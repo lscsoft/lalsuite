@@ -40,6 +40,21 @@ assert(XLALCOMPLEX16Mul(complex(10, -7), complex(30, 17)) == complex(419, -40))
 assert(XLALCOMPLEX16Div(complex(111.75, -120.50), complex(5, 12)) == complex(-5.25, -11.5))
 msg("passed complex number conversions")
 
+# check string conversions
+strs = ["a", "bc", "def"]
+sv = XLALCreateStringVector(*strs)
+assert(sv.length == 3)
+assert((sv.data == strs).all())
+strs[0] = "ghijk"
+sv.data_setel(0, strs[0])
+strs.append("lmnopq")
+XLALAppendString2Vector(sv, strs[3])
+assert(sv.length == 4)
+for i in range(0,4):
+    assert(sv.data_getel(i) == strs[i])
+XLALDestroyStringVector(sv)
+msg("passed string conversions")
+
 # passed all tests!
 msg("================")
 msg("PASSED all tests")

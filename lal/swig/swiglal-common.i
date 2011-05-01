@@ -262,6 +262,7 @@
 
 // Bit-flags to pass to swiglal_as_val
 %define SL_AV_DEFAULT  0x0 %enddef   // Default
+%define SL_AV_LALALLOC 0x1 %enddef   // Use LAL memory routines
 
 // These typemaps select which swiglal_from/swiglal_as_val functions to
 // use: if the supplied type is an enum, call the swiglal_{from,as_val}_enum
@@ -394,3 +395,64 @@ swiglal_conv_ctype(COMPLEX16);
 %typemaps_asvalfromn(SWIG_TYPECHECK_COMPLEX, gsl_complex);
 %typemaps_asvalfromn(SWIG_TYPECHECK_COMPLEX, COMPLEX8);
 %typemaps_asvalfromn(SWIG_TYPECHECK_COMPLEX, COMPLEX16);
+
+///// Provide conversions for strings /////
+
+// Ensure that the SWIG_FromCharPtr and SWIG_AsCharPtrAndSize
+// functions are available by including their respective SWIG fragments.
+%fragment("SWIG_FromCharPtr");
+%fragment("SWIG_AsCharPtrAndSize");
+
+%header {
+
+  // Convert a char* to a scripting language string using SWIG_FromCharPtr.
+  template<> SWIG_Object swiglal_from(char* *in, swig_type_info *in_ti) {
+    return SWIG_FromCharPtr(*in);
+  }
+  template<> SWIG_Object swiglal_from(const char* *in, swig_type_info *in_ti) {
+    return SWIG_FromCharPtr(*in);
+  }
+
+  // Convert a scripting language string to a char* using
+  // SWIG_AsCharPtrAndSize. If the conversion is successful,
+  // re-allocate '*out' to the required size (using memory
+  // routines requested by 'flags'), copy the converted char*
+  // to it, and free the converted char* if required.
+  template<> int swiglal_as_val(SWIG_Object in, char* *out, swig_type_info *out_ti, int flags) {
+    char* tmp;
+    size_t len;
+    int alloc;
+    // 'tmp' contains the converted string, 'len' its length, and
+    // 'alloc' indicates whether the string was newly allocated.
+    int ecode = SWIG_AsCharPtrAndSize(in, &tmp, &len, &alloc);
+    if (!SWIG_IsOK(ecode)) {
+      // Return if there was an error
+      return ecode;
+    }
+    // If we're using LAL memory allocation routines:
+    if (flags & SL_AV_LALALLOC) {
+      // Try to re-allocate '*out' using XLALRealloc.
+      *out = reinterpret_cast<char*>(XLALRealloc(*out, (len+1) * sizeof(char)));
+    }
+    // otherwise:
+    else {
+      // Try to re-allocate '*out' using realloc.
+      *out = reinterpret_cast<char*>(realloc(*out, (len+1) * sizeof(char)));
+    }
+    // If the re-allocation was unsuccessful:
+    if (*out == NULL) {
+      return SWIG_MemoryError;
+    }
+    // otherwise:
+    else {
+      // Copy 'tmp' to '*out', with the trailing '\0'.
+      memcpy(*out, tmp, len+1);
+      // Delete 'tmp' if it was newly allocated.
+      if (SWIG_IsNewObj(alloc)) {
+        %delete_array(tmp);
+      }
+      return SWIG_OK;
+    }
+  }
+
+}

@@ -33,6 +33,22 @@ assert(XLALCOMPLEX16Mul(complex(10, -7), complex(30, 17)) == complex(419, -40));
 assert(XLALCOMPLEX16Div(complex(111.75, -120.50), complex(5, 12)) == complex(-5.25, -11.5));
 msg("passed complex number conversions");
 
+## check string conversions
+strs = {"a", "bc", "def"};
+sv = XLALCreateStringVector(strs{:});
+assert(sv.length == 3);
+assert(all(strcmp(sv.data, strs)));
+strs{1} = "ghijk";
+sv.data_setel(0, strs{1});
+strs{end+1} = "lmnopq";
+XLALAppendString2Vector(sv, strs{4});
+assert(sv.length == 4);
+for i = 1:4
+  assert(strcmp(sv.data_getel(i-1), strs{i}));
+endfor
+XLALDestroyStringVector(sv);
+msg("passed string conversions");
+
 ## passed all tests!
 msg("================");
 msg("PASSED all tests");
