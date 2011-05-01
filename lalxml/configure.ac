@@ -151,7 +151,8 @@ echo "
 
         LALXML has now been successfully configured:
 
-                SWIG wrappings to build: $SWIG_WRAPPINGS
+                SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
+                SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
 
         and will be installed under the directory:
 
