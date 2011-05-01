@@ -150,3 +150,43 @@
 #ifdef SWIGPYTHON
 %include <lal/swiglal-python.i>
 #endif
+
+/////////////// Memory allocation ///////////////
+
+// SWIG generates default constructor and destructors for wrapped structs.
+// These contructors/destructors always use 'malloc'/'free' (C mode) or
+// 'new'/'delete' (C++ mode); see e.g. Source/Swig/cwrap.c in SWIG 1.3.40.
+// It is not possible to specify alternative memory allocators through any
+// options to SWIG. However, we would like all LAL structs to be allocated
+// with LAL memory allocation functions, so that the LAL memory debugging
+// system can be used inside a scripting language. For example, if a LAL
+// struct allocated by SWIG is passed to a LAL function which tries to
+// de-allocate it, the LAL memory debugging system will fail unless the
+// LAL struct was originally allocated by LAL.
+//
+// The solution is to use a C++ feature: a class C can supply their own
+// 'new'/'delete' operators, which will then be called by 'new C()' to
+// allocate the class. We do the same for all LAL structs by adding the
+// symbol 'SWIGLAL_STRUCT_LALALLOC' to their definitions. This symbol
+// defines a 'new' operator, which allocates the struct using XLALCalloc
+// (so that the struct is zero-initialised), and a 'delete' operator
+// which calls XLALFree to de-allocate the struct.
+//
+// Note that, if a LAL struct does not contain 'SWIGLAL_STRUCT_LALALLOC',
+// it will continue to be use the default 'new'/'delete' operators. This
+// should break anything as long as LAL memory debugging is not used,
+// either by compiling with --disable-debug or by setting lalDebugLevel=0.
+
+// Remove SWIGLAL_STRUCT_LALALLOC from SWIG interface
+#define SWIGLAL_STRUCT_LALALLOC()
+
+// Define SWIGLAL_STRUCT_LALALLOC in SWIG wrapping code
+%header %{
+  #define SWIGLAL_STRUCT_LALALLOC() \
+    void* operator new (size_t n) throw() { \
+      return XLALCalloc(1, n); \
+    } \
+    void operator delete(void* p) { \
+      XLALFree(p); \
+    }
+%}
