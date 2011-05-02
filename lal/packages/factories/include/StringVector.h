@@ -25,8 +25,6 @@
  * \brief Creation/destruction/manipulation API for 'StringVector' type objects,
  *  which are just LAL 'vectors' of CHAR * pointers.
  *
- * $Id$
- *
  */
 
 #ifndef _STRINGVECTOR_H  /* Double-include protection. */
@@ -44,7 +42,6 @@ extern "C" {
 #include <lal/LALRCSID.h>
 
 /*---------- DEFINES ----------*/
-NRCSID( STRINGVECTORH, "$Id$" );
 
 /*----- Error-codes -----*/
 /*---------- exported types ----------*/
