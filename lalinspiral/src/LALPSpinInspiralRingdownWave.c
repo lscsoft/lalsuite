@@ -160,10 +160,10 @@ INT4 XLALPSpinInspiralRingdownWave (
   while (j<nmodes) {
     if (j==0) {
       for (i = 0; i < nmodes; i++) {
-	gsl_matrix_set(coef, j, i, 1.);
-	gsl_matrix_set(coef, j, i+nmodes, 0.);
-	gsl_matrix_set(coef, j+1, i, -modefreqs->data[i].im);
-	gsl_matrix_set(coef, j+1, i+nmodes, modefreqs->data[i].re);
+	gsl_matrix_set(coef, 2*j, i, 1.);
+	gsl_matrix_set(coef, 2*j, i+nmodes, 0.);
+	gsl_matrix_set(coef, 2*j+1, i, -modefreqs->data[i].im);
+	gsl_matrix_set(coef, 2*j+1, i+nmodes, modefreqs->data[i].re);
       }
     }
     else {
@@ -176,8 +176,22 @@ INT4 XLALPSpinInspiralRingdownWave (
 	}
       }
       else {
-	fprintf(stderr,"*** ERROR: nmode must be <=2, %d selected\n",nmodes);
-	XLAL_ERROR( func, XLAL_EDOM );
+	if (j==2) {
+	  for (i = 0; i < nmodes; i++) {
+	    gsl_matrix_set(coef, 2*j, i, pow(modefreqs->data[i].im,4.)+pow(modefreqs->data[i].re,4.)-6.*pow(modefreqs->data[i].re*modefreqs->data[i].im,2.));
+	    gsl_matrix_set(coef, 2*j, i+nmodes, -4.*pow(modefreqs->data[i].im,3.)*modefreqs->data[i].re+4.*pow(modefreqs->data[i].re,3.)*modefreqs->data[i].im);
+	    gsl_matrix_set(coef, 2*j+1, i, -pow(modefreqs->data[i].im,5.)+10.*pow(modefreqs->data[i].im,3.)*pow(modefreqs->data[i].re,2.)-5.*modefreqs->data[i].im*pow(modefreqs->data[i].re,4.));
+	    gsl_matrix_set(coef, 2*j+1, i+nmodes, 5.*pow(modefreqs->data[i].im,4.)*modefreqs->data[i].re-10.*pow(modefreqs->data[i].im,2.)*pow(modefreqs->data[i].re,3.)+pow(modefreqs->data[i].re,5.));
+	  }
+	}
+	else {
+	  fprintf(stderr,"*** LALPSpinInspiralRingDown ERROR ***: nmode must be <=2, %d selected\n",nmodes);
+	  gsl_matrix_free(coef);
+	  gsl_vector_free(hderivs);
+	  gsl_vector_free(x);
+	  gsl_permutation_free(p);
+	  XLAL_ERROR( func, XLAL_EDOM );
+	}
       }
     }
     gsl_vector_set(hderivs, 2*j, matchinspwave->data[2*j]);
@@ -225,19 +239,15 @@ INT4 XLALPSpinInspiralRingdownWave (
 
   /* Build ring-down waveforms */
   UINT4 Nrdwave=rdwave->length;
-  for (j = 0; j < Nrdwave; j++)
-    {
-      tj = j * dt;
-      rdwave->data[j] = 0.;
-      for (i = 0; i < nmodes; i++)
-	{
-	  rdwave->data[j] += exp(- tj * modefreqs->data[i].im)
-	    * ( modeamps->data[i] * cos(tj * modefreqs->data[i].re)
-		+   modeamps->data[i + nmodes] * sin(tj * modefreqs->data[i].re) );
-
-	}
-
+  for (j = 0; j < Nrdwave; j++) {
+    tj = j * dt;
+    rdwave->data[j] = 0.;
+    for (i = 0; i < nmodes; i++) {
+      rdwave->data[j] += exp(- tj * modefreqs->data[i].im)
+	* ( modeamps->data[i] * cos(tj * modefreqs->data[i].re)
+	    +   modeamps->data[i + nmodes] * sin(tj * modefreqs->data[i].re) );
     }
+  }
 
   XLALDestroyREAL8Vector(modeamps);
   return errcode;
@@ -422,7 +432,6 @@ INT4 XLALPSpinGenerateQNMFreq(
   totalMass = params->totalMass;
 
   /* QNM frequencies from the fitting given in PRD73, 064030 */
-  /* Other modes than l=2, m=\pm 2, 0 should be added*/
 
   if ((l==2)&&(m==2)) {
     for (i = 0; i < nmodes; i++)
@@ -752,7 +761,7 @@ INT4 XLALPSpinFinalMassSpin(
 INT4 XLALPSpinInspiralAttachRingdownWave (
       REAL8Vector 	*sigl,
       InspiralTemplate 	*params,
-      UINT4              *attpos,
+      UINT4             *attpos,
       UINT4              nmodes,
       UINT4              l,
       INT4               m,
@@ -761,7 +770,7 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
     )
 {
 
-      static const char *func = "XLALInspiralAttachRingdownWave";
+      static const char *func = "XLALPSpinInspiralAttachRingdownWave";
 
       COMPLEX8Vector *modefreqs;
       UINT4 Nrdwave, Npatch;
@@ -807,7 +816,8 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
         XLAL_ERROR( func, XLAL_EFAILED );
       }
 
-      /* Create memory for the ring-down and full waveforms, and eventual derivatives of inspirals */
+      /* Create memory for the ring-down and full waveforms, derivatives of inspirals 
+	 and waveforms and its derivative values at the attach point */
 
       rdwave = XLALCreateREAL8Vector( Nrdwave );
       inspwave = XLALCreateREAL8Vector( Npatch );
@@ -826,10 +836,10 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
       }
 
       /* Generate derivatives of the last part of inspiral waves */
-      /* Take the last part of signal1 */
+      /* Take the last part of sigl1 */
 
       for (i=0; i<2; i++) {
-
+	/* i=0(1) for real(imaginaary) part */
 	for (j = 0; j < Npatch; j++) {
 	  inspwave->data[j]    = sigl->data[2*(atpos - Npatch + j)+i];	
 	}
@@ -837,7 +847,7 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
 	for (k=0;k<2*nmodes;k++) {
 	  matchinspwave->data[k] = inspwave->data[Npatch-1];
 	  if ((k+1)<2*nmodes) {
-	    errcode = XLALGenerateWaveDerivative( dinspwave, inspwave, params->tSampling );
+	    errcode = XLALGenerateWaveDerivative( dinspwave, inspwave, dt);
 	    if ( (errcode != XLAL_SUCCESS) ) {
 	      XLALDestroyCOMPLEX8Vector( modefreqs );
 	      XLALDestroyREAL8Vector( rdwave );
