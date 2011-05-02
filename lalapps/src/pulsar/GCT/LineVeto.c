@@ -33,6 +33,7 @@
 
 /*---------- INCLUDES ----------*/
 #define __USE_ISOC99 1
+#include <lal/StringVector.h>
 #include "LineVeto.h"
 
 NRCSID( LINEVETOC, "$Id$");
@@ -105,19 +106,11 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
   deltaTau = XLALGPSDiff( &candidateDopplerParams.refTime, &refTimeGPS );
 
   /* initialise detector name vector for later identification */
-  NameList *detectorIDs;
-  if ( ( detectorIDs = XLALCreateNameList ( 5 ) ) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCreateNameList( %d )\n", fn, 5 );
+  LALStringVector *detectorIDs;
+  if ( ( detectorIDs = XLALGetDetectorIDs ( multiSFTsV )) == NULL ) /* fill detector name vector with all detectors present in any data sements */
     XLAL_ERROR ( fn, XLAL_EFUNC );
-  }
-  for ( X = 0; X < detectorIDs->length; X++)
-     {
-       CHAR name[LALNameLength] = "INVALIDNAME";
-       detectorIDs->data[X] = name;
-     }
-  XLALGetDetectorIDs ( detectorIDs, multiSFTsV ); /* fill detector name vector with all detectors present in any data sements */
 
-  UINT4 numDetectors = detectorIDs->elems;
+  UINT4 numDetectors = detectorIDs->length;
 
   /* initialise LVcomponents structure and allocate memory */
   LVcomponents   lineVeto;      /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
@@ -166,7 +159,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
   /* free temporary structures */
   XLALDestroyREAL8Vector ( lineVeto.TwoFX );
-  XLALDestroyNameList ( detectorIDs );
+  XLALDestroyStringVector ( detectorIDs );
 
   return (XLAL_SUCCESS);
 
@@ -184,7 +177,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 					const MultiSFTVectorSequence *multiSFTsV,               /**< data files (SFTs) for all detectors and segments */
 					const MultiNoiseWeightsSequence *multiNoiseWeightsV,    /**< noise weights for all detectors and segments */
 					const MultiDetectorStateSeriesSequence *multiDetStatesV,/**< some state info for all detectors */
-					const NameList *detectorIDs,                            /**< name strings of all detectors present in multiSFTsV */
+					const LALStringVector *detectorIDs,                     /**< name strings of all detectors present in multiSFTsV */
 					const ComputeFParams *CFparams,                         /**< additional parameters needed for ComputeFStat */
 					const BOOLEAN SignalOnly                                /**< flag for case with no noise, makes some extra checks necessary */
 				      )
@@ -207,7 +200,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
   UINT4 X, Y;
 
   UINT4 numSegments  = multiSFTsV->length;
-  UINT4 numDetectors = detectorIDs->elems;
+  UINT4 numDetectors = detectorIDs->length;
 
   if ( lineVeto->TwoFX->length != numDetectors ) {
     XLALPrintError ("\%s, line %d : Inconsistent number of detectors: TwoFX vector has length %d, while detectorID list contains %d elements!\n\n", fn, __LINE__, lineVeto->TwoFX->length, numDetectors );
@@ -441,107 +434,59 @@ REAL8 XLALComputeLineVeto ( const REAL8 TwoF,          /**< multi-detector  Fsta
 
 /** XLAL function to get a list of detector IDs from multi-segment multiSFT vectors
 * returns all unique detector IDs for cases with some detectors switching on and off
-* detectorIDs structure needs to be properly initialised with length >= total number of detectors present in data
 */
-int XLALGetDetectorIDs ( NameList *detectorIDs,                 /** [out] vector of IFO name strings */
-                         const MultiSFTVectorSequence *multiSFTsV /**< data files (SFTs) for all detectors and segments */
-                       )
+LALStringVector *
+XLALGetDetectorIDs ( const MultiSFTVectorSequence *multiSFTsV /**< data files (SFTs) for all detectors and segments */
+                     )
 {
   const char *fn = __func__;
+
+  LALStringVector *IFOList = NULL;	// IFO string vector for returning
 
   /* check input parameters and report errors */
   if ( !multiSFTsV || !multiSFTsV->data ) {
     XLALPrintError ("\nError in function %s, line %d : Empty pointer as input parameter!\n\n", fn, __LINE__);
-    XLAL_ERROR ( fn, XLAL_EFAULT);
+    XLAL_ERROR_NULL ( fn, XLAL_EFAULT);
   }
 
   if ( multiSFTsV->length == 0 ) {
     XLALPrintError ("\nError in function %s, line %d : Input multiSFT vector contains no segments (zero length)!\n\n", fn, __LINE__);
-    XLAL_ERROR ( fn, XLAL_EBADLEN);
+    XLAL_ERROR_NULL ( fn, XLAL_EBADLEN);
   }
 
   /* set up variables */
-  UINT4 k, X, Y;
+  UINT4 k, X;
   UINT4 numSegments  = multiSFTsV->length; /* number of segments with SFTs from any detector */
   UINT4 numDetectorsSeg = 0;               /* number of detectors with data might be different for each segment */
-  BOOLEAN detIDfound = FALSE;              /* for each k and X, check if the detector ID was already in the list */
 
   for (k = 0; k < numSegments; k++)
   {
     if ( !multiSFTsV->data[k] || (multiSFTsV->data[k]->length == 0) ) {
     XLALPrintError ("\nError in function %s, line %d : Input multiSFT vector, segment k=%d has no elements (0 detectors)!\n\n", fn, __LINE__, k);
-    XLAL_ERROR ( fn, XLAL_EFAULT);
+    XLAL_ERROR_NULL ( fn, XLAL_EFAULT);
     }
 
     numDetectorsSeg = multiSFTsV->data[k]->length; /* for each segment, could be smaller than overall number */
 
     for (X = 0; X < numDetectorsSeg; X++)
     {
+      /* check if this segment k, IFO X contains a new detector */
+      const char *thisIFO = multiSFTsV->data[k]->data[X]->data[0].name;
 
-      /* check if this k, X combination yields a new detector ID */
-      Y = 0;
-      detIDfound = FALSE;
-      while ( ( Y < detectorIDs->length ) && ( detIDfound == FALSE ) )
-      {
-        if ( strcmp( multiSFTsV->data[k]->data[X]->data[0].name, detectorIDs->data[Y] ) == 0 )
-          detIDfound = TRUE; /* ID already in list, do nothing */
-        Y++;
-      }
-      if ( detIDfound == FALSE ) /* ID not in list yet, add it */
-      {
-        detectorIDs->data[detectorIDs->elems] = multiSFTsV->data[k]->data[X]->data[0].name;
-        detectorIDs->elems++;
-        if ( detectorIDs->elems > detectorIDs->length )
-        {
-         XLALPrintError ("\nError in function %s, line %d : already found %d detector IDs, exceeded ID list length %d. This happened for segment k=%d, detector X=%d!\n\n", fn, __LINE__, detectorIDs->elems, detectorIDs->length, k, X);
-         XLAL_ERROR ( fn, XLAL_EBADLEN);
+      if ( XLALFindStringInVector ( thisIFO, IFOList ) >= 0 )
+        { // if already in list, do nothing
+          continue;
         }
-      }
+      else
+        {       // otherwise, append to IFOList
+          if ( (IFOList = XLALAppendString2Vector ( IFOList, thisIFO )) == NULL )
+            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+        }
 
     } /* for X < numDetectorsSeg */
+
   } /* for k < numSegments */
 
-  return(XLAL_SUCCESS);
+  return IFOList;
 
 } /* XLALGetDetectorIDs() */
-
-
-
-
-NameList * XLALCreateNameList ( UINT4 length )
-{
-   NameList *list;
-   list = LALMalloc( sizeof( *list ) );
-   if ( ! list )
-     XLAL_ERROR_NULL( "XLALCreateNameList", XLAL_ENOMEM );
-   list->length = length;
-   list->elems = 0;
-   if ( ! length ) /* zero length: set data pointer to be NULL */
-     list->data = NULL;
-   else /* non-zero length: allocate memory for data */
-   {
-     list->data = LALMalloc( length * sizeof( *list->data ) );
-     if ( ! list->data )
-     {
-       LALFree( list );
-       XLAL_ERROR_NULL( "XLALCreateNameList", XLAL_ENOMEM );
-     }
-   }
-   return list;
-}
-
-
-
-
-void XLALDestroyNameList ( NameList *list )
-{
-   if ( ! list )
-     return;
-   if ( ( ! list->length || ! list->data ) && ( list->length || list->data  ) )
-     XLAL_ERROR_VOID( "XLALDestroyNameList", XLAL_EINVAL );
-   if ( list->data )
-     LALFree( list->data );
-   list->data = NULL; /* leave length non-zero to detect repeated frees */
-   LALFree( list );
-   return;
-}
