@@ -307,3 +307,30 @@ deblank_string ( const CHAR *start, UINT4 len )
 
 } /* deblank_string() */
 
+/** Search for string 'needle' in string-vector 'haystack', return index to
+ * first matching vector element if found, -1 outherwise.
+ *
+ * Note: function allows haystack=NULL input, in which case -1 (=not found) will be returned.
+ *
+ */
+INT4
+XLALFindStringInVector ( const char *needle, const LALStringVector *haystack )
+{
+  const char *fn = __func__;
+
+  if ( !needle ) {
+    XLALPrintError ("%s: invalid NULL input 'needle'!\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  if ( !haystack || (haystack->length == 0) )	// no vector to search => not found
+    return -1;
+
+  UINT4 i;
+  for ( i=0; i < haystack->length; i ++ )
+    if ( !strcmp ( needle, haystack->data[i] ) )	// found it!
+      return i;
+
+  return -1;	// didn't find matching entry
+
+} /* XLALFindStringInVector() */
