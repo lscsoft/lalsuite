@@ -55,43 +55,12 @@ typedef BOOLEAN (*FlatLatticeTilingBoundFunc)(
 typedef void (*FlatLatticeTilingBoundFree)(
                                            void *data /**< Arbitrary data describing parameter space */
                                            );
-typedef struct tagFlatLatticeTilingBound {
-
-  /* Number of bound dimensions */
-  INT4 dimensions;
-
-  /* Dimensions which are bound */
-  UINT8 is_bound;
-
-  /* Parameter space bound function */
-  FlatLatticeTilingBoundFunc func;
-
-  /* Arbitrary data describing parameter space */
-  void *data;
-
-  /* Cleanup function */
-  FlatLatticeTilingBoundFree free;
-
-} FlatLatticeTilingBound;
+typedef struct tagFlatLatticeTilingBound FlatLatticeTilingBound;
 
 /**
  * Flat lattice tiling subspace
  */
-typedef struct tagFlatLatticeTilingSubspace {
-
-  /* Total number of tiled (non-flat) dimensions */
-  INT4 dimensions;
-
-  /* Dimensions which are tiled (non-flat) */
-  UINT8 is_tiled;
-
-  /* Padding of bounds along each dimension */
-  gsl_vector *padding;
-
-  /* Increment vectors of the lattice tiling generator */
-  gsl_matrix *increment;
-
-} FlatLatticeTilingSubspace;
+typedef struct tagFlatLatticeTilingSubspace FlatLatticeTilingSubspace;
 
 /**
  * Flat tiling lattice generator
@@ -103,14 +72,8 @@ typedef int (*FlatTilingLatticeGenerator)(
                                           );
 
 /**
- * State of the flat lattice tiling algorithm
+ * Flat lattice tiling state/input structure
  */
-typedef enum tagFlatLatticeTilingState {
-  FLT_S_NotInitialised,
-  FLT_S_NotStarted,
-  FLT_S_InProgress,
-  FLT_S_Finished
-} FlatLatticeTilingState;
 typedef struct tagFlatLatticeTiling {
 
   /* Dimension of the parameter space */
@@ -162,7 +125,7 @@ typedef struct tagFlatLatticeTiling {
   UINT4 count;
 
   /* State of the tiling */
-  FlatLatticeTilingState state;
+  int state;
 
 } FlatLatticeTiling;
 

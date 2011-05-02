@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   CHAR *output_file = NULL;
   REAL8 scale_padding = 0;
 
-  int i, j;
+  int i;
   UINT4 k;
   VeryBasicXMLOutput xml = empty_VeryBasicXMLOutput;
   int spaces = 0;
@@ -302,22 +302,22 @@ int main(int argc, char *argv[]) {
     XLAL_VBXMLO_EndTag(&xml, "tiling");
 
   /* Output subspaces */
-  XLAL_VBXMLO_BeginTag(&xml, "subspaces");
-  for (i = 0; i < tiling->num_subspaces; ++i) {
-    XLAL_VBXMLO_BeginTag(&xml, "subspace");
-    XLAL_VBXMLO_Tag(&xml, "dimensions", "%i", tiling->subspaces[i]->dimensions);
-    XLAL_VBXMLO_BeginTag(&xml, "is_tiled");
-    XLAL_VBXMLO_Indent(&xml);
-    for (j = 0; j < tiling->dimensions; ++j) {
-      XLAL_VBXMLO_Printf(&xml, "%c", GET_BIT(UINT8, tiling->subspaces[i]->is_tiled, j) ? 'Y' : 'N');
-    }
-    XLAL_VBXMLO_Printf(&xml, "\n");
-    XLAL_VBXMLO_EndTag(&xml, "is_tiled");
-    XLAL_VBXMLO_gsl_vector(&xml, "padding", "%0.12g", tiling->subspaces[i]->padding);
-    XLAL_VBXMLO_gsl_matrix(&xml, "increment", "%0.12g", tiling->subspaces[i]->increment);
-    XLAL_VBXMLO_EndTag(&xml, "subspace");
-  }
-  XLAL_VBXMLO_EndTag(&xml, "subspaces");
+  /* XLAL_VBXMLO_BeginTag(&xml, "subspaces"); */
+  /* for (i = 0; i < tiling->num_subspaces; ++i) { */
+  /*   XLAL_VBXMLO_BeginTag(&xml, "subspace"); */
+  /*   XLAL_VBXMLO_Tag(&xml, "dimensions", "%i", tiling->subspaces[i]->dimensions); */
+  /*   XLAL_VBXMLO_BeginTag(&xml, "is_tiled"); */
+  /*   XLAL_VBXMLO_Indent(&xml); */
+  /*   for (j = 0; j < tiling->dimensions; ++j) { */
+  /*     XLAL_VBXMLO_Printf(&xml, "%c", GET_BIT(UINT8, tiling->subspaces[i]->is_tiled, j) ? 'Y' : 'N'); */
+  /*   } */
+  /*   XLAL_VBXMLO_Printf(&xml, "\n"); */
+  /*   XLAL_VBXMLO_EndTag(&xml, "is_tiled"); */
+  /*   XLAL_VBXMLO_gsl_vector(&xml, "padding", "%0.12g", tiling->subspaces[i]->padding); */
+  /*   XLAL_VBXMLO_gsl_matrix(&xml, "increment", "%0.12g", tiling->subspaces[i]->increment); */
+  /*   XLAL_VBXMLO_EndTag(&xml, "subspace"); */
+  /* } */
+  /* XLAL_VBXMLO_EndTag(&xml, "subspaces"); */
 
   /* Output template count */
   XLAL_VBXMLO_Tag(&xml, "template_count", "%li", XLALTotalFlatLatticePointCount(tiling));
