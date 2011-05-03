@@ -45,6 +45,9 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalframe])
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
+# debug
+LALSUITE_ENABLE_DEBUG
+
 # put version/configure info in config header
 lalframe_version_major=`echo "$VERSION" | cut -d. -f1`
 lalframe_version_minor=`echo "$VERSION" | cut -d. -f2`

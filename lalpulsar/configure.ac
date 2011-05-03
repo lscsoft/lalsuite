@@ -48,6 +48,9 @@ LALSUITE_ENABLE_NIGHTLY
 # enable LALXML support
 LALSUITE_ENABLE_LALXML
 
+# debug
+LALSUITE_ENABLE_DEBUG
+
 # put version/configure info in config header
 lalpulsar_version_major=`echo "$VERSION" | cut -d. -f1`
 lalpulsar_version_minor=`echo "$VERSION" | cut -d. -f2`

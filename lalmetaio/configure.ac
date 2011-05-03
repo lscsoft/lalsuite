@@ -44,6 +44,9 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalmetaio])
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
+# debug
+LALSUITE_ENABLE_DEBUG
+
 # put version/configure info in config header
 lalmetaio_version_major=`echo "$VERSION" | cut -d. -f1`
 lalmetaio_version_minor=`echo "$VERSION" | cut -d. -f2`
