@@ -907,8 +907,8 @@ struct coh_PTF_skyPoints coh_PTF_circular_grid(
   }
 
   /* assign memory for sky points */
-  skyPoints.rightAscension = LALCalloc(1, numSkyPoints*sizeof( REAL8 ));
-  skyPoints.declination    = LALCalloc(1, numSkyPoints*sizeof( REAL8 ));
+  skyPoints.rightAscension = LALCalloc(1, numSkyPoints*sizeof( REAL4 ));
+  skyPoints.declination    = LALCalloc(1, numSkyPoints*sizeof( REAL4 ));
   skyPoints.numPoints      = numSkyPoints;
 
   /* loop over rings on sky, and around each ring */

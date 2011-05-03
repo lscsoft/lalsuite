@@ -952,6 +952,11 @@ ConnectLinePoints(LALStatus *status,
 /*
  * Estimates from the TFR the internal mean Frequency profile
  * This allows us to estimate an SNR to individual curves
+ *
+ * This should smooth the profile with a running median smoothing
+ * call to allow even monochromatic triggers to have some measure
+ * of SNR. Fri-Jul-03-2009:200907031845  (Idea sprang from tracing
+ * very long duration TCS lines)
  */
 static void estimateProfile(REAL4 *myProfile,
 			    TimeFreqRep Map)
@@ -1221,7 +1226,7 @@ void LALTrackSearchInsertMarkers(
 	  output->curves[i].fBinHz[j]=
 	    (output->curves[i].col[j]*
 	     ((1/(2*input->dataDeltaT))/(input->mapFreqBins))
-	     );
+	     )+input->f0;
 	  currentRelativeFloatTime=output->curves[i].row[j]*deltaT;
 	  tmpGPS = input->mapStartGPS;
 	  XLALGPSAdd(&tmpGPS, currentRelativeFloatTime);

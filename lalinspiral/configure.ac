@@ -45,6 +45,9 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalinspiral])
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
+# debug
+LALSUITE_ENABLE_DEBUG
+
 # put version/configure info in config header
 lalinspiral_version_major=`echo "$VERSION" | cut -d. -f1`
 lalinspiral_version_minor=`echo "$VERSION" | cut -d. -f2`

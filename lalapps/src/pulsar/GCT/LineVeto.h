@@ -79,7 +79,6 @@ extern "C" {
     REAL8Vector *TwoFX;                   /**< vector of single-detector F-statistic values */
   } LVcomponents;
 
-
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */
 extern const LVcomponents empty_LVcomponents;
@@ -101,6 +100,7 @@ XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
 				    const MultiSFTVectorSequence *multiSFTs,
 				    const MultiNoiseWeightsSequence *multiNoiseWeights,
 				    const MultiDetectorStateSeriesSequence *multiDetStates,
+				    const LALStringVector *detectorIDs,
 				    const ComputeFParams *CFparams,
 				    const BOOLEAN SignalOnly);
 
@@ -113,6 +113,9 @@ XLALComputeLineVeto ( const REAL8 TwoF,
 		      const REAL8Vector *TwoFX,
 		      const REAL8 rhomax,
 		      const REAL8Vector *priorX );
+
+LALStringVector *
+XLALGetDetectorIDs ( const MultiSFTVectorSequence *multiSFTsV );
 
 #ifdef  __cplusplus
 }

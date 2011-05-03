@@ -62,6 +62,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <tracksearchToolbox.h>
+#include <FrameDataConvert.h>
 #include <tracksearchAverager.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/LALRunningMedian.h>
@@ -91,16 +92,21 @@ tagTSappsInjectParams
  */
 void
 LALappsTrackSearchPrepareData(
-			      LALStatus*,      
 			      REAL4TimeSeries*,
 			      REAL4TimeSeries*,
 			      TSSegmentVector*,
 			      TSSearchParams);
 
+int
+LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries*,
+				 REAL8);
+
+int
+LALappsSmoothWithRunningMedian(REAL4Vector*,
+			       UINT4);
 
 void 
-LALappsTrackSearchCalibrate( LALStatus*,
-			     REAL4TimeSeries*,
+LALappsTrackSearchCalibrate( REAL4TimeSeries*,
 			     TSSearchParams);
 
 void 
@@ -124,8 +130,7 @@ LALappsTrackSearchPerformInjection(
 				    TSSearchParams);
 
 void
-LALappsTrackSearchWhitenSegments( LALStatus*,
-				  REAL4TimeSeries*,
+LALappsTrackSearchWhitenSegments( REAL4TimeSeries*,
 				  TSSegmentVector*,
 				  TSSearchParams);
 
@@ -138,8 +143,7 @@ LALappsTrackSearchInitialize(
 			     CHARVector**,
 			     CHARVector**);
 void
-LALappsGetFrameData(LALStatus*,
-		    TSSearchParams*,
+LALappsGetFrameData(TSSearchParams*,
 		    REAL4TimeSeries*,
 		    CHARVector*,
 		    CHAR*);
@@ -151,28 +155,24 @@ LALappsGetAsciiData(
 		    CHARVector*);
 
 void
-LALappsDoTrackSearch(LALStatus*,
-		     TimeFreqRep*,
+LALappsDoTrackSearch(TimeFreqRep*,
 		     TrackSearchParams,
 		     TrackSearchMapMarkingParams ,
 		     TSSearchParams);
 
 void
-LALappsDoTSeriesSearch(LALStatus*,
-		       REAL4TimeSeries*,
+LALappsDoTSeriesSearch(REAL4TimeSeries*,
 		       TSSearchParams,
 		       INT4);
 
 void
-LALappsDoTimeSeriesAnalysis(LALStatus*,
-			    TSSearchParams,
+LALappsDoTimeSeriesAnalysis(TSSearchParams,
 			    TSappsInjectParams,
 			    CHAR*,
 			    CHARVector*);
 
 void
-LALappsDoTSAMapSearch(LALStatus*,
-		      TSAMap*,
+LALappsDoTSAMapSearch(TSAMap*,
 		      TSSearchParams*,
 		      INT4);
 
@@ -204,8 +204,7 @@ LALappsWriteBreveResults(
 			 TrackSearchOut);
 
 void
-LALappsCreateInjectableData(LALStatus*,
-			    REAL4TimeSeries**,
+LALappsCreateInjectableData(REAL4TimeSeries**,
 			    TSappsInjectParams);
 /*
  * Following routine need to be fixed
@@ -213,20 +212,18 @@ LALappsCreateInjectableData(LALStatus*,
  * if use is not careful
  * CONSIDER PLACING IN TSDATA.C FROM LALLIBS
  */
-void
-LALappsCreateCurveDataSection(LALStatus*,
-			      Curve**);
+int
+LALappsCreateCurveDataSection(Curve**);
 
 void
-LALappsDestroyCurveDataSection(LALStatus*,
-			       Curve**,
+LALappsDestroyCurveDataSection(Curve**,
 			       INT4);
 /*
  * Private functions
  */
 void Dump_Search_Data(TSSearchParams,TrackSearchOut,CHAR*);
 void QuickDump_Data(TSSearchParams,TrackSearchOut,CHAR*);
-void fakeDataGeneration(LALStatus*,REAL4TimeSeries*,INT4,INT4);
+void fakeDataGeneration(REAL4TimeSeries*,INT4,INT4);
 
 #endif
  

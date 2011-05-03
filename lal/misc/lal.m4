@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 8
+# serial 9
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -79,18 +79,6 @@ AC_DEFUN([LAL_ENABLE_INTELFFT],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-intelfft) ;;
     esac
   ], [ intelfft=false ] )
-])
-
-AC_DEFUN([LAL_ENABLE_DEBUG],
-[AC_ARG_ENABLE(
-  [debug],
-  AC_HELP_STRING([--enable-debug],[include standard LAL debugging code [default=yes]]),
-  [ case "${enableval}" in
-      yes) ;;
-      no) AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code) ;;
-      *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
-    esac
-  ], )
 ])
 
 AC_DEFUN([LAL_ENABLE_MACROS],

@@ -45,6 +45,7 @@
 #include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
+#include <lal/FindChirpTD.h>
 #include <lal/FindChirpPTF.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
@@ -76,6 +77,7 @@
 
 #define BUFFER_SIZE 256
 #define FILENAME_SIZE 256
+#define MAXIFO 4
 
 /* macro for testing validity of a condition that prints an error if invalid */
 #define sanity_check( condition ) \
@@ -107,7 +109,8 @@ struct coh_PTF_params {
   char        *cvsRevision;
   char        *cvsSource;
   char        *cvsDate;
-  char         ifoName[3];
+  char         ifoName[MAXIFO][LIGOMETA_IFO_MAX];
+  UINT4        numIFO;
   INT4         randomSeed;
   INT4         haveTrig[LAL_NUM_IFO];
   LIGOTimeGPS  startTime;
@@ -219,8 +222,8 @@ RingDataSegments;
 
 struct coh_PTF_skyPoints {
   UINT4 numPoints;
-  REAL8 *rightAscension;
-  REAL8 *declination;
+  REAL4 *rightAscension;
+  REAL4 *declination;
 };
 
 /* ENUM for sky location looping */
@@ -290,7 +293,9 @@ UINT8 coh_PTF_add_triggers(
     REAL4TimeSeries         *bankVeto,
     REAL4TimeSeries         *autoVeto,
     REAL4TimeSeries         *chiSquare,
-    REAL8Array              *PTFM[LAL_NUM_IFO+1]
+    REAL8Array              *PTFM[LAL_NUM_IFO+1],
+    REAL4                   rightAscension,
+    REAL4                   declination
 );
 void coh_PTF_cluster_triggers(
   MultiInspiralTable      **eventList,
@@ -420,12 +425,6 @@ void coh_PTF_template (
 );
 
 void coh_PTF_template_PTF (
-    FindChirpTemplate          *fcTmplt,
-    InspiralTemplate           *InspTmplt,
-    FindChirpTmpltParams       *params
-);
-
-void coh_PTF_template_TaylorF2 (
     FindChirpTemplate          *fcTmplt,
     InspiralTemplate           *InspTmplt,
     FindChirpTmpltParams       *params

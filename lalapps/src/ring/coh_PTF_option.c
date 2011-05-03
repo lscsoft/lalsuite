@@ -24,9 +24,12 @@ RCSID( "$Id$" );
 /* parse command line arguments using getopt_long to get ring params */
 int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
 {
+
+  CHAR                         ifo[LIGOMETA_IFO_MAX];
+  UINT4                        ifoNumber;
   static struct coh_PTF_params localparams;
   memset( &localparams.haveTrig, 0, LAL_NUM_IFO * sizeof(int) );
-  struct option long_options[] =
+  struct option                long_options[] =
   {
     { "verbose",            no_argument, &vrbflg, 1 },
     { "strain-data",        no_argument, &localparams.strainData, 1 },
@@ -195,11 +198,47 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         {
           localparams.approximant = FindChirpPTF;
         }
+        else if ( ! strcmp( "TaylorT1", optarg) )
+        {
+          localparams.approximant = TaylorT1;
+        }
+        else if ( ! strcmp( "TaylorT2", optarg) )
+        {
+          localparams.approximant = TaylorT2;
+        }
+        else if ( ! strcmp( "TaylorT3", optarg) )
+        {
+          localparams.approximant = TaylorT3;
+        }
+        else if ( ! strcmp( "TaylorT4", optarg) )
+        {
+          localparams.approximant = TaylorT4;
+        }
+        else if ( ! strcmp( "GeneratePPN", optarg) )
+        {
+          localparams.approximant = GeneratePPN;
+        }
+        else if ( ! strcmp( "PadeT1", optarg) )
+        {
+          localparams.approximant = PadeT1;
+        }
+        else if ( ! strcmp( "EOB", optarg) )
+        {
+          localparams.approximant = EOB;
+        }
+        else if ( ! strcmp( "EOBNR", optarg) )
+        {
+          localparams.approximant = EOBNR;
+        }
+        else if ( ! strcmp( "IMRPhenomB", optarg) )
+        {
+          localparams.approximant = IMRPhenomB;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
-              "%s (must be either FindChirpSP or FindChirpPTF)\n",
+              "%s (must be either FindChirpSP, FindChirpPTF or TaylorT4)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -348,6 +387,18 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     exit( 1 );
   }
 
+  /* set number of ifos */
+  localparams.numIFO = 0;
+
+  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+    if ( localparams.haveTrig[ifoNumber] )
+    {
+      XLALReturnIFO(ifo,ifoNumber);
+      snprintf( localparams.ifoName[localparams.numIFO], LIGOMETA_IFO_MAX,\
+                "%s", ifo );
+      localparams.numIFO++;
+    }
+
   *params = localparams;
 
   return 0;
@@ -408,19 +459,9 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   UINT4 segmentLength  = 0;
   UINT4 segmentStride  = 0;
   UINT4 truncateLength = 0;
-  UINT4 numDetectors   = 0;
   UINT4 ifoNumber;
   INT8  startTime;
   INT8  endTime;
-
-  /* Determine if we are analyzing single or multiple ifo data */
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-  {
-    if ( params->haveTrig[ifoNumber] )
-    {
-      numDetectors++;
-    }
-  }
 
   if ( params->getSpectrum ) /* need data and response if not strain data */
     sanity_check( params->getData && (params->strainData) );
@@ -489,7 +530,7 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
                     && params->skyError <=LAL_PI/2. );
       sanity_check( params->timingAccuracy > 0. );
 
-      if ( numDetectors == 2 )
+      if ( params->numIFO == 2 )
         params->skyLooping = TWO_DET_SKY_POINT_ERROR;
       else
         params->skyLooping = SKY_POINT_ERROR;
@@ -501,7 +542,7 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   }
   else
   {
-    if ( numDetectors == 2 )
+    if ( params->numIFO == 2 )
       params->skyLooping = TWO_DET_ALL_SKY;
     else
       params->skyLooping = ALL_SKY;
