@@ -664,12 +664,13 @@ char **getHeaderLine(FILE *inp) {
   }
 
   colName=strtok(header, delimiters);
-  colNames[0] = colNameToParamName(colName);
+  strcpy(colNames[0],colNameToParamName(colName));
+  //colNames[0] = colNameToParamName(colName); /* switched to strcpy() to avoid warning: assignment discards qualifiers from pointer target type */
   colNamesLen=1;
   do {
     colName=strtok(NULL, delimiters);
 
-    colNames[colNamesLen]=colNameToParamName(colName);
+    strcpy(colNames[colNamesLen],colNameToParamName(colName));
     colNamesLen++;
 
     /* Expand if necessary. */
