@@ -291,9 +291,9 @@ REAL8 NullLogLikelihood(LALIFOData *data);
 REAL8 TimeDomainNullLogLikelihood(LALIFOData *data);
 
 void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
-                            LALTemplateFunction *template, char *filename);
+                            LALTemplateFunction *template, const char *filename);
 void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data, 
-                            LALTemplateFunction *template, char *filename);
+                            LALTemplateFunction *template, const char *filename);
 
 void executeFT(LALIFOData *IFOdata);
 void executeInvFT(LALIFOData *IFOdata);

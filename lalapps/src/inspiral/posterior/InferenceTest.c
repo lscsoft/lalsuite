@@ -75,7 +75,7 @@ void SingleIFOLikelihoodTest(void);
 void BasicMCMCTest(void);
 void TemplateDumpTest(void);
 void PTMCMCTest(void);
-
+REAL8 FreqDomainNullLogLikelihood(LALIFOData *data);
 
 // gsl_rng * InitializeRandomSeed(void);
 // unsigned long int random_seed();
@@ -102,7 +102,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
 	LALInferenceRunState *irs=NULL;
 	LALIFOData *ifoPtr, *ifoListStart;
-	ProcessParamsTable *ppt=NULL;
+	//ProcessParamsTable *ppt=NULL;
 	unsigned long int randomseed;
 	struct timeval tv;
 	FILE *devrandom;
@@ -293,17 +293,17 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
         ra_proposed, dec_proposed, psi_proposed, dist_proposed;
   REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
   gsl_rng * GSLrandom=runState->GSLrandom;
-  LALVariables * currentParams = runState->currentParams;	
+  LALVariables * currentParams_local = runState->currentParams;
 
-  mc   = *(REAL8*) getVariable(currentParams, "chirpmass");		/* solar masses*/
-  eta  = *(REAL8*) getVariable(currentParams, "massratio");		/* dim-less    */
-  iota = *(REAL8*) getVariable(currentParams, "inclination");		/* radian      */
-  tc   = *(REAL8*) getVariable(currentParams, "time");				/* GPS seconds */
-  phi  = *(REAL8*) getVariable(currentParams, "phase");			/* radian      */
-  ra   = *(REAL8*) getVariable(currentParams, "rightascension");	/* radian      */
-  dec  = *(REAL8*) getVariable(currentParams, "declination");		/* radian      */
-  psi  = *(REAL8*) getVariable(currentParams, "polarisation");		/* radian      */
-  dist = *(REAL8*) getVariable(currentParams, "distance");			/* Mpc         */
+  mc   = *(REAL8*) getVariable(currentParams_local, "chirpmass");		/* solar masses*/
+  eta  = *(REAL8*) getVariable(currentParams_local, "massratio");		/* dim-less    */
+  iota = *(REAL8*) getVariable(currentParams_local, "inclination");		/* radian      */
+  tc   = *(REAL8*) getVariable(currentParams_local, "time");				/* GPS seconds */
+  phi  = *(REAL8*) getVariable(currentParams_local, "phase");			/* radian      */
+  ra   = *(REAL8*) getVariable(currentParams_local, "rightascension");	/* radian      */
+  dec  = *(REAL8*) getVariable(currentParams_local, "declination");		/* radian      */
+  psi  = *(REAL8*) getVariable(currentParams_local, "polarisation");		/* radian      */
+  dist = *(REAL8*) getVariable(currentParams_local, "distance");			/* Mpc         */
 
   //mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
   // (above proposal is not symmetric!)
@@ -322,7 +322,7 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
   dist_proposed = dist * exp(gsl_ran_ugaussian(GSLrandom)*0.1); // ~10% change
   logProposalRatio *= dist_proposed / dist;
 		
-  copyVariables(currentParams, proposedParams);
+  copyVariables(currentParams_local, proposedParams);
   setVariable(proposedParams, "chirpmass",      &mc_proposed);		
   setVariable(proposedParams, "massratio",      &eta_proposed);
   setVariable(proposedParams, "inclination",    &iota_proposed);
@@ -357,6 +357,7 @@ REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
 /* Prior is flat if within range	*/
 /****************************************/
 {
+  (void) runState; /* avoid warning about unused parameter */
   REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;	
   REAL8 logdensity;
   
@@ -395,10 +396,10 @@ void ASinOmegaTProposal(LALInferenceRunState *runState, LALVariables *proposedPa
   REAL8 A_proposed, Omega_proposed;
   REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
   gsl_rng * GSLrandom=runState->GSLrandom;
-  LALVariables * currentParams = runState->currentParams;	
+  LALVariables * currentParams_local = runState->currentParams;	
 
-  A     = *(REAL8*) getVariable(currentParams, "A");				/* dim-less	   */
-  Omega = *(REAL8*) getVariable(currentParams, "Omega");			/* rad/sec     */	
+  A     = *(REAL8*) getVariable(currentParams_local, "A");				/* dim-less	   */
+  Omega = *(REAL8*) getVariable(currentParams_local, "Omega");			/* rad/sec     */	
 
   //A_proposed=A*(1.0+gsl_ran_ugaussian(GSLrandom)*0.1);			/*mc changed by 10% */
   //Omega_proposed=Omega*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*Omega changed by 0.01*/
@@ -410,7 +411,7 @@ void ASinOmegaTProposal(LALInferenceRunState *runState, LALVariables *proposedPa
   Omega_proposed = Omega * exp(gsl_ran_ugaussian(GSLrandom)*0.01);  // ~ 1% change
   logProposalRatio *= Omega_proposed / Omega;
   
-  copyVariables(currentParams, proposedParams);
+  copyVariables(currentParams_local, proposedParams);
   setVariable(proposedParams, "A",     &A_proposed);		
   setVariable(proposedParams, "Omega", &Omega_proposed);
 
@@ -434,6 +435,7 @@ REAL8 ASinOmegaTPrior(LALInferenceRunState *runState, LALVariables *params)
 /* Prior is flat if within range		*/
 /****************************************/
 {
+  (void) runState; /* avoid warning about unused parameter */
   REAL8 A, Omega;
   REAL8 logdensity;
   
@@ -498,7 +500,7 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
 //Test LALAlgorithm
 void MCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-  int i;
+  //int i;
   REAL8 dummyR8;
   
   printf(" MCMCAlgorithm(); starting parameter values:\n");
@@ -525,7 +527,7 @@ void NelderMeadEval(struct tagLALInferenceRunState *runState,
 // Evaluates Prior & Likelihood for a given (sub-) set of parameters.
 //  /!\  Side effect: alters value of "runState->currentParams" !
 {
-  int i;
+  //int i;
   // copy over (subset of) values from "value" argument
   // (other parameter values, if any, remain as they are):
   for (i=0; i<dim; ++i)
@@ -573,7 +575,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
   REAL8 epsilon = 0.001;  // stop criterion 
   int maxiter = 500;      // also stop criterion
 
-  int i, j;
+  //int i, j;
   LALVariables param;
   LALVariables startval;
   char str[VARNAME_MAX];
@@ -606,7 +608,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
     if (i==0) 
       die(" ERROR in NelderMeadAlgorithm(): empty \"runstate->currentParams\" vector provided.\n");
     for (j=1; j<=i; ++j) {  // check "currentParams" entries and copy all REAL( values:
-      if (getVariableType(runstate->currentParams, j) == REAL8_t){
+      if (getVariableTypeByIndex(runstate->currentParams, j) == REAL8_t){
 	strcpy(str, getVariableName(runstate->currentParams, j));
         addVariable(&param, str, getVariable(runstate->currentParams, str), REAL8_t, PARAM_LINEAR);
       }
@@ -1026,7 +1028,7 @@ void SingleIFOLikelihoodTest(void)
 	freqModel2=runstate->data->freqData->data;
 	//ComputeFreqDomainResponse(&currentParams, runstate->data, templateLAL, freqModel2);
 	FILE * freqModelFile=fopen("freqModelFile.dat", "w");
-	for(i=0; i<runstate->data->freqData->data->length; i++){
+	for(i=0; i<(int)runstate->data->freqData->data->length; i++){
 		fprintf(freqModelFile, "%g\t %g\t %g\t %g\t %g\t %g\n", 
 		((double)i)*1.0/ (((double)runstate->data->timeData->data->length) * runstate->data->timeData->deltaT),
 		freqModel1->data[i].re, freqModel1->data[i].im, freqModel2->data[i].re, freqModel2->data[i].im,

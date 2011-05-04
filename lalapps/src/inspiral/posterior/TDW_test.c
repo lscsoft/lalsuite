@@ -5,7 +5,7 @@
 #include <lal/Units.h>
 #include <lal/RealFFT.h>
 
-int main() {
+int main(void) {
   REAL8FrequencySeries *PSD;
   REAL8TimeSeries *TDW;
   REAL8FFTPlan *plan;

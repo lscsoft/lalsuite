@@ -221,7 +221,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 			 && strcmp(caches[i],"LALAdLIGO")))
 		{
 			FakeFlag=1;
-			datarandparam=XLALCreateRandomParams(dataseed?dataseed+i:dataseed);
+			datarandparam=XLALCreateRandomParams(dataseed?dataseed+(int)i:dataseed);
 			/* Selection of the noise curve */
 			if(!strcmp(caches[i],"LALLIGO")) {PSD = &LALLIGOIPsd; scalefactor=9E-46;}
 			if(!strcmp(caches[i],"LALVirgo")) {PSD = &LALVIRGOPsd; scalefactor=1.0;}

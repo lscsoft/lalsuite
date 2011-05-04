@@ -5,7 +5,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Random.h>
 
-int main() {
+int main(void) {
   const UINT4 N = 8192;
   const UINT4 NPSD = N/2+1;
   const REAL8 T = 8.38;

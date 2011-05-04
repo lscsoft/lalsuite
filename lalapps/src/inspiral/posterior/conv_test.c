@@ -7,7 +7,7 @@
 #define MIN_INT(a, b) ((a) < (b) ? (a) : (b))
 #define MAX_INT(a, b) ((a) > (b) ? (a) : (b))
 
-int main() {
+int main(void) {
   REAL8TimeSeries *conv, *data, *response, *exactConv;
   const UINT4 N = 101;
   const LIGOTimeGPS zero = {0, 0};

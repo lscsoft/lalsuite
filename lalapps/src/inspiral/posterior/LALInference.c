@@ -721,6 +721,9 @@ void printCommandLine(ProcessParamsTable *procparams, char *str)
 /* ============ Likelihood computations: ========== */
 
 REAL8 ZeroLogLikelihood(LALVariables *currentParams, LALIFOData *data, LALTemplateFunction *template) {
+  (void) currentParams; /* avoid warning about unused parameter */
+  (void) data; /* avoid warning about unused parameter */
+  (void) template; /* avoid warning about unused parameter */
   return 0.0;
 }
 
@@ -1512,7 +1515,7 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr,
 }
 
 void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
-                            LALTemplateFunction *template, char *filename)
+                            LALTemplateFunction *template, const char *filename)
 /* de-bugging function writing (frequency-domain) template to a CSV file */
 /* File contains real & imaginary parts of plus & cross components.      */
 /* Template amplitude is scaled to 1Mpc distance.                        */
@@ -1552,7 +1555,7 @@ void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data,
 
 
 void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data, 
-                            LALTemplateFunction *template, char *filename)
+                            LALTemplateFunction *template, const char *filename)
 /* de-bugging function writing (frequency-domain) template to a CSV file */
 /* File contains real & imaginary parts of plus & cross components.      */
 /* Template amplitude is scaled to 1Mpc distance.                        */

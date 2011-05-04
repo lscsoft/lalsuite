@@ -49,6 +49,7 @@
 #include <lal/Units.h>
 #include <lal/LALFrameL.h>
 #include <lal/LALInspiral.h>
+#include <lal/SeqFactories.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_vector.h>
@@ -3601,6 +3602,7 @@ void templateLALPPN(DataFramework *DF, vector *parameter, double Fplus, double F
 /*  uses LAL function "LALGeneratePPNInspiral()"     */
 /*  "order" parameter doesn't (yet?) have an effect. */
 {
+  (void) order; /* avoid warning about unused parameter */
   double *timedomainwaveform=NULL;
   double chirptime, timeshift;
   long i,j, jStart;
