@@ -58,7 +58,7 @@ NRCSID(LALSTPNWaveformTestC, "$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:
 
 extern int newswitch;
 
-int main(int argc,char **argv UNUSED) {
+int main(int argc,char UNUSED **argv) {
     static LALStatus    mystatus;
 
     CoherentGW      thewaveform;
