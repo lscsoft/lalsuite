@@ -36,6 +36,7 @@ AC_CONFIG_FILES([\
   src/inspiral/Makefile \
   src/inspiral/posterior/Makefile \
   src/inspiral/posterior/SPINspiral/Makefile \
+  src/inspiral/posterior/mpi/Makefile \
   src/pulsar/hough/src2/Makefile \
   src/pulsar/GCT/Makefile \
   src/pulsar/MakeSFTs/Makefile \
@@ -65,6 +66,7 @@ LALAPPS_WITH_EXTRA_CFLAGS
 LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
 
+LALSUITE_ENABLE_DEBUG
 LALSUITE_ENABLE_GCC_FLAGS
 LALSUITE_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR

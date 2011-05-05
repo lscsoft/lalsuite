@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 16
+# serial 17
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -127,6 +127,18 @@ AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
       esac ],
   [ NIGHTLY_VERSION="" ] )
   AC_SUBST(NIGHTLY_VERSION)
+])
+
+AC_DEFUN([LALSUITE_ENABLE_DEBUG],
+[AC_ARG_ENABLE(
+  [debug],
+  AC_HELP_STRING([--enable-debug],[include standard LAL debugging code [default=yes]]),
+  [ case "${enableval}" in
+      yes) ;;
+      no) AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code) ;;
+      *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
+    esac
+  ], )
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_ALL_LAL],

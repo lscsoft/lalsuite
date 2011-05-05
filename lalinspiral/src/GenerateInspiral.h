@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Drew Keppel, Duncan Brown, Gareth Jones, Peter Shawhan, Thomas Cokelaer
+*  Copyright (C) 2007 Drew Keppel, Duncan Brown, Gareth Jones, Peter Shawhan, Thomas Cokelaer, Laszlo Vereb
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -131,6 +131,14 @@ LALGetApproximantFromString(
     CHAR        *message,
     Approximant *result
     );
+
+/**	Convert a string provided by the #CoherentGW structure in order to retrieve
+ *	the approximant of the waveform to generate.
+ *	@param[out]	inter	: the level of the spin interaction
+ *	@param[in]	thisEvent	: string containing the spin interaction
+ *	@return error code
+ */
+int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent);
 
 /*  three function to populate the needed structures */
 void

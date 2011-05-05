@@ -1640,6 +1640,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
             COMPLEX8 sftcoeff = sft->data->data[jj];
             tfdata->data[ii*sftlength + jj] = (REAL4)((sqrtnorm*sftcoeff.re)*(sqrtnorm*sftcoeff.re) + (sqrtnorm*sftcoeff.im)*(sqrtnorm*sftcoeff.im));  //power, normalized
          }
+         
       } else {
          for (jj=0; jj<sftlength; jj++) tfdata->data[ii*sftlength + jj] = 0.0;   //Set values to be zero
          nonexistantsft++;    //increment the nonexistantsft counter

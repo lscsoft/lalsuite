@@ -56,6 +56,61 @@ NRCSID(FLATLATTICETILINGC, "$Id$");
 #define UNUSED
 #endif
 
+/********** Structures and Enumerations **********/
+
+/**
+ * Flat lattice tiling bound
+ */
+struct tagFlatLatticeTilingBound {
+
+  /* Number of bound dimensions */
+  INT4 dimensions;
+
+  /* Dimensions which are bound */
+  UINT8 is_bound;
+
+  /* Parameter space bound function */
+  FlatLatticeTilingBoundFunc func;
+
+  /* Arbitrary data describing parameter space */
+  void *data;
+
+  /* Cleanup function */
+  FlatLatticeTilingBoundFree free;
+
+};
+
+/**
+ * Flat lattice tiling subspace
+ */
+struct tagFlatLatticeTilingSubspace {
+
+  /* Total number of tiled (non-flat) dimensions */
+  INT4 dimensions;
+
+  /* Dimensions which are tiled (non-flat) */
+  UINT8 is_tiled;
+
+  /* Padding of bounds along each dimension */
+  gsl_vector *padding;
+
+  /* Increment vectors of the lattice tiling generator */
+  gsl_matrix *increment;
+
+};
+
+/**
+ * State of the flat lattice tiling algorithm
+ */
+enum {
+  FLT_S_NotInitialised,
+  FLT_S_NotStarted,
+  FLT_S_InProgress,
+  FLT_S_Finished
+};
+
+/********** Functions **********/
+
 /**
  * Create a new flat lattice tiling bound structure
  */

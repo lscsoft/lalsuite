@@ -34,165 +34,132 @@
 #include <lal/Random.h>
 #include <lal/GSLSupport.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
-  NRCSID(FLATLATTICETILINGH, "$Id$");
+NRCSID(FLATLATTICETILINGH, "$Id$");
 
-  /**
-   * Flat lattice tiling bound
-   */
-  typedef BOOLEAN (*FlatLatticeTilingBoundFunc)(
-						void *data,        /**< Arbitrary data describing parameter space */
-						INT4 dimension,    /**< Dimension on which bound applies */
-						gsl_vector *point, /**< Point on which to find bounds */
-						REAL8 *lower,      /**< Lower bound on point in dimension */
-						REAL8 *upper       /**< Upper bound on point in dimension */
-						);
-  typedef void (*FlatLatticeTilingBoundFree)(
-					     void *data /**< Arbitrary data describing parameter space */
-					     );
-  typedef struct tagFlatLatticeTilingBound {
+/**
+ * Flat lattice tiling bound
+ */
+typedef BOOLEAN (*FlatLatticeTilingBoundFunc)(
+                                              void *data,        /**< Arbitrary data describing parameter space */
+                                              INT4 dimension,    /**< Dimension on which bound applies */
+                                              gsl_vector *point, /**< Point on which to find bounds */
+                                              REAL8 *lower,      /**< Lower bound on point in dimension */
+                                              REAL8 *upper       /**< Upper bound on point in dimension */
+                                              );
+typedef void (*FlatLatticeTilingBoundFree)(
+                                           void *data /**< Arbitrary data describing parameter space */
+                                           );
+typedef struct tagFlatLatticeTilingBound FlatLatticeTilingBound;
 
-    /* Number of bound dimensions */
-    INT4 dimensions;
+/**
+ * Flat lattice tiling subspace
+ */
+typedef struct tagFlatLatticeTilingSubspace FlatLatticeTilingSubspace;
 
-    /* Dimensions which are bound */
-    UINT8 is_bound;
+/**
+ * Flat tiling lattice generator
+ */
+typedef int (*FlatTilingLatticeGenerator)(
+                                          INT4 dimensions,        /**< Number of dimensions */
+                                          gsl_matrix** generator, /**< Generator matrix */
+                                          REAL8* norm_thickness   /**< Normalised thickness */
+                                          );
 
-    /* Parameter space bound function */
-    FlatLatticeTilingBoundFunc func;
+/**
+ * Flat lattice tiling state/input structure
+ */
+typedef struct tagFlatLatticeTiling {
 
-    /* Arbitrary data describing parameter space */
-    void *data;
+  /* Dimension of the parameter space */
+  INT4 dimensions;
 
-    /* Cleanup function */
-    FlatLatticeTilingBoundFree free;
+  /* Parameter space bounds */
+  INT4 num_bounds;
+  FlatLatticeTilingBound **bounds;
+  gsl_vector_int *bound_map;
+  gsl_vector *bound_point;
 
-  } FlatLatticeTilingBound;
+  /* Metric of the parameter space in normalised coordinates */
+  gsl_matrix *metric;
 
-  /**
-   * Flat lattice tiling subspace
-   */
-  typedef struct tagFlatLatticeTilingSubspace {
+  /* Normalised to real parameter coordinates scaling and offset */
+  gsl_vector *real_scale;
+  gsl_vector *real_offset;
 
-    /* Total number of tiled (non-flat) dimensions */
-    INT4 dimensions;
+  /* Maximum metric mismatch between the templates */
+  REAL8 max_mismatch;
 
-    /* Dimensions which are tiled (non-flat) */
-    UINT8 is_tiled;
+  /* Flat tiling lattice generator */
+  FlatTilingLatticeGenerator generator;
 
-    /* Padding of bounds along each dimension */
-    gsl_vector *padding;
+  /* Cache of generated tiling subspaces */
+  INT4 num_subspaces;
+  FlatLatticeTilingSubspace **subspaces;
 
-    /* Increment vectors of the lattice tiling generator */
-    gsl_matrix *increment;
+  /* Scaling of the padding of bounds (for testing) */
+  REAL8 scale_padding;
 
-  } FlatLatticeTilingSubspace;
+  /* Current dimensions which are tiled (non-flat) */
+  UINT8 curr_is_tiled;
 
-  /**
-   * Flat tiling lattice generator
-   */
-  typedef int (*FlatTilingLatticeGenerator)(
-					    INT4 dimensions,        /**< Number of dimensions */
-					    gsl_matrix** generator, /**< Generator matrix */
-					    REAL8* norm_thickness   /**< Normalised thickness */
-					    );
+  /* Current tiling subspace */
+  FlatLatticeTilingSubspace *curr_subspace;
 
-  /**
-   * State of the flat lattice tiling algorithm
-   */
-  typedef enum tagFlatLatticeTilingState {
-    FLT_S_NotInitialised,
-    FLT_S_NotStarted,
-    FLT_S_InProgress,
-    FLT_S_Finished
-  } FlatLatticeTilingState;
-  typedef struct tagFlatLatticeTiling {
+  /* Current lattice point */
+  gsl_vector *curr_point;
 
-    /* Dimension of the parameter space */
-    INT4 dimensions;
+  /* Bounds on current point */
+  gsl_vector *curr_lower;
+  gsl_vector *curr_upper;
 
-    /* Parameter space bounds */
-    INT4 num_bounds;
-    FlatLatticeTilingBound **bounds;
-    gsl_vector_int *bound_map;
-    gsl_vector *bound_point;
+  /* Current template */
+  gsl_vector *current;
 
-    /* Metric of the parameter space in normalised coordinates */
-    gsl_matrix *metric;
+  /* Total number of points generated so far */
+  UINT4 count;
 
-    /* Normalised to real parameter coordinates scaling and offset */
-    gsl_vector *real_scale;
-    gsl_vector *real_offset;
+  /* State of the tiling */
+  int state;
 
-    /* Maximum metric mismatch between the templates */
-    REAL8 max_mismatch;
+} FlatLatticeTiling;
 
-    /* Flat tiling lattice generator */
-    FlatTilingLatticeGenerator generator;
+/**
+ * Core functions
+ */
+FlatLatticeTiling* XLALCreateFlatLatticeTiling(INT4);
+void XLALFreeFlatLatticeTiling(FlatLatticeTiling*);
+int XLALAddFlatLatticeTilingBound(FlatLatticeTiling*, UINT8, FlatLatticeTilingBoundFunc, void*, FlatLatticeTilingBoundFree);
+int XLALSetFlatLatticeTilingMetric(FlatLatticeTiling*, gsl_matrix*, REAL8, gsl_vector*);
+int XLALSetFlatTilingLattice(FlatLatticeTiling*, FlatTilingLatticeGenerator);
+int XLALNextFlatLatticePoint(FlatLatticeTiling*);
+UINT4 XLALTotalFlatLatticePointCount(FlatLatticeTiling*);
+int XLALRandomPointInFlatLatticeParamSpace(FlatLatticeTiling*, RandomParams*, gsl_vector*, gsl_vector*, REAL8*);
 
-    /* Cache of generated tiling subspaces */
-    INT4 num_subspaces;
-    FlatLatticeTilingSubspace **subspaces;
+/**
+ * Support functions
+ */
+gsl_matrix* XLALMetricEllipsePrincipalAxes(gsl_matrix*, REAL8);
+gsl_vector* XLALMetricEllipseBoundingBox(gsl_matrix*, REAL8);
+int XLALOrthonormaliseWRTMetric(gsl_matrix*, gsl_matrix*);
+gsl_matrix* XLALSquareLowerTriangularLatticeGenerator(gsl_matrix*);
+int XLALNormaliseLatticeGenerator(gsl_matrix*, REAL8, REAL8);
 
-    /* Scaling of the padding of bounds (for testing) */
-    REAL8 scale_padding;
+/**
+ * Specific lattices and parameter spaces
+ */
+int XLALSetFlatTilingCubicLattice(FlatLatticeTiling*);
+int XLALSetFlatTilingAnstarLattice(FlatLatticeTiling*);
+int XLALAddFlatLatticeTilingConstantBound(FlatLatticeTiling*, INT4, REAL8, REAL8);
 
-    /* Current dimensions which are tiled (non-flat) */
-    UINT8 curr_is_tiled;
-
-    /* Current tiling subspace */
-    FlatLatticeTilingSubspace *curr_subspace;
-
-    /* Current lattice point */
-    gsl_vector *curr_point;
-
-    /* Bounds on current point */
-    gsl_vector *curr_lower;
-    gsl_vector *curr_upper;
-
-    /* Current template */
-    gsl_vector *current;
-
-    /* Total number of points generated so far */
-    UINT4 count;
-
-    /* State of the tiling */
-    FlatLatticeTilingState state;
-
-  } FlatLatticeTiling;
-
-  /**
-   * Core functions
-   */
-  FlatLatticeTiling* XLALCreateFlatLatticeTiling(INT4);
-  void XLALFreeFlatLatticeTiling(FlatLatticeTiling*);
-  int XLALAddFlatLatticeTilingBound(FlatLatticeTiling*, UINT8, FlatLatticeTilingBoundFunc, void*, FlatLatticeTilingBoundFree);
-  int XLALSetFlatLatticeTilingMetric(FlatLatticeTiling*, gsl_matrix*, REAL8, gsl_vector*);
-  int XLALSetFlatTilingLattice(FlatLatticeTiling*, FlatTilingLatticeGenerator);
-  int XLALNextFlatLatticePoint(FlatLatticeTiling*);
-  UINT4 XLALTotalFlatLatticePointCount(FlatLatticeTiling*);
-  int XLALRandomPointInFlatLatticeParamSpace(FlatLatticeTiling*, RandomParams*, gsl_vector*, gsl_vector*, REAL8*);
-
-  /**
-   * Support functions
-   */
-  gsl_matrix* XLALMetricEllipsePrincipalAxes(gsl_matrix*, REAL8);
-  gsl_vector* XLALMetricEllipseBoundingBox(gsl_matrix*, REAL8);
-  int XLALOrthonormaliseWRTMetric(gsl_matrix*, gsl_matrix*);
-  gsl_matrix* XLALSquareLowerTriangularLatticeGenerator(gsl_matrix*);
-  int XLALNormaliseLatticeGenerator(gsl_matrix*, REAL8, REAL8);
-
-  /**
-   * Specific lattices and parameter spaces
-   */
-  int XLALSetFlatTilingCubicLattice(FlatLatticeTiling*);
-  int XLALSetFlatTilingAnstarLattice(FlatLatticeTiling*);
-  int XLALAddFlatLatticeTilingConstantBound(FlatLatticeTiling*, INT4, REAL8, REAL8);
-
-#ifdef __cplusplus
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

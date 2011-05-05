@@ -20,7 +20,7 @@
 /**
  * \author Karl Wette
  * \file
- * \brief Macros for manipulating bit field
+ * \brief Macros for manipulating integers as bit fields
  */
 
 #ifndef _BITFIELD_H

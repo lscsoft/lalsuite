@@ -52,16 +52,20 @@ If outputfile is not given it is \texttt{wave1.dat} in the current directory.
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/GenerateInspiral.h>
 
+#include <LALSTPNWaveform2.h>
+
 NRCSID(LALSTPNWaveformTestC, "$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:23 thomas Exp");
 
-int main(void) {
+extern int newswitch;
+
+int main(int argc,char **argv) {
     static LALStatus    mystatus;
 
     CoherentGW      thewaveform;
     SimInspiralTable    injParams;
     PPNParamStruc       ppnParams;
 
-    const char        *filename = "wave1.dat";
+    const char  *filename = "wave1.dat";
     FILE        *outputfile;
     INT4        i,length;
     REAL8       dt;
@@ -104,11 +108,12 @@ int main(void) {
 
     fprintf(stderr, "Lower cut-off frequency used will be %fHz\n", injParams.f_lower);
 
+    if(argc > 1) newswitch=1;
     /* --- now we can call the injection function --- */
     LALGenerateInspiral( &mystatus, &thewaveform, &injParams, &ppnParams );
     if ( mystatus.statusCode )
     {
-      fprintf( stderr, "LALSTPNWaveformTest: error generating waveform\n" );
+      fprintf( stderr, "LALSTPNWaveformTest: error generating waveform %d\n", mystatus.statusCode );
       exit( 1 );
     }
 
@@ -134,6 +139,6 @@ int main(void) {
     }
 
     fclose(outputfile);
-    fprintf(stdout,"waveform saved in wave1.dat\n" );
+    fprintf(stderr,"waveform saved in wave1.dat\n" );
     return 0;
 }

@@ -655,6 +655,11 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
       for ifo in ifos:
         hipecp.set("thinca-2", ifo.lower() + "-veto-file", vetoFiles[ifo][vetoCat])
       hipecp.set("thinca-2", "do-veto", "")
+    elif config.has_option("hipe-arguments","ringdown"):
+      # add the veto files in the thinca section
+      for ifo in ifos:
+        hipecp.set("thinca", ifo.lower() + "-veto-file", vetoFiles[ifo][vetoCat])
+      hipecp.set("thinca", "do-veto", "")
     else:
       # add a vetoes section
       hipecp.add_section("vetoes")

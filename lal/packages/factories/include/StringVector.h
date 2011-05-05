@@ -25,8 +25,6 @@
  * \brief Creation/destruction/manipulation API for 'StringVector' type objects,
  *  which are just LAL 'vectors' of CHAR * pointers.
  *
- * $Id$
- *
  */
 
 #ifndef _STRINGVECTOR_H  /* Double-include protection. */
@@ -44,7 +42,6 @@ extern "C" {
 #include <lal/LALRCSID.h>
 
 /*---------- DEFINES ----------*/
-NRCSID( STRINGVECTORH, "$Id$" );
 
 /*----- Error-codes -----*/
 /*---------- exported types ----------*/
@@ -57,7 +54,7 @@ void XLALDestroyStringVector ( LALStringVector *vect );
 
 int XLALSortStringVector (LALStringVector *strings);
 LALStringVector *XLALParseCSV2StringVector ( const CHAR *CSVlist );
-
+INT4 XLALFindStringInVector ( const char *needle, const LALStringVector *haystack );
 
 #ifdef  __cplusplus
 }

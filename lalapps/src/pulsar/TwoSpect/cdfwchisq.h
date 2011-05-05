@@ -66,4 +66,6 @@ REAL8 coeff_twospect(qfvars *vars, REAL8 x);
 
 int compar(void *p, const void *a, const void *b);
 
+int compar(void *p, const void *a, const void *b);
+
 #endif

@@ -45,6 +45,9 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalburst])
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
+# debug
+LALSUITE_ENABLE_DEBUG
+
 # put version/configure info in config header
 lalburst_version_major=`echo "$VERSION" | cut -d. -f1`
 lalburst_version_minor=`echo "$VERSION" | cut -d. -f2`
