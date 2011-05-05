@@ -567,12 +567,29 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
 
     addVariable( data->dataParams, "chunkMin", &chunkMin, INT4_t, PARAM_FIXED );
     addVariable( data->dataParams, "chunkMax", &chunkMax, INT4_t, PARAM_FIXED );
+    
+    /* get chunk lengths of data */
+    
+    /* chunkLength = get_chunk_lengths( data, chunkMax ); */
+    chunkLength = chop_n_merge( data, chunkMin );
+    
+    addVariable( data->dataParams, "chunkLength", &chunkLength, UINT4Vector_t,
+                 PARAM_FIXED );
 
     if ( count == 0 ){
-      exclamation = XLALCreateREAL8Vector( chunkMax + 1 );
+      UINT4 k = 0;
+      UINT4 maxcl = 0;
+      
+      /* get max chunklength */
+      for ( k=0; k < chunkLength->length; k++ ){
+        if ( chunkLength->data[k] > maxcl ) 
+          maxcl = chunkLength->data[k] > maxcl;
+      }
+      
+      exclamation = XLALCreateREAL8Vector( maxcl + 1 );
 
       /* to save time get all log factorials up to chunkMax */
-      for( i = 0 ; i < chunkMax+1 ; i++ )
+      for( i = 0 ; i < (INT4)maxcl+1 ; i++ )
         exclamation->data[i] = log_factorial(i);
     
       count++;
@@ -580,12 +597,7 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     
     addVariable( data->dataParams, "logFactorial", &exclamation, REAL8Vector_t,
                  PARAM_FIXED );
-    
-    /* get chunk lengths of data */
-    chunkLength = get_chunk_lengths( data, chunkMax );
-    addVariable( data->dataParams, "chunkLength", &chunkLength, UINT4Vector_t,
-                 PARAM_FIXED );
-
+                 
     /* get sum of data for each chunk */
     sumData = sum_data( data );
     addVariable( data->dataParams, "sumData", &sumData, REAL8Vector_t,
@@ -1051,7 +1063,6 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
 REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data,
                              LALTemplateFunction *get_model ){
   REAL8 loglike = 0.; /* the log likelihood */
-  REAL8 logOf2 = log( 2. );
   UINT4 i = 0;
   
   while ( data ){
@@ -1121,18 +1132,18 @@ REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data,
         /* sum over that data and model */
         sumDataModel += B.re*M.re + B.im*M.im;
       }
-
+ 
       chiSquare = sumData->data[count];
       chiSquare -= 2.*sumDataModel;
       chiSquare += sumModel;
-
+      
       if( first == 0 ){
-        logliketmp = (chunkLength - 1.)*logOf2;
+        logliketmp = 2. * (chunkLength - 1.)*LAL_LN2;
         first++;
       }
-      else logliketmp += (chunkLength - 1.)*logOf2;
+      else logliketmp += 2. * (chunkLength - 1.)*LAL_LN2;
 
-      logliketmp += exclamation->data[(INT4)chunkLength];
+      logliketmp += 2. * exclamation->data[(INT4)chunkLength];
       logliketmp -= chunkLength*log(chiSquare);
     
       count++;
@@ -1544,7 +1555,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
 students-t likelihood, so this basically involves taking that likelihood and
 setting the signal to zero */
 REAL8 noise_only_model( LALIFOData *data ){
-  REAL8 logL = 0.0;
+  REAL8 logL = 0.;
   UINT4 i = 0;
   
   UINT4Vector *chunkLengths = NULL;
@@ -1563,8 +1574,8 @@ REAL8 noise_only_model( LALIFOData *data ){
   for (i=0; i<chunkLengths->length; i++){
     chunkLength = (REAL8)chunkLengths->data[i];
     
-    logL += (chunkLength - 1.) * log(2.);
-    logL += log_factorial((INT4)chunkLength);
+    logL += 2. * (chunkLength - 1.) * LAL_LN2;
+    logL += 2. * log_factorial((INT4)chunkLength);
     logL -= chunkLength * log(sumData->data[i]);
   }
   
@@ -1621,6 +1632,310 @@ UINT4Vector *get_chunk_lengths( LALIFOData *data, INT4 chunkMax ){
   chunkLengths = XLALResizeUINT4Vector( chunkLengths, j );
   
   return chunkLengths;
+}
+
+
+/* function to use change point analysis to chop up and remerge the data to
+   find stationary chunks (i.e. lengths of data which look like they have the
+   same statistics e.g. the same standard deviation) */
+UINT4Vector *chop_n_merge( LALIFOData *data, INT4 chunkMin ){
+  UINT4 j = 0;
+  
+  UINT4Vector *chunkLengths = NULL;
+  UINT4Vector *chunkIndex = NULL;
+  
+  chunkIndex = chop_data( data->compTimeData->data, chunkMin );
+  
+  merge_data( data->compTimeData->data, chunkIndex );
+  
+  chunkLengths = XLALCreateUINT4Vector( chunkIndex->length );
+  
+  /* go through segments and turn into vector of chunk lengths */
+  for ( j = 0; j < chunkIndex->length; j++ ){
+    if ( j == 0 )
+      chunkLengths->data[j] = chunkIndex->data[j];
+    else
+      chunkLengths->data[j] = chunkIndex->data[j] - chunkIndex->data[j-1];
+  }
+  
+  /* if verbose print out the segment end indices to a file */
+  if ( verbose ){
+    FILE *fpsegs = NULL;
+    
+    if ( (fpsegs = fopen("data_segment_list.txt", "a")) == NULL ){
+      fprintf(stderr, "Non-fatal error open file to output segment list.\n");
+      return chunkLengths;
+    }
+    
+    for ( j = 0; j < chunkIndex->length; j++ )
+      fprintf(fpsegs, "%u\n", chunkIndex->data[j]);
+    
+    /* add space at the end so that you can seperate lists from different
+       detector data streams */
+    fprintf(fpsegs, "\n");
+    
+    fclose( fpsegs );
+  }
+  
+  return chunkLengths;
+}
+
+
+/* function to find change points and chop up the data */
+UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
+  UINT4Vector *chunkIndex = NULL;
+  
+  UINT4 length = data->length;
+  
+  REAL8 logodds = 0;
+  UINT4 changepoint = 0;
+  
+  REAL8 threshold = 0.; /* may need tuning or setting globally */
+  
+  chunkIndex = XLALCreateUINT4Vector( 1 );
+  
+  changepoint = find_change_point( data, &logodds );
+  
+  if ( logodds > threshold && changepoint > (UINT4)chunkMin 
+    && length - changepoint > (UINT4)chunkMin ){
+    UINT4Vector *cp1 = NULL;
+    UINT4Vector *cp2 = NULL;
+    
+    COMPLEX16Vector *data1 = XLALCreateCOMPLEX16Vector( changepoint );
+    COMPLEX16Vector *data2 = XLALCreateCOMPLEX16Vector( length - changepoint );
+  
+    UINT4 i = 0, l = 0;
+  
+    /* fill in data */
+    for (i = 0; i < changepoint; i++)
+      data1->data[i] = data->data[i];
+  
+    for (i = 0; i < length - changepoint; i++)
+      data2->data[i] = data->data[i+changepoint];
+    
+    cp1 = chop_data( data1, chunkMin );
+    cp2 = chop_data( data2, chunkMin );
+    
+    l = cp1->length + cp2->length;
+    
+    chunkIndex = XLALResizeUINT4Vector( chunkIndex, l );
+    
+    /* combine new chunks */
+    for (i = 0; i < cp1->length; i++)
+      chunkIndex->data[i] = cp1->data[i];
+    
+    for (i = 0; i < cp2->length; i++)
+      chunkIndex->data[i+cp1->length] = cp2->data[i] + changepoint;
+  
+    /* free memory */
+    XLALDestroyCOMPLEX16Vector( data1 );
+    XLALDestroyCOMPLEX16Vector( data2 );
+  }
+  else{
+    chunkIndex->data[0] = length;
+  }
+  
+  return chunkIndex;
+}
+
+
+/* this function will go through the data and compare the "evidence" for it
+   being Gaussian with a single standard deviation, or it being two Gaussian's
+   with independent standard deviations. It will return the index of the index
+   of the point at with the data statistics change, and the log odds ratio of
+   the two hypotheses at that point. */ 
+UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds ){
+  UINT4 changepoint = 0, i = 0;
+  UINT4 length = data->length;
+  
+  REAL8 datameanre = 0., datameanim = 0., datasum = 0.;
+  
+  REAL8 logsingle = 0., logtot = -LAL_REAL8_MAX;
+  REAL8 logdouble = 0., logdouble_min = -LAL_REAL8_MAX;
+  REAL8 logratio = 0.;
+  
+  /* calculate the mean of the data (put real and imaginary parts together) */
+  for (i = 0; i < length; i++){
+    datameanre += data->data[i].re;
+    datameanim += data->data[i].im;
+  }
+    
+  datameanre /= (REAL8)length;
+  datameanim /= (REAL8)length;
+  
+  /* calculate the sum of the data minus the mean squared */
+  for (i = 0; i < length; i++){
+    datasum += (data->data[i].re - datameanre) * (data->data[i].re -
+      datameanre);
+    datasum += (data->data[i].im - datameanim) * (data->data[i].im -
+      datameanim);
+  }
+  
+  /* calculate the evidence that the data consists of a Gaussian data with a
+     single standard deviation */
+  logsingle = 2. * ( ((REAL8)length - 1.)*LAL_LN2 + log_factorial( length ) ) -
+    (REAL8)length * log( datasum );
+  
+  /* go through each possible change point and calculate the evidence for the
+     data consisting of two independent Gaussian's either side of the change
+     point. Also calculate the total evidence for any change point */
+  /* Don't allow single points, so start at the second data point. */
+  for (i = 2; i < length-1; i++){
+    UINT4 ln1 = i, ln2 = (length - i), j = 0;
+    
+    REAL8 mu1re = 0., mu1im = 0., mu2re = 0., mu2im = 0.;
+    REAL8 sum1 = 0, sum2 = 0.;
+    REAL8 log_1 = 0., log_2 = 0.;
+    
+    /* get means of the two segments */
+    for (j = 0; j < ln1; j++){
+      mu1re += data->data[j].re;
+      mu1im += data->data[j].im;
+    }
+    
+    mu1re /= (REAL8)ln1;
+    mu1im /= (REAL8)ln1;
+    
+    for (j = ln1; j < length; j++){
+      mu2im += data->data[j].re;
+      mu2im += data->data[j].im;
+    }
+    
+    mu2re /= (REAL8)ln2;
+    mu2im /= (REAL8)ln2;
+    
+    /* get the sum data squared */
+    for (j = 0; j < ln1; j++){
+      sum1 += (data->data[j].re - mu1re) * (data->data[j].re - mu1re);
+      sum1 += (data->data[j].im - mu1im) * (data->data[j].im - mu1im);
+    }
+    
+    for (j = ln1; j < length; j++){
+      sum2 += (data->data[j].re - mu2re) * (data->data[j].re - mu2re);
+      sum2 += (data->data[j].im - mu2im) * (data->data[j].im - mu2im);
+    }
+    
+    /* get log evidences for the individual segments */
+    log_1 = 2. * ( ((REAL8)ln1 - 1.)*LAL_LN2 + log_factorial( ln1 ) ) -
+      (REAL8)ln1 * log( sum1 );
+    log_2 = 2. * ( ((REAL8)ln2 - 1.)*LAL_LN2 + log_factorial( ln2 ) ) -
+      (REAL8)ln2 * log( sum2 );
+      
+    /* get evidence for the two segments */
+    logdouble = log_1 + log_2;
+    
+    /* add to total evidence for a change point */
+    logtot += LOGPLUS(logtot, logdouble);
+    
+    /* find maximum value of logdouble and record that as the change point */
+    if ( logdouble > logdouble_min ){
+      changepoint = i;
+      logdouble_min = logdouble;
+    }
+  }
+  
+  /* get the log odds ratio of segmented versus non-segmented model */
+  logratio = logtot - logsingle;
+  logodds = &logratio;
+  
+  return changepoint;
+}
+
+
+/* function to merge chunks */
+void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
+  UINT4 j = 0;
+  REAL8 threshold = 0.; /* may need to be passed to function in the future, or
+                           defined globally */
+  
+  /* loop until stopping criterion is reached */
+  while( 1 ){
+    UINT4 ncells = segs->length;
+    UINT4 mergepoint = 0;
+    REAL8 logodds = 0., minl = -LAL_REAL8_MAX;
+    
+    for (j = 1; j < ncells; j++){
+      REAL8 meanmergedre = 0., meanmergedim = 0.; 
+      REAL8 mu1re = 0., mu1im = 0., mu2re = 0., mu2im = 0.;
+      REAL8 summerged = 0., sum1 = 0., sum2 = 0.;
+      UINT4 i = 0, n1 = 0, n2 = 0, nm = 0;
+      UINT4 cellstarts1 = 0, cellends1 = 0, cellstarts2 = 0, cellends2 = 0;
+      REAL8 log_merged = 0., log_individual = 0.;
+      
+      /* get the evidence for merged adjacent cells */
+      if( j == 1 ) cellstarts1 = 0;
+      else cellstarts1 = segs->data[j-2];
+        
+      cellends1 = segs->data[j-1];
+      
+      cellstarts2 = segs->data[j-1];
+      cellends2 = segs->data[j];
+      
+      n1 = cellends1 - cellstarts1 - 1;
+      n2 = cellends2 - cellstarts2 - 1;
+      nm = cellends2 - cellstarts1 - 1;
+      
+      for( i = cellstarts1; i < cellends1; i++ ){
+        mu1re += data->data[i].re;
+        mu1im += data->data[i].im;
+      }
+        
+      for( i = cellstarts2; i < cellends2; i++ ){
+        mu2re += data->data[i].re;
+        mu2im += data->data[i].im;
+      }
+      
+      meanmergedre = (mu1re + mu2re) / (REAL8)nm;
+      meanmergedim = (mu1im + mu2im) / (REAL8)nm;
+      mu1re /= (REAL8)n1;
+      mu1im /= (REAL8)n1;
+      mu2re /= (REAL8)n2;
+      mu2im /= (REAL8)n2;
+      
+      for( i = cellstarts1; i < cellends1; i++ ){
+        sum1 += (data->data[i].re - mu1re) * (data->data[i].re - mu1re);
+        sum1 += (data->data[i].im - mu1im) * (data->data[i].im - mu1im);
+      }
+      
+      for( i = cellstarts2; i < cellends2; i++ ){
+        sum2 += (data->data[i].re - mu2re) * (data->data[i].re - mu2re);
+        sum2 += (data->data[i].im - mu2im) * (data->data[i].im - mu2im);
+      }
+      
+      for( i = cellstarts1; i < cellends2; i++ ){
+        summerged += (data->data[i].re - meanmergedre) * (data->data[i].re -
+          meanmergedre);
+        summerged += (data->data[i].im - meanmergedim) * (data->data[i].im -
+          meanmergedim);
+      }
+      
+      /* calculated evidences */
+      log_merged = 2. * ( ((REAL8)nm - 1.)*LAL_LN2 + log_factorial( nm ) ) -
+        (REAL8)nm * summerged;
+        
+      log_individual = 2. * ( ((REAL8)n1 - 1)*LAL_LN2 + log_factorial( n1 ) ) -
+        (REAL8)n1 * sum1;
+      log_individual += 2. * ( ((REAL8)n2 - 1)*LAL_LN2 + log_factorial( n2 ) ) -
+        (REAL8)n2 * sum2;
+      
+      logodds = log_merged - log_individual;
+      
+      if ( logodds > minl ){
+        mergepoint = j - 1;
+        minl = logodds;
+      } 
+    }
+    
+    /* set break criterion */
+    if ( minl < threshold ) break;
+    else{ /* merge cells */
+      /* remove the cell end value between the two being merged and shift */
+      memcpy( &segs->data[mergepoint], &segs->data[mergepoint+1], (ncells -
+              mergepoint - 1) * sizeof(UINT4) );
+      
+      segs = XLALResizeUINT4Vector( segs, ncells - 1 );
+    }
+  }
 }
 
 
