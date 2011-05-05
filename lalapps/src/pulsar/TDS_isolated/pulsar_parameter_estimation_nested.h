@@ -56,6 +56,9 @@ extern "C" {
 /** define macros */
 #define ROUND(x) (floor(x+0.5))
 
+/* macro to perform logarithmic addition log(exp(x) + exp(y)) */
+#define LOGPLUS(x,y) ( x>y ? x+log(1.+exp(y-x)) : y+log(1.+exp(x-y)) )
+
 #define MAXLENGTH 1000000
 
 #define SIXTH 0.166666666666666666666666666666666666666667L
@@ -107,6 +110,14 @@ REAL8 noise_only_model( LALInferenceIFOData *data );
   
 /* helper functions */
 UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax );
+
+UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin );
+
+UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin );
+
+UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds );
+
+void merge_data( COMPLEX16Vector *data, UINT4Vector *segs );
 
 REAL8Vector * sum_data( LALInferenceIFOData *data );
 
