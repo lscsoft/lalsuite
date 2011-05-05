@@ -628,3 +628,261 @@ swiglal_conv_ctype(COMPLEX16);
 //   double *b = calloc(2 * 5, sizeof(double));
 #define swiglal_dyn_1Darray_ptr(DATA, I, NI)          &((DATA)[I])
 #define swiglal_dyn_2Darray_ptr(DATA, I, NI, J, NJ)   &((DATA)[(I)*(NJ)+(J)])
+
+/////////////// Vector / matrix type element accessors ///////////////
+
+// The following macros provide accessor functions for vectors and arrays:
+//
+//  * DATA_getel(indices...) returns the indexed element of the vector/matrix DATA.
+//    This provides more efficient access to a single element than coverting the
+//    entire array to the scripting language representation first, then accessing
+//    only one element.
+//
+//  * DATA_setel(indices..., v) sets the indexed element of the vector/matrix DATA
+//    to v. Since the C struct array is copied to a scripting language representation,
+//    assigning an element of the scripting language array will not assign an element
+//    in the C array. (However, if the elements of the C array are structs which are
+//    being wrapped by a swig_type, then accessing any variable of the struct through
+//    the scripting language array *will* also access the same variable in the C
+//    array.) This method provides a way to change an element in the C struct array
+//    itself, short of copying the entire array to a scripting language representation,
+//    changing one element, the copying it back into the C struct array.
+//
+// The macros arguments correspond to the arguments to the
+// swiglal_{vector,matrix}_convert_{in,out} macros defined above.
+
+// Get the (I)th element of the vector DATA.
+%define swiglal_vector_get_elem(TYPE, NAME, DATA, I, NI, PTR_TO_DATA_I)
+
+  // The DATA_getel method is actually implemented inside an
+  // 'out' typemap, so that it can throw SWIG exceptions if
+  // e.g. the input index is out of bounds. No function named
+  // 'DATA_getel' is ever defined: the declaration exists
+  // solely to make SWIG generate the method and then wrap it.
+  // For this to work, we need to provide custom 'action'
+  // features, which do nothing instead of trying to call
+  // the (non-existent) method function.
+  %typemap(out, noblock=1) TYPE* NAME##_getel {
+    // Check that the vector exists
+    if (!swiglal_check_ptr(DATA)) {
+      swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NAME<<"'");
+    }
+    // Check that the vector has elements
+    if ((NI) == 0) {
+      swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NAME<<"'");
+    }
+    // Check that index to vector is in range
+    if ((I) >= (NI)) {
+      swiglal_exception(SWIG_IndexError, "index to vector '"<<#NAME<<"' must be less than "<<(NI));
+    }
+    // Return vector element
+    $result = swiglal_call_from(TYPE)(PTR_TO_DATA_I(DATA, I, NI), $1_descriptor);
+  }
+
+  // Disable keyword arguments for this method
+  %feature("kwargs", 0) NAME##_getel(const size_t);
+
+  // Set 'action' and 'except' features for this method to no-ops
+  %feature("action") NAME##_getel(const size_t) "";
+  %feature("except") NAME##_getel(const size_t) "";
+
+  // Declare method, so SWIG will define and then wrap it
+  TYPE* NAME##_getel(const size_t);
+
+  // Clear the custom features, so they can't be accidentally re-used
+  %feature("kwargs", "") NAME##_getel(const size_t);
+  %feature("action", "") NAME##_getel(const size_t);
+  %feature("except", "") NAME##_getel(const size_t);
+
+  // Clear the 'out' typemap, so it can't be accidentally re-used
+  %clear TYPE* NAME##_getel;
+
+%enddef // swiglal_vector_get_elem
+
+// Set the (I)th element of the vector DATA.
+%define swiglal_vector_set_elem(TYPE, NAME, DATA, I, NI, PTR_TO_DATA_I, FLAGS)
+
+  // Following DATA_getel, the DATA_setel method is implemented
+  // inside an 'out' typemap, so that SWIG exceptions can be
+  // thrown, and so that swiglal_as_val can be used to assign
+  // the element. No function named 'DATA_setel' is ever defined:
+  // the declaration exists solely to make SWIG generate the
+  // method and then wrap it. For this to work, we need to
+  // provide custom 'action' features, which do nothing instead
+  // of trying to call the (non-existent) method function.
+  %typemap(in, noblock=1) TYPE NAME##_setel_elem (int ecode = 0) {
+    // Check that the vector exists
+    if (!swiglal_check_ptr(DATA)) {
+      swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NAME<<"'");
+    }
+    // Check that the vector has elements
+    if ((NI) == 0) {
+      swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NAME<<"'");
+    }
+    // Check that index to vector is in range
+    if ((I) >= (NI)) {
+      swiglal_exception(SWIG_IndexError, "index to vector '"<<#NAME<<"' must be less than "<<(NI));
+    }
+    // Assign vector element
+    ecode = swiglal_call_as_val(TYPE)($input, PTR_TO_DATA_I(DATA, I, NI), $1_descriptor, FLAGS);
+    if (!SWIG_IsOK(ecode)) {
+      %argument_fail(ecode, "$type", $symname, $argnum);
+    }
+  }
+
+  // Disable keyword arguments for this method
+  %feature("kwargs", 0) NAME##_setel(const size_t, TYPE NAME##_setel_elem);
+
+  // Set 'action' and 'except' features for this method to no-ops
+  %feature("action") NAME##_setel(const size_t, TYPE NAME##_setel_elem) "";
+  %feature("except") NAME##_setel(const size_t, TYPE NAME##_setel_elem) "";
+
+  // Declare method, so SWIG will define and then wrap it
+  void NAME##_setel(const size_t, TYPE NAME##_setel_elem);
+
+  // Clear the custom features, so they can't be accidentally re-used
+  %feature("kwargs", "") NAME##_setel(const size_t, TYPE NAME##_setel_elem);
+  %feature("action", "") NAME##_getel(const size_t, TYPE NAME##_setel_elem);
+  %feature("except", "") NAME##_getel(const size_t, TYPE NAME##_setel_elem);
+
+  // Clear the 'in' typemap, so it can't be accidentally re-used
+  %clear TYPE NAME##_setel_elem;
+
+%enddef // swiglal_vector_set_elem
+
+// Get the (I,J)th element of the matrix DATA.
+%define swiglal_matrix_get_elem(TYPE, NAME, DATA, I, NI, J, NJ, PTR_TO_DATA_IJ)
+
+  // For an explanation of the typemap, see swiglal_vector_get_elem.
+  %typemap(out, noblock=1) TYPE* NAME##_getel {
+    // Check that the matrix exists
+    if (!swiglal_check_ptr(DATA)) {
+      swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NAME<<"'");
+    }
+    // Check that the matrix has elements
+    if ((NI) == 0 || (NJ) == 0) {
+      swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NAME<<"'");
+    }
+    // Check that indices to matrix are in range
+    if ((I) >= (NI)) {
+      swiglal_exception(SWIG_IndexError, "first index to matrix '"<<#NAME<<"' must be less than "<<(NI));
+    }
+    if ((J) >= (NJ)) {
+      swiglal_exception(SWIG_IndexError, "second index to matrix '"<<#NAME<<"' must be less than "<<(NJ));
+    }
+    // Return matrix element
+    $result = swiglal_call_from(TYPE)(PTR_TO_DATA_IJ(DATA, I, NI, J, NJ), $1_descriptor);
+  }
+
+  // Disable keyword arguments for this method
+  %feature("kwargs", 0) NAME##_getel(const size_t, const size_t);
+
+  // Set 'action' and 'except' features for this method to no-ops
+  %feature("action") NAME##_getel(const size_t, const size_t) "";
+  %feature("except") NAME##_getel(const size_t, const size_t) "";
+
+  // Declare method, so SWIG will define and then wrap it
+  TYPE* NAME##_getel(const size_t, const size_t);
+
+  // Clear the custom features, so they can't be accidentally re-used
+  %feature("kwargs", "") NAME##_getel(const size_t, const size_t);
+  %feature("action", "") NAME##_getel(const size_t, const size_t);
+  %feature("except", "") NAME##_getel(const size_t, const size_t);
+
+  // Clear the 'out' typemap, so it can't be accidentally re-used
+  %clear TYPE* NAME##_getel;
+
+%enddef // swiglal_matrix_get_elem
+
+// Set the (I,J)th element of the matrix DATA.
+%define swiglal_matrix_set_elem(TYPE, NAME, DATA, I, NI, J, NJ, PTR_TO_DATA_IJ, FLAGS)
+
+  // For an explanation of the typemap, see swiglal_vector_set_elem.
+  %typemap(in, noblock=1) TYPE NAME##_setel_elem (int ecode = 0) {
+    // Check that the matrix exists
+    if (!swiglal_check_ptr(DATA)) {
+      swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NAME<<"'");
+    }
+    // Check that the matrix has elements
+    if ((NI) == 0 || (NJ) == 0) {
+      swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NAME<<"'");
+    }
+    // Check that indices to matrix are in range
+    if ((I) >= (NI)) {
+      swiglal_exception(SWIG_IndexError, "first index to matrix '"<<#NAME<<"' must be less than "<<(NI));
+    }
+    if ((J) >= (NJ)) {
+      swiglal_exception(SWIG_IndexError, "second index to matrix '"<<#NAME<<"' must be less than "<<(NJ));
+    }
+    // Assign matrix element
+    ecode = swiglal_call_as_val(TYPE)($input, PTR_TO_DATA_IJ(DATA, I, NI, J, NJ), $1_descriptor, FLAGS);
+    if (!SWIG_IsOK(ecode)) {
+      %argument_fail(ecode, "$type", $symname, $argnum);
+    }
+  }
+
+  // Disable keyword arguments for this method
+  %feature("kwargs", 0) NAME##_setel(const size_t, const size_t, TYPE NAME##_setel_elem);
+
+  // Set 'action' and 'except' features for this method to no-ops
+  %feature("action") NAME##_setel(const size_t, const size_t, TYPE NAME##_setel_elem) "";
+  %feature("except") NAME##_setel(const size_t, const size_t, TYPE NAME##_setel_elem) "";
+
+  // Declare method, so SWIG will define and then wrap it
+  void NAME##_setel(const size_t, const size_t, TYPE NAME##_setel_elem);
+
+  // Clear the custom features, so they can't be accidentally re-used
+  %feature("kwargs", "") NAME##_setel(const size_t, const size_t, TYPE NAME##_setel_elem);
+  %feature("action", "") NAME##_getel(const size_t, const size_t, TYPE NAME##_setel_elem);
+  %feature("except", "") NAME##_setel(const size_t, const size_t, TYPE NAME##_setel_elem);
+
+  // Clear the 'in' typemap, so it can't be accidentally re-used
+  %clear TYPE NAME##_setel_elem;
+
+%enddef // swiglal_matrix_set_elem
+
+// These macros can be used to apply the swiglal_{vector,matrix}_{get,set}_elem
+// code to statically-allocated vectors and matrices in structs. Only the type
+// and name are required; the length/dimensions of the vector/matrix are
+// deduced using the sizeof() operator, which assumes non-zero dimensions.
+// If these macros are placed outside the struct definition, the name of the
+// struct should be given in STRUCT; i.e. if STRUCT is omitted, the macros
+// must appear inside the struct they are extending.
+%define SWIGLAL_FIXED_1DARRAY_ELEM(TYPE, DATA, STRUCT...)
+  %extend STRUCT {
+    swiglal_vector_get_elem(TYPE, DATA, arg1->DATA,
+                            arg2, sizeof(arg1->DATA) / sizeof(arg1->DATA[0]),
+                            swiglal_fix_1Darray_ptr);
+    swiglal_vector_set_elem(TYPE, DATA, arg1->DATA,
+                            arg2, sizeof(arg1->DATA) / sizeof(arg1->DATA[0]),
+                            swiglal_fix_1Darray_ptr, SL_AV_LALALLOC);
+  }
+%enddef
+%define SWIGLAL_FIXED_2DARRAY_ELEM(TYPE, DATA, STRUCT...)
+  %extend STRUCT {
+    swiglal_matrix_get_elem(TYPE, DATA, arg1->DATA,
+                            arg2, sizeof(arg1->DATA) / sizeof(arg1->DATA[0]),
+                            arg3, sizeof(arg1->DATA[0]) / sizeof(arg1->DATA[0][0]),
+                            swiglal_fix_2Darray_ptr);
+    swiglal_matrix_set_elem(TYPE, DATA, arg1->DATA,
+                            arg2, sizeof(arg1->DATA) / sizeof(arg1->DATA[0]),
+                            arg3, sizeof(arg1->DATA[0]) / sizeof(arg1->DATA[0][0]),
+                            swiglal_fix_2Darray_ptr, SL_AV_LALALLOC);
+  }
+%enddef
+
+// These macros can be used to apply the swiglal_vector_{get,set}_elem
+// code to statically-allocated global (constant) vector variables.
+%define SWIGLAL_GLOBAL_FIXED_1DARRAY_ELEM(TYPE, DATA)
+  swiglal_vector_get_elem(TYPE, DATA, DATA,
+                          arg1, sizeof(DATA) / sizeof(DATA[0]),
+                          swiglal_fix_1Darray_ptr);
+  swiglal_vector_set_elem(TYPE, DATA, DATA,
+                          arg1, sizeof(DATA) / sizeof(DATA[0]),
+                          swiglal_fix_1Darray_ptr, SL_AV_LALALLOC);
+%enddef
+%define SWIGLAL_GLOBAL_CONST_FIXED_1DARRAY_ELEM(TYPE, DATA)
+  swiglal_vector_get_elem(TYPE, DATA, DATA,
+                          arg1, sizeof(DATA) / sizeof(DATA[0]),
+                          swiglal_fix_1Darray_ptr);
+%enddef
