@@ -78,12 +78,12 @@ void setupFromParFile( LALInferenceRunState *runState );
 
 void setupLookupTables(LALInferenceRunState *runState, LALSource *source);
 
-UINT4 add_initial_variables( LALVariables *ini, LALVariables *scaleFac,
-                             LALVariables *priorArgs, 
+UINT4 add_initial_variables( LALInferenceVariables *ini, LALInferenceVariables *scaleFac,
+                             LALInferenceVariables *priorArgs, 
                              BinaryPulsarParams pars ); 
   
-UINT4 add_variable_scale_prior( LALVariables *var, LALVariables *scale, 
-                                LALVariables *prior, const char *name, 
+UINT4 add_variable_scale_prior( LALInferenceVariables *var, LALInferenceVariables *scale, 
+                                LALInferenceVariables *prior, const char *name, 
                                 REAL8 value, REAL8 sigma);
 
 void initialiseProposal( LALInferenceRunState *runState );
@@ -91,24 +91,24 @@ void initialiseProposal( LALInferenceRunState *runState );
 void setupLivePointsArray( LALInferenceRunState *runState );
 
 /* likelihood and prior */
-REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data,
-                             LALTemplateFunction *get_pulsar_model );
+REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *data,
+                             LALInferenceTemplateFunction *get_pulsar_model );
                              
-REAL8 priorFunction( LALInferenceRunState *runState, LALVariables *params );
+REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *params );
 
 /* model functions */
-void get_pulsar_model( LALIFOData *data );
+void get_pulsar_model( LALInferenceIFOData *data );
 
-REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data );
+REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOData *data );
 
-void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data );
+void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
   
-REAL8 noise_only_model( LALIFOData *data );
+REAL8 noise_only_model( LALInferenceIFOData *data );
   
 /* helper functions */
-UINT4Vector *get_chunk_lengths( LALIFOData *data, INT4 chunkMax );
+UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax );
 
-REAL8Vector * sum_data( LALIFOData *data );
+REAL8Vector * sum_data( LALInferenceIFOData *data );
 
 void response_lookup_table( REAL8 t0, LALDetAndSource detAndSource,
                             INT4 timeSteps, INT4 psiSteps, gsl_matrix *LUfplus,

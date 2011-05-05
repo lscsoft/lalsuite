@@ -24,7 +24,7 @@
 
 /**
  * \file LALInference.h
- * \brief Main header file
+ * \brief Main header file for LALInference common routines
  */
 
 #ifndef LALInference_h
@@ -70,10 +70,12 @@
 //...other includes
 
 struct tagLALInferenceRunState;
-struct tagLALIFOData;
+struct tagLALInferenceIFOData;
 
 /*Data storage type definitions*/
 
+/** An enumerated type for denoting the type of a variable
+*/
 typedef enum {
   INT4_t, 
   INT8_t,
@@ -86,21 +88,26 @@ typedef enum {
   REAL8Vector_t,
   UINT4Vector_t,
   string_t
-} VariableType;
+} LALInferenceVariableType;
 
+/** An enumerated type for denoting the domain
+*/
 typedef enum {
   timeDomain, 
   frequencyDomain
-} LALDomain;
+} LALInferenceDomain;
 
+/** An enumerated type for denoting the topolology of a parameter.
+*/
 typedef enum {
-	PARAM_LINEAR,
-	PARAM_CIRCULAR,
-	PARAM_FIXED,    /* Never changes */
-	PARAM_OUTPUT    /* Changed by the inner code and passed out */
-} ParamVaryType;
+	PARAM_LINEAR, /** A parameter that simply has a maximum and a minimum */
+	PARAM_CIRCULAR, /** A parameter that is cyclic, such as an angle between 0 and 2\pi */
+	PARAM_FIXED,    /** A parameter that never changes, functions should respect this */
+	PARAM_OUTPUT    /** A parameter changed by an inner code and passed out */
+} LALInferenceParamVaryType;
 
-
+/** An enumerated type for denoting a type of taper
+*/
 typedef enum
 {
 	INFERENCE_TAPER_NONE,
@@ -115,68 +122,85 @@ typedef enum
 
 extern size_t typeSize[];
 
-//VariableItem should NEVER be accessed directly, only through special
-//access functions as defined below.
-//Implementation may change from linked list to hashtable for faster access
+/** The LALInferenceVariableItem list node structure
+ * This should only be accessed using the accessor functions below
+ * Implementation may change to hash table
+*/
 typedef struct
 tagVariableItem
 {
   char                    name[VARNAME_MAX];
   void                    *value;
-  VariableType            type;
-  ParamVaryType			  vary;
+  LALInferenceVariableType            type;
+  LALInferenceParamVaryType			  vary;
   struct tagVariableItem  *next;
-} LALVariableItem;
+} LALInferenceVariableItem;
 
+/** The LALInferenceVariables list structure
+ * Should only be accessed using the accessor functions below
+ */
 typedef struct
-tagLALVariables
+tagLALInferenceVariables
 {
-  LALVariableItem * head;
+  LALInferenceVariableItem * head;
   INT4 dimension;
-} LALVariables;
+} LALInferenceVariables;
+
 
 const char *translateInternalToExternalParamName(const char *inName);
-int fprintParameterNonFixedHeaders(FILE *out, LALVariables *params);
+int fprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params);
 
-/* Return a pointer to the variable asked for */
-void *getVariable(LALVariables * vars, const char * name);
-/* Get number of dimensions in this variable */
-INT4 getVariableDimension(LALVariables *vars);
-/* Get number of dimensions which are not fixed to a certain value */
-INT4 getVariableDimensionNonFixed(LALVariables *vars);
-VariableType getVariableTypeByIndex(LALVariables *vars, int index);
-/* Get the type of the variable */
-VariableType getVariableType(LALVariables *vars, const char *name);
-/* Get the VaryType of the variable, see types above */
-ParamVaryType getVariableVaryType(LALVariables *vars, const char *name);
-/* Get the name of the index-th variable */
-char *getVariableName(LALVariables *vars, int index);
-/* Set a variable with a value, pass a void * to the value as argument */
-void setVariable(LALVariables * vars, const char * name, void * value);
-/* Add a variable to the list */
-void addVariable(LALVariables * vars, const char * name, void * value, 
-	VariableType type, ParamVaryType vary);
-/* Remove a variable fm the list */
-void removeVariable(LALVariables *vars,const char *name);
-/* Checks for a variable being present in the list, returns 1(==true) or 0 */
-int  checkVariable(LALVariables *vars,const char *name);
-/* Delete the variables in this structure (does not free the LALVariables itself) */
-void destroyVariables(LALVariables *vars);
-/* Deep copy the variables from one to another LALVariables structure */
-void copyVariables(LALVariables *origin, LALVariables *target);
-/* Print variables to stdout */
-void printVariables(LALVariables *var);
-/* Check for equality in two variables */
-int compareVariables(LALVariables *var1, LALVariables *var2);
+/** Return a pointer to the variable asked for */
+void *LALInferenceGetVariable(LALInferenceVariables * vars, const char * name);
+/** Get number of dimensions in this variable */
+INT4 LALInferenceGetVariableDimension(LALInferenceVariables *vars);
+/** Get number of dimensions which are not fixed to a certain value */
+INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars);
 
-/* Check for types of standard prior */
-int checkMinMaxPrior(LALVariables *priorArgs, const char *name);
-int checkGaussianPrior(LALVariables *priorArgs, const char *name);
+ 
+LALInferenceVariableType LALInferenceGetVariableTypeByIndex(LALInferenceVariables *vars, int index);
+
+
+/** Get the type of the variable, returns LALInferenceVariableType (see above) */
+LALInferenceVariableType LALInferenceGetVariableType(LALInferenceVariables *vars, const char *name);
+
+/** Get the LALInferenceParamVaryType of the variable, see types above */
+LALInferenceParamVaryType LALInferenceGetVariableVaryType(LALInferenceVariables *vars, const char *name);
+
+/** Get the name of the index-th variable */
+char *LALInferenceGetVariableName(LALInferenceVariables *vars, int index);
+
+/** Set a variable with a value, pass a void * to the value as argument */
+void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, void * value);
+
+/** Add a variable to the list */
+void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, void * value, 
+	LALInferenceVariableType type, LALInferenceParamVaryType vary);
+
+/** Remove a variable fm the list */
+void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name);
+
+/** Checks for a variable being present in the list, returns 1(==true) or 0 */
+int  LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name);
+
+/** Delete the variables in this structure (does not free the LALInferenceVariables itself) */
+void LALInferenceDestroyVariables(LALInferenceVariables *vars);
+
+/** Deep copy the variables from one to another LALInferenceVariables structure */
+void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariables *target);
+
+/** Print variables to stdout */
+void LALInferencePrintVariables(LALInferenceVariables *var);
+
+/** Check for equality in two variables */
+int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariables *var2);
+
 
 //Wrapper for template computation 
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?
-//typedef void (LALTemplateFunction) (LALVariables *currentParams, struct tagLALIFOData *data); //Parameter Set is modelParams of LALIFOData
-typedef void (LALTemplateFunction) (struct tagLALIFOData *data);
+//typedef void (LALTemplateFunction) (LALInferenceVariables *currentParams, struct tagLALInferenceIFOData *data); //Parameter Set is modelParams of LALInferenceIFOData
+/** Type declaration for template function */
+typedef void (LALInferenceTemplateFunction) (struct tagLALInferenceIFOData *data);
 
 
 //Jump proposal distribution
@@ -186,65 +210,69 @@ typedef void (LALTemplateFunction) (struct tagLALIFOData *data);
 //A jump proposal distribution function could call other jump proposal
 //distribution functions with various probabilities to allow for multiple
 //jump proposal distributions
-typedef void (LALProposalFunction) (struct tagLALInferenceRunState *runState,
-	LALVariables *proposedParams);
+/** Type declaration for Proposal function */
+typedef void (LALInferenceProposalFunction) (struct tagLALInferenceRunState *runState,
+	LALInferenceVariables *proposedParams);
 
-typedef REAL8 (LALPriorFunction) (struct tagLALInferenceRunState *runState,
-	LALVariables *params);
+/** Type declaration for prior function */
+typedef REAL8 (LALInferencePriorFunction) (struct tagLALInferenceRunState *runState,
+	LALInferenceVariables *params);
 
 //Likelihood calculator 
 //Should take care to perform expensive evaluation of h+ and hx 
 //only once if possible, unless necessary because different IFOs 
 //have different data lengths or sampling rates 
-typedef REAL8 (LALLikelihoodFunction) (LALVariables *currentParams,
-        struct tagLALIFOData * data, LALTemplateFunction *template);
+/** Type declaration for likelihood function */
+typedef REAL8 (LALInferenceLikelihoodFunction) (LALInferenceVariables *currentParams,
+        struct tagLALInferenceIFOData * data, LALInferenceTemplateFunction *template);
 
-//Compute next state along chain; replaces currentParams
-typedef void (LALEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
+/** Perform one step of an algorithm, replaces runState->currentParams */
+typedef void (LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
 
-//Main driver function for a run; will distinguish MCMC from NestedSampling
-typedef void (LALAlgorithm) (struct tagLALInferenceRunState *runState);
+/** Type declaration for an algorithm function; will distinguish MCMC from NestedSampling, etc */
+typedef void (LALInferenceAlgorithm) (struct tagLALInferenceRunState *runState);
 
-//Structure containing inference run state 
+/** Structure containing inference run state
+ * This includes pointers to the function types required to run
+ * the algorithm, and data structures as required */
 typedef struct 
 tagLALInferenceRunState
 {
-  ProcessParamsTable        *commandLine;
-  LALAlgorithm              *algorithm;
-  LALEvolveOneStepFunction  *evolve;
-  LALPriorFunction          *prior;
-  LALLikelihoodFunction     *likelihood;
-  LALProposalFunction       *proposal;
-  LALTemplateFunction       *template;
-  struct tagLALIFOData      *data;
-  LALVariables              *currentParams,
-    *priorArgs,
-    *proposalArgs,
-    *algorithmParams; /* Parameters which control the running of the algorithm*/
-  LALVariables				**livePoints; /* Array of live points
-for Nested Sampling */
-  LALVariables **differentialPoints;
-  size_t differentialPointsLength;
-  REAL8						currentLikelihood;
-  REAL8                     currentPrior;
-  gsl_rng                   *GSLrandom;
+  ProcessParamsTable        *commandLine; /** A ProcessParamsTable with command line arguments */
+  LALInferenceAlgorithm              *algorithm; /** The algorithm function */
+  LALInferenceEvolveOneStepFunction  *evolve; /** The algorithm's single iteration function */
+  LALInferencePriorFunction          *prior; /** The prior for the parameters */
+  LALInferenceLikelihoodFunction     *likelihood; /** The likelihood function */
+  LALInferenceProposalFunction       *proposal; /** The proposal function */
+  LALInferenceTemplateFunction       *template; /** The template generation function */
+  struct tagLALInferenceIFOData      *data; /** The data from the interferometers */
+  LALInferenceVariables              *currentParams, /** The current parameters */
+    *priorArgs,                                      /** Any special arguments for the prior function */
+    *proposalArgs,                                   /** Any special arguments for the proposal function */
+    *algorithmParams;                                /** Parameters which control the running of the algorithm*/
+  LALInferenceVariables				**livePoints; /** Array of live points for Nested Sampling */
+  LALInferenceVariables **differentialPoints;        /** Array of points for differential evolution */
+  size_t differentialPointsLength;                   /** This should be removed can be given as an algorithmParams entry */
+  REAL8			currentLikelihood;  /** This should be removed, can be given as an algorithmParams or proposalParams entry */
+  REAL8                 currentPrior;       /** This should be removed, can be given as an algorithmParams entry */
+  gsl_rng               *GSLrandom;         /** A pointer to a GSL random number generator */
 } LALInferenceRunState;
 
 
-LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
-
-struct tagLALIFOData * readData (ProcessParamsTable * commandLine);
-
-void injectSignal(struct tagLALIFOData *IFOdata, ProcessParamsTable *commandLine);
+/* LALInferenceRunState *initialize(ProcessParamsTable *commandLine); */
 
 #define DETNAMELEN 256
+
+/** Structure to contain IFO data.
+ *  Some fields may be left empty if not needed
+*/
 typedef struct
-tagLALIFOData
+tagLALInferenceIFOData
 {
-  char                       name[DETNAMELEN];
-  REAL8TimeSeries           *timeData, 
-                            *timeModelhPlus, *timeModelhCross,
-                            *whiteTimeData, *windowedTimeData; /* white is not really white, but over-white. */
+  char                       name[DETNAMELEN]; /** Detector name */
+  REAL8TimeSeries           *timeData,         /** A time series from the detector */
+                            *timeModelhPlus, *timeModelhCross, /** Time series model buffers */
+                            *whiteTimeData, *windowedTimeData; /** white is not really white, but over-white. */
   /* Stores the log(L) for the model in presence of data.  These were
      added to allow for individual-detector log(L) output.  The
      convention is that loglikelihood always stores the log(L) for the
@@ -252,133 +280,77 @@ tagLALIFOData
      that value is copied into acceptedloglikelihood, which is the
      quantity that is actually output in the output files. */
   REAL8                      nullloglikelihood, loglikelihood, acceptedloglikelihood; 
-  REAL8                      fPlus, fCross;
-  REAL8                      timeshift;
-  COMPLEX16FrequencySeries  *freqData, 
-                            *freqModelhPlus, *freqModelhCross,
+  REAL8                      fPlus, fCross; /** Detector responses */
+  REAL8                      timeshift;     /** What is this? */
+  COMPLEX16FrequencySeries  *freqData,      /** Buffer for frequency domain data */
+                            *freqModelhPlus, *freqModelhCross, /** Buffers for frequency domain models */
                             *whiteFreqData; /* Over-white. */
-  COMPLEX16TimeSeries       *compTimeData, *compModelData;
-  LIGOTimeGPSVector         *dataTimes;
-  LALVariables              *modelParams;
-  LALVariables		    *dataParams; /* Optional data parameters */
-  LALDomain                 modelDomain;
-  REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;
-  REAL8TimeSeries           *timeDomainNoiseWeights; /* Roughly, InvFFT(1/Noise PSD). */
-  REAL8Window               *window;
-  REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan;
-  REAL8                     fLow, fHigh;	//integration limits;
-  LALDetector               *detector;
-  BarycenterInput           *bary;
-  EphemerisData             *ephem;
-  LIGOTimeGPS				epoch;
+  COMPLEX16TimeSeries       *compTimeData, *compModelData; /** Complex time series data buffers */
+  LIGOTimeGPSVector         *dataTimes;                    /** Vector of time stamps for time domain data */
+  LALInferenceVariables              *modelParams;         /** Parameters used when filling the buffers - template functions should copy to here */
+  LALInferenceVariables		    *dataParams; /* Optional data parameters */
+  LALInferenceDomain                 modelDomain;         /** Domain of model */
+  REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;  /** one-sided Noise Power Spectrum */
+  REAL8TimeSeries           *timeDomainNoiseWeights; /** Roughly, InvFFT(1/Noise PSD). */
+  REAL8Window               *window;                 /** A window */
+  REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */
+  REAL8                     fLow, fHigh;	/** integration limits for overlap integral in F-domain */
+  LALDetector               *detector;          /** LALDetector structure for where this data came from */
+  BarycenterInput           *bary;              /** Barycenter information */
+  EphemerisData             *ephem;             /** Ephemeris data */
+  LIGOTimeGPS		    epoch;              /** The epoch of this observation (the time of the first sample) */
 
-  struct tagLALIFOData      *next;
-} LALIFOData;
+  struct tagLALInferenceIFOData      *next;     /** A pointer to the next set of data for linked list */
+} LALInferenceIFOData;
 
-/* Returns the element of the process params table with "name" */
-ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name);
+/** Returns the element of the process params table with "name" */
+ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,const char *name);
 
-void parseCharacterOptionString(char *input, char **strings[], UINT4 *n);
+/** What is this? */
+void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4 *n);
 
-ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
+/** Return a ProcessParamsTable from the command line arguments */
+ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[]);
 
-void printCommandLine(ProcessParamsTable *procparams, char *str);
+/** Output the command line based on the ProcessParamsTable */
+void LALInferencePrintCommandLine(ProcessParamsTable *procparams, char *str);
 
-REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData *data, 
-                              LALTemplateFunction *template);
-
-/* For testing purposes, likelihood that returns 0.0 = log(1) every
-   time.  Activated with the --zeroLogLike command flag. */
-REAL8 ZeroLogLikelihood(LALVariables *currentParams, LALIFOData *data, LALTemplateFunction *template);
-
-REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
-                              LALTemplateFunction *template);
-REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, 
-                              LALTemplateFunction *template);
-void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
-                              LALTemplateFunction *template, COMPLEX16Vector *freqWaveform);	
-
-REAL8 TimeDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
-                              LALTemplateFunction *template);
-void ComputeTimeDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
-                               LALTemplateFunction *template, REAL8TimeSeries *timeWaveform);						  
-REAL8 ComputeFrequencyDomainOverlap(LALIFOData * data, 
-	COMPLEX16Vector * freqData1, COMPLEX16Vector * freqData2);
+/** This should be moved elsewhere */
 void COMPLEX16VectorSubtract(COMPLEX16Vector * out, const COMPLEX16Vector * in1, const COMPLEX16Vector * in2);
 
-REAL8 NullLogLikelihood(LALIFOData *data);
-REAL8 TimeDomainNullLogLikelihood(LALIFOData *data);
+/** Execute FFT and inverse FFT for the data */
+void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);
+void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata);
 
-void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
-                            LALTemplateFunction *template, const char *filename);
-void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data, 
-                            LALTemplateFunction *template, const char *filename);
-
-void executeFT(LALIFOData *IFOdata);
-void executeInvFT(LALIFOData *IFOdata);
-
+/** This should be removed */
 void die(const char *message);
-void LALTemplateGeneratePPN(LALIFOData *IFOdata);
-void templateStatPhase(LALIFOData *IFOdata);
-void templateNullFreqdomain(LALIFOData *IFOdata);
-void templateNullTimedomain(LALIFOData *IFOdata);
-void templateLAL(LALIFOData *IFOdata);
-void template3525TD(LALIFOData *IFOdata);
-void templateSineGaussian(LALIFOData *IFOdata);
-void templateDampedSinusoid(LALIFOData *IFOdata);
-void templateSinc(LALIFOData *IFOdata);
-void templateLALSTPN(LALIFOData *IFOdata);
-void templateASinOmegaT(LALIFOData *IFOdata);
-void templateLALGenerateInspiral(LALIFOData *IFOdata);
 
-void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type);
-void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max);
-void removeMinMaxPrior(LALVariables *priorArgs, const char *name);
+/** Return the list node for "name" - do not rely on this */
+LALInferenceVariableItem *LALInferenceGetItem(LALInferenceVariables *vars,const char *name);
+/** Return the list node for the index-th item - do not rely on this */
+LALInferenceVariableItem *LALInferenceGetItemNr(LALInferenceVariables *vars, int index);
 
-void addGaussianPrior(LALVariables *priorArgs, const char *name, void *mu,
-  void *sigma, VariableType type);
-void getGaussianPrior(LALVariables *priorArgs, const char *name, void *mu,
-  void *sigma);
-void removeGaussianPrior(LALVariables *priorArgs, const char *name);
-
-LALVariableItem *getItem(LALVariables *vars,const char *name);
-LALVariableItem *getItemNr(LALVariables *vars, int index);
-void fprintSample(FILE *fp,LALVariables *sample);
-void fprintSampleNonFixed(FILE *fp,LALVariables *sample);
-
-/* Time-Domain Likelihood Utility Functions. */
-void makeWhiteData(LALIFOData *IFOdata);
-REAL8 WhitenedTimeDomainOverlap(const REAL8TimeSeries *whitenedData, const REAL8TimeSeries *data);
-void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan,
-              const REAL8 fMin, const REAL8 fMax);
-UINT4 nextPowerOfTwo(const UINT4 n);
-void padREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
-void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
-UINT4 LIGOTimeGPSToNearestIndex(const LIGOTimeGPS *time, const REAL8TimeSeries *series);
-REAL8 integrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2);
-void convolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, const REAL8TimeSeries *response);
-UINT4 NTDWFromNPSD(const UINT4 NPSD);
-void wrappedTimeSeriesToLinearTimeSeries(REAL8TimeSeries *linear, const REAL8TimeSeries *wrapped);
-void linearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8TimeSeries *linear);
+/** Output the sample to file *fp, in ASCII format */
+void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);
+/** Output only non-fixed parameters */
+void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
 
 void mc2masses(double mc, double eta, double *m1, double *m2);
-
-REAL8 timeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, const REAL8TimeSeries *B);
 
 /* Differential Evolution and Common Format Posterior File Parsing
    Utilities. */
 
-/* Returns an array of header strings (terminated by NULL). */
+/** Returns an array of header strings (terminated by NULL) from a common-format output file */
 char **getHeaderLine(FILE *inp);
 
-/* Turns common-format column names into our internal parameter
+/** Turns common-format column names into our internal parameter
    names. */
 char *colNameToParamName(const char *colName);
 
-/* Reads one line from the given file and stores the values there into
+/** Reads one line from the given file and stores the values there into
    the variable structure, using the given header array to name the
    columns.  Returns 0 on success. */
-int processParamLine(FILE *inp, char **headers, LALVariables *vars);
+int processParamLine(FILE *inp, char **headers, LALInferenceVariables *vars);
 
 #endif
 

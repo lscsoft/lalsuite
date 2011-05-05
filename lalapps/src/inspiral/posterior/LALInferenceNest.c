@@ -32,6 +32,9 @@
 #include <lal/TimeSeries.h>
 #include <lal/LALInferenceNestedSampler.h>
 #include <lal/LALInferencePrior.h>
+#include <lal/LALInferenceReadData.h>
+#include <lal/LALInferenceLikelihood.h>
+#include <lal/LALInferenceTemplate.h>
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
@@ -46,7 +49,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 Initialisation arguments:\n\
 (--randomseed seed           Random seed for Nested Sampling)\n\n";
 	LALInferenceRunState *irs=NULL;
-	LALIFOData *ifoPtr, *ifoListStart;
+	LALInferenceIFOData *ifoPtr, *ifoListStart;
 	ProcessParamsTable *ppt=NULL;
 	unsigned long int randomseed;
 	struct timeval tv;
@@ -56,9 +59,9 @@ Initialisation arguments:\n\
 	/* read data from files: */
 	fprintf(stdout, " readData(): started.\n");
 	irs->commandLine=commandLine;
-	irs->data = readData(commandLine);
+	irs->data = LALInferenceReadData(commandLine);
 	/* (this will already initialise each LALIFOData's following elements:  */
-        ppt=getProcParamVal(commandLine,"--help");
+        ppt=LALInferenceGetProcParamVal(commandLine,"--help");
         if(ppt)
         {
                 fprintf(stdout,"%s",help);
@@ -67,13 +70,13 @@ Initialisation arguments:\n\
 
 	/*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
 	/*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
-	fprintf(stdout, " readData(): finished.\n");
+	fprintf(stdout, " LALInferenceReadData(): finished.\n");
 	if (irs->data != NULL) {
 		fprintf(stdout, " initialize(): successfully read data.\n");
 		
-		fprintf(stdout, " injectSignal(): started.\n");
-		injectSignal(irs->data,commandLine);
-		fprintf(stdout, " injectSignal(): finished.\n");
+		fprintf(stdout, " LALInferenceInjectInspiralSignal(): started.\n");
+		LALInferenceInjectInspiralSignal(irs->data,commandLine);
+		fprintf(stdout, " LALInferenceInjectInspiralSignal(): finished.\n");
 		
 		ifoPtr = irs->data;
 		ifoListStart = irs->data;
@@ -81,7 +84,7 @@ Initialisation arguments:\n\
 			/*If two IFOs have the same sampling rate, they should have the same timeModelh*,
 			 freqModelh*, and modelParams variables to avoid excess computation 
 			 in model waveform generation in the future*/
-			LALIFOData * ifoPtrCompare=ifoListStart;
+			LALInferenceIFOData * ifoPtrCompare=ifoListStart;
 			int foundIFOwithSameSampleRate=0;
 			while(ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
 				if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
@@ -119,7 +122,7 @@ Initialisation arguments:\n\
 																			 ifoPtr->freqData->deltaF,
 																			 &lalDimensionlessUnit,
 																			 ifoPtr->freqData->data->length);
-				ifoPtr->modelParams = calloc(1, sizeof(LALVariables));
+				ifoPtr->modelParams = calloc(1, sizeof(LALInferenceVariables));
 			}
 			ifoPtr = ifoPtr->next;
 		}
@@ -133,7 +136,7 @@ Initialisation arguments:\n\
 	gsl_rng_env_setup();
 	irs->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
 	/* (try to) get random seed from command line: */
-	ppt = getProcParamVal(commandLine, "--randomseed");
+	ppt = LALInferenceGetProcParamVal(commandLine, "--randomseed");
 	if (ppt != NULL)
 		randomseed = atoi(ppt->value);
 	else { /* otherwise generate "random" random seed: */
@@ -175,7 +178,7 @@ Nested sampling arguments:\n\
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	/* Print command line arguments if help requested */
-	ppt=getProcParamVal(commandLine,"--help");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
 	if(ppt)
 	{
 		fprintf(stdout,"%s",help);
@@ -186,13 +189,13 @@ Nested sampling arguments:\n\
 	REAL8 tmp=0;
 	
 	/* Initialise parameters structure */
-	runState->algorithmParams=XLALCalloc(1,sizeof(LALVariables));
-	runState->priorArgs=XLALCalloc(1,sizeof(LALVariables));
-	runState->proposalArgs=XLALCalloc(1,sizeof(LALVariables));
+	runState->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
+	runState->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+	runState->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
 	
 	/* Set up the appropriate functions for the nested sampling algorithm */
-	runState->algorithm=&NestedSamplingAlgorithm;
-	runState->evolve=&NestedSamplingOneStep;
+	runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
+	runState->evolve=&LALInferenceNestedSamplingOneStep;
 	runState->proposal=&LALInferenceProposalNS;
 
 	/* This is the LAL template generator for inspiral signals */
@@ -200,50 +203,50 @@ Nested sampling arguments:\n\
 	runState->likelihood=&FreqDomainLogLikelihood;
 	runState->prior = &LALInferenceInspiralPrior;
 	
-	ppt=getProcParamVal(commandLine,"--verbose");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
 	if(ppt) {
 		verbose=1;
-		addVariable(runState->algorithmParams,"verbose", &verbose , INT4_t,
+		LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose , INT4_t,
 					PARAM_FIXED);
 	}
 		
 	printf("set number of live points.\n");
 	/* Number of live points */
-	ppt=getProcParamVal(commandLine,"--Nlive");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--Nlive");
 	if(ppt)
 		tmpi=atoi(ppt->value);
 	else {
 		fprintf(stderr,"Error, must specify number of live points\n");
 		exit(1);
 	}
-	addVariable(runState->algorithmParams,"Nlive",&tmpi, INT4_t,PARAM_FIXED);
+	LALInferenceAddVariable(runState->algorithmParams,"Nlive",&tmpi, INT4_t,PARAM_FIXED);
 	
 	printf("set number of MCMC points.\n");
 	/* Number of points in MCMC chain */
-	ppt=getProcParamVal(commandLine,"--Nmcmc");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--Nmcmc");
 	if(ppt)
 	  tmpi=atoi(ppt->value);
 	else {
 	  fprintf(stderr,"Error, must specify number of MCMC points\n");
 	  exit(1);
 	}
-	addVariable(runState->algorithmParams,"Nmcmc",&tmpi,
+	LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmpi,
 				INT4_t,PARAM_FIXED);
 	
 	printf("set number of parallel runs.\n");
 	/* Optionally specify number of parallel runs */
-	ppt=getProcParamVal(commandLine,"--Nruns");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--Nruns");
 	if(ppt) {
 		tmpi=atoi(ppt->value);
-		addVariable(runState->algorithmParams,"Nruns",&tmpi,INT4_t,PARAM_FIXED);
+		LALInferenceAddVariable(runState->algorithmParams,"Nruns",&tmpi,INT4_t,PARAM_FIXED);
 	}
 	
 	printf("set tolerance.\n");
 	/* Tolerance of the Nested sampling integrator */
-	ppt=getProcParamVal(commandLine,"--tolerance");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--tolerance");
 	if(ppt){
 		tmp=strtod(ppt->value,(char **)NULL);
-		addVariable(runState->algorithmParams,"tolerance",&tmp, REAL8_t,
+		LALInferenceAddVariable(runState->algorithmParams,"tolerance",&tmp, REAL8_t,
 					PARAM_FIXED);
 	}
 	
@@ -253,11 +256,11 @@ Nested sampling arguments:\n\
 	runState->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
 	
 	/* (try to) get random seed from command line: */
-	ppt = getProcParamVal(commandLine, "--randomseed");
+	ppt = LALInferenceGetProcParamVal(commandLine, "--randomseed");
 	if (ppt != NULL)
 		randomseed = atoi(ppt->value);
 	fprintf(stdout, " initialize(): random seed: %u\n", randomseed);
-	addVariable(runState->algorithmParams,"random_seed",&randomseed, INT4_t,PARAM_FIXED);
+	LALInferenceAddVariable(runState->algorithmParams,"random_seed",&randomseed, INT4_t,PARAM_FIXED);
 	gsl_rng_set(runState->GSLrandom, randomseed);
 	
 	return;
@@ -271,9 +274,9 @@ void initVariables(LALInferenceRunState *state)
 {
 	LALStatus status;
 	SimInspiralTable *injTable=NULL;
-	LALVariables *priorArgs=state->priorArgs;
-	state->currentParams=XLALCalloc(1,sizeof(LALVariables));
-	LALVariables *currentParams=state->currentParams;
+	LALInferenceVariables *priorArgs=state->priorArgs;
+	state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
+	LALInferenceVariables *currentParams=state->currentParams;
 	ProcessParamsTable *commandLine=state->commandLine;
 	REAL8 endtime;
 	ProcessParamsTable *ppt=NULL;
@@ -290,7 +293,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 dt=0.1;            /* Width of time prior */
 	REAL8 tmpMin,tmpMax,tmpVal;
 	
-	memset(currentParams,0,sizeof(LALVariables));
+	memset(currentParams,0,sizeof(LALInferenceVariables));
 	
 	char help[]="\
 Parameter arguments:\n\
@@ -306,7 +309,7 @@ Parameter arguments:\n\
 (--maxcomp max)\tMaximum component mass (30.0)\n\n";
 	
 	/* Print command line arguments if help requested */
-	ppt=getProcParamVal(commandLine,"--help");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
 	if(ppt)
 	{
 		fprintf(stdout,"%s",help);
@@ -314,7 +317,7 @@ Parameter arguments:\n\
 	}
 	
 	/* Read injection XML file for parameters if specified */
-	ppt=getProcParamVal(commandLine,"--injXML");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--injXML");
 	if(ppt){
 		SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
 		if(!injTable){
@@ -328,7 +331,7 @@ Parameter arguments:\n\
 	}	
 
 	/* Over-ride approximant if user specifies */
-	ppt=getProcParamVal(commandLine,"--approx");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
 	if(ppt){
 		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
 		LALGetApproximantFromString(&status,ppt->value,&approx);
@@ -337,90 +340,90 @@ Parameter arguments:\n\
 	}
 	
 	/* Over-ride end time if specified */
-	ppt=getProcParamVal(commandLine,"--trigtime");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--trigtime");
 	if(ppt){
 		endtime=atof(ppt->value);
 	}
 	
 	/* Over-ride time prior if specified */
-	ppt=getProcParamVal(commandLine,"--dt");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
 	if(ppt){
 		dt=atof(ppt->value);
 	}
 	
 	/* Over-ride Distance min if specified */
-	ppt=getProcParamVal(commandLine,"--Dmin");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--Dmin");
 	if(ppt){
 		logDmin=log(atof(ppt->value));
 	}
 	
 	/* Over-ride Distance max if specified */
-	ppt=getProcParamVal(commandLine,"--Dmax");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--Dmax");
 	if(ppt){
 		logDmax=log(atof(ppt->value));
 	}
 	
 	/* Over-ride Mass prior if specified */
-	ppt=getProcParamVal(commandLine,"--Mmin");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--Mmin");
 	if(ppt){
 		mcMin=atof(ppt->value);
 	}
-	ppt=getProcParamVal(commandLine,"--Mmax");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--Mmax");
 	if(ppt)	mcMax=atof(ppt->value);
 	
 	/* Over-ride component masses */
-	ppt=getProcParamVal(commandLine,"--compmin");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
 	if(ppt)	mMin=atof(ppt->value);
-	addVariable(priorArgs,"component_min",&mMin,REAL8_t,PARAM_FIXED);
-	ppt=getProcParamVal(commandLine,"--compmax");
+	LALInferenceAddVariable(priorArgs,"component_min",&mMin,REAL8_t,PARAM_FIXED);
+	ppt=LALInferenceGetProcParamVal(commandLine,"--compmax");
 	if(ppt)	mMax=atof(ppt->value);
-	addVariable(priorArgs,"component_max",&mMax,REAL8_t,PARAM_FIXED);
+	LALInferenceAddVariable(priorArgs,"component_max",&mMax,REAL8_t,PARAM_FIXED);
 	
 	
 	printf("Read end time %f\n",endtime);
 	
-	addVariable(currentParams, "LAL_APPROXIMANT", &approx,        INT4_t, PARAM_FIXED);
-    addVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        INT4_t, PARAM_FIXED);
+	LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        INT4_t, PARAM_FIXED);
+    LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        INT4_t, PARAM_FIXED);
 	
 	/* Set up the variable parameters */
 	tmpVal=log(mcMin+(mcMax-mcMin)/2.0);
-	/*addVariable(currentParams, "chirpmass",    &tmpVal,    REAL8_t,	PARAM_LINEAR);
+	/*LALInferenceAddVariable(currentParams, "chirpmass",    &tmpVal,    REAL8_t,	PARAM_LINEAR);
     addMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		REAL8_t); */
-	addVariable(currentParams,"logmc",&tmpVal, REAL8_t, PARAM_LINEAR);
+	LALInferenceAddVariable(currentParams,"logmc",&tmpVal, REAL8_t, PARAM_LINEAR);
 	logmcMin=log(mcMin); logmcMax=log(mcMax);
 	addMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		REAL8_t);
 
 	tmpVal=0.24;
-	addVariable(currentParams, "massratio",       &tmpVal,             REAL8_t, PARAM_LINEAR);
+	LALInferenceAddVariable(currentParams, "massratio",       &tmpVal,             REAL8_t, PARAM_LINEAR);
     addMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	REAL8_t);
 	
-    addVariable(currentParams, "time",            &endtime   ,           REAL8_t, PARAM_LINEAR); 
+    LALInferenceAddVariable(currentParams, "time",            &endtime   ,           REAL8_t, PARAM_LINEAR); 
 	tmpMin=endtime-0.5*dt; tmpMax=endtime+0.5*dt;
 	addMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   REAL8_t);	
 
 	tmpVal=1.0;
-    addVariable(currentParams, "phase",           &tmpVal,             REAL8_t, PARAM_CIRCULAR);
+    LALInferenceAddVariable(currentParams, "phase",           &tmpVal,             REAL8_t, PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	addMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	tmpVal=logDmin+(logDmax-logDmin)/2.0;
-	addVariable(currentParams,"logdistance", &tmpVal, REAL8_t, PARAM_LINEAR);
+	LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, REAL8_t, PARAM_LINEAR);
 	addMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   REAL8_t);
 	
 	tmpVal=1.0;
-	addVariable(currentParams, "rightascension",  &tmpVal,      REAL8_t, PARAM_CIRCULAR);
+	LALInferenceAddVariable(currentParams, "rightascension",  &tmpVal,      REAL8_t, PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	addMinMaxPrior(priorArgs, "rightascension",     &tmpMin, &tmpMax,   REAL8_t);
 
-	addVariable(currentParams, "declination",     &tmpVal,     REAL8_t, PARAM_CIRCULAR);
+	LALInferenceAddVariable(currentParams, "declination",     &tmpVal,     REAL8_t, PARAM_CIRCULAR);
 	tmpMin=-LAL_PI/2.0; tmpMax=LAL_PI/2.0;
 	addMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   REAL8_t);
     
-	addVariable(currentParams, "polarisation",    &tmpVal,     REAL8_t, PARAM_CIRCULAR);
+	LALInferenceAddVariable(currentParams, "polarisation",    &tmpVal,     REAL8_t, PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
 	addMinMaxPrior(priorArgs, "polarisation",     &tmpMin, &tmpMax,   REAL8_t);
 	
- 	addVariable(currentParams, "inclination",     &tmpVal,            REAL8_t, PARAM_CIRCULAR);
+ 	LALInferenceAddVariable(currentParams, "inclination",     &tmpVal,            REAL8_t, PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
 	addMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
 	
@@ -436,7 +439,7 @@ int main(int argc, char *argv[]){
 	ProcessParamsTable *procParams=NULL;
 	
 	/* Read command line and parse */
-	procParams=parseCommandLine(argc,argv);
+	procParams=LALInferenceParseCommandLine(argc,argv);
 	
 	/* initialise runstate based on command line */
 	/* This includes reading in the data */

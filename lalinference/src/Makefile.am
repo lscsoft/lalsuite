@@ -6,7 +6,10 @@ lalinferenceinclude_HEADERS = \
 	LALInferenceVCSInfo.h \
 	LALInferenceConfig.h \
 	LALInferenceNestedSampler.h \
-	LALInferencePrior.h 
+	LALInferencePrior.h \
+        LALInferenceLikelihood.h \
+	LALInferenceReadData.h \
+	LALInferenceTemplate.h
 
 lib_LTLIBRARIES = liblalinference.la
 liblalinference_la_SOURCES = \
@@ -15,7 +18,8 @@ liblalinference_la_SOURCES = \
 	LALInferenceNestedSampler.c \
 	LALInferencePrior.c \
 	LALInferenceReadData.c \
-	LALInferenceTemplate.c
+	LALInferenceTemplate.c \
+	LALInferenceLikelihood.c
 
 liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
 

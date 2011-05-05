@@ -14,6 +14,7 @@ static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0),
 #include <lal/Units.h>
 #include <sys/time.h>
 #include <lal/XLALError.h>
+#include <lal/LALInferencePrior.h>
 
 RCSID("$Id$");
 
@@ -61,7 +62,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   REAL8Vector *logLikelihoods = NULL;
   
   /* Get ProcParamsTable from input arguments */
-  param_table = parseCommandLine( argc, argv );
+  param_table = LALInferenceParseCommandLine( argc, argv );
   runState.commandLine = param_table;
   
   /* Initialise data structures from the command line arguments */
@@ -77,8 +78,8 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   printf("Done readPulsarData\n");
   
   /* set algorithm to use Nested Sampling */
-  runState.algorithm = &NestedSamplingAlgorithm;
-  runState.evolve = &NestedSamplingOneStep;
+  runState.algorithm = &LALInferenceNestedSamplingAlgorithm;
+  runState.evolve = &LALInferenceNestedSamplingOneStep;
   
   /* set likelihood function */
   runState.likelihood = &pulsar_log_likelihood;
@@ -102,7 +103,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   
   /* get noise likelihood and add as variable to runState */
   logZnoise = noise_only_model( runState.data );
-  addVariable( runState.algorithmParams, "logZnoise", &logZnoise, REAL8_t, 
+  LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, REAL8_t, 
                PARAM_FIXED );
   printf("Done setting noise likelihood\n");
   
@@ -110,7 +111,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   setupLivePointsArray( &runState );
   printf("Done setupLivePointsArray\n");
   
-  logLikelihoods = *(REAL8Vector **)getVariable( runState.algorithmParams,
+  logLikelihoods = *(REAL8Vector **)LALInferenceGetVariable( runState.algorithmParams,
                                                  "logLikelihoods" );
 
   /* for(i=0; i< logLikelihoods->length; i++)
@@ -144,45 +145,45 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
   struct timeval tv;
 
   /* print out help message */
-  ppt = getProcParamVal( commandLine, "--help" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--help" );
   if(ppt){
     fprintf(stderr, USAGE, commandLine->program);
     exit(0);
   }
   
   /* Initialise parameters structure */
-  runState->algorithmParams = XLALCalloc( 1, sizeof(LALVariables) );
-  runState->priorArgs = XLALCalloc( 1, sizeof(LALVariables) );
-  runState->proposalArgs = XLALCalloc( 1, sizeof(LALVariables) );
+  runState->algorithmParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+  runState->priorArgs = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+  runState->proposalArgs = XLALCalloc( 1, sizeof(LALInferenceVariables) );
  
-  ppt = getProcParamVal( commandLine, "--verbose" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--verbose" );
   if( ppt ) {
     verbose = 1;
-    addVariable( runState->algorithmParams, "verbose", &verbose , INT4_t,
+    LALInferenceAddVariable( runState->algorithmParams, "verbose", &verbose , INT4_t,
                  PARAM_FIXED);
   }
 
   /* Number of live points */
-  tmpi = atoi( getProcParamVal(commandLine, "--Nlive")->value );
-  addVariable( runState->algorithmParams,"Nlive", &tmpi, INT4_t, PARAM_FIXED );
+  tmpi = atoi( LALInferenceGetProcParamVal(commandLine, "--Nlive")->value );
+  LALInferenceAddVariable( runState->algorithmParams,"Nlive", &tmpi, INT4_t, PARAM_FIXED );
         
   /* Number of points in MCMC chain */
-  tmpi = atoi( getProcParamVal(commandLine, "--Nmcmc")->value );
-  addVariable( runState->algorithmParams, "Nmcmc", &tmpi, INT4_t, PARAM_FIXED );
+  tmpi = atoi( LALInferenceGetProcParamVal(commandLine, "--Nmcmc")->value );
+  LALInferenceAddVariable( runState->algorithmParams, "Nmcmc", &tmpi, INT4_t, PARAM_FIXED );
 
   /* Optionally specify number of parallel runs */
-  ppt = getProcParamVal( commandLine, "--Nruns" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--Nruns" );
   if(ppt) {
     tmpi = atoi( ppt->value );
-    addVariable( runState->algorithmParams, "Nruns", &tmpi, INT4_t,
+    LALInferenceAddVariable( runState->algorithmParams, "Nruns", &tmpi, INT4_t,
                  PARAM_FIXED );
   }
         
   /* Tolerance of the Nested sampling integrator */
-  ppt = getProcParamVal( commandLine, "--tolerance" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--tolerance" );
   if( ppt ){
     tmp = strtod( ppt->value, (char **)NULL );
-    addVariable( runState->algorithmParams, "tolerance", &tmp, REAL8_t,
+    LALInferenceAddVariable( runState->algorithmParams, "tolerance", &tmp, REAL8_t,
                  PARAM_FIXED );
   }
         
@@ -191,7 +192,7 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
   runState->GSLrandom = gsl_rng_alloc( gsl_rng_mt19937 );
         
   /* (try to) get random seed from command line: */
-  ppt = getProcParamVal( commandLine, "--randomseed" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--randomseed" );
   if ( ppt != NULL )
     randomseed = atoi( ppt->value );
   else { /* otherwise generate "random" random seed: */
@@ -233,16 +234,16 @@ void readPulsarData( LALInferenceRunState *runState ){
   CHAR dets[MAXDETS][256];
   INT4 numDets = 0, i = 0;
  
-  LALIFOData *ifodata = NULL;
-  LALIFOData *prev = NULL;
+  LALInferenceIFOData *ifodata = NULL;
+  LALInferenceIFOData *prev = NULL;
   
   runState->data = NULL;
   
   /* get the detectors */
-  ppt = getProcParamVal( commandLine, "--detectors" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--detectors" );
   if( ppt ){
     detectors = 
-      XLALStringDuplicate( getProcParamVal(commandLine,"--detectors")->value );
+      XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--detectors")->value );
   }
   else{
     fprintf(stderr, "Error... --detectors needs to be set.\n");
@@ -250,10 +251,10 @@ void readPulsarData( LALInferenceRunState *runState ){
     exit(0);
   }
   
-  ppt = getProcParamVal( commandLine,"--input-files" );
+  ppt = LALInferenceGetProcParamVal( commandLine,"--input-files" );
   if( ppt ){
     inputfile = 
-      XLALStringDuplicate(getProcParamVal(commandLine,"--input-files")->value);
+      XLALStringDuplicate(LALInferenceGetProcParamVal(commandLine,"--input-files")->value);
   }
   
   if ( inputfile == NULL ){
@@ -263,10 +264,10 @@ void readPulsarData( LALInferenceRunState *runState ){
   }
   
   /* get the output directory */
-  ppt = getProcParamVal( commandLine, "--outfile" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
   if( ppt ){
     outfile = 
-      XLALStringDuplicate( getProcParamVal( commandLine, "--outfile" )->value );
+      XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine, "--outfile" )->value );
   }
   else{
     fprintf(stderr, "Error... --outfile needs to be set.\n");
@@ -275,15 +276,15 @@ void readPulsarData( LALInferenceRunState *runState ){
   }
   
   /* get ephemeris files */
-  ppt = getProcParamVal( commandLine, "--ephem-earth" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
   if( ppt ){
   efile = 
-    XLALStringDuplicate( getProcParamVal(commandLine,"--ephem-earth")->value );
+    XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--ephem-earth")->value );
   }
-  ppt = getProcParamVal( commandLine, "--ephem-sun" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--ephem-sun" );
   if( ppt ){
     sfile = 
-      XLALStringDuplicate( getProcParamVal(commandLine,"--ephem-sun")->value );
+      XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--ephem-sun")->value );
   }
 
   /* count the number of detectors from command line argument of comma separated
@@ -345,11 +346,11 @@ defined!\n");
     
     FILE *fp = NULL;
     
-    ifodata = XLALCalloc( 1, sizeof(LALIFOData) );
-    ifodata->modelParams = XLALCalloc( 1, sizeof(LALVariables) );
+    ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
+    ifodata->modelParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
     ifodata->modelDomain = timeDomain;
     ifodata->next = NULL;
-    ifodata->dataParams = XLALCalloc( 1, sizeof(LALVariables) );
+    ifodata->dataParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
     
     if( i == 0 ) runState->data = ifodata;
     if( i > 0 ) prev->next = ifodata;
@@ -437,12 +438,12 @@ void setupFromParFile( LALInferenceRunState *runState )
   LALSource psr;
   BinaryPulsarParams pulsar;
   REAL8Vector *phase_vector;
-  LALIFOData *data = runState->data;
-  LALVariables *scaletemp;
+  LALInferenceIFOData *data = runState->data;
+  LALInferenceVariables *scaletemp;
   ProcessParamsTable *ppt = NULL;
   UINT4 withphase=0;
   
-  ppt = getProcParamVal( runState->commandLine, "--par-file" );
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
   if( ppt == NULL ) { fprintf(stderr,"Must specify --par-file!\n"); exit(1); }
   char *parFile = ppt->value;
         
@@ -456,9 +457,9 @@ void setupFromParFile( LALInferenceRunState *runState )
   setupLookupTables( runState, &psr );
   printf("Setup lookup tables.\n");
   
-  runState->currentParams = XLALCalloc( 1, sizeof(LALVariables) );
+  runState->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
   
-  scaletemp = XLALCalloc( 1, sizeof(LALVariables) );
+  scaletemp = XLALCalloc( 1, sizeof(LALInferenceVariables) );
   
   /* if no binary model set the value to "None" */
   if ( pulsar.model == NULL )
@@ -472,7 +473,7 @@ void setupFromParFile( LALInferenceRunState *runState )
   /* Setup initial phase */
   while( data ){
     UINT4 i = 0;
-    LALVariableItem *scaleitem = scaletemp->head;
+    LALInferenceVariableItem *scaleitem = scaletemp->head;
     
     phase_vector = get_phase_model( pulsar, data );
     
@@ -487,13 +488,13 @@ void setupFromParFile( LALInferenceRunState *runState )
        defines whether the phase model needs to be calculated in the
        likelihood, or not (i.e. are any phase parameters required to be
        searched over) */
-    addVariable( data->dataParams, "withphase", &withphase, UINT4_t,
+    LALInferenceAddVariable( data->dataParams, "withphase", &withphase, UINT4_t,
                  PARAM_FIXED);
       
     /* add the scale factors from scaletemp into the data->dataParams
        structure */
     for( ; scaleitem; scaleitem = scaleitem->next ){
-      addVariable( data->dataParams, scaleitem->name, scaleitem->value,
+      LALInferenceAddVariable( data->dataParams, scaleitem->name, scaleitem->value,
                    scaleitem->type, scaleitem->vary );
     }
     
@@ -514,15 +515,15 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
   INT4 chunkMin, chunkMax, count = 0;
 
   /* Get chunk min and chunk max */
-  ppt = getProcParamVal( commandLine, "--chunk-min" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--chunk-min" );
   if( ppt ) chunkMin = atoi( ppt->value );
   else chunkMin = CHUNKMIN; /* default minimum chunk length */
     
-  ppt = getProcParamVal( commandLine, "--chunk-max" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--chunk-max" );
   if( ppt ) chunkMax = atoi( ppt->value );
   else chunkMax = CHUNKMAX; /* default maximum chunk length */
    
-  LALIFOData *data = runState->data;
+  LALInferenceIFOData *data = runState->data;
 
   gsl_matrix *LUfplus = NULL;
   gsl_matrix *LUfcross = NULL;
@@ -530,12 +531,12 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
   REAL8 t0;
   LALDetAndSource detAndSource;
         
-  ppt = getProcParamVal( commandLine, "--psi-bins" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--psi-bins" );
   INT4 psiBins;
   if( ppt ) psiBins = atoi( ppt->value );
   else psiBins = PSIBINS; /* default psi bins */
                 
-  ppt = getProcParamVal( commandLine, "--time-bins" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--time-bins" );
   INT4 timeBins;
   if( ppt ) timeBins = atoi( ppt->value );
   else timeBins = TIMEBINS; /* default time bins */  
@@ -547,8 +548,8 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     UINT4Vector *chunkLength = NULL;
     INT4 i=0;
     
-    addVariable( data->dataParams, "psiSteps", &psiBins, INT4_t, PARAM_FIXED ); 
-    addVariable( data->dataParams, "timeSteps", &timeBins, INT4_t, 
+    LALInferenceAddVariable( data->dataParams, "psiSteps", &psiBins, INT4_t, PARAM_FIXED ); 
+    LALInferenceAddVariable( data->dataParams, "timeSteps", &timeBins, INT4_t, 
                  PARAM_FIXED );
     
     t0 = XLALGPSGetREAL8( &data->dataTimes->data[0] );
@@ -560,13 +561,13 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     LUfcross = gsl_matrix_alloc( psiBins, timeBins );
     response_lookup_table( t0, detAndSource, timeBins, psiBins, LUfplus, 
                            LUfcross );
-    addVariable( data->dataParams, "LU_Fplus", &LUfplus, gslMatrix_t,
+    LALInferenceAddVariable( data->dataParams, "LU_Fplus", &LUfplus, gslMatrix_t,
                  PARAM_FIXED );
-    addVariable( data->dataParams, "LU_Fcross", &LUfcross, gslMatrix_t,
+    LALInferenceAddVariable( data->dataParams, "LU_Fcross", &LUfcross, gslMatrix_t,
                  PARAM_FIXED );
 
-    addVariable( data->dataParams, "chunkMin", &chunkMin, INT4_t, PARAM_FIXED );
-    addVariable( data->dataParams, "chunkMax", &chunkMax, INT4_t, PARAM_FIXED );
+    LALInferenceAddVariable( data->dataParams, "chunkMin", &chunkMin, INT4_t, PARAM_FIXED );
+    LALInferenceAddVariable( data->dataParams, "chunkMax", &chunkMax, INT4_t, PARAM_FIXED );
 
     if ( count == 0 ){
       exclamation = XLALCreateREAL8Vector( chunkMax + 1 );
@@ -578,17 +579,17 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
       count++;
     }
     
-    addVariable( data->dataParams, "logFactorial", &exclamation, REAL8Vector_t,
+    LALInferenceAddVariable( data->dataParams, "logFactorial", &exclamation, REAL8Vector_t,
                  PARAM_FIXED );
     
     /* get chunk lengths of data */
     chunkLength = get_chunk_lengths( data, chunkMax );
-    addVariable( data->dataParams, "chunkLength", &chunkLength, UINT4Vector_t,
+    LALInferenceAddVariable( data->dataParams, "chunkLength", &chunkLength, UINT4Vector_t,
                  PARAM_FIXED );
 
     /* get sum of data for each chunk */
     sumData = sum_data( data );
-    addVariable( data->dataParams, "sumData", &sumData, REAL8Vector_t,
+    LALInferenceAddVariable( data->dataParams, "sumData", &sumData, REAL8Vector_t,
                  PARAM_FIXED);
 
     data = data->next;
@@ -598,8 +599,8 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
 }
 
 
-UINT4 add_initial_variables( LALVariables *ini, LALVariables *scaleFac,
-                             LALVariables *priorArgs, 
+UINT4 add_initial_variables( LALInferenceVariables *ini, LALInferenceVariables *scaleFac,
+                             LALInferenceVariables *priorArgs, 
                              BinaryPulsarParams pars ){ 
   /* include a scale factor of 1 scaling values and if the parameter file
      contains an uncertainty then set the prior to be Gaussian with the
@@ -648,7 +649,7 @@ UINT4 add_initial_variables( LALVariables *ini, LALVariables *scaleFac,
                                         pars.posepoch, pars.posepochErr );
   
   /* binary system parameters */
-  addVariable( ini, "model", &pars.model, string_t, PARAM_FIXED );
+  LALInferenceAddVariable( ini, "model", &pars.model, string_t, PARAM_FIXED );
   
   withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb",
                                         pars.Pb, pars.PbErr );
@@ -725,11 +726,11 @@ UINT4 add_initial_variables( LALVariables *ini, LALVariables *scaleFac,
 }
 
 
-UINT4 add_variable_scale_prior( LALVariables *var, LALVariables *scale, 
-                                LALVariables *prior, const char *name, 
+UINT4 add_variable_scale_prior( LALInferenceVariables *var, LALInferenceVariables *scale, 
+                                LALInferenceVariables *prior, const char *name, 
                                 REAL8 value, REAL8 sigma ){
   REAL8 scaleVal = 1.;
-  ParamVaryType vary;
+  LALInferenceParamVaryType vary;
   CHAR scaleName[VARNAME_MAX] = "";
  
   UINT4 nonzero = 0;
@@ -746,11 +747,11 @@ UINT4 add_variable_scale_prior( LALVariables *var, LALVariables *scale,
   else vary = PARAM_FIXED;
   
   /* add the variable */
-  addVariable( var, name, &value, REAL8_t, vary );
+  LALInferenceAddVariable( var, name, &value, REAL8_t, vary );
   
   /* add the initial scale factor of 1 */
   sprintf( scaleName, "%s_scale", name );
-  addVariable( scale, scaleName, &scaleVal, REAL8_t, PARAM_FIXED );
+  LALInferenceAddVariable( scale, scaleName, &scaleVal, REAL8_t, PARAM_FIXED );
               
   return nonzero;
 }
@@ -768,12 +769,12 @@ void initialiseProposal( LALInferenceRunState *runState )
   CHAR tempPar[VARNAME_MAX] = "";
   REAL8 low, high;
   
-  LALIFOData *data = runState->data;
+  LALInferenceIFOData *data = runState->data;
   
-  ppt = getProcParamVal( commandLine, "--prop-file" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--prop-file" );
   if( ppt ){
   propfile =
-    XLALStringDuplicate( getProcParamVal(commandLine,"--prop-file")->value );
+    XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--prop-file")->value );
   }
   else{
     fprintf(stderr, "Error... --prop-file is required.\n");
@@ -789,16 +790,16 @@ void initialiseProposal( LALInferenceRunState *runState )
   
   while(fscanf(fp, "%s %lf %lf", tempPar, &low, &high) != EOF){
     REAL8 tempVar;
-    VariableType type;
+    LALInferenceVariableType type;
     
     REAL8 scale = 0.;
-    VariableType scaleType;
+    LALInferenceVariableType scaleType;
     CHAR tempParScale[VARNAME_MAX] = "";
     CHAR tempParPrior[VARNAME_MAX] = "";
  
-    LALIFOData *datatemp = data;
+    LALInferenceIFOData *datatemp = data;
     
-    ParamVaryType varyType;
+    LALInferenceParamVaryType varyType;
     
     if( high < low ){
       fprintf(stderr, "Error... In %s the %s parameters ranges are wrongly \
@@ -809,26 +810,26 @@ set.\n", propfile, tempPar);
     sprintf(tempParScale, "%s_scale", tempPar);
     sprintf(tempParPrior, "%s_gaussian_mean", tempPar);
 
-    tempVar = *(REAL8*)getVariable( runState->currentParams, tempPar );
-    type = getVariableType( runState->currentParams, tempPar );
-    varyType = getVariableVaryType( runState->currentParams, tempPar );
+    tempVar = *(REAL8*)LALInferenceGetVariable( runState->currentParams, tempPar );
+    type = LALInferenceGetVariableType( runState->currentParams, tempPar );
+    varyType = LALInferenceGetVariableVaryType( runState->currentParams, tempPar );
     
     /* remove variable value */
-    removeVariable( runState->currentParams, tempPar );
+    LALInferenceRemoveVariable( runState->currentParams, tempPar );
     
     /* if a Gaussian prior has already been defined (i.e. from the par file)
        remove this and overwrite with values from the propfile */
-    if ( checkVariable(runState->priorArgs, tempParPrior) )
+    if ( LALInferenceCheckVariable(runState->priorArgs, tempParPrior) )
       removeGaussianPrior( runState->priorArgs, tempPar );
     
     scale = high;
     
     /* set the scale factor to be the high value of the prior */
     while( datatemp ){
-      scaleType = getVariableType( datatemp->dataParams, tempParScale );
-      removeVariable( datatemp->dataParams, tempParScale );
+      scaleType = LALInferenceGetVariableType( datatemp->dataParams, tempParScale );
+      LALInferenceRemoveVariable( datatemp->dataParams, tempParScale );
     
-      addVariable( datatemp->dataParams, tempParScale, &scale, scaleType,
+      LALInferenceAddVariable( datatemp->dataParams, tempParScale, &scale, scaleType,
         PARAM_FIXED );
     
       datatemp = datatemp->next;
@@ -841,11 +842,11 @@ set.\n", propfile, tempPar);
     
     /* re-add variable */
     if( !strcmp(tempPar, "phi0") ){
-      addVariable( runState->currentParams, tempPar, &tempVar, type,
+      LALInferenceAddVariable( runState->currentParams, tempPar, &tempVar, type,
                    PARAM_CIRCULAR );
     }
     else{
-      addVariable( runState->currentParams, tempPar, &tempVar, type,
+      LALInferenceAddVariable( runState->currentParams, tempPar, &tempVar, type,
                    PARAM_LINEAR );
     }
     /* Add the prior variables */
@@ -857,27 +858,27 @@ set.\n", propfile, tempPar);
     if ( !strcmp(tempPar, "phi0") || !strcmp(tempPar, "h0") || 
          !strcmp(tempPar, "cosiota") || !strcmp(tempPar, "psi") ){
       UINT4 withphase = 1;
-      setVariable( data->dataParams, "withphase", &withphase );
+      LALInferenceSetVariable( data->dataParams, "withphase", &withphase );
     }
   }
   
   /* check for any parameters with Gaussian priors and rescale to mean value */
-  LALVariableItem *checkPrior = runState->currentParams->head;
+  LALInferenceVariableItem *checkPrior = runState->currentParams->head;
   for( ; checkPrior ; checkPrior = checkPrior->next ){
     REAL8 scale = 0.;
     REAL8 tempVar;
     
     REAL8 mu, sigma;
     
-    LALIFOData *datatemp = data;
+    LALInferenceIFOData *datatemp = data;
     
-    VariableType scaleType;
+    LALInferenceVariableType scaleType;
     CHAR tempParScale[VARNAME_MAX] = "";
     CHAR tempParPrior[VARNAME_MAX] = "";
 
     sprintf(tempParPrior,"%s_gaussian_mean",checkPrior->name);
 
-    if ( checkVariable(runState->priorArgs, tempParPrior) ){
+    if ( LALInferenceCheckVariable(runState->priorArgs, tempParPrior) ){
       tempVar = *(REAL8 *)checkPrior->value;
       
       /* get the mean and standard deviation of the Gaussian prior */
@@ -903,10 +904,10 @@ set.\n", propfile, tempPar);
         
       /* set scale factor in data structure */
       while( datatemp ){
-        scaleType = getVariableType( datatemp->dataParams, tempParScale );
-        removeVariable( datatemp->dataParams, tempParScale );
+        scaleType = LALInferenceGetVariableType( datatemp->dataParams, tempParScale );
+        LALInferenceRemoveVariable( datatemp->dataParams, tempParScale );
     
-        addVariable( datatemp->dataParams, tempParScale, &scale, scaleType,
+        LALInferenceAddVariable( datatemp->dataParams, tempParScale, &scale, scaleType,
                      PARAM_FIXED );
       
         datatemp = datatemp->next;
@@ -921,14 +922,14 @@ set.\n", propfile, tempPar);
 void setupLivePointsArray( LALInferenceRunState *runState ){
 /* Set up initial basket of live points, drawn from prior,
    by copying runState->currentParams to all entries in the array*/
-  UINT4 Nlive = (UINT4)*(INT4 *)getVariable(runState->algorithmParams,"Nlive");
+  UINT4 Nlive = (UINT4)*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   UINT4 i;
   REAL8Vector *logLs;
         
-  LALVariableItem *current;
+  LALInferenceVariableItem *current;
 
   /* Allocate the array */
-  runState->livePoints = XLALCalloc( Nlive, sizeof(LALVariables *) );
+  runState->livePoints = XLALCalloc( Nlive, sizeof(LALInferenceVariables *) );
   
   if( runState->livePoints == NULL ){
     fprintf(stderr,"Unable to allocate memory for %i live points\n",Nlive);
@@ -937,16 +938,16 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
 
   logLs = XLALCreateREAL8Vector( Nlive );
      
-  addVariable( runState->algorithmParams, "logLikelihoods",
+  LALInferenceAddVariable( runState->algorithmParams, "logLikelihoods",
                &logLs, REAL8Vector_t, PARAM_FIXED);
                
   fprintf(stdout, "Sprinkling %i live points, may take some time\n", Nlive);
   
   for( i=0; i<Nlive; i++){
-    runState->livePoints[i] = XLALCalloc( 1, sizeof(LALVariables) );
+    runState->livePoints[i] = XLALCalloc( 1, sizeof(LALInferenceVariables) );
                 
     /* Copy the param structure */
-    copyVariables( runState->currentParams, runState->livePoints[i] );
+    LALInferenceCopyVariables( runState->currentParams, runState->livePoints[i] );
     
     /* Sprinkle the varying points among prior */
     do{
@@ -957,7 +958,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
       
         sprintf(tempParPrior,"%s_gaussian_mean",current->name);
       
-        if( checkVariable( runState->priorArgs, tempParPrior ) ) gp = 1;
+        if( LALInferenceCheckVariable( runState->priorArgs, tempParPrior ) ) gp = 1;
         
         if( current->vary==PARAM_CIRCULAR || current->vary==PARAM_LINEAR )
         {
@@ -978,7 +979,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
                 tmp = min + (max-min)*gsl_rng_uniform( runState->GSLrandom );
               }
                                                        
-              setVariable( runState->livePoints[i], current->name, &tmp );
+              LALInferenceSetVariable( runState->livePoints[i], current->name, &tmp );
               break;
             }
             case REAL8_t:
@@ -997,7 +998,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
                 tmp = min + (max-min)*gsl_rng_uniform( runState->GSLrandom );
               }
                                                        
-              setVariable( runState->livePoints[i], current->name, &tmp );
+              LALInferenceSetVariable( runState->livePoints[i], current->name, &tmp );
               break;
             }
             case INT4_t:
@@ -1010,7 +1011,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
                                                        
               tmp = min + (max-min)*gsl_rng_uniform(runState->GSLrandom);
                                                        
-              setVariable( runState->livePoints[i], current->name, &tmp );
+              LALInferenceSetVariable( runState->livePoints[i], current->name, &tmp );
               break;
             }
             case INT8_t:
@@ -1023,7 +1024,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
                                                        
               tmp = min + (max-min)*gsl_rng_uniform(runState->GSLrandom);
                                                        
-              setVariable( runState->livePoints[i], current->name, &tmp);
+              LALInferenceSetVariable( runState->livePoints[i], current->name, &tmp);
               break;
             }
             default:
@@ -1048,8 +1049,8 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
 /*                     LIKELIHOOD AND PRIOR FUNCTIONS                         */
 /******************************************************************************/
 
-REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data,
-                             LALTemplateFunction *get_model ){
+REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *data,
+                             LALInferenceTemplateFunction *get_model ){
   REAL8 loglike = 0.; /* the log likelihood */
   REAL8 logOf2 = log( 2. );
   UINT4 i = 0;
@@ -1071,17 +1072,17 @@ REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data,
     REAL8Vector *sumData = NULL;
     UINT4Vector *chunkLengths = NULL;
 
-    sumData = *(REAL8Vector **)getVariable( data->dataParams, "sumData" );
-    chunkLengths = *(UINT4Vector **)getVariable( data->dataParams,
+    sumData = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "sumData" );
+    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams,
                                                  "chunkLength" );
-    chunkMin = *(INT4*)getVariable( data->dataParams, "chunkMin" );
-    chunkMax = *(INT4*)getVariable( data->dataParams, "chunkMax" );
+    chunkMin = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMin" );
+    chunkMax = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMax" );
   
-    exclamation = *(REAL8Vector **)getVariable( data->dataParams,
+    exclamation = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
                                                 "logFactorial" );
   
     /* copy model parameters to data parameters */
-    copyVariables( vars, data->modelParams );
+    LALInferenceCopyVariables( vars, data->modelParams );
   
     /* get pulsar model */
     get_model( data );
@@ -1147,10 +1148,10 @@ REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data,
 }
 
 
-REAL8 priorFunction( LALInferenceRunState *runState, LALVariables *params ){
-  LALIFOData *data = runState->data;
+REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *params ){
+  LALInferenceIFOData *data = runState->data;
   (void)runState;
-  LALVariableItem *item = params->head;
+  LALInferenceVariableItem *item = params->head;
   REAL8 min, max, mu, sigma, prior = 0, value = 0.;
   
   for(; item; item = item->next ){
@@ -1162,12 +1163,12 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALVariables *params ){
     if( item->vary == PARAM_FIXED || item->vary == PARAM_OUTPUT ){ continue; }
     
     sprintf(scalePar, "%s_scale", item->name);
-    scale = *(REAL8 *)getVariable( data->dataParams, scalePar );
+    scale = *(REAL8 *)LALInferenceGetVariable( data->dataParams, scalePar );
     
     if( item->vary == PARAM_LINEAR || item->vary == PARAM_CIRCULAR ){
       sprintf(priorPar, "%s_gaussian_mean", item->name);
       /* Check for a gaussian */
-      if ( checkVariable(runState->priorArgs, priorPar) ){
+      if ( LALInferenceCheckVariable(runState->priorArgs, priorPar) ){
         getGaussianPrior( runState->priorArgs, item->name, (void *)&mu, 
                           (void *)&sigma );
       
@@ -1198,7 +1199,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALVariables *params ){
 /******************************************************************************/
 /*                            MODEL FUNCTIONS                                 */
 /******************************************************************************/
-void get_pulsar_model( LALIFOData *data ){
+void get_pulsar_model( LALInferenceIFOData *data ){
   INT4 i = 0, length = 0;
   
   BinaryPulsarParams pars;
@@ -1210,123 +1211,123 @@ void get_pulsar_model( LALIFOData *data ){
   UINT4 withphase = 0; /* set this to 1 if the phase model needs calculating */
   
   /* set model parameters (including rescaling) */
-  rescale = *(REAL8*)getVariable( data->dataParams, "h0_scale" );
-  pars.h0 = *(REAL8*)getVariable( data->modelParams, "h0" ) * rescale;
-  rescale = *(REAL8*)getVariable( data->dataParams, "cosiota_scale" );
-  pars.cosiota = *(REAL8*)getVariable( data->modelParams, "cosiota" ) * rescale;
-  rescale = *(REAL8*)getVariable( data->dataParams, "psi_scale" );
-  pars.psi = *(REAL8*)getVariable( data->modelParams, "psi" ) * rescale;
-  rescale = *(REAL8*)getVariable( data->dataParams, "phi0_scale" );
-  pars.phi0 = *(REAL8*)getVariable( data->modelParams, "phi0" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "h0_scale" );
+  pars.h0 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "h0" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "cosiota_scale" );
+  pars.cosiota = *(REAL8*)LALInferenceGetVariable( data->modelParams, "cosiota" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "psi_scale" );
+  pars.psi = *(REAL8*)LALInferenceGetVariable( data->modelParams, "psi" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "phi0_scale" );
+  pars.phi0 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "phi0" ) * rescale;
   
   /* set the potentially variable parameters */
-  rescale = *(REAL8*)getVariable( data->dataParams, "pepoch_scale" );
-  pars.pepoch = *(REAL8*)getVariable( data->modelParams, "pepoch" ) * rescale;
-  rescale = *(REAL8*)getVariable( data->dataParams, "posepoch_scale" );
-  pars.posepoch = *(REAL8*)getVariable( data->modelParams, "posepoch" ) *
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "pepoch_scale" );
+  pars.pepoch = *(REAL8*)LALInferenceGetVariable( data->modelParams, "pepoch" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "posepoch_scale" );
+  pars.posepoch = *(REAL8*)LALInferenceGetVariable( data->modelParams, "posepoch" ) *
     rescale;
   
-  rescale = *(REAL8*)getVariable( data->dataParams, "ra_scale" );
-  pars.ra = *(REAL8*)getVariable( data->modelParams, "ra" ) * rescale;
-  rescale = *(REAL8*)getVariable( data->dataParams, "pmra_scale" );
-  pars.pmra = *(REAL8*)getVariable( data->modelParams, "pmra" ) * rescale;
-  rescale = *(REAL8*)getVariable( data->dataParams, "dec_scale" );
-  pars.dec = *(REAL8*)getVariable( data->modelParams, "dec" ) * rescale;
-  rescale = *(REAL8*)getVariable( data->dataParams, "pmdec_scale" );
-  pars.pmdec = *(REAL8*)getVariable( data->modelParams, "pmdec" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "ra_scale" );
+  pars.ra = *(REAL8*)LALInferenceGetVariable( data->modelParams, "ra" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "pmra_scale" );
+  pars.pmra = *(REAL8*)LALInferenceGetVariable( data->modelParams, "pmra" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "dec_scale" );
+  pars.dec = *(REAL8*)LALInferenceGetVariable( data->modelParams, "dec" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "pmdec_scale" );
+  pars.pmdec = *(REAL8*)LALInferenceGetVariable( data->modelParams, "pmdec" ) * rescale;
   
-  rescale = *(REAL8*)getVariable( data->dataParams, "f0_scale" );
-  pars.f0 = *(REAL8*)getVariable( data->modelParams, "f0" ) * rescale;
-  rescale = *(REAL8*)getVariable( data->dataParams, "f1_scale" );
-  pars.f1 = *(REAL8*)getVariable( data->modelParams, "f1" ) * rescale;
-  rescale = *(REAL8*)getVariable( data->dataParams, "f2_scale" );
-  pars.f2 = *(REAL8*)getVariable( data->modelParams, "f2" ) * rescale;
-  rescale = *(REAL8*)getVariable( data->dataParams, "f3_scale" );
-  pars.f3 = *(REAL8*)getVariable( data->modelParams, "f3" ) * rescale;
-  rescale = *(REAL8*)getVariable( data->dataParams, "f4_scale" );
-  pars.f4 = *(REAL8*)getVariable( data->modelParams, "f4" ) * rescale;
-  rescale = *(REAL8*)getVariable( data->dataParams, "f5_scale" );
-  pars.f5 = *(REAL8*)getVariable( data->modelParams, "f5" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "f0_scale" );
+  pars.f0 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "f0" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "f1_scale" );
+  pars.f1 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "f1" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "f2_scale" );
+  pars.f2 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "f2" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "f3_scale" );
+  pars.f3 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "f3" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "f4_scale" );
+  pars.f4 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "f4" ) * rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "f5_scale" );
+  pars.f5 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "f5" ) * rescale;
   
-  pars.model = *(CHAR**)getVariable( data->modelParams, "model" );
+  pars.model = *(CHAR**)LALInferenceGetVariable( data->modelParams, "model" );
 
   /* binary parameters */
   if( pars.model != NULL ){
-    rescale = *(REAL8*)getVariable( data->dataParams, "e_scale" );
-    pars.e = *(REAL8*)getVariable( data->modelParams, "e" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "w0_scale" );
-    pars.w0 = *(REAL8*)getVariable( data->modelParams, "w0" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "Pb_scale" );
-    pars.Pb = *(REAL8*)getVariable( data->modelParams, "Pb" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "x_scale" );
-    pars.x = *(REAL8*)getVariable( data->modelParams, "x" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "T0_scale" );
-    pars.T0 = *(REAL8*)getVariable( data->modelParams, "T0" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "e_scale" );
+    pars.e = *(REAL8*)LALInferenceGetVariable( data->modelParams, "e" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "w0_scale" );
+    pars.w0 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "w0" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "Pb_scale" );
+    pars.Pb = *(REAL8*)LALInferenceGetVariable( data->modelParams, "Pb" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "x_scale" );
+    pars.x = *(REAL8*)LALInferenceGetVariable( data->modelParams, "x" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "T0_scale" );
+    pars.T0 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "T0" ) * rescale;
     
-    rescale = *(REAL8*)getVariable( data->dataParams, "e2_scale" );
-    pars.e2 = *(REAL8*)getVariable( data->modelParams, "e2" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "w02_scale" );
-    pars.w02 = *(REAL8*)getVariable( data->modelParams, "w02" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "Pb2_scale" );
-    pars.Pb2 = *(REAL8*)getVariable( data->modelParams, "Pb2" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "x2_scale" );
-    pars.x2 = *(REAL8*)getVariable( data->modelParams, "x2" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "T02_scale" );
-    pars.T02 = *(REAL8*)getVariable( data->modelParams, "T02" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "e2_scale" );
+    pars.e2 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "e2" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "w02_scale" );
+    pars.w02 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "w02" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "Pb2_scale" );
+    pars.Pb2 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "Pb2" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "x2_scale" );
+    pars.x2 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "x2" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "T02_scale" );
+    pars.T02 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "T02" ) * rescale;
     
-    rescale = *(REAL8*)getVariable( data->dataParams, "e3_scale" );
-    pars.e3 = *(REAL8*)getVariable( data->modelParams, "e3" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "w03_scale" );
-    pars.w03 = *(REAL8*)getVariable( data->modelParams, "w03" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "Pb3_scale" );
-    pars.Pb3 = *(REAL8*)getVariable( data->modelParams, "Pb3" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "x3_scale" );
-    pars.x3 = *(REAL8*)getVariable( data->modelParams, "x3" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "T03_scale" );
-    pars.T03 = *(REAL8*)getVariable( data->modelParams, "T03" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "e3_scale" );
+    pars.e3 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "e3" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "w03_scale" );
+    pars.w03 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "w03" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "Pb3_scale" );
+    pars.Pb3 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "Pb3" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "x3_scale" );
+    pars.x3 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "x3" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "T03_scale" );
+    pars.T03 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "T03" ) * rescale;
     
-    rescale = *(REAL8*)getVariable( data->dataParams, "xpbdot_scale" );
-    pars.xpbdot = *(REAL8*)getVariable( data->modelParams, "xpbdot" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "xpbdot_scale" );
+    pars.xpbdot = *(REAL8*)LALInferenceGetVariable( data->modelParams, "xpbdot" ) * rescale;
     
-    rescale = *(REAL8*)getVariable( data->dataParams, "eps1_scale" );
-    pars.eps1 = *(REAL8*)getVariable( data->modelParams, "eps1" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "eps2_scale" );
-    pars.eps2 = *(REAL8*)getVariable( data->modelParams, "eps2" ) * rescale;   
-     rescale = *(REAL8*)getVariable( data->dataParams, "eps1dot_scale" );
-    pars.eps1dot = *(REAL8*)getVariable( data->modelParams, "eps1dot" ) *
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "eps1_scale" );
+    pars.eps1 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "eps1" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "eps2_scale" );
+    pars.eps2 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "eps2" ) * rescale;   
+     rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "eps1dot_scale" );
+    pars.eps1dot = *(REAL8*)LALInferenceGetVariable( data->modelParams, "eps1dot" ) *
       rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "eps2dot_scale" );
-    pars.eps2dot = *(REAL8*)getVariable( data->modelParams, "eps2dot" ) *
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "eps2dot_scale" );
+    pars.eps2dot = *(REAL8*)LALInferenceGetVariable( data->modelParams, "eps2dot" ) *
       rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "Tasc_scale" );
-    pars.Tasc = *(REAL8*)getVariable( data->modelParams, "Tasc" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "Tasc_scale" );
+    pars.Tasc = *(REAL8*)LALInferenceGetVariable( data->modelParams, "Tasc" ) * rescale;
     
-    rescale = *(REAL8*)getVariable( data->dataParams, "wdot_scale" );
-    pars.wdot = *(REAL8*)getVariable( data->modelParams, "wdot" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "gamma_scale" );
-    pars.gamma = *(REAL8*)getVariable( data->modelParams, "gamma" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "Pbdot_scale" );
-    pars.Pbdot = *(REAL8*)getVariable( data->modelParams, "Pbdot" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "xdot_scale" );
-    pars.xdot = *(REAL8*)getVariable( data->modelParams, "xdot" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "edot_scale" );
-    pars.edot = *(REAL8*)getVariable( data->modelParams, "edot" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "wdot_scale" );
+    pars.wdot = *(REAL8*)LALInferenceGetVariable( data->modelParams, "wdot" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "gamma_scale" );
+    pars.gamma = *(REAL8*)LALInferenceGetVariable( data->modelParams, "gamma" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "Pbdot_scale" );
+    pars.Pbdot = *(REAL8*)LALInferenceGetVariable( data->modelParams, "Pbdot" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "xdot_scale" );
+    pars.xdot = *(REAL8*)LALInferenceGetVariable( data->modelParams, "xdot" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "edot_scale" );
+    pars.edot = *(REAL8*)LALInferenceGetVariable( data->modelParams, "edot" ) * rescale;
     
-    rescale = *(REAL8*)getVariable( data->dataParams, "s_scale" );
-    pars.s = *(REAL8*)getVariable( data->modelParams, "s" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "dr_scale" );
-    pars.dr = *(REAL8*)getVariable( data->modelParams, "dr" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "dth_scale" );
-    pars.dth = *(REAL8*)getVariable( data->modelParams, "dth" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "a0_scale" );
-    pars.a0 = *(REAL8*)getVariable( data->modelParams, "a0" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "b0_scale" );
-    pars.b0 = *(REAL8*)getVariable( data->modelParams, "b0" ) * rescale; 
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "s_scale" );
+    pars.s = *(REAL8*)LALInferenceGetVariable( data->modelParams, "s" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "dr_scale" );
+    pars.dr = *(REAL8*)LALInferenceGetVariable( data->modelParams, "dr" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "dth_scale" );
+    pars.dth = *(REAL8*)LALInferenceGetVariable( data->modelParams, "dth" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "a0_scale" );
+    pars.a0 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "a0" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "b0_scale" );
+    pars.b0 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "b0" ) * rescale; 
 
-    rescale = *(REAL8*)getVariable( data->dataParams, "M_scale" );
-    pars.M = *(REAL8*)getVariable( data->modelParams, "M" ) * rescale;
-    rescale = *(REAL8*)getVariable( data->dataParams, "m2_scale" );
-    pars.m2 = *(REAL8*)getVariable( data->modelParams, "m2" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "M_scale" );
+    pars.M = *(REAL8*)LALInferenceGetVariable( data->modelParams, "M" ) * rescale;
+    rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "m2_scale" );
+    pars.m2 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "m2" ) * rescale;
   }
 
   get_amplitude_model( pars, data );
@@ -1336,7 +1337,7 @@ void get_pulsar_model( LALIFOData *data ){
      phase calculated using the initial (heterodyne) values of the phase
      parameters */
   
-  withphase = *(UINT4 *)getVariable( data->dataParams, "withphase" );
+  withphase = *(UINT4 *)LALInferenceGetVariable( data->dataParams, "withphase" );
   
   /* get difference in phase and perform extra heterodyne with it */ 
   if ( withphase && (dphi = get_phase_model( pars, data )) != NULL ){
@@ -1363,7 +1364,7 @@ void get_pulsar_model( LALIFOData *data ){
 }
 
 
-REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data ){
+REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOData *data ){
   static LALStatus status;
 
   INT4 i = 0, length = 0;
@@ -1475,7 +1476,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data ){
 }
 
 
-void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
+void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
   INT4 i = 0, length;
   
   REAL8 psteps, tsteps;
@@ -1492,11 +1493,11 @@ void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
   length = data->dataTimes->length;
   
   /* set lookup table parameters */
-  psteps = *(INT4*)getVariable( data->dataParams, "psiSteps" );
-  tsteps = *(INT4*)getVariable( data->dataParams, "timeSteps" );
+  psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
+  tsteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "timeSteps" );
   
-  LU_Fplus = *(gsl_matrix**)getVariable( data->dataParams, "LU_Fplus");
-  LU_Fcross = *(gsl_matrix**)getVariable( data->dataParams, "LU_Fcross");
+  LU_Fplus = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fplus");
+  LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fcross");
   
   sin_cos_LUT( &sinphi, &cosphi, pars.phi0 );
   
@@ -1543,7 +1544,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
 /* calculate the likelihood for the data just being noise - we still have a
 students-t likelihood, so this basically involves taking that likelihood and
 setting the signal to zero */
-REAL8 noise_only_model( LALIFOData *data ){
+REAL8 noise_only_model( LALInferenceIFOData *data ){
   REAL8 logL = 0.0;
   UINT4 i = 0;
   
@@ -1553,12 +1554,12 @@ REAL8 noise_only_model( LALIFOData *data ){
   INT4 chunkMin = 0, chunkMax = 0;
   REAL8 chunkLength = 0.;
   
-  chunkMin = *(INT4*)getVariable( data->dataParams, "chunkMin" );
-  chunkMax = *(INT4*)getVariable( data->dataParams, "chunkMax" );
+  chunkMin = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMin" );
+  chunkMax = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMax" );
   
-  chunkLengths = *(UINT4Vector **)getVariable( data->dataParams, 
+  chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, 
                                                "chunkLength" );
-  sumData = *(REAL8Vector **)getVariable( data->dataParams, "sumData" );
+  sumData = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "sumData" );
   
   for (i=0; i<chunkLengths->length; i++){
     chunkLength = (REAL8)chunkLengths->data[i];
@@ -1579,7 +1580,7 @@ REAL8 noise_only_model( LALIFOData *data ){
 /******************************************************************************/
 
 /* function to get the lengths of consecutive chunks of data */
-UINT4Vector *get_chunk_lengths( LALIFOData *data, INT4 chunkMax ){
+UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
   INT4 i = 0, j = 0, count = 0;
   INT4 length;
   
@@ -1625,14 +1626,14 @@ UINT4Vector *get_chunk_lengths( LALIFOData *data, INT4 chunkMax ){
 
 
 /* a function to sum over the data */
-REAL8Vector *sum_data( LALIFOData *data ){
+REAL8Vector *sum_data( LALInferenceIFOData *data ){
   INT4 chunkLength = 0, length = 0, i = 0, j = 0, count = 0;
   COMPLEX16 B;
   REAL8Vector *sumData = NULL; 
 
   UINT4Vector *chunkLengths;
   
-  chunkLengths = *(UINT4Vector **)getVariable( data->dataParams, 
+  chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, 
                                                "chunkLength" );
   
   length = data->dataTimes->length + 1 -
@@ -1712,9 +1713,9 @@ void rescaleOutput( LALInferenceRunState *runState ){
   CHAR *outfile, outfiletmp[256] = "";
   FILE *fp = NULL, *fptemp = NULL;
   
-  LALVariables *current=XLALCalloc(1,sizeof(LALVariables));
+  LALInferenceVariables *current=XLALCalloc(1,sizeof(LALInferenceVariables));
   
-  ProcessParamsTable *ppt = getProcParamVal(runState->commandLine,"--outfile");
+  ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
   if( !ppt ){
     fprintf(stderr,"Must specify --outfile <filename.dat>\n");
     exit(1);
@@ -1739,10 +1740,10 @@ void rescaleOutput( LALInferenceRunState *runState ){
  
   /* copy variables from runState to current (this seems to switch the order,
      which is required! */
-  copyVariables(runState->currentParams, current);
+  LALInferenceCopyVariables(runState->currentParams, current);
   
   do{
-    LALVariableItem *item = current->head;
+    LALInferenceVariableItem *item = current->head;
     
     CHAR line[1000];
     CHAR value[128] = "";
@@ -1772,7 +1773,7 @@ void rescaleOutput( LALInferenceRunState *runState ){
       sprintf(scalename, "%s_scale", item->name);
       
       if( strcmp(item->name, "model") ){
-        scalefac = *(REAL8 *)getVariable( runState->data->dataParams, 
+        scalefac = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, 
                                           scalename );
       }
       

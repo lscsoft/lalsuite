@@ -4,6 +4,7 @@
 
 #include <lal/LALInferenceNestedSampler.h>
 #include <lal/LALInferencePrior.h>
+#include <lal/LALInferenceLikelihood.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <float.h>
@@ -46,32 +47,32 @@ REAL8 ang_dist(REAL8 a1, REAL8 a2){
 }
 
 /* Calculate the variance of a modulo-2pi distribution */
-REAL8 ang_var(LALVariables **list,const char *pname, int N){
+REAL8 ang_var(LALInferenceVariables **list,const char *pname, int N){
 	int i=0;
 	REAL8 ang_mean=0.0;
 	REAL8 var=0.0;
 	REAL8 ms,mc;
 	/* Calc mean */
 	for(i=0,ms=0.0,mc=0.0;i<N;i++) {
-		ms+=sin(*(REAL8 *)getVariable(list[i],pname));
-		mc+=cos(*(REAL8 *)getVariable(list[i],pname));
+		ms+=sin(*(REAL8 *)LALInferenceGetVariable(list[i],pname));
+		mc+=cos(*(REAL8 *)LALInferenceGetVariable(list[i],pname));
 	}
 	ms/=N; mc/=N;
 	ang_mean=atan2(ms,mc);
 	ang_mean = ang_mean<0? 2.0*LAL_PI + ang_mean : ang_mean;
 	/* calc variance */
-	for(i=0;i<N;i++) var+=ang_dist(*(REAL8 *)getVariable(list[i],pname),ang_mean)*ang_dist(*(REAL8 *)getVariable(list[i],pname),ang_mean);
+	for(i=0;i<N;i++) var+=ang_dist(*(REAL8 *)LALInferenceGetVariable(list[i],pname),ang_mean)*ang_dist(*(REAL8 *)LALInferenceGetVariable(list[i],pname),ang_mean);
 	return(var/(REAL8)N);
 }
 
 /* estimateCovarianceMatrix reads the list of live points,
  and works out the covariance matrix of the varying parameters
  with varyType==PARAM_LINEAR */
-void calcCVM(gsl_matrix **cvm, LALVariables **Live, UINT4 Nlive)
+void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4 Nlive)
 {
 	UINT4 i,j,k;
 	UINT4 ND=0;
-	LALVariableItem *item,*k_item,*j_item;
+	LALInferenceVariableItem *item,*k_item,*j_item;
 	REAL8 *means;
 	
 	/* Find the number of dimensions which vary in the covariance matrix */
@@ -83,7 +84,7 @@ void calcCVM(gsl_matrix **cvm, LALVariables **Live, UINT4 Nlive)
 	{if(NULL==(*cvm=gsl_matrix_alloc(ND,ND))) {fprintf(stderr,"Unable to allocate matrix memory\n"); exit(1);}}
 	else {
 		if((*cvm)->size1!=(*cvm)->size2 || (*cvm)->size1!=ND)
-		{	fprintf(stderr,"ERROR: Matrix wrong size. Something has gone wrong in calcCVM\n");
+		{	fprintf(stderr,"ERROR: Matrix wrong size. Something has gone wrong in LALInferenceNScalcCVM\n");
 			exit(1);
 		}
 	}
@@ -153,15 +154,15 @@ void calcCVM(gsl_matrix **cvm, LALVariables **Live, UINT4 Nlive)
 	which contains a REAL8 array of likelihood values for the live
 	points.
  */
-void NestedSamplingAlgorithm(LALInferenceRunState *runState)
+void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 {
 	UINT4 iter=0,i,j,minpos;
-	UINT4 Nlive=*(UINT4 *)getVariable(runState->algorithmParams,"Nlive");
+	UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
 	UINT4 Nruns=1;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
 	REAL8 TOLERANCE=0.5;
 	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,deltaZ,H,logZnoise,dZ=0;
-	LALVariables *temp;
+	LALInferenceVariables *temp;
 	FILE *fpout=NULL;
 	gsl_matrix **cvm=calloc(1,sizeof(gsl_matrix *));
 	REAL8 dblmax=-DBL_MAX;
@@ -170,41 +171,41 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 verbose=0;
 	
         
-        if ( !checkVariable(runState->algorithmParams, "logZnoise" ) ){
+        if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
           if (runState->data->modelDomain == frequencyDomain )
             logZnoise=NullLogLikelihood(runState->data);
 	
-          addVariable(runState->algorithmParams,"logZnoise",&logZnoise,REAL8_t,PARAM_FIXED);
+          LALInferenceAddVariable(runState->algorithmParams,"logZnoise",&logZnoise,REAL8_t,PARAM_FIXED);
         }
         else{
           logZnoise = 
-            *(REAL8 *)getVariable(runState->algorithmParams,"logZnoise");
+            *(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
         }
         
-        logLikelihoods=(REAL8 *)(*(REAL8Vector **)getVariable(runState->algorithmParams,"logLikelihoods"))->data;
+        logLikelihoods=(REAL8 *)(*(REAL8Vector **)LALInferenceGetVariable(runState->algorithmParams,"logLikelihoods"))->data;
 
-	verbose=checkVariable(runState->algorithmParams,"verbose");
+	verbose=LALInferenceCheckVariable(runState->algorithmParams,"verbose");
 	
 	/* Operate on parallel runs if requested */
-	if(checkVariable(runState->algorithmParams,"Nruns"))
-		Nruns = *(UINT4 *) getVariable(runState->algorithmParams,"Nruns");
+	if(LALInferenceCheckVariable(runState->algorithmParams,"Nruns"))
+		Nruns = *(UINT4 *) LALInferenceGetVariable(runState->algorithmParams,"Nruns");
 
-	if(checkVariable(runState->algorithmParams,"tolerance"))
-		TOLERANCE = *(REAL8 *) getVariable(runState->algorithmParams,"tolerance");
+	if(LALInferenceCheckVariable(runState->algorithmParams,"tolerance"))
+		TOLERANCE = *(REAL8 *) LALInferenceGetVariable(runState->algorithmParams,"tolerance");
 
 	/* Check that necessary parameters are created */
-	if(!checkVariable(runState->algorithmParams,"logLmin"))
-		addVariable(runState->algorithmParams,"logLmin",&dblmax,REAL8_t,PARAM_OUTPUT);
+	if(!LALInferenceCheckVariable(runState->algorithmParams,"logLmin"))
+		LALInferenceAddVariable(runState->algorithmParams,"logLmin",&dblmax,REAL8_t,PARAM_OUTPUT);
 
-	if(!checkVariable(runState->algorithmParams,"accept_rate"))
-		addVariable(runState->algorithmParams,"accept_rate",&zero,REAL8_t,PARAM_OUTPUT);
+	if(!LALInferenceCheckVariable(runState->algorithmParams,"accept_rate"))
+		LALInferenceAddVariable(runState->algorithmParams,"accept_rate",&zero,REAL8_t,PARAM_OUTPUT);
 
 	/* Set up the proposal scale factor, for use in the multi-student jump step */
 	REAL8 propScale=0.1;
-	addVariable(runState->proposalArgs,"proposal_scale",&propScale,REAL8_t,PARAM_FIXED);
+	LALInferenceAddVariable(runState->proposalArgs,"proposal_scale",&propScale,REAL8_t,PARAM_FIXED);
 	
 	/* Open output file */
-	ProcessParamsTable *ppt=getProcParamVal(runState->commandLine,"--outfile");
+	ProcessParamsTable *ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
 	if(!ppt){
 		fprintf(stderr,"Must specify --outfile <filename.dat>\n");
 		exit(1);
@@ -232,8 +233,8 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		logLmax=logLtmp>logLmax? logLtmp : logLmax;
 	}
 	/* Add the covariance matrix for proposal distribution */
-	calcCVM(cvm,runState->livePoints,Nlive);
-	addVariable(runState->proposalArgs,"LiveCVM",cvm,gslMatrix_t,PARAM_OUTPUT);
+	LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
+	LALInferenceAddVariable(runState->proposalArgs,"LiveCVM",cvm,gslMatrix_t,PARAM_OUTPUT);
 	fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
 	do {
@@ -259,7 +260,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
 
 		/* Write out old sample */
-		fprintSample(fpout,runState->livePoints[minpos]);
+		LALInferencePrintSample(fpout,runState->livePoints[minpos]);
 		fprintf(fpout,"%lf\n",logLikelihoods[minpos]);
 
 		UINT4 itercounter=0;
@@ -267,13 +268,13 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		do{ /* This loop is here in case it is necessary to find a different sample */
 			/* Clone an old live point and evolve it */
 			while((j=gsl_rng_uniform_int(runState->GSLrandom,Nlive)==minpos)){};
-			copyVariables(runState->livePoints[j],runState->currentParams);
-			setVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
+			LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
+			LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
 			runState->evolve(runState);
-			copyVariables(runState->currentParams,runState->livePoints[minpos]);
+			LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);
 			logLikelihoods[minpos]=runState->currentLikelihood;
 			itercounter++;
-		}while(runState->currentLikelihood<=logLmin || *(REAL8 *)getVariable(runState->algorithmParams,"accept_rate")==0.0);
+		}while(runState->currentLikelihood<=logLmin || *(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
 
 		if (runState->currentLikelihood>logLmax)
 			logLmax=runState->currentLikelihood;
@@ -282,15 +283,15 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		logw=mean(logwarray,Nruns);
 		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
 		if(verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",
-									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)getVariable(runState->algorithmParams,"accept_rate")/(REAL8)itercounter
-									   ,H,H/log(2.0),logLmin,runState->currentLikelihood,logZ,dZ,10.0*log10(exp(1.0))*(logZ-*(REAL8 *)getVariable(runState->algorithmParams,"logZnoise")));
+									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")/(REAL8)itercounter
+									   ,H,H/log(2.0),logLmin,runState->currentLikelihood,logZ,dZ,10.0*log10(exp(1.0))*(logZ-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise")));
 
 		/* Flush output file */
 		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
 		/* Update the covariance matrix */
-		if(!(iter%(Nlive/4))) 	calcCVM(cvm,runState->livePoints,Nlive);
-		setVariable(runState->proposalArgs,"LiveCVM",(void *)cvm);
+		if(!(iter%(Nlive/4))) 	LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
+		LALInferenceSetVariable(runState->proposalArgs,"LiveCVM",(void *)cvm);
 	}
 	while(iter<Nlive ||  dZ> TOLERANCE);
 
@@ -318,7 +319,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]);
 		}
 
-		fprintSample(fpout,runState->livePoints[i]);
+		LALInferencePrintSample(fpout,runState->livePoints[i]);
 		fprintf(fpout,"%lf\n",logLikelihoods[i]);
 	}
 
@@ -335,17 +336,17 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
  evolve runState->currentParams to a new point with higher
  likelihood than currentLikelihood. Uses the MCMC method.
  */
-void NestedSamplingOneStep(LALInferenceRunState *runState)
+void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 {
-	LALVariables *newParams=NULL;
+	LALInferenceVariables *newParams=NULL;
 	UINT4 mcmc_iter=0,Naccepted=0;
-	UINT4 Nmcmc=*(UINT4 *)getVariable(runState->algorithmParams,"Nmcmc");
-	REAL8 logLmin=*(REAL8 *)getVariable(runState->algorithmParams,"logLmin");
+	UINT4 Nmcmc=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc");
+	REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
 	REAL8 logPriorOld,logPriorNew,logLnew;
-	newParams=calloc(1,sizeof(LALVariables));
+	newParams=calloc(1,sizeof(LALInferenceVariables));
         
         /* Make a copy of the parameters passed through currentParams */
-	copyVariables(runState->currentParams,newParams);
+	LALInferenceCopyVariables(runState->currentParams,newParams);
 	/* Evolve the sample until it is accepted */
 	logPriorOld=runState->prior(runState,runState->currentParams);
  
@@ -361,19 +362,19 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 		if(logLnew>logLmin){
 			Naccepted++;
 			logPriorOld=logPriorNew;
-			copyVariables(newParams,runState->currentParams);
+			LALInferenceCopyVariables(newParams,runState->currentParams);
 			runState->currentLikelihood=logLnew;
 		}
 	} while(mcmc_iter<Nmcmc);
         
-	destroyVariables(newParams);
+	LALInferenceDestroyVariables(newParams);
 	free(newParams);
 	REAL8 accept_rate=(REAL8)Naccepted/(REAL8)mcmc_iter;
-	setVariable(runState->algorithmParams,"accept_rate",&accept_rate);
+	LALInferenceSetVariable(runState->algorithmParams,"accept_rate",&accept_rate);
 	return;
 }
 
-void LALInferenceProposalPulsarNS(LALInferenceRunState *runState, LALVariables
+void LALInferenceProposalPulsarNS(LALInferenceRunState *runState, LALInferenceVariables
 *parameter)
 {
         REAL8 randnum;
@@ -391,11 +392,11 @@ void LALInferenceProposalPulsarNS(LALInferenceRunState *runState, LALVariables
 }
 
 
-void LALInferenceProposalNS(LALInferenceRunState *runState, LALVariables *parameter)
+void LALInferenceProposalNS(LALInferenceRunState *runState, LALInferenceVariables *parameter)
 {
 	
 	UINT4 nIFO=0;
-	LALIFOData *ifo=runState->data;
+	LALInferenceIFOData *ifo=runState->data;
 	REAL8 randnum;
 	REAL8 STUDENTTFRAC=0.8,
 	      DIFFEVFRAC=0.1,
@@ -583,13 +584,13 @@ XLALMultiStudentDeviates(
 }
 
 
-void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariables *parameter)
+void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALInferenceVariables *parameter)
 {
-	gsl_matrix *covMat=*(gsl_matrix **)getVariable(runState->proposalArgs,"LiveCVM");
+	gsl_matrix *covMat=*(gsl_matrix **)LALInferenceGetVariable(runState->proposalArgs,"LiveCVM");
 	
 	static LALStatus status;
 	
-	LALVariableItem *paraHead=NULL;
+	LALInferenceVariableItem *paraHead=NULL;
 	REAL4Vector  *step=NULL;
 	gsl_matrix *work=NULL; 
 	REAL8 aii, aij, ajj;
@@ -598,7 +599,7 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariab
 	UINT4 randomseed = gsl_rng_get(runState->GSLrandom);
 	
 
-	REAL8 proposal_scale=*(REAL8 *)getVariable(runState->proposalArgs,"proposal_scale");
+	REAL8 proposal_scale=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,"proposal_scale");
 	randParam=XLALCreateRandomParams(randomseed);
 	
 	/* set some values */
@@ -667,14 +668,14 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariab
 
 
 void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
-									   LALVariables *parameter)
+									   LALInferenceVariables *parameter)
 	{
-		LALVariables **Live=runState->livePoints;
+		LALInferenceVariables **Live=runState->livePoints;
 		int i=0,j=0,dim=0,same=1;
-		INT4 Nlive = *(INT4 *)getVariable(runState->algorithmParams,"Nlive");
-		LALVariableItem *paraHead=NULL;
-		LALVariableItem *paraA=NULL;
-		LALVariableItem *paraB=NULL;
+		INT4 Nlive = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
+		LALInferenceVariableItem *paraHead=NULL;
+		LALInferenceVariableItem *paraA=NULL;
+		LALInferenceVariableItem *paraB=NULL;
 		
 		dim = parameter->dimension;
 		/* Select two other samples A and B*/
@@ -742,7 +743,7 @@ void normalise(REAL8 vec[3]){
 
 void LALInferenceRotateSky(
 					   LALInferenceRunState *state,
-					   LALVariables *parameter
+					   LALInferenceVariables *parameter
 					   )
 { /* Function to rotate the current sample around the vector between two random detectors */
 	static LALStatus status;
@@ -755,13 +756,13 @@ void LALInferenceRotateSky(
 	UINT4 i,j;
 	
 	UINT4 nIFO=0;
-	LALIFOData *ifodata1=state->data;
+	LALInferenceIFOData *ifodata1=state->data;
 	while(ifodata1){
 		nIFO++;
 		ifodata1=ifodata1->next;
 	}
 	
-	LALIFOData **IFOs=calloc(nIFO,sizeof(LALIFOData *));
+	LALInferenceIFOData **IFOs=calloc(nIFO,sizeof(LALInferenceIFOData *));
 	for(i=0,ifodata1=state->data;i<nIFO;i++){
 		IFOs[i]=ifodata1;
 		ifodata1=ifodata1->next;
@@ -771,8 +772,8 @@ void LALInferenceRotateSky(
 	if(nIFO<2) return;
 	if(nIFO==2 && IFOs[0]==IFOs[1]) return;
 	
-	longi = *(REAL8 *)getVariable(parameter,"rightascension");
-	lat = *(REAL8 *)getVariable(parameter,"declination");
+	longi = *(REAL8 *)LALInferenceGetVariable(parameter,"rightascension");
+	lat = *(REAL8 *)LALInferenceGetVariable(parameter,"declination");
 	
 	/* Convert the RA/dec to geodetic coordinates, as the detectors use these */
 	SkyPosition geodetic,equatorial;
@@ -832,10 +833,10 @@ void LALInferenceRotateSky(
 	dtold = XLALTimeDelayFromEarthCenter(IFOs[0]->detector->location, longi, lat, &(IFOs[0]->epoch)); /* Compute time delay */
 	dtnew = XLALTimeDelayFromEarthCenter(IFOs[0]->detector->location, newlong, newlat, &(IFOs[0]->epoch)); /* Compute time delay */
 	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
-	deltat+=*(REAL8 *)getVariable(parameter,"time");
-	setVariable(parameter,"time",&deltat);	
-	setVariable(parameter,"declination",&newlat);
-	setVariable(parameter,"rightascension",&newlong);
+	deltat+=*(REAL8 *)LALInferenceGetVariable(parameter,"time");
+	LALInferenceSetVariable(parameter,"time",&deltat);	
+	LALInferenceSetVariable(parameter,"declination",&newlat);
+	LALInferenceSetVariable(parameter,"rightascension",&newlong);
 	/*fprintf(stderr,"Skyrotate: new pos = %lf %lf %lf => %lf %lf\n",new[0],new[1],new[2],newlong,asin(new[2]));*/
 	LALInferenceCyclicReflectiveBound(parameter,state->priorArgs);
 	free(IFOs);
@@ -845,7 +846,7 @@ void LALInferenceRotateSky(
 
 INT4 LALInferenceReflectDetPlane(
 							 LALInferenceRunState *state,
-							 LALVariables *parameter
+							 LALInferenceVariables *parameter
 							 )
 { /* Function to reflect a point on the sky about the plane of 3 detectors */
 	/* Returns -1 if not possible */
@@ -863,16 +864,16 @@ INT4 LALInferenceReflectDetPlane(
 	REAL8 detvec[3];
 	
 	UINT4 nIFO=0;
-	LALIFOData *ifodata1=state->data;
-	LALIFOData *ifodata2=NULL;
+	LALInferenceIFOData *ifodata1=state->data;
+	LALInferenceIFOData *ifodata2=NULL;
 	while(ifodata1){
 		nIFO++;
 		ifodata1=ifodata1->next;
 	}
 	
-	LALIFOData **IFOs=calloc(nIFO,sizeof(LALIFOData *));
+	LALInferenceIFOData **IFOs=calloc(nIFO,sizeof(LALInferenceIFOData *));
 	if(!IFOs) {
-		printf("Unable to allocate memory for %i LALIFOData *s\n",nIFO);
+		printf("Unable to allocate memory for %i LALInferenceIFOData *s\n",nIFO);
 		exit(1);
 	}
 	for(i=0,ifodata1=state->data;i<nIFO;i++){
@@ -901,8 +902,8 @@ INT4 LALInferenceReflectDetPlane(
 		  || IFOs[IFO3]==IFOs[IFO2]);
 	/*fprintf(stderr,"Using %s, %s and %s for plane\n",inputMCMC->ifoID[IFO1],inputMCMC->ifoID[IFO2],inputMCMC->ifoID[IFO3]);*/
 	
-	longi = *(REAL8 *)getVariable(parameter,"rightascension");
-	lat = *(REAL8 *)getVariable(parameter,"declination");
+	longi = *(REAL8 *)LALInferenceGetVariable(parameter,"rightascension");
+	lat = *(REAL8 *)LALInferenceGetVariable(parameter,"declination");
 	
 	double deltalong=0;
 	
@@ -942,16 +943,16 @@ INT4 LALInferenceReflectDetPlane(
 	REAL8 newLongSky=newLongGeo-deltalong;
 	
 	
-	setVariable(parameter,"rightascension",&newLongSky);
-	setVariable(parameter,"declination",&newLat);
+	LALInferenceSetVariable(parameter,"rightascension",&newLongSky);
+	LALInferenceSetVariable(parameter,"declination",&newLat);
 		
 	/* Compute change in tgeocentre for this change in sky location */
 	REAL8 dtold,dtnew,deltat;
 	dtold = XLALTimeDelayFromEarthCenter(IFOs[0]->detector->location, longi, lat, &(IFOs[0]->epoch)); /* Compute time delay */
 	dtnew = XLALTimeDelayFromEarthCenter(IFOs[0]->detector->location, newLongSky, newLat, &(IFOs[0]->epoch)); /* Compute time delay */
 	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
-	deltat+=*(REAL8 *)getVariable(parameter,"time");
-	setVariable(parameter,"time",&deltat);
+	deltat+=*(REAL8 *)LALInferenceGetVariable(parameter,"time");
+	LALInferenceSetVariable(parameter,"time",&deltat);
 	
 	LALInferenceCyclicReflectiveBound(parameter,state->priorArgs);
 	free(IFOs);
@@ -964,15 +965,15 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	/* Set up initial basket of live points, drawn from prior,
 	 by copying runState->currentParams to all entries in the array*/
 	
-	UINT4 Nlive=(UINT4)*(INT4 *)getVariable(runState->algorithmParams,"Nlive");
+	UINT4 Nlive=(UINT4)*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
 	UINT4 i;
 	REAL8Vector *logLs;
 	
-	LALVariableItem *current;
+	LALInferenceVariableItem *current;
 
 	/* Allocate the array */
 	/* runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *)); */
-	runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *));
+	runState->livePoints=XLALCalloc(Nlive,sizeof(LALInferenceVariables *));
 	if(runState->livePoints==NULL)
 	{
 		fprintf(stderr,"Unable to allocate memory for %i live points\n",Nlive);
@@ -981,14 +982,14 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 
 	logLs=XLALCreateREAL8Vector(Nlive);
 
-	addVariable(runState->algorithmParams,"logLikelihoods",&logLs,REAL8Vector_t,PARAM_FIXED);
+	LALInferenceAddVariable(runState->algorithmParams,"logLikelihoods",&logLs,REAL8Vector_t,PARAM_FIXED);
 	fprintf(stdout,"Sprinkling %i live points, may take some time\n",Nlive);
 	for(i=0;i<Nlive;i++)
 	{
-		runState->livePoints[i]=XLALCalloc(1,sizeof(LALVariables));
+		runState->livePoints[i]=XLALCalloc(1,sizeof(LALInferenceVariables));
                 
 		/* Copy the param structure */
-		copyVariables(runState->currentParams,runState->livePoints[i]);
+		LALInferenceCopyVariables(runState->currentParams,runState->livePoints[i]);
 		
 		/* Sprinkle the varying points among prior */
 		do{
@@ -1004,7 +1005,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 							getMinMaxPrior(runState->priorArgs,current->name, 
 										   (void *)&min,(void *)&max);
 							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-							setVariable(runState->livePoints[i],current->name,&tmp);
+							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
 							break;
 						}
 							
@@ -1015,7 +1016,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 							getMinMaxPrior(runState->priorArgs,current->name, 
 										   (void *)&min,(void *)&max);
 							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-							setVariable(runState->livePoints[i],current->name,&tmp);
+							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
 							break;
 						}
 						case INT4_t:
@@ -1025,7 +1026,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 							getMinMaxPrior(runState->priorArgs,current->name,
 										   (void *)&min,(void *)&max);
 							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-							setVariable(runState->livePoints[i],current->name,&tmp);
+							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
 							break;
 						}
 						case INT8_t:
@@ -1035,7 +1036,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 							getMinMaxPrior(runState->priorArgs,current->name,
 										   (void *)&min,(void *)&max);
 							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-							setVariable(runState->livePoints[i],current->name,&tmp);
+							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
 							break;
 						}
 						default:
