@@ -36,6 +36,11 @@ information.  The various time systems are discussed in [\ref esaa1992].
 #ifndef _DATE_H
 #define _DATE_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 /* the following two preprocessor defines are to include the prototypes for
  * gmtime_r() and asctime_r() from /usr/include/time.h
  * HOWEVER, they do no good if -ansi is used in gcc: warnings are generated
@@ -210,6 +215,7 @@ LALUnixDate;
 typedef struct
 tagLALPlaceAndGPS
 {
+    SWIGLAL_STRUCT_LALALLOC();
     LALDetector *p_detector;   /**< pointer to a detector */
     LIGOTimeGPS *p_gps;        /**< Pointer to a GPS time structure */
 }

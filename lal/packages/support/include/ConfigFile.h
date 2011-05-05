@@ -35,6 +35,11 @@
 #ifndef _CONFIGFILE_H  /* Double-include protection. */
 #define _CONFIGFILE_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALDatatypes.h>
 #include <lal/StringInput.h>
 
@@ -62,6 +67,7 @@ typedef enum {
 %warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALConfigVar::fmt;
 #endif /* SWIG */
 typedef struct tagLALConfigVar {
+  SWIGLAL_STRUCT_LALALLOC();
   const CHAR *secName;          /**< Section name within which to find varName.  May be NULL */
   const CHAR *varName;		/**< Variable-name to be read in the config-file */
   const CHAR *fmt;		/**< Format string for reading (<tt>sscanf()</tt>-style) */
@@ -76,6 +82,7 @@ typedef struct tagLALConfigVar {
  * This is used as the input structure in the config-variable reading routines.
  */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   TokenList *lines;	/**< list of pre-parsed data-file lines */
   BOOLEAN *wasRead;	/**< keep track of successfully read lines for strictness-checking */
 } LALParsedDataFile;

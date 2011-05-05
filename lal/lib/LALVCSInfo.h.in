@@ -22,6 +22,11 @@
 #ifndef _LALVCSINFO_H
 #define _LALVCSINFO_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALConfig.h>
 
 #ifdef __cplusplus
@@ -63,6 +68,7 @@ extern const char *const lalVCSStatus;
 #endif /* SWIG */
 typedef struct tagLALVCSInfo
 {
+  SWIGLAL_STRUCT_LALALLOC();
   const char *name;
   const char *version;
   const char *vcsId;

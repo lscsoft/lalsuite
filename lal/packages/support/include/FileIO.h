@@ -42,6 +42,11 @@ the \texttt{lalsupport} library.
 #ifndef _FILEIO_H
 #define _FILEIO_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -59,7 +64,11 @@ NRCSID( FILEIOH, "$Id$" );
 FILE *
 LALOpenDataFile( const char * );
 
-typedef struct tagLALFILE { int compression; void *fp; } LALFILE;
+typedef struct tagLALFILE {
+  SWIGLAL_STRUCT_LALALLOC();
+  int compression;
+  void *fp;
+} LALFILE;
 LALFILE *lalstdin(void);
 LALFILE *lalstdout(void);
 LALFILE *lalstderr(void);

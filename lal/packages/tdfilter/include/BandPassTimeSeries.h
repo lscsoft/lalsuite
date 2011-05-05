@@ -43,6 +43,11 @@ Further documentation is given in the individual routines' modules.
 #ifndef _BANDPASSTIMESERIES_H
 #define _BANDPASSTIMESERIES_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/IIRFilter.h>
 #include <lal/ZPGFilter.h>
@@ -92,6 +97,7 @@ transition band.  In the latter case, a nonzero filter order parameter
 ******************************************************* </lalLaTeX> */
 
 typedef struct tagPassBandParamStruc{
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR *name;
   INT4 nMax;
   REAL8 f1;

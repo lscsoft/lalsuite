@@ -48,6 +48,11 @@ detected at a given time.
 #ifndef _DETRESPONSE_H
 #define _DETRESPONSE_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALConstants.h>
@@ -126,6 +131,7 @@ The fields are:
 typedef struct
 tagLALSource
 {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR         name[LALNameLength];  /* name of source, e.g. catalog number */
   SkyPosition  equatorialCoords;     /* equatorial coordinates of source,
                                         in decimal RADIANS */
@@ -158,6 +164,7 @@ The fields are:
 typedef struct
 tagLALDetAndSource
 {
+  SWIGLAL_STRUCT_LALALLOC();
   LALDetector  *pDetector;
   LALSource    *pSource;
 }
@@ -185,6 +192,7 @@ one source at one instance in time. The fields are:
 typedef struct
 tagLALDetAMResponse
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL4 plus;
   REAL4 cross;
   REAL4 scalar;
@@ -218,6 +226,7 @@ structure.  However, \texttt{REAL4Vector}s may be conveniently converted to
 typedef struct
 tagLALDetAMResponseSeries
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL4TimeSeries *pPlus;
   REAL4TimeSeries *pCross;
   REAL4TimeSeries *pScalar;
@@ -245,6 +254,7 @@ This structure encapsulates time and sampling information for computing a
 typedef struct
 tagLALTimeIntervalAndNSample
 {
+  SWIGLAL_STRUCT_LALALLOC();
   LIGOTimeGPS     epoch;
   REAL8           deltaT;    /* sampling interval */
   UINT4           nSample;   /* number of samples */

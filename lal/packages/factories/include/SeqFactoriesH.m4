@@ -26,6 +26,11 @@ and DestroyVectorSequence.
 #ifndef _SEQFACTORIES_H
 #define _SEQFACTORIES_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 
@@ -90,6 +95,7 @@ vectors) and the length of each vector.  The fields are:
 </lalLaTeX> */
 
 typedef struct tagCreateVectorSequenceIn {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;
   UINT4 vectorLength;
 } CreateVectorSequenceIn;
@@ -115,6 +121,7 @@ index (the same for every array in the sequence).
 </lalLaTeX> */
 
 typedef struct tagCreateArraySequenceIn {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;
   UINT4Vector *dimLength;
 } CreateArraySequenceIn;
