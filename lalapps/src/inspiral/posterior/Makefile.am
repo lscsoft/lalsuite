@@ -26,7 +26,7 @@ lalinference_nest_SOURCES = LALInferenceNest.c
 
 if MPI
 mpi_progs = lalinference_test
-lalinference_test_SOURCES = InferenceTest.c LALInferenceMCMC.c
+lalinference_test_SOURCES = InferenceTest.c
 endif
 
 endif
