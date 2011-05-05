@@ -1002,7 +1002,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 						{
 							REAL4 tmp;
 							REAL4 min,max;
-							getMinMaxPrior(runState->priorArgs,current->name, 
+							LALInferenceGetMinMaxPrior(runState->priorArgs,current->name, 
 										   (void *)&min,(void *)&max);
 							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
 							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
@@ -1013,7 +1013,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 						{
 							REAL8 tmp;
 							REAL8 min,max;
-							getMinMaxPrior(runState->priorArgs,current->name, 
+							LALInferenceGetMinMaxPrior(runState->priorArgs,current->name, 
 										   (void *)&min,(void *)&max);
 							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
 							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
@@ -1023,7 +1023,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 						{
 							INT4 tmp;
 							INT4 min,max;
-							getMinMaxPrior(runState->priorArgs,current->name,
+							LALInferenceGetMinMaxPrior(runState->priorArgs,current->name,
 										   (void *)&min,(void *)&max);
 							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
 							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
@@ -1033,7 +1033,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 						{
 							INT8 tmp;
 							INT8 min,max;
-							getMinMaxPrior(runState->priorArgs,current->name,
+							LALInferenceGetMinMaxPrior(runState->priorArgs,current->name,
 										   (void *)&min,(void *)&max);
 							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
 							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);

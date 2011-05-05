@@ -751,7 +751,7 @@ UINT4 add_variable_scale_prior( LALInferenceVariables *var, LALInferenceVariable
     vary = PARAM_LINEAR;
     
     /* set the prior to a Gaussian prior with mean value and sigma */
-    addGaussianPrior( prior, name, (void *)&value, (void *)&sigma, REAL8_t );
+    LALInferenceAddGaussianPrior( prior, name, (void *)&value, (void *)&sigma, REAL8_t );
     
     nonzero = 1;
   }
@@ -831,7 +831,7 @@ set.\n", propfile, tempPar);
     /* if a Gaussian prior has already been defined (i.e. from the par file)
        remove this and overwrite with values from the propfile */
     if ( LALInferenceCheckVariable(runState->priorArgs, tempParPrior) )
-      removeGaussianPrior( runState->priorArgs, tempPar );
+      LALInferenceRemoveGaussianPrior( runState->priorArgs, tempPar );
     
     scale = high;
     
@@ -861,7 +861,7 @@ set.\n", propfile, tempPar);
                    PARAM_LINEAR );
     }
     /* Add the prior variables */
-    addMinMaxPrior( runState->priorArgs, tempPar, (void *)&low, (void *)&high,
+    LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, (void *)&low, (void *)&high,
                     type );
     
     /* if there is a phase parameter defined in the proposal then set withphase
@@ -893,7 +893,7 @@ set.\n", propfile, tempPar);
       tempVar = *(REAL8 *)checkPrior->value;
       
       /* get the mean and standard deviation of the Gaussian prior */
-      getGaussianPrior( runState->priorArgs, checkPrior->name, (void *)&mu,
+      LALInferenceGetGaussianPrior( runState->priorArgs, checkPrior->name, (void *)&mu,
                         (void *)&sigma );
       
       /* set the scale factor to be the mean value */
@@ -907,8 +907,8 @@ set.\n", propfile, tempPar);
       sigma /= scale;
       
       /* remove the Gaussian prior values and reset as scaled values */
-      removeGaussianPrior( runState->priorArgs, checkPrior->name );
-      addGaussianPrior( runState->priorArgs, checkPrior->name, 
+      LALInferenceRemoveGaussianPrior( runState->priorArgs, checkPrior->name );
+      LALInferenceAddGaussianPrior( runState->priorArgs, checkPrior->name, 
                         (void *)&mu, (void *)&sigma, checkPrior->type );
       
       sprintf(tempParScale, "%s_scale", checkPrior->name);
@@ -980,12 +980,12 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
               REAL4 min, max, mu, sigma;
                                                        
               if( gp ){
-                getGaussianPrior( runState->priorArgs, current->name, 
+                LALInferenceGetGaussianPrior( runState->priorArgs, current->name, 
                                   (void *)&mu, (void *)&sigma );
                 tmp = mu + gsl_ran_gaussian(runState->GSLrandom, (double)sigma);
               }
               else{
-                getMinMaxPrior( runState->priorArgs, current->name, 
+                LALInferenceGetMinMaxPrior( runState->priorArgs, current->name, 
                                 (void *)&min, (void *)&max );
                 tmp = min + (max-min)*gsl_rng_uniform( runState->GSLrandom );
               }
@@ -999,12 +999,12 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
               REAL8 min, max, mu, sigma;
                                                        
               if( gp ){
-                getGaussianPrior( runState->priorArgs, current->name, 
+                LALInferenceGetGaussianPrior( runState->priorArgs, current->name, 
                                   (void *)&mu, (void *)&sigma );
                 tmp = mu + gsl_ran_gaussian(runState->GSLrandom, (double)sigma);
               }
               else{
-                getMinMaxPrior( runState->priorArgs, current->name, 
+                LALInferenceGetMinMaxPrior( runState->priorArgs, current->name, 
                                 (void *)&min, (void *)&max );
                 tmp = min + (max-min)*gsl_rng_uniform( runState->GSLrandom );
               }
@@ -1017,7 +1017,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
               INT4 tmp;
               INT4 min,max;
                                                        
-              getMinMaxPrior( runState->priorArgs, current->name, (void *)&min,
+              LALInferenceGetMinMaxPrior( runState->priorArgs, current->name, (void *)&min,
                               (void *)&max );
                                                        
               tmp = min + (max-min)*gsl_rng_uniform(runState->GSLrandom);
@@ -1030,7 +1030,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
               INT8 tmp;
               INT8 min, max;
                                                        
-              getMinMaxPrior( runState->priorArgs, current->name, (void *)&min,
+              LALInferenceGetMinMaxPrior( runState->priorArgs, current->name, (void *)&min,
                               (void *)&max );
                                                        
               tmp = min + (max-min)*gsl_rng_uniform(runState->GSLrandom);
@@ -1179,7 +1179,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
       sprintf(priorPar, "%s_gaussian_mean", item->name);
       /* Check for a gaussian */
       if ( LALInferenceCheckVariable(runState->priorArgs, priorPar) ){
-        getGaussianPrior( runState->priorArgs, item->name, (void *)&mu, 
+        LALInferenceGetGaussianPrior( runState->priorArgs, item->name, (void *)&mu, 
                           (void *)&sigma );
       
        value = (*(REAL8 *)item->value) * scale;
@@ -1190,7 +1190,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
       }
       /* Otherwise use a flat prior */
       else{
-	getMinMaxPrior( runState->priorArgs, item->name, (void *)&min, 
+	LALInferenceGetMinMaxPrior( runState->priorArgs, item->name, (void *)&min, 
                       (void *)&max );
 
         if( (*(REAL8 *) item->value)*scale < min*scale || 

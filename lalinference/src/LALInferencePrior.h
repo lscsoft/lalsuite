@@ -43,15 +43,15 @@ double outerIntegrand(double M1, void *voData);
 double computePriorMassNorm(const double MMin, const double MMax, const double MTotMax, const double McMin, const double McMax, const double etaMin, const double etaMax);
 
 
-void addMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max, LALInferenceVariableType type);
-void getMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max);
-void removeMinMaxPrior(LALInferenceVariables *priorArgs, const char *name);
+void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max, LALInferenceVariableType type);
+void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max);
+void LALInferenceRemoveMinMaxPrior(LALInferenceVariables *priorArgs, const char *name);
 
-void addGaussianPrior(LALInferenceVariables *priorArgs, const char *name, void *mu,
+void LALInferenceAddGaussianPrior(LALInferenceVariables *priorArgs, const char *name, void *mu,
   void *sigma, LALInferenceVariableType type);
-void getGaussianPrior(LALInferenceVariables *priorArgs, const char *name, void *mu,
+void LALInferenceGetGaussianPrior(LALInferenceVariables *priorArgs, const char *name, void *mu,
   void *sigma);
-void removeGaussianPrior(LALInferenceVariables *priorArgs, const char *name);
+void LALInferenceRemoveGaussianPrior(LALInferenceVariables *priorArgs, const char *name);
 
 /** Check for types of standard prior */
 /** Check for a flat prior with a min and max */

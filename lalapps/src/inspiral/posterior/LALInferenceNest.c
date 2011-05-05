@@ -388,44 +388,44 @@ Parameter arguments:\n\
 	/* Set up the variable parameters */
 	tmpVal=log(mcMin+(mcMax-mcMin)/2.0);
 	/*LALInferenceAddVariable(currentParams, "chirpmass",    &tmpVal,    REAL8_t,	PARAM_LINEAR);
-    addMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		REAL8_t); */
+    LALInferenceAddMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		REAL8_t); */
 	LALInferenceAddVariable(currentParams,"logmc",&tmpVal, REAL8_t, PARAM_LINEAR);
 	logmcMin=log(mcMin); logmcMax=log(mcMax);
-	addMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		REAL8_t);
 
 	tmpVal=0.24;
 	LALInferenceAddVariable(currentParams, "massratio",       &tmpVal,             REAL8_t, PARAM_LINEAR);
-    addMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	REAL8_t);
+    LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	REAL8_t);
 	
     LALInferenceAddVariable(currentParams, "time",            &endtime   ,           REAL8_t, PARAM_LINEAR); 
 	tmpMin=endtime-0.5*dt; tmpMax=endtime+0.5*dt;
-	addMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   REAL8_t);	
+	LALInferenceAddMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   REAL8_t);	
 
 	tmpVal=1.0;
     LALInferenceAddVariable(currentParams, "phase",           &tmpVal,             REAL8_t, PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
-	addMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	tmpVal=logDmin+(logDmax-logDmin)/2.0;
 	LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, REAL8_t, PARAM_LINEAR);
-	addMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   REAL8_t);
 	
 	tmpVal=1.0;
 	LALInferenceAddVariable(currentParams, "rightascension",  &tmpVal,      REAL8_t, PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
-	addMinMaxPrior(priorArgs, "rightascension",     &tmpMin, &tmpMax,   REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "rightascension",     &tmpMin, &tmpMax,   REAL8_t);
 
 	LALInferenceAddVariable(currentParams, "declination",     &tmpVal,     REAL8_t, PARAM_CIRCULAR);
 	tmpMin=-LAL_PI/2.0; tmpMax=LAL_PI/2.0;
-	addMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   REAL8_t);
     
 	LALInferenceAddVariable(currentParams, "polarisation",    &tmpVal,     REAL8_t, PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
-	addMinMaxPrior(priorArgs, "polarisation",     &tmpMin, &tmpMax,   REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "polarisation",     &tmpMin, &tmpMax,   REAL8_t);
 	
  	LALInferenceAddVariable(currentParams, "inclination",     &tmpVal,            REAL8_t, PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
-	addMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	return;
 }

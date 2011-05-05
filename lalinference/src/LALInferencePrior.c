@@ -43,7 +43,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
                         continue;
 		else
 		{
-			getMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+			LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
 			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
 		}
 	}
@@ -105,7 +105,7 @@ LALInferenceVariables *priorArgs){
         paraHead->vary==PARAM_OUTPUT || 
         !LALInferenceCheckMinMaxPrior(priorArgs, paraHead->name) ) continue;
 
-    getMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
+    LALInferenceGetMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
          
     if(paraHead->vary==PARAM_CIRCULAR) /* For cyclic boundaries */
     {
@@ -149,7 +149,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 	
 	if(LALInferenceCheckVariable(params,"massratio")){
 		eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
-		getMinMaxPrior(priorParams, "massratio", (void *)&etaMin, (void *)&etaMax);
+		LALInferenceGetMinMaxPrior(priorParams, "massratio", (void *)&etaMin, (void *)&etaMax);
 	}
 	
 	/* Check boundaries */
@@ -159,7 +159,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 		if(item->vary==PARAM_FIXED || item->vary==PARAM_OUTPUT) continue;
 		else
 		{
-			getMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+			LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
 			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
 			else
 			{
@@ -176,7 +176,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 							else 
 								MTotMax=2.0*(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max"));
 
-							getMinMaxPrior(priorParams, "massratio", (void *)&etaMin, (void *)&etaMax);
+							LALInferenceGetMinMaxPrior(priorParams, "massratio", (void *)&etaMin, (void *)&etaMax);
 							norm = -log(computePriorMassNorm(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min"),
 														*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max"),
 														MTotMax, min, max, etaMin, etaMax));
@@ -429,7 +429,7 @@ double computePriorMassNorm(const double MMin, const double MMax, const double M
 
 
 /* Function to add the min and max values for the prior onto the priorArgs */
-void addMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max, LALInferenceVariableType type){
+void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max, LALInferenceVariableType type){
   char minName[VARNAME_MAX];
   char maxName[VARNAME_MAX];
   
@@ -442,7 +442,7 @@ void addMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *mi
 }
 
 /* Function to remove the min and max values for the prior onto the priorArgs */
-void removeMinMaxPrior(LALInferenceVariables *priorArgs, const char *name){
+void LALInferenceRemoveMinMaxPrior(LALInferenceVariables *priorArgs, const char *name){
   char minName[VARNAME_MAX];
   char maxName[VARNAME_MAX];
   
@@ -466,7 +466,7 @@ int LALInferenceCheckMinMaxPrior(LALInferenceVariables *priorArgs, const char *n
 }
 
 /* Get the min and max values of the prior from the priorArgs list, given a name */
-void getMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max)
+void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max)
 {
 		char minName[VARNAME_MAX];
 		char maxName[VARNAME_MAX];
@@ -492,7 +492,7 @@ int LALInferenceCheckGaussianPrior(LALInferenceVariables *priorArgs, const char 
 }
 
 /* Function to add the min and max values for the prior onto the priorArgs */
-void addGaussianPrior(LALInferenceVariables *priorArgs, const char *name, void *mu,
+void LALInferenceAddGaussianPrior(LALInferenceVariables *priorArgs, const char *name, void *mu,
   void *sigma, LALInferenceVariableType type){
   char meanName[VARNAME_MAX];
   char sigmaName[VARNAME_MAX];
@@ -506,7 +506,7 @@ void addGaussianPrior(LALInferenceVariables *priorArgs, const char *name, void *
 }
 
 /* Function to remove the min and max values for the prior onto the priorArgs */
-void removeGaussianPrior(LALInferenceVariables *priorArgs, const char *name){
+void LALInferenceRemoveGaussianPrior(LALInferenceVariables *priorArgs, const char *name){
   char meanName[VARNAME_MAX];
   char sigmaName[VARNAME_MAX];
   
@@ -520,7 +520,7 @@ void removeGaussianPrior(LALInferenceVariables *priorArgs, const char *name){
 
 /* Get the min and max values of the prior from the priorArgs list, given a name
 */
-void getGaussianPrior(LALInferenceVariables *priorArgs, const char *name, void *mu,
+void LALInferenceGetGaussianPrior(LALInferenceVariables *priorArgs, const char *name, void *mu,
   void *sigma)
 {
   char meanName[VARNAME_MAX];
