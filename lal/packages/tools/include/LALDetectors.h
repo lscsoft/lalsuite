@@ -465,6 +465,9 @@ LALDetector;
 
 /** Pre-existing detectors. */
 extern const LALDetector lalCachedDetectors[LAL_NUM_DETECTORS];
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL_GLOBAL_CONST_FIXED_1DARRAY_ELEM(LALDetector, lalCachedDetectors);
+#endif
 
 
 
