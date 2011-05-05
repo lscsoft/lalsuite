@@ -19,11 +19,16 @@ endif
 
 if LALPULSAR
 if LALINFERENCE
-pulsar_progs = lalinference_test lalinference_nest ChiSquare_test #lalinference_mcmcmpi
-lalinference_test_SOURCES = InferenceTest.c LALInferenceMCMC.c
+pulsar_progs = lalinference_nest ChiSquare_test #lalinference_mcmcmpi
 ChiSquare_test_SOURCES = ChiSquare_test.c
 lalinference_nest_SOURCES = LALInferenceNest.c
 #lalinference_mcmcmpi_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceMCMCMPI.c LALInferenceMCMCMPISampler.c LALInferencePrior.c
+
+if MPI
+mpi_progs = lalinference_test
+lalinference_test_SOURCES = InferenceTest.c LALInferenceMCMC.c
+endif
+
 endif
 endif
 
@@ -32,7 +37,7 @@ lalapps_followupMcmc_SOURCES = followupMcmc.c
 endif
 endif
 
-bin_PROGRAMS = $(metaio_progs) $(frame_progs) $(pulsar_progs)
+bin_PROGRAMS = $(metaio_progs) $(frame_progs) $(pulsar_progs) $(mpi_progs)
 noinst_PROGRAMS = $(td_test_progs)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps

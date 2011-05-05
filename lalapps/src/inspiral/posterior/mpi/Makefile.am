@@ -5,16 +5,15 @@ CC = $(MPICC)
 AM_CFLAGS = -std=gnu99
 LIBS += $(MPILIBS)
 
+if LALINFERENCE
 if MPI
 mpi_progs = lalinference_mcmc
-lalinference_mcmc_SOURCES = \
-	$(srcdir)/../LALInference.c \
-	$(srcdir)/../LALInferenceReadData.c \
-	$(srcdir)/../LALInferenceTemplate.c \
-	$(srcdir)/../LALInferenceMCMC.c \
-	$(srcdir)/../LALInferenceMCMCSampler.c \
-	$(srcdir)/../LALInferencePrior.c
 endif
+endif
+
+lalinference_mcmc_SOURCES = \
+	$(srcdir)/../LALInferenceMCMC.c \
+	$(srcdir)/../LALInferenceMCMCSampler.c 
 
 bin_PROGRAMS = $(mpi_progs)
 

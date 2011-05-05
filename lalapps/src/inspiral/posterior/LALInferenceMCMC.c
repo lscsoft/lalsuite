@@ -35,7 +35,7 @@
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/TimeSeries.h>
 #include "LALInferenceMCMCSampler.h"
-#include "LALInferencePrior.h"
+#include <lal/LALInferencePrior.h>
 
 
 #include <mpi.h>
