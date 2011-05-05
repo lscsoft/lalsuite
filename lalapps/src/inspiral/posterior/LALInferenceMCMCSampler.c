@@ -132,9 +132,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 //	}
 	
 	
-	if (nChain==1){ 
-		tempLadder[0]=1.0;
-		tempMax=1.0;
+	if (nChain==1){
+    ppt=getProcParamVal(runState->commandLine,"--tempMax");
+    if(ppt){
+		  tempLadder[0]=tempMax;
+    }else{
+      tempLadder[0]=1.0;
+		  tempMax=1.0;
+    }
 	}
 	else {
 		ppt = getProcParamVal(runState->commandLine, "--inverseLadder");
