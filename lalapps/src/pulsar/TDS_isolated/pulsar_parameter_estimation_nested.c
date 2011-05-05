@@ -1638,7 +1638,7 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
 /* function to use change point analysis to chop up and remerge the data to
    find stationary chunks (i.e. lengths of data which look like they have the
    same statistics e.g. the same standard deviation) */
-UINT4Vector *chop_n_merge( LALIFOData *data, INT4 chunkMin ){
+UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin ){
   UINT4 j = 0;
   
   UINT4Vector *chunkLengths = NULL;
