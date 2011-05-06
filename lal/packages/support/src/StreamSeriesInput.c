@@ -1,18 +1,18 @@
-/**************************** <lalVerbatim file="StreamSeriesInputCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+*/
 
-/********************************************************** <lalLaTeX>
+/**
 
-\subsection{Module \texttt{StreamSeriesInput.c}}
-\label{ss:StreamSeriesInput.c}
+\heading{Module \ref StreamSeriesInput.c}
+\latexonly\label{ss_StreamSeriesInput_c}\endlatexonly
 
 Converts an input stream into a time or frequency series.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\begin{verbatim}
+\heading{Prototypes}
+
+\code
 void
 LAL<typecode>ReadTSeries( LALStatus            *stat,
                           <datatype>TimeSeries *series,
@@ -32,101 +32,101 @@ void
 LAL<typecode>ReadFSeries( LALStatus                 *stat,
                           <datatype>FrequencySeries *series,
                           FILE                      *stream )
-\end{verbatim}
+\endcode
 
-\idx{LALI2ReadTimeSeries()}
-\idx{LALI4ReadTimeSeries()}
-\idx{LALI8ReadTimeSeries()}
-\idx{LALU2ReadTimeSeries()}
-\idx{LALU4ReadTimeSeries()}
-\idx{LALU8ReadTimeSeries()}
-\idx{LALSReadTimeSeries()}
-\idx{LALDReadTimeSeries()}
-\idx{LALCReadTimeSeries()}
-\idx{LALZReadTimeSeries()}
 
-\idx{LALI2ReadTimeVectorSeries()}
-\idx{LALI4ReadTimeVectorSeries()}
-\idx{LALI8ReadTimeVectorSeries()}
-\idx{LALU2ReadTimeVectorSeries()}
-\idx{LALU4ReadTimeVectorSeries()}
-\idx{LALU8ReadTimeVectorSeries()}
-\idx{LALSReadTimeVectorSeries()}
-\idx{LALDReadTimeVectorSeries()}
-\idx{LALCReadTimeVectorSeries()}
-\idx{LALZReadTimeVectorSeries()}
 
-\idx{LALI2ReadTimeArraySeries()}
-\idx{LALI4ReadTimeArraySeries()}
-\idx{LALI8ReadTimeArraySeries()}
-\idx{LALU2ReadTimeArraySeries()}
-\idx{LALU4ReadTimeArraySeries()}
-\idx{LALU8ReadTimeArraySeries()}
-\idx{LALSReadTimeArraySeries()}
-\idx{LALDReadTimeArraySeries()}
-\idx{LALCReadTimeArraySeries()}
-\idx{LALZReadTimeArraySeries()}
 
-\idx{LALI2ReadFrequencySeries()}
-\idx{LALI4ReadFrequencySeries()}
-\idx{LALI8ReadFrequencySeries()}
-\idx{LALU2ReadFrequencySeries()}
-\idx{LALU4ReadFrequencySeries()}
-\idx{LALU8ReadFrequencySeries()}
-\idx{LALSReadFrequencySeries()}
-\idx{LALDReadFrequencySeries()}
-\idx{LALCReadFrequencySeries()}
-\idx{LALZReadFrequencySeries()}
 
-\subsubsection*{Description}
 
-These routines parse an input stream \verb@*stream@ to fill in the
-data and metadata fields of a time or frequency series \verb@*series@.
-The field \verb@series->data@ must be \verb@NULL@, so that it can be
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\heading{Description}
+
+These routines parse an input stream <tt>*stream</tt> to fill in the
+data and metadata fields of a time or frequency series <tt>*series</tt>.
+The field <tt>series->data</tt> must be \c NULL, so that it can be
 created and filled by the routine.  The other fields may be
 initialized or not; they will be overwritten by metadata read from
-\verb@*stream@.  If an error occurs, \verb@*series@ will be left
-unchanged, but \verb@*stream@ will have been read up to the point
+<tt>*stream</tt>.  If an error occurs, <tt>*series</tt> will be left
+unchanged, but <tt>*stream</tt> will have been read up to the point
 where the error occured.
 
 For each of these prototype templates there are in fact 10 separate
-routines corresponding to all the atomic datatypes \verb@<datatype>@
-(except \verb@CHAR@) referred to by \verb@<typecode>@:
-\begin{center}
-\begin{tabular}{|c@{\qquad}c|c@{\qquad}c|}
-\hline
-\tt <typecode> & \tt <datatype> & \tt <typecode> & \tt <datatype> \\
-\hline
-\tt I2 & \tt  INT2 & \tt U2 & \tt    UINT2  \\
-\tt I4 & \tt  INT4 & \tt U4 & \tt    UINT4  \\
-\tt I8 & \tt  INT8 & \tt U8 & \tt    UINT8  \\
-\tt  S & \tt REAL4 & \tt  C & \tt COMPLEX8  \\
-\tt  D & \tt REAL8 & \tt  Z & \tt COMPLEX16 \\
-\hline
-\end{tabular}
-\end{center}
+routines corresponding to all the atomic datatypes <tt><datatype></tt>
+(except \c CHAR) referred to by <tt><typecode></tt>:
 
-\paragraph{Format for \texttt{*stream}:} The input stream is assumed
+<table><tr><td>
+
+\tt <typecode></td><td>\tt <datatype></td><td>\tt <typecode></td><td>\tt <datatype></td></tr>
+<tr><td>
+\tt I2</td><td>\tt  INT2</td><td>\tt U2</td><td>\tt    UINT2</td></tr>
+<tr><td>\tt I4</td><td>\tt  INT4</td><td>\tt U4</td><td>\tt    UINT4</td></tr>
+<tr><td>\tt I8</td><td>\tt  INT8</td><td>\tt U8</td><td>\tt    UINT8</td></tr>
+<tr><td>\tt  S</td><td>\tt REAL4</td><td>\tt  C</td><td>\tt COMPLEX8</td></tr>
+<tr><td>\tt  D</td><td>\tt REAL8</td><td>\tt  Z</td><td>\tt COMPLEX16</td></tr>
+<tr><td>
+</td></tr></table>
+
+
+\heading{Format for <tt>*stream</tt>:} The input stream is assumed
 to be a text stream (ASCII) consisting of a header containing metadata
 followed by numerical data in standard integer or floating-point
-format, as recognized by the routines in \verb@StringConvert.c@.  The
-header consists of zero or more lines beginning with a \verb@'#'@
+format, as recognized by the routines in \ref StringConvert.c.  The
+header consists of zero or more lines beginning with a <tt>'#'</tt>
 character, followed by a metadata field name and value in the format:
 
-\medskip
-\begin{tabular}{l}
-\verb@# @\textit{fieldname}\verb@=@\textit{value}
-\end{tabular}
-\medskip
 
-\noindent The \verb@=@ sign in this format is standard but optional;
+<table><tr><td>
+<tt># </tt>\e fieldname<tt>=</tt>\e value
+</td></tr></table>
+
+
+The <tt>=</tt> sign in this format is standard but optional;
 it may be replaced or surrounded with any amount of any whitespace
-except a newline \verb@'\n'@.  If \textit{fieldname} is unrecognized,
-it is ignored; if it is recognized, then \textit{value} must be in a
+except a newline <tt>'\n'</tt>.  If \e fieldname is unrecognized,
+it is ignored; if it is recognized, then \e value must be in a
 suitable format for the field type, as described below.  Blank lines,
-or lines containing just a \verb@#@ character, are skipped.  Once a
+or lines containing just a <tt>#</tt> character, are skipped.  Once a
 line is encountered that contains non-whitespace characters and does
-not start with \verb@'#'@, that line is assumed to be the beginning of
+not start with <tt>'#'</tt>, that line is assumed to be the beginning of
 the numerical data.  From that point on, all non-whitespace characters
 must be part of parseable numbers; no more comments are permitted
 (although blank lines will still be skipped).
@@ -135,182 +135,182 @@ If a metadata field appears twice in the header, the later one takes
 precedence.  At present these routines do not track which fields have
 been previously assigned, so no warnings or errors are generated.
 
-How the data is packed into the \verb@series->data@ structure depends
+How the data is packed into the <tt>series->data</tt> structure depends
 on what metadata has been provided, as described below.
 
-\paragraph{Required, conditional, and optional metadata:} The input
+\heading{Required, conditional, and optional metadata:} The input
 stream need not contain a complete set of metadata, allowing some
-metadata to be read from \verb@*stream@ and others to be set
+metadata to be read from <tt>*stream</tt> and others to be set
 elsewhere.  For each type of series, some metadata will be
-\emph{required}, and the routine will abort if the metadata is not
-found.  Other metadata are \emph{conditional}, meaning that the
+\e required, and the routine will abort if the metadata is not
+found.  Other metadata are \e conditional, meaning that the
 routine will operate differently depending on whether or not these
-metadata were found.  The remaining metadata are \emph{optional}; if
-they are not found in \verb@*stream@, they will be left unchanged.
+metadata were found.  The remaining metadata are \e optional; if
+they are not found in <tt>*stream</tt>, they will be left unchanged.
 The recognized metadata fields are listed below.
 
-\medskip\noindent\verb@<datatype>TimeSeries@:
-\begin{description}
-\item[Required fields:] none
-\item[Conditional fields:] \verb@length@
-\item[Optional fields:] \verb@name@, \verb@epoch@, \verb@deltaT@,
-\verb@f0@, \verb@sampleUnits@, \verb@datatype@
-\end{description}
+<tt><datatype>TimeSeries</tt>:
+<dl>
+<dt>Required fields:</dt><dd> none</dd>
+<dt>Conditional fields:</dt><dd> \c length</dd>
+<dt>Optional fields:</dt><dd> \c name, \c epoch, \c deltaT,
+\c f0, \c sampleUnits, \c datatype</dd>
+</dl>
 
-\medskip\noindent\verb@<datatype>TimeVectorSeries@:
-\begin{description}
-\item[Required fields:] none
-\item[Conditional fields:] \verb@length@, \verb@vectorLength@
-\item[Optional fields:] \verb@name@, \verb@epoch@, \verb@deltaT@,
-\verb@f0@, \verb@sampleUnits@, \verb@datatype@
-\end{description}
+<tt><datatype>TimeVectorSeries</tt>:
+<dl>
+<dt>Required fields:</dt><dd> none</dd>
+<dt>Conditional fields:</dt><dd> \c length, \c vectorLength</dd>
+<dt>Optional fields:</dt><dd> \c name, \c epoch, \c deltaT,
+\c f0, \c sampleUnits, \c datatype</dd>
+</dl>
 
-\medskip\noindent\verb@<datatype>TimeArraySeries@:
-\begin{description}
-\item[Required fields:] \verb@dimLength@
-\item[Conditional fields:] \verb@length@, \verb@arrayDim@
-\item[Optional fields:] \verb@name@, \verb@epoch@, \verb@deltaT@,
-\verb@f0@, \verb@sampleUnits@, \verb@datatype@
-\end{description}
+<tt><datatype>TimeArraySeries</tt>:
+<dl>
+<dt>Required fields:</dt><dd> \c dimLength</dd>
+<dt>Conditional fields:</dt><dd> \c length, \c arrayDim</dd>
+<dt>Optional fields:</dt><dd> \c name, \c epoch, \c deltaT,
+\c f0, \c sampleUnits, \c datatype</dd>
+</dl>
 
-\medskip\noindent\verb@<datatype>FrequencySeries@:
-\begin{description}
-\item[Required fields:] none
-\item[Conditional fields:] \verb@length@
-\item[Optional fields:] \verb@name@, \verb@epoch@, \verb@deltaT@,
-\verb@f0@, \verb@deltaF@, \verb@sampleUnits@, \verb@datatype@
-\end{description}
+<tt><datatype>FrequencySeries</tt>:
+<dl>
+<dt>Required fields:</dt><dd> none</dd>
+<dt>Conditional fields:</dt><dd> \c length</dd>
+<dt>Optional fields:</dt><dd> \c name, \c epoch, \c deltaT,
+\c f0, \c deltaF, \c sampleUnits, \c datatype</dd>
+</dl>
 
 Below we describe the required format for the field values, as well as
 what occurs if a conditional field is or isn't present.
 
-\bigskip\noindent\textit{Required fields:}
-\begin{description}
-\item[\texttt{dimLength}] (\verb@TimeArraySeries@ only):
-\textit{value} consists of a sequence of \verb@UINT4@s separated by
-whitespace (but \emph{not} a newline \verb@'\n'@).  These data are
-stored in \verb@series->data->dimLength@: the number of integers gives
+\bigskip<em>Required fields:</em>
+<dl>
+<dt>\c dimLength</dt><dd> (\c TimeArraySeries only):
+\e value consists of a sequence of \c UINT4s separated by
+whitespace (but \e not a newline <tt>'\n'</tt>).  These data are
+stored in <tt>series->data->dimLength</tt>: the number of integers gives
 the number of array indecies, while the value of each integer gives
-the dimension of the corresponding array index.
-\end{description}
+the dimension of the corresponding array index.</dd>
+</dl>
 
-\medskip\noindent\textit{Conditional fields:}
-\begin{description}
-\item[\texttt{arrayDim}] (\verb@TimeArraySeries@ only): \textit{value}
-is a single \verb@UINT4@, to be stored in
-\verb@series->data->arrayDim@.  This must equal the product of the
-index ranges in \verb@dimLength@, above, or an error is returned.  If
-not given, the \verb@arrayDim@ field will be set equal to the product
-of the index ranges in \verb@dimLength@.  (The \verb@arrayDim@ and
-\verb@dimLength@ fields can appear in any order in \verb@*stream@;
-checking is done only after all header lines have been read.)
+<em>Conditional fields:</em>
+<dl>
+<dt>\c arrayDim</dt><dd> (\c TimeArraySeries only): \e value
+is a single \c UINT4, to be stored in
+<tt>series->data->arrayDim</tt>.  This must equal the product of the
+index ranges in \c dimLength, above, or an error is returned.  If
+not given, the \c arrayDim field will be set equal to the product
+of the index ranges in \c dimLength.  (The \c arrayDim and
+\c dimLength fields can appear in any order in <tt>*stream</tt>;
+checking is done only after all header lines have been read.)</dd>
 
-\item[\texttt{vectorLength}] (\verb@TimeVectorSeries@ only):
-\textit{value} is a single \verb@UINT4@, to be stored in
-\verb@series->data->vectorLength@.  If not specified in the header
-portion of \verb@*stream@, it will be taken to be the number of data
-on the \emph{first} line of the data portion of \verb@*stream@, or
+<dt>\c vectorLength</dt><dd> (\c TimeVectorSeries only):
+\e value is a single \c UINT4, to be stored in
+<tt>series->data->vectorLength</tt>.  If not specified in the header
+portion of <tt>*stream</tt>, it will be taken to be the number of data
+on the \e first line of the data portion of <tt>*stream</tt>, or
 half the number of real data for a complex-valued
-\verb@TimeVectorSeries@; if an odd number of real data are found on
-the first line of a complex \verb@TimeVectorSeries@, then an error is
-returned.
+\c TimeVectorSeries; if an odd number of real data are found on
+the first line of a complex \c TimeVectorSeries, then an error is
+returned.</dd>
 
-\item[\texttt{length}:] \textit{value} is a single \verb@UINT4@, to be
-stored in \verb@series->data->length@.  If it is specified in the
-header portion of \verb@*stream@, data will be read until
-\verb@length@ is reached.  Otherwise, \verb@*stream@ will be read to
-its end or until an unparseable character is read, and \verb@length@
+<dt>\c length:</dt><dd> \e value is a single \c UINT4, to be
+stored in <tt>series->data->length</tt>.  If it is specified in the
+header portion of <tt>*stream</tt>, data will be read until
+\c length is reached.  Otherwise, <tt>*stream</tt> will be read to
+its end or until an unparseable character is read, and \c length
 will then be set accordingly.  (If parsing stops in the middle of
 filling a complex, vector, or array valued element, the partly-read
-element is discarded.)
-\end{description}
+element is discarded.)</dd>
+</dl>
 
-\medskip\noindent\textit{Optional fields:}
-\begin{description}
-\item[\texttt{name}:] \textit{value} is a string surrounded by quotes
-\verb@"@, which is parsed in the manner of a string literal in C: it
-may contain ordinary printable characters (except \verb@"@ and
-\verb@\@), escape sequences (such as \verb@\t@ for tab, \verb@\n@ for
-newline, or \verb@\\@ and \verb@\"@ for literal backslash and quote
-characters), and octal or hexadecimal codes (\verb@\@$ooo$ or
-\verb@\x@$hh$ respectively) for arbitrary bytes.  Unlike in C,
+<em>Optional fields:</em>
+<dl>
+<dt>\c name:</dt><dd> \e value is a string surrounded by quotes
+<tt>"</tt>, which is parsed in the manner of a string literal in C: it
+may contain ordinary printable characters (except <tt>"</tt> and
+<tt>\</tt>), escape sequences (such as <tt>\t</tt> for tab, <tt>\n</tt> for
+newline, or <tt>\\</tt> and <tt>\"</tt> for literal backslash and quote
+characters), and octal or hexadecimal codes (<tt>\</tt>\f$ooo\f$ or
+<tt>\x</tt>\f$hh\f$ respectively) for arbitrary bytes.  Unlike in C,
 literals cannot be split between lines, adjacent literals are not
 concatenated, and converted strings longer than
-\verb@LALNameLength@$-1$ will be truncated.  The resulting string is
-stored in \verb@series->name@, and will always contain a \verb@\0@
-terminator, beyond which the contents are unspecified.
+\c LALNameLength\f$-1\f$ will be truncated.  The resulting string is
+stored in <tt>series->name</tt>, and will always contain a <tt>\0</tt>
+terminator, beyond which the contents are unspecified.</dd>
 
-\item[\texttt{epoch}:] \textit{value} is a single \verb@INT8@ number
-of GPS nanoseconds, or a pair of \verb@INT4@s representing GPS seconds
-and nanoseconds separately, separated by non-newline whitespace.
+<dt>\c epoch:</dt><dd> \e value is a single \c INT8 number
+of GPS nanoseconds, or a pair of \c INT4s representing GPS seconds
+and nanoseconds separately, separated by non-newline whitespace.</dd>
 
-\item[\texttt{deltaT}] (any time series): \textit{value} is a single
-\verb@REAL8@ number.
+<dt>\c deltaT</dt><dd> (any time series): \e value is a single
+\c REAL8 number.</dd>
 
-\item[\texttt{f0}:] \textit{value} is a single \verb@REAL8@ number.
+<dt>\c f0:</dt><dd> \e value is a single \c REAL8 number.</dd>
 
-\item[\texttt{deltaF}] (\verb@FrequencySeries@ only): \textit{value}
-is a single \verb@REAL8@ number.
+<dt>\c deltaF</dt><dd> (\c FrequencySeries only): \e value
+is a single \c REAL8 number.</dd>
 
-\item[\texttt{sampleUnits}:] \textit{value} is string surrounded by
-quotes \verb@"@; the quotes are stripped and the string passed to
-\verb@LALParseUnitString()@ to determine \verb@series->sampleUnits@.
-Since \verb@LALParseUnitString()@ is not very robust, it is
+<dt>\c sampleUnits:</dt><dd> \e value is string surrounded by
+quotes <tt>"</tt>; the quotes are stripped and the string passed to
+<tt>LALParseUnitString()</tt> to determine <tt>series->sampleUnits</tt>.
+Since <tt>LALParseUnitString()</tt> is not very robust, it is
 recommended to use only unit strings that have been generated by
-\verb@LALUnitAsString()@, or to remove this metadata field and set
-\verb@series->sampleUnits@ within the code.
+<tt>LALUnitAsString()</tt>, or to remove this metadata field and set
+<tt>series->sampleUnits</tt> within the code.</dd>
 
-\item[\texttt{datatype}:] \textit{value} is string identifying the
-series type; e.g. \verb@REAL4TimeSeries@ (\emph{not} surrounded by
-quotes).  This should correspond to the type of \verb@*series@, not to
-any field in \verb@*series@.  If there is a type mismatch, a warning
-is generated (and errors may occur later while parsing the data).
-\end{description}
+<dt>\c datatype:</dt><dd> \e value is string identifying the
+series type; e.g. \c REAL4TimeSeries (\e not surrounded by
+quotes).  This should correspond to the type of <tt>*series</tt>, not to
+any field in <tt>*series</tt>.  If there is a type mismatch, a warning
+is generated (and errors may occur later while parsing the data).</dd>
+</dl>
 
-\paragraph{Data format:} The data portion of \verb@*stream@ consists
+\heading{Data format:} The data portion of <tt>*stream</tt> consists
 of whitespace-separated integer or real numbers.  For complex input
 routines, the real data are parsed as alternately the real and
 imaginary parts of successive complex numbers.  By convention, each
 line should correspond to a single base, complex, vector, or array
-valued element of the \verb@series->data@ sequence.  However, this is
-\emph{required} only in the case of a \verb@TimeVectorSeries@ where
-the \verb@vectorLength@ metadata was not set in the header, since in
-this case the value of \verb@vectorLength@ will be taken from the
+valued element of the <tt>series->data</tt> sequence.  However, this is
+\e required only in the case of a \c TimeVectorSeries where
+the \c vectorLength metadata was not set in the header, since in
+this case the value of \c vectorLength will be taken from the
 number of elements read on the first data line.  After this, and in
 all other cases, newlines are treated as any other whitespace.
 
-If a \verb@length@ value is specified in the header, then data are
-read until the required length is acheived; if \verb@fscanf()@ returns
+If a \c length value is specified in the header, then data are
+read until the required length is acheived; if <tt>fscanf()</tt> returns
 zero or negative before this (representing either the end-of-input or
 a character that cannot be interpreted as part of the numerical data),
-an error is returned.  If a \verb@length@ value was not specified,
-data are read until \verb@fscanf()@ returns zero or negative: at this
+an error is returned.  If a \c length value was not specified,
+data are read until <tt>fscanf()</tt> returns zero or negative: at this
 point any partially-completed complex, vector, or array valued element
-is discarded, and \verb@series->data->length@ set to the number of
+is discarded, and <tt>series->data->length</tt> set to the number of
 elements read.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-These routines use \verb@LALCHARReadVector()@ to read the header lines
+These routines use <tt>LALCHARReadVector()</tt> to read the header lines
 and the first line of data.  After this, data are parsed directly from
-\verb@*stream@ using \verb@fscanf()@.  This is done for efficiency:
+<tt>*stream</tt> using <tt>fscanf()</tt>.  This is done for efficiency:
 repeated calling of the LAL string parsing routines in
-\verb@StringConvert.c@ involves far too much computational overhead.
+\ref StringConvert.c involves far too much computational overhead.
 
 After the first data line has been read, the length of each sequence
 element will be known from the atomic type, as well as the specified
-\verb@dimLength@ (for arrays), \verb@vectorLength@ (for vectors), or
+\c dimLength (for arrays), \c vectorLength (for vectors), or
 number of elements on the first data line (for vectors without an
-explicitly specified \verb@vectorLength@).  If \verb@length@ is also
+explicitly specified \c vectorLength).  If \c length is also
 specified, a sequence of the appropriate size is allocated, and all
-the data is copied or read directly into it.  If \verb@length@ was not
-specified, the data read with \verb@fscanf()@ are stored in a linked
-list of buffers of size \verb@BUFFSIZE@ (a local \verb@#define@d
+the data is copied or read directly into it.  If \c length was not
+specified, the data read with <tt>fscanf()</tt> are stored in a linked
+list of buffers of size \c BUFFSIZE (a local <tt>#define</tt>d
 constant) until parsing stops.  Then a sequence of the appropriate
 size is allocated and the data copied into it.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
 LALPrintError()                         LALWarning()
 LALMalloc()                             LALFree()
@@ -319,18 +319,18 @@ LAL<typecode>CreateVector()             LAL<typecode>DestroyVector()
 LAL<typecode>CreateVectorSequence()     LAL<typecode>DestroyVectorSequence()
 LAL<typecode>CreateArraySequence()      LAL<typecode>DestroyArraySequence()
 LALStringTo<typecode>()                 LALParseUnitString()
-\end{verbatim}
-where \verb@<typecode>@ is any of \verb@I2@, \verb@I4@, \verb@I8@,
-\verb@U2@, \verb@U4@, \verb@U8@, \verb@S@, \verb@D@, \verb@C@, or
-\verb@Z@.
+\endcode
+where <tt><typecode></tt> is any of \c I2, \c I4, \c I8,
+\c U2, \c U4, \c U8, \c S, \c D, \c C, or
+\c Z.
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{StreamSeriesInputCV}}
+
 
 % This quote will fix the C syntax highlighting: "
 
-******************************************************* </lalLaTeX> */
+*/
 
 #include <stdio.h>
 #include <string.h>

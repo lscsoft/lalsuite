@@ -21,10 +21,10 @@
 #define FMT CONCAT3(LAL_,DATA,_FORMAT)
 #define STRINGTODATA CONCAT2(LALStringTo,DATACODE)
 
-/* <lalVerbatim file="StreamSeriesInputCP"> */
+
 void
 SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
-{ /* </lalVerbatim> */
+{ 
   BufferList *head = NULL;  /* pointer to head of linked list of buffers */
   BufferList *here = NULL;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */
@@ -415,10 +415,10 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
   RETURN( stat );
 }
 
-/*<lalVerbatim file="StreamSeriesInputCP"> */
+
 void
 VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
-{ /* </lalVerbatim> */
+{ 
   BufferList *head = NULL;  /* pointer to head of linked list of buffers */
   BufferList *here = NULL;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */
@@ -893,10 +893,10 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
   RETURN( stat );
 }
 
-/*<lalVerbatim file="StreamSeriesInputCP"> */
+
 void
 AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
-{ /* </lalVerbatim> */
+{ 
   BufferList *head;  /* pointer to head of linked list of buffers */
   BufferList *here;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */
@@ -1445,10 +1445,10 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
   RETURN( stat );
 }
 
-/* <lalVerbatim file="StreamSeriesInputCP"> */
+
 void
 FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
-{ /* </lalVerbatim> */
+{ 
   BufferList *head;  /* pointer to head of linked list of buffers */
   BufferList *here;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */
