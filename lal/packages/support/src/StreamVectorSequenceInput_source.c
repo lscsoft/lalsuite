@@ -28,10 +28,10 @@ do { \
   } \
 } while (0)
 
-/* <lalVerbatim file="StreamVectorSequenceInputCP"> */
+
 void
 FUNC ( LALStatus  *stat, VTYPE **sequence, FILE *stream )
-{ /* </lalVerbatim> */
+{ 
   VectorList head = empty; /* head of linked list of vectors */
   VectorList *here;     /* pointer to current position in list */
   TYPE *data;           /* pointer to vector data */
