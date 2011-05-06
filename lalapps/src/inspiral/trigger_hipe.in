@@ -200,8 +200,6 @@ class hipe_run(object):
     ## Determine arguments to inspiral_hipe
     self._hipe_args = ["--output-segs", "--log-path=%s" % log_path,
       "--config-file=%s", "--write-script"]
-    if do_coh_PTF:
-      self._hipe_args.append("--ringdown")
 
     # decide what stages to run
     self.determine_stages(only_run, dont_run)
@@ -303,7 +301,7 @@ class hipe_run(object):
       show_stdout=False, show_command=self._verbose)
 
     # create link to datafind directory's cache directory
-    if self._stages != ["datafind"]:
+    if not "datafind" in self._stages:
       if os.path.isdir("cache") and not os.path.islink("cache"):
         os.rmdir("cache")
       if not os.path.exists("cache"):
@@ -725,11 +723,14 @@ for grb in ext_trigs:
 
   if opts.do_datafind:
     if opts.verbose: print "Creating datafind DAG"
+    datafind_run = ["datafind"]
+    if opts.do_coh_PTF:
+      datafind_run.append("template-bank")
     datafind_dag = hipe_run(idirectory + "/datafind", cp, grb_ifolist,
                             opts.log_path, source_file, "datafind",
                             offSourceSegment,
                             usertag=idirectory + "_DATAFIND",
-                            verbose=opts.verbose, only_run=["datafind"],
+                            verbose=opts.verbose, only_run=datafind_run,
                             do_coh_PTF=opts.do_coh_PTF)
     datafind_node = datafind_dag.finalize(uberdag=uberdag, parent=None)
   else:
