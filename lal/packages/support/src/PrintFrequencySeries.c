@@ -1,70 +1,70 @@
-/************************************ <lalVerbatim file="PrintFrequencySeriesCV">
-Author: Whelan, J. T.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Whelan, J. T.
+\file
+*/
 
-/* <lalLaTeX>
+/**
 
-\subsection{Module \texttt{PrintFrequencySeries.c}}
-\label{ss:PrintFrequencySeries.c}
+\heading{Module \ref PrintFrequencySeries.c}
+\latexonly\label{ss_PrintFrequencySeries_c}\endlatexonly
 
-Print a $\langle\mbox{datatype}\rangle$FrequencySeries object into a
+Print a \f$\langle\mbox{datatype}\rangle\f$FrequencySeries object into a
 file.  For use in non-production and test code only.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{PrintFrequencySeriesCP}
-\idx{LALZPrintFrequencySeries()}
-\idx{LALCPrintFrequencySeries()}
-\idx{LALDPrintFrequencySeries()}
-\idx{LALSPrintFrequencySeries()}
-\idx{LALI2PrintFrequencySeries()}
-\idx{LALI4PrintFrequencySeries()}
-\idx{LALI8PrintFrequencySeries()}
-\idx{LALU2PrintFrequencySeries()}
-\idx{LALU4PrintFrequencySeries()}
-\idx{LALU8PrintFrequencySeries()}
-\idx{LALPrintFrequencySeries()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+
+
+
+
+
+
+
+
+
+
+
+
+
+\heading{Description}
 
 Each member of this family of functions prints the elements of
-$\langle\mbox{datatype}\rangle$\verb+FrequencySeries+ into a file.
+\f$\langle\mbox{datatype}\rangle\f$\c FrequencySeries into a file.
 Note: the file name is specified using a character string.  This
 function is for debugging use only: its arguments do not conform to
 LAL standards so it should not be used in any real analysis codes.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\begin{verbatim}
+\code
 LALFopen()
 LALFclose()
 LALCHARCreateVector()
 LALCHARDestroyVector()
 LALUnitAsString()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
 This function's arguments do not conform to the LAL spec.  For this
 reason it should only be used for debugging purposes in test
 functions, not in any production code.
 
 Additionally, since printf cannot handle INT8 as integers, the
-functions \verb&LALI8PrintFrequencySeries()& and
-\verb&LALU8PrintFrequencySeries()& use a typecast to REAL8 and are
-thus only valid for numbers between around $-10^{15}$ and $10^{15}$.
+functions <tt>LALI8PrintFrequencySeries()</tt> and
+<tt>LALU8PrintFrequencySeries()</tt> use a typecast to REAL8 and are
+thus only valid for numbers between around \f$-10^{15}\f$ and \f$10^{15}\f$.
 
 The first four lines of the file are a header containing:
-\begin{enumerate}
-\item the name of the series
-\item heterodyning information, if any
-\item the starting epoch, relative to the GPS reference epoch (1980 January 6)
-\item the units expressed in terms of the basic SI units
-\item column labels
-\end{enumerate}
+<ol>
+<li> the name of the series</li>
+<li> heterodyning information, if any</li>
+<li> the starting epoch, relative to the GPS reference epoch (1980 January 6)</li>
+<li> the units expressed in terms of the basic SI units</li>
+<li> column labels</li>
+</ol>
 after which come the data, one per line.
 
 The output format is two or three tab-separated columns: the first
@@ -75,19 +75,19 @@ real part and the third the imaginary part of the value.
 
 Note that the frequency given is the physical frequency.  In the case
 of a heterodyned frequency series, this is the heterodyning frequency
-plus the frequency offset.  A frequency series of length $[N]$ is
+plus the frequency offset.  A frequency series of length \f$[N]\f$ is
 assumed to be packed so that the 0th element corresponds to zero
-frequency offset, elements 1 through $[N/2]$ to positive frequency
-offsets (in ascending order), and elements $N-[N/2]$ to $N-1$ to
+frequency offset, elements 1 through \f$[N/2]\f$ to positive frequency
+offsets (in ascending order), and elements \f$N-[N/2]\f$ to \f$N-1\f$ to
 negative frequency offsets (also in ascending order, so that the
-frequency corresponding to the $N-1$st element is just below that of
-the 0th element).  If $N$ is even, the element in position $N/2$ is
+frequency corresponding to the \f$N-1\f$st element is just below that of
+the 0th element).  If \f$N\f$ is even, the element in position \f$N/2\f$ is
 assumed to correspond both the maximum poitive and negative frequency
 offset.
 
-\vfill{\footnotesize\input{PrintFrequencySeriesCV}}
 
-</lalLaTeX> */
+
+*/
 
 
 #include <lal/LALStdlib.h>
@@ -105,9 +105,9 @@ enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
 				"K^-32768/32767 strain^-32768/32767 "
 				"count^-32768/32767") };
 
-/* <lalVerbatim file="PrintFrequencySeriesNRCSID"> */
+
 NRCSID( PRINTFREQUENCYSERIESC, "$Id$" );
-/* </lalVerbatim> */
+
 
 #define TYPECODE Z
 #define TYPE COMPLEX16
