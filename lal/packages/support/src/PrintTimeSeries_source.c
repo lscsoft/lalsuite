@@ -8,9 +8,9 @@
 #define VTYPE CONCAT2(TYPE,Sequence)
 #define FUNC CONCAT3(LAL,TYPECODE,PrintTimeSeries)
 
-/* <lalVerbatim file="PrintTimeSeriesCP"> */
+
 void FUNC ( STYPE *series, const CHAR *filename ) 
-{ /* </lalVerbatim> */
+{ 
   REAL8 t;
   TYPE *data;
   FILE *fp;

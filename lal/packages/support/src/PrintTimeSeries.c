@@ -1,69 +1,69 @@
-/************************************ <lalVerbatim file="PrintTimeSeriesCV">
-Author: Whelan, J. T.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Whelan, J. T.
+\file
+*/
 
-/* <lalLaTeX>
+/**
 
-\subsection{Module \texttt{PrintTimeSeries.c}}
-\label{ss:PrintTimeSeries.c}
+\heading{Module \ref PrintTimeSeries.c}
+\latexonly\label{ss_PrintTimeSeries_c}\endlatexonly
 
-Print a $\langle\mbox{datatype}\rangle$TimeSeries object into a
+Print a \f$\langle\mbox{datatype}\rangle\f$TimeSeries object into a
 file.  For use in non-production and test code only.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{PrintTimeSeriesCP}
-\idx{LALZPrintTimeSeries()}
-\idx{LALCPrintTimeSeries()}
-\idx{LALDPrintTimeSeries()}
-\idx{LALSPrintTimeSeries()}
-\idx{LALI2PrintTimeSeries()}
-\idx{LALI4PrintTimeSeries()}
-\idx{LALI8PrintTimeSeries()}
-\idx{LALU2PrintTimeSeries()}
-\idx{LALU4PrintTimeSeries()}
-\idx{LALU8PrintTimeSeries()}
-\idx{LALPrintTimeSeries()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+
+
+
+
+
+
+
+
+
+
+
+
+
+\heading{Description}
 
 Each member of this family of functions prints the elements of
-$\langle\mbox{datatype}\rangle$\verb+TimeSeries+ into a file.  Note:
+\f$\langle\mbox{datatype}\rangle\f$\c TimeSeries into a file.  Note:
 the file name is specified using a character string.  This function is
 for debugging use only: its arguments do not conform to LAL standards
 so it should not be used in any real analysis codes.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\begin{verbatim}
+\code
 LALFopen()
 LALFclose()
 LALCHARCreateVector()
 LALCHARDestroyVector()
 LALUnitAsString()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
 This function's arguments do not conform to the LAL spec.  For this
 reason it should only be used for debugging purposes in test
 functions, not in any production code.
 
 Additionally, since printf cannot handle INT8 as integers, the
-functions \verb&LALI8PrintTimeSeries()& and
-\verb&LALU8PrintTimeSeries()& use a typecast to REAL8 and are thus
-only valid for numbers between around $-10^{15}$ and $10^{15}$.
+functions <tt>LALI8PrintTimeSeries()</tt> and
+<tt>LALU8PrintTimeSeries()</tt> use a typecast to REAL8 and are thus
+only valid for numbers between around \f$-10^{15}\f$ and \f$10^{15}\f$.
 
 The first five lines of the file are a header containing:
-\begin{enumerate}
-\item the name of the series
-\item the starting epoch 
-\item the units expressed in terms of the basic SI units
-\item column labels
-\end{enumerate}
+<ol>
+<li> the name of the series</li>
+<li> the starting epoch </li>
+<li> the units expressed in terms of the basic SI units</li>
+<li> column labels</li>
+</ol>
 after which come the data, one per line.
 
 
@@ -74,9 +74,9 @@ series, the second column is the value of the series; for complex time
 series, the second column is the real part and the third the imaginary
 part of the value.
 
-\vfill{\footnotesize\input{PrintTimeSeriesCV}}
 
-</lalLaTeX> */
+
+*/
 
 
 #include <lal/LALStdlib.h>
@@ -94,9 +94,9 @@ enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
 				"K^-32768/32767 strain^-32768/32767 "
 				"count^-32768/32767") };
 
-/* <lalVerbatim file="PrintTimeSeriesNRCSID"> */
+
 NRCSID( PRINTTIMESERIESC, "$Id: " );
-/* </lalVerbatim> */
+
 
 #define TYPECODE Z
 #define TYPE COMPLEX16
