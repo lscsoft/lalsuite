@@ -27,22 +27,16 @@ $Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:23 thomas Exp
 \subsection{Test program \texttt{LALSTPNWaveformTest.c}}
 \label{ss:LALSTPNWaveformTest.c}
 
-Create a waveform based on SpinTaylor model (LALSTPNWaveform).
+Create a waveform based on SpinTaylor model (LALSTPNWaveform),
+switching to LALSTPNWaveform2 if anything is given as argument.
 Outputs a file with three columns corresponding to time (in seconds),
-$h_+$, and $h_\times$.
+$h_+$, and $h_\times$. The outputfile is \texttt{wave1.dat} in the
+current directory. [This is an obsolete test program that should
+be refactored with access to the new frameless LALSTPNWaveform.]
 
 \subsection*{Usage}
 
-\texttt{LALSTPNWaveformTest m1 m2 S1x S1y S1z S2x S2y S2z theta0 phi0 finit distance PNorder [outputfile]}
-
-The masses are given in solar masses.
-The spins are given as \texttt{chi1} and \texttt{chi2} times the unit vector;
-the direction of the initial orbital angular momentum is given with the standard polar angles;
-the final frequency is given in Hz, the distance in Mpc.
-Legal values for \texttt{PNorder} include the strings
-\texttt{newtonian}, \texttt{oneHalfPN}, \texttt{onePN}, \texttt{onePointFivePN},
-\texttt{twoPN}, \texttt{twoPointFivePN}, \texttt{threePN}, \texttt{threePointFivePN}.
-If outputfile is not given it is \texttt{wave1.dat} in the current directory.
+\texttt{LALSTPNWaveformTest [switch]}
 
 </lalLaTeX> */
 
@@ -52,13 +46,19 @@ If outputfile is not given it is \texttt{wave1.dat} in the current directory.
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/GenerateInspiral.h>
 
-#include <LALSTPNWaveform2.h>
+#include <lal/LALSTPNWaveform2.h>
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID(LALSTPNWaveformTestC, "$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:23 thomas Exp");
 
 extern int newswitch;
 
-int main(int argc,char **argv) {
+int main(int argc,char UNUSED **argv) {
     static LALStatus    mystatus;
 
     CoherentGW      thewaveform;
@@ -83,7 +83,7 @@ int main(int argc,char **argv) {
 
     /* MV-20060224: I believe this is not used in the SpinTaylor code! */
     injParams.f_final = 500.0;
-    injParams.f_lower = 40.;;
+    injParams.f_lower = 40.;
 
     snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
 

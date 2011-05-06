@@ -57,7 +57,7 @@ None so far...
 
 </lalLaTeX>  */
 
-#include <LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 
 NRCSID (LALADAPTIVERUNGEKUTTA4C, "$Id$");
 

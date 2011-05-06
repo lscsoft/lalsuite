@@ -2,19 +2,28 @@ SUBDIRS = SPINspiral mpi
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
+
 #Tests for the time-domian code
 td_test_progs = TDW_test conv_test time_domain_overlap_test
 TDW_test_SOURCES = TDW_test.c
 conv_test_SOURCES = conv_test.c
 time_domain_overlap_test_SOURCES = time_domain_overlap_test.c
 
-if LALINSPIRAL
 
+if LALINSPIRAL
 if LALFRAME
 
 if LALMETAIO
-metaio_progs = lalapps_inspnest
-lalapps_inspnest_SOURCES = lalnest.c LALInspiralMCMC.c LALInspiralMCMCUser.c nest_calc.c nest_calc.h LALInspiralMCMC.h LALInspiralMCMCUser.h
+metaio_progs = \
+	lalapps_inspnest
+lalapps_inspnest_SOURCES = \
+	lalnest.c \
+	LALInspiralMCMC.c \
+	LALInspiralMCMCUser.c \
+	nest_calc.c \
+	nest_calc.h \
+	LALInspiralMCMC.h \
+	LALInspiralMCMCUser.h
 endif
 
 if LALPULSAR
@@ -30,21 +39,33 @@ lalinference_test_SOURCES = InferenceTest.c
 endif
 
 endif
+91c2f5357595f16ef04a31f5441fa8ecf3e
 endif
 
-frame_progs = lalapps_followupMcmc
-lalapps_followupMcmc_SOURCES = followupMcmc.c
+frame_progs = \
+	lalapps_followupMcmc
+lalapps_followupMcmc_SOURCES = \
+	followupMcmc.c
+
 endif
 endif
+
 
 bin_PROGRAMS = $(metaio_progs) $(frame_progs) $(pulsar_progs) $(mpi_progs)
+
 noinst_PROGRAMS = $(td_test_progs)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 
 if HAVE_PYTHON
-bin_SCRIPTS = lalapps_combine_evidence lalapps_coherence_test lalapps_merge_nested_sampling_runs lalapps_nest_pipe
-pkgpython_DATA = nest_utils.py combine_evidence.py
+bin_SCRIPTS = \
+	lalapps_combine_evidence \
+	lalapps_coherence_test \
+	lalapps_merge_nested_sampling_runs \
+	lalapps_nest_pipe
+pkgpython_DATA = \
+	nest_utils.py \
+	combine_evidence.py
 endif
 
 EXTRA_DIST = \
@@ -76,7 +97,9 @@ lalapps_nest_pipe: $(srcdir)/nest_pipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/nest_pipe.in >lalapps_nest_pipe
 	chmod a+x lalapps_nest_pipe
 
-CLEANFILES = $(bin_SCRIPTS) python_config.sed
+CLEANFILES = \
+	$(bin_SCRIPTS) \
+	python_config.sed
 
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common
