@@ -972,14 +972,14 @@ void initVariables(LALInferenceRunState *state)
           UINT4 N = (approx == SpinTaylor ? 15 : 9);
           if (!checkVariable(state->proposalArgs, SIGMAVECTORNAME)) {
             /* We need a sigma vector for adaptable jumps. */
-            REAL8Vector *sigmaVec = XLALCreateREAL8Vector(N);
+            REAL8Vector *sigmas = XLALCreateREAL8Vector(N);
             UINT4 i = 0;
             
             for (i = 0; i < N; i++) {
-              sigmaVec->data[i] = 1e-4;
+              sigmas->data[i] = 1e-4;
             }
             
-            addVariable(state->proposalArgs, SIGMAVECTORNAME, &sigmaVec, REAL8Vector_t, PARAM_FIXED);
+            addVariable(state->proposalArgs, SIGMAVECTORNAME, &sigmas, REAL8Vector_t, PARAM_FIXED);
           }
           REAL8Vector *avgPaccept = XLALCreateREAL8Vector(N);
           UINT4 i;
@@ -997,8 +997,8 @@ void initVariables(LALInferenceRunState *state)
         INT4 varNumber = 0;
         addVariable(state->proposalArgs, "proposedVariableNumber", &varNumber, INT4_t, PARAM_OUTPUT);
 
-        INT4 sigmaVecNumber = 0;
-        addVariable(state->proposalArgs, "proposedSigmaNumber", &sigmaVecNumber, INT4_t, PARAM_OUTPUT);
+        INT4 sigmasNumber = 0;
+        addVariable(state->proposalArgs, "proposedSigmaNumber", &sigmasNumber, INT4_t, PARAM_OUTPUT);
 
         REAL8 tau = 1e3;
         addVariable(state->proposalArgs, "adaptTau", &tau, REAL8_t, PARAM_OUTPUT);
