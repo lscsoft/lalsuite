@@ -2,43 +2,99 @@ SUBDIRS = SPINspiral mpi
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-
 if LALINSPIRAL
-
 if LALFRAME
 
 if LALMETAIO
-metaio_progs = lalapps_inspnest
-lalapps_inspnest_SOURCES = lalnest.c LALInspiralMCMC.c LALInspiralMCMCUser.c nest_calc.c nest_calc.h LALInspiralMCMC.h LALInspiralMCMCUser.h
+metaio_progs = \
+	lalapps_inspnest
+lalapps_inspnest_SOURCES = \
+	lalnest.c \
+	LALInspiralMCMC.c \
+	LALInspiralMCMCUser.c \
+	nest_calc.c \
+	nest_calc.h \
+	LALInspiralMCMC.h \
+	LALInspiralMCMCUser.h
 endif
 
 if LALPULSAR
-pulsar_progs = lalinference_test lalinference_nest ChiSquare_test #lalinference_mcmcmpi
-lalinference_test_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c InferenceTest.c #LALInferenceMCMC.c
-ChiSquare_test_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c ChiSquare_test.c
-lalinference_nest_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceNest.c LALInferenceNestedSampler.c LALInferencePrior.c
-#lalinference_mcmc_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceMCMC.c LALInferenceMCMCSampler.c LALInferencePrior.c
+pulsar_progs = \
+	lalinference_test \
+	lalinference_nest \
+	ChiSquare_test #lalinference_mcmcmpi
+lalinference_test_SOURCES = \
+	LALInference.c \
+	LALInference.h \
+	LALInferenceReadData.c \
+	LALInferenceTemplate.c \
+	InferenceTest.c #LALInferenceMCMC.c
+ChiSquare_test_SOURCES = \
+	LALInference.c \
+	LALInferenceReadData.c \
+	LALInferenceTemplate.c \
+	ChiSquare_test.c
+lalinference_nest_SOURCES = \
+	LALInference.c \
+	LALInferenceReadData.c \
+	LALInferenceTemplate.c \
+	LALInferenceNest.c \
+	LALInferenceNestedSampler.c \
+	LALInferenceNestedSampler.h \
+	LALInferencePrior.c \
+	LALInferencePrior.h
+#lalinference_mcmc_SOURCES = \
+#	LALInference.c \
+#	LALInferenceReadData.c \
+#	LALInferenceTemplate.c \
+#	LALInferenceMCMC.c \
+#	LALInferenceMCMCSampler.c \
+#	LALInferencePrior.c
 
 #Tests for the time-domian code
-td_test_progs = TDW_test conv_test time_domain_overlap_test
-TDW_test_SOURCES = LALInference.c TDW_test.c
-conv_test_SOURCES = LALInference.c conv_test.c
-time_domain_overlap_test_SOURCES = LALInference.c time_domain_overlap_test.c
+td_test_progs = \
+	TDW_test \
+	conv_test \
+	time_domain_overlap_test
+TDW_test_SOURCES = \
+	LALInference.c \
+	LALInference.h \
+	TDW_test.c
+conv_test_SOURCES = \
+	LALInference.c \
+	LALInference.h \
+	conv_test.c
+time_domain_overlap_test_SOURCES = \
+	LALInference.c \
+	LALInference.h \
+	time_domain_overlap_test.c
 endif
 
-frame_progs = lalapps_followupMcmc
-lalapps_followupMcmc_SOURCES = followupMcmc.c
+frame_progs = \
+	lalapps_followupMcmc
+lalapps_followupMcmc_SOURCES = \
+	followupMcmc.c
+
 endif
 endif
 
-bin_PROGRAMS = $(metaio_progs) $(frame_progs) $(pulsar_progs)
+bin_PROGRAMS = \
+	$(metaio_progs) \
+	$(frame_progs) \
+	$(pulsar_progs)
 noinst_PROGRAMS = $(td_test_progs)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 
 if HAVE_PYTHON
-bin_SCRIPTS = lalapps_combine_evidence lalapps_coherence_test lalapps_merge_nested_sampling_runs lalapps_nest_pipe
-pkgpython_DATA = nest_utils.py combine_evidence.py
+bin_SCRIPTS = \
+	lalapps_combine_evidence \
+	lalapps_coherence_test \
+	lalapps_merge_nested_sampling_runs \
+	lalapps_nest_pipe
+pkgpython_DATA = \
+	nest_utils.py \
+	combine_evidence.py
 endif
 
 EXTRA_DIST = \
@@ -70,7 +126,9 @@ lalapps_nest_pipe: $(srcdir)/nest_pipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/nest_pipe.in >lalapps_nest_pipe
 	chmod a+x lalapps_nest_pipe
 
-CLEANFILES = $(bin_SCRIPTS) python_config.sed
+CLEANFILES = \
+	$(bin_SCRIPTS) \
+	python_config.sed
 
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common
