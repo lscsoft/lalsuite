@@ -46,7 +46,7 @@ be refactored with access to the new frameless LALSTPNWaveform.]
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/GenerateInspiral.h>
 
-#include <LALSTPNWaveform2.h>
+#include <lal/LALSTPNWaveform2.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

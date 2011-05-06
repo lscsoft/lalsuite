@@ -1,4 +1,4 @@
-#include <LALSTPNWaveform2.h>
+#include <lal/LALSTPNWaveform2.h>
 
 NRCSID (LALSTPNWAVEFORM2C, "$Id$");
 
