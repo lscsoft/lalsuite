@@ -1,18 +1,18 @@
-/************************************ <lalVerbatim file="MatrixOpsCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+*/
 
-/********************************************************** <lalLaTeX>
+/**
 
-\subsection{Module \texttt{MatrixOps.c}}
-\label{ss:MatrixOps.c}
+\heading{Module \ref MatrixOps.c}
+\latexonly\label{ss_MatrixOps_c}\endlatexonly
 
 Routines to perform basic matrix operations.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\begin{verbatim}
+\heading{Prototypes}
+
+\code
 void
 LAL<typecode>MatrixAdd( LALStatus *stat,
                         <datatype>Array *out,
@@ -29,122 +29,122 @@ void
 LAL<typecode>MatrixTranspose( LALStatus *stat,
                               <datatype>Array *out,
                               <datatype>Array *in )
-\end{verbatim}
-\input{MatrixOpsCP}
+\endcode
 
-\idx{LALI2MatrixAdd()}
-\idx{LALI4MatrixAdd()}
-\idx{LALI8MatrixAdd()}
-\idx{LALU2MatrixAdd()}
-\idx{LALU4MatrixAdd()}
-\idx{LALU8MatrixAdd()}
-\idx{LALSMatrixAdd()}
-\idx{LALDMatrixAdd()}
-\idx{LALCMatrixAdd()}
-\idx{LALZMatrixAdd()}
 
-\idx{LALI2MatrixMultiply()}
-\idx{LALI4MatrixMultiply()}
-\idx{LALI8MatrixMultiply()}
-\idx{LALU2MatrixMultiply()}
-\idx{LALU4MatrixMultiply()}
-\idx{LALU8MatrixMultiply()}
-\idx{LALSMatrixMultiply()}
-\idx{LALDMatrixMultiply()}
-\idx{LALCMatrixMultiply()}
-\idx{LALZMatrixMultiply()}
 
-\idx{LALI2MatrixTranspose()}
-\idx{LALI4MatrixTranspose()}
-\idx{LALI8MatrixTranspose()}
-\idx{LALU2MatrixTranspose()}
-\idx{LALU4MatrixTranspose()}
-\idx{LALU8MatrixTranspose()}
-\idx{LALSMatrixTranspose()}
-\idx{LALDMatrixTranspose()}
-\idx{LALCMatrixTranspose()}
-\idx{LALZMatrixTranspose()}
 
-\idx{LALCMatrixAdjoint()}
-\idx{LALZMatrixAdjoint()}
 
-\subsubsection*{Description}
 
-The routines \verb@LAL<datatype>MatrixAdd()@ add the matrices
-\verb@*in1@ and \verb@*in2@ element-by-element, storing the result in
-\verb@*out@.  All of these matrices must have the same dimensionality.
-The addition may be performed in-place by pointing \verb@out@ to the
-same structure as either \verb@in1@ or \verb@in2@.
 
-The routines \verb@LAL<datatype>MatrixMultiply()@ perform matrix
-multiplication, contracting the columns of \verb@*in1@ against the
-rows of \verb@*in2@, and storing the result in \verb@*out@.  The
-number of columns of \verb@*in1@ must equal the number of rows of
-\verb@*in2@, and \verb@*out@ must have the same number of columns as
-\verb@*in1@ and the same number of rows as \verb@*in2@.
 
-The routines \verb@LAL<datatype>MatrixTranspose()@ take the transpose
-of the matrix \verb@*in@ and store the result in \verb@*out@.  The
-number of rows of \verb@*out@ must equal the number of columns of
-\verb@*in@, and vice-versa.
 
-The routines \verb@LALCMatrixAdjoint()@ and \verb@LALZMatrixAdjoint()@
-take the Hermitian conjugate (adjoint) of the matrix \verb@*in@ and
-store the result in \verb@*out@: this involves transposing the matrix
-and taking the complex conjugate.  The number of rows of \verb@*out@
-must equal the number of columns of \verb@*in@, and vice-versa.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\heading{Description}
+
+The routines <tt>LAL<datatype>MatrixAdd()</tt> add the matrices
+<tt>*in1</tt> and <tt>*in2</tt> element-by-element, storing the result in
+<tt>*out</tt>.  All of these matrices must have the same dimensionality.
+The addition may be performed in-place by pointing \c out to the
+same structure as either \c in1 or \c in2.
+
+The routines <tt>LAL<datatype>MatrixMultiply()</tt> perform matrix
+multiplication, contracting the columns of <tt>*in1</tt> against the
+rows of <tt>*in2</tt>, and storing the result in <tt>*out</tt>.  The
+number of columns of <tt>*in1</tt> must equal the number of rows of
+<tt>*in2</tt>, and <tt>*out</tt> must have the same number of columns as
+<tt>*in1</tt> and the same number of rows as <tt>*in2</tt>.
+
+The routines <tt>LAL<datatype>MatrixTranspose()</tt> take the transpose
+of the matrix <tt>*in</tt> and store the result in <tt>*out</tt>.  The
+number of rows of <tt>*out</tt> must equal the number of columns of
+<tt>*in</tt>, and vice-versa.
+
+The routines <tt>LALCMatrixAdjoint()</tt> and <tt>LALZMatrixAdjoint()</tt>
+take the Hermitian conjugate (adjoint) of the matrix <tt>*in</tt> and
+store the result in <tt>*out</tt>: this involves transposing the matrix
+and taking the complex conjugate.  The number of rows of <tt>*out</tt>
+must equal the number of columns of <tt>*in</tt>, and vice-versa.
 
 Except for the adjoint routines, the prototype templates above in fact
 refer to 10 separate routines each, corresponding to all the numerical
-atomic datatypes \verb@<datatype>@ referred to by \verb@<typecode>@:
-\begin{center}
-\begin{tabular}{|c@{\qquad}c|c@{\qquad}c|}
-\hline
-\tt <typecode> & \tt <datatype> & \tt <typecode> & \tt <datatype> \\
-\hline
-\tt I2 & \tt  INT2 & \tt U2 & \tt    UINT2  \\
-\tt I4 & \tt  INT4 & \tt U4 & \tt    UINT4  \\
-\tt I8 & \tt  INT8 & \tt U8 & \tt    UINT8  \\
-\tt  S & \tt REAL4 & \tt  C & \tt COMPLEX8  \\
-\tt  D & \tt REAL8 & \tt  Z & \tt COMPLEX16 \\
-\hline
-\end{tabular}
-\end{center}
+atomic datatypes <tt><datatype></tt> referred to by <tt><typecode></tt>:
 
-\subsubsection*{Algorithm}
+<table><tr><td>
+
+\tt <typecode></td><td>\tt <datatype></td><td>\tt <typecode></td><td>\tt <datatype></td></tr>
+<tr><td>
+\tt I2</td><td>\tt  INT2</td><td>\tt U2</td><td>\tt    UINT2</td></tr>
+<tr><td>\tt I4</td><td>\tt  INT4</td><td>\tt U4</td><td>\tt    UINT4</td></tr>
+<tr><td>\tt I8</td><td>\tt  INT8</td><td>\tt U8</td><td>\tt    UINT8</td></tr>
+<tr><td>\tt  S</td><td>\tt REAL4</td><td>\tt  C</td><td>\tt COMPLEX8</td></tr>
+<tr><td>\tt  D</td><td>\tt REAL8</td><td>\tt  Z</td><td>\tt COMPLEX16</td></tr>
+<tr><td>
+</td></tr></table>
+
+
+\heading{Algorithm}
 
 Matrix addition is simply carried through element-by-element.  It
 involves one addition operation per element of the output matrix.
 
-The matrix product $\mathsf{Z}^a{}_b=\mathsf{X}^a{}_c
-\mathsf{Y}^c{}_b$ of two matrices $\mathsf{X}^a{}_c$ and
-$\mathsf{Y}^c{}_b$ is given by the element formula
-$Z^i{}_j=\sum_{k=1}^N X^i{}_k Y^k{}_j$, where $N$ is the number of
-columns of $\mathsf{X}^a{}_c$ \emph{and} the number of rows of
-$\mathsf{Y}^c{}_b$.  This can also be used to compute the inner
-product of two vectors $\mathsf{x}^a$ and $\mathsf{y}^a$: simply store
-the transpose $(\mathsf{x}^T)_a$ as a row vector (single-row matrix)
-as the first operand, and $\mathsf{y}^a$ as a column vector
+The matrix product \f$\mathsf{Z}^a{}_b=\mathsf{X}^a{}_c
+\mathsf{Y}^c{}_b\f$ of two matrices \f$\mathsf{X}^a{}_c\f$ and
+\f$\mathsf{Y}^c{}_b\f$ is given by the element formula
+\f$Z^i{}_j=\sum_{k=1}^N X^i{}_k Y^k{}_j\f$, where \f$N\f$ is the number of
+columns of \f$\mathsf{X}^a{}_c\f$ \e and the number of rows of
+\f$\mathsf{Y}^c{}_b\f$.  This can also be used to compute the inner
+product of two vectors \f$\mathsf{x}^a\f$ and \f$\mathsf{y}^a\f$: simply store
+the transpose \f$(\mathsf{x}^T)_a\f$ as a row vector (single-row matrix)
+as the first operand, and \f$\mathsf{y}^a\f$ as a column vector
 (single-column matrix) as the second operand.  To compute the vector
 outer product, simply transpose the second argument rather than the
-first.  These computations involve $N$ additions and multiplications
+first.  These computations involve \f$N\f$ additions and multiplications
 per element of the output matrix.
 
-The transpose $(\mathsf{X}^T){}^a{}_b$ of a matrix $\mathsf{X}^a{}_b$
-is given by $(X^T){}^i{}_j=X^j{}_i$.  The adjoint
-$(\mathsf{X}^\dag){}^a{}_b$ of a complex matrix $\mathsf{X}^a{}_b$ is
-given by $(X^\dag){}^i{}_j=X^j{}_i{}^*$, where ${}^*$ denotes complex
+The transpose \f$(\mathsf{X}^T){}^a{}_b\f$ of a matrix \f$\mathsf{X}^a{}_b\f$
+is given by \f$(X^T){}^i{}_j=X^j{}_i\f$.  The adjoint
+\f$(\mathsf{X}^\dag){}^a{}_b\f$ of a complex matrix \f$\mathsf{X}^a{}_b\f$ is
+given by \f$(X^\dag){}^i{}_j=X^j{}_i{}^*\f$, where \f${}^*\f$ denotes complex
 conjugation.  Transposition involves no arithmetic operations, just
 one assignment per element of the output.  Conjugation involves one
 multiplication (negating the sign of the imaginary part) per element.
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{MatrixOpsCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>
@@ -252,10 +252,10 @@ NRCSID( MATRIXOPSC, "$Id$" );
 #undef SIZE
 #undef COMPLEX
 
-/* <lalVerbatim file="MatrixOpsCP"> */
+
 void
 LALCMatrixAdjoint( LALStatus *stat, COMPLEX8Array *out, COMPLEX8Array *in1 )
-{ /* </lalVerbatim> */
+{ 
   UINT4 n;        /* number of elements */
   COMPLEX8 *data; /* pointer to elements */
 
@@ -277,10 +277,10 @@ LALCMatrixAdjoint( LALStatus *stat, COMPLEX8Array *out, COMPLEX8Array *in1 )
 }
 
 
-/* <lalVerbatim file="MatrixOpsCP"> */
+
 void
 LALZMatrixAdjoint( LALStatus *stat, COMPLEX16Array *out, COMPLEX16Array *in1 )
-{ /* </lalVerbatim> */
+{ 
   UINT4 n;         /* number of elements */
   COMPLEX16 *data; /* pointer to elements */
 
