@@ -13,10 +13,10 @@
 #define AFUNC CONCAT3(LAL,TYPECODE,WriteTArraySeries)
 #define FFUNC CONCAT3(LAL,TYPECODE,WriteFSeries)
 
-/* <lalVerbatim file="StreamSeriesInputCP"> */
+
 void
 SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
-{ /* </lalVerbatim> */
+{ 
   UINT4 length; /* length of data sequence */
   TYPE *data;   /* pointer to data in sequence */
 
@@ -130,10 +130,10 @@ SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
   RETURN( stat );
 }
 
-/* <lalVerbatim file="StreamSeriesInputCP"> */
+
 void
 VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
-{ /* </lalVerbatim> */
+{ 
   UINT4 length;       /* length of data sequence */
   UINT4 vectorLength; /* length of each element in sequence */
   TYPE *data; /* pointer to data in sequence */
@@ -267,10 +267,10 @@ VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
   RETURN( stat );
 }
 
-/* <lalVerbatim file="StreamSeriesInputCP"> */
+
 void
 AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
-{ /* </lalVerbatim> */
+{ 
   UINT4 length;   /* length of data sequence */
   UINT4 arrayDim; /* length of each element in sequence */
   UINT4 *dimData; /* pointer to dimLength data */
@@ -417,10 +417,10 @@ AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
   RETURN( stat );
 }
 
-/* <lalVerbatim file="StreamSeriesInputCP"> */
+
 void
 FFUNC ( LALStatus *stat, FILE *stream, FTYPE *series )
-{ /* </lalVerbatim> */
+{ 
   UINT4 length; /* length of data sequence */
   TYPE *data;   /* pointer to data in sequence */
 
