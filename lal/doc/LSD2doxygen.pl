@@ -161,7 +161,7 @@ switch ($action) {
     # show what changes were made to the file
     case "diff" {
         if ($file eq $origfile) {
-            print "No changes were made to '$fname'\n";
+            print "$fname: no changes were made\n";
         }
         else {
             open DIFF, "| $diffcmd $fname - $diffpipe" or die "'$diffcmd' failed: $!";
@@ -207,7 +207,7 @@ switch ($action) {
 
             }
             else {
-                print "Code has been modified in '$fname'!\n";
+                print "$fname: code has been modified!\n";
                 $status = 1;
             }
         }
@@ -218,7 +218,7 @@ switch ($action) {
             push @err, $_ if !defined($origcpperr->{$_});
         }
         if (@err) {
-            print "Errors in preprocessing '$fname'!\n";
+            print "$fname: errors in preprocessing:\n";
             map { print "   $_\n" } @err;
         }
 
