@@ -9,10 +9,10 @@
 #define CREATEFUNC CONCAT3(LAL,TYPECODE,CreateVector)
 #define FMT CONCAT3(LAL_,TYPE,_FORMAT)
 
-/* <lalVerbatim file="StreamSequenceInputCP"> */
+
 void
 FUNC ( LALStatus *stat, VTYPE **sequence, FILE *stream )
-{ /* </lalVerbatim> */
+{ 
   BufferList head;    /* head of linked list of buffers */
   BufferList *here;   /* pointer to current position in list */
   BOOLEAN done;       /* whether to stop reading */

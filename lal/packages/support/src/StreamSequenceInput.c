@@ -1,81 +1,81 @@
-/**************************** <lalVerbatim file="StreamSequenceInputCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+*/
 
-/********************************************************** <lalLaTeX>
+/**
 
-\subsection{Module \texttt{StreamSequenceInput.c}}
-\label{ss:StreamSequenceInput.c}
+\heading{Module \ref StreamSequenceInput.c}
+\latexonly\label{ss_StreamSequenceInput_c}\endlatexonly
 
 Converts an input stream into a data sequence.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{StreamSequenceInputCP}
-\idx{LALCHARReadSequence()}
-\idx{LALI2ReadSequence()}
-\idx{LALI4ReadSequence()}
-\idx{LALI8ReadSequence()}
-\idx{LALU2ReadSequence()}
-\idx{LALU4ReadSequence()}
-\idx{LALU8ReadSequence()}
-\idx{LALSReadSequence()}
-\idx{LALDReadSequence()}
-\idx{LALCReadSequence()}
-\idx{LALZReadSequence()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
 
-These routines read data from the I/O stream \verb@*stream@ until the
+
+
+
+
+
+
+
+
+
+
+
+
+\heading{Description}
+
+These routines read data from the I/O stream <tt>*stream</tt> until the
 end-of-input is reached.  (The input can be of arbitrary length; the
 data is temporarily stored in a linked list of buffers.)  Once read, a
-LAL sequence structure \verb@**sequence@ is created and the data
+LAL sequence structure <tt>**sequence</tt> is created and the data
 stored in it.  The routine passes back a pointer to the new structure.
 
-The routine \verb@LALCHARReadSequence()@ simply stores the entire
-remaining contents of the I/O stream in a \verb@CHARSequence@,
-including whitespace, newline \verb@'\n'@, null \verb@'\0'@, or other
+The routine <tt>LALCHARReadSequence()</tt> simply stores the entire
+remaining contents of the I/O stream in a \c CHARSequence,
+including whitespace, newline <tt>'\n'</tt>, null <tt>'\0'</tt>, or other
 special characters.  (It can in principle be used to read and store
 binary data as a sequence of bytes.  Note that the end-of-transmission
-byte \verb@'\004'@ does \emph{not} necessarily mark the end-of-input,
-which is instead determined using the \verb@feof()@ function.)
+byte <tt>'\004'</tt> does \e not necessarily mark the end-of-input,
+which is instead determined using the <tt>feof()</tt> function.)
 
 The other routines in this module interpret the input as a sequence of
 whitespace-separated numbers, which are parsed directly from the I/O
-stream using \verb@fscanf()@.  The sequence is terminated at the
-end-of-input or at any point where \verb@fscanf()@ is unable to parse
+stream using <tt>fscanf()</tt>.  The sequence is terminated at the
+end-of-input or at any point where <tt>fscanf()</tt> is unable to parse
 the input.
 
-For the complex input routines \verb@LALCReadSequence()@ and
-\verb@LALZReadSequence()@, each pair of numbers read are interpreted
+For the complex input routines <tt>LALCReadSequence()</tt> and
+<tt>LALZReadSequence()</tt>, each pair of numbers read are interpreted
 as the real and imaginary parts of a complex number.  The usual input
 format is for each line to contain a pair of numbers, but
-\verb@fscanf()@ does not distinguish between newline and other
+<tt>fscanf()</tt> does not distinguish between newline and other
 whitespace characters, so neither do these routines.
 
-Unlike the numerical routines in other \verb@StreamInput.h@ modules,
+Unlike the numerical routines in other \ref StreamInput.h modules,
 these routines have no mechanism to deal with comments; every
 whitespace-delimited substring will be treated as a number.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 These routines read data into a linked list of buffers, to allow
 memory allocation to occur in batches for improved efficiency.  The
-numerical routines also use \verb@fscanf()@ directly on the I/O stream
+numerical routines also use <tt>fscanf()</tt> directly on the I/O stream
 to avoid the inefficiency of storing and parsing intermediate
 character strings, as is done by the corresponding vector sequence
 input routines.  This reduces robustness and versatility (as
 indicated, for instance, by the inability of dealing with comments),
 and increases the number of potential points-of-failure (by requiring
-a consistent implementation across platforms of \verb@getc()@ and
-\verb@fscanf()@, rather than the single function \verb@fgets()@ used
+a consistent implementation across platforms of <tt>getc()</tt> and
+<tt>fscanf()</tt>, rather than the single function <tt>fgets()</tt> used
 by other stream input routines).  However, these sacrifices are
 necessary to allow LAL applications to ingest large quantities of
 numerical data efficiently.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALMalloc()                     LALFree()
 LALWarning()                    LALCHARCreateVector()
 LALI2CreateVector()             LALU2CreateVector()
@@ -83,13 +83,13 @@ LALI4CreateVector()             LALU4CreateVector()
 LALI8CreateVector()             LALU8CreateVector()
 LALSCreateVector()              LALDCreateVector()
 LALCCreateVector()              LALZCreateVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{StreamSequenceInputCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <stdio.h>
 #include <string.h>
@@ -135,10 +135,10 @@ if ( headPtr ) {                                                     \
 
 /* static const BufferList empty; */
 
-/* <lalVerbatim file="StreamSequenceInputCP"> */
+
 void
 LALCHARReadSequence( LALStatus *stat, CHARSequence **sequence, FILE *stream )
-{ /* </lalVerbatim> */
+{ 
   BufferList head;  /* head of linked list of buffers */
   BufferList *here; /* pointer to current position in list */
   CHAR *data;       /* pointer to vector data */
@@ -205,12 +205,12 @@ LALCHARReadSequence( LALStatus *stat, CHARSequence **sequence, FILE *stream )
 }
 
 
-/* <lalVerbatim file="StreamSequenceInputCP"> */
+
 int
 XLALCHARReadSequence( CHARSequence **sequence, FILE *stream );
 int
 XLALCHARReadSequence( CHARSequence **sequence, FILE *stream )
-{ /* </lalVerbatim> */
+{ 
   BufferList head;  /* head of linked list of buffers */
   BufferList *here; /* pointer to current position in list */
   CHAR *data;       /* pointer to vector data */

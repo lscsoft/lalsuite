@@ -8,10 +8,10 @@
 #define FUNC CONCAT3(LAL,TYPECODE,ReadSequence)
 #define CREATEFUNC CONCAT3(LAL,TYPECODE,CreateVector)
 
-/* <lalVerbatim file="StreamSequenceInputCP"> */
+
 void
 FUNC ( LALStatus *stat, VTYPE **sequence, FILE *stream )
-{ /* </lalVerbatim> */
+{ 
   BufferList head;    /* head of linked list of buffers */
   BufferList *here;   /* pointer to current position in list */
   BOOLEAN done;       /* whether to stop reading */
