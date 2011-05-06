@@ -25,6 +25,7 @@ pulsar_progs = \
 	ChiSquare_test #lalinference_mcmcmpi
 lalinference_test_SOURCES = \
 	LALInference.c \
+	LALInference.h \
 	LALInferenceReadData.c \
 	LALInferenceTemplate.c \
 	InferenceTest.c #LALInferenceMCMC.c
@@ -39,7 +40,9 @@ lalinference_nest_SOURCES = \
 	LALInferenceTemplate.c \
 	LALInferenceNest.c \
 	LALInferenceNestedSampler.c \
-	LALInferencePrior.c
+	LALInferenceNestedSampler.h \
+	LALInferencePrior.c \
+	LALInferencePrior.h
 #lalinference_mcmc_SOURCES = \
 #	LALInference.c \
 #	LALInferenceReadData.c \
@@ -55,12 +58,15 @@ td_test_progs = \
 	time_domain_overlap_test
 TDW_test_SOURCES = \
 	LALInference.c \
+	LALInference.h \
 	TDW_test.c
 conv_test_SOURCES = \
 	LALInference.c \
+	LALInference.h \
 	conv_test.c
 time_domain_overlap_test_SOURCES = \
 	LALInference.c \
+	LALInference.h \
 	time_domain_overlap_test.c
 endif
 
