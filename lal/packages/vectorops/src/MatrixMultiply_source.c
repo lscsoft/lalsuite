@@ -23,10 +23,10 @@
 #define F3 CONCAT5(LAL,TYPECODE,DotStar,TYPECODE2,Array)
 #define F4 CONCAT5(LAL,TYPECODE,ArrayDotStar,TYPECODE2,Array)
 
-/******************************* <lalLaTeX file="MatrixMultiplyC">
-\begin{verbatim}void F1 ( LALStatus *status, VTYPE2 **result,
-		TYPE B, VTYPE2 *A )\end{verbatim}
- *************************************************** </lalLaTeX> */
+/**
+\codevoid F1 ( LALStatus *status, VTYPE2 **result,
+		TYPE B, VTYPE2 *A )\endcode
+*/
 
 void F1 (
         LALStatus		*status,
@@ -66,10 +66,10 @@ void F1 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixMultiplyC">
-\begin{verbatim}void F2 ( LALStatus *status, VTYPE **result,
-		VTYPE *B, VTYPE2 *A )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F2 ( LALStatus *status, VTYPE **result,
+		VTYPE *B, VTYPE2 *A )\endcode
+*/
 
 void F2 (
         LALStatus		*status,
@@ -113,10 +113,10 @@ void F2 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixMultiplyC">
-\begin{verbatim}void F3 ( LALStatus *status, ATYPE2 **result,
-		TYPE A, ATYPE2 *B )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F3 ( LALStatus *status, ATYPE2 **result,
+		TYPE A, ATYPE2 *B )\endcode
+*/
 
 void F3 (
         LALStatus               *status,
@@ -184,10 +184,10 @@ void F3 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixMultiplyC">
-\begin{verbatim}void F4 ( LALStatus *status, ATYPE **result,
-		ATYPE *A, ATYPE2 *B )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F4 ( LALStatus *status, ATYPE **result,
+		ATYPE *A, ATYPE2 *B )\endcode
+*/
 
 void F4 (
         LALStatus		*status,
