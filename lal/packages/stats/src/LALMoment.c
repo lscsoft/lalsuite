@@ -1,49 +1,49 @@
-/************************************ <lalVerbatim file="LALMomentCV">
-Author: Tibbits, M M
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Tibbits, M M
+\file
+*/
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{LALMoment.c}}
-\label{s:LALMoment.c}
+/**
+\heading{Module \ref LALMoment.c}
+\latexonly\label{s_LALMoment_c}\endlatexonly
 
 Routine to compute various moments of data.
 
-\subsubsection*{Prototypes}
-\input{LALMomentCP}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+
+\heading{Description}
 The data structure passed in is either a REAL8 or a REAL4 Sequence.  The only parameter is which moment to calculate.
 The function the sums the data, calculates the average and then it returns the average for the first moment, it returns the variance for the second moment, and it returns the n-th moment about the mean for higher order moments.
 
-\subsubsection*{Algorithm}
-\begin{itemize}
-\item \textit{Find the mean (here referred to as $ \overline{x} $).}
-\item \textit{Sum, over all the elements, the quantity: \((x[k] - \overline{x})^{n}. \)}
-\item \textit{Divide the sum just made by N-1. Call it moment-n}
-\item \textit{If n is greater than 2:}
-\begin{itemize}
-\item \textit{Sum, over all the elements, the quantity: \((x[k] - \overline{x})^{n}. \)}
-\item \textit{Divide the sum just made by N. Call it moment-n}
-\end{itemize}
-\item \textit{Return moment-n}
+\heading{Algorithm}
+<ul>
+<li> <em>Find the mean (here referred to as \f$ \overline{x} \f$).</em></li>
+<li> <em>Sum, over all the elements, the quantity: \((x[k] - \overline{x})^{n}. \)</em></li>
+<li> <em>Divide the sum just made by N-1. Call it moment-n</em></li>
+<li> <em>If n is greater than 2:</em>
+\begin{itemize}</li>
+<li> <em>Sum, over all the elements, the quantity: \((x[k] - \overline{x})^{n}. \)</em></li>
+<li> <em>Divide the sum just made by N. Call it moment-n</em></li>
+</ul>
+\item <em>Return moment-n</em>
 \end{itemize}
 
-\subsubsection*{Uses}
+\heading{Uses}
 
 Determination of a specific moment of a set of data.
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\begin{itemize}
-\item \textit{Moments less than two are not allowed.}
-\item \textit{The result structure must be Non-NULL when passed in.}
-\item \textit{The function assumes that the length member of the data passed in is correct.}
-\end{itemize}
+<ul>
+<li> <em>Moments less than two are not allowed.</em></li>
+<li> <em>The result structure must be Non-NULL when passed in.</em></li>
+<li> <em>The function assumes that the length member of the data passed in is correct.</em></li>
+</ul>
 
-\vfill{\footnotesize\input{LALMomentCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <math.h>
 #include <lal/LALMoment.h>

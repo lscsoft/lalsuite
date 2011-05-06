@@ -7,14 +7,14 @@
 #define STYPE CONCAT2(TYPE,Sequence)
 #define FUNC CONCAT3(LAL,TYPECODE,Moment)
 
-/* <lalVerbatim file="LALMomentCP"> */
+
 void FUNC (
 	LALStatus		*status,
 	TYPE			*result,
 	STYPE		*data,
 	INT4			whichMoment
 )
-{	/* </lalVerbatim> */
+{	
 
 	/*  Variable Declarations  */
 	INT4	iterator;
