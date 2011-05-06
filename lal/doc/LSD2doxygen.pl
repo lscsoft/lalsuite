@@ -7,37 +7,47 @@ use Pod::Usage;
 
 # parse command line
 my ($fname, $action, $diffcmd, $diffpipe, $noclean, $nolatex, $printfn);
+unshift @ARGV, "--diffcmd=diffless";
 while (my $arg = shift @ARGV) {
     if ($arg =~ /^--/p) {
         my $opt = ${^POSTMATCH};
-        switch ($opt) {
-            case "diff" {
-                $diffcmd = "diff -y -W 160";
-                $diffpipe = "| less";
-                $action = "diff";
+        if ($opt =~ /^diffcmd=/p) {
+            my $diffopt = ${^POSTMATCH};
+            switch ($diffopt) {
+                case "diff" {
+                    $diffcmd = "diff";
+                    $diffpipe = "";
+                }
+                case "diffless" {
+                    $diffcmd = "diff -y -W 160";
+                    $diffpipe = "| less";
+                }
+                case "xxdiff" {
+                    $diffcmd = "xxdiff";
+                    $diffpipe = "";
+                    $action = "diff";
+                }
+                case "kompare" {
+                    $diffcmd = "diff -u5";
+                    $diffpipe = "| kompare -o -";
+                    $action = "diff";
+                }
             }
-            case "xxdiff" {
-                $diffcmd = "xxdiff";
-                $diffpipe = "";
-                $action = "diff";
-            }
-            case "kompare" {
-                $diffcmd = "diff -u5";
-                $diffpipe = "| kompare -o -";
-                $action = "diff";
-            }
-
-            case "print" {
-                $printfn = 1;
-            }
-            case "noclean" {
-                $noclean = 1;
-            }
-            case "nolatex" {
-                $nolatex = 2;
-            }
-            else {
-                $action = $opt;
+        }
+        else {
+            switch ($opt) {
+                case "print" {
+                    $printfn = 1;
+                }
+                case "noclean" {
+                    $noclean = 1;
+                }
+                case "nolatex" {
+                    $nolatex = 2;
+                }
+                else {
+                    $action = $opt;
+                }
             }
         }
     }
@@ -190,7 +200,7 @@ switch ($action) {
                 close FILE;
 
                 # print differences
-                system "$diffcmd $tmp1 $tmp2";
+                system "$diffcmd $tmp1 $tmp2 $diffpipe";
 
             }
             else {
@@ -462,7 +472,7 @@ __END__
 
 =head1 SYNOPSIS
 
-LSD2doxygen {action} [debug-options] "file"
+LSD2doxygen {action} [options] "file"
 
 where {action} (required) is one of:
 
@@ -493,9 +503,13 @@ Do the conversion!
 
 =back
 
-and [debug-options] are one of:
+and [options] are one of:
 
 =over
+
+=item --diffcmd={diff,diffless,xxdiff,kompare}
+
+Select command to use for displaying diff (default is 'diffless')
 
 =item --noclean
 
