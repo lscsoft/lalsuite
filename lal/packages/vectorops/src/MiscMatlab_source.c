@@ -13,9 +13,9 @@
 #define F3 CONCAT3(LAL,TYPECODE,Max)
 #define F4 CONCAT3(LAL,TYPECODE,FlipVector)
 
-/******************************* <lalLaTeX file="MiscMatlabC">
-\begin{verbatim}void F1 ( LALStatus *status, VTYPE **result, VTYPE *data )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F1 ( LALStatus *status, VTYPE **result, VTYPE *data )\endcode
+*/
 
 void F1 (
 	LALStatus		*status,
@@ -64,9 +64,9 @@ void F1 (
 	RETURN( status );
 }
 
-/******************************* <lalLaTeX file="MiscMatlabC">
-\begin{verbatim}void F2 ( LALStatus *status, TYPE *result, VTYPE *data )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F2 ( LALStatus *status, TYPE *result, VTYPE *data )\endcode
+*/
 
 void F2 (
         LALStatus		*status,
@@ -99,9 +99,9 @@ void F2 (
         RETURN( status );
 }
 
-/******************************* <lalLaTeX file="MiscMatlabC">
-\begin{verbatim}void F3 (LALStatus *status, TYPE *result, VTYPE *data, INT4 *myindex )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F3 (LALStatus *status, TYPE *result, VTYPE *data, INT4 *myindex )\endcode
+*/
 
 void F3 (
         LALStatus		*status,
@@ -140,9 +140,9 @@ void F3 (
         RETURN( status );
 }
 
-/******************************* <lalLaTeX file="MiscMatlabC">
-\begin{verbatim}void F4 (LALStatus *status, VTYPE **result, VTYPE *data )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F4 (LALStatus *status, VTYPE **result, VTYPE *data )\endcode
+*/
 
 void F4 (
         LALStatus		*status,
