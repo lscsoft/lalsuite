@@ -1548,42 +1548,6 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
 	REAL8 instant;
 	INT4 errnum;
   
- /* printf("\
-         injParams.waveform\t=\"%s\";\n\
-         injParams.mass1\t=%.15lf;\n\
-         injParams.mass2\t=%.15lf;\n\
-         injParams.eta\t\t=%.15lf;\n\
-         injParams.mchirp\t=%.15lf;\n\
-         injParams.inclination\t=%.15lf;\n\
-         injParams.coa_phase\t=%.15lf;\n\
-         injParams.spin1x\t=%.15lf;\n\
-         injParams.spin1y\t=%.15lf;\n\
-         injParams.spin1z\t=%.15lf;\n\
-         injParams.spin2x\t=%.15lf;\n\
-         injParams.spin2y\t=%.15lf;\n\
-         injParams.spin2z\t=%.15lf;\n\
-         injParams.distance\t=%.15lf;\n\
-         ppnParams.deltaT\t=%.15lf;\n\
-         injParams.f_lower\t=%.15lf;\n\
-         ",
-         injParams.waveform,
-         injParams.mass1,
-         injParams.mass2,
-         injParams.eta,
-         injParams.mchirp,
-         injParams.inclination,
-         injParams.coa_phase,
-         injParams.spin1x,
-         injParams.spin1y,
-         injParams.spin1z,
-         injParams.spin2x,
-         injParams.spin2y,
-         injParams.spin2z,
-         injParams.distance,
-         ppnParams.deltaT,
-         injParams.f_lower         
-         );*/
-  
   //lal_errhandler = LAL_ERR_RTRN;
 	//REPORTSTATUS(&status);
 	/* LAL_CALL( LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams ),&status); */
