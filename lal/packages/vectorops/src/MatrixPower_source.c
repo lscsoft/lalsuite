@@ -18,10 +18,10 @@
 #define F5 CONCAT4(LAL,TYPECODE,ArrayDotPower,TYPECODE2)
 #define F6 CONCAT5(LAL,TYPECODE,ArrayDotPower,TYPECODE2,Array)
 
-/******************************* <lalLaTeX file="MatrixPowerC">
-\begin{verbatim}void F1 ( LALStatus *status, REAL8Vector **result,
-		TYPE A, VTYPE2 *B )\end{verbatim}
- ************************************************** </lalLaTeX> */
+/**
+\codevoid F1 ( LALStatus *status, REAL8Vector **result,
+		TYPE A, VTYPE2 *B )\endcode
+*/
 
 void F1 (
         LALStatus		*status,
@@ -61,10 +61,10 @@ void F1 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixPowerC">
-\begin{verbatim}void F2 ( LALStatus *status, REAL8Vector **result,
-		VTYPE *A, TYPE2 B )\end{verbatim}
- ************************************************** </lalLaTeX> */
+/**
+\codevoid F2 ( LALStatus *status, REAL8Vector **result,
+		VTYPE *A, TYPE2 B )\endcode
+*/
 
 void F2 (
         LALStatus               *status,
@@ -104,10 +104,10 @@ void F2 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixPowerC">
-\begin{verbatim}void F3 ( LALStatus *status, REAL8Vector **result,
-		VTYPE *B, VTYPE2 *A )\end{verbatim}
- ************************************************** </lalLaTeX> */
+/**
+\codevoid F3 ( LALStatus *status, REAL8Vector **result,
+		VTYPE *B, VTYPE2 *A )\endcode
+*/
 
 void F3 (
         LALStatus		*status,
@@ -152,10 +152,10 @@ void F3 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixPowerC">
-\begin{verbatim}void F4 ( LALStatus *status, REAL8Array **result,
-		TYPE A, ATYPE2 *B )\end{verbatim}
- ************************************************** </lalLaTeX> */
+/**
+\codevoid F4 ( LALStatus *status, REAL8Array **result,
+		TYPE A, ATYPE2 *B )\endcode
+*/
 
 void F4 (
         LALStatus               *status,
@@ -222,10 +222,10 @@ void F4 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixPowerC">
-\begin{verbatim}void F5 ( LALStatus *status, REAL8Array **result,
-		ATYPE *A, TYPE2 B )\end{verbatim}
- ************************************************** </lalLaTeX> */
+/**
+\codevoid F5 ( LALStatus *status, REAL8Array **result,
+		ATYPE *A, TYPE2 B )\endcode
+*/
 
 void F5 (
         LALStatus		*status,
@@ -293,10 +293,10 @@ void F5 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixPowerC">
-\begin{verbatim}void F6 ( LALStatus *status, REAL8Array **result,
-		ATYPE *A, ATYPE2 *B )\end{verbatim}
- ************************************************** </lalLaTeX> */
+/**
+\codevoid F6 ( LALStatus *status, REAL8Array **result,
+		ATYPE *A, ATYPE2 *B )\endcode
+*/
 
 void F6 (
         LALStatus		*status,
