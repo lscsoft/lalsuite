@@ -1,18 +1,18 @@
-/***************************************** <lalVerbatim file="GridCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+*/
 
-/********************************************************** <lalLaTeX>
+/**
 
-\subsection{Module \texttt{Grid.c}}
-\label{ss:Grid.c}
+\heading{Module \ref Grid.c}
+\latexonly\label{ss_Grid_c}\endlatexonly
 
 Creates or destroys a LAL grid structure.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\begin{verbatim}
+\heading{Prototypes}
+
+\code
 void
 LAL<typecode>CreateGrid( LALStatus      *stat,
                          <datatype>Grid **grid,
@@ -22,78 +22,78 @@ LAL<typecode>CreateGrid( LALStatus      *stat,
 void
 LAL<typecode>DestroyGrid( LALStatus      *stat,
                           <datatype>Grid **grid )
-\end{verbatim}
+\endcode
 
-\idx{LALI2CreateGrid()}
-\idx{LALI4CreateGrid()}
-\idx{LALI8CreateGrid()}
-\idx{LALU2CreateGrid()}
-\idx{LALU4CreateGrid()}
-\idx{LALU8CreateGrid()}
-\idx{LALSCreateGrid()}
-\idx{LALDCreateGrid()}
-\idx{LALCCreateGrid()}
-\idx{LALZCreateGrid()}
-\idx{LALI2DestroyGrid()}
-\idx{LALI4DestroyGrid()}
-\idx{LALI8DestroyGrid()}
-\idx{LALU2DestroyGrid()}
-\idx{LALU4DestroyGrid()}
-\idx{LALU8DestroyGrid()}
-\idx{LALSDestroyGrid()}
-\idx{LALDDestroyGrid()}
-\idx{LALCDestroyGrid()}
-\idx{LALZDestroyGrid()}
 
-\subsubsection*{Description}
 
-These routines create or destroy a \verb@<datatype>Grid@ structure.
-The input vector \verb@dimLength@ stores the lengths of each dimension
-of the grid \emph{and} of the array at each grid point: in the
-notation defined in \verb@Grid.h@, \verb@dimLength->length@$=M$.  The
-parameter \verb@dimension@ gives the dimension $m$ of the physical
-grid space; if $M>m$, then the remaining dimensions refer to a tangent
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\heading{Description}
+
+These routines create or destroy a <tt><datatype>Grid</tt> structure.
+The input vector \c dimLength stores the lengths of each dimension
+of the grid \e and of the array at each grid point: in the
+notation defined in \ref Grid.h, <tt>dimLength->length</tt>\f$=M\f$.  The
+parameter \c dimension gives the dimension \f$m\f$ of the physical
+grid space; if \f$M>m\f$, then the remaining dimensions refer to a tangent
 space at each grid point.  When creating a grid, the routines allocate
 space for all the internal vectors and arrays, but no data are filled
-in, with the exception of the \verb@(*grid)->data->dimLength@ vector
-(which will contain exactly the same data as the \verb@dimLength@
-input parameter).  When calling the \verb@LAL<typecode>CreateGrid()@
-routines, or on returning from the \verb@LAL<typecode>DestroyGrid()@
-routines, \verb@grid@ should be a non-\verb@NULL@ handle to a
-\verb@NULL@-valued pointer.
+in, with the exception of the <tt>(*grid)->data->dimLength</tt> vector
+(which will contain exactly the same data as the \c dimLength
+input parameter).  When calling the <tt>LAL<typecode>CreateGrid()</tt>
+routines, or on returning from the <tt>LAL<typecode>DestroyGrid()</tt>
+routines, \c grid should be a non-\c NULL handle to a
+\c NULL-valued pointer.
 
 For each of these prototype templates there are in fact 10 separate
 routines corresponding to all the numerical atomic datatypes
-\verb@<datatype>@ referred to by \verb@<typecode>@:
-\begin{center}
-\begin{tabular}{|c@{\qquad}c|c@{\qquad}c|}
-\hline
-\tt <typecode> & \tt <datatype> & \tt <typecode> & \tt <datatype> \\
-\hline
-\tt I2 & \tt  INT2 & \tt U2 & \tt    UINT2  \\
-\tt I4 & \tt  INT4 & \tt U4 & \tt    UINT4  \\
-\tt I8 & \tt  INT8 & \tt U8 & \tt    UINT8  \\
-\tt  S & \tt REAL4 & \tt  C & \tt COMPLEX8  \\
-\tt  D & \tt REAL8 & \tt  Z & \tt COMPLEX16 \\
-\hline
-\end{tabular}
-\end{center}
+<tt><datatype></tt> referred to by <tt><typecode></tt>:
 
-\subsubsection*{Algorithm}
+<table><tr><td>
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\tt <typecode></td><td>\tt <datatype></td><td>\tt <typecode></td><td>\tt <datatype></td></tr>
+<tr><td>
+\tt I2</td><td>\tt  INT2</td><td>\tt U2</td><td>\tt    UINT2</td></tr>
+<tr><td>\tt I4</td><td>\tt  INT4</td><td>\tt U4</td><td>\tt    UINT4</td></tr>
+<tr><td>\tt I8</td><td>\tt  INT8</td><td>\tt U8</td><td>\tt    UINT8</td></tr>
+<tr><td>\tt  S</td><td>\tt REAL4</td><td>\tt  C</td><td>\tt COMPLEX8</td></tr>
+<tr><td>\tt  D</td><td>\tt REAL8</td><td>\tt  Z</td><td>\tt COMPLEX16</td></tr>
+<tr><td>
+</td></tr></table>
+
+
+\heading{Algorithm}
+
+\heading{Uses}
+\code
 lalDebugLevel
 LALMalloc()                     LALFree()
 LALDCreateVector()              LALDDestroyVector()
 LAL<typecode>CreateArray()      LAL<typecode>DestroyArray()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{GridCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
