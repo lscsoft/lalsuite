@@ -1,49 +1,49 @@
-/************************************ <lalVerbatim file="ReadFrequencySeriesCV">
-Author: Torres, C. V.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Torres, C. V.
+\file
+*/
 
-/* <lalLaTeX>
+/**
 
-\subsection{Module \texttt{ReadFrequencySeries.c}}
-\label{ss:ReadFrequencySeries.c}
+\heading{Module \ref ReadFrequencySeries.c}
+\latexonly\label{ss_ReadFrequencySeries_c}\endlatexonly
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{ReadFrequencySeriesCP}
-\idx{LALZReadFrequencySeries()}
-\idx{LALCReadFrequencySeries()}
-\idx{LALDReadFrequencySeries()}
-\idx{LALSReadFrequencySeries()}
-\idx{LALReadFrequencySeries()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+
+
+
+
+
+
+
+\heading{Description}
 
 Each member of this family of functions reads from a file the output
-of the corresponding \texttt{PrintFrequencySeries} routine.
+of the corresponding \c PrintFrequencySeries routine.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\begin{verbatim}
+\code
 LALOpenDataFile()
 LALParseUnitString()
 LALCHARCreateVector()
 LALCHARDestroyVector()
 LALDCreateVector()
 LALDDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
 These functions perform I/O operations, which are not a part of LAL
 proper. They should only be used for debugging purposes in test
 functions, not in any production code.
 
-\vfill{\footnotesize\input{ReadFrequencySeriesCV}}
 
-</lalLaTeX> */
+
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -62,9 +62,9 @@ void LALParseUnitString ( LALStatus *status,
 static const LALUnit lalDimensionlessUnit 
 	= {  0, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 
-/* <lalVerbatim file="ReadFrequencySeriesNRCSID"> */
+
 NRCSID( READFREQUENCYSERIESC, "$Id$" );
-/* </lalVerbatim> */
+
 
 /* Change the first instance of the target to '\0'; returns 0 on success,
    1 on failure */

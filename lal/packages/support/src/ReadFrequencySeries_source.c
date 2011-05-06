@@ -13,11 +13,11 @@ companion function called element counter that will notify the calling
 routine of how large we should allocate the Series to be before
 calling the read frequency series module */
 
-/* <lalVerbatim file="ReadFrequencySeriesCP"> */
+
 void FUNC ( LALStatus* status, 
                               STYPE *series,
 	                      const CHAR *filename )
- /* </lalVerbatim> */
+ 
 {
   REAL8Vector		*f=NULL;
   REAL8			*fPtr;
