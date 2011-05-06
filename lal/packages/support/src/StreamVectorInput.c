@@ -1,79 +1,79 @@
-/**************************** <lalVerbatim file="StreamVectorInputCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+*/
 
-/********************************************************** <lalLaTeX>
+/**
 
-\subsection{Module \texttt{StreamVectorInput.c}}
-\label{ss:StreamVectorInput.c}
+\heading{Module \ref StreamVectorInput.c}
+\latexonly\label{ss_StreamVectorInput_c}\endlatexonly
 
 Reads data from a single line in an input stream.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{StreamVectorInputCP}
-\idx{LALCHARReadVector()}
-\idx{LALI2ReadVector()}
-\idx{LALI4ReadVector()}
-\idx{LALI8ReadVector()}
-\idx{LALU2ReadVector()}
-\idx{LALU4ReadVector()}
-\idx{LALU8ReadVector()}
-\idx{LALSReadVector()}
-\idx{LALDReadVector()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
 
-These routines read ASCII data from the I/O stream \verb@*stream@
+
+
+
+
+
+
+
+
+
+
+\heading{Description}
+
+These routines read ASCII data from the I/O stream <tt>*stream</tt>
 until a newline or the end-of-input is reached.  (The line can be of
 arbitrary length; the data is temporarily stored in a linked list of
-buffers.)  Once read, a LAL vector structure \verb@**vector@ is
+buffers.)  Once read, a LAL vector structure <tt>**vector</tt> is
 created and the data stored in it.  The routine passes back a pointer
-to the new structure.  For the numerical routines, the \verb@strict@
+to the new structure.  For the numerical routines, the \c strict
 parameter determines whether the routine will do strict error checking
 based on the contents of the input stream (see below).
 
-The basic routine in this module is \verb@LALCHARReadVector()@, which
-simply stores bytes read from \verb@*stream@ until the next newline
-character \verb@'\n'@, null character \verb@'\0'@, or the end of the
-input as determined by the \verb@feof()@ function.  The vector
-includes the newline (if present), and also an explicit \verb@'\0'@ at
+The basic routine in this module is <tt>LALCHARReadVector()</tt>, which
+simply stores bytes read from <tt>*stream</tt> until the next newline
+character <tt>'\n'</tt>, null character <tt>'\0'</tt>, or the end of the
+input as determined by the <tt>feof()</tt> function.  The vector
+includes the newline (if present), and also an explicit <tt>'\0'</tt> at
 the end, if one was not already present.  This routine should
-\emph{not} be used to read a binary data stream, which are not
+\e not be used to read a binary data stream, which are not
 logically divided into ``lines''.  Unless it aborts due to invalid
-arguments or failed memory allocation, \verb@LALCHARReadVector()@ will
+arguments or failed memory allocation, <tt>LALCHARReadVector()</tt> will
 always return successfully regardless of the contents of the input
-stream; \verb@*vector@ will created containing at least a single
-\verb@'\0'@ terminator, if nothing else.
+stream; <tt>*vector</tt> will created containing at least a single
+<tt>'\0'</tt> terminator, if nothing else.
 
-The other routines in this module use \verb@LALCHARReadVector()@ to
+The other routines in this module use <tt>LALCHARReadVector()</tt> to
 read a line, and then parse it into numerical datatypes using the
-corresponding routine in the \verb@StringConvert.c@ module.
+corresponding routine in the \ref StringConvert.c module.
 Conversion stops when the routine encounters a character that cannot
-be parsed as part of a number.  If \verb@strict@ is 0, the routine
+be parsed as part of a number.  If \c strict is 0, the routine
 will fail only due to invalid arguments or memory allocation failure,
 not from a poorly-formatted input stream; if no numbers are read,
-\verb@*vector@ will remain \verb@NULL@, but no error will be reported.
+<tt>*vector</tt> will remain \c NULL, but no error will be reported.
 (In this mode, the calling routine should always test the output
 before trying to dereference it, in order to avoid segmentation
-violations.)  If \verb@strict@ is nonzero, the routine will report an
-error if the input stream was poorly formatted, either an \verb@ELEN@
-error if no numbers were read, or \verb@EFMT@ if a character was
+violations.)  If \c strict is nonzero, the routine will report an
+error if the input stream was poorly formatted, either an \c ELEN
+error if no numbers were read, or \c EFMT if a character was
 encountered that was neither part of a parseable number nor
 whitespace.
 
-Note that \verb@strict@=0 allows an input stream to contain blank
+Note that \c strict=0 allows an input stream to contain blank
 lines or comments.  A comment begins with any character that cannot
 occur in a valid number, which will cause the numerical parser to skip
-the rest of the line.  The usual comment delimiters are \verb@'#'@ and
-\verb@'%'@, but any character except \verb@'+'@ \verb@'-'@,
-\verb@'e'@, \verb@'E'@, \verb@'.'@, digits, and whitespace will work.
+the rest of the line.  The usual comment delimiters are <tt>'#'</tt> and
+<tt>'%'</tt>, but any character except <tt>'+'</tt> <tt>'-'</tt>,
+<tt>'e'</tt>, <tt>'E'</tt>, <tt>'.'</tt>, digits, and whitespace will work.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALMalloc()                     LALFree()
 LALCHARCreateVector()           LALCHARDestroyVector()
 LALI2CreateVector()             LALU2CreateVector()
@@ -81,13 +81,13 @@ LALI4CreateVector()             LALU4CreateVector()
 LALI8CreateVector()             LALU8CreateVector()
 LALSCreateVector()              LALDCreateVector()
 LALWarning()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{StreamVectorInputCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <stdio.h>
 #include <string.h>
@@ -132,10 +132,10 @@ if ( headPtr ) {                                                     \
 
 static const BufferList empty;
 
-/* <lalVerbatim file="StreamVectorInputCP"> */
+
 void
 LALCHARReadVector( LALStatus *stat, CHARVector **vector, FILE *stream )
-{ /* </lalVerbatim> */
+{ 
   BufferList head = empty; /* head of linked list of buffers */
   BufferList *here;     /* pointer to current position in list */
   CHAR *data;           /* pointer to vector data */

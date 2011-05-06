@@ -9,10 +9,10 @@
 #define PARSEFUNC CONCAT2(LALStringTo,TYPECODE)
 #define CREATEFUNC CONCAT3(LAL,TYPECODE,CreateVector)
 
-/* <lalVerbatim file="StreamVectorInputCP"> */
+
 void
 FUNC ( LALStatus *stat, VTYPE **vector, FILE *stream, BOOLEAN strict )
-{ /* </lalVerbatim> */
+{ 
   UINT4 i;                 /* an index */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
   BufferList head = empty; /* head of linked list of buffers */
