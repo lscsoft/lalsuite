@@ -272,11 +272,11 @@ sub cleanupLSD {
     # get rid of any long string of divider characters
     $text =~ s!([-*%+=])\1{4,}!!sg;
 
-    # get rid of CVS tags
-    $text =~ s!\$(?:Id|Date|Revision)\$!!mg;
+    # use CVS Id tag as a hook to place a '\file' command
+    $text =~ s!^(\s*\*?\s*)(Revision:\s*)?\$Id\$!\\file!mp;
 
-    # use 'Revision:' string as a hook to place a '\file' command
-    $text =~ s!^(\s*\*?\s*)Revision:!\\file!mp;
+    # get rid of other CVS tags
+    $text =~ s!\$(?:Date|Revision)\$!!mg;
 
     # convert 'Author:' string to doxygen formatting
     $text =~ s!^(\s*\*?\s*)Author:!$1\\author!mp;
