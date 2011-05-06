@@ -59,6 +59,9 @@ pod2usage(                            -exitval => 0) if $action eq "help";
 pod2usage(-message => "No filename!", -exitval => 2) if !defined($fname);
 pod2usage(-message => "No action!",   -exitval => 2) if !defined($action);
 
+# exit status
+my $status = 0;
+
 # temporary file names
 my $tmp1 = mktemp("$fname.LSD2doxygen.XXXXX");
 my $tmp2 = mktemp("$fname.LSD2doxygen.XXXXX");
@@ -205,6 +208,7 @@ switch ($action) {
             }
             else {
                 print "Code has been modified in '$fname'!\n";
+                $status = 1;
             }
         }
 
@@ -221,6 +225,7 @@ switch ($action) {
     }
     else {
         die "Invalid action '$action'!";
+        $status = 1;
     }
 }
 
@@ -228,13 +233,16 @@ switch ($action) {
 unlink $tmp1 if -f $tmp1;
 unlink $tmp2 if -f $tmp2;
 
+# exit
+exit $status;
+
 # parse file through the C preprocessor
 sub parseThruCPP {
     my ($fname) = @_;
     my ($cpp, $err);
 
     # proprocess $fname and get output
-    system "cpp -E $fname >$tmp1 2>$tmp2";
+    system "gcc -E $fname >$tmp1 2>$tmp2";
     open FILE, "<$tmp1" or die "Could not open '$tmp1'!: $!";
     while (<FILE>) {
         $cpp .= $_;
