@@ -27,10 +27,10 @@
 #define F5 CONCAT4(LAL,TYPECODE,ArrayDotSlash,TYPECODE2)
 #define F6 CONCAT5(LAL,TYPECODE,ArrayDotSlash,TYPECODE2,Array)
 
-/******************************* <lalLaTeX file="MatrixDivideC">
-\begin{verbatim}void F1 ( LALStatus *status, VTYPE2 **result,
-		TYPE A, VTYPE2 *B )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F1 ( LALStatus *status, VTYPE2 **result,
+		TYPE A, VTYPE2 *B )\endcode
+*/
 
 void F1 (
         LALStatus		*status,
@@ -70,10 +70,10 @@ void F1 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixDivideC">
-\begin{verbatim}void F2 ( LALStatus *status, VTYPE2 **result,
-		VTYPE2 *A, TYPE B )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F2 ( LALStatus *status, VTYPE2 **result,
+		VTYPE2 *A, TYPE B )\endcode
+*/
 
 void F2 (
         LALStatus               *status,
@@ -113,10 +113,10 @@ void F2 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixDivideC">
-\begin{verbatim}void F3 ( LALStatus *status, VTYPE **result,
-		VTYPE *A, VTYPE2 *B )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F3 ( LALStatus *status, VTYPE **result,
+		VTYPE *A, VTYPE2 *B )\endcode
+*/
 
 void F3 (
         LALStatus		*status,
@@ -160,10 +160,10 @@ void F3 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixDivideC">
-\begin{verbatim}void F4 ( LALStatus *status, ATYPE2 **result,
-		TYPE A, ATYPE2 *B )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F4 ( LALStatus *status, ATYPE2 **result,
+		TYPE A, ATYPE2 *B )\endcode
+*/
 
 void F4 (
         LALStatus               *status,
@@ -230,10 +230,10 @@ void F4 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixDivideC">
-\begin{verbatim}void F5 ( LALStatus *status, ATYPE **result,
-		ATYPE *A, TYPE2 B )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F5 ( LALStatus *status, ATYPE **result,
+		ATYPE *A, TYPE2 B )\endcode
+*/
 
 void F5 (
         LALStatus		*status,
@@ -300,10 +300,10 @@ void F5 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixDivideC">
-\begin{verbatim}void F6 ( LALStatus *status, ATYPE **result,
-		ATYPE *A, ATYPE2 *B )\end{verbatim}
-*************************************************** </lalLaTeX> */
+/**
+\codevoid F6 ( LALStatus *status, ATYPE **result,
+		ATYPE *A, ATYPE2 *B )\endcode
+*/
 
 void F6 (
         LALStatus		*status,
