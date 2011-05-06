@@ -1,63 +1,63 @@
-/************************************ <lalVerbatim file="PrintVectorCV">
-Author: Allen, B.; generalized by J.T. Whelan
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Allen, B.; generalized by J.T. Whelan
+\file
+*/
 
-/* <lalLaTeX>
+/**
 
-\subsection{Module \texttt{PrintVector.c}}
-\label{ss:PrintVector.c}
+\heading{Module \ref PrintVector.c}
+\latexonly\label{ss_PrintVector_c}\endlatexonly
 
-Print a $\langle\mbox{datatype}\rangle$Vector object into a file.  For
+Print a \f$\langle\mbox{datatype}\rangle\f$Vector object into a file.  For
 use in non-production and test code only.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{PrintVectorCP}
-\idx{LALZPrintVector()}
-\idx{LALCPrintVector()}
-\idx{LALDPrintVector()}
-\idx{LALSPrintVector()}
-\idx{LALI2PrintVector()}
-\idx{LALI4PrintVector()}
-\idx{LALI8PrintVector()}
-\idx{LALU2PrintVector()}
-\idx{LALU4PrintVector()}
-\idx{LALU8PrintVector()}
-\idx{LALCHARPrintVector()}
-\idx{LALPrintVector()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\heading{Description}
 
 Each member of this family of functions prints the elements of
-$\langle\mbox{datatype}\rangle$\verb+Vector+ into a file.  Note: the
-file names are $\langle\mbox{DT}\rangle$\verb+PrintVector.000+,
-$\langle\mbox{DT}\rangle$\verb+PrintVector.001+, and so on.
-($\langle\mbox{DT}\rangle$ is the abbreviation for the datatype,
+\f$\langle\mbox{datatype}\rangle\f$\c Vector into a file.  Note: the
+file names are \f$\langle\mbox{DT}\rangle\f$<tt>PrintVector.000</tt>,
+\f$\langle\mbox{DT}\rangle\f$<tt>PrintVector.001</tt>, and so on.
+(\f$\langle\mbox{DT}\rangle\f$ is the abbreviation for the datatype,
 included in the function names above.) The file numbers are
 incremented with each additional call.  This function is for debugging
 use only: it uses a static internal variable to keep track of the file
 number so it should not be used in any real analysis codes.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\begin{verbatim}
+\code
 LALFopen()
 LALFclose()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
 This function uses an internal static variable to keep track of file
 numbers.  For this reason it should only be used for debugging
 purposes in test functions, not in any production code.
 
 Additionally, since printf cannot handle INT8 as integers, the
-functions \verb&LALI8PrintVector()& and \verb&LALU8PrintVector()& use
+functions <tt>LALI8PrintVector()</tt> and <tt>LALU8PrintVector()</tt> use
 a typecast to REAL8 and are thus only valid for numbers between around
-$-10^{15}$ and $10^{15}$.
+\f$-10^{15}\f$ and \f$10^{15}\f$.
 
 The output format is two or three space-separated columns: the first
 column is the index of the element; the second is the element itself
@@ -65,9 +65,9 @@ for real and integer vectors and the real part of the element for
 complex vectors; complex vectors have a third column containing the
 imaginary part of the element.
 
-\vfill{\footnotesize\input{PrintVectorCV}}
 
-</lalLaTeX> */
+
+*/
 
 
 #include <lal/LALStdlib.h>
@@ -75,9 +75,9 @@ imaginary part of the element.
 #include <lal/LALDatatypes.h>
 #include <lal/PrintVector.h>
 
-/* <lalVerbatim file="VectorFactoriesNRCSID"> */
+
 NRCSID( PRINTVECTORC, "$Id$" );
-/* </lalVerbatim> */
+
 
 #define TYPECODE Z
 #define TYPE COMPLEX16

@@ -7,9 +7,9 @@
 #define VTYPE CONCAT2(TYPE,Vector)
 #define FUNC CONCAT3(LAL,TYPECODE,PrintVector)
 
-/* <lalVerbatim file="PrintVectorCP"> */
+
 void FUNC ( VTYPE *vector ) 
-{ /* </lalVerbatim> */
+{ 
   int i;
   static int filenum=0;
   FILE *fp;
