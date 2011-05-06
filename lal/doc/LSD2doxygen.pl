@@ -281,7 +281,7 @@ sub cleanupLSD {
 
     # replace first line #if / last line #endif directives with doxygen comments
     $text =~ s!\A#if[^\n]*!/**!;
-    $text =~ s!#endif\Z!*/!;
+    $text =~ s!#endif[^\n]*\Z!*/!;
 
     # replace long first / last line comments with doxygen comments
     $text =~ s!\A/($n|\*)+!/**!;
