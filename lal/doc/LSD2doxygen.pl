@@ -456,6 +456,7 @@ sub cleanupLSD {
 
         # replace miscellaneous LaTeX commands
         $text =~ s!\\lq!`!g;
+        $text =~ s!``|''!"!g;
 
         # remove any empty LaTeX comments
         $text =~ s!^$n*%$n*$!!mg;
