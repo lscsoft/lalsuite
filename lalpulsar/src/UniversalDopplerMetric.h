@@ -283,6 +283,7 @@ typedef struct
 {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 dim;						/**< number of dimensions covered */
+  SWIGLAL_FIXED_1DARRAY_ELEM(DopplerCoordinateID, coordIDs);
   DopplerCoordinateID coordIDs[DOPPLERMETRIC_MAX_DIM];	/**< coordinate 'names' */
 } DopplerCoordinateSystem;
 
@@ -294,7 +295,9 @@ typedef struct
 {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;						/**< number N of detectors */
+  SWIGLAL_FIXED_1DARRAY_ELEM(LALDetector, sites);
   LALDetector sites[DOPPLERMETRIC_MAX_DETECTORS]; 	/**< array of N detectors */
+  SWIGLAL_FIXED_1DARRAY_ELEM(REAL8, detWeights);
   REAL8 detWeights[DOPPLERMETRIC_MAX_DETECTORS];	/**< array of N detector noise-weights: must satisfy \f$\sum_{i=1}^N w_i = 1\f$ */
 } MultiDetectorInfo;
 
