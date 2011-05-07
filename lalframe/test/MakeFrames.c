@@ -17,28 +17,26 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="MakeFramesCV">
- * Author: Jolien D. E. Creighton
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Program \texttt{MakeFrames.c}}
+/**
+ * \author Jolien D. E. Creighton
+ * \file
+ *
+ * \heading{Program \ref MakeFrames.c}
  *
  * Make some frames with random Gaussian noise.
  *
- * \subsubsection*{Usage}
+ * \heading{Usage}
  *
- * \begin{verbatim}
+ * \code
  * MakeFrames
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
  * This program makes some frames with one ADC channel containing random
  * Gaussian noise.
  *
- **** </lalLaTeX> */
+*/
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>

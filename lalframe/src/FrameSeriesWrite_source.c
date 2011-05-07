@@ -149,14 +149,14 @@ int XWFUNC ( STYPE *series, int frnum )
 
 
 
-/* <lalVerbatim file="FrameSeriesCP"> */
+
 void
 WFUNC (
     LALStatus		*status,
     STYPE 	*series,
     FrOutPar		*params
     )
-{ /* </lalVerbatim> */
+{ 
   TYPE 	*data;
   CHAR   seconds[] = "s";
   CHAR   comment[] = "Created by " STRING(WFUNC);
@@ -256,7 +256,7 @@ WFUNC (
 
 
 
-/* <lalVerbatim file="FrameSeriesCP"> */
+
 void
 FSWFUNC (
     LALStatus		*status,
@@ -264,7 +264,7 @@ FSWFUNC (
     FrOutPar		*params,
     INT4                 subtype
     )
-{ /* </lalVerbatim> */
+{ 
   TYPE 	*data;
   CHAR   hertz[] = "Hz";
   CHAR   comment[] = "Created by " STRING(FSWFUNC);
