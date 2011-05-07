@@ -276,8 +276,8 @@ sub cleanupLSD {
     $text =~ s!</?lal(?:LaTeX|Verbatim)[^>]*?>!!sg;
 
     # make embedded C comments safe
-    while (($text =~ s!\A(.+)/\*!$1/-*!sg) > 0) {}
-    while (($text =~ s!\*/(.+)\Z!*-/$1!sg) > 0) {}
+    while (($text =~ s!\A(.+)/\*!$1/\\*!sg) > 0) {}
+    while (($text =~ s!\*/(.+)\Z!*\\/$1!sg) > 0) {}
 
     # replace first line #if / last line #endif directives with doxygen comments
     $text =~ s!\A#if[^\n]*!/**!;
