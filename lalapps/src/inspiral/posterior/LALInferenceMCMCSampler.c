@@ -422,10 +422,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//LALInferenceCopyVariables(runState->currentParams,&(TcurrentParams));
 		//TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
     
-    ppt = getProcParamVal(runState->commandLine, "--adaptVerbose");
+    ppt = LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose");
     if (ppt) {
      printf("iteration %d\t",i);
-     printf("MPIrank %d\ttemperature=%f\t",MPIrank,*(REAL8*) getVariable(runState->proposalArgs, "temperature"));
+     printf("MPIrank %d\ttemperature=%f\t",MPIrank,*(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature"));
      for (p=0; p<nPar; ++p) {
      printf("%f\t",sigmas->data[p]);
      }
