@@ -225,10 +225,6 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, 
   return(loglikeli);
 }
 
-
-REAL8 FreqDomainStudentTLogLikelihood(LALVariables *currentParams, LALIFOData *data, 
-                                      LALTemplateFunction *template,
-                                      LALVariables *df)
 /***************************************************************/
 /* Student-t (log-) likelihood function                        */
 /* as described in Roever/Meyer/Christensen (2011):            */
@@ -259,6 +255,10 @@ REAL8 FreqDomainStudentTLogLikelihood(LALVariables *currentParams, LALIFOData *d
 /*        i.e., to be a set of vectors corresponding to        */
 /*        frequencies)                                         */
 /***************************************************************/
+
+REAL8 FreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, 
+                                      LALInferenceTemplateFunction *template,
+                                      LALInferenceVariables *df)
 {
   static int timeDomainWarning = 0;
   double Fplus, Fcross;
@@ -269,7 +269,7 @@ REAL8 FreqDomainStudentTLogLikelihood(LALVariables *currentParams, LALIFOData *d
   REAL8 plainTemplateReal, plainTemplateImag;
   REAL8 templateReal, templateImag;
   int i, lower, upper;
-  LALIFOData *dataPtr;
+  LALInferenceIFOData *dataPtr;
   double ra, dec, psi, distMpc, gmst;
   double GPSdouble;
   LIGOTimeGPS GPSlal;
@@ -282,14 +282,14 @@ REAL8 FreqDomainStudentTLogLikelihood(LALVariables *currentParams, LALIFOData *d
   int different;
   LALStatus status;
   memset(&status,0,sizeof(status));
-  LALVariables intrinsicParams;
+  LALInferenceVariables intrinsicParams;
 
   /* determine source's sky location & orientation parameters: */
-  ra        = *(REAL8*) getVariable(currentParams, "rightascension"); /* radian      */
-  dec       = *(REAL8*) getVariable(currentParams, "declination");    /* radian      */
-  psi       = *(REAL8*) getVariable(currentParams, "polarisation");   /* radian      */
-  GPSdouble = *(REAL8*) getVariable(currentParams, "time");           /* GPS seconds */
-  distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
+  ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
+  dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
+  psi       = *(REAL8*) LALInferenceGetVariable(currentParams, "polarisation");   /* radian      */
+  GPSdouble = *(REAL8*) LALInferenceGetVariable(currentParams, "time");           /* GPS seconds */
+  distMpc   = *(REAL8*) LALInferenceGetVariable(currentParams, "distance");       /* Mpc         */
 
   /* figure out GMST: */
   /* XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5)); */
@@ -300,12 +300,12 @@ REAL8 FreqDomainStudentTLogLikelihood(LALVariables *currentParams, LALIFOData *d
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
   intrinsicParams.head      = NULL;
   intrinsicParams.dimension = 0;
-  copyVariables(currentParams, &intrinsicParams);
-  removeVariable(&intrinsicParams, "rightascension");
-  removeVariable(&intrinsicParams, "declination");
-  removeVariable(&intrinsicParams, "polarisation");
-  removeVariable(&intrinsicParams, "time");
-  removeVariable(&intrinsicParams, "distance");
+  LALInferenceCopyVariables(currentParams, &intrinsicParams);
+  LALInferenceRemoveVariable(&intrinsicParams, "rightascension");
+  LALInferenceRemoveVariable(&intrinsicParams, "declination");
+  LALInferenceRemoveVariable(&intrinsicParams, "polarisation");
+  LALInferenceRemoveVariable(&intrinsicParams, "time");
+  LALInferenceRemoveVariable(&intrinsicParams, "distance");
   /*  TODO: add pointer to template function here.                                         */
   /*  (otherwise same parameters but different template will lead to no re-computation!!)  */
 
@@ -326,31 +326,31 @@ REAL8 FreqDomainStudentTLogLikelihood(LALVariables *currentParams, LALIFOData *d
 
     /* Compare parameter values with parameter values corresponding */
     /* to currently stored template; ignore "time" variable:        */
-    if (checkVariable(dataPtr->modelParams, "time")) {
-      timeTmp = *(REAL8 *) getVariable(dataPtr->modelParams, "time");
-      removeVariable(dataPtr->modelParams, "time");
+    if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
+      timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
+      LALInferenceRemoveVariable(dataPtr->modelParams, "time");
     }
     else timeTmp = GPSdouble;
-    different = compareVariables(dataPtr->modelParams, &intrinsicParams);
+    different = LALInferenceCompareVariables(dataPtr->modelParams, &intrinsicParams);
     /* "different" now may also mean that "dataPtr->modelParams" */
     /* wasn't allocated yet (as in the very 1st iteration).      */
 
     if (different) { /* template needs to be re-computed: */
-      copyVariables(&intrinsicParams, dataPtr->modelParams);
-      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
+      LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
+      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
       template(dataPtr);
       if (dataPtr->modelDomain == timeDomain) {
 	if (!timeDomainWarning) {
 	  timeDomainWarning = 1;
 	  fprintf(stderr, "WARNING: using time domain template with frequency domain likelihood (in %s, line %d)\n", __FILE__, __LINE__);
 	}
-        executeFT(dataPtr);
+        LALInferenceExecuteFT(dataPtr);
         /* note that the dataPtr->modelParams "time" element may have changed here!! */
         /* (during "template()" computation)  */
       }
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
-      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
+      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
     }
 
     /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
@@ -365,15 +365,15 @@ REAL8 FreqDomainStudentTLogLikelihood(LALVariables *currentParams, LALIFOData *d
                                              ra, dec, &GPSlal);
     /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.)    */
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
-    timeshift =  (GPSdouble - (*(REAL8*) getVariable(dataPtr->modelParams, "time"))) + timedelay;
+    timeshift =  (GPSdouble - (*(REAL8*) LALInferenceGetVariable(dataPtr->modelParams, "time"))) + timedelay;
     twopit    = LAL_TWOPI * timeshift;
 
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
 
-    if (checkVariable(currentParams, "crazyInjectionHLSign") &&
-        *((INT4 *)getVariable(currentParams, "crazyInjectionHLSign"))) {
+    if (LALInferenceCheckVariable(currentParams, "crazyInjectionHLSign") &&
+        *((INT4 *)LALInferenceGetVariable(currentParams, "crazyInjectionHLSign"))) {
       if (strstr(dataPtr->name, "H") || strstr(dataPtr->name, "L")) {
         FplusScaled *= -1.0;
         FcrossScaled *= -1.0;
@@ -385,7 +385,7 @@ REAL8 FreqDomainStudentTLogLikelihood(LALVariables *currentParams, LALIFOData *d
     dataPtr->timeshift = timeshift;
 
     /* extract the element from the "df" vector that carries the current Ifo's name: */
-    degreesOfFreedom = *(REAL8*) getVariable(df, dataPtr->name);
+    degreesOfFreedom = *(REAL8*) LALInferenceGetVariable(df, dataPtr->name);
     if (!(degreesOfFreedom>0)) die(" ERROR in StudentTLogLikelihood(): degrees-of-freedom parameter (\"df\") must be positive.\n");
 
     /* determine frequency range & loop over frequency bins: */
@@ -425,14 +425,14 @@ REAL8 FreqDomainStudentTLogLikelihood(LALVariables *currentParams, LALIFOData *d
     dataPtr = dataPtr->next;
   }
   loglikeli = -1.0 * chisquared; /* note (again): the log-likelihood is unnormalised! */
-  destroyVariables(&intrinsicParams);  
+  LALInferenceDestroyVariables(&intrinsicParams);  
   return(loglikeli);
 }
 
 
 
-REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
-                              LALTemplateFunction *template)
+REAL8 FreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
+                              LALInferenceTemplateFunction *template)
 /***************************************************************/
 /* (log-) likelihood function.                                 */
 /* Returns the non-normalised logarithmic likelihood.          */
