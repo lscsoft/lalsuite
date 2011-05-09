@@ -20,9 +20,6 @@
 /**
 \author Creighton, T. D.
 \file
-*/
-
-/**
 
 \heading{Header \ref Grid.h}
 \latexonly\label{s_Grid_h}\endlatexonly

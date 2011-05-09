@@ -1,9 +1,6 @@
 /**
 \author Creighton, T. D.
 \file
-*/
-
-/**
 
 \heading{Module \ref Grid.c}
 \latexonly\label{ss_Grid_c}\endlatexonly
@@ -75,8 +72,7 @@ routines corresponding to all the numerical atomic datatypes
 <tr><td>\tt I8</td><td>\tt  INT8</td><td>\tt U8</td><td>\tt    UINT8</td></tr>
 <tr><td>\tt  S</td><td>\tt REAL4</td><td>\tt  C</td><td>\tt COMPLEX8</td></tr>
 <tr><td>\tt  D</td><td>\tt REAL8</td><td>\tt  Z</td><td>\tt COMPLEX16</td></tr>
-<tr><td>
-</td></tr></table>
+</table>
 
 
 \heading{Algorithm}
