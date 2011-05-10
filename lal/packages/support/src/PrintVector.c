@@ -1,9 +1,6 @@
 /**
 \author Allen, B.; generalized by J.T. Whelan
 \file
-*/
-
-/**
 
 \heading{Module \ref PrintVector.c}
 \latexonly\label{ss_PrintVector_c}\endlatexonly

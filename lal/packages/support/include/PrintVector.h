@@ -20,9 +20,6 @@
 /**
 \author Allen, B.; generalized by J. T. Whelan <jtwhelan@loyno.edu>
 \file
-*/
-
-/**
 
 \heading{Header \ref PrintVector.h}
 \latexonly\label{s_PrintVector_h}\endlatexonly
