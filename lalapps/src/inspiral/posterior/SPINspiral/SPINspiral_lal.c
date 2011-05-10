@@ -1675,12 +1675,12 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   //memcpy( &(waveform->f->epoch), &(waveform->a->epoch), sizeof(LIGOTimeGPS) );
   //memcpy( &(waveform->phi->epoch), &(waveform->a->epoch), sizeof(LIGOTimeGPS) );
 
-  waveform.f->epoch = waveform.a->epoch;
-  waveform.phi->epoch = waveform.a->epoch;
+  waveform->f->epoch = waveform->a->epoch;
+  waveform->phi->epoch = waveform->a->epoch;
 
-  if ( waveform.shift )
+  if ( waveform->shift )
     {
-      waveform.shift->epoch = waveform.a->epoch;
+      waveform->shift->epoch = waveform->a->epoch;
     }
   
   
