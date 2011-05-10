@@ -1,5 +1,5 @@
-#include <LALSTPNWaveformFrameless.h>
-#include <LALAdaptiveRungeKutta4.h>
+#include <lal/LALSTPNWaveformFrameless.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 #include <stdio.h>
 
 NRCSID (LALSTPNWAVEFORMFRAMELESSC, "$Id$");
