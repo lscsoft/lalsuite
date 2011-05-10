@@ -39,7 +39,6 @@ lalinference_test_SOURCES = InferenceTest.c
 endif
 
 endif
-91c2f5357595f16ef04a31f5441fa8ecf3e
 endif
 
 frame_progs = \
