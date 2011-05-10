@@ -45,6 +45,9 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalinference])
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
+# debug
+LALSUITE_ENABLE_DEBUG
+
 # put version/configure info in config header
 lalinference_version_major=`echo "$VERSION" | cut -d. -f1`
 lalinference_version_minor=`echo "$VERSION" | cut -d. -f2`
