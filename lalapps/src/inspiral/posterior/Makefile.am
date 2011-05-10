@@ -3,11 +3,11 @@ SUBDIRS = SPINspiral mpi
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 
-#Tests for the time-domian code
-td_test_progs = TDW_test conv_test time_domain_overlap_test
-TDW_test_SOURCES = TDW_test.c
-conv_test_SOURCES = conv_test.c
-time_domain_overlap_test_SOURCES = time_domain_overlap_test.c
+# #Tests for the time-domian code
+# td_test_progs = TDW_test conv_test time_domain_overlap_test
+# TDW_test_SOURCES = TDW_test.c
+# conv_test_SOURCES = conv_test.c
+# time_domain_overlap_test_SOURCES = time_domain_overlap_test.c
 
 
 if LALINSPIRAL
