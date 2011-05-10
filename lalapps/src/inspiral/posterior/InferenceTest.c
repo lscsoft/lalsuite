@@ -55,6 +55,7 @@ ProcessParamsTable *ppt, *ptr;
 LALInferenceRunState *runstate=NULL;
 int i, j, k;
 
+LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 //Test LALInferenceProposalFunction
 void BasicMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 void ASinOmegaTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
