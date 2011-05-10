@@ -1,9 +1,6 @@
 /**
 \author Whelan, J. T.
 \file
-*/
-
-/**
 
 \heading{Module \ref PrintTimeSeries.c}
 \latexonly\label{ss_PrintTimeSeries_c}\endlatexonly
