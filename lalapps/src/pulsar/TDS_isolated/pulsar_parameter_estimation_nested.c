@@ -349,11 +349,13 @@ void readPulsarData( LALInferenceRunState *runState ){
         CHAR *tmpstr = NULL;
         REAL8 psdvalf = 0.;
         
+        numPsds++;
+       
         tempdet = strsep( &tempdets, "," );
         
         if( (tmpstr = strstr(tempdet, "A")) != NULL ){ /* have Advanced */
-          XLALStringCopy( dets[i], tmpstr, strlen(tmpstr)+1 );
-         
+          XLALStringCopy( dets[i], tmpstr+1, strlen(tmpstr)+1 );
+          
           if( !strcmp(dets[i], "H1") || !strcmp(dets[i], "L1") ||  
               !strcmp(dets[i], "H2") ){ /* ALIGO */
             LALAdvLIGOPsd( &status, &psdvalf, pfreq );
@@ -371,7 +373,9 @@ void readPulsarData( LALInferenceRunState *runState ){
         else{ /* initial detector */
           XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
           
-          if( !strcmp(dets[i], "H1") || strcmp(dets[i], "L1") ||  
+          fprintf(stderr, "dets[i] = %s\n", dets[i]);
+          
+          if( !strcmp(dets[i], "H1") || !strcmp(dets[i], "L1") ||  
               !strcmp(dets[i], "H2") ){ /* Initial LIGO */
             psdvalf = XLALLIGOIPsd( pfreq );
           
@@ -474,7 +478,7 @@ void readPulsarData( LALInferenceRunState *runState ){
       
   }
   else{
-    fprintf(stderr, "Error... --detectors or --fake-data needs to be set.\n");
+    fprintf(stderr, "Error... --detectors OR --fake-data needs to be set.\n");
     fprintf(stderr, USAGE, commandLine->program);
     exit(0);
   }
@@ -578,10 +582,14 @@ defined!\n");
 
     /* set detector */
     ifodata->detector = XLALGetSiteInfo( dets[i] );
-
+    
+    /* set dummy initial time */
+    gpstime.gpsSeconds = 0;
+    gpstime.gpsNanoSeconds = 0;
+    
     /* allocate time domain data */
     ifodata->compTimeData = NULL;
-    ifodata->compTimeData = XLALCreateCOMPLEX16TimeSeries( "", 0, 0.,
+    ifodata->compTimeData = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0.,
                                                             1., &lalSecondUnit,
                                                             MAXLENGTH );
     
@@ -591,7 +599,7 @@ defined!\n");
     
     /* allocate time domain model */
     ifodata->compModelData = NULL;
-    ifodata->compModelData = XLALCreateCOMPLEX16TimeSeries( "", 0, 0.,
+    ifodata->compModelData = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0.,
                                                             1., &lalSecondUnit,
                                                             MAXLENGTH );
     
@@ -617,17 +625,7 @@ defined!\n");
 
       /* read in data */
       while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
-        /* check that size of data file is not to large */
-        if ( j == 0 ){
-          XLALGPSSetREAL8( &gpstime, times );
-
-          ifodata->compTimeData = NULL;
-          ifodata->compTimeData = XLALCreateCOMPLEX16TimeSeries( "", &gpstime,
-                                                                 0., 1.,
-                                                                 &lalSecondUnit,
-                                                                 MAXLENGTH );
-        }
-      
+        /* check that size of data file is not to large */      
         if( j == MAXLENGTH ){
           fprintf(stderr, "Error... size of MAXLENGTH not large enough.\n");
           exit(3);
@@ -653,7 +651,7 @@ defined!\n");
       for ( k = 0; k<j; k++ )
         XLALGPSSetREAL8( &ifodata->dataTimes->data[k], temptimes->data[k] );
       
-      ifodata->dataTimes->data = XLALRealloc( &ifodata->dataTimes->data, 
+      ifodata->dataTimes->data = XLALRealloc( ifodata->dataTimes->data, 
                                               j * sizeof(LIGOTimeGPS) );
       ifodata->dataTimes->length = (UINT4)j;
       
@@ -672,17 +670,17 @@ defined!\n");
       REAL8 psdscale = 0.;
       
       /* resize data time stamps */
-      ifodata->dataTimes->data = XLALRealloc( &ifodata->dataTimes->data, 
+      ifodata->dataTimes->data = XLALRealloc( ifodata->dataTimes->data, 
                                               datalength*sizeof(LIGOTimeGPS) );
       ifodata->dataTimes->length = (UINT4)datalength;
       
       /* resize the data and model times series */
       ifodata->compTimeData =
         XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, datalength );
-
+        
       ifodata->compModelData = 
         XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, datalength );
-      
+        
       /* create data drawn from normal distribution with zero mean and unit
          variance */
       realdata = XLALCreateREAL4Vector( datalength );
@@ -749,7 +747,6 @@ void setupFromParFile( LALInferenceRunState *runState )
 
   /* Setup lookup tables for amplitudes */
   setupLookupTables( runState, &psr );
-  printf("Setup lookup tables.\n");
   
   runState->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
   
@@ -834,8 +831,6 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
   INT4 timeBins;
   if( ppt ) timeBins = atoi( ppt->value );
   else timeBins = TIMEBINS; /* default time bins */  
-        
-  if(verbose) fprintf(stdout,"psi-bins = %i, time-bins =%i\n",psiBins,timeBins);
         
   while(data){
     REAL8Vector *sumData = NULL;
@@ -1903,6 +1898,8 @@ void injectSignal( LALInferenceRunState *runState ){
   ProcessParamsTable *commandLine = runState->commandLine;
   
   BinaryPulsarParams injpars;
+
+  fprintf(stderr, "Going to inject signal.\n");
   
   ppt = LALInferenceGetProcParamVal( commandLine, "--inject-file" );
   if( ppt ){
@@ -1924,6 +1921,8 @@ parameter file %s is wrong.\n", injectfile);
     return;
   }
   
+  fprintf(stderr, "Injection parameter file is %s\n", injectfile);
+  
   /* create signal to inject and add to the data */
   while ( data ){
     FILE *fp = NULL;
@@ -1933,14 +1932,19 @@ parameter file %s is wrong.\n", injectfile);
     /* check whether to output the data */
     if ( ppt2 ){
       /* add the site prefix to the start of the output name */
-      CHAR *outfile = data->detector->frDetector.prefix;
+      CHAR *outfile = NULL;
+      
+      outfile = XLALStringDuplicate( data->detector->frDetector.prefix );
+      
       outfile = XLALStringAppend( outfile, LALInferenceGetProcParamVal(
-                 commandLine, "--inject-output" )->value );
+        commandLine, "--inject-output" )->value );
       
       if ( (fp = fopen(outfile, "w")) == NULL ){
         fprintf(stderr, "Non-fatal error... unable to open file %s to output \
 injection\n", outfile);
       }
+      
+      fprintf(stderr, "Injection output file is %s.\n", outfile);
     }
                                                    
     INT4 i = 0, length = data->dataTimes->length;
