@@ -39,7 +39,6 @@ file.
 \verb+PrintTimeSeries.c+ and \verb+PrintFrequencySeries.c+.
 
 \vfill{\footnotesize\input{PrintFTSeriesHV}}
-\newpage\input{PrintTimeSeriesC}
 \newpage\input{PrintFTSeriesTestC}
 \newpage\input{PrintFrequencySeriesC}
 
