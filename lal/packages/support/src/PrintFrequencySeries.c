@@ -1,9 +1,6 @@
 /**
 \author Whelan, J. T.
 \file
-*/
-
-/**
 
 \heading{Module \ref PrintFrequencySeries.c}
 \latexonly\label{ss_PrintFrequencySeries_c}\endlatexonly
