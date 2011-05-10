@@ -205,7 +205,9 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	
 	if(MCMCinput->injectionTable!=NULL) MCMCinput->funcInit(temp,(void *)MCMCinput->injectionTable);
 	else MCMCinput->funcInit(temp,(void *)MCMCinput->inspiralTable);
-	
+	if(!PriorIsSane(temp))
+		{fprintf(stderr,"ERROR: Prior is not sane, check ranges specified\n"); exit(1);}
+
 	/* Likelihood of the noise model */
 	logZnoise=0.0;
 	for (j=0;j<MCMCinput->numberDataStreams;j++){
@@ -223,6 +225,8 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 			else MCMCinput->funcInit(Live[i],(void *)MCMCinput->inspiralTable);
 			MCMCinput->dim=Live[i]->dimension;
 			MCMCinput->funcPrior(MCMCinput,Live[i]);
+			if(!PriorIsSane(Live[i]))
+				{fprintf(stderr,"ERROR: Prior is not sane, check ranges specified\n"); exit(1);}
 			if(Live[i]->logPrior==-DBL_MAX) XLALMCMCFreePara(Live[i]);
 		} while(Live[i]->logPrior==-DBL_MAX);
 		MCMCinput->funcLikelihood(MCMCinput,Live[i]);
