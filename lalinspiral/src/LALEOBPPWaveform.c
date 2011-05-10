@@ -1509,7 +1509,8 @@ LALEOBPPWaveformEngine (
      ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE );
    }
 
-   if (signalvec1) length = signalvec1->length; else if (h) length = h->length;
+   /* Since h contains both plus and cross, it is twice the length of the vectors */
+   if (signalvec1) length = signalvec1->length; else if (h) length = h->length / 2;
 
    /* Allocate some memory */
    values    = XLALCreateREAL8Vector( nn );
