@@ -2300,8 +2300,8 @@ for ifos in ifo_coincs:
       coire_segments(coinc_nodes[ifos], coire_summary_job, dag,
           opts.summary_first_coinc_triggers,
           opts.coire_coincidence, ifos, gps_start_time, gps_end_time,
-          inj_file=inj_file, ifotag="SUMMARY_FIRST_" + ifos, usertag=usertag, inspinjNode=inspinj)
-
+          inj_file=inj_file, ifotag="SUMMARY_FIRST_" + ifos, usertag=usertag, 
+          inspinjNode=inspinj)
 
   # Step 6 slide: Time slides 
   coinc_slide_nodes[ifos] = []
@@ -2440,7 +2440,8 @@ for ifos in ifo_coincs:
         coire_segments(coire2_nodes[ifos], coire2_summary_job, dag,
             opts.summary_coinc_triggers, 
             opts.coire_second_coinc, ifos, gps_start_time, gps_end_time, 
-            inj_file=inj_file, ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag)
+            inj_file=inj_file, ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag,
+            inspinjNode=inspinj)
 
       for ifo in ifo_list:
         if ifo in ifos: 
@@ -2454,7 +2455,8 @@ for ifos in ifo_coincs:
             sire_segments(sire_nodes, sire_summary_job, dag, 
                 opts.summary_single_ifo_triggers, opts.sire_second_coinc, ifo, 
                 gps_start_time, gps_end_time, inj_file = inj_file, 
-                ifotag="SUMMARY_SECOND_" + ifos, usertag = usertag)
+                ifotag="SUMMARY_SECOND_" + ifos, usertag = usertag,
+                inspinjNode=inspinj)
 
 
   # Step 8slide: Time slides on the data

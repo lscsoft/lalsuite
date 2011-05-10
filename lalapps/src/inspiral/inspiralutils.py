@@ -75,7 +75,7 @@ def hipe_cache(ifos, usertag, gps_start_time, gps_end_time):
   return hipeCache
 
 ##############################################################################
-def hipe_pfn_glob_cache(cachename,globpat):
+def hipe_pfn_glob_cache(globpat):
   """
   create and return the name of a pfn cache containing files that match
   globpat. This is needed to manage the .input files that hipe creates.
@@ -83,16 +83,15 @@ def hipe_pfn_glob_cache(cachename,globpat):
   cachename = the name of the pfn cache file
   globpat = the pattern to search for
   """
-  cache_fh = open(cachename,"w")
+  cache_list = []
   for file in glob.glob(globpat):
     lfn = os.path.basename(file)
     pfn = "file://" + os.path.join(os.getcwd(),file)
-    print >> cache_fh, ' '.join([lfn,pfn,' pool="local"'])
-  cache_fh.close()
-  return cachename
+    cache_list.append( (lfn, pfn, "local") )
+  return cache_list
 
 ##############################################################################
-def hipe_pfn_list_cache(cachename,files):
+def hipe_pfn_list_cache(files):
   """
   create and return the name of a pfn cache containing files in files.
   This is needed to manage the .input files that hipe creates.
@@ -100,13 +99,12 @@ def hipe_pfn_list_cache(cachename,files):
   cachename = the name of the pfn cache file
   files = a list of files
   """
-  cache_fh = open(cachename,"w")
+  cache_list = []
   for file in files:
     lfn = os.path.basename(file)
     pfn = "file://" + os.path.abspath(file)
-    print >> cache_fh, ' '.join([lfn,pfn,' pool="local"'])
-  cache_fh.close()
-  return cachename
+    cache_list.append( (lfn, pfn, "local") )
+  return cache_list
 
 
 ##############################################################################
@@ -798,7 +796,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
       hipecp.has_option("input", "fixed-bank"):
     tmpltbankfile = hipecp.get("input", "fixed-bank")
     hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_list_cache(
-      'tmpltbanks.cache', [tmpltbankfile] )))
+      [tmpltbankfile] )))
 
   # add the maxjob categories to the dagman node class
   # FIXME pegasus should handle this in the dax schema itself
@@ -814,12 +812,6 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     local_exec_dir, '/'.join(os.getcwd().split('/')[-1:])))
 
   if hipeDir == "datafind":
-    # grab the segment files managed by hipe and put them in the df cache
-    # since it is inherited by all the other sub-workflows
-    hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_glob_cache(
-      'segment_files.cache', '../segments/*txt' )))
-    hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_glob_cache(
-      'veto_files.cache', '../segments/*VETOTIME*xml' )))
     hipeNode.add_output_file( hipe_cache(ifos, None, \
         hipecp.getint("input", "gps-start-time"), \
         hipecp.getint("input", "gps-end-time")) )
@@ -828,14 +820,16 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     hipeNode.add_output_file( hipe_cache(ifos, usertag, \
         hipecp.getint("input", "gps-start-time"), \
         hipecp.getint("input", "gps-end-time")) )
-    if hipecp.has_section("ligolw_cafe"):
-      num_slide_files = int(hipecp.get("ligolw_cafe", "num-slides-files"))
-      slide_files = [hipecp.get("ligolw_cafe","slides-file-%i"%idx)
-          for idx in range(num_slide_files)]
-      hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_list_cache(
-        'slide_files.cache', slide_files )))
-      hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_glob_cache(
-        'cafe_files.cache', '*CAFE*.cache' )))
+
+  hipeJob.add_pfn_cache(hipe_pfn_glob_cache('../segments/*txt'))
+  hipeJob.add_pfn_cache(hipe_pfn_glob_cache('../segments/*VETOTIME*xml'))
+
+  if hipecp.has_section("ligolw_cafe"):
+    num_slide_files = int(hipecp.get("ligolw_cafe", "num-slides-files"))
+    slide_files = [hipecp.get("ligolw_cafe","slides-file-%i"%idx)
+        for idx in range(num_slide_files)]
+    hipeJob.add_pfn_cache(hipe_pfn_list_cache(slide_files))
+    hipeJob.add_pfn_cache(hipe_pfn_glob_cache('*CAFE*.cache'))
 
   # return to the original directory
   os.chdir("..")
