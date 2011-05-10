@@ -1,9 +1,6 @@
 /**
 \author Torres, C. V.
 \file
-*/
-
-/**
 
 \heading{Module \ref ReadFrequencySeries.c}
 \latexonly\label{ss_ReadFrequencySeries_c}\endlatexonly
