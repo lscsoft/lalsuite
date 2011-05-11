@@ -17,97 +17,95 @@
 *  MA  02111-1307  USA
 */
 
-/****************** <lalVerbatim file="GenerateParabolicSpinOrbitCWCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{GenerateParabolicSpinOrbitCW.c}}
-\label{ss:GenerateParabolicSpinOrbitCW.c}
+\heading{Module \ref GenerateParabolicSpinOrbitCW.c}
+\latexonly\label{ss_GenerateParabolicSpinOrbitCW_c}\endlatexonly
 
 Computes a continuous waveform with frequency drift and Doppler
 modulation from a parabolic orbital trajectory.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{GenerateParabolicSpinOrbitCWCP}
-\idx{LALGenerateParabolicSpinOrbitCW()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+
+
+
+\heading{Description}
 
 This function computes a quaiperiodic waveform using the spindown and
-orbital parameters in \verb@*params@, storing the result in
-\verb@*output@.
+orbital parameters in <tt>*params</tt>, storing the result in
+<tt>*output</tt>.
 
-In the \verb@*params@ structure, the routine uses all the ``input''
-fields specified in \verb@GenerateSpinOrbitCW.h@, and sets all of the
-``output'' fields.  If \verb@params->f@=\verb@NULL@, no spindown
-modulation is performed.  If \verb@params->oneMinusEcc@$\neq0$, or if
-\verb@params->rPeriNorm@$\times$\verb@params->angularSpeed@$\geq1$
+In the <tt>*params</tt> structure, the routine uses all the "input"
+fields specified in \ref GenerateSpinOrbitCW.h, and sets all of the
+"output" fields.  If <tt>params->f</tt>=\c NULL, no spindown
+modulation is performed.  If <tt>params->oneMinusEcc</tt>\f$\neq0\f$, or if
+<tt>params->rPeriNorm</tt>\f$\times\f$<tt>params->angularSpeed</tt>\f$\geq1\f$
 (faster-than-light speed at periapsis), an error is returned.
 
-In the \verb@*output@ structure, the field \verb@output->h@ is
-ignored, but all other pointer fields must be set to \verb@NULL@.  The
-function will create and allocate space for \verb@output->a@,
-\verb@output->f@, and \verb@output->phi@ as necessary.  The
-\verb@output->shift@ field will remain set to \verb@NULL@.
+In the <tt>*output</tt> structure, the field <tt>output->h</tt> is
+ignored, but all other pointer fields must be set to \c NULL.  The
+function will create and allocate space for <tt>output->a</tt>,
+<tt>output->f</tt>, and <tt>output->phi</tt> as necessary.  The
+<tt>output->shift</tt> field will remain set to \c NULL.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-For parabolic orbits, we combine Eqs.~(\ref{eq:spinorbit-tr}),
-(\ref{eq:spinorbit-t}), and~(\ref{eq:spinorbit-upsilon}) to get $t_r$
-directly as a function of $E$:
-\begin{equation}
-\label{eq:cubic-e}
+For parabolic orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
+\TODOref{eq_spinorbit-t}, and\TODOref{eq_spinorbit-upsilon} to get \f$t_r\f$
+directly as a function of \f$E\f$:
+\anchor eq_cubic-e \f{equation}{
+\label{eq_cubic-e}
 t_r = t_p + \frac{r_p\sin i}{c} \left[ \cos\omega +
 	\left(\frac{1}{v_p} + \cos\omega\right)E -
 	\frac{\sin\omega}{4}E^2 + \frac{1}{12v_p}E^3\right] \;,
-\end{equation}
-where $v_p=r_p\dot{\upsilon}_p\sin i/c$ is a normalized velocity at
+\f}
+where \f$v_p=r_p\dot{\upsilon}_p\sin i/c\f$ is a normalized velocity at
 periapsis.  Following the prescription for the general analytic
 solution to the real cubic equation, we substitute
-$E=x+3v_p\sin\omega$ to obtain:
-\begin{equation}
-\label{eq:cubic-x}
+\f$E=x+3v_p\sin\omega\f$ to obtain:
+\anchor eq_cubic-x \f{equation}{
+\label{eq_cubic-x}
 x^3 + px = q \;,
-\end{equation}
+\f}
 where:
-\begin{eqnarray}
-\label{eq:cubic-p}
+\anchor eq_cubic-p \anchor eq_cubic-q \f{eqnarray}{
+\label{eq_cubic-p}
 p & = & 12 + 12v_p\cos\omega - 3v_p^2\sin^2\omega \;, \\
-\label{eq:cubic-q}
+\label{eq_cubic-q}
 q & = & 12v_p^2\sin\omega\cos\omega - 24v_p\sin\omega +
 	2v_p^3\sin^3\omega + 12\dot{\upsilon}_p(t_r-t_p) \;.
-\end{eqnarray}
-We note that $p>0$ is guaranteed as long as $v_p<1$, so the right-hand
-side of Eq.~(\ref{eq:cubic-x}) is monotonic in $x$ and has exactly one
-root.  However, $p\rightarrow0$ in the limit $v_p\rightarrow1$ and
-$\omega=\pi$.  This may cause some loss of precision in subsequent
-calculations.  But $v_p\sim1$ means that our solution will be
+\f}
+We note that \f$p>0\f$ is guaranteed as long as \f$v_p<1\f$, so the right-hand
+side of Eq.\eqref{eq_cubic-x} is monotonic in \f$x\f$ and has exactly one
+root.  However, \f$p\rightarrow0\f$ in the limit \f$v_p\rightarrow1\f$ and
+\f$\omega=\pi\f$.  This may cause some loss of precision in subsequent
+calculations.  But \f$v_p\sim1\f$ means that our solution will be
 inaccurate anyway because we ignore significant relativistic effects.
 
-Since $p>0$, we can substitute $x=y\sqrt{3/4p}$ to obtain:
-\begin{equation}
+Since \f$p>0\f$, we can substitute \f$x=y\sqrt{3/4p}\f$ to obtain:
+\f{equation}{
 4y^3 + 3y = \frac{q}{2}\left(\frac{3}{p}\right)^{3/2} \equiv C \;.
-\end{equation}
+\f}
 Using the triple-angle hyperbolic identity
-$\sinh(3\theta)=4\sinh^3\theta+3\sinh\theta$, we have
-$y=\sinh\left(\frac{1}{3}\sinh^{-1}C\right)$.  The solution to the
+\f$\sinh(3\theta)=4\sinh^3\theta+3\sinh\theta\f$, we have
+\f$y=\sinh\left(\frac{1}{3}\sinh^{-1}C\right)\f$.  The solution to the
 original cubic equation is then:
-\begin{equation}
+\f{equation}{
 E = 3v_p\sin\omega + 2\sqrt{\frac{p}{3}}
-	\sinh\left(\mbox{$\frac{1}{3}$}\sinh^{-1}C\right) \;.
-\end{equation}
-To ease the calculation of $E$, we precompute the constant part
-$E_0=3v_p\sin\omega$ and the coefficient $\Delta E=2\sqrt{p/3}$.
-Similarly for $C$, we precompute a constant piece $C_0$ evaluated at
+	\sinh\left(\mbox{\f$\frac{1}{3}\f$}\sinh^{-1}C\right) \;.
+\f}
+To ease the calculation of \f$E\f$, we precompute the constant part
+\f$E_0=3v_p\sin\omega\f$ and the coefficient \f$\Delta E=2\sqrt{p/3}\f$.
+Similarly for \f$C\f$, we precompute a constant piece \f$C_0\f$ evaluated at
 the epoch of the output time series, and a stepsize coefficient
-$\Delta C=6(p/3)^{3/2}\dot{\upsilon}_p\Delta t$, where $\Delta t$ is
-the step size in the (output) time series in $t_r$.  Thus at any
-timestep $i$, we obtain $C$ and hence $E$ via:
-\begin{eqnarray}
+\f$\Delta C=6(p/3)^{3/2}\dot{\upsilon}_p\Delta t\f$, where \f$\Delta t\f$ is
+the step size in the (output) time series in \f$t_r\f$.  Thus at any
+timestep \f$i\f$, we obtain \f$C\f$ and hence \f$E\f$ via:
+\f{eqnarray}{
 C & = & C_0 + i\Delta C \;, \nonumber\\
 E & = & E_0 + \Delta E\times\left\{\begin{array}{l@{\qquad}c}
 	\sinh\left[\frac{1}{3}\ln\left(
@@ -116,50 +114,50 @@ E & = & E_0 + \Delta E\times\left\{\begin{array}{l@{\qquad}c}
 	\sinh\left[-\frac{1}{3}\ln\left(
 		-C + \sqrt{C^2+1} \right) \right]\;, & C\leq0 \;,\\
 	\end{array}\right. \nonumber
-\end{eqnarray}
-where we have explicitly written $\sinh^{-1}$ in terms of functions in
-\verb@math.h@.  Once $E$ is found, we can compute
-$t=E(12+E^2)/(12\dot{\upsilon}_p)$ (where again $1/12\dot{\upsilon}_p$
-can be precomputed), and hence $f$ and $\phi$ via
-Eqs.~(\ref{eq:taylorcw-freq}) and~(\ref{eq:taylorcw-phi}).  The
-frequency $f$ must then be divided by the Doppler factor:
-$$
+\f}
+where we have explicitly written \f$\sinh^{-1}\f$ in terms of functions in
+\ref math.h.  Once \f$E\f$ is found, we can compute
+\f$t=E(12+E^2)/(12\dot{\upsilon}_p)\f$ (where again \f$1/12\dot{\upsilon}_p\f$
+can be precomputed), and hence \f$f\f$ and \f$\phi\f$ via
+Eqs.\eqref{eq_taylorcw-freq} and\TODOref{eq_taylorcw-phi}.  The
+frequency \f$f\f$ must then be divided by the Doppler factor:
+\f[
 1 + \frac{\dot{R}}{c} = 1 + \frac{v_p}{4+E^2}\left(
 	4\cos\omega - 2E\sin\omega \right)
-$$
-(where once again $4\cos\omega$ and $2\sin\omega$ can be precomputed).
+\f]
+(where once again \f$4\cos\omega\f$ and \f$2\sin\omega\f$ can be precomputed).
 
 This routine does not account for relativistic timing variations, and
 issues warnings or errors based on the criterea of
-Eq.~(\ref{eq:relativistic-orbit}) in
-\verb@GenerateEllipticSpinOrbitCW.c@.  The routine will also warn if
-it seems likely that \verb@REAL8@ precision may not be sufficient to
+Eq.\eqref{eq_relativistic-orbit} in
+\ref GenerateEllipticSpinOrbitCW.c.  The routine will also warn if
+it seems likely that \c REAL8 precision may not be sufficient to
 track the orbit accurately.  We estimate that numerical errors could
 cause the number of computed wave cycles to vary by
-$$
+\f[
 \Delta N \lessim f_0 T\epsilon\left[
 	\sim6+\ln\left(|C|+\sqrt{|C|^2+1}\right)\right] \;,
-$$
-where $|C|$ is the maximum magnitude of the variable $C$ over the
-course of the computation, $f_0T$ is the approximate total number of
-wave cycles over the computation, and $\epsilon\approx2\times10^{-16}$
-is the fractional precision of \verb@REAL8@ arithmetic.  If this
+\f]
+where \f$|C|\f$ is the maximum magnitude of the variable \f$C\f$ over the
+course of the computation, \f$f_0T\f$ is the approximate total number of
+wave cycles over the computation, and \f$\epsilon\approx2\times10^{-16}\f$
+is the fractional precision of \c REAL8 arithmetic.  If this
 estimate exceeds 0.01 cycles, a warning is issued.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALMalloc()                   LALFree()
 LALSCreateVectorSequence()    LALSDestroyVectorSequence()
 LALSCreateVector()            LALSDestroyVector()
 LALDCreateVector()            LALDDestroyVector()
 snprintf()                 LALWarning()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{GenerateParabolicSpinOrbitCWCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -172,12 +170,12 @@ snprintf()                 LALWarning()
 
 NRCSID( GENERATEPARABOLICSPINORBITCWC, "$Id$" );
 
-/* <lalVerbatim file="GenerateParabolicSpinOrbitCWCP"> */
+
 void
 LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
 				 CoherentGW            *output,
 				 SpinOrbitCWParamStruc *params )
-{ /* </lalVerbatim> */
+{
   UINT4 n, i;              /* number of and index over samples */
   UINT4 nSpin = 0, j;      /* number of and index over spindown terms */
   REAL8 t, dt, tPow;       /* time, interval, and t raised to a power */

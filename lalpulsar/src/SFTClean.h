@@ -22,60 +22,32 @@
  * \author Badri Krishnan, Alicia Sintes, Greg Mendell
  * \file SFTClean.h
  * \brief Header file for cleaning routines
- */
+\ingroup pulsarTODO
 
+\heading{Header \ref SFTClean.h}
+\latexonly\label{s_SFTClean_h}\endlatexonly
 
+Routines for cleaning SFT files using known spectral disturbances.
 
-/* *********************************** <lalVerbatim file="SFTbinHV">
-Author: Krishnan, B
-$Id$
-************************************* </lalVerbatim> */
+\heading{Synopsis}
+
+\code
+#include <lal/SFTClean.h>
+\endcode
+
+Format for list of known spectral disturbances and using
+them to clean SFT data
+
+\heading{Error conditions}
+
+ Test program. %%
+
+*/
+
 
 /* REVISIONS: */
 /* 09/09/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT. Thus only need to */
 /*               initialze RandomParams *randPar once and avoid repeatly opening /dev/urandom.  */
-
-/* <lalLaTeX>  *********************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Header \texttt{SFTClean.h}}
-\label{s:SFTClean.h}
-
-Routines for cleaning SFT files using known spectral disturbances.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Synopsis}
-
-\begin{verbatim}
-#include <lal/SFTClean.h>
-\end{verbatim}
-
-\noindent Format for list of known spectral disturbances and using
-them to clean SFT data
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Error conditions}
-\vspace{0.1in}
-\input{SFTCleanHErrorTable}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{SFTCleanHV}}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage\input{SFTCleanC}
-%%%%%%%%%% Test program. %%
-\newpage\input{SFTCleanTestC}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*************************************************</lalLaTeX> */
-
-
-/**
- * Routines for cleaning SFT files using known spectral disturbances.
- *
- * Also contains format for list of known spectral disturbances
- *
- **/
 
 /*
  * 4.  Protection against double inclusion (include-loop protection)
@@ -133,7 +105,7 @@ NRCSID (SFTCLEANH, "$Id$");
  *    inclusion in the documentation.
  */
 
-/* <lalErrTable file="SFTbinHErrorTable"> */
+/**\name Error Codes */ /*@{*/
 
 #define SFTCLEANH_ENULL 1
 #define SFTCLEANH_EFILE 2
@@ -156,7 +128,7 @@ NRCSID (SFTCLEANH, "$Id$");
 #define SFTCLEANH_MSGEWRITE "fwrite failed"
 
 
-/* </lalErrTable>  */
+/*@}*/
 
 
 /* ******************************************************

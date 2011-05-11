@@ -24,77 +24,57 @@
  * \ingroup pulsarTODO
  * \brief Functions to calculate binary system time delays and read TEMPO pulsar parameter files
  *
- */
-
-/* LAL functions to calculate the timing differences needed to
-   take into account binary pulsar orbits
-   Models are taken from Taylor and Weisberg (1989) and use the
-   naming conventions therein and used by TEMPO */
-
-/*   Also contains function to read TEMPO .par files to obtain parameters
-  and errors on parameters (if available) */
-
-/* <lalVerbatim file="BinaryPulsarTimingCV">
-   Author: Pitkin, M. D.
-   $Id$
-   </lalVerbatim>
-
-   <lalLaTeX>
-   \subsection{Module \texttt{BinaryPulsarTiming.c}}
+   \heading{Module \ref BinaryPulsarTiming.c}
    \label{ss:BinaryPulsarTiming.c}
 
    Functions for calculating the timing delay to a signal from a pulsar in a
-   binary system and reading pulsar parameters from TEMPO \cite{TEMPO} .par
+   binary system and reading pulsar parameters from TEMPO \ref TEMPO .par
    files.
+   Models are taken from Taylor and Weisberg (1989) and use the
+   naming conventions therein and used by TEMPO .
 
-   \subsubsection*{Prototypes}
-   \vspace{0.1in}
-   \input{BinaryPulsarTimingCP}
-   \idx{LALBinaryPulsarDeltaT()}
-   \idx{LALReadTEMPOParFile()}
-   \idx{LALdegsToRads()}
+   \heading{Prototypes}
 
-   \subsubsection*{Description}
+
+
+   \heading{Description}
 
    The main function computes the time delay of a signal from a pulsar in a
    binary system due to doppler shifts and relativistic delays,
-   \begin{equation}
-   \Delta{}t = t_{\rm Roemer} + t_{\rm Shapiro} + t_{\rm Einstein} + t_{\rm
+   \f{equation}{
+   \Delta{}t = t_\textrm{Roemer} + t_\textrm{Shapiro} + t_\textrm{Einstein} + t_\textrm{
    Abberation},
-   \end{equation}
-   where $t_{\rm Roemer}$ is the light travel time, $t_{\rm Shapiro}$ is the
-   General relativistic time delay, $t_{\rm Einstein}$ is the special
-   relativistic time delay, and $t_{\rm Abberation}$ is the delay caused by the
+   \f}
+   where \f$t_\textrm{Roemer}\f$ is the light travel time, \f$t_\textrm{Shapiro}\f$ is the
+   General relativistic time delay, \f$t_\textrm{Einstein}\f$ is the special
+   relativistic time delay, and \f$t_\textrm{Abberation}\f$ is the delay caused by the
    pulsars' rotation. There are several models of the binary systems, described
-   in \cite{TaylorWeisberg:1989}, of which the four most common are so far
+   in \ref TaylorWeisberg1989, of which the four most common are so far
    implemented. The four models are the Blandford-Teukolsky model (BT)
-   \cite{BlandfordTeukolsky:1976}, the low ellipticity model (ELL1)
-   \cite{ChLangeetal:2001}, Damour-Deruelle model (DD) \cite{DamourDeruelle:1985},
-   and the main sequence system model (MSS) \cite{Wex:1998}.
+   \ref BlandfordTeukolsky1976, the low ellipticity model (ELL1)
+   \ref ChLangeetal2001, Damour-Deruelle model (DD) \ref DamourDeruelle1985,
+   and the main sequence system model (MSS) \ref Wex1998.
    These four models all use the five main binary parameters: the longitude of
-   periastron $\omega_0$, the eccentricity of the orbit $e$, the orbital period
-   $P$, the time of periastron/or the time of ascension of the first node
-   $T_0$/$T_{{\rm asc}}$, and the projected semi-major axis $a\sin{}i$. The are
+   periastron \f$\omega_0\f$, the eccentricity of the orbit \f$e\f$, the orbital period
+   \f$P\f$, the time of periastron/or the time of ascension of the first node
+   \f$T_0\f$/\f$T_{\textrm{asc}}\f$, and the projected semi-major axis \f$a\sin{}i\f$. The are
    also many other model dependent parameters. These routines closely follow
-   those used in the radio astronomy package TEMPO \cite{TEMPO}.
+   those used in the radio astronomy package TEMPO \ref TEMPO.
 
    Radio astronomers fit pulsar parameters using TEMPO which will output
-   the parameters in a \verb+.par+ file. The values allowed in this file can be
+   the parameters in a <tt>.par</tt> file. The values allowed in this file can be
    found in the TEMPO documentation. A function is included to extract these
-   parameters from the \verb+.par+ files and put them into a
-   \verb+BinaryPulsarParams+ structure, it will set any unused parameters to
-   zero or \texttt{NULL}. All parameters are in the units used by TEMPO with any
+   parameters from the <tt>.par</tt> files and put them into a
+   \c BinaryPulsarParams structure, it will set any unused parameters to
+   zero or \c NULL. All parameters are in the units used by TEMPO with any
    conversion to SI units occuring within the binary timing routines. A function
    is also included which converts a string containing the right ascension or
-   declination in the format \texttt{ddd/hh:mm:ss.s} or \texttt{ddd/hhmmss.s}
-   (as is given in the \texttt{.par} file) into a \texttt{REAL8} value in
+   declination in the format <tt>ddd/hh:mm:ss.s</tt> or <tt>ddd/hhmmss.s</tt>
+   (as is given in the <tt>.par</tt> file) into a \c REAL8 value in
    radians.
 
-   \subsubsection*{Notes}
+   \heading{Notes}
 
-   \vfill{\footnotesize\input{BinaryPulsarTimingCV}}
-
-   </lalLaTeX>
 */
 
 /* Matt Pitkin 29/04/04 */

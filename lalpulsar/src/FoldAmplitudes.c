@@ -17,21 +17,19 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="FoldAmplitudesCV">
-Author: Mendell, Greg A.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Mendell, Greg A.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{FoldAmplitudes.c}}
+\heading{Module \ref FoldAmplitudes.c}
 
-\subsubsection*{Prototypes}
-\input{FoldAmplitudesCP}
-\idx{LALFoldAmplitudes()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
 
-\begin{verbatim}
+\heading{Description}
+
+\code
 Contains source for function LALFoldAmplitudes:
 
 inputs: a vector of amplitudes and a vector of phases.
@@ -43,13 +41,13 @@ action: for each phase, the phase is first reduced by modulo arithmetic to a val
         the corresponding phase bins.  The width of each bin is (binMax - binMin)/numBins.
 
 output: a vector of folded amplitude; component i is the folded amplitude for phase bin i.
-\end{verbatim}
+\endcode
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 %[A description of the method used to perform the calculation.]
 
-\begin{verbatim}
+\code
 
   Algorithm for folding amplitudes into phase bins:
 
@@ -80,25 +78,25 @@ output: a vector of folded amplitude; component i is the folded amplitude for ph
   	}
   }
 
-\end{verbatim}
+\endcode
 
 
-\subsubsection*{Uses}
+\heading{Uses}
 
 % List any external functions called by this function.
 
 For use in known pulsar search.
 
-\begin{verbatim}
-\end{verbatim}
+\code
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
 %[Any relevant notes]
 
-\vfill{\footnotesize\input{FoldAmplitudesCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
@@ -120,14 +118,14 @@ NRCSID( FOLDAMPLITUDESC, "$Id$" );
 
 /******* DEFINE GLOBAL FUNCTIONS ************/
 
-/* <lalVerbatim file="FoldAmplitudesCP"> */
+
 void
 LALFoldAmplitudes( LALStatus                      *status,
 		     REAL4Vector         	  *output,
 		     const FoldAmplitudesInput    *input,
 		     const FoldAmplitudesParams   *params )
 
-/* </lalVerbatim> */
+
 {
   /******* DECLARE VARIABLES ************/
 

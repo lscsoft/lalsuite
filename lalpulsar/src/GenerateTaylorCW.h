@@ -17,68 +17,120 @@
 *  MA  02111-1307  USA
 */
 
-/***************************** <lalVerbatim file="GenerateTaylorCWHV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-
-\section{Header \texttt{GenerateTaylorCW.h}}
-\label{s:GenerateTaylorCW.h}
+\heading{Header \ref GenerateTaylorCW.h}
+\latexonly\label{s_GenerateTaylorCW_h}\endlatexonly
 
 Provides routines to generate Taylor-parameterized continuous
 waveforms.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/GenerateTaylorCW.h>
-\end{verbatim}
+\endcode
 
 This header covers routines to generate continuous quasiperiodic
 waveforms whose frequency varies slowly and smoothly with time.  For
 such sources the frequency function is normally described by its
-Taylor ``spindown'' (or spin-up) coefficients.  This type of waveform
+Taylor "spindown" (or spin-up) coefficients.  This type of waveform
 may be typical of objects such as neutron stars that are gradually
 shedding angular momentum, or are accelerating in the gravitational
 potential of a star cluster.  The Taylor expansion is likely
-\emph{not} suitable for long-term modelling of the frequency of waves
+\e not suitable for long-term modelling of the frequency of waves
 from glitching neutron stars, neutron stars in close binary orbits, or
 neutron stars that are accreting or shedding angular momentum in a
 stochastic manner.
 
 The frequency and phase of such slowly-varying quasiperiodic sources
 are given by their Taylor series:
-\begin{eqnarray}
-\label{eq:taylorcw-freq}
+\anchor eq_taylorcw-freq \anchor eq_taylorcw-phi \f{eqnarray}{
+\label{eq_taylorcw-freq}
 f(t)    & = & f_0 \left[ 1 + \sum_{k=1}^n f_k(t-t_0)^k \right] \;, \\
-\label{eq:taylorcw-phi}
+\label{eq_taylorcw-phi}
 \phi(t) & = & \phi_0 + 2\pi f_0 \left[ (t-t_0) +
 		\sum_{k=1}^n \frac{f_k}{k+1}(t-t_0)^{k+1} \right] \;,
-\end{eqnarray}
-where $f_k$ are the spin-normalized Taylor coefficients.  If the
-source's spin is varying over some timescale $\tau$, one typically
-expects that $f_k\sim\tau^{-k}$.  Note that in this and later
-discussions, $f$ and $\phi$ refer to the frequency and phase of the
+\f}
+where \f$f_k\f$ are the spin-normalized Taylor coefficients.  If the
+source's spin is varying over some timescale \f$\tau\f$, one typically
+expects that \f$f_k\sim\tau^{-k}\f$.  Note that in this and later
+discussions, \f$f\f$ and \f$\phi\f$ refer to the frequency and phase of the
 gravitational wave, which are typically some constant multiple of
 (often twice) the frequency and phase of the rotating source.
 
-The \verb@CoherentGW@ structure allows for a very general
+The \c CoherentGW structure allows for a very general
 description of waveforms with modulations in the amplitudes or
 relative phases of the wave polarizations, as described in
-\verb@SimulateCoherentGW.h@.  However, in this simplest model of
+\ref SimulateCoherentGW.h.  However, in this simplest model of
 quasiperiodic waveforms, we neglect such phenomena as precession that
 would produce these effects.  Thus for any given source one can choose
-a polarization basis (described by some polarization angle $\psi$) in
+a polarization basis (described by some polarization angle \f$\psi\f$) in
 which the wave has a constant elliptical polarization of the form:
-\begin{eqnarray}
-\label{eq:taylorcw-hplus}
+\anchor eq_taylorcw-hplus \anchor eq_taylorcw-hcross \f{eqnarray}{
+\label{eq_taylorcw-hplus}
 h_+(t)      & = & A_+      \cos\phi(t) \;, \\
-\label{eq:taylorcw-hcross}
+\label{eq_taylorcw-hcross}
 h_\times(t) & = & A_\times \sin\phi(t) \;.
-\end{eqnarray}
+\f}
 
-******************************************************* </lalLaTeX> */
+
+
+\heading{Types}
+
+\heading{Structure \c TaylorCWParamStruc}
+
+
+This structure stores the parameters for constructing a gravitational
+waveform with a Taylor-polynomial frequency and phase.  As with the
+\c PPNParamStruc type in \ref GeneratePPNInspiral.h, we divide
+the fields into passed fields (which are supplied to the final
+\c CoherentGW structure but not used in any calculations), input
+fields (that are used by the waveform generator), and output fields
+(that are set by the waveform generator).  They are:
+
+\bigskip<em>Passed fields:</em>
+<dl>
+<dt><tt>SkyPosition position</tt></dt><dd> The location of the source on the
+sky, normally in equatorial coordinates.</dd>
+
+<dt><tt>REAL4 psi</tt></dt><dd> The polarization angle of the source, in
+radians.</dd>
+
+<dt><tt>LIGOTimeGPS epoch</tt></dt><dd> The start time \f$t_0\f$ of the output
+series.</dd>
+</dl>
+
+<em>Input fields:</em>
+<dl>
+<dt><tt>REAL8 deltaT</tt></dt><dd> The requested sampling interval of the
+waveform, in s.</dd>
+
+<dt><tt>UINT4 length</tt></dt><dd> The number of samples in the generated
+waveform.</dd>
+
+<dt><tt>REAL4 aPlus, aCross</tt></dt><dd> The polarization amplitudes \f$A_+\f$,
+\f$A_\times\f$, in dimensionless strain units.</dd>
+
+<dt><tt>REAL8 phi0</tt></dt><dd> The wave phase at time \f$t_0\f$, in radians.</dd>
+
+<dt><tt>REAL8 f0</tt></dt><dd> The wave frequency at time \f$t_0\f$, in Hz.</dd>
+
+<dt><tt>REAL8Vector *f</tt></dt><dd> The spin-normalized Taylor parameters
+\f$f_k\f$, as defined in Eq.\eqref{eq_taylorcw-freq}, above.  If
+\c f=\c NULL, a monochromatic wave is generated.</dd>
+</dl>
+
+<em>Output fields:</em>
+<dl>
+<dt><tt>REAL4 dfdt</tt></dt><dd> The maximum value of \f$\Delta f\Delta t\f$
+encountered over any timestep \f$\Delta t\f$ used in generating the
+waveform.</dd>
+</dl>
+
+*/
 
 #ifndef _GENERATETAYLORCW_H
 #define _GENERATETAYLORCW_H
@@ -95,9 +147,8 @@ extern "C" {
 
 NRCSID( GENERATETAYLORCWH, "$Id$" );
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error conditions}
-****************************************** </lalLaTeX><lalErrTable> */
+/**
+ \name Error Codes */ /*@{*/
 #define GENERATETAYLORCWH_ENUL 1
 #define GENERATETAYLORCWH_EOUT 2
 #define GENERATETAYLORCWH_EMEM 3
@@ -105,61 +156,8 @@ NRCSID( GENERATETAYLORCWH, "$Id$" );
 #define GENERATETAYLORCWH_MSGENUL "Unexpected null pointer in arguments"
 #define GENERATETAYLORCWH_MSGEOUT "Output field a, f, phi, or shift already exists"
 #define GENERATETAYLORCWH_MSGEMEM "Out of memory"
-/******************************************** </lalErrTable><lalLaTeX>
+/*@}*/
 
-\subsection*{Types}
-
-\subsubsection*{Structure \texttt{TaylorCWParamStruc}}
-\idx[Type]{TaylorCWParamStruc}
-
-This structure stores the parameters for constructing a gravitational
-waveform with a Taylor-polynomial frequency and phase.  As with the
-\verb@PPNParamStruc@ type in \verb@GeneratePPNInspiral.h@, we divide
-the fields into passed fields (which are supplied to the final
-\verb@CoherentGW@ structure but not used in any calculations), input
-fields (that are used by the waveform generator), and output fields
-(that are set by the waveform generator).  They are:
-
-\bigskip\noindent\textit{Passed fields:}
-\begin{description}
-\item[\texttt{SkyPosition position}] The location of the source on the
-sky, normally in equatorial coordinates.
-
-\item[\texttt{REAL4 psi}] The polarization angle of the source, in
-radians.
-
-\item[\texttt{LIGOTimeGPS epoch}] The start time $t_0$ of the output
-series.
-\end{description}
-
-\medskip\noindent\textit{Input fields:}
-\begin{description}
-\item[\texttt{REAL8 deltaT}] The requested sampling interval of the
-waveform, in s.
-
-\item[\texttt{UINT4 length}] The number of samples in the generated
-waveform.
-
-\item[\texttt{REAL4 aPlus, aCross}] The polarization amplitudes $A_+$,
-$A_\times$, in dimensionless strain units.
-
-\item[\texttt{REAL8 phi0}] The wave phase at time $t_0$, in radians.
-
-\item[\texttt{REAL8 f0}] The wave frequency at time $t_0$, in Hz.
-
-\item[\texttt{REAL8Vector *f}] The spin-normalized Taylor parameters
-$f_k$, as defined in Eq.~\ref{eq:taylorcw-freq}, above.  If
-\verb@f@=\verb@NULL@, a monochromatic wave is generated.
-\end{description}
-
-\medskip\noindent\textit{Output fields:}
-\begin{description}
-\item[\texttt{REAL4 dfdt}] The maximum value of $\Delta f\Delta t$
-encountered over any timestep $\Delta t$ used in generating the
-waveform.
-\end{description}
-
-******************************************************* </lalLaTeX> */
 
 typedef struct tagTaylorCWParamStruc {
   /* Passed parameters. */
@@ -180,24 +178,13 @@ typedef struct tagTaylorCWParamStruc {
 } TaylorCWParamStruc;
 
 
-/* <lalLaTeX>
-\vfill{\footnotesize\input{GenerateTaylorCWHV}}
-</lalLaTeX> */
-
-
 /* Function prototypes. */
 
-/* <lalLaTeX>
-\newpage\input{GenerateTaylorCWC}
-</lalLaTeX> */
 void
 LALGenerateTaylorCW( LALStatus          *,
 		     CoherentGW         *output,
 		     TaylorCWParamStruc *params );
 
-/* <lalLaTeX>
-\newpage\input{SimulateTaylorCWTestC}
-</lalLaTeX> */
 
 #if 0
 { /* so that editors will match succeeding brace */
