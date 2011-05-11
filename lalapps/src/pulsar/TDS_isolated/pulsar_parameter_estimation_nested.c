@@ -373,8 +373,6 @@ void readPulsarData( LALInferenceRunState *runState ){
         else{ /* initial detector */
           XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
           
-          fprintf(stderr, "dets[i] = %s\n", dets[i]);
-          
           if( !strcmp(dets[i], "H1") || !strcmp(dets[i], "L1") ||  
               !strcmp(dets[i], "H2") ){ /* Initial LIGO */
             psdvalf = XLALLIGOIPsd( pfreq );
@@ -399,7 +397,7 @@ void readPulsarData( LALInferenceRunState *runState ){
             exit(0);
           }
         }
-      
+        
         fpsds[i] = psdvalf;
       }
     }
@@ -1898,8 +1896,6 @@ void injectSignal( LALInferenceRunState *runState ){
   ProcessParamsTable *commandLine = runState->commandLine;
   
   BinaryPulsarParams injpars;
-
-  fprintf(stderr, "Going to inject signal.\n");
   
   ppt = LALInferenceGetProcParamVal( commandLine, "--inject-file" );
   if( ppt ){
@@ -1921,8 +1917,6 @@ parameter file %s is wrong.\n", injectfile);
     return;
   }
   
-  fprintf(stderr, "Injection parameter file is %s\n", injectfile);
-  
   /* create signal to inject and add to the data */
   while ( data ){
     FILE *fp = NULL;
@@ -1943,8 +1937,6 @@ parameter file %s is wrong.\n", injectfile);
         fprintf(stderr, "Non-fatal error... unable to open file %s to output \
 injection\n", outfile);
       }
-      
-      fprintf(stderr, "Injection output file is %s.\n", outfile);
     }
                                                    
     INT4 i = 0, length = data->dataTimes->length;
