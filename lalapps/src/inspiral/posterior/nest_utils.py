@@ -51,6 +51,8 @@ class InspNestNode(pipeline.CondorDAGNode):
             self.add_var_arg('--channel '+self.job().get_cp().get('data',ifo.lower()+'-channel'))
             if data_tuples[ifo][1] is None:
                 self.add_var_arg('--cache '+self.job().get_cp().get('data',ifo.lower()+'-channel'))
+                # Generate a seed to use when faking data that will allow coherence tests
+                self.add_var_arg('--dataseed '+str(max([int(data_tuples[ifo][0][0]) for ifo in allifos])))
             else:
                 self.add_var_arg('--cache '+data_tuples[ifo][1].get_df_node().get_output_files()[0])
                 self.add_parent(data_tuples[ifo][1].get_df_node())
