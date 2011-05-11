@@ -2,7 +2,8 @@
 #define CONCAT2(a,b) CONCAT2x(a,b)
 #define CONCAT3x(a,b,c) a##b##c
 #define CONCAT3(a,b,c) CONCAT3x(a,b,c)
-#define STRING(a) #a
+#define STRINGx(a) #a
+#define STRING(a) STRINGx(a)
 
 #define VTYPE CONCAT2(TYPE,Vector)
 #define FUNC CONCAT3(LAL,TYPECODE,PrintVector)
@@ -19,7 +20,7 @@ void FUNC ( VTYPE *vector )
   if (vector==NULL) return;
 
   /* open output file */
-  sprintf(fname, STRING(TYPECODE) "PrintVector.%03d",filenum++);
+  sprintf(fname, "%sPrintVector.%03d", STRING(TYPECODE), filenum++);
   fp=LALFopen(fname,"w");
 
   for (i=0;i<(int)vector->length;i++)
