@@ -29,15 +29,12 @@
  *
  *-----------------------------------------------------------------------
  */
-/************************************ <lalVerbatim file="NormalizeSFTRngMedTestCV">
-Author: Krishnan, B.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Krishnan, B.
+\file
+\ingroup pulsarTODO
 
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*********************************************** </lalLaTeX> */
-
+*/
 
 #include <lal/NormalizeSFTRngMed.h>
 #include <glob.h>
@@ -45,9 +42,7 @@ $Id$
 
 NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
 
-/* Error codes and messages */
-
-/************** <lalErrTable file="NORMALIZESFTRNGMEDCErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define NORMALIZESFTRNGMEDC_ENORM 0
 #define NORMALIZESFTRNGMEDC_ESUB  1
 #define NORMALIZESFTRNGMEDC_EARG  2
@@ -59,7 +54,7 @@ NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
 #define NORMALIZESFTRNGMEDC_MSGEARG  "Error parsing arguments"
 #define NORMALIZESFTRNGMEDC_MSGEBAD  "Bad argument values"
 #define NORMALIZESFTRNGMEDC_MSGEFILE "Could not create output file"
-/******************************************** </lalErrTable> */
+/*@}*/
 
 
 /* Default parameters. */
