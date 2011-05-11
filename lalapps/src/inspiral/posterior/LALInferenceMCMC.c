@@ -1060,19 +1060,16 @@ int main(int argc, char *argv[]){
     initializeMCMC(runState);
     runState->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
     
-    REAL8 x1Min=-1.0, x1Max=1.0;
+    REAL8 Min=-1.0, Max=1.0;
 
-    ppt=LALInferenceGetProcParamVal(procParams,"--x1min");
-    if(ppt) x1Min=atof(ppt->value);
-    ppt=LALInferenceGetProcParamVal(procParams,"--x1max");
-    if(ppt)	x1Max=atof(ppt->value);
+    ppt=LALInferenceGetProcParamVal(procParams,"--xmin");
+    if(ppt) Min=atof(ppt->value);
+    ppt=LALInferenceGetProcParamVal(procParams,"--xmax");
+    if(ppt)	Max=atof(ppt->value);
     
-    REAL8 start_x1 = x1Min + gsl_rng_uniform(runState->GSLrandom)*(x1Max - (x1Min));
-    
+    REAL8 start_x1 = Min + gsl_rng_uniform(runState->GSLrandom)*(Max - (Min));
     ppt=LALInferenceGetProcParamVal(procParams,"--x1");
-    if(ppt){
-      start_x1=atof(ppt->value);
-    }
+    if(ppt){start_x1=atof(ppt->value);}
     ppt=LALInferenceGetProcParamVal(procParams,"--fixX1");
     if(ppt){
       LALInferenceAddVariable(runState->currentParams, "x1",    &start_x1,    REAL8_t,	PARAM_FIXED);
@@ -1080,8 +1077,55 @@ int main(int argc, char *argv[]){
     }else{
 	    LALInferenceAddVariable(runState->currentParams, "x1",    &start_x1,    REAL8_t,	PARAM_LINEAR);
     }
-    LALInferenceAddMinMaxPrior(runState->priorArgs,	"x1",	&x1Min,	&x1Max,		REAL8_t);
+    LALInferenceAddMinMaxPrior(runState->priorArgs,	"x1",	&Min,	&Max,		REAL8_t);
+
+    REAL8 start_x2 = Min + gsl_rng_uniform(runState->GSLrandom)*(Max - (Min));
+    ppt=LALInferenceGetProcParamVal(procParams,"--x2");
+    if(ppt){start_x2=atof(ppt->value);}
+    ppt=LALInferenceGetProcParamVal(procParams,"--fixX2");
+    if(ppt){
+      LALInferenceAddVariable(runState->currentParams, "x2",    &start_x2,    REAL8_t,	PARAM_FIXED);
+      if(MPIrank==0) fprintf(stdout,"x2 fixed and set to %f\n",start_x2);
+    }else{
+	    LALInferenceAddVariable(runState->currentParams, "x2",    &start_x2,    REAL8_t,	PARAM_LINEAR);
+    }
+    LALInferenceAddMinMaxPrior(runState->priorArgs,	"x2",	&Min,	&Max,		REAL8_t);
     
+    ppt=LALInferenceGetProcParamVal(procParams, "--adapt");
+    if (ppt) {
+      fprintf(stdout, "Adapting single-param step sizes.\n");
+      UINT4 N = 2;
+      if (!LALInferenceCheckVariable(runState->proposalArgs, SIGMAVECTORNAME)) {
+        /* We need a sigma vector for adaptable jumps. */
+        REAL8Vector *sigmas = XLALCreateREAL8Vector(N);
+        UINT4 i = 0;
+        
+        for (i = 0; i < N; i++) {
+          sigmas->data[i] = 1e-4;
+        }
+        
+        
+        LALInferenceAddVariable(runState->proposalArgs, SIGMAVECTORNAME, &sigmas, REAL8Vector_t, PARAM_FIXED);
+        
+      }
+      REAL8Vector *avgPaccept = XLALCreateREAL8Vector(N);
+      UINT4 i;
+      
+      for (i = 0; i < N; i++) {
+        avgPaccept->data[i] = 0.0;
+      }
+      
+      LALInferenceAddVariable(runState->proposalArgs, "adaptPacceptAvg", &avgPaccept, REAL8Vector_t, PARAM_FIXED);
+    }
+    
+    INT4 adaptableStep = 0;
+    LALInferenceAddVariable(runState->proposalArgs, "adaptableStep", &adaptableStep, INT4_t, PARAM_OUTPUT);
+    
+    INT4 varNumber = 0;
+    LALInferenceAddVariable(runState->proposalArgs, "proposedVariableNumber", &varNumber, INT4_t, PARAM_OUTPUT);
+    
+    INT4 sigmasNumber = 0;
+    LALInferenceAddVariable(runState->proposalArgs, "proposedSigmaNumber", &sigmasNumber, INT4_t, PARAM_OUTPUT);
     
     
   }else{

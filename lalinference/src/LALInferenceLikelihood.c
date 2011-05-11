@@ -1379,12 +1379,20 @@ REAL8 timeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, co
 
 REAL8 AnalyticLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData UNUSED *data, LALInferenceTemplateFunction UNUSED *template) {
   
-  LALInferenceVariableItem *item=currentParams->head;
-	REAL8 value = 0.0;  
+  //LALInferenceVariableItem *item=currentParams->head;
+	REAL8 x1=0.0, x2=0.0;  
   REAL8 loglikelihood = 0.0;
   
-  value = *(REAL8*) LALInferenceGetVariable(currentParams, item->name);
-  loglikelihood = log(exp(-(value-0.5)*(value-0.5)/0.0001)+2*exp(-(value+0.5)*(value+0.5)/0.0001));
+  if(LALInferenceCheckVariable(currentParams, "x1")){ 
+    x1 = *(REAL8*) LALInferenceGetVariable(currentParams, "x1");
+    if(LALInferenceCheckVariable(currentParams, "x2")){
+      x2 = *(REAL8*) LALInferenceGetVariable(currentParams, "x2");
+      loglikelihood = log(exp(-((x1-0.5)*(x1-0.5)/0.1)-((x2-0.5)*(x2-0.5)/0.1))+10*exp(-((x1+0.5)*(x1+0.5)/0.0001)-((x2+0.5)*(x2+0.5)/0.0001)));
+    }else{
+    loglikelihood = log(exp(-((x1-0.5)*(x1-0.5)/0.1))+2*exp(-((x1+0.5)*(x1+0.5)/0.0001)));
+    }
+  }
+
   /*
   for(;item;item=item->next)
 	{
@@ -1397,11 +1405,7 @@ REAL8 AnalyticLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIF
 		}
 	}
   */
-  
-  
-  
-  
-  
+
   //loglikelihood += 1.0;
   
   return loglikelihood;
