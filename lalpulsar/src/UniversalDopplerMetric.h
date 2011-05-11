@@ -32,6 +32,14 @@
 #ifndef _UNIVERSALDOPPLERMETRIC_H  /* Double-include protection. */
 #define _UNIVERSALDOPPLERMETRIC_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+#if !defined(SWIG) && !defined(SWIGLAL_FIXED_1DARRAY_ELEM)
+#define SWIGLAL_FIXED_1DARRAY_ELEM(...)
+#endif
+
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
@@ -64,12 +72,14 @@ typedef REAL8 mat33_t[3][3];
 
 /** variable-length list of 2D-vectors */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;			/**< number of elements */
   vect2D_t *data;		/**< array of 2D vectors */
 } vect2Dlist_t;
 
 /** variable-length list of 3D vectors */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;			/**< number of elements */
   vect3D_t *data;		/**< array of 3D vectors */
 } vect3Dlist_t;
@@ -77,6 +87,7 @@ typedef struct {
 
 /** Small Container to hold two 3D vectors: position and velocity */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   vect3D_t pos;
   vect3D_t vel;
 } PosVel3D_t;
@@ -270,6 +281,7 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
  */
 typedef struct
 {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 dim;						/**< number of dimensions covered */
   DopplerCoordinateID coordIDs[DOPPLERMETRIC_MAX_DIM];	/**< coordinate 'names' */
 } DopplerCoordinateSystem;
@@ -280,6 +292,7 @@ typedef struct
  */
 typedef struct
 {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;						/**< number N of detectors */
   LALDetector sites[DOPPLERMETRIC_MAX_DETECTORS]; 	/**< array of N detectors */
   REAL8 detWeights[DOPPLERMETRIC_MAX_DETECTORS];	/**< array of N detector noise-weights: must satisfy \f$\sum_{i=1}^N w_i = 1\f$ */
@@ -289,6 +302,7 @@ typedef struct
  */
 typedef struct
 {
+  SWIGLAL_STRUCT_LALALLOC();
   DopplerCoordinateSystem coordSys;		/**< number of dimensions and coordinate-IDs of Doppler-metric */
   DetectorMotionType detMotionType;		/**< the type of detector-motion assumed: full spin+orbit, pure orbital, Ptole, ... */
 
@@ -311,6 +325,7 @@ typedef struct
  */
 typedef struct
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL8 a_a;		/**< \f$ \langle a^2 \rangle = A \f$ */
   REAL8 a_b;		/**< \f$ \langle a b \rangle = C \f$ */
   REAL8 b_b;		/**< \f$ \langle b^2 \rangle = B \f$ */
@@ -332,6 +347,7 @@ typedef struct
  */
 typedef struct
 {
+  SWIGLAL_STRUCT_LALALLOC();
   DopplerMetricParams meta;		/**< "meta-info" describing/specifying the type of Doppler metric */
 
   gsl_matrix *g_ij;			/**< symmetric matrix holding the usual Phase-metric */

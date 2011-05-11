@@ -29,6 +29,11 @@
 #ifndef _COMPLEXAM_H
 #define _COMPLEXAM_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <math.h>
 #include <lal/DetResponse.h>
 #include <lal/DetectorSite.h>
@@ -70,6 +75,7 @@ NRCSID (COMPLEXAMH, "$Id: ComplexAM.h");
  */
 typedef struct CmplxAMCoeffsTag
 {
+  SWIGLAL_STRUCT_LALALLOC();
   COMPLEX8Vector     *a;          /**< the a coefficient evaluated at the relevant times */
   COMPLEX8Vector     *b;          /**< the b coefficient evaluated at the relevant times  */
 } CmplxAMCoeffs;
@@ -78,6 +84,7 @@ typedef struct CmplxAMCoeffsTag
 */
 typedef struct
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL4 Freq;		/**< signal frequency */
   REAL8 skyposV[3];	/**< unit vector pointing to skyposition of source */
   SymmTensor3 ePlus;	/**< ePlus polarization tensor (skypos-dependent) */
@@ -105,6 +112,7 @@ typedef struct
  * to use that fact.
  */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL8 Ad; 		/**<  \f$A_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\f$ */
   REAL8 Bd; 		/**<  \f$B_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
   REAL8 Cd; 		/**<  \f$C_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
@@ -116,6 +124,7 @@ typedef struct {
 
 /** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;		/**< number of IFOs */
   CmplxAMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
   CmplxAntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */

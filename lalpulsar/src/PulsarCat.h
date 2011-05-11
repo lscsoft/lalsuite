@@ -80,6 +80,11 @@ know.
 #ifndef _PULSARCAT_H
 #define _PULSARCAT_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/StringInput.h>
 #include <lal/SkyCoordinates.h>
@@ -111,6 +116,7 @@ NRCSID( PULSARCATH, "$Id$" );
  * companion, these structures form a linked list.
  */
 typedef struct tagCompanionNode{
+  SWIGLAL_STRUCT_LALALLOC();
   LIGOTimeGPS epoch; /**< Epoch of companion periapsis */
   REAL8 x;           /**< Projected orbital semimajor axis \f$(a/c)\sin i\f$, in seconds */
   REAL8 p;           /**< Orbital period, in seconds, measured at \c epoch */
@@ -128,6 +134,7 @@ typedef struct tagCompanionNode{
  * pulsar data, storing data for a single pulsar.
  */
 typedef struct tagPulsarCatNode {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR bname[10];   	/**< The B1950 pulsar name (e.g.\ <tt>B0021-72C</tt>), terminated by a <tt>'\\0'</tt> character */
   CHAR jname[12];   	/**< The J2000 pulsar name (e.g.\ <tt>J0024-7203U</tt>), terminated by a <tt>'\\0'</tt> character */
   SkyPosition pos;  	/**< The J2000 pulsar position, in radians */

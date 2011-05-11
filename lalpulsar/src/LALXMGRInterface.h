@@ -52,6 +52,11 @@ object.
 #ifndef _LALXMGRINTERFACEH_H
 #define _LALXMGRINTERFACEH_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALDatatypes.h>
 #include <lal/Date.h>
 #include <lal/TwoDMesh.h>
@@ -119,6 +124,7 @@ XMGRColor;
 typedef struct
 tagXMGRDataSet
 {
+  SWIGLAL_STRUCT_LALALLOC();
   XMGRSymbol    symbol;
   XMGRColor     symbolColor;
   REAL4         symbolSize;
@@ -134,6 +140,7 @@ XMGRDataSet;
 typedef struct
 tagXMGRDataSetVector
 {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4         length;
   XMGRDataSet  *data;
 }
@@ -142,6 +149,7 @@ XMGRDataSetVector;
 typedef struct
 tagXMGRAxisParams
 {
+  SWIGLAL_STRUCT_LALALLOC();
   CHARVector   *label;
   CHARVector   *format;
   REAL4         min;
@@ -154,6 +162,7 @@ XMGRAxisParams;
 typedef struct
 tagXMGRGraph
 {
+  SWIGLAL_STRUCT_LALALLOC();
   CHARVector                   *type;
   CHARVector                   *title;
   REAL4                         viewx[2];
@@ -167,6 +176,7 @@ XMGRGraph;
 typedef struct
 tagXMGRGraphVector
 {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4         length;
   XMGRGraph    *data;
 }

@@ -36,6 +36,11 @@
 #ifndef _SFTUTILS_H  /* Double-include protection. */
 #define _SFTUTILS_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
@@ -75,18 +80,21 @@ NRCSID( SFTUTILSH, "$Id$" );
 
 /** A vector of COMPLEX8FrequencySeries */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 			length;		/**< number of SFTs */
   COMPLEX8FrequencySeries 	*data;		/**< array of SFTs */
 } COMPLEX8FrequencySeriesVector;
 
 /** A vector of REAL8FrequencySeries */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4                  length;
   REAL8FrequencySeries   *data;
 } REAL8FrequencySeriesVector;
 
 /** A vector of REAL4FrequencySeries */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4                  length;
   REAL4FrequencySeries   *data;
 } REAL4FrequencySeriesVector;
@@ -104,6 +112,7 @@ typedef REAL8FrequencySeriesVector PSDVector;
 
 /** A collection of SFT vectors -- one for each IFO in a multi-IFO search */
 typedef struct tagMultiSFTVector {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4      length;  	/**< number of ifos */
   SFTVector  **data; 	/**< sftvector for each ifo */
 } MultiSFTVector;
@@ -111,12 +120,14 @@ typedef struct tagMultiSFTVector {
 
 /** A collection of PSD vectors -- one for each IFO in a multi-IFO search */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4      length;  	/**< number of ifos */
   PSDVector  **data; 	/**< sftvector for each ifo */
 } MultiPSDVector;
 
 /** One noise-weight (number) per SFT (therefore indexed over IFOs and SFTs */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;		/**< number of ifos */
   REAL8Vector **data;	/**< weights-vector for each SFTs */
   REAL8 Sinv_Tsft;	/**< normalization factor used: \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (using single-sided PSD!) */
@@ -124,12 +135,14 @@ typedef struct {
 
 /** A collection of (multi-IFO) time-series */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;			/**< number of ifos */
   REAL4TimeSeries **data;	/**< vector of REAL4 timeseries */
 } MultiREAL4TimeSeries;
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 	length;		/**< number of timestamps */
   LIGOTimeGPS 	*data;		/**< array of timestamps */
   REAL8		deltaT;		/**< 'length' of each timestamp (e.g. typically Tsft) */
@@ -137,6 +150,7 @@ typedef struct {
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 	        length;	   /**< number of timestamps vectors or ifos */
   LIGOTimeGPSVector 	**data;    /**< timestamps vector for each ifo */
 } MultiLIGOTimeGPSVector;
