@@ -67,8 +67,8 @@ Optional OPTIONS:\n \
 [--srate rate (4096)\t:\tDownsample data to rate Hz]\n \
 [--pad padding (1s)\t:\tPadding for PSD Tukey window\n \
 [--event INT (0)\t:\tUse event INT from Sim or Sngl InspiralTable]\n \
-[--Mmin FLOAT, --Mmax FLOAT\t:\tSpecify min and max prior chirp masses\n \
-[--Dmin FLOAT (1), --Dmax FLOAT (100)\t:\tSpecify min and max prior distances in Mpc\n \
+[--mmin FLOAT, --mmax FLOAT\t:\tSpecify min and max prior chirp masses\n \
+[--dmin FLOAT (1), --dmax FLOAT (100)\t:\tSpecify min and max prior distances in Mpc\n \
 [--approximant STRING (TaylorF2)\t:\tUse a different approximant where STRING is (TaylorF2|TaylorT2|TaylorT3|TaylorT4|AmpCorPPN|IMRPhenomFA|IMRPhenomFB|IMRPhenomFB_NS|IMRPhenomFB_Chi|EOBNR|SpinTaylor|IMRPhenomFB_Chi_low)|IMRPhenomB_Chi_low]\n \
 [--amporder INT\t:\tAmplitude order to use, requires --approximant AmpCorPPN]\n \
 [--phaseorder INT\t:\tPhase PN order to use, multiply by two, i.e. 3.5PN=7. (Default 4 = 2.0PN)]\n\
@@ -274,8 +274,8 @@ void initialise(int argc, char *argv[]){
 		{"event",required_argument,0,'E'},
 		{"NINJA",no_argument,0,'n'},
 		{"end_time",required_argument,0,'Z'},
-		{"Mmin",required_argument,0,'m'},
-		{"Mmax",required_argument,0,'g'},
+		{"mmin",required_argument,0,'m'},
+		{"mmax",required_argument,0,'g'},
 		{"verbose",no_argument,0,'v'},
 		{"approximant",required_argument,0,'A'},
 		{"timeslide",no_argument,0,'L'},
@@ -292,8 +292,8 @@ void initialise(int argc, char *argv[]){
 		{"decohere",required_argument,0,16},
 		{"amporder",required_argument,0,17},
 		{"phaseorder",required_argument,0,20},
-		{"Dmin",required_argument,0,18},
-		{"Dmax",required_argument,0,19},
+		{"dmin",required_argument,0,18},
+		{"dmax",required_argument,0,19},
 		{"version",no_argument,0,'V'},
 		{"help",no_argument,0,'h'},
 		{"pinparams",required_argument,0,21},
