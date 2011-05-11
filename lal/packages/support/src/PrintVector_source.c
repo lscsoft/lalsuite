@@ -14,13 +14,13 @@ void FUNC ( VTYPE *vector )
   int i;
   static int filenum=0;
   FILE *fp;
-  char fname[256];
+  char fname[FILENAME_MAX];
 
 
   if (vector==NULL) return;
 
   /* open output file */
-  snprintf(fname, 256, "%sPrintVector.%03d", STRING(TYPECODE), filenum++);
+  snprintf(fname, FILENAME_MAX, "%sPrintVector.%03d", STRING(TYPECODE), filenum++);
   fp=LALFopen(fname,"w");
 
   for (i=0;i<(int)vector->length;i++)
