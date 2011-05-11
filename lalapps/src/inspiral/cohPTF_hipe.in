@@ -198,6 +198,20 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
 
           # make sure we only filter the master chunk once
           done_this_chunk = True
+
+          if not sbBankFile:
+            # Determine template bank file name
+            ifo_name = cp.get('templatebank-meta','bank-ifo')
+            tb_node = inspiral.TmpltBankNode(tmplt_job)
+            tb_node.set_start(chunk.start())
+            tb_node.set_end(chunk.end())
+            tb_node.set_ifo(ifo_name)
+            tb_node.set_vds_group(ifo_name[0] + str(chunk.start()))
+            tb_node.set_user_tag((usertag.split('_')[0])+'_DATAFIND')
+            os.symlink("../datafind/" + tb_node.get_output(),tb_node.get_output())
+            sbBankFile=tb_node.get_output()           
+
+          # Set up the bank splitting
           if runSplitBank:
             sb_node = inspiral.SplitBankNode(sb_job)            
             sb_node.set_bank(sbBankFile)
