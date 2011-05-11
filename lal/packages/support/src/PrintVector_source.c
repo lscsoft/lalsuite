@@ -20,7 +20,7 @@ void FUNC ( VTYPE *vector )
   if (vector==NULL) return;
 
   /* open output file */
-  sprintf(fname, "%sPrintVector.%03d", STRING(TYPECODE), filenum++);
+  snprintf(fname, 256, "%sPrintVector.%03d", STRING(TYPECODE), filenum++);
   fp=LALFopen(fname,"w");
 
   for (i=0;i<(int)vector->length;i++)
