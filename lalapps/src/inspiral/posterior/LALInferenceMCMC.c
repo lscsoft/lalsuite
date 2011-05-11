@@ -220,6 +220,9 @@ void initializeMCMC(LALInferenceRunState *runState)
         } else if (LALInferenceGetProcParamVal(commandLine, "--zeroLogLike")) {
           /* Use zero log(L) */
           runState->likelihood=&ZeroLogLikelihood;
+        } else if (LALInferenceGetProcParamVal(commandLine, "--analyticLogLike")) {
+          /* Use zero log(L) */
+          runState->likelihood=&AnalyticLogLikelihood;
         } else {
           runState->likelihood=&UndecomposedFreqDomainLogLikelihood;
         }
@@ -1048,6 +1051,40 @@ int main(int argc, char *argv[]){
 	
 	/* Read command line and parse */
 	procParams=LALInferenceParseCommandLine(argc,argv);
+  
+  if (LALInferenceGetProcParamVal(procParams, "--analyticLogLike")) {
+    
+    runState = calloc(1, sizeof(LALInferenceRunState));
+    runState->commandLine=procParams;
+    runState->data = NULL;
+    initializeMCMC(runState);
+    runState->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
+    
+    REAL8 x1Min=-1.0, x1Max=1.0;
+
+    ppt=LALInferenceGetProcParamVal(procParams,"--x1min");
+    if(ppt) x1Min=atof(ppt->value);
+    ppt=LALInferenceGetProcParamVal(procParams,"--x1max");
+    if(ppt)	x1Max=atof(ppt->value);
+    
+    REAL8 start_x1 = x1Min + gsl_rng_uniform(runState->GSLrandom)*(x1Max - (x1Min));
+    
+    ppt=LALInferenceGetProcParamVal(procParams,"--x1");
+    if(ppt){
+      start_x1=atof(ppt->value);
+    }
+    ppt=LALInferenceGetProcParamVal(procParams,"--fixX1");
+    if(ppt){
+      LALInferenceAddVariable(runState->currentParams, "x1",    &start_x1,    REAL8_t,	PARAM_FIXED);
+      if(MPIrank==0) fprintf(stdout,"x1 fixed and set to %f\n",start_x1);
+    }else{
+	    LALInferenceAddVariable(runState->currentParams, "x1",    &start_x1,    REAL8_t,	PARAM_LINEAR);
+    }
+    LALInferenceAddMinMaxPrior(runState->priorArgs,	"x1",	&x1Min,	&x1Max,		REAL8_t);
+    
+    
+    
+  }else{
 	
 	ppt=LALInferenceGetProcParamVal(procParams,"--continue-run");
 	if (ppt) {
@@ -1114,7 +1151,7 @@ int main(int argc, char *argv[]){
 
 	/* Set up currentParams with variables to be used */
 	initVariables(runState);
-	
+	}//NOT analyticLogLike
 	printf(" ==== This is thread %d of %d ====\n ", MPIrank, MPIsize);
 	MPI_Barrier(MPI_COMM_WORLD);
 	/* Call MCMC algorithm */

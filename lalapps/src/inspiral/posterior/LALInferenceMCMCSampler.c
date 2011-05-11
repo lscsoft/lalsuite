@@ -193,6 +193,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           nullLikelihood = NullLogLikelihood(runState->data);
         } else if (runState->likelihood==&ZeroLogLikelihood) {
           nullLikelihood = 0.0;
+        } else if (runState->likelihood==&AnalyticLogLikelihood) {
+          nullLikelihood = 0.0;
         } else {
           fprintf(stderr, "Unrecognized log(L) function (in %s, line %d)\n", 
                   __FILE__, __LINE__);
@@ -215,9 +217,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	char **outfileName = (char**)calloc(nChain,sizeof(char*));
 	
 	//"waveform" and "pnorder" are ints to label the template used. Just to comform to SPINspiral output format. Should be temporary, and replaced by the command line used.
-	
-	int waveform= LALwaveformToSPINspiralwaveform(*(INT4 *)LALInferenceGetVariable(runState->currentParams,"LAL_APPROXIMANT"));
-	double pnorder = ((double)(*(INT4 *)LALInferenceGetVariable(runState->currentParams,"LAL_PNORDER")))/2.0;
+	int waveform = 0;
+  if(LALInferenceCheckVariable(runState->currentParams,"LAL_APPROXIMANT")) waveform= LALwaveformToSPINspiralwaveform(*(INT4 *)LALInferenceGetVariable(runState->currentParams,"LAL_APPROXIMANT"));
+  double pnorder = 0.0;
+	if(LALInferenceCheckVariable(runState->currentParams,"LAL_PNORDER")) pnorder = ((double)(*(INT4 *)LALInferenceGetVariable(runState->currentParams,"LAL_PNORDER")))/2.0;
+
 	char str[999];
 	LALInferencePrintCommandLine(runState->commandLine, str);
 
@@ -913,8 +917,8 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
                                 decomp. */
           SINGLEFRAC=1.0,
           //SKYFRAC=0.0, /* Not symmetric! */
-          INCFRAC=0.05,
-          PHASEFRAC=0.05,
+          INCFRAC=0.0,
+          PHASEFRAC=0.0,
           SKYLOCSMALLWANDERFRAC=0.0; /* Not symmetric! Was: 0.05; */
         /* No spin rotations, because they are actually not symmetric! */
         REAL8 SPINROTFRAC = 0.0; /* (runState->template == &templateLALSTPN ? 0.05 : 0.0); */
@@ -923,7 +927,10 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
         REAL8 DIFFFULLFRAC;
         REAL8 DIFFPARTIALFRAC;
         ProcessParamsTable *ppt;
-  
+        
+        if(LALInferenceCheckVariable(proposedParams,"inclination")) INCFRAC=0.05;
+        if(LALInferenceCheckVariable(proposedParams,"phase")) PHASEFRAC=0.05;
+          
         ppt=LALInferenceGetProcParamVal(runState->commandLine, "--iotaDistance");
         if (ppt) {
           IOTADISTANCEFRAC = atof(ppt->value);

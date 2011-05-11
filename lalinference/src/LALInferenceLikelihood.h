@@ -79,4 +79,6 @@ REAL8 FreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALI
                                       LALInferenceTemplateFunction *template,
                                       LALInferenceVariables *df);
 
+REAL8 AnalyticLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction *template);
+
 #endif

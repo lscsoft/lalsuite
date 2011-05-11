@@ -1375,3 +1375,35 @@ REAL8 timeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, co
 
   return 4.0*overlap; /* This is the overlap definition. */
 }
+
+
+REAL8 AnalyticLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData UNUSED *data, LALInferenceTemplateFunction UNUSED *template) {
+  
+  LALInferenceVariableItem *item=currentParams->head;
+	REAL8 value = 0.0;  
+  REAL8 loglikelihood = 0.0;
+  
+  value = *(REAL8*) LALInferenceGetVariable(currentParams, item->name);
+  loglikelihood = log(exp(-(value-0.5)*(value-0.5)/0.0001)+2*exp(-(value+0.5)*(value+0.5)/0.0001));
+  /*
+  for(;item;item=item->next)
+	{
+		if(item->vary==PARAM_FIXED || item->vary==PARAM_OUTPUT)
+      continue;
+		else
+		{
+      value = *(REAL8*) LALInferenceGetVariable(currentParams, item->name); 
+      loglikelihood += value*value;
+		}
+	}
+  */
+  
+  
+  
+  
+  
+  //loglikelihood += 1.0;
+  
+  return loglikelihood;
+}
+
