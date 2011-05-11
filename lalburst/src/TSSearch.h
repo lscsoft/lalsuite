@@ -17,10 +17,12 @@
 *  MA  02111-1307  USA
 */
 
-/********************************** <lalVerbatim file="TrackSearchHV">
-Author: Torres, Cristina
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Torres, Cristina
+\file
+\ingroup tracksearch
+
+*/
 
 #ifndef _TSSEARCH_H
 #define _TSSEARCH_H
@@ -53,7 +55,7 @@ extern "C" {
 
   NRCSID (TSSEARCHH, "$Id$");
 
-  /******** <lalErrTable file="TSSearchHErrTab"> ********/
+  /**\name Error Codes */ /*@{*/
 #define TSSEARCHH_ENULLP       1
 #define TSSEARCHH_EPOSARG      2
 #define TSSEARCHH_EPOW2        4
@@ -74,7 +76,7 @@ extern "C" {
 #define TSSEARCHH_MSGENONNULL  "Null pointer expected"
 #define TSSEARCHH_MSGETILES    "Malloc failed while assigning memory for a tile"
 #define TSSEARCHH_MSGEDELF     "Inconsistent deltaF in spectrum and data"
-  /******** </lalErrTable> ********/
+  /*@}*/
 
   /*
    * Enumeration type to hold diagnostic flag information

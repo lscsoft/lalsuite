@@ -17,31 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/*
- * File TSData.h
- * Author: Torres, C
- */
-#if 0
-<lalVerbatim file="TSDataHV">
-Author C. Torres
-</lalVerbatim>
+/**
+\author C. Torres
+\ingroup tracksearch
+\file
 
-<lalLaTeX file="TSDataH">
-\section{Header \texttt{TSData.h}}
-\label{s:TSData.h}
+\heading{Header \ref TSData.h}
+\latexonly\label{s_TSData_h}\endlatexonly
 
 Provides an intermediate level of functions and structures for testing
 and production use of the tracksearch libraries.
 
-\begin{verbatim}
+\code
 #include <lal/TSData.h>
-\end{verbatim}
+\endcode
 
-\subsection*{Error Conditions}
-\input{TSDataHErrTab}
-
-</lalLaTeX>
-#endif
+*/
 
 #ifndef _TSDATA_H
 #define _TSDATA_H
@@ -65,7 +56,7 @@ extern "C" {
 
 NRCSID (TSDATAH, "$Id$");
 
-/******** <lalErrTable file="TSDataHErrTab"> ********/
+/**\name Error Codes */ /*@{*/
 #define TSDATA_ENULL    1
 #define TSDATA_ENNUL    2
 #define TSDATA_EALOC    4
@@ -87,7 +78,7 @@ NRCSID (TSDATAH, "$Id$");
 #define TSDATA_MSGERESP "Response function start frequency not equal to 0"
 #define TSDATA_MSGEINTP "Not enough points for interpolate function."
 #define TSDATA_MSGEINVA "Inconsistent Argument(s)"
-/******** </lalErrTable> ********/
+/*@}*/
 
 /*
  * All fields are depricated minus dataSegmentPoints and numberDataSegments
