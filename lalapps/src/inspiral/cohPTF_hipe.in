@@ -208,7 +208,8 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
             tb_node.set_ifo(ifo_name)
             tb_node.set_vds_group(ifo_name[0] + str(chunk.start()))
             tb_node.set_user_tag((usertag.split('_')[0])+'_DATAFIND')
-            sbBankFile="../datafind/" + tb_node.get_output()           
+            os.symlink("../datafind/" + tb_node.get_output(),tb_node.get_output())
+            sbBankFile=tb_node.get_output()           
 
           # Set up the bank splitting
           if runSplitBank:
