@@ -17,33 +17,25 @@
 *  MA  02111-1307  USA
 */
 
-/*********************** <lalVerbatim file="SimulateSBHV">
-Author: Sukanta Bose
-$Id$
-*********************************************************** </lalVerbatim> */
+/**
+\author Sukanta Bose
+\file
+\ingroup stochastic
 
-/********************************************************** <lalLaTeX>
-\section{Header \texttt{SimulateSB.h}}
-\label{inject:s:SimulateSB.h}
+\brief Provides prototype and error code information for the modules needed
+to simulate a stochastic background signal.
 
 Provides prototype and error code information for the modules needed
 to simulate a stochastic background signal (whitened, if desired) in a pair of
 detectors, given the appropriate representations of the
 detector transfer function in each detector.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/SimulateSB.h>
-\end{verbatim}
+\endcode
 
-\noindent
-
-\subsection*{Error conditions}
-\input{SimulateSBHE}
-
-\subsection*{Structures}
-
-*********************************************************** </lalLaTeX> */
+*/
 
 #ifndef _SIMULATESB_H
 #define _SIMULATESB_H
@@ -60,8 +52,7 @@ extern "C" {
 
   NRCSID( SIMULATESBH, "$Id$" );
 
-/***************** <lalErrTable file="SimulateSBHE"> */
-
+/**\name Error Codes */ /*@{*/
 #define SIMULATESBH_ENULLP          1
 #define SIMULATESBH_ENONPOSLEN      2
 #define SIMULATESBH_ENONPOSDELTAF   3
@@ -97,8 +88,7 @@ extern "C" {
 #define SIMULATESBH_MSGEWRONGUNITS    "Inconsistent input units"
 #define SIMULATESBH_MSGECOMPTIME      "Time domain data complex instead of real"
 #define SIMULATESBH_MSGENOTYETHETERO  "Non-zero heterodyning frequency not yet implemented"
-
-/************************************ </lalErrTable> */
+/*@}*/
 
   /*************************************************************
    *                                                           *
@@ -107,59 +97,43 @@ extern "C" {
    *                                                           *
    *************************************************************/
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{Structures associated with
-  \texttt{SimulateSB.c}
-  (Sec.~\ref{inject:ss:SimulateSB.c})}
-
-\subsubsection*{\texttt{struct SSSimStochBGOutput}}
-\idx[Type]{SSSimStochBGOutput}
-
-\noindent Contains the output data produced by
-\texttt{LALSSSimStochBGTimeSeries()}. It comprises of a pair of
+/** Contains the output data produced by
+<tt>LALSSSimStochBGTimeSeries()</tt>. It comprises of a pair of
 (real) time-series simulated stochastic background signal in the outputs of
 a given pair of detectors. The fields are:
 
-\begin{description}
-\item[\texttt{REAL4TimeSeries *SSimStochBG1}]
+<dl>
+<dt><tt>REAL4TimeSeries *SSimStochBG1</tt></dt><dd>
 Simulated stochastic background signal in the output of
-the first detector.
-\item[\texttt{REAL4TimeSeries *SSimStochBG2}]
+the first detector.</dd>
+<dt><tt>REAL4TimeSeries *SSimStochBG2</tt></dt><dd>
 Simulated stochastic background signal in the output of
-the second detector.
-\end{description}
+the second detector.</dd>
+</dl>
 
-*********************************************************** </lalLaTeX> */
-
+*/
   typedef struct tagSSSimStochBGOutput {
     REAL4TimeSeries    *SSimStochBG1;
     REAL4TimeSeries    *SSimStochBG2;
   } SSSimStochBGOutput;
 
-/*********************************************************** <lalLaTeX>
-
-\subsubsection*{\texttt{struct SSSimStochBGInput}}
-\idx[Type]{SSSimStochBGInput}
-
-\noindent Contains the input data needed by
-\texttt{LALSSSimStochBGTimeSeries()}
+/** Contains the input data needed by
+<tt>LALSSSimStochBGTimeSeries()</tt>
 to calculate the whitened stochastic background signal in the output of
 a detector.
 The fields are:
 
-\begin{description}
-\item[\texttt{REAL4FrequencySeries *omegaGW}] The spectrum
-$\Omega_{\scriptstyle{\rm GW}}(f)$ of the stochastic gravitational-wave
-background.
-\item[\texttt{COMPLEX8FrequencySeries *whiteningFilter1}]
-The frequency-domain response function $\tilde{R}_1(f)$ for the first detector.
-\item[\texttt{COMPLEX8FrequencySeries *whiteningFilter2}]
-The frequency-domain response function $\tilde{R}_2(f)$ for the second detector.
-\end{description}
+<dl>
+<dt><tt>REAL4FrequencySeries *omegaGW</tt></dt><dd> The spectrum
+\f$\Omega_{\mathrm{GW}}(f)\f$ of the stochastic gravitational-wave
+background.</dd>
+<dt><tt>COMPLEX8FrequencySeries *whiteningFilter1</tt></dt><dd>
+The frequency-domain response function \f$\tilde{R}_1(f)\f$ for the first detector.</dd>
+<dt><tt>COMPLEX8FrequencySeries *whiteningFilter2</tt></dt><dd>
+The frequency-domain response function \f$\tilde{R}_2(f)\f$ for the second detector.</dd>
+</dl>
 
-*********************************************************** </lalLaTeX> */
-
+*/
   typedef struct tagSSSimStochBGInput {
     REAL4FrequencySeries     *omegaGW;
     COMPLEX8FrequencySeries  *whiteningFilter1;
@@ -171,45 +145,38 @@ The frequency-domain response function $\tilde{R}_2(f)$ for the second detector.
   } SSSimStochBGStrainInput;
 
 
-/*********************************************************** <lalLaTeX>
-
-
-\subsubsection*{\texttt{struct SSSimStochBGParams}}
-\idx[Type]{SSSimStochBGParams}
-
-\noindent Contains the parameters used by \texttt{LALSSSimStochBGTimeSeries()}
+/** Contains the parameters used by <tt>LALSSSimStochBGTimeSeries()</tt>
 to compute the whitened stochastic background signal in the output of an
 interferometric detector. The fields are:
 
-\begin{description}
-\item[\texttt{UINT4 length}]
-The number of points in the output time series.
+<dl>
+<dt><tt>UINT4 length</tt></dt><dd>
+The number of points in the output time series.</dd>
 
-\item[\texttt{REAL8 deltaT}]
-The temporal spacing of the output time series.
+<dt><tt>REAL8 deltaT</tt></dt><dd>
+The temporal spacing of the output time series.</dd>
 
-\item[\texttt{INT4 seed}]
-The random number seed for the stochastic simulation.
+<dt><tt>INT4 seed</tt></dt><dd>
+The random number seed for the stochastic simulation.</dd>
 
-\item[\texttt{LALDetector *detector1}]
+<dt><tt>LALDetector *detector1</tt></dt><dd>
 The site location and orientation information of first detector involved in
-the stochastic background search.
+the stochastic background search.</dd>
 
-\item[\texttt{LALDetector *detector2}]
+<dt><tt>LALDetector *detector2</tt></dt><dd>
 The site location and orientation information of second detector involved in
-the stochastic background search.
+the stochastic background search.</dd>
 
-\item[\texttt{LALUnit SSimStochBGTimeSeries1Unit}]
+<dt><tt>LALUnit SSimStochBGTimeSeries1Unit</tt></dt><dd>
 The unit field of the stochastic background, expressed as a Real4
-time series, in detector 1.
+time series, in detector 1.</dd>
 
-\item[\texttt{LALUnit SSimStochBGTimeSeries2Unit}]
+<dt><tt>LALUnit SSimStochBGTimeSeries2Unit</tt></dt><dd>
 The unit field of the stochastic background, expressed as a Real4
 time series, in detector 2.
-
-\end{description}
-*********************************************************** </lalLaTeX> */
-
+</dd>
+</dl>
+*/
   typedef struct tagSSSimStochBGParams {
     UINT4        length;   /* time length of output vector data samples */
     REAL8        deltaT;   /* time spacing */
@@ -248,11 +215,3 @@ time series, in detector 2.
 #endif
 
 #endif /* _SIMULATESB_H */
-
-/********************************************************** <lalLaTeX>
-
-\vfill{\footnotesize\input{SimulateSBHV}}
-
-\newpage\input{SimulateSBC}
-%\newpage\input{SimulateSBTestC}
-*********************************************************** </lalLaTeX> */

@@ -43,4 +43,3 @@ int LALStochSummTableFromLIGOLw( \
 #endif
 
 #endif /* _LIGOLWXMLSTOCHASTICREAD_H */
-

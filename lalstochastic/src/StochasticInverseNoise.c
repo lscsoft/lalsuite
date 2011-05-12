@@ -17,94 +17,79 @@
 *  MA  02111-1307  USA
 */
 
-/********************* <lalVerbatim file="StochasticInverseNoiseCV">
-Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author UTB Relativity Group; contact whelan@phys.utb.edu
+\file
+\ingroup stochastic
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{StochasticInverseNoise.c}}
-\label{stochastic:ss:StochasticInverseNoise.c}
-
-Calculates the values of the calibrated and half-calibrated inverse
+\brief Calculates the values of the calibrated and half-calibrated inverse
 noise power spectra from the uncalibrated noise power spectrum and the
-frequency-domain instrument response function
+frequency-domain instrument response function.
 
-\subsubsection*{Prototypes}
-\idx{LALStochasticInverseNoise()}
-\input{StochasticInverseNoiseCP}
+\heading{Description}
 
-\subsubsection*{Description}
-
-As described in Sec.~\ref{stochastic:ss:StochasticOptimalFilter.c},
-the most convenient combinations of the noise $P(f)$ (defined by $\langle h(f)h(f')^*\rangle=\delta(f-f')P(f)$) and
+As described in \ref StochasticOptimalFilter.c,
+the most convenient combinations of the noise \f$P(f)\f$ (defined by \f$\langle h(f)h(f')^*\rangle=\delta(f-f')P(f)\f$) and
 instrument response
-$\widetilde{R}(f)=h(f)/h(f)$ to use in
+\f$\widetilde{R}(f)=h(f)/h(f)\f$ to use in
 constructing an optimal filter are the inverse half-calibrated power
 spectral density
-\begin{equation}
-  \label{stochastic:e:halfCalibratedPSD}
-  \frac{1}{P^{\scriptstyle{\rm HC}}(f)}=\frac{1}{\widetilde{R}(f)
-  \,P^{\scriptstyle{\rm C}}(f)}
+\anchor stochastic_e_halfCalibratedPSD \f{equation}{
+  \label{stochastic_e_halfCalibratedPSD}
+  \frac{1}{P^{\mathrm{HC}}(f)}=\frac{1}{\widetilde{R}(f)
+  \,P^{\mathrm{C}}(f)}
   =\frac{\widetilde{R}(f)^*}{P(f)}
-\end{equation}
+\f}
 and the inverse calibrated PSD
-\begin{equation}
-  \label{stochastic:e:calibratedPSD}
-  \frac{1}{P^{\scriptstyle{\rm C}}(f)}
+\anchor stochastic_e_calibratedPSD \f{equation}{
+  \label{stochastic_e_calibratedPSD}
+  \frac{1}{P^{\mathrm{C}}(f)}
   =\frac{|\widetilde{R}(f)|^2}{P(f)}
-\end{equation}
-The function \texttt{LALStochasticInverseNoise()} takes in a
-\texttt{REAL4FrequencySeries} describing the uncalibrated PSD
-$P(f)$ along with a
-\texttt{COMPLEX8FrequencySeries} describing the frequency-domain
-response $\widetilde{R}(f)$, and outputs a
-\texttt{REAL4FrequencySeries} describing the calibrated inverse PSD
-$1/P^{\scriptstyle{\rm C}}(f)$
-along with a \texttt{COMPLEX8FrequencySeries} describing the
-half-calibrated inverse PSD $1/P^{\scriptstyle{\rm HC}}(f)$.
+\f}
+The function <tt>LALStochasticInverseNoise()</tt> takes in a
+\c REAL4FrequencySeries describing the uncalibrated PSD
+\f$P(f)\f$ along with a
+\c COMPLEX8FrequencySeries describing the frequency-domain
+response \f$\widetilde{R}(f)\f$, and outputs a
+\c REAL4FrequencySeries describing the calibrated inverse PSD
+\f$1/P^{\mathrm{C}}(f)\f$
+along with a \c COMPLEX8FrequencySeries describing the
+half-calibrated inverse PSD \f$1/P^{\mathrm{HC}}(f)\f$.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 The output series are filled according to a straightforward
 implemementation of
-(\ref{stochastic:e:halfCalibratedPSD}-\ref{stochastic:e:calibratedPSD}).
+\eqref{stochastic_e_halfCalibratedPSD}-\eqref{stochastic_e_calibratedPSD}.
 The DC components, if included in the series, are set to zero.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALUnitRaise()
 LALUnitMultiply()
 strncpy()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
-\begin{itemize}
-\item Note that although $P^{\scriptstyle{\rm C}}(f)$
- and $P(f)$
-  are real, $P^{\scriptstyle{\rm HC}}(f)$ is \emph{complex}.
-\item The output units are constructed by combining the input units,
+\heading{Notes}
+<ul>
+<li> Note that although \f$P^{\mathrm{C}}(f)\f$
+ and \f$P(f)\f$
+  are real, \f$P^{\mathrm{HC}}(f)\f$ is \e complex.</li>
+<li> The output units are constructed by combining the input units,
   but under normal circumstances the units will be as follows:
-  \begin{eqnarray}
+  \f{eqnarray}{
     {} [P] &=& \textrm{count}^{2}\, \textrm{Hz}^{-1}\\
     {} [\widetilde{R}] &=& 10^{18}\,\textrm{strain}^{-1}\,\textrm{count} \\
-    {} [1/P^{\scriptstyle{\rm C}}]
+    {} [1/P^{\mathrm{C}}]
     &:=& [\widetilde{R}]^2 [P]
     = 10^{36}\,\textrm{Hz}\,\textrm{strain}^{-2} \\
-    {} [1/P^{\scriptstyle{\rm HC}}]
+    {} [1/P^\mathrm{HC}}]
     &:=&  [\widetilde{R}] [P]
     = 10^{18}\,\textrm{Hz}\,\textrm{strain}^{-1}\,\textrm{count}^{-1}
-  \end{eqnarray}
-\end{itemize}
+  \f}</li>
+</ul>
+*/
 
-\vfill{\footnotesize\input{StochasticInverseNoiseCV}}
-
-******************************************************* </lalLaTeX> */
-/********************** <lalLaTeX file="StochasticInverseNoiseCB">
-
-% \bibitem{stochastic:}
-
-******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
@@ -322,13 +307,13 @@ LALStochasticInverseNoiseCal(
   RETURN(status);
 } /* LALStochasticInverseNoiseCal() */
 
-/* <lalVerbatim file="StochasticInverseNoiseCP"> */
+
 void
 LALStochasticInverseNoise(
     LALStatus                         *status,
     StochasticInverseNoiseOutput      *output,
     const StochasticInverseNoiseInput *input )
-/* </lalVerbatim> */
+
 {
   REAL8 deltaF;
   REAL8 f0;

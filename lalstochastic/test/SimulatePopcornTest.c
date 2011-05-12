@@ -17,17 +17,15 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="SimulatePopcornTestCV">
-Author: Tania Regimbau $Id$
-</lalVerbatim> */
+/**
+\author Tania Regimbau
+\file
+\ingroup stochastic
 
-/*<lalLaTeX>
-\subsection{Program \texttt{SimulatePopcornTest.c}}
-\label{inject:ss:SimulatePopcornTest.c}
+\brief A program to test <tt>LALSimPopcornTimeSeries()</tt>
 
-A program to test \texttt{LALSimPopcornTimeSeries()}
+*/
 
-</lalLaTeX> */
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -281,9 +279,3 @@ int main ( void )
 
 
  }
-
-
-
-
-
-
