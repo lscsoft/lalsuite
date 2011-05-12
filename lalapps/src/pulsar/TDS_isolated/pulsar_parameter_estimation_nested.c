@@ -869,9 +869,9 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
       UINT4 maxcl = 0;
       
       /* get max chunklength */
-      for ( k=0; k < chunkLength->length; k++ ){
+      for ( k=0; k < chunkLength->length; k++ ){        
         if ( chunkLength->data[k] > maxcl ) 
-          maxcl = chunkLength->data[k] > maxcl;
+          maxcl = chunkLength->data[k];
       }
       
       exclamation = XLALCreateREAL8Vector( maxcl + 1 );
