@@ -971,10 +971,11 @@ void initVariables(LALInferenceRunState *state)
           state->differentialPointsLength = 0;
         }
 
+        UINT4 N = (approx == SpinTaylor ? 15 : 9);
+  
         ppt=LALInferenceGetProcParamVal(commandLine, "--adapt");
         if (ppt) {
           fprintf(stdout, "Adapting single-param step sizes.\n");
-          UINT4 N = (approx == SpinTaylor ? 15 : 9);
           if (!LALInferenceCheckVariable(state->proposalArgs, SIGMAVECTORNAME)) {
             /* We need a sigma vector for adaptable jumps. */
             REAL8Vector *sigmas = XLALCreateREAL8Vector(N);
@@ -988,14 +989,18 @@ void initVariables(LALInferenceRunState *state)
             LALInferenceAddVariable(state->proposalArgs, SIGMAVECTORNAME, &sigmas, REAL8Vector_t, PARAM_FIXED);
 
           }
-          REAL8Vector *avgPaccept = XLALCreateREAL8Vector(N);
+        }
+        ppt=LALInferenceGetProcParamVal(commandLine, "--acceptanceRatio");
+        if (ppt) {
+  
+          REAL8Vector *PacceptCount = XLALCreateREAL8Vector(N);
           UINT4 i;
 
           for (i = 0; i < N; i++) {
-            avgPaccept->data[i] = 0.0;
+            PacceptCount->data[i] = 0.0;
           }
           
-          LALInferenceAddVariable(state->proposalArgs, "adaptPacceptAvg", &avgPaccept, REAL8Vector_t, PARAM_FIXED);
+          LALInferenceAddVariable(state->proposalArgs, "PacceptCount", &PacceptCount, REAL8Vector_t, PARAM_FIXED);
         }
 
         INT4 adaptableStep = 0;
@@ -1005,7 +1010,7 @@ void initVariables(LALInferenceRunState *state)
         LALInferenceAddVariable(state->proposalArgs, "proposedVariableNumber", &varNumber, INT4_t, PARAM_OUTPUT);
 
         INT4 sigmasNumber = 0;
-        LALInferenceAddVariable(state->proposalArgs, "proposedSigmaNumber", &sigmasNumber, INT4_t, PARAM_OUTPUT);
+        LALInferenceAddVariable(state->proposalArgs, "proposedArrayNumber", &sigmasNumber, INT4_t, PARAM_OUTPUT);
 
         REAL8 tau = 1e3;
         LALInferenceAddVariable(state->proposalArgs, "adaptTau", &tau, REAL8_t, PARAM_OUTPUT);
@@ -1091,10 +1096,11 @@ int main(int argc, char *argv[]){
     }
     LALInferenceAddMinMaxPrior(runState->priorArgs,	"x2",	&Min,	&Max,		REAL8_t);
     
+    UINT4 N = 2;
+    
     ppt=LALInferenceGetProcParamVal(procParams, "--adapt");
     if (ppt) {
       fprintf(stdout, "Adapting single-param step sizes.\n");
-      UINT4 N = 2;
       if (!LALInferenceCheckVariable(runState->proposalArgs, SIGMAVECTORNAME)) {
         /* We need a sigma vector for adaptable jumps. */
         REAL8Vector *sigmas = XLALCreateREAL8Vector(N);
@@ -1108,14 +1114,18 @@ int main(int argc, char *argv[]){
         LALInferenceAddVariable(runState->proposalArgs, SIGMAVECTORNAME, &sigmas, REAL8Vector_t, PARAM_FIXED);
         
       }
-      REAL8Vector *avgPaccept = XLALCreateREAL8Vector(N);
+    }
+    ppt=LALInferenceGetProcParamVal(procParams, "--acceptanceRatio");
+    if (ppt) {
+
+      REAL8Vector *PacceptCount = XLALCreateREAL8Vector(N);
       UINT4 i;
       
       for (i = 0; i < N; i++) {
-        avgPaccept->data[i] = 0.0;
+        PacceptCount->data[i] = 0.0;
       }
       
-      LALInferenceAddVariable(runState->proposalArgs, "adaptPacceptAvg", &avgPaccept, REAL8Vector_t, PARAM_FIXED);
+      LALInferenceAddVariable(runState->proposalArgs, "PacceptCount", &PacceptCount, REAL8Vector_t, PARAM_FIXED);
     }
     
     INT4 adaptableStep = 0;
@@ -1125,7 +1135,7 @@ int main(int argc, char *argv[]){
     LALInferenceAddVariable(runState->proposalArgs, "proposedVariableNumber", &varNumber, INT4_t, PARAM_OUTPUT);
     
     INT4 sigmasNumber = 0;
-    LALInferenceAddVariable(runState->proposalArgs, "proposedSigmaNumber", &sigmasNumber, INT4_t, PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->proposalArgs, "proposedArrayNumber", &sigmasNumber, INT4_t, PARAM_OUTPUT);
     
     
   }else{

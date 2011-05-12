@@ -77,10 +77,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   REAL8 *sigmaVec = NULL;
   REAL8Vector *sigmas = NULL;
+  REAL8 *PacceptCountVec = NULL;
+  REAL8Vector *PacceptCount = NULL;
 	//LALVariables* TcurrentParams = malloc(sizeof(LALVariables));	//the current parameters for each chains
 	//LALVariables dummyLALVariable;
-	INT4 adatpationOn = 0;
-  
+	INT4 adaptationOn = 0;
+  INT4 acceptanceRatioOn = 0;
 	INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
 	INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
 	INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
@@ -112,11 +114,21 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 	tempLadder = malloc(nChain * sizeof(REAL8));			//the temperature ladder
 	
+  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatio");
+  if(ppt){
+    acceptanceRatioOn = 1;
+    if(MPIrank == 0){
+      PacceptCountVec = (REAL8 *)malloc(MPIsize*nPar*sizeof(REAL8));
+      for (p=0;p<(nChain*nPar);++p){
+        PacceptCountVec[p] = 0.0;
+      }
+    }
+  }
   ppt=LALInferenceGetProcParamVal(runState->commandLine, "--adapt");
   if (ppt) {
-    adatpationOn = 1;
-	  if(MPIrank == 0){	
-		  sigmaVec = (REAL8 *)malloc(MPIsize*nPar*sizeof(REAL8));//matrix of sigmas per parameter and temperature for adaptatio
+    adaptationOn = 1;
+    if(MPIrank == 0){
+		  sigmaVec = (REAL8 *)malloc(MPIsize*nPar*sizeof(REAL8));//matrix of sigmas per parameter and temperature for adaptation
       for (p=0;p<(nChain*nPar);++p){
         sigmaVec[p]=1.0;
       }				
@@ -302,8 +314,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	//addVariable(runState->proposalArgs, "sigma", sigma,  gslMatrix_t, PARAM_LINEAR);
 	
   //ppt=getProcParamVal(runState->commandLine, "--adapt");
-  if (adatpationOn == 1) {
-  sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, SIGMAVECTORNAME));
+  if (adaptationOn == 1) {
+    sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, SIGMAVECTORNAME)); 
+  }
+  if (acceptanceRatioOn == 1){
+    PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
   }
   //for (p=0; p<nPar; ++p) {
   //   sigmas->data[p]=tempLadder[tempIndex];//1.0;
@@ -312,7 +327,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   
   //addVariable(runState->proposalArgs, "sigma", &sigma,  REAL8Vector_t, PARAM_LINEAR);
   //addVariable(runState->proposalArgs, "sigma", &sigma,  REAL8ptr_t, PARAM_LINEAR);
-  if (adatpationOn == 1) {
+  if (adaptationOn == 1) {
 	LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, REAL8_t, PARAM_LINEAR);
   }
 	LALInferenceAddVariable(runState->algorithmParams, "nChain", &nChain,  INT4_t, PARAM_FIXED);
@@ -412,9 +427,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		LALInferenceSetVariable(runState->proposalArgs, "temperature", &(tempLadder[tempIndex]));  //update temperature of the chain
 		LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
 		LALInferenceSetVariable(runState->proposalArgs, "tempIndex", &(tempIndex));
-    if (adatpationOn == 1) {
-		s_gamma=10.0*exp(-(1.0/6.0)*log((double)i));
-		LALInferenceSetVariable(runState->proposalArgs, "s_gamma", &(s_gamma));
+    if (adaptationOn == 1) {
+      //s_gamma=10.0*exp(-(1.0/6.0)*log((double)i));
+      s_gamma=10.0*exp(-(1.0/6.0)*log((double)i));
+      LALInferenceSetVariable(runState->proposalArgs, "s_gamma", &(s_gamma));
     }
 
 		//LALInferenceSetVariable(runState->proposalArgs, "sigma", sigma);
@@ -428,12 +444,25 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     
     ppt = LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose");
     if (ppt) {
-     printf("iteration %d\t",i);
-     printf("MPIrank %d\ttemperature=%f\t",MPIrank,*(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature"));
-     for (p=0; p<nPar; ++p) {
-     printf("%f\t",sigmas->data[p]);
-     }
-     printf("\n");
+      if(tempLadder[tempIndex]==1.0){
+      printf("%d\t",i);
+      printf("MPIrank=%d\tT=%f\ts_gamma=%f\t",MPIrank,*(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature"),s_gamma);
+      for (p=0; p<nPar; ++p) {
+        printf("%fsig\t",sigmas->data[p]);
+      }
+      printf("\n");
+      }
+    }
+    
+    if(LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")){
+      if(tempLadder[tempIndex]==1.0){
+        printf("%d\t",i);
+        printf("MPIrank=%d\tT=%f\t\t\t\t",MPIrank,*(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature"));
+        for (p=0; p<nPar; ++p) {
+          printf("%f\t",nPar*PacceptCount->data[p]/(double)i);
+        }
+        printf("\n");
+      }      
     }
     
 		runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
@@ -446,7 +475,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
                    if (ppt) { 
                      UINT4 j; 
                      sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, SIGMAVECTORNAME)); 
-                     REAL8Vector *Pacc = *((REAL8Vector **) LALInferenceGetVariable(runState->proposalArgs, "adaptPacceptAvg")); 
+                     REAL8Vector *Pacc = *((REAL8Vector **) LALInferenceGetVariable(runState->proposalArgs, "PacceptCount")); 
                      fprintf(stderr, "Iteration %10d: sigma = {", i); 
                      for (j = 0; j < sigmas->length-1; j++) { 
                        fprintf(stderr, "%8.5g, ", sigmas->data[j]); 
@@ -498,10 +527,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		MPI_Gather(&(runState->currentLikelihood), 1, MPI_DOUBLE, TcurrentLikelihood, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		MPI_Gather(&acceptanceCount, 1, MPI_INT, acceptanceCountLadder, 1, MPI_INT, 0, MPI_COMM_WORLD);
     //ppt=LALInferenceGetProcParamVal(runState->commandLine, "--adapt");
-    if (adatpationOn == 1) {
-		MPI_Gather(sigmas->data,nPar,MPI_DOUBLE,sigmaVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    if (adaptationOn == 1) {
+      MPI_Gather(sigmas->data,nPar,MPI_DOUBLE,sigmaVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
+
     }
-		//MPI_Gather(sigma,nPar,MPI_DOUBLE,sigmaVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    if (acceptanceRatioOn == 1) {
+      MPI_Gather(PacceptCount->data,nPar,MPI_DOUBLE,PacceptCountVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    }
+    //MPI_Gather(sigma,nPar,MPI_DOUBLE,sigmaVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);	
 
 		//LALInferencePrintVariables(&(TcurrentParams[0]));
@@ -536,14 +569,21 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 						count++;
 						*/
             //ppt=getProcParamVal(runState->commandLine, "--adapt");
-            if (adatpationOn == 1) {
-						for (p=0; p<(nPar); ++p){
-							dummyR8=sigmaVec[p+nPar*upperRank];
-							sigmaVec[p+nPar*upperRank]=sigmaVec[p+nPar*lowerRank];
-							sigmaVec[p+nPar*lowerRank]=dummyR8;
-						}
-          //  printf("!!!!!!!!!!!!!!!!SWAP!!!!!!!!!!!!!!! %f <-> %f \n",tempLadder[tempIndexVec[lowerRank]],tempLadder[tempIndexVec[upperRank]]);
+            if (adaptationOn == 1) {
+              for (p=0; p<(nPar); ++p){
+                dummyR8=sigmaVec[p+nPar*upperRank];
+                sigmaVec[p+nPar*upperRank]=sigmaVec[p+nPar*lowerRank];
+                sigmaVec[p+nPar*lowerRank]=dummyR8;
+                }
+              }
+            if (acceptanceRatioOn == 1) {
+              for (p=0; p<(nPar); ++p){
+                dummyR8=PacceptCountVec[p+nPar*upperRank];
+                PacceptCountVec[p+nPar*upperRank]=PacceptCountVec[p+nPar*lowerRank];
+                PacceptCountVec[p+nPar*lowerRank]=dummyR8;
+              }
             }
+            //  printf("!!!!!!!!!!!!!!!!SWAP!!!!!!!!!!!!!!! %f <-> %f \n",tempLadder[tempIndexVec[lowerRank]],tempLadder[tempIndexVec[upperRank]]);
 					}
 				} //upperRank
 			} //lowerRank
@@ -551,8 +591,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		MPI_Scatter(tempIndexVec, 1, MPI_INT, &tempIndex, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Scatter(acceptanceCountLadder, 1, MPI_INT, &acceptanceCount, 1, MPI_INT, 0, MPI_COMM_WORLD);
     //ppt=getProcParamVal(runState->commandLine, "--adapt");
-    if (adatpationOn == 1) {
-		MPI_Scatter(sigmaVec,nPar,MPI_DOUBLE,sigmas->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
+    if (adaptationOn == 1) {
+      MPI_Scatter(sigmaVec,nPar,MPI_DOUBLE,sigmas->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
+    }
+    if (acceptanceRatioOn == 1){
+      MPI_Scatter(PacceptCountVec,nPar,MPI_DOUBLE,PacceptCount->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
     }
 		//MPI_Scatter(sigmaVec,nPar,MPI_DOUBLE,sigma,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -649,10 +692,10 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 		acceptanceCount++;
     accepted = 1;
 		LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount);
-    //    for (p=0; p<(nPar); ++p){
+    
+        //    for (p=0; p<(nPar); ++p){
     //			sigma[p]=sigma[p]+s_gamma*(1.0-0.234);
     //		}
-
 		//}
 	}//else{
 	//	for (p=0; p<(nPar); ++p){
@@ -660,6 +703,23 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	//		if(sigma[p]<0.0){sigma[p]=0.0;}
 	//	}
 	//}
+  
+  INT4 adaptableStep = 0;
+  INT4 i = 0;
+  ppt = LALInferenceGetProcParamVal(commandLine, "--acceptanceRatio");
+  if (ppt) {
+    adaptableStep = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptableStep"));
+    if (adaptableStep) {
+      i = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "proposedArrayNumber"));
+      REAL8Vector *PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
+      if(accepted == 1){
+        PacceptCount->data[i]+=1;
+      }
+    }
+  }
+  
+  
+  
  // printf("MPIrank %d\ttemperature=%f\t",MPIrank,*(REAL8*) getVariable(runState->proposalArgs, "temperature"));
  // for (p=0; p<nPar; ++p) {
  // printf("%f\t",sigma[p]);
@@ -668,7 +728,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
         /* Adapt if desired. */
         ppt = LALInferenceGetProcParamVal(commandLine, "--adapt");
         if (ppt) {
-          INT4 adaptableStep = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptableStep"));
+          adaptableStep = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptableStep"));
           if (adaptableStep) {
 
             //REAL8 *sigma=NULL;
@@ -677,12 +737,12 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
             //INT4 nPar  = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "nPar");
             //REAL8 s_gamma = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "s_gamma");
       
-            INT4 i = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "proposedSigmaNumber"));
+            i = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "proposedArrayNumber"));
             INT4 varNr = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "proposedVariableNumber"));
             //REAL8 Pacc = (logAcceptanceProbability > 0.0 ? 1.0 : exp(logAcceptanceProbability));
             REAL8 s_gamma = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "s_gamma");
             REAL8Vector *sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, SIGMAVECTORNAME));
-            //REAL8Vector *avgPacc = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "adaptPacceptAvg"));
+            
             REAL8 sigma = sigmas->data[i];
             //REAL8 tau = *((REAL8 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau"));
             char *name = LALInferenceGetVariableName(&proposedParams, varNr);
@@ -700,23 +760,25 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 
             //sigma *= (1.0 - 4.0*Pacc - 8.0*tau)/(4.0*Pacc - 8.0*tau - 1.0);
             if(accepted == 1){
-              sigma=sigma+s_gamma*(1.0-0.234);
+              sigma=sigma+s_gamma*(dprior/100.0)*(1.0-0.234);
             }else{
-              sigma=sigma-s_gamma*(0.234);
+              sigma=sigma-s_gamma*(dprior/100.0)*(0.234);
             }
             
             sigma = (sigma > dprior ? dprior : sigma);
+            sigma = (sigma < 0 ? 0 : sigma);
             
             sigmas->data[i] = sigma;
 
-            //avgPacc->data[i] *= 1.0 - 1.0/tau;
-            //avgPacc->data[i] += Pacc / tau;
+            //PacceptCount->data[i] *= 1.0 - 1.0/tau;
+            //PacceptCount->data[i] += Pacc / tau;
 
             /* Make sure we don't do this again until we take another adaptable step.*/
-            adaptableStep = 0;
-            LALInferenceSetVariable(runState->proposalArgs, "adaptableStep", &adaptableStep);
+
           }
         }
+  adaptableStep = 0;
+  LALInferenceSetVariable(runState->proposalArgs, "adaptableStep", &adaptableStep);
 	//fprintf(stdout,"%9.5f < %9.5f\t(%9.5f)\n",temp,logAcceptanceProbability,temperature);
 	LALInferenceDestroyVariables(&proposedParams);	
 }
@@ -1109,75 +1171,101 @@ void PTMCMCLALSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVa
 
     LALInferenceSetVariable(args, "proposedVariableNumber", &varNr);
     
-    LALInferenceSetVariable(args, "proposedSigmaNumber", &i);
+    LALInferenceSetVariable(args, "proposedArrayNumber", &i);
   }
 }
 
 void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
 {
 	gsl_rng * GSLrandom=runState->GSLrandom;
-	LALInferenceVariableItem *paraHead=NULL;
+	LALInferenceVariableItem *param=NULL, *dummyParam=NULL;
 	LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
         REAL8 T = *(REAL8 *)LALInferenceGetVariable(runState->proposalArgs, "temperature");
 	
 	REAL8 sigma = 0.1*sqrt(T); /* Adapt step to temperature. */
 	REAL8 big_sigma = 1.0;
-	
+  UINT4 dim;
+  UINT4 i;
+  UINT4 varNr;
+  
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in a parameter
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) big_sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in a parameter
 
-	do {
-          paraHead=LALInferenceGetItemNr(proposedParams,1+(int)gsl_rng_uniform_int(GSLrandom,proposedParams->dimension));
-	} while ((paraHead->vary==PARAM_FIXED || paraHead->vary==PARAM_OUTPUT));
-	//printf("%s\n",paraHead->name);
+  dim = proposedParams->dimension;
+  
+  do {
+    varNr = 1+gsl_rng_uniform_int(GSLrandom, dim);
+    param = LALInferenceGetItemNr(proposedParams, varNr);
+  } while (param->vary == PARAM_FIXED || param->vary == PARAM_OUTPUT);
+  
+  for (dummyParam = proposedParams->head, i = 0; dummyParam != NULL; dummyParam = dummyParam->next) {
+    if (!strcmp(dummyParam->name, param->name)) {
+      /* Found it; i = index into sigma vector. */
+      break;
+    } else if (dummyParam->vary == PARAM_FIXED || dummyParam->vary == PARAM_OUTPUT) {
+      /* Don't increment i, since we're not dealing with a "real" parameter. */
+      continue;
+    } else {
+      i++;
+      continue;
+    }
+  }	//printf("%s\n",param->name);
 		
         if (LALInferenceGetProcParamVal(runState->commandLine, "--zeroLogLike")) {
-          if (!strcmp(paraHead->name, "massratio")) {
+          if (!strcmp(param->name, "massratio")) {
             sigma = 0.02;
-          } else if (!strcmp(paraHead->name, "chirpmass")) {
+          } else if (!strcmp(param->name, "chirpmass")) {
             sigma = 1.0;
-          } else if (!strcmp(paraHead->name, "time")) {
+          } else if (!strcmp(param->name, "time")) {
             sigma = 0.02;
-          } else if (!strcmp(paraHead->name, "phase")) {
+          } else if (!strcmp(param->name, "phase")) {
             sigma = 0.6;
-          } else if (!strcmp(paraHead->name, "distance")) {
+          } else if (!strcmp(param->name, "distance")) {
             sigma = 10.0;
-          } else if (!strcmp(paraHead->name, "declination")) {
+          } else if (!strcmp(param->name, "declination")) {
             sigma = 0.3;
-          } else if (!strcmp(paraHead->name, "rightascension")) {
+          } else if (!strcmp(param->name, "rightascension")) {
             sigma = 0.6;
-          } else if (!strcmp(paraHead->name, "polarisation")) {
+          } else if (!strcmp(param->name, "polarisation")) {
             sigma = 0.6;
-          } else if (!strcmp(paraHead->name, "inclination")) {
+          } else if (!strcmp(param->name, "inclination")) {
             sigma = 0.3;
-          } else if (!strcmp(paraHead->name, "a_spin1")) {
+          } else if (!strcmp(param->name, "a_spin1")) {
             sigma = 0.1;
-          } else if (!strcmp(paraHead->name, "theta_spin1")) {
+          } else if (!strcmp(param->name, "theta_spin1")) {
             sigma = 0.3;
-          } else if (!strcmp(paraHead->name, "phi_spin1")) {
+          } else if (!strcmp(param->name, "phi_spin1")) {
             sigma = 0.6;
-          } else if (!strcmp(paraHead->name, "a_spin2")) {
+          } else if (!strcmp(param->name, "a_spin2")) {
             sigma = 0.1;
-          } else if (!strcmp(paraHead->name, "theta_spin2")) {
+          } else if (!strcmp(param->name, "theta_spin2")) {
             sigma = 0.3;
-          } else if (!strcmp(paraHead->name, "phi_spin2")) {
+          } else if (!strcmp(param->name, "phi_spin2")) {
             sigma = 0.6;
           } else {
-            fprintf(stderr, "Could not find parameter %s!", paraHead->name);
+            fprintf(stderr, "Could not find parameter %s!", param->name);
             exit(1);
           }
-          *(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*sigma;
+          *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*sigma;
         } else {
-          if (!strcmp(paraHead->name,"massratio") || !strcmp(paraHead->name,"time") || !strcmp(paraHead->name,"a_spin2") || !strcmp(paraHead->name,"a_spin1")){
-            *(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
-          } else if (!strcmp(paraHead->name,"polarisation") || !strcmp(paraHead->name,"phase") || !strcmp(paraHead->name,"inclination")){
-            *(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
+          if (!strcmp(param->name,"massratio") || !strcmp(param->name,"time") || !strcmp(param->name,"a_spin2") || !strcmp(param->name,"a_spin1")){
+            *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
+          } else if (!strcmp(param->name,"polarisation") || !strcmp(param->name,"phase") || !strcmp(param->name,"inclination")){
+            *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
           } else {
-            *(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+            *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
           }
         }
 	LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+  
+  INT4 as = 1;
+  LALInferenceSetVariable(runState->proposalArgs, "adaptableStep", &as);
+  
+  LALInferenceSetVariable(runState->proposalArgs, "proposedVariableNumber", &varNr);
+  
+  LALInferenceSetVariable(runState->proposalArgs, "proposedArrayNumber", &i);
+  
 }
 
 void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
