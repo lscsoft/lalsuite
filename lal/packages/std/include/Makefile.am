@@ -18,6 +18,11 @@ pkginclude_HEADERS = \
 	XLALError.h \
 	XLALGSL.h
 
+if SWIG_BUILD
+pkginclude_HEADERS += \
+	swig-lal-error.i
+endif
+
 EXTRA_DIST = LALPrimer.h
 
 EXTRA_TEXSOURCES = LALPrimer.h
