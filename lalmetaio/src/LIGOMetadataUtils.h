@@ -23,41 +23,35 @@
  *
  * Author: Brown, D. A. and Fairhurst, S.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="LIGOMetadataUtilsHV">
-Author: Brown, D. A. and Fairhurst, S.
-$Id$
-</lalVerbatim>
-<lalLaTeX>
-\section{Header \texttt{LIGOMetadataUtils.h}}
-\label{s:LIGOMetadataItils.h}
+/**
 
-Provides functions for manipulating the LAL structures that correspond
-to the LIGO metadata database tables defined in \texttt{LIGOMetadataTables.h}.
+\author Brown, D. A. and Fairhurst, S.
+\file
+\ingroup lalmetaio
+\brief Provides functions for manipulating the LAL structures that correspond
+to the LIGO metadata database tables defined in \ref LIGOMetadataTables.h.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/LIGOMetadataUtils.h>
-\end{verbatim}
+\endcode
 
-\noindent This header provides prototypes for routines that perform processing
+This header provides prototypes for routines that perform processing
 on the LAL structures that correspond to the LIGO metadata database tables
-defined in \texttt{LIGOMetadataTables.h}, such as sorting and eliminating
+defined in \ref LIGOMetadataTables.h, such as sorting and eliminating
 duplictaes. The functions specific to a particular metadata table (e.g.
-\texttt{sngl\_inspiral}, \texttt{sngl\_burst}, etc.) are all prototyped in
+\c sngl_inspiral, \c sngl_burst, etc.) are all prototyped in
 this header.
 
-\subsection*{Types}
+\heading{Types}
 
-\noindent None.
+None.
 
-</lalLaTeX>
-#endif
+
+*/
 
 #ifndef _LIGOMETADATAUTILS_H
 #define _LIGOMETADATAUTILS_H
@@ -74,12 +68,7 @@ extern "C" {
 
 NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-#endif
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define LIGOMETADATAUTILSH_ENULL 1
 #define LIGOMETADATAUTILSH_ENNUL 2
 #define LIGOMETADATAUTILSH_ETIME 3
@@ -99,24 +88,11 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 #define LIGOMETADATAUTILSH_MSGEDET "Unknown detector"
 #define LIGOMETADATAUTILSH_MSGEDIST "No horizon distance for consistency cut"
 
-/* </lalErrTable> */
+/*@}*/
 
-#if 0
-<lalLaTeX>
-\subsection*{Types}
-</lalLaTeX>
-\idx[Type]{LALPlaygroundDataMask}
-\idx[Type]{SnglInspiralParameterTest}
-\idx[Type]{SnglInspiralAccuracy}
-\idx[Type]{SnglInspiralClusterChoice}
-
-
-
-
-
-\subsubsection*{Type \texttt{LALPlaygroundDataMask}}
-#endif
-/* <lalVerbatim> */
+/** The \c LALPlaygroundDataMask contains an enum type for describing the
+    subset of data to be used, \c playground_only, \c exclude_play and \c all_data.
+*/
 typedef enum
 {
   unspecified_data_type,
@@ -125,15 +101,6 @@ typedef enum
   all_data
 }
 LALPlaygroundDataMask;
-/*</lalVerbatim> */
-#if 0
-<lalLaTeX>
-The \texttt{LALPlaygroundDataMask} contains an enum type for describing the
-subset of data to be used, \texttt{playground\_only}, \texttt{exclude\_play}
-and \texttt{all\_data}.
-\subsubsection*{Type \texttt{LALPlaygroundDataMask}}
-</lalLaTeX>
-#endif
 
 
 /*
@@ -301,16 +268,16 @@ LALTimeSortSummValue (
     int(*comparfunc)    (const void *, const void *)
     );
 
-#if 0
-<lalLaTeX>
-\vfill{\footnotesize\input{LIGOMetadataUtilsHV}}
 
-\newpage\input{LIGOMetadataUtilsC}
-\newpage\input{SnglInspiralUtilsC}
-\newpage\input{CoincInspiralUtilsC}
-\newpage\input{SimInspiralUtilsC}
-</lalLaTeX>
-#endif
+
+
+
+
+
+
+
+
+
 
 #if 0
 { /* so that editors will match succeeding brace */
