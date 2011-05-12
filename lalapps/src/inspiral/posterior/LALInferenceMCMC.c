@@ -994,13 +994,16 @@ void initVariables(LALInferenceRunState *state)
         if (ppt) {
   
           REAL8Vector *PacceptCount = XLALCreateREAL8Vector(N);
+          REAL8Vector *PproposeCount = XLALCreateREAL8Vector(N);
           UINT4 i;
 
           for (i = 0; i < N; i++) {
             PacceptCount->data[i] = 0.0;
+            PproposeCount->data[i] = 0.0;
           }
           
           LALInferenceAddVariable(state->proposalArgs, "PacceptCount", &PacceptCount, REAL8Vector_t, PARAM_FIXED);
+          LALInferenceAddVariable(state->proposalArgs, "PproposeCount", &PproposeCount, REAL8Vector_t, PARAM_FIXED);
         }
 
         INT4 adaptableStep = 0;
@@ -1119,13 +1122,16 @@ int main(int argc, char *argv[]){
     if (ppt) {
 
       REAL8Vector *PacceptCount = XLALCreateREAL8Vector(N);
+      REAL8Vector *PproposeCount = XLALCreateREAL8Vector(N);
       UINT4 i;
       
       for (i = 0; i < N; i++) {
         PacceptCount->data[i] = 0.0;
+        PproposeCount->data[i] = 0.0;
       }
       
       LALInferenceAddVariable(runState->proposalArgs, "PacceptCount", &PacceptCount, REAL8Vector_t, PARAM_FIXED);
+      LALInferenceAddVariable(runState->proposalArgs, "PproposeCount", &PproposeCount, REAL8Vector_t, PARAM_FIXED);
     }
     
     INT4 adaptableStep = 0;

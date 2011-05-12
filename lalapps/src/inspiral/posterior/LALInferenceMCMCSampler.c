@@ -79,6 +79,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8Vector *sigmas = NULL;
   REAL8 *PacceptCountVec = NULL;
   REAL8Vector *PacceptCount = NULL;
+  REAL8 *PproposeCountVec = NULL;
+  REAL8Vector *PproposeCount = NULL;
+  
 	//LALVariables* TcurrentParams = malloc(sizeof(LALVariables));	//the current parameters for each chains
 	//LALVariables dummyLALVariable;
 	INT4 adaptationOn = 0;
@@ -119,8 +122,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     acceptanceRatioOn = 1;
     if(MPIrank == 0){
       PacceptCountVec = (REAL8 *)malloc(MPIsize*nPar*sizeof(REAL8));
+      PproposeCountVec = (REAL8 *)malloc(MPIsize*nPar*sizeof(REAL8)); 
       for (p=0;p<(nChain*nPar);++p){
         PacceptCountVec[p] = 0.0;
+        PproposeCountVec[p] = 0.0;
       }
     }
   }
@@ -319,6 +324,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
   if (acceptanceRatioOn == 1){
     PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
+    PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
   }
   //for (p=0; p<nPar; ++p) {
   //   sigmas->data[p]=tempLadder[tempIndex];//1.0;
@@ -442,15 +448,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//LALInferenceCopyVariables(runState->currentParams,&(TcurrentParams));
 		//TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
     
+    
+		runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
+		acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
     ppt = LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose");
     if (ppt) {
       if(tempLadder[tempIndex]==1.0){
-      printf("%d\t",i);
-      printf("MPIrank=%d\tT=%f\ts_gamma=%f\t",MPIrank,*(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature"),s_gamma);
-      for (p=0; p<nPar; ++p) {
-        printf("%fsig\t",sigmas->data[p]);
-      }
-      printf("\n");
+        printf("%d\t",i);
+        printf("MPIrank=%d\tT=%f\ts_gamma=%f\t",MPIrank,*(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature"),s_gamma);
+        for (p=0; p<nPar; ++p) {
+          printf("%fsig\t",sigmas->data[p]);
+        }
+        printf("\n");
       }
     }
     
@@ -459,14 +468,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         printf("%d\t",i);
         printf("MPIrank=%d\tT=%f\t\t\t\t",MPIrank,*(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature"));
         for (p=0; p<nPar; ++p) {
-          printf("%f\t",nPar*PacceptCount->data[p]/(double)i);
+          printf("%f\t",PacceptCount->data[p]/( PproposeCount->data[p]==0 ? 1.0 : PproposeCount->data[p] ));
         }
         printf("\n");
       }      
     }
-    
-		runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
-		acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
 		
 
           //       if (MPIrank == 0 && (i % Nskip == 0)) {
@@ -533,6 +539,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
     if (acceptanceRatioOn == 1) {
       MPI_Gather(PacceptCount->data,nPar,MPI_DOUBLE,PacceptCountVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
+      MPI_Gather(PproposeCount->data,nPar,MPI_DOUBLE,PproposeCountVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
     }
     //MPI_Gather(sigma,nPar,MPI_DOUBLE,sigmaVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);	
@@ -581,6 +588,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
                 dummyR8=PacceptCountVec[p+nPar*upperRank];
                 PacceptCountVec[p+nPar*upperRank]=PacceptCountVec[p+nPar*lowerRank];
                 PacceptCountVec[p+nPar*lowerRank]=dummyR8;
+                
+                dummyR8=PproposeCountVec[p+nPar*upperRank];
+                PproposeCountVec[p+nPar*upperRank]=PproposeCountVec[p+nPar*lowerRank];
+                PproposeCountVec[p+nPar*lowerRank]=dummyR8;
               }
             }
             //  printf("!!!!!!!!!!!!!!!!SWAP!!!!!!!!!!!!!!! %f <-> %f \n",tempLadder[tempIndexVec[lowerRank]],tempLadder[tempIndexVec[upperRank]]);
@@ -596,6 +607,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
     if (acceptanceRatioOn == 1){
       MPI_Scatter(PacceptCountVec,nPar,MPI_DOUBLE,PacceptCount->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
+      MPI_Scatter(PproposeCountVec,nPar,MPI_DOUBLE,PproposeCount->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
     }
 		//MPI_Scatter(sigmaVec,nPar,MPI_DOUBLE,sigma,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -712,6 +724,8 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
     if (adaptableStep) {
       i = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "proposedArrayNumber"));
       REAL8Vector *PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
+      REAL8Vector *PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
+      PproposeCount->data[i]+=1;
       if(accepted == 1){
         PacceptCount->data[i]+=1;
       }
