@@ -414,7 +414,7 @@ sub cleanupLSD {
         $text =~ s!\\end$n*{picture}!\\endverbatim!mg;
 
         # replace formatting commands
-        $text =~ s!\{\\(tt|it|rm|sc|sl|bf|sf)$n*!\\text$1\{!sg;
+        $text =~ s!\{\\(tt|it|rm|sc|sl|bf|sf)$n+!\\text$1\{!sg;
         $text =~ s!\\verb(.)(.+?)\1!\\texttt{$2}!mg;
         $text =~ s!\\emph!\\textit!sg;
         $text =~ s!\\text(?:sc|sl|bf|sf)!\\texttt!sg;
