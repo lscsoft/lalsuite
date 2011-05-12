@@ -549,9 +549,6 @@ defined!\n");
   if ( ppt != NULL ) seed = atoi( ppt->value );
   else seed = 0; /* will be set from system clock */
       
-  /* initialise random number generator */
-  randomParams = XLALCreateRandomParams( seed );
-  
   /* reset filestr if using real data (i.e. not fake) */
   if ( !ppt2 )
     filestr = XLALStringDuplicate( inputfile );
@@ -569,6 +566,11 @@ defined!\n");
     
     count = 0;
     
+    /* initialise random number generator */
+    /* Moved into det loop so same random seed can be used with */
+    /* Different detector combos and still get same noise realisation */
+    randomParams = XLALCreateRandomParams( seed +i );
+  
     ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
     ifodata->modelParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
     ifodata->modelDomain = timeDomain;
@@ -715,9 +717,9 @@ defined!\n");
     
     /* set up ephemeris information */
     ifodata->ephem = XLALInitBarycenter( efile, sfile );
+    XLALDestroyRandomParams( randomParams );
   }
   
-  XLALDestroyRandomParams( randomParams );
 }
 
 
