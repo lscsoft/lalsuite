@@ -17,34 +17,31 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="StreamOutputHV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
 
-/********************************************************** <lalLaTeX>
-
-\section{Header \texttt{StreamOutput.h}}
-\label{s:StreamOutput.h}
+\heading{Header \ref StreamOutput.h}
+\latexonly\label{s_StreamOutput_h}\endlatexonly
 
 Provides routines to write data from LAL data structures to an open
 stream.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include "StreamOutput.h"
-\end{verbatim}
+\endcode
 
-\noindent This header provides prototypes for routines that write the
+This header provides prototypes for routines that write the
 contents of LAL time/frequency series structures or grid structures to
 a file (or other I/O) stream, in a standard format.  The routines do
 not provide a system-level interface to create files and open or close
 file streams; they simply assume that they have been passed an open,
 writeable stream.  Nonetheless, because they involve I/O stream
-manipulation, these routines are placed in the \verb@lalsupport@
-library rather than in \verb@lal@ proper.
+manipulation, these routines are placed in the \c lalsupport
+library rather than in \c lal proper.
 
-******************************************************* </lalLaTeX> */
+*/
 
 #ifndef _STREAMOUTPUT_H
 #define _STREAMOUTPUT_H
@@ -58,29 +55,29 @@ extern "C" {
 
 NRCSID( STREAMOUTPUTH, "$Id$" );
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error conditions}
-****************************************** </lalLaTeX><lalErrTable> */
+/**
+\heading{Error conditions}
+ \name Error Codes */ /*@{*/
 #define STREAMOUTPUTH_ENUL 1
 #define STREAMOUTPUTH_EPRN 2
 
 #define STREAMOUTPUTH_MSGENUL "Unexpected null pointer in arguments"
 #define STREAMOUTPUTH_MSGEPRN "Print statement failed"
-/******************************************** </lalErrTable><lalLaTeX>
+/*@}*//**
 
-\subsection*{Types}
+\heading{Types}
 
-******************************************************* </lalLaTeX> */
+*/
 
-/* <lalLaTeX>
-\vfill{\footnotesize\input{StreamOutputHV}}
-</lalLaTeX> */
+
+
+
 
 /* Function prototypes. */
 
-/* <lalLaTeX>
-\newpage\input{StreamSeriesOutputC}
-</lalLaTeX> */
+
+
+
 void
 LALI2WriteTSeries( LALStatus  *status, FILE *stream, INT2TimeSeries *series );
 void
@@ -165,9 +162,9 @@ LALCWriteFSeries( LALStatus  *status, FILE *stream, COMPLEX8FrequencySeries *ser
 void
 LALZWriteFSeries( LALStatus  *status, FILE *stream, COMPLEX16FrequencySeries *series );
 
-/* <lalLaTeX>
-\newpage\input{StreamGridOutputC}
-</lalLaTeX> */
+
+
+
 void
 LALI2WriteGrid( LALStatus  *status, FILE *stream, INT2Grid *grid );
 void
