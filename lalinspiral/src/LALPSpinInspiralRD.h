@@ -17,13 +17,11 @@ extern "C" {
 extern int newswitch;
 
 /* use error codes above 1024 to avoid conflicts with GSL */
-#define LALPSIRDPN_TEST_OMEGAMATCH         1
 #define LALPSIRDPN_TEST_ENERGY		1025
 #define LALPSIRDPN_TEST_OMEGADOT	1026
 #define LALPSIRDPN_TEST_OMEGANAN	1028
-
-#define LALPSIRD_DERIVATIVE_OMEGANONPOS	1030
-#define LALPSIRD_DERIVATIVE_COORDINATE	1031
+#define LALPSIRDPN_TEST_OMEGAMATCH      1029
+#define LALPSIRDPN_TEST_OMEGANONPOS     1031
 
 #ifdef  __cplusplus
 #pragma {

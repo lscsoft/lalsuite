@@ -128,8 +128,6 @@ int main() {
     /*Spin units are such that multiplying the above spins by m_i^2 one 
       obtains the physical spins */
 
-    ppnParams.axisChoice=View;
-
     /* Inverse rate*/
     ppnParams.deltaT = 1.0 / 4096.0;
     /* fStop is set for debugging purposes. The working version of 

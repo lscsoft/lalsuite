@@ -140,6 +140,12 @@ LALGetApproximantFromString(
  */
 int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent);
 
+int XLALGetAxisChoiceFromString(InputAxis *axisChoice, CHAR *thisEvent);
+
+int XLALGetAdaptiveIntFromString(UINT4 *fixedStep, CHAR *thisEvent);
+
+int XLALGetInspiralOnlyFromString(UINT4 *inspiralOnly, CHAR *thisEvent);
+
 /*  three function to populate the needed structures */
 void
 LALGenerateInspiralPopulatePPN(
