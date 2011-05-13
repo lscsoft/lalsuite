@@ -1,9 +1,6 @@
 /**
 \author Creighton, T. D.
 \file
-*/
-
-/**
 
 \heading{Module \ref StreamSeriesOutput.c}
 \latexonly\label{ss_StreamSeriesOutput_c}\endlatexonly
@@ -35,49 +32,6 @@ LAL<typecode>WriteFSeries( LALStatus                 *stat,
 \endcode
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 \heading{Description}
 
 These routines write the data and metadata in a time or frequency
@@ -99,8 +53,7 @@ routines corresponding to all the atomic datatypes <tt><datatype></tt>
 <tr><td>\tt I8</td><td>\tt  INT8</td><td>\tt U8</td><td>\tt    UINT8</td></tr>
 <tr><td>\tt  S</td><td>\tt REAL4</td><td>\tt  C</td><td>\tt COMPLEX8</td></tr>
 <tr><td>\tt  D</td><td>\tt REAL8</td><td>\tt  Z</td><td>\tt COMPLEX16</td></tr>
-<tr><td>
-</td></tr></table>
+</tr></table>
 
 
 \heading{Format for <tt>*stream</tt>:} The data written to the
