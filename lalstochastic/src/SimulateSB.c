@@ -17,156 +17,144 @@
 *  MA  02111-1307  USA
 */
 
-/*************************** <lalVerbatim file="SimulateSBCV">
-Author: Sukanta Bose (Adapted from a non-LAL code written by Bruce Allen)
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Sukanta Bose (Adapted from a non-LAL code written by Bruce Allen)
+\file
+\ingroup stochastic
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{SimulateSB.c}}
-\label{inject:ss:SimulateSB.c}
+\brief Simulates whitened time-domain signal in a pair of detectors.
 
-Simulates whitened time-domain signal in a pair
-of detectors that arises purely from  an isotropic and
+Simulates whitened time-domain signal in a pair of detectors that arises purely from  an isotropic and
 unpolarized stochastic background of gravitational radiation with the
-desired power spectrum, $\Omega_{\scriptstyle{\rm GW}}(f)$. This module
-will evolve beyond its present funtionality to produce only \texttt{real}
+desired power spectrum, \f$\Omega_{\mathrm{GW}}(f)\f$. This module
+will evolve beyond its present funtionality to produce only \c real
 time-series signal for a pair of interferometric detectors.
 
 
-\subsubsection*{Prototypes}
-\input{SimulateSBCP}
-\idx{LALSimulateSB()}
+\heading{Description}
 
-\subsubsection*{Description}
-
-The frequency domain strains $\widetilde{h}_1(f_i)$
-and $\widetilde{h}_2(f_j)$ caused by
+The frequency domain strains \f$\widetilde{h}_1(f_i)\f$
+and \f$\widetilde{h}_2(f_j)\f$ caused by
 the stochastic background in two detectors are random variables that have
-zero mean and that obey  \cite{inject:Allen:1999}:
-  \begin{equation}
+zero mean and that obey  \ref injectAllen1999:
+  \f{equation}{
     \langle\widetilde{h}_1^*(f_i)\widetilde{h}_1(f_j)\rangle
     = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{11}(f_i)
-    \Omega_{\scriptstyle{\rm GW}}(|f_i|)
-  \end{equation}
+    \Omega_{\mathrm{GW}}(|f_i|)
+  \f}
   and
-   \begin{equation}
+   \f{equation}{
     \langle\widetilde{h}_2^*(f_i)\widetilde{h}_2(f_j)\rangle
     = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{22}(f_i)
-    \Omega_{\scriptstyle{\rm GW}}(|f_i|)
-  \end{equation}
+    \Omega_{\mathrm{GW}}(|f_i|)
+  \f}
   and
-  \begin{equation}
+  \f{equation}{
     \langle\widetilde{h}_1^*(f_i)\widetilde{h}_2(f_j)\rangle
     = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{12}(f_i)
-    \Omega_{\scriptstyle{\rm GW}}(|f_i|) \ ,
-  \end{equation}
-where $\langle\rangle$ denotes ensemble average, $T$ is the time of
-observation, and $\gamma_{AB}$ is the overlap reduction function
-\cite{inject:Flanagan:1993} of the detector pair comprising detectors $A$
-and $B$. Above, $\widetilde{h}_1(f_i)$ and
-$\widetilde{h}_2(f_j)$ are the Fourier components of the gravitational strains
-$h_1(t)$ and $h_2(t)$ at the two detectors.
+    \Omega_{\mathrm{GW}}(|f_i|) \ ,
+  \f}
+where \f$\langle\rangle\f$ denotes ensemble average, \f$T\f$ is the time of
+observation, and \f$\gamma_{AB}\f$ is the overlap reduction function
+\ref injectFlanagan1993 of the detector pair comprising detectors \f$A\f$
+and \f$B\f$. Above, \f$\widetilde{h}_1(f_i)\f$ and
+\f$\widetilde{h}_2(f_j)\f$ are the Fourier components of the gravitational strains
+\f$h_1(t)\f$ and \f$h_2(t)\f$ at the two detectors.
 
 The Fourier components that
 obey the above relations are
-  \begin{equation}
+  \f{equation}{
     \widetilde{h}_1(f_i) = \sqrt{3H_0^2T \over 40\pi^2}f_i^{-3/2}
-    \Omega^{1/2}_{\scriptstyle{\rm GW}}(|f_i|) \sqrt{\gamma_{11}(f_i)}
+    \Omega^{1/2}_{\mathrm{GW}}(|f_i|) \sqrt{\gamma_{11}(f_i)}
 (x_{1i} + i y_{1i})
     \,
-  \end{equation}
+  \f}
   and
-  \begin{equation}
+  \f{equation}{
     \widetilde{h}_2(f_i) = \widetilde{h}_1(f_i)\frac{\gamma_{12}(f_i)}
 {\gamma_{11}(f_i)} +
     \sqrt{3H_0^2T \over 40\pi^2}f_i^{-3/2}
-    \Omega^{1/2}_{\scriptstyle{\rm GW}}(|f_i|)
+    \Omega^{1/2}_{\mathrm{GW}}(|f_i|)
     \sqrt{\gamma_{22}(f_i)-\frac{\gamma^2_{12}(f_i)}{\gamma_{11}(f_i)}}
 (x_{2i} + i y_{2i})
     \,
-  \end{equation}
-where $x_{1i}$, $y_{1i}$, $x_{2i}$, and $y_{2i}$ are statistically
+  \f}
+where \f$x_{1i}\f$, \f$y_{1i}\f$, \f$x_{2i}\f$, and \f$y_{2i}\f$ are statistically
 independent real Gaussian random variables, each of zero mean and unit
 variance.
 
 The routine assumes as inputs the data sample length, temporal spacing,
 stochastic background characteristics, detector locations, the appropriate
 representations of the detector response function in each detector, etc.
-The (frequency domain) response functions, $\widetilde{R}_1(f_i)$ and
-$\widetilde{R}_2(f_i)$  are used to whiten the strains
-$\widetilde{h}_1(f_i)$ and
-$\widetilde{h}_2(f_i)$, respectively, to obtain the whitened
+The (frequency domain) response functions, \f$\widetilde{R}_1(f_i)\f$ and
+\f$\widetilde{R}_2(f_i)\f$  are used to whiten the strains
+\f$\widetilde{h}_1(f_i)\f$ and
+\f$\widetilde{h}_2(f_i)\f$, respectively, to obtain the whitened
 Fourier components:
-  \begin{equation}
+  \f{equation}{
     \widetilde{o}_1(f_i) = \widetilde{R}_1(f_i)\widetilde{h}_1(f_i)
     \,
-  \end{equation}
+  \f}
   and
-  \begin{equation}
+  \f{equation}{
     \widetilde{o}_2(f_i) = \widetilde{R}_2(f_i)\widetilde{h}_2(f_i)
     \ .
-  \end{equation}
+  \f}
 To obtain the whitened (real)
-outputs $o_1(t_i)$ and $o_2(t_i)$ in the time domain, the inverse
+outputs \f$o_1(t_i)\f$ and \f$o_2(t_i)\f$ in the time domain, the inverse
 Fourier transforms of the above frequency series are taken.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-The routine \texttt{LALSSSimStochBGTimeSeries()} produces only \texttt{real}
+The routine <tt>LALSSSimStochBGTimeSeries()</tt> produces only \c real
 time-series signal for a pair of interferometric detectors. It
 first inputs the frequency
 series describing the power spectrum of the stochastic background,
-$\Omega_{\scriptstyle{\rm GW}}(|f|)$, which the simulated
-signal is required to represent. It also inputs two \texttt{COMPLEX8}
+\f$\Omega_{\mathrm{GW}}(|f|)\f$, which the simulated
+signal is required to represent. It also inputs two \c COMPLEX8
 frequency series corresponding, respectively, to the two detector
-response functions. As parameters, it takes the two \texttt{LALDetector}
+response functions. As parameters, it takes the two \c LALDetector
 structures corresponding to the two detectors in which the signal is to be
 mimicked. It also takes the time length (given in terms of the number of
 time data samples), the time spacing, a seed (for generating random
-numbers), and a couple of \texttt{LALUnit} structures for specifying the
+numbers), and a couple of \c LALUnit structures for specifying the
 units of the two time-series signals that the routine outputs.
 
 Using the specified power
 spectrum for the stochastic background, and a random number generator (of
 zero mean, unit variance Gaussian distributions), the routine produces
-$\widetilde{h}_1(f_i)$ and $\widetilde{h}_2(f_i)$. The
+\f$\widetilde{h}_1(f_i)\f$ and \f$\widetilde{h}_2(f_i)\f$. The
 response functions of the two detectors are then used to whiten the two
 strains in the Fourier domain. Their inverse transform is then taken to obtain
 at each detector the whitened simulated signal in the time domain.
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\begin{verbatim}
+\code
 LALStochasticOmegaGW()
 LALReverseRealFFT()
 LALNormalDeviates()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\begin{itemize}
-\item This routine does not yet support non-zero heterodyning frequencies.
-\end{itemize}
+<ul>
+<li> This routine does not yet support non-zero heterodyning frequencies.</li>
+</ul>
 
-\vfill{\footnotesize\input{SimulateSBCV}}
-
-******************************************************* </lalLaTeX> */
-
-/**************************** <lalLaTeX file="SimulateSBCB">
 \bibitem{inject:Allen:1999}
-  B.~Allen and J.~D.~Romano, ``Detecting a stochastic background of
+  B.~Allen and J.~D.~Romano, "Detecting a stochastic background of
   gravitational radiation: Signal processing strategies and
-  sensitivities''
-  Phys.\ Rev.\ D {\bf 59}, 102001 (1999);
+  sensitivities"
+  Phys.\ Rev.\ D \c 59, 102001 (1999);
   \href{http://www.arXiv.org/abs/gr-qc/9710117}{gr-qc/9710117}
   \bibitem{inject:Flanagan:1993}
-  E.~Flanagan, ``The sensitivity of the laser interferometer gravitational
+  E.~Flanagan, "The sensitivity of the laser interferometer gravitational
   wave observatory (LIGO) to a stochastic background, and its dependence on
-  the detector orientations''
-  Phys.\ Rev.\ D {\bf 48}, 2389 (1993);
+  the detector orientations"
+  Phys.\ Rev.\ D \c 48, 2389 (1993);
   \href{http://www.arXiv.org/abs/astro-ph/9305029}{astro-ph/9305029}
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <string.h>
@@ -184,14 +172,14 @@ LALNormalDeviates()
 
 NRCSID (SIMULATESBC, "$Id$");
 
-/* <lalVerbatim file="SimulateSBCP"> */
+
 void
 LALSSSimStochBGTimeSeries( LALStatus                    *status,
 			   SSSimStochBGOutput           *output,
 			   SSSimStochBGInput            *input,
 			   SSSimStochBGParams           *params
 	       )
-     /* </lalVerbatim> */
+
 {
   /* parameters */
   UINT4             length;   /* (time) length of output vector data samples */
@@ -842,7 +830,7 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
 			         SSSimStochBGStrainInput       *input,
 			         SSSimStochBGStrainParams      *params
 	       )
-     /* </lalVerbatim> */
+
 {
   /* parameters */
   UINT4             length, length1, length2; /* (time) length of output vector data samples */

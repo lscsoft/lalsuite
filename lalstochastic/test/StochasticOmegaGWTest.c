@@ -17,20 +17,16 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="StochasticOmegaGWTestCV">
-Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$
-********************************* </lalVerbatim> */
+/**
+\author UTB Relativity Group; contact whelan@phys.utb.edu
+\file
+\ingroup stochastic
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{StochasticOmegaGWTest.c}}
-\label{stochastic:ss:StochasticOmegaGWTest.c}
+\brief A program to test <tt>LALStochasticOmegaGW()</tt>.
 
-A program to test \texttt{LALStochasticOmegaGW()}.
+\heading{Usage}
 
-\subsubsection*{Usage}
-
-\begin{verbatim}
+\code
 ./StochasticOmegaGWTest [options]
 Options:
   -h             print usage message
@@ -44,70 +40,65 @@ Options:
   -e deltaF      set frequency spacing to deltaF
   -n length      set number of points in frequency series to length
   -o filename    print gravitational-wave spectrum to file filename
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
-This program tests the function {\tt LALStochasticOmegaGW()\/}, which outputs a
+This program tests the function <tt>LALStochasticOmegaGW()</tt>, which outputs a
 power law spectrum
-\begin{equation}
-h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f)
-=\Omega_{\scriptstyle{\rm R}}
+\f{equation}{
+h_{100}^2\Omega_{\mathrm{GW}}(f)
+=\Omega_{\mathrm{R}}
 \left(
-  \frac{f}{f_{\scriptstyle{\rm R}}}
+  \frac{f}{f_{\mathrm{R}}}
 \right)^\alpha
-\end{equation}
+\f}
 
 First, it tests that the correct error codes
-(\textit{cf.}\ Sec.~\ref{stochastic:s:StochasticCrossCorrelation.h})
+(cf. \ref StochasticCrossCorrelation.h)
 are generated for the following error conditions (tests in
-\textit{italics} are not performed if \verb+LAL_NDEBUG+ is set, as
+\e italics are not performed if \c LAL_NDEBUG is set, as
 the corresponding checks in the code are made using the ASSERT macro):
-\begin{itemize}
-\item \textit{null pointer to output series}
-\item \textit{null pointer to parameter structure}
-\item \textit{null pointer to data member of output series}
-\item \textit{null pointer to data member of data member of output series}
-\item \textit{zero length parameter}
-\item \textit{negative frequency spacing}
-\item \textit{zero frequency spacing}
-\item mismatch between length of output series and length parameter
-\item zero reference frequency $f_{\scriptstyle{\rm R}}$
-% \item reference frequency $f_{\scriptstyle{\rm R}}$
-% smaller than lowest positive output frequency
-\item negative amplitude parameter $\Omega_{\scriptstyle{\rm R}}$
-\item zero amplitude parameter $\Omega_{\scriptstyle{\rm R}}$
-\end{itemize}
+<ul>
+<li> <em>null pointer to output series</em></li>
+<li> <em>null pointer to parameter structure</em></li>
+<li> <em>null pointer to data member of output series</em></li>
+<li> <em>null pointer to data member of data member of output series</em></li>
+<li> <em>zero length parameter</em></li>
+<li> <em>negative frequency spacing</em></li>
+<li> <em>zero frequency spacing</em></li>
+<li> mismatch between length of output series and length parameter</li>
+<li> zero reference frequency \f$f_{\mathrm{R}}\f$
+% </li><li> reference frequency \f$f_{\mathrm{R}}\f$
+% smaller than lowest positive output frequency</li>
+<li> negative amplitude parameter \f$\Omega_{\mathrm{R}}\f$</li>
+<li> zero amplitude parameter \f$\Omega_{\mathrm{R}}\f$</li>
+</ul>
 
 It then verifies that the correct frequency series are generated for
-two simple test cases: $\alpha=2.5$ and $\alpha=0$.  For each
+two simple test cases: \f$\alpha=2.5\f$ and \f$\alpha=0\f$.  For each
 successful test (both of these valid data and the invalid ones
-described above), it prints ``\texttt{PASS}'' to standard output; if a
-test fails, it prints ``\texttt{FAIL}''.
+described above), it prints "\c PASS" to standard output; if a
+test fails, it prints "\c FAIL".
 
-If the \texttt{filename} argument is present, it also calculates a
+If the \c filename argument is present, it also calculates a
 spectrum based on user-specified data.
-Figure~\ref{stochastic:f:quadOmega} illustrates the output of the
+Figure\figref{stochastic_quadOmega} illustrates the output of the
 command with the following arguments:
-\begin{verbatim}
+\code
 StochasticOmegaGWTest -e 1 -n 1000 -F 100 -O 1e-6 -a 2 -o OmegaGW.dat
-\end{verbatim}
+\endcode
 
-\begin{figure}[htb!]
-\begin{center}
-\noindent
-\includegraphics[width=4in,angle=-90]{stochasticOmegaGWQuadratic}
-\caption{\label{stochastic:f:quadOmega}
-A quadratic stochastic gravitational-wave background spectrum.}
-\end{center}
-\end{figure}
+\floatfig{htbp,stochastic_quadOmega}
+\image html  stochasticOmegaGWQuadratic.png "Fig. [stochastic_quadOmega]: A quadratic stochastic gravitational-wave background spectrum."
+\image latex stochasticOmegaGWQuadratic.pdf "A quadratic stochastic gravitational-wave background spectrum."  width=4in
 
-\subsubsection*{Exit codes}
-\input{StochasticOmegaGWTestCE}
+\heading{Exit codes}
 
-\subsubsection*{Uses}
 
-\begin{verbatim}
+\heading{Uses}
+
+\code
 lalDebugLevel
 getopt()
 LALSCreateVector()
@@ -115,37 +106,35 @@ LALStochasticOmegaGW()
 LALSPrintFrequencySeries
 LALSDestroyVector()
 LALCheckMemoryLeaks()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\begin{itemize}
-  \item No specific error checking is done on user-specified data.  If
-\texttt{deltaF} or \texttt{length} are missing, the resulting defaults
+<ul>
+  <li> No specific error checking is done on user-specified data.  If
+\c deltaF or \c length are missing, the resulting defaults
 will cause a bad data error.  If other arguments are unspecified, the
 following defaults are used:
-\begin{description}
-\item[\texttt{alpha}] 0
-\item[\texttt{f0}] 0
-\item[\texttt{fRef}] 1\,Hz
-\item[\texttt{omegaRef}] 1
-\end{description}
-\item The routine \texttt{LALStochasticOmegaGW()} will eventually be generalized to
-include ``broken'' power law spectra
-\begin{equation}
-h_{100}^2\Omega_{\scriptstyle{\rm GW}}
+<dl>
+<dt>\c alpha</dt><dd> 0</dd>
+<dt>\c f0</dt><dd> 0</dd>
+<dt>\c fRef</dt><dd> 1\,Hz</dd>
+<dt>\c omegaRef</dt><dd> 1</dd>
+</dl></li>
+<li> The routine <tt>LALStochasticOmegaGW()</tt> will eventually be generalized to
+include "broken" power law spectra
+\f{equation}{
+h_{100}^2\Omega_{\mathrm{GW}}
 = \left\{
 \begin{array}{cc}
 \Omega_1 f^{\alpha_1} & f\le f_c\\
 \Omega_2 f^{\alpha_2} & f\ge f_c
 \end{array}
 \right.
-\end{equation}
-\end{itemize}
+\f}</li>
+</ul>
 
-\vfill{\footnotesize\input{StochasticOmegaGWTestCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <lal/LALStdlib.h>
 
@@ -202,7 +191,7 @@ Usage (const char *program, int exitflag);
 static void
 ParseOptions (int argc, char *argv[]);
 
-/***************************** <lalErrTable file="StochasticOmegaGWTestCE"> */
+/**\name Error Codes */ /*@{*/
 #define STOCHASTICOMEGAGWTESTC_ENOM 0
 #define STOCHASTICOMEGAGWTESTC_EARG 1
 #define STOCHASTICOMEGAGWTESTC_ECHK 2
@@ -213,7 +202,7 @@ ParseOptions (int argc, char *argv[]);
 #define STOCHASTICOMEGAGWTESTC_MSGECHK "Error checking failed to catch bad data"
 #define STOCHASTICOMEGAGWTESTC_MSGEFLS "Incorrect answer for valid data"
 #define STOCHASTICOMEGAGWTESTC_MSGEUSE "Bad user-entered data"
-/***************************** </lalErrTable> */
+/*@}*/
 
 int main( int argc, char *argv[] )
 {

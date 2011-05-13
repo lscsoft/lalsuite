@@ -18,27 +18,24 @@
 */
 
 
-/*
-<lalVerbatim file="StochasticMCCV">
-Author: Tania Regimbau, Sukanta Bose, Jeff Noel
-$Id$
-</lalVerbatim>
-<lalLaTeX>
-\subsection{Module \texttt{StochasticMC.c}}
-\label{ss:StochasticMC.c}
+/**
+\author Tania Regimbau, Sukanta Bose, Jeff Noel
+\file
+\ingroup stochastic
 
-Routine used by the stochastic DSO to do software injection.
+\brief Routine used by the stochastic DSO to do software injection.
 
-\subsubsection*{Prototypes}
-\input{StochasticMCCP}
-\idx{LALStochasticMCDso()}
-\subsubsection*{Description}
+\heading{Description}
 This routine simulates time-domain signal in a pair
 of detectors using Sukanta Bose's code SimulateSB.c, whitened with the adequate response function that can be used in LALwrapper.
-\idx{LALStochasticMCDsoSplice()}
-\subsubsection*{Description}
-In this version, long time-series are constructed by concatenating short segments of simulated data whitened with the adequate response function. Segments are sinusoidally spliced into consecutive segments using Jeff Noel's function SinusoidalSplice, in order to avoid discontinuities in the final time serie.
-\subsubsection*{Algorithm}
+
+\heading{Description}
+In this version, long time-series are constructed by concatenating short segments of simulated data
+whitened with the adequate response function. Segments are sinusoidally spliced into consecutive
+segments using Jeff Noel's function SinusoidalSplice, in order to avoid discontinuities in the final
+time serie.
+
+\heading{Algorithm}
 
 The following program shows how to use the routines LALStochasticMCDso and LALStochasticMCDsoSplice
 
@@ -291,15 +288,15 @@ int main( ){
     }
   }
 }
-\end{verbatim}
+\endcode
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALSSSimStochBGTimeSeries()
 LALUpdateCalibration()
 LALResponseConvert()
-\end{verbatim}
-</lalLaTeX> */
+\endcode
+*/
 
 
 #include <math.h>

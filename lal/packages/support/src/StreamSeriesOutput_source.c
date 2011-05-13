@@ -1,34 +1,26 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')define(`FMT',`"% .16e"')')dnl
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')define(`FMT',`"% .8e"')')dnl
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')define(`FMT',`"% .16e"')')dnl
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')define(`FMT',`"% .8e"')')dnl
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')define(`FMT',`"% " LAL_INT2_FORMAT')')dnl
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')define(`FMT',`"% " LAL_INT4_FORMAT')')dnl
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')define(`FMT',`"% " LAL_INT8_FORMAT')')dnl
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')define(`FMT',`"%" LAL_UINT2_FORMAT')')dnl
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')define(`FMT',`"%" LAL_UINT4_FORMAT')')dnl
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')define(`FMT',`"%" LAL_UINT8_FORMAT')')dnl
-define(`COMPLEX',`0')dnl
-ifelse(TYPECODE,`Z',`define(`COMPLEX',`1')')dnl
-ifelse(TYPECODE,`C',`define(`COMPLEX',`1')')dnl
-define(`STYPE',`format(`%sTimeSeries',TYPE)')dnl
-define(`VTYPE',`format(`%sTimeVectorSeries',TYPE)')dnl
-define(`ATYPE',`format(`%sTimeArraySeries',TYPE)')dnl
-define(`FTYPE',`format(`%sFrequencySeries',TYPE)')dnl
-define(`SFUNC',`format(`LAL%sWriteTSeries',TYPECODE)')dnl
-define(`VFUNC',`format(`LAL%sWriteTVectorSeries',TYPECODE)')dnl
-define(`AFUNC',`format(`LAL%sWriteTArraySeries',TYPECODE)')dnl
-define(`FFUNC',`format(`LAL%sWriteFSeries',TYPECODE)')dnl
-dnl
-/* <lalVerbatim file="StreamSeriesInputCP"> */
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define STYPE CONCAT2(TYPE,TimeSeries)
+#define VTYPE CONCAT2(TYPE,TimeVectorSeries)
+#define ATYPE CONCAT2(TYPE,TimeArraySeries)
+#define FTYPE CONCAT2(TYPE,FrequencySeries)
+#define SFUNC CONCAT3(LAL,TYPECODE,WriteTSeries)
+#define VFUNC CONCAT3(LAL,TYPECODE,WriteTVectorSeries)
+#define AFUNC CONCAT3(LAL,TYPECODE,WriteTArraySeries)
+#define FFUNC CONCAT3(LAL,TYPECODE,WriteFSeries)
+
+
 void
 SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
-{ /* </lalVerbatim> */
+{ 
   UINT4 length; /* length of data sequence */
   TYPE *data;   /* pointer to data in sequence */
 
-  INITSTATUS( stat, "SFUNC", STREAMSERIESOUTPUTC );
+  INITSTATUS( stat, STRING(SFUNC), STREAMSERIESOUTPUTC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -138,15 +130,15 @@ SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
   RETURN( stat );
 }
 
-/* <lalVerbatim file="StreamSeriesInputCP"> */
+
 void
 VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
-{ /* </lalVerbatim> */
+{ 
   UINT4 length;       /* length of data sequence */
   UINT4 vectorLength; /* length of each element in sequence */
   TYPE *data; /* pointer to data in sequence */
 
-  INITSTATUS( stat, "VFUNC", STREAMSERIESOUTPUTC );
+  INITSTATUS( stat, STRING(VFUNC), STREAMSERIESOUTPUTC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -275,16 +267,16 @@ VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
   RETURN( stat );
 }
 
-/* <lalVerbatim file="StreamSeriesInputCP"> */
+
 void
 AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
-{ /* </lalVerbatim> */
+{ 
   UINT4 length;   /* length of data sequence */
   UINT4 arrayDim; /* length of each element in sequence */
   UINT4 *dimData; /* pointer to dimLength data */
   TYPE *data; /* pointer to data in sequence */
 
-  INITSTATUS( stat, "AFUNC", STREAMSERIESOUTPUTC );
+  INITSTATUS( stat, STRING(AFUNC), STREAMSERIESOUTPUTC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -425,14 +417,14 @@ AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
   RETURN( stat );
 }
 
-/* <lalVerbatim file="StreamSeriesInputCP"> */
+
 void
 FFUNC ( LALStatus *stat, FILE *stream, FTYPE *series )
-{ /* </lalVerbatim> */
+{ 
   UINT4 length; /* length of data sequence */
   TYPE *data;   /* pointer to data in sequence */
 
-  INITSTATUS( stat, "FFUNC", STREAMSERIESOUTPUTC );
+  INITSTATUS( stat, STRING(FFUNC), STREAMSERIESOUTPUTC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

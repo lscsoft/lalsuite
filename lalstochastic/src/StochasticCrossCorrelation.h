@@ -17,14 +17,11 @@
 *  MA  02111-1307  USA
 */
 
-/*********************** <lalVerbatim file="StochasticCrossCorrelationHV">
-Author: UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-$Id$
-*********************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\section{Header \texttt{StochasticCrossCorrelation.h}}
-\label{stochastic:s:StochasticCrossCorrelation.h}
+/**
+\author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
+\file
+\ingroup stochastic
+\brief Provides prototype and error code information for the module \ref StochasticCrossCorrelation.c.
 
 Provides prototype and error code information for the modules needed
 to calculate the standard optimally-filtered cross-correlation
@@ -32,171 +29,44 @@ statistic for stochastic background searches, given a pair of data
 segments, along with appropriate representations of the detector
 transfer function and the (uncalibrated) power spectral density of the
 noise in each detector.  The relationship among these modules is
-illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
+illustrated in Fig.\figref{stochastic_CrossCorrFlowchart}.
 
-\begin{figure}[htb!]
-\begin{center}
-\begin{picture}(410,250)(-32,-110)
-\put(168,123){\vector(1,0){15}}
-\put(168,123){\line(1,0){25}}
-\put(195,120){$Y$}
-\put(65,110)
-{
-  \framebox(100,30)
-  {
-  \texttt{CrossCorr}
-  }
-}
-\put(80,85){\vector(0,1){15}}
-\put(80,85){\line(0,1){25}}
-\put(82,95){$\widetilde{\bar{h}}{}_{1,2}$}
-\put(-37,65){$h_{1,2}$}
-\put(-17,68){\vector(1,0){15}}
-\put(-17,68){\line(1,0){25}}
-\put(5,55)
-{
-  \framebox(90,30)
-  {
-    \texttt{ZeroPadAndFFT}
-  }
-}
-\put(150,85){\vector(0,1){15}}
-\put(150,85){\line(0,1){25}}
-\put(152,95){$\widetilde{Q}$}
-\put(100,55)
-{
-  \framebox(190,30)
-  {
-    \texttt{OptimalFilter}
-  }
-}
-\put(260,30){\vector(0,1){15}}
-\put(260,30){\line(0,1){25}}
-\put(262,40){$\lambda$}
-\put(343,13){\vector(1,0){15}}
-\put(343,13){\line(1,0){25}}
-\put(370,10){$\sigma^2/T$}
-\put(190,0)
-{
-  \framebox(150,30)
-  {
-    \texttt{Normalization}
-  }
-}
-\put(200,-30){\vector(0,1){25}}
-\put(200,-30){\line(0,1){30}}
-\put(202,-10){$\Omega_{\scriptstyle{\rm GW}}$}
-\put(200,-10){\line(-1,0){35}}
-\put(165,-10){\line(0,1){65}}
-\put(165,-10){\vector(0,1){55}}
-\put(167,40){$\Omega_{\scriptstyle{\rm GW}}$}
-\put(170,-60)
-{
-  \framebox(70,30)
-  {
-    \texttt{OmegaGW}
-  }
-}
-\put(280,-30){\vector(0,1){20}}
-\put(280,-30){\line(0,1){30}}
-\put(282,-15){$\gamma$}
-\put(280,-20){\line(-1,0){130}}
-\put(150,-20){\line(0,1){75}}
-\put(150,-20){\vector(0,1){55}}
-\put(152,30){$\gamma$}
-\put(250,-60)
-{
-  \framebox(70,30)
-  {
-    \texttt{Overlap}
-  }
-}
-\put(125,-80){\line(0,1){135}}
-\put(125,-80){\vector(0,1){100}}
-%\put(107,40){$({P^{\scriptstyle{\rm HC}}_{1,2}})^{-1}$}
-\put(127,20){$\frac{1}{P^{\scriptstyle{\rm HC}}_{1,2}}$}
-%\put(117,40){$\frac{\tilde{R}_{1,2}}{P^{\scriptstyle{\rm C}}_{1,2}}$}
-\put(330,-80){\line(0,1){80}}
-\put(330,-80){\vector(0,1){45}}
-% \put(142,40){${P^{\scriptstyle{\rm C}}_{1,2}}^{-1}$}
-\put(332,-35){$\frac{1}{P^{\scriptstyle{\rm C}}_{1,2}}$}
-%\put(142,40){$\frac{|\tilde{R}_{1,2}|^2}{P^{\scriptstyle{\rm C}}_{1,2}}$}
-\put(115,-110)
-{
-  \framebox(225,30)
-  {
-    \texttt{InverseNoise}
-  }
-}
-\put(73,-108){$\tilde{R}_{1,2}$}
-\put(93,-105){\vector(1,0){15}}
-\put(93,-105){\line(1,0){25}}
-\put(73,-90){$P_{1,2}$}
-\put(93,-87){\vector(1,0){15}}
-\put(93,-87){\line(1,0){25}}
-\end{picture}
-\end{center}
-\caption{\label{stochastic:f:CrossCorrFlowchart} Relationship among
-  the modules dependent on \texttt{StochasticCrossCorrelation.h},
-  which are used to calculate the cross-correlation statistic $Y$
-  and its theoretical variance per unit time $\sigma^2/T$ from
-  (uncalibrated) stretches of data $h_1(t)$,
-  $h_2(t)$, from two detectors, using metadata
-  on the power spectral densities $P_1(f)$,
-  $P_2(f)$ and transfer functions $\tilde{R}_1(f)$,
-  $\tilde{R}_2(f)$ for each detector.
-  \texttt{CrossCorr} represents the module
-  \texttt{StochasticCrossCorrelation.c}
-  (Sec.~\ref{stochastic:ss:StochasticCrossCorrelation.c})
-  containing the functions
-  \texttt{LALStochasticCrossCorrelationStatistic()},
-  \texttt{LALStochasticHeterodynedCrossCorrelationStatistic()},
-  and \texttt{LALStochasticCrossCorrelationSpectrum()},
-  \texttt{ZeroPadAndFFT} represents the module
-  \texttt{ZeroPadAndFFT.c} (Sec.~\ref{stochastic:ss:ZeroPadAndFFT.c})
-  containing the functions
-  \texttt{LALSZeroPadAndFFT()} and \texttt{LALCZeroPadAndFFT()};
-  \texttt{OptimalFilter} represents the module
-  \texttt{StochasticOptimalFilter.c}
-  (Sec.~\ref{stochastic:ss:StochasticOptimalFilter.c})
-  containing the function
-  \texttt{LALStochasticOptimalFilter()};
-  \texttt{Normalization} represents the module
-  \texttt{StochasticOptimalFilterNormalization.c}
-  (Sec.~\ref{stochastic:ss:StochasticOptimalFilterNormalization.c})
-  containing the function
-  \texttt{LALStochasticOptimalFilterNormalization()};
-  \texttt{InverseNoise} represents the module
-  \texttt{StochasticInverseNoise.c}
-  (Sec.~\ref{stochastic:ss:StochasticInverseNoise.c})
-  containing the function
-  \texttt{LALStochasticInverseNoise()};
-  \texttt{OmegaGW} represents the module
-  \texttt{StochasticOmegaGW.c}
-  (Sec.~\ref{stochastic:ss:StochasticOmegaGW.c})
-  containing the function
-  \texttt{LALStochasticOmegaGW()};
-  \texttt{Overlap} represents the module
-  \texttt{OverlapReductionFunction.c}
-  (Sec.~\ref{stochastic:ss:OverlapReductionFunction.c})
-  containing the function
-  \texttt{OverlapReductionFunction()}.
- }
-\end{figure}
+\floatfig{htbp,stochastic_CrossCorrFlowchart}
+\image html stochastic_CrossCorrFlowchart.png "Fig. [stochastic_CrossCorrFlowchart]: Relationship between the modules in \ref StochasticCrossCorrelation.h"
+\image latex stochastic_CrossCorrFlowchart.pdf "Relationship between the modules in \texttt{StochasticCrossCorrelation.h}"
 
-\subsection*{Synopsis}
-\begin{verbatim}
+Figure \figref{stochastic_CrossCorrFlowchart} illustrates the relationship among the modules
+dependent on \ref StochasticCrossCorrelation.h, which are used to calculate the cross-correlation
+statistic \f$Y\f$ and its theoretical variance per unit time \f$\sigma^2/T\f$ from (uncalibrated)
+stretches of data \f$h_1(t)\f$, \f$h_2(t)\f$, from two detectors, using metadata on the power
+spectral densities \f$P_1(f)\f$, \f$P_2(f)\f$ and transfer functions \f$\tilde{R}_1(f)\f$,
+\f$\tilde{R}_2(f)\f$ for each detector.
+
+\c CrossCorr represents the module \ref StochasticCrossCorrelation.c (containing the functions
+<tt>LALStochasticCrossCorrelationStatistic()</tt>,  <tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>,
+and <tt>LALStochasticCrossCorrelationSpectrum()</tt>),
+
+\c ZeroPadAndFFT represents the module \ref ZeroPadAndFFT.c (containing the functions
+<tt>LALSZeroPadAndFFT()</tt> and <tt>LALCZeroPadAndFFT()</tt>)
+
+\c OptimalFilter represents the module \ref StochasticOptimalFilter.c (containing the function
+<tt>LALStochasticOptimalFilter()</tt>)
+
+\c Normalization represents the module \ref StochasticOptimalFilterNormalization.c
+(containing the function <tt>LALStochasticOptimalFilterNormalization()</tt>)
+
+\c InverseNoise represents the module \ref StochasticInverseNoise.c  (containing the function
+<tt>LALStochasticInverseNoise()</tt>)
+\c OmegaGW represents the module \ref StochasticOmegaGW.c (containing the function <tt>LALStochasticOmegaGW()</tt>)
+
+\c Overlap represents the module \ref OverlapReductionFunction.c (containing the function <tt>OverlapReductionFunction()</tt>)
+
+\heading{Synopsis}
+\code
 #include <lal/StochasticCrossCorrelation.h>
-\end{verbatim}
+\endcode
 
-\noindent
-
-\subsection*{Error conditions}
-\input{StochasticCrossCorrelationHE}
-
-\subsection*{Structures}
-
-*********************************************************** </lalLaTeX> */
+*/
 
 #ifndef _STOCHASTICCROSSCORRELATION_H
 #define _STOCHASTICCROSSCORRELATION_H
@@ -210,11 +80,9 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
 extern "C" {
 #endif
 
-NRCSID( STOCHASTICCROSSCORRELATIONH,
-        "$Id$" );
+NRCSID( STOCHASTICCROSSCORRELATIONH, "$Id$" );
 
-/****************** <lalErrTable file="StochasticCrossCorrelationHE"> */
-
+/**\name Error Codes */ /*@{*/
 #define STOCHASTICCROSSCORRELATIONH_ENULLPTR        1
 #define STOCHASTICCROSSCORRELATIONH_ESAMEPTR        2
 #define STOCHASTICCROSSCORRELATIONH_EZEROLEN        3
@@ -254,8 +122,7 @@ NRCSID( STOCHASTICCROSSCORRELATIONH,
 #define STOCHASTICCROSSCORRELATIONH_MSGENONPOSWIN  "Zero or negative total for window functions"
 #define STOCHASTICCROSSCORRELATIONH_MSGEMEMORY     "Memory error"
 #define STOCHASTICCROSSCORRELATIONH_MSGENOTYETHETERO   "Non-zero heterodyning frequency not yet implemented"
-
-/************************************ </lalErrTable> */
+/*@}*/
 
   /*************************************************************
    *                                                           *
@@ -264,91 +131,57 @@ NRCSID( STOCHASTICCROSSCORRELATIONH,
    *                                                           *
    *************************************************************/
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{Structures and prototypes associated with
-  \texttt{StochasticCrossCorrelation.c}
-  (Sec.~\ref{stochastic:ss:StochasticCrossCorrelation.c})}
-
-\subsubsection*{Prototypes}
-
-\idx{LALStochasticCrossCorrelationStatistic()}
-\idx{LALStochasticHeterodynedCrossCorrelationStatistic()}
-\idx{LALStochasticCrossCorrelationSpectrum()}
-\input{StochasticCrossCorrelationHPCC}
-
-\subsubsection*{\texttt{struct REAL4WithUnits}}
-\idx[Type]{REAL4WithUnits}
-
-\noindent
-Represents a dimensionful number as a 4-byte float with an associated
+/** Represents a dimensionful number as a 4-byte float with an associated
 units structure, which is the output of
-\texttt{LALStochasticCrossCorrelationStatistic()}.  The fields are:
+<tt>LALStochasticCrossCorrelationStatistic()</tt>.  The fields are:
 
-\begin{description}
-\item[\texttt{REAL4 value}]
-The numerical value.
+<dl>
+<dt><tt>REAL4 value</tt></dt><dd>
+The numerical value.</dd>
 
-\item[\texttt{LALUnit units}]
-The units.
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
+<dt><tt>LALUnit units</tt></dt><dd>
+The units.</dd>
+</dl>
+*/
 typedef struct tagREAL4WithUnits {
   REAL4     value;
   LALUnit   units;
 } REAL4WithUnits;
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{\texttt{struct COMPLEX8WithUnits}}
-\idx[Type]{COMPLEX8WithUnits}
-
-\noindent
-Represents a dimensionful number as a single-precision (8-byte) complex
+/** Represents a dimensionful number as a single-precision (8-byte) complex
 number with an associated
 units structure, which is the output of
-\texttt{LALStochasticHeterodynedCrossCorrelationStatistic()}.  The fields are:
+<tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>.  The fields are:
 
-\begin{description}
-\item[\texttt{COMPLEX8 value}]
-The numerical value.
+<dl>
+<dt><tt>COMPLEX8 value</tt></dt><dd>
+The numerical value.</dd>
 
-\item[\texttt{LALUnit units}]
-The units.
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
+<dt><tt>LALUnit units</tt></dt><dd>
+The units.</dd>
+</dl>
+*/
 typedef struct tagCOMPLEX8WithUnits {
   COMPLEX8  value;
   LALUnit   units;
 } COMPLEX8WithUnits;
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{\texttt{struct StochasticCrossCorrelationInput}}
-\idx[Type]{StochasticCrossCorrelationInput}
-
-\noindent Contains the input data needed by
-\texttt{LALStochasticCrossCorrelationStatistic()}
+/** Contains the input data needed by
+<tt>LALStochasticCrossCorrelationStatistic()</tt>
 to calculate the value of the standard optimally-filtered
 cross-correlation statistic.  The fields are:
 
-\begin{description}
-\item[\texttt{COMPLEX8FrequencySeries  *hBarTildeOne}]
-Fourier transform of the first zero-padded data stream.
+<dl>
+<dt><tt>COMPLEX8FrequencySeries  *hBarTildeOne</tt></dt><dd>
+Fourier transform of the first zero-padded data stream.</dd>
 
-\item[\texttt{COMPLEX8FrequencySeries  *hBarTildeTwo}]
-Fourier transform of the second zero-padded data stream.
+<dt><tt>COMPLEX8FrequencySeries  *hBarTildeTwo</tt></dt><dd>
+Fourier transform of the second zero-padded data stream.</dd>
 
-\item[\texttt{COMPLEX8FrequencySeries  *optimalFilter}]
-Optimal filter function in the frequency domain.
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
+<dt><tt>COMPLEX8FrequencySeries  *optimalFilter</tt></dt><dd>
+Optimal filter function in the frequency domain.</dd>
+</dl>
+*/
 typedef struct tagStochasticCrossCorrelationInput {
   COMPLEX8FrequencySeries  *hBarTildeOne;
   COMPLEX8FrequencySeries  *hBarTildeTwo;
@@ -371,7 +204,7 @@ typedef struct tagStochasticCrossCorrelationCalInput {
 } StochasticCrossCorrelationCalInput;
 
 
-/********** <lalVerbatim file="StochasticCrossCorrelationHPCC"> *********/
+
 
 void
 LALStochasticCrossCorrelationStatistic(
@@ -436,7 +269,7 @@ LALStochasticCrossCorrelationSpectrumCal(
             const StochasticCrossCorrelationCalInput  *input,
             BOOLEAN                                   epochsMatch);
 
-/********** </lalVerbatim> *********/
+
 
   /*************************************************************
    *                                                           *
@@ -444,67 +277,42 @@ LALStochasticCrossCorrelationSpectrumCal(
    *                                                           *
    *************************************************************/
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{\texttt{struct SZeroPadAndFFTParameters}}
-\idx[Type]{SZeroPadAndFFTParameters}
-
-\noindent
-Contains the parameters of \texttt{LALSZeroPadAndFFT()}.
+/** Contains the parameters of <tt>LALSZeroPadAndFFT()</tt>.
 The fields are:
 
-\begin{description}
-\item[\texttt{RealFFTPlan *fftPlan}]
-The FFT plan to be used by FFTW
-\item[\texttt{REAL4Vector *window}]
-The window which is to be applied to the data
-\item[\texttt{UINT4 length}]
-The length of the data after zero-padding
-\end{description}
-
-\subsubsection*{\texttt{struct CZeroPadAndFFTParameters}}
-\idx[Type]{CZeroPadAndFFTParameters}
-
-\noindent
-Contains the parameters of \texttt{LALCZeroPadAndFFT()}.
-The fields are:
-
-\begin{description}
-\item[\texttt{ComplexFFTPlan *fftPlan}]
-The FFT plan to be used by FFTW
-\item[\texttt{REAL4Vector *window}]
-The window which is to be applied to the data
-\item[\texttt{UINT4 length}]
-The length of the data after zero-padding
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
+<dl>
+<dt><tt>RealFFTPlan *fftPlan</tt></dt><dd>
+The FFT plan to be used by FFTW</dd>
+<dt><tt>REAL4Vector *window</tt></dt><dd>
+The window which is to be applied to the data</dd>
+<dt><tt>UINT4 length</tt></dt><dd>
+The length of the data after zero-padding</dd>
+</dl>
+*/
 typedef struct tagSZeroPadAndFFTParameters {
   RealFFTPlan           *fftPlan;
   REAL4Window           *window;
   UINT4                  length;
 } SZeroPadAndFFTParameters;
 
+/** Contains the parameters of <tt>LALCZeroPadAndFFT()</tt>.
+The fields are:
+
+<dl>
+<dt><tt>ComplexFFTPlan *fftPlan</tt></dt><dd>
+The FFT plan to be used by FFTW</dd>
+<dt><tt>REAL4Vector *window</tt></dt><dd>
+The window which is to be applied to the data</dd>
+<dt><tt>UINT4 length</tt></dt><dd>
+The length of the data after zero-padding</dd>
+</dl>
+
+*/
 typedef struct tagCZeroPadAndFFTParameters {
   ComplexFFTPlan        *fftPlan;
   REAL4Window           *window;
   UINT4                  length;
 } CZeroPadAndFFTParameters;
-
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{Prototypes associated with
-  \texttt{ZeroPadAndFFT.c}
-  (Sec.~\ref{stochastic:ss:ZeroPadAndFFT.c})}
-
-\idx{LALSZeroPadAndFFT()}
-\idx{LALCZeroPadAndFFT()}
-\input{StochasticCrossCorrelationHPZP}
-
-********** </lalLaTeX> *********/
-
-/********** <lalVerbatim file="StochasticCrossCorrelationHPZP"> *********/
 
 void
 LALSZeroPadAndFFT(LALStatus                *status,
@@ -518,7 +326,7 @@ LALCZeroPadAndFFT(LALStatus                *status,
                   const COMPLEX8TimeSeries *input,
                   CZeroPadAndFFTParameters *parameters);
 
-/********** </lalVerbatim> *********/
+
 
   /*************************************************************
    *                                                           *
@@ -527,47 +335,31 @@ LALCZeroPadAndFFT(LALStatus                *status,
    *                                                           *
    *************************************************************/
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{Structures and protoypes associated with
-  \texttt{StochasticOptimalFilter.c}
-  (Sec.~\ref{stochastic:ss:StochasticOptimalFilter.c})}
-
-\subsubsection*{Prototypes}
-
-\idx{LALStochasticOptimalFilter()}
-\input{StochasticCrossCorrelationHPOF}
-
-\subsubsection*{\texttt{struct StochasticOptimalFilterInput}}
-\idx[Type]{StochasticOptimalFilterInput}
-
-\noindent
-Contains the inputs of \texttt{LALStochasticOptimalFilter()}.
+/** Contains the inputs of <tt>LALStochasticOptimalFilter()</tt>.
 The fields are:
 
-\begin{description}
-\item[\texttt{REAL4FrequencySeries *overlapReductionFunction}]
-The overlap reduction function $\gamma(f)$ describing the pair of detector
-sites.
-\item[\texttt{REAL4FrequencySeries *omegaGW}] The spectrum
-$\Omega_{\scriptstyle{\rm GW}}(f)$ of the stochastic gravitational-wave
-background.
-\item[\texttt{COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD1}]
+<dl>
+<dt><tt>REAL4FrequencySeries *overlapReductionFunction</tt></dt><dd>
+The overlap reduction function \f$\gamma(f)\f$ describing the pair of detector
+sites.</dd>
+<dt><tt>REAL4FrequencySeries *omegaGW</tt></dt><dd> The spectrum
+\f$\Omega_{\mathrm{GW}}(f)\f$ of the stochastic gravitational-wave
+background.</dd>
+<dt><tt>COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD1</tt></dt><dd>
  The reciprocal
-$1/P_1^{\scriptstyle{\rm HC}}(f)
+\f$1/P_1^{\mathrm{HC}}(f)
 =1/(\tilde{R_1}(f)P_1(f))
-=\tilde{R_1}(f)^* / P_1(f)$ of the
-half-calibrated noise power spectral density for the first detector.
-\item[\texttt{COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD2}]
+=\tilde{R_1}(f)^* / P_1(f)\f$ of the
+half-calibrated noise power spectral density for the first detector.</dd>
+<dt><tt>COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD2</tt></dt><dd>
  The reciprocal
-$1/P_2^{\scriptstyle{\rm HC}}(f)
+\f$1/P_2^{\mathrm{HC}}(f)
 =1/(\tilde{R_2}(f)P_2(f))
-=\tilde{R_2}(f)^* / P_2(f)$ of the
-half-calibrated noise power spectral density for the second detector.
-\end{description}
+=\tilde{R_2}(f)^* / P_2(f)\f$ of the
+half-calibrated noise power spectral density for the second detector.</dd>
+</dl>
 
-*********************************************************** </lalLaTeX> */
-
+*/
 typedef struct tagStochasticOptimalFilterInput {
   REAL4FrequencySeries     *overlapReductionFunction;
   REAL4FrequencySeries     *omegaGW;
@@ -582,7 +374,7 @@ typedef struct tagStochasticOptimalFilterCalInput {
   REAL4FrequencySeries     *calibratedInverseNoisePSD2;
 } StochasticOptimalFilterCalInput;
 
-/********** <lalVerbatim file="StochasticCrossCorrelationHPOF"> *********/
+
 
 void
 LALStochasticOptimalFilter(
@@ -598,7 +390,7 @@ LALStochasticOptimalFilterCal(
             const StochasticOptimalFilterCalInput    *input,
             const REAL4WithUnits                     *lambda);
 
-/********** </lalVerbatim> *********/
+
 
   /*************************************************************
    *                                                           *
@@ -607,66 +399,42 @@ LALStochasticOptimalFilterCal(
    *                                                           *
    *************************************************************/
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{Structures and protoypes associated with
-  \texttt{StochasticOptimalFilterNormalization.c}
-  (Sec.~\ref{stochastic:ss:StochasticOptimalFilterNormalization.c})}
-
-\subsubsection*{Prototypes}
-
-\idx{LALStochasticOptimalFilterNormalization()}
-\input{StochasticCrossCorrelationHPON}
-
-\subsubsection*{\texttt{struct StochasticOptimalFilterNormalizationOutput}}
-\idx[Type]{StochasticOptimalFilterNormalizationOutput}
-
-\noindent
-Contains the outputs of \texttt{LALStochasticOptimalFilterNormalization()}.
+/** Contains the outputs of <tt>LALStochasticOptimalFilterNormalization()</tt>.
 The fields are:
 
-\begin{description}
-\item[\texttt{REAL4WithUnits *normalization}]
-The normalization parameter $\lambda$.
-\item[\texttt{REAL4WithUnits *variance}]
-The variance per unit time $\sigma^2/T$ of the cross-correlation statistic.
-\end{description}
+<dl>
+<dt><tt>REAL4WithUnits *normalization</tt></dt><dd>
+The normalization parameter \f$\lambda\f$.</dd>
+<dt><tt>REAL4WithUnits *variance</tt></dt><dd>
+The variance per unit time \f$\sigma^2/T\f$ of the cross-correlation statistic.</dd>
+</dl>
 
-*********************************************************** </lalLaTeX> */
-
+*/
 typedef struct tagStochasticOptimalFilterNormalizationOutput {
   REAL4WithUnits           *normalization;
   REAL4WithUnits           *variance;
 } StochasticOptimalFilterNormalizationOutput;
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{\texttt{struct StochasticOptimalFilterNormalizationInput}}
-\idx[Type]{StochasticOptimalFilterNormalizationInput}
-
-\noindent
-Contains the inputs of \texttt{LALStochasticOptimalFilterNormalization()}.
+/** Contains the inputs of <tt>LALStochasticOptimalFilterNormalization()</tt>.
 The fields are:
 
-\begin{description}
-\item[\texttt{REAL4FrequencySeries *overlapReductionFunction}]
-The overlap reduction function $\gamma(f)$ describing the pair of detector
-sites.
-\item[\texttt{REAL4FrequencySeries *omegaGW}] The spectrum
-$\Omega_{\scriptstyle{\rm GW}}(f)$ of the stochastic gravitational-wave
-background.
-\item[\texttt{REAL4FrequencySeries *inverseNoisePSD1}]
+<dl>
+<dt><tt>REAL4FrequencySeries *overlapReductionFunction</tt></dt><dd>
+The overlap reduction function \f$\gamma(f)\f$ describing the pair of detector
+sites.</dd>
+<dt><tt>REAL4FrequencySeries *omegaGW</tt></dt><dd> The spectrum
+\f$\Omega_{\mathrm{GW}}(f)\f$ of the stochastic gravitational-wave
+background.</dd>
+<dt><tt>REAL4FrequencySeries *inverseNoisePSD1</tt></dt><dd>
  The reciprocal
-$1/P_1(f)=|\tilde{R_1}(f)|^2/P_1(f)$ of the
-ununcalibrated noise power spectral density for the first detector.
-\item[\texttt{REAL4FrequencySeries *inverseNoisePSD2}]
+\f$1/P_1(f)=|\tilde{R_1}(f)|^2/P_1(f)\f$ of the
+ununcalibrated noise power spectral density for the first detector.</dd>
+<dt><tt>REAL4FrequencySeries *inverseNoisePSD2</tt></dt><dd>
  The reciprocal
-$1/P_2(f)=|\tilde{R_2}(f)|^2/P_2(f)$ of the
-ununcalibrated noise power spectral density for the second detector.
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
+\f$1/P_2(f)=|\tilde{R_2}(f)|^2/P_2(f)\f$ of the
+ununcalibrated noise power spectral density for the second detector.</dd>
+</dl>
+*/
 typedef struct tagStochasticOptimalFilterNormalizationInput {
   REAL4FrequencySeries     *overlapReductionFunction;
   REAL4FrequencySeries     *omegaGW;
@@ -674,28 +442,20 @@ typedef struct tagStochasticOptimalFilterNormalizationInput {
   REAL4FrequencySeries     *inverseNoisePSD2;
 } StochasticOptimalFilterNormalizationInput;
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{\texttt{struct StochasticOptimalFilterNormalizationParameters}}
-\idx[Type]{StochasticOptimalFilterNormalizationParameters}
-
-\noindent
-Contains the parameters of \texttt{LALStochasticOptimalFilterNormalization()}.
+/** Contains the parameters of <tt>LALStochasticOptimalFilterNormalization()</tt>.
 The fields are:
 
-\begin{description}
-\item[\texttt{REAL8 fRef}]
-The reference frequency used in defining the normalization.
-\item[\texttt{BOOLEAN heterodyned}]
-Indicates whether the filter is to be used on heterodyned data or not.
-\item[\texttt{REAL4Vector window1}]
-The windowing function with which the first data stream was windowed
-\item[\texttt{REAL4Vector window2}]
-The windowing function with which the second data stream was windowed
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
+<dl>
+<dt><tt>REAL8 fRef</tt></dt><dd>
+The reference frequency used in defining the normalization.</dd>
+<dt><tt>BOOLEAN heterodyned</tt></dt><dd>
+Indicates whether the filter is to be used on heterodyned data or not.</dd>
+<dt><tt>REAL4Vector window1</tt></dt><dd>
+The windowing function with which the first data stream was windowed</dd>
+<dt><tt>REAL4Vector window2</tt></dt><dd>
+The windowing function with which the second data stream was windowed</dd>
+</dl>
+*/
 typedef struct tagStochasticOptimalFilterNormalizationParameters {
   REAL8               fRef;
   BOOLEAN             heterodyned;
@@ -703,7 +463,7 @@ typedef struct tagStochasticOptimalFilterNormalizationParameters {
   REAL4Vector        *window2;
 } StochasticOptimalFilterNormalizationParameters;
 
-/********** <lalVerbatim file="StochasticCrossCorrelationHPON"> *********/
+
 
 void
 LALStochasticOptimalFilterNormalization(
@@ -712,7 +472,7 @@ LALStochasticOptimalFilterNormalization(
             const StochasticOptimalFilterNormalizationInput      *input,
             const StochasticOptimalFilterNormalizationParameters *parameters);
 
-/********** </lalVerbatim> *********/
+
 
   /*************************************************************
    *                                                           *
@@ -720,38 +480,21 @@ LALStochasticOptimalFilterNormalization(
    *                                                           *
    *************************************************************/
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{Structures and prototypes associated with
-  \texttt{StochasticInverseNoise.c}
-  (Sec.~\ref{stochastic:ss:StochasticInverseNoise.c})}
-
-\subsubsection*{Prototypes}
-
-\idx{LALStochasticInverseNoise()}
-\input{StochasticCrossCorrelationHPIN}
-
-\subsubsection*{\texttt{struct StochasticInverseNoiseOutput}}
-\idx[Type]{StochasticInverseNoiseOutput}
-
-\noindent
-Contains the outputs of \texttt{LALStochasticInverseNoise()}.
+/** Contains the outputs of <tt>LALStochasticInverseNoise()</tt>.
 The fields are:
 
-\begin{description}
-\item[\texttt{REAL4FrequencySeries *calibratedInverseNoisePSD}]
+<dl>
+<dt><tt>REAL4FrequencySeries *calibratedInverseNoisePSD</tt></dt><dd>
 The reciprocal
-$1/P^{\scriptstyle{\rm C}}(f)=|\tilde{R}(f)|^2/P(f)$ of the
-ununcalibrated noise power spectral density.
+\f$1/P^{\mathrm{C}}(f)=|\tilde{R}(f)|^2/P(f)\f$ of the
+ununcalibrated noise power spectral density.</dd>
 
-\item[\texttt{COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD}]
+<dt><tt>COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD</tt></dt><dd>
 The reciprocal \\
-$1/P^{\scriptstyle{\rm HC}}(f)=\tilde{R}(f)^* / P(f)$
-of the half-calibrated noise power spectral density.
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
+\f$1/P^{\mathrm{HC}}(f)=\tilde{R}(f)^* / P(f)\f$
+of the half-calibrated noise power spectral density.</dd>
+</dl>
+*/
 typedef struct tagStochasticInverseNoiseOutput {
   REAL4FrequencySeries     *calibratedInverseNoisePSD;
   COMPLEX8FrequencySeries  *halfCalibratedInverseNoisePSD;
@@ -761,31 +504,24 @@ typedef struct tagStochasticInverseNoiseCalOutput {
   REAL4FrequencySeries     *calibratedInverseNoisePSD;
 } StochasticInverseNoiseCalOutput;
 
-/********************************************************** <lalLaTeX>
-\subsubsection*{\texttt{struct StochasticInverseNoiseInput}}
-\idx[Type]{StochasticInverseNoiseInput}
-
-\noindent
-Contains the inputs to \texttt{LALStochasticInverseNoise()}.
+/** Contains the inputs to <tt>LALStochasticInverseNoise()</tt>.
 The fields are:
 
-\begin{description}
-\item[\texttt{REAL4FrequencySeries *unCalibratedNoisePSD}]
-The power spectral density $P(f)$ of the noise
-contribution to the detector output.
+<dl>
+<dt><tt>REAL4FrequencySeries *unCalibratedNoisePSD</tt></dt><dd>
+The power spectral density \f$P(f)\f$ of the noise
+contribution to the detector output.</dd>
 
-\item[\texttt{COMPLEX8FrequencySeries *responseFunction}]
-The frequency-domain reponse function $\tilde{R}(f)$.
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
+<dt><tt>COMPLEX8FrequencySeries *responseFunction</tt></dt><dd>
+The frequency-domain reponse function \f$\tilde{R}(f)\f$.</dd>
+</dl>
+*/
 typedef struct tagStochasticInverseNoiseInput {
   REAL4FrequencySeries     *unCalibratedNoisePSD ;
   COMPLEX8FrequencySeries  *responseFunction;
 } StochasticInverseNoiseInput;
 
-/********** <lalVerbatim file="StochasticCrossCorrelationHPIN"> *********/
+
 
 void
 LALStochasticInverseNoise(
@@ -799,7 +535,7 @@ LALStochasticInverseNoiseCal(
             StochasticInverseNoiseCalOutput       *output,
             const StochasticInverseNoiseInput     *input);
 
-/********** </lalVerbatim> *********/
+
 
   /*************************************************************
    *                                                           *
@@ -807,60 +543,42 @@ LALStochasticInverseNoiseCal(
    *                                                           *
    *************************************************************/
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{Structures and protypes associated with
-  \texttt{StochasticOmegaGW.c}
-  (Sec.~\ref{stochastic:ss:StochasticOmegaGW.c})}
-
-\subsubsection*{Prototypes}
-
-\idx{LALStochasticOmegaGW()}
-\input{StochasticCrossCorrelationHPOG}
-
-\subsubsection*{\texttt{struct StochasticOmegaGWParameters}}
-\idx[Type]{StochasticOmegaGWParameters}
-
-\noindent
-Contains the parameters used by \texttt{LALStochasticOmegaGW()} to define a
-power law: $\Omega_{\scriptstyle{\rm GW}}(f)
-= \Omega_{\scriptstyle{\rm R}} (f/f_{\scriptstyle{\rm R}})^\alpha$.
+/** Contains the parameters used by <tt>LALStochasticOmegaGW()</tt> to define a
+power law: \f$\Omega_{\mathrm{GW}}(f)
+= \Omega_{\mathrm{R}}(f/f_{\mathrm{R}})^\alpha\f$.
 The fields are:
 
-\begin{description}
-\item[\texttt{REAL4 alpha}] The power-law exponent.
+<dl>
+<dt><tt>REAL4 alpha</tt></dt><dd> The power-law exponent.</dd>
 
-\item[\texttt{REAL8 fRef}] The reference frequency $f_{\scriptstyle{\rm
-R}}$ used to define the normalization.
+<dt><tt>REAL8 fRef</tt></dt><dd> The reference frequency \f$f_{\mathrm{R}}\f$ used to define the normalization.</dd>
 
-\item[\texttt{REAL4 omegaRef}] The amplitude
-$\Omega_{\scriptstyle{\rm R}}
-=\Omega_{\scriptstyle{\rm GW}}(f_{\scriptstyle{\rm R}})$
-at reference frequency.
+<dt><tt>REAL4 omegaRef</tt></dt><dd> The amplitude
+\f$\Omega_{\mathrm{R}}</tt>
+=\Omega_{\mathrm{GW}}(f_{\mathrm{R}})\f$
+at reference frequency.</dd>
 
-\item[\texttt{UINT4 length}]
-The number of points in the output frequency series.
+<dt><tt>UINT4 length</tt></dt><dd>
+The number of points in the output frequency series.</dd>
 
-\item[\texttt{REAL8 f0}]
-The start frequency of the output frequency series.
+<dt><tt>REAL8 f0</tt></dt><dd>
+The start frequency of the output frequency series.</dd>
 
-\item[\texttt{REAL8 deltaF}]
-The frequency spacing of the output frequency series.
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
+<dt><tt>REAL8 deltaF</tt></dt><dd>
+The frequency spacing of the output frequency series.</dd>
+</dl>
+*/
 typedef struct tagStochasticOmegaGWParameters {
-  REAL4     alpha;    /* exponent in power law: omegaGW(f) = f^alpha */
-  UINT4     length;   /* length of vector containing omegaGW(f) values */
-  REAL8     f0;       /* start frequency */
-  REAL8     deltaF;   /* frequency spacing */
-  REAL8     fRef;    /* reference normalization frequency */
-  REAL4     omegaRef; /* refenence omega coefficent for normalization */
+  REAL4     alpha;    /**< exponent in power law: omegaGW(f) = f^alpha */
+  UINT4     length;   /**< length of vector containing omegaGW(f) values */
+  REAL8     f0;       /**< start frequency */
+  REAL8     deltaF;   /**< frequency spacing */
+  REAL8     fRef;     /**< reference normalization frequency */
+  REAL4     omegaRef; /**< refenence omega coefficent for normalization */
 }
 StochasticOmegaGWParameters;
 
-/********** <lalVerbatim file="StochasticCrossCorrelationHPOG"> *********/
+
 
 void
 LALStochasticOmegaGW (
@@ -868,7 +586,7 @@ LALStochasticOmegaGW (
             REAL4FrequencySeries               *output,
             const StochasticOmegaGWParameters  *parameters);
 
-/********** </lalVerbatim> *********/
+
 
   /*************************************************************
    *                                                           *
@@ -877,70 +595,47 @@ LALStochasticOmegaGW (
    *                                                           *
    *************************************************************/
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{Structures and prototypes associated with
-  \texttt{OverlapReductionFunction.c}
-  (Sec.~\ref{stochastic:ss:OverlapReductionFunction.c})}
-
-\subsubsection*{Prototypes}
-
-\idx{LALOverlapReductionFunction()}
-\input{StochasticCrossCorrelationHPOR}
-
-\subsubsection*{\texttt{struct OverlapReductionFunctionParameters}}
-\idx[Type]{OverlapReductionFunctionParameters}
-
-\noindent Contains the parameters used by
-\texttt{LALOverlapReductionFunction()} to determine the format of its
+/** Contains the parameters used by
+<tt>LALOverlapReductionFunction()</tt> to determine the format of its
 output for the overlap reduction function.  The fields are:
 
-\begin{description}
-\item[\texttt{UINT4 length}]
-The number of points in the output frequency series.
+<dl>
+<dt><tt>UINT4 length</tt></dt><dd>
+The number of points in the output frequency series.</dd>
 
-\item[\texttt{REAL8 f0}]
-The start frequency of the output frequency series.
+<dt><tt>REAL8 f0</tt></dt><dd>
+The start frequency of the output frequency series.</dd>
 
-\item[\texttt{REAL8 deltaF}]
-The frequency spacing of the output frequency series.
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
+<dt><tt>REAL8 deltaF</tt></dt><dd>
+The frequency spacing of the output frequency series.</dd>
+</dl>
+*/
 typedef struct tagOverlapReductionFunctionParameters {
-  UINT4     length;   /* length of vector containing overlap red function */
-  REAL8     f0;       /* start frequency */
-  REAL8     deltaF;   /* frequency spacing for overlap reduction function */
+  UINT4     length;   /**< length of vector containing overlap red function */
+  REAL8     f0;       /**< start frequency */
+  REAL8     deltaF;   /**< frequency spacing for overlap reduction function */
 }
 OverlapReductionFunctionParameters;
 
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{\texttt{struct LALDetectorPair}}
-\idx[Type]{LALDetectorPair}
-
-\noindent Holds structures defining the location and orientation of a
+/** Holds structures defining the location and orientation of a
 pair of gravitational wave detectors.  This is the input to
-\texttt{LALOverlapReductionFunction()}.  The fields are:
+<tt>LALOverlapReductionFunction()</tt>.  The fields are:
 
-\begin{description}
-\item[\texttt{LALDetector detectorOne}]
-The first interferometer.
+<dl>
+<dt><tt>LALDetector detectorOne</tt></dt><dd>
+The first interferometer.</dd>
 
-\item[\texttt{LALDetector detectorTwo}]
-The second interferometer.
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
+<dt><tt>LALDetector detectorTwo</tt></dt><dd>
+The second interferometer.</dd>
+</dl>
+*/
 typedef struct tagLALDetectorPair {
   LALDetector    detectorOne;
   LALDetector    detectorTwo;
 }
 LALDetectorPair;
 
-/********** <lalVerbatim file="StochasticCrossCorrelationHPOR"> *********/
+
 
 void
 LALOverlapReductionFunction(
@@ -949,34 +644,10 @@ LALOverlapReductionFunction(
                    const LALDetectorPair                      *detectors,
                    const OverlapReductionFunctionParameters   *parameters);
 
-/********** </lalVerbatim> *********/
+
 
 #ifdef  __cplusplus
 }
 #endif /* C++ protection */
 
 #endif /* _STOCHASTICCROSSCORRELATION_H */
-
-/********************************************************** <lalLaTeX>
-
-\vfill{\footnotesize\input{StochasticCrossCorrelationHV}}
-
-\newpage\input{StochasticCrossCorrelationC}
-\newpage\input{StochasticCrossCorrelationStatisticTestC}
-\newpage\input{StochasticHeterodynedCrossCorrelationStatisticTestC}
-\newpage\input{StochasticCrossCorrelationSpectrumTestC}
-\newpage\input{ZeroPadAndFFTC}
-\newpage\input{SZeroPadAndFFTTestC}
-\newpage\input{CZeroPadAndFFTTestC}
-\newpage\input{StochasticOptimalFilterC}
-\newpage\input{StochasticOptimalFilterTestC}
-\newpage\input{StochasticOptimalFilterNormalizationC}
-\newpage\input{StochasticOptimalFilterNormalizationTestC}
-\newpage\input{StochasticInverseNoiseC}
-\newpage\input{StochasticInverseNoiseTestC}
-\newpage\input{StochasticOmegaGWC}
-\newpage\input{StochasticOmegaGWTestC}
-\newpage\input{OverlapReductionFunctionC}
-\newpage\input{OverlapReductionFunctionTestC}
-
-*********************************************************** </lalLaTeX> */

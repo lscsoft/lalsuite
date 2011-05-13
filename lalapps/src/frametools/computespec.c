@@ -17,10 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="computespecCV">
- * Author: Patrick R Brady
- * $Id$
- **** </lalVerbatim> */
+/**
+ * \author Patrick R Brady
+\file
+*/
 
 #include <stdio.h>
 #include <unistd.h>

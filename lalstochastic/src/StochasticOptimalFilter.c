@@ -17,63 +17,53 @@
 *  MA  02111-1307  USA
 */
 
-/*************************** <lalVerbatim file="StochasticOptimalFilterCV">
-Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author UTB Relativity Group; contact whelan@phys.utb.edu
+\file
+\ingroup stochastic
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{StochasticOptimalFilter.c}}
-\label{stochastic:ss:StochasticOptimalFilter.c}
-
-Calculates the values of the optimal filter function for the
+\brief Calculates the values of the optimal filter function for the
 standard cross-correlation statistic.
 
-\subsubsection*{Prototypes}
-\idx{LALStochasticOptimalFilter()}
-\input{StochasticOptimalFilterCP}
-
-\subsubsection*{Description}
+\heading{Description}
 
 As described in
-\cite{stochastic:Allen:1997,stochastic:Allen:1999,stochastic:Finn:2001},
-the optimal filter $\widetilde{Q}^{\scriptstyle{\rm C}}(f)$ which maximizes the ratio of the
-mean $\mu=\langle Y\rangle$ to the standard deviation
-$\sigma=\sqrt{\langle (Y-\mu)^2\rangle}$ of the cross-correlation
-statistic (\ref{stochastic:e:ymax}) is
-%
-\begin{equation}
-\widetilde{Q}^{\scriptstyle{\rm C}}(f)=\lambda\,
-\frac{\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)}
-{|f|^3\,P^{\scriptstyle{\rm C}}_1(f)\,P^{\scriptstyle{\rm C}}_2(f)}
-\end{equation}
-%
-where $\lambda$ is a normalization constant, $\gamma(f)$ is the
-overlap reduction function (\textit{cf}
-Sec.~\ref{stochastic:ss:OverlapReductionFunction.c}) for the two
-detectors, $\Omega_{\scriptstyle{\rm GW}}(f)$ is the stochastic
-gravitational wave background strength (\textit{cf}
-Sec.~\ref{stochastic:ss:OverlapReductionFunction.c}), and $P^{\scriptstyle{\rm C}}_i(f)$ is
-the power spectral density ($\langle
-h^{\scriptstyle{\rm C}}_i(f)h^{\scriptstyle{\rm C}}_i(f')^*\rangle=\delta(f-f')P^{\scriptstyle{\rm C}}_i(f)$)
-for the $i$th detector.
+\ref stochasticAllen1997, \ref stochasticAllen1999, \ref stochasticFinn2001,
+the optimal filter \f$\widetilde{Q}^{\mathrm{C}}(f)\f$ which maximizes the ratio of the
+mean \f$\mu=\langle Y\rangle\f$ to the standard deviation
+\f$\sigma=\sqrt{\langle (Y-\mu)^2\rangle}\f$ of the cross-correlation
+statistic\eqref{stochastic_e_ymax} is
 
-However, in practice, the data stream coming out of the $i$th detector
-is not the strain $h^{\scriptstyle{\rm C}}_i(t)=h_{ab}(t,\vec{x}_i)d^{ab}$, but that
-convolved with an instrumental response function $R_i(\tau)$ to
-produce an ``uncalibrated'' data stream
-\begin{equation}
+\f{equation}{
+\widetilde{Q}^{\mathrm{C}}(f)=\lambda\,
+\frac{\gamma(f)\,\Omega_{\mathrm{GW}}(f)}
+{|f|^3\,P^{\mathrm{C}}_1(f)\,P^{\mathrm{C}}_2(f)}
+\f}
+
+where \f$\lambda\f$ is a normalization constant, \f$\gamma(f)\f$ is the
+overlap reduction function (\e cf \ref OverlapReductionFunction.c) for the two
+detectors, \f$\Omega_{\mathrm{GW}}(f)\f$ is the stochastic
+gravitational wave background strength (\e cf \ref OverlapReductionFunction.c), and \f$P^{\mathrm{C}}_i(f)\f$ is
+the power spectral density (\f$\langle
+h^{\mathrm{C}}_i(f)h^{\mathrm{C}}_i(f')^*\rangle=\delta(f-f')P^{\mathrm{C}}_i(f)\f$)
+for the \f$i\f$th detector.
+
+However, in practice, the data stream coming out of the \f$i\f$th detector
+is not the strain \f$h^{\mathrm{C}}_i(t)=h_{ab}(t,\vec{x}_i)d^{ab}\f$, but that
+convolved with an instrumental response function \f$R_i(\tau)\f$ to
+produce an "uncalibrated" data stream
+\f{equation}{
 h_i(t) = \int_0^{\infty} d\tau\, R_i(\tau)\,
-h^{\scriptstyle{\rm C}}_i(t-\tau)
-\end{equation}
+h^{\mathrm{C}}_i(t-\tau)
+\f}
 which has the simpler frequency-domain representation
-\begin{equation}
+\f{equation}{
 \widetilde{h}_i(f)
 =  \widetilde{R}_i(f)\, \widetilde{h}_i(f)
-\end{equation}
-If we want to calculate the cross-correlation statistic $Y$ using the
+\f}
+If we want to calculate the cross-correlation statistic \f$Y\f$ using the
 uncalibrated detector output, the expression is
-\begin{equation}
+\f{equation}{
 Y
 = \int_{-\infty}^{\infty} df\,
 \left(
@@ -81,7 +71,7 @@ Y
   {\widetilde{R}_{1}(f)}
 \right)^*
 \,
-\widetilde{Q}^{\scriptstyle{\rm C}}(f)\,
+\widetilde{Q}^{\mathrm{C}}(f)\,
 \left(
   \frac{\widetilde{\bar{h}}{}_{2}(f)}
   {\widetilde{R}_{2}(f)}
@@ -91,111 +81,106 @@ Y
 \,
 \widetilde{Q}(f)\,
 \widetilde{\bar{h}}{}_{2}(f)
-\end{equation}
-where the ``uncalibrated optimal filter'' is
-\begin{eqnarray}
-\label{stochastic:e:QW}
+\f}
+where the "uncalibrated optimal filter" is
+\anchor stochastic_e_QW \f{eqnarray}{
+\label{stochastic_e_QW}
 \widetilde{Q}(f)
-&=&\frac{\widetilde{Q}^{\scriptstyle{\rm C}}(f)}{\widetilde{R}_1(f)^*\widetilde{R}_2(f)}
-=\lambda\,\left(\frac{1}{\widetilde{R}_1(f)^*P^{\scriptstyle{\rm C}}_1(f)}\right)
-\frac{\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)}
-{|f|^3}\left(\frac{1}{\widetilde{R}_2(f)P^{\scriptstyle{\rm C}}_2(f)}\right)
+&=&\frac{\widetilde{Q}^{\mathrm{C}}(f)}{\widetilde{R}_1(f)^*\widetilde{R}_2(f)}
+=\lambda\,\left(\frac{1}{\widetilde{R}_1(f)^*P^{\mathrm{C}}_1(f)}\right)
+\frac{\gamma(f)\,\Omega_{\mathrm{GW}}(f)}
+{|f|^3}\left(\frac{1}{\widetilde{R}_2(f)P^{\mathrm{C}}_2(f)}\right)
 \nonumber
 \\
 &=&\lambda\,
-\frac{\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)}
-{|f|^3\,P^{\scriptstyle{\rm HC}}_1(f)^*\,P^{\scriptstyle{\rm HC}}_2(f)}
+\frac{\gamma(f)\,\Omega_{\mathrm{GW}}(f)}
+{|f|^3\,P^{\mathrm{HC}}_1(f)^*\,P^{\mathrm{HC}}_2(f)}
 \ ,
-\end{eqnarray}
-where $P^{\scriptstyle{\rm HC}}_i(f)=\widetilde{R}_i(f)\,P^{\scriptstyle{\rm C}}_i(f)$ is the
-``half-calibrated'' PSD.  (The uncalibrated PSD is
-$P_i(f)=|\widetilde{R}_i(f)|^2\,P^{\scriptstyle{\rm C}}_i(f)$.)
+\f}
+where \f$P^{\mathrm{HC}}_i(f)=\widetilde{R}_i(f)\,P^{\mathrm{C}}_i(f)\f$ is the
+"half-calibrated" PSD.  (The uncalibrated PSD is
+\f$P_i(f)=|\widetilde{R}_i(f)|^2\,P^{\mathrm{C}}_i(f)\f$.)
 
-\texttt{LALStochasticOptimalFilter()} generates a complex frequency
+<tt>LALStochasticOptimalFilter()</tt> generates a complex frequency
 series containing the uncalibrated optimal filter
-$\widetilde{Q}(f)$, taking as inputs real
+\f$\widetilde{Q}(f)\f$, taking as inputs real
 frequency series representing the overlap reduction function
-$\gamma(f)$ and the stochastic gravitational wave background spectrum
-${h_{100}}^2\Omega_{\scriptstyle{\rm GW}}(f)$, as well as complex
+\f$\gamma(f)\f$ and the stochastic gravitational wave background spectrum
+\f${h_{100}}^2\Omega_{\mathrm{GW}}(f)\f$, as well as complex
 frequency series representing the half-calibrated (inverse) PSDs
-$\{1/P^{\scriptstyle{\rm HC}}_i(f)|i=1,2\}$, and as a real parameter
-the normalization constant $\lambda$.
+\f$\{1/P^{\mathrm{HC}}_i(f)|i=1,2\}\f$, and as a real parameter
+the normalization constant \f$\lambda\f$.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-The routine \texttt{LALStochasticOptimalFilter()} fills its output
+The routine <tt>LALStochasticOptimalFilter()</tt> fills its output
 series is filled with the values corresponding to the definition
-(\ref{stochastic:e:QW}).
+\eqref{stochastic_e_QW}.
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\begin{verbatim}
+\code
 LALUnitMultiply()
 LALUnitRaise()
 LALUnitCompare()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\begin{itemize}
-\item If $f_0=0$, the DC element $Q(0)$ is set to zero, regardless of
-  the values of the inputs, because the $f^3$ term would make it
+<ul>
+<li> If \f$f_0=0\f$, the DC element \f$Q(0)\f$ is set to zero, regardless of
+  the values of the inputs, because the \f$f^3\f$ term would make it
   diverge otherwise, and because any conceivable realistic noise
   spectrum will end up blowing up at zero frequency fast enough to
-  kill the optimal filter.
-\item The implementation of the optimal filter function given here
+  kill the optimal filter.</li>
+<li> The implementation of the optimal filter function given here
   assumes a large observation time continuum-limit approximation.  In
   this limit, the Dirichlet kernels (which appear in an exact
   expression for the standard cross-correlation statistic, when
-  evaluated in discrete time \cite{stochastic:Finn:2001}; see also
+  evaluated in discrete time \ref stochasticFinn2001; see also
   the documentation for the module Dirichlet.c in the utilities package)
-  may be replaced by Dirac delta functions.
-\item Although $Q^{\scriptstyle{\rm C}}(f)$ is real by construction, the uncalibrated optimal
-  filter $\widetilde{Q}(f)$ will in general be
-  complex because the response functions $\widetilde{R}_i(f)$ for the
-  two sites will be different.
-\item The expected units for the inputs and output of this function
+  may be replaced by Dirac delta functions.</li>
+<li> Although \f$Q^{\mathrm{C}}(f)\f$ is real by construction, the uncalibrated optimal
+  filter \f$\widetilde{Q}(f)\f$ will in general be
+  complex because the response functions \f$\widetilde{R}_i(f)\f$ for the
+  two sites will be different.</li>
+<li> The expected units for the inputs and output of this function
   are as follows (although the actual output units will be constructed
   from the input units):
-  \begin{eqnarray}
+  \f{eqnarray}{
     {} [\lambda] &=& 10^{-36}\,\textrm{s}^{-1}\\
     {} [\gamma] &=& \textrm{strain}^{2} \\
-    {} [\Omega_{\scriptstyle{\rm GW}}] &=& 1 \\
-    {} [1/P^{\scriptstyle{\rm HC}}_{1,2}]
+    {} [\Omega_{\mathrm{GW}}] &=& 1 \\
+    {} [1/P^{\mathrm{HC}}_{1,2}]
     &=& 10^{18}\,\textrm{Hz}\,\textrm{strain}^{-1}\,\textrm{count}^{-1} \\
     {} [\widetilde{Q}] &:=&
-    [\lambda] [\gamma][\Omega_{\scriptstyle{\rm GW}}]
-    \left[\frac{1}{P^{\scriptstyle{\rm HC}}_1}\right]
-    \left[\frac{1}{P^{\scriptstyle{\rm HC}}_2}\right]
+    [\lambda] [\gamma][\Omega_{\mathrm{GW}}]
+    \left[\frac{1}{P^{\mathrm{HC}}_1}\right]
+    \left[\frac{1}{P^{\mathrm{HC}}_2}\right]
     \,\textrm{s}^3
     =
     \textrm{count}^{-2}
-  \end{eqnarray}
-\end{itemize}
+  \f}</li>
+</ul>
 
-\vfill{\footnotesize\input{StochasticOptimalFilterCV}}
-
-******************************************************* </lalLaTeX> */
-
-/**************************** <lalLaTeX file="StochasticOptimalFilterCB">
 \bibitem{stochastic:Allen:1997}
   B.~Allen
-  ``The stochastic gravity-wave background: sources and detection''
-  in \textit{Proceedings of the Les Houches School on Astrophysical Sources of
-  Gravitational Waves},
+  "The stochastic gravity-wave background: sources and detection"
+  in <em>Proceedings of the Les Houches School on Astrophysical Sources of
+  Gravitational Waves</em>,
   eds. J.~A.~Marck and J.~P.~Lasota, Cambridge, 373 (1997);
   \href{http://www.arXiv.org/abs/gr-qc/9604033}{gr-qc/9604033}
 \bibitem{stochastic:Allen:1999}
-  B.~Allen and J.~D.~Romano, ``Detecting a stochastic background of
+  B.~Allen and J.~D.~Romano, "Detecting a stochastic background of
   gravitational radiation: Signal processing strategies and
-  sensitivities''
-  Phys.\ Rev.\ D {\bf 59}, 102001 (1999);
+  sensitivities"
+  Phys.\ Rev.\ D \c 59, 102001 (1999);
   \href{http://www.arXiv.org/abs/gr-qc/9710117}{gr-qc/9710117}
 \bibitem{stochastic:Finn:2001}
-  L.~S.~Finn and J.~D.~Romano, ``Detecting stochastic gravitational waves:
-  Performance of maximum-likelihood and cross-correlation statistics'',
+  L.~S.~Finn and J.~D.~Romano, "Detecting stochastic gravitational waves:
+  Performance of maximum-likelihood and cross-correlation statistics",
   unpublished.
-******************************************************* </lalLaTeX> */
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -499,14 +484,14 @@ LALStochasticOptimalFilterCal(
 } /* LALStochasticOptimalFilterCal() */
 
 
-/* <lalVerbatim file="StochasticOptimalFilterCP"> */
+
 void
 LALStochasticOptimalFilter(
     LALStatus                          *status,
     COMPLEX8FrequencySeries            *optimalFilter,
     const StochasticOptimalFilterInput *input,
     const REAL4WithUnits               *lambda)
-/* </lalVerbatim> */
+
 {
   REAL4 mygamma;
   REAL4 omega;

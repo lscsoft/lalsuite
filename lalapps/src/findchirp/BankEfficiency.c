@@ -874,7 +874,6 @@ void BankEfficiencyWaveOverlapBCV(
   UserParametersIn         userParam ,
   OverlapOutputIn         *overlapOutput,
   BankEfficiencyMoments   *moments)
-     /*  </lalVerbatim>  */
 {
   INT4 rhoBinConstraint = 0.;
 
@@ -1603,7 +1602,7 @@ void BankEfficiencyPrintResultsXml(
   LIGOLwXMLStream       xmlStream;
   CHAR                  fname[256];
   /* GPS times do not appear to have been implemeted - the only place they
-     were used was in the broken snprintf statement. Commenting out to 
+     were used was in the broken snprintf statement. Commenting out to
      stop unused variable warnings */
 /*  LIGOTimeGPS        gpsStartTime = { 0, 0 };*//* input data GPS start time*/
 /*  LIGOTimeGPS        gpsEndTime  = { 0, 0 };*//* input data GPS end time*/
@@ -1613,11 +1612,11 @@ void BankEfficiencyPrintResultsXml(
   MetadataTable         processParamsTable;
   ProcessParamsTable   *this_proc_param = NULL;
 
-  snprintf( fname, sizeof(fname), 
+  snprintf( fname, sizeof(fname),
            BANKEFFICIENCY_XMLRESULTS );
   /* Original code for the above snprintf statement should have been as below,
      but it looks like the gps times were never implemented - you just end
-     up with "BankEfficiency-Reults.xmlsimulation00"            
+     up with "BankEfficiency-Reults.xmlsimulation00"
   snprintf( fname, sizeof(fname),
            "%s%s%d%d", BANKEFFICIENCY_XMLRESULTS,
            "simulation",
@@ -2412,13 +2411,13 @@ void BankEfficiencyBankPrintXML(
   memset( &proctable, 0, sizeof( proctable ) );
   memset( &processParamsTable, 0, sizeof( processParamsTable ) );
   memcpy( ifo, "MC", sizeof(ifo) - 1 );
-  
+
 
   /* --- first we create the filename --- */
-  snprintf( fname, sizeof(fname), 
+  snprintf( fname, sizeof(fname),
            BANKEFFICIENCY_XMLBANK );
   /* Original code for the above snprintf statement should have been as below,
-     but it looks like the gps times were never implemented 
+     but it looks like the gps times were never implemented
   snprintf( fname, sizeof(fname),
            "%s%s%d%d", BANKEFFICIENCY_XMLBANK,
            ifo,
@@ -3618,10 +3617,10 @@ void BankEfficiencyAscii2Xml(void)
      Are they actually used!? Someone has commented out the lines where
      they are read in! */
   REAL4 tau0 = 0.0, tau3 = 0.0, tau0I = 0.0, tau3I = 0.0;
-  REAL4 psi0 = 0.0, psi3 = 0.0, phaseI = 0.0; 
+  REAL4 psi0 = 0.0, psi3 = 0.0, phaseI = 0.0;
   REAL4 ecc = 0.0, eccI = 0.0, eccI_fl = 0.0;
   REAL4 polarisation = 0.0, inclination = 0.0;
-  REAL4 bestEMatch = 0.0; 
+  REAL4 bestEMatch = 0.0;
 
   FILE *input1;
   FILE *input2;
@@ -3784,10 +3783,10 @@ void BankEfficiencyAscii2Xml(void)
     &trigger.alphaF, &trigger.bin, &nStartPad, &trigger.nfast, &nfast_max,
     &bestEMatch);*/
 
-    sscanf(sbuf,"%f %f %f %f %f %f %f %f %f %f %f %d", 
+    sscanf(sbuf,"%f %f %f %f %f %f %f %f %f %f %f %d",
       &trigger.mass1_trigger, &trigger.mass2_trigger,
       &tau0, &tau3, &tau0I, &tau3I,
-      &trigger.mass1_inject, &trigger.mass2_inject, &trigger.fend_trigger, 
+      &trigger.mass1_inject, &trigger.mass2_inject, &trigger.fend_trigger,
       &trigger.fend_inject,
       &trigger.rho_final, &trigger.bin );
 
@@ -3951,8 +3950,8 @@ void BankEfficiencyInspiralCreateFineBank(
   INT4                  *nlist,
   InspiralFineBankIn     fineIn,
   UserParametersIn       userParam)
-{ /*
-     </lalVerbatim> */
+{
+
 
   REAL8 x0FineMin;
   REAL8 x1FineMin;

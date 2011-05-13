@@ -17,14 +17,12 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: coherent_bank.c
  *
  * Author: Fairhust, S. and Seader, S.E.
- * 
- * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -88,7 +86,7 @@ static void print_usage(char *program)
       "Usage: %s [options] [LIGOLW XML input files]\n"\
       "The following options are recognized.  Options not surrounded in []\n"\
       "are required.\n", program );
-  fprintf(stderr,    
+  fprintf(stderr,
       " [--help]                      display this message\n"\
       " [--verbose]                   print progress information\n"\
       " [--version]                   print version information and exit\n"\
@@ -174,7 +172,7 @@ int main( int argc, char *argv[] )
     {"write-compress",         no_argument,     &outCompress,             1 },
     {"comment",                required_argument,     0,                 'x'},
     {"user-tag",               required_argument,     0,                 'Z'},
-    {"help",                   no_argument,           0,                 'h'}, 
+    {"help",                   no_argument,           0,                 'h'},
     {"debug-level",            required_argument,     0,                 'z'},
     {"version",                no_argument,           0,                 'V'},
     {"gps-start-time",         required_argument,     0,                 's'},
@@ -192,7 +190,7 @@ int main( int argc, char *argv[] )
   int c;
 
   /*
-   * 
+   *
    * initialize things
    *
    */
@@ -206,7 +204,7 @@ int main( int argc, char *argv[] )
   XLALGPSTimeNow(&(proctable.processTable->start_time));
   XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
       LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
-  this_proc_param = processParamsTable.processParamsTable = 
+  this_proc_param = processParamsTable.processParamsTable =
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
 
   /* initialize variables */
@@ -219,7 +217,7 @@ int main( int argc, char *argv[] )
 
   memset( &bittenLParams, 0, sizeof(CoincInspiralStatParams   ) );
   /* default value from traditional effective snr formula */
-  bittenLParams.eff_snr_denom_fac = 250.0; 
+  bittenLParams.eff_snr_denom_fac = 250.0;
 
   /* parse the arguments */
   while ( 1 )
@@ -229,8 +227,8 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
     long int gpstime;
 
-    c = getopt_long_only( argc, argv, 
-        "hi:r:s:t:x:z:C:E:T:N:A:VZ:", long_options, 
+    c = getopt_long_only( argc, argv,
+        "hi:r:s:t:x:z:C:E:T:N:A:VZ:", long_options,
         &option_index );
 
     /* detect the end of the options */
@@ -261,13 +259,13 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
-      case 's':  
+      case 's':
         /* start time coincidence window */
         gpstime = atol( optarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is prior to " 
+              "GPS start time is prior to "
               "Jan 01, 1994  00:00:00 UTC:\n"
               "(%ld specified)\n",
               long_options[option_index].name, gpstime );
@@ -276,9 +274,9 @@ int main( int argc, char *argv[] )
         if ( gpstime > 999999999 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after " 
+              "GPS start time is after "
               "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%ld specified)\n", 
+              "(%ld specified)\n",
               long_options[option_index].name, gpstime );
           exit( 1 );
         }
@@ -293,7 +291,7 @@ int main( int argc, char *argv[] )
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is prior to " 
+              "GPS start time is prior to "
               "Jan 01, 1994  00:00:00 UTC:\n"
               "(%ld specified)\n",
               long_options[option_index].name, gpstime );
@@ -302,9 +300,9 @@ int main( int argc, char *argv[] )
         if ( gpstime > 999999999 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after " 
+              "GPS start time is after "
               "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%ld specified)\n", 
+              "(%ld specified)\n",
               long_options[option_index].name, gpstime );
           exit( 1 );
         }
@@ -340,7 +338,7 @@ int main( int argc, char *argv[] )
 
       case 'C':
         /* choose the coinc statistic */
-        {        
+        {
           if ( ! strcmp( "snrsq", optarg ) )
           {
             coincstat = snrsq;
@@ -364,7 +362,7 @@ int main( int argc, char *argv[] )
 
       case 'S':
         /* choose the single-ifo cluster statistic */
-        {        
+        {
           if ( ! strcmp( "snr", optarg ) )
           {
             clusterchoice = snr;
@@ -391,7 +389,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'r':
-        /* choose the run-type for constructing a bank on either 
+        /* choose the run-type for constructing a bank on either
            coinc or inspiral-coherent triggers */
         {
           if ( ! strcmp( "cohbank", optarg ) )
@@ -464,7 +462,7 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
-      case 'Z': 
+      case 'Z':
         /* create storage for the usertag */
         optarg_len = strlen(optarg) + 1;
         userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
@@ -472,7 +470,7 @@ int main( int argc, char *argv[] )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
@@ -482,7 +480,7 @@ int main( int argc, char *argv[] )
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "Coherent Bank Generator\n" 
+        fprintf( stdout, "Coherent Bank Generator\n"
             "Steve Fairhurst and Shawn Seader\n");
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
@@ -502,10 +500,10 @@ int main( int argc, char *argv[] )
   if ( ! *comment )
   {
     snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
+    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
         " " );
-  } 
-  else 
+  }
+  else
   {
     snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
@@ -545,7 +543,7 @@ int main( int argc, char *argv[] )
 
   /*
    *
-   * check the values of the arguments 
+   * check the values of the arguments
    *
    */
 
@@ -573,7 +571,7 @@ int main( int argc, char *argv[] )
   /* check that if clustering is being done that we have all the options */
   if ( cluster_dt && (coincstat == no_stat) )
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "--coinc-stat must be specified if --cluster-time is given\n" );
     exit( 1 );
   }
@@ -598,28 +596,28 @@ int main( int argc, char *argv[] )
             argv[i]);
 	  exit( 1 );
 	}
-	
+
 	numTriggers += numFileTriggers;
       }
     }
     else {
-      InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;  
+      InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
       INT4                  numCoincTrigs = 0;
       for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++) {
 	//SnglInspiralTable    *inspiralEventTmpList=NULL;
 	INT4                  numIfoTriggers = 0;
-	  
+
 	for( i = optind; i < argc; ++i )
 	{
 	  INT4 numFileTriggers = 0;
 	  SearchSummaryTable *inputSummary = NULL;
-	  
+
 	  /* read in the search summary and store */
 	  XLALPrintInfo(
 		"XLALReadInspiralTriggerFile(): Reading search_summary table\n");
-	  
+
 	  inputSummary = XLALSearchSummaryTableFromLIGOLw(argv[i]);
-	  
+
 	  if ( ! inputSummary )
 	  {
 	    fprintf(stderr,"No valid search_summary table in %s, exiting\n",
@@ -641,14 +639,14 @@ int main( int argc, char *argv[] )
 	      }
 
 	      numIfoTriggers += numFileTriggers;
-	    
+
 	    }
 	  }
 	}/* Loop to read all trigger files from a single ifo */
 
       	if( vrbflg )
 	  {
-	    fprintf( stdout, 
+	    fprintf( stdout,
 		     "Number of triggers found in ifo number %d is %d\n",
 		     ifoNumber , numIfoTriggers);
 	  }
@@ -659,11 +657,11 @@ int main( int argc, char *argv[] )
           fprintf( stdout,
                    "Number of unclustered triggers found in all ifos in this coinc-segment is %d\n",
                   numCoincTrigs);
-        }	
+        }
       }/* Closes for loop over ifoNumber */
-      
+
       /* keep only triggers within the requested interval */
-      if ( vrbflg ) fprintf( stdout, 
+      if ( vrbflg ) fprintf( stdout,
 			     "Discarding triggers outside requested interval\n" );
       LAL_CALL( LALTimeCutSingleInspiral( &status, &inspiralEventList,
 				  &startTimeGPS, &endTimeGPS), &status );
@@ -686,12 +684,12 @@ int main( int argc, char *argv[] )
       numTriggers = XLALClusterInEventID(&inspiralEventList,clusterchoice);
       if( vrbflg )
 	{
-	  fprintf( stdout, 
+	  fprintf( stdout,
 		   "Number of CLUSTERED triggers found in coinc-segment is %d\n",
 		   numTriggers);
 	}
 	//numTriggers += numIfoTriggers;
-	
+
     } /*Closes if runType is not cohinspbank */
   } /* Closes if optind < argc */
   else
@@ -699,12 +697,12 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "Error: No trigger files specified.\n" );
     exit( 1 );
   }
-  
+
   if ( numTriggers == 0 )
-  { 
+  {
     if( vrbflg )
     {
-      fprintf( stdout, 
+      fprintf( stdout,
          "No triggers found - the coherent bank will be empty.\n");
     }
   }
@@ -712,10 +710,10 @@ int main( int argc, char *argv[] )
   {
     if( vrbflg )
     {
-      fprintf( stdout, 
-          "Read in a total of %d triggers.\n", numTriggers); 
+      fprintf( stdout,
+          "Read in a total of %d triggers.\n", numTriggers);
     }
-    
+
     /* reconstruct the coincs */
     numCoincs = XLALRecreateCoincFromSngls( &coincHead, &inspiralEventList );
     if( numCoincs < 0 )
@@ -726,7 +724,7 @@ int main( int argc, char *argv[] )
     else if ( vrbflg )
     {
       fprintf( stdout,
-          "Recreated %d coincs from the %d triggers\n", numCoincs, 
+          "Recreated %d coincs from the %d triggers\n", numCoincs,
           numTriggers );
     }
 
@@ -740,39 +738,39 @@ int main( int argc, char *argv[] )
     if ( coincHead && cluster_dt )
     {
       if ( vrbflg ) fprintf( stdout, "sorting coinc inspiral trigger list..." );
-      coincHead = XLALSortCoincInspiral( coincHead, 
+      coincHead = XLALSortCoincInspiral( coincHead,
                           *XLALCompareCoincInspiralByTime );
       if ( vrbflg ) fprintf( stdout, "done\n" );
 
       if ( vrbflg ) fprintf( stdout, "clustering remaining triggers... " );
-      
+
       if ( !numSlides )
       {
-        numClusteredEvents = XLALClusterCoincInspiralTable( &coincHead, 
+        numClusteredEvents = XLALClusterCoincInspiralTable( &coincHead,
                       cluster_dt, coincstat , &bittenLParams);
       }
       else
-      { 
+      {
         int slide = 0;
         int numClusteredSlide = 0;
         CoincInspiralTable *slideCoinc = NULL;
         CoincInspiralTable *slideClust = NULL;
-        
+
         if ( vrbflg ) fprintf( stdout, "splitting events by slide\n" );
-        
+
         for( slide = -numSlides; slide < (numSlides + 1); slide++)
         {
           if ( vrbflg ) fprintf( stdout, "slide number %d; ", slide );
           /* extract the slide */
           slideCoinc = XLALCoincInspiralSlideCut( &coincHead, slide );
           /* run clustering */
-          numClusteredSlide = XLALClusterCoincInspiralTable( &slideCoinc, 
+          numClusteredSlide = XLALClusterCoincInspiralTable( &slideCoinc,
                        cluster_dt, coincstat, &bittenLParams);
-          
-          if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
+
+          if ( vrbflg ) fprintf( stdout, "%d clustered events \n",
                                  numClusteredSlide );
           numClusteredEvents += numClusteredSlide;
-          
+
           /* add clustered triggers */
           if( slideCoinc )
           {
@@ -788,7 +786,7 @@ int main( int argc, char *argv[] )
             for( ; thisCoinc->next; thisCoinc = thisCoinc->next);
           }
         }
-        
+
         /* free coincHead -- although we expect it to be empty */
         while ( coincHead )
         {
@@ -796,23 +794,23 @@ int main( int argc, char *argv[] )
           coincHead = coincHead->next;
           XLALFreeCoincInspiral( &thisCoinc );
         }
-        
+
         /* move events to coincHead */
         coincHead = slideClust;
         slideClust = NULL;
       }
-      
+
       if ( vrbflg ) fprintf( stdout, "done\n" );
-      if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
+      if ( vrbflg ) fprintf( stdout, "%d clustered events \n",
                              numClusteredEvents );
     }
-    
+
     /*
      *
      *  Create the coherent bank
      *
      */
-    
+
     numTmplts = XLALGenerateCoherentBank( &newEventList, coincHead );
 
     if ( numTmplts < 0 )
@@ -822,7 +820,7 @@ int main( int argc, char *argv[] )
     }
     else if ( vrbflg )
     {
-      fprintf(stdout, "Generated a coherent bank with %d templates\n", 
+      fprintf(stdout, "Generated a coherent bank with %d templates\n",
           numTmplts);
     }
   }
@@ -848,8 +846,8 @@ int main( int argc, char *argv[] )
   if ( userTag && !outCompress )
   {
     if ( runType == cohinspbank ) {
-      snprintf( fileName, FILENAME_MAX, "%s-COHINSPBANK_%s-%d-%d.xml", 
-        ifos, userTag, startTime, endTime - startTime );  
+      snprintf( fileName, FILENAME_MAX, "%s-COHINSPBANK_%s-%d-%d.xml",
+        ifos, userTag, startTime, endTime - startTime );
     }
     else {
       snprintf( fileName, FILENAME_MAX, "%s-COHBANK_%s-%d-%d.xml",
@@ -881,7 +879,7 @@ int main( int argc, char *argv[] )
   else
   {
     if ( runType == cohinspbank ) {
-      snprintf( fileName, FILENAME_MAX, "%s-COHINSPBANK-%d-%d.xml", 
+      snprintf( fileName, FILENAME_MAX, "%s-COHINSPBANK-%d-%d.xml",
         ifos, startTime, endTime - startTime );
     }
     else {
@@ -890,44 +888,44 @@ int main( int argc, char *argv[] )
     }
   }
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName ), 
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName ),
       &status );
 
   /* write process table */
   XLALGPSTimeNow(&(proctable.processTable->end_time));
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ),
       &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable,
         process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
   /* write process_params table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream,
         process_params_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable, 
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable,
         process_params_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
   /* write search_summary table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream,
         search_summary_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchsumm, 
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchsumm,
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
   /* write the search_summvars tabls */
-  /* XXX not necessary as bank file specified in arguements XXX 
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
+  /* XXX not necessary as bank file specified in arguements XXX
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream,
         search_summvars_table), &status );
   searchSummvarsTable.searchSummvarsTable = inputFiles;
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchSummvarsTable,
         search_summvars_table), &status );
   LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status ); */
-  
+
   /* write the sngl_inspiral table if we have one*/
   if ( newEventList )
   {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream,
           sngl_inspiral_table), &status );
     inspiralTable.snglInspiralTable = newEventList;
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, inspiralTable,
@@ -943,7 +941,7 @@ int main( int argc, char *argv[] )
 
   /*
    *
-   * clean up the memory that has been allocated 
+   * clean up the memory that has been allocated
    *
    */
 
@@ -982,13 +980,13 @@ int main( int argc, char *argv[] )
   }
 
   /* while ( coincEventList )
-  {       
+  {
     thisCoinc = coincEventList;
     coincEventList = coincEventList->next;
     LALFree( thisCoinc );
-  }       
+  }
   */
-   
+
   while ( newEventList )
   {
     currentTrigger = newEventList;
@@ -1017,7 +1015,7 @@ int XLALCoincSegCutSnglInspiral(
     INT4                        startTime,
     SnglInspiralTable         **inspiralList
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable     *thisEvent=NULL;
   SnglInspiralTable     *prevEvent=NULL;
@@ -1076,15 +1074,15 @@ int XLALCoincSegCutSnglInspiral(
       ++numSnglClust;
     }
   }
- 
-  fprintf(stdout, "This last time-check is %" LAL_INT4_FORMAT "\n", timeCheck); 
+
+  fprintf(stdout, "This last time-check is %" LAL_INT4_FORMAT "\n", timeCheck);
   /* store the last event */
   //if ( ! (*inspiralList) )
    // {
     //  *inspiralList = thisEvent;
    // }
   //++numSnglClust;
-  
+
   return(numSnglClust);
 }
 
@@ -1093,7 +1091,7 @@ int XLALClusterInEventID(
     SnglInspiralTable         **inspiralList,
     SnglInspiralClusterChoice   clusterchoice
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable     *thisEvent=NULL;
   SnglInspiralTable     *prevEvent=NULL;
@@ -1118,19 +1116,19 @@ int XLALClusterInEventID(
   thisEvent = *inspiralList;
   nextEvent = (*inspiralList)->next;
   *inspiralList = NULL;
-  
+
   while ( nextEvent ) {
     /* find events with the same eventID in the same IFO */
-    if ( (thisEvent->event_id->id == nextEvent->event_id->id ) 
+    if ( (thisEvent->event_id->id == nextEvent->event_id->id )
 	 && !strcmp(thisEvent->ifo,nextEvent->ifo ) ) {
       REAL4 thisStat = XLALSnglInspiralStat( thisEvent, clusterchoice );
       REAL4 nextStat = XLALSnglInspiralStat( nextEvent, clusterchoice );
-      
+
       fprintf(stdout, "Next event's id is %" LAL_UINT8_FORMAT "\n",nextEvent->event_id->id);
       fprintf(stdout, "Next-statistic is %e\n",nextStat);
       fprintf(stdout, "Next IFO is %s\n",nextEvent->ifo);
-      
-      
+
+
       if ( nextStat > thisStat ) {
         /* displace previous event in cluster */
         if( prevEvent )
@@ -1162,7 +1160,7 @@ int XLALClusterInEventID(
 	++numSnglClust;
       }
   }
-  
+
   /* store the last event */
   if ( ! (*inspiralList) )
     {

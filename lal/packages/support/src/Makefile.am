@@ -39,26 +39,21 @@ noinst_HEADERS = \
 	StreamSequenceInput_source.c \
 	StreamSequenceInputComplex_source.c \
 	StreamSeriesInput_source.c \
+	StreamSeriesOutput_source.c \
 	StreamVectorInput_source.c \
 	StreamVectorSequenceInput_source.c
 
 MAINTAINERCLEANFILES = \
 	StreamGridInput.c \
-	StreamGridOutput.c \
-	StreamSeriesOutput.c
+	StreamGridOutput.c
 
 EXTRA_DIST = \
 	LALReadGrid.m4 \
 	LALWriteGrid.m4 \
-	LALWriteSeries.m4 \
 	StreamGridInput.m4 \
-	StreamGridOutput.m4 \
-	StreamSeriesOutput.m4
+	StreamGridOutput.m4
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-
-StreamSeriesOutput.c: StreamSeriesOutput.m4 LALWriteSeries.m4
-	cd $(srcdir) && @M4@ StreamSeriesOutput.m4 > StreamSeriesOutput.c
 
 StreamGridInput.c: StreamGridInput.m4 LALReadGrid.m4
 	cd $(srcdir) && @M4@ StreamGridInput.m4 > StreamGridInput.c

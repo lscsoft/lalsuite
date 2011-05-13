@@ -17,244 +17,229 @@
 *  MA  02111-1307  USA
 */
 
-/*************************** <lalVerbatim file="StochasticOptimalFilterNormalizationCV">
-Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author UTB Relativity Group; contact whelan@phys.utb.edu
+\file
+\ingroup stochastic
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{StochasticOptimalFilterNormalization.c}}
-\label{stochastic:ss:StochasticOptimalFilterNormalization.c}
-
-Calculates the normalization factor for the optimal filter and the
+\brief Calculates the normalization factor for the optimal filter and the
 expected variance per unit time of the standard cross-correlation
 statistic.
 
-\subsubsection*{Prototypes}
-\idx{LALStochasticOptimalFilterNormalization()}
-\input{StochasticOptimalFilterNormalizationCP}
+\heading{Description}
 
-\subsubsection*{Description}
-
-As described in Section~\ref{stochastic:ss:StochasticOptimalFilter.c},
+As described in \ref StochasticOptimalFilter_c,
 the optimal filter for stochastic searches is defined as
-%
-\begin{equation}\label{stochastic:e:Q}
-\widetilde{Q}{}^{\scriptstyle{\rm C}}(f)=\lambda\,
-\frac{\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)}
-{|f|^3\,P^{\scriptstyle{\rm C}}_1(f)\,P^{\scriptstyle{\rm C}}_2(f)}
-\end{equation}
-%
-The normalization constant $\lambda$ is chosen so that the expected mean
-value of the cross-correlation statistic is \cite{stochastic:Allen:1999}
-\begin{equation}
+
+\anchor stochastic_e_Q \f{equation}{\label{stochastic_e_Q}
+\widetilde{Q}{}^{\mathrm{C}}(f)=\lambda\,
+\frac{\gamma(f)\,\Omega_{\mathrm{GW}}(f)}
+{|f|^3\,P^{\mathrm{C}}_1(f)\,P^{\mathrm{C}}_2(f)}
+\f}
+
+The normalization constant \f$\lambda\f$ is chosen so that the expected mean
+value of the cross-correlation statistic is \ref stochasticAllen1999
+\anchor stochastic_e_mu \f{equation}{
 \mu = \frac{3 {H_0}^2}{20\pi^2}\, T \,\overline{w_1w_2}
 \int_{-\infty}^{\infty} df\, |f|^{-3}\,
-\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)
-\widetilde{Q}{}^{\scriptstyle{\rm C}}(f) = \Omega_{\scriptstyle{\rm R}} T
-\label{stochastic:e:mu}
-\end{equation}
-where $T$ is the integration time
-(\textit{cf.}~(\ref{stochastic:e:ymax})), $w_1$ and $w_2$ are the functions
+\gamma(f)\,\Omega_{\mathrm{GW}}(f)
+\widetilde{Q}{}^{\mathrm{C}}(f) = \Omega_{\mathrm{R}} T
+\label{stochastic_e_mu}
+\f}
+where \f$T\f$ is the integration time
+(cf.\eqref{stochastic_e_ymax}, \f$w_1\f$ and \f$w_2\f$ are the functions
 used to window the data, and
-$\Omega_{\scriptstyle{\rm R}} =\Omega_{\scriptstyle{\rm
-    GW}}(f_{\scriptstyle{\rm R}})$ is the overall strength of the
-stochastic background (see
-Sec.~\ref{stochastic:ss:OverlapReductionFunction.c}).  This sets the
+\f$\Omega_{\mathrm{R}} =\Omega_{\mathrm{GW}}(f_{\mathrm{R}})\f$ is the overall strength of the
+stochastic background (see \ref OverlapReductionFunction.c.  This sets the
 value at
-\begin{equation}
-\label{stochastic:e:lambda}
-\lambda = \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}
+\anchor stochastic_e_lambda \f{equation}{
+\label{stochastic_e_lambda}
+\lambda = \frac{20\pi^2\, \Omega_{\mathrm{R}}}
                {3\,{H_0}^2 \overline{w_1w_2}}
 \left(
       \int_{-\infty}^\infty \frac{df}{f^6}
-      \frac{[\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)]^2}{P^{\scriptstyle{\rm C}}_1(f)P^{\scriptstyle{\rm C}}_2(f)}
+      \frac{[\gamma(f)\,\Omega_{\mathrm{GW}}(f)]^2}{P^{\mathrm{C}}_1(f)P^{\mathrm{C}}_2(f)}
 \right)^{-1}
-\end{equation}
+\f}
 
-The same integral used to calculate $\lambda$ also allows one to
+The same integral used to calculate \f$\lambda\f$ also allows one to
 calculate the expected variance per unit integration time of the
 cross-correlation statistic, since
-\begin{eqnarray}
+\anchor stochastic_e_variance \f{eqnarray}{
   \frac{\sigma^2}{T}
   &=& \frac{\overline{(w_1w_2)^2}}{4T}\int_{-\infty}^{\infty} df
-  \, P^{\scriptstyle{\rm C}}_1(f)\, P^{\scriptstyle{\rm C}}_2(f)\,
+  \, P^{\mathrm{C}}_1(f)\, P^{\mathrm{C}}_2(f)\,
   \left(
-    \widetilde{Q}{}^{\scriptstyle{\rm C}}(f)
+    \widetilde{Q}{}^{\mathrm{C}}(f)
   \right)^2
   = \frac{\lambda}{4T} \overline{(w_1w_2)^2}
 \int_{-\infty}^{\infty} \frac{df}{|f|^3}\,\gamma(f)\,
-  \Omega_{\scriptstyle{\rm GW}}(f)\,\widetilde{Q}{}^{\scriptstyle{\rm C}}(f)
+  \Omega_{\mathrm{GW}}(f)\,\widetilde{Q}{}^{\mathrm{C}}(f)
   \nonumber
   \\
-\label{stochastic:e:variance}
+\label{stochastic_e_variance}
   &=& \frac{5\pi^2}{3 {H_0}^2}
   \,\frac{\overline{(w_1w_2)^2}}{\overline{w_1w_2}}
-\,\Omega_{\scriptstyle{\rm R}} \,\lambda
-\end{eqnarray}
-where we have used (\ref{stochastic:e:Q}) to replace one of the two
-factors of $\widetilde{Q}{}^{\scriptstyle{\rm C}}(f)$ and (\ref{stochastic:e:mu}) to replace
+\,\Omega_{\mathrm{R}} \,\lambda
+\f}
+where we have used\eqref{stochastic_e_Q} to replace one of the two
+factors of \f$\widetilde{Q}{}^{\mathrm{C}}(f)\f$ and\eqref{stochastic_e_mu} to replace
 the integral.
 
-\texttt{LALStochasticOptimalFilterNormalization()} uses
-(\ref{stochastic:e:lambda}) to calculate the normalization constant
-$\lambda$ and (\ref{stochastic:e:variance}) to calculate the expected
-variance per unit time $\sigma^2/T$ of the cross-correlation
+<tt>LALStochasticOptimalFilterNormalization()</tt> uses
+\eqref{stochastic_e_lambda} to calculate the normalization constant
+\f$\lambda\f$ and\eqref{stochastic_e_variance} to calculate the expected
+variance per unit time \f$\sigma^2/T\f$ of the cross-correlation
 statistic.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-The routine \texttt{LALStochasticOptimalFilterNormalization()} first uses
-(\ref{stochastic:e:lambda}) to find the normalization constant
-$\lambda$ (the amplitude ${h_{100}}^2\Omega_{\scriptstyle{\rm R}}$ is
+The routine <tt>LALStochasticOptimalFilterNormalization()</tt> first uses
+\eqref{stochastic_e_lambda} to find the normalization constant
+\f$\lambda\f$ (the amplitude \f${h_{100}}^2\Omega_{\mathrm{R}}\f$ is
 found by logarithmic interpolation using the reference frequency
-$f_{\scriptstyle{\rm R}}$ specified in the parameter structure and the
-input series representing ${h_{100}}^2\Omega_{\scriptstyle{\rm GW}}(f)$).
+\f$f_{\mathrm{R}}\f$ specified in the parameter structure and the
+input series representing \f${h_{100}}^2\Omega_{\mathrm{GW}}(f)\f$).
 
 The precise behavior of the normalization depends on the boolean
-parameter \verb+parameters->heterodyned+, which indicates whether the
+parameter <tt>parameters->heterodyned</tt>, which indicates whether the
 filter is to be used on heterodyned data or not.  In the case of
 heterodyned data, the integral is approximated by the sum
-\begin{eqnarray}
-\lambda &\approx& \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}
+\f{eqnarray}{
+\lambda &\approx& \frac{20\pi^2\, \Omega_{\mathrm{R}}}
                      {3\,{H_0}^2 \overline{w_1w_2}}
 \left(
   \delta f\sum_{k=0}^{N-1}
   (f_0 + k\,\delta f)^{-6}
-  \frac{(\gamma[k]\,\Omega_{\scriptstyle{\rm GW}}[k])^2}{P^{\scriptstyle{\rm C}}_1[k]P^{\scriptstyle{\rm C}}_2[k]}
+  \frac{(\gamma[k]\,\Omega_{\mathrm{GW}}[k])^2}{P^{\mathrm{C}}_1[k]P^{\mathrm{C}}_2[k]}
 \right)^{-1}
 \nonumber
 \\
 &\approx&
-\frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}{3\,{H_0}^2}
+\frac{20\pi^2\, \Omega_{\mathrm{R}}}{3\,{H_0}^2}
 \left(
       \int_{f_0}^{f_0+N\delta f} \frac{df}{f^6}
-      \frac{[\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)]^2}{P^{\scriptstyle{\rm C}}_1(f)P^{\scriptstyle{\rm C}}_2(f)}
+      \frac{[\gamma(f)\,\Omega_{\mathrm{GW}}(f)]^2}{P^{\mathrm{C}}_1(f)P^{\mathrm{C}}_2(f)}
 \right)^{-1}
-\end{eqnarray}
+\f}
 (Leaving out frequencies outside the band is equivalent to assuming
-one or both of the noise PSDs $P^{\scriptstyle{\rm C}}_{1,2}(f)$ blows up outside that
+one or both of the noise PSDs \f$P^{\mathrm{C}}_{1,2}(f)\f$ blows up outside that
 range.)
 
-In the case of non-heterodyned data with $f_0=0$, we calculate
-\begin{equation}
-\lambda \approx \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}
+In the case of non-heterodyned data with \f$f_0=0\f$, we calculate
+\f{equation}{
+\lambda \approx \frac{20\pi^2\, \Omega_{\mathrm{R}}}
                      {3\,{H_0}^2 \overline{w_1w_2}}
 \left(
-  \delta f\, 2\ {\mathrm{Re}}  \sum_{k=0 \scriptstyle{\rm or } 1}^{N-1}
+  \delta f\, 2\ {\mathrm{Re}}  \sum_{k=0 \mbox{ or } 1}^{N-1}
   (k\,\delta f)^{-6}
-  \frac{(\gamma[k]\,\Omega_{\scriptstyle{\rm GW}}[k])^2}{P^{\scriptstyle{\rm C}}_1[k]P^{\scriptstyle{\rm C}}_2[k]}
+  \frac{(\gamma[k]\,\Omega_{\mathrm{GW}}[k])^2}{P^{\mathrm{C}}_1[k]P^{\mathrm{C}}_2[k]}
 \right)^{-1}
-\end{equation}
+\f}
 which includes negative frequencies as well.  The difference
 between the two is because the cross-correlation statistic appearing
-in the definition (\ref{stochastic:e:mu}) is the one calculated by
-\texttt{StochasticHeterodynedCrossCorrelationStatistic()} in the case
-of heterodyned and \texttt{StochasticCrossCorrelationStatistic()} in
+in the definition\eqref{stochastic_e_mu} is the one calculated by
+<tt>StochasticHeterodynedCrossCorrelationStatistic()</tt> in the case
+of heterodyned and <tt>StochasticCrossCorrelationStatistic()</tt> in
 the case of non-heterodyned data.
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\begin{verbatim}
+\code
 LALUnitMultiply()
 LALUnitRaise()
 LALUnitCompare()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\begin{itemize}
-\item The reference frequency $f_{\scriptstyle{\rm R}}$ must lie
+<ul>
+<li> The reference frequency \f$f_{\mathrm{R}}\f$ must lie
   safely enough in the frequency range of the inputs to allow the
-  value of ${h_{100}}^2\Omega_{\scriptstyle{\rm R}}$ to be determined
-  by interpolation.
-\item The implementation of the optimal filter function given here
+  value of \f${h_{100}}^2\Omega_{\mathrm{R}}\f$ to be determined
+  by interpolation.</li>
+<li> The implementation of the optimal filter function given here
   assumes a large observation time continuum-limit approximation.  In
   this limit, the Dirichlet kernels (which appear in an exact
   expression for the standard cross-correlation statistic, when
-  evaluated in discrete time \cite{stochastic:Finn:2001}; see also
+  evaluated in discrete time \ref stochasticFinn2001; see also
   the documentation for the module Dirichlet.c in the utilities package)
-  may be replaced by Dirac delta functions.
-\item The units of the input series are checked for consistency; since
-  \cite{stochastic:Allen:1999}
-  \begin{equation}
-    \langle\widetilde{h}{}^{\scriptstyle{\rm C}}_1(f)^*
-    \widetilde{h}{}^{\scriptstyle{\rm C}}_2(f')\rangle
+  may be replaced by Dirac delta functions.</li>
+<li> The units of the input series are checked for consistency; since
+  \ref stochasticAllen1999
+  \f{equation}{
+    \langle\widetilde{h}{}^{\mathrm{C}}_1(f)^*
+    \widetilde{h}{}^{\mathrm{C}}_2(f')\rangle
     = \frac{3H_0^2}{20\pi^2}\delta(f-f')
-    \gamma(|f|)\Omega_{\scriptstyle{\rm GW}}(|f|)
-  \end{equation}
+    \gamma(|f|)\Omega_{\mathrm{GW}}(|f|)
+  \f}
   and
-  \begin{equation}
+  \f{equation}{
     \langle\widetilde{h}_i(f)^*\widetilde{h}_i(f')\rangle
-    = \delta(f-f')P^{\scriptstyle{\rm C}}_i(f)
+    = \delta(f-f')P^{\mathrm{C}}_i(f)
     \,
-  \end{equation}
+  \f}
   we demand that, up to powers of ten,
-  \begin{equation}
-    ([\gamma][\Omega_{\scriptstyle{\rm GW}}])^2
+  \f{equation}{
+    ([\gamma][\Omega_{\mathrm{GW}}])^2
     =([\widetilde{h}_1][\widetilde{h}_2][T]^{-2})^2
-    =[P^{\scriptstyle{\rm C}}_1][P^{\scriptstyle{\rm C}}_2][T]^{-2}
-  \end{equation}
-\item This routine, like all those in the \texttt{stochastic} package,
+    =[P^{\mathrm{C}}_1][P^{\mathrm{C}}_2][T]^{-2}
+  \f}</li>
+<li> This routine, like all those in the \c stochastic package,
   uses with single precision arithmetic, consistent with the accuracy
   of the continuous approximation for the intended number of data
   points.  However, the limited dynamic range can pose a problem,
-  especially in this routine, which uses numbers like $H_0^2$ which
+  especially in this routine, which uses numbers like \f$H_0^2\f$ which
   are far from unity when expressed in the standard SI units.  To
-  avoid this problem, the application of (\ref{stochastic:e:lambda})
-  takes the units $H_0$ of to be $10^{-18}\,\textrm{s}^{-1}$ rather
-  than $\textrm{s}^{-1}$.  In these units $h_{100}H_0$ has a numerical
-  value of $3.2407792903$, and inclusion of $(h_{100}H_0)^2$ in an
+  avoid this problem, the application of\eqref{stochastic_e_lambda}
+  takes the units \f$H_0\f$ of to be \f$10^{-18}\,\textrm{s}^{-1}\f$ rather
+  than \f$\textrm{s}^{-1}\f$.  In these units \f$h_{100}H_0\f$ has a numerical
+  value of \f$3.2407792903\f$, and inclusion of \f$(h_{100}H_0)^2\f$ in an
   expression doesn't risk single-precision overflow.  When %'
   constructing the unit structures of its outputs,
-  \texttt{LALStochasticOptimalFilterNormalization()} uses the
-  power-of-ten feature of the \texttt{LALUnit} structure to account
-  for the units of $H_0$.
-\item The expected units for the inputs and outputs of this function
+  <tt>LALStochasticOptimalFilterNormalization()</tt> uses the
+  power-of-ten feature of the \c LALUnit structure to account
+  for the units of \f$H_0\f$.</li>
+<li> The expected units for the inputs and outputs of this function
   are as follows (although the actual output units will be constructed
   from the input units):
-  \begin{equation}
-    ([\gamma][\Omega_{\scriptstyle{\rm GW}}])^2
+  \f{equation}{
+    ([\gamma][\Omega_{\mathrm{GW}}])^2
     =([\widetilde{h}_1][\widetilde{h}_2][T]^{-2})^2
-    =[P^{\scriptstyle{\rm C}}_1][P^{\scriptstyle{\rm C}}_2][T]^{-2}
-  \end{equation}
-  \begin{eqnarray}
+    =[P^{\mathrm{C}}_1][P^{\mathrm{C}}_2][T]^{-2}
+  \f}
+  \f{eqnarray}{
     {} [\gamma] &=& \textrm{strain}^{2} \\
-    {} [\Omega_{\scriptstyle{\rm GW}}] &=& 1 \\
-    {} [1/P^{\scriptstyle{\rm C}}_{1,2}] &=& 10^{36}\,\textrm{Hz}\,\textrm{strain}^{-2} \\
+    {} [\Omega_{\mathrm{GW}}] &=& 1 \\
+    {} [1/P^{\mathrm{C}}_{1,2}] &=& 10^{36}\,\textrm{Hz}\,\textrm{strain}^{-2} \\
     {} [\lambda] &=&
-    10^{36}\, [P^{\scriptstyle{\rm C}}_1]\,[P^{\scriptstyle{\rm C}}_2]
-    \,[\gamma]^{-2}\,[\Omega_{\scriptstyle{\rm GW}}]^{-1}\,\textrm{s}^{-3}
+    10^{36}\, [P^{\mathrm{C}}_1]\,[P^{\mathrm{C}}_2]
+    \,[\gamma]^{-2}\,[\Omega_{\mathrm{GW}}]^{-1}\,\textrm{s}^{-3}
     =  10^{-36}\,\textrm{s}^{-1}\\
     {} [\sigma^2/T] &=&
-    10^{36}\, [\lambda]\, [\Omega_{\scriptstyle{\rm GW}}] \,\textrm{s}^2
+    10^{36}\, [\lambda]\, [\Omega_{\mathrm{GW}}] \,\textrm{s}^2
     = \textrm{s}
-  \end{eqnarray}
-\end{itemize}
+  \f}</li>
+</ul>
 
-\vfill{\footnotesize\input{StochasticOptimalFilterNormalizationCV}}
-
-******************************************************* </lalLaTeX> */
-
-/**************************** <lalLaTeX file="StochasticOptimalFilterNormalizationCB">
 \bibitem{stochastic:Allen:1997}
   B.~Allen
-  ``The stochastic gravity-wave background: sources and detection''
-  in \textit{Proceedings of the Les Houches School on Astrophysical Sources of
-  Gravitational Waves},
+  "The stochastic gravity-wave background: sources and detection"
+  in <em>Proceedings of the Les Houches School on Astrophysical Sources of
+  Gravitational Waves</em>,
   eds. J.~A.~Marck and J.~P.~Lasota, Cambridge, 373 (1997);
   \href{http://www.arXiv.org/abs/gr-qc/9604033}{gr-qc/9604033}
 \bibitem{stochastic:Allen:1999}
-  B.~Allen and J.~D.~Romano, ``Detecting a stochastic background of
+  B.~Allen and J.~D.~Romano, "Detecting a stochastic background of
   gravitational radiation: Signal processing strategies and
-  sensitivities''
-  Phys.\ Rev.\ D {\bf 59}, 102001 (1999);
+  sensitivities"
+  Phys.\ Rev.\ D \c 59, 102001 (1999);
   \href{http://www.arXiv.org/abs/gr-qc/9710117}{gr-qc/9710117}
 \bibitem{stochastic:Finn:2001}
-  L.~S.~Finn and J.~D.~Romano, ``Detecting stochastic gravitational waves:
-  Performance of maximum-likelihood and cross-correlation statistics'',
+  L.~S.~Finn and J.~D.~Romano, "Detecting stochastic gravitational waves:
+  Performance of maximum-likelihood and cross-correlation statistics",
   unpublished.
-******************************************************* </lalLaTeX> */
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -263,17 +248,16 @@ LALUnitCompare()
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/Units.h>
 
-NRCSID (STOCHASTICOPTIMALFILTERC,
-"$Id$");
+NRCSID (STOCHASTICOPTIMALFILTERC, "$Id$");
 
-/* <lalVerbatim file="StochasticOptimalFilterNormalizationCP"> */
+
 void
 LALStochasticOptimalFilterNormalization(
     LALStatus                                            *status,
     StochasticOptimalFilterNormalizationOutput           *output,
     const StochasticOptimalFilterNormalizationInput      *input,
     const StochasticOptimalFilterNormalizationParameters *parameters)
-/* </lalVerbatim> */
+
 {
   REAL4 omegaTimesGamma;
   REAL4 p1Inv;

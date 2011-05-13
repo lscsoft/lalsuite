@@ -17,10 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="TSDatgenHV"> *********
-      Author: Torres. C
-      $ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 cristina Exp $
-      ***** </lalVerbatim> **********************************/
+/**
+      \author Torres. C
+      \file
+*/
 
 #ifndef TRACKSEARCHAVERAGER_H
 #define TRACKSEARCHAVERAGER_H
@@ -45,8 +45,8 @@
 #define TRACKSEARCHAVERAGERC_EMEM               32
 #define TRACKSEARCHAVERAGERC_EMISC              64
 #define TRACKSEARCHAVERAGERC_EWRITE             128
-#define TRACKSEARCHAVERAGERC_EDIMS              256 
-#define TRACKSEARCHAVERAGERC_ENULL              512 
+#define TRACKSEARCHAVERAGERC_EDIMS              256
+#define TRACKSEARCHAVERAGERC_ENULL              512
 #define TRACKSEARCHAVERAGERC_ENPTR              1024
 #define TRACKSEARCHAVERAGERC_EMAPO              2048
 
@@ -68,7 +68,7 @@
 #define FALSE    0
 
 /*
- * Averager data structures and functions 
+ * Averager data structures and functions
  */
 #define NumberAveragerOperations 2
 typedef enum averagerOperationType {
@@ -94,7 +94,7 @@ typedef struct tagTSAcache {
 TSAcache;
 
 typedef struct tagTSACollapseParams {
-  /* 
+  /*
    * Should be UINT4 but timefreq package uses INT4
    * So we do this to avoid compiler warnings
    */
@@ -139,4 +139,4 @@ void
 tsaTest(LALStatus  *status);
 
 #endif
- 
+
