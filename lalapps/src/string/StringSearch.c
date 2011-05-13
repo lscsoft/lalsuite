@@ -127,8 +127,8 @@ struct CommandLineArgsTag {
   INT4 printfilterflag;       /* flag set to 1 if user wants to print the filter in the frequency domain */
   INT4 printfirflag;          /* flag set to 1 if user wants to print the filter in the time domain */
   INT4 printsnrflag;          /* flag set to 1 if user wants to print the snr */
-  INT4 printdataflag;         /* flag set to 1 if user wants to print the data */  
-  INT4 printinjectionflag;    /* flag set to 1 if user wants to print the injection(s) */  
+  INT4 printdataflag;         /* flag set to 1 if user wants to print the data */
+  INT4 printinjectionflag;    /* flag set to 1 if user wants to print the injection(s) */
   char *comment;              /* for "comment" columns in some tables */
 };
 
@@ -190,7 +190,7 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
 int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, ProcessParamsTable *procparamtable, SnglBurst *events);
 
 /* Frees the memory */
-int FreeMem(StringTemplate *strtemplate, int NTemplates);                                        
+int FreeMem(StringTemplate *strtemplate, int NTemplates);
 
 /* Clustering comparison function */
 static int XLALCompareStringBurstByTime(const SnglBurst * const *, const SnglBurst * const *);
@@ -259,7 +259,7 @@ int main(int argc,char *argv[])
   if (DownSample(CommandLineArgs, ht)) return 8;
 
   /****** XLALResizeREAL8TimeSeries ******/
-  XLALPrintInfo("XLALResizeREAL8TimeSeries()\n");	
+  XLALPrintInfo("XLALResizeREAL8TimeSeries()\n");
   /* re-size the time series to remove the pad */
   ht = XLALResizeREAL8TimeSeries(ht, (int)round(CommandLineArgs.pad/ht->deltaT),
 				 ht->data->length-2*(int)round(CommandLineArgs.pad/ht->deltaT));
@@ -277,7 +277,7 @@ int main(int argc,char *argv[])
   /****** AvgSpectrum ******/
   XLALPrintInfo("AvgSpectrum()\n");
   Spec = AvgSpectrum(CommandLineArgs, ht, seg_length, fplan);
-  if (!Spec) return 9;  
+  if (!Spec) return 9;
   if (CommandLineArgs.printspectrumflag) LALDPrintFrequencySeries( Spec, "Spectrum.txt" );
 
   /****** CreateTemplateBank ******/
@@ -335,12 +335,12 @@ int main(int argc,char *argv[])
  * to whatever the high frequency cutoff is
  */
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
+
 static int XLALCompareStringBurstByTime(
   const SnglBurst * const *a,
   const SnglBurst * const *b
 )
-/* </lalVerbatim> */
+
 {
   double delta_t = XLALGPSDiff(&(*a)->peak_time, &(*b)->peak_time);
 
@@ -391,7 +391,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
   snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, "%s", type);
   snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
   snprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, "%s", value);
-  
+
   return(&(*proc_param)->next);
 }
 
@@ -422,10 +422,10 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
 
   /* write process table */
   if(XLALWriteLIGOLwXMLProcessTable(xml, proctable)) return -1;
-  
+
   /* write process params table */
   if(XLALWriteLIGOLwXMLProcessParamsTable(xml, procparamtable)) return -1;
-  
+
   /* create the search summary table */
   searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(proctable);
   /* the number of nodes for a standalone job is always 1 */
@@ -452,7 +452,7 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
   if(XLALWriteLIGOLwXMLSnglBurstTable(xml, events)) return -1;
 
   XLALCloseLIGOLwXMLFile(xml);
-      
+
   return 0;
 }
 
@@ -480,7 +480,7 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
       pend=p; pstart=p;
 
       /* Clustering in time: While we are above threshold, or within clustering time of the last point above threshold... */
-      while( ((fabs(vector->data->data[p]) > CLA.threshold) || ((p-pend)* vector->deltaT < (float)(CLA.cluster)) ) 
+      while( ((fabs(vector->data->data[p]) > CLA.threshold) || ((p-pend)* vector->deltaT < (float)(CLA.cluster)) )
 	     && p<3*vector->data->length/4){
 
 	/* This keeps track of the largest SNR point of the cluster */
@@ -490,8 +490,8 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
 	}
 	/* pend is the last point above threshold */
 	if ( (fabs(vector->data->data[p]) > CLA.threshold))
-	  pend =  p; 
-	
+	  pend =  p;
+
 	p++;
       }
 
@@ -529,8 +529,8 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
       XLALGPSAdd(&new->start_time, (pstart - 1) * vector->deltaT);
       new->duration = vector->deltaT * ( pend - pstart + 2 );
 
-      new->central_freq = (strtemplate->f+CLA.fbankstart)/2.0;	   
-      new->bandwidth    = strtemplate->f-CLA.fbankstart;				     
+      new->central_freq = (strtemplate->f+CLA.fbankstart)/2.0;
+      new->bandwidth    = strtemplate->f-CLA.fbankstart;
       new->snr          = maximum_snr;
       new->amplitude    = vector->data->data[pmax]/strtemplate->norm;
       new->chisq = chi2;
@@ -547,21 +547,21 @@ int FindStringBurst(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned
   int i,m;
   unsigned p;
   COMPLEX16FrequencySeries *vtilde;
-  
+
   /* create vector that will hold FFT of data;  metadata will be populated
    * by FFT function */
   vtilde = XLALCreateCOMPLEX16FrequencySeries( ht->name, &ht->epoch, ht->f0, 0.0, &lalDimensionlessUnit, seg_length / 2 + 1 );
-  
+
   /* loop over templates  */
   for (m = 0; m < NTemplates; m++){
-    /* loop over overlapping chunks */ 
+    /* loop over overlapping chunks */
     for(i=0; i < 2*(ht->data->length*ht->deltaT)/CLA.ShortSegDuration - 1 ;i++){
       /* extract overlapping chunk of data */
       REAL8TimeSeries *vector = XLALCutREAL8TimeSeries(ht, i * seg_length / 2, seg_length);
 
       /* FFT it */
       if(XLALREAL8TimeFreqFFT( vtilde, vector, fplan )) return 1;
-      
+
       /* multiply FT of data and String Filter */
       for ( p = 0 ; p < vtilde->data->length; p++ )
         vtilde->data->data[p] = XLALCOMPLEX16MulReal(vtilde->data->data[p], strtemplate[m].StringFilter->data->data[p]);
@@ -605,7 +605,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsi
 
   vector = XLALCreateREAL8TimeSeries( ht->name, &ht->epoch, ht->f0, ht->deltaT, &ht->sampleUnits, seg_length );
   vtilde = XLALCreateCOMPLEX16FrequencySeries( ht->name, &ht->epoch, ht->f0, 1.0 / (vector->data->length * vector->deltaT), &lalDimensionlessUnit, vector->data->length / 2 + 1 );
- 
+
   for (m = 0; m < NTemplates; m++){
     /* Initialize the filter */
     strtemplate[m].StringFilter = XLALCreateREAL8FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, Spec->deltaF, &lalStrainUnit, Spec->data->length);
@@ -621,11 +621,11 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsi
     /* this gets mucked up by round-off each time through the loop */
     vector->deltaT = ht->deltaT;
 
-    /* perform the truncation; the truncation is CLA.TruncSecs/2 because 
+    /* perform the truncation; the truncation is CLA.TruncSecs/2 because
        we are dealing with the sqrt of the filter at the moment*/
     if(CLA.TruncSecs != 0.0)
       memset( vector->data->data + (int)round(CLA.TruncSecs/2/vector->deltaT), 0,
-	      ( vector->data->length -  2 * (int)round(CLA.TruncSecs/2/vector->deltaT)) 
+	      ( vector->data->length -  2 * (int)round(CLA.TruncSecs/2/vector->deltaT))
 	      * sizeof( *vector->data->data ) );
 
     /* forward fft the truncated vector into vtilde */
@@ -789,18 +789,18 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, unsigned seg_length, REAL8
   /* Use static template bank or...*/
   if(CLA.TemplateFile){
     compute_t2t2_and_t1t2(CLA.power, Spec, integral, CLA.fbankstart, fcutoff_fix[0], &t1t1, &t1t2);
-    
+
     strtemplate[0].findex = round((fcutoff_fix[0] - Spec->f0) / Spec->deltaF);
     strtemplate[0].f = fcutoff_fix[0];
     strtemplate[0].mismatch = 0.0;
     strtemplate[0].norm = sqrt(t1t1);
-    XLALPrintInfo("%% Templ. frequency      sigma      mismatch\n");  
+    XLALPrintInfo("%% Templ. frequency      sigma      mismatch\n");
     XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n",0,strtemplate[0].f,strtemplate[0].norm, strtemplate[0].mismatch);
     *NTemplates = NTemplates_fix;
 
     for (m = 1; m < NTemplates_fix; m++){
       compute_t2t2_and_t1t2(CLA.power, Spec, integral, fcutoff_fix[m-1], fcutoff_fix[m], &t2t2, &t1t2);
-      
+
       strtemplate[m].findex = round((fcutoff_fix[m] - Spec->f0) / Spec->deltaF);
       strtemplate[m].f = fcutoff_fix[m];
       strtemplate[m].norm = sqrt(t2t2);
@@ -823,18 +823,18 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, unsigned seg_length, REAL8
     strtemplate[0].f = f_cut;
     strtemplate[0].mismatch = 0.0;
     strtemplate[0].norm = sqrt(t1t1);
-    XLALPrintInfo("%% Templ. frequency      sigma      mismatch\n");  
+    XLALPrintInfo("%% Templ. frequency      sigma      mismatch\n");
     XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n",*NTemplates,strtemplate[0].f,strtemplate[0].norm, strtemplate[0].mismatch);
     *NTemplates = 1;
-    
+
     /* find the next cutoffs given the maximal mismatch, until we hit the
      * highest frequency.  note that the algorithm will hit that frequency
      * bin by construction */
     while(strtemplate[*NTemplates - 1].findex < (int) Spec->data->length - 1) {
       f_cut = next_f_cut(CLA.fmismatchmax, CLA.power, Spec, integral, strtemplate[*NTemplates-1].f, strtemplate[*NTemplates-1].norm);
-      
+
       compute_t2t2_and_t1t2(CLA.power, Spec, integral, strtemplate[*NTemplates-1].f, f_cut, &t2t2, &t1t2);
-      
+
       strtemplate[*NTemplates].findex = round((f_cut - Spec->f0) / Spec->deltaF);
       strtemplate[*NTemplates].f = f_cut;
       strtemplate[*NTemplates].norm = sqrt(t2t2);
@@ -867,9 +867,9 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, unsigned seg_length, REAL8
     /* populate the rest with the template waveform */
     for ( p = f_low_cutoff_index; p < strtemplate[m].waveform_f->length; p++ ){
       double f = Spec->f0 + p * Spec->deltaF;
-      if(f<=strtemplate[m].f) 
+      if(f<=strtemplate[m].f)
 	strtemplate[m].waveform_f->data[p] = XLALCOMPLEX16Rect(pow(f, CLA.power), 0.0);
-      else 
+      else
 	strtemplate[m].waveform_f->data[p] = XLALCOMPLEX16Rect(pow(f, CLA.power)*exp(1-f/strtemplate[m].f), 0.0);
     }
 
@@ -1064,14 +1064,14 @@ int ReadTemplateFile(struct CommandLineArgsTag CLA, int *NTemplates_fix, REAL8 *
 
   SnglBurst *templates=NULL, *templates_root=NULL;
   int i;
-  
+
   /* Initialize */
   *NTemplates_fix=0;
-  
+
   /* Get templates from burst table */
   templates_root = XLALSnglBurstTableFromLIGOLw(CLA.TemplateFile);
-  
-  for(templates = templates_root; templates != NULL; templates = templates->next){ 
+
+  for(templates = templates_root; templates != NULL; templates = templates->next){
     fcutoff_fix[*NTemplates_fix]=templates->central_freq + (templates->bandwidth)/2;
     *NTemplates_fix=*NTemplates_fix+1;
     if(*NTemplates_fix==MAXTEMPLATES){
@@ -1079,13 +1079,13 @@ int ReadTemplateFile(struct CommandLineArgsTag CLA, int *NTemplates_fix, REAL8 *
       return 1;
     }
   }
-  
+
   /* Check that the bank has at least one template */
   if(*NTemplates_fix<=0){
     XLALPrintError("Empty template bank\n");
     return 1;
   }
-  
+
   /* Check that the frequencies are well ordered */
   for(i=0; i<*NTemplates_fix-1; i++){
     if(fcutoff_fix[i]>fcutoff_fix[i+1]){
@@ -1093,13 +1093,13 @@ int ReadTemplateFile(struct CommandLineArgsTag CLA, int *NTemplates_fix, REAL8 *
       return 1;
     }
   }
-  
+
   /* check that  the highest frequency is below the Nyquist frequency */
   if(fcutoff_fix[*NTemplates_fix-1]>CLA.samplerate/2){
     XLALPrintError("The templates frequencies go beyond the Nyquist frequency\n");
     return 1;
   }
-  
+
   return 0;
 }
 
@@ -1384,11 +1384,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
       fprintf(stdout,"\t--test-white-spectrum (-w)\tFLAG\t Use constant white noise (used only in combination with fake gaussian noise; otherwise ignored).\n");
       fprintf(stdout,"\t--cluster-events (-l)\tREAL4\t Cluster events with input timescale.\n");
       fprintf(stdout,"\t--print-spectrum (-a)\tFLAG\t Prints the spectrum to Spectrum.txt.\n");
-      fprintf(stdout,"\t--print-fd-filter (-b)\tFLAG\t Prints the frequency domain filter to Filter-<template no>.txt.\n");      
-      fprintf(stdout,"\t--print-td-filter (-r)\tFLAG\t Prints the time domain filter to FIRFilter-<template no>.txt.\n");      
-      fprintf(stdout,"\t--print-snr (-x)\tFLAG\t Prints the snr to stdout.\n");      
+      fprintf(stdout,"\t--print-fd-filter (-b)\tFLAG\t Prints the frequency domain filter to Filter-<template no>.txt.\n");
+      fprintf(stdout,"\t--print-td-filter (-r)\tFLAG\t Prints the time domain filter to FIRFilter-<template no>.txt.\n");
+      fprintf(stdout,"\t--print-snr (-x)\tFLAG\t Prints the snr to stdout.\n");
       fprintf(stdout,"\t--print-data (-y)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");
-      fprintf(stdout,"\t--print-injection (-z)\tFLAG\t Prints the injeciton data to injection.txt.\n");      
+      fprintf(stdout,"\t--print-injection (-z)\tFLAG\t Prints the injeciton data to injection.txt.\n");
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
       fprintf(stdout,"eg %s  --sample-rate 4096 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --output ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
       exit(0);
@@ -1407,44 +1407,44 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
       fprintf(stderr,"No low frequency for frequency bank specified.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
-    }      
+    }
   if(! CLA->TemplateFile && CLA->fbankhighfcutofflow == 0.0)
     {
       fprintf(stderr,"No template bank lowest high frequency cutoff specified.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
-    }      
+    }
   if(CLA->threshold == 0.0)
     {
       fprintf(stderr,"No SNR threshold specified.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
-    }      
+    }
   if(CLA->power == 0.0)
     {
       fprintf(stderr,"Cusp or kink search not specified. \n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
-    }      
+    }
   if(CLA->FrCacheFile == NULL)
     {
       fprintf(stderr,"No frame cache file specified.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
-    }      
+    }
   if(CLA->ChannelName == NULL)
     {
       fprintf(stderr,"No channel name specified.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
-    }      
+    }
   if(!(CLA->ChannelName[0] == 'V' || CLA->ChannelName[0] == 'H' || CLA->ChannelName[0] == 'L'))
     {
       fprintf(stderr,"The channel name is  not well specified\n");
       fprintf(stderr,"It should start with H1, H2, L1 or V1\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
-    }      
+    }
   if(XLALGPSToINT8NS(&CLA->GPSStart) == 0)
     {
       fprintf(stderr,"No GPS start time specified.\n");
@@ -1472,7 +1472,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
       fprintf(stderr,"Short segment duration not specified (they overlap by 50%s).\n","%");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
-    }      
+    }
 
   /* Some consistency checking */
   {
@@ -1484,18 +1484,18 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
       fprintf(stderr,"The total duration of the segment T and the short segment duration\n");
       fprintf(stderr,"Should obey the following rule: T/t - 0.5 shold be an odd integer.\n");
       return 1;
-    } 
+    }
     if(((int)x)%2 != 1){
       fprintf(stderr,"The total duration of the segment T and the short segment duration\n");
       fprintf(stderr,"Should obey the following rule: T/t - 0.5 shold be an odd integer.\n");
       return 1;
-    }     
+    }
 
     if( CLA->ShortSegDuration/4.0  < CLA->TruncSecs){
       fprintf(stderr,"Short segment length t=%d is too small to accomodate truncation time requested.\n", CLA->ShortSegDuration);
 	fprintf(stderr,"Need short segment t(=%d) to be >= 4 x Truncation length (%f).\n",CLA->ShortSegDuration,CLA->TruncSecs);
 	return 1;
-    }    
+    }
   }
 
   return errflg;
@@ -1510,7 +1510,7 @@ int FreeMem(StringTemplate *strtemplate, int NTemplates){
     XLALDestroyREAL8FrequencySeries(strtemplate[m].StringFilter);
 
   LALCheckMemoryLeaks();
-  
+
   return 0;
 }
 

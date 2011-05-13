@@ -17,10 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="TSDatgenHV"> *********
-Author: Torres. C
-$ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 cristina Exp $
-***** </lalVerbatim> **********************************/
+/**
+\author Torres. C
+\file
+*/
 
 #ifndef TRACKSEARCHTOOLBOX_H
 #define TRACKSEARCHTOOLBOX_H
@@ -100,7 +100,7 @@ LALappsTSALoadCacheFile(
 			CHARVector   *filename,
 			TSAcache    **mapCache);
 
-void 
+void
 LALappsTSACropMap(LALStatus*,
 		  TSAMap**,
 		  UINT4);
@@ -111,7 +111,7 @@ LALappsTSADestroyCache(TSAcache       **mapCache);
 void
 LALappsDetermineFilename(
 			 TrackSearchMapMarkingParams  imageBorders,
-			 CHARVector                 **thisFilename, 
+			 CHARVector                 **thisFilename,
 			 const CHAR*                  myFileExt);
 void
 LALappsCreateR4FromR8TimeSeries(
@@ -120,18 +120,18 @@ LALappsCreateR4FromR8TimeSeries(
 
 void LALappsPSD_Check(REAL8TimeSeries*);
 
-void print_real4tseries(const REAL4TimeSeries *fseries, 
+void print_real4tseries(const REAL4TimeSeries *fseries,
 			const char *file);
-void print_real8tseries(const REAL8TimeSeries *fseries, 
+void print_real8tseries(const REAL8TimeSeries *fseries,
 			const char *file);
 void print_real4fseries(const REAL4FrequencySeries *fseries,
 			const char *file);
-void print_real8fseries(const REAL8FrequencySeries *fseries, 
+void print_real8fseries(const REAL8FrequencySeries *fseries,
 			const char *file);
-void print_complex8fseries(const COMPLEX8FrequencySeries *fseries, 
+void print_complex8fseries(const COMPLEX8FrequencySeries *fseries,
 			   const char *file);
-void print_complex8_RandC_fseries(const COMPLEX8FrequencySeries *fseries, 
+void print_complex8_RandC_fseries(const COMPLEX8FrequencySeries *fseries,
 				  const char *file);
 void print_lalUnit(LALUnit unit,const char *file);
 #endif
- 
+
