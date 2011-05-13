@@ -120,19 +120,19 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Initialise the prior distribution given the command line arguments */
   /* Initialise the proposal distribution given the command line arguments */
   initialiseProposal( &runState );
- 
+  
   runState.proposal = LALInferenceProposalPulsarNS;
   
   /* get noise likelihood and add as variable to runState */
   logZnoise = noise_only_model( runState.data );
-  LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, REAL8_t, 
-               PARAM_FIXED );
-  
+  LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, 
+                           REAL8_t, PARAM_FIXED );
+               
   /* Create live points array and fill initial parameters */
   setupLivePointsArray( &runState );
   
-  logLikelihoods = *(REAL8Vector **)LALInferenceGetVariable( runState.algorithmParams,
-                                                 "logLikelihoods" );
+  logLikelihoods = *(REAL8Vector **)
+    LALInferenceGetVariable( runState.algorithmParams, "logLikelihoods" );
   
   /* Call the nested sampling algorithm */
   runState.algorithm( &runState );
@@ -249,8 +249,7 @@ void readPulsarData( LALInferenceRunState *runState ){
   
   CHAR *tempdets=NULL;
   CHAR *tempdet=NULL;
-  
-  CHAR *psds = NULL;
+ 
   REAL8 fpsds[MAXDETS];
   CHAR *fakestarts = NULL, *fakelengths = NULL, *fakedt = NULL;
   REAL8 fstarts[MAXDETS], flengths[MAXDETS], fdt[MAXDETS];
@@ -302,25 +301,36 @@ void readPulsarData( LALInferenceRunState *runState ){
     /* get noise psds if specified */
     ppt = LALInferenceGetProcParamVal(commandLine,"--fake-psd");
     if( ppt ){
-      CHAR *tmppsds = NULL, *tmppsd = NULL, psdval[256];
+      CHAR *psds = NULL, *tmppsds = NULL, *tmppsd = NULL, psdval[256];
       
       psds = XLALStringDuplicate(
         LALInferenceGetProcParamVal(commandLine,"--fake-psd")->value );
-        
+      
+      tmppsds = XLALStringDuplicate( psds );
+      tempdets = XLALStringDuplicate( detectors );
+      
       /* count the number of PSDs (comma seperated values) to compare to number
          of detectors */
       if( (numPsds = count_csv( psds )) != numDets ){
-        fprintf(stderr, "Error... number of PSDs for fake data must be\
- equal to the number of detectors specified = %d!\n", numDets);
+        fprintf(stderr, "Error... number of PSDs for fake data must be equal to\
+ the number of detectors specified = %d!\n", numDets);
         exit(0);
       }
       
-      tmppsds = XLALStringDuplicate( psds );
-      
       for( i = 0; i < numDets; i++ ){
+        CHAR *tmpstr = NULL;
+        
         tmppsd = strsep( &tmppsds, "," );
         XLALStringCopy( psdval, tmppsd, strlen(tmppsd)+1 );
         fpsds[i] = atof(psdval);
+        
+        /* set detector */
+        tempdet = strsep( &tempdets, "," );
+        
+        if( (tmpstr = strstr(tempdet, "A")) != NULL ) /* have advanced */
+          XLALStringCopy( dets[i], tmpstr+1, strlen(tmpstr)+1 );
+        else
+          XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
       }
     }
     else{ /* get PSDs from model functions and set detectors */
@@ -536,13 +546,6 @@ defined!\n");
       exit(0);
     }
   }
-  else if( ppt2 && !psds ){ /* if using fake data */
-    if ( numPsds != numDets ){
-      fprintf(stderr, "Error... Number of detectors and fake PSD values are not\
- equal!\n");
-      exit(0);
-    }
-  }
   
   /* set random number generator in case when that fake data is used */
   ppt = LALInferenceGetProcParamVal( commandLine, "--randomseed" );
@@ -744,7 +747,7 @@ void setupFromParFile( LALInferenceRunState *runState )
   psr.equatorialCoords.longitude = pulsar.ra;
   psr.equatorialCoords.latitude = pulsar.dec;
   psr.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
-
+  
   /* Setup lookup tables for amplitudes */
   setupLookupTables( runState, &psr );
   
@@ -754,13 +757,13 @@ void setupFromParFile( LALInferenceRunState *runState )
   
   /* if no binary model set the value to "None" */
   if ( pulsar.model == NULL )
-    pulsar.model = XLALStringDuplicate("None");  
+    pulsar.model = XLALStringDuplicate("None");
   
   /* Add initial (unchanging) variables for the model, initial (unity) scale
      factors, and any Gaussian priors defined from the par file */
   withphase = add_initial_variables( runState->currentParams, scaletemp,
                                      runState->priorArgs, pulsar );
-  
+                                     
   /* Setup initial phase */
   while( data ){
     UINT4 i = 0;
@@ -830,16 +833,16 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
   ppt = LALInferenceGetProcParamVal( commandLine, "--time-bins" );
   INT4 timeBins;
   if( ppt ) timeBins = atoi( ppt->value );
-  else timeBins = TIMEBINS; /* default time bins */  
-        
+  else timeBins = TIMEBINS; /* default time bins */
+    
   while(data){
     REAL8Vector *sumData = NULL;
     UINT4Vector *chunkLength = NULL;
-    INT4 i=0;
     
-    LALInferenceAddVariable( data->dataParams, "psiSteps", &psiBins, INT4_t, PARAM_FIXED ); 
+    LALInferenceAddVariable( data->dataParams, "psiSteps", &psiBins, INT4_t, 
+                             PARAM_FIXED ); 
     LALInferenceAddVariable( data->dataParams, "timeSteps", &timeBins, INT4_t, 
-                 PARAM_FIXED );
+                             PARAM_FIXED );
     
     t0 = XLALGPSGetREAL8( &data->dataTimes->data[0] );
     detAndSource.pDetector = data->detector;
@@ -848,26 +851,31 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     LUfplus = gsl_matrix_alloc( psiBins, timeBins );
 
     LUfcross = gsl_matrix_alloc( psiBins, timeBins );
+    
     response_lookup_table( t0, detAndSource, timeBins, psiBins, LUfplus, 
                            LUfcross );
-    LALInferenceAddVariable( data->dataParams, "LU_Fplus", &LUfplus, gslMatrix_t,
-                 PARAM_FIXED );
-    LALInferenceAddVariable( data->dataParams, "LU_Fcross", &LUfcross, gslMatrix_t,
-                 PARAM_FIXED );
 
-    LALInferenceAddVariable( data->dataParams, "chunkMin", &chunkMin, INT4_t, PARAM_FIXED );
-    LALInferenceAddVariable( data->dataParams, "chunkMax", &chunkMax, INT4_t, PARAM_FIXED );
+    LALInferenceAddVariable( data->dataParams, "LU_Fplus", &LUfplus, 
+                             gslMatrix_t, PARAM_FIXED );
+    LALInferenceAddVariable( data->dataParams, "LU_Fcross", &LUfcross,
+                             gslMatrix_t, PARAM_FIXED );
+
+    LALInferenceAddVariable( data->dataParams, "chunkMin", &chunkMin, INT4_t, 
+                             PARAM_FIXED );
+    LALInferenceAddVariable( data->dataParams, "chunkMax", &chunkMax, INT4_t, 
+                             PARAM_FIXED );
     
     /* get chunk lengths of data */
     
     /* chunkLength = get_chunk_lengths( data, chunkMax ); */
+    
     chunkLength = chop_n_merge( data, chunkMin );
     
-    LALInferenceAddVariable( data->dataParams, "chunkLength", &chunkLength, UINT4Vector_t,
-                 PARAM_FIXED );
+    LALInferenceAddVariable( data->dataParams, "chunkLength", &chunkLength, 
+                             UINT4Vector_t, PARAM_FIXED );
 
     if ( count == 0 ){
-      UINT4 k = 0;
+      UINT4 k = 0, i = 0;
       UINT4 maxcl = 0;
       
       /* get max chunklength */
@@ -879,18 +887,18 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
       exclamation = XLALCreateREAL8Vector( maxcl + 1 );
 
       /* to save time get all log factorials up to chunkMax */
-      for( i = 0 ; i < (INT4)maxcl+1 ; i++ )
+      for( i = 0 ; i < maxcl+1 ; i++ )
         exclamation->data[i] = log_factorial(i);
     
       count++;
     }
     
-    LALInferenceAddVariable( data->dataParams, "logFactorial", &exclamation, REAL8Vector_t,
-                 PARAM_FIXED );
+    LALInferenceAddVariable( data->dataParams, "logFactorial", &exclamation, 
+                             REAL8Vector_t, PARAM_FIXED );
     /* get sum of data for each chunk */
     sumData = sum_data( data );
-    LALInferenceAddVariable( data->dataParams, "sumData", &sumData, REAL8Vector_t,
-                 PARAM_FIXED);
+    LALInferenceAddVariable( data->dataParams, "sumData", &sumData, 
+                             REAL8Vector_t, PARAM_FIXED);
 
     data = data->next;
   }
@@ -899,7 +907,8 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
 }
 
 
-UINT4 add_initial_variables( LALInferenceVariables *ini, LALInferenceVariables *scaleFac,
+UINT4 add_initial_variables( LALInferenceVariables *ini, 
+                             LALInferenceVariables *scaleFac,
                              LALInferenceVariables *priorArgs, 
                              BinaryPulsarParams pars ){ 
   /* include a scale factor of 1 scaling values and if the parameter file
@@ -2405,7 +2414,7 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource,
                                 detNSource.pSource->equatorialCoords.latitude,
                                 detNSource.pSource->orientation,
                                 XLALGreenwichMeanSiderealTime( &gps ) );
-        
+                                
       gsl_matrix_set( LUfplus, i, j, fplus );
       gsl_matrix_set( LUfcross, i, j, fcross );
     }
