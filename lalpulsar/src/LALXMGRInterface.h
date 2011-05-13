@@ -23,33 +23,31 @@
  *
  * Author: Brady, P.R, and Brown, D. A.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="LALXMGRInterfaceHV">
-Author: Brady P., R., and Brown, D. A.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\section{Header \texttt{LALXMGRInterface.h}}
-\label{s:LALXMGRInterface.h}
+\author Brady P., R., and Brown, D. A.
+\file
+\ingroup pulsarTODO
+
+\heading{Header \ref LALXMGRInterface.h}
+\latexonly\label{s_LALXMGRInterface_h}\endlatexonly
 
 Provides protypes, structures and functions to allow visualisation of
-the events generated \texttt{findchirp} and the \texttt{inspiral} shared
+the events generated \c findchirp and the \c inspiral shared
 object.
 
-\subsection*{Synopsis}
+\heading{Synopsis}
 
-\begin{verbatim}
+\code
 #include <lal/LALXMGRInterface.h>
-\end{verbatim}
+\endcode
 
-</lalLaTeX>
-#endif
+
+*/
 
 #ifndef _LALXMGRINTERFACEH_H
 #define _LALXMGRINTERFACEH_H
@@ -67,10 +65,7 @@ extern "C" {
 
 NRCSID (LALXMGRINTERFACEH, "$Id$");
 
-/* <lalLaTeX>
-\newpage\subsection*{Error codes}
-</lalLaTeX> */
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define LALXMGRINTERFACEH_ENULL 1
 #define LALXMGRINTERFACEH_ENNUL 2
 #define LALXMGRINTERFACEH_EALOC 3
@@ -83,7 +78,7 @@ NRCSID (LALXMGRINTERFACEH, "$Id$");
 #define LALXMGRINTERFACEH_MSGEOPEN "Error opening file"
 #define LALXMGRINTERFACEH_MSGEFCLO "Error closing file"
 #define LALXMGRINTERFACEH_MSGENGRA "Already have max number of graphs in array"
-/* </lalErrTable> */
+/*@}*/
 
 
 /*
@@ -92,10 +87,6 @@ NRCSID (LALXMGRINTERFACEH, "$Id$");
  *
  */
 
-
-/* <lalLaTeX>
-\subsection*{Types}
-</lalLaTeX> */
 
 typedef enum
 {
@@ -181,9 +172,9 @@ tagXMGRGraphVector
 }
 XMGRGraphVector;
 
-/* <lalLaTeX>
-\vfill{\footnotesize\input{LALXMGRInterfaceHV}}
-</lalLaTeX> */
+
+
+
 
 
 /*
@@ -229,9 +220,9 @@ LALXMGRPlotMesh(
     TwoDMeshParamStruc *mesh
     );
 
-/* <lalLaTeX>
-\newpage\input{LALXMGRInterfaceC}
-</lalLaTeX> */
+
+
+
 
 #if 0
 { /* so that editors will match succeeding brace */

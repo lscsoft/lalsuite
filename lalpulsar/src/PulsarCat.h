@@ -17,27 +17,23 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="PulsarCatHV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-
-\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
-
-\section{Header \texttt{PulsarCat.h}}
-\label{s:PulsarCat.h}
+\heading{Header \ref PulsarCat.h}
+\latexonly\label{s_PulsarCat_h}\endlatexonly
 
 Provides structures and routines to store and manipulate pulsar
 properties.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/PulsarCat.h>
-\end{verbatim}
+\endcode
 
-\noindent This header covers structures to store pulsar properties in
+This header covers structures to store pulsar properties in
 a standard format, and routines to manipulate and update these
 properties.  The set of properties stored in the catalogue is based on
 radio pulsar catalogues, with some additions and subtractions specific
@@ -51,39 +47,39 @@ properties are then those that would be observed at the specified
 instant of time at the solar system barycentre; i.e.\ when the wave
 fronts carrying that information pass the solar system barycentre.
 
-\paragraph{A note on companion orbits:} Several known pulsars exist in
+\heading{A note on companion orbits:} Several known pulsars exist in
 multiple systems, and radio-pulsar catalogues include detailed models
 of the companion orbits, as determined from the pulsar timing.  See
-\verb@GenerateSpinOrbitCW.h@ in the \verb@inject@ package for a
+\ref GenerateSpinOrbitCW.h in the \c inject package for a
 discussion of the parameters defining the orientation of a companion
 orbit.
 
-Radio-pulsar observations rarely determine the inclination $i$ of the
+Radio-pulsar observations rarely determine the inclination \f$i\f$ of the
 orbit to the sky plane, and thus cannot resolve the longitude of the
-ascending node $\Omega$ and the argument of the periapsis $\omega$ as
+ascending node \f$\Omega\f$ and the argument of the periapsis \f$\omega\f$ as
 independent parameters.  Instead, they list the longitude of the
-periapsis $w$, which is the angle in the plane of the sky from the
+periapsis \f$w\f$, which is the angle in the plane of the sky from the
 North direction towards the West direction, to the ray from the system
 barycentre to the periapsis projected onto the plane of the sky.  If
-any three of $i$, $\Omega$, $\omega$, and $w$ are known, the fourth
+any three of \f$i\f$, \f$\Omega\f$, \f$\omega\f$, and \f$w\f$ are known, the fourth
 can be determined from the relation:
-$$
+\f[
 w - \Omega = \arctan\;2(\sin\omega\cos i,\cos\omega) \;,
-$$
+\f]
 or equivalently:
-$$
+\f[
 \omega = \arctan\;2(\cos[w-\Omega],\sin[w-\Omega]/\cos i) \;.
-$$
+\f]
 
 In addition to these Keplerian orbital parameters, some radio-pulsar
 systems have measured post-Keplerian relativistic orbital parameters.
-Some of these are obvious: $\dot{w}$ and $\dot{P}$ are the rate of
-change in $w$ (periapsis precession) and the orbital period $P$ (due
+Some of these are obvious: \f$\dot{w}\f$ and \f$\dot{P}\f$ are the rate of
+change in \f$w\f$ (periapsis precession) and the orbital period \f$P\f$ (due
 to gravitational radiation reaction).  The catalogue also lists
-post-Keplerian parameters ``sin'' and ``r'', whose meanings I don't
+post-Keplerian parameters "sin" and "r", whose meanings I don't
 know.
 
-******************************************************* </lalLaTeX> */
+*/
 
 #ifndef _PULSARCAT_H
 #define _PULSARCAT_H
@@ -101,9 +97,8 @@ extern "C" {
 
 NRCSID( PULSARCATH, "$Id$" );
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error conditions}
-****************************************** </lalLaTeX><lalErrTable> */
+/**
+ \name Error Codes */ /*@{*/
 #define PULSARCATH_ENUL   1
 #define PULSARCATH_EOUT   2
 #define PULSARCATH_EMEM   3
@@ -113,49 +108,46 @@ NRCSID( PULSARCATH, "$Id$" );
 #define PULSARCATH_MSGEOUT   "Output handle points to a non-null pointer"
 #define PULSARCATH_MSGEMEM   "Memory allocation error"
 #define PULSARCATH_MSGEPARSE "Error parsing input file"
-/******************************************** </lalErrTable><lalLaTeX>
+/*@}*/
 
-\subsection*{Types}
 
-\subsubsection*{Structure \texttt{CompanionNode}}
-\idx[Type]{CompanionNode}
+/** Structure \c CompanionNode
 
-\noindent This structure stores the orbital parameters of a companion
+This structure stores the orbital parameters of a companion
 to a pulsar in a multiple system.  If there is more than one
 companion, these structures form a linked list.
 
-\begin{description}
-\item[\texttt{LIGOTimeGPS epoch}] Epoch of companion periapsis.
+<dl>
+<dt><tt>LIGOTimeGPS epoch</tt></dt><dd> Epoch of companion periapsis.</dd>
 
-\item[\texttt{REAL8 x}] Projected orbital semimajor axis $(a/c)\sin
-i$, in seconds.
+<dt><tt>REAL8 x</tt></dt><dd> Projected orbital semimajor axis \f$(a/c)\sin
+i\f$, in seconds.</dd>
 
-\item[\texttt{REAL8 period}] Orbital period, in seconds, measured at
-\verb@epoch@.
+<dt><tt>REAL8 period</tt></dt><dd> Orbital period, in seconds, measured at
+\c epoch.</dd>
 
-\item[\texttt{REAL8 periodDot}] First time derivative of orbital
-period (dimensionless).
+<dt><tt>REAL8 periodDot</tt></dt><dd> First time derivative of orbital
+period (dimensionless).</dd>
 
-\item[\texttt{REAL8 omega}] Longitude of periapsis, in radians,
-measured at \verb@epoch@.
+<dt><tt>REAL8 omega</tt></dt><dd> Longitude of periapsis, in radians,
+measured at \c epoch.</dd>
 
-\item[\texttt{REAL8 omegaDot}] Rate of advance of periapsis, in
-radians/s.
+<dt><tt>REAL8 omegaDot</tt></dt><dd> Rate of advance of periapsis, in
+radians/s.</dd>
 
-\item[\texttt{REAL8 ecc}] Orbital eccentricity.
+<dt><tt>REAL8 ecc</tt></dt><dd> Orbital eccentricity.</dd>
 
-\item[\texttt{REAL8 gamma}] Post-Keplerian ``gamma'' term, in seconds.
+<dt><tt>REAL8 gamma</tt></dt><dd> Post-Keplerian "gamma" term, in seconds.</dd>
 
-\item[\texttt{REAL8 sin}] Post-Keplerian ``s'' term.
+<dt><tt>REAL8 sin</tt></dt><dd> Post-Keplerian "s" term.</dd>
 
-\item[\texttt{REAL8 r}] Post-Keplerian ``r'' term.
+<dt><tt>REAL8 r</tt></dt><dd> Post-Keplerian "r" term.</dd>
 
-\item[\texttt{CompanionNode *next}] Pointer to next companion's data;
-\verb@NULL@ if there are no further companions in the system.
-\end{description}
+<dt><tt>CompanionNode *next</tt></dt><dd> Pointer to next companion's data;
+\c NULL if there are no further companions in the system.</dd>
+</dl>
 
-******************************************************* </lalLaTeX> */
-
+*/
 typedef struct tagCompanionNode{
   LIGOTimeGPS epoch; /* epoch of periapsis */
   REAL8 x;           /* projected semimajor axis (a/c)sin(i), (s) */
@@ -170,87 +162,83 @@ typedef struct tagCompanionNode{
   struct tagCompanionNode *next; /* pointer to next companion */
 } CompanionNode;
 
-/******************************************************** <lalLaTeX>
+/** Structure \c PulsarCatNode
 
-\subsubsection*{Structure \texttt{PulsarCatNode}}
-\idx[Type]{PulsarCatNode}
-
-\noindent This structure represents a single node in a linked list of
+This structure represents a single node in a linked list of
 pulsar data, storing data for a single pulsar.  The fields are:
 
-\begin{description}
-\item[\texttt{CHAR bname[10]}] The B1950 pulsar name (e.g.\
-\verb@B0021-72C@), terminated by a \verb@'\0'@ character.
+<dl>
+<dt><tt>CHAR bname[10]</tt></dt><dd> The B1950 pulsar name (e.g.\
+<tt>B0021-72C</tt>), terminated by a <tt>'\0'</tt> character.</dd>
 
-\item[\texttt{CHAR jname[12]}] The J2000 pulsar name (e.g.\
-\verb@J0024-7203U@), terminated by a \verb@'\0'@ character.
+<dt><tt>CHAR jname[12]</tt></dt><dd> The J2000 pulsar name (e.g.\
+<tt>J0024-7203U</tt>), terminated by a <tt>'\0'</tt> character.</dd>
 
-\item[\texttt{SkyPosition pos}] The J2000 pulsar position, in radians.
+<dt><tt>SkyPosition pos</tt></dt><dd> The J2000 pulsar position, in radians.</dd>
 
-\item[\texttt{SkyPosition dpos}] Uncertainty in \verb@pos@, in
-radians.
+<dt><tt>SkyPosition dpos</tt></dt><dd> Uncertainty in \c pos, in
+radians.</dd>
 
-\item[\texttt{SkyPosition pm}] The pulsar proper motion, in radians
-per second.
+<dt><tt>SkyPosition pm</tt></dt><dd> The pulsar proper motion, in radians
+per second.</dd>
 
-\item[\texttt{SkyPosition dpm}] Uncertainty in \verb@pm@, in radians
-per second.
+<dt><tt>SkyPosition dpm</tt></dt><dd> Uncertainty in \c pm, in radians
+per second.</dd>
 
-\item[\texttt{LIGOTimeGPS posepoch}] The epoch of the postion
-measurement.
+<dt><tt>LIGOTimeGPS posepoch</tt></dt><dd> The epoch of the postion
+measurement.</dd>
 
-\item[\texttt{REAL8Vector *f}] The pulsar spin frequency
-\verb@f->data[0]@, and its time derivatives
-\verb@f->data[1]@$\ldots$\verb@f->data[@$k$\verb@]@$\ldots$, in units
-of Hz${}^{k+1}$.
+<dt><tt>REAL8Vector *f</tt></dt><dd> The pulsar spin frequency
+<tt>f->data[0]</tt>, and its time derivatives
+<tt>f->data[1]</tt>\f$\ldots\f$<tt>f->data[</tt>\f$k\f$<tt>]</tt>\f$\ldots\f$, in units
+of Hz\f${}^{k+1}\f$.</dd>
 
-\item[\texttt{REAL8Vector *df}] The uncertainty in the frequency and
-its time derivatives, in the same units.
+<dt><tt>REAL8Vector *df</tt></dt><dd> The uncertainty in the frequency and
+its time derivatives, in the same units.</dd>
 
-\item[\texttt{LIGOTimeGPS fepoch}] The epoch of the spin and phase
-measurements.
+<dt><tt>LIGOTimeGPS fepoch</tt></dt><dd> The epoch of the spin and phase
+measurements.</dd>
 
-\item[\texttt{REAL4 dist}] Distance to pulsar, in m.  If negative,
-only a lower or upper limit has been established.
+<dt><tt>REAL4 dist</tt></dt><dd> Distance to pulsar, in m.  If negative,
+only a lower or upper limit has been established.</dd>
 
-\item[\texttt{REAL4 dmin}] Lower-limit distance to pulsar, in m.  If
-negative, no lower limit has been specified.
+<dt><tt>REAL4 dmin</tt></dt><dd> Lower-limit distance to pulsar, in m.  If
+negative, no lower limit has been specified.</dd>
 
-\item[\texttt{REAL4 dmax}] Upper-limit distance to pulsar, in m.  If
-negative, no upper limit has been specified.
+<dt><tt>REAL4 dmax</tt></dt><dd> Upper-limit distance to pulsar, in m.  If
+negative, no upper limit has been specified.</dd>
 
-\item[\texttt{CHAR lcode}] Reliability of distance measurement on low
-side, from \verb@'a'@ (best) to \verb@'d'@ (worst).
+<dt><tt>CHAR lcode</tt></dt><dd> Reliability of distance measurement on low
+side, from <tt>'a'</tt> (best) to <tt>'d'</tt> (worst).</dd>
 
-\item[\texttt{CHAR ucode}] Reliability of distance measurement on high
-side, from \verb@'a'@ (best) to \verb@'d'@ (worst).
+<dt><tt>CHAR ucode</tt></dt><dd> Reliability of distance measurement on high
+side, from <tt>'a'</tt> (best) to <tt>'d'</tt> (worst).</dd>
 
-\item[\texttt{CompanionNode *companion}] Pointer to head of linked
+<dt><tt>CompanionNode *companion</tt></dt><dd> Pointer to head of linked
 list of orbital parameters for other components of a multiple system;
-\verb@NULL@ if the pulsar has no known companion.  See below for the
-contents of these data nodes.
+\c NULL if the pulsar has no known companion.  See below for the
+contents of these data nodes.</dd>
 
-\item[\texttt{UINT2 typecode}] Binary code for additional pulsar
-properties.  The typecode is the logical ```or'' (i.e.\ the numerical
+<dt><tt>UINT2 typecode</tt></dt><dd> Binary code for additional pulsar
+properties.  The typecode is the logical "`or" (i.e.\ the numerical
 sum) of the following property codes:
-\begin{itemize}
-\item[1] Globular cluster association
-\item[2] Supernova remnant association
-\item[4] Glitches in period
-\item[8] Binary or multiple pulsar
-\item[16] Millisecond pulsar
-\item[32] Recycled pulsar
-\item[64] Radio interpulse
-\item[128] Optical, xray, or gamma-ray pulsed emission
-\end{itemize}
+<ul></dd>
+<dt>1</dt><dd> Globular cluster association</dd>
+<dt>2</dt><dd> Supernova remnant association</dd>
+<dt>4</dt><dd> Glitches in period</dd>
+<dt>8</dt><dd> Binary or multiple pulsar</dd>
+<dt>16</dt><dd> Millisecond pulsar</dd>
+<dt>32</dt><dd> Recycled pulsar</dd>
+<dt>64</dt><dd> Radio interpulse</dd>
+<dt>128</dt><dd> Optical, xray, or gamma-ray pulsed emission
+</ul></dd>
 
-\item[\texttt{PulsarCatNode *next}] Next pulsar in the catalogue's
-linked list; \verb@NULL@ if this is the last (or only) pulsar in the
-list.
-\end{description}
+<dt><tt>PulsarCatNode *next</tt></dt><dd> Next pulsar in the catalogue's
+linked list; \c NULL if this is the last (or only) pulsar in the
+list.</dd>
+</dl>
 
-******************************************************* </lalLaTeX> */
-
+*/
 typedef struct tagPulsarCatNode {
   CHAR bname[10];   /* B1950 pulsar name */
   CHAR jname[12];   /* J2000 pulsar name */
@@ -272,55 +260,30 @@ typedef struct tagPulsarCatNode {
   struct tagPulsarCatNode *next; /* next node in list */
 } PulsarCatNode;
 
-/******************************************************** <lalLaTeX>
+/** Enumeration \c PulsarCatIndex
 
-\subsubsection*{Enumeration \texttt{PulsarCatIndex}}
-\idx[Type]{PulsarCatIndex}
-
-\noindent This enumerated type is used to give a default ordering to
+This enumerated type is used to give a default ordering to
 the fields in the pulsar catalogue.  This is used, for instance, when
 reading pulsar catalogue data from a file.  The values are of the form
-\verb@PULSARCATINDEX_@$\langle\mathrm{label}\rangle$, where the
-(currently) allowed values of $\langle\mathrm{label}\rangle$ are:
+\c PULSARCATINDEX_\f$\langle\mathrm{label}\rangle\f$, where the
+(currently) allowed values of \f$\langle\mathrm{label}\rangle\f$ are:
 
-\idx[Constant]{PULSARCATINDEX\_NAME}
-\idx[Constant]{PULSARCATINDEX\_RAJ}
-\idx[Constant]{PULSARCATINDEX\_RAJERR}
-\idx[Constant]{PULSARCATINDEX\_DECJ}
-\idx[Constant]{PULSARCATINDEX\_DECJERR}
-\idx[Constant]{PULSARCATINDEX\_PMRA}
-\idx[Constant]{PULSARCATINDEX\_PMRAERR}
-\idx[Constant]{PULSARCATINDEX\_PMDEC}
-\idx[Constant]{PULSARCATINDEX\_PMDECERR}
-\idx[Constant]{PULSARCATINDEX\_POSEPOCH}
-\idx[Constant]{PULSARCATINDEX\_F}
-\idx[Constant]{PULSARCATINDEX\_FERR}
-\idx[Constant]{PULSARCATINDEX\_F1}
-\idx[Constant]{PULSARCATINDEX\_F1ERR}
-\idx[Constant]{PULSARCATINDEX\_F2}
-\idx[Constant]{PULSARCATINDEX\_F2ERR}
-\idx[Constant]{PULSARCATINDEX\_PEPOCH}
-\idx[Constant]{PULSARCATINDEX\_Dist}
-\idx[Constant]{PULSARCATINDEX\_NUM}
-\medskip\noindent
-\begin{tabular}{ll@{\qquad}ll}
-\verb@NAME@  & pulsar name & & \\
-\verb@RAJ@   & J2000 right ascension & \verb@RAJERR@  & its uncertainty \\
-\verb@DECJ@  & J2000 declination     & \verb@DECJERR@ & its uncertainty \\
-\verb@PMRA@  & right ascension proper motion & \verb@PMRAERR@  & its uncertainty \\
-\verb@PMDEC@ & declination proper motion     & \verb@PMDECERR@ & its uncertainty \\
-\verb@POSEPOCH@ & position measurement epoch & & \\
-\verb@F@  & spin frequency                   & \verb@FERR@  & its uncertainty \\
-\verb@F1@ & spin frequency derivative        & \verb@F1ERR@ & its uncertainty \\
-\verb@F1@ & spin frequency second derivative & \verb@F2ERR@ & its uncertainty \\
-\verb@PEPOCH@ & spin measurement epoch & & \\
-\verb@Dist@ & distance & & \\
-\verb@NUM@ & number of enum values & &
-\end{tabular}
+<table><tr><td>
+\c NAME</td><td>pulsar name</td><td></td><td></td></tr>
+<tr><td>\c RAJ</td><td>J2000 right ascension</td><td>\c RAJERR</td><td>its uncertainty</td></tr>
+<tr><td>\c DECJ</td><td>J2000 declination</td><td>\c DECJERR</td><td>its uncertainty</td></tr>
+<tr><td>\c PMRA</td><td>right ascension proper motion</td><td>\c PMRAERR</td><td>its uncertainty</td></tr>
+<tr><td>\c PMDEC</td><td>declination proper motion</td><td>\c PMDECERR</td><td>its uncertainty</td></tr>
+<tr><td>\c POSEPOCH</td><td>position measurement epoch</td><td></td><td></td></tr>
+<tr><td>\c F</td><td>spin frequency</td><td>\c FERR</td><td>its uncertainty</td></tr>
+<tr><td>\c F1</td><td>spin frequency derivative</td><td>\c F1ERR</td><td>its uncertainty</td></tr>
+<tr><td>\c F1</td><td>spin frequency second derivative</td><td>\c F2ERR</td><td>its uncertainty</td></tr>
+<tr><td>\c PEPOCH</td><td>spin measurement epoch</td><td></td><td></td></tr>
+<tr><td>\c Dist</td><td>distance</td><td></td><td></td></tr>
+<tr><td>\c NUM</td><td>number of enum values</td><td></td><td>
+</td></tr></table>
 
-
-******************************************************* </lalLaTeX> */
-
+*/
 typedef enum {
   PULSARCATINDEX_NAME,
   PULSARCATINDEX_RAJ,   PULSARCATINDEX_RAJERR,
@@ -336,16 +299,11 @@ typedef enum {
   PULSARCATINDEX_NUM
 } PulsarCatIndex;
 
-/* <lalLaTeX>
-\vfill{\footnotesize\input{PulsarCatHV}}
-</lalLaTeX> */
-
-
 /* Function prototypes. */
 
-/* <lalLaTeX>
-\newpage\input{PulsarCatC}
-</lalLaTeX> */
+
+
+
 void
 LALUpdatePulsarCatNode( LALStatus      *status,
 			PulsarCatNode  *node,
@@ -362,9 +320,9 @@ void
 LALDestroyPulsarCat( LALStatus     *status,
 		     PulsarCatNode **head );
 
-/* <lalLaTeX>
-\newpage\input{PulsarCatInputC}
-</lalLaTeX> */
+
+
+
 void
 LALReadPulsarCatHead( LALStatus *status,
 		      INT4      indx[PULSARCATINDEX_NUM],
@@ -376,9 +334,9 @@ LALReadPulsarCatLine( LALStatus     *status,
 		      TokenList     *list,
 		      INT4          indx[PULSARCATINDEX_NUM] );
 
-/* <lalLaTeX>
-\newpage\input{PulsarCatTestC}
-</lalLaTeX> */
+
+
+
 
 #if 0
 { /* so that editors will match succeeding brace */

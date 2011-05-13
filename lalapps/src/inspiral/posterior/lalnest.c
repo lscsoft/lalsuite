@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <getopt.h>
+#include <sys/stat.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -221,6 +222,7 @@ void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT);
 void NestInitInj(LALMCMCParameter *parameter, void *iT);
 void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT);
 void initialise(int argc, char *argv[]);
+void PrintSNRsToFile(REAL8* SNRs,SimInspiralTable *inj_table,LALMCMCInput *inputMCMC);
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length)
 {
@@ -228,15 +230,16 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 	FrCache *cache = NULL;
 	FrStream *stream = NULL;
 	REAL8TimeSeries *out = NULL;
-	fprintf(stdout,"Attempting to open %s at time %lf\n",cachefile,start.gpsSeconds+1e-9*start.gpsNanoSeconds);
+	memset(&status,0,sizeof(LALStatus));
+    fprintf(stdout,"Attempting to open %s at time %lf\n",cachefile,start.gpsSeconds+1e-9*start.gpsNanoSeconds);
 	cache  = XLALFrImportCache( cachefile );
 	if(cache==NULL) {fprintf(stderr,"ERROR: Unable to import cache file %s\n",cachefile); exit(-1);}
 	stream = XLALFrCacheOpen( cache );
 	if(stream==NULL) {fprintf(stderr,"ERROR: Unable to open stream from frame cache file\n"); exit(-1);}
 	out = XLALFrInputREAL8TimeSeries( stream, channel, &start, length , 0 );
 	if(out==NULL) fprintf(stderr,"ERROR: unable to read channel %s from %s at time %i\nCheck the specified data duration is not too long\n",channel,cachefile,start.gpsSeconds);
-	LALDestroyFrCache(&status,&cache);
-	LALFrClose(&status,&stream);
+	LAL_CALL(LALDestroyFrCache(&status,&cache),&status);
+	LAL_CALL(LALFrClose(&status,&stream),&status);
 	return out;
 }
 
@@ -651,7 +654,9 @@ int main( int argc, char *argv[])
 	REAL4 TSoffset;
 	LIGOTimeGPS realstart,segmentStart;
 	REAL8 networkSNR=0.0;
-
+    REAL8 * SNRs=NULL;
+    SNRs=calloc(nIFO+1 ,sizeof(REAL8));
+    
 	lal_errhandler = LAL_ERR_EXIT;
         set_debug_level( "33" );
 
@@ -1047,6 +1052,7 @@ int main( int argc, char *argv[])
 			LALDestroyREAL4FFTPlan(&status,&inj_plan);
 
 			networkSNR+=SNR;
+            SNRs[i]=sqrt(SNR);
 			SNR=sqrt(SNR);
 
 			/* Actually inject the waveform */
@@ -1076,6 +1082,12 @@ int main( int argc, char *argv[])
 		}
 
 	} /* End loop over IFOs */
+    
+    if(NULL!=injXMLFile && fakeinj==0) {
+    /* Print the SNRs in a file */
+    PrintSNRsToFile(SNRs,injTable,&inputMCMC);
+    }
+    
 	/* Data is now all in place in the inputMCMC structure for all IFOs and for one trigger */
 	XLALDestroyRandomParams(datarandparam);
 
@@ -1803,3 +1815,34 @@ int checkParamInList(const char *list, const char *param)
 	return 1;
 }
 
+void PrintSNRsToFile(REAL8* SNRs,SimInspiralTable *inj_table,LALMCMCInput *inputMCMC){
+/* open the SNR file */
+    struct stat st;
+    char SnrName[70];
+    char ListOfIFOs[10];
+    REAL8 NetSNR=0.0;
+    sprintf(ListOfIFOs,"");    
+
+    for (UINT4 det_i=0;det_i<nIFO;det_i++){
+         sprintf(ListOfIFOs,"%s%s",ListOfIFOs,inputMCMC->ifoID[det_i]);
+        }
+    
+    if (stat("./SNR",&st) == 0){
+        sprintf(SnrName,"./SNR/snr_%s_%10.1f.dat",ListOfIFOs,(REAL8) inj_table->geocent_end_time.gpsSeconds+ (REAL8) inj_table->geocent_end_time.gpsNanoSeconds*1.0e-9);
+    }
+    else {
+        sprintf(SnrName,"snr_%s_%10.1f.dat",ListOfIFOs,(REAL8) inj_table->geocent_end_time.gpsSeconds+ (REAL8) inj_table->geocent_end_time.gpsNanoSeconds*1.0e-9);
+    }
+    
+    FILE *snrout=fopen(SnrName,"w");
+    for (UINT4 det_i=0;det_i<nIFO;det_i++){
+        fprintf(snrout,"%s:\t",inputMCMC->ifoID[det_i]);
+        fprintf(snrout,"%4.2f\n",SNRs[det_i]);
+        NetSNR+=(SNRs[det_i]*SNRs[det_i]);
+    }		
+    if (nIFO>1){  fprintf(snrout,"Network:\t");
+    fprintf(snrout,"%4.2f\n",sqrt(NetSNR));}
+    fprintf(snrout,"\n");
+    fclose(snrout);
+
+}

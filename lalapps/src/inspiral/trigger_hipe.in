@@ -107,6 +107,15 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
   else:
     jitter_sigma_deg = None
 
+
+  # check if the specific Fermi systematic error needs to 
+  # be added to the location jittering
+  if cpinj.has_option(injrun, "jitter-skyloc-fermi"):
+    jitter_skyloc_fermi = cpinj.getboolean(injrun, "jitter-skyloc-fermi")
+    cpinj.remove_option(injrun, "jitter-skyloc-fermi")
+  else:
+    jitter_skyloc_fermi = False
+
   # check if we should align the total angular momentum
   if cpinj.has_option(injrun, "align-total-spin"):
     align_total_spin = cpinj.getboolean(injrun, "align-total-spin")
@@ -152,9 +161,12 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
   if jitter_sigma_deg is not None:
     # rename the original, then have ligolw_cbc_jitter_skyloc create a new one
     os.rename(new_injFile, new_injFile + ".prejitter")
-    cmd = ["ligolw_cbc_jitter_skyloc", "--jitter-sigma-deg",
+    cmd = ["ligolw_cbc_jitter_skyloc"]
+    if jitter_skyloc_fermi:
+      cmd.append("--apply-fermi-error")
+    cmd.extend(["--jitter-sigma-deg",
       str(jitter_sigma_deg), "--output-file", new_injFile,
-      new_injFile + ".prejitter"]
+      new_injFile + ".prejitter"])
     if verbose:
       print " ".join(cmd)
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -220,8 +232,6 @@ class hipe_run(object):
     ## Determine arguments to inspiral_hipe
     self._hipe_args = ["--output-segs", "--log-path=%s" % log_path,
       "--config-file=%s", "--write-script"]
-    if do_coh_PTF:
-      self._hipe_args.append("--ringdown")
 
     # decide what stages to run
     self.determine_stages(only_run, dont_run)
@@ -323,7 +333,7 @@ class hipe_run(object):
       show_stdout=False, show_command=self._verbose)
 
     # create link to datafind directory's cache directory
-    if self._stages != ["datafind"]:
+    if not "datafind" in self._stages:
       if os.path.isdir("cache") and not os.path.islink("cache"):
         os.rmdir("cache")
       if not os.path.exists("cache"):
@@ -745,11 +755,14 @@ for grb in ext_trigs:
 
   if opts.do_datafind:
     if opts.verbose: print "Creating datafind DAG"
+    datafind_run = ["datafind"]
+    if opts.do_coh_PTF:
+      datafind_run.append("template-bank")
     datafind_dag = hipe_run(idirectory + "/datafind", cp, grb_ifolist,
                             opts.log_path, source_file, "datafind",
                             offSourceSegment,
                             usertag=idirectory + "_DATAFIND",
-                            verbose=opts.verbose, only_run=["datafind"],
+                            verbose=opts.verbose, only_run=datafind_run,
                             do_coh_PTF=opts.do_coh_PTF)
     datafind_node = datafind_dag.finalize(uberdag=uberdag, parent=None)
   else:

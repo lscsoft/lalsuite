@@ -17,63 +17,59 @@
 *  MA  02111-1307  USA
 */
 
-/************************** <lalVerbatim file="GenerateSpinOrbitCWCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-
-\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
-
-\subsection{Module \texttt{GenerateSpinOrbitCW.c}}
-\label{ss:GenerateSpinOrbitCW.c}
+\heading{Module \ref GenerateSpinOrbitCW.c}
+\latexonly\label{ss_GenerateSpinOrbitCW_c}\endlatexonly
 
 Computes a spindown- and Doppler-modulated continuous waveform.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{GenerateSpinOrbitCWCP}
-\idx{LALGenerateSpinOrbitCW()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+
+
+
+\heading{Description}
 
 This function computes a quaiperiodic waveform using the spindown and
-orbital parameters in \verb@*params@, storing the result in
-\verb@*output@.
+orbital parameters in <tt>*params</tt>, storing the result in
+<tt>*output</tt>.
 
-In the \verb@*params@ structure, the routine uses all the ``input''
-fields specified in \verb@GenerateSpinOrbitCW.h@, and sets all of the
-``output'' fields.  If \verb@params->f@=\verb@NULL@, no spindown
-modulation is performed.  If \verb@params->rPeriNorm@=0, no Doppler
+In the <tt>*params</tt> structure, the routine uses all the "input"
+fields specified in \ref GenerateSpinOrbitCW.h, and sets all of the
+"output" fields.  If <tt>params->f</tt>=\c NULL, no spindown
+modulation is performed.  If <tt>params->rPeriNorm</tt>=0, no Doppler
 modulation is performed.
 
-In the \verb@*output@ structure, the field \verb@output->h@ is
-ignored, but all other pointer fields must be set to \verb@NULL@.  The
-function will create and allocate space for \verb@output->a@,
-\verb@output->f@, and \verb@output->phi@ as necessary.  The
-\verb@output->shift@ field will remain set to \verb@NULL@.
+In the <tt>*output</tt> structure, the field <tt>output->h</tt> is
+ignored, but all other pointer fields must be set to \c NULL.  The
+function will create and allocate space for <tt>output->a</tt>,
+<tt>output->f</tt>, and <tt>output->phi</tt> as necessary.  The
+<tt>output->shift</tt> field will remain set to \c NULL.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-This routine calls \verb@LALGenerateCircularSpinOrbitCW()@,
-\verb@LALGenerateCircularSpinOrbitCW()@,
-\verb@LALGenerateCircularSpinOrbitCW()@, or
-\verb@LALGenerateCircularSpinOrbitCW()@, depending on the value of
-\verb@params->oneMinusEcc@.  See the other modules under
-\verb@GenerateSpinOrbitCW.h@ for descriptions of these routines'
+This routine calls <tt>LALGenerateCircularSpinOrbitCW()</tt>,
+<tt>LALGenerateCircularSpinOrbitCW()</tt>,
+<tt>LALGenerateCircularSpinOrbitCW()</tt>, or
+<tt>LALGenerateCircularSpinOrbitCW()</tt>, depending on the value of
+<tt>params->oneMinusEcc</tt>.  See the other modules under
+\ref GenerateSpinOrbitCW.h for descriptions of these routines'
 algorithms.
 
-If \verb@params->rPeriNorm@=0, this routine will call
-\verb@LALGenerateTaylorCW()@ to generate the waveform.  It creates a
-\verb@TaylorCWParamStruc@ from the values in \verb@*params@, adjusting
-the values of \verb@params->phi0@, \verb@params->f0@, and
-\verb@params->f@ from the reference time \verb@params->spinEpoch@ to
-the time \verb@params->epoch@, as follows: Let $\Delta
-t=t^{(2)}-t^{(1)}$ be the time between the old epoch $t^{(1)}$ and the
-new one $t^{(2)}$.  Then the phase, base frequency, and spindown
+If <tt>params->rPeriNorm</tt>=0, this routine will call
+<tt>LALGenerateTaylorCW()</tt> to generate the waveform.  It creates a
+\c TaylorCWParamStruc from the values in <tt>*params</tt>, adjusting
+the values of <tt>params->phi0</tt>, <tt>params->f0</tt>, and
+<tt>params->f</tt> from the reference time <tt>params->spinEpoch</tt> to
+the time <tt>params->epoch</tt>, as follows: Let \f$\Delta
+t=t^{(2)}-t^{(1)}\f$ be the time between the old epoch \f$t^{(1)}\f$ and the
+new one \f$t^{(2)}\f$.  Then the phase, base frequency, and spindown
 parameters for the new epoch are:
-\begin{eqnarray}
+\f{eqnarray}{
 \phi_0^{(2)} & = & \phi_0^{(1)} + 2\pi f_0^{(1)}t \left( 1 +
 	\sum_{k=1}^N \frac{1}{k+1}f_k^{(1)} \Delta t^k \right)
 	\nonumber\\
@@ -83,24 +79,24 @@ f_0^{(2)} & = & f_0^{(1)} \left( 1 +
 f_k^{(2)} & = & \frac{f_0^{(1)}}{f_0^{(2)}} \left( f_k^{(1)} +
 	\sum_{j=k+1}{N} {j\choose k} f_j^{(1)}\Delta t^{j-k} \right)
 	\nonumber
-\end{eqnarray}
-The phase function $\phi(t)=\phi_0^{(i)}+2\pi
+\f}
+The phase function \f$\phi(t)=\phi_0^{(i)}+2\pi
 f_0^{(i)}\left[t-t^{(i)}+\sum_{k=1}^N
-\frac{f_k^{(i)}}{k+1}\left(t-t^{(i)}\right)^{k+1}\right]$ then has the
-same functional dependence on $t$ for either $i=1$ or~2.
+\frac{f_k^{(i)}}{k+1}\left(t-t^{(i)}\right)^{k+1}\right]\f$ then has the
+same functional dependence on \f$t\f$ for either \f$i=1\f$ or~2.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALDCreateVector()                      LALDDestroyVector()
 LALGenerateCircularSpinOrbitCW()        LALGenerateEllipticSpinOrbitCW()
 LALGenerateTaylorCW()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{GenerateSpinOrbitCWCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -131,12 +127,12 @@ choose( UINT4 a, UINT4 b )
 }
 
 
-/* <lalVerbatim file="GenerateSpinOrbitCWCP"> */
+
 void
 LALGenerateSpinOrbitCW( LALStatus             *stat,
 			CoherentGW            *output,
 			SpinOrbitCWParamStruc *params )
-{ /* </lalVerbatim> */
+{
 
   INITSTATUS( stat, "LALGenerateSpinOrbitCW", GENERATESPINORBITCWC );
   ATTATCHSTATUSPTR( stat );

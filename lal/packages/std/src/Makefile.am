@@ -14,9 +14,9 @@ libstd_la_SOURCES = \
 	StringToken.c \
 	XLALError.c
 
+noinst_HEADERS = Grid_source.c
+
 EXTRA_DIST = \
-	Grid.m4 \
-	LALCreateDestroyGrid.m4 \
 	LALPrimer.c
 
 EXTRA_TEXSOURCES = LALPrimer.c
@@ -26,8 +26,5 @@ DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = Grid.c
 
 dvi-local: .dvi-dep
-
-Grid.c: Grid.m4 LALCreateDestroyGrid.m4
-	cd $(srcdir) && @M4@ Grid.m4 > Grid.c
 
 @DVIMKFILE@

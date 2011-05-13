@@ -140,6 +140,45 @@ XLALOrientNRWave(
   /*   return( strain ); */
 }
 
+/** Takes a (sky averaged) numerical relativity waveform and returns the
+ * waveform appropriate for given coalescence phase and inclination angles */
+void
+XLALOrientNRWaveTimeSeriesREAL8(
+    REAL8TimeSeries        *plus,
+    REAL8TimeSeries        *cross,
+    UINT4                  modeL,          /**< L                       */
+    INT4                   modeM,          /**< M                       */
+    REAL4                  inclination,    /**< binary inclination      */
+    REAL4                  coa_phase       /**< binary coalescence phase*/)
+{
+  COMPLEX16  MultSphHarm;
+  REAL4      tmp1, tmp2;
+  UINT4      vecLength, k;
+
+  vecLength = plus->data->length;
+
+  /* Calculating the (2,2) Spherical Harmonic */
+  /* need some error checking */
+  XLALSphHarm( &MultSphHarm, modeL, modeM, inclination, coa_phase );
+
+  /* Filling the data vector with the data multiplied by the Harmonic */
+  for ( k = 0; k < vecLength; k++)
+  {
+    tmp1 = plus->data->data[k];
+    tmp2 = cross->data->data[k];
+
+    plus->data->data[k] =
+      (tmp1 * MultSphHarm.re) +
+      (tmp2 * MultSphHarm.im);
+
+    cross->data->data[k] =
+      (tmp2 * MultSphHarm.re) -
+      (tmp1 * MultSphHarm.im);
+  }
+
+  return;
+}
+
 
 /** Takes a (sky averaged) numerical relativity waveform and returns the
  * waveform appropriate for given coalescence phase and inclination angles */
@@ -332,6 +371,74 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
 }
 
 
+/** Function for interpolating time series to a given sampling rate.
+  Input vector is destroyed and a new vector is allocated.
+  */
+  REAL8TimeSeries *
+XLALInterpolateNRWaveREAL8( REAL8TimeSeries *in,           /**< input strain time series */
+    INT4            sampleRate     /**< sample rate of time series */)
+{
+
+  REAL8TimeSeries *ret=NULL;
+  REAL8 deltaTin, deltaTout, r, y_1, y_2;
+  REAL8 tObs; /* duration of signal */
+  UINT4 k, lo, numPoints;
+
+  deltaTin = in->deltaT;
+  tObs = deltaTin * in->data->length;
+
+  /* length of output vector */
+  numPoints = (UINT4) (sampleRate * tObs);
+
+  /* allocate memory */
+  ret = LALCalloc(1, sizeof(*ret));
+  if (!ret)
+  {
+    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+  }
+
+  ret->data = XLALCreateREAL8Vector( numPoints );
+  if (! ret->data)
+  {
+    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+  }
+
+  ret->deltaT = 1./sampleRate;
+  deltaTout = ret->deltaT;
+
+  /* copy stuff from in which should be the same */
+  ret->epoch = in->epoch;
+  ret->f0 = in->f0;
+  ret->sampleUnits = in->sampleUnits;
+  strcpy(ret->name, in->name);
+
+  /* go over points of output vector and interpolate linearly
+     using closest points of input */
+  for (k = 0; k < numPoints; k++) {
+
+    lo = (UINT4)( k*deltaTout / deltaTin);
+
+    /* y_1 and y_2 are the input values at x1 and x2 */
+    /* here we need to make sure that we don't exceed
+       bounds of input vector */
+    if ( lo < in->data->length - 1) {
+      y_1 = in->data->data[lo];
+      y_2 = in->data->data[lo+1];
+
+      /* we want to calculate y_2*r + y_1*(1-r) where
+         r = (x-x1)/(x2-x1) */
+      r = k*deltaTout / deltaTin - lo;
+
+      ret->data->data[k] = y_2 * r + y_1 * (1 - r);
+    }
+    else {
+      ret->data->data[k] = 0.0;
+    }
+  }
+
+  /* destroy input vector */
+  return ret;
+}
 
 int compare_abs_float(const void *a, const void *b){
 

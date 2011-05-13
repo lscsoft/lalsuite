@@ -151,12 +151,11 @@ static void FollowLineCase(INT4, UINT4 *,REAL8, REAL8, REAL8,REAL8,INT4,INT4 *,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/*  ***************************** <lalVerbatim file="ConstructPLUTD"> */
 void LALHOUGHConstructPLUT(LALStatus       *status,
 			   HOUGHptfLUT     *lut,
 			   HOUGHPatchGrid  *patch,
 			   HOUGHParamPLUT  *par)
-{ /*  ************************************************ </lalVerbatim> */
+{
 
   INT8    f0Bin;
 

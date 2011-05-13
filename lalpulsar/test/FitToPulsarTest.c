@@ -17,53 +17,51 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="FitToPulsarCV">
-Author: Dupuis, R. J.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Dupuis, R. J.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{FitToPulsar.c}}
+\heading{Module \ref FitToPulsar.c}
 Calculates the best fit parameters for a GW signal originating from a
 non-precessing pulsar.
 
-\subsubsection*{Prototypes}
-\idx{LALCoarseFitToPulsar()}
-\idx{LALFineFitToPulsar}
-\input{FitToPulsarCP}
-\begin{verbatim}
+\heading{Prototypes}
+
+
+\code
 void
 LALFineFitToPulsar      (            LALStatus            *status,
                                 FineFitOutput        *output,
                                 FineFitInput         *input,
                                 FineFitParams        *params )
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
-This routine calculates the best fit of parameters by minimizing $\chi^2$ by going through
-fixed grid for $\iota, \psi, \phi_{0}$ and  $h_{0}$.  The best fit parameters
-returned by \texttt{LALCoarseFitToPulsar()} are then used as initial parameters for
-\texttt{LALFineFitToPulsar()}.
+This routine calculates the best fit of parameters by minimizing \f$\chi^2\f$ by going through
+fixed grid for \f$\iota, \psi, \phi_{0}\f$ and  \f$h_{0}\f$.  The best fit parameters
+returned by <tt>LALCoarseFitToPulsar()</tt> are then used as initial parameters for
+<tt>LALFineFitToPulsar()</tt>.
 
-The function \texttt{LALFineFitToPulsar()} refines the fit using the Levenberg-Marquardt method for nonlinear fitting. This is
-done by calculating the Hessian and the gradient of $\chi^2$ ...
+The function <tt>LALFineFitToPulsar()</tt> refines the fit using the Levenberg-Marquardt method for nonlinear fitting. This is
+done by calculating the Hessian and the gradient of \f$\chi^2\f$ ...
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 To be completed.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALSCreateVector()
 LALSDestroyVector()
 LALComputeDetAMResponse()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FitToPulsarCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
@@ -88,14 +86,14 @@ NRCSID( FITTOPULSARC, "$Id$" );
 
 /******* DEFINE GLOBAL FUNCTIONS ************/
 
-/* <lalVerbatim file="FitToPulsarCP"> */
+
 void
 LALCoarseFitToPulsar    (       LALStatus            *status,
                                 CoarseFitOutput      *output,
                                 CoarseFitInput       *input,
                                 CoarseFitParams      *params )
 
-/* </lalVerbatim> */
+
 {
   /******* DECLARE VARIABLES ************/
 
@@ -294,37 +292,37 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
 
 
 }
-/******************************** <lalVerbatim file="FitToPulsarTestCV">
-Author: Dupuis, R.J.
-$Id$
-********************************* </lalVerbatim> */
+/**
+\author Dupuis, R.J.
+\file
+*/
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{FitToPulsarTest.c}}
+/**
+\heading{Program \ref FitToPulsarTest.c}
 
 This test program demonstrates the correct usage of the functions
-\texttt{LALCoarseFitToPulsar} and \texttt{LALFineFitToPulsar}.
+\c LALCoarseFitToPulsar and \c LALFineFitToPulsar.
 
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 FitToPulsarTest
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 To be completed.
-\subsubsection*{Exit codes}
-\input{FitToPulsarTestCE}
+\heading{Exit codes}
 
-\subsubsection*{Uses}
-\begin{verbatim}
+
+\heading{Uses}
+\code
 LALCoarseFitToPulsar()
 LALFineFitToPulsar()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FitToPulsarCV}}
-******************************************************* </lalLaTeX> */
+
+*/
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
@@ -341,7 +339,7 @@ NRCSID( FitToPulsarTestC, "$Id$" );
 
 /******* DEFINE LOCAL CONSTANTS AND MACROS ************/
 
-/***************************** <lalErrTable file="FitToPulsarTestCE"> */
+/**\name Error Codes */ /*@{*/
 #define FITTOPULSARTESTC_ENOM 0
 #define FITTOPULSARTESTC_ECHK 1
 #define FITTOPULSARTESTC_EFLS 2
@@ -349,7 +347,7 @@ NRCSID( FitToPulsarTestC, "$Id$" );
 #define FITTOPULSARTESTC_MSGENOM "Nominal exit"
 #define FITTOPULSARTESTC_MSGECHK "Error checking failed to catch bad data"
 #define FITTOPULSARTESTC_MSGEFLS "Incorrect answer for valid data"
-/***************************** </lalErrTable> */
+/*@}*/
 
 /* might also wish to define parameters and expected results for test
    cases here, for example */

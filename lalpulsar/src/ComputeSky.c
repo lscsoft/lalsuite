@@ -17,54 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*********************************** <lalVerbatim file="ComputeSkyCV">
-Author:  Berukoff, S.J., Papa, M.A.
-$Id$
-************************************ </lalVerbatim> */
-
-/* <lalLaTeX>
-\subsection{Module \texttt{ComputeSky.c}}\label{ss:ComputeSky.c}
+/**
+\author  Berukoff, S.J., Papa, M.A.
+\file
+\ingroup pulsarTODO
+\subsection{Module \ref ComputeSky.c}\label{ss:ComputeSky.c}
 Computes the phase model coefficients necessary for a successful demodulation.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{ComputeSkyCP}
-\index{\texttt{ComputeSky()}}
-
-\subsubsection*{Description}
-Given an input index which refers to the sky patch under consideration, this
-routine returns the phase model coefficients $A_{s\alpha}$ and $B_{s\alpha}$
-which are needed to correctly account for the phase variance of a signal over
-time.  The \verb@CSParams@ parameter structure contains relevant information
-for this routine to properly run.  In particular, it contains an array of
-timestamps in \verb@LIGOTimeGPS@ format, which are the GPS times of the first
-data from each SFT.  The \verb@input@ is an \verb@INT4@ variable
-\verb@iSkyCoh@, which is the index of the sky patch under consideration.  For
-each sky patch, this code needs to be run once; the necessary phase model
-coefficients are calculated, and can then be applied to the relevant spindown
-parameter sets one is using in their search.
-
-\subsubsection*{Algorithm}
-The routine uses a simplistic nested for-loop structure.  The outer loop is
-over the number of SFTs in the observation timescale; this accounts for the
-temporal variability of the phase model coefficients.  The inner loop is over
-the number of spindown parameters in one set.  Inside the inner loop, the
-values are calculated using the analytical formulae given in the
-\verb@ComputeSky.h@ documentation.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-The reference-time, at which the pulsar spin-parameters are defined, is
-taken to be the start-time *INTERPRETED* as an SSB time (i.e. no translation
-is done, the times are numerically equal!).
-
-\vfill{\footnotesize\input{ComputeSkyCV}}
-
-</lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALConstants.h>
@@ -75,13 +35,39 @@ NRCSID (COMPUTESKYC, "$Id ComputeSky.c $");
 static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
 
-/* <lalVerbatim file="ComputeSkyCP"> */
+
+/** Given an input index which refers to the sky patch under consideration, this
+    routine returns the phase model coefficients \f$A_{s\alpha}\f$ and \f$B_{s\alpha}\f$
+    which are needed to correctly account for the phase variance of a signal over
+    time.  The \c CSParams parameter structure contains relevant information
+    for this routine to properly run.  In particular, it contains an array of
+    timestamps in \c LIGOTimeGPS format, which are the GPS times of the first
+    data from each SFT.  The \c input is an \c INT4 variable
+    \c iSkyCoh, which is the index of the sky patch under consideration.  For
+    each sky patch, this code needs to be run once; the necessary phase model
+    coefficients are calculated, and can then be applied to the relevant spindown
+    parameter sets one is using in their search.
+
+    \heading{Algorithm}
+    The routine uses a simplistic nested for-loop structure.  The outer loop is
+    over the number of SFTs in the observation timescale; this accounts for the
+    temporal variability of the phase model coefficients.  The inner loop is over
+    the number of spindown parameters in one set.  Inside the inner loop, the
+    values are calculated using the analytical formulae given in the
+    \ref ComputeSky.h documentation.
+
+    \heading{Notes}
+
+    The reference-time, at which the pulsar spin-parameters are defined, is
+    taken to be the start-time *INTERPRETED* as an SSB time (i.e. no translation
+    is done, the times are numerically equal!).
+*/
 void
 LALComputeSky (LALStatus *status,
 	       REAL8 *skyConst,
 	       INT8 iSkyCoh,
 	       CSParams	*params)
-{  /* </lalVerbatim> */
+{
 
   INT4	m, n;
   REAL8	t;

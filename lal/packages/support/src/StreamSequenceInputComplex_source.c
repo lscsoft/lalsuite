@@ -1,39 +1,24 @@
-dnl $Id$
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')dnl
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')dnl
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')dnl
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')dnl
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')dnl
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')dnl
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')dnl
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')dnl
-define(`VTYPE',`format(`%sSequence',TYPE)')dnl
-define(`FUNC',`format(`LAL%sReadSequence',TYPECODE)')dnl
-define(`CREATEFUNC',`format(`LAL%sCreateVector',TYPECODE)')dnl
-define(`FMT',`format(`LAL_%s_FORMAT',TYPE)')dnl
-define(`PARSEDATA',`done = ( fscanf( stream, "%" FMT, data++ ) != 1 )')dnl
-ifelse(TYPECODE,`Z',`define(`SIZE',`16')')dnl
-ifelse(TYPECODE,`C',`define(`SIZE',`8')')dnl
-ifelse(TYPECODE,`D',`define(`SIZE',`8')')dnl
-ifelse(TYPECODE,`S',`define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`I2',`define(`SIZE',`2')')dnl
-ifelse(TYPECODE,`I4',`define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`I8',`define(`SIZE',`8')')dnl
-ifelse(TYPECODE,`U2',`define(`SIZE',`2')')dnl
-ifelse(TYPECODE,`U4',`define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`U8',`define(`SIZE',`8')')dnl
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
 
-/* <lalVerbatim file="StreamSequenceInputCP"> */
+#define VTYPE CONCAT2(TYPE,Sequence)
+#define FUNC CONCAT3(LAL,TYPECODE,ReadSequence)
+#define CREATEFUNC CONCAT3(LAL,TYPECODE,CreateVector)
+
+
 void
 FUNC ( LALStatus *stat, VTYPE **sequence, FILE *stream )
-{ /* </lalVerbatim> */
+{ 
   BufferList head;    /* head of linked list of buffers */
   BufferList *here;   /* pointer to current position in list */
   BOOLEAN done;       /* whether to stop reading */
   TYPE *data;         /* pointer to vector data */
   size_t nTot = 0;    /* total number of values read */
 
-  INITSTATUS( stat, "FUNC", STREAMSEQUENCEINPUTC );
+  INITSTATUS( stat, STRING(FUNC), STREAMSEQUENCEINPUTC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -48,8 +33,11 @@ FUNC ( LALStatus *stat, VTYPE **sequence, FILE *stream )
   while ( !done ) {
     size_t n = BUFFSIZE/SIZE + 1;
     data = here->buf.TYPECODE;
-    while ( !done && --n )
-      PARSEDATA;
+    while ( !done && --n ) {
+      done = ( ( fscanf( stream, "%" FORMAT, &(data->re) ) != 1 ) ||
+          ( fscanf( stream, "%" FORMAT, &(data->im) ) != 1 ) );
+      data++;
+          }
     here->size = BUFFSIZE/SIZE - n;
     nTot += here->size;
     if ( !done ) {

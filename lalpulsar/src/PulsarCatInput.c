@@ -17,107 +17,105 @@
 *  MA  02111-1307  USA
 */
 
-/******************************* <lalVerbatim file="PulsarCatInputCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{PulsarCatInput.c}}
-\label{ss:PulsarCatInput.c}
+\heading{Module \ref PulsarCatInput.c}
+\latexonly\label{ss_PulsarCatInput_c}\endlatexonly
 
 Parses a catalogue of pulsar data.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{PulsarCatInputCP}
-\idx{LALReadPulsarCatHead()}
-\idx{LALReadPulsarCatLine()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
 
-The routine \verb@LALReadPulsarCatHead()@ takes a set of tokens
-\verb@*list@ (as generated from an input line by
-\verb@LALCreateTokenList()@, and determines which tokens correspond to
-the pulsar catalogue fields enumerated by \verb@indx[]@: each element
-of \verb@indx[]@ stores the number of the corresponding token.  Each
+
+
+
+\heading{Description}
+
+The routine <tt>LALReadPulsarCatHead()</tt> takes a set of tokens
+<tt>*list</tt> (as generated from an input line by
+<tt>LALCreateTokenList()</tt>, and determines which tokens correspond to
+the pulsar catalogue fields enumerated by <tt>indx[]</tt>: each element
+of <tt>indx[]</tt> stores the number of the corresponding token.  Each
 token should be a field name corresponding to one of the enumeration
-constants in \verb@PulsarCatIndex@ (e.g.\ \verb@"RAJ"@,
-\verb@"POSEPOCH"@, \verb@"F"@), or \verb@"e"@ to represent an
+constants in \c PulsarCatIndex (e.g.\ <tt>"RAJ"</tt>,
+<tt>"POSEPOCH"</tt>, <tt>"F"</tt>), or <tt>"e"</tt> to represent an
 uncertainty in the preceding field.  Unrecognized tokens are
 ignored. If any pusar catalogue field does not have a corresponding
-token in \verb@indx[]@ is set to $-1$.
+token in <tt>indx[]</tt> is set to \f$-1\f$.
 
-The routine \verb@LALReadPulsarCatLine()@ takes the input
-\verb@*line@, splits it into whitespace-separated tokens, and parses
-each token into the corresponding field of \verb@*node@, using
-\verb@indx[]@ to determine which tokens correspond to which fields.
+The routine <tt>LALReadPulsarCatLine()</tt> takes the input
+<tt>*line</tt>, splits it into whitespace-separated tokens, and parses
+each token into the corresponding field of <tt>*node</tt>, using
+<tt>indx[]</tt> to determine which tokens correspond to which fields.
 In general, each field has a distinct parsing algorithm, as specified
 below:
-\begin{description}
-\item[\texttt{NAME}] A standard B1950 or J2000 pulsar name (e.g.\
-\verb@"B0021-72C"@, \verb@"J0024-7203U"@), copied directly into
-\verb@node->bname@ or \verb@node->jname@.
-\item[\texttt{RAJ}] J2000 right ascencion in the form
-\verb@"@hours\verb@:@minutes\verb@:@seconds\verb@"@, where hours is a
+<dl>
+<dt>\c NAME</dt><dd> A standard B1950 or J2000 pulsar name (e.g.\
+<tt>"B0021-72C"</tt>, <tt>"J0024-7203U"</tt>), copied directly into
+<tt>node->bname</tt> or <tt>node->jname</tt>.</dd>
+<dt>\c RAJ</dt><dd> J2000 right ascencion in the form
+<tt>"</tt>hours\c :minutes\c :seconds<tt>"</tt>, where hours is a
 signed integer, minutes an unsigned integer, and seconds is an
 unsigned floating-point number in normal place-index notation (i.e.\
 integral part, optional decimal place, and optional fractional part;
-no exponential notation).
-\item[\texttt{DECJ}] J2000 declination in the form
-\verb@"@degrees\verb@:@minutes\verb@:@seconds\verb@"@, where degrees
+no exponential notation).</dd>
+<dt>\c DECJ</dt><dd> J2000 declination in the form
+<tt>"</tt>degrees\c :minutes\c :seconds<tt>"</tt>, where degrees
 is a signed integer, minutes an unsigned integer, and seconds is an
 unsigned floating-point number in normal place-index notation (i.e.\
 integral part, optional decimal place, and optional fractional part;
-no exponential notation).
-\item[\texttt{PMRA}] Right ascension component of proper motion in
-milliarcseconds per year, as a floating-point number (any notation).
-\item[\texttt{PMDEC}] Declination component of proper motion in
-milliarcseconds per year, as a floating-point number (any notation).
-\item[\texttt{POSEPOCH}] Epoch of position/proper motion measurements
+no exponential notation).</dd>
+<dt>\c PMRA</dt><dd> Right ascension component of proper motion in
+milliarcseconds per year, as a floating-point number (any notation).</dd>
+<dt>\c PMDEC</dt><dd> Declination component of proper motion in
+milliarcseconds per year, as a floating-point number (any notation).</dd>
+<dt>\c POSEPOCH</dt><dd> Epoch of position/proper motion measurements
 in Julian days, as a floating-point number (any notation).  If the
 number is less than 2~million, then it is assumed that the actual
-Julian day is 2~million plus the number given.
-\item[\texttt{F}] The pulsar spin frequency in Hz, as a floating-point
-number (any notation).
-\item[\texttt{F1}] The first derivative of the pulsar spin frequency
-in Hz${}^2$, as a floating-point number (any notation).
-\item[\texttt{F2}] The pulsar spin frequency in Hz${}^3$, as a
-floating-point number (any notation).
-\item[\texttt{PEPOCH}] Epoch of frequency and frequency-derivative
+Julian day is 2~million plus the number given.</dd>
+<dt>\c F</dt><dd> The pulsar spin frequency in Hz, as a floating-point
+number (any notation).</dd>
+<dt>\c F1</dt><dd> The first derivative of the pulsar spin frequency
+in Hz\f${}^2\f$, as a floating-point number (any notation).</dd>
+<dt>\c F2</dt><dd> The pulsar spin frequency in Hz\f${}^3\f$, as a
+floating-point number (any notation).</dd>
+<dt>\c PEPOCH</dt><dd> Epoch of frequency and frequency-derivative
 measurements in Julian days, as a floating-point number (any
 notation).  If the number is less than 2~million, then it is assumed
-that the actual Julian day is 2~million plus the number given.
-\item[\texttt{e}] Uncertainty in any of the preceding quantities.
+that the actual Julian day is 2~million plus the number given.</dd>
+<dt>\c e</dt><dd> Uncertainty in any of the preceding quantities.
 This is given as an unsigned integer corresponding to the uncertainty
 in the last 1 or 2 significant digits of the corresponding quantity.
 Thus, the parsing routine for that quantity is also responsible for
 reading its uncertainty, accounting for the number of significant
-digits.
-\end{description}
-An asterisk \verb@*@ in any field means that the quantity is not
+digits.</dd>
+</dl>
+An asterisk <tt>*</tt> in any field means that the quantity is not
 measured.  In most cases this means it will be treated as zero.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
 LALWarning()                  LALStringToU2()
 XLALGPSLeapSeconds()
 LALDCreateVector()            LALDDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-At present, \verb@LALLeapSecs()@ fails for times prior to the GPS
+At present, <tt>LALLeapSecs()</tt> fails for times prior to the GPS
 epoch (1980-01-06 00:00:00, or JD2444244.5000), which prevents earlier
-Julian dates from being converted into \verb@LIGOTimeGPS@ structures.
+Julian dates from being converted into \c LIGOTimeGPS structures.
 Pulsar catalogue entries with epochs earlier than this date will cause
-\verb@LALReadPulsarCatLine()@ to fail.
+<tt>LALReadPulsarCatLine()</tt> to fail.
 
-\vfill{\footnotesize\input{PulsarCatInputCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <math.h>
 #include <ctype.h>
@@ -366,12 +364,12 @@ LALParseREAL8HMS( LALStatus  *stat,
 }
 
 
-/* <lalVerbatim file="PulsarCatInputCP"> */
+
 void
 LALReadPulsarCatHead( LALStatus *stat,
 		      INT4      indx[PULSARCATINDEX_NUM],
 		      TokenList *list )
-{ /* </lalVerbatim> */
+{
   UINT4 i;                /* an index */
   INITSTATUS( stat, "LALReadPulsarCatHead", PULSARCATINPUTC );
 
@@ -432,13 +430,13 @@ LALReadPulsarCatHead( LALStatus *stat,
 }
 
 
-/* <lalVerbatim file="PulsarCatInputCP"> */
+
 void
 LALReadPulsarCatLine( LALStatus     *stat,
 		      PulsarCatNode *node,
 		      TokenList     *list,
 		      INT4          indx[PULSARCATINDEX_NUM] )
-{ /* </lalVerbatim> */
+{
   INT4 i;       /* an index */
   CHAR *endptr; /* pointer to end of a given token */
 

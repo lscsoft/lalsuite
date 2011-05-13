@@ -24,10 +24,9 @@
 
 /** \defgroup support LAL Support Interface */
 
-/** \defgroup frame LAL Framedata Interface (optional) */
+/** \defgroup lalmetaio LAL Metaio (optional) */
 
-/** \defgroup mpi LAL MPI Interface (optional) */
-
+/** \defgroup lalframe LAL Framedata Interface (optional) */
 
 
 /***************************************************************/

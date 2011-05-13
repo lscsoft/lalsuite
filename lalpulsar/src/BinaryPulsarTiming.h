@@ -42,34 +42,6 @@
  * frames (given as a modified Julian Date - MJD) into a GPS time.
  */
 
-/* LAL code to take into account binary pulsar motion */
-/*  for definitions of different models see Taylor and Weisberg (1989)
-    and TEMPO software documentation
-
-    Also contains function to read TEMPO .par files to obtain parameters
-    and errors on parameters (if available) */
-/* <lalVerbatim file="BinaryPulsarTimingHV">
-   Author: Pitkin, M. D.
-   $Id$
-*/
-/* Matt Pitkin 29/04/04 */
-
-/* <lalLaTeX>
-   \section{Header \texttt{BinaryPulsarTiming.h}}
-   label{ss:BinaryPulsarTiming.h}
-
-   Calculates time delay to a signal from a pulsar in a binary system.
-
-   \subsection*{Synopsis}
-   \begin{verbatim}
-   #include <lal/BinaryPulsarTiming.h>
-   \end{verbatim}
-
-   \noindent This header covers routines for calculating the time delay to a
-   signal from a pulsar in a binary system. The are also routines for reading
-   pulsar data from TEMPO .par file formats.
-   </lalLaTeX> */
-
 #ifndef _BINARYPULSARTIMING_H
 #define _BINARYPULSARTIMING_H
 
@@ -81,11 +53,7 @@ NRCSID (BINARYPULSARTIMINGH,"$Id$");
 extern "C" {
 #endif
 
-/* <lalLaTeX>
-   \subsection*{Error conditions}
-   </lalLaTeX> */
-
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define BINARYPULSARTIMINGH_ENULLINPUT 1
 #define BINARYPULSARTIMINGH_ENULLOUTPUT 2
 #define BINARYPULSARTIMINGH_ENULLPARAMS 3
@@ -107,39 +75,12 @@ not be in the binary timing routine"
 #define BINARYPULSARTIMINGH_MSGENAN "Output is NaN!"
 #define BINARYPULSARTIMINGH_MSGEPARFAIL "Failed to read in .par file"
 
-/* </lalErrTable> */
+/*@}*/
 
-/* <lalLaTeX>
-   \subsection*{Structures}
-   \idx[Type]{BinaryPulsarParams}
-   \idx[Type]{BinaryPulsarInput}
-   \idx[Type]{BinaryPulsarOutput}
-
-   \begin{verbatim}
-   typedef struct tagBinaryPulsarParams BinaryPulsarParams;
-   \end{verbatim}
-
-   This structure contains all the pulsars parameters. The structure does not
-   have to be used for a binary pulsar, but can just contain the parameters for
+/** A structure to contain all pulsar parameters and associated errors.
+    The structure does not have to be used for a binary pulsar, but can just contain the parameters for
    an isolated pulsar. All parameters are in the same units as given by TEMPO.
-
-   \begin{verbatim}
-   typedef struct tagBinaryPulsarInput BinaryPulsarInput;
-   \end{verbatim}
-
-   This structure contains the input time at which the binary correction needs
-   to be calculated.
-
-   \begin{verbatim}
-   typedef struct tagBinaryPulsarOutput BinaryPulsarOutput;
-   \end{verbatim}
-
-   This structure contains the binary time delay for the input time.
-
-   </lalLaTeX> */
-
-/**** DEFINE STRUCTURES ****/
-/** A structure to contain all pulsar parameters and associated errors */
+ */
 typedef struct
 tagBinaryPulsarParams
 {
@@ -310,9 +251,9 @@ tagBinaryPulsarOutput
   REAL8 deltaT;	/**< deltaT to add to TDB in order to account for binary */
 }BinaryPulsarOutput;
 
-/* <lalLaTeX>
-   \newpage\input{BinaryPulsarTimingC}
-   </lalLaTeX> */
+
+
+
 
 /**** DEFINE FUNCTIONS ****/
 /** function to calculate the binary system delay

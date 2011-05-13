@@ -1,4 +1,4 @@
-#include <LALSTPNWaveform2.h>
+#include <lal/LALSTPNWaveform2.h>
 
 NRCSID (LALSTPNWAVEFORM2C, "$Id$");
 
@@ -400,7 +400,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 		*countback = len;
 
 		if (signalvec1) { /* return polarizations */
-			REAL8 v, amp, alpha, alpha0 = atan2(LNhy[0],LNhx[0]);
+			REAL8 v=0, amp=0, alpha=0, alpha0 = atan2(LNhy[0],LNhx[0]);
 			
 			for(unsigned int i=0;i<len;i++) {
 				v = pow(omega[i],oneby3);

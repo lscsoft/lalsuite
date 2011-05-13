@@ -23,17 +23,103 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="LIGOLwXMLCV">
-Author: Brown, D. A.
-$Id$
-</lalVerbatim>
-#endif
+/**
+
+\author Brown, D. A.
+\file
+\ingroup lalmetaio
+
+\brief Routines to write LIGO metadata database structures to LIGO lightweight XML files.
+
+\heading{Description}
+
+The routine \c LALOpenLIGOLwXMLFile
+
+The routine \c XLALCreateLIGOLwXMLFileName creates a name for a  LIGO lightweight XML file that is in accordance with the specifications of document T050017.
+
+\c fopen to open a file specified by the \c path argument. The file is
+truncated to zero length if already exists. The standard LIGO lightweight XML
+header, \c LIGOLW_XML_HEADER given in LIGOLwXMLHeaders.h, is then written
+to the file and the the pointer to the file stream is returned in the
+<tt>xml->fp</tt> argument.
+
+The routine \c LALCloseLIGOLwXMLFile prints the standard LIGO lightweight
+XML footer, \c LIGOLW_XML_FOOTER given in LIGOLwXMLHeaders.h, and closes
+the file stream pointed to by <tt>xml->fp</tt>.
+
+The routine \c LALBeginLIGOLwXMLTable prints the table header.  The type of
+table to begin is specified by the \c table argument.  The appropriate
+headers are again contained in LIGOLwXMLHeaders.h and contain the table name as
+well as the names and data types of each of the columns in the table.  In
+addition, it sets <tt>xml->first</tt> to 1 and <tt>xml->table</tt> to the requested
+table.
+
+The routine \c LALEndLIGOLwXMLTable prints the table footer.  This is the
+same for all tables, and given by \c LIGOLW_XML_TABLE_FOOTER in
+LIGOLwXMLHeaders.h.  Additionally, <tt>xml->table</tt> is set to \c no_table.
+
+The routine \c LALWriteLIGOLwXMLTable writes the content of the xml table.
+The type of table to be written is specified by \c table.  The contents of
+the table should be stored as a linked list in <tt>tablePtr->table</tt>.  The data
+is written using the row format for the specified table given in
+LIGOLwXMLHeaders.h.
+
+
+\heading{Algorithm}
+
+None.
+
+\heading{Uses}
+
+<tt>fopen()</tt>
+<tt>fprintf()</tt>
+<tt>fclose()</tt>
+
+\heading{Notes}
+
+In order to change a table definition in LAL, changes must be made in
+several places.  It is necessary to update the structure which is used to store
+the information in memory as well as the reading and writing codes.  Below is a
+list of all the files which must be updated.
+<ul>
+<li>  Update the LAL table definition in \ref LIGOMetaDataTables.h</li>
+
+<li>  Update the LIGOLwXML writing code:
+
+<ol></li>
+<li>  Change the table header written at to the LIGOLwXML file.  This is
+\ref #define</tt>d in <tt>LIGOLwXMLHeaders.h.  For example, to change the
+\c sngl_inspiral table, you must edit \c LIGOLW_XML_SNGL_INSPIRAL.</li>
+
+<li> Change the row format of the LIGOLwXML file.  This is <tt>#define</tt>d in
+\ref LIGOLwXMLHeaders.h.  For example, to change the <tt> sngl_inspiral</tt>
+table, you must edit \c SNGL_INSPIRAL_ROW.</li>
+
+<li> Change the fprintf command which writes the table rows.  This is contained
+in \ref LIGOLwXML.c.
+
+</ol></li>
+
+<li> Update the LIGOLwXML reading code:
+
+<ol></li>
+
+<li> Add/remove columns from the table directory of the table in question.
+This is contained in \ref LIGOLwXMLRead.c, either in
+\c LALCreateMetaTableDir or in the specific reading function.</li>
+
+<li> Check that all columns read in from the XML table are stored in memory.
+This requires editing the table specific reading codes in
+\ref LIGOLwXMLRead.c.
+
+</ol>
+</li>
+</ul>
+
+*/
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -61,111 +147,7 @@ $Id$
 
 NRCSID( LIGOLWXMLC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{LIGOLwXML.c}}
 
-Routines to write LIGO metadata database structures to LIGO lightweight XML
-files.
-
-\subsubsection*{Prototypes}
-\input{LIGOLwXMLCP}
-\idx{LALOpenLIGOLwXMLFile()}
-\idx{LALCloseLIGOLwXMLFile()}
-\idx{LALBeginLIGOLwXMLTable()}
-\idx{LALEndLIGOLwXMLTable()}
-\idx{LALWriteLIGOLwXMLTable()}
-
-\subsubsection*{Description}
-
-The routine \verb+LALOpenLIGOLwXMLFile+
-
-The routine \verb+XLALCreateLIGOLwXMLFileName+ creates a name for a  LIGO lightweight XML file that is in accordance with the specifications of document T050017.
-
-\verb+fopen+ to open a file specified by the \verb+path+ argument. The file is
-truncated to zero length if already exists. The standard LIGO lightweight XML
-header, \verb+LIGOLW_XML_HEADER+ given in LIGOLwXMLHeaders.h, is then written
-to the file and the the pointer to the file stream is returned in the
-\verb+xml->fp+ argument.
-
-The routine \verb+LALCloseLIGOLwXMLFile+ prints the standard LIGO lightweight
-XML footer, \verb+LIGOLW_XML_FOOTER+ given in LIGOLwXMLHeaders.h, and closes
-the file stream pointed to by \verb+xml->fp+.
-
-The routine \verb+LALBeginLIGOLwXMLTable+ prints the table header.  The type of
-table to begin is specified by the \verb+table+ argument.  The appropriate
-headers are again contained in LIGOLwXMLHeaders.h and contain the table name as
-well as the names and data types of each of the columns in the table.  In
-addition, it sets \verb+xml->first+ to 1 and \verb+xml->table+ to the requested
-table.
-
-The routine \verb+LALEndLIGOLwXMLTable+ prints the table footer.  This is the
-same for all tables, and given by \verb+LIGOLW_XML_TABLE_FOOTER+ in
-LIGOLwXMLHeaders.h.  Additionally, \verb+xml->table+ is set to \verb+no_table+.
-
-The routine \verb+LALWriteLIGOLwXMLTable+ writes the content of the xml table.
-The type of table to be written is specified by \verb+table+.  The contents of
-the table should be stored as a linked list in \verb+tablePtr->table+.  The data
-is written using the row format for the specified table given in
-LIGOLwXMLHeaders.h.
-
-
-\subsubsection*{Algorithm}
-
-None.
-
-\subsubsection*{Uses}
-
-\verb+fopen()+
-\verb+fprintf()+
-\verb+fclose()+
-
-\subsubsection*{Notes}
-
-In order to change a table definition in LAL, changes must be made in
-several places.  It is necessary to update the structure which is used to store
-the information in memory as well as the reading and writing codes.  Below is a
-list of all the files which must be updated.
-\begin{itemize}
-\item  Update the LAL table definition in \verb+LIGOMetaDataTables.h+
-
-\item  Update the LIGOLwXML writing code:
-
-\begin{enumerate}
-\item  Change the table header written at to the LIGOLwXML file.  This is
-\verb+#define+d in \verb+LIGOLwXMLHeaders.h+.  For example, to change the
-\verb+sngl_inspiral+ table, you must edit \verb+LIGOLW_XML_SNGL_INSPIRAL+.
-
-\item Change the row format of the LIGOLwXML file.  This is \verb+#define+d in
-\verb+LIGOLwXMLHeaders.h+.  For example, to change the \verb+ sngl_inspiral+
-table, you must edit \verb+SNGL_INSPIRAL_ROW+.
-
-\item Change the fprintf command which writes the table rows.  This is contained
-in \verb+LIGOLwXML.c+.
-
-\end{enumerate}
-
-\item Update the LIGOLwXML reading code:
-
-\begin{enumerate}
-
-\item Add/remove columns from the table directory of the table in question.
-This is contained in \verb+LIGOLwXMLRead.c+, either in
-\verb+LALCreateMetaTableDir+ or in the specific reading function.
-
-\item Check that all columns read in from the XML table are stored in memory.
-This requires editing the table specific reading codes in
-\verb+LIGOLwXMLRead.c+.
-
-\end{enumerate}
-
-\end{itemize}
-
-
-\vfill{\footnotesize\input{LIGOLwXMLCV}}
-
-</lalLaTeX>
-#endif
 
 /* JC: ISO C89 COMPILERS ARE REQUIRED TO SUPPORT STRINGS UP TO 509 CHARS LONG;
  * MANY OF THE STRINGS IN THE ORIGINAL MACROS WERE LONGER.  TO FIX I CHANGED
@@ -183,7 +165,6 @@ This requires editing the table specific reading codes in
  * Open an XML file for writing.  The return value is a pointer to a new
  * LIGOLwXMLStream file handle or NULL on failure.
  */
-
 LIGOLwXMLStream *
 XLALOpenLIGOLwXMLFile (
     const char *path
@@ -225,14 +206,14 @@ XLALOpenLIGOLwXMLFile (
   return new;
 }
 
-/* <lalVerbatim file="LIGOLwXMLCP"> */
+
 void
 LALOpenLIGOLwXMLFile (
     LALStatus          *status,
     LIGOLwXMLStream    *xml,
     const CHAR         *path
     )
-/* </lalVerbatim> */
+
 {
   LIGOLwXMLStream *new;
   XLALPrintDeprecationWarning("LALOpenLIGOLwXMLFile", "XLALOpenLIGOLwXMLFile");
@@ -284,13 +265,13 @@ XLALCloseLIGOLwXMLFile (
 }
 
 
-/* <lalVerbatim file="LIGOLwXMLCP"> */
+
 void
 LALCloseLIGOLwXMLFile (
     LALStatus          *status,
     LIGOLwXMLStream    *xml
     )
-/* </lalVerbatim> */
+
 {
   LIGOLwXMLStream *copy;
   XLALPrintDeprecationWarning("LALCloseLIGOLwXMLFile", "XLALCloseLIGOLwXMLFile");
@@ -314,14 +295,14 @@ LALCloseLIGOLwXMLFile (
   RETURN( status );
 }
 
-/* <lalVerbatim file="LIGOLwXMLCP"> */
+
 void
 LALBeginLIGOLwXMLTable (
     LALStatus           *status,
     LIGOLwXMLStream     *xml,
     MetadataTableType    table
     )
-/* </lalVerbatim> */
+
 {
   /* print the header for the xml table */
   INITSTATUS( status, "LALBeginLIGOLwXMLTable", LIGOLWXMLC );
@@ -394,13 +375,13 @@ LALBeginLIGOLwXMLTable (
   RETURN( status );
 }
 
-/* <lalVerbatim file="LIGOLwXMLCP"> */
+
 void
 LALEndLIGOLwXMLTable (
     LALStatus           *status,
     LIGOLwXMLStream     *xml
     )
-/* </lalVerbatim> */
+
 {
   /* print the header for the xml table */
   INITSTATUS( status, "LALEndLIGOLwXMLTable", LIGOLWXMLC );
@@ -425,7 +406,7 @@ LALEndLIGOLwXMLTable (
   fprintf( xml->fp, ",\n" ); \
 }
 
-/* <lalVerbatim file="LIGOLwXMLCP"> */
+
 void
 LALWriteLIGOLwXMLTable (
     LALStatus           *status,
@@ -433,7 +414,7 @@ LALWriteLIGOLwXMLTable (
     MetadataTable        tablePtr,
     MetadataTableType    table
     )
-/* </lalVerbatim> */
+
 {
   /* print contents of the database struct into the xml table */
   INITSTATUS( status, "LALWriteLIGOLwXMLTable", LIGOLWXMLC );

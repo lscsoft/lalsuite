@@ -111,6 +111,7 @@ src/inspiral/lalapps_trigbank
 src/inspiral/lalapps_trigger_hipe
 src/inspiral/lalapps_trigscan
 src/inspiral/lalapps_write_ihope_page
+src/inspiral/posterior/ChiSquare_test
 src/inspiral/posterior/SPINspiral/lalapps_spinspiral
 src/inspiral/posterior/lalapps_coherence_test
 src/inspiral/posterior/lalapps_combine_evidence
@@ -156,6 +157,7 @@ src/pulsar/FDS_isolated/lalapps_makeInvetofile
 src/pulsar/FDS_isolated/lalapps_monteint
 src/pulsar/FDS_isolated/lalapps_polka
 src/pulsar/FDS_isolated/lalapps_synthesizeBstatMC
+src/pulsar/FDS_isolated/lalapps_synthesizeTransientStats
 src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
 src/pulsar/FDS_isolated/testFstat_v3

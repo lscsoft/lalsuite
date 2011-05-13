@@ -23,61 +23,55 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 
-#if 0
-<lalVerbatim file="LIGOLwXMLHeadersHV">
-Author: Brown, D. A.
-$Id$
-</lalVerbatim>
-<lalLaTeX>
-\section{Header \texttt{LIGOLwXMLHeaders.h}}
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/LIGOLwXMLHeaders.h>
-\end{verbatim}
+/**
+\author Brown, D. A.
+\file
+\ingroup lalmetaio
 
-This header provides provides \verb|#define|s for the common elements of LIGO
-light weight XML files.  It provides the XML header and footer, as well as table
-definitions for the various metadata tables.  It will need to be kept up to date
-with changes in the LIGO database table definitions.  The quantities which are
+\brief This header provides provides <tt>#define</tt>s for the common elements of LIGO light weight XML files.
+
+\heading{Synopsis}
+\code
+#include <lal/LIGOLwXMLHeaders.h>
+\endcode
+
+It provides the XML header and footer, as well as table definitions for the various metadata tables.
+It will need to be kept up to date with changes in the LIGO database table definitions.  The quantities which are
 defined in this file are
 
-\begin{itemize}
-\item LIGOLW\_XML\_HEADER
-\item LIGOLW\_XML\_FOOTER
-\item LIGOLW\_XML\_TABLE\_FOOTER
-\item LIGOLW\_XML\_PROCESS
-\item PROCESS\_ROW
-\item LIGOLW\_XML\_PROCESS\_PARAMS
-\item PROCESS\_PARAMS\_ROW
-\item LIGOLW\_XML\_SEARCH\_SUMMARY
-\item SEARCH\_SUMMARY\_ROW
-\item LIGOLW\_XML\_SEARCH\_SUMMVARS
-\item SEARCH\_SUMMVARS\_ROW
-\item LIGOLW\_XML\_SIM\_RINGDOWN
-\item SIM\_RINGDOWN\_ROW
-\item LIGOLW\_XML\_SUMM\_VALUE
-\item SUMM\_VALUE\_ROW
-\item LIGOLW\_XML\_SIM\_INST\_PARAMS
-\item SIM\_INST\_PARAMS\_ROW
-\item LIGOLW\_XML\_STOCHASTIC
-\item STOCHASTIC\_ROW
-\item LIGOLW\_XML\_STOCH\_SUMM
-\item STOCH\_SUMM\_ROW
-\item LIGOLW\_XML\_EXT\_TRIGGERS
-\item EXT\_TRIGGERS\_ROW
-\end{itemize}
+<ul>
+<li> LIGOLW\_XML\_HEADER</li>
+<li> LIGOLW\_XML\_FOOTER</li>
+<li> LIGOLW\_XML\_TABLE\_FOOTER</li>
+<li> LIGOLW\_XML\_PROCESS</li>
+<li> PROCESS\_ROW</li>
+<li> LIGOLW\_XML\_PROCESS\_PARAMS</li>
+<li> PROCESS\_PARAMS\_ROW</li>
+<li> LIGOLW\_XML\_SEARCH\_SUMMARY</li>
+<li> SEARCH\_SUMMARY\_ROW</li>
+<li> LIGOLW\_XML\_SEARCH\_SUMMVARS</li>
+<li> SEARCH\_SUMMVARS\_ROW</li>
+<li> LIGOLW\_XML\_SIM\_RINGDOWN</li>
+<li> SIM\_RINGDOWN\_ROW</li>
+<li> LIGOLW\_XML\_SUMM\_VALUE</li>
+<li> SUMM\_VALUE\_ROW</li>
+<li> LIGOLW\_XML\_SIM\_INST\_PARAMS</li>
+<li> SIM\_INST\_PARAMS\_ROW</li>
+<li> LIGOLW\_XML\_STOCHASTIC</li>
+<li> STOCHASTIC\_ROW</li>
+<li> LIGOLW\_XML\_STOCH\_SUMM</li>
+<li> STOCH\_SUMM\_ROW</li>
+<li> LIGOLW\_XML\_EXT\_TRIGGERS</li>
+<li> EXT\_TRIGGERS\_ROW</li>
+</ul>
 
-\vfill{\footnotesize\input{LIGOLwXMLHeadersHV}}
-</lalLaTeX>
-#endif
+*/
 
 #ifndef _LIGOLWXMLHEADERS_H
 #define _LIGOLWXMLHEADERS_H

@@ -19,9 +19,9 @@
 #define XREFUNC CONCAT2(XLALResize,STYPE)
 
 
-/* <lalVerbatim file="FrameSeriesCP"> */
+
 int XFSFUNC ( FSTYPE *series, FrStream *stream )
-{ /* </lalVerbatim> */
+{ 
   static const char func[] = STRING(XFSFUNC);
   struct FrVect	*vect;
 
@@ -67,7 +67,7 @@ int XFSFUNC ( FSTYPE *series, FrStream *stream )
 }
 
 
-/* <lalVerbatim file="FrameSeriesCP"> */
+
 void
 FSFUNC (
     LALStatus		*status,
@@ -75,7 +75,7 @@ FSFUNC (
     FrChanIn		*chanin,
     FrStream		*stream
     )
-{ /* </lalVerbatim> */
+{ 
   struct FrVect	*vect;
   INITSTATUS( status, STRING(FSFUNC), FRAMESERIESC );
 
@@ -366,7 +366,7 @@ int XFUNC ( STYPE *series, FrStream *stream )
 }
 
 
-/* <lalVerbatim file="FrameSeriesCP"> */
+
 void
 FUNC (
     LALStatus		*status,
@@ -374,7 +374,7 @@ FUNC (
     FrChanIn		*chanin,
     FrStream		*stream
     )
-{ /* </lalVerbatim> */
+{ 
   const REAL8    fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
   struct FrVect	*vect;
   UINT4		 need;
@@ -580,7 +580,7 @@ FUNC (
 }
 
 
-/* <lalVerbatim file="FrameSeriesCP"> */
+
 void
 FUNCM (
     LALStatus		*status,
@@ -588,7 +588,7 @@ FUNCM (
     FrChanIn		*chanin,
     FrStream		*stream
     )
-{ /* </lalVerbatim> */
+{ 
   void *sequence;
 
   INITSTATUS (status, STRING(FUNCM), FRAMESERIESC);

@@ -1,50 +1,46 @@
-dnl $Id$
-/************************************ <lalVerbatim file="ReadFrequencySeriesCV">
-Author: Torres, C. V.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Torres, C. V.
+\file
 
-/* <lalLaTeX>
+\heading{Module \ref ReadFrequencySeries.c}
+\latexonly\label{ss_ReadFrequencySeries_c}\endlatexonly
 
-\subsection{Module \texttt{ReadFrequencySeries.c}}
-\label{ss:ReadFrequencySeries.c}
+\heading{Prototypes}
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{ReadFrequencySeriesCP}
-\idx{LALZReadFrequencySeries()}
-\idx{LALCReadFrequencySeries()}
-\idx{LALDReadFrequencySeries()}
-\idx{LALSReadFrequencySeries()}
-\idx{LALReadFrequencySeries()}
 
-\subsubsection*{Description}
+
+
+
+
+
+
+\heading{Description}
 
 Each member of this family of functions reads from a file the output
-of the corresponding \texttt{PrintFrequencySeries} routine.
+of the corresponding \c PrintFrequencySeries routine.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\begin{verbatim}
+\code
 LALOpenDataFile()
 LALParseUnitString()
 LALCHARCreateVector()
 LALCHARDestroyVector()
 LALDCreateVector()
 LALDDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
 These functions perform I/O operations, which are not a part of LAL
 proper. They should only be used for debugging purposes in test
 functions, not in any production code.
 
-\vfill{\footnotesize\input{ReadFrequencySeriesCV}}
 
-</lalLaTeX> */
+
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -63,9 +59,9 @@ void LALParseUnitString ( LALStatus *status,
 static const LALUnit lalDimensionlessUnit 
 	= {  0, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 
-/* <lalVerbatim file="ReadFrequencySeriesNRCSID"> */
+
 NRCSID( READFREQUENCYSERIESC, "$Id$" );
-/* </lalVerbatim> */
+
 
 /* Change the first instance of the target to '\0'; returns 0 on success,
    1 on failure */
@@ -84,18 +80,62 @@ static INT2 changeCharToNull (CHAR *string, CHAR target, CHAR *offEndOfString)
   return 1;
 }
 
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#define FMT "%lf\t%lf\t%lf\n"
+#define ARG &(data.re),&(data.im)
+#define NARGS 2
+#include "ReadFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
 
-define(`TYPECODE',`Z') dnl
-include(`LALReadFrequencySeries.m4')
+#define TYPECODE C
+#define TYPE COMPLEX8
+#define FMT "%lf\t%f\t%f\n"
+#define ARG &(data.re),&(data.im)
+#define NARGS 2
+#include "ReadFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
 
-define(`TYPECODE',`C') dnl
-include(`LALReadFrequencySeries.m4')
+#define TYPECODE D
+#define TYPE REAL8
+#define FMT "%lf\t%lf\n"
+#define ARG &data
+#define NARGS 1
+#include "ReadFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
 
-define(`TYPECODE',`D') dnl
-include(`LALReadFrequencySeries.m4')
+#define TYPECODE S
+#define TYPE REAL4
+#define FMT "%lf\t%f\n"
+#define ARG &data
+#define NARGS 1
+#include "ReadFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
 
-define(`TYPECODE',`S') dnl
-include(`LALReadFrequencySeries.m4')
-
-define(`TYPECODE',`') dnl
-include(`LALReadFrequencySeries.m4')
+#define TYPECODE
+#define TYPE REAL4
+#define FMT "%lf\t%f\n"
+#define ARG &data
+#define NARGS 1
+#include "ReadFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS

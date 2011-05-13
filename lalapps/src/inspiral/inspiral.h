@@ -53,7 +53,7 @@ extern "C" {
 #define INSPIRALH_EFILE   2
 #define INSPIRALH_ENONULL 3
 #define INSPIRALH_ENOMEM  4
-#define INSPIRALH_EVAL 	  5
+#define INSPIRALH_EVAL    5
 
 #define INSPIRALH_MSGENULL    "Null pointer"
 #define INSPIRALH_MSGEFILE    "Error in file-IO"
@@ -63,44 +63,55 @@ extern "C" {
 
 
 REAL4 compute_candle_distance(
-    REAL4 candleM1, 
+    REAL4 candleM1,
     REAL4 candleM2,
-    REAL4 snr, 
-    REAL8 chanDeltaT, 
-    INT4 nPoints, 
-    REAL8FrequencySeries *spec, 
+    REAL4 snr,
+    REAL8 chanDeltaT,
+    INT4 nPoints,
+    REAL8FrequencySeries *spec,
     UINT4 cut);
 
 SummValueTable **add_summvalue_table(
     SummValueTable **newTable,
-    LIGOTimeGPS gpsStartTime, 
-    LIGOTimeGPS gpsEndTime, 
-    const CHAR *programName, 
-    const CHAR *ifoName, 
-    const CHAR *summValueName, 
-    const CHAR *comment, 
+    LIGOTimeGPS gpsStartTime,
+    LIGOTimeGPS gpsEndTime,
+    const CHAR *programName,
+    const CHAR *ifoName,
+    const CHAR *summValueName,
+    const CHAR *comment,
     REAL8 value
     );
 
 void AddNumRelStrainModes( LALStatus              *status,
-			   REAL4TimeVectorSeries  **outStrain,
-			   SimInspiralTable *thisinj);
+                           REAL4TimeVectorSeries  **outStrain,
+                           SimInspiralTable *thisinj);
+
+void AddNumRelStrainModesREAL8( LALStatus   *status,
+                           REAL8TimeSeries  **outPlus,
+                           REAL8TimeSeries  **outCross,
+                           SimInspiralTable *thisinj);
 
 void InjectNumRelWaveforms (LALStatus           *status,
-			    REAL4TimeSeries     *chan,        
-			    SimInspiralTable    *injections,  
-			    CHAR                ifo[3],       
-			    REAL8               dynRange,     
-			    REAL8               freqLowCutoff,
-			    REAL8               snrLow,       
-			    REAL8               snrHigh,
-			    CHAR                *fnameOutXML);
+                            REAL4TimeSeries     *chan,
+                            SimInspiralTable    *injections,
+                            CHAR                ifo[3],
+                            REAL8               dynRange,
+                            REAL8               freqLowCutoff,
+                            REAL8               snrLow,
+                            REAL8               snrHigh,
+                            CHAR                *fnameOutXML);
 
 REAL8 start_freq_from_frame_url(CHAR  *url);
 
 REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
-				       SimInspiralTable      *thisInj,	  
-				       const CHAR            ifo[3]);
+                                       SimInspiralTable      *thisInj,
+                                       const CHAR            ifo[3]);
+
+REAL8 calculate_ligo_snr_from_strain_real8( REAL8TimeSeries *strain,
+                                       const CHAR            ifo[3]);
+
+REAL8TimeSeries *
+XLALNRInjectionStrain(const char *ifo, SimInspiralTable *inj);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

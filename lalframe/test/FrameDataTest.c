@@ -17,21 +17,19 @@
 *  MA  02111-1307  USA
 */
 
-#if 0 /* autodoc block */
+/**
+\file
 
-<lalVerbatim file="FrameDataTestCV">
-$Id$
-</lalVerbatim>
 
-<lalLaTeX>
 
-\subsection{Program \texttt{FrameDataTest.c}}
-\label{ss:FrameDataTest.c}
 
-Tests the routines in \verb+FrameData.h+.
+\heading{Program \ref FrameDataTest.c}
+\latexonly\label{ss_FrameDataTest_c}\endlatexonly
 
-\subsection*{Usage}
-\begin{verbatim}
+Tests the routines in \ref FrameData.h.
+
+\heading{Usage}
+\code
 FrameDataTest [options]
 Options:
   -h         print this message
@@ -40,31 +38,31 @@ Options:
   -d level   set lalDebugLevel to level
   -o         output framedata to files
   -f dir     set frame data path to dir
-\end{verbatim}
+\endcode
 
-Unless the \verb+-f+ option is used, the environment variable
-\verb+LAL_FRAME_PATH+ must be set to the directory containing the frame files.
+Unless the <tt>-f</tt> option is used, the environment variable
+\c LAL_FRAME_PATH must be set to the directory containing the frame files.
 
-\subsubsection*{Description}
-\subsubsection*{Exit codes}
-\begin{tabular}{|c|l|}
-\hline
- Code & Explanation                   \\
-\hline
-\tt 0 & Success, normal exit.         \\
-\tt 1 & Subroutine failed.            \\
-\tt77 & Ignored failure: {\tt LAL\_FRAME\_PATH} not set. \\
-\hline
-\end{tabular}
+\heading{Description}
+\heading{Exit codes}
+<table><tr><td>
 
-\subsubsection*{Uses}
-\subsubsection*{Notes}
+ Code</td><td>Explanation</td></tr>
+<tr><td>
+\tt 0</td><td>Success, normal exit.</td></tr>
+<tr><td>\tt 1</td><td>Subroutine failed.</td></tr>
+<tr><td>\tt77</td><td>Ignored failure: \c LAL_FRAME_PATH not set.</td></tr>
+<tr><td>
+</td></tr></table>
 
-\vfill{\footnotesize\input{FrameDataTestCV}}
+\heading{Uses}
+\heading{Notes}
 
-</lalLaTeX>
 
-#endif /* autodoc block */
+
+
+
+*/
 
 
 #include <stdio.h>

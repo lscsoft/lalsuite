@@ -559,7 +559,8 @@ XLALCheckPositiveDefinite(
 
 INT4 XLALMCMCCheckWrapping(LALMCMCParameter *parameter,
 						   const char *name);
-	
+
+int PriorIsSane(LALMCMCParameter *parameter);
 	
 #ifdef  __cplusplus
 }

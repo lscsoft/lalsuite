@@ -1,49 +1,45 @@
-dnl $Id$
-/************************************ <lalVerbatim file="ReadTimeSeriesCV">
-Author: Torres, C. V.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Torres, C. V.
+\file
 
-/* <lalLaTeX>
+\heading{Module \ref ReadTimeSeries.c}
+\latexonly\label{ss_ReadTimeSeries_c}\endlatexonly
 
-\subsection{Module \texttt{ReadTimeSeries.c}}
-\label{ss:ReadTimeSeries.c}
+\heading{Prototypes}
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{ReadTimeSeriesCP}
-\idx{LALZReadTimeSeries()}
-\idx{LALCReadTimeSeries()}
-\idx{LALDReadTimeSeries()}
-\idx{LALSReadTimeSeries()}
 
-\subsubsection*{Description}
+
+
+
+
+
+\heading{Description}
 
 Each member of this family of functions reads from a file the output
-of the corresponding \texttt{PrintTimeSeries} routine.
+of the corresponding \c PrintTimeSeries routine.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\begin{verbatim}
+\code
 LALOpenDataFile()
 LALParseUnitString()
 LALCHARCreateVector()
 LALCHARDestroyVector()
 LALDCreateVector()
 LALDDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
 These functions perform I/O operations, which are not a part of LAL
 proper They should only be used for debugging purposes in test
 functions, not in any production code.
 
-\vfill{\footnotesize\input{ReadTimeSeriesCV}}
 
-</lalLaTeX> */
+
+*/
 
 
 #include <lal/LALStdlib.h>
@@ -63,9 +59,9 @@ void LALParseUnitString ( LALStatus *status,
 static const LALUnit lalDimensionlessUnit 
 	= {  0, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 
-/* <lalVerbatim file="ReadTimeSeriesNRCSID"> */
+
 NRCSID( READTIMESERIESC, "$Id$" );
-/* </lalVerbatim> */
+
 
 /* Change the first instance of the target to '\0'; returns 0 on success,
    1 on failure */
@@ -84,23 +80,62 @@ static INT2 changeCharToNull (CHAR *string, CHAR target, CHAR *offEndOfString)
   return 1;
 }
 
-define(`TYPECODE',`Z')
-include(`LALReadTimeSeries.m4')
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#define FMT "%lf\t%lf\t%lf\n"
+#define ARG &(data.re),&(data.im)
+#define NARGS 2
+#include "ReadTimeSeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
 
-define(`TYPECODE',`C')
-include(`LALReadTimeSeries.m4')
+#define TYPECODE C
+#define TYPE COMPLEX8
+#define FMT "%lf\t%f\t%f\n"
+#define ARG &(data.re),&(data.im)
+#define NARGS 2
+#include "ReadTimeSeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
 
-define(`TYPECODE',`D')
-include(`LALReadTimeSeries.m4')
+#define TYPECODE D
+#define TYPE REAL8
+#define FMT "%lf\t%lf\n"
+#define ARG &data
+#define NARGS 1
+#include "ReadTimeSeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
 
-define(`TYPECODE',`S')
-include(`LALReadTimeSeries.m4')
+#define TYPECODE S
+#define TYPE REAL4
+#define FMT "%lf\t%f\n"
+#define ARG &data
+#define NARGS 1
+#include "ReadTimeSeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
 
-define(`TYPECODE',`')
-include(`LALReadTimeSeries.m4')
-
-
-
-
-
-
+#define TYPECODE
+#define TYPE REAL4
+#define FMT "%lf\t%f\n"
+#define ARG &data
+#define NARGS 1
+#include "ReadTimeSeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS

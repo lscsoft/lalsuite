@@ -41,7 +41,7 @@ download() {
 
 eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
-test ".$appname" = "." && appname=einstein_S5GC1HF
+test ".$appname" = "." && appname=einstein_S6Bucket
 test ".$appversion" = "." && appversion=0.00
 boinc_rev=-r23037
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
@@ -81,7 +81,7 @@ for i; do
 	    rebuild_lal=""
 	    rebuild="" ;;
 	--64)
-	    CPPFLAGS="-m64 $CPPFLAGS"
+	    CPPFLAGS="-DGC_SSE2_OPT -m64 $CPPFLAGS"
 	    CXXFLAGS="-m64 $CXXFLAGS"
 	    CFLAGS="-m64 $CFLAGS"
 	    LDFLAGS="-m64 $LDFLAGS" ;;
@@ -97,7 +97,7 @@ for i; do
 	    planclass=__SSE
 	    acc="_sse";;
 	--sse2)
-	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
+	    CPPFLAGS="-DGC_SSE2_OPT -DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
             fftw_copts_single=--enable-sse
             fftw_copts_double=--enable-sse2
@@ -225,6 +225,7 @@ else
                 platform=powerpc-apple-darwin
 	    else
 		platform=i686-apple-darwin
+		CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS"
 	    fi
 	    LDFLAGS="-framework Carbon -framework AppKit -framework IOKit -framework CoreFoundation $LDFLAGS" ;;
 	Linux)
@@ -265,7 +266,7 @@ if echo "$LDFLAGS" | grep -e -m64 >/dev/null; then
     LDFLAGS="-L$INSTALL/lib64 $LDFLAGS"
 fi
 
-export CPPFLAGS="-DBOINC_APIV6 -D__NO_CTYPE -DUSE_BOINC -DEAH_BOINC -I$INSTALL/include $CPPFLAGS"
+export CPPFLAGS="-DUSEXLALLOADSFTS -DBOINC_APIV6 -D__NO_CTYPE -DUSE_BOINC -DEAH_BOINC -I$INSTALL/include $CPPFLAGS"
 export LDFLAGS
 export LD_LIBRARY_PATH="$INSTALL/lib:$LD_LIBRARY_PATH"
 export DYLD_LIBRARY_PATH="$INSTALL/lib:$DYLD_LIBRARY_PATH"

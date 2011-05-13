@@ -17,31 +17,29 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="Read40mDataCV">
- * Author: Jolien D. E. Creighton
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Program \texttt{Read40mData.c}}
+/**
+ * \author Jolien D. E. Creighton
+ * \file
+ *
+ * \heading{Program \ref Read40mData.c}
  *
  * Tests the low-level frame stream routines by reading Caltech 40m-prototype
  * data from Nov1994.
  *
- * \subsubsection*{Usage}
+ * \heading{Usage}
  *
- * \begin{verbatim}
+ * \code
  * Read40mData
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
- * This program reads the channels \verb+IFO_DMRO+ and \verb+IFO_Lock+ from
- * all the frames in the directory set in the environment \verb+LAL_FRAME_PATH+
+ * This program reads the channels \c IFO_DMRO and \c IFO_Lock from
+ * all the frames in the directory set in the environment \c LAL_FRAME_PATH
  * (or the current directory if this environment is not set) and prints them
- * to new frame files containing only the in-lock \verb+IFO_DMRO+ channel.
+ * to new frame files containing only the in-lock \c IFO_DMRO channel.
  *
- **** </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <stdio.h>

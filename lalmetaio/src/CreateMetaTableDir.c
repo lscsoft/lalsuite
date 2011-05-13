@@ -23,17 +23,42 @@
  *
  * Author: Brown, D. A., and Brady, P. R.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="CreateMetaTableDirCV">
-Author: Brown, D. A., and Brady, P. R.
-$Id$
-</lalVerbatim>
-#endif
+/**
+
+\author Brown, D. A., and Brady, P. R.
+\file
+\ingroup lalmetaio
+\brief Construct a \c MetaTableDirectory for a given LIGOLwXML table.
+
+\heading{Description}
+
+The routine \c LALCreateMetaTableDir constructs a
+\c MetaTableDirectory for a given LIGOLwXML table.  It determines the
+location of each column expected to be present in the XML table and
+populates the \c pos field with this information.  This then allows
+other routines to parse the contents of an XML file and correctly interpret
+the entries.  When reading these tables, a call is made to
+\c LALCreateMetaTableDir.  For all other tables, the directory is
+constructed internally by the reading code.
+
+\heading{Algorithm}
+
+None.
+
+\heading{Uses}
+Functions in the Metaio library:
+<ul>
+<li> \c MetaioFindColumn()</li>
+<li> \c MetaioGetRow()</li>
+<li> \c MetaioOpenTable()</li>
+<li> \c MetaioClose()</li>
+</ul>
+\heading{Notes}
+
+*/
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -49,53 +74,12 @@ $Id$
 
 NRCSID( CREATEMETATABLEDIRC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{CreateMetaTableDir.c}}
 
-Routines to create a directory of a LIGO LW XML file.
-
-\subsubsection*{Prototypes}
-\input{CreateMetaTableDirCP}
-\idx{XLALCreateMetaTableDir()}
-\idx{LALCreateMetaTableDir()}
-
-\subsubsection*{Description}
-
-The routine \verb+LALCreateMetaTableDir+ constructs a
-\verb+MetaTableDirectory+ for a given LIGOLwXML table.  It determines the
-location of each column expected to be present in the XML table and
-populates the \verb+pos+ field with this information.  This then allows
-other routines to parse the contents of an XML file and correctly interpret
-the entries.  When reading these tables, a call is made to
-\verb+LALCreateMetaTableDir+.  For all other tables, the directory is
-constructed internally by the reading code.
-
-\subsubsection*{Algorithm}
-
-None.
-
-\subsubsection*{Uses}
-Functions in the Metaio library:
-\begin{itemize}
-\item \verb+MetaioFindColumn+
-\item \verb+MetaioGetRow+
-\item \verb+MetaioOpenTable+
-\item \verb+MetaioClose+
-\end{itemize}
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{CreateMetaTableDirCV}}
-
-</lalLaTeX>
-#endif
-
-/* <lalVerbatim file="CreateMetaTableDirCP"> */
 MetaTableDirectory* XLALCreateMetaTableDir(
     const MetaioParseEnv    env,
     MetadataTableType       table
     )
-/* </lalVerbatim> */
+
 {
   static const char   *func = "XLALCreateMetaTableDir";
   MetaTableDirectory  *tableDir;
@@ -354,7 +338,7 @@ MetaTableDirectory* XLALCreateMetaTableDir(
   return tableDir;
 }
 
-/* <lalVerbatim file="CreateMetaTableDirCP"> */
+
 void
 LALCreateMetaTableDir(
     LALStatus              *status,
@@ -362,7 +346,7 @@ LALCreateMetaTableDir(
     const MetaioParseEnv    UNUSED env,
     MetadataTableType       table
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALCreateMetaTableDir", CREATEMETATABLEDIRC );
   ATTATCHSTATUSPTR (status);

@@ -17,57 +17,17 @@
 *  MA  02111-1307  USA
 */
 
-/*********************************** <lalVerbatim file="ComputeSkyBinaryCV">
-Author:  Messenger, C.J., Berukoff, S.J., Papa, M.A.
-$Id$
-************************************ </lalVerbatim> */
+/**
+\author  Messenger, C.J., Berukoff, S.J., Papa, M.A.
+\file
+\ingroup pulsarTODO
 
-/* <lalLaTeX>
-\subsection{Module \texttt{ComputeSkyBinary.c}}\label{ss:ComputeSkyBinary.c}
-Computes the phase model coefficients necessary for a successful demodulation
+\subsection{Module \ref ComputeSkyBinary.c}\label{ss:ComputeSkyBinary.c}
+
+\brief Computes the phase model coefficients necessary for a successful demodulation
 for the case of a continuous wave source in a binary system.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{ComputeSkyBinaryCP}
-\index{\texttt{ComputeSkyBinary()}}
-
-\subsubsection*{Description}
-Given a set of input parameters defining a source location in the sky and
-the binary system in which the source resides, this routine returns the phase
-model coefficients $A_{s\alpha}$ and $B_{s\alpha}$ which are needed to
-correctly account for the phase variance of a signal over time. The
-\verb@CSBParams@ parameter structure contains relevant information
-for this routine to properly run.  In particular, it contains an array of
-timestamps in \verb@LIGOTimeGPS@ format, which are the GPS times of the first
-data from each SFT.  The \verb@input@ is an \verb@INT4@ variable
-\verb@iSkyCoh@, which is the index of the sky location under consideration.  For
-each sky location and set of orbital parameters, this code needs to be run
-once; the necessary phase model
-coefficients are calculated, and can then be applied to the relevant spindown
-parameter sets one is using in their search.
-
-\subsubsection*{Algorithm}
-The routine uses a simplistic nested for-loop structure.  The outer loop is
-over the number of SFTs in the observation timescale; this accounts for the
-temporal variability of the phase model coefficients.  The inner loop is over
-the number of spindown parameters in one set.  Inside the inner loop, the
-values are calculated using the analytical formulae given in the
-\verb@ComputeSkyBinary.h@ documentation.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALBarycenter()
-LALBarycenterEarth()
-LALDBracketRoot()
-LALDBisectionFindRoot()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{ComputeSkyBinaryCV}}
-
-</lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALConstants.h>
@@ -87,13 +47,34 @@ static LIGOTimeGPS Tperi;  /* Time of periapse passage as measured in SSB frame 
 static REAL8 p,q;    /* coeficients of phase model */
 static REAL8 E;      /* eccentric anomoly */
 
-/* <lalVerbatim file="ComputeSkyBinaryCP"> */
-void LALComputeSkyBinary	(LALStatus	*status,
-		 REAL8 	*skyConst,
-		 INT8 		iSkyCoh,
-		 CSBParams 	*params)
-{  /* </lalVerbatim> */
 
+/** Given a set of input parameters defining a source location in the sky and
+the binary system in which the source resides, this routine returns the phase
+model coefficients \f$A_{s\alpha}\f$ and \f$B_{s\alpha}\f$ which are needed to
+correctly account for the phase variance of a signal over time. The
+\c CSBParams parameter structure contains relevant information
+for this routine to properly run.  In particular, it contains an array of
+timestamps in \c LIGOTimeGPS format, which are the GPS times of the first
+data from each SFT.  The \c input is an \c INT4 variable
+\c iSkyCoh, which is the index of the sky location under consideration.  For
+each sky location and set of orbital parameters, this code needs to be run
+once; the necessary phase model
+coefficients are calculated, and can then be applied to the relevant spindown
+parameter sets one is using in their search.
+
+\heading{Algorithm}
+The routine uses a simplistic nested for-loop structure.  The outer loop is
+over the number of SFTs in the observation timescale; this accounts for the
+temporal variability of the phase model coefficients.  The inner loop is over
+the number of spindown parameters in one set.  Inside the inner loop, the
+values are calculated using the analytical formulae given in the
+\ref ComputeSkyBinary.h documentation.
+*/
+void LALComputeSkyBinary (LALStatus	*status,
+                          REAL8 	*skyConst,
+                          INT8 		iSkyCoh,
+                          CSBParams 	*params)
+{
 
 	INT4	m, n, nP;
 	REAL8	dTbary;
