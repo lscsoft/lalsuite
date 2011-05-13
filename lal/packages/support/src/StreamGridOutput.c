@@ -1,9 +1,6 @@
 /**
 \author Creighton, T. D.
 \file
-*/
-
-/**
 
 \heading{Module \ref StreamGridOutput.c}
 \latexonly\label{ss_StreamGridOutput_c}\endlatexonly
@@ -16,17 +13,6 @@ Writes a LAL grid structure to an output stream.
 void
 LAL<typecode>WriteGrid( LALStatus *stat, FILE *stream, <datatype>Grid *grid )
 \endcode
-
-
-
-
-
-
-
-
-
-
-
 
 \heading{Description}
 
@@ -49,8 +35,7 @@ routines corresponding to all the numeric atomic datatypes
 <tr><td>\tt I8</td><td>\tt  INT8</td><td>\tt U8</td><td>\tt    UINT8</td></tr>
 <tr><td>\tt  S</td><td>\tt REAL4</td><td>\tt  C</td><td>\tt COMPLEX8</td></tr>
 <tr><td>\tt  D</td><td>\tt REAL8</td><td>\tt  Z</td><td>\tt COMPLEX16</td></tr>
-<tr><td>
-</td></tr></table>
+</tr></table>
 
 
 \heading{Format for <tt>*stream</tt>:} The data written to the

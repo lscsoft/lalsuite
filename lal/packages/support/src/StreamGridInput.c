@@ -1,9 +1,6 @@
 /**
 \author Creighton, T. D.
 \file
-*/
-
-/**
 
 \heading{Module \ref StreamGridInput.c}
 \latexonly\label{ss_StreamGridInput_c}\endlatexonly
@@ -16,17 +13,6 @@ Converts an input stream into a LAL grid structure.
 void
 LAL<typecode>ReadGrid( LALStatus *stat, <datatype>Grid **grid, FILE *stream )
 \endcode
-
-
-
-
-
-
-
-
-
-
-
 
 \heading{Description}
 
@@ -48,8 +34,7 @@ referred to by <tt><typecode></tt>:
 <tr><td>\tt I8</td><td>\tt  INT8</td><td>\tt U8</td><td>\tt    UINT8</td></tr>
 <tr><td>\tt  S</td><td>\tt REAL4</td><td>\tt  C</td><td>\tt COMPLEX8</td></tr>
 <tr><td>\tt  D</td><td>\tt REAL8</td><td>\tt  Z</td><td>\tt COMPLEX16</td></tr>
-<tr><td>
-</td></tr></table>
+</tr></table>
 
 
 \heading{Format for <tt>*stream</tt>:} The input stream is assumed
