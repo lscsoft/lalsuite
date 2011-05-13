@@ -275,6 +275,8 @@ INT4 XLALGenerateWaveDerivative (
   gsl_interp_accel *acc;
   gsl_spline *spline;
 
+  if (wave->length!=dwave->length)
+    XLAL_ERROR( func, XLAL_EFUNC );
 
   /* Getting interpolation and derivatives of the waveform using gsl spline routine */
   /* Initialize arrays and supporting variables for gsl */

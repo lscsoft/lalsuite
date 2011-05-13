@@ -74,6 +74,7 @@
  * LALPSpinInspiralRDderivatives
  * LALInspiralSetup
  * LALInspiralChooseModel
+ * LALRungeKutta4
  * LALAdaptiveRungeKutta4
  * \end{verbatim}
  *
@@ -173,6 +174,7 @@ typedef struct LALPSpinInspiralRDstructparams {
   REAL8 epnspin20S2S2dotLNh;
   REAL8 epnspin25S1dotLNh;
   REAL8 epnspin25S2dotLNh;
+  REAL8 OmCutoff;
   REAL8 lengths;
   UINT4 length;
   UINT4 inspiralOnly;
@@ -228,7 +230,7 @@ static void XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspi
 
   mparams->inspiralOnly=params->inspiralOnly;
   mparams->dt=1./params->tSampling;
-
+  mparams->OmCutoff = params->fCutoff*params->totalMass * LAL_MTSUN_SI * (REAL8) LAL_PI;
   mparams->lengths = (5.0 / 256.0) / LAL_PI * pow(LAL_PI * params->chirpMass * LAL_MTSUN_SI * params->fLower,-5.0 / 3.0) / params->fLower;
 
   /* setup coefficients for PN equations */
@@ -1328,6 +1330,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
   REAL8 S1x,S1y,S1z;
   REAL8 S2x,S2y,S2z;
   REAL8 LNhxy;
+  REAL8 energy;
 
   REAL8 LNhS1,LNhS2,S1S1,S1S2,S2S2;
   REAL8 dLNhx,dLNhy,dLNhz;
@@ -1491,14 +1494,16 @@ static void LALSpinInspiralEngine(LALStatus * status,
     S2x = values.data[8] = newvalues.data[8];
     S2y = values.data[9] = newvalues.data[9];
     S2z = values.data[10] = newvalues.data[10];
-  
+
+    energy = values.data[11] = newvalues.data[11];
+
     alphaold = alpha;
     LNhxy = sqrt(LNhx * LNhx + LNhy * LNhy);
     if (LNhxy>0.)
       alpha = atan2(LNhy, LNhx);
     else 
       alpha = alphaold;
-    if ((fabs(alpha-alphaold)>LAL_PI/4.)&&(fabs(alpha-alphaold)<2.*LAL_PI-0.1)&&(count>1)) 
+    if ((fabs(alpha-alphaold)>LAL_PI/4.)&&(fabs(alpha-alphaold)<2.*LAL_PI-0.1)&&(count>1))
       fprintf(stderr,"**** LALSpinInspiraEngine ERROR ****: Problem with coordinate singularity %d  %12.6e  %12.6e\n",count,alpha,alphaold);
 
     LNhS1 = (S1x * LNhx + S1y * LNhy + S1z * LNhz) / mparams->m1m / mparams->m1m;
@@ -1542,6 +1547,8 @@ static void LALSpinInspiralEngine(LALStatus * status,
 
   } while ( (intreturn==GSL_SUCCESS) && (omegaMatch>omega) );
 
+  if (omega>omegaMatch) intreturn = LALPSIRDPN_TEST_OMEGAMATCH;
+
   LALFree(dummy.data);
 
   if (intreturn!=LALPSIRDPN_TEST_OMEGAMATCH) {
@@ -1558,7 +1565,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
   phenPars->intreturn = intreturn;
   phenPars->Psi       = Phi;
   phenPars->alpha     = alpha;
-  phenPars->energy    = values.data[11];
+  phenPars->energy    = energy;
   phenPars->omega     = omega;
   phenPars->domega    = domega/Mass;
   phenPars->ddomega   = ddomega/Mass/Mass;
@@ -1710,12 +1717,13 @@ static int XLALSpinInspiralAdaptiveEngine(
   if (mparams->inspiralOnly!=1) {
 
     Npoints = (UINT4) 1./mparams->dt/20.;
+    if (Npoints>intlen) Npoints=intlen;
 
     REAL8Vector *omega_s   = XLALCreateREAL8Vector(Npoints);
     REAL8Vector *LNhx_s    = XLALCreateREAL8Vector(Npoints);
     REAL8Vector *LNhy_s    = XLALCreateREAL8Vector(Npoints);
     REAL8Vector *LNhz_s    = XLALCreateREAL8Vector(Npoints);
-    REAL8Vector *alpha_s     = XLALCreateREAL8Vector(Npoints); 
+    REAL8Vector *alpha_s   = XLALCreateREAL8Vector(Npoints); 
 
     REAL8Vector *domega    = XLALCreateREAL8Vector(Npoints);
     REAL8Vector *dLNhx     = XLALCreateREAL8Vector(Npoints);
@@ -1728,7 +1736,6 @@ static int XLALSpinInspiralAdaptiveEngine(
     REAL8Vector *ddiota    = XLALCreateREAL8Vector(Npoints);
     REAL8Vector *ddalpha   = XLALCreateREAL8Vector(Npoints);
 
-    if (Npoints>intlen) Npoints=intlen;
     for (k=0; k<Npoints; k++) {
       j=k+intlen-Npoints;
       omega_s->data[k]  = omega[j];
@@ -1774,8 +1781,6 @@ static int XLALSpinInspiralAdaptiveEngine(
       fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating derivatives\n");
       XLAL_ERROR(func,XLAL_EFAILED);
     }
-    domegak  = domega->data[kend];
-    ddomegak = ddomega->data[kend];
 
     for (k=0; k<Npoints; k++) {
       LNhxy = sqrt(LNhx_s->data[k] * LNhx_s->data[k] + LNhy_s->data[k] * LNhy_s->data[k]);
@@ -1787,8 +1792,8 @@ static int XLALSpinInspiralAdaptiveEngine(
 	dalpha->data[k] = 0.;
       }
     }
+    domegak  = domega->data[kend];
     diotak  = diota->data[kend];
-    ddiotak = ddiota->data[kend];
     dalphak = dalpha->data[kend];
 
     errcode  = XLALGenerateWaveDerivative(ddiota,diota,dt);
@@ -1798,6 +1803,9 @@ static int XLALSpinInspiralAdaptiveEngine(
       fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating derivative\n");
       XLAL_ERROR(func,XLAL_EFAILED);
     }
+    ddomegak = ddomega->data[kend];
+    ddiotak  = ddiota->data[kend];
+    ddalphak = ddalpha->data[kend];
 
     XLALDestroyREAL8Vector(omega_s);
     XLALDestroyREAL8Vector(LNhx_s);
@@ -1893,7 +1901,6 @@ static int XLALSpinInspiralAdaptiveEngine(
   phenPars->countback = jend;
   phenPars->Psi       = Phi[jend];
   phenPars->endtime   = ((REAL8) jend)*dt;
-  phenPars->alpha     = alphak;
   phenPars->ci        = LNhz[jend];
   phenPars->LNhS1     = LNhS1k;
   phenPars->LNhS2     = LNhS2k;
@@ -2341,7 +2348,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   if ( (intreturn != LALPSIRDPN_TEST_OMEGAMATCH) && (intreturn != LALPSIRDPN_TEST_ENERGY) )  
     {
       fprintf(stderr,"** LALPSpinInspiralRD WARNING **: integration terminated with code %d.\n",intreturn);
-      fprintf(stderr,"  1025: Energy increases\n  1026: Omegadot -ve\n  1028: Omega NAN\n  1029: Omega > Omegamatch\n  1030: omega -ve\n");
+      fprintf(stderr,"  1025: Energy increases\n  1026: Omegadot -ve\n  1028: Omega NAN\n  1029: Omega > Omegamatch\n  1030: Omega -ve\n");
       fprintf(stderr,"  Waveform parameters were m1 = %14.6e, m2 = %14.6e, inc = %10.6f,\n", params->mass1, params->mass2, params->inclination);
       fprintf(stderr,"                           S1 = (%10.6f,%10.6f,%10.6f)\n", params->spin1[0], params->spin1[1], params->spin1[2]);
       fprintf(stderr,"                           S2 = (%10.6f,%10.6f,%10.6f)\n", params->spin2[0], params->spin2[1], params->spin2[2]);

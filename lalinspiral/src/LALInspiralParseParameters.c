@@ -192,6 +192,8 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	  }
 	  else if (strcmp(argv[i],"SpinTaylorT3")==0){
 	    params->approximant = SpinTaylorT3; }
+	  else if (strcmp(argv[i],"PhenSpinTaylorRD")==0){
+	    params->approximant = PhenSpinTaylorRD; }
           else if (strcmp(argv[i],"Eccentricity")==0){
 	    params->approximant = Eccentricity; }
 	  else {fprintf(stderr,"Approximant not found in ParseParameter function\n");} /*is it correct ? */
