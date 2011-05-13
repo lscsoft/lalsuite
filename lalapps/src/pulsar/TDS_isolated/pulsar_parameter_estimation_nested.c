@@ -41,12 +41,17 @@ INT4 verbose=0;
                      upper and lower ranges\n"\
 " --ephem-earth       Earth ephemeris file\n"\
 " --ephem-sun         Sun ephemeris file\n"\
+" --model-type        (CHAR) the signal model that you want to use. Currently\n\
+                     this can only be 'triaxial', which is the default\n\
+                     value.\n"\
+"\n"\
 " Nested sampling parameters:\n"\
 " --Nlive             (INT4) no. of live points for nested sampling\n"\
 " --Nmcmc             (INT4) no. of for MCMC used to find new live points\n"\
 " --Nruns             (INT4) no. of parallel runs\n"\
 " --tolerance         (REAL8) tolerance of nested sampling integrator\n"\
 " --randomseed        seed for random number generator\n"\
+"\n"\
 " Signal injection parameters:\n"\
 " --inject-file       a pulsar parameter (par) file containing the parameters\n\
                      of a signal to be injected. If this is given a signal\n\
@@ -97,6 +102,9 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   
   /* read in data using command line arguments */
   readPulsarData( &runState );
+  
+  /* set the pulsar model type */
+  setSignalModelType( &runState );
   
   /* set algorithm to use Nested Sampling */
   runState.algorithm = &LALInferenceNestedSamplingAlgorithm;
@@ -726,6 +734,32 @@ defined!\n");
 }
 
 
+/* function to set the model of the pulsar that is being used */
+void setSignalModelType( LALInferenceRunState *runState ){
+  LALInferenceIFOData *data = runState->data;
+  
+  ProcessParamsTable *ppt;
+  ProcessParamsTable *commandLine = runState->commandLine;
+  
+  CHAR *modeltype = NULL;
+  
+  ppt = LALInferenceGetProcParamVal( commandLine, "--model-type" );
+  if( ppt ){
+    modeltype  = XLALStringDuplicate( 
+      LALInferenceGetProcParamVal( commandLine, "--model-type" )->value );
+  }
+  else{ /* set default model to triaxial */
+    modeltype = XLALStringDuplicate( "triaxial" );
+  }
+  
+  while( data ){
+    LALInferenceAddVariable( data->dataParams, "modeltype", &modeltype,
+                             string_t, PARAM_FIXED );
+    data = data->next;
+  }
+}
+
+
 void setupFromParFile( LALInferenceRunState *runState )
 /* Read the PAR file of pulsar parameters and setup the code using them */
 /* Generates lookup tables also */
@@ -1159,8 +1193,8 @@ set.\n", propfile, tempPar);
                    PARAM_LINEAR );
     }
     /* Add the prior variables */
-    LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, (void *)&low, (void *)&high,
-                    type );
+    LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, (void *)&low, 
+                                (void *)&high, type );
     
     /* if there is a phase parameter defined in the proposal then set withphase
        to 1 */
@@ -1507,10 +1541,13 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
 /******************************************************************************/
 /*                            MODEL FUNCTIONS                                 */
 /******************************************************************************/
+
 void get_pulsar_model( LALInferenceIFOData *data ){
   BinaryPulsarParams pars;
   
   REAL8 rescale = 1.;
+  
+  CHAR *modeltype = NULL;
   
   /* set model parameters (including rescaling) */
   rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "h0_scale" );
@@ -1632,10 +1669,17 @@ void get_pulsar_model( LALInferenceIFOData *data ){
     pars.m2 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "m2" ) * rescale;
   }
 
+  modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
+
   /* model specific for a triaxial pulsar emitting at twice the rotation
      frequency - other models can be added later */
-  get_triaxial_pulsar_model( pars, data );
-  
+  if ( !strcmp( modeltype, "triaxial" ) )
+    get_triaxial_pulsar_model( pars, data );
+  else{
+    fprintf(stderr, "Error... model '%s' is not defined!\n", modeltype);
+    exit(0);
+  }
+    
 }
 
 
@@ -1899,6 +1943,7 @@ REAL8 noise_only_model( LALInferenceIFOData *data ){
 /*                       SOFTWARE INJECTION FUNCTIONS                         */
 /******************************************************************************/
 
+
 void injectSignal( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
   
@@ -2072,7 +2117,14 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin ){
   if ( verbose ){
     FILE *fpsegs = NULL;
     
-    if ( (fpsegs = fopen("data_segment_list.txt", "a")) == NULL ){
+    CHAR *outfile = NULL;
+    
+    /* set detector name as prefix */
+    outfile = XLALStringDuplicate( data->detector->frDetector.prefix );
+      
+    outfile = XLALStringAppend( outfile, "data_segment_list.txt" );
+    
+    if ( (fpsegs = fopen(outfile, "w")) == NULL ){
       fprintf(stderr, "Non-fatal error open file to output segment list.\n");
       return chunkLengths;
     }
@@ -2434,8 +2486,9 @@ REAL8 log_factorial( UINT4 num ){
 
 void rescaleOutput( LALInferenceRunState *runState ){
   /* Open orginal output output file */
-  CHAR *outfile, outfiletmp[256] = "";
-  FILE *fp = NULL, *fptemp = NULL;
+  CHAR *outfile, outfiletmp[256] = "", outfilepars[256] = "";
+  FILE *fp = NULL, *fptemp = NULL, *fppars = NULL;
+  UINT4 j = 0;
   
   LALInferenceVariables *current=XLALCalloc(1,sizeof(LALInferenceVariables));
   
@@ -2456,13 +2509,21 @@ void rescaleOutput( LALInferenceRunState *runState ){
     exit(3);
   }
   
-  /* open tempoary output file for reading */
+  /* open temporary output file for reading */
   if( (fptemp = fopen(outfiletmp, "w")) == NULL ){
     fprintf(stderr, "Error... cannot open temporary output file %s.\n",
             outfile);
     exit(3);
   }
  
+  /* open file for printing out list of parameter names */
+  sprintf(outfilepars, "%s_parnames.txt", outfile);
+  if( (fppars = fopen(outfilepars, "w")) == NULL ){
+    fprintf(stderr, "Error... cannot open parameter name output file %s.\n",
+            outfilepars);
+    exit(3);
+  }
+  
   /* copy variables from runState to current (this seems to switch the order,
      which is required! */
   LALInferenceCopyVariables(runState->currentParams, current);
@@ -2472,7 +2533,7 @@ void rescaleOutput( LALInferenceRunState *runState ){
     
     CHAR line[1000];
     CHAR value[128] = "";
-    UINT4 i=0;
+    UINT4 i = 0;
     
     /* read in one line of the file */
     if( fgets(line, 1000*sizeof(CHAR), fp) == NULL && !feof(fp) ){
@@ -2505,12 +2566,15 @@ void rescaleOutput( LALInferenceRunState *runState ){
       switch (item->type) {
         case INT4_t:
           fprintf(fptemp, "%d", (INT4)(atoi(value)*scalefac));
+          if ( j == 0 ) fprintf(fppars, "%s\n", item->name);
           break;
         case REAL4_t:
           fprintf(fptemp, "%e", atof(value)*scalefac);
+          if ( j == 0 ) fprintf(fppars, "%s\n", item->name);
           break;
         case REAL8_t:
           fprintf(fptemp, "%le", atof(value)*scalefac);
+          if ( j == 0 ) fprintf(fppars, "%s\n", item->name);
           break;
         case string_t:
           /* don't reprint out any string values */
@@ -2529,10 +2593,14 @@ void rescaleOutput( LALInferenceRunState *runState ){
     sprintf(value, "%s", strtok(NULL, "'\t'"));
     fprintf(fptemp, "%lf\n", atof(value));
     
+    if ( j == 0 ) fprintf(fppars, "logLikelihood\n");
+    
+    j++;
   }while( !feof(fp) );
   
   fclose(fp);
   fclose(fptemp);
+  fclose(fppars);
   
   /* move the temporary file name to the standard outfile name */
   rename( outfiletmp, outfile );

@@ -77,6 +77,8 @@ void initialiseAlgorithm( LALInferenceRunState *runState );
 
 void readPulsarData( LALInferenceRunState *runState );
 
+void setSignalModelType( LALInferenceRunState *runState );
+
 void setupFromParFile( LALInferenceRunState *runState );
 
 void setupLookupTables(LALInferenceRunState *runState, LALSource *source);
