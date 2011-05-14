@@ -184,6 +184,7 @@ src/pulsar/SideBand/lalapps_GetTimeStamps
 src/pulsar/SideBand/lalapps_SideBandMCMC
 src/pulsar/TDS_isolated/lalapps_heterodyne_pulsar
 src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation
+src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation_nested
 src/pulsar/TimingTests/lalapps_TEMPOcomparison
 src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr
