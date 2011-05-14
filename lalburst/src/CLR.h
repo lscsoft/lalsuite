@@ -23,8 +23,6 @@
  *
  * Author: Sintes, A. M.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  *
  * NAME
@@ -43,15 +41,13 @@
 
 
 
-/************************************ <lalVerbatim file="CLRHV">
-Author: Sintes, A. M.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Sintes, A. M.
+\file
+\ingroup clremoval
 
-/* <lalLaTeX>
-
-\section{Header \texttt{CLR.h}}
-\label{s:CLR.h}
+\heading{Header \ref CLR.h}
+\latexonly\label{s_CLR_h}\endlatexonly
 
 Provides routines for finding line harmonics,
 generating a reference interference signal, and removing
@@ -59,33 +55,33 @@ all the interference harmonics.
 
 
 
-\subsection*{Synopsis}
+\heading{Synopsis}
 
 
-\begin{verbatim}
+\code
 #include "CLR.h"
-\end{verbatim}
+\endcode
 
 
-\noindent The principal of  {\sc clr} is the following:
+The principal of  \c clr is the following:
 
 We assume that the interference has the form
-\begin{equation}
+\anchor e3 \f{equation}{
 y(t)=\sum_n a_n m(t)^n + \left( a_n m(t)^n\right)^* \ ,
 \label{e3}
-\end{equation}
-where $a_n$ are
-complex amplitudes and  $m(t)$ is a nearly monochromatic function
+\f}
+where \f$a_n\f$ are
+complex amplitudes and  \f$m(t)\f$ is a nearly monochromatic function
  near
-a frequency $f_0$.
+a frequency \f$f_0\f$.
 The idea is to
  use the information in the different harmonics of the interference
-to construct a function $M(t)$ that is  as close a replica as possible of
-$m(t)$ and then construct a function close to $y(t)$ which
+to construct a function \f$M(t)\f$ that is  as close a replica as possible of
+\f$m(t)\f$ and then construct a function close to \f$y(t)\f$ which
 is subtracted from the output  of the system cancelling the interference.
 The key is that real gravitational wave signals will not be present
-with multiple harmonics and that $M(t)$ is constructed from many
-frequency bands with independent noise. Hence, {\sc clr} will little
+with multiple harmonics and that \f$M(t)\f$ is constructed from many
+frequency bands with independent noise. Hence, \c clr will little
 affect the statistics of the noise in any one band and
 any gravitational wave signal masked by the interference can
 be recovered without any disturbance.
@@ -93,16 +89,16 @@ be recovered without any disturbance.
 
 We assume that the data produced by the system
 is just the sum of the interference plus  noise
-\begin{equation}
+\anchor e6 \f{equation}{
 x(t)=y(t)+n(t) \ ,
 \label{e6}
-\end{equation}
-where $y(t)$ is given by Eq.~(\ref{e3}) and the noise $n(t)$ in the
+\f}
+where \f$y(t)\f$ is given by Eq.\eqref{e3} and the noise \f$n(t)\f$ in the
 detector  is a zero-mean stationary
 stochastic process.
-The procedure consists in   defining a set of functions $\tilde z_k(\nu)$
+The procedure consists in   defining a set of functions \f$\tilde z_k(\nu)\f$
 in the frequency domain as
-\begin{equation}
+\anchor e8 \f{equation}{
 \tilde z_k(\nu)\equiv \left\{
 \begin{array}{cc}
 \tilde x(\nu) & \nu_{ik}<\nu <\nu_{fk}\\
@@ -110,70 +106,70 @@ in the frequency domain as
 \end{array}
 \right.
 \label{e8}
-\end{equation}
-where  $(\nu_{ik}, \nu_{fk})$ correspond to the upper and lower frequency
+\f}
+where  \f$(\nu_{ik}, \nu_{fk})\f$ correspond to the upper and lower frequency
 limits of the harmonics of the interference
-and $k$ denotes the harmonic considered.
+and \f$k\f$ denotes the harmonic considered.
 These functions are equivalent to
-\begin{equation}
+\f{equation}{
 \tilde z_k(\nu)= a_k \widetilde{m^k}(\nu) +\tilde n_k(\nu) \ ,
-\end{equation}
-where $ \tilde n_k(\nu)$ is the noise in the frequency band of the
+\f}
+where \f$ \tilde n_k(\nu)\f$ is the noise in the frequency band of the
 harmonic considered.  Their inverse  Fourier transforms yield
-\begin{equation}
+\f{equation}{
 z_k(t)=a_k m(t)^k +n_k(t) \ .
-\end{equation}
-Since  $m(t)$ is supposed to be a narrow-band function near a frequency $f_0$,
-each $z_k(t)$ is a  narrow-band function near $kf_0$.
+\f}
+Since  \f$m(t)\f$ is supposed to be a narrow-band function near a frequency \f$f_0\f$,
+each \f$z_k(t)\f$ is a  narrow-band function near \f$kf_0\f$.
 Then, we  define
-\begin{equation}
+\anchor e10a \f{equation}{
 B_k(t)\equiv \left[ z_k(t)\right]^{1/k}\ ,\label{e10a}
-\end{equation}
+\f}
 that can be rewritten as
-\begin{equation}
+\anchor e10 \f{equation}{
 B_k(t)= (a_k)^{1/k}m(t) \beta_k(t) \ , \qquad
 \beta_k(t)=\left[ 1+ {n_k(t) \over a_k m(t)^k}\right]^{1/k} \ .
 \label{e10}
-\end{equation}
-All these  functions, $\{B_k(t)\}$, are almost monochromatic around the
-fundamental frequency, $f_0$, but they differ basically by a certain
-complex amplitude. These factors, $\Gamma_k$, can easily be  calculated,
-and  we can construct a set of functions   $\{b_k(t)\}$
-\begin{equation}
+\f}
+All these  functions, \f$\{B_k(t)\}\f$, are almost monochromatic around the
+fundamental frequency, \f$f_0\f$, but they differ basically by a certain
+complex amplitude. These factors, \f$\Gamma_k\f$, can easily be  calculated,
+and  we can construct a set of functions   \f$\{b_k(t)\}\f$
+\f{equation}{
  b_k(t)=\Gamma_k B_k(t)\ ,
- \end{equation}
-such that, they all have the same mean value. Then,   $M(t)$ can be
- constructed  as a function of all $\{b_k(t)\}$
+ \f}
+such that, they all have the same mean value. Then,   \f$M(t)\f$ can be
+ constructed  as a function of all \f$\{b_k(t)\}\f$
  in such a way
 that it has the same mean and minimum variance.
 If
-$M(t)$ is linear with $\{b_k(t)\}$, the statistically the best is
-\begin{equation}
- M(t)=\left(\sum_k {b_k(t) \over {\rm Var}[\beta_k(t)]} \right) {\Big
+\f$M(t)\f$ is linear with \f$\{b_k(t)\}\f$, the statistically the best is
+\f{equation}{
+ M(t)=\left(\sum_k {b_k(t) \over \textrm{Var}[\beta_k(t)]} \right) {\Big
  { /}}
-\left( \sum_k {1 \over {\rm Var}[\beta_k(t)]}\right) \ ,
-\end{equation}
+\left( \sum_k {1 \over \textrm{Var}[\beta_k(t)]}\right) \ ,
+\f}
 where
-\begin{equation}
-{\rm Var}[\beta_k(t)]= {\langle n_k(t) n_k(t)^*\rangle\over  k^2
+\f{equation}{
+\textrm{Var}[\beta_k(t)]= {\langle n_k(t) n_k(t)^*\rangle\over  k^2
 \vert a_k m(t)^k\vert^2}+ \mbox{corrections} \ .
-\end{equation}
+\f}
 In practice,
 we  approximate
-\begin{equation}
+\f{equation}{
 \vert a_k m(t)^k\vert^2 \approx \vert z_k(t)\vert^2 \ ,
-\end{equation}
+\f}
 and we assume  stationary noise. Therefore,
-\begin{equation}
+\f{equation}{
 \langle n_k(t) n_k(t)^*\rangle= \int_{\nu_{ik}}^{\nu_{fk}} S(\nu) d\nu \ ,
-\end{equation}
-where $S(\nu)$ is the power spectral density of the noise.
+\f}
+where \f$S(\nu)\f$ is the power spectral density of the noise.
 
 Finally, it only remains to determine the amplitude of the different
 harmonics, which can be obtained applying a least square method.
 
 
-</lalLaTeX> */
+*/
 
 
 /*
@@ -223,16 +219,16 @@ NRCSID (CLRH, "$Id: CLR.h");
  */
 
 
-/* <lalLaTeX>
-\subsection*{Error conditions}
-\vspace{0.1in}
-\input{CLRHErrorTable}
-
-</lalLaTeX> */
+/**
+\heading{Error conditions}
 
 
 
-/* <lalErrTable file="CLRHErrorTable"> */
+*/
+
+
+
+/**\name Error Codes */ /*@{*/
 
 #define CLRH_ENULL 1
 #define CLRH_ESIZE 2
@@ -248,58 +244,22 @@ NRCSID (CLRH, "$Id: CLR.h");
 #define CLRH_MSGESAME "Input/Output data vectors are the same"
 #define CLRH_MSGEFREQ "Invalid frequency"
 
-/* </lalErrTable>  */
-
-
-
-/* <lalLaTeX>
-
-\subsection*{Structures}
-
-\begin{verbatim}
-struct REAL4TVectorCLR
-\end{verbatim}
-\idx[Type]{REAL4TVectorCLR}
-
-\noindent This structure stores the time domain data and other
-information needed in order to remove all the line interference
-harmonics.  The fields are:
-
-\begin{description}
-\item[\texttt{UINT4 length}]  The number of elements in data.
-\item[\texttt{REAL4  *data}] The (real) time domain data.
-\item[\texttt{REAL4  deltaT}] The sample spacing in time (in seconds).
-\item[\texttt{REAL4  fLine}] The interference fundamental frequency $f_0$
-    (in Hz), e.g., 60 Hz.
-\end{description}
-
-
-
-\begin{verbatim}
-struct REAL4FVectorCLR
-\end{verbatim}
-\idx[Type]{REAL4FVectorCLR}
-
-\noindent This structure stores the spectrum, $\vert\tilde x(\nu)\vert^2$,
- and other information
-needed to find the location of the line harmonics.
-  The fields are:
-
-\begin{description}
-\item[\texttt{UINT4 length}]  The number of elements in data.
-\item[\texttt{REAL4   *data}] The (real)  frequency domain data, e.g.,
-                              $\vert\tilde x(\nu)\vert^2$.
-\item[\texttt{REAL4   deltaF}] The $\Delta$F offset between samples (in Hz).
-\item[\texttt{REAL4   fLine}] The interference fundamental frequency $f_0$
-    (in Hz), e.g., 60 Hz.
-\end{description}
-
-
-</lalLaTeX> */
-
+/*@}*/
 
   /* Available CLR Time Vector  */
 
+/** This structure stores the time domain data and other
+information needed in order to remove all the line interference
+harmonics.  The fields are:
+
+<dl>
+<dt><tt>UINT4 length</tt></dt><dd>  The number of elements in data.</dd>
+<dt><tt>REAL4  *data</tt></dt><dd> The (real) time domain data.</dd>
+<dt><tt>REAL4  deltaT</tt></dt><dd> The sample spacing in time (in seconds).</dd>
+<dt><tt>REAL4  fLine</tt></dt><dd> The interference fundamental frequency \f$f_0\f$
+    (in Hz), e.g., 60 Hz.</dd>
+</dl>
+*/
 typedef struct tagREAL4TVectorCLR{
   UINT4   length;  /* number of elements in data */
   REAL4   *data;   /* time domain data */
@@ -310,6 +270,21 @@ typedef struct tagREAL4TVectorCLR{
 
   /* Available CLR Frequency Vector  */
 
+/** This structure stores the spectrum, \f$\vert\tilde x(\nu)\vert^2\f$,
+    and other information
+    needed to find the location of the line harmonics.
+    The fields are:
+
+<dl>
+<dt><tt>UINT4 length</tt></dt><dd>  The number of elements in data.</dd>
+<dt><tt>REAL4   *data</tt></dt><dd> The (real)  frequency domain data, e.g.,
+                              \f$\vert\tilde x(\nu)\vert^2\f$.</dd>
+<dt><tt>REAL4   deltaF</tt></dt><dd> The \f$\Delta\f$F offset between samples (in Hz).</dd>
+<dt><tt>REAL4   fLine</tt></dt><dd> The interference fundamental frequency \f$f_0\f$
+    (in Hz), e.g., 60 Hz.</dd>
+</dl>
+
+*/
 typedef struct tagREAL4FVectorCLR{
   UINT4   length;  /* number of elements in data */
   REAL4   *data;   /* frequency domain data */
@@ -319,9 +294,9 @@ typedef struct tagREAL4FVectorCLR{
 
 
 
-/* <lalLaTeX>
-\vfill{\footnotesize\input{CLRHV}}
-</lalLaTeX> */
+
+
+
 
 
 
@@ -331,11 +306,11 @@ typedef struct tagREAL4FVectorCLR{
 
 
 
-/* <lalLaTeX>
-\newpage\input{HarmonicFinderC}
-\newpage\input{RefInterferenceC}
-\newpage\input{CleanAllC}
-</lalLaTeX> */
+
+
+
+
+
 
 void LALRefInterference ( LALStatus          *status,
 			  COMPLEX8Vector     *out, /*  M(t), size n */
@@ -361,9 +336,9 @@ void LALHarmonicFinder (
 
 /* Test program. */
 
-/* <lalLaTeX>
-\newpage\input{CLRTestC}
-</lalLaTeX> */
+
+
+
 
 #ifdef  __cplusplus
 }

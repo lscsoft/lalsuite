@@ -17,11 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/************************* <lalVerbatim file="GeneratePulsarSignalTestCV">
-Author: Mendell, G.
-$Id$
-**************************************************** </lalVerbatim> */
-
 /* NOTES: */
 /* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
 /* 10/12/04 gam; include INCLUDE_SEQUENTIAL_MISMATCH to make make pulsar parameters more varied. */
@@ -30,20 +25,23 @@ $Id$
 /* 02/02/05 gam; fix warnings about setting ephemeris files pointers equal to constant strings and unused variables. */
 /* 09/07/05 gam; Add Dterms parameter to LALFastGeneratePulsarSFTs; use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
 
-/********************************************************** <lalLaTeX>
+/**
+\author Mendell, G.
+\file
+\ingroup pulsarTODO
 
-\subsection{Program \texttt{GeneratePulsarSignalTest.c}}
-\label{ss:GeneratePulsarSignalTest.c}
+\heading{Program \ref GeneratePulsarSignalTest.c}
+\latexonly\label{ss_GeneratePulsarSignalTest_c}\endlatexonly
 
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 GeneratePulsarSignalTest
-\end{verbatim}
+\endcode
 
 No command line options are currently supported. However, preprocessor flags
 can be set to print output for debugging purposes.
 
-\subsubsection*{Description}
+\heading{Description}
 
 This test program calls and compares the output from LALGeneratePulsarSignal
 and LALSignalToSFTs with the output from LALComputeSkyAndZeroPsiAMResponse
@@ -52,8 +50,15 @@ and LALFastGeneratePulsarSFTs for a variety of signal parameters.
 The current code only compares the modulus of the output SFTs,
 not the phases.
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
+
+\heading{Notes}
+
+See the pulsar search code in lalapps for more
+example uses of the functions tested by this code.
+
+*/
+
+/** \name Error Codes */ /*@{*/
 #define GENERATEPULSARSIGNALTESTC_ENORM  0
 #define GENERATEPULSARSIGNALTESTC_EIFO   1
 #define GENERATEPULSARSIGNALTESTC_EMOD   2
@@ -65,16 +70,7 @@ not the phases.
 #define GENERATEPULSARSIGNALTESTC_MSGEMOD   "SFT max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs"
 #define GENERATEPULSARSIGNALTESTC_MSGEBIN  "SFT freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs by more than 1 bin"
 #define GENERATEPULSARSIGNALTESTC_MSGEBINS "SFTs freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs too often"
-/******************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Notes}
-
-See the pulsar search code in lalapps for more
-example uses of the functions tested by this code.
-
-\vfill{\footnotesize\input{GeneratePulsarSignalTestCV}}
-
-******************************************************* </lalLaTeX> */
+/*@}*/
 
 /* preprocessor flags that control output */
 /* First two are used with PRINT_OUTPUTSFT

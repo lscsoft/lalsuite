@@ -17,19 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/******************** <lalVerbatim file="StochasticOptimalFilterNormalizationTestCV">
-Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$
-********************************* </lalVerbatim> */
+/**
+\author UTB Relativity Group; contact whelan@phys.utb.edu
+\file
+\ingroup stochastic
+\brief Test suite for <tt>LALStochasticOptimalFilterNormalization()</tt>.
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{StochasticOptimalFilterNormalizationTest.c}}
-\label{stochastic:ss:StochasticOptimalFilterNormalizationTest.c}
-
-Test suite for \texttt{LALStochasticOptimalFilterNormalization()}.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 ./StochasticOptimalFilterNormalizationTest [options]
 Options:
   -h             print usage message
@@ -43,78 +38,78 @@ Options:
   -i filename    read first inverse noise PSD from file filename
   -j filename    read second inverse noise PSD from file filename
   -y             use normalization appropriate to heterodyned data
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This program tests the function
-\texttt{LALStochasticOptimalFilterNormalization()}, which calculates
+<tt>LALStochasticOptimalFilterNormalization()</tt>, which calculates
 the normalization factor for an optimal filter and the expected
 variance per unit time of the cross-correlation statistic, given a
 stochastic gravitational-wave background spectrum
-$h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f)$, an overlap reduction
-function $\gamma(f)$, and unwhitened noise power spectral densities
-$\{P_i(f)$ for a pair of detectors.
+\f$h_{100}^2\Omega_{\mathrm{GW}}(f)\f$, an overlap reduction
+function \f$\gamma(f)\f$, and unwhitened noise power spectral densities
+\f$\{P_i(f)\f$ for a pair of detectors.
 
 First, it tests that the correct error codes
-(\textit{cf.}\ Sec.~\ref{stochastic:s:StochasticCrossCorrelation.h})
+(cf. \ref StochasticCrossCorrelation.h)
 are generated for the following error conditions (tests in
-\textit{italics} are not performed if \verb+LAL_NDEBUG+ is set, as
+\e italics are not performed if \c LAL_NDEBUG is set, as
 the corresponding checks in the code are made using the ASSERT macro):
-\begin{itemize}
-\item \textit{null pointer to input structure}
-\item \textit{null pointer to output structure}
-\item \textit{null pointer to overlap reduction function}
-\item \textit{null pointer to gravitational-wave spectrum}
-\item \textit{null pointer to first inverse noise PSD}
-\item \textit{null pointer to second inverse noise PSD}
-\item \textit{null pointer to data member of overlap reduction function}
-\item \textit{null pointer to data member of gravitational-wave spectrum}
-\item \textit{null pointer to data member of first inverse noise PSD}
-\item \textit{null pointer to data member of second inverse noise PSD}
-\item \textit{null pointer to data member of data member of overlap reduction function}
-\item \textit{null pointer to data member of data member of gravitational-wave spectrum}
-\item \textit{null pointer to data member of data member of first inverse noise PSD}
-\item \textit{null pointer to data member of data member of second inverse noise PSD}
-\item \textit{zero length}
-\item \textit{negative frequency spacing}
-\item \textit{zero frequency spacing}
-\item negative start frequency
-\item length mismatch between overlap reduction function and gravitational-wave spectrum
-\item length mismatch between overlap reduction function and first inverse noise PSD
-\item length mismatch between overlap reduction function and second inverse noise PSD
-\item frequency spacing mismatch between overlap reduction function and gravitational-wave spectrum
-\item frequency spacing mismatch between overlap reduction function and first inverse noise PSD
-\item frequency spacing mismatch between overlap reduction function and second inverse noise PSD
-\item start frequency mismatch between overlap reduction function and gravitational-wave spectrum
-\item start frequency mismatch between overlap reduction function and first inverse noise PSD
-\item start frequency mismatch between overlap reduction function and second inverse noise PSD
-\item reference frequency less than frequency spacing
-\item reference frequency greater than maximum frequency
-\end{itemize}
+<ul>
+<li> <em>null pointer to input structure</em></li>
+<li> <em>null pointer to output structure</em></li>
+<li> <em>null pointer to overlap reduction function</em></li>
+<li> <em>null pointer to gravitational-wave spectrum</em></li>
+<li> <em>null pointer to first inverse noise PSD</em></li>
+<li> <em>null pointer to second inverse noise PSD</em></li>
+<li> <em>null pointer to data member of overlap reduction function</em></li>
+<li> <em>null pointer to data member of gravitational-wave spectrum</em></li>
+<li> <em>null pointer to data member of first inverse noise PSD</em></li>
+<li> <em>null pointer to data member of second inverse noise PSD</em></li>
+<li> <em>null pointer to data member of data member of overlap reduction function</em></li>
+<li> <em>null pointer to data member of data member of gravitational-wave spectrum</em></li>
+<li> <em>null pointer to data member of data member of first inverse noise PSD</em></li>
+<li> <em>null pointer to data member of data member of second inverse noise PSD</em></li>
+<li> <em>zero length</em></li>
+<li> <em>negative frequency spacing</em></li>
+<li> <em>zero frequency spacing</em></li>
+<li> negative start frequency</li>
+<li> length mismatch between overlap reduction function and gravitational-wave spectrum</li>
+<li> length mismatch between overlap reduction function and first inverse noise PSD</li>
+<li> length mismatch between overlap reduction function and second inverse noise PSD</li>
+<li> frequency spacing mismatch between overlap reduction function and gravitational-wave spectrum</li>
+<li> frequency spacing mismatch between overlap reduction function and first inverse noise PSD</li>
+<li> frequency spacing mismatch between overlap reduction function and second inverse noise PSD</li>
+<li> start frequency mismatch between overlap reduction function and gravitational-wave spectrum</li>
+<li> start frequency mismatch between overlap reduction function and first inverse noise PSD</li>
+<li> start frequency mismatch between overlap reduction function and second inverse noise PSD</li>
+<li> reference frequency less than frequency spacing</li>
+<li> reference frequency greater than maximum frequency</li>
+</ul>
 
 It then verifies that the correct optimal filter is generated
-(checking the normalization by verifying that (\ref{stochastic:e:mu})
+(checking the normalization by verifying that\eqref{stochastic_e_mu}
 is satisfied) for each of the following simple test cases (with
-$f_0=0$, $f_{\scriptstyle{\rm R}}=1$, $\delta f=1$ and $N=8$):
-\begin{enumerate}
-\item $\gamma(f) = h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f)
-  = P^{\scriptstyle{\rm C}}_1(f)
-  = P^{\scriptstyle{\rm C}}_2(f) = 1$;
-  The expected results in this case are $\lambda=3.079042427975$,
-  $\sigma^2\,T^{-1}=4.822422518205$
-\item $\gamma(f) = P^{\scriptstyle{\rm C}}_1(f)
-  = P^{\scriptstyle{\rm C}}_2(f) = 1$;
-  $h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f)=f^3$.
-  The expected results in this case are $\lambda=.4474881517327$,
-  $\sigma^2\,T^{-1}=.700859760794$
-\end{enumerate}
+\f$f_0=0\f$, \f$f_{\mathrm{R}}=1\f$, \f$\delta f=1\f$ and \f$N=8\f$):
+<ol>
+<li> \f$\gamma(f) = h_{100}^2\Omega_{\mathrm{GW}}(f)
+  = P^{\mathrm{C}}_1(f)
+  = P^{\mathrm{C}}_2(f) = 1\f$;
+  The expected results in this case are \f$\lambda=3.079042427975\f$,
+  \f$\sigma^2\,T^{-1}=4.822422518205\f$</li>
+<li> \f$\gamma(f) = P^{\mathrm{C}}_1(f)
+  = P^{\mathrm{C}}_2(f) = 1\f$;
+  \f$h_{100}^2\Omega_{\mathrm{GW}}(f)=f^3\f$.
+  The expected results in this case are \f$\lambda=.4474881517327\f$,
+  \f$\sigma^2\,T^{-1}=.700859760794\f$</li>
+</ol>
 
-\subsubsection*{Exit codes}
-\input{StochasticOptimalFilterNormalizationTestCE}
+\heading{Exit codes}
 
-\subsubsection*{Uses}
-\begin{verbatim}
+
+\heading{Uses}
+\code
 LALStochasticOptimalFilterNormalization()
 LALCheckMemoryLeaks()
 LALCReadFrequencySeries()
@@ -131,25 +126,25 @@ printf()
 fprintf()
 freopen()
 fabs()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
-\begin{itemize}
-\item No specific error checking is done on user-specified data.  If
-  \texttt{length} is missing, the resulting default will cause a bad
-  data error.  If \texttt{fRef} is unspecified, a default value of
-  1\,Hz is used.
-\item The length of the user-provided series must be specified, even
+\heading{Notes}
+<ul>
+<li> No specific error checking is done on user-specified data.  If
+  \c length is missing, the resulting default will cause a bad
+  data error.  If \c fRef is unspecified, a default value of
+  1\,Hz is used.</li>
+<li> The length of the user-provided series must be specified, even
   though it could in principle be deduced from the input file, because
   the data sequences must be allocated before the
-  \texttt{LALCReadFrequencySeries()} function is called.
-\item If some, but not all, of the \texttt{filename} arguments are
-  present, the user-specified data will be silently ignored.
-\end{itemize}
+  <tt>LALCReadFrequencySeries()</tt> function is called.</li>
+<li> If some, but not all, of the \c filename arguments are
+  present, the user-specified data will be silently ignored.</li>
+</ul>
 
-\vfill{\footnotesize\input{StochasticOptimalFilterNormalizationTestCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -211,7 +206,7 @@ INT4 code;
 static void Usage (const char *program, int exitflag);
 static void ParseOptions (int argc, char *argv[]);
 
-/************* <lalErrTable file="StochasticOptimalFilterNormalizationTestCE"> */
+/**\name Error Codes */ /*@{*/
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_ENOM 0
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EARG 1
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_ECHK 2
@@ -223,7 +218,7 @@ static void ParseOptions (int argc, char *argv[]);
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGECHK "Error checking failed to catch bad data"
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS "Incorrect answer for valid data"
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEUSE "Bad user-entered data"
-/***************************** </lalErrTable> */
+/*@}*/
 
 int main(int argc, char *argv[])
 {

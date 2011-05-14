@@ -23,43 +23,41 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 
-#if 0
-<lalVerbatim file="LIGOLwXMLInspiralHeadersHV">
-Author: Brown, D. A.
-$Id$
-</lalVerbatim>
-<lalLaTeX>
-\section{Header \texttt{LIGOLwXMLInspiralHeaders.h}}
-\subsection*{Synopsis}
-\begin{verbatim}
+/**
+
+\author Brown, D. A.
+\file
+\ingroup lalmetaio
+
+\brief This header provides provides <tt>#define</tt>s for the inspiral related
+tables of LIGO light weight XML files.
+
+\heading{Synopsis}
+\code
 #include <lal/LIGOLwXMLInspiralHeaders.h>
-\end{verbatim}
+\endcode
 
-This header provides provides \verb|#define|s for the inspiral related
-tables of LIGO light weight XML files.  It will need to be kept up to date
-with changes in the LIGO database table definitions.  The quantities which are
-defined in this file are
+It will need to be kept up to date with changes in the LIGO database table definitions.
+The quantities which are defined in this file are
 
-\begin{itemize}
-\item LIGOLW\_XML\_SNGL\_INSPIRAL
-\item SNGL\_INSPIRAL\_ROW
-\item LIGOLW\_XML\_MULTI\_INSPIRAL
-\item MULTI\_INSPIRAL\_ROW
-\item LIGOLW\_XML\_SIM\_INSPIRAL
-\item SIM\_INSPIRAL\_ROW
-\end{itemize}
+<ul>
+<li> LIGOLW\_XML\_SNGL\_INSPIRAL</li>
+<li> SNGL\_INSPIRAL\_ROW</li>
+<li> LIGOLW\_XML\_MULTI\_INSPIRAL</li>
+<li> MULTI\_INSPIRAL\_ROW</li>
+<li> LIGOLW\_XML\_SIM\_INSPIRAL</li>
+<li> SIM\_INSPIRAL\_ROW</li>
+</ul>
 
-\vfill{\footnotesize\input{LIGOLwXMLInspiralHeadersHV}}
-</lalLaTeX>
-#endif
+
+
+*/
 
 #ifndef _LIGOLWXMLINSPIRALHEADERS_H
 #define _LIGOLWXMLINSPIRALHEADERS_H

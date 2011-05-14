@@ -17,29 +17,27 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="Read40mDataCV">
- * Author: Jolien D. E. Creighton
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Program \texttt{ReadGEOData.c}}
+/**
+ * \author Jolien D. E. Creighton
+ * \file
+ *
+ * \heading{Program \ref ReadGEOData.c}
  *
  * Tests the low-level frame stream routines by reading GEO frame data.
  *
- * \subsubsection*{Usage}
+ * \heading{Usage}
  *
- * \begin{verbatim}
+ * \code
  * ReadGEOData
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
- * This program reads the channel \verb+IFO_DMRO+ from all the frames in the
- * directory set in the environment \verb+LAL_FRAME_PATH+ (or the current
+ * This program reads the channel \c IFO_DMRO from all the frames in the
+ * directory set in the environment \c LAL_FRAME_PATH (or the current
  * directory if this environment is not set) and prints them as an ascii file.
  *
- **** </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <stdio.h>

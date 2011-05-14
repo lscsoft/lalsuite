@@ -17,61 +17,59 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="LALDemodCV">
-Author: Berukoff, S.J.,  Papa, M.A., Allen, B., Siemens, X. $Id$
-************************************* </lalVerbatim> */
+/**
+\author Berukoff, S.J.,  Papa, M.A., Allen, B., Siemens, X. \f$Id\f$
+\file
+\ingroup pulsarTODO
 
-/* <lalLaTeX>
-\subsection{Module \texttt{LALDemod.c}}\label{ss:LALDemod.c}
+\subsection{Module \ref LALDemod.c}\label{ss:LALDemod.c}
 Computes a demodulated Fourier transform (DeFT) given a set of input short Fourier transforms (SFT).
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALDemodCP}
-\idx{LALDemod()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
 
-This routine computes the $F$ statistic for a set of templates that are defined by: one sky position, a set of spin-down parameters and a band of possible signal frequencies. The $F$ statistic is described in JKS, Phys Rev D 58, 063001 (1998). Here, it has been adapted to a single emission frequency model.
+\heading{Description}
 
-The {\bf parameter structure} defines the search frequency band
-(\verb@f0@ and \verb@imax@), the search frequency resolution (\verb@df@) the first frequency of the input SFTs (\verb@ifmin@), how many SFTs have to be combined (\verb@SFTno@) and template parameters (\verb@*spinDwnOrder@, \verb@*spinDwn@ and @\verb@*skyConst@). \verb@amcoe@ contains the values of the amplitude modulation functions $a$ and $b$.  \verb@Dterms@ represents the numbers of terms to be summed to compute the Dirichlet kernel on each side of the instantaneous frequency.
+This routine computes the \f$F\f$ statistic for a set of templates that are defined by: one sky position, a set of spin-down parameters and a band of possible signal frequencies. The \f$F\f$ statistic is described in JKS, Phys Rev D 58, 063001 (1998). Here, it has been adapted to a single emission frequency model.
 
-The {\bf input} is: \verb@**input@, an array of structures of type \verb@FFT@. This data type will soon disappear as it is just a complex8frequencyseries.
+The <tt>parameter structure</tt> defines the search frequency band
+(\c f0 and \c imax), the search frequency resolution (\c df) the first frequency of the input SFTs (\c ifmin), how many SFTs have to be combined (\c SFTno) and template parameters (<tt>*spinDwnOrder</tt>, <tt>*spinDwn</tt> and @<tt>*skyConst</tt>). \c amcoe contains the values of the amplitude modulation functions \f$a\f$ and \f$b\f$.  \c Dterms represents the numbers of terms to be summed to compute the Dirichlet kernel on each side of the instantaneous frequency.
 
-The {\bf output} is a pointer a structure of type \verb+LALFstat+ containing an array of the values of $\mathcal{F}$.
-In addition, if \verb+DemodPar->returnFaFb == TRUE+, the values of $F_a$ and $F_b$ will be returned in addition.
+The \c input is: <tt>**input</tt>, an array of structures of type \c FFT. This data type will soon disappear as it is just a complex8frequencyseries.
+
+The \c output is a pointer a structure of type \c LALFstat containing an array of the values of \f$\mathcal{F}\f$.
+In addition, if <tt>DemodPar->returnFaFb == TRUE</tt>, the values of \f$F_a\f$ and \f$F_b\f$ will be returned in addition.
 (Memory has to be allocated correctly beforehand!)
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-The routine implements the analytical result of eq. \ref{DeFT_algo}.  It thus
-uses a nested-loop structure, which computes $F$ for all the template frequencies.
+The routine implements the analytical result of Eq.\eqref{DeFT_algo}.  It thus
+uses a nested-loop structure, which computes \f$F\f$ for all the template frequencies.
 
 The outer most loop is over the search frequencies.   The next loop is over
-$\alpha$, which identifies the SFTs.
-The value of  $k^*$ is then computed using the second of Eq. \ref{DeFT_defs},
-and thus the summation over $k$ of Eq.\ref{DeFT_algo} is carried out, with a
-loop over Dterms.  In this loop the product $\tilde{x}_{\alpha k}P_{\alpha k}$
+\f$\alpha\f$, which identifies the SFTs.
+The value of  \f$k^*\f$ is then computed using the second of Eq.\eqref{DeFT_defs},
+and thus the summation over \f$k\f$ of Eq.\eqref{DeFT_algo} is carried out, with a
+loop over Dterms.  In this loop the product \f$\tilde{x}_{\alpha k}P_{\alpha k}\f$
 is calculated.  Once this loop completes,
-$e^{iy_\alpha}$ is computed, the summation over $\alpha$ performed and,
-finally,  the code yields the DeFT $\hat{x}_b$.  It can be seen that the code
+\f$e^{iy_\alpha}\f$ is computed, the summation over \f$\alpha\f$ performed and,
+finally,  the code yields the DeFT \f$\hat{x}_b\f$.  It can be seen that the code
 closely follows the analytical development of the formalism.
 
 Finally, note that in order to avoid repeated
 trigonometric function computations, a look-up-table (LUT) for sine and cosine is
 constructed at the beginning of the routine.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 None
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALDemodCV}}
 
-</lalLaTeX> */
+
+*/
 
 /* loop protection */
 #ifndef LALDEMOD_C
@@ -82,9 +80,9 @@ None
 #include <lal/LALDemod.h>
 NRCSID( LALDEMODC, "$Id$" );
 
-/* <lalVerbatim file="LALDemodCP"> */
+
 void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
-/* </lalVerbatim> */
+
 {
 
   INT4 alpha,i;                 /* loop indices */

@@ -17,10 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="TSDatgenHV"> *********
-      Author: Torres. C
-      $ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 cristina Exp $
-***** </lalVerbatim> **********************************/
+/**
+      \author Torres. C
+      \file
+*/
 
 #ifndef TRACKSEARCH_H
 #define TRACKSEARCH_H
@@ -105,16 +105,16 @@ int
 LALappsSmoothWithRunningMedian(REAL4Vector*,
 			       UINT4);
 
-void 
+void
 LALappsTrackSearchCalibrate( REAL4TimeSeries*,
 			     TSSearchParams);
 
-void 
+void
 LALappsTrackSearchBandPassing(
 			       REAL4TimeSeries*,
 			       TSSearchParams);
 
-void 
+void
 LALappsTracksearchRemoveHarmonics(
 				   REAL4TimeSeries*,
 				   TSSearchParams);
@@ -123,7 +123,7 @@ void LALappsTracksearchRemoveHarmonicsFromSegments(
 						   REAL4TimeSeries*,
 						   TSSegmentVector*,
 						   TSSearchParams);
-void 
+void
 LALappsTrackSearchPerformInjection(
 				    REAL4TimeSeries*,
 				    REAL4TimeSeries*,
@@ -134,7 +134,7 @@ LALappsTrackSearchWhitenSegments( REAL4TimeSeries*,
 				  TSSegmentVector*,
 				  TSSearchParams);
 
-void 
+void
 LALappsTrackSearchInitialize(
 			     int argc,
 			     char* argv[],
@@ -226,4 +226,4 @@ void QuickDump_Data(TSSearchParams,TrackSearchOut,CHAR*);
 void fakeDataGeneration(REAL4TimeSeries*,INT4,INT4);
 
 #endif
- 
+

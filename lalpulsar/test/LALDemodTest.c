@@ -17,42 +17,40 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="LALDemodTestCV">
-Author: Berukoff, S.J., Papa, M.A., $Id$
- </lalVerbatim> */
+/**
+\author Berukoff, S.J., Papa, M.A.,
+\file
+\ingroup pulsarTODO
 
-#if 0
- <lalLaTeX>
-
-   \subsection{Program \texttt{LALDemodTest.c}}
+   \heading{Program \ref LALDemodTest.c}
    \label{ss:LALDemodTest.c}
 
-   Performs required tests of \verb@LALDemod()@.
+   Performs required tests of <tt>LALDemod()</tt>.
 
-   \subsubsection*{Usage}
-   \begin{verbatim}
+   \heading{Usage}
+   \code
    LALDemodTest -i <input data file> [-d <gap>] [-n] [-o]
-   \end{verbatim}
+   \endcode
 
-   \subsubsection*{Description}
+   \heading{Description}
 
-   \noindent This routine performs tests on the routine \verb@LALDemod()@.
+   This routine performs tests on the routine <tt>LALDemod()</tt>.
    Options:
-   \begin{itemize}
-   \item \verb@-i@ -- the input data file (default is 'in.data'; an example is included, format below)
-   \item \verb@-n@ -- add zero-mean Gaussian noise to the signal
-   \item \verb@-d <gap>@ -- simulate gaps in the data.  The number \verb@<gaps>@ refers to the integral number of SFT timescales between adjacent timestamps.
-   \item \verb@-o@ -- print out result data files
-   \end{itemize}
+   <ul>
+   <li> <tt>-i</tt> -- the input data file (default is 'in.data'; an example is included, format below)
+   </li><li> <tt>-n</tt> -- add zero-mean Gaussian noise to the signal
+   </li><li> <tt>-d <gap></tt> -- simulate gaps in the data.  The number <tt><gaps></tt> refers to the integral number of SFT timescales between adjacent timestamps.
+   </li><li> <tt>-o</tt> -- print out result data files
+   </li></ul>
 
    Structure:
    In more detail, let us begin with a discussion of the structure of the test
    code, which is composed of several modules.
-   \begin{itemize}
-   \item The first module reads in data from an input parameter data file.
+   <ul>
+   <li> The first module reads in data from an input parameter data file.
    The parameters must be listed in the input file in the following order,
    with the corresponding format:
-   \begin{verbatim}
+   \code
    total observation time -- float
    coherent search time -- float
    factor by which to modify SFT timescale -- float
@@ -77,36 +75,36 @@ Author: Berukoff, S.J., Papa, M.A., $Id$
    template spindown parameter 5 --  scientific notation (NOT scaled by f0)
    template source right ascension (alpha) -- float (value in DEGREES)
    template source declination (delta) -- float (value in DEGREES)
-   \end{verbatim}
+   \endcode
    Note: Above, the *signal* spindown parameters are scaled by the intrinsic frequency, while the *template* spindown parameters are not.  This is due to the difference in definitions between the SimulateCoherentGW() package, which generates the signal, and this package.
 
-   \item The next module in the test code, which is optionally executed with
-   the '\verb@-n@' switch, creates noise using LALs
-   \verb@LALNormalDeviates()@ routine.  By design, the noise is created in
+   </li><li> The next module in the test code, which is optionally executed with
+   the '<tt>-n</tt>' switch, creates noise using LALs
+   <tt>LALNormalDeviates()</tt> routine.  By design, the noise is created in
    single
    precision, and is zero-mean and Gaussian.  This noise is added,
    datum-by-datum, to the time series created in
    the next module, after the amplitude of the time series has been
    changed by a
-   factor of \verb@SNR@, which is specified in the input data file.
+   factor of \c SNR, which is specified in the input data file.
 
-   \item The next module to be invoked creates a time series, according to
-   the standard model for pulsars with spindown.  This is done by using the \verb@LALGenerateTaylorCW()@ and \verb@LALSimulateCoherentGW()@ functions.  This time series undergoes
+   </li><li> The next module to be invoked creates a time series, according to
+   the standard model for pulsars with spindown.  This is done by using the <tt>LALGenerateTaylorCW()</tt> and <tt>LALSimulateCoherentGW()</tt> functions.  This time series undergoes
    an FFT, and this transformed data then constitutes the SFT data to be
    input to the demodulation code.  The fake signal data is characterized
    by an intrinsic frequency at the beginning of the observation plus some
-   other source parameters.  The DeFT is produced in a band \verb@f0Band@
+   other source parameters.  The DeFT is produced in a band \c f0Band
    (as specified as an input parameter) and centered at this frequency.
-   The width of the band (plus some extra width of $2\cdot 10^{-4}f0 $ Hz) determines the
+   The width of the band (plus some extra width of \f$2\cdot 10^{-4}f0 \f$ Hz) determines the
    sampling frequency of the time series (Nyquist theorem).  In practice this
    would be the inverse FFT of a data set that has been band-passed around
-   \verb@f0@ and then appropriately down-sampled (e.g. with a lock-in).  The
+   \c f0 and then appropriately down-sampled (e.g. with a lock-in).  The
    normalization rule for FFT data is the following: if sinusoidal data over a
-   time $T$ and with amplitude $A$ is FFT-ed, the sum of the square amplitude of
-   the output of the FFT (power) is equal to ${A^2 T}$.  Thus, the power peak at
-   the sinusoids frequency should be expected to be $\sim$ $\frac{A^2}{2} T$,
+   time \f$T\f$ and with amplitude \f$A\f$ is FFT-ed, the sum of the square amplitude of
+   the output of the FFT (power) is equal to \f${A^2 T}\f$.  Thus, the power peak at
+   the sinusoids frequency should be expected to be \f$\sim\f$ \f$\frac{A^2}{2} T\f$,
    within a factor of 2.  The same normalization rule applies to the DeFT data.
-   Thus by piecing together $N$ SFTs we expect a DeFT power peak $\sim N$ higher
+   Thus by piecing together \f$N\f$ SFTs we expect a DeFT power peak \f$\sim N\f$ higher
    than that of the SFTs - at least in the case of perfect signal-template match.
 
 
@@ -118,7 +116,7 @@ Author: Berukoff, S.J., Papa, M.A., $Id$
    is due to the spin of the Earth and having taken a simple epicyclic model to
    evaluate the magnitude of this effect.  It is possible to choose a different
    time baseline by specifying a value for
-   the variable \verb@gap@ other than 1.  Note that the SFT time baseline is
+   the variable \c gap other than 1.  Note that the SFT time baseline is
    approximated to the nearest value such that the number of SFT samples is a
    power of two.  This is also well documented in the code.
 
@@ -126,17 +124,17 @@ Author: Berukoff, S.J., Papa, M.A., $Id$
    The set of SFTs does not necessarily come from contiguous data sets: a set of
    time stamps is created that defines the time of the first sample of each SFT
    data chunk.  The timestamps which are required in many parts of the code are
-   generated in a small subroutine \verb@times2()@.  This routine takes as input
-   the SFT timescale \verb@tSFT@, the number of SFTs which will be created,
-   \verb@mObsSFT@, and a switch which lets the code know whether to make even
+   generated in a small subroutine <tt>times2()</tt>.  This routine takes as input
+   the SFT timescale \c tSFT, the number of SFTs which will be created,
+   \c mObsSFT, and a switch which lets the code know whether to make even
    timestamps, or timestamps with gaps (see below for more on this).  The
-   subroutine then writes the times to the \verb@LIGOTimeGPS@ vector containing
+   subroutine then writes the times to the \c LIGOTimeGPS vector containing
    the timestamps for the entire test code, and returns this vector.  Note that
-   each datum of the  \verb@LIGOTimeGPS@ vector is comprised of two fields; if
-   accessing the $i^{th}$ datum, the seconds part of the timestamp vector
-   \verb@ts@ is \verb@ts[i].gpsSeconds@ and the nanoseconds part is
-   \verb@ts[i].gpsNanoSeconds@.  These are the fields which are written in this
-   \verb@times()@.
+   each datum of the  \c LIGOTimeGPS vector is comprised of two fields; if
+   accessing the \f$i^{th}\f$ datum, the seconds part of the timestamp vector
+   \c ts is <tt>ts[i].gpsSeconds</tt> and the nanoseconds part is
+   <tt>ts[i].gpsNanoSeconds</tt>.  These are the fields which are written in this
+   <tt>times()</tt>.
 
 
    As an important side note, let us discuss the effect that a vector of
@@ -157,38 +155,38 @@ Author: Berukoff, S.J., Papa, M.A., $Id$
    reason being that they are rounded to the nearest multiple of the SFT time
    baseline.
 
-   Note that use is made of the \verb@LALBarycenter()@ routine (see section
-   \ref{s:LALBarycenter.h}), which (among other things) provides,  at any given
+   Note that use is made of the <tt>LALBarycenter()</tt> routine (see section
+\TODOref{s_LALBarycenter_h}, which (among other things) provides,  at any given
    time, the actual instantaneous position and velocity of a  detector at any
    specified location of the Earth with respect to the SSB.
 
-   \item Following the creation of a short chunk of time series data, an FFT is
+   </li><li> Following the creation of a short chunk of time series data, an FFT is
    performed with the internal FFTW routines.  This outputs a frequency domain
-   chunk which is placed into the \verb@SFTData@ array of structures.  This will
+   chunk which is placed into the \c SFTData array of structures.  This will
    contain all of the SFT data we need to demodulate, and in the future, will be
    the storage area for the real data.
 
-   \item The next module begins the demodulation process.  First, the parameters
+   </li><li> The next module begins the demodulation process.  First, the parameters
    for the demodulation routine are assigned from values previously calculated in
-   the test code.  Similarly, parameters for the \verb@LALComputeSky()@ routine are
-   assigned.  This routine computes the coefficients $A_{s\alpha}$ and
-   $B_{s\alpha}$ (see section \ref{s:ComputeSky.h}) of the spindown parameters
+   the test code.  Similarly, parameters for the <tt>LALComputeSky()</tt> routine are
+   assigned.  This routine computes the coefficients \f$A_{s\alpha}\f$ and
+   \f$B_{s\alpha}\f$ (see section\TODOref{s_ComputeSky_h} of the spindown parameters
    for the phase model weve assumed.  These coefficients are used within the
-   \verb@LALDemod()@ routine itself. Since they only depend on the template sky
+   <tt>LALDemod()</tt> routine itself. Since they only depend on the template sky
    position, in a search over many different spin-down parameters they are
-   reused, thus one needs compute them only once.  Then, the \verb@LALComputeAM()@
+   reused, thus one needs compute them only once.  Then, the <tt>LALComputeAM()</tt>
    routine is called, to calculate the amplitude modulation filter information.  Finally, at last, the
    demodulation routine itself is called, and, if the command line option
-   '\verb@-o@' is used,  output are several data files containing demodulated
-   data (these are by default named '\verb@xhat_#@').  These output files have two columns, one for the value of the periodogram and one for the frequency.
+   '<tt>-o</tt>' is used,  output are several data files containing demodulated
+   data (these are by default named '<tt>xhat_#</tt>').  These output files have two columns, one for the value of the periodogram and one for the frequency.
 
-   \end{itemize}
+   </li></ul>
 
 
-   \subsubsection*{Exit codes}
+   \heading{Exit codes}
 
-   \subsubsection*{Uses}
-   \begin{verbatim}
+   \heading{Uses}
+   \code
    lalDebugLevel
    LALMalloc()
    LALFopen()
@@ -210,18 +208,15 @@ Author: Berukoff, S.J., Papa, M.A., $Id$
    LALDemod()
    LALBarycenter()
    LALComputeAM()
-   \end{verbatim}
+   \endcode
 
-   \subsubsection*{Notes}
+   \heading{Notes}
    The implementation of the code here is intended to give a general outline of
    what the demodulation code needs to work.  Most of this test function performs
    steps (e.g., noise, time- and frequency-series generation) that will be already
    present in the data.
 
-   \vfill{\footnotesize\input{LALDemodTestCV}}
-
-   </lalLaTeX>
-#endif /* autodoc block */
+*/
 
 #ifndef LALDEMODTEST_C
 #define LALDEMODTEST_C

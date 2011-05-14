@@ -17,10 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="FrameStreamTestCV">
- * Author: Jolien D. E. Creighton
- * $Id$
- **** </lalVerbatim> */
+/**
+ * \author Jolien D. E. Creighton
+\file
+*/
 
 #include <stdio.h>
 #include <unistd.h>

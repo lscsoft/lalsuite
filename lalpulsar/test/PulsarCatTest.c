@@ -17,87 +17,123 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="PulsarCatTestCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Program \texttt{PulsarCatTest.c}}
-\label{ss:PulsarCatTest.c}
+\heading{Program \ref PulsarCatTest.c}
+\latexonly\label{ss_PulsarCatTest_c}\endlatexonly
 
 Tests routines to manipulate pulsar data.
 
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 PulsarCatTest [-p posepoch ra dec pmra pmdec] [-l site earthfile sunfile] [-h]
               [-t newepoch] [-i infile] [-o outfile] [-d debuglevel]
               [fepoch f0 [f1 ...]]
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This program reads in or randomly generates pulsar parameters, stores
 them in a pulsar catalogue structure, and manipulates them based on
 command-line arguments.  The following option flags are accepted (in
 any order):
-\begin{itemize}
-\item[\texttt{-p}] The pulsar position at time \verb@posepoch@ is set
-to \verb@ra@ radians right ascension and \verb@dec@ radians
-declination, with proper motions of \verb@pmra@ and \verb@pmdec@
+<ul>
+<li>[<tt>-p</tt>] The pulsar position at time \c posepoch is set
+to \c ra radians right ascension and \c dec radians
+declination, with proper motions of \c pmra and \c pmdec
 radians per second, respectively.  See below for parsing formats for
-\verb@posepoch@.  If the \verb@-p@ option is not specified, a random
-source position is generated.
-\item[\texttt{-l}] Sets the detector location.  \verb@site@ must be
-one of the following character strings: \verb@LHO@, \verb@LLO@,
-\verb@VIRGO@, \verb@GEO600@, \verb@TAMA300@, or \verb@CIT40@.
-\verb@earthfile@ and \verb@sunfile@ are ephemeris files of the format
-expected by \verb@LALInitBarycenter()@.  If the \verb@-l@ option is
-not specified, the detector is placed at the solar system barycentre.
-\item[\texttt{-h}] Prints usage information and then exits.
-\item[\texttt{-t}] Sets the new epoch to which the pulsar data will be
-updated.  See below for parsing formats for \verb@newepoch@.  If the
-\verb@-t@ option is not given, \verb@-t J2000.0@ is assumed.
-\item[\texttt{-i}] Reads the pulsar data from the file \verb@infile@,
+\c posepoch.  If the <tt>-p</tt> option is not specified, a random
+source position is generated.</li>
+<li>[<tt>-l</tt>] Sets the detector location.  \c site must be
+one of the following character strings: \c LHO, \c LLO,
+\c VIRGO, \c GEO600, \c TAMA300, or \c CIT40.
+\c earthfile and \c sunfile are ephemeris files of the format
+expected by <tt>LALInitBarycenter()</tt>.  If the <tt>-l</tt> option is
+not specified, the detector is placed at the solar system barycentre.</li>
+<li>[<tt>-h</tt>] Prints usage information and then exits.</li>
+<li>[<tt>-t</tt>] Sets the new epoch to which the pulsar data will be
+updated.  See below for parsing formats for \c newepoch.  If the
+<tt>-t</tt> option is not given, <tt>-t J2000.0</tt> is assumed.</li>
+<li>[<tt>-i</tt>] Reads the pulsar data from the file \c infile,
 whose format is described below.  This overrides the position and spin
-information read from the command line.  If the name \verb@stdin@ is
-given, it will read from standard input, \emph{not} from a file named
-\verb@stdin@.
-\item[\texttt{-o}] Writes the pulsar data to the file \verb@outfile@.
-If the name \verb@stdout@ or \verb@stderr@ is given, it will write to
-standard output or standard error (respectively), \emph{not} to a file
-named \verb@stdout@ or \verb@stderr@.  If the \verb@-o@ option is not
-given, the routines are exercised, but no output is written.
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.  If
-absent, level 0 is assumed.
-\end{itemize}
+information read from the command line.  If the name \c stdin is
+given, it will read from standard input, \e not from a file named
+\c stdin.</li>
+<li>[<tt>-o</tt>] Writes the pulsar data to the file \c outfile.
+If the name \c stdout or \c stderr is given, it will write to
+standard output or standard error (respectively), \e not to a file
+named \c stdout or \c stderr.  If the <tt>-o</tt> option is not
+given, the routines are exercised, but no output is written.</li>
+<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.  If
+absent, level 0 is assumed.</li>
+</ul>
 
 Once all valid options are read, the remaining command-line arguments
-are taken to be the epoch \verb@fepoch@ at which the pulsar spin
-frequency \verb@f@ (in Hz) was measured, plus zero or more frequency
-derivatives \verb@f1@$\ldots$ (in Hz${}^{k+1}$ for the $k^\mathrm{th}$
+are taken to be the epoch \c fepoch at which the pulsar spin
+frequency \c f (in Hz) was measured, plus zero or more frequency
+derivatives \c f1\f$\ldots\f$ (in Hz\f${}^{k+1}\f$ for the \f$k^\mathrm{th}\f$
 derivative).  If no additional arguments are given, spin timing
 information will be omitted.
 
-Meaurement epoch \verb@posepoch@, \verb@newepoch@, and \verb@fepoch@
-may be specified either as a \verb@REAL8@ Julian epoch preceded by a
-\verb@J@ character (e.g.\ \verb@JD2000.0@), a \verb@REAL8@ number of
-Julian days preceded by \verb@JD@ (e.g.\ \verb@JD2451545.0@), or as an
-\verb@INT8@ number of GPS nanoseconds with no prefix (e.g.\
-\verb@630763213000000000@).  Note that the preceding examples all
+Meaurement epoch \c posepoch, \c newepoch, and \c fepoch
+may be specified either as a \c REAL8 Julian epoch preceded by a
+\c J character (e.g.\ <tt>JD2000.0</tt>), a \c REAL8 number of
+Julian days preceded by \c JD (e.g.\ <tt>JD2451545.0</tt>), or as an
+\c INT8 number of GPS nanoseconds with no prefix (e.g.\
+\c 630763213000000000).  Note that the preceding examples all
 refer to noon UTC, January 1, 2000.  Also, note that each Julian epoch
 is assumed to be exactly 365.25 Julian days, so J2001.0 corresponds to
 18:00 UTC, January 1, 2001.
 
 If an input file is specified, it should consist of a header line
-that, when tokenized, can be parsed by \verb@LALReadPulsarCatHead()@,
+that, when tokenized, can be parsed by <tt>LALReadPulsarCatHead()</tt>,
 followed by one or more lines of pulsar data parseable (when
-tokenized) by \verb@LALReadPulsarCatLine()@.  Blank lines (with no
+tokenized) by <tt>LALReadPulsarCatLine()</tt>.  Blank lines (with no
 tokens) or divider lines (with only one token) will be skipped.
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
+
+\heading{Algorithm}
+
+This routine simply parses the input arguments, stuffs the data into a
+\c PulsarCatNode structure, and then calls
+<tt>LAUpdatePulsarCatNode()</tt> to update it to the new epoch.
+
+If the <tt>-i</tt> option is given, the corresponding file is opened and
+read by <tt>LALCHARReadVectorSequence()</tt>, then each line is
+tokenized by <tt>LALCreateTokenList()</tt>.
+
+Output via the <tt>-o</tt> option is in a custom human-readable format,
+which should be easy to figure out.
+
+\heading{Uses}
+\code
+lalDebugLevel
+LALPrintError()                 LALCheckMemoryLeaks()
+LALMalloc()                     LALFree()
+LALDCreateVector()              LALDDestroyVector()
+LALCreateRandomParams()         LALDestroyRandomParams()
+LALUniformDeviate()             LALInitBarycenter()
+LALCHARReadVectorSequence()     LALCHARDestroyVectorSequence()
+LALCreateTokenList()            LALDestroyTokenList()
+LALReadPulsarCatHead()          LALReadPulsarCatLine()
+LALStringToD()                  LALStringToI8()
+XLALGPSLeapSeconds()            LALUpdatePulsarCat()
+snprintf()
+\endcode
+
+\heading{Notes}
+
+At present the routine is kludged up to ignore pulsar position and
+frequency information from the command line, using hardwired
+parameters for \mbox{PSR J0034-0534} instead.  It can still override
+this with the <tt>-i</tt> option.
+
+*/
+
+/** \name Error Codes */ /*@{*/
 #define PULSARCATTESTC_ENORM 0
 #define PULSARCATTESTC_ESUB  1
 #define PULSARCATTESTC_EARG  2
@@ -111,47 +147,7 @@ tokens) or divider lines (with only one token) will be skipped.
 #define PULSARCATTESTC_MSGEVAL  "Input argument out of valid range"
 #define PULSARCATTESTC_MSGEMEM  "Out of memory"
 #define PULSARCATTESTC_MSGEFILE "Could not open file"
-/******************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Algorithm}
-
-This routine simply parses the input arguments, stuffs the data into a
-\verb@PulsarCatNode@ structure, and then calls
-\verb@LAUpdatePulsarCatNode()@ to update it to the new epoch.
-
-If the \verb@-i@ option is given, the corresponding file is opened and
-read by \verb@LALCHARReadVectorSequence()@, then each line is
-tokenized by \verb@LALCreateTokenList()@.
-
-Output via the \verb@-o@ option is in a custom human-readable format,
-which should be easy to figure out.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALMalloc()                     LALFree()
-LALDCreateVector()              LALDDestroyVector()
-LALCreateRandomParams()         LALDestroyRandomParams()
-LALUniformDeviate()             LALInitBarycenter()
-LALCHARReadVectorSequence()     LALCHARDestroyVectorSequence()
-LALCreateTokenList()            LALDestroyTokenList()
-LALReadPulsarCatHead()          LALReadPulsarCatLine()
-LALStringToD()                  LALStringToI8()
-XLALGPSLeapSeconds()            LALUpdatePulsarCat()
-snprintf()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-At present the routine is kludged up to ignore pulsar position and
-frequency information from the command line, using hardwired
-parameters for \mbox{PSR J0034-0534} instead.  It can still override
-this with the \verb@-i@ option.
-
-\vfill{\footnotesize\input{PulsarCatTestCV}}
-
-******************************************************* </lalLaTeX> */
+/*@}*/
 
 #include <stdlib.h>
 #include <lal/LALStdio.h>

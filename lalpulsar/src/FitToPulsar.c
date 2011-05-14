@@ -17,53 +17,49 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="FitToPulsarCV">
-Author: Dupuis, R. J.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Dupuis, R. J.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{FitToPulsar.c}}
-Calculates the best fit parameters for a GW signal originating from a
+\heading{Module \ref FitToPulsar.c}
+\brief Calculates the best fit parameters for a GW signal originating from a
 non-precessing pulsar.
 
-\subsubsection*{Prototypes}
-\idx{LALCoarseFitToPulsar()}
-\idx{LALFineFitToPulsar}
-\input{FitToPulsarCP}
-\begin{verbatim}
+\heading{Prototypes}
+
+\code
 void
 LALFineFitToPulsar	(            LALStatus            *status,
                                 FineFitOutput        *output,
                                 FineFitInput         *input,
                                 FineFitParams        *params )
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
-This routine calculates the best fit of parameters by minimizing $\chi^2$ by going through
-fixed grid for $\iota, \psi, \phi_{0}$ and  $h_{0}$.  The best fit parameters
-returned by \texttt{LALCoarseFitToPulsar()} are then used as initial parameters for
-\texttt{LALFineFitToPulsar()}.
+This routine calculates the best fit of parameters by minimizing \f$\chi^2\f$ by going through
+fixed grid for \f$\iota, \psi, \phi_{0}\f$ and  \f$h_{0}\f$.  The best fit parameters
+returned by <tt>LALCoarseFitToPulsar()</tt> are then used as initial parameters for
+<tt>LALFineFitToPulsar()</tt>.
 
-The function \texttt{LALFineFitToPulsar()} refines the fit using the Levenberg-Marquardt method for nonlinear fitting. This is
-done by calculating the Hessian and the gradient of $\chi^2$ ...
+The function <tt>LALFineFitToPulsar()</tt> refines the fit using the Levenberg-Marquardt method for nonlinear fitting. This is
+done by calculating the Hessian and the gradient of \f$\chi^2\f$ ...
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 To be completed.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALSCreateVector()
 LALSDestroyVector()
 LALComputeDetAMResponse()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FitToPulsarCV}}
 
-******************************************************* </lalLaTeX> */
+*/
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
@@ -88,14 +84,14 @@ NRCSID( FITTOPULSARC, "$Id$" );
 
 /******* DEFINE GLOBAL FUNCTIONS ************/
 
-/* <lalVerbatim file="FitToPulsarCP"> */
+
 void
 LALCoarseFitToPulsar	( 	LALStatus            *status,
 		    		CoarseFitOutput      *output,
 		    		CoarseFitInput       *input,
 		    		CoarseFitParams      *params )
 
-/* </lalVerbatim> */
+
 {
   /******* DECLARE VARIABLES ************/
 

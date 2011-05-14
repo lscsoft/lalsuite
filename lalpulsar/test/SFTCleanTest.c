@@ -17,30 +17,15 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: SFTCleanTest.c
- * Authors:  Krishnan, B.
- *
- * Revision: $Id$
- *
- * History:   Created by Krishnan July 12, 2004
- *            Modified...
- *
- *-----------------------------------------------------------------------
- */
-/************************************ <lalVerbatim file="SFTbinTestCV">
-Author: Krishnan, B.
-$Id$
-************************************* </lalVerbatim> */
-
 /* REVISIONS: */
 /* 09/09/05 gam; make RandomParams *randPar a parameter for LALCleanCOMPLEX8SFT. Thus only need to */
 /*               initialze RandomParams *randPar once and avoid repeatly opening /dev/urandom.  */
 
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*********************************************** </lalLaTeX> */
+/**
+\author Krishnan, B.
+\file
+\ingroup pulsarTODO
+*/
 
 
 #include <lal/SFTClean.h>
@@ -49,9 +34,7 @@ $Id$
 
 NRCSID (SFTCLEANTESTC, "$Id$");
 
-/* Error codes and messages */
-
-/************** <lalErrTable file="SFTCLEANTESTCErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define SFTCLEANTESTC_ENORM     0
 #define SFTCLEANTESTC_ESUB      1
 #define SFTCLEANTESTC_EARG      2
@@ -67,7 +50,7 @@ NRCSID (SFTCLEANTESTC, "$Id$");
 #define SFTCLEANTESTC_MSGEFILE     "Could not create output file"
 #define SFTCLEANTESTC_MSGERANDFILE "Could not open /dev/urandom"
 #define SFTCLEANTESTC_MSGERANDSEED "Error initializing random seed"
-/******************************************** </lalErrTable> */
+/*@}*/
 
 
 /* Default parameters. */

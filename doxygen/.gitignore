@@ -1,8 +1,9 @@
+/doxygen-html.cfg
+/doxygen-html.log
+/doxygen-pdf.cfg
+/doxygen-pdf.log
 /figures/
 /html/
 /latex/
 /refman.pdf
-/doxygen-html.cfg
-/doxygen-pdf.cfg
-/doxygen-html.log
-/doxygen-pdf.log
+doxygen-html-eqns.log

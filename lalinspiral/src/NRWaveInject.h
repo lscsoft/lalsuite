@@ -60,18 +60,18 @@ extern "C" {
 NRCSID( NRWAVEINJECTH, "$Id$");
 
 
-#define NRWAVEINJECT_ENULL 	  1
-#define NRWAVEINJECT_EFILE 	  2
+#define NRWAVEINJECT_ENULL    1
+#define NRWAVEINJECT_EFILE    2
 #define NRWAVEINJECT_ENONULL  3
 #define NRWAVEINJECT_ENOMEM   4
-#define NRWAVEINJECT_EVAL 	  5
+#define NRWAVEINJECT_EVAL     5
 #define NRWAVEINJECT_EFORMAT  6
 
-#define NRWAVEINJECT_MSGENULL 	"Null pointer"
-#define NRWAVEINJECT_MSGEFILE 	"Error in file-IO"
+#define NRWAVEINJECT_MSGENULL   "Null pointer"
+#define NRWAVEINJECT_MSGEFILE   "Error in file-IO"
 #define NRWAVEINJECT_MSGENONULL "Not a Null pointer"
-#define NRWAVEINJECT_MSGENOMEM 	"Memory ellocation error"
-#define NRWAVEINJECT_MSGEVAL  	"Invalid value"
+#define NRWAVEINJECT_MSGENOMEM  "Memory ellocation error"
+#define NRWAVEINJECT_MSGEVAL    "Invalid value"
 #define NRWAVEINJECT_MSGEFORMAT "Meta data file format incorrect"
 
 
@@ -122,6 +122,15 @@ XLALOrientNRWaveREAL8(
     REAL4                  inclination,
     REAL4                  coa_phase);
 
+void
+XLALOrientNRWaveTimeSeriesREAL8(
+    REAL8TimeSeries        *plus,
+    REAL8TimeSeries        *cross,
+    UINT4                  modeL,
+    INT4                   modeM,
+    REAL4                  inclination,
+    REAL4                  coa_phase);
+
 REAL4TimeSeries *
 XLALCalculateNRStrain(
     REAL4TimeVectorSeries *strain,
@@ -131,14 +140,18 @@ XLALCalculateNRStrain(
 
 REAL4TimeSeries *
 XLALInterpolateNRWave( REAL4TimeSeries *in,
-		       INT4      sampleRate);
+                       INT4      sampleRate);
+
+REAL8TimeSeries *
+XLALInterpolateNRWaveREAL8( REAL8TimeSeries *in,
+                       INT4      sampleRate);
 
 INT4
 XLALFindNRFile( NRWaveMetaData *out,
-		NRWaveCatalog *nrCatalog,
-		const SimInspiralTable  *inj,
-		INT4  modeL,
-		INT4  modeM);
+                NRWaveCatalog *nrCatalog,
+                const SimInspiralTable  *inj,
+                INT4  modeL,
+                INT4  modeM);
 
 REAL4TimeVectorSeries *
 XLALSumStrain(
@@ -146,44 +159,44 @@ XLALSumStrain(
     REAL4TimeVectorSeries *strain          /**< variable to add  */);
 
 void LALInjectStrainGW( LALStatus *status,
-			REAL4TimeSeries *injData,
-			REAL4TimeVectorSeries *strain,
-			SimInspiralTable *thisInj,
-			CHAR *ifo,
-			REAL8 dynRange);
+                        REAL4TimeSeries *injData,
+                        REAL4TimeVectorSeries *strain,
+                        SimInspiralTable *thisInj,
+                        CHAR *ifo,
+                        REAL8 dynRange);
 
 void LALInjectStrainGWREAL8( LALStatus                 *status,
-			     REAL8TimeSeries           *injData,
-			     REAL8TimeVectorSeries     *strain,
-			     SimInspiralTable          *thisInj,
-			     CHAR                      *ifo,
-			     REAL8                     dynRange);
+                             REAL8TimeSeries           *injData,
+                             REAL8TimeVectorSeries     *strain,
+                             SimInspiralTable          *thisInj,
+                             CHAR                      *ifo,
+                             REAL8                     dynRange);
 
 
 INT4
 XLALFindNRCoalescenceTime(REAL8 *tc,
-			  const REAL4TimeVectorSeries *in);
+                          const REAL4TimeVectorSeries *in);
 
 INT4
 XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc,
-				  const REAL4TimeSeries *in);
+                                  const REAL4TimeSeries *in);
 
 INT4
 XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,
-			       const REAL8TimeSeries *in);
+                               const REAL8TimeSeries *in);
 
 /** Spin weighted Spherical Harmonic  */
 INT4
 XLALSphHarm ( COMPLEX16 *out, /**< [out] the value of Y2_lm(theta,phi) */
-	      UINT4   L,  /**< the aziuhtal quantum number */
-	      INT4    M,  /**< the M value */
-	      REAL4   theta, /**< position - azimuthal angle */
-	      REAL4   phi ); /**< position - polar angle */
+              UINT4   L,  /**< the aziuhtal quantum number */
+              INT4    M,  /**< the M value */
+              REAL4   theta, /**< position - azimuthal angle */
+              REAL4   phi ); /**< position - polar angle */
 
 /** channel name for nr data in frame file */
 CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, /**< either plus or cross */
-			      UINT4 l, /**< azimuthal mode index */
-			      INT4 m /**< polar mode index */);
+                              UINT4 l, /**< azimuthal mode index */
+                              INT4 m /**< polar mode index */);
 
 NumRelGroup XLALParseNumRelGroupName( CHAR *name);
 

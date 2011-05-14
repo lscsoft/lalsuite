@@ -18,27 +18,20 @@
 */
 
 
-/*
-<lalVerbatim file="StochasticMCHV">
-Author: Tania Regimbau, Sukanta Bose, Jeff Noel
-$Id$
-</lalVerbatim>
+/**
+\author Tania Regimbau, Sukanta Bose, Jeff Noel
+\file
+\ingroup stochastic
 
-<lalLaTeX>
-\section{Header \texttt{StochasticMC.h}}
-\label{s:StochasticMC.h}
-Routine used by the stochastic DSO to do software injection.
-\subsection*{Synopsis}
-\begin{verbatim}
+\brief Routine used by the stochastic DSO to do software injection.
+
+\heading{Synopsis}
+\code
 #include <lal/StochasticMC.h>
-\end{verbatim}
-\noindent
+\endcode
 
-\subsection*{Error conditions}
-\input{StochasticMCHE}
-\subsection*{Structures}
-</lalLaTeX>
 */
+
 #ifndef _STOCHASTICMC_H
 #define _STOCHASTICMC_H
 
@@ -54,8 +47,7 @@ extern "C" {
 
   NRCSID( STOCHASTICMCH, "$Id$" );
 
-/***************** <lalErrTable file="StochasticMCHE"> */
-
+/**\name Error Codes */ /*@{*/
 #define STOCHASTICMCH_ENULLP        1
 #define STOCHASTICMCH_ENULLLEN      2
 #define STOCHASTICMCH_ENULLSEG      3
@@ -64,7 +56,6 @@ extern "C" {
 #define STOCHASTICMCH_EMMEPOCH      6
 #define STOCHASTICMCH_EMMUNITS      7
 
-
 #define STOCHASTICMCH_MSGENULLP       "Null pointer"
 #define STOCHASTICMCH_MSGENULLLEN     "Negative or zero length for data member of time series"
 #define STOCHASTICMCH_MSGENULLSEG      "Negative or zero number of segment"
@@ -72,8 +63,7 @@ extern "C" {
 #define STOCHASTICMCH_MSGENEGFMIN      "negative start frequency"
 #define STOCHASTICMCH_MSGEMMEPOCH      "Mismatch in epochs"
 #define STOCHASTICMCH_MSGEMMUNITS      "Mismatch in units"
-
-/************************************ </lalErrTable> */
+/*@}*/
 
   typedef struct tagStochasticMCInput {
     CalibrationFunctions         calfuncs1;
@@ -122,4 +112,3 @@ extern "C" {
 #endif
 
 #endif /* _STOCHASTICMC_H */
-

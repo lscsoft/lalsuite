@@ -786,6 +786,13 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir, hipeDax)
   hipeNode = pipeline.CondorDAGManNode(hipeJob)
 
+  # grab the tmpltbank from hipecp file if provided in input section
+  if hipecp.has_section("input") and \
+      hipecp.has_option("input", "fixed-bank"):
+    tmpltbankfile = hipecp.get("input", "fixed-bank")
+    hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_list_cache(
+      'tmpltbanks.cache', [tmpltbankfile] )))
+
   # add the maxjob categories to the dagman node class
   # FIXME pegasus should handle this in the dax schema itself
   for cp_opt in config.options('condor-max-jobs'):

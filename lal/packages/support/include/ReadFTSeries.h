@@ -17,33 +17,29 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="ReadFTSeriesHV">
-Author: Torres, C. W.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Torres, C. W.
+\file
 
-/* <lalLaTeX>
-
-\section{Header \texttt{ReadFTSeries.h}}
-\label{s:ReadFTSeries.h}
+\heading{Header \ref ReadFTSeries.h}
+\latexonly\label{s_ReadFTSeries_h}\endlatexonly
 
 This is a simple utility to Read time and frequency series into a
 file.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/ReadFTSeries.h>
-\end{verbatim}
+\endcode
 
-\noindent Provides prototype information for the routines in
-\verb+ReadTimeSeries.c+ and \verb+ReadFrequencySeries.c+.
+Provides prototype information for the routines in
+\ref ReadTimeSeries.c and \ref ReadFrequencySeries.c.
 
-\vfill{\footnotesize\input{ReadFTSeriesHV}}
-\newpage\input{ReadFrequencySeriesC}
-\newpage\input{ReadTimeSeriesC}
-\newpage\input{ReadFTSeriesTestC}
 
-</lalLaTeX> */
+
+
+
+*/
 
 #ifndef _READFTSERIES_H
 #define _READFTSERIES_H
@@ -86,7 +82,7 @@ void LALZReadFrequencySeries(LALStatus* status,  COMPLEX16FrequencySeries *serie
 
 
 
-/****************************** <lalErrTable file="ReadFTSeriesHE"> */
+/**\name Error Codes */ /*@{*/
 
 #define  READFTSERIESH_EFILENOTFOUND       1
 #define  READFTSERIESH_EPARSE              2
@@ -94,4 +90,4 @@ void LALZReadFrequencySeries(LALStatus* status,  COMPLEX16FrequencySeries *serie
 #define  READFTSERIESH_MSGEFILENOTFOUND    "Invalid Filename or File Not Found"
 #define  READFTSERIESH_MSGEPARSE           "Error Parsing File"
 
-/****************************** </lalErrTable> */
+/*@}*/

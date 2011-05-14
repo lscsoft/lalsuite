@@ -64,8 +64,18 @@ cp.read(opts.ini_file)
 #Get ifos from string list
 ifos=eval(cp.get('analysis','ifos'))
 
+## This function is used to put the ifos.keys() in the same order than in the ifos section in the parser, whist passing them to the inspnest nodes
+def sort_ifo(a,b):
+    global ifos
+    if ifos.index(a)<ifos.index(b):
+        return -1
+    elif ifos.index(a)>ifos.index(b):
+        return 1
+    else: 
+        return 0
 
-print 'Setting up pipeline with ifos'+' '.join(map(str,ifos))
+print 'Setting up pipeline with ifos '+' '.join(map(str,ifos))
+IFOs=''.join(map(str,ifos))
 
 def checkDir(dir):
         if not os.access(dir,os.F_OK):
@@ -357,6 +367,10 @@ nest_path=os.path.join(opts.run_path,'nest')
 checkDir(nest_path)
 
 combine_dir=os.path.join(opts.run_path,'combine')
+
+snr_dir=os.path.join(opts.run_path,'SNR')
+checkDir(snr_dir)
+
 time_combine_sub_file=os.path.join(opts.run_path,'combine_each_time.sub')
 combine_each_time_job=OddsPipeline.CombineZJob(cp,time_combine_sub_file,opts.log_path)
 combine_each_time_nodes={}
@@ -368,12 +382,14 @@ nest_files={}
 nparallel=int(cp.get('analysis','nparallel'))
 posfiles_by_time={}
 bayesfiles_by_time={}
+snrs_by_time={}
 for time in times:
     posfile=os.path.join(combine_dir,'posterior_samples_%.3f'%(time))
     posfiles_by_time[time]=posfile
     combine_node=OddsPipeline.CombineZNode(combine_each_time_job)
     combine_node.add_file_opt('outpos',posfile,file_is_output_file=True)
     bayesfiles_by_time[time]=os.path.join(combine_dir,'bayesfactor_%.3f.txt'%(time))
+    snrs_by_time[time]=os.path.join(snr_dir,'snr_%s_%9.1f.dat'%(IFOs,time))
     combine_node.add_file_opt('bayesfactor',bayesfiles_by_time[time])
     combine_each_time_nodes[time]=combine_node
 # Set up inspnest jobs, using parallel if needed
@@ -383,7 +399,7 @@ if nparallel==1:
                 thisevent=time_event[time]
         else:
                 thisevent=None
-        inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=segments_by_time[time].keys(),event=thisevent)
+        inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=sorted(segments_by_time[time].keys(),sort_ifo),event=thisevent)
         inspnest_nodes_by_time[time]=inspnest_node
         dag.add_node(inspnest_node)
         combine_each_time_nodes[time].add_parent(inspnest_node)
@@ -396,7 +412,7 @@ else:
                 thisevent=time_event[time]
         else:
                 thisevent=None
-        (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=segments_by_time[time].keys(),event=thisevent)
+        (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=sorted(segments_by_time[time].keys(),sort_ifo),event=thisevent)
         dag.add_node(merge_node)
         map(dag.add_node,inspnest_nodes)
         nest_files[time]=merge_node.get_output_files()[0]
@@ -419,6 +435,7 @@ if opts.coherence_test:
     coherence_test_outfiles={}
     coherence_test_bfiles={}
     combine_nodes_by_time={}
+    snr_files_by_time={}
     coherence_test_dir=os.path.join(opts.run_path,'coherencetest')
     checkDir(coherence_test_dir)
     # Loop over all the times
@@ -434,11 +451,13 @@ if opts.coherence_test:
         coherence_test_bfiles[time]={}
         coherence_inspnest_nodes[time]={}
         combine_nodes_by_time[time]={}
+        snr_files_by_time[time]={}
         for ifo in segments_by_time[time].keys():
             combine_node=OddsPipeline.CombineZNode(combine_each_time_job)
             combine_nodes_by_time[time][ifo]=combine_node
             coherence_test_posfiles[time][ifo]=os.path.join(combine_dir,'posfile_%.3f_%s.dat'%(time,ifo))
             coherence_test_bfiles[time][ifo]=os.path.join(combine_dir,'bayesfactor_%.3f_%s.txt'%(time,ifo))
+            snr_files_by_time[time][ifo]=os.path.join(snr_dir,'snr_%s_%9.1f.dat'%(ifo,time))
             combine_node.add_file_opt('bayesfactor',coherence_test_bfiles[time][ifo],file_is_output_file=True),
             combine_node.add_file_opt('outpos',coherence_test_posfiles[time][ifo],file_is_output_file=True)
             if time_event is not None and not opts.disable_inject:
@@ -602,6 +621,7 @@ if opts.enable_pages_alltimes is True:
                 results_page_node.add_var_arg('--inj '+os.path.abspath(opts.inj))
         results_page_node.add_parent(combine_each_time_nodes[time])
         results_page_node.add_var_opt('bsn',bayesfiles_by_time[time])
+        results_page_node.add_var_arg('--snr '+snrs_by_time[time])
 	dag.add_node(results_page_node)
 
         if opts.coherence_test and (time in coherence_inspnest_nodes.keys()):
@@ -619,6 +639,7 @@ if opts.enable_pages_alltimes is True:
                     ifo_results_path=os.path.join(results_dir,ifo)
                     results_node.add_var_opt('outpath',ifo_results_path)
                     results_node.add_var_opt('bsn',coherence_test_bfiles[time][ifo])
+                    results_node.add_var_arg('--snr '+snr_files_by_time[time][ifo])
                 
                     dag.add_node(results_node)
 

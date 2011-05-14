@@ -619,8 +619,8 @@ might be used:
   LIGOTimeGPS tgps, startgps;
   LALSeg *segp;
   ...
-  /-* (Fill the segment list 'mylist' with segments here) *-/
-  /-* (Set the gps time, 'tgps', to search for) *-/
+  /\* (Fill the segment list 'mylist' with segments here) *\/
+  /\* (Set the gps time, 'tgps', to search for) *\/
   ...
   segp = XLALSegListSearch( &mylist, &tgps );
   if ( segp ) {

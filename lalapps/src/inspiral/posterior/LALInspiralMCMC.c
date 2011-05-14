@@ -1,110 +1,47 @@
-/*  <lalVerbatim file="LALInspiralMCMCCV">
-Author: Sathyaprakash, B. S.
-$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup inspiral
 
+\brief The file \c LALInspiralMCMC contains tools to perform a Monte Carlo Markov Chain parameter estimation computation on gravitational wave data.
 
-#if 0
-/*  <lalLaTeX>
+\heading{Description}
 
-\subsection{Module \texttt{LALInspiralMCMC.c} }
+This package contains routines needed for doing a MCMC calculation within the LAL framework. The only functions called from outside this package is to \c XLALMCMCMetro.
 
-The file \texttt{LALInspiralMCMC} contains tools to perform a Monte Carlo Markov Chain parameter estimation computation on gravitational wave data. 
+The function \c XLALMCMCMetro is the main function to call to start the actual Markov Chain given the parameters in the \c MCMCParameter structure as a set of starting value. This function performs a Metropolis Hasting sampling.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
+The function \c XLALMCMCSample samples the next element of the chain, i.e. draws a new proposal parameter set using \c XLALMCMCJump and apply the acceptance/rejectance rule.
 
-
-\input{XLALMCMCMetroCP}
-\index{\verb&XLALMCMCMetro()&}
-
-\input{XLALMCMCCheckAnnealingCP}
-\index{\verb&XLALMCMCCheckAnnealing()&}
-
-\input{XLALMCMCCheckBurninCP}
-\index{\verb&XLALMCMCCheckBurnin()&}
-
-\input{XLALMCMCCheckUpdateCP}
-\index{\verb&XLALMCMCCheckUpdate()&}
-
-\input{XLALMCMCCheckAcceptRatioCP}
-\index{\verb&XLALMCMCCheckAcceptRatio()&}
-
-\input{XLALMCMCSampleCP}
-\index{\verb&XLALMCMCSample()&}
-
-\input{XLALMCMCJumpCP}
-\index{\verb&XLALMCMCJump()&}
-
-
-\input{XLALMCMCAddParamCP}
-\index{\verb&XLALMCMCAddParam()&}
-
-\input{XLALMCMCGetParamCP}
-\index{\verb&XLALMCMCGetParam()&}
-
-\input{XLALMCMCGetParameterCP}
-\index{\verb&XLALMCMCGetParameter()&}
-
-\input{XLALMCMCSetParameterCP}
-\index{\verb&XLALMCMCSetParameter()&}
-
-\input{XLALMCMCCopyParaCP}
-\index{\verb&XLALMCMCCopyPara()&}
-
-\input{XLALMCMCFreeParaCP}
-\index{\verb&XLALMCMCFreePara()&}
-
-\input{XLALMCMCDestroyParaCP}
-\index{\verb&XLALMCMCDestroyPara()&}
-
-\input{XLALMultiStudentDeviatesCP}
-\index{\verb&XLALMultiStudentDeviates()&}
-
-\input{XLALMultiNormalDeviatesCP}
-\index{\verb&XLALMultiNormalDeviates()&}
-
-\input{XLALCheckPositiveDefiniteCP}
-\index{\verb&XLALCheckPositiveDefinite()&}
-
-
-\subsubsection*{Description}
-
-This package contains routines needed for doing a MCMC calculation within the LAL framework. The only functions called from outside this package is to {\tt XLALMCMCMetro}. 
-
-The function {\tt XLALMCMCMetro} is the main function to call to start the actual Markov Chain given the parameters in the \texttt{MCMCParameter} structure as a set of starting value. This function performs a Metropolis Hasting sampling. 
-
-The function {\tt XLALMCMCSample} samples the next element of the chain, i.e. draws a new proposal parameter set using {\tt XLALMCMCJump} and apply the acceptance/rejectance rule. 
-
-The function {\tt XLALMCMCJump} computes a proposal parameter set from the current parameter set, using the covariance matrix and a random draw from a multidimensional Student distribution:
+The function \c XLALMCMCJump computes a proposal parameter set from the current parameter set, using the covariance matrix and a random draw from a multidimensional Student distribution:
 The use of a Student distribution (with n=2) ensures that outliers are more weighted than in a Normal distribution.
 
-The function {\tt XLALMCMCCheckAnnealing} is used for annealing if the flag {\tt useAnnealing} is set to 1. In this function, an 'annealing temparature' {\tt annealingTemp} decreases from an initial temperature of {\tt annealingTempBegin} to unity within {\tt annealingSteps} stepsin an exponential way. 
+The function \c XLALMCMCCheckAnnealing is used for annealing if the flag \c useAnnealing is set to 1. In this function, an 'annealing temparature' \c annealingTemp decreases from an initial temperature of \c annealingTempBegin to unity within \c annealingSteps stepsin an exponential way.
 
-The function {\tt XLALMCMCCheckBurnin} is experimental code to check if the burnin is reached, if {\tt flagBurnin} is set to 1. The last {\tt burninStep} values of the chain are fitted to a line every {\tt burninNumber} steps in the chain, and if the ratio of slope to mean is below a value {\tt burninThreshold} the burnin is reached.  
+The function \c XLALMCMCCheckBurnin is experimental code to check if the burnin is reached, if \c flagBurnin is set to 1. The last \c burninStep values of the chain are fitted to a line every \c burninNumber steps in the chain, and if the ratio of slope to mean is below a value \c burninThreshold the burnin is reached.
 
-The function {\tt XLALMCMCCheckUpdate} is used to update the covariance matrix. The updating is done by using the actual parameters and a set of mean values ({\tt mean}) and difference values ({\tt xdiff} and {\tt ndiff} ). 
+The function \c XLALMCMCCheckUpdate is used to update the covariance matrix. The updating is done by using the actual parameters and a set of mean values (\c mean) and difference values (\c xdiff and \c ndiff ).
 
-The function {\tt XLALMCMCCheckAcceptRatio} is experimental code to check the current acceptance ratio. If this ratio is too small. If, after {\tt acceptRatioNorm} steps the ratio of accepted ({\tt acceptRatioCounter}) to rejected jumps is below {\tt acceptThreshold}, then the annealing temperature is halfed, and the counters are zeroed.
+The function \c XLALMCMCCheckAcceptRatio is experimental code to check the current acceptance ratio. If this ratio is too small. If, after \c acceptRatioNorm steps the ratio of accepted (\c acceptRatioCounter) to rejected jumps is below \c acceptThreshold, then the annealing temperature is halfed, and the counters are zeroed.
 
-The functions {\tt XLALMCMCAddParam, XLALMCMCGetParam, XLALMCMCGetParameter, XLALMCMCSetParameter, XLALMCMCCopyPara, XLALMCMCFreePara} and {\tt XLALMXMXDestroyPara} are functions to handle the {\tt MCMCParameter} structure. They can be used to add new parameter to this structure (in the initializing step ({\tt XLALMCMCAddParam}) and to set/get parameters. The function {\tt XLALMCMCCopyPara} copies the parameter structure (actually only the current values. The pointer to the core-structure remains the same).
+The functions <tt>XLALMCMCAddParam, XLALMCMCGetParam, XLALMCMCGetParameter, XLALMCMCSetParameter, XLALMCMCCopyPara, XLALMCMCFreePara</tt> and \c XLALMXMXDestroyPara are functions to handle the \c MCMCParameter structure. They can be used to add new parameter to this structure (in the initializing step (\c XLALMCMCAddParam) and to set/get parameters. The function \c XLALMCMCCopyPara copies the parameter structure (actually only the current values. The pointer to the core-structure remains the same).
 
-The functions {\tt XLALMultiStudentDeviates} and {\tt XLALMultiNormalDeviates} draw multivariate random values, either Student-distributed or Norla distributed, given a covariance matrix. A function {\tt XLALCheckPositiveDefinite} can be used to check if the function is positive definite, which is required beforehand.
+The functions \c XLALMultiStudentDeviates and \c XLALMultiNormalDeviates draw multivariate random values, either Student-distributed or Norla distributed, given a covariance matrix. A function \c XLALCheckPositiveDefinite can be used to check if the function is positive definite, which is required beforehand.
 
 
-To set a different chain for the parameter estimation, just set another random seed. 
+To set a different chain for the parameter estimation, just set another random seed.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 The algorithms used in these functions are explained in detail in [Ref Needed].
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-This section briefly explains how to set-up the \texttt{MCMCInput} and the \texttt{MCMCParameter} structure for doing a MCMC sampling. 
+This section briefly explains how to set-up the \c MCMCInput and the \c MCMCParameter structure for doing a MCMC sampling.
 
-The first step is to initialize the \texttt{MCMCInput} structure with the output from data reading and conditioning, as well with user inputs to define settings for the MCMC. Also, the user is required to set the pointer to three functions which will initialize the parameter structure ({\tt funcInit}), that calculates the logarithm of the likelihood for a given set of parameters ({\tt funcLikelihood}) and that calculates the logarithm of the prior given a set of parameters ({\tt funcPrior}). Below is an example:
+The first step is to initialize the \c MCMCInput structure with the output from data reading and conditioning, as well with user inputs to define settings for the MCMC. Also, the user is required to set the pointer to three functions which will initialize the parameter structure (\c funcInit), that calculates the logarithm of the likelihood for a given set of parameters (\c funcLikelihood) and that calculates the logarithm of the prior given a set of parameters (\c funcPrior). Below is an example:
 
-\begin{verbatim}
+\code
         LALMCMCInput inputMCMC;
         inputMCMC.fcFilterInput  = fcFilterInput;
         inputMCMC.fcFilterParams = fcFilterParams;
@@ -114,18 +51,18 @@ The first step is to initialize the \texttt{MCMCInput} structure with the output
         inputMCMC.approximant    = approximant;
         inputMCMC.inspiralTable  = inputCurrent;
 
-        inputMCMC.tmpltPtr = 
+        inputMCMC.tmpltPtr =
           (InspiralTemplate*)LALCalloc(sizeof(InspiralTemplate),1);
 
         inputMCMC.counter=0;
 
-        inputMCMC.useAnnealing = 0;        
+        inputMCMC.useAnnealing = 0;
         inputMCMC.numberAnneal=iterAnneal;
         inputMCMC.annealingTempBegin=4.0;
         inputMCMC.annealingTemp=1.0;
         inputMCMC.annealingSteps=0;
 
-        inputMCMC.useScaling = 1;        
+        inputMCMC.useScaling = 1;
         inputMCMC.scalePeak=50.0;
         inputMCMC.scaleNormal=1.0;
         inputMCMC.scaleQ=0.84;
@@ -142,7 +79,7 @@ The first step is to initialize the \texttt{MCMCInput} structure with the output
         inputMCMC.xdiff=NULL;
         inputMCMC.ndiff=NULL;
 
-        inputMCMC.flagBurnin = 1;        
+        inputMCMC.flagBurnin = 1;
         inputMCMC.burninNumber = 100;
         inputMCMC.burninStep = 100;
         inputMCMC.burninTime = 0;
@@ -155,19 +92,15 @@ The first step is to initialize the \texttt{MCMCInput} structure with the output
         inputMCMC.funcTemplate = MCMCTemplate0;
         inputMCMC.funcPrior    = MCMCPrior0;
 
-\end{verbatim}
+\endcode
 
 
 
-The next step is to initialize a \texttt{MCMCParameter} structure as a NULL pointer and pass it along the \texttt{MCMCInput} structure to \texttt{XLALMCMCMetro}. Thats it!
+The next step is to initialize a \c MCMCParameter structure as a NULL pointer and pass it along the \c MCMCInput structure to \c XLALMCMCMetro. Thats it!
 
-However, you need to point to a function that initializes the parameter structure. This \texttt{funcInit} function populates the parameter structure with as many parameters as the user whishes, defining inital and boundary values. An example of a init function is given here, which also can be found in the code {\tt XLALMCMCUser.c}:
+However, you need to point to a function that initializes the parameter structure. This \c funcInit function populates the parameter structure with as many parameters as the user whishes, defining inital and boundary values. An example of a init function is given here, which also can be found in the code \ref XLALMCMCUser.c:
 
-\subsubsection*{Notes}
-
-
-</lalLaTeX>  */
-#endif
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -185,12 +118,12 @@ However, you need to point to a function that initializes the parameter structur
 #define UNUSED
 #endif
 
-NRCSID (LALINSPIRALMCMCC, "$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $"); 
+NRCSID (LALINSPIRALMCMCC, "$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $");
 
 /* *****************************
 printMatrix
   ***************************** */
-void 
+void
 printMatrix( gsl_matrix *covMat, int dim)
 {
   /* print matrix content */
@@ -208,7 +141,7 @@ printMatrix( gsl_matrix *covMat, int dim)
 /* *****************************
 printState
   ***************************** */
-void 
+void
 printState( StateMCMC state )
 {
   switch (state)
@@ -236,12 +169,12 @@ printState( StateMCMC state )
 /* *****************************
 XLALInspiralMCMCMetro
   ***************************** */
-/*  <lalVerbatim file="XLALMCMCMetroCP"> */
+
 void
-XLALMCMCMetro ( 
+XLALMCMCMetro (
   LALMCMCParameter  **paraPtr,
   LALMCMCInput       *inputMCMC
-) { /* </lalVerbatim>  */
+) {
 
   static LALStatus status;
 
@@ -256,20 +189,20 @@ XLALMCMCMetro (
   int       foundBurnin, loopMCMC, move, dim, i,j;
 
   /* initialize the parameter structure */
-  parameter = *paraPtr;  
-  inputMCMC->funcInit( parameter, inputMCMC->inspiralTable ); 
+  parameter = *paraPtr;
+  inputMCMC->funcInit( parameter, inputMCMC->inspiralTable );
 
   dim            = parameter->dimension;
-  inputMCMC->dim = dim;  
+  inputMCMC->dim = dim;
 
   /* initialize the internal vectors */
-  for (paraHead=parameter->param; paraHead; 
-       paraHead=paraHead->next) 
+  for (paraHead=parameter->param; paraHead;
+       paraHead=paraHead->next)
   {
     paraHead->core->chain=NULL;
     LALSCreateVector( &status, &paraHead->core->chain, inputMCMC->numberDraw+1);
-  }                
- 
+  }
+
   /* initialize vectors in the MCMC structure */
   LALSCreateVector( &status, &vector, dim);
   inputMCMC->mean = (REAL8*)LALCalloc( sizeof(REAL8), dim );
@@ -277,23 +210,23 @@ XLALMCMCMetro (
   inputMCMC->ndiff= (REAL8*)LALCalloc( sizeof(REAL8), dim );
 
   /* prepare the gsl matrices */
-  startCovMat = gsl_matrix_alloc( dim, dim); 
-  covMat      = gsl_matrix_alloc( dim, dim); 
+  startCovMat = gsl_matrix_alloc( dim, dim);
+  covMat      = gsl_matrix_alloc( dim, dim);
 
   /* set everything to zeros in the matrix */
-  for (i=0;i<dim;i++) 
-    for (j=0;j<dim;j++) 
+  for (i=0;i<dim;i++)
+    for (j=0;j<dim;j++)
       gsl_matrix_set( startCovMat, i, j, 0.0 );
 
   /* populate the startCovMat with initial values */
   printf("populating the covariance matrix:\n");
   for (paraHead=parameter->param,i=0; paraHead; paraHead=paraHead->next,i++)
-  {    
+  {
     range=paraHead->core->maxVal - paraHead->core->minVal;
     gsl_matrix_set( startCovMat, i, i, 0.001*range*range );
     printf("element %d: %f\n", i, 0.001*range*range);
   }
-  gsl_matrix_memcpy( covMat, startCovMat ); 
+  gsl_matrix_memcpy( covMat, startCovMat );
 
   /* initialize the state */
   inputMCMC->counter=inputMCMC->counterState=inputMCMC->counterAccept=inputMCMC->counterAcceptDraw=0;
@@ -315,7 +248,7 @@ XLALMCMCMetro (
     printf("ERROR: unknown state\n");
     exit(1);
   }
-      
+
 
   /* get the first values */
   inputMCMC->funcPrior( inputMCMC, parameter );
@@ -331,21 +264,21 @@ XLALMCMCMetro (
 
     /* print generel information */
     printf("####################################################\n");
-    printf("\nMCMCSTATUS k: %d c: %d  state: ", 
+    printf("\nMCMCSTATUS k: %d c: %d  state: ",
            inputMCMC->counter, inputMCMC->counterState);
     printState( state);
     printf("\n");
-    
-   
+
+
     /* do the sampling from the underlying distribution */
     move=XLALMCMCSample(inputMCMC, &parameter, &currentLogPosterior, covMat);
 
     /* count the accepted moves */
-    if (move) 
+    if (move)
     {
       inputMCMC->counterAccept++;
     }
-    
+
 
     /* ------------------------------
        checking the burnin
@@ -362,34 +295,34 @@ XLALMCMCMetro (
       /* increase internal burnin counter */
       inputMCMC->burninCounter++;
 
-      if ( inputMCMC->counterState>=inputMCMC->burninNumber && 
+      if ( inputMCMC->counterState>=inputMCMC->burninNumber &&
            inputMCMC->burninCounter>=inputMCMC->burninStep )
       {
         /* reset internal burnin counter */
         inputMCMC->burninCounter=0;
 
         /* check if burnin found */
-        foundBurnin=XLALMCMCCheckBurnin( inputMCMC, parameter );  
+        foundBurnin=XLALMCMCCheckBurnin( inputMCMC, parameter );
 
-        if (foundBurnin || inputMCMC->counterState >= inputMCMC->burninMaxNumber ) 
+        if (foundBurnin || inputMCMC->counterState >= inputMCMC->burninMaxNumber )
         {
           if (inputMCMC->verbose)
-            printf("MCMCINFO: Burnin period found at step %d." 
+            printf("MCMCINFO: Burnin period found at step %d."
                    "Moving to updating state.\n", inputMCMC->counter );
-          
+
           /* reset the counter */
           inputMCMC->burninTime = inputMCMC->counter;
-          
+
           /* adjust scaling factor and the cov-matrix*/
           inputMCMC->scaling = inputMCMC->scaleNormal;
           gsl_matrix_scale( covMat, 0.20);
-          
+
           /* deactivate this algorithm and set the new state */
-          inputMCMC->flagBurnin=0;          
+          inputMCMC->flagBurnin=0;
           state=doUpdating;
-          inputMCMC->counterState=0;          
-        } 
-        
+          inputMCMC->counterState=0;
+        }
+
       }
     }
 
@@ -401,7 +334,7 @@ XLALMCMCMetro (
     }
 
     /* ------------------------------
-       updating the covariance matrix 
+       updating the covariance matrix
        ------------------------------ */
     if ( state == doUpdating )
     {
@@ -423,7 +356,7 @@ XLALMCMCMetro (
         }
 
         /* set drawing state after matrix updating is finished */
-        state = doDrawing;       
+        state = doDrawing;
         inputMCMC->counterState=0;
       }
 
@@ -449,7 +382,7 @@ XLALMCMCMetro (
 
 
     /*if (inputMCMC->counterState>1000) loopMCMC=0;*/
-    
+
   } while( loopMCMC );
 
 
@@ -462,12 +395,12 @@ XLALMCMCMetro (
   /* print some summary informations */
   if ( inputMCMC->verbose>0 )
   {
-    printf("MCMCINFO: Total number of iterations: %d , steps accepted: %d  ( %.1f %% )\n", 
-           inputMCMC->counter, inputMCMC->counterAccept, 
+    printf("MCMCINFO: Total number of iterations: %d , steps accepted: %d  ( %.1f %% )\n",
+           inputMCMC->counter, inputMCMC->counterAccept,
            100.0*(float)inputMCMC->counterAccept/(float)inputMCMC->counter );
     printf("MCMCINFO: Number of draws used: %d, steps accepted: %d ( %.1f %%)\n",
-           inputMCMC->numberDraw, inputMCMC->counterAccept, 
-           100.0*(float)inputMCMC->counterAccept/(float)inputMCMC->numberDraw );    
+           inputMCMC->numberDraw, inputMCMC->counterAccept,
+           100.0*(float)inputMCMC->counterAccept/(float)inputMCMC->numberDraw );
   }
 
   /* set the correct pointer */
@@ -477,41 +410,41 @@ XLALMCMCMetro (
 /* *****************************
   XLALMCMCCheckAnnealing
   ***************************** */
-/*  <lalVerbatim file="XLALMCMCCheckAnnealingCP"> */
-void 
+
+void
 XLALMCMCCheckAnnealing(
   gsl_matrix *covMat,
   gsl_matrix *inputMat,
-  LALMCMCInput *inputMCMC) 
-{ /* </lalVerbatim>  */
+  LALMCMCInput *inputMCMC)
+{
 
   int k, number;
   k=inputMCMC->counterState;
   number = inputMCMC->annealingSteps;
 
   /* adjust the 'temperature' of the MCMC every annealingSteps steps */
-  if ( (k%number)==0 ) 
+  if ( (k%number)==0 )
   {
     /* calculate the 'heat' */
     inputMCMC->annealingTemp = exp( log(inputMCMC->annealingTempBegin) * (number-k)/(number-1.0));
-    
+
     /* copy and scale matrix */
     gsl_matrix_memcpy( covMat, inputMat );
     gsl_matrix_scale( covMat, inputMCMC->annealingTemp );
-    
-  }  
+
+  }
 }
 
 
 /* *****************************
   XLALMCMCCheckBurnin
   ***************************** */
-/*  <lalVerbatim file="XLALMCMCCheckBurninCP"> */
+
 INT4
 XLALMCMCCheckBurnin(
   LALMCMCInput *inputMCMC,
   LALMCMCParameter *parameter)
-{ /* </lalVerbatim>  */
+{
 
   LALMCMCParam *paraHead=NULL;
 
@@ -528,7 +461,7 @@ XLALMCMCCheckBurnin(
   printf("\nXLALMCMCCheckBurnin: -------------------------------------------\n");
   /* get the data for each parameter and perform a linear regression */
   for (paraHead=parameter->param; paraHead; paraHead=paraHead->next)
-  { 
+  {
 
     sxy=0;
     sxx=0;
@@ -547,12 +480,12 @@ XLALMCMCCheckBurnin(
     /* calculate the slope and the mean */
     mean=sy/(float)n;
     slope=((float)n*sxy-sx*sy)/((float)n*sxx-sx*sx);
-    
+
     /* is fluctuation is above a trheshold, set flag to zero: no burnin */
-    if (slope/mean>inputMCMC->burninThreshold) 
+    if (slope/mean>inputMCMC->burninThreshold)
     {
       flag=flag*0;
-    } 
+    }
 
     printf("  parameter %10s: mean=%10e  slope=%10e \n", paraHead->core->name, mean, slope);
 
@@ -565,13 +498,13 @@ XLALMCMCCheckBurnin(
 /* *****************************
   XLALMCMCCheckUpdate
   ***************************** */
-/*  <lalVerbatim file="XLALMCMCCheckUpdateCP"> */
+
 void
 XLALMCMCCheckUpdate(
    LALMCMCInput *inputMCMC,
    LALMCMCParameter *parameter,
    gsl_matrix *covMat)
-{ /* </lalVerbatim>  */
+{
 
   LALMCMCParam* paraHead=NULL;
   REAL8* mean = NULL;
@@ -588,8 +521,8 @@ XLALMCMCCheckUpdate(
 
   /* increase internal counter */
   inputMCMC->updateCounter++;
-  
-  /* calculate oldDiff */ 
+
+  /* calculate oldDiff */
   for (paraHead=parameter->param,c=0; paraHead; paraHead=paraHead->next,c++)
   {
 
@@ -599,12 +532,12 @@ XLALMCMCCheckUpdate(
       oldDiff[c]=0.0;
       newDiff[c]=0.0;
     }
-    else      
+    else
     {
       /* calculate oldDiff */
       oldDiff[c] = paraHead->value - mean[c];
-      
-      /* check wrapping on the oldDiff value*/        
+
+      /* check wrapping on the oldDiff value*/
       minWrap=paraHead->core->minVal;
       maxWrap=paraHead->core->maxVal;
       deltaWrap=maxWrap-minWrap;
@@ -613,17 +546,17 @@ XLALMCMCCheckUpdate(
         if (oldDiff[c] > maxWrap) oldDiff[c]-= deltaWrap;
         if (oldDiff[c] < minWrap) oldDiff[c]+= deltaWrap;
       }
-      
+
       /* update mean */
       mean[c] += oldDiff[c]/(inputMCMC->updateCounter + inputMCMC->updateOffset);
-      
+
       /* check wrapping on the mean value */
       if (paraHead->core->wrapping)
       {
         if (mean[c] > maxWrap) mean[c]-= deltaWrap;
         if (mean[c] < minWrap) mean[c]+= deltaWrap;
-      }		    
-      
+      }
+
       /* calculate newDiff (usage of NEW mean) */
       newDiff[c] = paraHead->value - mean[c];
       if (paraHead->core->wrapping)
@@ -633,34 +566,34 @@ XLALMCMCCheckUpdate(
       }
     }
   }
-     
-  /* update covariance: */ 
+
+  /* update covariance: */
   t=(float)inputMCMC->updateCounter-1.0;
   for (i=0; i<inputMCMC->dim; i++)
     for (j=0; j<inputMCMC->dim; j++)
-      if (t>1) 
-      {              
+      if (t>1)
+      {
         element=(t-1)*gsl_matrix_get( covMat, i, j);
         term1 = t*oldDiff[i]*oldDiff[j]/((t+1.0)*(t+1.0));
-        term2 = newDiff[i]*newDiff[j];            
-        gsl_matrix_set( covMat, i,j, (element+term1+term2)/t );	  
-      }      
-     
+        term2 = newDiff[i]*newDiff[j];
+        gsl_matrix_set( covMat, i,j, (element+term1+term2)/t );
+      }
+
 }
 
 
 /* ******************************************
   XLALMCMCSample
   ******************************************* */
-/*  <lalVerbatim file="XLALMCMCSampleCP"> */
-UINT4 
+
+UINT4
 XLALMCMCSample(
   LALMCMCInput *inputMCMC,
   LALMCMCParameter **paraPtr,
-  REAL4  *oldLogPosterior, 
+  REAL4  *oldLogPosterior,
   gsl_matrix *covMat
   )
-{ /* </lalVerbatim>  */
+{
 
   static LALStatus status;
 
@@ -669,7 +602,7 @@ XLALMCMCSample(
   LALMCMCParameter *help=NULL;      /* help parameter set */
   LALMCMCParam* paraHead = NULL;
 
-  REAL4 alpha, my_random, s; 
+  REAL4 alpha, my_random, s;
   REAL4 logPrior, logLikelihood, logPosterior;
   UINT4 move, accept, c;
   INT4 UNUSED testPrior;
@@ -679,23 +612,23 @@ XLALMCMCSample(
   move=0;
 
   /* allocate spec for proposal set */
-  proposal=(LALMCMCParameter*)LALMalloc( sizeof(LALMCMCParameter) ); 
+  proposal=(LALMCMCParameter*)LALMalloc( sizeof(LALMCMCParameter) );
 
   do {
     accept = 1;
     XLALMCMCCopyPara( &proposal, parameter);
-    XLALMCMCJump( inputMCMC, proposal, covMat); 
-    
+    XLALMCMCJump( inputMCMC, proposal, covMat);
+
     for (paraHead = proposal->param,c=0; paraHead; paraHead=paraHead->next,c++ )
     {
       /* check if parameter lies in valid range */
-      if (paraHead->value < paraHead->core->minVal || 
+      if (paraHead->value < paraHead->core->minVal ||
           paraHead->value > paraHead->core->maxVal)
       {
         accept=0;
         /*
         if ( inputMCMC->verbose )
-          printf("MCMCSAMPLE Parameter %10s outside range. Value: %8.3f  Range: %8.3f - %8.3f \n", 
+          printf("MCMCSAMPLE Parameter %10s outside range. Value: %8.3f  Range: %8.3f - %8.3f \n",
                  paraHead->core->name, paraHead->value,
                  paraHead->core->minVal,  paraHead->core->maxVal );
         */
@@ -706,26 +639,26 @@ XLALMCMCSample(
   /* calculate the log Prior */
   testPrior = inputMCMC->funcPrior( inputMCMC, proposal );
   logPrior = proposal->logPrior;
-  
+
   /*-- determine likelihood if prior gives something reasonable:   --*/
-  if ( logPrior>-HUGE_VAL ) 
+  if ( logPrior>-HUGE_VAL )
   {
-    
+
     /* calculate the new posterior value for the proposal parameter set */
     logLikelihood = inputMCMC->funcLikelihood( inputMCMC, proposal );
     logPosterior = logLikelihood + logPrior;
-    
+
     /* calculate the alpha-value and draw a random number */
     s=inputMCMC->scaling;
     alpha=exp( s*(logPosterior - *oldLogPosterior) );
     LALUniformDeviate( &status, &my_random, inputMCMC->randParams );
-    
+
     /* now check accept/reject criterion */
-    if ( my_random<=alpha ) 
-    {        
+    if ( my_random<=alpha )
+    {
       /* accept the proposal set */
       move = 1;
-      
+
       /* just swap the two pointers */
       help=proposal;
       proposal=parameter;
@@ -733,9 +666,9 @@ XLALMCMCSample(
 
       /* return the new log posterior value */
       *oldLogPosterior = logPosterior;
-    } 
+    }
 
-    /* output */ 
+    /* output */
     if ( inputMCMC->verbose )
     {
       if (move==1)
@@ -743,22 +676,22 @@ XLALMCMCSample(
       else
         printf("MCMCSAMPLE: --JumpNotAccepted ");
       printf("current logPost: %6.3f  proposal logPost: %6.3f alpha: %6.3f  "
-             "u: %6.3f\n", 
+             "u: %6.3f\n",
              *oldLogPosterior, logPosterior, alpha, my_random);
     }
   }
- 
-  /* test printout */  
+
+  /* test printout */
   if ( inputMCMC->verbose )
   {
     printf("MCMCPARAMETER: ");
-    printf("| SNR: %f  ", *oldLogPosterior);  
+    printf("| SNR: %f  ", *oldLogPosterior);
     for (paraHead=parameter->param; paraHead; paraHead=paraHead->next) {
       printf(" | %s: %9.5f", paraHead->core->name, paraHead->value);
     }
     fprintf(stdout, "\n");
   }
-  
+
 
   /* recopy the correct parameter structure */
   *paraPtr=parameter;
@@ -865,13 +798,13 @@ INT4 XLALMCMCJumpHarmonic(
   REAL8 mcFactor,mcnew;
   LALStatus status;
   memset(&status,0,sizeof(LALStatus));
-  
+
   /* Check random params exist */
   if(inputMCMC->randParams==NULL) LALCreateRandomParams(&status,&(inputMCMC->randParams),0);
 
   /* Maximum harmonic multiple to include in jumps */
   maxOrder = inputMCMC->ampOrder+2;
-  
+
   /* Select two harmonics */
   LALUniformDeviate(&status, &randnum, inputMCMC->randParams);
   old=ceil(randnum*(REAL4)maxOrder);
@@ -879,7 +812,7 @@ INT4 XLALMCMCJumpHarmonic(
     LALUniformDeviate(&status, &randnum, inputMCMC->randParams);
     new=ceil(randnum*(REAL4)maxOrder);
   }while(new==old);
-    
+
   /* Ratio of mchirp is determined by (old/new)^(5/8) */
   mcFactor = pow(old/new, 5./8.);
   if(XLALMCMCCheckParameter(parameter,"logM"))
@@ -895,7 +828,7 @@ INT4 XLALMCMCJumpHarmonic(
   XLALMCMCCyclicReflectiveBound(parameter);
   return(0);
 }
-  
+
 INT4 XLALMCMCReflectDetPlane(
 	LALMCMCInput *inputMCMC,
 	LALMCMCParameter *parameter
@@ -925,7 +858,7 @@ if(inputMCMC->numberDataStreams-DetCollision<3) return(-1); /* Not enough indepe
 /* Select IFOs to use */
 if(inputMCMC->randParams==NULL) LALCreateRandomParams(&status,&(inputMCMC->randParams),0);
 LALUniformDeviate(&status,&randnum,inputMCMC->randParams);
-IFO1 = (INT4)floor(inputMCMC->numberDataStreams*randnum);	
+IFO1 = (INT4)floor(inputMCMC->numberDataStreams*randnum);
 LALUniformDeviate(&status,&randnum,inputMCMC->randParams);
 IFO2 = (INT4)floor((inputMCMC->numberDataStreams-1)*randnum);
 while(IFO1==IFO2 || inputMCMC->detector[IFO1]==inputMCMC->detector[IFO2]) IFO2=(IFO2+1) % inputMCMC->numberDataStreams;
@@ -1007,10 +940,10 @@ void XLALMCMCRotateSky(
 
 	if(inputMCMC->numberDataStreams<2) return;
 	if(inputMCMC->numberDataStreams==2 && inputMCMC->detector[0]==inputMCMC->detector[1]) return;
-	
+
 	longi = XLALMCMCGetParameter(parameter,"ra");
 	lat = XLALMCMCGetParameter(parameter,"dec");
-	
+
 	/* Convert the RA/dec to geodetic coordinates, as the detectors use these */
 	SkyPosition geodetic,equatorial;
 	equatorial.longitude=longi;
@@ -1023,7 +956,7 @@ void XLALMCMCRotateSky(
 	cur[0]=cos(lat)*cos(longi);
 	cur[1]=cos(lat)*sin(longi);
 	cur[2]=sin(lat);
-	
+
 	if(inputMCMC->randParams==NULL) LALCreateRandomParams(&status,&(inputMCMC->randParams),0);
 	LALUniformDeviate(&status,&randnum,inputMCMC->randParams);
 	IFO1 = (INT4)floor(inputMCMC->numberDataStreams*randnum);
@@ -1031,20 +964,20 @@ void XLALMCMCRotateSky(
 		LALUniformDeviate(&status,&randnum,inputMCMC->randParams);
 		IFO2 = (INT4)floor(inputMCMC->numberDataStreams*randnum);
 	}while(IFO2==IFO1 || inputMCMC->detector[IFO1]==inputMCMC->detector[IFO2]);
-	
+
 /*	fprintf(stderr,"Rotating around %s-%s vector\n",inputMCMC->ifoID[IFO1],inputMCMC->ifoID[IFO2]);*/
 	/* Calc normalised direction vector */
 	for(i=0;i<3;i++) vec[i]=inputMCMC->detector[IFO2]->location[i]-inputMCMC->detector[IFO1]->location[i];
 	for(i=0;i<3;i++) vec_abs+=vec[i]*vec[i];
 	vec_abs=sqrt(vec_abs);
 	for(i=0;i<3;i++) vec[i]/=vec_abs;
-	
+
 	/* Chose random rotation angle */
 	LALUniformDeviate(&status,&randnum,inputMCMC->randParams);
 	theta=LAL_TWOPI*randnum;
 	c=cos(-theta); s=sin(-theta);
 	/* Set up rotation matrix */
-	double R[3][3] = {{c+vec[0]*vec[0]*(1.0-c), 
+	double R[3][3] = {{c+vec[0]*vec[0]*(1.0-c),
                      vec[0]*vec[1]*(1.0-c)-vec[2]*s,
                      vec[0]*vec[2]*(1.0-c)+vec[1]*s},
                     {vec[1]*vec[0]*(1.0-c)+vec[2]*s,
@@ -1059,21 +992,21 @@ void XLALMCMCRotateSky(
 			new[i] += R[i][j]*cur[j];
 	double newlong = atan2(new[1],new[0]);
 	if(newlong<0.0) newlong=LAL_TWOPI+newlong;
-	
+
 	geodetic.longitude=newlong;
 	geodetic.latitude=asin(new[2]);
 	/* Convert back into equatorial (sky) coordinates */
 	LALGeographicToEquatorial(&status,&equatorial,&geodetic,&(inputMCMC->epoch));
 	newlong=equatorial.longitude;
 	double newlat=equatorial.latitude;
-	
+
 	/* Compute change in tgeocentre for this change in sky location */
 	REAL8 dtold,dtnew,deltat;
 	dtold = XLALTimeDelayFromEarthCenter(inputMCMC->detector[0]->location, longi, lat, &(inputMCMC->epoch)); /* Compute time delay */
 	dtnew = XLALTimeDelayFromEarthCenter(inputMCMC->detector[0]->location, newlong, newlat, &(inputMCMC->epoch)); /* Compute time delay */
 	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
 	deltat+=XLALMCMCGetParameter(parameter,"time");
-	XLALMCMCSetParameter(parameter,"time",deltat);	
+	XLALMCMCSetParameter(parameter,"time",deltat);
 	XLALMCMCSetParameter(parameter,"dec",newlat);
 	XLALMCMCSetParameter(parameter,"ra",newlong);
 	/*fprintf(stderr,"Skyrotate: new pos = %lf %lf %lf => %lf %lf\n",new[0],new[1],new[2],newlong,asin(new[2]));*/
@@ -1097,7 +1030,7 @@ int XLALMCMC1PNMasseta(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter)
 	XLALMCMCSetParameter(parameter,"eta",eta2);
 	if(logflag) XLALMCMCSetParameter(parameter,"logM",log(mc2));
 	else XLALMCMCSetParameter(parameter,"mchirp",mc2);
-	
+
 	return(0);
 }
 
@@ -1127,19 +1060,19 @@ void XLALMCMCJumpSingle(
 /* ******************************************
   XLALMCMCJump
   ******************************************* */
-/*  <lalVerbatim file="XLALMCMCJumpCP"> */
-void 
+
+void
 XLALMCMCJump(
   LALMCMCInput     *inputMCMC,
-  LALMCMCParameter *parameter, 
+  LALMCMCParameter *parameter,
   gsl_matrix       *covMat
-  ) 
-{ /* </lalVerbatim>  */
+  )
+{
   static LALStatus status;
 
   LALMCMCParam *paraHead=NULL;
   REAL4Vector  *step=NULL;
-  gsl_matrix *work=NULL; 
+  gsl_matrix *work=NULL;
   REAL8 aii, aij, ajj;
   INT4 i, j, dim;
 
@@ -1150,11 +1083,11 @@ XLALMCMCJump(
   LALSCreateVector( &status, &step, dim);
 
   /* copy matrix into workspace and scale it appriopriately */
-  work =  gsl_matrix_alloc(dim,dim); 
+  work =  gsl_matrix_alloc(dim,dim);
 
   gsl_matrix_memcpy( work, covMat );
   gsl_matrix_scale( work, inputMCMC->annealingTemp);
-  
+
   /* check if the matrix if positive definite */
   while ( !XLALCheckPositiveDefinite( work, dim) ) {
     printf("WARNING: Matrix not positive definite!\n");
@@ -1165,8 +1098,8 @@ XLALMCMCJump(
       {
         aij=gsl_matrix_get( work, i, j);
         aii=gsl_matrix_get( work, i, i);
-        ajj=gsl_matrix_get( work, j, j);  
-        
+        ajj=gsl_matrix_get( work, j, j);
+
         if ( fabs(aij) > 0.95* sqrt( aii*ajj ) )
         {
           aij=aij/fabs(aij)*0.95*sqrt( aii*ajj );
@@ -1179,38 +1112,38 @@ XLALMCMCJump(
     }
     exit(0);
   }
-    
+
   /* draw multivariate student distribution with n=2 */
-  XLALMultiStudentDeviates( step, work, dim, 2, inputMCMC->randParams); 
-  
+  XLALMultiStudentDeviates( step, work, dim, 2, inputMCMC->randParams);
+
   /* loop over all parameters */
   for (paraHead=parameter->param,i=0; paraHead; paraHead=paraHead->next,i++)
-  { 
+  {
   /*  if (inputMCMC->verbose)
-      printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
+      printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n",
              paraHead->core->name, paraHead->value, step->data[i] , paraHead->value + step->data[i]);*/
-    
+
 	  if(paraHead->core->wrapping!=-1) paraHead->value += step->data[i];
 	}
-  
+
   XLALMCMCCyclicReflectiveBound(parameter);
   /* destroy the vectors */
   LALSDestroyVector(&status, &step);
   gsl_matrix_free(work);
 }
 
-void 
+void
 XLALMCMCJumpIntrinsic(
   LALMCMCInput     *inputMCMC,
-  LALMCMCParameter *parameter, 
+  LALMCMCParameter *parameter,
   gsl_matrix       *covMat
-  ) 
-{ /* </lalVerbatim>  */
+  )
+{
   static LALStatus status;
 
   LALMCMCParam *paraHead=NULL;
   REAL4Vector  *step=NULL;
-  gsl_matrix *work=NULL; 
+  gsl_matrix *work=NULL;
   REAL8 aii, aij, ajj;
   INT4 i, j, dim;
 
@@ -1220,10 +1153,10 @@ XLALMCMCJumpIntrinsic(
   /* draw the mutinormal deviates */
   LALSCreateVector( &status, &step, dim);
   /* copy matrix into workspace and scale it appriopriately */
-  work =  gsl_matrix_alloc(dim,dim); 
+  work =  gsl_matrix_alloc(dim,dim);
   gsl_matrix_memcpy( work, covMat );
   gsl_matrix_scale( work, inputMCMC->annealingTemp);
-  
+
   /* check if the matrix if positive definite */
   while ( !XLALCheckPositiveDefinite( work, dim) ) {
     printf("WARNING: Matrix not positive definite!\n");
@@ -1234,8 +1167,8 @@ XLALMCMCJumpIntrinsic(
       {
         aij=gsl_matrix_get( work, i, j);
         aii=gsl_matrix_get( work, i, i);
-        ajj=gsl_matrix_get( work, j, j);  
-        
+        ajj=gsl_matrix_get( work, j, j);
+
         if ( fabs(aij) > 0.95* sqrt( aii*ajj ) )
         {
           aij=aij/fabs(aij)*0.95*sqrt( aii*ajj );
@@ -1250,19 +1183,19 @@ XLALMCMCJumpIntrinsic(
   }
 
   /* draw multivariate student distribution with n=2 */
-  XLALMultiStudentDeviates( step, work, dim, 2, inputMCMC->randParams); 
-  
+  XLALMultiStudentDeviates( step, work, dim, 2, inputMCMC->randParams);
+
   /* loop over all parameters */
   for (paraHead=parameter->param,i=0; paraHead; paraHead=paraHead->next,i++)
-  { 
+  {
 	if(!strcmp(paraHead->core->name,"ra") || !strcmp(paraHead->core->name,"dec")||!strcmp(paraHead->core->name,"time")||paraHead->core->wrapping==-1)
 	{;}
   /*  if (inputMCMC->verbose)
-      printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
+      printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n",
              paraHead->core->name, paraHead->value, step->data[i] , paraHead->value + step->data[i]);*/
     else paraHead->value += step->data[i];
 	}
-  
+
   XLALMCMCCyclicReflectiveBound(parameter);
   /* destroy the vectors */
   LALSDestroyVector(&status, &step);
@@ -1281,9 +1214,9 @@ function to keep its proposals inside the parameter space */
 		if(paraHead->core->wrapping==1) /* For cyclic boundaries */
 		{
 			delta = paraHead->core->maxVal - paraHead->core->minVal;
-			while ( paraHead->value > paraHead->core->maxVal) 
+			while ( paraHead->value > paraHead->core->maxVal)
 				paraHead->value -= delta;
-			while ( paraHead->value < paraHead->core->minVal) 
+			while ( paraHead->value < paraHead->core->minVal)
 			paraHead->value += delta;
 		}
 		else if(paraHead->core->wrapping==0) /* Use reflective boundaries */
@@ -1317,17 +1250,17 @@ INT4 XLALMCMCCheckWrapping(LALMCMCParameter *parameter,
 /* *****************************
 XLALMCMCAddParam
   ***************************** */
-/*  <lalVerbatim file="XLALMCMCAddParamCP"> */
+
 void
 XLALMCMCAddParam(
   LALMCMCParameter  *parameter,
-  const char        *name, 
+  const char        *name,
   REAL8              value,
   REAL8              minValue,
   REAL8              maxValue,
   INT4               wrapping
   )
-{ /* </lalVerbatim>  */
+{
 
   LALMCMCParam* paraPointer;
 
@@ -1344,19 +1277,19 @@ XLALMCMCAddParam(
   else
   {
 
-    /* first search the end of the line */  
+    /* first search the end of the line */
     paraPointer=parameter->param;
     while ( paraPointer->next )
     {
       paraPointer=paraPointer->next;
     }
-    
+
     paraPointer = paraPointer->next = (LALMCMCParam*) LALMalloc( sizeof(LALMCMCParam) );
   }
 
   /* set the next pointer to NULL always */
   paraPointer->next = NULL;
-  
+
   /* allocate the sub structure (once!!) */
   paraPointer->core = (LALMCMCSubParam*) LALMalloc( sizeof(LALMCMCSubParam) );
 
@@ -1371,7 +1304,7 @@ XLALMCMCAddParam(
   /*printf("MCMCInit parameter %s with range %f - %f - %f\n", name, minValue, value, maxValue ); */
 
   /* increase dimension */
-  parameter->dimension++;  
+  parameter->dimension++;
 }
 
 
@@ -1379,13 +1312,13 @@ XLALMCMCAddParam(
 /* *****************************
 XLALMCMCGetParam
   ***************************** */
-/*  <lalVerbatim file="XLALMCMCGetParamCP"> */
+
 LALMCMCParam*
 XLALMCMCGetParam(
   LALMCMCParameter* parameter,
   const char* name
   )
-{ /* </lalVerbatim>  */
+{
 
   LALMCMCParam* param=NULL;
 
@@ -1403,7 +1336,7 @@ XLALMCMCGetParam(
   }
 
   /* parameter not found .... */
-  fprintf( stderr, 
+  fprintf( stderr,
            "WARNING: parameter '%s' unknown!\n",name );
 
   return param;
@@ -1413,18 +1346,18 @@ XLALMCMCGetParam(
 /* *****************************
 XLALMCMCGetParameter
   ***************************** */
-/*  <lalVerbatim file="XLALMCMCGetParameterCP"> */
+
 REAL8
 XLALMCMCGetParameter(
   LALMCMCParameter* parameter,
   const char* name
   )
-{ /* </lalVerbatim>  */
+{
 
   LALMCMCParam* param=NULL;
 
   param=XLALMCMCGetParam( parameter, name);
-  
+
   if (param)
   {
     return param->value;
@@ -1437,14 +1370,14 @@ XLALMCMCGetParameter(
 /* *****************************
 XLALMCMCSetParameter
   ***************************** */
-/*  <lalVerbatim file="XLALMCMCSetParameterCP"> */
+
 void
 XLALMCMCSetParameter(
   LALMCMCParameter* parameter,
   const char* name,
   REAL8 value
   )
-{ /* </lalVerbatim>  */
+{
 
   LALMCMCParam* param;
   param=XLALMCMCGetParam( parameter, name);
@@ -1453,26 +1386,26 @@ XLALMCMCSetParameter(
   {
     param->value=value;
   }
-  
+
 }
 
 
 /* *****************************
 XLALMCMCCopyPara
   ***************************** */
-/*  <lalVerbatim file="XLALMCMCCopyParaCP"> */
+
 void
 XLALMCMCCopyPara(
   LALMCMCParameter **parameterOutPtr,
   LALMCMCParameter *parameterIn
   )
-{ /* </lalVerbatim>  */
+{
 
   /* deep copy of the param structure, parameterOut must be a already allocated pointer */
   LALMCMCParam *outPointer= NULL;
   LALMCMCParam *inPointer = NULL;
   LALMCMCParam *before    = NULL;
-  
+
   LALMCMCParameter *parameterOut = NULL;
 
   parameterOut = *parameterOutPtr;
@@ -1483,17 +1416,17 @@ XLALMCMCCopyPara(
     fprintf(stderr," ERROR in XLALMCMCCopyPara: 'parameter' not allocated");
     exit(0);
   }
-  
+
   /* deep copy of the upper structure */
   /*memcpy( parameterOut, parameterIn, sizeof(LALMCMCParameter) );*/
   parameterOut->dimension     = parameterIn->dimension;
   parameterOut->logLikelihood = parameterIn->logLikelihood;
   parameterOut->logPrior      = parameterIn->logPrior;
 
-   
+
   /* allocate the first of the param-pointers if needed */
   if(parameterOut->param==NULL) parameterOut->param = (LALMCMCParam*) LALMalloc( sizeof(LALMCMCParam) );
- 
+
   outPointer = parameterOut->param;
   /*outPointer->next = NULL; */
 
@@ -1501,11 +1434,11 @@ XLALMCMCCopyPara(
   for ( inPointer=parameterIn->param; inPointer; inPointer = inPointer->next )
   {
     /* check if the next-pointer is already allocated (happens only the first time) */
-    if ( !outPointer ) 
+    if ( !outPointer )
     {
       outPointer = (LALMCMCParam*) LALMalloc( sizeof(LALMCMCParam) );
-      before->next = outPointer;           
-      outPointer->next = NULL; 
+      before->next = outPointer;
+      outPointer->next = NULL;
     }
 
     /* copy the sub-param structure: just copy the pointer ... */
@@ -1525,24 +1458,24 @@ XLALMCMCCopyPara(
 /* *****************************
 XLALMCMCFreePara
   ***************************** */
-/*  <lalVerbatim file="XLALMCMCFreeParaCP"> */
+
 void
 XLALMCMCFreePara(
   LALMCMCParameter *parameter
   )
-{ /* </lalVerbatim>  */
+{
 
-  LALMCMCParam* param=NULL; 
+  LALMCMCParam* param=NULL;
   LALMCMCParam* thisParam=NULL;
 
-  
+
   param=parameter->param;
   while (param)
   {
     thisParam = param;
     param = param->next;
 	LALFree( thisParam->core);
-    LALFree( thisParam );    
+    LALFree( thisParam );
   }
   parameter->param = NULL;
   parameter->dimension=0;
@@ -1552,17 +1485,17 @@ XLALMCMCFreePara(
 /* *****************************
 XLALMCMCDestroyPara
   ***************************** */
-/*  <lalVerbatim file="XLALMCMCDestroyParaCP"> */
+
 void
 XLALMCMCDestroyPara(
   LALMCMCParameter **parameter
   )
-{ /* </lalVerbatim>  */
+{
 
   LALMCMCParameter* para;
-  LALMCMCParam* param=NULL; 
+  LALMCMCParam* param=NULL;
   LALMCMCParam* paramNext=NULL;
-  
+
   para=*parameter;
 
   param=para->param;
@@ -1572,7 +1505,7 @@ XLALMCMCDestroyPara(
     LALFree( param->core );
     LALFree( param );
     param=paramNext;
-    
+
   }
 
   LALFree( para );
@@ -1582,16 +1515,16 @@ XLALMCMCDestroyPara(
 /* *****************************
 XLALMultiStudentDeviates
   ***************************** */
-/*  <lalVerbatim file="XLALMultiStudentDeviatesCP"> */
+
 void
-XLALMultiStudentDeviates( 
+XLALMultiStudentDeviates(
   REAL4Vector  *vector,
   gsl_matrix   *matrix,
   UINT4         dim,
   UINT4         n,
   RandomParams *randParam
   )
-{ /* </lalVerbatim> */
+{
   static const char *func = "LALMultiStudentDeviates";
 
   static LALStatus status;
@@ -1603,7 +1536,7 @@ XLALMultiStudentDeviates(
   /* check input arguments */
   if (!vector || !matrix || !randParam)
     XLAL_ERROR_VOID( func, XLAL_EFAULT );
-  
+
   if (dim<1)
     XLAL_ERROR_VOID( func, XLAL_EINVAL );
 
@@ -1616,13 +1549,13 @@ XLALMultiStudentDeviates(
 
 
   /* then draw from chi-square with n degrees of freedom;
-     this is the sum d_i*d_i with d_i drawn from a normal 
+     this is the sum d_i*d_i with d_i drawn from a normal
      distribution. */
   LALSCreateVector( &status, &dummy, n);
   LALNormalDeviates( &status, dummy, randParam);
 
   /* calculate the chisquare distributed value */
-  for (i=0; i<n; i++) 
+  for (i=0; i<n; i++)
   {
     chi+=dummy->data[i]*dummy->data[i];
   }
@@ -1632,7 +1565,7 @@ XLALMultiStudentDeviates(
 
   /* now, finally, calculate the distribution value */
   factor=sqrt(n/chi);
-  for (i=0; i<dim; i++) 
+  for (i=0; i<dim; i++)
   {
     vector->data[i]*=factor;
   }
@@ -1641,37 +1574,37 @@ XLALMultiStudentDeviates(
 
 
 /* Reference: http://www.mail-archive.com/help-gsl@gnu.org/msg00631.html*/
-/*  <lalVerbatim file="XLALMultiNormalDeviatesCP"> */
+
 void
-XLALMultiNormalDeviates( 
-  REAL4Vector *vector, 
-	gsl_matrix *matrix, 
-  UINT4 dim, 
+XLALMultiNormalDeviates(
+  REAL4Vector *vector,
+	gsl_matrix *matrix,
+  UINT4 dim,
   RandomParams *randParam
   )
-{/* </lalVerbatim> */
+{
   static LALStatus status;
 
   UINT4 i=0;
   gsl_matrix *work=NULL;
   gsl_vector *result = NULL;
-  
+
   static const char *func = "LALMultiNormalDeviates";
-  
+
   /* check input arguments */
   if (!vector || !matrix || !randParam)
     XLAL_ERROR_VOID( func, XLAL_EFAULT );
-  
+
   if (dim<1)
     XLAL_ERROR_VOID( func, XLAL_EINVAL );
 
   /* copy matrix into workspace */
-  work =  gsl_matrix_alloc(dim,dim); 
+  work =  gsl_matrix_alloc(dim,dim);
   gsl_matrix_memcpy( work, matrix );
 
   /* compute the cholesky decomposition */
   gsl_linalg_cholesky_decomp(work);
-  
+
   /* retrieve the normal distributed random numbers (LAL procedure) */
   LALNormalDeviates( &status, vector, randParam);
 
@@ -1694,38 +1627,38 @@ XLALMultiNormalDeviates(
   /* free unused stuff */
   gsl_matrix_free(work);
   gsl_vector_free(result);
-  
+
 }
- 
- 
-/*  <lalVerbatim file="XLALCheckPositiveDefiniteCP"> */
+
+
+
 UINT4
-XLALCheckPositiveDefinite( 
+XLALCheckPositiveDefinite(
   gsl_matrix       *matrix,
   UINT4            dim
   )
-{/* </lalVerbatim> */
+{
   gsl_matrix  *m     = NULL;
   gsl_vector  *eigen = NULL;
   gsl_eigen_symm_workspace *workspace = NULL;
   UINT4 i;
-  
+
   /* copy input matrix */
-  m =  gsl_matrix_alloc( dim,dim ); 
-  gsl_matrix_memcpy( m, matrix);  
-  
+  m =  gsl_matrix_alloc( dim,dim );
+  gsl_matrix_memcpy( m, matrix);
+
   /* prepare variables */
   eigen = gsl_vector_alloc ( dim );
   workspace = gsl_eigen_symm_alloc ( dim );
-  
+
   /* compute the eigen values */
   gsl_eigen_symm ( m,  eigen, workspace );
-  
+
   /* test the result */
   for (i = 0; i < dim; i++)
     {
       /* printf("diag: %f | eigen[%d]= %f\n", gsl_matrix_get( matrix,i,i), i, eigen->data[i]);*/
-    if (eigen->data[i]<0) 
+    if (eigen->data[i]<0)
     {
       printf("NEGATIVE EIGEN VALUE!!! PANIC\n");
       return 0;
@@ -1736,7 +1669,18 @@ XLALCheckPositiveDefinite(
   gsl_eigen_symm_free( workspace);
   gsl_matrix_free(m);
   gsl_vector_free(eigen);
-  
+
   return 1;
 }
- 
+
+int PriorIsSane(LALMCMCParameter *parameter)
+{
+UINT4 i;
+int inrange=1;
+LALMCMCParam *p=parameter->param;
+for(i=0;i<parameter->dimension;i++){
+        if(p->core->maxVal < p->core->minVal)
+        	return 0;
+}
+return 1;
+}

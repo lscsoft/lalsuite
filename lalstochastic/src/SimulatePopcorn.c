@@ -18,27 +18,20 @@
 */
 
 
-/*
-<lalVerbatim file="SimulatePopcornCV">
-Author: Tania Regimbau
-$Id$
-</lalVerbatim>
-<lalLaTeX>
-\subsection{Module \texttt{SimulatePopcorn.c}}
-\label{ss:SimulatePopcorn.c}
+/**
 
-Routine for simulating whitened time-domain signals in a pair
-of detectors that arises from low duty cycle astrophysical backgrounds
+\author Tania Regimbau
+\file
+\ingroup stochastic
 
-\subsubsection*{Prototypes}
-\input{SimulatePopcornCP}
-\idx{LALSimPopcornTimeSeries()}
+\brief Routine for simulating whitened time-domain signals in a pair
+of detectors that arises from low duty cycle astrophysical backgrounds.
 
-\subsubsection*{Description}
+\heading{Description}
 
 This routines  simulate stochastic backgrounds of astrophysical origin produced by the superposition of 'burst sources' since the beginning of the stellar activity. Depending on the ratio between the burst duration and the mean arrival time interval between events, such signals may be sequences of resolved bursts, 'popcorn noises' or continuous backgrounds.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 The two unwhitened time series are produced according to the procedure discribed in Coward,Burman & Blair, 2002, MNRAS, 329.
 1) the arrival time of the events is randomly selected assuming a Poisson statistic.
@@ -47,32 +40,32 @@ The two unwhitened time series are produced according to the procedure discribed
 
 4) the resulting signal is the sum of the individual strain amplitudes expressed in our frame.
 
-The frequency domain strains $\widetilde{o}_{1}$ and $\widetilde{o}_{2} in the output of the two detectors are constructed as follow:
-\begin {equation}
+The frequency domain strains \f$\widetilde{o}_{1}\f$ and \f$\widetilde{o}_{2} in the output of the two detectors are constructed as follow:
+\f{equation}{
 \widetilde{o}_{1}  = \widetilde{R}_{1}\widetilde{h}_{1}
-\end {equation}
-\begin {equation}
+\f}
+\f{equation}{
 \widetilde{o}_{2}  = \widetilde{R}_{2}(\widetilde{h}_{1}\gamma + \widetilde{h}_{1}\sqrt{1-\gamma^{2}})
-\end {equation}
-where  $widetilde{h}_{i}$ is the FFT and $\widetilde{R}_{i}$  the response function of the ith detector.
-In the second equation,  $\gamma$ is the overlap reduction function.
+\f}
+where  \f$widetilde{h}_{i}\f$ is the FFT and \f$\widetilde{R}_{i}\f$  the response function of the ith detector.
+In the second equation,  \f$\gamma\f$ is the overlap reduction function.
 
-Then the inverse FFTs give the whitened time series $o_{1}$ and $o_{2}$.
+Then the inverse FFTs give the whitened time series \f$o_{1}\f$ and \f$o_{2}\f$.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALForwardRealFFT()
 LALReverseRealFFT()
 LALOverlapReductionFunction()
 LALUniformDeviate()
 LALSRombergIntegrate()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-The cosmological model considered here corresponds to a flat Einstein de Sitter Universe with $\Omega_{matter}=0.3$, $\Omega_{vacuum}=0.7 and $h_{0}=0.7. The code can be easily adapted to any cosmological model. The same for the cosmic star formation rate (Madau \& Porciani, 2001, ApJ, 548, 522).
+The cosmological model considered here corresponds to a flat Einstein de Sitter Universe with \f$\Omega_{matter}=0.3\f$, \f$\Omega_{vacuum}=0.7 and $h_{0}=0.7. The code can be easily adapted to any cosmological model. The same for the cosmic star formation rate (Madau \& Porciani, 2001, ApJ, 548, 522).
 
-</lalLaTeX> */
+*/
 
 #include <stdio.h>
 #include <math.h>

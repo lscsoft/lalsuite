@@ -276,8 +276,8 @@ sub cleanupLSD {
     $text =~ s!</?lal(?:LaTeX|Verbatim)[^>]*?>!!sg;
 
     # make embedded C comments safe
-    while (($text =~ s!\A(.+)/\*!$1/-*!sg) > 0) {}
-    while (($text =~ s!\*/(.+)\Z!*-/$1!sg) > 0) {}
+    while (($text =~ s!\A(.+)/\*!$1/\\*!sg) > 0) {}
+    while (($text =~ s!\*/(.+)\Z!*\\/$1!sg) > 0) {}
 
     # replace first line #if / last line #endif directives with doxygen comments
     $text =~ s!\A#if[^\n]*!/**!;
@@ -414,7 +414,7 @@ sub cleanupLSD {
         $text =~ s!\\end$n*{picture}!\\endverbatim!mg;
 
         # replace formatting commands
-        $text =~ s!\{\\(tt|it|rm|sc|sl|bf|sf)$n*!\\text$1\{!sg;
+        $text =~ s!\{\\(tt|it|rm|sc|sl|bf|sf)$n+!\\text$1\{!sg;
         $text =~ s!\\verb(.)(.+?)\1!\\texttt{$2}!mg;
         $text =~ s!\\emph!\\textit!sg;
         $text =~ s!\\text(?:sc|sl|bf|sf)!\\texttt!sg;
@@ -456,7 +456,11 @@ sub cleanupLSD {
 
         # replace miscellaneous LaTeX commands
         $text =~ s!\\lq!`!g;
+        $text =~ s!``|''!"!g;
 
+        # remove any empty LaTeX comments
+        $text =~ s!^$n*%$n*$!!mg;
+        
     }
 
     # get rid of empty comments

@@ -1,0 +1,124 @@
+\documentclass{minimal}
+% Load packages
+\usepackage{graphicx}
+\usepackage{color}
+% Set papersize
+\usepackage[papersize={450.00bp,280.00bp},text={450.00bp,280.00bp}]{geometry}
+% No page numbers and no paragraph indentation
+\pagestyle{empty}
+\setlength{\parindent}{0bp}%
+% Load configuration file
+\InputIfFileExists{gnuplot.cfg}{%
+  \typeout{Using configuration file gnuplot.cfg}%
+}{%
+ \typeout{No configuration file gnuplot.cfg found.}%
+}%
+%
+
+\begin{document}
+
+\vspace*{5bp}
+\begin{center}
+\begin{picture}(410,250)(-32,-110)
+\put(168,123){\vector(1,0){15}}
+\put(168,123){\line(1,0){25}}
+\put(195,120){$Y$}
+\put(65,110)
+{
+  \framebox(100,30)
+  {
+  \texttt{CrossCorr}
+  }
+}
+\put(80,85){\vector(0,1){15}}
+\put(80,85){\line(0,1){25}}
+\put(82,95){$\widetilde{\bar{h}}{}_{1,2}$}
+\put(-37,65){$h_{1,2}$}
+\put(-17,68){\vector(1,0){15}}
+\put(-17,68){\line(1,0){25}}
+\put(5,55)
+{
+  \framebox(90,30)
+  {
+    \texttt{ZeroPadAndFFT}
+  }
+}
+\put(150,85){\vector(0,1){15}}
+\put(150,85){\line(0,1){25}}
+\put(152,95){$\widetilde{Q}$}
+\put(100,55)
+{
+  \framebox(190,30)
+  {
+    \texttt{OptimalFilter}
+  }
+}
+\put(260,30){\vector(0,1){15}}
+\put(260,30){\line(0,1){25}}
+\put(262,40){$\lambda$}
+\put(343,13){\vector(1,0){15}}
+\put(343,13){\line(1,0){25}}
+\put(370,10){$\sigma^2/T$}
+\put(190,0)
+{
+  \framebox(150,30)
+  {
+    \texttt{Normalization}
+  }
+}
+\put(200,-30){\vector(0,1){25}}
+\put(200,-30){\line(0,1){30}}
+\put(202,-10){$\Omega_{\mathrm{GW}}$}
+\put(200,-10){\line(-1,0){35}}
+\put(165,-10){\line(0,1){65}}
+\put(165,-10){\vector(0,1){55}}
+\put(167,40){$\Omega_{\mathrm{GW}}$}
+\put(170,-60)
+{
+  \framebox(70,30)
+  {
+    \texttt{OmegaGW}
+  }
+}
+\put(280,-30){\vector(0,1){20}}
+\put(280,-30){\line(0,1){30}}
+\put(282,-15){$\gamma$}
+\put(280,-20){\line(-1,0){130}}
+\put(150,-20){\line(0,1){75}}
+\put(150,-20){\vector(0,1){55}}
+\put(152,30){$\gamma$}
+\put(250,-60)
+{
+  \framebox(70,30)
+  {
+    \texttt{Overlap}
+  }
+}
+\put(125,-80){\line(0,1){135}}
+\put(125,-80){\vector(0,1){100}}
+\put(127,20){$\frac{1}{P^{\mathrm{HC}}_{1,2}}$}
+\put(330,-80){\line(0,1){80}}
+\put(330,-80){\vector(0,1){45}}
+\put(332,-35){$\frac{1}{P^{\mathrm{C}}_{1,2}}$}
+\put(115,-110)
+{
+  \framebox(225,30)
+  {
+    \texttt{InverseNoise}
+  }
+}
+\put(73,-108){$\tilde{R}_{1,2}$}
+\put(93,-105){\vector(1,0){15}}
+\put(93,-105){\line(1,0){25}}
+\put(73,-90){$P_{1,2}$}
+\put(93,-87){\vector(1,0){15}}
+\put(93,-87){\line(1,0){25}}
+\end{picture}
+\end{center}
+
+\end{document}
+
+%%% Local Variables:
+%%% TeX-PDF-mode: t
+%%% TeX-master: t
+%%% End:
