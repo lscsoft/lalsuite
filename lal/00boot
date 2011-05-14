@@ -92,11 +92,6 @@ printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 # run m4 to generate sources
 echo "00boot: creating sources"
 
-cd packages/support/src || fail "creating sources in packages/support/src"
-${M4} StreamGridInput.m4 > StreamGridInput.c || fail "creating sources in packages/support/src"
-${M4} StreamGridOutput.m4 > StreamGridOutput.c || fail "creating sources in packages/support/src"
-cd ../../.. || fail "creating sources in packages/support/src"
-
 cd packages/factories/src || fail "creating sources in packages/factories/src"
 ${M4} VectorFactories.m4 > VectorFactories.c || fail "creating sources in packages/factories/src"
 ${M4} VectorSequenceFactories.m4 > VectorSequenceFactories.c || fail "creating sources in packages/factories/src"

@@ -1,20 +1,12 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')define(`FMT',`"% .16e"')')dnl
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')define(`FMT',`"% .8e"')')dnl
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')define(`FMT',`"% .16e"')')dnl
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')define(`FMT',`"% .8e"')')dnl
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')define(`FMT',`"% " LAL_INT2_FORMAT')')dnl
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')define(`FMT',`"% " LAL_INT4_FORMAT')')dnl
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')define(`FMT',`"% " LAL_INT8_FORMAT')')dnl
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')define(`FMT',`"%" LAL_UINT2_FORMAT')')dnl
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')define(`FMT',`"%" LAL_UINT4_FORMAT')')dnl
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')define(`FMT',`"%" LAL_UINT8_FORMAT')')dnl
-define(`COMPLEX',`0')dnl
-ifelse(TYPECODE,`Z',`define(`COMPLEX',`1')')dnl
-ifelse(TYPECODE,`C',`define(`COMPLEX',`1')')dnl
-define(`GTYPE',`format(`%sGrid',TYPE)')dnl
-define(`FUNC',`format(`LAL%sWriteGrid',TYPECODE)')dnl
-dnl
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define GTYPE CONCAT2(TYPE,Grid)
+#define FUNC CONCAT3(LAL,TYPECODE,WriteGrid)
+
 void
 FUNC ( LALStatus *stat, FILE *stream, GTYPE *grid )
 {
@@ -22,7 +14,7 @@ FUNC ( LALStatus *stat, FILE *stream, GTYPE *grid )
   UINT4 pLength, np;  /* length and number of data ``paragraphs'' */
   TYPE *data;         /* pointer to grid->data->data */
 
-  INITSTATUS( stat, "FUNC", STREAMGRIDOUTPUTC );
+  INITSTATUS( stat, STRING(FUNC), STREAMGRIDOUTPUTC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -52,7 +44,7 @@ FUNC ( LALStatus *stat, FILE *stream, GTYPE *grid )
    *******************************************************************/
 
   /* Print the datatype. */
-  if ( fprintf( stream, "# datatype = GTYPE\n" ) < 0 ) {
+  if ( fprintf( stream, "# datatype = " STRING(GTYPE) "\n" ) < 0 ) {
     ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
   }
 
