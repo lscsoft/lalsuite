@@ -111,12 +111,12 @@ NRCSID(LALPSPININSPIRALRDC, "$Id$");
 
 static REAL8 OmMatch(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2) {
 
-  const REAL8 omM     = 0.055;
-  const REAL8 omMz1p2 = -5.02e-3;
-  const REAL8 omM12   = -4.29e-4;
-  const REAL8 omMsq   = 5.78e-3;
-  const REAL8 omMz12  = 2.66e-3;
-  const REAL8 omMzsq  = -9.27e-3;
+  const REAL8 omM     = 0.0625;
+  const REAL8 omMz1p2 = -4.67e-3;
+  const REAL8 omM12   = -2.04e-3;
+  const REAL8 omMsq   = -1.61e-3;
+  const REAL8 omMz12  = -7.13e-3;
+  const REAL8 omMzsq  = -5.45e-3;
 
   return omM + /*6.05e-3 * sqrtOneMinus4Eta +*/ 
     omMz1p2 * (LNhS1 + LNhS2) + omM12 * (S1S2 - LNhS1 * LNhS2) + 
@@ -126,12 +126,12 @@ static REAL8 OmMatch(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S
 
 static REAL8 fracRD(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2) {
 
-  const double frac0 = 0.57;
-  const double frac1p2 = 1.42e-2;
-  const double frac12 = -3.71e-3;
-  const double fracsq = -1.201e-2;
-  const double fracz12 = -2.447e-2;
-  const double fraczsq = -1.930e-2;
+  const double frac0   = 0.80;
+  const double frac1p2 = -1.33e-02;
+  const double frac12  = -5.65e-02;
+  const double fracsq  = -4.59e-02;
+  const double fracz12 = -2.44e-02;
+  const double fraczsq = -1.79e-02;
 
   return frac0 + frac1p2 * (LNhS1 + LNhS2) + frac12 * (S1S2 - LNhS1 * LNhS1) +
     fracsq * (S1S1 + S2S2 - LNhS1 * LNhS1 - LNhS2 * LNhS2) +
@@ -567,7 +567,7 @@ static int XLALSpinInspiralDerivatives(double t, const double values[], double d
 	alphadotcosi = LNhz * (LNhx * dLNhy - LNhy * dLNhx) / LNhxy;
     else
       {
-	fprintf(stderr,"*** LALPSpinInspiralRD WARNING ***: alphadot set to 0 by hand LNh:(%12.4e %12.4e %12.4e)\n",LNhx,LNhy,LNhz);
+	//fprintf(stderr,"*** LALPSpinInspiralRD WARNING ***: alphadot set to 0 by hand LNh:(%12.4e %12.4e %12.4e)\n",LNhx,LNhy,LNhz);
 	alphadotcosi = 0.;
       }
 
@@ -685,6 +685,7 @@ void LALPSpinInspiralRDTemplates(LALStatus * status,
     memset(s1->data, 0, signalvec1->length * sizeof(REAL8));
     memset(s2->data, 0, signalvec2->length * sizeof(REAL8));
 
+    /* Call the engine function*/
     LALPSpinInspiralRDEngine(status->statusPtr, s1, s2, NULL, NULL, NULL, &count, params, &paramsInit);
 
     UINT4 i;
@@ -1307,6 +1308,8 @@ static void LALSpinInspiralEngine(LALStatus * status,
 				  REAL8Vector* h4P1,
 				  REAL8Vector* h4M1,
 				  REAL8Vector* h40,
+				  REAL8Vector* freq,
+				  REAL8Vector* phase,
 				  LALPSpinInspiralPhenPars *phenPars 
 				  ) 
 {
@@ -1315,31 +1318,43 @@ static void LALSpinInspiralEngine(LALStatus * status,
   UINT4 count=0;
   UINT4 write=0;
 
-  REAL8 dt,tm;
+  REAL8 dt,tm,timewrite;
   REAL8 Mass,dm;
   REAL8 v,v2;
-  REAL8 Phi, Phiold;
-  REAL8 omega, omegaold;
+  REAL8 Phi;
+  REAL8 omega;
   REAL8 domega=0.;
   REAL8 domegaold;
   REAL8 ddomega=0.;
-  REAL8 ddomegaold;
   REAL8 omegaMatch;
 
   REAL8 LNhx,LNhy,LNhz;
   REAL8 S1x,S1y,S1z;
   REAL8 S2x,S2y,S2z;
   REAL8 LNhxy;
-  REAL8 energy;
+  REAL8 energy=0.;
+  REAL8 energywrite;
 
-  REAL8 LNhS1,LNhS2,S1S1,S1S2,S2S2;
+  REAL8 LNhS1=0.;
+  REAL8 LNhS2=0.;
+  REAL8 S1S1=0.;
+  REAL8 S1S2=0.;
+  REAL8 S2S2=0.;
   REAL8 dLNhx,dLNhy,dLNhz;
+  REAL8 LNhS1w,LNhS2w,S1S1w,S2S2w,S1S2w;
 
   REAL8 alpha,alphaold;
-  REAL8 dalpha,dalphaold;
-  REAL8 ddalpha;
-  REAL8 diota,diotaold;
-  REAL8 ddiota;
+  REAL8 dalpha=0.;
+  REAL8 dalphaold;
+  REAL8 ddalpha=0.;
+  REAL8 diota=0.;
+  REAL8 diotaold;
+  REAL8 ddiota=0.;
+
+  REAL8 Phiwrite,alphawrite;
+  REAL8 omegawrite,domegawrite,ddomegawrite;
+  REAL8 diotawrite,ddiotawrite;
+  REAL8 dalphawrite,ddalphawrite;
 
   REAL8 amp22,amp33,amp44;
   REAL8 unitHz;
@@ -1410,9 +1425,8 @@ static void LALSpinInspiralEngine(LALStatus * status,
     RETURN(status);
   }
 
-  count=0;
-  write=0;
-  tm = 0.;
+  count = write= 0;
+  tm = timewrite = 0.;
 
   LALSpinInspiralDerivatives(&values, &dvalues, (void *) mparams);
 
@@ -1438,10 +1452,21 @@ static void LALSpinInspiralEngine(LALStatus * status,
       amp33 = -amp22 / 4. * sqrt(5. / 42.);
       amp44 = amp22 * v2;
 
-      Phiold     = Phi;
-      omegaold   = omega;
-      domegaold  = domega;
-      ddomegaold = ddomega;
+      Phiwrite   = Phi;
+      omegawrite = omega;
+      alphawrite = alpha;
+      domegawrite  = domega;
+      ddomegawrite = ddomega;
+      energywrite  = energy;
+      diotawrite   = diota;
+      ddiotawrite  = ddiota;
+      dalphawrite  = dalpha;
+      ddalphawrite = ddalpha;
+      LNhS1w = LNhS1;
+      LNhS2w = LNhS2;
+      S1S1w  = S1S1;
+      S1S2w  = S1S2;
+      S2S2w  = S2S2;
 
       trigAngle.ci   = LNhz;
       trigAngle.cdi  = 2. * trigAngle.ci * trigAngle.ci - 1.;
@@ -1464,13 +1489,18 @@ static void LALSpinInspiralEngine(LALStatus * status,
       trigAngle.c8i2 = trigAngle.c4i2 * trigAngle.c4i2;
       trigAngle.s8i2 = trigAngle.s4i2 * trigAngle.s4i2;
 
-      XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,write,amp22,v,mparams->eta,dm,Phi,alpha,trigAngle);
+      XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,write,amp22,v,mparams->eta,dm,Phiwrite,alphawrite,trigAngle);
 
-      XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,write,amp33,v,mparams->eta,dm,Phi,alpha,trigAngle);
+      XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,write,amp33,v,mparams->eta,dm,Phiwrite,alphawrite,trigAngle);
 
-      XLALSpinInspiralFillH4Modes(h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,write,amp44,v,mparams->eta,dm,Phi,alpha,trigAngle);
+      XLALSpinInspiralFillH4Modes(h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,write,amp44,v,mparams->eta,dm,Phiwrite,alphawrite,trigAngle);
+
+      freq->data[write]=omega;
+      phase->data[write]=Phi;
 
       write++;
+
+      timewrite+=mparams->dt;
 
     }
 
@@ -1534,8 +1564,9 @@ static void LALSpinInspiralEngine(LALStatus * status,
     v  = pow(omega,oneby3);
     v2 = v*v;
 
-    domega = dvalues.data[1];
-    ddomega = (domega - domegaold) / dt * Mass;
+    domegaold = domega;
+    domega    = dvalues.data[1];
+    ddomega   = (domega - domegaold) / dt * Mass;
 
     tm += dt;
 
@@ -1547,39 +1578,28 @@ static void LALSpinInspiralEngine(LALStatus * status,
 
   } while ( (intreturn==GSL_SUCCESS) && (omegaMatch>omega) );
 
-  if (omega>omegaMatch) intreturn = LALPSIRDPN_TEST_OMEGAMATCH;
+  if ((omega>omegaMatch)&&(count>subsampling)) intreturn = LALPSIRDPN_TEST_OMEGAMATCH;
 
   LALFree(dummy.data);
 
-  if (intreturn!=LALPSIRDPN_TEST_OMEGAMATCH) {
-    count--;
-    tm     -=dt;
-    alpha   = alphaold;
-    Phi     = Phiold;
-    omega   = omegaold;
-    domega  = domegaold;
-    ddomega = ddomegaold;
-  }
-
-  phenPars->endtime   = tm;
   phenPars->intreturn = intreturn;
-  phenPars->Psi       = Phi;
-  phenPars->alpha     = alpha;
-  phenPars->energy    = energy;
-  phenPars->omega     = omega;
-  phenPars->domega    = domega/Mass;
-  phenPars->ddomega   = ddomega/Mass/Mass;
-  phenPars->diota     = diota;
-  phenPars->ddiota    = ddiota/Mass;
-  phenPars->dalpha    = dalpha;
-  phenPars->ddalpha   = ddalpha/Mass;
+  phenPars->Psi       = Phiwrite;
+  phenPars->alpha     = alphawrite;
+  phenPars->energy    = energywrite;
+  phenPars->omega     = omegawrite;
+  phenPars->domega    = domegawrite/Mass;
+  phenPars->ddomega   = ddomegawrite/Mass/Mass;
+  phenPars->diota     = diotawrite;
+  phenPars->ddiota    = ddiotawrite/Mass;
+  phenPars->dalpha    = dalphawrite;
+  phenPars->ddalpha   = ddalphawrite/Mass;
   phenPars->ci        = trigAngle.ci;
-  phenPars->countback = write;
-  phenPars->LNhS1     = LNhS1;
-  phenPars->LNhS2     = LNhS2;
-  phenPars->S1S2      = S1S2;
-  phenPars->S1S1      = S1S1;
-  phenPars->S2S2      = S2S2;
+  phenPars->countback = write-1;
+  phenPars->LNhS1     = LNhS1w;
+  phenPars->LNhS2     = LNhS2w;
+  phenPars->S1S2      = S1S2w;
+  phenPars->S1S1      = S1S1w;
+  phenPars->S2S2      = S2S2w;
 
 }
 
@@ -1609,16 +1629,18 @@ static int XLALSpinInspiralAdaptiveEngine(
 					  REAL8Vector* h4P1,
 					  REAL8Vector* h4M1,
 					  REAL8Vector* h40,
+					  REAL8Vector* freq,
+					  REAL8Vector* phase,
 					  LALPSpinInspiralPhenPars *phenPars 
 					  ) 
 {
 
-  UINT4 j,k;
-  UINT4 kend=0;
-  UINT4 jend=0;
-  UINT4 intlen;
+  INT4 j,k;
+  INT4 kend=0;
+  INT4 jend=0;
+  INT4 intlen;
   UINT4 intreturn;
-  UINT4 Npoints;
+  INT4 Npoints;
 
   LALSpinInspiralAngle trigAngle;
 
@@ -1635,8 +1657,11 @@ static int XLALSpinInspiralAdaptiveEngine(
   REAL8 amp44;
 
   REAL8 LNhxy;
-  REAL8 LNhS1,LNhS2;
-  REAL8 S1S1,S1S2,S2S2;
+  REAL8 LNhS1=0.;
+  REAL8 LNhS2=0.;
+  REAL8 S1S1=0.;
+  REAL8 S1S2=0.;
+  REAL8 S2S2=0.;
   REAL8 omegaMatch;
   REAL8 domegak  = 0.;
   REAL8 ddomegak = 0.;
@@ -1695,7 +1720,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   }
 
   /* if we have enough space, compute the waveform components; otherwise abort */
-  if ( intlen >= mparams->length ) {
+  if ( (UINT4)intlen >= mparams->length ) {
     fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: no space to write in waveforms: %d vs. %d\n",intlen,mparams->length);
     XLAL_ERROR(func, XLAL_ESIZE);
   }
@@ -1748,27 +1773,27 @@ static int XLALSpinInspiralAdaptiveEngine(
       }
       else alpha_s->data[k] = alpha_s->data[k-1];
 
+      LNhS1k=LNhS1;
       LNhS1=(LNhx[j]*S1x[j]+LNhy[j]*S1y[j]+LNhz[j]*S1z[j])/mparams->m1m/mparams->m1m;
+      LNhS2k=LNhS2;
       LNhS2=(LNhx[j]*S2x[j]+LNhy[j]*S2y[j]+LNhz[j]*S2z[j])/mparams->m2m/mparams->m2m;;
+      S1S2k=S1S2;
       S1S2=(S1x[j]*S2x[j]+S1y[j]*S2y[j]+S1z[j]*S2z[j])/pow(mparams->m1m*mparams->m2m,2.);
+      S1S1k=S1S1;
       S1S1=(S1x[j]*S1x[j]+S1y[j]*S1y[j]+S1z[j]*S1z[j])/pow(mparams->m1m,4.);
+      S2S2k=S2S2;
       S2S2=(S2x[j]*S2x[j]+S2y[j]*S2y[j]+S2z[j]*S2z[j])/pow(mparams->m2m,4.);
 
       omegaMatch= OmMatch(LNhS1,LNhS2,S1S1,S1S2,S2S2);
 
       if ((omegaMatch<=omega_s->data[k])&&(kend==0)) {
-	kend=k;
-	jend=j;
-	LNhS1k = LNhS1;
-	LNhS2k = LNhS2;
-	S1S2k  = S1S2;
-	S1S1k  = S1S1;
-	S2S2k  = S2S2;
+	kend=k-1;
+	jend=j-1;
       }
     }
     alphak=alpha_s->data[kend];
 
-    if (kend==0) {
+    if (kend<0) {
       fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: phenomenological phase cannot be added\n");
       XLAL_ERROR(func,XLAL_EFAILED);
     }
@@ -1781,6 +1806,7 @@ static int XLALSpinInspiralAdaptiveEngine(
       fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating derivatives\n");
       XLAL_ERROR(func,XLAL_EFAILED);
     }
+    domegak  = domega->data[kend];
 
     for (k=0; k<Npoints; k++) {
       LNhxy = sqrt(LNhx_s->data[k] * LNhx_s->data[k] + LNhy_s->data[k] * LNhy_s->data[k]);
@@ -1792,7 +1818,6 @@ static int XLALSpinInspiralAdaptiveEngine(
 	dalpha->data[k] = 0.;
       }
     }
-    domegak  = domega->data[kend];
     diotak  = diota->data[kend];
     dalphak = dalpha->data[kend];
 
@@ -1804,8 +1829,8 @@ static int XLALSpinInspiralAdaptiveEngine(
       XLAL_ERROR(func,XLAL_EFAILED);
     }
     ddomegak = ddomega->data[kend];
-    ddiotak  = ddiota->data[kend];
     ddalphak = ddalpha->data[kend];
+    ddiotak  = ddiota->data[kend];
 
     XLALDestroyREAL8Vector(omega_s);
     XLALDestroyREAL8Vector(LNhx_s);
@@ -1823,19 +1848,16 @@ static int XLALSpinInspiralAdaptiveEngine(
 
   }
   else {
-    if (intreturn==LALPSIRDPN_TEST_OMEGAMATCH)
-      jend=intlen;
-    else {
-      jend=intlen-1;
-    }
+    jend=intlen-1;
   }
 
   /* Now fill the Hlm waveform structures*/
 
   alpha=atan2(LNhy[0],LNhx[0]);
 
-  for (j=0;j<jend;j++) {
+  for (j=0;j<=jend;j++) {
 
+    freq->data[j]=omega[j];
     v=pow(omega[j],oneby3);
     v2=v*v;
 
@@ -1849,7 +1871,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     amp33 = -amp22 / 4. * sqrt(5./42.); 
     amp44 = amp22 * sqrt(5./7.) * 2./9.* v2;
 
-    Psi = Phi[j];// - 2. * omega[j] * log(omega[j]);
+    Psi = phase->data[j] = Phi[j];// - 2. * omega[j] * log(omega[j]);
 
     trigAngle.ci   = (LNhz[j]);
     trigAngle.cdi  = 2. * trigAngle.ci * trigAngle.ci - 1.;
@@ -2335,10 +2357,10 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 
   if (params->fixedStep == 1) {
     //printf("Fixed step integration\n");
-    LALSpinInspiralEngine(status->statusPtr,neqs,yinit,amp22ini,&mparams,h2P2,h2M2,h2P1,h2M1,h20,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,&phenPars);
+    LALSpinInspiralEngine(status->statusPtr,neqs,yinit,amp22ini,&mparams,h2P2,h2M2,h2P1,h2M1,h20,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,fap,phap,&phenPars);
   }  else {
     //printf("Adaptive integration\n");
-    errcode = XLALSpinInspiralAdaptiveEngine(neqs,yinit,amp22ini,&mparams,h2P2,h2M2,h2P1,h2M1,h20,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,&phenPars);
+    errcode = XLALSpinInspiralAdaptiveEngine(neqs,yinit,amp22ini,&mparams,h2P2,h2M2,h2P1,h2M1,h20,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,fap,phap,&phenPars);
   }
   intreturn=phenPars.intreturn;
   /* report on abnormal termination */ 
@@ -2354,7 +2376,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       fprintf(stderr,"                           S2 = (%10.6f,%10.6f,%10.6f)\n", params->spin2[0], params->spin2[1], params->spin2[2]);
     }
 
-  if (params->inspiralOnly != 1) {
+  if ((params->inspiralOnly != 1)&&(intreturn==LALPSIRDPN_TEST_OMEGAMATCH)) {
 
     tim = t0 = phenPars.endtime;
     tAs = t0 + 2. * phenPars.domega / phenPars.ddomega;
@@ -2374,247 +2396,247 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       RETURN(status);
       //XLAL_ERROR(func, XLAL_EFAILED);
     }
+    else {
+      trigAngle.ci = phenPars.ci;
+      Psi    = phenPars.Psi;// - 2. * om * log(om);
+      Psi0   = Psi + tAs * (om1/mass -dalpha1*trigAngle.ci) * log(1. - t0 / tAs);
+      alpha0 = phenPars.alpha + tAs * dalpha1 * log(1. - t0 / tAs);
+      iota0  = acos(phenPars.ci) + diota1 * tAs * log(1. - t0 / tAs);
+      energy = phenPars.energy;
+      count = phenPars.countback;
 
-    trigAngle.ci = phenPars.ci;
-    Psi    = phenPars.Psi - 2. * om * log(om);
-    Psi0   = Psi + tAs * (om1/mass -dalpha1*trigAngle.ci) * log(1. - t0 / tAs);
-    alpha0 = phenPars.alpha + tAs * dalpha1 * log(1. - t0 / tAs);
-    iota0  = acos(phenPars.ci) + diota1 * tAs * log(1. - t0 / tAs);
-    energy = phenPars.energy;
-    count = phenPars.countback;
+      /* Get QNM frequencies */
+      modefreqs = XLALCreateCOMPLEX8Vector(nmodes);
 
-    /* Get QNM frequencies */
-    modefreqs = XLALCreateCOMPLEX8Vector(nmodes);
-
-    errcode = XLALPSpinFinalMassSpin(&finalMass, &finalSpin, params, energy, initLNh);
-    if (errcode != XLAL_SUCCESS) {
-      DETATCHSTATUSPTR(status);
-      RETURN(status);
-      //XLAL_ERROR(func,XLAL_EFAILED);
-    }
-
-    errcode =XLALPSpinGenerateQNMFreq(modefreqs, params, 2, 2, nmodes, finalMass, finalSpin);
-    if (errcode != XLAL_SUCCESS) {
-      XLALDestroyCOMPLEX8Vector(modefreqs);
-      DETATCHSTATUSPTR(status);
-      RETURN(status);
-      //XLAL_ERROR(func,XLAL_EFAILED);
-    }
-
-    omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
-    XLALDestroyCOMPLEX8Vector(modefreqs);
-
-    frRD = fracRD(phenPars.LNhS1,phenPars.LNhS2,phenPars.S1S1,phenPars.S1S2,phenPars.S2S2);
-
-    v     = pow(om,oneby3);
-    v2    = v*v;
-    amp22 = amp22ini*v2;
-
-    do {
-
-      count++;
-      if (count >= length) {
-	fprintf(stderr,"**** LALPhenSpinInspiralRD ERROR ****: phen. part exceeds array length");
-	fprintf(stderr, "   m  (%11.4e  %11.4e)  f0 %11.4e\n",params->mass1, params->mass2, params->fLower);
-	fprintf(stderr, "   S1 (%8.4f  %8.4f  %8.4f)\n", initS1[0],initS1[1], initS1[2]);
-	fprintf(stderr, "   S2 (%8.4f  %8.4f  %8.4f)\n", initS2[0],initS2[1], initS2[2]);
+      errcode = XLALPSpinFinalMassSpin(&finalMass, &finalSpin, params, energy, initLNh);
+      if (errcode != XLAL_SUCCESS) {
 	DETATCHSTATUSPTR(status);
 	RETURN(status);
-	//XLAL_ERROR(func,XLAL_ENOMEM);
+	//XLAL_ERROR(func,XLAL_EFAILED);
       }
 
-      tim += dt;
-      v2old = v2;
-      omold = om;
-      om = om1 / (1. - tim / tAs) + om0;
-      fap->data[count] = om;
-      Psi  = Psi0 + (- tAs * (om1/mass-dalpha1*trigAngle.ci) * log(1. - tim / tAs) + (om0/mass-dalpha0*trigAngle.ci) * (tim - t0) );
-      //trigAngle.ci = cos(diota0 * (tim - t0) - diota1 * tAs * log(1. - tim / tAs) + iota0);
-      alpha = alpha0 + ( dalpha0 * (tim - t0) - dalpha1 * tAs * log(1. - tim / tAs) );
+      errcode =XLALPSpinGenerateQNMFreq(modefreqs, params, 2, 2, nmodes, finalMass, finalSpin);
+      if (errcode != XLAL_SUCCESS) {
+	XLALDestroyCOMPLEX8Vector(modefreqs);
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
+	//XLAL_ERROR(func,XLAL_EFAILED);
+      }
 
-      v  = pow(om, oneby3);
-      v2 = v*v;
-      amp22 *= v2 / v2old;
+      omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
+      XLALDestroyCOMPLEX8Vector(modefreqs);
 
-      amp33 = -amp22 / 4. * sqrt(5. / 42.);
-      amp44 = amp22 * sqrt(5./7.) * 2./9.   * v2;
+      frRD = fracRD(phenPars.LNhS1,phenPars.LNhS2,phenPars.S1S1,phenPars.S1S2,phenPars.S2S2);
 
-      trigAngle.cdi  = 2. * trigAngle.ci * trigAngle.ci - 1.;
-      trigAngle.c2i  = trigAngle.ci * trigAngle.ci;
-      trigAngle.s2i  = 1. - trigAngle.ci * trigAngle.ci;
-      trigAngle.si   = sqrt(trigAngle.s2i);
-      trigAngle.sdi  = 2. * trigAngle.ci * trigAngle.si;
-      trigAngle.c2i2 = (1. + trigAngle.ci) / 2.;
-      trigAngle.s2i2 = (1. - trigAngle.ci) / 2.;
-      trigAngle.ci2  = sqrt(trigAngle.c2i2);
-      trigAngle.si2  = sqrt(trigAngle.s2i2);
-      trigAngle.c3i2 = trigAngle.c2i2 * trigAngle.ci2;
-      trigAngle.s3i2 = trigAngle.s2i2 * trigAngle.si2;
-      trigAngle.c4i2 = trigAngle.c2i2 * trigAngle.c2i2;
-      trigAngle.s4i2 = trigAngle.s2i2 * trigAngle.s2i2;
-      trigAngle.c5i2 = trigAngle.c4i2 * trigAngle.ci2;
-      trigAngle.s5i2 = trigAngle.s4i2 * trigAngle.si2;
-      trigAngle.c6i2 = trigAngle.c4i2 * trigAngle.c2i2;
-      trigAngle.s6i2 = trigAngle.s4i2 * trigAngle.s2i2;
-      trigAngle.c8i2 = trigAngle.c4i2 * trigAngle.c4i2;
-      trigAngle.s8i2 = trigAngle.s4i2 * trigAngle.s4i2;
+      v     = pow(om,oneby3);
+      v2    = v*v;
+      amp22 = amp22ini*v2;
 
-      errcode=XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,count,amp22,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
+      do {
 
-      errcode += XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,count,amp33,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
+	count++;
+	if (count >= length) {
+	  fprintf(stderr,"**** LALPhenSpinInspiralRD ERROR ****: phen. part exceeds array length");
+	  fprintf(stderr, "   m  (%11.4e  %11.4e)  f0 %11.4e\n",params->mass1, params->mass2, params->fLower);
+	  fprintf(stderr, "   S1 (%8.4f  %8.4f  %8.4f)\n", initS1[0],initS1[1], initS1[2]);
+	  fprintf(stderr, "   S2 (%8.4f  %8.4f  %8.4f)\n", initS2[0],initS2[1], initS2[2]);
+	  DETATCHSTATUSPTR(status);
+	  RETURN(status);
+	  //XLAL_ERROR(func,XLAL_ENOMEM);
+	}
 
-      errcode += XLALSpinInspiralFillH4Modes(h4P4,h4M4,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,count,amp44,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
+	tim += dt;
+	v2old = v2;
+	omold = om;
+	om = om1 / (1. - tim / tAs) + om0;
+	fap->data[count] = om;
+	Psi  = Psi0 + (- tAs * (om1/mass-dalpha1*trigAngle.ci) * log(1. - tim / tAs) + (om0/mass-dalpha0*trigAngle.ci) * (tim - t0) );
+	//trigAngle.ci = cos(diota0 * (tim - t0) - diota1 * tAs * log(1. - tim / tAs) + iota0);
+	alpha = alpha0 + ( dalpha0 * (tim - t0) - dalpha1 * tAs * log(1. - tim / tAs) );
 
-      fap->data[count] = om;
-      phap->data[count] = Psi;
-      
-    } while (om < (frRD * omegaRD));
+	v  = pow(om, oneby3);
+	v2 = v*v;
+	amp22 *= v2 / v2old;
+
+	amp33 = -amp22 / 4. * sqrt(5. / 42.);
+	amp44 = amp22 * sqrt(5./7.) * 2./9.   * v2;
+
+	trigAngle.cdi  = 2. * trigAngle.ci * trigAngle.ci - 1.;
+	trigAngle.c2i  = trigAngle.ci * trigAngle.ci;
+	trigAngle.s2i  = 1. - trigAngle.ci * trigAngle.ci;
+	trigAngle.si   = sqrt(trigAngle.s2i);
+	trigAngle.sdi  = 2. * trigAngle.ci * trigAngle.si;
+	trigAngle.c2i2 = (1. + trigAngle.ci) / 2.;
+	trigAngle.s2i2 = (1. - trigAngle.ci) / 2.;
+	trigAngle.ci2  = sqrt(trigAngle.c2i2);
+	trigAngle.si2  = sqrt(trigAngle.s2i2);
+	trigAngle.c3i2 = trigAngle.c2i2 * trigAngle.ci2;
+	trigAngle.s3i2 = trigAngle.s2i2 * trigAngle.si2;
+	trigAngle.c4i2 = trigAngle.c2i2 * trigAngle.c2i2;
+	trigAngle.s4i2 = trigAngle.s2i2 * trigAngle.s2i2;
+	trigAngle.c5i2 = trigAngle.c4i2 * trigAngle.ci2;
+	trigAngle.s5i2 = trigAngle.s4i2 * trigAngle.si2;
+	trigAngle.c6i2 = trigAngle.c4i2 * trigAngle.c2i2;
+	trigAngle.s6i2 = trigAngle.s4i2 * trigAngle.s2i2;
+	trigAngle.c8i2 = trigAngle.c4i2 * trigAngle.c4i2;
+	trigAngle.s8i2 = trigAngle.s4i2 * trigAngle.s4i2;
+
+	errcode=XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,count,amp22,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
+
+	errcode += XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,count,amp33,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
+
+	errcode += XLALSpinInspiralFillH4Modes(h4P4,h4M4,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,count,amp44,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
+
+	fap->data[count] = om;
+	phap->data[count] = Psi;
+
+      } while (om < (frRD * omegaRD));
  
-    *countback=count;
+      *countback=count;
 
-    /*--------------------------------------------------------------
-     * Attach the ringdown waveform to the end of inspiral
-     -------------------------------------------------------------*/
+      /*--------------------------------------------------------------
+       * Attach the ringdown waveform to the end of inspiral
+       -------------------------------------------------------------*/
 
-    apcount  = *countback;
-    errcode  = XLALPSpinInspiralAttachRingdownWave(h2P2, params, &apcount, nmodes, 2, 2, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h2P2->data[i] = 0.;
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode  = XLALPSpinInspiralAttachRingdownWave(h2P2, params, &apcount, nmodes, 2, 2, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h2P2->data[i] = 0.;
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h2M2, params, &apcount, nmodes, 2, -2, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h2M2->data[i] = 0.;
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h2M2, params, &apcount, nmodes, 2, -2, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h2M2->data[i] = 0.;
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h2P1, params, &apcount, nmodes, 2, 1, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h2P1->data[i] = 0.;
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h2P1, params, &apcount, nmodes, 2, 1, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h2P1->data[i] = 0.;
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h2M1, params, &apcount, nmodes, 2, -1, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h2M1->data[i] = 0.;
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h2M1, params, &apcount, nmodes, 2, -1, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h2M1->data[i] = 0.;
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h20, params, &apcount, nmodes, 2, 0, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h20->data[i] = 0.;  
-    if (apcount > count) count = apcount;  
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h20, params, &apcount, nmodes, 2, 0, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h20->data[i] = 0.;  
+      if (apcount > count) count = apcount;  
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h3P3, params, &apcount, nmodes, 3, 3, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h3P3->data[i] = 0.;  
-    if (apcount > count) count = apcount;  
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h3P3, params, &apcount, nmodes, 3, 3, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h3P3->data[i] = 0.;  
+      if (apcount > count) count = apcount;  
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h3M3, params, &apcount, nmodes, 3, -3, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h3M3->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h3M3, params, &apcount, nmodes, 3, -3, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h3M3->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h3P2, params, &apcount, nmodes, 3, 2, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h3P2->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h3P2, params, &apcount, nmodes, 3, 2, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h3P2->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h3M2, params, &apcount, nmodes, 3, -2, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h3P2->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h3M2, params, &apcount, nmodes, 3, -2, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h3P2->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h3P1, params, &apcount, nmodes, 3, 1, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h3P1->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h3P1, params, &apcount, nmodes, 3, 1, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h3P1->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h3M1, params, &apcount, nmodes, 3, -1, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h3M1->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h3M1, params, &apcount, nmodes, 3, -1, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h3M1->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h30, params, &apcount, nmodes, 3, 0, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h30->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h30, params, &apcount, nmodes, 3, 0, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h30->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h4P4, params, &apcount, nmodes, 4, 4, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h4P4->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4P4, params, &apcount, nmodes, 4, 4, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4P4->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h4M4, params, &apcount, nmodes, 4, -4, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h4M4->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4M4, params, &apcount, nmodes, 4, -4, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4M4->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h4P3, params, &apcount, nmodes, 4, 3, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h4P3->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4P3, params, &apcount, nmodes, 4, 3, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4P3->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h4M3, params, &apcount, nmodes, 4, -3, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h4M3->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4M3, params, &apcount, nmodes, 4, -3, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4M3->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h4P2, params, &apcount, nmodes, 4, 2, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h4P4->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4P2, params, &apcount, nmodes, 4, 2, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4P4->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h4M2, params, &apcount, nmodes, 4, -2, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h4M4->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4M2, params, &apcount, nmodes, 4, -2, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4M4->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h4P1, params, &apcount, nmodes, 4, 1, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h4P3->data[i] = 0.;  
-    if (apcount > count) count = apcount;
-    
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h4M1, params, &apcount, nmodes, 4, -1, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h4M3->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4P1, params, &apcount, nmodes, 4, 1, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4P3->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    apcount  = *countback;
-    errcode += XLALPSpinInspiralAttachRingdownWave(h40, params, &apcount, nmodes, 4, 0, finalMass, finalSpin);
-    for (i = 2 * apcount; i < 2 * length; i++) h40->data[i] = 0.;  
-    if (apcount > count) count = apcount;
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4M1, params, &apcount, nmodes, 4, -1, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4M3->data[i] = 0.;  
+      if (apcount > count) count = apcount;
 
-    *countback=count;
-    
-    if (errcode != XLAL_SUCCESS) {
-      XLALDestroyREAL8Vector(h2P2);
-      XLALDestroyREAL8Vector(h2M2);
-      XLALDestroyREAL8Vector(h2P1);
-      XLALDestroyREAL8Vector(h2M1);
-      XLALDestroyREAL8Vector(h20);
-      XLALDestroyREAL8Vector(h3P3);
-      XLALDestroyREAL8Vector(h3M3);
-      XLALDestroyREAL8Vector(h3P2);
-      XLALDestroyREAL8Vector(h3M2);
-      XLALDestroyREAL8Vector(h3P1);
-      XLALDestroyREAL8Vector(h3M1);
-      XLALDestroyREAL8Vector(h30);
-      XLALDestroyREAL8Vector(h4P4);
-      XLALDestroyREAL8Vector(h4M4);
-      XLALDestroyREAL8Vector(h4P3);
-      XLALDestroyREAL8Vector(h4M3);
-      XLALDestroyREAL8Vector(h4P2);
-      XLALDestroyREAL8Vector(h4M2);
-      XLALDestroyREAL8Vector(h4P1);
-      XLALDestroyREAL8Vector(h4M1);
-      XLALDestroyREAL8Vector(h40);
-      XLALDestroyREAL8Vector(hap);
-      XLALDestroyREAL8Vector(fap);
-      XLALDestroyREAL8Vector(phap);
-      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: impossible to create RingDownWave\n");
-      DETATCHSTATUSPTR(status);
-      RETURN(status);
-      //XLAL_ERROR(func,XLAL_EFAILED);
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h40, params, &apcount, nmodes, 4, 0, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h40->data[i] = 0.;  
+      if (apcount > count) count = apcount;
+
+      *countback=count;
+
+      if (errcode != XLAL_SUCCESS) {
+	XLALDestroyREAL8Vector(h2P2);
+	XLALDestroyREAL8Vector(h2M2);
+	XLALDestroyREAL8Vector(h2P1);
+	XLALDestroyREAL8Vector(h2M1);
+	XLALDestroyREAL8Vector(h20);
+	XLALDestroyREAL8Vector(h3P3);
+	XLALDestroyREAL8Vector(h3M3);
+	XLALDestroyREAL8Vector(h3P2);
+	XLALDestroyREAL8Vector(h3M2);
+	XLALDestroyREAL8Vector(h3P1);
+	XLALDestroyREAL8Vector(h3M1);
+	XLALDestroyREAL8Vector(h30);
+	XLALDestroyREAL8Vector(h4P4);
+	XLALDestroyREAL8Vector(h4M4);
+	XLALDestroyREAL8Vector(h4P3);
+	XLALDestroyREAL8Vector(h4M3);
+	XLALDestroyREAL8Vector(h4P2);
+	XLALDestroyREAL8Vector(h4M2);
+	XLALDestroyREAL8Vector(h4P1);
+	XLALDestroyREAL8Vector(h4M1);
+	XLALDestroyREAL8Vector(h40);
+	XLALDestroyREAL8Vector(hap);
+	XLALDestroyREAL8Vector(fap);
+	XLALDestroyREAL8Vector(phap);
+	fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: impossible to create RingDownWave\n");
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
+	//XLAL_ERROR(func,XLAL_EFAILED);
+      }
     }
-
-  }
+  } /*End of if not inspiralonly and test_omegamatch*/
 
   /*-------------------------------------------------------------------
    * Compute the spherical harmonics required for constructing (h+,hx).
@@ -2622,7 +2644,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 
   /* The angles theta for the spherical harmonics has been set according to 
      the input inclination parameter and the axisChoice */
-  
+
   errcode  = XLALSphHarm(&MultSphHarmP, 2, 2, inc, 0.);
   errcode += XLALSphHarm(&MultSphHarmM, 2, -2, inc, 0.);
   if (errcode != XLAL_SUCCESS) {
@@ -2677,8 +2699,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h2P1->data[2 * i + 1];
       x2 = h2M1->data[2 * i];
       x3 = h2M1->data[2 * i + 1];
-      //      sigp->data[i] +=   x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] += - x0 * MultSphHarmP.im - x1 * MultSphHarmP.re - x2 * MultSphHarmM.im - x3 * MultSphHarmM.re;
+      sigp->data[i] +=   x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] += - x0 * MultSphHarmP.im - x1 * MultSphHarmP.re - x2 * MultSphHarmM.im - x3 * MultSphHarmM.re;
     }
   }
   
@@ -2690,8 +2712,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     for (i = 0; i < length; i++) {
       x0 = h20->data[2 * i];
       x1 = h20->data[2 * i + 1];
-      //sigp->data[i] += x1 * MultSphHarmP.re - x1 * MultSphHarmP.im;
-      //sigc->data[i] -= x1 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+      sigp->data[i] += x1 * MultSphHarmP.re - x1 * MultSphHarmP.im;
+      sigc->data[i] -= x1 * MultSphHarmP.im + x1 * MultSphHarmP.re;
     }
   }
   
@@ -2707,8 +2729,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h3P3->data[2 * i + 1];
       x2 = h3M3->data[2 * i];
       x3 = h3M3->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
   
@@ -2724,8 +2746,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h3P2->data[2 * i + 1];
       x2 = h3M2->data[2 * i];
       x3 = h3M2->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
   
@@ -2741,8 +2763,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h3P1->data[2 * i + 1];
       x2 = h3M1->data[2 * i];
       x3 = h3M1->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
   
@@ -2754,8 +2776,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     for (i = 0; i < length; i++) {
       x0 = h30->data[2 * i];
       x1 = h30->data[2 * i + 1];    
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
     }
   }
 
@@ -2771,8 +2793,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h4P4->data[2 * i + 1];
       x2 = h4P4->data[2 * i];
       x3 = h4M4->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
 
@@ -2788,8 +2810,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h4P3->data[2 * i + 1];
       x2 = h4M3->data[2 * i];
       x3 = h4M3->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
   
@@ -2805,8 +2827,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h4P2->data[2 * i + 1];
       x2 = h4M2->data[2 * i];
       x3 = h4M2->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
   
@@ -2822,8 +2844,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h4P1->data[2 * i + 1];
       x2 = h4M1->data[2 * i];
       x3 = h4M1->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
   
@@ -2835,8 +2857,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     for (i = 0; i < length; i++) {
       x0 = h40->data[2 * i];
       x1 = h40->data[2 * i + 1];    
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
     }
   }
   
