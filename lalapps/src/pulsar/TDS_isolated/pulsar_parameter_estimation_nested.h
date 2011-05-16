@@ -61,6 +61,7 @@ extern "C" {
 
 /* macro to perform logarithmic addition log(exp(x) + exp(y)) */
 #define LOGPLUS(x,y) ( x>y ? x+log(1.+exp(y-x)) : y+log(1.+exp(x-y)) )
+#define SQUARE(x) ( (x) * (x) );
 
 #define MAXLENGTH 1000000
 
@@ -137,8 +138,6 @@ REAL8Vector * sum_data( LALInferenceIFOData *data );
 void response_lookup_table( REAL8 t0, LALDetAndSource detAndSource,
                             INT4 timeSteps, INT4 psiSteps, gsl_matrix *LUfplus,
                             gsl_matrix *LUfcross );
-                            
-REAL8 log_factorial(UINT4 num);
 
 void rescaleOutput( LALInferenceRunState *runState );
 
