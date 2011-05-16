@@ -815,10 +815,10 @@ INT4 XLALMCMCJumpHarmonic(
 
   /* Ratio of mchirp is determined by (old/new)^(5/8) */
   mcFactor = pow(old/new, 5./8.);
-  if(XLALMCMCCheckParameter(parameter,"logM"))
+  if(XLALMCMCCheckParameter(parameter,"logmc"))
   {
-    mcnew=mcFactor*exp(XLALMCMCGetParameter(parameter,"logM"));
-    XLALMCMCSetParameter(parameter,"logM",log(mcnew));
+    mcnew=mcFactor*exp(XLALMCMCGetParameter(parameter,"logmc"));
+    XLALMCMCSetParameter(parameter,"logmc",log(mcnew));
   }
   else
   {
