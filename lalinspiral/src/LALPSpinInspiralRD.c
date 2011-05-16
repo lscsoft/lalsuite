@@ -1313,7 +1313,6 @@ static void LALSpinInspiralEngine(LALStatus * status,
 				  LALPSpinInspiralPhenPars *phenPars 
 				  ) 
 {
-
   INT4 intreturn;
   UINT4 count=0;
   UINT4 write=0;
@@ -2863,7 +2862,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   }
   
   params->fFinal = params->tSampling / 2.;
-  
+
   /*------------------------------------------------------
    * If required by the user copy other data sets to the
    * relevant arrays
