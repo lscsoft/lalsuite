@@ -1506,7 +1506,7 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
 	localetawin=etamax-etamin;
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
-	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 
 	/*  XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 	XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
@@ -1541,7 +1541,7 @@ void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT)
 	deltaEta=etaMax-etaMin;
 	double lmmin=log(inMc-deltaM);
 	double lmmax=log(inMc+deltaM);
-	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 
 	/*  XLALMCMCAddParam(parameter,"mchirp",(gsl_rng_uniform(RNG)-0.5)*deltaM + inMc,inMc-0.5*deltaM,inMc+0.5*deltaM,0);*/
 	XLALMCMCAddParam(parameter,"eta",(gsl_rng_uniform(RNG))*deltaEta + etaMin,etaMin,etaMax,0);
@@ -1570,7 +1570,7 @@ void NestInitSkyPatch(LALMCMCParameter *parameter, void UNUSED *iT)
 
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
-	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 
 	/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 	/*	XLALMCMCAddParam(parameter,"mtotal",manual_mass_low+mwin*gsl_rng_uniform(RNG),manual_mass_low,manual_mass_high,0);*/
@@ -1599,7 +1599,7 @@ void NestInitManual(LALMCMCParameter *parameter, void UNUSED *iT)
 	double lDmin=log(manual_dist_min);
 	double lDmax=log(manual_dist_max);
 
-	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 	/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 	/*	XLALMCMCAddParam(parameter,"mtotal",manual_mass_low+mwin*gsl_rng_uniform(RNG),manual_mass_low,manual_mass_high,0);*/
 	XLALMCMCAddParam(parameter,"eta",etamin+gsl_rng_uniform(RNG)*(0.25-etamin),etamin,0.25,0);
@@ -1637,7 +1637,7 @@ void NestInitManualIMRB(LALMCMCParameter *parameter, void UNUSED *iT)
     double spin2zmin=-1.;
     double spin2zmax=1.;
 
-	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 	/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 	/*	XLALMCMCAddParam(parameter,"mtotal",manual_mass_low+mwin*gsl_rng_uniform(RNG),manual_mass_low,manual_mass_high,0);*/
 	XLALMCMCAddParam(parameter,"eta",etamin+gsl_rng_uniform(RNG)*(0.25-etamin),etamin,0.25,0);
@@ -1673,7 +1673,7 @@ void NestInitManualIMRBChi(LALMCMCParameter *parameter, void UNUSED *iT)
     double chiSpinmin=manual_chi_min;
     double chiSpinmax=manual_chi_max;
 
-	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 	/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 	/*	XLALMCMCAddParam(parameter,"mtotal",manual_mass_low+mwin*gsl_rng_uniform(RNG),manual_mass_low,manual_mass_high,0);*/
 	XLALMCMCAddParam(parameter,"eta",etamin+gsl_rng_uniform(RNG)*(0.25-etamin),etamin,0.25,0);
@@ -1751,10 +1751,10 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	
 	LALMCMCParam *head;
 	
-	if(checkParamInList(pinned_params,"logM")||checkParamInList(pinned_params,"mchirp"))
-		XLALMCMCAddParam(parameter,"logM",log(injTable->mchirp),lmmin,lmmax,-1);
+	if(checkParamInList(pinned_params,"logmc")||checkParamInList(pinned_params,"mchirp"))
+		XLALMCMCAddParam(parameter,"logmc",log(injTable->mchirp),lmmin,lmmax,-1);
 	else
-		XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+		XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 	/*XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 
 	if(checkParamInList(pinned_params,"eta"))

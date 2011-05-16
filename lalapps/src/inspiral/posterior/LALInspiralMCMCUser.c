@@ -304,7 +304,7 @@ REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 #define m2min 1.0
 #define m2max 35.0
   parameter->logPrior=0.0;
-  if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+  if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
   else mc=XLALMCMCGetParameter(parameter,"mchirp");
   logmc=log(mc);
   parameter->logPrior+=-(5.0/6.0)*logmc;
@@ -332,7 +332,7 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   REAL8 maxCompMass = 100.0;
 
   /* Check in range */
-  if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+  if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
   else mc=XLALMCMCGetParameter(parameter,"mchirp");
 
   eta=XLALMCMCGetParameter(parameter,"eta");
@@ -371,7 +371,7 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
     parameter->logPrior+= -log( 1.0+exp((ampli-a)/b) );
 */
 /* Check in range */
-	if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+	if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
 	else mc=XLALMCMCGetParameter(parameter,"mchirp");
 	double logmc=log(mc);
 	eta=XLALMCMCGetParameter(parameter,"eta");
@@ -456,7 +456,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	memset(&status,0,sizeof(LALStatus));
 	memset(&det,0,sizeof(DetectorResponse));
 	/* Populate the structures */
-	if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+	if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
 	else mc=XLALMCMCGetParameter(parameter,"mchirp");
 	eta=XLALMCMCGetParameter(parameter,"eta");
 	PPNparams.position.longitude=XLALMCMCGetParameter(parameter,"ra");
@@ -671,7 +671,7 @@ in the frequency domain */
 		parameter->logLikelihood=0.0;
 		return 0.0;
 	}
-	if(XLALMCMCCheckParameter(parameter,"logM")) mchirp=exp(XLALMCMCGetParameter(parameter,"logM"));
+	if(XLALMCMCCheckParameter(parameter,"logmc")) mchirp=exp(XLALMCMCGetParameter(parameter,"logmc"));
         else mchirp=XLALMCMCGetParameter(parameter,"mchirp");
 
 	eta = XLALMCMCGetParameter(parameter,"eta");
@@ -1233,7 +1233,7 @@ in the frequency domain */
 	REAL8 eta,mtot,mchirp;
 	expnFunc expnFunction;
 	expnCoeffs ak;
-	if(XLALMCMCCheckParameter(parameter,"logM")) mchirp=exp(XLALMCMCGetParameter(parameter,"logM"));
+	if(XLALMCMCCheckParameter(parameter,"logmc")) mchirp=exp(XLALMCMCGetParameter(parameter,"logmc"));
 	else mchirp=XLALMCMCGetParameter(parameter,"mchirp");
 	eta = XLALMCMCGetParameter(parameter,"eta");
 	mtot=mc2mt(mchirp,eta);
