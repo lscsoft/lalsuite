@@ -945,17 +945,9 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	if(XLALMCMCCheckParameter(parameter,"phi2"))
 	  phi2=XLALMCMCGetParameter(parameter,"phi2");
 
-<<<<<<< HEAD:lalapps/src/inspiral/posterior/LALInspiralMCMCUser.c
-
-	template.spin1[0]=spin1*sin(spin1theta)*cos(spinphi);
-	template.spin1[1]=spin1*sin(spin1theta)*sin(spinphi);
-	template.spin1[2]=spin1*cos(spin1theta);
-=======
-	
 	template.spin1[0]=a1*sin(theta1)*cos(phi1);
 	template.spin1[1]=a1*sin(theta1)*sin(phi1);
 	template.spin1[2]=a1*cos(theta1);
->>>>>>> 15d phenspin likelihood reimplemented in inspnest:lalapps/src/inspiral/posterior/LALInspiralMCMCUser.c
 
 	template.spin2[0]=a2*sin(theta2)*cos(phi2);
 	template.spin2[1]=a2*sin(theta2)*sin(phi2);;

@@ -823,7 +823,6 @@ int main( int argc, char *argv[])
 
 	if(ETgpsSeconds>datastart.gpsSeconds+duration) {fprintf(stderr,"Error, trigger lies outwith data range %i - %i\n",datastart.gpsSeconds,datastart.gpsSeconds+(INT4)duration); exit(-1);}
 
-	datarandparam=XLALCreateRandomParams(dataseed);
 
 	/* Read in the data for each IFO */
 	for(i=0,j=0;i<nIFO;i++){
@@ -834,6 +833,7 @@ int main( int argc, char *argv[])
 		inputMCMC_N.deltaF = inputMCMC.deltaF;
 		datastart=realstart; /* Reset the datastart in case it has been slid previously */
 		segmentStart = datastart;
+		datarandparam=XLALCreateRandomParams(dataseed+(INT2)IFOnames[i][0]+(INT2)IFOnames[i][1]);
 
 		/* Check for synthetic data */
 		if(!(strcmp(CacheFileNames[i],"LALLIGO") && strcmp(CacheFileNames[i],"LALVirgo") && strcmp(CacheFileNames[i],"LALGEO") && strcmp(CacheFileNames[i],"LALEGO") && strcmp(CacheFileNames[i],"LALAdLIGO")))
@@ -1081,6 +1081,7 @@ int main( int argc, char *argv[])
 			else {fprintf(stderr,"injection failed!!!\n"); REPORTSTATUS(&status); exit(-1);}
 		}
 
+	XLALDestroyRandomParams(datarandparam);
 	} /* End loop over IFOs */
     
     if(NULL!=injXMLFile && fakeinj==0) {
@@ -1089,7 +1090,6 @@ int main( int argc, char *argv[])
     }
     
 	/* Data is now all in place in the inputMCMC structure for all IFOs and for one trigger */
-	XLALDestroyRandomParams(datarandparam);
 
 	if(estimatenoise && DEBUG){
 		for(j=0;j<nIFO;j++){
