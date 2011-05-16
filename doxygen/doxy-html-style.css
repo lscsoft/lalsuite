@@ -567,6 +567,7 @@ table.doxtable {
 table.doxtable td, table.doxtable th {
 	border: 1px solid #2D4068;
 	padding: 3px 7px 2px;
+	text-align:center;
 }
 
 table.doxtable th {
@@ -575,7 +576,7 @@ table.doxtable th {
 	font-size: 110%;
 	padding-bottom: 4px;
 	padding-top: 5px;
-	text-align:left;
+	text-align:center;
 }
 
 .tabsearch {
