@@ -212,7 +212,7 @@ XLALREAL8PolynomialInterpolation (
     REAL8 *x,
     UINT4  n
     )
-{
+{ /* </lalVerbatim> */
   REAL8  dy;
   REAL8 *dn;   /* difference in a step down */
   REAL8 *up;   /* difference in a step up   */
