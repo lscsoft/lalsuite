@@ -427,14 +427,19 @@ sub cleanupLSD {
                 ($e eq 'tt' ? "<tt>$_</tt>" : "<em>$_</em>" )
         }sge;
 
-        # replace subsection commands, preserving labels
-        $text =~ s{\\(?:sub)*section\*?$wbbr\n(?<LBL>\\label$bbr)?}{
-            $_ = '\\heading{' . $1 . "}\n";
-            if (defined(my $lbl = $+{LBL})) {
-                $_ .= '\\latexonly' . &$illref($lbl) . '\\endlatexonly';
+        # rephrase (sub)section commands, turning labels (if present) into anchors
+        $text =~ s{\\((?:sub)*section\*?)\s*$wbbr\n(?<LBL>\\label\s*$bbr)?}{
+            my $lbl = $+{LBL};
+            if (defined($lbl)) {
+                $lbl =~ s!\\label\s*$wbbr!$1!;
+            } else {
+                $lbl = "TODOref";
             }
+            $_ = '\\' . $1 . ' ' . $lbl . ' '. $2 . "\n";
             $_
         }sge;
+
+        # replace paragraph command by 'heading'
         $text =~ s!\\paragraph\*?$wbbr!\\heading{$1}!mg;
 
         # preserve references
