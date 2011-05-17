@@ -22,9 +22,7 @@
 \file
 \ingroup pulsarTODO
 
-\heading{Header \ref LALDemod.h}
-\latexonly\label{s_LALDemod_h}\endlatexonly
-Computes a demodulated transform.
+\brief Computes a demodulated transform.
 
 \heading{Synopsis}
 \code

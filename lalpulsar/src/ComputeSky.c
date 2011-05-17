@@ -21,8 +21,7 @@
 \author  Berukoff, S.J., Papa, M.A.
 \file
 \ingroup pulsarTODO
-\subsection{Module \ref ComputeSky.c}\label{ss:ComputeSky.c}
-Computes the phase model coefficients necessary for a successful demodulation.
+\brief Computes the phase model coefficients necessary for a successful demodulation.
 
 */
 

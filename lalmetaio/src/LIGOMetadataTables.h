@@ -143,7 +143,7 @@ typedef enum
 InterferometerNumber;
 
 
-/** The \c ProcessIDColumn contains the process\_id for a given row in a table.
+/** The ProcessIDColumn contains the process_id for a given row in a table.
 */
 typedef struct
 tagProcessIDColumn

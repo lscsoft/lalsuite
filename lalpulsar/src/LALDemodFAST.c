@@ -22,9 +22,7 @@
 \file
 \ingroup pulsarTODO
 
-\subsection{Module \ref LALDemodFAST.c}\label{ss:LALDemodFAST.c}
-Computes a demodulated Fourier transform (DeFT) given a set of input
-short Fourier transforms (SFT).
+\brief Computes a demodulated Fourier transform (DeFT) given a set of input short Fourier transforms (SFT).
 
 \heading{Prototypes}
 
