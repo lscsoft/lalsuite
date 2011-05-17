@@ -591,7 +591,7 @@ REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params )
   {
     UINT4 segmentLength;
     segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
-    plan = XLALCreateForwardREAL4FFTPlan( segmentLength, 0 );
+    plan = XLALCreateForwardREAL4FFTPlan( segmentLength, 1 );
   }
   return plan;
 }
@@ -605,7 +605,7 @@ REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params )
   {
     UINT4 segmentLength;
     segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
-    plan = XLALCreateReverseREAL4FFTPlan( segmentLength, 0 );
+    plan = XLALCreateReverseREAL4FFTPlan( segmentLength, 1 );
   }
   return plan;
 }
