@@ -456,7 +456,7 @@ sub cleanupLSD {
         $text =~ s{\\cite\s*$wbbr}{
             $_ = $1;
             s/[:\s-]//g;
-            '\ref ' . $_
+            '[\ref ' . $_ .']'
         }mge;
 
         # replace bibitems by anchors
