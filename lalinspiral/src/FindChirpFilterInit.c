@@ -451,7 +451,7 @@ LALFindChirpFilterInit (
 
   /* create plan for optimal filter */
   LALCreateReverseComplexFFTPlan( status->statusPtr,
-      &(outputPtr->invPlan), params->numPoints, 0 );
+      &(outputPtr->invPlan), params->numPoints, 1 );
   BEGINFAIL( status )
   {
     LALFree( outputPtr->chisqInput );

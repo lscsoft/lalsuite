@@ -1035,7 +1035,7 @@ int main( int argc, char *argv[] )
     ntilde->data[0].im = ntilde->data[length / 2].im = 0.0;
 
     /* Fourier transform back in the time domain */
-    LAL_CALL( LALCreateReverseRealFFTPlan( &status, &invPlan, length, 0 ),
+    LAL_CALL( LALCreateReverseRealFFTPlan( &status, &invPlan, length, 1 ),
         &status );
     LAL_CALL( LALReverseRealFFT( &status, chan.data, ntilde, invPlan ), &status);
     /* normalize the noise */
@@ -2304,7 +2304,7 @@ int main( int argc, char *argv[] )
               templateFFTDataVector->data[i].im = 0;
               }
             }
-          plan = XLALCreateReverseREAL4FFTPlan( num_points, 0);
+          plan = XLALCreateReverseREAL4FFTPlan( num_points, 1);
           if ( XLALREAL4ReverseFFT( templateTimeSeriesVector, templateFFTDataVector, plan) )  fprintf(stderr, "\n\nFFT FAILED\n\n");
           templateTimeSeries.data = templateTimeSeriesVector;
           }
