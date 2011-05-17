@@ -450,7 +450,7 @@ sub cleanupLSD {
         # replace citations
         $text =~ s{\\cite\s*$wbbr}{
             $_ = $1;
-            s/://g;
+            s/[:\s-]//g;
             '\ref ' . $_
         }mge;
 
