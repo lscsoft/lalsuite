@@ -397,7 +397,7 @@ int main( int argc, char **argv )
   }
 
 
-  fcTmpltParams->fwdPlan      = XLALCreateForwardREAL4FFTPlan( numPoints, 0 );
+  fcTmpltParams->fwdPlan      = XLALCreateForwardREAL4FFTPlan( numPoints, 1 );
   fcTmpltParams->deltaT       = 1.0/params->sampleRate;
   fcTmpltParams->fLow = params->lowTemplateFrequency;
 
@@ -421,7 +421,7 @@ int main( int argc, char **argv )
   }
 
   /* Create an inverse FFT plan */
-  invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 0 );
+  invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 1 );
 
   /*------------------------------------------------------------------------*
    * Read in the tmpltbank xml files                                        *
