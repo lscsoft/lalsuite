@@ -1581,6 +1581,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
 
   LALFree(dummy.data);
 
+  phenPars->endtime   = timewrite-mparams->dt;
   phenPars->intreturn = intreturn;
   phenPars->Psi       = Phiwrite;
   phenPars->alpha     = alphawrite;
@@ -2022,7 +2023,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   REAL8 x0, x1, x2, x3;
 
   /* The number of Ring Down modes is hard-coded here */
-  const UINT4 nmodes=3;   
+  const UINT4 nmodes=2;
+  /* Nmodes should be restricted to either 1 or 2*/
 
   UINT4 errcode;
 
@@ -2676,6 +2678,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     RETURN(status);
     //XLAL_ERROR(func,XLAL_EFAILED);
   }
+
   for (i = 0; i < length; i++) {
     fap->data[i] /= unitHz;
     x0 = h2P2->data[2 * i];

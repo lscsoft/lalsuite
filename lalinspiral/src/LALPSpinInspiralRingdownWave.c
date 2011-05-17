@@ -172,7 +172,7 @@ INT4 XLALPSpinInspiralRingdownWave (
 	  gsl_matrix_set(coef, 2*j, i, modefreqs->data[i].im*modefreqs->data[i].im-modefreqs->data[i].re*modefreqs->data[i].re);
 	  gsl_matrix_set(coef, 2*j, i+nmodes, -2.*modefreqs->data[i].im*modefreqs->data[i].re);
 	  gsl_matrix_set(coef, 2*j+1, i, -modefreqs->data[i].im*modefreqs->data[i].im*modefreqs->data[i].im+3.*modefreqs->data[i].im*modefreqs->data[i].re*modefreqs->data[i].re);
-	  gsl_matrix_set(coef, 2*j+1, i+nmodes, -modefreqs->data[i].re*modefreqs->data[i].re*modefreqs->data[i].re+3*modefreqs->data[i].re*modefreqs->data[i].im*modefreqs->data[i].im);
+	  gsl_matrix_set(coef, 2*j+1, i+nmodes, -modefreqs->data[i].re*modefreqs->data[i].re*modefreqs->data[i].re+3.*modefreqs->data[i].re*modefreqs->data[i].im*modefreqs->data[i].im);
 	}
       }
       else {
@@ -227,7 +227,7 @@ INT4 XLALPSpinInspiralRingdownWave (
     XLAL_ERROR( func, XLAL_ENOMEM );
   }
 
-  for (i = 0; i < 2*nmodes; ++i) {
+  for (i = 0; i < 2*nmodes; i++) {
     modeamps->data[i] = gsl_vector_get(x, i);
   }
 
@@ -774,8 +774,12 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
 
       static const char *func = "XLALPSpinInspiralAttachRingdownWave";
 
+      const UINT4 Npatch=40;
+      const UINT4 offsetAttch = 2;
+
       COMPLEX8Vector *modefreqs;
-      UINT4 Nrdwave, Npatch;
+      UINT4 Nrdwave;
+
       UINT4 i=0;
       UINT4 j=0;
       UINT4 k=0;
@@ -808,7 +812,6 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
       /* Patch length, centered around the matching point "attpos" */
 
       (*attpos)+=Nrdwave;
-      Npatch = 6;
 
       /* Check the value of attpos, to prevent memory access problems later */
       if ( atpos < Npatch || atpos + Npatch >= sigl->length )
@@ -847,7 +850,7 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
 	}
 
 	for (k=0;k<2*nmodes;k++) {
-	  matchinspwave->data[k] = inspwave->data[Npatch-1];
+	  matchinspwave->data[k] = inspwave->data[Npatch-1-offsetAttch];
 	  if ((k+1)<2*nmodes) {
 	    errcode = XLALGenerateWaveDerivative( dinspwave, inspwave, dt);
 	    if ( (errcode != XLAL_SUCCESS) ) {
@@ -877,7 +880,7 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
 	/* Generate full waveforms, by stitching inspiral and ring-down waveforms */
 
 	for (j = 0; j < Nrdwave; j++) {
-	  sigl->data[2*j + 2*atpos - 2 + i] = rdwave->data[j];
+	  sigl->data[2*j + 2*(atpos - 1 - offsetAttch) + i ] = rdwave->data[j];
 	}
 
       }
