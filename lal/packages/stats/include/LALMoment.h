@@ -22,10 +22,6 @@
 \author Tibbits, M. M.
 \file
 
-*/
-
-/**
-
 \heading{Header \ref LALMoment.h}
 \latexonly\label{s_LALMoment_h}\endlatexonly
 

@@ -1,9 +1,7 @@
 /**
 \author Tibbits, M M
 \file
-*/
 
-/**
 \heading{Module \ref LALMoment.c}
 \latexonly\label{s_LALMoment_c}\endlatexonly
 
