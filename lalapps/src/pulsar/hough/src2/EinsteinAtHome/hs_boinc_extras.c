@@ -696,6 +696,18 @@ static void worker (void) {
 	res = HIERARCHICALSEARCH_EFILE;
     }
 
+    /* boinc_resolve and unzip segment list */
+    else if (MATCH_START("--segmentList=",argv[arg],l)) {
+      rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
+      if(!rargv[rarg]){
+	LogPrintf(LOG_CRITICAL, "Out of memory\n");
+	boinc_finish(HIERARCHICALSEARCH_EMEM);
+      }
+      strncpy(rargv[rarg],argv[arg],l);
+      if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
+	res = HIERARCHICALSEARCH_EFILE;
+    }
+
     /* boinc_resolve and unzip ephermeris files */
     else if (MATCH_START("--ephemE=",argv[arg],l)) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));

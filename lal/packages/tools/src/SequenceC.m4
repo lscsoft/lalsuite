@@ -141,9 +141,6 @@ SEQUENCETYPE *`XLALShrink'SEQUENCETYPE (
 }
 
 
-ifelse(DATATYPE, COMPLEX8, `#if 0', DATATYPE, COMPLEX16, `#if 0', `#if 1')
-/* FIXME: too bad we aren't C99, or we could include versions for complex
- * data types */
 DATATYPE `XLAL'DATATYPE`Sum' (
 	const DATATYPE *data,
 	size_t first,
@@ -167,7 +164,6 @@ DATATYPE `XLAL'DATATYPE`Sum' (
 
 	return sum;
 }
-#endif
 
 
 SQUAREDATATYPE `XLAL'DATATYPE`SumSquares' (
@@ -190,9 +186,6 @@ SQUAREDATATYPE `XLAL'DATATYPE`SumSquares' (
 }
 
 
-ifelse(DATATYPE, COMPLEX8, `#if 0', DATATYPE, COMPLEX16, `#if 0', `#if 1')
-/* FIXME: too bad we aren't C99, or we could include versions for complex
- * data types */
 DATATYPE `XLAL'SEQUENCETYPE`Sum' (
 	const SEQUENCETYPE *sequence,
 	size_t first,
@@ -200,12 +193,16 @@ DATATYPE `XLAL'SEQUENCETYPE`Sum' (
 )
 {
 	if(first >= sequence->length)
-		return 0;
+	         ifelse(DATATYPE, COMPLEX8,
+	         `return LAL_COMPLEX8_ZERO;'
+	         , DATATYPE, COMPLEX16,
+	         `return LAL_COMPLEX16_ZERO;'
+	         ,
+	         return 0;)
 	if(first + count > sequence->length)
 		count = sequence->length - first;
 	return `XLAL'DATATYPE`Sum' (sequence->data, first, count);
 }
-#endif
 
 
 SQUAREDATATYPE `XLAL'SEQUENCETYPE`SumSquares' (

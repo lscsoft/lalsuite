@@ -258,9 +258,10 @@ f/\dot{f}$ (provided $\tau\gg1/f$, as we have assumed).
 #include <lal/SkyCoordinates.h>
 #include <lal/LALBarycenter.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( SIMULATECOHERENTGWH, "$Id$" );
@@ -406,18 +407,13 @@ LALSimulateCoherentGW( LALStatus        *status,
 		       CoherentGW       *input,
 		       DetectorResponse *detector );
 
-void
-LALSimulateCoherentGW_exp (LALStatus        *status,
-			   REAL4TimeSeries  *output,
-			   CoherentGW       *input,
-			   DetectorResponse *detector );
-
 /* <lalLaTeX>
 %\newpage\input{SimulateCoherentGWTestC}
 </lalLaTeX> */
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

@@ -17,154 +17,149 @@
 *  MA  02111-1307  USA
 */
 
-/**************** <lalVerbatim file="GenerateHyperbolicSpinOrbitCWCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{GenerateHyperbolicSpinOrbitCW.c}}
-\label{ss:GenerateHyperbolicSpinOrbitCW.c}
+\heading{Module \ref GenerateHyperbolicSpinOrbitCW.c}
+\latexonly\label{ss_GenerateHyperbolicSpinOrbitCW_c}\endlatexonly
 
 Computes a continuous waveform with frequency drift and Doppler
 modulation from a hyperbolic orbital trajectory.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{GenerateHyperbolicSpinOrbitCWCP}
-\idx{LALGenerateHyperbolicSpinOrbitCW()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+\heading{Description}
 
 This function computes a quaiperiodic waveform using the spindown and
-orbital parameters in \verb@*params@, storing the result in
-\verb@*output@.
+orbital parameters in <tt>*params</tt>, storing the result in
+<tt>*output</tt>.
 
-In the \verb@*params@ structure, the routine uses all the ``input''
-fields specified in \verb@GenerateSpinOrbitCW.h@, and sets all of the
-``output'' fields.  If \verb@params->f@=\verb@NULL@, no spindown
-modulation is performed.  If \verb@params->oneMinusEcc@$\not<0$ (a
+In the <tt>*params</tt> structure, the routine uses all the "input"
+fields specified in \ref GenerateSpinOrbitCW.h, and sets all of the
+"output" fields.  If <tt>params->f</tt>=\c NULL, no spindown
+modulation is performed.  If <tt>params->oneMinusEcc</tt>\f$\not<0\f$ (a
 non-hyperbolic orbit), or if
-\verb@params->rPeriNorm@$\times$\verb@params->angularSpeed@$\geq1$
+<tt>params->rPeriNorm</tt>\f$\times\f$<tt>params->angularSpeed</tt>\f$\geq1\f$
 (faster-than-light speed at periapsis), an error is returned.
 
-In the \verb@*output@ structure, the field \verb@output->h@ is
-ignored, but all other pointer fields must be set to \verb@NULL@.  The
-function will create and allocate space for \verb@output->a@,
-\verb@output->f@, and \verb@output->phi@ as necessary.  The
-\verb@output->shift@ field will remain set to \verb@NULL@.
+In the <tt>*output</tt> structure, the field <tt>output->h</tt> is
+ignored, but all other pointer fields must be set to \c NULL.  The
+function will create and allocate space for <tt>output->a</tt>,
+<tt>output->f</tt>, and <tt>output->phi</tt> as necessary.  The
+<tt>output->shift</tt> field will remain set to \c NULL.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-For hyperbolic orbits, we combine Eqs.~(\ref{eq:spinorbit-tr}),
-(\ref{eq:spinorbit-t}), and~(\ref{eq:spinorbit-upsilon}) to get $t_r$
-directly as a function of $E$:
-\begin{eqnarray}
+For hyperbolic orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
+\TODOref{eq_spinorbit-t}, and\TODOref{eq_spinorbit-upsilon} to get \f$t_r\f$
+directly as a function of \f$E\f$:
+\anchor eq_tr-e3 \f{eqnarray}{
 t_r = t_p & + & \left(\frac{r_p \sin i}{c}\right)\sin\omega \nonumber\\
-\label{eq:tr-e3}
+\label{eq_tr-e3}
 	& + & \frac{1}{n} \left( -E +
 		\left[v_p(e-1)\cos\omega + e\right]\sinh E
 		- \left[v_p\sqrt{\frac{e-1}{e+1}}\sin\omega\right]
 			[\cosh E - 1]\right) \;,
-\end{eqnarray}
-where $v_p=r_p\dot{\upsilon}_p\sin i/c$ is a normalized velocity at
-periapsis and $n=\dot{\upsilon}_p\sqrt{(1-e)^3/(1+e)}$ is a normalized
+\f}
+where \f$v_p=r_p\dot{\upsilon}_p\sin i/c\f$ is a normalized velocity at
+periapsis and \f$n=\dot{\upsilon}_p\sqrt{(1-e)^3/(1+e)}\f$ is a normalized
 angular speed for the orbit (the hyperbolic analogue of the mean
 angular speed for closed orbits).  For simplicity we write this as:
-\begin{equation}
-\label{eq:tr-e4}
+\anchor eq_tr-e4 \f{equation}{
+\label{eq_tr-e4}
 t_r = T_p + \frac{1}{n}\left( E + A\sinh E + B[\cosh E - 1] \right) \;,
-\end{equation}
+\f}
 \begin{wrapfigure}{r}{0.28\textwidth}
-\vspace{-5ex}
-\begin{center}
+
+
 \resizebox{0.23\textwidth}{!}{\includegraphics{inject_hanomaly}} \\
 %\parbox{0.23\textwidth}{\caption{\label{fig:binary-orbit} Function to
 %be inverted to find eccentric anomaly.}}
-\end{center}
-\vspace{-5ex}
+
+
 \end{wrapfigure}
-where $T_p$ is the \emph{observed} time of periapsis passage.  Thus
+where \f$T_p\f$ is the \e observed time of periapsis passage.  Thus
 the key numerical procedure in this routine is to invert the
-expression $x=E+A\sinh E+B(\cosh E - 1)$ to get $E(x)$.  This function
+expression \f$x=E+A\sinh E+B(\cosh E - 1)\f$ to get \f$E(x)\f$.  This function
 is sketched to the right (solid line), along with an approximation
 used for making an initial guess (dotted line), as described later.
 
-We note that $A^2-B^2<1$, although it approaches 1 when
-$e\rightarrow1$, or when $v_p\rightarrow1$ and either $e=0$ or
-$\omega=\pi$.  Except in this limit, Newton-Raphson methods will
+We note that \f$A^2-B^2<1\f$, although it approaches 1 when
+\f$e\rightarrow1\f$, or when \f$v_p\rightarrow1\f$ and either \f$e=0\f$ or
+\f$\omega=\pi\f$.  Except in this limit, Newton-Raphson methods will
 converge rapidly for any initial guess.  In this limit, though, the
-slope $dx/dE$ approaches zero at $E=0$, and an initial guess or
+slope \f$dx/dE\f$ approaches zero at \f$E=0\f$, and an initial guess or
 iteration landing near this point will send the next iteration off to
 unacceptably large or small values.  A hybrid root-finding strategy is
-used to deal with this, and with the exponential behaviour of $x$ at
-large $E$.
+used to deal with this, and with the exponential behaviour of \f$x\f$ at
+large \f$E\f$.
 
-First, we compute $x=x_{\pm1}$ at $E=\pm1$.  If the desired $x$ lies
+First, we compute \f$x=x_{\pm1}\f$ at \f$E=\pm1\f$.  If the desired \f$x\f$ lies
 in this range, we use a straightforward Newton-Raphson root finder,
-with the constraint that all guesses of $E$ are restricted to the
-domain $[-1,1]$.  This guarantees that the scheme will eventually find
+with the constraint that all guesses of \f$E\f$ are restricted to the
+domain \f$[-1,1]\f$.  This guarantees that the scheme will eventually find
 itself on a uniformly-convergent trajectory.
 
-Second, for $E$ outside of this range, $x$ is dominated by the
-exponential terms: $x\approx\frac{1}{2}(A+B)\exp(E)$ for $E\gg1$, and
-$x\approx-\frac{1}{2}(A-B)\exp(-E)$ for $E\ll-1$.  We therefore do an
-\emph{approximate} Newton-Raphson iteration on the function $\ln|x|$,
-where the approximation is that we take $d\ln|x|/d|E|\approx1$.  This
+Second, for \f$E\f$ outside of this range, \f$x\f$ is dominated by the
+exponential terms: \f$x\approx\frac{1}{2}(A+B)\exp(E)\f$ for \f$E\gg1\f$, and
+\f$x\approx-\frac{1}{2}(A-B)\exp(-E)\f$ for \f$E\ll-1\f$.  We therefore do an
+\e approximate Newton-Raphson iteration on the function \f$\ln|x|\f$,
+where the approximation is that we take \f$d\ln|x|/d|E|\approx1\f$.  This
 involves computing an extra logarithm inside the loop, but gives very
-rapid convergence to high precision, since $\ln|x|$ is very nearly
+rapid convergence to high precision, since \f$\ln|x|\f$ is very nearly
 linear in these regions.
 
 At the start of the algorithm, we use an initial guess of
-$E=-\ln[-2(x-x_{-1})/(A-B)-\exp(1)]$ for $x<x_{-1}$, $E=x/x_{-1}$ for
-$x_{-1}\leq x\leq0$, $E=x/x_{+1}$ for $0\leq x\leq x_{+1}$, or
-$E=\ln[2(x-x_{+1})/(A+B)-\exp(1)]$ for $x>x_{+1}$.  We refine this
+\f$E=-\ln[-2(x-x_{-1})/(A-B)-\exp(1)]\f$ for \f$x<x_{-1}\f$, \f$E=x/x_{-1}\f$ for
+\f$x_{-1}\leq x\leq0\f$, \f$E=x/x_{+1}\f$ for \f$0\leq x\leq x_{+1}\f$, or
+\f$E=\ln[2(x-x_{+1})/(A+B)-\exp(1)]\f$ for \f$x>x_{+1}\f$.  We refine this
 guess until we get agreement to within 0.01 parts in part in
-$N_\mathrm{cyc}$ (where $N_\mathrm{cyc}$ is the larger of the number
-of wave cycles in a time $2\pi/n$, or the number of wave cycles in the
-entire waveform being generated), or one part in $10^{15}$ (an order
-of magnitude off the best precision possible with \verb@REAL8@
-numbers).  The latter case indicates that \verb@REAL8@ precision may
+\f$N_\mathrm{cyc}\f$ (where \f$N_\mathrm{cyc}\f$ is the larger of the number
+of wave cycles in a time \f$2\pi/n\f$, or the number of wave cycles in the
+entire waveform being generated), or one part in \f$10^{15}\f$ (an order
+of magnitude off the best precision possible with \c REAL8
+numbers).  The latter case indicates that \c REAL8 precision may
 fail to give accurate phasing, and one should consider modeling the
 orbit as a set of Taylor frequency coefficients \'{a} la
-\verb@LALGenerateTaylorCW()@.  On subsequent timesteps, we use the
+<tt>LALGenerateTaylorCW()</tt>.  On subsequent timesteps, we use the
 previous timestep as an initial guess, which is good so long as the
-timesteps are much smaller than $1/n$.
+timesteps are much smaller than \f$1/n\f$.
 
-Once a value of $E$ is found for a given timestep in the output
-series, we compute the system time $t$ via Eq.~(\ref{eq:spinorbit-t}),
+Once a value of \f$E\f$ is found for a given timestep in the output
+series, we compute the system time \f$t\f$ via Eq.\eqref{eq_spinorbit-t},
 and use it to determine the wave phase and (non-Doppler-shifted)
-frequency via Eqs.~(\ref{eq:taylorcw-freq})
-and~(\ref{eq:taylorcw-phi}).  The Doppler shift on the frequency is
-then computed using Eqs.~(\ref{eq:spinorbit-upsilon})
-and~(\ref{eq:orbit-rdot}).  We use $\upsilon$ as an intermediate in
-the Doppler shift calculations, since expressing $\dot{R}$ directly in
-terms of $E$ results in expression of the form $(e-1)/(e\cosh E-1)$,
+frequency via Eqs.\eqref{eq_taylorcw-freq}
+and\TODOref{eq_taylorcw-phi}.  The Doppler shift on the frequency is
+then computed using Eqs.\eqref{eq_spinorbit-upsilon}
+and\TODOref{eq_orbit-rdot}.  We use \f$\upsilon\f$ as an intermediate in
+the Doppler shift calculations, since expressing \f$\dot{R}\f$ directly in
+terms of \f$E\f$ results in expression of the form \f$(e-1)/(e\cosh E-1)\f$,
 which are difficult to simplify and face precision losses when
-$E\sim0$ and $e\rightarrow1$.  By contrast, solving for $\upsilon$ is
-numerically stable provided that the system \verb@atan2()@ function is
+\f$E\sim0\f$ and \f$e\rightarrow1\f$.  By contrast, solving for \f$\upsilon\f$ is
+numerically stable provided that the system <tt>atan2()</tt> function is
 well-designed.
 
 This routine does not account for relativistic timing variations, and
 issues warnings or errors based on the criterea of
-Eq.~(\ref{eq:relativistic-orbit}) in
-\verb@GenerateEllipticSpinOrbitCW.c@.
+Eq.\eqref{eq_relativistic-orbit} in
+\ref GenerateEllipticSpinOrbitCW.c.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALMalloc()                   LALFree()
 LALSCreateVectorSequence()    LALSDestroyVectorSequence()
 LALSCreateVector()            LALSDestroyVector()
 LALDCreateVector()            LALDDestroyVector()
 snprintf()                 LALWarning()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{GenerateHyperbolicSpinOrbitCWCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -177,12 +172,12 @@ snprintf()                 LALWarning()
 
 NRCSID( GENERATEHYPERBOLICSPINORBITCWC, "$Id$" );
 
-/* <lalVerbatim file="GenerateHyperbolicSpinOrbitCWCP"> */
+
 void
 LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
 				  CoherentGW            *output,
 				  SpinOrbitCWParamStruc *params )
-{ /* </lalVerbatim> */
+{
   UINT4 n, i;              /* number of and index over samples */
   UINT4 nSpin = 0, j;      /* number of and index over spindown terms */
   REAL8 t, dt, tPow;       /* time, interval, and t raised to a power */

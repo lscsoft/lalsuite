@@ -1,4 +1,4 @@
-AC_INIT([lalpulsar],[1.1.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalpulsar],[1.1.0.2],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -17,6 +17,8 @@ AC_CONFIG_FILES([ \
 AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
+
+LALSUITE_ARG_VAR
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -45,6 +47,9 @@ LALSUITE_ENABLE_NIGHTLY
 
 # enable LALXML support
 LALSUITE_ENABLE_LALXML
+
+# debug
+LALSUITE_ENABLE_DEBUG
 
 # put version/configure info in config header
 lalpulsar_version_major=`echo "$VERSION" | cut -d. -f1`

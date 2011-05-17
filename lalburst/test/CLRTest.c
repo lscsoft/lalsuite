@@ -21,7 +21,6 @@
  *
  * File Name: CLRTest.c
  * Author: Sintes, A. M.
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  *
@@ -60,38 +59,35 @@
  */
 
 
-/************************************ <lalVerbatim file="CLRTestCV">
-Author: Sintes, A. M.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Sintes, A. M.
+\file
+\ingroup clremoval
 
-
-/* <lalLaTeX>
-
-\subsection{Program \texttt{CLRTest.c}}
-\label{s:CLRTest.c}
+\heading{Program \ref CLRTest.c}
+\latexonly\label{s_CLRTest_c}\endlatexonly
 
  Test for CLR  operations.
 
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 CLRTest
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 This program is just an example of the usage of the different prototypes.
 
  The program reads some data from the file
-\texttt{CLRindata.asc}, finds
+<tt>CLRindata.asc</tt>, finds
 the position of several harmonics, builds a reference signal,
 cleans the initial data of all interference harmonics and
 writes the clean data into the file
-\texttt{CLRoutdata.asc}.
+<tt>CLRoutdata.asc</tt>.
 
-\subsubsection*{Exit codes}
+\heading{Exit codes}
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
 LALI4CreateVector()
 LALCCreateVector()
@@ -111,17 +107,17 @@ LALCleanAll()
 LALCreateReverseComplexFFTPlan()
 LALCOMPLEX8VectorFFT()
 LALDestroyComplexFFTPlan()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 Take this program just as an example,  build
 your own one  and feed it  with the data of your interest.
 The CLR functions work on stretches of data from a few seconds up to a
 couple of minutes.
 
-\vfill{\footnotesize\input{CLRTestCV}}
 
-</lalLaTeX> */
+
+*/
 
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>

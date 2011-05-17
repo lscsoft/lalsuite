@@ -20,6 +20,7 @@
 /**
  * \author Badri Krishnan, Alicia Sintes, Greg Mendell
  * \file SFTClean.c
+ \ingroup pulsarTODO
  * \brief Module containing routines for dealing with spectral disturbances in SFTs
 
    \heading{Description}
@@ -62,11 +63,6 @@
 
 */
 
-/************************************ <lalVerbatim file="SFTCleanCV">
-Author: Sintes, A.M., Krishnan, B.
-$Id$
-************************************* </lalVerbatim> */
-
 /* REVISIONS: */
 /* 09/09/05 gam; if (nLinesOut == 0) still need outLine->nLines = nLinesOut; calling function needs to know this */
 /* 09/09/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT. Thus only need to */
@@ -75,46 +71,7 @@ $Id$
 /* 09/09/05 gam; only assert harmonicInfo and fname in LALFindNumberHarmonic and fix assert of fp. */
 /*               Other pointers can be unititialized until nHarmonicSets is determined.            */
 
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Module \texttt{SFTClean.c}}
-\label{ss:SFTClean.c}
-Routines for reading SFT binary files
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{SFTCleanD}
-\index{\verb&ReadSFTCleanHeader1()&}
-\index{\verb&ReadCOMPLEX8SFTCleanData1()&}
-\index{\verb&ReadCOMPLEX16SFTCleanData1()&}
-\index{\verb&COMPLEX8SFT2Periodogram1()&}
-\index{\verb&COMPLEX16SFT2Periodogram1()&}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
-
-SFT cleaning routines
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-\begin{verbatim}
-LALHO()
-\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{SFTCleanCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*********************************************** </lalLaTeX> */
-
-
 #include <lal/SFTClean.h>
-
-
 
 NRCSID (SFTCLEANC, "$Id$");
 
@@ -123,16 +80,15 @@ NRCSID (SFTCLEANC, "$Id$");
  */
 
 
-
 /**
  * Looks into the input file containing list of lines, does some checks on the
  * file format, and calculates the number of harmonic sets in this file.
  */
-/*<lalVerbatim file="SFTCleanD"> */
+
 void LALFindNumberHarmonics (LALStatus    *status,	/**< pointer to LALStatus structure */
 			     LineHarmonicsInfo   *harmonicInfo, /**< list of harmonics */
 			     CHAR         *fname /**< input filename */)
-{/*   *********************************************  </lalVerbatim> */
+{
 
   FILE *fp = NULL;
   CHAR  dump[128];
@@ -182,11 +138,11 @@ void LALFindNumberHarmonics (LALStatus    *status,	/**< pointer to LALStatus str
  *  the LineHarmonicsInfo structure.  Appropriate memory must be allocated for
  *  this structure before this function is called.
  */
-/*  <lalVerbatim file="SFTCleanD"> */
+
 void  LALReadHarmonicsInfo (LALStatus          *status,		/**< pointer to LALStatus structure */
 			    LineHarmonicsInfo  *harmonicsInfo, /**< list of harmonics */
 			    CHAR               *fname /**< input file */)
-{/*   *********************************************  </lalVerbatim> */
+{
   /* this reads the information about the lines: central frequency, left wing and
      right wing */
   FILE    *fp = NULL;
@@ -240,11 +196,11 @@ void  LALReadHarmonicsInfo (LALStatus          *status,		/**< pointer to LALStat
 /** Converts the list of harmonic sets into an explicit list of spectral
  *  lines.
  */
-/*  <lalVerbatim file="SFTCleanD"> */
+
 void  LALHarmonics2Lines (LALStatus          *status,	/**< pointer to LALStatus structure */
 			  LineNoiseInfo      *lineInfo, /**< output list of explicit lines */
 			  LineHarmonicsInfo  *harmonicsInfo) /**< input list of harmonics */
-{/*   *********************************************  </lalVerbatim> */
+{
   /* this reads the information about the lines: central frequency, left wing and
      right wing */
 
@@ -314,11 +270,11 @@ void  LALHarmonics2Lines (LALStatus          *status,	/**< pointer to LALStatus 
  * a list of explicit spectral lines -- obsolete.
  * Use instead LALFindNumberHarmonics().
  */
-/*  <lalVerbatim file="SFTCleanD"> */
+
 void LALFindNumberLines (LALStatus          *status,
 		      LineNoiseInfo      *lineInfo,
 		      CHAR               *fname)
-{/*   *********************************************  </lalVerbatim> */
+{
   /* this function counts the number of lines present in the file "fname" and
      checks that the format of the lines is correct */
 
@@ -358,11 +314,11 @@ void LALFindNumberLines (LALStatus          *status,
 /** Reads information from file containing list of explicit lines - obsolete.
  *  Use instead LALReadHarmonicsInfo()
  */
-/*  <lalVerbatim file="SFTCleanD"> */
+
 void  LALReadLineInfo (LALStatus     *status,
 		    LineNoiseInfo *lineInfo,
 		    CHAR          *fname)
-{/*   *********************************************  </lalVerbatim> */
+{
   /* this reads the information about the lines: central frequency, left wing and
      right wing */
   FILE    *fp = NULL;
@@ -412,14 +368,14 @@ void  LALReadLineInfo (LALStatus     *status,
  * frequency range or whose wings overlap with the frequency range.  This is useful
  * for discarding unnecessary lines to save computational cost and memory.
  */
-/*  <lalVerbatim file="SFTCleanD"> */
+
 void LALChooseLines (LALStatus        *status,	/**< pointer to LALStatus structure */
 		     LineNoiseInfo    *outLine,  /**< reduced list of lines */
 		     LineNoiseInfo    *inLine,   /**< input list of lines */
 		     REAL8            fMin,      /**< start of frequency band */
 		     REAL8            fMax       /**< end of frequency band */
 		  )
-{/*   *********************************************  </lalVerbatim> */
+{
 
   INT4 nLinesIn, nLinesOut, j;
   REAL8 lineFreq, leftWing, rightWing;
@@ -498,12 +454,12 @@ void LALChooseLines (LALStatus        *status,	/**< pointer to LALStatus structu
  * broadening of the lines is taken into account while deciding whether the
  * frequency is affected or not.
  */
-/*  <lalVerbatim file="SFTCleanD"> */
+
 void LALCheckLines ( LALStatus           *status, /**< pointer to LALStatus structure */
 		     INT4                *countL, /**< number of lines affecting frequency */
 		     LineNoiseInfo       *lines, /**< list of lines */
 		     REAL8               freq)   /**< frequency to be checked */
-{/*   *********************************************  </lalVerbatim> */
+{
 
   INT4 nLines, j;
   REAL8 lineFreq, leftWing, rightWing, doppler;
@@ -617,14 +573,14 @@ void LALCheckLines ( LALStatus           *status, /**< pointer to LALStatus stru
  must read in the extra bins.
 
  */
-/* *******************************  <lalVerbatim file="SFTCleanD"> */
+
 void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus structure */
 			  SFTtype            *sft,  /**< SFT to be cleaned */
 			  INT4               width, /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
 			  INT4               window,/**< window size for noise floor estimation in vicinity of a line */
 			  LineNoiseInfo      *lineInfo, /**< list of lines */
 			  RandomParams       *randPar /**< parameters for generating random noise */)
-{ /*   *********************************************  </lalVerbatim> */
+{
   /* function to clean the SFT based on the line information read earlier */
 
   INT4     nLines, count, leftCount, rightCount, lineBin, minBin, maxBin, k, tempk;

@@ -54,12 +54,6 @@ extern "C" {
 #include <lal/DetectorStates.h>
 #include <lal/SFTutils.h>
 
-/*---------- DEFINES ----------*/
-NRCSID( UNIVERSALDOPPLERMETRICH, "$Id$");
-
-/*----- Error-codes -----*/
-
-
 /*---------- exported types ----------*/
   /** 2D vector */
 typedef REAL8 vect2D_t[2];
@@ -356,8 +350,9 @@ typedef struct
 
 
 /*---------- Global variables ----------*/
-extern DopplerMetricParams empty_DopplerMetricParams;
-extern MultiDetectorInfo empty_MultiDetectorInfo;
+extern const DopplerMetricParams empty_DopplerMetricParams;
+extern const MultiDetectorInfo empty_MultiDetectorInfo;
+extern const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
 
 /*---------- exported prototypes [API] ----------*/
 gsl_matrix *

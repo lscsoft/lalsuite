@@ -23,8 +23,6 @@
  *
  * Author: Sintes, A. M.
  *
- * Revision: $Id:
- *
  *-----------------------------------------------------------------------
  *
  * NAME
@@ -47,78 +45,75 @@
  */
 
 
-/************************************ <lalVerbatim file="CleanAllCV">
-Author: Sintes, A. M.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Sintes, A. M.
+\file
+\ingroup clremoval
 
-
-/* <lalLaTeX>
-
-\subsection{Module \texttt{CleanAll.c}}
-\label{ss:CleanAll.c}
+\heading{Module \ref CleanAll.c}
+\latexonly\label{ss_CleanAll_c}\endlatexonly
 Gets data cleaned from line harmonic interference given  a time domain
 reference signal.
 
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{CleanAllD}
-\idx{LALCleanAll()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+
+
+
+\heading{Description}
 This routine cleans data in the time domain from line harmonic interference
 (from the first harmonic up to the Nyquist frequency). The inputs are:
 
-\verb@*in1@ the time domain data of type  \verb@REAL4TVectorCLR@,
-containing also the interference fundamental frequency $f_0$ and the
+<tt>*in1</tt> the time domain data of type  \c REAL4TVectorCLR,
+containing also the interference fundamental frequency \f$f_0\f$ and the
 sampling spacing. This information is needed in order to obtain
 the total  number of harmonics contained in the data.
-\begin{description}
-\item[\texttt{in1->length}] The number of elements in \texttt{in1->data} $=n$.
-\item[\texttt{in1->data}]   The (real) time domain data,  $x(t)$.
-\item[\texttt{in1->deltaT}] The sample spacing in seconds.
-\item[\texttt{in1->fLine}]  The interference fundamental frequency $f_0$
-       (in Hz), e.g., 60 Hz.
-\end{description}
+<dl>
+<dt><tt>in1->length</tt></dt><dd> The number of elements in <tt>in1->data</tt> \f$=n\f$.</dd>
+<dt><tt>in1->data</tt></dt><dd>   The (real) time domain data,  \f$x(t)\f$.</dd>
+<dt><tt>in1->deltaT</tt></dt><dd> The sample spacing in seconds.</dd>
+<dt><tt>in1->fLine</tt></dt><dd>  The interference fundamental frequency \f$f_0\f$
+       (in Hz), e.g., 60 Hz.</dd>
+</dl>
 
-\verb@*in2@ the time domain reference signal (a complex vector).
-\begin{description}
-\item[\texttt{in2->length}] The number of elements in
-            \texttt{in2->data} $=n$.
-\item[\texttt{in2->data}]    The $M(t)$ complex data.
-\end{description}
+<tt>*in2</tt> the time domain reference signal (a complex vector).
+<dl>
+<dt><tt>in2->length</tt></dt><dd> The number of elements in
+            <tt>in2->data</tt> \f$=n\f$.</dd>
+<dt><tt>in2->data</tt></dt><dd>    The \f$M(t)\f$ complex data.</dd>
+</dl>
 
-The output \verb@*out@ is a real vector containing the clean data.
-\begin{description}
-\item[\texttt{out->length}] The number of elements in
-            \texttt{out->data} $=n$.
-\item[\texttt{out->data}]    The clean (real) time domain data.
-\end{description}
+The output <tt>*out</tt> is a real vector containing the clean data.
+<dl>
+<dt><tt>out->length</tt></dt><dd> The number of elements in
+            <tt>out->data</tt> \f$=n\f$.</dd>
+<dt><tt>out->data</tt></dt><dd>    The clean (real) time domain data.</dd>
+</dl>
 
-\subsubsection*{Algorithm}
-It takes the reference signal $M(t)$ and, for all possible harmonics
-$j$
-($j=1,\ldots,$\texttt{floor(1.0/fabs( 2.02* in1->deltaT * in1->fLine))} ),
+\heading{Algorithm}
+It takes the reference signal \f$M(t)\f$ and, for all possible harmonics
+\f$j\f$
+(\f$j=1,\ldots,\f$<tt>floor(1.0/fabs( 2.02* in1->deltaT * in1->fLine))</tt> ),
 from the fundamental frequency up to the Nyquist frequency,
-constructs $M(t)^j$,  performs a least-squares fit, i.e.,
-minimizes the power $\vert x(t) -\rho_j M(t)^j\vert^2$ with
-respect to $\rho_j$, and  subtracts $\rho_j M(t)^j$ from the
-original data, $x(t)$.
+constructs \f$M(t)^j\f$,  performs a least-squares fit, i.e.,
+minimizes the power \f$\vert x(t) -\rho_j M(t)^j\vert^2\f$ with
+respect to \f$\rho_j\f$, and  subtracts \f$\rho_j M(t)^j\f$ from the
+original data, \f$x(t)\f$.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALDCreateVector()
 LALZCreateVector()
 LALDDestroyVector()
 LALZDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{CleanAllCV}}
 
-</lalLaTeX> */
+
+*/
 
 
 
@@ -126,12 +121,12 @@ LALZDestroyVector()
 
 NRCSID (CLEANALLC, "$Id$");
 
-/* <lalVerbatim file="CleanAllD"> */
+
 void LALCleanAll (LALStatus     *status,
                REAL4Vector      *out,  /* clean data */
                COMPLEX8Vector   *in2,  /* M(t), ref. interference */
                REAL4TVectorCLR  *in1)  /* x(t), data + information */
-{ /* </lalVerbatim> */
+{
 
   INT4    n;
   INT4    i,j;

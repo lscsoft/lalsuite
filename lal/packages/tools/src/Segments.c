@@ -514,7 +514,7 @@ XLALSegListSort( LALSegList *seglist )
 
 /** The function XLALSegListCoalesce() first sorts the segments in a
  * segment list (if not already sorted) and then joins together segments which
- * overlap or touch (<em>i.e.</em>\ share endpoints).
+ * overlap or touch (i.e. share endpoints).
  * The result is a segment list which is sorted and is guaranteed
  * to not have any overlapping segments; thus it is ``disjoint''.
  * (Note, however, that a disjoint segment list is not necessarily coalesced,
@@ -619,8 +619,8 @@ might be used:
   LIGOTimeGPS tgps, startgps;
   LALSeg *segp;
   ...
-  /-* (Fill the segment list 'mylist' with segments here) *-/
-  /-* (Set the gps time, 'tgps', to search for) *-/
+  /\* (Fill the segment list 'mylist' with segments here) *\/
+  /\* (Set the gps time, 'tgps', to search for) *\/
   ...
   segp = XLALSegListSearch( &mylist, &tgps );
   if ( segp ) {

@@ -17,33 +17,29 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="PrintFTSeriesHV">
-Author: J. T. Whelan <jtwhelan@loyno.edu>
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author J. T. Whelan <jtwhelan@loyno.edu>
+\file
 
-/* <lalLaTeX>
-
-\section{Header \texttt{PrintFTSeries.h}}
-\label{s:PrintFTSeries.h}
+\heading{Header \ref PrintFTSeries.h}
+\latexonly\label{s_PrintFTSeries_h}\endlatexonly
 
 This is a simple utility to print time and frequency series into a
 file.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/PrintFTSeries.h>
-\end{verbatim}
+\endcode
 
-\noindent Provides prototype information for the routines in
-\verb+PrintTimeSeries.c+ and \verb+PrintFrequencySeries.c+.
+Provides prototype information for the routines in
+\ref PrintTimeSeries.c and \ref PrintFrequencySeries.c.
 
-\vfill{\footnotesize\input{PrintFTSeriesHV}}
-\newpage\input{PrintTimeSeriesC}
-\newpage\input{PrintFTSeriesTestC}
-\newpage\input{PrintFrequencySeriesC}
 
-</lalLaTeX> */
+
+
+
+*/
 
 #ifndef _PRINTFTSERIES_H
 #define _PRINTFTSERIES_H

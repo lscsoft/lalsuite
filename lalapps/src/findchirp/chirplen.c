@@ -74,7 +74,7 @@ RCSID("$Id$");
 "  --flow fstart             low frequency cutoff\n"\
 "\n"
 
-#define FSTART 100.0
+#define FSTART 30.0
 #define DELTAT (1.0/4096.0)
 
 int verbose = 0;

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -30,6 +30,8 @@
 #include <lal/Sort.h>
 
 #include <gsl/gsl_sf_log.h>
+#include <gsl/gsl_machine.h>
+
 
 #include "cdfwchisq.h"
 
@@ -41,8 +43,21 @@ REAL8 exp1(REAL8 x)
    //if (x<-50.0) return 0.0;
    if (x<-700.0) return 0.0;
    else return exp(x);
-}
+} /* exp1() */
 
+//Next special function routines based on the gsl functions
+REAL8 twospect_log_1plusx(REAL8 x)
+{
+   
+   return log1p(x);
+   
+}
+REAL8 twospect_log_1plusx_mx(REAL8 x)
+{
+   
+   return log1p(x)-x;
+   
+}
 
 //count number of calls to errbound, truncation, coeff
 void counter(qfvars *vars)
@@ -50,17 +65,8 @@ void counter(qfvars *vars)
    
    vars->count++;
    
-}
+} /* counter() */
 
-
-//If first is 1, then log(1 + x) ; else  log(1 + x) - x
-REAL8 log1(REAL8 x, INT4 first)
-{
-   
-   if (first) return gsl_sf_log_1plusx(x);
-   else return gsl_sf_log_1plusx_mx(x);
-   
-}
 
 //find order of absolute values of weights
 void order(qfvars *vars)
@@ -68,7 +74,7 @@ void order(qfvars *vars)
    
    const CHAR *fn = __func__;
    
-   INT4 ascend = 0;     //To sort descending, set ascend to zero
+   INT4 ascend = 1;     //To sort descending, set ascend to zero
    if ( XLALHeapIndex(vars->sorting->data, vars->weights->data, vars->weights->length, sizeof(REAL8), &ascend, compar) != 0) {
       fprintf(stderr,"%s: XLALHeapIndex() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
@@ -76,7 +82,7 @@ void order(qfvars *vars)
    
    vars->ndtsrt = 0; //Signify that we have done the sorting
    
-}
+} /* order() */
 
 //Comparison routine for sorting algorithm (NOTE: Ascending order p=1, descending p=0)
 int compar(void *p, const void *a, const void *b)
@@ -95,7 +101,7 @@ int compar(void *p, const void *a, const void *b)
    if (x < y) return 1;
    return 0;
    
-}
+} /* compar() */
 
 //find bound on tail probability using mgf, cutoff point returned to *cx
 REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx)
@@ -113,14 +119,36 @@ REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx)
       x = u * vars->weights->data[ii];
       y = 1.0 - x;
       xconst += vars->weights->data[ii] * (vars->noncentrality->data[ii] / y + vars->dofs->data[ii]) / y;
-      //sum1 += vars->noncentrality->data[ii] * (x*x/(y*y)) + vars->dofs->data[ii] * (x*x / y + log1(-x, 0 ));
       sum1 += vars->noncentrality->data[ii] * (x*x/(y*y)) + vars->dofs->data[ii] * (x*x / y + gsl_sf_log_1plusx_mx(-x));
    }
    *cx = xconst;
    
    return exp1(-0.5 * sum1);
    
-}
+}/* errbound() */
+REAL8 errbound_twospect(qfvars *vars, REAL8 u, REAL8* cx)
+{
+   
+   REAL8 sum1, x, y, xconst;
+   INT4 ii;
+   
+   counter(vars);
+   
+   xconst = u * vars->sigsq;
+   sum1 = u * xconst;
+   u *= 2.0;
+   for (ii=vars->weights->length-1; ii>=0; ii--) {
+      x = u * vars->weights->data[ii];
+      y = 1.0 - x;
+      xconst += 2.0*vars->weights->data[ii]/y;
+      //sum1 += 2 * (x*x / y + twospect_log_1plusx_mx(-x));
+      sum1 += 2 * (x*x / y + (log1p(-x)+x));
+   }
+   *cx = xconst;
+   
+   return exp1(-0.5 * sum1);
+   
+} /* errbound_twospect() */
 
 //find cutoff so that p(qf > cutoff) < accx  if (upn > 0, p(qf < cutoff) < accx otherwise
 REAL8 cutoff(qfvars *vars, REAL8 accx, REAL8* upn)
@@ -134,11 +162,6 @@ REAL8 cutoff(qfvars *vars, REAL8 accx, REAL8* upn)
    if (u2>0.0) rb = 2.0*vars->wnmax;
    else rb = 2.0*vars->wnmin;
    
-   /* for (u=u2/(1.0+u2*rb); errbound(vars, u, &c2)>accx; u=u2/(1.0+u2*rb)) {
-      u1 = u2;
-      c1 = c2;
-      u2 *= 2.0;
-   } */
    u = u2/(1.0 + u2*rb);
    while (errbound(vars, u, &c2)>accx) {
       u1 = u2;
@@ -147,16 +170,6 @@ REAL8 cutoff(qfvars *vars, REAL8 accx, REAL8* upn)
       u = u2/(1.0 + u2*rb);
    }
    
-   /* for (u=(c1-vars->wnmean)/(c2-vars->wnmean); u<0.9; u=(c1-vars->wnmean)/(c2-vars->wnmean)) {
-      u = 0.5*(u1 + u2);
-      if (errbound(vars, u/(1.0+u*rb), &xconst)>accx) {
-         u1 = u; 
-         c1 = xconst;
-      } else {
-         u2 = u;
-         c2 = xconst;
-      }
-   } */
    u = (c1-vars->wnmean)/(c2-vars->wnmean);
    while (u<0.9) {
       u = 0.5*(u1 + u2);
@@ -173,9 +186,46 @@ REAL8 cutoff(qfvars *vars, REAL8 accx, REAL8* upn)
    
    return c2;
    
-}
+} /* cutoff() */
+REAL8 cutoff_twospect(qfvars *vars, REAL8 accx, REAL8* upn)
+{
+   
+   REAL8 u1, u2, u, rb, xconst, c1, c2;
+   
+   u2 = *upn;
+   u1 = 0.0;
+   c1 = vars->wnmean;
+   if (u2>0.0) rb = 2.0*vars->wnmax;
+   else rb = 2.0*vars->wnmin;
+   
+   u = u2/(1.0 + u2*rb);
+   while (errbound_twospect(vars, u, &c2)>accx) {
+      u1 = u2;
+      c1 = c2;
+      u2 *= 2.0;
+      u = u2/(1.0 + u2*rb);
+   }
+   
+   u = (c1-vars->wnmean)/(c2-vars->wnmean);
+   while (u<0.9) {
+      u = 0.5*(u1 + u2);
+      if (errbound_twospect(vars, u/(1.0+u*rb), &xconst)>accx) {
+         u1 = u; 
+         c1 = xconst;
+      } else {
+         u2 = u;
+         c2 = xconst;
+      }
+      u = (c1-vars->wnmean)/(c2-vars->wnmean);
+   }
+   *upn = u2;
+   
+   return c2;
+   
+} /* cutoff_twospect() */
 
 //bound integration error due to truncation at u
+//Eq. 6, 7, 8 of Davies 1980
 REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
 {
    REAL8 sum1, sum2, prod1, prod2, prod3, x, y, err1, err2;
@@ -183,7 +233,56 @@ REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
 
    counter(vars);
    
-   sum1  = 0.0;
+   sum1  = 0.0;   //Calculating N(u) = exp(-2u**2 sum_j(lambda_j**2 delta_j**2/(1+4u**2 lambda_j**2)))
+   prod2 = 0.0;   //Calculating product (i)
+   prod3 = 0.0;   //Calculating product (ii)
+   s = 0;   //Sum of degrees of freedom
+   
+   sum2 = (vars->sigsq + tausq) * u*u;
+   prod1 = 2.0 * sum2;
+   u *= 2.0;      //This produces the factor of 4 in front of the products (U*lambda_j)**2 (i and ii) in Davies 1980
+   
+   for (ii=0; ii<(INT4)vars->weights->length; ii++ ) {
+      x = (u * vars->weights->data[ii])*(u * vars->weights->data[ii]);  //(2*U*lambda_j)**2
+      sum1 += vars->noncentrality->data[ii] * x / (1.0 + x);   //Sum after eq 4 in Davies 1980
+      if (x > 1.0) {
+         prod2 += vars->dofs->data[ii] * log(x);      //Logarithim of product (ii) produces sum of logorithms
+         prod3 += vars->dofs->data[ii] * gsl_sf_log_1plusx(x);    //Logarithim of product (i) produces sum of logorithms
+         s += vars->dofs->data[ii];    //sum of degrees of freedom
+      }
+      else prod1 += vars->dofs->data[ii] * gsl_sf_log_1plusx(x);
+   } /* for ii < vars->weights->length */
+   
+   sum1 *= 0.5;      //Remove the extra prefactor of 2 before taking the exponential
+   prod2 += prod1;
+   prod3 += prod1;
+   x = exp1(-sum1 - 0.25*prod2)*LAL_1_PI;    //Now remove logarithm by computing exponential (eq 6)
+   y = exp1(-sum1 - 0.25*prod3)*LAL_1_PI;    //Now remove logarithm by computing exponential (eq 8)
+   
+   if (s==0) err1 = 1.0;
+   else err1 = 2.0*x/s;
+   
+   if (prod3>1.0) err2 = 2.5*y;  //eq 8
+   else err2 = 1.0;
+   
+   if (err2 < err1) err1 = err2;
+   
+   x = 0.5 * sum2;
+   
+   if (x<=y) err2 = 1.0;
+   else err2 = y/x;
+   
+   if (err1<err2) return err1;
+   else return err2;
+   
+} /* truncation() */
+REAL8 truncation_twospect(qfvars *vars, REAL8 u, REAL8 tausq)
+{
+   REAL8 sum2, prod1, prod2, prod3, x, y, err1, err2;
+   INT4 ii, s;
+   
+   counter(vars);
+   
    prod2 = 0.0;
    prod3 = 0.0;
    s = 0;
@@ -192,27 +291,22 @@ REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
    prod1 = 2.0 * sum2;
    u *= 2.0;
    
-   for (ii=0; ii<(INT4)vars->weights->length; ii++ ) {
+   for (ii=0; ii<(INT4)vars->weights->length; ii++) {
       x = (u * vars->weights->data[ii])*(u * vars->weights->data[ii]);
-      sum1 += vars->noncentrality->data[ii] * x / (1.0 + x);
       if (x > 1.0) {
-         prod2 += vars->dofs->data[ii] * log(x);
-         //prod3 += vars->dofs->data[ii] * log1(x, 1 );
-         prod3 += vars->dofs->data[ii] * gsl_sf_log_1plusx(x);
-         s += vars->dofs->data[ii];
+         prod2 += 2 * log(x);
+         prod3 += 2 * log1p(x);
+         s += 2;
       }
-      else prod1 += vars->dofs->data[ii] * gsl_sf_log_1plusx(x);
-      //else prod1 += vars->dofs->data[ii] * log1(x, 1 );
+      else prod1 += 2 * log1p(x);
    } /* for ii < vars->weights->length */
    
-   sum1 *= 0.5;
    prod2 += prod1;
    prod3 += prod1;
-   x = exp1(-sum1 - 0.25*prod2)*LAL_1_PI;
-   y = exp1(-sum1 - 0.25*prod3)*LAL_1_PI;
+   x = exp1(-0.25*prod2)*LAL_1_PI;
+   y = exp1(-0.25*prod3)*LAL_1_PI;
    
-   if (s==0) err1 = 1.0;
-   else err1 = 2.0*x/s;
+   err1 = 2.0*x/s;
    
    if (prod3>1.0) err2 = 2.5*y;
    else err2 = 1.0;
@@ -227,7 +321,7 @@ REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
    if (err1<err2) return err1;
    else return err2;
    
-}
+} /* truncation_twospect() */
 
 //find u such that truncation(u) < accx and truncation(u / 1.2) > accx
 void findu(qfvars *vars, REAL8* utx, REAL8 accx)
@@ -263,7 +357,39 @@ void findu(qfvars *vars, REAL8* utx, REAL8 accx)
    
    *utx = ut;
    
-}
+} /* findu() */
+void findu_twospect(qfvars *vars, REAL8* utx, REAL8 accx)
+{
+   
+   REAL8 u, ut;
+   INT4 ii;
+   REAL8 divis[] = {2.0, 1.4, 1.2, 1.1};
+   
+   ut = *utx;
+   u = 0.25*ut;
+   if ( truncation_twospect(vars, u, 0.0)>accx ) {
+      u = ut;
+      while (truncation_twospect(vars, u, 0.0)>accx) {
+         ut *= 4.0;
+         u = ut;
+      }
+   } else {
+      ut = u;
+      u *= 0.25;
+      while (truncation_twospect(vars, u, 0.0) <=  accx) {
+         ut = u;
+         u *= 0.25;
+      }
+   }
+   
+   for (ii=0; ii<4; ii++) {
+      u = ut/divis[ii]; 
+      if ( truncation_twospect(vars, u, 0.0)<=accx )  ut = u; 
+   }
+   
+   *utx = ut;
+   
+} /* findu_twospect() */
 
 
 //carry out integration with nterm terms, at stepsize interv.  if (! mainx) multiply integrand by 1.0-exp(-0.5*tausq*u^2)
@@ -271,6 +397,40 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
 {
    
    REAL8 inpi, u, sum1, sum2, sum3, x, y, z;
+   INT4 ii, jj;
+   
+   inpi = interv*LAL_1_PI;    //inpi = pi*(k + 1/2)
+   
+   for (ii=nterm; ii>=0; ii--) {
+      u = (ii + 0.5)*interv;     //First part of eq 3 in Davies 1980, eq 9 in Davies 1973
+      sum1 = - 2.0*u*vars->c;    //Third sum
+      sum2 = fabs(sum1);
+      sum3 = -0.5*vars->sigsq * u*u;   //Product
+      
+      for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
+         x = 2.0 * vars->weights->data[jj] * u;    //2 * lambda_j * u
+         y = x*x;    //4 * lambda_j**2 * u**2
+         sum3 -= 0.25 * vars->dofs->data[jj] * gsl_sf_log_1plusx(y);    //product in eq 13 of Davies 1980
+         y = vars->noncentrality->data[jj] * x / (1.0 + y);    //First sum argument in eq 13 of Davies 1980
+         z = vars->dofs->data[jj] * atan(x) + y;      //Third sum argument in eq 13 of Davies 1980
+         sum1 += z;        //Third sum in eq 13
+         sum2 += fabs(z);
+         sum3 -= 0.5 * x * y;    //Product
+      } /* for jj=vars->weights->length-1 --> 0 */
+      
+      x = inpi * exp1(sum3) / u;
+      if ( !mainx ) x *= (1.0 - exp1(-0.5 * tausq * u*u));  //For auxillary integration, we multiply by this factor)
+      sum1 = sin(0.5 * sum1) * x;   //Now compute the sine
+      sum2 *= 0.5*x;
+      vars->intl += sum1;     //integration value
+      vars->ersm += sum2;     //error on integration
+   } /* for ii=nterm --> 0 */
+   
+} /* integrate() */
+void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
+{
+   
+   REAL8 inpi, u, sum1, sum2, sum3, x, z;
    INT4 ii, jj;
    
    inpi = interv*LAL_1_PI;
@@ -283,14 +443,10 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
       
       for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          x = 2.0 * vars->weights->data[jj] * u;
-         y = x*x;
-         //sum3 -= 0.25 * vars->dofs->data[jj] * log1(y, 1 );
-         sum3 -= 0.25 * vars->dofs->data[jj] * gsl_sf_log_1plusx(y);
-         y = vars->noncentrality->data[jj] * x / (1.0 + y);
-         z = vars->dofs->data[jj] * atan(x) + y;
+         sum3 -= 0.5 * log1p((x*x));
+         z = 2.0 * atan(x);
          sum1 += z;
          sum2 += fabs(z);
-         sum3 -= 0.5 * x * y;
       } /* for jj=vars->weights->length-1 --> 0 */
       
       x = inpi * exp1(sum3) / u;
@@ -301,9 +457,10 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
       vars->ersm += sum2;
    } /* for ii=nterm --> 0 */
    
-}
+} /* integrate_twospect() */
 
 //Coefficient of tausq in error when convergence factor of exp1(-0.5*tausq*u^2) is used when df is evaluated at x
+//Eq. 10 of Davies 1980
 REAL8 coeff(qfvars *vars, REAL8 x)
 {
    
@@ -357,7 +514,51 @@ REAL8 coeff(qfvars *vars, REAL8 x)
       return pow(2.0, 0.25*sum1)*LAL_1_PI/(axl*axl);
    }
    
-}
+} /* coeff() */
+REAL8 coeff_twospect(qfvars *vars, REAL8 x)
+{
+   
+   REAL8 axl, axl1, axl2, sxl, sum1, lj;
+   INT4 ii, jj, t;
+   
+   counter(vars);
+   
+   axl = fabs(x);
+   
+   if (x>0.0) sxl = 1.0;
+   else sxl = -1.0;
+   
+   sum1 = 0.0;
+   for ( ii=vars->weights->length-1; ii>=0; ii-- ) {
+      t = vars->sorting->data[ii];
+      if ( vars->weights->data[t] * sxl > 0.0 ) {
+         lj = fabs(vars->weights->data[t]);
+         axl1 = axl - 2*lj;
+         axl2 = 8.0*lj/LAL_LN2;
+         if ( axl1 > axl2 )  axl = axl1; 
+         else {
+            if ( axl > axl2 ) axl = axl2;
+            sum1 = (axl - axl1) / lj;
+            for ( jj = ii-1; jj>=0; jj--) sum1 += 2;
+            
+            if (sum1 > 100.0) { 
+               vars->fail = 1; 
+               return 1.0;
+            } else {
+               return pow(2.0, 0.25*sum1)*LAL_1_PI/(axl*axl);
+            }
+         }
+      }
+   } /* for ii=vars->weights->length-1 --> 0 */
+   
+   if (sum1 > 100.0) { 
+      vars->fail = 1; 
+      return 1.0; 
+   } else {
+      return pow(2.0, 0.25*sum1)*LAL_1_PI/(axl*axl);
+   }
+   
+} /* coeff_twospect() */
 
 
 /*  distribution function of a linear combination of non-central
@@ -377,8 +578,6 @@ output:
 
 REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
 {
-   
-   //const CHAR *fn = __func__;
 
    INT4 ii, nt, ntm;
    REAL8 acc1, almx, xlim, xnt, xntm;
@@ -392,7 +591,7 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
    vars->ersm = 0.0;
    qfval = -1.0;
    acc1 = acc;
-   //vars->ndtsrt = 1;  We already sorted outside of this algorithm
+   vars->ndtsrt = 1;
    vars->fail = 0;
    xlim = (REAL8)vars->lim;
 
@@ -525,5 +724,154 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
       }
    
       return qfval;
-}
+} /* cdfwchisq() */
+REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
+{
+   
+   INT4 ii, nt, ntm;
+   REAL8 acc1, almx, xlim, xnt, xntm;
+   REAL8 utx, tausq, wnstd, intv, intv1, x, up, un, d1, d2;
+   REAL8 qfval;
+   INT4 rats[] = {1, 2, 4, 8};
+   
+   *ifault = 0;
+   vars->count = 0;
+   vars->intl = 0.0;
+   vars->ersm = 0.0;
+   qfval = -1.0;
+   acc1 = acc;
+   vars->fail = 0;
+   xlim = (REAL8)vars->lim;
+   
+   /* find wnmean, wnstd, wnmax and wnmin of weights, check that parameter values are valid */
+   vars->sigsq = sigma*sigma;    //Sigma squared
+   wnstd = vars->sigsq;          //weights*noise standard deviation initial value
+   vars->wnmax = 0.0;            //Initial value for weights*noise maximum
+   vars->wnmin = 0.0;            //Initial value for weights*noise minimum
+   vars->wnmean = 0.0;           //Initial value for weights*noise 'mean'
+   for (ii=0; ii<(INT4)vars->weights->length; ii++ ) {
+      
+      wnstd += 4*vars->weights->data[ii]*vars->weights->data[ii];
+      vars->wnmean += 2*vars->weights->data[ii];
+      
+      //Find maximum and minimum values
+      if (vars->wnmax < vars->weights->data[ii]) vars->wnmax = vars->weights->data[ii];
+      else if (vars->wnmin > vars->weights->data[ii]) vars->wnmin = vars->weights->data[ii];
+      
+   } /* for ii < vars->weights->length */
+   
+   if ( wnstd == 0.0  ) {  
+      if (vars->c>0.0) qfval = 1.0;
+      else qfval = 0.0;
+      return qfval;
+   } /* if wnstd==0 */
+   
+   if ( vars->wnmin == 0.0 && vars->wnmax == 0.0 ) {
+      *ifault = 3;
+      return qfval;
+   }
+   
+   wnstd = sqrt(wnstd);
+   
+   //almx is absolute value maximum of weights
+   if (vars->wnmax < -vars->wnmin) almx = -vars->wnmin;
+   else almx = vars->wnmax;
+   
+   /* starting values for findu, cutoff */
+   utx = 16.0/wnstd;
+   up = 4.5/wnstd;
+   un = -up;
+   
+   /* truncation point with no convergence factor */
+   findu_twospect(vars, &utx, 0.5*acc1);
+   
+   /* does convergence factor help */
+   if (vars->c!=0.0  && almx>0.07*wnstd) {
+      tausq = 0.25*acc1/coeff_twospect(vars, vars->c);
+      if (vars->fail) vars->fail = 0;
+      else if (truncation_twospect(vars, utx, tausq) < 0.2*acc1) {
+         vars->sigsq += tausq;
+         findu_twospect(vars, &utx, 0.25*acc1);
+      }
+   }
+   acc1 = 0.5*acc1;
+   
+   BOOLEAN contin = 1;
+   
+   /* find RANGE of distribution, quit if outside this */
+   while (contin) {
+      d1 = cutoff_twospect(vars, acc1, &up) - vars->c;
+      if (d1 < 0.0) {
+         qfval = 1.0;
+         return qfval;
+      }
+      d2 = vars->c - cutoff_twospect(vars, acc1, &un);
+      if (d2 < 0.0) {
+         qfval = 0.0;
+         return qfval;
+      }
+      
+      /* find integration interval */
+      if (d1>d2) intv = LAL_TWOPI/d1;
+      else intv = LAL_TWOPI/d2;
+      
+      /* calculate number of terms required for main and auxillary integrations */
+      xnt = utx/intv;
+      xntm = 3.0/sqrt(acc1);
+      
+      if (xnt>xntm*1.5) {
+         //parameters for auxillary integration
+         if (xntm>xlim) {
+            *ifault = 1;
+            return qfval;
+         }
+         ntm = (INT4)round(xntm);
+         intv1 = utx/ntm;
+         x = LAL_TWOPI/intv1;
+         if (x<=fabs(vars->c)) {
+            contin = 0;
+         } else {
+            //calculate convergence factor
+            REAL8 coeffvalplusx = coeff_twospect(vars, vars->c+x);
+            REAL8 coeffvalminusx = coeff_twospect(vars, vars->c-x);
+            tausq = acc1/(1.1*(coeffvalminusx + coeffvalplusx)*3.0);
+            if (vars->fail) {
+               contin = 0;
+            } else {
+               acc1 = (2.0/3.0)*acc1;
+               
+               //auxillary integration
+               //fprintf(stderr,"Num terms in auxillary integration %d\n", ntm);
+               integrate_twospect(vars, ntm, intv1, tausq, 0);
+               xlim -= xntm;
+               vars->sigsq += tausq;
+               
+               //find truncation point with new convergence factor
+               findu_twospect(vars, &utx, 0.25*acc1);
+               acc1 *= 0.75;
+            }
+         }
+      } else {
+         contin = 0;
+      }
+   }
+   
+   /* main integration */
+   if (xnt > xlim) {
+      *ifault = 1;
+      return qfval;
+   }
+   nt = (INT4)round(xnt);  //number of terms in main integration
+   integrate_twospect(vars, nt, intv, 0.0, 1);
+   qfval = 0.5 - vars->intl;
+   
+   /* test whether round-off error could be significant allow for radix 8 or 16 machines */
+   up = vars->ersm;
+   x = up + 0.1*acc;
+   for (ii=0; ii<4; ii++) {
+      if (rats[ii] * x == rats[ii] * up) *ifault = 2;
+   }
+   
+   return qfval;
+} /* cdfwchisq_twospect() */
 

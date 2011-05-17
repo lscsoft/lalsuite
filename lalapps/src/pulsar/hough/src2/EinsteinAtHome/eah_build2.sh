@@ -41,7 +41,7 @@ download() {
 
 eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
-test ".$appname" = "." && appname=einstein_S5GC1HF
+test ".$appname" = "." && appname=einstein_S6Bucket
 test ".$appversion" = "." && appversion=0.00
 boinc_rev=-r23037
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
@@ -81,7 +81,7 @@ for i; do
 	    rebuild_lal=""
 	    rebuild="" ;;
 	--64)
-	    CPPFLAGS="-m64 $CPPFLAGS"
+	    CPPFLAGS="-DGC_SSE2_OPT -m64 $CPPFLAGS"
 	    CXXFLAGS="-m64 $CXXFLAGS"
 	    CFLAGS="-m64 $CFLAGS"
 	    LDFLAGS="-m64 $LDFLAGS" ;;
@@ -97,7 +97,7 @@ for i; do
 	    planclass=__SSE
 	    acc="_sse";;
 	--sse2)
-	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
+	    CPPFLAGS="-DGC_SSE2_OPT -DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
             fftw_copts_single=--enable-sse
             fftw_copts_double=--enable-sse2
@@ -170,8 +170,8 @@ for i; do
 	    echo "  --check-app=<app> only test the app specified, not necessarily the one just built"
 	    echo "  --release         use some dark magic to make the App most compatible and add remote debugging."
 	    echo "                    Implies --static and --rebuild and even more dirty hacks on Linux to work on Woody"
-	    echo "  --appname         set an application name (only used in --release builds, defaults to einstein_S5GC1HF)"
-	    echo "  --appversion      set an application version (only used in --release builds, defaults to 0.00)"
+	    echo "  --appname=<name>  set an application name (only used in --release builds, defaults to einstein_S5GC1HF)"
+	    echo "  --appversion=N.NN set an application version (only used in --release builds, defaults to 0.00)"
 	    echo "  --norebuild       disables --rebuild on --release. DANGEROUS! Use only for testing the build script"
 	    echo "  --help            show this message and exit"
 	    exit ;;
@@ -225,6 +225,7 @@ else
                 platform=powerpc-apple-darwin
 	    else
 		platform=i686-apple-darwin
+		CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS"
 	    fi
 	    LDFLAGS="-framework Carbon -framework AppKit -framework IOKit -framework CoreFoundation $LDFLAGS" ;;
 	Linux)
@@ -252,8 +253,8 @@ fi
 
 # if --pather and not --altivec, make sure the binary runs on G3
 test ."$MACOSX_DEPLOYMENT_TARGET" = ."10.3" -a ."$acc" = ."" &&
-CFLAGS="-mcpu=G3 $CFLAGS" &&
-CXXFLAGS="-mcpu=G3 $CXXFLAGS"
+    CFLAGS="-mcpu=G3 $CFLAGS" &&
+    CXXFLAGS="-mcpu=G3 $CXXFLAGS"
 
 if [ ".$cuda" = ".true" -a ."$build_win32" = ."true" ]; then
     export CFLAGS="-g0 $CFLAGS"
@@ -265,7 +266,7 @@ if echo "$LDFLAGS" | grep -e -m64 >/dev/null; then
     LDFLAGS="-L$INSTALL/lib64 $LDFLAGS"
 fi
 
-export CPPFLAGS="-DBOINC_APIV6 -D__NO_CTYPE -DUSE_BOINC -DEAH_BOINC -I$INSTALL/include $CPPFLAGS"
+export CPPFLAGS="-DUSEXLALLOADSFTS -DBOINC_APIV6 -D__NO_CTYPE -DUSE_BOINC -DEAH_BOINC -I$INSTALL/include $CPPFLAGS"
 export LDFLAGS
 export LD_LIBRARY_PATH="$INSTALL/lib:$LD_LIBRARY_PATH"
 export DYLD_LIBRARY_PATH="$INSTALL/lib:$DYLD_LIBRARY_PATH"

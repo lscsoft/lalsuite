@@ -54,16 +54,17 @@ introduced by Ajith et al. in arXiv:0710.2335 [gr-qc]
 #ifndef _BBHPHENOMCOEFFSH_H
 #define _BBHPHENOMCOEFFSH_H
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID (BBHPHENOMCOEFFSH, "$Id$");
 
 /* This header contains the coeffs from the matching with the LONG */
 /* Jena waveforms (those are not the ones published in the original paper */
-/* but in the Amaldi 07 proceedings) */
+/* but in the Amaldi 07 proceedings: http://arxiv.org/abs/0712.0343) */
 
 #define BBHPHENOMCOEFFSH_FMERG_A   6.6389e-01
 #define BBHPHENOMCOEFFSH_FMERG_B   -1.0321e-01
@@ -111,8 +112,9 @@ NRCSID (BBHPHENOMCOEFFSH, "$Id$");
 </lalLaTeX>
 #endif
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

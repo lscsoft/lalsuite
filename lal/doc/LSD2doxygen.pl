@@ -7,37 +7,47 @@ use Pod::Usage;
 
 # parse command line
 my ($fname, $action, $diffcmd, $diffpipe, $noclean, $nolatex, $printfn);
+unshift @ARGV, "--diffcmd=diffless";
 while (my $arg = shift @ARGV) {
     if ($arg =~ /^--/p) {
         my $opt = ${^POSTMATCH};
-        switch ($opt) {
-            case "diff" {
-                $diffcmd = "diff -y -W 160";
-                $diffpipe = "| less";
-                $action = "diff";
+        if ($opt =~ /^diffcmd=/p) {
+            my $diffopt = ${^POSTMATCH};
+            switch ($diffopt) {
+                case "diff" {
+                    $diffcmd = "diff";
+                    $diffpipe = "";
+                }
+                case "diffless" {
+                    $diffcmd = "diff -y -W 160";
+                    $diffpipe = "| less";
+                }
+                case "xxdiff" {
+                    $diffcmd = "xxdiff";
+                    $diffpipe = "";
+                    $action = "diff";
+                }
+                case "kompare" {
+                    $diffcmd = "diff -u5";
+                    $diffpipe = "| kompare -o -";
+                    $action = "diff";
+                }
             }
-            case "xxdiff" {
-                $diffcmd = "xxdiff";
-                $diffpipe = "";
-                $action = "diff";
-            }
-            case "kompare" {
-                $diffcmd = "diff -u5";
-                $diffpipe = "| kompare -o -";
-                $action = "diff";
-            }
-
-            case "print" {
-                $printfn = 1;
-            }
-            case "noclean" {
-                $noclean = 1;
-            }
-            case "nolatex" {
-                $nolatex = 2;
-            }
-            else {
-                $action = $opt;
+        }
+        else {
+            switch ($opt) {
+                case "print" {
+                    $printfn = 1;
+                }
+                case "noclean" {
+                    $noclean = 1;
+                }
+                case "nolatex" {
+                    $nolatex = 2;
+                }
+                else {
+                    $action = $opt;
+                }
             }
         }
     }
@@ -48,6 +58,9 @@ while (my $arg = shift @ARGV) {
 pod2usage(                            -exitval => 0) if $action eq "help";
 pod2usage(-message => "No filename!", -exitval => 2) if !defined($fname);
 pod2usage(-message => "No action!",   -exitval => 2) if !defined($action);
+
+# exit status
+my $status = 0;
 
 # temporary file names
 my $tmp1 = mktemp("$fname.LSD2doxygen.XXXXX");
@@ -148,7 +161,7 @@ switch ($action) {
     # show what changes were made to the file
     case "diff" {
         if ($file eq $origfile) {
-            print "No changes were made to '$fname'\n";
+            print "$fname: no changes were made\n";
         }
         else {
             open DIFF, "| $diffcmd $fname - $diffpipe" or die "'$diffcmd' failed: $!";
@@ -190,11 +203,12 @@ switch ($action) {
                 close FILE;
 
                 # print differences
-                system "$diffcmd $tmp1 $tmp2";
+                system "$diffcmd $tmp1 $tmp2 $diffpipe";
 
             }
             else {
-                print "Code has been modified in '$fname'!\n";
+                print "$fname: code has been modified!\n";
+                $status = 1;
             }
         }
 
@@ -204,13 +218,14 @@ switch ($action) {
             push @err, $_ if !defined($origcpperr->{$_});
         }
         if (@err) {
-            print "Errors in preprocessing '$fname'!\n";
+            print "$fname: errors in preprocessing:\n";
             map { print "   $_\n" } @err;
         }
 
     }
     else {
         die "Invalid action '$action'!";
+        $status = 1;
     }
 }
 
@@ -218,13 +233,16 @@ switch ($action) {
 unlink $tmp1 if -f $tmp1;
 unlink $tmp2 if -f $tmp2;
 
+# exit
+exit $status;
+
 # parse file through the C preprocessor
 sub parseThruCPP {
     my ($fname) = @_;
     my ($cpp, $err);
 
     # proprocess $fname and get output
-    system "cpp -E $fname >$tmp1 2>$tmp2";
+    system "gcc -E $fname >$tmp1 2>$tmp2";
     open FILE, "<$tmp1" or die "Could not open '$tmp1'!: $!";
     while (<FILE>) {
         $cpp .= $_;
@@ -258,12 +276,12 @@ sub cleanupLSD {
     $text =~ s!</?lal(?:LaTeX|Verbatim)[^>]*?>!!sg;
 
     # make embedded C comments safe
-    while (($text =~ s!\A(.+)/\*!$1/-*!sg) > 0) {}
-    while (($text =~ s!\*/(.+)\Z!*-/$1!sg) > 0) {}
+    while (($text =~ s!\A(.+)/\*!$1/\\*!sg) > 0) {}
+    while (($text =~ s!\*/(.+)\Z!*\\/$1!sg) > 0) {}
 
     # replace first line #if / last line #endif directives with doxygen comments
     $text =~ s!\A#if[^\n]*!/**!;
-    $text =~ s!#endif\Z!*/!;
+    $text =~ s!#endif[^\n]*\Z!*/!;
 
     # replace long first / last line comments with doxygen comments
     $text =~ s!\A/($n|\*)+!/**!;
@@ -272,11 +290,11 @@ sub cleanupLSD {
     # get rid of any long string of divider characters
     $text =~ s!([-*%+=])\1{4,}!!sg;
 
-    # get rid of CVS tags
-    $text =~ s!\$(?:Id|Date|Revision)\$!!mg;
+    # use CVS Id tag as a hook to place a '\file' command
+    $text =~ s!^(\s*\*?\s*)(Revision:\s*)?\$Id\$!\\file!mp;
 
-    # use 'Revision:' string as a hook to place a '\file' command
-    $text =~ s!^(\s*\*?\s*)Revision:!\\file!mp;
+    # get rid of other CVS tags
+    $text =~ s!\$(?:Date|Revision)\$!!mg;
 
     # convert 'Author:' string to doxygen formatting
     $text =~ s!^(\s*\*?\s*)Author:!$1\\author!mp;
@@ -396,11 +414,11 @@ sub cleanupLSD {
         $text =~ s!\\end$n*{picture}!\\endverbatim!mg;
 
         # replace formatting commands
-        $text =~ s!\{\\(tt|it|rm|sc|sl|bf|sf)$n*!\\text$1\{!sg;
+        $text =~ s!\{\\(tt|it|rm|sc|sl|bf|sf)$n+!\\text$1\{!sg;
         $text =~ s!\\verb(.)(.+?)\1!\\texttt{$2}!mg;
         $text =~ s!\\emph!\\textit!sg;
         $text =~ s!\\text(?:sc|sl|bf|sf)!\\texttt!sg;
-        $text =~ s{\\text(tt|it)$wbbr}{
+        $text =~ s{\\text(tt|it)\s*$wbbr}{
             my $e = $1;
             $_ = $2;
             s/\\_/_/g;
@@ -409,14 +427,19 @@ sub cleanupLSD {
                 ($e eq 'tt' ? "<tt>$_</tt>" : "<em>$_</em>" )
         }sge;
 
-        # replace subsection commands, preserving labels
-        $text =~ s{\\(?:sub)*section\*?$wbbr\n(?<LBL>\\label$bbr)?}{
-            $_ = '\\heading{' . $1 . "}\n";
-            if (defined(my $lbl = $+{LBL})) {
-                $_ .= '\\latexonly' . &$illref($lbl) . '\\endlatexonly';
+        # rephrase (sub)section commands, turning labels (if present) into anchors
+        $text =~ s{\\((?:sub)*section\*?)\s*$wbbr\n(?<LBL>\\label\s*$bbr)?}{
+            my $lbl = $+{LBL};
+            if (defined($lbl)) {
+                $lbl =~ s!\\label\s*$wbbr!$1!;
+            } else {
+                $lbl = "TODOref";
             }
+            $_ = '\\' . $1 . ' ' . $lbl . ' '. $2 . "\n";
             $_
         }sge;
+
+        # replace paragraph command by 'heading'
         $text =~ s!\\paragraph\*?$wbbr!\\heading{$1}!mg;
 
         # preserve references
@@ -429,15 +452,30 @@ sub cleanupLSD {
         # replace probable filenames with references
         $text =~ s!<tt>(.*?\.[ch])</tt>!\\ref \1!mg;
 
-        # replace citations
-        $text =~ s{\\cite$wbbr}{
+        # replace citations by refs
+        $text =~ s{\\cite\s*$wbbr}{
             $_ = $1;
-            s/://g;
-            '\ref ' . $_
+            s/[:\s-]//g;
+            '[\ref ' . $_ .']'
         }mge;
+
+        # replace bibitems by anchors
+        $text =~ s{\\bibitem\s*$wbbr}{
+            $_ = $1;
+            s/[:\s-]//g;
+            '\anchor ' . $_ . ' <b>[' . $_ . "]</b>\n"
+        }mge;
+        # and get rid of 'bibliography'
+        $text =~ s!\\begin{thebibliography}{.*}!(MANUAL INTERVENTION begin bibliography)!;
+        $text =~ s!\\end{thebibliography}!(MANUAL INTERVENTION end bibliography)!;
+
 
         # replace miscellaneous LaTeX commands
         $text =~ s!\\lq!`!g;
+        $text =~ s!``|''!"!g;
+
+        # remove any empty LaTeX comments
+        $text =~ s!^$n*%$n*$!!mg;
 
     }
 
@@ -462,7 +500,7 @@ __END__
 
 =head1 SYNOPSIS
 
-LSD2doxygen {action} [debug-options] "file"
+LSD2doxygen {action} [options] "file"
 
 where {action} (required) is one of:
 
@@ -493,9 +531,13 @@ Do the conversion!
 
 =back
 
-and [debug-options] are one of:
+and [options] are one of:
 
 =over
+
+=item --diffcmd={diff,diffless,xxdiff,kompare}
+
+Select command to use for displaying diff (default is 'diffless')
 
 =item --noclean
 

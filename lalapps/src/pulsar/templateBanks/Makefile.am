@@ -10,7 +10,7 @@ bin_PROGRAMS = lalapps_skynet lalapps_getMetric lalapps_testFlatPulsarMetric lal
 
 lalapps_testLatticeCovering_SOURCES = testLatticeCovering.c
 
-lalapps_testFlatLatticeTilingPulsar_SOURCES = testFlatLatticeTilingPulsar.c
+lalapps_testFlatLatticeTilingPulsar_SOURCES = testFlatLatticeTilingPulsar.c VeryBasicXMLOutput.c VeryBasicXMLOutput.h
 
 lalapps_skynet_SOURCES = skynet.c
 

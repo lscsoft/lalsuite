@@ -17,69 +17,61 @@
 *  MA  02111-1307  USA
 */
 
-/******************* <lalVerbatim file="XLALOverlapReductionFunctionCV">
-Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author UTB Relativity Group; contact whelan@phys.utb.edu
+\file
+\ingroup stochastic
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{XLALOverlapReductionFunction.c}}
-\label{stochastic:ss:XLALOverlapReductionFunction.c}
-
-Calculates the values of the overlap reduction function for a pair
+\brief Calculates the values of the overlap reduction function for a pair
 of gravitational wave detectors.
 
-\subsubsection*{Prototypes}
-\idx{XLALOverlapReductionFunction()}
-\input{XLALOverlapReductionFunctionCP}
+\heading{Description}
 
-\subsubsection*{Description}
+<tt>XLALOverlapReductionFunction()</tt> calculates the values of the overlap reduction:
 
-\texttt{XLALOverlapReductionFunction()} calculates the values of the overlap reduction:
-%
-\begin{equation}
+\anchor stochastic_e_gamma(f) \f{equation}{
 \gamma(f):={5\over 8\pi}\sum_A\int_{S^2}d\hat\Omega\
 e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
 F_1^A(\hat\Omega)F_2^A(\hat\Omega)\ ,
-\label{stochastic:e:gamma(f)}
-\end{equation}
-%
-where $\hat \Omega$ is a unit vector specifying a direction on the
-two-sphere, $\Delta\vec x:=\vec x_1-\vec x_2$ is the separation vector
+\label{stochastic_e_gamma(f)}
+\f}
+
+where \f$\hat \Omega\f$ is a unit vector specifying a direction on the
+two-sphere, \f$\Delta\vec x:=\vec x_1-\vec x_2\f$ is the separation vector
 between the two detectors, and
-%
-\begin{equation}
+
+\anchor stochastic_e_F_i^A \f{equation}{
 F_i^A(\hat\Omega):=e_{ab}^A(\hat\Omega)\ d_i^{ab}
 % :=
 % e_{ab}^A(\hat\Omega)\ {1\over 2}\left(\hat X_i^a\hat X_i^b-
 % \hat Y_i^a\hat Y_i^b\right)\
-\label{stochastic:e:F_i^A}
-\end{equation}
-%
-is the response of the $i$th detector $(i=1,2)$ to the $A=+,\times$
+\label{stochastic_e_F_i^A}
+\f}
+
+is the response of the \f$i\f$th detector \f$(i=1,2)\f$ to the \f$A=+,\times\f$
 polarization.
-Here $d_i^{ab}$ is the response tensor for the $i$th detector, which
-relates the ``strain'' $h$ measured by the detector to the metric
-perturbation $h_{ab}$ due to gravitational waves by
-%
-\begin{equation}
+Here \f$d_i^{ab}\f$ is the response tensor for the \f$i\f$th detector, which
+relates the "strain" \f$h\f$ measured by the detector to the metric
+perturbation \f$h_{ab}\f$ due to gravitational waves by
+
+\f{equation}{
 h = d_i^{ab} h_{ab}
-\end{equation}
-%
-The Cartesian components of $d_{ab}$ are constant in an earth-fixed
-rotating co\"{o}rdinate system.  $\{e_{ab}^A(\hat\Omega)|A=+,\times\}$
-are the spin-2 polarization tensors for the ``plus'' and ``cross''
-polarization states, normalized so that $e_{ab}^A e^{Bab}=2\delta^{AB}$.
+\f}
+
+The Cartesian components of \f$d_{ab}\f$ are constant in an earth-fixed
+rotating co\"{o}rdinate system.  \f$\{e_{ab}^A(\hat\Omega)|A=+,\times\}\f$
+are the spin-2 polarization tensors for the "plus" and "cross"
+polarization states, normalized so that \f$e_{ab}^A e^{Bab}=2\delta^{AB}\f$.
 With this definition,
-%
-\begin{equation}
+
+\f{equation}{
 \gamma(f)=d_{1ab}d_2^{cd}{5\over 4\pi}\int_{S^2}d\hat\Omega\
 e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
 P^{ab}_{cd}(\hat\Omega)
-\end{equation}
-%
-where $P^{ab}_{cd}(\hat\Omega)$ is a projection operator onto the space
-of symmetric, traceless second-rank tensors orthogonal to $\hat\Omega$.
+\f}
+
+where \f$P^{ab}_{cd}(\hat\Omega)\f$ is a projection operator onto the space
+of symmetric, traceless second-rank tensors orthogonal to \f$\hat\Omega\f$.
 
 The overlap reduction function for a pair of identical detectors is a
 maximum when they are co\"{\i}ncident and co\"{a}ligned; it
@@ -90,29 +82,29 @@ polarizations).  The overlap reduction function arises naturally when
 calculating the cross-correlated signal due to an isotropic and
 unpolarized stochastic gravitational-wave background.
 
-Given a choice of two detector sites, a frequency spacing $\delta f$,
-a start frequency $f_0$, and the number of desired values $N$, {\tt
-XLALOverlapReductionFunction()\/} calculates the values of $\gamma(f)$ at the discrete
-frequencies $f_i=f_0 + i\Delta f$, $i=0,1,\cdots, N-1$.
+Given a choice of two detector sites, a frequency spacing \f$\delta f\f$,
+a start frequency \f$f_0\f$, and the number of desired values \f$N\f$, <tt>
+XLALOverlapReductionFunction()\/</tt> calculates the values of \f$\gamma(f)\f$ at the discrete
+frequencies \f$f_i=f_0 + i\Delta f\f$, \f$i=0,1,\cdots, N-1\f$.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-As shown in Appendix B of \cite{stochastic:Flanagan:1993} and Sec.~III.B of
-\cite{stochastic:Allen:1999}, the overlap reduction function can be written in
+As shown in Appendix B of \ref stochasticFlanagan1993 and Sec.~III.B of
+\ref stochasticAllen1999, the overlap reduction function can be written in
 closed form in terms of the traceless response tensor
-$D_{ab}=d_{ab}-\delta_{ab} d^c_c/3$
+\f$D_{ab}=d_{ab}-\delta_{ab} d^c_c/3\f$
 as sum of three spherical Bessel functions:
-%
-\begin{equation}
+
+\anchor stochastic_e_closed1 \f{equation}{
 \gamma(f)=\rho_1(\alpha)\ D_1^{ab}D_{2ab}
 +\rho_2(\alpha)\ D_1^{ab}D_{2a}{}^c s_b s_c
 +\rho_3(\alpha)\ D_1^{ab}D_2^{cd}s_a s_b s_c s_d\ ,
-\label{stochastic:e:closed1}
-\end{equation}
-%
+\label{stochastic_e_closed1}
+\f}
+
 where
-%
-\begin{equation}
+
+\anchor stochastic_e_closed2 \f{equation}{
 \left[
 \begin{array}{c}
 \rho_1\\
@@ -136,43 +128,43 @@ j_1\\
 j_2
 \end{array}
 \right]\ ,
-\label{stochastic:e:closed2}
-\end{equation}
-%
-$j_0$, $j_1$, and $j_2$ are the standard spherical Bessel functions:
-%
-\begin{eqnarray}
+\label{stochastic_e_closed2}
+\f}
+
+\f$j_0\f$, \f$j_1\f$, and \f$j_2\f$ are the standard spherical Bessel functions:
+
+\anchor stochastic_e_closed3 \f{eqnarray}{
 j_0(\alpha)&=&{\sin\alpha\over\alpha} ,\nonumber\\
 j_1(\alpha)&=&{\sin\alpha\over\alpha^2}-{\cos\alpha\over\alpha}\ ,
-\label{stochastic:e:closed3}\\
+\label{stochastic_e_closed3}\\
 j_2(\alpha)&=&3\ {\sin\alpha\over\alpha^3}-3\ {\cos\alpha\over\alpha^2}
 -{\sin\alpha\over\alpha}\ ,\nonumber
-\end{eqnarray}
-%
-$\vec s$ is a unit vector pointing in the direction of
-$\Delta \vec x:=\vec x_1-\vec x_2$, and $\alpha:=2\pi f|\Delta\vec x|/c$.
+\f}
 
-{\tt XLALOverlapReductionFunction()\/} calculates the values of $\gamma(f)$
+\f$\vec s\f$ is a unit vector pointing in the direction of
+\f$\Delta \vec x:=\vec x_1-\vec x_2\f$, and \f$\alpha:=2\pi f|\Delta\vec x|/c\f$.
+
+<tt>XLALOverlapReductionFunction()\/</tt> calculates the values of \f$\gamma(f)\f$
 as follows:
 
-\begin{enumerate}
+<ol>
 
-\item Gets the locations and response tensors for the two detectors
-  from the \texttt{LALDetector} structures in the input.
+<li> Gets the locations and response tensors for the two detectors
+  from the \c LALDetector structures in the input.</li>
 
-\item Constructs the traceless parts $D_{iab}$ of the two detector
-  response tensors and finds the distance $|\Delta\vec x|$ and
-  direction $s^a$ between the sites.
+<li> Constructs the traceless parts \f$D_{iab}\f$ of the two detector
+  response tensors and finds the distance \f$|\Delta\vec x|\f$ and
+  direction \f$s^a\f$ between the sites.</li>
 
-\item Calculates the frequency-independent co\"{e}fficients
-  $D_1^{ab}D_{2ab}$, $D_1^{ab}D_{2a}{}^c s_b s_c$, and
-  $D_1^{ab}D_2^{cd}s_a s_b s_c s_d$ that appear in
-  Eq.~(\ref{stochastic:e:closed1}).
+<li> Calculates the frequency-independent co\"{e}fficients
+  \f$D_1^{ab}D_{2ab}\f$, \f$D_1^{ab}D_{2a}{}^c s_b s_c\f$, and
+  \f$D_1^{ab}D_2^{cd}s_a s_b s_c s_d\f$ that appear in
+  Eq.\eqref{stochastic_e_closed1}.</li>
 
-\item Calculates $\gamma(f)$ at each discrete frequency
-  $f_i:=f_0+i\Delta f$, $i=0,1,\cdots N-1$, using the power series
+<li> Calculates \f$\gamma(f)\f$ at each discrete frequency
+  \f$f_i:=f_0+i\Delta f\f$, \f$i=0,1,\cdots N-1\f$, using the power series
   expansion
-  \begin{eqnarray}
+  \f{eqnarray}{
     j_0(\alpha)&=& 1 - \frac{\alpha^2}{6} + \frac{\alpha^4}{120}
     + \mathcal{O}(\alpha^6) \\
     \frac{j_1(\alpha)}{\alpha}
@@ -181,82 +173,79 @@ as follows:
     \frac{j_2(\alpha)}{\alpha^2}
     &=& \frac{1}{15} - \frac{\alpha^2}{210} + \frac{\alpha^4}{7560}
     + \mathcal{O}(\alpha^6)
-  \end{eqnarray}
-  for the spherical Bessel functions $j_0(\alpha_i)$,
-  $j_a(\alpha_i)$, $j_2(\alpha_i)$ when $\alpha_i=2\pi f_i
-  |\Delta\vec x|/c<0.01$.
+  \f}
+  for the spherical Bessel functions \f$j_0(\alpha_i)\f$,
+  \f$j_a(\alpha_i)\f$, \f$j_2(\alpha_i)\f$ when \f$\alpha_i=2\pi f_i
+  |\Delta\vec x|/c<0.01\f$.
+</li>
+</ol>
 
-\end{enumerate}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALUnitRaise()
 sin()
 cos()
 sqrt()
 strncpy()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\begin{itemize}
+<ul>
 
-\item The $\gamma(f)$ here is related to the unnormalized $\Gamma(f)$
+<li> The \f$\gamma(f)\f$ here is related to the unnormalized \f$\Gamma(f)\f$
   defined by Maggiore
-  \cite{stochastic:Maggiore:2000a,stochastic:Maggiore:2000b} by
-  $\gamma(f) = \frac{5}{2}\Gamma(f)$.  This normalization, which
+  \ref stochasticMaggiore2000a,stochasticMaggiore2000b by
+  \f$\gamma(f) = \frac{5}{2}\Gamma(f)\f$.  This normalization, which
   agrees with the literature
-  \cite{stochastic:Flanagan:1993,stochastic:Allen:1997,stochastic:Allen:1999}
-  on interferometers, is chosen so that $\gamma(f)\equiv 1$ for a pair
+  \ref stochasticFlanagan1993,stochasticAllen1997,stochasticAllen1999
+  on interferometers, is chosen so that \f$\gamma(f)\equiv 1\f$ for a pair
   of co\"{\i}ncident, co\"{a}ligned interferometers with perpendicular
   arms.  It means that, for combinations other than a pair of
-  interferometers, our $\gamma(f)$ is \emph{not} equal to the
-  generalization of $\gamma(f)$ defined by Maggiore, whose
-  relationship to $\Gamma(f)$ depends on the type of detector.
-  Defining $\gamma(f)$ as we do allows us to use the formul{\ae} from,
-  e.g., \cite{stochastic:Allen:1999}, irrespective of the detector
-  type in question.
+  interferometers, our \f$\gamma(f)\f$ is \e not equal to the
+  generalization of \f$\gamma(f)\f$ defined by Maggiore, whose
+  relationship to \f$\Gamma(f)\f$ depends on the type of detector.
+  Defining \f$\gamma(f)\f$ as we do allows us to use the formul{\ae} from,
+  e.g., \ref stochasticAllen1999, irrespective of the detector
+  type in question.</li>
 
-\item While $\gamma(f)$ is usually considered to be dimensionless,
-  this routine attaches to it units of strain$^2$.  This is because it
-  contains two powers of the response tensor $d^{ab}$, which converts
-  the dimensionless metric perturbation $h_{ab}$ to $h=h_{ab}d^{ab}$,
+<li> While \f$\gamma(f)\f$ is usually considered to be dimensionless,
+  this routine attaches to it units of strain\f$^2\f$.  This is because it
+  contains two powers of the response tensor \f$d^{ab}\f$, which converts
+  the dimensionless metric perturbation \f$h_{ab}\f$ to \f$h=h_{ab}d^{ab}\f$,
   which has units of strain.
+</li>
+</ul>
 
-\end{itemize}
-
-\vfill{\footnotesize\input{XLALOverlapReductionFunctionCV}}
-
-******************************************************* </lalLaTeX> */
-/**************************************** <lalLaTeX file="XLALOverlapReductionFunctionCB">
 \bibitem{stochastic:Flanagan:1993}
-  \'{E}.~\'{E}.~Flanagan, ``The Sensitivity of Ligo to a Stochastic
-  Background, and its Dependence on the Detector Orientations''
-  Phys.\ Rev.\ D.\ {\bf 48}, 2389 (1993);
+  \'{E}.~\'{E}.~Flanagan, "The Sensitivity of Ligo to a Stochastic
+  Background, and its Dependence on the Detector Orientations"
+  Phys.\ Rev.\ D.\ \c 48, 2389 (1993);
   \href{http://www.arXiv.org/abs/astro-ph/9305029}{astro-ph/9305029}
 % \bibitem{stochastic:Allen:1997}
 %   B.~Allen
-%   ``The stochastic gravity-wave background: sources and detection''
-%   in \textit{Proceedings of the Les Houches School on Astrophysical Sources of
-%   Gravitational Waves},
+%   "The stochastic gravity-wave background: sources and detection"
+%   in <em>Proceedings of the Les Houches School on Astrophysical Sources of
+%   Gravitational Waves</em>,
 %   eds. J.~A.~Marck and J.~P.~Lasota, Cambridge, 373 (1997);
 %   \href{http://www.arXiv.org/abs/gr-qc/9604033}{gr-qc/9604033}
 % \bibitem{stochastic:Allen:1999}
-%   B.~Allen and J.D.~Romano, ``Detecting a stochastic background of
+%   B.~Allen and J.D.~Romano, "Detecting a stochastic background of
 %   gravitational radiation: Signal processing strategies and
-%   sensitivities''
-%   Phys.\ Rev.\ D {\bf 59}, 102001 (1999);
+%   sensitivities"
+%   Phys.\ Rev.\ D \c 59, 102001 (1999);
 %   \href{http://www.arXiv.org/abs/gr-qc/9710117}{gr-qc/9710117}
 \bibitem{stochastic:Maggiore:2000a}
-  M.~Maggiore and A.~Nicholis, ``Detection strategies for scalar
-  gravitational waves with interferometers and resonant spheres'',
-  Phys.\ Rev.\ D \textbf{62}, 024004 (2000);
+  M.~Maggiore and A.~Nicholis, "Detection strategies for scalar
+  gravitational waves with interferometers and resonant spheres",
+  Phys.\ Rev.\ D \c 62, 024004 (2000);
   \href{http://www.arXiv.org/abs/gr-qc/9907055}{gr-qc/9907055}
 \bibitem{stochastic:Maggiore:2000b}
-  M.~Maggiore, ``Gravitational Wave Experiments and Early Universe Cosmology'',
-  Phys.\ Rept.\ \textbf{331}, 283-367 (2000);
+  M.~Maggiore, "Gravitational Wave Experiments and Early Universe Cosmology",
+  Phys.\ Rept.\ \c 331, 283-367 (2000);
   \href{http://www.arXiv.org/abs/gr-qc/9909001}{gr-qc/9909001}
-******************************************************* </lalLaTeX> */
+*/
+
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <math.h>
@@ -268,14 +257,14 @@ NRCSID(XLALOVERLAPREDUCTIONFUNCTIONC, "$Id$");
 static void evaluateBessels(REAL4 rho[3], REAL4 alpha);
 static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
 
-/* <lalVerbatim file="XLALOverlapReductionFunctionCP"> */
+
 void
 XLALOverlapReductionFunction(
     LALStatus                                *status,
     REAL4FrequencySeries                     *output,
     const LALDetectorPair                    *detectors,
     const XLALOverlapReductionFunctionParameters *parameters)
-/* </lalVerbatim> */
+
 {
   UINT4 length;
   REAL8 deltaF;

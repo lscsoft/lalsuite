@@ -1,6 +1,8 @@
 package "lalapps_TwoSpect"
-version "1.0.4"
+version "1.0.6"
 purpose "TwoSpect analysis program"
+
+args "--string-parser --conf-parser"
 
 option "config"   - "Configuration file in gengetopt format for passing parameters" string optional
 option "verbosity" v "Verbosity level" int default="0" optional
@@ -30,6 +32,7 @@ option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec
 option "SFToverlap"    - "SFT overlap in seconds, usually Tcoh/2" double default="900" optional
 option "sftType"  - "Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization" string default="vladimir" optional
 option "markBadSFTs"   - "Mark bad SFTs" flag off
+option "keepOneCandidate"  - "Keep a single IHS candidate and let process through the pipeline" flag off
 option "FFTplanFlag"   - "0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive" int default="3" optional
 option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off hidden
 option "BrentsMethod"  - "Use Brent's method in the root finding algorithm." flag off hidden

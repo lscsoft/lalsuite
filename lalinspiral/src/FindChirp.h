@@ -108,9 +108,10 @@ that implement the search.
 #include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirpChisq.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 
@@ -1145,8 +1146,9 @@ XLALFindChirpSortTemplates(
   UINT4 max_subbank_size
 );
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

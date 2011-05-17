@@ -23,10 +23,6 @@
 #include <lal/XLALError.h>
 
 
-#define XLAL_BILLION_INT8 LAL_INT8_C( 1000000000 )
-#define XLAL_BILLION_REAL8 1e9
-
-
 /*
  * mostly internal functions
  */

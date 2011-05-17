@@ -17,40 +17,38 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="FoldAmplitudesHV">
-Author: Mendell, Greg A.
-$Id$
-********************************** </lalVerbatim> */
+/**
+\author Mendell, Greg A.
+\file
+\ingroup pulsarTODO
 
-/********************************* <lalLaTeX>
+\heading{Header \ref FoldAmplitudes.h}
 
-\section{Header \texttt{FoldAmplitudes.h}}
+\heading{Synopsis}
 
-\subsection*{Synopsis}
-
-\begin{verbatim}
+\code
 #include <lal/FoldAmplitudes.h>
-\end{verbatim}
+\endcode
 
-\noindent Contains prototypes for:
+Contains prototypes for:
 
-\noindent struct FoldAmplitudesInput
+struct FoldAmplitudesInput
 
-\noindent struct FoldAmplitudesParams
+struct FoldAmplitudesParams
 
-\noindent function LALFoldAmplitudes
+function LALFoldAmplitudes
 
 %[Generic documentation on the header; this is the main place to
 %document any stuff not specific to the module]
 
-\subsection*{Error conditions}
-\input{FoldAmplitudesHE}
+\heading{Error conditions}
 
-\subsection*{Structures}
+
+\heading{Structures}
 
 %[Document here any structures defined in the header.
 %Also include any of them in the index; e.g.:]
-\begin{verbatim}
+\code
 
 typedef struct tagFoldAmplitudesInput
 {
@@ -69,16 +67,9 @@ typedef struct tagFoldAmplitudesParams
 
 } FoldAmplitudesParams;
 
-\end{verbatim}
+\endcode
 
-\idx[Type]{FoldAmplitudesInput}
-\idx[Type]{FoldAmplitudesParams}
-
-\vfill{\footnotesize\input{FoldAmplitudesHV}}
-\newpage\input{FoldAmplitudesC}
-\newpage\input{FoldAmplitudesTestC}
-
-********************************** </lalLaTeX> */
+*/
 
 #ifndef _FOLDAMPLITUDES_H
 #define _FOLDAMPLITUDES_H
@@ -92,7 +83,7 @@ extern "C" {
 
 NRCSID (FOLDAMPLITUDESH, "$Id$");
 
-/******************************** <lalErrTable file="FoldAmplitudesHE"> */
+/**\name Error Codes */ /*@{*/
 
 #define FOLDAMPLITUDESH_ENULLP        	1
 #define FOLDAMPLITUDESH_EVECSIZE   	2
@@ -106,7 +97,7 @@ NRCSID (FOLDAMPLITUDESH, "$Id$");
 #define FOLDAMPLITUDESH_MSGEBINSIZE     "Bin max was less than bin min!"
 #define FOLDAMPLITUDESH_MSGEBINMIN      "Bin min was not zero; nonzero bin min has not yet been implemented!"
 
-/************************************ </lalErrTable> */
+/*@}*/
 
 /****** DEFINE OTHER GLOBAL CONSTANTS OR MACROS ************/
 

@@ -76,9 +76,9 @@ XLALINT8NanoSecIsPlayground (
     )
 /* </lalVerbatim> */
 {
-  const INT8 start = 729273613 * LAL_INT8_C(1000000000);
-  const INT8 interval = 6370 * LAL_INT8_C(1000000000);
-  const INT8 length = 600 * LAL_INT8_C(1000000000);
+  const INT8 start = 729273613 * XLAL_BILLION_INT8;
+  const INT8 interval = 6370 * XLAL_BILLION_INT8;
+  const INT8 length = 600 * XLAL_BILLION_INT8;
 
   return (ns - start) % interval < length;
 }

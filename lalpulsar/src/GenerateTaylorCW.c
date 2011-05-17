@@ -17,97 +17,93 @@
 *  MA  02111-1307  USA
 */
 
-/************************** <lalVerbatim file="GenerateTaylorCWCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-
-\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
-
-\subsection{Module \texttt{GenerateTaylorCW.c}}
-\label{ss:GenerateTaylorCW.c}
+\heading{Module \ref GenerateTaylorCW.c}
+\latexonly\label{ss_GenerateTaylorCW_c}\endlatexonly
 
 Computes a Taylor-parametrized continuous waveform.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{GenerateTaylorCWCP}
-\idx{LALGenerateTaylorCW()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+
+
+
+\heading{Description}
 
 This function computes a quaiperiodic waveform using the parameters in
-\verb@*params@, storing the result in \verb@*output@.
+<tt>*params</tt>, storing the result in <tt>*output</tt>.
 
-In the \verb@*params@ structure, the routine uses all the ``input''
-fields specified in \verb@GenerateTaylorCW.h@, and sets all of the
-``output'' fields.  If \verb@params->f=NULL@, a precisely periodic
+In the <tt>*params</tt> structure, the routine uses all the "input"
+fields specified in \ref GenerateTaylorCW.h, and sets all of the
+"output" fields.  If <tt>params->f=NULL</tt>, a precisely periodic
 (monochromatic) waveform is generated.
 
-In the \verb@*output@ structure, the field \verb@output->h@ is
-ignored, but all other pointer fields must be set to \verb@NULL@.  The
-function will create and allocate space for \verb@output->a@,
-\verb@output->f@, and \verb@output->phi@ as necessary.  The
-\verb@output->shift@ field will remain set to \verb@NULL@.
+In the <tt>*output</tt> structure, the field <tt>output->h</tt> is
+ignored, but all other pointer fields must be set to \c NULL.  The
+function will create and allocate space for <tt>output->a</tt>,
+<tt>output->f</tt>, and <tt>output->phi</tt> as necessary.  The
+<tt>output->shift</tt> field will remain set to \c NULL.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 This function is a fairly straightforward calculation of
-Eqs.~\ref{eq:taylorcw-freq} and~\ref{eq:taylorcw-phi} in
-\verb@GenerateTaylorCW.h@.  There are no real tricks involved, except
-to note that the phase $\phi$ and the time elapsed $t-t_0$ are
-computed and stored as \verb@REAL8@s in order to provide waveforms
+Eqs.\eqref{eq_taylorcw-freq} and\TODOref{eq_taylorcw-phi} in
+\ref GenerateTaylorCW.h.  There are no real tricks involved, except
+to note that the phase \f$\phi\f$ and the time elapsed \f$t-t_0\f$ are
+computed and stored as \c REAL8s in order to provide waveforms
 that are accurate to small fractions of a cycle over many years.
 
 Since the waveform does not include any effects such as precession,
-the amplitudes $A_+$, $A_\times$ and the shift angle $\Phi$, as
-defined in \verb@SimulateCoherentGW.h@, are constant.  This is dealt
-with by setting \verb@output->a@ to be a
-\verb@REAL4TimeVectorSequence@ of two identical vectors
-$(A_+,A_\times)$ spanning the requested time of the waveform, under
+the amplitudes \f$A_+\f$, \f$A_\times\f$ and the shift angle \f$\Phi\f$, as
+defined in \ref SimulateCoherentGW.h, are constant.  This is dealt
+with by setting <tt>output->a</tt> to be a
+\c REAL4TimeVectorSequence of two identical vectors
+\f$(A_+,A_\times)\f$ spanning the requested time of the waveform, under
 the assumption that any routine using this output data (such as the
-routines in \verb@SimulateCoherentGW.h@) will interpolate these two
-endpoints to get the instantaneous values of $A_+$, $A_\times$.  The
-field \verb@output->shift@ is left as \verb@NULL@, so the constant
-value of $\Phi$ must be subsumed into the polarization angle $\psi$.
+routines in \ref SimulateCoherentGW.h) will interpolate these two
+endpoints to get the instantaneous values of \f$A_+\f$, \f$A_\times\f$.  The
+field <tt>output->shift</tt> is left as \c NULL, so the constant
+value of \f$\Phi\f$ must be subsumed into the polarization angle \f$\psi\f$.
 
-The fields \verb@output->f@ and \verb@output->phi@ are created and
-filled at the requested sampling interval \verb@params->deltaT@; it is
+The fields <tt>output->f</tt> and <tt>output->phi</tt> are created and
+filled at the requested sampling interval <tt>params->deltaT</tt>; it is
 up to the calling routine to ensure that this sampling interval is
 reasonable.  As a guideline, we want to be able to determine the
 instantaneous wave phase accurately to within a fraction of a cycle.
 For functions that compute the phase by linear interpolation of
-\verb@output->phi@, this means sampling on timescales $\Delta
-t\lessim\dot{f}^{-1/2}\sim\max\{\sqrt{kf_0f_kT^{k-1}}\}$, where $T$ is
+<tt>output->phi</tt>, this means sampling on timescales \f$\Delta
+t\lessim\dot{f}^{-1/2}\sim\max\{\sqrt{kf_0f_kT^{k-1}}\}\f$, where \f$T\f$ is
 the duration of the waveform.  More precisely, the largest deviation
 from linear phase evolution will typically be on the order of
-$\Delta\phi\approx(1/2)\ddot{\phi}(\Delta t/2)^2\approx(\pi/4)\Delta
-f\Delta t$, where $\Delta f$ is the frequency shift over the timestep.
+\f$\Delta\phi\approx(1/2)\ddot{\phi}(\Delta t/2)^2\approx(\pi/4)\Delta
+f\Delta t\f$, where \f$\Delta f\f$ is the frequency shift over the timestep.
 So if we want our interpolated phase to agree with the true phase to
-within, say, $\pi/2$ radians, then we would like to have
-$$
+within, say, \f$\pi/2\f$ radians, then we would like to have
+\f[
 \Delta f \Delta t \lessim 2 \;.
-$$
+\f]
 This routine provides a check by setting the output parameter field
-\verb@params->dfdt@ equal to the maximum value of $\Delta f\Delta t$
+<tt>params->dfdt</tt> equal to the maximum value of \f$\Delta f\Delta t\f$
 encountered during the integration.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALMalloc()                   LALFree()
 LALSCreateVectorSequence()    LALSDestroyVectorSequence()
 LALSCreateVector()            LALSDestroyVector()
 LALDCreateVector()            LALDDestroyVector()
 snprintf()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{GenerateTaylorCWCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -120,12 +116,12 @@ snprintf()
 
 NRCSID( GENERATETAYLORCWC, "$Id$" );
 
-/* <lalVerbatim file="GenerateTaylorCWCP"> */
+
 void
 LALGenerateTaylorCW( LALStatus          *stat,
 		     CoherentGW         *output,
 		     TaylorCWParamStruc *params )
-{ /* </lalVerbatim> */
+{
   UINT4 n, i;          /* number of and index over samples */
   UINT4 nSpin = 0, j;  /* number of and index over spindown terms */
   REAL8 t, tPow, dt;   /* time, interval, and t raised to a power */

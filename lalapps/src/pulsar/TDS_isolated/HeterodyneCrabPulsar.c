@@ -18,15 +18,15 @@
 */
 
 /* Write function definitions for reading in the Crab ephemeris and */
-/* computing the coefficients of the spin down model for f3 and f4  */ 
+/* computing the coefficients of the spin down model for f3 and f4  */
 
 /* Matt Pitkin 10/03/04 */
-/* LALTimingNoiseHeterodyne function has now been changed so that it 
+/* LALTimingNoiseHeterodyne function has now been changed so that it
    doesn't have to heterodyne at the SSB, cos the data has already been
 	 transformed to the SSB - soooo much easier! */
-	 
+
 /* Matt Pitkin 26/03/04 */
-/* The function's inputs params have be swithced about to conform to 
+/* The function's inputs params have be swithced about to conform to
 	 the LAL Spec */
 
 /**
@@ -190,7 +190,7 @@
 	 \f}
 	 where \f$a = \phi_0 + f_0 t + \frac{\dot{f_0}}{2}t^2 - \phi + f t -
 	 \frac{\dot{f}}{2}\f$, \f$b = f_0 + \dot{f_0}t - f + \dot{f}t\f$, \f$c =
-	 \dot{f_0} - \dot{f}\f$ and \f$t$ is the time halfway between ephemeris points.
+	 \dot{f_0} - \dot{f}\f$ and \f$t\f$ is the time halfway between ephemeris points.
 
 	 The third function sets the values of the Crab pulsar spin-down to be used
 	 to heterodyne a particular data point. The values are set to those that are
@@ -215,44 +215,44 @@
 #include "HeterodyneCrabPulsar.h"
 
 /* DEFINE RCS ID STRING */
-NRCSID( HETERODYNECRABPULSARC, "$Id$"); 
+NRCSID( HETERODYNECRABPULSARC, "$Id$");
 
-void 
+void
 LALGetCrabEphemeris	( LALStatus			*status,
 			  CrabSpindownParamsInput	*output,
 				GetCrabEphemerisInput *input )
 {
   UINT4 i=0, j=0;
-  
+
   REAL8 MJD;
   REAL8 MJDVec[1000];
 	REAL8 GPStemp;
-  
+
   /* array of the time of the pulse from the ephemeris  */
   /* minus the time of the first ephemeris data point */
   REAL8 GPStArr;
   REAL8 tArrVec[1000];
-  
+
   REAL8 f0;
   REAL8 f1;
 
   FILE *fp;
-  
+
   INITSTATUS( status, "LALGetCrabEphemeris", HETERODYNECRABPULSARC);
   ATTATCHSTATUSPTR (status);
-  
+
   /* Check Input Arguments */
   ASSERT(output != (CrabSpindownParamsInput *)NULL, status, HETERODYNECRABPULSARH_ENULLOUTPUT,
   HETERODYNECRABPULSARH_MSGENULLOUTPUT);
-  
+
   ASSERT(input->filename != NULL, status, HETERODYNECRABPULSARH_EEPHEMERISFILENAME,
   HETERODYNECRABPULSARH_MSGEEPHEMERISFILENAME);
-  
+
   if((fp = fopen(input->filename,"r")) == NULL){
     fprintf(stderr,"Unable to open file!");
     exit(1);
   }
-  
+
   /* read in ephermeris data */
   while(!feof(fp)){
     fscanf(fp,"%lf%lf%lf%lf",&MJD,&GPStArr,&f0,&f1);
@@ -262,12 +262,12 @@ LALGetCrabEphemeris	( LALStatus			*status,
     tArrVec[j] = GPStArr;
     j++;
   }
-  
+
   fclose(fp);
-  
+
   ASSERT(j != 0, status, HETERODYNECRABPULSARH_ENUMEPHEMERISDATA,
   HETERODYNECRABPULSARH_MSGENUMEPHEMERISDATA);
-  
+
   output->numOfData = j;
 
 /* check that the number of times in the ephemeris file (N2) is equal to the */
@@ -276,20 +276,20 @@ LALGetCrabEphemeris	( LALStatus			*status,
     fprintf(stderr,"Error in ephemeris file, check or update\n");
     exit(1);
   }*/
-  
+
   /* convert time in MJD to secs in TDB */
   for(i=0;i<j;i++){
     /* GPStemp = LALTDBMJDtoGPS(MJDVec[i]); */
     GPStemp = LALTTMJDtoGPS(MJDVec[i]);
-    
+
     MJDVec[i] = GPStemp + tArrVec[i];
-    
-    /*printf("%lf\n",fmod(MJDVec[i],50000));*/ 
-    output->tArr->data[i] = MJDVec[i];   
+
+    /*printf("%lf\n",fmod(MJDVec[i],50000));*/
+    output->tArr->data[i] = MJDVec[i];
   }
-  
+
   /* LALCheckMemoryLeaks();*/
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
@@ -311,37 +311,37 @@ LALComputeFreqDerivatives	( LALStatus			*status,
   REAL8 tArr;	/* arrival time of pulse (GPS) */
   REAL8 phase0, phase; /* phase of signal */
   REAL8 phaseNew;
-  
+
   INITSTATUS( status, "LALComputeFreqDerivatives", HETERODYNECRABPULSARC);
   ATTATCHSTATUSPTR (status);
-  
+
   /* Check Input Arguments */
   ASSERT(input != (CrabSpindownParamsInput *)NULL, status, HETERODYNECRABPULSARH_ENULLINPUT,
   HETERODYNECRABPULSARH_MSGENULLINPUT);
-  
+
   ASSERT(output != (CrabSpindownParamsOutput *)NULL, status, HETERODYNECRABPULSARH_ENULLOUTPUT,
   HETERODYNECRABPULSARH_MSGENULLOUTPUT);
-  
+
   ASSERT(input->numOfData != 0, status, HETERODYNECRABPULSARH_ENUMEPHEMERISDATA,
   HETERODYNECRABPULSARH_MSGENUMEPHEMERISDATA);
-  
-  input->f1->data[0] = input->f1->data[0]*1.e-15;  /* convert f1 to correct units */ 
+
+  input->f1->data[0] = input->f1->data[0]*1.e-15;  /* convert f1 to correct units */
   phase0 = 0.0;
   phaseNew = 0.0;
-  
+
   for (i=1;i<input->numOfData;i++){
     tArr = input->tArr->data[i-1];
-    t = input->tArr->data[i]-input->tArr->data[i-1]; 
+    t = input->tArr->data[i]-input->tArr->data[i-1];
     t1 = t/2.0;
     input->f1->data[i] = input->f1->data[i]*1.0e-15;
 
-    /* calculate values for spline */ 
+    /* calculate values for spline */
     b = input->f0->data[i-1] + input->f1->data[i-1]*t1 - input->f0->data[i] +
     input->f1->data[i]*t1;
     c = input->f1->data[i-1] - input->f1->data[i];
-    
+
     /* calculate second and third derivatives of f with constrained f0 and f1 */
-    
+
     tempf2 = -(3.0/(2.0*t1*t1))*b - (1.0/(2.0*t1))*c;
     tempf3 = (3.0/(2.0*t1*t1*t1))*b;
 
@@ -350,17 +350,17 @@ LALComputeFreqDerivatives	( LALStatus			*status,
     (tempf2/6.0)*t*t*t + (tempf3/24.0)*t*t*t*t;
 
     /* round phase to nearest integer */
-    /* (phase is tracked well enough using the values of f0, f1, f2 and f3 
+    /* (phase is tracked well enough using the values of f0, f1, f2 and f3
       calculated above to be able to constrain the phase after time t to the nearest
       integer) */
     phaseNew = floor(phase + 0.5);
     /* fprintf(stdout,"%lf\t%lf\n",phase,phaseNew); */
-    
+
     /* recalculate spindown params with constrained phase */
     a = phase0 + input->f0->data[i-1]*t1 + (input->f1->data[i-1]/2.0)*t1*t1 -
     phaseNew + input->f0->data[i]*t1 - (input->f1->data[i]/2.0)*t1*t1;
-    
-    /* calculate the second, third and fourth derivatives of frequency */ 
+
+    /* calculate the second, third and fourth derivatives of frequency */
     f0 = input->f0->data[i-1];
     f1 = input->f1->data[i-1];
     f2 = -(15.0/(2.0*t1*t1*t1))*a - (3.0/(2.0*t1*t1))*b + (3.0/(4.0*t1))*c;
@@ -375,9 +375,9 @@ LALComputeFreqDerivatives	( LALStatus			*status,
     output->tArr->data[i-1] = tArr;
     output->numOfData = input->numOfData;
   }
-  
+
   /* LALCheckMemoryLeaks(); */
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
@@ -390,19 +390,19 @@ LALSetSpindownParams	( LALStatus  *status,
 {
   UINT4 i = 0;
   REAL8 dataEpoch;
-  
+
   INITSTATUS( status, "LALSetSpindownParams", HETERODYNECRABPULSARC);
   ATTATCHSTATUSPTR (status);
-  
-  /* Check Input Arguments */ 
+
+  /* Check Input Arguments */
   ASSERT(input != (CrabSpindownParamsOutput *)NULL, status, HETERODYNECRABPULSARH_ENULLINPUT,
   HETERODYNECRABPULSARH_MSGENULLINPUT);
-  
+
   ASSERT(input->numOfData != 0, status, HETERODYNECRABPULSARH_ENUMEPHEMERISDATA,
   HETERODYNECRABPULSARH_MSGENUMEPHEMERISDATA);
 
   dataEpoch = (REAL8)epoch.gpsSeconds + ((REAL8)epoch.gpsNanoSeconds/1.0e9);
-    
+
   for(i=0;i<input->numOfData;i++){
     if((dataEpoch<input->tArr->data[i+1])&&(dataEpoch>=input->tArr->data[i])){
       output->f0 = input->f0->data[i];
@@ -416,7 +416,7 @@ LALSetSpindownParams	( LALStatus  *status,
       break;
     }
   }
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
@@ -433,7 +433,7 @@ LALTimingNoiseHeterodyne	( LALStatus  *status,
           EarthState earth )
 {
   REAL8 DPhi; /* phase difference to be removed */
-  REAL8 t1; 
+  REAL8 t1;
   REAL8 t;
   REAL8 phi, phi0; /* phases with and without timing noise */
 
@@ -444,14 +444,14 @@ LALTimingNoiseHeterodyne	( LALStatus  *status,
 
   INITSTATUS( status, "LALTimingNoiseHeterodyne", HETERODYNECRABPULSARC);
   ATTATCHSTATUSPTR (status);
-  
-  /* Check Input Arguments */ 
+
+  /* Check Input Arguments */
   ASSERT(input != (TNHeterodyneInput *)NULL, status, HETERODYNECRABPULSARH_ENULLINPUT,
   HETERODYNECRABPULSARH_MSGENULLINPUT);
-  
+
   ASSERT(output != (TNHeterodyneOutput *)NULL, status, HETERODYNECRABPULSARH_ENULLOUTPUT,
   HETERODYNECRABPULSARH_MSGENULLOUTPUT);
-  
+
   ASSERT(params->f0 > 0, status, HETERODYNECRABPULSARH_EINVALIDF0,
   HETERODYNECRABPULSARH_MSGEINVALIDF0);
 
@@ -463,7 +463,7 @@ LALTimingNoiseHeterodyne	( LALStatus  *status,
 
   /* Dt between time of data point and the epoch of that data point */
   t1 = t + (REAL8)input->t0 - (REAL8)params->epoch;
-  
+
   /* calculate phase difference between signal with timing noise and one without */
   /* phi - phi0 */
   /* input f0 is already at GW freq (i.e. spin freq * 2) */
@@ -472,18 +472,18 @@ LALTimingNoiseHeterodyne	( LALStatus  *status,
 
   phi = 2.0*(params->f0*t1 + 0.5*params->f1*t1*t1 + (params->f2/6.0)*t1*t1*t1+
     (params->f3/24.0)*t1*t1*t1*t1 + (params->f4/120.0)*t1*t1*t1*t1*t1);
-    
+
   DPhi = phi-phi0;
   DPhi = 2.0*(REAL8)LAL_PI*fmod(DPhi,1.0);
 
   output->Dphase = DPhi;
   output->phi0 = 2.*LAL_PI*fmod(phi0,1.0);
   output->phi1 = 2.*LAL_PI*fmod(phi,1.0);
-      
+
   /* Heterodyne to remove timing noise */
   output->Vh.re = (REAL8)input->Vh.re*cos(-DPhi) - (REAL8)input->Vh.im*sin(-DPhi);
   output->Vh.im = (REAL8)input->Vh.re*sin(-DPhi) + (REAL8)input->Vh.im*cos(-DPhi);
-    
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

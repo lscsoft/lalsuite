@@ -63,9 +63,9 @@ typedef struct tagLALFILE { int compression; void *fp; } LALFILE;
 LALFILE *lalstdin(void);
 LALFILE *lalstdout(void);
 LALFILE *lalstderr(void);
-#define lalstdin (lalstdin())
-#define lalstdout (lalstdout())
-#define lalstderr (lalstderr())
+#define LALSTDIN  (lalstdin())
+#define LALSTDOUT (lalstdout())
+#define LALSTDERR (lalstderr())
 
 int XLALFileIsCompressed( const char *path );
 LALFILE * XLALFileOpenRead( const char *path );

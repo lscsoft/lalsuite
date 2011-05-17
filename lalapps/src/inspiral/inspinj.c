@@ -19,14 +19,14 @@
 
 
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: inspinj.c
  *
- * Author: Brown, D. A., Creighton, J. D. E. and Dietz A. 
- * 
+ * Author: Brown, D. A., Creighton, J. D. E. and Dietz A.
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -41,6 +41,8 @@
 #include <lal/Random.h>
 #include <lal/AVFactories.h>
 #include <lal/InspiralInjectionParams.h>
+#include <lal/LALDetectors.h>
+#include <lal/LALSimulation.h>
 #include <processtable.h>
 #include <lal/RingUtils.h>
 #include <LALAppsVCSInfo.h>
@@ -72,9 +74,9 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 #define UNUSED
 #endif
 
-/* 
+/*
  *  *********************************
- *  Definition of the prototypes 
+ *  Definition of the prototypes
  *  *********************************
  */
 extern int vrbflg;
@@ -94,8 +96,11 @@ void drawMassSpinFromNR( SimInspiralTable* table );
 void drawMassSpinFromNRNinja2( SimInspiralTable* table );
 
 void adjust_snr(SimInspiralTable *inj, REAL8 target_snr, const char *ifos);
+void adjust_snr_real8(SimInspiralTable *inj, REAL8 target_snr, const char *ifos);
 REAL8 network_snr(const char *ifos, SimInspiralTable *inj);
 REAL8 snr_in_ifo(const char *ifo, SimInspiralTable *inj);
+REAL8 network_snr_real8(const char *ifos, SimInspiralTable *inj);
+REAL8 snr_in_ifo_real8(const char *ifo, SimInspiralTable *inj);
 
 REAL8 probability_redshift(REAL8 rshift);
 REAL8 luminosity_distance(REAL8 rshift);
@@ -103,7 +108,7 @@ REAL8 mean_time_step_sfr(REAL8 zmax, REAL8 rate_local);
 REAL8 drawRedshift(REAL8 zmin, REAL8 zmax, REAL8 pzmax);
 REAL8 redshift_mass(REAL8 mass, REAL8 z);
 
-/* 
+/*
  *  *************************************
  *  Defining of the used global variables
  *  *************************************
@@ -151,6 +156,7 @@ REAL4 minMassRatio=-1.0;
 REAL4 maxMassRatio=-1.0;
 REAL4 inclStd=-1.0;
 REAL4 fixed_inc=-1.0;
+REAL4 max_inc=LAL_PI/2.0;
 REAL4 psi=-1.0;
 REAL4 longitude=181.0;
 REAL4 latitude=91.0;
@@ -212,9 +218,9 @@ int num_nr = 0;
 int i = 0;
 SimInspiralTable **nrSimArray = NULL;
 
-/* 
+/*
  *  *********************************
- *  Implementation of the code pieces  
+ *  Implementation of the code pieces
  *  *********************************
  */
 
@@ -232,9 +238,9 @@ REAL8 probability_redshift(REAL8 rshift)
 REAL8 luminosity_distance(REAL8 rshift)
 {
   REAL8 dL;
-	
-	dL = -2.89287707063171+(rshift*(4324.33492012756+(rshift*(3249.74193862773
-	   +(rshift*(-1246.66339928289+rshift*(335.354613407693+rshift*(-56.1194965448065
+        
+        dL = -2.89287707063171+(rshift*(4324.33492012756+(rshift*(3249.74193862773
+           +(rshift*(-1246.66339928289+rshift*(335.354613407693+rshift*(-56.1194965448065
        +rshift*(5.20261234121263+rshift*(-0.203151569744028))))))))));
   return dL;
 }
@@ -254,14 +260,14 @@ REAL8 mean_time_step_sfr(REAL8 zmax, REAL8 rate_local)
 REAL8 drawRedshift(REAL8 zmin, REAL8 zmax, REAL8 pzmax)
 {
   REAL8 test,z,p;
-    do 
-	{
+    do
+        {
       test = pzmax * XLALUniformDeviate(randParams);
       z = (zmax-zmin) * XLALUniformDeviate(randParams)+zmin;
-	  p= probability_redshift(z);   
-	}
-	while (test>p);
-	
+          p= probability_redshift(z);
+        }
+        while (test>p);
+        
   return z;
 }
 
@@ -269,7 +275,7 @@ REAL8 redshift_mass(REAL8 mass, REAL8 z)
 {
   REAL8 mz;
   mz= mass * (1.+z);
-	
+        
   return mz;
 }
 
@@ -289,6 +295,46 @@ REAL8 snr_in_ifo(const char *ifo, SimInspiralTable *inj)
 
   return this_snr;
 }
+
+
+REAL8 snr_in_ifo_real8(const char *ifo, SimInspiralTable *inj)
+{
+  REAL8       this_snr;
+  REAL8TimeSeries *strain = NULL;
+
+  strain   = XLALNRInjectionStrain(ifo, inj);
+  this_snr = calculate_ligo_snr_from_strain_real8(strain, ifo);
+
+  XLALDestroyREAL8TimeSeries (strain);
+
+  return this_snr;
+}
+
+
+REAL8 network_snr_real8(const char *ifo_list, SimInspiralTable *inj)
+{
+  char *tmp;
+  char *ifo;
+
+  REAL8 snr_total = 0.0;
+  REAL8 this_snr;
+
+  tmp = LALCalloc(1, strlen(ifos) + 1);
+  strcpy(tmp, ifo_list);
+  ifo = strtok (tmp,",");
+
+  while (ifo != NULL)
+  {
+    this_snr   = snr_in_ifo_real8(ifo, inj);
+    snr_total += this_snr * this_snr;
+    ifo        = strtok (NULL, ",");
+  }
+
+  LALFree(tmp);
+
+  return sqrt(snr_total);
+}
+
 
 REAL8 network_snr(const char *ifo_list, SimInspiralTable *inj)
 {
@@ -312,6 +358,58 @@ REAL8 network_snr(const char *ifo_list, SimInspiralTable *inj)
 
   return sqrt(snr_total);
 }
+
+
+void adjust_snr_real8(SimInspiralTable *inj, REAL8 target_snr, const char *ifo_list)
+{
+  /* Vars for calculating SNRs */
+  REAL8 this_snr;
+  REAL8 UNUSED low_snr, UNUSED high_snr;
+  REAL8 low_dist,high_dist;
+
+  this_snr = network_snr_real8(ifo_list, inj);
+
+  if (this_snr > target_snr)
+  {
+    high_snr  = this_snr;
+    high_dist = inj->distance;
+
+    while (this_snr > target_snr)
+    {
+      inj-> distance = inj->distance * 3.0;
+      this_snr       = network_snr_real8(ifo_list, inj);
+    }
+    low_snr  = this_snr;
+    low_dist = inj->distance;
+  } else {
+    low_snr  = this_snr;
+    low_dist = inj->distance;
+
+    while (this_snr < target_snr)
+    {
+      inj->distance = (inj->distance) / 3.0;
+      this_snr      = network_snr_real8(ifo_list, inj);
+    }
+    high_snr  = this_snr;
+    high_dist = inj->distance;
+  }
+
+  while ( abs(target_snr - this_snr) > 1.0 )
+  {
+    inj->distance = (high_dist + low_dist) / 2.0;
+    this_snr = network_snr_real8(ifo_list, inj);
+
+    if (this_snr > target_snr)
+    {
+      high_snr  = this_snr;
+      high_dist = inj->distance;
+    } else {
+      low_snr  = this_snr;
+      low_dist = inj->distance;
+    }
+  }
+}
+
 
 
 void adjust_snr(SimInspiralTable *inj, REAL8 target_snr, const char *ifo_list)
@@ -451,7 +549,8 @@ static void print_usage(char *program)
       " --polarization psi        set the polarization angle for all \n"
       "                           injections (degrees)\n"\
       " [--incl-std]  inclStd     std dev for gaussian inclination dist\n"\
-      " [--fixed-inc]  fixed_inc  read inclination dist if fixed value (degrees)\n"\
+      " [--fixed-inc]  fixed_inc  value for the fixed inclination angle (in degrees) if '--i-distr fixed' is chosen.\n"\
+      " [--max-inc]  max_inc      value for the maximum inclination angle (in degrees) if '--i-distr uniform' is chosen. \n"\
       " [--source-file] sources   read source parameters from sources\n"\
       "                           requires enable/disable milkyway\n"\
       " [--sourcecomplete] distance \n"
@@ -528,11 +627,11 @@ static void print_usage(char *program)
 
 /*
  *
- * functions to read source masses 
+ * functions to read source masses
  *
  */
 
-  void 
+  void
 read_mass_data( char* filename )
 {
   char line[256];
@@ -543,8 +642,8 @@ read_mass_data( char* filename )
   if ( ! fp )
   {
     perror( "read_mass_data" );
-    fprintf( stderr, 
-        "Error while trying to open file %s\n", 
+    fprintf( stderr,
+        "Error while trying to open file %s\n",
         filename );
     exit( 1 );
   }
@@ -556,7 +655,7 @@ read_mass_data( char* filename )
 
   /* alloc space for the data */
   mass_data = LALCalloc( num_mass, sizeof(*mass_data) );
-  if ( !mass_data ) 
+  if ( !mass_data )
   {
     fprintf( stderr, "Allocation error for mass_data\n" );
     exit( 1 );
@@ -588,27 +687,27 @@ read_nr_data( char* filename )
 
   if ( num_nr < 0 )
   {
-    fprintf( stderr, "error: unable to read sim_inspiral table from %s\n", 
+    fprintf( stderr, "error: unable to read sim_inspiral table from %s\n",
         filename );
     exit( 1 );
   }
   else if ( num_nr == 0 )
   {
-    fprintf( stderr, "error: zero events in sim_inspiral table from %s\n", 
+    fprintf( stderr, "error: zero events in sim_inspiral table from %s\n",
         filename );
   }
 
   /* allocate an array of pointers */
-  nrSimArray = (SimInspiralTable ** ) 
+  nrSimArray = (SimInspiralTable ** )
     LALCalloc( num_nr, sizeof(SimInspiralTable *) );
 
-  if ( !nrSimArray ) 
+  if ( !nrSimArray )
   {
     fprintf( stderr, "Allocation error for nr simulations\n" );
     exit( 1 );
   }
 
-  for( j = 0, thisEvent=nrSimHead; j < num_nr; 
+  for( j = 0, thisEvent=nrSimHead; j < num_nr;
       ++j, thisEvent = thisEvent->next )
   {
     nrSimArray[j] = thisEvent;
@@ -626,7 +725,7 @@ read_nr_data( char* filename )
  *
  */
 
-  void 
+  void
 read_source_data( char* filename )
 {
   char line[256];
@@ -646,7 +745,7 @@ read_source_data( char* filename )
   while ( fgets( line, sizeof( line ), fp ) )
     if ( line[0] == '#' )
       continue;
-    else 
+    else
       ++num_source;
 
   /* rewind the file */
@@ -898,7 +997,7 @@ shellLum = 0;
 if (makeCatalog == 1) {
 /* Write the corrected catalog to a file */
 fp = fopen("correctedcatalog.txt", "w+");
-for (j=0; j<(num_source+galaxynum);j++) { 
+for (j=0; j<(num_source+galaxynum);j++) {
 fprintf(fp, "%s %g %g %g %g %g \n", source_data[j].name, source_data[j].ra, source_data[j].dec, source_data[j].dist, source_data[j].lum, source_data[j].fudge );
 }
 fclose(fp);
@@ -950,11 +1049,11 @@ XLALDestroyREAL8Vector(pN);
  */
 
 void drawMassFromSource( SimInspiralTable* table )
-{ 
+{
   REAL4 m1, m2, eta;
   int mass_index=0;
 
-  /* choose masses from the mass-list */  
+  /* choose masses from the mass-list */
   mass_index = (int)( num_mass * XLALUniformDeviate( randParams ) );
   m1 = redshift_mass(mass_data[mass_index].mass1,redshift);
   m2 = redshift_mass(mass_data[mass_index].mass2,redshift);
@@ -963,7 +1062,7 @@ void drawMassFromSource( SimInspiralTable* table )
   table->mass1 = m1;
   table->mass2 = m2;
   table->eta = eta;
-  table->mchirp = pow( eta, 0.6) * (m1 + m2); 
+  table->mchirp = pow( eta, 0.6) * (m1 + m2);
 }
 
 
@@ -973,18 +1072,18 @@ void drawMassFromSource( SimInspiralTable* table )
  *
  */
 void drawMassSpinFromNR( SimInspiralTable* table )
-{ 
+{
   int mass_index=0;
 
-  /* choose masses from the mass-list */  
+  /* choose masses from the mass-list */
   mass_index = (int)( num_nr * XLALUniformDeviate( randParams ) );
-  XLALRandomNRInjectTotalMass( table, randParams, minMtotal, maxMtotal, 
+  XLALRandomNRInjectTotalMass( table, randParams, minMtotal, maxMtotal,
       nrSimArray[mass_index]);
 }
 
 
 void drawMassSpinFromNRNinja2( SimInspiralTable* inj )
-{ 
+{
   /* For ninja2 we first select a mass, then find */
   /* a waveform that can be injected at that mass */
 
@@ -1085,7 +1184,7 @@ void drawFromSource( REAL8 *rightAscension,
 
   /* now then, draw from MilkyWay
    * WARNING: This sets location AND distance */
-  XLALRandomInspiralMilkywayLocation( rightAscension, declination, distance, 
+  XLALRandomInspiralMilkywayLocation( rightAscension, declination, distance,
       randParams );
   memcpy( name, MW_name, sizeof(CHAR) * 30 );
 
@@ -1100,7 +1199,7 @@ void drawLocationFromExttrig( SimInspiralTable* table )
 {
   LIGOTimeGPS timeGRB;  /* real time of the GRB */
   REAL4 ra_rad, de_rad;
-  REAL8 gmst1, gmst2;  
+  REAL8 gmst1, gmst2;
 
   /* convert the position (stored as degree) to radians first */
   ra_rad = exttrigHead->event_ra  * LAL_PI_180;
@@ -1119,13 +1218,13 @@ void drawLocationFromExttrig( SimInspiralTable* table )
 }
 
 
-/* 
+/*
  *
- * generate all parameters (sky position and angles) for a random inspiral 
+ * generate all parameters (sky position and angles) for a random inspiral
  *
  */
 int main( int argc, char *argv[] )
-{ 
+{
   LIGOTimeGPS gpsStartTime = {-1,0};
   LIGOTimeGPS gpsEndTime = {-1,0};
   LIGOTimeGPS currentGpsTime;
@@ -1134,10 +1233,9 @@ int main( int argc, char *argv[] )
   REAL8 meanTimeStep = -1;
   REAL8 timeInterval = 0;
   REAL4 fLower = -1;
-  REAL4 eps=0.01;  /* needed for some awkward spinning injections */
   UINT4 useChirpDist = 0;
   REAL4 minMass10, maxMass10, minMass20, maxMass20, minMtotal0, maxMtotal0, meanMass10, meanMass20, massStdev10, massStdev20; /* masses at z=0 */
-  REAL8 pzmax=0; /* maximal value of the probability distribution of the redshift */ 
+  REAL8 pzmax=0; /* maximal value of the probability distribution of the redshift */
   size_t ninj;
   int rand_seed = 1;
 
@@ -1168,7 +1266,6 @@ int main( int argc, char *argv[] )
   status=blank_status;
 
   /* getopt arguments */
-  /* available letters: H */
   struct option long_options[] =
   {
     {"help",                          no_argument, 0,                'h'},
@@ -1216,7 +1313,8 @@ int main( int argc, char *argv[] )
     {"latitude",                required_argument, 0,                'z'},
     {"i-distr",                 required_argument, 0,                'I'},
     {"incl-std",                required_argument, 0,                'B'},
-    {"fixed-inc",               required_argument, 0,                'C'},   
+    {"fixed-inc",               required_argument, 0,                'C'},
+    {"max-inc",                 required_argument, 0,               1001},
     {"polarization",            required_argument, 0,                'S'},
     {"sourcecomplete",          required_argument, 0,                'H'},
     {"make-catalog",            no_argument,       0,                '.'},
@@ -1247,13 +1345,13 @@ int main( int argc, char *argv[] )
   set_debug_level( "1" );
 
   /* create the process and process params tables */
-  proctable.processTable = (ProcessTable *) 
+  proctable.processTable = (ProcessTable *)
     calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
   XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
       LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
 
   /* clear the waveform field */
@@ -1267,7 +1365,7 @@ int main( int argc, char *argv[] )
     long int gpsinput;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, 
+    c = getopt_long_only( argc, argv,
         "hf:m:a:b:t:s:w:i:M:*", long_options, &option_index );
 
     /* detect the end of the options */
@@ -1296,8 +1394,8 @@ int main( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         sourceFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( sourceFileName, optarg, optarg_len * sizeof(char) );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
               "%s", optarg );
         break;
 
@@ -1305,8 +1403,8 @@ int main( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         massFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( massFileName, optarg, optarg_len * sizeof(char) );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
               "%s", optarg );
         break;
 
@@ -1314,8 +1412,8 @@ int main( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         nrFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( nrFileName, optarg, optarg_len * sizeof(char) );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
               "%s", optarg );
         break;
 
@@ -1323,15 +1421,15 @@ int main( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         exttrigFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( exttrigFileName, optarg, optarg_len * sizeof(char) );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
               "%s", optarg );
         break;
 
       case 'F':
         fLower = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "float", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "float",
               "%f", fLower );
         break;
 
@@ -1340,7 +1438,7 @@ int main( int argc, char *argv[] )
         if ( gpsinput < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is prior to " 
+              "GPS start time is prior to "
               "Jan 01, 1994  00:00:00 UTC:\n"
               "(%ld specified)\n",
               long_options[option_index].name, gpsinput );
@@ -1349,16 +1447,16 @@ int main( int argc, char *argv[] )
         if ( gpsinput > 999999999 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after " 
+              "GPS start time is after "
               "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%ld specified)\n", 
+              "(%ld specified)\n",
               long_options[option_index].name, gpsinput );
           exit( 1 );
         }
         gpsStartTime.gpsSeconds = gpsinput;
-        gpsStartTime.gpsNanoSeconds = 0;        
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "int", 
+        gpsStartTime.gpsNanoSeconds = 0;
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "int",
               "%ld", gpsinput );
         break;
 
@@ -1367,7 +1465,7 @@ int main( int argc, char *argv[] )
         if ( gpsinput < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is prior to " 
+              "GPS start time is prior to "
               "Jan 01, 1994  00:00:00 UTC:\n"
               "(%ld specified)\n",
               long_options[option_index].name, gpsinput );
@@ -1376,86 +1474,86 @@ int main( int argc, char *argv[] )
         if ( gpsinput > 999999999 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after " 
+              "GPS start time is after "
               "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%ld specified)\n", 
+              "(%ld specified)\n",
               long_options[option_index].name, gpsinput );
           exit( 1 );
         }
         gpsEndTime.gpsSeconds = gpsinput;
         gpsEndTime.gpsNanoSeconds = 0;
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "int", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "int",
               "%ld", gpsinput );
         break;
 
       case 's':
         rand_seed = atoi( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "int", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "int",
               "%d", rand_seed );
         break;
-			
+                        
       case '(':
-		optarg_len = strlen( optarg ) + 1;
-		memcpy( dummy, optarg, optarg_len );
+                optarg_len = strlen( optarg ) + 1;
+                memcpy( dummy, optarg, optarg_len );
 
-		if (!strcmp(dummy, "fixed")) 
-		{         
-		  tDistr=LALINSPIRAL_FIXED_TIME_DIST; 
-		} 
-		else if (!strcmp(dummy, "uniform")) 
-		{
-		  tDistr=LALINSPIRAL_UNIFORM_TIME_DIST;
-		}  
-		else if(!strcmp(dummy, "exponential")) 
-		{         
-		  tDistr=LALINSPIRAL_EXPONENTIAL_TIME_DIST; 
-		} 
-		else 
-		{
-		  tDistr=LALINSPIRAL_UNKNOWN_TIME_DIST; 
-		  fprintf( stderr, "invalid argument to --%s:\n"
-			  "unknown time distribution: %s must be one of\n"
-			  "fixed, uniform or exponential\n", 
-			  long_options[option_index].name, optarg );
-		  exit( 1 );
-		}
-		break;
-  
+                if (!strcmp(dummy, "fixed"))
+                {
+                  tDistr=LALINSPIRAL_FIXED_TIME_DIST;
+                }
+                else if (!strcmp(dummy, "uniform"))
+                {
+                  tDistr=LALINSPIRAL_UNIFORM_TIME_DIST;
+                }
+                else if(!strcmp(dummy, "exponential"))
+                {
+                  tDistr=LALINSPIRAL_EXPONENTIAL_TIME_DIST;
+                }
+                else
+                {
+                  tDistr=LALINSPIRAL_UNKNOWN_TIME_DIST;
+                  fprintf( stderr, "invalid argument to --%s:\n"
+                          "unknown time distribution: %s must be one of\n"
+                          "fixed, uniform or exponential\n",
+                          long_options[option_index].name, optarg );
+                  exit( 1 );
+                }
+                break;
+
       case ')':
-	    localRate = atof( optarg );
-	    this_proc_param = this_proc_param->next = 
-	    next_process_param( long_options[option_index].name,
-			"float", "%le", localRate );
-	    break;
+            localRate = atof( optarg );
+            this_proc_param = this_proc_param->next =
+            next_process_param( long_options[option_index].name,
+                        "float", "%le", localRate );
+            break;
 
       case 't':
         {
           meanTimeStep = atof( optarg );
-          this_proc_param = this_proc_param->next = 
-            next_process_param( long_options[option_index].name, "float", 
+          this_proc_param = this_proc_param->next =
+            next_process_param( long_options[option_index].name, "float",
                 "%le", meanTimeStep );
         }
         break;
 
       case 'i':
         timeInterval = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", timeInterval );
         break;
 
       case 'w':
         snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "%s", optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
               "%s", optarg );
         break;
 
       case 'q':
         amp_order = atof( optarg );
-        this_proc_param = this_proc_param->next = 
+        this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
             "int", "%ld", amp_order );
       break;
@@ -1466,21 +1564,21 @@ int main( int argc, char *argv[] )
         if ( mwLuminosity < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "Milky Way luminosity must be positive" 
-              "(%f specified)\n", 
+              "Milky Way luminosity must be positive"
+              "(%f specified)\n",
               long_options[option_index].name, mwLuminosity );
           exit( 1 );
         }
 
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "float", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "float",
               "%le", mwLuminosity );
-        break;  
+        break;
 
       case 'D':
         /* set the luminosity of the Milky Way */
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
               "" );
         mwLuminosity = 0;
         break;
@@ -1493,7 +1591,7 @@ int main( int argc, char *argv[] )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
@@ -1506,7 +1604,7 @@ int main( int argc, char *argv[] )
         memcpy( dummy, optarg, optarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--m-distr" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
@@ -1517,23 +1615,23 @@ int main( int argc, char *argv[] )
         {
           mDistr=massFromSourceFile;
         }
-        else if (!strcmp(dummy, "nrwaves")) 
+        else if (!strcmp(dummy, "nrwaves"))
         {
-          mDistr=massFromNRFile; 
-        } 
-        else if (!strcmp(dummy, "totalMass")) 
+          mDistr=massFromNRFile;
+        }
+        else if (!strcmp(dummy, "totalMass"))
         {
           mDistr=uniformTotalMass;
-        }  
-        else if (!strcmp(dummy, "componentMass")) 
+        }
+        else if (!strcmp(dummy, "componentMass"))
         {
           mDistr=uniformComponentMass;
-        }  
-        else if (!strcmp(dummy, "gaussian")) 
+        }
+        else if (!strcmp(dummy, "gaussian"))
         {
           mDistr=gaussianMassDist;
-        } 
-        else if (!strcmp(dummy, "log")) 
+        }
+        else if (!strcmp(dummy, "log"))
         {
           mDistr=logComponentMass;
         }
@@ -1548,7 +1646,7 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown mass distribution: %s must be one of\n"
               "(source, nrwaves, totalMass, componentMass, gaussian, log,\n"
-              "totalMassRatio, logTotalMassUniformMassRatio)\n", 
+              "totalMassRatio, logTotalMassUniformMassRatio)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -1556,85 +1654,85 @@ int main( int argc, char *argv[] )
 
       case 'j':
         minMass1 = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", minMass1 );
-        break; 
+        break;
 
       case 'k':
         maxMass1 = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", maxMass1 );
         break;
 
       case 'J':
         minMass2 = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", minMass2 );
-        break; 
+        break;
 
       case 'K':
         maxMass2 = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", maxMass2 );
         break;
 
       case 'A':
         minMtotal = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", minMtotal );
         break;
 
       case 'L':
         maxMtotal = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", maxMtotal );
         break;
 
       case 'n':
         meanMass1 = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", meanMass1 );
         break;
 
       case 'N':
         meanMass2 = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", meanMass2 );
         break;
 
       case 'o':
         massStdev1 = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", massStdev1 );
         break;
 
       case 'O':
         massStdev2 = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", massStdev2 );
         break;
 
       case 'x':
         minMassRatio = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", minMassRatio );
         break;
 
       case 'y':
         maxMassRatio = atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", maxMassRatio );
         break;
 
@@ -1649,8 +1747,8 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, dmin );
           exit( 1 );
         }
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%e", dmin );
         break;
 
@@ -1665,8 +1763,8 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, dmax );
           exit( 1 );
         }
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%e", dmax );
         break;
 
@@ -1683,26 +1781,26 @@ int main( int argc, char *argv[] )
         memcpy( dummy, optarg, optarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         snprintf( this_proc_param->param,LIGOMETA_PARAM_MAX,"--d-distr" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
 
-        if (!strcmp(dummy, "source")) 
-        {         
-          dDistr=distFromSourceFile; 
-        } 
-        else if (!strcmp(dummy, "uniform")) 
+        if (!strcmp(dummy, "source"))
+        {
+          dDistr=distFromSourceFile;
+        }
+        else if (!strcmp(dummy, "uniform"))
         {
           dDistr=uniformDistance;
         }
-        else if (!strcmp(dummy, "log10")) 
+        else if (!strcmp(dummy, "log10"))
         {
           dDistr=uniformLogDistance;
-        } 
-        else if (!strcmp(dummy, "volume")) 
+        }
+        else if (!strcmp(dummy, "volume"))
         {
           dDistr=uniformVolume;
         }
@@ -1714,7 +1812,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown source distribution: "
-              "%s, must be one of (uniform, log10, volume, source)\n", 
+              "%s, must be one of (uniform, log10, volume, source)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -1726,34 +1824,34 @@ int main( int argc, char *argv[] )
         memcpy( dummy, optarg, optarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--l-distr" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
 
-        if (!strcmp(dummy, "source")) 
-        {         
-          lDistr=locationFromSourceFile; 
-        } 
-        else if (!strcmp(dummy, "exttrig")) 
+        if (!strcmp(dummy, "source"))
         {
-          lDistr=locationFromExttrigFile;    
-        } 
-        else if (!strcmp(dummy, "random")) 
+          lDistr=locationFromSourceFile;
+        }
+        else if (!strcmp(dummy, "exttrig"))
         {
-          lDistr=uniformSkyLocation;        
+          lDistr=locationFromExttrigFile;
+        }
+        else if (!strcmp(dummy, "random"))
+        {
+          lDistr=uniformSkyLocation;
         }
         else if(!strcmp(dummy, "fixed"))
         {
-          lDistr=fixedSkyLocation;    
-        } 
+          lDistr=fixedSkyLocation;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown location distribution: "
-              "%s must be one of (source, random)\n", 
+              "%s must be one of (source, random)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -1776,9 +1874,9 @@ int main( int argc, char *argv[] )
         longitude =  atof( optarg )*LAL_PI_180 ;
         if (longitude <= (  LAL_PI + epsAngle ) && \
             longitude >= ( -LAL_PI - epsAngle ))
-        { 
-          this_proc_param = this_proc_param->next = 
-            next_process_param( long_options[option_index].name, 
+        {
+          this_proc_param = this_proc_param->next =
+            next_process_param( long_options[option_index].name,
                 "float", "%e", longitude );
         }
         else
@@ -1795,9 +1893,9 @@ int main( int argc, char *argv[] )
         latitude = (REAL4) atof( optarg )*LAL_PI_180;
         if (latitude <= (  LAL_PI/2. + epsAngle ) && \
             latitude >= ( -LAL_PI/2. - epsAngle ))
-        { 
-          this_proc_param = this_proc_param->next = 
-            next_process_param( long_options[option_index].name, 
+        {
+          this_proc_param = this_proc_param->next =
+            next_process_param( long_options[option_index].name,
                 "float", "%e", latitude );
         }
         else
@@ -1806,7 +1904,7 @@ int main( int argc, char *argv[] )
                   "%s must be between -90. and 90. degrees\n",
                   long_options[option_index].name, optarg );
           exit( 1 );
-        } 
+        }
         break;
 
       case 'I':
@@ -1814,20 +1912,20 @@ int main( int argc, char *argv[] )
         memcpy( dummy, optarg, optarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--i-distr" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
 
-        if (!strcmp(dummy, "uniform")) 
-        {         
-          iDistr=uniformInclDist; 
-        } 
-        else if (!strcmp(dummy, "gaussian")) 
+        if (!strcmp(dummy, "uniform"))
         {
-          iDistr=gaussianInclDist;        
+          iDistr=uniformInclDist;
+        }
+        else if (!strcmp(dummy, "gaussian"))
+        {
+          iDistr=gaussianInclDist;
         }
         else if (!strcmp(dummy, "fixed"))
         {
@@ -1837,7 +1935,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown inclination distribution: "
-              "%s must be one of (uniform, gaussian, fixed)\n", 
+              "%s must be one of (uniform, gaussian, fixed)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -1856,17 +1954,32 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, dmax );
           exit( 1 );
         }
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%e", inclStd );
         break;
-      
+
       case 'C':
         /* fixed angle of inclination */
         fixed_inc = (REAL4) atof( optarg )/180.*LAL_PI;
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%e", fixed_inc );
+        break;
+
+     case 1001:
+        /* maximum  angle of inclination */
+        max_inc = (REAL4) atof( optarg )/180.*LAL_PI;
+        if ( (atof(optarg) < 0.) || (atof(optarg) >= 180.) ) {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "maximum inclination angle must be between 0 and 180 degrees:"
+              "(%s specified)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%e", max_inc );
         break;
 
       case 'S':
@@ -1879,17 +1992,17 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, optarg );
           exit( 1 );
         }
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%e", psi );
         break;
- 
+
       case 'P':
         optarg_len = strlen( optarg ) + 1;
         outputFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( outputFileName, optarg, optarg_len * sizeof(char) );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
               "%s", optarg );
         break;
 
@@ -1906,14 +2019,14 @@ int main( int argc, char *argv[] )
           next_process_param( long_options[option_index].name,
               "float", "%le", maxSpin1 );
         break;
-                                
+
       case 'Q':
         minKappa1 = atof( optarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", minKappa1 );
         break;
-        
+
       case 'R':
         maxKappa1 = atof( optarg );
         this_proc_param = this_proc_param->next =
@@ -1927,14 +2040,14 @@ int main( int argc, char *argv[] )
           next_process_param( long_options[option_index].name,
               "float", "%le", minabsKappa1 );
         break;
-        
+
       case 'Y':
         maxabsKappa1 = atof( optarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", maxabsKappa1 );
         break;
-        
+
       case 'u':
         minSpin2 = atof( optarg );
         this_proc_param = this_proc_param->next =
@@ -1958,24 +2071,24 @@ int main( int argc, char *argv[] )
 
       case 'T':
         /* enable spining injections */
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
               "" );
         spinInjections = 1;
         break;
 
       case 'W':
         /* disable spining injections */
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
               "" );
         spinInjections = 0;
         break;
 
       case '}':
         /* enable band-passing */
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
               "" );
         bandPassInj = 1;
         break;
@@ -2009,8 +2122,8 @@ int main( int argc, char *argv[] )
                     "(Must be one of start|end|startend)\n",
                     long_options[option_index].name, optarg );
         }
-        this_proc_param = this_proc_param->next = 
-                next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+                next_process_param( long_options[option_index].name,
                         "string", optarg );
         break;
 
@@ -2025,10 +2138,10 @@ int main( int argc, char *argv[] )
 
           exit( 1 );
         }
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", minSNR );
-        
+
         break;
       case '2':
         maxSNR = atof( optarg );
@@ -2040,17 +2153,17 @@ int main( int argc, char *argv[] )
 
           exit( 1 );
         }
-        
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
+
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
               "float", "%le", maxSNR );
         break;
       case '3':
         optarg_len = strlen( optarg ) + 1;
         ifos       = calloc( 1, optarg_len * sizeof(char) );
         memcpy( ifos, optarg, optarg_len * sizeof(char) );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
               "%s", optarg );
         break;
 
@@ -2072,9 +2185,9 @@ int main( int argc, char *argv[] )
   }
 
   /* must set MW flag */
-  if ( mwLuminosity < 0  && dDistr == distFromSourceFile ) 
+  if ( mwLuminosity < 0  && dDistr == distFromSourceFile )
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "Must specify either --enable-milkyway LUM or --disable-milkyway\n"\
         " when using --d-distr=source\n" );
     exit( 1 );
@@ -2082,7 +2195,7 @@ int main( int argc, char *argv[] )
 
   if (gpsStartTime.gpsSeconds==-1 || gpsEndTime.gpsSeconds==-1)
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "Must specify both --gps-start-time and --gps-end-time.\n");
     exit( 1 );
   }
@@ -2134,7 +2247,7 @@ int main( int argc, char *argv[] )
   {
     if ( ! sourceFileName )
     {
-      fprintf( stderr, 
+      fprintf( stderr,
           "Must specify --source-file when using --d-distr source \n" );
       exit( 1 );
     }
@@ -2173,21 +2286,21 @@ int main( int argc, char *argv[] )
     }
   }
 
-  /* check if the source file is specified for distance but NOT for 
+  /* check if the source file is specified for distance but NOT for
      location */
   if ( dDistr==distFromSourceFile && lDistr!=locationFromSourceFile )
-  {    
-    fprintf( stderr, 
+  {
+    fprintf( stderr,
         "WARNING: source file specified for distance "
         "but NOT for location. This might give strange distributions\n" );
   }
 
-  /* check if the location file is specified for location but NOT for 
+  /* check if the location file is specified for location but NOT for
    * distances: GRB case */
   if ( dDistr!=distFromSourceFile && lDistr==locationFromSourceFile &&
       mwLuminosity>0.0 )
-  {    
-    fprintf( stderr, 
+  {
+    fprintf( stderr,
         "WARNING: source file specified for locations "
         "but NOT for distances, while Milky Way injections "
         "are allowed. This might give strange distributions\n" );
@@ -2197,14 +2310,14 @@ int main( int argc, char *argv[] )
   /* check selection of masses */
   if ( !massFileName && mDistr==massFromSourceFile )
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "Must specify either a file contining the masses (--mass-file) "\
         "or choose another mass-distribution (--m-distr).\n" );
     exit( 1 );
   }
   if ( !nrFileName && mDistr==massFromNRFile )
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "Must specify either a file contining the masses (--nr-file) "\
         "or choose another mass-distribution (--m-distr).\n" );
     exit( 1 );
@@ -2215,7 +2328,7 @@ int main( int argc, char *argv[] )
   if ( massFileName && mDistr==massFromSourceFile )
   {
     read_mass_data( massFileName );
-  } 
+  }
 
   if ( nrFileName && mDistr==massFromNRFile )
   {
@@ -2225,11 +2338,11 @@ int main( int argc, char *argv[] )
   /* read in the data from the external trigger file */
   if ( lDistr == locationFromExttrigFile && !exttrigFileName )
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "If --l-distr exttrig is specified, must specify " \
         "external trigger XML file using --exttrig-file.\n");
     exit( 1 );
-  } 
+  }
   if ( lDistr == locationFromExttrigFile && exttrigFileName )
   {
     numExtTriggers=LALExtTriggerTableFromLIGOLw( &exttrigHead, exttrigFileName,
@@ -2257,7 +2370,7 @@ int main( int argc, char *argv[] )
   /* check inclination distribution */
   if ( ( iDistr == gaussianInclDist ) && ( inclStd < 0.0 ) )
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "Must specify width for gaussian inclination distribution; "\
         "use --incl-std.\n" );
     exit( 1 );
@@ -2279,20 +2392,20 @@ int main( int argc, char *argv[] )
 
 
   /* check for gaussian mass distribution parameters */
-  if ( mDistr==gaussianMassDist && (meanMass1 <= 0.0 || massStdev1 <= 0.0 || 
+  if ( mDistr==gaussianMassDist && (meanMass1 <= 0.0 || massStdev1 <= 0.0 ||
         meanMass2 <= 0.0 || massStdev2 <= 0.0))
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "Must specify --mean-mass1/2 and --stdev-mass1/2 if choosing"
         " --m-distr=gaussian\n" );
     exit( 1 );
   }
 
   /* check if the mass area is properly specified */
-  if ( mDistr!=gaussianMassDist && (minMass1 <=0.0 || minMass2 <=0.0 || 
+  if ( mDistr!=gaussianMassDist && (minMass1 <=0.0 || minMass2 <=0.0 ||
          maxMass1 <=0.0 || maxMass2 <=0.0) )
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "Must specify --min-mass1/2 and --max-mass1/2 if choosing"
         " --m-distr not gaussian\n" );
     exit( 1 );
@@ -2301,21 +2414,21 @@ int main( int argc, char *argv[] )
   /* check if the maximum total mass is properly specified */
   if ( mDistr!=gaussianMassDist && maxMtotal<(minMass1 + minMass2 ))
   {
-    fprintf( stderr, 
-        "Maximum total mass must be larger than minMass1+minMass2\n"); 
+    fprintf( stderr,
+        "Maximum total mass must be larger than minMass1+minMass2\n");
     exit( 1 );
   }
 
   /* check if total mass is specified */
   if ( maxMtotal<0.0)
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "Must specify --max-mtotal.\n" );
     exit( 1 );
   }
   if ( minMtotal<0.0)
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "Must specify --min-mtotal.\n" );
     exit( 1 );
   }
@@ -2332,7 +2445,7 @@ int main( int argc, char *argv[] )
 
   if ( dDistr!=distFromSourceFile && (dmin<0.0 || dmax<0.0) )
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "Must specify --min-distance and --max-distance if "
         "--d-distr is not source.\n" );
     exit( 1 );
@@ -2340,12 +2453,12 @@ int main( int argc, char *argv[] )
 
   if ( dDistr==sfr && (dmax<0.2 || dmax>1.0) )
   {
-	fprintf( stderr,
+        fprintf( stderr,
         "Maximal redshift can only take values between 0.2 and 1 .\n" );
     exit( 1 );
   }
 
-  /* check if waveform is specified */    
+  /* check if waveform is specified */
   if ( !*waveform )
   {
     fprintf( stderr, "No waveform specified (--waveform).\n" );
@@ -2354,7 +2467,7 @@ int main( int argc, char *argv[] )
 
   if ( spinInjections==-1 && mDistr != massFromNRFile )
   {
-    fprintf( stderr, 
+    fprintf( stderr,
         "Must specify --disable-spin or --enable-spin\n"\
         "Unless doing NR injections\n" );
     exit( 1 );
@@ -2374,12 +2487,12 @@ int main( int argc, char *argv[] )
     if (minSpin1 > maxSpin1 || minSpin2 > maxSpin2 )
     {
       fprintf( stderr,
-          "Minimal spins must be less than maximal spins.\n" );    
+          "Minimal spins must be less than maximal spins.\n" );
       exit( 1 );
     }
-   
+
     /* check that selection criteria for kappa are unique */
-    if ( (minKappa1 > -1.0 || maxKappa1 < 1.0) && 
+    if ( (minKappa1 > -1.0 || maxKappa1 < 1.0) &&
         (minabsKappa1 > 0.0 || maxabsKappa1 < 1.0) )
     {
       fprintf( stderr,
@@ -2417,11 +2530,11 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
   }
-	
+        
   if( dDistr==sfr && localRate > 0.)
   {
-    /* calculate mean time step from the SFR  */ 
-	meanTimeStep = mean_time_step_sfr(dmax,localRate);   
+    /* calculate mean time step from the SFR  */
+        meanTimeStep = mean_time_step_sfr(dmax,localRate);
   }
 
   if (meanTimeStep<=0)
@@ -2446,7 +2559,7 @@ int main( int argc, char *argv[] )
   }
   else if ( userTag && !outCompress )
   {
-    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%ld.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%ld.xml",
         rand_seed, userTag, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else if ( !userTag && outCompress )
@@ -2456,12 +2569,12 @@ int main( int argc, char *argv[] )
   }
   else
   {
-    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%ld.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%ld.xml",
         rand_seed, gpsStartTime.gpsSeconds, gpsDuration );
   }
-  if ( outputFileName ) 
+  if ( outputFileName )
   {
-    snprintf( fname, sizeof(fname), "%s", 
+    snprintf( fname, sizeof(fname), "%s",
         outputFileName);
   }
 
@@ -2481,26 +2594,26 @@ int main( int argc, char *argv[] )
 
   simRingTable = ringparams.simRingdownTable = (SimRingdownTable *)
     calloc( 1, sizeof(SimRingdownTable) );
-	  
-  /* set redshift to zero */ 
+
+  /* set redshift to zero */
   redshift=0.;
 
   /* set mass distribution parameters to their value at z = 0 */
-  minMass10 = minMass1; 
+  minMass10 = minMass1;
   maxMass10 = maxMass1;
   minMass20 = minMass2;
   maxMass20 = maxMass2;
-  minMtotal0 = minMtotal; 
+  minMtotal0 = minMtotal;
   maxMtotal0 = maxMtotal;
   meanMass10 = meanMass1;
   meanMass20 = meanMass2;
   massStdev10 = massStdev1;
   massStdev20 = massStdev2;
 
-  /* calculate the maximal value of the probability distribution of the redshift */	
-  if (dDistr == sfr) 
+  /* calculate the maximal value of the probability distribution of the redshift */        
+  if (dDistr == sfr)
   {
-    pzmax = probability_redshift(dmax); 
+    pzmax = probability_redshift(dmax);
   }
 
   /* loop over parameter generation until end time is reached */
@@ -2516,7 +2629,7 @@ int main( int argc, char *argv[] )
         currentGpsTime, timeInterval );
 
     /* populate waveform and other parameters */
-    memcpy( simTable->waveform, waveform, 
+    memcpy( simTable->waveform, waveform,
         sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
     simTable->f_lower = fLower;
     simTable->amp_order = amp_order;
@@ -2524,18 +2637,18 @@ int main( int argc, char *argv[] )
     /* draw redshift */
     if (dDistr==sfr)
     {
-	  redshift= drawRedshift(dmin,dmax,pzmax);	
+          redshift= drawRedshift(dmin,dmax,pzmax);        
 
       minMass1 = redshift_mass(redshift,minMass10);
       maxMass1 = redshift_mass(redshift,maxMass10);
-      meanMass1 = redshift_mass(redshift,meanMass10);  
+      meanMass1 = redshift_mass(redshift,meanMass10);
       massStdev1 = redshift_mass(redshift,massStdev10);
       minMass2 = redshift_mass(redshift,minMass20);
       maxMass2 = redshift_mass(redshift,maxMass20);
-      meanMass2 = redshift_mass(redshift,meanMass20);  
-      massStdev2 = redshift_mass(redshift,massStdev20);  
+      meanMass2 = redshift_mass(redshift,meanMass20);
+      massStdev2 = redshift_mass(redshift,massStdev20);
       minMtotal = redshift_mass(redshift,minMtotal0);
-      maxMtotal = redshift_mass(redshift,maxMtotal0);  
+      maxMtotal = redshift_mass(redshift,maxMtotal0);
     }
 
     /* populate masses */
@@ -2551,16 +2664,16 @@ int main( int argc, char *argv[] )
         drawMassSpinFromNR( simTable );
     }
     else if ( mDistr==gaussianMassDist )
-    { 
+    {
       simTable=XLALGaussianInspiralMasses( simTable, randParams,
           minMass1, maxMass1,
           meanMass1, massStdev1,
-          minMass2, maxMass2, 
+          minMass2, maxMass2,
           meanMass2, massStdev2);
     }
     else if ( mDistr==uniformTotalMassRatio )
     {
-      simTable=XLALRandomInspiralTotalMassRatio(simTable, randParams, 
+      simTable=XLALRandomInspiralTotalMassRatio(simTable, randParams,
           mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
     }
     else if ( mDistr==logMassUniformTotalMassRatio )
@@ -2572,7 +2685,7 @@ int main( int argc, char *argv[] )
     else {
       simTable=XLALRandomInspiralMasses( simTable, randParams, mDistr,
           minMass1, maxMass1,
-          minMass2, maxMass2, 
+          minMass2, maxMass2,
           minMtotal, maxMtotal);
     }
 
@@ -2597,10 +2710,10 @@ int main( int argc, char *argv[] )
     {
        /* fit of luminosity distance  between z=0-1, in Mpc for h0=0.7, omega_m=0.3, omega_v=0.7*/
        simTable->distance = luminosity_distance(redshift);
-	}
+    }
     else
     {
-      simTable=XLALRandomInspiralDistance(simTable, randParams, 
+      simTable=XLALRandomInspiralDistance(simTable, randParams,
           dDistr, dmin/1000.0, dmax/1000.0);
     }
     /* Scale by chirp mass if desired, relative to a 1.4,1.4 object */
@@ -2630,7 +2743,7 @@ int main( int argc, char *argv[] )
     }
     else if (lDistr == uniformSkyLocation)
     {
-      simTable=XLALRandomInspiralSkyLocation(simTable, randParams); 
+      simTable=XLALRandomInspiralSkyLocation(simTable, randParams);
     }
     else
     {
@@ -2640,16 +2753,12 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
-
     /* populate polarization, inclination, and coa_phase */
     do
     {
       simTable=XLALRandomInspiralOrientation(simTable, randParams,
                                              iDistr, inclStd);
-    } while ( ! strcmp(waveform, "SpinTaylorthreePointFivePN") &&
-              ( iDistr != fixedInclDist ) &&
-              ( simTable->inclination < eps ||
-                simTable->inclination > LAL_PI-eps) );
+    } while ( (fabs(cos(simTable->inclination))<cos(max_inc)) );
 
     /* override inclination */
     if ( iDistr == fixedInclDist )
@@ -2670,7 +2779,7 @@ int main( int argc, char *argv[] )
          spin distributions for waveforms under development */
       if ( ! strcmp(waveform, "IMRPhenomBpseudoFourPN"))
         aligned = 1;
-      simTable = XLALRandomInspiralSpins( simTable, randParams, 
+      simTable = XLALRandomInspiralSpins( simTable, randParams,
           minSpin1, maxSpin1,
           minSpin2, maxSpin2,
           minKappa1, maxKappa1,
@@ -2685,6 +2794,10 @@ int main( int argc, char *argv[] )
           targetSNR = exp(targetSNR);
 
         adjust_snr(simTable, targetSNR, ifos);
+
+        /* TODO: for NINJA2, decide whether to call the above or
+        adjust_snr_real8(simTable, targetSNR, ifos);
+        */
     }
 
     /* populate the site specific information */
@@ -2695,20 +2808,20 @@ int main( int argc, char *argv[] )
         switch (taperInj)
         {
             case INSPIRAL_TAPER_NONE:
-                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
-                         "%s", "TAPER_NONE"); 
+                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX,
+                         "%s", "TAPER_NONE");
                  break;
             case INSPIRAL_TAPER_START:
-                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
-                         "%s", "TAPER_START"); 
+                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX,
+                         "%s", "TAPER_START");
                  break;
             case INSPIRAL_TAPER_END:
-                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
-                         "%s", "TAPER_END"); 
+                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX,
+                         "%s", "TAPER_END");
                  break;
             case INSPIRAL_TAPER_STARTEND:
-                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
-                         "%s", "TAPER_STARTEND"); 
+                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX,
+                         "%s", "TAPER_STARTEND");
                  break;
             default: /* Never reach here */
                  fprintf( stderr, "unknown error while populating sim_inspiral taper options\n" );
@@ -2716,12 +2829,12 @@ int main( int argc, char *argv[] )
         }
 
     }
-    
+
     /* populate the bandpass options */
     simTable->bandpass = bandPassInj;
 
 
-    /* populate the sim_ringdown table */ 
+    /* populate the sim_ringdown table */
    if ( writeSimRing )
    {
        memcpy( simRingTable->waveform, "Ringdown",
@@ -2740,14 +2853,17 @@ int main( int argc, char *argv[] )
        simRingTable->polarization = simTable->polarization;
        simRingTable->phase = 0;
        simRingTable->mass = XLALNonSpinBinaryFinalBHMass(simTable->eta, simTable->mass1, simTable->mass2);
-       simRingTable->spin = XLALNonSpinBinaryFinalBHSpin(simTable->eta);
+       /* The final spin calc has been generalized so as to allow initially spinning systems*/
+       /* simRingTable->spin = XLALNonSpinBinaryFinalBHSpin(simTable->eta); */
+       simRingTable->spin = XLALSpinBinaryFinalBHSpin(simTable->eta, simTable->mass1, simTable->mass2,
+          simTable->spin1x, simTable->spin2x,simTable->spin1y, simTable->spin2y, simTable->spin1z, simTable->spin2z);
        simRingTable->frequency = XLALBlackHoleRingFrequency( simRingTable->mass, simRingTable->spin);
        simRingTable->quality = XLALBlackHoleRingQuality(simRingTable->spin);
-       simRingTable->epsilon = 0.01; 
+       simRingTable->epsilon = 0.01;
        simRingTable->amplitude = XLALBlackHoleRingAmplitude( simRingTable->frequency, simRingTable->quality, simRingTable->distance, simRingTable->epsilon );
-       simRingTable->eff_dist_h = simTable->eff_dist_h; 
-       simRingTable->eff_dist_l = simTable->eff_dist_l; 
-       simRingTable->eff_dist_v = simTable->eff_dist_v; 
+       simRingTable->eff_dist_h = simTable->eff_dist_h;
+       simRingTable->eff_dist_l = simTable->eff_dist_l;
+       simRingTable->eff_dist_v = simTable->eff_dist_v;
        simRingTable->hrss = XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 2., 0. );
        // need hplus & hcross in each detector to populate these
        simRingTable->hrss_h = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
@@ -2768,7 +2884,7 @@ int main( int argc, char *argv[] )
     }
     if ( XLALGPSCmp( &currentGpsTime, &gpsEndTime ) >= 0 )
       break;
-    
+
   /* allocate and go to next SimInspiralTable */
     simTable = simTable->next = (SimInspiralTable *)
       calloc( 1, sizeof(SimInspiralTable) );
@@ -2780,7 +2896,7 @@ int main( int argc, char *argv[] )
 
   /* destroy the structure containing the random params */
   LAL_CALL(  LALDestroyRandomParams( &status, &randParams ), &status);
-  
+
   /* If we read from an external trigger file, free our external trigger.
      exttrigHead is guaranteed to have no children to free. */
   if ( exttrigHead != NULL ) {
@@ -2802,9 +2918,9 @@ int main( int argc, char *argv[] )
 
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname ), &status );
   XLALGPSTimeNow(&(proctable.processTable->end_time));
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ),
       &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, proctable, 
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, proctable,
         process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
 
@@ -2812,22 +2928,22 @@ int main( int argc, char *argv[] )
   {
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_params_table ),
         &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, procparams, 
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, procparams,
           process_params_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
 
   if ( injections.simInspiralTable )
   {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ),
         &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections,
           sim_inspiral_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );   
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
 
   if ( writeSimRing )
-  { 
+  {
     if ( ringparams.simRingdownTable )
     {
       LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_ringdown_table ),
@@ -2836,7 +2952,7 @@ int main( int argc, char *argv[] )
           sim_ringdown_table ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
     }
-  }  
+  }
 
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
 

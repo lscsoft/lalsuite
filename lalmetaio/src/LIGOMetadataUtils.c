@@ -23,17 +23,69 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="LIGOMetadataUtilsCV">
-Author: Brown, D. A.
-$Id$
-</lalVerbatim>
-#endif
+/**
+
+\author Brown, D. A.
+\file
+\ingroup lalmetaio
+\brief General routines for manipulating LIGO metadatabase tables.
+
+\heading{Description}
+
+The function <tt>LALPlaygroundInSearchSummary()</tt> determines the
+ammount of time in the search summary table \c ssTable that overlaps
+with playground data. The time between \c in_start_time and
+\c in_end_time that overlaps with playground is returned in
+\c inPlayTime and the time between \c out_start_time and
+\c out_end_time that overlaps with playground is returned in
+\c outPlayTime.
+
+<tt>LALCompareSearchSummaryByInTime()</tt> is a function to compare the in
+times in two search summary tables.  It returns 1 if the
+\c in_start_time of the first table is after the
+\c in_start_time of the second and -1 if it is before.  If the two
+\c in_start_times are identical, the test is repeated on the
+\c in_end_times.  If these are also equal, the comparison returns 0.
+<tt>LALCompareSearchSummaryByOutTime()</tt> operates in a similar manner, but
+uses the out, rather than in, times.
+
+<tt>LALTimeSortSearchSummary()</tt> will time sort a linked list of search
+summary tables.  You can sort on in our out start time depending which
+\c comparfunc is specified.
+
+<tt>LALIfoScanSearchSummary()</tt> steps through a linked list of search
+summary tables and returns a pointer \c output to a linked list of those
+tables whos \c ifos field matches the string \c ifos.
+
+
+<tt>LALIfoScanSummValue()</tt>, <tt>LALCompareSummValueByTime()</tt> and
+<tt>LALTimeSortSummValue()</tt> performs the same functions as described
+above.  The only difference being that they act on summ value tables.
+
+<tt>LALCheckOutTimeFromSearchSummary()</tt> verifies that all times
+between the specified \c startTime and \c endTime have been
+searched precisely once for the given \c ifo.
+
+Finally, <tt>LALDistanceScanSummValueTable()</tt> scan a summ value table
+ searching for a trigger belonging to a given ifo and englobing a give GPS
+ time.
+
+
+\heading{Algorithm}
+
+None.
+
+\heading{Uses}
+
+LALCalloc, LALMalloc, LALFree.
+
+\heading{Notes}
+%% Any relevant notes.
+
+*/
 
 #include <math.h>
 #include <stdio.h>
@@ -47,86 +99,9 @@ $Id$
 
 NRCSID( LIGOMETADATAUTILSC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{LIGOMetadataUtils.c}}
 
-\noindent General routines for manipulating LIGO metadatabase tables.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LIGOMetadataUtilsCP}
-\idx{LALPlaygroundInSearchSummary()}
-\idx{LALCompareSearchSummaryByInTime()}
-\idx{LALCompareSearchSummaryByOutTime ()}
-\idx{LALTimeSortSearchSummary()}
-\idx{LALIfoScanSearchSummary()}
-\idx{LALIfoScanSummValue()}
-\idx{LALCompareSummValueByTime()}
-\idx{LALTimeSortSummValue()}
-\idx{LALCheckOutTimeFromSearchSummary()}
-\idx{LALDistanceScansummValueTable()}
-
-\subsubsection*{Description}
-
-The function \texttt{LALPlaygroundInSearchSummary()} determines the
-ammount of time in the search summary table \texttt{ssTable} that overlaps
-with playground data. The time between \texttt{in\_start\_time} and
-\texttt{in\_end\_time} that overlaps with playground is returned in
-\texttt{inPlayTime} and the time between \texttt{out\_start\_time} and
-\texttt{out\_end\_time} that overlaps with playground is returned in
-\texttt{outPlayTime}.
-
-\texttt{LALCompareSearchSummaryByInTime()} is a function to compare the in
-times in two search summary tables.  It returns 1 if the
-\texttt{in\_start\_time} of the first table is after the
-\texttt{in\_start\_time} of the second and -1 if it is before.  If the two
-\texttt{in\_start\_time}s are identical, the test is repeated on the
-\texttt{in\_end\_time}s.  If these are also equal, the comparison returns 0.
-\texttt{LALCompareSearchSummaryByOutTime()} operates in a similar manner, but
-uses the out, rather than in, times.
-
-\texttt{LALTimeSortSearchSummary()} will time sort a linked list of search
-summary tables.  You can sort on in our out start time depending which
-\texttt{comparfunc} is specified.
-
-\texttt{LALIfoScanSearchSummary()} steps through a linked list of search
-summary tables and returns a pointer \texttt{output} to a linked list of those
-tables whos \texttt{ifos} field matches the string \texttt{ifos}.
-
-
-\texttt{LALIfoScanSummValue()}, \texttt{LALCompareSummValueByTime()} and
-\texttt{LALTimeSortSummValue()} performs the same functions as described
-above.  The only difference being that they act on summ value tables.
-
-\texttt{LALCheckOutTimeFromSearchSummary()} verifies that all times
-between the specified \texttt{startTime} and \texttt{endTime} have been
-searched precisely once for the given \texttt{ifo}.
-
-Finally, \texttt{LALDistanceScanSummValueTable()} scan a summ value table
- searching for a trigger belonging to a given ifo and englobing a give GPS
- time.
-
-
-\subsubsection*{Algorithm}
-
-\noindent None.
-
-\subsubsection*{Uses}
-
-\noindent LALCalloc, LALMalloc, LALFree.
-
-\subsubsection*{Notes}
-%% Any relevant notes.
-
-\vfill{\footnotesize\input{LIGOMetadataUtilsCV}}
-
-</lalLaTeX>
-#endif
-
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
 int XLALCountProcessTable(ProcessTable *head)
-/* </lalVerbatim> */
+
 {
 	int length;
 
@@ -137,9 +112,9 @@ int XLALCountProcessTable(ProcessTable *head)
 	return(length);
 }
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 int XLALCountProcessParamsTable(ProcessParamsTable *head)
-/* </lalVerbatim> */
+
 {
 	int length;
 
@@ -150,9 +125,9 @@ int XLALCountProcessParamsTable(ProcessParamsTable *head)
 	return(length);
 }
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 int XLALCountMultiInspiralTable(MultiInspiralTable *head)
-/* </lalVerbatim> */
+
 {
 	int length;
 	/* count the number of events in the list */
@@ -163,12 +138,12 @@ int XLALCountMultiInspiralTable(MultiInspiralTable *head)
 }
 
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 int
 XLALIFONumber(
     const char *ifo
     )
-/* </lalVerbatim> */
+
 {
   switch( ifo[0] )
   {
@@ -210,13 +185,13 @@ XLALIFONumber(
   }
 }
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 void
 XLALReturnIFO(
     char                *ifo,
     InterferometerNumber IFONumber
     )
-/* </lalVerbatim> */
+
 {
   switch( IFONumber )
   {
@@ -251,13 +226,13 @@ XLALReturnIFO(
 }
 
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 void
 XLALReturnDetector(
     LALDetector           *det,
     InterferometerNumber   IFONumber
     )
-/* </lalVerbatim> */
+
 {
   switch( IFONumber )
   {
@@ -374,7 +349,7 @@ static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
   return LAL_INT8_C(-1);
 }
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 void
 LALPlaygroundInSearchSummary (
     LALStatus          *status,
@@ -382,7 +357,7 @@ LALPlaygroundInSearchSummary (
     LIGOTimeGPS        *inPlayTime,
     LIGOTimeGPS        *outPlayTime
     )
-/* </lalVerbatim> */
+
 {
   INT4 playCheck = 0;
   INITSTATUS( status, "LALPlaygroundInSearchSummary", LIGOMETADATAUTILSC );
@@ -400,14 +375,14 @@ LALPlaygroundInSearchSummary (
   RETURN( status );
 }
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 int
 XLALPlaygroundInSearchSummary (
     SearchSummaryTable *ssTable,
     LIGOTimeGPS        *inPlayTime,
     LIGOTimeGPS        *outPlayTime
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "PlaygroundInSearchSummary";
   INT8 startNS, endNS, lengthNS, playNS;
@@ -437,13 +412,13 @@ XLALPlaygroundInSearchSummary (
 }
 
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 int
 LALCompareSearchSummaryByInTime (
     const void *a,
     const void *b
     )
-/* </lalVerbatim> */
+
 {
   LALStatus     status;
 
@@ -489,13 +464,13 @@ LALCompareSearchSummaryByInTime (
 }
 
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 int
 LALCompareSearchSummaryByOutTime (
     const void *a,
     const void *b
     )
-/* </lalVerbatim> */
+
 {
   LALStatus     status;
 
@@ -540,13 +515,13 @@ LALCompareSearchSummaryByOutTime (
   }
 }
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 int
 XLALTimeSortSearchSummary(
     SearchSummaryTable  **summHead,
     int(*comparfunc)    (const void *, const void *)
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "TimeSortSearchSummary";
   INT4                  i;
@@ -599,14 +574,14 @@ XLALTimeSortSearchSummary(
 
 
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 void
 LALTimeSortSearchSummary (
     LALStatus            *status,
     SearchSummaryTable  **summHead,
     int(*comparfunc)    (const void *, const void *)
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALTimeSortSearchSummary", LIGOMETADATAUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -621,13 +596,13 @@ LALTimeSortSearchSummary (
 }
 
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 SearchSummaryTable *
 XLALIfoScanSearchSummary(
     SearchSummaryTable         *input,
     CHAR                       *ifos
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "IfoScanSearchSummary";
   SearchSummaryTable    *output = NULL;
@@ -679,7 +654,7 @@ XLALIfoScanSearchSummary(
 
 
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 void
 LALIfoScanSearchSummary(
     LALStatus                  *status,
@@ -687,7 +662,7 @@ LALIfoScanSearchSummary(
     SearchSummaryTable         *input,
     CHAR                       *ifos
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALIfoScanSearchSummary", LIGOMETADATAUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -699,7 +674,7 @@ LALIfoScanSearchSummary(
 
 }
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 void
 LALDistanceScanSummValueTable (
     LALStatus            *status,
@@ -707,7 +682,7 @@ LALDistanceScanSummValueTable (
     LIGOTimeGPS          gps,
     const CHAR           *ifo,
     REAL4                *distance)
-/* </lalVerbatim> */
+
 {
   SummValueTable    *thisSummValue = NULL;
   /*INT4 test=0;*/
@@ -757,7 +732,7 @@ LALDistanceScanSummValueTable (
   RETURN (status);
 }
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 void
 LALCheckOutTimeFromSearchSummary (
     LALStatus            *status,
@@ -766,7 +741,7 @@ LALCheckOutTimeFromSearchSummary (
     LIGOTimeGPS          *startTime,
     LIGOTimeGPS          *endTime
     )
-/* </lalVerbatim> */
+
 {
   SearchSummaryTable   *thisIFOSummList = NULL;
   SearchSummaryTable   *thisSearchSumm = NULL;
@@ -858,7 +833,7 @@ LALCheckOutTimeFromSearchSummary (
 
 
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 void
 LALIfoScanSummValue(
     LALStatus                  *status,
@@ -866,7 +841,7 @@ LALIfoScanSummValue(
     SummValueTable             *input,
     CHAR                       *ifo
     )
-/* </lalVerbatim> */
+
 {
   SummValueTable    *thisSummValue = NULL;
   SummValueTable    *keptSumm = NULL;
@@ -912,13 +887,13 @@ LALIfoScanSummValue(
 
 
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 int
 LALCompareSummValueByTime (
     const void *a,
     const void *b
     )
-/* </lalVerbatim> */
+
 {
   const SummValueTable *aPtr = *((const SummValueTable * const *)a);
   const SummValueTable *bPtr = *((const SummValueTable * const *)b);
@@ -959,13 +934,13 @@ LALCompareSummValueByTime (
   }
 }
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 int
 XLALTimeSortSummValue(
     SummValueTable      **summHead,
     int(*comparfunc)    (const void *, const void *)
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "TimeSortSummValue";
   INT4                  i;
@@ -1021,14 +996,14 @@ XLALTimeSortSummValue(
 }
 
 
-/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+
 void
 LALTimeSortSummValue (
     LALStatus            *status,
     SummValueTable      **summHead,
     int(*comparfunc)    (const void *, const void *)
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALTimeSortSummValue", LIGOMETADATAUTILSC );
   ATTATCHSTATUSPTR( status );

@@ -44,9 +44,20 @@
 
 #include <lal/LALDatatypes.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
+#ifdef  __cplusplus
+#ifdef __GNUC__
+#define RESTRICT __restrict__
+#else
+#define RESTRICT
+#endif
+#else
+#define RESTRICT restrict
 #endif
 
 NRCSID( REALFFTH, "$Id$" );
@@ -438,7 +449,7 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
  *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
  *  .
  */
-int XLALREAL4VectorFFT( REAL4Vector * restrict output, const REAL4Vector * restrict input,
+int XLALREAL4VectorFFT( REAL4Vector * RESTRICT output, const REAL4Vector * RESTRICT input,
     const REAL4FFTPlan *plan );
 
 /** Computes the power spectrum of REAL4 data
@@ -895,8 +906,11 @@ LALREAL8VectorFFT(
     REAL8FFTPlan *plan
     );
 
-#ifdef  __cplusplus
-#pragma {
+#undef RESTRICT
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

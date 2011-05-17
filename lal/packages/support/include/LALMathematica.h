@@ -154,6 +154,12 @@
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 
 /* <lalErrTable file="LALMathematicaHE"> */
 #define LALMATHEMATICAH_ENULL 1
@@ -216,5 +222,11 @@ LALMathNDPlot( LALStatus *status,
                MathNDPointList *first,
                INT4 *ntiles,
                REAL4 *pointSize );
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
 
 #endif /* _LALMATHEMATICA_H */

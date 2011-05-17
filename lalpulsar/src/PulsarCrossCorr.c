@@ -25,8 +25,6 @@
  * \ingroup pulsarTODO
  * \brief LAL routines for CW cross-correlation searches
  *
- * $Id$
- *
  */
 
 #include <lal/DopplerScan.h>

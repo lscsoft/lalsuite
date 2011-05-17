@@ -17,29 +17,27 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="ReadLHODataCV">
- * Author: Jolien D. E. Creighton
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Program \texttt{ReadLHOData.c}}
+/**
+ * \author Jolien D. E. Creighton
+ * \file
+ *
+ * \heading{Program \ref ReadLHOData.c}
  *
  * Tests the low-level frame stream routines by reading LHO E5 frame data.
  *
- * \subsubsection*{Usage}
+ * \heading{Usage}
  *
- * \begin{verbatim}
+ * \code
  * ReadLHOData
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
- * This program extracts the channel \verb+H2:LSC-AS_Q+ from all the frames in
- * the directory set in the environment \verb+LAL_FRAME_PATH+ (or the current
+ * This program extracts the channel <tt>H2:LSC-AS_Q</tt> from all the frames in
+ * the directory set in the environment \c LAL_FRAME_PATH (or the current
  * directory if this environment is not set) and writes it to new frame files.
  *
- **** </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <stdio.h>

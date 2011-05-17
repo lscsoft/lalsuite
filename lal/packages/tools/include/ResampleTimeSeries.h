@@ -46,9 +46,10 @@
 #ifndef _RESAMPLETIMESERIES_H
 #define _RESAMPLETIMESERIES_H
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( RESAMPLETIMESERIESH, "$Id$" );
@@ -177,8 +178,9 @@ LALResampleREAL4TimeSeries(
     ResampleTSParams   *params
     );
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

@@ -17,40 +17,39 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="HeterodynePulsarTestCV">
-Author: Dupuis, R. J.
-$Id$
-********************************* </lalVerbatim> */
+/**
+\author Dupuis, R. J.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{HeterodynePulsarTest.c}}
+\heading{Program \ref HeterodynePulsarTest.c}
 
-This program demonstrates the usage of the functions \texttt{LALCoarseHeterodyne()}
-and \texttt{LALFineHeterodyneToPulsar()}.
+This program demonstrates the usage of the functions <tt>LALCoarseHeterodyne()</tt>
+and <tt>LALFineHeterodyneToPulsar()</tt>.
 
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 HeterodynePulsarTest
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This test program heterodynes, averages, and resamples an artificial signal using the functions
-\texttt{LALCoarseHeterodyne()} and \texttt{LALFineHeterodyneToPulsar()}.
+<tt>LALCoarseHeterodyne()</tt> and <tt>LALFineHeterodyneToPulsar()</tt>.
 
-\subsubsection*{Exit codes}
-\input{HeterodynePulsarTestCE}
+\heading{Exit codes}
 
-\subsubsection*{Uses}
-\begin{verbatim}
+
+\heading{Uses}
+\code
 LALCoarseHeterodyne()
 LALFineHeterodyneToPulsar()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{HeterodynePulsarTestCV}}
-******************************************************* </lalLaTeX> */
+
+*/
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
@@ -74,7 +73,7 @@ NRCSID( HETERODYNEPULSARTESTC, "$Id$" );
 /******* DEFINE LOCAL CONSTANTS AND MACROS ************/
 #define SQRT3_2 0.8660254037844386467637231707529361L
 
-/***************************** <lalErrTable file="HeterodynePulsarTestCE"> */
+/**\name Error Codes */ /*@{*/
 #define HETERODYNEPULSARTESTC_ENOM 0
 #define HETERODYNEPULSARTESTC_ECHK 1
 #define HETERODYNEPULSARTESTC_EFLS 2
@@ -82,7 +81,7 @@ NRCSID( HETERODYNEPULSARTESTC, "$Id$" );
 #define HETERODYNEPULSARTESTC_MSGENOM "Nominal exit"
 #define HETERODYNEPULSARTESTC_MSGECHK "Error checking failed to catch bad data"
 #define HETERODYNEPULSARTESTC_MSGEFLS "Incorrect answer for valid data"
-/***************************** </lalErrTable> */
+/*@}*/
 
 /* might also wish to define parameters and expected results for test
    cases here, for example */

@@ -31,7 +31,11 @@ import os
 import string
 import time
 import copy
-from lalapps.tracksearchutils import *
+try:
+    from lalapps.tracksearchutils import *
+except:
+    from tracksearchutils import *
+
 disableGraphics=False
 try:
     from pylab import *
@@ -42,7 +46,7 @@ except Exception, errorInfo:
     sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
     sys.stderr.write("Pylab functionality unavailable!\n")
     sys.stderr.write("Function calls requiring graphics may FAIL!\n")
-    
+    sys.stderr.flush()
 
 #Begin MAIN part of this python code to actually manipulate the curve
 #lists
@@ -99,6 +103,7 @@ def wrapperGraphTriggers(candidateObject):
             if candidateObject.verboseMode:
                 sys.stdout.write("Only trait summary for triggers in memory.\n")
                 sys.stdout.write("Loading entire candidate list.\n")
+                sys.stdout.flush()
             candidateObject.__loadfileQuick__(candidateObject.filename[0])
         candidateObject.graphTriggers(graph2file,graphGPSoffset,timescale)
     except Exception, errorInfo:
@@ -106,6 +111,7 @@ def wrapperGraphTriggers(candidateObject):
         sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
         sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
         sys.stderr.write("Skipping this plot. Sorry.\n")
+        sys.stderr.flush()
 #End wrapperGraphTriggers(candidateObject)
 
 def wrapperShowHistogram(candidateObject):
@@ -143,12 +149,7 @@ def wrapperShowHistogram(candidateObject):
             property=candidateObject.__getCurveField__('',myTrait)
             sys.stdout.write("Creating histogram for %s \n"%
                              (property[1]))
-
-        candidateObject.setHistogramType(histogramType)
-        candidateObject.showHistogram(myTrait,
-                                      graph2file,
-                                      newHistCol,
-                                      topTol)
+            sys.stdout.flush()
         try:
             candidateObject.setHistogramType(histogramType)
             candidateObject.showHistogram(myTrait,
@@ -160,6 +161,7 @@ def wrapperShowHistogram(candidateObject):
             sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
             sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
             sys.stderr.write("Skipping this plot. Sorry.\n")
+            sys.stderr.flush()
 #End wrapperShowHistogram(candidateObject)
 
 def wrapperShowScatterPlot(candidateObject):
@@ -176,6 +178,7 @@ def wrapperShowScatterPlot(candidateObject):
             sys.stderr.write("Error plotting this scatter plot!\n")
             sys.stderr.write("Check trigger property string.\n")
             sys.stderr.write("%s\n"%(triggerTrait))
+            sys.stderr.flush()
             if (triggerTrait=="p"):
                 colX="p"
                 colY="v"
@@ -188,6 +191,7 @@ def wrapperShowScatterPlot(candidateObject):
             propertyY=candidateObject.__getCurveField__('',myTraitY)[1]
             sys.stdout.write("Creating scatter plot for %s,%s\n"%
                              (propertyX,propertyY))
+            sys.stdout.flush()
         try:
             formatString=''
             candidateObject.showScatterPlot(myTraitX,
@@ -199,6 +203,7 @@ def wrapperShowScatterPlot(candidateObject):
             sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
             sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
             sys.stderr.write("Skipping this plot. Sorry.\n")
+            sys.stderr.flush()
             
 #End wrapperShowScatterPlot(candidateObject)
 
@@ -237,7 +242,12 @@ parser.add_option("-c","--clobber",dest="clobberFilename",
                    default="",
                    help="This is a file or directory/mask of all files that should be globbed together then checked against the globbed list from --file option.  Entries candidates in FILE with reside in list CLOBBER will be deleted from list FILE and written to disk along with an globbed list which is not clobbered.The filename will be like CLOBBER:Start:00000000,0:Stop:00000000,0:TF:000:000:AND:Start:00000000,0:Stop:00000000,0:TF:000:000:.candidates.  This option can not be used with glob, we assume specified --file are globs of candidates.   We glob the --clobber option if neccessary to perform the clobber."
                    )
-parser.add_option("-T","--expression-threshold",dest="expThreshold",
+parser.add_option("-K","--percentile-cut",dest="percentileCut",
+                  default="",
+                  help="A string formated by property letter ex: P or \
+!P (negate) then a colon then the decimal percentage \
+P:0.05 if making several different cuts separete by commas, EX: P:0.01,L:0.50")
+parser.add_option("-T","--expression-threshold",dest="expThreshold", 
                   default="",
                   help="This is a flexible thresholding interface.  We are allowed to manipulate variables to build expressions. Variables allowed are:\n P ,power \n L ,curve length \n D , time duration in seconds \n B , frequency bandwith of kurve \n  T, start time float\n S, stop time float\n F, start Freq \n, G, stop Freq \n V, bright pixel frequency\n H, bright pixel time(float)\n J, power of bright pixel \n M, mean pixel power \n C, variance pixel power \n A, trigger angle \n See the help for the candidateList class for better explaination of the valid syntax allowed. You can impose multiple threshold expresssions for one file operation.  This saves time lost to IO of running candidateHandler.py multiple times.  Use the comma as a delimiter B>10,L<100 would apply to thresholds and save them in two appropriately marked files. ENCLOSE THE EXPRESSION IN DOUBLE QUOTES",
                   )
@@ -327,6 +337,7 @@ glitchdb=bool(options.glitchdb)
 glob=options.glob
 clobberFilename=str(options.clobberFilename)
 expThreshold=str(options.expThreshold)
+percentileCut=str(options.percentileCut)
 graph2file=options.imageFilemask
 linePlot=bool(options.linePlot)
 createHistogram=bool(options.histogram)
@@ -381,6 +392,9 @@ elif (glob and (canList.__len__() >= 1)):
         #Just join the files
         nullLibrary=candidateList()
         for libraryEntry in canList:
+            if verboseSwitch:
+                sys.stdout.write("Processing file : %s"%libraryEntry)
+                sys.stdout.flush()
             nullLibrary.globListFile(outName,libraryEntry)
     else:
         #Glob them through RAM allowing the proper adjustments to be made
@@ -460,7 +474,11 @@ elif (createScatterPlot and (canList.__len__() >=1)):
         del candidateObject
     
     #SECTION APPLY ABITRARY THRESHOLDS
-elif ((expThreshold != "") and (canList.__len__() >=1)):
+    #Adjust logic to do expThres or percentileCut together!!!
+    #Use to local defs to clean up this branch in script!
+    # A def for -T and a def for -K
+elif (((expThreshold != "") or (percentileCut != ""))and (canList.__len__() >=1)):
+    #Treshold will always go before percentile Cuts
     #Carry out thresholding on all entries in canList
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
@@ -468,49 +486,123 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
             candidateObject.spinnerVerboseMode=False        
         candidateObject.__loadfileQuick__(entry)
         #Build Threshold list
-        if expThreshold.__contains__('"'):
-            if verboseSwitch:
-                sys.stdout.write("Found extra parenthesis in threshold expressions!")
-        expThreshold=expThreshold.strip('"')
-        expThresholdLIST=str(expThreshold).split(',')
+        if (expThreshold != ""):
+            if expThreshold.__contains__('"'):
+                if verboseSwitch:
+                    sys.stdout.write("Found extra parenthesis in threshold expressions!")
+                    sys.stdout.flush()
+            expThreshold=expThreshold.strip('"')
+            expThresholdLIST=str(expThreshold).split(',')
+        else:
+            expThresholdLIST=[None]
+        #Build Percentile Cut list
+        if (percentileCut != ""):
+            perCut=percentileCut.strip('"')
+            perCutLIST=str(perCut).split(',')
+        else:
+            perCutLIST=[None]
+        #Process both lists
         for singleThreshold in expThresholdLIST:
-            candidateResults=candidateObject.applyArbitraryThresholds(singleThreshold)
-            singleThresholdName=str(singleThreshold).replace('(','--').replace(')','--')
-            pathName=''
-            if (outfile != "") and (canList.__len__() == 1):
-                #Prepend Threshold label to outfile
-                if expThresholdLIST.__len__()>1:
-                    outfile=singleThreshold+outfile
-                candidateResults.writefile(outfile)
-                if verboseSwitch:
-                    print "Wrote file :",outfile
-                if dumpSummaryDisk:
-                    candidateResults.writeSummary(outfile)
-                if glitchdb:
-                    candidateResults.writeGlitchDatabase('',outfile)
-                if (dqList>=0):
-                    candidateObject.writeDQtable(dqList,outfile)
-            else:
-                pathName=os.path.dirname(entry)
-                saveFiles=pathName+'/Threshold:'+str(singleThresholdName)+':'+os.path.basename(entry)
-                candidateResults.writefile(saveFiles)
-                if verboseSwitch:
-                    print "Wrote file :",saveFiles
-            	if dumpSummaryDisk:
-                	candidateResults.writeSummary(saveFiles)
-            	if glitchdb:
-                	candidateResults.writeGlitchDatabase('',saveFiles)
-                if (dqList>=0):
-                    candidateObject.writeDQtable(dqList,outfile)
-                candidateResults.__setfilename__(saveFiles)
-                if createHistogram:
-                    wrapperShowHistogram(candidateResults)
-                if linePlot:
-                    wrapperGraphTriggers(candidateResults)
-            del candidateResults
+            for singleCut in perCutLIST:
+                singleThresholdName=str(singleThreshold).replace('(','--').replace(')','--')
+                singleCutName=str(singleCut).replace('(','--').replace(')','--')
+                #Fix up name schema and apply cuts as appropriate
+                if ((singleCut != None) and \
+                    (singleThreshold != None)):
+                    singleCompleteName=singleThresholdName+":"+singleCutName
+                    candidateResults=candidateObject.applyArbitraryThresholds(singleThreshold)
+                    argProp,argVal=singleCut.split(':')
+                    candidateResults2=candidateResults.applyPercentageThreshold(argProp,argVal)
+                    candidateResults=candidateResults2
+                elif singleCut != None:
+                    singleCompleteName=singleCutName
+                    argProp,argVal=singleCut.split(':')
+                    candidateResults=candidateObject.applyPercentageThreshold(argProp,argVal)
+                elif singleThreshold != None:
+                    singleCompleteName=singleThresholdName
+                    candidateResults=candidateObject.applyArbitraryThresholds(singleThreshold)
+                else:
+                    singleCompleteName="FUNCERR"
+                    candidateResults=candidateObject
+                if (outfile != "") and (canList.__len__() == 1):
+                    candidateResults.writefile(outfile)
+                    if verboseSwitch:
+                        print "Wrote file :",outfile
+                    if dumpSummaryDisk:
+                        candidateResults.writeSummary(outfile)
+                    if glitchdb:
+                        candidateResults.writeGlitchDatabase('',outfile)
+                    if (dqList>=0):
+                        candidateObject.writeDQtable(dqList,outfile)
+                else:
+                    pathName=os.path.dirname(entry)
+                    saveFiles=pathName+'/Threshold:'+str(singleCompleteName)+':'+os.path.basename(entry)
+                    candidateResults.writefile(saveFiles)
+                    if verboseSwitch:
+                        print "Wrote file :",saveFiles
+                    if dumpSummaryDisk:
+                            candidateResults.writeSummary(saveFiles)
+                    if glitchdb:
+                            candidateResults.writeGlitchDatabase('',saveFiles)
+                    if (dqList>=0):
+                        candidateObject.writeDQtable(dqList,outfile)
+                    candidateResults.__setfilename__(saveFiles)
+                    if createHistogram:
+                        wrapperShowHistogram(candidateResults)
+                    if linePlot:
+                        wrapperGraphTriggers(candidateResults)
+                del candidateResults
         del entry
     del candidateObject
-
+# #Do percentile cuts
+# elif ((percentileCut != "") and (canList.__len__() >=1)):
+#     #Carry out thresholding on all entries in canList
+#     for entry in canList:
+#         candidateObject=candidateList(verboseSwitch)
+#         if muteSpinner:
+#             candidateObject.spinnerVerboseMode=False        
+#         candidateObject.__loadfileQuick__(entry)
+#         perCut=percentileCut.strip('"')
+#         perCutLIST=str(perCut).split(',')
+#         for singleThreshold in perCutLIST:
+#             argProp,argVal=singleThreshold.split(':')
+#             candidateResults=candidateObject.applyPercentageThreshold(argProp,argVal)
+#             singleThresholdName=str(singleThreshold).replace('(','--').replace(')','--')
+#             pathName=''
+#             if (outfile != "") and (canList.__len__() == 1):
+#                 #Prepend Threshold label to outfile
+#                 if perCutLIST.__len__()>1:
+#                     outfile=singleThreshold+"_PercentileCut_"+outfile
+#                 candidateResults.writefile(outfile)
+#                 if verboseSwitch:
+#                     print "Wrote file :",outfile
+#                 if dumpSummaryDisk:
+#                     candidateResults.writeSummary(outfile)
+#                 if glitchdb:
+#                     candidateResults.writeGlitchDatabase('',outfile)
+#                 if (dqList>=0):
+#                     candidateObject.writeDQtable(dqList,outfile)
+#             else:
+#                 pathName=os.path.dirname(entry)
+#                 saveFiles=pathName+'/Threshold:'+str(singleThresholdName)+':'+os.path.basename(entry)
+#                 candidateResults.writefile(saveFiles)
+#                 if verboseSwitch:
+#                     print "Wrote file :",saveFiles
+#             	if dumpSummaryDisk:
+#                 	candidateResults.writeSummary(saveFiles)
+#             	if glitchdb:
+#                 	candidateResults.writeGlitchDatabase('',saveFiles)
+#                 if (dqList>=0):
+#                     candidateObject.writeDQtable(dqList,outfile)
+#                 candidateResults.__setfilename__(saveFiles)
+#                 if createHistogram:
+#                     wrapperShowHistogram(candidateResults)
+#                 if linePlot:
+#                     wrapperGraphTriggers(candidateResults)
+#             del candidateResults
+#         del entry
+#     del candidateObject
+    
     #SECTION TO DUMP SUMMARY TO DISK WHEN NO THRESHOLDING REQD
     #Want to rely on traitSummary to speed things up if available.
 elif ((canList.__len__() >=1) and (dumpSummaryDisk or glitchdb) and (expThreshold =="") ):

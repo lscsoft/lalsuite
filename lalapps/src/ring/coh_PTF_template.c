@@ -23,49 +23,36 @@
  *
  * Author: Brown, D. A., and Fazi, D.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpPTFTemplateCV">
-Author: Brown, D. A., and Fazi, D.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpPTFTemplate.c}}
-\label{ss:FindChirpPTFTemplate.c}
+\author Brown, D. A., and Fazi, D.
+\file
+\ingroup inspiral
 
-Provides functions to create physical template family templates in a
-form that can be used by the \texttt{FindChirpPTFFilter()} function.
+\brief Provides functions to create physical template family templates in a
+form that can be used by the <tt>FindChirpPTFFilter()</tt> function.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpPTFTemplateCP}
-\idx{LALFindChirpPTFTemplate()}
-
-The function \texttt{LALFindChirpPTFTemplate()} creates a physical template
+The function <tt>LALFindChirpPTFTemplate()</tt> creates a physical template
 family template as described by the algorithm below.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 Blah.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpPTFTemplateCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include "coh_PTF.h"
 
@@ -73,8 +60,40 @@ RCSID( "$Id$" );
 
 NRCSID(FINDCHIRPPTFTEMPLATEC, "$Id: FindChirpPTFTemplate.c,v 1.7 2008/06/26 19:05:07 dfazi Exp $");
 
+void coh_PTF_template (
+    FindChirpTemplate          *fcTmplt,
+    InspiralTemplate           *InspTmplt,
+    FindChirpTmpltParams       *params
+    )
+{
+  LALStatus status = blank_status;
+  switch ( params->approximant )
+  {
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorT4:
+    case GeneratePPN:
+    case PadeT1:
+    case EOB:
+    case EOBNR:
+    case IMRPhenomB:
+      LALFindChirpTDTemplate( &status,fcTmplt,InspTmplt,params );
+      break;
+    case FindChirpSP:
+      LALFindChirpSPTemplate( &status,fcTmplt,InspTmplt,params );
+      break;
+    case FindChirpPTF:
+      coh_PTF_template_PTF(fcTmplt,InspTmplt,params);
+      break;
+    default:
+      fprintf(stderr,"Waveform approximant not recognized at template generation\n");
+      exit(1);
+  }
+}
+
 void
-coh_PTF_template (
+coh_PTF_template_PTF (
     FindChirpTemplate          *fcTmplt,
     InspiralTemplate           *InspTmplt,
     FindChirpTmpltParams       *params
@@ -125,9 +144,9 @@ coh_PTF_template (
 
   N = params->PTFphi->length;
 
-  /* check that the parameter structure is set */
+  /* set the parameter structure */
   /* to the correct waveform approximant       */
-  sanity_check( InspTmplt->approximant == FindChirpPTF );
+  InspTmplt->approximant = FindChirpPTF;
   sanity_check( InspTmplt->fLower );
 
   /* copy the template parameters to the finchirp template structure */
@@ -235,7 +254,7 @@ void coh_PTF_normalize(
   COMPLEX8     *qtilde, *inputData;
   COMPLEX8Vector *qtildeVec,qVec;
   COMPLEX8     *PTFQtilde   = NULL;
-  
+
 
   /* check the required input exists */
   sanity_check( fcTmplt );
@@ -273,11 +292,10 @@ void coh_PTF_normalize(
   sanity_check ( deltaF > 0 );
   sanity_check ( fcTmplt->tmplt.tC > 0 );
   /*Segment, response function and PTFQtilde must be the same length */
-  sanity_check ( len == length ) ; 
+  sanity_check ( len == length ) ;
   sanity_check ( fcTmplt->PTFQtilde->vectorLength == len);
 
-  /* check that the parameter structure is set to a time domain approximant */
-  sanity_check ( fcTmplt->tmplt.approximant == FindChirpPTF );
+//  sanity_check ( fcTmplt->tmplt.approximant == FindChirpPTF );
 
   /* Set parameters to determine spin/nonspin */
   /* For non-spin we only need one filter. For PTF all 5 are needed */
@@ -285,7 +303,7 @@ void coh_PTF_normalize(
   if (spinTemplate == 1)
   {
     vecLength = 5;
-  } 
+  }
 
   /*
    *
@@ -311,7 +329,7 @@ void coh_PTF_normalize(
       PTFM->data[5 * j + i] = PTFM->data[5 * i + j];
     }
   }
-  
+
   if (PTFN)
   {
     /* Compute N_ij */
@@ -360,9 +378,9 @@ void coh_PTF_normalize(
     XLALCOMPLEX8VectorFFT( &qVec, qtildeVec, invPlan );
   }
 
-  /* FIXME: We would like to be able to print off A,B and M. 
+  /* FIXME: We would like to be able to print off A,B and M.
      like above, this may be better in the main function */
-  
+
   XLALDestroyCOMPLEX8Vector( qtildeVec );
 }
 
@@ -410,7 +428,7 @@ void coh_PTF_template_overlaps(
                             PTFQtilde1[k + i * len].im *
                             PTFQtilde2[k + j * len].im )
                             * invspec->data->data[k] ;
-      
+
       }
       PTFM->data[vecLen * i + j] *= 4.0 * deltaF ;
     }
@@ -486,7 +504,7 @@ void coh_PTF_bank_filters(
     REAL8                      f_min,
     REAL8                      fFinal)
 {
-  // This function calculates (Q|s) for the bank veto. It only returns the 
+  // This function calculates (Q|s) for the bank veto. It only returns the
   // middle half of the time series with some buffer to allow for time shifts
 
   /* FIXME: Can this function be merged with normalize?? */
@@ -495,7 +513,7 @@ void coh_PTF_bank_filters(
   REAL8          deltaF, r, s, x, y, UNUSED length;
   COMPLEX8       *inputData,*qtilde;
   COMPLEX8Vector *qtildeVec,qVec;
-  COMPLEX8       *PTFQtilde   = NULL;  
+  COMPLEX8       *PTFQtilde   = NULL;
 
   numPoints   = PTFqVec->vectorLength;
   halfNumPoints = 3*numPoints/4 - numPoints/4;
@@ -569,7 +587,7 @@ void coh_PTF_auto_veto_overlaps(
     REAL4FrequencySeries       *invspec,
     COMPLEX8FFTPlan            *invBankPlan,
     UINT4                      spinBank,
-    UINT4                      numAutoPoints, 
+    UINT4                      numAutoPoints,
     UINT4                      timeStepPoints,
     UINT4                      ifoNumber )
 {

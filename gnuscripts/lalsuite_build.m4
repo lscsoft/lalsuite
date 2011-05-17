@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 13
+# serial 17
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -16,6 +16,11 @@ AC_PROVIDE_IFELSE([AC_PROG_CXX],
 ])])[]dnl
 AC_LANG(_AC_LANG)[]dnl
 ]) # LALSUITE_USE_LIBTOOL
+
+AC_DEFUN([LALSUITE_ARG_VAR],[
+  AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
+  AC_ARG_VAR(LALSUITE_TOP_SRCDIR,[Set to top source directory of lalsuite])
+])
 
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
 AM_CONDITIONAL([$1],[test x$$2 = xtrue])
@@ -124,6 +129,30 @@ AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
   AC_SUBST(NIGHTLY_VERSION)
 ])
 
+AC_DEFUN([LALSUITE_ENABLE_DEBUG],
+[AC_ARG_ENABLE(
+  [debug],
+  AC_HELP_STRING([--enable-debug],[include standard LAL debugging code [default=yes]]),
+  [ case "${enableval}" in
+      yes) ;;
+      no) AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code) ;;
+      *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
+    esac
+  ], )
+])
+
+AC_DEFUN([LALSUITE_ENABLE_ALL_LAL],
+[AC_ARG_ENABLE(
+  [all_lal],
+  AC_HELP_STRING([--enable-all-lal],[enable/disable compilation of all LAL libraries]),
+  [ case "${enableval}" in
+      yes) all_lal=true;;
+      no) all_lal=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-all-lal) ;;
+    esac
+  ], [ all_lal= ] )
+])
+
 AC_DEFUN([LALSUITE_ENABLE_LALFRAME],
 [AC_ARG_ENABLE(
   [lalframe],
@@ -131,9 +160,9 @@ AC_DEFUN([LALSUITE_ENABLE_LALFRAME],
   [ case "${enableval}" in
       yes) lalframe=true;;
       no) lalframe=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalframe) ;;
     esac
-  ], [ lalframe=true ] )
+  ], [ lalframe=${all_lal:-true} ] )
 if test "$frame" = "false"; then
   lalframe=false
 fi
@@ -146,9 +175,9 @@ AC_DEFUN([LALSUITE_ENABLE_LALMETAIO],
   [ case "${enableval}" in
       yes) lalmetaio=true;;
       no) lalmetaio=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-metaio) ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalmetaio) ;;
     esac
-  ], [ lalmetaio=true ] )
+  ], [ lalmetaio=${all_lal:-true} ] )
 if test "$metaio" = "false"; then
   lalmetaio=false
 fi
@@ -163,7 +192,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALXML],
       no) lalxml=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalxml) ;;
     esac
-  ], [ lalxml=false ] )
+  ], [ lalxml=${all_lal:-false} ] )
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALBURST],
@@ -173,9 +202,9 @@ AC_DEFUN([LALSUITE_ENABLE_LALBURST],
   [ case "${enableval}" in
       yes) lalburst=true;;
       no) lalburst=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-burst) ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalburst) ;;
     esac
-  ], [ lalburst=true ] )
+  ], [ lalburst=${all_lal:-true} ] )
 if test "$lalmetaio" = "false"; then
   lalburst=false
 fi])
@@ -187,9 +216,9 @@ AC_DEFUN([LALSUITE_ENABLE_LALINSPIRAL],
   [ case "${enableval}" in
       yes) lalinspiral=true;;
       no) lalinspiral=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-inspiral) ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalinspiral) ;;
     esac
-  ], [ lalinspiral=true ] )
+  ], [ lalinspiral=${all_lal:-true} ] )
 if test "$lalmetaio" = "false"; then
   lalinspiral=false
 fi
@@ -204,7 +233,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALPULSAR],
       no) lalpulsar=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalpulsar) ;;
     esac
-  ], [ lalpulsar=true ] )
+  ], [ lalpulsar=${all_lal:-true} ] )
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALSTOCHASTIC],
@@ -214,9 +243,9 @@ AC_DEFUN([LALSUITE_ENABLE_LALSTOCHASTIC],
   [ case "${enableval}" in
       yes) lalstochastic=true;;
       no) lalstochastic=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-stochastic) ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalstochastic) ;;
     esac
-  ], [ lalstochastic=true ] )
+  ], [ lalstochastic=${all_lal:-true} ] )
 if test "$lalmetaio" = "false"; then
   lalstochastic=false
 fi

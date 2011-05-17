@@ -208,12 +208,12 @@ LALStochasticTableFromLIGOLw (
   thisValue = NULL; \
 }
 
-/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+
 int
 LALStochSummTableFromLIGOLw (
     StochSummTable **stochSummHead,
     CHAR *fileName)
-/* </lalVerbatim> */
+
 {
   int i, j, nrows;
   int mioStatus;

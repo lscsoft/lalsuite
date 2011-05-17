@@ -198,6 +198,20 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
 
           # make sure we only filter the master chunk once
           done_this_chunk = True
+
+          if not sbBankFile:
+            # Determine template bank file name
+            ifo_name = cp.get('templatebank-meta','bank-ifo')
+            tb_node = inspiral.TmpltBankNode(tmplt_job)
+            tb_node.set_start(chunk.start())
+            tb_node.set_end(chunk.end())
+            tb_node.set_ifo(ifo_name)
+            tb_node.set_vds_group(ifo_name[0] + str(chunk.start()))
+            tb_node.set_user_tag((usertag.split('_')[0])+'_DATAFIND')
+            os.symlink("../datafind/" + tb_node.get_output(),tb_node.get_output())
+            sbBankFile=tb_node.get_output()           
+
+          # Set up the bank splitting
           if runSplitBank:
             sb_node = inspiral.SplitBankNode(sb_job)            
             sb_node.set_bank(sbBankFile)
@@ -598,8 +612,9 @@ if doExtTrig:
 else:
   exttrigInjections=[0,0]
 
-# spinchecker
+tmplt_job = inspiral.TmpltBankJob(cp,opts.dax)
 
+# spinchecker
 spincheck_job = inspiral.PTFSpinCheckerJob(cp,opts.dax)
 
 # inspiral:
@@ -629,7 +644,10 @@ for ifo1 in ifo_list:
   #splitbank
   split_job = inspiral.SplitBankJob(cp,opts.dax)
   if opts.splitbank:
-    splitBankFile = cp.get('splitbank-meta','bank-file')
+    if cp.has_option('splitbank-meta','bank-file'):
+      splitBankFile = cp.get('splitbank-meta','bank-file')
+    else:
+      splitBankFile = None
     splitNumBanks = int(cp.get('splitbank-meta','num-banks'))
   else:
     splitBankFile = None
@@ -686,8 +704,14 @@ else:
 ##############################################################################
 # get the pad and chunk lengths from the values in the ini file
 pad = int(cp.get('data', 'pad-data'))
-length = int(cp.get('data','block-duration'))
-overlap = int(cp.get('data','segment-duration'))/2
+#length = int(cp.get('data','block-duration'))
+#overlap = int(cp.get('data','segment-duration'))/2
+n = int(cp.get('data', 'segment-length'))
+s = int(cp.get('data', 'number-of-segments'))
+r = int(cp.get('data', 'sample-rate'))
+o = int(cp.get('inspiral', 'segment-overlap'))
+length = ( n * s - ( s - 1 ) * o ) / r
+overlap = o / r
 
 ##############################################################################
 #  The meat of the DAG generation comes below
@@ -878,7 +902,7 @@ print ifo_analyze
 sys.stdout.flush()
 
 chunks_analyzed = analyze_coh(ifo_analyze,data,data_to_do,  
-    None,insp_jobs,None,None,dag,exttrigInjections,
+    tmplt_job,insp_jobs,None,None,dag,exttrigInjections,
     usertag,None,runSplitBank=opts.splitbank,sb_job = split_job,
     sbBankFile=splitBankFile,sbNumBanks = splitNumBanks,
     runSpinChecker=opts.spin_checker,sc_job=spincheck_job)

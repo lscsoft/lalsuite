@@ -17,41 +17,39 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="FrameCalibrationTestCV">
- * Author: Brown, D. A.
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Program \texttt{FrameCalibrationTest.c}}
+/**
+ * \author Brown, D. A.
+ * \file
+ *
+ * \heading{Program \ref FrameCalibrationTest.c}
  *
  * Tests the hig-level function to obtain an up-to-date calibration from
  * frame files.
  *
- * \subsubsection*{Usage}
+ * \heading{Usage}
  *
- * \begin{verbatim}
+ * \code
  * FrameCalibrationTest
- * \end{verbatim}
+ * \endcode
  *
- * \subsection*{Usage}
- * \begin{verbatim}
+ * \heading{Usage}
+ * \code
  * FrameCalibrationTest [options]
  * Options:
  *   -h         print this message
  *   -o         write calibration to file
  *   -v         verbose: print extra information
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
- * For each interferometer in the array \verb+ifoCode+ the program does the
- * following: For each GPS time in the array \verb+calTime+, an attempt is
+ * For each interferometer in the array \c ifoCode the program does the
+ * following: For each GPS time in the array \c calTime, an attempt is
  * made to generate a calibration for that time. It reads a frame cache file
- * named \verb+ifo-CAL_V03-gpstimerange.catalog+, where \verb+ifo+ is the
- * interferometer obtained from the array \verb+ifoCode+, \verb+gpstimerange+ is
- * obtained from the array \verb+cacheTime+. Even elements of the array
- * \verb+calTime+ use the first element of the array \verb+cacheTime+ and odd
+ * named <tt>ifo-CAL_V03-gpstimerange.catalog</tt>, where \c ifo is the
+ * interferometer obtained from the array \c ifoCode, \c gpstimerange is
+ * obtained from the array \c cacheTime. Even elements of the array
+ * \c calTime use the first element of the array \c cacheTime and odd
  * elements the second. This is done to allow the developer to test a range of
  * GPS times and catalogs quickly.
  *
@@ -60,35 +58,35 @@
  * 729273600-734367600 and 729273600-734367600.
  *
  * The test uses that calibration data files
- * \begin{verbatim}
+ * \code
  * H-CAL_FAC_V03-729273600-5094000.gwf
  * H-CAL_REF_V03-734073939-64.gwf
  * L-CAL_FAC_V03-729273600-5094000.gwf
  * L-CAL_REF_V03-731488397-64.gwf
- * \end{verbatim}
+ * \endcode
  *
  * FIXME: the following test is not yet implemented: waiting for Steve's
  * change to add the return of the actual values used.
- * The returned values of $\alpha$ and $\alpha\beta$ are checked against the
+ * The returned values of \f$\alpha\f$ and \f$\alpha\beta\f$ are checked against the
  * values obtained from the files S2 version 3 calibration factor files
- * \verb+H1AlphaBeta.txt+ and \verb+L1AlphaBeta.txt+ which can be found on the
+ * <tt>H1AlphaBeta.txt</tt> and <tt>L1AlphaBeta.txt</tt> which can be found on the
  * calibration home page.
  *
- * \subsubsection*{Exit codes}
- * \begin{tabular}{|c|l|}
- * \hline
- *  Code & Explanation                   \\
- * \hline
- * \tt 0 & Success, normal exit.         \\
- * \tt 1 & Subroutine failed.            \\
- * \tt77 & Ignored failure: Test frame data not found. \\
- * \hline
- * \end{tabular}
+ * \heading{Exit codes}
+ * <table><tr><td>
  *
- * \subsubsection*{Uses}
- * \subsubsection*{Notes}
+ *  Code</td><td>Explanation</td></tr>
+<tr><td> *
+ * \tt 0</td><td>Success, normal exit.</td></tr>
+<tr><td> * \tt 1</td><td>Subroutine failed.</td></tr>
+<tr><td> * \tt77</td><td>Ignored failure: Test frame data not found.</td></tr>
+<tr><td> *
+ * </td></tr></table>
  *
- **** </lalLaTeX> */
+ * \heading{Uses}
+ * \heading{Notes}
+ *
+*/
 
 
 #include <stdio.h>

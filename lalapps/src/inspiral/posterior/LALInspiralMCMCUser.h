@@ -1,24 +1,18 @@
-/* <lalVerbatim file="LALInspiralMCMCUserHV">
-Author: Dietz, A. & Veitch, J.
-$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17 thomas Exp $
-</lalVerbatim>  */
+/**
+\author Dietz, A. & Veitch, J.
+\file
+\ingroup inspiral
 
+\brief Header file for the MCMC user code.
 
-/*  <lalLaTeX>
-
-\section{Header \texttt{LALInspiralMCMCUser.h}}
-\label{s:LALInspiralMCMCUser.h}
-
-Header file for the MCMC user code.
-
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/LALInspiralMCMCUser.h>
-\end{verbatim}
+\endcode
 
-\noindent This header file covers user routines that are used for the Markov Chain Monte Carlo algorithm tools.
+This header file covers user routines that are used for the Markov Chain Monte Carlo algorithm tools.
 
-</lalLaTeX> */
+*/
 
 #ifndef _LALINSPIRALMCMCUSER_H
 #define _LALINSPIRALMCMCUSER_H
@@ -48,24 +42,19 @@ Header file for the MCMC user code.
 
 
 /*#ifdef  __cplusplus
-extern "C" { 
+extern "C" {
 #endif*/
 
 NRCSID( LALINSPIRALMCMCUSERH, "$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17 thomas Exp $" );
 
-
-/*  <lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>  */
-
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define LALINSPIRALH_ENULL           1
 #define LALINSPIRALH_EMEM            2
 #define LALINSPIRALH_EDIV0           3
 #define LALINSPIRALH_ESIZE           4
 #define LALINSPIRALH_ECHOICE         5
-#define LALINSPIRALH_EORDER          6 
-#define LALINSPIRALH_EAPPROXIMANT    7 
+#define LALINSPIRALH_EORDER          6
+#define LALINSPIRALH_EAPPROXIMANT    7
 
 #define LALINSPIRALH_MSGENULL         "Arguments contained an unexpected null pointer"
 #define LALINSPIRALH_MSGEMEM          "Memory allocation error"
@@ -74,14 +63,7 @@ NRCSID( LALINSPIRALMCMCUSERH, "$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17
 #define LALINSPIRALH_MSGECHOICE       "Invalid choice for an input parameter"
 #define LALINSPIRALH_MSGEORDER        "unknown order specified"
 #define LALINSPIRALH_MSGEAPPROXIMANT  "Invalid model"
-/* ---------------------------------------------------------------------  
-</lalErrTable> */
-
-
-
-/* <lalLaTeX>
---------------------------------------------------------------------- 
-</lalLaTeX>  */
+/*@}*/
 
 extern gsl_rng *RNG;
 extern double timewindow;

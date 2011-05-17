@@ -118,7 +118,7 @@ typedef struct
 
 typedef struct
 {
-  EphemerisData *edat;			/**< ephemeris data (from LALInitBarycenter()) */
+  EphemerisData *edat;			/**< ephemeris data (from XLALInitBarycenter()) */
   LIGOTimeGPS startTime;		/**< start time of observation */
   PulsarParams signalParams;		/**< GW signal parameters: Amplitudes + doppler */
   MultiDetectorInfo detInfo;		/**< (multi-)detector info */
@@ -175,7 +175,7 @@ UserVariables_t empty_UserVariables;
 extern int vrbflg;
 
 /* ---------- local prototypes ---------- */
-void initUserVars (LALStatus *status, UserVariables_t *uvar);
+int initUserVars (UserVariables_t *uvar);
 int XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name);
 
 EphemerisData *InitEphemeris (const CHAR *ephemDir, const CHAR *ephemYear );
@@ -194,7 +194,6 @@ main(int argc, char *argv[])
 {
   const CHAR *fn = argv[0];
 
-  LALStatus status = blank_status;
   ConfigVariables config = empty_ConfigVariables;
   UserVariables_t uvar = empty_UserVariables;
   DopplerMetric *metric;
@@ -207,15 +206,24 @@ main(int argc, char *argv[])
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
+  if ( XLALGetDebugLevel (argc, argv, 'v') != XLAL_SUCCESS ) {
+    XLALPrintError( "%s(): XLALGetDebugLevel() failed\n", fn );
+    return EXIT_FAILURE;
+  }
 
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
 
-  LAL_CALL (initUserVars (&status, &uvar), &status);
+  if ( initUserVars(&uvar) != XLAL_SUCCESS ) {
+    XLALPrintError( "%s(): initUserVars() failed\n", fn );
+    return EXIT_FAILURE;
+  }
 
   /* read cmdline & cfgfile  */
-  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);
+  if ( XLALUserVarReadAllInput(argc,argv) != XLAL_SUCCESS ) {
+    XLALPrintError( "%s(): XLALUserVarReadAllInput() failed\n", fn );
+    return EXIT_FAILURE;
+  }
 
   if (uvar.help) 	/* help requested: we're done */
     return 0;
@@ -302,11 +310,9 @@ main(int argc, char *argv[])
 
 
 /** register all "user-variables" */
-void
-initUserVars (LALStatus *status, UserVariables_t *uvar)
+int
+initUserVars (UserVariables_t *uvar)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
-  ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
   uvar->help = FALSE;
@@ -327,7 +333,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   uvar->projection = 0;
   if ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Call to XLALCreateStringVector() failed with xlalErrno = %d\n", xlalErrno );
-    ABORT ( status, FSTATMETRIC_EXLAL, FSTATMETRIC_MSGEXLAL );
+    XLAL_ERROR ( __func__, XLAL_ENOMEM );
   }
 
   uvar->IFOweights = NULL;
@@ -337,42 +343,41 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
 
   if ( (uvar->coords = XLALCreateStringVector ( "Freq_Nat", "Alpha", "Delta", "f1dot_Nat", NULL )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Call to XLALCreateStringVector() failed with xlalErrno = %d\n", xlalErrno );
-    ABORT ( status, FSTATMETRIC_EXLAL, FSTATMETRIC_MSGEXLAL );
+    XLAL_ERROR ( __func__, XLAL_ENOMEM );
   }
 
   /* register all our user-variables */
 
-  LALregBOOLUserStruct(status,	help,		'h', UVAR_HELP,		"Print this help/usage message");
-  LALregLISTUserStruct(status,	IFOs,		'I', UVAR_OPTIONAL, 	"Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
-  LALregLISTUserStruct(status,	IFOweights,	 0,  UVAR_OPTIONAL, 	"Comma-separated list of relative noise-weights, eg. \"w1,w2,w3,..\" ");
-  LALregREALUserStruct(status,	Alpha,		'a', UVAR_OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
-  LALregREALUserStruct(status,	Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
-  LALregREALUserStruct(status,	Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
-  LALregREALUserStruct(status,	f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
-  LALregREALUserStruct(status, 	startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
-  LALregREALUserStruct(status, 	refTime,         0,  UVAR_OPTIONAL, 	"GPS reference time of Doppler parameters. Special values: 0=startTime, -1=mid-time");
-  LALregREALUserStruct(status,  duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
-  LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
-  LALregSTRINGUserStruct(status,ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
+  XLALregBOOLUserStruct(help,		'h', UVAR_HELP,		"Print this help/usage message");
+  XLALregLISTUserStruct(IFOs,		'I', UVAR_OPTIONAL, 	"Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
+  XLALregLISTUserStruct(IFOweights,	 0,  UVAR_OPTIONAL, 	"Comma-separated list of relative noise-weights, eg. \"w1,w2,w3,..\" ");
+  XLALregREALUserStruct(Alpha,		'a', UVAR_OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
+  XLALregREALUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
+  XLALregREALUserStruct(Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
+  XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
+  XLALregREALUserStruct(startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
+  XLALregREALUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"GPS reference time of Doppler parameters. Special values: 0=startTime, -1=mid-time");
+  XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
+  XLALregSTRINGUserStruct(ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
+  XLALregSTRINGUserStruct(ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
 
-  LALregREALUserStruct(status, 	h0,	 	 0, UVAR_OPTIONAL,	"GW amplitude h0" );
-  LALregREALUserStruct(status, 	cosi,	 	 0, UVAR_OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
-  LALregREALUserStruct(status,	psi,		 0, UVAR_OPTIONAL,	"Wave polarization-angle psi [0, pi]" );
-  LALregREALUserStruct(status,	phi0,		 0, UVAR_OPTIONAL,	"GW initial phase phi_0 [0, 2pi]" );
+  XLALregREALUserStruct(h0,	 	 0, UVAR_OPTIONAL,	"GW amplitude h0" );
+  XLALregREALUserStruct(cosi,	 	 0, UVAR_OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
+  XLALregREALUserStruct(psi,		 0, UVAR_OPTIONAL,	"Wave polarization-angle psi [0, pi]" );
+  XLALregREALUserStruct(phi0,		 0, UVAR_OPTIONAL,	"GW initial phase phi_0 [0, 2pi]" );
 
-  LALregINTUserStruct(status,  	metricType,	 0,  UVAR_OPTIONAL,	"type of metric to compute: 0=phase-metric, 1=F-metric(s), 2=both" );
-  LALregSTRINGUserStruct(status, outputMetric,	'o', UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
-  LALregINTUserStruct(status,   projection,      0,  UVAR_OPTIONAL,     "Project onto subspace orthogonal to this axis: 0=none, 1=1st-coord, 2=2nd-coord etc");
+  XLALregINTUserStruct(metricType,	 0,  UVAR_OPTIONAL,	"type of metric to compute: 0=phase-metric, 1=F-metric(s), 2=both" );
+  XLALregSTRINGUserStruct(outputMetric,	'o', UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
+  XLALregINTUserStruct(projection,      0,  UVAR_OPTIONAL,     "Project onto subspace orthogonal to this axis: 0=none, 1=1st-coord, 2=2nd-coord etc");
 
-  LALregLISTUserStruct(status,	coords,		'c', UVAR_OPTIONAL, 	"Doppler-coordinates to compute metric in (see --coordsHelp)");
-  LALregBOOLUserStruct(status,	coordsHelp,      0,  UVAR_OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
+  XLALregLISTUserStruct(coords,		'c', UVAR_OPTIONAL, 	"Doppler-coordinates to compute metric in (see --coordsHelp)");
+  XLALregBOOLUserStruct(coordsHelp,      0,  UVAR_OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
 
-  LALregINTUserStruct(status,  	detMotionType,	 0,  UVAR_DEVELOPER,	"Detector-motion: 0=spin+orbit, 1=orbit, 2=spin, 3=spin+ptoleorbit, 4=ptoleorbit, 5=orbit+spin_z, 6=orbit+spin_xy");
+  XLALregINTUserStruct(detMotionType,	 0,  UVAR_DEVELOPER,	"Detector-motion: 0=spin+orbit, 1=orbit, 2=spin, 3=spin+ptoleorbit, 4=ptoleorbit, 5=orbit+spin_z, 6=orbit+spin_xy");
 
-  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,      "Output code version");
+  XLALregBOOLUserStruct(version,        'V', UVAR_SPECIAL,      "Output code version");
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 
 } /* initUserVars() */
 
@@ -382,9 +387,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
 int
 XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name)
 {
-  const CHAR *fn = "XLALInitCode()";
-
-  LALStatus status = blank_status;
+  const CHAR *fn = __func__;
 
   if ( !cfg || !uvar || !app_name ) {
     LogPrintf (LOG_CRITICAL, "%s: illegal NULL pointer input.\n\n", fn );
@@ -478,9 +481,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     cfg->history->app_name = tmp;
 
     /* get commandline describing search*/
-    LALUserVarGetLog (&status, &cmdline,  UVAR_LOGFMT_CMDLINE );
-    if ( status.statusCode ) {
-      LogPrintf (LOG_CRITICAL, "%s: LALUserVarGetLog() failed with statusCode = %d.\n\n", fn, status.statusCode );
+    if ( (cmdline = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) == NULL ) {
+      LogPrintf (LOG_CRITICAL, "%s: XLALUserVarGetLog() failed with xlalErrno = %d.\n\n", fn, xlalErrno );
       XLAL_ERROR ( fn, XLAL_EFUNC );
     }
     cfg->history->cmdline = cmdline;
@@ -496,26 +498,18 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 int
 XLALDestroyConfig ( ConfigVariables *cfg )
 {
-  const CHAR *fn = "XLALDestroyConfig()";
-
-  LALStatus status = blank_status;
+  const CHAR *fn = __func__;
 
   if ( !cfg ) {
     LogPrintf (LOG_CRITICAL, "%s: invalid NULL input!\n\n", fn );
     XLAL_ERROR (fn, XLAL_EINVAL );
   }
 
-  LALDestroyUserVars ( &status );
-  if ( status.statusCode ) {
-    LogPrintf (LOG_CRITICAL, "%s: call to LALDestroyUserVars() failed, status = %d\n\n", fn, status.statusCode );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
-  }
+  XLALDestroyUserVars ();
 
   XLALDestroyResultHistory ( cfg->history );
 
-  LALFree ( cfg->edat->ephemE );
-  LALFree ( cfg->edat->ephemS );
-  LALFree ( cfg->edat );
+  XLALDestroyEphemerisData ( cfg->edat );
 
   return XLAL_SUCCESS;
 
@@ -530,8 +524,7 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
 	       )
 {
 #define FNAME_LENGTH 1024
-  const CHAR *fn = "InitEphemeris()";
-  LALStatus status = blank_status;
+  const CHAR *fn = __func__;
   EphemerisData *edat;
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
@@ -555,22 +548,8 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
   EphemEarth[FNAME_LENGTH-1] = 0;
   EphemSun[FNAME_LENGTH-1] = 0;
 
-  /* allocate memory for ephemeris-data to be returned */
-  if ( (edat = XLALCalloc ( 1, sizeof(*edat))) == NULL ) {
-    XLALPrintError("%s: XLALCalloc(1, %d) failed.\n", fn, sizeof(*edat) );
-    return NULL;
-  }
-
-  /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
-   * why we can use local variables (EphemEarth, EphemSun) to initialize them.
-   */
-  edat->ephiles.earthEphemeris = EphemEarth;
-  edat->ephiles.sunEphemeris = EphemSun;
-
-  LALInitBarycenter(&status, edat);
-
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: LALInitBarycenter() failed! code = %d, msg = '%s'", fn, status.statusCode, status.statusDescription );
+  if ( (edat = XLALInitBarycenter(EphemEarth, EphemSun)) == NULL ) {
+    XLALPrintError ( "%s: XLALInitBarycenter() failed with xlalErrno = %d.\n\n", fn, xlalErrno );
     return NULL;
   }
 
@@ -581,7 +560,7 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
 int
 XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHistory_t *history )
 {
-  const CHAR *fn = "XLALOutputDopplerMetric()";
+  const CHAR *fn = __func__;
 
   UINT4 i;
   REAL8 A, B, C, D;

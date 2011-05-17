@@ -75,8 +75,12 @@ RCSID(LALAPPS_VCS_IDENT_ID);
 static void print_usage( CHAR *program );
 static void output_frame( CHAR *ifo, INT4 gpsStart, INT4 gpsEnd,
     REAL4TimeSeries *injData, CHAR *frameType, CHAR *outDir );
+static void output_frame_real8( CHAR *ifo, INT4 gpsStart, INT4 gpsEnd,
+    REAL8TimeSeries *injData, CHAR *frameType, CHAR *outDir );
 static void output_multi_channel_frame( INT4 num_ifos, INT4 gpsStart,
     INT4 gpsEnd, REAL4TimeSeries *injData[LAL_NUM_IFO], CHAR *frameType, CHAR *outDir );
+static void output_multi_channel_frame_real8( INT4 num_ifos, INT4 gpsStart,
+    INT4 gpsEnd, REAL8TimeSeries *injData[LAL_NUM_IFO], CHAR *frameType, CHAR *outDir );
 static void write_mdc_log_file( CHAR *filename, SimInspiralTable *injections,
     INT4 gps_start, CHAR *set_name );
 static int get_spectrum(REAL8Sequence *spectrum, InterferometerNumber ifoNumber,
@@ -844,6 +848,78 @@ static void output_frame(CHAR *ifo,
 }
 
 
+/* function to output h(t) waveform in a frame file */
+static void output_frame_real8(CHAR *ifo,
+    INT4 gpsStart,
+    INT4 gpsEnd,
+    REAL8TimeSeries *injData,
+    CHAR *frameType,
+    CHAR *outDir)
+{
+  CHAR fname[FILENAME_MAX];
+  INT4 duration;
+  INT4 detectorFlags;
+  FrameH *frame;
+  CHAR creator[HISTORY_COMMENT];
+  CHAR channel[LALNameLength];
+
+  /* get frame filename */
+  duration = gpsEnd - gpsStart;
+  if (outDir)
+    snprintf( fname, FILENAME_MAX, "%s/GHLTV-%s-%d-%d.gwf", outDir, frameType, gpsStart, duration );
+  else
+    snprintf( fname, FILENAME_MAX, "GHLTV-%s-%d-%d.gwf", frameType, gpsStart, duration );
+
+  /* set detector flags */
+  if ( strncmp( ifo, "H2", 2 ) == 0 )
+    detectorFlags = LAL_LHO_2K_DETECTOR_BIT;
+  else if ( strncmp( ifo, "H1", 2 ) == 0 )
+    detectorFlags = LAL_LHO_4K_DETECTOR_BIT;
+  else if ( strncmp( ifo, "L1", 2 ) == 0 )
+    detectorFlags = LAL_LLO_4K_DETECTOR_BIT;
+  else if ( strncmp( ifo, "G1", 2 ) == 0 )
+    detectorFlags = LAL_GEO_600_DETECTOR_BIT;
+  else if ( strncmp( ifo, "V1", 2 ) == 0 )
+    detectorFlags = LAL_VIRGO_DETECTOR_BIT;
+  else if ( strncmp( ifo, "T1", 2 ) == 0 )
+    detectorFlags = LAL_TAMA_300_DETECTOR_BIT;
+  else
+  {
+    fprintf( stderr, "ERROR: Unrecognised IFO: '%s'\n", ifo );
+    exit( 1 );
+  }
+
+  /* set the channel name */
+  snprintf(channel, LALNameLength, "%s:STRAIN", ifo);
+  strncpy(injData->name, channel, LALNameLength);
+
+  /* define frame */
+  frame = XLALFrameNew( &injData->epoch, duration, "LIGO", 0, 1,
+      detectorFlags );
+
+  /* set creator metadata */
+  snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
+  XLALFrHistoryAdd(frame, "creator", creator);
+
+  /* add channel to frame */
+  XLALFrameAddREAL8TimeSeriesSimData( frame, injData );
+
+  if ( vrbflg )
+    fprintf( stdout, "Writing injection to frame: '%s'\n", fname );
+
+  /* write frame */
+  if (XLALFrameWrite( frame, fname, 8) != 0)
+  {
+    fprintf( stderr, "ERROR: Cannot save frame file: '%s'\n", fname );
+    exit( 1 );
+  }
+
+  /* clear frame */
+  FrameFree( frame );
+
+  return;
+}
+
 /* write injections for all ifos into a single frame */
 static void output_multi_channel_frame(INT4 num_ifos,
     INT4 gpsStart,
@@ -906,6 +982,66 @@ static void output_multi_channel_frame(INT4 num_ifos,
 }
 
 
+/* write injections for all ifos into a single frame */
+static void output_multi_channel_frame_real8(INT4 num_ifos,
+    INT4 gpsStart,
+    INT4 gpsEnd,
+    REAL8TimeSeries *injData[LAL_NUM_IFO],
+    CHAR *frameType,
+    CHAR *outDir)
+{
+  CHAR fname[FILENAME_MAX];
+  INT4 duration;
+  INT4 detectorFlags;
+  FrameH *frame;
+  INT4 i;
+  CHAR creator[HISTORY_COMMENT];
+  CHAR *ifo = NULL;
+
+  /* get frame filename */
+  duration = gpsEnd - gpsStart;
+  if (outDir)
+    snprintf( fname, FILENAME_MAX, "%s/GHLTV-%s-%d-%d.gwf", outDir, frameType, gpsStart, duration );
+  else
+    snprintf( fname, FILENAME_MAX, "GHLTV-%s-%d-%d.gwf", frameType, gpsStart, duration );
+
+  /* set detector flags */
+  detectorFlags = LAL_GEO_600_DETECTOR_BIT | LAL_LHO_4K_DETECTOR_BIT |
+    LAL_LHO_2K_DETECTOR_BIT | LAL_LLO_4K_DETECTOR_BIT |
+    LAL_TAMA_300_DETECTOR_BIT | LAL_VIRGO_DETECTOR_BIT;
+
+  /* define frame */
+  frame = XLALFrameNew( &(injData[0])->epoch, duration, "LIGO", 0, 1,
+      detectorFlags );
+
+  /* set creator metadata */
+  snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
+  XLALFrHistoryAdd(frame, "creator", creator);
+
+  /* add channels to frame */
+  for( i = 0; i < num_ifos; i++ )
+  {
+    ifo = (CHAR*)calloc(LIGOMETA_IFO_MAX, sizeof(CHAR));
+    XLALReturnIFO(ifo, i);
+    printf("adding %s channel to frame\n", ifo);
+    XLALFrameAddREAL8TimeSeriesSimData( frame, injData[i] );
+  }
+
+  if (vrbflg)
+    fprintf( stdout, "Writing injections to frame: '%s'\n", fname );
+
+  /* write frame */
+  if ( XLALFrameWrite( frame, fname, 8 ) != 0 )
+  {
+    fprintf( stderr, "ERROR: Cannot save frame file: '%s'\n", fname );
+    exit( 1 );
+  }
+
+  /* clear frame */
+  FrameFree( frame );
+
+  return;
+}
 /* function to write a Burst MDC log file */
 static void write_mdc_log_file(CHAR *filename,
     SimInspiralTable *injections,

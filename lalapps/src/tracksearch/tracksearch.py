@@ -33,6 +33,7 @@ import string
 import math
 import exceptions
 import ConfigParser
+import subprocess
 from tracksearchutils import determineDataPadding
 from glue import pipeline
 
@@ -162,10 +163,20 @@ class tracksearchCheckIniFile:
     def __init__(self,cp):
         self.iniOpts=cp
         self.errList=[]
+        self.warnList=[]
         self.memoryUseEstimate=int(0)
         self.smoothingWidthEstimate=float(0)
     #End init
 
+    def which(self,prog):
+        """
+        Method to do a which search at unix command line to find
+        codes. It then gives to error structure where the files were
+        found if found.
+        """
+        myWhich=subprocess.Popen(['which',prog],stdout=subprocess.PIPE,stderr=None)
+        return myWhich.stdout.read().strip()
+    
     def checkOpts(self):
         #Need to add simple check compare datafind:observatory
         #to multichannel:channel or tracksearchtime:channel
@@ -182,8 +193,15 @@ class tracksearchCheckIniFile:
                 optValue=newValue
             if str(optValue).__contains__('/'):
                 if not os.path.exists(str(optValue)):
-                    self.errList.append('Can not find :'+str(entry)+':'+str(optValue))
-                    fileNotFound=True
+                    #Attempt to make on the substitution!
+                    potentialFile=self.which(os.path.basename(optValue))
+                    if not os.path.exists(str(potentialFile)):
+                        self.errList.append('Can not find :'+str(entry)+':'+str(optValue))
+                        fileNotFound=True
+                    else:
+                        self.iniOpts.set('condor',entry,potentialFile)
+                        fileNotFound=False
+                        self.warnList.append("Did not find %s using %s instead!"%(os.path.basename(optValue),str(potentialFile).strip('\n')))
         #Check the opts compared to condor-max-jobs
         if self.iniOpts.has_section('condor-max-jobs'):
             condorMaxJobOpts=self.iniOpts.options('condor-max-jobs')
@@ -198,7 +216,6 @@ class tracksearchCheckIniFile:
             for entry in LALpath.split(':'):
                 if (entry.__contains__('lal') and entry.__contains__('bin')):
                     self.errList.append(entry)
-                
         #Check [tracksearchbase] section
         lambdaH=0
         lambdaL=1
@@ -230,8 +247,21 @@ class tracksearchCheckIniFile:
         if self.iniOpts.has_option('tracksearchtime','sample_rate'):
             sampleRate=float(self.iniOpts.get('tracksearchtime','sample_rate'))
         else:
-            self.errList.append('It appears that sample_rate option is missing in ini file!.');
+            self.errList.append('It appears that sample_rate option is missing in ini file!.')
             sampleRate=float(0)
+        #If INI has heterodyne options then both must be present
+        heterodyneFrequency=0
+        heterodyneRate=0
+        if self.iniOpts.has_option('tracksearchtime','heterodyne_frequency'):
+            heterodyneFrequency=float(self.iniOpts.get('tracksearchtime','heterodyne_frequency'))
+            if heterodyneFrequency > sampleRate/2:
+                self.errList.append('It appears that the heterodyne \
+frequency requested exceeds the original data nyquist frequency')
+            if self.iniOpts.has_option('tracksearchtime','heterodyne_sample_rate'):
+                heterodyneRate=float(self.iniOpts.get('tracksearchtime','heterodyne_sample_rate'))
+                if heterodyneRate > sampleRate:
+                    self.errList.append('The effective sampling rate \
+after heterodyning can not exceed the original sampling rate!\n')
         #Check for consistent PSD smoothing bin count!
         if self.iniOpts.has_option('tracksearchtime','whiten_level'):
             if self.iniOpts.get('tracksearchtime','whiten_level') > 0:
@@ -249,12 +279,17 @@ class tracksearchCheckIniFile:
                     LOSS=0
                 #Tabulate the width in Hz of the features we will be suppressing...
                 #RunBlockSize > X * (t+(2/fs))
-                if sampleRate > 0:
-                    ##removeWidth=(1+(sampleRate*LoTS)/2)/(LoTS+(2/sampleRate))
-                    removeWidth=((sampleRate/2)*SAP)/(1+(sampleRate*LoTS)/2)
+                rateUsed=0
+                if heterodyneRate>0:
+                    rateUsed=heterodyneRate
+                else:
+                    rateUsed=sampleRate
+                if rateUsed > 0:
+                    ##removeWidth=(1+(rateUsed*LoTS)/2)/(LoTS+(2/rateUsed))
+                    removeWidth=((rateUsed/2)*SAP)/(1+(rateUsed*LoTS)/2)
                     self.smoothingWidthEstimate=removeWidth
-                if (((LOSS*LoTS*sampleRate)/2)<SAP):
-                    trySAP=int(((LoTS*sampleRate)/2.0)*0.05)
+                if (((LOSS*LoTS*rateUsed)/2)<SAP):
+                    trySAP=int(((LoTS*rateUsed)/2.0)*0.05)
                     self.errList.append('It appears that smooth_average_spectrum option is inconsistent! Try this value '+str(trySAP)+'. One rule of thumb is: ((fs*dT)/2)*0.05')
                 
         #Check [multichannel] section if present
@@ -326,9 +361,17 @@ class tracksearchCheckIniFile:
         return self.smoothingWidthEstimate
     #End()
     
+    def numberWarnings(self):
+        return self.warnList.__len__()
+    
     def numberErrors(self):
         return self.errList.__len__()
     #end numberErrors def
+
+    def printWarningList(self):
+        sys.stdout.write(str(self.numberWarnings())+' INI Warnings Issued.\n')
+        for myWarning in self.warnList:
+            sys.stdout.write(myWarning+'\n')
 
     def printErrorList(self):
         sys.stderr.write(str(self.numberErrors())+' INI file Errors found!\n')
@@ -627,7 +670,12 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.add_condor_cmd('should_transfer_files','yes')
         self.add_condor_cmd('when_to_transfer_output','on_exit')
         #Read expected job sampling rate
-        sampleRate=float(cp.get('tracksearchtime','sample_rate'))
+        #This value is either the true sampling rate or the effective
+        #rate after heterodyning
+        if cp.has_option('tracksearchtime','heterodyne_sample_rate'):
+            sampleRate=float(cp.get('tracksearchtime','heterodyne_sample_rate'))
+        else:
+            sampleRate=float(cp.get('tracksearchtime','sample_rate'))
         #Read expected TF overlapping percentage
         overlapPercentage=float(cp.get('layerconfig','layerOverlapPercent'))
         #Set each trials total_time_point
@@ -871,14 +919,14 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #Add the candidateUtils.py equivalent library to dag for proper
         #execution!
         self.candUtil=str(cp.get('pylibraryfiles','pyutilfile'))
-        self.add_condor_cmd('should_transfer_files','yes')
-        self.add_condor_cmd('when_to_transfer_output','on_exit')
-        self.add_condor_cmd('initialdir',self.initialDir)
         #If the job is to run in the scheduler universe we set the proper ENV
         #variables otherwise the submit file will transfer the py script.
-        if self.__universe == 'scheduler':
+        if ((self.__universe == 'scheduler') or (self.__universe == 'local')):
             self.add_condor_cmd('environment','PYTHONPATH=$PYTHONPATH:'+os.path.abspath(os.path.dirname(self.candUtil)))
         else:
+            self.add_condor_cmd('should_transfer_files','yes')
+            self.add_condor_cmd('when_to_transfer_output','on_exit')
+            self.add_condor_cmd('initialdir',self.initialDir)
             self.add_condor_cmd('transfer_input_files',self.candUtil)
         if cp.has_section('clusterconfig'):
             for sec in ['clusterconfig']:
@@ -918,20 +966,32 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #Add the candidateUtils.py equivalent library to dag for proper
         #execution!
         self.candUtil=str(cp.get('pylibraryfiles','pyutilfile'))
-        self.add_condor_cmd('should_transfer_files','yes')
-        self.add_condor_cmd('when_to_transfer_output','on_exit')
-        self.add_condor_cmd('transfer_input_files',self.candUtil)
-        self.add_condor_cmd('initialdir',self.initialDir)
+        if ((self.__universe == 'scheduler') or (self.__universe == 'local')):
+            self.add_condor_cmd('environment','PYTHONPATH=$PYTHONPATH:'+os.path.abspath(os.path.dirname(self.candUtil)))
+        else:
+            self.add_condor_cmd('should_transfer_files','yes')
+            self.add_condor_cmd('when_to_transfer_output','on_exit')
+            self.add_condor_cmd('transfer_input_files',self.candUtil)
+            self.add_condor_cmd('initialdir',self.initialDir)
         #Setp escaping possible quotes in threshold string!
-        optionText=str('expression-threshold')
-        if cp.has_option('candidatethreshold',optionText):
-            newVal=val=cp.get('candidatethreshold',optionText)
-            #Introduce proper shell escapes for submit file to work...
-            if (newVal.__contains__('"') and not newVal.__contains__('\\')):
-                newVal=str(newVal).replace('"','\\"')
+        optionTextList=[str('expression-threshold'),str('percentile-cut')]
+        oldValList=list()#(list of tuple pairs(opt,val))
+        for optionText in optionTextList:
+            if cp.has_option('candidatethreshold',optionText):
+                oldVal=cp.get('candidatethreshold',optionText)
+                newVal=str(oldVal)
+                #New shell escape for latest condor 7.2.4
+                if newVal.__contains__('"'):
+                    newVal=str(newVal).replace('"','""')
                 cp.set('candidatethreshold',optionText,newVal)
+                oldValList.append((optionText,oldVal))
         for sec in ['candidatethreshold']:
-                self.add_ini_opts(cp,sec)
+            self.add_ini_opts(cp,sec)
+        #Replace double quotes escape in CP object back to
+        #friend format "opt" instead of ""opt""
+        for myOpt,oldVal in oldValList:
+            if oldVal != None:
+                cp.set('candidatethreshold',myOpt,oldVal)
    #End __init__ method
 #End tracksearchThresholdJob class
 
@@ -1259,6 +1319,8 @@ class tracksearch:
             buildDir(dataFindSubFileDir)
             currentDataFindJob=pipeline.LSCDataFindJob(dataFindInitialDir,dataFindLogPath,self.cp)
             filename="/datafind--"+str(self.blockID)+".sub"
+            if self.cp.has_option('condor','datafind_universe'):
+                currentDataFindJob.set_universe(self.cp.get('condor','datafind_universe'))
             currentDataFindJob.set_sub_file(os.path.normpath(dataFindSubFileDir+filename))
             currentDataFindJob.add_condor_cmd('initialdir',str(dataFindInitialDir))
             currentDataFindNodeList=list()
@@ -1350,9 +1412,10 @@ class tracksearch:
         if (self.sciSeg._ScienceSegment__chunks.__len__() < 1):
             sys.stdout.write("WARNING: Data to be analyzed not properly divided or absent!\n")
             sys.stdout.write("The input options must be WRONG!\n")
-        if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
+        if self.cp.has_option('condor','datafind_fixcache'):
             sys.stdout.write("Assuming we do not need standard data find job! Hardwiring in cache file to pipeline!\n")
-            sys.stdout.write("Looking for ini option: condor,datafind_fixcache\n")
+            sys.stdout.write("Using option condor,datafind_fixcache\n")
+            sys.stdout.write("If fixed cache files option not needed please remove ini file option!\n")
         # Pop first chunk off list to keep from repeating jobs!
         # We do this because the for look has a repeat issue the first job
         # seems to be a repeat of 2nd analysis chunk.  The for loop catches these types
@@ -1380,13 +1443,14 @@ class tracksearch:
             tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
             #If executable name is anything but LSCdataFind we
             #assume that the cache file should be hard wired!
-            if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
+            if self.cp.has_option('condor','datafind_fixcache'):
                 fixCache=self.cp.get('condor','datafind_fixcache')
                 subCacheFile=self.__buildSubCacheFile__(fixCache,dataFindInitialDir,chunk.start(),chunk.end())
                 tracksearchTime_node.add_var_opt('cachefile',subCacheFile)
             else:
                 #Setup a traditional pipe with a real data finding job
-                df_node=self.__getAssociatedDataFindNode__(dataFindInitialDir,dataFindLogPath,nodeStart,nodeEnd)
+                #A workaround for cache file since [start,stop) is the data
+                df_node=self.__getAssociatedDataFindNode__(dataFindInitialDir,dataFindLogPath,nodeStart,nodeEnd+1)
                 tracksearchTime_node.add_parent(df_node)
                 outputFileList=df_node.get_output_files()
                 tracksearchTime_node.add_var_opt('cachefile',outputFileList[0])
@@ -1613,6 +1677,10 @@ class tracksearch:
             self.dag.set_dag_file(self.dagFilename)
         self.dag.write_sub_files()
         self.dag.write_dag()
+        try:
+            self.dag.write_script()
+        except:
+            sys.stderr.write("Had trouble writing shell script equivalent of DAG skipping...\n")
         #Read in the resulting text file and prepend the DOT
         #information writing the DAG back to disk.
         input_fp=open(self.dag.get_dag_file(),'r')

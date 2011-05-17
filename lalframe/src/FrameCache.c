@@ -17,84 +17,71 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="FrameCacheCV">
- * Author: Jolien D. E. Creighton
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
+/**
+ * \author Jolien D. E. Creighton
+ * \file
  *
- * \subsection{Module \texttt{FrameCache.c}}
+ * \heading{Module \ref FrameCache.c}
  *
  * Routines for importing, exporting, generating, and manipulating frame
  * catalogs and cache structures.
  *
- * \subsubsection*{Prototypes}
- * \input{FrameCacheCP}
- * \idx{LALFrCacheImport}
- * \idx{LALFrCacheExport}
- * \idx{LALFrCacheSieve}
- * \idx{LALFrCacheGenerate}
- *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
  * A frame catalogue file has several pieces of metadata, including:
- * \begin{description}
- * \item[source] the source identifier, often a combination of upper-case
+ * <dl>
+ * <dt>source</dt><dd> the source identifier, often a combination of upper-case
  *     letters representing the detector sites (e.g., `H' for Hanford, `L'
  *     for Livingston) from which the frame data was generated.
- * \item[description] the description identifier, often a single upper-case
+ * </dd><dt>description</dt><dd> the description identifier, often a single upper-case
  *     letter describing what kind of frame data is present (e.g., `R' for
  *     raw data, `M' for minute-trend data).
- * \item[GPS-time] the GPS time in seconds (rounded down) of the start of the
+ * </dd><dt>GPS-time</dt><dd> the GPS time in seconds (rounded down) of the start of the
  *     data contained in the frame file.
- * \item[duration] the difference between the GPS time in seconds (rounded up)
+ * </dd><dt>duration</dt><dd> the difference between the GPS time in seconds (rounded up)
  *     of the end of the data contained in the frame file and the GPS time in
  *     seconds (rounded down) of the start of the data contained in the frame
  *     file.
- * \item[URL] the URL of the frame data.  If the protocol (i.e.,
- *     \verb+file://+ or \verb+http://+) is missing then it is assumed that
+ * </dd><dt>URL</dt><dd> the URL of the frame data.  If the protocol (i.e.,
+ *     <tt>file://</tt> or <tt>http://</tt>) is missing then it is assumed that
  *     this is the absolute or relative path of a frame file.  File URLs
- *     must have a fully-qualified domain name or the word \verb+localhost+
+ *     must have a fully-qualified domain name or the word \c localhost
  *     if on the localhost (or else localhost is assumed if absent).
  *     Examples:
- *     \begin{verbatim}
+ *     \code
  *     file://machine.university.edu/usr/share/lal/F-TEST-600000000-60.gwf
  *     file://localhost/usr/share/lal/F-TEST-600000000-60.gwf
  *     file:///usr/share/lal/F-TEST-600000000-60.gwf
  *     /usr/share/lal/F-TEST-600000000-60.gwf
  *     F-TEST-600000000-60.gwf
- *     \end{verbatim}
- * \end{description}
+ *     \endcode
+ * </dd></dl>
  * Other types of metadata, such as the md5 checksum and the file size, are not
  * used by these LAL routines.  The format of the catalogues is
- * \begin{verbatim}
+ * \code
  * source description GPS-time duration URL (ignored additional fields)
- * \end{verbatim}
+ * \endcode
  * for example:
- * \begin{verbatim}
+ * \code
  * F TEST 600000000 60 file://localhost/usr/share/lal/F-TEST-600000000-60.gwf
  * F TEST 600000060 60 file://localhost/usr/share/lal/F-TEST-600000060-60.gwf
  * F TEST 600000120 60 file://localhost/usr/share/lal/F-TEST-600000120-60.gwf
- * \end{verbatim}
+ * \endcode
  * If any data is missing or unknown, it is represented in the catalogue by a
- * single hyphen (\texttt{-}).
+ * single hyphen (<tt>-</tt>).
  *
- * The routine \texttt{LALFrCacheImport} reads in a specified frame catalogue
- * file and creates a frame cache.  The routine \texttt{LALFrCacheExport}
+ * The routine \c LALFrCacheImport reads in a specified frame catalogue
+ * file and creates a frame cache.  The routine \c LALFrCacheExport
  * exports a frame cache as a frame catalogue file.  The routine
- * \texttt{LALFrCacheGenerate} scans a colon-delimited list of directory paths
- * (or \texttt{.} if \texttt{NULL}) for files that match a given glob pattern
- * (default is \texttt{*.gwf} if \texttt{NULL}), and uses these to generate a
+ * \c LALFrCacheGenerate scans a colon-delimited list of directory paths
+ * (or <tt>.</tt> if \c NULL) for files that match a given glob pattern
+ * (default is <tt>*.gwf</tt> if \c NULL), and uses these to generate a
  * frame cache (with the metadata extracted from the file names).  The routine
- * \texttt{LALFrCacheSieve} applies regular expression filters to various
+ * \c LALFrCacheSieve applies regular expression filters to various
  * pieces of metadata to distill a frame cache into a sorted sub-cache of frame
- * files of interst.  The routine \texttt{LALDestroyFrCache} destroys a frame
+ * files of interst.  The routine \c LALDestroyFrCache destroys a frame
  * cache.
- *
- * \vfill{\footnotesize\input{FrameCacheCV}}
- *
- **** </lalLaTeX> */
+*/
 
 
 
@@ -579,13 +566,13 @@ void XLALFrDestroyCache( FrCache *cache )
  */
 
 
-/* <lalVerbatim file="FrameCacheCP"> */
+
 void LALFrCacheImport(
     LALStatus   *status,
     FrCache    **output,
     const CHAR  *fname
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrCacheImport", FRAMECACHEC );
   ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );
@@ -613,13 +600,13 @@ void LALFrCacheImport(
 }
 
 
-/* <lalVerbatim file="FrameCacheCP"> */
+
 void LALFrCacheExport(
     LALStatus  *status,
     FrCache    *cache,
     const CHAR *fname
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrCacheExport", FRAMECACHEC );
   ASSERT( cache, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( fname, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
@@ -634,13 +621,13 @@ void LALFrCacheExport(
 }
 
 
-/* <lalVerbatim file="FrameCacheCP"> */
+
 void
 LALDestroyFrCache(
     LALStatus  *status,
     FrCache   **cache
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALDestroyFrCache", FRAMECACHEC );
   ASSERT( cache, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( *cache, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
@@ -652,7 +639,7 @@ LALDestroyFrCache(
 }
 
 
-/* <lalVerbatim file="FrameCacheCP"> */
+
 void
 LALFrCacheSieve(
     LALStatus     *status,
@@ -660,7 +647,7 @@ LALFrCacheSieve(
     FrCache       *input,
     FrCacheSieve  *params
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrCacheSieve", FRAMECACHEC );
   ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );
@@ -678,7 +665,7 @@ LALFrCacheSieve(
 }
 
 
-/* <lalVerbatim file="FrameCacheCP"> */
+
 void
 LALFrCacheGenerate(
     LALStatus   *status,
@@ -686,7 +673,7 @@ LALFrCacheGenerate(
     const CHAR  *dirstr,
     const CHAR  *fnptrn
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrCacheGenerate", FRAMECACHEC );
   ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );

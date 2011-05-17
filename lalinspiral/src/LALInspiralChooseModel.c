@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, Jolien Creighton, David McKechan, B.S. Sathyaprakash, Thomas Cokelaer, Duncan Brown, Riccardo Sturani
+*  Copyright (C) 2007 David Churches, Jolien Creighton, David McKechan, B.S. Sathyaprakash, Thomas Cokelaer, Duncan Brown, Riccardo Sturani,  Laszlo Vereb
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -506,10 +506,12 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
          case PhenSpinTaylorRDF:
+		 case SpinQuadTaylor:
          case IMRPhenomA:
          case IMRPhenomB:
          case IMRPhenomFA:
@@ -550,10 +552,12 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
          case PhenSpinTaylorRDF:
+		 case SpinQuadTaylor:
          case IMRPhenomA:
          case IMRPhenomB:
          case IMRPhenomFA:
@@ -592,10 +596,12 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
          case PhenSpinTaylorRDF:
+		 case SpinQuadTaylor:
          case IMRPhenomA:
          case IMRPhenomB:
          case IMRPhenomFA:
@@ -637,10 +643,12 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
          case PhenSpinTaylorRDF:
+		 case SpinQuadTaylor:
 /*
    The value vlsoT4 is too large and doesn't work sometimes;
    so we use vlsoT2.
@@ -686,10 +694,12 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
          case PhenSpinTaylorRDF:
+		 case SpinQuadTaylor:
 /*
    The value vlsoT4 is too large and doesn't work with 2.5 PN
    Taylor approximant; so we use vlsoT2.
@@ -736,10 +746,12 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
          case PhenSpinTaylorRDF:
+	     case SpinQuadTaylor:
 /*
    vlsoT6 is as yet undetermined and vlsoT4 is too large in
    certain cases (TaylorT2 crashes for (1.4,10)); using vlsoT2;
@@ -786,10 +798,12 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
          case PhenSpinTaylorRDF:
+		 case SpinQuadTaylor:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt6;
             f->flux = Ft7;
@@ -841,10 +855,12 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
          case PhenSpinTaylorRDF:
+		 case SpinQuadTaylor:
          case PadeT1:
          case PadeF1:
          case TaylorEt:
@@ -871,10 +887,12 @@ LALInspiralChooseModel(
    case PadeT1:
    case PadeF1:
    case TaylorF2:
+   case SpinTaylorFrameless:
    case SpinTaylorT3:
    case SpinTaylor:
    case PhenSpinTaylorRD:
    case PhenSpinTaylorRDF:
+   case SpinQuadTaylor:
    case TaylorEt:
    case TaylorT4:
    case TaylorN:

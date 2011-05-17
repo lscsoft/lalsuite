@@ -57,6 +57,18 @@ typedef enum {
   LISA_ARM3
 } LISAarmT;
 
+
+/** The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle.
+ * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for
+ * Earth-based detectors and ECLIPTIC coords for LISA.
+ */
+typedef struct
+{
+  SymmTensor3 re;	/**< tensor holding real-parts of all components */
+  SymmTensor3 im;	/**< tensor holding imaginary-parts of all components */
+} CmplxDetectorTensor;
+
+
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */
 
