@@ -447,12 +447,23 @@ sub cleanupLSD {
         # replace probable filenames with references
         $text =~ s!<tt>(.*?\.[ch])</tt>!\\ref \1!mg;
 
-        # replace citations
+        # replace citations by refs
         $text =~ s{\\cite\s*$wbbr}{
             $_ = $1;
             s/[:\s-]//g;
             '\ref ' . $_
         }mge;
+
+        # replace bibitems by anchors
+        $text =~ s{\\bibitem\s*$wbbr}{
+            $_ = $1;
+            s/[:\s-]//g;
+            '\anchor ' . $_ . ' <b>[' . $_ . "]</b>\n"
+        }mge;
+        # and get rid of 'bibliography'
+        $text =~ s!\\begin{thebibliography}{.*}!(MANUAL INTERVENTION begin bibliography)!;
+        $text =~ s!\\end{thebibliography}!(MANUAL INTERVENTION end bibliography)!;
+
 
         # replace miscellaneous LaTeX commands
         $text =~ s!\\lq!`!g;
