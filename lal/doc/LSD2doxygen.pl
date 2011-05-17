@@ -418,7 +418,7 @@ sub cleanupLSD {
         $text =~ s!\\verb(.)(.+?)\1!\\texttt{$2}!mg;
         $text =~ s!\\emph!\\textit!sg;
         $text =~ s!\\text(?:sc|sl|bf|sf)!\\texttt!sg;
-        $text =~ s{\\text(tt|it)$wbbr}{
+        $text =~ s{\\text(tt|it)\s*$wbbr}{
             my $e = $1;
             $_ = $2;
             s/\\_/_/g;
@@ -448,7 +448,7 @@ sub cleanupLSD {
         $text =~ s!<tt>(.*?\.[ch])</tt>!\\ref \1!mg;
 
         # replace citations
-        $text =~ s{\\cite$wbbr}{
+        $text =~ s{\\cite\s*$wbbr}{
             $_ = $1;
             s/://g;
             '\ref ' . $_
@@ -460,7 +460,7 @@ sub cleanupLSD {
 
         # remove any empty LaTeX comments
         $text =~ s!^$n*%$n*$!!mg;
-        
+
     }
 
     # get rid of empty comments
