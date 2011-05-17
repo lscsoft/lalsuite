@@ -111,12 +111,12 @@ NRCSID(LALPSPININSPIRALRDC, "$Id$");
 
 static REAL8 OmMatch(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2) {
 
-  const REAL8 omM     = 0.0625;
-  const REAL8 omMz1p2 = -4.67e-3;
-  const REAL8 omM12   = -2.04e-3;
-  const REAL8 omMsq   = -1.61e-3;
-  const REAL8 omMz12  = -7.13e-3;
-  const REAL8 omMzsq  = -5.45e-3;
+  const REAL8 omM     = 0.0605;
+  const REAL8 omMz1p2 = -4.08e-3;
+  const REAL8 omM12   = -2.01e-3;
+  const REAL8 omMsq   = -4.81e-4;
+  const REAL8 omMz12  = -7.04e-3;
+  const REAL8 omMzsq  = -4.93e-3;
 
   return omM + /*6.05e-3 * sqrtOneMinus4Eta +*/ 
     omMz1p2 * (LNhS1 + LNhS2) + omM12 * (S1S2 - LNhS1 * LNhS2) + 
@@ -126,12 +126,12 @@ static REAL8 OmMatch(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S
 
 static REAL8 fracRD(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2) {
 
-  const double frac0   = 0.80;
-  const double frac1p2 = -1.33e-02;
-  const double frac12  = -5.65e-02;
-  const double fracsq  = -4.59e-02;
-  const double fracz12 = -2.44e-02;
-  const double fraczsq = -1.79e-02;
+  const double frac0   = 0.84;
+  const double frac1p2 = -2.17e-02;
+  const double frac12  = -5.47e-02;
+  const double fracsq  = -5.68e-02;
+  const double fracz12 = -4.55e-02;
+  const double fraczsq = -5.06e-02;
 
   return frac0 + frac1p2 * (LNhS1 + LNhS2) + frac12 * (S1S2 - LNhS1 * LNhS1) +
     fracsq * (S1S1 + S2S2 - LNhS1 * LNhS1 - LNhS2 * LNhS2) +
