@@ -334,7 +334,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     if ( !bankVetoData->acorrMat)
       bankVetoData->acorrMat = XLALCreateREAL4Vector(bankVetoData->acorrMatSize * bankVetoData->length);
     if ( !bankVetoData->revplan)
-      bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((templateLength-1) * 2 , 0);
+      bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((templateLength-1) * 2 , 1);
 
     /* FIXME no time shifts are done yet, we have to linearly shift the phase during
      * the inner product too

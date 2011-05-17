@@ -213,7 +213,7 @@ LALCHARReadVector( LALStatus *stat, CHARVector **vector, FILE *stream )
 
 #define TYPECODE I4
 #define TYPE INT4
-#define SIZE 2
+#define SIZE 4
 #include "StreamVectorInput_source.c"
 #undef TYPECODE
 #undef TYPE
