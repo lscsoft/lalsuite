@@ -801,7 +801,7 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
  *
  */
 int
-XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename <outbname> */
+XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename 'outbname' */
                          const MultiPSDVector *multiPSDVect	/**< multi-psd vector to output */
                   )
 {

@@ -20,18 +20,10 @@
 /**
 \author Creighton, T. D.
 \file
-*/
 
-/**
+\brief Provides routines to solve linear systems.
 
-
-
-\section s:MatrixUtils.h Header \ref MatrixUtils.h
-
-
-Provides routines to solve linear systems.
-
-\subsection* TODOref Synopsis
+\heading{Synopsis}
 \code
 #include <lal/MatrixUtils.h>
 \endcode
@@ -43,9 +35,9 @@ for computing eigenvalues and eigenvectors of real symmetric matrices.
 Routines for inverting or computing the determinant of arbitrary
 square matrices will likely follow.
 
-\subsubsection* TODOref Notation
+\section TODOref Notation
 
-A \e matrix is represented in LAL by a <tt><datatype>Array</tt>
+A \e matrix is represented in LAL by a <tt>\<datatype\>Array</tt>
 structure with a <tt>dimLength->length</tt> field of 2; the
 <tt>dimLength->data</tt> field gives the dimensions \f$[M,N]\f$ of the
 matrix.  Using the place-index notation common in tensor calculus, a
@@ -84,7 +76,7 @@ vector structure.  Whether the object is to be used as a row or column
 vector must be determined from context; it is not specified by the
 datatype.
 
-\subsubsection* TODOref Properties
+\section TODOref Properties
 
 The basic matrix operations are addition, scalar multiplication, and
 vector multiplication.  We assume the reader is familiar with these.
@@ -132,9 +124,7 @@ extern "C" {
 
 NRCSID( MATRIXUTILSH, "$Id$" );
 
-/**
-\subsection* TODOref Error conditions
- \name Error Codes */ /*@{*/
+/** \name Error Codes */ /*@{*/
 #define MATRIXUTILSH_ENUL  1
 #define MATRIXUTILSH_EDIM  2
 #define MATRIXUTILSH_EITER 3

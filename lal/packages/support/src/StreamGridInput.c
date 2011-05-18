@@ -22,19 +22,17 @@ The output parameter \c grid must be a non-\c NULL handle to a
 \c NULL-valued pointer <tt>*grid</tt>.
 
 This prototype template in fact refers to 10 separate routines
-corresponding to all the numerical atomic datatypes <tt><datatype></tt>
-referred to by <tt><typecode></tt>:
+corresponding to all the numerical atomic datatypes <tt>\<datatype\></tt>
+referred to by <tt>\<typecode\></tt>:
 
-<table><tr><td>
-
-\tt <typecode></td><td>\tt <datatype></td><td>\tt <typecode></td><td>\tt <datatype></td></tr>
-<tr><td>
-\tt I2</td><td>\tt  INT2</td><td>\tt U2</td><td>\tt    UINT2</td></tr>
-<tr><td>\tt I4</td><td>\tt  INT4</td><td>\tt U4</td><td>\tt    UINT4</td></tr>
-<tr><td>\tt I8</td><td>\tt  INT8</td><td>\tt U8</td><td>\tt    UINT8</td></tr>
-<tr><td>\tt  S</td><td>\tt REAL4</td><td>\tt  C</td><td>\tt COMPLEX8</td></tr>
-<tr><td>\tt  D</td><td>\tt REAL8</td><td>\tt  Z</td><td>\tt COMPLEX16</td></tr>
-</tr></table>
+<table>
+<tr><th>\<typecode\></th><th>\<datatype\></th><th>\<typecode\></th><th>\<datatype\></th></tr>
+<tr><td>I2</td><td> INT2</td><td>U2</td><td>   UINT2</td></tr>
+<tr><td>I4</td><td> INT4</td><td>U4</td><td>   UINT4</td></tr>
+<tr><td>I8</td><td> INT8</td><td>U8</td><td>   UINT8</td></tr>
+<tr><td> S</td><td>REAL4</td><td> C</td><td>COMPLEX8</td></tr>
+<tr><td> D</td><td>REAL8</td><td> Z</td><td>COMPLEX16</td></tr>
+</table>
 
 
 \heading{Format for <tt>*stream</tt>:} The input stream is assumed
@@ -45,10 +43,7 @@ header consists of zero or more lines beginning with a <tt>'#'</tt>
 character, followed by a metadata field name and value in the format:
 
 
-<table><tr><td>
-<tt># </tt>\e fieldname<tt>=</tt>\e value
-</td></tr></table>
-
+<table><tr><td><tt># </tt>\e fieldname<tt>=</tt>\e value</td></tr></table>
 
 The <tt>=</tt> sign in this format is standard but optional;
 it may be replaced or surrounded with any amount of any whitespace
@@ -70,9 +65,9 @@ if it doesn't find them.  Others are \e optional: if they are not
 found, the routine will assign some default value.  The various fields
 and their required formats are given below:
 
-\bigskip<em>Required fields:</em>
+em>Required fields:</em>
 <dl>
-<dt>\c dimLength:</dt><dd> \e value consists of a sequence of
+<dt>dimLength:</dt><dd> \e value consists of a sequence of
 \c UINT4s separated by whitespace (but \e not a newline
 <tt>'\n'</tt>).  These are used to create <tt>(*grid)->data</tt> with the
 appropriate dimensions, and are stored in

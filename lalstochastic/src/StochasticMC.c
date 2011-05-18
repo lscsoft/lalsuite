@@ -39,7 +39,7 @@ time serie.
 
 The following program shows how to use the routines LALStochasticMCDso and LALStochasticMCDsoSplice
 
-\begin verbatim
+\code
 #include <math.h>
 #include <string.h>
 #include <stdio.h>

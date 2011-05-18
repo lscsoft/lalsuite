@@ -54,40 +54,40 @@ each token into the corresponding field of <tt>*node</tt>, using
 In general, each field has a distinct parsing algorithm, as specified
 below:
 <dl>
-<dt>\c NAME</dt><dd> A standard B1950 or J2000 pulsar name (e.g.\
+<dt>NAME</dt><dd> A standard B1950 or J2000 pulsar name (e.g.\
 <tt>"B0021-72C"</tt>, <tt>"J0024-7203U"</tt>), copied directly into
 <tt>node->bname</tt> or <tt>node->jname</tt>.</dd>
-<dt>\c RAJ</dt><dd> J2000 right ascencion in the form
+<dt>RAJ</dt><dd> J2000 right ascencion in the form
 <tt>"</tt>hours\c :minutes\c :seconds<tt>"</tt>, where hours is a
 signed integer, minutes an unsigned integer, and seconds is an
 unsigned floating-point number in normal place-index notation (i.e.\
 integral part, optional decimal place, and optional fractional part;
 no exponential notation).</dd>
-<dt>\c DECJ</dt><dd> J2000 declination in the form
+<dt>DECJ</dt><dd> J2000 declination in the form
 <tt>"</tt>degrees\c :minutes\c :seconds<tt>"</tt>, where degrees
 is a signed integer, minutes an unsigned integer, and seconds is an
 unsigned floating-point number in normal place-index notation (i.e.\
 integral part, optional decimal place, and optional fractional part;
 no exponential notation).</dd>
-<dt>\c PMRA</dt><dd> Right ascension component of proper motion in
+<dt>PMRA</dt><dd> Right ascension component of proper motion in
 milliarcseconds per year, as a floating-point number (any notation).</dd>
-<dt>\c PMDEC</dt><dd> Declination component of proper motion in
+<dt>PMDEC</dt><dd> Declination component of proper motion in
 milliarcseconds per year, as a floating-point number (any notation).</dd>
-<dt>\c POSEPOCH</dt><dd> Epoch of position/proper motion measurements
+<dt>POSEPOCH</dt><dd> Epoch of position/proper motion measurements
 in Julian days, as a floating-point number (any notation).  If the
 number is less than 2~million, then it is assumed that the actual
 Julian day is 2~million plus the number given.</dd>
-<dt>\c F</dt><dd> The pulsar spin frequency in Hz, as a floating-point
+<dt>F</dt><dd> The pulsar spin frequency in Hz, as a floating-point
 number (any notation).</dd>
-<dt>\c F1</dt><dd> The first derivative of the pulsar spin frequency
+<dt>F1</dt><dd> The first derivative of the pulsar spin frequency
 in Hz\f${}^2\f$, as a floating-point number (any notation).</dd>
-<dt>\c F2</dt><dd> The pulsar spin frequency in Hz\f${}^3\f$, as a
+<dt>F2</dt><dd> The pulsar spin frequency in Hz\f${}^3\f$, as a
 floating-point number (any notation).</dd>
-<dt>\c PEPOCH</dt><dd> Epoch of frequency and frequency-derivative
+<dt>PEPOCH</dt><dd> Epoch of frequency and frequency-derivative
 measurements in Julian days, as a floating-point number (any
 notation).  If the number is less than 2~million, then it is assumed
 that the actual Julian day is 2~million plus the number given.</dd>
-<dt>\c e</dt><dd> Uncertainty in any of the preceding quantities.
+<dt>e</dt><dd> Uncertainty in any of the preceding quantities.
 This is given as an unsigned integer corresponding to the uncertainty
 in the last 1 or 2 significant digits of the corresponding quantity.
 Thus, the parsing routine for that quantity is also responsible for

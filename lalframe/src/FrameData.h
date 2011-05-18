@@ -30,7 +30,7 @@ Root finding routines.
 #include <lal/FrameData.h>
 \endcode
 
-Gets IFO\_DMRO data from frame files.
+Gets IFO_DMRO data from frame files.
 */
 
 #ifndef _FRAMEDATA_H

@@ -29,23 +29,23 @@ of gravitational wave detectors.
 
 <tt>LALOverlapReductionFunction()</tt> calculates the values of the overlap reduction:
 
-\anchor stochastic_e_gamma(f) \f{equation}{
+\anchor stochastic_e_gamma \f{equation}{
 \gamma(f):={5\over 8\pi}\sum_A\int_{S^2}d\hat\Omega\
 e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
 F_1^A(\hat\Omega)F_2^A(\hat\Omega)\ ,
-\label{stochastic_e_gamma(f)}
+\label{stochastic_e_gamma}
 \f}
 
 where \f$\hat \Omega\f$ is a unit vector specifying a direction on the
 two-sphere, \f$\Delta\vec x:=\vec x_1-\vec x_2\f$ is the separation vector
 between the two detectors, and
 
-\anchor stochastic_e_F_i^A \f{equation}{
+\anchor stochastic_e_F_i \f{equation}{
 F_i^A(\hat\Omega):=e_{ab}^A(\hat\Omega)\ d_i^{ab}
 % :=
 % e_{ab}^A(\hat\Omega)\ {1\over 2}\left(\hat X_i^a\hat X_i^b-
 % \hat Y_i^a\hat Y_i^b\right)\
-\label{stochastic_e_F_i^A}
+\label{stochastic_e_F_i}
 \f}
 
 is the response of the \f$i\f$th detector \f$(i=1,2)\f$ to the \f$A=+,\times\f$
@@ -59,7 +59,7 @@ h = d_i^{ab} h_{ab}
 \f}
 
 The Cartesian components of \f$d_{ab}\f$ are constant in an earth-fixed
-rotating co\"{o}rdinate system.  \f$\{e_{ab}^A(\hat\Omega)|A=+,\times\}\f$
+rotating coördinate system.  \f$\{e_{ab}^A(\hat\Omega)|A=+,\times\}\f$
 are the spin-2 polarization tensors for the "plus" and "cross"
 polarization states, normalized so that \f$e_{ab}^A e^{Bab}=2\delta^{AB}\f$.
 With this definition,
@@ -74,23 +74,23 @@ where \f$P^{ab}_{cd}(\hat\Omega)\f$ is a projection operator onto the space
 of symmetric, traceless second-rank tensors orthogonal to \f$\hat\Omega\f$.
 
 The overlap reduction function for a pair of identical detectors is a
-maximum when they are co\"{\i}ncident and co\"{a}ligned; it
+maximum when they are coïncident and coäligned; it
 decreases when the detectors are shifted apart (so there is a phase
 shift between the signals in the two detectors), or rotated out of
-co\"{a}lignment (so the detectors are sensitive to different
+coälignment (so the detectors are sensitive to different
 polarizations).  The overlap reduction function arises naturally when
 calculating the cross-correlated signal due to an isotropic and
 unpolarized stochastic gravitational-wave background.
 
 Given a choice of two detector sites, a frequency spacing \f$\delta f\f$,
 a start frequency \f$f_0\f$, and the number of desired values \f$N\f$, <tt>
-LALOverlapReductionFunction()\/</tt> calculates the values of \f$\gamma(f)\f$ at the discrete
+LALOverlapReductionFunction()</tt> calculates the values of \f$\gamma(f)\f$ at the discrete
 frequencies \f$f_i=f_0 + i\Delta f\f$, \f$i=0,1,\cdots, N-1\f$.
 
 \heading{Algorithm}
 
-As shown in Appendix B of \ref stochasticFlanagan1993 and Sec.~III.B of
-\ref stochasticAllen1999, the overlap reduction function can be written in
+As shown in Appendix B of [\ref Flanagan1993] and Sec.~III.B of
+[\ref Allen1999], the overlap reduction function can be written in
 closed form in terms of the traceless response tensor
 \f$D_{ab}=d_{ab}-\delta_{ab} d^c_c/3\f$
 as sum of three spherical Bessel functions:
@@ -144,7 +144,7 @@ j_2(\alpha)&=&3\ {\sin\alpha\over\alpha^3}-3\ {\cos\alpha\over\alpha^2}
 \f$\vec s\f$ is a unit vector pointing in the direction of
 \f$\Delta \vec x:=\vec x_1-\vec x_2\f$, and \f$\alpha:=2\pi f|\Delta\vec x|/c\f$.
 
-<tt>LALOverlapReductionFunction()\/</tt> calculates the values of \f$\gamma(f)\f$
+<tt>LALOverlapReductionFunction()</tt> calculates the values of \f$\gamma(f)\f$
 as follows:
 
 <ol>
@@ -156,7 +156,7 @@ as follows:
   response tensors and finds the distance \f$|\Delta\vec x|\f$ and
   direction \f$s^a\f$ between the sites.</li>
 
-<li> Calculates the frequency-independent co\"{e}fficients
+<li> Calculates the frequency-independent coëfficients
   \f$D_1^{ab}D_{2ab}\f$, \f$D_1^{ab}D_{2a}{}^c s_b s_c\f$, and
   \f$D_1^{ab}D_2^{cd}s_a s_b s_c s_d\f$ that appear in
   Eq.\eqref{stochastic_e_closed1}.</li>
@@ -194,19 +194,18 @@ strncpy()
 <ul>
 
 <li> The \f$\gamma(f)\f$ here is related to the unnormalized \f$\Gamma(f)\f$
-  defined by Maggiore
-  \ref stochasticMaggiore2000a,stochasticMaggiore2000b by
+  defined by Maggiore[\ref Maggiore2000a,\ref Maggiore2000b] by
   \f$\gamma(f) = \frac{5}{2}\Gamma(f)\f$.  This normalization, which
   agrees with the literature
-  \ref stochasticFlanagan1993,stochasticAllen1997,stochasticAllen1999
+  [\ref Flanagan1993,\ref Allen1997,\ref Allen1999]
   on interferometers, is chosen so that \f$\gamma(f)\equiv 1\f$ for a pair
-  of co\"{\i}ncident, co\"{a}ligned interferometers with perpendicular
+  of coïncident, coäligned interferometers with perpendicular
   arms.  It means that, for combinations other than a pair of
   interferometers, our \f$\gamma(f)\f$ is \e not equal to the
   generalization of \f$\gamma(f)\f$ defined by Maggiore, whose
   relationship to \f$\Gamma(f)\f$ depends on the type of detector.
-  Defining \f$\gamma(f)\f$ as we do allows us to use the formul{\ae} from,
-  e.g., \ref stochasticAllen1999, irrespective of the detector
+  Defining \f$\gamma(f)\f$ as we do allows us to use the formulae from,
+  e.g., [\ref Allen1999], irrespective of the detector
   type in question.</li>
 
 <li> While \f$\gamma(f)\f$ is usually considered to be dimensionless,
@@ -216,34 +215,6 @@ strncpy()
   which has units of strain.
 </li>
 </ul>
-
-\bibitem{stochastic:Flanagan:1993}
-  \'{E}.~\'{E}.~Flanagan, "The Sensitivity of Ligo to a Stochastic
-  Background, and its Dependence on the Detector Orientations"
-  Phys.\ Rev.\ D.\ \c 48, 2389 (1993);
-  \href{http://www.arXiv.org/abs/astro-ph/9305029}{astro-ph/9305029}
-% \bibitem{stochastic:Allen:1997}
-%   B.~Allen
-%   "The stochastic gravity-wave background: sources and detection"
-%   in <em>Proceedings of the Les Houches School on Astrophysical Sources of
-%   Gravitational Waves</em>,
-%   eds. J.~A.~Marck and J.~P.~Lasota, Cambridge, 373 (1997);
-%   \href{http://www.arXiv.org/abs/gr-qc/9604033}{gr-qc/9604033}
-% \bibitem{stochastic:Allen:1999}
-%   B.~Allen and J.D.~Romano, "Detecting a stochastic background of
-%   gravitational radiation: Signal processing strategies and
-%   sensitivities"
-%   Phys.\ Rev.\ D \c 59, 102001 (1999);
-%   \href{http://www.arXiv.org/abs/gr-qc/9710117}{gr-qc/9710117}
-\bibitem{stochastic:Maggiore:2000a}
-  M.~Maggiore and A.~Nicholis, "Detection strategies for scalar
-  gravitational waves with interferometers and resonant spheres",
-  Phys.\ Rev.\ D \c 62, 024004 (2000);
-  \href{http://www.arXiv.org/abs/gr-qc/9907055}{gr-qc/9907055}
-\bibitem{stochastic:Maggiore:2000b}
-  M.~Maggiore, "Gravitational Wave Experiments and Early Universe Cosmology",
-  Phys.\ Rept.\ \c 331, 283-367 (2000);
-  \href{http://www.arXiv.org/abs/gr-qc/9909001}{gr-qc/9909001}
 */
 
 #include <lal/LALStdlib.h>

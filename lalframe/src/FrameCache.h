@@ -132,17 +132,17 @@ FrCacheSieve;
  * of interest from a cache.  The parameters include regular expressions and
  * time ranges.  The fields are:
  * <dl>
- * <dt>\c srcRegEx</dt><dd> regular expression to use in selecting frame files
- *     with a specified source identifier.  (Not used if \c NULL.)
- * </dd><dt>\c dscRegEx</dt><dd> regular expression to use in selecting frame files
- *     with a specified description identifier.  (Not used if \c NULL.)
- * </dd><dt>\c urlRegEx</dt><dd> regular expression to use in selecting frame files
- *     with a specified URL.  (Not used if \c NULL.)
- * </dd><dt>\c earliestTime</dt><dd> earliest time (GPS seconds) of frame files of
- *     interest.  (Not used if zero or less.)
- * </dd><dt>\c latestTime</dt><dd> latest time (GPS seconds) of frame files of
- *     interest.  (Not used if zero or less.)
- * </dd></dl>
+ * <dt>srcRegEx</dt><dd> regular expression to use in selecting frame files
+ *     with a specified source identifier.  (Not used if \c NULL.) </dd>
+ * <dt>dscRegEx</dt><dd> regular expression to use in selecting frame files
+ *     with a specified description identifier.  (Not used if \c NULL.)</dd>
+ * <dt>urlRegEx</dt><dd> regular expression to use in selecting frame files
+ *     with a specified URL.  (Not used if \c NULL.)</dd>
+ * <dt>earliestTime</dt><dd> earliest time (GPS seconds) of frame files of
+ *     interest.  (Not used if zero or less.)</dd>
+ * <dt>latestTime</dt><dd> latest time (GPS seconds) of frame files of
+ *     interest.  (Not used if zero or less.)</dd>
+ * </dl>
  *
  *
  *

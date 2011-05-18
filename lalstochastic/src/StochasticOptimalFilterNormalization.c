@@ -28,7 +28,7 @@ statistic.
 
 \heading{Description}
 
-As described in \ref StochasticOptimalFilter_c,
+As described in \ref StochasticOptimalFilter.c,
 the optimal filter for stochastic searches is defined as
 
 \anchor stochastic_e_Q \f{equation}{\label{stochastic_e_Q}
@@ -38,7 +38,7 @@ the optimal filter for stochastic searches is defined as
 \f}
 
 The normalization constant \f$\lambda\f$ is chosen so that the expected mean
-value of the cross-correlation statistic is \ref stochasticAllen1999
+value of the cross-correlation statistic is [\ref Allen1999]
 \anchor stochastic_e_mu \f{equation}{
 \mu = \frac{3 {H_0}^2}{20\pi^2}\, T \,\overline{w_1w_2}
 \int_{-\infty}^{\infty} df\, |f|^{-3}\,
@@ -50,7 +50,7 @@ where \f$T\f$ is the integration time
 (cf.\eqref{stochastic_e_ymax}, \f$w_1\f$ and \f$w_2\f$ are the functions
 used to window the data, and
 \f$\Omega_{\mathrm{R}} =\Omega_{\mathrm{GW}}(f_{\mathrm{R}})\f$ is the overall strength of the
-stochastic background (see \ref OverlapReductionFunction.c.  This sets the
+stochastic background (see \ref OverlapReductionFunction.c).  This sets the
 value at
 \anchor stochastic_e_lambda \f{equation}{
 \label{stochastic_e_lambda}
@@ -162,11 +162,11 @@ LALUnitCompare()
   assumes a large observation time continuum-limit approximation.  In
   this limit, the Dirichlet kernels (which appear in an exact
   expression for the standard cross-correlation statistic, when
-  evaluated in discrete time \ref stochasticFinn2001; see also
+  evaluated in discrete time [\ref Finn2001]; see also
   the documentation for the module Dirichlet.c in the utilities package)
   may be replaced by Dirac delta functions.</li>
 <li> The units of the input series are checked for consistency; since
-  \ref stochasticAllen1999
+  [\ref Allen1999]
   \f{equation}{
     \langle\widetilde{h}{}^{\mathrm{C}}_1(f)^*
     \widetilde{h}{}^{\mathrm{C}}_2(f')\rangle
@@ -222,23 +222,6 @@ LALUnitCompare()
   \f}</li>
 </ul>
 
-\bibitem{stochastic:Allen:1997}
-  B.~Allen
-  "The stochastic gravity-wave background: sources and detection"
-  in <em>Proceedings of the Les Houches School on Astrophysical Sources of
-  Gravitational Waves</em>,
-  eds. J.~A.~Marck and J.~P.~Lasota, Cambridge, 373 (1997);
-  \href{http://www.arXiv.org/abs/gr-qc/9604033}{gr-qc/9604033}
-\bibitem{stochastic:Allen:1999}
-  B.~Allen and J.~D.~Romano, "Detecting a stochastic background of
-  gravitational radiation: Signal processing strategies and
-  sensitivities"
-  Phys.\ Rev.\ D \c 59, 102001 (1999);
-  \href{http://www.arXiv.org/abs/gr-qc/9710117}{gr-qc/9710117}
-\bibitem{stochastic:Finn:2001}
-  L.~S.~Finn and J.~D.~Romano, "Detecting stochastic gravitational waves:
-  Performance of maximum-likelihood and cross-correlation statistics",
-  unpublished.
 */
 
 #include <lal/LALStdlib.h>

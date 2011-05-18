@@ -36,7 +36,7 @@ time-series signal for a pair of interferometric detectors.
 The frequency domain strains \f$\widetilde{h}_1(f_i)\f$
 and \f$\widetilde{h}_2(f_j)\f$ caused by
 the stochastic background in two detectors are random variables that have
-zero mean and that obey  \ref injectAllen1999:
+zero mean and that obey  [\ref Allen1999]:
   \f{equation}{
     \langle\widetilde{h}_1^*(f_i)\widetilde{h}_1(f_j)\rangle
     = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{11}(f_i)
@@ -56,7 +56,7 @@ zero mean and that obey  \ref injectAllen1999:
   \f}
 where \f$\langle\rangle\f$ denotes ensemble average, \f$T\f$ is the time of
 observation, and \f$\gamma_{AB}\f$ is the overlap reduction function
-\ref injectFlanagan1993 of the detector pair comprising detectors \f$A\f$
+[\ref Flanagan1993] of the detector pair comprising detectors \f$A\f$
 and \f$B\f$. Above, \f$\widetilde{h}_1(f_i)\f$ and
 \f$\widetilde{h}_2(f_j)\f$ are the Fourier components of the gravitational strains
 \f$h_1(t)\f$ and \f$h_2(t)\f$ at the two detectors.
@@ -142,18 +142,6 @@ LALNormalDeviates()
 <li> This routine does not yet support non-zero heterodyning frequencies.</li>
 </ul>
 
-\bibitem{inject:Allen:1999}
-  B.~Allen and J.~D.~Romano, "Detecting a stochastic background of
-  gravitational radiation: Signal processing strategies and
-  sensitivities"
-  Phys.\ Rev.\ D \c 59, 102001 (1999);
-  \href{http://www.arXiv.org/abs/gr-qc/9710117}{gr-qc/9710117}
-  \bibitem{inject:Flanagan:1993}
-  E.~Flanagan, "The sensitivity of the laser interferometer gravitational
-  wave observatory (LIGO) to a stochastic background, and its dependence on
-  the detector orientations"
-  Phys.\ Rev.\ D \c 48, 2389 (1993);
-  \href{http://www.arXiv.org/abs/astro-ph/9305029}{astro-ph/9305029}
 */
 
 #include <math.h>

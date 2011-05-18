@@ -91,7 +91,7 @@ the fields into passed fields (which are supplied to the final
 fields (that are used by the waveform generator), and output fields
 (that are set by the waveform generator).  They are:
 
-\bigskip<em>Passed fields:</em>
+<em>Passed fields:</em>
 <dl>
 <dt><tt>SkyPosition position</tt></dt><dd> The location of the source on the
 sky, normally in equatorial coordinates.</dd>

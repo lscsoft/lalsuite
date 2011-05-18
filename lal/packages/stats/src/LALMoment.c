@@ -2,30 +2,26 @@
 \author Tibbits, M M
 \file
 
-\heading{Module \ref LALMoment.c}
-\latexonly\label{s_LALMoment_c}\endlatexonly
-
-Routine to compute various moments of data.
-
-\heading{Prototypes}
-
+\brief Routine to compute various moments of data.
 
 \heading{Description}
-The data structure passed in is either a REAL8 or a REAL4 Sequence.  The only parameter is which moment to calculate.
-The function the sums the data, calculates the average and then it returns the average for the first moment, it returns the variance for the second moment, and it returns the n-th moment about the mean for higher order moments.
+The data structure passed in is either a REAL8 or a REAL4 Sequence.  The only parameter is which
+moment to calculate. The function the sums the data, calculates the average and then it returns the
+average for the first moment, it returns the variance for the second moment, and it returns the n-th
+moment about the mean for higher order moments.
 
 \heading{Algorithm}
 <ul>
-<li> <em>Find the mean (here referred to as \f$ \overline{x} \f$).</em></li>
-<li> <em>Sum, over all the elements, the quantity: \((x[k] - \overline{x})^{n}. \)</em></li>
-<li> <em>Divide the sum just made by N-1. Call it moment-n</em></li>
-<li> <em>If n is greater than 2:</em>
-\begin{itemize}</li>
-<li> <em>Sum, over all the elements, the quantity: \((x[k] - \overline{x})^{n}. \)</em></li>
-<li> <em>Divide the sum just made by N. Call it moment-n</em></li>
+<li> Find the mean (here referred to as \f$ \overline{x} \f$).</li>
+<li> Sum, over all the elements, the quantity: \f$(x[k] - \overline{x})^{n}\f$</li>
+<li> Divide the sum just made by N-1. Call it moment-n</li>
+<li> If n is greater than 2:</li>
+   <ul>
+   <li> Sum, over all the elements, the quantity: \f$(x[k] - \overline{x})^{n}\f$</li>
+   <li> <em>Divide the sum just made by N. Call it moment-n</em></li>
+   </ul>
+<li>Return moment-n</li>
 </ul>
-\item <em>Return moment-n</em>
-\end{itemize}
 
 \heading{Uses}
 

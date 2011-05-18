@@ -22,15 +22,7 @@
 \file
 \ingroup pulsarTODO
 
-\heading{Module \ref GenerateTaylorCW.c}
-\latexonly\label{ss_GenerateTaylorCW_c}\endlatexonly
-
-Computes a Taylor-parametrized continuous waveform.
-
-\heading{Prototypes}
-
-
-
+\brief Computes a Taylor-parametrized continuous waveform.
 
 \heading{Description}
 
@@ -51,7 +43,7 @@ function will create and allocate space for <tt>output->a</tt>,
 \heading{Algorithm}
 
 This function is a fairly straightforward calculation of
-Eqs.\eqref{eq_taylorcw-freq} and\TODOref{eq_taylorcw-phi} in
+Eqs.\eqref{eq_taylorcw-freq} and\eqref{eq_taylorcw-phi} in
 \ref GenerateTaylorCW.h.  There are no real tricks involved, except
 to note that the phase \f$\phi\f$ and the time elapsed \f$t-t_0\f$ are
 computed and stored as \c REAL8s in order to provide waveforms
