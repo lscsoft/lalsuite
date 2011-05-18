@@ -469,6 +469,8 @@ sub cleanupLSD {
         $text =~ s!\\begin{thebibliography}{.*}!(MANUAL INTERVENTION begin bibliography)!;
         $text =~ s!\\end{thebibliography}!(MANUAL INTERVENTION end bibliography)!;
 
+        # replace LaTeX's "\_" by "_"
+        $text =~ s!\\_!_!g;
 
         # replace miscellaneous LaTeX commands
         $text =~ s!\\lq!`!g;
