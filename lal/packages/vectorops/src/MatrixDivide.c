@@ -1,9 +1,7 @@
 /**
 \author Tibbits, M. M.
 \file
-*/
 
-/**
 \heading{Module \ref MatrixDivide.c}
 \latexonly\label{s_MatrixDivide_c}\endlatexonly
 

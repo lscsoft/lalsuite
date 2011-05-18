@@ -1,9 +1,7 @@
 /**
 \author Tibbits, M. M.
 \file
-*/
 
-/**
 \heading{Module \ref MatrixPower.c}
 \latexonly\label{s_MatrixPower_c}\endlatexonly
 This file is dedicated to reproducing the matlab function " <tt>.^</tt> ".  This file

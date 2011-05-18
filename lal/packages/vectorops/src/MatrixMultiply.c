@@ -1,9 +1,7 @@
 /**
 \author Tibbits, M. M.
 \file
-*/
 
-/**
 \heading{Module \ref MatrixMultiply.c}
 \latexonly\label{s_MatrixMultiply_c}\endlatexonly
 
