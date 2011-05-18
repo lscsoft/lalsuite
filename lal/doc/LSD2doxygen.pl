@@ -428,7 +428,7 @@ sub cleanupLSD {
         }sge;
 
         # rephrase (sub)section commands, turning labels (if present) into anchors
-        $text =~ s{\\((?:sub)*section\*?)\s*$wbbr\n(?<LBL>\\label\s*$bbr)?}{
+        $text =~ s{\\((?:sub)*section)\*?\s*$wbbr\n(?<LBL>\\label\s*$bbr)?}{
             my $lbl = $+{LBL};
             if (defined($lbl)) {
                 $lbl =~ s!\\label\s*$wbbr!$1!;
@@ -463,7 +463,7 @@ sub cleanupLSD {
         $text =~ s{\\bibitem\s*$wbbr}{
             $_ = $1;
             s/[:\s-]//g;
-            '\anchor ' . $_ . ' <b>[' . $_ . "]</b>\n"
+            '\anchor ' . $_ . ' <b>[' . $_ . "]</b> "
         }mge;
         # and get rid of 'bibliography'
         $text =~ s!\\begin{thebibliography}{.*}!(MANUAL INTERVENTION begin bibliography)!;
