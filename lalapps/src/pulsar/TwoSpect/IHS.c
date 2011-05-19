@@ -197,14 +197,21 @@ void incHarmSum(ihsVals *output, REAL4Vector *input)
    output->ihs = 0.0;
    
    //Start ii >= 15
-   for (ii=15; ii<(INT4)input->length; ii++) {
+   /*for (ii=15; ii<(INT4)input->length; ii++) {
       REAL4 sum = input->data[ii] + input->data[(INT4)(ii*0.5)] + input->data[(INT4)(ii/3.0)] + input->data[(INT4)(ii*0.25)] + input->data[(INT4)(ii*0.2)];
 
       if (sum > output->ihs) {
          output->ihs = sum;
          output->loc = (INT4)round(ii/3.0);
       }
-   } /* for ii < input->length */
+   } */ /* for ii < input->length */
+   for (ii=5; ii<(INT4)(0.2*input->length); ii++) {
+      REAL4 sum = input->data[ii] + input->data[(INT4)(ii*2.0)] + input->data[(INT4)(ii*3.0)] + input->data[(INT4)(ii*4.0)] + input->data[(INT4)(ii*5.0)];
+      if (sum > output->ihs) {
+         output->ihs = sum;
+         output->loc = ii;
+      }
+   } /* for ii = 5 --> 0.2*input->length */
 
 } /* incHarmSum() */
 
@@ -425,6 +432,8 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 columns, RE
    
    //Destroy variables
    XLALDestroyREAL4Vector(ihss);
+   XLALDestroyREAL4Vector(FbinMean);
+   XLALDestroyINT4Vector(locs);
    free_ihsVals(ihsvals);
    free_ihsMaxima(ihsmaxima);
    gsl_rng_free(rng);
@@ -608,6 +617,11 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
    //REAL4Vector *ihss, *avgsinrange;
    INT4Vector *locs;
    checkbin = numfbins*(mincols-2) - removedbins;  //Starting position in the ihsmaxima vector
+   
+   //Save the highest candidate above threshold (only if necessary)
+   REAL8 highestabovethresh = 0.0;
+   INT4 iiloc = 0, jjloc = 0, locloc = 0, checkbinloc = 0;
+   
    //Check the IHS values against the FAR, checking between IHS width values
    for (ii=mincols; ii<=(INT4)ihsfarstruct->ihsfar->length+1; ii++) {
       ihss = XLALCreateREAL4Vector(ii);
@@ -642,8 +656,26 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
             fprintf(stderr,"%s: calcMean() failed.\n", fn);
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
          }
+         REAL4 rmsNoise = calcRms(avgsinrange);
+         if (XLAL_IS_REAL4_FAIL_NAN(rmsNoise)) {
+            fprintf(stderr,"%s: calcRms() failed.\n", fn);
+            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+         }
          
          //numberofIHSvalsChecked++;
+         
+         //Save one IHS value
+         if (params->keepOneIHS) {
+            REAL8 abovethreshbysigma = (ihsmaxima->maxima->data[checkbin]-ihsfarstruct->ihsfar->data[ii-2]*meanNoise)/(ihsfarstruct->ihsdistSigma->data[ii-2]*rmsNoise);
+            if (abovethreshbysigma>highestabovethresh) {
+               highestabovethresh = abovethreshbysigma;
+               iiloc = ii;
+               jjloc = jj;
+               locloc = ihsLoc(ihss, locs, ihsexpect);
+               checkbinloc = checkbin;
+            }
+         }
+
          
          //Check the IHS sum against the FAR (scaling FAR with mean of the noise in the range of columns)
          if (ihsmaxima->maxima->data[checkbin] > ihsfarstruct->ihsfar->data[ii-2]*meanNoise) {
@@ -682,6 +714,11 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
          
          checkbin++;
       } /* for jj < numfbins-(ii-1) */
+      
+      if (params->keepOneIHS && candlist->numofcandidates==0) {
+         loadCandidateData(&candlist->data[candlist->numofcandidates], params->fmin + (0.5*iiloc + jjloc)/params->Tcoh, params->Tobs/locloc, 0.5*iiloc/params->Tcoh, 0.0, 0.0, ihsmaxima->maxima->data[checkbinloc], ihsmaxima->foms->data[checkbinloc], 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
+         (candlist->numofcandidates)++;
+      }
       
       //Destroy
       XLALDestroyREAL4Vector(ihss);

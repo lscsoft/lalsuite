@@ -1,0 +1,18 @@
+/**
+\defgroup tracksearch tracksearch
+\ingroup burst
+
+A collection of functions for the implementation of tracksearch
+analysis. These function can be found in
+<ul>
+<li> \ref TSData.h</li>
+<li> \ref TSSearch.h</li>
+<li> \ref TrackSearch.h</li>
+</ul>
+
+ Section of technical howTos for functions
+
+Text Here
+
+
+*/

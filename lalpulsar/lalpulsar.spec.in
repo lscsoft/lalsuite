@@ -1,4 +1,4 @@
-%define _prefix @prefix@
+%define _prefix /opt/lscsoft/lalpulsar
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
 Name: @PACKAGE@

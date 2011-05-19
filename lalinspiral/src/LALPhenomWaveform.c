@@ -593,7 +593,8 @@ void LALBBHPhenWaveFreqDomTemplates( LALStatus        *status,
 void LALBBHPhenWaveTimeDom( LALStatus        *status,
 				     REAL4Vector      *signalvec1,
 				     InspiralTemplate *insp_template) {
-    
+    UINT4 count;
+
     /* check inputs */
     INITSTATUS(status, "LALBBHPhenWaveTimeDom", LALPHENOMWAVEFORMC);
     ATTATCHSTATUSPTR(status);
@@ -605,7 +606,7 @@ void LALBBHPhenWaveTimeDom( LALStatus        *status,
     /* Initially the waveforms are empty */
     memset(signalvec1->data, 0, signalvec1->length * sizeof(REAL4));
     
-    LALBBHPhenTimeDomEngine(status->statusPtr, signalvec1, NULL, NULL, NULL, NULL, NULL, insp_template);
+    LALBBHPhenTimeDomEngine(status->statusPtr, signalvec1, NULL, NULL, NULL, NULL, NULL, &count, insp_template);
     CHECKSTATUSPTR(status);
     
     DETATCHSTATUSPTR(status);
@@ -617,6 +618,8 @@ void LALBBHPhenWaveTimeDomTemplates( LALStatus        *status,
 				     REAL4Vector      *signalvec2,
 				     InspiralTemplate *insp_template) {
     
+	UINT4 count;
+
     /* check inputs */
     INITSTATUS(status, "LALBBHPhenWaveTimeDomTemplates", LALPHENOMWAVEFORMC);
     ATTATCHSTATUSPTR(status);
@@ -633,7 +636,7 @@ void LALBBHPhenWaveTimeDomTemplates( LALStatus        *status,
     memset(signalvec1->data, 0, signalvec1->length * sizeof(REAL4));
     memset(signalvec2->data, 0, signalvec2->length * sizeof(REAL4));
     
-    LALBBHPhenTimeDomEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL, NULL, NULL, insp_template);
+    LALBBHPhenTimeDomEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL, NULL, NULL, &count, insp_template);
     CHECKSTATUSPTR(status);
     
     DETATCHSTATUSPTR(status);
@@ -648,6 +651,7 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
 			      REAL4Vector      *aVec,
 			      REAL4Vector      *freqVec,
 			      REAL8Vector      *phiVec,
+				  UINT4            *countback,
 			      InspiralTemplate *params)
 {
 
@@ -780,10 +784,7 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
     XLALDestroyREAL4Vector(signalFD2);
     XLALDestroyREAL4FFTPlan(revPlan);
   
-    /* FFT normalisation. The LAL implementation of the FFT omits the factor 1/n.
-     * Also we change the sign of the waveform so that the initialPhase = 0 and pi/2
-     * will match to the 'plus' and 'cross' polarisations of the hybrid waveforms,
-       * respectively*/
+    /* FFT normalisation. The LAL implementation of the FFT omits the factor 1/n.*/
     for (i = 0; i < n; i++) {
         signalTD1->data[i] *= params->tSampling/n;
         signalTD2->data[i] *= params->tSampling/n;
@@ -836,7 +837,6 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
     for (i=0; i< fVec->length; i++) {
           if (a->data[i] < expectedAmplRatio*peakAmp) {
 			fVec->data[i] = 0.0;
-			phi->data[i] = 0.0;
 		  }
           if ((iLower == 0) && (fVec->data[i] >= fLowerOrig)) iLower = i;
     }
@@ -895,7 +895,8 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
             j++;
         }
     }
-    
+	*countback = j;
+
     /* free the memory */
     XLALDestroyREAL4Vector(a);
     XLALDestroyREAL4Vector(fVec);
@@ -964,8 +965,6 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
   LALInspiralInit(status->statusPtr, params, &paramsInit);
   CHECKSTATUSPTR(status);
 
-  count = paramsInit.nbins;
-
   if (paramsInit.nbins==0) {
       DETATCHSTATUSPTR(status);
       RETURN (status);
@@ -996,7 +995,7 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
 
   /* generate two orthogonal waveforms */
   params->startPhase = ppnParams->phi;
-  LALBBHPhenTimeDomEngine(status->statusPtr, hp, hc, h, a, ff, phi, params);
+  LALBBHPhenTimeDomEngine(status->statusPtr, hp, hc, h, a, ff, phi, &count, params);
 
   BEGINFAIL(status) {
     LALSDestroyVector(status->statusPtr, &ff);
@@ -1036,7 +1035,7 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
   sprintf(message, "fFinal = %f", params->fFinal);
   LALInfo(status, message);
 
-  s = 0.5 * phi->data[count - 1];
+  s = 0.5 * (phi->data[count-1] - phi->data[0]);
   sprintf(message, "cycles = %f", s/3.14159);
   LALInfo(status, message);
 

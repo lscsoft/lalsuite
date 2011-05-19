@@ -20,17 +20,11 @@ libutilities_la_SOURCES = \
 	Random.c \
 	RngMedBias.c
 
-MAINTAINERCLEANFILES = MatrixOps.c
+noinst_HEADERS = MatrixOps_source.c
+
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 
-EXTRA_DIST = \
-	LALMatrixOps.m4 \
-	MatrixOps.m4
-
 dvi-local: .dvi-dep
-
-MatrixOps.c: MatrixOps.m4 LALMatrixOps.m4
-	cd $(srcdir) && @M4@ MatrixOps.m4 > MatrixOps.c
 
 @DVIMKFILE@

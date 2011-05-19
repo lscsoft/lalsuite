@@ -18,27 +18,22 @@
 */
 
 
-/*<lalVerbatim file="AstroOmegaTestCV">
-Author: Regimbau Tania
-$Id$
-</lalVerbatim> */
+/**
+\author Regimbau Tania
+\file
+\ingroup stochastic
 
-/*
-<lalLaTeX>
-\subsection{Program \texttt{AstroOmegaTest.c}}
-This programs verifies that the routine LALAstroOmega() gives the expected results (computed separetly with mathematica) for a set of input parameters.
+\brief This programs verifies that the routine LALAstroOmega() gives the expected results (computed separetly with mathematica) for a set of input parameters.
 
-\subsubsection*{Exit codes}
+\heading{Exit codes}
 returns 0 on success, otherwise returns 1.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
 LALAstroOmega()
-\end{verbatim}
+\endcode
 
-\vfill{\footnotesize\input{AstroOmegaTestCV}}
-</lalLaTeX>
 */
 
 #include <stdio.h>

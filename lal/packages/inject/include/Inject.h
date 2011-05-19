@@ -101,9 +101,10 @@ signiatures of the digitization.
 #include <lal/LALStdlib.h>
 #include <lal/Random.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( INJECTH, "$Id$" );
@@ -158,8 +159,9 @@ LALSSInjectTimeSeries( LALStatus       *,
 		       REAL4TimeSeries *output,
 		       REAL4TimeSeries *signalvec );
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

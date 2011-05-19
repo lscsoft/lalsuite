@@ -116,15 +116,6 @@ extern void gzclearerr (gzFile file);
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 
-#ifdef lalstdin
-#undef lalstdin
-#endif
-#ifdef lalstdout
-#undef lalstdout
-#endif
-#ifdef lalstderr
-#undef lalstderr
-#endif
 LALFILE * lalstdin( void )
 {
 	static LALFILE _lalstdin;

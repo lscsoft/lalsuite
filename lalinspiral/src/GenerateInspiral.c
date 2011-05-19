@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Stas Babak, Drew Keppel, Duncan Brown, Eirini Messaritaki, Gareth Jones, Thomas Cokelaer
+*  Copyright (C) 2007 Stas Babak, Drew Keppel, Duncan Brown, Eirini Messaritaki, Gareth Jones, Thomas Cokelaer, Laszlo Vereb
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ $Id$
 \begin{description}
 \item[\texttt{LALGenerateInspiral()}] create an inspiral binary
 waveform generated either by the \texttt{inspiral} package (EOB,
-EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor, PhenSpinTaylorRD) 
+EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor, PhenSpinTaylorRD, SpinQuadTaylor) 
 or the \texttt{inject} package (GeneratePPN).  It is used in the module
 \texttt{FindChirpSimulation} in \texttt{findchirp} package.
 
@@ -188,6 +188,12 @@ LALGenerateInspiral(
   {
     inspiralParams.approximant = approximant;
     inspiralParams.order       = order;
+	if (approximant == SpinQuadTaylor) {
+		xlalErrno = 0;
+		if (XLALGetSpinInteractionFromString(&inspiralParams.spinInteraction, thisEvent->waveform) == XLAL_FAILURE) {
+			ABORTXLAL(status);
+		}
+	}
 
     /* We fill ppnParams */
     LALGenerateInspiralPopulatePPN(status->statusPtr, ppnParams, thisEvent);
@@ -207,15 +213,22 @@ LALGenerateInspiral(
     CHECKSTATUSPTR(status);
   }
 
-  /* If no waveform has been generated. (AmpCorPPN and PhenSpinTaylorRD fill waveform.h) */
-  if ( waveform->a == NULL && approximant != AmpCorPPN && approximant != PhenSpinTaylorRD )
+  /* If no waveform has been generated. (AmpCorPPN and PhenSpinTaylorRD and SpinTaylorFrameless fill waveform.h) */
+  if ( waveform->a == NULL && approximant != AmpCorPPN && approximant != PhenSpinTaylorRD && approximant != SpinTaylorFrameless )
   {
     snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "No waveform generated (check lower frequency)\n");
     LALInfo( status, warnMsg );
     ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
   }
-
+  if ( waveform->h == NULL && ( approximant == AmpCorPPN || approximant == PhenSpinTaylorRD || approximant == SpinTaylorFrameless ) )
+  {
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+             "No waveform generated (check lower frequency)\n");
+    LALInfo( status, warnMsg );
+    ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
+  }
+  
 
   /* If sampling problem. (AmpCorPPN may not be compatible) */
   if ( ppnParams->dfdt > 2.0 && approximant != AmpCorPPN )
@@ -332,6 +345,33 @@ LALGetOrderFromString(
   RETURN( status );
 }
 
+int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent) {
+	static const char *func = "XLALGetSpinInteractionFromString";
+
+	if (strstr(thisEvent, "ALL")) {
+		*inter = LAL_AllInter;
+	} else if (strstr(thisEvent, "NO")) {
+		*inter = LAL_NOInter;
+	} else {
+		*inter = LAL_SOInter;
+		if (strstr(thisEvent, "SO")) {
+			*inter |= LAL_SOInter;
+		}
+		if (strstr(thisEvent, "QM")) {
+			*inter |= LAL_QMInter;
+		}
+		if (strstr(thisEvent, "SELF")) {
+			*inter |= LAL_SSselfInter;
+		}
+		if (strstr(thisEvent, "SS")) {
+			*inter |= LAL_SSInter;
+		}
+		if (*inter == LAL_NOInter) {
+			XLAL_ERROR(func, XLAL_EDOM);
+		}
+	}
+	return XLAL_SUCCESS;
+}
 
 /* <lalVerbatim file="LALGetApproxFromStringCP"> */
 void
@@ -376,9 +416,21 @@ LALGetApproximantFromString(
   {
     *approximant = PhenSpinTaylorRD;
   }
+  else if ( strstr(thisEvent, "SpinTaylorFrameless" ) )
+  {
+	  *approximant = SpinTaylorFrameless;
+  }
+  else if ( strstr(thisEvent, "SpinTaylorT3" ) )
+  {
+    *approximant = SpinTaylorT3;
+  }
   else if ( strstr(thisEvent, "SpinTaylor" ) )
   {
     *approximant = SpinTaylor;
+  }
+  else if ( strstr(thisEvent, "SpinQuadTaylor" ) )
+  {
+	*approximant = SpinQuadTaylor;
   }
   else if ( strstr(thisEvent, "PadeT1" ) )
   {
@@ -490,6 +542,7 @@ LALGenerateInspiralPopulateInspiral(
   inspiralParams->mass1	  =  thisEvent->mass1;  	/* masses 1 */
   inspiralParams->mass2	  =  thisEvent->mass2;  	/* masses 2 */
   inspiralParams->fLower  =  ppnParams->fStartIn; /* lower cutoff frequency */
+  inspiralParams->fFinal  =  thisEvent->f_final;
   inspiralParams->fCutoff = 1./ (ppnParams->deltaT)/2.-1;
 
   /* -1 to be  in agreement with the inspiral assert. */
@@ -500,7 +553,6 @@ LALGenerateInspiralPopulateInspiral(
   /* distance in Mpc */
   inspiralParams->startTime	  =  0.0;
   inspiralParams->startPhase	  =  thisEvent->coa_phase;
-  inspiralParams->startPhase      = 0.0;
 
   inspiralParams->OmegaS = GENERATEINSPIRAL_OMEGAS;/* EOB 3PN contribution */
   inspiralParams->Theta	 = GENERATEINSPIRAL_THETA; /* EOB 3PN contribution */
@@ -542,6 +594,8 @@ LALGenerateInspiralPopulateInspiral(
 
   inspiralParams->orbitTheta0 = thisEvent->theta0;
   inspiralParams->orbitPhi0   = thisEvent->phi0;
+  inspiralParams->qmParameter[0] = thisEvent->qmParameter1;
+  inspiralParams->qmParameter[1] = thisEvent->qmParameter2;
 
   DETATCHSTATUSPTR( status );
   RETURN( status );

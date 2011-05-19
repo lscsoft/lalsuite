@@ -17,31 +17,28 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="PrintVectorHV">
-Author: Allen, B.; generalized by J. T. Whelan <jtwhelan@loyno.edu>
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Allen, B.; generalized by J. T. Whelan <jtwhelan@loyno.edu>
+\file
 
-/* <lalLaTeX>
-
-\section{Header \texttt{PrintVector.h}}
-\label{s:PrintVector.h}
+\heading{Header \ref PrintVector.h}
+\latexonly\label{s_PrintVector_h}\endlatexonly
 
 This is a simple utility to print vectors into a file.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/PrintVector.h>
-\end{verbatim}
+\endcode
 
-\noindent Contains the prototypes for the
-LAL$\langle\mbox{DT}\rangle$PrintVector functions
+Contains the prototypes for the
+LAL\f$\langle\mbox{DT}\rangle\f$PrintVector functions
 
-\vfill{\footnotesize\input{PrintVectorHV}}
-\newpage\input{PrintVectorC}
-\newpage\input{PrintVectorTestC}
 
-</lalLaTeX> */
+
+
+
+*/
 
 #ifndef _PRINTVECTOR_H
 #define _PRINTVECTOR_H

@@ -17,20 +17,16 @@
 *  MA  02111-1307  USA
 */
 
-/********* <lalVerbatim file="StochasticCrossCorrelationSpectrumTestCV">
-Author: UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-$Id$
-********************************* </lalVerbatim> */
+/**
+\author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
+\file
+\ingroup stochastic
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{StochasticCrossCorrelationSpectrumTest.c}}
-\label{stochastic:ss:StochasticCrossCorrelationSpectrumTest.c}
+\brief A program to test <tt>LALStochasticCrossCorrelationSpectrum()</tt>.
 
-A program to test \texttt{LALStochasticCrossCorrelationSpectrum()}.
+\heading{Usage}
 
-\subsubsection*{Usage}
-
-\begin{verbatim}
+\code
 ./StochasticCrossCorrelationSpectrumTest [options]
 Options:
   -h             print usage message
@@ -44,62 +40,62 @@ Options:
   -m length      optimal filter contains length points
   -n length      data streams contain length points
   -t             epochs need not match
-\end{verbatim}
+\endcode
 
 This program tests the function
-\texttt{LALStochasticCrossCorrelationSpectrum()}, which calculates
+<tt>LALStochasticCrossCorrelationSpectrum()</tt>, which calculates
 the cross-correlation spectrum given two zero-padded and
 Fourier-transformed data streams and a (frequency domain) optimal
 filter.
 
 First, it tests that the correct error codes
-(\textit{cf.}\ Sec.~\ref{stochastic:s:StochasticCrossCorrelation.h})
+(cf. \ref StochasticCrossCorrelation.h)
 are generated for the following error conditions (tests in
-\textit{italics} are not performed if \verb+LAL_NDEBUG+ is set, as
+\e italics are not performed if \c LAL_NDEBUG is set, as
 the corresponding checks in the code are made using the ASSERT macro):
-\begin{itemize}
-\item \textit{null pointer to output series}
-\item \textit{null pointer to input structure}
-\item \textit{null pointer to first data stream}
-\item \textit{null pointer to second data stream}
-\item \textit{null pointer to optimal filter}
-\item \textit{null pointer to data member of first data stream}
-\item \textit{null pointer to data member of second data stream}
-\item \textit{null pointer to data member of optimal filter}
-\item \textit{null pointer to data member of data member of first data stream}
-\item \textit{null pointer to data member of data member of second data stream}
-\item \textit{null pointer to data member of data member of optimal filter}
-\item \textit{zero length}
-\item \textit{negative frequency spacing}
-\item \textit{zero frequency spacing}
-\item negative start frequency
-\item length mismatch between data streams
-\item frequency spacing mismatch between data streams
-\item start frequency mismatch between data streams
-\item mismatch between epochs of data streams
-\end{itemize}
+<ul>
+<li> <em>null pointer to output series</em></li>
+<li> <em>null pointer to input structure</em></li>
+<li> <em>null pointer to first data stream</em></li>
+<li> <em>null pointer to second data stream</em></li>
+<li> <em>null pointer to optimal filter</em></li>
+<li> <em>null pointer to data member of first data stream</em></li>
+<li> <em>null pointer to data member of second data stream</em></li>
+<li> <em>null pointer to data member of optimal filter</em></li>
+<li> <em>null pointer to data member of data member of first data stream</em></li>
+<li> <em>null pointer to data member of data member of second data stream</em></li>
+<li> <em>null pointer to data member of data member of optimal filter</em></li>
+<li> <em>zero length</em></li>
+<li> <em>negative frequency spacing</em></li>
+<li> <em>zero frequency spacing</em></li>
+<li> negative start frequency</li>
+<li> length mismatch between data streams</li>
+<li> frequency spacing mismatch between data streams</li>
+<li> start frequency mismatch between data streams</li>
+<li> mismatch between epochs of data streams</li>
+</ul>
 
 It then verifies that the correct cross-correlation statistic (value
 and units) is generated for the following simple test case:
-$\widetilde{Q}(f) = x(1-x)$; $\widetilde{\bar{h}}_1(f)=x^2+ix$,
-  $\widetilde{\bar{h}}_2(f)=x^{-2}-ix^{-1}$, with $x=f/400\,\textrm{Hz}$.
-  The expected result in this case is $Y(f)=-i(2-x)(x^2+2)$.
+\f$\widetilde{Q}(f) = x(1-x)\f$; \f$\widetilde{\bar{h}}_1(f)=x^2+ix\f$,
+  \f$\widetilde{\bar{h}}_2(f)=x^{-2}-ix^{-1}\f$, with \f$x=f/400\,\textrm{Hz}\f$.
+  The expected result in this case is \f$Y(f)=-i(2-x)(x^2+2)\f$.
 For each successful test
 (this valid data test and the invalid ones described above), it
-prints ``\texttt{PASS}'' to standard output; if a test fails, it
-prints ``\texttt{FAIL}''.
+prints "\c PASS" to standard output; if a test fails, it
+prints "\c FAIL".
 
-If the \texttt{filename} arguments are present, it also reads in the
+If the \c filename arguments are present, it also reads in the
 optimal filter and the two data streams from the specified files and
 use the specified parameters to calculate the cross-correlation
 statistic.  The result is printed to the specified output file.
 
-\subsubsection*{Exit codes}
-\input{StochasticCrossCorrelationSpectrumTestCE}
+\heading{Exit codes}
 
-\subsubsection*{Uses}
 
-\begin{verbatim}
+\heading{Uses}
+
+\code
 LALStochasticCrossCorrelationSpectrum()
 LALCheckMemoryLeaks()
 LALCReadFrequencySeries()
@@ -114,25 +110,25 @@ printf()
 fprintf()
 freopen()
 fabs()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\begin{itemize}
-  \item No specific error checking is done on user-specified data.  If
-    \texttt{length} is missing, the resulting default will cause a bad
+<ul>
+  <li> No specific error checking is done on user-specified data.  If
+    \c length is missing, the resulting default will cause a bad
     data error.
-  \item The length of the user-provided series must be specified, even
+  </li><li> The length of the user-provided series must be specified, even
     though it could in principle be deduced from the input file,
     because the data sequences must be allocated before the
-    \texttt{LALCReadFrequencySeries()} function is called.
-  \item If some, but not all, of the \texttt{filename} arguments are
-    present, the user-specified data will be silently ignored.
-\end{itemize}
+    <tt>LALCReadFrequencySeries()</tt> function is called.
+  </li><li> If some, but not all, of the \c filename arguments are
+    present, the user-specified data will be silently ignored.</li>
+</ul>
 
-\vfill{\footnotesize\input{StochasticCrossCorrelationSpectrumTestCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <lal/LALStdlib.h>
 
@@ -192,7 +188,7 @@ Usage (const char *program, int exitflag);
 static void
 ParseOptions (int argc, char *argv[]);
 
-/*************** <lalErrTable file="StochasticCrossCorrelationSpectrumTestCE"> */
+/**\name Error Codes */ /*@{*/
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ENOM 0
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EARG 1
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK 2
@@ -204,7 +200,7 @@ ParseOptions (int argc, char *argv[]);
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK "Error checking failed to catch bad data"
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEFLS "Incorrect answer for valid data"
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEUSE "Bad user-entered data"
-/***************************** </lalErrTable> */
+/*@}*/
 
 int main( int argc, char *argv[] )
 {

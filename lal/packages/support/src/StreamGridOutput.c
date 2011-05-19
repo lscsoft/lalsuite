@@ -1,0 +1,307 @@
+/**
+\author Creighton, T. D.
+\file
+
+\heading{Module \ref StreamGridOutput.c}
+\latexonly\label{ss_StreamGridOutput_c}\endlatexonly
+
+Writes a LAL grid structure to an output stream.
+
+\heading{Prototypes}
+
+\code
+void
+LAL<typecode>WriteGrid( LALStatus *stat, FILE *stream, <datatype>Grid *grid )
+\endcode
+
+\heading{Description}
+
+These routines write the data and metadata in a grid structure
+<tt>*grid</tt> to an output stream <tt>*stream</tt> in a standard format,
+described below.  It returns an error if any attempt to write to the
+stream failed; <tt>*grid</tt> may then be left in a partially-written
+state.
+
+For each of these prototype templates there are in fact 10 separate
+routines corresponding to all the numeric atomic datatypes
+<tt><datatype></tt> referred to by <tt><typecode></tt>:
+
+<table><tr><td>
+
+\tt <typecode></td><td>\tt <datatype></td><td>\tt <typecode></td><td>\tt <datatype></td></tr>
+<tr><td>
+\tt I2</td><td>\tt  INT2</td><td>\tt U2</td><td>\tt    UINT2</td></tr>
+<tr><td>\tt I4</td><td>\tt  INT4</td><td>\tt U4</td><td>\tt    UINT4</td></tr>
+<tr><td>\tt I8</td><td>\tt  INT8</td><td>\tt U8</td><td>\tt    UINT8</td></tr>
+<tr><td>\tt  S</td><td>\tt REAL4</td><td>\tt  C</td><td>\tt COMPLEX8</td></tr>
+<tr><td>\tt  D</td><td>\tt REAL8</td><td>\tt  Z</td><td>\tt COMPLEX16</td></tr>
+</tr></table>
+
+
+\heading{Format for <tt>*stream</tt>:} The data written to the
+output stream will be formatted in a manner consistent with the input
+routines in \ref StreamGridInput.c.  That is, it will begin with a
+metadata header, consisting of multiple lines of the form:
+
+
+<table><tr><td>
+<tt># </tt>\e fieldname<tt> = </tt>\e value
+</td></tr></table>
+
+
+where \e fieldname is the name of a field in
+<tt>*series</tt> and \e value is the value of that metadata field,
+in some standard format (below).  The following metadata fields will
+be written, one per line:
+
+<dl>
+<dt>\c datatype:</dt><dd> \e value is a string (\e not
+surrounded by quotes) corresponding to the type of <tt>*grid</tt>;
+e.g.\ \c COMPLEX8Grid.</dd>
+
+<dt>\c name:</dt><dd> \e value is a string surrounded by quotes
+<tt>"</tt> representing <tt>grid->name</tt>.  Standard C-language string
+literal notation is used: printable characters are written directly
+except for <tt>"</tt> and <tt>\</tt> (rendered as <tt>\"</tt> and <tt>\\</tt>,
+respectively), characters with special C escape sequences are written
+as those sequences (e.g.\ <tt>\t</tt> for tab and <tt>\n</tt> for
+newline), and all other character bytes are written as three-digit
+octal codes <tt>\</tt>\f$ooo\f$.  Writing stops at the first null byte
+<tt>\0</tt>.</dd>
+
+<dt>\c sampleUnits:</dt><dd> \e value is string surrounded by
+quotes <tt>"</tt>; inside the quotes is a unit string corresponding to
+<tt>grid->sampleUnits</tt> as converted by the routine
+<tt>LALUnitAsString()</tt>.</dd>
+
+<dt>\c dimUnits:</dt><dd> \e value is a sequence of \f$m\f$ strings,
+surrounded by quotes <tt>"</tt> and separated by a space, where \f$m\f$ is
+the grid dimension (number of grid axes); inside the quotes is a unit
+string corresponding to the elements of the <tt>grid->dimUnits</tt>
+array as converted by the routine <tt>LALUnitAsString()</tt>.</dd>
+
+<dt>\c offset:</dt><dd> \e value is a sequence of \f$m\f$
+\c REAL8 numbers separated by single spaces, representing the
+elements of the <tt>grid->offset->data</tt>; the number of data \f$m\f$ is
+the grid dimension and corresponds to the value of
+<tt>grid->offset->length</tt>.</dd>
+
+<dt>\c interval:</dt><dd> \e value is a sequence of \f$m\f$
+\c REAL8 numbers separated by single spaces, representing the
+elements of the <tt>grid->interval->data</tt>; the number of data \f$m\f$ is
+the grid dimension and corresponds to the value of
+<tt>grid->interval->length</tt>.</dd>
+
+<dt>\c dimLength:</dt><dd> \e value is a sequence of \f$M\f$
+\c REAL8 numbers separated by single spaces, representing the
+elements of the <tt>grid->data->dimLength->data</tt>; the number of data
+\f$M\f$ is the data dimension and corresponds to the value of
+<tt>grid->data->dimLength->length</tt>, which must be greater than or
+equal to the grid dimension \f$m\f$, above.</dd>
+</dl>
+
+After all metadata have been written, the contents of
+<tt>grid->data->data</tt> will be written in standard integer or
+floating-point notation, according to <tt><datatype></tt>: integers will
+be written to full precision, while floating-point numbers will be
+written in exponential notation with sufficient digits to ensure that
+they represent a unique binary floating-point number under the IEEE
+Standard 754 (this means 9 digits for \c REAL4s and 17 digits for
+\c REAL8s).
+
+The input format in \ref StreamGridInput.c does not specify how the
+numerical data is to be arranged, other than that the numbers be
+separated by whitespace, and that complex datatypes be represented by
+alternating real and imaginary components.  These routines adopt the
+following conventions to improve human-readability: If the data
+dimension is equal to the grid dimension, then each line consists of a
+single datum (either a single number, or, for complex datatypes, a
+pair of numbers separated by whitespace), followed by a newline
+<tt>'\n'</tt>.  If the data dimension is greater than the grid
+dimension, then each line will consist of a number of data equal to
+the length of the last dimension in <tt>grid->data->dimLength</tt>.  If
+the data dimension is at least two greater than the grid dimension,
+and the dimension lengths are such that a single grid point comprises
+multiple lines of data, then an additional blank line <tt>'\n'</tt> is
+inserted to separate subsequent grid points.
+
+\heading{Algorithm}
+
+\heading{Uses}
+\code
+lalDebugLevel                           LALPrintError()
+LALCHARCreateVector()                   LALCHARDestroyVector()
+LALUnitAsString()
+\endcode
+
+\heading{Notes}
+
+
+
+% a " to fix C prettyprinting
+
+*/
+
+#include <stdio.h>
+#include <ctype.h>
+#include <lal/LALStdlib.h>
+#include <lal/Grid.h>
+#include <lal/Units.h>
+#include <lal/AVFactories.h>
+#include <lal/StringInput.h>
+#include <lal/StreamOutput.h>
+
+NRCSID( STREAMGRIDOUTPUTC, "$Id$" );
+
+/* Define a function for printing a string as a literal. */
+static int
+LALWriteLiteral( FILE *stream, const CHAR *string )
+{
+  CHAR c; /* Current character being considered. */
+
+  /* Open literal and start parsing string. */
+  if ( putc( '"', stream ) == EOF ) return 1;
+  while ( ( c = *(string++) ) != '\0' ) {
+
+    /* Characters with named escape sequences. */
+    if ( c == '\a' ) {
+      if ( fputs( "\\a", stream ) == EOF ) return 1;
+    } else if ( c == '\b' ) {
+      if ( fputs( "\\b", stream ) == EOF ) return 1;
+    } else if ( c == '\f' ) {
+      if ( fputs( "\\f", stream ) == EOF ) return 1;
+    } else if ( c == '\n' ) {
+      if ( fputs( "\\n", stream ) == EOF ) return 1;
+    } else if ( c == '\r' ) {
+      if ( fputs( "\\r", stream ) == EOF ) return 1;
+    } else if ( c == '\t' ) {
+      if ( fputs( "\\t", stream ) == EOF ) return 1;
+    } else if ( c == '\v' ) {
+      if ( fputs( "\\v", stream ) == EOF ) return 1;
+    } else if ( c == '"' ) {
+      if ( fputs( "\\\"", stream ) == EOF ) return 1;
+    } else if ( c == '\\' ) {
+      if ( fputs( "\\\\", stream ) == EOF ) return 1;
+    }
+
+    /* Printable characters. */
+    else if ( isprint( c ) ) {
+      if ( putc( c, stream ) == EOF ) return 1;
+    }
+
+    /* Other characters are given 3-digit octal escape sequences. */
+    else {
+      if ( fprintf( stream, "\\%03o", (UCHAR)( c ) ) < 0 )
+	return 1;
+    }
+  }
+
+  /* Close literal and exit. */
+  if ( putc( '"', stream ) == EOF ) return 1;
+  return 0;
+}
+
+/* tell GNU C compiler to ignore warnings about the `ll' length modifier */
+#ifdef __GNUC__
+#define fprintf __extension__ fprintf
+#endif
+
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#define FMT "%.16e"
+#define COMPLEX 1
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
+
+#define TYPECODE C
+#define TYPE COMPLEX8
+#define FMT "%.8e"
+#define COMPLEX 1
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
+
+#define TYPECODE D
+#define TYPE REAL8
+#define FMT "%.16e"
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
+
+#define TYPECODE S
+#define TYPE REAL4
+#define FMT "%.8e"
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
+
+#define TYPECODE I2
+#define TYPE INT2
+#define FMT "%"LAL_INT2_FORMAT
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
+
+#define TYPECODE I4
+#define TYPE INT4
+#define FMT "%"LAL_INT4_FORMAT
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
+
+#define TYPECODE I8
+#define TYPE INT8
+#define FMT "%"LAL_INT8_FORMAT
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
+
+#define TYPECODE U2
+#define TYPE UINT2
+#define FMT "%"LAL_UINT2_FORMAT
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
+
+#define TYPECODE U4
+#define TYPE UINT4
+#define FMT "%"LAL_UINT4_FORMAT
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
+
+#define TYPECODE U8
+#define TYPE UINT8
+#define FMT "%"LAL_UINT8_FORMAT
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX

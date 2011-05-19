@@ -227,7 +227,7 @@ int main( int argc, char **argv )
   fcTmpltParams->PTFe1 = XLALCreateVectorSequence( 3, numPoints );
   fcTmpltParams->PTFe2 = XLALCreateVectorSequence( 3, numPoints );
   fcTmpltParams->fwdPlan =
-        XLALCreateForwardREAL4FFTPlan( numPoints, 0 );
+        XLALCreateForwardREAL4FFTPlan( numPoints, 1 );
   fcTmpltParams->deltaT = 1.0/params->sampleRate;
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -239,7 +239,7 @@ int main( int argc, char **argv )
     }
   }
   /* Create an inverser FFT plan */
-  invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 0 );
+  invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 1 );
 
   /* Read in the tmpltbank xml file */
   numTmplts = InspiralTmpltBankFromLIGOLw( &PTFtemplate,bankFileName,
@@ -325,7 +325,7 @@ int main( int argc, char **argv )
 
   coh_PTF_cleanup(procpar,fwdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
-      fcInitParams,PTFM,PTFN,PTFqVec,Fplus,Fcross,timeOffsets);
+      fcInitParams,PTFM,PTFN,PTFqVec,Fplus,Fcross,timeOffsets,NULL,NULL);
   while ( PTFSpinTmpltHead )
   {
     PTFSpinTmplt = PTFSpinTmpltHead;

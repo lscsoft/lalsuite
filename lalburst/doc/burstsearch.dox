@@ -1,0 +1,269 @@
+/**
+\defgroup burstsearch burstsearch
+\ingroup burst
+
+Functions for the implementation of the standard burst searches:
+
+<ul>
+
+<li> A standard interface for burst event trigger generators.</li>
+
+<li> A function for the estimation of burst parameters.</li>
+
+<li> A wrapper for the TFCLUSTERS algorithm.</li>
+
+<li> A wrapper for the SLOPE algorithm.</li>
+
+<li> A set of functions to implement the excess power search technique which was suggested in Ref.~\ref fh1998 and later independently invented in Ref.~\ref acdhp1999.  The implementation here is described in detail in Ref.~\ref abcf2000.
+</li>
+</ul>
+
+\heading{Header \ref TFTransform.h}
+\latexonly\label{s_TFTransform_h}\endlatexonly
+
+
+Provides routines to to compute time-frequency planes from either
+time-domain or frequency-domain data, for use in the excess
+power search technique.
+
+\heading{Synopsis}
+\code
+#include "TFTransform.h"
+\endcode
+
+This package provides a suite for functions for computing time-frequency
+representations of data using stacked Fourier transforms.
+
+The first few functions simply combine functionality from the packages
+\c fft and \c Window in a convenient way.  They are designed to
+streamline the task of setting up structures to prepare for taking many
+discrete Fourier transforms (DFTs), including windows and plans for FFTW.
+
+A general description of the time-frequency (TF) transform provided by
+TFTransform is as follows.  Suppose one starts with some data \f$h_j\f$, \f$0 \le j
+< n\f$ in the time domain, with sampling time \f$\Delta t\f$, so that the data point
+\f$h_j\f$ corresponds to a time \f$t_j = t_\textrm{start} + j \Delta t\f$.  Taking the
+standard DFT yields complex data
+\anchor standarddft \f{equation}{
+{\tilde h}_\gamma = \sum_{j=0}^{n-1} \, e^{-2 \pi i j \gamma / n} \, h_j
+\label{standarddft}
+\f}
+in the Fourier domain, for \f$0 \le \gamma \le [n/2]+1\f$.  Here the data point
+\f${\tilde h}_\gamma\f$ corresponds to a frequency \f$f_\gamma = \gamma \Delta f\f$,
+where \f$\Delta f= 1/(n \Delta t)\f$ is the frequency resolution.
+
+
+Now suppose that we can factorize the number \f$n\f$ of data points as
+\f{equation}{
+n = 2 N_T N_F.
+\f}
+Then, by a time-frequency plane we shall mean a set of \f$N_T N_F\f$ complex
+numbers \f$H_{I\Gamma}\f$ with \f$0 \le I < N_T\f$ and \f$0 \le \Gamma < N_F\f$, obtained
+by an invertible linear transformation from the original data, such  that the
+data point \f$H_{I\Gamma}\f$ corresponds approximately to a time \f$t_I = t_\textrm{
+start} + I {\overline {\Delta t}}\f$ and to a frequency \f$f_\Gamma = \Gamma
+{\overline {\Delta f}}\f$.  Here \f$N_F\f$ is the number of frequency bins in the TF
+plane, and \f$N_T\f$ is the number of time bins.  The time resolution \f${\overline
+{\Delta t}}\f$ and frequency resolution \f${\overline {\Delta f}}\f$ are related by
+\f${\overline {\Delta t}} \ {\overline {\Delta f}} =1\f$, and are given by
+\f${\overline {\Delta t}} = 2 N_F \Delta t\f$ and \f${\overline {\Delta f}} = N_T
+\Delta f\f$.  Note that there are many other time-frequency representations
+of data that are not of this type; see \ref ab1999.
+
+
+There are many possible choices of linear transformations from the data \f$h_j\f$
+to data \f$H_{J\Gamma}\f$ satisfying the above properties.  Here we have
+implemented two simple choices.  The first choice consists of dividing the
+time-domain data \f$h_j\f$ into \f$N_T\f$ equal-sized chunks, each of length \f$n/N_T\f$,
+and then taking the forward DFT of each chunk.  Then, \f$H_{J\Gamma}\f$ is just
+the \f$\Gamma\f$th element of the \f$J\f$th chunk.  In terms of formulae this
+corresponds to
+\anchor verticalTFP \f{equation}{
+H_{J\Sigma} = \sum_{k=0}^{2 N_F-1} \, \exp \left[ 2 \pi i k \Sigma / (2
+N_F) \right] \, h_{2 N_F J + k},
+\label{verticalTFP}
+\f}
+for \f$0 \le J < N_T\f$ and \f$0 \le \Sigma < N_F\f$.  We call this first type
+of TF plane a vertical TF plane, since it corresponds to a series of
+vertical lines if the time axis is horizontal and the frequency axis
+vertical.
+
+The second type of TF plane is obtained by first taking a DFT of all the time
+domain data to obtain frequency domain data, then dividing the frequency
+domain data into \f$N_F\f$ equal-sized chunks, then taking the inverse DFT of each
+chunk.  We call the resulting TF plane a horizontal TF plane. In terms of
+formulae the TF plane elements are \anchor horizontalTFP \f{equation}{ H_{J\Sigma} =
+\sum_{\gamma=0}^{N_T-1} \, \exp \left[ -2 \pi i J \gamma / N_T \right] \,
+{\tilde h}_{N_T \Sigma + \gamma}, \label{horizontalTFP} \f} for \f$0
+\le J < N_T\f$ and \f$0 \le \Sigma < N_F\f$, where \f${\tilde h}_\gamma\f$ is given by
+Eq.\\TODOref{standarddft}.
+
+
+\heading{Structures}
+
+
+\heading{struct \c TFPlaneParams}
+
+
+
+Parameters needed to describe a particular TF plane.
+
+<dl>
+<dt><tt>INT4 timeBins</tt></dt><dd> Number of time bins \f$N_T\f$ in TF plane.</dd>
+
+<dt><tt>INT4 freqBins</tt></dt><dd> Number of freq bins \f$N_F\f$ in TF plane.</dd>
+
+<dt><tt>REAL8 deltaT</tt></dt><dd> The time resolution \f${\overline {\Delta t}}\f$
+of the TF plane in seconds, \c deltaF will always be 1/\c deltaT.</dd>
+
+<dt><tt>REAL8 flow</tt></dt><dd> The lowest frequency \f$f_\textrm{low}\f$ in the TF plane
+in Hertz [such that the data point \f$H_{J\Gamma}\f$ corresponds to a time \f$t_J =
+t_\textrm{start} + J {\overline {\Delta t}}\f$ and to a frequency \f$f_\Gamma =
+f_\textrm{low} + \Gamma {\overline {\Delta f}}\f$, in a slight generalization of
+the above correspondence].</dd>
+</dl>
+
+
+\heading{struct \c RealDFTParams}
+
+
+
+
+
+<dl>
+<dt><tt>WindowType windowType</tt></dt><dd></dd>
+<dt><tt>REAL4Vector *window</tt></dt><dd></dd>
+<dt><tt>REAL4 sumofsquares</tt></dt><dd></dd>
+<dt><tt>RealFFTPlan *plan</tt></dt><dd></dd>
+</dl>
+
+
+\heading{struct \c ComplexDFTParams}
+
+
+
+
+
+<dl>
+<dt><tt>WindowType  windowType</tt></dt><dd></dd>
+<dt><tt>REAL4Vector   *window</tt></dt><dd></dd>
+<dt><tt>REAL4  sumofsquares</tt></dt><dd></dd>
+<dt><tt>ComplexFFTPlan  *plan</tt></dt><dd></dd>
+</dl>
+
+
+\heading{struct \c COMPLEX8TimeFrequencyPlane}
+
+
+
+
+This structure has some fields that also appear in the structures
+\c REAL4TimeSeries and \c COMPLEX8FrequencySeries.
+
+<dl>
+<dt><tt>CHAR  *name</tt></dt><dd> The name of the TF plane.</dd>
+
+<dt><tt>LIGOTimeGPS   epoch</tt></dt><dd> The initial time \f$t_\textrm{start}\f$ of the
+data used to generate the TF plane.</dd>
+
+<dt><tt>CHARVector  *sampleUnits</tt></dt><dd> The units of the quantities \f$H_{J\Gamma}\f$.</dd>
+
+<dt><tt>TFPlaneParams   *params</tt></dt><dd>  Parameters needed to generate the
+plane from input data.  (See above.)</dd>
+
+<dt><tt>TFPlaneType   planeType</tt></dt><dd>  This is an enumerated type that can
+be either \c verticalPlane or \c horizontalPlane, corresponding to the
+two types of TF plane.</dd>
+
+<dt><tt>COMPLEX8   *data</tt></dt><dd>  The \f$N_T \times N_F\f$ array of complex
+numbers \f$H_{J\Sigma}\f$.
+</dd>
+</dl>
+
+
+\heading{struct \c VerticalTFTransformIn}
+
+
+
+
+
+<dl>
+<dt><tt>RealDFTParams  *dftParams</tt></dt><dd></dd>
+<dt><tt>INT4  startT</tt></dt><dd></dd>
+</dl>
+
+
+\heading{struct \c HorizontalTFTransformIn}
+
+
+
+
+
+<dl>
+<dt><tt>ComplexDFTParams  *dftParams</tt></dt><dd></dd>
+<dt><tt>INT4  startT</tt></dt><dd></dd>
+</dl>
+
+
+
+\heading{Module \ref CreateRealDFTParams.c}
+\latexonly\label{ss_CreateRealDFTParams_c}\endlatexonly
+
+
+Creates a structure of type \c RealDFTParams,
+
+\heading{Prototypes}
+
+
+
+\heading{Description}
+
+The inputs to <tt>CreateDFTParams()</tt> consist of (i) a parameter
+\c winParams of type <tt>WindowParams*</tt> giving the length of the vectors
+to be Fourier  transformed and the type of windowing to be used, (ii) a
+pointer \c dftParams to a pointer to a \c RealDFTParams structure, and
+(iii) an integer \c sign specifying the direction of the transform, with
+\f$+1\f$ indicating forward transform and \f$-1\f$ indicating inverse transform.  On
+exit, <tt>*dftParams</tt> will point to the newly created structure.
+
+\heading{Uses}
+\code
+LALCreateForwardRealFFTPlan
+LALCreateReverseRealFFTPlan
+LALSCreateVector
+LALWindow
+\endcode
+
+\heading{Notes}
+
+
+
+\begin{thebibliography}{0}
+
+\bibitem{ab:1999}
+Warren G. Anderson and R. Balasubramanian, <em>Time-frequency
+detection of gravitational waves</em>, gr-qc/9905023, and references
+therein.
+
+\bibitem{fh:1998}
+\'Eanna~\'E.~Flanagan and S. A. Hughes, Phys. Rev. D \c 57,
+4535-4565 (1998) (also gr-qc/9701039).
+
+\bibitem{acdhp:1999}
+N. Arnaud, F. Cavalier, M. Davier, P. Hello, and T. Pradier,
+<em>Triggers for the Detection of Gravitational Wave Bursts</em>,
+gr-qc/9903035.
+
+\bibitem{abcf:2000}
+Warren G. Anderson, Patrick R. Brady, Jolien D. E. Creighton and
+{\'E}anna {\'E}. Flanagan,
+<em>An excess power statistic for detection of burst sources of
+gravitational radiation</em>, PRD 63, 042003 (2001) (gr-qc/0008066).
+For a short version see \e ibid, <em>A power filter for the
+detection of burst sources of gravitational radiation in
+interferometric detectors</em>, gr-qc/0001044, submitted to
+Int. J. Modern. Phys. D.
+
+\end{thebibliography}
+
+*/

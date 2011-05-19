@@ -30,9 +30,10 @@ $Id$
 #include <lal/SkyCoordinates.h>
 #include <lal/IIRFilter.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( COHERENTESTIMATION, "$Id$" );
@@ -104,4 +105,10 @@ LALClearCoherentInfo (
 		      CoherentEstimation *dat
 		      );
 
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
 #endif
+
+#endif /* _COHERENTESTIMATION_H */

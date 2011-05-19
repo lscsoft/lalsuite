@@ -23,30 +23,22 @@
  *
  * Author: Brown, D. A. and Fairhurst, S.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="LIGOLwXMLReadHV">
-Author: Brown, D. A. and Fairhurst, S.
-$Id$
-</lalVerbatim>
-<lalLaTeX>
-\section{Header \texttt{LIGOLwXMLRead.h}}
-\label{s:LIGOLwXMLRead.h}
+/**
 
-Provides functions for reading LIGO lightweight XML files to LIGO
-metadata database tables.
+\author Brown, D. A. and Fairhurst, S.
+\file
+\ingroup lalmetaio
+\brief Provides functions for reading LIGO lightweight XML files to LIGO metadata database tables.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/LIGOLwXMLRead.h>
-\end{verbatim}
+\endcode
 
-</lalLaTeX>
-#endif
+*/
 
 #ifndef _LIGOLWXMLREAD_H
 #define _LIGOLWXMLREAD_H
@@ -65,14 +57,7 @@ extern "C" {
 
 NRCSID( LIGOLWXMLREADH, "$Id$" );
 
-/* <lalLaTeX>
-
-\subsection*{Error conditions}
-\input{LIGOLwXMLReadHE}
-
-</lalLaTeX> */
-
-/* <lalErrTable file="LIGOLwXMLReadHE"> */
+/**\name Error Codes */ /*@{*/
 #define LIGOLWXMLREADH_ENULL 1
 #define LIGOLWXMLREADH_ENNUL 2
 #define LIGOLWXMLREADH_EALOC 3
@@ -96,19 +81,20 @@ NRCSID( LIGOLWXMLREADH, "$Id$" );
 #define LIGOLWXMLREADH_MSGEENDT "Ending a table without an beginning a table"
 #define LIGOLWXMLREADH_MSGETMSM "Table type mismatch"
 #define LIGOLWXMLREADH_MSGETNOP "Table not begun for writing"
-/* </lalErrTable> */
+/*@}*/
 
 
-#if 0
-<lalLaTeX>
-\subsection*{Structures}
 
-\subsubsection*{Type \texttt{tagMetaTableDirectory}}
-\idx[Type]{tagMetaTableDirectory}
-</lalLaTeX>
-#endif
 
-/* <lalVerbatim> */
+/** This structure allows for the association of entries in a MetaDataTable
+with columns in an xml file.
+<dl>
+<dt>\c name</dt><dd> The name of the column in the XML table.</dd>
+<dt>\c pos</dt><dd> The position of this column in the XML table.</dd>
+<dt>\c idx</dt><dd> The id number of the column.</dd>
+</dl>
+
+*/
 typedef struct
 tagMetaTableDirectory
 {
@@ -117,26 +103,14 @@ tagMetaTableDirectory
   INT4   idx;
 }
 MetaTableDirectory;
-/* </lalVerbatim> */
-#if 0
-<lalLaTeX>
-
-This structure allows for the association of entries in a MetaDataTable
-with columns in an xml file.
-\begin{description}
-\item[\texttt{name}] The name of the column in the XML table.
-\item[\texttt{pos}] The position of this column in the XML table.
-\item[\texttt{idx}] The id number of the column.
-\end{description}
-</lalLaTeX>
-#endif
 
 
-#if 0
-<lalLaTeX>
-\newpage\input{CreateMetaTableDirC}
-</lalLaTeX>
-#endif
+
+
+
+
+
+
 
 MetaTableDirectory* XLALCreateMetaTableDir(
     const MetaioParseEnv    env,
@@ -151,11 +125,11 @@ LALCreateMetaTableDir(
     MetadataTableType       table
     );
 
-#if 0
-<lalLaTeX>
-\newpage\input{LIGOLwXMLReadC}
-</lalLaTeX>
-#endif
+
+
+
+
+
 
 int
 XLALLIGOLwFindColumn(

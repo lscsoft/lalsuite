@@ -47,9 +47,10 @@ Further documentation is given in the individual routines' modules.
 #include <lal/IIRFilter.h>
 #include <lal/ZPGFilter.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID(BANDPASSTIMESERIESH,"$Id$");
@@ -146,8 +147,9 @@ LALDButterworthREAL4TimeSeries( LALStatus          *status,
 \newpage\input{BandPassTestC}
 </lalLaTeX> */
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

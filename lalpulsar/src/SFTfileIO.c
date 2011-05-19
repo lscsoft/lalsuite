@@ -2506,11 +2506,13 @@ LALDestroySFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure 
 
 
 /** Free an 'SFT-catalogue' */
-SFTCatalog*
+void
 XLALDestroySFTCatalog ( SFTCatalog **catalog )	/**< the 'catalogue' to free */
 {
-  if ( *catalog )
-    {
+  if ( catalog ) {
+
+    if ( *catalog ) {
+
       if ( (*catalog) -> data )
 	{
 	  UINT4 i;
@@ -2531,6 +2533,8 @@ XLALDestroySFTCatalog ( SFTCatalog **catalog )	/**< the 'catalogue' to free */
 		XLALDestroyCOMPLEX8Sequence (ptr->header.data);
 	    } /* for i < length */
 
+	  (*catalog)->length = 0;
+
 	  XLALFree ( (*catalog)->data );
 
 	} /* if *catalog->data */
@@ -2539,9 +2543,8 @@ XLALDestroySFTCatalog ( SFTCatalog **catalog )	/**< the 'catalogue' to free */
 
     } /* if *catalog */
 
-  (*catalog) = NULL;
-
-  return ( *catalog );
+    (*catalog) = NULL;
+  }
 
 } /* XLALDestroySFTCatalog() */
 

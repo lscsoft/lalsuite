@@ -10,7 +10,6 @@ pkginclude_HEADERS = \
 	LALBarycenter.h \
 	LALCalibration.h \
 	LALDetectors.h \
-	LALTrigScanCluster.h \
 	ResampleTimeSeries.h \
 	Segments.h \
 	Sequence.h \

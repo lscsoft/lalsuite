@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Drew Keppel, Duncan Brown, Gareth Jones, Peter Shawhan, Thomas Cokelaer
+*  Copyright (C) 2007 Drew Keppel, Duncan Brown, Gareth Jones, Peter Shawhan, Thomas Cokelaer, Laszlo Vereb
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -62,9 +62,10 @@ code. It is called InjectionInterfaceTest.c
 
 #include <lal/Units.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( GENERATEINSPIRALH,
@@ -131,6 +132,14 @@ LALGetApproximantFromString(
     Approximant *result
     );
 
+/**	Convert a string provided by the #CoherentGW structure in order to retrieve
+ *	the approximant of the waveform to generate.
+ *	@param[out]	inter	: the level of the spin interaction
+ *	@param[in]	thisEvent	: string containing the spin interaction
+ *	@return error code
+ */
+int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent);
+
 /*  three function to populate the needed structures */
 void
 LALGenerateInspiralPopulatePPN(
@@ -148,8 +157,9 @@ LALGenerateInspiralPopulateInspiral(
     );
 
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

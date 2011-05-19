@@ -68,7 +68,7 @@ iterator, as in the following example code:
   LALSegList mylist;
   LALSeg *segp;
   ...
-  /-* (Append segments to the segment list 'mylist' here) *-/
+  /\* (Append segments to the segment list 'mylist' here) *\/
   ...
   for ( segp=mylist.segs; segp<mylist.segs+mylist.length; segp++ ) {
 
@@ -85,15 +85,15 @@ iterator, as in the following example code:
   INT4 iseg;
   LIGOTimeGPS startgps;
   ...
-  /-* (Append segments to the segment list 'mylist' here) *-/
+  /\* (Append segments to the segment list 'mylist' here) *\/
   ...
   for ( iseg=0; iseg<mylist.length; iseg++ ) {
 
-    /-* One way to access the segment... *-/
+    /\* One way to access the segment... *\/
     startgps = mylist.segs[iseg].start;
     printf( "The start time of the segment is GPS %d.%09d\n", startgps.gpsSeconds, startgps.gpsNanoSeconds );
 
-    /-* Another way to access the segment... *-/
+    /\* Another way to access the segment... *\/
     segp = mylist.segs + iseg;
     printf( "The end time of the segment is GPS %d.%09d\n", segp->end.gpsSeconds, segp->end.gpsNanoSeconds );
 
@@ -127,9 +127,10 @@ Also all segments in a segment list can be time-shifted using \c XLALSegListShif
 #include <lal/LALDatatypes.h>
 #include <lal/XLALError.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 /** \cond DONT_DOXYGEN */
@@ -227,8 +228,9 @@ XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeG
 /** \endcond */
 /*----------------------- Trailer stuff ----------------------------*/
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif  /* C++ protection. */
 #endif  /* Double-include protection. */

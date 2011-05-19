@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton
+*  Copyright (C) 2007 Jolien Creighton, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -187,47 +187,71 @@ LALDPolynomialInterpolation (
     DInterpolatePar *params
     )
 { /* </lalVerbatim> */
-  REAL8 *dn;   /* difference in a step down */
-  REAL8 *up;   /* difference in a step up   */
-  REAL8  diff;
-  UINT4  near;
-  UINT4  order;
-  UINT4  n;
-  UINT4  i;
-
   INITSTATUS (status, "LALDPolynomialInterpolation", INTERPOLATEC);
+
+  XLALPrintDeprecationWarning("LALDPolynomialInterpolation", "XLALDPolynomialInterpolation");
 
   ASSERT (output, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
   ASSERT (params, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
   ASSERT (params->x, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
   ASSERT (params->y, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
 
-  n = params->n;
-  ASSERT (n > 1, status, INTERPOLATEH_ESIZE, INTERPOLATEH_MSGESIZE);
+  output->dy = XLALREAL8PolynomialInterpolation(&(output->y), target, params->y, params->x, params->n);
+  if (xlalErrno)
+    ABORTXLAL (status);
 
-  dn = (REAL8 *) LALMalloc (n*sizeof(REAL8));
-  ASSERT (dn, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
+  RETURN  (status);
+}
 
-  up = (REAL8 *) LALMalloc (n*sizeof(REAL8));
-  ASSERT (up, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
+/* <lalVerbatim file="InterpolateCP"> */
+REAL8
+XLALREAL8PolynomialInterpolation (
+    REAL8 *yout,
+    REAL8  xtarget,
+    REAL8 *y,
+    REAL8 *x,
+    UINT4  n
+    )
+{ /* </lalVerbatim> */
+  REAL8  dy;
+  REAL8 *dn;   /* difference in a step down */
+  REAL8 *up;   /* difference in a step up   */
+  REAL8  diff;
+  UINT4  near = 0;
+  UINT4  order;
+  UINT4  i;
+
+  if ( yout == NULL || y == NULL || x == NULL )
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+
+  if ( n <= 1 )
+    XLAL_ERROR_REAL8(__func__, XLAL_ESIZE);
+
+  dn = (REAL8 *) LALMalloc (n*sizeof(*dn));
+  if ( !dn )
+    XLAL_ERROR_REAL8(__func__, XLAL_ENOMEM);
+
+  up = (REAL8 *) LALMalloc (n*sizeof(*up));
+  if ( !up )
+    XLAL_ERROR_REAL8(__func__, XLAL_ENOMEM);
 
 
   /*
    *
-   * Initialize dn[] and up[] and find element of domain nearest the target.
+   * Initialize dn[] and up[] and find element of domain nearest xtarget.
    *
    */
 
 
-  memcpy (dn, params->y, n*sizeof(REAL8));
-  memcpy (up, params->y, n*sizeof(REAL8));
-  diff = target - params->x[near = 0];
+  memcpy (dn, y, n*sizeof(*dn));
+  memcpy (up, y, n*sizeof(*up));
+  diff = xtarget - x[near];
   for (i = 1; diff > 0 && i < n; ++i)
   {
-    REAL8 tmp = target - params->x[i];
+    REAL8 tmp = xtarget - x[i];
     diff = (fabs(tmp) < fabs(diff) ? near = i, tmp : diff);
   }
-  output->y = params->y[near];
+  *yout = y[near];
 
 
   /*
@@ -242,23 +266,28 @@ LALDPolynomialInterpolation (
     UINT4 imax = n - order;
     for (i = 0; i < imax; ++i)
     {
-      REAL8 xdn = params->x[i];
-      REAL8 xup = params->x[i + order];
+      REAL8 xdn = x[i];
+      REAL8 xup = x[i + order];
       REAL8 den = xdn - xup;
       REAL8 fac;
-      ASSERT (den != 0, status, INTERPOLATEH_EZERO, INTERPOLATEH_MSGEZERO);
+      if ( !den )
+      {
+	LALFree (dn);
+	LALFree (up);
+        XLAL_ERROR_REAL8 (__func__, XLAL_EFPDIV0);
+      }
       fac   = (dn[i + 1] - up[i])/den;
-      dn[i] = fac*(xdn - target);
-      up[i] = fac*(xup - target);
+      dn[i] = fac*(xdn - xtarget);
+      up[i] = fac*(xup - xtarget);
     }
 
     /* go down unless impossible */
-    output->y += (near < imax ? dn[near] : up[--near]);
+    *yout += (near < imax ? dn[near] : up[--near]);
   }
 
-  output->dy = fabs(dn[0]) < fabs(up[0]) ? fabs(dn[0]) : fabs(up[0]);
+  dy = fabs(dn[0]) < fabs(up[0]) ? fabs(dn[0]) : fabs(up[0]);
 
   LALFree (dn);
   LALFree (up);
-  RETURN  (status);
+  return dy;
 }

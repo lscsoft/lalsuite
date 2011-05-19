@@ -70,9 +70,10 @@ The null statistic will be defined here.
 #include <lal/FindChirp.h>
 #include <lal/LALInspiralBank.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID (NULLSTATISTICH, "$Id$");
@@ -193,8 +194,9 @@ XLALNullStatisticInputFinal (
    );
 
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

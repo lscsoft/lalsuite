@@ -17,113 +17,143 @@
 *  MA  02111-1307  USA
 */
 
-/************************* <lalVerbatim file="SimulateTaylorCWTestCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Program \texttt{SimulateTaylorCWTest.c}}
-\label{ss:SimulateTaylorCWTest.c}
+\heading{Program \ref SimulateTaylorCWTest.c}
+\latexonly\label{ss_SimulateTaylorCWTest_c}\endlatexonly
 
 Generates a quasiperiodic waveform.
 
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 SimulateTaylorCWTest [-s sourcefile] [-r respfile] [-l site earthfile sunfile]
                      [-o outfile] [-t sec nsec npt dt] [-h hsec hnsec fh]
                      [-d debuglevel]
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This program generates a Taylor-parameterized continuous waveform as a
 function of time.  The following option flags are accepted:
-\begin{itemize}
-\item[\texttt{-s}] Reads source information from the file
-\verb@sourcefile@, whose format is specified below.  If absent, it
+<ul>
+<li>[<tt>-s</tt>] Reads source information from the file
+\c sourcefile, whose format is specified below.  If absent, it
 injects a monochromatic wave with intrinsic frequency 100~Hz, strain
 amplitude 1000, and zero phase at the GPS epoch, arriving from the
-direction RA=00h00m, dec=$0^\circ$.
-\item[\texttt{-r}] Reads a detector response function from the file
-\verb@respfile@, whose format is specified below.  If absent, it
-generates raw dimensionless strain.
-\item[\texttt{-l}] Sets the detector location and orientation.
-\verb@site@ must be one of the following character strings:
-\verb@LHO@, \verb@LLO@, \verb@VIRGO@, \verb@GEO600@, \verb@TAMA300@,
-or \verb@CIT40@.  \verb@earthfile@ and \verb@sunfile@ are ephemeris
-files of the format expected by \verb@LALInitBarycenter()@.  If the
-\verb@-l@ option is not specified, a stationary (barycentric) detector
-aligned with the wave's + polarization is assumed.
-\item[\texttt{-o}] Writes the generated time series to the file
-\verb@outfile@.  If absent, the routines are exercised, but no output
-is written.
-\item[\texttt{-t}] Sets the timing information for the generated
-waveform: \verb@sec@ and \verb@nsec@ are integers specifying the start
-time in GPS seconds and nanoseconds, \verb@npt@ is the number of time
-samples generated, and \verb@dt@ is the sampling interval in seconds.
-If absent, \verb@-t 0 0 65536 9.765625e-4@ is assumed.
-\item[\texttt{-h}] Performs ``ideal heterodyning'' (phase subtraction)
-on the signal: \verb@hsec@ and \verb@hnsec@ are integers specifying an
+direction RA=00h00m, dec=\f$0^\circ\f$.</li>
+<li>[<tt>-r</tt>] Reads a detector response function from the file
+\c respfile, whose format is specified below.  If absent, it
+generates raw dimensionless strain.</li>
+<li>[<tt>-l</tt>] Sets the detector location and orientation.
+\c site must be one of the following character strings:
+\c LHO, \c LLO, \c VIRGO, \c GEO600, \c TAMA300,
+or \c CIT40.  \c earthfile and \c sunfile are ephemeris
+files of the format expected by <tt>LALInitBarycenter()</tt>.  If the
+<tt>-l</tt> option is not specified, a stationary (barycentric) detector
+aligned with the wave's + polarization is assumed.</li>
+<li>[<tt>-o</tt>] Writes the generated time series to the file
+\c outfile.  If absent, the routines are exercised, but no output
+is written.</li>
+<li>[<tt>-t</tt>] Sets the timing information for the generated
+waveform: \c sec and \c nsec are integers specifying the start
+time in GPS seconds and nanoseconds, \c npt is the number of time
+samples generated, and \c dt is the sampling interval in seconds.
+If absent, <tt>-t 0 0 65536 9.765625e-4</tt> is assumed.</li>
+<li>[<tt>-h</tt>] Performs "ideal heterodyning" (phase subtraction)
+on the signal: \c hsec and \c hnsec are integers specifying an
 epoch of zero phase subtraction in GPS seconds and nanoseconds, and
-\verb@fh@ is the frequency of phase subtraction in Hz.  If absent, no
-heterodyning is performed.
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.  If
-absent, level 0 is assumed.
-\end{itemize}
+\c fh is the frequency of phase subtraction in Hz.  If absent, no
+heterodyning is performed.</li>
+<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.  If
+absent, level 0 is assumed.</li>
+</ul>
 
-\paragraph{Format for \texttt{sourcefile}:} The source file consists
+\heading{Format for \c sourcefile:} The source file consists
 of any number of lines of data, each specifying a continuous waveform.
 Each line consists of a GPS epoch where the frequency, phase, and
-Taylor coefficients are defined (\verb@INT8@ nanoseconds), followed by
-7 or more whitespace-delimited \verb@REAL8@ numbers: the + and
-$\times$ wave amplitudes (dimensionless strain) and polarization angle
-$\psi$ (degrees), the right ascension and declination (degrees), the
+Taylor coefficients are defined (\c INT8 nanoseconds), followed by
+7 or more whitespace-delimited \c REAL8 numbers: the + and
+\f$\times\f$ wave amplitudes (dimensionless strain) and polarization angle
+\f$\psi\f$ (degrees), the right ascension and declination (degrees), the
 initial phase (degrees) and frequency (Hz), followed by zero or more
-Taylor coefficients $f_k$ (Hz${}^k$).  Note that the wave amplitudes
-and polarization angle are read as \verb@REAL8@, but are later cast to
-\verb@REAL4@.
+Taylor coefficients \f$f_k\f$ (Hz\f${}^k\f$).  Note that the wave amplitudes
+and polarization angle are read as \c REAL8, but are later cast to
+\c REAL4.
 
-\paragraph{Format for \texttt{respfile}:} The response function $R(f)$
+\heading{Format for \c respfile:} The response function \f$R(f)\f$
 gives the real and imaginary components of the transformation
-\emph{from} ADC output $o$ \emph{to} tidal strain $h$ via
-$\tilde{h}(f)=R(f)\tilde{o}(f)$.  It is inverted internally to give
-the detector \emph{transfer function} $T(f)=1/R(f)$.  The format
-\verb@respfile@ is a header specifying the GPS epoch $t_0$ at which
-the response was taken (\verb@INT8@ nanoseconds), the lowest frequency
-$f_0$ at which the response is given (\verb@REAL8@ Hz), and the
-frequency sampling interval $\Delta f$ (\verb@REAL8@ Hz):
+\e from ADC output \f$o\f$ \e to tidal strain \f$h\f$ via
+\f$\tilde{h}(f)=R(f)\tilde{o}(f)\f$.  It is inverted internally to give
+the detector <em>transfer function</em> \f$T(f)=1/R(f)\f$.  The format
+\c respfile is a header specifying the GPS epoch \f$t_0\f$ at which
+the response was taken (\c INT8 nanoseconds), the lowest frequency
+\f$f_0\f$ at which the response is given (\c REAL8 Hz), and the
+frequency sampling interval \f$\Delta f\f$ (\c REAL8 Hz):
 
-\medskip
-\begin{tabular}{l}
-\verb@# epoch = @$t_0$ \\
-\verb@# f0 = @$f_0$ \\
-\verb@# deltaF = @$\Delta f$
-\end{tabular}
-\medskip
 
-\noindent followed by two columns of \verb@REAL4@ data giving the real
-and imaginary components of $R(f_0+k\Delta f)$.
+<table><tr><td>
+<tt># epoch = </tt>\f$t_0\f$</td></tr>
+<tr><td><tt># f0 = </tt>\f$f_0\f$</td></tr>
+<tr><td><tt># deltaF = </tt>\f$\Delta f\f$
+</td></tr></table>
 
-\paragraph{Format for \texttt{outfile}:} The ouput files generated by
-this program consist of a two-line header giving the GPS epoch $t_0$
-of the first time sample (\verb@INT8@ nanoseconds) and the sampling
-interval $\Delta t$ (\verb@REAL8@ seconds):
 
-\medskip
-\begin{tabular}{l}
-\verb@# epoch = @$t_0$ \\
-\verb@# deltaT = @$\Delta t$
-\end{tabular}
-\medskip
+followed by two columns of \c REAL4 data giving the real
+and imaginary components of \f$R(f_0+k\Delta f)\f$.
 
-\noindent followed by a single column of \verb@REAL4@ data
+\heading{Format for \c outfile:} The ouput files generated by
+this program consist of a two-line header giving the GPS epoch \f$t_0\f$
+of the first time sample (\c INT8 nanoseconds) and the sampling
+interval \f$\Delta t\f$ (\c REAL8 seconds):
+
+
+<table><tr><td>
+<tt># epoch = </tt>\f$t_0\f$</td></tr>
+<tr><td><tt># deltaT = </tt>\f$\Delta t\f$
+</td></tr></table>
+
+
+followed by a single column of \c REAL4 data
 representing the undigitized output of the interferometer's
 gravitational-wave channel.
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
+
+\heading{Algorithm}
+
+If a \c sourcefile is specified, this program first reads the
+epoch field, and then calls <tt>LALSReadVector()</tt> to read the
+remaining fields.  (If no \c sourcefile is specified, the
+parameters are taken from <tt>#define</tt>d constants.) The arguments
+are passed to <tt>LALGenerateTaylorCW()</tt> to generate frequency and
+phase timeseries.  The required sampling resolution for these
+timeseries is estimated at \f$0.1/\sum_k\sqrt{|kf_0f_kT^{k-1}|}\f$, where
+\f$T\f$ is the duration of the waveform, to ensure that later
+interpolation of the waveforms will give phases accurate to well
+within a radian.
+
+The output from <tt>LALGenerateTaylorCW()</tt> is then passed to
+<tt>LALSimulateCoherentGW()</tt> to generate an output time series.  If
+there are multiple lines in \c sourcefile, the procedure is
+repeated and the new waveforms added into the output.  A warning is
+generated if the wave frequency exceeds the Nyquist rate for the
+output time series.
+
+\heading{Uses}
+\code
+lalDebugLevel
+LALPrintError()                 LALCheckMemoryLeaks()
+LALSCreateVector()              LALSDestroyVector()
+LALGenerateTaylorCW()           LALSDestroyVectorSequence()
+\endcode
+
+\heading{Notes}
+
+*/
+
+/** \name Error Codes */ /*@{*/
 #define SIMULATETAYLORCWTESTC_ENORM  0
 #define SIMULATETAYLORCWTESTC_ESUB   1
 #define SIMULATETAYLORCWTESTC_EARG   2
@@ -141,41 +171,7 @@ gravitational-wave channel.
 #define SIMULATETAYLORCWTESTC_MSGEINPUT "Error reading file"
 #define SIMULATETAYLORCWTESTC_MSGEMEM   "Out of memory"
 #define SIMULATETAYLORCWTESTC_MSGEPRINT "Wrote past end of message string"
-/******************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Algorithm}
-
-If a \verb@sourcefile@ is specified, this program first reads the
-epoch field, and then calls \verb@LALSReadVector()@ to read the
-remaining fields.  (If no \verb@sourcefile@ is specified, the
-parameters are taken from \verb@#define@d constants.) The arguments
-are passed to \verb@LALGenerateTaylorCW()@ to generate frequency and
-phase timeseries.  The required sampling resolution for these
-timeseries is estimated at $0.1/\sum_k\sqrt{|kf_0f_kT^{k-1}|}$, where
-$T$ is the duration of the waveform, to ensure that later
-interpolation of the waveforms will give phases accurate to well
-within a radian.
-
-The output from \verb@LALGenerateTaylorCW()@ is then passed to
-\verb@LALSimulateCoherentGW()@ to generate an output time series.  If
-there are multiple lines in \verb@sourcefile@, the procedure is
-repeated and the new waveforms added into the output.  A warning is
-generated if the wave frequency exceeds the Nyquist rate for the
-output time series.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALSCreateVector()              LALSDestroyVector()
-LALGenerateTaylorCW()           LALSDestroyVectorSequence()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{SimulateTaylorCWTestCV}}
-
-******************************************************* </lalLaTeX> */
+/*@}*/
 
 #include <math.h>
 #include <stdlib.h>

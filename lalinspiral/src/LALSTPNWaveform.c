@@ -60,7 +60,7 @@ the injecttion  package (return a CoherentGW structure).
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
-
+#include "LALSTPNWaveform2.h"
 
 NRCSID (LALSTPNWAVEFORMC, "$Id$");
 
@@ -407,6 +407,7 @@ LALSTPNWaveformTemplates (
 
 
 
+int newswitch = 0;
 
 NRCSID (LALSTPNWAVEFORMFORINJECTIONC,
 "$Id$");
@@ -478,7 +479,18 @@ LALSTPNWaveformForInjection (
 
 
   /* Call the engine function */
-  LALSTPNWaveformEngine(status->statusPtr, NULL, NULL, a, ff, phi, shift,&count, params, &paramsInit);
+	if(newswitch==0) {
+    LALSTPNWaveformEngine(status->statusPtr, NULL, NULL, a, ff, phi, shift,&count, params, &paramsInit);
+	} else {
+  // void LALSTPNAdaptiveWaveformEngine(LALStatus *status,
+  //                                     REAL4Vector *signalvec1,REAL4Vector *signalvec2,
+  //                  							     REAL4Vector *a,REAL4Vector *ff,REAL8Vector *phi,REAL4Vector *shift,
+  //                  							     UINT4 *countback,
+  //                  							     InspiralTemplate *params,InspiralInit *paramsInit);
+                    						 
+    //fprintf(stderr,"Using new engine.\n");
+    LALSTPNAdaptiveWaveformEngine(status->statusPtr, NULL, NULL, a, ff, phi, shift,&count, params, &paramsInit);
+  }
 
   BEGINFAIL( status )
   {
@@ -690,7 +702,7 @@ LALSTPNWaveformEngine (
   /* declare dynamical variables*/
   REAL8 vphi, omega, LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z;
   REAL8 test=-2;
-  REAL8 alpha, omegadot;
+  REAL8 alpha, alpha0, omegadot;
   REAL8 f2a, apcommon;
 
   INITSTATUS(status, "LALSTPNWaveform", LALSTPNWAVEFORMC);
@@ -964,6 +976,8 @@ LALSTPNWaveformEngine (
   S2y = initS2y;
   S2z = initS2z;
 
+  alpha0 = atan2(LNhy,LNhx);
+  
   /* copy everything in the "values" structure*/
 
   values.data[0] = vphi;
@@ -1061,7 +1075,11 @@ LALSTPNWaveformEngine (
 
       /* now setting the wave from the dynamical variables*/
 
-      alpha = atan2(LNhy, LNhx);
+    if(LNhx*LNhx + LNhy*LNhy > 0.0) {
+      alpha = atan2(LNhy,LNhx); alpha0 = alpha;
+    } else {
+      alpha = alpha0;
+    }    
 
       /* I don't really need i, because I can use the explicit formulae below*/
       /* i = acos(LNhz);*/
@@ -1144,7 +1162,7 @@ LALSTPNWaveformEngine (
 
   }
  /* Test that omega/unitHz < NYQUIST */
- while(test < 0.0 && omegadot > 0 && LNhz*LNhz < 1.0 - LNhztol && omega/unitHz < params->tSampling/2. && !(isnan(omega))) ;
+ while(test < 0.0 && omegadot > 0 && omega/unitHz < params->tSampling/2. && !(isnan(omega))) ;
 
  /* if code stopped since evolving quantities became nan write an error message */
  if (isnan(omega)){

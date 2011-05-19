@@ -3,92 +3,214 @@
 /** \page References
 
 \anchor Anderson_W2000 <b>[Anderson_W2000]</b>.
-W.G. Anderson, P.R. Brady, J.D.E. Creighton and E.E. Flanagan,
+W.G.\ Anderson, P.R.\ Brady, J.D.E.\ Creighton and É.\ É.\ Flanagan,
 <i>An excess power statistic for detection of burst sources of gravitational radiation</i>,
 (2000), <tt>gr-qc/0008066</tt>
 
 \anchor Brady_P2000 <b>[Brady_P2000]</b>.
-  P.R. Brady and T. Creighton, Phys. Rev. <b>D 61</b>, 082001 (2000).
+  P.R.\ Brady and T.\ Creighton, Phys.\ Rev.\ <b>D 61</b>, 082001 (2000).
 
 \anchor CS99 <b>[CS99]</b>.
-J.H. Conway and N.J.A. Sloane, <i>Sphere Packings, Lattices and Groups</i>,
-vol. 290 of Grundlehren der mathematischen Wissenschaften,
+J.H.\ Conway and N.J.A.\ Sloane, <i>Sphere Packings, Lattices and Groups</i>,
+vol.\ 290 of Grundlehren der mathematischen Wissenschaften,
 (Springer, New York, U.S.A., 1999), 3rd edition.
 
 \anchor GRASP2000 <b>[GRASP2000]</b>.
-B. Allen,
+B.\ Allen,
 <i>GRASP: a data analysis package for gravitational wave detection</i>,
-Department of Physics, P.O. Box 413,
+Department of Physics, P.O.\ Box 413,
 University of Wisconsin, Milwaukee WI 53201, USA, 1st ed., (2000)
 http://www.lsc-group.phys.uwm.edu/~ballen/grasp-distribution
 
 \anchor JKS98 <b>[JKS98]</b>.
-P. Jaranowski, A. Krolak, B.F. Schutz,
+P.\ Jaranowski, A.\ Królak, B.F.\ Schutz,
 <i>Data analysis of gravitational-wave signals from spinning neutron stars:
-The signal and its detection.</i>, Phys.Rev. <b>D 58</b>, 063001 (1998).
+The signal and its detection.</i>, Phys.Rev.\ <b>D 58</b>, 063001 (1998).
 
 \anchor JK99 <b>[JK99]</b>.
-P. Jaranowski, A. Krolak,
+P.\ Jaranowski, A.\ Królak,
 <i>Data analysis of gravitational-wave signals from spinning neutron
-stars. II. Accuracy of estimation of parameters.</i>,
-Phys.Rev. <b>D59</b>, 063003 (1999).
+stars.\ II.\ Accuracy of estimation of parameters.</i>,
+Phys.Rev.\ <b>D59</b>, 063003 (1999).
 
 \anchor Lang_K1999 <b>[Lang_K1999]</b>.
-K.R. Lang,  <i>Astrophysical Formulae, Volume II: Space, Time, Matter and Cosmology</i>,
+K.R.\ Lang,  <i>Astrophysical Formulae, Volume II: Space, Time, Matter and Cosmology</i>,
 Astronomy and Astrophysics Library (Springer-Verlag, Berlin, 1999), 3rd ed.
 
 \anchor Papa2001 <b>[Papa2001]</b>.
-M.A. Papa, B.F. Schutz, and A.M. Sintes,
-<i>Searching for continuous gravitational wave signals. The hierarchical Hough
+M.A.\ Papa, B.F.\ Schutz, and A.M.\ Sintes,
+<i>Searching for continuous gravitational wave signals.\ The hierarchical Hough
 transform algorithm</i> in
 ''Gravitational waves: A challenge to theoretical astrophysics'',
-Edts. V. Ferrari, J.C. Miller, L. Rezzolla,
-ICTP Lecture Notes Series, Volume III  (ISBN 92-95003-05-5), p. 431-442 (2001),
-Italy. AEI-2000-077, <tt>gr-qc/0011034</tt>
+Edts.\ V.\ Ferrari, J.C.\ Miller, L.\ Rezzolla,
+ICTP Lecture Notes Series, Volume III  (ISBN 92-95003-05-5), p.\ 431-442 (2001),
+Italy.\ AEI-2000-077, <tt>gr-qc/0011034</tt>
 
 \anchor Schutz1998 <b>[Schutz1998]</b>.
-B.F. Schutz, M.A. Papa,
+B.F.\ Schutz, M.A.\ Papa,
 <i>End-to-end algorithm for hierarchical area searches for
 long-duration GW sources for GEO 600</i>, in
 ''Gravitational waves and experimental gravity'',
- Edts. J. Tran Thanh Van, J. Dumarchez, S. Reynaud, C. Salomon, S. Thorsett,
-J.Y. Vinet; World Publishers,  (2000), Hanoi-Vietnam. <tt>gr-qc/9905018</tt>
+ Edts.\ J.\ Tran Thanh Van, J.\ Dumarchez, S.\ Reynaud, C.\ Salomon, S.\ Thorsett,
+J.Y.\ Vinet; World Publishers,  (2000), Hanoi-Vietnam.<tt>gr-qc/9905018</tt>
 
 \anchor Schutz1999 <b>[Schutz1999]</b>.
-Bernard F. Schutz, M. A. Papa, <tt>gr-qc/9905018</tt>.
+Bernard F.\ Schutz, M.\ A.\ Papa, <tt>gr-qc/9905018</tt>.
 
 \anchor Will_C1996 <b>[Will_C1996]</b>.
-C.M. Will and A.G. Wiseman, Phys. Rev. <b>D 54</b> 8, 4813 (1996).
+C.M.\ Will and A.G.\ Wiseman, Phys.\ Rev.\ <b>D 54</b> 8, 4813 (1996).
 
 \anchor Williams1999 <b>[Williams1999]</b>.
-Peter R. Williams, Bernard F. Schutz.  <tt>gr-qc/9912029</tt>.
+Peter R.\ Williams, Bernard F.\ Schutz.\  <tt>gr-qc/9912029</tt>.
 
 \anchor Prix07 <b>[Prix2007]</b>.
 Reinhard Prix, <i>Search for continuous gravitational waves: metric of the multi-detector F-statistic</i>,
-<a href="http://adsabs.harvard.edu/abs/2007PhRvD..75b3004P">Phys. Rev. <b>D75</b>, 023004 (2007)</a>.
+<a href="http://adsabs.harvard.edu/abs/2007PhRvD..75b3004P">Phys.\ Rev.\ <b>D75</b>, 023004 (2007)</a>.
 
 \anchor esaa1992 <b>[esaa1992]</b>
 <i>Explanatory Supplement to the Astronomical Almanac</i>,
- P.K. Seidelmann, <i>ed.</i> (University Science Books, Mill Valley (1992)
+ P.K.\ Seidelmann, <i>ed.</i> (University Science Books, Mill Valley (1992)
 
 \anchor green1985 <b>[green1985]</b>
-R.M. Green, <i>Spherical Astronomy</i> (Cambridge University Press, Cambridge) (1985)
+R.M.\ Green, <i>Spherical Astronomy</i> (Cambridge University Press, Cambridge) (1985)
 
 \anchor vfp1979 <b>[vfp1979]</b>
-T.C. Van Flandern, and K.~F. Pulkkinen, <i>Astrophysical Journal
+T.C.\ Van Flandern, and K.\ F.\ Pulkkinen, <i>Astrophysical Journal
   Supplement Series</i>, <b>41</b>, 391-411, 1979 Nov
 
 \anchor fvf1968 <b>[fvf1968]</b>
 Fliegen, and Van Flandern, <i>Communications of the ACM</i>, <b>11</b>, 657, (1968)
 
 \anchor dis2001 <b>[dis2001]</b>
-T. Damour, B.R.  Iyer and B.S. Sathyaprakash, Phys. Rev. <b>D63</b>, 044023 (2001)
+T.\ Damour, B.R.\  Iyer and B.S.\ Sathyaprakash, Phys.\ Rev.\ <b>D63</b>, 044023 (2001)
 
 
 \anchor ABCF2000 <b>[ABCF2000]</b>
-W.G. Anderson, P.R. Brady, J.D.E. Creighton, and É.É. Flanagan,
-<i>Beam Pattern Response Functions and Times of Arrival for Earthbound Interferometers</i> (2000),
+W.G.\ Anderson, P.R.\ Brady, J.D.E.\ Creighton, and É.\ É.\ Flanagan,
+<i>Beam Pattern %Response Functions and Times of Arrival for Earthbound Interferometers</i> (2000),
 unpublished Maple worksheet,
 <a href="http://phys.utb.edu/UTBRG/activities/papers/#UTBRG-2001-01">http://phys.utb.edu/UTBRG/activities/papers/#UTBRG-2001-01</a>
+
+
+\anchor TaylorWeisberg1989 <b>[TaylorWeisberg1989]</b>
+J.\ Taylor and J.\ Weisberg, <i>ApJ</i>, <b>345</b> (1989)
+
+\anchor BlandfordTeukolsky1976 <b>[BlandfordTeukolsky1976]</b>
+R.\ Blandford and S.\ Teukolsky, <i>ApJ</i>, <b>205</b> (1976)
+
+\anchor ChLangeetal2001 <b>[ChLangeetal2001]</b>
+Ch.\ Lange et.al., <i>Mon.\ Not.\ R.\ Astron.\ Soc.</i>, <b>326</b> (2001)
+
+\anchor DamourDeruelle1985 <b>[DamourDeruelle1985]</b>
+T.\ Damour and N.\ Deruelle, <i>Ann.\ Inst.\ H.\ Poincaré (Phys.\ Th\'eorique)</i>, <b>43</b> (1985)
+
+\anchor Wex1998 <b>[Wex1998]</b>
+N.\ Wex, <i>Mon.\ Not.\ R.\ Astron.\ Soc.</i>, <b>298</b> (1998)
+
+\anchor BDIWW1995 <b>[BDIWW]</b>
+L.\ Blanchett, B.R.\ Iyer, C.M.\ Will and A.G.\ Wiseman,
+Phys.\ Rev.\ Lett.\ <i>74</i>, 3515 (1995).
+
+\anchor BIWW1996 <b>[BIWW1996]</b>
+L.\ Blanchett, B.R.\ Iyer, C.M.\ Will and A.G.\ Wiseman,
+Class.\ Quantum Grav., \c 13, 575, (1996).
+
+\anchor dis1998 <b>[dis1998]</b>
+T.\ Damour, B.R.\ Iyer and B.S.\ Sathyaprakash,
+Phys.\ Rev.\ D <tt>57,</tt> 885 (1998).
+
+\anchor dis2000 <b>[dis2000]</b>
+T.\ Damour, B.R.\ Iyer and B.S.\ Sathyaprakash,
+Phys.\ Rev.\ D <tt>62,</tt> 084036 (2000).
+
+\anchor dis2002 <b>[dis2002]</b>
+T.\ Damour, B.R.\ Iyer and B.S.\ Sathyaprakash,
+Phys.\ Rev.\ D <tt>63</tt>, 044023 (2001); <i>ibid</i>, 027502 (2002).
+
+\anchor BD99 <b>[BD99]</b>
+A.\ Buonanno and T.\ Damour,
+Phys.\ Rev.\ D \c 59, 084006 (1999).
+
+\anchor BD00 <b>[BD00]</b>
+A.\ Buonanno and T.\ Damour,
+Phys.\ Rev.\ D \c 62, 064015 (2000).
+
+\anchor DJS00 <b>[DJS00]</b>
+T.\ Damour, P.\ Jaranowski, and G.\ Schäfer,
+Phys.\ Rev.\ D \c 62, 084011 (2000).
+
+\anchor TD02 <b>[TD02]</b>
+T.\ Damour,
+Phys.\ Rev.\ D \c 64, 124013 (2002).
+
+\anchor BCV03 <b>[BCV03]</b>
+A.\ Buonanno, Y.\ Chen, and M.\ Vallisneri,
+Phys.\ Rev.\ D <tt>67,</tt> 024016 (2003)
+gr-qc/0205122.
+
+\anchor BCV03b <b>[BCV03b]</b>
+A.\ Buonanno, Y.\ Chen, and M.\ Vallisneri,
+Phys.\ Rev.\ D <tt>67,</tt> 104025 (2003)
+gr-qc/0211087.
+
+\anchor ACST94 <b>[ACST94]</b>
+T.A.\ Apostolatos, C.\ Cutler, G.J.\ Sussman
+and K.S.\ Thorne Phys.\ Rev.\ D <tt>49,</tt> 6274 (1994);
+
+\anchor TAA96 <b>[TAA96]</b>
+T.A.\ Apostolatos Phys.\ Rev.\ D <tt>50,</tt> 605 (1996).
+
+\anchor SathyaprakashDhurandhar1991 <b>[SathyaprakashDhurandhar1991]</b>
+B.S.\ Sathyaprakash and S.V.\ Dhurandhar, Phys.\ Rev.\ D <tt>44</tt>, 3819 (1991).
+
+\anchor Sathyaprakash1994 <b>[Sathyaprakash1994]</b>
+B.S.\ Sathyaprakash, Phys.\ Rev.\ D <tt>50</tt>, R7111 (1994).
+
+\anchor OwenAndSathyaprakash99 <b>[OwenAndSathyaprakash99]</b>
+B.J.\ Owen and B.S.\ Sathyaprakash, Phys.\ Rev.\ D <tt>60</tt>, 022002 (1999)
+
+\anchor Sathyaprakash2001a <b>[Sathyaprakash2001a]</b>
+B.S.\ Sathyaprakash, <em>Effectualness of template placement algorithtms in capturing different post-Newtonian
+inspiral signals</em> (in preparation).
+
+\anchor Owen96 <b>[Owen96]</b>
+B.J.\ Owen, Phys.\ Rev.\ D 53, 6749 (1996).
+
+\anchor Flanagan1993 <b>[Flanagan1993]</b>
+É.\ É.\ Flanagan, "The Sensitivity of Ligo to a Stochastic
+  Background, and its Dependence on the Detector Orientations"
+  Phys.\ Rev.\ D.\ \c 48, 2389 (1993);
+  <a href="http://www.arXiv.org/abs/astro-ph/9305029">astro-ph/9305029</a>
+
+ \anchor Allen1997 <b>[Allen1997]</b>
+   B.\ Allen
+   "The stochastic gravity-wave background: sources and detection"
+   in <em>Proceedings of the Les Houches School on Astrophysical Sources of
+   Gravitational Waves</em>,
+   eds.\ J.\ A.\ Marck and J.\ P.\ Lasota, Cambridge, 373 (1997);
+   <a href="http://www.arXiv.org/abs/gr-qc/9604033">gr-qc/9604033</a>
+
+ \anchor Allen1999 <b>[Allen1999]</b>
+   B.\ Allen and J.D.\ Romano, "Detecting a stochastic background of
+   gravitational radiation: Signal processing strategies and
+   sensitivities"
+   Phys.\ Rev.\ D \c 59, 102001 (1999);
+   <a href="http://www.arXiv.org/abs/gr-qc/9710117">gr-qc/9710117</a>
+
+\anchor Maggiore2000a <b>[Maggiore2000a]</b>
+  M.\ Maggiore and A.\ Nicholis, "Detection strategies for scalar
+  gravitational waves with interferometers and resonant spheres",
+  Phys.\ Rev.\ D \c 62, 024004 (2000);
+  <a href="http://www.arXiv.org/abs/gr-qc/9907055">gr-qc/9907055</a>
+
+\anchor Maggiore2000b <b>[Maggiore2000b]</b>
+  M.\ Maggiore, "Gravitational Wave Experiments and Early Universe Cosmology",
+  Phys.\ Rept.\ \c 331, 283-367 (2000);
+  <a href="http://www.arXiv.org/abs/gr-qc/9909001">gr-qc/9909001</a>
+
+\anchor Finn2001 <b>[Finn2001]</b>
+  L.\ S.\ Finn and J.\ D.\ Romano, "Detecting stochastic gravitational waves:
+  Performance of maximum-likelihood and cross-correlation statistics",
+  unpublished.
 
 */

@@ -21,13 +21,13 @@
  * \file
  * \ingroup pulsarApps
  * \author Bernd Machenschalk, Bruce Allen
- * \brief 
-  This program reads in binary SFTs (v1 and v2) and writes out narrow-banded merged SFTs (v2).
+ *
+ * \brief This program reads in binary SFTs (v1 and v2) and writes out narrow-banded merged SFTs (v2).
 
   This code links to the SFTReferenceLibrary. To compile, use somehting like
-  gcc -Wall -g -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a -lm
+  <code>gcc -Wall -g -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a -lm</code>
 
-  Writen by Bernd Machenschalk for Einstein@home 2008
+  Writen by Bernd Machenschalk for Einstein\@home 2008
 
   * Revision splitSFTs.c,v 1.41 2008/10/29 16:54:13 was
     reviewed by the LSC CW Review Committee Thur Oct 30, 2008

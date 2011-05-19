@@ -166,6 +166,13 @@ void sort_double_descend(REAL8Vector *vector)
    XLALDestroyREAL8Vector(tempvect);
    
 }
+/* !!!!This modifies the input vector!!!! */
+void sort_double_ascend(REAL8Vector *vector)
+{
+   
+   qsort(vector->data, vector->length, sizeof(REAL8), qsort_REAL8_compar);
+   
+}
 
 
 //////////////////////////////////////////////////////////////

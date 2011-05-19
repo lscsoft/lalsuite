@@ -49,6 +49,8 @@
 
 #include <lalapps.h>
 
+#include "../transientCW_utils.h"
+
 /* local includes */
 
 RCSID( "$Id$");
@@ -130,9 +132,14 @@ typedef struct {
   INT4 minStartTime;	/**< limit start-time of input SFTs to use */
   INT4 maxEndTime;	/**< limit end-time of input SFTs to use */
 
+  CHAR *transient_Name;	/**< name of transient window ('rect', 'exp',...) */
+  REAL8 transient_t0;	/**< GPS start-time of transient window */
+  REAL8 transient_tau;	/**< time-scale of transient window */
+
   REAL8 cosiota;	/* DEPRECATED in favor of cosi */
 
   BOOLEAN version;	/**< output version-info */
+
 } UserInput_t;
 
 static UserInput_t empty_UserInput;
@@ -291,6 +298,10 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 
   uvar->phi0 = 0;
 
+#define DEFAULT_TRANSIENT "none"
+  uvar->transient_Name = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  strcpy ( uvar->transient_Name, DEFAULT_TRANSIENT );
+
   /* register all our user-variables */
   LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
 
@@ -320,7 +331,12 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,   "Output code version");
 
   LALregINTUserStruct(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
-  LALregREALUserStruct(status,	cosiota,	 0 , UVAR_DEVELOPER,"[DEPRECATED] Use --cosi instead!");
+  LALregREALUserStruct(status,	cosiota,	 0 , UVAR_DEVELOPER, "[DEPRECATED] Use --cosi instead!");
+
+  /* transient signal window properties (name, start, duration) */
+  LALregSTRINGUserStruct(status, transient_Name,  0, UVAR_OPTIONAL, "Name of transient signal window to use. ('none', 'rect', 'exp').");
+  LALregREALUserStruct(status,   transient_t0,    0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
+  LALregREALUserStruct(status,   transient_tau,   0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in seconds.");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -375,6 +391,8 @@ InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
 void
 InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 {
+  static const char *fn = "InitPFS()";
+
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
   SkyPosition skypos;
@@ -389,8 +407,10 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   MultiNoiseWeights *multiNoiseWeights = NULL;
   MultiSFTVector *multiSFTs = NULL;	    	/* multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates = NULL; /* pos, vel and LMSTs for detector at times t_i */
+  UINT4 X, i;
 
-  INITSTATUS (status, "InitPFS", rcsid);
+
+  INITSTATUS (status, fn, rcsid);
   ATTATCHSTATUSPTR (status);
 
   { /* Check user-input consistency */
@@ -483,6 +503,17 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     duration = GPS2REAL8(endTime) - GPS2REAL8 (startTime);
   }
 
+  { /* ----- load ephemeris-data ----- */
+    CHAR *ephemDir;
+
+    edat = LALCalloc(1, sizeof(EphemerisData));
+    if ( LALUserVarWasSet ( &uvar->ephemDir ) )
+      ephemDir = uvar->ephemDir;
+    else
+      ephemDir = NULL;
+    TRY( InitEphemeris (status->statusPtr, edat, ephemDir, uvar->ephemYear ), status);
+  }
+
   {/* ----- load the multi-IFO SFT-vectors ----- */
     UINT4 wings = uvar->RngMedWindow/2 + 10;   /* extra frequency-bins needed for rngmed */
     REAL8 fMax = uvar->Freq + 1.0 * wings / Tsft;
@@ -494,19 +525,91 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
   }
 
+  TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &multiRngmed, multiSFTs, uvar->RngMedWindow ), status);
+  TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, multiRngmed, uvar->RngMedWindow, 0 ), status );
+
+  /* correctly handle the --SignalOnly case:
+   * set noise-weights to 1, and
+   * set Sh->1 (single-sided)
+   */
+  if ( uvar->SignalOnly )
+    {
+      multiNoiseWeights->Sinv_Tsft = Tsft;
+      for ( X=0; X < multiNoiseWeights->length; X ++ )
+        for ( i=0; i < multiNoiseWeights->data[X]->length; i ++ )
+          multiNoiseWeights->data[X]->data[i] = 1.0;
+    }
+
+  /* ----- handle transient-signal window if given ----- */
+  if ( LALUserVarWasSet ( &uvar->transient_Name ) && strcmp ( uvar->transient_Name, "none") )
+    {
+      transientWindow_t transientWindow;	/**< properties of transient-signal window */
+      MultiLIGOTimeGPSVector *mTS;
+
+      if ( !strcmp ( uvar->transient_Name, "rect" ) )
+        transientWindow.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
+      else if ( !strcmp ( uvar->transient_Name, "exp" ) )
+        transientWindow.type = TRANSIENT_EXPONENTIAL;		/* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
+      else
+	{
+	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar->transient_Name);
+          ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
+	}
+
+      if ( LALUserVarWasSet ( &uvar->transient_t0 ) )
+        transientWindow.t0 = uvar->transient_t0;
+      else
+        transientWindow.t0 = XLALGPSGetREAL8( &startTime ); /* if not set, default window startTime == startTime here */
+
+      transientWindow.tau  = uvar->transient_tau;
+
+      if ( (mTS = XLALExtractMultiTimestampsFromSFTs ( multiSFTs )) == NULL ) {
+        XLALPrintError ("%s: failed to XLALExtractMultiTimestampsFromSFTs() from SFTs. xlalErrno = %d.\n", fn, xlalErrno );
+        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
+      }
+
+      if ( XLALApplyTransientWindow2NoiseWeights ( multiNoiseWeights, mTS, transientWindow ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: XLALApplyTransientWindow2NoiseWeights() failed! xlalErrno = %d\n", fn, xlalErrno );
+        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
+      }
+
+      XLALDestroyMultiTimestamps ( mTS );
+
+    } /* apply transient window to noise-weights */
+
+
+  /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
+  TRY (LALGetMultiDetectorStates( status->statusPtr, &multiDetStates, multiSFTs, edat), status );
+
+  /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
+  skypos.longitude = uvar->Alpha;
+  skypos.latitude = uvar->Delta;
+  skypos.system = COORDINATESYSTEM_EQUATORIAL;
+  TRY (LALNormalizeSkyPosition ( status->statusPtr, &skypos, &skypos), status);
+
+  TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos ), status);
+  /* noise-weighting of Antenna-patterns and compute A,B,C */
+  if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiNoiseWeights ) != XLAL_SUCCESS ) {
+    LogPrintf (LOG_CRITICAL, "XLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+    ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+  }
+
+  /* OK: we only need the antenna-pattern matrix M_mu_nu */
+  cfg->Mmunu = multiAMcoef->Mmunu;
+
   /* ----- produce a log-string describing the data-specific setup ----- */
   {
     struct tm utc;
     time_t tp;
     CHAR dateStr[512], line[512], summary[1024];
-    UINT4 i, numDet;
+    UINT4 j, numDet;
     numDet = multiSFTs->length;
     tp = time(NULL);
     sprintf (summary, "%%%% Date: %s", asctime( gmtime( &tp ) ) );
     strcat (summary, "%% Loaded SFTs: [ " );
-    for ( i=0; i < numDet; i ++ ) {
-      sprintf (line, "%s:%d%s",  multiSFTs->data[i]->data->name, multiSFTs->data[i]->length,
-	       (i < numDet - 1)?", ":" ]\n");
+    for ( j=0; j < numDet; j ++ ) {
+      sprintf (line, "%s:%d%s",  multiSFTs->data[j]->data->name, multiSFTs->data[j]->length,
+	       (j < numDet - 1)?", ":" ]\n");
       strcat ( summary, line );
     }
     utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(startTime) );
@@ -524,53 +627,6 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
     LogPrintfVerbatim( LOG_DEBUG, cfg->dataSummary );
   } /* write dataSummary string */
-
-  { /* ----- load ephemeris-data ----- */
-    CHAR *ephemDir;
-
-    edat = LALCalloc(1, sizeof(EphemerisData));
-    if ( LALUserVarWasSet ( &uvar->ephemDir ) )
-      ephemDir = uvar->ephemDir;
-    else
-      ephemDir = NULL;
-    TRY( InitEphemeris (status->statusPtr, edat, ephemDir, uvar->ephemYear ), status);
-  }
-
-  /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
-  TRY (LALGetMultiDetectorStates( status->statusPtr, &multiDetStates, multiSFTs, edat), status );
-
-  /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-  skypos.longitude = uvar->Alpha;
-  skypos.latitude = uvar->Delta;
-  skypos.system = COORDINATESYSTEM_EQUATORIAL;
-  TRY (LALNormalizeSkyPosition ( status->statusPtr, &skypos, &skypos), status);
-
-  TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos ), status);
-
-  /* correctly handle --SignalOnly case:
-   * we don't use noise-weights.
-   * The SignalOnly case is characterized by
-   * setting Sh->1 (single-sided)
-   */
-  if ( uvar->SignalOnly )
-    {
-      multiNoiseWeights = NULL;
-      multiAMcoef->Mmunu.Sinv_Tsft = Tsft;
-    }
-  else
-    {
-      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &multiRngmed, multiSFTs, uvar->RngMedWindow ), status);
-      TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, multiRngmed, uvar->RngMedWindow, 0 ), status );
-    }
-
-  /* noise-weighting of Antenna-patterns and compute A,B,C */
-  if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiNoiseWeights ) != XLAL_SUCCESS ) {
-    LogPrintf (LOG_CRITICAL, "XLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
-    ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-  }
-
-  /* OK: we only need the antenna-pattern matrix M_mu_nu */
-  cfg->Mmunu = multiAMcoef->Mmunu;
 
   /* free everything not needed any more */
   TRY ( LALDestroyMultiPSDVector (status->statusPtr, &multiRngmed ), status );

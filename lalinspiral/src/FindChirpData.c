@@ -265,7 +265,7 @@ LALFindChirpDataInit (
 
   /* foward fft plan */
   LALCreateForwardRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan,
-      params->numPoints, 0 );
+      params->numPoints, 1 );
   BEGINFAIL( status )
   {
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ),
@@ -292,7 +292,7 @@ LALFindChirpDataInit (
 
   /* inverse fft plan */
   LALCreateReverseRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan,
-      params->numPoints, 0 );
+      params->numPoints, 1 );
   BEGINFAIL( status )
   {
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ),

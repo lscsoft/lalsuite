@@ -15,7 +15,7 @@ endif
 
 bin_PROGRAMS = $(LALFRAMEPROGS) lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd \
 	lalapps_ComputePSD  lalapps_FreqAverager_v2 lalapps_GetSFTVelocities lalapps_create_solar_system_ephemeris \
-        lalapps_ComputeWeightedMultiAMCoeffs lalapps_make_job_input_data lalapps_PrintDetectorState
+        lalapps_make_job_input_data lalapps_PrintDetectorState
 
 if LALFRAME
 lalapps_make_sfts_SOURCES = make_sfts.c
@@ -29,7 +29,6 @@ lalapps_ComputePSD_SOURCES = ComputePSD.c
 lalapps_FreqAverager_v2_SOURCES =  FreqAverager_v2.c
 lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c
 lalapps_create_solar_system_ephemeris_SOURCES = create_solar_system_ephemeris.c
-lalapps_ComputeWeightedMultiAMCoeffs_SOURCES = ComputeWeightedMultiAMCoeffs.c
 lalapps_make_job_input_data_SOURCES = make_job_input_data.c
 lalapps_PrintDetectorState_SOURCES = PrintDetectorState.c
 

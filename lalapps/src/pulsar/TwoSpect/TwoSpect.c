@@ -164,8 +164,7 @@ int main(int argc, char *argv[])
    //Basic units
    REAL4 tempfspan = inputParams->fspan + (inputParams->blksize-1)/inputParams->Tcoh;
    INT4 tempnumfbins = (INT4)round(tempfspan*inputParams->Tcoh)+1;
-   //REAL4 ihsfarthresh = args_info.ihsfar_arg;
-   REAL4 templatefarthresh = args_info.tmplfar_arg;
+   REAL8 templatefarthresh = args_info.tmplfar_arg;
    fprintf(LOG, "FAR for templates = %g\n", templatefarthresh);
    fprintf(stderr, "FAR for templates = %g\n", templatefarthresh);
    
@@ -246,10 +245,23 @@ int main(int argc, char *argv[])
       }
       removeBadSFTs(tfdata, removeTheseSFTs);
       fprintf(stderr, "done.\n");
+      XLALDestroyINT4Vector(removeTheseSFTs);
    }
    /* FILE *rawtfdata = fopen("./output/rawtfdata.dat","w");
    for (ii=0; ii<(INT4)tfdata->length; ii++) fprintf(rawtfdata, "%f\n", tfdata->data[ii]);
    fclose(rawtfdata); */
+   
+   //Existing SFTs listed in this vector
+   INT4Vector *sftexist = XLALCreateINT4Vector(ffdata->numffts);
+   if (sftexist==NULL) {
+      fprintf(stderr, "\n%s: XLALCreateINT4Vector(%d) failed.\n", fn, ffdata->numffts);
+      XLAL_ERROR(fn, XLAL_EFUNC);
+   }
+   for (ii=0; ii<ffdata->numffts; ii++) {
+      if (tfdata->data[ii*ffdata->numfbins+2*inputParams->maxbinshift+inputParams->blksize-1] == 0.0) sftexist->data[ii] = 0;
+      else sftexist->data[ii] = 1;
+
+   }
    
    //Calculate the running mean values of the SFTs (output here is smaller than initialTFdata). Here,
    //numfbins needs to be the bins you expect to come out of the running means -- the band you are going
@@ -296,6 +308,10 @@ int main(int argc, char *argv[])
    //We can delete the originally loaded SFTs since we have the usableTFdata saved
    XLALDestroyREAL4Vector(tfdata);
    
+   
+   //Do mean subtraction of TFdata here
+   tfMeanSubtract(usableTFdata, usableTFdata, background, inputParams);
+   //fprintf(stderr,"%g\n",calcMean(usableTFdata));
    
    fprintf(LOG, "Maximum column width to be searched = %d\n", maxcols);
    fprintf(stderr, "Maximum column width to be searched = %d\n", maxcols);
@@ -420,16 +436,11 @@ int main(int argc, char *argv[])
       }
       
       //TODO: Return to normal
-      /* //Calculation of average TF noise per frequency bin ratio to total mean
-      //REAL4 aveTFinv = 1.0/avgTFdataBand(background_slided, ffdata->numfbins, ffdata->numffts, 0, ffdata->numfbins);
-      //REAL4 rmsTFinv = 1.0/avgTFdataBand(background_slided, ffdata->numfbins, ffdata->numffts, 0, ffdata->numfbins);
+      //Calculation of average TF noise per frequency bin ratio to total mean
+      /* //REAL4 aveTFinv = 1.0/avgTFdataBand(background_slided, ffdata->numfbins, ffdata->numffts, 0, ffdata->numfbins);
       REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
-      REAL4Vector *rmsTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
       REAL4Vector *TSofPowers = XLALCreateREAL4Vector((UINT4)ffdata->numffts);
       if (aveTFnoisePerFbinRatio==NULL) {
-         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ffdata->numfbins);
-         XLAL_ERROR(fn, XLAL_EFUNC);
-      } else if (rmsTFnoisePerFbinRatio==NULL) {
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ffdata->numfbins);
          XLAL_ERROR(fn, XLAL_EFUNC);
       } else if (TSofPowers==NULL) {
@@ -439,16 +450,12 @@ int main(int argc, char *argv[])
       for (ii=0; ii<ffdata->numfbins; ii++) {
          //for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = background_slided->data[jj*ffdata->numfbins + ii];
          //aveTFnoisePerFbinRatio->data[ii] = calcMean(TSofPowers)*aveTFinv;
-         //rmsTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers)*rmsTFinv;
          for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_slided->data[jj*ffdata->numfbins + ii]; //TODO: test
          aveTFnoisePerFbinRatio->data[ii] = calcMean(TSofPowers);
-         rmsTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers);
       }
       REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
-      REAL4 aveTFrmsinv = 1.0/calcMean(rmsTFnoisePerFbinRatio);
       for (ii=0; ii<ffdata->numfbins; ii++) {
          aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
-         rmsTFnoisePerFbinRatio->data[ii] *= aveTFrmsinv;
       }
       XLALDestroyREAL4Vector(TSofPowers); */
       
@@ -458,9 +465,10 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, (UINT4)(ffdata->numffts*ffdata->numfbins));
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
-      tfWeightMeanSubtract(TFdata_weighted, TFdata_slided, background_slided, antweights, inputParams);
+      //tfWeightMeanSubtract(TFdata_weighted, TFdata_slided, background_slided, antweights, inputParams);
+      tfWeight(TFdata_weighted, TFdata_slided, background_slided, antweights, inputParams);
       if (xlalErrno!=0) {
-         fprintf(stderr, "%s: tfWeightMeanSubtract() failed.\n", fn);
+         fprintf(stderr, "%s: tfWeight() failed.\n", fn);
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
       XLALDestroyREAL4Vector(TFdata_slided);
@@ -473,12 +481,8 @@ int main(int argc, char *argv[])
       //TODO: remove this
       //Calculation of average TF noise per frequency bin ratio to total mean
       REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
-      REAL4Vector *rmsTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
       REAL4Vector *TSofPowers = XLALCreateREAL4Vector((UINT4)ffdata->numffts);
       if (aveTFnoisePerFbinRatio==NULL) {
-         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ffdata->numfbins);
-         XLAL_ERROR(fn, XLAL_EFUNC);
-      } else if (rmsTFnoisePerFbinRatio==NULL) {
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ffdata->numfbins);
          XLAL_ERROR(fn, XLAL_EFUNC);
       } else if (TSofPowers==NULL) {
@@ -489,13 +493,10 @@ int main(int argc, char *argv[])
          for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
          //aveTFnoisePerFbinRatio->data[ii] = calcMean(TSofPowers);
          aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers);
-         rmsTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers);
       }
       REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
-      REAL4 aveTFrmsinv = 1.0/calcMean(rmsTFnoisePerFbinRatio);
       for (ii=0; ii<ffdata->numfbins; ii++) {
          aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
-         rmsTFnoisePerFbinRatio->data[ii] *= aveTFrmsinv;
       }
       XLALDestroyREAL4Vector(TSofPowers);
       
@@ -543,7 +544,6 @@ int main(int argc, char *argv[])
       }
       
       //Find any IHS candidates
-      //findIHScandidates(ihsCandidates, ihsfarstruct, inputParams, ffdata, ihsmaxima, aveTFnoisePerFbinRatio, rmsTFnoisePerFbinRatio);
       findIHScandidates(ihsCandidates, ihsfarstruct, inputParams, ffdata, ihsmaxima, aveTFnoisePerFbinRatio);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: findIHScandidates() failed.\n", fn);
@@ -551,22 +551,29 @@ int main(int argc, char *argv[])
       }
       fprintf(LOG, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
       fprintf(stderr, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
+      for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth);
 ////////End of the IHS step
       
 ////////Start of the Gaussian template search!
       if (!args_info.IHSonly_given) {
-         farStruct *farval = NULL;
+         
+         //Allocate memory for FAR struct
+         farStruct *farval = new_farStruct();
+         if (farval==NULL) {
+            fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
+            XLAL_ERROR(fn, XLAL_EFUNC); 
+         }
+         
+         //Allocate memory for template
+         templateStruct *template = new_templateStruct(inputParams->templatelength);
+         if (template==NULL) {
+            fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
+            XLAL_ERROR(fn, XLAL_EFUNC); 
+         }
          for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
             
             //Now assess the IHS candidate if the signal is away from the band edges, the modulation depth is greater or equal to minimum allowed and less than or equal to the maximum allowed, and if the period/modulation depth combo is within allowable limits for a template to be made. We will cut the period space in the next step.
             if ( (ihsCandidates->data[ii].fsig-ihsCandidates->data[ii].moddepth-6.0/inputParams->Tcoh)>inputParams->fmin && (ihsCandidates->data[ii].fsig+ihsCandidates->data[ii].moddepth+6.0/inputParams->Tcoh)<(inputParams->fmin+inputParams->fspan) && ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period,inputParams->Tcoh) && ihsCandidates->data[ii].period>=(2.0*3600.0) && ihsCandidates->data[ii].period<=(0.2*inputParams->Tobs) ) {
-               
-               //Allocate memory for template
-               templateStruct *template = new_templateStruct(inputParams->templatelength);
-               if (template==NULL) {
-                  fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
-                  XLAL_ERROR(fn, XLAL_EFUNC); 
-               }
                
                //Make a Gaussian train template
                makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
@@ -576,11 +583,6 @@ int main(int argc, char *argv[])
                }
                
                //Estimate the FAR for these bin weights
-               farval = new_farStruct();
-               if (farval==NULL) {
-                  fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
-                  XLAL_ERROR(fn, XLAL_EFUNC); 
-               }
                numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                if (xlalErrno!=0) {
                   fprintf(stderr,"%s: numericFAR() failed.\n", fn);
@@ -597,7 +599,7 @@ int main(int argc, char *argv[])
                   fprintf(stderr,"%s: probR() failed.\n", fn);
                   XLAL_ERROR(fn, XLAL_EFUNC);
                }
-               REAL8 h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+               REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                
                /* if (prob!=0.0) {
                   FILE *TEMPLATEOUT = fopen("./templatevalues.dat","w");
@@ -606,16 +608,12 @@ int main(int argc, char *argv[])
                   fclose(TEMPLATEOUT);
                } */
                
-               //Destroy unneeded things
-               free_templateStruct(template);
-               template = NULL;
-               
                /* Log the candidate if R exceeds the FAR or check other possibilities of different 
-               periods. Use same farval.far because the FAR is ~independent on period. */
+               periods */
                REAL8 bestPeriod = 0.0;
                REAL8 besth0 = 0.0;
                REAL8 bestR = 0.0;
-               REAL8 bestProb = 1.0;
+               REAL8 bestProb = 0.0;
                INT4 bestproberrcode = 0;
                REAL8 initialFAR = farval->far;
                REAL8 Rfirst = R;
@@ -635,24 +633,19 @@ int main(int argc, char *argv[])
                   gaussCandidates1->numofcandidates++;
                } /* if R > farval->far */
                
-               //Try shifting period by fractions, if necessary
-               if (bestProb == 1.0) {
-                  for (jj=0; jj<3; jj++) {
-                     REAL8 periodfact = (jj+1.0)/(jj+2.0);
-                     if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>=2.0*3600.0) {
-                        ihsCandidates->data[ii].period *= periodfact;
-                        template = new_templateStruct(inputParams->templatelength);
-                        if (template==NULL) {
-                           fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
-                           XLAL_ERROR(fn, XLAL_EFUNC); 
-                        }
+               //Try shifting period by harmonics and fractions, if no candidate was initially found
+               if (bestProb == 0.0) {
+                  //Shift period by harmonics
+                  for (jj=2; jj<6; jj++) {
+                     if (ihsCandidates->data[ii].period/jj > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && ihsCandidates->data[ii].period/jj >= 2.0*3600.0) {
+                        ihsCandidates->data[ii].period /= (REAL8)jj;
                         makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                         R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                        prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                        prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
                         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
                            fprintf(stderr,"%s: calculateR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
@@ -660,33 +653,111 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-                        if (R>farval->far && prob < bestProb) {
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        if (bestProb==0.0) {
+                           numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                           if (xlalErrno!=0) {
+                              fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                              XLAL_ERROR(fn, XLAL_EFUNC);
+                           }
+                        }
+                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && R>farval->far)) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
                            bestR = R;
                            bestProb = prob;
                            bestproberrcode = proberrcode;
                         }
-                        free_templateStruct(template);
-                        template = NULL;
+                        ihsCandidates->data[ii].period *= (REAL8)jj;
+                     } /* shorter period harmonics */
+                     if (ihsCandidates->data[ii].period*jj <= 0.2*inputParams->Tobs) {
+                        ihsCandidates->data[ii].period *= (REAL8)jj;
+                        makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                        if (xlalErrno!=0) {
+                           fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
+                           XLAL_ERROR(fn, XLAL_EFUNC);
+                        }
+                        R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+                        prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
+                        if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+                           fprintf(stderr,"%s: calculateR() failed.\n", fn);
+                           XLAL_ERROR(fn, XLAL_EFUNC);
+                        } else if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                           fprintf(stderr,"%s: probR() failed.\n", fn);
+                           XLAL_ERROR(fn, XLAL_EFUNC);
+                        }
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        if (bestProb==0.0) {
+                           numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                           if (xlalErrno!=0) {
+                              fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                              XLAL_ERROR(fn, XLAL_EFUNC);
+                           }
+                        }
+                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && R>farval->far)) {
+                           bestPeriod = ihsCandidates->data[ii].period;
+                           besth0 = h0;
+                           bestR = R;
+                           bestProb = prob;
+                           bestproberrcode = proberrcode;
+                        }
+                        ihsCandidates->data[ii].period /= (REAL8)jj;
+                     } /* longer period harmonics */
+                  } /* shift by harmonics for jj < 6 (harmonics) */
+                  
+                  //Shift by fractions
+                  for (jj=0; jj<3; jj++) {
+                     REAL8 periodfact = (jj+1.0)/(jj+2.0);
+                     if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>=2.0*3600.0) {
+                        
+                        ihsCandidates->data[ii].period *= periodfact;   //Shift period
+                        
+                        //Make a template
+                        makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                        if (xlalErrno!=0) {
+                           fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
+                           XLAL_ERROR(fn, XLAL_EFUNC);
+                        }
+                        //Calculate R, FAP, and h0
+                        R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+                        prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
+                        if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+                           fprintf(stderr,"%s: calculateR() failed.\n", fn);
+                           XLAL_ERROR(fn, XLAL_EFUNC);
+                        } else if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                           fprintf(stderr,"%s: probR() failed.\n", fn);
+                           XLAL_ERROR(fn, XLAL_EFUNC);
+                        }
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        //TODO: Remove this?
+                        //Calculate FAR if bestProb=0
+                        if (bestProb==0.0) {
+                           numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                           if (xlalErrno!=0) {
+                              fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                              XLAL_ERROR(fn, XLAL_EFUNC);
+                           }
+                        } //up to here
+                        //Log candidate if more significant or exceeding the FAR for the first time
+                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && R>farval->far)) {
+                           bestPeriod = ihsCandidates->data[ii].period;
+                           besth0 = h0;
+                           bestR = R;
+                           bestProb = prob;
+                           bestproberrcode = proberrcode;
+                        }
                         ihsCandidates->data[ii].period /= periodfact;
                      } /* shift shorter period */
                      periodfact = 1.0/periodfact;
                      if ( periodfact*ihsCandidates->data[ii].period <= 0.2*inputParams->Tobs ) {
                         ihsCandidates->data[ii].period *= periodfact;
-                        template = new_templateStruct(inputParams->templatelength);
-                        if (template==NULL) {
-                           fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
-                           XLAL_ERROR(fn, XLAL_EFUNC); 
-                        }
                         makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                         R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                        prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                        prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
                         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
                            fprintf(stderr,"%s: calculateR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
@@ -694,44 +765,39 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-                        if (R>farval->far && prob < bestProb) {
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        if (bestProb==0.0) {
+                           numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                           if (xlalErrno!=0) {
+                              fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                              XLAL_ERROR(fn, XLAL_EFUNC);
+                           }
+                        }
+                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && R>farval->far)) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
                            bestR = R;
                            bestProb = prob;
                            bestproberrcode = proberrcode;
                         }
-                        free_templateStruct(template);
-                        template = NULL;
                         ihsCandidates->data[ii].period /= periodfact;
                      } /* shift longer period */
                   } /* for jj < 3 (fractions of period) */
                } /* if a best probability was not found */
                
                //If a potentially interesting candidate has been found (exceeding the FAR threshold) then try some new periods
-               if (bestR != 0.0) {
+               if (bestProb != 0.0) {
                   //Shift period by harmonics
-                  for (jj=2; jj<6; jj++) {
+                  for (jj=2; jj<8; jj++) {
                      if (ihsCandidates->data[ii].period/jj > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && ihsCandidates->data[ii].period/jj >= 2.0*3600.0) {
                         ihsCandidates->data[ii].period /= (REAL8)jj;
-                        template = new_templateStruct(inputParams->templatelength);
-                        if (template==NULL) {
-                           fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
-                           XLAL_ERROR(fn, XLAL_EFUNC); 
-                        }
                         makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
-                        if (xlalErrno!=0) {
-                           fprintf(stderr,"%s: numericFAR() failed.\n", fn);
-                           XLAL_ERROR(fn, XLAL_EFUNC);
-                        }
                         R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                        prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                        prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
                         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
                            fprintf(stderr,"%s: calculateR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
@@ -739,37 +805,25 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-                        if (R>farval->far && prob < bestProb) {
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        if (prob < bestProb) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
                            bestR = R;
                            bestProb = prob;
                            bestproberrcode = proberrcode;
                         }
-                        free_templateStruct(template);
-                        template = NULL;
                         ihsCandidates->data[ii].period *= (REAL8)jj;
                      } /* shorter period harmonics */
                      if (ihsCandidates->data[ii].period*jj <= 0.2*inputParams->Tobs) {
                         ihsCandidates->data[ii].period *= (REAL8)jj;
-                        template = new_templateStruct(inputParams->templatelength);
-                        if (template==NULL) {
-                           fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
-                           XLAL_ERROR(fn, XLAL_EFUNC); 
-                        }
                         makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
-                        if (xlalErrno!=0) {
-                           fprintf(stderr,"%s: numericFAR() failed.\n", fn);
-                           XLAL_ERROR(fn, XLAL_EFUNC);
-                        }
                         R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                        prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                        prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
                         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
                            fprintf(stderr,"%s: calculateR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
@@ -777,16 +831,14 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-                        if (R>farval->far && prob < bestProb) {
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        if (prob < bestProb) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
                            bestR = R;
                            bestProb = prob;
                            bestproberrcode = proberrcode;
                         }
-                        free_templateStruct(template);
-                        template = NULL;
                         ihsCandidates->data[ii].period /= (REAL8)jj;
                      } /* longer period harmonics */
                   } /* shift by harmonics */
@@ -796,18 +848,13 @@ int main(int argc, char *argv[])
                      REAL8 periodfact = (jj+1.0)/(jj+2.0);
                      if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>=2.0*3600.0) {
                         ihsCandidates->data[ii].period *= periodfact;
-                        template = new_templateStruct(inputParams->templatelength);
-                        if (template==NULL) {
-                           fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
-                           XLAL_ERROR(fn, XLAL_EFUNC); 
-                        }
                         makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                         R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                        prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                        prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
                         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
                            fprintf(stderr,"%s: calculateR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
@@ -815,33 +862,26 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-                        if (R>farval->far && prob < bestProb) {
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        if (prob < bestProb) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
                            bestR = R;
                            bestProb = prob;
                            bestproberrcode = proberrcode;
                         }
-                        free_templateStruct(template);
-                        template = NULL;
                         ihsCandidates->data[ii].period /= periodfact;
                      } /* shift to shorter period */
                      periodfact = 1.0/periodfact;
                      if ( periodfact*ihsCandidates->data[ii].period<=0.2*inputParams->Tobs ) {
                         ihsCandidates->data[ii].period *= periodfact;
-                        template = new_templateStruct(inputParams->templatelength);
-                        if (template==NULL) {
-                           fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
-                           XLAL_ERROR(fn, XLAL_EFUNC); 
-                        }
                         makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                         R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                        prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                        prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
                         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
                            fprintf(stderr,"%s: calculateR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
@@ -849,31 +889,27 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-                        if (R>farval->far && prob < bestProb) {
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        if (prob < bestProb) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
                            bestR = R;
                            bestProb = prob;
                            bestproberrcode = proberrcode;
                         }
-                        free_templateStruct(template);
-                        template = NULL;
                         ihsCandidates->data[ii].period /= periodfact;
                      } /* shift to longer period */
                   } /* for jj < 10 (period fractions) */
                } /* if bestR != 0.0 */
                
-               free_farStruct(farval);
-               farval = NULL;
-               
-               if (bestR != 0.0) {
+               if (bestProb != 0.0) {
                   //If a better period was found, then make sure to save it
                   if (bestPeriod != 0.0) ihsCandidates->data[ii].period = bestPeriod;
                   
                   if (Rfirst > initialFAR && bestProb < gaussCandidates1->data[gaussCandidates1->numofcandidates-1].prob) {
-                     loadCandidateData(&gaussCandidates1->data[gaussCandidates1->numofcandidates-1], ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, ihsCandidates->data[ii].normalization);
-                  } else if (Rfirst <= initialFAR && bestProb != 1.0) {
+                     //loadCandidateData(&gaussCandidates1->data[gaussCandidates1->numofcandidates-1], ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, ihsCandidates->data[ii].normalization);
+                     ihsCandidates->data[ii].prob = bestProb;
+                  } else if (Rfirst <= initialFAR && bestProb != 0.0) {
                      if (gaussCandidates1->numofcandidates == gaussCandidates1->length-1) {
                         gaussCandidates1 = resize_candidateVector(gaussCandidates1, 2*gaussCandidates1->length);
                         if (gaussCandidates1->data==NULL) {
@@ -882,11 +918,18 @@ int main(int argc, char *argv[])
                         }
                      }
                      loadCandidateData(&gaussCandidates1->data[gaussCandidates1->numofcandidates], ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, ihsCandidates->data[ii].normalization);
-                     gaussCandidates1->numofcandidates++;
+                     (gaussCandidates1->numofcandidates)++;
                   }
                } /* if bestR != 0.0, add candidate or replace if something better is found */
             } /* if within boundaries */
          } /* for ii < numofcandidates */
+         
+         //Destroy allocated memory
+         free_templateStruct(template);
+         template = NULL;
+         free_farStruct(farval);
+         farval = NULL;
+         
          fprintf(LOG,"Initial stage done with candidates = %d\n",gaussCandidates1->numofcandidates);
          fprintf(stderr,"Initial stage done with candidates = %d\n",gaussCandidates1->numofcandidates);
          
@@ -909,12 +952,13 @@ int main(int argc, char *argv[])
 ////////End of the Gaussian template search
 
       //Reset IHS candidates, but keep length the same (doesn't reset actual values in the vector)
-      ihsCandidates->numofcandidates = 0;
+      if (inputParams->keepOneIHS) ihsCandidates->numofcandidates = 1;
+      else ihsCandidates->numofcandidates = 0;
       
       //Search the IHS templates further if user has not specified IHSonly flag
       if (!args_info.IHSonly_given) {
 ////////Start clustering! Note that the clustering algorithm takes care of the period range of parameter space
-         clusterCandidates(gaussCandidates2, gaussCandidates1, ffdata, inputParams, aveNoise, aveTFnoisePerFbinRatio, 0);
+         clusterCandidates(gaussCandidates2, gaussCandidates1, ffdata, inputParams, aveNoise, aveTFnoisePerFbinRatio, sftexist, 0);
          if (xlalErrno!=0) {
             fprintf(stderr,"%s: clusterCandidates() failed.\n", fn);
             XLAL_ERROR(fn, XLAL_EFUNC);
@@ -984,6 +1028,17 @@ int main(int argc, char *argv[])
             //Initialze best values as the initial point we are searching around
             INT4 bestproberrcode = 0;
             REAL8 bestf = 0.0, bestp = 0.0, bestdf = 0.0, bestR = 0.0, besth0 = 0.0, bestProb = 0.0;
+            candidate cand;
+            templateStruct *template = new_templateStruct(inputParams->templatelength);
+            if (template==NULL) {
+               fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
+               XLAL_ERROR(fn, XLAL_EFUNC); 
+            }
+            farStruct *farval = new_farStruct();
+            if (farval==NULL) {
+               fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
+               XLAL_ERROR(fn, XLAL_EFUNC); 
+            }
             for (jj=0; jj<(INT4)trialf->length; jj++) {
                for (kk=0; kk<(INT4)trialb->length; kk++) {
                   //Start with period of the first guess, then determine nearest neighbor from the
@@ -999,57 +1054,26 @@ int main(int argc, char *argv[])
                      trialp->data[midposition-(ll+1)] = trialp->data[midposition-ll] - nnp;
                   }
                   
-                  //Take the mean period and compute a template/FAR pair.
-                  REAL8 tempP = calcMeanD(trialp);
-                  candidate cand;
-                  loadCandidateData(&cand, trialf->data[jj], tempP, trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0, 0.0, 0, 0.0);
-                  templateStruct *template = new_templateStruct(inputParams->templatelength);
-                  if (template==NULL) {
-                     fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
-                     XLAL_ERROR(fn, XLAL_EFUNC); 
-                  }
-                  makeTemplateGaussians(template, cand, inputParams);
-                  if (xlalErrno!=0) {
-                     fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
-                     XLAL_ERROR(fn, XLAL_EFUNC);
-                  }
-                  farStruct *farval = new_farStruct();
-                  if (farval==NULL) {
-                     fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
-                     XLAL_ERROR(fn, XLAL_EFUNC); 
-                  }
-                  numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
-                  if (xlalErrno!=0) {
-                     fprintf(stderr,"%s: numericFAR() failed.\n", fn);
-                     XLAL_ERROR(fn, XLAL_EFUNC);
-                  }
-                  free_templateStruct(template);
-                  template = NULL;
                   for (ll=0; ll<(INT4)trialp->length; ll++) {
                      if ( (trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh)>inputParams->fmin && (trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh)<(inputParams->fmin+inputParams->fspan) && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll]>minPeriod(trialb->data[kk], inputParams->Tcoh) && trialp->data[ll]<=(0.2*inputParams->Tobs) && trialp->data[ll]>=(2.0*3600.0) && trialb->data[kk]>=inputParams->dfmin && trialb->data[kk]<=inputParams->dfmax && trialp->data[ll]<=inputParams->Pmax && trialp->data[ll]>=inputParams->Pmin ) {
                         
                         loadCandidateData(&cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0, 0.0, 0, 0.0);
-                        
-                        template = new_templateStruct(inputParams->templatelength);
-                        if (template==NULL) {
-                           fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
-                           XLAL_ERROR(fn, XLAL_EFUNC); 
-                        }
                         
                         makeTemplateGaussians(template, cand, inputParams);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        //TODO: think about removing this?
-                        numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
-                        if (xlalErrno!=0) {
-                           fprintf(stderr,"%s: numericFAR() failed.\n", fn);
-                           XLAL_ERROR(fn, XLAL_EFUNC);
-                        } /* up to here */
+                        if (bestProb==0.0) {
+                           numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                           if (xlalErrno!=0) {
+                              fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                              XLAL_ERROR(fn, XLAL_EFUNC);
+                           }
+                        }
                         
                         REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                        REAL8 prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                        REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
                         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
                            fprintf(stderr,"%s: calculateR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
@@ -1058,11 +1082,11 @@ int main(int argc, char *argv[])
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                         
-                        REAL8 h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         //fprintf(Rtemplatevals,"%.9g %.9g %.9g %.9g %.9g %.9g\n",trialf->data[jj], trialp->data[ll], trialb->data[kk], R, h0, prob);
                         //if (ll==1) fprintf(stderr,"%f %g %g\n",trialf->data[jj],R,snr);
                         
-                        if (R > farval->far && prob < bestProb) {
+                        if ( (bestProb!=0.0 && prob < bestProb) || (bestProb==0.0 && R > farval->far) ) {
                            bestf = trialf->data[jj];
                            bestp = trialp->data[ll];
                            bestdf = trialb->data[kk];
@@ -1072,19 +1096,18 @@ int main(int argc, char *argv[])
                            bestproberrcode = proberrcode;
                         }
                         
-                        free_templateStruct(template);
-                        template = NULL;
                      } /* if within boundaries */
                   } /* for ll < trialp */
-                  
-                  free_farStruct(farval);
-                  farval = NULL;
                } /* for kk < trialb */
             } /* for jj < trialf */
+            free_templateStruct(template);
+            template = NULL;
+            free_farStruct(farval);
+            farval = NULL;
             
             //fclose(Rtemplatevals);
             
-            if (bestf!=0.0) {
+            if (bestProb!=0.0) {
                if (gaussCandidates3->numofcandidates == gaussCandidates3->length-1) {
                   gaussCandidates3 = resize_candidateVector(gaussCandidates3, 2*gaussCandidates3->length);
                   if (gaussCandidates3->data==NULL) {
@@ -1111,7 +1134,7 @@ int main(int argc, char *argv[])
          gaussCandidates2->numofcandidates = 0;
 
 ////////Start clustering!
-         clusterCandidates(gaussCandidates4, gaussCandidates3, ffdata, inputParams, aveNoise, aveTFnoisePerFbinRatio, 0);
+         clusterCandidates(gaussCandidates4, gaussCandidates3, ffdata, inputParams, aveNoise, aveTFnoisePerFbinRatio, sftexist, 0);
          if (xlalErrno!=0) {
             fprintf(stderr,"%s: clusterCandidates() failed.\n", fn);
             XLAL_ERROR(fn, XLAL_EFUNC);
@@ -1135,7 +1158,7 @@ int main(int argc, char *argv[])
             }
             
             if (!args_info.gaussTemplatesOnly_given) {
-               makeTemplate(template, gaussCandidates4->data[ii], inputParams, secondFFTplan);
+               makeTemplate(template, gaussCandidates4->data[ii], inputParams, sftexist, secondFFTplan);
                if (xlalErrno!=0) {
                   fprintf(stderr,"%s: makeTemplate() failed.\n", fn);
                   XLAL_ERROR(fn, XLAL_EFUNC);
@@ -1165,7 +1188,7 @@ int main(int argc, char *argv[])
                fprintf(stderr,"%s: calculateR() failed.\n", fn);
                XLAL_ERROR(fn, XLAL_EFUNC);
             }
-            REAL8 h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+            REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
             if (R > farval->far) {
                if (exactCandidates1->numofcandidates == exactCandidates1->length-1) {
                   exactCandidates1 = resize_candidateVector(exactCandidates1, 2*exactCandidates1->length);
@@ -1231,6 +1254,17 @@ int main(int argc, char *argv[])
             //Same as before
             INT4 bestproberrcode = 0;
             REAL8 bestf = 0.0, bestp = 0.0, bestdf = 0.0, bestR = 0.0, besth0 = 0.0, bestProb = 0.0;
+            candidate cand;
+            templateStruct *template = new_templateStruct(inputParams->templatelength);
+            if (template==NULL) {
+               fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
+               XLAL_ERROR(fn, XLAL_EFUNC); 
+            }
+            farStruct *farval = new_farStruct();
+            if (farval==NULL) {
+               fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
+               XLAL_ERROR(fn, XLAL_EFUNC); 
+            }
             for (jj=0; jj<(INT4)trialf->length; jj++) {
                for (kk=0; kk<(INT4)trialb->length; kk++) {
                   INT4 midposition = (INT4)((nump-1)*0.5);
@@ -1242,39 +1276,6 @@ int main(int argc, char *argv[])
                      trialp->data[midposition-(ll+1)] = trialp->data[midposition-ll] - nnp;
                   }
                   
-                  REAL8 tempP = calcMeanD(trialp);
-                  candidate cand;
-                  loadCandidateData(&cand, trialf->data[jj], tempP, trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0, 0.0, 0, 0.0);
-                  templateStruct *template = new_templateStruct(inputParams->templatelength);
-                  if (template==NULL) {
-                     fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
-                     XLAL_ERROR(fn, XLAL_EFUNC); 
-                  }
-                  if (!args_info.gaussTemplatesOnly_given) {
-                     makeTemplate(template, cand, inputParams, secondFFTplan);
-                     if (xlalErrno!=0) {
-                        fprintf(stderr,"%s: makeTemplate() failed.\n", fn);
-                        XLAL_ERROR(fn, XLAL_EFUNC);
-                     }
-                  } else {
-                     makeTemplateGaussians(template, cand, inputParams);
-                     if (xlalErrno!=0) {
-                        fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
-                        XLAL_ERROR(fn, XLAL_EFUNC);
-                     }
-                  }
-                  farStruct *farval = new_farStruct();
-                  if (farval==NULL) {
-                     fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
-                     XLAL_ERROR(fn, XLAL_EFUNC); 
-                  }
-                  numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
-                  if (xlalErrno!=0) {
-                     fprintf(stderr,"%s: numericFAR() failed.\n", fn);
-                     XLAL_ERROR(fn, XLAL_EFUNC);
-                  }
-                  free_templateStruct(template);
-                  template = NULL;
                   for (ll=0; ll<(INT4)trialp->length; ll++) {
                      //if ( trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll]>=5.0 && trialp->data[ll] >= 2.0*3600.0) {
                      //We make this more restrictive to be within what the user has input as searchable parameters
@@ -1282,14 +1283,8 @@ int main(int argc, char *argv[])
                         
                         loadCandidateData(&cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0, 0.0, 0, 0.0);
                         
-                        template = new_templateStruct(inputParams->templatelength);
-                        if (template==NULL) {
-                           fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
-                           XLAL_ERROR(fn, XLAL_EFUNC); 
-                        }
-                        
                         if (!args_info.gaussTemplatesOnly_given) {
-                           makeTemplate(template, cand, inputParams, secondFFTplan);
+                           makeTemplate(template, cand, inputParams, sftexist, secondFFTplan);
                            if (xlalErrno!=0) {
                               fprintf(stderr,"%s: makeTemplate() failed.\n", fn);
                               XLAL_ERROR(fn, XLAL_EFUNC);
@@ -1301,15 +1296,16 @@ int main(int argc, char *argv[])
                               XLAL_ERROR(fn, XLAL_EFUNC);
                            }
                         }
-                        //TODO: think about removing this?
-                        numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
-                        if (xlalErrno!=0) {
-                           fprintf(stderr,"%s: numericFAR() failed.\n", fn);
-                           XLAL_ERROR(fn, XLAL_EFUNC);
-                        } /* up to here */
+                        if (bestProb==0.0) {
+                           numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                           if (xlalErrno!=0) {
+                              fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                              XLAL_ERROR(fn, XLAL_EFUNC);
+                           }
+                        }
                         
                         REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                        REAL8 prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                        REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
                         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
                            fprintf(stderr,"%s: calculateR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
@@ -1318,9 +1314,9 @@ int main(int argc, char *argv[])
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                         
-                        REAL8 h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         
-                        if (R > farval->far && prob < bestProb) {
+                        if ( (bestProb!=0.0 && prob < bestProb) || (bestProb==0.0 && R > farval->far) ) {
                            bestf = trialf->data[jj];
                            bestp = trialp->data[ll];
                            bestdf = trialb->data[kk];
@@ -1335,18 +1331,17 @@ int main(int argc, char *argv[])
                            fclose(TEMPLATEOUT); */
                         }
                         
-                        free_templateStruct(template);
-                        template = NULL;
                      } /* if within boundaries */
                   } /* for ll < trialp */
-                  
-                  free_farStruct(farval);
-                  farval = NULL;
                } /* for kk < trialb */
             } /* for jj < trialf */
+            free_templateStruct(template);
+            template = NULL;
+            free_farStruct(farval);
+            farval = NULL;
             
             //Load candidate
-            if (bestf!=0.0) {
+            if (bestProb!=0.0) {
                if (exactCandidates2->numofcandidates == exactCandidates2->length-1) {
                   exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
                   if (exactCandidates2->data==NULL) {
@@ -1355,8 +1350,8 @@ int main(int argc, char *argv[])
                   }
                }
                loadCandidateData(&exactCandidates2->data[exactCandidates2->numofcandidates], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, exactCandidates1->data[0].normalization);
-               exactCandidates2->numofcandidates++;
-            }
+               (exactCandidates2->numofcandidates)++;
+            } /* if bestProb != 0 */
             
             //Destroy parameter space values
             XLALDestroyREAL8Vector(trialf);
@@ -1366,18 +1361,83 @@ int main(int argc, char *argv[])
             trialb = NULL;
             trialp = NULL;
          } /* for ii < numofcandidates */
-         fprintf(LOG,"Exact step is done with the total number of candidates = %d\n", exactCandidates2->numofcandidates);
-         fprintf(stderr,"Exact step is done with the total number of candidates = %d\n", exactCandidates2->numofcandidates);
 ////////End of detailed search
+         
+         //If no candidate from this sky location passed the tests, save the one best candidate from the IHS candidates
+         if (inputParams->keepOneIHS && ihsCandidates->numofcandidates>=1 && exactCandidates1->numofcandidates==0) {
+            //Determine the best candidate
+            INT4 bestcandidate = 0;
+            REAL8 bestcandidatevalue = 0.0;
+            if (ihsCandidates->numofcandidates>1) {
+               for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
+                  REAL8 candidatevalue = (ihsCandidates->data[ii].stat-ihsfarstruct->ihsfar->data[(INT4)round(2.0*ihsCandidates->data[ii].moddepth*inputParams->Tcoh)-2])/ihsfarstruct->ihsdistSigma->data[(INT4)round(2.0*ihsCandidates->data[ii].moddepth*inputParams->Tcoh)-2];
+                  if (candidatevalue>bestcandidatevalue || bestcandidatevalue==0.0) {
+                     bestcandidatevalue = candidatevalue;
+                     bestcandidate = ii;
+                  } /* if candidatevalue > bestcandidate value or bestcandidatevalue == 0.0 */
+               } /* for ii < ihsCandidates->numofcandidates */
+            } /* if ihsCandidates->numofcandidates > 1 */
+            
+            templateStruct *template = new_templateStruct(inputParams->templatelength);
+            if (template==NULL) {
+               fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
+               XLAL_ERROR(fn, XLAL_EFUNC); 
+            }
+            
+            if (!args_info.gaussTemplatesOnly_given) {
+               makeTemplate(template, ihsCandidates->data[bestcandidate], inputParams, sftexist, secondFFTplan);
+               if (xlalErrno!=0) {
+                  fprintf(stderr,"%s: makeTemplate() failed.\n", fn);
+                  XLAL_ERROR(fn, XLAL_EFUNC);
+               }
+            } else {
+               makeTemplateGaussians(template, ihsCandidates->data[bestcandidate], inputParams);
+               if (xlalErrno!=0) {
+                  fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
+                  XLAL_ERROR(fn, XLAL_EFUNC);
+               }
+            }
+            
+            REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+            REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
+            if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+               fprintf(stderr,"%s: calculateR() failed.\n", fn);
+               XLAL_ERROR(fn, XLAL_EFUNC);
+            } else if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+               fprintf(stderr,"%s: probR() failed.\n", fn);
+               XLAL_ERROR(fn, XLAL_EFUNC);
+            }
+            
+            REAL8 h0 = 0.0;
+            if (R>0.0) h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+            
+            if (exactCandidates2->numofcandidates == exactCandidates2->length-1) {
+               exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
+               if (exactCandidates2->data==NULL) {
+                  fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*exactCandidates2->length);
+                  XLAL_ERROR(fn, XLAL_EFUNC);
+               }
+            }
+            loadCandidateData(&exactCandidates2->data[exactCandidates2->numofcandidates], ihsCandidates->data[bestcandidate].fsig, ihsCandidates->data[bestcandidate].period, ihsCandidates->data[bestcandidate].moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, R, h0, prob, proberrcode, ihsCandidates->data[bestcandidate].normalization);
+            (exactCandidates2->numofcandidates)++;
+            
+            free_templateStruct(template);
+            template = NULL;
+            
+            //Now reset the IHS candidate vector for next sky position
+            ihsCandidates->numofcandidates = 0;
+         } /* if keepOneIHS is true, number of IHS candidates == 1, and number of exact candidates (1) == 0 */
          
          //Reset first round of exact template candidates, but keep length the same (doesn't reset actual values in the vector)
          exactCandidates1->numofcandidates = 0;
          
-      }
+         fprintf(LOG,"Exact step is done with the total number of candidates = %d\n", exactCandidates2->numofcandidates);
+         fprintf(stderr,"Exact step is done with the total number of candidates = %d\n", exactCandidates2->numofcandidates);
+         
+      } /* if IHSonly is not given */
       
       //Destroy stuff
       XLALDestroyREAL4Vector(aveTFnoisePerFbinRatio);
-      XLALDestroyREAL4Vector(rmsTFnoisePerFbinRatio);
       
       //Iterate to next sky location
       if ((XLALNextDopplerSkyPos(&dopplerpos, &scan))!=0) {
@@ -1403,6 +1463,7 @@ int main(int argc, char *argv[])
    XLALDestroyREAL4Vector(detectorVelocities);
    XLALDestroyREAL4Vector(aveNoise);
    XLALDestroyINT4Vector(binshifts);
+   XLALDestroyINT4Vector(sftexist);
    free_ffdata(ffdata);
    free_ihsfarStruct(ihsfarstruct);
    free_inputParams(inputParams);
@@ -1579,6 +1640,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
             COMPLEX8 sftcoeff = sft->data->data[jj];
             tfdata->data[ii*sftlength + jj] = (REAL4)((sqrtnorm*sftcoeff.re)*(sqrtnorm*sftcoeff.re) + (sqrtnorm*sftcoeff.im)*(sqrtnorm*sftcoeff.im));  //power, normalized
          }
+         
       } else {
          for (jj=0; jj<sftlength; jj++) tfdata->data[ii*sftlength + jj] = 0.0;   //Set values to be zero
          nonexistantsft++;    //increment the nonexistantsft counter
@@ -1762,6 +1824,94 @@ void removeBadSFTs(REAL4Vector *tfdata, INT4Vector *badsfts)
    }
    
 }
+
+
+void tfMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, inputParamsStruct *input)
+{
+   
+   INT4 ii, jj;
+   
+   INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);    //Number of FFTs
+   INT4 numfbins = (INT4)(round(input->fspan*input->Tcoh)+1+2*input->maxbinshift);     //Number of frequency bins
+   
+   for (ii=0; ii<numffts; ii++) {
+      for (jj=0; jj<numfbins; jj++) {
+         if (rngMeans->data[ii*numfbins] != 0.0) output->data[ii*numfbins + jj] = (REAL4)(tfdata->data[ii*numfbins+jj] - rngMeans->data[ii*numfbins+jj]);
+         else output->data[ii*numfbins+jj] = 0.0;
+      } /* for jj < numfbins */
+   } /* for ii < numffts */
+   
+} /* tfMeanSubtract() */
+
+void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *input)
+{
+   
+   const CHAR *fn = __func__;
+   
+   INT4 ii, jj;
+   
+   INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);    //Number of FFTs
+   INT4 numfbins = (INT4)(round(input->fspan*input->Tcoh)+1);     //Number of frequency bins
+   
+   REAL4Vector *antweightssq = XLALCreateREAL4Vector(numffts);
+   REAL4Vector *rngMeanssq = XLALCreateREAL4Vector(numffts);
+   if (antweightssq==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, numffts);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   } else if (rngMeanssq==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, numffts);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
+   
+   for (ii=0; ii<(INT4)rngMeanssq->length; ii++) rngMeanssq->data[ii] = 0.0;
+   
+   //for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
+   //antweightssq = XLALSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
+   antweightssq = SSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
+   if (xlalErrno!=0) {
+      fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
+   
+   for (ii=0; ii<numfbins; ii++) {
+      
+      rngMeanssq = SSVectorMultiply_with_stride_and_offset(rngMeanssq, rngMeans, rngMeans, numfbins, numfbins, ii, ii);
+      if (xlalErrno!=0) {
+         fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", fn);
+         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+      }
+      
+      //If noiseWeightOff is given, then set all the noise weights to be 1.0
+      if (input->noiseWeightOff!=0) {
+         for (jj=0; jj<(INT4)rngMeanssq->length; jj++) {
+            if (rngMeanssq->data[jj]!=0.0) {
+               rngMeanssq->data[jj] = 1.0;
+            }
+         }
+      }
+      
+      //Get sum of antenna pattern weight/variances for each frequency bin as a function of time (only for existant SFTs)
+      REAL8 sumofweights = 0.0;
+      for (jj=0; jj<numffts; jj++) if (rngMeanssq->data[jj] != 0.0) sumofweights += antweightssq->data[jj]/rngMeanssq->data[jj];
+      REAL8 invsumofweights = 1.0/sumofweights;
+      
+      //Now do noise weighting, antenna pattern weighting
+      for (jj=0; jj<numffts; jj++) {
+         if (rngMeanssq->data[jj] != 0.0) {
+            output->data[jj*numfbins+ii] = (REAL4)(invsumofweights*antPatternWeights->data[jj]*tfdata->data[jj*numfbins+ii]/rngMeanssq->data[jj]);
+         } else {
+            output->data[jj*numfbins+ii] = 0.0;
+         }
+      } /* for jj < numffts */
+   } /* for ii < numfbins */
+   
+   
+   XLALDestroyREAL4Vector(antweightssq);
+   XLALDestroyREAL4Vector(rngMeanssq);
+   
+   //fprintf(stderr,"TF after weighting, mean subtraction = %g\n",calcMean(output));   
+   
+} /* tfWeight() */
 
 
 
@@ -2237,6 +2387,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->antennaOff = args_info.antennaOff_given;
    params->noiseWeightOff = args_info.noiseWeightOff_given;
    params->markBadSFTs = args_info.markBadSFTs_given;
+   params->keepOneIHS = args_info.keepOneCandidate_given;
    params->FFTplanFlag = args_info.FFTplanFlag_arg;
    
    //Non-default arguments
@@ -2438,18 +2589,10 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
 REAL4Vector * SSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
 {
    
-   const CHAR *fn = __func__;
-   
    REAL4 *a;
    REAL4 *b;
    REAL4 *c;
    INT4   n;
-   
-   if ( ! output || ! input1 || !input2 || ! output->data || ! input1->data || ! input2->data ) {
-      XLAL_ERROR_NULL( fn, XLAL_EFAULT );
-   } else if ( ! output->length ) {
-      XLAL_ERROR_NULL( fn, XLAL_EBADLEN );
-   }
    
    a = input1->data + offset1;
    b = input2->data + offset2;
@@ -2457,9 +2600,10 @@ REAL4Vector * SSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4
    n = output->length;
    
    while (n-- > 0) {
-      *c++ = (*a)*(*b);
+      *c = (*a)*(*b);
       a = a + stride1;
       b = b + stride2;
+      c++;
    }
    
    return output;
@@ -2469,18 +2613,10 @@ REAL4Vector * SSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4
 REAL8Vector * DDVectorMultiply_with_stride_and_offset(REAL8Vector *output, REAL8Vector *input1, REAL8Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
 {
    
-   const CHAR *fn = __func__;
-   
    REAL8 *a;
    REAL8 *b;
    REAL8 *c;
    INT4   n;
-   
-   if ( ! output || ! input1 || !input2 || ! output->data || ! input1->data || ! input2->data ) {
-      XLAL_ERROR_NULL( fn, XLAL_EFAULT );
-   } else if ( ! output->length ) {
-      XLAL_ERROR_NULL( fn, XLAL_EBADLEN );
-   }
    
    a = input1->data + offset1;
    b = input2->data + offset2;
@@ -2488,9 +2624,10 @@ REAL8Vector * DDVectorMultiply_with_stride_and_offset(REAL8Vector *output, REAL8
    n = output->length;
    
    while (n-- > 0) {
-      *c++ = (*a)*(*b);
+      *c = (*a)*(*b);
       a = a + stride1;
       b = b + stride2;
+      c++;
    }
    
    return output;
@@ -2500,18 +2637,10 @@ REAL8Vector * DDVectorMultiply_with_stride_and_offset(REAL8Vector *output, REAL8
 REAL8Vector * SDVectorMultiply_with_stride_and_offset(REAL8Vector *output, REAL4Vector *input1, REAL8Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
 {
    
-   const CHAR *fn = __func__;
-   
    REAL4 *a;
    REAL8 *b;
    REAL8 *c;
    INT4   n;
-   
-   if ( ! output || ! input1 || !input2 || ! output->data || ! input1->data || ! input2->data ) {
-      XLAL_ERROR_NULL( fn, XLAL_EFAULT );
-   } else if ( ! output->length ) {
-      XLAL_ERROR_NULL( fn, XLAL_EBADLEN );
-   }
    
    a = input1->data + offset1;
    b = input2->data + offset2;
@@ -2519,9 +2648,10 @@ REAL8Vector * SDVectorMultiply_with_stride_and_offset(REAL8Vector *output, REAL4
    n = output->length;
    
    while (n-- > 0) {
-      *c++ = (*a)*(*b);
+      *c = (*a)*(*b);
       a = a + stride1;
       b = b + stride2;
+      c++;
    }
    
    return output;
