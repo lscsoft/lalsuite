@@ -2,10 +2,7 @@
 \author Creighton, T. D.
 \file
 
-\heading{Module \ref StreamGridInput.c}
-\latexonly\label{ss_StreamGridInput_c}\endlatexonly
-
-Converts an input stream into a LAL grid structure.
+\brief Converts an input stream into a LAL grid structure.
 
 \heading{Prototypes}
 
@@ -43,16 +40,16 @@ header consists of zero or more lines beginning with a <tt>'#'</tt>
 character, followed by a metadata field name and value in the format:
 
 
-<table><tr><td><tt># </tt>\e fieldname<tt>=</tt>\e value</td></tr></table>
+<table><tr><td><tt>\# </tt>fieldname<tt>=</tt>value</td></tr></table>
 
 The <tt>=</tt> sign in this format is standard but optional;
 it may be replaced or surrounded with any amount of any whitespace
-except a newline <tt>'\n'</tt>.  If \e fieldname is unrecognized,
+except a newline <tt>'\\n'</tt>.  If \e fieldname is unrecognized,
 it is ignored; if it is recognized, then \e value must be in a
 suitable format for the field type, as described below.  Blank lines,
-or lines containing just a <tt>#</tt> character, are skipped.  Once a
+or lines containing just a <tt>\#</tt> character, are skipped.  Once a
 line is encountered that contains non-whitespace characters and does
-not start with <tt>'#'</tt>, that line is assumed to be the beginning of
+not start with <tt>'\#'</tt>, that line is assumed to be the beginning of
 the numerical data.  From that point on, all non-whitespace characters
 must be part of parseable numbers; no more comments are permitted
 (although blank lines will still be skipped).
@@ -65,28 +62,28 @@ if it doesn't find them.  Others are \e optional: if they are not
 found, the routine will assign some default value.  The various fields
 and their required formats are given below:
 
-em>Required fields:</em>
+<em>Required fields:</em>
 <dl>
 <dt>dimLength:</dt><dd> \e value consists of a sequence of
 \c UINT4s separated by whitespace (but \e not a newline
-<tt>'\n'</tt>).  These are used to create <tt>(*grid)->data</tt> with the
+<tt>'\\n'</tt>).  These are used to create <tt>(*grid)->data</tt> with the
 appropriate dimensions, and are stored in
 <tt>(*grid)->data->dimLength->data</tt>: the number of integers \f$M\f$
 gives the data dimension number (the number of array indecies), while
 the value of each integer gives the length of each dimension (the
 range of values of the corresponding array index).</dd>
 
-<dt>\c offset:</dt><dd> \e value consists of a sequence of
+<dt>offset:</dt><dd> \e value consists of a sequence of
 \c REAL8s separated by whitespace (but \e not a newline
-<tt>'\n'</tt>).  These values are stored in
+<tt>'\\n'</tt>).  These values are stored in
 <tt>(*grid)->offset->data</tt>.  The number of data \f$m\f$ gives the grid
 dimension, which must be less than or equal to the data dimension \f$M\f$
 of the array defined above, and must be consistent among the
 \c offset, \c interval, and \c dimUnits fields.</dd>
 
-<dt>\c interval:</dt><dd> \e value consists of a sequence of
+<dt>interval:</dt><dd> \e value consists of a sequence of
 \c REAL8s separated by whitespace (but \e not a newline
-<tt>'\n'</tt>).  These values are stored in
+<tt>'\\n'</tt>).  These values are stored in
 <tt>(*grid)->interval->data</tt>.  The number of data \f$m\f$ gives the grid
 dimension, which must be less than or equal to the data dimension \f$M\f$
 of the array defined above, and must be consistent among the
@@ -96,22 +93,22 @@ of the array defined above, and must be consistent among the
 
 <em>Optional fields:</em>
 <dl>
-<dt>\c name:</dt><dd> \e value is a string surrounded by quotes
-<tt>"</tt>, which is parsed in the manner of a string literal in C: it
-may contain ordinary printable characters (except <tt>"</tt> and
-<tt>\</tt>), escape sequences (such as <tt>\t</tt> for tab, <tt>\n</tt> for
+<dt>name:</dt><dd> \e value is a string surrounded by quotes
+<tt>\"</tt>, which is parsed in the manner of a string literal in C: it
+may contain ordinary printable characters (except <tt>\"</tt> and
+<tt>\\</tt>), escape sequences (such as <tt>\\t</tt> for tab, <tt>\\n</tt> for
 newline, or <tt>\\</tt> and <tt>\"</tt> for literal backslash and quote
-characters), and octal or hexadecimal codes (<tt>\</tt>\f$ooo\f$ or
-<tt>\x</tt>\f$hh\f$ respectively) for arbitrary bytes.  Unlike in C,
+characters), and octal or hexadecimal codes (<tt>\\</tt>ooo or
+<tt>\\x</tt>hh respectively) for arbitrary bytes.  Unlike in C,
 literals cannot be split between lines, adjacent literals are not
 concatenated, and converted strings longer than
 \c LALNameLength\f$-1\f$ will be truncated.  The resulting string is
-stored in <tt>(*grid)->name</tt>, and will always contain a <tt>\0</tt>
+stored in <tt>(*grid)->name</tt>, and will always contain a <tt>\\0</tt>
 terminator, beyond which the contents are unspecified.  If this field
 is not given in \c stream, then the routine will simply assign
-<tt>(*grid)->name[0]</tt>=<tt>'\0'</tt>.</dd>
+<tt>(*grid)->name[0]</tt>=<tt>'\\0'</tt>.</dd>
 
-<dt>\c sampleUnits:</dt><dd> \e value is string surrounded by
+<dt>sampleUnits:</dt><dd> \e value is string surrounded by
 quotes <tt>"</tt>; the quotes are stripped and the string passed to
 <tt>LALParseUnitString()</tt> to determine <tt>(*grid)->sampleUnits</tt>.
 Since <tt>LALParseUnitString()</tt> is not very robust, it is
@@ -120,13 +117,13 @@ recommended to use only unit strings that have been generated by
 <tt>(*grid)->sampleUnits</tt> within the code.  If this field is not
 given in \c stream, then \c lalDimensionlessUnit is assumed.</dd>
 
-<dt>\c dimUnits:</dt><dd> \e value is a sequence of strings,
-each surrounded by quotes <tt>"</tt>, and optionally separated by
-whitespace (but \e not a newline <tt>'\n'</tt>); the quotes are
-stripped and the string passed to <tt>LALParseUnitString()</tt> to
-determine <tt>(*grid)->dimUnits</tt>.  Since <tt>LALParseUnitString()</tt>
+<dt>dimUnits:</dt><dd> \e value is a sequence of strings,
+each surrounded by quotes <tt>\"</tt>, and optionally separated by
+whitespace (but \e not a newline <tt>'\\n'</tt>); the quotes are
+stripped and the string passed to LALParseUnitString() to
+determine <tt>(*grid)->dimUnits</tt>.  Since LALParseUnitString()
 is not very robust, it is recommended to use only unit strings that
-have been generated by <tt>LALUnitAsString()</tt>, or to remove this
+have been generated by LALUnitAsString(), or to remove this
 metadata field and reset <tt>(*grid)->dimUnits</tt> within the code.  If
 this field is not given in \c stream, then
 <tt>(*grid)->dimUnits</tt> will be allocated as an array containing \f$m\f$
@@ -136,15 +133,15 @@ field \e is given, then the number of unit strings must be
 consistent with the lengths of the \c interval and \c offset
 vectors, or the routine will abort.</dd>
 
-<dt>\c datatype:</dt><dd> \e value is string identifying the
-grid type; e.g. \c REAL4Grid (\e not surrounded by quotes).
+<dt>datatype:</dt><dd> \e value is string identifying the
+grid type; e.g. REAL4Grid (\e not surrounded by quotes).
 This should correspond to the type of <tt>**grid</tt>, not to any field
 in <tt>**grid</tt>.  If there is a type mismatch, a warning is generated
 (and errors may occur later while parsing the data).</dd>
 </dl>
 
 \heading{Data format:} The first line that is neither blank nor
-beginning with a <tt>'#'</tt> character is assumed to be the start of
+beginning with a <tt>'\#'</tt> character is assumed to be the start of
 the grid data, and is parsed as a sequence of whitespace-separated
 integers or real numbers.  For complex datatypes, the numbers read are
 interpreted as alternately the real and imaginary parts of the data.
@@ -157,7 +154,7 @@ filling the structure, an error is returned.
 
 \heading{Algorithm}
 
-These routines use <tt>LALCHARReadVector()</tt> to read the header lines
+These routines use LALCHARReadVector() to read the header lines
 and the first line of data.  The metadata are stored in temporary
 variables or vectors.  After the first data line has been read, the
 size of the grid should be known from the metadata: the structure is
@@ -177,17 +174,15 @@ LALDCreateVector()                      LALDDestroyVector()
 LAL<typecode>CreateGrid()               LAL<typecode>DestroyGrid()
 LALStringTo<typecode>()                 LALParseUnitString()
 \endcode
-where <tt><typecode></tt> is any of \c I2, \c I4, \c I8,
+where <tt>\<typecode\></tt> is any of \c I2, \c I4, \c I8,
 \c U2, \c U4, \c U8, \c S, \c D, \c C, or
 \c Z.
 
 \heading{Notes}
 
-
-
-% This quote will fix the C syntax highlighting: "
-
 */
+
+/* This quote will fix the C syntax highlighting: " */
 
 #include <stdio.h>
 #include <string.h>
