@@ -1,9 +1,7 @@
 /**
 \author Tibbits, M. M.
 \file
-*/
 
-/**
 \heading{Module \ref MiscMatlab.c}
 \latexonly\label{s_MiscMatlab_c}\endlatexonly
 
