@@ -52,7 +52,7 @@ functions from one codebase.
 */
 
 #include <math.h>
-#include "Matrix.h"
+#include <lal/Matrix.h>
 
 NRCSID( MATLABMATRIXSUMC, "$Id$");
 
