@@ -89,9 +89,9 @@ NRCSID( LIGOLWXMLREADH, "$Id$" );
 /** This structure allows for the association of entries in a MetaDataTable
 with columns in an xml file.
 <dl>
-<dt>\c name</dt><dd> The name of the column in the XML table.</dd>
-<dt>\c pos</dt><dd> The position of this column in the XML table.</dd>
-<dt>\c idx</dt><dd> The id number of the column.</dd>
+<dt>name</dt><dd> The name of the column in the XML table.</dd>
+<dt>pos</dt><dd> The position of this column in the XML table.</dd>
+<dt>idx</dt><dd> The id number of the column.</dd>
 </dl>
 
 */

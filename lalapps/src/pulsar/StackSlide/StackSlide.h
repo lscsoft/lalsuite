@@ -17,10 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author M. Landry, G. Mendell
-*/
-
 /* REVISIONS: */
 /* 04/26/04 gam; Change LALStackSlide to StackSlide and LALSTACKSLIDE to STACKSLIDE for initial entry to LALapps. */
 /* 06/05/04 gam; Add gpsStartTimeSec and gpsStartTimeNan to StackSlideSkyParams; set these to epoch that gives T0 at SSB. */
@@ -30,8 +26,10 @@
 /* 05/06/05 gam; Add function SumStacks with just creates a SUM from the STKs without sliding */
 
 /**
-\heading{Header \ref StackSlide.h}
-Computes frequency model, slide stacks accordingly, and sum them.
+\author M. Landry, G. Mendell
+\file
+
+\brief Computes frequency model, slide stacks accordingly, and sum them.
 
 \heading{Synopsis}
 \code
@@ -42,7 +40,7 @@ This is a short summary...
 
 #ifndef _STACKSLIDE_H
 #define _STACKSLIDE_H
- 
+
 #include <lal/LALStdlib.h>
 #include <math.h>
 #include <lal/LALConstants.h>
@@ -53,11 +51,11 @@ This is a short summary...
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
+
 NRCSID (STACKSLIDEH, "$Id$");
-  
+
 /* Author-defined error codes */
-  
+
 /**\name Error Codes */ /*@{*/
 #define STACKSLIDEH_ENULL 1
 #define STACKSLIDEH_ENNUL 2
@@ -71,9 +69,7 @@ NRCSID (STACKSLIDEH, "$Id$");
 #define STACKSLIDECOMPUTESKYH_MSGENULL "Null Pointer in StackSlideComputeSky"
 #define STACKSLIDECOMPUTESKYH_MSGENNUL "Non-Null Pointer in StackSlideComputeSky"
 #define STACKSLIDECOMPUTESKYH_MSGENEGA "Bad Negative Value in StackSlideComputeSky"
-/*@}*/
 
-/**\name Error Codes */ /*@{*/
 #define COMPUTESKYBINARYH_ENULL 1
 #define COMPUTESKYBINARYH_ENNUL 2
 #define COMPUTESKYBINARYH_ERANG 3
@@ -94,21 +90,18 @@ struct StackSlideParams
 \endcode
 \c StackSlideParams
 This structure contains the parameters for the <tt>StackSlide()</tt> routine.  The parameters are:
-<dl>
-</dl>
-*/
 
-/* 04/12/05 gam; old version; new version is below */
-/* typedef struct
+\code
+typedef struct
 tagStackSlideParams
 {
-	REAL8 **skyPosData;  
-	REAL8 **freqDerivData;  
+	REAL8 **skyPosData;
+	REAL8 **freqDerivData;
         REAL8 *ParamsSMA;
 	REAL8 *ParamsTperi;
 	INT4 numSkyPosTotal;
 	INT4 numFreqDerivTotal;
-	BOOLEAN divideSUMsByNumSTKs;	
+	BOOLEAN divideSUMsByNumSTKs;
 	REAL8 f0STK;
 	REAL8 refFreq;
 	REAL8 f0SUM;
@@ -136,8 +129,10 @@ tagStackSlideParams
         REAL8 LoudestEvent;
 	REAL8 peakFreq;
 	INT4 nMaxSMA;
-} 
-StackSlideParams; */
+}
+StackSlideParams;
+\endcode
+*/
 
 /* 04/12/05 gam; Simplify StackSlideParams struct; change REAL8 **freqDerivData to REAL8 *freqDerivData; */
 typedef struct
@@ -156,7 +151,7 @@ tagStackSlideParams
         UINT4 gpsStartTimeNan;
         INT4 numSpinDown;
 }
-StackSlideParams; 
+StackSlideParams;
 
 typedef struct
 tagStackSlideSkyParams
@@ -174,7 +169,7 @@ tagStackSlideSkyParams
         REAL8           ArgPeriapse;    /* Argument of Periapse */
         LIGOTimeGPS     TperiapseSSB;   /* Instance of periapse passage measured in the SSB frame */
 	UINT4 gpsTperiapseSSBSec;
-	BarycenterInput *baryinput;	
+	BarycenterInput *baryinput;
 	EmissionTime *emit;
 	EarthState *earth;
 	EphemerisData *edat;

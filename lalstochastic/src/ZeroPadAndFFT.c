@@ -98,7 +98,7 @@ approximation of a continuous Fourier transorm, which makes it \f$\delta
 t\f$ times the discrete Fourier transform.</li>
 
 <li> The Fourier transform of a series of \f$M\f$ points is calculated
-  with the FFTW \ref stochasticFrigo1998 (via the interfaces in
+  with the FFTW [\ref Frigo1998] (via the interfaces in
   the \c fft package), which is efficient for products of small
   primes, so \f$M\f$ should be chosen to have this property.  The minimum
   value, \f$2N-1\f$, is odd and can thus be at best a power of 3.
@@ -123,12 +123,6 @@ t\f$ times the discrete Fourier transform.</li>
 
 </li>
 </ul>
-
-\bibitem{stochastic:Frigo:1998}
-  M. Frigo and S. G. Johnson,
-  <em>FFTW User's Manual</em>,
-  (Massachusetts Institute of Technology, Cambridge, USA, 1998).
-  URL: \href{http://www.fftw.org/doc/}{<tt>http://www.fftw.org/doc/</tt>}
 
 */
 

@@ -282,7 +282,7 @@ LALStochasticOptimalFilterNormalization(
 
   /* ERROR CHECKING ----------------------------------------------------- */
 
-  /***** check for null pointers *****/
+  /* check for null pointers *****/
   /* input structure */
   ASSERT(input != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -396,14 +396,14 @@ LALStochasticOptimalFilterNormalization(
     }
   }
 
-  /*** done with null pointers ***/
+  /* done with null pointers ***/
 
   /* extract parameters from overlap */
   length = input->overlapReductionFunction->data->length;
   f0 = input->overlapReductionFunction->f0;
   deltaF = input->overlapReductionFunction->deltaF;
 
-  /**** check for legality ****/
+  /* check for legality ****/
   /* length must be positive */
   ASSERT(length != 0, status, \
       STOCHASTICCROSSCORRELATIONH_EZEROLEN, \
@@ -421,7 +421,7 @@ LALStochasticOptimalFilterNormalization(
       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, \
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
-  /** check for mismatches **/
+  /* check for mismatches **/
   /* length */
   if (input->omegaGW->data->length != length)
   {
@@ -472,7 +472,7 @@ LALStochasticOptimalFilterNormalization(
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
-  /** check for reference frequency lower and upper limits **/
+  /* check for reference frequency lower and upper limits **/
   if (parameters->fRef < f0 + deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EOORFREF, \
@@ -521,8 +521,8 @@ LALStochasticOptimalFilterNormalization(
 
   /* tmpUnit1 holds units of f^2*(Omega*Gamma)^-2 */
 
-  /** unitPair.unitOne = &tmpUnit1; **/
-  /** Commented out because it's redundant with the last assignment **/
+  /* unitPair.unitOne = &tmpUnit1; **/
+  /* Commented out because it's redundant with the last assignment **/
 
   unitPair.unitTwo = &tmpUnit2;
 
@@ -530,7 +530,7 @@ LALStochasticOptimalFilterNormalization(
 
   /* checkUnit holds units of f^2*P1*P2(Omega*Gamma)^-2 */
 
-  /*** Check that checkUnit is dimensionless up to a power of ten ***/
+  /* Check that checkUnit is dimensionless up to a power of ten ***/
 
   for (i=0; i<LALNumUnits; ++i)
   {
@@ -541,7 +541,7 @@ LALStochasticOptimalFilterNormalization(
     }
   }
 
-  /******* Set tmpUnit1 to dims of Omega/H0^2 ******/
+  /* Set tmpUnit1 to dims of Omega/H0^2 ******/
 
   /* First, set it to dims of H0 */
 
@@ -559,7 +559,7 @@ LALStochasticOptimalFilterNormalization(
 
   /* Now tmpUnit1 has units of Omega/H0^2 */
 
-  /******* assign correct units to normalization constant ********/
+  /* assign correct units to normalization constant ********/
   /* These are Omega/H0^2*f^5*P1*P2*(gamma*Omega)^-2
    * which is the same as tmpUnit1*f^3*checkUnit */
   unitPair.unitOne = &tmpUnit1;
@@ -590,7 +590,7 @@ LALStochasticOptimalFilterNormalization(
   unitPair.unitOne = &tmpUnit2;
 
   /* unitPair.unitTwo = &checkUnit; */
-  /** Commented out because it's redundant with the last assignment **/
+  /* Commented out because it's redundant with the last assignment **/
 
   LALUnitMultiply(status->statusPtr, &(lamPtr->units), &unitPair);
 
@@ -600,7 +600,7 @@ LALStochasticOptimalFilterNormalization(
 
   if (output->variance != NULL)
   {
-    /******* assign correct units to variance per time of CC stat ********/
+    /* assign correct units to variance per time of CC stat ********/
     unitPair.unitOne = &(lamPtr->units);
     unitPair.unitTwo = &tmpUnit1;
 
@@ -637,7 +637,7 @@ LALStochasticOptimalFilterNormalization(
     }
   }
 
-  /************** calculate lambda ***********************/
+  /* ************* calculate lambda ***********************/
   /* find omegaRef */
   xRef = (UINT4)((parameters->fRef - f0)/deltaF);
   if (((parameters->fRef - f0)/deltaF) == (REAL8)(xRef))

@@ -20,10 +20,7 @@
 /**
 \file
 
-\heading{Header \ref FrameData.h}
-\latexonly\label{s_FrameData_h}\endlatexonly
-
-Root finding routines.
+\brief Root finding routines.
 
 \heading{Synopsis}
 \code
@@ -89,12 +86,12 @@ This is the frame data parameter structure: think of it as something like a
 file pointer to the frame data.  The "public" fields are:
 
 <dl>
-<dt>\c inLock</dt><dd> Boolean that user should set to non-zero if data that
-  is not "in lock" according to the IFO\_Lock channel is desired.</dd>
-<dt>\c endOfData</dt><dd> Boolean that is non-zero if there is no more data.</dd>
-<dt>\c newLock</dt><dd> Boolean that is non-zero if starting a new locked
+<dt>inLock</dt><dd> Boolean that user should set to non-zero if data that
+  is not "in lock" according to the IFO_Lock channel is desired.</dd>
+<dt>endOfData</dt><dd> Boolean that is non-zero if there is no more data.</dd>
+<dt>newLock</dt><dd> Boolean that is non-zero if starting a new locked
   section of data.</dd>
-<dt>\c newCalibration</dt><dd> Boolean that is non-zero if new calibration data
+<dt>newCalibration</dt><dd> Boolean that is non-zero if new calibration data
   is available.</dd>
 </dl>
 */

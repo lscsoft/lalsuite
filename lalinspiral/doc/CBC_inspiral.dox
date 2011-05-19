@@ -531,12 +531,12 @@ small, corrections in the phase.) For a source with position vector
 \f}
 Here \f$\hat{\mathbf L} = {\mathbf L}/L,\f$ \f$\hat{\mathbf N} = {\mathbf N}/D\f$ (\f$D\f$ is the distance to
 the source) and \f$\psi(t)\f$ is the precession-modulated polarization angle given by
-\anchor eqn_psi(t) \f{equation}{
+\anchor eqn_psi \f{equation}{
 \tan \psi(t) =
 \frac{\hat{\mathbf L}(t)\cdot\hat{\mathbf z} - (\hat{\mathbf L}(t)\cdot\hat{\mathbf N})
 (\hat{\mathbf z}\cdot\hat{\mathbf N})}
 {\hat{\mathbf N}\cdot(\hat{\mathbf L}(t)\times\hat{\mathbf z})}.
-\label{eqn_psi(t)}
+\label{eqn_psi}
 \f}
 Also, \f$F_+\f$ and \f$F_\times\f$ are the antenna beam pattern functions are given by
 \f{equation}{

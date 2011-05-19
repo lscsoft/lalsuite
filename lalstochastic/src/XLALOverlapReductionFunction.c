@@ -27,7 +27,7 @@ of gravitational wave detectors.
 
 \heading{Description}
 
-<tt>XLALOverlapReductionFunction()</tt> calculates the values of the overlap reduction:
+XLALOverlapReductionFunction() calculates the values of the overlap reduction:
 
 \anchor stochastic_e_gamma \f{equation}{
 \gamma(f):={5\over 8\pi}\sum_A\int_{S^2}d\hat\Omega\
@@ -205,7 +205,7 @@ strncpy()
   interferometers, our \f$\gamma(f)\f$ is \e not equal to the
   generalization of \f$\gamma(f)\f$ defined by Maggiore, whose
   relationship to \f$\Gamma(f)\f$ depends on the type of detector.
-  Defining \f$\gamma(f)\f$ as we do allows us to use the formul{\ae} from,
+  Defining \f$\gamma(f)\f$ as we do allows us to use the formulae from,
   e.g., [\ref Allen1999], irrespective of the detector
   type in question.</li>
 

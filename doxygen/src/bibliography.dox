@@ -2,6 +2,11 @@
 
 /** \page References
 
+\anchor ptvf1992 <b>[ptvf1992]</b>
+ W. H. Press, S. A. Teukolsky, W. T. Vetterling, and B. P. Flannery,
+<i>Numerical Recipes in C: The Art of Scientiﬁc Computing</i>,
+2nd ed. (Cambridge University Press, Cambridge, 1992).
+
 \anchor Anderson_W2000 <b>[Anderson_W2000]</b>.
 W.G.\ Anderson, P.R.\ Brady, J.D.E.\ Creighton and É.\ É.\ Flanagan,
 <i>An excess power statistic for detection of burst sources of gravitational radiation</i>,
@@ -212,5 +217,63 @@ B.J.\ Owen, Phys.\ Rev.\ D 53, 6749 (1996).
   L.\ S.\ Finn and J.\ D.\ Romano, "Detecting stochastic gravitational waves:
   Performance of maximum-likelihood and cross-correlation statistics",
   unpublished.
+
+\anchor Frigo1998 <b>[Frigo1998]</b>
+  M. Frigo and S. G. Johnson,
+  <em>FFTW User's Manual</em>,
+  (Massachusetts Institute of Technology, Cambridge, USA, 1998).
+  URL: <a href="http://www.fftw.org/doc/">http://www.fftw.org/doc/</a>
+
+\anchor ab1999 <b>[ab1999]</b>
+Warren G. Anderson and R. Balasubramanian, <em>Time-frequency
+detection of gravitational waves</em>, gr-qc/9905023, and references
+therein.
+
+\anchor fh1998 <b>[fh1998]</b>
+É.\ É.\ Flanagan and S. A. Hughes, Phys. Rev. D \c 57,
+4535-4565 (1998) (also gr-qc/9701039).
+
+\anchor acdhp1999 <b>[acdhp1999]</b>
+N. Arnaud, F. Cavalier, M. Davier, P. Hello, and T. Pradier,
+<em>Triggers for the Detection of Gravitational Wave Bursts</em>,
+gr-qc/9903035.
+
+\anchor abcf2000 <b>[abcf2000]</b>
+Warren G. Anderson, Patrick R. Brady, Jolien D. E. Creighton and É.\ É.\ Flanagan,
+<em>An excess power statistic for detection of burst sources of
+gravitational radiation</em>, PRD 63, 042003 (2001) (gr-qc/0008066).
+For a short version see \e ibid, <em>A power filter for the
+detection of burst sources of gravitational radiation in
+interferometric detectors</em>, gr-qc/0001044, submitted to
+Int. J. Modern. Phys. D.
+
+\anchor Sintes1998 <b>[Sintes1998]</b>
+  A.\ M. Sintes, B.\ F. Schutz, Phys. Rev. D\c 58, 122003 (1998)
+
+\anchor Sintes1998b <b>[Sintes1998b]</b>
+  A.\ M. Sintes, B.\ F. Schutz,
+ <em>Removal of interference from gravitational wave spectrum</em>, in
+ <em>Proceedings of the 2nd workshop on Gravitational Wave
+  Data Analysis</em>.
+  Edts. M. Davier and P. Hello. Editions Fronti\`eres,
+  France (1998) pp. 255-260
+
+\anchor Sintes1998c <b>[Sintes1998c]</b>
+  A.\ M. Sintes, B.\ F. Schutz,
+  <em>Removal of interference from external coherent signals</em>, in
+  <em>Laser Interferometer Space Antenna:
+  Second international LISA symposium on gravitational waves</em>.
+  Edt. W. Folkner. American Institute of Physics, New York (1998) pp. 135-140
+
+\anchor Sintes1999 <b>[Sintes1999]</b>
+  A.\ M. Sintes, B.\ F. Schutz, Phys. Rev. D\c 60, 062001 (1999)
+
+\anchor Sintes2000 <b>[Sintes2000]</b>
+  A.\ M. Sintes, B.\ F. Schutz,
+  <em>Removing %Line Interference from Gravitational Wave
+   Interferometer Data</em>, in
+  <em>Gravitational Wave Detection II</em>.
+  Edts. S. Kawamura and N. Mio. Frontiers Science Series n. 32;
+  Universal Academy Press, Inc, Tokyo  (2000) pp. 273-278
 
 */

@@ -185,8 +185,8 @@ FrChanIn;
  *
  * This structure specifies the channel to read as input.  The fields are:
  * <dl>
- * <dt>\c name</dt><dd> the name of the channel.
- * </dd><dt>\c type</dt><dd> the channel type.
+ * <dt>name</dt><dd> the name of the channel.
+ * </dd><dt>type</dt><dd> the channel type.
  * </dd></dl>
  *
 */

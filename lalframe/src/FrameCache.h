@@ -83,16 +83,16 @@ FrStat;
  *
  * This structure contains a frame file status.  The fields are:
  * <dl>
- * <dt>\c source</dt><dd> the source detector(s) of the data in the frame
+ * <dt>source</dt><dd> the source detector(s) of the data in the frame
  *     file, or other identifier.
- * </dd><dt>\c description</dt><dd> the description of the type of data contained
+ * </dd><dt>description</dt><dd> the description of the type of data contained
  *     in the frame file, or other identifier.
- * </dd><dt>\c startTime</dt><dd> the GPS time of the second equal to
+ * </dd><dt>startTime</dt><dd> the GPS time of the second equal to
  *     (or just before) the start of the data contained in the frame file.
- * </dd><dt>\c duration</dt><dd> the number of seconds between \c startTime
+ * </dd><dt>duration</dt><dd> the number of seconds between \c startTime
  *     and the GPS time of the second equal to (or just after) the end of the
  *     data contained in the frame file.
- * </dd><dt>\c url</dt><dd> the URL of the frame file.
+ * </dd><dt>url</dt><dd> the URL of the frame file.
  * </dd></dl>
  *
 */
@@ -109,8 +109,8 @@ FrCache;
  *
  * This structure contains a list of all frame files available.  The fields are:
  * <dl>
- * <dt>\c numFrameFiles</dt><dd> the total number of frame files in the list.
- * </dd><dt>\c frameFiles</dt><dd> array of frame file status descriptors.
+ * <dt>numFrameFiles</dt><dd> the total number of frame files in the list.
+ * </dd><dt>frameFiles</dt><dd> array of frame file status descriptors.
  * </dd></dl>
  *
 */
