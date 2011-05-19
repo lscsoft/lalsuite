@@ -23,17 +23,12 @@
 #define F3 CONCAT5(LAL,TYPECODE,DotStar,TYPECODE2,Array)
 #define F4 CONCAT5(LAL,TYPECODE,ArrayDotStar,TYPECODE2,Array)
 
-/**
-\codevoid F1 ( LALStatus *status, VTYPE2 **result,
-		TYPE B, VTYPE2 *A )\endcode
-*/
-
 void F1 (
-        LALStatus		*status,
-        VTYPE2		**result,
-        TYPE			B,
-        VTYPE2		*A
-)
+         LALStatus		*status,
+         VTYPE2		**result,
+         TYPE			B,
+         VTYPE2		*A
+         )
 {
         /*  Variable Declarations  */
         UINT4    iterator;
@@ -66,17 +61,12 @@ void F1 (
         RETURN (status);
 }
 
-/**
-\codevoid F2 ( LALStatus *status, VTYPE **result,
-		VTYPE *B, VTYPE2 *A )\endcode
-*/
-
 void F2 (
-        LALStatus		*status,
-        VTYPE		**result,
-        VTYPE		*B,
-        VTYPE2		*A
-)
+         LALStatus		*status,
+         VTYPE		**result,
+         VTYPE		*B,
+         VTYPE2		*A
+         )
 {
         /*  Variable Declarations  */
         UINT4    iterator;
@@ -113,17 +103,12 @@ void F2 (
         RETURN (status);
 }
 
-/**
-\codevoid F3 ( LALStatus *status, ATYPE2 **result,
-		TYPE A, ATYPE2 *B )\endcode
-*/
-
 void F3 (
-        LALStatus               *status,
-        ATYPE2		**result,
-        TYPE			A,
-        ATYPE2		*B
-)
+         LALStatus               *status,
+         ATYPE2		**result,
+         TYPE			A,
+         ATYPE2		*B
+         )
 {
         /*  Variable Declarations  */
         UINT4Vector     *length;
@@ -184,17 +169,12 @@ void F3 (
         RETURN (status);
 }
 
-/**
-\codevoid F4 ( LALStatus *status, ATYPE **result,
-		ATYPE *A, ATYPE2 *B )\endcode
-*/
-
 void F4 (
-        LALStatus		*status,
-        ATYPE		**result,
-        ATYPE		*A,
-        ATYPE2		*B
-)
+         LALStatus		*status,
+         ATYPE		**result,
+         ATYPE		*A,
+         ATYPE2		*B
+         )
 {
         /*  Variable Declarations  */
         UINT4Vector     *length;
@@ -264,5 +244,3 @@ void F4 (
         DETATCHSTATUSPTR( status );
         RETURN (status);
 }
-
-
