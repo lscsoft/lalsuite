@@ -1,6 +1,6 @@
 @SWIG_COMMON_MK@
 
-SUBDIRS = octave
+SUBDIRS = octave python
 
 if SWIG_BUILD
 

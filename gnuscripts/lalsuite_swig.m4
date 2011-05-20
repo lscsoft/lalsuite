@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011
 #
-# serial 2
+# serial 3
 
 # basic version string comparison
 # can only handle numeric versions separated by periods
@@ -264,6 +264,7 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE],[
 # SWIG languages
 AC_DEFUN([LALSUITE_SWIG_LANGUAGES],[
   LALSUITE_SWIG_LANGUAGE_OCTAVE
+  LALSUITE_SWIG_LANGUAGE_PYTHON
 ])
 
 # SWIG octave configuration
@@ -317,6 +318,16 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE_OCTAVE],[
     ])
     AC_MSG_RESULT([${OCTAVE_OCTFILEDIR}])
     AC_SUBST(OCTAVE_OCTFILEDIR)
+
+  ])
+])
+
+# SWIG python configuration
+AC_DEFUN([LALSUITE_SWIG_LANGUAGE_PYTHON],[
+  LALSUITE_SWIG_LANGUAGE([Python],[
+
+    # check for python
+    AM_PATH_PYTHON([2.4])
 
   ])
 ])
