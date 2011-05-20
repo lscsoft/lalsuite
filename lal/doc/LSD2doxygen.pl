@@ -330,7 +330,7 @@ sub cleanupLSD {
                    )$bbk?$bbr!!mgx;
         # one argument
         $text =~ s!\\(?:
-                   input|vfill|vspace
+                   vfill|vspace
                    )$bbr!!mgx;
         # no arguments
         $text =~ s!\\(?:
@@ -488,6 +488,8 @@ sub cleanupLSD {
         # remove any empty LaTeX comments
         $text =~ s!^$n*%$n*$!!mg;
 
+        # mark input commands as 'TODO'
+        $text =~ s!\\input$wbbr!(MANUAL INTERVENTION input) $1.tex!g
     }
 
     # get rid of empty comments
