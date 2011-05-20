@@ -1,8 +1,7 @@
 DOXY_HTML_FILES = doxy-html-config.cfg.in \
 		  doxy-html-aliases.cfg \
 		  doxy-html-eqns.sty \
-		  doxy-html-layout.xml \
-		  doxy-html-style.css
+		  doxy-html-layout.xml
 
 DOXY_PDF_FILES = doxy-pdf-config.cfg.in  \
 		 doxy-pdf-aliases.cfg \
