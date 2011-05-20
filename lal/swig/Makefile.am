@@ -1,6 +1,6 @@
 @SWIG_COMMON_MK@
 
-SUBDIRS =
+SUBDIRS = octave
 
 if SWIG_BUILD
 

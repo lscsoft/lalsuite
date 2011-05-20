@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011
 #
-# serial 1
+# serial 2
 
 # basic version string comparison
 # can only handle numeric versions separated by periods
@@ -263,4 +263,60 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE],[
 
 # SWIG languages
 AC_DEFUN([LALSUITE_SWIG_LANGUAGES],[
+  LALSUITE_SWIG_LANGUAGE_OCTAVE
+])
+
+# SWIG octave configuration
+AC_DEFUN([LALSUITE_SWIG_LANGUAGE_OCTAVE],[
+  LALSUITE_SWIG_LANGUAGE([Octave],[
+
+    # minimum required octave version
+    OCTAVE_MIN_VERSION=3.2.4
+
+    # check for octave-config binary
+    AC_PATH_PROGS(OCTAVE_CONFIG,[octave-config],[])
+    AS_IF([test "x${OCTAVE_CONFIG}" = x],[
+      AC_MSG_ERROR([could not find 'octave-config' in path])
+    ])
+
+    # check for corresponding octave binary
+    AC_MSG_CHECKING([for octave])
+    OCTAVE=`${OCTAVE_CONFIG} -p BINDIR`/octave
+    AS_IF([test -f "${OCTAVE}" && test -x "${OCTAVE}"],[],[
+      AC_MSG_ERROR([could not find 'octave' in path])
+    ])
+    AC_MSG_RESULT([${OCTAVE}])
+    AC_SUBST(OCTAVE)
+    # add flags for silence and environment-independence
+    OCTAVE="${OCTAVE} -qfH"
+
+    # check for octave version
+    AC_MSG_CHECKING([for octave version])
+    octave_version=`${OCTAVE_CONFIG} --version`
+    AS_IF([test "x${octave_version}" = x],[
+      AC_MSG_ERROR([could not determine octave version])
+    ])
+    AC_MSG_RESULT([${octave_version}])
+
+    # check if octave version is newer than required
+    LALSUITE_VERSION_COMPARE([${OCTAVE_MIN_VERSION}],[${octave_version}],[],[],[
+      AC_MSG_ERROR([require octave version >= ${OCTAVE_MIN_VERSION}])
+    ])
+
+    # determine where to install .oct files:
+    # take site .oct install dir given by octave-config,
+    # and strip off prefix; thus, if LAL is installed in
+    # the same directory as octave, .oct files will be
+    # found by octave without having to add to OCTAVE_PATH
+    octave_prefix=[`${OCTAVE_CONFIG} -p PREFIX | ${SED} 's|/*$||'`]
+    AC_MSG_CHECKING([for octave .oct installation directory])
+    octave_localoctfiledir=[`${OCTAVE_CONFIG} -p LOCALOCTFILEDIR | ${SED} 's|/*$||'`]
+    OCTAVE_OCTFILEDIR=[`echo ${octave_localoctfiledir} | ${SED} "s|^${octave_prefix}/||"`]
+    AS_IF([test -n "`echo ${OCTAVE_OCTFILEDIR} | ${SED} -n '\|^/|p'`"],[
+      AC_MSG_ERROR([could not build relative path from '${OCTAVE_OCTFILEDIR}'])
+    ])
+    AC_MSG_RESULT([${OCTAVE_OCTFILEDIR}])
+    AC_SUBST(OCTAVE_OCTFILEDIR)
+
+  ])
 ])
