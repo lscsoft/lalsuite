@@ -466,7 +466,7 @@ sub cleanupLSD {
         $text =~ s{\\bibitem\s*$wbbr}{
             my $ref = $1;
             $ref = &$illref($ref);
-            '\anchor ' . $_ . ' <b>[' . $ref . "]</b> "
+            '\anchor ' . $ref . ' <b>[' . $ref . "]</b> "
         }mge;
         # and get rid of 'bibliography'
         $text =~ s!\\begin{thebibliography}{.*}!(MANUAL INTERVENTION begin bibliography)!;
