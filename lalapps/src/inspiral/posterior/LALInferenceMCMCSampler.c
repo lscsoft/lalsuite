@@ -233,6 +233,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 	char **outfileName = (char**)calloc(nChain,sizeof(char*));
 	
+  FILE *stat = NULL;
+	char statfilename[256];
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose") || LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")) {
+    sprintf(statfilename,"PTMCMC.statistics.%u",randomseed);
+    stat = fopen(statfilename, "a");
+  }
+  
 	//"waveform" and "pnorder" are ints to label the template used. Just to comform to SPINspiral output format. Should be temporary, and replaced by the command line used.
 	int waveform = 0;
   if(LALInferenceCheckVariable(runState->currentParams,"LAL_APPROXIMANT")) waveform= LALwaveformToSPINspiralwaveform(*(INT4 *)LALInferenceGetVariable(runState->currentParams,"LAL_APPROXIMANT"));
@@ -342,7 +349,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	LALInferenceAddVariable(runState->proposalArgs, "tempIndex", &tempIndex,  INT4_t, PARAM_LINEAR);
 	LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood, REAL8_t, PARAM_FIXED);
 	
-	
+
+  
 	//for(t=0; t<nChain; t++) { TcurrentLikelihood[t] = runState->currentLikelihood; } // initialize the liklelihood for all chains
 	
 	if (MPIrank == 0) {
@@ -451,28 +459,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     
 		runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
 		acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
-    ppt = LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose");
-    if (ppt) {
-      if(tempLadder[tempIndex]==1.0){
-        printf("%d\t",i);
-        printf("MPIrank=%d\tT=%f\ts_gamma=%f\t",MPIrank,*(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature"),s_gamma);
-        for (p=0; p<nPar; ++p) {
-          printf("%fsig\t",sigmas->data[p]);
-        }
-        printf("\n");
-      }
-    }
-    
-    if(LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")){
-      if(tempLadder[tempIndex]==1.0){
-        printf("%d\t",i);
-        printf("MPIrank=%d\tT=%f\t\t\t\t",MPIrank,*(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature"));
-        for (p=0; p<nPar; ++p) {
-          printf("%f\t",PacceptCount->data[p]/( PproposeCount->data[p]==0 ? 1.0 : PproposeCount->data[p] ));
-        }
-        printf("\n");
-      }      
-    }
+
 		
 
           //       if (MPIrank == 0 && (i % Nskip == 0)) {
@@ -510,6 +497,29 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		
                   fprintf(chainoutput[tempIndex],"\n");
                   fflush(chainoutput[tempIndex]);
+
+                  if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose") || LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")) {
+                    if(tempLadder[tempIndex]==1.0){
+          
+                      fseek(stat, 0L, SEEK_END);
+                      fprintf(stat,"%d\t",i);
+                      
+                      //printf("MPIrank=%d\tT=%f\ts_gamma=%f\t",MPIrank,*(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature"),s_gamma);
+                      if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")){
+                        fprintf(stat,"%f\t",s_gamma);
+                        for (p=0; p<nPar; ++p) {
+                          fprintf(stat,"%f\t",sigmas->data[p]);
+                        }
+                      }
+                      if(LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")){
+                        for (p=0; p<nPar; ++p) {
+                          fprintf(stat,"%f\t",PacceptCount->data[p]/( PproposeCount->data[p]==0 ? 1.0 : PproposeCount->data[p] ));
+                        }
+                      }
+                      fprintf(stat,"\n");
+                      fflush(stat);
+                    }
+                  }
                 }
 		
 
@@ -621,9 +631,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	for (t=0; t<nChain; ++t) {
 		fclose(chainoutput[t]);
 	}
-	
+	          
 	free(chainoutput);
-
+  
+  fclose(stat);
+  
 	for (t=0; t<nChain; ++t) {
 		free(outfileName[t]);
 	}

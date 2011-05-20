@@ -1087,7 +1087,7 @@ int main(int argc, char *argv[]){
     }
     LALInferenceAddMinMaxPrior(runState->priorArgs,	"x1",	&Min,	&Max,		REAL8_t);
 
-    REAL8 start_x2 = Min + gsl_rng_uniform(runState->GSLrandom)*(Max - (Min));
+ /*   REAL8 start_x2 = Min + gsl_rng_uniform(runState->GSLrandom)*(Max - (Min));
     ppt=LALInferenceGetProcParamVal(procParams,"--x2");
     if(ppt){start_x2=atof(ppt->value);}
     ppt=LALInferenceGetProcParamVal(procParams,"--fixX2");
@@ -1099,7 +1099,8 @@ int main(int argc, char *argv[]){
     }
     LALInferenceAddMinMaxPrior(runState->priorArgs,	"x2",	&Min,	&Max,		REAL8_t);
     
-    UINT4 N = 2;
+    UINT4 N = 2;*/
+    UINT4 N = 1;
     
     ppt=LALInferenceGetProcParamVal(procParams, "--adapt");
     if (ppt) {
