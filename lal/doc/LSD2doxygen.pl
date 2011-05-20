@@ -313,7 +313,7 @@ sub cleanupLSD {
         my $wbbk = qr!\[((?:[^[\]]*$bbk)*[^[\]]*)\]!;
 
         # regex substitution for illegal \ref characters
-        my $illref = sub { $_[0] =~ s![:.]!_!g; $_[0] };
+        my $illref = sub { $_[0] =~ s![:.()^\-]!_!g; $_[0] };
 
         # remove these LaTeX commands:
         # environments
@@ -429,13 +429,16 @@ sub cleanupLSD {
 
         # rephrase (sub)section commands, turning labels (if present) into anchors
         $text =~ s{\\((?:sub)*section)\*?\s*$wbbr\n(?<LBL>\\label\s*$bbr)?}{
+            my $level = $1;
+            my $title = $2;
             my $lbl = $+{LBL};
             if (defined($lbl)) {
                 $lbl =~ s!\\label\s*$wbbr!$1!;
             } else {
                 $lbl = "TODOref";
             }
-            $_ = '\\' . $1 . ' ' . $lbl . ' '. $2 . "\n";
+            $lbl = &$illref($lbl);
+            $_ = '\\' . $level . ' ' . $lbl . ' '. $title . "\n";
             $_
         }sge;
 
@@ -454,16 +457,16 @@ sub cleanupLSD {
 
         # replace citations by refs
         $text =~ s{\\cite\s*$wbbr}{
-            $_ = $1;
-            s/[:\s-]//g;
-            '[\ref ' . $_ .']'
+            my $ref = $1;
+            $ref = &$illref($ref);
+            '[\ref ' . $ref .']'
         }mge;
 
         # replace bibitems by anchors
         $text =~ s{\\bibitem\s*$wbbr}{
-            $_ = $1;
-            s/[:\s-]//g;
-            '\anchor ' . $_ . ' <b>[' . $_ . "]</b> "
+            my $ref = $1;
+            $ref = &$illref($ref);
+            '\anchor ' . $_ . ' <b>[' . $ref . "]</b> "
         }mge;
         # and get rid of 'bibliography'
         $text =~ s!\\begin{thebibliography}{.*}!(MANUAL INTERVENTION begin bibliography)!;
