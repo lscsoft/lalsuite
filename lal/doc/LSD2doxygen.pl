@@ -482,8 +482,8 @@ sub cleanupLSD {
         # replace \href{} hyperlinks
         $text =~ s!\\href\s*{(.*)}{(.*)}!<a href="$1">$2</a>!g;
 
-        # replace ".~" by ".\ " which is understood by doxygen
-        $text =~ s!.~!.\\ !g;
+        # replace protected space "~" by "\ " which is understood by doxygen
+        $text =~ s!([^\\])~!$1\\ !g;
 
         # remove any empty LaTeX comments
         $text =~ s!^$n*%$n*$!!mg;
