@@ -49,7 +49,7 @@ these files are described below.  They are read using the function
 LALSReadVectorSequence().  If the <b>-o</b> option is not
 specified, results are written to \c stdout; if other options or
 arguments are not specified, the information is taken from
-<tt>#define</tt>d constants.
+<tt>\#define</tt>d constants.
 
 \heading{\c eigenvectorfile:} This file contains the
 eigenvectors of the \f$n\f$-dimensional mismatch metric \f$\mathsf{g}_{ab}\f$
