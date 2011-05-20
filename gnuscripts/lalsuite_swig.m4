@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011
 #
-# serial 5
+# serial 6
 
 # basic version string comparison
 # can only handle numeric versions separated by periods
@@ -94,6 +94,12 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
     # check if swig version is newer than required
     LALSUITE_VERSION_COMPARE([${SWIG_MIN_VERSION}],[${swig_version}],[],[],[
       AC_MSG_ERROR([require swig version >= ${SWIG_MIN_VERSION}])
+    ])
+
+    # check for perl binary
+    AC_PATH_PROGS(PERL,[perl],[])
+    AS_IF([test "x${PERL}" = x],[
+      AC_MSG_ERROR([could not find 'perl' in path])
     ])
 
     # common SWIG language build makefile

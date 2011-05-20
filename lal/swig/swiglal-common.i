@@ -192,6 +192,15 @@
     }
 %}
 
+// swig-check-headers.pl checks that every LAL struct contains either
+// 'SWIGLAL_STRUCT_LALALLOC' or 'SWIGLAL_STRUCT_NO_LALALLOC'; the latter
+// can be used if memory allocation using the LAL memory debugging routines
+// is specifically not desired.
+#define SWIGLAL_STRUCT_NO_LALALLOC()
+%header %{
+  #define SWIGLAL_STRUCT_NO_LALALLOC()
+%}
+
 /////////////// Type conversion helpers ///////////////
 
 // In most cases SWIG will handle the conversion of types between C code

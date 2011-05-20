@@ -69,14 +69,19 @@ $(swig_iface_deps) : $(swig_iface)
 	@echo "#$(swig_iface_deps)" > $@
 include $(swig_iface_deps)
 
+# script which checks headers for correct SWIGLAL constructs
+swig_check_headers = $(top_srcdir)/swig/swig-check-headers.pl
+
 # path where SWIG should look for SWIG interface / LAL header files
 swig_inclpath = $(top_srcdir)/swig \
                 $(top_builddir)/include \
                 $(wildcard $(sort $(SWIG_INCLPATH)))
 
 # generate SWIG wrapping code
-$(swig_wrapfile) : $(swig_iface_deps)
+$(swig_wrapfile) : $(swig_iface_deps) $(swig_check_headers)
 	@cd $(top_builddir)/swig && $(MAKE) iface-links
+	CPP='$(CPP)' $(PERL) $(swig_check_headers) \
+	--include $(top_builddir)/include --interface $(swig_iface)
 	$(SWIG) $(addprefix -D,$(SWIG_SWIG_DEFINES)) \
         -module $(swig_wrapname) -$(swig_language) -c++ $(swig_language_opts) \
 	-MD -MF $(swig_iface_deps) -MT $(swig_wrapfile) \
