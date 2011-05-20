@@ -456,3 +456,175 @@ swiglal_conv_ctype(COMPLEX16);
   }
 
 }
+
+/////////////// Vector / matrix type conversion ///////////////
+
+// The following four macros convert a one-dimension (_vector) or
+// two-dimensional (_matrix_) C array to (_out) or from (_in) a
+// representation of the same data in the scripting language.
+// The macros require the following functions to be implemented
+// for the target scripting language:
+//
+//  * swiglal_object_valid(v) returns whether its argument is a valid
+//    scripting language object, e.g. whether it is a non-NULL pointer
+//
+//  * swiglal_object_free(v) frees any resources associated with a
+//    scripting language object, e.g. by decreasing its reference count
+//
+//  * swiglal_is_vector(v) and swiglal_is_matrix(v) return whether
+//    their argument can be interpreted as a vector or a matrix,
+//    respectively, in the target scripting language.
+//
+//  * swiglal_vector_get(v, i) and swiglal_vector_set(v, i, vi)
+//    get the (i)th element of the scripting language vector v, and
+//    assign the scripting language object vi to the (i)th element of v.
+//
+//  * swiglal_matrix_get(v, i, j) and swiglal_matrix_set(v, i, j, vij)
+//    get the (i,j)th element of the scripting language vector v, and
+//    assign the scripting language object vij to the (i,j)th element of v.
+//
+//  * swiglal_vector_new<TYPE>(n) and swiglal_matrix_new<TYPE>(ni, nj)
+//    return a scripting language object containing a new vector of
+//    length n, and a new matrix with ni rows and nj columns respectively,
+//    and which can contain elements of C type TYPE.
+//
+// NOTE: swiglal_vector_get() and swiglal_matrix_get() must return *new*
+// scripting language objects (i.e. objects that are owned by the SWIG
+// wrapping code), as swiglal_object_free() will be called to destroy them
+// after use.
+//
+// The macros take the following arguments:
+//  TYPE:
+//    the type of an element of the C array.
+//  NAME:
+//    the name of the C array variable, e.g. 'data'.
+//  DATA:
+//    an expression accessing the C array variable, e.g. 'arg1->data'.
+//  NI:
+//    the length of the vector / the number of rows of the matrix.
+//  NJ:
+//    the number of columns of the matrix.
+//  PTR_TO_DATA_I(DATA, I, NI):
+//    the name of a macro which return a pointer to the (I)th
+//    element of the vector DATA.
+//  PTR_TO_DATA_IJ(DATA, I, NI, J, NJ):
+//    the name of a macro which returns a pointer to the (I,J)th
+//    element of the matrix DATA.
+//  FLAGS:
+//    bit-flags to pass to swiglal_as_val
+
+// When creating a new scripting language vector/matrix, these
+// typemaps determine what the representing C type should be:
+// for enumeration types use int; otherwise use the supplied
+// type, stripped of any const qualifiers (using '$ltype').
+%typemap(swiglal_new_type)      SWIGTYPE "$ltype";
+%typemap(swiglal_new_type) enum SWIGTYPE "int";
+
+// Convert a scripting language vector to a C vector
+%define swiglal_vector_convert_in(TYPE, NAME, DATA, NI, PTR_TO_DATA_I, FLAGS)
+  // Check that the C vector has elements
+  if ((NI) == 0) {
+    swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NAME<<"'");
+  }
+  // Check that the scripting language $input is a vector with the same dimensions
+  if (!swiglal_is_vector($input)) {
+    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NAME<<"' must be a vector");
+  }
+  if (swiglal_vector_length($input) != (NI)) {
+    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NAME<<"' must have length "<<(NI));
+  }
+  // Copy the scripting language vector $input to the C vector DATA
+  for (size_t i = 0; i < (NI); ++i) {
+    SWIG_Object elem = swiglal_vector_get($input, i);
+    int ecode = swiglal_call_as_val(TYPE)(elem, PTR_TO_DATA_I(DATA, i, NI), $1_descriptor, FLAGS);
+    swiglal_object_free(elem);
+    if (!SWIG_IsOK(ecode)) {
+      %argument_fail(ecode, "$type", $symname, $argnum);
+    }
+  }
+%enddef // swiglal_vector_convert_in
+
+// Convert a C vector to a scripting language vector
+%define swiglal_vector_convert_out(TYPE, NAME, DATA, NI, PTR_TO_DATA_I)
+  // Check that the C vector has elements
+  if ((NI) == 0) {
+    swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NAME<<"'");
+  }
+  // Create a new scripting language vector $result
+  $result = swiglal_new_vector<$typemap(swiglal_new_type, TYPE) >(NI);
+  if (!swiglal_object_valid($result)) {
+    swiglal_exception(SWIG_RuntimeError, "failed to create a new vector for '"<<#NAME<<"'");
+  }
+  // Copy the C vector DATA the scripting language vector $result
+  for (size_t i = 0; i < (NI); ++i) {
+    if (!swiglal_vector_set($result, i, swiglal_call_from(TYPE)(PTR_TO_DATA_I(DATA, i, NI), $1_descriptor))) {
+      %argument_fail(SWIG_RuntimeError, "$type", $symname, $argnum);
+    }
+  }
+%enddef // swiglal_vector_convert_out
+
+// Convert a scripting language matrix to a C matrix
+%define swiglal_matrix_convert_in(TYPE, NAME, DATA, NI, NJ, PTR_TO_DATA_IJ, FLAGS)
+  // Check that the C matrix has elements
+  if ((NI) == 0 || (NJ) == 0) {
+    swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NAME<<"'");
+  }
+  // Check that the scripting language $input is a matrix with the same dimensions
+  if (!swiglal_is_matrix($input)) {
+    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NAME<<"' must be a matrix");
+  }
+  if (swiglal_matrix_rows($input) != (NI)) {
+    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NAME<<"' must have "<<(NI)<<" rows");
+  }
+  if (swiglal_matrix_cols($input) != (NJ)) {
+    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NAME<<"' must have "<<(NJ)<<" columns");
+  }
+  // Copy the scripting language matrix $input to the C matrix DATA
+  for (size_t i = 0; i < (NI); ++i) {
+    for (size_t j = 0; j < (NJ); ++j) {
+      SWIG_Object elem = swiglal_matrix_get($input, i, j);
+      int ecode = swiglal_call_as_val(TYPE)(elem, PTR_TO_DATA_IJ(DATA, i, NI, j, NJ), $1_descriptor, FLAGS);
+      swiglal_object_free(elem);
+      if (!SWIG_IsOK(ecode)) {
+        %argument_fail(ecode, "$type", $symname, $argnum);
+      }
+    }
+  }
+%enddef // swiglal_matrix_convert_in
+
+// Convert a C matrix to a scripting language matrix
+%define swiglal_matrix_convert_out(TYPE, NAME, DATA, NI, NJ, PTR_TO_DATA_IJ)
+  // Check that the C matrix has elements
+  if ((NI) == 0 || (NJ) == 0) {
+    swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NAME<<"'");
+  }
+  // Create a new scripting language matrix $result
+  $result = swiglal_new_matrix<$typemap(swiglal_new_type, TYPE) >(NI, NJ);
+  if (!swiglal_object_valid($result)) {
+    swiglal_exception(SWIG_RuntimeError, "failed to create a new matrix for '"<<#NAME<<"'");
+  }
+  // Copy the C matrix DATA the scripting language matrix $result
+  for (size_t i = 0; i < (NI); ++i) {
+    for (size_t j = 0; j < (NJ); ++j) {
+      if (!swiglal_matrix_set($result, i, j, swiglal_call_from(TYPE)(PTR_TO_DATA_IJ(DATA, i, NI, j, NJ), $1_descriptor))) {
+        %argument_fail(SWIG_RuntimeError, "$type", $symname, $argnum);
+      }
+    }
+  }
+%enddef // swiglal_matrix_convert_out
+
+// These macros return pointers to the (I)th element of the 1-D array DATA,
+// and the (I,J)th element of the 2-D array DATA respectively. The arrays
+// are assumed to be statically declared, e.g:
+//   int a[3];
+//   double b[2][5];
+#define swiglal_fix_1Darray_ptr(DATA, I, NI)          &((DATA)[I])
+#define swiglal_fix_2Darray_ptr(DATA, I, NI, J, NJ)   &((DATA)[I][J])
+
+// These macros return pointers to the (I)th element of the vector SELF->DATA,
+// and the (I,J)th element of the matrix SELF->DATA respectively. The arrays
+// are assumed to be dynamically allocated, e.g.:
+//   int *a = calloc(3, sizeof(int));
+//   double *b = calloc(2 * 5, sizeof(double));
+#define swiglal_dyn_1Darray_ptr(DATA, I, NI)          &((DATA)[I])
+#define swiglal_dyn_2Darray_ptr(DATA, I, NI, J, NJ)   &((DATA)[(I)*(NJ)+(J)])

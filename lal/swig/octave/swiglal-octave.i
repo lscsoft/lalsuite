@@ -148,3 +148,130 @@
 %swig_cplxdbl_convn(gsl_complex, gsl_complex_rect, GSL_REAL, GSL_IMAG);
 %swig_cplxflt_convn(COMPLEX8, XLALCOMPLEX8Rect, LAL_REAL, LAL_IMAG);
 %swig_cplxdbl_convn(COMPLEX16, XLALCOMPLEX16Rect, LAL_REAL, LAL_IMAG);
+
+// Return true, since an octave_value is always a valid object.
+#define swiglal_object_valid(OBJ)   true
+
+// Do nothing, since an octave_value is automatically destroyed.
+#define swiglal_object_free(OBJ)   /*nothing*/
+
+// Functions for manipulating vectors in Octave.
+%header %{
+
+  // Return whether an octave_value is a non-zero-length vector,
+  // i.e. whether it has 2 dimensions (all octave_value array
+  // objects have at least 2 dimensions), one of which  must be
+  // of size 1, and the other must be of non-zero size.
+  SWIGINTERN bool swiglal_is_vector(const octave_value& v) {
+    return v.ndims() == 2 &&
+      ((v.rows() == 1 && v.columns() >= 1) ||
+       (v.rows() >= 1 && v.columns() == 1));
+  }
+
+  // Return the length of an octave_value vector.
+  SWIGINTERN size_t swiglal_vector_length(const octave_value& v) {
+    return v.length();
+  }
+
+  // Get the (i)th element of an octave_value vector.
+  SWIGINTERN octave_value swiglal_vector_get(octave_value v, const size_t i) {
+    std::list<octave_value_list> idx(1);
+    idx.front()(0) = i + 1;
+    return v.subsref(v.is_cell() ? "{" : "(", idx);
+  }
+
+  // Set the (i)th element of an octave_value vector to vi.
+  SWIGINTERN bool swiglal_vector_set(octave_value& v, const size_t i, octave_value vi) {
+    std::list<octave_value_list> idx(1);
+    idx.front()(0) = i + 1;
+    v = v.subsasgn(v.is_cell() ? "{" : "(", idx, vi);
+    return true;
+  }
+
+  // Create a new octave_value vector for a general type.
+  // We return a one-dimensional cell array, so that it can
+  // contain arbitrary data such as swig_type-wrapped pointers.
+  template<class TYPE > SWIGINTERN octave_value swiglal_new_vector(const size_t n) {
+    return octave_value(Cell(dim_vector(1, n)));
+  }
+
+%}
+
+// Functions for manipulating matrices in Octave.
+%header %{
+
+  // Return whether an octave_value is a non-zero-size matrix,
+  // i.e. whether it has 2 dimensions, each of non-zero size.
+  SWIGINTERN bool swiglal_is_matrix(const octave_value& v) {
+    return v.ndims() == 2 &&
+      v.rows() >= 1 && v.columns() >= 1;
+  }
+
+  // Return the number of rows of an octave_value matrix.
+  SWIGINTERN size_t swiglal_matrix_rows(const octave_value& v) {
+    return v.rows();
+  }
+
+  // Return the number of columns of an octave_value matrix.
+  SWIGINTERN size_t swiglal_matrix_cols(const octave_value& v) {
+    return v.columns();
+  }
+
+  // Get the (i,j)th element of an octave_value matrix.
+  SWIGINTERN octave_value swiglal_matrix_get(octave_value v, const size_t i, const size_t j) {
+    std::list<octave_value_list> idx(1);
+    idx.front()(0) = i + 1;
+    idx.front()(1) = j + 1;
+    return v.subsref(v.is_cell() ? "{" : "(", idx);
+  }
+
+  // Set the (i,j)th element of an octave_value matrix to vij.
+  SWIGINTERN bool swiglal_matrix_set(octave_value& v, const size_t i, const size_t j, octave_value vij) {
+    std::list<octave_value_list> idx(1);
+    idx.front()(0) = i + 1;
+    idx.front()(1) = j + 1;
+    v = v.subsasgn(v.is_cell() ? "{" : "(", idx, vij);
+    return true;
+  }
+
+  // Create a new octave_value matrix for a general type.
+  // We return a two-dimensional cell array, so that it can
+  // contain arbitrary data such as swig_type-wrapped pointers.
+  template<class TYPE > SWIGINTERN octave_value swiglal_new_matrix(const size_t ni, const size_t nj) {
+    return octave_value(Cell(dim_vector(ni, nj)));
+  }
+
+%}
+
+// Create new octave_value vectors and matrices of a specific TYPE.
+%define swiglal_new_oct_vecmat(TYPE, CTOR)
+  %header %{
+    template<> octave_value swiglal_new_vector<TYPE >(const size_t n) {
+      return octave_value(CTOR(dim_vector(1, n)));
+    }
+    template<> octave_value swiglal_new_matrix<TYPE >(const size_t ni, const size_t nj) {
+      return octave_value(CTOR(dim_vector(ni, nj)));
+    }
+  %}
+%enddef
+
+// Create new octave_value vectors and matrices for integer types
+%define swiglal_new_oct_int_vecmat(TYPE)
+  swiglal_new_oct_vecmat(TYPE, intNDArray<octave_int<TYPE > >)
+%enddef
+swiglal_new_oct_int_vecmat(int8_t);
+swiglal_new_oct_int_vecmat(uint8_t);
+swiglal_new_oct_int_vecmat(int16_t);
+swiglal_new_oct_int_vecmat(uint16_t);
+swiglal_new_oct_int_vecmat(int32_t);
+swiglal_new_oct_int_vecmat(uint32_t);
+swiglal_new_oct_int_vecmat(int64_t);
+swiglal_new_oct_int_vecmat(uint64_t);
+
+// Create new octave_value vectors and matrices for real and complex types
+swiglal_new_oct_vecmat(float, FloatMatrix);
+swiglal_new_oct_vecmat(double, Matrix);
+swiglal_new_oct_vecmat(gsl_complex_float, FloatComplexMatrix);
+swiglal_new_oct_vecmat(gsl_complex, ComplexMatrix);
+swiglal_new_oct_vecmat(COMPLEX8, FloatComplexMatrix);
+swiglal_new_oct_vecmat(COMPLEX16, ComplexMatrix);
