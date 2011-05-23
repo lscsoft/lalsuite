@@ -88,6 +88,7 @@ Optional OPTIONS:\n \
 [--flow NUM\t:\t:Set low frequency cutoff (default 40Hz)]\n\
 [--chimin NUM\t:\tMin value of chi spin parameter]\n\
 [--chimax NUM\t:\tMax value of chi spin parameter]\n\
+[--snrpath PATH\t:\tOutput SNRs to a file in PATH]\n\
 \n\n \
 Optional PhenSpinTaylorRD_template OPTIONS:\n \
 [--onespin_flag INT\t:\tSet S2=(0,0,0) in PhenSpinTaylorRD template waveform]\n \
@@ -130,6 +131,7 @@ CHAR **ChannelNames = NULL;
 CHAR **IFOnames = NULL;
 CHAR UserChannel[512];
 CHAR **UserChannelNames = NULL;
+CHAR *SNRpath = NULL;
 int nChannel=0;
 UINT4 nIFO=0;
 int fakeinj =0;
@@ -327,6 +329,7 @@ void initialise(int argc, char *argv[]){
 		{"chimax",required_argument,0,91},
 		{"m_c_min",required_argument,0,99},
 		{"mc_flag",no_argument,0,100},
+		{"snrfile",required_argument,0,123},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
@@ -440,6 +443,10 @@ void initialise(int argc, char *argv[]){
 		case 21:
 			pinned_params=calloc(strlen(optarg)+1 ,sizeof(char));
 			memcpy(pinned_params,optarg,strlen(optarg)+1);
+			break;
+		case 123:
+			SNRpath = calloc(strlen(optarg)+1,sizeof(char));
+			memcpy(SNRpath,optarg,strlen(optarg)+1);
 			break;
 		case 'V':
 			fprintf(stdout,"LIGO/LSC Bayesian parameter estimation and evidence calculation code\nfor CBC signals, using nested sampling algorithm.\nJohn Veitch <john.veitch@ligo.org>\n");
@@ -1084,7 +1091,7 @@ int main( int argc, char *argv[])
 	XLALDestroyRandomParams(datarandparam);
 	} /* End loop over IFOs */
     
-    if(NULL!=injXMLFile && fakeinj==0) {
+    if(NULL!=injXMLFile && fakeinj==0 && SNRpath!=NULL) {
     /* Print the SNRs in a file */
     PrintSNRsToFile(SNRs,injTable,&inputMCMC);
     }
@@ -1830,24 +1837,21 @@ int checkParamInList(const char *list, const char *param)
 
 void PrintSNRsToFile(REAL8* SNRs,SimInspiralTable *inj_table,LALMCMCInput *inputMCMC){
 /* open the SNR file */
-    struct stat st;
     char SnrName[70];
     char ListOfIFOs[10];
     REAL8 NetSNR=0.0;
-    sprintf(ListOfIFOs,"");    
+    sprintf(ListOfIFOs,"");
 
     for (UINT4 det_i=0;det_i<nIFO;det_i++){
          sprintf(ListOfIFOs,"%s%s",ListOfIFOs,inputMCMC->ifoID[det_i]);
         }
     
-    if (stat("./SNR",&st) == 0){
-        sprintf(SnrName,"./SNR/snr_%s_%10.1f.dat",ListOfIFOs,(REAL8) inj_table->geocent_end_time.gpsSeconds+ (REAL8) inj_table->geocent_end_time.gpsNanoSeconds*1.0e-9);
+    sprintf(SnrName,"%s/snr_%s_%10.1f.dat",SNRpath,ListOfIFOs,(REAL8) inj_table->geocent_end_time.gpsSeconds+ (REAL8) inj_table->geocent_end_time.gpsNanoSeconds*1.0e-9);
+    FILE * snrout = fopen(SnrName,"w");
+    if(!snrout){
+	fprintf(stderr,"Unable to open the path %s for writing SNR files\n",SNRpath);
+	exit(1);
     }
-    else {
-        sprintf(SnrName,"snr_%s_%10.1f.dat",ListOfIFOs,(REAL8) inj_table->geocent_end_time.gpsSeconds+ (REAL8) inj_table->geocent_end_time.gpsNanoSeconds*1.0e-9);
-    }
-    
-    FILE *snrout=fopen(SnrName,"w");
     for (UINT4 det_i=0;det_i<nIFO;det_i++){
         fprintf(snrout,"%s:\t",inputMCMC->ifoID[det_i]);
         fprintf(snrout,"%4.2f\n",SNRs[det_i]);
