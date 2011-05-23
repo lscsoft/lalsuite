@@ -758,7 +758,7 @@ void initVariables(LALInferenceRunState *state)
 	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	ppt=LALInferenceGetProcParamVal(commandLine, "--noSpin");
-	if((approx==SpinTaylor ||approx==SpinTaylorFrameless) && !ppt){
+	if((approx==SpinTaylor || approx==SpinTaylorFrameless) && !ppt){
 		
 
       ppt=LALInferenceGetProcParamVal(commandLine, "--spinAligned");
@@ -862,6 +862,106 @@ void initVariables(LALInferenceRunState *state)
 		LALInferenceAddMinMaxPrior(priorArgs, "spin2",     &tmpMin, &tmpMax,   REAL8_t);
     
 	}
+  
+  ppt=LALInferenceGetProcParamVal(commandLine, "--TaylorF2ppE");
+	if(approx==TaylorF2 && ppt){
+    
+    REAL8 start_alpha, start_A, start_a, start_beta, start_B, start_b;
+    
+    tmpMin = -1000;
+    tmpMax = 1000;
+    start_alpha = tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
+    ppt=LALInferenceGetProcParamVal(commandLine,"--ppEalpha");
+    if (ppt) {
+      start_alpha = atof(ppt->value);
+    }    
+    ppt=LALInferenceGetProcParamVal(commandLine,"--fixppEalpha");
+		if(ppt){
+			LALInferenceAddVariable(currentParams, "ppEalpha",     &start_alpha,            REAL8_t, PARAM_FIXED);
+			if(MPIrank==0) fprintf(stdout,"ppE alpha fixed and set to %f\n",start_alpha);
+		}else{
+			LALInferenceAddVariable(currentParams, "ppEalpha",     &start_alpha,            REAL8_t, PARAM_LINEAR);
+		}
+    LALInferenceAddMinMaxPrior(priorArgs, "ppEalpha",     &tmpMin, &tmpMax,   REAL8_t);
+    
+    start_beta = tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
+    ppt=LALInferenceGetProcParamVal(commandLine,"--ppEbeta");
+    if (ppt) {
+      start_beta = atof(ppt->value);
+    }    
+    ppt=LALInferenceGetProcParamVal(commandLine,"--fixppEbeta");
+		if(ppt){
+			LALInferenceAddVariable(currentParams, "ppEbeta",     &start_beta,            REAL8_t, PARAM_FIXED);
+			if(MPIrank==0) fprintf(stdout,"ppE beta fixed and set to %f\n",start_beta);
+		}else{
+			LALInferenceAddVariable(currentParams, "ppEbeta",     &start_beta,            REAL8_t, PARAM_LINEAR);
+		}
+    LALInferenceAddMinMaxPrior(priorArgs, "ppEbeta",     &tmpMin, &tmpMax,   REAL8_t);
+    
+    tmpMin = -3;
+    tmpMax = 3;
+    start_A = tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
+    ppt=LALInferenceGetProcParamVal(commandLine,"--ppEA");
+    if (ppt) {
+      start_A = atof(ppt->value);
+    }    
+    ppt=LALInferenceGetProcParamVal(commandLine,"--fixppEA");
+		if(ppt){
+			LALInferenceAddVariable(currentParams, "ppEA",     &start_A,            REAL8_t, PARAM_FIXED);
+			if(MPIrank==0) fprintf(stdout,"ppE A fixed and set to %f\n",start_A);
+		}else{
+			LALInferenceAddVariable(currentParams, "ppEA",     &start_A,            REAL8_t, PARAM_LINEAR);
+		}
+    LALInferenceAddMinMaxPrior(priorArgs, "ppEA",     &tmpMin, &tmpMax,   REAL8_t);
+    
+    start_B = tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
+    ppt=LALInferenceGetProcParamVal(commandLine,"--ppEB");
+    if (ppt) {
+      start_B = atof(ppt->value);
+    }    
+    ppt=LALInferenceGetProcParamVal(commandLine,"--fixppEB");
+		if(ppt){
+			LALInferenceAddVariable(currentParams, "ppEB",     &start_B,            REAL8_t, PARAM_FIXED);
+			if(MPIrank==0) fprintf(stdout,"ppE B fixed and set to %f\n",start_B);
+		}else{
+			LALInferenceAddVariable(currentParams, "ppEB",     &start_B,            REAL8_t, PARAM_LINEAR);
+		}
+    LALInferenceAddMinMaxPrior(priorArgs, "ppEB",     &tmpMin, &tmpMax,   REAL8_t);
+    
+    tmpMin = -3.0;
+    tmpMax = 2.0/3.0;
+    start_a = tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
+    ppt=LALInferenceGetProcParamVal(commandLine,"--ppEa");
+    if (ppt) {
+      start_a = atof(ppt->value);
+    }    
+    ppt=LALInferenceGetProcParamVal(commandLine,"--fixppEa");
+		if(ppt){
+			LALInferenceAddVariable(currentParams, "ppEa",     &start_a,            REAL8_t, PARAM_FIXED);
+			if(MPIrank==0) fprintf(stdout,"ppE a fixed and set to %f\n",start_a);
+		}else{
+			LALInferenceAddVariable(currentParams, "ppEa",     &start_a,            REAL8_t, PARAM_LINEAR);
+		}
+    LALInferenceAddMinMaxPrior(priorArgs, "ppEa",     &tmpMin, &tmpMax,   REAL8_t);
+
+    tmpMin = -4.5;
+    tmpMax = 1.0;
+    start_b = tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
+    ppt=LALInferenceGetProcParamVal(commandLine,"--ppEb");
+    if (ppt) {
+      start_b = atof(ppt->value);
+    }    
+    ppt=LALInferenceGetProcParamVal(commandLine,"--fixppEb");
+		if(ppt){
+			LALInferenceAddVariable(currentParams, "ppEb",     &start_b,            REAL8_t, PARAM_FIXED);
+			if(MPIrank==0) fprintf(stdout,"ppE b fixed and set to %f\n",start_b);
+		}else{
+			LALInferenceAddVariable(currentParams, "ppEb",     &start_b,            REAL8_t, PARAM_LINEAR);
+		}
+    LALInferenceAddMinMaxPrior(priorArgs, "ppEb",     &tmpMin, &tmpMax,   REAL8_t);
+    
+  }  
+  
   
         /* Make sure that our initial value is within the
            prior-supported volume. */

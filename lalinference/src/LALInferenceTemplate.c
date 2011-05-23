@@ -650,6 +650,27 @@ void templateLAL(LALInferenceIFOData *IFOdata)
       IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) n) * deltaT;
       IFOdata->freqModelhPlus->data->data[i].im *= ((REAL8) n) * deltaT;
     }
+    if(LALInferenceCheckVariable(IFOdata->modelParams, "ppEalpha") && LALInferenceCheckVariable(IFOdata->modelParams, "ppEA") &&
+       LALInferenceCheckVariable(IFOdata->modelParams, "ppEa") && LALInferenceCheckVariable(IFOdata->modelParams, "ppEbeta") &&
+       LALInferenceCheckVariable(IFOdata->modelParams, "ppEB") && LALInferenceCheckVariable(IFOdata->modelParams, "ppEb")){
+      
+      REAL8 alpha, A, a, beta, B, b, ppE_amp, ppE_phase, cos_ppE_phase, sin_ppE_phase;
+      alpha =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEalpha");
+      A     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEA");
+      a     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEa");
+      beta  =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEbeta");
+      B     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEB");
+      b     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEb");
+      
+      ppE_amp = 1.0+alpha*pow(4.0*eta,A)*pow(LAL_PI*mc*(1.0/deltaT),a);
+      ppE_phase = beta*pow(4.0*eta,B)*pow(LAL_PI*mc*(1.0/deltaT),b);
+      cos_ppE_phase = cos(ppE_phase);
+      sin_ppE_phase = sin(ppE_phase);
+      
+      IFOdata->freqModelhPlus->data->data[i].re = (ppE_amp)*(IFOdata->freqModelhPlus->data->data[i].re*cos_ppE_phase-IFOdata->freqModelhPlus->data->data[i].im*sin_ppE_phase);
+      IFOdata->freqModelhPlus->data->data[i].im = (ppE_amp)*(IFOdata->freqModelhPlus->data->data[i].re*sin_ppE_phase+IFOdata->freqModelhPlus->data->data[i].im*cos_ppE_phase);
+
+    }
   }
 
   /* (now frequency-domain plus-waveform has been computed, either directly or via FFT)   */
