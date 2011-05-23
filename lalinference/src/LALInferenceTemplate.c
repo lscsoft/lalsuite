@@ -662,14 +662,15 @@ void templateLAL(LALInferenceIFOData *IFOdata)
       B     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEB");
       b     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEb");
       
-      ppE_amp = 1.0+alpha*pow(4.0*eta,A)*pow(LAL_PI*mc*(1.0/deltaT),a);
-      ppE_phase = beta*pow(4.0*eta,B)*pow(LAL_PI*mc*(1.0/deltaT),b);
-      cos_ppE_phase = cos(ppE_phase);
-      sin_ppE_phase = sin(ppE_phase);
+      for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
+        ppE_amp = 1.0+alpha*pow(4.0*eta,A)*pow(LAL_PI*mc*(IFOdata->fLow*0.9 + ((REAL8) i)*IFOdata->freqData->deltaF),a);
+        ppE_phase = beta*pow(4.0*eta,B)*pow(LAL_PI*mc*(IFOdata->fLow*0.9 + ((REAL8) i)*IFOdata->freqData->deltaF),b);
+        cos_ppE_phase = cos(ppE_phase);
+        sin_ppE_phase = sin(ppE_phase);
       
-      IFOdata->freqModelhPlus->data->data[i].re = (ppE_amp)*(IFOdata->freqModelhPlus->data->data[i].re*cos_ppE_phase-IFOdata->freqModelhPlus->data->data[i].im*sin_ppE_phase);
-      IFOdata->freqModelhPlus->data->data[i].im = (ppE_amp)*(IFOdata->freqModelhPlus->data->data[i].re*sin_ppE_phase+IFOdata->freqModelhPlus->data->data[i].im*cos_ppE_phase);
-
+        IFOdata->freqModelhPlus->data->data[i].re = (ppE_amp)*(IFOdata->freqModelhPlus->data->data[i].re*cos_ppE_phase-IFOdata->freqModelhPlus->data->data[i].im*sin_ppE_phase);
+        IFOdata->freqModelhPlus->data->data[i].im = (ppE_amp)*(IFOdata->freqModelhPlus->data->data[i].re*sin_ppE_phase+IFOdata->freqModelhPlus->data->data[i].im*cos_ppE_phase);
+      }
     }
   }
 
