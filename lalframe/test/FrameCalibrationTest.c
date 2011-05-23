@@ -21,9 +21,7 @@
  * \author Brown, D. A.
  * \file
  *
- * \heading{Program \ref FrameCalibrationTest.c}
- *
- * Tests the hig-level function to obtain an up-to-date calibration from
+ * \brief Tests the hig-level function to obtain an up-to-date calibration from
  * frame files.
  *
  * \heading{Usage}
@@ -73,15 +71,12 @@
  * calibration home page.
  *
  * \heading{Exit codes}
- * <table><tr><td>
- *
- *  Code</td><td>Explanation</td></tr>
-<tr><td> *
- * \tt 0</td><td>Success, normal exit.</td></tr>
-<tr><td> * \tt 1</td><td>Subroutine failed.</td></tr>
-<tr><td> * \tt77</td><td>Ignored failure: Test frame data not found.</td></tr>
-<tr><td> *
- * </td></tr></table>
+ * <table>
+ * <tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>\c 0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>\c 1</td><td>Subroutine failed.</td></tr>
+ * <tr><td>\c 77</td><td>Ignored failure: Test frame data not found.</td></tr>
+ * </table>
  *
  * \heading{Uses}
  * \heading{Notes}

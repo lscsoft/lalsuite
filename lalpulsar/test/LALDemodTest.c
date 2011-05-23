@@ -22,10 +22,7 @@
 \file
 \ingroup pulsarTODO
 
-   \heading{Program \ref LALDemodTest.c}
-   \label{ss:LALDemodTest.c}
-
-   Performs required tests of <tt>LALDemod()</tt>.
+\brief Performs required tests of LALDemod().
 
    \heading{Usage}
    \code
@@ -37,11 +34,11 @@
    This routine performs tests on the routine <tt>LALDemod()</tt>.
    Options:
    <ul>
-   <li> <tt>-i</tt> -- the input data file (default is 'in.data'; an example is included, format below)
-   </li><li> <tt>-n</tt> -- add zero-mean Gaussian noise to the signal
-   </li><li> <tt>-d <gap></tt> -- simulate gaps in the data.  The number <tt><gaps></tt> refers to the integral number of SFT timescales between adjacent timestamps.
-   </li><li> <tt>-o</tt> -- print out result data files
-   </li></ul>
+   <li> <tt>-i</tt> -- the input data file (default is 'in.data'; an example is included, format below)</li>
+   <li> <tt>-n</tt> -- add zero-mean Gaussian noise to the signal</li>
+   <li> <tt>-d \<gap\></tt> -- simulate gaps in the data.  The number <tt>\<gaps\></tt> refers to the integral number of SFT timescales between adjacent timestamps.</li>
+   <li> <tt>-o</tt> -- print out result data files</li>
+   </ul>
 
    Structure:
    In more detail, let us begin with a discussion of the structure of the test
@@ -76,7 +73,9 @@
    template source right ascension (alpha) -- float (value in DEGREES)
    template source declination (delta) -- float (value in DEGREES)
    \endcode
-   Note: Above, the *signal* spindown parameters are scaled by the intrinsic frequency, while the *template* spindown parameters are not.  This is due to the difference in definitions between the SimulateCoherentGW() package, which generates the signal, and this package.
+   Note: Above, the *signal* spindown parameters are scaled by the intrinsic frequency, while the
+   *template* spindown parameters are not.  This is due to the difference in definitions between the
+   SimulateCoherentGW() package, which generates the signal, and this package.
 
    </li><li> The next module in the test code, which is optionally executed with
    the '<tt>-n</tt>' switch, creates noise using LALs
@@ -89,8 +88,9 @@
    factor of \c SNR, which is specified in the input data file.
 
    </li><li> The next module to be invoked creates a time series, according to
-   the standard model for pulsars with spindown.  This is done by using the <tt>LALGenerateTaylorCW()</tt> and <tt>LALSimulateCoherentGW()</tt> functions.  This time series undergoes
-   an FFT, and this transformed data then constitutes the SFT data to be
+   the standard model for pulsars with spindown.  This is done by using the
+   <tt>LALGenerateTaylorCW()</tt> and <tt>LALSimulateCoherentGW()</tt> functions.  This time series
+   undergoes an FFT, and this transformed data then constitutes the SFT data to be
    input to the demodulation code.  The fake signal data is characterized
    by an intrinsic frequency at the beginning of the observation plus some
    other source parameters.  The DeFT is produced in a band \c f0Band
@@ -155,8 +155,8 @@
    reason being that they are rounded to the nearest multiple of the SFT time
    baseline.
 
-   Note that use is made of the <tt>LALBarycenter()</tt> routine (see section
-\TODOref{s_LALBarycenter_h}, which (among other things) provides,  at any given
+   Note that use is made of the <tt>LALBarycenter()</tt> routine (see
+   \ref LALBarycenter.h), which (among other things) provides,  at any given
    time, the actual instantaneous position and velocity of a  detector at any
    specified location of the Earth with respect to the SSB.
 
@@ -170,7 +170,7 @@
    for the demodulation routine are assigned from values previously calculated in
    the test code.  Similarly, parameters for the <tt>LALComputeSky()</tt> routine are
    assigned.  This routine computes the coefficients \f$A_{s\alpha}\f$ and
-   \f$B_{s\alpha}\f$ (see section\TODOref{s_ComputeSky_h} of the spindown parameters
+   \f$B_{s\alpha}\f$ (see \ref ComputeSky.h) of the spindown parameters
    for the phase model weve assumed.  These coefficients are used within the
    <tt>LALDemod()</tt> routine itself. Since they only depend on the template sky
    position, in a search over many different spin-down parameters they are
@@ -178,7 +178,8 @@
    routine is called, to calculate the amplitude modulation filter information.  Finally, at last, the
    demodulation routine itself is called, and, if the command line option
    '<tt>-o</tt>' is used,  output are several data files containing demodulated
-   data (these are by default named '<tt>xhat_#</tt>').  These output files have two columns, one for the value of the periodogram and one for the frequency.
+   data (these are by default named '<tt>xhat_#</tt>').  These output files have two columns, one
+   for the value of the periodogram and one for the frequency.
 
    </li></ul>
 

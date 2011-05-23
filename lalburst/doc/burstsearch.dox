@@ -14,7 +14,9 @@ Functions for the implementation of the standard burst searches:
 
 <li> A wrapper for the SLOPE algorithm.</li>
 
-<li> A set of functions to implement the excess power search technique which was suggested in Ref.~\ref fh1998 and later independently invented in Ref.~\ref acdhp1999.  The implementation here is described in detail in Ref.~\ref abcf2000.
+<li> A set of functions to implement the excess power search technique which was suggested in
+Ref.\ [\ref fh1998] and later independently invented in Ref.\ [\ref acdhp1999].  The implementation here
+is described in detail in Ref.\ [\ref abcf2000].
 </li>
 </ul>
 
@@ -127,9 +129,6 @@ the above correspondence].</dd>
 \heading{struct \c RealDFTParams}
 
 
-
-
-
 <dl>
 <dt><tt>WindowType windowType</tt></dt><dd></dd>
 <dt><tt>REAL4Vector *window</tt></dt><dd></dd>
@@ -141,9 +140,6 @@ the above correspondence].</dd>
 \heading{struct \c ComplexDFTParams}
 
 
-
-
-
 <dl>
 <dt><tt>WindowType  windowType</tt></dt><dd></dd>
 <dt><tt>REAL4Vector   *window</tt></dt><dd></dd>
@@ -153,9 +149,6 @@ the above correspondence].</dd>
 
 
 \heading{struct \c COMPLEX8TimeFrequencyPlane}
-
-
-
 
 This structure has some fields that also appear in the structures
 \c REAL4TimeSeries and \c COMPLEX8FrequencySeries.
@@ -182,10 +175,6 @@ numbers \f$H_{J\Sigma}\f$.
 
 
 \heading{struct \c VerticalTFTransformIn}
-
-
-
-
 
 <dl>
 <dt><tt>RealDFTParams  *dftParams</tt></dt><dd></dd>
@@ -235,35 +224,5 @@ LALWindow
 \endcode
 
 \heading{Notes}
-
-
-
-\begin{thebibliography}{0}
-
-\bibitem{ab:1999}
-Warren G. Anderson and R. Balasubramanian, <em>Time-frequency
-detection of gravitational waves</em>, gr-qc/9905023, and references
-therein.
-
-\bibitem{fh:1998}
-\'Eanna~\'E.~Flanagan and S. A. Hughes, Phys. Rev. D \c 57,
-4535-4565 (1998) (also gr-qc/9701039).
-
-\bibitem{acdhp:1999}
-N. Arnaud, F. Cavalier, M. Davier, P. Hello, and T. Pradier,
-<em>Triggers for the Detection of Gravitational Wave Bursts</em>,
-gr-qc/9903035.
-
-\bibitem{abcf:2000}
-Warren G. Anderson, Patrick R. Brady, Jolien D. E. Creighton and
-{\'E}anna {\'E}. Flanagan,
-<em>An excess power statistic for detection of burst sources of
-gravitational radiation</em>, PRD 63, 042003 (2001) (gr-qc/0008066).
-For a short version see \e ibid, <em>A power filter for the
-detection of burst sources of gravitational radiation in
-interferometric detectors</em>, gr-qc/0001044, submitted to
-Int. J. Modern. Phys. D.
-
-\end{thebibliography}
 
 */

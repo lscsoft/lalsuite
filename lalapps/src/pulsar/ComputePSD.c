@@ -797,11 +797,11 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
 } /* LALfwriteSpectrograms() */
 
 /** Dump complete multi-PSDVector over IFOs, timestamps and frequency-bins into
- *  per-IFO ASCII output-files <outbname-IFO>
+ *  per-IFO ASCII output-files 'outbname-IFO'
  *
  */
 int
-XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename <outbname> */
+XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename 'outbname' */
                          const MultiPSDVector *multiPSDVect	/**< multi-psd vector to output */
                   )
 {

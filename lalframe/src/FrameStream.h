@@ -21,10 +21,7 @@
  * \author Jolien D. E. Creighton
  * \file
  *
- *
- * \heading{Header \ref FrameStream.h}
- *
- * Low-level routines for manupulating frame data streams.
+ * \brief Low-level routines for manupulating frame data streams.
  *
  * \heading{Synopsis}
  * \code
@@ -152,16 +149,12 @@ FrPos;
  * record can be used to restore the stream to the state when the record
  * was made (provided the stream has not been closed).  The fields are:
  * <dl>
- * <dt>\c epoch</dt><dd> the GPS time of the open frame when the record
- *     was made.
- * </dd><dt>\c fnum</dt><dd> the file number of a list of frame files that was
- *     open when the record was made.
- * </dd><dt>\c pos</dt><dd> the position within the
- *     frame file that was open when the record was made.
- * </dd></dl>
+ * <dt>epoch</dt><dd> the GPS time of the open frame when the record  was made.</dd>
+ * <dt>fnum</dt><dd> the file number of a list of frame files that was open when the record was made.</dd>
+ * <dt>pos</dt><dd> the position within the frame file that was open when the record was made.</dd>
+ * </dl>
  *
 */
-
 typedef enum
 { LAL_ADC_CHAN, LAL_SIM_CHAN, LAL_PROC_CHAN }
 FrChanType;
@@ -192,8 +185,8 @@ FrChanIn;
  *
  * This structure specifies the channel to read as input.  The fields are:
  * <dl>
- * <dt>\c name</dt><dd> the name of the channel.
- * </dd><dt>\c type</dt><dd> the channel type.
+ * <dt>name</dt><dd> the name of the channel.
+ * </dd><dt>type</dt><dd> the channel type.
  * </dd></dl>
  *
 */
@@ -216,24 +209,17 @@ FrOutPar;
  * This structure specifies the parameters for output of data to a frame.
  * The fields are:
  * <dl>
- * <dt>\c source</dt><dd> the source identifier to attach to the output
- *   frame file name.
- * </dd><dt>\c description</dt><dd> the description identifier to attach to the
- *   output frame file name.
- * </dd><dt>\c type</dt><dd> the type of channel to create in the output frames.
- * </dd><dt>\c nframes</dt><dd> the number of frames to output in the frame file.
- * </dd><dt>\c frame</dt><dd> the number the first frame of output.
- * </dd><dt>\c run</dt><dd> the number this data run.
- * </dd></dl>
+ * <dt>source</dt><dd> the source identifier to attach to the output frame file name.</dd>
+ * <dt>description</dt><dd> the description identifier to attach to the output frame file name.</dd>
+ * <dt>type</dt><dd> the type of channel to create in the output frames.</dd>
+ * <dt>nframes</dt><dd> the number of frames to output in the frame file.</dd>
+ * <dt>frame</dt><dd> the number the first frame of output.</dd>
+ * <dt>run</dt><dd> the number this data run.</dd>
+ * </dl>
  * The output frame file name will be
  * \f$\langle\mbox{source}\rangle\f$<tt>-</tt>\f$\langle\mbox{description}\rangle\f$%
  * <tt>-</tt>\f$\langle\mbox{GPS start time}\rangle\f$<tt>-</tt>%
  * \f$\langle\mbox{duration}\rangle\f$<tt>.gwf</tt>.
- *
- *
- *
- *
- *
  *
 */
 

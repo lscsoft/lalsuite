@@ -94,11 +94,13 @@ The first step is to initialize the \c MCMCInput structure with the output from 
 
 \endcode
 
+The next step is to initialize a \c MCMCParameter structure as a NULL pointer and pass it along the
+\c MCMCInput structure to \c XLALMCMCMetro. Thats it!
 
-
-The next step is to initialize a \c MCMCParameter structure as a NULL pointer and pass it along the \c MCMCInput structure to \c XLALMCMCMetro. Thats it!
-
-However, you need to point to a function that initializes the parameter structure. This \c funcInit function populates the parameter structure with as many parameters as the user whishes, defining inital and boundary values. An example of a init function is given here, which also can be found in the code \ref XLALMCMCUser.c:
+However, you need to point to a function that initializes the parameter structure. This \c funcInit
+function populates the parameter structure with as many parameters as the user whishes, defining
+inital and boundary values. An example of a init function is given here, which also can be found in
+the code \ref LALInspiralMCMCUser.c.
 
 */
 

@@ -112,24 +112,12 @@ ${M4} ArraySequenceFactoriesTest.m4 > ArraySequenceFactoriesTest.c || fail "crea
 cd ../../.. || fail "creating sources in packages/factories/test"
 
 cd packages/vectorops/src || fail "creating sources in packages/vectorops/src"
-${M4} MatrixDivide.m4 > MatrixDivide.c || fail "creating sources in packages/vectorops/src"
-${M4} MatrixMultiply.m4 > MatrixMultiply.c || fail "creating sources in packages/vectorops/src"
-${M4} MatrixPower.m4 > MatrixPower.c || fail "creating sources in packages/vectorops/src"
-${M4} MiscMatlab.m4 > MiscMatlab.c || fail "creating sources in packages/vectorops/src"
 ${M4} VectorIndexRangeC.m4 > VectorIndexRange.c || fail "creating sources in packages/vectorops/src"
 cd ../../.. || fail "creating sources in packages/vectorops/src"
 
 cd packages/vectorops/include || fail "creating sources in packages/vectorops/include"
 ${M4} VectorIndexRangeH.m4 > VectorIndexRange.h || fail "creating sources in packages/vectorops/include"
 cd ../../.. || fail "creating sources in packages/vectorops/include"
-
-cd packages/utilities/src || fail "creating sources in packages/vectorops/include"
-${M4} MatrixOps.m4 > MatrixOps.c || fail "creating sources in packages/vectorops/src"
-cd ../../.. || fail "creating sources in packages/vectorops/include"
-
-cd packages/stats/src || fail "creating sources in packages/stats/src"
-${M4} LALMoment.m4 > LALMoment.c || fail "creating sources in packages/stats/src"
-cd ../../.. || fail "creating sources in packages/stats/src"
 
 cd packages/tools/include || fail "creating sources in packages/tools/include"
 ${M4} FrequencySeries.m4 > FrequencySeries.h || fail "creating sources in packages/tools/include"

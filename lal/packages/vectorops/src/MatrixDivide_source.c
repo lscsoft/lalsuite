@@ -1,47 +1,49 @@
-dnl $Id$
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE2,`D',`define(`TYPE2',`REAL8')')
-ifelse(TYPECODE2,`S',`define(`TYPE2',`REAL4')')
-ifelse(TYPECODE2,`I2',`define(`TYPE2',`INT2')')
-ifelse(TYPECODE2,`I4',`define(`TYPE2',`INT4')')
-ifelse(TYPECODE2,`I8',`define(`TYPE2',`INT8')')
-define(`VTYPE',`format(`%sVector',TYPE)')
-define(`ATYPE',`format(`%sArray',TYPE)')
-define(`VTYPE2',`format(`%sVector',TYPE2)')
-define(`ATYPE2',`format(`%sArray',TYPE2)')
-define(`F1',`format(`LAL%sDotPower%sVector',TYPECODE,TYPECODE2)')
-define(`F2',`format(`LAL%sVectorDotPower%s',TYPECODE,TYPECODE2)')
-define(`F3',`format(`LAL%sVectorDotPower%sVector',TYPECODE,TYPECODE2)')
-define(`F4',`format(`LAL%sDotPower%sArray',TYPECODE,TYPECODE2)')
-define(`F5',`format(`LAL%sArrayDotPower%s',TYPECODE,TYPECODE2)')
-define(`F6',`format(`LAL%sArrayDotPower%sArray',TYPECODE,TYPECODE2)')
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define CONCAT4x(a,b,c,d) a##b##c##d
+#define CONCAT4(a,b,c,d) CONCAT4x(a,b,c,d)
+#define CONCAT5x(a,b,c,d,e) a##b##c##d##e
+#define CONCAT5(a,b,c,d,e) CONCAT5x(a,b,c,d,e)
+#define STRING(a) #a
 
-/******************************* <lalLaTeX file="MatrixPowerC">
-\begin{verbatim}void F1 ( LALStatus *status, REAL8Vector **result,
-		TYPE A, VTYPE2 *B )\end{verbatim}
- ************************************************** </lalLaTeX> */
+#define VTYPE CONCAT2(TYPE,Vector)
+#define ATYPE CONCAT2(TYPE,Array)
+#define VTYPE2 CONCAT2(TYPE2,Vector)
+#define ATYPE2 CONCAT2(TYPE2,Array)
+
+#define CAFUNC CONCAT3(LAL,TYPECODE,CreateArray)
+#define CVFUNC CONCAT3(LAL,TYPECODE,CreateVector)
+#define DAFUNC CONCAT3(LAL,TYPECODE,DestroyArray)
+#define CAFUNC2 CONCAT3(LAL,TYPECODE2,CreateArray)
+#define CVFUNC2 CONCAT3(LAL,TYPECODE2,CreateVector)
+#define DAFUNC2 CONCAT3(LAL,TYPECODE2,DestroyArray)
+
+#define F1 CONCAT5(LAL,TYPECODE,DotSlash,TYPECODE2,Vector)
+#define F2 CONCAT4(LAL,TYPECODE,VectorDotSlash,TYPECODE2)
+#define F3 CONCAT5(LAL,TYPECODE,VectorDotSlash,TYPECODE2,Vector)
+#define F4 CONCAT5(LAL,TYPECODE,DotSlash,TYPECODE2,Array)
+#define F5 CONCAT4(LAL,TYPECODE,ArrayDotSlash,TYPECODE2)
+#define F6 CONCAT5(LAL,TYPECODE,ArrayDotSlash,TYPECODE2,Array)
 
 void F1 (
-        LALStatus		*status,
-        REAL8Vector		**result,
-        TYPE			A,
-        VTYPE2		*B
-)
+         LALStatus	*status,
+         VTYPE2		**result,
+         TYPE		A,
+         VTYPE2		*B
+         )
 {
         /*  Variable Declarations  */
-        UINT4    iterator;
+        UINT4   iterator;
         UINT4   length;
 
-        INITSTATUS( status, "F1" , MATLABMATRIXPOWC);
+        INITSTATUS( status, STRING(F1) , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
         /*  Result should not come in Allocated  */
-	ASSERT ( result, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
+        ASSERT ( result, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
         ASSERT ( !(*result), status, MATLABMATRIXH_ENNUL, MATLABMATRIXH_MSGENNUL);
 
         /*  data must be defined  */
@@ -52,39 +54,34 @@ void F1 (
         /*  length must be greater than one  */
         ASSERT ( length > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LALDCreateVector( status->statusPtr, result, length);
+        CVFUNC2( status->statusPtr, result, length);
 
         for (iterator = 0; iterator < length; iterator++)
         {
-                (*result)->data[iterator] = pow( B->data[iterator], A );
+                (*result)->data[iterator] = B->data[iterator] / A;
         }
 
         DETATCHSTATUSPTR( status );
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixPowerC">
-\begin{verbatim}void F2 ( LALStatus *status, REAL8Vector **result,
-		VTYPE *A, TYPE2 B )\end{verbatim}
- ************************************************** </lalLaTeX> */
-
 void F2 (
-        LALStatus               *status,
-        REAL8Vector		**result,
-        VTYPE		*A,
-        TYPE2			B
-)
+         LALStatus       *status,
+         VTYPE2          **result,
+         VTYPE2          *A,
+         TYPE            B
+         )
 {
         /*  Variable Declarations  */
-        UINT4    iterator;
+        UINT4   iterator;
         UINT4   length;
 
-        INITSTATUS( status, "F2" , MATLABMATRIXPOWC);
+        INITSTATUS( status, STRING(F2) , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
         /*  Result should not come in Allocated  */
-	ASSERT ( result, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
+        ASSERT ( result, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
         ASSERT ( !(*result), status, MATLABMATRIXH_ENNUL, MATLABMATRIXH_MSGENNUL);
 
         /*  data must be defined  */
@@ -95,41 +92,35 @@ void F2 (
         /*  length must be greater than one  */
         ASSERT ( length > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LALDCreateVector( status->statusPtr, result, length);
+        CVFUNC2( status->statusPtr, result, length);
 
         for (iterator = 0; iterator < length; iterator++)
         {
-                (*result)->data[iterator] = pow( A->data[iterator], B );
+               (*result)->data[iterator] = A->data[iterator] / B;
         }
 
         DETATCHSTATUSPTR( status );
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixPowerC">
-\begin{verbatim}void F3 ( LALStatus *status, REAL8Vector **result,
-		VTYPE *B, VTYPE2 *A )\end{verbatim}
- ************************************************** </lalLaTeX> */
-
 void F3 (
-        LALStatus		*status,
-        REAL8Vector		**result,
-        VTYPE		*B,
-        VTYPE2		*A
-)
+         LALStatus	*status,
+         VTYPE		**result,
+         VTYPE		*A,
+         VTYPE2		*B
+         )
 {
         /*  Variable Declarations  */
         UINT4    iterator;
         UINT4   length;
 
-        INITSTATUS( status, "F3" , MATLABMATRIXPOWC);
+        INITSTATUS( status, STRING(F3) , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
         /*  Result should not come in Allocated  */
-	ASSERT ( result, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
+        ASSERT ( result, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
         ASSERT ( !(*result), status, MATLABMATRIXH_ENNUL, MATLABMATRIXH_MSGENNUL);
-
 
         /*  data must be defined  */
         ASSERT ( A, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
@@ -143,28 +134,23 @@ void F3 (
         /*  length must be greater than one  */
         ASSERT ( length > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LALDCreateVector( status->statusPtr, result, length);
+	CVFUNC( status->statusPtr, result, length);
 
         for (iterator = 0; iterator < length; iterator++)
         {
-                (*result)->data[iterator] = pow( A->data[iterator], B->data[iterator] );
+                (*result)->data[iterator] = A->data[iterator] / B->data[iterator];
         }
 
         DETATCHSTATUSPTR( status );
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixPowerC">
-\begin{verbatim}void F4 ( LALStatus *status, REAL8Array **result,
-		TYPE A, ATYPE2 *B )\end{verbatim}
- ************************************************** </lalLaTeX> */
-
 void F4 (
-        LALStatus               *status,
-        REAL8Array		**result,
-        TYPE			A,
-        ATYPE2		*B
-)
+         LALStatus      *status,
+         ATYPE2		**result,
+         TYPE		A,
+         ATYPE2		*B
+         )
 {
         /*  Variable Declarations  */
         UINT4Vector     *length;
@@ -172,12 +158,12 @@ void F4 (
         UINT4		iterator, myindex;
 	UINT4		row, column;
 
-        INITSTATUS( status, "F4" , MATLABMATRIXPOWC);
+        INITSTATUS( status, STRING(F4) , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
         /*  Result should not come in Allocated  */
-	ASSERT ( result, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
+        ASSERT ( result, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
         ASSERT ( !(*result), status, MATLABMATRIXH_ENNUL, MATLABMATRIXH_MSGENNUL);
 
         /*  data must be defined  */
@@ -198,7 +184,7 @@ void F4 (
 	/*  length must be greater than one  */
         ASSERT ( length->data[0] > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LALDCreateArray( status->statusPtr, result, length);
+        CAFUNC2( status->statusPtr, result, length);
 
 	if( ndims == 2 )
 	{
@@ -207,13 +193,13 @@ void F4 (
 			for( column = 0; column < length->data[1]; column++)
 			{
 				myindex = (row * length->data[1]) + column;
-				(*result)->data[myindex] = pow( A, B->data[myindex] );
+				(*result)->data[myindex] = A / B->data[myindex];
 			}
 	        }
         }
         else
         {
-		LALDDestroyArray( status->statusPtr, result);
+		DAFUNC2( status->statusPtr, result);
 		(*result) = NULL;
         }
 
@@ -224,17 +210,12 @@ void F4 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixPowerC">
-\begin{verbatim}void F5 ( LALStatus *status, REAL8Array **result,
-		ATYPE *A, TYPE2 B )\end{verbatim}
- ************************************************** </lalLaTeX> */
-
 void F5 (
-        LALStatus		*status,
-        REAL8Array		**result,
-        ATYPE		*A,
-        TYPE2			B
-)
+         LALStatus		*status,
+         ATYPE		**result,
+         ATYPE		*A,
+         TYPE2			B
+         )
 {
         /*  Variable Declarations  */
         UINT4Vector     *length;
@@ -242,14 +223,13 @@ void F5 (
         UINT4            iterator, myindex;
         UINT4            row, column;
 
-        INITSTATUS( status, "F5" , MATLABMATRIXPOWC);
+        INITSTATUS( status, STRING(F5) , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
         /*  Result should not come in Allocated  */
-	ASSERT ( result, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
+        ASSERT ( result, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
         ASSERT ( !(*result), status, MATLABMATRIXH_ENNUL, MATLABMATRIXH_MSGENNUL);
-
 
         /*  data must be defined  */
         ASSERT ( A, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
@@ -269,7 +249,7 @@ void F5 (
         /*  length must be greater than one  */
         ASSERT ( length->data[0] > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LALDCreateArray( status->statusPtr, result, length);
+        CAFUNC( status->statusPtr, result, length);
 
 	if( ndims == 2 )
 	{
@@ -278,13 +258,13 @@ void F5 (
 			for( column = 0; column < length->data[1]; column++)
 			{
                                 myindex = (row * length->data[1]) + column;
-				(*result)->data[myindex] = pow( A->data[myindex], B );
+				(*result)->data[myindex] = A->data[myindex] / B;
 			}
 		}
         }
         else
         {
-		LALDDestroyArray( status->statusPtr, result);
+		DAFUNC( status->statusPtr, result);
 		(*result) = NULL;
         }
 
@@ -295,17 +275,12 @@ void F5 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixPowerC">
-\begin{verbatim}void F6 ( LALStatus *status, REAL8Array **result,
-		ATYPE *A, ATYPE2 *B )\end{verbatim}
- ************************************************** </lalLaTeX> */
-
 void F6 (
-        LALStatus		*status,
-        REAL8Array		**result,
-        ATYPE		*A,
-        ATYPE2		*B
-)
+         LALStatus		*status,
+         ATYPE		**result,
+         ATYPE		*A,
+         ATYPE2		*B
+         )
 {
         /*  Variable Declarations  */
         UINT4Vector     *length;
@@ -314,14 +289,13 @@ void F6 (
         UINT4            iterator, myindex;
         UINT4            row, column;
 
-        INITSTATUS( status, "F6" , MATLABMATRIXPOWC);
+        INITSTATUS( status, STRING(F6) , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
         /*  Result should not come in Allocated  */
-	ASSERT ( result, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
+        ASSERT ( result, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
         ASSERT ( !(*result), status, MATLABMATRIXH_ENNUL, MATLABMATRIXH_MSGENNUL);
-
 
         /*  data must be defined  */
         ASSERT ( B, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
@@ -352,7 +326,7 @@ void F6 (
 		ASSERT ( length->data[iterator] == ((ATYPE2*)(A))->dimLength->data[iterator], status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 	}
 
-        LALDCreateArray( status->statusPtr, result, length);
+        CAFUNC( status->statusPtr, result, length);
 
 	if ( ndims == 2 )
 	{
@@ -361,20 +335,17 @@ void F6 (
 			for( column = 0; column < length->data[1]; column++)
 			{
                                 myindex = (row * length->data[1]) + column;
-				(*result)->data[myindex] = pow( (A->data[myindex]) , (B->data[myindex]));
+				(*result)->data[myindex] = (A->data[myindex]) / (B->data[myindex]);
 			}
 		}
 	}
 	else
 	{
-		LALDDestroyArray( status->statusPtr, result);
+		DAFUNC( status->statusPtr, result);
 		(*result) = NULL;
 	}
 
         LALU4DestroyVector( status->statusPtr, &length );
-
         DETATCHSTATUSPTR( status );
         RETURN (status);
 }
-
-

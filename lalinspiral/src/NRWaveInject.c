@@ -23,8 +23,6 @@
  *
  *  \brief Functions for reading/writing numerical relativity waveforms
  *
- * $Id$
- *
  */
 
 #include <lal/LALStdio.h>
@@ -144,8 +142,8 @@ XLALOrientNRWave(
  * waveform appropriate for given coalescence phase and inclination angles */
 void
 XLALOrientNRWaveTimeSeriesREAL8(
-    REAL8TimeSeries        *plus,
-    REAL8TimeSeries        *cross,
+    REAL8TimeSeries        *plus,	   /**< NEEDS DOCUMENTATION */
+    REAL8TimeSeries        *cross,	   /**< NEEDS DOCUMENTATION */
     UINT4                  modeL,          /**< L                       */
     INT4                   modeM,          /**< M                       */
     REAL4                  inclination,    /**< binary inclination      */

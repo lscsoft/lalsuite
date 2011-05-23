@@ -18,28 +18,35 @@
 */
 
 /**
-\author Berukoff, S.J.,  Papa, M.A., Allen, B., Siemens, X. \f$Id\f$
+\author Berukoff, S.J.,  Papa, M.A., Allen, B., Siemens, X.
 \file
 \ingroup pulsarTODO
 
-\subsection{Module \ref LALDemod.c}\label{ss:LALDemod.c}
-Computes a demodulated Fourier transform (DeFT) given a set of input short Fourier transforms (SFT).
+\brief Computes a demodulated Fourier transform (DeFT) given a set of input short Fourier transforms (SFT).
 
 \heading{Prototypes}
 
 
 \heading{Description}
 
-This routine computes the \f$F\f$ statistic for a set of templates that are defined by: one sky position, a set of spin-down parameters and a band of possible signal frequencies. The \f$F\f$ statistic is described in JKS, Phys Rev D 58, 063001 (1998). Here, it has been adapted to a single emission frequency model.
+This routine computes the \f$F\f$ statistic for a set of templates that are defined by: one sky
+position, a set of spin-down parameters and a band of possible signal frequencies. The \f$F\f$
+statistic is described in JKS, Phys Rev D 58, 063001 (1998). Here, it has been adapted to a single
+emission frequency model.
 
-The <tt>parameter structure</tt> defines the search frequency band
-(\c f0 and \c imax), the search frequency resolution (\c df) the first frequency of the input SFTs (\c ifmin), how many SFTs have to be combined (\c SFTno) and template parameters (<tt>*spinDwnOrder</tt>, <tt>*spinDwn</tt> and @<tt>*skyConst</tt>). \c amcoe contains the values of the amplitude modulation functions \f$a\f$ and \f$b\f$.  \c Dterms represents the numbers of terms to be summed to compute the Dirichlet kernel on each side of the instantaneous frequency.
+The <tt>parameter structure</tt> defines the search frequency band (\c f0 and \c imax), the search
+frequency resolution (\c df) the first frequency of the input SFTs (\c ifmin), how many SFTs have to
+be combined (\c SFTno) and template parameters (<tt>*spinDwnOrder</tt>, <tt>*spinDwn</tt> and
+<tt>*skyConst</tt>). \c amcoe contains the values of the amplitude modulation functions \f$a\f$ and
+\f$b\f$.  \c Dterms represents the numbers of terms to be summed to compute the Dirichlet kernel on
+each side of the instantaneous frequency.
 
-The \c input is: <tt>**input</tt>, an array of structures of type \c FFT. This data type will soon disappear as it is just a complex8frequencyseries.
+The \c input is: <tt>**input</tt>, an array of structures of type \c FFT. This data type will soon
+disappear as it is just a COMPLEX8FrequencySeries.
 
-The \c output is a pointer a structure of type \c LALFstat containing an array of the values of \f$\mathcal{F}\f$.
-In addition, if <tt>DemodPar->returnFaFb == TRUE</tt>, the values of \f$F_a\f$ and \f$F_b\f$ will be returned in addition.
-(Memory has to be allocated correctly beforehand!)
+The \c output is a pointer a structure of type \c LALFstat containing an array of the values of
+\f$\mathcal{F}\f$. In addition, if <tt>DemodPar-\>returnFaFb == TRUE</tt>, the values of \f$F_a\f$
+and \f$F_b\f$ will be returned in addition. (Memory has to be allocated correctly beforehand!)
 
 \heading{Algorithm}
 

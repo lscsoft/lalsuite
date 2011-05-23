@@ -99,7 +99,7 @@ static const EarthState empty_EarthState;
  * in the most economical way possible.
  */
 void
-LALGetAMCoeffs(LALStatus *status,
+LALGetAMCoeffs(LALStatus *status,				/**< [in/out] LAL status structure pointer */
 	       AMCoeffs *coeffs,				/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
 	       const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
 	       SkyPosition skypos				/**< {alpha,delta} of the source */
@@ -261,9 +261,9 @@ LALGetAMCoeffs(LALStatus *status,
  * needed.)
  */
 void
-LALNewGetAMCoeffs(LALStatus *status,
+LALNewGetAMCoeffs(LALStatus *status,			/**< [in/out] LAL status structure pointer */
 	       AMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
-	       const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
+	       const DetectorStateSeries *DetectorStates,/**< timeseries of detector states */
 	       SkyPosition skypos			/**< {alpha,delta} of the source */
 	       )
 {
@@ -467,7 +467,7 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
  * use XLALDestroyMultiAMCoeffs() to free this.
  */
 void
-LALGetMultiAMCoeffs (LALStatus *status,
+LALGetMultiAMCoeffs (LALStatus *status,			/**< [in/out] LAL status structure pointer */
 		     MultiAMCoeffs **multiAMcoef,	/**< [out] AM-coefficients for all input detector-state series */
 		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
 		     SkyPosition skypos			/**< source sky-position [in equatorial coords!] */

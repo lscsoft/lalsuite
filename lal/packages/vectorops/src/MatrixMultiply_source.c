@@ -1,40 +1,40 @@
-dnl $Id$
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE2,`D',`define(`TYPE2',`REAL8')')
-ifelse(TYPECODE2,`S',`define(`TYPE2',`REAL4')')
-ifelse(TYPECODE2,`I2',`define(`TYPE2',`INT2')')
-ifelse(TYPECODE2,`I4',`define(`TYPE2',`INT4')')
-ifelse(TYPECODE2,`I8',`define(`TYPE2',`INT8')')
-define(`VTYPE',`format(`%sVector',TYPE)')
-define(`ATYPE',`format(`%sArray',TYPE)')
-define(`VTYPE2',`format(`%sVector',TYPE2)')
-define(`ATYPE2',`format(`%sArray',TYPE2)')
-define(`F1',`format(`LAL%sDotStar%sVector',TYPECODE,TYPECODE2)')
-define(`F2',`format(`LAL%sVectorDotStar%sVector',TYPECODE,TYPECODE2)')
-define(`F3',`format(`LAL%sDotStar%sArray',TYPECODE,TYPECODE2)')
-define(`F4',`format(`LAL%sArrayDotStar%sArray',TYPECODE,TYPECODE2)')
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define CONCAT5x(a,b,c,d,e) a##b##c##d##e
+#define CONCAT5(a,b,c,d,e) CONCAT5x(a,b,c,d,e)
+#define STRING(a) #a
 
-/******************************* <lalLaTeX file="MatrixMultiplyC">
-\begin{verbatim}void F1 ( LALStatus *status, VTYPE2 **result,
-		TYPE B, VTYPE2 *A )\end{verbatim}
- *************************************************** </lalLaTeX> */
+#define VTYPE CONCAT2(TYPE,Vector)
+#define ATYPE CONCAT2(TYPE,Array)
+#define VTYPE2 CONCAT2(TYPE2,Vector)
+#define ATYPE2 CONCAT2(TYPE2,Array)
+
+#define CAFUNC CONCAT3(LAL,TYPECODE,CreateArray)
+#define CVFUNC CONCAT3(LAL,TYPECODE,CreateVector)
+#define DAFUNC CONCAT3(LAL,TYPECODE,DestroyArray)
+#define CAFUNC2 CONCAT3(LAL,TYPECODE2,CreateArray)
+#define CVFUNC2 CONCAT3(LAL,TYPECODE2,CreateVector)
+#define DAFUNC2 CONCAT3(LAL,TYPECODE2,DestroyArray)
+
+#define F1 CONCAT5(LAL,TYPECODE,DotStar,TYPECODE2,Vector)
+#define F2 CONCAT5(LAL,TYPECODE,VectorDotStar,TYPECODE2,Vector)
+#define F3 CONCAT5(LAL,TYPECODE,DotStar,TYPECODE2,Array)
+#define F4 CONCAT5(LAL,TYPECODE,ArrayDotStar,TYPECODE2,Array)
 
 void F1 (
-        LALStatus		*status,
-        VTYPE2		**result,
-        TYPE			B,
-        VTYPE2		*A
-)
+         LALStatus		*status,
+         VTYPE2		**result,
+         TYPE			B,
+         VTYPE2		*A
+         )
 {
         /*  Variable Declarations  */
         UINT4    iterator;
         UINT4   length;
 
-        INITSTATUS( status, "F1" , MATLABMATRIXMULTC);
+        INITSTATUS( status, STRING(F1) , MATLABMATRIXMULTC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -50,7 +50,7 @@ void F1 (
         /*  length must be greater than one  */
         ASSERT ( length > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LAL`'TYPECODE2`'CreateVector( status->statusPtr, result, length);
+        CVFUNC2( status->statusPtr, result, length);
 
         for (iterator = 0; iterator < length; iterator++)
         {
@@ -61,23 +61,18 @@ void F1 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixMultiplyC">
-\begin{verbatim}void F2 ( LALStatus *status, VTYPE **result,
-		VTYPE *B, VTYPE2 *A )\end{verbatim}
-*************************************************** </lalLaTeX> */
-
 void F2 (
-        LALStatus		*status,
-        VTYPE		**result,
-        VTYPE		*B,
-        VTYPE2		*A
-)
+         LALStatus		*status,
+         VTYPE		**result,
+         VTYPE		*B,
+         VTYPE2		*A
+         )
 {
         /*  Variable Declarations  */
         UINT4    iterator;
         UINT4   length;
 
-        INITSTATUS( status, "F2" , MATLABMATRIXMULTC);
+        INITSTATUS( status, STRING(F2) , MATLABMATRIXMULTC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -97,7 +92,7 @@ void F2 (
         /*  length must be greater than one  */
         ASSERT ( length > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LAL`'TYPECODE`'CreateVector( status->statusPtr, result, length);
+        CVFUNC( status->statusPtr, result, length);
 
         for (iterator = 0; iterator < length; iterator++)
         {
@@ -108,17 +103,12 @@ void F2 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixMultiplyC">
-\begin{verbatim}void F3 ( LALStatus *status, ATYPE2 **result,
-		TYPE A, ATYPE2 *B )\end{verbatim}
-*************************************************** </lalLaTeX> */
-
 void F3 (
-        LALStatus               *status,
-        ATYPE2		**result,
-        TYPE			A,
-        ATYPE2		*B
-)
+         LALStatus               *status,
+         ATYPE2		**result,
+         TYPE			A,
+         ATYPE2		*B
+         )
 {
         /*  Variable Declarations  */
         UINT4Vector     *length;
@@ -126,7 +116,7 @@ void F3 (
         UINT4		iterator, myindex;
 	UINT4		row, column;
 
-        INITSTATUS( status, "F3" , MATLABMATRIXMULTC);
+        INITSTATUS( status, STRING(F3) , MATLABMATRIXMULTC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -153,7 +143,7 @@ void F3 (
 	/*  length must be greater than one  */
         ASSERT ( length->data[0] > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LAL`'TYPECODE2`'CreateArray( status->statusPtr, result, length);
+        CAFUNC2( status->statusPtr, result, length);
 
 	if( ndims == 2 )
 	{
@@ -168,7 +158,7 @@ void F3 (
         }
         else
         {
-		LAL`'TYPECODE2`'DestroyArray( status->statusPtr, result);
+		DAFUNC2( status->statusPtr, result);
 		(*result) = NULL;
         }
 
@@ -179,17 +169,12 @@ void F3 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixMultiplyC">
-\begin{verbatim}void F4 ( LALStatus *status, ATYPE **result,
-		ATYPE *A, ATYPE2 *B )\end{verbatim}
-*************************************************** </lalLaTeX> */
-
 void F4 (
-        LALStatus		*status,
-        ATYPE		**result,
-        ATYPE		*A,
-        ATYPE2		*B
-)
+         LALStatus		*status,
+         ATYPE		**result,
+         ATYPE		*A,
+         ATYPE2		*B
+         )
 {
         /*  Variable Declarations  */
         UINT4Vector     *length;
@@ -198,7 +183,7 @@ void F4 (
         UINT4            iterator, myindex;
         UINT4            row, column;
 
-        INITSTATUS( status, "F4" , MATLABMATRIXMULTC);
+        INITSTATUS( status, STRING(F4) , MATLABMATRIXMULTC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -235,7 +220,7 @@ void F4 (
 		ASSERT ( length->data[iterator] == ((ATYPE2*)(A))->dimLength->data[iterator], status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 	}
 
-        LAL`'TYPECODE`'CreateArray( status->statusPtr, result, length);
+        CAFUNC( status->statusPtr, result, length);
 
 	if ( ndims == 2 )
 	{
@@ -250,7 +235,7 @@ void F4 (
 	}
 	else
 	{
-		LAL`'TYPECODE`'DestroyArray( status->statusPtr, result);
+		DAFUNC( status->statusPtr, result);
 		(*result) = NULL;
 	}
 
@@ -259,5 +244,3 @@ void F4 (
         DETATCHSTATUSPTR( status );
         RETURN (status);
 }
-
-

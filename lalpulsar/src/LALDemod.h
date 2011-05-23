@@ -22,9 +22,7 @@
 \file
 \ingroup pulsarTODO
 
-\heading{Header \ref LALDemod.h}
-\latexonly\label{s_LALDemod_h}\endlatexonly
-Computes a demodulated transform.
+\brief Computes a demodulated transform.
 
 \heading{Synopsis}
 \code
@@ -35,8 +33,10 @@ The following is a brief synopsis of the demodulation, or 'Coherent Transform', 
 
 In order to remove frequency and amplitude modulation of a time series \f$x_a\f$, we need two basic components:
 <dl>
-<dt>\bf{Frequency modulation information}</dt><dd>  This is given through a phase model \f$\Phi\f$.</dd>
-<dt>\bf{Amplitude modulation information}</dt><dd>  This is given through two functions \f$\hat{a}\f$ and \f$\hat{b}\f$, which are derived from the beam-pattern functions \f$F_{+}\f$ and \f$F_{\times}\f$.</dd>
+<dt>Frequency modulation information</dt><dd>  This is given through a phase model \f$\Phi\f$.</dd>
+<dt>Amplitude modulation information</dt><dd>  This is given through two functions \f$\hat{a}\f$ and
+\f$\hat{b}\f$, which are derived from the beam-pattern functions \f$F_{+}\f$ and
+\f$F_{\times}\f$.</dd>
 </dl>
 Given these, the F statistic in the \f$b^{th}\f$ frequency bin is
 \f{equation}{
@@ -45,35 +45,46 @@ Given these, the F statistic in the \f$b^{th}\f$ frequency bin is
 
 where
 
-\anchor e1 \f{eqnarray}{
-\label{e1}
-\hat{F_{\hat{a}}}=\sum_{a=0}^<em>{NM-1}</em> x_{a} \hat{a} e^{-2{\pi}i{\Phi}_{ab}(\vec{\lambda})} \\
-\hat{F_{\hat{b}}}=\sum_{a=0}^<em>{NM-1}</em> x_{a} \hat{b} e^{-2{\pi}i{\Phi}_{ab}(\vec{\lambda})}
+\anchor eq_e1 \f{eqnarray}{
+\label{eq_e1}
+\hat{F_{\hat{a}}}=\sum_{a=0}^{NM-1} x_{a} \hat{a} e^{-2{\pi}i{\Phi}_{ab}(\vec{\lambda})} \\
+\hat{F_{\hat{b}}}=\sum_{a=0}^{NM-1} x_{a} \hat{b} e^{-2{\pi}i{\Phi}_{ab}(\vec{\lambda})}
 \f}
-\f$T_{0}\f$ is the observation time, \f$S_{h}\f$ is the noise power spectral density, and \f$A\f$, \f$B\f$, \f$C\f$, and \f$D\f$ are constants.
+\f$T_{0}\f$ is the observation time, \f$S_{h}\f$ is the noise power spectral density, and \f$A\f$,
+\f$B\f$, \f$C\f$, and \f$D\f$ are constants.
 
-In writing the previous equation we have assumed that there is a total of \f$M\cdot N\f$ data samples and \f$0\leq a<MN\f$.  \f$\Phi_{ab}\f$ is the expected phase at time \f$a\f$ for an
-intrinsic emission frequency \f$b\over T_{DeFT}\f$ (where the denominator is the DeFT time baseline). \f$\Phi\f$
-depends on \f$\vec\lambda\f$, a vector of parameters that defines the phase model.  Typically these are the source location and the spin-down parameter values of the template source for which one is
-demodulating.  For simplicity, we will focus only on \f$F_{a}\f$; the analysis for \f$F_{b}\f$ is identical.
-Let us now suppose that the time series \f$x_a\f$ is composed of \f$M\f$ chunks, each of \f$N\f$ samples.  If we introduce a short-time index \f$0\leq j<N-1\f$ and a short time-series index \f$0\leq \alpha <M-1\f$, so that \f$a=N\alpha+j\f$, we can rewrite the above sum as
-\anchor e2 \f{equation}{
+In writing the previous equation we have assumed that there is a total of \f$M\cdot N\f$ data
+samples and \f$0\leq a<MN\f$.  \f$\Phi_{ab}\f$ is the expected phase at time \f$a\f$ for an
+intrinsic emission frequency \f$b\over T_{DeFT}\f$ (where the denominator is the DeFT time
+baseline). \f$\Phi\f$ depends on \f$\vec\lambda\f$, a vector of parameters that defines the phase
+model.  Typically these are the source location and the spin-down parameter values of the template
+source for which one is demodulating.  For simplicity, we will focus only on \f$F_{a}\f$; the
+analysis for \f$F_{b}\f$ is identical. Let us now suppose that the time series \f$x_a\f$ is composed
+of \f$M\f$ chunks, each of \f$N\f$ samples.  If we introduce a short-time index \f$0\leq j<N-1\f$
+and a short time-series index \f$0\leq \alpha <M-1\f$, so that \f$a=N\alpha+j\f$, we can rewrite the
+above sum as
+\anchor eq_e2 \f{equation}{
 \hat{F_{\hat{a}}}({\vec{\lambda}})=\sum_{\alpha=0}^{M-1}\sum_{j=0}^{N-1}x_{\alpha j}a_{\alpha j}e^{-2{\pi}i{\Phi}_{ab}(\vec{\lambda})}
-\label{e2}
+\label{eq_e2}
 \f}
-Note that \f$\hat{a}(t)\f$ is a periodic function with period equal to one sidereal day.  Since the sum over \f$N\f$ is on a timescale much shorter than that (say, 1 hour), then \f$\hat{a}(t)\f$ won't change significantly, and thus can be taken outside of that summation, and then is evaluated at the midpoint of each SFT time.  Now, If \f$\tilde{x}_{\alpha k}\f$ is the matrix of FTs formed along the short time index \f$j\f$
-\anchor e3 \f{equation}{
+Note that \f$\hat{a}(t)\f$ is a periodic function with period equal to one sidereal day.  Since the
+sum over \f$N\f$ is on a timescale much shorter than that (say, 1 hour), then \f$\hat{a}(t)\f$ won't
+change significantly, and thus can be taken outside of that summation, and then is evaluated at the
+midpoint of each SFT time.  Now, If \f$\tilde{x}_{\alpha k}\f$ is the matrix of FTs formed along the
+short time index \f$j\f$
+\anchor eq_e3 \f{equation}{
 x_{\alpha j}=\frac{1}{N}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}e^{2\pi{i}\frac{jk}{N}},
-\label{e3}
+\label{eq_e3}
 \f}
-making the appropriate substitutions, Eq.\eqref{e1} becomes
-\anchor e4 \f{equation}{
+making the appropriate substitutions, Eq.\eqref{eq_e1} becomes
+\anchor eq_e4 \f{equation}{
 \hat{F_{\hat{a}}}({\vec{\lambda}})=\sum_{\alpha=0}^{M-1}\hat{a}_{\alpha}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}\left[\frac{1}{N}\sum_{j=0}^{N-1}e^{-2\pi i(\Phi_{\alpha jb}(\vec{\lambda})-\frac{jk}{N})}\right]
-\label{e4}
+\label{eq_e4}
 \f}
 We assume that the phase evolution can be described as linear in \f$t\f$ during the time duration
-\f$T_{SFT}\f$; thus we can Taylor-expand \f$\Phi\f$ around the temporal midpoint of every SFT time data chunk.  For large values of \f$N\f$,
-the summation over \f$j\f$ in Eq.\eqref{e4} can be expressed in closed form, thus saving computations, and Eq.\eqref{e4} can be rewritten as
+\f$T_{SFT}\f$; thus we can Taylor-expand \f$\Phi\f$ around the temporal midpoint of every SFT time
+data chunk.  For large values of \f$N\f$, the summation over \f$j\f$ in Eq.\eqref{eq_e4} can be
+expressed in closed form, thus saving computations, and Eq.\eqref{eq_e4} can be rewritten as
 \anchor DeFT2 \f{equation}{
 \hat{F_{\hat{a}}}=\sum_{\alpha=0}^{M-1}\hat{a}_{\alpha}e^{i y_\alpha}\sum_{k=0}^{N-1}\tilde{x}_{\alpha\beta} P_{\alpha k}(b,\vec{\lambda}),
 \label{DeFT2}
@@ -86,11 +97,21 @@ x'=\sum_{s} f_s B_{s\alpha} - k\\
 y_\alpha=\sum_{s} f_s A_{s\alpha}.
 \f}
 In the previous expressions \f$f_s\f$ indicate the spin-down parameters of different orders (labeled
-by the index \f$s\f$\footnote{Note that when \f$s=0\f$ the values computed are coefficients of the intrinsic frequency and thus must be computed for the value corresponding to the index \f$b\f$.}), and \f$A_{s\alpha}\f$ and \f$B_{s\alpha}\f$
-are functions that depend on the phase evolution, whose values depend on \f$\alpha\f$ and on \f$\vec\lambda\f$.  The values of these functions are calculated by the <tt>ComputeSky()</tt> routine, also in this package.  Incidentally, in the code, these are the values contained in the variable \c skyConst.
+by the index \f$s\f$
+\latexonly\footnote{Note that when $s=0$ the values computed are coefficients of the
+intrinsic frequency and thus must be computed for the value corresponding to the index $b$.}\endlatexonly
+\if HTML
+[Note that when \f$s=0\f$ the values computed are coefficients of the
+intrinsic frequency and thus must be computed for the value corresponding to the index]
+\endif
+), and \f$A_{s\alpha}\f$ and \f$B_{s\alpha}\f$ are functions that depend on the phase evolution, whose
+values depend on \f$\alpha\f$ and on \f$\vec\lambda\f$.  The values of these functions are
+calculated by the ComputeSky() routine, also in this package.  Incidentally, in the code,
+these are the values contained in the variable \c skyConst.
 Note that the function \f$P_{\alpha k}\f$ is peaked around \f$x'=0\f$.  Thus in the summation
-over \f$k\f$ in Eq.\eqref{DeFT2} one only needs to consider a few values (NTERMS) of \f$k\f$ around \f$k^*\f$ such
-that \f$x'(k^*)\approx 0\f$.  This approximation again saves computations. Eq.\eqref{DeFT2} can then be rewritten as
+over \f$k\f$ in Eq.\eqref{DeFT2} one only needs to consider a few values (NTERMS) of \f$k\f$ around
+\f$k^*\f$ such that \f$x'(k^*)\approx 0\f$.  This approximation again saves
+computations. Eq.\eqref{DeFT2} can then be rewritten as
 \anchor DeFT_algo \f{equation}{
 \label{DeFT_algo}
 \hat{F_{\hat{a}}}=\sum_{\alpha=0}^{M-1}\hat{a}_{\alpha}e^{i y_\alpha}\sum_{k=k^*\pm NTERMS} \tilde x_{\alpha\beta}
@@ -98,8 +119,11 @@ P_{\alpha k}(b,\vec{\lambda}).
 \f}
 If \f$NTERMS\f$ is 8 the power loss due to this approximation is less than \f$\sim 5\%\f$.
 
-Now, computing \f$\hat{F_{\hat{a}}}\f$ and \f$\hat{F_{\hat{b}}}\f$ can be done in parallel; given the approximations we have made, for each iteration of the \f$\alpha\f$ loop, one computes first \f$P_{\alpha k}\f$ (through the k-loop), multiplies by \f$\tilde{x}_{\alpha k}\f$, and then forms the statistics of\TODOref{e1} at the same time.  After all the iterations of the \f$\alpha\f$ loop are complete, that is, when all SFTs have been exhausted, the final statistic is computed.
-
+Now, computing \f$\hat{F_{\hat{a}}}\f$ and \f$\hat{F_{\hat{b}}}\f$ can be done in parallel; given
+the approximations we have made, for each iteration of the \f$\alpha\f$ loop, one computes first
+\f$P_{\alpha k}\f$ (through the k-loop), multiplies by \f$\tilde{x}_{\alpha k}\f$, and then forms
+the statistics of\eqref{eq_e1} at the same time.  After all the iterations of the \f$\alpha\f$ loop
+are complete, that is, when all SFTs have been exhausted, the final statistic is computed.
 
 \heading{Types}
 

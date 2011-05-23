@@ -24,11 +24,8 @@
  * \ingroup pulsarTODO
  * \brief Functions to calculate binary system time delays and read TEMPO pulsar parameter files
  *
-   \heading{Module \ref BinaryPulsarTiming.c}
-   \label{ss:BinaryPulsarTiming.c}
-
    Functions for calculating the timing delay to a signal from a pulsar in a
-   binary system and reading pulsar parameters from TEMPO \ref TEMPO .par
+   binary system and reading pulsar parameters from TEMPO .par
    files.
    Models are taken from Taylor and Weisberg (1989) and use the
    naming conventions therein and used by TEMPO .
@@ -49,17 +46,17 @@
    General relativistic time delay, \f$t_\textrm{Einstein}\f$ is the special
    relativistic time delay, and \f$t_\textrm{Abberation}\f$ is the delay caused by the
    pulsars' rotation. There are several models of the binary systems, described
-   in \ref TaylorWeisberg1989, of which the four most common are so far
+   in [\ref TaylorWeisberg1989], of which the four most common are so far
    implemented. The four models are the Blandford-Teukolsky model (BT)
-   \ref BlandfordTeukolsky1976, the low ellipticity model (ELL1)
-   \ref ChLangeetal2001, Damour-Deruelle model (DD) \ref DamourDeruelle1985,
-   and the main sequence system model (MSS) \ref Wex1998.
+   [\ref BlandfordTeukolsky1976], the low ellipticity model (ELL1)
+   [\ref ChLangeetal2001], Damour-Deruelle model (DD) [\ref DamourDeruelle1985],
+   and the main sequence system model (MSS) [\ref Wex1998].
    These four models all use the five main binary parameters: the longitude of
    periastron \f$\omega_0\f$, the eccentricity of the orbit \f$e\f$, the orbital period
    \f$P\f$, the time of periastron/or the time of ascension of the first node
    \f$T_0\f$/\f$T_{\textrm{asc}}\f$, and the projected semi-major axis \f$a\sin{}i\f$. The are
    also many other model dependent parameters. These routines closely follow
-   those used in the radio astronomy package TEMPO \ref TEMPO.
+   those used in the radio astronomy package TEMPO.
 
    Radio astronomers fit pulsar parameters using TEMPO which will output
    the parameters in a <tt>.par</tt> file. The values allowed in this file can be

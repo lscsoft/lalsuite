@@ -17,109 +17,101 @@
 *  MA  02111-1307  USA
 */
 
-/********************************** <lalVerbatim file="MatrixUtilsHV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
 
-/********************************************************** <lalLaTeX>
+\brief Provides routines to solve linear systems.
 
-\providecommand{\bd}{\mbox{\boldmath$\delta$\unboldmath}}
-
-\section{Header \texttt{MatrixUtils.h}}
-\label{s:MatrixUtils.h}
-
-Provides routines to solve linear systems.
-
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/MatrixUtils.h>
-\end{verbatim}
+\endcode
 
 This header covers routines to solve linear systems of equations and
 eigensystems, using algorithms adapted from Chapters~2 and~11 of
-Numerical Recipes~\cite{ptvf:1992}.  The only routines at present are
+Numerical Recipes~[\ref ptvf1992].  The only routines at present are
 for computing eigenvalues and eigenvectors of real symmetric matrices.
 Routines for inverting or computing the determinant of arbitrary
 square matrices will likely follow.
 
-\subsubsection*{Notation}
+\section TODOref Notation
 
-A \emph{matrix} is represented in LAL by a \verb@<datatype>Array@
-structure with a \verb@dimLength->length@ field of 2; the
-\verb@dimLength->data@ field gives the dimensions $[M,N]$ of the
+A \e matrix is represented in LAL by a <tt>\<datatype\>Array</tt>
+structure with a <tt>dimLength->length</tt> field of 2; the
+<tt>dimLength->data</tt> field gives the dimensions \f$[M,N]\f$ of the
 matrix.  Using the place-index notation common in tensor calculus, a
 matrix is a two-index tensor:
-\begin{equation}
+\f{equation}{
 \mathsf{A}^a{}_b = \left[\begin{array}{cccc}
 	A^1{}_1 & A^1{}_2 & \cdots & A^1{}_N \\
 	A^2{}_1 & A^2{}_2 & \cdots & A^2{}_N \\
 	\vdots  & \vdots  & \ddots & \vdots  \\
 	A^M{}_1 & A^M{}_2 & \cdots & A^M{}_N
 \end{array}\right] \;,
-\end{equation}
+\f}
 that is, the first (raised) index represents the row number and the
 second (lowered) index the column number.  The standard C array
-structure declares this object as, say, \verb@float a[M][N]@, where
-the element $A^i{}_j$ is stored in \verb@a[i][j]@.  The LAL array
-structure \verb@REAL4Array a@ stores data in a flattened block of
-memory, where the element $A^i{}_j$ is stored in \verb@a.data[i*M+j]@.
+structure declares this object as, say, <tt>float a[M][N]</tt>, where
+the element \f$A^i{}_j\f$ is stored in <tt>a[i][j]</tt>.  The LAL array
+structure <tt>REAL4Array a</tt> stores data in a flattened block of
+memory, where the element \f$A^i{}_j\f$ is stored in <tt>a.data[i*M+j]</tt>.
 
-A \emph{row vector} is a matrix with only one row ($M=1$).  In the
+A <em>row vector</em> is a matrix with only one row (\f$M=1\f$).  In the
 above place-index notation, it is represented with a single lowered
 index:
-\begin{equation}
+\f{equation}{
 \mathsf{r}_a = \left[\begin{array}{cccc} r_1 & r_2 & \cdots & r_N
 	\end{array}\right] \;.
-\end{equation}
-A \emph{column vector} is a matrix with only one column ($N=1$).  In
+\f}
+A <em>column vector</em> is a matrix with only one column (\f$N=1\f$).  In
 the above place-index notation, it is represented with a single raised
 index:
-\begin{equation}
+\f{equation}{
 \mathsf{c}^a = \left[\begin{array}{c} c^1 \\ c^2 \\ \vdots \\ c^M
 	\end{array}\right] \;.
-\end{equation}
+\f}
 In LAL, both of these objects are conventionally represented as a LAL
 vector structure.  Whether the object is to be used as a row or column
 vector must be determined from context; it is not specified by the
 datatype.
 
-\subsubsection*{Properties}
+\section TODOref Properties
 
 The basic matrix operations are addition, scalar multiplication, and
 vector multiplication.  We assume the reader is familiar with these.
 In addition, we will refer to the following unary operations on
-\emph{square} matrices:
+\e square matrices:
 
-\textit{Inversion:} The inverse $(\mathsf{A}^{-1}){}^a{}_b$ of a
-matrix $\mathsf{A}^a{}_b$ is one such that their matrix product is the
-identity matrix $\bd^a{}_b$ (whose elements $\delta^i{}_j$ are just
+\e Inversion: The inverse \f$(\mathsf{A}^{-1}){}^a{}_b\f$ of a
+matrix \f$\mathsf{A}^a{}_b\f$ is one such that their matrix product is the
+identity matrix \f$\bd^a{}_b\f$ (whose elements \f$\delta^i{}_j\f$ are just
 the Kr\"onecker delta function).
 
-\textit{Transposition:} The transpose $(\mathsf{A}^T){}^a{}_b$ of a
-matrix $\mathsf{A}^a{}_b$ is given by interchanging the indecies on
-each component: $(A^T){}^i{}_j=A^j{}_i$.
+\e Transposition: The transpose \f$(\mathsf{A}^T){}^a{}_b\f$ of a
+matrix \f$\mathsf{A}^a{}_b\f$ is given by interchanging the indecies on
+each component: \f$(A^T){}^i{}_j=A^j{}_i\f$.
 
-\textit{Conjugation:} The Hermitian conjugate (adjoint)
-$(\mathsf{A}^\dag){}^a{}_b$ of a matrix $\mathsf{A}^a{}_b$ is given by
+\e Conjugation: The Hermitian conjugate (adjoint)
+\f$(\mathsf{A}^\dag){}^a{}_b\f$ of a matrix \f$\mathsf{A}^a{}_b\f$ is given by
 interchanging the indecies and taking the complex conjugate of each
-component: $(A^\dag){}^i{}_j={A^j{}_i}^*$.
+component: \f$(A^\dag){}^i{}_j={A^j{}_i}^*\f$.
 
 A matrix that is identical to its own transpose is called
-\emph{symmetric}.  A matrix whose transpose is identical to the
-original matrix's inverse is called \emph{orthogonal}.  A matrix that
-is identical to its own Hermitian conjugate is called \emph{Hermitian}
-(or \emph{self-adjoint}.  A matrix whose Hermitian conjugate is
-identical to the original matrix's inverse is called \emph{unitary}.
+\e symmetric.  A matrix whose transpose is identical to the
+original matrix's inverse is called \e orthogonal.  A matrix that
+is identical to its own Hermitian conjugate is called \e Hermitian
+(or <em>self-adjoint</em>.  A matrix whose Hermitian conjugate is
+identical to the original matrix's inverse is called \e unitary.
 
-At present, the routines under this header only deal with \emph{real}
+At present, the routines under this header only deal with \e real
 matrices (i.e.\ matrices, vectors, and scalars whose components are
 all real).  In this case, symmetric is equivalent to Hermitian, and
 orthogonal is equivalent to unitary.
 
 %"
 
-******************************************************* </lalLaTeX> */
+*/
 
 #ifndef _MATRIXUTILS_H
 #define _MATRIXUTILS_H
@@ -132,9 +124,7 @@ extern "C" {
 
 NRCSID( MATRIXUTILSH, "$Id$" );
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error conditions}
-****************************************** </lalLaTeX><lalErrTable> */
+/** \name Error Codes */ /*@{*/
 #define MATRIXUTILSH_ENUL  1
 #define MATRIXUTILSH_EDIM  2
 #define MATRIXUTILSH_EITER 3
@@ -146,18 +136,18 @@ NRCSID( MATRIXUTILSH, "$Id$" );
 #define MATRIXUTILSH_MSGEITER "Did not converge after maximum iterations"
 #define MATRIXUTILSH_MSGESING "Singular matrix"
 #define MATRIXUTILSH_MSGEMEM  "Memory allocation error"
-/*************************************************** </lalErrTable> */
+/*@}*/
 
-/* <lalLaTeX>
-\vfill{\footnotesize\input{MatrixUtilsHV}}
-</lalLaTeX> */
+
+
+
 
 
 /* Function prototypes. */
 
-/* <lalLaTeX>
-\newpage\input{MatrixOpsC}
-</lalLaTeX> */
+
+
+
 
 void
 LALI2MatrixAdd( LALStatus *, INT2Array *out, INT2Array *in1, INT2Array *in2 );
@@ -227,9 +217,9 @@ LALCMatrixAdjoint( LALStatus *, COMPLEX8Array *out, COMPLEX8Array *in1 );
 void
 LALZMatrixAdjoint( LALStatus *, COMPLEX16Array *out, COMPLEX16Array *in1 );
 
-/* <lalLaTeX>
-\newpage\input{DetInverseC}
-</lalLaTeX> */
+
+
+
 void
 LALSMatrixDeterminant( LALStatus *, REAL4 *det, REAL4Array *matrix );
 
@@ -248,9 +238,9 @@ LALDMatrixInverse( LALStatus *, REAL8 *det, REAL8Array *matrix, REAL8Array *inve
 void
 LALDMatrixDeterminantErr( LALStatus *, REAL8 det[2], REAL8Array *matrix, REAL8Array *matrixErr );
 
-/* <lalLaTeX>
-\newpage\input{DetInverseInternalC}
-</lalLaTeX> */
+
+
+
 void
 LALSLUDecomp( LALStatus   *,
 	      INT2        *sgn,
@@ -275,13 +265,13 @@ LALDLUBackSub( LALStatus   *,
 	       REAL8Array  *matrix,
 	       UINT4Vector *indx );
 
-/* <lalLaTeX>
-\newpage\input{DetInverseTestC}
-</lalLaTeX> */
 
-/* <lalLaTeX>
-\newpage\input{EigenC}
-</lalLaTeX> */
+
+
+
+
+
+
 void
 LALSSymmetricEigenVectors( LALStatus *, REAL4Vector *values, REAL4Array *matrix );
 
@@ -294,9 +284,9 @@ LALDSymmetricEigenVectors( LALStatus *, REAL8Vector *values, REAL8Array *matrix 
 void
 LALDSymmetricEigenValues( LALStatus *, REAL8Vector *values, REAL8Array *matrix );
 
-/* <lalLaTeX>
-\newpage\input{EigenInternalC}
-</lalLaTeX> */
+
+
+
 void
 LALSSymmetricToTriDiagonal( LALStatus   *,
 			    REAL4Vector *diag,
@@ -345,9 +335,9 @@ LALDTriDiagonalToDiagonal2( LALStatus   *,
 			    REAL8Array  *matrix,
 			    REAL8Vector *offDiag );
 
-/* <lalLaTeX>
-\newpage\input{EigenTestC}
-</lalLaTeX> */
+
+
+
 
 #ifdef  __cplusplus
 }

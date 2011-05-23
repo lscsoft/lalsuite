@@ -418,7 +418,7 @@ sub cleanupLSD {
         $text =~ s!\\verb(.)(.+?)\1!\\texttt{$2}!mg;
         $text =~ s!\\emph!\\textit!sg;
         $text =~ s!\\text(?:sc|sl|bf|sf)!\\texttt!sg;
-        $text =~ s{\\text(tt|it)$wbbr}{
+        $text =~ s{\\text(tt|it)\s*$wbbr}{
             my $e = $1;
             $_ = $2;
             s/\\_/_/g;
@@ -427,14 +427,19 @@ sub cleanupLSD {
                 ($e eq 'tt' ? "<tt>$_</tt>" : "<em>$_</em>" )
         }sge;
 
-        # replace subsection commands, preserving labels
-        $text =~ s{\\(?:sub)*section\*?$wbbr\n(?<LBL>\\label$bbr)?}{
-            $_ = '\\heading{' . $1 . "}\n";
-            if (defined(my $lbl = $+{LBL})) {
-                $_ .= '\\latexonly' . &$illref($lbl) . '\\endlatexonly';
+        # rephrase (sub)section commands, turning labels (if present) into anchors
+        $text =~ s{\\((?:sub)*section)\*?\s*$wbbr\n(?<LBL>\\label\s*$bbr)?}{
+            my $lbl = $+{LBL};
+            if (defined($lbl)) {
+                $lbl =~ s!\\label\s*$wbbr!$1!;
+            } else {
+                $lbl = "TODOref";
             }
+            $_ = '\\' . $1 . ' ' . $lbl . ' '. $2 . "\n";
             $_
         }sge;
+
+        # replace paragraph command by 'heading'
         $text =~ s!\\paragraph\*?$wbbr!\\heading{$1}!mg;
 
         # preserve references
@@ -447,20 +452,39 @@ sub cleanupLSD {
         # replace probable filenames with references
         $text =~ s!<tt>(.*?\.[ch])</tt>!\\ref \1!mg;
 
-        # replace citations
-        $text =~ s{\\cite$wbbr}{
+        # replace citations by refs
+        $text =~ s{\\cite\s*$wbbr}{
             $_ = $1;
-            s/://g;
-            '\ref ' . $_
+            s/[:\s-]//g;
+            '[\ref ' . $_ .']'
         }mge;
+
+        # replace bibitems by anchors
+        $text =~ s{\\bibitem\s*$wbbr}{
+            $_ = $1;
+            s/[:\s-]//g;
+            '\anchor ' . $_ . ' <b>[' . $_ . "]</b> "
+        }mge;
+        # and get rid of 'bibliography'
+        $text =~ s!\\begin{thebibliography}{.*}!(MANUAL INTERVENTION begin bibliography)!;
+        $text =~ s!\\end{thebibliography}!(MANUAL INTERVENTION end bibliography)!;
+
+        # replace LaTeX's "\_" by "_"
+        $text =~ s!\\_!_!g;
 
         # replace miscellaneous LaTeX commands
         $text =~ s!\\lq!`!g;
         $text =~ s!``|''!"!g;
 
+        # replace \href{} hyperlinks
+        $text =~ s!\\href\s*{(.*)}{(.*)}!<a href="$1">$2</a>!g;
+
+        # replace ".~" by ".\ " which is understood by doxygen
+        $text =~ s!.~!.\\ !g;
+
         # remove any empty LaTeX comments
         $text =~ s!^$n*%$n*$!!mg;
-        
+
     }
 
     # get rid of empty comments

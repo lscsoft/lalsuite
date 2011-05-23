@@ -19,11 +19,7 @@
 
 /**
 \file
-
-\heading{Module \ref FrameData.c}
-\latexonly\label{ss_FrameData_c}\endlatexonly
-
-Functions for reading frame data.
+\brief Functions for reading frame data.
 
 \heading{Description}
 
@@ -32,7 +28,7 @@ specified directory and performs the necessary preparation for reading these
 files.  When the user is finished reading frame data from the path, the
 routine <tt>LALFinalizeFrameData()</tt> should be called.
 
-The routine <tt>LALGetFrameData()</tt> gets the next frame IFO\_DMRO data while
+The routine <tt>LALGetFrameData()</tt> gets the next frame IFO_DMRO data while
 the routine <tt>LALGetFrameDataResponse()</tt> gets the current response
 function.  The routine <tt>LALGetFrameDataResponse()</tt> does a spline-fit to
 the sweptsine response of the instrument in order to get the response

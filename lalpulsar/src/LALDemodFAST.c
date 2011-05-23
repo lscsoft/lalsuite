@@ -22,13 +22,7 @@
 \file
 \ingroup pulsarTODO
 
-\subsection{Module \ref LALDemodFAST.c}\label{ss:LALDemodFAST.c}
-Computes a demodulated Fourier transform (DeFT) given a set of input
-short Fourier transforms (SFT).
-
-\heading{Prototypes}
-
-
+\brief Computes a demodulated Fourier transform (DeFT) given a set of input short Fourier transforms (SFT).
 
 
 \heading{Description}
@@ -44,7 +38,7 @@ The <tt>parameter structure</tt> defines the search frequency band
 (\c df) the first frequency of the input SFTs (\c ifmin), how
 many SFTs have to be combined (\c SFTno) and template parameters
 (<tt>*spinDwnOrder</tt>, <tt>*spinDwn</tt> and
-@<tt>*skyConst</tt>). \c amcoe contains the values of the amplitude
+<tt>*skyConst</tt>). \c amcoe contains the values of the amplitude
 modulation functions \f$a\f$ and \f$b\f$.  \c Dterms represents the
 numbers of terms to be summed to compute the Dirichlet kernel on each
 side of the instantaneous frequency.
@@ -55,7 +49,7 @@ complex8frequencyseries.
 
 The \c output is a pointer a structure of type \c LALFstat
 containing an array of the values of \f$\mathcal{F}\f$. In addition, if
-<tt>DemodPar->returnFaFb == TRUE</tt>, the values of \f$F_a\f$ and \f$F_b\f$
+<tt>DemodPar-\>returnFaFb == TRUE</tt>, the values of \f$F_a\f$ and \f$F_b\f$
 will be returned in addition.  (Memory has to be allocated correctly
 beforehand!)
 

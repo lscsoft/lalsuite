@@ -1,19 +1,20 @@
-dnl $Id$
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
-define(`STYPE',`format(`%sSequence',TYPE)')
-define(`FUNC',`format(`LAL%sMoment',TYPECODE)')
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define STYPE CONCAT2(TYPE,Sequence)
+#define FUNC CONCAT3(LAL,TYPECODE,Moment)
 
 
-/* <lalVerbatim file="LALMomentCP"> */
 void FUNC (
 	LALStatus		*status,
 	TYPE			*result,
 	STYPE		*data,
 	INT4			whichMoment
 )
-{	/* </lalVerbatim> */
+{	
 
 	/*  Variable Declarations  */
 	INT4	iterator;
@@ -23,7 +24,7 @@ void FUNC (
 	TYPE	sum	= 0.0;
 	TYPE	base	= 0.0;
 
-	INITSTATUS( status, "FUNC" , LALMOMENTC);
+	INITSTATUS( status, STRING(FUNC) , LALMOMENTC);
 
 	/*  Check input for existence.  */
 	/*  Result should come in Allocated  */

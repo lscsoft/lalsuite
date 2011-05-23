@@ -1,29 +1,21 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')define(`SIZE',`8')')dnl
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')define(`SIZE',`8')')dnl
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')define(`SIZE',`2')')dnl
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')define(`SIZE',`8')')dnl
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')define(`SIZE',`2')')dnl
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')define(`SIZE',`8')')dnl
-define(`COMPLEX',`0')dnl
-ifelse(TYPECODE,`Z',`define(`COMPLEX',`1')')dnl
-ifelse(TYPECODE,`C',`define(`COMPLEX',`1')')dnl
-define(`ATYPE',`format(`%sArray',TYPE)')dnl
-define(`ADDFUNC',`format(`LAL%sMatrixAdd',TYPECODE)')dnl
-define(`MULFUNC',`format(`LAL%sMatrixMultiply',TYPECODE)')dnl
-define(`TRNFUNC',`format(`LAL%sMatrixTranspose',TYPECODE)')dnl
-dnl
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define ATYPE CONCAT2(TYPE,Array)
+#define ADDFUNC CONCAT3(LAL,TYPECODE,MatrixAdd)
+#define MULFUNC CONCAT3(LAL,TYPECODE,MatrixMultiply)
+#define TRNFUNC CONCAT3(LAL,TYPECODE,MatrixTranspose)
+
 void
 ADDFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1, ATYPE *in2 )
 {
   UINT4 ni, nj;                      /* index ranges */
   TYPE *outData, *in1Data, *in2Data; /* data pointers */
 
-  INITSTATUS( stat, "ADDFUNC", MATRIXOPSC );
+  INITSTATUS( stat, STRING(ADDFUNC), MATRIXOPSC );
 
   /* Check for valid input arguments. */
   ASSERT( out, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -82,7 +74,7 @@ MULFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1, ATYPE *in2 )
   UINT4 ij, ik, kj, in, kn;          /* array indices */
   TYPE *outData, *in1Data, *in2Data; /* data pointers */
 
-  INITSTATUS( stat, "MULFUNC", MATRIXOPSC );
+  INITSTATUS( stat, STRING(MULFUNC), MATRIXOPSC );
 
   /* Check for valid input arguments. */
   ASSERT( out, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -150,7 +142,7 @@ TRNFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1 )
   UINT4 ij, ji, in;        /* array indices */
   TYPE *outData, *in1Data; /* data pointers */
 
-  INITSTATUS( stat, "TRNFUNC", MATRIXOPSC );
+  INITSTATUS( stat, STRING(TRNFUNC), MATRIXOPSC );
 
   /* Check for valid input arguments. */
   ASSERT( out, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );

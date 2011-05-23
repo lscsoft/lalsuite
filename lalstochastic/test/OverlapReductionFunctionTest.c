@@ -45,7 +45,7 @@ Options:
 
 
 This program tests the function <tt>LALOverlapReductionFunction()</tt>, which calculates
-the overlap reduction\eqref{stochastic_e_gamma(f)} for a pair of gravitational
+the overlap reduction\eqref{stochastic_e_gamma} for a pair of gravitational
 wave detectors.
 
 First, it tests that the correct error codes
