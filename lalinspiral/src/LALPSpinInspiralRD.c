@@ -103,6 +103,7 @@
 NRCSID(LALPSPININSPIRALRDC, "$Id$");
 
 #define omM0 0.0680414 //=6^(-3/2)
+#define omMlow 0.049 
 #define sqrtOnePointFive 1.22474
 #define sqrtPoint15      0.387298
 #define sqrtFiveOver2    1.1183
@@ -1635,12 +1636,11 @@ static int XLALSpinInspiralAdaptiveEngine(
 					  ) 
 {
 
-  INT4 j,k;
+  UINT4 j,k;
   INT4 kend=0;
   INT4 jend=0;
-  INT4 intlen;
+  UINT4 intlen;
   UINT4 intreturn;
-  INT4 Npoints;
 
   LALSpinInspiralAngle trigAngle;
 
@@ -1720,8 +1720,13 @@ static int XLALSpinInspiralAdaptiveEngine(
   }
 
   /* if we have enough space, compute the waveform components; otherwise abort */
-  if ( (UINT4)intlen >= mparams->length ) {
+  if ( intlen >= mparams->length ) {
     fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: no space to write in waveforms: %d vs. %d\n",intlen,mparams->length);
+    XLAL_ERROR(func, XLAL_ESIZE);
+  }
+
+  if ( intlen < 2 ) {
+    fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: incorrect integration with length %d\n",intlen);
     XLAL_ERROR(func, XLAL_ESIZE);
   }
   /* End of integration checks*/
@@ -1741,8 +1746,9 @@ static int XLALSpinInspiralAdaptiveEngine(
 
   if (mparams->inspiralOnly!=1) {
 
-    Npoints = (UINT4) 1./mparams->dt/20.;
-    if (Npoints>intlen) Npoints=intlen;
+    UINT4 Npoints = 1;
+
+    while ( ((Npoints*2)<intlen) && (omega[intlen-Npoints]>omMlow) ) Npoints*=2;
 
     REAL8Vector *omega_s   = XLALCreateREAL8Vector(Npoints);
     REAL8Vector *LNhx_s    = XLALCreateREAL8Vector(Npoints);
@@ -1761,7 +1767,9 @@ static int XLALSpinInspiralAdaptiveEngine(
     REAL8Vector *ddiota    = XLALCreateREAL8Vector(Npoints);
     REAL8Vector *ddalpha   = XLALCreateREAL8Vector(Npoints);
 
-    for (k=0; k<Npoints; k++) {
+
+
+    for (k=0; k< Npoints; k++) {
       j=k+intlen-Npoints;
       omega_s->data[k]  = omega[j];
       LNhx_s->data[k]   = LNhx[j];
@@ -1794,7 +1802,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     alphak=alpha_s->data[kend];
 
     if (kend<0) {
-      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: phenomenological phase cannot be added\n");
+      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: phenomenological phase cannot be added: initial omega too high %11.6e\n",omega_s->data[0]);
       XLAL_ERROR(func,XLAL_EFAILED);
     }
 
@@ -1808,7 +1816,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     }
     domegak  = domega->data[kend];
 
-    for (k=0; k<Npoints; k++) {
+    for (k=0; k< Npoints; k++) {
       LNhxy = sqrt(LNhx_s->data[k] * LNhx_s->data[k] + LNhy_s->data[k] * LNhy_s->data[k]);
       if (LNhxy > 0.) {
 	diota->data[k]  = -dLNhz->data[k] / LNhxy;
@@ -1855,7 +1863,7 @@ static int XLALSpinInspiralAdaptiveEngine(
 
   alpha=atan2(LNhy[0],LNhx[0]);
 
-  for (j=0;j<=jend;j++) {
+  for (j=0;j<=(UINT4)jend;j++) {
 
     freq->data[j]=omega[j];
     v=pow(omega[j],oneby3);
@@ -1900,7 +1908,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     }
     else alpha = alphaold;
     if ((fabs(alpha-alphaold)>LAL_PI/4.)&&(fabs(alpha-alphaold)<2.*LAL_PI-0.1)&&(j>1)) 
-      fprintf(stderr,"*** LALPSpinInspiralRD ERROR ***: Problem with coordinate singularity %d %12.6e  %12.6e  \n   %12.6e %12.6e %12.6e  %12.6e %12.6e  %12.6e\n",j,alpha/LAL_PI*180.,alphaold/LAL_PI*180.,LNhy[j],LNhx[j],omega[j],LNhy[j-1],LNhx[j-1],omega[j-1]);
+      fprintf(stderr,"*** LALPSpinInspiralRD ERROR ***: Problem with coordinate singularity: alpha[%d]: %12.6e  alpha[%d]:%12.6e  \n  Step %d:  LNhy: %12.6e LNhx: %12.6e  omega:%12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  omega: %12.6e\n",j,alpha/LAL_PI*180.,j-1,alphaold/LAL_PI*180.,j,LNhy[j],LNhx[j],omega[j],j,LNhy[j-1],LNhx[j-1],omega[j-1]);
 
     errcode  = XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
 
@@ -2059,7 +2067,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   initphi=params->startPhase;
 
   initomega=params->fLower*unitHz;
-  if ( initomega > (0.85 * omM0) ) {
+  if ( initomega > omMlow ) {
     fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: Initial frequency too high: %11.5e for omM ~ %11.5e and m:(%8.3f, %8.3f)\n",params->fLower,omM0/unitHz,params->mass1,params->mass2);
     DETATCHSTATUSPTR(status);
     RETURN(status);
