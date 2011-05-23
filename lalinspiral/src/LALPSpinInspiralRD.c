@@ -1332,8 +1332,8 @@ static void LALSpinInspiralEngine(LALStatus * status,
   REAL8 S1x,S1y,S1z;
   REAL8 S2x,S2y,S2z;
   REAL8 LNhxy;
-  REAL8 energy=0.;
-  REAL8 energywrite;
+  REAL8 energy      = 0.;
+  REAL8 energywrite = 0.;
 
   REAL8 LNhS1=0.;
   REAL8 LNhS2=0.;
@@ -1341,20 +1341,29 @@ static void LALSpinInspiralEngine(LALStatus * status,
   REAL8 S1S2=0.;
   REAL8 S2S2=0.;
   REAL8 dLNhx,dLNhy,dLNhz;
-  REAL8 LNhS1w,LNhS2w,S1S1w,S2S2w,S1S2w;
+  REAL8 LNhS1w = 0.;
+  REAL8 LNhS2w = 0.;
+  REAL8 S1S1w  = 0.;
+  REAL8 S2S2w  = 0.;
+  REAL8 S1S2w  = 0.;
 
   REAL8 alpha,alphaold;
-  REAL8 dalpha=0.;
   REAL8 dalphaold;
-  REAL8 ddalpha=0.;
-  REAL8 diota=0.;
+  REAL8 dalpha  = 0.;
+  REAL8 ddalpha = 0.;
+  REAL8 diota   = 0.;
+  REAL8 ddiota  = 0.;
   REAL8 diotaold;
-  REAL8 ddiota=0.;
 
-  REAL8 Phiwrite,alphawrite;
-  REAL8 omegawrite,domegawrite,ddomegawrite;
-  REAL8 diotawrite,ddiotawrite;
-  REAL8 dalphawrite,ddalphawrite;
+  REAL8 Phiwrite     = 0.;
+  REAL8 alphawrite   = 0.;
+  REAL8 omegawrite   = 0.;
+  REAL8 domegawrite  = 0.;
+  REAL8 ddomegawrite = 0.;
+  REAL8 diotawrite   = 0.;
+  REAL8 ddiotawrite  = 0.;
+  REAL8 dalphawrite  = 0.;
+  REAL8 ddalphawrite = 0.;
 
   REAL8 amp22,amp33,amp44;
   REAL8 unitHz;
