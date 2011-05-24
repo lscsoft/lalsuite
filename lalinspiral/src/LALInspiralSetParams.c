@@ -17,63 +17,58 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralSetParamsCV">
-Author: Churches, D. K and Sathyaprakash, B.S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Churches, D. K and Sathyaprakash, B.S.
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
+\brief A routine that fills an \c ::InspiralTemplate structure
+based on the values in the \c ::InspiralCoarseBankIn structure.
 
-\subsection{Module \texttt{LALInspiralSetParams.c}}
+\heading{Prototypes}
 
-A routine that fills an \texttt{InspiralTemplate} structure
-based on the values in the \texttt{InspiralCoarseBankIn} structure.
+<tt>LALInspiralSetParams()</tt>
+<ul>
+   <li> <tt>tempPars,</tt> Output
+   </li><li> <tt>coarseIn,</tt> Input</li>
+</ul>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralSetParamsCP}
-\idx{LALInspiralSetParams()}
-\begin{itemize}
-   \item \texttt{tempPars,} Output
-   \item \texttt{coarseIn,} Input
-\end{itemize}
-
-\subsubsection*{Description}
+\heading{Description}
 
 This function takes as an input a structure of type
-\texttt{InspiralCoarseBankIn} and it fills up the
-elements of a structure of type \texttt{InspiralTemplate}.
+\c ::InspiralCoarseBankIn and it fills up the
+elements of a structure of type \c ::InspiralTemplate.
 The function sets the fields
-\texttt{massChoice}, \texttt{ieta}, \texttt{signalAmplitude},
-\texttt{tSampling}, \texttt{fLower}, \texttt{fCutoff},
-\texttt{order},
-\texttt{approximant}, \texttt{nStartPad}, \texttt{nEndPad}.
+\c massChoice, \c ieta, \c signalAmplitude,
+\c tSampling, \c fLower, \c fCutoff,
+\c order,
+\c approximant, \c nStartPad, \c nEndPad.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 None
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralSetParamsCV}}
 
-</lalLaTeX>  */
+
+*/
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 
 NRCSID (LALINSPIRALSETPARAMSC, "Id: $");
 
-/*  <lalVerbatim file="LALInspiralSetParamsCP"> */
+
 
 void LALInspiralSetParams(LALStatus            *status,
                           InspiralTemplate     *tempPars,
                           InspiralCoarseBankIn coarseIn)
-{  /*  </lalVerbatim>  */
+{
 
    INITSTATUS (status, "LALInspiralSetParams", LALINSPIRALSETPARAMSC);
    ATTATCHSTATUSPTR(status);

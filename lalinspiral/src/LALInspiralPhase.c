@@ -17,50 +17,34 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralPhaseCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralPhase.c}}
-
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralPhaseCP}
-\idx{LALInspiralPhase()}
-
-\subsubsection*{Description}
-
-The function \texttt{LALInspiralPhase} calculates the phase $\phi(v)$ of a gravitational wave from an
+\brief The function \c LALInspiralPhase() calculates the phase \f$\phi(v)\f$ of a gravitational wave from an
 inspiralling binary system.
+
+\heading{Description}
 
 It does this using the following equation, which is one of the pair which constitute the gravitational wave
 phasing formula,
 
-\begin{equation}
+\anchor phiofv \f{equation}{
 \phi(v) =  \phi_{0} - 2 \int_{v_{0}}^{v} v^{3} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
 \label{phiofv}
-\end{equation}
+\f}
 
-\texttt{LALInspiralPhase} calculates $\phi(v)$, given $\phi_{0}$, $v_{0}$,  $v$, $E^{\prime}(v)$ and
-$\mathcal{F}(v)$.
+\c LALInspiralPhase calculates \f$\phi(v)\f$, given \f$\phi_{0}\f$, \f$v_{0}\f$,  \f$v\f$, \f$E^{\prime}(v)\f$ and
+\f$\mathcal{F}(v)\f$.
+
+\heading{Algorithm}
 
 
-\subsubsection*{Algorithm}
+\heading{Uses}
+LALDRombergIntegrate()
+\heading{Notes}
 
-
-\subsubsection*{Uses}
-
-\texttt{LALDRombergIntegrate}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralPhaseCV}}
-
-</lalLaTeX>  */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -69,7 +53,7 @@ $\mathcal{F}(v)$.
 
 NRCSID (LALINSPIRALPHASEC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralPhaseCP"> */
+
 void
 LALInspiralPhase (
    LALStatus *status,
@@ -77,7 +61,7 @@ LALInspiralPhase (
    REAL8     v,
    void      *params
    )
-{ /* </lalVerbatim>  */
+{
 
    void *funcParams;
    DIntegrateIn intinp;

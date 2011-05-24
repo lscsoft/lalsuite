@@ -17,51 +17,32 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralPhiofVIntegrandCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief The function \c LALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
 
-\subsection{Module \texttt{LALInspiralPhiofVIntegrand.c}}
+\heading{Prototypes}
 
-The function \texttt{LALInspiralPhiofVIntegrandIn} calculates the quantity $v^{3} E^{\prime}(v)/\mathcal{F}(v)$.
+<tt>LALInspiralPhiofVIntegrand()</tt>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralPhiofVIntegrandCP}
-\index{\verb&LALInspiralPhiofVIntegrand()&}
+\heading{Description}
 
-\subsubsection*{Description}
+The function \c LALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
 
-The function \texttt{LALInspiralPhiofVIntegrandIn} calculates the quantity $v^{3} E^{\prime}(v)/\mathcal{F}(v)$.
+\heading{Uses}
 
-\subsubsection*{Algorithm}
+This function calls \c dEnergy and \c flux functions that are defined in the
+\c expnFunc structure  and represent \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$, respectively,
+and pointed to the appropriate PN functions with a call to <tt>LALInspiralChooseModel().</tt>
 
-
-\subsubsection*{Uses}
-
-This function calls {\tt dEnergy} and {\tt flux} functions that are defined in the
-{\tt expnFunc} structure  and represent $E^{\prime}(v)$ and $\mathcal{F}(v)$, respectively,
-and pointed to the appropriate PN functions with a call to \texttt{LALInspiralChooseModel.}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralPhiofVIntegrandCV}}
-
-</lalLaTeX>  */
+\heading{Notes}
 
 
 
-
-
-
-
-
-
-
-
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -69,7 +50,7 @@ and pointed to the appropriate PN functions with a call to \texttt{LALInspiralCh
 
 NRCSID (LALINSPIRALPHIOFVINTEGRANDC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralPhiofVIntegrandCP"> */
+
 void
 LALInspiralPhiofVIntegrand (
    LALStatus  *status,
@@ -77,7 +58,7 @@ LALInspiralPhiofVIntegrand (
    REAL8       v,
    void       *params
    )
-{ /* </lalVerbatim>  */
+{
 
   PhiofVIntegrandIn *in;
 
@@ -98,4 +79,3 @@ LALInspiralPhiofVIntegrand (
 
 
 }
-

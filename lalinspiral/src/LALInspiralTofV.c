@@ -17,44 +17,26 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralTofVCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralTofV.c}}
+\brief NONE
 
 This module outputs
-\begin{equation}
-{\tt tofv} = t - t_0 + m \int_{v_0}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv\,.
-\end{equation}
-where the constants $t,$ $t_0,$ $v_0,$ and functions in the integrand
-$E'(v)$ and ${\cal F}(v)$ are defined in the {\tt void} structure {\tt params.}
+\f{equation}{
+\c tofv = t - t_0 + m \int_{v_0}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv\,.
+\f}
+where the constants \f$t,\f$ \f$t_0,\f$ \f$v_0,\f$ and functions in the integrand
+\f$E'(v)\f$ and \f${\cal F}(v)\f$ are defined in the \c void structure <tt>params.</tt>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralTofVCP}
-\index{\verb&LALInspiralTofV()&}
+\heading{Uses}
+\code
+LALDRombergIntegrate()
+\endcode
 
-\subsubsection*{Description}
-
-
-\subsubsection*{Algorithm}
-
-
-\subsubsection*{Uses}
-
-\texttt{LALDRombergIntegrate}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralTofVCV}}
-
-</lalLaTeX>  */
-
-
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -63,7 +45,7 @@ $E'(v)$ and ${\cal F}(v)$ are defined in the {\tt void} structure {\tt params.}
 
 NRCSID (LALINSPIRALTOFVC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralTofVCP"> */
+
 void
 LALInspiralTofV (
    LALStatus *status,
@@ -71,7 +53,7 @@ LALInspiralTofV (
    REAL8 v,
    void *params
    )
-{ /* </lalVerbatim>  */
+{
 
    void *funcParams;
    DIntegrateIn intinp;

@@ -26,51 +26,34 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="TrigScanEThincaCommonCV">
-Author: Robinson, C. A. K.
-</lalVerbatim>
-#endif
-
 #include <lal/TrigScanEThincaCommon.h>
 
 NRCSID( TRIGSCANETHINCACOMMONC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{TrigScanEThincaCommon.c}}
+/**
+\author Robinson, C. A. K.
+\file
 
-Provides helper functions used in TrigScan and E-thinca.
+\brief Provides helper functions used in TrigScan and E-thinca.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{TrigScanEThincaCommonCP}
-\idx{XLALCreateTriggerErrorList()}
-\idx{XLALDestroyTriggerErrorList()}
-
-\subsubsection*{Description}
-The function \texttt{XLALCreateTriggerErrorList()} creates a linked list of
+\heading{Description}
+The function <tt>XLALCreateTriggerErrorList()</tt> creates a linked list of
 structures pointing to the trigger and their associated position vector and
 shape matrix. If required, the maximum difference in tC associated with the
-triggers in the list of \texttt{SnglInspiralTable}s will be passed back in
-\texttt{tcMax}.
+triggers in the list of \c ::SnglInspiralTable's will be passed back in
+\c tcMax.
 
-The function \texttt{XLALDestroyTriggerErrorList()} frees all memory associated
-with the \texttt{TriggerErrorList}, with the exception of the wrapped
-\texttt{SnglInspiralTable}s, which will normally still be required after
+The function <tt>XLALDestroyTriggerErrorList()</tt> frees all memory associated
+with the \c ::TriggerErrorList, with the exception of the wrapped
+::SnglInspiralTable's, which will normally still be required after
 TrigScan and E-thinca have completed.
 
-\vfill{\footnotesize\input{SnglInspiralUtilsCV}}
+*/
 
-</lalLaTeX>
-#endif
-
-
-/* <lalVerbatim file="TrigScanEThincaCommonCP"> */
 TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
                                                REAL8             scaleFactor,
                                                REAL8             *tcMax )
-/* </lalVerbatim> */
+
 {
 
   static const char *func = "XLALCreateTriggerErrorList";
@@ -139,9 +122,9 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
   return errorListHead;
 }
 
-/* <lalVerbatim file="TrigScanEThincaCommonCP"> */
+
 void XLALDestroyTriggerErrorList( TriggerErrorList *errorListHead )
-/* </lalVerbatim> */
+
 {
 
   TriggerErrorList *thisErrorList;

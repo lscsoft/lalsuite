@@ -17,81 +17,67 @@
 *  MA  02111-1307  USA
 */
 
-/**************************** <lalVerbatim file="GetInspiralParamsCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup GeneratePPNInspiral_h
 
-/********************************************************** <lalLaTeX>
+\brief Computes the input parameters for a PPN inspiral.
 
-\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
-
-\subsection{Module \texttt{GetInspiralParams.c}}
-\label{ss:GetInspiralParams.c}
-
-Computes the input parameters for a PPN inspiral.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{GetInspiralParamsCP}
-\idx{LALGetInspiralParams()}
-
-\subsubsection*{Description}
+\heading{Description}
 
 This function takes a Galactic location and pair of masses from
-\verb@*input@ and uses them to set the \verb@PPNParamStruc@ fields
-\verb@output->position@, \verb@output->mTot@, \verb@output->eta@, and
-\verb@output->d@.  The fields \verb@output->psi@, \verb@output->inc@,
-and \verb@output->phi@ are set randomly to reflect a uniform
+<tt>*input</tt> and uses them to set the \c PPNParamStruc fields
+<tt>output->position</tt>, <tt>output->mTot</tt>, <tt>output->eta</tt>, and
+<tt>output->d</tt>.  The fields <tt>output->psi</tt>, <tt>output->inc</tt>,
+and <tt>output->phi</tt> are set randomly to reflect a uniform
 distribution in solid angle (that is, cosine of inclination is uniform
-between $-1$ and 1, other angles are uniform between 0 and $2\pi$).
-The routine uses the random sequence specified by \verb@*params@ when
-given, but if \verb@*params@=\verb@NULL@ a new sequence is started
+between \f$-1\f$ and 1, other angles are uniform between 0 and \f$2\pi\f$).
+The routine uses the random sequence specified by <tt>*params</tt> when
+given, but if <tt>*params</tt>=\c NULL a new sequence is started
 internally using the current execution time as a seed. The field
-\verb@input->geocentEndTime@ is ignored by this routine.
+<tt>input->geocentEndTime</tt> is ignored by this routine.
 
-The other \verb@PPNParamStruc@ input fields are not touched by this
+The other \c PPNParamStruc input fields are not touched by this
 routine, and must be specified externally before generating a waveform
 with this structure.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-Galactocentric Galactic axial coordinates $\rho$, $z$, and $l_G$ are
+Galactocentric Galactic axial coordinates \f$\rho\f$, \f$z\f$, and \f$l_G\f$ are
 transformed to geocentric Galactic Cartesian coordinates:
-\begin{eqnarray}
+\f{eqnarray}{
 x_e & = & R_e + \rho\cos l_G \;,\nonumber\\
 y_e & = & \rho\sin l_G \;,\nonumber\\
 z_e & = & z \;,
-\end{eqnarray}
+\f}
 where
-$$
+\f[
 R_e \approx 8.5\,\mathrm{kpc}
-$$
+\f]
 is the distance to the Galactic core (this constant will probably
-migrate into \verb@LALConstants.h@ eventually).  These are converted
+migrate into \ref LALConstants.h eventually).  These are converted
 to geocentric Galactic spherical coordinates:
-\begin{eqnarray}
+\f{eqnarray}{
 d & = & \sqrt{x_e^2 + y_e^2 + z_e^2} \;,\nonumber\\
 b & = & \arcsin\left(\frac{z_e}{d_e}\right) \;,\nonumber\\
 l & = & \arctan\!2(y_e,x_e) \;.
-\end{eqnarray}
-In the calculation of $d$ we factor out the leading order term from
+\f}
+In the calculation of \f$d\f$ we factor out the leading order term from
 the square root to avoid inadvertent overflow, and check for underflow
 in case the location lies on top of the Earth.  The angular
 coordinates are then transformed to equatorial celestial coordinates
-$\alpha$ and $\delta$ using the routines in \verb@SkyCoordinates.h@.
+\f$\alpha\f$ and \f$\delta\f$ using the routines in \ref SkyCoordinates.h.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALGalacticToEquatorial()       LALUniformDeviate()
 LALCreateRandomParams()         LALDestroyRandomParams()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{GetInspiralParamsCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -103,13 +89,13 @@ NRCSID( GETINSPIRALPARAMSC, "$Id$" );
 
 #define LAL_DGALCORE_SI (2.62e20) /* Galactic core distance (metres) */
 
-/* <lalVerbatim file="GetInspiralParamsCP"> */
+
 void
 LALGetInspiralParams( LALStatus                  *stat,
 		      PPNParamStruc              *output,
 		      GalacticInspiralParamStruc *input,
 		      RandomParams               *params )
-{ /* </lalVerbatim> */
+{
   REAL4 x, y, z;  /* geocentric Galactic Cartesian coordinates */
   REAL4 max, d;   /* maximum of x, y, and z, and normalized distance */
   REAL4 psi, phi, inc; /* polarization, phase, and inclination angles */

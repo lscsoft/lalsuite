@@ -20,6 +20,7 @@
 /* <lalVerbatim file="CoarseTestCV">
 Author: Churches, D. K. and Sathyaprakash, B. S., Cokelaer, T
 $Id$
+\ingroup LALInspiralBank_h
 </lalVerbatim> */
 
 /* <lalLaTeX>

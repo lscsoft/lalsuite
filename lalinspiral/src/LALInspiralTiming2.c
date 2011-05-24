@@ -17,53 +17,48 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralTiming2CV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief Module used in solving the timing and phasing functions in quadrature for the
+::Approximant #TaylorT2.
 
-\subsection{Module \texttt{LALInspiralTiming2.c}}
+\heading{Prototypes}
 
-Module used in solving the timing and phasing functions in quadrature for the
-{\tt Approximant TaylorT2}.
+<tt>LALInspiralTiming2()</tt>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralTiming2CP}
-\index{\verb&LALInspiralTiming2()&}
+\heading{Description}
 
-\subsubsection*{Description}
+Given \f$t\f$ and \f$v\f$ this module computes the quantity
+\f{equation}{
+\c tofv = t - t_C - t_N(v) \sum t_k v^k,
+\f}
+where the coefficients \f$t_k\f$ and the Newtonian value \f$t_N\f$ are all defined
+in Table.\tableref{table_flux}.
 
-Given $t$ and $v$ this module computes the quantity
-\begin{equation}
-{\tt tofv} = t - t_C - t_N(v) \sum t_k v^k,
-\end{equation}
-where the coefficients $t_k$ and the Newtonian value $t_N$ are all defined
-in Table~\ref{table:flux}.
-
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 None
 
 
-\subsubsection*{Uses}
+\heading{Uses}
 None
 
-\subsubsection*{Notes}
+\heading{Notes}
 None
 
 
-\vfill{\footnotesize\input{LALInspiralTiming2CV}}
 
-</lalLaTeX>  */
+
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
 NRCSID (LALINSPIRALTIMING2C, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+
 void
 LALInspiralTiming2_0PN (
    LALStatus *status,
@@ -71,7 +66,7 @@ LALInspiralTiming2_0PN (
    REAL8      f,
    void      *params
    )
-{ /* </lalVerbatim>  */
+{
 
   InspiralToffInput *toffIn;
   REAL8 v, v8;
@@ -97,7 +92,7 @@ LALInspiralTiming2_0PN (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+
 void
 LALInspiralTiming2_2PN (
    LALStatus *status,
@@ -105,7 +100,7 @@ LALInspiralTiming2_2PN (
    REAL8      f,
    void      *params
    )
-{ /* </lalVerbatim>  */
+{
 
   InspiralToffInput *toffIn;
   REAL8 v, v2, v8;
@@ -134,7 +129,7 @@ LALInspiralTiming2_2PN (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+
 void
 LALInspiralTiming2_3PN (
    LALStatus *status,
@@ -142,7 +137,7 @@ LALInspiralTiming2_3PN (
    REAL8      f,
    void      *params
    )
-{ /* </lalVerbatim>  */
+{
 
   InspiralToffInput *toffIn;
   REAL8 v, v2, v3, v8;
@@ -172,7 +167,7 @@ LALInspiralTiming2_3PN (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+
 void
 LALInspiralTiming2_4PN (
    LALStatus *status,
@@ -180,7 +175,7 @@ LALInspiralTiming2_4PN (
    REAL8      f,
    void      *params
    )
-{ /* </lalVerbatim>  */
+{
 
   InspiralToffInput *toffIn;
   REAL8 v, v2, v3, v4, v8;
@@ -212,7 +207,7 @@ LALInspiralTiming2_4PN (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+
 void
 LALInspiralTiming2_5PN (
    LALStatus *status,
@@ -220,7 +215,7 @@ LALInspiralTiming2_5PN (
    REAL8      f,
    void      *params
    )
-{ /* </lalVerbatim>  */
+{
 
   InspiralToffInput *toffIn;
   REAL8 v, v2, v3, v4, v5, v8;
@@ -254,7 +249,7 @@ LALInspiralTiming2_5PN (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+
 void
 LALInspiralTiming2_6PN (
    LALStatus *status,
@@ -262,7 +257,7 @@ LALInspiralTiming2_6PN (
    REAL8      f,
    void      *params
    )
-{ /* </lalVerbatim>  */
+{
 
   InspiralToffInput *toffIn;
   REAL8 v, v2, v3, v4, v5, v6, v8;
@@ -298,7 +293,7 @@ LALInspiralTiming2_6PN (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+
 void
 LALInspiralTiming2_7PN (
    LALStatus *status,
@@ -306,7 +301,7 @@ LALInspiralTiming2_7PN (
    REAL8      f,
    void      *params
    )
-{ /* </lalVerbatim>  */
+{
 
   InspiralToffInput *toffIn;
   REAL8 v, v2, v3, v4, v5, v6, v7, v8;

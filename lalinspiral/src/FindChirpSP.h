@@ -23,33 +23,29 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpSPHV">
-Author: Brown, D. A.
-$Id$
-</lalVerbatim>
+/**
+ * \defgroup FindChirpSP_h FindChirpSP_h
+ * \ingroup CBC_findchirp
+ */
 
-<lalLaTeX>
-\section{Header \texttt{FindChirpSP.h}}
-\label{s:FindChirpSP.h}
+/**
 
-Provides structures and functions to condition interferometer data
+\author Brown, D. A.
+\file
+\ingroup FindChirpSP_h
+
+\brief Provides structures and functions to condition interferometer data
 and generate binary inspiral chirps using the stationary phase approximation.
 
-\subsection*{Synopsis}
-
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/FindChirpSP.h>
-\end{verbatim}
+\endcode
 
-\input{FindChirpSPHDoc}
-</lalLaTeX>
-#endif
+*/
 
 
 #ifndef _FINDCHIRPSPH_H
@@ -70,12 +66,7 @@ extern "C" {
 
 NRCSID (FINDCHIRPSPH, "$Id$");
 
-#if 0
-<lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-#endif
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define FINDCHIRPSPH_ENULL 1
 #define FINDCHIRPSPH_ENNUL 2
 #define FINDCHIRPSPH_EALOC 3
@@ -104,28 +95,7 @@ NRCSID (FINDCHIRPSPH, "$Id$");
 #define FINDCHIRPSPH_MSGEMAPX "Mismatch in waveform approximant"
 #define FINDCHIRPSPH_MSGEUAPX "Unknown approximant"
 #define FINDCHIRPSPH_MSGEORDR "Invalid post-Newtonian order"
-/* </lalErrTable> */
-
-#if 0
-<lalLaTeX>
-\subsection*{Types}
-
-None.
-</lalLaTeX>
-#endif
-
-
-#if 0
-<lalLaTeX>
-\vfill{\footnotesize\input{FindChirpSPHV}}
-</lalLaTeX>
-#endif
-
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpSPDataC}
-</lalLaTeX>
-#endif
+/*@}*/
 
 void
 LALFindChirpSPData (
@@ -135,11 +105,11 @@ LALFindChirpSPData (
     FindChirpDataParams        *params
     );
 
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpSPTemplateC}
-</lalLaTeX>
-#endif
+
+
+
+
+
 
 double
 XLALFindChirpChirpTime (double m1,

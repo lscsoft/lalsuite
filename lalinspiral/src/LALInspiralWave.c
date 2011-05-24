@@ -17,112 +17,108 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralWaveCV">
-Author: Churches, D. K and Sathyaprakash, B.S. and Cokelaer. T
-$Id$
-</lalVerbatim>  */
+/**
+\author Churches, D. K and Sathyaprakash, B.S. and Cokelaer. T
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralWave.c} and \texttt{LALInspiralWaveTemplates.c}}
-
-Interface routine needed to generate all waveforms in the {\tt inspiral} package.
+\brief Interface routine needed to generate all waveforms in the \ref CBC_inspiral package.
 
 To generate a waveform
 a user is noramlly required to (a) choose the binary parameters, starting frequency, number of
-bins of leading and trailing zero-padding, etc., in the structure {\tt InspiralTemplate params}
+bins of leading and trailing zero-padding, etc., in the structure <tt>InspiralTemplate params</tt>
 and (b) call the following three functions in the order given:
-{\tt LALInspiralParameterCalc,} {\tt LALInspiralWaveLength,} and {\tt LALInspiralWave.}
+LALInspiralParameterCalc(), LALInspiralWaveLength() and LALInspiralWave().
 Either a time- or a frequency-domain signal is returned depending upon the
-{\tt approximant} requested (see Notes below).
+\c approximant requested (see Notes below).
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralWaveCP}
-\idx{LALInspiralWave()}
-\begin{itemize}
-\item {\tt signalvec:} Output containing the inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+\heading{Prototypes}
 
-\vspace{0.1in}
-\input{LALInspiralWaveTemplatesCP}
-\idx{LALInspiralWaveTemplates()}
-\begin{itemize}
-\item {\tt signalvec1:} Output containing the 0-phase inspiral waveform.
-\item {\tt signalvec2:} Output containing the $\pi/2$-phase inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+<tt>LALInspiralWave()</tt>
+<ul>
+<li> \c signalvec: Output containing the inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
 
-\subsubsection*{Description}
 
-The code \texttt{LALInspiralWave} is the user interface to the inspiral codes. It takes from the user all
+
+<tt>LALInspiralWaveTemplates()</tt>
+<ul>
+<li> \c signalvec1: Output containing the 0-phase inspiral waveform.</li>
+<li> \c signalvec2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
+
+\heading{Description}
+
+The code LALInspiralWave() is the user interface to the inspiral codes. It takes from the user all
 the physical parameters which specify the binary, and calls the relevent wave generation function.
-Currently ten different approximants are fully implemented. These are {\tt TaylorT1, TaylorT2, 
-TaylorT3, TaylorF1, TaylorF2, PadeT1, EOB, BCV, SpinTaylorT3, PhenSpinTalorRD.}
-{\tt Taylor} approximants can all be generated at seven different post-Newtonian orders,
-from Newtonian to 3.5 PN order, {\tt PadeT1} exists at order 1.5PN and higher,
-{\tt EOB} at orders 2 and higher. {\tt SpinTaylorT3} is implemented only at 2PN order
+Currently ten different approximants are fully implemented. These are #TaylorT1, #TaylorT2,
+#TaylorT3, #TaylorF1, #TaylorF2, #PadeT1, #EOB, #BCV, #SpinTaylorT3, #PhenSpinTaylorRD.
+\c Taylor approximants can all be generated at seven different post-Newtonian orders,
+from Newtonian to 3.5 PN order, #PadeT1 exists at order 1.5PN and higher,
+#EOB at orders 2 and higher. #SpinTaylorT3 is implemented only at 2PN order
 by solving the evolution equations for the spin and orbital angular momenta and a
-time-domain phasing formula. Finally, PN order is undefined for {\tt BCV.}
-The approximant and the order are set up by the enums \texttt{Approximant} and \texttt{Order,}
+time-domain phasing formula. Finally, PN order is undefined for #BCV.
+The approximant and the order are set up by the enums ::Approximant and ::LALPNOrder,
 respectively.
 
 The waveforms are all terminated one bin before the last stable orbit is reached.
-The last stable orbit corresponding to a given {\tt Approximant} and {\tt Order} is
-defined as follows: For all {\tt Taylor} approximants at orders 0PN, 1PN and 1.5PN
-$v_{\rm lso}^2=1/6,$ and at 2PN, 2.5PN, 3PN and 3.5PN
-$v_{\rm lso}^2 = x^{\rm lso}_{T_4},$ where $x^{\rm lso}_{T_4}$ is
-defined in Table \ref{table:energy}.  In the case of {\tt Pade} approximant
-at 1.5PN order $v_{\rm lso}^2=1/6,$ and at orders 2PN, 2.5PN, 3PN and 3.5PN
-$v_{\rm lso}^2 = x^{\rm lso}_{P_4},$ where $x^{\rm lso}_{P_4}$ is
-defined in Table \ref{table:energy}. In the case of {\tt EOB} approximant,
+The last stable orbit corresponding to a given ::Approximant and ::LALPNOrder is
+defined as follows: For all \c Taylor approximants at orders 0PN, 1PN and 1.5PN
+\f$v_\textrm{lso}^2=1/6,\f$ and at 2PN, 2.5PN, 3PN and 3.5PN
+\f$v_\textrm{lso}^2 = x^\textrm{lso}_{T_4},\f$ where \f$x^\textrm{lso}_{T_4}\f$ is
+defined in Table.\tableref{table_energy}.  In the case of \c Pade approximant
+at 1.5PN order \f$v_\textrm{lso}^2=1/6,\f$ and at orders 2PN, 2.5PN, 3PN and 3.5PN
+\f$v_\textrm{lso}^2 = x^\textrm{lso}_{P_4},\f$ where \f$x^\textrm{lso}_{P_4}\f$ is
+defined in Table.\tableref{table_energy}. In the case of #EOB approximant,
 defined only at orders greater than 2PN, the plunge waveform is
-terminated at the light-ring orbit defined by Equation~(\ref{eq:LightRing}).
+terminated at the light-ring orbit defined by Equation.\eqref{eq_LightRing}.
 
-In the case of {\tt LALInspiralWaveTemplates} {\tt *signalvec1}
-contains the `0-phase' inspiral template and {\tt *signalvec2} contains
-a signal that is $\pi/2$ out of phase with respect to {\tt *signalvec1.}
-Currently, a template pair is generated only for the following {\tt approximants:}
-{\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB.}
+In the case of LALInspiralWaveTemplates() <tt>*signalvec1</tt>
+contains the `0-phase' inspiral template and <tt>*signalvec2</tt> contains
+a signal that is \f$\pi/2\f$ out of phase with respect to <tt>*signalvec1.</tt>
+Currently, a template pair is generated only for the following \c approximants:
+#TaylorT1, #TaylorT2, #TaylorT3, #PadeT1, #EOB.
 
 See the test codes for examples of how to generate different approximations.
 
-\subsubsection*{Algorithm}
-Simple use of {\tt switch} statement to access different PN approximations.
+\heading{Algorithm}
+Simple use of \c switch statement to access different PN approximations.
 
-\subsubsection*{Uses}
-Depending on the user inputs one of the following functions is called:\\
-\texttt{LALInspiralWave1\\}
-\texttt{LALInspiralWave2\\}
-\texttt{LALInspiralWave3\\}
-\texttt{LALInspiralStationaryPhaseApprox1\\}
-\texttt{LALInspiralStationaryPhaseApprox2\\}
-\texttt{LALEOBWaveform\\}
-\texttt{LALBCVWaveform\\}
-\texttt{LALInspiralSpinModulatedWave\\}
+\heading{Uses}
+Depending on the user inputs one of the following functions is called:
+\code
+LALInspiralWave1()
+LALInspiralWave2()
+LALInspiralWave3()
+LALInspiralStationaryPhaseApprox1()
+LALInspiralStationaryPhaseApprox2()
+LALEOBWaveform()
+LALBCVWaveform()
+LALInspiralSpinModulatedWave()
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\begin{itemize}
-    \item A time-domain waveform is returned when the {\tt approximant} is one of
-        {\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, SpinTaylorT3, PhenSpinTaylorRD, SpinQuadTaylor}
-    \item A frequency-domain waveform is returned when the {\tt approximant} is one of
-        {\tt TaylorF1, TaylorF2, BCV}.
+<ul>
+    <li> A time-domain waveform is returned when the ::Approximant is one of
+    #TaylorT1, #TaylorT2, #TaylorT3, #PadeT1, #EOB, #SpinTaylorT3, #PhenSpinTaylorRD, #SpinQuadTaylor
+    </li><li> A frequency-domain waveform is returned when the ::Approximant is one of
+         #TaylorF1, #TaylorF2, #BCV.
          In these cases the code returns the real and imagninary parts of the
          Fourier domain signal in the convention of fftw. For a signal vector
-         of length {\tt n=signalvec->length} ({\tt n} even):
-     \begin{itemize}
-         \item {\tt signalvec->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
-         \item {\tt signalvec->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
-         \item {\tt signalvec->data[k]} and {\tt signalvec->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
-             the real and imaginary parts of the Fourier transform at a frequency $k\Delta f=k/T,$ $T$ being
-             the duration of the signal and $\Delta f=1/T$ is the frequency resolution.
-     \end{itemize}
-\end{itemize}
-\vfill{\footnotesize\input{LALInspiralWaveCV}}
+         of length <tt>n=signalvec->length</tt> (\c n even):</li>
+         <ul>
+         <li> <tt>signalvec->data[0]</tt> is the \e real 0th frequency component of the Fourier transform.</li>
+         <li> <tt>signalvec->data[n/2]</tt> is the \e real Nyquist frequency component of the Fourier transform.</li>
+         <li> <tt>signalvec->data[k]</tt> and <tt>signalvec->data[n-k],</tt> for <tt>k=1,..., n/2-1,</tt> are
+             the real and imaginary parts of the Fourier transform at a frequency \f$k\Delta f=k/T,\f$ \f$T\f$ being
+             the duration of the signal and \f$\Delta f=1/T\f$ is the frequency resolution.</li>
+         </ul>
+</ul>
 
-</lalLaTeX>  */
+*/
 
 #include <lal/LALInspiral.h>
 #include <lal/LALNoiseModels.h>
@@ -132,14 +128,14 @@ Depending on the user inputs one of the following functions is called:\\
 
 NRCSID (LALINSPIRALWAVEC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWaveCP"> */
+
 void
 LALInspiralWave(
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim>  */
+{
 
    INITSTATUS(status, "LALInspiralWave", LALINSPIRALWAVEC);
    ATTATCHSTATUSPTR(status);
@@ -259,7 +255,7 @@ LALInspiralWave(
 
 NRCSID (LALINSPIRALWAVETEMPLATESC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWaveTemplatesCP"> */
+
 void
 LALInspiralWaveTemplates(
    LALStatus        *status,
@@ -267,7 +263,7 @@ LALInspiralWaveTemplates(
    REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim>  */
+{
 
    INITSTATUS(status, "LALInspiralWaveTemplates", LALINSPIRALWAVETEMPLATESC);
    ATTATCHSTATUSPTR(status);
@@ -354,14 +350,14 @@ LALInspiralWaveTemplates(
 
 NRCSID (LALINSPIRALWAVEFORINJECTIONC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWaveForInjectionCP"> */
+
 void
 LALInspiralWaveForInjection(
    LALStatus        *status,
    CoherentGW       *waveform,
    InspiralTemplate *inspiralParams,
    PPNParamStruc  *ppnParams)
-{ /* </lalVerbatim>  */
+{
 
    INITSTATUS(status, "LALInspiralWaveForInjection", LALINSPIRALWAVEFORINJECTIONC);
    ATTATCHSTATUSPTR(status);

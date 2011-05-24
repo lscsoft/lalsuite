@@ -20,6 +20,7 @@
 /* <lalVerbatim file="GetOrientationEllipseCV">
 Author: Thomas Cokelaer
 $Id$
+\ingroup LALInspiralBank_h
 </lalVerbatim> */
 
 /* <lalLaTeX>

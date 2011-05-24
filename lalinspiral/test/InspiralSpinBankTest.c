@@ -20,6 +20,7 @@
 /* <lalVerbatim file="InspiralSpinBankTestCV">
  * Author: Hanna, C.R. and Owen, B. J.
  * $Id$
+\ingroup LALInspiralBank_h
  * </lalVerbatim> */
 
 /* <lalLaTeX>

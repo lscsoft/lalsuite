@@ -17,42 +17,36 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALMatrixTransformCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
+\brief A routine to transform a second rank tensor under a given transformation.
 
-\subsection{Module \texttt{LALMatrixTransform.c}}
-A routine to transform a second rank tensor under a given transformation.
+\heading{Prototypes}
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALMatrixTransformCP}
-\idx{LALMatrixTransform()}
-\begin{itemize}
-   \item \texttt{n,} Input, dimension of the matrix (currently, and possibly always, only 3)
-   \item \texttt{data1,} Input, transformation matrix
-   \item \texttt{data2,} Input, matrix whose transformation is required
-   \item \texttt{data3,} Output, transformed matrix
-\end{itemize}
+<tt>LALMatrixTransform()</tt>
+<ul>
+   <li> <tt>n,</tt> Input, dimension of the matrix (currently, and possibly always, only 3)
+   </li><li> <tt>data1,</tt> Input, transformation matrix
+   </li><li> <tt>data2,</tt> Input, matrix whose transformation is required
+   </li><li> <tt>data3,</tt> Output, transformed matrix</li>
+</ul>
 
-\subsubsection*{Description}
-Given the matrix of transformation in \texttt{data1} and a second rank tensor
-\texttt{data2}, this routine computes the transformed tensor in \texttt{data3}.
+\heading{Description}
+Given the matrix of transformation in \c data1 and a second rank tensor
+\c data2, this routine computes the transformed tensor in \c data3.
 
-\subsubsection*{Algorithm}
-$$ C_{ij} = A_{im} A_{jl}  B_{ml}.$$
+\heading{Algorithm}
+\f[ C_{ij} = A_{im} A_{jl}  B_{ml}.\f]
 
-\subsubsection*{Uses}
+\heading{Uses}
 None.
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALMatrixTransformCV}}
-
-</lalLaTeX>  */
+*/
 
 
 
@@ -60,14 +54,14 @@ None.
 
 NRCSID(LALMATRIXTRANSFORMC, "$Id$");
 
-/*  <lalVerbatim file="LALMatrixTransformCP"> */
+
 
 void LALMatrixTransform (LALStatus *status,
                          INT4 n,
                          REAL8 **data1,
                          REAL8 **data2,
                          REAL8 **data3)
-{ /* </lalVerbatim> */
+{
 
    INT4 i, j, l, m;
 

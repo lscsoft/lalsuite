@@ -17,25 +17,26 @@
 *  MA  02111-1307  USA
 */
 
-/************************ <lalVerbatim file="SimulateInspiralHV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+ * \defgroup SimulateInspiral_h SimulateInspiral_h
+ * \ingroup inject
+ */
 
-/********************************************************** <lalLaTeX>
 
-\section{Header \texttt{SimulateInspiral.h}}
-\label{s:SimulateInspiral.h}
+/**
+\author Creighton, T. D.
+\file
+\ingroup SimulateInspiral_h
 
-Provides a routine to inject inspirals into time series data.
+\brief Provides a routine to inject inspirals into time series data.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\section synopsis Synopsis
+\code
 #include <lal/SimulateInspiral.h>
-\end{verbatim}
+\endcode
 
-The routines in \verb@GeneratePPNInspiral.h@,
-\verb@SimulateCoherentGW.h@, and \verb@Inject.h@ provide a powerful
+The routines in \ref GeneratePPNInspiral.h, \ref SimulateCoherentGW.h,
+and \ref Inject.h provide a powerful
 mechanism for simulating the instrumental response to a physical
 inspiral event, including such considerations as the polarization
 response and propagation delay for a particular instrument, which are
@@ -51,52 +52,199 @@ to be internalized.  First, the waveform must be time-shifted so that
 it coalesces at the specified time.  This is straightforward and
 requires no explanation.  Second, the waveform must be scaled to have
 some specified amplitude.  To do this, we must first state what we
-mean by ``amplitude''.
+mean by "amplitude".
 
-We define the \emph{characteristic detection amplitude} $A_c$ of a
+We define the <em>characteristic detection amplitude</em> \f$A_c\f$ of a
 gravitational-wave signal to be its root summed squared contribution
 to the sampled detector output.  That is, if the detector output can
-be written as $o(t_k)=n(t_k)+s(t_k)$, where $n$ is the contribution
-due to noise, $s$ is the contribution due to signal, and $t_k=k\Delta
-t$ are the discrete time samples, then:
-\begin{equation}
-\label{eq:SimulateInspiralH:characteristic-amplitude}
+be written as \f$o(t_k)=n(t_k)+s(t_k)\f$, where \f$n\f$ is the contribution
+due to noise, \f$s\f$ is the contribution due to signal, and \f$t_k=k\Delta
+t\f$ are the discrete time samples, then:
+\anchor eq_SimulateInspiralH_characteristic_amplitude \f{equation}{
+\label{eq_SimulateInspiralH_characteristic_amplitude}
 A_c \equiv \sqrt{\sum_{k=-\infty}^\infty |s(t_k)|^2} \;.
-\end{equation}
-If $T(f)$ is the detector transfer function (such that a gravitational
-have signal $\tilde{h}(f)$ in the frequency domain produces an output
-$\tilde{o}(f)=\tilde{n}(f)+T(f)\tilde{h}(f)$), the characteristic
+\f}
+If \f$T(f)\f$ is the detector transfer function (such that a gravitational
+have signal \f$\tilde{h}(f)\f$ in the frequency domain produces an output
+\f$\tilde{o}(f)=\tilde{n}(f)+T(f)\tilde{h}(f)\f$), the characteristic
 detection amplitude has the not-so-obvious relation that:
-\begin{equation}
-\label{eq:SimulateInspiralH:characteristic-gw-amplitude}
+\anchor eq_SimulateInspiralH_characteristic_gw_amplitude \f{equation}{
+\label{eq_SimulateInspiralH_characteristic_gw_amplitude}
 A_c^2 = \int_{-\infty}^\infty \frac{df}{\Delta t}
 	|T(f)\tilde{h}(f)|^2 \;.
-\end{equation}
+\f}
 So why use this quantity to specify the signal amplitude?  First, it
 is easy for a simulation/injection routine to calculate.  Second, if
-we assume that $T(f)$ is a true whitening filter such that the output
-power spectral density is flat $S_o(f)=S_o=$constant, then the sampled
+we assume that \f$T(f)\f$ is a true whitening filter such that the output
+power spectral density is flat \f$S_o(f)=S_o=\f$constant, then the sampled
 noise output is uncorrelated noise with a mean of zero and a variance
-of $\sigma_n^2=S_o/2\Delta t$.  The intrinsic signal-to-noise power is
+of \f$\sigma_n^2=S_o/2\Delta t\f$.  The intrinsic signal-to-noise power is
 then given by the simple relation:
-\begin{eqnarray}
+\anchor eq_SimulateInspiralH_instrinsic_snr_power \f{eqnarray}{
 (h|h) & = & 2\int_{-\infty}^\infty df\,\frac{|\tilde{h}(f)|^2}{S_h(f)}
 	\nonumber\\
       & = & 2\int_{-\infty}^\infty df\,\frac{|T(f)\tilde{h}(f)|^2}{S_o}
 	\nonumber\\
       & = & \frac{A_c^2}{\sigma_n^2} \;.
-	\label{eq:SimulateInspiralH:instrinsic-snr-power}
-\end{eqnarray}
+	\label{eq_SimulateInspiralH_instrinsic_snr_power}
+\f}
 Thus to simulate a signal with an intrinsic signal-to-noise amplitude
-$\sqrt{(h|h)}$, simply fill a data vector with uncorrelated noise with
-variance $\sigma_n^2$ and inject a signal with a characteristic
-detection amplitude of $A_c=\sigma_n\sqrt{(h|h)}$.
+\f$\sqrt{(h|h)}\f$, simply fill a data vector with uncorrelated noise with
+variance \f$\sigma_n^2\f$ and inject a signal with a characteristic
+detection amplitude of \f$A_c=\sigma_n\sqrt{(h|h)}\f$.
 
-We refer the reader to the Conventions section at the end of this
-header documentation for a more detailed derivation of these
+We refer the reader to the Conventions section for a more detailed derivation of these
 specifications.
 
-******************************************************* </lalLaTeX> */
+\section sec_si_conv Conventions
+
+We define here the conventions we use when talking about
+signal-to-noise ratios in coloured and white noise.  You may also want
+to read the signal processing conventions in Secs.\ \ref ss_conventions and \ref ss_psdconv of
+\ref CBC_findchirp, since this section is esentially a summary and extension of those conventions.
+
+\subsection sec_si_SNR Signal-to-noise definitions
+
+We first reiterate the standard definitions (given in the
+\ref CBC_findchirp package) of the Fourier transform pair:
+\anchor eq_SimulateInspiralH_fourier_transforms \f{equation}{
+\label{eq_SimulateInspiralH_fourier_transforms}
+\tilde{a}(f) = \int_{-\infty}^\infty dt\,a(t)e^{-2\pi ift}
+\qquad\rightleftharpoons\qquad
+a(t) = \int_{-\infty}^\infty df\,\tilde{a}(f)e^{2\pi ift} \;,
+\f}
+of the power spectral density \f$S_n(f)\f$ of a stationary random process
+(noise) \f$n(t)\f$:
+\anchor eq_SimulateInspiralH_noise_psd \f{equation}{
+\label{eq_SimulateInspiralH_noise_psd}
+\langle\tilde{n}(f)\tilde{n}^*(f')\rangle
+	= \frac{1}{2}S_n(f)\delta(f-f')
+\f}
+(where \f$\langle\ldots\rangle\f$ denotes an enseble average over
+instantiations of the random process), and finally of the
+noise-weighted inner product \f$(a|b)\f$ of two time series \f$a(t)\f$ and
+\f$b(t)\f$:
+\anchor eq_SimulateInspiralH_inner_product \f{equation}{
+\label{eq_SimulateInspiralH_inner_product}
+(a|b) = \int_{-\infty}^\infty df\,\frac{\tilde{a}(f)\tilde{b}(f)^*
+	+ \tilde{a}(f)^*\tilde{b}(f)}{S_n(f)} \;.
+\f}
+In the case where the time series are all real and the noise has zero
+mean \f$\langle n(t)\rangle=0\f$, the weighting on the inner product leads
+to the property that:
+\anchor eq_SimulateInspiralH_inner_product_normalisation \f{equation}{
+\label{eq_SimulateInspiralH_inner_product_normalisation}
+\langle(n|s)^2\rangle = (s|s) \;.
+\f}
+We call this quantity the <em>intrinsic signal-to-noise power</em> of
+the waveform \f$s(t)\f$, and its square root \f$\sqrt{(s|s)}\f$ the
+<em>intrinsic signal-to-noise amplitude</em>.
+
+In the theory of signal processing, if one has a data stream
+\f$o(t)=n(t)+s(t)\f$ and can determine a <em>matched filter</em>
+\f$a(t)\propto s(t)\f$, one can then define a signal-to-noise estimator
+\f$r=(o|a)/\sqrt{(a|a)}\f$ with the property that \f$\langle
+r\rangle=\sqrt{(s|s)}\f$ and \f$\sigma_r=\sqrt{\langle r^2\rangle-\langle
+r\rangle^2}=1\f$ (these follow from
+Eq.\eqref{eq_SimulateInspiralH_inner_product_normalisation} and
+\f$\langle n\rangle=0\f$).  This is the justification for calling
+\f$\sqrt{(s|s)}\f$ a signal-to-noise ratio.
+
+However, in many cases one can only define a set of orthogonal
+waveforms \f$\{a_1,\ldots,a_N:(a_i|a_j)=(a_i|a_i)\delta_{ij}\}\f$ spanning
+the space of possible signals.  Specifically, for inspiral signals,
+one does not know in advance the phase of the waveform, and so one
+must filter the data using two orthogonal waveforms \f$\{a_s,a_c\}\f$ (the
+sine and cosine quadratures) that are \f$90^\circ\f$ out of phase.  As
+described in the
+\ref FindChirp.h header, the optimal statistic in this case is:
+\anchor eq_SimulateInspiralH_rhosq \f{equation}{
+\label{eq_SimulateInspiralH_rhosq}
+\rho^2 = \frac{(o|a_s)^2}{(a_s|a_s)} + \frac{(o|a_c)^2}{(a_c|a_c)}
+\f}
+(where we have implicitly already maximised over any filter
+parameters, including time-of-arrival).  This statistic no longer has
+unit variance, but instead has the property that:
+\anchor eq_SimulateInspiralH_rhosq_expectation \f{equation}{
+\label{eq_SimulateInspiralH_rhosq_expectation}
+\langle\rho^2\rangle = 2 + (s|s)\;.
+\f}
+By comparison, for the perfectly-matched filter one has \f$\langle
+r^2\rangle=1+(s|s)\f$, which is why one often says that the search over
+phase halves the effective signal-to-noise power.  However, this
+statement is ambiguous, as the two statistics \f$\rho\f$ and \f$r\f$ have
+completely diffferent probability distributions in the presence of
+noise, and even in the absence of any signal we have
+\f$\langle\rho\rangle>0\f$ (its value depends on the particular noise
+probability distribution).
+
+\subsection sec_si_wn Specification to white noise
+
+White noise is stationary zero-mean noise whose power spectral density
+\f$S_n(f)\f$ is independent of \f$f\f$.  This property allows inner products
+to be expressed equivalently in the time domain as well as in the
+frequency domain:
+\anchor eq_SimulateInspiralH_inner_product_time \f{equation}{
+\label{eq_SimulateInspiralH_inner_product_time}
+(a|b) = \int_{-\infty}^\infty dt\,\frac{a(t)b(t)^* + a(t)^*b(t)}{S_n} \;.
+\f}
+If the white noise process \f$n(t)\f$ is discretely sampled at intervals
+\f$\Delta t\f$, we find that different time samples are uncorrelated:
+\anchor eq_SimulateInspiralH_noise_correlation \f{equation}{
+\label{eq_SimulateInspiralH_noise_correlation}
+\langle n(t_j)n(t_{j'})^*\rangle = \sigma_n^2 \delta_{jj'} \;,
+\f}
+where \f$\sigma_n^2\f$ is the variance in the sampled noise.  This can be
+proven using the definitions of the discrete inverse FFT and discrete
+power spectrum given in Eqs.\ (.9) and\ (.19) of the \c findchirp
+package:
+\f{eqnarray}{
+\langle n(t_j)n(t_{j'})^*\rangle
+& = & \frac{1}{N^2}\sum_{k=0}^{N-1}\sum_{k'=0}^{N-1}
+	e^{2\pi i(jk-j'k')/N} \langle\tilde{n}_k\tilde{n}_{k'}\rangle
+	\nonumber\\
+& = & \frac{1}{N^2}\sum_{k=0}^{N-1}\sum_{k'=0}^{N-1}
+	e^{2\pi i(jk-j'k')/N} \frac{N}{2\Delta t}S_n\delta_{kk'}
+	\nonumber\\
+& = & \frac{S_n}{2N\Delta t}\sum_{k=0}^{N-1} e^{2\pi i(j-j')k/N}
+	\nonumber\\
+& = & \frac{S_n}{2\Delta t}\delta_{jj'} \;,\nonumber
+\f}
+whence we have \f$\sigma_n^2=S_n/2\Delta t\f$.  We note that the
+divergence as \f$\Delta t\rightarrow0\f$ reflects the fact that the
+idealized white power spectral density integrates to an infinite
+amount of power as \f$f\rightarrow\infty\f$.  Real noise processes always
+have some minimum timescale below which correlations between
+subsequent measurements are inevitable.
+
+Reexpressing the inner product in
+Eq.\eqref{eq_SimulateInspiralH_inner_product_time} for
+discretely-sampled time series, we have:
+\anchor eq_SimulateInspiralH_inner_product_sampled \f{equation}{
+\label{eq_SimulateInspiralH_inner_product_sampled}
+(a|b) = \sum_k \Delta t\,\frac{a(t_k)b(t_k)^* + a(t_k)^*b(t_k)}{S_n}
+      = \frac{\mathrm{Re}\left[\sum_k
+		a(t_k)b(t_k)^*\right]}{\sigma_n^2} \;.
+\f}
+The intrinsic signal-to-noise amplitude also takes an intuitive form:
+\anchor eq_SimulateInspiralH_snr_sampled \f{equation}{
+\label{eq_SimulateInspiralH_snr_sampled}
+\sqrt{(s|s)} = \frac{\sqrt{\sum_k |s(t_k)|^2}}{\sigma_n}
+\f}
+This, then, is the key formula that we will use to determine the
+signal-to-noise amplitude of a whitened signal that is to be injected
+into white noise.  It applies to any stationary white noise (recall
+that "white" implies zero mean), but we will almost always be
+concerned with white Gaussian noise, where the differential
+probability of a noise sample \f$n(t_k)\f$ lying in an infinitesimal range
+\f$(n,n+dn)\f$ is:
+\anchor eq_SimulateInspiralH_gaussian_pdf \f{equation}{
+\label{eq_SimulateInspiralH_gaussian_pdf}
+\frac{dP[n(t_k)\in(n,n+dn)]}{dn} = \frac{1}{\sqrt{2\pi\sigma_n^2}}
+	e^{-n^2/2\sigma_n^2} \;.
+\f}
+
+*/
 
 #ifndef _SIMULATEINSPIRAL_H
 #define _SIMULATEINSPIRAL_H
@@ -114,9 +262,7 @@ extern "C" {
 
 NRCSID( SIMULATEINSPIRALH, "$Id$" );
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error conditions}
-****************************************** </lalLaTeX><lalErrTable> */
+/** \name Error Codes */ /*@{*/
 #define SIMULATEINSPIRALH_ENUL 1
 #define SIMULATEINSPIRALH_EMEM 2
 #define SIMULATEINSPIRALH_EDF  3
@@ -126,46 +272,39 @@ NRCSID( SIMULATEINSPIRALH, "$Id$" );
 #define SIMULATEINSPIRALH_MSGEMEM "Memory allocation error"
 #define SIMULATEINSPIRALH_MSGEDF  "Transfer frequency interval is zero"
 #define SIMULATEINSPIRALH_MSGEBAD "Bad parameters: ac and dEff are negative"
-/******************************************** </lalErrTable><lalLaTeX>
+/*@}*/
 
-\subsection*{Types}
-
-\subsubsection*{Structure \texttt{SimulateInspiralParamStruc}}
-\idx[Type]{SimulateInspiralParamStruc}
-
-\noindent This structure stores the parameters required to simulate a
+/** This structure stores the parameters required to simulate a
 set of inspiral signal in white Gaussian noise.  It can be part of a
 linked list of inspiral events, to allow for multiple injections.  It
 consists of the following fields:
 
-\begin{description}
-\item[\texttt{LIGOTimeGPS timeC}] The time of coalescence.
+<dl>
+<dt><tt>LIGOTimeGPS timeC</tt></dt><dd> The time of coalescence.</dd>
 
-\item[\texttt{REAL4 phiC}] The wave phase at coalescence, in radians.
+<dt><tt>REAL4 phiC</tt></dt><dd> The wave phase at coalescence, in radians.</dd>
 
-\item[\texttt{REAL4 mass1, mass2}] The masses of the binary
-components, in $M_\odot$.
+<dt><tt>REAL4 mass1, mass2</tt></dt><dd> The masses of the binary
+components, in \f$M_\odot\f$.</dd>
 
-\item[\texttt{REAL4 signalAmplitude, effDist}] The characteristic
-detection amplitude $A_c$, in ADC counts, and the effective distance
+<dt><tt>REAL4 signalAmplitude, effDist</tt></dt><dd> The characteristic
+detection amplitude \f$A_c\f$, in ADC counts, and the effective distance
 in Mpc of an optimally-oriented source that would give that amplitude.
 A negative number means the quantity is unspecified.  In general only
 one of these must be specified by the user; the simulation routine
-will set the other to be consistent with the first.
+will set the other to be consistent with the first.</dd>
 
-\item[\texttt{REAL4 fStart}] The lower cutoff frequency at which
-waveform generation will begin, in Hz.  If $\leq0$, the cutoff
+<dt><tt>REAL4 fStart</tt></dt><dd> The lower cutoff frequency at which
+waveform generation will begin, in Hz.  If \f$\leq0\f$, the cutoff
 frequency will be taken as the point where the instrument sensitivity
-function is $\sim10^{-6}$ of its optimal value, as determined from the
-transfer function.
+function is \f$\sim10^{-6}\f$ of its optimal value, as determined from the
+transfer function.</dd>
 
-\item[\texttt{SimulateInspiralParamStruc *next}] Pointer to another
-inspiral event to be injected, or \verb@NULL@ if this is the last (or
-only) injection.
-\end{description}
-
-******************************************************* </lalLaTeX> */
-
+<dt><tt>SimulateInspiralParamStruc *next</tt></dt><dd> Pointer to another
+inspiral event to be injected, or \c NULL if this is the last (or
+only) injection.</dd>
+</dl>
+*/
 typedef struct tagSimulateInspiralParamStruc {
   LIGOTimeGPS timeC;      /* time of coalescence */
   REAL4 phiC;             /* phase at coalescence */
@@ -176,178 +315,14 @@ typedef struct tagSimulateInspiralParamStruc {
   struct tagSimulateInspiralParamStruc *next; /* next node in list */
 } SimulateInspiralParamStruc;
 
-/********************************************************** <lalLaTeX>
-
-\subsection*{Conventions}
-
-We define here the conventions we use when talking about
-signal-to-noise ratios in coloured and white noise.  You may also want
-to read the signal processing conventions in Secs.~.1.1 and~.1.2 of
-the \verb@findchirp@ package, since this section is esentially a
-summary and extension of those conventions.
-
-\subsubsection*{Signal-to-noise definitions}
-
-We first reiterate the standard definitions (given in the
-\verb@findchirp@ package) of the Fourier transform pair:
-\begin{equation}
-\label{eq:SimulateInspiralH:fourier-transforms}
-\tilde{a}(f) = \int_{-\infty}^\infty dt\,a(t)e^{-2\pi ift}
-\qquad\rightleftharpoons\qquad
-a(t) = \int_{-\infty}^\infty df\,\tilde{a}(f)e^{2\pi ift} \;,
-\end{equation}
-of the power spectral density $S_n(f)$ of a stationary random process
-(noise) $n(t)$:
-\begin{equation}
-\label{eq:SimulateInspiralH:noise-psd}
-\langle\tilde{n}(f)\tilde{n}^*(f')\rangle
-	= \frac{1}{2}S_n(f)\delta(f-f')
-\end{equation}
-(where $\langle\ldots\rangle$ denotes an enseble average over
-instantiations of the random process), and finally of the
-noise-weighted inner product $(a|b)$ of two time series $a(t)$ and
-$b(t)$:
-\begin{equation}
-\label{eq:SimulateInspiralH:inner-product}
-(a|b) = \int_{-\infty}^\infty df\,\frac{\tilde{a}(f)\tilde{b}(f)^*
-	+ \tilde{a}(f)^*\tilde{b}(f)}{S_n(f)} \;.
-\end{equation}
-In the case where the time series are all real and the noise has zero
-mean $\langle n(t)\rangle=0$, the weighting on the inner product leads
-to the property that:
-\begin{equation}
-\label{eq:SimulateInspiralH:inner-product-normalisation}
-\langle(n|s)^2\rangle = (s|s) \;.
-\end{equation}
-We call this quantity the \emph{intrinsic signal-to-noise power} of
-the waveform $s(t)$, and its square root $\sqrt{(s|s)}$ the
-\emph{intrinsic signal-to-noise amplitude}.
-
-In the theory of signal processing, if one has a data stream
-$o(t)=n(t)+s(t)$ and can determine a \emph{matched filter}
-$a(t)\propto s(t)$, one can then define a signal-to-noise estimator
-$r=(o|a)/\sqrt{(a|a)}$ with the property that $\langle
-r\rangle=\sqrt{(s|s)}$ and $\sigma_r=\sqrt{\langle r^2\rangle-\langle
-r\rangle^2}=1$ (these follow from
-Eq.~(\ref{eq:SimulateInspiralH:inner-product-normalisation}) and
-$\langle n\rangle=0$).  This is the justification for calling
-$\sqrt{(s|s)}$ a signal-to-noise ratio.
-
-However, in many cases one can only define a set of orthogonal
-waveforms $\{a_1,\ldots,a_N:(a_i|a_j)=(a_i|a_i)\delta_{ij}\}$ spanning
-the space of possible signals.  Specifically, for inspiral signals,
-one does not know in advance the phase of the waveform, and so one
-must filter the data using two orthogonal waveforms $\{a_s,a_c\}$ (the
-sine and cosine quadratures) that are $90^\circ$ out of phase.  As
-described in the
-\verb@FindChirp.h@ header, the optimal statistic in this case is:
-\begin{equation}
-\label{eq:SimulateInspiralH:rhosq}
-\rho^2 = \frac{(o|a_s)^2}{(a_s|a_s)} + \frac{(o|a_c)^2}{(a_c|a_c)}
-\end{equation}
-(where we have implicitly already maximised over any filter
-parameters, including time-of-arrival).  This statistic no longer has
-unit variance, but instead has the property that:
-\begin{equation}
-\label{eq:SimulateInspiralH:rhosq-expectation}
-\langle\rho^2\rangle = 2 + (s|s)\;.
-\end{equation}
-By comparison, for the perfectly-matched filter one has $\langle
-r^2\rangle=1+(s|s)$, which is why one often says that the search over
-phase halves the effective signal-to-noise power.  However, this
-statement is ambiguous, as the two statistics $\rho$ and $r$ have
-completely diffferent probability distributions in the presence of
-noise, and even in the absence of any signal we have
-$\langle\rho\rangle>0$ (its value depends on the particular noise
-probability distribution).
-
-\subsubsection*{Specification to white noise}
-
-White noise is stationary zero-mean noise whose power spectral density
-$S_n(f)$ is independent of $f$.  This property allows inner products
-to be expressed equivalently in the time domain as well as in the
-frequency domain:
-\begin{equation}
-\label{eq:SimulateInspiralH:inner-product-time}
-(a|b) = \int_{-\infty}^\infty dt\,\frac{a(t)b(t)^* + a(t)^*b(t)}{S_n} \;.
-\end{equation}
-If the white noise process $n(t)$ is discretely sampled at intervals
-$\Delta t$, we find that different time samples are uncorrelated:
-\begin{equation}
-\label{eq:SimulateInspiralH:noise-correlation}
-\langle n(t_j)n(t_{j'})^*\rangle = \sigma_n^2 \delta_{jj'} \;,
-\end{equation}
-where $\sigma_n^2$ is the variance in the sampled noise.  This can be
-proven using the definitions of the discrete inverse FFT and discrete
-power spectrum given in Eqs.~(.9) and~(.19) of the \verb@findchirp@
-package:
-\begin{eqnarray}
-\langle n(t_j)n(t_{j'})^*\rangle
-& = & \frac{1}{N^2}\sum_{k=0}^{N-1}\sum_{k'=0}^{N-1}
-	e^{2\pi i(jk-j'k')/N} \langle\tilde{n}_k\tilde{n}_{k'}\rangle
-	\nonumber\\
-& = & \frac{1}{N^2}\sum_{k=0}^{N-1}\sum_{k'=0}^{N-1}
-	e^{2\pi i(jk-j'k')/N} \frac{N}{2\Delta t}S_n\delta_{kk'}
-	\nonumber\\
-& = & \frac{S_n}{2N\Delta t}\sum_{k=0}^{N-1} e^{2\pi i(j-j')k/N}
-	\nonumber\\
-& = & \frac{S_n}{2\Delta t}\delta_{jj'} \;,\nonumber
-\end{eqnarray}
-whence we have $\sigma_n^2=S_n/2\Delta t$.  We note that the
-divergence as $\Delta t\rightarrow0$ reflects the fact that the
-idealized white power spectral density integrates to an infinite
-amount of power as $f\rightarrow\infty$.  Real noise processes always
-have some minimum timescale below which correlations between
-subsequent measurements are inevitable.
-
-Reexpressing the inner product in
-Eq.~(\ref{eq:SimulateInspiralH:inner-product-time}) for
-discretely-sampled time series, we have:
-\begin{equation}
-\label{eq:SimulateInspiralH:inner-product-sampled}
-(a|b) = \sum_k \Delta t\,\frac{a(t_k)b(t_k)^* + a(t_k)^*b(t_k)}{S_n}
-      = \frac{\mathrm{Re}\left[\sum_k
-		a(t_k)b(t_k)^*\right]}{\sigma_n^2} \;.
-\end{equation}
-The intrinsic signal-to-noise amplitude also takes an intuitive form:
-\begin{equation}
-\label{eq:SimulateInspiralH:snr-sampled}
-\sqrt{(s|s)} = \frac{\sqrt{\sum_k |s(t_k)|^2}}{\sigma_n}
-\end{equation}
-This, then, is the key formula that we will use to determine the
-signal-to-noise amplitude of a whitened signal that is to be injected
-into white noise.  It applies to any stationary white noise (recall
-that ``white'' implies zero mean), but we will almost always be
-concerned with white Gaussian noise, where the differential
-probability of a noise sample $n(t_k)$ lying in an infinitesimal range
-$(n,n+dn)$ is:
-\begin{equation}
-\label{eq:SimulateInspiralH:gaussian-pdf}
-\frac{dP[n(t_k)\in(n,n+dn)]}{dn} = \frac{1}{\sqrt{2\pi\sigma_n^2}}
-	e^{-n^2/2\sigma_n^2} \;.
-\end{equation}
-
-******************************************************* </lalLaTeX> */
-
-/* <lalLaTeX>
-\vfill{\footnotesize\input{SimulateInspiralHV}}
-</lalLaTeX> */
-
 
 /* Function prototypes. */
 
-/* <lalLaTeX>
-\newpage\input{SimulateInspiralC}
-</lalLaTeX> */
 void
 LALSimulateInspiral( LALStatus                  *,
 		     REAL4TimeSeries            *output,
 		     COMPLEX8FrequencySeries    *transfer,
 		     SimulateInspiralParamStruc *params );
-
-/* <lalLaTeX>
-%\newpage\input{SimulateInspiralTestC}
-</lalLaTeX> */
 
 #if 0
 { /* so that editors will match succeeding brace */

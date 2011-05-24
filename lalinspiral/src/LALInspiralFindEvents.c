@@ -17,43 +17,37 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralFindEventsCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
-/* <lalLaTeX>
-\subsection{Module \texttt{LALInspiralFindEvents.c}}
-Module to find events in a given data set with an SNR
+/**
+\author Sathyaprakash, B. S.
+\file
+
+\brief Module to find events in a given data set with an SNR
 larger than a pre-specified threshold. The module uses
 two orthogonal inspiral signals of specified parameters
 with a weight specified in a psd array. The code returns
 the number of events found, and for each event the snr,
 the bin number and the phase of the template at that bin.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralFindEventsCP}
-\index{\verb&LALInspiralFindEvents()&}
+\heading{Prototypes}
 
-\subsubsection*{Description}
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
-LALInspiralWave
-LALREAL4VectorFFT
-LALInspiralWaveNormalise
-LALInspiralWaveCorrelate
-\end{verbatim}
+<tt>LALInspiralFindEvents()</tt>
 
-\subsubsection*{Notes}
+\heading{Description}
+\heading{Algorithm}
+\heading{Uses}
+\code
+LALInspiralWave()
+LALREAL4VectorFFT()
+LALInspiralWaveNormalise()
+LALInspiralWaveCorrelate()
+\endcode
 
-\vfill{\footnotesize\input{LALInspiralFindEventsCV}}
-</lalLaTeX>  */
+*/
 #include <lal/LALNoiseModelsInspiral.h>
 
 NRCSID (LALINSPIRALFINDEVENTSC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralFindEventsCP"> */
+
 
 void
 LALInspiralFindEvents
@@ -63,7 +57,7 @@ LALInspiralFindEvents
    InspiralEventsList   **eventlist,
    InspiralFindEventsIn *findeventsin
    )
-{  /*  </lalVerbatim>  */
+{
 
    /*
     * We shall assume that the number of events to be found in

@@ -17,51 +17,43 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralPhasing1CV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief This module is used to set the phase of the waveform so that
+it is equal to the user specified phase \f$\phi_0\f$ when the `velocity' of the
+system is equal to \f$v.\f$
 
-\subsection{Module \texttt{LALInspiralPhasing1.c}}
-This module is used to set the phase of the waveform so that
-it is equal to the user specified phase $\phi_0$ when the `velocity' of the
-system is equal to $v.$
+\heading{Prototypes}
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralPhasing1CP}
-\index{\verb&LALInspiralPhasing1()&}
+<tt>LALInspiralPhasing1()</tt>
 
-\subsubsection*{Description}
+\heading{Description}
 
-The function \texttt{LALInspiralPhasing1} calculates the phase $\phi(v)$ using
+The function \c LALInspiralPhasing1() calculates the phase \f$\phi(v)\f$ using
 the phasing formula,
-\begin{equation}
+\anchor phiofv \f{equation}{
 \phi(v) =  \phi_{0} - 2 \int_{v_{0}}^{v} v^{3} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
 \label{phiofv}
-\end{equation}
-\texttt{LALInspiralPhasing1} calculates $\phi(v)$, given $\phi_{0}$, $v_{0}$,
-$v$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.  The user can specify the phase to
+\f}
+\c LALInspiralPhasing1() calculates \f$\phi(v)\f$, given \f$\phi_{0}\f$, \f$v_{0}\f$,
+\f$v\f$, \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.  The user can specify the phase to
 be of a particular value at an arbitrary point on the waveform when the
-post-Newtonian evolution variable $v$ reaches a specific value. Choosing
-$v=v_0,$ the initial velocity, means that the initial phase of the wave is $\phi_0;$
-Choosing $v=v_{\rm lso}$ means that the phase at the last stable orbit is $\phi_0$ and
+post-Newtonian evolution variable \f$v\f$ reaches a specific value. Choosing
+\f$v=v_0,\f$ the initial velocity, means that the initial phase of the wave is \f$\phi_0;\f$
+Choosing \f$v=v_\textrm{lso}\f$ means that the phase at the last stable orbit is \f$\phi_0\f$ and
 so on.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 Numerical integration.
 
-\subsubsection*{Uses}
+\heading{Uses}
+LALDRombergIntegrate()
+\heading{Notes}
 
-\texttt{LALDRombergIntegrate}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralPhasing1CV}}
-
-</lalLaTeX>  */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -70,7 +62,7 @@ Numerical integration.
 
 NRCSID (LALINSPIRALPHASING1C, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralPhasing1CP"> */
+
 void
 LALInspiralPhasing1 (
    LALStatus *status,
@@ -78,7 +70,7 @@ LALInspiralPhasing1 (
    REAL8     v,
    void      *params
    )
-{ /* </lalVerbatim>  */
+{
 
    void *funcParams;
    DIntegrateIn intinp;
@@ -130,4 +122,3 @@ LALInspiralPhasing1 (
    DETATCHSTATUSPTR (status);
    RETURN (status);
 }
-

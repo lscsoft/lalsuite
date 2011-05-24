@@ -20,6 +20,7 @@
 /* <lalVerbatim file="SpaceCoveringCV">
 Author: Thomas Cokelaer
 $Id$
+\ingroup LALInspiralBank_h
 </lalVerbatim> */
 
 /* <lalLaTeX>

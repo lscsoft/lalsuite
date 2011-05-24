@@ -17,28 +17,24 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="NDTemplateBankCV">
- * Author: Hanna, C. R.
- * $Id$
- **** </lalVerbatim> */
+/**
+ * \author Hanna, C. R.
+ \file
+ \ingroup TemplateBankGeneration_h
 
-/**** <lalLaTeX>
+ * \brief This module handles template bank generation for up to searches with
+ * \f$<=\f$ 12 dimensional parameter spaces.
  *
- * \subsection{Module \texttt{NDTemplateBank.c}}
+ * \heading{Prototypes}
  *
- * This module handles template bank generation for up to searches with
- * $<=$ 12 dimensional parameter spaces.
+ * <tt>LALNDTemplateBank()</tt>
  *
- * \subsubsection*{Prototypes}
- * \input{NDTemplateBankCP}
- * %% \idx{LALNDTemplateBank()}
- *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
  * This module tiles up to a 12 dimensional space when given a metric and a
  * function that determines the search region.
  *
- * \subsubsection*{Algorithm}
+ * \heading{Algorithm}
  *
  * The algorithm first draws a rectilinear box in the primed coordinates
  * which includes the distorted box, then steps through along the directions
@@ -47,24 +43,17 @@
  * algorithm adds a template to the linked list. If not, it continues.
  *
  *
- * \subsubsection*{Uses}
+ * \heading{Uses}
  *
- * \begin{verbatim}
+ * \code
  * LALCalloc()
  * LALFree()
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Notes}
+ * \heading{Notes}
+
  *
- *
- * \vfill{\footnotesize\input{NDTemplateBankCV}}
- *
- **** </lalLaTeX> */
-
-
-
-
-
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -93,12 +82,12 @@ static REAL4 DotProduct(REAL4 *EV, REAL4 *DX){
 
 
 void
-/* <lalVerbatim file="NDTemplateBankCP"> */
+
 LALNDTemplateBank( LALStatus *status,
                    NDTemplateBankInput *input,
                    NDTemplateBankFunctionPtrs *functionPtrs,
 		   NDTemplateBankOutput **output)
-/* </lalVerbatim> */
+
 {
 
   INT2 Dimension = input->dimension;

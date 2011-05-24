@@ -17,40 +17,33 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralPolarizationsCV">
+/**
 
-Author: Ochsner, E.
-$Id$
-</lalVerbatim>  */
+\author Ochsner, E.
+\file
 
-/*  <lalLaTeX>
+\brief This code generates the two GW polarizations of the inspiral waveform for a given phase model.
 
-\subsection{Module \texttt{LALInspiralPolarizations.c} and \texttt{LALInspiralPolarizationsTemplates.c}}
-This code generates the two GW polarizations of the inspiral waveform for a given phase model.
+\heading{Prototypes}
 
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralPolarizationsCP}
-\index{\verb&LALInspiralHplus()&}
-\begin{itemize}
-\item {\tt output:} Outputs either $h_+$ or $h_\times.$
-\item {\tt params:} Input containing binary chirp parameters.
-\item {\tt phase:} Input containing binary chirp phase.
-\item {\tt v:} PN expansion parameter
-\end{itemize}
+<tt>LALInspiralHplus()</tt>
+<ul>
+<li> \c output: Outputs either \f$h_+\f$ or \f$h_\times.\f$</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+<li> \c phase: Input containing binary chirp phase.</li>
+<li> \c v: PN expansion parameter</li>
+</ul>
 
-\subsubsection*{Description}
+\heading{Description}
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralPolarizationsCV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALStdlib.h>
 #include<lal/LALConstants.h>

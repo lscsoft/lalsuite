@@ -4,17 +4,8 @@
  *
  * Author: Bose, S.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
-
-#if 0
-<lalVerbatim file="MultiInspiralUtilsCV">
-Author: Bose, S.
-$Id$
-</lalVerbatim>
-#endif
 
 #include <math.h>
 #include <stdio.h>
@@ -32,43 +23,13 @@ $Id$
 
 NRCSID( SNGLINSPIRALUTILSC, "$Id$");
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{MultiInspiralUtils.c}}
+/**
+\author Bose, S.
+\file
 
-Provides a set of utilities for manipulating \texttt{multiInspiralTable}s.
+\brief Provides a set of utilities for manipulating \c multiInspiralTables.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{MultiInspiralUtilsCP}
-\idx{XLALFreeMultiInspiral()}
-\idx{XLALSortMultiInspiral()}
-\idx{XLALClusterMultiInspiralTable()}
-\idx{XLALTimeCutSingleInspiral()}
-\idx{XLALSNRCutSingleInspiral()}
-\idx{XLALRsqCutSingleInspiral()}
-\idx{XLALPlayTestSingleInspiral()}
-\idx{XLALMaxMultiInspiralOverIntervals(()}
-\idx{XLALCountMultiInspiral()}
-\idx{XLALCoincInspiralSlideCut()}
-
-\subsubsection*{Description}
-
-\subsubsection*{Algorithm}
-
-\noindent None.
-
-\subsubsection*{Uses}
-
-\noindent LALCalloc, LALFree, XLALINT8NanoSecIsPlayground.
-
-\subsubsection*{Notes}
-%% Any relevant notes.
-
-\vfill{\footnotesize\input{MultiInspiralUtilsCV}}
-
-</lalLaTeX>
-#endif
+*/
 
   /* a few useful static functions */
 static INT8 geocent_end_time(const SimInspiralTable *x)
@@ -98,25 +59,25 @@ static INT4 end_time_nsec(const MultiInspiralTable *x)
 }
 #endif
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALFreeMultiInspiral (
     LALStatus          *status,
     MultiInspiralTable **eventHead
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALFreeMultiInspiral", SNGLINSPIRALUTILSC );
   XLALFreeMultiInspiral( eventHead );
   RETURN( status );
 }
 
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 int
 XLALFreeMultiInspiral (
     MultiInspiralTable **eventHead
     )
-/* </lalVerbatim> */
+
 {
   EventIDColumn        *eventId;
 
@@ -131,13 +92,13 @@ XLALFreeMultiInspiral (
   return (0);
 }
 
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 MultiInspiralTable *
 XLALSortMultiInspiral (
     MultiInspiralTable *eventHead,
     int(*comparfunc)   (const void *, const void *)
     )
-/* </lalVerbatim> */
+
 {
   INT4                  i;
   INT4                  numEvents = 0;
@@ -182,7 +143,7 @@ XLALSortMultiInspiral (
   return( eventHead );
 }
 
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 REAL4
 XLALMultiInspiralStat(
     MultiInspiralTable         *multiInspiral,
@@ -251,14 +212,14 @@ XLALMultiInspiralStat(
 }
 
 
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 int
 XLALClusterMultiInspiralTable (
     MultiInspiralTable         **inspiralList,
     INT8                         dtimeNS,
     MultiInspiralClusterChoice   clusterchoice
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALClusterMultiInspiralTable";
   MultiInspiralTable     *thisEvent=NULL;
@@ -336,14 +297,14 @@ XLALClusterMultiInspiralTable (
   return(numMultiClust);
 }
 
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 MultiInspiralTable *
 XLALTimeCutMultiInspiral(
     MultiInspiralTable          *eventHead,
     LIGOTimeGPS                *startTime,
     LIGOTimeGPS                *endTime
     )
-/* </lalVerbatim> */
+
 {
   MultiInspiralTable    *inspiralEventList = NULL;
   MultiInspiralTable    *thisEvent = NULL;
@@ -389,13 +350,13 @@ XLALTimeCutMultiInspiral(
 }
 
 
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 MultiInspiralTable *
 XLALSNRCutMultiInspiral (
     MultiInspiralTable          *eventHead,
     REAL4                       snrCut
     )
-/* </lalVerbatim> */
+
 {
   MultiInspiralTable    *thisEvent = NULL;
   MultiInspiralTable    *prevEvent = NULL;
@@ -432,13 +393,13 @@ XLALSNRCutMultiInspiral (
 }
 
 
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 MultiInspiralTable *
 XLALPlayTestMultiInspiral(
     MultiInspiralTable          *eventHead,
     LALPlaygroundDataMask       *dataType
     )
-/* </lalVerbatim> */
+
 {
   MultiInspiralTable    *inspiralEventList = NULL;
   MultiInspiralTable    *thisEvent = NULL;
@@ -510,9 +471,9 @@ XLALPlayTestMultiInspiral(
 
 /*CHECK: This function is not needed since XLALCountMultiInspiralTable
   in LIGOMetadataUtils in support already does that job */
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 INT4 XLALCountMultiInspiral( MultiInspiralTable *head )
-/* </lalVerbatim> */
+
 {
   INT4 length;
   MultiInspiralTable *event;
@@ -529,13 +490,13 @@ INT4 XLALCountMultiInspiral( MultiInspiralTable *head )
   return length;
 }
 
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 int
 LALCompareMultiInspiralByTime (
     const void *a,
     const void *b
     )
-/* </lalVerbatim> */
+
 {
   LALStatus     status;
   const MultiInspiralTable *aPtr = *((const MultiInspiralTable * const *)a);
@@ -560,7 +521,7 @@ LALCompareMultiInspiralByTime (
   }
 }
 
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 int
 XLALMultiSimInspiralTest (
     SimInspiralTable  **simHead,
@@ -569,7 +530,7 @@ XLALMultiSimInspiralTest (
     MultiInspiralTable **missedMultiHead,
     INT8                injectWindowNS
     )
-/* </lalVerbatim> */
+
 {
 
   /* Note: we are assuming that both the inspiral and */
@@ -792,13 +753,13 @@ XLALMultiSimInspiralTest (
   return( numSimFound );
 }
 
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 int
 XLALMultiInspiralIfos (
     MultiInspiralTable  *multiInspiral,
     char                *ifos
     )
-/* </lalVerbatim> */
+
 {
   int                   ifosMatch  = 0;
 
@@ -815,13 +776,13 @@ XLALMultiInspiralIfos (
   return( ifosMatch );
 }
 
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 int
 XLALMultiInspiralIfosCut(
     MultiInspiralTable **multiHead,
     char                *ifos
     )
-/* </lalVerbatim> */
+
 {
   MultiInspiralTable    *prevTrig = NULL;
   MultiInspiralTable    *thisTrig = NULL;
@@ -860,7 +821,7 @@ XLALMultiInspiralIfosCut(
   return( numTrig );
 }
 
-/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+
 MultiInspiralTable *
 XLALMultiInspiralSlideCut(
     MultiInspiralTable **multiHead,

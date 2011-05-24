@@ -17,19 +17,12 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALTaylorT4WaveformCV">
-Author: Sathyaprakash, B. S., Cokelaer T.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S., Cokelaer T.
+\file
+\brief NONE
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALTaylorT4Waveform.c} and
-\texttt{LALTaylorT4WaveformTemplates.c}}
-
-\vfill{\footnotesize\input{LALTaylorT4WaveformCV}}
-
-</lalLaTeX>  */
+*/
 /*-------------------------------------------------------------------*/
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
@@ -272,13 +265,13 @@ void LALTaylorT4Derivatives7PN(
    dvalues->data[1] =  v3/ak->totalmass;
 }
 
-/*  <lalVerbatim file="LALTaylorT4WaveformCP"> */
+
 void LALTaylorT4Waveform (
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim> */
+{
 
    InspiralInit paramsInit;
    UINT4        count;

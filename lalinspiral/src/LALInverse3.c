@@ -17,61 +17,52 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInverse3CV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
+\brief Uses \f$g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}\f$ to compute the inverse.
 
-\subsection{Module \texttt{LALInverse3.c}}
+\heading{Prototypes}
 
+<tt>LALInverse3()</tt>
+<ul>
+   <li> <tt>inverse,</tt> Output, inverse of the \f$(3\times 3)\f$ input matrix
+   </li><li> <tt>*matrix,</tt> Input, matrix whose inverse is required</li>
+</ul>
 
-Uses $g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}$ to compute the inverse.
+\heading{Description}
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInverse3CP}
-\idx{LALInverse3()}
-
-\begin{itemize}
-   \item \texttt{inverse,} Output, inverse of the $(3\times 3)$ input matrix
-   \item \texttt{*matrix,} Input, matrix whose inverse is required
-\end{itemize}
-\subsubsection*{Description}
-
-
-Uses $g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}$ to compute
+Uses \f$g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}\f$ to compute
 the inverse; though not efficient, it is good enough for the
 3-d matrix that we have. Prevents the need for having a new library.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\begin{verbatim}
-LALDeterminant3
-\end{verbatim}
+\code
+LALDeterminant3()
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 Do not generalise to more than 3 dimensions.
 
-\vfill{\footnotesize\input{LALInverse3CV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALInspiralBank.h>
 
 NRCSID(LALINVERSE3C, "$Id$");
 #define Dim 3
 
-/*  <lalVerbatim file="LALInverse3CP"> */
+
 
 void LALInverse3(LALStatus *status,
                  REAL8     **inverse,
                  REAL8     **matrix)
-{ /* </lalVerbatim> */
+{
 
    REAL8 epsilon[Dim][Dim][Dim] = {{
                               { 0, 0, 0},

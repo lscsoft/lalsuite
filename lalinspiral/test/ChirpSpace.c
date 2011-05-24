@@ -22,6 +22,7 @@ Author: Sathyaprakash, B. S.
 </lalVerbatim> */
 
 /* <lalLaTeX>
+\ingroup LALInspiralBank_h
 \subsection{Program \texttt{ChirpSpace.c}}
 \label{ss:bank:ChirpSpace.c}
 

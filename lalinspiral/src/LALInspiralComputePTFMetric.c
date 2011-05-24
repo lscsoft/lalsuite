@@ -17,89 +17,82 @@
 *  MA  02111-1307  USA
 */
 
-#if 0
-<lalVerbatim file="LALInspiralComputePTFMetricCV">
-Author: Yi Pan, Duncan Brown
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{LALInspiralComputePTFMetric.c}}
+\author Yi Pan, Duncan Brown
+\file
+\ingroup LALInspiralBank_h
 
-Module to compute the components of the metric which is used to describe
+\brief Module to compute the components of the metric which is used to describe
 distances on Physical Template Family signal manifold.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{XLALInspiralComputePTFIntrinsicMetricCP}
-\idx{XLALInspiralComputePTFIntrinsicMetric()}
-\begin{itemize}
-   \item \texttt{metric,} Output, the metric at the lattice point defined by \texttt{params}
-   \item \texttt{psd,} Input, the power spectral density of the data
-   \item \texttt{params,} Input, the parameters where metric must be computed
-   in the computation of the metric.
-\end{itemize}
+\heading{Prototypes}
 
-\input{XLALInspiralComputePTFFullMetricCP}
-\idx{XLALInspiralComputePTFFullMetric()}
-\begin{itemize}
-   \item \texttt{metric,} Output, the metric at the lattice point defined by \texttt{params}
-   \item \texttt{psd,} Input, the power spectral density of the data
-   \item \texttt{params,} Input, the parameters where metric must be computed
-   in the computation of the metric.
-\end{itemize}
+<tt>XLALInspiralComputePTFIntrinsicMetric()</tt>:
+<ul>
+   <li> <tt>metric,</tt> Output, the metric at the lattice point defined by \c params
+   </li><li> <tt>psd,</tt> Input, the power spectral density of the data
+   </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
+   in the computation of the metric.</li>
+</ul>
 
-\input{XLALInspiralComputePTFWaveformCP}
-\idx{XLALInspiralComputePTFWaveform()}
-\begin{itemize}
-   \item \texttt{ptfwave,} Output, the waveform at the lattice point defined
-   by \texttt{params}
-   \item \texttt{params,} Input, the parameters where metric must be computed
-   in the computation of the metric.
-\end{itemize}
 
-\input{XLALInspiralComputePTFWDerivCP}
-\idx{XLALInspiralComputePTFWDeriv()}
-\begin{itemize}
-   \item \texttt{Wderiv,} Output, the time derivative of waveform at the lattice
-   point defined by \texttt{params}
-   \item \texttt{psd,}  Input, the power spectral density of the data
-   \item \texttt{params,} Input, the parameters where metric must be computed
+<tt>XLALInspiralComputePTFFullMetric()</tt>:
+<ul>
+   <li> <tt>metric,</tt> Output, the metric at the lattice point defined by \c params
+   </li><li> <tt>psd,</tt> Input, the power spectral density of the data
+   </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
+   in the computation of the metric.</li>
+</ul>
+
+
+<tt>XLALInspiralComputePTFWaveform()</tt>:
+<ul>
+   <li> <tt>ptfwave,</tt> Output, the waveform at the lattice point defined
+   by \c params
+   </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
+   in the computation of the metric.</li>
+</ul>
+
+
+<tt>XLALInspiralComputePTFWDeriv()</tt>:
+<ul>
+   <li> <tt>Wderiv,</tt> Output, the time derivative of waveform at the lattice
+   point defined by \c params
+   </li><li> <tt>psd,</tt>  Input, the power spectral density of the data
+   </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
    in the computation of the metric
-   \item \texttt{paramid,} Input, id of the parameter to take derivative on
-   \item \texttt{initdelta,} Input, initial difference in parameters
-   \item \texttt{tolerance,} Input, stop iteration when difference between two
-   bisections is smaller than tolerance.
-\end{itemize}
+   </li><li> <tt>paramid,</tt> Input, id of the parameter to take derivative on
+   </li><li> <tt>initdelta,</tt> Input, initial difference in parameters
+   </li><li> <tt>tolerance,</tt> Input, stop iteration when difference between two
+   bisections is smaller than tolerance.</li>
+</ul>
 
-\input{XLALInspiralComputePTFQDerivCP}
-\idx{XLALInspiralComputePTFQDeriv()}
-\begin{itemize}
-   \item \texttt{Qderiv,} Output, the time derivative of Q at the lattice point
-   defined by \texttt{params}
-   \item \texttt{params,} Input, the parameters where metric must be computed
-   in the computation of the metric.
-\end{itemize}
 
-\subsubsection*{Description}
+<tt>XLALInspiralComputePTFQDeriv()</tt>:
+<ul>
+   <li> <tt>Qderiv,</tt> Output, the time derivative of Q at the lattice point
+   defined by \c params
+   </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
+   in the computation of the metric.</li>
+</ul>
+
+\heading{Description}
 We calculate the components of the metric using the procedure outlined
 by Yi.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\begin{verbatim}
+\code
 LALMalloc
 LALFree
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralComputePTFMetricCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
@@ -117,14 +110,14 @@ LALFree
 #define UNUSED
 #endif
 
-/* <lalVerbatim file="XLALInspiralComputePTFIntrinsicMetricCP">  */
+
 INT4 XLALInspiralComputePTFIntrinsicMetric (
     InspiralMetric			   *metric,
     REAL8Vector				   *fullmetric,
     REAL8FrequencySeries                   *psd,
     InspiralTemplate                       *params
     )
-/* </lalVerbatim> */
+
 {
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
@@ -554,24 +547,24 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   return errcode;
 }
 
-/* <lalVerbatim file="XLALInspiralComputePTFFullMetricCP">  */
+
 INT4 XLALInspiralComputePTFFullMetric (
     InspiralMetric             UNUSED *metric,
     REAL8FrequencySeries       UNUSED *psd,
     InspiralTemplate           UNUSED *params
     )
-/* </lalVerbatim> */
+
 {
   return XLAL_SUCCESS;
 }
 
 
-/* <lalVerbatim file="XLALInspiralComputePTFWaveformCP">  */
+
 INT4 XLALInspiralComputePTFWaveform (
     REAL8Vector				   *ptfwave,
     InspiralTemplate           *params
     )
-/* </lalVerbatim> */
+
 {
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
@@ -713,7 +706,7 @@ INT4 XLALInspiralComputePTFWaveform (
 
 }
 
-/* <lalVerbatim file="XLALInspiralComputePTFWDerivCP">  */
+
 INT4 XLALInspiralComputePTFWDeriv (
 	COMPLEX16Vector			   *Wderiv,
 	REAL8FrequencySeries       *psd,
@@ -722,7 +715,7 @@ INT4 XLALInspiralComputePTFWDeriv (
 	REAL8					   initdelta,
 	REAL8					   tolerance
     )
-/* </lalVerbatim> */
+
 {
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
@@ -1004,13 +997,12 @@ INT4 XLALInspiralComputePTFWDeriv (
   return XLAL_SUCCESS;
 }
 
-/* <lalVerbatim file="XLALInspiralComputePTFQDerivCP">  */
+
 INT4 XLALInspiralComputePTFQDeriv (
     REAL8VectorSequence        UNUSED *Qderiv,
     InspiralTemplate           UNUSED *params
     )
-/* </lalVerbatim> */
+
 {
   return XLAL_SUCCESS;
 }
-

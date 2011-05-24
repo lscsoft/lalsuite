@@ -20,6 +20,7 @@
 /********************** <lalVerbatim file="GeneratePPNInspiralTestCV">
 Author: Creighton, T. D.
 $Id$
+\ingroup GeneratePPNInspiral_h
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>

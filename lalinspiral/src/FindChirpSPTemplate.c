@@ -24,49 +24,38 @@
  *
  * Author: Brown D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpSPTemplateCV">
-Author: Brown, D. A.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpSPTemplate.c}}
-\label{ss:FindChirpSPTemplate.c}
+\author Brown, D. A.
+\file
+\ingroup FindChirpSP_h
 
-Provides functions to create stationary phase inspiral templates in a
-form that can be used by the \texttt{FindChirpFilter()} function.
+\brief Provides functions to create stationary phase inspiral templates in a
+form that can be used by the <tt>FindChirpFilter()</tt> function.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpSPTemplateCP}
-\idx{LALFindChirpSPTemplate()}
+\heading{Prototypes}
 
-The function \texttt{LALFindChirpSPTemplate()} creates the stationary phase
+The function <tt>LALFindChirpSPTemplate()</tt> creates the stationary phase
 template as described by the algorithm below.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 Blah.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpSPTemplateCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -137,7 +126,7 @@ XLALFindChirpChirpTime (double m1,
 
 
 
-/* <lalVerbatim file="FindChirpSPTemplateCP"> */
+
 void
 LALFindChirpSPTemplate (
     LALStatus                  *status,
@@ -145,7 +134,7 @@ LALFindChirpSPTemplate (
     InspiralTemplate           *tmplt,
     FindChirpTmpltParams       *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4         numPoints  = 0;
   REAL4         deltaF     = 0.0;
