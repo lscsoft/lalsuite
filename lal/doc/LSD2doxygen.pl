@@ -325,9 +325,9 @@ sub cleanupLSD {
                    providecommand
                    )$bbr$bbr!!mgx;
         # two arguments, first optional
-        $text =~ s!\\(?:
-                   idx
-                   )$bbk?$bbr!!mgx;
+        #$text =~ s!\\(?:
+        #idx
+        #)$bbk?$bbr!!mgx;
         # one argument
         $text =~ s!\\(?:
                    vfill|vspace
@@ -427,6 +427,9 @@ sub cleanupLSD {
                 ($e eq 'tt' ? "<tt>$_</tt>" : "<em>$_</em>" )
         }sge;
 
+        # special treatment of 'Synopsis/Prototypes/Description/Uses/Algorithm/Notes' sections: turn into 'heading'
+        $text =~ s!\\(?:sub)*section\*?{(Synopsis|Description|Prototypes|Algorithm|Notes|Uses)}!\\heading{$1}!g;
+
         # rephrase (sub)section commands, turning labels (if present) into anchors
         $text =~ s{\\((?:sub)*section)\*?\s*$wbbr\n(?<LBL>\\label\s*$bbr)?}{
             my $level = $1;
@@ -450,7 +453,13 @@ sub cleanupLSD {
             $_ = $1;
             '\TODOref{' . &$illref($_) . '}'
         }sge;
-        $text =~ s![Ee]q(s?)\.?\\TODOref!Eq\1.\\eqref!mg;
+
+        ## intelligent guess about equation references
+        $text =~ s!([Ee]qs?|[Ee]quations?)[.\\~]*\\TODOref!\1.\\eqref!mg;
+        ## intelligent guess about figure references
+        $text =~ s!([Ff]igs?|[Ff]igures?)[.\\~]*\\TODOref!\1.\\figref!mg;
+        ## intelligent guess about table references
+        $text =~ s!([Tt]ab?|[Tt]ables?)[.\\~]*\\TODOref!\1.\\tableref!mg;
 
         # replace probable filenames with references
         $text =~ s!<tt>(.*?\.[ch])</tt>!\\ref \1!mg;
@@ -489,7 +498,7 @@ sub cleanupLSD {
         $text =~ s!^$n*%$n*$!!mg;
 
         # mark input commands as 'TODO'
-        $text =~ s!\\input$wbbr!(MANUAL INTERVENTION input) $1.tex!g
+        $text =~ s!\\input$wbbr!\TODOinput{$1}!g
     }
 
     # get rid of empty comments
