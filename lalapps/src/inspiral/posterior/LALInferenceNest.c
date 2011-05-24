@@ -39,6 +39,7 @@
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
 void initVariables(LALInferenceRunState *state);
+void initStudentt(LALInferenceRunState *state);
 
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
@@ -306,8 +307,8 @@ Parameter arguments:\n\
 (--Dmax dist)\tMaximum distance in Mpc (100)\n\
 (--approx ApproximantorderPN)\tSpecify a waveform to use, (default TaylorF2twoPN)\n\
 (--mincomp min)\tMinimum component mass (1.0)\n\
-(--maxcomp max)\tMaximum component mass (30.0)\n\n";
-	
+(--maxcomp max)\tMaximum component mass (30.0)\n";
+
 	/* Print command line arguments if help requested */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
 	if(ppt)
@@ -383,7 +384,7 @@ Parameter arguments:\n\
 	printf("Read end time %f\n",endtime);
 	
 	LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        INT4_t, PARAM_FIXED);
-    LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        INT4_t, PARAM_FIXED);
+    	LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        INT4_t, PARAM_FIXED);
 	
 	/* Set up the variable parameters */
 	tmpVal=log(mcMin+(mcMax-mcMin)/2.0);
@@ -430,14 +431,64 @@ Parameter arguments:\n\
 	return;
 }
 
+/** Initialise student-t extra variables, set likelihood */
+void initStudentt(LALInferenceRunState *state)
+{
+        char help[]="\
+Student T Likelihood Arguments:\n\
+(--studentt)\tUse student-t likelihood function\n";
+
+        ProcessParamsTable *ppt=NULL;
+	LALInferenceIFOData *ifo=state->data;
+
+	/* Print command line arguments if help requested */
+        if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
+        {
+                fprintf(stdout,"%s",help);
+		while(ifo)
+			fprintf(stdout,"(--dof-%s DoF)\tDegrees of freedom for %s\n",ifo->name,ifo->name);
+		return;
+        }
+	/* Don't do anything unless asked */
+	if(!LALInferenceGetProcParamVal(state->commandLine,"--studentt")) return;
+
+	/* initialise degrees of freedom parameters for each IFO */
+	while(ifo){
+		CHAR df_argument_name[128];
+		CHAR df_variable_name[64];
+		REAL8 dof=10.0; /* Degrees of freedom parameter */
+		
+		sprintf(df_argument_name,"--df-%s",ifo->name);
+		if((ppt=LALInferenceGetProcParamVal(state->commandLine,df_argument_name)))
+			dof=atoi(ppt->value);
+    		sprintf(df_variable_name,"df_%s",ifo->name);
+    		LALInferenceAddVariable(state->currentParams,df_variable_name,&dof,REAL8_t,PARAM_FIXED);
+		ifo=ifo->next;
+	}
+
+	/* Set likelihood to student-t */
+	state->likelihood = &FreqDomainStudentTLogLikelihood;
+	
+	/* Set the noise model evidence to the student t model value */
+	REAL8 noiseZ=FreqDomainStudentTLogLikelihood(state->currentParams,state->data,&templateNullFreqdomain);
+	LALInferenceAddVariable(state->algorithmParams,"logZnoise",&noiseZ,REAL8_t,PARAM_FIXED);
+
+	return;
+}
+
 /*************** MAIN **********************/
 
 
 int main(int argc, char *argv[]){
+        char help[]="\
+LALInferenceNest:\n\
+Bayesian analysis tool using Nested Sampling algorithm\n\
+for CBC analysis. Uses LALInference library for back-end.\n\n\
+Arguments for each section follow:\n\n";
 
 	LALInferenceRunState *state;
 	ProcessParamsTable *procParams=NULL;
-	
+
 	/* Read command line and parse */
 	procParams=LALInferenceParseCommandLine(argc,argv);
 	
@@ -453,13 +504,22 @@ int main(int argc, char *argv[]){
 	/* Set up currentParams with variables to be used */
 	initVariables(state);
 	
+	/* Check for student-t and apply */
+	initStudentt(state);
+
+       /* Print command line arguments if help requested */
+        if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
+        {
+                fprintf(stdout,"%s",help);
+		exit(0);
+        }
+
 	/* Call setupLivePointsArray() to populate live points structures */
 	LALInferenceSetupLivePointsArray(state);
-	
+
 	/* Call nested sampling algorithm */
 	state->algorithm(state);
-	
-	
+
 	/* end */
 	return(0);
 }

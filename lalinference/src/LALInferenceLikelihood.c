@@ -257,8 +257,7 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, 
 /***************************************************************/
 
 REAL8 FreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, 
-                                      LALInferenceTemplateFunction *template,
-                                      LALInferenceVariables *df)
+                                      LALInferenceTemplateFunction *template)
 {
   static int timeDomainWarning = 0;
   double Fplus, Fcross;
@@ -270,7 +269,7 @@ REAL8 FreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALI
   REAL8 templateReal, templateImag;
   int i, lower, upper;
   LALInferenceIFOData *dataPtr;
-  double ra, dec, psi, distMpc, gmst;
+  double ra, dec, psi, distMpc, gmst,mc;
   double GPSdouble;
   LIGOTimeGPS GPSlal;
   double chisquared;
@@ -283,7 +282,17 @@ REAL8 FreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALI
   LALStatus status;
   memset(&status,0,sizeof(status));
   LALInferenceVariables intrinsicParams;
+  
+  /* Fill in derived parameters if necessary */
+  if(LALInferenceCheckVariable(currentParams,"logdistance")){
+    distMpc=exp(*(REAL8 *) LALInferenceGetVariable(currentParams,"logdistance"));
+    LALInferenceAddVariable(currentParams,"distance",&distMpc,REAL8_t,PARAM_OUTPUT);
+  }
 
+  if(LALInferenceCheckVariable(currentParams,"logmc")){
+    mc=exp(*(REAL8 *)LALInferenceGetVariable(currentParams,"logmc"));
+    LALInferenceAddVariable(currentParams,"chirpmass",&mc,REAL8_t,PARAM_OUTPUT);
+  }
   /* determine source's sky location & orientation parameters: */
   ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
   dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
@@ -385,8 +394,16 @@ REAL8 FreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALI
     dataPtr->timeshift = timeshift;
 
     /* extract the element from the "df" vector that carries the current Ifo's name: */
-    degreesOfFreedom = *(REAL8*) LALInferenceGetVariable(df, dataPtr->name);
-    if (!(degreesOfFreedom>0)) die(" ERROR in StudentTLogLikelihood(): degrees-of-freedom parameter (\"df\") must be positive.\n");
+    CHAR df_variable_name[64];
+    sprintf(df_variable_name,"df_%s",dataPtr->name);
+    if(LALInferenceCheckVariable(currentParams,df_variable_name)){
+      degreesOfFreedom = *(REAL8*) LALInferenceGetVariable(currentParams,df_variable_name);
+    }
+    else {
+      fprintf(stderr,"ERROR: Unable to find degrees of freedom parameter %s!\n",df_variable_name);
+      degreesOfFreedom = -1;
+    }
+    if (!(degreesOfFreedom>0)) die(" ERROR in StudentTLogLikelihood(): degrees-of-freedom parameter must be positive.\n");
 
     /* determine frequency range & loop over frequency bins: */
     deltaT = dataPtr->timeData->deltaT;
