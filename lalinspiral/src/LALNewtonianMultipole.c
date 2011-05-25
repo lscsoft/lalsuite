@@ -116,6 +116,9 @@ XLALCalculateNewtonianMultipole(
   }
   *multipole = XLALCOMPLEX16Mul( *multipole, y );
 
+  *multipole = XLALCOMPLEX16Mul( *multipole, XLALCOMPLEX16MulReal( 
+                     XLALCOMPLEX16Exp( XLALCOMPLEX16Rect( 0., - m * LAL_PI_2 ) ), -1. ) );
+
   return XLAL_SUCCESS;
 }
 

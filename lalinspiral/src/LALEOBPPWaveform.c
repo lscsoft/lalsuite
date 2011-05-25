@@ -121,6 +121,9 @@ at the last stable orbit. It is recommended that a rather generous
 
 #include <gsl/gsl_sf_gamma.h>
 
+
+static const int EOBNRV2_NUM_MODES_MAX = 5;
+
 typedef struct tagrOfOmegaIn {
    REAL8 eta, omega;
 } rOfOmegaIn;
@@ -361,7 +364,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
                 {
 	        deltalm = vh3*(hCoeffs->delta21vh3 + vh3*(hCoeffs->delta21vh6
 			+ vh*(hCoeffs->delta21vh7 + (hCoeffs->delta21vh9)*vh*vh))) 
-			+ hCoeffs->delta21v5*v*v2*v2;
+			+ hCoeffs->delta21v5*v*v2*v2 + hCoeffs->delta21v7*v2*v2*v2*v;
 		rholm	= 1. + v*(hCoeffs->rho21v1
 			+ v*( hCoeffs->rho21v2 + v*(hCoeffs->rho21v3 + v*(hCoeffs->rho21v4 
 			+ v*(hCoeffs->rho21v5 + v*(hCoeffs->rho21v6 + hCoeffs->rho21v6l*eulerlogxabs 
@@ -380,7 +383,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	    {
 	      case 3:
 	        deltalm = vh3*(hCoeffs->delta33vh3 + vh3*(hCoeffs->delta33vh6 + hCoeffs->delta33vh9*vh3)) 
-                        + hCoeffs->delta33v5*v*v2*v2;
+                        + hCoeffs->delta33v5*v*v2*v2 + hCoeffs->delta33v7*v2*v2*v2*v;
 		rholm	= 1. + v2*(hCoeffs->rho33v2 + v*(hCoeffs->rho33v3 + v*(hCoeffs->rho33v4 
 			+ v*(hCoeffs->rho33v5 + v*(hCoeffs->rho33v6 + hCoeffs->rho33v6l*eulerlogxabs
 			+ v*(hCoeffs->rho33v7 + (hCoeffs->rho33v8 + hCoeffs->rho33v8l*eulerlogxabs)*v))))));
@@ -411,7 +414,8 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	    {
 	      case 4:
                 
-	        deltalm = vh3*(hCoeffs->delta44vh3 + hCoeffs->delta44vh6 *vh3);
+	        deltalm = vh3*(hCoeffs->delta44vh3 + hCoeffs->delta44vh6 *vh3)
+                          + hCoeffs->delta44v5*v2*v2*v;
 		rholm	= 1. + v2*(hCoeffs->rho44v2
 			+ v*( hCoeffs->rho44v3 + v*(hCoeffs->rho44v4
 			+ v*(hCoeffs->rho44v5 + (hCoeffs->rho44v6
@@ -448,9 +452,10 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	    switch (m)
 	    {
 	      case 5:
-	        deltalm = hCoeffs->delta55vh3*vh3;
+	        deltalm = hCoeffs->delta55vh3*vh3 + hCoeffs->delta55v5*v2*v2*v;
 		rholm	= 1. + v2*( hCoeffs->rho55v2 
-			+ v*(hCoeffs->rho55v3 + v*(hCoeffs->rho55v4 + hCoeffs->rho55v5*v)));
+			+ v*(hCoeffs->rho55v3 + v*(hCoeffs->rho55v4 
+                        + v*(hCoeffs->rho55v5 + hCoeffs->rho55v6*v))));
 	        break;
 	      case 4:
 		deltalm = vh3*(hCoeffs->delta54vh3 + hCoeffs->delta54vh4*vh);
@@ -1126,6 +1131,61 @@ REAL8 LALvrP4PN( const REAL8 r,
   return (FDIS * x1);
 }
 
+static REAL8
+GetRingdownAttachCombSize( INT4 l, INT4 m )
+{
+
+   switch ( l )
+   {
+     case 2:
+       switch ( m )
+       {
+         case 2:
+           return 5.;
+           break;
+         case 1:
+           return 8.;
+           break;
+         default:
+           XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+           break;
+        }
+        break;
+     case 3:
+       if ( m == 3 )
+       {
+         return 12.;
+       }
+       else
+       {
+         XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+       }
+       break;
+     case 4:
+       if ( m == 4 )
+       {
+         return 9.;
+       }
+       else
+       {
+         XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+       }
+       break;
+     case 5:
+       if ( m == 5 )
+       {
+         return 8.;
+       }
+       else
+       {
+         XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+       }
+       break;
+     default:
+       XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+       break;
+  }
+}
 
 /*-------------------------------------------------------------------*/
 
@@ -1435,7 +1495,8 @@ LALEOBPPWaveformEngine (
    COMPLEX16  hNQC;            /* Non-quasicircular correction */
    REAL4      x1, x2;
    UINT4      i, j, k, modeL;
-   INT4       modeM;          /* number of modes required */
+   INT4       modeM;         
+   INT4       nModes;         /* number of modes required */
    REAL4      inclination;    /* binary inclination       */
    REAL4      coa_phase;      /* binary coalescence phase */
    REAL8      y_1, y_2, z1, z2; /* (2,2) and (2,-2) spherical harmonics needed in (h+,hx) */
@@ -1472,7 +1533,7 @@ LALEOBPPWaveformEngine (
    REAL8Vector *sPrev = NULL;
 
    /* Stuff at higher sample rate */
-   REAL4Vector             *sig1Hi, *sig2Hi, *amplHi, *freqHi;
+   REAL4Vector             *sig1Hi, *sig2Hi, *freqHi;
    REAL8Vector             *phseHi, *omegaHi;
    UINT4                   lengthHiSR;
 
@@ -1491,6 +1552,15 @@ LALEOBPPWaveformEngine (
    UINT4                   startIdx = 0;
    /* Counter used in unwrapping the waveform phase for NQC correction */
    INT4 phaseCounter;
+
+   /* The list of available modes */
+   const INT4 lmModes[5][2] = {{2, 2},
+                               {2, 1},
+                               {3, 3},
+                               {4, 4},
+                               {5, 5}};
+
+   INT4 currentMode;
 
    INITSTATUS(status, "LALEOBPPWaveformEngine", LALEOBPPWAVEFORMC);
    ATTATCHSTATUSPTR(status);
@@ -1547,6 +1617,21 @@ LALEOBPPWaveformEngine (
    if ( ampl0 == 0.0 )
    {
      XLALPrintWarning( "Generating waveform of zero amplitude!!\n" );
+   }
+
+   /* Set the number of modes depending on whether the user wants higher order modes */
+   if ( params->approximant == EOBNRv2 )
+   {
+     nModes = 1;
+   }
+   else if ( params->approximant == EOBNRv2HM )
+   {
+     nModes = EOBNRV2_NUM_MODES_MAX;
+   }
+   else
+   {
+     XLALPrintError( "Unsupported approximant\n" );
+     ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE );
    }
 
    /* Check that the 220 QNM freq. is less than the Nyquist freq. */
@@ -1754,7 +1839,6 @@ LALEOBPPWaveformEngine (
    /* Allocate memory for temporary arrays */
    sig1Hi  = XLALCreateREAL4Vector ( lengthHiSR );
    sig2Hi  = XLALCreateREAL4Vector ( lengthHiSR );
-   amplHi  = XLALCreateREAL4Vector ( lengthHiSR*2 );
    freqHi  = XLALCreateREAL4Vector ( lengthHiSR );
    phseHi  = XLALCreateREAL8Vector ( lengthHiSR );
    omegaHi = XLALCreateREAL8Vector ( lengthHiSR );
@@ -1767,7 +1851,7 @@ LALEOBPPWaveformEngine (
    p1     = XLALCreateREAL8Vector ( lengthHiSR );
    p2     = XLALCreateREAL8Vector ( lengthHiSR );
 
-   if ( !sig1Hi || !sig2Hi || !amplHi || !freqHi || !phseHi )
+   if ( !sig1Hi || !sig2Hi || !freqHi || !phseHi )
    {
      if ( sig1 ) XLALDestroyREAL4Vector( sig1 );
      if ( sig2 ) XLALDestroyREAL4Vector( sig2 );
@@ -1779,7 +1863,6 @@ LALEOBPPWaveformEngine (
 
    memset(sig1Hi->data, 0, sig1Hi->length * sizeof( REAL4 ));
    memset(sig2Hi->data, 0, sig2Hi->length * sizeof( REAL4 ));
-   memset(amplHi->data, 0, amplHi->length * sizeof( REAL4 ));
    memset(freqHi->data, 0, freqHi->length * sizeof( REAL4 ));
    memset(phseHi->data, 0, phseHi->length * sizeof( REAL8 ));
    memset(omegaHi->data, 0, omegaHi->length * sizeof( REAL8 ));
@@ -1850,304 +1933,345 @@ LALEOBPPWaveformEngine (
    pPhiVecHi.data = dynamicsHi->data+4*retLen;
    tVecHi.data    = dynamicsHi->data;
 
+   /* We are now finished with the adaptive RK, so we can free its resources */
+   XLALAdaptiveRungeKutta4Free( integrator );
+   integrator = NULL;
+
+   /* Now we have the dynamics, we tweak the factorized coefficients for the waveform */
+  if ( XLALModifyFacWaveformCoefficients( &hCoeffs, eta) == XLAL_FAILURE )
+  {
+    ABORTXLAL( status );
+  }
+
    /* We can now start calculating things for NQCs, and hiSR waveform */
    omegaOld = 0.0;
    phaseCounter = 0;
 
-   for ( i=0; i < (UINT4)retLen; i++ )
+   for ( currentMode = 0; currentMode < nModes; currentMode++ )
    {
-     omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );
-     omegaHi->data[i] = omega;
-     /* For now we re-populate values - there may be a better way to do this */
-     values->data[0] = r = rVecHi.data[i];
-     values->data[1] = s = phiVecHi.data[i] - sSub;
-     values->data[2] = p = prVecHi.data[i];
-     values->data[3] = q = pPhiVecHi.data[i];
+     count = params->nStartPad;
 
-     v = cbrt( omega ); 
+     modeL = lmModes[currentMode][0];
+     modeM = lmModes[currentMode][1];
 
-     /* Only 2,2 mode for now */
-     xlalStatus = XLALGetFactorizedWaveform( &hLM, values, v, 2, 2, &eobParams );
-
-     ampNQC->data[i] = XLALCOMPLEX16Abs( hLM );
-     sig1Hi->data[i] = (REAL4) ampl0 * hLM.re;
-     sig2Hi->data[i] = (REAL4) ampl0 * hLM.im;
-     phseHi->data[i] = XLALCOMPLEX16Arg( hLM ) + phaseCounter * LAL_TWOPI;
-     if ( i && phseHi->data[i] > phseHi->data[i-1] )
+     for ( i=0; i < (UINT4)retLen; i++ )
      {
-       phaseCounter--;
-       phseHi->data[i] -= LAL_TWOPI;
+       omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );
+       omegaHi->data[i] = omega;
+       /* For now we re-populate values - there may be a better way to do this */
+       values->data[0] = r = rVecHi.data[i];
+       values->data[1] = s = phiVecHi.data[i] - sSub;
+       values->data[2] = p = prVecHi.data[i];
+       values->data[3] = q = pPhiVecHi.data[i];
+
+       v = cbrt( omega ); 
+
+       xlalStatus = XLALGetFactorizedWaveform( &hLM, values, v, modeL, modeM, &eobParams );
+
+       ampNQC->data[i] = XLALCOMPLEX16Abs( hLM );
+       sig1Hi->data[i] = (REAL4) ampl0 * hLM.re;
+       sig2Hi->data[i] = (REAL4) ampl0 * hLM.im;
+       phseHi->data[i] = XLALCOMPLEX16Arg( hLM ) + phaseCounter * LAL_TWOPI;
+       if ( i && phseHi->data[i] > phseHi->data[i-1] )
+       {
+         phaseCounter--;
+         phseHi->data[i] -= LAL_TWOPI;
+       }
+       q1->data[i] = p*p / (r*r*omega*omega);
+       q2->data[i] = q1->data[i] / r;
+       q3->data[i] = q2->data[i] / sqrt(r);
+       p1->data[i] = p / ( r*omega );
+       p2->data[i] = p1->data[i] * p*p;
+
+       if ( omega <= omegaOld && !peakIdx )
+       {
+         peakIdx = i-1;
+       }
+       omegaOld = omega;
      }
-     q1->data[i] = p*p / (r*r*omega*omega);
-     q2->data[i] = q1->data[i] / r;
-     q3->data[i] = q2->data[i] / sqrt(r);
-     p1->data[i] = p / ( r*omega );
-     p2->data[i] = p1->data[i] * p*p;
+     finalIdx = retLen - 1;
 
-     if ( omega <= omegaOld && !peakIdx )
-     {
-       peakIdx = i-1;
-     }
-     omegaOld = omega;
-   }
-   finalIdx = retLen - 1;
+    /* Stuff to find the actual peak time */
+    gsl_spline    *spline = NULL;
+    gsl_interp_accel *acc = NULL;  
+    REAL8 omegaDeriv1, omegaDeriv2;
+    REAL8 time1, time2;
+    REAL8 timePeak, omegaDerivMid;
 
-  /* Stuff to find the actual peak time */
-  gsl_spline    *spline = NULL;
-  gsl_interp_accel *acc = NULL;  
-  REAL8 omegaDeriv1, omegaDeriv2;
-  REAL8 time1, time2;
-  REAL8 timePeak, omegaDerivMid;
+    spline = gsl_spline_alloc( gsl_interp_cspline, retLen );
+    acc    = gsl_interp_accel_alloc();
 
-  spline = gsl_spline_alloc( gsl_interp_cspline, retLen );
-  acc    = gsl_interp_accel_alloc();
+    time1 = dynamicsHi->data[peakIdx];
 
-  time1 = dynamicsHi->data[peakIdx];
-
-  gsl_spline_init( spline, dynamicsHi->data, omegaHi->data, retLen );
-  omegaDeriv1 = gsl_spline_eval_deriv( spline, time1, acc );
-  if ( omegaDeriv1 > 0. )
-  {
-    time2 = dynamicsHi->data[peakIdx+1];
-    omegaDeriv2 = gsl_spline_eval_deriv( spline, time2, acc );
-  }
-  else
-  {
-    omegaDeriv2 = omegaDeriv1;
-    time2 = time1;
-    time1 = dynamicsHi->data[peakIdx-1];
-    peakIdx--;
+    gsl_spline_init( spline, dynamicsHi->data, omegaHi->data, retLen );
     omegaDeriv1 = gsl_spline_eval_deriv( spline, time1, acc );
-  }
-
-  do
-  {
-    timePeak = ( time1 + time2 ) / 2.;
-    omegaDerivMid = gsl_spline_eval_deriv( spline, timePeak, acc );
-
-    if ( omegaDerivMid * omegaDeriv1 < 0.0 )
+    if ( omegaDeriv1 > 0. )
     {
-      omegaDeriv2 = omegaDerivMid;
-      time2 = timePeak;
+      time2 = dynamicsHi->data[peakIdx+1];
+      omegaDeriv2 = gsl_spline_eval_deriv( spline, time2, acc );
     }
     else
     {
-      omegaDeriv1 = omegaDerivMid;
-      time1 = timePeak;
+      omegaDeriv2 = omegaDeriv1;
+      time2 = time1;
+      time1 = dynamicsHi->data[peakIdx-1];
+      peakIdx--;
+      omegaDeriv1 = gsl_spline_eval_deriv( spline, time1, acc );
     }
-  }
-  while ( time2 - time1 > 1.0e-5 );
 
-  gsl_spline_free( spline );
-  gsl_interp_accel_free( acc );
-
-  XLALPrintInfo( "Estimation of the peak is now at time %e\n", timePeak );
-
-  /* Calculate the NQC correction */
-  XLALCalculateNQCCoefficients( ampNQC, phseHi, q1,q2,q3,p1,p2, timePeak, dt/m, eta, &nqcCoeffs );
-
-  /* We can now calculate the waveform */
-  i = 0;
-
-  /* Find the point where we reach the low frequency cutoff */
-  REAL8 lfCut = f * LAL_PI*m;
-
-  while ( i < hiSRndx )
-  {
-    omega = XLALCalculateOmega( eta, rVec.data[i], prVec.data[i], pPhiVec.data[i], &aCoeffs );
-    if ( omega > lfCut || fabs( omega - lfCut ) < 1.0e-5 )
+    do
     {
-      break;
+      timePeak = ( time1 + time2 ) / 2.;
+      omegaDerivMid = gsl_spline_eval_deriv( spline, timePeak, acc );
+
+      if ( omegaDerivMid * omegaDeriv1 < 0.0 )
+      {
+        omegaDeriv2 = omegaDerivMid;
+        time2 = timePeak;
+      }
+      else
+      {
+        omegaDeriv1 = omegaDerivMid;
+        time1 = timePeak;
+      }
     }
-    i++;
-  }
+    while ( time2 - time1 > 1.0e-5 );
 
-  if ( i == hiSRndx )
-  {
-    XLALPrintError( "We don't seem to have crossed the low frequency cut-off\n" );
-    ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
-  }
+    gsl_spline_free( spline );
+    gsl_interp_accel_free( acc );
 
-  startIdx = i;
+    XLALPrintInfo( "Estimation of the peak is now at time %e\n", timePeak );
 
-  /* Set the coalescence time */
-  t = m * (dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx] - dynamics->data[startIdx]);
+    /* Calculate the NQC correction */
+    XLALCalculateNQCCoefficients( ampNQC, phseHi, q1,q2,q3,p1,p2, modeL, modeM, timePeak, dt/m, eta, &nqcCoeffs );
 
-  /* Now create the (low-sampled) part of the waveform */
-  while ( i < hiSRndx )
-  {
-     omega = XLALCalculateOmega( eta, rVec.data[i], prVec.data[i], pPhiVec.data[i], &aCoeffs );
-     /* For now we re-populate values - there may be a better way to do this */
-     values->data[0] = r = rVec.data[i];
-     values->data[1] = s = phiVec.data[i] - sSub;
-     values->data[2] = p = prVec.data[i];
-     values->data[3] = q = pPhiVec.data[i];
+    /* We can now calculate the waveform */
+    i = 0;
 
-     v = cbrt( omega );
+    /* Find the point where we reach the low frequency cutoff */
+    REAL8 lfCut = f * LAL_PI*m;
 
-     /* Only 2,2 mode for now */
-     xlalStatus = XLALGetFactorizedWaveform( &hLM, values, v, 2, 2, &eobParams );
+    while ( i < hiSRndx )
+    {
+      omega = XLALCalculateOmega( eta, rVec.data[i], prVec.data[i], pPhiVec.data[i], &aCoeffs );
+      if ( omega > lfCut || fabs( omega - lfCut ) < 1.0e-5 )
+      {
+        break;
+      }
+      i++;
+    }
 
-     xlalStatus = XLALEOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
-     hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+    if ( i == hiSRndx )
+    {
+      XLALPrintError( "We don't seem to have crossed the low frequency cut-off\n" );
+      ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
+    }
 
-     sig1->data[count] = (REAL4) ampl0 * hLM.re;
-     sig2->data[count] = (REAL4) ampl0 * hLM.im;
+    startIdx = i;
 
-     count++;
-     i++;
-  }
+    /* Set the coalescence time */
+    t = m * (dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx] - dynamics->data[startIdx]);
 
-  /* Now apply the NQC correction to the high sample part */
-  for ( i = 0; i <= finalIdx; i++ )
-  {
-    omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );
+    /* Now create the (low-sampled) part of the waveform */
+    while ( i < hiSRndx )
+    {
+       omega = XLALCalculateOmega( eta, rVec.data[i], prVec.data[i], pPhiVec.data[i], &aCoeffs );
+       /* For now we re-populate values - there may be a better way to do this */
+       values->data[0] = r = rVec.data[i];
+       values->data[1] = s = phiVec.data[i] - sSub;
+       values->data[2] = p = prVec.data[i];
+       values->data[3] = q = pPhiVec.data[i];
 
-    /* For now we re-populate values - there may be a better way to do this */
-    values->data[0] = r = rVecHi.data[i];
-    values->data[1] = s = phiVecHi.data[i] - sSub;
-    values->data[2] = p = prVecHi.data[i];
-    values->data[3] = q = pPhiVecHi.data[i];
+       v = cbrt( omega );
 
-    xlalStatus = XLALEOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
+       xlalStatus = XLALGetFactorizedWaveform( &hLM, values, v, modeL, modeM, &eobParams );
 
-    hLM.re = sig1Hi->data[i];
-    hLM.im = sig2Hi->data[i];
+       xlalStatus = XLALEOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
+       hLM = XLALCOMPLEX16Mul( hNQC, hLM );
 
-    hLM = XLALCOMPLEX16Mul( hNQC, hLM );
-    sig1Hi->data[i] = (REAL4) hLM.re;
-    sig2Hi->data[i] = (REAL4) hLM.im;
-  }
+       sig1->data[count] = (REAL4) ampl0 * hLM.re;
+       sig2->data[count] = (REAL4) ampl0 * hLM.im;
+
+       count++;
+       i++;
+    }
+
+    /* Now apply the NQC correction to the high sample part */
+    for ( i = 0; i <= finalIdx; i++ )
+    {
+      omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );
+
+      /* For now we re-populate values - there may be a better way to do this */
+      values->data[0] = r = rVecHi.data[i];
+      values->data[1] = s = phiVecHi.data[i] - sSub;
+      values->data[2] = p = prVecHi.data[i];
+      values->data[3] = q = pPhiVecHi.data[i];
+
+      xlalStatus = XLALEOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
+
+      hLM.re = sig1Hi->data[i];
+      hLM.im = sig2Hi->data[i];
+
+      hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+      sig1Hi->data[i] = (REAL4) hLM.re;
+      sig2Hi->data[i] = (REAL4) hLM.im;
+    }
 
 
-   /*----------------------------------------------------------------------*/
-   /* Record the final cutoff frequency of BD Waveforms for record keeping */
-   /* ---------------------------------------------------------------------*/
-   params->vFinal = v;
-   if (signalvec1 && !signalvec2) params->tC = t;
+     /*----------------------------------------------------------------------*/
+     /* Record the final cutoff frequency of BD Waveforms for record keeping */
+     /* ---------------------------------------------------------------------*/
+     params->vFinal = v;
+     if (signalvec1 && !signalvec2) params->tC = t;
 
-   /* For now we just set fFinal to Nyquist */
-   /* This is a hack to get the filtering code to work properly */
-   params->fFinal = params->tSampling/2.;
+     /* For now we just set fFinal to Nyquist */
+     /* This is a hack to get the filtering code to work properly */
+     params->fFinal = params->tSampling/2.;
 
-   XLALAdaptiveRungeKutta4Free( integrator );
-   XLALDestroyREAL8Vector( values );
-   XLALDestroyREAL8Vector( dvalues );
+     /*--------------------------------------------------------------
+      * Attach the ringdown waveform to the end of inspiral
+       -------------------------------------------------------------*/
+     REAL8 tmpSamplingRate = params->tSampling;
+     params->tSampling *= resampFac;
 
-   /*--------------------------------------------------------------
-    * Attach the ringdown waveform to the end of inspiral
-     -------------------------------------------------------------*/
-   REAL8 tmpSamplingRate = params->tSampling;
-   params->tSampling *= resampFac;
+     rdMatchPoint = XLALCreateREAL8Vector( 3 );
 
-   rdMatchPoint = XLALCreateREAL8Vector( 3 );
-
-   /* Check the first matching point is sensible */
-   if ( ceil( tStepBack * params->tSampling / 2.0 ) > peakIdx )
-   {
-     XLALPrintError( "Invalid index for first ringdown matching point.\n" );
-     ABORT( status, LALINSPIRALH_ESIZE , LALINSPIRALH_MSGESIZE );
-   }
-
-   rdMatchPoint->data[0] = 5. < timePeak ? timePeak - 5. : 0;
-   rdMatchPoint->data[1] = timePeak;
-   rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
-
-   xlalStatus = XLALInspiralHybridAttachRingdownWave(sig1Hi, sig2Hi,
-                   &tVecHi, rdMatchPoint, params);
-   if (xlalStatus != XLAL_SUCCESS )
-   {
-     XLALDestroyREAL4Vector( sig1 );
-     XLALDestroyREAL4Vector( sig2 );
-     XLALDestroyREAL4Vector( freq );
-     ABORTXLAL( status );
-   }
-   params->tSampling = tmpSamplingRate;
-
-   for(j=0; j<sig1Hi->length; j+=resampFac)
-   {
-     sig1->data[count] = sig1Hi->data[j];
-     sig2->data[count] = sig2Hi->data[j];
-     freq->data[count] = freqHi->data[j];
-     if (sig1->data[count] == 0)
+     /* Check the first matching point is sensible */
+     if ( ceil( tStepBack * params->tSampling / 2.0 ) > peakIdx )
      {
-       break;
+       XLALPrintError( "Invalid index for first ringdown matching point.\n" );
+       ABORT( status, LALINSPIRALH_ESIZE , LALINSPIRALH_MSGESIZE );
      }
-     count++;
-   }
-   *countback = count;
 
-   /*-------------------------------------------------------------------
-    * Compute the spherical harmonics required for constructing (h+,hx).
-    * We are going to choose coa_phase to be zero. This perhaps should be
-    * made compatible with the wave CoherentGW handles the phase at
-    * coalecence. I have no idea how I (i.e., Sathya) might be able to
-    * do this for EOBNR as there is no such thing as "phase at merger".
-    -------------------------------------------------------------------*/
-   inclination = (REAL4)params->inclination;
-   coa_phase = 0.;
-   /* -----------------------------------------------------------------
-    * Attaching the (2,2) Spherical Harmonic
-    * need some error checking
-    *----------------------------------------*/
-   modeL = 2;
-   modeM = 2;
-   xlalStatus = XLALSphHarm( &MultSphHarmP, modeL, modeM, inclination, coa_phase );
-   if (xlalStatus != XLAL_SUCCESS )
-   {
-     XLALDestroyREAL4Vector( sig1 );
-     XLALDestroyREAL4Vector( sig2 );
-     XLALDestroyREAL4Vector( freq );
-     ABORTXLAL( status );
-   }
+     REAL8 combSize = GetRingdownAttachCombSize( modeL, modeM );
+     REAL8 nrPeakDeltaT = XLALGetNRPeakDeltaT( modeL, modeM, eta );
 
-   modeM = -2;
-   xlalStatus = XLALSphHarm( &MultSphHarmM, modeL, modeM, inclination, coa_phase );
-   if (xlalStatus != XLAL_SUCCESS )
-   {
-     XLALDestroyREAL4Vector( sig1 );
-     XLALDestroyREAL4Vector( sig2 );
-     XLALDestroyREAL4Vector( freq );
-     ABORTXLAL( status );
-   }
-
-   y_1 =   MultSphHarmP.re + MultSphHarmM.re;
-   y_2 =   MultSphHarmM.im - MultSphHarmP.im;
-   z1 = - MultSphHarmM.im - MultSphHarmP.im;
-   z2 =   MultSphHarmM.re - MultSphHarmP.re;
-
-   /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
-   for ( i = 0; i < sig1->length; i++)
-   {
-     freq->data[i] /= unitHz;
-     x1 = sig1->data[i];
-     x2 = sig2->data[i];
-     sig1->data[i] = (x1 * y_1) + (x2 * y_2);
-     sig2->data[i] = (x1 * z1) + (x2 * z2);     
-   }
-   /*------------------------------------------------------
-    * If required by the user copy other data sets to the
-    * relevant arrays
-    ------------------------------------------------------*/
-   if (h)
-   {
-     for(i = 0; i < length; i++)
+     if ( combSize > timePeak )
      {
-       j = 2*i;
-       k = j+1;
-       h->data[j] = sig1->data[i];
-       h->data[k] = sig2->data[i];
+       XLALPrintWarning( "Comb size not as big as it should be\n" );
      }
-   }
-   if (signalvec1) memcpy(signalvec1->data , sig1->data, length * (sizeof(REAL4)));
-   if (signalvec2) memcpy(signalvec2->data , sig2->data, length * (sizeof(REAL4)));
+     rdMatchPoint->data[0] = combSize < timePeak + nrPeakDeltaT ? timePeak + nrPeakDeltaT - combSize : 0;
+     rdMatchPoint->data[1] = timePeak + nrPeakDeltaT;
+     rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
+
+     xlalStatus = XLALInspiralHybridAttachRingdownWave(sig1Hi, sig2Hi,
+                   modeL, modeM, &tVecHi, rdMatchPoint, params);
+     if (xlalStatus != XLAL_SUCCESS )
+     {
+       XLALDestroyREAL4Vector( sig1 );
+       XLALDestroyREAL4Vector( sig2 );
+       XLALDestroyREAL4Vector( freq );
+       ABORTXLAL( status );
+     }
+     params->tSampling = tmpSamplingRate;
+
+     for(j=0; j<sig1Hi->length; j+=resampFac)
+     {
+       sig1->data[count] = sig1Hi->data[j];
+       sig2->data[count] = sig2Hi->data[j];
+       freq->data[count] = freqHi->data[j];
+       if (sig1->data[count] == 0)
+       {
+         break;
+       }
+       count++;
+     }
+     *countback = count;
+
+     /*-------------------------------------------------------------------
+      * Compute the spherical harmonics required for constructing (h+,hx).
+      * We are going to choose coa_phase to be zero. This perhaps should be
+      * made compatible with the wave CoherentGW handles the phase at
+      * coalecence. I have no idea how I (i.e., Sathya) might be able to
+      * do this for EOBNR as there is no such thing as "phase at merger".
+      -------------------------------------------------------------------*/
+     inclination = (REAL4)params->inclination;
+     coa_phase = 0.;
+     /* -----------------------------------------------------------------
+      * Attaching the (2,2) Spherical Harmonic
+      * need some error checking
+      *----------------------------------------*/
+     xlalStatus = XLALSphHarm( &MultSphHarmP, modeL, modeM, inclination, coa_phase );
+     if (xlalStatus != XLAL_SUCCESS )
+     {
+       XLALDestroyREAL4Vector( sig1 );
+       XLALDestroyREAL4Vector( sig2 );
+       XLALDestroyREAL4Vector( freq );
+       ABORTXLAL( status );
+     }
+
+     modeM = -modeM;
+     xlalStatus = XLALSphHarm( &MultSphHarmM, modeL, modeM, inclination, coa_phase );
+     if (xlalStatus != XLAL_SUCCESS )
+     {
+       XLALDestroyREAL4Vector( sig1 );
+       XLALDestroyREAL4Vector( sig2 );
+       XLALDestroyREAL4Vector( freq );
+       ABORTXLAL( status );
+     }
+
+     y_1 =   MultSphHarmP.re + MultSphHarmM.re;
+     y_2 =   MultSphHarmM.im - MultSphHarmP.im;
+     z1 = - MultSphHarmM.im - MultSphHarmP.im;
+     z2 =   MultSphHarmM.re - MultSphHarmP.re;
+
+     /* Next, compute h+ and hx from hLM, hLM*, YLM, YL-M */
+     for ( i = 0; i < sig1->length; i++)
+     {
+       freq->data[i] /= unitHz;
+       x1 = sig1->data[i];
+       x2 = sig2->data[i];
+       sig1->data[i] = (x1 * y_1) + (x2 * y_2);
+       sig2->data[i] = (x1 * z1) + (x2 * z2);     
+     }
+
+     /*------------------------------------------------------
+      * If required by the user copy other data sets to the
+      * relevant arrays
+      ------------------------------------------------------*/
+     if (h)
+     {
+       for(i = 0; i < length; i++)
+       {
+         j = 2*i;
+         k = j+1;
+         h->data[j] += sig1->data[i];
+         h->data[k] += sig2->data[i];
+       }
+     }
+     /*
+     if (signalvec1) memcpy(signalvec1->data , sig1->data, length * (sizeof(REAL4)));
+     if (signalvec2) memcpy(signalvec2->data , sig2->data, length * (sizeof(REAL4)));
+     */
+     if (signalvec1)
+     {
+       for ( i = 0; i < length; i++ )
+       {
+         signalvec1->data[i] += sig1->data[i];
+       }
+     }
+     if (signalvec2)
+     {
+       for ( i = 0; i < length; i++ )
+       {
+         signalvec2->data[i] += sig2->data[i];
+       }
+     }
+   } /* End loop over modes */
 
    /* Clean up */
+   XLALDestroyREAL8Vector( values );
+   XLALDestroyREAL8Vector( dvalues );
    XLALDestroyREAL8Array( dynamics );
    XLALDestroyREAL8Array( dynamicsHi );
    XLALDestroyREAL4Vector ( sig1 );
    XLALDestroyREAL4Vector ( sig2 );
    XLALDestroyREAL4Vector ( freq );
+   XLALDestroyREAL4Vector ( sig1Hi );
+   XLALDestroyREAL4Vector ( sig2Hi );
+   XLALDestroyREAL4Vector ( freqHi );
+   XLALDestroyREAL8Vector ( phseHi );
+   XLALDestroyREAL8Vector ( omegaHi );
 
    DETATCHSTATUSPTR(status);
    RETURN(status);

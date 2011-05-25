@@ -354,7 +354,7 @@ LALInspiralSetup (
          vpole = ak->vpoleP6;
          break;
       case LAL_PNORDER_PSEUDO_FOUR:
-         if ( params->approximant == EOBNRv2 )
+         if ( params->approximant == EOBNRv2 || params->approximant == EOBNRv2HM )
          {
            vpole = ak->vpolePP;
          }
@@ -369,7 +369,7 @@ LALInspiralSetup (
    }
 
    /* We need a different vlso for the PP model */
-   if ( params->approximant == EOBNRv2 )
+   if ( params->approximant == EOBNRv2  || params->approximant == EOBNRv2HM )
    {
      vlso = ak->vlsoPP;
    }

@@ -96,6 +96,7 @@ tagFacWaveformCoeffs
   REAL8 delta21vh7;
   REAL8 delta21vh9;
   REAL8 delta21v5;
+  REAL8 delta21v7;
 
   REAL8 rho21v1;
   REAL8 rho21v2;
@@ -115,6 +116,7 @@ tagFacWaveformCoeffs
   REAL8 delta33vh6;
   REAL8 delta33vh9;
   REAL8 delta33v5;
+  REAL8 delta33v7;
 
   REAL8 rho33v2;
   REAL8 rho33v3;
@@ -159,6 +161,7 @@ tagFacWaveformCoeffs
 
   REAL8 delta44vh3;
   REAL8 delta44vh6;
+  REAL8 delta44v5;
 
   REAL8 rho44v2;
   REAL8 rho44v3;
@@ -200,10 +203,12 @@ tagFacWaveformCoeffs
   REAL8 rho41v6l;
 
   REAL8 delta55vh3;
+  REAL8 delta55v5;
   REAL8 rho55v2;
   REAL8 rho55v3;
   REAL8 rho55v4;
   REAL8 rho55v5;
+  REAL8 rho55v6;
 
   REAL8 delta54vh3;
   REAL8 delta54vh4;
@@ -378,12 +383,21 @@ int XLALCalculateNQCCoefficients(
                  REAL8Vector    * restrict q3,
                  REAL8Vector    * restrict p1,
                  REAL8Vector    * restrict p2,
+                 INT4                      l,
+                 INT4                      m,
                  REAL8                     timePeak,
                  REAL8                     deltaT,
                  REAL8                     eta,
                  EOBNonQCCoeffs * restrict coeffs );
 
+REAL8 XLALGetNRPeakDeltaT( INT4 l, INT4 m, REAL8 eta );
+
 int XLALCalcFacWaveformCoefficients(
+          FacWaveformCoeffs * const coeffs,
+          const REAL8               eta
+          );
+
+int XLALModifyFacWaveformCoefficients( 
           FacWaveformCoeffs * const coeffs,
           const REAL8               eta
           );

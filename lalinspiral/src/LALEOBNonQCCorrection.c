@@ -41,28 +41,278 @@
 #include <gsl/gsl_linalg.h>
 
 
-static inline
-REAL8 GetNRPeakAmplitude( REAL8 eta )
+REAL8 XLALGetNRPeakDeltaT( INT4 l, INT4 m, REAL8 eta )
 {
-  return eta * ( 1.422 + 0.3013 * eta + 1.246 * eta * eta );
+  switch ( l )
+  {
+    case 2:
+      if ( m == 2 )
+      {
+        return 0.0;
+      }
+      else if ( m == 1 )
+      {
+        return 10.67 - 41.41 * eta + 76.1 * eta*eta;
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 3:
+      if ( m == 3 )
+      {
+        return 3.383 + 3.847 * eta + 8.979 * eta * eta;
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 4:
+      if ( m == 4 )
+      {
+        return 5.57 - 49.86 * eta + 154.3 * eta * eta;
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 5:
+      if ( m == 5 )
+      {
+        return 6.693 - 34.47 * eta + 102.7 * eta*eta;
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    default:
+      XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      break;
+  }
 }
 
 static inline
-REAL8 GetNRPeakADDot( REAL8 eta )
+REAL8 GetNRPeakAmplitude( INT4 l, INT4 m, REAL8 eta )
 {
-  return -0.01 * eta * ( 0.1679 + 1.44 * eta - 2.001 * eta * eta );
+  switch ( l )
+  {
+    case 2:
+      if ( m == 2 )
+      {
+        return eta * ( 1.422 + 0.3013 * eta + 1.246 * eta * eta );
+      }
+      else if ( m == 1 )
+      {
+        return eta * sqrt( 1.0 - 4. * eta ) * (0.4832 - 0.01032 * eta);
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 3:
+      if ( m == 3 )
+      {
+        return eta * sqrt(1.-4.*eta) * ( 0.5761 - 0.09638 * eta + 2.715*eta*eta );
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 4:
+      if ( m == 4 )
+      {
+        return eta * (0.354 - 1.779 * eta + 2.834 * eta*eta );
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 5:
+      if ( m == 5 )
+      {
+        return eta * sqrt(1.-4.*eta) * ( 0.1353 - 0.1485 * eta );
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    default:
+      XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      break;
+  }
+}
+
+static inline
+REAL8 GetNRPeakADDot( INT4 l, INT4 m, REAL8 eta )
+{
+  switch ( l )
+  {
+    case 2:
+      if ( m == 2 )
+      {
+        return -0.01 * eta * ( 0.1679 + 1.44 * eta - 2.001 * eta * eta );
+      }
+      else if ( m == 1 )
+      {
+        return -0.01 * eta * sqrt(1.-4.*eta) * (0.1867 + 0.6094 * eta );
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 3:
+      if ( m == 3 )
+      {
+        return -0.01 * eta * sqrt(1.-4.*eta) * (0.2518 - 0.8145*eta + 5.731*eta*eta);
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 4:
+      if ( m == 4 )
+      {
+        return -0.01 * eta * (0.1813 - 0.9935 * eta + 1.858 * eta * eta );
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 5:
+      if ( m == 5 )
+      {
+        return -0.01 * eta * sqrt(1.-4.*eta) * ( 0.09051 - 0.1604 * eta );
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    default:
+      XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      break;
+  }
 }
 
 static inline 
-REAL8 GetNRPeakOmega( REAL8 eta )
+REAL8 GetNRPeakOmega( INT4 l, INT4 m, REAL8 eta )
 {
-  return 0.2733 + 0.2316 * eta + 0.4463 * eta * eta;
+  switch ( l )
+  {
+    case 2:
+      if ( m == 2 )
+      {
+        return 0.2733 + 0.2316 * eta + 0.4463 * eta * eta;
+      }
+      else if ( m == 1 )
+      {
+        return 0.2907 - 0.08338 * eta + 0.587 * eta*eta;
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 3:
+      if ( m == 3 )
+      {
+        return 0.4539 + 0.5376 * eta + 1.042 * eta*eta;
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 4:
+      if ( m == 4 )
+      {
+        return 0.6435 - 0.05103 * eta + 2.216 * eta*eta;
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 5:
+      if ( m == 5 )
+      {
+        return 0.8217 + 0.2346 * eta + 2.599 * eta*eta;
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    default:
+      XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      break;
+  }
 }
 
 static inline 
-REAL8 GetNRPeakOmegaDot( REAL8 eta )
+REAL8 GetNRPeakOmegaDot( INT4 l, INT4 m, REAL8 eta )
 {
-  return 0.005862 + 0.01506 * eta + 0.02625 * eta * eta;
+  switch ( l )
+  {
+    case 2:
+      if ( m == 2 )
+      {
+        return 0.005862 + 0.01506 * eta + 0.02625 * eta * eta;
+      }
+      else if ( m == 1 )
+      {
+        return 0.00149 + 0.09197 * eta - 0.1909 * eta*eta;
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 3:
+      if ( m == 3 )
+      {
+        return 0.01074 + 0.0293 * eta + 0.02066 * eta*eta;
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 4:
+      if ( m == 4 )
+      {
+        return 0.01486 + 0.08529 * eta - 0.2174 * eta * eta;
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 5:
+      if ( m == 5 )
+      {
+        return 0.01775 + 0.09801 * eta - 0.1686 * eta*eta;
+      }
+      else
+      {
+        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    default:
+      XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      break;
+  }
 }
 
 int  XLALEOBNonQCCorrection(
@@ -108,6 +358,8 @@ int XLALCalculateNQCCoefficients(
                  REAL8Vector    * restrict q3,
                  REAL8Vector    * restrict p1,
                  REAL8Vector    * restrict p2,
+                 INT4                      l,
+                 INT4                      m,
                  REAL8                     timePeak,
                  REAL8                     deltaT,
                  REAL8                     eta,
@@ -132,6 +384,11 @@ int XLALCalculateNQCCoefficients(
 
   REAL8 a, aDot, aDDot;
   REAL8 omega, omegaDot;
+
+  REAL8 nra, nraDDot;
+  REAL8 nromega, nromegaDot;
+
+  REAL8 nrDeltaT, nrTimePeak;
 
   /* Stuff for finding numerical derivatives */
   gsl_spline    *spline = NULL;
@@ -184,6 +441,16 @@ int XLALCalculateNQCCoefficients(
     XLAL_ERROR( __func__, XLAL_ENOMEM );
   }
 
+  /* The time we want to take as the peak time depends on l and m */
+  /* Calculate the adjustment we need to make here */
+  nrDeltaT = XLALGetNRPeakDeltaT( l, m, eta );
+  if ( XLAL_IS_REAL8_FAIL_NAN( nrDeltaT ) )
+  {
+    XLAL_ERROR( __func__, XLAL_EFUNC );
+  }
+
+  nrTimePeak = timePeak + nrDeltaT;
+
   /* We are now in a position to use the interp stuff to calculate the derivatives we need */
   /* We will start with the quantities used in the calculation of the a coefficients */
   spline = gsl_spline_alloc( gsl_interp_cspline, amplitude->length );
@@ -191,34 +458,42 @@ int XLALCalculateNQCCoefficients(
 
   /* Q1 */
   gsl_spline_init( spline, time->data, q1LM->data, q1LM->length );
-  gsl_matrix_set( qMatrix, 0, 0, gsl_spline_eval( spline, timePeak, acc ) );
-  gsl_matrix_set( qMatrix, 1, 0, gsl_spline_eval_deriv( spline, timePeak, acc ) );
-  gsl_matrix_set( qMatrix, 2, 0, gsl_spline_eval_deriv2( spline, timePeak, acc ) );
+  gsl_matrix_set( qMatrix, 0, 0, gsl_spline_eval( spline, nrTimePeak, acc ) );
+  gsl_matrix_set( qMatrix, 1, 0, gsl_spline_eval_deriv( spline, nrTimePeak, acc ) );
+  gsl_matrix_set( qMatrix, 2, 0, gsl_spline_eval_deriv2( spline, nrTimePeak, acc ) );
 
   /* Q2 */
   gsl_spline_init( spline, time->data, q2LM->data, q2LM->length );
   gsl_interp_accel_reset( acc );
-  gsl_matrix_set( qMatrix, 0, 1, gsl_spline_eval( spline, timePeak, acc ) );
-  gsl_matrix_set( qMatrix, 1, 1, gsl_spline_eval_deriv( spline, timePeak, acc ) );
-  gsl_matrix_set( qMatrix, 2, 1, gsl_spline_eval_deriv2( spline, timePeak, acc ) );
+  gsl_matrix_set( qMatrix, 0, 1, gsl_spline_eval( spline, nrTimePeak, acc ) );
+  gsl_matrix_set( qMatrix, 1, 1, gsl_spline_eval_deriv( spline, nrTimePeak, acc ) );
+  gsl_matrix_set( qMatrix, 2, 1, gsl_spline_eval_deriv2( spline, nrTimePeak, acc ) );
 
   /* Q3 */
   gsl_spline_init( spline, time->data, q3LM->data, q3LM->length );
   gsl_interp_accel_reset( acc );
-  gsl_matrix_set( qMatrix, 0, 2, gsl_spline_eval( spline, timePeak, acc ) );
-  gsl_matrix_set( qMatrix, 1, 2, gsl_spline_eval_deriv( spline, timePeak, acc ) );
-  gsl_matrix_set( qMatrix, 2, 2, gsl_spline_eval_deriv2( spline, timePeak, acc ) );
+  gsl_matrix_set( qMatrix, 0, 2, gsl_spline_eval( spline, nrTimePeak, acc ) );
+  gsl_matrix_set( qMatrix, 1, 2, gsl_spline_eval_deriv( spline, nrTimePeak, acc ) );
+  gsl_matrix_set( qMatrix, 2, 2, gsl_spline_eval_deriv2( spline, nrTimePeak, acc ) );
 
   /* Amplitude */
   gsl_spline_init( spline, time->data, amplitude->data, amplitude->length );
   gsl_interp_accel_reset( acc );
-  a     = gsl_spline_eval( spline, timePeak, acc );
-  aDot  = gsl_spline_eval_deriv( spline, timePeak, acc );
-  aDDot = gsl_spline_eval_deriv2( spline, timePeak, acc );
+  a     = gsl_spline_eval( spline, nrTimePeak, acc );
+  aDot  = gsl_spline_eval_deriv( spline, nrTimePeak, acc );
+  aDDot = gsl_spline_eval_deriv2( spline, nrTimePeak, acc );
 
-  gsl_vector_set( amps, 0, GetNRPeakAmplitude( eta ) - a );
+  nra = GetNRPeakAmplitude( l, m, eta );
+  nraDDot = GetNRPeakADDot( l, m, eta );
+
+  if ( XLAL_IS_REAL8_FAIL_NAN( nra ) || XLAL_IS_REAL8_FAIL_NAN( nraDDot ) )
+  {
+    XLAL_ERROR( __func__, XLAL_EFUNC );
+  }
+
+  gsl_vector_set( amps, 0, nra - a );
   gsl_vector_set( amps, 1, - aDot );
-  gsl_vector_set( amps, 2, GetNRPeakADDot( eta ) - aDDot );
+  gsl_vector_set( amps, 2, nraDDot - aDDot );
 
   /* We have now set up all the stuff to calculate the a coefficients */
   /* So let us do it! */
@@ -230,20 +505,20 @@ int XLALCalculateNQCCoefficients(
   /* P1 */
   gsl_spline_init( spline, time->data, p1->data, p1->length );
   gsl_interp_accel_reset( acc );
-  gsl_matrix_set( pMatrix, 0, 0, - gsl_spline_eval_deriv( spline, timePeak, acc ) );
-  gsl_matrix_set( pMatrix, 1, 0, - gsl_spline_eval_deriv2( spline, timePeak, acc ) );
+  gsl_matrix_set( pMatrix, 0, 0, - gsl_spline_eval_deriv( spline, nrTimePeak, acc ) );
+  gsl_matrix_set( pMatrix, 1, 0, - gsl_spline_eval_deriv2( spline, nrTimePeak, acc ) );
 
   /* P2 */
   gsl_spline_init( spline, time->data, p2->data, p2->length );
   gsl_interp_accel_reset( acc );
-  gsl_matrix_set( pMatrix, 0, 1, - gsl_spline_eval_deriv( spline, timePeak, acc ) );
-  gsl_matrix_set( pMatrix, 1, 1, - gsl_spline_eval_deriv2( spline, timePeak, acc ) );
+  gsl_matrix_set( pMatrix, 0, 1, - gsl_spline_eval_deriv( spline, nrTimePeak, acc ) );
+  gsl_matrix_set( pMatrix, 1, 1, - gsl_spline_eval_deriv2( spline, nrTimePeak, acc ) );
 
   /* Phase */
   gsl_spline_init( spline, time->data, phase->data, phase->length );
   gsl_interp_accel_reset( acc );
-  omega    = gsl_spline_eval_deriv( spline, timePeak, acc );
-  omegaDot = gsl_spline_eval_deriv2( spline, timePeak, acc );
+  omega    = gsl_spline_eval_deriv( spline, nrTimePeak, acc );
+  omegaDot = gsl_spline_eval_deriv2( spline, nrTimePeak, acc );
 
   /* Since the phase can be decreasing, we need to take care not to have a -ve frequency */
   if ( omega * omegaDot > 0.0 )
@@ -257,8 +532,16 @@ int XLALCalculateNQCCoefficients(
     omegaDot = - fabs( omegaDot );
   }
 
-  gsl_vector_set( omegaVec, 0, GetNRPeakOmega( eta ) - omega );
-  gsl_vector_set( omegaVec, 1, GetNRPeakOmegaDot( eta ) - omegaDot );
+  nromega = GetNRPeakOmega( l, m, eta );
+  nromegaDot = GetNRPeakOmegaDot( l, m, eta );
+
+  if ( XLAL_IS_REAL8_FAIL_NAN( nromega ) || XLAL_IS_REAL8_FAIL_NAN( nromegaDot ) )
+  {
+    XLAL_ERROR( __func__, XLAL_EFUNC );
+  }
+
+  gsl_vector_set( omegaVec, 0, nromega - omega );
+  gsl_vector_set( omegaVec, 1, nromegaDot - omegaDot );
 
   /* And now solve for the b coefficients */
   gsl_linalg_LU_decomp( pMatrix, perm2, &signum );

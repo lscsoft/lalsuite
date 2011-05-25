@@ -107,7 +107,7 @@ int XLALCalcFacWaveformCoefficients(
     coeffs->delta21vh6 = (-17.*a)/35. + (107.*LAL_PI)/105.;
     coeffs->delta21vh7 = (3.*a2)/140.;
     coeffs->delta21vh9 = -272./81. + (214.*LAL_PI*LAL_PI)/315.;
-    coeffs->delta21v5  = - 493./42.;
+    coeffs->delta21v5  = - 493. * eta /42.;
 
     coeffs->rho21v1   = (-3.*chiAPlusChiSdM)/(4.*dM);
     coeffs->rho21v2   = -59./56 - (9.*chiAPlusChiSdM*chiAPlusChiSdM)/(32.*dM2) + (23.*eta)/84.;
@@ -440,3 +440,26 @@ int XLALCalcFacWaveformCoefficients(
 
   return XLAL_SUCCESS;
 }
+
+int XLALModifyFacWaveformCoefficients( FacWaveformCoeffs * const coeffs,
+                                       const REAL8 eta )
+{
+
+  if ( !coeffs )
+  {
+    XLAL_ERROR( __func__, XLAL_EINVAL );
+  }
+
+  /* Tweak the relevant coefficients for the generation of the waveform */
+  coeffs->rho21v6 += -5. * eta;
+  coeffs->rho33v6 += -20. * eta;
+  coeffs->rho44v6 += -15. * eta;
+  coeffs->rho55v6 += 4. * eta;
+
+  coeffs->delta21v7 += 30. * eta;
+  coeffs->delta33v7 += -10. * eta;
+  coeffs->delta44v5 += -70. * eta;
+  coeffs->delta55v5 += 40. * eta;
+
+  return XLAL_SUCCESS;
+} 
