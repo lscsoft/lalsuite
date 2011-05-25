@@ -2607,6 +2607,7 @@ void DumpLUT2file(LALStatus       *status,
   /* construct a fake peakgram to print all borders
      -- peakgram should be 1,0,1,0,1,0.... */
   for (k = 0; k < pg.length; ++k){
+   /*  pg.peak[k] = 4*k+3; */
     pg.peak[k] = 2*k;
   }
 
