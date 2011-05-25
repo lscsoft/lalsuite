@@ -1325,7 +1325,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
   REAL8 dt,tm,timewrite;
   REAL8 Mass,dm;
   REAL8 v,v2;
-  REAL8 Phi;
+  REAL8 Phi=0.;
   REAL8 omega;
   REAL8 domega=0.;
   REAL8 domegaold;
@@ -1351,6 +1351,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
   REAL8 S2S2w  = 0.;
   REAL8 S1S2w  = 0.;
 
+  REAL8 Phiold;
   REAL8 alpha,alphaold;
   REAL8 dalphaold;
   REAL8 dalpha  = 0.;
@@ -1444,6 +1445,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
   LALSpinInspiralDerivatives(&values, &dvalues, (void *) mparams);
 
   omega  = values.data[1];
+  Phiold = Phi;
   Phi    = values.data[0];
   v      = pow(omega,oneby3);
   v2     = v*v;
@@ -1546,8 +1548,11 @@ static void LALSpinInspiralEngine(LALStatus * status,
       alpha = atan2(LNhy, LNhx);
     else 
       alpha = alphaold;
-    if ((fabs(alpha-alphaold)>LAL_PI/4.)&&(fabs(alpha-alphaold)<2.*LAL_PI-0.1)&&(count>1))
-      fprintf(stderr,"**** LALSpinInspiraEngine ERROR ****: Problem with coordinate singularity %d  %12.6e  %12.6e\n",count,alpha,alphaold);
+
+    if ((fabs(Phi-alpha-Phiold+alphaold)>LAL_PI/8.)&&(fabs(Phi-alpha-Phiold+alphaold)<2.*LAL_PI-0.1)&&(count>1)) {
+      fprintf(stderr,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity. Step %d:  Phi-alpha:%12.6e\n Step %d  Phi-alpha: %12.6e\n",count,(Phi-alpha)/LAL_PI*180.,count-1,(Phiold-alphaold)/LAL_PI*180.);
+      fprintf(stderr,"  Waveform parameters were m1/m = %14.6e, m2/m = %14.6e\n", mparams->m1m, mparams->m2m);
+    }
 
     LNhS1 = (S1x * LNhx + S1y * LNhy + S1z * LNhz) / mparams->m1m / mparams->m1m;
     LNhS2 = (S2x * LNhx + S2y * LNhy + S2z * LNhz) / mparams->m2m / mparams->m2m;
@@ -1927,11 +1932,12 @@ static int XLALSpinInspiralAdaptiveEngine(
 
     errcode  = XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
 
-    if ((fabs(alpha-alphaold)>LAL_PI/16.)&&(fabs(alpha-alphaold)<2.*LAL_PI-0.1)&&(j>1)) {
-      fprintf(stderr,"*** LALPSpinInspiralRD ERROR ***: Problem with coordinate singularity: alpha[%d]: %12.6e  alpha[%d]:%12.6e  \n  Step %d:  LNhy: %12.6e LNhx: %12.6e  Psi+a:%12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+a: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+a: %12.6e ",j,alpha/LAL_PI*180.,j-1,alphaold/LAL_PI*180.,j,LNhy[j],LNhx[j],Phi[j]+alpha,j-1,LNhy[j-1],LNhx[j-1],Phi[j]+alphaold,j-2,LNhy[j-2],LNhx[j-2],Phi[j-2]+alphaoold);
-      printf("%12.5e  %12.5e  %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
-      printf("%12.5e  %12.5e  %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
-      printf("%12.5e  %12.5e  %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);
+    if ((fabs(Psi-alpha-Phi[j-1]+alphaold)>LAL_PI/8.)&&(fabs(Psi-alpha-Phi[j-1]+alphaold)<2.*LAL_PI-0.1)&&(j>1)) {
+      fprintf(stderr,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity: Step %d:  LNhy: %12.6e LNhx: %12.6e  Psi+a:%12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+a: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+a: %12.6e ",j,LNhy[j],LNhx[j],Phi[j]+alpha,j-1,LNhy[j-1],LNhx[j-1],Phi[j]+alphaold,j-2,LNhy[j-2],LNhx[j-2],Phi[j-2]+alphaoold);
+      fprintf(stderr,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
+      fprintf(stderr,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
+      fprintf(stderr,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);
+      fprintf(stderr,"            m1,2/m = (%10.6f,%10.6f)\n", mparams->m1m, mparams->m2m);
     }
 
     errcode += XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,j,amp33,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
