@@ -1071,7 +1071,7 @@ void initVariables(LALInferenceRunState *state)
           state->differentialPointsLength = 0;
         }
 
-        UINT4 N = (approx == SpinTaylor ? 15 : 9);
+        UINT4 N = LALInferenceGetVariableDimensionNonFixed(currentParams);
   
         ppt=LALInferenceGetProcParamVal(commandLine, "--adapt");
         if (ppt) {

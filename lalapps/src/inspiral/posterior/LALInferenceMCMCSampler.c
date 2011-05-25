@@ -1244,8 +1244,8 @@ void PTMCMCLALSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVa
     } 
 
     if (i >= sigmas->length) {
-      fprintf(stderr, "Attempting to draw single-parameter jump past the end of sigma array.\n(Maybe you used a non-spinning correlation matrix for a spinning run?)\nError in %s, line %d.\n",
-              __FILE__, __LINE__);
+      fprintf(stderr, "Attempting to draw single-parameter jump %d past the end of sigma array %d.\n(Maybe you used a non-spinning correlation matrix for a spinning run?)\nError in %s, line %d.\n",
+              i,sigmas->length,__FILE__, __LINE__);
       exit(1);
     }
 
