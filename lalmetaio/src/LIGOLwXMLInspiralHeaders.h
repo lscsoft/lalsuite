@@ -35,7 +35,7 @@
 \file
 \ingroup lalmetaio
 
-\brief This header provides provides <tt>#define</tt>s for the inspiral related
+\brief This header provides provides <tt>\#define</tt>s for the inspiral related
 tables of LIGO light weight XML files.
 
 \heading{Synopsis}

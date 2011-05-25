@@ -62,7 +62,7 @@ J.Y.\ Vinet; World Publishers,  (2000), Hanoi-Vietnam.<tt>gr-qc/9905018</tt>
 \anchor Schutz1999 <b>[Schutz1999]</b>.
 Bernard F.\ Schutz, M.\ A.\ Papa, <tt>gr-qc/9905018</tt>.
 
-\anchor Will_C1996 <b>[Will_C1996]</b>.
+\anchor Will_C_1996 <b>[Will_C1996]</b>.
 C.M.\ Will and A.G.\ Wiseman, Phys.\ Rev.\ <b>D 54</b> 8, 4813 (1996).
 
 \anchor Williams1999 <b>[Williams1999]</b>.
@@ -112,7 +112,7 @@ T.\ Damour and N.\ Deruelle, <i>Ann.\ Inst.\ H.\ Poincaré (Phys.\ Th\'eorique)<
 \anchor Wex1998 <b>[Wex1998]</b>
 N.\ Wex, <i>Mon.\ Not.\ R.\ Astron.\ Soc.</i>, <b>298</b> (1998)
 
-\anchor BDIWW1995 <b>[BDIWW]</b>
+\anchor BDIWW1995 <b>[BDIWW1995]</b>
 L.\ Blanchett, B.R.\ Iyer, C.M.\ Will and A.G.\ Wiseman,
 Phys.\ Rev.\ Lett.\ <i>74</i>, 3515 (1995).
 
@@ -178,7 +178,7 @@ B.J.\ Owen and B.S.\ Sathyaprakash, Phys.\ Rev.\ D <tt>60</tt>, 022002 (1999)
 B.S.\ Sathyaprakash, <em>Effectualness of template placement algorithtms in capturing different post-Newtonian
 inspiral signals</em> (in preparation).
 
-\anchor Owen96 <b>[Owen96]</b>
+\anchor Owen_96 <b>[Owen_96]</b>
 B.J.\ Owen, Phys.\ Rev.\ D 53, 6749 (1996).
 
 \anchor Flanagan1993 <b>[Flanagan1993]</b>
@@ -275,5 +275,21 @@ Int. J. Modern. Phys. D.
   <em>Gravitational Wave Detection II</em>.
   Edts. S. Kawamura and N. Mio. Frontiers Science Series n. 32;
   Universal Academy Press, Inc, Tokyo  (2000) pp. 273-278
+
+\anchor EWLeaver85 <b>[EWLeaver85]</b>
+  E. W. Leaver, Proc. R. Soc. London \c A402, 285 (1985).
+
+\anchor FEcheverria89 <b>[FEcheverria89]</b>
+  F. Echeverria, Phys. Rev. D \c 40, 3194 (1989).
+
+\anchor JDECreighton99 <b>[JDECreighton99]</b>
+  J. D. E. Creighton, Phys. Rev. D \c 60, 022001 (1999).
+
+\anchor EBertiEtAl06 <b>[EBertiEtAl06]</b>
+  E. Berti, V. Cardoso and C. M. Will, Phys. Rev. D \c 73, 064030 (2006).
+
+\anchor WeinZub62 <b>[WeinZub62]</b>
+  L.A. Weinstein and V.D. Zubakov, <i>Extraction of Signals from Noise</i>.
+  Prentice-Hall, Englewood Cliffs, NJ. (1962)
 
 */

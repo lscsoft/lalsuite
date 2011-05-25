@@ -13,10 +13,6 @@
 #define F3 CONCAT3(LAL,TYPECODE,Max)
 #define F4 CONCAT3(LAL,TYPECODE,FlipVector)
 
-/**
-\codevoid F1 ( LALStatus *status, VTYPE **result, VTYPE *data )\endcode
-*/
-
 void F1 (
 	LALStatus		*status,
 	VTYPE		**result,
@@ -64,10 +60,6 @@ void F1 (
 	RETURN( status );
 }
 
-/**
-\codevoid F2 ( LALStatus *status, TYPE *result, VTYPE *data )\endcode
-*/
-
 void F2 (
         LALStatus		*status,
         TYPE			*result,
@@ -98,10 +90,6 @@ void F2 (
 
         RETURN( status );
 }
-
-/**
-\codevoid F3 (LALStatus *status, TYPE *result, VTYPE *data, INT4 *myindex )\endcode
-*/
 
 void F3 (
         LALStatus		*status,
@@ -139,10 +127,6 @@ void F3 (
 
         RETURN( status );
 }
-
-/**
-\codevoid F4 (LALStatus *status, VTYPE **result, VTYPE *data )\endcode
-*/
 
 void F4 (
         LALStatus		*status,
