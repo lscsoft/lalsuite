@@ -76,8 +76,7 @@ void linearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8Ti
 REAL8 timeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, const REAL8TimeSeries *B);
 
 REAL8 FreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data,
-                                      LALInferenceTemplateFunction *template,
-                                      LALInferenceVariables *df);
+                                      LALInferenceTemplateFunction *template);
 
 REAL8 AnalyticLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction *template);
 
