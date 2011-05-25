@@ -103,7 +103,7 @@
 NRCSID(LALPSPININSPIRALRDC, "$Id$");
 
 #define omM0 0.0680414 //=6^(-3/2)
-#define omMlow 0.042 
+#define omMlow 0.042
 #define sqrtOnePointFive 1.22474
 #define sqrtPoint15      0.387298
 #define sqrtFiveOver2    1.1183
@@ -1666,7 +1666,8 @@ static int XLALSpinInspiralAdaptiveEngine(
   ark4GSLIntegrator *integrator;
 
   REAL8 Psi;
-  REAL8 alpha,alphaold;
+  REAL8 alpha=0.;
+  REAL8 alphaold;
   REAL8 v,v2;
   REAL8 dt;
   REAL8 Mass;
@@ -1785,9 +1786,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     REAL8Vector *ddiota    = XLALCreateREAL8Vector(Npoints);
     REAL8Vector *ddalpha   = XLALCreateREAL8Vector(Npoints);
 
-
-
-    for (k=0; k< Npoints; k++) {
+    for (k=0; k<Npoints; k++) {
       j=k+intlen-Npoints;
       omega_s->data[k]  = omega[j];
       LNhx_s->data[k]   = LNhx[j];
@@ -1834,7 +1833,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     }
     domegak  = domega->data[kend];
 
-    for (k=0; k< Npoints; k++) {
+    for (k=0; k<Npoints; k++) {
       LNhxy = sqrt(LNhx_s->data[k] * LNhx_s->data[k] + LNhy_s->data[k] * LNhy_s->data[k]);
       if (LNhxy > 0.) {
 	diota->data[k]  = -dLNhz->data[k] / LNhxy;
@@ -1879,10 +1878,10 @@ static int XLALSpinInspiralAdaptiveEngine(
 
   /* Now fill the Hlm waveform structures*/
 
-  alpha=atan2(LNhy[0],LNhx[0]);
-  alphaold=alpha;
 
-  double alphaoold=0.;
+  alphaold=alpha;
+  alpha=atan2(LNhy[0],LNhx[0]);
+  REAL8 alphaoold = 0.;
 
   for (j=0;j<=(UINT4)jend;j++) {
 
@@ -1924,7 +1923,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     trigAngle.s8i2 = trigAngle.s4i2 * trigAngle.s4i2;
     
     alphaoold = alphaold;
-    alphaold = alpha;
+    alphaold  = alpha;
     if ((LNhy[j]*LNhy[j]+LNhx[j]*LNhx[j])>0.) {
       alpha = atan2(LNhy[j], LNhx[j]);
     }
@@ -1932,12 +1931,14 @@ static int XLALSpinInspiralAdaptiveEngine(
 
     errcode  = XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
 
-    if ((fabs(Psi-alpha-Phi[j-1]+alphaold)>LAL_PI/8.)&&(fabs(Psi-alpha-Phi[j-1]+alphaold)<2.*LAL_PI-0.1)&&(j>1)) {
-      fprintf(stderr,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity: Step %d:  LNhy: %12.6e LNhx: %12.6e  Psi+a:%12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+a: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+a: %12.6e ",j,LNhy[j],LNhx[j],Phi[j]+alpha,j-1,LNhy[j-1],LNhx[j-1],Phi[j]+alphaold,j-2,LNhy[j-2],LNhx[j-2],Phi[j-2]+alphaoold);
-      fprintf(stderr,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
-      fprintf(stderr,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
-      fprintf(stderr,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);
-      fprintf(stderr,"            m1,2/m = (%10.6f,%10.6f)\n", mparams->m1m, mparams->m2m);
+    if (j>1) {
+      if ((fabs(Psi-alpha-Phi[j-1]+alphaold)>LAL_PI/8.)&&(fabs(Psi-alpha-Phi[j-1]+alphaold)<2.*LAL_PI-0.1)) {
+	fprintf(stderr,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity: Step %d:  LNhy: %12.6e LNhx: %12.6e  Psi+a:%12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+a: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+a: %12.6e ",j,LNhy[j],LNhx[j],Phi[j]+alpha,j-1,LNhy[j-1],LNhx[j-1],Phi[j]+alphaold,j-2,LNhy[j-2],LNhx[j-2],Phi[j-2]+alphaoold);
+	fprintf(stderr,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
+	fprintf(stderr,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
+	fprintf(stderr,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);
+	fprintf(stderr,"            m1,2/m = (%10.6f,%10.6f)\n", mparams->m1m, mparams->m2m);
+      }
     }
 
     errcode += XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,j,amp33,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
