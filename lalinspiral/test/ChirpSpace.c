@@ -17,33 +17,30 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="ChirpSpaceCV">
-Author: Sathyaprakash, B. S.
-</lalVerbatim> */
-
-/* <lalLaTeX>
+/**
+\author Sathyaprakash, B. S.
+\file
 \ingroup LALInspiralBank_h
-\subsection{Program \texttt{ChirpSpace.c}}
-\label{ss:bank:ChirpSpace.c}
 
-Test code for \texttt{LALInspiralParameterCalc} module.
-If the variable \texttt{type} is set to 1 the code works
+\brief Test code for \c LALInspiralParameterCalc module.
+
+If the variable \c type is set to 1 the code works
 out the boundary of the region enclosed
 by the parameter space specified by {\em maximum total
-mass} and {\em minimum companion masses,} as given in \texttt{mmin}
-and \texttt{Mmax}. If the variable \texttt{type} is set to 0
+mass} and {\em minimum companion masses,} as given in \c mmin
+and \c Mmax. If the variable \c type is set to 0
 it computes the boundary of the region corresponding to the companion
-masses in the range defined by \texttt{mmin} and \texttt{mmax}.
+masses in the range defined by \c mmin and \c mmax.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALInspiralParameterCalc
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{ChirpSpaceCV}}
-</lalLaTeX> */
+*/
+
 /*
    This code generates the chirp parameter space for a given
    minimum companion mass mMin and maximum total mass MMax. One can use

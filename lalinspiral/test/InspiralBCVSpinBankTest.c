@@ -17,38 +17,31 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="InspiralBCVSpinBankTestCV">
- * Author: Van Den Broeck, C and Jones, G.
- * $Id$
- * </lalVerbatim> */
-
-/* <lalLaTeX>
- * \subsection{Program \texttt{InspiralBCVSpinBankTest}}
- * \label{s:InspiralBCVSpinBankTest.c}
- * Tests InpsiralBCVSpinBankTest().
+/**
+ * \author Van Den Broeck, C and Jones, G.
+ * \file
  *
- * \subsubsection*{Usage}
+ * \brief Tests InpsiralBCVSpinBankTest().
  *
- * \begin{verbatim}
+ * \heading{Usage}
+ *
+ * \code
  * InspiralBCVSpinBankTest
- * \end{verbatim}
+ * \endcode
  *
  * This program uses InspiralBCVSpinBank() to generate a template bank from
  * command line parameter input.
  *
- * \subsubsection{Command line options}
- * \begin{description}
- * \end{description}
+ * \subsubsection TODOref Command line options
+ * <dl>
+ * </dl>
  *
- * \subsubsection*{Exit codes}
- * \input{InspiralBCVSpinBankTestCE}
+ * \heading{Notes}
  *
- * \subsubsection*{Notes}
  *
- * \vfill{\footnotesize\input{InspiralBCVSpinBankTestCV}}
- * </lalLaTeX> */
+*/
 
-/* <lalErrTable file="InspiralBCVSpinBankTestCE"> */
+/**\name Error Codes */ /*@{*/
 #define INSPIRALBCVSPINBANKTESTC_ENORM     0
 #define INSPIRALBCVSPINBANKTESTC_EMEM      1
 #define INSPIRALBCVSPINBANKTESTC_ESUB      2
@@ -58,7 +51,7 @@
 #define INSPIRALBCVSPINBANKTESTC_MSGEMEM   "Memory allocation error"
 #define INSPIRALBCVSPINBANKTESTC_MSGESUB   "Subroutine error"
 #define INSPIRALBCVSPINBANKTESTC_MSGEFILE  "File I/O error"
-/* </lalErrTable> */
+/*@}*/
 
 extern int lalDebugLevel;
 #include <stdio.h>
