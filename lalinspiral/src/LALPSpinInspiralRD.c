@@ -115,7 +115,7 @@ static REAL8 OmMatch(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S
   const REAL8 omM     = 0.0590;
   const REAL8 omMz1p2 = -5.849e-3;
   const REAL8 omM12   = -2.149e-3;
-  const REAL8 omMsq   =  1.49 e-3;
+  const REAL8 omMsq   =  1.49e-3;
   const REAL8 omMz12  = -6.537e-3;
   const REAL8 omMzsq  = -1.985e-3;
 
@@ -157,6 +157,8 @@ typedef struct LALPSpinInspiralRDstructparams {
   REAL8 wdotspin20S1S2LNh;
   REAL8 wdotspin25S1LNh;
   REAL8 wdotspin25S2LNh;	///< Coeff. of the \f$s_2\cdot \hat L_N\f$ cntrb. to \f$\dot\omega\f$
+  REAL8 wdotspin30S1LNh;
+  REAL8 wdotspin30S2LNh;
   REAL8 S1dot15;
   REAL8 S2dot15;
   REAL8 Sdot20;
@@ -256,6 +258,8 @@ static void XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspi
       mparams->epnorb[3] = paramsInit->ak.ETa3;
       mparams->wdotorb[6] = paramsInit->ak.ST[6];
       mparams->wdotorblog = paramsInit->ak.ST[7];
+      mparams->wdotspin30S1LNh = -LAL_PI/3. * ( 188. - 151./2./mparams->m1m);
+      mparams->wdotspin30S2LNh = -LAL_PI/3. * ( 188. + 151./2./mparams->m2m);
 
     case LAL_PNORDER_TWO_POINT_FIVE:
       mparams->wdotorb[5] = paramsInit->ak.ST[5];
@@ -317,6 +321,8 @@ static void XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspi
   switch (params->spinInteraction) {
 
   case LAL_NOInter: 
+    mparams->wdotspin30S1LNh   = 0.;
+    mparams->wdotspin30S2LNh   = 0.;
     mparams->epnspin25S1dotLNh = 0.;
     mparams->epnspin25S2dotLNh = 0.;
     mparams->wdotspin25S1LNh   = 0.;
@@ -495,6 +501,8 @@ static int XLALSpinInspiralDerivatives(double t, const double values[], double d
     // wdotspin25SiLNh = see below
     domega += v5 * (params->wdotspin25S1LNh * LNhS1 + params->wdotspin25S2LNh * LNhS2);	//see (8.3) of Blanchet et al.
     energy += v5 * (params->epnspin25S1dotLNh * LNhS1 + params->epnspin25S2dotLNh * LNhS2);	//see (7.9) of Blanchet et al.
+
+    domega += v6 * (params->wdotspin30S1LNh * LNhS1 + params->wdotspin30S2LNh * LNhS2); // see (6.5) of arXiv:1104.5659
 
     // Setting the right pre-factor
     domega *= 96. / 5. * params->eta * v5 * omega* omega;
