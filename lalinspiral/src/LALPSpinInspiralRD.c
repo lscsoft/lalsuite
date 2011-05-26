@@ -112,12 +112,12 @@ NRCSID(LALPSPININSPIRALRDC, "$Id$");
 
 static REAL8 OmMatch(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2) {
 
-  const REAL8 omM     = 0.0605;
-  const REAL8 omMz1p2 = -4.08e-3;
-  const REAL8 omM12   = -2.01e-3;
-  const REAL8 omMsq   = -4.81e-4;
-  const REAL8 omMz12  = -7.04e-3;
-  const REAL8 omMzsq  = -4.93e-3;
+  const REAL8 omM     = 0.0590;
+  const REAL8 omMz1p2 = -5.066e-3;
+  const REAL8 omM12   = -3.125e-3;
+  const REAL8 omMsq   =  1.450e-3;
+  const REAL8 omMz12  = -6.285e-3;
+  const REAL8 omMzsq  = -2.483e-3;
 
   return omM + /*6.05e-3 * sqrtOneMinus4Eta +*/ 
     omMz1p2 * (LNhS1 + LNhS2) + omM12 * (S1S2 - LNhS1 * LNhS2) + 
@@ -127,12 +127,12 @@ static REAL8 OmMatch(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S
 
 static REAL8 fracRD(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2) {
 
-  const double frac0   = 0.84;
-  const double frac1p2 = -2.17e-02;
-  const double frac12  = -5.47e-02;
-  const double fracsq  = -5.68e-02;
-  const double fracz12 = -4.55e-02;
-  const double fraczsq = -5.06e-02;
+  const double frac0   = 0.85;
+  const double frac1p2 =  1.84e-03;
+  const double frac12  = -2.767e-02;
+  const double fracsq  = -5.533e-02;
+  const double fracz12 =  8.17e-03;
+  const double fraczsq = -2.664e-02;
 
   return frac0 + frac1p2 * (LNhS1 + LNhS2) + frac12 * (S1S2 - LNhS1 * LNhS1) +
     fracsq * (S1S1 + S2S2 - LNhS1 * LNhS1 - LNhS2 * LNhS2) +
@@ -983,55 +983,55 @@ static int XLALSpinInspiralFillH2Modes(
   REAL8 amp20 = amp * sqrtOnePointFive;
   REAL8 v2    = v*v;
   REAL8 omega = v*v*v;
-  const REAL8 omegaC = 0.5;
+  const REAL8 omegaC = 0.48;
   const REAL8 Afac   = .5;
   REAL8 damp  = omega > omegaC ? 1. : exp(-Afac*(1.-omegaC/omega)*(1.-omegaC/omega));
 
-  h2P2->data[2 * j] = amp * ( 1. /(1. + damp * v2 / 42. * (107. - 55. * eta) )* 
+  h2P2->data[2 * j] = amp * ( (1. - damp * v2 / 42. * (107. - 55. * eta) )* 
 			      ( cos(2. * (Psi + alpha)) * an.c4i2 + cos(2. * (Psi - alpha)) * an.s4i2) +
 			      v * dm / 3. * an.si *
 			      ( cos(Psi - 2. * alpha) * an.s2i2 + cos(Psi + 2. * alpha) * an.c2i2 ) );
 
-  h2M2->data[2 * j] = amp * ( 1. /(1. + damp * v2 / 42. * (107. - 55. * eta) )* 
+  h2M2->data[2 * j] = amp * ( (1. - damp * v2 / 42. * (107. - 55. * eta) )* 
 				( cos(2. * (Psi + alpha)) * an.c4i2 + cos(2. * (Psi - alpha)) * an.s4i2) -
 				v * dm / 3. * an.si * 
 				( cos(Psi - 2. * alpha) * an.s2i2 + cos(Psi + 2. * alpha) * an.c2i2) );
 
-  h2P2->data[2 * j + 1] = amp * (1. /(1. + damp * v2 / 42. * (107. - 55. * eta) )* 
+  h2P2->data[2 * j + 1] = amp * ( (1. - damp * v2 / 42. * (107. - 55. * eta) )* 
 				   ( -sin(2. * (Psi + alpha)) * an.c4i2 + sin(2. * (Psi - alpha)) * an.s4i2) +
 				   v * dm / 3. * an.si *
 				   ( sin(Psi - 2. * alpha) * an.s2i2 - sin(Psi + 2. * alpha) * an.c2i2) );
 
-  h2M2->data[2 * j + 1] = amp * (1. /(1. + damp * v2 / 42. * (107. - 55. * eta) )* 
+  h2M2->data[2 * j + 1] = amp * ( (1. - damp * v2 / 42. * (107. - 55. * eta) )* 
 				   ( sin(2. * (Psi + alpha)) * an.c4i2 - sin(2. * (Psi - alpha)) * an.s4i2) +
 				   v * dm / 3. * an.si *
 				   ( sin(Psi - 2. * alpha) * an.s2i2 - sin(Psi + 2. * alpha) * an.c2i2) );
 
-  h2P1->data[2 * j] = amp * (an.si /(1. + damp * v2 / 42. * (107. - 55. * eta) ) *
+  h2P1->data[2 * j] = amp * (an.si * (1. - damp * v2 / 42. * (107. - 55. * eta) ) *
 			       ( -cos(2. * Psi - alpha) * an.s2i2 + cos(2. * Psi + alpha) * an.c2i2) +
 			       v * dm / 3. *
 			       (-cos(Psi + alpha) * (an.ci + an.cdi)/2. - 
 				cos(Psi - alpha) * an.s2i2 * (1. + 2. * an.ci) ) );
 
-  h2M1->data[2 * j] = amp * (an.si / (1. + damp * v2 / 42. * (107. - 55. * eta)) *
+  h2M1->data[2 * j] = amp * (an.si * (1. - damp * v2 / 42. * (107. - 55. * eta)) *
 			       ( cos(2. * Psi - alpha) * an.s2i2 - cos(2. * Psi + alpha) * an.c2i2) +
 			       v * dm / 3. * 
 			       (-cos(Psi + alpha) * (an.ci + an.cdi)/2. -
 				cos(Psi - alpha) * an.s2i2 * (1. + 2. * an.ci) ) );
 
-  h2P1->data[2 * j + 1] = amp * (an.si /(1. + damp * v2 / 42. * (107. - 55. * eta) ) * 
+  h2P1->data[2 * j + 1] = amp * (an.si * (1. - damp * v2 / 42. * (107. - 55. * eta) ) * 
 				   ( -sin(2. * Psi - alpha ) * an.s2i2 - sin(2. * Psi + alpha) * an.c2i2) +
 				   v * dm / 3. * 
 				   (sin(Psi + alpha) * (an.ci + an.cdi)/2. - 
 				    sin(Psi - alpha) * an.s2i2 * (1. + 2. * an.ci) ) );
 	
-  h2M1->data[2 * j + 1] = amp * (an.si / (1. + damp * v2 / 42. * (107. - 55. * eta)) * 
+  h2M1->data[2 * j + 1] = amp * (an.si * (1. - damp * v2 / 42. * (107. - 55. * eta)) * 
 				   ( -sin(2. * Psi - alpha) * an.s2i2 - sin(2. * Psi + alpha) * an.c2i2) -
 				   v * dm / 3. * 
 				   (sin(Psi + alpha) * (an.ci + an.cdi) / 2. - 
 				    sin(Psi - alpha) * an.s2i2 * (1. + 2. * an.ci) ) );
 
-  h20->data[2 * j] = amp20 * ( an.s2i / (1.+ damp * v2/42. * (107. - 55.*eta) ) * cos(2. * Psi) );
+  h20->data[2 * j] = amp20 * ( an.s2i * (1.- damp * v2/42. * (107. - 55.*eta) ) * cos(2. * Psi) );
 
   h20->data[2 * j + 1] = amp20 * ( v * dm / 3. * an.sdi * sin(Psi) );
 
