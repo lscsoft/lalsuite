@@ -52,6 +52,9 @@
 #include <lal/LALInferenceNestedSampler.h>
 #include <lal/LALInferencePrior.h>
 
+#include <gsl/gsl_sort_double.h>
+#include <gsl/gsl_statistics_double.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -67,9 +70,34 @@ extern "C" {
 
 /* default values */
 #define CHUNKMIN 5
-#define CHUNKMAX 30
+#define CHUNKMAX 0
 #define PSIBINS 50
 #define TIMEBINS 1440
+
+/* INCREASE THESE VALUES IF ADDING ADDITIONAL PARAMETERS */
+/* number of amplitude parameters e.g. h0, phi0, psi, ciota */
+#define NUMAMPPARS 4
+CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi", "cosiota" };
+
+/* number of frequency parameters e.g. f0 */
+#define NUMFREQPARS 7
+CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "f0", "f1", "f2", "f3", "f4", "f5",
+                                            "pepoch" };
+
+/* number of sky position parameters e.g. ra, dec */ 
+#define NUMSKYPARS 5
+CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "ra", "pmra", "dec", "pmdec",
+                                          "posepoch" };
+
+/* number of binary parameters e.g. e, x */       
+#define NUMBINPARS 33
+CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1", "eps2", "T0",
+                                          "Tasc", "x", "w0", "Pb2", "e2", "T02",
+                                          "x2", "w02", "Pb3", "e3", "T03", "x3",
+                                          "w03", "xpbdot", "eps1dot", "eps2dot",
+                                          "wdot", "gamma", "Pbdot", "xdot",
+                                          "edot", "s", "dr", "dth", "a0", "b0",
+                                          "M", "m2" };
 
 /** define functions */
 
@@ -84,15 +112,15 @@ void setupFromParFile( LALInferenceRunState *runState );
 
 void setupLookupTables(LALInferenceRunState *runState, LALSource *source);
 
-UINT4 add_initial_variables( LALInferenceVariables *ini, 
-                             LALInferenceVariables *scaleFac,
-                             LALInferenceVariables *priorArgs, 
-                             BinaryPulsarParams pars ); 
+void add_initial_variables( LALInferenceVariables *ini, 
+                            LALInferenceVariables *scaleFac,
+                            LALInferenceVariables *priorArgs, 
+                            BinaryPulsarParams pars ); 
   
-UINT4 add_variable_scale_prior( LALInferenceVariables *var, 
-                                LALInferenceVariables *scale, 
-                                LALInferenceVariables *prior, const char *name, 
-                                REAL8 value, REAL8 sigma);
+void add_variable_scale_prior( LALInferenceVariables *var, 
+                               LALInferenceVariables *scale, 
+                               LALInferenceVariables *prior, const char *name, 
+                               REAL8 value, REAL8 sigma );
 
 void initialiseProposal( LALInferenceRunState *runState );
 
@@ -115,6 +143,16 @@ void get_triaxial_pulsar_model( BinaryPulsarParams params,
 REAL8Vector *get_phase_model( BinaryPulsarParams params, 
                               LALInferenceIFOData *data );
 
+REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, 
+                            LIGOTimeGPSVector *datatimes,
+                            EphemerisData *ephem,
+                            LALDetector *detector,
+                            REAL8 interptime );
+                            
+REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
+                            LIGOTimeGPSVector *datatimes,
+                            REAL8Vector *dts );                
+                              
 void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
   
 REAL8 noise_only_model( LALInferenceIFOData *data );
@@ -125,11 +163,16 @@ void injectSignal( LALInferenceRunState *runState );
 /* helper functions */
 UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax );
 
-UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin );
+UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, 
+                           INT4 chunkMax );
+
+COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data );
 
 UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin );
 
-UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds );
+UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, INT4 chunkMin );
+
+void rechop_data( UINT4Vector *segs, INT4 chunkMax, INT4 chunkMin );
 
 void merge_data( COMPLEX16Vector *data, UINT4Vector *segs );
 

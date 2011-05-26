@@ -13,10 +13,24 @@ static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0),
 
 RCSID("$Id$");
 
-/* global variable */
+/* global variables */
 INT4 verbose = 0;
 
+/* array to contain the log of factorials up to a certain number */
 REAL8 *logfactorial = NULL;
+
+/* set if phase parameters are being searched over and therefore the pulsar
+   model requires phase evolution to be re-calculated */ 
+UINT4 varyphase = 0; 
+
+/* set if the sky position will be searched over, and therefore whether the
+   solar system barycentring needs recalculating */
+UINT4 varyskypos = 0; 
+
+/* set if the binary system parameters will be searched over, and therefore
+   whether the binary system barycentring needs recalculating */
+UINT4 varybinary = 0; 
+
 
 /* Usage format string */
 #define USAGE \
@@ -777,11 +791,10 @@ void setupFromParFile( LALInferenceRunState *runState )
 {
   LALSource psr;
   BinaryPulsarParams pulsar;
-  REAL8Vector *phase_vector;
+  REAL8Vector *phase_vector = NULL;
   LALInferenceIFOData *data = runState->data;
   LALInferenceVariables *scaletemp;
   ProcessParamsTable *ppt = NULL;
-  UINT4 withphase=0;
   
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
   if( ppt == NULL ) { fprintf(stderr,"Must specify --par-file!\n"); exit(1); }
@@ -806,13 +819,28 @@ void setupFromParFile( LALInferenceRunState *runState )
   
   /* Add initial (unchanging) variables for the model, initial (unity) scale
      factors, and any Gaussian priors defined from the par file */
-  withphase = add_initial_variables( runState->currentParams, scaletemp,
-                                     runState->priorArgs, pulsar );
+  add_initial_variables( runState->currentParams, scaletemp,
+                         runState->priorArgs, pulsar );
                                      
-  /* Setup initial phase */
+  /* Setup initial phase, and barycentring delays */
   while( data ){
     UINT4 i = 0;
     LALInferenceVariableItem *scaleitem = scaletemp->head;
+    REAL8Vector *dts = NULL, *bdts = NULL;
+    
+    if ( !varyskypos ){
+      dts = get_ssb_delay( pulsar, data->dataTimes, data->ephem, data->detector,
+                           0. );
+    
+      if ( !varybinary )
+        bdts = get_bsb_delay( pulsar, data->dataTimes, dts );
+    }
+    
+    LALInferenceAddVariable( data->dataParams, "ssb_delays", &dts,
+                             REAL8Vector_t, PARAM_FIXED );
+    
+    LALInferenceAddVariable( data->dataParams, "bsb_delays", &bdts,
+                             REAL8Vector_t, PARAM_FIXED );
     
     phase_vector = get_phase_model( pulsar, data );
     
@@ -822,19 +850,13 @@ void setupFromParFile( LALInferenceRunState *runState )
                                                 phase_vector->length );
     for ( i=0; i<phase_vector->length; i++ )
       data->timeData->data->data[i] = phase_vector->data[i];
-  
-    /* add the withphase variable to the data->dataParams variable, which
-       defines whether the phase model needs to be calculated in the
-       likelihood, or not (i.e. are any phase parameters required to be
-       searched over) */
-    LALInferenceAddVariable( data->dataParams, "withphase", &withphase, UINT4_t,
-                 PARAM_FIXED);
       
     /* add the scale factors from scaletemp into the data->dataParams
        structure */
     for( ; scaleitem; scaleitem = scaleitem->next ){
-      LALInferenceAddVariable( data->dataParams, scaleitem->name, scaleitem->value,
-                   scaleitem->type, scaleitem->vary );
+      LALInferenceAddVariable( data->dataParams, scaleitem->name, 
+                               scaleitem->value, scaleitem->type,
+                               scaleitem->vary );
     }
     
     data = data->next;
@@ -913,7 +935,7 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     
     /* chunkLength = get_chunk_lengths( data, chunkMax ); */
     
-    chunkLength = chop_n_merge( data, chunkMin );
+    chunkLength = chop_n_merge( data, chunkMin, chunkMax );
     
     LALInferenceAddVariable( data->dataParams, "chunkLength", &chunkLength, 
                              UINT4Vector_t, PARAM_FIXED );
@@ -931,7 +953,7 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
 }
 
 
-UINT4 add_initial_variables( LALInferenceVariables *ini, 
+void add_initial_variables( LALInferenceVariables *ini, 
                              LALInferenceVariables *scaleFac,
                              LALInferenceVariables *priorArgs, 
                              BinaryPulsarParams pars ){ 
@@ -939,143 +961,162 @@ UINT4 add_initial_variables( LALInferenceVariables *ini,
      contains an uncertainty then set the prior to be Gaussian with the
      uncertainty as the standard deviation */
   
-  UINT4 withphase=0, dummy;
-  
   /* amplitude model parameters */
-  dummy = add_variable_scale_prior( ini, scaleFac, priorArgs, "h0", pars.h0,
-                                    pars.h0Err );
-  dummy = add_variable_scale_prior( ini, scaleFac, priorArgs, "phi0", pars.phi0,
-                                    pars.phi0Err );
-  dummy = add_variable_scale_prior( ini, scaleFac, priorArgs, "cosiota",
-                                    pars.cosiota, pars.cosiotaErr );
-  dummy = add_variable_scale_prior( ini, scaleFac, priorArgs, "psi", pars.psi,
-                                    pars.psiErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "h0", pars.h0,
+                            pars.h0Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "phi0", pars.phi0,
+                            pars.phi0Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "cosiota",
+                            pars.cosiota, pars.cosiotaErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "psi", pars.psi,  
+                            pars.psiErr );
     
   /* phase model parameters */
   
   /* frequency */
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "f0",
-                                        pars.f0, pars.f0Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "f1",
-                                        pars.f1, pars.f1Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "f2",
-                                        pars.f2, pars.f2Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "f3",
-                                        pars.f3, pars.f3Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "f4",
-                                        pars.f4, pars.f4Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "f5",
-                                        pars.f5, pars.f5Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "pepoch",
-                                        pars.pepoch, pars.pepochErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "f0", pars.f0, 
+                            pars.f0Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "f1", pars.f1, 
+                            pars.f1Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "f2", pars.f2, 
+                            pars.f2Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "f3", pars.f3, 
+                            pars.f3Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "f4", pars.f4, 
+                            pars.f4Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "f5", pars.f5, 
+                            pars.f5Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "pepoch", pars.pepoch,
+                            pars.pepochErr );
   
   /* sky position */
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "ra",
-                                        pars.ra, pars.raErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "pmra",
-                                        pars.pmra, pars.pmraErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "dec",
-                                        pars.dec, pars.decErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "pmdec",
-                                        pars.pmdec, pars.pmdecErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "posepoch",
-                                        pars.posepoch, pars.posepochErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "ra", pars.ra, 
+                            pars.raErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "pmra", pars.pmra, 
+                            pars.pmraErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "dec", pars.dec,
+                            pars.decErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "pmdec", pars.pmdec,
+                            pars.pmdecErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "posepoch", pars.posepoch,
+                            pars.posepochErr );
   
   /* binary system parameters */
   LALInferenceAddVariable( ini, "model", &pars.model, string_t, PARAM_FIXED );
   
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb",
-                                        pars.Pb, pars.PbErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "e",
-                                        pars.e, pars.eErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "eps1",
-                                        pars.eps1, pars.eps1Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "eps2",
-                                        pars.eps2, pars.eps2Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "T0",
-                                        pars.T0, pars.T0Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "Tasc",
-                                        pars.Tasc, pars.TascErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "x",
-                                        pars.x, pars.xErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "w0",
-                                        pars.w0, pars.w0Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb", pars.Pb, 
+                            pars.PbErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "e", pars.e, pars.eErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "eps1", pars.eps1,
+                            pars.eps1Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "eps2", pars.eps2,
+                            pars.eps2Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "T0", pars.T0, 
+                            pars.T0Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "Tasc", pars.Tasc,
+                            pars.TascErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "x", pars.x, pars.xErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "w0", pars.w0, 
+                            pars.w0Err );
 
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb2",
-                                        pars.Pb2, pars.Pb2Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "e2",
-                                        pars.e2, pars.e2Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "T02",
-                                        pars.T02, pars.T02Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "x2",
-                                        pars.x2, pars.x2Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "w02",
-                                        pars.w02, pars.w02Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb2", pars.Pb2,
+                            pars.Pb2Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "e2", pars.e2, 
+                            pars.e2Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "T02", pars.T02,
+                            pars.T02Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "x2", pars.x2, 
+                            pars.x2Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "w02", pars.w02,
+                            pars.w02Err );
 
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb3",
-                                        pars.Pb3, pars.Pb3Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "e3",
-                                        pars.e3, pars.e3Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "T03",
-                                        pars.T03, pars.T03Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "x3",
-                                        pars.x3, pars.x3Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "w03",
-                                        pars.w03, pars.w03Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb3", pars.Pb3,
+                            pars.Pb3Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "e3", pars.e3, 
+                            pars.e3Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "T03", pars.T03,
+                            pars.T03Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "x3", pars.x3, 
+                            pars.x3Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "w03", pars.w03,
+                            pars.w03Err );
 
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "xpbdot",
-                                        pars.xpbdot, pars.xpbdotErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "eps1dot",
-                                        pars.eps1dot, pars.eps1dotErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "eps2dot",
-                                        pars.eps2dot, pars.eps2dotErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "wdot",
-                                        pars.wdot, pars.wdotErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "gamma",
-                                        pars.gamma, pars.gammaErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "Pbdot",
-                                        pars.Pbdot, pars.PbdotErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "xdot",
-                                        pars.xdot, pars.xdotErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "edot",
-                                        pars.edot, pars.edotErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "xpbdot", pars.xpbdot,
+                            pars.xpbdotErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "eps1dot", pars.eps1dot,
+                            pars.eps1dotErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "eps2dot", pars.eps2dot,
+                            pars.eps2dotErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "wdot", pars.wdot,
+                            pars.wdotErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "gamma", pars.gamma,
+                            pars.gammaErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "Pbdot", pars.Pbdot,
+                            pars.PbdotErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "xdot", pars.xdot,
+                            pars.xdotErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "edot", pars.edot,
+                            pars.edotErr );
  
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "s",
-                                        pars.s, pars.sErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "dr",
-                                        pars.dr, pars.drErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "dth",
-                                        pars.dth, pars.dthErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "a0",
-                                        pars.a0, pars.a0Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "b0",
-                                        pars.b0, pars.b0Err );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "M",
-                                        pars.M, pars.MErr );
-  withphase = add_variable_scale_prior( ini, scaleFac, priorArgs, "m2",
-                                        pars.m2, pars.m2Err );
-
-  return withphase;
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "s", pars.s, pars.sErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "dr", pars.dr, 
+                            pars.drErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "dth", pars.dth,
+                            pars.dthErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "a0", pars.a0, 
+                            pars.a0Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "b0", pars.b0, 
+                            pars.b0Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "M", pars.M, pars.MErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "m2", pars.m2, 
+                            pars.m2Err );
 }
 
 
-UINT4 add_variable_scale_prior( LALInferenceVariables *var, LALInferenceVariables *scale, 
-                                LALInferenceVariables *prior, const char *name, 
-                                REAL8 value, REAL8 sigma ){
+void add_variable_scale_prior( LALInferenceVariables *var, 
+                               LALInferenceVariables *scale, 
+                               LALInferenceVariables *prior, const CHAR *name, 
+                               REAL8 value, REAL8 sigma ){
   REAL8 scaleVal = 1.;
   LALInferenceParamVaryType vary;
   CHAR scaleName[VARNAME_MAX] = "";
- 
-  UINT4 nonzero = 0;
+  INT4 i = 0;
   
   /* if the sigma is non-zero then set a Gaussian prior */
   if ( sigma != 0. ){
     vary = PARAM_LINEAR;
+    INT4 isthere = 0;
     
     /* set the prior to a Gaussian prior with mean value and sigma */
-    LALInferenceAddGaussianPrior( prior, name, (void *)&value, (void *)&sigma, REAL8_t );
+    LALInferenceAddGaussianPrior( prior, name, (void *)&value, (void *)&sigma, 
+                                  REAL8_t );
     
-    nonzero = 1;
+    /* if the parameter is not one of the amplitude parameters then set
+       global variable varyphase to 1, so that the phase evolution will be
+       calculated */
+    for ( i = 0; i < NUMAMPPARS; i++ ){
+      if ( !strcmp(name, amppars[i]) ){
+        isthere = 1;
+        break;
+      }
+    }
+    if ( !isthere ) varyphase = 1;
+   
+    /* check if there are sky position parameters that will be searched over */
+    for ( i = 0; i < NUMSKYPARS; i++ ){
+      if ( !strcmp(name, skypars[i]) ){
+        varyskypos = 1;
+        break;
+      }
+    }
+    
+    /* check if there are any binary parameters that will be searched over */
+    for ( i = 0; i < NUMBINPARS; i++ ){
+      if ( !strcmp(name, binpars[i]) ){
+        varybinary = 1;
+        break;
+      }
+    }
   }
   else vary = PARAM_FIXED;
   
@@ -1085,8 +1126,6 @@ UINT4 add_variable_scale_prior( LALInferenceVariables *var, LALInferenceVariable
   /* add the initial scale factor of 1 */
   sprintf( scaleName, "%s_scale", name );
   LALInferenceAddVariable( scale, scaleName, &scaleVal, REAL8_t, PARAM_FIXED );
-              
-  return nonzero;
 }
 
 
@@ -1124,6 +1163,7 @@ void initialiseProposal( LALInferenceRunState *runState )
   while(fscanf(fp, "%s %lf %lf", tempPar, &low, &high) != EOF){
     REAL8 tempVar;
     LALInferenceVariableType type;
+    INT4 isthere = 0, i = 0;
     
     REAL8 scale = 0.;
     LALInferenceVariableType scaleType;
@@ -1186,13 +1226,32 @@ set.\n", propfile, tempPar);
     LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, (void *)&low, 
                                 (void *)&high, type );
     
-    /* if there is a phase parameter defined in the proposal then set withphase
+    /* if there is a phase parameter defined in the proposal then set varyphase
        to 1 */
-    if ( !strcmp(tempPar, "phi0") || !strcmp(tempPar, "h0") || 
-         !strcmp(tempPar, "cosiota") || !strcmp(tempPar, "psi") ){
-      UINT4 withphase = 1;
-      LALInferenceSetVariable( data->dataParams, "withphase", &withphase );
+    for ( i = 0; i < NUMAMPPARS; i++ ){
+      if ( !strcmp(tempPar, amppars[i]) ){
+        isthere = 1;
+        break;
+      }
     }
+    if ( !isthere ) varyphase = 1;
+      
+    /* check if there are sky position parameters that will be searched over */
+    for ( i = 0; i < NUMSKYPARS; i++ ){
+      if ( !strcmp(tempPar, skypars[i]) ){
+        varyskypos = 1;
+        break;
+      }
+    }
+    
+    /* check if there are any binary parameters that will be searched over */
+    for ( i = 0; i < NUMBINPARS; i++ ){
+      if ( !strcmp(tempPar, binpars[i]) ){
+        varybinary = 1;
+        break;
+      }
+    }
+ 
   }
   
   /* check for any parameters with Gaussian priors and rescale to mean value */
@@ -1455,12 +1514,10 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
       chiSquare += sumModel;
       
       if( first == 0 ){
-        logliketmp = 2. * (chunkLength - 1.)*LAL_LN2;
+        logliketmp = 0.;
         first++;
       }
-      else logliketmp += 2. * (chunkLength - 1.)*LAL_LN2;
 
-      logliketmp += 2. * logfactorial[(INT4)chunkLength];
       logliketmp -= chunkLength*log(chiSquare);
     
       count++;
@@ -1671,7 +1728,6 @@ void get_pulsar_model( LALInferenceIFOData *data ){
 void get_triaxial_pulsar_model( BinaryPulsarParams params, 
                                 LALInferenceIFOData *data ){
   REAL8Vector *dphi = NULL;
-  UINT4 withphase = 0; /* set this to 1 if the phase model needs calculating */
   INT4 i = 0, length = 0;
   
   get_amplitude_model( params, data );
@@ -1681,11 +1737,8 @@ void get_triaxial_pulsar_model( BinaryPulsarParams params,
      phase calculated using the initial (heterodyne) values of the phase
      parameters */
   
-  withphase = *(UINT4 *)LALInferenceGetVariable( data->dataParams, 
-                                                 "withphase" );
-  
   /* get difference in phase and perform extra heterodyne with it */ 
-  if ( withphase ){ 
+  if ( varyphase ){ 
     if ( (dphi = get_phase_model( params, data )) != NULL ){
       for( i=0; i<length; i++ ){
         COMPLEX16 M;
@@ -1710,55 +1763,38 @@ void get_triaxial_pulsar_model( BinaryPulsarParams params,
 }
 
 
-REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOData *data ){
-  static LALStatus status;
-
+REAL8Vector *get_phase_model( BinaryPulsarParams params, 
+                              LALInferenceIFOData *data ){
   INT4 i = 0, length = 0;
 
-  REAL8 T0 = 0., DT = 0., DTplus = 0., deltat = 0., deltat2 = 0.;
+  REAL8 T0 = 0., DT = 0., deltat = 0., deltat2 = 0.;
   REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
-
-  EarthState earth, earth2;
-  EmissionTime emit, emit2;
-  REAL8 emitdt = 0.;
-
-  BinaryPulsarInput binput;
-  BinaryPulsarOutput boutput;
-
-  BarycenterInput *bary = NULL;
   
-  REAL8Vector *phis = NULL;
+  REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
 
   /* if edat is NULL then return a NULL poniter */
   if( data->ephem == NULL )
     return NULL;
-  
-  /* copy barycenter and ephemeris data */
-  bary = (BarycenterInput*)XLALCalloc( 1, sizeof(BarycenterInput) );
-  memcpy( &bary->site, data->detector, sizeof(LALDetector) );
-  
-  bary->alpha = params.ra;
-  bary->delta = params.dec;
-  
-   /* set the position and frequency epochs if not already set */
-  if( params.pepoch == 0. && params.posepoch != 0.)
-    params.pepoch = params.posepoch;
-  else if( params.posepoch == 0. && params.pepoch != 0. )
-    params.posepoch = params.pepoch;
 
   length = data->dataTimes->length;
   
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( length );
- 
-  /* set 1/distance if parallax or distance value is given (1/sec) */
-  if( params.px != 0. )
-    bary->dInv = params.px*1e-3*LAL_C_SI/LAL_PC_SI;
-  else if( params.dist != 0. )
-    bary->dInv = LAL_C_SI/(params.dist*1e3*LAL_PC_SI);
-  else
-    bary->dInv = 0.;
 
+  /* get time delays */ 
+  if( (dts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
+      "ssb_delays" )) == NULL ){
+    /* get time delays with an interpolation of interptime (30 mins) */
+    dts = get_ssb_delay( params, data->dataTimes, data->ephem, data->detector,
+                         interptime );
+  }
+  
+  if( (bdts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
+      "bsb_delays" )) == NULL ){
+    /* get binary system time delays */
+    bdts = get_bsb_delay( params, data->dataTimes, dts );
+  }
+  
   for( i=0; i<length; i++){
     REAL8 realT = XLALGPSGetREAL8( &data->dataTimes->data[i] );
     
@@ -1766,46 +1802,11 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOData *da
 
     DT = realT - T0;
 
-    /* only do call the barycentring routines every 30 minutes, otherwise just
-       linearly interpolate between them */
-    if( i==0 || DT > DTplus ){
-      bary->tgps = data->dataTimes->data[i];
-
-      bary->delta = params.dec + (realT-params.posepoch) * params.pmdec;
-      bary->alpha = params.ra + (realT-params.posepoch) *
-         params.pmra/cos(bary->delta);
-     
-      /* call barycentring routines */
-      LAL_CALL( LALBarycenterEarth( &status, &earth, &bary->tgps, data->ephem ),
-                &status );
-      
-      LAL_CALL( LALBarycenter( &status, &emit, bary, &earth ), &status );
-
-      /* add interptime to the time */
-      DTplus = DT + interptime;
-      XLALGPSAdd( &bary->tgps, interptime );
-
-      /* No point in updating the positions as difference will be tiny */
-      LAL_CALL( LALBarycenterEarth( &status, &earth2, &bary->tgps, 
-                                    data->ephem ), &status );
-      LAL_CALL( LALBarycenter( &status, &emit2, bary, &earth2), &status );
-    }
-
-    /* linearly interpolate to get emitdt */
-    emitdt = emit.deltaT + (DT - (DTplus - interptime)) *
-      (emit2.deltaT - emit.deltaT)/interptime;
-
-    /* check if need to perform binary barycentring */
-    if( params.model != NULL ){
-      binput.tb = realT + emitdt;
-
-      XLALBinaryPulsarDeltaT( &boutput, &binput, &params );
-
-      deltat = DT + emitdt + boutput.deltaT;
-    }
+    if ( params.model != NULL )
+      deltat = DT + dts->data[i] + bdts->data[i];
     else
-      deltat = DT + emitdt;
-
+      deltat = DT + dts->data[i];
+    
     /* work out phase */
     deltat2 = deltat*deltat;
     phis->data[i] = 2.*deltat*(params.f0 + 
@@ -1816,9 +1817,129 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOData *da
       inv_fact[6]*params.f5*deltat2*deltat2*deltat);
   }
 
-  XLALFree( bary );
-
   return phis;
+}
+
+
+/* function to get the solar system barycentring time delay */
+REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, 
+                            LIGOTimeGPSVector *datatimes,
+                            EphemerisData *ephem,
+                            LALDetector *detector,
+                            REAL8 interptime ){
+  static LALStatus status;
+
+  INT4 i = 0, length = 0;
+
+  REAL8 T0 = 0., DT = 0., DTplus = 0.;
+
+  EarthState earth, earth2;
+  EmissionTime emit, emit2;
+
+  BarycenterInput *bary = NULL;
+  
+  REAL8Vector *dts = NULL;
+
+  /* if edat is NULL then return a NULL poniter */
+  if( ephem == NULL )
+    return NULL;
+  
+  /* copy barycenter and ephemeris data */
+  bary = (BarycenterInput*)XLALCalloc( 1, sizeof(BarycenterInput) );
+  memcpy( &bary->site, detector, sizeof(LALDetector) );
+  
+  bary->alpha = pars.ra;
+  bary->delta = pars.dec;
+  
+   /* set the position and frequency epochs if not already set */
+  if( pars.pepoch == 0. && pars.posepoch != 0.)
+    pars.pepoch = pars.posepoch;
+  else if( pars.posepoch == 0. && pars.pepoch != 0. )
+    pars.posepoch = pars.pepoch;
+
+  length = datatimes->length;
+  
+  /* allocate memory for times delays */
+  dts = XLALCreateREAL8Vector( length );
+ 
+  /* set 1/distance if parallax or distance value is given (1/sec) */
+  if( pars.px != 0. )
+    bary->dInv = pars.px*1e-3*LAL_C_SI/LAL_PC_SI;
+  else if( pars.dist != 0. )
+    bary->dInv = LAL_C_SI/(pars.dist*1e3*LAL_PC_SI);
+  else
+    bary->dInv = 0.;
+  
+  for( i=0; i<length; i++){
+    REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] );
+    
+    T0 = pars.pepoch;
+
+    DT = realT - T0;
+
+    /* only do call to the barycentring routines once every interptime (unless
+       interptime == 0), otherwise just linearly interpolate between them */
+    if( i == 0 || DT > DTplus || interptime == 0 ){
+      bary->tgps = datatimes->data[i];
+
+      bary->delta = pars.dec + (realT-pars.posepoch) * pars.pmdec;
+      bary->alpha = pars.ra + (realT-pars.posepoch) *
+         pars.pmra/cos(bary->delta);
+     
+      /* call barycentring routines */
+      LAL_CALL( LALBarycenterEarth( &status, &earth, &bary->tgps, ephem ),
+                &status );
+      
+      LAL_CALL( LALBarycenter( &status, &emit, bary, &earth ), &status );
+
+      /* add interptime to the time */
+      if ( interptime > 0 ){
+        DTplus = DT + interptime;
+        XLALGPSAdd( &bary->tgps, interptime );
+
+        /* No point in updating the positions as difference will be tiny */
+        LAL_CALL( LALBarycenterEarth( &status, &earth2, &bary->tgps, ephem ),
+                  &status );
+        LAL_CALL( LALBarycenter( &status, &emit2, bary, &earth2), &status );
+      }
+    }
+
+    /* linearly interpolate to get emitdt */
+    if( interptime > 0. ){
+      dts->data[i] = emit.deltaT + (DT - (DTplus - interptime)) *
+        (emit2.deltaT - emit.deltaT)/interptime;
+    }
+    else
+      dts->data[i] = emit.deltaT;
+  }
+  
+  XLALFree( bary );
+  
+  return dts;
+}
+
+
+/* function to get the binary system barycentring time delay */
+REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
+                            LIGOTimeGPSVector *datatimes,
+                            REAL8Vector *dts ){
+  BinaryPulsarInput binput;
+  BinaryPulsarOutput boutput;
+  REAL8Vector *bdts = NULL;
+  
+  INT4 i = 0, length = datatimes->length;
+  
+  bdts = XLALCreateREAL8Vector( length );
+  
+  for ( i = 0; i < length; i++ ){
+    binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
+  
+    XLALBinaryPulsarDeltaT( &boutput, &binput, &pars );
+    
+    bdts->data[i] = boutput.deltaT;
+  }
+  
+  return bdts;
 }
 
 
@@ -1909,9 +2030,7 @@ REAL8 noise_only_model( LALInferenceIFOData *data ){
   
     for (i=0; i<chunkLengths->length; i++){
       chunkLength = (REAL8)chunkLengths->data[i];
-    
-      logL += 2. * (chunkLength - 1.) * LAL_LN2;
-      logL += 2. * logfactorial[(INT4)chunkLength];
+   
       logL -= chunkLength * log(sumData->data[i]);
     }
   
@@ -1981,14 +2100,11 @@ injection\n", outfile);
     }
                                                    
     INT4 i = 0, length = data->dataTimes->length;
-    
-    UINT4 withphase = *(UINT4 *)LALInferenceGetVariable( data->dataParams, 
-                                                            "withphase" );
-    UINT4 withphasetmp = 1;                                               
-    
+   
     /* for injection always attempt to include the signal phase model even if
        the search is not going to be over phase */
-    LALInferenceSetVariable( data->dataParams, "withphase", &withphasetmp );
+    UINT4 varyphasetmp = varyphase;
+    varyphase = 1;
                                                             
     /* create the signal */
     get_triaxial_pulsar_model( injpars, data );
@@ -2015,8 +2131,8 @@ injection\n", outfile);
     
     if ( fp != NULL ) fclose( fp );
     
-    /* reset withphase to its original value */
-    LALInferenceSetVariable( data->dataParams, "withphase", &withphase );
+    /* reset varyphase to its original value */
+    varyphase = varyphasetmp;
     
     data = data->next; 
   }
@@ -2078,15 +2194,28 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
 /* function to use change point analysis to chop up and remerge the data to
    find stationary chunks (i.e. lengths of data which look like they have the
    same statistics e.g. the same standard deviation) */
-UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin ){
+UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, 
+                           INT4 chunkMax ){
   UINT4 j = 0;
   
   UINT4Vector *chunkLengths = NULL;
   UINT4Vector *chunkIndex = NULL;
   
-  chunkIndex = chop_data( data->compTimeData->data, chunkMin );
+  COMPLEX16Vector *meddata = NULL;
   
-  merge_data( data->compTimeData->data, chunkIndex );
+  /* subtract a running median value from the data to remove any underlying
+     trends (e.g. caused by a string signal) that might affect the chunk
+     calculations (which can assume the data is Gaussian with zero mean). */
+  meddata = subtract_running_median( data->compTimeData->data );
+  
+  chunkIndex = chop_data( meddata, chunkMin );
+  
+  merge_data( meddata, chunkIndex );
+  
+  /* if a maximum chunk length is defined then rechop up the data, to segment
+     any chunks longer than this value */
+  if ( chunkMax > chunkMin )
+    rechop_data( chunkIndex, chunkMax, chunkMin );
   
   chunkLengths = XLALCreateUINT4Vector( chunkIndex->length );
   
@@ -2128,6 +2257,59 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin ){
 }
 
 
+COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
+  COMPLEX16Vector *submed = NULL;
+  UINT4 length = data->length, i = 0, j = 0, n = 0; 
+  UINT4 RANGE = 30; /* perform running median with 30 data points */
+  UINT4 N = (UINT4)floor(RANGE/2); 
+  INT4 sidx = 0;
+ 
+  submed = XLALCreateCOMPLEX16Vector( length );
+  
+  for ( i = 1; i < length+1; i++ ){
+    double *dre = NULL;
+    double *dim = NULL;
+    
+    /* get median of data within RANGE */
+    if ( i < N ){
+      n = N+i;     
+      sidx = 0;
+    }
+    else if ( i > length - N ){
+      n = length - i + N;     
+      sidx = (i-N)-1;
+    }
+    else{
+      n = RANGE;
+      sidx = i-N;
+    }
+    
+    dre = XLALCalloc( n, sizeof(double) );
+    dim = XLALCalloc( n, sizeof(double) );
+    
+    for ( j = 0; j < n; j++ ){
+      dre[j] = data->data[j+sidx].re;
+      dim[j] = data->data[j+sidx].im;
+    }
+    
+    /* sort data */
+    gsl_sort( dre, 1, n );
+    gsl_sort( dim, 1, n );
+    
+    /* get median and subtract from data*/
+    submed->data[i-1].re = data->data[i-1].re
+      - gsl_stats_median_from_sorted_data( dre, 1, n );
+    submed->data[i-1].im = data->data[i-1].im
+      - gsl_stats_median_from_sorted_data( dim, 1, n );
+      
+    XLALFree( dre );
+    XLALFree( dim );
+  }
+  
+  return submed;
+}
+
+
 /* function to find change points and chop up the data */
 UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
   UINT4Vector *chunkIndex = NULL;
@@ -2141,10 +2323,9 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
   
   chunkIndex = XLALCreateUINT4Vector( 1 );
   
-  changepoint = find_change_point( data, &logodds );
+  changepoint = find_change_point( data, &logodds, chunkMin );
   
-  if ( logodds > threshold && changepoint > (UINT4)chunkMin 
-    && length - changepoint > (UINT4)chunkMin ){
+  if ( logodds > threshold ){
     UINT4Vector *cp1 = NULL;
     UINT4Vector *cp2 = NULL;
     
@@ -2152,11 +2333,11 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
     COMPLEX16Vector *data2 = XLALCreateCOMPLEX16Vector( length - changepoint );
   
     UINT4 i = 0, l = 0;
-  
+    
     /* fill in data */
     for (i = 0; i < changepoint; i++)
       data1->data[i] = data->data[i];
-  
+
     for (i = 0; i < length - changepoint; i++)
       data2->data[i] = data->data[i+changepoint];
     
@@ -2191,91 +2372,61 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
    with independent standard deviations. It will return the index of the index
    of the point at with the data statistics change, and the log odds ratio of
    the two hypotheses at that point. */ 
-UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds ){
+UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, 
+                         INT4 minlength ){
   UINT4 changepoint = 0, i = 0;
-  UINT4 length = data->length;
+  UINT4 length = data->length, lsum = 0;
   
-  REAL8 datameanre = 0., datameanim = 0., datasum = 0.;
+  REAL8 datasum = 0.;
   
   REAL8 logsingle = 0., logtot = -LAL_REAL8_MAX;
   REAL8 logdouble = 0., logdouble_min = -LAL_REAL8_MAX;
   REAL8 logratio = 0.;
-  
-  COMPLEX16 muforward = {0., 0.}, muback = {0., 0.};
+ 
   REAL8Vector *sumforward = NULL, *sumback = NULL;
   
-  REAL8 lengthtemp1 = 0., lengthtemp2 = 0.;
-  
-  /* calculate the mean of the data (put real and imaginary parts together) */
-  for (i = 0; i < length; i++){
-    datameanre += data->data[i].re;
-    datameanim += data->data[i].im;
+  /* check that data is at least twice the minimum length, if not return an
+     odds ratio of zero (log odds = -inf [or close to that!]) */
+  if ( length < (UINT4)(2*minlength) ){
+    logratio = -LAL_REAL8_MAX;
+    memcpy(logodds, &logratio, sizeof(REAL8));
+    return 0;
   }
-    
-  datameanre /= (REAL8)length;
-  datameanim /= (REAL8)length;
   
-  /* calculate the sum of the data minus the mean squared */
+  /* calculate the sum of the data squared */
   for (i = 0; i < length; i++){
-    datasum += (data->data[i].re - datameanre) * (data->data[i].re -
-      datameanre);
-    datasum += (data->data[i].im - datameanim) * (data->data[i].im -
-      datameanim);
+    datasum += SQUARE( data->data[i].re );
+    datasum += SQUARE( data->data[i].im );
   }
   
   /* calculate the evidence that the data consists of a Gaussian data with a
      single standard deviation */
-  logsingle = 2. * ( ((REAL8)length - 1.)*LAL_LN2 + logfactorial[length] ) -
-    (REAL8)length * log( datasum );
+  logsingle = -2 + logfactorial[length-1] - (REAL8)length * log( datasum );
+   
+  /* to speed up process calculate data sums first */
+  lsum = length - 2*minlength + 1;
+  sumforward = XLALCreateREAL8Vector( lsum );
+  sumback = XLALCreateREAL8Vector( lsum );
   
-  /* to speed up process calculate means and data sums first */
-  sumforward = XLALCreateREAL8Vector( length - 2 );
-  sumback = XLALCreateREAL8Vector( length - 2 );
+  sumforward->data[0] = 0.;
+  sumback->data[0] = 0.;
   
-  for ( i = 0; i < length-2; i++ ){
-    if ( i == 0 ){
-      lengthtemp1 = 2.;
-      muforward.re = ( data->data[i].re + data->data[i+1].re ) /
-        lengthtemp1;
-      muforward.im = ( data->data[i].im + data->data[i+1].im ) /
-        lengthtemp1;
-        
-      muback.re = ( data->data[length-1].re + data->data[length-2].re )
-        / lengthtemp1;
-      muback.im = ( data->data[length-1].im + data->data[length-2].im )
-        / lengthtemp1;
-     
-      sumforward->data[i] = SQUARE( data->data[i].re - muforward.re );
-      sumforward->data[i] += SQUARE( data->data[i+1].re - muforward.re );
-      sumforward->data[i] += SQUARE( data->data[i].im - muforward.im );
-      sumforward->data[i] += SQUARE( data->data[i+1].im - muforward.im );
-        
-      sumback->data[i] = SQUARE( data->data[length-1].re - muback.re );
-      sumback->data[i] += SQUARE( data->data[length-2].re - muback.re );
-      sumback->data[i] += SQUARE( data->data[length-1].im - muback.im );
-      sumback->data[i] += SQUARE( data->data[length-2].im - muback.im );
+  for ( i = 0; i < length - minlength; i++ ){    
+    if ( i < (UINT4)minlength ){
+      sumforward->data[0] += SQUARE( data->data[i].re );
+      sumforward->data[0] += SQUARE( data->data[i].im );
+      
+      sumback->data[0] += SQUARE( data->data[length-(i+1)].re );
+      sumback->data[0] += SQUARE( data->data[length-(i+1)].im );
     }
     else{
-      lengthtemp2 = lengthtemp1 + 1;
-      muforward.re = ( muforward.re * lengthtemp1 +
-        data->data[i+1].re ) / lengthtemp2;
-      muforward.im = ( muforward.im * lengthtemp1 +
-        data->data[i+1].im ) / lengthtemp2;
-        
-      muback.re = ( muback.re * lengthtemp1 +
-        data->data[length-(i+2)].re ) / lengthtemp2;
-      muback.im = ( muback.im * lengthtemp1 +
-        data->data[length-(i+2)].im ) / lengthtemp2;
-        
-      lengthtemp1++;
+      sumforward->data[i+1-minlength] = sumforward->data[i-minlength] + 
+        SQUARE( data->data[i].re );
+      sumforward->data[i+1-minlength] += SQUARE( data->data[i].im );
       
-      sumforward->data[i] = sumforward->data[i-1] + 
-        SQUARE( data->data[i].re - muforward.re );
-      sumforward->data[i] += SQUARE( data->data[i].im - muforward.im );
-      
-      sumback->data[i] = sumback->data[i-1] + 
-        SQUARE( data->data[length-(i+2)].re - muback.re );
-      sumback->data[i] += SQUARE( data->data[length-(i+2)].im - muback.im );
+      sumback->data[i+1-minlength] = sumback->data[i-minlength] +
+        SQUARE( data->data[length-(i+1)].re );
+      sumback->data[i+1-minlength] += SQUARE( data->data[length-(i+1)].im );
     }
   }
   
@@ -2283,26 +2434,26 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds ){
      data consisting of two independent Gaussian's either side of the change
      point. Also calculate the total evidence for any change point */
   /* Don't allow single points, so start at the second data point. */
-  for (i = 2; i < length-1; i++){
-    UINT4 ln1 = i, ln2 = (length - i);
+  for (i = 0; i < lsum; i++){ 
+    UINT4 ln1 = i+minlength, ln2 = (length-i-minlength);
    
     REAL8 log_1 = 0., log_2 = 0.;
     
     /* get log evidences for the individual segments */
-    log_1 = 2. * ( ((REAL8)ln1 - 1.)*LAL_LN2 + logfactorial[ln1] ) -
-      (REAL8)ln1 * log( sumforward->data[i-2] );
-    log_2 = 2. * ( ((REAL8)ln2 - 1.)*LAL_LN2 + logfactorial[ln2] ) -
-      (REAL8)ln2 * log( sumback->data[length-(i+1)] );
+    log_1 = -2 + logfactorial[ln1-1] -
+      (REAL8)ln1 * log( sumforward->data[i] );
+    log_2 = -2 + logfactorial[ln2-1] -
+      (REAL8)ln2 * log( sumback->data[lsum-i-1] );
       
     /* get evidence for the two segments */
     logdouble = log_1 + log_2;
-    
+   
     /* add to total evidence for a change point */
     logtot = LOGPLUS(logtot, logdouble);
-       
+    
     /* find maximum value of logdouble and record that as the change point */
     if ( logdouble > logdouble_min ){
-      changepoint = i;
+      changepoint = ln1;
       logdouble_min = logdouble;
     }
   }
@@ -2318,21 +2469,83 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds ){
 }
 
 
+void rechop_data( UINT4Vector *chunkIndex, INT4 chunkMax, INT4 chunkMin ){
+  INT4 i = 0, j = 0, count = 0;
+  INT4 length = chunkIndex->length;
+  INT4 endIndex = (INT4)chunkIndex->data[length-1];
+  UINT4 startindex = 0, chunklength = 0;
+  
+  UINT4Vector *newindex = NULL;
+  newindex = XLALCreateUINT4Vector( ceil((REAL8)endIndex / (REAL8)chunkMax ) );
+  
+  /* chop any chunks that are greater than chunkMax into chunks smaller than,
+     or equal to chunkMax, and greater than chunkMin */
+  for ( i = 0; i < length; i++ ){
+    if ( i == 0 ) startindex = 0;
+    else startindex = chunkIndex->data[i-1]+1;
+    
+    chunklength = chunkIndex->data[i] - startindex;
+    
+    if ( chunklength > (UINT4)chunkMax ){
+      INT4 remain = chunklength % chunkMax;
+      
+      /* cut segment into as many chunkMin chunks as possible */
+      for ( j = 0; j < floor(chunklength / chunkMax); j++ ){
+        newindex->data[count] = startindex + (j+1)*chunkMax;
+        count++;
+      }
+      
+      /* last chunk values */
+      if ( remain != 0 ){
+        /* set final value */
+        newindex->data[count] = startindex + j*chunkMax + remain;
+        
+        if ( remain < chunkMin ){
+          /* split the last two cells into one that is chunkMin long and one
+             that is (chunkMax+remainder)-chunkMin long - this may leave a cell
+             shorter than chunkMin, but we'll have to live with that! */
+          INT4 n1 = (chunkMax + remain) - chunkMin;
+       
+          /* reset second to last value two values */
+          newindex->data[count-1] = newindex->data[count] - chunkMin;
+        
+          if ( n1 < chunkMin && verbose ){
+            fprintf(stderr, "Non-fatal error... segment no. %d is %d long, \
+which is less than chunkMin = %d.\n", count, n1, chunkMin);
+          }
+        }
+        
+        count++;
+      }
+    }
+    else{
+      newindex->data[count] = chunkIndex->data[i];
+      count++;
+    }
+  }
+  
+  chunkIndex = XLALResizeUINT4Vector( chunkIndex, count );
+
+  for ( i = 0; i < count; i++ ) chunkIndex->data[i] = newindex->data[i];
+  
+  XLALDestroyUINT4Vector( newindex );  
+}
+
+
 /* function to merge chunks */
 void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
   UINT4 j = 0;
   REAL8 threshold = 0.; /* may need to be passed to function in the future, or
                            defined globally */
-  
+                           
   /* loop until stopping criterion is reached */
   while( 1 ){
     UINT4 ncells = segs->length;
+    
     UINT4 mergepoint = 0;
     REAL8 logodds = 0., minl = -LAL_REAL8_MAX;
     
     for (j = 1; j < ncells; j++){
-      REAL8 meanmergedre = 0., meanmergedim = 0.; 
-      REAL8 mu1re = 0., mu1im = 0., mu2re = 0., mu2im = 0.;
       REAL8 summerged = 0., sum1 = 0., sum2 = 0.;
       UINT4 i = 0, n1 = 0, n2 = 0, nm = 0;
       UINT4 cellstarts1 = 0, cellends1 = 0, cellstarts2 = 0, cellends2 = 0;
@@ -2347,68 +2560,43 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
       cellstarts2 = segs->data[j-1];
       cellends2 = segs->data[j];
       
-      n1 = cellends1 - cellstarts1 - 1;
-      n2 = cellends2 - cellstarts2 - 1;
-      nm = cellends2 - cellstarts1 - 1;
+      n1 = cellends1 - cellstarts1;
+      n2 = cellends2 - cellstarts2;
+      nm = cellends2 - cellstarts1;
       
       for( i = cellstarts1; i < cellends1; i++ ){
-        mu1re += data->data[i].re;
-        mu1im += data->data[i].im;
-      }
-        
-      for( i = cellstarts2; i < cellends2; i++ ){
-        mu2re += data->data[i].re;
-        mu2im += data->data[i].im;
-      }
-      
-      meanmergedre = (mu1re + mu2re) / (REAL8)nm;
-      meanmergedim = (mu1im + mu2im) / (REAL8)nm;
-      mu1re /= (REAL8)n1;
-      mu1im /= (REAL8)n1;
-      mu2re /= (REAL8)n2;
-      mu2im /= (REAL8)n2;
-      
-      for( i = cellstarts1; i < cellends1; i++ ){
-        sum1 += (data->data[i].re - mu1re) * (data->data[i].re - mu1re);
-        sum1 += (data->data[i].im - mu1im) * (data->data[i].im - mu1im);
+        sum1 += SQUARE( data->data[i].re );
+        sum1 += SQUARE( data->data[i].im );
       }
       
       for( i = cellstarts2; i < cellends2; i++ ){
-        sum2 += (data->data[i].re - mu2re) * (data->data[i].re - mu2re);
-        sum2 += (data->data[i].im - mu2im) * (data->data[i].im - mu2im);
+        sum2 += SQUARE( data->data[i].re );
+        sum2 += SQUARE( data->data[i].im );
       }
       
-      for( i = cellstarts1; i < cellends2; i++ ){
-        summerged += (data->data[i].re - meanmergedre) * (data->data[i].re -
-          meanmergedre);
-        summerged += (data->data[i].im - meanmergedim) * (data->data[i].im -
-          meanmergedim);
-      }
+      summerged = sum1 + sum2;
       
       /* calculated evidences */
-      log_merged = 2. * ( ((REAL8)nm - 1.)*LAL_LN2 + logfactorial[nm] ) -
-        (REAL8)nm * summerged;
+      log_merged = -2 + logfactorial[nm-1] - (REAL8)nm * log( summerged );
         
-      log_individual = 2. * ( ((REAL8)n1 - 1)*LAL_LN2 + logfactorial[n1] ) -
-        (REAL8)n1 * sum1;
-      log_individual += 2. * ( ((REAL8)n2 - 1)*LAL_LN2 + logfactorial[n2] ) -
-        (REAL8)n2 * sum2;
+      log_individual = -2 + logfactorial[n1-1] - (REAL8)n1 * log( sum1 );
+      log_individual += -2 + logfactorial[n2-1] - (REAL8)n2 * log( sum2 );
       
       logodds = log_merged - log_individual;
       
       if ( logodds > minl ){
         mergepoint = j - 1;
         minl = logodds;
-      } 
+      }
     }
     
     /* set break criterion */
     if ( minl < threshold ) break;
     else{ /* merge cells */
-      /* remove the cell end value between the two being merged and shift */
-      memcpy( &segs->data[mergepoint], &segs->data[mergepoint+1], (ncells -
-              mergepoint - 1) * sizeof(UINT4) );
-      
+      /* remove the cell end value between the two being merged and shift */   
+      for( UINT4 i=0; i < ncells-(mergepoint+1); i++ )
+        segs->data[mergepoint+i] = segs->data[mergepoint+i+1];
+        
       segs = XLALResizeUINT4Vector( segs, ncells - 1 );
     }
   }
