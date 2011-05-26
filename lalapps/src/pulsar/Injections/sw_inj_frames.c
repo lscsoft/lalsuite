@@ -17,6 +17,14 @@
  *  MA  02111-1307  USA
  */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Erin Macdonald
+ * \brief
+ * Code to create frames and add them to existing data files
+ */
+
 /* Code to create frames and add them to existing data files
 Input format as $ ./sw_inj_frames framefile duration epoch
 example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_files -g /Users/erinmacdonald/lsc/analyses/frames -c /Users/erinmacdonald/lsc/analyses/CWINJframes -I H1 -e /Users/erinmacdonald/lsc/src/lscsoft/lalsuite/lalpulsar/test -y 09-11
@@ -25,9 +33,6 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 /* 2/3/11 v. 2 (which is not entirely accurate, but I'm starting from here): added a log file, version number, and separate channel for i(t) -- E. Macdonald */
 /* 3/3/11 v. 3: placed log comments throughout */
 /* 7/3/11 v. 4: output file to dump ascii of failed frames */
-/* 21/3/11 v. 5: fixed closing .par file L520 */
-/* 9/4/11 v.6: including proper motion calculations */
-/* 12/5/11 v.7: fix memory leak */
 
 #include <stdio.h>
 #include <unistd.h>
@@ -113,7 +118,7 @@ int main(int argc, char **argv)
     return 0;  
 
   char version[256];
-  sprintf(version, "v7"); /*manually change */
+  sprintf(version, "v4"); /*manually change */
 
   /*Get current time for log */
   time_t result;
@@ -124,7 +129,7 @@ int main(int argc, char **argv)
   FILE *logfile;
   char log_file[256];
 
-  sprintf(log_file, "%s/%s/injections.log", uvar->outputdir, uvar->logDir); /*How to name log files separately?*/
+  sprintf(log_file, "%s/%s/test.log", uvar->outputdir, uvar->logDir); /*How to name log files separately?*/
   fprintf(stderr, "Your log file is here: %s\n", log_file);
 
   /*Writing to .log file*/
@@ -146,8 +151,8 @@ int main(int argc, char **argv)
   lalDebugLevel = 1;	/* debug level for this code */
   LALStatus status = empty_LALStatus;
   
-  /*PulsarSignalParams params = empty_PulsarSignalParams;*/ /*pulsar parameter structure*/
-  /*BinaryPulsarParams pulparams;*/ /* read from the .par file */
+  PulsarSignalParams params = empty_PulsarSignalParams; /*pulsar parameter structure*/
+  BinaryPulsarParams pulparams; /* read from the .par file */
   
   /*  sprintf(lalframefile, "%s", argv[1]);  User defined frame file -- need to simplify */
   /*  sprintf(gwfframefile, "%s", argv[2]);  Frame file to be read in*/
@@ -174,10 +179,10 @@ int main(int argc, char **argv)
   }
   
   
- /*  if ( (params.pulsar.spindown = XLALCreateREAL8Vector(1))== NULL ) { */
-/*     XLALPrintError("Out of memory"); */
-/*     XLAL_ERROR ( fn, XLAL_EFUNC ); */
-/*   } */
+  if ( (params.pulsar.spindown = XLALCreateREAL8Vector(1))== NULL ) {
+    XLALPrintError("Out of memory");
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
   
   /*Error Checks*/
   /*    if (uvar->in_chan == 0){*/
@@ -251,24 +256,12 @@ int main(int argc, char **argv)
     XLALPrintError ("%s: scandir() failed for directory '%s'\n", fn, uvar->inputdir );
     XLAL_ERROR ( fn, XLAL_EIO );
   }
-
   UINT4 numParFiles = (UINT4)n;
   UINT4 h=0;
   /*h starts at 2 to skip over . and .. found in scandir, they are the first two entries */
-  
-  /* MATTS EDIT */
-  free(parnamelist[0]);
-  free(parnamelist[1]);
-  /* MATTS EDIT */
-  
   for (h=2; h < numParFiles; h++) {
     if(strstr(parnamelist[h]->d_name, ".par") == NULL){
       fprintf(stderr, "Not using file %s\n",parnamelist[h]->d_name);
-      
-      /* MATTS EDIT */
-      free(parnamelist[h]);
-      /* MATTS EDIT */
-      
       continue;
     }
     else{
@@ -286,39 +279,20 @@ int main(int argc, char **argv)
 	  strftime(t, 100, "%d/%m/%Y %H:%M:%S", localtime( &b.st_mtime));
 	  fprintf (logfile, "%s/%s Last Modified: %s\n", uvar->inputdir, parnamelist[h]->d_name, t);
 	  fclose(logfile);
-        }
+	}
       }
       /* </log file> */
     } /*checking if file ends in .par*/
-    
-    /* MATTS EDIT */
-    free(parnamelist[h]);
-    /* MATTS EDIT */
-  
   }/*looping through files in uvar->inputdir */
-
-  /* MATTS EDIT */
-  free(parnamelist);
-  /* MATTS EDIT */
 
   if ( (m = scandir(uvar->gwfdir, &gwfnamelist, 0, alphasort)) == -1) {
     XLALPrintError ("%s: scandir('%s',...) failed.\n", fn, uvar->gwfdir );
     XLAL_ERROR ( fn, XLAL_EIO );
   }
   
-  /* MATTS EDIT */
-  free(gwfnamelist[0]);
-  free(gwfnamelist[1]);
-  /* MATTS EDIT */
-  
   UINT4 k=0;
   for (k=2; k < (UINT4)m; k++){
     if (strstr(gwfnamelist[k]->d_name, ".gwf") == NULL){
-      
-      /* MATTS EDIT */
-      free(gwfnamelist[k]);
-      /* MATTS EDIT */
-      
       continue; /*make sure it's a .gwf file */
     }
     else{
@@ -337,7 +311,7 @@ int main(int argc, char **argv)
         }
         else {
           fprintf (frames, "%s\n", gwfnamelist[k]->d_name);
-	  fclose(frames);
+	  fclose(logfile);
         }
         /* </failed file> */
 	continue; /*don't exit program if .gwf file fails, continue through*/
@@ -423,16 +397,12 @@ int main(int argc, char **argv)
 	if ((series = XLALCreateREAL8TimeSeries( out_chan, &epoch, 0., 1./srate, &lalSecondUnit, (int)(ndata*srate) )) == NULL){
 	  XLAL_ERROR ( fn, XLAL_EFUNC );
 	}
-
-	FILE *filetest;
 	CHAR fffile[256];
 	snprintf(fffile,STRINGLENGTH,"%s/%s",uvar->outputdir,out_file);
-	if ( (filetest = fopen(fffile , "w+")) == NULL){
+	if (fopen(fffile , "w+") == NULL){
 	  fprintf(stderr, "fail");
 	}
 	
-	fclose(filetest);
-
 	/*if (( frfile = XLALFrOpen( uvar->outputdir, out_file )) == NULL){
 	  XLAL_ERROR ( fn, XLAL_EFUNC );
 	  }*/
@@ -456,50 +426,24 @@ int main(int argc, char **argv)
 	numParFiles=(UINT4)n;
 	h=0;
 	/*h starts at 2 to skip over . and .. found in scandir, they are the first two entries */
-	
-        /* MATTS EDIT */
-        free(parnamelist[0]);
-        free(parnamelist[1]);
-        /* MATTS EDIT */
-        
-        for (h=2; h < numParFiles; h++) {
+	for (h=2; h < numParFiles; h++) {
 	  if(strstr(parnamelist[h]->d_name, ".par") == NULL){
 	    fprintf(stderr, "Not using file %s\n",parnamelist[h]->d_name);
-            
-            /* MATTS EDIT */
-            free(parnamelist[h]);
-            /* MATTS EDIT */
-            
 	    continue;
 	  }
 	  else{
 	    sprintf(pulin, "%s/%s", uvar->inputdir, parnamelist[h]->d_name);
-	    fprintf(stderr, "This is your pulsar file:%s\n", pulin);
+	    /*fprintf(stderr, "This is your pulsar file:%s\n", pulin);*/
 	    if (( inject = fopen ( pulin, "r" )) == NULL ){
 	      fprintf(stderr, "Error opening file: %s\n", pulin);
 	      XLAL_ERROR ( fn, XLAL_EIO );
 	    }
-	    PulsarSignalParams params = empty_PulsarSignalParams; /*pulsar parameter structure*/
-	    BinaryPulsarParams pulparams; /* read from the .par file */
-	    if ( (params.pulsar.spindown = XLALCreateREAL8Vector(1))== NULL ) {
-	      XLALPrintError("Out of memory");
-	      XLAL_ERROR ( fn, XLAL_EFUNC );
-	    }
+	    
 	    /*read in parameters from .par file */
 	    XLALReadTEMPOParFile( &pulparams, pulin);
-	    /*fprintf(stderr, "%s\n", pulin);*/
-	    /*fprintf(stderr, "h=%i\n", h);*/
-	    
-	    /*Convert location with proper motion */
-	    if ( pulparams.posepoch == 0.0 )
-	      pulparams.posepoch = pulparams.pepoch; /*set posepoch to pepoch if position epoch not present */
-	    INT4 dtpos = epoch.gpsSeconds - (INT4)pulparams.posepoch; /*calculate time since posepoch */
-	    
-	    params.pulsar.position.latitude = pulparams.dec + dtpos * pulparams.pmdec;
-	    params.pulsar.position.longitude = pulparams.ra + dtpos * pulparams.ra / cos(params.pulsar.position.latitude);
-	    
+	    params.pulsar.position.longitude = pulparams.ra;
+	    params.pulsar.position.latitude = pulparams.dec;
 	    params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
-	    
 	    params.pulsar.f0 = 2.*pulparams.f0;
 	    params.pulsar.spindown->data[0] = 2.*pulparams.f1; /*spindown is REAL8Vector ?? */
 	    if (( XLALGPSSetREAL8(&(params.pulsar.refTime),pulparams.pepoch) ) == NULL ){
@@ -513,7 +457,6 @@ int main(int argc, char **argv)
 	    
 	    /*if binary */
 	    if (pulparams.model != NULL) {
-	      fprintf(stderr, "You have a binary! %s", pulin);
 	      params.orbit->asini = pulparams.x;
 	      params.orbit->period = pulparams.Pb*86400;
 	      
@@ -532,7 +475,7 @@ int main(int argc, char **argv)
 		params.orbit->ecc = pulparams.e;
 	      }
 	      if (strstr(pulparams.model,"ELL1") != NULL) {
-		REAL8 fe, uasc, Dt;
+		REAL8 fe, uasc,Dt;
 		fe = sqrt((1.0-params.orbit->ecc)/(1.0+params.orbit->ecc));
 		uasc = 2.0*atan(fe*tan(params.orbit->argp/2.0));
 		Dt = (params.orbit->period/LAL_TWOPI)*(uasc-params.orbit->ecc*sin(uasc));
@@ -544,26 +487,17 @@ int main(int argc, char **argv)
 	    } /* if pulparams.model is BINARY */
 	    else
 	      params.orbit = NULL; /*if pulparams.model = NULL -- isolated pulsar*/
+            
 	    params.site = site;
 	    params.ephemerides = edat;
 	    params.startTimeGPS = epoch;
 	    params.duration = ndata; /*maybe want to take out conversion and keep this uvar->duration*/
 	    params.samplingRate = srate; /*same as above*/
-	    params.fHeterodyne = 0.; 
+	    params.fHeterodyne = 0.; /*not sure what this is, will check */
 	    
 	    REAL4TimeSeries *TSeries = NULL;
-	    fprintf(stderr, "status%i\n", status.statusCode);
 	    LALGeneratePulsarSignal (&status, &TSeries, &params);
 	    if ( status.statusCode ) {
-	      if (( logfile = fopen( log_file, "a" )) == NULL ) {
-		fprintf (stderr, "Error opening .log file! \n" );
-		return 0;
-	      }
-	      else {
-		fprintf (logfile, "LAL Routine failed at pulsar %s\n", pulin);
-		XLAL_ERROR ( fn, XLAL_EFAILED );
-		fclose(logfile);
-	      }
 	      fprintf( stderr, "LAL Routine failed\n" );
 	      XLAL_ERROR ( fn, XLAL_EFAILED );
 	    }
@@ -572,21 +506,10 @@ int main(int argc, char **argv)
 	      total_inject->data->data[i] += TSeries->data->data[i];
 	    }
 	    /*	  if ((total_inject = XLALFrameAddREAL8TimeSeriesProcData(frfile, TSeries)) == NULL)*/
-	    fprintf(stderr, "your pulsar is %s\n", pulin);
 	    XLALDestroyREAL4TimeSeries (TSeries);
-	    fclose( inject ); /*close .par file */
 	  } /* for strstr .par  */
+	} /*for k<num par files */
 	
-          /* MATTS EDIT */
-          free(parnamelist[h]);
-          /* MATTS EDIT */
-        
-        } /*for k<num par files */
-	
-	/* MATTS EDIT */
-	free(parnamelist);
-	/* MATTS EDIT */
-        
 	/*add to series*/
 	for (i=0; i < series->data->length; i++){
 	  series->data->data[i] = gwfseries->data->data[i] + total_inject->data->data[i];
@@ -611,10 +534,31 @@ int main(int argc, char **argv)
 	  XLAL_ERROR(fn,XLAL_EFAILED);
 	}
 	
-	/*if (( XLALFrWriteREAL8TimeSeries( series, 1 ) ) != XLAL_SUCCESS ){
+	if (( XLALFrWriteREAL8TimeSeries( series, 1 ) ) != XLAL_SUCCESS ){
 	  XLAL_ERROR( fn, XLAL_EFUNC );
-	  }*/
-
+	}
+	
+	/****Test for Matlab****/
+	FILE *outtest;
+        if (( outtest = fopen( "/Users/erinmacdonald/lsc/analyses/sw_injections/test.txt", "w" )) == NULL)
+          fprintf(stderr, "Error opening file\n");
+        else{
+          for (i = 0; i < series->data->length; i++){
+            fprintf(outtest,"%e\n",series->data->data[i] );
+          }
+          fclose(outtest);
+        }
+	FILE *injtest;
+	if (( injtest = fopen( "/Users/erinmacdonald/lsc/analyses/sw_injections/injtest.txt","w" )) == NULL)
+	  fprintf(stderr, "Error opening injection file\n");
+	else{
+	  for (i = 0; i < total_inject->data->length; i++){
+	    fprintf(injtest,"%e\n",total_inject->data->data[i] );
+	  }
+	  fclose(injtest);
+	}
+        /****End test****/
+	
 	XLALDestroyREAL8TimeSeries( gwfseries);
 	XLALDestroyREAL8TimeSeries( total_inject );
 	XLALDestroyREAL8TimeSeries( series );
@@ -628,11 +572,6 @@ int main(int argc, char **argv)
 	/*  XLALDestroyREAL8TimeSeries( series );*/
 
       } /*ends loop for creating CWINJ .gwf file */
-      
-      /* MATTS EDIT */
-      free(gwfnamelist[k]);
-      /* MATTS EDIT */
-      
       /*Writing to .log file*/
       if (( logfile = fopen( log_file, "a" )) == NULL ) {
 	fprintf (stderr, "Error opening .log file! \n" );
@@ -643,17 +582,9 @@ int main(int argc, char **argv)
 	fclose(logfile);
       }
       /* </log file> */
-      fprintf(stderr, "you created %s", out_file);
-      
-      XLALFrClose( gwffile );
-    
+
     } /*ends loop through all .gwf files in .gwf directory*/
   }
-  
-  /* MATTS EDIT */
-  free(gwfnamelist);
-  /* MATTS EDIT */
-  
   return 1;
     
 } /* main() */
