@@ -24,11 +24,11 @@
  * \brief multipulsar injection routine
  */
 
-/* 
+/*
    multipulsar injection routine, written for E10/S3 by Bruce Allen,
    10/2003.  Calls to Signal Injection Library added by Peter
-   Shawhan.  
-   
+   Shawhan.
+
    2005/02 - Duncan Brown renamed variable to avoid Condor conflict
 
    2005/02 - Reinhard Prix removed the actuation scaling options
@@ -81,7 +81,7 @@ float data[BLOCKSIZE];
 float total[BLOCKSIZE];
 float testval=1234.5;
 char *directory;
-char *channel=NULL; 
+char *channel=NULL;
 int  gpstime=0;
 char *programname;
 int show=0;
@@ -104,7 +104,7 @@ float *buffs[MAXPULSARS];
 
 double calamp[3]={0.0, 0.0, 0.0};
 
-/* 
+/*
    Calibration line frequencies. THE CODE ASSUMES THAT THESE ARE
    POSITIVE.  Order is Low, Medium, High frequency.  If you change
    these, you MUST choose a frequency that can be exactly represented
@@ -139,20 +139,20 @@ void sighandler(int sig){
   int hours=minutes/60;
   int days=hours/24;
   int secs=seconds % 60;
-  
+
   syserror(0, "made %d days %d hours %d minutes %d seconds of data\n",
 	   days, hours % 24, minutes % 60, secs);
 
   syserror (0, "Received signal %d\n", sig);
-  
+
   if (sig==SIGTERM) {
     syserror(0, "received SIGTERM, initiating graceful shutdown...\n");
     shutdown_pulsar_injection = 1;
   }
-  
-  if (sig!=SIGCHLD) 
+
+  if (sig!=SIGCHLD)
     return;
-  
+
   if((pid=waitpid(-1, &status, WNOHANG | WUNTRACED))>0) {
     /* if child stopped, make log entry then return */
     if (WIFSTOPPED(status)) {
@@ -160,20 +160,20 @@ void sighandler(int sig){
 	       (int)pid, WSTOPSIG(status), strsignal(WSTOPSIG(status)));
       return;
     }
-    
+
     /* otherwise something more serious is wrong... */
     syserror(0, "Subprocess [PID=%d] is misbehaving.\n", (int)pid);
     if (WIFEXITED(status))
       syserror(0, "Subprocess [PID=%d] or shell did exit(%d)\n", (int)pid, WEXITSTATUS(status));
-    
+
     if (WIFSIGNALED(status))
-      syserror(0, "Subprocess [PID=%d] terminated because it caught signal %d [%s]\n", 
-	       (int)pid, WTERMSIG(status), strsignal(WTERMSIG(status)));      
+      syserror(0, "Subprocess [PID=%d] terminated because it caught signal %d [%s]\n",
+	       (int)pid, WTERMSIG(status), strsignal(WTERMSIG(status)));
     exit(1);
   }
   else
     syserror(1, "waitpid() returned -1.  Call Bruce...\n");
-  return; 
+  return;
 }
 
 /* Like perror() but takes variable numbers of arguments and includes program name */
@@ -231,11 +231,11 @@ void usage(FILE *filep){
 
 
 int parseinput(int argc, char **argv){
-  
+
   int c;
   const char *optionlist="hL:M:H:n:d:e:DG:TXspI:A:F:vS:";
   opterr=0;
-  
+
   /* set some defaults */
   directory = strdup(".");
 
@@ -392,14 +392,14 @@ int parseinput(int argc, char **argv){
     exit(1);
   }
 
-  
+
 #ifndef ONLINE
   if (channel) {
     syserror(0, "Can't do exicitations. Code not compiled with ONLINE defined\n");
     exit(1);
   }
-#endif      
-  
+#endif
+
   return 0;
 }
 
@@ -415,7 +415,7 @@ int main(int argc, char *argv[]){
 #endif
 
   parseinput(argc, argv);
-  
+
   syserror(0, "Starting up\n");
 
   /* install signal handler to catch SIGCHLD. Note that solaris uses
@@ -437,7 +437,7 @@ int main(int argc, char *argv[]){
       syserror(1, "Unable to install signal handler for logging output rate data\n");
     }
   }
-  
+
   for (i=0; i<npulsars; i++){
     char command[MAXLINE];
     char filename[MAXLINE];
@@ -451,7 +451,7 @@ int main(int argc, char *argv[]){
 	      programname, directory, i, MAXLINE);
       exit(1);
     }
-    
+
     /* open file */
     if (!(fpc=fopen(filename, "r"))) {
       syserror(1, "Can't open file %s for reading\n", filename);
@@ -464,7 +464,7 @@ int main(int argc, char *argv[]){
       exit(1);
     }
     fclose(fpc);
-    
+
     /* check that contents are not too large */
     length=strlen(command);
     if (length>=MAXLINE-1) {
@@ -472,7 +472,7 @@ int main(int argc, char *argv[]){
 	       filename, MAXLINE);
       exit(1);
     }
-    
+
     /* replace first NEWLINE to null terminate string */
     if ((newlineloc=index(command, '\n')))
 	*newlineloc='\0';
@@ -514,7 +514,7 @@ int main(int argc, char *argv[]){
       }
     }
   }
-  
+
   /* a useful option for debugging -- show the output */
   if (show) {
     if (!npulsars)
@@ -533,16 +533,16 @@ int main(int argc, char *argv[]){
       syserror(0,"Subprocess with PID=%d is misbehaving.\n", (int)pid);
       if (WIFEXITED(status))
 	syserror(0, "Subprocess or shell did exit(%d)\n", WEXITSTATUS(status));
-      
+
       if (WIFSIGNALED(status))
-	syserror(0, "Subprocess terminated because it caught signal %d [%s]\n", 
+	syserror(0, "Subprocess terminated because it caught signal %d [%s]\n",
 		WTERMSIG(status), strsignal(WTERMSIG(status)));
       exit(1);
     }
   }
 #endif
-    
-  /* processes opened, read data*/  
+
+  /* processes opened, read data*/
   for (i=0; i<npulsars; i++){
     if (fread(&testval, sizeof(float), 1, fp[i]) != 1) {
       syserror(1, "Could not read first float 1234.5 from %d'th signal source\n", i);
@@ -558,7 +558,7 @@ int main(int argc, char *argv[]){
       exit(1);
     } else if (bufflen[i]% BLOCKSIZE) {
       syserror(0, "Bad buffer size %d floats from %d'th signal source NOT a multiple of BLOCKSIZE=%d\n", bufflen[i], i, BLOCKSIZE);
-      exit(1);  
+      exit(1);
     } else if (!(buffs[i]=(float *)calloc(bufflen[i], sizeof(float)))) {
       syserror(1, "Can't allocate buffer of %d floats for %d'th signal source\n", bufflen[i], i);
       exit(1);
@@ -566,7 +566,7 @@ int main(int argc, char *argv[]){
     /* ensure that we read buffers on first pass */
     readfrombuff[i]=bufflen[i];
   }
-  
+
 #if 0
   /* are we writing frames? */
   if (write_frames) {
@@ -587,11 +587,11 @@ int main(int argc, char *argv[]){
     }
     free( cwd );
     SIStrAppInfo( info );
-    
+
     /* Open the Signal Injection Stream */
     status = SIStrOpen( &sis, channel, 16384, (double) gpstime );
-    if ( SIStr_debug ) { 
-      syserror(0, "SIStrOpen() returned %d\n", status ); 
+    if ( SIStr_debug ) {
+      syserror(0, "SIStrOpen() returned %d\n", status );
     }
     if ( status != SIStr_OK ) {
       syserror(0, "SIStrOpen() error opening SIStream: %s\n", SIStrErrorMsg(status) );
@@ -599,7 +599,7 @@ int main(int argc, char *argv[]){
     }
 #endif
   }
-  else 
+  else
     if (do_text)
     printf("1234.5\n");
   else {
@@ -609,7 +609,7 @@ int main(int argc, char *argv[]){
       exit(1);
     }
   }
-  
+
   /* now read data blocks unless a SIGTERM has set shutdown */
   while (!shutdown_pulsar_injection) {
     int num=0;
@@ -619,7 +619,7 @@ int main(int argc, char *argv[]){
     /* clear block that will contain totals */
     for (j=0; j<BLOCKSIZE; j++)
       total[j]=0.0;
-    
+
     /* if needed, insert calibration line(s) */
     for (line=0; line<3; line++){
       if (calamp[line] != 0.0) {
@@ -638,7 +638,7 @@ int main(int argc, char *argv[]){
 	double f_fra  = calfreq[line];
 	int    f_int  = (int)f_fra;
 	f_fra -= f_int;
-	
+
 	/* integer and fractional time offsets of first sample */
 	t_rem   *= t_int;
 	t_int    = t_rem;
@@ -667,11 +667,11 @@ int main(int argc, char *argv[]){
 	}
       }
     }
-    
+
     /* loop over the different pulsars */
     for (i=0; i<npulsars; i++) {
       float *where;
-      
+
       if (readfrombuff[i]==bufflen[i]){
 	/* read data from the i'th signal */
 	if (bufflen[i]!=(num=fread(buffs[i], sizeof(float), bufflen[i], fp[i]))){
@@ -683,17 +683,17 @@ int main(int argc, char *argv[]){
 #endif
 	readfrombuff[i]=0;
       }
-      
+
       /* location of signal in buffer */
       where=buffs[i]+readfrombuff[i];
-      
+
       /* add i'th pulsar to the total signal */
       for (j=0; j<BLOCKSIZE; j++)
 	total[j]+=where[j];
-      
+
       readfrombuff[i]+=BLOCKSIZE;
     }
-    
+
     /* now output the total signal to frames */
     if (write_frames) {
 
@@ -708,7 +708,7 @@ int main(int argc, char *argv[]){
 	long ndata = BLOCKSIZE;
 	char framename[256];
 	struct stat statbuf;
-	
+
 	/* This leads to a names like: CW_Injection-921517800-60.gwf */
 	sprintf(framename, "CW_Injection");
 	frame = FrameHNew(framename);
@@ -720,12 +720,12 @@ int main(int argc, char *argv[]){
 	/* set up GPS time, sample interval, copy data */
 	frame->GTimeS = gpstime + counter;
 	frame->GTimeN = 0;
-	frame->dt = ndata/sampleRate;  
+	frame->dt = ndata/sampleRate;
 	sim = FrSimDataNew(frame,"CW_simulated", sampleRate, ndata, -32);
 	for (m=0; m < ndata; m++) {
 	    sim->data->dataF[m] = total[m];
 	}
-	
+
 	/* open framefile, to contain secs_per_framefile of data */
 	if (!counter) {
 	    oFile = FrFileONewM(framename, level, argv[0], secs_per_framefile);
@@ -733,29 +733,29 @@ int main(int argc, char *argv[]){
 		syserror(1, "Cannot open output file %s\n", framename);
 		exit(1);
 	    }
-	    /* Turn off the 'framefile boundary alignment'.  Without this one gets: 
+	    /* Turn off the 'framefile boundary alignment'.  Without this one gets:
 	       CW_Injection-921517807-3.gwf
 	       CW_Injection-921517810-10.gwf
 	       CW_Injection-921517820-10.gwf
 	       ...
-	       With this one gets 
+	       With this one gets
 	       CW_Injection-921517807-10.gwf
 	       CW_Injection-921517817-10.gwf
-	       ... 
+	       ...
 	    */
 	    oFile->aligned  = FR_NO;
 	}
-	
+
 	/* write data to framefile */
 	if (FR_OK != FrameWrite(frame, oFile)) {
 	    syserror(1, "Error during frame write\n"
 		     "  Last errors are:\n%s", FrErrorGetHistory());
 	    exit(1);
 	}
-	
+
 	/* free memory for frames and for simdata structures */
 	FrameFree(frame);
-	
+
 	/* Do we keep a limited set of frames on disk? */
 	if (write_frames>1) {
 	    char listname[256];
@@ -766,7 +766,7 @@ int main(int argc, char *argv[]){
 		/* if enough files already in place, then sleep 0.1 seconds */
 		struct timespec rqtp;
 		rqtp.tv_sec = 0;
-		rqtp.tv_nsec = 100000000; 
+		rqtp.tv_nsec = 100000000;
 		nanosleep(&rqtp, NULL);
 	    }
 	}
@@ -797,7 +797,7 @@ int main(int argc, char *argv[]){
 	long long x1=gpstime;
 	long long E9=1000000000;
 	x1*=E9;
-	
+
 	for (j=0; j<BLOCKSIZE; j++){
 	  long long x2=count, x3;
 	  x2 *= E9;
@@ -829,9 +829,9 @@ int main(int argc, char *argv[]){
     }
 
     /* increment counter of blocks sent out */
-    blocks++; 
+    blocks++;
   }
-  
+
   /* We'll be exiting, so clean up */
   if (channel) {
 #ifdef ONLINE
@@ -846,7 +846,7 @@ int main(int argc, char *argv[]){
 #endif
   }
 
-#ifdef _LINUX  
+#ifdef _LINUX
   /* shut down signal handler for SIGCHLD */
   {
     struct sigaction sig;
