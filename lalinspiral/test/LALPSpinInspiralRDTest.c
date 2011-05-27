@@ -15,38 +15,33 @@
 *  along with with program; see the file COPYING. If not, write to the
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
-*  
-* Compile with 
+*
+* Compile with
 * gcc `pkg-config --cflags lal lalsupport lalinspiral` LALPSpinInspiralRDTest.c `pkg-config --libs lal lalsupport lalinspiral` -o LALPSpinInspiralRDTest.out
 *
 */
 
-/**** <lalVerbatim file="LALSpinInspiralRDTestCV">
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Test program \texttt{LALSpinInspiralRDTest.c}}
- * \label{ss:LALSpinInspiralRDTest.c}
+/**
+ * \file
  *
- * Create a waveform based on HSpinTaylorRD model (LALSpinInspiralRD).
+ * \brief Create a waveform based on HSpinTaylorRD model (LALSpinInspiralRD).
  * Outputs a file with three columns corresponding to time (in seconds),
- * $h_+$, and $h_\times$.
- * 
- * \subsection*{Usage}
- * 
- * \texttt{LALSpinInspiralRDTest m1 m2 S1x S1y S1z S2x S2y S2z theta0 phi0 finit distance PNorder [outputfile]}
+ * \f$h_+\f$, and \f$h_\times\f$.
  *
- * The masses are given in solar masses. 
- * The spins are given as \texttt{chi1} and \texttt{chi2} times the unit vector;
+ * \heading{Usage}
+ *
+ * <tt>LALSpinInspiralRDTest m1 m2 S1x S1y S1z S2x S2y S2z theta0 phi0 finit distance PNorder [outputfile]</tt>
+ *
+ * The masses are given in solar masses.
+ * The spins are given as \c chi1 and \c chi2 times the unit vector;
  * the direction of the initial orbital angular momentum is assumed along the z axisg;
  * the final frequency is given in Hz, the distance in Mpc.
- * Legal values for \texttt{PNorder} include the strings
- * \texttt{newtonian}, \texttt{oneHalfPN}, \texttt{onePN}, \texttt{onePointFivePN},
- * \texttt{twoPN}, \texttt{twoPointFivePN}, \texttt{threePN}, \texttt{threePointFivePN}.
- * If outputfile is not given it is \texttt{wave1.dat} in the current directory.
-
- **** </lalLaTeX> */
+ * Legal values for \c PNorder include the strings
+ * \c newtonian, \c oneHalfPN, \c onePN, \c onePointFivePN,
+ * \c twoPN, \c twoPointFivePN, \c threePN, \c threePointFivePN.
+ * If outputfile is not given it is <tt>wave1.dat</tt> in the current directory.
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -72,7 +67,7 @@ int main() {
     INT4        i,length;
     REAL8       dt;
     REAL8       a1, a2, om;
-    
+
     const REAL8 omf=0.058;
     const REAL8 fi =40.;
     REAL8 omi,ff;
@@ -101,17 +96,17 @@ int main() {
     //injParams.f_final  = ff;
     omi=injParams.f_lower*(injParams.mass1+injParams.mass2)*LAL_MTSUN_SI*LAL_PI;
 
-    /*Inclination sets the angle between the line of sight and initial L, 
+    /*Inclination sets the angle between the line of sight and initial L,
        according to spinTaylor code convention*/
     injParams.inclination  = 72.9/180.*LAL_PI;
-    /* Neither psi nor the polarization are used by the LALPSpinInspiralRD 
+    /* Neither psi nor the polarization are used by the LALPSpinInspiralRD
        code, they will enter the pattern function along with the angles
        marking the sky position of the source*/
     ppnParams.psi          = -33.4/180.*LAL_PI;
     injParams.polarization = ppnParams.psi;
-    /* Polar angles of the source arrival direction enter the pattern 
-       functions, they do not matter for waveform construction and 
-       they won't be set here.*/ 
+    /* Polar angles of the source arrival direction enter the pattern
+       functions, they do not matter for waveform construction and
+       they won't be set here.*/
 
     injParams.spin1x = 0.74*sin(66./180.*LAL_PI)*cos(168./180.*LAL_PI);
     injParams.spin1y = 0.74*sin(66./180.*LAL_PI)*sin(168./180.*LAL_PI);
@@ -121,16 +116,16 @@ int main() {
     injParams.spin2y = 0.65*sin(94./180.*LAL_PI)*sin(-83./180.*LAL_PI);
     injParams.spin2z = 0.65*cos(94./180.*LAL_PI);
 
-    /* The above spin components are assumed to be in the frame where the 
-       viewing direction is along the z-axis, this is to comply with the 
+    /* The above spin components are assumed to be in the frame where the
+       viewing direction is along the z-axis, this is to comply with the
        spin-Taylor. To insert their values   */
 
-    /*Spin units are such that multiplying the above spins by m_i^2 one 
+    /*Spin units are such that multiplying the above spins by m_i^2 one
       obtains the physical spins */
 
     /* Inverse rate*/
     ppnParams.deltaT = 1.0 / 4096.0;
-    /* fStop is set for debugging purposes. The working version of 
+    /* fStop is set for debugging purposes. The working version of
        LALPSpinInspiralRD simply ignores its value */
     ppnParams.fStop  = ff;
     /* Initial shift in the phase*/

@@ -50,13 +50,13 @@ static INT8 geocent_start_time(const SimRingdownTable *x)
 }
 
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 void
 XLALPlayTestSimRingdown(
     SimRingdownTable         **eventHead,
     LALPlaygroundDataMask      *dataType
     )
-/* </lalVerbatim> */
+
 {
   SimRingdownTable    *ringdownEventList = NULL;
   SimRingdownTable    *thisEvent = NULL;
@@ -133,7 +133,7 @@ XLALSimRingdownInSearchedData(
     SimRingdownTable         **eventHead,
     SearchSummaryTable       **summList
     )
-/* </lalVerbatim> */
+
 {
   SearchSummaryTable   *thisSearchSumm = NULL;
 
@@ -210,7 +210,7 @@ XLALSortSimRingdown(
     int (*comparefunc)(const SimRingdownTable * const *,
       const SimRingdownTable * const *)
     )
-/* </lalVerbatim> */
+
 {
   INT4 i;
   INT4 length;
@@ -244,12 +244,12 @@ XLALSortSimRingdown(
 }
 
 
-/* <lalVerbatim file="SimRingdownUtilsCP"> */
+
 int
 XLALFreeSimRingdown (
     SimRingdownTable **eventHead
     )
-/* </lalVerbatim> */
+
 {
   EventIDColumn        *eventId;
 
@@ -271,7 +271,7 @@ XLALCompareSimRingdownByGeocentStartTime(
     const SimRingdownTable * const *a,
     const SimRingdownTable * const *b
     )
-/* </lalVerbatim> */
+
 {
   INT8 ta, tb;
   INT8 epsilon = 10;    /* nanoseconds */
@@ -292,7 +292,7 @@ XLALReturnSimRingdownStartTime (
         SimRingdownTable *event,
             CHAR             *ifo
                 )
-/* </lalVerbatim> */
+
 {
     static const char *func = "ReturnSimRingdownStartTime";
       if ( ! strcmp( "L1", ifo ) )
@@ -323,7 +323,7 @@ XLALSnglSimRingdownTest (
     SnglRingdownTable **missedSnglHead,
     INT8                injectWindowNS
     )
-/* </lalVerbatim> */
+
 {
 
   /* Note: we are assuming that both the ringdown and */
@@ -551,7 +551,7 @@ XLALCoincSimRingdownTest (
     SimRingdownTable   **missedSimHead,
     CoincRingdownTable **missedCoincHead
     )
-/* </lalVerbatim> */
+
 {
   CoincRingdownTable    *thisCoinc       = *coincHead;
   CoincRingdownTable    *prevCoinc       = NULL;
@@ -693,7 +693,3 @@ XLALCoincSimRingdownTest (
    XLALPrintInfo( "\n" );
    return( numSimFound );
 }
-
-
-
-

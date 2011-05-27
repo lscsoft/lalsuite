@@ -17,71 +17,42 @@
 *  MA  02111-1307  USA
 */
 
-/*<lalVerbatim file="LALInspiralParseParametersCV">
-  Author:  Cokelaer, T.
-  $Id: LALInspiralParseParameters.c,v 1.24 2009/04/01 00:45:29 ajith Exp $
-  </lalVerbatim>  */
+/**
+  \author  Cokelaer, T.
+  \file
+  \ingroup LALInspiral_h
 
+  \brief Module to work with the ::InspiralTemplate Structure.
 
-
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralParseParameters.c}}
-DOC IN PROGRESS
-
-
-Module to work with the inspiralTemplate Structure.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralITStructureParseParametersCP}
-\input{LALInspiralITStructurePrintCP}
-\input{LALInspiralITStructureSetDefaultCP}
-\input{LALInspiralITStructureHelpCP}
-
-
-\idx{LALInspiralITStructureParseParameters}
-\idx{LALInspiralITStructurePrint}
-\idx{LALInspiralITStructureSetDefault}
-\idx{LALInspiralITStructureHelp}
-
-
-\idx{LALInspiralParseParametersForInjection}
-
-
-
-
-\subsubsection*{Description}
-This module is a set of functions to play with the inspiralTemplate structure of the
+\heading{Description}
+This module is a set of functions to play with the ::InspiralTemplate structure of the
 inspiral package. It allows to set default values to the inspiral strcuture, to parse
 parameters from the inspiral strcuture and to print the inspiral structure.
 
 Has to check and finalized...
 
-\begin{itemize}
-\item  The \texttt{LALInspiralITSructureParseParameters} function allows
+<ul>
+<li>  The \c LALInspiralITStructureParseParameters() function allows
 the user to parse string with respect to that structure. Each variable in the
 inspiralTemplate structure might be parse with a string like "--(name of the variable)+(value)"
- i.e. \textit{--approximant TaylorT1}. Each argument starts with a double dash character
+ i.e. <em>--approximant TaylorT1</em>. Each argument starts with a double dash character
 followed by a key word which is exactly as written in the InspiralTemplate Structure such as
  --order, --mass1, --mass2, --fCutoff ...
 
-Once the string is parsed, the checking function is called.
+Once the string is parsed, the checking function is called.</li>
 
-\item The \texttt{LALInspiralITStructurePrint} function will print on the stdout the value
-of the InspiralTemplate structure.
-\item The \texttt{LALInspiralITStructureSetDefault} set default values to the variables.
-Those values are written in the C-code.
-\item \texttt{LALInspiralITStructureHelp}
-\end{itemize}
+<li> The \c LALInspiralITStructurePrint() function will print on the stdout the value
+of the InspiralTemplate structure.</li>
+<li> The \c LALInspiralITStructureSetDefault() set default values to the variables.
+Those values are written in the C-code.</li>
+<li> \c LALInspiralITStructureHelp()</li>
+</ul>
 
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 None
 
-\vfill{\footnotesize\input{LALInspiralParseParametersCV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALInspiral.h>
 #include <lal/StringInput.h>
@@ -135,12 +106,12 @@ None
 NRCSID (LALINSPIRALPARSEPARAMETERSC, "");
 
 
-/* <lalVerbatim file="LALInspiralITStructureParseParametersCP"> */
+
 void LALInspiralITStructureParseParameters(LALStatus *status,
 					   UINT4 argc,
 					   CHAR **argv,
 					   InspiralTemplate *params)
-/* </lalVerbatim> */
+
 {
   UINT4 i	= 1;
 
@@ -284,10 +255,10 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 }
 
 
-/* <lalVerbatim file="LALInspiralITStructurePrintCP"> */
+
 void LALInspiralITStructurePrint(LALStatus *status,
 				 InspiralTemplate params)
-/* </lalVerbatim> */
+
 {
   /* later */
   printf("# approximant = %-15.12d\n", params.approximant);
@@ -353,10 +324,10 @@ void LALInspiralITStructurePrint(LALStatus *status,
 
 
 /**/
-/* <lalVerbatim file="LALInspiralITStructureSetDefaultCP"> */
+
 void LALInspiralITStructureSetDefault(LALStatus *status,
 				      InspiralTemplate *params)
-/* </lalVerbatim> */
+
 {
 
   params->approximant  = INSPIRALTEMPLATE_APPROXIMANT;
@@ -411,9 +382,9 @@ void LALInspiralITStructureSetDefault(LALStatus *status,
 }
 
 
-/* <lalVerbatim file="LALInspiralITStructureHelpCP"> */
+
 void LALInspiralITStructureHelp()
-/* </lalVerbatim> */
+
 {
 
   fprintf(stderr,"InspiralTemplate Structure; parsing arguments\n");

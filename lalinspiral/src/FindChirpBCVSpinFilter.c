@@ -23,101 +23,92 @@
  *
  * Author: Brown D. A., Spinning BCV-Modifications: Jones, G
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpBCVSpinFilterCV">
-Author: Brown, D. A., Spinning BCV-Modifications: Jones, G.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpBCVSpinFilter.c}}
-\label{ss:FindChirpBCVSpinFilter.c}
+\author Brown, D. A., Spinning BCV-Modifications: Jones, G.
+\file
+\ingroup FindChirpBCVSpin_h
 
-Provides functions to filter data for spinning BCV templates.
+\brief Provides functions to filter data for spinning BCV templates.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpBCVSpinFilterCP}
-\idx{LALFindChirpBCVSpinFilter()}
+\heading{Prototypes}
 
-The function \texttt{LALFindChirpBCVSpinFilterSegment()} filters data for
+The function <tt>LALFindChirpBCVSpinFilterSegment()</tt> filters data for
 spinning BCV templates as described by the algorithm below.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-Using the quantities calculated in {\tt LALFindChirpBCVSpinTemplate()} we
+Using the quantities calculated in <tt>LALFindChirpBCVSpinTemplate()</tt> we
 construct a template and filter our data producing a clustered
 signal-to-noise ratio time series.
 We filter our data in 256 second data segments.
 We first calculate the following functions in the frequency domain:
-\begin{eqnarray}
-{\tt qtilde}         & = & \frac {\mathcal{\widehat{A}}_1(f)
+\f{eqnarray}{
+\c qtilde         & = & \frac {\mathcal{\widehat{A}}_1(f)
 e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)} \nonumber\\
-{\tt qtildeBCVSpin1} & = & \frac {\mathcal{\widehat{A}}_2(f)
+\c qtildeBCVSpin1 & = & \frac {\mathcal{\widehat{A}}_2(f)
 e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)} \nonumber\\
-{\tt qtildeBCVSpin2} & = & \frac {\mathcal{\widehat{A}}_3(f)
+\c qtildeBCVSpin2 & = & \frac {\mathcal{\widehat{A}}_3(f)
 e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)}
-\end{eqnarray}
-where $\mathcal{\widehat{A}}_1(f)$, $\mathcal{\widehat{A}}_2(f)$
-and $\mathcal{\widehat{A}}_3(f)$ are the orthonormal amplitude functions
-and $\psi_{NM} (f)$ is the non-modulational phase of our template. These
-quantitites were calculated in {\tt LALFindChirpBCVSpinTemplate()}. $s^*$
+\f}
+where \f$\mathcal{\widehat{A}}_1(f)\f$, \f$\mathcal{\widehat{A}}_2(f)\f$
+and \f$\mathcal{\widehat{A}}_3(f)\f$ are the orthonormal amplitude functions
+and \f$\psi_{NM} (f)\f$ is the non-modulational phase of our template. These
+quantitites were calculated in <tt>LALFindChirpBCVSpinTemplate()</tt>. \f$s^*\f$
 is the complex conjugate of our (detector) data in the frequency domain
-and $S_h (f)$ is our estimate of the power spectral density of the detector
-data estimated over a 2048 second ``blocks''.
+and \f$S_h (f)\f$ is our estimate of the power spectral density of the detector
+data estimated over a 2048 second "blocks".
 Using inverse FFTs we construct the complex time domain quantities
-{\tt q}, {\tt qBCVSpin1} and {\tt qBCVSpin2}.
+\c q, \c qBCVSpin1 and \c qBCVSpin2.
 We then calculate signal-to-noise ratio as
-\begin{eqnarray}
-\rho(t)^2 & = & {\tt q.re}^2
-           + {\tt q.im}^2
-           + {\tt qBCVSpin1.re}^2
-           + {\tt qBCVSpin1.im}^2 + \nonumber\\
-       &   & {\tt qBCVSpin2.re}^2
-           + {\tt qBCVSpin2.im}^2.
-\end{eqnarray}
-We then look for values of $\rho(t)$ above our threshold - note that the
-$\beta = 0$ threshold is currently hardcoded. We do not calculate
+\f{eqnarray}{
+\rho(t)^2 & = & <tt>q.re</tt>^2
+           + <tt>q.im</tt>^2
+           + <tt>qBCVSpin1.re</tt>^2
+           + <tt>qBCVSpin1.im</tt>^2 + \nonumber\\
+       &   & <tt>qBCVSpin2.re</tt>^2
+           + <tt>qBCVSpin2.im</tt>^2.
+\f}
+We then look for values of \f$\rho(t)\f$ above our threshold - note that the
+\f$\beta = 0\f$ threshold is currently hardcoded. We do not calculate
 signal-to-noise ratio for the 64 second stretch at the beginning and end
 of each data segment to avoid edge-effects. These times are picked up by
 overlapping our 256 second data segments.
 For times for which signal-to-noise ratio is calculated we have the option
-of clustering our output using the {\tt --cluster-method window} option in
-{\tt lalapps\_inspiral} with an appropriate choice of cluster length.
+of clustering our output using the <tt>--cluster-method window</tt> option in
+\c lalapps_inspiral with an appropriate choice of cluster length.
 For events that pass the signal-to-noise ratio threshold and survive
-clustering we store the template parameters $\psi_0$, $\psi_3$, $\beta$
-and $f_{final}$ as well as 6 $\alpha$ values which encode the relative
-contribution of the {\tt q}, {\tt qBCVSpin1} and {\tt qBCVSpin2} functions
+clustering we store the template parameters \f$\psi_0\f$, \f$\psi_3\f$, \f$\beta\f$
+and \f$f_{final}\f$ as well as 6 \f$\alpha\f$ values which encode the relative
+contribution of the \c q, \c qBCVSpin1 and \c qBCVSpin2 functions
 to the overall signal-to-noise ratio. These are simply calculated as
-\begin{eqnarray}
-\alpha_1 & = & {\tt q.re} / \rho \nonumber \\
-\alpha_2 & = & {\tt qBCVSpin1.re} / \rho \nonumber \\
-\alpha_3 & = & {\tt qBCVSpin2.re} / \rho \nonumber \\
-\alpha_4 & = & {\tt q.im} / \rho \nonumber \\
-\alpha_5 & = & {\tt qBCVSpin1.im} / \rho \nonumber \\
-\alpha_6 & = & {\tt qBCVSpin2.im} / \rho.
-\end{eqnarray}
-These obey $\sum_{i=1}^6 \alpha_i = 1$ and might prove useful in future
+\f{eqnarray}{
+\alpha_1 & = & <tt>q.re</tt> / \rho \nonumber \\
+\alpha_2 & = & <tt>qBCVSpin1.re</tt> / \rho \nonumber \\
+\alpha_3 & = & <tt>qBCVSpin2.re</tt> / \rho \nonumber \\
+\alpha_4 & = & <tt>q.im</tt> / \rho \nonumber \\
+\alpha_5 & = & <tt>qBCVSpin1.im</tt> / \rho \nonumber \\
+\alpha_6 & = & <tt>qBCVSpin2.im</tt> / \rho.
+\f}
+These obey \f$\sum_{i=1}^6 \alpha_i = 1\f$ and might prove useful in future
 signal based vetoe studies.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpBCVSpinFilterCV}}
-</lalLaTeX>
-#endif
+
+
+*/
 
 #include <math.h>
 #include <lal/LALErrno.h>
@@ -138,7 +129,7 @@ LALDestroyVector()
 
 NRCSID (FINDCHIRPBCVSPINFILTERC, "$Id$");
 
-/* <lalVerbatim file="FindChirpBCVSpinFilterCP"> */
+
 void
 LALFindChirpBCVSpinFilterSegment (
     LALStatus                  *status,
@@ -147,7 +138,7 @@ LALFindChirpBCVSpinFilterSegment (
     FindChirpFilterParams      *params,
     FindChirpDataParams        *fcDataParams
   )
-/* </lalVerbatim> */
+
 {
   UINT4                 j, k;
   UINT4                 numPoints;

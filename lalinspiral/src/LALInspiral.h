@@ -17,28 +17,26 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="LALInspiralHV">
+/**
+ * \defgroup LALInspiral_h LALInspiral_h
+ * \ingroup CBC_inspiral
+ */
 
-Author: Churches, D. K ,  B. S. Sathyaprakash,  T. Cokelaer.
-$Id$
+/**
+\author Churches, D. K ,  B. S. Sathyaprakash,  T. Cokelaer.
+\file
+\ingroup LALInspiral_h
 
-</lalVerbatim>  */
+\brief %Header file for the template generation codes.
 
-/*  <lalLaTeX>
-
-\section{Header \texttt{LALInspiral.h}}
-\label{s:LALInspiral.h}
-
-Header file for the template generation codes.
-
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/LALInspiral.h>
-\end{verbatim}
+\endcode
 
-\noindent This header file covers routines that are used in template generation.
+This header file covers routines that are used in template generation.
 
-</lalLaTeX> */
+*/
 
 #ifndef _LALINSPIRAL_H
 #define _LALINSPIRAL_H
@@ -80,11 +78,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 # define sevenby8  0.875
 #define  ninty4by3etc  18.687902694437592603 /* (94/3 -41/31*pi*pi) */
 
-/*  <lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>  */
-
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define LALINSPIRALH_ENULL           1
 #define LALINSPIRALH_EMEM            2
 #define LALINSPIRALH_EDIV0           3
@@ -128,273 +122,25 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_MSGEBPERR        "Error in band passing signal"
 #define LALINSPIRALH_MSGESWITCH       "Unknown case in switch"
 #define LALINSPIRALH_MSGEMASSCHOICE   "Improper choice for massChoice"
-
-/* ---------------------------------------------------------------------  </lalErrTable> */
-
+/*@}*/
 
 
-/* <lalLaTeX>
+/** These are the input structures needed to solve for the mass
+    ratio \f$\eta\f$ given the chirptimes \f$(\tau_0,\, \tau_2)\f$ or
+    \f$(\tau_0, \, \tau_4).\f$
 
-\section*{Structures}
+Here, \c t2\ \f$ = \tau_2,\f$ \c A2\ \f$ = A_2 ({\tau_0}/{A_0})^{3/5},\f$  and
+\c B2\ \f$=B_2\f$,
+where \f$A_0 = 5/[256 (\pi f_{s} )^{8/3}],\f$ \f$A_2 = 3715 / [64512 (\pi f_s)^2],\f$
+\f$B_2 = 4620/3715.\f$
 
-\begin{enumerate}
-
-\item \texttt{LALPNOrder:}
-Enum that tells which post-Newtonian order is being used.
-\input{LALInspiralOrderH}
-\begin{itemize}
-\item \texttt{LAL\_PNORDER\_NEWTONIAN:} Newtonain order, flux and enrgy both to the lowest order.
-\item \texttt{LAL\_PNORDER\_HALF:} same as before
-\item \texttt{LAL\_PNORDER\_ONE:} Both energy and flux to order $O(v^2)$ beyond the Newtonian order.
-\item \texttt{LAL\_PNORDER\_ONE\_POINT\_FIVE:} Energy to order $O(v^2)$ and flux to order $O(v^3)$
-\item \texttt{LAL\_PNORDER\_TWO:} Both energy and flux to order $O(v^4)$
-\item \texttt{LAL\_PNORDER\_TWO\_POINT\_FIVE:} Energy to order $O(v^4)$ and flux to order $O(v^5)$
-\item \texttt{LAL\_PNORDER\_THREE:} Both energy and flux to order $O(v^6)$
-\item \texttt{LAL\_PNORDER\_THREE\_POINT\_FIVE:} Energy to order $O(v^6)$ and flux to order $O(v^7)$
-\item \texttt{LAL\_PNORDER\_PSEUDIO\_FOUR:} Need to describe
-\end{itemize}
-In all cases, the gravitational wave phase (also frequency and time)
-as an expansion of the gauge invariant parameter $v$ is given up to
-the order specified by flux.  Note that there are certain undetermined
-parameters at \texttt{LAL\_PNORDER\_THREE} and
-\texttt{LAL\_PNORDER\_THREE\_POINT\_FIVE}. The waveform generation codes use
-a specific value of those parameters while generating the wave.
-
-
-\item \texttt{Approximant:} Enum that specifies the PN approximant to
-be used in computing the waveform.
-\input{LALInspiralApproximantH}
-\begin{itemize}
-\item \texttt{TaylorT1:} Time domain Taylor approximant in which
-	the energy and flux are both kept as Taylor expansions
-	and a first order ordinary differential equation is solved
-	for the GW phase as a function of $t.$ Outputs a time-domain wave.
-\item \texttt{TaylorT2:} Time domain Taylor approximant in which
-	the phase evolution $\varphi(t)$ is obtained by iteratively
-	solving post-Newtonian expansions $\varphi(v)$ and $t(v).$ Outputs a time-domain wave.
-\item \texttt{TaylorT3:} Time domain Taylor approximant in which
-phase is explicitly given as a function of time. Outputs a time-domain wave.
-\item \texttt{TaylorF1:} The stationary phase approximation that
-correctly represents, in the Fourier domain, the waveform given
-by \texttt{TaylorT1} approximant (see Ref. \cite{dis2} for details). Outputs a frequency-domain wave.
-\item \texttt{TaylorF2:} The standard stationary phase approximation. Outputs a frequency-domain wave.
-\item \texttt{PadeT1:} Time-domain P-approximant. Outputs a time-domain wave.
-\item \texttt{PadeF1:} Frequency-domain P-approximant (not yet implemented).
-\item \texttt{EOB:} Effective one-body waveform  Outputs a time-domain wave.
-\item \texttt{BCV:} Detection template family of Buonanno, Chen and
-                    Vallisneri \cite{BCV03}. Outputs a frequency-domain wave.
-\item \texttt{BCVSpin:} Detection template family of Buonanno, Chen and
-                    Vallisneri including  spin effects\cite{BCV03b}. Outputs a frequency-domain wave.
-\item \texttt{SpinTaylorT3} Spinning case T3 models
-\item \texttt{SpinTaylor} Spinning case PN models (should replace SpinTaylorT3 in the future)
-\item \textt{SpinTaylorFrameless} Spinning case PN models (replace SpinTaylor by removing the coordinate singularity)
-\item \texttt{PhenSpinTaylorRD} Phenomenological waveforms, interpolating between a T4 spin-inspiral and the ringdown.
-\item \texttt{SpinQuadTaylor} Spinning case PN models with quadrupole-monopole and self-spin interaction.
-\item \texttt{FindChirpSP} The stationary phase templates implemented by FindChirpSPTemplate in the findchirp package (equivalent to TaylorF2 at twoPN order).
-\item \texttt{GeneratePPN} The time domain templates generated by LALGeneratePPNInspiral() in the inject package (equivalent to TaylorT3 at twoPN order).
-\item \texttt{FrameFile} The waveform contains arbitrary data read from a frame file.
-
-
-\end{itemize}
-\input{LALInputMassesH}
-\texttt{InputMasses:}
-This structure is one of the members of the \texttt{InspiralTemplate}
-structure.
-
-
-A user can specify the parameters of a binary using any of the
-following combination of {\it masses:}
-\begin{itemize}
-\item \texttt{m1Andm2:} component masses
-\item \texttt{totalMassAndEta:} total mass and symmetric mass ratio
-\item \texttt{totalMassUAndEta:} total mass and eta but uniform distribution in totalMass
-\item \texttt{totalMassAndMu:} total mass and reduced mass
-\item \texttt{t01:} unused; shouldn't be used.
-\item \texttt{t02:} chirptimes $\tau_0$ and $\tau_2$
-\item \texttt{t03:} chirptimes $\tau_0$ and $\tau_3$, and
-\item \texttt{t04:} chirptimes $\tau_0$ and $\tau_4$
-\item \texttt{psi0Andpsi3:} BCV parameters $\psi_0$ and $\psi_3$
-\end{itemize}
-The LALRandomInspiralSignal uses that structure as an input. Since the injected
-waveform are not necessarely wanted to be random, we also provide the following
-options
-\begin{itemize}
-\item \texttt{bhns:} One of the mass is a Neutron star and the other a black
-hole. (m1 $\in$ [minMass-3] and m2 $\in$ [3-maxMass]).
-\item \texttt{fixedMasses:} The two masses are given by the input parameter structure.
-\item \texttt{fixedPsi:} The two psi values are given by the input parameter structure.
-\item \texttt{fixedTau:} The two tau values are given by the input parameter structure.
-\end{itemize}
-
-
-\item \texttt{InspiralTemplate:}
-The inspiral waveform parameter structure containing information about the
-	waveform to be generated.
-\input{LALInspiralTemplateH}
-
-\begin{itemize}
-  \item \texttt { ieta:} parameter that tells whether the symmetric mass ratio $\eta$
-	  should be set to zero in the PN expansions of GW flux and binding energy.
-	  If \texttt{ieta=0} $\eta$ will be set to zero, otherwise the appropriate
-	  value of $\eta$ from the given parameters will be used.
-
-  \item \texttt { level:} Flag used in heirarical serached to indicate if this is a coarse or a fine template
-  \item \texttt { *segmentIdVec:} Vector of segment that have been filtered against this template needed for the LDAS implementation of the inspiral search.
-  \item \texttt { number:} Unique ID number for this template needed for the LDAS implementation of the inspiral search.
-  \item \texttt { minMatch:} The minimal match specified by the user when the bank that contains this template was created.
-  \item \texttt { nStartPad:} Number of leading elements in the signal generation to be set to zero (input). If template is requested, that value must be set to zero. In the injection routines related to inject package, that nStartPad is set to zero. However, for injection performed using the inspiral package, that value can be set to non zero.
-  \item \texttt { nEndPad:} Number of trailing bins to be set to zero, the
-  resulting waveform will have at least this many bins zero at the end, probably
-  more since we always deal with an integer power of 2 array (input).
-  \item \texttt { mass1:}  Mass of the primary in solar mass (input/output).
-  \item \texttt { mass2:}  Mass of the secondary in solar mass
-  (\texttt{mass1} need not be larger than \texttt{mass2} (input/output).
-  \item \texttt { spin1[3]:} Spin vector of the primary (currently not in use)
-  \item \texttt { spin2[3]:} Spin vector of the secondary (currently not in use)
-  \item \texttt { sourceTheta:} Co-latitute in the direction to the source.
-  \item \texttt { sourcePhi:} Azimuth angle in the direction to the source.
-  \item \texttt { orbitTheta0:} Initial co-latitute of the orbit.
-  \item \texttt { orbitPhi0:} Initial azimuth angle of the orbit.
-  \item \texttt { inclination:} Inclination of the orbit  (currently not in use)
-  \item \texttt { distance:} Distance to the binary in seconds
-  \item \texttt { psi0:} BCV parameter $\psi_0.$
-  \item \texttt { psi3:} BCV parameter $\psi_3.$
-  \item \texttt { alpha:} BCV amplitude correction factor $\alpha f_{\rm cut}^{2/3}$
-  \item \texttt { eccentricity:} initial eccentricity of the orbit  (currently not in use)
-  \item \texttt { totalMass:} total mass of the binary $m=m_1+m_2$ in solar mass (input/output).
-  \item \texttt { eta:} symmetric mass ratio $\eta=m_1m_2/m^2.$ (input/output).
-  \item \texttt { chirpMass:} chirp mass of the binary $=\eta^{3/5} m$ in solar mass (output).
-  \item \texttt { t0:} Newtonain chirp time in seconds (input/output).
-  \item \texttt { t2:} first post-Newtonian chirp time in seconds (input/output).
-  \item \texttt { t3:} 1.5 post-Newtonian chirp time in seconds (input/output).
-  \item \texttt { t4:} second post-Newtonian chirp time in seconds (output).
-  \item \texttt { t5:} 2.5 post-Newtonian chirp time in seconds (output).
-  \item \texttt { t6:} third post-Newtonian chirp time in seconds (output).
-  \item \texttt { t7:} 3.5 post-Newtonian chirp time in seconds (output).
-  \item \texttt { tC:} total chirp time seconds (output).
-  \item \texttt { mu:} reduced mass (in solar mass) (input/output)
-  \item \texttt { fLower:} lower frequency cutoff of the detector in Hz (input)
-  \item \texttt { fCutoff:} upper frequency cutoff in Hz to be used in generating the waveform.
-  If the last stable orbit frequency is smaller than the upper cutoff it will be used
-  in terminating the waveform instead of fCutoff (input).
-  \item \texttt { tSampling:} Sampling rate in Hz (input)
-  \item \texttt { startPhase:} starting phase of the waveform in radians (input)
-  \item \texttt { startTime:} starting time of the waveform (in sec); if different from zero, the
-  waveform will start with an instantaneous frequency different from fLower and reach
-  fLower at time (approximately) zero (input, not used in Stationary phase approximation)
-  \item \texttt { signalAmplitude:} dimensionless amplitude of the signal (input, currently unused.)
-  \item \texttt { rInitial:} initial radial separation of the two, in units of total mass
-  bodies (used only in EOB waveforms) (output)
-  \item \texttt { vInitial:} initial velocity parameter, in units of the speed of light (output)
-  \item \texttt { rFinal:} final 'separation' between the bodies, in units of total mass (output)
-  \item \texttt { vFinal:} final velocity parameter, in units of the speed of light (output)
-  \item \texttt { fFinal:} final frequency reached, in units of Hz (output)
-  \item \texttt { rLightRing:} radial coordinate at the light ring, in units of total mass (output)
-  \item \texttt { OmegaS:} The 3PN (unknown) parameter; calculated to be equal to zero
-  by Damour, Jaranowski and Schaffer (input).
-  \item \texttt { Theta:} The 3PN unknown flux parameter; likely to be around unity;
-  most waveform generation routines take theta to be zero. Robustness of the EOB waveform
-	  has been demonstrated for $-2 < $ \texttt{Theta} $< 2.$ (input)
-  \item \texttt { massChoice:} The pair of (mass) parameters given (see structure
-		  defining this member for more details) (input).
-  \item \texttt { order:} Post-Newtonain order to be used in generating the wave (input).
-  \item \texttt { approximant:} Post-Newtonain approximant to be used in generating the wave (input).
-  \item \texttt { tagInspiralTemplate *next:} Linked list to the next coarse bank template
-  (currently not filled by inspiral or bank codes)
-  \item \texttt { tagInspiralTemplate *fine:} Linked list to the next fine bank template
-  (currently not filled by inspiral or bank codes)
-\end{itemize}
-
-\item \texttt{InspiralACSTParams:}
-This structure is needed to solve the differential equation
-	giving the evolution of the orbital angular momentum and the
-	spin angular momenta in the case of spinning black hole binaries.
-\input{LALInspiralACSTParamsH}
-\begin{itemize}
-  \item	\texttt {v:} parameter of 'integration': v=sqrt(M/r)
-  \item {\tt magS1:} The constant spin magnitude of the primary.
-  \item {\tt magS2:} The constant spin magnitude of the secondary.
-  \item {\tt NCap[3]:} Source direction (unit vector) in detector coordinate system.
-  \item {\tt spin1[3]:} Spin of the larger body.
-  \item {\tt M:} Total mass of the binary (in seconds).
-  \item {\tt fourM1Plus:} = $(4 m_1+3 m_2)/(2 m_1 M^3)$ (all masses expressed in seconds).
-  \item {\tt fourM2Plus:} = $(4 m_2+3 m_1)/(2 m_2 M^3)$ (all masses expressed in seconds).
-  \item {\tt oneBy2Mcube:} = $1/(2 M^3)$
-  \item {\tt threeBy2Mcube:}  = $3/(2 M^3)$
-  \item {\tt thirtytwoBy5etc:}=  $(32/5) \eta^2 M$
-\end{itemize}
-
-\item \texttt{EtaTau02In, EtaTau04In:}
-These are the input structures needed to solve for the mass
-ratio $\eta$ given the chirptimes $(\tau_0,\, \tau_2)$ or
-$(\tau_0, \, \tau_4).$
-
-\input{LALEtaTau0Tau2InH}
-
-Here, \texttt{t2}~$ = \tau_2,$ \texttt{A2}~$ = A_2 ({\tau_0}/{A_0})^{3/5},$  and
-\texttt{B2}~$=B_2$,
-where $A_0 = 5/[256 (\pi f_{s} )^{8/3}],$ $A_2 = 3715 / [64512 (\pi f_s)^2],$
-$B_2 = 4620/3715.$
-
-Similarly, \texttt{t4}~$ = \tau_4,$ \texttt{A4}~$ = A_4 ({\tau_0}/{A_0})^{1/5},$
-\texttt{B4}~$=B_4$ and \texttt{C4}~$=C_4,$ where
-where $A_0 = 5/[256 (\pi f_{s} )^{8/3}],$
-$A_4 = 5 \times 3058673/ [128 \times 1016064  (\pi f_s)^{4/3}],$
-$B_4 = 5429 \times 1016064 /(1008 \times 3058673),$ and $C_4 = 617 \times
-1016064/(144 \times 3058673).$
-
-\item \texttt{InspiralToffInput:}
-This is a structure needed by the inner workings of the inspiral wave generation code.
-\input{LALInspiralToffInputH}
-
-
-\item \texttt{expnCoeffs:}
-This structure contains various post-Newtonian and P-approximant expansion
-	coefficients; the meanings of the coefficients is indicated as comments
-	before each list.
-\input{LALExpnCoeffsH}
-
-\item {Energy, flux, phase, time and frequency functions:} The following
-	functions are generic function definitions that will be used in
-	template generation. The function \texttt{LALInspiralChooseModel,}
-        which is called by wave generation interface code, points these
-	functions to the appropriate specific functions depending on the
-	choices made by the user.
-\input{LALEnergyAndFluxFunctionsH}
-
-\item \texttt{expnFunc:} Structure to hold the pointers to the generic
-       	functions defined above.
-\input{LALexpnFuncH}
-
-\item \texttt{TofVIn {\rm and} TofVIntegrandIn:} Structures needed to
-	compute the time elapsed
-	from/to the starting epoch of the waveform when the velocity
-	parameter was $v_0,$ to/from the current epoch when velocity
-	parameter is $v.$
-\input{LALInspiralTofVH}
-
-\item {\tt InspiralPhaseIn {\rm and} PhiofVIntegrandIn:} Structures used
-	to compute the phase of the signal from the `beginning', when the
-	veolcity parameter is $v_0,$ to a time when the velocity parameter
-	has evolved to a user input value $v.$
-\input{LALInspiralPhaseH}
-
-\item {\tt InspiralDerivativesIn:} Structure used as an input to compute
-	the derivatives needed in solving the phasing formula when the
-	{\tt approximant} is {\tt TaylorT1, TaylorP1} or {\tt EOB.}
-\input{LALInspiralDerivativesH}
-
-\item {\tt rk4GSLIntegrator:} Structure containing steps and controls
-for the GSL Runge-Kutta solver
-\input{LALInspiralGSLRungeKuttaH}
-
-\item {\tt rk4In:} Structure used as an input to Runge-Kutta solver.
-\input{LALInspiralRungeKuttaH}
-
-\end{enumerate}
---------------------------------------------------------------------- </lalLaTeX>  */
-
-/* <lalVerbatim file="LALEtaTau0Tau2InH">  */
+Similarly, \c t4\ \f$ = \tau_4,\f$ \c A4\ \f$ = A_4 ({\tau_0}/{A_0})^{1/5},\f$
+\c B4\ \f$=B_4\f$ and \c C4\ \f$=C_4,\f$ where
+where \f$A_0 = 5/[256 (\pi f_{s} )^{8/3}],\f$
+\f$A_4 = 5 \times 3058673/ [128 \times 1016064  (\pi f_s)^{4/3}],\f$
+\f$B_4 = 5429 \times 1016064 /(1008 \times 3058673),\f$ and \f$C_4 = 617 \times
+1016064/(144 \times 3058673).\f$
+*//* @{ */
 typedef struct
 tagEtaTau02In
 {
@@ -402,13 +148,7 @@ tagEtaTau02In
    REAL8 A2;
    REAL8 B2;
 } EtaTau02In;
-/* </lalVerbatim>  */
 
-/* <lalLaTeX>
-\idx[Type]{EtaTau02In}
-</lalLaTeX>  */
-
-/* <lalVerbatim file="LALEtaTau0Tau2InH">  */
 typedef struct
 tagEtaTau04In
 {
@@ -417,15 +157,28 @@ tagEtaTau04In
    REAL8 B4;
    REAL8 C4;
 } EtaTau04In;
-/* </lalVerbatim>  */
-
-/* <lalLaTeX>
-\idx[Type]{EtaTau04In}
-</lalLaTeX>  */
+/* @} */
 
 
-
-/* <lalVerbatim file="LALInspiralOrderH">  */
+/** Enum that tells which post-Newtonian order is being used.
+<ul>
+<li> \c LAL_PNORDER_NEWTONIAN: Newtonain order, flux and enrgy both to the lowest order.</li>
+<li> \c LAL_PNORDER_HALF: same as before</li>
+<li> \c LAL_PNORDER_ONE: Both energy and flux to order \f$O(v^2)\f$ beyond the Newtonian order.</li>
+<li> \c LAL_PNORDER_ONE_POINT_FIVE: Energy to order \f$O(v^2)\f$ and flux to order \f$O(v^3)\f$</li>
+<li> \c LAL_PNORDER_TWO: Both energy and flux to order \f$O(v^4)\f$</li>
+<li> \c LAL_PNORDER_TWO_POINT_FIVE: Energy to order \f$O(v^4)\f$ and flux to order \f$O(v^5)\f$</li>
+<li> \c LAL_PNORDER_THREE: Both energy and flux to order \f$O(v^6)\f$</li>
+<li> \c LAL_PNORDER_THREE_POINT_FIVE: Energy to order \f$O(v^6)\f$ and flux to order \f$O(v^7)\f$</li>
+<li> \c LAL_PNORDER_PSEUDIO_FOUR: Need to describe</li>
+</ul>
+In all cases, the gravitational wave phase (also frequency and time)
+as an expansion of the gauge invariant parameter \f$v\f$ is given up to
+the order specified by flux.  Note that there are certain undetermined
+parameters at \c LAL_PNORDER_THREE and
+\c LAL_PNORDER_THREE_POINT_FIVE. The waveform generation codes use
+a specific value of those parameters while generating the wave.
+*/
 typedef enum {
   LAL_PNORDER_NEWTONIAN,
   LAL_PNORDER_HALF,
@@ -438,15 +191,43 @@ typedef enum {
   LAL_PNORDER_PSEUDO_FOUR,
   LAL_PNORDER_NUM_ORDER
  } LALPNOrder;
-/* </lalVerbatim>  */
-
-/* <lalLaTeX>
-\idx[Type]{LALPNOrder}
-</lalLaTeX>  */
 
 
 
-/* <lalVerbatim file="LALInspiralApproximantH">  */
+
+
+/** Enum that specifies the PN approximant to be used in computing the waveform.
+<ul>
+<li> \c TaylorT1: Time domain Taylor approximant in which
+	the energy and flux are both kept as Taylor expansions
+	and a first order ordinary differential equation is solved
+	for the GW phase as a function of \f$t.\f$ Outputs a time-domain wave.</li>
+<li> \c TaylorT2: Time domain Taylor approximant in which
+	the phase evolution \f$\varphi(t)\f$ is obtained by iteratively
+	solving post-Newtonian expansions \f$\varphi(v)\f$ and \f$t(v).\f$ Outputs a time-domain wave.</li>
+<li> \c TaylorT3: Time domain Taylor approximant in which
+phase is explicitly given as a function of time. Outputs a time-domain wave.</li>
+<li> \c TaylorF1: The stationary phase approximation that
+correctly represents, in the Fourier domain, the waveform given
+by \c TaylorT1 approximant (see Ref. [\ref dis2000] for details). Outputs a frequency-domain wave.</li>
+<li> \c TaylorF2: The standard stationary phase approximation. Outputs a frequency-domain wave.</li>
+<li> \c PadeT1: Time-domain P-approximant. Outputs a time-domain wave.</li>
+<li> \c PadeF1: Frequency-domain P-approximant (not yet implemented).</li>
+<li> \c EOB: Effective one-body waveform  Outputs a time-domain wave.</li>
+<li> \c BCV: Detection template family of Buonanno, Chen and
+                    Vallisneri [\ref BCV03]. Outputs a frequency-domain wave.</li>
+<li> \c BCVSpin: Detection template family of Buonanno, Chen and
+                    Vallisneri including  spin effects[\ref BCV03b]. Outputs a frequency-domain wave.</li>
+<li> \c SpinTaylorT3 Spinning case T3 models</li>
+<li> \c SpinTaylor Spinning case PN models (should replace SpinTaylorT3 in the future)</li>
+<li> \c SpinTaylorFrameless Spinning case PN models (replace SpinTaylor by removing the coordinate singularity)</li>
+<li> \c PhenSpinTaylorRD Phenomenological waveforms, interpolating between a T4 spin-inspiral and the ringdown.</li>
+<li> \c SpinQuadTaylor Spinning case PN models with quadrupole-monopole and self-spin interaction.</li>
+<li> \c FindChirpSP The stationary phase templates implemented by FindChirpSPTemplate in the findchirp package (equivalent to TaylorF2 at twoPN order).</li>
+<li> \c GeneratePPN The time domain templates generated by LALGeneratePPNInspiral() in the inject package (equivalent to TaylorT3 at twoPN order).</li>
+<li> \c FrameFile The waveform contains arbitrary data read from a frame file.</li>
+</ul>
+*/
 typedef enum {
    TaylorT1,
    TaylorT2,
@@ -482,10 +263,34 @@ typedef enum {
    TaylorN,
    NumApproximants
  } Approximant;
-/* </lalVerbatim>  */
 
 
-/* <lalVerbatim file="LALInputMassesH">  */
+/** This structure is one of the members of the \c InspiralTemplate structure.
+
+A user can specify the parameters of a binary using any of the
+following combination of \e masses:
+<ul>
+<li> \c m1Andm2: component masses</li>
+<li> \c totalMassAndEta: total mass and symmetric mass ratio</li>
+<li> \c totalMassUAndEta: total mass and eta but uniform distribution in totalMass</li>
+<li> \c totalMassAndMu: total mass and reduced mass</li>
+<li> \c t01: unused; shouldn't be used.</li>
+<li> \c t02: chirptimes \f$\tau_0\f$ and \f$\tau_2\f$</li>
+<li> \c t03: chirptimes \f$\tau_0\f$ and \f$\tau_3\f$, and</li>
+<li> \c t04: chirptimes \f$\tau_0\f$ and \f$\tau_4\f$</li>
+<li> \c psi0Andpsi3: BCV parameters \f$\psi_0\f$ and \f$\psi_3\f$</li>
+</ul>
+The LALRandomInspiralSignal uses that structure as an input. Since the injected
+waveform are not necessarely wanted to be random, we also provide the following
+options
+<ul>
+<li> \c bhns: One of the mass is a Neutron star and the other a black
+hole. (m1 \f$\in\f$ [minMass-3] and m2 \f$\in\f$ [3-maxMass]).</li>
+<li> \c fixedMasses: The two masses are given by the input parameter structure.</li>
+<li> \c fixedPsi: The two psi values are given by the input parameter structure.</li>
+<li> \c fixedTau: The two tau values are given by the input parameter structure.</li>
+</ul>
+*/
 typedef enum {
    m1Andm2,
    totalMassAndEta,
@@ -504,10 +309,10 @@ typedef enum {
    minmaxTotalMass,
    spinOnly
  } InputMasses;
-/* </lalVerbatim>  */
 
 
-/**		Enumeration to specify which component will be used in the waveform
+
+/** Enumeration to specify which component will be used in the waveform
  * generation. Their combination also can be used by the bitwise or.
  **/
 typedef enum {
@@ -519,12 +324,81 @@ typedef enum {
 	LAL_AllInter = LAL_SOInter | LAL_SSInter | LAL_SSselfInter | LAL_QMInter	///< all interactions
 } LALSpinInteraction;
 
-/* <lalLaTeX>
-\idx[Type]{InputMasses}
-</lalLaTeX>  */
+/** The inspiral waveform parameter structure containing information about the waveform to be generated.
 
+<ul>
+<li> <tt> ieta:</tt> parameter that tells whether the symmetric mass ratio \f$\eta\f$
+	  should be set to zero in the PN expansions of GW flux and binding energy.
+	  If <tt>ieta=0</tt> \f$\eta\f$ will be set to zero, otherwise the appropriate
+	  value of \f$\eta\f$ from the given parameters will be used.
 
-/* <lalVerbatim file="LALInspiralTemplateH">  */
+  </li><li> <tt> level:</tt> Flag used in heirarical serached to indicate if this is a coarse or a fine template
+  </li><li> <tt> *segmentIdVec:</tt> Vector of segment that have been filtered against this template needed for the LDAS implementation of the inspiral search.
+  </li><li> <tt> number:</tt> Unique ID number for this template needed for the LDAS implementation of the inspiral search.
+  </li><li> <tt> minMatch:</tt> The minimal match specified by the user when the bank that contains this template was created.
+  </li><li> <tt> nStartPad:</tt> Number of leading elements in the signal generation to be set to zero (input). If template is requested, that value must be set to zero. In the injection routines related to inject package, that nStartPad is set to zero. However, for injection performed using the inspiral package, that value can be set to non zero.
+  </li><li> <tt> nEndPad:</tt> Number of trailing bins to be set to zero, the
+  resulting waveform will have at least this many bins zero at the end, probably
+  more since we always deal with an integer power of 2 array (input).
+  </li><li> <tt> mass1:</tt>  Mass of the primary in solar mass (input/output).
+  </li><li> <tt> mass2:</tt>  Mass of the secondary in solar mass
+  (\c mass1 need not be larger than \c mass2 (input/output).
+  </li><li> <tt> spin1[3]:</tt> Spin vector of the primary (currently not in use)
+  </li><li> <tt> spin2[3]:</tt> Spin vector of the secondary (currently not in use)
+  </li><li> <tt> sourceTheta:</tt> Co-latitute in the direction to the source.
+  </li><li> <tt> sourcePhi:</tt> Azimuth angle in the direction to the source.
+  </li><li> <tt> orbitTheta0:</tt> Initial co-latitute of the orbit.
+  </li><li> <tt> orbitPhi0:</tt> Initial azimuth angle of the orbit.
+  </li><li> <tt> inclination:</tt> Inclination of the orbit  (currently not in use)
+  </li><li> <tt> distance:</tt> Distance to the binary in seconds
+  </li><li> <tt> psi0:</tt> BCV parameter \f$\psi_0.\f$
+  </li><li> <tt> psi3:</tt> BCV parameter \f$\psi_3.\f$
+  </li><li> <tt> alpha:</tt> BCV amplitude correction factor \f$\alpha f_\textrm{cut}^{2/3}\f$
+  </li><li> <tt> eccentricity:</tt> initial eccentricity of the orbit  (currently not in use)
+  </li><li> <tt> totalMass:</tt> total mass of the binary \f$m=m_1+m_2\f$ in solar mass (input/output).
+  </li><li> <tt> eta:</tt> symmetric mass ratio \f$\eta=m_1m_2/m^2.\f$ (input/output).
+  </li><li> <tt> chirpMass:</tt> chirp mass of the binary \f$=\eta^{3/5} m\f$ in solar mass (output).
+  </li><li> <tt> t0:</tt> Newtonain chirp time in seconds (input/output).
+  </li><li> <tt> t2:</tt> first post-Newtonian chirp time in seconds (input/output).
+  </li><li> <tt> t3:</tt> 1.5 post-Newtonian chirp time in seconds (input/output).
+  </li><li> <tt> t4:</tt> second post-Newtonian chirp time in seconds (output).
+  </li><li> <tt> t5:</tt> 2.5 post-Newtonian chirp time in seconds (output).
+  </li><li> <tt> t6:</tt> third post-Newtonian chirp time in seconds (output).
+  </li><li> <tt> t7:</tt> 3.5 post-Newtonian chirp time in seconds (output).
+  </li><li> <tt> tC:</tt> total chirp time seconds (output).
+  </li><li> <tt> mu:</tt> reduced mass (in solar mass) (input/output)
+  </li><li> <tt> fLower:</tt> lower frequency cutoff of the detector in Hz (input)
+  </li><li> <tt> fCutoff:</tt> upper frequency cutoff in Hz to be used in generating the waveform.
+  If the last stable orbit frequency is smaller than the upper cutoff it will be used
+  in terminating the waveform instead of fCutoff (input).
+  </li><li> <tt> tSampling:</tt> Sampling rate in Hz (input)
+  </li><li> <tt> startPhase:</tt> starting phase of the waveform in radians (input)
+  </li><li> <tt> startTime:</tt> starting time of the waveform (in sec); if different from zero, the
+  waveform will start with an instantaneous frequency different from fLower and reach
+  fLower at time (approximately) zero (input, not used in Stationary phase approximation)
+  </li><li> <tt> signalAmplitude:</tt> dimensionless amplitude of the signal (input, currently unused.)
+  </li><li> <tt> rInitial:</tt> initial radial separation of the two, in units of total mass
+  bodies (used only in EOB waveforms) (output)
+  </li><li> <tt> vInitial:</tt> initial velocity parameter, in units of the speed of light (output)
+  </li><li> <tt> rFinal:</tt> final 'separation' between the bodies, in units of total mass (output)
+  </li><li> <tt> vFinal:</tt> final velocity parameter, in units of the speed of light (output)
+  </li><li> <tt> fFinal:</tt> final frequency reached, in units of Hz (output)
+  </li><li> <tt> rLightRing:</tt> radial coordinate at the light ring, in units of total mass (output)
+  </li><li> <tt> OmegaS:</tt> The 3PN (unknown) parameter; calculated to be equal to zero
+  by Damour, Jaranowski and Schaffer (input).
+  </li><li> <tt> Theta:</tt> The 3PN unknown flux parameter; likely to be around unity;
+  most waveform generation routines take theta to be zero. Robustness of the EOB waveform
+	  has been demonstrated for \f$-2 < \f$ \c Theta \f$< 2.\f$ (input)
+  </li><li> <tt> massChoice:</tt> The pair of (mass) parameters given (see structure
+		  defining this member for more details) (input).
+  </li><li> <tt> order:</tt> Post-Newtonain order to be used in generating the wave (input).
+  </li><li> <tt> approximant:</tt> Post-Newtonain approximant to be used in generating the wave (input).
+  </li><li> <tt> tagInspiralTemplate *next:</tt> Linked list to the next coarse bank template
+  (currently not filled by inspiral or bank codes)
+  </li><li> <tt> tagInspiralTemplate *fine:</tt> Linked list to the next fine bank template
+  (currently not filled by inspiral or bank codes)</li>
+</ul>
+*/
 typedef struct
 tagInspiralTemplate
 {
@@ -640,13 +514,10 @@ tagInspiralTemplate
   struct tagInspiralTemplate *next;
   struct tagInspiralTemplate *fine;
 } InspiralTemplate;
-/* </lalVerbatim>  */
 
-/* <lalLaTeX>
-\index{\texttt{InspiralTemplate}}
-</lalLaTeX>  */
 
-/* <lalVerbatim file="LALInspiralToffInputH">  */
+/** This is a structure needed by the inner workings of the inspiral wave generation code.
+ */
 typedef struct
 tagInspiralToffInput
 {
@@ -662,13 +533,25 @@ tagInspiralToffInput
    REAL8 tc;
    REAL8 t;
  } InspiralToffInput;
-/* </lalVerbatim>  */
 
-/* <lalLaTeX>
-\idx[Type]{InspiralToffInput}
-</lalLaTeX>  */
 
-/* <lalVerbatim file="LALInspiralACSTParamsH">  */
+/** This structure is needed to solve the differential equation
+    giving the evolution of the orbital angular momentum and the
+    spin angular momenta in the case of spinning black hole binaries.
+<ul>
+   <li>	\c v: parameter of 'integration': v=sqrt(M/r)
+  </li><li> \c magS1: The constant spin magnitude of the primary.
+  </li><li> \c magS2: The constant spin magnitude of the secondary.
+  </li><li> <tt>NCap[3]:</tt> Source direction (unit vector) in detector coordinate system.
+  </li><li> <tt>spin1[3]:</tt> Spin of the larger body.
+  </li><li> \c M: Total mass of the binary (in seconds).
+  </li><li> \c fourM1Plus: = \f$(4 m_1+3 m_2)/(2 m_1 M^3)\f$ (all masses expressed in seconds).
+  </li><li> \c fourM2Plus: = \f$(4 m_2+3 m_1)/(2 m_2 M^3)\f$ (all masses expressed in seconds).
+  </li><li> \c oneBy2Mcube: = \f$1/(2 M^3)\f$
+  </li><li> \c threeBy2Mcube:  = \f$3/(2 M^3)\f$
+  </li><li> \c thirtytwoBy5etc:=  \f$(32/5) \eta^2 M\f$</li>
+</ul>
+*/
 typedef struct
 tagInspiralACSTParams
 {
@@ -684,14 +567,54 @@ tagInspiralACSTParams
    REAL8 threeBy2Mcube;
    REAL8 thirtytwoBy5etc;
 }  InspiralACSTParams;
-/* </lalVerbatim>  */
-
-/* <lalLaTeX>
-\idx[Type]{InspiralACSTParamsH}
-</lalLaTeX>  */
 
 
-/* <lalVerbatim file="LALExpnCoeffsH">  */
+
+
+
+
+
+/** This structure contains various post-Newtonian and P-approximant expansion
+    coefficients; the meanings of the coefficients is indicated as comments
+    before each list.
+
+<ul>
+<li> {Energy, flux, phase, time and frequency functions:} The following
+	functions are generic function definitions that will be used in
+	template generation. The function <tt>LALInspiralChooseModel,</tt>
+	which is called by wave generation interface code, points these
+	functions to the appropriate specific functions depending on the
+	choices made by the user.</li>
+
+
+<li> \c expnFunc: Structure to hold the pointers to the generic
+	functions defined above.</li>
+
+
+<li> <tt>TofVIn</tt> and <tt>TofVIntegrandIn:</tt> Structures needed to
+	compute the time elapsed
+	from/to the starting epoch of the waveform when the velocity
+	parameter was \f$v_0,\f$ to/from the current epoch when velocity
+	parameter is \f$v.\f$</li>
+
+
+<li> <tt>InspiralPhaseIn</tt> and <tt>PhiofVIntegrandIn:</tt> Structures used
+	to compute the phase of the signal from the `beginning', when the
+	veolcity parameter is \f$v_0,\f$ to a time when the velocity parameter
+	has evolved to a user input value \f$v.\f$</li>
+
+
+<li> \c InspiralDerivativesIn: Structure used as an input to compute
+	the derivatives needed in solving the phasing formula when the
+	\c approximant is <tt>TaylorT1, TaylorP1</tt> or <tt>EOB.</tt></li>
+
+
+<li> \c rk4GSLIntegrator: Structure containing steps and controls
+for the GSL Runge-Kutta solver</li>
+
+<li> \c rk4In: Structure used as an input to Runge-Kutta solver.</li>
+</ul>
+*/
 typedef struct
 tagexpnCoeffs {
    int ieta;
@@ -743,14 +666,6 @@ tagexpnCoeffs {
    REAL8 vpoleP4, vpoleP6;
 }  expnCoeffs;
 
-/* </lalVerbatim>  */
-
-/* <lalLaTeX>
-\idx[Type]{expnCoeffs}
-</lalLaTeX>  */
-
-/* <lalVerbatim file="LALEnergyAndFluxFunctionsH"> */
-
 typedef REAL8 EnergyFunction(
    REAL8 v,
    expnCoeffs *ak);
@@ -788,9 +703,6 @@ typedef void (InspiralTiming2) (
    REAL8 f,
    void *params);
 
-/* </lalVerbatim> */
-
-/* <lalVerbatim file="LALexpnFuncH">  */
 typedef struct
 tagexpnFunc
 {
@@ -801,13 +713,8 @@ tagexpnFunc
    InspiralPhasing3 *phasing3;
    InspiralFrequency3 *frequency3;
 } expnFunc;
-/* </lalVerbatim>  */
 
-/* <lalLaTeX>
-\idx[Type]{expnFunc}
-</lalLaTeX>  */
 
-/* <lalVerbatim file="LALInspiralTofVH">  */
 typedef struct
 tagTofVIn
 {
@@ -820,14 +727,7 @@ tagTofVIn
    FluxFunction *flux;
    expnCoeffs *coeffs;
 } TofVIn;
-/* </lalVerbatim>  */
 
-/* <lalLaTeX>
-\idx[Type]{TofVIn}
-</lalLaTeX>  */
-
-
-/* <lalVerbatim file="LALInspiralTofVH">  */
 typedef struct
 tagTofVIntegrandIn
 {
@@ -835,13 +735,8 @@ tagTofVIntegrandIn
    FluxFunction *flux;
    expnCoeffs *coeffs;
 } TofVIntegrandIn;
-/* </lalVerbatim>  */
 
-/* <lalLaTeX>
-\idx[Type]{TofVIntegrandIn}
-</lalLaTeX>  */
 
-/* <lalVerbatim file="LALInspiralDerivativesH">  */
 typedef struct
 tagInspiralDerivativesIn
 {
@@ -850,13 +745,13 @@ tagInspiralDerivativesIn
    FluxFunction *flux;
    expnCoeffs *coeffs;
 } InspiralDerivativesIn;
-/* </lalVerbatim>  */
 
-/* <lalLaTeX>
-\idx[Type]{InspiralDerivativesIn}
-</lalLaTeX>  */
 
-/* <lalVerbatim file="LALInspiralRungeKuttaH">  */
+
+
+
+
+
 typedef struct
 tagrk4In
 {
@@ -870,13 +765,7 @@ tagrk4In
    REAL8 h;
    INT4 n;
 } rk4In;
-/* </lalVerbatim>  */
 
-/* <lalLaTeX>
-\index{\texttt{rk4In}}
-</lalLaTeX>  */
-
-/* <lalVerbatim file="LALInspiralGSLRungeKuttaH"> */
 typedef struct
 tagrk4GSLIntegrator
 {
@@ -887,13 +776,7 @@ tagrk4GSLIntegrator
    REAL8 *y;
    rk4In *input;
 } rk4GSLIntegrator;
-/* </lalVerbatim> */
 
-/* <lalLaTeX>
-\index{\texttt{rk4GSLIntegrator}}
-</lalLaTeX>  */
-
-/* <lalVerbatim file="LALInspiralPhaseH">  */
 typedef struct
 tagInspiralPhaseIn
 {
@@ -903,14 +786,7 @@ tagInspiralPhaseIn
    FluxFunction *flux;
    expnCoeffs *coeffs;
 } InspiralPhaseIn;
-/* </lalVerbatim>  */
 
-/* <lalLaTeX>
-\idx[Type]{InspiralPhaseIn}
-</lalLaTeX>  */
-
-
-/* <lalVerbatim file="LALInspiralPhaseH">  */
 typedef struct
 tagPhiofVIntegrandIn
 {
@@ -918,15 +794,7 @@ tagPhiofVIntegrandIn
    FluxFunction *flux;
    expnCoeffs *coeffs;
 }  PhiofVIntegrandIn;
-/* </lalVerbatim>  */
 
-/* <lalLaTeX>
-\idx[Type]{PhiofVIntegrandIn}
-</lalLaTeX>  */
-
-
-
-/* <lalVerbatim file="LALInspiralInitH">  */
 typedef struct
 tagInspiralInit
 {
@@ -935,13 +803,7 @@ tagInspiralInit
   expnFunc   func;
 
 }  InspiralInit;
-/* </lalVerbatim>  */
 
-/* <lalLaTeX>
-\idx[Type]{InspiralInit}
-</lalLaTeX>  */
-
-/* <lalVerbatim file="LALInspiralApplyTaperH">  */
 typedef enum
 {
   INSPIRAL_TAPER_NONE,
@@ -950,44 +812,22 @@ typedef enum
   INSPIRAL_TAPER_STARTEND,
   INSPIRAL_TAPER_NUM_OPTS
 }  InspiralApplyTaper;
-/* </lalVerbatim>  */
-
-/* <lalLaTeX>
-\idx[Type]{InspiralInit}
-</lalLaTeX>  */
-
-
-
-/*  <lalLaTeX>
-\vfill{\footnotesize\input{LALInspiralHV}}
-</lalLaTeX>  */
-
-
-
 
 /* Function prototypes */
 
-
 /* --- HERE ARE SOME USEFUL PROTOTYPE FOR LENGTH, PARAMETER CALCULATION... --- */
-/*  <lalLaTeX>
-\newpage\input{LALInspiralParameterCalcC}
-</lalLaTeX>  */
 
 void LALInspiralParameterCalc (
      LALStatus *status,
      InspiralTemplate *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralAmplitudeC}
-</lalLaTeX>  */
-
 void LALInspiralRestrictedAmplitude(
      LALStatus *status,
      InspiralTemplate  *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWaveLengthC}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralWaveLength (
      LALStatus *status,
@@ -995,9 +835,9 @@ void LALInspiralWaveLength (
      InspiralTemplate params);
 
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralChooseModelC}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralChooseModel(
      LALStatus *status,
@@ -1005,27 +845,27 @@ void LALInspiralChooseModel(
      expnCoeffs *ak,
      InspiralTemplate *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralSetupC}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralSetup (
      LALStatus *status,
      expnCoeffs *ak,
      InspiralTemplate *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralInitC}
-</lalLaTeX>  */
+
+
+
 void
 LALInspiralInit(
 	LALStatus        *status,
 	InspiralTemplate *params,
 	InspiralInit     *paramsInit);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWaveTaperC}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralWaveTaper(
      LALStatus    *status,
@@ -1038,9 +878,9 @@ int XLALInspiralWaveTaper(
                    InspiralApplyTaper  bookends);
 
 /* --- HERE ARE THE WAVEFORMS/MODELS PROTOTYPES --- */
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWaveC}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralAmplitudeCorrectedWave(
      LALStatus *status,
@@ -1060,9 +900,9 @@ LALInspiralAmplitudeCorrectedWaveForInjection(
    InspiralTemplate *params,
    PPNParamStruc  *ppnParams);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWaveC}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralWave(
      LALStatus *status,
@@ -1082,9 +922,9 @@ LALInspiralWaveForInjection(
    InspiralTemplate *params,
    PPNParamStruc  *ppnParams);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave1C}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralWave1(
      LALStatus *status,
@@ -1123,9 +963,9 @@ void LALInspiralEccentricityForInjection(
      );
 
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave2C}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralWave2(
      LALStatus *status,
@@ -1145,9 +985,9 @@ void LALInspiralWave2ForInjection(
      PPNParamStruc  *ppnParams
      );
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave3C}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralWave3 (
      LALStatus *status,
@@ -1166,25 +1006,25 @@ void LALInspiralWave3ForInjection(
      InspiralTemplate *params,
      PPNParamStruc  *ppnParams);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralStationaryPhaseApprox1C}
-</lalLaTeX>  */
+
+
+
 void LALInspiralStationaryPhaseApprox1 (
      LALStatus *status,
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralStationaryPhaseApprox2C}
-</lalLaTeX>  */
+
+
+
 void LALInspiralStationaryPhaseApprox2 (
      LALStatus *status,
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALEOBWaveformC}
-</lalLaTeX>  */
+
+
+
 
 void LALEOBWaveform(
      LALStatus *status,
@@ -1203,9 +1043,9 @@ void LALEOBWaveformForInjection(
      InspiralTemplate *params,
      PPNParamStruc  *ppnParams);
 
-/*  <lalLaTeX>
-\newpage\input{LALBCVWaveformC}
-</lalLaTeX>  */
+
+
+
 
 void LALBCVWaveform(
      LALStatus *status,
@@ -1233,18 +1073,18 @@ void LALBCVSpinWaveform(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
-/* <lalLaTeX>
-\newpage\input{LALInspiralTaylorNWaveformC}
-</lalLaTeX> */
+
+
+
 
 void LALTaylorNWaveform (
      LALStatus        *status,
      REAL4Vector      *signalvec,
      InspiralTemplate *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralSpinningBHBinaryC}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralSpinModulatedWave(
      LALStatus        *status,
@@ -1260,9 +1100,9 @@ void LALInspiralSpinModulatedWaveForInjection(
      );
 
 
-/*  <lalLaTeX>
- \newpage\input{LALSTPNWaveformC}
-</lalLaTeX>  */
+
+
+
 void
 LALSTPNWaveformForInjection (
 			    LALStatus        *status,
@@ -1306,9 +1146,9 @@ void LALSTPNWaveform(
 
 /* Phen-Spin waveform functions*/
 
-/*  <lalLaTeX>
- \input{LALSpinInspiralRDC}
-</lalLaTeX>  */
+
+
+
 
 void LALSpinInspiralDerivatives(
                          REAL8Vector *values,
@@ -1388,9 +1228,9 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
 
 /* --- OTHER PROTOTYPES --- */
 
-/*  <lalLaTeX>
-\newpage\input{LALEtaTau02C}
-</lalLaTeX>  */
+
+
+
 
 void LALEtaTau02(
      LALStatus *status,
@@ -1398,9 +1238,9 @@ void LALEtaTau02(
      REAL8 eta,
      void  *in);
 
-/* <lalLaTeX>
-\newpage\input{LALEtaTau04C}
-</lalLaTeX>  */
+
+
+
 
 void LALEtaTau04(
      LALStatus *status,
@@ -1408,27 +1248,27 @@ void LALEtaTau04(
      REAL8 eta,
      void  *in);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralDerivativesC}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralDerivatives (
      REAL8Vector *vec1,
      REAL8Vector *vec2,
      void *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralVelocityC}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralVelocity (
      LALStatus *status,
      REAL8 *v,
      TofVIn *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralPhasing1C}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralPhasing1 (
      LALStatus *status,
@@ -1436,9 +1276,9 @@ void LALInspiralPhasing1 (
      REAL8 v,
      void *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralPhiofVIntegrandC}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralPhiofVIntegrand (
      LALStatus *status,
@@ -1447,9 +1287,9 @@ void LALInspiralPhiofVIntegrand (
      void *);
 
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralPhasing2C}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralPhasing2_0PN (
      LALStatus *status,
@@ -1500,9 +1340,9 @@ void LALInspiralPhasing2_7PN (
      expnCoeffs *ak);
 
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralPhasing3C}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralPhasing3_0PN (
      LALStatus *status,
@@ -1552,9 +1392,9 @@ void LALInspiralPhasing3_7PN (
      REAL8 td,
      expnCoeffs *ak);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralTofVC}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralTofV (
      LALStatus *,
@@ -1563,9 +1403,9 @@ void LALInspiralTofV (
      void *);
 
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralTofVIntegrandC}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralTofVIntegrand (
      LALStatus *status,
@@ -1573,9 +1413,9 @@ void LALInspiralTofVIntegrand (
      REAL8,
      void *);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralTiming2C}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralTiming2_0PN (
      LALStatus *,
@@ -1626,9 +1466,9 @@ void LALInspiralTiming2_7PN (
      REAL8 f,
      void *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralFrequency3C}
-</lalLaTeX>  */
+
+
+
 
 void LALInspiralFrequency3_0PN (
      LALStatus *status,
@@ -1688,9 +1528,9 @@ REAL4 LALInspiralHCrossPolarization(
      REAL8 v,
      InspiralTemplate *params );
 
-/*  <lalLaTeX>
-\newpage\input{LALRungeKutta4C}
-</lalLaTeX>  */
+
+
+
 
 rk4GSLIntegrator * XLALRungeKutta4Init(
 		   INT4 n,
@@ -1707,9 +1547,9 @@ void XLALRungeKutta4Free(
 
 /* --- PARSING PROTOTYPE FOR INSPIRALTEMPLATE STRCUTURE --- */
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralParseParametersC}
-</lalLaTeX>  */
+
+
+
 void
 LALInspiralITStructureParseParameters(
 	LALStatus *status,
@@ -1769,7 +1609,7 @@ INT4 XLALInspiralAttachRingdownWave (
         REAL4Vector  	 *signalvec2,
         InspiralTemplate *params);
 
- 
+
 INT4 XLALPSpinInspiralRingdownWave (
        REAL8Vector             *rdwave,
        InspiralTemplate        *params,

@@ -23,17 +23,8 @@
  *
  * Author: Brady, P. R., Brown, D. A., and Fairhurst, S
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
-
-#if 0
-<lalVerbatim file="SimInspiralUtilsCV">
-Author: Brown, D. A.
-$Id$
-</lalVerbatim>
-#endif
 
 #include <math.h>
 #include <stdio.h>
@@ -53,54 +44,39 @@ $Id$
 
 NRCSID( SIMINSPIRALUTILSC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{SimInspiralUtils.c}}
+/**
+\author Brown, D. A.
+\file
 
-Provides a set of utilities for manipulating \texttt{simInspiralTable}s.
+\brief Provides a set of utilities for manipulating \c simInspiralTables.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{SimInspiralUtilsCP}
-\idx{LALGalacticInspiralParamsToSimInspiralTable()}
-\idx{LALInspiralSiteTimeAndDist()}
-\idx{LALPopulateSimInspiralSiteInfo()}
+\heading{Description}
 
-\subsubsection*{Description}
-
-The function \texttt{LALInspiralSiteTimeAndDist()} calculates detector end
-time (\texttt{endTime}) and effective distance (\texttt{effDist}) for an
-inspiral signal from a specific location in the sky (\texttt{skyPos}) assumed
+The function <tt>LALInspiralSiteTimeAndDist()</tt> calculates detector end
+time (\c endTime) and effective distance (\c effDist) for an
+inspiral signal from a specific location in the sky (\c skyPos) assumed
 to be given in equatorial coordinates.  The detector end time is obtained by
-using \texttt{LALTimeDelayFromEarthCenter()}, while the effective distance
+using <tt>LALTimeDelayFromEarthCenter()</tt>, while the effective distance
 requires calculation of the detector response, calculated using
-\texttt{LALComputeDetAMResponse()}.
+<tt>LALComputeDetAMResponse()</tt>.
 
-The function \texttt{LALPopulateSimInspiralSiteInfo()} populates the end time
+The function <tt>LALPopulateSimInspiralSiteInfo()</tt> populates the end time
 and effective distance for each of the interferometer sites.  The sky location
 (in equatorial coordinates) is assumed to be already contained in the input
-\texttt{SimInspiralTable}.  The end time and effective distance for each site
-is calculated by calling \texttt{LALInspiralSiteTimeAndDist()} once for each
-of the detectors, and setting the \texttt{detector} appropriately.
+\c SimInspiralTable.  The end time and effective distance for each site
+is calculated by calling <tt>LALInspiralSiteTimeAndDist()</tt> once for each
+of the detectors, and setting the \c detector appropriately.
 
+\heading{Algorithm}
 
+None.
 
-\subsubsection*{Algorithm}
+\heading{Uses}
 
-\noindent None.
+LALGetInspiralParams(), LALGPStoGMST1(), LALTimeDelayFromEarthCenter(),
+  LALComputeDetAMResponse().
 
-\subsubsection*{Uses}
-
-\noindent LALGetInspiralParams, LALGPStoGMST1, LALTimeDelayFromEarthCenter,
-  LALComputeDetAMResponse.
-
-  \subsubsection*{Notes}
-  %% Any relevant notes.
-
-  \vfill{\footnotesize\input{SimInspiralUtilsCV}}
-
-  </lalLaTeX>
-#endif
+*/
 
   /* a few useful static functions */
 static INT8 geocent_end_time(const SimInspiralTable *x)
@@ -109,13 +85,13 @@ static INT8 geocent_end_time(const SimInspiralTable *x)
 }
 
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 void
 XLALPlayTestSimInspiral(
     SimInspiralTable         **eventHead,
     LALPlaygroundDataMask      *dataType
     )
-/* </lalVerbatim> */
+
 {
   SimInspiralTable    *inspiralEventList = NULL;
   SimInspiralTable    *thisEvent = NULL;
@@ -188,13 +164,13 @@ XLALPlayTestSimInspiral(
 }
 
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 int
 XLALSimInspiralInSearchedData(
     SimInspiralTable         **eventHead,
     SearchSummaryTable       **summList
     )
-/* </lalVerbatim> */
+
 {
   SearchSummaryTable   *thisSearchSumm = NULL;
 
@@ -265,14 +241,14 @@ XLALSimInspiralInSearchedData(
 }
 
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 int
 XLALSimInspiralChirpMassCut(
     SimInspiralTable   **eventHead,
     REAL4                minChirpMass,
     REAL4                maxChirpMass
     )
-/* </lalVerbatim> */
+
 {
   SimInspiralTable    *inspiralEventList = NULL;
   SimInspiralTable    *thisEvent = NULL;
@@ -319,7 +295,7 @@ XLALSimInspiralChirpMassCut(
 }
 
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 int
 XLALSimInspiralCompMassCut(
     SimInspiralTable   **eventHead,
@@ -328,7 +304,7 @@ XLALSimInspiralCompMassCut(
     REAL4                minCompMass2,
     REAL4                maxCompMass2
     )
-/* </lalVerbatim> */
+
 {
   SimInspiralTable    *inspiralEventList = NULL;
   SimInspiralTable    *thisEvent = NULL;
@@ -390,14 +366,14 @@ XLALSimInspiralCompMassCut(
 }
 
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 int
 XLALSimInspiralTotalMassCut(
     SimInspiralTable   **eventHead,
     REAL4                minTotalMass,
     REAL4                maxTotalMass
     )
-/* </lalVerbatim> */
+
 {
   SimInspiralTable    *inspiralEventList = NULL;
   SimInspiralTable    *thisEvent = NULL;
@@ -444,7 +420,7 @@ XLALSimInspiralTotalMassCut(
 }
 
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 void
 LALGalacticInspiralParamsToSimInspiralTable(
     LALStatus                  *status,
@@ -452,7 +428,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
     GalacticInspiralParamStruc *input,
     RandomParams               *params
     )
-/* </lalVerbatim> */
+
 {
   PPNParamStruc         ppnParams;
   SkyPosition           skyPos;
@@ -590,7 +566,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
   RETURN (status);
 }
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 void
 LALInspiralSiteTimeAndDist(
     LALStatus         *status,
@@ -600,7 +576,7 @@ LALInspiralSiteTimeAndDist(
     REAL4             *effDist,
     SkyPosition       *skyPos
     )
-/* </lalVerbatim> */
+
 {
   LALSource             source;
   LALDetAndSource       detAndSource;
@@ -661,13 +637,13 @@ LALInspiralSiteTimeAndDist(
 
 
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 void
 LALPopulateSimInspiralSiteInfo(
     LALStatus                  *status,
     SimInspiralTable           *output
     )
-/* </lalVerbatim> */
+
 {
   SkyPosition           skyPos;
   LALDetector           detector;
@@ -734,14 +710,14 @@ LALPopulateSimInspiralSiteInfo(
   RETURN (status);
 }
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 void
 XLALSortSimInspiral(
     SimInspiralTable **head,
     int (*comparefunc)(const SimInspiralTable * const *,
       const SimInspiralTable * const *)
     )
-/* </lalVerbatim> */
+
 {
   INT4 i;
   INT4 length;
@@ -774,13 +750,13 @@ XLALSortSimInspiral(
   LALFree(array);
 }
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 int
 XLALCompareSimInspiralByGeocentEndTime(
     const SimInspiralTable * const *a,
     const SimInspiralTable * const *b
     )
-/* </lalVerbatim> */
+
 {
   INT8 ta, tb;
   INT8 epsilon = 10;	/* nanoseconds */
@@ -796,12 +772,12 @@ XLALCompareSimInspiralByGeocentEndTime(
 }
 
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 int
 XLALFreeSimInspiral (
     SimInspiralTable **eventHead
     )
-/* </lalVerbatim> */
+
 {
   EventIDColumn        *eventId;
 
@@ -818,13 +794,13 @@ XLALFreeSimInspiral (
 }
 
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 INT8
 XLALReturnSimInspiralEndTime (
     SimInspiralTable *event,
     CHAR             *ifo
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "ReturnSimInspiralEndTime";
   if ( ! strcmp( "L1", ifo ) )
@@ -855,7 +831,7 @@ XLALReturnSimInspiralEndTime (
 
 }
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 int
 XLALSnglSimInspiralTest (
     SimInspiralTable  **simHead,
@@ -864,7 +840,7 @@ XLALSnglSimInspiralTest (
     SnglInspiralTable **missedSnglHead,
     INT8                injectWindowNS
     )
-/* </lalVerbatim> */
+
 {
 
   /* Note: we are assuming that both the inspiral and */
@@ -1085,7 +1061,7 @@ XLALSnglSimInspiralTest (
 }
 
 
-/* <lalVerbatim file="SimInspiralUtilsCP"> */
+
 int
 XLALCoincSimInspiralTest (
     SimInspiralTable   **simHead,
@@ -1093,7 +1069,7 @@ XLALCoincSimInspiralTest (
     SimInspiralTable   **missedSimHead,
     CoincInspiralTable **missedCoincHead
     )
-/* </lalVerbatim> */
+
 {
   CoincInspiralTable    *thisCoinc       = *coincHead;
   CoincInspiralTable    *prevCoinc       = NULL;

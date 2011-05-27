@@ -17,81 +17,75 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="LALBCVWaveformCV">
- * Author: B.S. Sathyaprakash
- * $Id$
- **** </lalVerbatim> */
+/**
+ * \author B.S. Sathyaprakash
+ * \file
+ * \ingroup LALInspiral_h
 
-/**** <lalLaTeX>
+
+ * \brief This module contains a single function <tt>LALBCVWaveform()</tt>.
  *
- * \subsection{Module \texttt{LALBCVWaveform.c}}
+ * \heading{Prototypes}
  *
- * This module contains a single function {\tt LALBCVWaveform.}
- * \subsubsection*{Prototypesc}
- * \input{LALBCVWaveformCP}
- * \idx{LALLALBCVWaveform()}
- * \begin{itemize}
- * \item {\tt signalvec:} Output containing the \emph {Fourier transform} of the inspiral waveform.
- * \item {\tt params:} Input containing binary chirp parameters;
+ * <tt>LALLALBCVWaveform():</tt>
+ * <ul>
+ * <li> \c signalvec: Output containing the <em>Fourier transform</em> of the inspiral waveform.
+ * </li><li> \c params: Input containing binary chirp parameters;
  * it is necessary and sufficent to specify the following parameters
- * of the {\tt params} structure:
- * {\tt psi0, psi3, alpha, fendBCV(fFinal), nStartPad, fLower, tSampling}.
- * All other parameters in {\tt params} are ignored.  \end{itemize}
- * \input{LALBCVSpinWaveformCP}
- * \idx{LALLALBCVSpinWaveform()}
- * \begin{itemize}
- * \item {\tt signalvec:} Output containing the \emph {Fourier transform} of the inspiral waveform.
- * \item {\tt params:} Input containing binary chirp parameters;
- * it is necessary and sufficent to specify the following parameters
- * of the {\tt params} structure:
- * {\tt psi0, psi3, alpha1, alpha2, beta, fendBCV(fFinal), nStartPad, fLower, tSampling}.
- * All other parameters in {\tt params} are ignored.  \end{itemize} *
+ * of the \c params structure:
+ * <tt>psi0, psi3, alpha, fendBCV(fFinal), nStartPad, fLower, tSampling</tt>.
+ * All other parameters in \c params are ignored.  </li></ul>
  *
- * \subsubsection*{Description}
- * This module can be used to generate {\it detection template
- * family} of Buonanno, Chen and Vallisneri \cite{BCV03,BCV03b}.
- * There are two modules: {\tt LALBCVWaveform.} and {\tt LALBCVSpinWaveform.}
+ * <tt>LALLALBCVSpinWaveform()</tt>
+ * <ul>
+ * <li> \c signalvec: Output containing the <em>Fourier transform</em> of the inspiral waveform.
+ * </li><li> \c params: Input containing binary chirp parameters;
+ * it is necessary and sufficent to specify the following parameters
+ * of the \c params structure:
+ * <tt>psi0, psi3, alpha1, alpha2, beta, fendBCV(fFinal), nStartPad, fLower, tSampling</tt>.
+ * All other parameters in \c params are ignored.  </li></ul> *
+ *
+ * \heading{Description}
+ * This module can be used to generate <em>detection template
+ * family</em> of Buonanno, Chen and Vallisneri [\ref BCV03,BCV03b].
+ * There are two modules: <tt>LALBCVWaveform.</tt> and <tt>LALBCVSpinWaveform.</tt>
  * The former can be used to generate non-spinning waveforms and the DTF
- * it implements is given in Sec.~\ref{sec:BCV} and
- * Eq.(\ref{eq:BCV:NonSpinning}) and the latter
- * to generate spinning waveforms (Eq.~\ref{eq:BCV:Spinning}).
+ * it implements is given in Eq.\eqref{eq_BCV_NonSpinning} and the latter
+ * to generate spinning waveforms (Eq.\eqref{eq_BCV_Spinning}.
  *
- * \subsubsection*{Algorithm}
+ * \heading{Algorithm}
  * A straightforward implementation of the formula. Note that the routine returns
- * {\bf Fourier transform} of the signal as opposed to most other modules in this
+ * <tt>Fourier transform</tt> of the signal as opposed to most other modules in this
  * package which return time-domain signals. Also, the amplitude is quite arbitrary.
  *
- * \subsubsection*{Uses}
- * \begin{verbatim}
+ * \heading{Uses}
+ * \code
  * ASSERT
  * ATTATCHSTATUSPTR
  * DETATCHSTATUSPTR
  * INITSTATUS
  * RETURN
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Notes}
+ * \heading{Notes}
  *
  * %% Any relevant notes.
  *
- * \vfill{\footnotesize\input{LALBCVWaveformCV}}
  *
- **** </lalLaTeX> */
+ *
+*/
 
 #include <lal/LALInspiral.h>
 
-/** DEFINE RCS ID STRING **/
 NRCSID (LALBCVWAVEFORMC, "$Id$");
 
-
-/*  <lalVerbatim file="LALBCVWaveformCP"> */
 void
 LALBCVWaveform(
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
- { /* </lalVerbatim>  */
+ {
 
   REAL8 f, df;
   REAL8 shift, phi, psi, amp0, amp;
@@ -176,7 +170,7 @@ LALBCVWaveform(
 
 
 
-/*  <lalVerbatim file="LALBCVSpinWaveformCP"> */
+
 
 void
 LALBCVSpinWaveform(
@@ -184,7 +178,7 @@ LALBCVSpinWaveform(
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
- { /* </lalVerbatim>  */
+ {
 
   REAL8 f, df;
   REAL8 shift, phi, psi, amp0, ampRe, ampIm, modphase;

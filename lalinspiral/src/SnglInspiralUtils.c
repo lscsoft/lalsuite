@@ -23,17 +23,8 @@
  *
  * Author: Brady, P. R., Brown, D. A., Fairhurst, S. and Messaritaki, E.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
-
-#if 0
-<lalVerbatim file="SnglInspiralUtilsCV">
-Author: Brown, D. A., Fairhurst, S. and Messaritaki, E.
-$Id$
-</lalVerbatim>
-#endif
 
 #include <math.h>
 #include <stdio.h>
@@ -51,176 +42,137 @@ $Id$
 
 NRCSID( SNGLINSPIRALUTILSC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{SnglInspiralUtils.c}}
+/**
+\author Brown, D. A., Fairhurst, S. and Messaritaki, E.
+\file
 
-Provides a set of utilities for manipulating \texttt{snglInspiralTable}s.
+\brief Provides a set of utilities for manipulating \c snglInspiralTables.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{SnglInspiralUtilsCP}
-\idx{LALFreeSnglInspiral()}
-\idx{XLALFreeSnglInspiral()}
-\idx{LALSortSnglInspiral()}
-\idx{XLALSortSnglInspiral()}
-\idx{LALCompareSnglInspiralByMass()}
-\idx{LALCompareSnglInspiralByPsi()}
-\idx{LALCompareSnglInspiralByTime()}
-\idx{LALCompareSnglInspiral()}
-\idx{LALCompareInspirals()}
-\idx{LALClusterSnglInspiralTable()}
-\idx{XLALClusterSnglInspiralTable()}
-\idx{LALTimeCutSingleInspiral()}
-\idx{XLALTimeCutSingleInspiral()}
-\idx{LALSNRCutSingleInspiral()}
-\idx{XLALSNRCutSingleInspiral()}
-\idx{XLALRsqCutSingleInspiral()}
-\idx{LALBCVCVetoSingleInspiral()}
-\idx{LALalphaFCutSingleInspiral()}
-\idx{LALIfoCutSingleInspiral()}
-\idx{XLALIfoCutSingleInspiral()}
-\idx{LALIfoCountSingleInspiral()}
-\idx{LALTimeSlideSingleInspiral()}
-\idx{LALPlayTestSingleInspiral()}
-\idx{XLALPlayTestSingleInspiral()}
-\idx{LALCreateTrigBank()}
-\idx{LALIncaCoincidenceTest()}
-\idx{LALTamaCoincidenceTest()}
-\idx{XLALMaxSnglInspiralOverIntervals(()}
-\idx{XLALCountSnglInspiral()}
+\heading{Description}
 
-\subsubsection*{Description}
-
-The function \texttt{LALFreeSnglInspiral()} and \idx{XLALFreeSnglInspiral()}
+The function <tt>LALFreeSnglInspiral()</tt> and XLALFreeSnglInspiral()
 free the memory associated to a single inspiral table.  The single inspiral
 table may point to a linked list of EventIDColumns.  Thus, it is necessary to
 free all event ids associated with the single inspiral.
 
-The function \texttt{LALSortSnglInspiral()} and \texttt{XLALSortSnglInspiral()}
+The function <tt>LALSortSnglInspiral()</tt> and <tt>XLALSortSnglInspiral()</tt>
 sorts a list of single inspiral tables.  The function simply calls qsort with
-the appropriate comparison function, \texttt{comparfunc}.  It then ensures that
+the appropriate comparison function, \c comparfunc.  It then ensures that
 the head of the sorted list is returned.  There then follow several comparison
-functions for single inspiral tables.  \texttt{LALCompareSnglInspiralByMass ()}
-first compares the \texttt{mass1} entry of the two inspiral tables, returning 1
+functions for single inspiral tables.  <tt>LALCompareSnglInspiralByMass()</tt>
+first compares the \c mass1 entry of the two inspiral tables, returning 1
 if the first mass is larger and -1 if the second is larger.  In the case that
-the \texttt{mass1} fields are equal, a similar comparsion is performed on
-\texttt{mass2}.  If these also agree, 0 is returned.
-\texttt{LALCompareSnglInspiralByPsi()} compares the \texttt{Psi0} and
-\texttt{Psi3} fields in two single inspiral tables.  The function is analogous
-to the mass comparison described above.  \texttt{LALCompareSnglInspiralByTime}
+the \c mass1 fields are equal, a similar comparsion is performed on
+\c mass2.  If these also agree, 0 is returned.
+<tt>LALCompareSnglInspiralByPsi()</tt> compares the \c Psi0 and
+\c Psi3 fields in two single inspiral tables.  The function is analogous
+to the mass comparison described above.  \c LALCompareSnglInspiralByTime()
 compares the end times of two single inspiral tables, returnng 1 if the first
 time is larger, 0 if equal and -1 if the second time is larger.
 
-\texttt{LALCompareSnglInspiral()} tests whether two single inspiral tables
+<tt>LALCompareSnglInspiral()</tt> tests whether two single inspiral tables
 pass a coincidence test.  The coincidence parameters are given by
-\texttt{params} which is a \texttt{SnglInspiralAccuracy} structure.  It tests
-first that the \texttt{ifo} fields are different.  If they are, it then tests
+\c params which is a \c ::SnglInspiralAccuracy structure.  It tests
+first that the \c ifo fields are different.  If they are, it then tests
 for time and mass coincidence, where mass coincidence may be any one of
-\texttt{psi0\_and\_psi3}, \texttt{m1\_and\_m2}, \texttt{mchirp\_and\_eta}.
-Finally, if the test is on \texttt{m1\_and\_m2}, consistency of effective
+\c psi0_and_psi3, \c m1_and_m2, \c mchirp_and_eta.
+Finally, if the test is on \c m1_and_m2, consistency of effective
 distances is also checked.  If the two single inspiral tables pass
-coincidences the \texttt{params.match} is set to 1, otherwise it is set to
+coincidences the <tt>params.match</tt> is set to 1, otherwise it is set to
 zero.
 
-\texttt{LALClusterSnglInspiralTable ()} clusters single inspiral triggers
-within a time window \texttt{dtimeNS}.  The triggers are compared either by
-\texttt{snr}, \texttt{snr\_and\_chisq} or \texttt{snrsq\_over\_chisq}.  The
+<tt>LALClusterSnglInspiralTable()</tt> clusters single inspiral triggers
+within a time window \c dtimeNS.  The triggers are compared either by
+\c snr, \c snr_and_chisq or \c snrsq_over_chisq.  The
 "loudest" trigger, as determined by the selected algorithm, within each time
 window is returned.
 
-\texttt{LALTimeCutSingleInspiral()} and
-\texttt{XLALTimeCutSingleInspiral()}takes in a linked list of single inspiral
-tables and returns only those which occur after the given \texttt{startTime}
-and before the \texttt{endTime}.
+<tt>LALTimeCutSingleInspiral()</tt> and
+<tt>XLALTimeCutSingleInspiral()</tt>takes in a linked list of single inspiral
+tables and returns only those which occur after the given \c startTime
+and before the \c endTime.
 
-\texttt{LALSNRCutSingleInspiral()} and \texttt{XLALSNRCutSingleInspiral()}
+<tt>LALSNRCutSingleInspiral()</tt> and <tt>XLALSNRCutSingleInspiral()</tt>
 take in a linked list of single inspiral tables and returns only those
 triggers which have snr values above a specific snrCut.
 
-\texttt{XLALRsqCutSingleInspiral()} performs the R-squared veto on a linked
+<tt>XLALRsqCutSingleInspiral()</tt> performs the R-squared veto on a linked
 list of single inspiral tables.  Triggers whose snr is less than
-\texttt{rsqSnrMax} and whose \texttt{rsqveto\_duration} is greater than
-\texttt{rsqVetoThresh} or \texttt{(optional)} whose snr is greater than
-\texttt{rsqSnrMax} and whose \texttt{rsqveto\_duration} is greater than
-$\mathtt{rsqAboveSnrCoeff} \times \mathtt{snr}^{\mathtt{rsqAboveSnrPow}}$
+\c rsqSnrMax and whose \c rsqveto_duration is greater than
+\c rsqVetoThresh or <tt>(optional)</tt> whose snr is greater than
+\c rsqSnrMax and whose \c rsqveto_duration is greater than
+\f$\mathtt{rsqAboveSnrCoeff} \times \mathtt{snr}^{\mathtt{rsqAboveSnrPow}}\f$
 
-\texttt{XLALVetoSingleInspiral()} takes in a linked list of single inspiral
+<tt>XLALVetoSingleInspiral()</tt> takes in a linked list of single inspiral
 tables and a list of segments and returns only those triggers which do not lie
-in within the \texttt{vetoSegs}.
+in within the \c vetoSegs.
 
-\texttt{LALBCVCVetoSingleInspiral()} takes in a linked list of single inspiral
+<tt>LALBCVCVetoSingleInspiral()</tt> takes in a linked list of single inspiral
 tables and returns only those triggers which have alphaF/SNR values below a
 specific threshold and alphaF value between alphaF-hi and alphaF-lo values.  It
 is relevant for the BCVC or BCVU search only.
 
-\texttt{LALalphaFCutSingleInspiral()} takes in a linked list of single
+<tt>LALalphaFCutSingleInspiral()</tt> takes in a linked list of single
 inspiral tables and returns only those triggers which have alphaF values below
 a specific alphaFcut. It is relevant for the BCV search only.
 
-\texttt{LALIfoCutSingleInspiral()} scans through a linked list of single
-inspiral tables and returns those which are from the requested \texttt{ifo}.
-On input, \texttt{eventHead} is a pointer to the head of a linked list of
+<tt>LALIfoCutSingleInspiral()</tt> scans through a linked list of single
+inspiral tables and returns those which are from the requested \c ifo.
+On input, \c eventHead is a pointer to the head of a linked list of
 single inspiral tables.  On output, this list contains only single inspirals
-from the requested \texttt{ifo}.  \texttt{XLALIfoCutSingleInspiral()} works
+from the requested \c ifo.  <tt>XLALIfoCutSingleInspiral()</tt> works
 similarly, although slightly differently.  This function returns the list of
-events from the specified \texttt{ifo}, while on completion,
-\texttt{eventHead} contains the list of events from \textit{other} ifos.
+events from the specified \c ifo, while on completion,
+\c eventHead contains the list of events from \e other ifos.
 
-\texttt{LALIfoCountSingleInspiral()} scans through a linked list of single
+<tt>LALIfoCountSingleInspiral()</tt> scans through a linked list of single
 inspiral tables and counts the number which are from the requested IFO.
-This count is returned as \texttt{numTrigs}.
+This count is returned as \c numTrigs.
 
-\texttt{LALTimeSlideSingleInspiral()} performs a time slide on the triggers
-contained in the \texttt{triggerList}.  The time slide for each instrument is
-specified by \texttt{slideTimes[LAL\_NUM\_IFO]}.  If \texttt{startTime} and
-\texttt{endTime} are specified, then the time slide is performed on a ring.  If
+<tt>XLALTimeSlideSingleInspiral()</tt> performs a time slide on the triggers
+contained in the \c triggerList.  The time slide for each instrument is
+specified by <tt>slideTimes[LAL_NUM_IFO]</tt>.  If \c startTime and
+\c endTime are specified, then the time slide is performed on a ring.  If
 the slide takes any trigger outside of the window
-\texttt{[startTime,endTime]}, then the trigger is wrapped to be in
+<tt>[startTime,endTime]</tt>, then the trigger is wrapped to be in
 this time window.
 
-\texttt{LALPlayTestSingleInspiral()} and \idx{XLALPlayTestSingleInspiral()}
+<tt>LALPlayTestSingleInspiral()</tt> and <tt>XLALPlayTestSingleInspiral()</tt>
 test whether single inspiral events occured in playground or non-playground
 times.  It then returns the requested subset of events which occurred in the
-times specified by \texttt{dataType} which must be one of
-\texttt{playground\_only}, \texttt{exclude\_play} or \texttt{all\_data}.
+times specified by \c dataType which must be one of
+\c playground_only, \c exclude_play or \c all_data.
 
-\texttt{LALCreateTrigBank()} takes in a list of single inspiral tables and
+<tt>LALCreateTrigBank()</tt> takes in a list of single inspiral tables and
 returns a template bank.  The function tests whether a given template produced
 multiple triggers.  If it did, only one copy of the template is retained.
-Triggers are tested for coincidence in \texttt{m1\_and\_m2} or
-\texttt{psi0\_and\_psi3}.
+Triggers are tested for coincidence in \c m1_and_m2 or
+\c psi0_and_psi3.
 
-\texttt{LALIncaCoincidenceTest()} performs a coincidence test between triggers
+<tt>LALIncaCoincidenceTest()</tt> performs a coincidence test between triggers
 from two interferometers.  It tests pairs of events for both time and mass
 coincidence and returns two equal length lists of coincident events.  Note
 that if an event in one detector is coincident with several events in the
 other detector, the output lists will contain several copies of this event.
 
-\texttt{LALTamaCoincidenceTest()} also performs a coincidence test between
+<tt>LALTamaCoincidenceTest()</tt> also performs a coincidence test between
 triggers from two interferometers, but with a slightly different coincidence
 test.  First, it locates all triggers in the second instrument which are
 coincident with triggers in the first instrument.  Then, it clusters these
-triggers using the appropriate \texttt{clusterchioce}.  Finally, it tests for
+triggers using the appropriate \c clusterchioce.  Finally, it tests for
 mass coincidence between the first trigger and the clustered trigger from the
 second instrument.
 
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\noindent None.
+None.
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\noindent LALCalloc, LALFree, LALINT8NanoSecIsPlayground.
+LALCalloc(), LALFree(), LALINT8NanoSecIsPlayground().
 
-\subsubsection*{Notes}
-%% Any relevant notes.
-
-\vfill{\footnotesize\input{SnglInspiralUtilsCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 /*
  * A few quickies for convenience.
@@ -242,25 +194,25 @@ static INT4 end_time_nsec(const SnglInspiralTable *x)
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALFreeSnglInspiral (
     LALStatus          *status,
     SnglInspiralTable **eventHead
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALFreeSnglInspiral", SNGLINSPIRALUTILSC );
   XLALFreeSnglInspiral( eventHead );
   RETURN( status );
 }
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 int
 XLALFreeSnglInspiral (
     SnglInspiralTable **eventHead
     )
-/* </lalVerbatim> */
+
 {
   EventIDColumn        *eventId;
   CoincInspiralTable   *thisCoinc;
@@ -289,14 +241,14 @@ XLALFreeSnglInspiral (
   return (0);
 }
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALSortSnglInspiral (
     LALStatus          *status,
     SnglInspiralTable **eventHead,
     int(*comparfunc)    (const void *, const void *)
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALSortSnglInspiral", SNGLINSPIRALUTILSC );
 
@@ -305,13 +257,13 @@ LALSortSnglInspiral (
   RETURN( status );
 }
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 SnglInspiralTable *
 XLALSortSnglInspiral (
     SnglInspiralTable *eventHead,
     int(*comparfunc)   (const void *, const void *)
     )
-/* </lalVerbatim> */
+
 {
   INT4                  i;
   INT4                  numEvents = 0;
@@ -358,13 +310,13 @@ XLALSortSnglInspiral (
 
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 int
 LALCompareSnglInspiralByMass (
     const void *a,
     const void *b
     )
-/* </lalVerbatim> */
+
 {
   const SnglInspiralTable *aPtr = *((const SnglInspiralTable * const *)a);
   const SnglInspiralTable *bPtr = *((const SnglInspiralTable * const *)b);
@@ -392,13 +344,13 @@ LALCompareSnglInspiralByMass (
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 int
 LALCompareSnglInspiralByPsi (
     const void *a,
     const void *b
     )
-/* </lalVerbatim> */
+
 {
   const SnglInspiralTable *aPtr = *((const SnglInspiralTable * const *)a);
   const SnglInspiralTable *bPtr = *((const SnglInspiralTable * const *)b);
@@ -427,13 +379,13 @@ LALCompareSnglInspiralByPsi (
 
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 int
 LALCompareSnglInspiralByTime (
     const void *a,
     const void *b
     )
-/* </lalVerbatim> */
+
 {
   LALStatus     status;
   const SnglInspiralTable *aPtr = *((const SnglInspiralTable * const *)a);
@@ -458,13 +410,13 @@ LALCompareSnglInspiralByTime (
   }
 }
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 int
 LALCompareSnglInspiralByID (
     const void *a,
     const void *b
     )
-/* </lalVerbatim> */
+
 {
   const SnglInspiralTable *aPtr = *((const SnglInspiralTable * const *)a);
   const SnglInspiralTable *bPtr = *((const SnglInspiralTable * const *)b);
@@ -484,7 +436,7 @@ LALCompareSnglInspiralByID (
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALCompareSnglInspiral (
     LALStatus                *status,
@@ -492,7 +444,7 @@ LALCompareSnglInspiral (
     SnglInspiralTable        *bPtr,
     SnglInspiralAccuracy     *params
     )
-/* </lalVerbatim> */
+
 {
   INT8 ta, tb;
   REAL4 dm1, dm2;
@@ -612,7 +564,7 @@ LALCompareSnglInspiral (
   RETURN (status);
 }
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALCompareInspirals (
     LALStatus                *status,
@@ -620,7 +572,7 @@ LALCompareInspirals (
     SnglInspiralTable        *bPtr,
     InspiralAccuracyList     *params
     )
-/* </lalVerbatim> */
+
 {
 
   INITSTATUS( status, "LALCompareInspirals", SNGLINSPIRALUTILSC );
@@ -632,14 +584,14 @@ LALCompareInspirals (
 
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 int
 XLALCompareInspirals (
     SnglInspiralTable        *aPtr,
     SnglInspiralTable        *bPtr,
     InspiralAccuracyList     *params
     )
-/* </lalVerbatim> */
+
 {
   INT8    ta,  tb;
   REAL4   dmass1, dmass2;
@@ -788,7 +740,7 @@ XLALCompareInspirals (
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALClusterSnglInspiralTable (
     LALStatus                  *status,
@@ -796,7 +748,7 @@ LALClusterSnglInspiralTable (
     INT8                        dtimeNS,
     SnglInspiralClusterChoice   clusterchoice
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALClusterSnglInspiralTable", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -835,14 +787,14 @@ XLALSnglInspiralStat(
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 int
 XLALClusterSnglInspiralTable (
     SnglInspiralTable         **inspiralList,
     INT8                        dtimeNS,
     SnglInspiralClusterChoice   clusterchoice
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALClusterSnglInspiralTable";
   SnglInspiralTable     *thisEvent=NULL;
@@ -923,7 +875,7 @@ XLALClusterSnglInspiralTable (
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALTimeCutSingleInspiral(
     LALStatus                  *status,
@@ -931,7 +883,7 @@ LALTimeCutSingleInspiral(
     LIGOTimeGPS                *startTime,
     LIGOTimeGPS                *endTime
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALTimeCutSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -943,14 +895,14 @@ LALTimeCutSingleInspiral(
 
 }
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 SnglInspiralTable *
 XLALTimeCutSingleInspiral(
     SnglInspiralTable          *eventHead,
     LIGOTimeGPS                *startTime,
     LIGOTimeGPS                *endTime
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisEvent = NULL;
@@ -996,13 +948,13 @@ XLALTimeCutSingleInspiral(
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void LALSNRCutSingleInspiral (
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
     REAL4                       snrCut
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALSNRCutSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -1013,13 +965,13 @@ void LALSNRCutSingleInspiral (
   RETURN (status);
 }
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 SnglInspiralTable *
 XLALSNRCutSingleInspiral (
     SnglInspiralTable          *eventHead,
     REAL4                       snrCut
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable    *prevEvent = NULL;
@@ -1058,7 +1010,7 @@ XLALSNRCutSingleInspiral (
 
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 SnglInspiralTable *
 XLALRsqCutSingleInspiral (
     SnglInspiralTable          *eventHead,
@@ -1067,7 +1019,7 @@ XLALRsqCutSingleInspiral (
     REAL4                       rsqAboveSnrCoeff,
     REAL4                       rsqAboveSnrPow
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable    *prevEvent = NULL;
@@ -1114,14 +1066,14 @@ XLALRsqCutSingleInspiral (
   return( eventHead );
 }
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 SnglInspiralTable *
 XLALVetoSingleInspiral (
     SnglInspiralTable *eventHead,
     LALSegList        *vetoSegs,
     const CHAR        *ifo
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable    *prevEvent = NULL;
@@ -1161,7 +1113,7 @@ LALBCVCVetoSingleInspiral(
     SnglInspiralTable         **eventHead,
     SnglInspiralBCVCalphafCut   alphafParams
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisEvent = NULL;
@@ -1233,7 +1185,7 @@ LALBCVCVetoSingleInspiral(
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALalphaFCutSingleInspiral(
     LALStatus                  *status,
@@ -1241,7 +1193,7 @@ LALalphaFCutSingleInspiral(
     REAL4                       alphaFhi,
     REAL4                       alphaFlo
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisEvent = NULL;
@@ -1291,14 +1243,14 @@ LALalphaFCutSingleInspiral(
 
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALIfoCutSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
     CHAR                       *ifo
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *ifoHead   = NULL;
   SnglInspiralTable    *thisEvent = NULL;
@@ -1322,13 +1274,13 @@ LALIfoCutSingleInspiral(
   RETURN (status);
 }
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 SnglInspiralTable *
 XLALIfoCutSingleInspiral(
     SnglInspiralTable         **eventHead,
     char                       *ifo
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "IfoCutSingleInspiral";
   SnglInspiralTable    *prevEvent   = NULL;
@@ -1390,7 +1342,7 @@ XLALIfoCutSingleInspiral(
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALIfoCountSingleInspiral(
     LALStatus                  *status,
@@ -1398,7 +1350,7 @@ LALIfoCountSingleInspiral(
     SnglInspiralTable          *input,
     InterferometerNumber        ifoNumber
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *thisEvent = NULL;
 
@@ -1549,7 +1501,7 @@ XLALTimeSlideSegList(
 
 
 /* ======================================= */
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 XLALTimeSlideSingleInspiral(
     SnglInspiralTable          *triggerList,
@@ -1557,7 +1509,7 @@ XLALTimeSlideSingleInspiral(
     const LIGOTimeGPS          *endTime,
     const LIGOTimeGPS           slideTimes[LAL_NUM_IFO]
     )
-/* </lalVerbatim> */
+
 {
   INT8 ringStartNS = 0;	/* initialized to silence warning */
   INT8 ringLengthNS = 0;	/* initialized to silence warning */
@@ -1588,13 +1540,13 @@ XLALTimeSlideSingleInspiral(
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 SnglInspiralTable *
 XLALPlayTestSingleInspiral(
     SnglInspiralTable          *eventHead,
     LALPlaygroundDataMask      *dataType
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisEvent = NULL;
@@ -1665,14 +1617,14 @@ XLALPlayTestSingleInspiral(
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALPlayTestSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
     LALPlaygroundDataMask      *dataType
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALPlayTestSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -1684,14 +1636,14 @@ LALPlayTestSingleInspiral(
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALCreateTrigBank(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
     SnglInspiralParameterTest  *test
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *trigBankList = NULL;
   SnglInspiralTable   **eventHandle = NULL;
@@ -1798,7 +1750,7 @@ LALCreateTrigBank(
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALIncaCoincidenceTest(
     LALStatus                  *status,
@@ -1808,7 +1760,7 @@ LALIncaCoincidenceTest(
     SnglInspiralTable          *ifoBInput,
     SnglInspiralAccuracy       *errorParams
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *currentTrigger[2];
   SnglInspiralTable    *coincidentEvents[2];
@@ -1916,7 +1868,7 @@ LALIncaCoincidenceTest(
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALTamaCoincidenceTest(
     LALStatus                  *status,
@@ -1927,7 +1879,7 @@ LALTamaCoincidenceTest(
     SnglInspiralAccuracy       *errorParams,
     SnglInspiralClusterChoice   clusterchoice
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *currentTrigger[2];
   SnglInspiralTable    *coincidentEvents[2];
@@ -2073,13 +2025,13 @@ LALTamaCoincidenceTest(
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 int
 XLALMaxSnglInspiralOverIntervals(
     SnglInspiralTable         **eventHead,
     INT4                       deltaT
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisEvent = NULL;
@@ -2136,9 +2088,9 @@ XLALMaxSnglInspiralOverIntervals(
   return (0);
 }
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 INT4 XLALCountSnglInspiral( SnglInspiralTable *head )
-/* </lalVerbatim> */
+
 {
   INT4 length;
   SnglInspiralTable *event;
@@ -2155,7 +2107,7 @@ INT4 XLALCountSnglInspiral( SnglInspiralTable *head )
   return length;
 }
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 SnglInspiralTable *
 XLALMassCut(
     SnglInspiralTable         *eventHead,
@@ -2165,7 +2117,7 @@ XLALMassCut(
     REAL4                      mass2RangeLow,
     REAL4                      mass2RangeHigh
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisEvent = NULL;
@@ -2268,4 +2220,3 @@ XLALMassCut(
   eventHead = inspiralEventList;
   return(eventHead);
 }
-

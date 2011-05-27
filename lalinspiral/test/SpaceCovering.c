@@ -17,28 +17,24 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="SpaceCoveringCV">
-Author: Thomas Cokelaer
-$Id$
-</lalVerbatim> */
+/**
+\author Thomas Cokelaer
+\file
+\ingroup LALInspiralBank_h
 
-/* <lalLaTeX>
-\subsection{Program \texttt{SpaceCovering.c}}
-\label{ss:SpaceCovering.c}
+\brief Test code for the \c bank modules.
 
-Test code for the \texttt{bank} modules.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 SpaceCovering
 --template [TaylorT1, EOB ....]
 --grid-spacing [square, hexagonal, squareOriented, hexagonalOriented]
-\end{verbatim}
+\endcode
 
 --template BCV --grid-spacing Hexagonal gives 178 templates
 and --template EOB grid-spacing Hexagonal gives 532 templates
 
-\subsubsection*{Description}
+\heading{Description}
 This test code gives an example of how to generate a template bank and
 generates vertices of the ambiguity 'rectangle' around each lattice point
 suitable for plotting with xmgr or xgrace.
@@ -47,17 +43,17 @@ This is valid for various template bank placement (Hexagonal, SquareNorOriented)
 This is valid for BCV and physical template families.
 
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
 LALRectangleVertices
 LALInspiralCreateCoarseBank
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
-\vfill{\footnotesize\input{SpaceCoveringCV}}
+\heading{Notes}
 
-</lalLaTeX> */
+
+*/
 
 #include <stdio.h>
 #include <lal/AVFactories.h>

@@ -17,43 +17,40 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralWaveOverlapCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
-/* <lalLaTeX>
-\subsection{Module \texttt{LALInspiralWaveOverlap.c}}
-Module to compute the overlap of a given data set with
+/**
+\author Sathyaprakash, B. S.
+\file
+
+\brief Module to compute the overlap of a given data set with
 two orthogonal inspiral signals of specified parameters
 with a weight specified in a psd array. The code also returns
 in a parameter structure the maximum of the overlap, the bin
 where the maximum occured and the phase at the maximum.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralWaveOverlapCP}
-\idx{LALInspiralWaveOverlap()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
-LALInspiralWave
-LALREAL4VectorFFT
-LALInspiralWaveNormaliseLSO
-LALInspiralWaveCorrelate
-\end{verbatim}
+<tt>LALInspiralWaveOverlap()</tt>
 
-\subsubsection*{Notes}
+\heading{Description}
+\heading{Algorithm}
+\heading{Uses}
+\code
+LALInspiralWave()
+LALREAL4VectorFFT()
+LALInspiralWaveNormaliseLSO()
+LALInspiralWaveCorrelate()
+\endcode
 
-\vfill{\footnotesize\input{LALInspiralWaveOverlapCV}}
-</lalLaTeX>  */
+\heading{Notes}
+
+
+*/
 #include <lal/LALNoiseModelsInspiral.h>
 
 void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1);
 NRCSID (LALINSPIRALWAVEOVERLAPC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWaveOverlapCP"> */
+
 void
 LALInspiralWaveOverlap
    (
@@ -62,7 +59,7 @@ LALInspiralWaveOverlap
    InspiralWaveOverlapOut  *overlapout,
    InspiralWaveOverlapIn   *overlapin
    )
-{  /*  </lalVerbatim>  */
+{
    REAL4Vector filter1, filter2, output1, output2;
    InspiralWaveCorrelateIn corrin;
    REAL8 norm, x, y, z, phase;

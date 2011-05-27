@@ -29,12 +29,12 @@ static void XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,InspiralTemplate *p
 	for(unsigned int j = LAL_PNORDER_NEWTONIAN; j <= params->order; j++) {
 		mparams->wdotorb[j] = paramsInit->ak.ST[j];
 	}
-	
+
 	/* note: in the original code epnorb[2] is set even for PNORDER_NEWTONIAN or PNORDER_HALF */
 	if (params->order >= LAL_PNORDER_ONE) {
 		mparams->epnorb[2]  = -(1.0/12.0) * (9.0 + params->eta);
 	}
-	
+
 	for(int j = params->order + 1; j <= 8; j++) {
   	mparams->wdotorb[j] = 0;
 	}
@@ -43,7 +43,7 @@ static void XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,InspiralTemplate *p
     mparams->wspin15 	= -(1.0/12.0);
     mparams->LNhdot15 = 0.5;
     mparams->S1dot15 	= (4.0 + 3.0 * mparams->m2m1) / 2.0 ;
-    mparams->S2dot15 	= (4.0 + 3.0 * mparams->m1m2) / 2.0 ;		
+    mparams->S2dot15 	= (4.0 + 3.0 * mparams->m1m2) / 2.0 ;
 	} else {
 		mparams->wspin15 	= 0.0;
     mparams->LNhdot15 = 0.0;
@@ -55,12 +55,12 @@ static void XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,InspiralTemplate *p
     mparams->wspin20 	= -(1.0/48.0) / params->eta;	/* TO DO: these will give infinity in test mass case */
     mparams->LNhdot20 = -1.5 / params->eta;
     mparams->Sdot20 	= 0.5;
-		
+
 		mparams->epnorb[4]  = (1.0/24.0) * (-81.0 + 57.0*params->eta - params->eta*params->eta);
 	} else {
     mparams->wspin20 	= 0.0;
     mparams->LNhdot20 = 0.0;
-    mparams->Sdot20 	= 0.0;		
+    mparams->Sdot20 	= 0.0;
 	}
 
   if (params->order >= LAL_PNORDER_THREE) {
@@ -72,11 +72,11 @@ static void XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,InspiralTemplate *p
   if (params->order == LAL_PNORDER_THREE) {
     mparams->wdotorb[(int)(LAL_PNORDER_THREE+1)] = paramsInit->ak.ST[(int)(LAL_PNORDER_THREE+1)];
 	}
-	
+
   if (params->order == LAL_PNORDER_THREE_POINT_FIVE) {
     mparams->wdotorb[8] = paramsInit->ak.ST[8];
 	}
-  
+
 	return;
 }
 
@@ -88,9 +88,9 @@ static int XLALSTPNAdaptiveTest(double t,const double values[],double dvalues[],
 
 	UNUSED(t);
 
-	omega = values[1];	
+	omega = values[1];
 	v = pow(omega,oneby3);
-	
+
   test = -0.5 * params->eta * ( (2.0/3.0) * (1.0/v) * params->epnorb[0]	+
                                 params->epnorb[1] +
 																(4.0/3.0) * v * (params->epnorb[2] +
@@ -118,31 +118,31 @@ static int XLALSTPNAdaptiveTest(double t,const double values[],double dvalues[],
 				 + (8.0/7.0) * v * (params->epnorb[6]
 				 + (9.0/8.0) * v * (params->epnorb[7]
 				 + (10.0/9.0)* v *  params->epnorb[8] )))))) );
-	
+
 	if (params->wspin15 != 0.0) {
 		REAL8 LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z;
 		REAL8 v2, dotLNS1, dotLNS2;
-		
+
 		LNhx = values[2]; LNhy  = values[3]; LNhz = values[4] ;
 		S1x  = values[5]; S1y   = values[6]; S1z  = values[7] ;
 		S2x  = values[8]; S2y   = values[9]; S2z  = values[10];
-		
+
 		v2 = v * v;
-		
+
 	  dotLNS1 = (LNhx*S1x + LNhy*S1y + LNhz*S1z);
-	  dotLNS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);		
-		
+	  dotLNS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);
+
 		test += -0.5 * params->eta * (5.0/3.0) * v2 * ( (8.0/3.0 + 2.0*params->m2m1)*dotLNS1 + (8.0/3.0 + 2.0*params->m1m2)*dotLNS2 );
 
 	  if (params->wspin20 != 0.0) {
 			REAL8 dotS1S2;
-			
+
 			dotS1S2 = (S1x*S2x + S1y*S2y + S1z*S2z);
-			
+
 	    test += -(v*v2)  * (dotS1S2 - 3.0 * dotLNS1 * dotLNS2);
 		}
 	}
-	
+
 	if (test > 0.0) {							 									   /* energy test fails! */
 		return LALSTPN_TEST_ENERGY;
 	} else if (dvalues[1] < 0.0) { 									   /* omegadot < 0! */
@@ -158,7 +158,7 @@ static int XLALSTPNAdaptiveDerivativesFrameless(double t,const double values[],d
 	/* coordinates and derivatives */
   REAL8  s,  omega,  LNhx,  LNhy,  LNhz,  S1x,  S1y,  S1z,  S2x,  S2y,  S2z, E1x, E1y, E1z;
   REAL8 ds, domega, dLNhx, dLNhy, dLNhz, dS1x, dS1y, dS1z, dS2x, dS2y, dS2z, dE1x, dE1y, dE1z;
-  
+
 	/* auxiliary variables */
 	REAL8 v, v2, v3, v4, v7, v11;
 	REAL8 dotLNS1, dotLNS2, dotS1S2;
@@ -173,20 +173,20 @@ static int XLALSTPNAdaptiveDerivativesFrameless(double t,const double values[],d
 	s    = values[0]; omega = values[1];
 	LNhx = values[2]; LNhy  = values[3]; LNhz = values[4] ;
 	S1x  = values[5]; S1y   = values[6]; S1z  = values[7] ;
-	S2x  = values[8]; S2y   = values[9]; S2z  = values[10];		
-	E1x  = values[11]; E1y   = values[12]; E1z  = values[13];		
+	S2x  = values[8]; S2y   = values[9]; S2z  = values[10];
+	E1x  = values[11]; E1y   = values[12]; E1z  = values[13];
 
 	if (omega <= 0.0) {
 		return LALSTPN_DERIVATIVE_OMEGANONPOS;
 	}
 
   v = pow(omega,oneby3);
-  v2  = v * v; v3 = v2 * v;	v4 = v3 * v; v7 = v4 * v3; v11 = v7 * v4; 
+  v2  = v * v; v3 = v2 * v;	v4 = v3 * v; v7 = v4 * v3; v11 = v7 * v4;
 
   dotLNS1 = (LNhx*S1x + LNhy*S1y + LNhz*S1z);
   dotLNS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);
   dotS1S2 = (S1x*S2x  + S1y*S2y  + S1z*S2z );
-	
+
 	/* domega */
   domega = params->wdotorb[0] + v * (params->wdotorb[1] +
  																	 	 v * (params->wdotorb[2] +
@@ -226,7 +226,7 @@ static int XLALSTPNAdaptiveDerivativesFrameless(double t,const double values[],d
   dLNhz = (-tmpy*LNhx + tmpx*LNhy);
 
   /* dE1; reuses tmpxyz above, which is PBCV's Omega_L */
-  
+
   tmp1 = tmpx * LNhx + tmpy * LNhy + tmpz * LNhz;
   tmpx -= tmp1 * LNhx;
   tmpy -= tmp1 * LNhy;
@@ -267,17 +267,17 @@ static int XLALSTPNAdaptiveDerivativesFrameless(double t,const double values[],d
   dS2x += params->Sdot20 * omega2 * (-tmpx - 3.0 * dotLNS1 * crossx);
   dS2y += params->Sdot20 * omega2 * (-tmpy - 3.0 * dotLNS1 * crossy);
   dS2z += params->Sdot20 * omega2 * (-tmpz - 3.0 * dotLNS1 * crossz);
-		
+
 	/* dphi */
 	/* No coordinate singularity; instead, frame is evolving */
   ds = omega;
-	
+
 	dvalues[0] = ds   ; dvalues[1] = domega;
 	dvalues[2] = dLNhx; dvalues[3] = dLNhy ; dvalues[4] = dLNhz;
 	dvalues[5] = dS1x ; dvalues[6] = dS1y  ; dvalues[7] = dS1z ;
 	dvalues[8] = dS2x ; dvalues[9] = dS2y  ; dvalues[10]= dS2z ;
 	dvalues[11] = dE1x ; dvalues[12] = dE1y  ; dvalues[13]= dE1z ;
-	
+
 	return GSL_SUCCESS;
 }
 
@@ -292,7 +292,7 @@ LALSTPNWaveformFramelessForInjection (
 			     PPNParamStruc    *ppnParams
 			    )
 {
-  /* </lalVerbatim> */
+
  UINT4 count;
 
   REAL4Vector *hplus  = NULL;
@@ -349,7 +349,7 @@ LALSTPNWaveformFramelessForInjection (
 
   /* Check an empty waveform hasn't been returned
      Is this something that we should actually check for?
-     If so, uncomment and switch to checking hplus 
+     If so, uncomment and switch to checking hplus
   for (i = 0; i < a->length; i++)
   {
     if (a->data[i] != 0.0) break;
@@ -431,7 +431,7 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
         REAL4Vector *signalvec1,REAL4Vector *signalvec2,
         UINT4 *countback,
         InspiralTemplate *params,InspiralInit *paramsInit )
-{	/* </lalVerbatim> */
+{
 	/* PN parameters */
   LALSTPNparams mparams;
 
@@ -473,25 +473,25 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
 	yinit[2] = sin(params->inclination);							/* LNh(x,y,z) */
 	yinit[3] = 0.0;
 	yinit[4] = cos(params->inclination);
-	
+
 	norm = pow(params->mass1/params->totalMass,2.0);
 	yinit[5] = norm * params->spin1[0];								/* S1(x,y,z) */
-	yinit[6] = norm * params->spin1[1]; 
-	yinit[7] = norm * params->spin1[2]; 
-	
+	yinit[6] = norm * params->spin1[1];
+	yinit[7] = norm * params->spin1[2];
+
 	norm = pow(params->mass2/params->totalMass,2.0);	/* S2(x,y,z) */
 	yinit[8] = norm * params->spin2[0];
-	yinit[9] = norm * params->spin2[1]; 
-	yinit[10]= norm * params->spin2[2]; 
+	yinit[9] = norm * params->spin2[1];
+	yinit[10]= norm * params->spin2[2];
 
         yinit[11] = cos(params->inclination);  /* E1(x,y,z) */
         yinit[12] = 0.0;
         yinit[13] = -1.0 * sin(params->inclination);
 
-  xlalErrno = 0;	
+  xlalErrno = 0;
 
 	/* allocate the integrator */
-	integrator = XLALAdaptiveRungeKutta4Init(14,XLALSTPNAdaptiveDerivativesFrameless,XLALSTPNAdaptiveTest,1.0e-6,1.0e-6);							
+	integrator = XLALAdaptiveRungeKutta4Init(14,XLALSTPNAdaptiveDerivativesFrameless,XLALSTPNAdaptiveTest,1.0e-6,1.0e-6);
   if (!integrator) {
 		fprintf(stderr,"LALSTPNWaveformFrameless: Cannot allocate integrator.\n");
     if (XLALClearErrno() == XLAL_ENOMEM)
@@ -499,16 +499,16 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
     else
       ABORTXLAL(status);
   }
-	
+
 	/* stop the integration only when the test is true */
 	integrator->stopontestonly = 1;
-		
+
 	/* run the integration; note: time is measured in units of total mass */
 	len = XLALAdaptiveRungeKutta4(integrator,(void *)&mparams,yinit,0.0,lengths/m,dt/m,&yout);
-	
+
 	intreturn = integrator->returncode;
 	XLALAdaptiveRungeKutta4Free(integrator);
-	
+
 	if (!len) {
     if (XLALClearErrno() == XLAL_ENOMEM) {
       ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
@@ -517,8 +517,8 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
 			ABORTXLAL(status);
 		}
 	}
-	
-	/* report on abnormal termination (TO DO: throw some kind of LAL error?) */ 
+
+	/* report on abnormal termination (TO DO: throw some kind of LAL error?) */
 	if (intreturn != 0 && intreturn != LALSTPN_TEST_ENERGY && intreturn != LALSTPN_TEST_OMEGADOT) {
 		fprintf(stderr,"LALSTPNWaveformFrameless WARNING: integration terminated with code %d.\n",intreturn);
     fprintf(stderr,"                          Waveform parameters were m1 = %e, m2 = %e, s1 = (%e,%e,%e), s2 = (%e,%e,%e), inc = %e.",
@@ -527,13 +527,13 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
      							 params->spin2[0], params->spin2[1], params->spin2[2],
      							 params->inclination);
 	}
-	
+
 	/* check that we're not above Nyquist
            Need to find a way to pass this information along without creating GB worth of warnings. a --no-warning flag?
 	if (yinit[1]/unitHz > 0.5 * params->tSampling) {
 		fprintf(stderr,"LALSTPNWaveform2 WARNING: final frequency above Nyquist.\n");
 	} */
-	
+
 	/* if we have enough space, compute the waveform components; otherwise abort */
   if (signalvec1 && len >= signalvec1->length) {
       fprintf(stderr,"LALSTPNWaveformFrameless: no space to write in signalvec1: %d vs. %d\n",len,signalvec1->length);
@@ -545,12 +545,12 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
   }
 
   /* set up some aliases for the returned arrays; note vector 0 is time */
-	
+
   REAL8 *vphi = &yout->data[1*len]; REAL8 *omega = &yout->data[2*len];
   REAL8 *LNhx = &yout->data[3*len]; REAL8 *LNhy  = &yout->data[4*len]; REAL8 *LNhz = &yout->data[5*len];
 
   /* these are not needed for the waveforms:
-  REAL8 *S1x  = &yout->data[6*len]; REAL8 *S1y   = &yout->data[7*len];  REAL8 *S1z   = &yout->data[8*len];	
+  REAL8 *S1x  = &yout->data[6*len]; REAL8 *S1y   = &yout->data[7*len];  REAL8 *S1z   = &yout->data[8*len];
   REAL8 *S2x  = &yout->data[9*len]; REAL8 *S2y   = &yout->data[10*len]; REAL8 *S2z   = &yout->data[11*len];	*/
 
   REAL8 *E1x = &yout->data[12*len]; REAL8 *E1y = &yout->data[13*len]; REAL8 *E1z = &yout->data[14*len];
@@ -558,7 +558,7 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
   *countback = len;
 
   REAL8 amp, f2a;
-  amp = -4.0 * params->mu * LAL_MRSUN_SI / (params->distance);	
+  amp = -4.0 * params->mu * LAL_MRSUN_SI / (params->distance);
   for(unsigned int i=0;i<len;i++) {
 
       f2a = pow(omega[i],2.0/3.0);
@@ -585,7 +585,7 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
               ( hcrosscos * cos(2*vphi[i]) + hcrosssin * sin(2*vphi[i]) ) );
       }
   }
-      
+
   params->fFinal = (REAL4)(omega[len-1]/unitHz);
   params->tC = yout->data[len-1];	/* In the original code, this is only done if signalvec2 doesn't exist. I don't see a reason for that, so I removed it. */
 

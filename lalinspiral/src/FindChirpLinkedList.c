@@ -23,76 +23,57 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpLinkedListCV">
-Author: Brown D. A.
-$Id$
-</lalVerbatim>
+/**
+\author Brown D. A.
+\file
+\ingroup FindChirp_h
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpLinkedList.c}}
-\label{ss:FindChirpLinkedList.c}
-
-It is often convienient to deal with the inspiral templates as a doubly linked
-list.  This module provides memory management functions for creating and
+\brief This module provides memory management functions for creating and
 destroying linked lists of inspiral template nodes for flat and heirarchical
 search management.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpLinkedListCP}
-\idx{LALFindChirpCreateTmpltNode()}
-\idx{LALFindChirpDestroyTmpltNode()}
+It is often convienient to deal with the inspiral templates as a doubly linked
+list.
 
-\subsubsection*{Description}
+\heading{Description}
 
-The function \texttt{LALFindChirpCreateTmpltNode()} adds the inspiral template
-parameter structure pointed to by \texttt{tmplt} to the linked list of
-template nodes \texttt{tmpltNode}. On entry \texttt{tmpltNode} should be set
+The function <tt>LALFindChirpCreateTmpltNode()</tt> adds the inspiral template
+parameter structure pointed to by \c tmplt to the linked list of
+template nodes \c tmpltNode. On entry \c tmpltNode should be set
 to memory address of the last node of the current linked list (or NULL if it
-is a new linked list) and on exit \texttt{tmpltNode} is set to the memory
+is a new linked list) and on exit \c tmpltNode is set to the memory
 address of the last node in the linked list.
 
-The function \texttt{LALFindChirpDestroyTmpltNode()} removed the node pointed
-to by \texttt{tmpltNode} from the doubly linked list. On exit
-\texttt{tmpltNode} is set to the address of the previous node in the list for
+The function <tt>LALFindChirpDestroyTmpltNode()</tt> removed the node pointed
+to by \c tmpltNode from the doubly linked list. On exit
+\c tmpltNode is set to the address of the previous node in the list for
 removal of a node in the middle or at the end of the list. If the first node
-is removed \texttt{tmpltNode} is set to the address of the new first node.
+is removed \c tmpltNode is set to the address of the new first node.
 
-\subsubsection*{Algorithm}
-
-None.
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{FindChirpLinkedListCV}}
-</lalLaTeX>
-#endif
+*/
 
 
 #include <lal/FindChirp.h>
 
 NRCSID (FINDCHIRPLINKEDLISTC, "$Id$");
 
-/* <lalVerbatim file="FindChirpLinkedListCP"> */
+
 void
 LALFindChirpCreateTmpltNode (
     LALStatus                  *status,
     InspiralTemplate           *tmplt,
     InspiralTemplateNode      **tmpltNode
     )
-/* </lalVerbatim> */
+
 {
   InspiralTemplateNode         *current = NULL;
 
@@ -142,13 +123,13 @@ LALFindChirpCreateTmpltNode (
 }
 
 
-/* <lalVerbatim file="FindChirpLinkedListCP"> */
+
 void
 LALFindChirpDestroyTmpltNode (
     LALStatus                  *status,
     InspiralTemplateNode      **tmpltNode
     )
-/* </lalVerbatim> */
+
 {
   InspiralTemplateNode  *prev = NULL;
   InspiralTemplateNode  *next = NULL;

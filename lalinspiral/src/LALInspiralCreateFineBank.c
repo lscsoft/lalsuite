@@ -17,117 +17,120 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralCreateFineBankCV">
-Author: Sathyaprakash, B.S. and Churches, D. K.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B.S. and Churches, D. K.
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
+\brief Function to create a fine grid of templates.
 
-\subsection{Module \texttt{LALInspiralCreateFineBank.c}}
+\heading{Prototypes}
 
-Function to create a fine grid of templates.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralCreateFineBankCP}
-\idx{LALInspiralCreateFineBank()}
-\begin{itemize}
-   \item \texttt{outlist,} Output, containing an array of template bank parameters
-   \item \texttt{nlist,} Output, the number of fine bank templates around a given coarse-mesh point
-   \item \texttt{fineIn,} Input, the parameters required to find the fine bank
-\end{itemize}
+<tt>LALInspiralCreateFineBank()</tt>:
+<ul>
+   <li> <tt>outlist,</tt> Output, containing an array of template bank parameters
+   </li><li> <tt>nlist,</tt> Output, the number of fine bank templates around a given coarse-mesh point
+   </li><li> <tt>fineIn,</tt> Input, the parameters required to find the fine bank</li>
+</ul>
 
-\subsubsection*{Description}
+\heading{Description}
 
 The fine grid algorithm is a very simple algorithm that computes a uniform
 grid of templates around a given coordinate point -- which can in particular be
 a coarse grid point -- from a knowledge of the metric at the coordinate point
-and the coarse and fine grid minimal matches, $D\tau_{0,3}$ and
-$d\tau_{0,3},$ respectively. Since $D\tau$ is not necessarily an
-integral multiple of $d\tau$ the rectangular fine grid about the point
+and the coarse and fine grid minimal matches, \f$D\tau_{0,3}\f$ and
+\f$d\tau_{0,3},\f$ respectively. Since \f$D\tau\f$ is not necessarily an
+integral multiple of \f$d\tau\f$ the rectangular fine grid about the point
 in question will be larger than required. The algorithm chooses templates
-{\it symmetrically} about the given coarse grid point. It does so
+\e symmetrically about the given coarse grid point. It does so
 by laying a rectangular lattice of templates with spacings
-$d\tau_0$ and $d\tau_3,$ in the rectangular region defined by
-$(\tau_0 - \Delta \tau_0, \tau_3 - \Delta \tau_3),$
-$(\tau_0 + \Delta \tau_0, \tau_3 - \Delta \tau_3),$
-$(\tau_0 + \Delta \tau_0, \tau_3 + \Delta \tau_3)$ and
-$(\tau_0 - \Delta \tau_0, \tau_3 + \Delta \tau_3),$
+\f$d\tau_0\f$ and \f$d\tau_3,\f$ in the rectangular region defined by
+\f$(\tau_0 - \Delta \tau_0, \tau_3 - \Delta \tau_3),\f$
+\f$(\tau_0 + \Delta \tau_0, \tau_3 - \Delta \tau_3),\f$
+\f$(\tau_0 + \Delta \tau_0, \tau_3 + \Delta \tau_3)\f$ and
+\f$(\tau_0 - \Delta \tau_0, \tau_3 + \Delta \tau_3),\f$
 where
-$$\Delta\tau_0 = d\tau_0 \left [ \frac{D\tau_0}{2d\tau_0} \right ], $$
-and for any $x$, $[x]$ denotes the smallest integer greater than or
-equal to $x$.
-\begin{figure}[h]
-\centering\includegraphics[angle=-90,width=4.5 true in]{LALInspiralBankHfine}
-\caption{Algorithm sketching the construction of a rectangular fine grid around a given coordinate point.}
-\label{fig:fine}
-\end{figure}
+\f[\Delta\tau_0 = d\tau_0 \left [ \frac{D\tau_0}{2d\tau_0} \right ], \f]
+and for any \f$x\f$, \f$[x]\f$ denotes the smallest integer greater than or
+equal to \f$x\f$.
+\floatfig{h,fig_fine}
+\image html  LALInspiralBankHfine.png "Fig.[fig_fine]: Algorithm sketching the construction of a rectangular fine grid around a given coordinate point"
+\image latex LALInspiralBankHfine.pdf "Algorithm sketching the construction of a rectangular fine grid around a given coordinate point" width=4.5in
 The algorithm takes as input a structure of type
-\texttt{InspiralFineBankIn} and returns a \texttt{pointer-to-a-pointer}
-of type \texttt{InspiralTemplateList} as well as the number of fine grid
-templates \texttt {int} around the lattice point in question.
+\c InspiralFineBankIn and returns a <tt>pointer-to-a-pointer</tt>
+of type \c InspiralTemplateList as well as the number of fine grid
+templates \c int around the lattice point in question.
 
 The spacing between fine grid templates is chosen
 to be a constant determined by the metric at the coarse grid point; for
 example,
-$$d\tau_0 = \sqrt{\frac{2 (1 - MM_{\rm Fine})}{g_{00}} }.$$
+\f[d\tau_0 = \sqrt{\frac{2 (1 - MM_\textrm{Fine})}{g_{00}} }.\f]
 Only those grid points that are within the parameter space boundary, or
 have the vertices of the ambiguity rectangle inside the parameter
 space, are kept and others are discarded.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 The Fine grid algorithm works as follows:
-\begin{obeylines}
-\texttt{
-\hskip 1 true cm From input structure extract coordinates of the grid point $(\tau_0^G, \tau_3^G).$
-\hskip 1 true cm Compute coarse and fine grid spacings $(D\tau_0, D\tau_3)$ and $(d\tau_0, d\tau_3)$
-\hskip 1 true cm Compute half-sides of the {\it smallest} symmetric rectangle about $(\tau_0, \tau_3)$:
-\hskip 2 true cm $\Delta\tau_0 =  d\tau_0 {\it ceil}[D\tau_0/(2d\tau_0)],$ $\Delta\tau_3 =  d\tau_3 {\it ceil}[D\tau_3/(2d\tau_3)],$
-\hskip 1 true cm Begin at $\tau_3 = \tau_3^G - \Delta \tau_3,$
-\hskip 1 true cm do while ($\tau_3 <= \tau_3^G+\Delta \tau_3$)
-\hskip 1 true cm \{
-\hskip 2 true cm Begin at $\tau_0 = \tau_0^G - \Delta \tau_0,$
-\hskip 2 true cm do while ($\tau_0 <= \tau_0^G+\Delta \tau_0$)
-\hskip 2 true cm \{
-\hskip 3 true cm if ($(\tau_0, \tau_3)$ is inside the parameter space)
-\hskip 3 true cm \{
-\hskip 4 true cm Add ($\tau_0, \tau_3$) to InspiralTemplateList
-\hskip 4 true cm numTemplates++
-\hskip 3 true cm \}
-\hskip 3 true cm Increment $\tau_0:$ $\tau_0 = \tau_0 + d\tau_0$
-\hskip 2 true cm \}
-\hskip 2 true cm Increment $\tau_3:$ $\tau_3 = \tau_3 + d\tau_3$
-\hskip 1 true cm \}
-}
-\end{obeylines}
+<tt>
+<ul>
+<li> From input structure extract coordinates of the grid point \f$(\tau_0^G, \tau_3^G).\f$
+<li> Compute coarse and fine grid spacings \f$(D\tau_0, D\tau_3)\f$ and \f$(d\tau_0, d\tau_3)\f$
+<li>Compute half-sides of the <i>smallest</i> symmetric rectangle about \f$(\tau_0, \tau_3)\f$:
+   <ul>
+   <li> \f$\Delta\tau_0 =  d\tau_0 \,\mathrm{ceil}[D\tau_0/(2d\tau_0)],\f$ \f$\Delta\tau_3 =  d\tau_3 \,\mathrm{ceil}[D\tau_3/(2d\tau_3)],\f$
+   </ul>
+<li> Begin at \f$\tau_3 = \tau_3^G - \Delta \tau_3,\f$
+<li> do while (\f$\tau_3 <= \tau_3^G+\Delta \tau_3\f$)<br>
+     {<br>
+     <ul>
+     <li> Begin at \f$\tau_0 = \tau_0^G - \Delta \tau_0,\f$
+     <li> do while (\f$\tau_0 <= \tau_0^G+\Delta \tau_0\f$)<br>
+          {<br>
+          <ul>
+          <li> if (\f$(\tau_0, \tau_3)\f$ is inside the parameter space)<br>
+               {<br>
+               <ul>
+               <li> Add (\f$\tau_0, \tau_3\f$) to InspiralTemplateList
+               <li> numTemplates++
+               </ul>
+               }<br>
+           <li> Increment \f$\tau_0:\f$ \f$\tau_0 = \tau_0 + d\tau_0\f$
+           </ul>
+           }<br>
+    <li>Increment \f$\tau_3:\f$ \f$\tau_3 = \tau_3 + d\tau_3\f$
+    </ul>
+    }
+</ul>
+</tt>
 
-\subsubsection*{Uses}
-\begin{verbatim}
+
+\heading{Uses}
+\code
 LALInspiralComputeParams()
 LALInspiralUpdateParams()
 LALInspiralValidTemplate()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralCreateFineBankCV}}
 
-</lalLaTeX>  */
+
+*/
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 
 NRCSID (LALINSPIRALCREATEFINEBANKC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralCreateFineBankCP"> */
+
 
 void LALInspiralCreateFineBank(LALStatus            *status,
                                InspiralTemplateList **outlist,
                                INT4                 *nlist,
                                InspiralFineBankIn   fineIn)
-{ /* </lalVerbatim> */
+{
 
   REAL8 x0, x1, Dx0, Dx1, dx0, dx1, x0FineMin, x1FineMin;
   INT4  i, j, validPars, bins0, bins1;

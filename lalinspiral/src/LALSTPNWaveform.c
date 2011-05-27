@@ -17,44 +17,15 @@
 *  MA  02111-1307  USA
 */
 
-/*<lalVerbatim file="LALSTPNWaveformCV">
-  Author: Vallisneri, M.  Cokelaer, T.
-  $Id$
-  </lalVerbatim>  */
+/**
+  \author Vallisneri, M.  Cokelaer, T.
+  \file
+  \ingroup LALInspiral_h
 
+  \brief Module to generate STPN (spinning binaries) waveforms in agreement with
+  the injecttion  package (return a CoherentGW structure).
 
-
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALSTPNWaveform.c}}
-DOCUMENTATION IN PROGRESS
-
-Module to generate STPN (spinning binaries) waveforms in agreement with
-the injecttion  package (return a CoherentGW structure).
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALSTPNWaveformForInjectionCP}
-\index{\verb&LALSTPNWaveformForInjection&}
-
-
-\subsubsection*{Description}
-
-\subsubsection*{Algorithm}
-
-
-\subsubsection*{Uses}
-\begin{verbatim}
-   LALSTPNderivatives
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-
-\vfill{\footnotesize\input{LALSTPNWaveformCV}}
-
-</lalLaTeX>  */
-
+*/
 
 
 #include <lal/Units.h>
@@ -298,14 +269,14 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
 
 
 
-/*  <lalVerbatim file="LALEOBWaveformCP"> */
+
 void
 LALSTPNWaveform (
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim> */
+{
 
    UINT4 count;
    InspiralInit paramsInit;
@@ -345,7 +316,7 @@ LALSTPNWaveform (
 
 
 
-/*  <lalVerbatim file="LALEOBWaveformCP"> */
+
 void
 LALSTPNWaveformTemplates (
    LALStatus        *status,
@@ -353,7 +324,7 @@ LALSTPNWaveformTemplates (
    REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim> */
+{
 
    UINT4 count;
 
@@ -412,7 +383,7 @@ int newswitch = 0;
 NRCSID (LALSTPNWAVEFORMFORINJECTIONC,
 "$Id$");
 
-/*  <lalVerbatim file="LALSTPNWaveformForInjectionCP"> */
+
 void
 LALSTPNWaveformForInjection (
 			     LALStatus        *status,
@@ -421,7 +392,7 @@ LALSTPNWaveformForInjection (
 			     PPNParamStruc    *ppnParams
 			    )
 {
-  /* </lalVerbatim> */
+
  UINT4 count, i;
 
   REAL4Vector *a=NULL;/* pointers to generated amplitude  data */
@@ -487,7 +458,7 @@ LALSTPNWaveformForInjection (
   //                  							     REAL4Vector *a,REAL4Vector *ff,REAL8Vector *phi,REAL4Vector *shift,
   //                  							     UINT4 *countback,
   //                  							     InspiralTemplate *params,InspiralInit *paramsInit);
-                    						 
+
     //fprintf(stderr,"Using new engine.\n");
     LALSTPNAdaptiveWaveformEngine(status->statusPtr, NULL, NULL, a, ff, phi, shift,&count, params, &paramsInit);
   }
@@ -649,7 +620,7 @@ LALSTPNWaveformForInjection (
 
 
 
-/*  <lalVerbatim file="LALSTPNWaveformInjectionCP"> */
+
 void
 LALSTPNWaveformEngine (
                 LALStatus        *status,
@@ -663,7 +634,7 @@ LALSTPNWaveformEngine (
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 )
-  /* </lalVerbatim> */
+
 {
   /* declare model parameters*/
 
@@ -977,7 +948,7 @@ LALSTPNWaveformEngine (
   S2z = initS2z;
 
   alpha0 = atan2(LNhy,LNhx);
-  
+
   /* copy everything in the "values" structure*/
 
   values.data[0] = vphi;
@@ -1079,7 +1050,7 @@ LALSTPNWaveformEngine (
       alpha = atan2(LNhy,LNhx); alpha0 = alpha;
     } else {
       alpha = alpha0;
-    }    
+    }
 
       /* I don't really need i, because I can use the explicit formulae below*/
       /* i = acos(LNhz);*/

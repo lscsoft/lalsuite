@@ -23,80 +23,59 @@
  *
  * Author: Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
  *
- * $Id: LALTrigScanCluster.c,v 1.13 2007/10/02 13:48:53 spxcar Exp $
- *
  *---------------------------------------------------------------------------*/
-
-#if 0
-<lalVerbatim file="LALTrigScanClusterCV">
-Author: Sengupta, Anand. S. and Gupchup, Jayant A.
-$Id: LALTrigScanCluster.c,v 1.13 2007/10/02 13:48:53 spxcar Exp $
-</lalVerbatim>
-#endif
 
 #include <lal/TrigScanEThincaCommon.h>
 #include <lal/LALTrigScanCluster.h>
 
-NRCSID (LALTRIGSCANCLUSTERC,
-        "$Id$");
+NRCSID (LALTRIGSCANCLUSTERC, "$Id$");
 
+/**
+\author Sengupta, Anand. S. and Gupchup, Jayant A.
+\file
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{LALTrigScanCluster.c}}
+\brief Functions for trigScan clustering
 
-\noindent Functions for trigScan clustering
+\heading{Description}
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALTrigScanClusterCP}
-\idx{XLALTrigScanClusterTriggers()}
-\idx{XLALTrigScanCreateCluster()}
-\idx{XLALTrigScanRemoveStragglers()}
-\idx{XLALTrigScanKeepLoudestTrigger()}
-\idx{XLALTrigScanReLinkLists()}
-\idx{XLALTrigScanDestroyCluster()}
-\subsubsection*{Description}
-
-\texttt{XLALTrigScanClusterTriggers()} is the main function for invoking
-trigScan clustering. It takes in the \texttt{SnglInspiralTable} to be clustered,
+<tt>XLALTrigScanClusterTriggers()</tt> is the main function for invoking
+trigScan clustering. It takes in the ::SnglInspiralTable to be clustered,
 the method to be applied, the metric scaling factor, and a flag to say whether
 to append stragglers (i.e. clusters of only 1 trigger). Upon success, the
-return value will be XLAL_SUCCESS, with the texttt{SnglInspiralTable} having
-been clustered. At present, the only clustering method implemented is T0T3Tc.
+return value will be #XLAL_SUCCESS, with the ::SnglInspiralTable having
+been clustered. At present, the only clustering method implemented is #T0T3Tc.
 
-\texttt{XLALTrigScanCreateCluster()} takes in a \texttt{TriggerErrorList}
+<tt>XLALTrigScanCreateCluster()</tt> takes in a ::TriggerErrorList
 containing the triggers, their position vectors and ellipsoid matrices. It
 creates the cluster by agglomerating triggers by checking for overlap of
 ellipsoids. Upon ellipsoid overlap, the trigger is added to the cluster, and
 removed from the unclustered list.
 
-\texttt{XLALTrigScanRemoveStragglers()} takes in a linked list of
-\texttt{TrigScanCluster}s. It removes all clusters of 1 element from the list.
+<tt>XLALTrigScanRemoveStragglers()</tt> takes in a linked list of
+::TrigScanCluster's. It removes all clusters of 1 element from the list.
 
-\texttt{XLALTrigScanKeepLoudestTrigger()} performs the actual clustering,
+<tt>XLALTrigScanKeepLoudestTrigger()</tt> performs the actual clustering,
 freeing all triggers in the cluster except the loudest. Currently, loudest
 means the trigger with the highest SNR, but this could be extended to other
 statistics.
 
-\texttt{XLALTrigScanReLinkLists()} re-links all the inter-cluster lists after
+<tt>XLALTrigScanReLinkLists()</tt> re-links all the inter-cluster lists after
 the clustering has been performed, in preparation for returning the clustered
-\texttt{SnglInspiralTable} to the program.
+::SnglInspiralTable to the program.
 
-\texttt{XLALTrigScanDestroyCluster()} frees memory associated with a cluster.
-It has two modes of operation, specified by the \texttt{TrigScanStatus}. If this
-is TRIGSCAN_FAILURE, the SnglInspiralTable will also be freed. If it is
-TRIGSCAN_SUCCESS, the SnglInspiralTable will be kept for returning to the
+<tt>XLALTrigScanDestroyCluster()</tt> frees memory associated with a cluster.
+It has two modes of operation, specified by the ::TrigScanStatus. If this
+is #TRIGSCAN_ERROR, the ::SnglInspiralTable will also be freed. If it is
+#TRIGSCAN_SUCCESS, the ::SnglInspiralTable will be kept for returning to the
 calling program.
-</lalLaTeX>
-#endif
 
-/* <lalVerbatim file="LALTrigScanClusterCP"> */
+*/
+
 int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
                                  trigScanType      method,
                                  REAL8             scaleFactor,
                                  INT4              appendStragglers )
-/* </lalVerbatim> */
+
 {
 
   static const char func[] = "XLALTrigScanClusterTriggers";
@@ -282,10 +261,10 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
   return XLAL_SUCCESS;
 }
 
-/* <lalVerbatim file="LALTrigScanClusterCP"> */
+
 TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
                                              REAL8            tcMax )
-/* </lalVerbatim> */
+
 {
   static const char func[] = "XLALTrigScanCreateCluster";
 
@@ -455,9 +434,9 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
   return cluster;
 }
 
-/* <lalVerbatim file="LALTrigScanClusterCP"> */
+
 int XLALTrigScanRemoveStragglers( TrigScanCluster **clusters )
-/* </lalVerbatim> */
+
 {
   TrigScanCluster *previous    = NULL; /* Keeping track of the previous element */
   TrigScanCluster *thisCluster = NULL;
@@ -501,7 +480,7 @@ int XLALTrigScanRemoveStragglers( TrigScanCluster **clusters )
   return XLAL_SUCCESS;
 }
 
-/* <lalVerbatim file="LALTrigScanClusterCP"> */
+
 int XLALTrigScanKeepLoudestTrigger( TrigScanCluster *cluster )
 {
   TriggerErrorList *triggerToKeep;
@@ -560,9 +539,9 @@ int XLALTrigScanKeepLoudestTrigger( TrigScanCluster *cluster )
   return XLAL_SUCCESS;
 }
 
-/* <lalVerbatim file="LALTrigScanClusterCP"> */
+
 int XLALTrigScanReLinkLists( TrigScanCluster *clusterHead )
-/* </lalVerbatim> */
+
 {
 
   static const char func[] = "XLALTrigScanReLinkLists";
@@ -582,11 +561,11 @@ int XLALTrigScanReLinkLists( TrigScanCluster *clusterHead )
   return XLAL_SUCCESS;
 }
 
-/* <lalVerbatim file="LALTrigScanClusterCP"> */
+
 void XLALTrigScanDestroyCluster( TrigScanCluster *cluster,
                                 TrigScanStatus   status
                               )
-/* </lalVerbatim> */
+
 {
   TriggerErrorList *thisList;
 

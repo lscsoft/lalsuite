@@ -23,17 +23,8 @@
  *
  * Author: Brown, D. A., and Goggin, L. M.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
-
-#if 0
-<lalVerbatim file="LIGOLwXMLRingdownReadCV">
-Author: Brown, D. A. and Goggin, L. M.
-$Id$
-</lalVerbatim>
-#endif
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -50,39 +41,29 @@ NRCSID( LIGOLWXMLRINGDOWNREADC, "$Id$" );
 #define UNUSED
 #endif
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{LIGOLwXMLRingdownRead.c}}
+/**
+\author Brown, D. A. and Goggin, L. M.
+\file
 
-Routines to read the various ringdown search XML data into LAL structures.
+\brief Routines to read the various ringdown search XML data into LAL structures.
 
-\subsubsection*{Prototypes}
-\input{LIGOLwXMLRingdownReadCP}
-\idx{XLALSnglRingdownTableFromLIGOLw()}
-\idx{XLALSimRingdownTableFromLIGOLw()}
+\heading{Description}
 
-\subsubsection*{Description}
-
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 None.
 
-\subsubsection*{Uses}
+\heading{Uses}
 Functions in the Metaio library:
-\begin{itemize}
-\item \verb+MetaioFindColumn+
-\item \verb+MetaioGetRow+
-\item \verb+MetaioOpenTable+
-\item \verb+MetaioClose+
-\end{itemize}
-\subsubsection*{Notes}
+<ul>
+<li>MetaioFindColumn()</li>
+<li>MetaioGetRow()</li>
+<li>MetaioOpenTable()</li>
+<li>MetaioClose()</li>
+</ul>
+\heading{Notes}
 
-%% Any relevant notes.
-
-\vfill{\footnotesize\input{LIGOLwXMLRingdownReadCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 
 #define XLAL_CLOBBER_EVENTS \
@@ -94,11 +75,11 @@ Functions in the Metaio library:
   thisEvent = NULL; \
 }
 
-/* <lalVerbatim file="LIGOLwXMLRingdownReadCP"> */
+
 SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
     CHAR               *fileName
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALSnglRingdownTableFromLIGOLw";
   int                            i, j;
@@ -285,13 +266,13 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
 }
 
 
-/* <lalVerbatim file="LIGOLwXMLRingdownReadCP"> */
+
 SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
     CHAR               *fileName,
     INT4                startTime,
     INT4                stopTime
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALSimRingdownTableFromLIGOLw";
   int                            i, j;
@@ -529,7 +510,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
 
 #undef XLAL_CLOBBER_EVENTS
 
-/* <lalVerbatim file="LIGOLwXMLRingdownReadCP"> */
+
 INT4 XLALReadRingdownTriggerFile (
     SnglRingdownTable    **ringdownEventList,
     SnglRingdownTable    **lastTrigger,
@@ -537,7 +518,7 @@ INT4 XLALReadRingdownTriggerFile (
     SearchSummvarsTable  **inputFileList,
     CHAR                  *fileName
     )
-/* </lalVerbatim> */
+
 {
   const char *func = "XLALReadRingdownTriggerFile";
   INT4                 numFileTriggers = 0;

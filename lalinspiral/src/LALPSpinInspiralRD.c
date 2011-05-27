@@ -103,7 +103,7 @@
 NRCSID(LALPSPININSPIRALRDC, "$Id$");
 
 #define omM0 0.0680414 //=6^(-3/2)
-#define omMlow 0.048
+#define omMlow 0.046
 #define sqrtOnePointFive 1.22474
 #define sqrtPoint15      0.387298
 #define sqrtFiveOver2    1.1183
@@ -1557,9 +1557,9 @@ static void LALSpinInspiralEngine(LALStatus * status,
     else 
       alpha = alphaold;
 
-    if ((fabs(Phi-alpha-Phiold+alphaold)>LAL_PI/8.)&&(fabs(Phi-alpha-Phiold+alphaold)<2.*LAL_PI-0.1)&&(count>1)) {
+    if ((fabs(Phi-alpha-Phiold+alphaold)>LAL_PI/4.)&&(fabs(Phi-alpha-Phiold+alphaold)<2.*LAL_PI-0.1)&&(count>1)) {
       fprintf(stderr,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity. Step %d:  Phi-alpha:%12.6e\n Step %d  Phi-alpha: %12.6e\n",count,(Phi-alpha)/LAL_PI*180.,count-1,(Phiold-alphaold)/LAL_PI*180.);
-      fprintf(stderr,"  Waveform parameters were m1/m = %14.6e, m2/m = %14.6e\n", mparams->m1m, mparams->m2m);
+      fprintf(stderr,"  Waveform parameters were m1 = %14.6e, m2 = %14.6e\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
     }
 
     LNhS1 = (S1x * LNhx + S1y * LNhy + S1z * LNhz) / mparams->m1m / mparams->m1m;
@@ -1826,7 +1826,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     alphak=alpha_s->data[kend];
 
     if (kend<0) {
-      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: phenomenological phase cannot be added: initial omega too high %11.6e  omM ~ %12.6e  m:(%14.6e, %14.6e)\n",omega_s->data[0],omegaMatch,mparams->m1m*mparams->m,mparams->m2m*mparams->m);
+      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: phenomenological phase cannot be added: initial omega too high %12.6e  omegaM ~ %12.6e  m:(%14.6e, %14.6e)\n",omega_s->data[0],omegaMatch,mparams->m1m*mparams->m,mparams->m2m*mparams->m);
       XLAL_ERROR(func,XLAL_EFAILED);
     }
 
@@ -1943,7 +1943,7 @@ static int XLALSpinInspiralAdaptiveEngine(
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);
-	fprintf(stdout,"            m1,2/m = (%10.6f,%10.6f)\n", mparams->m1m, mparams->m2m);
+	fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
       }
     }
 

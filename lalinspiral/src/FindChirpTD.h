@@ -23,32 +23,29 @@
  *
  * Author: Brown, D. A., and Creighton, J. D. E.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpTDHV">
-Author: Brown, D. A., and Creighton, J. D. E.
-$Id$
-</lalVerbatim>
+/**
+ * \defgroup FindChirpTD_h FindChirpTD_h
+ * \ingroup CBC_findchirp
+ */
 
-<lalLaTeX>
-\section{Header \texttt{FindChirpTD.h}}
-\label{s:FindChirpTD.h}
+/**
+\author Brown, D. A., and Creighton, J. D. E.
+\file
+\ingroup FindChirpTD_h
 
-Provides structures and functions to condition interferometer data
+\brief Provides structures and functions to condition interferometer data
 and generate binary inspiral chirps using time domain waveforms.
 
-\subsection*{Synopsis}
-
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/FindChirpTD.h>
-\end{verbatim}
+\endcode
 
-</lalLaTeX>
-#endif
+
+*/
 
 
 #ifndef _FINDCHIRPTDH_H
@@ -69,12 +66,7 @@ extern "C" {
 
 NRCSID (FINDCHIRPTDH, "$Id$");
 
-#if 0
-<lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-#endif
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define FINDCHIRPTDH_ENULL 1
 #define FINDCHIRPTDH_ENNUL 2
 #define FINDCHIRPTDH_EALOC 3
@@ -105,28 +97,7 @@ NRCSID (FINDCHIRPTDH, "$Id$");
 #define FINDCHIRPTDH_MSGELONG "Time domain template too long"
 #define FINDCHIRPTDH_MSGEEMTY "Could not find end of chirp in xfacVec"
 #define FINDCHIRPTDH_MSGESMPL "Waveform sampling interval is too large"
-/* </lalErrTable> */
-
-#if 0
-<lalLaTeX>
-\subsection*{Types}
-
-None.
-</lalLaTeX>
-#endif
-
-
-#if 0
-<lalLaTeX>
-\vfill{\footnotesize\input{FindChirpTDHV}}
-</lalLaTeX>
-#endif
-
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpTDDataC}
-</lalLaTeX>
-#endif
+/*@}*/
 
 void
 LALFindChirpTDData (
@@ -136,11 +107,11 @@ LALFindChirpTDData (
     FindChirpDataParams        *params
     );
 
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpTDTemplateC}
-</lalLaTeX>
-#endif
+
+
+
+
+
 
 void
 LALFindChirpTDTemplate (

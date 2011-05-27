@@ -17,38 +17,27 @@
 *  MA  02111-1307  USA
 */
 
-#if 0
-<lalVerbatim file="MetricTestPTFCV">
-Author: Duncan Brown, Yi Pan
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
+\author Duncan Brown, Yi Pan
+\file
 
-\subsection{Program \texttt{MetricTestPTF.c}}
-\label{ss:MetricTestPTF.c}
+\brief Creates the PTF metric for a single point in the parameter space.
 
-Creates the PTF metric for a single point in the parameter space.
+\heading{Usage}
 
-\subsubsection*{Usage}
+\heading{Description}
 
-\subsubsection*{Description}
+\heading{Algorithm}
 
-\subsubsection*{Exit codes}
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{MetricTestPTFCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <stdlib.h>

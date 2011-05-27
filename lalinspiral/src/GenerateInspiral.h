@@ -17,20 +17,19 @@
 *  MA  02111-1307  USA
 */
 
-#if 0
-<lalVerbatim file="GenerateInspiralHV">
-Author: Cokelaer, T.
-$Id$
-</lalVerbatim>
-#endif
+/**
+ * \defgroup GenerateInspiral_h GenerateInspiral_h
+ * \ingroup inject
+ */
 
-#if 0
-<lalLaTeX>
-\section{Header \texttt{GenerateInspiral.h}}
-\label{s:GenerateInspiral.h}
+/**
+\author Cokelaer, T.
+\file
+\ingroup GenerateInspiral_h
 
-Header file for the inspiral injection interface code. The
-code contained in GenerateInspiral.c is an interface between the
+\brief %Header file for the inspiral injection interface code.
+
+The code contained in GenerateInspiral.c is an interface between the
 injection package and the inspiral package. More precisely, the
 function GenerateInspiral.c is used within the FindChirpSimulation.c
 file of the FindChirp package in order to inject waveforms into real
@@ -43,12 +42,12 @@ waveform) and the inject package (so-called PPN waveform).
 also a test code as well which allows to check the output of
 code. It is called InjectionInterfaceTest.c
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/GenerateInspiral.h>
-\end{verbatim}
-</lalLaTeX>
-#endif
+\endcode
+
+*/
 
 #ifndef _GENERATEINSPIRAL_H
 #define _GENERATEINSPIRAL_H
@@ -71,13 +70,7 @@ extern "C" {
 NRCSID( GENERATEINSPIRALH,
     "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-#endif
-
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define GENERATEINSPIRALH_ENORM 0
 #define GENERATEINSPIRALH_ENULL 1
 #define GENERATEINSPIRALH_EDFDT 2
@@ -86,7 +79,7 @@ NRCSID( GENERATEINSPIRALH,
 #define GENERATEINSPIRALH_MSGENULL "Null pointer"
 #define GENERATEINSPIRALH_MSGEDFDT "Waveform sampling interval is too large"
 #define GENERATEINSPIRALH_MSGEZERO "inclination zero for SpinTaylor waveform"
-/* </lalErrTable> */
+/*@}*/
 
 
 /* parameter for the EOB at 3PN. In principle, the three */
@@ -103,11 +96,7 @@ NRCSID( GENERATEINSPIRALH,
 /* Default low freqnecy cutoff for injections */
 #define GENERATEINSPIRAL_DEFAULT_FLOWER 40
 
-#if 0
-<lalLaTeX>
-\newpage\input{GenerateInspiralC}
-</lalLaTeX>
-#endif
+
 void
 LALGenerateInspiral(
     LALStatus        *status,

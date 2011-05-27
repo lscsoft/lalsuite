@@ -17,62 +17,55 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralFrequency3CV">
+/**
 
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralFrequency3.c}}
-
-The code \texttt{LALInspiralFrequency3.c} calculates the frequency the
+\brief The code \ref LALInspiralFrequency3.c calculates the frequency the
 waveform from an inspiralling binary system as a function of time up to 3.5
 post-Nowtonian order.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralFrequency3CP}
-\index{\verb&LALInspiralFrequency3()&}
-\begin{itemize}
-\item {\tt frequency:} Output containing the inspiral waveform.
-\item {\tt td:} Input containing PN expansion coefficients $F_k$ (cf. Table \ref{table:flux})
-of frequency as a function of time.
-\item {\tt ak:} Input containing all PN expansion coefficients.
-\end{itemize}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>LALInspiralFrequency3()</tt>
+<ul>
+<li> \c frequency: Output containing the inspiral waveform.</li>
+<li> \c td: Input containing PN expansion coefficients \f$F_k\f$ (cf. Table\tableref{table_flux})
+of frequency as a function of time.</li>
+<li> \c ak: Input containing all PN expansion coefficients.</li>
+</ul>
+
+\heading{Description}
 
 This module computes the instantaneous frequency of an inspiral wave using
-\begin{equation}
+\f{equation}{
 F(t) = F_N(\theta) \sum F_k \theta^k,
-\end{equation}
-where the expansion coefficients $F_k,$ Newtonian value $F_N$ and the
-time-variable $\theta$ are defined in Table \ref{table:flux}.
+\f}
+where the expansion coefficients \f$F_k,\f$ Newtonian value \f$F_N\f$ and the
+time-variable \f$\theta\f$ are defined in Table\tableref{table_flux}.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 
-\subsubsection*{Uses}
+\heading{Uses}
 None.
 
-\subsubsection*{Notes}
+\heading{Notes}
 The frequency evolution defined by post-Newtonian expansion is not monotonic.
 Indeed, the equations become highly inaccurate close to the last stable orbit (lso)
 and breakdown at or slightly after lso, and the frequency begins to decrease at later times.
 It turns out that the evolution is monotonic at least up to lso.
 
-\vfill{\footnotesize\input{LALInspiralFrequency3CV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
 NRCSID (LALINSPIRALFREQUENCY3C, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralFrequency3CP"> */
+
 
 void
 LALInspiralFrequency3_0PN (
@@ -81,7 +74,7 @@ LALInspiralFrequency3_0PN (
    REAL8      td,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 theta,theta3;
 
@@ -99,7 +92,7 @@ LALInspiralFrequency3_0PN (
   RETURN(status);
 }
 
-/*  <lalVerbatim file="LALInspiralFrequency3CP"> */
+
 
 void
 LALInspiralFrequency3_2PN (
@@ -108,7 +101,7 @@ LALInspiralFrequency3_2PN (
    REAL8 td,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 theta,theta2,theta3;
 
@@ -129,7 +122,7 @@ LALInspiralFrequency3_2PN (
   RETURN(status);
 }
 
-/*  <lalVerbatim file="LALInspiralFrequency3CP"> */
+
 
 void
 LALInspiralFrequency3_3PN (
@@ -138,7 +131,7 @@ LALInspiralFrequency3_3PN (
    REAL8 td,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 theta,theta2,theta3;
 
@@ -158,7 +151,7 @@ LALInspiralFrequency3_3PN (
   RETURN(status);
 }
 
-/*  <lalVerbatim file="LALInspiralFrequency3CP"> */
+
 
 void
 LALInspiralFrequency3_4PN (
@@ -167,7 +160,7 @@ LALInspiralFrequency3_4PN (
    REAL8 td,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 theta,theta2,theta3,theta4;
 
@@ -189,7 +182,7 @@ LALInspiralFrequency3_4PN (
   RETURN(status);
 }
 
-/*  <lalVerbatim file="LALInspiralFrequency3CP"> */
+
 
 void
 LALInspiralFrequency3_5PN (
@@ -198,7 +191,7 @@ LALInspiralFrequency3_5PN (
    REAL8 td,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 theta,theta2,theta3,theta4,theta5;
 
@@ -222,7 +215,7 @@ LALInspiralFrequency3_5PN (
   RETURN(status);
 }
 
-/*  <lalVerbatim file="LALInspiralFrequency3CP"> */
+
 
 void
 LALInspiralFrequency3_6PN (
@@ -231,7 +224,7 @@ LALInspiralFrequency3_6PN (
    REAL8 td,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 theta,theta2,theta3,theta4,theta5,theta6;
 
@@ -257,7 +250,7 @@ LALInspiralFrequency3_6PN (
   RETURN(status);
 }
 
-/*  <lalVerbatim file="LALInspiralFrequency3CP"> */
+
 
 void
 LALInspiralFrequency3_7PN (
@@ -266,7 +259,7 @@ LALInspiralFrequency3_7PN (
    REAL8 td,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 theta,theta2,theta3,theta4,theta5,theta6,theta7;
 
