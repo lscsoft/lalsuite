@@ -1558,7 +1558,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
       alpha = alphaold;
 
     if ((fabs(Phi-alpha-Phiold+alphaold)>LAL_PI/4.)&&(fabs(Phi-alpha-Phiold+alphaold)<2.*LAL_PI-0.1)&&(count>1)) {
-      fprintf(stderr,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity. Step %d:  Phi-alpha:%12.6e\n Step %d  Phi-alpha: %12.6e\n",count,(Phi-alpha)/LAL_PI*180.,count-1,(Phiold-alphaold)/LAL_PI*180.);
+      fprintf(stderr,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n  Step %d:  Phi-alpha:%12.6e\n  Step %d  Phi-alpha: %12.6e\n",count,(Phi-alpha)/LAL_PI*180.,count-1,(Phiold-alphaold)/LAL_PI*180.);
       fprintf(stderr,"  Waveform parameters were m1 = %14.6e, m2 = %14.6e\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
     }
 
@@ -1939,7 +1939,7 @@ static int XLALSpinInspiralAdaptiveEngine(
 
     if (j>1) {
       if ((fabs(Psi-alpha-Phi[j-1]+alphaold)>LAL_PI/4.)&&(fabs(Psi-alpha-Phi[j-1]+alphaold)<2.*LAL_PI-0.1)) {
-	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity: Step %d:  LNhy: %12.6e LNhx: %12.6e  Psi-a:%12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-a: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-a: %12.6e ",j,LNhy[j],LNhx[j],Phi[j]-alpha,j-1,LNhy[j-1],LNhx[j-1],Phi[j-1]-alphaold,j-2,LNhy[j-2],LNhx[j-2],Phi[j-2]-alphaoold);
+	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d:  LNhy: %12.6e LNhx: %12.6e  Psi-a:%12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-a: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-a: %12.6e\n",j,LNhy[j],LNhx[j],Phi[j]-alpha,j-1,LNhy[j-1],LNhx[j-1],Phi[j-1]-alphaold,j-2,LNhy[j-2],LNhx[j-2],Phi[j-2]-alphaoold);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);
