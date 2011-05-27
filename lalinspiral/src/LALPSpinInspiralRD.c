@@ -320,7 +320,7 @@ static void XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspi
 
   switch (params->spinInteraction) {
 
-  case LAL_NOInter: 
+  case LAL_NOInter:
     mparams->wdotspin30S1LNh   = 0.;
     mparams->wdotspin30S2LNh   = 0.;
     mparams->epnspin25S1dotLNh = 0.;
@@ -354,7 +354,7 @@ static void XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspi
 
   case LAL_SSselfInter:
     break;
-  case LAL_QMInter:  
+  case LAL_QMInter:
     break;
   case LAL_AllInter:
     break;
