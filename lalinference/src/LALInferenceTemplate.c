@@ -650,17 +650,17 @@ void templateLAL(LALInferenceIFOData *IFOdata)
       IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) n) * deltaT;
       IFOdata->freqModelhPlus->data->data[i].im *= ((REAL8) n) * deltaT;
     }
-    if(LALInferenceCheckVariable(IFOdata->modelParams, "ppEalpha") && LALInferenceCheckVariable(IFOdata->modelParams, "ppEA") &&
-       LALInferenceCheckVariable(IFOdata->modelParams, "ppEa") && LALInferenceCheckVariable(IFOdata->modelParams, "ppEbeta") &&
-       LALInferenceCheckVariable(IFOdata->modelParams, "ppEB") && LALInferenceCheckVariable(IFOdata->modelParams, "ppEb")){
+    if(LALInferenceCheckVariable(IFOdata->modelParams, "ppealpha") && LALInferenceCheckVariable(IFOdata->modelParams, "ppeuppera") &&
+       LALInferenceCheckVariable(IFOdata->modelParams, "ppelowera") && LALInferenceCheckVariable(IFOdata->modelParams, "ppebeta") &&
+       LALInferenceCheckVariable(IFOdata->modelParams, "ppeupperb") && LALInferenceCheckVariable(IFOdata->modelParams, "ppelowerb")){
       
       REAL8 alpha, A, a, beta, B, b, ppE_amp, ppE_phase, cos_ppE_phase, sin_ppE_phase;
-      alpha =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEalpha");
-      A     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEA");
-      a     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEa");
-      beta  =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEbeta");
-      B     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEB");
-      b     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppEb");
+      alpha =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppealpha");
+      A     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppeuppera");
+      a     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppelowera");
+      beta  =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppebeta");
+      B     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppeupperb");
+      b     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppelowerb");
       
       for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
         ppE_amp = 1.0+alpha*pow(4.0*eta,A)*pow(LAL_PI*mc*(IFOdata->fLow*0.9 + ((REAL8) i)*IFOdata->freqData->deltaF),a);

@@ -1404,7 +1404,7 @@ REAL8 AnalyticLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIF
     x1 = *(REAL8*) LALInferenceGetVariable(currentParams, "x1");
     if(LALInferenceCheckVariable(currentParams, "x2")){
       x2 = *(REAL8*) LALInferenceGetVariable(currentParams, "x2");
-      loglikelihood = log(exp(-((x1-0.5)*(x1-0.5)/0.1)-((x2-0.5)*(x2-0.5)/0.1))+10*exp(-((x1+0.5)*(x1+0.5)/0.0001)-((x2+0.5)*(x2+0.5)/0.0001)));
+      loglikelihood = log(exp(-((x1-0.5)*(x1-0.5)/0.1)-((x2-0.5)*(x2-0.5)/0.1))+10*exp(-((x1+0.5)*(x1+0.5)/0.001)-((x2+0.5)*(x2+0.5)/0.001)));
     }else{
     loglikelihood = log(exp(-((x1-0.5)*(x1-0.5)/0.1))+2*exp(-((x1+0.5)*(x1+0.5)/0.0001)));
     }

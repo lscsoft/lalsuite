@@ -55,7 +55,7 @@ int LALwaveformToSPINspiralwaveform(int waveform);
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-	int i,t,p,lowerRank,upperRank; //indexes for for() loops
+	int i,t,p,lowerRank,upperRank,x; //indexes for for() loops
 	int tempSwapCount=0;
 	REAL8 tempDelta;
 	int nChain;
@@ -74,6 +74,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	REAL8 *tempLadder = NULL;			//the temperature ladder
 	INT4 *acceptanceCountLadder = NULL;	//array of acceptance counts to compute the acceptance ratios.
 	double *TcurrentLikelihood = NULL; //the current likelihood for each chain
+  INT4 **pdf = NULL;
+  REAL8 pdf_count = 0.0;
 
   //REAL8 *sigmaVec = NULL;
   REAL8Vector *sigmas = NULL;
@@ -209,9 +211,21 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     //sigma[p]=tempLadder[tempIndex];//1.0;
  // }
   
+  pdf=(INT4**)calloc(nPar,sizeof(INT4 *));
+  for (p=0;p<nPar;++p){
+    pdf[p]=calloc(100,sizeof(INT4));
+    for(x=0;x<100;++x){
+      pdf[p][x]=0;
+    }
+  }
+  
+  char *name = NULL;
+  char nameMin[VARNAME_MAX], nameMax[VARNAME_MAX];
+  REAL8 priorMin, priorMax, dprior;
+  INT4 temperature_test = 0;
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--temperatureTest")) temperature_test=1;
   
   
-	
 	if (MPIrank == 0) {
 	//	tempIndexVec = (int*) malloc(sizeof(int)*nChain);	//initialize temp index
 		TcurrentLikelihood = (double*) malloc(sizeof(double)*nChain);
@@ -573,10 +587,38 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     while(ptr!=NULL) {
       if (ptr->vary != PARAM_FIXED) {
         parameters->data[p]=*(REAL8 *)ptr->value;
+        
+        if(temperature_test==1){
+          name = LALInferenceGetVariableName(runState->currentParams, (p+1));
+          sprintf(nameMin, "%s_min", name);
+          sprintf(nameMax, "%s_max", name);
+          priorMin = *((REAL8 *)LALInferenceGetVariable(runState->priorArgs, nameMin));
+          priorMax = *((REAL8 *)LALInferenceGetVariable(runState->priorArgs, nameMax));
+          dprior = priorMax - priorMin;
+          x=(int)(((parameters->data[p] - priorMin)/dprior)*100);
+          if(x<0) x=0;
+          if(x>99) x=99;
+          pdf[p][x]++;
+        }
+        
         p++;
       }
       ptr=ptr->next;
     }    
+  
+    if(temperature_test==1){
+      for (p=0;p<nPar;++p){
+        pdf_count=0;
+        for(x=0;x<100;++x){
+          if(pdf[p][x]<((double)i)/1000.0) pdf_count++;
+        }
+        if(pdf_count==0) printf("PDF of parmeter %d is flat at temperature %f, iteration %d\n",p,tempLadder[MPIrank],i);
+      }
+    }
+
+    
+    dprior = priorMax - priorMin;
+    
     
 		MPI_Gather(&(runState->currentLikelihood), 1, MPI_DOUBLE, TcurrentLikelihood, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		MPI_Gather(&acceptanceCount, 1, MPI_INT, acceptanceCountLadder, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -621,7 +663,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 						//dummyTemp = tempIndexVec[upperRank];
 						//tempIndexVec[upperRank] = tempIndexVec[lowerRank];
 						//tempIndexVec[lowerRank] = dummyTemp;
-						//++tempSwapCount;
+						++tempSwapCount;
 						
 						//dummyTemp = acceptanceCountLadder[upperRank];
 						//acceptanceCountLadder[upperRank]=acceptanceCountLadder[lowerRank];
@@ -688,6 +730,16 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	MPI_Barrier(MPI_COMM_WORLD);
 	if (MPIrank == 0) printf("Temp swaps %d times\n", tempSwapCount);
 
+ /* if (MPIrank == 0) {
+    printf("\n");
+    for (p=0;p<nPar;++p){
+      for(x=0;x<100;++x){
+        printf("%d\t",pdf[p][x]);
+      }
+      printf("\n");
+    }
+  }*/
+  
 	//for (t=0; t<nChain; ++t) {
 	//	fclose(chainoutput[t]);
 	//}
