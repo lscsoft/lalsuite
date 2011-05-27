@@ -103,7 +103,7 @@
 NRCSID(LALPSPININSPIRALRDC, "$Id$");
 
 #define omM0 0.0680414 //=6^(-3/2)
-#define omMlow 0.045
+#define omMlow 0.048
 #define sqrtOnePointFive 1.22474
 #define sqrtPoint15      0.387298
 #define sqrtFiveOver2    1.1183
@@ -1826,7 +1826,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     alphak=alpha_s->data[kend];
 
     if (kend<0) {
-      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: phenomenological phase cannot be added: initial omega too high %11.6e\n",omega_s->data[0]);
+      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: phenomenological phase cannot be added: initial omega too high %11.6e  omM ~ %12.6e  m:(%14.6e, %14.6e)\n",omega_s->data[0],omegaMatch,mparams->m1m*mparams->m,mparams->m2m*mparams->m);
       XLAL_ERROR(func,XLAL_EFAILED);
     }
 
@@ -1939,11 +1939,11 @@ static int XLALSpinInspiralAdaptiveEngine(
 
     if (j>1) {
       if ((fabs(Psi-alpha-Phi[j-1]+alphaold)>LAL_PI/4.)&&(fabs(Psi-alpha-Phi[j-1]+alphaold)<2.*LAL_PI-0.1)) {
-	fprintf(stderr,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity: Step %d:  LNhy: %12.6e LNhx: %12.6e  Psi-a:%12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-a: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-a: %12.6e ",j,LNhy[j],LNhx[j],Phi[j]-alpha,j-1,LNhy[j-1],LNhx[j-1],Phi[j-1]-alphaold,j-2,LNhy[j-2],LNhx[j-2],Phi[j-2]-alphaoold);
-	fprintf(stderr,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
-	fprintf(stderr,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
-	fprintf(stderr,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);
-	fprintf(stderr,"            m1,2/m = (%10.6f,%10.6f)\n", mparams->m1m, mparams->m2m);
+	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity: Step %d:  LNhy: %12.6e LNhx: %12.6e  Psi-a:%12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-a: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-a: %12.6e ",j,LNhy[j],LNhx[j],Phi[j]-alpha,j-1,LNhy[j-1],LNhx[j-1],Phi[j-1]-alphaold,j-2,LNhy[j-2],LNhx[j-2],Phi[j-2]-alphaoold);
+	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
+	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
+	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);
+	fprintf(stdout,"            m1,2/m = (%10.6f,%10.6f)\n", mparams->m1m, mparams->m2m);
       }
     }
 
@@ -2103,7 +2103,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 
   initomega=params->fLower*unitHz;
   if ( initomega > omMlow ) {
-    fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: Initial frequency too high: %11.5e for omM ~ %11.5e and m:(%8.3f, %8.3f)\n",params->fLower,omM0/unitHz,params->mass1,params->mass2);
+    fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: Initial frequency too high: %11.5e for omM ~ %11.5e and m:(%8.3f, %8.3f)\n",params->fLower,omMlow/unitHz,params->mass1,params->mass2);
     DETATCHSTATUSPTR(status);
     RETURN(status);
     //XLAL_ERROR(func,XLAL_EFAILED);
