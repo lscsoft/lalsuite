@@ -154,6 +154,24 @@ gsl_vector_free(rv)
 gsl_matrix_complex_float_free(cm)
 msg("passed dynamic vector/matrix conversions (GSL)")
 
+# check 'tm' struct conversions
+gps = 989168284
+utc = [2011, 5, 11, 16, 57, 49, 2, 131, 0]
+assert(XLALGPSToUTC(None, gps) == utc)
+assert(XLALUTCToGPS(utc) == gps)
+assert(XLALUTCToGPS(utc[0:6]) == gps)
+utc[6] = utc[7] = 0
+for i in [-1, 0, 1]:
+    utc[8] = i
+    assert(XLALUTCToGPS(utc) == gps)
+utcd = utc
+for i in range(0,10):
+    utcd[2] = utc[2] + i
+    utcd = XLALGPSToUTC(None, XLALUTCToGPS(utcd))
+    dt = datetime.datetime(*utcd[0:6])
+    assert(utcd[6] == dt.weekday())
+msg("passed 'tm' struct conversions")
+
 # passed all tests!
 msg("================")
 msg("PASSED all tests")

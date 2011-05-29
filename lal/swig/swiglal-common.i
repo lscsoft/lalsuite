@@ -59,6 +59,7 @@
 %header %{
   #include <cstdlib>
   #include <cstring>
+  #include <ctime>
   #include <iostream>
   #include <string>
   #include <sstream>
@@ -1121,3 +1122,68 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
 // Assumes that all printf-style LAL functions name the format
 // string either "format" or "fmt" in the header files.
 %apply (const char *format, ...) { (const char *fmt, ...) };
+
+// Helper function for converting 'tm' structs to/from native representations.
+// We want to use the C time functions in to fill in values for 'tm_wday' and
+// 'tm_yday', and normalise the ranges of the other members. mktime() does this,
+// but it also assumes local time, so that the 'tm' struct members are adjusted
+// according to the timezone. timegm() would be a more appropriate, but it seems
+// that it is not portable (BSD/Mac, but not standard GNU); neither is using the
+// 'timezone' variable to get the correct offset (works on GNU but not BSD/Mac!)
+// So, we do the following (idea from somewhere on the internet):
+%header %{
+
+  SWIGINTERN bool swiglal_fill_struct_tm(struct tm *tm) {
+
+    // Check input and set timezone
+    if (!tm) {
+      return false;
+    }
+    tzset();
+
+    // Set daylight savings flag to zero, since we want to get the timezone
+    // difference against UTC. We save its initial value for use later.
+    int isdst = tm->tm_isdst;
+    tm->tm_isdst = 0;
+
+    // Call mktime() to get a time 't1', adjusted for the timezone
+    time_t t1 = mktime(tm);
+    if (t1 < 0) {
+      return false;
+    }
+
+    // If original daylight savings flag was -1 (i.e. daylight savings unknown),
+    // save the current value of the flag for use later.
+    if (isdst < 0) {
+      isdst = tm->tm_isdst;
+    }
+
+    // Convert 't2' back into a 'tm' struct. gmtime() will preserve the timezone.
+    if (gmtime_r(&t1, tm) == NULL) {
+      return false;
+    }
+
+    // Now call mktime() again to get a time 't2', *twice* adjusted for the timezone.
+    time_t t2 = mktime(tm);
+    if (t2 < 0) {
+      return false;
+    }
+
+    // Since 't1' has been adjusted for the timezone once, and 't2' twice, their
+    // difference is precisely the correct timezone difference! We substract this
+    // from 't1', which is now the desired time in UTC.
+    t1 -= t2 - t1;
+
+    // Call gmtime() to convert the desired time 't1' back into a 'tm' struct.
+    if (gmtime_r(&t1, tm) == NULL) {
+      return false;
+    }
+
+    // Restore the daylight savings flag.
+    tm->tm_isdst = isdst;
+
+    return true;
+
+  }
+
+%}

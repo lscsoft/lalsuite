@@ -275,3 +275,70 @@ swiglal_new_oct_vecmat(gsl_complex_float, FloatComplexMatrix);
 swiglal_new_oct_vecmat(gsl_complex, ComplexMatrix);
 swiglal_new_oct_vecmat(COMPLEX8, FloatComplexMatrix);
 swiglal_new_oct_vecmat(COMPLEX16, ComplexMatrix);
+
+///// Convert a 'tm' struct to/from a representation in Octave /////
+
+// Convert an octave_value to a 'tm' struct
+%typemap(in) tm* (struct tm temptm) {
+
+  // Set 'tm' struct to zero
+  memset(&temptm, 0, sizeof(temptm));
+
+  if (!$input.is_empty()) {
+
+    // Check that the $input octave_value is a vector of either 6 or 9 integer elements.
+    // Note that the 7th ('tm_wday') and 8th ('tm_yday') elements are ignored; see below.
+    if (!$input.dims().is_vector() || $input.is_complex_type()) {
+      %argument_fail(SWIG_TypeError, "$type (not a non-complex vector)", $symname, $argnum);
+    }
+    RowVector octtm = $input.row_vector_value();
+    if (octtm.numel() != 6 && octtm.numel() != 9) {
+      %argument_fail(SWIG_ValueError, "$type (must have 6 or 9 elements)", $symname, $argnum);
+    }
+    for (int i = 0; i < octtm.numel(); ++i) {
+      if (octtm(i) != int(octtm(i))) {
+        %argument_fail(SWIG_ValueError, "$type (must have integer elements)", $symname, $argnum);
+      }
+    }
+
+    // Assign members of 'tm' struct, converting Octave date ranges to 'tm' struct date ranges
+    temptm.tm_year  = int(octtm(0)) - 1900;   // 'tm' struct years start from 1900
+    temptm.tm_mon   = int(octtm(1)) - 1;      // 'tm' struct months start from 0
+    temptm.tm_mday  = int(octtm(2));
+    temptm.tm_hour  = int(octtm(3));
+    temptm.tm_min   = int(octtm(4));
+    temptm.tm_sec   = int(octtm(5));
+    temptm.tm_isdst = octtm.numel() > 8 ? int(octtm(8)) : -1;
+
+    // Fill in values for 'tm_wday' and 'tm_yday', and normalise member ranges
+    if (!swiglal_fill_struct_tm(&temptm)) {
+      %argument_fail(SWIG_ValueError, "$type (invalid date/time)", $symname, $argnum);
+    }
+
+  }
+
+  $1 = &temptm;
+
+}
+%typemap(freearg) tm* "";
+
+// Convert a 'tm' struct to an octave_value
+%typemap(out) tm* {
+
+  // Create a 9-element row vector
+  RowVector octtm(9);
+
+  // Assign members of vector, converting 'tm' struct date ranges to Octave date ranges
+  octtm(0) = $1->tm_year + 1900;   // Octave stores 4-digit years
+  octtm(1) = $1->tm_mon  + 1;      // Octave months start from 1
+  octtm(2) = $1->tm_mday;
+  octtm(3) = $1->tm_hour;
+  octtm(4) = $1->tm_min;
+  octtm(5) = $1->tm_sec;
+  octtm(6) = $1->tm_wday + 1;      // Octave week day starts from 1=Sunday
+  octtm(7) = $1->tm_yday + 1;      // Octave year day should start from 1
+  octtm(8) = $1->tm_isdst;
+
+  $result = octave_value(octtm);
+
+}

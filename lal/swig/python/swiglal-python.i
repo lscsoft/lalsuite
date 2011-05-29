@@ -255,3 +255,70 @@ swiglal_new_numpy_vecmat(gsl_complex_float, NPY_CFLOAT);
 swiglal_new_numpy_vecmat(gsl_complex, NPY_CDOUBLE);
 swiglal_new_numpy_vecmat(COMPLEX8, NPY_CFLOAT);
 swiglal_new_numpy_vecmat(COMPLEX16, NPY_CDOUBLE);
+
+///// Convert a 'tm' struct to/from a representation in Python /////
+
+// Uses code from pylal/src/xlal/date.c: Copyright (C) 2006 Kipp Cannon
+
+// Convert a PyObject to a 'tm' struct
+%typemap(in) tm* (struct tm temptm) {
+
+  // Set 'tm' struct to zero
+  memset(&temptm, 0, sizeof(temptm));
+
+  if ($input != NULL && $input != Py_None) {
+
+    // Check that the $input PyObject is a sequence of either 6 or 9 integer elements; this
+    // should also handle a time.struct_time (assuming its attributes are in the order below).
+    // Note that the 7th ('tm_wday') and 8th ('tm_yday') elements are ignored; see below.
+    if (!PySequence_Check($input)) {
+      %argument_fail(SWIG_ValueError, "$type (not a sequence)", $symname, $argnum);
+    }
+    if (PySequence_Size($input) != 6 && PySequence_Size($input) != 9) {
+      %argument_fail(SWIG_ValueError, "$type (must have 6 or 9 elements)", $symname, $argnum);
+    }
+    PyObject *seq = PySequence_Fast($input, "$type (not a sequence)");
+    temptm.tm_year  = PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 0));
+    temptm.tm_mon   = PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 1));
+    temptm.tm_mday  = PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 2));
+    temptm.tm_hour  = PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 3));
+    temptm.tm_min   = PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 4));
+    temptm.tm_sec   = PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 5));
+    temptm.tm_isdst = PySequence_Size($input) > 8 ?
+      PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 8)) : -1;
+    Py_XDECREF(seq);
+    if (PyErr_Occurred())   // Catch any errors while converting items to integers
+      SWIG_fail;
+
+    // Convert Python date ranges to 'tm' struct date ranges
+    temptm.tm_year -= 1900;   // 'tm' struct years start from 1900
+    temptm.tm_mon  -= 1;      // 'tm' struct months start from 0
+
+    // Fill in values for 'tm_wday' and 'tm_yday', and normalise member ranges
+    if (!swiglal_fill_struct_tm(&temptm)) {
+      %argument_fail(SWIG_ValueError, "$type (invalid date/time)", $symname, $argnum);
+    }
+
+  }
+
+  $1 = &temptm;
+
+}
+%typemap(freearg) tm* "";
+
+// Convert a 'tm' struct to a PyObject
+%typemap(out) tm* {
+
+  // Convert 'tm' struct date ranges to Python date ranges
+  $1->tm_year += 1900;                    // Python stores 4-digit years
+  $1->tm_mon  += 1;                       // Python months start from 1
+  $1->tm_wday  = ($1->tm_wday + 6) % 7;   // Python week days start from 0=Monday
+  $1->tm_yday += 1;                       // Python year days start from 1
+
+  // Build a 9-element list
+  $result = Py_BuildValue("[iiiiiiiii]",
+                          $1->tm_year, $1->tm_mon, $1->tm_mday,
+                          $1->tm_hour, $1->tm_min, $1->tm_sec,
+                          $1->tm_wday, $1->tm_yday, $1->tm_isdst);
+
+}
