@@ -17,35 +17,21 @@
 *  MA  02111-1307  USA
 */
 
-/** \file
- * \ingroup std
- * \author Chin, D. W. and Creighton, J. D. E.
- * \brief Routines for converting between various time representations.
- *
- */
-/* <lalVerbatim file="DateHV">
+/**
+ * \defgroup Date_h Time Conversions
+ * \ingroup date
+ * \author D.W. Chin, J.D.E. Creighton and Kipp Cannon
+ * \brief Provides routines for manipulating date and time information.
 
-Author: David Chin <dwchin@umich.edu> +1-734-709-9119
-
-</lalVerbatim> */
-
-/* <lalLaTeX>
-
-\section{Header \texttt{Date.h}}
-\label{s:Date.h}
-
-Provides routines for manipulating date and time information.
-
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/Date.h>
-\end{verbatim}
+\endcode
 
 This header covers routines for manipulating date and time
-information.  The various time systems are discussed in~\cite{esaa:1992}.
+information.  The various time systems are discussed in [\ref esaa1992].
 
-
-</lalLaTeX> */
+*/
 
 #ifndef _DATE_H
 #define _DATE_H
@@ -90,6 +76,7 @@ extern "C"
 #define XLAL_BILLION_INT8 LAL_INT8_C( 1000000000 )
 #define XLAL_BILLION_REAL8 1e9
 
+/** \ingroup Date_h *//*@{*/
 /** The UNIX time of the GPS origin epoch.
  *
  * 1980 6 JAN 0h UTC is 3657 days after 1970 1 JAN 0h UTC:
@@ -119,105 +106,85 @@ extern "C"
 #define XLAL_EPOCH_GPS_TAI_UTC 19 /**< Leap seconds (TAI-UTC) on the GPS epoch (1980 JAN 6 0h UTC) */
 #define XLAL_MJD_REF 2400000.5 /**< Reference Julian Day for Mean Julian Day. */
 #define XLAL_MODIFIED_JULIEN_DAY(utc) (XLALJulianDay(utc)-XLAL_MJD_REF) /**< Modified Julian Day for specified civil time structure. */
+/*@}*/
 
-/** Converts GPS time to nano seconds stored as an INT8. */
+/* Converts GPS time to nano seconds stored as an INT8. */
 INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch );
 
-/** Converts nano seconds stored as an INT8 to GPS time. */
+/* Converts nano seconds stored as an INT8 to GPS time. */
 LIGOTimeGPS * XLALINT8NSToGPS( LIGOTimeGPS *epoch, INT8 ns );
 
-/** Sets GPS time given GPS integer seconds and residual nanoseconds. */
+/* Sets GPS time given GPS integer seconds and residual nanoseconds. */
 LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT4 gpsnan );
 
-/** Sets GPS time given GPS seconds as a REAL8. */
+/* Sets GPS time given GPS seconds as a REAL8. */
 LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t );
 
-/** Returns GPS time as a REAL8. */
+/* Returns GPS time as a REAL8. */
 REAL8 XLALGPSGetREAL8( const LIGOTimeGPS *epoch );
 
-/** Adds dt to a GPS time. */
+/* Adds dt to a GPS time. */
 LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt );
 
-/** Adds two GPS times. */
+/* Adds two GPS times. */
 LIGOTimeGPS * XLALGPSAddGPS( LIGOTimeGPS *epoch, const LIGOTimeGPS *dt );
 
-/** Difference between two GPS times. */
+/* Difference between two GPS times. */
 REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 );
 
-/** Compares two GPS times.
- * Returns:
- *  - -1 if t0 < t1
- *  - 0 if t0 == t1
- *  - 1 if t0 > t1.
- */
+  /* Compares two GPS times. */
 int XLALGPSCmp( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 );
 
-/** Multiply a GPS time by a REAL8 */
+/* Multiply a GPS time by a REAL8 */
 LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x );
 
-/** Divide a GPS time by a REAL8 */
+/* Divide a GPS time by a REAL8 */
 LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x );
 
-/** Returns the leap seconds TAI-UTC at a given GPS second. */
+/* Returns the leap seconds TAI-UTC at a given GPS second. */
 int XLALLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ );
 
-/** Returns the leap seconds GPS-UTC at a given GPS second. */
+/* Returns the leap seconds GPS-UTC at a given GPS second. */
 int XLALGPSLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ );
 
-/** Returns the leap seconds TAI-UTC for a given UTC broken down time. */
+/* Returns the leap seconds TAI-UTC for a given UTC broken down time. */
 int XLALLeapSecondsUTC( const struct tm *utc /**< [In] UTC as a broken down time.*/ );
 
-/** Returns the GPS seconds since the GPS epoch for a
- * specified UTC time structure. */
+/* Returns the GPS seconds since the GPS epoch for a specified UTC time structure. */
 INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ );
 
-/** Returns a pointer to a tm structure representing the time
+/* Returns a pointer to a tm structure representing the time
  * specified in seconds since the GPS epoch.  */
 struct tm * XLALGPSToUTC(
     struct tm *utc, /**< [Out] Pointer to tm struct where result is stored. */
     INT4 gpssec /**< [In] Seconds since the GPS epoch. */
     );
 
-/** Returns the Julian Day (JD) corresponding to the date given in a broken
+/* Returns the Julian Day (JD) corresponding to the date given in a broken
  * down time structure. */
 REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ );
 
-/** Returns the Modified Julian Day (MJD) corresponding to the date given
- * in a broken down time structure.
- *
- * Note:
- *   - By convention, MJD is an integer.
- *   - MJD number starts at midnight rather than noon.
- *
- * If you want a Modified Julian Day that has a fractional part, simply use
- * the macro:
- *
- * \#define XLAL_MODIFIED_JULIAN_DAY(utc) (XLALJulianDay(utc)-XLAL_MJD_REF)
- */
+/* Returns the Modified Julian Day (MJD) corresponding to the date given in a broken down time structure.*/
 INT4 XLALModifiedJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ );
 
-/** Returns the Greenwich mean or aparent sideral time in radians.
- */
+/* Returns the Greenwich mean or aparent sideral time in radians. */
 REAL8 XLALGreenwichSiderealTime(
 	const LIGOTimeGPS *gpstime,
 	REAL8 equation_of_equinoxes
 );
 
-/** Returns the Greenwich Mean Sidereal Time in RADIANS for a specified GPS
- * time. */
+/* Returns the Greenwich Mean Sidereal Time in RADIANS for a specified GPS time. */
 REAL8 XLALGreenwichMeanSiderealTime(
 	const LIGOTimeGPS *gpstime
 );
 
-/** Returns the GPS time for the given Greenwich mean sidereal time (in
- * radians). */
+/* Returns the GPS time for the given Greenwich mean sidereal time (in radians). */
 LIGOTimeGPS *XLALGreenwichMeanSiderealTimeToGPS(
 	REAL8 gmst,
 	LIGOTimeGPS *gps
 );
 
-/** Returns the GPS time for the given Greenwich sidereal time (in
- * radians). */
+/* Returns the GPS time for the given Greenwich sidereal time (in radians). */
 LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(
 	REAL8 gmst,
 	REAL8 equation_of_equinoxes,
@@ -225,57 +192,26 @@ LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(
 );
 
 
-/* <lalLaTeX>
-
-\subsection*{Structures}
-
-
-\vfill{\footnotesize\input{DateHV}}
-
-
-\subsubsection*{Structure \texttt{LALUnixDate}}
-\idx[Type]{LALUnixDate}
-
-This structure is just the standard Unix \texttt{tm} structure, described
-in the man page for \texttt{ctime(3)}.  We shall
-{\em always} ignore the daylight savings time field, \verb+tm_isdst+.
-
-</lalLaTeX> */
-
-/*
- * The standard Unix tm structure
+/** \ingroup Date_h
+ * This structure is just the standard Unix \c tm structure, described
+ * in the man page for <tt>ctime(3)</tt>.  We shall
+ * {\em always} ignore the daylight savings time field, \c tm_isdst.
  */
 typedef struct
 tm
 LALUnixDate;
 
 
-/* <lalLaTeX>
-
-
-\subsubsection{Structure \texttt{LALPlaceAndGPS}}
-\idx[Type]{LALPlaceAndGPS}
-
-This structure stores pointers to a \texttt{LALDetector} and a
-\texttt{LIGOTimeGPS}. Its sole purpose is to aggregate these
-structures for passing to functions.  The fields are:
-
-\begin{description}
-\item{\verb+LALDetector *p_detector+} Pointer to a detector
-\item{\verb+LIGOTimeGPS *p_gps+} Pointer to a GPS time structure
-\end{description}
-
-</lalLaTeX> */
-
-/*
- * Place and time structures
+/** \ingroup Date_h
+ * This structure stores pointers to a ::LALDetector and a
+ * ::LIGOTimeGPS. Its sole purpose is to aggregate these
+ * structures for passing to functions.
  */
-/* First, with GPS */
 typedef struct
 tagLALPlaceAndGPS
 {
-    LALDetector *p_detector;   /* pointer to a detector */
-    LIGOTimeGPS *p_gps;        /* pointer to GPS time */
+    LALDetector *p_detector;   /**< pointer to a detector */
+    LIGOTimeGPS *p_gps;        /**< Pointer to a GPS time structure */
 }
 LALPlaceAndGPS;
 
@@ -294,9 +230,6 @@ XLALGPSTimeNow (
     LIGOTimeGPS *gpstime
     );
 
-/* <lalLaTeX>
-\newpage\input{PlaygroundC}
-</lalLaTeX> */
 int
 XLALINT8NanoSecIsPlayground (
     INT8        ns
