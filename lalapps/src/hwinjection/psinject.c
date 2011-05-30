@@ -68,8 +68,6 @@
 #define MAXPULSARS 64
 /* blocksize for gathering results from children */
 #define BLOCKSIZE 16384
-/* sample rate of output */
-#define SRATE 16384
 
 /* Flag to initiate graceful shutdown, set by sighandler */
 volatile int shutdown_pulsar_injection = 0;
@@ -90,6 +88,7 @@ long long count=0;
 long blocks=0;
 const char *ifo_name = NULL;
 const char *actuation = NULL;
+int sampling_rate = 16384; /* sample rate of output: default = 16kHz */
 
 /* capacity, occupancy, and pointers to input buffers. Cleared to zero
    on starup because they are initialized data.  Units of buffer size
@@ -131,7 +130,7 @@ int parseinput(int argc, char **argv);
 void sighandler(int sig){
   pid_t pid;
   int status;
-  long long seconds=((long long)blocks)*((long long)BLOCKSIZE)/((long long)SRATE);
+  long long seconds=((long long)blocks)*((long long)BLOCKSIZE)/((long long)sampling_rate);
   int minutes=seconds/60;
   int hours=minutes/60;
   int days=hours/24;
@@ -220,6 +219,7 @@ void usage(FILE *filep){
 	  "-A STRING     File containing detector actuation-function     [OPTIONAL]\n"
           "-F INT        Keep N frame files on disk.  If N==0 write all frames immediately.\n"
 	  "-S INT        Number of 1-second frames per frame file (default 60).\n"
+          "-r INT        Sampling rate (NOTE: strain-generators must use the same!) (Default:16384)\n"
           "--------------------------------------------------------------------------------\n"
 	  , programname, MAXPULSARS
 	  );
@@ -230,7 +230,7 @@ void usage(FILE *filep){
 int parseinput(int argc, char **argv){
 
   int c;
-  const char *optionlist="hL:M:H:n:d:e:DG:TXspI:A:F:vS:";
+  const char *optionlist="hL:M:H:n:d:e:DG:TXspI:A:F:vS:r:";
   opterr=0;
 
   /* set some defaults */
@@ -361,6 +361,15 @@ int parseinput(int argc, char **argv){
 	    syserror(0,"%s: caution, argument -S %d seconds is more than one hour!\n", argv[0], secs_per_framefile);
 	}
 	break;
+
+    case 'r':
+      sampling_rate = atoi(optarg);
+      if ( sampling_rate <= 0 ) {
+        syserror (0, "%s: need positive sampling rate! %d\n", argv[0], sampling_rate );
+        exit(1);
+      }
+      break;
+
     default:
       /* error case -- option not recognized */
       syserror(0,"%s: Option argument: -%c unrecognized or missing argument.\n"
@@ -368,8 +377,10 @@ int parseinput(int argc, char **argv){
 	       ,argv[0], optopt);
       exit(1);
       break;
-    }
-  }
+
+    } /* switch(c) */
+
+  } /* while (getopt) */
 
   /* sanity checks on command line arguments */
   if (do_axis && !do_text) {
@@ -550,8 +561,8 @@ int main(int argc, char *argv[]){
     } else if (fread(bufflen+i, sizeof(int), 1, fp[i]) != 1) {
       syserror(1, "Could not read buffer size from %d'th signal source\n", i);
       exit(1);
-    } else if (bufflen[i]<SRATE || bufflen[i]>SRATE*60) {
-      syserror(0, "Bad buffer size %d floats from %d'th signal source (expect %d <= size <= %d)\n", bufflen[i], i, SRATE, 60*SRATE);
+    } else if (bufflen[i]<sampling_rate || bufflen[i]>sampling_rate*60) {
+      syserror(0, "Bad buffer size %d floats from %d'th signal source (expect %d <= size <= %d)\n", bufflen[i], i, sampling_rate, 60*sampling_rate);
       exit(1);
     } else if (bufflen[i]% BLOCKSIZE) {
       syserror(0, "Bad buffer size %d floats from %d'th signal source NOT a multiple of BLOCKSIZE=%d\n", bufflen[i], i, BLOCKSIZE);
@@ -586,7 +597,7 @@ int main(int argc, char *argv[]){
     SIStrAppInfo( info );
 
     /* Open the Signal Injection Stream */
-    status = SIStrOpen( &sis, channel, 16384, (double) gpstime );
+    status = SIStrOpen( &sis, channel, sampling_rate, (double) gpstime );
     if ( SIStr_debug ) {
       syserror(0, "SIStrOpen() returned %d\n", status );
     }
@@ -638,17 +649,17 @@ int main(int argc, char *argv[]){
 	/* integer and fractional time offsets of first sample */
 	t_rem   *= t_int;
 	t_int    = t_rem;
-	t_int   /= SRATE;
-	t_rem   -= t_int*SRATE;
+	t_int   /= sampling_rate;
+	t_rem   -= t_int*sampling_rate;
 	t_int   += tdelt;
 
 	// unused: int dt_int   = t_int;
 	dt_fra   = t_rem;
-	dt_fra  /= SRATE;
+	dt_fra  /= sampling_rate;
 
 	for (j=0; j<BLOCKSIZE; j++) {
 	  double cycles1, cycles2, cycles3;
-	  double tlocal_fra  = dt_fra+(double)j/((double)SRATE);
+	  double tlocal_fra  = dt_fra+(double)j/((double)sampling_rate);
 	  int    tlocal_int  = (int)tlocal_fra;
 	  tlocal_fra        -= tlocal_int;
 	  tlocal_int        += t_int;
@@ -675,7 +686,7 @@ int main(int argc, char *argv[]){
 	  exit(1);
 	}
 #ifdef DEBUGTIMING
-	syserror(0, "just read %d seconds of data from %d'th signal\n", num/SRATE, i);
+	syserror(0, "just read %d seconds of data from %d'th signal\n", num/sampling_rate, i);
 #endif
 	readfrombuff[i]=0;
       }
@@ -700,7 +711,6 @@ int main(int argc, char *argv[]){
 	FrSimData *sim;
 
 	int m, level = 0;
-	double sampleRate = SRATE;
 	long ndata = BLOCKSIZE;
 	char framename[256];
 	struct stat statbuf;
@@ -716,9 +726,9 @@ int main(int argc, char *argv[]){
 	/* set up GPS time, sample interval, copy data */
 	frame->GTimeS = gpstime + counter;
 	frame->GTimeN = 0;
-	frame->dt = ndata/sampleRate;
-        char tmpString[] = "CW_simulated";
-	sim = FrSimDataNew(frame, tmpString, sampleRate, ndata, -32);
+	frame->dt = ndata/sampling_rate;
+        char frName[] = "CW_simulated";
+	sim = FrSimDataNew(frame, frName, sampling_rate, ndata, -32);
 	for (m=0; m < ndata; m++) {
 	    sim->data->dataF[m] = total[m];
 	}
@@ -798,7 +808,7 @@ int main(int argc, char *argv[]){
 	for (j=0; j<BLOCKSIZE; j++){
 	  long long x2=count, x3;
 	  x2 *= E9;
-	  x2  /= (SRATE);
+	  x2  /= (sampling_rate);
 	  x2 += x1;
 	  x3 =  x2;
 	  x3 /= E9;
@@ -820,8 +830,8 @@ int main(int argc, char *argv[]){
 	exit(1);
       }
 #ifdef DEBUGTIMING
-      syserror(0, "Just sent %d seconds of data to system\n", BLOCKSIZE/SRATE);
-      sleep(BLOCKSIZE/SRATE);
+      syserror(0, "Just sent %d seconds of data to system\n", BLOCKSIZE/sampling_rate);
+      sleep(BLOCKSIZE/sampling_rate);
 #endif
     }
 
