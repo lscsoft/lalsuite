@@ -896,7 +896,7 @@ static void worker (void) {
 
     /* record a help otion (to later write help for additional command-line options) */
     else if ((0 == strncmp("--help",argv[arg],strlen("--help"))) ||
-	     (0 == strncmp("-h",argv[arg],strlen("--help")))) {
+	     (0 == strncmp("-h",argv[arg],strlen("-h")))) {
       output_help = 1;
       rargv[rarg] = argv[arg];
     }
