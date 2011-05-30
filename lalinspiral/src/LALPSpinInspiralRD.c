@@ -810,11 +810,11 @@ void LALPSpinInspiralRDForInjection(LALStatus        * status,
     waveform->phi->data = XLALCreateREAL8Vector(count);
 
     for (i=0; i<count; i++) {
-      waveform->f->data->data[i]=(REAL4) f->data[i];
-      waveform->h->data->data[2*i]=(REAL4) h->data[2*i];
-      waveform->h->data->data[2*i+1]=(REAL4) h->data[2*i+1];
+      waveform->f->data->data[i]     =(REAL4) f->data[i];
+      waveform->h->data->data[2*i]   =(REAL4) h->data[2*i];
+      waveform->h->data->data[2*i+1] =(REAL4) h->data[2*i+1];
+      waveform->phi->data->data[i]   = phi->data[i];
     }
-    memcpy(waveform->phi->data->data, phi->data, count * (sizeof(REAL8)));
 
     waveform->h->deltaT = waveform->f->deltaT = waveform->phi->deltaT = 1. / params->tSampling;
 
@@ -884,7 +884,7 @@ void LALPSpinInspiralRDFreqDom(LALStatus * status,
 	RETURN(status);
     }
     nbins = paramsInit.nbins;
-    if (nbins < signalvec->length) nbins = signalvec->length;
+    if (nbins < length) nbins = length;
     tsignalvec = XLALCreateREAL8Vector(nbins);
     fsignalvec = XLALCreateREAL4Vector(nbins);
 
@@ -894,6 +894,7 @@ void LALPSpinInspiralRDFreqDom(LALStatus * status,
 
     /* Call the engine function */
     LALPSpinInspiralRDEngine(status->statusPtr, tsignalvec, NULL, NULL, NULL, NULL, &count, params, &paramsInit);
+
     REAL4Vector *tsigR4=XLALCreateREAL4Vector(nbins);
     for (idx=0;idx<nbins;idx++) tsigR4->data[idx]=(REAL4) tsignalvec->data[idx];
     XLALDestroyREAL8Vector(tsignalvec);
@@ -902,15 +903,16 @@ void LALPSpinInspiralRDFreqDom(LALStatus * status,
     forwPlan = XLALCreateForwardREAL4FFTPlan(nbins, 0);
     if (forwPlan == NULL) {
       XLALDestroyREAL4Vector(fsignalvec);
+      XLALDestroyREAL4Vector(tsignalvec);
       XLALDestroyREAL4Vector(tsigR4);
       ABORTXLAL(status);
     }
     XLALREAL4VectorFFT(fsignalvec, tsigR4, forwPlan);
     XLALDestroyREAL4Vector(tsigR4);
 
-    for (idx = 0; idx < nbins/2; idx++) fsignalvec->data[idx]/=params->tSampling/2.;
+    for (idx = 0; idx < nbins; idx++) fsignalvec->data[idx] /= params->tSampling;
 
-    if (nbins>signalvec->length) {
+    if (nbins > length) {
       /*do interpolation*/
       REAL8Vector *fsigRe  = XLALCreateREAL8Vector(nbins/2);
       REAL8Vector *fsigIm  = XLALCreateREAL8Vector(nbins/2);
@@ -948,7 +950,14 @@ void LALPSpinInspiralRDFreqDom(LALStatus * status,
       XLALDestroyREAL8Vector(fsigIm);
       XLALDestroyREAL8Vector(freq);
       XLALDestroyREAL8Vector(freqSup);
-
+      gsl_spline_free(spline_real);
+      gsl_spline_free(spline_imag);
+      gsl_interp_accel_free(acc);
+      
+    }
+    else {
+      for (idx=0; idx<length; idx++)
+	signalvec->data[idx]=fsignalvec->data[idx];
     }
 
     XLALDestroyREAL4Vector(fsignalvec);
@@ -1557,9 +1566,14 @@ static void LALSpinInspiralEngine(LALStatus * status,
     else 
       alpha = alphaold;
 
-    if ((fabs(Phi-alpha-Phiold+alphaold)>LAL_PI/4.)&&(fabs(Phi-alpha-Phiold+alphaold)<2.*LAL_PI-0.1)&&(count>1)) {
-      fprintf(stderr,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n  Step %d:  Phi-alpha:%12.6e\n  Step %d  Phi-alpha: %12.6e\n",count,(Phi-alpha)/LAL_PI*180.,count-1,(Phiold-alphaold)/LAL_PI*180.);
-      fprintf(stderr,"  Waveform parameters were m1 = %14.6e, m2 = %14.6e\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
+    if (count>1) {
+      if ( (fabs(alpha-alphaold)>LAL_PI/4.) && (fabs(alpha-alphaold)<2.*LAL_PI-0.1) ) {
+	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e alphaold %12.6e\n",write,LNhy,LNhx,Phi[write],alpha,alphaold);
+	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-1)],h2P2->data[2*(write-1)+1],h2M2->data[2*(write-1)],h2M2->data[2*(write-1)+1]);
+	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-2)],h2P2->data[2*(write-2)+1],h2M2->data[2*(write-2)],h2M2->data[2*(write-2)+1]);
+	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-3)],h2P2->data[2*(write-3)+1],h2M2->data[2*(write-3)],h2M2->data[2*(write-3)+1]);
+	fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
+      }
     }
 
     LNhS1 = (S1x * LNhx + S1y * LNhy + S1z * LNhz) / mparams->m1m / mparams->m1m;
@@ -1606,6 +1620,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
 
   if ((omega>omegaMatch)&&(count>subsampling)) intreturn = LALPSIRDPN_TEST_OMEGAMATCH;
 
+  XLALRungeKutta4Free(integrator);
   LALFree(dummy.data);
 
   phenPars->endtime   = timewrite-mparams->dt;
@@ -1727,7 +1742,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   Mass = mparams->m * LAL_MTSUN_SI;
   dt   = mparams->dt;
 
-  memcpy(yin, yinit, neqs * (sizeof(REAL8)) );
+  fot (j=0; j<neqs; j++) yin[j]=yinit[j];
 
   intlen = XLALAdaptiveRungeKutta4(integrator,(void *)mparams,yin,0.0,mparams->lengths/Mass,dt/Mass,&yout);
 
@@ -1874,10 +1889,10 @@ static int XLALSpinInspiralAdaptiveEngine(
     XLALDestroyREAL8Vector(dLNhz);
     XLALDestroyREAL8Vector(diota);
     XLALDestroyREAL8Vector(dalpha);
+    XLALDestroyREAL8Vector(domega);
     XLALDestroyREAL8Vector(ddomega);
     XLALDestroyREAL8Vector(ddiota);
     XLALDestroyREAL8Vector(ddalpha);
-
   }
   else {
     jend=intlen-1;
@@ -1938,7 +1953,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     errcode  = XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
 
     if (j>1) {
-      if (((alpha-alphaold)>LAL_PI/2.)&&(fabs(Psi-alpha-Phi[j-1]+alphaold)>LAL_PI/4.)&&(fabs(Psi-alpha-Phi[j-1]+alphaold)<2.*LAL_PI-0.1)) {
+      if ( (fabs(alpha-alphaold)>LAL_PI/4.) && (fabs(alpha-alphaold)<2.*LAL_PI-0.1) ) {
 	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e\n",j,LNhy[j],LNhx[j],Phi[j],alpha,j-1,LNhy[j-1],LNhx[j-1],Phi[j-1],alphaold,j-2,LNhy[j-2],LNhx[j-2],Phi[j-2],alphaoold);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
@@ -1973,6 +1988,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   phenPars->S1S1      = S1S1k;
   phenPars->S2S2      = S2S2k;
 
+  LALFree(yin);
   XLALDestroyREAL8Array(yout);  
 
   return errcode;
@@ -2435,7 +2451,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     dalpha0 = phenPars.dalpha - dalpha1 / (1. - t0 / tAs);
 
     if ((tAs < t0) || (om1 < 0.)) {
-      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: Could not attach phen part\n");
+      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: Could not attach phen part for m:(%12.6e, %12.6e)\n",params->mass1,params->mass2);
       DETATCHSTATUSPTR(status);
       RETURN(status);
       //XLAL_ERROR(func, XLAL_EFAILED);
@@ -2450,8 +2466,6 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       count = phenPars.countback;
 
       /* Get QNM frequencies */
-      modefreqs = XLALCreateCOMPLEX8Vector(nmodes);
-
       errcode = XLALPSpinFinalMassSpin(&finalMass, &finalSpin, params, energy, initLNh);
       if (errcode != XLAL_SUCCESS) {
 	DETATCHSTATUSPTR(status);
@@ -2468,8 +2482,6 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       }
 
       omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
-      XLALDestroyCOMPLEX8Vector(modefreqs);
-
       frRD = fracRD(phenPars.LNhS1,phenPars.LNhS2,phenPars.S1S1,phenPars.S1S2,phenPars.S2S2);
 
       v     = pow(om,oneby3);
@@ -2961,6 +2973,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   XLALDestroyREAL8Vector(hap);
   XLALDestroyREAL8Vector(sigp);
   XLALDestroyREAL8Vector(sigc);
+  XLALDestroyCOMPLEX8Vector(modefreqs);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
