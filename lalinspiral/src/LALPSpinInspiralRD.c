@@ -903,7 +903,7 @@ void LALPSpinInspiralRDFreqDom(LALStatus * status,
     forwPlan = XLALCreateForwardREAL4FFTPlan(nbins, 0);
     if (forwPlan == NULL) {
       XLALDestroyREAL4Vector(fsignalvec);
-      XLALDestroyREAL4Vector(tsignalvec);
+      XLALDestroyREAL8Vector(tsignalvec);
       XLALDestroyREAL4Vector(tsigR4);
       ABORTXLAL(status);
     }
@@ -1568,7 +1568,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
 
     if (count>1) {
       if ( (fabs(alpha-alphaold)>LAL_PI/4.) && (fabs(alpha-alphaold)<2.*LAL_PI-0.1) ) {
-	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e alphaold %12.6e\n",write,LNhy,LNhx,Phi[write],alpha,alphaold);
+	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e alphaold %12.6e\n",write,LNhy,LNhx,Phi,alpha,alphaold);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-1)],h2P2->data[2*(write-1)+1],h2M2->data[2*(write-1)],h2M2->data[2*(write-1)+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-2)],h2P2->data[2*(write-2)+1],h2M2->data[2*(write-2)],h2M2->data[2*(write-2)+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-3)],h2P2->data[2*(write-3)+1],h2M2->data[2*(write-3)],h2M2->data[2*(write-3)+1]);
@@ -1742,7 +1742,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   Mass = mparams->m * LAL_MTSUN_SI;
   dt   = mparams->dt;
 
-  fot (j=0; j<neqs; j++) yin[j]=yinit[j];
+  for (j=0; j<neqs; j++) yin[j]=yinit[j];
 
   intlen = XLALAdaptiveRungeKutta4(integrator,(void *)mparams,yin,0.0,mparams->lengths/Mass,dt/Mass,&yout);
 
