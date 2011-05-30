@@ -1938,8 +1938,8 @@ static int XLALSpinInspiralAdaptiveEngine(
     errcode  = XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
 
     if (j>1) {
-      if ((fabs(Psi-alpha-Phi[j-1]+alphaold)>LAL_PI/4.)&&(fabs(Psi-alpha-Phi[j-1]+alphaold)<2.*LAL_PI-0.1)) {
-	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d:  LNhy: %12.6e LNhx: %12.6e  Psi-a:%12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-a: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-a: %12.6e\n",j,LNhy[j],LNhx[j],Phi[j]-alpha,j-1,LNhy[j-1],LNhx[j-1],Phi[j-1]-alphaold,j-2,LNhy[j-2],LNhx[j-2],Phi[j-2]-alphaoold);
+      if (((alpha-alphaold)>LAL_PI/2.)&&(fabs(Psi-alpha-Phi[j-1]+alphaold)>LAL_PI/4.)&&(fabs(Psi-alpha-Phi[j-1]+alphaold)<2.*LAL_PI-0.1)) {
+	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e\n",j,LNhy[j],LNhx[j],Phi[j],alpha,j-1,LNhy[j-1],LNhx[j-1],Phi[j-1],alphaold,j-2,LNhy[j-2],LNhx[j-2],Phi[j-2],alphaoold);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);
