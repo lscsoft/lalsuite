@@ -775,6 +775,7 @@ void setSignalModelType( LALInferenceRunState *runState ){
   }
   else{ /* set default model to triaxial */
     modeltype = XLALStringDuplicate( "triaxial" );
+    fprintf(stderr,"Signal model set to triaxial as default\n");
   }
   
   while( data ){
@@ -1715,8 +1716,12 @@ void get_pulsar_model( LALInferenceIFOData *data ){
 
   /* model specific for a triaxial pulsar emitting at twice the rotation
      frequency - other models can be added later */
-  if ( !strcmp( modeltype, "triaxial" ) )
+  if ( !strcmp( modeltype, "triaxial" ) ){
     get_triaxial_pulsar_model( pars, data );
+  }
+  else if ( !strcmp( modeltype, "pinsf" ) ){
+    get_pinsf_pulsar_model( pars, data );
+  }
   else{
     fprintf(stderr, "Error... model '%s' is not defined!\n", modeltype);
     exit(0);
@@ -1726,6 +1731,43 @@ void get_pulsar_model( LALInferenceIFOData *data ){
 
 
 void get_triaxial_pulsar_model( BinaryPulsarParams params, 
+                                LALInferenceIFOData *data ){
+  REAL8Vector *dphi = NULL;
+  INT4 i = 0, length = 0;
+  
+  get_amplitude_model( params, data );
+  length = data->compModelData->data->length;
+  
+  /* the timeData vector within the LALIFOData structure contains the
+     phase calculated using the initial (heterodyne) values of the phase
+     parameters */
+  
+  /* get difference in phase and perform extra heterodyne with it */ 
+  if ( varyphase ){ 
+    if ( (dphi = get_phase_model( params, data )) != NULL ){
+      for( i=0; i<length; i++ ){
+        COMPLEX16 M;
+        REAL8 dphit;
+        REAL4 sp, cp;
+    
+        dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
+    
+        sin_cos_2PI_LUT( &sp, &cp, dphit );
+    
+        M.re = data->compModelData->data->data[i].re;
+        M.im = data->compModelData->data->data[i].im;
+    
+        /* heterodyne */
+        data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
+        data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
+      }
+    }
+  }
+  
+  XLALDestroyREAL8Vector( dphi );
+}
+
+void get_pinsf_pulsar_model( BinaryPulsarParams params, 
                                 LALInferenceIFOData *data ){
   REAL8Vector *dphi = NULL;
   INT4 i = 0, length = 0;

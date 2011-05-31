@@ -140,6 +140,9 @@ void get_pulsar_model( LALInferenceIFOData *data );
 void get_triaxial_pulsar_model( BinaryPulsarParams params, 
                                 LALInferenceIFOData *data );
 
+void get_pinsf_pulsar_model( BinaryPulsarParams params, 
+                                LALInferenceIFOData *data );
+
 REAL8Vector *get_phase_model( BinaryPulsarParams params, 
                               LALInferenceIFOData *data );
 
