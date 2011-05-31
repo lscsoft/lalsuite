@@ -38,10 +38,6 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter, LALInfe
 
 REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState,
 LALInferenceVariables *params);
-double innerIntegrand(double M2, void *viData);
-double outerIntegrand(double M1, void *voData);
-double computePriorMassNorm(const double MMin, const double MMax, const double MTotMax, const double McMin, const double McMax, const double etaMin, const double etaMax);
-
 
 void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max, LALInferenceVariableType type);
 void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max);

@@ -28,6 +28,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/VectorOps.h>
 #include <lal/Date.h>
+#include <lal/XLALError.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -46,14 +47,6 @@ size_t typeSize[] = {sizeof(INT4),
                      sizeof(REAL8Vector *),
                      sizeof(UINT4Vector *),
                      sizeof(CHAR *)};
-
-
-void die(const char message[])
-{
-  fprintf(stderr, "%s", message);
-  exit(1);
-}
-
 
 
 /* ============ Accessor functions for the Variable structure: ========== */
@@ -79,7 +72,10 @@ LALInferenceVariableItem *LALInferenceGetItemNr(LALInferenceVariables *vars, int
 /* Returns pointer to item for given item number. */
 {
   int i=1;
-  if (idx < i) die(" Error in getItemNr(): requesting zero or negative idx entry.\n");
+  if (idx < i) {
+    XLALPrintError(" Error in getItemNr(): requesting zero or negative idx entry.\n");
+    XLAL_ERROR_NULL("LALInferenceGetItemNr",XLAL_EINVAL);
+  }
   LALInferenceVariableItem *this=vars->head;
   while (this != NULL) { 
     if (i == idx) break;
@@ -206,7 +202,10 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, vo
 	if(new) {
 		new->value = (void *)malloc(typeSize[type]);
 	}
-  if(new==NULL||new->value==NULL) die(" ERROR in addVariable(): unable to allocate memory for list item.\n");
+  if(new==NULL||new->value==NULL) {
+    XLALPrintError(" ERROR in addVariable(): unable to allocate memory for list item.\n");
+    XLAL_ERROR_VOID("LALInferenceAddVariable",XLAL_ENOMEM);
+  }
   memcpy(new->name,name,VARNAME_MAX);
   new->type = type;
   new->vary = vary;
@@ -468,7 +467,7 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 	return;
 }
 
-const char *translateInternalToExternalParamName(const char *inName) {
+const char *LALInferenceTranslateInternalToExternalParamName(const char *inName) {
   if (!strcmp(inName, "a_spin1")) {
     return "a1";
   } else if (!strcmp(inName, "a_spin2")) {
@@ -502,12 +501,12 @@ const char *translateInternalToExternalParamName(const char *inName) {
   }
 }
 
-int fprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params) {
+int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params) {
   LALInferenceVariableItem *head = params->head;
 
   while (head != NULL) {
     if (head->vary != PARAM_FIXED) {
-      fprintf(out, "%s\t", translateInternalToExternalParamName(head->name));
+      fprintf(out, "%s\t", LALInferenceTranslateInternalToExternalParamName(head->name));
     }
     head = head->next;
   }
@@ -703,7 +702,10 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
     }
     ++i;
   }
-  if (state==4) die(" ERROR in parseCommandLine(): failed parsing command line options.\n");
+  if (state==4) {
+    XLALPrintError(" ERROR in parseCommandLine(): failed parsing command line options.\n");
+    XLAL_ERROR_NULL("LALInferenceParseCommandLine",XLAL_EFAILED);
+  }
   return(head);
 }
 
@@ -766,23 +768,38 @@ void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata)
 /* Results go into 'IFOdata->timeModelh...'          */
 {
   while (IFOdata != NULL) {
-    if (IFOdata->freqToTimeFFTPlan==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'freqToTimeFFTPlan'.\n");
+    if (IFOdata->freqToTimeFFTPlan==NULL) {
+      XLALPrintError(" ERROR in executeInvFT(): encountered unallocated 'freqToTimeFFTPlan'.\n");
+      XLAL_ERROR_VOID("LALInferenceExecuteInvFT",XLAL_EFAULT);
+    }
 
     /*  h+ :  */
-    if (IFOdata->timeModelhPlus==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'timeModelhPlus'.\n");
-    if (IFOdata->freqModelhPlus==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'freqModelhPlus'.\n");
+    if (IFOdata->timeModelhPlus==NULL) {
+      XLALPrintError(" ERROR in executeInvFT(): encountered unallocated 'timeModelhPlus'.\n");
+      XLAL_ERROR_VOID("LALInferenceExecuteInvFT",XLAL_EFAULT);
+    }
+    if (IFOdata->freqModelhPlus==NULL) {
+      XLALPrintError(" ERROR in executeInvFT(): encountered unallocated 'freqModelhPlus'.\n");
+      XLAL_ERROR_VOID("LALInferenceExecuteInvFT",XLAL_EFAULT);
+    }
     
     XLALREAL8FreqTimeFFT(IFOdata->timeModelhPlus, IFOdata->freqModelhPlus, IFOdata->freqToTimeFFTPlan);
 
-    if (xlalErrno) {
+    if (*XLALGetErrnoPtr()) {
       fprintf(stderr, "XLAL Error: %s (in %s, line %d)\n",
               XLALErrorString(xlalErrno), __FILE__, __LINE__);
       exit(1);
     }
     
     /*  hx :  */
-    if (IFOdata->timeModelhCross==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'timeModelhCross'.\n");
-    if (IFOdata->freqModelhCross==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'freqModelhCross'.\n");
+    if (IFOdata->timeModelhCross==NULL) {
+      XLALPrintError(" ERROR in executeInvFT(): encountered unallocated 'timeModelhCross'.\n");
+      XLAL_ERROR_VOID("LALInferenceExecuteInvFT",XLAL_EFAULT);
+    }
+    if (IFOdata->freqModelhCross==NULL) {
+      XLALPrintError(" ERROR in executeInvFT(): encountered unallocated 'freqModelhCross'.\n");
+      XLAL_ERROR_VOID("LALInferenceExecuteInvFT",XLAL_EFAULT);
+    }
     
     XLALREAL8FreqTimeFFT(IFOdata->timeModelhCross, IFOdata->freqModelhCross, IFOdata->freqToTimeFFTPlan);
 
@@ -796,4 +813,23 @@ void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata)
   }
 }
 
+int LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariables *vars) {
+  size_t i;
 
+  for (i = 0; headers[i] != NULL; i++) {
+    double param;
+    int nread;
+    
+    nread = fscanf(inp, " %lg ", &param);
+
+    if (nread != 1) {
+      fprintf(stderr, "Could not read parameter value, the %zu parameter in the row (in %s, line %d)\n",
+              i, __FILE__, __LINE__);
+      exit(1);
+    }
+
+    LALInferenceAddVariable(vars, headers[i], &param, REAL8_t, PARAM_FIXED);
+  }
+
+  return 0;
+}

@@ -54,7 +54,7 @@
 const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
-
+void makeWhiteData(LALInferenceIFOData *IFOdata);
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length)
 {
@@ -304,7 +304,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                                                                1.0/SampleRate,
                                                                &lalDimensionlessUnit,
                                                                seglen);
-                PSDToTDW(IFOdata[i].timeDomainNoiseWeights, IFOdata[i].oneSidedNoisePowerSpectrum, IFOdata[i].freqToTimeFFTPlan,
+                LALInferencePSDToTDW(IFOdata[i].timeDomainNoiseWeights, IFOdata[i].oneSidedNoisePowerSpectrum, IFOdata[i].freqToTimeFFTPlan,
                          IFOdata[i].fLow, IFOdata[i].fHigh);
 
                 makeWhiteData(&(IFOdata[i]));
@@ -757,23 +757,4 @@ char *colNameToParamName(const char *colName) {
   return retstr;
 }
 
-int processParamLine(FILE *inp, char **headers, LALInferenceVariables *vars) {
-  size_t i;
 
-  for (i = 0; headers[i] != NULL; i++) {
-    double param;
-    int nread;
-    
-    nread = fscanf(inp, " %lg ", &param);
-
-    if (nread != 1) {
-      fprintf(stderr, "Could not read parameter value, the %zu parameter in the row (in %s, line %d)\n",
-              i, __FILE__, __LINE__);
-      exit(1);
-    }
-
-    LALInferenceAddVariable(vars, headers[i], &param, REAL8_t, PARAM_FIXED);
-  }
-
-  return 0;
-}

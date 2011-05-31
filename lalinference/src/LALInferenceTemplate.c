@@ -47,7 +47,7 @@ RCSID("$Id$");
 extern int newswitch; //temporay global variable to use the new LALSTPN
 static void destroyCoherentGW( CoherentGW *waveform );
 
-void LALTemplateGeneratePPN(LALInferenceIFOData *IFOdata){
+void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata){
 
 	static LALStatus status;								/* status structure */	
 	memset(&status,0,sizeof(status));
@@ -229,7 +229,7 @@ fclose(file);
 
 
 
-void templateStatPhase(LALInferenceIFOData *IFOdata)
+void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
 /*************************************************************/
 /* returns the (analytic) frequency-domain template.         */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -269,13 +269,20 @@ void templateStatPhase(LALInferenceIFOData *IFOdata)
   double plusRe, plusIm, crossRe, crossIm;
   UINT4 i, lower, upper;
  
-  if (IFOdata->timeData==NULL)
-    die(" ERROR in templateStatPhase(): encountered unallocated 'timeData'.\n");
-  if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
-    die(" ERROR in templateStatPhase(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
+  if (IFOdata->timeData==NULL){
+    XLALPrintError(" ERROR in templateStatPhase(): encountered unallocated 'timeData'.\n");
+    XLAL_ERROR_VOID("LALInferenceTemplateStatPhase",XLAL_EFAULT);
+  }
+  if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) {
+    XLALPrintError(" ERROR in templateStatPhase(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
+    XLAL_ERROR_VOID("LALInferenceTemplateStatPhase",XLAL_EFAULT);
+  }
   if (LALInferenceCheckVariable(IFOdata->modelParams, "PNOrder"))
     PNOrder = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "PNOrder");
-  if ((PNOrder!=2.5) && (PNOrder!=2.0)) die(" ERROR in templateStatPhase(): only PN orders 2.0 or 2.5 allowed.");
+  if ((PNOrder!=2.5) && (PNOrder!=2.0)) {
+    XLALPrintError(" ERROR in templateStatPhase(): only PN orders 2.0 or 2.5 allowed.");
+    XLAL_ERROR_VOID("LALInferenceTemplateStatPhase",XLAL_EFAULT);
+  }
   ampliConst  = 0.5*log(5.0) + (5.0/6.0)*log(LAL_G_SI) - log(2.0) - 0.5*log(6.0) - (2.0/3.0)*log(LAL_PI) - 1.5*log((double)LAL_C_SI);
   ampliConst  = exp(ampliConst + 0.5*log_eta + (5.0/6.0)*log(mt) - (log(LAL_PC_SI)+log(1.0e+6)));
   /* leaving out the following term makes freqDomain template scaling match that of "XLALREAL8TimeFreqFFT()" output: */
@@ -328,15 +335,17 @@ void templateStatPhase(LALInferenceIFOData *IFOdata)
 
 
 
-void templateNullFreqdomain(LALInferenceIFOData *IFOdata)
+void LALInferenceTemplateNullFreqdomain(LALInferenceIFOData *IFOdata)
 /**********************************************/
 /* returns a frequency-domain 'null' template */
 /* (all zeroes, implying no signal present).  */
 /**********************************************/
 {
   UINT4 i;
-  if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
-    die(" ERROR in templateNullFreqdomain(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
+  if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) {
+    XLALPrintError(" ERROR in templateNullFreqdomain(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
+    XLAL_ERROR_VOID("LALInferenceTemplateNullFreqdomain",XLAL_EFAULT);
+  }
   for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i){
     IFOdata->freqModelhPlus->data->data[i].re  = 0.0;
     IFOdata->freqModelhPlus->data->data[i].im  = 0.0;
@@ -349,15 +358,17 @@ void templateNullFreqdomain(LALInferenceIFOData *IFOdata)
 
 
 
-void templateNullTimedomain(LALInferenceIFOData *IFOdata)
+void LALInferenceTemplateNullTimedomain(LALInferenceIFOData *IFOdata)
 /*********************************************/
 /* returns a time-domain 'null' template     */
 /* (all zeroes, implying no signal present). */
 /*********************************************/
 {
   UINT4 i;
-  if ((IFOdata->timeModelhPlus==NULL) || (IFOdata->timeModelhCross==NULL)) 
-    die(" ERROR in templateNullTimedomain(): encountered unallocated 'timeModelhPlus/-Cross'.\n");
+  if ((IFOdata->timeModelhPlus==NULL) || (IFOdata->timeModelhCross==NULL)) {
+    XLALPrintError(" ERROR in templateNullTimedomain(): encountered unallocated 'timeModelhPlus/-Cross'.\n");
+    XLAL_ERROR_VOID("LALInferenceTemplateNullTimedomain",XLAL_EFAULT);
+  }
   for (i=0; i<IFOdata->timeModelhPlus->data->length; ++i){
     IFOdata->timeModelhPlus->data->data[i]  = 0.0;
     IFOdata->timeModelhCross->data->data[i] = 0.0;
@@ -371,6 +382,7 @@ void templateNullTimedomain(LALInferenceIFOData *IFOdata)
 /* ============ LAL template wrapper function: ========== */
 
 
+void mc2masses(double mc, double eta, double *m1, double *m2);
 
 void mc2masses(double mc, double eta, double *m1, double *m2)
 /*  Compute individual companion masses (m1, m2)   */
@@ -414,7 +426,7 @@ double m2mc(double m1, double m2)
 
 
 
-void templateLAL(LALInferenceIFOData *IFOdata)
+void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
 /*************************************************************************************************/
 /* Wrapper function to call LAL functions for waveform generation.                               */
 /* Will always return frequency-domain templates (numerically FT'ed                              */
@@ -473,22 +485,34 @@ void templateLAL(LALInferenceIFOData *IFOdata)
 
   if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
     approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
-  else die(" ERROR in templateLAL(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
+  else {
+    XLALPrintError(" ERROR in templateLAL(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
+    XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EDATA);
+  }
 
   if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_PNORDER"))
     order = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
-  else die(" ERROR in templateLAL(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
+  else {
+    XLALPrintError(" ERROR in templateLAL(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
+    XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EDATA);
+  }
 
   /*fprintf(stdout, " templateLAL() - approximant = %d,  PN order = %d\n", approximant, order);*/
 
   /* little consistency check (otherwise no output without warning): */
-  if (((approximant==EOBNR) || (approximant==EOB)) && (order!=LAL_PNORDER_PSEUDO_FOUR))
-    die(" ERROR in templateLAL(): \"EOB\" and \"EOBNR\" templates require \"LAL_PNORDER_PSEUDO_FOUR\" PN order!\n");  
-
-  if (IFOdata->timeData==NULL) 
-    die(" ERROR in templateLAL(): encountered unallocated 'timeData'.\n");
-  if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
-    die(" ERROR in templateLAL(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
+  if (((approximant==EOBNR) || (approximant==EOB)) && (order!=LAL_PNORDER_PSEUDO_FOUR)) {
+    XLALPrintError(" ERROR in templateLAL(): \"EOB\" and \"EOBNR\" templates require \"LAL_PNORDER_PSEUDO_FOUR\" PN order!\n");  
+    XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EDATA);
+  }
+    
+  if (IFOdata->timeData==NULL) {
+    XLALPrintError(" ERROR in templateLAL(): encountered unallocated 'timeData'.\n");
+    XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EDATA);
+  }
+  if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) {
+    XLALPrintError(" ERROR in templateLAL(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
+    XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EDATA);
+  }
   deltaT = IFOdata->timeData->deltaT;
 
   mc2masses(mc, eta, &m1, &m2);
@@ -626,11 +650,15 @@ void templateLAL(LALInferenceIFOData *IFOdata)
     }
     LALDestroyVector(&status, &LALSignal);
     /* apply window & execute FT of plus component: */
-    if (IFOdata->window==NULL) 
-      die(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->window'.\n");
+    if (IFOdata->window==NULL) {
+      XLALPrintError(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->window'.\n");
+      XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EFAULT);
+    }
     XLALDDVectorMultiply(IFOdata->timeModelhPlus->data, IFOdata->timeModelhPlus->data, IFOdata->window->data);
-    if (IFOdata->timeToFreqFFTPlan==NULL)
-      die(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->timeToFreqFFTPlan'.\n");
+    if (IFOdata->timeToFreqFFTPlan==NULL) {
+      XLALPrintError(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->timeToFreqFFTPlan'.\n");
+      XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EFAULT);
+    }
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
   }  else {             /*  (LAL function returns FREQUENCY-DOMAIN template)  */
     IFOdata->modelDomain = frequencyDomain;
@@ -790,7 +818,7 @@ void templateLAL(LALInferenceIFOData *IFOdata)
 
 
 
-void template3525TD(LALInferenceIFOData *IFOdata)
+void LALInferenceTemplate3525TD(LALInferenceIFOData *IFOdata)
 /*****************************************************************/
 /* 3.5PN phase / 2.5PN amplitude time-domain inspiral templates  */
 /* following                                                     */
@@ -1013,7 +1041,7 @@ void template3525TD(LALInferenceIFOData *IFOdata)
 
 
 
-void templateSineGaussian(LALInferenceIFOData *IFOdata)
+void LALInferenceTemplateSineGaussian(LALInferenceIFOData *IFOdata)
 /*****************************************************/
 /* Sine-Gaussian (burst) template.                   */
 /* Signal is (by now?) linearly polarised,           */
@@ -1064,7 +1092,7 @@ void templateSineGaussian(LALInferenceIFOData *IFOdata)
 
 
 
-void templateDampedSinusoid(LALInferenceIFOData *IFOdata)
+void LALInferenceTemplateDampedSinusoid(LALInferenceIFOData *IFOdata)
 /*****************************************************/
 /* Damped Sinusoid (burst) template.                 */
 /* Signal is linearly polarized,                     */
@@ -1110,7 +1138,7 @@ void templateDampedSinusoid(LALInferenceIFOData *IFOdata)
 
 
 
-void templateSinc(LALInferenceIFOData *IFOdata)
+void LALInferenceTemplateSinc(LALInferenceIFOData *IFOdata)
 /*****************************************************/
 /* Sinc function (burst) template.                   */
 /* Signal is linearly polarized,                     */
@@ -1149,7 +1177,7 @@ void templateSinc(LALInferenceIFOData *IFOdata)
 }
 
 
-void templateASinOmegaT(LALInferenceIFOData *IFOdata)
+void LALInferenceTemplateASinOmegaT(LALInferenceIFOData *IFOdata)
 /************************************************************/
 /* Trivial h(t)=A*sin(Omega*t) template						*/
 /*  Required (`IFOdata->modelParams') parameters are:       */
@@ -1172,7 +1200,7 @@ void templateASinOmegaT(LALInferenceIFOData *IFOdata)
   return;
 }
 
-void templateLALSTPN(LALInferenceIFOData *IFOdata)
+void LALInferenceTemplateLALSTPN(LALInferenceIFOData *IFOdata)
 /********************************************************************************************/
 /* LALSTPN template																			*/
 /*  Required (`IFOdata->modelParams') parameters are:										*/
@@ -1249,8 +1277,10 @@ void templateLALSTPN(LALInferenceIFOData *IFOdata)
 	injParams.distance	= 1.;																	/* distance set at 1 Mpc */
 	//double PNorder = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "PNorder");					/* Phase PN order, i.e. 1.0 ; 1.5 ; 2.0; 2.5; 3.0 ; 3.5 */
 	
-	if (IFOdata->timeData==NULL) 
-		die(" ERROR in templateLALSTPN(): encountered unallocated 'timeData'.\n");
+	if (IFOdata->timeData==NULL) {
+		XLALPrintError(" ERROR in templateLALSTPN(): encountered unallocated 'timeData'.\n");
+		XLAL_ERROR_VOID("LALInferenceTemplateLALSTPN",XLAL_EFAULT);
+	}
 	
 	ppnParams.deltaT = IFOdata->timeData->deltaT;
 	double deltaT = IFOdata->timeData->deltaT;
@@ -1269,7 +1299,10 @@ void templateLALSTPN(LALInferenceIFOData *IFOdata)
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_PNORDER"))
 		order = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
-	else die(" ERROR in templateLALSTPN(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
+	else {
+	  XLALPrintError(" ERROR in templateLALSTPN(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
+	  XLAL_ERROR_VOID("LALInferenceTemplateLALSTPN",XLAL_EDATA);
+	}
 	
 	XLALInspiralGetApproximantString( approximant_order, LIGOMETA_WAVEFORM_MAX, (Approximant) approximant, (LALPNOrder)  order);
 	//LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),approximant_order);
@@ -1444,7 +1477,7 @@ void templateLALSTPN(LALInferenceIFOData *IFOdata)
 
 
 
-void templateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
+void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 /********************************************************************************************/
 /* LALGenerateInspiral wrapper.																*/
 /*  Required (`IFOdata->modelParams') parameters are:										*/
@@ -1491,11 +1524,17 @@ void templateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
 		approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
-	else die(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
+	else {
+	  XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
+	  XLAL_ERROR_VOID("LALInferenceTemplateLALGenerateInspiral",XLAL_EDATA);
+	}
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_PNORDER"))
 		order = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
-	else die(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
+	else {
+	  XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
+	  XLAL_ERROR_VOID("LALInferenceTemplateLALGenerateInspiral",XLAL_EDATA);
+	}
 	
 	XLALInspiralGetApproximantString( approximant_order, LIGOMETA_WAVEFORM_MAX, (Approximant) approximant, (LALPNOrder)  order);
 	//LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),approximant_order);
@@ -1547,8 +1586,10 @@ void templateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 	
 	injParams.distance	= 1.;																	/* distance set at 1 Mpc */
 	
-	if (IFOdata->timeData==NULL) 
-		die(" ERROR in templateLALGenerateInspiral(): encountered unallocated 'timeData'.\n");
+	if (IFOdata->timeData==NULL) {
+		XLALPrintError(" ERROR in templateLALGenerateInspiral(): encountered unallocated 'timeData'.\n");
+		XLAL_ERROR_VOID("LALInferenceTemplateLALGenerateInspiral",XLAL_EFAULT);
+	}
 	
 	ppnParams.deltaT = IFOdata->timeData->deltaT;
 	double deltaT = IFOdata->timeData->deltaT;
@@ -1739,7 +1780,7 @@ static void destroyCoherentGW( CoherentGW *waveform )
 }
 
 
-void dumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
+void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                             LALInferenceTemplateFunction *template, const char *filename)
 /* de-bugging function writing (frequency-domain) template to a CSV file */
 /* File contains real & imaginary parts of plus & cross components.      */
@@ -1779,7 +1820,7 @@ void dumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceIF
 }
 
 
-void dumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
+void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                             LALInferenceTemplateFunction *template, const char *filename)
 /* de-bugging function writing (frequency-domain) template to a CSV file */
 /* File contains real & imaginary parts of plus & cross components.      */

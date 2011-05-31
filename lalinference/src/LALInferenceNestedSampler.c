@@ -20,6 +20,14 @@ RCSID("$Id$");
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
+/* Prototypes for private "helper" functions. */
+void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3]);
+void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
+void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
+double logadd(double a,double b);
+REAL8 mean(REAL8 *array,int N);
+
+
 double logadd(double a,double b){
 	if(a>b) return(a+log(1.0+exp(b-a)));
 	else return(b+log(1.0+exp(a-b)));
@@ -33,21 +41,16 @@ REAL8 mean(REAL8 *array,int N){
 	return sum/((REAL8) N);
 }
 
-REAL8 sample_logt(int Nlive,gsl_rng *RNG){
-	REAL8 t=0.0;
-	REAL8 a=0.0;
-	while((Nlive--)>1) {a=gsl_rng_uniform(RNG); t = t>a ? t : a;}
-	return(log(t));
-}
+
 
 /* Calculate shortest angular distance between a1 and a2 */
-REAL8 ang_dist(REAL8 a1, REAL8 a2){
+REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2){
 	double raw = (a2>a1 ? a2-a1 : a1-a2);
 	return(raw>LAL_PI ? 2.0*LAL_PI - raw : raw);
 }
 
 /* Calculate the variance of a modulo-2pi distribution */
-REAL8 ang_var(LALInferenceVariables **list,const char *pname, int N){
+REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname, int N){
 	int i=0;
 	REAL8 ang_mean=0.0;
 	REAL8 var=0.0;
@@ -61,8 +64,15 @@ REAL8 ang_var(LALInferenceVariables **list,const char *pname, int N){
 	ang_mean=atan2(ms,mc);
 	ang_mean = ang_mean<0? 2.0*LAL_PI + ang_mean : ang_mean;
 	/* calc variance */
-	for(i=0;i<N;i++) var+=ang_dist(*(REAL8 *)LALInferenceGetVariable(list[i],pname),ang_mean)*ang_dist(*(REAL8 *)LALInferenceGetVariable(list[i],pname),ang_mean);
+	for(i=0;i<N;i++) var+=LALInferenceAngularDistance(*(REAL8 *)LALInferenceGetVariable(list[i],pname),ang_mean)*LALInferenceAngularDistance(*(REAL8 *)LALInferenceGetVariable(list[i],pname),ang_mean);
 	return(var/(REAL8)N);
+}
+
+REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG){
+	REAL8 t=0.0;
+	REAL8 a=0.0;
+	while((Nlive--)>1) {a=gsl_rng_uniform(RNG); t = t>a ? t : a;}
+	return(log(t));
 }
 
 /* estimateCovarianceMatrix reads the list of live points,
@@ -133,7 +143,7 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 		if(item->vary!=PARAM_CIRCULAR && item->vary!=PARAM_LINEAR) continue;
 		if(item->vary==PARAM_CIRCULAR) {
 			for(k=0;k<j;k++) gsl_matrix_set(*cvm,j,k,0.0);
-			gsl_matrix_set(*cvm,j,j,ang_var(Live,item->name,Nlive));
+			gsl_matrix_set(*cvm,j,j,LALInferenceAngularVariance(Live,item->name,Nlive));
 			for(k=j+1;k<ND;k++) gsl_matrix_set(*cvm,k,j,0.0);
 		}
 		j++;
@@ -173,7 +183,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         
         if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
           if (runState->data->modelDomain == frequencyDomain )
-            logZnoise=NullLogLikelihood(runState->data);
+            logZnoise=LALInferenceNullLogLikelihood(runState->data);
 	
           LALInferenceAddVariable(runState->algorithmParams,"logZnoise",&logZnoise,REAL8_t,PARAM_FIXED);
         }
@@ -279,7 +289,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		if (runState->currentLikelihood>logLmax)
 			logLmax=runState->currentLikelihood;
 
-		for(j=0;j<Nruns;j++) logwarray[j]+=sample_logt(Nlive,runState->GSLrandom);
+		for(j=0;j<Nruns;j++) logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 		logw=mean(logwarray,Nruns);
 		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
 		if(verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",
@@ -315,7 +325,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	for(i=0;i<Nlive;i++){
 		logZ=logadd(logZ,logLikelihoods[i]+logw);
 		for(j=0;j<Nruns;j++){
-			logwarray[j]+=sample_logt(Nlive,runState->GSLrandom);
+			logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]);
 		}
 

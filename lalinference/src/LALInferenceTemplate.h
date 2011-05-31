@@ -32,22 +32,22 @@
 
 #include <lal/LALInference.h>
 
-void dumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
+void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                             LALInferenceTemplateFunction *template, const char *filename);
-void dumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
+void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                             LALInferenceTemplateFunction *template, const char *filename);
 
-void LALTemplateGeneratePPN(LALInferenceIFOData *IFOdata);
-void templateStatPhase(LALInferenceIFOData *IFOdata);
-void templateNullFreqdomain(LALInferenceIFOData *IFOdata);
-void templateNullTimedomain(LALInferenceIFOData *IFOdata);
-void templateLAL(LALInferenceIFOData *IFOdata);
-void template3525TD(LALInferenceIFOData *IFOdata);
-void templateSineGaussian(LALInferenceIFOData *IFOdata);
-void templateDampedSinusoid(LALInferenceIFOData *IFOdata);
-void templateSinc(LALInferenceIFOData *IFOdata);
-void templateLALSTPN(LALInferenceIFOData *IFOdata);
-void templateASinOmegaT(LALInferenceIFOData *IFOdata);
-void templateLALGenerateInspiral(LALInferenceIFOData *IFOdata);
+void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateNullFreqdomain(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateNullTimedomain(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplate3525TD(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateSineGaussian(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateDampedSinusoid(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateSinc(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateLALSTPN(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateASinOmegaT(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata);
 
 #endif

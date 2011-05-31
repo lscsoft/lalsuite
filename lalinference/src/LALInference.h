@@ -120,7 +120,7 @@ typedef enum
 }  LALInferenceApplyTaper;
 
 
-extern size_t typeSize[];
+extern size_t LALInferenceTypeSize[];
 
 /** The LALInferenceVariableItem list node structure
  * This should only be accessed using the accessor functions below
@@ -147,8 +147,8 @@ tagLALInferenceVariables
 } LALInferenceVariables;
 
 
-const char *translateInternalToExternalParamName(const char *inName);
-int fprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params);
+const char *LALInferenceTranslateInternalToExternalParamName(const char *inName);
+INT4 LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params);
 
 /** Return a pointer to the variable asked for */
 void *LALInferenceGetVariable(LALInferenceVariables * vars, const char * name);
@@ -306,7 +306,14 @@ tagLALInferenceIFOData
 /** Returns the element of the process params table with "name" */
 ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,const char *name);
 
-/** What is this? */
+/** parses a character string (passed as one of the options) and decomposes   
+ it into individual parameter character strings. Input is of the form
+   input   :  "[one,two,three]"
+ and the resulting output is
+   strings :  {"one", "two", "three"}   
+ length of parameter names is for now limited to 512 characters. 
+ (should 'theoretically' (untested) be able to digest white space as well.
+ Irrelevant for command line options, though.)                             */
 void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4 *n);
 
 /** Return a ProcessParamsTable from the command line arguments */
@@ -322,9 +329,6 @@ void COMPLEX16VectorSubtract(COMPLEX16Vector * out, const COMPLEX16Vector * in1,
 void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);
 void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata);
 
-/** This should be removed */
-void die(const char *message);
-
 /** Return the list node for "name" - do not rely on this */
 LALInferenceVariableItem *LALInferenceGetItem(LALInferenceVariables *vars,const char *name);
 /** Return the list node for the index-th item - do not rely on this */
@@ -335,7 +339,6 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);
 /** Output only non-fixed parameters */
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
 
-void mc2masses(double mc, double eta, double *m1, double *m2);
 
 /* Differential Evolution and Common Format Posterior File Parsing
    Utilities. */
@@ -350,7 +353,7 @@ char *colNameToParamName(const char *colName);
 /** Reads one line from the given file and stores the values there into
    the variable structure, using the given header array to name the
    columns.  Returns 0 on success. */
-int processParamLine(FILE *inp, char **headers, LALInferenceVariables *vars);
+int LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariables *vars);
 
 #endif
 

@@ -41,7 +41,7 @@
 #include <lal/LALInference.h>
 
 /* logadd(a,b) = log(exp(a) + exp(b)) using Stirling's approximation */
-double logadd(double a,double b);
+/* double logadd(double a,double b); */
 
 /** NestedSamplingAlgorithm implements the nested sampling algorithm,
  see e.g. Sivia "Data Analysis: A Bayesian Tutorial, 2nd edition */
@@ -53,15 +53,15 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState, L
 /** Calculate covariance matrix from a collection of live points */
 void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4 Nlive);
 /** This should be moved */
-double logadd(double a,double b);
+/* double logadd(double a,double b); */
 
 /** A single iteration of the NS algorithm */
 void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState);
 
-REAL8 mean(REAL8 *array,int N);
-REAL8 sample_logt(int Nlive,gsl_rng *RNG);
-REAL8 ang_dist(REAL8 a1, REAL8 a2);
-REAL8 ang_var(LALInferenceVariables **list,const char *pname, int N);
+/* REAL8 mean(REAL8 *array,int N); */
+REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG);
+REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2);
+REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname, int N);
 
 /* Functions for proposal distributions */
 void LALInferenceProposalPulsarNS(LALInferenceRunState *runState, LALInferenceVariables
@@ -78,9 +78,10 @@ void LALInferenceRotateSky(
 						   LALInferenceRunState *state,
 						   LALInferenceVariables *parameter
 						   );
-void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3]);
+
+/*void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3]);
 void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
-void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
+void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);*/
 
 
 

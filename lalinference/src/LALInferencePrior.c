@@ -24,6 +24,13 @@
 #include <math.h>
 #include <gsl/gsl_integration.h>
 
+/* Private helper function prototypes */
+double innerIntegrand(double M2, void *viData);
+double outerIntegrand(double M1, void *voData);
+double computePriorMassNorm(const double MMin, const double MMax, const double MTotMax, const double McMin, const double McMax, const double etaMin, const double etaMax);
+void mc2masses(double mc, double eta, double *m1, double *m2);
+
+
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
 {
