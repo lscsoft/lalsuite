@@ -17,62 +17,59 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralWaveNormaliseLSOCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
-/* <lalLaTeX>
-\subsection{Module \texttt{LALInspiralWaveNormaliseLSO.c}}
-Module to find the norm of a signal and to return a normaliseLSOd
+/**
+\author Sathyaprakash, B. S.
+\file
+
+\brief Module to find the norm of a signal and to return a normaliseLSOd
 array. The original signal is left untouched.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralWaveNormaliseLSOCP}
-\index{\verb&LALInspiralWaveNormaliseLSO()&}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>LALInspiralWaveNormaliseLSO()</tt>
+
+\heading{Description}
 Given the positive frequency Fourier components
-$H_k,$ $k=0,\ldots,n-1,$ of a vector
-and the noise PSD $S_m,$ $m=0,\ldots,n/2,$
-this module first computes the norm $H$ of the vector treating
-$S_m$ as the measure:
+\f$H_k,\f$ \f$k=0,\ldots,n-1,\f$ of a vector
+and the noise PSD \f$S_m,\f$ \f$m=0,\ldots,n/2,\f$
+this module first computes the norm \f$H\f$ of the vector treating
+\f$S_m\f$ as the measure:
 (note that in {\em fftw} notation, the zeroth frequency
-component is $H_0,$ Nyquist
-is $H_{n/2},$ $H_k,$ $k \ne 0,n/2,$ ($H_{n-k})$ is the real (imaginary)
-part of the $k$th harmonic)
-\begin{equation}
+component is \f$H_0,\f$ Nyquist
+is \f$H_{n/2},\f$ \f$H_k,\f$ \f$k \ne 0,n/2,\f$ (\f$H_{n-k})\f$ is the real (imaginary)
+part of the \f$k\f$th harmonic)
+\anchor eq_inspiralnorm \f{equation}{
 H = \sum_{k=1}^{n/2-1} \frac{H_k^2 + H^2_{n-k}}{S_k}.
-\label{eq:inspiralnorm}
-\end{equation}
-{\bf The above sum is limited to frequency} {\tt in->fCutoff.}
+\label{eq_inspiralnorm}
+\f}
+<tt>The above sum is limited to frequency</tt> <tt>in->fCutoff.</tt>
 Also, note that the zeroth and Nyquist frequency components
 are ignored in the computation of the norm.
-Moreover, {\bf array elements of} {\tt filter} corresponding
-to frequencies greater than {\tt in->fCutoff} are {\bf set to zero}.
-That is, the code replaces the original vector $H_k$ with {\it normalized
-vector} using:
-\begin{eqnarray}
+Moreover, <tt>array elements of</tt> \c filter corresponding
+to frequencies greater than <tt>in->fCutoff</tt> are <tt>set to zero</tt>.
+That is, the code replaces the original vector \f$H_k\f$ with <em>normalized
+vector</em> using:
+\f{eqnarray}{
 \widehat H_k & = & \frac {H_k}{\sqrt H},
-\ \ \ {\tt k \times in\rightarrow df} \le {\tt in\rightarrow fCutoff},\nonumber \\
-& = & 0, \ \ \ {\tt k \times in\rightarrow df} > {\tt in\rightarrow fCutoff}.
-\end{eqnarray}
+\ \ \ \mathrm{k \times in\rightarrow\mathrm df} \le \mathrm{in\rightarrow fCutoff},\nonumber \\
+& = & 0, \ \ \ \mathrm{k \times in\rightarrow df} > \mathrm{in\rightarrow fCutoff}.
+\f}
 In addition, the 0th and Nyquist frequency components are also set to zero.
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Algorithm}
+\heading{Uses}
+\code
 none.
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralWaveNormaliseLSOCV}}
-</lalLaTeX>  */
+
+*/
 #include <lal/LALNoiseModelsInspiral.h>
 
 NRCSID (LALINSPIRALWAVENORMALISEC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWaveNormaliseLSOCP"> */
+
 void
 LALInspiralWaveNormaliseLSO
    (
@@ -81,7 +78,7 @@ LALInspiralWaveNormaliseLSO
    REAL8       *norm,
    InspiralWaveNormaliseIn *in
    )
-{  /*  </lalVerbatim>  */
+{
 
   INT4 i, n, nby2;
   REAL8 psd, f;

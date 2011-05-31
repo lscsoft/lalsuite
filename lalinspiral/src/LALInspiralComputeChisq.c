@@ -17,37 +17,33 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralComputeChisqCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\brief NONE
 
-/* <lalLaTeX>
-\subsection{Module \texttt{LALInspiralComputeChisq.c}}
+\heading{Prototypes}
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralComputeChisqCP}
-\index{\verb&LALInspiralComputeChisq()&}
+<tt>LALInspiralComputeChisq()</tt>
 
-\subsubsection*{Description}
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Description}
+\heading{Algorithm}
+\heading{Uses}
+\code
 LALREAL4VectorFFT
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralComputeChisqCV}}
-</lalLaTeX>  */
+
+*/
 
 #include <lal/AVFactories.h>
 #include <lal/LALNoiseModelsInspiral.h>
 
 NRCSID (LALINSPIRALCOMPUTECHISQ, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralComputeChisqCP"> */
+
 void
 LALInspiralComputeChisq
    (
@@ -56,7 +52,7 @@ LALInspiralComputeChisq
    InspiralChisqDataVec  *input,
    InspiralChisqParams   *params
    )
-{  /*  </lalVerbatim>  */
+{
 
   REAL8 c2, flso, df, duration, totalModelSNR, SNRPerBin, binSNR, totalSNR, diffSNR, mSevenBy3;
   INT4 n, k_0, k_N, /*ki,*/ count, k, k_start, k_end, i;

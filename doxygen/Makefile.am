@@ -1,12 +1,14 @@
-EXTRA_DIST = \
-	DoxygenLayout-html.xml \
-	DoxygenLayout-pdf.xml \
-	doxy-html-aliases.cfg \
-	doxy-pdf-aliases.cfg \
-	doxy_html_eqns.sty \
-	doxy_pdf_header.tex \
-	doxygen-html.cfg.in \
-	doxygen-pdf.cfg.in
+DOXY_HTML_FILES = doxy-html-config.cfg.in \
+		  doxy-html-aliases.cfg \
+		  doxy-html-eqns.sty \
+		  doxy-html-layout.xml
+
+DOXY_PDF_FILES = doxy-pdf-config.cfg.in  \
+		 doxy-pdf-aliases.cfg \
+		 doxy-pdf-header.tex \
+		 doxy-pdf-layout.xml
+
+EXTRA_DIST = $(DOXY_HTML_FILES) $(DOXY_PDF_FILES)
 
 SUBDIRS = src
 
@@ -43,30 +45,30 @@ override pool_size = 4000000
 
 export doxy_inputdirs lalsuite_version TEXINPUTS pool_size
 
-html: doxygen-html.cfg
+html: $(DOXY_HTML_FILES)
 	@echo "===== building doxygen HTML in $(abs_builddir) ======"
 	@echo "DOXYINPUT=$(DOXYINPUT)"
-	rm -f doxygen-html*.log
+	rm -f doxy-html*.log
 	cd $(abs_builddir) && ( \
-	   if doxygen doxygen-html.cfg; then \
+	   if doxygen doxy-html-config.cfg; then \
 	      if test -f html/_formulas.log; then \
-	         $(LN_S) html/_formulas.log doxygen-html-eqns.log; \
+	         $(LN_S) html/_formulas.log doxy-html-eqns.log; \
 	      fi; \
 	      exit 0; \
 	   fi; \
 	)
 	@echo "===== OK: done building doxygen HTML ====="
 
-pdf: doxygen-pdf.cfg
+pdf: $(DOXY_PDF_FILES)
 	@echo "===== building doxygen PDF in $(abs_builddir) ====="
 	@echo "DOXYINPUT=$(DOXYINPUT)"
-	rm -f refman.pdf doxygen-pdf*.log
+	rm -f refman.pdf doxy-pdf*.log
 	cd $(abs_builddir) && ( \
-	   if doxygen doxygen-pdf.cfg && ( cd latex && $(MAKE) ); then \
+	   if doxygen doxy-pdf-config.cfg && ( cd latex && $(MAKE) ); then \
 	      $(LN_S) latex/refman.pdf refman.pdf; \
 	      exit 0; \
 	   else \
-	      $(LN_S) latex/refman.log doxygen-pdf-make.log; \
+	      $(LN_S) latex/refman.log doxy-pdf-make.log; \
 	      exit 1; \
 	   fi; \
 	)
@@ -75,4 +77,4 @@ pdf: doxygen-pdf.cfg
 clean-local:
 	cd $(abs_builddir) && \
 	   rm -fr html/ latex/ && \
-	   rm -f  refman.pdf doxygen-html*.log doxygen-pdf*.log
+	   rm -f  refman.pdf doxy-html*.log doxy-pdf*.log

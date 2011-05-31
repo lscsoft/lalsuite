@@ -17,52 +17,47 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralNextTemplateCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
+\brief Routine to compute the parameters of the template next to the
+current template, but in the positive \f$\tau_{2(3)}\f$ axis.
 
-\subsection{Module \texttt{LALInspiralNextTemplate.c}}
+\heading{Prototypes}
 
-Routine to compute the parameters of the template next to the
-current template, but in the positive $\tau_{2(3)}$ axis.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralNextTemplateCP}
-\idx{LALInspiralNextTemplate()}
-\begin{itemize}
-   \item \texttt{bankPars,} Output, the parameters of the bank at the next grid point; the
+<tt>LALInspiralNextTemplate()</tt>:
+<ul>
+   <li> <tt>bankPars,</tt> Output, the parameters of the bank at the next grid point; the
    point may, indeed, lay outside the parameter space.
-   \item \texttt{matrix} Input, the value of the metric which would allow computation of the
-   next lattice point (in the $\tau_{2(3)}$ direction).
-\end{itemize}
+   </li><li> \c matrix Input, the value of the metric which would allow computation of the
+   next lattice point (in the \f$\tau_{2(3)}\f$ direction).</li>
+</ul>
 
-\subsubsection*{Description}
+\heading{Description}
 
 The coarse grid algorithm works by starting at one corner of the
-parameter space, incrementing along positive $\tau_0$ direction,
+parameter space, incrementing along positive \f$\tau_0\f$ direction,
 with increments determined by the local value of the metric,
 till the boundary of the parameter space is reached. It then gets back to
-the starting point and increments along positive $\tau_{2(3)}$
+the starting point and increments along positive \f$\tau_{2(3)}\f$
 direction, with an increment defined by the metric defined locally;
 it starts at the first point inside the parameter space but
-{\it consistent} with a square lattice. This routine is called each
-time a translation along the $\tau_{2(3)}$ direction is required.
+\e consistent with a square lattice. This routine is called each
+time a translation along the \f$\tau_{2(3)}\f$ direction is required.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 
-\subsubsection*{Uses}
+\heading{Uses}
 None.
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralNextTemplateCV}}
 
-</lalLaTeX>  */
+
+*/
 
 
 
@@ -70,12 +65,12 @@ None.
 
 NRCSID (LALINSPIRALNEXTTEMPLATEC, "Id: $");
 
-/*  <lalVerbatim file="LALInspiralNextTemplateCP"> */
+
 
 void LALInspiralNextTemplate(LALStatus          *status,
                              InspiralBankParams *bankPars,
                              InspiralMetric     metric)
-{ /* </lalVerbatim> */
+{
 
    REAL8 x0tmp, myphi, theta;
    INT4 k;

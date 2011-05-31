@@ -17,62 +17,53 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralWave3CV">
+/**
 
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief These modules generate a time-domain chirp waveform of type #TaylorT3.
 
-\subsection{Module \texttt{LALInspiralWave3.c} and \texttt{LALInspiralWave3Templates.c}}
-These modules generate a time-domain chirp waveform of type {\tt TaylorT3}.
+\heading{Prototypes}
 
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralWave3CP}
-\index{\verb&LALInspiralWave3()&}
-\begin{itemize}
-\item {\tt output:} Output containing the inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
-\vspace{0.1in}
-\input{LALInspiralWave3TemplatesCP}
-\index{\verb&LALInspiralWave3Templates()&}
-\begin{itemize}
-\item {\tt output1:} Output containing the 0-phase inspiral waveform.
-\item {\tt output2:} Output containing the $\pi/2$-phase inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+<tt>LALInspiralWave3()</tt>
+<ul>
+<li> \c output: Output containing the inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
 
 
-\subsubsection*{Description}
-{\tt LALInspiralWave3} generates {\tt TaylorT3} approximant which
+<tt>LALInspiralWave3Templates()</tt>
+<ul>
+<li> \c output1: Output containing the 0-phase inspiral waveform.</li>
+<li> \c output2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
+
+
+\heading{Description}
+LALInspiralWave3() generates #TaylorT3 approximant which
 corresponds to the case wherein
 the phase of the waveform is given as an explicit function of time
-as in Equation (\ref{eq:InspiralWavePhase3}).
+as in Equation.\eqref{eq_InspiralWavePhase3}.
 
-{\tt LALInspiralWave3Templates} simultaneously generates
+LALInspiralWave3Templates() simultaneously generates
 two inspiral waveforms and the two differ in
-phase by $\pi/2$.
+phase by \f$\pi/2\f$.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
+\code
+LALInspiralParameterCalc()
+LALInspiralChooseModel()
+LALInspiralSetup()
+LALInspiralPhasing3 (via expnFunc)()
+LALInspiralFrequency3 (via expnFunc)()
+\endcode
 
-\texttt{LALInspiralParameterCalc} \\
-\texttt{LALInspiralChooseModel} \\
-\texttt{LALInspiralSetup} \\
-\texttt{LALInspiralPhasing3} (via expnFunc)\\
-\texttt{LALInspiralFrequency3}. (via expnFunc)\\
-
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralWave3CV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
@@ -106,7 +97,7 @@ LALInspiralWave3Engine(
 
 NRCSID (LALINSPIRALWAVE3C, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWave3CP"> */
+
 
 void
 LALInspiralWave3 (
@@ -115,7 +106,7 @@ LALInspiralWave3 (
    InspiralTemplate *params
    )
 
-{ /* </lalVerbatim>  */
+{
 
 
   UINT4 count;
@@ -178,7 +169,7 @@ static void LALInspiralFrequency3Wrapper(LALStatus *status, REAL8 *f, REAL8 tC, 
 
 NRCSID (LALINSPIRALWAVE3TEMPLATESC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWave3TemplatesCP"> */
+
 
 void
 LALInspiralWave3Templates (
@@ -188,7 +179,7 @@ LALInspiralWave3Templates (
    InspiralTemplate *params
    )
 
-{ /* </lalVerbatim>  */
+{
 
   UINT4 count;
 
@@ -240,7 +231,7 @@ LALInspiralWave3Templates (
 
 NRCSID (LALINSPIRALWAVE3FORINJECTIONC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWave3ForInjectionCP"> */
+
 
 void
 LALInspiralWave3ForInjection (
@@ -249,7 +240,7 @@ LALInspiralWave3ForInjection (
 			      InspiralTemplate *params,
 			      PPNParamStruc  *ppnParams)
 
-     /* </lalVerbatim>  */
+
 {
 
   UINT4 count, i;

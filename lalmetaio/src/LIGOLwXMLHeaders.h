@@ -34,7 +34,7 @@
 \file
 \ingroup lalmetaio
 
-\brief This header provides provides <tt>#define</tt>s for the common elements of LIGO light weight XML files.
+\brief This header provides provides <tt>\#define</tt>s for the common elements of LIGO light weight XML files.
 
 \heading{Synopsis}
 \code
@@ -46,29 +46,29 @@ It will need to be kept up to date with changes in the LIGO database table defin
 defined in this file are
 
 <ul>
-<li> LIGOLW\_XML\_HEADER</li>
-<li> LIGOLW\_XML\_FOOTER</li>
-<li> LIGOLW\_XML\_TABLE\_FOOTER</li>
-<li> LIGOLW\_XML\_PROCESS</li>
-<li> PROCESS\_ROW</li>
-<li> LIGOLW\_XML\_PROCESS\_PARAMS</li>
-<li> PROCESS\_PARAMS\_ROW</li>
-<li> LIGOLW\_XML\_SEARCH\_SUMMARY</li>
-<li> SEARCH\_SUMMARY\_ROW</li>
-<li> LIGOLW\_XML\_SEARCH\_SUMMVARS</li>
-<li> SEARCH\_SUMMVARS\_ROW</li>
-<li> LIGOLW\_XML\_SIM\_RINGDOWN</li>
-<li> SIM\_RINGDOWN\_ROW</li>
-<li> LIGOLW\_XML\_SUMM\_VALUE</li>
-<li> SUMM\_VALUE\_ROW</li>
-<li> LIGOLW\_XML\_SIM\_INST\_PARAMS</li>
-<li> SIM\_INST\_PARAMS\_ROW</li>
-<li> LIGOLW\_XML\_STOCHASTIC</li>
-<li> STOCHASTIC\_ROW</li>
-<li> LIGOLW\_XML\_STOCH\_SUMM</li>
-<li> STOCH\_SUMM\_ROW</li>
-<li> LIGOLW\_XML\_EXT\_TRIGGERS</li>
-<li> EXT\_TRIGGERS\_ROW</li>
+<li> LIGOLW_XML_HEADER</li>
+<li> LIGOLW_XML_FOOTER</li>
+<li> LIGOLW_XML_TABLE_FOOTER</li>
+<li> LIGOLW_XML_PROCESS</li>
+<li> PROCESS_ROW</li>
+<li> LIGOLW_XML_PROCESS_PARAMS</li>
+<li> PROCESS_PARAMS_ROW</li>
+<li> LIGOLW_XML_SEARCH_SUMMARY</li>
+<li> SEARCH_SUMMARY_ROW</li>
+<li> LIGOLW_XML_SEARCH_SUMMVARS</li>
+<li> SEARCH_SUMMVARS_ROW</li>
+<li> LIGOLW_XML_SIM_RINGDOWN</li>
+<li> SIM_RINGDOWN_ROW</li>
+<li> LIGOLW_XML_SUMM_VALUE</li>
+<li> SUMM_VALUE_ROW</li>
+<li> LIGOLW_XML_SIM_INST_PARAMS</li>
+<li> SIM_INST_PARAMS_ROW</li>
+<li> LIGOLW_XML_STOCHASTIC</li>
+<li> STOCHASTIC_ROW</li>
+<li> LIGOLW_XML_STOCH_SUMM</li>
+<li> STOCH_SUMM_ROW</li>
+<li> LIGOLW_XML_EXT_TRIGGERS</li>
+<li> EXT_TRIGGERS_ROW</li>
 </ul>
 
 */

@@ -18,60 +18,46 @@
 *  MA  02111-1307  USA
 */
 
-/************************** <lalVerbatim file="GeneratePPNAmpCorInspiralCV">
-Author: Creighton, T. D., McKechan David, Van Den Broeck Chris
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D., McKechan David, Van Den Broeck Chris
+\file
+\ingroup GeneratePPNInspiral_h
 
-/********************************************************** <lalLaTeX>
-
-\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
-
-\subsection{Module \texttt{GeneratePPNampCorInspiral.c}}
-\label{ss:GeneratePPNAmpCorInspiral.c}
-
-Computes a parametrized post-Newtonian inspiral waveform
+\brief Computes a parametrized post-Newtonian inspiral waveform
 with ampltidude corrections.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{GeneratePPNAmpCorInspiralCP}
-\idx{LALGeneratePPNampCorInspiral()}
+\heading{Description}
 
-\subsubsection*{Description}
-
-See GeneratePPNInspiral.c
+See \ref GeneratePPNInspiral.c
 
 Phase computed to 3.5PN.
 Amplitude computed to 2.5PN.
 
-The ampitude corrrected gravitaional wave polarizations $h_+$ and $h_x$
+The ampitude corrrected gravitaional wave polarizations \f$h_+\f$ and \f$h_x\f$
 are stored in output.h.
 
 Warning! output.a is used to store the first three harmonics in
 alternate values, (i.e. [a1(0),a2(0),a3(0),a1(dt),a2(dt),a3(dt)...]) as
 this will be used for filtering with higher harmonic waveforms.
 
-Although $h_{+,\times} are computed, $output.phi is also required for filtering.
+Although \f$h_{+,\times} are computed, \f$output.phi is also required for filtering.
 
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALMalloc()                   LALFree()
 LALSCreateVectorSequence()    LALSDestroyVectorSequence()
 LALSCreateVector()            LALSDestroyVector()
 LALDCreateVector()            LALDDestroyVector()
 LALSBisectionFindRoot()       snprintf()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{GeneratePPNAmpCorInspiralCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALStdio.h>
@@ -213,14 +199,14 @@ do {                                                                 \
  * MAIN FUNCTION                                                     *
  *********************************************************************/
 
-/* <lalVerbatim file="GeneratePPNAmpCorInspiralCP"> */
+
 void
 LALGeneratePPNAmpCorInspiral(
                               LALStatus     *stat,
                               CoherentGW    *output,
                               PPNParamStruc *params
                             )
-{ /* </lalVerbatim> */
+{
 
   /* System-derived constants. */
   BOOLEAN b0, b1, b2, b3, b4, b5, b6, b7; /* whether each order is nonzero */

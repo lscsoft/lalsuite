@@ -380,13 +380,20 @@ int main( int argc, char **argv )
         XLALCreateCOMPLEX8VectorSequence( 1, numPoints / 2 + 1 );
     fcTmplt->data               = XLALCreateCOMPLEX8Vector( numPoints / 2 + 1 );
     fcTmpltParams->xfacVec      = XLALCreateVector(numPoints / 2 + 1 );
-    /* Set the values of xfacVec  This is k^(-1/3) */
+    fcTmpltParams->PTFphi       = XLALCreateVector(numPoints / 2 + 1 );
+    /* Set the values of xfacVec  This is k^(-1/3) 
+       also PTFphi which is k^(-7/6). As these are expensive to compute it
+       is cheaper to do it once rather than many times. */
     const REAL4                   xfacExponent = -1.0/3.0;
     REAL4                        *xfac = NULL;
     xfac = fcTmpltParams->xfacVec->data;
     xfac[0] = 0;
+    fcTmpltParams->PTFphi->data[0] = 0;
     for (ui = 1; ui < fcTmpltParams->xfacVec->length; ++ui)
+    {
       xfac[ui] = pow( (REAL4) ui, xfacExponent );
+      fcTmpltParams->PTFphi->data[ui] = pow( (REAL4) ui, -7.0/6.0 );
+    }
   }
   else
   {
@@ -397,7 +404,7 @@ int main( int argc, char **argv )
   }
 
 
-  fcTmpltParams->fwdPlan      = XLALCreateForwardREAL4FFTPlan( numPoints, 0 );
+  fcTmpltParams->fwdPlan      = XLALCreateForwardREAL4FFTPlan( numPoints, 1 );
   fcTmpltParams->deltaT       = 1.0/params->sampleRate;
   fcTmpltParams->fLow = params->lowTemplateFrequency;
 
@@ -421,7 +428,7 @@ int main( int argc, char **argv )
   }
 
   /* Create an inverse FFT plan */
-  invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 0 );
+  invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 1 );
 
   /*------------------------------------------------------------------------*
    * Read in the tmpltbank xml files                                        *
@@ -485,6 +492,7 @@ int main( int argc, char **argv )
     verbose( "Initializing bank veto filters at %ld \n", timeval_subtract(&startTime));
     /* Reads in and initializes the bank veto sub bank */
     subBankSize = coh_PTF_read_sub_bank(params,&PTFBankTemplates);
+    params->BVsubBankSize = subBankSize;
     bankNormOverlaps = LALCalloc( subBankSize,sizeof( *bankNormOverlaps));
     bankOverlaps = LALCalloc( subBankSize,sizeof( *bankOverlaps));
     dataOverlaps = LALCalloc(subBankSize,sizeof( *dataOverlaps));

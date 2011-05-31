@@ -43,13 +43,11 @@ and setting \c xlalErrno to a nonzero value.
 
 \heading{Error conditions}
 
-<table><tr><td>
-\c xlalErrno</td><td>description</td></tr>
-<tr><td>  \tt XLAL_EFAULT</td><td>Null pointer passed for some argument</td></tr>
-<tr><td>  \tt XLAL_EINVAL</td><td>Attempted to use an uninitialized segment list structure</td></tr>
-<tr><td>  \tt XLAL_EDOM</td><td>Pair of GPS times does not represent a valid segment</td></tr>
-<tr><td>
-</td></tr></table>
+<table><tr><th>xlalErrno</th><th>description</th></tr>
+<tr><td>   XLAL_EFAULT</td><td>Null pointer passed for some argument</td></tr>
+<tr><td>   XLAL_EINVAL</td><td>Attempted to use an uninitialized segment list structure</td></tr>
+<tr><td>   XLAL_EDOM</td><td>Pair of GPS times does not represent a valid segment</td></tr>
+</table>
 
 \heading{Notes}
 

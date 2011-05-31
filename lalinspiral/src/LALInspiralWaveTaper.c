@@ -17,21 +17,19 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralWaveTaperCV">
- *  Author:  McKechan D J A
- *  </lalVerbatim>  */
+/**
+ *  \author  McKechan D J A
+ *  \file
+ *  \ingroup LALInspiral_h
+ *
 
-/*  <lalLaTeX>
- *
- *  \subsection{Module \texttt{LALInspiralWaveTaper.c} }
- *
- *  The code \texttt{LALInspiralWaveTaper} imposes a smooth time tapering at
+ *  \brief The code \c LALInspiralWaveTaper() imposes a smooth time tapering at
  *  the beginning and/or the end of waves in the time domain.
  *
- *  It takes in a Real4Vector and searches for the beginning and end points
+ *  It takes in a ::REAL4Vector and searches for the beginning and end points
  *  of the signal, in case there are null data points at either end. It then
  *  tapers the wave from the ends to the second maxima from each end
- *  in the waveform, according to formula 3.35 of gr-qc/0001023.
+ *  in the waveform, according to formula 3.35 of <tt>gr-qc/0001023</tt>.
  *
  *  If the waveform does has less than 4 maxima,  such that it cannot be tapered
  *  from the each end to the second peak then the waveform is tapered from the
@@ -42,29 +40,22 @@
  *  This corresponds to bookends = 1, 2 or 3 respectively. If bookends does
  *  not equal 1, 2 or 3 then option 3 is assumed.
  *
- *  The function \texttt{XLALInspiralWaveTaper} is the XLAL version of the code
+ *  The function \c XLALInspiralWaveTaper() is the XLAL version of the code
  *  described above. In this case, instead of passing an integer to give the tapering
- *  method, we use one of the options in the \texttt{InspiralApplyTaper} enumeration.
- *  These options are \texttt{INSPIRAL\_TAPER\_START}, \texttt{INSPIRAL\_TAPER\_END}
- *  and \texttt{INSPIRAL\_TAPER\_STARTEND}.
+ *  method, we use one of the options in the ::InspiralApplyTaper enumeration.
+ *  These options are #INSPIRAL_TAPER_START, #INSPIRAL_TAPER_END
+ *  and #INSPIRAL_TAPER_STARTEND.
  *
- *  \subsubsection*{Prototypes}
- *  \vspace{0.1in}
- *  \input{LALInspiralWaveTaperCP}
- *  \index{\verb&LALInspiralWaveTaper()&}
+ *  \heading{Prototypes}
+ *  <tt>LALInspiralWaveTaper()</tt>
  *
- *  \subsubsection*{Description}
+ *  \heading{Description}
  *
+ *  \heading{Uses}
  *
- *  \subsubsection*{Uses}
+ *   \heading{Notes}
  *
- *
- *
- *   \subsubsection*{Notes}
- *
- *   \vfill{\footnotesize\input{LALInspiralWaveTaperCV}}
- *
- *   </lalLaTeX>  */
+*/
 
 #include <lal/LALInspiral.h>
 #include <stdio.h>
@@ -74,12 +65,12 @@ NRCSID(LALINSPIRALWAVETAPERC,
 		  "$Id$");
 
 
-/*  <lalVerbatim file="LALInspiralWaveTaperCP"> */
+
 void LALInspiralWaveTaper(
                    LALStatus   *status,
                    REAL4Vector *signalvec,
                    UINT4       bookends)
-{ /* </lalVerbatim>  */
+{
 
   InspiralApplyTaper taperType;
 
@@ -118,11 +109,11 @@ void LALInspiralWaveTaper(
   RETURN( status );
 }
 
-/*  <lalVerbatim file="LALInspiralWaveTaperCP"> */
+
 int XLALInspiralWaveTaper(
                    REAL4Vector         *signalvec,
                    InspiralApplyTaper  bookends)
-{ /* </lalVerbatim>  */
+{
 
   static const char *func = "XLALInspiralWaveTaper";
 
@@ -266,5 +257,3 @@ int XLALInspiralWaveTaper(
 
   return XLAL_SUCCESS;
 }
-
-

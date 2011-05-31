@@ -17,66 +17,58 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralWave1CV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief The code \c LALInspiralWave1() generates an time-domain inspiral waveform corresponding to the
+::Approximant #TaylorT1 and #PadeT1 as outlined in the documentation for the function \c LALInspiralWave().
 
-\subsection{Module \texttt{LALInspiralWave1.c} and \texttt{LALInspiralWave1Templates.c}}
+\heading{Prototypes}
 
-The code \texttt{LALInspiralWave1} generates an time-domain inspiral waveform corresponding to the
-\texttt{approximant} \texttt{TaylorT1} and \texttt{PadeT1} as outlined in the
-documentation for the function \texttt{LALInspiralWave}.
+<tt>LALInspiralWave1()</tt>
+<ul>
+<li> \c signalvec: Output containing the inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralWave1CP}
-\index{\verb&LALInspiralWave1()&}
-\begin{itemize}
-\item {\tt signalvec:} Output containing the inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
 
-\input{LALInspiralWave1TemplatesCP}
-\index{\verb&LALInspiralWave1Templates()&}
-\begin{itemize}
-\item {\tt signalvec1:} Output containing the 0-phase inspiral waveform.
-\item {\tt signalvec2:} Output containing the $\pi/2$-phase inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+<tt>LALInspiralWave1Templates()</tt>
+<ul>
+<li> \c signalvec1: Output containing the 0-phase inspiral waveform.</li>
+<li> \c signalvec2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
 
-\subsubsection*{Description}
+\heading{Description}
 
-\texttt{LALInspiralWave1} is called if the user has specified the
-\texttt{enum} \texttt{approximant} to be
-either \texttt{TaylorT1} or \texttt{PadeT1}.
-{\tt LALInspiralWave1Templates} is exactly the same as \texttt{LALInspiralWave1,} except that
+LALInspiralWave1() is called if the user has specified the
+\c enum ::Approximant to be
+either #TaylorT1 or #PadeT1.
+LALInspiralWave1Templates() is exactly the same as LALInspiralWave1(), except that
 it generates two templates one for which the starting phase is
-\texttt{params.startPhase} and the other for which the phase is
-\texttt{params.startPhase + $\pi/2$}.
+<tt>params.startPhase</tt> and the other for which the phase is
+<tt>params.startPhase + \f$\pi/2\f$</tt>.
 
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs
-in Equation (\ref{eq:ode2}).
+in Equation.\eqref{eq_ode2}.
 
-\subsubsection*{Uses}
+\heading{Uses}
+\code
+LALInspiralSetup()
+LALInspiralChooseModel()
+LALInspiralVelocity()
+LALInspiralPhasing1()
+LALInspiralDerivatives()
+LALRungeKutta4()
+\endcode
 
-\texttt{LALInspiralSetup}\\
-\texttt{LALInspiralChooseModel}\\
-\texttt{LALInspiralVelocity}\\
-\texttt{LALInspiralPhasing1}\\
-\texttt{LALInspiralDerivatives}\\
-\texttt{LALRungeKutta4}.
+\heading{Notes}
 
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralWave1CV}}
-
-</lalLaTeX>  */
+*/
 
 /*
    Interface routine needed to generate time-domain T- or a P-approximant
@@ -103,14 +95,14 @@ LALInspiralWave1Engine(
 
 NRCSID (LALINSPIRALWAVE1C, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWave1CP"> */
+
 void
 LALInspiralWave1(
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
- { /* </lalVerbatim>  */
+ {
 
    INT4 count;
 
@@ -142,7 +134,7 @@ LALInspiralWave1(
 
 NRCSID (LALINSPIRALWAVE1TEMPLATESC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWave1TemplatesCP"> */
+
 void
 LALInspiralWave1Templates(
    LALStatus        *status,
@@ -150,7 +142,7 @@ LALInspiralWave1Templates(
    REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
- { /* </lalVerbatim>  */
+ {
 
    INT4 count;
 
@@ -182,7 +174,7 @@ LALInspiralWave1Templates(
 
 NRCSID (LALINSPIRALWAVE1FORINJECTIONC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWave1ForInjectionCP"> */
+
 void
 LALInspiralWave1ForInjection(
 			     LALStatus        *status,
@@ -190,7 +182,7 @@ LALInspiralWave1ForInjection(
 			     InspiralTemplate *params,
 			     PPNParamStruc  *ppnParams
 			     )
-{ /* </lalVerbatim>  */
+{
 
   INT4        count, i;
   REAL8       p, phiC;

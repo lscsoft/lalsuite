@@ -37,12 +37,12 @@
  * The following example code constructs a nonsense frequency series and
  * writes it to a LIGO Light Weight XML file.
  *
- * #include <math.h>
- * #include <stdlib.h>
- * #include <lal/FrequencySeries.h>
- * #include <lal/LIGOLwXML.h>
- * #include <lal/LIGOLwXMLArray.h>
- * #include <lal/Units.h>
+ * \#include <math.h>
+ * \#include <stdlib.h>
+ * \#include <lal/FrequencySeries.h>
+ * \#include <lal/LIGOLwXML.h>
+ * \#include <lal/LIGOLwXMLArray.h>
+ * \#include <lal/Units.h>
  *
  * int main()
  * {

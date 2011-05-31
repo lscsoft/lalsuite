@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton
+*  Copyright (C) 2007 Jolien Creighton, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -193,6 +193,15 @@ LALDPolynomialInterpolation (
     DInterpolateOut *output,
     REAL8            target,
     DInterpolatePar *params
+    );
+
+REAL8
+XLALREAL8PolynomialInterpolation (
+    REAL8 *yout,
+    REAL8  xtarget,
+    REAL8 *y,
+    REAL8 *x,
+    UINT4  n
     );
 
 #if 0 /* autodoc block */

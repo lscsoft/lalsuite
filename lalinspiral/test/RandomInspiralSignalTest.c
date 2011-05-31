@@ -17,34 +17,28 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="RandomInspiralSignalTestCV">
-Author: Sathyaprakash, B. S.
-< $Id$
-********************************* </lalVerbatim> */
+/**
+\author Sathyaprakash, B. S.
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{RandomInspiralSignalTest.c}}
-\label{ss:RandomInspiralSignalTest.c}
+\brief Test code for the inspiral wave generation and noisemodels modules.
 
-Test code for the inspiral wave generation and noisemodels modules.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 RandomInspiralSignalTest
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This test code gives an example of how one might generate an inspiral
 waveform and compute its overlap with simulated detector noise
 (with or witnout the signal present).  Recently, the code
 was modified so that users can output either the time-domain signal,
 noise, or signal+noise and not the correlated output. This is
-done via the variable \texttt{TimeDomain} which controls the type of output
-If \texttt{TimeDomain=0} then the code fitlers the random signal
+done via the variable \c TimeDomain which controls the type of output
+If <tt>TimeDomain=0</tt> then the code fitlers the random signal
 with a template of the same parameters and outputs the
 results of the correlation.
-If \texttt{TimeDomain=1} then the code outputs the time-domain
+If <tt>TimeDomain=1</tt> then the code outputs the time-domain
 signal/noise/signal+noise
 
 The parameter
@@ -53,22 +47,19 @@ The parameter
 {\texttt randIn.type=2} generates {\texttt randIn.SignalAmp * signal(t)
 + randIn.NoiseAmp * noise(t)}
 Note that one must calculate the length of the waveform and allocate memory for it
-\emph{before} calling \texttt{InspiralWave}. The length of the waveform can
-be calculated by calling the function \texttt{InspiralWaveLength} beforehand, as shown.
+\e before calling \c InspiralWave. The length of the waveform can
+be calculated by calling the function \c InspiralWaveLength beforehand, as shown.
 
 There are only two functions which one can call to generate waveforms. These are
-\texttt{InspiralWave},
-which will return a \emph{single} waveform, and \texttt{InspiralWaveTemplates}, which
-returns a \emph{pair}
-of waveforms which have phases that differ by $\pi/2$.
+\c InspiralWave,
+which will return a \e single waveform, and \c InspiralWaveTemplates, which
+returns a \e pair
+of waveforms which have phases that differ by \f$\pi/2\f$.
 
-\subsubsection*{Exit codes}
-\input{RandomInspiralSignalTestCE}
-
-\subsubsection*{Uses}
+\heading{Uses}
 This code directly uses the following functions and macros (see those functions
 to find out what they call in turn):
-\begin{verbatim}
+\code
 lalDebugLevel
 LALCreateForwardRealFFTPlan
 LALCreateReverseRealFFTPlan
@@ -78,15 +69,10 @@ LALInspiralWaveOverlap
 LALInspiralFindEventsCluster
 LALNoiseSpectralDensity
 LALRandomInspiralSignal
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{RandomInspiralSignalTestCV}}
-******************************************************* </lalLaTeX> */
-
-/***************************** <lalErrTable file="RandomInspiralSignalTestCE"> */
-/***************************** </lalErrTable> */
+\heading{Notes}
+*/
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>

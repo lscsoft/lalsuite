@@ -116,10 +116,10 @@ LALCheckMemoryLeaks()
 will cause a bad data error.  If other arguments are unspecified, the
 following defaults are used:
 <dl>
-<dt>\c alpha</dt><dd> 0</dd>
-<dt>\c f0</dt><dd> 0</dd>
-<dt>\c fRef</dt><dd> 1\,Hz</dd>
-<dt>\c omegaRef</dt><dd> 1</dd>
+<dt>alpha</dt><dd> 0</dd>
+<dt>f0</dt><dd> 0</dd>
+<dt>fRef</dt><dd> 1\,Hz</dd>
+<dt>omegaRef</dt><dd> 1</dd>
 </dl></li>
 <li> The routine <tt>LALStochasticOmegaGW()</tt> will eventually be generalized to
 include "broken" power law spectra

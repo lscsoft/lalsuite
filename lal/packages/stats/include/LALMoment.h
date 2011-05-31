@@ -17,32 +17,28 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="LALMomentHV">
+/**
 
-Author: Tibbits, M. M.
-$Id$
+\author Tibbits, M. M.
+\file
 
-</lalVerbatim> */
+\heading{Header \ref LALMoment.h}
+\latexonly\label{s_LALMoment_h}\endlatexonly
 
-/* <lalLaTeX>
-
-\section{Header \texttt{LALMoment.h}}
-\label{s:LALMoment.h}
-
-\begin{verbatim}
+\code
 The LALDMoment() and LALSMoment() associated header file.
 (S - single precision )
 (D - double precision )
-\end{verbatim}
+\endcode
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/LALMoment.h>
-\end{verbatim}
+\endcode
 
-\noindent This header provides the prototype for the LALDMoment() and LALSMoment() function.
+This header provides the prototype for the LALDMoment() and LALSMoment() function.
 
- </lalLaTeX> */
+*/
 
 /* Double Include Protection */
 #ifndef _LALMOMENT_H
@@ -61,15 +57,15 @@ extern "C" {
 NRCSID( LALMOMENTH, "$Id$");
 
 
-/*  <lalLaTeX>
+/**
 
-\subsection*{Error codes}
-\input{LALMomentHE}
+\heading{Error codes}
 
-\vfill{\footnotesize\input{LALMomentHV}}
-</lalLaTeX>  */
 
-/* <lalErrTable file="LALMomentHE"> */
+
+*/
+
+/**\name Error Codes */ /*@{*/
 
 #define LALMOMENTH_ENULL 1
 #define	LALMOMENTH_ENNUL 2
@@ -85,15 +81,15 @@ NRCSID( LALMOMENTH, "$Id$");
 #define LALMOMENTH_MSGENUMZ "Invalid number of points in segment"
 #define LALMOMENTH_MSGEALOC "Memory Allocation Error"
 
-/* </lalErrTable> */
+/*@}*/
 
 
 /* Function prototypes */
 
 
-/*  <lalLaTeX>
-\newpage\input{LALMomentC}
-</lalLaTeX>  */
+
+
+
 
 void LALSMoment
 (
@@ -112,9 +108,9 @@ void LALDMoment
 	INT4			whichMoment
 );
 
-/*  <lalLaTeX>
-\newpage\input{LALMomentTestC}
-</lalLaTeX>  */
+
+
+
 
 #ifdef  __cplusplus
 }

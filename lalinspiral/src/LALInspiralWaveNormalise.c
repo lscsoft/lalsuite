@@ -17,56 +17,53 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralWaveNormaliseCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
-/* <lalLaTeX>
-\subsection{Module \texttt{LALInspiralWaveNormalise.c}}
-Module to find the norm of a signal and to return a normalised
+/**
+\author Sathyaprakash, B. S.
+\file
+
+\brief Module to find the norm of a signal and to return a normalised
 array. The original signal is left untouched.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralWaveNormaliseCP}
-\index{\verb&LALInspiralWaveNormalise()&}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>LALInspiralWaveNormalise()</tt>
+
+\heading{Description}
 Given the positive frequency Fourier components
-$H_k,$ $k=0,\ldots,n-1,$ of a vector
-and the noise PSD $S_m,$ $m=0,\ldots,n/2,$
-this module first computes the norm $H$ of the vector treating
-$S_m$ as the measure:
+\f$H_k,\f$ \f$k=0,\ldots,n-1,\f$ of a vector
+and the noise PSD \f$S_m,\f$ \f$m=0,\ldots,n/2,\f$
+this module first computes the norm \f$H\f$ of the vector treating
+\f$S_m\f$ as the measure:
 (note that in {\em fftw} notation, the zeroth frequency
-component is $H_0,$ Nyquist
-is $H_{n/2},$ $H_k,$ $k \ne 0,n/2,$ ($H_{n-k})$ is the real (imaginary)
-part of the $k$th harmonic)
-\begin{equation}
+component is \f$H_0,\f$ Nyquist
+is \f$H_{n/2},\f$ \f$H_k,\f$ \f$k \ne 0,n/2,\f$ (\f$H_{n-k})\f$ is the real (imaginary)
+part of the \f$k\f$th harmonic)
+\anchor eq_inspiralnorm \f{equation}{
 H = \sum_{k=1}^{n/2-1} \frac{H_k^2 + H^2_{n-k}}{S_k}.
-\label{eq:inspiralnorm}
-\end{equation}
+\label{eq_inspiralnorm}
+\f}
 (Note that the zeroth and Nyquist components are ignored in the
 computation of the norm.)
-It then replaces the original vector $H_k$ with normalized
+It then replaces the original vector \f$H_k\f$ with normalized
 vector using:
-\begin{equation}
+\f{equation}{
 \widehat H_k = \frac {H_k}{\sqrt H},\ \ k=0,\ldots n-1.
-\end{equation}
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
+\f}
+
+\heading{Algorithm}
+\heading{Uses}
+\code
 none.
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralWaveNormaliseCV}}
-</lalLaTeX>  */
+*/
 #include <lal/LALNoiseModelsInspiral.h>
 
 NRCSID (LALINSPIRALWAVENORMALISEC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWaveNormaliseCP"> */
+
 void
 LALInspiralWaveNormalise
    (
@@ -75,7 +72,7 @@ LALInspiralWaveNormalise
    REAL8       *norm,
    REAL8Vector psd
    )
-{  /*  </lalVerbatim>  */
+{
 
   INT4 i, n, nby2, k;
   REAL8 psdvalue;
@@ -124,4 +121,3 @@ LALInspiralWaveNormalise
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-

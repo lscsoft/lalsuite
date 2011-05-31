@@ -1,18 +1,17 @@
-dnl $Id$
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-define(`VTYPE',`format(`%sVector',TYPE)')
-define(`F1',`format(`LAL%sCumSum',TYPECODE)')
-define(`F2',`format(`LAL%sSum',TYPECODE)')
-define(`F3',`format(`LAL%sMax',TYPECODE)')
-define(`F4',`format(`LAL%sFlipVector',TYPECODE)')
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
 
-/******************************* <lalLaTeX file="MiscMatlabC">
-\begin{verbatim}void F1 ( LALStatus *status, VTYPE **result, VTYPE *data )\end{verbatim}
-*************************************************** </lalLaTeX> */
+#define VTYPE CONCAT2(TYPE,Vector)
+
+#define CVFUNC CONCAT3(LAL,TYPECODE,CreateVector)
+
+#define F1 CONCAT3(LAL,TYPECODE,CumSum)
+#define F2 CONCAT3(LAL,TYPECODE,Sum)
+#define F3 CONCAT3(LAL,TYPECODE,Max)
+#define F4 CONCAT3(LAL,TYPECODE,FlipVector)
 
 void F1 (
 	LALStatus		*status,
@@ -25,7 +24,7 @@ void F1 (
 	INT4	myindex;
 	INT4	length;
 
-	INITSTATUS( status, "F1" , MATLABMATRIXSUMC);
+	INITSTATUS( status, STRING(F1) , MATLABMATRIXSUMC);
         ATTATCHSTATUSPTR( status );
 
 	/*  Check input for existence.  */
@@ -41,7 +40,7 @@ void F1 (
 	/*  length must be greater than one  */
 	ASSERT ( length >= 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-	LAL`'TYPECODE`'CreateVector( status->statusPtr, result, length);
+	CVFUNC( status->statusPtr, result, length);
 	CHECKSTATUSPTR( status );
 
 	myindex = 0;
@@ -61,10 +60,6 @@ void F1 (
 	RETURN( status );
 }
 
-/******************************* <lalLaTeX file="MiscMatlabC">
-\begin{verbatim}void F2 ( LALStatus *status, TYPE *result, VTYPE *data )\end{verbatim}
-*************************************************** </lalLaTeX> */
-
 void F2 (
         LALStatus		*status,
         TYPE			*result,
@@ -75,7 +70,7 @@ void F2 (
         INT4    iterator;
         INT4    length;
 
-        INITSTATUS( status, "F2" , MATLABMATRIXSUMC);
+        INITSTATUS( status, STRING(F2) , MATLABMATRIXSUMC);
 
         /*  Check input for existence.  */
         /*  data must be defined  */
@@ -96,10 +91,6 @@ void F2 (
         RETURN( status );
 }
 
-/******************************* <lalLaTeX file="MiscMatlabC">
-\begin{verbatim}void F3 (LALStatus *status, TYPE *result, VTYPE *data, INT4 *myindex )\end{verbatim}
-*************************************************** </lalLaTeX> */
-
 void F3 (
         LALStatus		*status,
         TYPE			*result,
@@ -111,7 +102,7 @@ void F3 (
         INT4    iterator;
         INT4    length;
 
-        INITSTATUS( status, "F3" , MATLABMATRIXSUMC);
+        INITSTATUS( status, STRING(F3) , MATLABMATRIXSUMC);
 
         /*  Check input for existence.  */
         /*  data must be defined  */
@@ -137,10 +128,6 @@ void F3 (
         RETURN( status );
 }
 
-/******************************* <lalLaTeX file="MiscMatlabC">
-\begin{verbatim}void F4 (LALStatus *status, VTYPE **result, VTYPE *data )\end{verbatim}
-*************************************************** </lalLaTeX> */
-
 void F4 (
         LALStatus		*status,
         VTYPE		**result,
@@ -151,7 +138,7 @@ void F4 (
         INT4    iterator;
         INT4    length;
 
-        INITSTATUS( status, "F4" , MATLABMATRIXSUMC);
+        INITSTATUS( status, STRING(F4) , MATLABMATRIXSUMC);
 	ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -167,7 +154,7 @@ void F4 (
         /*  length must be greater than one  */
         ASSERT ( length >= 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LAL`'TYPECODE`'CreateVector( status->statusPtr, result, length);
+        CVFUNC( status->statusPtr, result, length);
 
 	for (iterator = 0; iterator < length; iterator++)
 	{

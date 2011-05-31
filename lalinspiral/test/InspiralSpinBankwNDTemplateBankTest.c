@@ -23,85 +23,50 @@
  *
  * Author: Hanna C. R.
  *
- * Revision: $Id$
- *
  *_______________________________________________________________________________________
  */
 
 
-/* ------------------------------------ AUTO-DOC ------------------------------------- */
-/* ----------------------------------------------------------------------------------- */
-
-/*<lalVerbatim file="InspiralSpinBankwNDTemplateBankTestCV">
-  Author: Hanna, C.R.
-  $Id$
-  </lalVerbatim>*/
-
-/*SUBSECTION - PROGRAM - "InspiralSpinBankwNDTemplateBankTest.c" ---------------------------- <lalLaTeX>
-  \subsection{Program \texttt{InspiralSpinBankwNDTemplateBankTest.c}}
-  \label{s:InspiralSpinBankwNDTemplateBankTest.c}
-  \providecommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
-* Tests InpsiralSpinBankwNDTemplateBank().
-  </lalLaTeX>*/
-
-  /*SUBSUBSECTION - USAGE - "InspiralSpinBankwNDTemplateBankTest.c" ------------------------- <lalLaTeX>
-    \begin{verbatim}
-    InspiralSpinBankwNDTemplateBankTest
-    \end{verbatim}
-    </lalLaTeX>
-    END SUBSUBSECTION - USAGE - "InspiralSpinBankwNDTemplateBankTest.c" ----------------------------- */
-
-  /*SUBSUBSECTION - DESCRIPTION - "InspiralSpinBankwNDTemplateBankTest.c" ------------------- <lalLaTeX>
-    \subsubsection{Description}
-  * This program uses InspiralSpinBankwNDTemplateBank() to generate a template bank from command line
-  * parameter input.  It also has the option to make a \MATHEMATICA notebook using
-  * LALMath3DPlot() which will plot the 3D template bank.
-    </lalLaTeX>
-    END SUBSUBSECTION - DESCRIPTION - "InspiralSpinBankTest.c" ----------------------- */
-
-  /*SUBSUBSECTION - OPTIONS - "InspiralSpinBankTest.c" ----------------------- <lalLaTeX>
-    \subsubsection{Command line options}
-    \begin{description}
-    \item[-n]
-  * Specifies the minimum smaller mass between 0 and 5.0 $M\odot$.
-    \item[-x]
-  * Specifies the maximum smaller mass between 0 and 5.0 $M\odot$.
-    \item[-m]
-  * Specifies the minimum mismatch threshold (typically 0.03) but for the sake of testing
-  * it is best to pick a value $O[1]$ to save compiling time.
-    \item[-p]
-  * Specifies that the program should generate a \MATHEMATICA notebook ``Math3DNotebook.nb".
-    \end{description}
-    </lalLaTeX>
-    END SUBSUBSECTION - OPTIONS - "InspiralSpinBankTest.c" --------------------------- */
-
-  /*SUBSUBSECTION - EXIT CODES ------------------------------------------------------- */
-    /* <lalLaTeX>
-    \subsubsection*{Exit codes}
-    \input{InspiralSpinBankwNDTemplateBankTestCE}
-    </lalLaTeX>
-    END - SUBSUBSECTION - EXIT CODES ------------------------------------------------- */
-
-  /*SUBSUBSECTION - NOTES - "InspiralSpinBankTest.c" ------------------------- <lalLaTeX>
-    \subsubsection{Notes}
-    \begin{itemize}
-  * \item The metric used in InspiralSpinBank() is only valid for binary systems with a
-  * total mass $<15M\odot$ where the minimum larger mass is at least twice the maximum
-  * smaller mass.  Choosing mass values that violate these conditions will cause an
-  * error message.
-  * \item It is unlikely that you will be able to run a \MATHEMATICA notebook that
-  * contains more than 10,000 tiles.  Adjust your parameters accordingly if you plan to
-  * view a plot.
-    \end{itemize}
-    </lalLaTeX>
-    END - SUBSUBSECTION - NOTES - "InspiralSpinBankTest.c" --------------------------- */
-  /*<lalLaTeX>
-  \vfill{\footnotesize\input{InspiralSpinBankTestCV}}
-  </lalLaTeX>
-  END SUBSECTION - PROGRAM - "InspiralSpinBankTest.c" -------------------------------- */
-
-/* ----------------------------------------------------------------------------------- */
-/* ----------------------------------- END AUTO-DOC ---------------------------------- */
+/**
+ * \author Hanna, C.R.
+ * \file
+ *
+ * \brief Tests InspiralSpinBankwNDTemplateBank().
+ *
+ * \heading{Usage}
+ * \code
+ * InspiralSpinBankwNDTemplateBankTest
+ * \endcode
+ *
+ * \heading{Description}
+ * This program uses InspiralSpinBankwNDTemplateBank() to generate a template bank from command line
+ * parameter input.  It also has the option to make a \MATHEMATICA notebook using
+ * LALMath3DPlot() which will plot the 3D template bank.
+ *
+ *
+ * \heading{Command line options}
+ * <dl>
+ * <dt>-n</dt><dd>
+ * Specifies the minimum smaller mass between 0 and 5.0 \f$M\odot\f$.
+ * </dd><dt>-x</dt><dd>Specifies the maximum smaller mass between 0 and 5.0 \f$M\odot\f$.</dd>
+ * <dt>-m</dt><dd>Specifies the minimum mismatch threshold (typically 0.03) but for the sake of testing
+ * it is best to pick a value \f$O[1]\f$ to save compiling time.</dd>
+ * <dt>-p</dt><dd>Specifies that the program should generate a \MATHEMATICA notebook "Math3DNotebook.nb".</dd>
+ * </dl>
+ *
+ *
+ * \heading{Notes}
+ * <ul>
+ * <li> The metric used in InspiralSpinBank() is only valid for binary systems with a
+ * total mass \f$<15M\odot\f$ where the minimum larger mass is at least twice the maximum
+ * smaller mass.  Choosing mass values that violate these conditions will cause an
+ * error message.
+ * </li><li> It is unlikely that you will be able to run a \MATHEMATICA notebook that
+ * contains more than 10,000 tiles.  Adjust your parameters accordingly if you plan to
+ * view a plot.
+ * </li></ul>
+ *
+ */
 
 #include <math.h>
 #include <stdio.h>
@@ -123,7 +88,7 @@
 
 extern char *optarg;
 
-/*<lalErrTable file="InspiralSpinBankwNDTemplateBankTestCE">*/
+/**\name Error Codes */ /*@{*/
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_ENORM     0
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_EMEM      1
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_ESUB      2
@@ -131,7 +96,7 @@ extern char *optarg;
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_MSGENORM  "Normal exit"
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_MSGEMEM   "Memory allocation error"
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_MSGESUB   "Subroutine error"
-/*</lalErrTable>*/
+/*@}*/
 
 NRCSID(LALINSPIRALSPINBANKWNDTEMPLATEBANKTESTC, "$Id$");
 

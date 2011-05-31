@@ -86,6 +86,10 @@ extern "C"
 {
 #endif
 
+#define XLAL_BILLION_INT4 1000000000
+#define XLAL_BILLION_INT8 LAL_INT8_C( 1000000000 )
+#define XLAL_BILLION_REAL8 1e9
+
 /** The UNIX time of the GPS origin epoch.
  *
  * 1980 6 JAN 0h UTC is 3657 days after 1970 1 JAN 0h UTC:
@@ -188,7 +192,7 @@ REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down ti
  * If you want a Modified Julian Day that has a fractional part, simply use
  * the macro:
  *
- * #define XLAL_MODIFIED_JULIAN_DAY(utc) (XLALJulianDay(utc)-XLAL_MJD_REF)
+ * \#define XLAL_MODIFIED_JULIAN_DAY(utc) (XLALJulianDay(utc)-XLAL_MJD_REF)
  */
 INT4 XLALModifiedJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ );
 

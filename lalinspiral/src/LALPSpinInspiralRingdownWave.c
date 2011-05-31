@@ -18,72 +18,66 @@
 */
 
 
-/**** <lalVerbatim file="LALPSpinInspiralRingdownWaveCV">
- * $Id$
- **** </lalVerbatim> */
+/**
+\file
 
-/**** <lalLaTeX>
- * \subsection{Module \texttt{LALPSpinInspiralRingdownWave.c}}
- * 
- * Module to compute the ring-down waveform as linear combination
+ *
+ * \brief Module to compute the ring-down waveform as linear combination
  * of quasi-normal-modes decaying waveforms, which can be attached to
  * the phenomenological spin Taylor waveform.
- * 
- * \subsubsection*{Prototypes}
- * \vspace{0.1in}
- * \input{XLALXLALPSpinInspiralRingdownWaveCP}
- * \idx{XLALXLALPSpinInspiralRingdownWave()}
- * \begin{itemize}
- * \item \texttt{rdwave,} Output, the ring-down waveform
- * \item \texttt{params,} Input, the parameters where ring-down waveforms are computed
- * \item \texttt{inspwave,} Input, the inspiral waveform with given multiple
- * \item \texttt{modefreqs,} Input, the frequencies of the quasi-normal-modes
- * \item \texttt{nmodes,} Input, the number of quasi-normal-modes to be combined.
- * \end{itemize}
  *
- * \input{XLALPSpinGenerateWaveDerivativeCP}
- * \idx{XLALPSpinGenerateWaveDerivative()}
- * \begin{itemize}
- * \item \texttt{dwave,} Output, time derivative of the input waveform
- * \item \texttt{wave,} Input, waveform to be differentiated in time
- * \item \texttt{params,} Input, the parameters of the input waveform.
- * \end{itemize}
+ * \heading{Prototypes}
  *
- * \input{XLALPSpinGenerateQNMFreqCP}
- * \idx{XLALPSpinGenerateQNMFreq()}
- * \begin{itemize}
- * \item \texttt{ptfwave,} Output, the frequencies of the quasi-normal-modes
- * \item \texttt{params,} Input, the parameters of the binary system
- * \item \texttt{l,} Input, the l of the modes
- * \item \texttt{m,} Input, the m of the modes
- * \item \texttt{nmodes,} Input, the number of overtones considered.
- * \end{itemize}
+ * <tt>XLALXLALPSpinInspiralRingdownWave()</tt>
+ * <ul>
+ * <li> <tt>rdwave,</tt> Output, the ring-down waveform
+ * </li><li> <tt>params,</tt> Input, the parameters where ring-down waveforms are computed
+ * </li><li> <tt>inspwave,</tt> Input, the inspiral waveform with given multiple
+ * </li><li> <tt>modefreqs,</tt> Input, the frequencies of the quasi-normal-modes
+ * </li><li> <tt>nmodes,</tt> Input, the number of quasi-normal-modes to be combined.
+ * </li></ul>
  *
- * \input{XLALPSpinFinalMassSpinCP}
- * \idx{XLALPSpinFinalMassSpin()}
- * \begin{itemize}
- * \item \texttt{finalMass,} Output, the mass of the final Kerr black hole
- * \item \texttt{finalSpin,}  Input, the spin of the final Kerr balck hole
- * \item \texttt{params,} Input, the parameters of the binary system.
- * \item \texttt{energy,} Input, the binding energy at the time final time.
- * \end{itemize}
+ *
+ * <tt>XLALPSpinGenerateWaveDerivative()</tt>
+ * <ul>
+ * <li> <tt>dwave,</tt> Output, time derivative of the input waveform
+ * </li><li> <tt>wave,</tt> Input, waveform to be differentiated in time
+ * </li><li> <tt>params,</tt> Input, the parameters of the input waveform.
+ * </li></ul>
+ *
+ *
+ * <tt>XLALPSpinGenerateQNMFreq()</tt>
+ * <ul>
+ * <li> <tt>ptfwave,</tt> Output, the frequencies of the quasi-normal-modes
+ * </li><li> <tt>params,</tt> Input, the parameters of the binary system
+ * </li><li> <tt>l,</tt> Input, the l of the modes
+ * </li><li> <tt>m,</tt> Input, the m of the modes
+ * </li><li> <tt>nmodes,</tt> Input, the number of overtones considered.
+ * </li></ul>
+ *
+ *
+ * <tt>XLALPSpinFinalMassSpin()</tt>
+ * <ul>
+ * <li> <tt>finalMass,</tt> Output, the mass of the final Kerr black hole
+ * </li><li> <tt>finalSpin,</tt>  Input, the spin of the final Kerr balck hole
+ * </li><li> <tt>params,</tt> Input, the parameters of the binary system.
+ * </li><li> <tt>energy,</tt> Input, the binding energy at the time final time.
+ * </li></ul>
 
- * \subsubsection*{Description}
+ * \heading{Description}
  * This module generate ring-down waveforms.
  *
- * \subsubsection*{Algorithm}
+ * \heading{Algorithm}
  *
- * \subsubsection*{Uses}
- * \begin{verbatim}
+ * \heading{Uses}
+ * \code
  * LALMalloc
  * LALFree
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Notes}
+ * \heading{Notes}
  *
- * \vfill{\footnotesize\input{LALPSpinInspiralRingdownWaveCV}}
- *
- **** </lalLaTeX> */
+*/
 
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
@@ -96,7 +90,7 @@
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>
 
-/* <lalVerbatim file="XLALInspiralRingdownWaveCP">  */
+
 INT4 XLALPSpinInspiralRingdownWave (
 	REAL4Vector		*rdwave,
 	InspiralTemplate	*params,
@@ -104,7 +98,7 @@ INT4 XLALPSpinInspiralRingdownWave (
 	COMPLEX8Vector		*modefreqs,
 	UINT4			nmodes
 	)
-/* </lalVerbatim> */
+
 {
 
   static const char *func = "XLALPSpinInspiralRingdownWave";
@@ -243,13 +237,13 @@ INT4 XLALPSpinInspiralRingdownWave (
   return errcode;
 } /*End of XLALPSpinInspiralRingdownWave */
 
-/* <lalVerbatim file="XLALPSpinGenerateWaveDerivative">  */
+
 INT4 XLALPSpinGenerateWaveDerivative (
 	REAL4Vector		*dwave,
 	REAL4Vector	        *wave,
 	InspiralTemplate	*params
 	)
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALPSpinGenerateWaveDerivative";
 
@@ -336,7 +330,7 @@ INT4 XLALPSpinGenerateWaveDerivative (
   return errcode;
 }
 
-/* <lalVerbatim file="XLALPSpinGenerateQNMFreqCP">  */
+
 INT4 XLALPSpinGenerateQNMFreq(
 	COMPLEX8Vector		*modefreqs,
 	InspiralTemplate	*params,
@@ -347,7 +341,7 @@ INT4 XLALPSpinGenerateQNMFreq(
 	REAL8                   finalSpin
 	)
 
-/* </lalVerbatim> */
+
 {
 
   static const char *func = "XLALPSpinGenerateQNMFreq";
@@ -479,7 +473,7 @@ INT4 XLALPSpinGenerateQNMFreq(
   return errcode;
 }
 
-/* <lalVerbatim file="XLALPSpinFinalMassSpinCP">  */
+
 INT4 XLALPSpinFinalMassSpin(
 	REAL8		 *finalMass,
 	REAL8		 *finalSpin,
@@ -487,7 +481,7 @@ INT4 XLALPSpinFinalMassSpin(
 	REAL8            energy,
 	REAL8            *LNhvec
 	)
-/* </lalVerbatim> */
+
 {
 
   static const char *func = "XLALPSpinFinalMassSpin";
@@ -549,7 +543,7 @@ INT4 XLALPSpinFinalMassSpin(
       }
     else {
       fprintf(stderr,"*** LALPSpinInspiralRingdownWave ERROR: Estimated final Spin >1 : %11.3e\n ",*finalSpin);
-     fprintf(stderr,"      (m1=%8.3f  m2=%8.3f s1=(%8.3f,%8.3f,%8.3f) s2=(%8.3f,%8.3f,%8.3f) ) final spin set to one and code goes on\n",params->mass1,params->mass2,params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2]); 
+     fprintf(stderr,"      (m1=%8.3f  m2=%8.3f s1=(%8.3f,%8.3f,%8.3f) s2=(%8.3f,%8.3f,%8.3f) ) final spin set to one and code goes on\n",params->mass1,params->mass2,params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2]);
      fprintf(stderr,"***                                    Final Spin set to 0 and code aborts\n");
       *finalSpin = 0.;
       XLAL_ERROR( func, XLAL_ERANGE);
@@ -563,7 +557,7 @@ INT4 XLALPSpinFinalMassSpin(
   return errcode;
 }
 
-/* <lalVerbatim file="XLALPSpinInspiralAttachRingdownWaveCP">  */
+
 INT4 XLALPSpinInspiralAttachRingdownWave (
       REAL4Vector 	*sigl,
       InspiralTemplate 	*params,
@@ -646,7 +640,7 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
       for (i=0; i<2; i++) {
 
 	for (j = 0; j < Npatch; j++) {
-	  inspwave->data[j]    = sigl->data[2*(atpos - Npatch + j)+i];	
+	  inspwave->data[j]    = sigl->data[2*(atpos - Npatch + j)+i];
 	}
 
 	for (k=0;k<2*nmodes;k++) {

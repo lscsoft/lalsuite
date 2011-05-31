@@ -17,53 +17,46 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralPhasing2CV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralPhasing2.c}}
-
-The code \texttt{LALInspiralPhasing2.c} calculates the phase of an inspiral
+\brief The code \ref LALInspiralPhasing2.c calculates the phase of an inspiral
 waveform as a function of the
-instantaneous frequency of the wave, up to $2^{nd}$ post--Newtonian order.
+instantaneous frequency of the wave, up to \f$2^{nd}\f$ post--Newtonian order.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralPhasing2CP}
-\index{\verb&LALInspiralPhasing2()&}
-\begin{itemize}
-\item {\tt phase:} Output, the phase of the wave at the current epoch.
-\item {\tt v:} Input, the PN expansion parameter at the current epoch.
-\item {\tt ak:} Input containing PN expansion coefficients.
-\end{itemize}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>LALInspiralPhasing2()</tt>
+<ul>
+<li> \c phase: Output, the phase of the wave at the current epoch.</li>
+<li> \c v: Input, the PN expansion parameter at the current epoch.</li>
+<li> \c ak: Input containing PN expansion coefficients.</li>
+</ul>
 
-The phase of the inspiral wave corresponding to the {\tt Approximant} {\tt TaylorT2}
-as in Equation~{eq:InspiralPhasing2}.
+\heading{Description}
 
-\subsubsection*{Algorithm}
+The phase of the inspiral wave corresponding to the ::Approximant #TaylorT2
+as in Equation\eqref{eq_InspiralWavePhase2} (<tt>correct equation?</tt>)
+
+\heading{Algorithm}
 None.
 
-\subsubsection*{Uses}
+\heading{Uses}
 None.
 
-\subsubsection*{Notes}
+\heading{Notes}
 None.
 
-\vfill{\footnotesize\input{LALInspiralPhasing2CV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
 NRCSID (LALINSPIRALPHASING2C, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
 
 void
 LALInspiralPhasing2_0PN (
@@ -72,7 +65,7 @@ LALInspiralPhasing2_0PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 v5;
 
@@ -89,7 +82,7 @@ LALInspiralPhasing2_0PN (
 
 }
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
 
 void
 LALInspiralPhasing2_2PN (
@@ -98,7 +91,7 @@ LALInspiralPhasing2_2PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 v2,v5;
 
@@ -117,7 +110,7 @@ LALInspiralPhasing2_2PN (
 
 }
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
 
 void
 LALInspiralPhasing2_3PN (
@@ -126,7 +119,7 @@ LALInspiralPhasing2_3PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 v2,v3,v5;
 
@@ -148,7 +141,7 @@ LALInspiralPhasing2_3PN (
 
 }
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
 
 void
 LALInspiralPhasing2_4PN (
@@ -157,7 +150,7 @@ LALInspiralPhasing2_4PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 v2,v3,v4,v5;
 
@@ -178,7 +171,7 @@ LALInspiralPhasing2_4PN (
   RETURN(status);
 }
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
 
 void
 LALInspiralPhasing2_5PN (
@@ -187,7 +180,7 @@ LALInspiralPhasing2_5PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 v2,v3,v4,v5;
 
@@ -211,7 +204,7 @@ LALInspiralPhasing2_5PN (
 
 }
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
 
 void
 LALInspiralPhasing2_6PN (
@@ -220,7 +213,7 @@ LALInspiralPhasing2_6PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 v2,v3,v4,v5,v6;
 
@@ -246,7 +239,7 @@ LALInspiralPhasing2_6PN (
 
 }
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
 
 void
 LALInspiralPhasing2_7PN (
@@ -255,7 +248,7 @@ LALInspiralPhasing2_7PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   REAL8 v2,v3,v4,v5,v6,v7;
 

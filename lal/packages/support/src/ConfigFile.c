@@ -36,9 +36,9 @@ The general syntax is somewhat similar to the one provided by the
 perl-module <tt>ConfigParser</tt> (cf.
 http://www.python.org/doc/current/lib/module-ConfigParser.html)
 
-Comments are allowed using either '<tt>\#</tt>', '<tt>;</tt>' or <tt>%</tt>.
-You can also use line-continuation  using a '<tt>\\</tt>' at the end of the line.
-Also note that comment-signs '<tt>\#;%</tt>' within double-quotes '<tt>"..."</tt>'
+Comments are allowed using either '<tt>\#</tt>', '<tt>;</tt>' or <tt>\%</tt>.
+You can also use line-continuation  using a '<tt>\\\\</tt>' at the end of the line.
+Also note that comment-signs '<tt>\#;\%</tt>' within double-quotes '<tt>\"...\"</tt>'
 are <em>not</em> treated as comment-characters.  The general syntax is best illustrated
 using a simple example:
 \code
@@ -50,7 +50,7 @@ somevar = some text.\
    var3 = 4      # whatever that means
 note = "this is also possible, and # here does nothing"
 a_switch = true	 #possible values: 0,1,true,false,yes,no, case insensitive
-%% etc etc.
+...
 \endcode
 
 Note that TABS generally get replaced by a single space, which can be
@@ -66,8 +66,8 @@ XLALReadConfigVariable().
 
 
 A boolean variable read by XLALReadConfigBOOLVariable() can have any of the values
-<tt>{"1", "0", "yes", "no", "true", "false"}</tt>, where the comparison is done
-<em>case-insensitively</em>, i.e. you can also use "True" or "FALSE"....
+<tt>{\"1\", \"0\", \"yes\", \"no\", \"true\", \"false\"}</tt>, where the comparison is done
+<em>case-insensitively</em>, i.e. you can also use \"True\" or \"FALSE\"....
 
 
 If one wishes a tight sytnax for the config-file, one can check
@@ -95,7 +95,7 @@ XLALPrintError()            LALOpenDataFile()        fclose()
 \par Notes
 
 XLALReadConfigSTRINGVariable() and XLALReadConfigSTRINGVariable() are not
-the same as using <tt>"%s"</tt> as a format string, as they read the
+the same as using <tt>\"\%s\"</tt> as a format string, as they read the
 <em>rest</em> of the logical line (excluding comments) as a string.
 
 
@@ -159,8 +159,8 @@ static const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
 
 /** Parse an ASCII data-file into a pre-cleaned array of lines.
  *
- * The cleaning gets rid of comments ('#', ';'), empty lines,
- * and performs line-continuation if '\' is found at EOL
+ * The cleaning gets rid of comments ('\#', ';'), empty lines,
+ * and performs line-continuation if '\\' is found at EOL
  */
 int
 XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file lines */
@@ -346,7 +346,7 @@ XLALConfigSectionExists ( const LALParsedDataFile *cfgdata,  	/**< [in] pre-pars
  * - <tt>param->fmt</tt>     is the format string to use for reading
  *
  * \note a special format-string is FMT_STRING, which means read the whole remaining line
- *   which is different from "%s"! (reads only one word)
+ *   which is different from \"\%s\"! (reads only one word)
  *   In this case, this also does the memory-allocation!
  *
  */

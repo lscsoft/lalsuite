@@ -17,27 +17,20 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralHybridHexagonalBankCV">
-Author: Cokelaer Thomas
-$Id$
-</lalVerbatim>  */
+/**
+\author Cokelaer Thomas
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
+\brief NONE
 
-\subsection{Module \texttt{LALInspiralHybridHexagonalBank.c}}
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralHybridHexagonalBankCP}
-\idx{LALInspiralHybridHexagonalBank()}
-
-\subsubsection*{Description}
+\heading{Description}
 This code does almost the same as the standard Hexagonal Bank code. However,
-once the templates cover both the equal line and an other line ($m_1={\rm mMin}$
-or $m_2 ={\rm mMax}$), then there is no need to carry on any square/hexagonal
+once the templates cover both the equal line and an other line (\f$m_1=\textrm{mMin}\f$
+or \f$m_2 =\textrm{mMax}\f$), then there is no need to carry on any square/hexagonal
 placement. One can simply populate templates along a bissectrice.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 The algorithm is identical to the hexagonal placement. However, once a template covers
 both the equal mass line and the upper boundary, then the hexagonal placement stops.
 So, an additional placement is needed to finalise the bank. In principle the placement
@@ -46,75 +39,62 @@ we should start from the two templates which covers the two boundaries and popul
 parameter space along a bissectrice.
 
 
-The coordinates of the bissectrice at a given $tau_0$ coordinate is estimated by tracing a vertical
-line in the $\tau_0/tau_3$ plane, estimate the vlue of $tau_3$ on the upper boundary and low
-boundary ($\eta=1/4$ line), and finally take the mean of the two values. Although,  is is an approximation
+The coordinates of the bissectrice at a given \f$tau_0\f$ coordinate is estimated by tracing a vertical
+line in the \f$\tau_0/tau_3\f$ plane, estimate the vlue of \f$tau_3\f$ on the upper boundary and low
+boundary (\f$\eta=1/4\f$ line), and finally take the mean of the two values. Although,  is is an approximation
 since we should also take into account the orientation of the ellipse, we
 think this is good enough.  The vertical line crosses the parameter space on the
-$\eta=1/4$ line and the other parameter space boundary which is define either by (1)
-$m_1=variable$ and $m_2=mMin$ or (2) $m_1=variable$ and $m_2=mMax$. Concerning (1),
-$\eta=1/4$, this is a trivial computation, since
-\begin{equation}
+\f$\eta=1/4\f$ line and the other parameter space boundary which is define either by (1)
+\f$m_1=variable\f$ and \f$m_2=mMin\f$ or (2) \f$m_1=variable\f$ and \f$m_2=mMax\f$. Concerning (1),
+\f$\eta=1/4\f$, this is a trivial computation, since
+\f{equation}{
 \tau_3 =    \frac{  A3}{\eta}  \left( \frac{\eta \tau_0}{A0} \right)^{2/5},
-\end{equation}
-which in the case of $\eta=1/4$ simply becomes :
-\begin{equation}
+\f}
+which in the case of \f$\eta=1/4\f$ simply becomes :
+\f{equation}{
 \tau_3 =     4 A3  \left( \frac{\tau_0}{4 A0} \right)^{2/5}.
-\end{equation}
-In the case (2), if $\tau_0$ is provided, if we can extract the total mass and $\eta$ parameter,
-then $tau_3$ is given by
-\begin{equation}
+\f}
+In the case (2), if \f$\tau_0\f$ is provided, if we can extract the total mass and \f$\eta\f$ parameter,
+then \f$tau_3\f$ is given by
+\f{equation}{
 \tau_3 =    \frac{  A3}{\eta}  M^{-2/3}.
-\end{equation}
-So, we need $M$ and $\eta$. Starting from
-\begin{equation}
+\f}
+So, we need \f$M\f$ and \f$\eta\f$. Starting from
+\f{equation}{
 \tau_0 =    \frac{  A0}{\eta}  \left( M \right)^{-5/3},
-\end{equation}
+\f}
 we can extract a cubic equation
-\begin{equation}
+\f{equation}{
 x^3 - px+q=0
-\end{equation}
-where $x = M^{1/3}$, $p = -\frac{A0}{\tau_0/m_{\rm Extreme}}$ and $q= - m_{\rm Extreme}=0$. $ m_{\rm Extreme}$
+\f}
+where \f$x = M^{1/3}\f$, \f$p = -\frac{A0}{\tau_0/m_\textrm{Extreme}}\f$ and \f$q= - m_\textrm{Extreme}=0\f$. \f$ m_\textrm{Extreme}\f$
 is either set to mMin or mMax depending on which side of the parameter space we are.
 
-The solution for $x$ is standard and takes the expression :
-\begin{equation}
+The solution for \f$x\f$ is standard and takes the expression :
+\f{equation}{
 x =  \left(-\frac{q}{2}-\frac{1}{2}*\sqrt{\frac{27 q^2 + 4 p^3}{27}}\right)^{\frac{1}{3}}
    + \left(-\frac{q}{2}+\frac{1}{2}*\sqrt{\frac{27 q^2 + 4 p^3}{27}}\right)^{\frac{1}{3}};
-\end{equation}
-
-\begin{figure}[]
-\begin{center}
-\includegraphics[angle=-180, width=-3.5 true in]{LALInspiralHybridHexa2}
-\label{fig:hybridhexa1}
-\end{center}
-\caption{Example of hybrid hexagonal placement. Once an ellipse covers the upper and lower boundary, then the hexagonal
-placement stops. This occurs neccesseraly at low and high mass range. }
-\end{figure}
+\f}
 
 
-\begin{figure}[]
-\begin{center}
-\includegraphics[angle=-180, width=-3.5 true in]{LALInspiralHybridHexa1}
-\label{fig:hybridhexa1}
-\end{center}
-\caption{Example of hybrid hexagonal placement. Once the ellipses covers the upper and lower part of the parameter space (at
-tau0=3.6 and tau0=0.4), then the placement is switched from the hexagonal to a placement along the bissectric of the
-upper/lower boundaries as described in the text.}
-\end{figure}
+\floatfig{h,fig_hybridhexa1}
+\image html  LALInspiralHybridHexa2.png "Fig.[fig_hybridhexa1]: Example of hybrid hexagonal placement. Once an ellipse covers the upper and lower boundary, then the hexagonal placement stops. This occurs neccesseraly at low and high mass range."
+\image latex LALInspiralHybridHexa2.pdf "Example of hybrid hexagonal placement. Once an ellipse covers the upper and lower boundary, then the hexagonal placement stops. This occurs neccesseraly at low and high mass range." width=3.5in
 
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\floatfig{h,fig_hybridhexa1}
+\image html  LALInspiralHybridHexa1.png "Fig.[fig_hybridhexa1]: Example of hybrid hexagonal placement. Once the ellipses covers the upper and lower part of the parameter space (at tau0=3.6 and tau0=0.4), then the placement is switched from the hexagonal to a placement along the bissectric of the upper/lower boundaries as described in the text."
+\image latex LALInspiralHybridHexa1.pdf "Example of hybrid hexagonal placement. Once the ellipses covers the upper and lower part of the parameter space (at tau0=3.6 and tau0=0.4), then the placement is switched from the hexagonal to a placement along the bissectric of the upper/lower boundaries as described in the text." width=3.5in
+
+\heading{Uses}
+\code
 LALPopulateNarrowEdge()
 XLALInspiralBissectionLine ()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vspace{0.1in}
-\vfill{\footnotesize\input{LALInspiralHybridHexagonalBankCV}}
-</lalLaTeX>  */
+*/
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
@@ -142,7 +122,7 @@ LALPopulateNarrowEdge(LALStatus       	*status,
 
 NRCSID(LALINSPIRALHYBRIDHEXAGONALBANKC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralHybridHexagonalBankCP"> */
+
 void
 LALInspiralCreatePNCoarseBankHybridHexa(
     LALStatus            *status,
@@ -150,7 +130,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
     INT4                 *nlist,
     InspiralCoarseBankIn coarseIn
     )
-{  /*  </lalVerbatim>  */
+{
   INT4                  i;
   INT4 			firstId = 0;
   REAL4 		A0, A3;

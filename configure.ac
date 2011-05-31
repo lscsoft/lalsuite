@@ -6,8 +6,8 @@ AC_CONFIG_FILES([
   Makefile \
   gnuscripts/Makefile \
   doxygen/Makefile \
-  doxygen/doxygen-html.cfg \
-  doxygen/doxygen-pdf.cfg \
+  doxygen/doxy-html-config.cfg \
+  doxygen/doxy-pdf-config.cfg \
   doxygen/src/Makefile
 ])
 AM_INIT_AUTOMAKE([foreign])

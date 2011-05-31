@@ -304,7 +304,7 @@ REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 #define m2min 1.0
 #define m2max 35.0
   parameter->logPrior=0.0;
-  if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+  if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
   else mc=XLALMCMCGetParameter(parameter,"mchirp");
   logmc=log(mc);
   parameter->logPrior+=-(5.0/6.0)*logmc;
@@ -332,7 +332,7 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   REAL8 maxCompMass = 100.0;
 
   /* Check in range */
-  if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+  if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
   else mc=XLALMCMCGetParameter(parameter,"mchirp");
 
   eta=XLALMCMCGetParameter(parameter,"eta");
@@ -371,7 +371,7 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
     parameter->logPrior+= -log( 1.0+exp((ampli-a)/b) );
 */
 /* Check in range */
-	if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+	if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
 	else mc=XLALMCMCGetParameter(parameter,"mchirp");
 	double logmc=log(mc);
 	eta=XLALMCMCGetParameter(parameter,"eta");
@@ -402,12 +402,12 @@ REAL8 NestPriorPhenSpin(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
     REAL8 m1,m2;
         parameter->logPrior=0.0;
         REAL8 mc,eta;
-        REAL8 minCompMass = 1.0;
-        REAL8 maxCompMass = 34.0;
-	REAL8 maxMTotal= 35.0;
+        REAL8 minCompMass = 1.;
+        REAL8 maxCompMass = 34.;
+	REAL8 maxMTotal= 35.;
 
 /* Check in range */
-        if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+        if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
         else mc=XLALMCMCGetParameter(parameter,"mchirp");
         double logmc=log(mc);
         eta=XLALMCMCGetParameter(parameter,"eta");
@@ -418,7 +418,7 @@ REAL8 NestPriorPhenSpin(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
         if(XLALMCMCCheckParameter(parameter,"logdist"))
                 parameter->logPrior+=3.0*XLALMCMCGetParameter(parameter,"logdist");
         else
-                parameter->logPrior+=2.0*log(XLALMCMCGetParameter(parameter,"distMpc"));
+                parameter->logPrior+=2.0*log(XLALMCMCGetParameter(parameter,"distance"));
         parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
         parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
         ParamInRange(parameter);
@@ -456,7 +456,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	memset(&status,0,sizeof(LALStatus));
 	memset(&det,0,sizeof(DetectorResponse));
 	/* Populate the structures */
-	if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+	if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
 	else mc=XLALMCMCGetParameter(parameter,"mchirp");
 	eta=XLALMCMCGetParameter(parameter,"eta");
 	PPNparams.position.longitude=XLALMCMCGetParameter(parameter,"ra");
@@ -671,7 +671,7 @@ in the frequency domain */
 		parameter->logLikelihood=0.0;
 		return 0.0;
 	}
-	if(XLALMCMCCheckParameter(parameter,"logM")) mchirp=exp(XLALMCMCGetParameter(parameter,"logM"));
+	if(XLALMCMCCheckParameter(parameter,"logmc")) mchirp=exp(XLALMCMCGetParameter(parameter,"logmc"));
         else mchirp=XLALMCMCGetParameter(parameter,"mchirp");
 
 	eta = XLALMCMCGetParameter(parameter,"eta");
@@ -883,8 +883,8 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 
 	eta = XLALMCMCGetParameter(parameter,"eta");
 
-	if (XLALMCMCCheckParameter(parameter,"logM")) {
-	  mchirp=exp(XLALMCMCGetParameter(parameter,"logM"));
+	if (XLALMCMCCheckParameter(parameter,"logmc")) {
+	  mchirp=exp(XLALMCMCGetParameter(parameter,"logmc"));
 	  mtot=mchirp/pow(eta,3./5.);
 	}
 	else {
@@ -904,9 +904,9 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	template.eta = eta;
 	template.massChoice = totalMassAndEta;
 	template.fLower = inputMCMC->fLow;
-	if (XLALMCMCCheckParameter(parameter,"distMpc"))
-	  template.distance = XLALMCMCGetParameter(parameter,"distMpc")*LAL_PC_SI*1.e6; /* This must be metres */
-	else
+	if (XLALMCMCCheckParameter(parameter,"distance"))
+	  template.distance = XLALMCMCGetParameter(parameter,"distance")*LAL_PC_SI*1.e6; /* This must be metres */
+	else 
 	  if(XLALMCMCCheckParameter(parameter,"logdist")) {
 	    template.distance=exp(XLALMCMCGetParameter(parameter,"logdist"))*LAL_PC_SI*1.e6;
 	  }
@@ -921,38 +921,39 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	template.ieta = 1;
 	template.inclination=XLALMCMCGetParameter(parameter,"iota");
 
-	template.totalMass=mtot;
-	template.eta=eta;
+	//template.totalMass=mtot;
+	//template.eta=eta;
 
 
-	double spin1=0.;
-	double spin1theta=0.;
-	double spinphi=0.;
-	double spin2=0.;
-	double spin2theta=0.;
+	double a1=0.;
+	double theta1=0.;
+	double phi1=0.;
+	double a2=0.;
+	double theta2=0.;
+	double phi2=0.;
 
-	if(XLALMCMCCheckParameter(parameter,"Spin1"))
-	  spin1 = XLALMCMCGetParameter(parameter,"Spin1");
-	if(XLALMCMCCheckParameter(parameter,"Spin1theta"))
-	  spin1theta=XLALMCMCGetParameter(parameter,"Spin1theta");
+	if(XLALMCMCCheckParameter(parameter,"a1"))
+	  a1 = XLALMCMCGetParameter(parameter,"a1");
+	if(XLALMCMCCheckParameter(parameter,"theta1"))
+	  theta1=XLALMCMCGetParameter(parameter,"theta1");
+	if(XLALMCMCCheckParameter(parameter,"phi1"))
+	  phi1=XLALMCMCGetParameter(parameter,"phi1");
+	if(XLALMCMCCheckParameter(parameter,"a2"))
+	  a2=XLALMCMCGetParameter(parameter,"a2");
+	if(XLALMCMCCheckParameter(parameter,"theta2"))
+	  theta2=XLALMCMCGetParameter(parameter,"theta2");
+	if(XLALMCMCCheckParameter(parameter,"phi2"))
+	  phi2=XLALMCMCGetParameter(parameter,"phi2");
 
-	if(XLALMCMCCheckParameter(parameter,"Spin2"))
-	  spin2=XLALMCMCGetParameter(parameter,"Spin2");
-	if(XLALMCMCCheckParameter(parameter,"Spin2theta"))
-	  spin2theta=XLALMCMCGetParameter(parameter,"Spin2theta");
-	if(XLALMCMCCheckParameter(parameter,"Spinphi"))
-	  spinphi=XLALMCMCGetParameter(parameter,"Spinphi");
+	template.spin1[0]=a1*sin(theta1)*cos(phi1);
+	template.spin1[1]=a1*sin(theta1)*sin(phi1);
+	template.spin1[2]=a1*cos(theta1);
 
+	template.spin2[0]=a2*sin(theta2)*cos(phi2);
+	template.spin2[1]=a2*sin(theta2)*sin(phi2);;
+	template.spin2[2]=a2*cos(theta2);
 
-	template.spin1[0]=spin1*sin(spin1theta)*cos(spinphi);
-	template.spin1[1]=spin1*sin(spin1theta)*sin(spinphi);
-	template.spin1[2]=spin1*cos(spin1theta);
-
-	template.spin2[0]=spin2*sin(spin2theta)*cos(spinphi);
-	template.spin2[1]=0.;
-	template.spin2[2]=spin2*cos(spin2theta);
-
-	template.axisChoice=TotalJ;
+	//template.axisChoice=TotalJ;
 
 	template.next = NULL;
 	template.fine = NULL;
@@ -1224,7 +1225,7 @@ in the frequency domain */
 	REAL8 eta,mtot,mchirp;
 	expnFunc expnFunction;
 	expnCoeffs ak;
-	if(XLALMCMCCheckParameter(parameter,"logM")) mchirp=exp(XLALMCMCGetParameter(parameter,"logM"));
+	if(XLALMCMCCheckParameter(parameter,"logmc")) mchirp=exp(XLALMCMCGetParameter(parameter,"logmc"));
 	else mchirp=XLALMCMCGetParameter(parameter,"mchirp");
 	eta = XLALMCMCGetParameter(parameter,"eta");
 	mtot=mc2mt(mchirp,eta);

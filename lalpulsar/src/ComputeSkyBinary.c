@@ -22,8 +22,6 @@
 \file
 \ingroup pulsarTODO
 
-\subsection{Module \ref ComputeSkyBinary.c}\label{ss:ComputeSkyBinary.c}
-
 \brief Computes the phase model coefficients necessary for a successful demodulation
 for the case of a continuous wave source in a binary system.
 

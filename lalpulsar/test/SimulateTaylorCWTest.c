@@ -126,7 +126,7 @@ gravitational-wave channel.
 If a \c sourcefile is specified, this program first reads the
 epoch field, and then calls <tt>LALSReadVector()</tt> to read the
 remaining fields.  (If no \c sourcefile is specified, the
-parameters are taken from <tt>#define</tt>d constants.) The arguments
+parameters are taken from <tt>\#define</tt>d constants.) The arguments
 are passed to <tt>LALGenerateTaylorCW()</tt> to generate frequency and
 phase timeseries.  The required sampling resolution for these
 timeseries is estimated at \f$0.1/\sum_k\sqrt{|kf_0f_kT^{k-1}|}\f$, where

@@ -25,13 +25,6 @@
  *
  *---------------------------------------------------------------------------*/
 
-#if 0
-<lalVerbatim file="GetErrorMatrixFromSnglInspiralCV">
-Author: Craig Robinson
-</lalVerbatim>
-#endif
-
-
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALGSL.h>
@@ -44,58 +37,39 @@ Author: Craig Robinson
 
 NRCSID( ERRORMATRIXFROMSNGLINSPIRALC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{GetErrorMatrixFromSnglInspiral.c}}
+/**
 
-\noindent Blah.
+\author Craig Robinson
+\file
+\ingroup CoincInspiralEllipsoid_h
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{GetErrorMatrixFromSnglInspiralCP}
-\idx{XLALGetErrorMatrixFromSnglInspiral()}
-\idx{XLALGetPositionFromSnglInspiral()}
-\idx{XLALSetTimeInPositionVector()}
+\brief Blah.
 
-\subsubsection*{Description}
+\heading{Description}
 
-\texttt{XLALGetErrorMatrixFromSnglInspiral()} takes in a
-\texttt{SnglInspiralTable}, and a value for the e-thinca parameter. It returns
-a \texttt{gsl\_matrix} containing the the metric scaled appropriately for the
+<tt>XLALGetErrorMatrixFromSnglInspiral()</tt> takes in a
+\c SnglInspiralTable, and a value for the e-thinca parameter. It returns
+a \c gsl_matrix containing the the metric scaled appropriately for the
 given e-thinca parameter.
 
-\texttt{XLALGetPositionFromSnglInspiral()} takes in a
-\texttt{SnglInspiralTable}, and returns the position vector associated with
-the trigger in $(t_C, \tau_0, \tau_3)$ space.
+<tt>XLALGetPositionFromSnglInspiral()</tt> takes in a
+\c SnglInspiralTable, and returns the position vector associated with
+the trigger in \f$(t_C, \tau_0, \tau_3)\f$ space.
 
-\texttt{XLALSetTimeInPositionVector()} sets the time co-ordinate in the given
-position vector to \texttt{time}. It returns zero upon successful completion.
+<tt>XLALSetTimeInPositionVector()</tt> sets the time co-ordinate in the given
+position vector to \c time. It returns zero upon successful completion.
 
-\subsubsection*{Algorithm}
-
-\noindent None.
-
-\subsubsection*{Uses}
-
-\noindent
-
-\subsubsection*{Notes}
-%% Any relevant notes.
-
-\vfill{\footnotesize\input{CoincInspiralEllipsoidCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 
 /* Function for getting the error matrix from the metric in
  * (tc, tau0, tau3) space.
  */
-/* <lalVerbatim file="GetErrorMatrixFromSnglInspiralCP"> */
+
 gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event,
                                                 REAL8              eMatch
                                                )
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALGetErrorMatrixFromSnglInspiral";
 
@@ -223,9 +197,9 @@ int XLALSetErrorMatrixFromSnglInspiral(gsl_matrix        *shape,
 
 
 /* Returns the position vector in (tc, tau0, tau3) space */
-/* <lalVerbatim file="GetErrorMatrixFromSnglInspiralCP"> */
+
 gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALGetPositionFromSnglInspiral";
   gsl_vector *position = NULL;
@@ -263,10 +237,10 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
 
 
 /* Sets the time in the position vector to the given value */
-/* <lalVerbatim file="GetErrorMatrixFromSnglInspiralCP"> */
+
 int XLALSetTimeInPositionVector( gsl_vector *position,
                                  REAL8 timeShift)
-/* </lalVerbatim> */
+
 {
 #ifndef LAL_NDEBUG
     if ( !position )

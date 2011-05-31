@@ -66,6 +66,7 @@ void coh_PTF_template (
     FindChirpTmpltParams       *params
     )
 {
+  UINT4 i;
   LALStatus status = blank_status;
   switch ( params->approximant )
   {
@@ -82,6 +83,11 @@ void coh_PTF_template (
       break;
     case FindChirpSP:
       LALFindChirpSPTemplate( &status,fcTmplt,InspTmplt,params );
+      for (i=0 ; i < params->xfacVec->length ; i++ )
+      {
+        fcTmplt->data->data[i].re = fcTmplt->data->data[i].re * params->PTFphi->data[i];
+        fcTmplt->data->data[i].im = fcTmplt->data->data[i].im * params->PTFphi->data[i];
+      }
       break;
     case FindChirpPTF:
       coh_PTF_template_PTF(fcTmplt,InspTmplt,params);

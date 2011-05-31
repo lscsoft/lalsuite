@@ -87,36 +87,30 @@ list of all the files which must be updated.
 <ul>
 <li>  Update the LAL table definition in \ref LIGOMetaDataTables.h</li>
 
-<li>  Update the LIGOLwXML writing code:
+<li>  Update the LIGOLwXML writing code:</li>
+   <ol>
+   <li>  Change the table header written at to the LIGOLwXML file.  This is
+   \#defined in \ref LIGOLwXMLHeaders.h.  For example, to change the
+   \c sngl_inspiral table, you must edit \c LIGOLW_XML_SNGL_INSPIRAL.</li>
 
-<ol></li>
-<li>  Change the table header written at to the LIGOLwXML file.  This is
-\ref #define</tt>d in <tt>LIGOLwXMLHeaders.h.  For example, to change the
-\c sngl_inspiral table, you must edit \c LIGOLW_XML_SNGL_INSPIRAL.</li>
+   <li> Change the row format of the LIGOLwXML file.  This is \#defined in
+   \ref LIGOLwXMLHeaders.h.  For example, to change the <tt> sngl_inspiral</tt>
+   table, you must edit \c SNGL_INSPIRAL_ROW.</li>
 
-<li> Change the row format of the LIGOLwXML file.  This is <tt>#define</tt>d in
-\ref LIGOLwXMLHeaders.h.  For example, to change the <tt> sngl_inspiral</tt>
-table, you must edit \c SNGL_INSPIRAL_ROW.</li>
+   <li> Change the fprintf command which writes the table rows.  This is contained
+   in \ref LIGOLwXML.c.
+   </ol>
 
-<li> Change the fprintf command which writes the table rows.  This is contained
-in \ref LIGOLwXML.c.
+<li> Update the LIGOLwXML reading code:</li>
+   <ol>
+   <li> Add/remove columns from the table directory of the table in question.
+   This is contained in \ref LIGOLwXMLRead.c, either in
+   \c LALCreateMetaTableDir or in the specific reading function.</li>
 
-</ol></li>
-
-<li> Update the LIGOLwXML reading code:
-
-<ol></li>
-
-<li> Add/remove columns from the table directory of the table in question.
-This is contained in \ref LIGOLwXMLRead.c, either in
-\c LALCreateMetaTableDir or in the specific reading function.</li>
-
-<li> Check that all columns read in from the XML table are stored in memory.
-This requires editing the table specific reading codes in
-\ref LIGOLwXMLRead.c.
-
-</ol>
-</li>
+   <li> Check that all columns read in from the XML table are stored in memory.
+   This requires editing the table specific reading codes in
+   \ref LIGOLwXMLRead.c.</li>
+   </ol>
 </ul>
 
 */

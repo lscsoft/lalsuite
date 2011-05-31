@@ -23,50 +23,36 @@
  *
  * Author: Brown D. A., and Creighton, J. D. E.
  *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpTDTemplateCV">
-Author: Brown, D. A., and Creighton, J. D. E.
-$Id$
-</lalVerbatim>
+/**
+\author Brown, D. A., and Creighton, J. D. E.
+\file
+\ingroup FindChirpTD_h
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpTDTemplate.c}}
-\label{ss:FindChirpTDTemplate.c}
+\brief Provides functions to create time domain inspiral templates in a
+form that can be used by the <tt>FindChirpFilter()</tt> function.
 
-Provides functions to create time domain inspiral templates in a
-form that can be used by the \texttt{FindChirpFilter()} function.
+\heading{Prototypes}
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpTDTemplateCP}
-\idx{LALFindChirpTDTemplate()}
-\idx{LALFindChirpTDNormalize()}
-
-The function \texttt{LALFindChirpTDTemplate()} creates a time domain template
+The function <tt>LALFindChirpTDTemplate()</tt> creates a time domain template
 template using the inspiral package.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 Blah.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpTDTemplateCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -79,7 +65,7 @@ LALDestroyVector()
 
 NRCSID (FINDCHIRPTDTEMPLATEC, "$Id$");
 
-/* <lalVerbatim file="FindChirpTDTemplateCP"> */
+
 void
 LALFindChirpTDTemplate (
     LALStatus                  *status,
@@ -87,7 +73,7 @@ LALFindChirpTDTemplate (
     InspiralTemplate           *tmplt,
     FindChirpTmpltParams       *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4         j;
   UINT4         shift;
@@ -434,7 +420,7 @@ LALFindChirpTDTemplate (
 }
 
 
-/* <lalVerbatim file="FindChirpTDTemplateCP"> */
+
 void
 LALFindChirpTDNormalize(
     LALStatus                  *status,
@@ -442,7 +428,7 @@ LALFindChirpTDNormalize(
     FindChirpSegment           *fcSeg,
     FindChirpDataParams        *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4         k;
   REAL4        *tmpltPower;

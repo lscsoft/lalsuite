@@ -28,48 +28,38 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpSimulationCV">
-Author: Brown, D. A. and Creighton, T. D
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpSimulation.c}}
-\label{ss:FindChirpSimulation.c}
+\author Brown, D. A. and Creighton, T. D
+\file
+\ingroup FindChirp_h
 
-\noindent Provides an interface between code build from \texttt{findchirp} and
+\brief Provides an interface between code build from \c findchirp and
 various simulation packages for injecting chirps into data.
 
-\subsubsection*{Prototypes}
+\heading{Prototypes}
 
-\input{FindChirpSimulationCP}
-\idx{LALFindChirpInjectSignals()}
-\idx{LALRandomPPNParamStruc()}
+<dl>
+<dt><tt>LALFindChirpInjectSignals()</tt></dt><dd> injects the signals described
+in the linked list of \c SimInspiralTable structures \c events
+into the data \c chan. The response function \c resp should
+contain the response function to use when injecting the signals into the data.</dd>
+</dl>
 
-\begin{description}
-\item[\texttt{LALFindChirpInjectSignals()}] injects the signals described
-in the linked list of \texttt{SimInspiralTable} structures \texttt{events}
-into the data \texttt{chan}. The response function \texttt{resp} should
-contain the response function to use when injecting the signals into the data.
-\end{description}
+\heading{Algorithm}
 
-\subsubsection*{Algorithm}
+None.
 
-\noindent None.
-
-\subsubsection*{Notes}
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Notes}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpSimulationCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <lal/Units.h>
 #include <lal/Date.h>
@@ -111,7 +101,7 @@ static int FindTimeSeriesStartAndEnd (
               UINT4 *end
              );
 
-/* <lalVerbatim file="FindChirpSimulationCP"> */
+
 void
 LALFindChirpInjectSignals (
     LALStatus                  *status,
@@ -119,7 +109,7 @@ LALFindChirpInjectSignals (
     SimInspiralTable           *events,
     COMPLEX8FrequencySeries    *resp
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 k;
   DetectorResponse      detector;
@@ -577,13 +567,13 @@ LALFindChirpInjectSignals (
 }
 
 
-/* <lalVerbatim file="FindChirpSimulationCP"> */
+
 INT4
 XLALFindChirpSetAnalyzeSegment (
     DataSegmentVector          *dataSegVec,
     SimInspiralTable           *injections
     )
-/* </lalVerbatim> */
+
 {
   DataSegment      *currentSegment;
   SimInspiralTable *thisInjection;
@@ -638,7 +628,7 @@ XLALFindChirpSetAnalyzeSegment (
   return 0;
 }
 
-/* <lalVerbatim file="FindChirpSimulationCP"> */
+
 INT4
 XLALFindChirpTagTemplateAndSegment (
         DataSegmentVector       *dataSegVec,
@@ -648,7 +638,7 @@ XLALFindChirpTagTemplateAndSegment (
         REAL4                   tdFast,
         UINT4                   *analyseThisTmplt
         )
-/* </lalVerbatim> */
+
 {
     static const char *func = "XLALFindChirpTagTemplateAndSegment";
 
@@ -763,13 +753,13 @@ XLALFindChirpTagTemplateAndSegment (
 
 
 
-/* <lalVerbatim file="FindChirpSimulationCP"> */
+
 INT4
 XLALFindChirpSetFollowUpSegment (
     DataSegmentVector          *dataSegVec,
     SnglInspiralTable          **events
     )
-/* </lalVerbatim> */
+
 {
   DataSegment       *currentSegment;
   SnglInspiralTable *thisEvent;
@@ -824,7 +814,7 @@ XLALFindChirpSetFollowUpSegment (
   return 0;
 }
 
-/* <lalVerbatim file="FindChirpSimulationCP"> */
+
 void
 LALFindChirpSetAnalyseTemplate (
     LALStatus                  *status,
@@ -838,7 +828,7 @@ LALFindChirpSetAnalyseTemplate (
     int                        numInjections,
     SimInspiralTable           *injections
     )
-/* </lalVerbatim> */
+
 {
   InspiralTemplate      *tmpltCurrent = NULL;
   REAL8FrequencySeries  *mmFshf = NULL;
@@ -1080,14 +1070,14 @@ LALFindChirpSetAnalyseTemplate (
 }
 
 
-/* <lalVerbatim file="FindChirpSimulationCP"> */
+
 UINT4
 XLALCmprSgmntTmpltFlags (
     UINT4 numInjections,
     UINT4 TmpltFlag,
     UINT4 SgmntFlag
     )
-/* </lalVerbatim> */
+
 {
   UINT4 k1, bitTmplt, bitSgmnt, analyseTag;
 
@@ -1110,14 +1100,14 @@ XLALCmprSgmntTmpltFlags (
 }
 
 
-/* <lalVerbatim file="FindChirpSimulationCP"> */
+
 UINT4
 XLALFindChirpBankSimInitialize (
     REAL4FrequencySeries       *spec,
     COMPLEX8FrequencySeries    *resp,
     REAL8                       fLow
     )
-/* </lalVerbatim> */
+
 {
   UINT4 k, cut;
   REAL4 psdMin = 0;

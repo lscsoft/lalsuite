@@ -28,95 +28,84 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpFilterOutputVetoCV">
-Author: Brown D. A.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpFilterOutputVeto.c}}
-\label{ss:FindChirpFilterOutputVeto.c}
+\author Brown D. A.
+\file
+\ingroup FindChirp_h
 
-Memory management functions for creating and destroying input data and
+\brief Memory management functions for creating and destroying input data and
 workspace memory for findchirp.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpFilterOutputVetoCP}
-\idx{LALFindChirpFilterOutputVeto()}
-
-\subsubsection*{Description}
-The function \texttt{LALFindChirpFilterOutputVeto()} implements a signal based
+\section sec_fcfo_desc Description
+The function <tt>LALFindChirpFilterOutputVeto()</tt> implements a signal based
 veto, currently it is used primarily for testing. The function itself tests the
 consistency of the triggers that survive the bns and macho inspiral search pipeline
-by monitoring the behavior of the $r^2$ time series which is calculated for each
+by monitoring the behavior of the \f$r^2\f$ time series which is calculated for each
 segment of data (256 seconds).
 
-\subsubsection*{Thresholds for Searches}
+\subsection sec_fcfo_thresh Thresholds for Searches
 Two thresholds are currently employed in the binary neutron star and primordial
 black hole inspiral searches: a signal to noise ratio threshold
-($\rho^*$(\emph{t$_j$}), ($^*$ denoting the threshold), and a threshold on the
-consistency of the template chirp waveform with the data ($r^{2*}$). At a given instant
-in time, \emph{t$_j$}. $r^2$(\emph{t$_j$}) is defined as:
+(\f$\rho^*\f$(<em>t\f$_j\f$</em>), (\f$^*\f$ denoting the threshold), and a threshold on the
+consistency of the template chirp waveform with the data (\f$r^{2*}\f$). At a given instant
+in time, <em>t\f$_j\f$</em>. \f$r^2\f$(<em>t\f$_j\f$</em>) is defined as:
 \\
-\begin{equation}
+\f{equation}{
 {r^2(t_j)} = \frac{\chi^2(t_j)}{p}
-\end{equation}
+\f}
 \\
 where:
 \\
 \\
-p = number of $\chi^2$ bins
+p = number of \f$\chi^2\f$ bins
 \\
 \\
 The search code calculates
-$\rho$(\emph{t$_j$}) and $r^2$(\emph{t$_j$}) for a given segment of data and looks
+\f$\rho\f$(<em>t\f$_j\f$</em>) and \f$r^2\f$(<em>t\f$_j\f$</em>) for a given segment of data and looks
 for:
 \\
-\begin{equation}
+\f{equation}{
 \rho (t_j) > \rho^*(t_j)
-\end{equation}
+\f}
 and
-\begin{equation}
+\f{equation}{
 r^2(t_j) < r^{2*}(t_j) * (1 + \frac{\rho^2(t_j)  \delta^2}{p})
-\end{equation}
+\f}
 \\
 where:
 \\
-$^*$ = threshold used in the search\\
-$\rho$ = signal to noise ratio\\
-$\delta$ = mismatch between your data and template waveform\\
-p = number of $\chi^2$ bins
+\f$^*\f$ = threshold used in the search\\
+\f$\rho\f$ = signal to noise ratio\\
+\f$\delta\f$ = mismatch between your data and template waveform\\
+p = number of \f$\chi^2\f$ bins
 \\
 \\
-If both these criteria are met at a given \emph{t$_j$}, an inspiral "trigger" is
+If both these criteria are met at a given <em>t\f$_j\f$</em>, an inspiral "trigger" is
 recorded.
 
-\subsubsection*{Algorithm}
-The algorithm inputs the the vector \texttt{chisqVec} (which is actually $r^2$)
-for the whole data segment and searches a time window (\texttt{rsqvetoWindow})
+\heading{Algorithm}
+The algorithm inputs the the vector \c chisqVec (which is actually \f$r^2\f$)
+for the whole data segment and searches a time window (\c rsqvetoWindow)
 prior to the inferred coalescence time of the trigger up to the trigger time
-and counts the number of time samples above a given $r^{2**}$ threshold
-(\texttt{rsqvetoThresh}) different than the search pipeline employs. Note as well
+and counts the number of time samples above a given \f$r^{2**}\f$ threshold
+(\c rsqvetoThresh) different than the search pipeline employs. Note as well
 that the threshold we impose does not get multiplied by the factor:
-(1 + {$\rho^2$(t$_j$)$\delta^2$$/p$). The outputted value from this test is
-stored in the \texttt{rsqveto\_duration} field in the \texttt{sngl\_inspiral}
+(1 + {\f$\rho^2\f$(t\f$_j\f$)\f$\delta^2\f$\f$/p\f$). The outputted value from this test is
+stored in the \c rsqveto_duration field in the \c sngl_inspiral
 xml table. Future implementation of this function will have it take the
 calculated value and decide whether or not to store the trigger
 for future analysis.
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\subsubsection*{Notes}
+\heading{Notes}
 The same test described here could also be employed for monitoring the
-behavior of the signal to noise time series, $\rho(\emph{t$_j$})$, about a
-trigger, therefore the inclusion of \texttt{qVec} and \texttt{qNorm} as
+behavior of the signal to noise time series, \f$\rho(<em>t\f$_j\f$</em>)\f$, about a
+trigger, therefore the inclusion of \c qVec and \c qNorm as
 input to the function for future work.
 
-\vfill{\footnotesize\input{FindChirpFilterOutputVetoCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <lal/LALStdio.h>
@@ -133,7 +122,7 @@ input to the function for future work.
 
 NRCSID (FINDCHIRPFILTEROUTPUTVETOC, "$Id$");
 
-/* <lalVerbatim file="FindChirpFilterOutputVetoCP"> */
+
 void
 LALFindChirpFilterOutputVeto(
     LALStatus                          *status,
@@ -141,7 +130,7 @@ LALFindChirpFilterOutputVeto(
     FindChirpFilterInput               *input,
     FindChirpFilterParams              *fcParams
     )
-/* </lalVerbatim> */
+
 {
 
   UINT4                 x;                  /* for loops */

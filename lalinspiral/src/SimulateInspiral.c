@@ -17,91 +17,80 @@
 *  MA  02111-1307  USA
 */
 
-/***************************** <lalVerbatim file="SimulateInspiralCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup SimulateInspiral_h
 
-/********************************************************** <lalLaTeX>
+\brief Injects inspiral waveforms into detector output.
 
-\subsection{Module \texttt{SimulateInspiral.c}}
-\label{ss:SimulateInspiral.c}
+\heading{Description}
 
-Injects inspiral waveforms into detector output.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{SimulateInspiralCP}
-\idx{LALSimulateInspiral()}
-
-\subsubsection*{Description}
-
+<tt>LALSimulateInspiral()</tt>:
 This function generates a binary inspiral signal using the parameters
-in \verb@*params@, simulates an instrument's response to that signal
-using the instrument transfer function \verb@*transfer@, and injects
-the resulting waveform into detector output stored in \verb@*output@.
+in <tt>*params</tt>, simulates an instrument's response to that signal
+using the instrument transfer function <tt>*transfer</tt>, and injects
+the resulting waveform into detector output stored in <tt>*output</tt>.
 
-The \verb@*output@ time series should have all of its fields set to
+The <tt>*output</tt> time series should have all of its fields set to
 their desired values, and should have a data sequence already
-allocated; the function \verb@LALSimulateInspiral()@ simply adds the
-inspiral waveform on top of the existing data. The \verb@epoch@ and
-\verb@deltaT@ fields must be set, as they are used to determine the
+allocated; the function <tt>LALSimulateInspiral()</tt> simply adds the
+inspiral waveform on top of the existing data. The \c epoch and
+\c deltaT fields must be set, as they are used to determine the
 sample rate and time positioning of the injected signal.  The
-\verb@sampleUnits@ field must be set to \verb@lalADCCountUnit@ for
+\c sampleUnits field must be set to \c lalADCCountUnit for
 consistency.
 
-The \verb@*transfer@ frequency series should define the complex
-frequency response function $T(f)$ taking the differential strain
-signal $\tilde{h}(f)$ to detector response
-$\tilde{o}(f)=T(f)\tilde{h}(f)$, and should have units of ADC counts
+The <tt>*transfer</tt> frequency series should define the complex
+frequency response function \f$T(f)\f$ taking the differential strain
+signal \f$\tilde{h}(f)\f$ to detector response
+\f$\tilde{o}(f)=T(f)\tilde{h}(f)\f$, and should have units of ADC counts
 per strain.  It is treated as zero outside its frequency domain, and
 is linearly interpolated between its frequency samples.
 
-The \verb@*params@ structure represents the parameters of an inspiral
-signal to be injected (if \verb@params->next@=\verb@NULL@), or the
+The <tt>*params</tt> structure represents the parameters of an inspiral
+signal to be injected (if <tt>params->next</tt>=\c NULL), or the
 head of a linked list of parameter structures for multiple injections.
-For each structure, if the \verb@signalAmplitude@ field is $\geq0$,
+For each structure, if the \c signalAmplitude field is \f$\geq0\f$,
 the injected waveform will be scaled to give it the correct
-characteristic detection amplitude, and the \verb@effDist@ field is
-set appropriately.  If \verb@signalAmplitude@$<0$ and
-\verb@effDist@$>0$, the waveform is injected with that effective
-distance, and the \verb@signalAmplitude@ field is set appropriately.
-If \verb@signalAmplitude@$<0$ and \verb@effDist@$\leq0$, an error is
+characteristic detection amplitude, and the \c effDist field is
+set appropriately.  If \c signalAmplitude\f$<0\f$ and
+\c effDist\f$>0\f$, the waveform is injected with that effective
+distance, and the \c signalAmplitude field is set appropriately.
+If \c signalAmplitude\f$<0\f$ and \c effDist\f$\leq0\f$, an error is
 returned (that and all subsequent injections are skipped).
 
 An error is also returned (and no injections performed) if any of the
-fields of \verb@*output@ and \verb@*transfer@ are not set to usable
+fields of <tt>*output</tt> and <tt>*transfer</tt> are not set to usable
 values, including such things as wrong units or bad sampling
 intervals.
 
-\subsubsection*{Usage}
+\heading{Usage}
 
 One of the most useful applications of this routine is to generate
 simulated noise containing a signal.  The following code snippet
-generates white Gaussian noise with rms amplitude \verb@SIGMA@, and
+generates white Gaussian noise with rms amplitude \c SIGMA, and
 injects a signal with intrinsic signal-to-noise ratio
-$\sqrt{(h|h)}=$\verb@SNR@ into it, coalescing at a time \verb@DT@
+\f$\sqrt{(h|h)}=\f$\c SNR into it, coalescing at a time \c DT
 seconds from the start of the time series, with a wave phase
-\verb@PHI@ at coalescence.  The \verb@REAL4TimeSeries output@ and
-\verb@COMPLEX8FrequencySeries transfer@ structures are assumed to be
+\c PHI at coalescence.  The <tt>REAL4TimeSeries output</tt> and
+<tt>COMPLEX8FrequencySeries transfer</tt> structures are assumed to be
 defined and allocated outside of this block.
 
-******************************************************* </lalLaTeX> */
-#if 0
-/* <lalVerbatim> */
+\code
 {
   UINT4 i;
   SimulateInspiralParamStruc inspParams;
   RandomParams *randParams = NULL;
 
-  /* Generate white Gaussian noise. */
+  // Generate white Gaussian noise.
   LALCreateRandomParams( status->statusPtr, &randParams, 0 );
   LALNormalDeviates( status->statusPtr, output.data, randParams );
   for ( i = 0; i < output.data->length; i++ )
     output.data->data[i] *= SIGMA;
   LALDestroyRandomParams( status->statusPtr, &randParams );
 
-  /* Inject signal. */
+  // Inject signal.
   inspParams.timeC = output.epoch;
   inspParams.timeC.gpsSeconds += DT;
   inspParams.phiC = PHI; inspParams.mass1 = M1; inspParams.mass2 = M2;
@@ -109,16 +98,14 @@ defined and allocated outside of this block.
   inspParams.next = NULL;
   LALSimulateInspiral( status->statusPtr, &output, &transfer, &inspParams );
 }
-/* </lalVerbatim> */
-#endif
-/********************************************************** <lalLaTeX>
+\endcode
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 The default mode of operation, when one specifies the desired
 amplitude, is as follows:
 
-First, \verb@LALGeneratePPNInspiral()@ is called to generate the
+First, <tt>LALGeneratePPNInspiral()</tt> is called to generate the
 signal, placing the source at a distance of 1Mpc with optimal
 orientation.  For lack of anything better, the amplitude and phase
 functions are sampled at the full sampling interval as the output data
@@ -126,35 +113,35 @@ stream.  This function call also returns the time at coalescence.
 
 Second, the waveform produced by the signal in the detector output
 stream is calculated.  The basic algorithm is the same as that in
-\verb@LALSimulateCoherentGW()@, but we can simplify it significantly
+<tt>LALSimulateCoherentGW()</tt>, but we can simplify it significantly
 because we ignore polarization responses, time delays, and
 interpolation between time samples.  Thus we have only to compute the
-effect of the frequency transfer function ${\cal T}(f)$.  As stated in
-the \verb@SimulateCoherentGW.h@ header, for quasiperiodic waveforms
-$h(t)=\mathrm{Re}[{\cal H}(t)e^{i\phi(t)}]$ we can approximate the
+effect of the frequency transfer function \f${\cal T}(f)\f$.  As stated in
+the \ref SimulateCoherentGW.h header, for quasiperiodic waveforms
+\f$h(t)=\mathrm{Re}[{\cal H}(t)e^{i\phi(t)}]\f$ we can approximate the
 instrument response (in the absence of noise) as:
-$$
+\f[
 o(t) \approx \mathrm{Re}[{\cal T}\{f(t)\}{\cal H}(t)e^{i\phi(t)}] \;.
-$$
+\f]
 In our case we are only sensitive to a single polarization (let's say
-$h_+$), so we take ${\cal H}(t)=A_+(t)$, where the phase of $\cal H$
-is absorbed into the coalescence phase of $\phi$.  Then we can write
+\f$h_+\f$), so we take \f${\cal H}(t)=A_+(t)\f$, where the phase of \f$\cal H\f$
+is absorbed into the coalescence phase of \f$\phi\f$.  Then we can write
 the instrument response as:
-$$
+\f[
 o(t) \approx A_+(t)[ T_\mathrm{re}\{f(t)\}\cos\phi(t)
 	- T_\mathrm{im}\{f(t)\}\sin\phi(t) ] \;.
-$$
+\f]
 This calculation can be done in place and stored in one of the arrays
 for the amplitude, phase, or frequency functions, since they are
 already sampled at the correct rate and have the correct length.
 
 Third, the characteristic detection amplitude is computed, and the
 whole waveform is scaled so that it has the correct value.
-Simultaneously, the effective distance is set to \mbox{1Mpc/(the scale
-factor)}.  The epoch is also adjusted to give the waveform the correct
+Simultaneously, the effective distance is set to 1Mpc/(the scale factor).
+The epoch is also adjusted to give the waveform the correct
 coalescence time.
 
-Finally, \verb@LALSSInjectTimeSeries()@ is called to inject the
+Finally, LALSSInjectTimeSeries() is called to inject the
 waveform into the output time series.  The whole procedure is repeated
 for any other nodes in the linked list of parameters.
 
@@ -163,19 +150,17 @@ of the characteristic detection amplitude, then the signal is injected
 with that effective distance and is not rescaled.  The characteristic
 detection amplitude field is set to the measured value.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALWarning()
 LALDDestroyVector()           LALFree()
 LALSDestroyVector()           LALSDestroyVectorSequence()
 LALGeneratePPNInspiral()      LALSSInjectTimeSeries()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{SimulateInspiralCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALStdio.h>
@@ -196,13 +181,13 @@ LALGeneratePPNInspiral()      LALSSInjectTimeSeries()
 
 NRCSID( SIMULATEINSPIRALC, "$Id$" );
 
-/* <lalVerbatim file="SimulateInspiralCP"> */
+
 void
 LALSimulateInspiral( LALStatus                  *stat,
 		     REAL4TimeSeries            *output,
 		     COMPLEX8FrequencySeries    *transfer,
 		     SimulateInspiralParamStruc *params )
-{ /* </lalVerbatim> */
+{
   CHAR name[LALNameLength]; /* name of output time series */
   UINT4 i;                  /* an index */
   COMPLEX8 *tData;          /* pointer to transfer function data */

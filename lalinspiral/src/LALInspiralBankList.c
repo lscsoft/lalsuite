@@ -17,24 +17,12 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralBankListCV">
-Author: Cokelaer Thomas
-$Id$
-</lalVerbatim>  */
+/**
+\author Cokelaer Thomas
+\file
+\brief Functions to manipulate linked list.
 
-/*  <lalLaTeX>
-\subsection{Module \texttt{LALInspiralBankList.c}}
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralBankListCP}
-\idx{LALInspiralBankList()}
-
-\subsubsection*{Description}
-A list of subroutimes to manipulate link list.
-
-\vspace{0.1in}
-\vfill{\footnotesize\input{LALInspiralBankListCV}}
-</lalLaTeX>  */
+*/
 
 
 #include <stdio.h>

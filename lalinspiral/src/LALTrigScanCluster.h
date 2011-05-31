@@ -24,16 +24,14 @@
  *
  * Author: Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
  *
- * Revision: $Id: LALTrigScanCluster.h,v 1.10 2007/06/08 14:41:57 bema Exp $
- *
  *----------------------------------------------------------------------- */
 
-#if 0
-<lalVerbatim file="LALTrigScanClusterHV">
-Author: Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
-$Id: LALTrigScanCluster.h,v 1.10 2007/06/08 14:41:57 bema Exp $
-</lalVerbatim>
-#endif
+/**
+
+\author Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
+\file
+\brief NONE
+*/
 
 #ifndef _LALTRIGSCANCLUSTER_H
 #define _LALTRIGSCANCLUSTER_H
@@ -46,9 +44,7 @@ $Id: LALTrigScanCluster.h,v 1.10 2007/06/08 14:41:57 bema Exp $
 #include    <lal/EllipsoidOverlapTools.h>
 #include    <lal/CoincInspiralEllipsoid.h>
 
-NRCSID( LALTRIGSCANCLUSTERH,
-        "$Id$");
-
+NRCSID( LALTRIGSCANCLUSTERH, "$Id$");
 
 typedef enum {
     trigScanNone,

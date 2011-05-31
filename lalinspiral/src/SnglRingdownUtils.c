@@ -23,18 +23,8 @@
  *
  * Author: Goggin, L. M based on  SnglInspiralUtils by Brady, P. R., Brown, D. A., Fairhurst, S. and Messaritaki, E.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
-
-#if 0
-<lalVerbatim file="SnglRingdownUtilsCV">
-Author: Brown, D. A., Fairhurst, S. and Messaritaki, E.
-$Id$
-</lalVerbatim>
-#endif
-
 
 #include <math.h>
 #include <stdio.h>
@@ -53,119 +43,98 @@ $Id$
 
 NRCSID( SNGLRINGDOWNUTILSC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{SnglRingdownUtils.c}}
+/**
+\author Brown, D. A., Fairhurst, S. and Messaritaki, E.
+\file
 
-Provides a set of utilities for manipulating \texttt{snglRingdownTable}s.
+\brief Provides a set of utilities for manipulating \c snglRingdownTables.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{SnglRingdownUtilsCP}
-\idx{LALSortSnglRingdown()}
-\idx{LALCompareSnglRingdownByTime()}
-\idx{LALCompareSnglRingdown()}
-\idx{LALClusterSnglRingdownTable()}
-\idx{LALTimeCutSingleRingdown()}
-\idx{LALIfoCountSingleRingdown()}
-\idx{LALTimeSlideSingleRingdown()}
-\idx{LALPlayTestSingleRingdown()}
-\idx{LALCreateTrigBank()}
+\heading{Description}
 
-
-\subsubsection*{Description}
-
-The function \texttt{LALFreeSnglInspiral()} frees the memory associated to a
+The function <tt>LALFreeSnglInspiral()</tt> frees the memory associated to a
 single inspiral table.  The single inspiral table may point to a linked list
 of EventIDColumns.  Thus, it is necessary to free all event ids associated
 with the single inspiral.
 
-The function \texttt{LALSortSnglInspiral()} sorts a list of single inspiral
+The function <tt>LALSortSnglInspiral()</tt> sorts a list of single inspiral
 tables.  The function simply calls qsort with the appropriate comparison
-function, \texttt{comparfunc}.  It then ensures that the head of the sorted
+function, \c comparfunc.  It then ensures that the head of the sorted
 list is returned.  There then follow several comparison functions for single
-inspiral tables.  \texttt{LALCompareSnglInspiralByMass ()} first compares the
-\texttt{mass1} entry of the two inspiral tables, returning 1 if the first mass
-is larger and -1 if the second is larger.  In the case that the \texttt{mass1}
-fields are equal, a similar comparsion is performed on \texttt{mass2}.  If
-these also agree, 0 is returned.  \texttt{LALCompareSnglInspiralByPsi()}
-compares the \texttt{Psi0} and \texttt{Psi3} fields in two single inspiral
+inspiral tables.  <tt>LALCompareSnglInspiralByMass()</tt> first compares the
+\c mass1 entry of the two inspiral tables, returning 1 if the first mass
+is larger and -1 if the second is larger.  In the case that the \c mass1
+fields are equal, a similar comparsion is performed on \c mass2.  If
+these also agree, 0 is returned.  <tt>LALCompareSnglInspiralByPsi()</tt>
+compares the \c Psi0 and \c Psi3 fields in two single inspiral
 tables.  The function is analogous to the mass comparison described above.
-\texttt{LALCompareSnglInspiralByTime} compares the end times of two single
+\c LALCompareSnglInspiralByTime() compares the end times of two single
 inspiral tables, returnng 1 if the first time is larger, 0 if equal and -1 if
 the second time is larger.
 
-\texttt{LALCompareSnglInspiral()} tests whether two single inspiral tables
+<tt>LALCompareSnglInspiral()</tt> tests whether two single inspiral tables
 pass a coincidence test.  The coincidence parameters are given by
-\texttt{params} which is a \texttt{SnglInspiralAccuracy} structure.  It tests
-first that the \texttt{ifo} fields are different.  If they are, it then tests
+\c params which is a \c ::SnglInspiralAccuracy structure.  It tests
+first that the \c ifo fields are different.  If they are, it then tests
 for time and mass coincidence, where mass coincidence may be any one of
-\texttt{psi0\_and\_psi3}, \texttt{m1\_and\_m2}, \texttt{mchirp\_and\_eta}.
-Finally, if the test is on \texttt{m1\_and\_m2}, consistency of effective
+\c psi0_and_psi3, \c m1_and_m2, \c mchirp_and_eta.
+Finally, if the test is on \c m1_and_m2, consistency of effective
 distances is also checked.  If the two single inspiral tables pass
-coincidences the \texttt{params.match} is set to 1, otherwise it is set to
+coincidences the <tt>params.match</tt> is set to 1, otherwise it is set to
 zero.
 
-\texttt{LALClusterSnglInspiralTable ()} clusters single inspiral triggers
-within a time window \texttt{dtimeNS}.  The triggers are compared either by
-\texttt{snr}, \texttt{snr\_and\_chisq} or \texttt{snrsq\_over\_chisq}.  The
+<tt>LALClusterSnglInspiralTable()</tt> clusters single inspiral triggers
+within a time window \c dtimeNS.  The triggers are compared either by
+\c snr, \c snr_and_chisq or \c snrsq_over_chisq.  The
 "loudest" trigger, as determined by the selected algorithm, within each time
 window is returned.
 
-\texttt{LALTimeCutSingleInspiral()} takes in a linked list of single inspiral
-tables and returns only those which occur after the given \texttt{startTime}
-and before the \texttt{endTime}.
+<tt>LALTimeCutSingleInspiral()</tt> takes in a linked list of single inspiral
+tables and returns only those which occur after the given \c startTime
+and before the \c endTime.
 
-\texttt{LALalphaFCutSingleInspiral()} takes in a linked list of single
+<tt>LALalphaFCutSingleInspiral()</tt> takes in a linked list of single
 inspiral tables and returns only those triggers which have alphaF values below
 a specific alphaFcut. It is relevant for the BCV search only.
 
-\texttt{LALIfoCutSingleInspiral()} scans through a linked list of single
-inspiral tables and returns those which are from the requested \texttt{ifo}.
-On input, \texttt{eventHead} is a pointer to the head of a linked list of
+<tt>LALIfoCutSingleInspiral()</tt> scans through a linked list of single
+inspiral tables and returns those which are from the requested \c ifo.
+On input, \c eventHead is a pointer to the head of a linked list of
 single inspiral tables.  On output, this list contains only single inspirals
-from the requested \texttt{ifo}.
+from the requested \c ifo.
 
-\texttt{LALIfoCountSingleInspiral()} scans through a linked list of single
+<tt>LALIfoCountSingleInspiral()</tt> scans through a linked list of single
 inspiral tables and counts the number which are from the requested IFO.
-This count is returned as \texttt{numTrigs}.
+This count is returned as \c numTrigs.
 
-\texttt{LALTimeSlideSingleInspiral()} performs a time slide on the triggers
-contained in the \texttt{triggerList}.  The time slide for each instrument is
-specified by \texttt{slideTimes[LAL\_NUM\_IFO]}.  If \texttt{startTime} and
-\texttt{endTime} are specified, then the time slide is performed on a ring.  If
+<tt>XLALTimeSlideSingleInspiral()</tt> performs a time slide on the triggers
+contained in the \c triggerList.  The time slide for each instrument is
+specified by <tt>slideTimes[LAL_NUM_IFO]</tt>.  If \c startTime and
+\c endTime are specified, then the time slide is performed on a ring.  If
 the slide takes any trigger outside of the window
-\texttt{[startTime,endTime]}, then the trigger is wrapped to be in
+<tt>[startTime,endTime]</tt>, then the trigger is wrapped to be in
 this time window.
 
-\texttt{LALPlayTestSingleInspiral()} tests whether single inspiral events
+<tt>LALPlayTestSingleInspiral()</tt> tests whether single inspiral events
 occured in playground or non-playground times.  It then returns the requested
-subset of events which occurred in the times specified by \texttt{dataType}
-which must be one of \texttt{playground\_only}, \texttt{exclude\_play} or
-\texttt{all\_data}.
+subset of events which occurred in the times specified by \c dataType
+which must be one of \c playground_only, \c exclude_play or
+\c all_data.
 
-\texttt{LALCreateTrigBank()} takes in a list of single inspiral tables and
+<tt>LALCreateTrigBank()</tt> takes in a list of single inspiral tables and
 returns a template bank.  The function tests whether a given template produced
 multiple triggers.  If it did, only one copy of the template is retained.
-Triggers are tested for coincidence in \texttt{m1\_and\_m2} or
-\texttt{psi0\_and\_psi3}.
+Triggers are tested for coincidence in \c m1_and_m2 or
+\c psi0_and_psi3.
 
+\heading{Algorithm}
 
-\subsubsection*{Algorithm}
+None.
 
-\noindent None.
+\heading{Uses}
 
-\subsubsection*{Uses}
+LALCalloc(), LALFree(), LALINT8NanoSecIsPlayground().
 
-\noindent LALCalloc, LALFree, LALINT8NanoSecIsPlayground.
-
-\subsubsection*{Notes}
-%% Any relevant notes.
-
-\vfill{\footnotesize\input{SnglInspiralUtilsCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 /*
  * A few quickies for convenience.
@@ -186,25 +155,25 @@ static INT4 start_time_nsec(const SnglRingdownTable *x)
 	return(x->start_time.gpsNanoSeconds);
 }
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 void
 LALFreeSnglRingdown (
     LALStatus          *status,
     SnglRingdownTable **eventHead
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALFreeSnglRingdown", SNGLRINGDOWNUTILSC );
   XLALFreeSnglRingdown( eventHead );
   RETURN( status );
 }
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 int
 XLALFreeSnglRingdown (
     SnglRingdownTable **eventHead
     )
-/* </lalVerbatim> */
+
 {
   EventIDColumn        *eventId;
   CoincRingdownTable   *thisCoinc;
@@ -234,14 +203,14 @@ XLALFreeSnglRingdown (
 }
 
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 void
 LALSortSnglRingdown (
     LALStatus          *status,
     SnglRingdownTable **eventHead,
     int(*comparfunc)    (const void *, const void *)
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALSortSnglRingdown", SNGLRINGDOWNUTILSC );
 
@@ -250,13 +219,13 @@ LALSortSnglRingdown (
   RETURN( status );
 }
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 SnglRingdownTable *
 XLALSortSnglRingdown (
     SnglRingdownTable *eventHead,
     int(*comparfunc)   (const void *, const void *)
     )
-/* </lalVerbatim> */
+
 {
   INT4                  i;
   INT4                  numEvents = 0;
@@ -303,13 +272,13 @@ XLALSortSnglRingdown (
 
 
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 int
 LALCompareSnglRingdownByTime (
     const void *a,
     const void *b
     )
-/* </lalVerbatim> */
+
 {
   LALStatus     status;
   const SnglRingdownTable *aPtr = *((const SnglRingdownTable * const *)a);
@@ -339,7 +308,7 @@ LALCompareSnglRingdownByTime (
 /** Compare theparameters of two ringdown triggers according to
  * the specified coincidence test.
  */
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 void
 LALCompareRingdowns (
     LALStatus                *status,
@@ -347,7 +316,7 @@ LALCompareRingdowns (
     SnglRingdownTable        *bPtr,
     RingdownAccuracyList     *params
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALCompareRingdowns", SNGLRINGDOWNUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -530,7 +499,7 @@ XLAL3DRinca(
 }
 
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 void
 LALClusterSnglRingdownTable (
     LALStatus                  *status,
@@ -538,7 +507,7 @@ LALClusterSnglRingdownTable (
     INT8                        dtimeNS,
     SnglInspiralClusterChoice   clusterchoice
     )
-/* </lalVerbatim> */
+
 {
   SnglRingdownTable     *thisEvent=NULL;
   SnglRingdownTable     *prevEvent=NULL;
@@ -589,14 +558,14 @@ LALClusterSnglRingdownTable (
   RETURN (status);
 }
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 SnglRingdownTable *
 XLALVetoSingleRingdown (
     SnglRingdownTable          *eventHead,
     LALSegList                 *vetoSegs,
     CHAR                        *ifo
     )
-/* </lalVerbatim> */
+
 {
   SnglRingdownTable    *thisEvent = NULL;
   SnglRingdownTable    *prevEvent = NULL;
@@ -630,14 +599,14 @@ XLALVetoSingleRingdown (
   return( eventHead );
 }
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 void
 LALIfoCutSingleRingdown(
     LALStatus                  *status,
     SnglRingdownTable         **eventHead,
     CHAR                       *ifo
     )
-/* </lalVerbatim> */
+
 {
   SnglRingdownTable    *ifoHead   = NULL;
   SnglRingdownTable    *thisEvent = NULL;
@@ -661,13 +630,13 @@ LALIfoCutSingleRingdown(
   RETURN (status);
 }
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+
 SnglRingdownTable *
 XLALIfoCutSingleRingdown(
     SnglRingdownTable         **eventHead,
     char                       *ifo
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "IfoCutSingleRingdown";
   SnglRingdownTable    *prevEvent   = NULL;
@@ -728,7 +697,7 @@ XLALIfoCutSingleRingdown(
 }
 
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 void
 LALTimeCutSingleRingdown(
     LALStatus                  *status,
@@ -736,7 +705,7 @@ LALTimeCutSingleRingdown(
     LIGOTimeGPS                *startTime,
     LIGOTimeGPS                *endTime
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALTimeCutSingleRingdown", SNGLRINGDOWNUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -748,7 +717,7 @@ LALTimeCutSingleRingdown(
 
 }
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 
 SnglRingdownTable *
 XLALTimeCutSingleRingdown(
@@ -756,7 +725,7 @@ XLALTimeCutSingleRingdown(
     LIGOTimeGPS                *startTime,
     LIGOTimeGPS                *endTime
     )
-/* </lalVerbatim> */
+
 {
   SnglRingdownTable    *ringdownEventList = NULL;
   SnglRingdownTable    *thisEvent = NULL;
@@ -802,7 +771,7 @@ XLALTimeCutSingleRingdown(
 }
 
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 void
 LALIfoCountSingleRingdown(
     LALStatus                  *status,
@@ -810,7 +779,7 @@ LALIfoCountSingleRingdown(
     SnglRingdownTable          *input,
     InterferometerNumber        ifoNumber
     )
-/* </lalVerbatim> */
+
 {
   SnglRingdownTable    *thisEvent = NULL;
 
@@ -838,7 +807,7 @@ LALIfoCountSingleRingdown(
   RETURN (status);
 }
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 void
 LALTimeSlideSingleRingdown(
     LALStatus                  *status,
@@ -847,7 +816,7 @@ LALTimeSlideSingleRingdown(
     LIGOTimeGPS                *endTime,
     LIGOTimeGPS                 slideTimes[LAL_NUM_IFO]
     )
-/* </lalVerbatim> */
+
 {
   SnglRingdownTable    *thisEvent   = NULL;
   INT8                  startTimeNS = 0;
@@ -905,13 +874,13 @@ LALTimeSlideSingleRingdown(
 
 
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 SnglRingdownTable *
 XLALPlayTestSingleRingdown(
     SnglRingdownTable          *eventHead,
     LALPlaygroundDataMask      *dataType
     )
-/* </lalVerbatim> */
+
 {
   SnglRingdownTable    *ringdownEventList = NULL;
   SnglRingdownTable    *thisEvent = NULL;
@@ -981,14 +950,14 @@ XLALPlayTestSingleRingdown(
   return(eventHead);
 }
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 void
 LALPlayTestSingleRingdown(
     LALStatus                  *status,
     SnglRingdownTable         **eventHead,
     LALPlaygroundDataMask      *dataType
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALPlayTestSingleRingdown", SNGLRINGDOWNUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -999,13 +968,13 @@ LALPlayTestSingleRingdown(
   RETURN (status);
 }
 
-/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
 int
 XLALMaxSnglRingdownOverIntervals(
     SnglRingdownTable         **eventHead,
     INT8                       deltaT
     )
-/* </lalVerbatim> */
+
 {
   SnglRingdownTable    *ringdownEventList = NULL;
   SnglRingdownTable    *thisEvent = NULL;
@@ -1067,7 +1036,7 @@ XLALMaxSnglRingdownOverIntervals(
 }
 
 INT4 XLALCountSnglRingdown( SnglRingdownTable *head )
-  /* </lalVerbatim> */
+
 {
   INT4 length;
   SnglRingdownTable *event;

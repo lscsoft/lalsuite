@@ -17,36 +17,35 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralTestCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief Test routine for codes that generate inspiral waveform from non-spinning black
+hole binaries.
 
-\subsection{Module \texttt{LALInspiralTest.c}}
-Test routine for codes that generate inspiral waveform from non-spinning black
-hole binaries.  Time domain signals are returned when the {\tt approximant} is
-one of {\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, SpinTaylorT3}
-and frequency domain signals are returned when the {\tt approximant} is
-one of {\tt TaylorF1, TaylorF2, BCV.} This code checks every available approximant
+Time domain signals are returned when the \c approximant is
+one of <tt>TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, SpinTaylorT3</tt>
+and frequency domain signals are returned when the \c approximant is
+one of <tt>TaylorF1, TaylorF2, BCV.</tt> This code checks every available approximant
 at every order and reports whether or not there was any problem with the
 generation codes.
 
-To generate a waveform first set the \texttt{InspiralTemplate} structure (see
+To generate a waveform first set the \c InspiralTemplate structure (see
 below for an example).  Next, to measure the length of the array required
-call the function\\
-\texttt{
-	LALInspiralWaveLength (\&status, \&n, params)
-	}\\
-The length will be returned in \texttt{n}. Finally, call the function \\
-\texttt{
-	LALInspiralWave(\&status, signal1, params);
-	}\\
-to generate the wave, which will be returned in \texttt{signal}.
+call the function
+\code
+	LALInspiralWaveLength (&status, &n, params)
+\endcode
+The length will be returned in \c n. Finally, call the function
+\code
+	LALInspiralWave(&status, signal1, params);
+\endcode
+to generate the wave, which will be returned in \c signal.
 
 Example values of the parameters that can be set (with options in brackets) is:
-\begin{verbatim}
+\code
    params.OmegaS = 0.;     (Unknown 3PN parameter in energy; shown to be 0 by DJS)
    params.Theta = 0.;      (Unknown 3PN parameter in flux; arbitrarily set to 0)
    params.ieta=1;          (1 for comparable masses model, 0 for test mass model)
@@ -76,11 +75,9 @@ Example values of the parameters that can be set (with options in brackets) is:
    params.alpha = 0.528;    (amplitude correction used in BCV templates)
    params.fFinal = 868.7;  (frequency at which the BCV template is terminated)
 
-\end{verbatim}
+\endcode
 
-\vfill{\footnotesize\input{LALInspiralTestCV}}
-
-</lalLaTeX> */
+*/
 
 #include <stdio.h>
 #include <lal/LALInspiral.h>

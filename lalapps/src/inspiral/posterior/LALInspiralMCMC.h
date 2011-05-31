@@ -45,24 +45,23 @@ This header file covers routines that are used for the Markov Chain Monte Carlo 
 \heading{Structures}
 
 <ol>
-
 <li> \c LALMCMCParameter:
 Main structure that holds the different parameters that are used within the MCMC. The number, names or ranges is freely choosable for each of the parameter.
 
 <dl>
-<dt>\c tagLALMCMCParam</dt><dd> Pointer to a \c LALMCMCParam structure, which is a linked list over all parameters</dd>
-<dt><tt>UINT4 dimension</tt></dt><dd> Dimension of the parameter space</dd>
-<dt><tt>REAL8 logLikelihood</tt></dt><dd> The logarithm of the likelihood associated with this set of parameters </dd>
-<dt><tt>REAL4 logPrior</tt></dt><dd> The logarithm of the prior associated with this set of parameters </dd>
+<dt>tagLALMCMCParam</dt><dd> Pointer to a \c LALMCMCParam structure, which is a linked list over all parameters</dd>
+<dt>UINT4 dimension</dt><dd> Dimension of the parameter space</dd>
+<dt>REAL8 logLikelihood</dt><dd> The logarithm of the likelihood associated with this set of parameters </dd>
+<dt>REAL4 logPrior</dt><dd> The logarithm of the prior associated with this set of parameters </dd>
 </dl></li>
 
 <li> \c LALMCMCParam:
 Structure that contain the linked list structure and holds the current value.
 
 <dl>
-<dt><tt>LALMCMCParam next</tt></dt><dd> Pointer to the next \c LALMCMCParam structure (or a NULL pointer for the last element in this linked list).</dd>
-<dt><tt>LALMCMCSubParam core</tt></dt><dd> Pointer to a \c LALMCMCSubParam structure that holds fixed values related to this parameter (see next structure).</dd>
-<dt><tt>REAL8 value</tt></dt><dd> Actual value of this parameter</dd>
+<dt>LALMCMCParam next</dt><dd> Pointer to the next \c LALMCMCParam structure (or a NULL pointer for the last element in this linked list).</dd>
+<dt>LALMCMCSubParam core</dt><dd> Pointer to a \c LALMCMCSubParam structure that holds fixed values related to this parameter (see next structure).</dd>
+<dt>REAL8 value</dt><dd> Actual value of this parameter</dd>
 </dl></li>
 
 
@@ -70,73 +69,73 @@ Structure that contain the linked list structure and holds the current value.
 Structure that holds fixed properties for a single parameter.
 
 <dl>
-<dt><tt>char name</tt></dt><dd> Name of this parameter.</dd>
-<dt><tt>REAL8 minVal</tt></dt><dd> Minimal allowed value for this parameter.</dd>
-<dt><tt>REAL8 maxVal</tt></dt><dd> Maximal allowed value for this parameter.</dd>
-<dt><tt>INT4 wrapping</tt></dt><dd> If set to 1, the value is being wrapped between \c minVal and \c maxVal (e.g. for any angle like a phase or right ascension).</dd>
-<dt><tt>REAL4VECTOR chain</tt></dt><dd>  A \c REAL4Vector structure that holds the values of the chain for this parameter.</dd>
+<dt>char name</dt><dd> Name of this parameter.</dd>
+<dt>REAL8 minVal</dt><dd> Minimal allowed value for this parameter.</dd>
+<dt>REAL8 maxVal</dt><dd> Maximal allowed value for this parameter.</dd>
+<dt>INT4 wrapping</dt><dd> If set to 1, the value is being wrapped between \c minVal and \c maxVal (e.g. for any angle like a phase or right ascension).</dd>
+<dt>REAL4VECTOR chain</dt><dd>  A \c REAL4Vector structure that holds the values of the chain for this parameter.</dd>
 </dl></li>
 
 <li> \c LALMCMCInput:
 Structure that holds all data needed for the MCMC algorithm. It contains input data, output data, as well as flags and parameters used for the MCMC algorithm.
 
 <dl>
-<dt><tt>RandomParams randParams</tt></dt><dd> Parameter for random number generation.</dd>
-<dt><tt>FindChirpFilterInput fcFilterInput</tt></dt><dd> A FindChirpFilterInput structure containing the input data</dd>
-<dt><tt>FindChirpFilterParams fcFilterParams</tt></dt><dd> A FindChirpFilterParams structure containing the parameters</dd>
-<dt><tt>FindChirpDataParams fcDataParams</tt></dt><dd> Parameters describing the data </dd>
-<dt><tt>SnglInspiralTable     *inspiralTable</tt></dt><dd> A pointer to a single\_inspiral table containing parameters of the trigger</dd>
-<dt><tt>MCMCInitFunction *funcInit</tt></dt><dd> A pointer to a function that initializes the parameter structure</dd>
-<dt><tt>MCMCLikelihoodFunction *funcLikelihood</tt></dt><dd> A pointer to a function that calculates the logarithm of the likelihood</dd>
-<dt><tt>MCMCPriorFunction *funcPrior</tt></dt><dd> A pointer to a function that calculates the logarithm of the prior</dd>
-<dt><tt>InspiralTemplate tmpltPtr</tt></dt><dd> A InspiralTemplate structure to hold the parameters to create a template </dd>
-<dt><tt>FindChirpTmpltParams fcTmpltParams</tt></dt><dd> A FindChirpTmpltParams structure to hold parameters for creating the template</dd>
-<dt><tt>Approximant approximant</tt></dt><dd> The approximant used to filter the data (NA)</dd>
-<dt><tt>UINT4 verbose</tt></dt><dd> The verbosity flag (NA)</dd>
+<dt>RandomParams randParams</dt><dd> Parameter for random number generation.</dd>
+<dt>FindChirpFilterInput fcFilterInput</dt><dd> A FindChirpFilterInput structure containing the input data</dd>
+<dt>FindChirpFilterParams fcFilterParams</dt><dd> A FindChirpFilterParams structure containing the parameters</dd>
+<dt>FindChirpDataParams fcDataParams</dt><dd> Parameters describing the data </dd>
+<dt>SnglInspiralTable     *inspiralTable</dt><dd> A pointer to a single_inspiral table containing parameters of the trigger</dd>
+<dt>MCMCInitFunction *funcInit</dt><dd> A pointer to a function that initializes the parameter structure</dd>
+<dt>MCMCLikelihoodFunction *funcLikelihood</dt><dd> A pointer to a function that calculates the logarithm of the likelihood</dd>
+<dt>MCMCPriorFunction *funcPrior</dt><dd> A pointer to a function that calculates the logarithm of the prior</dd>
+<dt>InspiralTemplate tmpltPtr</dt><dd> A InspiralTemplate structure to hold the parameters to create a template </dd>
+<dt>FindChirpTmpltParams fcTmpltParams</dt><dd> A FindChirpTmpltParams structure to hold parameters for creating the template</dd>
+<dt>Approximant approximant</dt><dd> The approximant used to filter the data (NA)</dd>
+<dt>UINT4 verbose</dt><dd> The verbosity flag (NA)</dd>
 
 
-<dt><tt>UINT4 dim</tt></dt><dd> Number of dimensions of the parameter space</dd>
-<dt><tt>UINT4 counter</tt></dt><dd> Counter of the MCMC iteration in general</dd>
-<dt><tt>UINT4 counterState</tt></dt><dd> Counter of the MCMC iteration within the current state</dd>
-<dt><tt>UINT4 counterAccept</tt></dt><dd> Counter of the MCMC iteration within the accepted steps</dd>
-<dt><tt>UINT4 counterAcceptDraw</tt></dt><dd> Counter of the MCMC iteration which are the drawn ones</dd>
+<dt>UINT4 dim</dt><dd> Number of dimensions of the parameter space</dd>
+<dt>UINT4 counter</dt><dd> Counter of the MCMC iteration in general</dd>
+<dt>UINT4 counterState</dt><dd> Counter of the MCMC iteration within the current state</dd>
+<dt>UINT4 counterAccept</dt><dd> Counter of the MCMC iteration within the accepted steps</dd>
+<dt>UINT4 counterAcceptDraw</dt><dd> Counter of the MCMC iteration which are the drawn ones</dd>
 
-<dt><tt>UINT4 numberDraw</tt></dt><dd> Number of values to be drawn after all the possible methods below came into place\\</dd>
+<dt>UINT4 numberDraw</dt><dd> Number of values to be drawn after all the possible methods below came into place\\</dd>
 
-<dt><tt>UINT4 useAnnealing</tt></dt><dd> Flag to activate annealing</dd>
-<dt><tt>UINT4 numberAnneal</tt></dt><dd> Number of iterations used for matrix annealing.</dd>
-<dt><tt>REAL4 annealTempBegin</tt></dt><dd> Initial annealing temperature</dd>
-<dt><tt>REAL4 annealTemp</tt></dt><dd> Actual annealing temperature</dd>
-<dt><tt>UINT4 annealingSteps</tt></dt><dd> TO BE SPECIFIED</dd>
+<dt>UINT4 useAnnealing</dt><dd> Flag to activate annealing</dd>
+<dt>UINT4 numberAnneal</dt><dd> Number of iterations used for matrix annealing.</dd>
+<dt>REAL4 annealTempBegin</dt><dd> Initial annealing temperature</dd>
+<dt>REAL4 annealTemp</dt><dd> Actual annealing temperature</dd>
+<dt>UINT4 annealingSteps</dt><dd> TO BE SPECIFIED</dd>
 
-<dt><tt>UINT4 useScaling</tt></dt><dd> Flag to activate the scaling method</dd>
-<dt><tt>REAL4 scaling</tt></dt><dd> Initial scaling value (should be named Begin or so,. see annealing)</dd>
-<dt><tt>REAL4 scalePeak</tt></dt><dd> Initial scaling value (e.g. 50.0)</dd>
-<dt><tt>REAL4 scaleNormal</tt></dt><dd> Normal scaling value (1.0)</dd>
-<dt><tt>REAL4 scaleQ</tt></dt><dd> an internal parameter </dd>
-<dt><tt>REAL4 scalePA</tt></dt><dd> an internal parameter </dd>
+<dt>UINT4 useScaling</dt><dd> Flag to activate the scaling method</dd>
+<dt>REAL4 scaling</dt><dd> Initial scaling value (should be named Begin or so,. see annealing)</dd>
+<dt>REAL4 scalePeak</dt><dd> Initial scaling value (e.g. 50.0)</dd>
+<dt>REAL4 scaleNormal</dt><dd> Normal scaling value (1.0)</dd>
+<dt>REAL4 scaleQ</dt><dd> an internal parameter </dd>
+<dt>REAL4 scalePA</dt><dd> an internal parameter </dd>
 
-<dt><tt>UINT4 flagAcceptRatio</tt></dt><dd> Flag to activate the acceptance-ratio method</dd>
-<dt><tt>UINT4 acceptRatioCounter</tt></dt><dd> Factor for acceptance ratio method</dd>
-<dt><tt>UINT4 acceptRatioNorm</tt></dt><dd> Norming factor for acceptance ratio method</dd>
-<dt><tt>REAL4 acceptThreshold</tt></dt><dd> Threshold </dd>
-<dt><tt>Approximant approximant</tt></dt><dd> Approximant to use</dd>
+<dt>UINT4 flagAcceptRatio</dt><dd> Flag to activate the acceptance-ratio method</dd>
+<dt>UINT4 acceptRatioCounter</dt><dd> Factor for acceptance ratio method</dd>
+<dt>UINT4 acceptRatioNorm</dt><dd> Norming factor for acceptance ratio method</dd>
+<dt>REAL4 acceptThreshold</dt><dd> Threshold </dd>
+<dt>Approximant approximant</dt><dd> Approximant to use</dd>
 
-<dt><tt>UINT4 useUpdate</tt></dt><dd> Flag to activate matrix updating.</dd>
-<dt><tt>UINT4 updateNumber</tt></dt><dd> Number of iterations used to update the covariance matrix.</dd>
-<dt><tt>UINT4 updateOffset</tt></dt><dd> Offset value used in matrix updating</dd>
-<dt><tt>UINT4 updateCounter</tt></dt><dd> Internal counter used by the updating algorithm</dd>
-<dt><tt>REAL8* mean</tt></dt><dd> A vector containing the mean values of each parameter</dd>
-<dt><tt>REAL8* xdiff</tt></dt><dd> A vector used for updating the matrix</dd>
-<dt><tt>REAL8* ndiff</tt></dt><dd> A vector used for updating the matrix</dd>
+<dt>UINT4 useUpdate</dt><dd> Flag to activate matrix updating.</dd>
+<dt>UINT4 updateNumber</dt><dd> Number of iterations used to update the covariance matrix.</dd>
+<dt>UINT4 updateOffset</dt><dd> Offset value used in matrix updating</dd>
+<dt>UINT4 updateCounter</dt><dd> Internal counter used by the updating algorithm</dd>
+<dt>REAL8* mean</dt><dd> A vector containing the mean values of each parameter</dd>
+<dt>REAL8* xdiff</dt><dd> A vector used for updating the matrix</dd>
+<dt>REAL8* ndiff</dt><dd> A vector used for updating the matrix</dd>
 
 
-<dt><tt>UINT4 flagBurnin</tt></dt><dd> Flag to activate the burn-in method</dd>
-<dt><tt>UINT4 burninNumber</tt></dt><dd> Minimum steps after which the burn-in period is checked</dd>
-<dt><tt>UINT4 burninStep</tt></dt><dd> The number of steps between two checks for burn-in</dd>
-<dt><tt>UINT4 burninCounter</tt></dt><dd> Internal counter</dd>
-<dt><tt>UINT4 burninTime</tt></dt><dd> The number of iteration will be stored after the burn-in is reached</dd>
-<dt><tt>REAL4 burninThreshold</tt></dt><dd> Threshold for this chain of having reached burnin.
+<dt>UINT4 flagBurnin</dt><dd> Flag to activate the burn-in method</dd>
+<dt>UINT4 burninNumber</dt><dd> Minimum steps after which the burn-in period is checked</dd>
+<dt>UINT4 burninStep</dt><dd> The number of steps between two checks for burn-in</dd>
+<dt>UINT4 burninCounter</dt><dd> Internal counter</dd>
+<dt>UINT4 burninTime</dt><dd> The number of iteration will be stored after the burn-in is reached</dd>
+<dt>REAL4 burninThreshold</dt><dd> Threshold for this chain of having reached burnin.
 
 </dd>
 </dl>

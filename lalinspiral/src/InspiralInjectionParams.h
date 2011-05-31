@@ -4,14 +4,10 @@
  *
  * \brief Module for generating randomly distributed inspiral parameters
  *
-
- *
  */
 
 /** \file
  *  \ingroup InspiralInjectionParams
- * \date $Date$
- *
  *
  */
 

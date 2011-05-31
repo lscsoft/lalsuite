@@ -35,7 +35,7 @@
 \file
 \ingroup lalmetaio
 
-\brief This header provides provides <tt>#define</tt>s for the inspiral related
+\brief This header provides provides <tt>\#define</tt>s for the inspiral related
 tables of LIGO light weight XML files.
 
 \heading{Synopsis}
@@ -47,12 +47,12 @@ It will need to be kept up to date with changes in the LIGO database table defin
 The quantities which are defined in this file are
 
 <ul>
-<li> LIGOLW\_XML\_SNGL\_INSPIRAL</li>
-<li> SNGL\_INSPIRAL\_ROW</li>
-<li> LIGOLW\_XML\_MULTI\_INSPIRAL</li>
-<li> MULTI\_INSPIRAL\_ROW</li>
-<li> LIGOLW\_XML\_SIM\_INSPIRAL</li>
-<li> SIM\_INSPIRAL\_ROW</li>
+<li> LIGOLW_XML_SNGL_INSPIRAL</li>
+<li> SNGL_INSPIRAL_ROW</li>
+<li> LIGOLW_XML_MULTI_INSPIRAL</li>
+<li> MULTI_INSPIRAL_ROW</li>
+<li> LIGOLW_XML_SIM_INSPIRAL</li>
+<li> SIM_INSPIRAL_ROW</li>
 </ul>
 
 

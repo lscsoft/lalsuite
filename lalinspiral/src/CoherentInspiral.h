@@ -23,38 +23,27 @@
  *
  * Author: Bose, S., Seader, S. E.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="CoherentInspiralHV">
-Author: Bose, S., Seader, S. E.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\section{Header \texttt{CoherentInspiral.h}}
-\label{s:CoherentInspiral.h}
+\author Bose, S., Seader, S. E.
+\file
 
-\noindent Provides core prototypes, structures and functions to filter
+\brief Provides core prototypes, structures and functions to filter
 data from multiple interferometers coherently for binary inspiral chirps.
 
-\subsection*{Coherent search statistic for binary neutron stars}
+\section sec_ci_stat Coherent search statistic for binary neutron stars
 
 The coherent statistic will be defined here.
 
-\subsubsection*{Synopsis}
-
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/CoherentInspiral.h>
-\end{verbatim}
+\endcode
 
-\input{CoherentInspiralHDoc}
-
-</lalLaTeX>
-#endif
+*/
 
 #ifndef _COHERENTINSPIRALH_H
 #define _COHERENTINSPIRALH_H
@@ -79,12 +68,7 @@ extern "C" {
 
 NRCSID (COHERENTINSPIRALH, "$Id$");
 
-#if 0
-<lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-#endif
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define COHERENTINSPIRALH_ENULL 1
 #define COHERENTINSPIRALH_ENNUL 2
 #define COHERENTINSPIRALH_EALOC 3
@@ -109,74 +93,9 @@ NRCSID (COHERENTINSPIRALH, "$Id$");
 #define COHERENTINSPIRALH_MSGECHIT "Chisq threshold is negative"
 #define COHERENTINSPIRALH_MSGESMSM "Size mismatch between vectors"
 #define COHERENTINSPIRALH_MSGEZDET "Number of detectors should be greater than 1 and less than 5"
-/* </lalErrTable> */
-
-#if 0
-<lalLaTeX>
-\subsection*{Types}
-</lalLaTeX>
-#endif
-
-/* --- structure for describing a binary insipral event ------------------ */
-/* <lalVerbatim file="FindChirpHInspiralEvent"> */
-
-
-/* </lalVerbatim> */
-#if 0
-<lalLaTeX>
-\subsubsection*{Structure \texttt{InspiralEvent}}
-\idx[Type]{InspiralEvent}
-
-\input{FindChirpHInspiralEvent}
-
-\noindent This structure describes inspiral events found by \texttt{findchirp}.
-The fields are:
-
-\begin{description}
-\item[\texttt{UINT4 id}] A unique number assigned by the filter routine to
-each event it finds.
-
-\item[\texttt{UINT4 segmentNumber}] The id number of the
-\texttt{FindChirpDataSegment} in which the event was found.
-
-\item[\texttt{LIGOTimeGPS time}] The GPS time at which the event occoured.
-
-\item[\texttt{UINT4 timeIndex}] The index at which the event occoured in
-the array containing the filter output.
-
-\item[\texttt{InspiralTemplate tmplt}] The parameters of the inspiral template
-for the event.
-
-\item[\texttt{REAL4 snrsq}] The value of $\rho^2$ for the event.
-
-\item[\texttt{REAL4 chisq}] The value of the $\chi^2$ veto for the event, if
-it has been computed.
-
-\item[\texttt{REAL4 sigmasq}] The value of the normalisation constant $\sigmasq$
-for the event.
-
-\item[\texttt{REAL4 effDist}] The effective distance in megaparsecs to the
-event.
-
- \item[\texttt{REAL4 coaPhase}] The coalescence phase of the chirp.
-
-\item[\texttt{CHAR ifoName[2]}] Array for storing the two character
-interferometer name (e.g. L1, H2, etc.)
-
-\item[\texttt{struct tagInspiralEvent *next}] A pointer to a structure of type
-\texttt{InspiralEvent} to allow the construction of a linked list of events.
-\end{description}
-</lalLaTeX>
-#endif
-
-#if 0
-<lalLaTeX>
-\subsection*{Types}
-</lalLaTeX>
-#endif
+/*@}*/
 
 /* --- parameter structure for the coherent inspiral filtering function ---- */
-/* <lalVerbatim file="CoherentInspiralHCoherentInspiralFilterParams"> */
 typedef struct
 tagCoherentInspiralInitParams
 {
@@ -191,7 +110,7 @@ tagCoherentInspiralInitParams
   UINT4                         threeSiteCase;
 }
 CoherentInspiralInitParams;
-/* </lalVerbatim> */
+
 
 typedef struct
 tagDetectorVector
@@ -220,6 +139,27 @@ tagCoherentInspiralBeamVector
 CoherentInspiralBeamVector;
 
 
+/** This structure provides the parameters used by the CoherentInspiralFilter() function.
+
+<dl>
+<dt><tt>UINT4 numPoints</tt></dt><dd> Number of time-points in the \f$c\f$ series
+from each detector. This determines the number of time-points in the
+\c cohSNRVec time-series.</dd>
+
+<dt><tt>REAL4 cohSNRThresh</tt></dt><dd> The value to threshold the multi-detector
+coherent signal to noise
+ratio square, \f$\rho^2\f$, on. If the signal to noise exceeds this value, then a
+candidate event is generated. Must be \f$\ge 0\f$ on entry.</dd>
+
+<dt><tt>DetectorVector   detectors</tt></dt><dd> This structure is defined below. It specifies the detectors on which
+the coherent search is being performed.</dd>
+
+<dt><tt>REAL4Vector *cohSNRVec</tt></dt><dd> Pointer to a vector that is set to
+\f$\rho^2(t_j)\f$ on exit. If NULL \f$\rho^2(t_j)\f$ is not stored.
+</dd>
+</dl>
+
+*/
 typedef struct
 tagCoherentInspiralFilterParams
 {
@@ -257,38 +197,32 @@ tagCoherentInspiralFilterParams
   UINT4                         exttrig;
 }
 CoherentInspiralFilterParams;
-#if 0
-<lalLaTeX>
-\subsubsection*{Structure \texttt{CoherentInspiralFilterParams}}
-\idx[Type]{CoherentInspiralFilterParams}
-
-\input{CoherentInspiralHCoherentInspiralFilterParams}
-
-\noindent This structure provides the parameters used by the
-\texttt{CoherentInspiralFilter()} function.
-
-\begin{description}
-\item[\texttt{UINT4 numPoints}] Number of time-points in the $c$ series
-from each detector. This determines the number of time-points in the
-\texttt{cohSNRVec} time-series.
-
-\item[\texttt{REAL4 cohSNRThresh}] The value to threshold the multi-detector
-coherent signal to noise
-ratio square, $\rho^2$, on. If the signal to noise exceeds this value, then a
-candidate event is generated. Must be $\ge 0$ on entry.
-
-\item[\texttt{DetectorVector   detectors}] This structure is defined below. It specifies the detectors on which
-the coherent search is being performed.
-
-\item[\texttt{REAL4Vector *cohSNRVec}] Pointer to a vector that is set to
-$\rho^2(t_j)$ on exit. If NULL $\rho^2(t_j)$ is not stored.
-
-\end{description}
-</lalLaTeX>
-#endif
 
 /* --- input to the CoherentInspiral filtering functions --------- */
-/* <lalVerbatim file="CoherentInspiralHCoherentInspiralCVector"> */
+
+/** This structure groups the \f$c = x+iy\f$ outputs of \f$M\f$ detectors
+into an ordered set. The FindChirpFilter code, when separately run on the
+data from multiple detectors, outputs a \c COMPLEX8TimeSeries, \f$c\f$, for
+each detector. If a coherent search is to be performed on the data from
+these \f$M\f$ detectors, one of the inputs required is the
+\c CoherentInspiralCVector structure with a default vector
+\c length of \f$M=6\f$ and with the vector index ordered as 0=H1, 1=L1,
+2=V (Virgo), 3=G (GEO), 4=T (Tama), (just like the lalcached detector siteIDs)
+and 5=H2. If a coherent search is to be performed on, say, the data from
+H1, L1, Virgo, and GEO, then the \c length
+member above will be set to 6 (by default), but the pointers to the fourth and
+fifth \c COMPLEX8TimeSeries will be set to NULL; the remainder will
+point to the \f$c\f$ outputs from the above 4 detectors, in that order.
+
+<dl>
+<dt><tt>UINT4  length</tt></dt><dd> Length of the vector; set to 6 (by default)
+for the total number of operating (or nearly so) interferometers.</dd>
+
+<dt><tt>COMPLEX8TimeSeries  *cData</tt></dt><dd> Pointer to the c outputs of
+the 6 interferometers.</dd>
+</dl>
+
+*/
 typedef struct
 tagCoherentInspiralCVector
 {
@@ -296,41 +230,23 @@ tagCoherentInspiralCVector
   COMPLEX8TimeSeries     *cData[4];
 }
 CoherentInspiralCVector;
-/* </lalVerbatim> */
-
-#if 0
-<lalLaTeX>
-\subsubsection*{Structure \texttt{CoherentInspiralCVector}}
-\idx[Type]{CoherentInspiralCVector}
-
-\input{CoherentInspiralHCoherentInspiralCVector}
-
-\noindent This structure groups the $c = x+iy$ outputs of $M$ detectors
-into an ordered set. The FindChirpFilter code, when separately run on the
-data from multiple detectors, outputs a \texttt{COMPLEX8TimeSeries}, $c$, for
-each detector. If a coherent search is to be performed on the data from
-these $M$ detectors, one of the inputs required is the
-\texttt{CoherentInspiralCVector} structure with a default vector
-\texttt{length} of $M=6$ and with the vector index ordered as 0=H1, 1=L1,
-2=V (Virgo), 3=G (GEO), 4=T (Tama), (just like the lalcached detector siteIDs)
-and 5=H2. If a coherent search is to be performed on, say, the data from
-H1, L1, Virgo, and GEO, then the \texttt{length}
-member above will be set to 6 (by default), but the pointers to the fourth and
-fifth \texttt{COMPLEX8TimeSeries} will be set to NULL; the remainder will
-point to the $c$ outputs from the above 4 detectors, in that order.
-
-\begin{description}
-\item[\texttt{UINT4  length}] Length of the vector; set to 6 (by default)
-for the total number of operating (or nearly so) interferometers.
-
-\item[\texttt{COMPLEX8TimeSeries  *cData}] Pointer to the c outputs of
-the 6 interferometers.
-\end{description}
-</lalLaTeX>
-#endif
 
 
-/* <lalVerbatim file="CoherentInspiralHCoherentInspiralFilterInput"> */
+
+
+/** This structure provides the essential information for
+computing the coherent SNR from the \f$c\f$ outputs of multiple detectors.
+In addition to this, the code requires the beam-pattern coefficients
+for the different detectors. These coefficients are currently
+computed by a Mathematica code and are read in as ascii files directly
+by the coherent code. But there are plans for the future where a new member
+will be added to this structure to store these coefficients.
+
+<dl>
+<dt><tt>CoherentInspiralCVector   *multiCData</tt></dt><dd> Pointer to the
+ vector of COMPLEX8TimeSeries, namely, \c CoherentInspiralCVector.</dd>
+</dl>
+*/
 typedef struct
 tagCoherentInspiralFilterInput
 {
@@ -339,41 +255,13 @@ tagCoherentInspiralFilterInput
   CoherentInspiralBeamVector  *beamVec;
 }
 CoherentInspiralFilterInput;
-/* </lalVerbatim> */
+
 
 typedef struct tagSkyGrid {
   REAL8 Alpha;
   REAL8 Delta;
   struct tagSkyGrid *next;
 } SkyGrid;
-#if 0
-<lalLaTeX>
-\subsubsection*{Structure \texttt{CoherentInspiralFilterInput}}
-\idx[Type]{CoherentInspiralFilterInput}
-
-\input{CoherentInspiralFilterHCoherentInspiralFilterInput}
-
-\noindent This structure provides the essential information for
-computing the coherent SNR from the $c$ outputs of multiple detectors.
-In addition to this, the code requires the beam-pattern coefficients
-for the different detectors. These coefficients are currently
-computed by a Mathematica code and are read in as ascii files directly
-by the coherent code. But there are plans for the future where a new member
-will be added to this structure to store these coefficients.
-
-\begin{description}
-\item[\texttt{CoherentInspiralCVector   *multiCData}] Pointer to the vector
-of COMPLEX8TimeSeries, namely, \texttt{CoherentInspiralCVector}.
-\end{description}
-</lalLaTeX>
-#endif
-
-#if 0
-<lalLaTeX>
-\vfill{\footnotesize\input{CoherentInspiralHV}}
-</lalLaTeX>
-#endif
-
 
 /*
  *
@@ -412,13 +300,6 @@ LALCoherentInspiralFilterParamsFinalize (
  * function prototypes for coherent inspiral filter function
  *
  */
-
-
-#if 0
-<lalLaTeX>
-\newpage\input{CoherentInspiralHV}
-</lalLaTeX>
-#endif
 
 void
 LALCoherentInspiralEstimatePsiEpsilonCoaPhase (

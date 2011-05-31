@@ -143,7 +143,7 @@ typedef enum
 InterferometerNumber;
 
 
-/** The \c ProcessIDColumn contains the process\_id for a given row in a table.
+/** The ProcessIDColumn contains the process_id for a given row in a table.
 */
 typedef struct
 tagProcessIDColumn
@@ -344,23 +344,23 @@ SnglInspiralTable;
 /** This structure contains the required information for generating a ringdown
 template and storing ringdown triggers.  The fields are:
 <dl>
-<dt>\c ifo</dt><dd> The interferometer in which the trigger is found.</dd>
-<dt>\c channel</dt><dd> The interferometer channel in which the ringdown is
+<dt>ifo</dt><dd> The interferometer in which the trigger is found.</dd>
+<dt>channel</dt><dd> The interferometer channel in which the ringdown is
 found.</dd>
-<dt>\c start_time</dt><dd> The GPS start time of the ringdown trigger.</dd>
-<dt>\c frequency</dt><dd> The central frequency of the ringdown waveform
+<dt>start_time</dt><dd> The GPS start time of the ringdown trigger.</dd>
+<dt>frequency</dt><dd> The central frequency of the ringdown waveform
     (in Hz).</dd>
-<dt>\c quality</dt><dd> The quality factor \f$Q\f$ of the ringdown waveform.</dd>
-<dt>\c phase</dt><dd> The initial phase of the ringdown in radians.
+<dt>quality</dt><dd> The quality factor \f$Q\f$ of the ringdown waveform.</dd>
+<dt>phase</dt><dd> The initial phase of the ringdown in radians.
     Zero is a cosine-phase ringdown; \f$-\pi/2\f$ is a sine-phase ringdown.</dd>
-<dt>\c mass</dt><dd> The mass \f$M\f$ of the black hole (in solar
+<dt>mass</dt><dd> The mass \f$M\f$ of the black hole (in solar
     masses, \f$M_\odot\f$).</dd>
-<dt>\c spin</dt><dd> The dimensionless spin parameter of the
+<dt>spin</dt><dd> The dimensionless spin parameter of the
     black hole \f${\hat{a}}\f$ where the spin is \f$S={\hat{a}}GM^2/c\f$ (\f$G\f$ is
     Newton constant and \f$c\f$ is the speed of light).</dd>
-<dt>\c epsilon</dt><dd> The fractional mass loss \f$\epsilon\f$
+<dt>epsilon</dt><dd> The fractional mass loss \f$\epsilon\f$
     of the initial black hole mass in ringdown radiation.</dd>
-<dt>\c amplitude</dt><dd> The peak strain amplitude \f$h_0\f$ of the waveform,
+<dt>amplitude</dt><dd> The peak strain amplitude \f$h_0\f$ of the waveform,
     given by
     \f{equation}{
     h_0=\sqrt{\frac{5}{2}\epsilon}\left(\frac{GM}{c^2 r}\right)
@@ -368,10 +368,10 @@ found.</dd>
     \f}
     where \f$F(Q) = 1 + 7/(24 Q^2)\f$, \f$g(a) = 1 - 0.63(1-a)^{3/10}\f$ and \f$r\f$
     is the distance to the trigger.</dd>
-<dt>\c snr</dt><dd> The signal-to-noise ratio of the trigger.</dd>
-<dt>\c eff_dist</dt><dd> The effective distance to the trigger source in
+<dt>snr</dt><dd> The signal-to-noise ratio of the trigger.</dd>
+<dt>eff_dist</dt><dd> The effective distance to the trigger source in
     megaparsecs (Mpc).</dd>
-<dt>\c sigma_sq</dt><dd> The variance of the matched filter used to find the
+<dt>sigma_sq</dt><dd> The variance of the matched filter used to find the
     trigger.</dd>
 </dl>
 
@@ -628,38 +628,38 @@ tagSimBurst
 /** This structure contains the required information for generating a ringdown
 injection.  The fields are:
 <dl>
-<dt>\c waveform</dt><dd> Description of the type of waveform to inject.</dd>
-<dt>\c coordinates</dt><dd> Type of coordinate system to perform injection.</dd>
-<dt>\c geocent_start_time</dt><dd> The GPS start time of the waveform at the
+<dt>waveform</dt><dd> Description of the type of waveform to inject.</dd>
+<dt>coordinates</dt><dd> Type of coordinate system to perform injection.</dd>
+<dt>geocent_start_time</dt><dd> The GPS start time of the waveform at the
     center of the earth.</dd>
-<dt>\c h_start_time</dt><dd> The GPS start time of the waveform at the
+<dt>h_start_time</dt><dd> The GPS start time of the waveform at the
     LIGO Hanford Observatory.</dd>
-<dt>\c l_start_time</dt><dd> The GPS start time of the waveform at the
+<dt>l_start_time</dt><dd> The GPS start time of the waveform at the
     LIGO Livingston Observatory.</dd>
-<dt>\c v_start_time</dt><dd> The GPS start time of the waveform at the
+<dt>v_start_time</dt><dd> The GPS start time of the waveform at the
     Virgo Observatory.</dd>
-<dt>\c start_time_gmst</dt><dd> The start time of the waveform at the
+<dt>start_time_gmst</dt><dd> The start time of the waveform at the
     in siderial time.</dd>
-<dt>\c longitude</dt><dd> The longitude of the source defined in the
+<dt>longitude</dt><dd> The longitude of the source defined in the
     stated coordinate system.</dd>
-<dt>\c latitude</dt><dd> The latitude of the source defined in the
+<dt>latitude</dt><dd> The latitude of the source defined in the
     stated coordinate system.</dd>
-<dt>\c distance</dt><dd> The distance to the source defined in the
+<dt>distance</dt><dd> The distance to the source defined in the
     stated coordinate system in megaparsecs (Mpc).</dd>
-<dt>\c inclination</dt><dd> The inclination angle \f$\iota\f$ of the source.</dd>
-<dt>\c polarization</dt><dd> The polarization angle \f$\Psi\f$ of the source.</dd>
-<dt>\c frequency</dt><dd> The central frequency of the ringdown waveform
+<dt>inclination</dt><dd> The inclination angle \f$\iota\f$ of the source.</dd>
+<dt>polarization</dt><dd> The polarization angle \f$\Psi\f$ of the source.</dd>
+<dt>frequency</dt><dd> The central frequency of the ringdown waveform
     (in Hz).</dd>
-<dt>\c quality</dt><dd> The quality factor \f$Q\f$ of the ringdown waveform.</dd>
-<dt>\c phase</dt><dd> The initial phase of the ringdown signal \f$\phi_0\f$.</dd>
-<dt>\c mass</dt><dd> The mass \f$M\f$ of the black hole (in solar
+<dt>quality</dt><dd> The quality factor \f$Q\f$ of the ringdown waveform.</dd>
+<dt>phase</dt><dd> The initial phase of the ringdown signal \f$\phi_0\f$.</dd>
+<dt>mass</dt><dd> The mass \f$M\f$ of the black hole (in solar
     masses, \f$M_\odot\f$).</dd>
-<dt>\c spin</dt><dd> The dimensionless spin parameter of the
+<dt>spin</dt><dd> The dimensionless spin parameter of the
     black hole \f${\hat{a}}\f$ where the spin is \f$S={\hat{a}}GM^2/c\f$ (\f$G\f$ is
     Newton constant and \f$c\f$ is the speed of light).</dd>
-<dt>\c epsilon</dt><dd> The fractional mass loss \f$\epsilon\f$
+<dt>epsilon</dt><dd> The fractional mass loss \f$\epsilon\f$
     of the initial black hole mass in ringdown radiation.</dd>
-<dt>\c amplitude</dt><dd> The peak strain amplitude \f$h_0\f$ of the waveform,
+<dt>amplitude</dt><dd> The peak strain amplitude \f$h_0\f$ of the waveform,
     given by
     \f{equation}{
     h_0=\sqrt{\frac{5}{2}\epsilon}\left(\frac{GM}{c^2 r}\right)
@@ -667,16 +667,16 @@ injection.  The fields are:
     \f}
     where \f$F(Q) = 1 + 7/(24 Q^2)\f$, \f$g(a) = 1 - 0.63(1-a)^{3/10}\f$ and \f$r\f$
     is the distance to the trigger.</dd>
-<dt>\c h_eff_dist</dt><dd> The effective distance to the source from the
+<dt>h_eff_dist</dt><dd> The effective distance to the source from the
     LIGO Hanford Observatory in megaparsecs (Mpc).</dd>
-<dt>\c l_eff_dist</dt><dd> The effective distance to the source from the
+<dt>l_eff_dist</dt><dd> The effective distance to the source from the
     LIGO Livingston Observatory in megaparsecs (Mpc).</dd>
-<dt>\c v_eff_dist</dt><dd> The effective distance to the source from the
+<dt>v_eff_dist</dt><dd> The effective distance to the source from the
     Virgo Observatory in megaparsecs (Mpc).</dd>
-<dt>\c hrss</dt><dd> Define.</dd>
-<dt>\c hrss_h</dt><dd> Define.</dd>
-<dt>\c hrss_l</dt><dd> Define.</dd>
-<dt>\c hrss_v</dt><dd> Define.</dd>
+<dt>hrss</dt><dd> Define.</dd>
+<dt>hrss_h</dt><dd> Define.</dd>
+<dt>hrss_l</dt><dd> Define.</dd>
+<dt>hrss_v</dt><dd> Define.</dd>
 </dl>
 */
 typedef struct

@@ -21,11 +21,7 @@
 \author Creighton, T. D.
 \file
 
-\heading{Header \ref Grid.h}
-\latexonly\label{s_Grid_h}\endlatexonly
-
-Provides a structured datatype for a multidimensional rectilinear
-grid.
+\brief Provides a structured datatype for a multidimensional rectilinear grid.
 
 \heading{Synopsis}
 \code
@@ -65,21 +61,11 @@ NRCSID( GRIDH, "$Id$" );
 
 \heading{Types}
 
-\heading{Structure <tt><datatype>Grid</tt>}
-
-
-
-
-
-
-
-
-
-
+\heading{Structure <tt>\<datatype\>Grid</tt>}
 
 This structure is a generalization of the LAL series types,
 storing data on an \f$m\f$-dimensional rectangular grid on a physical
-parameter space.  The values on the grid are of type <tt><datatype></tt>
+parameter space.  The values on the grid are of type <tt>\<datatype\></tt>
 which can be any LAL primitive \e numerical datatype (\c INT2,
 \c INT4, \c INT8, \c UINT2, \c UINT4, \c UINT8,
 \c REAL4, \c REAL8, \c COMPLEX8, \c COMPLEX16).  The
@@ -108,7 +94,7 @@ Must have dimensionality \f$m\f$.</dd>
 specifying the grid spacing in each dimension.  Must have
 dimensionality \f$m\f$.</dd>
 
-<dt><tt><datatype>Array *data</tt></dt><dd> Pointer to an array storing the
+<dt><tt>\<datatype\>Array *data</tt></dt><dd> Pointer to an array storing the
 data values at the corresponding grid points.  The data dimension
 \f$M=\f$<tt>data->dimLength->length</tt> must be greater than or equal to
 the grid dimension \f$m=\f$<tt>offset->length</tt>=<tt>interval->length</tt>.

@@ -22,10 +22,7 @@
 \file
 \ingroup pulsarTODO
 
-\heading{Header \ref GenerateSpinOrbitCW.h}
-\latexonly\label{s_GenerateSpinOrbitCW_h}\endlatexonly
-
-Provides routines to generate continuous waveforms with spindown and
+\brief Provides routines to generate continuous waveforms with spindown and
 orbital modulation.
 
 \heading{Synopsis}
@@ -43,7 +40,7 @@ precession, accretion processes, or other complicating factors; they
 simply Doppler-modulate a polynomial frequency function.
 
 The frequency and phase of the wave in the source's rest frame are
-given by Eqs.\eqref{eq_taylorcw-freq} and\TODOref{eq_taylorcw-phi} of
+given by Eqs.\eqref{eq_taylorcw-freq} and\eqref{eq_taylorcw-phi} of
 \ref GenerateTaylorCW.h, where \f$t\f$ is the proper time in this rest
 frame.  The frequency and phase of the wave fronts crossing a
 reference point in an inertial frame (e.g.\ the Solar system
@@ -74,16 +71,11 @@ rotation.
 
 \heading{Orbital motion}
 
-\begin{wrapfigure}{r}{0.52\textwidth}
+\wrapfig{r,0.52\textwidth,fig_binary-orbit}
+\image html  inject_binary.png "Fig.[fig_binary-orbit]: Binary orbit orientation parameters"
+\image latex inject_binary.pdf "Binary orbit orientation parameters" width=0.47\textwidth
 
-
-\resizebox{0.47\textwidth}{!}{\includegraphics{inject_binary}} \\
-\parbox{0.47\textwidth}{\caption{\label{fig:binary-orbit} Binary orbit
-orientation parameters.}}
-
-
-\end{wrapfigure}
-Fig.\TODOref{fig_binary-orbit} illustrates the notation conventions
+Fig.\figref{fig_binary-orbit} illustrates the notation conventions
 defining a binary orbit.  We define a radial axis \f$R\f$ directed
 \e from the observer (Earth) \e to the source, as shown.  The
 horizontal plane is thus the plane of the sky, and the direction
@@ -92,7 +84,9 @@ celestial pole.  The tilted plane is the plane of the binary orbit,
 and the axis labeled \f$z\f$ is the normal to this plane directed such
 that the orbit is right-handed about this axis.  The <em>ascending
 node</em> of the orbit, denoted by
-\raisebox{-0.5pt}{\includegraphics{inject_ascend}}, is the direction
+\latexonly\raisebox{-0.5pt}{\includegraphics{inject_ascend}}\endlatexonly
+\htmlonly<img class="formulaInl" src="inject_ascend.png"/>\endhtmlonly
+, is the direction
 defined by \f$\hat{\mathbf{\mathit{R}}}\times\hat{\mathbf{\mathit{z}}}\f$.
 The binary orbit itself is shown as an off-centred ellipse, with the
 barycentre at one of its foci; the wave-emitting source is also shown.
@@ -221,7 +215,6 @@ parabolic orbits, and negative (unbounded) for hyperbolic orbits.
 
 \heading{Structure \c SpinOrbitCWParamStruc}
 
-
 This structure stores the parameters for constructing a gravitational
 waveform with both a Taylor-polynomial intrinsic frequency and phase,
 and a binary-orbit modulation.  As with the \c PPNParamStruc type
@@ -231,7 +224,7 @@ but not used in any calculations), input fields (that are used by the
 waveform generator), and output fields (that are set by the waveform
 generator).  They are:
 
-\bigskip<em>Passed fields:</em>
+<em>Passed fields:</em>
 <dl>
 <dt><tt>SkyPosition position</tt></dt><dd> The location of the source on the
 sky, normally in equatorial coordinates.</dd>

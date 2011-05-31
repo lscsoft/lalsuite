@@ -17,28 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralSpinningBHBinariesTestCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Test routine for spin-modulted inspiral waveform generation code.
 
-/*  <lalLaTeX>
+ First set the \c InspiralTemplate structure (example given below). Then call the function
+ <tt>LALInspiralWaveLength (\&status, \&n, params)</tt>
+ to measure the length \c n of the array required. Then call the function
+ <tt>LALInspiralWave(\&status, signal1, params);</tt>
+ to generate the wave, which will be returned in \c signal.
+ Example values of the parameters that can be set (with options in
+ brackets):
 
-\subsection{Module \texttt{LALInspiralSpinningBHBinariesTest.c}}
-Test routine for spin-modulted inspiral waveform generation code. First set the
-\texttt{InspiralTemplate} structure (example given below). Then call the function\\
-\texttt{
-	LALInspiralWaveLength (\&status, \&n, params)
-	}\\
-to measure the length {\tt n} of the array required. Then call the function \\
-\texttt{
-	LALInspiralWave(\&status, signal1, params);
-	}\\
-to generate the wave, which will be returned in \texttt{signal}.
-Example values of the parameters that can be set (with options in
-brackets):
-
-\begin{verbatim}
+\code
    params.OmegaS = 0.;     (Unknown 3PN parameter in energy shown to be zero by DJS)
    params.ieta=1;          (1 for comparable masses model, 0 for test mass model)
    params.mass1=1.4;       (masses of the component stars in solar masses)
@@ -79,11 +73,9 @@ brackets):
    params.spin2[0] =  mass2Sq * spin2Frac * sin(spin2Theta) * cos(spin2Phi);
    params.spin2[1] =  mass2Sq * spin2Frac * sin(spin2Theta) * sin(spin2Phi);
    params.spin2[2] =  mass2Sq * spin2Frac * cos(spin2Theta);
-\end{verbatim}
+\endcode
 
-\vfill{\footnotesize\input{LALInspiralTestCV}}
-
-</lalLaTeX> */
+*/
 
 #include <stdio.h>
 #include <lal/LALInspiral.h>

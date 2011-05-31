@@ -17,77 +17,64 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralBankUtilsCV">
-Author: Cokelaer Thomas
-$Id$
-</lalVerbatim>  */
+/**
+\author Cokelaer Thomas
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
+\brief NONE
 
-\subsection{Module \texttt{LALInspiralBankUtils.c}}
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{XLALInspiralTau3FromTau0AndEqualMassLineCP}
-\input{XLALInspiralTau3FromNonEqualMassCP}
-\input{XLALInspiralTau0FromMEtaCP}
-\input{XLALInspiralMFromTau0AndNonEqualMassCP}
-
-\idx{LALInspiralBankUtils()}
-
-\subsubsection*{Description}
-In a parameter space defined by $m_1$ and $m_2$, or equivalently, $M=m_1+m_2$ and $\eta=\frac{m_1 m_2}{M^2}$, the conversion
-to chirp-time parameter such as $\tau_0$ and $\tau_3$ si quite common. In particular, it is interesting to get the value of
-$\tau_3$ when only $\tau_0$ is known, and a constraint on the masses exists (e.g., $m_1=m_2$ or one of the mass equals mMin or mMax.
+\heading{Description}
+In a parameter space defined by \f$m_1\f$ and \f$m_2\f$, or equivalently, \f$M=m_1+m_2\f$ and \f$\eta=\frac{m_1 m_2}{M^2}\f$, the conversion
+to chirp-time parameter such as \f$\tau_0\f$ and \f$\tau_3\f$ si quite common. In particular, it is interesting to get the value of
+\f$\tau_3\f$ when only \f$\tau_0\f$ is known, and a constraint on the masses exists (e.g., \f$m_1=m_2\f$ or one of the mass equals mMin or mMax.
 This modules contains a few functions to perform these conversion.
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 We know that
-\begin{equation}
+\anchor eq_tau0a \f{equation}{
 \tau_0 = \frac{A_0}{\eta} M^{-5/2},
-\label{eq:tau0a}
-\end{equation}
+\label{eq_tau0a}
+\f}
 and
- \begin{equation}
+ \f{equation}{
 \tau_3 = \frac{A_3}{\eta} M^{-2/3},
-\end{equation}
+\f}
 where
-\begin{equation}
+\f{equation}{
 A_0 = \frac{5}{256 (\pi *f_L)^{8/3}},
-\end{equation}
+\f}
 and
-\begin{equation}
+\f{equation}{
 A_3 = \frac{\pi}{8 (\pi *f_L)^{5/3}},
-\end{equation}
+\f}
 
-Therefore, it is straightforward to express $\tau_3$ as a function of $\tau_0$ amd $\eta$:
-\begin{equation}
+Therefore, it is straightforward to express \f$\tau_3\f$ as a function of \f$\tau_0\f$ amd \f$\eta\f$:
+\anchor eq_tau3b \f{equation}{
 \tau_3 = \frac{A3}{\eta} \left( \frac{\tau_0 \eta}{ A_0} \right)^{2/5}
-\label{eq:tau3b}
-\end{equation}
-if $\eta=0.25$ on the equal-mass line, then
-\begin{equation}
+\label{eq_tau3b}
+\f}
+if \f$\eta=0.25\f$ on the equal-mass line, then
+\anchor eq_tau3a \f{equation}{
 \tau_3 = 4 A3 \left( \frac{\tau_0}{ 4 A_0} \right)^{2/5}
-\label{eq:tau3a}
-\end{equation}
+\label{eq_tau3a}
+\f}
+
+Equation\eqref{eq_tau3b} returns \f$\tau_3\f$ given in \f$M, \eta\f$ and \f$f_L\f$ and is defined
+in\c XLALInspiralTau3FromNonEqualMassLine.
 
 
-\noindent Equation \ref{eq:tau3b} returns $\tau_3$ given in $M, \eta$ and $f_L$ and is defined
-in\texttt{XLALInspiralTau3FromNonEqualMassLine}.
-\\\\
-Equation \ref{eq:tau3a} returns tau3 in the particular case $m_1=m_2$, given
-$\tau_0$ only, and is defined in \texttt{XLALInspiralTau3FromTau0AndEqualMassLine}.
- \\\\
-Equation \ref{eq:tau0a} returns $tau_0$ given $M, \eta$ and $f_L$, and is defined
-\texttt{XLALInspiralTau0FromMEta}.
-\\\\
-Finally, \texttt{XLALInspiralMFromTau0AndNonEqualMass} returns $M$ when $\tau_0$ is known
- and a constraint exists on one of the individual mass (e.g., $m_1={\rm mMax}$ or
- $m_1={\rm mMin}$). This functions requires a little more algebra and is used in the
+Equation\eqref{eq_tau3a} returns tau3 in the particular case \f$m_1=m_2\f$, given
+\f$\tau_0\f$ only, and is defined in \c XLALInspiralTau3FromTau0AndEqualMassLine.
+
+Equation\eqref{eq_tau0a} returns \f$tau_0\f$ given \f$M, \eta\f$ and \f$f_L\f$, and is defined
+\c XLALInspiralTau0FromMEta.
+
+Finally, \c XLALInspiralMFromTau0AndNonEqualMass returns \f$M\f$ when \f$\tau_0\f$ is known
+ and a constraint exists on one of the individual mass (e.g., \f$m_1=\textrm{mMax}\f$ or
+ \f$m_1=\textrm{mMin}\f$). This functions requires a little more algebra and is used in the
 HybridHexagonal placement. The function LALInspiralHybridHexagonal describes this algebra.
 
-\vspace{0.1in}
-\vfill{\footnotesize\input{LALInspiralBankUtilsCV}}
-</lalLaTeX>  */
+*/
 
 #include <stdio.h>
 #include <lal/LALStdio.h>
@@ -103,13 +90,13 @@ NRCSID(LALINSPIRALBANKUTILSC, "$Id$");
 
 
 
-/*  <lalVerbatim file="XLALInspiralTau3FromTau0AndEqualMassLineCP"> */
+
 REAL4
 XLALInspiralTau3FromTau0AndEqualMassLine(
     REAL4               tau0,
     REAL4               fL
     )
-{   /*  </lalVerbatim>  */
+{
   REAL4 A0, A3, tau3=0;
 
 
@@ -122,14 +109,14 @@ XLALInspiralTau3FromTau0AndEqualMassLine(
 }
 
 
-/*  <lalVerbatim file="XLALInspiralTau3FromNonEqualMassCP"> */
+
 REAL4
 XLALInspiralTau3FromNonEqualMass(
     REAL4              	M,
     REAL4 		eta,
     REAL4		fL
  )
-{ /*  </lalVerbatim>  */
+{
   REAL4 A3;
   REAL4 tau3 = 0;
 
@@ -139,14 +126,14 @@ XLALInspiralTau3FromNonEqualMass(
   return tau3;
 }
 
-/*  <lalVerbatim file="XLALInspiralTau0FromMEtaCP"> */
+
 REAL4
 XLALInspiralTau0FromMEta(
     REAL4              	M,
     REAL4 		eta,
     REAL4		fL
  )
-{/*  </lalVerbatim>  */
+{
 
 /* This function returns tau3, computed from M and eta*/
 
@@ -159,13 +146,13 @@ XLALInspiralTau0FromMEta(
   return tau0;
 }
 
-/*  <lalVerbatim file="XLALInspiralMFromTau0AndNonEqualMassCP"> */
+
 REAL8
 XLALInspiralMFromTau0AndNonEqualMass(
   REAL8 tau0,
   REAL8 extremMass,
   REAL8 fL)
-{/*  </lalVerbatim>  */
+{
   REAL8 result, A0, p, q, x;
 
   A0 = (5.0 / 256.0) * pow( LAL_PI * fL, (-8.0/3.0));

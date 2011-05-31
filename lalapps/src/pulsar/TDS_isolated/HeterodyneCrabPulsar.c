@@ -43,7 +43,7 @@
 	 the Modified Julian Date (MJD) in Barycentre Dynamical Time (TDB),
 	 the arrival time of the first pulse after
 	 midnight on the given MJD in seconds, the frequency \f$f\f$ (Hz) at that time
-	 and \f$\dot{f}\f$ (\f$10^{-10}\,\textrm{Hz}^2\f$) \ref CrabEphem. The ephemeris values
+	 and \f$\dot{f}\f$ (\f$10^{-10}\,\textrm{Hz}^2\f$) CrabEphem. The ephemeris values
 	 are given on a roughly monthly basis. The function converts the MJD
 	 times into GPS seconds including adding leap seconds. The ephemeris values
 	 are available from 15 February 1982 so all leap seconds from that point are
@@ -107,13 +107,13 @@
 	 on the phase at each data point, the boundary conditions for the known
 	 parameters can be used to calculate the values of the unknowns \f$\ddot{f}\f$,
 	 \f$\ddot{f_0}\f$, \f$\dddot{f}\f$, and \f$\dddot{f_0}\f$. Taking the \f$4\times 4\f$
-	 matrices in the centres of\eqnref{numatrix} and\eqnref{nu2matrix} and vectors
+	 matrices in the centres of\eqref{numatrix} and\eqref{nu2matrix} and vectors
 	 of \f$f\f$ and its first three derivatives, one can then construct 4 equations
 	 containing the 4 unknowns by equating the equations, when worked out at a
 	 time \f$t\f$ halfway between consecutive points and solving them
 	 simultaneously using the boundary conditions (by inverting the matrix in
-	 \eqnref{simult1} to give\eqnref{inverse1} and solving as above). The values
-	 could then be used to calculate a value of \f$\phi\f$ from\eqnref{phi}.
+	 \eqref{simult1} to give\eqref{inverse1} and solving as above). The values
+	 could then be used to calculate a value of \f$\phi\f$ from\eqref{phi}.
 
 	 \anchor simult1 \f{equation}{\label{simult1}
 	 \left( \begin{array}{c} f_0 + \dot{f_0}t - f + \dot{f}t \\
@@ -136,10 +136,10 @@
 	 0 & -1 & 0 & 1 \end{array} \right)
 	 \f}
 
-	 Equating the whole of equations\eqnref{numatrix} and\eqnref{nu2matrix} at a
+	 Equating the whole of equations\eqref{numatrix} and\eqref{nu2matrix} at a
 	 point halfway inbetween consecutive points, gave the six equations necessary
 	 to work out the six unknowns, which are shown in matrix form in equation
-	 \eqnref{simult2}.
+	 \eqref{simult2}.
 
 	 \anchor simult2 \f{equation}{\label{simult2}
 	 \left( \begin{array}{c} \phi_0 + f_0 t + \frac{\dot{f_0}}{2}t^2 - \phi + f t - \frac{\dot{f}}{2} \\ f_0 + \dot{f_0}t - f + \dot{f}t \\ \dot{f_0} - \dot{f} \\ 0 \\ 0 \\ 0 \end{array} \right) = \left( \begin{array}{cccccc}

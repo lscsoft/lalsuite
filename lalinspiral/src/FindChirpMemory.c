@@ -28,68 +28,54 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpMemoryCV">
-Author: Brown D. A.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpMemory.c}}
-\label{ss:FindChirpMemory.c}
+\author Brown D. A.
+\file
+\ingroup FindChirp_h
 
-Memory management functions for creating and destroying input data and
+\brief Memory management functions for creating and destroying input data and
 workspace memory for findchirp.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpMemoryCP}
-\idx{LALInitializeDataSegmentVector()}
-\idx{LALFinalizeDataSegmentVector()}
-\idx{LALCreateDataSegmentVector()}
-\idx{LALDestroyDataSegmentVector()}
-\idx{LALCreateFindChirpSegmentVector()}
-\idx{LALDestroyFindChirpSegmentVector()}
+\heading{Description}
 
-\subsubsection*{Description}
-
-The function \texttt{LALInitializeDataSegmentVector()} creates a vector of
-\texttt{DataSegment} structures of length and dimension specified in the
-\texttt{FindChirpInitParams} structure. The data segments are created using
-the input data in \texttt{chan}, \texttt{spec} and \texttt{resp}. No storage
+The function <tt>LALInitializeDataSegmentVector()</tt> creates a vector of
+\c DataSegment structures of length and dimension specified in the
+\c FindChirpInitParams structure. The data segments are created using
+the input data in \c chan, \c spec and \c resp. No storage
 is allocated for the actual data in the data segments, instead the data
-segment \texttt{chan}, \texttt{spec} and \texttt{resp} pointers are pointed at
-the input data appropriately. This means that the input \texttt{chan},
-\texttt{spec} and \texttt{resp} time and frequency series must persist for the
+segment \c chan, \c spec and \c resp pointers are pointed at
+the input data appropriately. This means that the input \c chan,
+\c spec and \c resp time and frequency series must persist for the
 duration of the filtering process.
 
-The function \texttt{LALFinalizeDataSegmentVector()} frees any memory
-allocated by the function \texttt{LALInitializeDataSegmentVector()}.
+The function <tt>LALFinalizeDataSegmentVector()</tt> frees any memory
+allocated by the function <tt>LALInitializeDataSegmentVector()</tt>.
 
-The function \texttt{LALCreateDataSegmentVector()} creates a vector of
-\texttt{DataSegment} structures of length and dimension specified in the
-\texttt{FindChirpInitParams} structure.  \texttt{**vector} must point to NULL
+The function <tt>LALCreateDataSegmentVector()</tt> creates a vector of
+\c DataSegment structures of length and dimension specified in the
+\c FindChirpInitParams structure.  <tt>**vector</tt> must point to NULL
 on entry and contains a handle to the address of the created
-\texttt{DataSegmentVector} on exit.
+\c DataSegmentVector on exit.
 
-The function \texttt{LALDestroyDataSegmentVector()} frees the memory of the
-\texttt{DataSegmentVector} at address \texttt{*vector}.
+The function <tt>LALDestroyDataSegmentVector()</tt> frees the memory of the
+\c DataSegmentVector at address <tt>*vector</tt>.
 
-The function \texttt{LALCreateFindChirpSegmentVector()} creates a vector of
-\texttt{FindChirpSegment} structures of length and dimension specified in the
-\texttt{FindChirpInitParams} structure.  \texttt{**vector} must point to NULL
+The function <tt>LALCreateFindChirpSegmentVector()</tt> creates a vector of
+\c FindChirpSegment structures of length and dimension specified in the
+\c FindChirpInitParams structure.  <tt>**vector</tt> must point to NULL
 on entry and contains a handle to the address of the created
-\texttt{DataSegmentVector} on exit.
+\c DataSegmentVector on exit.
 
-The function \texttt{LALDestroyFindChirpSegmentVector()} frees the memory of
-the \texttt{FindChirpSegmentVector} at address \texttt{*vector}.
+The function <tt>LALDestroyFindChirpSegmentVector()</tt> frees the memory of
+the \c FindChirpSegmentVector at address <tt>*vector</tt>.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 None.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALCreateVector()
 LALCCreateVector()
@@ -98,13 +84,13 @@ LALFree()
 LALDestroyVector()
 LALCDestroyVector()
 LALU4DestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpMemoryCV}}
-</lalLaTeX>
-#endif
+
+
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -113,7 +99,7 @@ LALU4DestroyVector()
 
 NRCSID (FINDCHIRPMEMORYC, "$Id$");
 
-/* <lalVerbatim file="FindChirpMemoryCP"> */
+
 void
 LALInitializeDataSegmentVector (
     LALStatus                  *status,
@@ -123,7 +109,7 @@ LALInitializeDataSegmentVector (
     COMPLEX8FrequencySeries    *resp,
     FindChirpInitParams        *params
     )
-/* </lalVerbatim> */
+
 {
   INT8  chanStartTime;
   UINT4 i;
@@ -237,13 +223,13 @@ LALInitializeDataSegmentVector (
 }
 
 
-/* <lalVerbatim file="FindChirpMemoryCP"> */
+
 void
 LALFinalizeDataSegmentVector (
     LALStatus                  *status,
     DataSegmentVector         **vector
     )
-/* </lalVerbatim> */
+
 {
   DataSegmentVector *dataSegVec;
   UINT4 i;
@@ -273,14 +259,14 @@ LALFinalizeDataSegmentVector (
 }
 
 
-/* <lalVerbatim file="FindChirpMemoryCP"> */
+
 void
 LALCreateDataSegmentVector (
     LALStatus                  *status,
     DataSegmentVector         **vector,
     FindChirpInitParams        *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 i;
   DataSegmentVector    *vectorPtr;
@@ -389,13 +375,13 @@ LALCreateDataSegmentVector (
 }
 
 
-/* <lalVerbatim file="FindChirpMemoryCP"> */
+
 void
 LALDestroyDataSegmentVector (
     LALStatus                  *status,
     DataSegmentVector         **vector
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 i;
   DataSegment          *segPtr;
@@ -462,14 +448,14 @@ LALDestroyDataSegmentVector (
 }
 
 
-/* <lalVerbatim file="FindChirpMemoryCP"> */
+
 void
 LALCreateFindChirpSegmentVector (
     LALStatus                  *status,
     FindChirpSegmentVector    **vector,
     FindChirpInitParams        *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                         i/*,k*/;
   FindChirpSegmentVector       *vectorPtr;
@@ -668,13 +654,13 @@ LALCreateFindChirpSegmentVector (
 }
 
 
-/* <lalVerbatim file="FindChirpMemoryCP"> */
+
 void
 LALDestroyFindChirpSegmentVector (
     LALStatus                  *status,
     FindChirpSegmentVector    **vector
     )
-/* </lalVerbatim> */
+
 {
   UINT4                         i;
   FindChirpSegment             *segPtr;

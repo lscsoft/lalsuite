@@ -28,18 +28,12 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpStoreEventCV">
-Author: Brown D. A., Woods D.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpStoreEvent.c}}
-\label{ss:FindChirpStoreEvent.c}
+\author Brown D. A., Woods D.
+\file
 
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <lal/LALErrno.h>
@@ -53,7 +47,7 @@ $Id$
 
 NRCSID (FINDCHIRPSTOREEVENTC, "$Id$");
 
-/* <lalVerbatim file="FindChirpStoreEventCP"> */
+
 void
 LALFindChirpStoreEvent (
     LALStatus                  *status,
@@ -67,7 +61,7 @@ LALFindChirpStoreEvent (
     UINT4                       numChisqBins,
     CHAR                        searchName[LIGOMETA_SEARCH_MAX]
 )
-/* </lalVerbatim> */
+
 
 {
   INT8                       timeNS;
