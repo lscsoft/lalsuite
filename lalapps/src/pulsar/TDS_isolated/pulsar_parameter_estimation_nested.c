@@ -1772,7 +1772,7 @@ void get_pinsf_pulsar_model( BinaryPulsarParams params,
   REAL8Vector *dphi = NULL;
   INT4 i = 0, length = 0;
   
-  get_amplitude_model( params, data );
+  get_pinsf_amplitude_model( params, data );
   length = data->compModelData->data->length;
   
   /* the timeData vector within the LALIFOData structure contains the
@@ -1780,7 +1780,7 @@ void get_pinsf_pulsar_model( BinaryPulsarParams params,
      parameters */
   
   /* get difference in phase and perform extra heterodyne with it */ 
-  if ( varyphase ){ 
+  if ( varyphase ){
     if ( (dphi = get_phase_model( params, data )) != NULL ){
       for( i=0; i<length; i++ ){
         COMPLEX16 M;
