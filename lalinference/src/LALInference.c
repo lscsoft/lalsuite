@@ -36,7 +36,7 @@
 #define UNUSED
 #endif
 
-size_t typeSize[] = {sizeof(INT4), 
+size_t LALInferenceTypeSize[] = {sizeof(INT4), 
                      sizeof(INT8),
                      sizeof(UINT4),
                      sizeof(REAL4), 
@@ -174,7 +174,7 @@ void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, vo
     exit(1);
   }
   if (item->vary==PARAM_FIXED) return;
-  memcpy(item->value,value,typeSize[item->type]);
+  memcpy(item->value,value,LALInferenceTypeSize[item->type]);
   return;
 }
 
@@ -200,7 +200,7 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, vo
 
   memset(new,0,sizeof(LALInferenceVariableItem));
 	if(new) {
-		new->value = (void *)malloc(typeSize[type]);
+		new->value = (void *)malloc(LALInferenceTypeSize[type]);
 	}
   if(new==NULL||new->value==NULL) {
     XLALPrintError(" ERROR in addVariable(): unable to allocate memory for list item.\n");
@@ -209,7 +209,7 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, vo
   memcpy(new->name,name,VARNAME_MAX);
   new->type = type;
   new->vary = vary;
-  memcpy(new->value,value,typeSize[type]);
+  memcpy(new->value,value,LALInferenceTypeSize[type]);
   new->next = vars->head;
   vars->head = new;
   vars->dimension++;

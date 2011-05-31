@@ -175,7 +175,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 			}
 			ifoPtr = ifoPtr->next;
 		}
-		irs->currentLikelihood=NullLogLikelihood(irs->data);
+		irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
 		printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
 	}
 	else
@@ -229,7 +229,7 @@ REAL8 FreqDomainNullLogLikelihood(LALInferenceIFOData *data)
 	dummyValue = XLALGPSGetREAL8(&data->timeData->epoch) 
 	+ (((double) data->timeData->data->length) / 2.0) * data->timeData->deltaT;
 	LALInferenceAddVariable(&dummyParams, "time",           &dummyValue, REAL8_t,PARAM_LINEAR);
-	loglikeli = FreqDomainLogLikelihood(&dummyParams, data, &templateNullFreqdomain);
+	loglikeli = LALInferenceFreqDomainLogLikelihood(&dummyParams, data, &LALInferenceTemplateNullFreqdomain);
 	LALInferenceDestroyVariables(&dummyParams);
 	return(loglikeli);
 }
@@ -607,11 +607,15 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
   param.dimension=0;
   // "subset" specified? If not, simply gather all REAL8 elements of "currentParams" to optimize over:
   if (subset==NULL) {
-    if (runstate->currentParams == NULL) 
-      die(" ERROR in NelderMeadAlgorithm(): no \"runstate->currentParams\" vector provided.\n");
+    if (runstate->currentParams == NULL) {
+      fprintf(stderr," ERROR in NelderMeadAlgorithm(): no \"runstate->currentParams\" vector provided.\n");
+      exit(1);
+    }
     i = LALInferenceGetVariableDimension(runstate->currentParams);
-    if (i==0) 
-      die(" ERROR in NelderMeadAlgorithm(): empty \"runstate->currentParams\" vector provided.\n");
+    if (i==0) {
+      fprintf(stderr," ERROR in NelderMeadAlgorithm(): empty \"runstate->currentParams\" vector provided.\n");
+      exit(1);
+    }
     for (j=1; j<=i; ++j) {  // check "currentParams" entries and copy all REAL( values:
       if (LALInferenceGetVariableTypeByIndex(runstate->currentParams, j) == REAL8_t){
 	strcpy(str, LALInferenceGetVariableName(runstate->currentParams, j));
@@ -620,7 +624,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
     }
   }
   else {
-    die(" ERROR in NelderMeadAlgorithm(): \"subset\" feature not yet implemented.\n");
+    fprintf(stderr," ERROR in NelderMeadAlgorithm(): \"subset\" feature not yet implemented.\n"); exit(0);
     // TODO: take a (named) "subset" vector of zeroes/ones indicating which variables optimize over and which to keep fixed.
   }
 
@@ -645,8 +649,10 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
   for (j=0; j<nmDim; ++j)
     simplex[j] = *(REAL8*) LALInferenceGetVariable(&param, nameVec[j]);
   NelderMeadEval(runState, nameVec, &simplex[0], nmDim, &logprior, &loglikelihood);
-  if (!(loglikelihood>-HUGE_VAL))
-    die(" ERROR in NelderMeadAlgorithm(): invalid starting value provided.\n");
+  if (!(loglikelihood>-HUGE_VAL)) {
+    fprintf(stderr," ERROR in NelderMeadAlgorithm(): invalid starting value provided.\n");
+    exit(1);
+  }
   val_simplex[0] = ML ? loglikelihood : logprior+loglikelihood;
   // remaining corners are drawn from "runState->proposal()" function:
   for (i=1; i<(nmDim+1); ++i) {  // (loop over vertices (except 1st))
@@ -916,8 +922,8 @@ void DataTest(void)
     numberI4 = LAL_PNORDER_TWO;
     LALInferenceAddVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_FIXED);*/
 	 fprintf(stdout, " trying 'LALTemplateGeneratePPN' likelihood..\n");
-    likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
-    nulllikelihood = NullLogLikelihood(runstate->data);
+    likelihood = LALInferenceFreqDomainLogLikelihood(&currentParams, runstate->data, LALInferenceLALTemplateGeneratePPN);
+    nulllikelihood = LALInferenceNullLogLikelihood(runstate->data);
 printf("Likelihood %g NullLikelihood %g RelativeLikelihood %g\n", likelihood, nulllikelihood, likelihood-nulllikelihood);
 
 /*
@@ -988,7 +994,7 @@ void TemplateStatPhaseTest(void)
     LALInferenceAddVariable(runstate->data->modelParams, "phase",       &phi,   REAL8_t, PARAM_LINEAR);
     LALInferenceAddVariable(runstate->data->modelParams, "time",        &tcoal, REAL8_t, PARAM_LINEAR);
     LALInferencePrintVariables(runstate->data->modelParams);
-    templateStatPhase(runstate->data);
+    LALInferenceTemplateStatPhase(runstate->data);
     fprintf(stdout, " ...done.\n");
 
 	  
@@ -1013,7 +1019,7 @@ void TemplateStatPhaseTest(void)
     LALInferenceAddVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t, PARAM_FIXED);
     numberI4 = LAL_PNORDER_TWO;
     LALInferenceAddVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_FIXED);
-    likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL);
+    likelihood = LALInferenceFreqDomainLogLikelihood(&currentParams, runstate->data, LALInferenceTemplateLAL);
     fprintf(stdout, " ...done.\n");
     fprintf(stdout," templateLAL log-likelihood %f\n", likelihood);  
     fprintf(stdout," ----------\n");
@@ -1029,7 +1035,7 @@ void SingleIFOLikelihoodTest(void)
     LALInferenceSetVariable(&currentParams, "LAL_PNORDER",     &numberI4);	
 	numberI4 = TaylorT1;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);														  																  
-	ComputeFreqDomainResponse(&currentParams, runstate->data, templateLAL, freqModel1);
+	LALInferenceComputeFreqDomainResponse(&currentParams, runstate->data, LALInferenceTemplateLAL, freqModel1);
 	freqModel2=runstate->data->freqData->data;
 	//ComputeFreqDomainResponse(&currentParams, runstate->data, templateLAL, freqModel2);
 	FILE * freqModelFile=fopen("freqModelFile.dat", "w");
@@ -1040,21 +1046,21 @@ void SingleIFOLikelihoodTest(void)
 		runstate->data->oneSidedNoisePowerSpectrum->data->data[i]);
 	}
 	fprintf(stdout, "overlap=%g\n", 
-		ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel2));
+		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel2));
 	fprintf(stdout, "<d|d>=%g, <d|h>=%g, <h|h>=%g, <d|h>-1/2<h|h>=%g\n", 
-		ComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel2),
-		ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel2),
-		ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1),
-		ComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel1)
-			-0.5*ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1)
+		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel2),
+		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel2),
+		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1),
+		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel1)
+			-0.5*LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1)
 		);				
 	fprintf(stdout, "likelihood %g\n",
-		FreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL));
+		LALInferenceFreqDomainLogLikelihood(&currentParams, runstate->data, LALInferenceTemplateLAL));
 	fprintf(stdout, "undecomposed likelihood %g \n", 
-		UndecomposedFreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL));
+		LALInferenceUndecomposedFreqDomainLogLikelihood(&currentParams, runstate->data, LALInferenceTemplateLAL));
 	fprintf(stdout, "null likelihood %g decomposed null likelihood %g\n",
-		FreqDomainNullLogLikelihood(runstate->data),
-		NullLogLikelihood(runstate->data));
+		LALInferenceNullLogLikelihood(runstate->data),
+		LALInferenceNullLogLikelihood(runstate->data));
     XLALDestroyCOMPLEX16Vector(freqModel1);
     //	XLALDestroyCOMPLEX16Vector(freqModel2);
 }
@@ -1069,9 +1075,9 @@ void BasicMCMCTest(void)
         runstate->proposalArgs = malloc(sizeof(LALInferenceVariables));
         runstate->proposalArgs->head=NULL;
         runstate->proposalArgs->dimension=0;
-	runstate->likelihood=FreqDomainLogLikelihood;
+	runstate->likelihood=LALInferenceFreqDomainLogLikelihood;
 	//runstate->template=templateLAL;
-	runstate->template=templateStatPhase;
+	runstate->template=LALInferenceTemplateStatPhase;
 	runstate->currentParams=&currentParams;
 	MCMCAlgorithm(runstate);
 	fprintf(stdout, "End of MCMC basic Sampler test\n");
@@ -1083,10 +1089,10 @@ void TemplateDumpTest(void)
  /* NOTE: try out the "forceTimeLocation" flag within the "templateLAL()" function */
     /*       for aligning (time domain) templates.                                    */
     fprintf(stdout," generating templates & writing to files...:\n");
-    dumptemplateFreqDomain(&currentParams, runstate->data, templateStatPhase, "test_FTemplate25SP.csv");
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateStatPhase, "test_TTemplate25SP.csv");
-    dumptemplateFreqDomain(&currentParams, runstate->data, template3525TD, "test_FTemplate3525TD.csv");
-    dumptemplateTimeDomain(&currentParams, runstate->data, template3525TD, "test_TTemplate3525TD.csv");
+    LALInferenceDumptemplateFreqDomain(&currentParams, runstate->data, LALInferenceTemplateStatPhase, "test_FTemplate25SP.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateStatPhase, "test_TTemplate25SP.csv");
+    LALInferenceDumptemplateFreqDomain(&currentParams, runstate->data, LALInferenceTemplate3525TD, "test_FTemplate3525TD.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplate3525TD, "test_TTemplate3525TD.csv");
 
     fprintf(stdout," ----------\n");
 	 
@@ -1112,7 +1118,7 @@ void TemplateDumpTest(void)
 	  LALInferenceAddVariable(&currentParams, "coa_phase",    &coa_phase,           REAL8_t, PARAM_CIRCULAR);	  
 	  double PNorder = 3.5;
 	  LALInferenceAddVariable(&currentParams, "PNorder",      &PNorder,             REAL8_t, PARAM_FIXED);	  
-	  dumptemplateTimeDomain(&currentParams, runstate->data, templateLALSTPN, "test_TTemplateLALSTPN.csv");
+	  LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLALSTPN, "test_TTemplateLALSTPN.csv");
 
 	  
     /* These are the LAL templates that (...seem to...) work right now: */
@@ -1121,43 +1127,43 @@ void TemplateDumpTest(void)
     LALInferenceSetVariable(&currentParams, "LAL_PNORDER",     &numberI4);
     numberI4 = TaylorF2;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-TF2.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-TF2.csv");
     numberI4 = TaylorT1;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-TT1.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-TT1.csv");
     numberI4 = TaylorT2;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-TT2.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-TT2.csv");
     numberI4 = TaylorT3;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-TT3.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-TT3.csv");
 
     numberI4 = IMRPhenomA;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-Phenom.csv");
-	dumptemplateFreqDomain(&currentParams, runstate->data, templateLAL, "test_FTemplateLAL-Phenom.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-Phenom.csv");
+    LALInferenceDumptemplateFreqDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_FTemplateLAL-Phenom.csv");
 
     numberI4 = PadeT1;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-PadeT1.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-PadeT1.csv");
 
     numberI4 = EOB;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
     numberI4 = LAL_PNORDER_PSEUDO_FOUR;
     LALInferenceSetVariable(&currentParams, "LAL_PNORDER", &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-EOB.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-EOB.csv");
 
     numberI4 = BCV;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
     numberI4 = LAL_PNORDER_TWO;
     LALInferenceSetVariable(&currentParams, "LAL_PNORDER",     &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-BCV.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-BCV.csv");
 
     numberI4 = EOBNR;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
     numberI4 = LAL_PNORDER_PSEUDO_FOUR;
     LALInferenceSetVariable(&currentParams, "LAL_PNORDER", &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-EOBNR.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-EOBNR.csv");
 
     fprintf(stdout," ----------\n");
 
@@ -1165,15 +1171,15 @@ void TemplateDumpTest(void)
     LALInferenceAddVariable(&currentParams, "frequency", &numberR8, REAL8_t, PARAM_LINEAR);
     numberR8 = 1e-19;
     LALInferenceAddVariable(&currentParams, "amplitude", &numberR8, REAL8_t, PARAM_LINEAR);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateSinc, "test_TTemplateSinc.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateSinc, "test_TTemplateSinc.csv");
 
     numberR8 = 0.01;
     LALInferenceAddVariable(&currentParams, "sigma", &numberR8, REAL8_t, PARAM_LINEAR);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateSineGaussian, "test_TTemplateSineGauss.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateSineGaussian, "test_TTemplateSineGauss.csv");
 
     numberR8 = 0.01;
     LALInferenceAddVariable(&currentParams, "tau", &numberR8, REAL8_t, PARAM_LINEAR);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateDampedSinusoid, "test_TTemplateDampedSinus.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateDampedSinusoid, "test_TTemplateDampedSinus.csv");
 
     LALInferenceDestroyVariables(&currentParams);
     fprintf(stdout," ----------\n");
@@ -1191,9 +1197,9 @@ void PTMCMCTest(void)
 	runstate->proposalArgs = malloc(sizeof(LALInferenceVariables));
 	runstate->proposalArgs->head=NULL;
 	runstate->proposalArgs->dimension=0;
-	runstate->likelihood=FreqDomainLogLikelihood;
+	runstate->likelihood=LALInferenceFreqDomainLogLikelihood;
 	//runstate->likelihood=GaussianLikelihood;
-	runstate->template=templateLAL;
+	runstate->template=LALInferenceTemplateLAL;
 	
 	
 	SimInspiralTable *injTable=NULL;

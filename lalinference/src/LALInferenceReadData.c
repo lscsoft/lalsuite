@@ -56,6 +56,14 @@ const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 void makeWhiteData(LALInferenceIFOData *IFOdata);
 
+/** Returns an array of header strings (terminated by NULL) from a common-format output file */
+char **getHeaderLine(FILE *inp);
+
+/** Turns common-format column names into our internal parameter
+   names. */
+char *colNameToParamName(const char *colName);
+
+
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length)
 {
 	LALStatus status;

@@ -239,15 +239,15 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	
 	
-        if (runState->likelihood==&TimeDomainLogLikelihood) {
+        if (runState->likelihood==&LALInferenceTimeDomainLogLikelihood) {
           fprintf(stderr, "Computing null likelihood in time domain.\n");
-          nullLikelihood = TimeDomainNullLogLikelihood(runState->data);
-        } else if (runState->likelihood==&UndecomposedFreqDomainLogLikelihood ||
-                   runState->likelihood==&FreqDomainLogLikelihood) {
-          nullLikelihood = NullLogLikelihood(runState->data);
-        } else if (runState->likelihood==&ZeroLogLikelihood) {
+          nullLikelihood = LALInferenceTimeDomainNullLogLikelihood(runState->data);
+        } else if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood ||
+                   runState->likelihood==&LALInferenceFreqDomainLogLikelihood) {
+          nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
+        } else if (runState->likelihood==&LALInferenceZeroLogLikelihood) {
           nullLikelihood = 0.0;
-        } else if (runState->likelihood==&AnalyticLogLikelihood) {
+        } else if (runState->likelihood==&LALInferenceAnalyticLogLikelihood) {
           nullLikelihood = 0.0;
         } else {
           fprintf(stderr, "Unrecognized log(L) function (in %s, line %d)\n", 
@@ -318,7 +318,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			}
 			fprintf(chainoutput, "\n\n%31s\n","");
                         fprintf(chainoutput, "cycle\tlogpost\tlogprior\t");
-                        fprintParameterNonFixedHeaders(chainoutput, runState->currentParams);
+                        LALInferenceFprintParameterNonFixedHeaders(chainoutput, runState->currentParams);
                         fprintf(chainoutput, "logl\t");
                         LALInferenceIFOData *headIFO = runState->data;
                         while (headIFO != NULL) {
@@ -707,7 +707,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     p=0;
     while(ptr!=NULL) {
       if (ptr->vary != PARAM_FIXED) {
-        memcpy(ptr->value,&(parameters->data[p]),typeSize[ptr->type]);
+        memcpy(ptr->value,&(parameters->data[p]),LALInferenceTypeSize[ptr->type]);
         p++;
       }
       ptr=ptr->next;
@@ -2293,7 +2293,7 @@ void PTMCMCLALInferenceInclinationFlip(LALInferenceRunState *runState, LALInfere
 
   iota = *((REAL8 *) LALInferenceGetVariable(proposedParams, "inclination"));
   
-  if (runState->template==&templateLALSTPN) {
+  if (runState->template==&LALInferenceTemplateLALSTPN) {
     /* Handle spins. */
     REAL8 dummyNorm, newIota, newPhi;
     REAL8 theta1, theta2, phi1, phi2;

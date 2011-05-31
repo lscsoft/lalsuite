@@ -322,9 +322,6 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[]);
 /** Output the command line based on the ProcessParamsTable */
 void LALInferencePrintCommandLine(ProcessParamsTable *procparams, char *str);
 
-/** This should be moved elsewhere */
-void COMPLEX16VectorSubtract(COMPLEX16Vector * out, const COMPLEX16Vector * in1, const COMPLEX16Vector * in2);
-
 /** Execute FFT and inverse FFT for the data */
 void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);
 void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata);
@@ -338,17 +335,6 @@ LALInferenceVariableItem *LALInferenceGetItemNr(LALInferenceVariables *vars, int
 void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);
 /** Output only non-fixed parameters */
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
-
-
-/* Differential Evolution and Common Format Posterior File Parsing
-   Utilities. */
-
-/** Returns an array of header strings (terminated by NULL) from a common-format output file */
-char **getHeaderLine(FILE *inp);
-
-/** Turns common-format column names into our internal parameter
-   names. */
-char *colNameToParamName(const char *colName);
 
 /** Reads one line from the given file and stores the values there into
    the variable structure, using the given header array to name the

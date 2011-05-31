@@ -1282,7 +1282,7 @@ set.\n", propfile, tempPar);
       tempVar /= scale;
       
       /* scale the parameter value and reset it */
-      memcpy( checkPrior->value, &tempVar, typeSize[checkPrior->type] );
+      memcpy( checkPrior->value, &tempVar, LALInferenceTypeSize[checkPrior->type] );
       
       mu /= scale;
       sigma /= scale;

@@ -119,7 +119,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 			}
 			ifoPtr = ifoPtr->next;
 		}
-		irs->currentLikelihood=NullLogLikelihood(irs->data);
+		irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
 		printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
 	}
 	else
@@ -597,9 +597,9 @@ int main(int argc, char *argv[]){
  	initVariables(runState);
 	
     REAL8 loglikelihood=0.0;
-	loglikelihood = FreqDomainLogLikelihood(runState->currentParams, runState->data, &templateLALGenerateInspiral) - NullLogLikelihood(runState->data);
+	loglikelihood = LALInferenceFreqDomainLogLikelihood(runState->currentParams, runState->data, &LALInferenceTemplateLALGenerateInspiral) - LALInferenceNullLogLikelihood(runState->data);
 	printf("network LogLikelihood=%f\tSNR=%f\n",loglikelihood,sqrt(2*loglikelihood));
-    ChiSquareTest(runState->currentParams, runState->data, &templateLALGenerateInspiral);
+    LALInferenceChiSquareTest(runState->currentParams, runState->data, &LALInferenceTemplateLALGenerateInspiral);
 
   return 0;
 }

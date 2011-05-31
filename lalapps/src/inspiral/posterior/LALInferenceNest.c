@@ -127,7 +127,7 @@ Initialisation arguments:\n\
 			}
 			ifoPtr = ifoPtr->next;
 		}
-		irs->currentLikelihood=NullLogLikelihood(irs->data);
+		irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
 		printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
 	}
 	else
@@ -200,8 +200,8 @@ Nested sampling arguments:\n\
 	runState->proposal=&LALInferenceProposalNS;
 
 	/* This is the LAL template generator for inspiral signals */
-	runState->template=&templateLAL;
-	runState->likelihood=&FreqDomainLogLikelihood;
+	runState->template=&LALInferenceTemplateLAL;
+	runState->likelihood=&LALInferenceFreqDomainLogLikelihood;
 	runState->prior = &LALInferenceInspiralPrior;
 	
 	ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
@@ -467,10 +467,10 @@ Student T Likelihood Arguments:\n\
 	}
 
 	/* Set likelihood to student-t */
-	state->likelihood = &FreqDomainStudentTLogLikelihood;
+	state->likelihood = &LALInferenceFreqDomainStudentTLogLikelihood;
 	
 	/* Set the noise model evidence to the student t model value */
-	REAL8 noiseZ=FreqDomainStudentTLogLikelihood(state->currentParams,state->data,&templateNullFreqdomain);
+	REAL8 noiseZ=LALInferenceFreqDomainStudentTLogLikelihood(state->currentParams,state->data,&LALInferenceTemplateNullFreqdomain);
 	LALInferenceAddVariable(state->algorithmParams,"logZnoise",&noiseZ,REAL8_t,PARAM_FIXED);
 
 	return;

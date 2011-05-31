@@ -130,7 +130,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 			}
 			ifoPtr = ifoPtr->next;
 		}
-		irs->currentLikelihood=NullLogLikelihood(irs->data);
+		irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
 		printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
 	}
 	else
@@ -199,32 +199,32 @@ void initializeMCMC(LALInferenceRunState *runState)
 			fprintf(stdout,"Template function called is \"templateLAL\"\n");
 		}*/
 		if(strstr(ppt->value,"TaylorF2")) {
-			runState->template=&templateLAL;
+			runState->template=&LALInferenceTemplateLAL;
 			fprintf(stdout,"Template function called is \"templateLAL\"\n");
 		}
     else if(strstr(ppt->value,"35phase_25amp")) {
-      runState->template=&template3525TD;
+      runState->template=&LALInferenceTemplate3525TD;
 			fprintf(stdout,"Template function called is \"template3525TD\"\n");
     }
 		else {
-			runState->template=&templateLALGenerateInspiral;
+			runState->template=&LALInferenceTemplateLALGenerateInspiral;
 			fprintf(stdout,"Template function called is \"templateLALGenerateInspiral\"\n");
 		}
 		
 	}
-	else {runState->template=&templateLAL;}
+	else {runState->template=&LALInferenceTemplateLAL;}
 
         if (LALInferenceGetProcParamVal(commandLine,"--tdlike")) {
           fprintf(stderr, "Computing likelihood in the time domain.\n");
-          runState->likelihood=&TimeDomainLogLikelihood;
+          runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
         } else if (LALInferenceGetProcParamVal(commandLine, "--zeroLogLike")) {
           /* Use zero log(L) */
-          runState->likelihood=&ZeroLogLikelihood;
+          runState->likelihood=&LALInferenceZeroLogLikelihood;
         } else if (LALInferenceGetProcParamVal(commandLine, "--analyticLogLike")) {
           /* Use zero log(L) */
-          runState->likelihood=&AnalyticLogLikelihood;
+          runState->likelihood=&LALInferenceAnalyticLogLikelihood;
         } else {
-          runState->likelihood=&UndecomposedFreqDomainLogLikelihood;
+          runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
         }
 
 	/* runState->likelihood=&FreqDomainLogLikelihood; */
@@ -1046,7 +1046,7 @@ void initVariables(LALInferenceRunState *state)
             dePts[dePtsLen-1]->head = NULL;
             dePts[dePtsLen-1]->dimension = 0;
             
-            processParamLine(dePtsFile, headers, dePts[dePtsLen-1]);
+            LALInferenceProcessParamLine(dePtsFile, headers, dePts[dePtsLen-1]);
             
             dePtsLen++;
             if (dePtsLen > maxDePtsLen) {
