@@ -46,7 +46,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 	for(;item;item=item->next)
 	{
 		// if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR)
-		if(item->vary==PARAM_FIXED || item->vary==PARAM_OUTPUT)
+		if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
                         continue;
 		else
 		{
@@ -108,13 +108,13 @@ LALInferenceVariables *priorArgs){
   /* REAL8 mu, sigma; */
   for (paraHead=parameter->head;paraHead;paraHead=paraHead->next)
   {
-    if( paraHead->vary==PARAM_FIXED || 
-        paraHead->vary==PARAM_OUTPUT || 
+    if( paraHead->vary==LALINFERENCE_PARAM_FIXED || 
+        paraHead->vary==LALINFERENCE_PARAM_OUTPUT || 
         !LALInferenceCheckMinMaxPrior(priorArgs, paraHead->name) ) continue;
 
     LALInferenceGetMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
          
-    if(paraHead->vary==PARAM_CIRCULAR) /* For cyclic boundaries */
+    if(paraHead->vary==LALINFERENCE_PARAM_CIRCULAR) /* For cyclic boundaries */
     {
        delta = max-min;
        while ( *(REAL8 *)paraHead->value > max) 
@@ -123,7 +123,7 @@ LALInferenceVariables *priorArgs){
        while ( *(REAL8 *)paraHead->value < min) 
          *(REAL8 *)paraHead->value += delta;
      }
-     else if(paraHead->vary==PARAM_LINEAR) /* Use reflective boundaries */
+     else if(paraHead->vary==LALINFERENCE_PARAM_LINEAR) /* Use reflective boundaries */
      {
        while(max<*(REAL8 *)paraHead->value || min>*(REAL8 *)paraHead->value){
        /*      printf("%s: max=%lf,
@@ -163,7 +163,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 	for(;item;item=item->next)
 	{
 		//if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR) continue;
-		if(item->vary==PARAM_FIXED || item->vary==PARAM_OUTPUT) continue;
+		if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT) continue;
 		else
 		{
 			LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
@@ -192,7 +192,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 						else {
 							norm = -1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
 						}
-						LALInferenceAddVariable(priorParams, "mass_norm", &norm, REAL8_t, PARAM_FIXED);
+						LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 					}
 					if(!strcmp(item->name, "chirpmass")){
 						logmc=log(*(REAL8 *)LALInferenceGetVariable(params,"chirpmass"));
@@ -231,7 +231,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 					else
 					{
 						norm = +1.09861228867-log(max*max*max-min*min*min);
-						LALInferenceAddVariable(priorParams, "distance_norm", &norm, REAL8_t, PARAM_FIXED);
+						LALInferenceAddVariable(priorParams, "distance_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 					}
 					logPrior += 2.0*log(*(REAL8 *)LALInferenceGetVariable(params,"distance"))+norm;
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
@@ -243,7 +243,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 					else
 					{
 						norm = 1.38629436112-log(max*max*max*max-min*min*min*min);
-						LALInferenceAddVariable(priorParams, "logdistance_norm", &norm, REAL8_t, PARAM_FIXED);
+						LALInferenceAddVariable(priorParams, "logdistance_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 					}
 					logPrior += 3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance")+norm;
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
@@ -259,7 +259,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 						REAL8 intpart_max=0.0;
 						REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
 						norm = cos(LAL_PI*fractpart_min)-cos(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min);
-						LALInferenceAddVariable(priorParams, "inclination_norm", &norm, REAL8_t, PARAM_FIXED);
+						LALInferenceAddVariable(priorParams, "inclination_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 					}
 					logPrior += log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"inclination"))))+norm;
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
@@ -275,7 +275,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 						REAL8 intpart_max=0.0;
 						REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
 						norm = -sin(LAL_PI*fractpart_min)+sin(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min);
-						LALInferenceAddVariable(priorParams, "declination_norm", &norm, REAL8_t, PARAM_FIXED);
+						LALInferenceAddVariable(priorParams, "declination_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 					}
 					logPrior += log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))))+norm;
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
@@ -291,7 +291,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 						REAL8 intpart_max=0.0;
 						REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
 						norm = cos(LAL_PI*fractpart_min)-cos(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min);
-						LALInferenceAddVariable(priorParams, "theta_spin1_norm", &norm, REAL8_t, PARAM_FIXED);
+						LALInferenceAddVariable(priorParams, "theta_spin1_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 					}
 					logPrior += log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin1"))))+norm;
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
@@ -307,7 +307,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 						REAL8 intpart_max=0.0;
 						REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
 						norm = cos(LAL_PI*fractpart_min)-cos(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min);
-						LALInferenceAddVariable(priorParams, "theta_spin2_norm", &norm, REAL8_t, PARAM_FIXED);
+						LALInferenceAddVariable(priorParams, "theta_spin2_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 					}
 					logPrior += log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))))+norm;
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
@@ -321,7 +321,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 					else
 					{
 						norm = -log(max-min);
-						LALInferenceAddVariable(priorParams, normName, &norm, REAL8_t, PARAM_FIXED);
+						LALInferenceAddVariable(priorParams, normName, &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 					}
 					logPrior += norm;
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
@@ -443,8 +443,8 @@ void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *na
   sprintf(minName,"%s_min",name);
   sprintf(maxName,"%s_max",name);
   
-  LALInferenceAddVariable(priorArgs,minName,min,type,PARAM_FIXED);
-  LALInferenceAddVariable(priorArgs,maxName,max,type,PARAM_FIXED);    
+  LALInferenceAddVariable(priorArgs,minName,min,type,LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(priorArgs,maxName,max,type,LALINFERENCE_PARAM_FIXED);    
   return;
 }
 
@@ -507,8 +507,8 @@ void LALInferenceAddGaussianPrior(LALInferenceVariables *priorArgs, const char *
   sprintf(meanName,"%s_gaussian_mean",name);
   sprintf(sigmaName,"%s_gaussian_sigma",name);
   
-  LALInferenceAddVariable(priorArgs,meanName,mu,type,PARAM_FIXED);
-  LALInferenceAddVariable(priorArgs,sigmaName,sigma,type,PARAM_FIXED);    
+  LALInferenceAddVariable(priorArgs,meanName,mu,type,LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(priorArgs,sigmaName,sigma,type,LALINFERENCE_PARAM_FIXED);    
   return;
 }
 

@@ -134,7 +134,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   LALInferenceVariableItem *ptr=runState->currentParams->head;
   p=0;
   while(ptr!=NULL) {
-    if (ptr->vary != PARAM_FIXED) {
+    if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
       parameters->data[p]=*(REAL8 *)ptr->value;
       p++;
     }
@@ -361,9 +361,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	*/
 	INT4 parameter=0;
 
-	LALInferenceAddVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_LINEAR);
-	LALInferenceAddVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount,  INT4_t, PARAM_LINEAR);
-	//addVariable(runState->proposalArgs, "sigma", sigma,  gslMatrix_t, PARAM_LINEAR);
+	LALInferenceAddVariable(runState->proposalArgs, "temperature", &temperature,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+	LALInferenceAddVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+	//addVariable(runState->proposalArgs, "sigma", sigma,  gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
 	
   
   
@@ -380,16 +380,16 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   // }
   
   
-  //addVariable(runState->proposalArgs, "sigma", &sigma,  REAL8Vector_t, PARAM_LINEAR);
-  //addVariable(runState->proposalArgs, "sigma", &sigma,  REAL8ptr_t, PARAM_LINEAR);
+  //addVariable(runState->proposalArgs, "sigma", &sigma,  REAL8Vector_t, LALINFERENCE_PARAM_LINEAR);
+  //addVariable(runState->proposalArgs, "sigma", &sigma,  REAL8ptr_t, LALINFERENCE_PARAM_LINEAR);
   if (adaptationOn == 1) {
-	LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, REAL8_t, PARAM_LINEAR);
+	LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
   }
-	LALInferenceAddVariable(runState->algorithmParams, "nChain", &nChain,  INT4_t, PARAM_FIXED);
-	LALInferenceAddVariable(runState->algorithmParams, "nPar", &nPar,  INT4_t, PARAM_FIXED);
-	LALInferenceAddVariable(runState->proposalArgs, "parameter",&parameter, INT4_t, PARAM_LINEAR);
-	//LALInferenceAddVariable(runState->proposalArgs, "tempIndex", &tempIndex,  INT4_t, PARAM_LINEAR);
-	LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood, REAL8_t, PARAM_FIXED);
+	LALInferenceAddVariable(runState->algorithmParams, "nChain", &nChain,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+	LALInferenceAddVariable(runState->algorithmParams, "nPar", &nPar,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+	LALInferenceAddVariable(runState->proposalArgs, "parameter",&parameter, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+	//LALInferenceAddVariable(runState->proposalArgs, "tempIndex", &tempIndex,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+	LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 	
 
   
@@ -585,7 +585,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     ptr=runState->currentParams->head;
     p=0;
     while(ptr!=NULL) {
-      if (ptr->vary != PARAM_FIXED) {
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
         parameters->data[p]=*(REAL8 *)ptr->value;
         
         if(temperature_test==1){
@@ -706,7 +706,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     ptr=runState->currentParams->head;
     p=0;
     while(ptr!=NULL) {
-      if (ptr->vary != PARAM_FIXED) {
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
         memcpy(ptr->value,&(parameters->data[p]),LALInferenceTypeSize[ptr->type]);
         p++;
       }
@@ -1232,7 +1232,7 @@ void PTMCMCLALBlockProposal(LALInferenceRunState *runState, LALInferenceVariable
 	/* loop over all parameters */
 	for (paraHead=proposedParams->head,i=0; paraHead; paraHead=paraHead->next)
 	{ 
-		if(paraHead->vary==PARAM_LINEAR || paraHead->vary==PARAM_CIRCULAR){
+		if(paraHead->vary==LALINFERENCE_PARAM_LINEAR || paraHead->vary==LALINFERENCE_PARAM_CIRCULAR){
 			
 			if (!strcmp(paraHead->name,"massratio") || !strcmp(paraHead->name,"time") || !strcmp(paraHead->name,"a_spin2") || !strcmp(paraHead->name,"a_spin1")){
 				*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
@@ -1274,13 +1274,13 @@ void PTMCMCLALSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVa
     do {
       varNr = 1+gsl_rng_uniform_int(rng, dim);
       param = LALInferenceGetItemNr(proposedParams, varNr);
-    } while (param->vary == PARAM_FIXED || param->vary == PARAM_OUTPUT);
+    } while (param->vary == LALINFERENCE_PARAM_FIXED || param->vary == LALINFERENCE_PARAM_OUTPUT);
 
     for (dummyParam = proposedParams->head, i = 0; dummyParam != NULL; dummyParam = dummyParam->next) {
       if (!strcmp(dummyParam->name, param->name)) {
         /* Found it; i = index into sigma vector. */
         break;
-      } else if (dummyParam->vary == PARAM_FIXED || dummyParam->vary == PARAM_OUTPUT) {
+      } else if (dummyParam->vary == LALINFERENCE_PARAM_FIXED || dummyParam->vary == LALINFERENCE_PARAM_OUTPUT) {
         /* Don't increment i, since we're not dealing with a "real" parameter. */
         continue;
       } else {
@@ -1289,7 +1289,7 @@ void PTMCMCLALSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVa
       }
     }
 
-    if (param->type != REAL8_t) {
+    if (param->type != LALINFERENCE_REAL8_t) {
       fprintf(stderr, "Attempting to set non-REAL8 parameter with numerical sigma (in %s, %d)\n",
               __FILE__, __LINE__);
       exit(1);
@@ -1336,13 +1336,13 @@ void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALInferenceVariabl
   do {
     varNr = 1+gsl_rng_uniform_int(GSLrandom, dim);
     param = LALInferenceGetItemNr(proposedParams, varNr);
-  } while (param->vary == PARAM_FIXED || param->vary == PARAM_OUTPUT);
+  } while (param->vary == LALINFERENCE_PARAM_FIXED || param->vary == LALINFERENCE_PARAM_OUTPUT);
   
   for (dummyParam = proposedParams->head, i = 0; dummyParam != NULL; dummyParam = dummyParam->next) {
     if (!strcmp(dummyParam->name, param->name)) {
       /* Found it; i = index into sigma vector. */
       break;
-    } else if (dummyParam->vary == PARAM_FIXED || dummyParam->vary == PARAM_OUTPUT) {
+    } else if (dummyParam->vary == LALINFERENCE_PARAM_FIXED || dummyParam->vary == LALINFERENCE_PARAM_OUTPUT) {
       /* Don't increment i, since we're not dealing with a "real" parameter. */
       continue;
     } else {
@@ -1436,7 +1436,7 @@ void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALInferen
     }
 
     for (i = 0, param = proposedParams->head; param != NULL; param = param->next) {
-      if (param->vary != PARAM_FIXED && param->vary != PARAM_OUTPUT) {
+      if (param->vary != LALINFERENCE_PARAM_FIXED && param->vary != LALINFERENCE_PARAM_OUTPUT) {
         /* Then it's a parameter to set. */
         UINT4 j;
         REAL8 sum;
@@ -1445,7 +1445,7 @@ void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALInferen
           sum += gsl_matrix_get(covarianceMatrix, i, j)*uncorrelatedSample->data[j];
         }
 
-        if (param->type != REAL8_t) {
+        if (param->type != LALINFERENCE_REAL8_t) {
           fprintf(stderr, "Trying to use covariance matrix to set non-REAL8 parameter (in %s, line %d)\n",
                   __FILE__, __LINE__);
           exit(1);
@@ -1589,7 +1589,7 @@ void PTMCMCLALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInfer
 //	if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
 //		LALInferenceSetVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
 //	else
-//		LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t, PARAM_OUTPUT);
+//		LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 //}
 
 
@@ -1688,7 +1688,7 @@ void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALInferenceVar
 	if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
 		LALInferenceSetVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
 	else
-		LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t, PARAM_OUTPUT);
+		LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 }
 
 
@@ -1806,7 +1806,7 @@ void PTMCMCLALAdaptationSingleProposal(LALInferenceRunState *runState, LALInfere
 	if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
 		LALInferenceSetVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
 	else
-		LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t, PARAM_OUTPUT);
+		LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 }
 
 
@@ -1890,7 +1890,7 @@ void PTMCMCLALAdaptationSingleProposal(LALInferenceRunState *runState, LALInfere
 	if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
 		LALInferenceSetVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
 	else
-		LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t, PARAM_OUTPUT);
+		LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 	
 	
 	
@@ -2361,7 +2361,7 @@ void PTMCMCLALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState,
     exit(1);
   }
   do {
-    if (proposeIterator->vary != PARAM_FIXED && proposeIterator->vary != PARAM_OUTPUT) {
+    if (proposeIterator->vary != LALINFERENCE_PARAM_FIXED && proposeIterator->vary != LALINFERENCE_PARAM_OUTPUT) {
       REAL8 tmp = *((REAL8 *)proposeIterator->value);
       REAL8 inc = jumpSize*gsl_matrix_get(eigenvectors, j, i);
 

@@ -150,7 +150,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* get noise likelihood and add as variable to runState */
   logZnoise = noise_only_model( runState.data );
   LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, 
-                           REAL8_t, PARAM_FIXED );
+                           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
                
   /* Create live points array and fill initial parameters */
   setupLivePointsArray( &runState );
@@ -201,25 +201,25 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
   if( ppt ) {
     verbose = 1;
     LALInferenceAddVariable( runState->algorithmParams, "verbose", &verbose , 
-                             INT4_t, PARAM_FIXED);
+                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   }
 
   /* Number of live points */
   tmpi = atoi( LALInferenceGetProcParamVal(commandLine, "--Nlive")->value );
-  LALInferenceAddVariable( runState->algorithmParams,"Nlive", &tmpi, INT4_t, 
-                           PARAM_FIXED );
+  LALInferenceAddVariable( runState->algorithmParams,"Nlive", &tmpi, LALINFERENCE_INT4_t, 
+                           LALINFERENCE_PARAM_FIXED );
         
   /* Number of points in MCMC chain */
   tmpi = atoi( LALInferenceGetProcParamVal(commandLine, "--Nmcmc")->value );
-  LALInferenceAddVariable( runState->algorithmParams, "Nmcmc", &tmpi, INT4_t, 
-                           PARAM_FIXED );
+  LALInferenceAddVariable( runState->algorithmParams, "Nmcmc", &tmpi, LALINFERENCE_INT4_t, 
+                           LALINFERENCE_PARAM_FIXED );
 
   /* Optionally specify number of parallel runs */
   ppt = LALInferenceGetProcParamVal( commandLine, "--Nruns" );
   if(ppt) {
     tmpi = atoi( ppt->value );
-    LALInferenceAddVariable( runState->algorithmParams, "Nruns", &tmpi, INT4_t,
-                             PARAM_FIXED );
+    LALInferenceAddVariable( runState->algorithmParams, "Nruns", &tmpi, LALINFERENCE_INT4_t,
+                             LALINFERENCE_PARAM_FIXED );
   }
         
   /* Tolerance of the Nested sampling integrator */
@@ -227,7 +227,7 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
   if( ppt ){
     tmp = strtod( ppt->value, (char **)NULL );
     LALInferenceAddVariable( runState->algorithmParams, "tolerance", &tmp, 
-                             REAL8_t, PARAM_FIXED );
+                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
   }
         
   /* Set up the random number generator */
@@ -601,7 +601,7 @@ defined!\n");
   
     ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
     ifodata->modelParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-    ifodata->modelDomain = timeDomain;
+    ifodata->modelDomain = LALINFERENCE_DOMAIN_TIME;
     ifodata->next = NULL;
     ifodata->dataParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
     
@@ -779,7 +779,7 @@ void setSignalModelType( LALInferenceRunState *runState ){
   
   while( data ){
     LALInferenceAddVariable( data->dataParams, "modeltype", &modeltype,
-                             string_t, PARAM_FIXED );
+                             LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
     data = data->next;
   }
 }
@@ -837,10 +837,10 @@ void setupFromParFile( LALInferenceRunState *runState )
     }
     
     LALInferenceAddVariable( data->dataParams, "ssb_delays", &dts,
-                             REAL8Vector_t, PARAM_FIXED );
+                             LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
     
     LALInferenceAddVariable( data->dataParams, "bsb_delays", &bdts,
-                             REAL8Vector_t, PARAM_FIXED );
+                             LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
     
     phase_vector = get_phase_model( pulsar, data );
     
@@ -905,10 +905,10 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     REAL8Vector *sumData = NULL;
     UINT4Vector *chunkLength = NULL;
     
-    LALInferenceAddVariable( data->dataParams, "psiSteps", &psiBins, INT4_t, 
-                             PARAM_FIXED ); 
-    LALInferenceAddVariable( data->dataParams, "timeSteps", &timeBins, INT4_t, 
-                             PARAM_FIXED );
+    LALInferenceAddVariable( data->dataParams, "psiSteps", &psiBins, LALINFERENCE_INT4_t, 
+                             LALINFERENCE_PARAM_FIXED ); 
+    LALInferenceAddVariable( data->dataParams, "timeSteps", &timeBins, LALINFERENCE_INT4_t, 
+                             LALINFERENCE_PARAM_FIXED );
     
     t0 = XLALGPSGetREAL8( &data->dataTimes->data[0] );
     detAndSource.pDetector = data->detector;
@@ -922,14 +922,14 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
                            LUfcross );
 
     LALInferenceAddVariable( data->dataParams, "LU_Fplus", &LUfplus, 
-                             gslMatrix_t, PARAM_FIXED );
+                             LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED );
     LALInferenceAddVariable( data->dataParams, "LU_Fcross", &LUfcross,
-                             gslMatrix_t, PARAM_FIXED );
+                             LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED );
 
-    LALInferenceAddVariable( data->dataParams, "chunkMin", &chunkMin, INT4_t, 
-                             PARAM_FIXED );
-    LALInferenceAddVariable( data->dataParams, "chunkMax", &chunkMax, INT4_t, 
-                             PARAM_FIXED );
+    LALInferenceAddVariable( data->dataParams, "chunkMin", &chunkMin, LALINFERENCE_INT4_t, 
+                             LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( data->dataParams, "chunkMax", &chunkMax, LALINFERENCE_INT4_t, 
+                             LALINFERENCE_PARAM_FIXED );
     
     /* get chunk lengths of data */
     
@@ -938,13 +938,13 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     chunkLength = chop_n_merge( data, chunkMin, chunkMax );
     
     LALInferenceAddVariable( data->dataParams, "chunkLength", &chunkLength, 
-                             UINT4Vector_t, PARAM_FIXED );
+                             LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_FIXED );
 
     /* get sum of data for each chunk */
     sumData = sum_data( data );
     
     LALInferenceAddVariable( data->dataParams, "sumData", &sumData, 
-                             REAL8Vector_t, PARAM_FIXED);
+                             LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 
     data = data->next;
   }
@@ -1002,7 +1002,7 @@ void add_initial_variables( LALInferenceVariables *ini,
                             pars.posepochErr );
   
   /* binary system parameters */
-  LALInferenceAddVariable( ini, "model", &pars.model, string_t, PARAM_FIXED );
+  LALInferenceAddVariable( ini, "model", &pars.model, LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
   
   add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb", pars.Pb, 
                             pars.PbErr );
@@ -1084,12 +1084,12 @@ void add_variable_scale_prior( LALInferenceVariables *var,
   
   /* if the sigma is non-zero then set a Gaussian prior */
   if ( sigma != 0. ){
-    vary = PARAM_LINEAR;
+    vary = LALINFERENCE_PARAM_LINEAR;
     INT4 isthere = 0;
     
     /* set the prior to a Gaussian prior with mean value and sigma */
     LALInferenceAddGaussianPrior( prior, name, (void *)&value, (void *)&sigma, 
-                                  REAL8_t );
+                                  LALINFERENCE_REAL8_t );
     
     /* if the parameter is not one of the amplitude parameters then set
        global variable varyphase to 1, so that the phase evolution will be
@@ -1118,14 +1118,14 @@ void add_variable_scale_prior( LALInferenceVariables *var,
       }
     }
   }
-  else vary = PARAM_FIXED;
+  else vary = LALINFERENCE_PARAM_FIXED;
   
   /* add the variable */
-  LALInferenceAddVariable( var, name, &value, REAL8_t, vary );
+  LALInferenceAddVariable( var, name, &value, LALINFERENCE_REAL8_t, vary );
   
   /* add the initial scale factor of 1 */
   sprintf( scaleName, "%s_scale", name );
-  LALInferenceAddVariable( scale, scaleName, &scaleVal, REAL8_t, PARAM_FIXED );
+  LALInferenceAddVariable( scale, scaleName, &scaleVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 }
 
 
@@ -1203,7 +1203,7 @@ set.\n", propfile, tempPar);
       LALInferenceRemoveVariable( datatemp->dataParams, tempParScale );
     
       LALInferenceAddVariable( datatemp->dataParams, tempParScale, &scale, scaleType,
-        PARAM_FIXED );
+        LALINFERENCE_PARAM_FIXED );
     
       datatemp = datatemp->next;
     }
@@ -1216,11 +1216,11 @@ set.\n", propfile, tempPar);
     /* re-add variable */
     if( !strcmp(tempPar, "phi0") ){
       LALInferenceAddVariable( runState->currentParams, tempPar, &tempVar, type,
-                   PARAM_CIRCULAR );
+                   LALINFERENCE_PARAM_CIRCULAR );
     }
     else{
       LALInferenceAddVariable( runState->currentParams, tempPar, &tempVar, type,
-                   PARAM_LINEAR );
+                   LALINFERENCE_PARAM_LINEAR );
     }
     /* Add the prior variables */
     LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, (void *)&low, 
@@ -1300,7 +1300,7 @@ set.\n", propfile, tempPar);
         LALInferenceRemoveVariable( datatemp->dataParams, tempParScale );
     
         LALInferenceAddVariable( datatemp->dataParams, tempParScale, &scale, scaleType,
-                     PARAM_FIXED );
+                     LALINFERENCE_PARAM_FIXED );
       
         datatemp = datatemp->next;
       }
@@ -1331,7 +1331,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
   logLs = XLALCreateREAL8Vector( Nlive );
      
   LALInferenceAddVariable( runState->algorithmParams, "logLikelihoods",
-               &logLs, REAL8Vector_t, PARAM_FIXED);
+               &logLs, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
                
   fprintf(stdout, "Sprinkling %i live points, may take some time\n", Nlive);
   
@@ -1352,10 +1352,10 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
       
         if( LALInferenceCheckVariable( runState->priorArgs, tempParPrior ) ) gp = 1;
         
-        if( current->vary==PARAM_CIRCULAR || current->vary==PARAM_LINEAR )
+        if( current->vary==LALINFERENCE_PARAM_CIRCULAR || current->vary==LALINFERENCE_PARAM_LINEAR )
         {
           switch (current->type){
-            case REAL4_t:
+            case LALINFERENCE_REAL4_t:
             {
               REAL4 tmp;
               REAL4 min, max, mu, sigma;
@@ -1374,7 +1374,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
               LALInferenceSetVariable( runState->livePoints[i], current->name, &tmp );
               break;
             }
-            case REAL8_t:
+            case LALINFERENCE_REAL8_t:
             {
               REAL8 tmp;
               REAL8 min, max, mu, sigma;
@@ -1393,7 +1393,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
               LALInferenceSetVariable( runState->livePoints[i], current->name, &tmp );
               break;
             }
-            case INT4_t:
+            case LALINFERENCE_INT4_t:
             {
               INT4 tmp;
               INT4 min,max;
@@ -1406,7 +1406,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
               LALInferenceSetVariable( runState->livePoints[i], current->name, &tmp );
               break;
             }
-            case INT8_t:
+            case LALINFERENCE_INT8_t:
             {
               INT8 tmp;
               INT8 min, max;
@@ -1544,12 +1544,12 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     CHAR priorPar[VARNAME_MAX] = "";
     REAL8 scale;
     
-    if( item->vary == PARAM_FIXED || item->vary == PARAM_OUTPUT ){ continue; }
+    if( item->vary == LALINFERENCE_PARAM_FIXED || item->vary == LALINFERENCE_PARAM_OUTPUT ){ continue; }
     
     sprintf(scalePar, "%s_scale", item->name);
     scale = *(REAL8 *)LALInferenceGetVariable( data->dataParams, scalePar );
     
-    if( item->vary == PARAM_LINEAR || item->vary == PARAM_CIRCULAR ){
+    if( item->vary == LALINFERENCE_PARAM_LINEAR || item->vary == LALINFERENCE_PARAM_CIRCULAR ){
       sprintf(priorPar, "%s_gaussian_mean", item->name);
       /* Check for a gaussian */
       if ( LALInferenceCheckVariable(runState->priorArgs, priorPar) ){
@@ -2756,19 +2756,19 @@ void rescaleOutput( LALInferenceRunState *runState ){
       }
       
       switch (item->type) {
-        case INT4_t:
+        case LALINFERENCE_INT4_t:
           fprintf(fptemp, "%d", (INT4)(atoi(value)*scalefac));
           if ( j == 0 ) fprintf(fppars, "%s\n", item->name);
           break;
-        case REAL4_t:
+        case LALINFERENCE_REAL4_t:
           fprintf(fptemp, "%e", atof(value)*scalefac);
           if ( j == 0 ) fprintf(fppars, "%s\n", item->name);
           break;
-        case REAL8_t:
+        case LALINFERENCE_REAL8_t:
           fprintf(fptemp, "%le", atof(value)*scalefac);
           if ( j == 0 ) fprintf(fppars, "%s\n", item->name);
           break;
-        case string_t:
+        case LALINFERENCE_string_t:
           /* don't reprint out any string values */
           break;
         default:
