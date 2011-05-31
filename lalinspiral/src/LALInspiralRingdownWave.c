@@ -1137,6 +1137,9 @@ INT4 XLALInspiralHybridAttachRingdownWave (
         XLAL_ERROR( func, XLAL_ENOMEM );
       }
 
+      memset( rdwave1->data, 0, rdwave1->length * sizeof( REAL4 ) );
+      memset( rdwave2->data, 0, rdwave2->length * sizeof( REAL4 ) );
+
       /* Generate derivatives of the last part of inspiral waves */
       /* Get derivatives of signal1 */
       errcode = XLALGenerateHybridWaveDerivatives( rinspwave, dinspwave, ddinspwave, time, signal1, 
@@ -1206,6 +1209,9 @@ INT4 XLALInspiralHybridAttachRingdownWave (
 	    signal1->data[j + attachIdx] = rdwave1->data[j];
 	    signal2->data[j + attachIdx] = rdwave2->data[j];
       }
+
+      memset( signal1->data+Nrdwave+attachIdx, 0, (signal1->length - Nrdwave - attachIdx)*sizeof(REAL4) );
+      memset( signal2->data+Nrdwave+attachIdx, 0, (signal2->length - Nrdwave - attachIdx)*sizeof(REAL4) );
 
       /* Free memory */
       XLALDestroyCOMPLEX8Vector( modefreqs );
