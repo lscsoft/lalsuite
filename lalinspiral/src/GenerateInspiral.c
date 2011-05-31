@@ -17,90 +17,66 @@
 *  MA  02111-1307  USA
 */
 
-#if 0
-<lalVerbatim file="GenerateInspiralCV">
-Author: Thomas Cokelaer
-$Id$
-</lalVerbatim>
-#endif
+/**
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{GenerateInspiral.c}}
-\label{ss:GenerateInspiral.c}
-\noindent Generates a CoherentGW inspiral waveform for injection.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALGenerateInspiralCP}
-\input{LALGetApproxFromStringCP}
-\input{LALGetOrderFromStringCP}
-\input{LALGenerateInspiralPopulatePPNCP}
-\input{LALGenerateInspiralPopulateInspiralCP}
+\author Thomas Cokelaer
+\file
+\ingroup GenerateInspiral_h
 
 
-\idx{LALGenerateInspiral}
-\idx{LALGetApproxFromString}
-\idx{LALGetOrderFromString}
-\idx{LALGenerateInspiralPopulatePPN}
-\idx{LALGenerateInspiralPopulateInspiral}
-
-
-\begin{description}
-\item[\texttt{LALGenerateInspiral()}] create an inspiral binary
-waveform generated either by the \texttt{inspiral} package (EOB,
-EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor, PhenSpinTaylorRD, SpinQuadTaylor) 
-or the \texttt{inject} package (GeneratePPN).  It is used in the module
-\texttt{FindChirpSimulation} in \texttt{findchirp} package.
+<dl>
+<dt><tt>LALGenerateInspiral()</tt></dt><dd> create an inspiral binary
+waveform generated either by the \c inspiral package (EOB,
+EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor, PhenSpinTaylorRD, SpinQuadTaylor)
+or the \c inject package (GeneratePPN).  It is used in the module
+\c FindChirpSimulation in \c findchirp package.
 
 There are three  parsed arguments
-\begin{itemize}
-\item a \texttt{CoherentGW}  structure which stores amplitude,
-frequency and phase of the  waveform (output)
-\item a \texttt{thisEvent}  structure which provides some
-waveform parameters (input)
-\item a \texttt{PPNParamStruc} which gives some input
+<ul>
+<li> a \c CoherentGW  structure which stores amplitude,
+frequency and phase of the  waveform (output)</li>
+<li> a \c thisEvent  structure which provides some
+waveform parameters (input)</li>
+<li> a \c PPNParamStruc which gives some input
 parameters needed by the GeneratePPN waveform  generation. That
 arguments is also used as an output by all the different
-approximant  (output/input).
-\end{itemize}
+approximant  (output/input).</li>
+</ul>
 
 The input must be composed of a valid thisEvent structure as well as
 the  variable deltaT of the PPNparamsStruct. All others variables
-of the PPNParamStruc are populated within that function.
+of the PPNParamStruc are populated within that function.</dd>
 
-\item[\texttt{LALGetOrderFromString()}] convert a string
-provided by the \texttt{CoherentGW} structure in order to retrieve the
-order of the waveform to generate.
+<dt><tt>LALGetOrderFromString()</tt></dt><dd> convert a string
+provided by the \c CoherentGW structure in order to retrieve the
+order of the waveform to generate.</dd>
 
-\item[\texttt{LALGetApproximantFromString()}] convert a string
-provided by the \texttt{CoherentGW} structure in order to retrieve the
-approximant of the waveform to generate.
+<dt><tt>LALGetApproximantFromString()</tt></dt><dd> convert a string
+provided by the \c CoherentGW structure in order to retrieve the
+approximant of the waveform to generate.</dd>
 
-\item[\texttt{LALGenerateInspiralPopulatePPN()}] Populate the
-PPNParamsStruc with the input argument \texttt{thisEvent}. That
-structure is used by both inspiral waveforms inject waveforms.
+<dt><tt>LALGenerateInspiralPopulatePPN()</tt></dt><dd> Populate the
+PPNParamsStruc with the input argument \c thisEvent. That
+structure is used by both inspiral waveforms inject waveforms.</dd>
 
-\item[\texttt{LALGenerateInspiralPopulateInspiral()}]  Populate the
+<dt><tt>LALGenerateInspiralPopulateInspiral()</tt></dt><dd>  Populate the
 InspiralTemplate structure if the model chosen belongs to the
 inspiral package.
+</dd>
+</dl>
 
-\end{description}
+\heading{Algorithm}
+None.
 
-\subsubsection*{Algorithm}
-\noindent None.
-
-\subsubsection*{Notes}
+\heading{Notes}
 Inject only time-domain waveforms for the time being such as GeneratePPN,
   TaylorT1, TaylorT2, TaylorT3, PadeT1 and EOB , SpinTaylor, PhenSpinTaylorRD.
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 None.
-\end{verbatim}
+\endcode
 
-\vfill{\footnotesize\input{GenerateInspiralCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
@@ -112,7 +88,7 @@ None.
 NRCSID( GENERATEINSPIRALC,
 "$Id$" );
 
-/* <lalVerbatim file="LALGenerateInspiralCP"> */
+
 void
 LALGenerateInspiral(
     LALStatus		*status,
@@ -120,7 +96,7 @@ LALGenerateInspiral(
     SimInspiralTable	*thisEvent,
     PPNParamStruc	*ppnParams
     )
-/* </lalVerbatim> */
+
 {
   LALPNOrder        order;              /* Order of the model             */
   Approximant       approximant;        /* And its approximant value      */
@@ -228,7 +204,7 @@ LALGenerateInspiral(
     LALInfo( status, warnMsg );
     ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
   }
-  
+
 
   /* If sampling problem. (AmpCorPPN may not be compatible) */
   if ( ppnParams->dfdt > 2.0 && approximant != AmpCorPPN )
@@ -280,14 +256,14 @@ LALGenerateInspiral(
 }
 
 
-/* <lalVerbatim file="LALGetOrderFromStringCP"> */
+
 void
 LALGetOrderFromString(
     LALStatus  *status,
     CHAR       *thisEvent,
     LALPNOrder *order
     )
-/* </lalVerbatim> */
+
 {
   CHAR  warnMsg[1024];
 
@@ -373,14 +349,14 @@ int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent)
 	return XLAL_SUCCESS;
 }
 
-/* <lalVerbatim file="LALGetApproxFromStringCP"> */
+
 void
 LALGetApproximantFromString(
     LALStatus   *status,
     CHAR        *thisEvent,
     Approximant *approximant
     )
-/* </lalVerbatim> */
+
 {
   /* Function to search for the approximant into a string */
   CHAR warnMsg[1024];
@@ -473,14 +449,14 @@ LALGetApproximantFromString(
 }
 
 
-/* <lalVerbatim file="LALGenerateInspiralPopulatePPNCP"> */
+
 void
 LALGenerateInspiralPopulatePPN(
     LALStatus             *status,
     PPNParamStruc         *ppnParams,
     SimInspiralTable      *thisEvent
     )
-/* </lalVerbatim> */
+
 {
   CHAR warnMsg[1024];
 
@@ -523,7 +499,7 @@ LALGenerateInspiralPopulatePPN(
 }
 
 
-/* <lalVerbatim file="LALGenerateInspiralPopulateInspiralCP"> */
+
 void
 LALGenerateInspiralPopulateInspiral(
     LALStatus           *status,
@@ -532,7 +508,7 @@ LALGenerateInspiralPopulateInspiral(
     PPNParamStruc       *ppnParams
     )
 
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALGenerateInspiralPopulateInspiral",
       GENERATEINSPIRALC );

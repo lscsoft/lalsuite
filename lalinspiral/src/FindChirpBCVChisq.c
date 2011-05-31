@@ -23,54 +23,39 @@
  *
  * Author: Anderson, W. G., and Brown, D. A. and Messaritaki E.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpBCVChisqCV">
-Author: Anderson, W. G., and Brown D. A., BCV-Modifications: Messaritaki E.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpBCVChisq.c}}
-\label{ss:FindChirpBCVChisq.c}
+\author Anderson, W. G., and Brown D. A., BCV-Modifications: Messaritaki E.
+\file
+\ingroup FindChirpBCV_h
 
-Module to implement the $\chi^2$ veto for the BCV templates.
+\brief Module to implement the \f$\chi^2\f$ veto for the BCV templates.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpBCVChisqCP}
-\idx{LALFindChirpBCVChisqVeto()}
+\heading{Description}
 
-\subsubsection*{Description}
-
-The function \texttt{LALFindChirpBCVChisqVeto()} perfoms a $\chi^2$ veto on an
+The function <tt>LALFindChirpBCVChisqVeto()</tt> perfoms a \f$\chi^2\f$ veto on an
 entire data segment using the corresponding algorithm for the BCV templates,
-described below. On exit the vector \texttt{chisqVec} contains the value
-$\chi^2(t_j)$ for the data segment.
+described below. On exit the vector \c chisqVec contains the value
+\f$\chi^2(t_j)\f$ for the data segment.
 
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 chisq algorithm here
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCreateReverseComplexFFTPlan()
 LALDestroyComplexFFTPlan()
 LALCCreateVector()
 LALCDestroyVector()
 LALCOMPLEX8VectorFFT()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{FindChirpBCVChisqCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>
@@ -84,7 +69,7 @@ LALCOMPLEX8VectorFFT()
 NRCSID (FINDCHIRPBCVCHISQC, "$Id$");
 
 
-/* <lalVerbatim file="FindChirpBCVChisqCP"> */
+
 void
 LALFindChirpBCVChisqVeto (
     LALStatus                  *status,
@@ -93,7 +78,7 @@ LALFindChirpBCVChisqVeto (
     FindChirpChisqInput        *inputBCV,
     FindChirpChisqParams       *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 j, l;
   UINT4                 numPoints;

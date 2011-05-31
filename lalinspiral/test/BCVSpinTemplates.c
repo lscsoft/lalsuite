@@ -17,38 +17,26 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="BCVSpinTemplatesCV">
-Author: B.S. Sathyaprakash
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author B.S. Sathyaprakash
+\file
 
-/********************************************************** <lalLaTeX>
+\brief Creates a template mesh for BCVSpin using the mismatch metric.
 
-\subsection{Program \texttt{BCVSpinTemplates.c}}
-\label{ss:BCVSpinTemplates.c}
+\heading{Usage}
 
-Creates a template mesh for BCVSpin using the mismatch metric.
+\heading{Description}
 
-\subsubsection*{Usage}
+\heading{Algorithm}
 
-\subsubsection*{Description}
-
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-/******************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{BCVSpinTemplatesCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <stdlib.h>

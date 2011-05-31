@@ -17,71 +17,57 @@
 *  MA  02111-1307  USA
 */
 
-/************************** <lalVerbatim file="GenerateInspiralSmoothCV">
-Author: Fairhurst, S.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Fairhurst, S.
+\file
+\ingroup GeneratePPNInspiral_h
 
-/********************************************************** <lalLaTeX>
-
-\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
-
-\subsection{Module \texttt{GenerateInspiralSmooth.c}}
-\label{ss:GenerateInspiralSmooth.c}
-
-Smooths the end of an inspiral waveform by adding an exponential
+\brief Smooths the end of an inspiral waveform by adding an exponential
 ringdown at the end.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{GenerateInspiralSmoothCP}
-\idx{LALGenerateInspiralSmooth()}
-
-\subsubsection*{Description}
+\heading{Description}
 
 This function creates a smooth ending to an inspiral waveform from
-GeneratePPNInspiral.  It works by reading in \verb@**output@ and the
-damping factor \verb@*qfactor@.
+GeneratePPNInspiral.  It works by reading in <tt>**output</tt> and the
+damping factor <tt>*qfactor</tt>.
 
-It is assumed that the \verb@**output@ structure is the output from
-\verb@LAL_GeneratePPNInspiral@ so that it contains amplitude, frequency
-and phase information in \verb@(*output)->a@, \verb@(*output)->f@ and
-\verb@(*output)->phi@ respectively.  These data is then extended by
+It is assumed that the <tt>**output</tt> structure is the output from
+\c LAL_GeneratePPNInspiral so that it contains amplitude, frequency
+and phase information in <tt>(*output)->a</tt>, <tt>(*output)->f</tt> and
+<tt>(*output)->phi</tt> respectively.  These data is then extended by
 keeping the frequency fixed and exponentially damping the amplitude with
-damping factor \verb@qfactor@.
+damping factor \c qfactor.
 
-Note:  The length of the injection stored in \verb@**waveform@ will be
+Note:  The length of the injection stored in <tt>**waveform</tt> will be
 correct.  However, the length and time of the inspiral are not updated
-in the \verb@PPNParamStruc@ \verb@params@.  Therefore,
+in the \c PPNParamStruc \c params.  Therefore,
 they will still contain the actual end time of the inspiral part of the
 waveform.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-The function reads in $f_{\mathrm{final}}$ and
-$(a_{+,\times})_{\mathrm{final}}$ then it populates additional data
+The function reads in \f$f_{\mathrm{final}}\f$ and
+\f$(a_{+,\times})_{\mathrm{final}}\f$ then it populates additional data
 entries by:
-\begin{eqnarray}
+\f{eqnarray}{
   f &=& f_{\mathrm{final}} \\
   a_{+,\times} &=& (a_{+,\times})_{\mathrm{final}} \,
     \exp( - \pi \, f_{\mathrm{final}} \, t / \mathrm{qfactor}) \\
   \phi &=& \phi_{\mathrm{final}} + (f_{\mathrm{final}}) \, t \, .
-\end{eqnarray}
-Here, $t$ is the elapsed time after the end of the inspiral.  The waveform
-ends when its amplitude has been suppressed by a factor of $\exp(-10)$.
+\f}
+Here, \f$t\f$ is the elapsed time after the end of the inspiral.  The waveform
+ends when its amplitude has been suppressed by a factor of \f$\exp(-10)\f$.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALRealloc()                  LALFree()
 LALSResizeVector()            LALDResizeVector()
 LALSDestroyVectorSequence()   LALSDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{GenerateInspiralSmoothCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 /*********************************************************************
  * PREAMBLE                                                          *
@@ -106,13 +92,13 @@ NRCSID( GENERATEINSPIRALSMOOTHC, "$Id$" );
  * MAIN FUNCTION                                                     *
  *********************************************************************/
 
-/* <lalVerbatim file="GenerateInspiralSmoothCP"> */
+
 void
 LALGenerateInspiralSmooth(  LALStatus     *stat,
 			    CoherentGW    **output,
 			    PPNParamStruc *params,
 			    REAL4	  *qfactor )
-{ /* </lalVerbatim> */
+{
 
   REAL4 *a, *f; /* pointers to generated amplitude and frequency data */
   REAL8 *phi;   /* pointer to generated phase data */

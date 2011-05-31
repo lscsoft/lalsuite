@@ -23,53 +23,40 @@
  *
  * Author: Anderson, W. G., and Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpChisqCV">
-Author: Anderson, W. G., and Brown D. A.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpChisq.c}}
-\label{ss:FindChirpChisq.c}
+\author Anderson, W. G., and Brown D. A.
+\file
+\ingroup FindChirpChisq_h
 
-Module to implement the $\chi^2$ veto for the stationary phase chirp.
+\brief Module to implement the \f$\chi^2\f$ veto for the stationary phase chirp.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpChisqCP}
-\idx{LALFindChirpChisqVeto()}
+\heading{Description}
 
-\subsubsection*{Description}
-
-The function \texttt{LALFindChirpChisqVeto()} perfoms a $\chi^2$ veto on
+The function <tt>LALFindChirpChisqVeto()</tt> perfoms a \f$\chi^2\f$ veto on
 an entire data segment using the algorithm described below. On exit the
-vector \texttt{chisqVec} contains the value $\chi^2(t_j)$ for the data
+vector \c chisqVec contains the value \f$\chi^2(t_j)\f$ for the data
 segment.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 chisq algorithm here
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCreateReverseComplexFFTPlan()
 LALDestroyComplexFFTPlan()
 LALCCreateVector()
 LALCDestroyVector()
 LALCOMPLEX8VectorFFT()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpChisqCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>
@@ -82,7 +69,7 @@ LALCOMPLEX8VectorFFT()
 NRCSID (FINDCHIRPCHISQC, "$Id$");
 
 
-/* <lalVerbatim file="FindChirpChisqCP"> */
+
 void
 LALFindChirpComputeChisqBins(
     LALStatus                  *status,
@@ -90,7 +77,7 @@ LALFindChirpComputeChisqBins(
     FindChirpSegment           *fcSeg,
     UINT4                       kmax
     )
-/* </lalVerbatim> */
+
 {
   UINT4         k, incIdx;
   REAL4        *tmpltPower;
@@ -190,7 +177,7 @@ LALFindChirpComputeChisqBins(
 }
 
 
-/* <lalVerbatim file="FindChirpChisqCP"> */
+
 void
 LALFindChirpChisqVeto (
     LALStatus                  *status,
@@ -198,7 +185,7 @@ LALFindChirpChisqVeto (
     FindChirpChisqInput        *input,
     FindChirpChisqParams       *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 j, l;
   UINT4                 numPoints;

@@ -17,55 +17,48 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALEtaTau02CV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief Given \f$\tau_0\f$ and \f$\tau_2\f$ compute the mass ratio \f$\eta.\f$
 
-\subsection{Module \texttt{LALEtaTau02.c}}
-Given $\tau_0$ and $\tau_2$ compute the mass ratio $\eta.$
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALEtaTau02CP}
-\idx{LALEtaTau02()}
-
-\subsubsection*{Description}
-Given $\tau_0$ and $\tau_2$ one can determine $\eta$ by solving
-\begin{equation}
+\heading{Description}
+Given \f$\tau_0\f$ and \f$\tau_2\f$ one can determine \f$\eta\f$ by solving
+\f{equation}{
 -\eta^{2/5} \tau_2 + A_2 \left ( \frac {\tau_0}{A_0} \right )^{3/5}
 \left (1 + B_2\eta \right )  = 0,
-\end{equation}
-where $A_0 = 5/[256 (\pi f_{s} )^{8/3}],$ $A_2 = 3715 / [64512 (\pi f_s)^2],$
-$B_2 = 4620/3715.$
+\f}
+where \f$A_0 = 5/[256 (\pi f_{s} )^{8/3}],\f$ \f$A_2 = 3715 / [64512 (\pi f_s)^2],\f$
+\f$B_2 = 4620/3715.\f$
 This function returns the LHS of the above
-equation in \texttt{x} for a given \texttt{eta}.
+equation in \c x for a given \c eta.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 None.
 
-\subsubsection*{Uses}
+\heading{Uses}
 None.
 
-\subsubsection*{Notes}
-The {\tt void pointer} {\tt *p} should point to a {\tt struct}
-of type {\tt EtaTau02In:}\\[10pt]
-{\tt
-void *p;\\
-EtaTau02In q;\\[5pt]
-
-$\ldots$\\
-p = (void *) \&q;\\
+\heading{Notes}
+The void pointer} <tt>*p</tt> should point to a struct
+of type ::EtaTau02In :
+\code
+{
+   void *p;
+   EtaTau02In q;
+    ...
+    p = (void *) &q;
 }
+\endcode
 
-</lalLaTeX> */
-
+*/
 
 #include <lal/LALInspiral.h>
 
 NRCSID (LALETATAU02C, "$Id$");
-/*  <lalVerbatim file="LALEtaTau02CP"> */
+
 void
 LALEtaTau02(
    LALStatus *status,
@@ -73,7 +66,7 @@ LALEtaTau02(
    REAL8     eta,
    void      *p
    )
-{ /* </lalVerbatim> */
+{
    EtaTau02In *q;
 
    INITSTATUS(status, "LALEtaTau02", LALETATAU02C);

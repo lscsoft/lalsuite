@@ -385,7 +385,7 @@ LALStochasticOptimalFilterCal(
   /* All the powers we use are integers, so we can do this once here */
   power.denominatorMinusOne = 0;
 
-  /******* Set tmpUnit1 to dims of Omega/H0^2 ******/
+  /* Set tmpUnit1 to dims of Omega/H0^2 ******/
 
   /* First, set it to dims of H0 */
   tmpUnit1 = lalHertzUnit;
@@ -679,7 +679,7 @@ LALStochasticOptimalFilter(
   /* All the powers we use are integers, so we can do this once here */
   power.denominatorMinusOne = 0;
 
-  /******* Set tmpUnit1 to dims of Omega/H0^2 ******/
+  /* Set tmpUnit1 to dims of Omega/H0^2 ******/
 
   /* First, set it to dims of H0 */
 

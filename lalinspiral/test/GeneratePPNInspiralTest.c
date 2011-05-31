@@ -17,54 +17,71 @@
 *  MA  02111-1307  USA
 */
 
-/********************** <lalVerbatim file="GeneratePPNInspiralTestCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup GeneratePPNInspiral_h
 
-/********************************************************** <lalLaTeX>
+\brief Generates a parametrized post-Newtonian inspiral waveform.
 
-\subsection{Program \texttt{GeneratePPNInspiralTest.c}}
-\label{ss:GeneratePPNInspiralTest.c}
-
-Generates a parametrized post-Newtonian inspiral waveform.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 GeneratePPNInspiralTest [-m m1 m2] [-r dist] [-i inc phii] [-f f_min f_max]
                         [-t dt] [-w deltat] [-p order] [-d debuglevel] [-o outfile]
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This program generates the amplitude, phase, and frequency of a
 post-Newtonian inspiral waveform as functions of time.  The following
 option flags are accepted:
-\begin{itemize}
-\item[\texttt{-m}] Sets the binary masses to \verb@m1@ and \verb@m2@
-solar massses (default values: $1.4M_\odot$).
-\item[\texttt{-r}] Sets the binary system distance to \verb@dist@ kpc
-(default value: 8.5kpc).
-\item[\texttt{-i}] Sets the inclination and \emph{initial} phase
-angles to \verb@inc@ and \verb@phii@ degrees (default values:
-0~degrees).
-\item[\texttt{-f}] Sets the initial and final wave frequencies to
-\verb@f_min@ and \verb@f_max@ Hz (default values: 40Hz and 500Hz).
-\item[\texttt{-t}] Sets the waveform sampling interval to \verb@dt@
-seconds (default value: 0.01s).
-\item[\texttt{-w}] Generates actual waveforms rather than phase and
-amplitude functions, sampled at intervals of \verb@deltat@ seconds (no
-default).
-\item[\texttt{-p}] Sets the post${}^{n/2}$-Newtonian order to
-$n=$\verb@order@ (default value: $n=4$).
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@ (default
-value:~0).
-\item[\texttt{-o}] Sets the output filename to \verb@outfile@ (by
-default no output is produced).
-\end{itemize}
+<ul>
+<li>[<tt>-m</tt>] Sets the binary masses to \c m1 and \c m2
+solar massses (default values: \f$1.4M_\odot\f$).</li>
+<li>[<tt>-r</tt>] Sets the binary system distance to \c dist kpc
+(default value: 8.5kpc).</li>
+<li>[<tt>-i</tt>] Sets the inclination and \e initial phase
+angles to \c inc and \c phii degrees (default values:
+0\ degrees).</li>
+<li>[<tt>-f</tt>] Sets the initial and final wave frequencies to
+\c f_min and \c f_max Hz (default values: 40Hz and 500Hz).</li>
+<li>[<tt>-t</tt>] Sets the waveform sampling interval to \c dt
+seconds (default value: 0.01s).</li>
+<li>[<tt>-w</tt>] Generates actual waveforms rather than phase and
+amplitude functions, sampled at intervals of \c deltat seconds (no
+default).</li>
+<li>[<tt>-p</tt>] Sets the post\f${}^{n/2}\f$-Newtonian order to
+\f$n=\f$\c order (default value: \f$n=4\f$).</li>
+<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel (default
+value:\ 0).</li>
+<li>[<tt>-o</tt>] Sets the output filename to \c outfile (by
+default no output is produced).</li>
+</ul>
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
+\heading{Algorithm}
+
+This program simply parses the command line, sets the appropriate
+fields of a \c PPNParamStruc, and passes it in to
+<tt>LALGeneratePPNInspiral()</tt>.  No maximum waveform length is
+specified; the function will allocate as much data as necessary.
+
+If the <tt>-w</tt> \e and <tt>-o</tt> options are given, the
+amplitude, phase, and frequency are generated as above, but are then
+resampled at intervals \c deltat to generate actual wave output.
+
+\heading{Uses}
+\code
+lalDebugLevel
+LALPrintError()                 LALCheckMemoryLeaks()
+LALSCreateVector()              LALSDestroyVector()
+LALGeneratePPNInspiral()        LALSDestroyVectorSequence()
+\endcode
+
+\heading{Notes}
+
+*/
+
+/** \name Error Codes */ /*@{*/
 #define GENERATEPPNINSPIRALTESTC_ENORM  0
 #define GENERATEPPNINSPIRALTESTC_ESUB   1
 #define GENERATEPPNINSPIRALTESTC_EARG   2
@@ -78,32 +95,8 @@ default no output is produced).
 #define GENERATEPPNINSPIRALTESTC_MSGEVAL   "Input argument out of valid range"
 #define GENERATEPPNINSPIRALTESTC_MSGEFILE  "Could not open file"
 #define GENERATEPPNINSPIRALTESTC_MSGEPRINT "Wrote past end of message string"
-/******************************************** </lalErrTable><lalLaTeX>
+/*@}*/
 
-\subsubsection*{Algorithm}
-
-This program simply parses the command line, sets the appropriate
-fields of a \verb@PPNParamStruc@, and passes it in to
-\verb@LALGeneratePPNInspiral()@.  No maximum waveform length is
-specified; the function will allocate as much data as necessary.
-
-If the \verb@-w@ \emph{and} \verb@-o@ options are given, the
-amplitude, phase, and frequency are generated as above, but are then
-resampled at intervals \verb@deltat@ to generate actual wave output.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALSCreateVector()              LALSDestroyVector()
-LALGeneratePPNInspiral()        LALSDestroyVectorSequence()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{GeneratePPNInspiralTestCV}}
-
-******************************************************* </lalLaTeX> */
 
 #include <math.h>
 #include <stdlib.h>

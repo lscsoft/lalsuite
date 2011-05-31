@@ -23,23 +23,15 @@
  *
  * Author: Brown, D. A.,  Messaritaki E. and Cokelaer, T.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpBCVCFilterCV">
-Author: Thomas Cokelaer
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\input{FindChirpBCVCFilterCDoc}
+\author Thomas Cokelaer
+\file
 
-\vfill{\footnotesize\input{FindChirpBCVCFilterCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <lal/LALErrno.h>
@@ -61,7 +53,7 @@ $Id$
 NRCSID (FINDCHIRPBCVCFILTERC, "$Id$");
 
 
-/* <lalVerbatim file="FindChirpBCVCFilterCP"> */
+
 void
 LALFindChirpBCVCFilterSegment (
     LALStatus                  *status,
@@ -69,7 +61,7 @@ LALFindChirpBCVCFilterSegment (
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 j, k, kFinal/*, kOpt*/;
   UINT4                 numPoints;

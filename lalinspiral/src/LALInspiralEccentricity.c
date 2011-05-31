@@ -17,65 +17,59 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralEccentricityCV">
-Author: Devanka Pathak and Thomas Cokelaer
-$Id$
-</lalVerbatim>  */
+/**
+\author Devanka Pathak and Thomas Cokelaer
+\file
 
-/*  <lalLaTeX>
+\brief The code \c LALInspiralEccentricity generates a time-domain inspiral waveform corresponding to the
+\c approximant \c Eccentricity as outlined PRD 60 for the Newtonian case.
 
-\subsection{Module \texttt{LALInspiralEccentricity.c} and \texttt{LALInspiralEccentricityTemplates.c}}
+\heading{Prototypes}
 
-The code \texttt{LALInspiralEccentricity} generates a time-domain inspiral waveform corresponding to the
-\texttt{approximant} \texttt{Eccentricity} as outlined PRD 60 for the Newtonian case.
+<tt>LALInspiralEccentricity()</tt>
+<ul>
+<li> \c signalvec: Output containing the inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters and eccentricity.</li>
+</ul>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralEccentricityCP}
-\index{\verb&LALInspiralEccentricity()&}
-\begin{itemize}
-\item {\tt signalvec:} Output containing the inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters and eccentricity.
-\end{itemize}
 
-\input{LALInspiralEccentricityTemplatesCP}
-\index{\verb&LALInspiralEccentricityTemplates()&}
-\begin{itemize}
-\item {\tt signalvec1:} Output containing the 0-phase inspiral waveform.
-\item {\tt signalvec2:} Output containing the $\pi/2$-phase inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+<tt>LALInspiralEccentricityTemplates()</tt>
+<ul>
+<li> \c signalvec1: Output containing the 0-phase inspiral waveform.</li>
+<li> \c signalvec2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
 
-\subsubsection*{Description}
+\heading{Description}
 
-\texttt{LALInspiralEccentricity} is called if the user has specified the
-\texttt{enum} \texttt{approximant} to be
-either \texttt{TaylorT1} or \texttt{PadeT1}.
-{\tt LALInspiralEccentricityTemplates} is exactly the same as \texttt{LALInspiralEccentricity,} except that
+\c LALInspiralEccentricity is called if the user has specified the
+\c enum \c approximant to be
+either \c TaylorT1 or \c PadeT1.
+\c LALInspiralEccentricityTemplates is exactly the same as <tt>LALInspiralEccentricity,</tt> except that
 it generates two templates one for which the starting phase is
-\texttt{params.startPhase} and the other for which the phase is
-\texttt{params.startPhase + $\pi/2$}.
+<tt>params.startPhase</tt> and the other for which the phase is
+<tt>params.startPhase + \f$\pi/2\f$</tt>.
 
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs
-in Equation (\ref{eq:ode2}).
+in Equation\eqref{eq_ode2}.
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\texttt{LALInspiralSetup}\\
-\texttt{LALInspiralChooseModel}\\
-\texttt{LALInspiralVelocity}\\
-\texttt{LALInspiralPhasing1}\\
-\texttt{LALInspiralDerivatives}\\
-\texttt{LALRungeKutta4}.
+\code
+LALInspiralSetup()
+LALInspiralChooseModel()
+LALInspiralVelocity()
+LALInspiralPhasing1()
+LALInspiralDerivatives()
+LALRungeKutta4()
+\endcode
+
+\heading{Notes}
 
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralEccentricityCV}}
-
-</lalLaTeX>  */
+*/
 
 /*
    Interface routine needed to generate time-domain T- or a P-approximant
@@ -124,14 +118,14 @@ LALInspiralEccentricityEngine(
 
 NRCSID (LALINSPIRALECCENTRICITYC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralEccentricityCP"> */
+
 void
 LALInspiralEccentricity(
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
- { /* </lalVerbatim>  */
+ {
 
    INT4 count;
 
@@ -163,7 +157,7 @@ LALInspiralEccentricity(
 
 NRCSID (LALINSPIRALECCENTRICITYTEMPLATESC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralEccentricityTemplatesCP"> */
+
 void
 LALInspiralEccentricityTemplates(
    LALStatus        *status,
@@ -171,7 +165,7 @@ LALInspiralEccentricityTemplates(
    REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
- { /* </lalVerbatim>  */
+ {
 
    INT4 count;
 
@@ -203,7 +197,7 @@ LALInspiralEccentricityTemplates(
 
 NRCSID (LALINSPIRALECCENTRICITYFORINJECTIONC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralEccentricityForInjectionCP"> */
+
 void
 LALInspiralEccentricityForInjection(
 			     LALStatus        *status,
@@ -211,7 +205,7 @@ LALInspiralEccentricityForInjection(
 			     InspiralTemplate *params,
 			     PPNParamStruc  *ppnParams
 			     )
-{ /* </lalVerbatim>  */
+{
 
   INT4        count, i;
   REAL8       p, phiC;
@@ -683,7 +677,7 @@ LALInspiralEccentricityDerivatives (
    REAL8Vector *dvalues,
    void        *params
    )
- { /* </lalVerbatim> */
+ {
 
   ecc_CBC_ODE_Input *par;
   double M, eta, mu, c1, e0, e2, UNUSED p0, p2, p3, p4, phi;
@@ -725,6 +719,3 @@ LALInspiralEccentricityDerivatives (
 
   return;
 }
-
-
-

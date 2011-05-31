@@ -34,7 +34,7 @@
 \file
 \ingroup lalmetaio
 
-\brief This header provides provides <tt>#define</tt>s for the common elements of LIGO light weight XML files.
+\brief This header provides provides <tt>\#define</tt>s for the common elements of LIGO light weight XML files.
 
 \heading{Synopsis}
 \code

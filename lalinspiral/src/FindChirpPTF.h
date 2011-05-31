@@ -23,33 +23,28 @@
  *
  * Author: Brown, D. A., and Fazi, D.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpPTFHV">
-Author: Brown, D. A., and Fazi, D.
-$Id$
-</lalVerbatim>
+/**
+ * \defgroup FindChirpPTF_h FindChirpPTF_h
+ * \ingroup CBC_findchirp
+ */
 
-<lalLaTeX>
-\section{Header \texttt{FindChirpPTF.h}}
-\label{s:FindChirpPTF.h}
+/**
+\author Brown, D. A., and Fazi, D.
+\file
+\ingroup FindChirpPTF_h
 
-Provides structures and functions to filter interferometer data using the
+\brief Provides structures and functions to filter interferometer data using the
 physical template family.
 
-\subsection*{Synopsis}
-
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/FindChirpPTF.h>
-\end{verbatim}
+\endcode
 
-\input{FindChirpPTFHDoc}
-</lalLaTeX>
-#endif
+*/
 
 
 #ifndef _FINDCHIRPPTFH_H
@@ -69,33 +64,6 @@ extern "C" {
 
 NRCSID (FINDCHIRPPTFH, "$Id$");
 
-#if 0
-<lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-#endif
-
-#if 0
-<lalLaTeX>
-\subsection*{Types}
-
-None.
-</lalLaTeX>
-#endif
-
-
-#if 0
-<lalLaTeX>
-\vfill{\footnotesize\input{FindChirpPTFHV}}
-</lalLaTeX>
-#endif
-
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpPTFTemplateC}
-</lalLaTeX>
-#endif
-
 void
 LALFindChirpPTFTemplate (
     LALStatus                  *status,
@@ -112,11 +80,11 @@ LALFindChirpPTFNormalize(
     FindChirpDataParams        *params
     );
 
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpPTFWaveformC}
-</lalLaTeX>
-#endif
+
+
+
+
+
 
 REAL4Vector*
 XLALPTFOmegaPNCoeffsOrbital(
@@ -161,11 +129,11 @@ XLALPTFWaveformDerivatives(
               REAL8  dydt[14],
               void  *params );
 
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpPTFFilterC}
-</lalLaTeX>
-#endif
+
+
+
+
+
 
 void
 LALFindChirpPTFFilterSegment (

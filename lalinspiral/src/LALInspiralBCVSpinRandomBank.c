@@ -1,19 +1,16 @@
-/*  <lalVerbatim file="LALInspiralBCVSpinBankCV">
+/**
 Authors: Ian Harry, B.S. Sathyaprakash,  Chris Van Den Broeck
-$Id$
-</lalVerbatim>  */
-/*  <lalLaTeX>
-\subsection{Module \texttt{LALInspiralBCVSpinRandomBank.c}}
-This code uses the random bank developed by I. Harry, B. Allen and B.S. Sathyaprakash (2007, in preparation).
-\subsubsection*{Prototypes}
-\subsubsection*{Description}
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
-\end{verbatim}
-\subsubsection*{Notes}
-\clearpage
-</lalLaTeX>  */
+\file
+\ingroup LALInspiralBank_h
+
+\brief This code uses the random bank developed by I. Harry, B. Allen and B.S. Sathyaprakash (2007, in preparation).
+
+\heading{Prototypes}
+\heading{Description}
+\heading{Algorithm}
+\heading{Uses}
+\heading{Notes}
+*/
 
 
 #include <math.h>
@@ -40,7 +37,7 @@ This code uses the random bank developed by I. Harry, B. Allen and B.S. Sathyapr
 
 NRCSID(LALINSPIRALBCVSPINRANDOMBANKC, "$Id$");
 
-/* <lalVerbatim file="LALInspiralBCVSpinRandomBankCP"> */
+
 void
 LALInspiralBCVSpinRandomBank(
     LALStatus         	 *status,
@@ -48,7 +45,7 @@ LALInspiralBCVSpinRandomBank(
     INT4      		 *ntiles,
     InspiralCoarseBankIn *coarseIn
     )
-/* </lalVerbatim> */
+
 
 {
   INT4 ShMaxSz, N, i, j, k;

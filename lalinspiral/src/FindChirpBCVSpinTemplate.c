@@ -23,8 +23,6 @@
  *
  * Author: Brown D. A., Spinning BCV-Modifications: Jones, G
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
@@ -36,44 +34,37 @@
 
 NRCSID (FINDCHIRPSBCVTEMPLATEC, "$Id$");
 
-#if 0
-<lalVerbatim file="FindChirpBCVSpinTemplateCV">
-Author: Brown, D. A., Spinning BCV-Modifications: Jones, G
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpBCVSpinTemplate.c}}
-\label{ss:FindChirpBCVSpinTemplate.c}
+\author Brown, D. A., Spinning BCV-Modifications: Jones, G
+\file
+\ingroup FindChirpBCVSpin_h
 
-Provides functions to create spinning BCV detection templates in a form that
-can be used by the \texttt{FindChirpBCVSpinFilter()} function.
+\brief Provides functions to create spinning BCV detection templates in a form that
+can be used by the <tt>FindChirpBCVSpinFilter()</tt> function.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpBCVSpinTemplateCP}
-\idx{LALFindChirpBCVSpinTemplate()}
+\heading{Prototypes}
 
-The function \texttt{LALFindChirpBCVSpinTemplate()} creates the
+The function <tt>LALFindChirpBCVSpinTemplate()</tt> creates the
 spinning BCV template as described by the algorithm below.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 This code calculates a number of quantities required by the
-{\tt LALFindChirpBCVSpinFilterSegment()} function.
+<tt>LALFindChirpBCVSpinFilterSegment()</tt> function.
 To improve efficiency we calculate every template dependent
 quantity that does not require detector data
 in this function.
-Since the template bank does not provide values for $f_{final}$ we calculate
-it here. For every combination of $\psi_0$ and $\psi_3$ values provided by
+Since the template bank does not provide values for \f$f_{final}\f$ we calculate
+it here. For every combination of \f$\psi_0\f$ and \f$\psi_3\f$ values provided by
 the template bank we find the frequency at the last stable orbit using
-$f_{final} = (-16 \pi \psi_0)/(\psi_3 r_{LSO}^{3/2})$
-where $r_{LSO} = 6M_{\odot}$ is the separation of the binaries components.
+\f$f_{final} = (-16 \pi \psi_0)/(\psi_3 r_{LSO}^{3/2})\f$
+where \f$r_{LSO} = 6M_{\odot}\f$ is the separation of the binaries components.
 We then calculate the complex phase of the template
-$\psi_{NM}(f) = \psi_{initial} + f^{-5/3}(\psi_0 + f \psi_3)$
-between $f_{low}$ and $f_{final}$.
+\f$\psi_{NM}(f) = \psi_{initial} + f^{-5/3}(\psi_0 + f \psi_3)\f$
+between \f$f_{low}\f$ and \f$f_{final}\f$.
 Next we calculate 5 moments which are required to construct the template:
-\begin{eqnarray}
+\f{eqnarray}{
 I &=& 4 \int_{0}^{\infty} f^{-7/3} \frac{df} {S_{n} (f) } \nonumber\\
 J &=& 4 \int_{0}^{\infty} f^{-7/3} \cos ( \beta f^{-2/3})
 \frac{df} {S_{n} (f) } \nonumber\\
@@ -83,26 +74,26 @@ L &=& 2 \int_{0}^{\infty} f^{-7/3} \sin (2\beta f^{-2/3})
 \frac{df} {S_{n} (f) } \nonumber\\
 M &=& 2 \int_{0}^{\infty} f^{-7/3} \cos (2\beta f^{-2/3})
 \frac{df} {S_{n} (f) }
-\end{eqnarray}
+\f}
 In practise we integrate between our lowest non-zero frequency sample
-point {\tt k=1} (a division-by-zero error would
-occur at $0 Hz$) and the Nyquist frequency {\tt k=numPoints/2}. From
+point <tt>k=1</tt> (a division-by-zero error would
+occur at \f$0 Hz\f$) and the Nyquist frequency <tt>k=numPoints/2</tt>. From
 these moments we then find the
 orthonormalised amplitude vectors:
-\begin{eqnarray}
+\f{eqnarray}{
 \mathcal{\widehat{A}}_1(f)   =  \frac { f^{-7/6} }  { I^{1/2}}
 \nonumber
-\end{eqnarray}
+\f}
 
-\begin{eqnarray}
+\f{eqnarray}{
 \mathcal{\widehat{A}}_2(f)   =  \frac{ f^{-7/6} \bigg
 [ \cos(\beta f^{-2/3}) - \frac{J}{I} \bigg ] I^{1/2} }
 { \bigg[ IM + \frac{I^{2}}{2}
 - J^{2} \bigg] ^{1/2} }
 \nonumber
-\end{eqnarray}
+\f}
 
-\begin{eqnarray}
+\f{eqnarray}{
 \mathcal{\widehat{A}}_3(f) & = & \frac{ f^{-7/6} \bigg [
 \sin(\beta f^{-2/3})
 - \frac{K}{I}
@@ -113,30 +104,30 @@ orthonormalised amplitude vectors:
 \frac{I^{2}}{2} - IM - K^{2} - \frac{ (IL - JK)^{2}}
 {IM + \frac{I^{2}}{2} - J^{2} }
 \bigg ] ^{1/2} }
-\end{eqnarray}
-where $\beta$ is provided by the template bank code and the
-$f^{-7/6}$ and $f^{-2/3}$ vectors were calculated previously
-in {\tt LALFindChirpDataInit()}. To avoid division-by-zero
+\f}
+where \f$\beta\f$ is provided by the template bank code and the
+\f$f^{-7/6}\f$ and \f$f^{-2/3}\f$ vectors were calculated previously
+in <tt>LALFindChirpDataInit()</tt>. To avoid division-by-zero
 errors we explicitly set
-$\mathcal{\widehat{A}}_2(f) = \mathcal{\widehat{A}}_3(f) = 0$
-when $\beta = 0$.
+\f$\mathcal{\widehat{A}}_2(f) = \mathcal{\widehat{A}}_3(f) = 0\f$
+when \f$\beta = 0\f$.
 
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpBCVSpinTemplateCV}}
-</lalLaTeX>
-#endif
 
-/* <lalVerbatim file="FindChirpBCVSpinTemplateCP"> */
+
+*/
+
+
 void
 LALFindChirpBCVSpinTemplate (
     LALStatus                  *status,
@@ -145,7 +136,7 @@ LALFindChirpBCVSpinTemplate (
     FindChirpTmpltParams       *params,
     FindChirpDataParams        *fcDataParams
     )
-/* </lalVerbatim> */
+
 {
   UINT4        		numPoints        = 0;
   REAL4        		deltaF           = 0.0;
@@ -413,5 +404,3 @@ LALFindChirpBCVSpinTemplate (
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
-
-

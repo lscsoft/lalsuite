@@ -17,21 +17,15 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="BankEfficiencyCV">
-Author: Cokelaer, T. and Sathyaprakash, B. S.
-< $Id$
-********************************* </lalVerbatim> */
+/**
+\author Cokelaer, T. and Sathyaprakash, B. S.
+\file
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{BankEfficiency.c}}
-\label{ss:BankEfficiency.c}
+\brief Test code for the inspiral bank modules.
 
-Test code for the inspiral bank modules.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 BankEfficiency [options]
-
 
 The options are :
    -alpha : BCV amplitude correction parameter
@@ -50,31 +44,28 @@ The options are :
 -x1Min : Min value of psi
 
 
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This test code gives an example of how one might generate inspiral
 waveforms and use them to compute the overlap of a random signal
 (with or witnout simulated noise) of a certain strength. The parameter
 Note that one must calculate the length of the waveform and allocate memory for it
-\emph{before} calling
-\texttt{InspiralWave}. The length of the waveform can be calculated by calling the function
-\texttt{InspiralWaveLength} beforehand, as shown.
+\e before calling
+\c InspiralWave. The length of the waveform can be calculated by calling the function
+\c InspiralWaveLength beforehand, as shown.
 
 There are only two functions which one can call to generate waveforms. These are
-\texttt{InspiralWave},
-which will return a \emph{single} waveform, and \texttt{InspiralWaveTemplates}, which
-returns a \emph{pair}
-of waveforms which have phases which differ by $\pi/2$.
+\c InspiralWave,
+which will return a \e single waveform, and \c InspiralWaveTemplates, which
+returns a \e pair
+of waveforms which have phases which differ by \f$\pi/2\f$.
 
-\subsubsection*{Exit codes}
-\input{BankEfficiencyCE}
-
-\subsubsection*{Uses}
+\heading{Uses}
 This code directly uses the following functions (see those functions
 to find out what they call in turn):
-\begin{verbatim}
+\code
 LALInspiralWaveLength
 LALInspiralCreateCoarseBank
 LALRandomInspiralSignal
@@ -87,15 +78,12 @@ LALReverseRealFFT
 LALDestroyRealFFTPlan
 LALInspiralWaveOverlap
 LALInspiralParameterCalc
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{BankEfficiencyCV}}
-******************************************************* </lalLaTeX> */
 
-/***************************** <lalErrTable file="BankEfficiencyCE"> */
-/***************************** </lalErrTable> */
+*/
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>

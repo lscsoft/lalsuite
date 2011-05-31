@@ -17,14 +17,13 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALRandomInspiralSignalCV">
-Author: Sathyaprakash, B. S., Thomas Cokelaer, Anand S. Sengupta
-$Id$
-</lalVerbatim>  */
-/* <lalLaTeX>
-\subsection{Module \texttt{LALRandomInspiralSignal.c}}
-Module to generate
+/**
+\author Sathyaprakash, B. S., Thomas Cokelaer, Anand S. Sengupta
+\file
 
+\brief Module to generate inspiral signals and simulated Gaussian noise
+
+Generate:<br>
 (a) inspiral signals with random masses or chirp times
 that have values within the parameter space specified by an input struct,
 
@@ -35,15 +34,14 @@ to simulated Gaussian noise as in (b).
 
 In all cases the returned vector is the Fourier transform of the relevant signal.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALRandomInspiralSignalCP}
-\idx{LALRandomInspiralSignal()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
-The function receives input struct of type RandomInspiralSignalIn
+<tt>LALRandomInspiralSignal()</tt>
+
+\heading{Description}
+The function receives input struct of type ::RandomInspiralSignalIn
 whose members are
-\begin{verbatim}
+\code
 typedef struct
 tagRandomInspiralSignalIn
 {
@@ -65,109 +63,103 @@ tagRandomInspiralSignalIn
    REAL8Vector psd;
    RealFFTPlan *fwdp;
 } RandomInspiralSignalIn;
-\end{verbatim}
+\endcode
 
-Depending on the value of the parameter (\texttt{randIn.type}) this
+Depending on the value of the parameter (<tt>randIn.type</tt>) this
 code returns the Fourier transform of
 
 (a) a pure inspiral signal of a given type
-(\texttt{randIn.type=0}),
+(<tt>randIn.type=0</tt>),
 
 (b) simulated noise expected
-in a chosen interferometer \texttt{randIn.type=1} or
+in a chosen interferometer <tt>randIn.type=1</tt> or
 
 (c)
-$\mathtt{SignalAmp}\times s+\mathtt{NoiseAmp}\times n$ (\texttt{randIn.type=2}),
-where $s$ is normalised signal and $n$ random Gaussian noise whose PSD is
+\f$\mathtt{SignalAmp}\times s+\mathtt{NoiseAmp}\times n\f$ (<tt>randIn.type=2</tt>),
+where \f$s\f$ is normalised signal and \f$n\f$ random Gaussian noise whose PSD is
 that expected in a given interferometer with zero mean and unit rms.
 
 User must specify the following quantities in the input structure
-\begin{table}
-\begin{tabular}{lcl}
-\hline
-\hline
-     Parameter         &   i/o  &   Comment \\
-\hline
-\texttt {INT4 useed}        &  input &   Seed for the random number generator    \\
-\texttt {INT4 type}         &  input &   Type of signal required to be generated    \\\\
-\texttt {InspiralTemplate p}  &  i/o   &   user must input certain params; others will be output\\
-\texttt {p.startTime}         &        &   usually 0.\\
-\texttt {p.startPhase}        &        &   $[0,\pi/2]$\\
-\texttt {p.nStartPad}         &        &   number of zeros in the vector before the signal begins\\
-\texttt {p.nEndPad}           &        &   number of zeros in the vector after the signal ends\\
-\texttt {p.signalAmplitude}   &        &   usually 1\\
-\texttt {p.ieta}              &        &   1 for comparable mass systems 0 for test mass model\\
-\texttt {p.fLower}            &        &   lower frequency cutoff in Hz\\
-\texttt {p.fCutoff}           &        &   upper frequency cutoff in Hz\\
-\texttt {p.tSampling}         &        &   sampling rate in Hz\\
-\texttt {p.order}             &        &   order of the PN approximant of the signal \\
-\texttt {p.approximant}       &        &   PN approximation to be used for inspiral signal generation\\
-\texttt {InputMasses massChoice}        & input &   space in which parameters are chosen; \texttt{m1Andm2, totalMassAndEta, totalMassUAndEta, t02, t03, bhns}\\\\
-\texttt {REAL8Vector psd}   &  input &   pre-computed power spectral density used for coloring the noise \\
-\texttt {RealFFTPlan *fwdp} &  input &   pre-computed fftw plan to compute forward Fourier transform   \\\\
-\texttt {REAL8 mMin}        &  input &   smallest component mass allowed   \\
-\texttt {REAL8 mMax}        &  input &   largest component mass allowed   {\bf OR} \\
-\texttt {REAL8 MMax}        &  input &   largest total mass allowed   \\
-\texttt {REAL8 SignalAmp}   &  input &   amplitude of the signal (relevant only when \texttt{type=2})   \\
-\texttt {REAL8 NoiseAmp}    &  input &   amplitude of noise (relevant only when \texttt{type=2})   \\
-\texttt {REAL8 etaMin}      &  input &   smallest value of the symmetric mass ratio    \\
-\hline
-\multicolumn{3}{c}{Following chirp times are needed
-only if \texttt{param.massChoice {\rm is} t02 {\rm or} t03}} \\
-\hline
-\texttt {REAL8 t0Min}       &  input &   smallest Newtonian chirp time   \\
-\texttt {REAL8 t0Max}       &  input &   largest Newtonian chirp time   \\
-\texttt {REAL8 tnMin}       &  input &   smallest 1 chirp time if \texttt{param.massChoice=t02}\\
-                            &        &   smallest 1.5 chirp time if \texttt{param.massChoice=t03}\\
-\texttt {REAL8 tnMax}       &  input &   largest 1 chirp time  if \texttt{param.massChoice=t02}\\
-                            &        &   largest 1.5 chirp time  if \texttt{param.massChoice=t03}\\
-\hline
-\end{tabular}
-\caption{Input structure needed for the function \texttt{LALRandomInspiralSignal}}.
-\end{table}
+
+<table class="doxtable" align="center">
+<caption align="top" style="text-align: left; font-weight: normal;">Table: Input structure needed for the function LALRandomInspiralSignal().</caption>
+<tr><th>Parameter</th><th>i/o</th><th>Comment</th></tr>
+<tr><td><tt>INT4 useed</tt></td><td>input</td><td>Seed for the random number generator</td></tr>
+<tr><td><tt>INT4 type</tt></td><td>input</td><td>Type of signal required to be generated</td></tr>
+<tr><td><tt>InspiralTemplate p</tt></td><td>i/o</td><td>user must input certain params; others will be output</td></tr>
+<tr><td><tt>p.startTime</tt></td><td></td><td>usually 0.</td></tr>
+<tr><td><tt>p.startPhase</tt></td><td></td><td>\f$[0,\pi/2]\f$</td></tr>
+<tr><td><tt>p.nStartPad</tt></td><td></td><td>number of zeros in the vector before the signal begins</td></tr>
+<tr><td><tt>p.nEndPad</tt></td><td></td><td>number of zeros in the vector after the signal ends</td></tr>
+<tr><td><tt>p.signalAmplitude</tt></td><td></td><td>usually 1</td></tr>
+<tr><td><tt>p.ieta</tt></td><td></td><td>1 for comparable mass systems 0 for test mass model</td></tr>
+<tr><td><tt>p.fLower</tt></td><td></td><td>lower frequency cutoff in Hz</td></tr>
+<tr><td><tt>p.fCutoff</tt></td><td></td><td>upper frequency cutoff in Hz</td></tr>
+<tr><td><tt>p.tSampling</tt></td><td></td><td>sampling rate in Hz</td></tr>
+<tr><td><tt>p.order</tt></td><td></td><td>order of the PN approximant of the signal</td></tr>
+<tr><td><tt>p.approximant</tt></td><td></td><td>PN approximation to be used for inspiral signal generation</td></tr>
+<tr><td><tt>InputMasses massChoice</tt></td><td>input</td><td>space in which parameters are chosen; #m1Andm2, #totalMassAndEta, #totalMassUAndEta, #t02, #t03, #bhns</td></tr>
+<tr><td><tt>REAL8Vector psd</tt></td><td>input</td><td>pre-computed power spectral density used for coloring the noise</td></tr>
+<tr><td><tt>RealFFTPlan *fwdp</tt></td><td>input</td><td>pre-computed fftw plan to compute forward Fourier transform</td></tr>
+<tr><td><tt>REAL8 mMin</tt></td><td>input</td><td>smallest component mass allowed</td></tr>
+<tr><td><tt>REAL8 mMax</tt></td><td>input</td><td>largest component mass allowed   \c OR</td></tr>
+<tr><td><tt>REAL8 MMax</tt></td><td>input</td><td>largest total mass allowed</td></tr>
+<tr><td><tt>REAL8 SignalAmp</tt></td><td>input</td><td>amplitude of the signal (relevant only when <tt>type=2</tt>)</td></tr>
+<tr><td><tt>REAL8 NoiseAmp</tt></td><td>input</td><td>amplitude of noise (relevant only when <tt>type=2</tt>)</td></tr>
+<tr><td><tt>REAL8 etaMin</tt></td><td>input</td><td>smallest value of the symmetric mass ratio</td></tr>
+<tr><td colspan="3"><center>Following chirp times are needed only if <tt>param.massChoice</tt> is #t02 \c or #t03 </center></td></tr>
+<tr><td><tt>REAL8 t0Min</tt></td><td>input</td><td>smallest Newtonian chirp time</td></tr>
+<tr><td><tt>REAL8 t0Max</tt></td><td>input</td><td>largest Newtonian chirp time</td></tr>
+<tr><td><tt>REAL8 tnMin</tt></td><td>input</td><td>smallest 1 chirp time if <tt>param.massChoice=t02</tt></td></tr>
+<tr><td></td><td></td><td>smallest 1.5 chirp time if <tt>param.massChoice=t03</tt></td></tr>
+<tr><td><tt>REAL8 tnMax</tt></td><td>input</td><td>largest 1 chirp time  if <tt>param.massChoice=t02</tt></td></tr>
+<tr><td></td><td></td><td>largest 1.5 chirp time  if <tt>param.massChoice=t03</tt></td></tr>
+</table>
+
+
 When repeatedly called, the parameters of the signal will be
 uniformly distributed in the space of
 
-(a) component masses in the range \texttt{[randIn.mMin, randIn.mMax]} if
-\texttt{param.massChoice=m1Andm2},
+(a) component masses in the range <tt>[randIn.mMin, randIn.mMax]</tt> if
+<tt>param.massChoice=m1Andm2</tt>,
 
-(b) component masses greater than \texttt{randIn.mMin} and total mass
-less than \texttt{randIn.MMax} if  \texttt{param.massChoice=totalMassAndEta},
+(b) component masses greater than <tt>randIn.mMin</tt> and total mass
+less than <tt>randIn.MMax</tt> if  <tt>param.massChoice=totalMassAndEta</tt>,
 
-(c) component masses greater than \texttt{randIn.mMin} and \texttt{uniform} total mass
-less than \texttt{randIn.MMax} if  \texttt{param.massChoice=totalMassUAndEta},
+(c) component masses greater than <tt>randIn.mMin</tt> and \c uniform total mass
+less than <tt>randIn.MMax</tt> if  <tt>param.massChoice=totalMassUAndEta</tt>,
 
 (d) Newtonian and first post-Newtonian chirp times if
-\texttt{param.massChoice=t02},
+<tt>param.massChoice=t02</tt>,
 
 (e) Newtonian and 1.5 post-Newtonian chirp times if
-\texttt{param.massChoice=t03} and.
+<tt>param.massChoice=t03</tt> and.
 
-(f) component masses in the range \texttt{[randIn.mMin, randIn.mMax]} one of them being a neutron start and the other a black hole (one above 3 solar mass and one below) if  \texttt{param.massChoice=bhns}. The function therefore checks the mass range validity i.e. randIn.mMin must be less than 3 and randIn.mMax greater than 3.
+(f) component masses in the range <tt>[randIn.mMin, randIn.mMax]</tt> one of them being a neutron
+start and the other a black hole (one above 3 solar mass and one below) if
+<tt>param.massChoice=bhns</tt>. The function therefore checks the mass range validity
+i.e. randIn.mMin must be less than 3 and randIn.mMax greater than 3.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 No special algorithm, only a series of calls to pre-existing functions.
-\subsubsection*{Uses}
-\begin{verbatim}
-random
-LALInspiralParameterCalc
-LALInspiralWave
-LALREAL4VectorFFT
-LALInspiralWaveNormaliseLSO
-LALCreateRandomParams
-LALNormalDeviates
-LALDestroyRandomParams
-LALREAL4VectorFFT
-LALColoredNoise
-LALAddVectors
-\end{verbatim}
+\heading{Uses}
+\code
+random()
+LALInspiralParameterCalc()
+LALInspiralWave()
+LALREAL4VectorFFT()
+LALInspiralWaveNormaliseLSO()
+LALCreateRandomParams()
+LALNormalDeviates()
+LALDestroyRandomParams()
+LALREAL4VectorFFT()
+LALColoredNoise()
+LALAddVectors()
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALRandomInspiralSignalCV}}
-%Laldoc Closed at: Wed Jan 16 08:39:35 2002
-
-</lalLaTeX>  */
+*/
 #include <lal/LALStdlib.h>
 #include <lal/LALNoiseModelsInspiral.h>
 #include <lal/Random.h>
@@ -189,7 +181,7 @@ static void GenerateRandomSkyPositionAndPolarisation (
 
 NRCSID (LALRANDOMINSPIRALSIGNALC, "$Id$");
 
-/*  <lalVerbatim file="LALRandomInspiralSignalCP"> */
+
 
 void LALRandomInspiralSignal
 (
@@ -197,7 +189,7 @@ void LALRandomInspiralSignal
  REAL4Vector            *signalvec,
  RandomInspiralSignalIn *randIn
  )
-{  /*  </lalVerbatim>  */
+{
 
     REAL8                   maxTemp; /* temporary variable */
     INT4                    iMax;    /* temporary index    */

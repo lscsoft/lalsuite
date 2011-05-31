@@ -10,7 +10,7 @@ for removing all those lines corresponding to the electricity supply
  frequency and its harmonics.
 
 The technique used  is the so-called coherent line removal
-(\c clr) \ref Sintes1998-\ref Sintes2000.
+(\c clr) [\ref Sintes1998,\ref Sintes2000].
  \c clr is an algorithm able to remove interference present in the
  data while preserving the stochastic detector noise.  \c clr
  works when the interference is present in many harmonics, as long as
@@ -24,45 +24,6 @@ there is no external reference source.  \c clr requires little
  a priori knowledge of the signals we want to remove.
 
 The package  is organized under the header \ref CLR.h and the modules
-  \ref HarmonicFinder.c,  \ref RefInterference.c and
- \ref CleanAll.c.
-
-
-
-
-
-
-\begin{thebibliography}{0}
-
-\bibitem{Sintes:1998}
-  A.~M. Sintes, B.~F. Schutz, Phys. Rev. D\c 58, 122003 (1998)
-
-\bibitem{Sintes:1998b}
-  A.~M. Sintes, B.~F. Schutz,
- <em>Removal of interference from gravitational wave spectrum</em>, in
- <em>Proceedings of the 2nd workshop on Gravitational Wave
-  Data Analysis</em>.
-  Edts. M. Davier and P. Hello. Editions Fronti\`eres,
-  France (1998) pp. 255-260
-
-\bibitem{Sintes:1998c}
-  A.~M. Sintes, B.~F. Schutz,
-  <em>Removal of interference from external coherent signals</em>, in
-  <em>Laser Interferometer Space Antenna:
-  Second international LISA symposium on gravitational waves</em>.
-  Edt. W. Folkner. American Institute of Physics, New York (1998) pp. 135-140
-
-\bibitem{Sintes:1999}
-  A.~M. Sintes, B.~F. Schutz, Phys. Rev. D\c 60, 062001 (1999)
-
-\bibitem{Sintes:2000}
-  A.~M. Sintes, B.~F. Schutz,
-  <em>Removing Line Interference from Gravitational Wave
-   Interferometer Data</em>, in
-  <em>Gravitational Wave Detection II</em>.
-  Edts. S. Kawamura and N. Mio. Frontiers Science Series n. 32;
-  Universal Academy Press, Inc, Tokyo  (2000) pp. 273-278
-
-\end{thebibliography}
+  \ref HarmonicFinder.c,  \ref RefInterference.c and \ref CleanAll.c.
 
 */

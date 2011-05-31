@@ -1,12 +1,12 @@
 /**
-\defgroup CBC_bank Template Bank
+\defgroup CBC_bank bank
 \ingroup inspiral
 \brief This is a module that generates a template bank to search for
        inspiralling and merging binaries consisting of neutron stars
        and/or black holes.
 
 %Template placement is based on the geometrical
-formalism [\ref Owen96,\ref OwenAndSathyaprakash99].  A user
+formalism [\ref Owen_96,\ref OwenAndSathyaprakash99].  A user
 calls either LALInspiralCreateCoarseBank(),
 to create a coarse bank, or LALInspiralCreateFineBank(),
 to create a fine bank, at specified minimal matches.
@@ -50,8 +50,13 @@ and \f$M_\mathrm{max} = 100 M_\odot.\f$
 The number of chirp
 times that one can define is determined by the post-Newtonian order
 one is working with. At the second post-Newtonian order (i.e.
-an approximation accurate to order\footnote{We use units in
-which \f$c=G=1;\f$ thus \f$1M_\odot=4.92549095 \times 10^{-6}\f$~s.} \f$v^4\f$) and for
+an approximation accurate to order
+\latexonly\footnote{We use units in which $c=G=1;$ thus $1M_\odot=4.92549095 \times 10^{-6}$~s.}
+\endlatexonly
+\if HTML
+[Note: we use units in which \f$c=G=1;\f$ thus \f$1M_\odot=4.92549095 \times 10^{-6}\f$\ s]
+\endif
+\f$v^4\f$) and for
 a binary consisting of two non-spinning compact objects in a quasi-circular
 orbit, there are
 four chirp-times \f$\tau_k,\; k=0,\ 2,\ 3,\ 4,\f$ of which we can choose

@@ -17,56 +17,47 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralWaveLengthCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralWaveLength.c}}
-
-Module to calculate the number of data points (to the nearest power of 2)
+\brief Module to calculate the number of data points (to the nearest power of 2)
 needed to store a waveform.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralWaveLengthCP}
-\idx{LALInspiralWaveLength()}
-\begin{itemize}
-\item {\tt length:} output, number of bins to the nearest power of 2
-greater than the minimum length required to store a wave of parameters as in {\tt params}.
-\item {\tt params:} input, parameters of the binary system.
-\end{itemize}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>LALInspiralWaveLength()</tt>
+<ul>
+<li> \c length: output, number of bins to the nearest power of 2
+greater than the minimum length required to store a wave of parameters as in \c params.</li>
+<li> \c params: input, parameters of the binary system.</li>
+</ul>
 
+\heading{Description}
 
-This module first calls {\tt LALInspiralChooseModel,} which gives the length of the
+This module first calls LALInspiralChooseModel(), which gives the length of the
 waveform in seconds. That function returns an estimated waveform length. However, the
 length might not be appropriate in some extreme cases (large masses and large lower
 cut-off frequency). It is especially true in the EOB case. Therefore, we introduce
-two constants namely LALINSPIRAL\_LENGTHOVERESTIMATION (in percentage) which
-overestimate the length of the waveform and LALINSPIRAL\_MINIMALWAVELENGTH which is
+two constants namely LALINSPIRAL_LENGTHOVERESTIMATION (in percentage) which
+overestimate the length of the waveform and LALINSPIRAL_MINIMALWAVELENGTH which is
 the minimal waveform length in seconds. Multiplying this by the sampling rate
-{\tt params.tSampling} gives the minimum number of samples needed to hold the waveform.
+<tt>params.tSampling</tt> gives the minimum number of samples needed to hold the waveform.
 To this are added the number of bins of leading and trailing zeroes requested by the user in
-{\tt params.nStartPad} and {\tt params.nEndPad.} The resulting number is rounded to
-an upward power of 2 and returned in {\tt length}.
+<tt>params.nStartPad</tt> and <tt>params.nEndPad.</tt> The resulting number is rounded to
+an upward power of 2 and returned in \c length.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
+\heading{Uses}
+This function calls:
+\code
+LALInspiralSetup()
+LALInspiralChooseModel()
+\endcode
 
-\subsubsection*{Uses}
-This function calls:\\
-\texttt{
-LALInspiralSetup\\
-LALInspiralChooseModel
-}
-
-\vfill{\footnotesize\input{LALInspiralWaveLengthCV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
@@ -77,14 +68,14 @@ LALInspiralChooseModel
 
 NRCSID (LALINSPIRALWAVELENGTHC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWaveLengthCP"> */
+
 void
 LALInspiralWaveLength(
    LALStatus        *status,
    UINT4            *length,
    InspiralTemplate  params
    )
-{ /* </lalVerbatim>  */
+{
 
    INT4 ndx;
    REAL8 x;

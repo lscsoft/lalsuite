@@ -17,53 +17,41 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralTofVIntegrandCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief The function \c LALInspiralTofVIntegrand() calculates the quantity \f$E^{\prime}(v)/\mathcal{F}(v)\f$.
 
-\subsection{Module \texttt{LALInspiralTofVIntegrand.c}}
+\heading{Prototypes}
 
-The function \texttt{LALInspiralTofVIntegrand} calculates the quantity $E^{\prime}(v)/\mathcal{F}(v)$.
-These are the energy and flux functions which are used in the gravitational wave phasing formula.
+<tt>LALInspiralTofVIntegrand()</tt>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralTofVIntegrandCP}
-\index{\verb&LALInspiralTofVIntegrand()&}
+\heading{Description}
 
-\subsubsection*{Description}
-
-The function \texttt{LALInspiralTofVIntegrand} calculates the quantity $E^{\prime}(v)/\mathcal{F}(v)$.
+The function \c LALInspiralTofVIntegrand() calculates the quantity \f$E^{\prime}(v)/\mathcal{F}(v)\f$.
 These are the energy and flux functions which are used in the gravitational wave phasing formula, which is
 defined as
 
-\begin{eqnarray}
-t(v) & = & t_{\rm ref} + m \int_v^{v_{\rm ref}} \,
+\anchor phasing formula \f{eqnarray}{
+t(v) & = & t_\textrm{ref} + m \int_v^{v_\textrm{ref}} \,
 \frac{E'(v)}{{\cal F}(v)} \, dv, \nonumber \\
-\phi (v) & = & \phi_{\rm ref} + 2 \int_v^{v_{\rm ref}}  v^3 \,
+\phi (v) & = & \phi_\textrm{ref} + 2 \int_v^{v_\textrm{ref}}  v^3 \,
 \frac{E'(v)}{{\cal F}(v)} \, dv,
 \label{phasing formula}
-\end{eqnarray}
+\f}
 
-where $v=(\pi m F)^{1/3}$ is an invariantly defined velocity, $F$ is the instantaneous GW frequency, and
-$m$ is the total mass of the binary.
+where \f$v=(\pi m F)^{1/3}\f$ is an invariantly defined velocity, \f$F\f$ is the instantaneous GW frequency, and
+\f$m\f$ is the total mass of the binary.
 
-\subsubsection*{Algorithm}
+\heading{Uses}
+
+This function calls the function which represents \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$. The pointer to each
+of these functions is set by a call to the function \c LALInspiralChooseModel().
 
 
-\subsubsection*{Uses}
-
-This function calls the function which represents $E^{\prime}(v)$ and $\mathcal{F}(v)$. The pointer to each
-of these functions is set by a call to the function \texttt{LALInspiralChooseModel}.
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralTofVIntegrandCV}}
-
-</lalLaTeX>  */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -71,7 +59,7 @@ of these functions is set by a call to the function \texttt{LALInspiralChooseMod
 
 NRCSID (LALINSPIRALTOFVINTEGRANDC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralTofVIntegrandCP"> */
+
 void
 LALInspiralTofVIntegrand (
    LALStatus *status,
@@ -79,7 +67,7 @@ LALInspiralTofVIntegrand (
    REAL8      v,
    void      *params
    )
-{ /* </lalVerbatim>  */
+{
 
    TofVIntegrandIn *ak;
 

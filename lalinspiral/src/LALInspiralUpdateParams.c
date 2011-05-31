@@ -17,51 +17,44 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralUpdateParamsCV">
-Author: Sathyaprakash, B. S., T. Cokelaer
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S., T. Cokelaer
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralUpdateParams.c}}
-
-Module to update the parameters used in creating a coarse bank
+\brief Module to update the parameters used in creating a coarse bank
 based on a square lattice.
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralUpdateParamsCP}
-\idx{LALInspiralUpdateParams()}
-\begin{itemize}
-   \item \texttt{bankParams} Output, refreshed to get the next location
-   \item \texttt{metric} Input, metric at the current location
-   \item \texttt{minimalmatch} Input, the minimal match
-\end{itemize}
 
-\subsubsection*{Description}
-While scanning the $\tau_0$-direction after reaching the
+\heading{Prototypes}
+
+<tt>LALInspiralUpdateParams()</tt>
+<ul>
+   <li> \c bankParams Output, refreshed to get the next location
+   </li><li> \c metric Input, metric at the current location
+   </li><li> \c minimalmatch Input, the minimal match</li>
+</ul>
+
+\heading{Description}
+While scanning the \f$\tau_0\f$-direction after reaching the
 boundary of the parameter space, we have to return to the
 starting point of the same line and use the metric there
-to increment one step upwards in the direction of $\tau_{2(3)}.$
-to a {\it template list}.
+to increment one step upwards in the direction of \f$\tau_{2(3)}.\f$
+to a <em>template list</em>.
 
+The \f$dx_i\f$ returned by this function gives the spacing for a
+square lattice (e.g., \f$dx_i\f$ as given in [\ref Owen_96].
 
-The $dx_i$ returned by this function gives the spacing for a
-square lattice (e.g., $dx_i$ as given in Owen PRD 53).
-
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 Copy the parameters in the temporary parameter structure
 to the current parameter structure.
 
-\subsubsection*{Uses}
+\heading{Uses}
 None.
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralUpdateParamsCV}}
-
-</lalLaTeX>  */
+*/
 
 
 
@@ -69,12 +62,12 @@ None.
 
 NRCSID (LALINSPIRALUPDATEPARAMSC, "Id: $");
 
-/*  <lalVerbatim file="LALInspiralUpdateParamsCP"> */
+
 void LALInspiralUpdateParams(LALStatus          *status,
                              InspiralBankParams *bankParams,
                              InspiralMetric     metric,
                              REAL8              minimalmatch)
-{  /*  </lalVerbatim>  */
+{
    REAL8 dx0, dx1, myphi, theta, fac;
 
    INITSTATUS (status, "LALInspiralUpdateParams", LALINSPIRALUPDATEPARAMSC);

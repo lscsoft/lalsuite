@@ -90,10 +90,10 @@ list of all the files which must be updated.
 <li>  Update the LIGOLwXML writing code:</li>
    <ol>
    <li>  Change the table header written at to the LIGOLwXML file.  This is
-   #defined in \ref LIGOLwXMLHeaders.h.  For example, to change the
+   \#defined in \ref LIGOLwXMLHeaders.h.  For example, to change the
    \c sngl_inspiral table, you must edit \c LIGOLW_XML_SNGL_INSPIRAL.</li>
 
-   <li> Change the row format of the LIGOLwXML file.  This is #defined in
+   <li> Change the row format of the LIGOLwXML file.  This is \#defined in
    \ref LIGOLwXMLHeaders.h.  For example, to change the <tt> sngl_inspiral</tt>
    table, you must edit \c SNGL_INSPIRAL_ROW.</li>
 

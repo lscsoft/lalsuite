@@ -28,18 +28,12 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpFilterInitCV">
-Author: Brown D. A., BCV-Modifications by Messaritaki E.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\input{FindChirpFilterInitCDoc}
+\author Brown D. A., BCV-Modifications by Messaritaki E.
+\file
 
-\vfill{\footnotesize\input{FindChirpFilterInitCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <lal/LALStdio.h>
@@ -55,14 +49,14 @@ $Id$
 NRCSID (FINDCHIRPFILTERINITC, "$Id$");
 
 
-/* <lalVerbatim file="FindChirpFilterInitCP"> */
+
 void
 LALCreateFindChirpInput (
     LALStatus                  *status,
     FindChirpFilterInput      **output,
     FindChirpInitParams        *params
     )
-/* </lalVerbatim> */
+
 {
   FindChirpFilterInput         *outputPtr;
 
@@ -230,13 +224,13 @@ LALCreateFindChirpInput (
 
 
 
-/* <lalVerbatim file="FindChirpFilterInitCP"> */
+
 void
 LALDestroyFindChirpInput (
     LALStatus                  *status,
     FindChirpFilterInput      **output
     )
-/* </lalVerbatim> */
+
 {
   FindChirpFilterInput         *outputPtr;
 
@@ -327,14 +321,14 @@ LALDestroyFindChirpInput (
 }
 
 
-/* <lalVerbatim file="FindChirpFilterInitCP"> */
+
 void
 LALFindChirpFilterInit (
     LALStatus                  *status,
     FindChirpFilterParams     **output,
     FindChirpInitParams        *params
     )
-/* </lalVerbatim> */
+
 {
   FindChirpFilterParams        *outputPtr;
 
@@ -995,13 +989,13 @@ LALFindChirpFilterInit (
 
 
 
-/* <lalVerbatim file="FindChirpFilterInitCP"> */
+
 void
 LALFindChirpFilterFinalize (
     LALStatus                  *status,
     FindChirpFilterParams     **output
     )
-/* </lalVerbatim> */
+
 {
   FindChirpFilterParams        *outputPtr;
   /*UINT4 i,j;*/

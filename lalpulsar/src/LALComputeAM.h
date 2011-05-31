@@ -25,7 +25,7 @@
  * \file
  * \brief Header-file for computing antenna-pattern components for amplitude demodulation.
  *
- * <tt>#include <lal/LALComputeAM.h></tt>
+ * <tt>\#include <lal/LALComputeAM.h></tt>
  *
  * In order to compute the optimal statistic for pulsar searches, one must take account of the
  * various modulations that change the emitted, (fairly) simple sinusoid into a non-trivial function

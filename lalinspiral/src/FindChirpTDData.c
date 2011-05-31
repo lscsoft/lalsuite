@@ -23,38 +23,28 @@
  *
  * Author: Brown D. A., and Creighton, J. D. E.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpTDDataCV">
-Author: Brown, D. A., and Creighton, J. D. E.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpTDData.c}}
-\label{ss:FindChirpTDData.c}
+\author Brown, D. A., and Creighton, J. D. E.
+\file
+\ingroup FindChirpTD_h
 
-Time domain filtering code.
+\brief Time domain filtering code.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpTDDataCP}
+\heading{Description}
 
-\subsubsection*{Description}
+\heading{Algorithm}
 
-\subsubsection*{Algorithm}
+\heading{Uses}
 
-\subsubsection*{Uses}
+\heading{Notes}
 
-\subsubsection*{Notes}
 
-\vfill{\footnotesize\input{FindChirpTDDataCV}}
-</lalLaTeX>
-#endif
+
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -68,7 +58,7 @@ Time domain filtering code.
 NRCSID (FINDCHIRPTDDATAC, "$Id$");
 
 
-/* <lalVerbatim file="FindChirpTDDataCP"> */
+
 void
 LALFindChirpTDData (
     LALStatus                  *status,
@@ -76,7 +66,7 @@ LALFindChirpTDData (
     DataSegmentVector          *dataSegVec,
     FindChirpDataParams        *params
     )
-/* </lalVerbatim> */
+
 {
   Approximant approx;
   UINT4 i, k;

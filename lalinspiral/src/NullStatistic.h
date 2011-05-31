@@ -23,38 +23,28 @@
  *
  * Author: Messaritaki, E.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="NullStatisticHV">
-Author: Messaritaki, E.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\section{Header \texttt{NullStatistic.h}}
-\label{s:NullStatistic.h}
+\author Messaritaki, E.
+\file
 
-\noindent Provides core prototypes, structures and functions to calculate
+\brief Provides core prototypes, structures and functions to calculate
 the null statistic for the binary inspiral searches.
 
-\subsection*{Calculation of the null statistic}
+\heading{Calculation of the null statistic}
 
 The null statistic will be defined here.
 
-\subsubsection*{Synopsis}
+\heading{Synopsis}
 
-\begin{verbatim}
+\code
 #include <lal/NullStatistic.h>
-\end{verbatim}
+\endcode
 
-\input{NullStatisticHDoc}
-
-</lalLaTeX>
-#endif
+*/
 
 #ifndef _NULLSTATISTICH_H
 #define _NULLSTATISTICH_H
@@ -78,12 +68,7 @@ extern "C" {
 
 NRCSID (NULLSTATISTICH, "$Id$");
 
-#if 0
-<lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-#endif
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define NULLSTATH_ENULL 1
 #define NULLSTATH_ENNUL 2
 #define NULLSTATH_EALOC 3
@@ -104,7 +89,7 @@ NRCSID (NULLSTATISTICH, "$Id$");
 #define NULLSTATH_MSGETHRN "null statistic threshold is negative"
 #define NULLSTATH_MSGESMSM "Size mismatch between vectors"
 #define NULLSTATH_MSGENDET "Number of detectors should be 2; H1 and H2"
-/* </lalErrTable> */
+/*@}*/
 
 typedef struct
 tagChanNames

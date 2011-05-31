@@ -17,99 +17,77 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="RingUtilsCV">
- * Author: Jolien Creighton
- * $Id$
- **** </lalVerbatim> */
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/RingUtils.h>
 
-/**** <lalLaTeX>
+/**
+ * \author Jolien Creighton
+ * \file
+ * \ingroup RingUtils_h
  *
- * \subsection{Module \texttt{RingUtils.c}}
+ * \brief Routines to generate ringdown waveforms and to make a ringdown template bank.
  *
- * Routines to generate ringdown waveforms and to make a ringdown template bank.
+ * \heading{Description}
  *
- * \subsubsection*{Prototypes}
- * \input{RingUtilsCP}
- * \idx{XLALComputeRingTemplate()}
- * \idx{XLALComputeBlackHoleRing()}
- * \idx{XLALCreateRingTemplateBank()}
- * \idx{XLALDestroyRingTemplateBank()}
- *
- * \subsubsection*{Description}
- *
- * The routine \verb+LALComputeRingTemplate()+ computes the ringdown waveform
- * \begin{equation}
+ * The routine <tt>XLALComputeRingTemplate()</tt> computes the ringdown waveform
+ * \f{equation}{
  *   r(t) = \left\{
  *   \begin{array}{ll}
- *     e^{-\pi ft/Q}\cos(2\pi ft) & \mbox{for $t\ge0$} \\
- *     0 & \mbox{for $t<0$}
+ *     e^{-\pi ft/Q}\cos(2\pi ft) & \mbox{for \f$t\ge0\f$} \\
+ *     0 & \mbox{for \f$t<0\f$}
  *   \end{array}
  *   \right.
- * \end{equation}
- * where the parameters $f$ and $Q$ are specified in the input structure.
+ * \f}
+ * where the parameters \f$f\f$ and \f$Q\f$ are specified in the input structure.
  * The output must have an appropriate amount of memory allocated, and must
- * have the desired temporal spacing set.  Note: Ref.~\cite{JDECreighton}
+ * have the desired temporal spacing set.  Note: Ref.\ [\ref JDECreighton99]
  * used a different convention for the ringdown normlization: there the
- * ringdown waveform was taken to be $q(t)=(2\pi)^{1/2}r(t)$.
+ * ringdown waveform was taken to be \f$q(t)=(2\pi)^{1/2}r(t)\f$.
  *
- * The routine \verb+LALComputeBlackHoleRing()+ computes a waveform for a
+ * The routine <tt>XLALComputeBlackHoleRing()</tt> computes a waveform for a
  * black hole with the specified physical parameters (in the input structure).
- * The parameters are the black hole mass $M$ (in solar masses $M_\odot$), the
- * spin $S={\hat{a}}GM^2/c$ expressed in terms of the dimensionless mass
- * parameter ${\hat{a}}$, the fractional mass lost $\epsilon$ in ringdown
+ * The parameters are the black hole mass \f$M\f$ (in solar masses \f$M_\odot\f$), the
+ * spin \f$S={\hat{a}}GM^2/c\f$ expressed in terms of the dimensionless mass
+ * parameter \f${\hat{a}}\f$, the fractional mass lost \f$\epsilon\f$ in ringdown
  * radiation expressed as a percent, and the distance to the typical source
- * (angle-averaged waveform) $r$ given in megaparsecs (Mpc).  The central
+ * (angle-averaged waveform) \f$r\f$ given in megaparsecs (Mpc).  The central
  * frequency and quality of the ringdown are approximated
- * as~\cite{EWLeaver,EBerti}:
- * \begin{equation}
+ * as\ [\ref EWLeaver85,\ref EBertiEtAl06]:
+ * \f{equation}{
  *   f \simeq 32\,\textrm{kHz}\times[f_1+f_2(1-{\hat{a}})^{f_3}](M_\odot/M)
- * \end{equation}
+ * \f}
  * and
- * \begin{equation}
+ * \f{equation}{
  *   Q \simeq q_1+q_2(1-{\hat{a}})^{q_3},
- * \end{equation}
+ * \f}
  * where the values of the constants (f_1,f_2,f_3) and (q_1,q_2,q_3) are
- * given for each of (l,m,n) in~\cite{EBerti}.
- * The strain waveform produced is $h(t)=A_q q(t)$ where the amplitude factor
- * is~\cite{JDECreighton}
- * \begin{equation}
+ * given for each of (l,m,n) in\ [\ref EBertiEtAl06].
+ * The strain waveform produced is \f$h(t)=A_q q(t)\f$ where the amplitude factor
+ * is\ [\ref JDECreighton99]
+ * \f{equation}{
  *   A_q = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
  *   \left(\frac{\textrm{Mpc}}{r}\right)
  *   \left(\frac{M}{M_\odot}\right)
  *   \left(\frac{\epsilon}{0.01}\right)^{1/2}.
- * \end{equation}
- * Note that this is written $A_q$ to emphasize that it is the amplitude
- * factor for $q(t)$ rather than $r(t)$.
+ * \f}
+ * Note that this is written \f$A_q\f$ to emphasize that it is the amplitude
+ * factor for \f$q(t)\f$ rather than \f$r(t)\f$.
  *
- * The routine \verb+LALCreateRingTemplateBank()+ creates a bank of ringdown
- * templates that cover a set range in the parameters $f$ and $Q$.  The bank
- * is destroyed with \verb+LALDestroyRingTemplateBank()+.
+ * The routine <tt>XLALCreateRingTemplateBank()</tt> creates a bank of ringdown
+ * templates that cover a set range in the parameters \f$f\f$ and \f$Q\f$.  The bank
+ * is destroyed with <tt>XLALDestroyRingTemplateBank()</tt>.
  *
- * \subsubsection*{Algorithm}
+ * \heading{Algorithm}
  *
  * The waveform generation routines use recurrance relations for both the
  * exponentially-decaying envelope and for the co-sinusoid.
  *
  * The template placement algorithm is described above.
  *
- * \subsubsection*{Uses}
- *
- * %% List of any external functions called by this function.
- *
- * \subsubsection*{Notes}
- *
- * %% Any relevant notes.
- *
- * \vfill{\footnotesize\input{RingUtilsCV}}
- *
- **** </lalLaTeX> */
-
+*/
 
 NRCSID( RINGC, "$Id$" );
 
@@ -157,9 +135,9 @@ static int SIGN( REAL4 x )
  */
 
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL4 XLALBlackHoleRingSpin( REAL4 Q )
-/* </lalVerbatim> */
+
 {
 
   /* Cardoso's equation from Berti et al. (2008) */
@@ -174,9 +152,9 @@ REAL4 XLALBlackHoleRingSpin( REAL4 Q )
   /* return 1.0 - pow( 2.0/Q, 20.0/9.0 ); */
 }
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q )
-/* </lalVerbatim> */
+
 {
   const REAL4 c = LAL_C_SI;
   const REAL4 a = XLALBlackHoleRingSpin( Q );
@@ -184,9 +162,9 @@ REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q )
   return (c * c * c * g) / ( LAL_TWOPI * LAL_G_SI * LAL_MSUN_SI * f );
 }
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL4 XLALBlackHoleRingQuality( REAL4 a )
-/* </lalVerbatim> */
+
 {
 
   /* Cardoso's equation from Berti et al. (2008) */
@@ -201,9 +179,9 @@ REAL4 XLALBlackHoleRingQuality( REAL4 a )
   /*  return 2.0 * pow( ( 1.0 - a ), -0.45 ); */
 }
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL4 XLALBlackHoleRingFrequency( REAL4 M, REAL4 a )
-/* </lalVerbatim> */
+
 {
   const REAL4 c = LAL_C_SI;
   const REAL4 g = ring_spin_factor( a );
@@ -213,16 +191,16 @@ REAL4 XLALBlackHoleRingFrequency( REAL4 M, REAL4 a )
 /* Formulas for final mass and spin of a non-spinning binary */
 /* Spin equation is not used. See XLALSpinBinaryFinalBHSpin() below. */
 /* Buonanno et al arxiv:0706.3732v3 */
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL4 XLALNonSpinBinaryFinalBHSpin( REAL4 eta )
-/* </lalVerbatim> */
+
 {
   return sqrt(12.0) * eta - 2.9 * eta *eta;
 }
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL4 XLALNonSpinBinaryFinalBHMass( REAL4 eta, REAL4 mass1, REAL4 mass2 )
-/* </lalVerbatim> */
+
 {
   return ( 1 + ( sqrt(8.0/9.0) - 1) * eta - 0.498 * eta * eta) * (mass1 + mass2);
 }
@@ -231,10 +209,10 @@ REAL4 XLALNonSpinBinaryFinalBHMass( REAL4 eta, REAL4 mass1, REAL4 mass2 )
 /* non-spinning binary. */
 /* Barausse & Rezzolla arxiv:0904.2577 */
 /* Equations 6, 7, and 10 */
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL4 XLALSpinBinaryFinalBHSpin( REAL4 eta, REAL4 mass1, REAL4 mass2, REAL4 spin1x, REAL4 spin2x,
    REAL4 spin1y, REAL4 spin2y, REAL4 spin1z, REAL4 spin2z )
-/* </lalVerbatim> */
+
 {
   REAL4 norml;
   REAL4 cosalpha;
@@ -275,9 +253,9 @@ REAL4 XLALSpinBinaryFinalBHSpin( REAL4 eta, REAL4 mass1, REAL4 mass2, REAL4 spin
      q + norml * norml * q2);
 }
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon )
-/* </lalVerbatim> */
+
 {
   const REAL4 c = LAL_C_SI;
   const REAL4 M = XLALBlackHoleRingMass( f, Q );
@@ -290,9 +268,9 @@ REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon )
     (1.0 / sqrt( Q * F * g) );
 }
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude )
-  /* </lalVerbatim> */
+
 {
   const REAL4 c = LAL_C_SI;
   const REAL4 M = XLALBlackHoleRingMass( f, Q );
@@ -305,16 +283,16 @@ REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude )
     ( Q * F * g );
 }
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL4 XLALBlackHoleRingHRSS( REAL4 f, REAL4 Q, REAL4 amplitude, REAL4 plus, REAL4 cross )
-  /* </lalVerbatim> */
+
 {
   return amplitude * sqrt( Q * ( (0.5 + Q*Q ) * plus*plus + Q * plus*cross + Q*Q * cross*cross ) / ( 1.0 + 4.0 * Q*Q) / LAL_PI / f );
 }
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL8 XLAL2DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb )
-/* </lalVerbatim> */
+
 {
   REAL8 Q2 = Qa*Qa;
   REAL8 gQQ;
@@ -328,9 +306,9 @@ REAL8 XLAL2DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb )
   return ( 1.0/8.0 * ( gQQ * pow(Qb-Qa,2) + gQf * (Qb-Qa) * (fb-fa) + gff * pow(fb-fa,2) ) );
 }
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL8 XLAL3DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb, REAL8 dt )
-/* </lalVerbatim> */
+
 {
   REAL8 gQQ, gff, gtt;
   REAL8 gQf, gtf, gtQ;
@@ -355,9 +333,9 @@ REAL8 XLAL3DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb, REAL8 dt
 }
 
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 REAL8 XLAL3DRingTimeMinimum( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb)
-/* </lalVerbatim> */
+
 {
   REAL8 gtt;
   REAL8 gtf, gtQ;
@@ -391,9 +369,9 @@ REAL8 XLALRingdownTimeError( const SnglRingdownTable *table,  REAL8 lal_ring_ds_
   return ( sqrt( lal_ring_ds_sq / gtt ) );
 }
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALComputeRingTemplate";
   const REAL8 efolds = 10;
@@ -443,13 +421,13 @@ int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
 }
 
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 int XLALComputeBlackHoleRing(
     REAL4TimeSeries     *output,
     SnglRingdownTable   *input,
     REAL4                dynRange
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALComputeBlackHoleRing";
   const REAL4 amp = dynRange *
@@ -501,9 +479,9 @@ static int MakeBank( SnglRingdownTable *tmplt, RingTemplateBankInput *input )
 }
 
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input )
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALCreateRingTemplateBank";
   UINT4 i;
@@ -531,9 +509,9 @@ RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input )
 }
 
 
-/* <lalVerbatim file="RingUtilsCP"> */
+
 void XLALDestroyRingTemplateBank( RingTemplateBank *bank )
-/* </lalVerbatim> */
+
 {
   if ( bank )
   {

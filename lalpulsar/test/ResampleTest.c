@@ -55,7 +55,7 @@ signal frequency \c df, and the frequency of the modulation
 All frequencies are in units of the sampling rate, which is an
 arbitrary scale.  With no options, the program runs with
 \c lalDebugLevel=0, produces no output, and uses internally
-<tt>#define</tt>d signal parameters.
+<tt>\#define</tt>d signal parameters.
 
 \par Algorithm
 

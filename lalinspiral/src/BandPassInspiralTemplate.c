@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (C) 2007 Anand Sengupta
  *
@@ -24,16 +23,14 @@
  *
  * Author: Anand Sengupta
  *
- * $Id$
- *
  *---------------------------------------------------------------------------*/
 
-#if 0
-<lalVerbatim file="BandPassInspiralTemplateCV">
-Author: Anand Sengupta
-$Id$
-</lalVerbatim>
-#endif
+/**
+
+\author Anand Sengupta
+\file
+
+*/
 
 
 #include <lal/LALStdio.h>

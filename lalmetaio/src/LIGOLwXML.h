@@ -56,11 +56,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/**
-
-\heading{Error conditions}
-
-*/
 /**\name Error Codes */ /*@{*/
 #define LIGOLWXMLH_ENULL 1
 #define LIGOLWXMLH_ENNUL 2
@@ -90,10 +85,10 @@ extern "C" {
 writing to LIGO lightweight XML files. It should not be manipulated
 directly, but passed to the \c LIGOLwXML functions for their use.
 <dl>
-<dt>\c fp</dt><dd> The file stream pointer of the XML file.</dd>
-<dt>\c first</dt><dd> Is this the first entry in the table.</dd>
-<dt>\c rowCount</dt><dd> Counter for the number of rows in the current table.</dd>
-<dt>\c table</dt><dd> The database table currently open.</dd>
+<dt>fp</dt><dd> The file stream pointer of the XML file.</dd>
+<dt>first</dt><dd> Is this the first entry in the table.</dd>
+<dt>rowCount</dt><dd> Counter for the number of rows in the current table.</dd>
+<dt>table</dt><dd> The database table currently open.</dd>
 </dl>
 
 */

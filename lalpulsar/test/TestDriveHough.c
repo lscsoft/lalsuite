@@ -67,7 +67,7 @@ result into a file.
 
 By default, running this program with no arguments simply tests the subroutines,
 producing an output file called <tt>OutHough.asc</tt>.  All default parameters are set from
-<tt>#define</tt>d constants.
+<tt>\#define</tt>d constants.
 
 The <b>-d</b> option sets the debug level to the specified value
 \c debuglevel.  The <b>-o</b> flag tells the program to print the partial Hough map

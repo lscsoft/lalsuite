@@ -140,6 +140,7 @@
       <typedefs title=""/>
       <enums title=""/>
       <enumvalues title=""/>
+      <defines title=""/>
       <functions title=""/>
       <files visible="yes" title=""/>
       <variables title=""/>
@@ -158,6 +159,7 @@
       <typedefs title=""/>
       <enums title=""/>
       <enumvalues title=""/>
+      <defines title=""/>
       <variables title=""/>
       <signals title=""/>
       <publicslots title=""/>
