@@ -157,6 +157,8 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
                             REAL8Vector *dts );                
                               
 void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
+
+void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
   
 REAL8 noise_only_model( LALInferenceIFOData *data );
 
