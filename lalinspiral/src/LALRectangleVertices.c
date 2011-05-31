@@ -17,67 +17,60 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALRectangleVerticesCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALRectangleVertices.c}}
-
-Module to find the vertices of a rectangle given its centre,
+\brief Module to find the vertices of a rectangle given its centre,
 half side-lengths and orientation angle.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALRectangleVerticesCP}
-\index{\verb&LALRectangleVertices()&}
-\begin{itemize}
-   \item \texttt{out,} Output.
-   \item \texttt{in,} Input.
-\end{itemize}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>LALRectangleVertices()</tt>
+<ul>
+   <li> <tt>out,</tt> Output.
+   </li><li> <tt>in,</tt> Input.</li>
+</ul>
+
+\heading{Description}
 
 This code computes the vertices of a rectangle for plotting
 a grid of templates with xmgr, useful when looking at the
 minimal-match-rectangles around mesh points in a template bank.
 
-\subsubsection*{Algorithm}
-Given the centre $(x_0,y_0)$ and half-sides $(dx,dy),$
-the vertices of a rectangle in a {\it diagonal} coordinate
+\heading{Algorithm}
+Given the centre \f$(x_0,y_0)\f$ and half-sides \f$(dx,dy),\f$
+the vertices of a rectangle in a \e diagonal coordinate
 system are given by
-\begin{eqnarray}
+\f{eqnarray}{
 x_1 & = & x_0 - dx, \ \ y_1 = y_0 - dy, \nonumber \\
 x_2 & = & x_0 + dx, \ \ y_2 = y_0 - dy, \nonumber \\
 x_3 & = & x_0 + dx, \ \ y_3 = y_0 + dy, \nonumber \\
 x_4 & = & x_0 - dx, \ \ y_4 = y_0 + dy. \nonumber
-\end{eqnarray}
-The coordinates of a rectangle oriented at an angle $\theta$ is
+\f}
+The coordinates of a rectangle oriented at an angle \f$\theta\f$ is
 found by using the formulas
-\begin{eqnarray}
+\f{eqnarray}{
 x' = x \cos(\theta) - y \sin(\theta),\nonumber \\
 y' = y \cos(\theta) + x \sin(\theta).\nonumber
-\end{eqnarray}
+\f}
 The function returns five coordinate points (1,2,3,4,1),
 and not just the four verticies, to help
 a plotting programme to complete the rectangle.
 
-\subsubsection*{Uses}
+\heading{Uses}
 None.
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALRectangleVerticesCV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALInspiralBank.h>
 
 NRCSID(LALRECTANGLEVERTICESC, "$Id$");
 
-/*  <lalVerbatim file="LALRectangleVerticesCP"> */
+
 
 void
 LALRectangleVertices(
@@ -85,7 +78,7 @@ LALRectangleVertices(
    RectangleOut *out,
    RectangleIn *in
 )
-{ /* </lalVerbatim> */
+{
 
    REAL4 x1, x2, x3, x4, myy1, y2, y3, y4;
    REAL4 ctheta,stheta;

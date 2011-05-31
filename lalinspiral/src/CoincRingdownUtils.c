@@ -28,13 +28,6 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="CoincRingdownUtilsCV">
-Author: Fairhurst, S.
-$Id$
-</lalVerbatim>
-#endif
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,133 +45,101 @@ $Id$
 
 NRCSID( COINCRINGDOWNUTILSC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{CoincRingdownUtils.c}}
+/**
+\author Fairhurst, S.
+\file
+\brief Blah.
 
-\noindent Blah.
+\section noref Description
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{CoincRingdownUtilsCP}
-\idx{LALCreateTwoIFOCoincList()}
-\idx{LALCreateNIFORingdownCoincList()}
-\idx{LALRemoveRepeatedRingdownCoincs()}
-\idx{LALFreeCoincRingdown()}
-\idx{XLALFreeCoincRingdown()}
-\idx{LALAddSnglRingdownToCoinc()}
-\idx{LALSnglInspiralCoincTest()}
-\idx{LAExtractSnglInspiralFromCoinc()}
-\idx{XLALRecreateCoincFromSngls()}
-\idx{XLALGenerateCoherentBank()}
-\idx{XLALInspiralDistanceCut()}
-\idx{LALCoincCutSnglInspiral()}
-
-\subsubsection*{Description}
-
-\texttt{LALCreateTwoIFOCoincList()} takes in a linked list of single inspiral
+<tt>LALCreateTwoIFOCoincList()</tt> takes in a linked list of single inspiral
 tables and returns a list of two instrument coincidences.  The coincidence
-requirements are given by the \texttt{accuracyParams}.  When single inspirals
+requirements are given by the \c accuracyParams.  When single inspirals
 from two different instruments are found to be coincident, the code creates a
-new \texttt{coincInspiralTable} and uses \texttt{LALAddSnglInspiralToCoinc()}
+new \c coincInspiralTable and uses <tt>LALAddSnglInspiralToCoinc()</tt>
 to add the single inspirals to the coinc.  The function returns
-\texttt{coincOutput} which is a pointer to the head of a linked list of
-\texttt{CoincInspiralTable}s.
+\c coincOutput which is a pointer to the head of a linked list of
+\c CoincInspiralTables.
 
-\texttt{LALCreateNIFORingdownCoincList()} takes linked list of
-\texttt{CoincInspiralTable}s, assumed to contain (N-1) ifo coincidences and
+<tt>LALCreateNIFORingdownCoincList()</tt> takes linked list of
+\c CoincInspiralTables, assumed to contain (N-1) ifo coincidences and
 creates all N ifo coincidences.  Both the input and output list of
-\texttt{CoincInspiralTable}s are passed as \texttt{coincHead}.
+\c CoincInspiralTables are passed as \c coincHead.
 
-\texttt{LALRemoveRepeatedRingdownCoincs()} will remove any lower order coincidences
+<tt>LALRemoveRepeatedRingdownCoincs()</tt> will remove any lower order coincidences
 if they are contained in a higher order coincidence.  For example, if an H1-L1
 double coincident trigger is also part of an H1-H2-L1 triple coincident
 trigger, the double coincident trigger will be removed.  The head of the list
-of coincident triggers is passed and returned as \texttt{coincHead}.
+of coincident triggers is passed and returned as \c coincHead.
 
-\texttt{XLALFreeCoincRingdown()} \texttt{LALFreeCoincRingdown()} and  free the
-memory associated to the \texttt{CoincInspiralTable} pointed to by
-\texttt{coincPtr}.  This entails freeing the \texttt{CoincInspiralTable} as
-well as any \texttt{eventId}s which point to the coinc.
+<tt>XLALFreeCoincRingdown()</tt> <tt>LALFreeCoincRingdown()</tt> and  free the
+memory associated to the \c CoincInspiralTable pointed to by
+\c coincPtr.  This entails freeing the \c CoincInspiralTable as
+well as any \c eventIds which point to the coinc.
 
-\texttt{LALAddSnglInspiralToCoinc()} adds a pointer to a single inspiral table
-to a coinc inspiral table.  Upon entry, if \texttt{coincPtr} points to a
-\texttt{NULL} coinc inspiral table, the table is created before a pointer to
-the single inspiral table is added.  Additionally, an \texttt{eventId} table is
+<tt>LALAddSnglInspiralToCoinc()</tt> adds a pointer to a single inspiral table
+to a coinc inspiral table.  Upon entry, if \c coincPtr points to a
+\c NULL coinc inspiral table, the table is created before a pointer to
+the single inspiral table is added.  Additionally, an \c eventId table is
 created for the single inspiral table.  This points to both the single and
-coinc inspirals.  If an \texttt{eventId} already exists for the single
+coinc inspirals.  If an \c eventId already exists for the single
 inspiral, another eventId table is added to the linked list.  The linked list
-of \texttt{eventId}s associated to a single inspiral table allow us to easily
+of \c eventIds associated to a single inspiral table allow us to easily
 determine which coincident events each single is a part of.
 
-\texttt{LALSnglInspiralCoincTest()} tests for coincidence between a single
+<tt>LALSnglInspiralCoincTest()</tt> tests for coincidence between a single
 inspiral and a coinc inspiral.  It works by testing for coincidence between
 each non-null entry in the coinc inspiral and the single.  This is done using
-\texttt{LALCompareSnglInspiral()}.  If all members of the coinc are found to be
-coincident with the single, the \texttt{accuracyParams.match} is set to 1,
+<tt>LALCompareSnglInspiral()</tt>.  If all members of the coinc are found to be
+coincident with the single, the <tt>accuracyParams.match</tt> is set to 1,
 otherwise to 0.
 
-\texttt{LALExtractSnglInspiralFromCoinc()} extracts the information from a
-linked list of \texttt{coincInspiralTable}s and returns it as a linked list of
-\texttt{snglInspiralTable}s.  Thus, the output \texttt{snglPtr} is a pointer to
+<tt>LALExtractSnglInspiralFromCoinc()</tt> extracts the information from a
+linked list of \c coincInspiralTables and returns it as a linked list of
+\c snglInspiralTables.  Thus, the output \c snglPtr is a pointer to
 a linked list of single inspiral tables.  That list contains only single
 inspirals which are found in coincidence.  In order to preserve the coincidence
 information, we assign to each coincident event an integer value.  This is
-stored in the \texttt{UINT8 id} field of the \texttt{eventIDColumn} of each
-single inspiral which forms part of the coincidence.  The \texttt{id} is set
-equal to $10^{9} \times$ \texttt{gpsStartTime} $+ 10^{5} \times$
-\texttt{slideNum} $+$ event number. We do not assign multiple \texttt{id}
+stored in the <tt>UINT8 id</tt> field of the \c eventIDColumn of each
+single inspiral which forms part of the coincidence.  The \c id is set
+equal to \f$10^{9} \times\f$ \c gpsStartTime \f$+ 10^{5} \times\f$
+\c slideNum \f$+\f$ event number. We do not assign multiple \c id
 values to a given single inspiral table, but instead make multiple copies of
-the table, each with a unique \texttt{id}.
+the table, each with a unique \c id.
 
-\texttt{XLALRecreateCoincFromSngls()} is used to recreate a list of coinc
-inspirals from a list of \texttt{snglInspiralTable}s with populated
-\texttt{eventIDColumn}.  The code searches for entries in
-\texttt{snglInspiral} which have the same numerical value of the \texttt{id}
-field in the \texttt{eventIDColumn}.
+<tt>XLALRecreateCoincFromSngls()</tt> is used to recreate a list of coinc
+inspirals from a list of \c snglInspiralTables with populated
+\c eventIDColumn.  The code searches for entries in
+\c snglInspiral which have the same numerical value of the \c id
+field in the \c eventIDColumn.
 
-\texttt{XLALGenerateCoherentBank()} is used to generate a coherent bank from
-a list of \texttt{coincInspiralTable}s.  The coherent bank has the same mass
+<tt>XLALGenerateCoherentBank()</tt> is used to generate a coherent bank from
+a list of \c coincInspiralTables.  The coherent bank has the same mass
 parameters for each ifo.  These are currently chosen as the mass parameters
-of the trigger in the coinc with the highest \texttt{snr}.  If the
-\texttt{ifos} field is not \texttt{NULL}, then a template is generated for
-every ifo in \texttt{ifos}.  If it is \texttt{NULL} then templates are only
+of the trigger in the coinc with the highest \c snr.  If the
+\c ifos field is not \c NULL, then a template is generated for
+every ifo in \c ifos.  If it is \c NULL then templates are only
 generated for those ifos which have triggers in the coinc.
 
-\texttt{XLALInspiralDistanceCut()} is used to perform a distance cut between
+<tt>XLALInspiralDistanceCut()</tt> is used to perform a distance cut between
 the triggers in a coincidence.  The distance cut uses the following algorithm:
 
-\texttt{LALCoincCutSnglInspiral()} extracts all single inspirals from a
-specific ifo which are in coinc inspirals.  The output \texttt{snglPtr} is a
+<tt>LALCoincCutSnglInspiral()</tt> extracts all single inspirals from a
+specific ifo which are in coinc inspirals.  The output \c snglPtr is a
 pointer to a linked list of single inspiral tables.  That list contains only
-single inspirals from the specified \texttt{ifo} which are found in
+single inspirals from the specified \c ifo which are found in
 coincidence.
 
-
-\subsubsection*{Algorithm}
-
-\noindent None.
-
-\subsubsection*{Uses}
-
-\noindent None.
-
-\subsubsection*{Notes}
-%% Any relevant notes.
-
-\vfill{\footnotesize\input{CoincInspiralUtilsCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 int
 XLALCoincRingdownIfosDiscard(
     CoincRingdownTable **coincHead,
     char                *ifos
     )
-/* </lalVerbatim> */
+
 {
   CoincRingdownTable    *prevCoinc = NULL;
   CoincRingdownTable    *thisCoinc = NULL;
@@ -217,7 +178,7 @@ XLALCoincRingdownIfosDiscard(
 }
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 void
 LALCreateTwoIFORingdownCoincList(
     LALStatus                  *status,
@@ -225,7 +186,7 @@ LALCreateTwoIFORingdownCoincList(
     SnglRingdownTable          *snglInput,
     RingdownAccuracyList       *accuracyParams
     )
-/* </lalVerbatim> */
+
 {
   SnglRingdownTable            *currentTrigger[2];
   INT8                          currentTriggerNS[2];
@@ -323,7 +284,7 @@ LALCreateTwoIFORingdownCoincList(
   RETURN (status);
 }
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 void
 LALCreateNIFORingdownCoincList(
     LALStatus                  *status,
@@ -331,7 +292,7 @@ LALCreateNIFORingdownCoincList(
     RingdownAccuracyList       *accuracyParams,
     INT4                        N
     )
-/* </lalVerbatim> */
+
 {
   INT4                          numEvents  = 0;
   InterferometerNumber          ifoNumber  = LAL_UNKNOWN_IFO;
@@ -605,14 +566,14 @@ XLALFreeCoincRingdown(
   LALFree(*coincPtr);
 }
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 void
 LALAddSnglRingdownToCoinc(
     LALStatus                  *status,
     CoincRingdownTable        **coincPtr,
     SnglRingdownTable          *snglRingdown
     )
-/* </lalVerbatim> */
+
 {
   /*
   CoincRingdownTable  *coincRingdown = NULL;
@@ -634,13 +595,13 @@ LALAddSnglRingdownToCoinc(
 }
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 CoincRingdownTable *
 XLALAddSnglRingdownToCoinc(
     CoincRingdownTable         *coincRingdown,
     SnglRingdownTable          *snglRingdown
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALAddSnglRingdownToCoinc";
   EventIDColumn     *eventId = NULL;
@@ -721,7 +682,7 @@ XLALAddSnglRingdownToCoinc(
   return coincRingdown;
 }
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 void
 LALSnglRingdownCoincTest(
     LALStatus                  *status,
@@ -729,7 +690,7 @@ LALSnglRingdownCoincTest(
     SnglRingdownTable          *snglRingdown,
     RingdownAccuracyList       *accuracyParams
     )
-/* </lalVerbatim> */
+
 {
   SnglRingdownTable    *thisCoincEntry;
   INT4                  match = 1;
@@ -775,7 +736,7 @@ LALSnglRingdownCoincTest(
 }
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 void
 LALExtractSnglRingdownFromCoinc(
     LALStatus                  *status,
@@ -784,7 +745,7 @@ LALExtractSnglRingdownFromCoinc(
     LIGOTimeGPS                *gpsStartTime,
     INT4                        slideNum
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALExtractCoincSngls", COINCRINGDOWNUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -797,14 +758,14 @@ LALExtractSnglRingdownFromCoinc(
   RETURN (status);
 }
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 SnglRingdownTable *
 XLALExtractSnglRingdownFromCoinc(
     CoincRingdownTable         *coincRingdown,
     LIGOTimeGPS                *gpsStartTime,
     INT4                        slideNum
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "ExtractSnglRingdownFromCoinc";
   SnglRingdownTable  *snglHead = NULL;
@@ -894,13 +855,13 @@ XLALExtractSnglRingdownFromCoinc(
 }
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 int
 XLALCoincRingdownIfos (
     CoincRingdownTable  *coincRingdown,
     char                *ifos
     )
-/* </lalVerbatim> */
+
 {
   InterferometerNumber  ifoNumber  = LAL_UNKNOWN_IFO;
   int                   ifosMatch  = 1;
@@ -971,12 +932,12 @@ XLALCoincRingdownIfosCut(
 }
 
 
-/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+
 UINT8
 XLALCoincRingdownIdNumber (
     CoincRingdownTable  *coincRingdown
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "CoincRingdownIdNumber";
   SnglRingdownTable    *thisSngl = NULL;
@@ -1078,9 +1039,9 @@ XLALCoincRingdownSlideCut(
 
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 INT4 XLALCountCoincRingdown( CoincRingdownTable *head )
-/* </lalVerbatim> */
+
 {
   INT4 length;
   CoincRingdownTable *event;
@@ -1098,7 +1059,7 @@ INT4 XLALCountCoincRingdown( CoincRingdownTable *head )
 }
 
 
-/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+
 CoincRingdownTable *
 XLALStatCutCoincRingdown (
     CoincRingdownTable         *eventHead,
@@ -1106,7 +1067,7 @@ XLALStatCutCoincRingdown (
     CoincInspiralStatParams    *bittenLParams,
     REAL4                       statCut
     )
-/* </lalVerbatim> */
+
 {
   CoincRingdownTable    *thisEvent = NULL;
   CoincRingdownTable    *prevEvent = NULL;
@@ -1145,13 +1106,13 @@ XLALStatCutCoincRingdown (
 
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 SnglRingdownTable *
 XLALCompleteCoincRingdown (
     CoincRingdownTable         *eventHead,
     int                         ifoList[LAL_NUM_IFO]
     )
-/* </lalVerbatim> */
+
 {
   static const char     *func = "XLALCompleteCoincRingdown";
   CoincRingdownTable    *thisCoinc = NULL;
@@ -1209,13 +1170,13 @@ XLALCompleteCoincRingdown (
 
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 CoincRingdownTable *
 XLALPlayTestCoincRingdown(
     CoincRingdownTable         *eventHead,
     LALPlaygroundDataMask      *dataType
     )
-/* </lalVerbatim> */
+
 {
   CoincRingdownTable    *coincEventList = NULL;
   CoincRingdownTable    *thisEvent = NULL;
@@ -1287,13 +1248,13 @@ XLALPlayTestCoincRingdown(
 
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 int
 XLALRecreateRingdownCoincFromSngls(
     CoincRingdownTable        **coincPtr,
     SnglRingdownTable          *snglRingdown
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "RecreateCoincFromSngls";
   SnglRingdownTable    *thisSngl  = NULL;
@@ -1400,14 +1361,14 @@ XLALRecreateRingdownCoincFromSngls(
 
 #if 0
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 int
 XLALGenerateCoherentBank(
     SnglRingdownTable         **coherentBank,
     CoincRingdownTable         *coincInput,
     CHAR                       *ifos
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "CreateCoherentBank";
   InterferometerNumber  ifoInCoinc = LAL_UNKNOWN_IFO;
@@ -1504,13 +1465,13 @@ XLALGenerateCoherentBank(
 #endif
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 CoincRingdownTable *
 XLALRingdownDistanceCut(
     CoincRingdownTable        **coincRingdown,
     RingdownAccuracyList       *accuracyParams
     )
-/* </lalVerbatim> */
+
 {
   /*static const char *func = "RingdownDistanceCut";*/
   InterferometerNumber  ifoA = LAL_UNKNOWN_IFO;
@@ -1588,13 +1549,13 @@ XLALRingdownDistanceCut(
 
 
 #if 0
-/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+
 void
 LALCoincCutSnglInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead
     )
-/* </lalVerbatim> */
+
 {
   SnglInspiralTable  *eventList = NULL;
   SnglInspiralTable  *prevEvent = NULL;
@@ -1763,7 +1724,7 @@ XLALCoincRingdownStat(
 }
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 int
 XLALClusterCoincRingdownTable (
     CoincRingdownTable        **coincList,
@@ -1771,7 +1732,7 @@ XLALClusterCoincRingdownTable (
     CoincInspiralStatistic      coincStat,
     CoincInspiralStatParams    *bittenLParams
     )
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALClusterCoincRingdownTable";
   CoincRingdownTable     *thisCoinc = NULL;
@@ -1900,13 +1861,13 @@ XLALClusterCoincRingdownTable (
 }
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 int
 XLALCompareCoincRingdownByTime (
     const void *a,
     const void *b
     )
-/* </lalVerbatim> */
+
 {
   const CoincRingdownTable *aPtr = *((const CoincRingdownTable * const *)a);
   const CoincRingdownTable *bPtr = *((const CoincRingdownTable * const *)b);
@@ -1930,13 +1891,13 @@ XLALCompareCoincRingdownByTime (
 }
 
 
-/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+
 CoincRingdownTable *
 XLALSortCoincRingdown (
     CoincRingdownTable  *eventHead,
     int(*comparfunc)    (const void *, const void *)
     )
-/* </lalVerbatim> */
+
 {
   INT4                   i;
   INT4                   numEvents = 0;
@@ -1982,7 +1943,7 @@ XLALSortCoincRingdown (
 
 }
 
-/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+
 void
 LALRingdownH1H2Consistency(
     LALStatus                  *status,
@@ -1991,7 +1952,7 @@ LALRingdownH1H2Consistency(
     LALSegList                 *vetoSegsH1,
     LALSegList                 *vetoSegsH2
     )
-/* </lalVerbatim> */
+
 {
   CoincRingdownTable   *thisCoinc = NULL;
   CoincRingdownTable   *prevCoinc = NULL;

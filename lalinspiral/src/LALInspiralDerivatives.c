@@ -17,88 +17,81 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralDerivativesCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief Module to calculate the RHS of the differential equations
+in Eq.\eqref{eq_ode2}.
 
-\subsection{Module \texttt{LALInspiralDerivatives.c}}
+\heading{Prototypes}
 
-Module to calculate the RHS of the differential equations
-in Eq.~(\ref{eq:ode2}).
+<tt>LALInspiralDerivatives()</tt>:
+<ul>
+<li> \c values: Input containing the values of the variables \f$v\f$ and \f$\phi\f$ at the
+current time.</li>
+<li> \c dvalues: Output containing the derivatives \f$dv/dt\f$ and \f$d\phi/dt\f$ at the
+current time.</li>
+<li> \c params: Input  of type \c InspiralDerivativesIn that must be
+cast to a <tt>void.</tt>\\
+</li>
+</ul>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralDerivativesCP}
-\idx{LALInspiralDerivatives()}
-\begin{itemize}
-\item {\tt values:} Input containing the values of the variables $v$ and $\phi$ at the
-current time.
-\item {\tt dvalues:} Output containing the derivatives $dv/dt$ and $d\phi/dt$ at the
-current time.
-\item {\tt params:} Input  of type {\tt InspiralDerivativesIn} that must be
-cast to a {\tt void.}\\
-
-\end{itemize}
-
-\subsubsection*{Description}
+\heading{Description}
 
 This module calculates the right-hand sides of
 the follwoing two coupled first-order differential equations which are
 solved to obtain the gravitational wave phasing equation,
-as described in the documentation for the function \texttt{LALInspiralWave1}:
+as described in the documentation for the function \c LALInspiralWave1:
 The equations are
-\begin{equation}
+\anchor ode2 \f{equation}{
 \frac{dv}{dt} = - \frac{\mathcal{F}(v)}{m E^{\prime}(v)},\ \ \ \
 \frac{d \phi(t)}{dt} = \frac{2v^{3}}{m}.
 \label{ode2}
-\end{equation}
+\f}
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 
-\subsubsection*{Uses}
+\heading{Uses}
 None.
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\begin{itemize}
-\item This function has been intentionally made non-LAL compliant in the sense that it
+<ul>
+<li> This function has been intentionally made non-LAL compliant in the sense that it
 has no status structure.  This is because this code
 outputs the RHS of the differential equations
 and is called repeatedly by a function that integrates the two differential
-equations and should therefore not suffer from undue overheads.
-\item The input {\tt params} is of type {\tt InspiralDerivativesIn} and must
-be cast to a void before calling this function. For example,\\[5pt]
-\texttt {
-   InspiralDerivativesIn in3;\\
-   void *funcParams;\\[5pt]
-   in3.totalmass = totalmass;\\
-   $\ldots$\\
+equations and should therefore not suffer from undue overheads.</li>
+<li> The input \c params is of type \c InspiralDerivativesIn and must
+be cast to a void before calling this function. For example,
+<code>
+   InspiralDerivativesIn in3;
+   void *funcParams;
+   in3.totalmass = totalmass;
+   ...
    funcParams = (void *) \&in3;
-   }
+</code>
+</li>
+</ul>
 
-\end{itemize}
-
-\vfill{\footnotesize\input{LALInspiralDerivativesCV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 
 NRCSID (LALINSPIRALDERIVATIVESC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralDerivativesCP"> */
+
 void
 LALInspiralDerivatives (
    REAL8Vector *values,
    REAL8Vector *dvalues,
    void        *params
    )
- { /* </lalVerbatim> */
+ {
 
   InspiralDerivativesIn *ak;
   REAL8 v;

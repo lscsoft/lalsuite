@@ -428,7 +428,7 @@ sub cleanupLSD {
         }sge;
 
         # special treatment of 'Synopsis/Prototypes/Description/Uses/Algorithm/Notes' sections: turn into 'heading'
-        $text =~ s!\\(?:sub)*section\*?{(Synopsis|Description|Prototypes|Algorithm|Notes|Uses)}!\\heading{$1}!g;
+        $text =~ s!\\(?:sub)*section\*?{(Synopsis|Description|Prototypes|Algorithm|Notes|Uses|Usage)}!\\heading{$1}!g;
 
         # rephrase (sub)section commands, turning labels (if present) into anchors
         $text =~ s{\\((?:sub)*section)\*?\s*$wbbr\n(?<LBL>\\label\s*$bbr)?}{

@@ -27,12 +27,12 @@ static void XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,InspiralTemplate *p
 	for(unsigned int j = LAL_PNORDER_NEWTONIAN; j <= params->order; j++) {
 		mparams->wdotorb[j] = paramsInit->ak.ST[j];
 	}
-	
+
 	/* note: in the original code epnorb[2] is set even for PNORDER_NEWTONIAN or PNORDER_HALF */
 	if (params->order >= LAL_PNORDER_ONE) {
 		mparams->epnorb[2]  = -(1.0/12.0) * (9.0 + params->eta);
 	}
-	
+
 	for(int j = params->order + 1; j <= 8; j++) {
   	mparams->wdotorb[j] = 0;
 	}
@@ -41,7 +41,7 @@ static void XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,InspiralTemplate *p
     mparams->wspin15 	= -(1.0/12.0);
     mparams->LNhdot15 = 0.5;
     mparams->S1dot15 	= (4.0 + 3.0 * mparams->m2m1) / 2.0 ;
-    mparams->S2dot15 	= (4.0 + 3.0 * mparams->m1m2) / 2.0 ;		
+    mparams->S2dot15 	= (4.0 + 3.0 * mparams->m1m2) / 2.0 ;
 	} else {
 		mparams->wspin15 	= 0.0;
     mparams->LNhdot15 = 0.0;
@@ -53,12 +53,12 @@ static void XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,InspiralTemplate *p
     mparams->wspin20 	= -(1.0/48.0) / params->eta;	/* TO DO: these will give infinity in test mass case */
     mparams->LNhdot20 = -1.5 / params->eta;
     mparams->Sdot20 	= 0.5;
-		
+
 		mparams->epnorb[4]  = (1.0/24.0) * (-81.0 + 57.0*params->eta - params->eta*params->eta);
 	} else {
     mparams->wspin20 	= 0.0;
     mparams->LNhdot20 = 0.0;
-    mparams->Sdot20 	= 0.0;		
+    mparams->Sdot20 	= 0.0;
 	}
 
   if (params->order >= LAL_PNORDER_THREE) {
@@ -70,11 +70,11 @@ static void XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,InspiralTemplate *p
   if (params->order == LAL_PNORDER_THREE) {
     mparams->wdotorb[(int)(LAL_PNORDER_THREE+1)] = paramsInit->ak.ST[(int)(LAL_PNORDER_THREE+1)];
 	}
-	
+
   if (params->order == LAL_PNORDER_THREE_POINT_FIVE) {
     mparams->wdotorb[8] = paramsInit->ak.ST[8];
 	}
-  
+
 	return;
 }
 
@@ -86,9 +86,9 @@ static int XLALSTPNAdaptiveTest(double t,const double values[],double dvalues[],
 
 	UNUSED(t);
 
-	omega = values[1];	
+	omega = values[1];
 	v = pow(omega,oneby3);
-	
+
   test = -0.5 * params->eta * ( (2.0/3.0) * (1.0/v) * params->epnorb[0]	+
                                 params->epnorb[1] +
 																(4.0/3.0) * v * (params->epnorb[2] +
@@ -116,31 +116,31 @@ static int XLALSTPNAdaptiveTest(double t,const double values[],double dvalues[],
 				 + (8.0/7.0) * v * (params->epnorb[6]
 				 + (9.0/8.0) * v * (params->epnorb[7]
 				 + (10.0/9.0)* v *  params->epnorb[8] )))))) );
-	
+
 	if (params->wspin15 != 0.0) {
 		REAL8 LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z;
 		REAL8 v2, dotLNS1, dotLNS2;
-		
+
 		LNhx = values[2]; LNhy  = values[3]; LNhz = values[4] ;
 		S1x  = values[5]; S1y   = values[6]; S1z  = values[7] ;
 		S2x  = values[8]; S2y   = values[9]; S2z  = values[10];
-		
+
 		v2 = v * v;
-		
+
 	  dotLNS1 = (LNhx*S1x + LNhy*S1y + LNhz*S1z);
-	  dotLNS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);		
-		
+	  dotLNS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);
+
 		test += -0.5 * params->eta * (5.0/3.0) * v2 * ( (8.0/3.0 + 2.0*params->m2m1)*dotLNS1 + (8.0/3.0 + 2.0*params->m1m2)*dotLNS2 );
 
 	  if (params->wspin20 != 0.0) {
 			REAL8 dotS1S2;
-			
+
 			dotS1S2 = (S1x*S2x + S1y*S2y + S1z*S2z);
-			
+
 	    test += -(v*v2)  * (dotS1S2 - 3.0 * dotLNS1 * dotLNS2);
 		}
 	}
-	
+
 	if (test > 0.0) {							 									   /* energy test fails! */
 		return LALSTPN_TEST_ENERGY;
 	} else if (dvalues[1] < 0.0) { 									   /* omegadot < 0! */
@@ -156,7 +156,7 @@ static int XLALSTPNAdaptiveDerivatives(double t,const double values[],double dva
 	/* coordinates and derivatives */
   REAL8  s,  omega,  LNhx,  LNhy,  LNhz,  S1x,  S1y,  S1z,  S2x,  S2y,  S2z;
   REAL8 ds, domega, dLNhx, dLNhy, dLNhz, dS1x, dS1y, dS1z, dS2x, dS2y, dS2z;
-  
+
 	/* auxiliary variables */
 	REAL8 v, v2, v3, v4, v7, v11;
 	REAL8 dotLNS1, dotLNS2, dotS1S2;
@@ -171,19 +171,19 @@ static int XLALSTPNAdaptiveDerivatives(double t,const double values[],double dva
 	s    = values[0]; omega = values[1];
 	LNhx = values[2]; LNhy  = values[3]; LNhz = values[4] ;
 	S1x  = values[5]; S1y   = values[6]; S1z  = values[7] ;
-	S2x  = values[8]; S2y   = values[9]; S2z  = values[10];		
+	S2x  = values[8]; S2y   = values[9]; S2z  = values[10];
 
 	if (omega <= 0.0) {
 		return LALSTPN_DERIVATIVE_OMEGANONPOS;
 	}
 
   v = pow(omega,oneby3);
-  v2  = v * v; v3 = v2 * v;	v4 = v3 * v; v7 = v4 * v3; v11 = v7 * v4; 
+  v2  = v * v; v3 = v2 * v;	v4 = v3 * v; v7 = v4 * v3; v11 = v7 * v4;
 
   dotLNS1 = (LNhx*S1x + LNhy*S1y + LNhz*S1z);
   dotLNS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);
   dotS1S2 = (S1x*S2x  + S1y*S2y  + S1z*S2z );
-	
+
 	/* domega */
   domega = params->wdotorb[0] + v * (params->wdotorb[1] +
  																	 	 v * (params->wdotorb[2] +
@@ -257,7 +257,7 @@ static int XLALSTPNAdaptiveDerivatives(double t,const double values[],double dva
   dS2x += params->Sdot20 * omega2 * (-tmpx - 3.0 * dotLNS1 * crossx);
   dS2y += params->Sdot20 * omega2 * (-tmpy - 3.0 * dotLNS1 * crossy);
   dS2z += params->Sdot20 * omega2 * (-tmpz - 3.0 * dotLNS1 * crossz);
-		
+
 	/* dphi */
   if(LNhx*LNhx + LNhy*LNhy > 0.0) {
     ds = omega - (-LNhz * (LNhy*dLNhx - LNhx*dLNhy) / (LNhx*LNhx + LNhy*LNhy)); /* term in parens is alphadotcosi */
@@ -269,11 +269,11 @@ static int XLALSTPNAdaptiveDerivatives(double t,const double values[],double dva
 	dvalues[2] = dLNhx; dvalues[3] = dLNhy ; dvalues[4] = dLNhz;
 	dvalues[5] = dS1x ; dvalues[6] = dS1y  ; dvalues[7] = dS1z ;
 	dvalues[8] = dS2x ; dvalues[9] = dS2y  ; dvalues[10]= dS2z ;
-	
+
 	return GSL_SUCCESS;
 }
 
-/*  <lalVerbatim file="LALSTPNWaveformInjectionCP"> */
+
 void
 LALSTPNAdaptiveWaveformEngine( LALStatus *status,
                 							 REAL4Vector *signalvec1,REAL4Vector *signalvec2,
@@ -281,7 +281,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
                 							 UINT4 *countback,
                 							 InspiralTemplate *params,InspiralInit *paramsInit
                 						 )
-{	/* </lalVerbatim> */
+{
 	/* PN parameters */
   LALSTPNparams mparams;
 
@@ -320,21 +320,21 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 	yinit[2] = sin(params->inclination);							/* LNh(x,y,z) */
 	yinit[3] = 0.0;
 	yinit[4] = cos(params->inclination);
-	
+
 	norm = pow(params->mass1/params->totalMass,2.0);
 	yinit[5] = norm * params->spin1[0];								/* S1(x,y,z) */
-	yinit[6] = norm * params->spin1[1]; 
-	yinit[7] = norm * params->spin1[2]; 
-	
+	yinit[6] = norm * params->spin1[1];
+	yinit[7] = norm * params->spin1[2];
+
 	norm = pow(params->mass2/params->totalMass,2.0);	/* S2(x,y,z) */
 	yinit[8] = norm * params->spin2[0];
-	yinit[9] = norm * params->spin2[1]; 
-	yinit[10]= norm * params->spin2[2]; 
+	yinit[9] = norm * params->spin2[1];
+	yinit[10]= norm * params->spin2[2];
 
-  xlalErrno = 0;	
+  xlalErrno = 0;
 
 	/* allocate the integrator */
-	integrator = XLALAdaptiveRungeKutta4Init(11,XLALSTPNAdaptiveDerivatives,XLALSTPNAdaptiveTest,1.0e-6,1.0e-6);							
+	integrator = XLALAdaptiveRungeKutta4Init(11,XLALSTPNAdaptiveDerivatives,XLALSTPNAdaptiveTest,1.0e-6,1.0e-6);
   if (!integrator) {
 		fprintf(stderr,"LALSTPNWaveform2: Cannot allocate integrator.\n");
     if (XLALClearErrno() == XLAL_ENOMEM)
@@ -342,16 +342,16 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
     else
       ABORTXLAL(status);
   }
-	
+
 	/* stop the integration only when the test is true */
 	integrator->stopontestonly = 1;
-		
+
 	/* run the integration; note: time is measured in units of total mass */
 	len = XLALAdaptiveRungeKutta4(integrator,(void *)&mparams,yinit,0.0,lengths/m,dt/m,&yout);
-	
+
 	intreturn = integrator->returncode;
 	XLALAdaptiveRungeKutta4Free(integrator);
-	
+
 	if (!len) {
     if (XLALClearErrno() == XLAL_ENOMEM) {
       ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
@@ -360,8 +360,8 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 			ABORTXLAL(status);
 		}
 	}
-	
-	/* report on abnormal termination (TO DO: throw some kind of LAL error?) */ 
+
+	/* report on abnormal termination (TO DO: throw some kind of LAL error?) */
 	if (intreturn != 0 && intreturn != LALSTPN_TEST_ENERGY && intreturn != LALSTPN_TEST_OMEGADOT) {
 		fprintf(stderr,"LALSTPNWaveform2 WARNING: integration terminated with code %d.\n",intreturn);
     fprintf(stderr,"                          Waveform parameters were m1 = %e, m2 = %e, s1 = (%e,%e,%e), s2 = (%e,%e,%e), inc = %e.",
@@ -370,12 +370,12 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
      							 params->spin2[0], params->spin2[1], params->spin2[2],
      							 params->inclination);
 	}
-	
+
 	/* check that we're not above Nyquist */
 	if (yinit[1]/unitHz > 0.5 * params->tSampling) {
 		fprintf(stderr,"LALSTPNWaveform2 WARNING: final frequency above Nyquist.\n");
 	}
-	
+
 	/* if we have enough space, compute the waveform components; otherwise abort */
   if ((signalvec1 && len >= signalvec1->length) || (ff && len >= ff->length)) {
 		if (signalvec1) {
@@ -386,22 +386,22 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 			fprintf(stderr,"LALSTPNWaveform2: no space to write anywhere!\n");
 		}
 		ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  } else {		
+  } else {
 		/* set up some aliases for the returned arrays; note vector 0 is time */
-	
+
   //  REAL8 *thet = yout->data;
 		REAL8 *vphi = &yout->data[1*len]; REAL8 *omega = &yout->data[2*len];
 		REAL8 *LNhx = &yout->data[3*len]; REAL8 *LNhy  = &yout->data[4*len];	REAL8 *LNhz  = &yout->data[5*len];
 
 		/* these are not needed for the waveforms:
-		REAL8 *S1x  = &yout->data[6*len]; REAL8 *S1y   = &yout->data[7*len];  REAL8 *S1z   = &yout->data[8*len];	
+		REAL8 *S1x  = &yout->data[6*len]; REAL8 *S1y   = &yout->data[7*len];  REAL8 *S1z   = &yout->data[8*len];
 		REAL8 *S2x  = &yout->data[9*len]; REAL8 *S2y   = &yout->data[10*len]; REAL8 *S2z   = &yout->data[11*len];	*/
 
 		*countback = len;
 
 		if (signalvec1) { /* return polarizations */
 			REAL8 v=0, amp=0, alpha=0, alpha0 = atan2(LNhy[0],LNhx[0]);
-			
+
 			for(unsigned int i=0;i<len;i++) {
 				v = pow(omega[i],oneby3);
 				amp = params->signalAmplitude * (v*v);
@@ -409,7 +409,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
           alpha = atan2(LNhy[i],LNhx[i]); alpha0 = alpha;
         } else {
           alpha = alpha0;
-        }        
+        }
 
 				signalvec1->data[i]   = (REAL4)(-0.5 * amp * cos(2*vphi[i]) * cos(2*alpha) * (1.0 + LNhz[i]*LNhz[i]) \
 				                                     + amp * sin(2*vphi[i]) * sin(2*alpha) * LNhz[i]);
@@ -419,30 +419,30 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 																				     - amp * sin(2*vphi[i]) * cos(2*alpha) * LNhz[i]);
 				}
 			}
-			
+
 			params->fFinal = pow(v,3.0)/(LAL_PI*m);
 			if (!signalvec2) params->tC = yout->data[len-1];	/* TO DO: why only in this case? */
 		} else if (a) {	/* return coherentGW components */
 			REAL8 apcommon, f2a, alpha, alpha0 = atan2(LNhy[0],LNhx[0]);
-			
+
 			/* (minus) amplitude for distance in m; should be (1e6 * LAL_PC_SI * params->distance) for distance in Mpc */
 			apcommon = -4.0 * params->mu * LAL_MRSUN_SI/(params->distance);
-			
+
 			for(unsigned int i=0;i<len;i++) {
 				f2a = pow(omega[i],twoby3);
 				if(LNhx[i]*LNhx[i] + LNhy[i]*LNhy[i] > 0.0) {
           alpha = atan2(LNhy[i],LNhx[i]); alpha0 = alpha;
         } else {
           alpha = alpha0;
-        }        
+        }
 
 			  ff   ->data[i]     = (REAL4)(omega[i]/unitHz);
 			  a    ->data[2*i]   = (REAL4)(apcommon * f2a * 0.5 * (1 + LNhz[i]*LNhz[i]));
 			  a    ->data[2*i+1] = (REAL4)(apcommon * f2a * LNhz[i]);
 			  phi  ->data[i]     = (REAL8)(2.0 * vphi[i]);
-			  shift->data[i]     = (REAL4)(2.0 * alpha);			
+			  shift->data[i]     = (REAL4)(2.0 * alpha);
 			}
-			
+
 			params->fFinal = ff->data[len-1];
 		}
 	}
@@ -452,4 +452,3 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-

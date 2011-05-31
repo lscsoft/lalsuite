@@ -1,12 +1,12 @@
 /**
-\defgroup CBC_bank Template Bank
+\defgroup CBC_bank bank
 \ingroup inspiral
 \brief This is a module that generates a template bank to search for
        inspiralling and merging binaries consisting of neutron stars
        and/or black holes.
 
 %Template placement is based on the geometrical
-formalism [\ref Owen96,\ref OwenAndSathyaprakash99].  A user
+formalism [\ref Owen_96,\ref OwenAndSathyaprakash99].  A user
 calls either LALInspiralCreateCoarseBank(),
 to create a coarse bank, or LALInspiralCreateFineBank(),
 to create a fine bank, at specified minimal matches.

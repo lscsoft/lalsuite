@@ -23,63 +23,40 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpFilterCV">
-Author: Brown D. A.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpFilter.c}}
-\label{ss:FindChirpFilter.c}
+\author Brown D. A.
+\file
+\ingroup FindChirp_h
 
-This module provides the core of the matched filter for binary inspiral
-chirps.
+\brief This module provides the core of the matched filter for binary inspiral chirps.
 
-
-\subsection{Matched Filtering Using Post-Newtonian Templates}
+\section sec_fcf_match Matched Filtering Using Post-Newtonian Templates
 
 The gravitational wave strain induced in an interferometer by a binary
 inspiral may be written as
-\begin{equation}
+\anchor eq_rootwaveform \f{equation}{
 h(t) = \frac{A(t)}{\mathcal{D}} \cos\left( 2 \phi(t) - \theta \right),
-\label{eq:rootwaveform}
-\end{equation}
+\label{eq_rootwaveform}
+\f}
 where
-\begin{equation}
+\f{equation}{
 A(t) = - \frac{2G\mu}{c^4} \left[ \pi GM f(t) \right]^\frac{2}{3}
-\end{equation}
-and $\mathcal{D}$ is the \emph{effective distance}, given by
-\begin{equation}
+\f}
+and \f$\mathcal{D}\f$ is the <em>effective distance</em>, given by
+\f{equation}{
 \mathcal{D} = \frac{r}{\sqrt{F_+^2 (1 + \cos^2 \iota)^2 + F_\times^2 4 \cos^2 \iota}}.
-\end{equation}
-The phase angle $\theta$ is
-\begin{equation}
+\f}
+The phase angle \f$\theta\f$ is
+\f{equation}{
 \tan \theta = \frac{F_\times 2\cos \iota}{F_+(1 + \cos^2 \iota)}
-\end{equation}
-and $\phi(t)$ is the phase evolution of the inspiral waveform.
+\f}
+and \f$\phi(t)\f$ is the phase evolution of the inspiral waveform.
 
-
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpFilterCP}
-\idx{LALFindChirpFilterSegment()}
-
-\subsubsection*{Description}
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{FindChirpFilterCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <lal/LALStdio.h>
@@ -104,7 +81,7 @@ extern int vrbflg;                      /* verbocity of lal function    */
 NRCSID (FINDCHIRPFILTERC, "$Id$");
 
 
-/* <lalVerbatim file="FindChirpFilterCP"> */
+
 void
 LALFindChirpFilterSegment (
     LALStatus                  *status,
@@ -112,7 +89,7 @@ LALFindChirpFilterSegment (
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 j, k, kmax;
   UINT4                 numPoints;

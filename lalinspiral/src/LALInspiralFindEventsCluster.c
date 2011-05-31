@@ -17,17 +17,15 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralFindEventsClusterCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
-/* <lalLaTeX>
-\subsection{Module \texttt{LALInspiralFindEventsCluster.c}}
-Module to find all `distinct' events in a given data set with an SNR
+/**
+\author Sathyaprakash, B. S.
+\file
+
+\brief Module to find all `distinct' events in a given data set with an SNR
 larger than a pre-specified threshold. To select `distinct'
 events the code uses two thresholds; all events crossing a first
-{\it lower} threshold are clustered. If at least one of the points
-in the clustered event crosses a second {\it higher} threshold then the clustered
+\e lower threshold are clustered. If at least one of the points
+in the clustered event crosses a second \e higher threshold then the clustered
 event is a trigger and what is recorded is the loudest point in the
 clustered event and the number of points above the first threshold in
 the cluster.
@@ -37,30 +35,26 @@ with a weight specified in a psd array. The code returns
 the number of events found, and for each event the snr,
 the bin number and the phase of the template at that bin.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralFindEventsClusterCP}
-\index{\verb&LALInspiralFindEventsCluster()&}
+\heading{Prototypes}
 
-\subsubsection*{Description}
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
-LALInspiralWave
-LALREAL4VectorFFT
-LALInspiralWaveNormaliseLSO
-LALInspiralWaveCorrelate
-\end{verbatim}
+<tt>LALInspiralFindEventsCluster()</tt>
 
-\subsubsection*{Notes}
+\heading{Description}
+\heading{Algorithm}
+\heading{Uses}
+\code
+LALInspiralWave()
+LALREAL4VectorFFT()
+LALInspiralWaveNormaliseLSO()
+LALInspiralWaveCorrelate()
+\endcode
 
-\vfill{\footnotesize\input{LALInspiralFindEventsClusterCV}}
-</lalLaTeX>  */
+*/
 #include <lal/LALNoiseModelsInspiral.h>
 
 NRCSID (LALINSPIRALFINDEVENTSCLUSTERC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralFindEventsClusterCP"> */
+
 void
 LALInspiralFindEventsCluster
    (
@@ -69,7 +63,7 @@ LALInspiralFindEventsCluster
    InspiralEventsList   **eventlist,
    InspiralFindEventsIn *findeventsin
    )
-{  /*  </lalVerbatim>  */
+{
 
    /*
     * We shall assume that the number of events to be found in

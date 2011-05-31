@@ -17,54 +17,47 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralSpinningBHBinaryCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
 
-\subsection{Module \texttt{LALInspiralSpinningBHBinary.c}}
-
-This module generates the inspiral waveform from a binary consisting of
+\brief This module generates the inspiral waveform from a binary consisting of
 two spinning compact stars.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralSpinningBHBinaryCP}
-\index{\verb&LALInspiralSpinningBHBinary()&}
-\begin{itemize}
-\item {\tt signalvec:} Output containing the spin modulated inspiral waveform.
-\item {\tt in:} Input containing binary chirp parameters.
-\end{itemize}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>LALInspiralSpinningBHBinary()</tt>
+<ul>
+<li> \c signalvec: Output containing the spin modulated inspiral waveform.</li>
+<li> \c in: Input containing binary chirp parameters.</li>
+</ul>
+
+\heading{Description}
 Using the formalism described in Apostolatos
-et al \cite{ACST94} and Blanchet et al. \cite{BDIWW} and formulas
-summarized in Sec.~\ref{sec:smirches} this module computes
+et al [\ref ACST94] and Blanchet et al. [\ref BDIWW1995] and formulas
+summarized in Sec.\ \ref sec_smirches this module computes
 the spin-modulated chirps from a pair of compact stars in orbit around
 each other.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 This code uses a fourth-order Runge-Kutta algorithm to solve the nine
-first-order, coupled, ordinary differential equations in Eq.~\ref{eqn:precession1}
-Eq.~\ref{eqn:precession2} and Eq.~\ref{eqn:precession3}. The solution is then used
-in Eq.~\ref{eq:waveform} (and following equations) to get the waveform  emitted
+first-order, coupled, ordinary differential equations in Eq.\eqref{eqn_precession1}
+Eq.\eqref{eqn_precession2} and Eq.\eqref{eqn_precession3}. The solution is then used
+in Eq.\eqref{eqn_waveform} (and following equations) to get the waveform  emitted
 by a spinning black hole binary.
 
-\subsubsection*{Uses}
+\heading{Uses}
+\code
+LALInspiralSetup()
+LALInspiralChooseModel()
+LALInspiralVelocity()
+LALInspiralPhasing3()
+LALRungeKutta4()
+\endcode
 
-\texttt{LALInspiralSetup}\\
-\texttt{LALInspiralChooseModel}\\
-\texttt{LALInspiralVelocity}\\
-\texttt{LALInspiralPhasing3}\\
-\texttt{LALRungeKutta4}.
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralSpinningBHBinaryCV}}
-
-</lalLaTeX>  */
+*/
 
 /*
    Interface routine needed to generate time-domain T- or a P-approximant
@@ -96,14 +89,14 @@ void LALACSTDerivatives (REAL8Vector *values, REAL8Vector *dvalues, void *funcPa
 NRCSID (LALINSPIRALSPINNINGBHBINARYC, "$Id$");
 
 /* Routine to generate inspiral waveforms from binaries consisting of spinning objects */
-/*  <lalVerbatim file="LALInspiralSpinningBHBinaryCP"> */
+
 void
 LALInspiralSpinModulatedWave(
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *in
    )
-{ /* </lalVerbatim> */
+{
 
 
 	UINT4 nDEDim=9/*, Dim=3*/;
@@ -489,7 +482,7 @@ LALACSTDerivatives
 
 
 /* Routine to inject inspiral waveforms from binaries consisting of spinning objects */
-/*  <lalVerbatim file="LALInspiralSpinningBHBinaryCP"> */
+
 
 /* NOT DONE FOR THE MOMENT should remove the polarisation effects which are already
    taken into account in inject package */
@@ -500,7 +493,7 @@ LALInspiralSpinModulatedWaveForInjection(
 					 InspiralTemplate *params,
 					 PPNParamStruc  *ppnParams
 					 )
-{ /* </lalVerbatim> */
+{
 
 
   UINT4 nDEDim=9/*, Dim=3*/;

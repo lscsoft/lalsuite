@@ -17,25 +17,35 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="BCVTemplatesCV">
-Author: B.S. Sathyaprakash
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author B.S. Sathyaprakash
+\file
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Program \texttt{BCVTemplates.c}}
-\label{ss:BCVTemplates.c}
-
-Creates a template mesh for BCV (or, alternatively, for SPA but
+\brief Creates a template mesh for BCV (or, alternatively, for SPA but
 assuing a constant metric) using the mismatch metric.
 
-\subsubsection*{Usage}
+\heading{Usage}
 
-\subsubsection*{Description}
+\heading{Description}
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
+\heading{Algorithm}
+
+\heading{Uses}
+\code
+lalDebugLevel
+LALPrintError()                 LALCheckMemoryLeaks()
+LALCalloc()                     LALFree()
+LALCreateFlatMesh()             LALSReadVectorSequence()
+LALSCreateVectorSequence()      LALSDestroyVectorSequence()
+LALSCreateVector()              LALSDestroyVector()
+\endcode
+
+\heading{Notes}
+
+*/
+
+
+/** \name Error Codes */ /*@{*/
 #define FLATMESHTESTC_ENORM 0
 #define FLATMESHTESTC_ESUB  1
 #define FLATMESHTESTC_EARG  2
@@ -51,25 +61,7 @@ assuing a constant metric) using the mismatch metric.
 #define FLATMESHTESTC_MSGEDIM  "Inconsistent parameter space dimension"
 #define FLATMESHTESTC_MSGELEN  "Too few points specified"
 #define FLATMESHTESTC_MSGEFILE "Could not open file"
-/******************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALCalloc()                     LALFree()
-LALCreateFlatMesh()             LALSReadVectorSequence()
-LALSCreateVectorSequence()      LALSDestroyVectorSequence()
-LALSCreateVector()              LALSDestroyVector()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{BCVTemplatesCV}}
-
-******************************************************* </lalLaTeX> */
+/*@}*/
 
 #include <math.h>
 #include <stdlib.h>

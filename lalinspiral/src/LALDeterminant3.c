@@ -17,56 +17,50 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALDeterminant3CV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
+\brief Module to calculate the determinant of a 3-dimensional matrix \f$g_{ij}\f$.
 
-\subsection{Module \texttt{LALDeterminant.c}}
+\heading{Prototypes}
 
-Module to calculate the determinant of a 3-dimensional matrix $g_{ij}$.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALDeterminant3CP}
-\idx{LALDeterminant() 3D determinant}
-\begin{itemize}
-   \item \texttt{determinant,} Output, determinant of the matrix.
-   \item \texttt{matrix,} Input, the input $(3\times 3)$ matrix whose determinant is required.
-\end{itemize}
+<b>LALDeterminant()</b>:
+<ul>
+   <li> <tt>determinant,</tt> Output, determinant of the matrix.
+   </li><li> <tt>matrix,</tt> Input, the input \f$(3\times 3)\f$ matrix whose determinant is required.</li>
+</ul>
 
-\subsubsection*{Description}
+\heading{Description}
 
 This code computes the determinant of a 3-dimensional matrix.
 
-\subsubsection*{Algorithm}
-Given a matrix $g_{ij}$ its determinant
-is computed using  the formula $g = \epsilon^{ijk} g_{i1} g_{j2} g_{k3},$
-where $\epsilon$ is the totally anti-symmetric tensor in 3-dimensions.
+\heading{Algorithm}
+Given a matrix \f$g_{ij}\f$ its determinant
+is computed using  the formula \f$g = \epsilon^{ijk} g_{i1} g_{j2} g_{k3},\f$
+where \f$\epsilon\f$ is the totally anti-symmetric tensor in 3-dimensions.
 
-\subsubsection*{Uses}
+\heading{Uses}
 None.
 
-\subsubsection*{Notes}
+\heading{Notes}
 Don't ever generalise this to higher dimensions since this
 would take many more operations than some of the standard routines.
 
-\vfill{\footnotesize\input{LALDeterminant3CV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALInspiralBank.h>
 
 NRCSID(LALDETERMINANT3C, "$Id$");
 
-/*  <lalVerbatim file="LALDeterminant3CP"> */
+
 
 void LALDeterminant3(LALStatus *status,
                      REAL8     *determinant,
                      REAL8     **matrix)
-{ /* </lalVerbatim> */
+{
 
    REAL8 epsilon[3][3][3] = {{
                               { 0, 0, 0},

@@ -17,67 +17,60 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="InspiralSpinBankTestCV">
- * Author: Hanna, C.R. and Owen, B. J.
- * $Id$
- * </lalVerbatim> */
-
-/* <lalLaTeX>
- * \subsection{Program \texttt{InspiralSpinBankTest}}
- * \label{s:InspiralSpinBankTest.c}
- * \providecommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
- * Tests InpsiralSpinBank().
+/**
+ * \author Hanna, C.R. and Owen, B. J.
+ * \file
+ * \ingroup LALInspiralBank_h
  *
- * \subsubsection*{Usage}
+ * \brief Tests InpsiralSpinBank().
  *
- * \begin{verbatim}
+ * \heading{Usage}
+ *
+ * \code
  * InspiralSpinBankTest
- * \end{verbatim}
+ * \endcode
  *
  * This program uses InspiralSpinBank() to generate a template bank from
  * command line parameter input.  It also has the option to make a
  * \MATHEMATICA notebook using LALMath3DPlot() which will plot the 3D
- * template bank. If the \texttt{-b} option is specified, the program will
+ * template bank. If the <tt>-b</tt> option is specified, the program will
  * read the template bank from an XML file instead of generating it. (This
  * only works if LAL is compiled with metaio.)
  *
- * \subsubsection{Command line options}
- * \begin{description}
- * \item[-b]
+ * \heading{Command line options}
+ * <dl>
+ * <dt>-b</dt><dd>
  * Specifies the XML file to read template bank from. (Only with metaio.)
- * \item[-n]
- * Specifies the minimum smaller mass between 0 and 5.0 $M\odot$.
- * \item[-x]
- * Specifies the maximum smaller mass between 0 and 5.0 $M\odot$.
- * \item[-m]
+ * </dd><dt>-n</dt><dd>
+ * Specifies the minimum smaller mass between 0 and 5.0 \f$M\odot\f$.
+ * </dd><dt>-x</dt><dd>
+ * Specifies the maximum smaller mass between 0 and 5.0 \f$M\odot\f$.
+ * </dd><dt>-m</dt><dd>
  * Specifies the minimum mismatch threshold (typically 0.03) but for the
- * sake of testing it is best to pick a value $O[1]$ to save compiling time.
- * \item[-p]
+ * sake of testing it is best to pick a value \f$O[1]\f$ to save compiling time.
+ * </dd><dt>-p</dt><dd>
  * Specifies that the program should generate a \MATHEMATICA notebook
- * ``Math3DNotebook.nb''.
- * \end{description}
+ * "Math3DNotebook.nb".
+ * </dd></dl>
  *
- * \subsubsection*{Exit codes}
- * \input{InspiralSpinBankTestCE}
+ * \heading{Notes}
  *
- * \subsubsection*{Notes}
+ * <ul>
  *
- * \begin{itemize}
- *
- * \item The metric used in InspiralSpinBank() is only valid for binary
- * systems with a total mass $<15M\odot$ where the minimum larger mass is at
+ * <li> The metric used in InspiralSpinBank() is only valid for binary
+ * systems with a total mass \f$<15M\odot\f$ where the minimum larger mass is at
  * least twice the maximum smaller mass.  Choosing mass values that violate
  * these conditions will cause an error message.
  *
- * \item Only up to 20,000 templates will be read from an XML file. Making
+ * </li><li> Only up to 20,000 templates will be read from an XML file. Making
  * an animated image will start bogging most systems down with more than a
  * few thousand templates, so you can switch the option off by editing the
  * notebook within Mathematica.
  *
- * \end{itemize}
+ * </li></ul>
  *
- * \vfill{\footnotesize\input{InspiralSpinBankTestCV}}
- * </lalLaTeX> */
+ *
+*/
 
 
 #include <math.h>
@@ -105,7 +98,7 @@
 extern char *optarg;
 
 
-/* <lalErrTable file="InspiralSpinBankTestCE"> */
+/**\name Error Codes */ /*@{*/
 #define INSPIRALSPINBANKTESTC_ENORM     0
 #define INSPIRALSPINBANKTESTC_EMEM      1
 #define INSPIRALSPINBANKTESTC_ESUB      2
@@ -115,7 +108,7 @@ extern char *optarg;
 #define INSPIRALSPINBANKTESTC_MSGEMEM   "Memory allocation error"
 #define INSPIRALSPINBANKTESTC_MSGESUB   "Subroutine error"
 #define INSPIRALSPINBANKTESTC_MSGEFILE  "File I/O error"
-/* </lalErrTable> */
+/*@}*/
 
 NRCSID(LALINSPIRALSPINBANKTESTC, "$Id$");
 

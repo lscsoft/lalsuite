@@ -1,42 +1,26 @@
-#if 0
-<lalVerbatim file="FindChirpACTDTemplateCV">
-Author: Brown, D. A., Creighton, J. D. E. and Mckechan, D. J. A.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpACTDTemplate.c}}
-\label{ss:FindChirpACTDTemplate.c}
+\author Brown, D. A., Creighton, J. D. E. and Mckechan, D. J. A.
+\file
+\ingroup FindChirpACTD_h
 
-Provides functions to create time domain inspiral templates in a
-form that can be used by the \texttt{FindChirpACTDFilter()} function.
+\brief Provides functions to create time domain inspiral templates in a
+form that can be used by the <tt>FindChirpACTDFilter()</tt> function.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpACTDTemplateCP}
-\idx{LALFindChirpACTDTemplate()}
-\idx{LALFindChirpACTDNormalize()}
+\heading{Prototypes}
 
-The function \texttt{LALFindChirpACTDTemplate()} creates a time
+The function <tt>LALFindChirpACTDTemplate()</tt> creates a time
 domain template using LALGeneratePPNAmpCorInspiral().
 
-\subsubsection*{Algorithm}
-
-Blah.
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{FindChirpACTDTemplateCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -49,7 +33,7 @@ LALDestroyVector()
 
 NRCSID (FINDCHIRPACTDTEMPLATEC, "$Id$");
 
-/* <lalVerbatim file="FindChirpACTDTemplateCP"> */
+
 void
 LALFindChirpACTDTemplate(
     LALStatus                  *status,
@@ -57,7 +41,7 @@ LALFindChirpACTDTemplate(
     InspiralTemplate           *tmplt,
     FindChirpTmpltParams       *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4          i, j;
   UINT4          shift;
@@ -415,7 +399,7 @@ LALFindChirpACTDTemplate(
 }
 
 
-/* <lalVerbatim file="FindChirpACTDTemplate"> */
+
 void
 LALFindChirpACTDNormalize(
     LALStatus                  *status,
@@ -423,7 +407,7 @@ LALFindChirpACTDNormalize(
     FindChirpTmpltParams       *tmpltParams,
     FindChirpDataParams        *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4          i, k;
   UINT4          numPoints;

@@ -292,4 +292,13 @@ Int. J. Modern. Phys. D.
   L.A. Weinstein and V.D. Zubakov, <i>Extraction of Signals from Noise</i>.
   Prentice-Hall, Englewood Cliffs, NJ. (1962)
 
+\anchor novas_1999 <b>[novas_1999]</b>
+  <em>Naval Observatory Vector Astrometry Subroutines, C Version 2.0.1</em>
+  (U.\ S.\ Naval Observatory, Astronomical Applications Dept., Dec. 1999)
+  http://aa.usno.navy.mil/software/novas/novasUNDERSCOREc/novasc_info.html
+
+\anchor iso8601 <b>[iso8601]</b>
+  <em>International Standard ISO 8601</em> (International Organization for
+  Standardization, Switzerland, 1988, http://www.iso.ch)
+
 */

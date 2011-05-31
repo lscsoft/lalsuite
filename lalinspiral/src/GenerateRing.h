@@ -17,27 +17,24 @@
 *  MA  02111-1307  USA
 */
 
-/***************************** <lalVerbatim file="GenerateRingHV">
-Author: Goggin, L., and Brown, D. A.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+ * \defgroup GenerateRing_h GenerateRing_h
+ * \ingroup inject
+ */
 
-/********************************************************** <lalLaTeX>
+/**
+\author Goggin, L., and Brown, D. A.
+\file
+\ingroup GenerateRing_h
 
-\section{Header \texttt{GenerateRing.h}}
-\label{s:GenerateRing.h}
+\brief Provides routines to generate ringdown waveforms.
 
-Provides routines to generate ringdown waveforms.
-
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/GenerateRing.h>
-\end{verbatim}
+\endcode
 
-This header covers routines to generate ringdown waveforms.
-
-
-******************************************************* </lalLaTeX> */
+*/
 
 #ifndef _GENERATERING_H
 #define _GENERATERING_H
@@ -56,9 +53,7 @@ extern "C" {
 #endif
 
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error conditions}
-****************************************** </lalLaTeX><lalErrTable> */
+/**  \name Error Codes */ /*@{*/
 #define GENERATERINGH_ENUL 1
 #define GENERATERINGH_EOUT 2
 #define GENERATERINGH_EMEM 3
@@ -70,50 +65,23 @@ extern "C" {
 #define GENERATERINGH_MSGEMEM "Out of memory"
 #define GENERATERINGH_MSGETYP "Waveform type not implemented"
 #define GENERATERINGH_MSGELEN "Waveform length not correctly specified"
-/******************************************** </lalErrTable><lalLaTeX>
+/*@}*/
 
-\subsection*{Types}
-\idx[Type]{SimRingType}
-\idx[Type]{RingParamStruc}
-
-\subsubsection*{Structure \texttt{SimRingType}}
-
-******************************************************* </lalLaTeX> */
-
-/******************************************** <lalVerbatim> */
 typedef enum{
   Ringdown
 } SimRingType;
-/******************************************** </lalVerbatim> */
 
 
-/******************************************** <lalLaTeX>
-
-\subsubsection*{Structure \texttt{RingParamStruc}}
-
-This structure stores the parameters for constructing a burst gravitational
-waveform
-
-******************************************************* </lalLaTeX> */
-
-/******************************************** <lalVerbatim> */
+/** This structure stores the parameters for constructing a burst gravitational
+    waveform
+*/
 typedef struct tagRingParamStruc {
   REAL8 deltaT;             /* requested sampling interval (s) */
   CoordinateSystem system;  /* coordinate system to assume for simRingdown */
 } RingParamStruc;
-/******************************************** </lalVerbatim> */
-
-
-/* <lalLaTeX>
-\vfill{\footnotesize\input{GenerateRingHV}}
-</lalLaTeX> */
-
 
 /* Function prototypes. */
 
-/* <lalLaTeX>
-\newpage\input{GenerateRingC}
-</lalLaTeX> */
 void
 LALGenerateRing(
     LALStatus          *status,

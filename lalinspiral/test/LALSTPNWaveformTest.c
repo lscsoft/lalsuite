@@ -17,28 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="LALSTPNWaveformTestCV">
-Author: Cokelaer, T. and Vallisneri, M.
-$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:23 thomas Exp
-</lalVerbatim>*/
+/**
+\author Cokelaer, T. and Vallisneri, M.
 
-/* <lalLaTeX>
-
-\subsection{Test program \texttt{LALSTPNWaveformTest.c}}
-\label{ss:LALSTPNWaveformTest.c}
-
-Create a waveform based on SpinTaylor model (LALSTPNWaveform),
+\brief Create a waveform based on SpinTaylor model (LALSTPNWaveform),
 switching to LALSTPNWaveform2 if anything is given as argument.
+
 Outputs a file with three columns corresponding to time (in seconds),
-$h_+$, and $h_\times$. The outputfile is \texttt{wave1.dat} in the
+\f$h_+\f$, and \f$h_\times\f$. The outputfile is <tt>wave1.dat</tt> in the
 current directory. [This is an obsolete test program that should
 be refactored with access to the new frameless LALSTPNWaveform.]
 
-\subsection*{Usage}
+\heading{Usage}
 
-\texttt{LALSTPNWaveformTest [switch]}
+<tt>LALSTPNWaveformTest [switch]</tt>
 
-</lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>

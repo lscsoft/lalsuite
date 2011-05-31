@@ -17,32 +17,24 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="InspiralSpinBankwNDTemplateBankCV">
- * Authors: Hanna, C. R. and Owen, B. J.
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
+/**
+ * \author Hanna, C. R. and Owen, B. J.
+ * \file
+ * \ingroup TemplateBankGeneration_h
  *
- * \subsection{Module \texttt{InspiralSpinBankwNDTemplateBank.c}}
- *
- * This module creates a bank of templates to search for precessing
+ * \brief This module creates a bank of templates to search for precessing
  * binaries.
  *
- * \subsubsection*{Prototypes}
- * \input{InspiralSpinBankwNDTemplateBankCP}
- * %% \idx{LALInspiralSpinBankwNDTemplateBank()}
- *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
  * This function creates a bank of templates to search for precessing
  * binaries. It uses the general tiling algorithm LALNDTemplateBank()
  *
- * \subsubsection*{Algorithm}
+ * \heading{Algorithm}
  *
  * The target region of parameter space is a distorted box in the
- * coordinates $(x=\psi_0, y=\psi_3, z=\beta)$. The metric at high values of
- * $\beta$ is flat. It is convenient to rotate to coordinates $(x',y',z')$
+ * coordinates \f$(x=\psi_0, y=\psi_3, z=\beta)\f$. The metric at high values of
+ * \f$\beta\f$ is flat. It is convenient to rotate to coordinates \f$(x',y',z')\f$
  * which lie along eigenvectors of the metric.
  *
  * The algorithm first draws a rectilinear box in the primed coordinates
@@ -55,18 +47,18 @@
  * At the end it copies the linked list into the inspiral package's array
  * format.
  *
- * \subsubsection*{Uses}
+ * \heading{Uses}
  *
- * \begin{verbatim}
+ * \code
  * LALCalloc()
  * LALFree()
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Notes}
+ * \heading{Notes}
  *
  *
  * The metric relies on approximations that make it valid only for a binary
- * system with a total mass $<15M\odot$ where the larger body's minimum mass
+ * system with a total mass \f$<15M\odot\f$ where the larger body's minimum mass
  * is at least twice the smaller body's maximum mass.  Using
  * that violate these conditions will result in an error message.
  *
@@ -74,9 +66,9 @@
  * our experience with this code shows, multidimensional tiling of
  * complicated parameter regions demands the flexibility of linked lists.
  *
- * \vfill{\footnotesize\input{InspiralSpinBankwNDTemplateBankCV}}
  *
- **** </lalLaTeX> */
+ *
+*/
 
 
 #include <math.h>
@@ -161,7 +153,7 @@ LALInspiralSpinBankMetric(
 
 
 /* LALInspiralSpinBankwNDTemplateBank() --------------------------------------------------- */
-/* <lalVerbatim file="LALInspiralSpinBankwNDTemplateBankCP"> */
+
 void
 LALInspiralSpinBankwNDTemplateBank(
     LALStatus         	 *status,
@@ -169,7 +161,7 @@ LALInspiralSpinBankwNDTemplateBank(
     INT4      		 *ntiles,
     InspiralCoarseBankIn  coarseIn
     )
-/* </lalVerbatim> */
+
 {
 
   /* Initialize variables */
