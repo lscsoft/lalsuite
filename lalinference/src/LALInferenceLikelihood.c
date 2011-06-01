@@ -193,9 +193,9 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
     if (different) { /* template needs to be re-computed: */
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
-      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
+      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       template(dataPtr);
-      if (dataPtr->modelDomain == timeDomain) {
+      if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
 	if (!timeDomainWarning) {
 	  timeDomainWarning = 1;
 	  fprintf(stderr, "WARNING: using time domain template with frequency domain likelihood (in %s, line %d)\n", __FILE__, __LINE__);
@@ -206,7 +206,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       }
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
-      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
+      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     }
 
     /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
@@ -347,12 +347,12 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
   /* Fill in derived parameters if necessary */
   if(LALInferenceCheckVariable(currentParams,"logdistance")){
     distMpc=exp(*(REAL8 *) LALInferenceGetVariable(currentParams,"logdistance"));
-    LALInferenceAddVariable(currentParams,"distance",&distMpc,REAL8_t,PARAM_OUTPUT);
+    LALInferenceAddVariable(currentParams,"distance",&distMpc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   }
 
   if(LALInferenceCheckVariable(currentParams,"logmc")){
     mc=exp(*(REAL8 *)LALInferenceGetVariable(currentParams,"logmc"));
-    LALInferenceAddVariable(currentParams,"chirpmass",&mc,REAL8_t,PARAM_OUTPUT);
+    LALInferenceAddVariable(currentParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   }
   /* determine source's sky location & orientation parameters: */
   ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
@@ -407,9 +407,9 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
 
     if (different) { /* template needs to be re-computed: */
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
-      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
+      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       template(dataPtr);
-      if (dataPtr->modelDomain == timeDomain) {
+      if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
 	if (!timeDomainWarning) {
 	  timeDomainWarning = 1;
 	  fprintf(stderr, "WARNING: using time domain template with frequency domain likelihood (in %s, line %d)\n", __FILE__, __LINE__);
@@ -420,7 +420,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
       }
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
-      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
+      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     }
 
     /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
@@ -784,12 +784,12 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
 	/* Fill in derived parameters if necessary */
 	if(LALInferenceCheckVariable(currentParams,"logdistance")){
 		distMpc=exp(*(REAL8 *) LALInferenceGetVariable(currentParams,"logdistance"));
-		LALInferenceAddVariable(currentParams,"distance",&distMpc,REAL8_t,PARAM_OUTPUT);
+		LALInferenceAddVariable(currentParams,"distance",&distMpc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
 
 	if(LALInferenceCheckVariable(currentParams,"logmc")){
 		mc=exp(*(REAL8 *)LALInferenceGetVariable(currentParams,"logmc"));
-		LALInferenceAddVariable(currentParams,"chirpmass",&mc,REAL8_t,PARAM_OUTPUT);
+		LALInferenceAddVariable(currentParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
 		
 	
@@ -838,9 +838,9 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
 
     if (different) { /* template needs to be re-computed: */
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
-      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
+      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       template(dataPtr);
-      if (dataPtr->modelDomain == timeDomain) {
+      if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
 	if (!timeDomainWarning) {
 	  timeDomainWarning = 1;
 	  fprintf(stderr, "WARNING: using time domain template with frequency domain likelihood (in %s, line %d)\n", __FILE__, __LINE__);
@@ -851,7 +851,7 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
       }
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
-      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
+      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     }
 
     /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
@@ -965,12 +965,12 @@ void LALInferenceComputeTimeDomainResponse(LALInferenceVariables *currentParams,
 	/* Fill in derived parameters if necessary */
 	if(LALInferenceCheckVariable(currentParams,"logdistance")){
 		distMpc=exp(*(REAL8 *) LALInferenceGetVariable(currentParams,"logdistance"));
-		LALInferenceAddVariable(currentParams,"distance",&distMpc,REAL8_t,PARAM_OUTPUT);
+		LALInferenceAddVariable(currentParams,"distance",&distMpc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
 
 	if(LALInferenceCheckVariable(currentParams,"logmc")){
 		mc=exp(*(REAL8 *)LALInferenceGetVariable(currentParams,"logmc"));
-		LALInferenceAddVariable(currentParams,"chirpmass",&mc,REAL8_t,PARAM_OUTPUT);
+		LALInferenceAddVariable(currentParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
 		
 	
@@ -1018,9 +1018,9 @@ void LALInferenceComputeTimeDomainResponse(LALInferenceVariables *currentParams,
 
     if (different) { /* template needs to be re-computed: */
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
-      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
+      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       template(dataPtr);
-      if (dataPtr->modelDomain == frequencyDomain) {
+      if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_FREQUENCY) {
 	if (!freqDomainWarning) {
 	  freqDomainWarning = 1;
 	  fprintf(stderr, "WARNING: frequency domain template used with time domain calculation (in %s, line %d)\n", __FILE__, __LINE__);
@@ -1031,7 +1031,7 @@ void LALInferenceComputeTimeDomainResponse(LALInferenceVariables *currentParams,
       }
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
-      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
+      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     }
 
     /*-- Template is now in dataPtr->timeModelhPlus and dataPtr->timeModelhCross. --*/

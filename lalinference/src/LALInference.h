@@ -77,46 +77,46 @@ struct tagLALInferenceIFOData;
 /** An enumerated type for denoting the type of a variable
 */
 typedef enum {
-  INT4_t, 
-  INT8_t,
-  UINT4_t,
-  REAL4_t, 
-  REAL8_t, 
-  COMPLEX8_t, 
-  COMPLEX16_t, 
-  gslMatrix_t,
-  REAL8Vector_t,
-  UINT4Vector_t,
-  string_t
+  LALINFERENCE_INT4_t, 
+  LALINFERENCE_INT8_t,
+  LALINFERENCE_UINT4_t,
+  LALINFERENCE_REAL4_t, 
+  LALINFERENCE_REAL8_t, 
+  LALINFERENCE_COMPLEX8_t, 
+  LALINFERENCE_COMPLEX16_t, 
+  LALINFERENCE_gslMatrix_t,
+  LALINFERENCE_REAL8Vector_t,
+  LALINFERENCE_UINT4Vector_t,
+  LALINFERENCE_string_t
 } LALInferenceVariableType;
 
 /** An enumerated type for denoting the domain
 */
 typedef enum {
-  timeDomain, 
-  frequencyDomain
+  LALINFERENCE_DOMAIN_TIME, 
+  LALINFERENCE_DOMAIN_FREQUENCY
 } LALInferenceDomain;
 
 /** An enumerated type for denoting the topolology of a parameter.
 */
 typedef enum {
-	PARAM_LINEAR, /** A parameter that simply has a maximum and a minimum */
-	PARAM_CIRCULAR, /** A parameter that is cyclic, such as an angle between 0 and 2\pi */
-	PARAM_FIXED,    /** A parameter that never changes, functions should respect this */
-	PARAM_OUTPUT    /** A parameter changed by an inner code and passed out */
+	LALINFERENCE_PARAM_LINEAR, /** A parameter that simply has a maximum and a minimum */
+	LALINFERENCE_PARAM_CIRCULAR, /** A parameter that is cyclic, such as an angle between 0 and 2\pi */
+	LALINFERENCE_PARAM_FIXED,    /** A parameter that never changes, functions should respect this */
+	LALINFERENCE_PARAM_OUTPUT    /** A parameter changed by an inner code and passed out */
 } LALInferenceParamVaryType;
 
 /** An enumerated type for denoting a type of taper
 */
 typedef enum
 {
-	INFERENCE_TAPER_NONE,
-	INFERENCE_TAPER_START,
-	INFERENCE_TAPER_END,
-	INFERENCE_TAPER_STARTEND,
-	INFERENCE_TAPER_NUM_OPTS,
-	INFERENCE_RING,
-	INFERENCE_SMOOTH
+	LALINFERENCE_TAPER_NONE,
+	LALINFERENCE_TAPER_START,
+	LALINFERENCE_TAPER_END,
+	LALINFERENCE_TAPER_STARTEND,
+	LALINFERENCE_TAPER_NUM_OPTS,
+	LALINFERENCE_RING,
+	LALINFERENCE_SMOOTH
 }  LALInferenceApplyTaper;
 
 
@@ -146,6 +146,8 @@ tagLALInferenceVariables
   INT4 dimension;
 } LALInferenceVariables;
 
+/** Returns an array of header strings (terminated by NULL) from a common-format output file */
+char **LALInferenceGetHeaderLine(FILE *inp);
 
 const char *LALInferenceTranslateInternalToExternalParamName(const char *inName);
 INT4 LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params);

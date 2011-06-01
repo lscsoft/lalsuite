@@ -207,8 +207,8 @@ Nested sampling arguments:\n\
 	ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
 	if(ppt) {
 		verbose=1;
-		LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose , INT4_t,
-					PARAM_FIXED);
+		LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose , LALINFERENCE_INT4_t,
+					LALINFERENCE_PARAM_FIXED);
 	}
 		
 	printf("set number of live points.\n");
@@ -220,7 +220,7 @@ Nested sampling arguments:\n\
 		fprintf(stderr,"Error, must specify number of live points\n");
 		exit(1);
 	}
-	LALInferenceAddVariable(runState->algorithmParams,"Nlive",&tmpi, INT4_t,PARAM_FIXED);
+	LALInferenceAddVariable(runState->algorithmParams,"Nlive",&tmpi, LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 	
 	printf("set number of MCMC points.\n");
 	/* Number of points in MCMC chain */
@@ -232,14 +232,14 @@ Nested sampling arguments:\n\
 	  exit(1);
 	}
 	LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmpi,
-				INT4_t,PARAM_FIXED);
+				LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 	
 	printf("set number of parallel runs.\n");
 	/* Optionally specify number of parallel runs */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Nruns");
 	if(ppt) {
 		tmpi=atoi(ppt->value);
-		LALInferenceAddVariable(runState->algorithmParams,"Nruns",&tmpi,INT4_t,PARAM_FIXED);
+		LALInferenceAddVariable(runState->algorithmParams,"Nruns",&tmpi,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 	}
 	
 	printf("set tolerance.\n");
@@ -247,8 +247,8 @@ Nested sampling arguments:\n\
 	ppt=LALInferenceGetProcParamVal(commandLine,"--tolerance");
 	if(ppt){
 		tmp=strtod(ppt->value,(char **)NULL);
-		LALInferenceAddVariable(runState->algorithmParams,"tolerance",&tmp, REAL8_t,
-					PARAM_FIXED);
+		LALInferenceAddVariable(runState->algorithmParams,"tolerance",&tmp, LALINFERENCE_REAL8_t,
+					LALINFERENCE_PARAM_FIXED);
 	}
 	
 	printf("set random seed.\n");
@@ -261,7 +261,7 @@ Nested sampling arguments:\n\
 	if (ppt != NULL)
 		randomseed = atoi(ppt->value);
 	fprintf(stdout, " initialize(): random seed: %u\n", randomseed);
-	LALInferenceAddVariable(runState->algorithmParams,"random_seed",&randomseed, INT4_t,PARAM_FIXED);
+	LALInferenceAddVariable(runState->algorithmParams,"random_seed",&randomseed, LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 	gsl_rng_set(runState->GSLrandom, randomseed);
 	
 	return;
@@ -375,58 +375,58 @@ Parameter arguments:\n\
 	/* Over-ride component masses */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
 	if(ppt)	mMin=atof(ppt->value);
-	LALInferenceAddVariable(priorArgs,"component_min",&mMin,REAL8_t,PARAM_FIXED);
+	LALInferenceAddVariable(priorArgs,"component_min",&mMin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	ppt=LALInferenceGetProcParamVal(commandLine,"--compmax");
 	if(ppt)	mMax=atof(ppt->value);
-	LALInferenceAddVariable(priorArgs,"component_max",&mMax,REAL8_t,PARAM_FIXED);
+	LALInferenceAddVariable(priorArgs,"component_max",&mMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
 	
 	printf("Read end time %f\n",endtime);
 	
-	LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        INT4_t, PARAM_FIXED);
-    	LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        INT4_t, PARAM_FIXED);
+	LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+    	LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
 	
 	/* Set up the variable parameters */
 	tmpVal=log(mcMin+(mcMax-mcMin)/2.0);
-	/*LALInferenceAddVariable(currentParams, "chirpmass",    &tmpVal,    REAL8_t,	PARAM_LINEAR);
-    LALInferenceAddMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		REAL8_t); */
-	LALInferenceAddVariable(currentParams,"logmc",&tmpVal, REAL8_t, PARAM_LINEAR);
+	/*LALInferenceAddVariable(currentParams, "chirpmass",    &tmpVal,    LALINFERENCE_REAL8_t,	LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		LALINFERENCE_REAL8_t); */
+	LALInferenceAddVariable(currentParams,"logmc",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	logmcMin=log(mcMin); logmcMax=log(mcMax);
-	LALInferenceAddMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		LALINFERENCE_REAL8_t);
 
 	tmpVal=0.24;
-	LALInferenceAddVariable(currentParams, "massratio",       &tmpVal,             REAL8_t, PARAM_LINEAR);
-    LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	REAL8_t);
+	LALInferenceAddVariable(currentParams, "massratio",       &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
 	
-    LALInferenceAddVariable(currentParams, "time",            &endtime   ,           REAL8_t, PARAM_LINEAR); 
+    LALInferenceAddVariable(currentParams, "time",            &endtime   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
 	tmpMin=endtime-0.5*dt; tmpMax=endtime+0.5*dt;
-	LALInferenceAddMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   REAL8_t);	
+	LALInferenceAddMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);	
 
 	tmpVal=1.0;
-    LALInferenceAddVariable(currentParams, "phase",           &tmpVal,             REAL8_t, PARAM_CIRCULAR);
+    LALInferenceAddVariable(currentParams, "phase",           &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
-	LALInferenceAddMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
 	tmpVal=logDmin+(logDmax-logDmin)/2.0;
-	LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, REAL8_t, PARAM_LINEAR);
-	LALInferenceAddMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   REAL8_t);
+	LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+	LALInferenceAddMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   LALINFERENCE_REAL8_t);
 	
 	tmpVal=1.0;
-	LALInferenceAddVariable(currentParams, "rightascension",  &tmpVal,      REAL8_t, PARAM_CIRCULAR);
+	LALInferenceAddVariable(currentParams, "rightascension",  &tmpVal,      LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
-	LALInferenceAddMinMaxPrior(priorArgs, "rightascension",     &tmpMin, &tmpMax,   REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "rightascension",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 
-	LALInferenceAddVariable(currentParams, "declination",     &tmpVal,     REAL8_t, PARAM_CIRCULAR);
+	LALInferenceAddVariable(currentParams, "declination",     &tmpVal,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	tmpMin=-LAL_PI/2.0; tmpMax=LAL_PI/2.0;
-	LALInferenceAddMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
     
-	LALInferenceAddVariable(currentParams, "polarisation",    &tmpVal,     REAL8_t, PARAM_CIRCULAR);
+	LALInferenceAddVariable(currentParams, "polarisation",    &tmpVal,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
-	LALInferenceAddMinMaxPrior(priorArgs, "polarisation",     &tmpMin, &tmpMax,   REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "polarisation",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
- 	LALInferenceAddVariable(currentParams, "inclination",     &tmpVal,            REAL8_t, PARAM_CIRCULAR);
+ 	LALInferenceAddVariable(currentParams, "inclination",     &tmpVal,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
-	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
 	return;
 }
@@ -462,7 +462,7 @@ Student T Likelihood Arguments:\n\
 		if((ppt=LALInferenceGetProcParamVal(state->commandLine,df_argument_name)))
 			dof=atoi(ppt->value);
     		sprintf(df_variable_name,"df_%s",ifo->name);
-    		LALInferenceAddVariable(state->currentParams,df_variable_name,&dof,REAL8_t,PARAM_FIXED);
+    		LALInferenceAddVariable(state->currentParams,df_variable_name,&dof,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 		ifo=ifo->next;
 	}
 
@@ -471,7 +471,7 @@ Student T Likelihood Arguments:\n\
 	
 	/* Set the noise model evidence to the student t model value */
 	REAL8 noiseZ=LALInferenceFreqDomainStudentTLogLikelihood(state->currentParams,state->data,&LALInferenceTemplateNullFreqdomain);
-	LALInferenceAddVariable(state->algorithmParams,"logZnoise",&noiseZ,REAL8_t,PARAM_FIXED);
+	LALInferenceAddVariable(state->algorithmParams,"logZnoise",&noiseZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
 	return;
 }

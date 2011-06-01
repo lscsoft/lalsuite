@@ -52,7 +52,7 @@ void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata){
 	static LALStatus status;								/* status structure */	
 	memset(&status,0,sizeof(status));
 
-	IFOdata->modelDomain = timeDomain;
+	IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
 	
 	UINT4 i;                      /* index */
 	PPNParamStruc params;         /* input parameters */
@@ -329,7 +329,7 @@ void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
     IFOdata->freqModelhCross->data->data[i].re = crossRe;
     IFOdata->freqModelhCross->data->data[i].im = crossIm;
   }
-  IFOdata->modelDomain = frequencyDomain;
+  IFOdata->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
   return;
 }
 
@@ -352,7 +352,7 @@ void LALInferenceTemplateNullFreqdomain(LALInferenceIFOData *IFOdata)
     IFOdata->freqModelhCross->data->data[i].re = 0.0;
     IFOdata->freqModelhCross->data->data[i].im = 0.0;
   }
-  IFOdata->modelDomain = frequencyDomain;
+  IFOdata->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
   return;
 }
 
@@ -373,7 +373,7 @@ void LALInferenceTemplateNullTimedomain(LALInferenceIFOData *IFOdata)
     IFOdata->timeModelhPlus->data->data[i]  = 0.0;
     IFOdata->timeModelhCross->data->data[i] = 0.0;
   }
-  IFOdata->modelDomain = timeDomain;
+  IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
   return;
 }
 
@@ -641,7 +641,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   }
 
   if (! FDomain) {   /*  (LAL function returns TIME-DOMAIN template)       */
-    IFOdata->modelDomain = timeDomain;
+    IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
 
     /* copy over, normalise: */
     for (i=0; i<n; ++i) {
@@ -661,7 +661,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
     }
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
   }  else {             /*  (LAL function returns FREQUENCY-DOMAIN template)  */
-    IFOdata->modelDomain = frequencyDomain;
+    IFOdata->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
 
     /* copy over: */
     IFOdata->freqModelhPlus->data->data[0].re = ((REAL8) LALSignal->data[0]);
@@ -812,7 +812,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
     }
   }
 
-  IFOdata->modelDomain = frequencyDomain;
+  IFOdata->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
   return;
 }
 
@@ -1035,7 +1035,7 @@ void LALInferenceTemplate3525TD(LALInferenceIFOData *IFOdata)
     IFOdata->timeModelhPlus->data->data[i]  = h_plus;
     IFOdata->timeModelhCross->data->data[i] = h_cross;
   }
-  IFOdata->modelDomain = timeDomain;
+  IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
   return;
 }
 
@@ -1086,7 +1086,7 @@ void LALInferenceTemplateSineGaussian(LALInferenceIFOData *IFOdata)
       IFOdata->timeModelhPlus->data->data[i] = 0.0;
     IFOdata->timeModelhCross->data->data[i] = 0.0;
   }
-  IFOdata->modelDomain = timeDomain;
+  IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
   return;
 }
 
@@ -1132,7 +1132,7 @@ void LALInferenceTemplateDampedSinusoid(LALInferenceIFOData *IFOdata)
       IFOdata->timeModelhPlus->data->data[i] = 0.0;
     IFOdata->timeModelhCross->data->data[i] = 0.0;
   }
-  IFOdata->modelDomain = timeDomain;
+  IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
   return;
 }
 
@@ -1172,7 +1172,7 @@ void LALInferenceTemplateSinc(LALInferenceIFOData *IFOdata)
     IFOdata->timeModelhPlus->data->data[i] = a * sinc;
     IFOdata->timeModelhCross->data->data[i] = 0.0;
   }
-  IFOdata->modelDomain = timeDomain;
+  IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
   return;
 }
 
@@ -1196,7 +1196,7 @@ void LALInferenceTemplateASinOmegaT(LALInferenceIFOData *IFOdata)
     IFOdata->timeModelhPlus->data->data[i] = A * sin(Omega*t);
     IFOdata->timeModelhCross->data->data[i] = 0.0;
   }
-  IFOdata->modelDomain = timeDomain;
+  IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
   return;
 }
 
@@ -1360,7 +1360,7 @@ void LALInferenceTemplateLALSTPN(LALInferenceIFOData *IFOdata)
 	//printf("/n/n waveform: %s/ /n/n","waveform");
 	
 	if(LALInferenceCheckVariable(IFOdata->modelParams, "INFERENCE_TAPER")){
-		if (*(LALInferenceApplyTaper*)LALInferenceGetVariable(IFOdata->modelParams, "INFERENCE_TAPER")==INFERENCE_RING){
+		if (*(LALInferenceApplyTaper*)LALInferenceGetVariable(IFOdata->modelParams, "INFERENCE_TAPER")==LALINFERENCE_RING){
 		
 			SimRingdownTable          thisRingdownEvent;
 			memset( &thisRingdownEvent, 0, sizeof(SimRingdownTable) );
@@ -1454,7 +1454,7 @@ void LALInferenceTemplateLALSTPN(LALInferenceIFOData *IFOdata)
 		}
 	}
 	
-	IFOdata->modelDomain = timeDomain;
+	IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
 
 
 	destroyCoherentGW( &waveform );
@@ -1520,7 +1520,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
   if (LALInferenceCheckVariable(IFOdata->modelParams, "newswitch"))
     newswitch = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "newswitch"); //temporay global variable to use the new LALSTPN
   
-	IFOdata->modelDomain = timeDomain;
+	IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
 		approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
@@ -1795,7 +1795,7 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
   dataPtr = data;
   while (dataPtr != NULL) { /* this loop actually does nothing (yet) here. */
     template(data);
-    if (data->modelDomain == timeDomain)
+    if (data->modelDomain == LALINFERENCE_DOMAIN_TIME)
       LALInferenceExecuteFT(data);
 
     outfile = fopen(filename, "w");
@@ -1835,7 +1835,7 @@ void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LA
   dataPtr = data;
   while (dataPtr != NULL) { /* this loop actually does nothing (yet) here. */
     template(data);
-    if (data->modelDomain == frequencyDomain)
+    if (data->modelDomain == LALINFERENCE_DOMAIN_FREQUENCY)
       LALInferenceExecuteInvFT(data);
 
     outfile = fopen(filename, "w");
