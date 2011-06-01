@@ -882,9 +882,13 @@ for result_db in result_dbs_cache:
     for on_instruments in distinct_instrument_sets:
       on_instruments = lsctables.ifos_from_instrument_set(on_instruments)
       # set output and extracted xml file names
+      if cp.has_option('printlc', 'output-format'):
+        summ_file_type = cp.get('printlc', 'output-format')
+      else:
+        summ_file_type = 'xml'
       summary_filename = '.'.join([
         '-'.join([ ''.join(on_instruments.split(',')), type + '_SUMMARY', experiment_start, experiment_duration ]),
-        'xml' ])
+        summ_file_type ])
       full_filename = '-'.join([ ''.join(on_instruments.split(',')), type, experiment_start, experiment_duration ])
       # set node options
       printlc_node = inspiral.PrintLCNode( printlc_job )
@@ -962,6 +966,8 @@ for result_db in result_dbs_cache:
               'sim_tag',
               'recovered_combined_far',
               'recovered_snr'])
+          elif cp.has_option('printsims', 'output-format'):
+            summ_file_type = cp.get('printsims', 'output-format')
           else:
             summ_file_type = 'xml'
           summary_filename = '.'.join([
@@ -1039,6 +1045,8 @@ for result_db in result_dbs_cache:
             'eff_dist_l',
             'eff_dist_v',
             'sim_tag'])
+        elif cp.has_option('printmissed', 'output-format'):
+          summ_file_type = cp.get('printmissed', 'output-format')
         else:
           summ_file_type = 'xml'
         summary_filename = '.'.join([
