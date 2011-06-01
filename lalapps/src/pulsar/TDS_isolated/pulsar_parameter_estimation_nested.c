@@ -2051,7 +2051,6 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
 }
 
 void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
-  fprintf(stderr,"Using get_amplitude_model_double \n");
   INT4 i = 0, length;
   
   REAL8 psteps, tsteps;
@@ -2096,6 +2095,8 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
  
   tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] ); /*time of first B_k*/
   
+  /*fprintf(stderr,"lambda: %f, theta: %f, h1: %f\n",pars.lambda, pars.theta, pars.h1);*/
+  
   for( i=0; i<length; i++ ){
     /* set the psi bin for the lookup table */
     psibin = (INT4)ROUND( ( pars.psi + LAL_PI/4. ) * ( psteps-1. )/LAL_PI_2 );
@@ -2111,14 +2112,14 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
     
     /* create the complex signal amplitude model */
     /*at f*/
-    data->compModelData->data->data[i].re = plus*Xplusf*((A1*cosphi)-(A2*sinphi)) + cross*Xcrossf*((A2*cosphi)-(A1*sinphi));
+    /*data->compModelData->data->data[i].re = plus*Xplusf*((A1*cosphi)-(A2*sinphi)) + cross*Xcrossf*((A2*cosphi)-(A1*sinphi));
     
-    data->compModelData->data->data[i].im = plus*Xplusf*((A2*cosphi)+(A1*sinphi)) + cross*Xcrossf*((A2*sinphi)-(A1*cosphi));
+    data->compModelData->data->data[i].im = plus*Xplusf*((A2*cosphi)+(A1*sinphi)) + cross*Xcrossf*((A2*sinphi)-(A1*cosphi));*/
     
     /*at 2f*/
-    data->compModelData->data->data[i+length].re = plus*Xplus2f*((B1*cos2phi)-(B2*sin2phi)) + cross*Xcross2f*((B2*cos2phi)+(B1*sin2phi));
+    data->compModelData->data->data[i].re = plus*Xplus2f*((B1*cos2phi)-(B2*sin2phi)) + cross*Xcross2f*((B2*cos2phi)+(B1*sin2phi));
     
-    data->compModelData->data->data[i+length].im = plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) - cross*Xcross2f*((B1*cos2phi)-(B2*sin2phi));
+    data->compModelData->data->data[i].im = plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) - cross*Xcross2f*((B1*cos2phi)-(B2*sin2phi));
     
   }
   
