@@ -365,7 +365,34 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   return parameter->logPrior;
 }
 
-/** Low mass space prior */
+REAL8 NestPriorSkyLoc(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter)
+{
+	/* Prior is uniform on log10(dist) */
+        /* Uniform on component masses between 1 and 15 */
+	/* With total mass < 20 */
+	REAL8 minCompMass=1.0, maxCompMass=15.0;
+	REAL8 maxTotalMass=20.0;
+	REAL8 mc,m1,m2,eta;
+	(void) inputMCMC;
+	/* Work out the implicit prior density on mc/eta */
+	if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
+	else mc=XLALMCMCGetParameter(parameter,"mchirp");
+	eta=XLALMCMCGetParameter(parameter,"eta");
+	m1 = mc2mass1(mc,eta);
+	m2 = mc2mass2(mc,eta);
+	parameter->logPrior=0.0;
+	if(XLALMCMCCheckParameter(parameter,"logmc")) parameter->logPrior+=(m1+m2)*(m1+m2)*(m1+m2)/(m1-m2);
+	else parameter->logPrior+=(m1+m2)*(m1+m2)/(pow(eta,0.6)*(m1-m2));
+	
+	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
+	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
+	
+	ParamInRange(parameter);
+	if(m1<minCompMass || m1>maxCompMass || m2<minCompMass || m2>maxCompMass || (m1+m2)>maxTotalMass)
+		parameter->logPrior=-DBL_MAX;
+	return parameter->logPrior;
+}
+
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
 	REAL8 m1,m2;

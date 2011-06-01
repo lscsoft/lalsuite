@@ -89,6 +89,7 @@ Optional OPTIONS:\n \
 [--etamin NUM\t:\tMinimum value of eta]\n\
 [--chimax NUM\t:\tMax value of chi spin parameter]\n\
 [--snrpath PATH\t:\tOutput SNRs to a file in PATH]\n\
+[--skyloc\t:\tUse Sky localisation prior for Larry's injections]\n\
 \n\n \
 Optional PhenSpinTaylorRD_template OPTIONS:\n \
 [--onespin_flag INT\t:\tSet S2=(0,0,0) in PhenSpinTaylorRD template waveform]\n \
@@ -136,6 +137,7 @@ CHAR *SNRpath = NULL;
 int nChannel=0;
 UINT4 nIFO=0;
 int fakeinj =0;
+int skylocprior=0;
 REAL8 duration=0;
 LIGOTimeGPS datastart;
 INT4 SampleRate=0;
@@ -328,7 +330,8 @@ void initialise(int argc, char *argv[]){
 		{"chimin",required_argument,0,64}, /* N.B. ASCII codes 65 - 90 and 97-122 are letters */
 		{"chimax",required_argument,0,91},
 		{"mc_flag",no_argument,0,100},
-		{"snrpath",required_argument,0,123},
+		{"snrfile",required_argument,0,123},
+		{"skyloc",no_argument,&skylocprior,92},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
@@ -606,6 +609,9 @@ void initialise(int argc, char *argv[]){
 		case 23:
 			fLow=atof(optarg);
 			fLowFlag=1;
+			break;
+		case 92:
+			skylocprior=1;
 			break;
 		default:
 			fprintf(stdout,USAGE); exit(0);
@@ -1225,6 +1231,8 @@ doneinit:
 	if(GRBflag) {inputMCMC.funcPrior = GRBPrior;
 		inputMCMC.funcInit = NestInitGRB;
 	}
+	if(HighMassFlag) inputMCMC.funcPrior = NestPriorHighMass;
+	if(skylocprior) inputMCMC.funcPrior = NestPriorSkyLoc;
 
     if(!strcmp(approx,BBHSpin1)) {
         inputMCMC.funcPrior = NestPriorHighMass;
