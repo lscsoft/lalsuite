@@ -775,6 +775,7 @@ void setSignalModelType( LALInferenceRunState *runState ){
   }
   else{ /* set default model to triaxial */
     modeltype = XLALStringDuplicate( "triaxial" );
+    fprintf(stderr,"Signal model set to triaxial as default\n");
   }
   
   while( data ){
@@ -1715,8 +1716,12 @@ void get_pulsar_model( LALInferenceIFOData *data ){
 
   /* model specific for a triaxial pulsar emitting at twice the rotation
      frequency - other models can be added later */
-  if ( !strcmp( modeltype, "triaxial" ) )
+  if ( !strcmp( modeltype, "triaxial" ) ){
     get_triaxial_pulsar_model( pars, data );
+  }
+  else if ( !strcmp( modeltype, "pinsf" ) ){
+    get_pinsf_pulsar_model( pars, data );
+  }
   else{
     fprintf(stderr, "Error... model '%s' is not defined!\n", modeltype);
     exit(0);
@@ -1739,6 +1744,43 @@ void get_triaxial_pulsar_model( BinaryPulsarParams params,
   
   /* get difference in phase and perform extra heterodyne with it */ 
   if ( varyphase ){ 
+    if ( (dphi = get_phase_model( params, data )) != NULL ){
+      for( i=0; i<length; i++ ){
+        COMPLEX16 M;
+        REAL8 dphit;
+        REAL4 sp, cp;
+    
+        dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
+    
+        sin_cos_2PI_LUT( &sp, &cp, dphit );
+    
+        M.re = data->compModelData->data->data[i].re;
+        M.im = data->compModelData->data->data[i].im;
+    
+        /* heterodyne */
+        data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
+        data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
+      }
+    }
+  }
+  
+  XLALDestroyREAL8Vector( dphi );
+}
+
+void get_pinsf_pulsar_model( BinaryPulsarParams params, 
+                                LALInferenceIFOData *data ){
+  REAL8Vector *dphi = NULL;
+  INT4 i = 0, length = 0;
+  
+  get_pinsf_amplitude_model( params, data );
+  length = data->compModelData->data->length;
+  
+  /* the timeData vector within the LALIFOData structure contains the
+     phase calculated using the initial (heterodyne) values of the phase
+     parameters */
+  
+  /* get difference in phase and perform extra heterodyne with it */ 
+  if ( varyphase ){
     if ( (dphi = get_phase_model( params, data )) != NULL ){
       for( i=0; i<length; i++ ){
         COMPLEX16 M;
@@ -1944,6 +1986,7 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
 
 
 void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
+    
   INT4 i = 0, length;
   
   REAL8 psteps, tsteps;
@@ -2003,6 +2046,81 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
     /* create the complex signal amplitude model */
     data->compModelData->data->data[i].re = plus*Xpcosphi + cross*Xcsinphi;
     data->compModelData->data->data[i].im = plus*Xpsinphi - cross*Xccosphi;
+  }
+  
+}
+
+void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
+  INT4 i = 0, length;
+  
+  REAL8 psteps, tsteps;
+  INT4 psibin, timebin;
+  REAL8 tstart;
+  REAL8 plus, cross;
+  REAL8 T;
+  REAL8 Xplusf, Xcrossf, Xplus2f, Xcross2f;
+  REAL8 A1, A2, B1, B2;
+  REAL4 sinphi, cosphi, sin2phi, cos2phi;
+  
+  gsl_matrix *LU_Fplus, *LU_Fcross;
+  
+  length = data->dataTimes->length;
+  
+  /* set lookup table parameters */
+  psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
+  tsteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "timeSteps" );
+  
+  LU_Fplus = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fplus");
+  LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fcross");
+  
+  sin_cos_LUT( &sinphi, &cosphi, pars.phi0 );
+  sin_cos_LUT( &sin2phi, &cos2phi, 2*pars.phi0 );
+  
+  /************************* CREATE MODEL *************************************/
+  /* This model is a complex heterodyned time series for a pinned superfluid neutron
+     star emitting at its roation frequency and twice its rotation frequency 
+     (as defined in Jones 2009):
+
+   ****************************************************************************/
+  
+  Xplusf = 0.125*sin(acos(pars.cosiota))*pars.cosiota*pars.h0;
+  Xcrossf = 0.125*sin(acos(pars.cosiota))*pars.h0;
+  Xplus2f = 0.25*(1.+pars.cosiota*pars.cosiota)*pars.h0;
+  Xcross2f = 0.5*pars.cosiota*pars.h0;
+  A1=( (cos(pars.lambda)*cos(pars.lambda))-pars.h1 )*sin(2*pars.theta);
+  A2=sin(2*pars.lambda)*sin(pars.theta);
+  B1=( (cos(pars.lambda)*cos(pars.lambda))*(cos(pars.theta)*cos(pars.theta)) ) - (sin(pars.lambda)*sin(pars.lambda)) 
+    + ( pars.h1*(sin(pars.theta)*sin(pars.theta)) );
+  B2=sin(2*pars.lambda)*cos(pars.theta);
+ 
+  tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] ); /*time of first B_k*/
+  
+  /*fprintf(stderr,"lambda: %f, theta: %f, h1: %f\n",pars.lambda, pars.theta, pars.h1);*/
+  
+  for( i=0; i<length; i++ ){
+    /* set the psi bin for the lookup table */
+    psibin = (INT4)ROUND( ( pars.psi + LAL_PI/4. ) * ( psteps-1. )/LAL_PI_2 );
+
+    /* set the time bin for the lookup table */
+    /* sidereal day in secs*/
+    T = fmod( XLALGPSGetREAL8(&data->dataTimes->data[i]) - tstart,
+              LAL_DAYSID_SI );
+    timebin = (INT4)fmod( ROUND(T*tsteps/LAL_DAYSID_SI), tsteps );
+
+    plus = gsl_matrix_get( LU_Fplus, psibin, timebin );
+    cross = gsl_matrix_get( LU_Fcross, psibin, timebin );
+    
+    /* create the complex signal amplitude model */
+    /*at f*/
+    /*data->compModelData->data->data[i].re = plus*Xplusf*((A1*cosphi)-(A2*sinphi)) + cross*Xcrossf*((A2*cosphi)-(A1*sinphi));
+    
+    data->compModelData->data->data[i].im = plus*Xplusf*((A2*cosphi)+(A1*sinphi)) + cross*Xcrossf*((A2*sinphi)-(A1*cosphi));*/
+    
+    /*at 2f*/
+    data->compModelData->data->data[i].re = plus*Xplus2f*((B1*cos2phi)-(B2*sin2phi)) + cross*Xcross2f*((B2*cos2phi)+(B1*sin2phi));
+    
+    data->compModelData->data->data[i].im = plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) - cross*Xcross2f*((B1*cos2phi)-(B2*sin2phi));
+    
   }
   
 }

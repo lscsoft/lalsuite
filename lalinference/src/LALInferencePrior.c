@@ -138,6 +138,80 @@ min=%lf, val=%lf\n",paraHead->name,max,min,*(REAL8 *)paraHead->value); */
    return;
 }
 
+/* Return the log Prior of the variables specified for the sky localisation project, ref: https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/SkyLocComparison#priors, for the non-spinning/spinning inspiral signal case */
+REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
+{
+	REAL8 logPrior=0.0;
+	
+	(void)runState;
+	LALInferenceVariableItem *item=params->head;
+	LALInferenceVariables *priorParams=runState->priorArgs;
+	REAL8 min, max;
+	REAL8 logmc=0.0;
+	REAL8 m1,m2,mc,eta=0.0;
+	/* Check boundaries */
+	for(;item;item=item->next)
+	{
+		// if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR)
+		if(item->vary==PARAM_FIXED || item->vary==PARAM_OUTPUT)
+      continue;
+		else
+		{
+			LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
+		}
+	}
+  /*Use a uniform in log D distribution*/
+	//if(LALInferenceCheckVariable(params,"logdistance"))
+	//	logPrior+=3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
+    if(LALInferenceCheckVariable(params,"distance"))
+      logPrior-=log(*(REAL8 *)LALInferenceGetVariable(params,"distance"));
+	
+	if(LALInferenceCheckVariable(params,"inclination"))
+		logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"inclination"))));
+	if(LALInferenceCheckVariable(params,"declination"))
+		logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
+	if(LALInferenceCheckVariable(params,"theta_spin1"))
+		logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin1"))));
+	if(LALInferenceCheckVariable(params,"theta_spin2"))
+		logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))));
+
+	/*priors uniform in the individual masses. Not taking into account if mtot_max < m1_max+m2_max */
+  if(LALInferenceCheckVariable(params,"massratio"))
+	{
+    eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
+    if(LALInferenceCheckVariable(params,"logmc")) {
+      logmc=*(REAL8 *)LALInferenceGetVariable(params,"logmc");
+      mc2masses(exp(logmc),eta,&m1,&m2);
+      /*careful using mc2masses, it returns m2>=m1*/
+      logPrior+=log(((m1+m2)*(m1+m2)*(m1+m2))/(m2-m1));
+    } else if(LALInferenceCheckVariable(params,"chirpmass")) {
+      mc=*(REAL8 *)LALInferenceGetVariable(params,"chirpmass");
+      mc2masses(mc,eta,&m1,&m2);
+      logPrior+=log(((m1+m2)*(m1+m2))/((m2-m1)*pow(eta,3.0/5.0)));
+    }
+
+	}
+	
+	/* Check for component masses in range, if specified */
+	if(LALInferenceCheckVariable(priorParams,"component_min"))
+		if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m1
+		   || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m2)
+			return -DBL_MAX;
+	
+	if(LALInferenceCheckVariable(priorParams,"component_max"))
+		if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m1
+		   || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
+			return -DBL_MAX;
+  
+  if(LALInferenceCheckVariable(priorParams,"MTotMax"))
+    if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
+      return -DBL_MAX;
+  
+	return(logPrior);
+}
+
+
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInferenceVariables *params)
 {

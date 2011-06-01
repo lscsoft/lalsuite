@@ -140,6 +140,9 @@ void get_pulsar_model( LALInferenceIFOData *data );
 void get_triaxial_pulsar_model( BinaryPulsarParams params, 
                                 LALInferenceIFOData *data );
 
+void get_pinsf_pulsar_model( BinaryPulsarParams params, 
+                                LALInferenceIFOData *data );
+
 REAL8Vector *get_phase_model( BinaryPulsarParams params, 
                               LALInferenceIFOData *data );
 
@@ -154,6 +157,8 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
                             REAL8Vector *dts );                
                               
 void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
+
+void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
   
 REAL8 noise_only_model( LALInferenceIFOData *data );
 

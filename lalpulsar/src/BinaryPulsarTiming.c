@@ -752,6 +752,9 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->phi0=0.;
   output->Aplus=0.;
   output->Across=0.;
+  output->h1=0.;
+  output->lambda=0.;
+  output->theta=0.;
 
   output->h0Err=0.;
   output->cosiotaErr=0.;
@@ -759,6 +762,9 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->phi0Err=0.;
   output->AplusErr=0.;
   output->AcrossErr=0.;
+  output->h1Err=0.;
+  output->lambdaErr=0.;
+  output->thetaErr=0.;
 
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
     XLAL_ERROR_VOID( fn, XLAL_EIO );
@@ -1692,6 +1698,33 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
       if(atoi(val[i+2])==1 && i+2<k){
         output->AcrossErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"h1") || !strcmp(val[i],"H1") ) {
+      output->h1 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->h1Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"lambda") || !strcmp(val[i],"LAMBDA") ) {
+      output->lambda = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->lambdaErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"theta") || !strcmp(val[i],"THETA") ) {
+      output->theta = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->thetaErr = atof(val[i+3]);
         j+=2;
       }
     }

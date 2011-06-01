@@ -173,7 +173,11 @@ tagBinaryPulsarParams
   REAL8 phi0;   /**> initial phase */
   REAL8 Aplus;  /**> 0.5*h0*(1+cos^2iota) */
   REAL8 Across; /**> h0*cosiota */
-
+  /*pinned superfluid gw parameters*/
+  REAL8 h1;     /**> determines relative strength of 2 vs 2f emission */
+  REAL8 lambda;/**> this is a longitude like angle between pinning axis and line of sight */
+  REAL8 theta;    /**> angle between rotation axis and pinning axis */
+  
   /******** errors read in from a .par file **********/
   REAL8 f0Err;
   REAL8 f1Err;
@@ -235,6 +239,9 @@ tagBinaryPulsarParams
   REAL8 phi0Err;
   REAL8 AplusErr;
   REAL8 AcrossErr;
+  REAL8 h1Err;
+  REAL8 lambdaErr;
+  REAL8 thetaErr;
 }BinaryPulsarParams;
 
 /** structure containing the input parameters for the binary delay function */

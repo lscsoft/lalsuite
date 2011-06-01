@@ -234,7 +234,11 @@ void initializeMCMC(LALInferenceRunState *runState)
 	//runState->likelihood=GaussianLikelihood;
 	//runState->prior=&PTUniformLALPrior;
 	//runState->prior=&LALInferenceInspiralPrior;
-	runState->prior=&LALInferenceInspiralPriorNormalised;
+  if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
+    runState->prior=&LALInferenceInspiralSkyLocPrior;
+  }else{
+    runState->prior=&LALInferenceInspiralPriorNormalised;
+  }
 	//runState->prior=PTUniformGaussianPrior;
 
 
@@ -437,6 +441,14 @@ void initVariables(LALInferenceRunState *state)
 		return;
 	}
 	
+  if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
+    MTotMax=20.0;
+    mMin=1.0;
+    mMax=15.0;
+    Dmin=10.0;
+    Dmax=40.0;
+  }
+  
 	/* Read injection XML file for parameters if specified */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--injXML");
 	if(ppt){
