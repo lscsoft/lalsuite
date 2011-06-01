@@ -460,12 +460,12 @@ Student T Likelihood Arguments:\n\
 		CHAR df_variable_name[64];
 		REAL8 dof=10.0; /* Degrees of freedom parameter */
 		
-		sprintf(df_argument_name,"--df-%s",ifo->name);
+		sprintf(df_argument_name,"--dof-%s",ifo->name);
 		if((ppt=LALInferenceGetProcParamVal(state->commandLine,df_argument_name)))
-			dof=atoi(ppt->value);
+			dof=atof(ppt->value);
     		sprintf(df_variable_name,"df_%s",ifo->name);
     		LALInferenceAddVariable(state->currentParams,df_variable_name,&dof,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-		fprintf(stdout,"Setting %i degrees of freedom for %s\n",dof,ifo->name);
+		fprintf(stdout,"Setting %lf degrees of freedom for %s\n",dof,ifo->name);
 		ifo=ifo->next;
 	}
 
