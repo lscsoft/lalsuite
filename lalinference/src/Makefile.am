@@ -7,7 +7,7 @@ lalinferenceinclude_HEADERS = \
 	LALInferenceConfig.h \
 	LALInferenceNestedSampler.h \
 	LALInferencePrior.h \
-        LALInferenceLikelihood.h \
+	LALInferenceLikelihood.h \
 	LALInferenceReadData.h \
 	LALInferenceTemplate.h
 
