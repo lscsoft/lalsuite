@@ -171,6 +171,43 @@ for i = 0:9
 endfor
 msg("passed 'tm' struct conversions");
 
+## check LIGOTimeGPS operations
+if swiglal.cvar.swig_version_hex < 0x020004
+  global op_any_add_LIGOTimeGPS = inline("LIGOTimeGPS___radd__(y,x)", "x", "y")
+  global op_any_sub_LIGOTimeGPS = inline("LIGOTimeGPS___rsub__(y,x)", "x", "y")
+  global op_any_mul_LIGOTimeGPS = inline("LIGOTimeGPS___rmul__(y,x)", "x", "y")
+  global op_any_div_LIGOTimeGPS = inline("LIGOTimeGPS___rdiv__(y,x)", "x", "y")
+endif
+t0 = new_LIGOTimeGPS();
+assert(t0 == 0 && strcmp(swig_type(t0), "LIGOTimeGPS"));
+t1 = new_LIGOTimeGPS(10.5);
+t2 = new_LIGOTimeGPS(10, 500000000);
+assert(t1 == t2 && strcmp(swig_type(t1), "LIGOTimeGPS"));
++t1;
+-t2;
+assert(t1 == t2 && t1 >= t2 && t2 >= t1);
+assert(t1 + 3.5 == 14 && strcmp(swig_type(t1 + 3.5), "LIGOTimeGPS"));
+assert(3.5 + t1 == 14 && strcmp(swig_type(3.5 + t1), "LIGOTimeGPS"));
+t2 -= 5.5;
+assert(t2 == 5 && strcmp(swig_type(t2), "LIGOTimeGPS"));
+assert(t2 + 5.5 >= t1 && t2 + 3 != t2);
+assert(t2 - 5 == t0 && strcmp(swig_type(t2 - 5), "LIGOTimeGPS"));
+assert(t1 * 3 == 31.5 && strcmp(swig_type(t1 * 3), "LIGOTimeGPS"));
+assert(3 * t1 == 31.5 && strcmp(swig_type(3 * t1), "LIGOTimeGPS"));
+assert(t2 / 2.5 == 2 && strcmp(swig_type(t2 / 2.5), "LIGOTimeGPS"));
+assert(21 / t1  == 2 && strcmp(swig_type(21 / t1 ), "LIGOTimeGPS"));
+assert(t1 + t2 == 15.5 && strcmp(swig_type(t1 + t2), "LIGOTimeGPS"));
+assert(t1 - t2 == 5.5 && strcmp(swig_type(t1 - t2), "LIGOTimeGPS"));
+assert(t1 * t2 == 52.5 && strcmp(swig_type(t1 * t2), "LIGOTimeGPS"));
+assert(t2 * t1 == 52.5 && strcmp(swig_type(t2 * t1), "LIGOTimeGPS"));
+assert(t1 / t2 == 2.1 && strcmp(swig_type(t1 / t2), "LIGOTimeGPS"));
+assert(t1 > t2 && t2 < t1 && t1 >= t2 && t2 <= t1)
+t1 += 812345667.75;
+assert(strcmp(t1.__str__(), "812345678.250000000"));
+assert(new_LIGOTimeGPS(t1.__str__()) == t1);
+assert(t1.ns() == 812345678250000000);
+msg("passed LIGOTimeGPS operations");
+
 ## passed all tests!
 msg("================");
 msg("PASSED all tests");

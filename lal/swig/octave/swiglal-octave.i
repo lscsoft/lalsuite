@@ -26,6 +26,18 @@
   void Swig::swig_register_director(octave_swig_type*, void*, Swig::Director*) {}
 %}
 
+// Rename Python unary operators to names recognised by the Octave runtime.
+%rename(__uplus__) __pos__;
+%rename(__uminus__) __neg__;
+
+// In-place __operator__s are not used in Octave, so ignore them.
+%ignore __iadd__;
+%ignore __isub__;
+%ignore __imul__;
+%ignore __idiv__;
+%ignore __imod__;
+%ignore __ifloordiv__;
+
 // octcomplex.swg was broken for single-precision complex numbers; fixed
 // in SWIG version 2.0.4. For older SWIG we provide the fixed version here.
 #if SWIG_VERSION < 0x020004
@@ -342,3 +354,16 @@ swiglal_new_oct_vecmat(COMPLEX16, ComplexMatrix);
   $result = octave_value(octtm);
 
 }
+
+///// Additional input conversion code for LIGOTimeGPS /////
+
+%fragment("swiglal_LIGOTimeGPS_from_object", "header") %{
+
+  #include <lal/Date.h>
+
+  // Currently not implemented for Octave
+  SWIGINTERN bool swiglal_LIGOTimeGPS_from_object(LIGOTimeGPS *gps, const octave_value& obj) {
+    return false;
+  }
+
+%}

@@ -178,6 +178,53 @@ for i in range(0,10):
     assert(utcd[6] == dt.weekday())
 msg("passed 'tm' struct conversions")
 
+# check LIGOTimeGPS operations
+t0 = LIGOTimeGPS()
+assert(t0 == 0 and isinstance(t0, LIGOTimeGPS))
+t1 = LIGOTimeGPS(10.5)
+t2 = LIGOTimeGPS(10, 500000000)
+assert(not t0 and t1 and t2)
+assert(t1 == t2 and isinstance(t1, LIGOTimeGPS))
++t1
+-t2
+assert(t1 == t2 and t1 >= t2 and t2 >= t1)
+assert(abs(-t1) == t1)
+assert(int(t1) == 10 and int(t1) == int(t2))
+assert(float(t1) == 10.5)
+assert(t1 + 3.5 == 14 and isinstance(t1 + 3.5, LIGOTimeGPS))
+assert(3.5 + t1 == 14 and isinstance(3.5 + t1, LIGOTimeGPS))
+t2 -= 5.5
+assert(t2 == 5 and isinstance(t2, LIGOTimeGPS))
+assert(t2 + 5.5 >= t1 and t2 + 3 != t2)
+assert(t2 - 5 == t0 and isinstance(t2 - 5, LIGOTimeGPS))
+assert(t1 * 3 == 31.5 and isinstance(t1 * 3, LIGOTimeGPS))
+assert(3 * t1 == 31.5 and isinstance(3 * t1, LIGOTimeGPS))
+assert(t2 / 2.5 == 2 and isinstance(t2 / 2.5, LIGOTimeGPS))
+assert(21 / t1  == 2 and isinstance(21 / t1 , LIGOTimeGPS))
+assert(t1 + t2 == 15.5 and isinstance(t1 + t2, LIGOTimeGPS))
+assert(t1 - t2 == 5.5 and isinstance(t1 - t2, LIGOTimeGPS))
+assert(t1 * t2 == 52.5 and isinstance(t1 * t2, LIGOTimeGPS))
+assert(t2 * t1 == 52.5 and isinstance(t2 * t1, LIGOTimeGPS))
+assert(t1 / t2 == 2.1 and isinstance(t1 / t2, LIGOTimeGPS))
+assert(t1 % t2 == 0.5 and isinstance(t1 % t2, LIGOTimeGPS))
+assert(t1 // t2 == 2.0 and isinstance(t1 // t2, LIGOTimeGPS))
+assert(t1 > t2 and t2 < t1 and t1 >= t2 and t2 <= t1)
+class tc:
+    seconds = t1.gpsSeconds
+    nanoseconds = t1.gpsNanoSeconds
+assert(t1 == tc)
+assert(t2 + tc == 15.5 and isinstance(t2 + tc, LIGOTimeGPS))
+assert(t2 - tc == -5.5 and isinstance(t2 - tc, LIGOTimeGPS))
+assert(t2 * tc == 52.5 and isinstance(t2 * tc, LIGOTimeGPS))
+assert(t2 < tc and t2 <= tc)
+t1 += 812345667.75
+assert(str(t1) == "812345678.250000000")
+assert(LIGOTimeGPS(str(t1)) == t1)
+assert(long(t1) == 812345678)
+assert(t1.ns() == 812345678250000000L)
+assert(hash(t1) == 1049484238)
+msg("passed LIGOTimeGPS operations")
+
 # passed all tests!
 msg("================")
 msg("PASSED all tests")

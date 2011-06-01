@@ -1196,3 +1196,65 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
   }
 
 %}
+
+// Additional input typemaps for LIGOTimeGPS. If the default conversion from a
+// swig-type-wrapped LIGOTimeGPS C struct fails, call additional language-specific
+// code to attempt further possible conversions. Based on the default typemaps in
+// Lib/typemaps/swigtype.swg (SWIG version 1.3.40).
+
+// Include the fragment containing the conversion function.
+%fragment("swiglal_LIGOTimeGPS_from_object");
+
+// Typemaps for a pointer to a LIGOTimeGPS
+%typemap(typecheck, precedence=SWIG_TYPECHECK_POINTER, noblock=1) LIGOTimeGPS* {
+  void *vptr = 0;
+  int res = SWIG_ConvertPtr($input, &vptr, $descriptor, 0);
+  if (!SWIG_IsOK(res)) {
+    res = swiglal_LIGOTimeGPS_from_object(NULL, $input) ? SWIG_OK : SWIG_ERROR;
+  }
+  $1 = SWIG_CheckState(res);
+}
+%typemap(in, noblock=1) LIGOTimeGPS* (void *argp = 0, int res = 0, LIGOTimeGPS temp) {
+  // Try the default conversion from a swig-wrapped LIGOTimeGPS C struct.
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, $disown | %convertptr_flags);
+  if (SWIG_IsOK(res)) {
+    $1 = %reinterpret_cast(argp, $ltype);
+  }
+  // Try further possible language-specific conversions.
+  else if (swiglal_LIGOTimeGPS_from_object(&temp, $input)) {
+    $1 = &temp;
+  }
+  else {
+    %argument_fail(res, "$type", $symname, $argnum);
+  }
+}
+%typemap(freearg) LIGOTimeGPS* "";
+
+// Typemaps for a reference to a LIGOTimeGPS
+%typemap(typecheck, precedence=SWIG_TYPECHECK_POINTER, noblock=1) LIGOTimeGPS& {
+  void *vptr = 0;
+  int res = SWIG_ConvertPtr($input, &vptr, $descriptor, 0);
+  if (!SWIG_IsOK(res)) {
+    res = swiglal_LIGOTimeGPS_from_object(NULL, $input) ? SWIG_OK : SWIG_ERROR;
+  }
+  $1 = SWIG_CheckState(res);
+}
+%typemap(in, noblock=1) LIGOTimeGPS& (void *argp = 0, int res = 0, LIGOTimeGPS temp) {
+  // Try the default conversion from a swig-wrapped LIGOTimeGPS C struct.
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
+  if (SWIG_IsOK(res)) {
+    // Input is a reference, so it must be non-NULL.
+    if (!argp) {
+      %argument_nullref("$type", $symname, $argnum);
+    }
+    $1 = %reinterpret_cast(argp, $ltype);
+  }
+  // Try further possible language-specific conversions
+  else if (swiglal_LIGOTimeGPS_from_object(&temp, $input)) {
+    $1 = &temp;
+  }
+  else {
+    %argument_fail(res, "$type", $symname, $argnum);
+  }
+}
+%typemap(freearg) LIGOTimeGPS& "";

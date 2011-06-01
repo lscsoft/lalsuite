@@ -73,6 +73,9 @@ following section.
 #if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
 #define SWIGLAL_STRUCT_LALALLOC(...)
 #endif
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_NO_LALALLOC)
+#define SWIGLAL_STRUCT_NO_LALALLOC(...)
+#endif
 #if !defined(SWIG) && !defined(SWIGLAL_DYNAMIC_1DARRAY_BEGIN)
 #define SWIGLAL_DYNAMIC_1DARRAY_BEGIN(...)
 #define SWIGLAL_DYNAMIC_1DARRAY_END(...)
@@ -1016,7 +1019,7 @@ The macro \verb@LIGOTIMEGPSZERO@ can be used to statically initialize a
 typedef struct
 tagLIGOTimeGPS
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT_NO_LALALLOC();
   INT4 gpsSeconds; /**< Seconds since 0h UTC 6 Jan 1980. */
   INT4 gpsNanoSeconds; /**< Residual nanoseconds. */
 }

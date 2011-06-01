@@ -322,3 +322,36 @@ swiglal_new_numpy_vecmat(COMPLEX16, NPY_CDOUBLE);
                           $1->tm_wday, $1->tm_yday, $1->tm_isdst);
 
 }
+
+///// Additional input conversion code for LIGOTimeGPS /////
+
+// Uses code from pylal/src/xlal/datatypes/ligotimegps.c: Copyright (C) 2009 Kipp Cannon
+
+%fragment("swiglal_LIGOTimeGPS_from_object", "header") %{
+
+  #include <lal/Date.h>
+
+  // Allow any Python object with attributes "seconds" and
+  // "nanoseconds" to be converted into a LIGOTimeGPS.
+  SWIGINTERN bool swiglal_LIGOTimeGPS_from_object(LIGOTimeGPS *gps, PyObject *obj) {
+
+    if (!PyObject_HasAttrString(obj, "seconds") || !PyObject_HasAttrString(obj, "nanoseconds")) {
+      return false;
+    }
+
+    // Set LIGOTimeGPS fields to values of PyObject attributes.
+    // Coversion was successful if there were no errors.
+    if (gps) {
+      PyObject *seconds = PyObject_GetAttrString(obj, "seconds");
+      PyObject *nanoseconds = PyObject_GetAttrString(obj, "nanoseconds");
+      XLALGPSSet(gps, PyInt_AsLong(seconds), PyInt_AsLong(nanoseconds));
+      Py_XDECREF(seconds);
+      Py_XDECREF(nanoseconds);
+      return !PyErr_Occurred();
+    }
+
+    return true;
+
+  }
+
+%}
