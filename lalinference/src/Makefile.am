@@ -3,23 +3,23 @@ INCLUDES = -I$(top_builddir)/include
 lalinferenceincludedir = $(includedir)/lal
 lalinferenceinclude_HEADERS = \
 	LALInference.h \
-	LALInferenceVCSInfo.h \
 	LALInferenceConfig.h \
+	LALInferenceLikelihood.h \
 	LALInferenceNestedSampler.h \
 	LALInferencePrior.h \
-	LALInferenceLikelihood.h \
 	LALInferenceReadData.h \
-	LALInferenceTemplate.h
+	LALInferenceTemplate.h \
+	LALInferenceVCSInfo.h
 
 lib_LTLIBRARIES = liblalinference.la
 liblalinference_la_SOURCES = \
 	LALInference.c \
-	LALInferenceVCSInfo.c \
+	LALInferenceLikelihood.c \
 	LALInferenceNestedSampler.c \
 	LALInferencePrior.c \
 	LALInferenceReadData.c \
 	LALInferenceTemplate.c \
-	LALInferenceLikelihood.c
+	LALInferenceVCSInfo.c
 
 liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
 
