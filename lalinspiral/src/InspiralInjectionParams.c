@@ -339,7 +339,9 @@ SimInspiralTable* XLALRandomInspiralTotalMassFraction(
     )
 {
   REAL4 mtotal = -1.0;
-  REAL4 ratio = -1.0;
+  REAL4 fraction = -1.0;
+  REAL4 minfraction = -1.0;
+  REAL4 maxfraction = -1.0;
 
   if ( mDist==uniformTotalMassFraction)
   {
@@ -351,12 +353,14 @@ SimInspiralTable* XLALRandomInspiralTotalMassFraction(
   else
   {
     /* unsupported distribution type */
-    XLAL_ERROR_NULL("XLALRandomInspiralTotalMassFraction", XLAL_EINVAL);}
+    XLAL_ERROR_NULL("XLALRandomInspiralTotalMassFraction", XLAL_EINVAL);
   }
   inj->mass1 = fraction * mtotal;
-  inj->mass2 = mtotal - mass1;
+  inj->mass2 = mtotal - inj->mass1;
   inj->eta = inj->mass1 * inj->mass2 / ( mtotal * mtotal );
   inj->mchirp = mtotal * pow(inj->eta, 0.6);
+
+  return ( inj );
 }
 
 /** Generates spins for an inspiral injection.  Spin magnitudes lie between the
