@@ -445,8 +445,10 @@ Student T Likelihood Arguments:\n\
         if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
         {
                 fprintf(stdout,"%s",help);
-		while(ifo)
+		while(ifo) {
 			fprintf(stdout,"(--dof-%s DoF)\tDegrees of freedom for %s\n",ifo->name,ifo->name);
+			ifo=ifo->next;
+		}
 		return;
         }
 	/* Don't do anything unless asked */
@@ -470,8 +472,10 @@ Student T Likelihood Arguments:\n\
 	state->likelihood = &LALInferenceFreqDomainStudentTLogLikelihood;
 	
 	/* Set the noise model evidence to the student t model value */
+	LALInferenceTemplateNullFreqdomain(state->data);
 	REAL8 noiseZ=LALInferenceFreqDomainStudentTLogLikelihood(state->currentParams,state->data,&LALInferenceTemplateNullFreqdomain);
 	LALInferenceAddVariable(state->algorithmParams,"logZnoise",&noiseZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+	fprintf(stdout,"Student-t Noise evidence %lf\n",noiseZ);
 
 	return;
 }
