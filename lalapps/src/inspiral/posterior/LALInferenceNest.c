@@ -465,6 +465,7 @@ Student T Likelihood Arguments:\n\
 			dof=atoi(ppt->value);
     		sprintf(df_variable_name,"df_%s",ifo->name);
     		LALInferenceAddVariable(state->currentParams,df_variable_name,&dof,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+		fprintf(stdout,"Setting %i degrees of freedom for %s\n",dof,ifo->name);
 		ifo=ifo->next;
 	}
 

@@ -153,7 +153,7 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
 	for(;item;item=item->next)
 	{
 		// if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR)
-		if(item->vary==PARAM_FIXED || item->vary==PARAM_OUTPUT)
+		if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
       continue;
 		else
 		{
