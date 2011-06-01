@@ -103,7 +103,7 @@
 NRCSID(LALPSPININSPIRALRDC, "$Id$");
 
 #define omM0 0.0680414 //=6^(-3/2)
-#define omMlow 0.038
+#define omMlow 0.045
 #define sqrtOnePointFive 1.22474
 #define sqrtPoint15      0.387298
 #define sqrtFiveOver2    1.1183
@@ -112,17 +112,23 @@ NRCSID(LALPSPININSPIRALRDC, "$Id$");
 
 static REAL8 OmMatch(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2) {
 
-  const REAL8 omM     = 0.0590;
-  const REAL8 omMz1p2 = -5.849e-3;
-  const REAL8 omM12   = -2.149e-3;
-  const REAL8 omMsq   =  1.49e-3;
-  const REAL8 omMz12  = -6.537e-3;
-  const REAL8 omMzsq  = -1.985e-3;
+  const REAL8 omM       = 0.0590;
+  const REAL8 omMz1p2   = -9.546e-3;
+  const REAL8 omM12     = -2.153e-3;
+  const REAL8 omMsq     =  1.633e-3;
+  const REAL8 omMz12    = -6.527e-3;
+  const REAL8 omMzsq    = -1.851e-3;
+  const REAL8 omMzcb12  = 3.2157e-3; 
+  const REAL8 omMzcb1p2 = 7.3016e-3;
 
   return omM + /*6.05e-3 * sqrtOneMinus4Eta +*/ 
-    omMz1p2 * (LNhS1 + LNhS2) + omM12 * (S1S2 - LNhS1 * LNhS2) + 
-    omMsq   * (S1S1 + S2S2 - LNhS1 * LNhS1 - LNhS2 * LNhS2) +
-    omMz12  * (LNhS1 * LNhS2) + omMzsq * (LNhS1 * LNhS1 + LNhS2 * LNhS2);
+    omMz1p2   * (LNhS1 + LNhS2) + 
+    omM12     * (S1S2 - LNhS1 * LNhS2) + 
+    omMsq     * (S1S1 + S2S2 - LNhS1 * LNhS1 - LNhS2 * LNhS2) +
+    omMz12    * (LNhS1 * LNhS2) + 
+    omMzsq    * (LNhS1 * LNhS1 + LNhS2 * LNhS2) +
+    omMzcb12  * (LNhS1 + LNhS2)*LNhS1*LNhS2 + 
+    omMzcb1p2 * (LNhS1 + LNhS2)*(LNhS1*LNhS1+LNhS2*LNhS2);
 }
 
 static REAL8 fracRD(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2) {
