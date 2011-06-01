@@ -326,6 +326,38 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio(
   return ( inj );
 }
 
+/* generate masses for an inspiral injection. Total mass and mass fraction
+ * m1 / M are uniformly distributed */
+SimInspiralTable* XLALRandomInspiralTotalMassFraction(
+    SimInspiralTable *inj,   /**< injection for which masses will be set */
+    RandomParams *randParams,/**< random parameter details */
+    MassDistribution mDist,  /**< the mass distribution to use */
+    REAL4  minTotalMass,     /**< minimum total mass of binary */
+    REAL4  maxTotalMass,     /**< maximum total mass of binary */
+    REAL4  minMassRatio,     /**< minimum mass ratio */
+    REAL4  maxMassRatio      /**< maximum mass ratio */
+    )
+{
+  REAL4 mtotal = -1.0;
+  REAL4 ratio = -1.0;
+
+  if ( mDist==uniformTotalMassFraction)
+  {
+    mtotal = minTotalMass + (XLALUniformDeviate(randParams) * (maxTotalMass - minTotalMass));
+    minfraction = 1 / (1 + 1 / minMassRatio); 
+    maxfraction = 1 / (1 + 1 / maxMassRatio);
+    fraction = minfraction + (XLALUniformDeviate(randParams) * (maxfraction - minfraction));
+  }
+  else
+  {
+    /* unsupported distribution type */
+    XLAL_ERROR_NULL("XLALRandomInspiralTotalMassFraction", XLAL_EINVAL);}
+  }
+  inj->mass1 = fraction * mtotal;
+  inj->mass2 = mtotal - mass1;
+  inj->eta = inj->mass1 * inj->mass2 / ( mtotal * mtotal );
+  inj->mchirp = mtotal * pow(inj->eta, 0.6);
+}
 
 /** Generates spins for an inspiral injection.  Spin magnitudes lie between the
  * specified max and min values.  Orientation for spin1 can be constrained by
