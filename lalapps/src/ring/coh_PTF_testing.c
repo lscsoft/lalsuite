@@ -1157,10 +1157,10 @@ void coh_PTF_statistic(
   }
 
   /* This loop takes the time offset in seconds and converts to time offset
-  * in data points */
+  * in data points (rounded) */
   for (i = 0; i < LAL_NUM_IFO; i++ )
   {
-    timeOffsetPoints[i]=(int)(timeOffsets[i]/deltaT);
+    timeOffsetPoints[i] = (int) floor(timeOffsets[i]/deltaT + 0.5);
   }
 
   v1p = LALCalloc(vecLengthTwo , sizeof(REAL4));
@@ -1850,7 +1850,10 @@ UINT8 coh_PTF_add_triggers(
         currEvent->mchirp = PTFTemplate.totalMass*pow(PTFTemplate.eta,3.0/5.0);
         currEvent->eta = PTFTemplate.eta;
         currEvent->end_time = trigTime;
-        currEvent->ra = rightAscension;
+        /* add sky position, but need to track back to sky fixed sky position */
+        currEvent->ra = rightAscension - 
+                            XLALGreenwichMeanSiderealTime(&params->trigTime) + 
+                            XLALGreenwichMeanSiderealTime(&currEvent->end_time);
         currEvent->dec = declination;
         if (params->doNullStream)
           currEvent->null_statistic = nullSNR->data->data[i];
