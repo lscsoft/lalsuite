@@ -112,14 +112,14 @@ NRCSID(LALPSPININSPIRALRDC, "$Id$");
 
 static REAL8 OmMatch(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2) {
 
-  const REAL8 omM       = 0.0590;
-  const REAL8 omMz1p2   = -9.546e-3;
-  const REAL8 omM12     = -2.153e-3;
-  const REAL8 omMsq     =  1.633e-3;
-  const REAL8 omMz12    = -6.527e-3;
-  const REAL8 omMzsq    = -1.851e-3;
-  const REAL8 omMzcb12  = 3.2157e-3; 
-  const REAL8 omMzcb1p2 = 7.3016e-3;
+  const REAL8 omM       = 0.0555;
+  const REAL8 omMz1p2   = -7.111e-3;
+  const REAL8 omM12     = -1.487e-3;
+  const REAL8 omMsq     =  5.563e-3;
+  const REAL8 omMz12    =  5.923e-3;
+  const REAL8 omMzsq    = -3.471e-3;
+  const REAL8 omMzcb12  = 2.2635e-2; 
+  const REAL8 omMzcb1p2 =  1.048e-3;
 
   return omM + /*6.05e-3 * sqrtOneMinus4Eta +*/ 
     omMz1p2   * (LNhS1 + LNhS2) + 
@@ -133,16 +133,22 @@ static REAL8 OmMatch(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S
 
 static REAL8 fracRD(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2) {
 
-  const double frac0   = 0.85;
-  const double frac1p2 =  1.16e-02;
-  const double frac12  = -1.53e-02;
-  const double fracsq  = -5.86e-02;
-  const double fracz12 =  1.51e-02;
-  const double fraczsq = -3.92e-02;
+  const double frac0      = 0.840;
+  const double frac1p2    =    8.31e-03;
+  const double frac12     =  -1.442e-02;
+  const double fracsq     =  -3.203e-02;
+  const double fracz12    = -1.0707e-01;
+  const double fraczsq    =  -5.045e-02;
+  const double fraczcb12  =  1.3034e-01;
+  const double fraczcb1p2 = -1.1176e-01;
 
-  return frac0 + frac1p2 * (LNhS1 + LNhS2) + frac12 * (S1S2 - LNhS1 * LNhS1) +
-    fracsq * (S1S1 + S2S2 - LNhS1 * LNhS1 - LNhS2 * LNhS2) +
-    fracz12 * (LNhS1 * LNhS2) + fraczsq * (LNhS1 * LNhS1 + LNhS2 * LNhS2);
+  return frac0 + frac1p2 * (LNhS1 + LNhS2) + 
+    frac12     * (S1S2 - LNhS1 * LNhS1) +
+    fracsq     * (S1S1 + S2S2 - LNhS1 * LNhS1 - LNhS2 * LNhS2) +
+    fracz12    * (LNhS1 * LNhS2) + 
+    fraczsq    * (LNhS1 * LNhS1 + LNhS2 * LNhS2) +
+    fraczcb12  * (LNhS1 + LNhS2)*LNhS1*LNhS2 + 
+    fraczcb1p2 * (LNhS1 + LNhS2)*(LNhS1*LNhS1+LNhS2*LNhS2);
 }
 
 typedef struct LALPSpinInspiralRDstructparams {
