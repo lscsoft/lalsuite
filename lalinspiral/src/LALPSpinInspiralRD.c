@@ -103,7 +103,7 @@
 NRCSID(LALPSPININSPIRALRDC, "$Id$");
 
 #define omM0 0.0680414 //=6^(-3/2)
-#define omMlow 0.045
+#define omMlow 0.04
 #define sqrtOnePointFive 1.22474
 #define sqrtPoint15      0.387298
 #define sqrtFiveOver2    1.1183
@@ -1797,11 +1797,11 @@ static int XLALSpinInspiralAdaptiveEngine(
   REAL8 *S2y    = &yout->data[10*intlen];
   REAL8 *S2z    = &yout->data[11*intlen];
   REAL8 *energy = &yout->data[12*intlen];
-
+  
   if (mparams->inspiralOnly!=1) {
 
     UINT4 Npoints = 1;
-    while ((omega[intlen-Npoints]>omMlow)||(Npoints==intlen)) {
+    while ((omega[intlen-Npoints]>omMlow)||(Npoints<intlen)) {
       if ((Npoints*2)<intlen) Npoints*=2;
       else Npoints=intlen;
     }
@@ -2130,14 +2130,14 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   XLALPSpinInspiralRDSetParams(&mparams,params,paramsInit);
 
   /* Check that initial frequency is smaller than omegamatch ~ xxyy for m=100 Msun */
-  initphi=params->startPhase;
-
-  initomega=params->fLower*unitHz;
+  initphi   = params->startPhase;
+  initomega = params->fLower*unitHz;
 
   if ( initomega > omMlow ) {
     if ((params->spin1[0]==params->spin1[1])&&(params->spin1[1]==params->spin2[0])&&(params->spin2[0]==params->spin2[1])&&(params->spin2[1]==0.)) {
       // Beware, this correspond to a shift of the initial phase!
       initomega = omMlow;
+      fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Initial frequency reset from %12.6e to %12.6e Hz, m:(%12.4e,%12.4e)\n",params->fLower,initomega/unitHz,params->mass1,params->mass2);
     }
     else {
       fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: Initial frequency too high: %11.5e for omM ~ %11.5e and m:(%8.3f, %8.3f)\n",params->fLower,omMlow/unitHz,params->mass1,params->mass2);
@@ -2445,6 +2445,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     errcode = XLALSpinInspiralAdaptiveEngine(neqs,yinit,amp22ini,&mparams,h2P2,h2M2,h2P1,h2M1,h20,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,fap,phap,&phenPars);
   }
   intreturn=phenPars.intreturn;
+  //printf("intreturn %d\n",intreturn);
   /* report on abnormal termination */ 
 
   /* check for abnormal termination:
