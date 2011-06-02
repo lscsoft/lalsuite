@@ -17,9 +17,21 @@
 *  MA  02111-1307  USA
 */
 
-/** \file
- * \ingroup std
+#include <math.h>
+#include <time.h>
+#include <string.h>
+#include <lal/LALStdlib.h>
+#include <lal/Date.h>
+
+#include "XLALLeapSeconds.h" /* contains the leap second table */
+
+/* in case this is not prototyped ... */
+struct tm * gmtime_r(const time_t *, struct tm *);
+
+/** \defgroup CivilTime CivilTime
+ * \ingroup date
  * \author Chin, D. W. and Creighton, J. D. E.
+ *
  * \brief XLAL routines for converting civil time structures to GPS times.
  *
  * Civil time structures, represented in the C library by the \c struct \c tm
@@ -68,17 +80,6 @@
  *
  */
 
-#include <math.h>
-#include <time.h>
-#include <string.h>
-#include <lal/LALStdlib.h>
-#include <lal/Date.h>
-
-#include "XLALLeapSeconds.h" /* contains the leap second table */
-
-/* in case this is not prototyped ... */
-struct tm * gmtime_r(const time_t *, struct tm *);
-
 
 /* change in TAI-UTC from previous second:
  *
@@ -113,7 +114,7 @@ static int delta_tai_utc( INT4 gpssec )
   return 0;
 }
 
-
+/** \ingroup CivilTime *//*@{*/
 /** Returns the leap seconds TAI-UTC at a given GPS second. */
 int XLALLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
 {
@@ -275,8 +276,6 @@ struct tm * XLALGPSToUTC(
  * analyzable data from before 1900 March.
  *
  */
-
-
 REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
 {
   const int sec_per_day = 60 * 60 * 24; /* seconds in a day */
@@ -324,3 +323,5 @@ INT4 XLALModifiedJulianDay( const struct tm *utc /**< [In] UTC time in a broken 
   mjd = floor( jd - XLAL_MJD_REF );
   return mjd;
 }
+
+/*@}*/
