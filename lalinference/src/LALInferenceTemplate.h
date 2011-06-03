@@ -49,5 +49,6 @@ void LALInferenceTemplateSinc(LALInferenceIFOData *IFOdata);
 void LALInferenceTemplateLALSTPN(LALInferenceIFOData *IFOdata);
 void LALInferenceTemplateASinOmegaT(LALInferenceIFOData *IFOdata);
 void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata);
 
 #endif

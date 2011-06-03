@@ -40,6 +40,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
 void initVariables(LALInferenceRunState *state);
 void initStudentt(LALInferenceRunState *state);
+void initializeTemplate(LALInferenceRunState *runState);
 
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
@@ -159,6 +160,30 @@ Initialisation arguments:\n\
 	return(irs);
 }
 
+void initializeTemplate(LALInferenceRunState *runState)
+{
+	char help[]="\
+(--template [LAL,LALSTPN,PhenSpin]\tSpecify template (default LAL)\n";
+	ProcessParamsTable *ppt=NULL;
+	ProcessParamsTable *commandLine=runState->commandLine;
+	/* Print command line arguments if help requested */
+	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
+	if(ppt)
+	{
+		fprintf(stdout,"%s",help);
+		return;
+	}
+	/* This is the LAL template generator for inspiral signals */
+	runState->template=&LALInferenceTemplateLAL;
+	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
+	if(ppt) {
+		if(!strcmp("LALSTPN",ppt->value))
+			runState->template=&LALInferenceTemplateLALSTPN;
+		if(!strcmp("PhenSpin",ppt->value))
+			runState->template=&LALInferenceTemplatePSTRD;
+	}	
+	return;
+}
 
 /***** Initialise Nested Sampling structures ****/
 /* Fill in samples from the prior distribution */
@@ -199,8 +224,6 @@ Nested sampling arguments:\n\
 	runState->evolve=&LALInferenceNestedSamplingOneStep;
 	runState->proposal=&LALInferenceProposalNS;
 
-	/* This is the LAL template generator for inspiral signals */
-	runState->template=&LALInferenceTemplateLAL;
 	runState->likelihood=&LALInferenceFreqDomainLogLikelihood;
 	runState->prior = &LALInferenceInspiralPrior;
 	
@@ -289,6 +312,12 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 mcMin=1.0;
 	REAL8 mcMax=20.5;
 	REAL8 logmcMax,logmcMin,mMin=1.0,mMax=30.0;
+	REAL8 a_spin2_max=1.0, a_spin1_max=1.0;
+	REAL8 a_spin2_min=0.0, a_spin1_min=0.0;
+	REAL8 phi_spin1_min=-LAL_PI;
+	REAL8 phi_spin1_max=LAL_PI;
+	REAL8 theta_spin1_min=-LAL_PI/2.0;
+	REAL8 theta_spin1_max=LAL_PI/2.0;	
 	REAL8 etaMin=0.01;
 	REAL8 etaMax=0.25;
 	REAL8 dt=0.1;            /* Width of time prior */
@@ -428,6 +457,34 @@ Parameter arguments:\n\
 	tmpMin=0.0; tmpMax=LAL_PI;
 	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
+	/* Additional parameters for spinning waveforms */
+	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
+	if(!strcmp("LALSTPN",ppt->value)){
+		tmpVal=a_spin1_min+(a_spin1_max-a_spin1_min)/2.0;
+		LALInferenceAddVariable(currentParams, "a_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+		LALInferenceAddMinMaxPrior(priorArgs, "a_spin1",     &a_spin1_min, &a_spin1_max,   LALINFERENCE_REAL8_t); 
+	
+		LALInferenceAddVariable(currentParams, "a_spin2",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
+		LALInferenceAddMinMaxPrior(priorArgs, "a_spin2",     &a_spin2_min, &a_spin2_max,   LALINFERENCE_REAL8_t); 
+	
+		tmpVal=theta_spin1_min+(theta_spin1_max - theta_spin1_min)/2.0;
+	
+		LALInferenceAddVariable(currentParams,"theta_spin1",	&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+		LALInferenceAddMinMaxPrior(priorArgs, "theta_spin1",     &theta_spin1_min, &theta_spin1_max,   LALINFERENCE_REAL8_t); 
+	
+		LALInferenceAddVariable(currentParams,"theta_spin2",	&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+		LALInferenceAddMinMaxPrior(priorArgs, "theta_spin2",     &theta_spin1_min, &theta_spin1_max,   LALINFERENCE_REAL8_t); 
+	
+		tmpVal=phi_spin1_min+(phi_spin1_max - phi_spin1_min)/2.0;
+	
+		LALInferenceAddVariable(currentParams,"phi_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+		LALInferenceAddMinMaxPrior(priorArgs, "phi_spin1",     &phi_spin1_min, &phi_spin1_max,   LALINFERENCE_REAL8_t); 
+	
+		LALInferenceAddVariable(currentParams,"phi_spin2",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+		LALInferenceAddMinMaxPrior(priorArgs, "phi_spin2",     &phi_spin1_min, &phi_spin1_max,   LALINFERENCE_REAL8_t);
+	}
+	
+	
 	return;
 }
 
@@ -502,6 +559,9 @@ Arguments for each section follow:\n\n";
 	/* And performing any injections specified */
 	/* And allocating memory */
 	state = initialize(procParams);
+	
+	/* Set template function */
+	initializeTemplate(state);
 	
 	/* Set up structures for nested sampling */
 	initializeNS(state);

@@ -841,14 +841,14 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       template(dataPtr);
       if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
-	if (!timeDomainWarning) {
-	  timeDomainWarning = 1;
-	  fprintf(stderr, "WARNING: using time domain template with frequency domain likelihood (in %s, line %d)\n", __FILE__, __LINE__);
-	}
-	LALInferenceExecuteFT(dataPtr);
-      /* note that the dataPtr->modelParams "time" element may have changed here!! */
-      /* (during "template()" computation)                                      */
-      }
+		  if (!timeDomainWarning) {
+			  timeDomainWarning = 1;
+			  fprintf(stderr, "WARNING: using time domain template with frequency domain likelihood (in %s, line %d)\n", __FILE__, __LINE__);
+		  }
+		  LALInferenceExecuteFT(dataPtr);
+		  /* note that the dataPtr->modelParams "time" element may have changed here!! */
+		  /* (during "template()" computation)                                      */
+		}
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);

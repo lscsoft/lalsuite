@@ -425,6 +425,116 @@ double m2mc(double m1, double m2)
 }
 
 
+void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
+
+/** Template function for PhenSpinTaylorRingDown waveforms. 
+ THIS HAS NOT BEEN TESTED! */
+{
+	static LALStatus status;
+	
+	InspiralTemplate template;
+	
+	memset(&template,0,sizeof(InspiralTemplate));
+	UINT4 idx=0;
+	
+	/* spin variables still need to be initialised */
+	double a_spin1		= 0.;
+	double theta_spin1	= 0.;
+	double phi_spin1	= 0.;
+	
+	double a_spin2		= 0.;
+	double theta_spin2	= 0.;
+	double phi_spin2	= 0.;
+	/* spin variables still need to be initialised */	
+	
+	/* spin variables still need to be initialised */
+	if (LALInferenceCheckVariable(IFOdata->modelParams, "a_spin1")){		
+		a_spin1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "a_spin1");
+	}
+	
+	if (LALInferenceCheckVariable(IFOdata->modelParams, "theta_spin1")){
+		theta_spin1	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "theta_spin1");
+	}
+	
+	if (LALInferenceCheckVariable(IFOdata->modelParams, "phi_spin1")){
+		phi_spin1= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_spin1");
+	}
+	
+	if (LALInferenceCheckVariable(IFOdata->modelParams, "a_spin2")){		
+		a_spin1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "a_spin2");
+	}
+	
+	if (LALInferenceCheckVariable(IFOdata->modelParams, "theta_spin2")){
+		theta_spin1	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "theta_spin2");
+	}
+	
+	if (LALInferenceCheckVariable(IFOdata->modelParams, "phi_spin2")){
+		phi_spin1= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_spin2");
+	}
+	
+	
+	/* spin variables still need to be initialised */
+	
+	double mc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
+	double eta      = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "massratio");
+	double phi      = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
+	double iota     = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "inclination");
+	
+	REAL8 mtot=mc/pow(eta,3./5.);	
+	
+	/* fill the template structure */
+	template.spin1[0]=a_spin1*sin(theta_spin1)*cos(phi_spin1);
+	template.spin1[1]=a_spin1*sin(theta_spin1)*sin(phi_spin1);
+	template.spin1[2]=a_spin1*cos(theta_spin1); 
+	template.spin2[0]=a_spin2*sin(theta_spin2)*cos(phi_spin2);
+	template.spin2[1]=a_spin2*sin(theta_spin2)*sin(phi_spin2);
+	template.spin2[2]=a_spin2*cos(theta_spin2);
+	template.totalMass = mtot;
+	template.eta = eta;
+	template.massChoice = totalMassAndEta;
+	template.fLower = IFOdata->fLow;	
+	template.tSampling = IFOdata->timeData->deltaT;
+	template.fCutoff = 0.5/IFOdata->timeData->deltaT-1.0;
+	template.nStartPad = 0;
+	template.nEndPad =0;
+	template.startPhase = phi;
+	template.startTime = 0.0;
+	template.ieta = 1;
+	template.inclination=iota;
+	int order = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
+	template.order=order; //check order is set correctly
+	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT")){
+		template.approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
+		if(template.approximant!=PhenSpinTaylorRD) {
+			XLALPrintError("Error, LALInferenceTemplatePSTRD can only use PhenSpinTaylorRD approximant!");
+			XLAL_ERROR_VOID("LALInferenceTemplatePSTRD",XLAL_EDATA);
+		}
+	}
+	
+	template.next = NULL;
+	template.fine = NULL;
+	
+	LALInspiralParameterCalc(&status,&template);
+	
+	REAL4Vector *hPlus = XLALCreateREAL4Vector(IFOdata->timeModelhPlus->data->length);
+	REAL4Vector *hCross = XLALCreateREAL4Vector(IFOdata->timeModelhCross->data->length);
+	
+	LALPSpinInspiralRDTemplates(&status,hPlus,hCross,&template);
+	
+	for(idx=0;idx<hPlus->length;idx++) IFOdata->timeModelhPlus->data->data[idx]= (REAL8)hPlus->data[idx];
+	for(idx=0;idx<hCross->length;idx++) IFOdata->timeModelhCross->data->data[idx]= (REAL8)hCross->data[idx];
+	
+	XLALDestroyREAL4Vector(hPlus);
+	XLALDestroyREAL4Vector(hCross);
+	// executeFT(LALIFOData *IFOdata); //for phenspin we need to transform each of the states separately so i think you can do it with this function, but can you check just incase
+	
+	double tc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time");
+	LALInferenceSetVariable(IFOdata->modelParams, "time", &tc);
+
+	
+	return;
+}
+
 
 void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
 /*************************************************************************************************/
@@ -1288,7 +1398,6 @@ void LALInferenceTemplateLALSTPN(LALInferenceIFOData *IFOdata)
 	//injParams.f_final = IFOdata->fHigh; //(IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
 	injParams.f_lower = IFOdata->fLow; // IFOdata->fLow * 0.9;
 	
-	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT")){
 		approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
 		if((approximant!=SpinTaylor)){
@@ -1296,6 +1405,7 @@ void LALInferenceTemplateLALSTPN(LALInferenceIFOData *IFOdata)
 			approximant = SpinTaylor;
 		}
 	}
+	
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_PNORDER"))
 		order = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
@@ -1306,7 +1416,7 @@ void LALInferenceTemplateLALSTPN(LALInferenceIFOData *IFOdata)
 	
 	XLALInspiralGetApproximantString( approximant_order, LIGOMETA_WAVEFORM_MAX, (Approximant) approximant, (LALPNOrder)  order);
 	//LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),approximant_order);
-  snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",approximant_order);
+	snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",approximant_order);
 	
 	/*switch(order) {
 		case 2:
