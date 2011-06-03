@@ -2445,6 +2445,11 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     errcode = XLALSpinInspiralAdaptiveEngine(neqs,yinit,amp22ini,&mparams,h2P2,h2M2,h2P1,h2M1,h20,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,fap,phap,&phenPars);
   }
   intreturn=phenPars.intreturn;
+
+  printf("Omega   %12.6e\n",phenPars.omega);
+  printf("dOmega  %12.6e\n",phenPars.domega);
+  printf("ddOmega %12.6e\n",phenPars.ddomega);
+
   //printf("intreturn %d\n",intreturn);
   /* report on abnormal termination */ 
 
