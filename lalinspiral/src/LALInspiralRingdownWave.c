@@ -1000,7 +1000,6 @@ INT4 XLALGenerateQNMFreqV2(
     modefreqs->data[i].im = gsl_spline_eval( spline, finalSpin, acc );
 
     /* Scale by the appropriate mass factors */
-    printf( "%d, %d frequency = %e + i %e\n", l, m, modefreqs->data[i].re, modefreqs->data[i].im );
     modefreqs->data[i].re *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
     modefreqs->data[i].im *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
   }
