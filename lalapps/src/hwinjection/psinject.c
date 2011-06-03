@@ -88,7 +88,8 @@ long long count=0;
 long blocks=0;
 const char *ifo_name = NULL;
 const char *actuation = NULL;
-int sampling_rate = 16384; /* sample rate of output: default = 16kHz */
+int sampling_rate = 16384; 		/* sample rate of output requested by user (default = 16kHz) */
+double starttime_offset_eff = 0;	/* effective starttime offset (in multiple of samples) requested by user*/
 
 /* capacity, occupancy, and pointers to input buffers. Cleared to zero
    on starup because they are initialized data.  Units of buffer size
@@ -165,7 +166,7 @@ void sighandler(int sig){
     if (WIFSIGNALED(status))
       syserror(0, "Subprocess [PID=%d] terminated because it caught signal %d [%s]\n",
 	       (int)pid, WTERMSIG(status), strsignal(WTERMSIG(status)));
-    exit(1);
+    shutdown_pulsar_injection = 1;
   }
   else
     syserror(1, "waitpid() returned -1.  Call Bruce...\n");
@@ -220,6 +221,7 @@ void usage(FILE *filep){
           "-F INT        Keep N frame files on disk.  If N==0 write all frames immediately.\n"
 	  "-S INT        Number of 1-second frames per frame file (default 60).\n"
           "-r INT        Sampling rate (NOTE: strain-generators must use the same!) (Default:16384)\n"
+          "-z DOUBLE     Delay: shift CHANNEL signals by round[offset*samplingRate] samples forward (Default:0)\n"
           "--------------------------------------------------------------------------------\n"
 	  , programname, MAXPULSARS
 	  );
@@ -230,8 +232,11 @@ void usage(FILE *filep){
 int parseinput(int argc, char **argv){
 
   int c;
-  const char *optionlist="hL:M:H:n:d:e:DG:TXspI:A:F:vS:r:";
+  const char *optionlist="hL:M:H:n:d:e:DG:TXspI:A:F:vS:r:z:";
   opterr=0;
+
+  double starttime_offset_req = 0;	/* requested offset correction to shift start-time of signals into the future */
+  double starttime_offset_samples = 0;	/* offset rounded to nearest sample */
 
   /* set some defaults */
   directory = strdup(".");
@@ -370,6 +375,14 @@ int parseinput(int argc, char **argv){
       }
       break;
 
+    case 'z':
+      starttime_offset_req = strtod(optarg, &end);
+      if ( end == optarg ){
+	syserror(1, "-%c %s is invalid. -%c takes a double-precision amplitude.\n", c, optarg, c);
+	exit(1);
+      }
+      break;
+
     default:
       /* error case -- option not recognized */
       syserror(0,"%s: Option argument: -%c unrecognized or missing argument.\n"
@@ -400,6 +413,15 @@ int parseinput(int argc, char **argv){
     exit(1);
   }
 
+
+  /* "discretize" starttime offset to sampling rate, and
+   * provide some debug-info about starttime shifting */
+  starttime_offset_samples = floor(starttime_offset_req * sampling_rate + 0.5 );	/* correctly *round*, allowing for negative offsets */
+  starttime_offset_eff     = starttime_offset_samples / sampling_rate;
+  if ( starttime_offset_req ) {
+    syserror(0, "starttime OFFSET requested = %+.16g s (offset > 0 means a *delay*)\n", starttime_offset_req );
+    syserror(0, "effective OFFSET will be   = %+.16g s (that is: %+.0f samples)\n", starttime_offset_eff, starttime_offset_samples );
+  }
 
 #ifndef ONLINE
   if (channel) {
@@ -597,7 +619,7 @@ int main(int argc, char *argv[]){
     SIStrAppInfo( info );
 
     /* Open the Signal Injection Stream */
-    status = SIStrOpen( &sis, channel, sampling_rate, (double) gpstime );
+    status = SIStrOpen( &sis, channel, sampling_rate, (double) gpstime + starttime_offset_eff );
     if ( SIStr_debug ) {
       syserror(0, "SIStrOpen() returned %d\n", status );
     }
@@ -804,6 +826,7 @@ int main(int argc, char *argv[]){
 	long long x1=gpstime;
 	long long E9=1000000000;
 	x1*=E9;
+        x1 += (long long)(starttime_offset_eff * E9 );	/* account for startime-shift, consistent with CHANNEL injection */
 
 	for (j=0; j<BLOCKSIZE; j++){
 	  long long x2=count, x3;
@@ -813,14 +836,14 @@ int main(int argc, char *argv[]){
 	  x3 =  x2;
 	  x3 /= E9;
 	  x2 -= x3*E9;
-	  printf("%lld.%09lld %f\n", x3, x2, total[j]);
+	  printf("%lld.%09lld %g\n", x3, x2, total[j]);
 	  count++;
 	}
       }
       else {
 	/* ... or as y-axis text only ... */
 	for (j=0; j<BLOCKSIZE; j++)
-	  printf("%f\n", total[j]);
+	  printf("%g\n", total[j]);
       }
     }
     else {
