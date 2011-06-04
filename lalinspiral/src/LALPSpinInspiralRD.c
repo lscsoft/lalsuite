@@ -1593,6 +1593,8 @@ static void LALSpinInspiralEngine(LALStatus * status,
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-2)],h2P2->data[2*(write-2)+1],h2M2->data[2*(write-2)],h2M2->data[2*(write-2)+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-3)],h2P2->data[2*(write-3)+1],h2M2->data[2*(write-3)],h2M2->data[2*(write-3)+1]);
 	fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
+	fprintf(stdout,"            S1: (%9.6f,%9.6f,%9.6f)\n",yinit[5]/mparams->m1msq,yinit[6]/mparams->m1msq,yinit[7]/mparams->m1msq);
+	fprintf(stdout,"            S2: (%9.6f,%9.6f,%9.6f)\n",yinit[8]/mparams->m2msq,yinit[9]/mparams->m2msq,yinit[10]/mparams->m2msq);
       }
     }
 
