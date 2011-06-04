@@ -22,6 +22,7 @@ extern int newswitch;
 #define LALPSIRDPN_TEST_OMEGANAN	1028
 #define LALPSIRDPN_TEST_OMEGAMATCH      1029
 #define LALPSIRDPN_TEST_OMEGANONPOS     1031
+#define LALPSIRDPN_TEST_OMEGACUT        1032
 
 #ifdef  __cplusplus
 #pragma {
