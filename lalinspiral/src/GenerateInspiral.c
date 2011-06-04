@@ -595,6 +595,7 @@ LALGenerateInspiralPopulateInspiral(
   inspiralParams->nEndPad   =  16384;
 
   inspiralParams->massChoice  = m1Andm2;
+  inspiralParams->axisChoice  = ppnParams->axisChoice;
 
   /* spin parameters */
   inspiralParams->sourceTheta = GENERATEINSPIRAL_SOURCETHETA;
