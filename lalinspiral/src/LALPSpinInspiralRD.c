@@ -1588,7 +1588,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
 
     if (count>1) {
       if ( (fabs(Phi-alpha-Phiold+alphaold)>LAL_PI/3.) && (fabs(Phi-alpha-Phiold+alphaold)<5/3.*LAL_PI) ) {
-	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e alphaold %12.6e\n",write,LNhy,LNhx,Phi,alpha,alphaold);
+	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e alphaold %12.6e\n",write,LNhy,LNhx,Phi/LAL_PI,alpha/LAL_PI,alphaold/LAL_PI);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-1)],h2P2->data[2*(write-1)+1],h2M2->data[2*(write-1)],h2M2->data[2*(write-1)+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-2)],h2P2->data[2*(write-2)+1],h2M2->data[2*(write-2)],h2M2->data[2*(write-2)+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-3)],h2P2->data[2*(write-3)+1],h2M2->data[2*(write-3)],h2M2->data[2*(write-3)+1]);
@@ -2005,7 +2005,7 @@ static int XLALSpinInspiralAdaptiveEngine(
 
     if (j>2) {
       if ( (fabs(Phi[j-1]-alphaold-Phi[j-2]+alphaoold)>LAL_PI/3.) && (fabs(Phi[j-1]-alphaold-Phi[j-2]+alphaoold)<5./3.*LAL_PI) ) {
-	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi-alpha: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-alpha: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-alpha: %12.6e\n",j,LNhy[j],LNhx[j],Phi[j]-alpha,j-1,LNhy[j-1],LNhx[j-1],Phi[j-1]-alphaold,j-2,LNhy[j-2],LNhx[j-2],Phi[j-2]-alphaoold);
+	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi-alpha: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-alpha: %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi-alpha: %12.6e\n",j,LNhy[j],LNhx[j],(Phi[j]-alpha)/LAL_PI,j-1,LNhy[j-1],LNhx[j-1],(Phi[j-1]-alphaold)/LAL_PI,j-2,LNhy[j-2],LNhx[j-2],(Phi[j-2]-alphaoold)/LAL_PI);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
 	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);
