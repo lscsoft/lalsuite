@@ -104,3 +104,4 @@ CLEANFILES = \
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common
 
+LDADD = $(top_builddir)/src/lalapps/liblalapps.la

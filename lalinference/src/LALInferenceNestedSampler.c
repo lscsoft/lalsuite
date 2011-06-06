@@ -996,8 +996,9 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	fprintf(stdout,"Sprinkling %i live points, may take some time\n",Nlive);
 	for(i=0;i<Nlive;i++)
 	{
+		if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 		runState->livePoints[i]=XLALCalloc(1,sizeof(LALInferenceVariables));
-                
+		
 		/* Copy the param structure */
 		LALInferenceCopyVariables(runState->currentParams,runState->livePoints[i]);
 		

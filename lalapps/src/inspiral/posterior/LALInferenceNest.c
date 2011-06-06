@@ -30,6 +30,7 @@
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/TimeSeries.h>
+#include <lalapps.h>
 #include <lal/LALInferenceNestedSampler.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceReadData.h>
@@ -231,8 +232,10 @@ Nested sampling arguments:\n\
 	if(ppt) {
 		verbose=1;
 		LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose , LALINFERENCE_INT4_t,
-					LALINFERENCE_PARAM_FIXED);
+					LALINFERENCE_PARAM_FIXED);		
 	}
+	if(verbose) set_debug_level("ERROR|INFO");
+	else set_debug_level("NDEBUG");
 		
 	printf("set number of live points.\n");
 	/* Number of live points */
@@ -324,6 +327,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 tmpMin,tmpMax,tmpVal;
 	
 	memset(currentParams,0,sizeof(LALInferenceVariables));
+	memset(&status,0,sizeof(LALStatus));
 	
 	char help[]="\
 Parameter arguments:\n\
@@ -459,7 +463,7 @@ Parameter arguments:\n\
 	
 	/* Additional parameters for spinning waveforms */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
-	if(!strcmp("LALSTPN",ppt->value)){
+	if(!strcmp("PhenSpin",ppt->value)){
 		tmpVal=a_spin1_min+(a_spin1_max-a_spin1_min)/2.0;
 		LALInferenceAddVariable(currentParams, "a_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 		LALInferenceAddMinMaxPrior(priorArgs, "a_spin1",     &a_spin1_min, &a_spin1_max,   LALINFERENCE_REAL8_t); 

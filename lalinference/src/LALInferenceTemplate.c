@@ -431,7 +431,7 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
  THIS HAS NOT BEEN TESTED! */
 {
 	static LALStatus status;
-	
+	memset(&status,0,sizeof(LALStatus));
 	InspiralTemplate template;
 	
 	memset(&template,0,sizeof(InspiralTemplate));
@@ -493,7 +493,7 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	template.eta = eta;
 	template.massChoice = totalMassAndEta;
 	template.fLower = IFOdata->fLow;	
-	template.tSampling = IFOdata->timeData->deltaT;
+	template.tSampling = 1./IFOdata->timeData->deltaT;
 	template.fCutoff = 0.5/IFOdata->timeData->deltaT-1.0;
 	template.nStartPad = 0;
 	template.nEndPad =0;
@@ -513,13 +513,13 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	
 	template.next = NULL;
 	template.fine = NULL;
-	
-	LALInspiralParameterCalc(&status,&template);
+	INT4 errnum;
+	XLAL_TRY(LALInspiralParameterCalc(&status,&template),errnum);
 	
 	REAL4Vector *hPlus = XLALCreateREAL4Vector(IFOdata->timeModelhPlus->data->length);
 	REAL4Vector *hCross = XLALCreateREAL4Vector(IFOdata->timeModelhCross->data->length);
 	
-	LALPSpinInspiralRDTemplates(&status,hPlus,hCross,&template);
+	XLAL_TRY(LALPSpinInspiralRDTemplates(&status,hPlus,hCross,&template),errnum);
 	
 	for(idx=0;idx<hPlus->length;idx++) IFOdata->timeModelhPlus->data->data[idx]= (REAL8)hPlus->data[idx];
 	for(idx=0;idx<hCross->length;idx++) IFOdata->timeModelhCross->data->data[idx]= (REAL8)hCross->data[idx];
