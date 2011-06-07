@@ -499,7 +499,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
       diffRe       = dataReal - templateReal;         /* Difference in real parts...                     */
       diffIm       = dataImag - templateImag;         /* ...and imaginary parts, and...                  */
       diffSquared  = diffRe*diffRe + diffIm*diffIm ;  /* ...squared difference of the 2 complex figures. */
-      singleFreqBinTerm = ((nu+2.0)/2.0) * log((FourDeltaToverN * diffSquared) / (nu * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]));
+      singleFreqBinTerm = ((nu+2.0)/2.0) * log(1.0 + (FourDeltaToverN * diffSquared) / (nu * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]));
       chisquared  += singleFreqBinTerm;   /* (This is a sum-of-squares, or chi^2, term in the Gaussian case, not so much in the Student-t case...)  */
       dataPtr->loglikelihood -= singleFreqBinTerm;
     }
