@@ -2866,8 +2866,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h2P1->data[2 * i + 1];
       x2 = h2M1->data[2 * i];
       x3 = h2M1->data[2 * i + 1];
-      //sigp->data[i] +=   x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] += - x0 * MultSphHarmP.im - x1 * MultSphHarmP.re - x2 * MultSphHarmM.im - x3 * MultSphHarmM.re;
+      sigp->data[i] +=   x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] += - x0 * MultSphHarmP.im - x1 * MultSphHarmP.re - x2 * MultSphHarmM.im - x3 * MultSphHarmM.re;
     }
   }
   
@@ -2879,8 +2879,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     for (i = 0; i < length; i++) {
       x0 = h20->data[2 * i];
       x1 = h20->data[2 * i + 1];
-      //sigp->data[i] += x1 * MultSphHarmP.re - x1 * MultSphHarmP.im;
-      //sigc->data[i] -= x1 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+      sigp->data[i] += x1 * MultSphHarmP.re - x1 * MultSphHarmP.im;
+      sigc->data[i] -= x1 * MultSphHarmP.im + x1 * MultSphHarmP.re;
     }
   }
   
@@ -2896,8 +2896,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h3P3->data[2 * i + 1];
       x2 = h3M3->data[2 * i];
       x3 = h3M3->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
   
@@ -2913,8 +2913,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h3P2->data[2 * i + 1];
       x2 = h3M2->data[2 * i];
       x3 = h3M2->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
   
@@ -2930,8 +2930,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h3P1->data[2 * i + 1];
       x2 = h3M1->data[2 * i];
       x3 = h3M1->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
   
@@ -2943,8 +2943,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     for (i = 0; i < length; i++) {
       x0 = h30->data[2 * i];
       x1 = h30->data[2 * i + 1];    
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
     }
   }
 
@@ -2960,8 +2960,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h4P4->data[2 * i + 1];
       x2 = h4P4->data[2 * i];
       x3 = h4M4->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
 
@@ -2977,8 +2977,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h4P3->data[2 * i + 1];
       x2 = h4M3->data[2 * i];
       x3 = h4M3->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
   
@@ -2994,8 +2994,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h4P2->data[2 * i + 1];
       x2 = h4M2->data[2 * i];
       x3 = h4M2->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
   
@@ -3011,8 +3011,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       x1 = h4P1->data[2 * i + 1];
       x2 = h4M1->data[2 * i];
       x3 = h4M1->data[2 * i + 1];
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
     }
   }
   
@@ -3024,8 +3024,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     for (i = 0; i < length; i++) {
       x0 = h40->data[2 * i];
       x1 = h40->data[2 * i + 1];    
-      //sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im;
-      //sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
     }
   }
   
