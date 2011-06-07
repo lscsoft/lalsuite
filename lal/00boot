@@ -146,12 +146,6 @@ if test "$only_build_sources" = "false"; then
 echo "00boot: running autoreconf"
 LIBTOOLIZE=true $AUTORECONF || fail "autoreconf"
 
-# if there is a lalapps subdirectory run 00boot within this directory too
-if test -d lalapps ; then
-  echo "00boot: running 00boot within lalapps subdir"
-  ( cd lalapps && ./00boot )  || fail "lalapps 00boot"
-fi
-
 # report success
 echo "00boot: success"
 echo "
