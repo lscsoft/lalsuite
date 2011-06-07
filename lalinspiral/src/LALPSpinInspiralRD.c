@@ -1587,11 +1587,9 @@ static void LALSpinInspiralEngine(LALStatus * status,
       alpha = alphaold;
 
     if (count>1) {
-      if ( (fabs(Phi-alpha-Phiold+alphaold)>LAL_PI/3.) && (fabs(Phi-alpha-Phiold+alphaold)<5/3.*LAL_PI) ) {
+      if ( !((fabs(Phi+alpha-Phiold-alphaold)<LAL_PI/4.) || ((fabs(Phi+alpha-Phiold-alphaold)<1.25*LAL_PI) && (fabs(Phi+alpha-Phiold-alphaold)>LAL_PI)) ) )
+      {
 	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e alphaold %12.6e\n",write,LNhy,LNhx,Phi/LAL_PI,alpha/LAL_PI,alphaold/LAL_PI);
-	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-1)],h2P2->data[2*(write-1)+1],h2M2->data[2*(write-1)],h2M2->data[2*(write-1)+1]);
-	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-2)],h2P2->data[2*(write-2)+1],h2M2->data[2*(write-2)],h2M2->data[2*(write-2)+1]);
-	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(write-3)],h2P2->data[2*(write-3)+1],h2M2->data[2*(write-3)],h2M2->data[2*(write-3)+1]);
 	fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
 	fprintf(stdout,"            S1: (%9.6f,%9.6f,%9.6f)\n",yinit[5]/mparams->m1msq,yinit[6]/mparams->m1msq,yinit[7]/mparams->m1msq);
 	fprintf(stdout,"            S2: (%9.6f,%9.6f,%9.6f)\n",yinit[8]/mparams->m2msq,yinit[9]/mparams->m2msq,yinit[10]/mparams->m2msq);
@@ -2003,16 +2001,17 @@ static int XLALSpinInspiralAdaptiveEngine(
 
     errcode  = XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
 
-    if (j>5) {
-      if ( ((fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)>LAL_PI/4.) && (fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)<7./4.*LAL_PI)) || (fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)>2.3*LAL_PI) ) {
+    if (j>2) {
+      if ( !((fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)<LAL_PI/4.) || ((fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)<1.25*LAL_PI) && (fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)>LAL_PI) ) ) )
+	{
 	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi+alpha: %12.6e alpha %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+alpha: %12.6e  alpha %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+alpha: %12.6e  alpha %12.6e\n",j,LNhy[j],LNhx[j],(Phi[j]+alpha)/LAL_PI,alpha/LAL_PI,j-1,LNhy[j-1],LNhx[j-1],(Phi[j-1]+alphaold)/LAL_PI,alphaold/LAL_PI,j-2,LNhy[j-2],LNhx[j-2],(Phi[j-2]+alphaoold)/LAL_PI,alphaoold/LAL_PI);
 	/*	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
 		fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
-		fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);
-		fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);*/
+		fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);*/
+		fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
 	fprintf(stdout,"            S1: (%9.6f,%9.6f,%9.6f)\n",yinit[5]/mparams->m1msq,yinit[6]/mparams->m1msq,yinit[7]/mparams->m1msq);
 	fprintf(stdout,"            S2: (%9.6f,%9.6f,%9.6f)\n",yinit[8]/mparams->m2msq,yinit[9]/mparams->m2msq,yinit[10]/mparams->m2msq);
-      }
+	}
     }
 
     errcode += XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,j,amp33,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
@@ -2515,6 +2514,30 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 
     if ((tAs < t0) || (om1 < 0.)) {
       fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: Could not attach phen part for m:(%12.6e, %12.6e)\n",params->mass1,params->mass2);
+      XLALDestroyREAL8Vector(h2P2);
+      XLALDestroyREAL8Vector(h2M2);
+      XLALDestroyREAL8Vector(h2P1);
+      XLALDestroyREAL8Vector(h2M1);
+      XLALDestroyREAL8Vector(h20);
+      XLALDestroyREAL8Vector(h3P3);
+      XLALDestroyREAL8Vector(h3M3);
+      XLALDestroyREAL8Vector(h3P2);
+      XLALDestroyREAL8Vector(h3M2);
+      XLALDestroyREAL8Vector(h3P1);
+      XLALDestroyREAL8Vector(h3M1);
+      XLALDestroyREAL8Vector(h30);
+      XLALDestroyREAL8Vector(h4P4);
+      XLALDestroyREAL8Vector(h4M4);
+      XLALDestroyREAL8Vector(h4P3);
+      XLALDestroyREAL8Vector(h4M3);
+      XLALDestroyREAL8Vector(h4P2);
+      XLALDestroyREAL8Vector(h4M2);
+      XLALDestroyREAL8Vector(h4P1);
+      XLALDestroyREAL8Vector(h4M1);
+      XLALDestroyREAL8Vector(h40);
+      XLALDestroyREAL8Vector(hap);
+      XLALDestroyREAL8Vector(fap);
+      XLALDestroyREAL8Vector(phap);
       DETATCHSTATUSPTR(status);
       RETURN(status);
       //XLAL_ERROR(func, XLAL_EFAILED);
@@ -2559,6 +2582,30 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 	  fprintf(stderr, "   m  (%11.4e  %11.4e)  f0 %11.4e\n",params->mass1, params->mass2, params->fLower);
 	  fprintf(stderr, "   S1 (%8.4f  %8.4f  %8.4f)\n", initS1[0],initS1[1], initS1[2]);
 	  fprintf(stderr, "   S2 (%8.4f  %8.4f  %8.4f)\n", initS2[0],initS2[1], initS2[2]);
+	  XLALDestroyREAL8Vector(h2P2);
+	  XLALDestroyREAL8Vector(h2M2);
+	  XLALDestroyREAL8Vector(h2P1);
+	  XLALDestroyREAL8Vector(h2M1);
+	  XLALDestroyREAL8Vector(h20);
+	  XLALDestroyREAL8Vector(h3P3);
+	  XLALDestroyREAL8Vector(h3M3);
+	  XLALDestroyREAL8Vector(h3P2);
+	  XLALDestroyREAL8Vector(h3M2);
+	  XLALDestroyREAL8Vector(h3P1);
+	  XLALDestroyREAL8Vector(h3M1);
+	  XLALDestroyREAL8Vector(h30);
+	  XLALDestroyREAL8Vector(h4P4);
+	  XLALDestroyREAL8Vector(h4M4);
+	  XLALDestroyREAL8Vector(h4P3);
+	  XLALDestroyREAL8Vector(h4M3);
+	  XLALDestroyREAL8Vector(h4P2);
+	  XLALDestroyREAL8Vector(h4M2);
+	  XLALDestroyREAL8Vector(h4P1);
+	  XLALDestroyREAL8Vector(h4M1);
+	  XLALDestroyREAL8Vector(h40);
+	  XLALDestroyREAL8Vector(hap);
+	  XLALDestroyREAL8Vector(fap);
+	  XLALDestroyREAL8Vector(phap);
 	  DETATCHSTATUSPTR(status);
 	  RETURN(status);
 	  //XLAL_ERROR(func,XLAL_ENOMEM);
