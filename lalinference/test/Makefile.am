@@ -1,5 +1,5 @@
 AM_CFLAGS = $(LALSUPPORT_CFLAGS)
-LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalinspiral.la
+LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalinference.la
 
 if LALSUPPORT
 if LALINSPIRAL
