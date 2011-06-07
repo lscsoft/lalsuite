@@ -1587,9 +1587,8 @@ static void LALSpinInspiralEngine(LALStatus * status,
       alpha = alphaold;
 
     if (count>1) {
-      if ( !((fabs(Phi+alpha-Phiold-alphaold)<LAL_PI/4.) || ((fabs(Phi+alpha-Phiold-alphaold)<1.25*LAL_PI) && (fabs(Phi+alpha-Phiold-alphaold)>LAL_PI)) ) )
-      {
-	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi: %12.6e  alpha: %12.6e alphaold %12.6e\n",write,LNhy,LNhx,Phi/LAL_PI,alpha/LAL_PI,alphaold/LAL_PI);
+      if ( !((fabs(Phi+alpha-Phiold-alphaold)<LAL_PI/4.) || ((fabs(Phi+alpha-Phiold-alphaold)<1.25*LAL_PI) && (fabs(Phi+alpha-Phiold-alphaold)>LAL_PI)) ) ) {
+	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi+alpha: %12.6e\n Step %d      Psiold+alphaold %12.6e\n",write,LNhy,LNhx,(Phi+alpha)/LAL_PI,write-1,(Phiold+alphaold)/LAL_PI);
 	fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
 	fprintf(stdout,"            S1: (%9.6f,%9.6f,%9.6f)\n",yinit[5]/mparams->m1msq,yinit[6]/mparams->m1msq,yinit[7]/mparams->m1msq);
 	fprintf(stdout,"            S2: (%9.6f,%9.6f,%9.6f)\n",yinit[8]/mparams->m2msq,yinit[9]/mparams->m2msq,yinit[10]/mparams->m2msq);
@@ -2002,16 +2001,12 @@ static int XLALSpinInspiralAdaptiveEngine(
     errcode  = XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
 
     if (j>2) {
-      if ( !((fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)<LAL_PI/4.) || ((fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)<1.25*LAL_PI) && (fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)>LAL_PI) ) ) )
-	{
+      if ( !((fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)<LAL_PI/4.) || ((fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)<1.25*LAL_PI) && (fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)>LAL_PI)) ) ) {
 	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi+alpha: %12.6e alpha %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+alpha: %12.6e  alpha %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+alpha: %12.6e  alpha %12.6e\n",j,LNhy[j],LNhx[j],(Phi[j]+alpha)/LAL_PI,alpha/LAL_PI,j-1,LNhy[j-1],LNhx[j-1],(Phi[j-1]+alphaold)/LAL_PI,alphaold/LAL_PI,j-2,LNhy[j-2],LNhx[j-2],(Phi[j-2]+alphaoold)/LAL_PI,alphaoold/LAL_PI);
-	/*	fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*j],h2P2->data[2*j+1],h2M2->data[2*j],h2M2->data[2*j+1]);
-		fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-1)],h2P2->data[2*(j-1)+1],h2M2->data[2*(j-1)],h2M2->data[2*(j-1)+1]);
-		fprintf(stdout,"h22: %12.5e  %12.5e  h2-2: %12.5e  %12.5e\n",h2P2->data[2*(j-2)],h2P2->data[2*(j-2)+1],h2M2->data[2*(j-2)],h2M2->data[2*(j-2)+1]);*/
-		fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
+	fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
 	fprintf(stdout,"            S1: (%9.6f,%9.6f,%9.6f)\n",yinit[5]/mparams->m1msq,yinit[6]/mparams->m1msq,yinit[7]/mparams->m1msq);
 	fprintf(stdout,"            S2: (%9.6f,%9.6f,%9.6f)\n",yinit[8]/mparams->m2msq,yinit[9]/mparams->m2msq,yinit[10]/mparams->m2msq);
-	}
+      }
     }
 
     errcode += XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,j,amp33,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
@@ -2174,7 +2169,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   if ( initomega > omegaMatch ) {
     /*if ((params->spin1[0]==params->spin1[1])&&(params->spin1[1]==params->spin2[0])&&(params->spin2[0]==params->spin2[1])&&(params->spin2[1]==0.)) {
       //Beware, this correspond to a shift of the initial phase!
-      initomega = omMlow;
+      initomega = 0.95*omegaMatch;
       fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Initial frequency reset from %12.6e to %12.6e Hz, m:(%12.4e,%12.4e)\n",params->fLower,initomega/unitHz,params->mass1,params->mass2);
       }*/
     /*else {*/
@@ -2294,6 +2289,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   mparams.length = length;
   
   /* Allocate memory for temporary arrays */
+
   h2P2 = XLALCreateREAL8Vector(length * 2);
   h2M2 = XLALCreateREAL8Vector(length * 2);
   h2P1 = XLALCreateREAL8Vector(length * 2);
