@@ -162,6 +162,11 @@ XLALProcessParamsTableFromLIGOLw (
     const char *filename
 );
 
+TimeSlide *
+XLALTimeSlideTableFromLIGOLw (
+    const char *filename
+);
+
 /* these functions need to be lalified, but they are in support... */
 
 SearchSummaryTable *
