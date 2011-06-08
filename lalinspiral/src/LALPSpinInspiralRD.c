@@ -2513,6 +2513,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       XLALDestroyREAL8Vector(hap);
       XLALDestroyREAL8Vector(fap);
       XLALDestroyREAL8Vector(phap);
+      XLALDestroyREAL8Vector(sigp);
+      XLALDestroyREAL8Vector(sigc);
       DETATCHSTATUSPTR(status);
       RETURN(status);
       //XLAL_ERROR(func, XLAL_EFAILED);
@@ -2606,6 +2608,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 	  XLALDestroyREAL8Vector(hap);
 	  XLALDestroyREAL8Vector(fap);
 	  XLALDestroyREAL8Vector(phap);
+	  XLALDestroyREAL8Vector(sigp);
+	  XLALDestroyREAL8Vector(sigc);
 	  XLALDestroyCOMPLEX8Vector(modefreqs);
 	  DETATCHSTATUSPTR(status);
 	  RETURN(status);
@@ -3031,7 +3035,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
     }
   }
-  
+
   params->fFinal = params->tSampling / 2.;
 
   /*------------------------------------------------------
