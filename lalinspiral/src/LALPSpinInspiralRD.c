@@ -1400,7 +1400,6 @@ static void LALSpinInspiralEngine(LALStatus * status,
   REAL8 Phiwrite     = 0.;
   REAL8 alphawrite   = 0.;
   REAL8 omegawrite   = 0.;
-  REAL8 intpart      = 0.;
 
   REAL8 amp22,amp33,amp44;
   REAL8 unitHz;
@@ -1589,7 +1588,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
 
     if (count>1) {
       if ((alpha*alphaold)<0.) {
-	if ( (fabs(modf((Phi+alpha-Phiold-alphaold)/LAL_PI,&intpart))>0.2) && (fabs(modf((Phi+alpha-Phiold-alphaold)/LAL_PI,&intpart))<0.8) ) {
+	if (fabs(cos(2.*(Phi+alpha))-cos(2.*(Phiold+alphaold)))>0.2) {
 	  fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Possible problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi+alpha: %12.6e\n Step %d      Psiold+alphaold %12.6e\n",write,LNhy,LNhx,(Phi+alpha)/LAL_PI,write-1,(Phiold+alphaold)/LAL_PI);
 	  fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
 	  fprintf(stdout,"            S1: (%9.6f,%9.6f,%9.6f)\n",yinit[5]/mparams->m1msq,yinit[6]/mparams->m1msq,yinit[7]/mparams->m1msq);
@@ -1737,8 +1736,6 @@ static int XLALSpinInspiralAdaptiveEngine(
   REAL8 S1S2;
   REAL8 S2S2;
   REAL8 omegaMatch;
-
-  REAL8 intpart=0.;
 
   INT4 errcode;
   
@@ -2007,7 +2004,7 @@ static int XLALSpinInspiralAdaptiveEngine(
 
     if (j>2) {
       if ((alphaold*alphaoold)<0.) {
-	if ( (fabs(modf((Phi[j-1]+alphaold-Phi[j-2]-alphaoold)/LAL_PI,&intpart))>0.2) && (fabs(modf((Phi[j-1]+alphaold-Phi[j-2]-alphaoold)/LAL_PI,&intpart))<0.8) ) {
+	if ( fabs(cos(Phi[j-1]+alphaold)-cos(Phi[j-2]+alphaoold))>0.2) {
 	  fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Possible problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi+alpha: %12.6e alpha %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+alpha: %12.6e  alpha %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+alpha: %12.6e  alpha %12.6e\n",j,LNhy[j],LNhx[j],(Phi[j]+alpha)/LAL_PI,alpha/LAL_PI,j-1,LNhy[j-1],LNhx[j-1],(Phi[j-1]+alphaold)/LAL_PI,alphaold/LAL_PI,j-2,LNhy[j-2],LNhx[j-2],(Phi[j-2]+alphaoold)/LAL_PI,alphaoold/LAL_PI);
 	  fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
 	  fprintf(stdout,"            S1: (%9.6f,%9.6f,%9.6f)\n",yinit[5]/mparams->m1msq,yinit[6]/mparams->m1msq,yinit[7]/mparams->m1msq);
