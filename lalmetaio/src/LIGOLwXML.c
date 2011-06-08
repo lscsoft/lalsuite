@@ -1501,14 +1501,11 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	const SimBurst *sim_burst
 )
 {
-	static const char func[] = "XLALWriteLIGOLwXMLSimBurstTable";
 	const char *row_head = "\n\t\t\t";
-
-
 
 	if(xml->table != no_table) {
 		XLALPrintError("a table is still open");
-		XLAL_ERROR(func, XLAL_EFAILED);
+		XLAL_ERROR(__func__, XLAL_EFAILED);
 	}
 
 	/* table header */
@@ -1533,15 +1530,16 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	fputs("\t\t<Column Name=\"sim_burst:hrss\" Type=\"real_8\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sim_burst:egw_over_rsquared\" Type=\"real_8\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sim_burst:waveform_number\" Type=\"int_8u\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:time_slide_id\" Type=\"ilwd:char\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sim_burst:simulation_id\" Type=\"ilwd:char\"/>\n", xml->fp);
 	fputs("\t\t<Stream Name=\"sim_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 
 	/* rows */
 
 	for(; sim_burst; sim_burst = sim_burst->next) {
-		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",%.16g,%.16g,%.16g,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%lu,\"sim_burst:simulation_id:%ld\"",
+		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",%.16g,%.16g,%.16g,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%lu,\"time_slide:time_slide_id:%ld\",\"sim_burst:simulation_id:%ld\"",
 			row_head,
 			sim_burst->process_id,
 			sim_burst->waveform,
@@ -1561,16 +1559,17 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 			sim_burst->hrss,
 			sim_burst->egw_over_rsquared,
 			sim_burst->waveform_number,
+			sim_burst->time_slide_id,
 			sim_burst->simulation_id
 		) < 0)
-			XLAL_ERROR(func, XLAL_EFUNC);
+			XLAL_ERROR(__func__, XLAL_EFUNC);
 		row_head = ",\n\t\t\t";
 	}
 
 	/* table footer */
 
 	if(fputs("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 
 	/* done */
 
