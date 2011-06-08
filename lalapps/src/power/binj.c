@@ -1042,7 +1042,7 @@ int main(int argc, char *argv[])
 	/* output */
 
 	XLALGPSTimeNow(&process_table_head->end_time);
-	search_summary_head->nevents = XLALSimBurstAssignIDs(sim_burst_table_head, process_table_head->process_id, 0);
+	search_summary_head->nevents = XLALSimBurstAssignIDs(sim_burst_table_head, process_table_head->process_id, 0, 0);
 	write_xml(options.output, process_table_head, process_params_table_head, search_summary_head, sim_burst_table_head);
 
 	/* done */
