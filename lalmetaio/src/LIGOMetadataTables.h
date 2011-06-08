@@ -743,6 +743,8 @@ a different time slide.
 
 
 /* <lalVerbatim> */
+/** The \c SimBurst structure describes a burst injection.
+*/
 typedef struct
 tagSimBurst
 {
@@ -1108,11 +1110,28 @@ FilterTable;
 
 Document table.
 
+<<<<<<< HEAD:lalmetaio/src/LIGOMetadataTables.h
 \subsubsection*{Type \texttt{MetadataTable}}
 
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
+=======
+/** This structure corresponds to one row of a time_slide table.
+*/
+typedef struct
+tagTimeSlide
+{
+  struct tagTimeSlide *next;
+  long           process_id;
+  long           time_slide_id;
+  CHAR           instrument[LIGOMETA_STRING_MAX];
+  REAL8          offset;
+}
+TimeSlide;
+
+
+>>>>>>> 7992a08... Fix 3824:lalmetaio/src/LIGOMetadataTables.h
 typedef union
 tagMetadataTable
 {

@@ -503,6 +503,110 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 
 
 /**
+ * Read the time_slide table from a LIGO Light Weight XML file into a
+ * linked list of TimeSlide structures.
+ */
+
+TimeSlide *
+XLALTimeSlideTableFromLIGOLw (
+    const char *filename
+)
+{
+	static const char table_name[] = "time_slide";
+	int miostatus;
+	TimeSlide *head = NULL;
+	TimeSlide **next = &head;
+	struct MetaioParseEnvironment env;
+	struct {
+		int process_id;
+		int time_slide_id;
+		int instrument;
+		int offset;
+	} column_pos;
+
+	/* open the file and find table */
+
+	if(MetaioOpenFile(&env, filename)) {
+		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+	}
+	if(MetaioOpenTableOnly(&env, table_name)) {
+		MetaioAbort(&env);
+		XLALPrintError("%s(): cannot find %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+	}
+
+	/* find columns */
+
+	XLALClearErrno();
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.time_slide_id = XLALLIGOLwFindColumn(&env, "time_slide_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.instrument = XLALLIGOLwFindColumn(&env, "instrument", METAIO_TYPE_LSTRING, 1);
+	column_pos.offset = XLALLIGOLwFindColumn(&env, "offset", METAIO_TYPE_REAL_8, 1);
+
+	/* check for failure (== a required column is missing) */
+
+	if(XLALGetBaseErrno()) {
+		MetaioAbort(&env);
+		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
+		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+	}
+
+	/* loop over the rows in the file */
+
+	while((miostatus = MetaioGetRow(&env)) > 0) {
+		/* create a new row */
+
+		TimeSlide *row = XLALCreateTimeSlide();
+
+		if(!row) {
+			XLALDestroyTimeSlideTable(head);
+			MetaioAbort(&env);
+			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		}
+
+		/* append to linked list */
+
+		*next = row;
+		next = &(*next)->next;
+
+		/* populate the columns */
+
+		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
+			XLALDestroyTimeSlideTable(head);
+			MetaioAbort(&env);
+			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		}
+		if((row->time_slide_id = XLALLIGOLwParseIlwdChar(&env, column_pos.time_slide_id, "time_slide", "time_slide_id")) < 0) {
+			XLALDestroyTimeSlideTable(head);
+			MetaioAbort(&env);
+			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		}
+		strncpy(row->instrument, env.ligo_lw.table.elt[column_pos.instrument].data.lstring.data, sizeof(row->instrument) - 1);
+		row->offset = env.ligo_lw.table.elt[column_pos.offset].data.real_8;
+	}
+	if(miostatus < 0) {
+		XLALDestroyTimeSlideTable(head);
+		MetaioAbort(&env);
+		XLALPrintError("%s(): I/O error parsing %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+	}
+
+	/* close file */
+
+	if(MetaioClose(&env)) {
+		XLALDestroyTimeSlideTable(head);
+		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+	}
+
+	/* done */
+
+	return head;
+}
+
+
+/**
  * Read the search_summary table from a LIGO Light Weight XML file into a
  * linked list of SearchSummaryTable structures.
  */

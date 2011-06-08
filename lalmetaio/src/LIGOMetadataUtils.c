@@ -1158,6 +1158,55 @@ void XLALDestroyProcessParamsTable(ProcessParamsTable *head)
 
 
 /**
+ * Create a TimeSlide structure.
+ */
+
+
+TimeSlide *XLALCreateTimeSlide(void)
+{
+  TimeSlide *new = XLALMalloc(sizeof(*new));
+
+  if(!new)
+    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+
+  new->next = NULL;
+  new->process_id = -1;
+  new->time_slide_id = -1;
+  memset(new->instrument, 0, sizeof(new->instrument));
+  new->offset = 0;
+
+  return new;
+}
+
+
+/**
+ * Destroy a TimeSlide structure.
+ */
+
+
+void XLALDestroyTimeSlide(TimeSlide *row)
+{
+  XLALFree(row);
+}
+
+
+/**
+ * Destroy a TimeSlide linked list.
+ */
+
+
+void XLALDestroyTimeSlideTable(TimeSlide *head)
+{
+  while(head)
+  {
+    TimeSlide *next = head->next;
+    XLALDestroyTimeSlide(head);
+    head = next;
+  }
+}
+
+
+/**
  * Create a SearchSummaryTable structure.
  */
 

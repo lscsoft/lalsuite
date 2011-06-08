@@ -1602,6 +1602,61 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	return 0;
 }
 
+
+/**
+ * Write a sim_burst table to an XML file.
+ */
+
+
+int XLALWriteLIGOLwXMLTimeSlideTable(
+	LIGOLwXMLStream *xml,
+	const TimeSlide *time_slide
+)
+{
+	const char *row_head = "\n\t\t\t";
+
+	if(xml->table != no_table) {
+		XLALPrintError("a table is still open");
+		XLAL_ERROR(__func__, XLAL_EFAILED);
+	}
+
+	/* table header */
+
+	XLALClearErrno();
+	fputs("\t<Table Name=\"time_slide:table\">\n", xml->fp);
+	fputs("\t\t<Column Name=\"time_slide:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"time_slide:time_slide_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"time_slide:instrument\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"time_slide:offset\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Stream Name=\"time_slide:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
+	if(XLALGetBaseErrno())
+		XLAL_ERROR(__func__, XLAL_EFUNC);
+
+	/* rows */
+
+	for(; time_slide; time_slide = time_slide->next) {
+		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"time_slide:time_slide_id:%ld\",\"%s\",%.16g",
+			row_head,
+			time_slide->process_id,
+			time_slide->time_slide_id,
+			time_slide->instrument,
+			time_slide->offset
+		) < 0)
+			XLAL_ERROR(__func__, XLAL_EFUNC);
+		row_head = ",\n\t\t\t";
+	}
+
+	/* table footer */
+
+	if(fputs("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+		XLAL_ERROR(__func__, XLAL_EFUNC);
+
+	/* done */
+
+	return 0;
+}
+
+
 /**
  * Creates a XML filename accordingly to document T050017
  */
