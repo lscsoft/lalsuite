@@ -160,7 +160,7 @@ INT4 LALInferenceGetVariableDimension(LALInferenceVariables *vars);
 INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars);
 
  
-LALInferenceVariableType LALInferenceGetVariableTypeByIndex(LALInferenceVariables *vars, int index);
+LALInferenceVariableType LALInferenceGetVariableTypeByIndex(LALInferenceVariables *vars, int idx);
 
 
 /** Get the type of the variable, returns LALInferenceVariableType (see above) */
@@ -169,8 +169,8 @@ LALInferenceVariableType LALInferenceGetVariableType(LALInferenceVariables *vars
 /** Get the LALInferenceParamVaryType of the variable, see types above */
 LALInferenceParamVaryType LALInferenceGetVariableVaryType(LALInferenceVariables *vars, const char *name);
 
-/** Get the name of the index-th variable */
-char *LALInferenceGetVariableName(LALInferenceVariables *vars, int index);
+/** Get the name of the idx-th variable */
+char *LALInferenceGetVariableName(LALInferenceVariables *vars, int idx);
 
 /** Set a variable with a value, pass a void * to the value as argument */
 void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, void * value);
@@ -330,8 +330,8 @@ void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata);
 
 /** Return the list node for "name" - do not rely on this */
 LALInferenceVariableItem *LALInferenceGetItem(LALInferenceVariables *vars,const char *name);
-/** Return the list node for the index-th item - do not rely on this */
-LALInferenceVariableItem *LALInferenceGetItemNr(LALInferenceVariables *vars, int index);
+/** Return the list node for the idx-th item - do not rely on this */
+LALInferenceVariableItem *LALInferenceGetItemNr(LALInferenceVariables *vars, int idx);
 
 /** Output the sample to file *fp, in ASCII format */
 void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);

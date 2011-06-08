@@ -117,6 +117,10 @@ ProcessParamsTable *XLALCreateProcessParamsTableRow(const ProcessTable *);
 void XLALDestroyProcessParamsTableRow(ProcessParamsTable *);
 void XLALDestroyProcessParamsTable(ProcessParamsTable *);
 
+TimeSlide *XLALCreateTimeSlide(void);
+void XLALDestroyTimeSlide(TimeSlide *);
+void XLALDestroyTimeSlideTable(TimeSlide *);
+
 SearchSummaryTable *XLALCreateSearchSummaryTableRow(const ProcessTable *);
 void XLALDestroySearchSummaryTableRow(SearchSummaryTable *);
 void XLALDestroySearchSummaryTable(SearchSummaryTable *);

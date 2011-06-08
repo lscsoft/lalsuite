@@ -201,6 +201,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 		int hrss;
 		int egw_over_rsquared;
 		int waveform_number;
+		int time_slide_id;
 		int simulation_id;
 	} column_pos;
 
@@ -237,6 +238,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	column_pos.hrss = XLALLIGOLwFindColumn(&env, "hrss", METAIO_TYPE_REAL_8, 0);
 	column_pos.egw_over_rsquared = XLALLIGOLwFindColumn(&env, "egw_over_rsquared", METAIO_TYPE_REAL_8, 0);
 	column_pos.waveform_number = XLALLIGOLwFindColumn(&env, "waveform_number", METAIO_TYPE_INT_8U, 0);
+	column_pos.time_slide_id = XLALLIGOLwFindColumn(&env, "time_slide_id", METAIO_TYPE_ILWD_CHAR, 1);
 	column_pos.simulation_id = XLALLIGOLwFindColumn(&env, "simulation_id", METAIO_TYPE_ILWD_CHAR, 1);
 
 	/* check for failure (== a required column is missing) */
@@ -278,6 +280,12 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 		XLALGPSSet(&row->time_geocent_gps, env.ligo_lw.table.elt[column_pos.time_geocent_gps].data.int_4s, env.ligo_lw.table.elt[column_pos.time_geocent_gps_ns].data.int_4s);
 		if(column_pos.time_geocent_gmst >= 0)
 			row->time_geocent_gmst = env.ligo_lw.table.elt[column_pos.time_geocent_gmst].data.real_8;
+		if((row->time_slide_id = XLALLIGOLwParseIlwdChar(&env, column_pos.time_slide_id, "time_slide", "time_slide_id")) < 0) {
+			XLALDestroySimBurst(row);
+			XLALDestroySimBurstTable(head);
+			MetaioAbort(&env);
+			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		}
 		if((row->simulation_id = XLALLIGOLwParseIlwdChar(&env, column_pos.simulation_id, "sim_burst", "simulation_id")) < 0) {
 			XLALDestroySimBurst(row);
 			XLALDestroySimBurstTable(head);

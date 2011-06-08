@@ -147,6 +147,7 @@ long
 XLALSimBurstAssignIDs(
 	SimBurst *head,
 	long process_id,
+	long time_slide_id,
 	long event_id
 );
 

@@ -177,6 +177,11 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	const SimBurst *
 );
 
+int XLALWriteLIGOLwXMLTimeSlideTable(
+	LIGOLwXMLStream *,
+	const TimeSlide *
+);
+
 int XLALCreateLIGODataFileName(
         char* filename,
         size_t size,
