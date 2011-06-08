@@ -764,6 +764,7 @@ tagSimBurst
 	REAL8 hrss;
 	REAL8 egw_over_rsquared;
 	unsigned long waveform_number;
+	long time_slide_id;
 	long simulation_id;
 } SimBurst;
 /* </lalVerbatim> */
