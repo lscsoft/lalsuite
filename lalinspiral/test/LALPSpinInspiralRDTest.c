@@ -24,22 +24,21 @@
 /**
  * \file
  *
- * \brief Create a waveform based on HSpinTaylorRD model (LALSpinInspiralRD).
+ * \brief Create a waveform based on PhenSpinTaylorRD model (LALPSpinInspiralRD).
  * Outputs a file with three columns corresponding to time (in seconds),
  * \f$h_+\f$, and \f$h_\times\f$.
  *
  * \heading{Usage}
  *
- * <tt>LALSpinInspiralRDTest m1 m2 S1x S1y S1z S2x S2y S2z theta0 phi0 finit distance PNorder [outputfile]</tt>
+ * <tt>LALSpinInspiralRDTest m1 m2 S1x S1y S1z S2x S2y S2z inclination polarizaationi finit distance PNorder [outputfile]</tt>
  *
  * The masses are given in solar masses.
  * The spins are given as \c chi1 and \c chi2 times the unit vector;
- * the direction of the initial orbital angular momentum is assumed along the z axisg;
  * the final frequency is given in Hz, the distance in Mpc.
  * Legal values for \c PNorder include the strings
  * \c newtonian, \c oneHalfPN, \c onePN, \c onePointFivePN,
  * \c twoPN, \c twoPointFivePN, \c threePN, \c threePointFivePN.
- * If outputfile is not given it is <tt>wave1.dat</tt> in the current directory.
+ * Putputfile is <tt>wave1.dat</tt> in the current directory.
  *
  */
 
@@ -147,6 +146,11 @@ int main() {
     length  = thewaveform.h->data->length;
 
     dt      = thewaveform.phi->deltaT;
+
+    const REAL8 intpart=0.0;
+
+    printf("frac(dt) %12.5f\n",modf(1.+dt,&intpart));
+    printf("frac(dt) %12.5f\n",intpart);
 
     for(i = 0; i < length; i++) {
         a1  = thewaveform.h->data->data[2*i];

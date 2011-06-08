@@ -1400,6 +1400,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
   REAL8 Phiwrite     = 0.;
   REAL8 alphawrite   = 0.;
   REAL8 omegawrite   = 0.;
+  REAL8 intpart      = 0.;
 
   REAL8 amp22,amp33,amp44;
   REAL8 unitHz;
@@ -1587,7 +1588,7 @@ static void LALSpinInspiralEngine(LALStatus * status,
       alpha = alphaold;
 
     if (count>1) {
-      if ( !((fabs(Phi+alpha-Phiold-alphaold)<LAL_PI/4.) || ((fabs(Phi+alpha-Phiold-alphaold)<1.25*LAL_PI) && (fabs(Phi+alpha-Phiold-alphaold)>LAL_PI)) ) ) {
+      if ( (fabs(modf((Phi+alpha-Phiold-alphaold)/LAL_PI,&intpart))>0.2) && (fabs(modf((Phi+alpha-Phiold-alphaold)/LAL_PI,&intpart))<0.8) ) {
 	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi+alpha: %12.6e\n Step %d      Psiold+alphaold %12.6e\n",write,LNhy,LNhx,(Phi+alpha)/LAL_PI,write-1,(Phiold+alphaold)/LAL_PI);
 	fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
 	fprintf(stdout,"            S1: (%9.6f,%9.6f,%9.6f)\n",yinit[5]/mparams->m1msq,yinit[6]/mparams->m1msq,yinit[7]/mparams->m1msq);
@@ -1734,6 +1735,8 @@ static int XLALSpinInspiralAdaptiveEngine(
   REAL8 S1S2;
   REAL8 S2S2;
   REAL8 omegaMatch;
+
+  REAL8 intpart=0.;
 
   INT4 errcode;
   
@@ -2001,7 +2004,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     errcode  = XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
 
     if (j>2) {
-      if ( !((fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)<LAL_PI/4.) || ((fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)<1.25*LAL_PI) && (fabs(Phi[j-1]+alphaold-Phi[j-2]-alphaoold)>LAL_PI)) ) ) {
+      if ( (fabs(modf((Phi[j-1]+alphaold-Phi[j-2]-alphaoold)/LAL_PI,&intpart))>0.2) && (fabs(modf((Phi[j-1]+alphaold-Phi[j-2]-alphaoold)/LAL_PI,&intpart))<0.8) ) {
 	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi+alpha: %12.6e alpha %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+alpha: %12.6e  alpha %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+alpha: %12.6e  alpha %12.6e\n",j,LNhy[j],LNhx[j],(Phi[j]+alpha)/LAL_PI,alpha/LAL_PI,j-1,LNhy[j-1],LNhx[j-1],(Phi[j-1]+alphaold)/LAL_PI,alphaold/LAL_PI,j-2,LNhy[j-2],LNhx[j-2],(Phi[j-2]+alphaoold)/LAL_PI,alphaoold/LAL_PI);
 	fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
 	fprintf(stdout,"            S1: (%9.6f,%9.6f,%9.6f)\n",yinit[5]/mparams->m1msq,yinit[6]/mparams->m1msq,yinit[7]/mparams->m1msq);
@@ -2121,7 +2124,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   REAL8 finalMass,finalSpin;
   REAL8 energy=0.;
   REAL8 omegaMatch;
-  REAL8 frRD,omegaRD;
+  REAL8 frOmRD,omegaRD;
 
   //static const char *func = "XLALSpinInspiralEngine";
 
@@ -2400,34 +2403,10 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   memset(hap->data,  0, hap->length  * sizeof(REAL8));
   memset(fap->data,  0, fap->length  * sizeof(REAL8));
   memset(phap->data, 0, phap->length * sizeof(REAL8));
-  
-  /* For RD, check that the 220 QNM freq. is less than the Nyquist freq. */
-  /* Get QNM frequencies */
-  modefreqs = XLALCreateCOMPLEX8Vector(nmodes);
 
-  /* Call XLALFinalMassSpin() to get mass and spin of the final black hole */
-  errcode = XLALPSpinFinalMassSpin(&finalMass, &finalSpin, params, energy, initLNh);
-  if (errcode != XLAL_SUCCESS) {
-    XLALDestroyCOMPLEX8Vector(modefreqs);
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
-    //XLAL_ERROR(func,XLAL_EFAILED);
-  }
-  
-  errcode = XLALPSpinGenerateQNMFreq(modefreqs, params, 2, 2, nmodes, finalMass, finalSpin);
-  if (errcode != XLAL_SUCCESS) {
-    XLALDestroyCOMPLEX8Vector(modefreqs);
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
-    //XLAL_ERROR(func,XLAL_EFAILED);
-  }
-  
-  omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
-  /* If Nyquist freq. <  220 QNM freq., one could print a warning message */
-  /* Note that we cancelled a factor of 2 occuring on both sides */
-  /* if (params->tSampling < modefreqs->data[0].re / LAL_PI)
-     fprintf(stdout,"LALPhenSpin WARNING : Estimated ringdown freq larger than Nyquist freq.\n"); */
-  
+  /* Here there used to be a check that OmegaRD is smaller than Nyquist, it
+     has been taken out */
+
   params->ampOrder = 1;
   if (params->distance > 0.) 
     amp22ini = -2.0 * params->mu * LAL_MRSUN_SI / params->distance * sqrt(16. * LAL_PI / 5.);
@@ -2549,14 +2528,39 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 
       /* Get QNM frequencies */
       errcode = XLALPSpinFinalMassSpin(&finalMass, &finalSpin, params, energy, initLNh);
+      modefreqs=XLALCreateCOMPLEX8Vector(nmodes);
+      errcode+=XLALPSpinGenerateQNMFreq(modefreqs, params, 2, 2, nmodes, finalMass, finalSpin);
       if (errcode != XLAL_SUCCESS) {
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
-	//XLAL_ERROR(func,XLAL_EFAILED);
-      }
-
-      errcode =XLALPSpinGenerateQNMFreq(modefreqs, params, 2, 2, nmodes, finalMass, finalSpin);
-      if (errcode != XLAL_SUCCESS) {
+	fprintf(stderr,"**** LALPhenSpinInspiralRD ERROR ****: impossible to generate RingDown frequency\n");
+	fprintf(stderr, "   m  (%11.4e  %11.4e)  f0 %11.4e\n",params->mass1, params->mass2, params->fLower);
+	fprintf(stderr, "   S1 (%8.4f  %8.4f  %8.4f)\n", initS1[0],initS1[1], initS1[2]);
+	fprintf(stderr, "   S2 (%8.4f  %8.4f  %8.4f)\n", initS2[0],initS2[1], initS2[2]);
+	XLALDestroyREAL8Vector(h2P2);
+	XLALDestroyREAL8Vector(h2M2);
+	XLALDestroyREAL8Vector(h2P1);
+	XLALDestroyREAL8Vector(h2M1);
+	XLALDestroyREAL8Vector(h20);
+	XLALDestroyREAL8Vector(h3P3);
+	XLALDestroyREAL8Vector(h3M3);
+	XLALDestroyREAL8Vector(h3P2);
+	XLALDestroyREAL8Vector(h3M2);
+	XLALDestroyREAL8Vector(h3P1);
+	XLALDestroyREAL8Vector(h3M1);
+	XLALDestroyREAL8Vector(h30);
+	XLALDestroyREAL8Vector(h4P4);
+	XLALDestroyREAL8Vector(h4M4);
+	XLALDestroyREAL8Vector(h4P3);
+	XLALDestroyREAL8Vector(h4M3);
+	XLALDestroyREAL8Vector(h4P2);
+	XLALDestroyREAL8Vector(h4M2);
+	XLALDestroyREAL8Vector(h4P1);
+	XLALDestroyREAL8Vector(h4M1);
+	XLALDestroyREAL8Vector(h40);
+	XLALDestroyREAL8Vector(fap);
+	XLALDestroyREAL8Vector(phap);
+	XLALDestroyREAL8Vector(hap);
+	XLALDestroyREAL8Vector(sigp);
+	XLALDestroyREAL8Vector(sigc);
 	XLALDestroyCOMPLEX8Vector(modefreqs);
 	DETATCHSTATUSPTR(status);
 	RETURN(status);
@@ -2564,7 +2568,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       }
 
       omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
-      frRD = fracRD(phenPars.LNhS1,phenPars.LNhS2,phenPars.S1S1,phenPars.S1S2,phenPars.S2S2);
+      frOmRD = fracRD(phenPars.LNhS1,phenPars.LNhS2,phenPars.S1S1,phenPars.S1S2,phenPars.S2S2)*omegaRD;
 
       v     = pow(om,oneby3);
       v2    = v*v;
@@ -2602,6 +2606,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 	  XLALDestroyREAL8Vector(hap);
 	  XLALDestroyREAL8Vector(fap);
 	  XLALDestroyREAL8Vector(phap);
+	  XLALDestroyCOMPLEX8Vector(modefreqs);
 	  DETATCHSTATUSPTR(status);
 	  RETURN(status);
 	  //XLAL_ERROR(func,XLAL_ENOMEM);
@@ -2652,8 +2657,9 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 	fap->data[count] = om;
 	phap->data[count] = Psi;
 
-      } while (om < (frRD * omegaRD));
- 
+      } while (om < frOmRD);
+
+      XLALDestroyCOMPLEX8Vector(modefreqs);
       *countback=count;
 
       /*--------------------------------------------------------------
@@ -2768,6 +2774,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       *countback=count;
 
       if (errcode != XLAL_SUCCESS) {
+	fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: impossible to create RingDownWave\n");
 	XLALDestroyREAL8Vector(h2P2);
 	XLALDestroyREAL8Vector(h2M2);
 	XLALDestroyREAL8Vector(h2P1);
@@ -2792,12 +2799,12 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 	XLALDestroyREAL8Vector(hap);
 	XLALDestroyREAL8Vector(fap);
 	XLALDestroyREAL8Vector(phap);
-	fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: impossible to create RingDownWave\n");
 	DETATCHSTATUSPTR(status);
 	RETURN(status);
 	//XLAL_ERROR(func,XLAL_EFAILED);
       }
     }
+
   } /*End of if not inspiralonly and test_omegamatch*/
 
   /*-------------------------------------------------------------------
@@ -3079,7 +3086,6 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   XLALDestroyREAL8Vector(hap);
   XLALDestroyREAL8Vector(sigp);
   XLALDestroyREAL8Vector(sigc);
-  XLALDestroyCOMPLEX8Vector(modefreqs);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
