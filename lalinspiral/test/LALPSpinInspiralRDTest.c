@@ -30,7 +30,7 @@
  *
  * \heading{Usage}
  *
- * <tt>LALSpinInspiralRDTest m1 m2 S1x S1y S1z S2x S2y S2z inclination polarizaationi finit distance PNorder [outputfile]</tt>
+ * <tt>LALSpinInspiralRDTest m1 m2 S1x S1y S1z S2x S2y S2z inclination polarization finit distance PNorder [outputfile]</tt>
  *
  * The masses are given in solar masses.
  * The spins are given as \c chi1 and \c chi2 times the unit vector;
@@ -146,11 +146,6 @@ int main() {
     length  = thewaveform.h->data->length;
 
     dt      = thewaveform.phi->deltaT;
-
-    const REAL8 intpart=0.0;
-
-    printf("frac(dt) %12.5f\n",modf(1.+dt,&intpart));
-    printf("frac(dt) %12.5f\n",intpart);
 
     for(i = 0; i < length; i++) {
         a1  = thewaveform.h->data->data[2*i];
