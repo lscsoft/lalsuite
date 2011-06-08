@@ -38,7 +38,7 @@
  * Legal values for \c PNorder include the strings
  * \c newtonian, \c oneHalfPN, \c onePN, \c onePointFivePN,
  * \c twoPN, \c twoPointFivePN, \c threePN, \c threePointFivePN.
- * Putputfile is <tt>wave1.dat</tt> in the current directory.
+ * Outputfile is <tt>wave1.dat</tt> in the current directory.
  *
  */
 
