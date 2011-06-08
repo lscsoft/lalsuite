@@ -1,4 +1,4 @@
-#include "LALInference.h"
+#include <lal/LALInference.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>

@@ -47,12 +47,14 @@
 #include <lal/LIGOLwXMLInspiralRead.h>
 
 
-#include "LALInference.h"
+#include <lal/LALInference.h>
+#include <lal/LALInferenceReadData.h>
+#include <lal/LALInferenceLikelihood.h>
 
 const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
-
+void makeWhiteData(LALInferenceIFOData *IFOdata);
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length)
 {
@@ -74,31 +76,29 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 	LALFrClose(&status,&stream);
 	return out;
 }
-#define USAGE \
-"Variables needed from command line to read data:\n\
-[ --channel [channel1,channel2,channel3,..] ] \n\
---IFO [IFO1,IFO2,IFO3,..] \n\
---cache [cache1,cache2,cache3,..] \n\
-  (Use LALLIGO, LAL2kLIGO, LALGEO, LALVirgo, LALAdLIGO to simulate these detectors)\n \
---PSDstart GPSsecs.GPSnanosecs \n\
---PSDlength length \n\
-[--srate SampleRate   [4096]] \n\
---seglen segment_length \n\
---trigtime GPSsecs.GPSnanosecs \n\
-[--fLow [cutoff1,cutoff2,cutoff3,..] [40Hz]] \n\
-[--fHigh [fHigh1,fHigh2,fHigh3,..] [f_Nyquist]]\n\
-[--dataseed number]\n"
+#define USAGE "\
+ --IFO   [IFO1,IFO2,...]        IFOs can be H1,L1,V1\n\
+ --cache [cache1,cache2,...]    LAL cache files (LALLIGO, LALAdLIGO, LALVirgo to simulate these detectors)\n\
+ --PSDstart  GPStime            GPS start time of PSD estimation data\n\
+ --PSDlength length             length of PSD estimation data in seconds\n\
+ --seglen    length             length of segments for PSD estimation and analysis in seconds\n\
+ --trigtime  GPStime            GPS time of the trigger to analyse\n\
+(--srate     rate )             Downsample data to rate in Hz\n\
+(--fLow  [freq1,freq2,...] )    Specify lower frequency cutoff for overlap integral\n\
+(--fHigh [freq1,freq2,...] )    Specify higher frequency cutoff for overlap integral\n\
+(--channel [chan1,chan2,...]  ) Specify channel names when reading cache files\n \
+(--dataseed number)             Specify random seed to use when generating data\n"
 
-LALIFOData *readData(ProcessParamsTable *commandLine)
-/* Read in the data and store it in a LALIFOData structure */
+LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
+/* Read in the data and store it in a LALInferenceIFOData structure */
 {
 	LALStatus status;
 	INT4 dataseed=0;
 	memset(&status,0,sizeof(status));
 	ProcessParamsTable *procparam=NULL;
-	LALIFOData *headIFO=NULL,*IFOdata=NULL;
+	LALInferenceIFOData *headIFO=NULL,*IFOdata=NULL;
 	REAL8 SampleRate=4096.0,SegmentLength=0;
-	if(getProcParamVal(commandLine,"--srate")) SampleRate=atof(getProcParamVal(commandLine,"--srate")->value);
+	if(LALInferenceGetProcParamVal(commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(commandLine,"--srate")->value);
         const REAL8 defaultFLow = 40.0;
         const REAL8 defaultFHigh = SampleRate/2.0;
 	int nSegs=0;
@@ -124,45 +124,45 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	LIGOTimeGPS GPSstart,GPStrig,segStart;
 	REAL8 PSDdatalength=0;
 
-	if(!getProcParamVal(commandLine,"--cache")||!getProcParamVal(commandLine,"--IFO")||
-	   !getProcParamVal(commandLine,"--PSDstart")||!getProcParamVal(commandLine,"--trigtime")||
-	   !getProcParamVal(commandLine,"--PSDlength")||!getProcParamVal(commandLine,"--seglen"))
+	if(!LALInferenceGetProcParamVal(commandLine,"--cache")||!LALInferenceGetProcParamVal(commandLine,"--IFO")||
+	   !LALInferenceGetProcParamVal(commandLine,"--PSDstart")||!LALInferenceGetProcParamVal(commandLine,"--trigtime")||
+	   !LALInferenceGetProcParamVal(commandLine,"--PSDlength")||!LALInferenceGetProcParamVal(commandLine,"--seglen"))
 	{fprintf(stderr,USAGE); return(NULL);}
 	
   //TEMPORARY. JUST FOR CHECKING USING SPINSPIRAL PSD
   char **spinspiralPSD=NULL;
   UINT4 NspinspiralPSD = 0;
-  if (getProcParamVal(commandLine, "--spinspiralPSD")) {
-    parseCharacterOptionString(getProcParamVal(commandLine,"--spinspiralPSD")->value,&spinspiralPSD,&NspinspiralPSD);
+  if (LALInferenceGetProcParamVal(commandLine, "--spinspiralPSD")) {
+    LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--spinspiralPSD")->value,&spinspiralPSD,&NspinspiralPSD);
   }    
   
-	if(getProcParamVal(commandLine,"--channel")){
-		parseCharacterOptionString(getProcParamVal(commandLine,"--channel")->value,&channels,&Nchannel);
+	if(LALInferenceGetProcParamVal(commandLine,"--channel")){
+		LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--channel")->value,&channels,&Nchannel);
 	}
-	parseCharacterOptionString(getProcParamVal(commandLine,"--cache")->value,&caches,&Ncache);
-	parseCharacterOptionString(getProcParamVal(commandLine,"--IFO")->value,&IFOnames,&Nifo);
-	if(getProcParamVal(commandLine,"--fLow")){
-		parseCharacterOptionString(getProcParamVal(commandLine,"--fLow")->value,&fLows,&NfLow);
+	LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--cache")->value,&caches,&Ncache);
+	LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--IFO")->value,&IFOnames,&Nifo);
+	if(LALInferenceGetProcParamVal(commandLine,"--fLow")){
+		LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--fLow")->value,&fLows,&NfLow);
 	}
-	if(getProcParamVal(commandLine,"--fHigh")){
-		parseCharacterOptionString(getProcParamVal(commandLine,"--fHigh")->value,&fHighs,&NfHigh);
+	if(LALInferenceGetProcParamVal(commandLine,"--fHigh")){
+		LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--fHigh")->value,&fHighs,&NfHigh);
 	}
-	if(getProcParamVal(commandLine,"--dataseed")){
-		procparam=getProcParamVal(commandLine,"--dataseed");
+	if(LALInferenceGetProcParamVal(commandLine,"--dataseed")){
+		procparam=LALInferenceGetProcParamVal(commandLine,"--dataseed");
 		dataseed=atoi(procparam->value);
 	}
 								   
 	if(Nifo!=Ncache) {fprintf(stderr,"ERROR: Must specify equal number of IFOs and Cache files\n"); exit(1);}
 	if(Nchannel!=0 && Nchannel!=Nifo) {fprintf(stderr,"ERROR: Please specify a channel for all caches, or omit to use the defaults\n"); exit(1);}
 	
-	IFOdata=headIFO=calloc(sizeof(LALIFOData),Nifo);
+	IFOdata=headIFO=calloc(sizeof(LALInferenceIFOData),Nifo);
 	
-	procparam=getProcParamVal(commandLine,"--PSDstart");
+	procparam=LALInferenceGetProcParamVal(commandLine,"--PSDstart");
 	LALStringToGPS(&status,&GPSstart,procparam->value,&chartmp);
-	procparam=getProcParamVal(commandLine,"--trigtime");
+	procparam=LALInferenceGetProcParamVal(commandLine,"--trigtime");
 	LALStringToGPS(&status,&GPStrig,procparam->value,&chartmp);
-	PSDdatalength=atof(getProcParamVal(commandLine,"--PSDlength")->value);
-	SegmentLength=atof(getProcParamVal(commandLine,"--seglen")->value);
+	PSDdatalength=atof(LALInferenceGetProcParamVal(commandLine,"--PSDlength")->value);
+	SegmentLength=atof(LALInferenceGetProcParamVal(commandLine,"--seglen")->value);
 	seglen=(size_t)(SegmentLength*SampleRate);
 	nSegs=(int)floor(PSDdatalength/SegmentLength);
 	
@@ -261,7 +261,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 			XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
 			PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
 			IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("spectrum",&PSDtimeSeries->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
-			if (getProcParamVal(commandLine, "--PSDwelch")) {
+			if (LALInferenceGetProcParamVal(commandLine, "--PSDwelch")) {
         XLALREAL8AverageSpectrumWelch(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);
       }
       else {
@@ -304,12 +304,12 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
                                                                1.0/SampleRate,
                                                                &lalDimensionlessUnit,
                                                                seglen);
-                PSDToTDW(IFOdata[i].timeDomainNoiseWeights, IFOdata[i].oneSidedNoisePowerSpectrum, IFOdata[i].freqToTimeFFTPlan,
+                LALInferencePSDToTDW(IFOdata[i].timeDomainNoiseWeights, IFOdata[i].oneSidedNoisePowerSpectrum, IFOdata[i].freqToTimeFFTPlan,
                          IFOdata[i].fLow, IFOdata[i].fHigh);
 
                 makeWhiteData(&(IFOdata[i]));
     
-    if (getProcParamVal(commandLine, "--spinspiralPSD")) {
+    if (LALInferenceGetProcParamVal(commandLine, "--spinspiralPSD")) {
       FILE *in;
       //char fileNameIn[256];
       //snprintf(fileNameIn, 256, spinspiralPSD);
@@ -354,7 +354,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
       fclose(in);
     }
                 
-                if (getProcParamVal(commandLine, "--data-dump")) {
+                if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
                   const UINT4 nameLength=256;
                   char filename[nameLength];
                   FILE *out;
@@ -413,7 +413,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	return headIFO;
 }
 
-void makeWhiteData(LALIFOData *IFOdata) {
+void makeWhiteData(LALInferenceIFOData *IFOdata) {
   REAL8 deltaF = IFOdata->freqData->deltaF;
   REAL8 deltaT = IFOdata->timeData->deltaT;
 
@@ -485,7 +485,7 @@ void makeWhiteData(LALIFOData *IFOdata) {
   XLALREAL8FreqTimeFFT(IFOdata->whiteTimeData, IFOdata->whiteFreqData, IFOdata->freqToTimeFFTPlan);
 }
 
-void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
+void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine)
 {
 	LALStatus status;
 	memset(&status,0,sizeof(status));
@@ -501,7 +501,7 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	memset(&injstart,0,sizeof(LIGOTimeGPS));
 	//memset(&InjParams,0,sizeof(PPNParamStruc));
 	COMPLEX16FrequencySeries *injF=NULL;
-	LALIFOData *thisData=IFOdata->next;
+	LALInferenceIFOData *thisData=IFOdata->next;
 	REAL8 minFlow=IFOdata->fLow;
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
 	REAL4TimeSeries *injectionBuffer=NULL;
@@ -514,14 +514,14 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	//InjParams.deltaT = MindeltaT;
 	//InjParams.fStartIn=(REAL4)minFlow;
 	
-	if(!getProcParamVal(commandLine,"--injXML")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
-	if(getProcParamVal(commandLine,"--event")) event= atoi(getProcParamVal(commandLine,"--event")->value);
+	if(!LALInferenceGetProcParamVal(commandLine,"--injXML")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
+	if(LALInferenceGetProcParamVal(commandLine,"--event")) event= atoi(LALInferenceGetProcParamVal(commandLine,"--event")->value);
 	fprintf(stdout,"Injecting event %d\n",event);
 	
-	Ninj=SimInspiralTableFromLIGOLw(&injTable,getProcParamVal(commandLine,"--injXML")->value,0,0);
+	Ninj=SimInspiralTableFromLIGOLw(&injTable,LALInferenceGetProcParamVal(commandLine,"--injXML")->value,0,0);
 	REPORTSTATUS(&status);
 	printf("Ninj %d\n", Ninj);
-	if(Ninj<event) fprintf(stderr,"Error reading event %d from %s\n",event,getProcParamVal(commandLine,"--injXML")->value);
+	if(Ninj<event) fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--injXML")->value);
 	while(i<event) {i++; injTable = injTable->next;} /* Select event */
 
 	//memset(&InjectGW,0,sizeof(InjectGW));
@@ -628,152 +628,3 @@ fclose(file);
 	return;
 }
 
-/* This function has a Memory Leak!  You cannot free the allocated
-   header buffer (of length MAXSIZE).  Don't call it too many times!
-   (It's only expected to be called once to initialize the
-   differential evolution array, so this should be OK. */
-char **getHeaderLine(FILE *inp) {
-  const size_t MAXSIZE=1024;
-  const char *delimiters = " \n\t";
-  char *header = malloc(MAXSIZE*sizeof(char));
-  char **colNames = NULL;  /* Will be filled in with the column names,
-                              terminated by NULL. */
-  size_t colNamesLen=0, colNamesMaxLen=0;
-  char *colName = NULL;
-
-  if (!fgets(header, MAXSIZE, inp)) {
-    /* Some error.... */
-    fprintf(stderr, "Error reading header line from file (in %s, line %d)\n",
-            __FILE__, __LINE__);
-    exit(1);
-  } else if (strlen(header) >= MAXSIZE-1) {
-    /* Probably ran out of space before reading the entire line. */
-    fprintf(stderr, "Header line too long (more than %ld chars) in %s, line %d.\n",
-            MAXSIZE-1, __FILE__, __LINE__);
-    exit(1);
-  }
-
-  /* Sure hope we read the whole line. */
-  colNamesMaxLen=2;
-  colNames=(char **)malloc(2*sizeof(char *));
-
-  if (!colNames) {
-    fprintf(stderr, "Failed to allocate colNames (in %s, line %d).\n",
-            __FILE__, __LINE__);
-    exit(1);
-  }
-
-  colName=strtok(header, delimiters);
-  strcpy(colNames[0],colNameToParamName(colName));
-  //colNames[0] = colNameToParamName(colName); /* switched to strcpy() to avoid warning: assignment discards qualifiers from pointer target type */
-  colNamesLen=1;
-  do {
-    colName=strtok(NULL, delimiters);
-
-    strcpy(colNames[colNamesLen],colNameToParamName(colName));
-    colNamesLen++;
-
-    /* Expand if necessary. */
-    if (colNamesLen >= colNamesMaxLen) {
-      colNamesMaxLen *= 2;
-      colNames=realloc(colNames, colNamesMaxLen*sizeof(char *));
-      if (!colNames) {
-        fprintf(stderr, "Failed to realloc colNames (in %s, line %d).\n",
-                __FILE__, __LINE__);
-        exit(1);
-      }
-    }
-
-  } while (colName != NULL);
-
-  /* Trim down to size. */
-  colNames=realloc(colNames, colNamesLen*sizeof(char *));
-
-  return colNames;
-}
-
-const char *colNameToParamName(const char *colName) {
-  if (colName == NULL) {
-    return NULL;
-  }
-
-  if (!strcmp(colName, "dist")) {
-    return "distance";
-  }
-
-  if (!strcmp(colName, "ra")) {
-    return "rightascension";
-  }
-
-  if (!strcmp(colName, "iota")) {
-    return "inclination";
-  }
-
-  if (!strcmp(colName, "psi")) {
-    return "polarisation";
-  }
-
-  if (!strcmp(colName, "mc")) {
-    return "chirpmass";
-  }
-
-  if (!strcmp(colName, "phi_orb")) {
-    return "phase";
-  }
-
-  if (!strcmp(colName, "eta")) {
-    return "massratio";
-  }
-
-  if (!strcmp(colName, "dec")) {
-    return "declination";
-  }
-
-  /* Note the 1 <--> 2 swap between the post-proc world and the LI world. */
-  if (!strcmp(colName, "phi1")) {
-    return "phi_spin2";
-  }
-
-  if (!strcmp(colName, "phi2")) {
-    return "phi_spin1";
-  }
-
-  if (!strcmp(colName, "theta1")) {
-    return "theta_spin2";
-  }
-
-  if (!strcmp(colName, "theta2")) {
-    return "theta_spin1";
-  }
-
-  if (!strcmp(colName, "a1")) {
-    return "a_spin2";
-  }
-
-  if (!strcmp(colName, "a2")) {
-    return "a_spin1";
-  }
-
-  return colName;
-}
-
-int processParamLine(FILE *inp, char **headers, LALVariables *vars) {
-  size_t i;
-
-  for (i = 0; headers[i] != NULL; i++) {
-    double param;
-    int nread;
-    
-    nread = fscanf(inp, " %lg ", &param);
-
-    if (nread != 1) {
-      fprintf(stderr, "Could not read parameter value, the %ld parameter in the row (in %s, line %d)\n",
-              i, __FILE__, __LINE__);
-      exit(1);
-    }
-
-    addVariable(vars, headers[i], &param, REAL8_t, PARAM_FIXED);
-  }
-
-  return 0;
-}
