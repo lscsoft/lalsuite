@@ -2004,7 +2004,7 @@ static int XLALSpinInspiralAdaptiveEngine(
 
     if (j>2) {
       if ((alphaold*alphaoold)<0.) {
-	if ( fabs(cos(Phi[j-1]+alphaold)-cos(Phi[j-2]+alphaoold))>0.2) {
+	if ( fabs(cos(2.*(Phi[j-1]+alphaold))-cos(2.*(Phi[j-2]+alphaoold)))>0.2) {
 	  fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Possible problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi+alpha: %12.6e alpha %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+alpha: %12.6e  alpha %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+alpha: %12.6e  alpha %12.6e\n",j,LNhy[j],LNhx[j],(Phi[j]+alpha)/LAL_PI,alpha/LAL_PI,j-1,LNhy[j-1],LNhx[j-1],(Phi[j-1]+alphaold)/LAL_PI,alphaold/LAL_PI,j-2,LNhy[j-2],LNhx[j-2],(Phi[j-2]+alphaoold)/LAL_PI,alphaoold/LAL_PI);
 	  fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
 	  fprintf(stdout,"            S1: (%9.6f,%9.6f,%9.6f)\n",yinit[5]/mparams->m1msq,yinit[6]/mparams->m1msq,yinit[7]/mparams->m1msq);
