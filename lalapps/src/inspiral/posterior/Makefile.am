@@ -2,6 +2,14 @@ SUBDIRS = SPINspiral mpi
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
+
+# #Tests for the time-domian code
+# td_test_progs = TDW_test conv_test time_domain_overlap_test
+# TDW_test_SOURCES = TDW_test.c
+# conv_test_SOURCES = conv_test.c
+# time_domain_overlap_test_SOURCES = time_domain_overlap_test.c
+
+
 if LALINSPIRAL
 if LALFRAME
 
@@ -19,55 +27,19 @@ lalapps_inspnest_SOURCES = \
 endif
 
 if LALPULSAR
-pulsar_progs = \
-	lalinference_test \
-	lalinference_nest \
-	ChiSquare_test #lalinference_mcmcmpi
-lalinference_test_SOURCES = \
-	LALInference.c \
-	LALInference.h \
-	LALInferenceReadData.c \
-	LALInferenceTemplate.c \
-	InferenceTest.c #LALInferenceMCMC.c
-ChiSquare_test_SOURCES = \
-	LALInference.c \
-	LALInferenceReadData.c \
-	LALInferenceTemplate.c \
-	ChiSquare_test.c
-lalinference_nest_SOURCES = \
-	LALInference.c \
-	LALInferenceReadData.c \
-	LALInferenceTemplate.c \
-	LALInferenceNest.c \
-	LALInferenceNestedSampler.c \
-	LALInferenceNestedSampler.h \
-	LALInferencePrior.c \
-	LALInferencePrior.h
-#lalinference_mcmc_SOURCES = \
-#	LALInference.c \
-#	LALInferenceReadData.c \
-#	LALInferenceTemplate.c \
-#	LALInferenceMCMC.c \
-#	LALInferenceMCMCSampler.c \
-#	LALInferencePrior.c
+if LALINFERENCE
+pulsar_progs = lalinference_nest ChiSquare_test #lalinference_mcmcmpi
+ChiSquare_test_SOURCES = ChiSquare_test.c
+lalinference_nest_SOURCES = LALInferenceNest.c
+#lalinference_mcmcmpi_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceMCMCMPI.c LALInferenceMCMCMPISampler.c LALInferencePrior.c
 
-#Tests for the time-domian code
-td_test_progs = \
-	TDW_test \
-	conv_test \
-	time_domain_overlap_test
-TDW_test_SOURCES = \
-	LALInference.c \
-	LALInference.h \
-	TDW_test.c
-conv_test_SOURCES = \
-	LALInference.c \
-	LALInference.h \
-	conv_test.c
-time_domain_overlap_test_SOURCES = \
-	LALInference.c \
-	LALInference.h \
-	time_domain_overlap_test.c
+if MPI
+mpi_progs = lalinference_test
+lalinference_test_SOURCES = InferenceTest.c
+endif
+
+endif
+
 endif
 
 frame_progs = \
@@ -78,10 +50,9 @@ lalapps_followupMcmc_SOURCES = \
 endif
 endif
 
-bin_PROGRAMS = \
-	$(metaio_progs) \
-	$(frame_progs) \
-	$(pulsar_progs)
+
+bin_PROGRAMS = $(metaio_progs) $(frame_progs) $(pulsar_progs) $(mpi_progs)
+
 noinst_PROGRAMS = $(td_test_progs)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps

@@ -1,4 +1,4 @@
-AC_INIT([lalsuite],[6.5.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalsuite],[6.5.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -26,6 +26,7 @@ LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALSTOCHASTIC
 LALSUITE_ENABLE_LALPULSAR
+LALSUITE_ENABLE_LALINFERENCE
 
 lalsuite_top_builddir='$(top_builddir)/..'
 lalsuite_top_srcdir='$(top_srcdir)/..'
@@ -80,6 +81,12 @@ if test "$lalpulsar" = "true"; then
   export LALPULSAR_LIBS LALPULSAR_CFLAGS
 fi
 
+if test "$lalinference" = "true"; then
+  LALINFERENCE_LIBS="${lalsuite_top_builddir}/lalinference/src/liblalinference.la"
+  LALINFERENCE_CFLAGS="-I${lalsuite_top_builddir}/lalinference/include"
+  export LALINFERENCE_LIBS LALINFERENCE_CFLAGS
+fi
+
 AC_CONFIG_SUBDIRS([lal])
 
 if test "$lalframe" = "true"; then
@@ -108,6 +115,10 @@ fi
 
 if test "$lalpulsar" = "true"; then
   AC_CONFIG_SUBDIRS([lalpulsar])
+fi
+
+if test "$lalinference" = "true"; then
+  AC_CONFIG_SUBDIRS([lalinference])
 fi
 
 AC_CONFIG_SUBDIRS([lalapps])
