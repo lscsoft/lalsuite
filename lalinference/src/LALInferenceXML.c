@@ -69,15 +69,60 @@
 
 xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables **varsArray, UINT4 N)
 {
-  xmlNode *fieldNodeList=NULL;
-  xmlNode *paramNodeList=NULL;
-  xmlNode *dataContentNode=NULL;
-  xmlNode *VOTtableNode=NULL;
-  
+  xmlNodePtr fieldNodeList=NULL;
+  xmlNodePtr paramNodeList=NULL;
+  xmlNodePtr dataContentNode=NULL;
+  xmlNodePtr VOTtableNode=NULL;
+	xmlNodePtr tmpNode=NULL;
+	xmlNodePtr *field_ptr,*param_ptr,*data_ptr;
+	LALInferenceVariableItem *varitem=NULL;
+	UINT4 Nfields=0;
+	
+	/* Sanity check input */
+	if(!varsArray) {
+		XLALPrintError("Received null varsArray pointer");
+		XLAL_ERROR_NULL(__func__,XLAL_EFAULT);
+	}
+	if(N==0) return(NULL);
+	
+	field_ptr=&fieldNodeList;
+	param_ptr=&paramNodeList;
+	data_ptr=&dataContentNode;
+	
+	varitem=varsArray[0]->head;
+	
   /* Build a list of PARAM and FIELD elements */
-  
+  while(varitem)
+	{
+		switch(varitem->vary){
+			case LALINFERENCE_PARAM_LINEAR:
+			case LALINFERENCE_PARAM_CIRULAR:
+			case LALINFERENCE_PARAM_OUTPUT:
+			{
+				*field_ptr=XLALCreateVOTFieldNode ( const char *name,
+																const char *unit,
+																VOTABLE_DATATYPE datatype,
+																const char *arraysize
+																);
+				field_ptr=&(field_ptr->next);				
+				break;
+			}
+			case LALINFERENCE_PARAM_FIXED:
+			{
+				*param_ptr=LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varitem);
+				param_ptr=&(param_ptr->next);
+				break;
+			}
+			default: 
+			{
+				XLALPrintError("Unknown param vary type");
+			}
+		}
+		varitem=varitem->next;
+	}
+	
   /* Build array of DATA */
-  
+		
   /* Create TABLEDATA node */
   
   /* Create a TABLE from the FIELDs and TABLEDATA nodes */
@@ -163,6 +208,24 @@ xmlNodePtr XLALInferenceVariables2VOTNode (const LALInferenceVariables *const va
  * 
  */
 
+xmlNodePtr LALInferenceVariableItem2VOTFieldNode(LALInferenceVariableItem *varitem)
+{
+  VOTABLE_DATATYPE vo_type;
+  CHAR *unitName={0};
+  
+  /* Special case for matrix */
+  if(varitem->type==LALINFERENCE_gslMatrix_t)
+    return(XLALgsl_matrix2VOTNode((gsl_matrix *)varitem->value, varitem->name, unitName));
+	
+	/* Special case for string */
+	if(varitem->type==LALINFERENCE_string_t)
+		return(XLALCreateVOTFieldNode(varitem->name,unitName,VOT_CHAR,"*");
+	
+  /* Check the type of the item */
+  vo_type=LALInferenceVariableType2VOT(varitem->type);
+	
+  return(XLALCreateVOTFieldNode(varitem->name,unitName,vo_type,NULL));
+}
 
 xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varitem)
 {
@@ -174,13 +237,16 @@ xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varit
   if(varitem->type==LALINFERENCE_gslMatrix_t)
     return(XLALgsl_matrix2VOTNode((gsl_matrix *)varitem->value, varitem->name, unitName));
 
+	/* Special case for string */
+	if(varitem->type==LALINFERENCE_string_t)
+		return(XLALCreateVOTParamNode(varitem->name,unitName,VOT_CHAR,"*",varitem->value);
+	
   /* Check the type of the item */
   vo_type=LALInferenceVariableType2VOT(varitem->type);
   
   LALInferencePrintVariableItem(valString, varitem);
   
   return(XLALCreateVOTParamNode(varitem->name,unitName,vo_type,NULL,valString));
-  
 }
 
 /**
