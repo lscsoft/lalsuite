@@ -35,6 +35,7 @@
 # include <stdlib.h>
 
 #define VARNAME_MAX 128
+#define VARVALSTRINGSIZE_MAX 128
 
 # include <lal/LALStdlib.h>
 # include <lal/LALConstants.h>
@@ -151,6 +152,10 @@ char **LALInferenceGetHeaderLine(FILE *inp);
 
 const char *LALInferenceTranslateInternalToExternalParamName(const char *inName);
 INT4 LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params);
+
+/** Prints a variable item to a string (must be pre-allocated!) */
+void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr);
+
 
 /** Return a pointer to the variable asked for */
 void *LALInferenceGetVariable(LALInferenceVariables * vars, const char * name);

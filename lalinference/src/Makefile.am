@@ -1,7 +1,8 @@
 INCLUDES = -I$(top_builddir)/include
 
 lalinferenceincludedir = $(includedir)/lal
-lalinferenceinclude_HEADERS = \
+
+HDR= \
 	LALInference.h \
 	LALInferenceConfig.h \
 	LALInferenceLikelihood.h \
@@ -11,8 +12,10 @@ lalinferenceinclude_HEADERS = \
 	LALInferenceTemplate.h \
 	LALInferenceVCSInfo.h
 
+
 lib_LTLIBRARIES = liblalinference.la
-liblalinference_la_SOURCES = \
+
+SRC= \
 	LALInference.c \
 	LALInferenceLikelihood.c \
 	LALInferenceNestedSampler.c \
@@ -20,6 +23,15 @@ liblalinference_la_SOURCES = \
 	LALInferenceReadData.c \
 	LALInferenceTemplate.c \
 	LALInferenceVCSInfo.c
+
+if LALXML
+XMLHDR = LALInferenceXML.h
+XMLSRC = LALInferenceXML.c
+endif
+
+lalinferenceinclude_HEADERS = $(HDR) $(XMLHDR)
+
+liblalinference_la_SOURCES = $(SRC) $(XMLSRC)
 
 liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
 
