@@ -599,7 +599,8 @@ tagCoincInspiralSlideTable
 CoincInspiralSlideTable;
 
 
-
+/** The \c SimBurst structure describes a burst injection.
+*/
 typedef struct
 tagSimBurst
 {
@@ -621,6 +622,7 @@ tagSimBurst
 	REAL8 hrss;
 	REAL8 egw_over_rsquared;
 	unsigned long waveform_number;
+	long time_slide_id;
 	long simulation_id;
 } SimBurst;
 
@@ -878,6 +880,20 @@ tagFilterTable
   CHAR          comment[LIGOMETA_SUMMVALUE_COMM_MAX];
 }
 FilterTable;
+
+
+/** This structure corresponds to one row of a time_slide table.
+*/
+typedef struct
+tagTimeSlide
+{
+  struct tagTimeSlide *next;
+  long           process_id;
+  long           time_slide_id;
+  CHAR           instrument[LIGOMETA_STRING_MAX];
+  REAL8          offset;
+}
+TimeSlide;
 
 
 typedef union
