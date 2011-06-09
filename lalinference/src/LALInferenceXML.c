@@ -60,15 +60,38 @@
  *
  * \sa XLALCreateVOTParamNode
  * \sa XLALCreateVOTResourceNode
- * \sa XLALCreateVOTDocumentFromTree
  *
  * \author John Veitch\n
  * 
  */
+
+
+
 xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables **varsArray, UINT4 N)
 {
+  xmlNode *fieldNodeList=NULL;
+  xmlNode *paramNodeList=NULL;
+  xmlNode *dataContentNode=NULL;
+  xmlNode *VOTtableNode=NULL;
+  
+  /* Build a list of PARAM and FIELD elements */
+  
+  /* Build array of DATA */
+  
+  /* Create TABLEDATA node */
+  
+  /* Create a TABLE from the FIELDs and TABLEDATA nodes */
+  
+  VOTtableNode= XLALCreateVOTTableNode (
+			 const char *name,		/**< [in] optional name attribute to assign to this \c TABLE element (may be NULL) */
+                         xmlNode *fieldNodeList, 	/**< [in] linked list of \c xmlNodes that are to be assigned as FIELD children */
+                         xmlNode *dataContentNode 	/**< [in] pointer to xmlNode to be inserted under the \<DATA\> element: TABLEDATA, BINARY or FITS */
+                         );
+  
+  /* Attach PARAMs to TABLE node */
   
   
+  return(VOTtableNode);
 }
 
 /**
