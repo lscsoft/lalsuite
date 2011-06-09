@@ -326,6 +326,7 @@ typedef struct tagPPNParamStruc {
   REAL4 fStop;      /* actual stop frequency (Hz) */
   UINT4 length;     /* length of signal generated */
   INT4 termCode;    /* termination code */
+  InputAxis axisChoice; /* z axis of the reference frame*/
   const CHAR *termDescription; /* description of termination code */
 } PPNParamStruc;
 

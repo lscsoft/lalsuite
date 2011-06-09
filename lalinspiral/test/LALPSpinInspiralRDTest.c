@@ -24,21 +24,22 @@
 /**
  * \file
  *
- * \brief Create a waveform based on PhenSpinTaylorRD model (LALPSpinInspiralRD).
+ * \brief Create a waveform based on HSpinTaylorRD model (LALSpinInspiralRD).
  * Outputs a file with three columns corresponding to time (in seconds),
  * \f$h_+\f$, and \f$h_\times\f$.
  *
  * \heading{Usage}
  *
- * <tt>LALSpinInspiralRDTest m1 m2 S1x S1y S1z S2x S2y S2z inclination polarization finit distance PNorder [outputfile]</tt>
+ * <tt>LALSpinInspiralRDTest m1 m2 S1x S1y S1z S2x S2y S2z theta0 phi0 finit distance PNorder [outputfile]</tt>
  *
  * The masses are given in solar masses.
  * The spins are given as \c chi1 and \c chi2 times the unit vector;
+ * the direction of the initial orbital angular momentum is assumed along the z axisg;
  * the final frequency is given in Hz, the distance in Mpc.
  * Legal values for \c PNorder include the strings
  * \c newtonian, \c oneHalfPN, \c onePN, \c onePointFivePN,
  * \c twoPN, \c twoPointFivePN, \c threePN, \c threePointFivePN.
- * Outputfile is <tt>wave1.dat</tt> in the current directory.
+ * If outputfile is not given it is <tt>wave1.dat</tt> in the current directory.
  *
  */
 
@@ -121,6 +122,8 @@ int main() {
 
     /*Spin units are such that multiplying the above spins by m_i^2 one
       obtains the physical spins */
+
+    ppnParams.axisChoice=View;
 
     /* Inverse rate*/
     ppnParams.deltaT = 1.0 / 4096.0;
