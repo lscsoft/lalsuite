@@ -502,7 +502,6 @@ void InjectNumRelWaveformsREAL8 (LALStatus      *status,       /**< pointer to L
                             REAL8TimeSeries     *chan,         /**< [out] the output time series */
                             SimInspiralTable    *injections,   /**< [in] list of injections */
                             CHAR                ifo[3],        /**< [in] 2 char code for interferometer */
-                            REAL8               dynRange,      /**< [in] dynamic range factor for scaling time series */
                             REAL8               freqLowCutoff, /**< [in] Lower cutoff frequency */
                             REAL8               snrLow,        /**< [in] lower cutoff value of snr */
                             REAL8               snrHigh,       /**< TO BE DOCUMENTED */
