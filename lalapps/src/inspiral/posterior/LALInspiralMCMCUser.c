@@ -372,7 +372,7 @@ REAL8 NestPriorSkyLoc(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter)
 	/* With total mass < 20 */
 	REAL8 minCompMass=1.0, maxCompMass=15.0;
 	REAL8 maxTotalMass=20.0;
-	REAL8 mc,m1,m2,eta;
+	REAL8 mc,m1,m2,eta,tmp;
 	(void) inputMCMC;
 	/* Work out the implicit prior density on mc/eta */
 	if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
@@ -380,6 +380,9 @@ REAL8 NestPriorSkyLoc(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter)
 	eta=XLALMCMCGetParameter(parameter,"eta");
 	m1 = mc2mass1(mc,eta);
 	m2 = mc2mass2(mc,eta);
+	if(m2>m1) {
+		tmp=m1; m1=m2; m2=tmp;
+	}
 	parameter->logPrior=0.0;
 	if(XLALMCMCCheckParameter(parameter,"logmc")) parameter->logPrior+=(m1+m2)*(m1+m2)*(m1+m2)/(m1-m2);
 	else parameter->logPrior+=(m1+m2)*(m1+m2)/(pow(eta,0.6)*(m1-m2));

@@ -290,7 +290,6 @@ void initialise(int argc, char *argv[]){
 		{"ra",required_argument,0,'O'},
 		{"dec",required_argument,0,'a'},
 		{"SNRfac",required_argument,0,14},
-		{"skyloc",no_argument,0,13},
 		{"channel",required_argument,0,'C'},
 		{"highmass",no_argument,0,15},
 		{"decohere",required_argument,0,16},
@@ -496,7 +495,6 @@ void initialise(int argc, char *argv[]){
 			UserChannelNames[nChannel]=malloc(strlen(optarg)+1);
 			strcpy(UserChannelNames[nChannel++],optarg);
 			break;
-		case 13: SkyLocFlag=1; break;
 		case 'D':
 			dataseed=atoi(optarg);
 			break;
