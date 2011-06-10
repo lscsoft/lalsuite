@@ -213,7 +213,6 @@ double lat_max=LAL_PI/2.;
 double manual_chi_min=-1.;
 double manual_chi_max=1.;
 int mc_flag=0;
-double m_c_min=1.;
 /* */
 void NestInitManual(LALMCMCParameter *parameter, void *iT);
 void NestInitManualIMRB(LALMCMCParameter *parameter, void *iT);
@@ -328,19 +327,12 @@ void initialise(int argc, char *argv[]){
 		{"m_tot_max",required_argument,0,63},
 		{"chimin",required_argument,0,64}, /* N.B. ASCII codes 65 - 90 and 97-122 are letters */
 		{"chimax",required_argument,0,91},
-		{"m_c_min",required_argument,0,99},
 		{"mc_flag",no_argument,0,100},
 		{"snrfile",required_argument,0,123},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
 	while((i=getopt_long(argc,argv,"hi:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFVvb",long_options,&i))!=-1){ switch(i) {
-		case 100:
-			mc_flag=1;
-			break;
-		case 99:
-			m_c_min=atof(optarg);
-			break;
 		case 64:
 			manual_chi_min=atof(optarg);
 			break;
@@ -1265,7 +1257,7 @@ doneinit:
 		template.fCutoff=SampleRate/2.-1.;
 		template.tSampling=SampleRate;
 		template.approximant=PhenSpinTaylorRD;
-		template.totalMass=mc2mass1(m_c_min,0.24)+mc2mass2(m_c_min,0.24);
+		template.totalMass=mc2mass1(manual_mass_low,0.25)+mc2mass2(manual_mass_low,0.25);
 		
 		template.eta=0.24;
 		template.massChoice=totalMassAndEta;
@@ -1349,6 +1341,9 @@ doneinit:
 	}
 	return(0);
 } /* End main() */
+
+
+
 void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
 {
   (void)iT;
@@ -1357,10 +1352,7 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
   double dmax=d_max;
  
 
-  double singleMassMin=compmassmin;
-  double totalMassMin=m_tot_min;
-  double totalMassMax=m_tot_max;
-  if ( (manual_mass_high > manual_mass_low) && (manual_mass_low>2.*singleMassMin) ) {
+/*  if ( (manual_mass_high > manual_mass_low) && (manual_mass_low>2.*singleMassMin) ) {
     totalMassMin=manual_mass_low;
     totalMassMax=manual_mass_high;
   }
@@ -1370,11 +1362,7 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
       totalMassMax=m_tot_max_highmass;
     }
   }
-  
-  double m1min = m_tot_min/2.;
-  double m2min = m_tot_min/2.;
-  double mmaxhalf = m_tot_max/2.;
-
+  */
 
   double eta=etamin+gsl_rng_uniform(RNG)*(0.25-etamin);
 
@@ -1383,15 +1371,8 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
  // double mcmin = m2mc(m1min,m2min);
  // double mcmax = m2mc(m1maxhalf,m2maxhalf);
 
-  double mu_pow_min=pow((m1min*m2min)/(m1min +m2min),0.6);
-  double mcmin=pow((m1min+m2min),0.4)*mu_pow_min;
-  if(mc_flag){
-	mcmin=m_c_min;
-		}
-  double mu_pow_max=pow(mmaxhalf*mmaxhalf/(mmaxhalf +mmaxhalf),0.6);
-  double mcmax=pow((mmaxhalf+mmaxhalf),0.4)*mu_pow_max;
-  double lMcmin=log(mcmin);
-  double lMcmax=log(mcmax);
+  double lMcmin=log(manual_mass_low);
+  double lMcmax=log(manual_mass_high);
 
 
   parameter->param=NULL;
