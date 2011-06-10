@@ -403,8 +403,8 @@ REAL8 NestPriorPhenSpin(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
         parameter->logPrior=0.0;
         REAL8 mc,eta;
         REAL8 minCompMass = 1.;
-        REAL8 maxCompMass = 34.;
-	REAL8 maxMTotal= 35.;
+        REAL8 maxCompMass = 349.;
+	REAL8 maxMTotal= 350.;
 
 /* Check in range */
         if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
@@ -421,7 +421,17 @@ REAL8 NestPriorPhenSpin(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
                 parameter->logPrior+=2.0*log(XLALMCMCGetParameter(parameter,"distance"));
         parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
         parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
-        ParamInRange(parameter);
+        if(XLALMCMCCheckParameter(parameter,"a1")){
+                parameter->logPrior+=log(fabs(XLALMCMCGetParameter(parameter,"a1")));
+                parameter->logPrior+=log(fabs(XLALMCMCGetParameter(parameter,"phi1")));
+                parameter->logPrior+=log(fabs(XLALMCMCGetParameter(parameter,"theta1")));
+        }
+        if(XLALMCMCCheckParameter(parameter,"a2")){
+                parameter->logPrior+=log(fabs(XLALMCMCGetParameter(parameter,"a2")));
+                parameter->logPrior+=log(fabs(XLALMCMCGetParameter(parameter,"phi2")));
+                parameter->logPrior+=log(fabs(XLALMCMCGetParameter(parameter,"theta2")));
+        }
+	ParamInRange(parameter);
 
         if(m1<minCompMass || m2<minCompMass) {
           parameter->logPrior=-DBL_MAX;
