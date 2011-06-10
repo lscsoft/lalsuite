@@ -1124,7 +1124,11 @@ int main( int argc, char *argv[])
 
 
 	/* Set up the approximant to use in the likelihood function */
-	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB_NS"; CHAR BBHSpin2[]="IMRPhenomFB"; CHAR BBHSpin3[]="IMRPhenomFB_Chi"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN"; CHAR ST[]="SpinTaylor"; CHAR LowMassIMRFB[]="IMRPhenomFB_Chi_low"; CHAR LowMassIMRB[]="IMRPhenomB_Chi_low"; CHAR PSTRD[]="PhenSpinTaylorRD";
+	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2";
+	CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB_NS"; CHAR BBHSpin2[]="IMRPhenomFB";
+	CHAR BBHSpin3[]="IMRPhenomFB_Chi"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN";
+	CHAR ST[]="SpinTaylor"; CHAR LowMassIMRFB[]="IMRPhenomFB_Chi_low"; CHAR LowMassIMRB[]="IMRPhenomB_Chi_low";
+	CHAR PSTRD[]="PhenSpinTaylorRD";
 	/*CHAR PSTRD[]="PhenSpinTaylorRD"; */ /* Commented out until PhenSpin waveforms are in master */
 	inputMCMC.approximant = TaylorF2; /* Default */
 	if(!strcmp(approx,TF2)) inputMCMC.approximant=TaylorF2;
@@ -1221,20 +1225,19 @@ doneinit:
 	if(GRBflag) {inputMCMC.funcPrior = GRBPrior;
 		inputMCMC.funcInit = NestInitGRB;
 	}
-	if(HighMassFlag) inputMCMC.funcPrior = NestPriorHighMass;
 
     if(!strcmp(approx,BBHSpin1)) {
         inputMCMC.funcPrior = NestPriorHighMass;
         inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
         inputMCMC.funcInit = NestInitManual;
     }
-
+		/* IMRPhenomFB */
     if(!strcmp(approx,BBHSpin2)) {
         inputMCMC.funcPrior = NestPriorHighMass;
         inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
         inputMCMC.funcInit = NestInitManualIMRB;
     }
-
+		/* IMRPhenomFB_Chi */
     if(!strcmp(approx,BBHSpin3)) {
         inputMCMC.funcPrior = NestPriorHighMass;
         inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
@@ -1247,7 +1250,7 @@ doneinit:
     }
    
     	if(!strcmp(approx,PSTRD)) {
-	  inputMCMC.funcPrior = NestPriorPhenSpin;
+	  inputMCMC.funcPrior = NestPrior;
 	  inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF_PhenSpin;
 	  inputMCMC.likelihoodPlan = NULL;
 	  inputMCMC.funcInit = NestInitManualPhenSpinRD;
@@ -1284,6 +1287,8 @@ doneinit:
         
 
 	} 
+	
+	if(HighMassFlag) inputMCMC.funcPrior = NestPriorHighMass;
      
 	/* Live is an array of LALMCMCParameter * types */
 	Live = (LALMCMCParameter **)LALMalloc(Nlive*sizeof(LALMCMCParameter *));
@@ -1647,7 +1652,7 @@ void NestInitManualIMRBChi(LALMCMCParameter *parameter, void UNUSED *iT)
 	mcmin=manual_mass_low;
 	mcmax=manual_mass_high;
 
-    double lmmin=log(mcmin);
+	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 
     double ldmin=log(manual_dist_min);

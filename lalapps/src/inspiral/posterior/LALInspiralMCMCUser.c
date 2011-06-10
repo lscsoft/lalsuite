@@ -346,8 +346,14 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
   /*      parameter->logPrior+=logJacobianMcEta(mc,eta);*/
   
-
-
+	/* Spin prior for theta angles */
+	if(XLALMCMCCheckParameter(parameter,"theta1")){
+		parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"theta1"))));
+	}
+	if(XLALMCMCCheckParameter(parameter,"theta2")){
+		parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"theta2"))));
+	}
+	
   ParamInRange(parameter);
   if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
 /*  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
@@ -357,6 +363,7 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   return parameter->logPrior;
 }
 
+/** Low mass space prior */
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
 	REAL8 m1,m2;
@@ -389,63 +396,21 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
 	/*	parameter->logPrior+=logJacobianMcEta(mc,eta);*/
+	
+	/* Spin prior for theta angles */
+	if(XLALMCMCCheckParameter(parameter,"theta1")){
+		parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"theta1"))));
+	}
+	if(XLALMCMCCheckParameter(parameter,"theta2")){
+		parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"theta2"))));
+	}	
+	
 	ParamInRange(parameter);
 	if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
 	if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
 	if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
 	if(m1+m2>MAX_MTOT) parameter->logPrior=-DBL_MAX;
 	return parameter->logPrior;
-}
-
-
-REAL8 NestPriorPhenSpin(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
-{
-
-    (void)inputMCMC;
-    REAL8 m1,m2;
-        parameter->logPrior=0.0;
-        REAL8 mc,eta;
-        REAL8 minCompMass = 1.;
-        REAL8 maxCompMass = 349.;
-	REAL8 maxMTotal= 350.;
-
-/* Check in range */
-        if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
-        else mc=XLALMCMCGetParameter(parameter,"mchirp");
-        double logmc=log(mc);
-        eta=XLALMCMCGetParameter(parameter,"eta");
-        m1 = mc2mass1(mc,eta);
-        m2 = mc2mass2(mc,eta);
-        /* This term is the sqrt of m-m term in F.I.M, ignoring dependency on f and eta */
-        parameter->logPrior+=-(5.0/6.0)*logmc;
-        if(XLALMCMCCheckParameter(parameter,"logdist"))
-                parameter->logPrior+=3.0*XLALMCMCGetParameter(parameter,"logdist");
-        else
-                parameter->logPrior+=2.0*log(XLALMCMCGetParameter(parameter,"distance"));
-        parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
-        parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
-        if(XLALMCMCCheckParameter(parameter,"a1")){
-                parameter->logPrior+=log(fabs(XLALMCMCGetParameter(parameter,"a1")));
-                parameter->logPrior+=log(fabs(XLALMCMCGetParameter(parameter,"phi1")));
-                parameter->logPrior+=log(fabs(XLALMCMCGetParameter(parameter,"theta1")));
-        }
-        if(XLALMCMCCheckParameter(parameter,"a2")){
-                parameter->logPrior+=log(fabs(XLALMCMCGetParameter(parameter,"a2")));
-                parameter->logPrior+=log(fabs(XLALMCMCGetParameter(parameter,"phi2")));
-                parameter->logPrior+=log(fabs(XLALMCMCGetParameter(parameter,"theta2")));
-        }
-	ParamInRange(parameter);
-
-        if(m1<minCompMass || m2<minCompMass) {
-          parameter->logPrior=-DBL_MAX;
-        }
-        if(m1>maxCompMass || m2>maxCompMass) {
-          parameter->logPrior=-DBL_MAX;
-        }
-        if(m1+m2>maxMTotal) {
-          parameter->logPrior=-DBL_MAX;
-	}
-        return parameter->logPrior;
 }
 
 
