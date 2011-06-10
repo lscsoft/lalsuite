@@ -78,7 +78,6 @@ Optional OPTIONS:\n \
 [--timeslide\t:\tTimeslide data]\n[--studentt\t:\tuse student-t likelihood function]\n \
 [--ra FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use (DEGREES)]\n \
 [--grb\t:\tuse GRB prior ]\n[--skyloc\t:\tuse trigger masses]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
-[--deta FLOAT\t:\twidth of eta window]\n \
 [--dt FLOAT (0.01)\t:\ttime window (0.01s)]\n \
 [--injSNR FLOAT\t:\tScale injection to have network SNR of FLOAT]\n \
 [--SNRfac FLOAT\t:\tScale injection SNR by a factor FLOAT]\n \
@@ -87,6 +86,7 @@ Optional OPTIONS:\n \
 [--datadump DATA.txt\t:\tOutput frequency domain PSD and data segment to DATA.txt]\n \
 [--flow NUM\t:\t:Set low frequency cutoff (default 40Hz)]\n\
 [--chimin NUM\t:\tMin value of chi spin parameter]\n\
+[--etamin NUM\t:\tMinimum value of eta]\n\
 [--chimax NUM\t:\tMax value of chi spin parameter]\n\
 [--snrpath PATH\t:\tOutput SNRs to a file in PATH]\n\
 \n\n \
@@ -126,6 +126,7 @@ extern CHAR outfile[FILENAME_MAX];
 CHAR *datadump=NULL;
 extern double etawindow;
 extern double timewindow;
+double etamin=0.03;
 CHAR **CacheFileNames = NULL;
 CHAR **ChannelNames = NULL;
 CHAR **IFOnames = NULL;
@@ -271,13 +272,13 @@ void initialise(int argc, char *argv[]){
 		{"inj",required_argument,0,'j'},
 		{"fake",no_argument,0,'F'},
 		{"injSNR",required_argument,0,'p'},
-		{"deta",required_argument,0,'e'},
 		{"dt",required_argument,0,'t'},
 		{"event",required_argument,0,'E'},
 		{"NINJA",no_argument,0,'n'},
 		{"end_time",required_argument,0,'Z'},
 		{"mmin",required_argument,0,'m'},
 		{"mmax",required_argument,0,'g'},
+		{"etamin",required_argument,0,'e'},
 		{"verbose",no_argument,0,'v'},
 		{"approximant",required_argument,0,'A'},
 		{"timeslide",no_argument,0,'L'},
@@ -548,7 +549,7 @@ void initialise(int argc, char *argv[]){
 			manual_end_time=atof(optarg);
 			break;
 		case 'e':
-			etawindow=atof(optarg);
+			etamin=atof(optarg);
 			break;
 		case 'r':
 			Nruns=atoi(optarg);
@@ -1375,7 +1376,6 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
   double mmaxhalf = m_tot_max/2.;
 
 
-  double etamin=0.25 - etawindow;
   double eta=etamin+gsl_rng_uniform(RNG)*(0.25-etamin);
 
   double logMc;
@@ -1495,9 +1495,7 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
 		if(manual_RA!=-4200.0) trueLong = manual_RA;
 		if(manual_dec!=-4200.0) trueLat = manual_dec;
     }
-	double etamin;
 	/*etamin = etamin<0.01?0.01:etamin;*/
-	etamin=0.01;
 	double etamax = 0.25;
 
 	/* GRB priors are below */
@@ -1565,7 +1563,6 @@ void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT)
 /* FIXME: parameter iT is unused */
 void NestInitSkyPatch(LALMCMCParameter *parameter, void UNUSED *iT)
 {
-	double etamin=0.01;
 	double mcmin,mcmax;
 	double deltaLong=0.001;
 	double deltaLat=0.001;
@@ -1595,12 +1592,11 @@ void NestInitSkyPatch(LALMCMCParameter *parameter, void UNUSED *iT)
 /* FIXME: parameter iT is unused */
 void NestInitManual(LALMCMCParameter *parameter, void UNUSED *iT)
 {
-	double etamin=0.03;
 	double mcmin,mcmax;
 	parameter->param=NULL;
 	parameter->dimension = 0;
-	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
-	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
+	mcmin=manual_mass_low;
+	mcmax=manual_mass_high;
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 	double lDmin=log(manual_dist_min);
@@ -1625,12 +1621,11 @@ void NestInitManual(LALMCMCParameter *parameter, void UNUSED *iT)
 /* FIXME: parameter iT is unused */
 void NestInitManualIMRB(LALMCMCParameter *parameter, void UNUSED *iT)
 {
-	double etamin=0.03;
 	double mcmin,mcmax;
 	parameter->param=NULL;
 	parameter->dimension = 0;
-	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
-	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
+	mcmin=manual_mass_low;
+	mcmax=manual_mass_high;
 
     double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
@@ -1665,7 +1660,6 @@ void NestInitManualIMRB(LALMCMCParameter *parameter, void UNUSED *iT)
 /* FIXME: parameter iT is unused */
 void NestInitManualIMRBChi(LALMCMCParameter *parameter, void UNUSED *iT)
 {
-	double etamin=0.03;
 	double mcmin,mcmax;
 	parameter->param=NULL;
 	parameter->dimension = 0;
@@ -1708,7 +1702,6 @@ void NestInitNINJAManual(LALMCMCParameter *parameter, void UNUSED *iT){
 
 	/*double etamin = eta-0.5*etawindow;
 	 etamin = etamin<0.01?0.01:etamin;*/
-	double etamin=0.01;
 	/*double etamax = eta+0.5*etawindow;
 	 etamax = etamax>0.25?0.25:etamax;*/
 	double etamax=0.25;
@@ -1743,14 +1736,13 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	mtot = injTable->mass1 + injTable->mass2;
 	eta = injTable->eta;
 	mwindow = 0.2;
-	double etamin;
 	/*etamin = etamin<0.01?0.01:etamin;*/
 	etamin=0.01;
 	double etamax = 0.25;
 	mc=m2mc(injTable->mass1,injTable->mass2);
-	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
+	mcmin=manual_mass_low;
 
-	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
+	mcmax=manual_mass_high;
 
 	lmmin=log(mcmin);
 	lmmax=log(mcmax);
