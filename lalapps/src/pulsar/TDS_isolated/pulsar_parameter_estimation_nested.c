@@ -1456,8 +1456,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
     REAL8 sumModel = 0., sumDataModel = 0.;
     REAL8 chiSquare = 0.;
     COMPLEX16 B, M;
-
-    INT4 first = 0, through = 0;
   
     REAL8Vector *sumData = NULL;
     UINT4Vector *chunkLengths = NULL;
@@ -1483,13 +1481,8 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
         chunk length */
       if( chunkLength < chunkMin ){
         count++;
-
-        if( through == 0 ) first = 0;
-
         continue;
       }
-
-      through = 1;
 
       sumModel = 0.;
       sumDataModel = 0.;
@@ -1513,11 +1506,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
       chiSquare = sumData->data[count];
       chiSquare -= 2.*sumDataModel;
       chiSquare += sumModel;
-      
-      if( first == 0 ){
-        logliketmp = 0.;
-        first++;
-      }
 
       logliketmp -= chunkLength*log(chiSquare);
     
