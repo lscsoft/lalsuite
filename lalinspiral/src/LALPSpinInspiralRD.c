@@ -17,43 +17,36 @@
 *  MA  02111-1307  USA
 */
 
-/****  <lalVerbatim file="LALPSpinInspiralRDCV">
- * $Id$
- **** </lalVerbatim> */
+/**
+\file
+\ingroup LALInspiral_h
 
-/****  <lalLaTeX>
+ * \brief Module to generate generic spinning binaries waveforms complete with ring-down
  *
- * \subsection{Module \texttt{LALPSpinInspiralRD.c},
- * \texttt{LALPSpinInspiralTemplates} and \texttt{LALPSpinInspiralForInjection}}
- * \label{ss:LALPSpinInspiralRD.c}
+ * \heading{Prototypes}
  *
- * Module to generate generic spinning binaries waveforms complete with ring-down
+ * <tt>LALPSpinInspiralRD()</tt>
+ * <dl>
+ * <dt>signalvec:</dt><dd> Output containing the inspiral waveform.</dd>
+ * <dt>params:</dt><dd> Input containing binary chirp parameters.</dd>
+ * </dl>
  *
- * \subsubsection*{Prototypes}
- * \vspace{0.1in}
- * \input{LALPSpinInspiralRDCP}
- * \idx{\verb&LALPSpinInspiralRD()&}
- * \begin{description}
- * \item {\tt signalvec:} Output containing the inspiral waveform.
- * \item {\tt params:} Input containing binary chirp parameters.
- * \end{description}
  *
- * \input{LALPSpinInspiralRDTemplatesCP}
- * \idx{\verb&LALPSpinInspiralRDTemplates()&}
- * \begin{description}
- * \item {\tt signalvec1:} Output containing the $+$ inspiral waveform.
- * \item {\tt signalvec2:} Output containing the $\times$ inspiral waveform.
- * \item {\tt params:} Input containing binary chirp parameters.
- * \end{description}
+ * <tt>LALPSpinInspiralRDTemplates()</tt>
+ * <dl>
+ * <dt>signalvec1:</dt><dd>Output containing the \f$+\f$ inspiral waveform.</dd>
+ * <dt>signalvec2:</dt><dd>Output containing the \f$\times\f$ inspiral waveform.</dd>
+ * <dt>params:</dt><dd>Input containing binary chirp parameters.</dd>
+ * </dl>
  *
- * \input{LALPSpinInspiralRDInjectionCP}
- * \idx{\verb&LALPSpinInspiralRDInjection()&}
- * \begin{description}
- * \item {\tt signalvec:} Output containing the inspiral waveform.
- * \item {\tt params:} Input containing binary chirp parameters.
- * \end{description}
  *
- * \subsubsection*{Description}
+ * <tt>LALPSpinInspiralRDInjection()</tt>
+ * <dl>
+ * <dt>signalvec:</dt><dd>Output containing the inspiral waveform.</dd>
+ * <dt>params:</dt><dd>Input containing binary chirp parameters.</dd>
+ * </dl>
+ *
+ * \heading{Description}
  * This codes provide complete waveforms for generically spinning binary systems.
  * In order to construct the waveforms three phases are joined together:
  * an initial inspiral phase, a phenomenological phase encompassing the description
@@ -67,22 +60,19 @@
  * ensure continuity of the phase, the frequency and its first and second
  * derivatives. Finally a ring-down phase is attached.
  *
- * \subsubsection*{Algorithm}
+ * \heading{Algorithm}
  *
- * \subsubsection*{Uses}
- * \begin{verbatim}
- * LALPSpinInspiralRDderivatives
- * LALInspiralSetup
- * LALInspiralChooseModel
- * LALRungeKutta4
- * LALAdaptiveRungeKutta4
- * \end{verbatim}
+ * \heading{Uses}
+ * \code
+ * LALPSpinInspiralRDderivatives()
+ * LALInspiralSetup()
+ * LALInspiralChooseModel()
+ * LALRungeKutta4()
+ * \endcode
  *
- * \subsubsection*{Notes}
+ * \heading{Notes}
  *
- * \vfill{\footnotesize\input{LALPSpinInspiralRDCV}}
- *
- **** </lalLaTeX>  */
+*/
 
 /** \defgroup psird Complete phenomenological spin-inspiral waveforms
  *
