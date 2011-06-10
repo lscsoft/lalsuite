@@ -328,7 +328,7 @@ void initialise(int argc, char *argv[]){
 		{"chimin",required_argument,0,64}, /* N.B. ASCII codes 65 - 90 and 97-122 are letters */
 		{"chimax",required_argument,0,91},
 		{"mc_flag",no_argument,0,100},
-		{"snrfile",required_argument,0,123},
+		{"snrpath",required_argument,0,123},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
