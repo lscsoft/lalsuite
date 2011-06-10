@@ -80,7 +80,7 @@ UINT4 varybinary = 0;
                      be generated from the noise models in LALNoiseModels.\n\
                      For Advanced detectors (e.g Advanced LIGO) prefix the\n\
                      name with an A (e.g. AH1 for an Advanced LIGO detector\n\
-                     at Hanford). The nosie will be white across the data\n\
+                     at Hanford). The noise will be white across the data\n\
                      band width.\n"\
 " --fake-psd          if you want to generate fake data with specific power\n\
                      spectral densities for each detector giving in\n\

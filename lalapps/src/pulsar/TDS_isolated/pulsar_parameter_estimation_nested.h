@@ -71,8 +71,8 @@ extern "C" {
 /* default values */
 #define CHUNKMIN 5
 #define CHUNKMAX 0
-#define PSIBINS 50
-#define TIMEBINS 1440
+#define PSIBINS 200
+#define TIMEBINS 2880
 
 /* INCREASE THESE VALUES IF ADDING ADDITIONAL PARAMETERS */
 /* number of amplitude parameters e.g. h0, phi0, psi, ciota */
