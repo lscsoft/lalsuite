@@ -112,6 +112,7 @@ LALPlaygroundDataMask;
 ProcessTable *XLALCreateProcessTableRow(void);
 void XLALDestroyProcessTableRow(ProcessTable *);
 void XLALDestroyProcessTable(ProcessTable *);
+long XLALProcessTableGetNextID(ProcessTable *);
 
 ProcessParamsTable *XLALCreateProcessParamsTableRow(const ProcessTable *);
 void XLALDestroyProcessParamsTableRow(ProcessParamsTable *);

@@ -1080,6 +1080,21 @@ void XLALDestroyProcessTable(ProcessTable *head)
 
 
 /**
+ * Return the next available process ID.
+ */
+
+
+long XLALProcessTableGetNextID(ProcessTable *head)
+{
+  long highest = -1;
+  for(; head; head = head->next)
+    if(head->process_id > highest)
+      highest = head->process_id;
+  return highest + 1;
+}
+
+
+/**
  * Create a ProcessParamsTable structure.
  */
 
