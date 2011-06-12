@@ -103,6 +103,9 @@
 #include <lal/FileIO.h>
 #include <lal/StringInput.h>
 
+/* prototypes */
+void print_help(void);
+int plan_problem(char type, char direc, UINT4 transform_size, int measurelvl);
 
 /** Print basic usage information about the program and exit */
 void print_help(void)
