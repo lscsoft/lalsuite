@@ -29,7 +29,9 @@ liblalapps_la_SOURCES = \
 bin_PROGRAMS = \
 	lalapps_version \
 	lalapps_tconvert \
-	lalapps_cache
+	lalapps_cache \
+	lalapps_fftwf_wisdom \
+	lalapps_fftw_wisdom
 
 lalapps_version_SOURCES = \
 	version.c \
@@ -41,6 +43,10 @@ lalapps_tconvert_SOURCES = \
 	getdate.h
 lalapps_cache_SOURCES = \
 	cache.c
+lalapps_fftwf_wisdom_SOURCES = \
+	fftwf_wisdom.c
+lalapps_fftw_wisdom_SOURCES = \
+	fftw_wisdom.c
 
 LDADD = liblalapps.la @LAL_LIBS@
 INCLUDES = -I$(top_srcdir)/src
