@@ -183,12 +183,12 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
     if(LALInferenceCheckVariable(params,"logmc")) {
       logmc=*(REAL8 *)LALInferenceGetVariable(params,"logmc");
       mc2masses(exp(logmc),eta,&m1,&m2);
-      /*careful using mc2masses, it returns m2>=m1*/
-      logPrior+=log(((m1+m2)*(m1+m2)*(m1+m2))/(m2-m1));
+      /*careful using mc2masses, it returns m1>=m2*/
+      logPrior+=log(((m1+m2)*(m1+m2)*(m1+m2))/(m1-m2));
     } else if(LALInferenceCheckVariable(params,"chirpmass")) {
       mc=*(REAL8 *)LALInferenceGetVariable(params,"chirpmass");
       mc2masses(mc,eta,&m1,&m2);
-      logPrior+=log(((m1+m2)*(m1+m2))/((m2-m1)*pow(eta,3.0/5.0)));
+      logPrior+=log(((m1+m2)*(m1+m2))/((m1-m2)*pow(eta,3.0/5.0)));
     }
 
 	}

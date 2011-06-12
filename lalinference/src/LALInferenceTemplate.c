@@ -387,7 +387,7 @@ void mc2masses(double mc, double eta, double *m1, double *m2);
 void mc2masses(double mc, double eta, double *m1, double *m2)
 /*  Compute individual companion masses (m1, m2)   */
 /*  for given chirp mass (m_c) & mass ratio (eta)  */
-/*  (note: m2 >= m1).                              */
+/*  (note: m1 >= m2).                              */
 {
   double root = sqrt(0.25-eta);
   double fraction = (0.5+root) / (0.5-root);
