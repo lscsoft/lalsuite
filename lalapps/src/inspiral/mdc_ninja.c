@@ -696,11 +696,32 @@ INT4 main( INT4 argc, CHAR *argv[] )
     if (vrbflg)
       fprintf(stdout, "\n");
 
+    int writing_real_8 = 0;
+
     /* output frame */
     if ( ifosFlag )
-      output_multi_channel_frame( num_ifos, gpsStartSec, gpsEndSec, injData, frameType, outDir );
-    else
-      output_frame( ifo, gpsStartSec, gpsEndSec, injData[0], frameType, outDir );
+    {
+      if ( writing_real_8 )
+      {
+        /* Stub call to surpress compiler warning until we're ready with the real
+           REAL8 call
+         */
+         output_multi_channel_frame_real8( num_ifos, gpsStartSec, gpsEndSec, NULL, frameType, outDir );
+      }
+      else
+         output_multi_channel_frame( num_ifos, gpsStartSec, gpsEndSec, injData, frameType, outDir );
+    }
+    else {
+      if ( writing_real_8 )
+      { 
+        /* Stub call to surpress compiler warning until we're ready with the real
+           REAL8 call
+        */
+        output_frame_real8( ifo, gpsStartSec, gpsEndSec, NULL, frameType, outDir );
+      }
+      else
+        output_frame( ifo, gpsStartSec, gpsEndSec, injData[0], frameType, outDir );
+    }
   }
 
   /* write mdc log */

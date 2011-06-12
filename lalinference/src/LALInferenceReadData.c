@@ -110,7 +110,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	int FakeFlag=0;
 	char strainname[]="LSC-STRAIN";
 	
-	typedef void (NoiseFunc)(LALStatus *status,REAL8 *psd,REAL8 f);
+	typedef void (NoiseFunc)(LALStatus *statusPtr,REAL8 *psd,REAL8 f);
 	NoiseFunc *PSD=NULL;
 	REAL8 scalefactor=1;
 

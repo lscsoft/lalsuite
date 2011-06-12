@@ -78,7 +78,6 @@ Optional OPTIONS:\n \
 [--timeslide\t:\tTimeslide data]\n[--studentt\t:\tuse student-t likelihood function]\n \
 [--ra FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use (DEGREES)]\n \
 [--grb\t:\tuse GRB prior ]\n[--skyloc\t:\tuse trigger masses]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
-[--deta FLOAT\t:\twidth of eta window]\n \
 [--dt FLOAT (0.01)\t:\ttime window (0.01s)]\n \
 [--injSNR FLOAT\t:\tScale injection to have network SNR of FLOAT]\n \
 [--SNRfac FLOAT\t:\tScale injection SNR by a factor FLOAT]\n \
@@ -87,6 +86,7 @@ Optional OPTIONS:\n \
 [--datadump DATA.txt\t:\tOutput frequency domain PSD and data segment to DATA.txt]\n \
 [--flow NUM\t:\t:Set low frequency cutoff (default 40Hz)]\n\
 [--chimin NUM\t:\tMin value of chi spin parameter]\n\
+[--etamin NUM\t:\tMinimum value of eta]\n\
 [--chimax NUM\t:\tMax value of chi spin parameter]\n\
 [--snrpath PATH\t:\tOutput SNRs to a file in PATH]\n\
 \n\n \
@@ -126,6 +126,7 @@ extern CHAR outfile[FILENAME_MAX];
 CHAR *datadump=NULL;
 extern double etawindow;
 extern double timewindow;
+double etamin=0.03;
 CHAR **CacheFileNames = NULL;
 CHAR **ChannelNames = NULL;
 CHAR **IFOnames = NULL;
@@ -212,7 +213,6 @@ double lat_max=LAL_PI/2.;
 double manual_chi_min=-1.;
 double manual_chi_max=1.;
 int mc_flag=0;
-double m_c_min=1.;
 /* */
 void NestInitManual(LALMCMCParameter *parameter, void *iT);
 void NestInitManualIMRB(LALMCMCParameter *parameter, void *iT);
@@ -271,13 +271,13 @@ void initialise(int argc, char *argv[]){
 		{"inj",required_argument,0,'j'},
 		{"fake",no_argument,0,'F'},
 		{"injSNR",required_argument,0,'p'},
-		{"deta",required_argument,0,'e'},
 		{"dt",required_argument,0,'t'},
 		{"event",required_argument,0,'E'},
 		{"NINJA",no_argument,0,'n'},
 		{"end_time",required_argument,0,'Z'},
 		{"mmin",required_argument,0,'m'},
 		{"mmax",required_argument,0,'g'},
+		{"etamin",required_argument,0,'e'},
 		{"verbose",no_argument,0,'v'},
 		{"approximant",required_argument,0,'A'},
 		{"timeslide",no_argument,0,'L'},
@@ -327,19 +327,12 @@ void initialise(int argc, char *argv[]){
 		{"m_tot_max",required_argument,0,63},
 		{"chimin",required_argument,0,64}, /* N.B. ASCII codes 65 - 90 and 97-122 are letters */
 		{"chimax",required_argument,0,91},
-		{"m_c_min",required_argument,0,99},
 		{"mc_flag",no_argument,0,100},
-		{"snrfile",required_argument,0,123},
+		{"snrpath",required_argument,0,123},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
 	while((i=getopt_long(argc,argv,"hi:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFVvb",long_options,&i))!=-1){ switch(i) {
-		case 100:
-			mc_flag=1;
-			break;
-		case 99:
-			m_c_min=atof(optarg);
-			break;
 		case 64:
 			manual_chi_min=atof(optarg);
 			break;
@@ -548,7 +541,7 @@ void initialise(int argc, char *argv[]){
 			manual_end_time=atof(optarg);
 			break;
 		case 'e':
-			etawindow=atof(optarg);
+			etamin=atof(optarg);
 			break;
 		case 'r':
 			Nruns=atoi(optarg);
@@ -1131,7 +1124,11 @@ int main( int argc, char *argv[])
 
 
 	/* Set up the approximant to use in the likelihood function */
-	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB_NS"; CHAR BBHSpin2[]="IMRPhenomFB"; CHAR BBHSpin3[]="IMRPhenomFB_Chi"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN"; CHAR ST[]="SpinTaylor"; CHAR LowMassIMRFB[]="IMRPhenomFB_Chi_low"; CHAR LowMassIMRB[]="IMRPhenomB_Chi_low"; CHAR PSTRD[]="PhenSpinTaylorRD";
+	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2";
+	CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB_NS"; CHAR BBHSpin2[]="IMRPhenomFB";
+	CHAR BBHSpin3[]="IMRPhenomFB_Chi"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN";
+	CHAR ST[]="SpinTaylor"; CHAR LowMassIMRFB[]="IMRPhenomFB_Chi_low"; CHAR LowMassIMRB[]="IMRPhenomB_Chi_low";
+	CHAR PSTRD[]="PhenSpinTaylorRD";
 	/*CHAR PSTRD[]="PhenSpinTaylorRD"; */ /* Commented out until PhenSpin waveforms are in master */
 	inputMCMC.approximant = TaylorF2; /* Default */
 	if(!strcmp(approx,TF2)) inputMCMC.approximant=TaylorF2;
@@ -1228,20 +1225,19 @@ doneinit:
 	if(GRBflag) {inputMCMC.funcPrior = GRBPrior;
 		inputMCMC.funcInit = NestInitGRB;
 	}
-	if(HighMassFlag) inputMCMC.funcPrior = NestPriorHighMass;
 
     if(!strcmp(approx,BBHSpin1)) {
         inputMCMC.funcPrior = NestPriorHighMass;
         inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
         inputMCMC.funcInit = NestInitManual;
     }
-
+		/* IMRPhenomFB */
     if(!strcmp(approx,BBHSpin2)) {
         inputMCMC.funcPrior = NestPriorHighMass;
         inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
         inputMCMC.funcInit = NestInitManualIMRB;
     }
-
+		/* IMRPhenomFB_Chi */
     if(!strcmp(approx,BBHSpin3)) {
         inputMCMC.funcPrior = NestPriorHighMass;
         inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
@@ -1254,7 +1250,7 @@ doneinit:
     }
    
     	if(!strcmp(approx,PSTRD)) {
-	  inputMCMC.funcPrior = NestPriorPhenSpin;
+	  inputMCMC.funcPrior = NestPrior;
 	  inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF_PhenSpin;
 	  inputMCMC.likelihoodPlan = NULL;
 	  inputMCMC.funcInit = NestInitManualPhenSpinRD;
@@ -1264,7 +1260,7 @@ doneinit:
 		template.fCutoff=SampleRate/2.-1.;
 		template.tSampling=SampleRate;
 		template.approximant=PhenSpinTaylorRD;
-		template.totalMass=mc2mass1(m_c_min,0.24)+mc2mass2(m_c_min,0.24);
+		template.totalMass=mc2mass1(manual_mass_low,0.25)+mc2mass2(manual_mass_low,0.25);
 		
 		template.eta=0.24;
 		template.massChoice=totalMassAndEta;
@@ -1291,6 +1287,8 @@ doneinit:
         
 
 	} 
+	
+	if(HighMassFlag) inputMCMC.funcPrior = NestPriorHighMass;
      
 	/* Live is an array of LALMCMCParameter * types */
 	Live = (LALMCMCParameter **)LALMalloc(Nlive*sizeof(LALMCMCParameter *));
@@ -1348,6 +1346,9 @@ doneinit:
 	}
 	return(0);
 } /* End main() */
+
+
+
 void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
 {
   (void)iT;
@@ -1356,10 +1357,7 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
   double dmax=d_max;
  
 
-  double singleMassMin=compmassmin;
-  double totalMassMin=m_tot_min;
-  double totalMassMax=m_tot_max;
-  if ( (manual_mass_high > manual_mass_low) && (manual_mass_low>2.*singleMassMin) ) {
+/*  if ( (manual_mass_high > manual_mass_low) && (manual_mass_low>2.*singleMassMin) ) {
     totalMassMin=manual_mass_low;
     totalMassMax=manual_mass_high;
   }
@@ -1369,13 +1367,8 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
       totalMassMax=m_tot_max_highmass;
     }
   }
-  
-  double m1min = m_tot_min/2.;
-  double m2min = m_tot_min/2.;
-  double mmaxhalf = m_tot_max/2.;
+  */
 
-
-  double etamin=0.25 - etawindow;
   double eta=etamin+gsl_rng_uniform(RNG)*(0.25-etamin);
 
   double logMc;
@@ -1383,15 +1376,8 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
  // double mcmin = m2mc(m1min,m2min);
  // double mcmax = m2mc(m1maxhalf,m2maxhalf);
 
-  double mu_pow_min=pow((m1min*m2min)/(m1min +m2min),0.6);
-  double mcmin=pow((m1min+m2min),0.4)*mu_pow_min;
-  if(mc_flag){
-	mcmin=m_c_min;
-		}
-  double mu_pow_max=pow(mmaxhalf*mmaxhalf/(mmaxhalf +mmaxhalf),0.6);
-  double mcmax=pow((mmaxhalf+mmaxhalf),0.4)*mu_pow_max;
-  double lMcmin=log(mcmin);
-  double lMcmax=log(mcmax);
+  double lMcmin=log(manual_mass_low);
+  double lMcmax=log(manual_mass_high);
 
 
   parameter->param=NULL;
@@ -1495,9 +1481,7 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
 		if(manual_RA!=-4200.0) trueLong = manual_RA;
 		if(manual_dec!=-4200.0) trueLat = manual_dec;
     }
-	double etamin;
 	/*etamin = etamin<0.01?0.01:etamin;*/
-	etamin=0.01;
 	double etamax = 0.25;
 
 	/* GRB priors are below */
@@ -1565,7 +1549,6 @@ void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT)
 /* FIXME: parameter iT is unused */
 void NestInitSkyPatch(LALMCMCParameter *parameter, void UNUSED *iT)
 {
-	double etamin=0.01;
 	double mcmin,mcmax;
 	double deltaLong=0.001;
 	double deltaLat=0.001;
@@ -1595,12 +1578,11 @@ void NestInitSkyPatch(LALMCMCParameter *parameter, void UNUSED *iT)
 /* FIXME: parameter iT is unused */
 void NestInitManual(LALMCMCParameter *parameter, void UNUSED *iT)
 {
-	double etamin=0.03;
 	double mcmin,mcmax;
 	parameter->param=NULL;
 	parameter->dimension = 0;
-	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
-	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
+	mcmin=manual_mass_low;
+	mcmax=manual_mass_high;
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 	double lDmin=log(manual_dist_min);
@@ -1625,12 +1607,11 @@ void NestInitManual(LALMCMCParameter *parameter, void UNUSED *iT)
 /* FIXME: parameter iT is unused */
 void NestInitManualIMRB(LALMCMCParameter *parameter, void UNUSED *iT)
 {
-	double etamin=0.03;
 	double mcmin,mcmax;
 	parameter->param=NULL;
 	parameter->dimension = 0;
-	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
-	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
+	mcmin=manual_mass_low;
+	mcmax=manual_mass_high;
 
     double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
@@ -1665,14 +1646,13 @@ void NestInitManualIMRB(LALMCMCParameter *parameter, void UNUSED *iT)
 /* FIXME: parameter iT is unused */
 void NestInitManualIMRBChi(LALMCMCParameter *parameter, void UNUSED *iT)
 {
-	double etamin=0.03;
 	double mcmin,mcmax;
 	parameter->param=NULL;
 	parameter->dimension = 0;
 	mcmin=manual_mass_low;
 	mcmax=manual_mass_high;
 
-    double lmmin=log(mcmin);
+	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 
     double ldmin=log(manual_dist_min);
@@ -1708,7 +1688,6 @@ void NestInitNINJAManual(LALMCMCParameter *parameter, void UNUSED *iT){
 
 	/*double etamin = eta-0.5*etawindow;
 	 etamin = etamin<0.01?0.01:etamin;*/
-	double etamin=0.01;
 	/*double etamax = eta+0.5*etawindow;
 	 etamax = etamax>0.25?0.25:etamax;*/
 	double etamax=0.25;
@@ -1743,14 +1722,13 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	mtot = injTable->mass1 + injTable->mass2;
 	eta = injTable->eta;
 	mwindow = 0.2;
-	double etamin;
 	/*etamin = etamin<0.01?0.01:etamin;*/
 	etamin=0.01;
 	double etamax = 0.25;
 	mc=m2mc(injTable->mass1,injTable->mass2);
-	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
+	mcmin=manual_mass_low;
 
-	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
+	mcmax=manual_mass_high;
 
 	lmmin=log(mcmin);
 	lmmax=log(mcmax);
