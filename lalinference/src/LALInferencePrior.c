@@ -25,11 +25,23 @@
 #include <gsl/gsl_integration.h>
 
 /* Private helper function prototypes */
-double innerIntegrand(double M2, void *viData);
-double outerIntegrand(double M1, void *voData);
-double computePriorMassNorm(const double MMin, const double MMax, const double MTotMax, const double McMin, const double McMax, const double etaMin, const double etaMax);
-void mc2masses(double mc, double eta, double *m1, double *m2);
+static double innerIntegrand(double M2, void *viData);
+static double outerIntegrand(double M1, void *voData);
+static double computePriorMassNorm(const double MMin, const double MMax, const double MTotMax, const double McMin, const double McMax, const double etaMin, const double etaMax);
 
+static void mc2masses(double mc, double eta, double *m1, double *m2);
+
+static void mc2masses(double mc, double eta, double *m1, double *m2)
+/*  Compute individual companion masses (m1, m2)   */
+/*  for given chirp mass (m_c) & mass ratio (eta)  */
+/*  (note: m1 >= m2).                              */
+{
+  double root = sqrt(0.25-eta);
+  double fraction = (0.5+root) / (0.5-root);
+  *m2 = mc * (pow(1+fraction,0.2) / pow(fraction,0.6));
+  *m1 = mc * (pow(1+1.0/fraction,0.2) / pow(1.0/fraction,0.6));
+  return;
+}
 
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
@@ -41,7 +53,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 	LALInferenceVariables *priorParams=runState->priorArgs;
 	REAL8 min, max;
 	REAL8 logmc=0.0;
-	REAL8 m1,m2,eta=0.0;
+	REAL8 m1=0.0,m2=0.0,eta=0.0;
 	/* Check boundaries */
 	for(;item;item=item->next)
 	{
@@ -148,7 +160,7 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
 	LALInferenceVariables *priorParams=runState->priorArgs;
 	REAL8 min, max;
 	REAL8 logmc=0.0;
-	REAL8 m1,m2,mc,eta=0.0;
+	REAL8 m1=0.0,m2=0.0,mc=0.0,eta=0.0;
 	/* Check boundaries */
 	for(;item;item=item->next)
 	{
@@ -421,7 +433,7 @@ typedef struct {
 
 #define SQR(x) ((x)*(x))
 
-double innerIntegrand(double M2, void *viData) {
+static double innerIntegrand(double M2, void *viData) {
 	innerData *iData = (innerData *)viData;
 	double Mc = pow(M2*iData->M1, 3.0/5.0)/pow(M2+iData->M1, 1.0/5.0);
 	double eta = M2*iData->M1/SQR(M2+iData->M1);
@@ -449,7 +461,7 @@ typedef struct {
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
-double outerIntegrand(double M1, void *voData) {
+static double outerIntegrand(double M1, void *voData) {
 	outerData *oData = (outerData *)voData;
 	gsl_function f;
 	innerData iData;
@@ -472,7 +484,7 @@ double outerIntegrand(double M1, void *voData) {
 
 #undef MIN
 
-double computePriorMassNorm(const double MMin, const double MMax, const double MTotMax, 
+static double computePriorMassNorm(const double MMin, const double MMax, const double MTotMax, 
                     const double McMin, const double McMax,
                     const double etaMin, const double etaMax) {
 	const double epsabs = 1e-8;

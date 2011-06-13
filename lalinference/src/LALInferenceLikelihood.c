@@ -38,8 +38,8 @@
 
 
 /** Internal functions which are not exported */
-UINT4 LIGOTimeGPSToNearestIndex(const LIGOTimeGPS *tm, const REAL8TimeSeries *series);
-UINT4 LIGOTimeGPSToNearestIndex(const LIGOTimeGPS *tm, const REAL8TimeSeries *series) {
+static UINT4 LIGOTimeGPSToNearestIndex(const LIGOTimeGPS *tm, const REAL8TimeSeries *series);
+static UINT4 LIGOTimeGPSToNearestIndex(const LIGOTimeGPS *tm, const REAL8TimeSeries *series) {
   REAL8 dT = XLALGPSDiff(tm, &(series->epoch));
 
   return (UINT4) (round(dT/series->deltaT));
@@ -52,8 +52,8 @@ UINT4 LIGOTimeGPSToNearestIndex(const LIGOTimeGPS *tm, const REAL8TimeSeries *se
 
 */
 
-UINT4 nextPowerOfTwo(const UINT4 n);
-UINT4 nextPowerOfTwo(const UINT4 n) {
+static UINT4 nextPowerOfTwo(const UINT4 n);
+static UINT4 nextPowerOfTwo(const UINT4 n) {
   UINT4 np2 = 1;
   
   for (np2 = 1; np2 < n; np2 *= 2) ; /* Keep doubling until >= n */
@@ -61,8 +61,8 @@ UINT4 nextPowerOfTwo(const UINT4 n) {
   return np2;
 }
 
-void padREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
-void padREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data) {
+static void padREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
+static void padREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data) {
   if (padded->length < data->length) {
     fprintf(stderr, "padREAL8Sequence: padded sequence too short (in %s, line %d)", __FILE__, __LINE__);
     exit(1);
@@ -72,8 +72,8 @@ void padREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data) {
   memcpy(padded->data, data->data, data->length*sizeof(data->data[0]));
 }
 
-void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
-void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data) {
+static void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
+static void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data) {
   UINT4 i;
   UINT4 np = padded->length;
   UINT4 nd = data->length;
