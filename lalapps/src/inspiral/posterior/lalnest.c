@@ -1273,6 +1273,7 @@ doneinit:
 
 		LALInspiralParameterCalc(&status,&template);
 		LALInspiralWaveLength(&status, &inputMCMC.mylength, template);
+		inputMCMC.mylength *= 2;
 	        if(inputMCMC.mylength>inputMCMC.numPoints){	
 		printf("myl = %d ,total mass=%11.4E\n",inputMCMC.mylength,template.totalMass);
 		
