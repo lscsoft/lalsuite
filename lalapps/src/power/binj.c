@@ -226,9 +226,9 @@ static void print_usage(void)
 "--time-slide-file filename\n" \
 "	Set the name of the LIGO Light-Weight XML file from which to load\n" \
 "	the time slide table.  The document must contain exactly 1 time\n" \
-"	slide vector, and only the contents of the process, process_params\n" \
-"	and time_slide tables will be copied into " PROGRAM_NAME "'s\n" \
-"	output.\n" \
+"	slide vector, and only the contents of the process, process_params,\n" \
+"	search_summary (optional), sim_burst (optional), and time_slide tables\n" \
+"	will be copied into " PROGRAM_NAME "'s output.\n" \
 "\n" \
 "--user-tag string\n" \
 "	Set the user tag in the process and search summary tables to this.\n"
