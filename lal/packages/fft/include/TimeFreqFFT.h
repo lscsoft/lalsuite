@@ -61,6 +61,11 @@
 #ifndef _TIMEFREQFFT_H
 #define _TIMEFREQFFT_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALDatatypes.h>
 #include <lal/ComplexFFT.h>
 #include <lal/RealFFT.h>
@@ -174,6 +179,7 @@ of the power spectrum.
 typedef struct
 tagAverageSpectrumParams
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL4Window          *window;
   UINT4                 overlap;
   AvgSpecMethod         method;
@@ -184,6 +190,7 @@ AverageSpectrumParams;
 typedef struct
 tagLALPSDRegressor
 {
+  SWIGLAL_STRUCT_LALALLOC();
   unsigned average_samples;
   unsigned median_samples;
   unsigned n_samples;

@@ -114,6 +114,11 @@ spindown timescale.
 #ifndef _FLATMESH_H
 #define _FLATMESH_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 
 #ifdef __cplusplus
@@ -147,6 +152,7 @@ NRCSID(FLATMESHH,"$Id$");
  */
 typedef struct tagFlatMeshParamStruc
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL4VectorSequence *matrix;    /**< The matrix \f$\mathsf{M}^a{}_b\f$ (above) that transforms from orthonormalized to parameter coordinates */
   REAL4VectorSequence *matrixInv; /**< The inverse of <tt>*matrix</tt> */
   REAL4Vector *xMin;	/**< A vector defining one corner of a rectangular region in parameter space that contains the region to be

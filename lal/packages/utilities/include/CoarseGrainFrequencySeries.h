@@ -48,6 +48,11 @@ which coarse-grain a frequency series.
 #ifndef _COARSEGRAINFREQUENCYSERIES_H
 #define _COARSEGRAINFREQUENCYSERIES_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -113,6 +118,7 @@ The frequency spacing of the frequency series.
 typedef struct
 tagFrequencySamplingParams
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL8         f0;
   REAL8         deltaF;
   UINT4         length;

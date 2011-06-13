@@ -325,6 +325,8 @@ void XLALPerror( const char *func, const char *file, int line, int errnum );
  *
  */
 
+#ifndef SWIG /* exclude from SWIG interface */
+
 /** The XLAL error handler type. */
 typedef void XLALErrorHandlerType( const char *func, const char *file, int line, int errnum );
 
@@ -350,6 +352,8 @@ XLALErrorHandlerType * XLALSetErrorHandler( XLALErrorHandlerType *newHandler );
 XLALErrorHandlerType * XLALSetDefaultErrorHandler( void );
 /** Sets the error handler to a silent handler and returns the old handler. */
 XLALErrorHandlerType * XLALSetSilentErrorHandler( void );
+
+#endif /* SWIG */
 
 
 /*
@@ -381,8 +385,12 @@ int XLALClearErrno( void );
 /** Function to return pointer to the XLAL error number. */
 int * XLALGetErrnoPtr( void );
 
+#ifndef SWIG /* exclude from SWIG interface */
+
 /** Function to return pointer to the XLAL error handler function pointer. */
 XLALErrorHandlerType ** XLALGetErrorHandlerPtr( void );
+
+#endif /* SWIG */
 
 /* these are the modifiable lvalues for xlalErrno and XLALErrorHandler */
 #define xlalErrno ( * XLALGetErrnoPtr() ) /**< Modifiable lvalue containing the XLAL error number */

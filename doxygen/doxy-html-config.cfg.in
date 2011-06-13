@@ -638,7 +638,8 @@ EXCLUDE_PATTERNS       = */include/lal/* \
 
 EXCLUDE_SYMBOLS        = UNUSED \
                          NRCSID \
-                         RCSID
+                         RCSID \
+                         SWIGLAL_*
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or
 # directories that contain example code fragments that are included (see

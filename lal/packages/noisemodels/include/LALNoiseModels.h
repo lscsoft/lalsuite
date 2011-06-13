@@ -46,6 +46,11 @@ detectors and signals with random parameters in background noise.
 #ifndef _LALNOISEMODELS_H
 #define _LALNOISEMODELS_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -107,6 +112,7 @@ extern "C" {
     typedef struct
             tagAddVectorsIn
             {
+                SWIGLAL_STRUCT_LALALLOC();
                 REAL4Vector *v1;
                 REAL4Vector *v2;
                 REAL8       a1;
@@ -124,6 +130,7 @@ extern "C" {
     typedef struct
             tagStatsREAL4VectorOut
             {
+                SWIGLAL_STRUCT_LALALLOC();
                 REAL8 mean;
                 REAL8 var;
                 REAL8 stddev;

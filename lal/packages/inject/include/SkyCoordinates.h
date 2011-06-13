@@ -28,6 +28,11 @@
 #ifndef _SKYCOORDINATES_H
 #define _SKYCOORDINATES_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
@@ -67,6 +72,7 @@ typedef enum {
  * indicating which coordinate system it is expressed in.
  */
 typedef struct tagSkyPosition {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL8 longitude;		/**< The longitudinal coordinate (in radians), as defined above.*/
   REAL8 latitude;		/**< The latitudinal coordinate (in radians), as defined above. */
   CoordinateSystem system; 	/**< The coordinate system in which latitude/longitude are expressed. */
@@ -77,6 +83,7 @@ typedef struct tagSkyPosition {
  * in TerrestrialCoordinates.c .
  */
 typedef struct tagEarthPosition {
+  SWIGLAL_STRUCT_LALALLOC();
   SkyPosition geodetic; 	/**< The geographic coordinates of the
 				 * upward vertical direction from the point; that is, the point's
 				 * <em>geodetic</em> latitude and longitude. */
@@ -98,6 +105,7 @@ typedef struct tagEarthPosition {
 /** This structure stores parameters for the function <tt>LALConvertSkyPosition()</tt>.
  */
 typedef struct tagConvertSkyParams {
+  SWIGLAL_STRUCT_LALALLOC();
   CoordinateSystem system;	/**<  The coordinate system to which one is transforming. */
 
   SkyPosition *zenith;		/**< The position of the zenith of the horizon coordinate system;

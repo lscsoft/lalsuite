@@ -80,3 +80,7 @@ LALXMLVCSInfo.h: ._vcsinfo
 	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALXML $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@
+
+swig_headers = $(lalxmlinclude_HEADERS)
+CLEANFILES += $(swig_clean)
+@SWIG_HEADER_MK@

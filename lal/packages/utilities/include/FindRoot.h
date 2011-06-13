@@ -44,6 +44,11 @@ Root finding routines.
 #ifndef _FINDROOT_H
 #define _FINDROOT_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALDatatypes.h>
 
 #ifdef __cplusplus
@@ -128,6 +133,7 @@ These are the input structures to the root finding routines.  The fields are:
 typedef struct
 tagSFindRootIn
 {
+  SWIGLAL_STRUCT_LALALLOC();
   void (*function)(LALStatus *s, REAL4 *y, REAL4 x, void *p);
   REAL4 xmax;
   REAL4 xmin;
@@ -138,6 +144,7 @@ SFindRootIn;
 typedef struct
 tagDFindRootIn
 {
+  SWIGLAL_STRUCT_LALALLOC();
   void (*function)(LALStatus *s, REAL8 *y, REAL8 x, void *p);
   REAL8 xmax;
   REAL8 xmin;

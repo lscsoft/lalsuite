@@ -12,6 +12,7 @@ SUBDIRS = \
 	debian \
 	include \
 	src \
+	swig \
 	test
 
 pkgconfigdir = $(libdir)/pkgconfig

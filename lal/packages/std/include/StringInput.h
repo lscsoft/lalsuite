@@ -66,6 +66,11 @@ fully LAL-compliant and use only LAL types, so they are included in
 #ifndef _STRINGINPUT_H
 #define _STRINGINPUT_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 
@@ -174,6 +179,7 @@ separated by (and terminated with) \verb@'\0'@ characters.
 ******************************************************* </lalLaTeX> */
 
 typedef struct tagTokenList {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 nTokens;    /* number of tokens */
   CHAR **tokens;    /* list of pointers to tokens */
   CHARVector *list; /* flattened list of null-terminated tokens */

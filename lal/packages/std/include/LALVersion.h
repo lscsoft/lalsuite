@@ -90,14 +90,14 @@ NRCSID( LALVERSIONH, "$Id$" );
 
 /* </lalErrTable> */
 
-extern const char *lalVersion;
-extern const int   lalVersionMajor;
-extern const int   lalVersionMinor;
-extern const int   lalVersionMicro;
-extern const int   lalVersionDevel;
-extern const char *lalBuildDate;
-extern const char *lalConfigureArgs;
-extern const char *lalConfigureDate;
+extern const char *const lalVersion;
+extern const int         lalVersionMajor;
+extern const int         lalVersionMinor;
+extern const int         lalVersionMicro;
+extern const int         lalVersionDevel;
+extern const char *const lalBuildDate;
+extern const char *const lalConfigureArgs;
+extern const char *const lalConfigureDate;
 
 
 void

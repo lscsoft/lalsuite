@@ -37,6 +37,11 @@ $Id$
 #ifndef __LALVECTORINDEXRANGE_H__
 #define __LALVECTORINDEXRANGE_H__
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* C++ */
