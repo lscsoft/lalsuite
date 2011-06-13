@@ -746,9 +746,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   fclose(chainoutput);
 	          
 	//free(chainoutput);
-  
-  fclose(stat);
-  
+  if(MPIrank == 0){
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose") || LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")) {
+      fclose(stat);
+    }
+  }
 	//for (t=0; t<nChain; ++t) {
 	//	free(outfileName[t]);
 	//}
