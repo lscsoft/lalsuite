@@ -322,7 +322,7 @@ static int check_checksum(const char *filterfile, const char *claimed_chksum)
     snprintf(command, sizeof command, "tail -n +3 %s | sha1sum", filterfile);
     if ( !(fpipe = (FILE*) popen(command, "r")) ) {
         perror("Problem in popen when checking checksum.");
-	return -1;
+        return -1;
     }
     if ( !(fgets(actual_chksum, sizeof actual_chksum, fpipe)) ) {
         perror("Problem in fgets when checking checksum.");
