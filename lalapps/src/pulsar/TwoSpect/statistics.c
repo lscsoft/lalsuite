@@ -18,10 +18,13 @@
  */
 
 #include <math.h>
+#include <time.h>
 
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_cdf.h>
+#include <gsl/gsl_sf_bessel.h>
+#include <gsl/gsl_sf_erf.h>
 #include <gsl/gsl_statistics_double.h>
 
 #include <lal/LALConstants.h>
@@ -49,6 +52,246 @@ REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator)
    
 } /* expRandNum() */
 
+
+
+REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
+{
+   
+   const CHAR *fn = __func__;
+   
+   //Matlab's version
+   REAL8 prob = 0.0;
+   REAL8 err = LAL_REAL8_EPS;
+   REAL8 halfdelta = 0.5*delta;
+   INT4 counter = (INT4)floor(halfdelta);
+   REAL8 P = gsl_ran_poisson_pdf(counter, halfdelta);
+   REAL8 C = gsl_cdf_chisq_P(x, dof+2.0*counter);
+   REAL8 E = exp((dof*0.5+counter-1)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
+   
+   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
+   if (xlalErrno!=0) {
+      fprintf(stderr,"%s: sumseries() failed.\n", fn);
+      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+   }
+   counter--;
+   if (counter<0) return GSL_MIN(prob, 1.0);
+   
+   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
+   if (xlalErrno!=0) {
+      fprintf(stderr,"%s: sumseries() failed.\n", fn);
+      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+   }
+   
+   INT4 fromzero = 0;
+   if (prob==0.0) fromzero = 1;
+   if (fromzero==1) {
+      counter = 0;
+      REAL8 pk = gsl_ran_poisson_pdf(0, halfdelta)*gsl_cdf_chisq_P(x, dof);
+      REAL8 dp = 0.0;
+      INT4 ok = 0;
+      if ((REAL8)counter<halfdelta) ok = 1;
+      while (ok==1) {
+         counter++;
+         P = gsl_ran_poisson_pdf(counter, halfdelta);
+         C = gsl_cdf_chisq_P(x, dof+2.0*counter);
+         dp = P*C;
+         pk += dp;
+         if (!(ok==1 && (REAL8)counter<halfdelta && dp>=err*pk)) ok = 0;
+      }
+      prob = pk;
+   }
+   
+   return GSL_MIN(prob, 1.0);
+   
+}
+void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT4 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown)
+{
+   
+   const CHAR *fn = __func__;
+   
+   REAL8 Pint = P, Cint = C, Eint = E;
+   INT4 counterint = counter;
+   INT4 j = 0;
+   if (countdown!=0) {
+      if (counterint>=0) j = 1;
+      if (j==1) {
+         Pint *= (counterint+1)/halfdelta;
+         Cint += E;
+      } else {
+         counterint = -1;
+      }
+   }
+   
+   while (counterint!=-1) {
+      REAL8 pplus = Pint*Cint;
+      if (XLAL_IS_REAL8_FAIL_NAN(pplus)) {
+         fprintf(stderr, "%s: pplus is NaN.\n", fn);
+         XLAL_ERROR_VOID(fn, XLAL_EFPOVRFLW);
+      }
+      *(computedprob) += pplus;
+      
+      if (pplus > *(computedprob)*err) j = 1;
+      else j = 0;
+      if (countdown!=0 && counterint<0) j = 0;
+      if (j==0) return;
+      
+      if (countdown!=0) {
+         counterint--;
+         Pint *= (counterint+1)/halfdelta;
+         Eint *= (0.5*dof + counterint+1)/(x*0.5);
+         Cint += Eint;
+      } else {
+         counterint++;
+         Pint *= halfdelta/counterint;
+         Eint *= (0.5*x)/(0.5*dof+counterint-1);
+         Cint -= Eint;
+      }
+   }
+   
+}
+
+
+REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
+{
+   
+   //Like Matlabs ncx2pdf
+   REAL8 dofint = 0.5*dof-1.0;
+   REAL8 x1 = sqrt(x);
+   REAL8 delta1 = sqrt(delta);
+   
+   REAL8 ul = 0.0;
+   if (dofint<=-0.5) {
+      ul = -0.5*(delta+x) + 0.5*x1*delta1/(dofint+1.0) + dofint*(log(x)-LAL_LN2) - LAL_LN2 - lgamma(dofint+1.0);
+   } else {
+      ul = -0.5*(delta1-x1)*(delta1-x1) + dofint*(log(x)-LAL_LN2) - LAL_LN2 - lgamma(dofint+1.0) + (dofint+0.5)*log((dofint+0.5)/(x1*delta1+dofint+0.5));
+   }
+   if (ul<log(LAL_REAL8_MIN)) {
+      return 0.0;
+   }
+   
+   //Scaled Bessel function?
+   REAL8 sbes = gsl_sf_bessel_Inu_scaled(dofint, delta1*x1);
+   if (!XLAL_IS_REAL8_FAIL_NAN(sbes) && sbes>0) {
+      return exp(-LAL_LN2 - 0.5*(x1-delta1)*(x1-delta1) + dofint*log(x1/delta1))*sbes;
+   }
+   
+   //Bessel function without scaling?
+   REAL8 bes = gsl_sf_bessel_Inu(dofint, delta1*x1);
+   if (XLAL_IS_REAL8_FAIL_NAN(bes) && bes>0) {
+      return exp(-LAL_LN2 - 0.5*(x+delta) + dofint*log(x1/delta1))*bes;
+   }
+   
+   //Okay, now recursion
+   REAL8 lnsr2pi = log(sqrt(LAL_TWOPI));
+   REAL8 dx = delta*x*0.25;
+   INT4 K = GSL_MAX(0, (INT4)floor(0.5*(sqrt(dofint*dofint+4.0*dx) - dofint)));
+   REAL8 lntK = 0.0;
+   if (K==0) {
+      lntK = -lnsr2pi - 0.5*(delta+log(dofint)) - (lgamma(dofint+1)-0.5*log(LAL_TWOPI*dofint)+dofint*log(dofint)-dofint) - binodeviance(dofint, 0.5*x);
+   } else {
+      lntK = -2.0*lnsr2pi - 0.5*(log(K) + log(dofint+K)) - (lgamma(K+1)-0.5*log(LAL_TWOPI*K)+K*log(K)-K) - (lgamma(dofint+K+1)-0.5*log(LAL_TWOPI*(dofint+K))+(dofint+K)*log(dofint+K)-(dofint+K)) - binodeviance(K, 0.5*delta) - binodeviance(dofint+K, 0.5*x);
+   }
+   REAL8 sumK = 1.0;
+   INT4 keep = 0;
+   if (K>0) keep = 1;
+   REAL8 term = 1.0;
+   REAL8 k = K;
+   while (keep==1) {
+      term *= (dofint+k)*k/dx;
+      sumK += term;
+      if (k<0 || term<LAL_REAL8_EPS) keep = 0;
+      k--;
+   }
+   keep = 1;
+   term = 1.0;
+   k = K+1;
+   while (keep==1) {
+      term /= (dofint+k)*k/dx;
+      sumK += term;
+      if (term<LAL_REAL8_EPS) keep = 0;
+      k++;
+   }
+   return 0.5*exp(lntK + log(sumK));
+   
+}
+REAL8 binodeviance(REAL8 x, REAL8 np)
+{
+   
+   //From matlab's "hidden" function binodeviance
+   if (fabs(x-np)<0.1*(x+np)) {
+      REAL8 s = (x-np)*(x-np)/(x+np);
+      REAL8 v = (x-np)/(x+np);
+      REAL8 ej = 2.0*x*v;
+      REAL8 s1 = 0.0;
+      INT4 jj = 0;
+      INT4 ok = 1;
+      while (ok==1) {
+         ej *= v*v;
+         jj++;
+         s1 = s + ej/(2.0*jj+1);
+         if (s1!=s) {
+            s = s1;
+         } else {
+            ok = 0;
+         }
+      }
+      return s;
+   } else {
+      return x*log(x/np)+np-x;
+   }
+
+}
+
+//Matlab's ncx2inv() function
+REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
+{
+   
+   const CHAR *fn = __func__;
+   
+   REAL8 x = 0.0;
+   REAL8 pk = p;
+   INT4 count_limit = 100;
+   INT4 count = 0;
+   REAL8 crit = sqrt(LAL_REAL8_EPS);
+   REAL8 mn = dof + delta;
+   REAL8 variance = 2.0*(dof + 2.0*delta);
+   REAL8 temp = log(variance + mn*mn);
+   REAL8 mu = 2.0*log(mn) - 0.5*temp;
+   REAL8 sigma = -2.0*log(mn) + temp;
+   REAL8 xk = exp(norminv(pk, mu, sigma));
+   REAL8 h = 0.0;
+   REAL8 F = ncx2cdf(xk, dof, delta);
+   while (count < count_limit) {
+      count++;
+      REAL8 f = ncx2pdf(xk, dof, delta);
+      h = (F-pk)/f;
+      REAL8 xnew = GSL_MAX(0.2*xk, GSL_MIN(5.0*xk, xk-h));
+      REAL8 newF = ncx2cdf(xnew, dof, delta);
+      INT4 worse = 0;
+      while (worse==0) {
+         if (!(fabs(newF-pk)>fabs(F-pk)*(1.0+crit) && fabs(xk-xnew)>crit*xk)) worse = 1;
+         else {
+            xnew = 0.5*(xnew + xk);
+            newF = ncx2cdf(xnew, dof, delta);
+         }
+      }
+      h = xk-xnew;
+      x = xnew;
+      if (!(fabs(h)>crit*fabs(xk) && fabs(h)>crit)) return xk;
+      xk = xnew;
+      F = newF;
+   }
+   
+   fprintf(stderr, "%s: Warning! ncx2inv() failed to converge!\n", fn);
+   return xk;
+   
+}
+REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma)
+{
+   
+   return mu - sigma*gsl_cdf_ugaussian_Qinv(p);
+   
+}
 
 
 /* Critical values of KS test (from Bickel and Doksum). Does not apply directly (mean determined from distribution)
@@ -173,6 +416,44 @@ void sort_double_ascend(REAL8Vector *vector)
    qsort(vector->data, vector->length, sizeof(REAL8), qsort_REAL8_compar);
    
 }
+/* !!!!This modifies the input vector!!!! */
+void sort_float_ascend(REAL4Vector *vector)
+{
+   
+   qsort(vector->data, vector->length, sizeof(REAL4), qsort_REAL4_compar);
+   
+}
+
+
+REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize)
+{
+   
+   const CHAR *fn = __func__;
+   
+   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   if (rng==NULL) {
+      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", fn);
+      XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
+   }
+   srand(time(NULL));
+   UINT8 randseed = rand();
+   gsl_rng_set(rng, randseed);
+   //gsl_rng_set(rng, 0);
+   
+   REAL4Vector *output = XLALCreateREAL4Vector(sampleSize);
+   if (output==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, sampleSize);
+      XLAL_ERROR_NULL(fn, XLAL_EFUNC);
+   }
+   
+   INT4 ii;
+   for (ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*input->length)];
+   
+   gsl_rng_free(rng);
+   
+   return output;
+   
+}
 
 
 //////////////////////////////////////////////////////////////
@@ -216,7 +497,7 @@ REAL4 calcStddev(REAL4Vector *vector)
    for (ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = (double)vector->data[ii];
    REAL4 stddev = (REAL4)gsl_stats_sd(gslarray, 1, vector->length);
    
-   XLALFree((double*)gslarray);   
+   XLALFree((double*)gslarray);
    
    return stddev;
    
@@ -275,6 +556,37 @@ REAL8 calcStddevD(REAL8Vector *vector)
    return stddev;
    
 } /* calcStddevD */
+
+
+INT4 max_index(REAL4Vector *vector)
+{
+   
+   const CHAR *fn = __func__;
+   
+   INT4 ii;
+   
+   double *gslarray = XLALMalloc(sizeof(double)*vector->length);
+   if (gslarray==NULL) {
+      fprintf(stderr,"%s: XLALMalloc(%d) failed.\n", fn, vector->length);
+      XLAL_ERROR_REAL4(fn, XLAL_ENOMEM);
+   }
+   for (ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = (double)vector->data[ii];
+   
+   INT4 indexval = gsl_stats_max_index(gslarray, 1, vector->length);
+   
+   XLALFree((double*)gslarray);
+   
+   return indexval;
+   
+}
+INT4 max_index_double(REAL8Vector *vector)
+{
+   
+   INT4 indexval = gsl_stats_max_index(vector->data, 1, vector->length);
+   
+   return indexval;
+   
+}
 
 
 

@@ -50,6 +50,7 @@ typedef struct
    REAL4 ihsfar;
    REAL4 ihsfom;
    REAL4 ihsfomfar;
+   REAL8 templatefar;
    INT4 blksize;
    INT4 maxbinshift;
    INT4 templatelength;
@@ -87,11 +88,25 @@ typedef struct
 
 typedef struct
 {
+   REAL4 alpha;
+   REAL4 delta;
+   REAL8 ULval;
+} UpperLimit;
+
+typedef struct
+{
+   UpperLimit *data;
+   UINT4 length;
+} UpperLimitVector;
+
+typedef struct
+{
    REAL4Vector *maxima;
-   REAL4Vector *foms;
-   REAL4Vector *ihsForEachFbin;
    INT4Vector *locations;
-   INT4 columns;
+   REAL4Vector *foms;
+   REAL4Vector *maximaForEachFbin;
+   INT4Vector *locationsForEachFbin;
+   INT4 rows;
 } ihsMaximaStruct;
 
 typedef struct
@@ -106,6 +121,8 @@ typedef struct
    REAL4Vector *ihsdistMean;
    REAL4Vector *ihsdistSigma;
    REAL4Vector *fomfarthresh;
+   REAL4Vector *ihsfomdistMean;
+   REAL4Vector *ihsfomdistSigma;
 } ihsfarStruct;
 
 typedef struct

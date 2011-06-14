@@ -112,8 +112,9 @@ REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx)
    
    counter(vars);
    
-   xconst = u * vars->sigsq;                 //xconst = u * sigma**2 + sum{ }
-   sum1 = u * xconst;                        //sum1 = u**2 * sigma**2 + sum{ }
+   xconst = u * vars->sigsq;  //xconst = u * sigma**2 + sum{ }
+   sum1 = u * xconst;         //sum1 = u**2 * sigma**2 + sum{ } this is almost the equation after eq 9 in Davies 1973
+                              //without the factor of 1/2 (applied at the end of this function)
    u *= 2.0;
    for (ii=vars->weights->length-1; ii>=0; ii--) {
       x = u * vars->weights->data[ii];       //x=2*u*lambda_j
@@ -479,7 +480,7 @@ REAL8 coeff(qfvars *vars, REAL8 x)
          return 1.0;
       }
    }
-   axl = fabs(x);
+   axl = fabs(x);    //absolute value of the value of c
    
    if (x>0.0) sxl = 1.0;
    else sxl = -1.0;
@@ -501,7 +502,8 @@ REAL8 coeff(qfvars *vars, REAL8 x)
                vars->fail = 1; 
                return 1.0;
             } else {
-               return pow(2.0, 0.25*sum1)*LAL_1_PI/(axl*axl);
+               //return pow(2.0, 0.25*sum1)*LAL_1_PI/(axl*axl);
+               return exp2(0.25*sum1)*LAL_1_PI/(axl*axl);
             }
          }
       }
@@ -511,7 +513,8 @@ REAL8 coeff(qfvars *vars, REAL8 x)
       vars->fail = 1; 
       return 1.0; 
    } else {
-      return pow(2.0, 0.25*sum1)*LAL_1_PI/(axl*axl);
+      //return pow(2.0, 0.25*sum1)*LAL_1_PI/(axl*axl);
+      return exp2(0.25*sum1)*LAL_1_PI/(axl*axl);
    }
    
 } /* coeff() */
@@ -545,7 +548,7 @@ REAL8 coeff_twospect(qfvars *vars, REAL8 x)
                vars->fail = 1; 
                return 1.0;
             } else {
-               return pow(2.0, 0.25*sum1)*LAL_1_PI/(axl*axl);
+               return exp2(0.25*sum1)*LAL_1_PI/(axl*axl);
             }
          }
       }
@@ -555,7 +558,7 @@ REAL8 coeff_twospect(qfvars *vars, REAL8 x)
       vars->fail = 1; 
       return 1.0; 
    } else {
-      return pow(2.0, 0.25*sum1)*LAL_1_PI/(axl*axl);
+      return exp2(0.25*sum1)*LAL_1_PI/(axl*axl);
    }
    
 } /* coeff_twospect() */
@@ -652,7 +655,7 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
          findu(vars, &utx, 0.25*acc1);
       }
    }
-   acc1 = 0.5*acc1;
+   acc1 *= 0.5;
 
       /* find RANGE of distribution, quit if outside this */
    l1:
@@ -794,7 +797,7 @@ REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
          findu_twospect(vars, &utx, 0.25*acc1);
       }
    }
-   acc1 = 0.5*acc1;
+   acc1 *= 0.5;
    
    BOOLEAN contin = 1;
    
