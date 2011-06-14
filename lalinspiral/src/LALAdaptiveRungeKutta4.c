@@ -244,7 +244,7 @@ XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
         status = XLAL_ENOMEM;	/* ouch, that hurt */
         goto bail_out;
       } else {
-				for(unsigned int i=0;i<=dim;i++) memcpy(&rebuffers->data[i*2*bufferlength],&buffers->data[i*bufferlength],(cnt-1)*sizeof(REAL8));
+				for(unsigned int i=0;i<=dim;i++) memcpy(&rebuffers->data[i*2*bufferlength],&buffers->data[i*bufferlength],cnt*sizeof(REAL8));
 				XLALDestroyREAL8Array(buffers); buffers = rebuffers;
 				bufferlength *= 2;
 			}

@@ -1200,6 +1200,7 @@ struct injection_document {
 	ProcessTable *process_table_head;
 	ProcessParamsTable *process_params_table_head;
 	SearchSummaryTable *search_summary_table_head;
+	TimeSlide *time_slide_table_head;
 	int has_sim_burst_table;
 	SimBurst *sim_burst_table_head;
 	int has_sim_inspiral_table;
@@ -1213,6 +1214,7 @@ static void destroy_injection_document(struct injection_document *doc)
 		XLALDestroyProcessTable(doc->process_table_head);
 		XLALDestroyProcessParamsTable(doc->process_params_table_head);
 		XLALDestroySearchSummaryTable(doc->search_summary_table_head);
+		XLALDestroyTimeSlideTable(doc->time_slide_table_head);
 		XLALDestroySimBurstTable(doc->sim_burst_table_head);
 		while(doc->sim_inspiral_table_head) {
 			SimInspiralTable *next = doc->sim_inspiral_table_head->next;
@@ -1249,6 +1251,7 @@ static struct injection_document *load_injection_document(const char *filename, 
 	new->process_table_head = XLALProcessTableFromLIGOLw(filename);
 	new->process_params_table_head = XLALProcessParamsTableFromLIGOLw(filename);
 	new->search_summary_table_head = XLALSearchSummaryTableFromLIGOLw(filename);
+	new->time_slide_table_head = XLALTimeSlideTableFromLIGOLw(filename);
 
 	/*
 	 * load optional sim_burst table
@@ -1279,6 +1282,7 @@ static struct injection_document *load_injection_document(const char *filename, 
 		!new->process_table_head ||
 		!new->process_params_table_head ||
 		!new->search_summary_table_head ||
+		!new->time_slide_table_head ||
 		(new->has_sim_burst_table && !new->sim_burst_table_head) ||
 		(new->has_sim_inspiral_table && !new->sim_inspiral_table_head)
 	) {
@@ -1309,7 +1313,7 @@ static int add_xml_injections(REAL8TimeSeries *h, const struct injection_documen
 
 	if(injection_document->sim_burst_table_head) {
 		XLALPrintInfo("%s(): computing sim_burst injections ...\n", func);
-		if(XLALBurstInjectSignals(h, injection_document->sim_burst_table_head, NULL))
+		if(XLALBurstInjectSignals(h, injection_document->sim_burst_table_head, injection_document->time_slide_table_head, NULL))
 			XLAL_ERROR(func, XLAL_EFUNC);
 		XLALPrintInfo("%s(): done\n", func);
 	}
