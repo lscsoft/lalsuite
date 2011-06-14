@@ -194,6 +194,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 				tempLadder[t]=1.0/(REAL8)(1.0-t*tempDelta);
 			}
 		}
+    else if(LALInferenceGetProcParamVal(runState->commandLine, "--geomLadder")){
+      tempDelta=1.3;
+      for (t=0;t<nChain; ++t) {
+        tempLadder[t]=pow(tempDelta,t);
+      }
+    }
 		else{
 			tempDelta = log(tempMax)/(REAL8)(nChain-1);
 			for (t=0; t<nChain; ++t) {
@@ -582,6 +588,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			
 		//	fprintf(stdout,"\n");
 		//}
+    if ((i % Nskip) == 0) {
     ptr=runState->currentParams->head;
     p=0;
     while(ptr!=NULL) {
@@ -619,7 +626,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     
     dprior = priorMax - priorMin;
     
-    
+
 		MPI_Gather(&(runState->currentLikelihood), 1, MPI_DOUBLE, TcurrentLikelihood, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		MPI_Gather(&acceptanceCount, 1, MPI_INT, acceptanceCountLadder, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Gather(parameters->data,nPar,MPI_DOUBLE,parametersVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
@@ -723,7 +730,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   //  }
 		//MPI_Scatter(sigmaVec,nPar,MPI_DOUBLE,sigma,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
-    
+    }
 		//printf("%d\n",count);
 		count = 0;
 	}// for(i=0; i<100; i++)
