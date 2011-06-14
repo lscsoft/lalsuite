@@ -22,6 +22,7 @@
 
 #include <gsl/gsl_sf_trig.h>
 #include <gsl/gsl_roots.h>
+#include <gsl/gsl_fit.h>
 #include <gsl/gsl_sort.h>
 
 #include <lal/LALConstants.h>
@@ -45,6 +46,7 @@ farStruct * new_farStruct(void)
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    
+   farstruct->far = 1.0;
    farstruct->topRvalues = NULL;
 
    return farstruct;
@@ -224,7 +226,6 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
          }
          if (ii>0) prevroot = root;
          root = gsl_root_fsolver_root(s1);
-         fprintf(stderr,"root = %g\n",root);    //TODO: remove this
          Rlow = gsl_root_fsolver_x_lower(s1);
          Rhigh = gsl_root_fsolver_x_upper(s1);
          status = gsl_root_test_interval(Rlow, Rhigh, 0.0, 0.001);
@@ -247,7 +248,6 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
          }
          
          //If there is an issue that the root is negative, try a new initial guess
-         fprintf(stderr,"root = %g\n",root);    //TODO: remove this
          if (root<0.0 && jj<max_retries) {
             ii = 0;
             jj++;
@@ -439,7 +439,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    vars.lim = 1000000;
    vars.c = Rpr;
    REAL8 sigma = 0.0;
-   REAL8 accuracy = 1.0e-12;   //(1e-5) old value
+   REAL8 accuracy = 1.0e-13;   //(1e-5) old value
    
    //sort the weights here so we don't have to do it later (qsort)
    sort_double_ascend(newweights);
@@ -452,60 +452,6 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
    REAL8 logprobest = 0.0;
    INT4 estimatedTheProb = 0;
-   /* if (prob<=1.0e-4) {
-      estimatedTheProb = 1;
-      
-      INT4 errcode1 = 0, errcode2 = 0;
-      REAL8 c1, c2, logprob1, logprob2, probslope, tempprob, tempprob2;
-      
-      REAL8 dR = 0.999;
-      
-      c1 = dR*vars.c;
-      vars.c = c1;
-      tempprob = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1);
-      while ( tempprob <= 1.0e-4 ) {
-         c1 *= dR;
-         vars.c = c1;
-         tempprob = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1);
-      }
-      logprob1 = log10(tempprob);
-      
-      c2 = dR*c1;
-      vars.c = c2;
-      tempprob2 = 1.0 - cdfwchisq(&vars, sigma, accuracy, &errcode2);
-      while ( (tempprob2 - tempprob) < 4.0e-4 ) {
-         c2 *= dR;
-         vars.c = c2;
-         tempprob2 = 1.0 - cdfwchisq(&vars, sigma, accuracy, &errcode2);
-      }
-      REAL8 deltac = c1 - c2;
-      logprob2 = log10(tempprob2);
-      
-      //If either point along the slope had a problem at the end, then better fail.
-      //Otherwise, set errcode = 0;
-      if (errcode1!=0 || errcode2!=0) {
-         fprintf(stderr,"%s: cdfwchisq() failed.\n", fn);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-      } else {
-         *errcode = errcode1;
-      }
-      
-      //Calculating slope
-      probslope = (logprob1-logprob2)/deltac;
-      if (probslope>=0.0) {
-         fprintf(stderr, "%s: Slope calculation failed. Non-negative slope: %f", fn, probslope);
-         XLAL_ERROR_REAL8(fn, XLAL_EDIVERGE);
-      }
-      
-      //Find the log10(prob) of the original Rpr value
-      logprobest = probslope*(Rpr-c1) + logprob1;
-      //logprobest = probslope*(Rpr-c2) + logprob2;
-      if (logprobest>-0.5) {
-         fprintf(stderr, "%s: Failure calculating accurate interpolated value.\n", fn);
-         XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
-      }
-      
-   } */ /* if prob<=1e-4 */
    if (prob<=1.0e-9) {
       estimatedTheProb = 1;
       
@@ -532,9 +478,9 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          c1 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
          vars.c = c1;
          tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
-         while (tempprob<=1.0e-9 || tempprob>=1.0e-7) {
-            if (tempprob<=1.0e-9) upperend = c1;
-            else if (tempprob>=1.0e-7) lowerend = c1;
+         while (tempprob<=1.0e-11 || tempprob>=1.0e-9) {
+            if (tempprob<=1.0e-11) upperend = c1;
+            else if (tempprob>=1.0e-9) lowerend = c1;
             c1 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
             vars.c = c1;
             tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
@@ -544,9 +490,9 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          c2 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
          vars.c = c2;
          tempprob2 = 1.0 - cdfwchisq_twospect(&vars, sigma, accuracy, &errcode2);
-         while (tempprob2<=1.0e-9 || tempprob2>=1.0e-7 || fabs(c1-c2)<=100.0*LAL_REAL8_EPS) {
-            if (tempprob2<=1.0e-9) upperend = c2;
-            else if (tempprob2>=1.0e-7) lowerend = c2;
+         while (tempprob2<=1.0e-11 || tempprob2>=1.0e-9 || fabs(c1-c2)<=100.0*LAL_REAL8_EPS) {
+            if (tempprob2<=1.0e-11) upperend = c2;
+            else if (tempprob2>=1.0e-9) lowerend = c2;
             c2 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
             vars.c = c2;
             tempprob2 = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode2);
@@ -572,16 +518,48 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       REAL8 cave = .5*c/(REAL8)slopes->length;
       logprobave /= 2.0*slopes->length;
       probslope = calcMeanD(slopes);
-      //REAL8 stddevprobslope = calcStddevD(slopes);
-      //fprintf(stderr,"Slope average = %g, Slope sigma = %g\n", probslope, stddevprobslope);
       logprobest = probslope*(Rpr-cave) + logprobave;
       if (logprobest>-0.5) {
          fprintf(stderr, "%s: Failure calculating accurate interpolated value.\n", fn);
          XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
       }
+      XLALDestroyREAL8Vector(slopes);
+      
+      lowerend = 0.0;
+      upperend = Rpr;
+      REAL8Vector *probvals = XLALCreateREAL8Vector(10);
+      REAL8Vector *cvals = XLALCreateREAL8Vector(probvals->length);
+      if (probvals==NULL) {
+         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, 10);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      } else if (cvals==NULL) {
+         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, 10);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      }
+      for (ii=0; ii<(INT4)probvals->length; ii++) {
+         c1 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
+         vars.c = c1;
+         tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
+         while (tempprob<=1.0e-11 || tempprob>=1.0e-9) {
+            if (tempprob<=1.0e-11) upperend = c1;
+            else if (tempprob>=1.0e-9) lowerend = c1;
+            c1 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
+            vars.c = c1;
+            tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
+         }
+         probvals->data[ii] = log10(tempprob);
+         cvals->data[ii] = c1;
+      }
+      REAL8 yintercept, cov00, cov01, cov11, sumsq;
+      if (gsl_fit_linear(cvals->data, 1, probvals->data, 1, cvals->length, &yintercept, &probslope, &cov00, &cov01, &cov11, &sumsq)!=GSL_SUCCESS) {
+         fprintf(stderr,"%s: gsl_fit_linear() failed.\n", fn);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      }
+      logprobest = probslope*Rpr + yintercept;
+      XLALDestroyREAL8Vector(probvals);
+      XLALDestroyREAL8Vector(cvals);
       
       gsl_rng_free(rng);
-      XLALDestroyREAL8Vector(slopes);
       
    }
    
@@ -599,16 +577,8 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    
    //return prob;
    if (estimatedTheProb==1) {
-      /* if (logprobest==0.0) {
-         fprintf(stderr, "%s: Failure calculating interpolated value.\n", fn);
-         XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
-      } */
       return logprobest;
    } else {
-      /* if (log10(prob)==0.0) {
-         fprintf(stderr, "%s: Failure calculating correct false alarm probability value.\n", fn);
-         XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
-      } */
       return log10(prob);
    }
    
@@ -717,7 +687,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, (INT4)floor(numffts*0.5)+1);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
-   for (ii=0; ii<(INT4)fpr->length; ii++) fpr->data[ii] = (REAL8)ii/params->Tobs;
+   for (ii=0; ii<(INT4)fpr->length; ii++) fpr->data[ii] = (REAL8)ii*(1.0/params->Tobs);
    
    //Scale used for "spillover" into bins outside of phi_actual
    REAL8 k = input.moddepth*params->Tcoh;    //amplitude of modulation in units of bins
@@ -729,14 +699,15 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    INT4 m0 = (INT4)round(input.fsig*params->Tcoh) - (INT4)round(params->fmin*params->Tcoh);   //central frequency bin
    INT4 mextent = (INT4)floor(input.moddepth*params->Tcoh);   //Bins filled by modulation
    REAL8 overage = (k-(REAL8)mextent)-1.0;
+   //REAL8 overage = (k-(REAL8)mextent);
    INT4 fnumstart = -1;
    INT4 fnumend = -1;
-   for (ii=0; ii<(INT4)scale->length; ii++) {
-      if (mextent != 0) {
+   for (ii=0; ii<numfbins; ii++) {
+      /* if (mextent != 0) {
          if (ii < m0-mextent-2 || ii > m0+mextent+2) {
             scale->data[ii] = 0.0;
          } else if (ii == m0-mextent-2 || ii == m0+mextent+2) {
-            scale->data[ii] = sincxoverxsqminusone(overage-1)*sincxoverxsqminusone(overage-1);
+            scale->data[ii] = sincxoverxsqminusone(overage-1.0)*sincxoverxsqminusone(overage-1.0);
          } else if (ii == m0-mextent-1 || ii == m0+mextent+1) {
             scale->data[ii] = sincxoverxsqminusone(overage)*sincxoverxsqminusone(overage);
          } else {
@@ -746,13 +717,22 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          if (ii < m0-2 || ii > m0+2) {
             scale->data[ii] = 0.0;
          } else if (ii == m0-2 || ii == m0+2) {
-            scale->data[ii] = sincxoverxsqminusone(overage-1)*sincxoverxsqminusone(overage-1);
+            scale->data[ii] = sincxoverxsqminusone(overage-1.0)*sincxoverxsqminusone(overage-1.0);
          } else if (ii == m0-1 || ii == m0+1) {
             scale->data[ii] = sincxoverxsqminusone(overage)*sincxoverxsqminusone(overage);
          } else {
             scale->data[ii] = 1.0;
          }
-      } /* if mextent!=0 else ... */
+      } */ /* if mextent!=0 else ... */
+      if (ii < m0-mextent-2 || ii > m0+mextent+2) {
+         scale->data[ii] = 0.0;
+      } else if (ii == m0-mextent-2 || ii == m0+mextent+2) {
+         scale->data[ii] = sincxoverxsqminusone(overage-1.0)*sincxoverxsqminusone(overage-1.0);
+      } else if (ii == m0-mextent-1 || ii == m0+mextent+1) {
+         scale->data[ii] = sincxoverxsqminusone(overage)*sincxoverxsqminusone(overage);
+      } else {
+         scale->data[ii] = 1.0;
+      }
    } /* for ii < scale->length */
    for (ii=0; ii<(INT4)scale->length; ii++) {
       if (scale->data[ii] != 0.0 && fnumstart == -1) fnumstart = ii;
@@ -790,6 +770,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    for (ii=0; ii<(INT4)sigmas->length; ii++) {
       for (jj=0; jj<(INT4)wvals->length; jj++) wvals->data[jj] = allsigmas->data[ii + jj*sigmas->length]*allsigmas->data[ii + jj*sigmas->length];
       sigmas->data[ii] = sqrt(calcMeanD(wvals));
+      //for (jj=0; jj<(INT4)wvals->length; jj++) wvals->data[jj] = allsigmas->data[ii + jj*sigmas->length];
+      //sigmas->data[ii] = (calcMeanD(wvals));
    }
    
    
@@ -801,7 +783,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       REAL8 scale1 = 1.0/(1.0+exp(-phi_actual->data[ii+fnumstart]*phi_actual->data[ii+fnumstart]*0.5/(s*s)));
       for (jj=0; jj<(INT4)fpr->length; jj++) {
          
-         if (jj==0 || jj==1) {
+         if (jj==0 || jj==1 || jj==2 || jj==3) {
             dataval = 0.0;
          } else if (fabs(cos(input.period*LAL_TWOPI*fpr->data[jj])-1.0)<1e-5) {
             dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * LAL_TWOPI * LAL_TWOPI * fpr->data[jj] * fpr->data[jj]) * (cos(phi_actual->data[ii+fnumstart] * LAL_TWOPI * fpr->data[jj]) + 1.0) * N * N;
@@ -810,7 +792,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          }
          
          //Set any bin below 1e-8 to 0.0
-         if (dataval <= 1.0e-8) dataval = 0.0;
+         //if (dataval <= 1.0e-8) dataval = 0.0;
          
          //Sum up the weights in total
          sum += dataval;
@@ -932,15 +914,15 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       //Order of vector is by second frequency then first frequency
       //Ignore the DC and 1st frequency bins
       if (doSecondFFT==1) {
-         for (jj=0; jj<(INT4)psd->length; jj++) {
-            REAL4 correctedValue = (REAL4)(psd->data[jj]*winFactor/x->length*0.5*params->Tcoh);
-            if (correctedValue<=1.0e-8) correctedValue = 0.0;
+         for (jj=4; jj<(INT4)psd->length; jj++) {
+            REAL4 correctedValue = psd->data[jj]*winFactor/x->length*0.5*params->Tcoh;
+            //if (correctedValue<=1.0e-8) correctedValue = 0.0;
             
             //Sum the total weights
             sum += correctedValue;
             
             //Sort the weights, insertion sort technique
-            if (jj>1 && correctedValue > output->templatedata->data[output->templatedata->length-1]) {
+            if (correctedValue > output->templatedata->data[output->templatedata->length-1]) {
                insertionSort_template(output, correctedValue, ii*psd->length+jj, ii, jj);
             }
          } /* for jj < psd->length */
@@ -992,12 +974,8 @@ void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc,
 REAL8 sincxoverxsqminusone(REAL8 x)
 {
    
-   REAL8 val;
-   
-   if (fabs(x*x-1.0)<1.0e-5) val = -0.5;
-   else val = gsl_sf_sinc(x)/(x*x-1.0);
-   
-   return val;
+   if (fabs(x*x-1.0)<1.0e-8) return -0.5;
+   else return gsl_sf_sinc(x)/(x*x-1.0);
    
 } /* sincxoverxsqminusone() */
 
