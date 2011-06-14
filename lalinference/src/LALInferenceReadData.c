@@ -490,6 +490,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	LALStatus status;
 	memset(&status,0,sizeof(status));
 	SimInspiralTable *injTable=NULL;
+  SimInspiralTable *injEvent=NULL;
 	UINT4 Ninj=0;
 	UINT4 event=0;
 	UINT4 i=0,j=0;
@@ -515,15 +516,19 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	//InjParams.fStartIn=(REAL4)minFlow;
 	
 	if(!LALInferenceGetProcParamVal(commandLine,"--injXML")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
-	if(LALInferenceGetProcParamVal(commandLine,"--event")) event= atoi(LALInferenceGetProcParamVal(commandLine,"--event")->value);
-	fprintf(stdout,"Injecting event %d\n",event);
-	
+	if(LALInferenceGetProcParamVal(commandLine,"--event")){
+    event= atoi(LALInferenceGetProcParamVal(commandLine,"--event")->value);
+    fprintf(stdout,"Injecting event %d\n",event);
+	}
 	Ninj=SimInspiralTableFromLIGOLw(&injTable,LALInferenceGetProcParamVal(commandLine,"--injXML")->value,0,0);
 	REPORTSTATUS(&status);
 	printf("Ninj %d\n", Ninj);
 	if(Ninj<event) fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--injXML")->value);
 	while(i<event) {i++; injTable = injTable->next;} /* Select event */
-
+  if(LALInferenceGetProcParamVal(commandLine,"--event")){ 
+    injEvent = injTable;
+    injEvent->next = NULL;
+  }
 	//memset(&InjectGW,0,sizeof(InjectGW));
 	Approximant injapprox;
 	LALGetApproximantFromString(&status,injTable->waveform,&injapprox);
@@ -563,7 +568,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 		realStartSample+=(INT4)((IFOdata->timeData->epoch.gpsNanoSeconds - injectionBuffer->epoch.gpsNanoSeconds)*1e-9/IFOdata->timeData->deltaT);
 
 		/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
-		LALFindChirpInjectSignals(&status,injectionBuffer,injTable,resp);
+    if(LALInferenceGetProcParamVal(commandLine,"--event")) LALFindChirpInjectSignals(&status,injectionBuffer,injEvent,resp);
+		else LALFindChirpInjectSignals(&status,injectionBuffer,injTable,resp);
 		if(status.statusCode) REPORTSTATUS(&status);
 
 		XLALDestroyCOMPLEX8FrequencySeries(resp);
@@ -616,6 +622,13 @@ fprintf(file, "%lg %lg \t %lg\n", IFOdata->freqData->deltaF*j, injF->data->data[
 fclose(file);		
 //fclose(file2);
 		
+    char filename[256];
+    sprintf(filename,"%s_time.dat",IFOdata->detector->frDetector.name);
+    file=fopen(filename, "w");
+		for(j=0;j<inj8Wave->data->length;j++){   
+      fprintf(file, "%.6f\t%lg\n", XLALGPSGetREAL8(&IFOdata->timeData->epoch) + IFOdata->timeData->deltaT*j, inj8Wave->data->data[j]);
+		}
+    fclose(file);
 		
 		XLALDestroyREAL8TimeSeries(inj8Wave);
 		XLALDestroyCOMPLEX16FrequencySeries(injF);
