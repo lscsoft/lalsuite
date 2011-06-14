@@ -157,6 +157,11 @@ It is these constants that form the input to the function <tt>LALDemod()</tt>.
 #ifndef _COMPUTESKYBINARY_H
 #define _COMPUTESKYBINARY_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/LALBarycenter.h>
 #include <lal/Date.h>
@@ -185,6 +190,7 @@ extern "C" {
 typedef struct
 tagCSBParams
 {
+  SWIGLAL_STRUCT_LALALLOC();
   INT8		spinDwnOrder;	/**< The maximal number of spindown parameters per spindown parameter set */
   INT8		mObsSFT;	/**< The number of SFTs in the observation time */
   REAL8		tSFT;		/**< The timescale of one SFT */

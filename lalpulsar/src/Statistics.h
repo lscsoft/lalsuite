@@ -22,6 +22,11 @@
 #ifndef _STATISTICS_H
 #define _STATISTICS_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 /* *************
  *    Includes. This header may include others; if so, they go immediately
  *    after include-loop protection. Includes should appear in the following
@@ -77,6 +82,7 @@ number counts.
 
 /** Structure for storing statistical information about a Hough map */
 typedef struct tagHoughStats {
+  SWIGLAL_STRUCT_LALALLOC();
   HoughTT    maxCount;    /**< maximum number count */
   UINT2      maxIndex[2]; /**< loctaion of maximum number count */
   HoughTT    minCount;    /**< minimum number count */

@@ -40,6 +40,11 @@
 #ifndef _FRAMECACHE_H
 #define _FRAMECACHE_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
@@ -71,6 +76,7 @@ NRCSID( FRAMECACHEH, "$Id$" );
 typedef struct
 tagFrStat
 {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR *source;
   CHAR *description;
   INT4  startTime;
@@ -100,6 +106,7 @@ FrStat;
 typedef struct
 tagFrCache
 {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4   numFrameFiles;
   FrStat *frameFiles;
 }
@@ -115,9 +122,15 @@ FrCache;
  *
 */
 
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::srcRegEx;
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::dscRegEx;
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::urlRegEx;
+#endif /* SWIG */
 typedef struct
 tagFrCacheSieve
 {
+  SWIGLAL_STRUCT_LALALLOC();
   const CHAR *srcRegEx;
   const CHAR *dscRegEx;
   const CHAR *urlRegEx;

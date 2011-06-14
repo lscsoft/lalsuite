@@ -1,5 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 pkginclude_HEADERS = AVFactories.h SeqFactories.h StringVector.h
+CLEANFILES =
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = SeqFactories.h AVFactories.h
@@ -15,3 +16,7 @@ AVFactories.h: AVFactoriesH.m4 VFactoriesBaseH.m4 AFactoriesBaseH.m4
 
 @INCLUDEMKFILE@
 @DVIMKFILE@
+
+swig_headers = $(pkginclude_HEADERS)
+CLEANFILES += $(swig_clean)
+@SWIG_HEADER_MK@

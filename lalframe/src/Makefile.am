@@ -93,3 +93,7 @@ LALFrameVCSInfo.h: ._vcsinfo
 	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALFrame $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@
+
+swig_headers = $(lalframeinclude_HEADERS)
+CLEANFILES += $(swig_clean)
+@SWIG_HEADER_MK@

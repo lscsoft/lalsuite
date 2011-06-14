@@ -12,6 +12,9 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
+  swig/Makefile \
+  swig/octave/Makefile \
+  swig/python/Makefile \
   test/Makefile
 ])
 AM_INIT_AUTOMAKE([foreign])
@@ -150,6 +153,12 @@ fi
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.0.0.2],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
+# check for SWIG wrapping
+LALSUITE_ENABLE_SWIG
+if test "$lalxml" = "true"; then
+   LALSUITE_SWIG_USE([LALXML])
+fi
+
 # add gcc specific flags
 if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags"
@@ -171,6 +180,8 @@ echo "
         LALPulsar has now been successfully configured:
 
                 LAL XML library support is $LALXML_ENABLE_VAL
+                SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
+                SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
 
         and will be installed under the directory:
 

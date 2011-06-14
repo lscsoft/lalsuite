@@ -20,6 +20,7 @@ define(`S1',`format(`%sVectorPair',TYPE)')
 
 typedef struct
 S1TAG {
+  SWIGLAL_STRUCT_LALALLOC();
   VTYPE **head;
   VTYPE **tail;
 } S1;

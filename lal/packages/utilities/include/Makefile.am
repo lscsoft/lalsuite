@@ -13,6 +13,7 @@ pkginclude_HEADERS = \
 	RngMedBias.h \
 	Sort.h
 
+CLEANFILES =
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 
@@ -22,3 +23,7 @@ dvi-local: .dvi-dep
 
 @INCLUDEMKFILE@
 @DVIMKFILE@
+
+swig_headers = $(pkginclude_HEADERS)
+CLEANFILES += $(swig_clean)
+@SWIG_HEADER_MK@

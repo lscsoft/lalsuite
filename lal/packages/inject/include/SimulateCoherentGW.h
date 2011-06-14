@@ -253,6 +253,11 @@ f/\dot{f}$ (provided $\tau\gg1/f$, as we have assumed).
 #ifndef _SIMULATECOHERENTGW_H
 #define _SIMULATECOHERENTGW_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/DetectorSite.h>
 #include <lal/SkyCoordinates.h>
@@ -336,6 +341,7 @@ gravitational wave propagating from a particular point on the sky.
 Several alternate representations are permitted to allow a more
 natural characterization of quasiperiodic waveforms.*/
 typedef struct tagCoherentGW {
+  SWIGLAL_STRUCT_LALALLOC();
   SkyPosition position;     /**< sky position of source */
   REAL4 psi;                /**< polarization angle of source */
   REAL4TimeVectorSeries *h; /**< sampled waveforms \f$h_+, h_\times\f$ */
@@ -384,6 +390,7 @@ have to add it here.)
 /** This structure contains information required to determine
     the response of a detector to a gravitational waveform. */
 typedef struct tagDetectorResponse {
+  SWIGLAL_STRUCT_LALALLOC();
   COMPLEX8FrequencySeries *transfer; 	/**< frequency transfer function */
   LALDetector *site;           		/**< detector location and orientation */
   EphemerisData *ephemerides;  		/**< Earth and Sun ephemerides */

@@ -135,6 +135,11 @@ waveform.</dd>
 #ifndef _GENERATETAYLORCW_H
 #define _GENERATETAYLORCW_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
@@ -160,6 +165,7 @@ NRCSID( GENERATETAYLORCWH, "$Id$" );
 
 
 typedef struct tagTaylorCWParamStruc {
+  SWIGLAL_STRUCT_LALALLOC();
   /* Passed parameters. */
   SkyPosition position; /* location of source on sky */
   REAL4 psi;            /* polarization angle (radians) */
