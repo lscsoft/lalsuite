@@ -106,6 +106,8 @@ void initialiseAlgorithm( LALInferenceRunState *runState );
 
 void readPulsarData( LALInferenceRunState *runState );
 
+void readDoublePulsarData( LALInferenceRunState *runState );
+
 void setSignalModelType( LALInferenceRunState *runState );
 
 void setupFromParFile( LALInferenceRunState *runState );
@@ -128,6 +130,10 @@ void setupLivePointsArray( LALInferenceRunState *runState );
 
 /* likelihood and prior */
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, 
+                             LALInferenceIFOData *data,
+                             LALInferenceTemplateFunction *get_pulsar_model );
+
+REAL8 pulsar_double_log_likelihood( LALInferenceVariables *vars, 
                              LALInferenceIFOData *data,
                              LALInferenceTemplateFunction *get_pulsar_model );
                              
