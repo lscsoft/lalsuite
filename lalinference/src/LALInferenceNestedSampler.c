@@ -21,20 +21,20 @@ RCSID("$Id$");
 #define CVS_NAME_STRING "$Name$"
 
 /* Prototypes for private "helper" functions. */
-void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3]);
-void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
-void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
-double logadd(double a,double b);
-REAL8 mean(REAL8 *array,int N);
+static void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3]);
+static void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
+static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
+static double logadd(double a,double b);
+static REAL8 mean(REAL8 *array,int N);
 
 
-double logadd(double a,double b){
+static double logadd(double a,double b){
 	if(a>b) return(a+log(1.0+exp(b-a)));
 	else return(b+log(1.0+exp(a-b)));
 }
 
 
-REAL8 mean(REAL8 *array,int N){
+static REAL8 mean(REAL8 *array,int N){
 	REAL8 sum=0.0;
 	int i;
 	for(i=0;i<N;i++) sum+=array[i];
@@ -712,7 +712,7 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 		return;
 	}
 	
-void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude)
+static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude)
 {
 	vec[0]=cos(longitude)*cos(latitude);
 	vec[1]=sin(longitude)*cos(latitude);
@@ -720,7 +720,7 @@ void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude)
 	return;
 }
 
-void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude)
+static void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude)
 {
 	REAL8 longi,lat,dist;
 	dist=sqrt(pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2]);
@@ -733,7 +733,7 @@ void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude)
 	return;
 }
 
-void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3])
+static void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3])
 {
 	out[0]=x[1]*y[2] - x[2]*y[1];
 	out[1]=y[0]*x[2] - x[0]*y[2];
@@ -741,8 +741,8 @@ void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3])
 	return;
 }
 
-void normalise(REAL8 vec[3]);
-void normalise(REAL8 vec[3]){
+static void normalise(REAL8 vec[3]);
+static void normalise(REAL8 vec[3]){
 	REAL8 my_abs=0.0;
 	my_abs=sqrt(vec[0]*vec[0]+vec[1]*vec[1]+vec[2]*vec[2]);
 	vec[0]/=my_abs;

@@ -164,11 +164,20 @@ LALGenerateInspiral(
   {
     inspiralParams.approximant = approximant;
     inspiralParams.order       = order;
-	if (approximant == SpinQuadTaylor) {
+    if ((approximant == SpinQuadTaylor)||(approximant == PhenSpinTaylorRD)) {
 		xlalErrno = 0;
 		if (XLALGetSpinInteractionFromString(&inspiralParams.spinInteraction, thisEvent->waveform) == XLAL_FAILURE) {
 			ABORTXLAL(status);
 		}
+	}
+
+	if (approximant == PhenSpinTaylorRD) {
+	  xlalErrno = 0;
+	  if ( (XLALGetAxisChoiceFromString(&inspiralParams.axisChoice, thisEvent->waveform) == XLAL_FAILURE) || 
+	       (XLALGetAdaptiveIntFromString(&inspiralParams.fixedStep, thisEvent->waveform) == XLAL_FAILURE) || 
+	       (XLALGetInspiralOnlyFromString(&inspiralParams.inspiralOnly, thisEvent->waveform) == XLAL_FAILURE ) ) {
+	    ABORTXLAL(status);
+	  }
 	}
 
     /* We fill ppnParams */
@@ -349,6 +358,36 @@ int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent)
 	return XLAL_SUCCESS;
 }
 
+int XLALGetAxisChoiceFromString(InputAxis *axisChoice, CHAR *thisEvent) {
+  //static const char *func = "XLALGetAxisChoiceFromString";
+  if (strstr(thisEvent, "View")) {
+    *axisChoice = View;
+  } else if  (strstr(thisEvent, "OrbitalL")) {
+    *axisChoice = OrbitalL;
+  }
+  else  
+    *axisChoice = TotalJ;
+  return XLAL_SUCCESS;
+}
+
+int XLALGetAdaptiveIntFromString(UINT4 *fixedStep, CHAR *thisEvent) {
+  //static const char *func = "XLALGetAdaptiveIntFromString";
+  if (strstr(thisEvent, "fixedStep")) {
+    *fixedStep = 1;
+  } else 
+    *fixedStep = 0;
+  return XLAL_SUCCESS;
+}
+
+int XLALGetInspiralOnlyFromString(UINT4 *inspiralOnly, CHAR *thisEvent) {
+  //static const char *func = "XLALGetinspiralOnlyFromString";
+  if (strstr(thisEvent, "inspiralOnly")) {
+    *inspiralOnly = 1;
+  }
+  else
+    *inspiralOnly = 0;
+  return XLAL_SUCCESS;
+}
 
 void
 LALGetApproximantFromString(
@@ -556,7 +595,6 @@ LALGenerateInspiralPopulateInspiral(
   inspiralParams->nEndPad   =  16384;
 
   inspiralParams->massChoice  = m1Andm2;
-  inspiralParams->axisChoice  = ppnParams->axisChoice;
 
   /* spin parameters */
   inspiralParams->sourceTheta = GENERATEINSPIRAL_SOURCETHETA;

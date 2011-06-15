@@ -382,9 +382,9 @@ void LALInferenceTemplateNullTimedomain(LALInferenceIFOData *IFOdata)
 /* ============ LAL template wrapper function: ========== */
 
 
-void mc2masses(double mc, double eta, double *m1, double *m2);
+static void mc2masses(double mc, double eta, double *m1, double *m2);
 
-void mc2masses(double mc, double eta, double *m1, double *m2)
+static void mc2masses(double mc, double eta, double *m1, double *m2)
 /*  Compute individual companion masses (m1, m2)   */
 /*  for given chirp mass (m_c) & mass ratio (eta)  */
 /*  (note: m1 >= m2).                              */
@@ -396,10 +396,14 @@ void mc2masses(double mc, double eta, double *m1, double *m2)
   return;
 }
 
-double mc2mt(double mc, double eta);
-
-double mc2mt(double mc, double eta)
+/*
+static double mc2mt(double mc, double eta);
+*/
+/*
+static double mc2mt(double mc, double eta)
+*/
 /* total mass (mt) for given mass ratio & chirp mass */
+/*
 {
 	double root = sqrt(0.25-eta);
 	double fraction = (0.5+root) / (0.5-root);
@@ -407,22 +411,26 @@ double mc2mt(double mc, double eta)
 	return mc * ((pow(1+fraction,0.2) / pow(fraction,0.6))
 				 + (pow(1+inversefraction,0.2) / pow(inversefraction,0.6)));
 }
-
-double m2eta(double m1, double m2);
-
-double m2eta(double m1, double m2)
+*/
+/*
+static double m2eta(double m1, double m2);
+*/
+/*static double m2eta(double m1, double m2)*/
 /* component masses to eta */
+/*
 {
 	return(m1*m2/((m1+m2)*(m1+m2)));
 }
+*/
 
-double m2mc(double m1, double m2);
-
-double m2mc(double m1, double m2)
+/*
+static double m2mc(double m1, double m2);
+*/
+/* static double m2mc(double m1, double m2) */
 /* component masses to chirp mass */
-{
+/* {
 	return(pow(m2eta(m1,m2),0.6)*(m1+m2));
-}
+} */
 
 
 void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)

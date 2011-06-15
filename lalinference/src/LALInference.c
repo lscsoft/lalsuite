@@ -51,7 +51,7 @@ size_t LALInferenceTypeSize[] = {sizeof(INT4),
 
 /* ============ Accessor functions for the Variable structure: ========== */
 
-char *colNameToParamName(const char *colName);
+static char *colNameToParamName(const char *colName);
 
 
 LALInferenceVariableItem *LALInferenceGetItem(LALInferenceVariables *vars,const char *name)

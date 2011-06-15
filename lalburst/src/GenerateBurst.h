@@ -65,12 +65,14 @@ int XLALGenerateSimBurst(
 int XLALBurstInjectSignals(
 	REAL8TimeSeries *h,
 	const SimBurst *sim_burst,
+	const TimeSlide *time_slide_table_head,
 	const COMPLEX16FrequencySeries *response
 );
 
 int XLALBurstInjectHNullSignals(
 	REAL8TimeSeries *series,
-	const SimBurst *sim_burst
+	const SimBurst *sim_burst,
+	const TimeSlide *time_slide_table_head
 );
 
 #if 0

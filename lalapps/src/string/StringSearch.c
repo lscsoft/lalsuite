@@ -354,29 +354,29 @@ static int XLALCompareStringBurstByTime(
 /*******************************************************************************/
 
 int AddInjections(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht){
-  LIGOTimeGPS startTime = ht->epoch;
-  LIGOTimeGPS stopTime = ht->epoch;
-  SimBurst *sim_burst;
-
-  XLALGPSAdd(&stopTime, ht->data->length * ht->deltaT);
+  TimeSlide *time_slide_table_head;
+  SimBurst *sim_burst_table_head;
 
   /* Get info from injection file */
-  sim_burst = XLALSimBurstTableFromLIGOLw(CLA.InjectionFile, &startTime, &stopTime);
-
+  time_slide_table_head = XLALTimeSlideTableFromLIGOLw(CLA.InjectionFile);
+  sim_burst_table_head = XLALSimBurstTableFromLIGOLw(CLA.InjectionFile, NULL, NULL);
+  if(!time_slide_table_head || !sim_burst_table_head)
+    return 1;
 
   /* Inject the signals into ht */
 
   /* only calibration uncertainties if null stream */
   if(!strcmp(CLA.ChannelName,"H2:LSC-STRAIN_HNULL")){
-    if(XLALBurstInjectHNullSignals(ht, sim_burst)) return 1;
+    if(XLALBurstInjectHNullSignals(ht, sim_burst_table_head, time_slide_table_head)) return 1;
   }
   /* inject once otherwise */
   else{
-    if(XLALBurstInjectSignals(ht, sim_burst, NULL)) return 1;
+    if(XLALBurstInjectSignals(ht, sim_burst_table_head, time_slide_table_head, NULL)) return 1;
   }
 
   /* free the injection table */
-  XLALDestroySimBurstTable(sim_burst);
+  XLALDestroyTimeSlideTable(time_slide_table_head);
+  XLALDestroySimBurstTable(sim_burst_table_head);
 
   return 0;
 }

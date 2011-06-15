@@ -51,12 +51,12 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceLikelihood.h>
 
-const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+static const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
-REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
-void makeWhiteData(LALInferenceIFOData *IFOdata);
+static REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
+static void makeWhiteData(LALInferenceIFOData *IFOdata);
 
-REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length)
+static REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length)
 {
 	LALStatus status;
 	memset(&status,0,sizeof(status));
@@ -413,7 +413,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	return headIFO;
 }
 
-void makeWhiteData(LALInferenceIFOData *IFOdata) {
+static void makeWhiteData(LALInferenceIFOData *IFOdata) {
   REAL8 deltaF = IFOdata->freqData->deltaF;
   REAL8 deltaT = IFOdata->timeData->deltaT;
 

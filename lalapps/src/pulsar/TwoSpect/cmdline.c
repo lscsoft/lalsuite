@@ -66,6 +66,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --keepOneCandidate        Keep a single IHS candidate and let process \n                                  through the pipeline  (default=off)",
   "      --FFTplanFlag=INT         0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive  \n                                  (default=`3')",
   "      --IHSonly                 IHS stage only is run. Output statistic is the \n                                  IHS statistic.  (default=off)",
+  "      --calcRthreshold          Calculate the threshold value for R given the \n                                  template false alarm rate  (default=off)",
   "      --BrentsMethod            Use Brent's method in the root finding \n                                  algorithm.  (default=off)",
   "      --antennaOff              Antenna pattern weights are /NOT/ used if this \n                                  flag is used  (default=off)",
   "      --noiseWeightOff          Turn off noise weighting if this flag is used  \n                                  (default=off)",
@@ -196,6 +197,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->keepOneCandidate_given = 0 ;
   args_info->FFTplanFlag_given = 0 ;
   args_info->IHSonly_given = 0 ;
+  args_info->calcRthreshold_given = 0 ;
   args_info->BrentsMethod_given = 0 ;
   args_info->antennaOff_given = 0 ;
   args_info->noiseWeightOff_given = 0 ;
@@ -256,6 +258,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->FFTplanFlag_arg = 3;
   args_info->FFTplanFlag_orig = NULL;
   args_info->IHSonly_flag = 0;
+  args_info->calcRthreshold_flag = 0;
   args_info->BrentsMethod_flag = 0;
   args_info->antennaOff_flag = 0;
   args_info->noiseWeightOff_flag = 0;
@@ -302,10 +305,11 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->keepOneCandidate_help = gengetopt_args_info_full_help[31] ;
   args_info->FFTplanFlag_help = gengetopt_args_info_full_help[32] ;
   args_info->IHSonly_help = gengetopt_args_info_full_help[33] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[34] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[35] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[36] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[37] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[34] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[35] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[36] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[37] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[38] ;
   
 }
 
@@ -529,6 +533,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "FFTplanFlag", args_info->FFTplanFlag_orig, 0);
   if (args_info->IHSonly_given)
     write_into_file(outfile, "IHSonly", 0, 0 );
+  if (args_info->calcRthreshold_given)
+    write_into_file(outfile, "calcRthreshold", 0, 0 );
   if (args_info->BrentsMethod_given)
     write_into_file(outfile, "BrentsMethod", 0, 0 );
   if (args_info->antennaOff_given)
@@ -829,6 +835,7 @@ cmdline_parser_internal (
         { "keepOneCandidate",	0, NULL, 0 },
         { "FFTplanFlag",	1, NULL, 0 },
         { "IHSonly",	0, NULL, 0 },
+        { "calcRthreshold",	0, NULL, 0 },
         { "BrentsMethod",	0, NULL, 0 },
         { "antennaOff",	0, NULL, 0 },
         { "noiseWeightOff",	0, NULL, 0 },
@@ -1282,6 +1289,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->IHSonly_flag), 0, &(args_info->IHSonly_given),
                 &(local_args_info.IHSonly_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "IHSonly", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Calculate the threshold value for R given the template false alarm rate.  */
+          else if (strcmp (long_options[option_index].name, "calcRthreshold") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->calcRthreshold_flag), 0, &(args_info->calcRthreshold_given),
+                &(local_args_info.calcRthreshold_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "calcRthreshold", '-',
                 additional_error))
               goto failure;
           
