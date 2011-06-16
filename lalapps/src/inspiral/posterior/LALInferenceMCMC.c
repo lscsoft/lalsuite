@@ -468,6 +468,7 @@ void initVariables(LALInferenceRunState *state)
         if(ppt){
             event= atoi(ppt->value);
             fprintf(stderr,"Reading event %d from file\n",event);
+            i=0;
             while(i<event) {i++; injTable=injTable->next;} /* select event */
 		
             endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
@@ -1002,7 +1003,6 @@ void initVariables(LALInferenceRunState *state)
           gsl_matrix *covM = gsl_matrix_alloc(N,N);
           gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
           REAL8Vector *sigmaVec = XLALCreateREAL8Vector(N);
-          UINT4 i;
 
 
           if (readSquareMatrix(covM, N, inp)) {
@@ -1104,7 +1104,6 @@ void initVariables(LALInferenceRunState *state)
           if (!LALInferenceCheckVariable(state->proposalArgs, SIGMAVECTORNAME)) {
             /* We need a sigma vector for adaptable jumps. */
             REAL8Vector *sigmas = XLALCreateREAL8Vector(N);
-            UINT4 i = 0;
             
             for (i = 0; i < N; i++) {
               sigmas->data[i] = 1e-4;
@@ -1120,7 +1119,6 @@ void initVariables(LALInferenceRunState *state)
   
           REAL8Vector *PacceptCount = XLALCreateREAL8Vector(N);
           REAL8Vector *PproposeCount = XLALCreateREAL8Vector(N);
-          UINT4 i;
 
           for (i = 0; i < N; i++) {
             PacceptCount->data[i] = 0.0;
