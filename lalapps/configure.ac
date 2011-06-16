@@ -46,6 +46,7 @@ AC_CONFIG_FILES([\
   src/pulsar/SFTReferenceLibrary/Makefile \
   src/tracksearch/Makefile \
   src/online/Makefile \
+  src/hwinjection/Makefile \
 ])
 AM_INIT_AUTOMAKE([foreign])
 AH_TOP([
