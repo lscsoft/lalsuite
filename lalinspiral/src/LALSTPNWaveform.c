@@ -1004,6 +1004,11 @@ LALSTPNWaveformEngine (
 
   /* main integration loop*/
 
+  /*---- Uncomment the next 2 lines for debugging ----*/
+  /*FILE *outFile=NULL;
+  outFile = fopen("STPN-dynamics.dat", "w");*/
+  /*--------------------------------------------------*/
+
   t = 0.0;
   count = 0;
 
@@ -1091,6 +1096,12 @@ LALSTPNWaveformEngine (
 	  shift->data[count]        = (REAL4)(2.0 * alpha);
 	}
 
+      /*---- Uncomment the next line for debugging ----*/
+      /*fprintf(outFile,"%f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
+        t, vphi, omega, 2.0*alpha, LNhx, LNhy, LNhz,
+        S1x, S1y, S1z, S2x, S2y, S2z);*/
+      /* ----------------------------------------------*/
+
       /* Debugging: it can be occasionally useful to store dynamical variables
 	 in the waveform output structure. Keep this here.
 
@@ -1176,6 +1187,10 @@ LALSTPNWaveformEngine (
   /* Michele-041208: to check, is omega really in Hz? */
   /* Michele-041208: the original Mathematica code, stopped the
      inspiral at the ISCO for order = newtonian. This is not currently implemented here. */
+
+  /*---- Uncomment next line for debugging ----*/
+  /*fclose(outFile);*/
+  /*-------------------------------------------*/
 
 
   /* -? the EOB version saves some final values in params; I'm doing only fFinal*/
