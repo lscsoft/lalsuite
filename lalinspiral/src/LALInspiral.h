@@ -1066,6 +1066,19 @@ LALSTPNWaveformForInjection (
 			    PPNParamStruc  *ppnParams);
 
 void
+LALSTPNWaveformFrameless (
+    		LALStatus        *status,
+    		REAL4Vector      *signalvec,
+    		InspiralTemplate *params);
+
+void
+LALSTPNWaveformTemplatesFrameless (
+    		LALStatus        *status,
+    		REAL4Vector      *signalvec1,
+    		REAL4Vector      *signalvec2,
+    		InspiralTemplate *params);
+
+void
 LALSTPNWaveformFramelessForInjection (
                              LALStatus        *status,
                              CoherentGW       *waveform,

@@ -175,12 +175,12 @@ LALInspiralWave(
       case IMRPhenomB:
            LALBBHPhenWaveTimeDom(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
-       break;
+           break;
       case IMRPhenomFA:
       case IMRPhenomFB:
            LALBBHPhenWaveFreqDom(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
-       break;
+           break;
       case BCV:
            LALBCVWaveform(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
@@ -213,6 +213,10 @@ LALInspiralWave(
            LALSTPNWaveform(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
+      case SpinTaylorFrameless:
+           LALSTPNWaveformFrameless(status->statusPtr, signalvec, params);
+           CHECKSTATUSPTR(status);
+           break;
       case PhenSpinTaylorRD:
            LALPSpinInspiralRD(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
@@ -221,9 +225,9 @@ LALInspiralWave(
            LALPSpinInspiralRDFreqDom(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
            break;
-	  case SpinQuadTaylor:
-	   		TRY(LALSQTPNWaveform(status->statusPtr, signalvec, params), status);
-			break;
+      case SpinQuadTaylor:
+           TRY(LALSQTPNWaveform(status->statusPtr, signalvec, params), status);
+           break;
       case AmpCorPPN:
    	   LALInspiralAmplitudeCorrectedWave(status->statusPtr, signalvec, params);
 	   CHECKSTATUSPTR(status);
@@ -292,7 +296,7 @@ LALInspiralWaveTemplates(
       case TaylorT2:
            LALInspiralWave2Templates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
-      break;
+           break;
       case TaylorT3:
            LALInspiralWave3Templates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
@@ -320,6 +324,10 @@ LALInspiralWaveTemplates(
       case BCVSpin:
       case SpinTaylor:
            LALSTPNWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params);
+           CHECKSTATUSPTR(status);
+           break;
+      case SpinTaylorFrameless:
+           LALSTPNWaveformTemplatesFrameless(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
            break;
       case PhenSpinTaylorRD:

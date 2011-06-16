@@ -281,8 +281,95 @@ static int XLALSTPNAdaptiveDerivativesFrameless(double t,const double values[],d
 	return GSL_SUCCESS;
 }
 
-NRCSID (LALSTPNWAVEFORMFRAMELESSFORINJECTIONC,
-"$Id$");
+void
+LALSTPNWaveformFrameless(
+			    LALStatus        *status,
+			    REAL4Vector      *signalvec,
+			    InspiralTemplate *params
+			    )
+{
+
+    UINT4 count;
+    InspiralInit paramsInit;
+    INITSTATUS(status, "LALSTPNWaveformFrameless", LALSTPNWAVEFORMFRAMELESSC);
+    ATTATCHSTATUSPTR(status);
+
+    ASSERT(signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(signalvec->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, 
+        LALINSPIRALH_MSGESIZE);
+    ASSERT(params->nEndPad >= 0, status, LALINSPIRALH_ESIZE, 
+        LALINSPIRALH_MSGESIZE);
+    ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, 
+        LALINSPIRALH_MSGESIZE);
+    ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, 
+        LALINSPIRALH_MSGESIZE);
+    ASSERT(params->totalMass > 0., status, LALINSPIRALH_ESIZE, 
+        LALINSPIRALH_MSGESIZE);
+
+    LALInspiralSetup(status->statusPtr, &(paramsInit.ak), params);   
+    CHECKSTATUSPTR(status);
+    LALInspiralChooseModel(status->statusPtr, &(paramsInit.func), 
+        &(paramsInit.ak), params);
+    CHECKSTATUSPTR(status);
+
+    memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));   
+    /* Call the engine function */
+    LALSTPNAdaptiveWaveformEngineFrameless(status->statusPtr, signalvec, NULL, 
+      &count, params, &paramsInit);
+    CHECKSTATUSPTR( status );
+
+    DETATCHSTATUSPTR(status);
+    RETURN(status);
+}
+
+void
+LALSTPNWaveformTemplatesFrameless(
+			    LALStatus        *status,
+			    REAL4Vector      *signalvec1,
+			    REAL4Vector      *signalvec2,
+			    InspiralTemplate *params
+			    )
+{
+
+    UINT4 count;
+    InspiralInit paramsInit;
+    INITSTATUS(status, "LALSTPNWaveformFrameless", LALSTPNWAVEFORMFRAMELESSC);
+    ATTATCHSTATUSPTR(status);
+
+    ASSERT(signalvec1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(signalvec1->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(signalvec2, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(signalvec2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, 
+        LALINSPIRALH_MSGESIZE);
+    ASSERT(params->nEndPad >= 0, status, LALINSPIRALH_ESIZE, 
+        LALINSPIRALH_MSGESIZE);
+    ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, 
+        LALINSPIRALH_MSGESIZE);
+    ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, 
+        LALINSPIRALH_MSGESIZE);
+    ASSERT(params->totalMass > 0., status, LALINSPIRALH_ESIZE, 
+        LALINSPIRALH_MSGESIZE);
+
+    LALInspiralInit(status->statusPtr, params, &paramsInit);
+    CHECKSTATUSPTR(status);
+
+    memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));   
+    memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));   
+    /* Call the engine function */
+    LALSTPNAdaptiveWaveformEngineFrameless(status->statusPtr, 
+      signalvec1, signalvec2, &count, params, &paramsInit);
+    CHECKSTATUSPTR( status );
+
+    DETATCHSTATUSPTR(status);
+    RETURN(status);
+}
+
+
+NRCSID (LALSTPNWAVEFORMFRAMELESSFORINJECTIONC,"$Id$");
 
 void
 LALSTPNWaveformFramelessForInjection (
@@ -293,7 +380,7 @@ LALSTPNWaveformFramelessForInjection (
 			    )
 {
 
- UINT4 count;
+  UINT4 count, i;
 
   REAL4Vector *hplus  = NULL;
   REAL4Vector *hcross = NULL;
@@ -386,10 +473,15 @@ LALSTPNWaveformFramelessForInjection (
     CHECKSTATUSPTR(status);
 
 
-    memcpy(waveform->h->data->data,
-             hplus->data, count*(sizeof(REAL4)));
-    memcpy(waveform->h->data->data + count,
-             hcross->data, count*(sizeof(REAL4)));
+    /* We alternate hplus and hcross. LALInjectStrainGW actually wants */
+    /* a continuous block of hplus followed by a continuous block of hcross */
+    /* But, LALFindChirpInjectSignals reorders h assuming it is passed */
+    /* into the function as alternating hplus and hcross */
+    for( i = 0; i < count; i++)
+    {
+        waveform->h->data->data[2*i] = hplus->data[i];
+        waveform->h->data->data[2*i+1] = hcross->data[i];
+    }
 
     waveform->h->deltaT = 1./params->tSampling;
     waveform->h->sampleUnits = lalStrainUnit;
@@ -547,18 +639,27 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
   /* set up some aliases for the returned arrays; note vector 0 is time */
 
   REAL8 *vphi = &yout->data[1*len]; REAL8 *omega = &yout->data[2*len];
-  REAL8 *LNhx = &yout->data[3*len]; REAL8 *LNhy  = &yout->data[4*len]; REAL8 *LNhz = &yout->data[5*len];
+  REAL8 *LNhx = &yout->data[3*len]; REAL8 *LNhy  = &yout->data[4*len]; 
+  REAL8 *LNhz = &yout->data[5*len];
 
-  /* these are not needed for the waveforms:
-  REAL8 *S1x  = &yout->data[6*len]; REAL8 *S1y   = &yout->data[7*len];  REAL8 *S1z   = &yout->data[8*len];
-  REAL8 *S2x  = &yout->data[9*len]; REAL8 *S2y   = &yout->data[10*len]; REAL8 *S2z   = &yout->data[11*len];	*/
+  /*-- these are not needed for the waveforms, but uncomment for debugging: --*/
+  /*REAL8 *S1x  = &yout->data[6*len];  REAL8 *S1y   = &yout->data[7*len];  
+  REAL8 *S1z  = &yout->data[8*len];  REAL8 *S2x   = &yout->data[9*len]; 
+  REAL8 *S2y  = &yout->data[10*len]; REAL8 *S2z   = &yout->data[11*len];
+  REAL8 *that = &yout->data[0];*/
+  /*--------------------------------------------------------------------------*/
 
-  REAL8 *E1x = &yout->data[12*len]; REAL8 *E1y = &yout->data[13*len]; REAL8 *E1z = &yout->data[14*len];
+  REAL8 *E1x = &yout->data[12*len]; REAL8 *E1y = &yout->data[13*len]; 
+  REAL8 *E1z = &yout->data[14*len];
 
   *countback = len;
 
   REAL8 amp, f2a;
   amp = -4.0 * params->mu * LAL_MRSUN_SI / (params->distance);
+  /*---- Uncomment the next 2 lines for debugging ----*/
+  /*FILE *outFile=NULL;
+  outFile = fopen("frameless-dynamics.dat", "w");*/
+  /*--------------------------------------------------*/
   for(unsigned int i=0;i<len;i++) {
 
       f2a = pow(omega[i],2.0/3.0);
@@ -566,6 +667,13 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
       E2x = LNhy[i]*E1z[i] - LNhz[i]*E1y[i]; /* E2 = LNhat x E1 */
       E2y = LNhz[i]*E1x[i] - LNhx[i]*E1z[i];
       E2z = LNhx[i]*E1y[i] - LNhy[i]*E1x[i];
+
+	  /*---- Uncomment the next line for debugging ----*/
+    /*fprintf(outFile,"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
+		that[i] * m, vphi[i], omega[i], LNhx[i], LNhy[i], LNhz[i], 
+		S1x[i], S1y[i], S1z[i], S2x[i], S2y[i], S2z[i], 
+		E1x[i], E1y[i], E1z[i], E2x, E2y, E2z);*/
+	  /* ----------------------------------------------*/
 
       if (signalvec1) {
           /* Hplus polarization tensor projected into viewer's frame */
@@ -585,9 +693,12 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
               ( hcrosscos * cos(2*vphi[i]) + hcrosssin * sin(2*vphi[i]) ) );
       }
   }
-
+  /*---- Uncomment next line for debugging ----*/
+  /*fclose(outFile);*/
+  /*-------------------------------------------*/
+      
   params->fFinal = (REAL4)(omega[len-1]/unitHz);
-  params->tC = yout->data[len-1];	/* In the original code, this is only done if signalvec2 doesn't exist. I don't see a reason for that, so I removed it. */
+  params->tC = yout->data[len-1] * m;
 
   if (yout) XLALDestroyREAL8Array(yout);
 
