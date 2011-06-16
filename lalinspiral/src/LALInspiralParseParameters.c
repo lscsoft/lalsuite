@@ -442,7 +442,7 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"\t\tFindChirpSP, FindChirpPTF, GeneratePPN, AmpCorPPN,\n");
   fprintf(stderr,"\t\tFrameFile, NumRel, Eccentricity, EOB, EOBNR,\n");
   fprintf(stderr,"\t\tIMRPhenomA, IMRPhenomB, IMRPhenomFA, IMRPhenomFB,\n");
-  fprintf(stderr,"\t\tTaylorEt, TaylorT4, TaylorN)\n");
+  fprintf(stderr,"\t\tTaylorEt, TaylorN)\n");
   fprintf(stderr,"--order       (0, 1, 2, 3, 4, 5, 6, 7, 8 (i.e. 4==twoPN)\n");
   fprintf(stderr,"--ampOrder    (0, 1, 2, 3, 4, 5 (i.e. 4==twoPN)\n");
   fprintf(stderr,"--mass1       (in solar mass)\n");
