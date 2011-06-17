@@ -319,6 +319,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			temp=runState->livePoints[minpos]; /* Put the minimum remaining point in the current position */
 			runState->livePoints[minpos]=runState->livePoints[i];
 			runState->livePoints[i]=temp;
+			logLikelihoods[minpos]=logLikelihoods[i];
+			logLikelihoods[i]=logLmin;
 		}
 
 	/* final corrections */
