@@ -107,11 +107,13 @@ so that you can load the libawg.so and libtestpoint.so shared objects.
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
-#include "tconv.h"   /* For TAInow() */
-#include "awgapi.h"
-#include "testpoint.h"
-#include "SIStr.h"
 
+/* GDS includes */
+#include <tconv.h>   /* For TAInow() */
+#include <dtt/awgapi.h>
+#include <dtt/testpoint.h>
+
+#include "SIStr.h"
 /*====== Prototypes for static local functions =============================*/
 static int SIStrInit( SIStream *sis );
 static int SIStrCreateBuf( SIStream *sis );

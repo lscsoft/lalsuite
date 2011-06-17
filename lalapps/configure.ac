@@ -241,6 +241,13 @@ if test "${fftw}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([FFTW],[fftw])
 
+# check for GDS system: we check if we can link against libawg which is in GDS
+# GDS is a requirements for building 'online_psinject', which is used for hardware injections
+gds="true";
+AC_CHECK_LIB([awg],[awgGetChannelNames],,[gds="false"])
+AC_CHECK_HEADERS([gdstype.h],,[gds="false"])
+LALSUITE_ENABLE_MODULE([GDS],[gds])
+
 # check for libFrame
 if test "${frame}" = "true"; then
   PKG_CHECK_MODULES([FRAME],[libframe],[true],[false])
@@ -439,6 +446,7 @@ echo "
                 Condor support is $CONDOR_ENABLE_VAL
                 BOINC support is $BOINC_ENABLE_VAL
                 MPI support is $MPI_ENABLE_VAL
+                GDS support is $GDS_ENABLE_VAL
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps
