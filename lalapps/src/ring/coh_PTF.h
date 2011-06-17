@@ -170,6 +170,7 @@ struct coh_PTF_params {
   const char  *noSpinBank;
   char         userTag[256];
   char         ifoTag[256];
+  UINT4        slideSegments[LAL_NUM_IFO];
   /* flags */
   int          strainData;
   int          doubleData;
@@ -349,6 +350,7 @@ RingDataSegments *coh_PTF_get_segments(
     REAL4TimeSeries         *channel,
     REAL4FrequencySeries    *invspec,
     REAL4FFTPlan            *fwdplan,
+    InterferometerNumber     NumberIFO,
     struct coh_PTF_params      *params
 );
 
