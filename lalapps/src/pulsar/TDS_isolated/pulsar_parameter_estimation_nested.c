@@ -101,6 +101,20 @@ UINT4 varybinary = 0;
 "\n"
 
 
+#define USAGEGRID \
+"Usage: %s [options]\n\n"\
+" --grid              perform the posterior evalution on a 1D grid over the\n\
+                     parameter given by --gridpar\n"\
+" --gridpar           The parameter over which to perform the 1D posterior\n\
+                     evaluation\n"\
+" --gridmin           The lower end of the range over which to evaluate the\n\
+                     paramter given by --gridpar\n"\
+" --gridmax           The upper end of the range over which to evaluate the\n\
+                     paramter given by --gridpar\n"\
+" --gridsteps         The number of points in the grid\n"\
+"\n"
+
+
 INT4 main( INT4 argc, CHAR *argv[] ){
   ProcessParamsTable *param_table;
   LALInferenceRunState runState;
@@ -144,6 +158,8 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Initialise the prior distribution given the command line arguments */
   /* Initialise the proposal distribution given the command line arguments */
   initialiseProposal( &runState );
+  
+  gridOutput( &runState );
   
   runState.proposal = LALInferenceProposalPulsarNS;
   
@@ -934,9 +950,9 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     
     /* get chunk lengths of data */
     
-    /* chunkLength = get_chunk_lengths( data, chunkMax ); */
+    chunkLength = get_chunk_lengths( data, chunkMax );
     
-    chunkLength = chop_n_merge( data, chunkMin, chunkMax );
+    /* chunkLength = chop_n_merge( data, chunkMin, chunkMax ); */
     
     LALInferenceAddVariable( data->dataParams, "chunkLength", &chunkLength, 
                              LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_FIXED );
@@ -1311,6 +1327,143 @@ set.\n", propfile, tempPar);
   return;
 }
 
+/* this is a testing function to output the posterior of 1 parameter as
+   calculated on a specified 1D grid, with all other values held fixed at there
+   values from the input par file */
+void gridOutput( LALInferenceRunState *runState ){
+  REAL8 h0min = 0.;
+  REAL8 h0max = 0.;
+  REAL8 h0range = 0, h0step = 0;
+  INT4 h0steps = 0, i = 0;
+ 
+  ProcessParamsTable *ppt;
+  REAL8 scaleval = 1., tmpscale = 0., tmpgridval = 0.;
+  
+  ProcessParamsTable *commandLine = runState->commandLine;
+  
+  FILE *fp = NULL;
+  REAL8 minL = LAL_REAL8_MAX;
+  REAL8 sumPost = 0.;
+  
+  REAL8Vector *logL = NULL;
+  
+  CHAR *parname = NULL, parscale[256], outputgrid[256];
+  
+  /*------------------------------------------------------------*/
+  /* test output on a h0 grid */
+  ppt = LALInferenceGetProcParamVal( commandLine, "--grid" );
+  if ( ppt ){
+    ProcessParamsTable *ppt2;
+    
+    /* parameters over which to perform the grid search */
+    ppt2 = LALInferenceGetProcParamVal( commandLine, "--gridpar" );
+    
+    if( ppt2 ){
+      parname = XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine,
+        "--gridpar" )->value );
+        
+      if( !recognised_parameter( parname ) ){
+        fprintf(stderr, "Error... parameter %s not recognised\n", parname );
+        exit(0);
+      }
+        
+      sprintf(parscale, "%s_scale", parname);
+    }
+    else{
+      fprintf(stderr, USAGEGRID, commandLine->program);
+      exit(0);
+    }
+    
+    ppt2 = LALInferenceGetProcParamVal( commandLine, "--gridmin" );
+    
+    if( ppt2 ){
+      h0min = atof( LALInferenceGetProcParamVal(commandLine, 
+                                                "--gridmin")->value );
+    }
+    else h0min = 0.; /* default to zero */
+    
+    ppt2 = LALInferenceGetProcParamVal( commandLine, "--gridmax" );
+    
+    if( ppt2 ){
+      h0max = atof( LALInferenceGetProcParamVal(commandLine, 
+                                                "--gridmax")->value );
+    }
+    else h0max = 1.; /* default to 1 */
+    
+    ppt2 = LALInferenceGetProcParamVal( commandLine, "--gridsteps" );
+    
+    if( ppt2 ){
+      h0steps = atoi( LALInferenceGetProcParamVal(commandLine, 
+                                                "--gridsteps")->value );
+    }
+    else h0steps = 100; /* default to 100 steps */
+  }
+  else{
+    return;
+  }
+  
+  if ( verbose ){
+    fprintf(stderr, "Calculating posterior on %s over a grid from:\n", parname);
+    fprintf(stderr, "\t%le --> %le in %d steps.\n", h0min, h0max, h0steps);
+  }
+  
+  h0range = h0max - h0min;
+  h0step = h0range / (REAL8)(h0steps-1.);
+  
+  logL = XLALCreateREAL8Vector( h0steps );
+  
+  /* reset rescale value for h0 */
+  tmpscale = *(REAL8*)LALInferenceGetVariable( runState->data->dataParams,
+                                               parscale );
+  LALInferenceRemoveVariable( runState->data->dataParams, parscale );
+  LALInferenceAddVariable( runState->data->dataParams, parscale, &scaleval,
+    LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+  
+  tmpgridval = *(REAL8*)LALInferenceGetVariable( runState->currentParams,
+                                                 parname );
+  
+  sprintf(outputgrid, "%s_grid_posterior.txt", parname);
+  
+  if ( (fp = fopen(outputgrid, "w")) == NULL ){
+    fprintf(stderr, "Error... cannot open grid posterior file %s.\n",
+            outputgrid);
+    exit(0);
+  }
+  
+  for( i = 0; i < h0steps; i++ ){
+    REAL8 h0val = h0min + i*h0step;
+    
+    LALInferenceSetVariable( runState->currentParams, parname, &h0val );
+    
+    logL->data[i] = runState->likelihood( runState->currentParams,
+                                          runState->data, runState->template );
+    
+    if ( logL->data[i] < minL ) minL = logL->data[i];
+  }
+  
+  /* integrate area under posterior - trapezium rule */
+  for( i = 0; i < h0steps-1; i++ ){
+    sumPost += ( exp(logL->data[i] - minL) + exp(logL->data[i+1] - minL) ) *
+      h0step / 2.;
+  }
+  
+  /* output posterior */
+  for( i = 0; i < h0steps; i++ ){
+    REAL8 h0val = h0min + i*h0step;
+    fprintf(fp, "%le\t%le\n", h0val, exp( logL->data[i] - minL ) / sumPost);
+  }
+  
+  fclose(fp);
+  
+  XLALDestroyREAL8Vector( logL );
+  
+  /* reset scale value and parameter value in currentParams */
+  LALInferenceRemoveVariable( runState->data->dataParams, parscale );
+  LALInferenceAddVariable( runState->data->dataParams, parscale, &tmpscale,
+    LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+  LALInferenceSetVariable( runState->currentParams, parname, &tmpgridval );
+}
+
 
 void setupLivePointsArray( LALInferenceRunState *runState ){
 /* Set up initial basket of live points, drawn from prior,
@@ -1320,7 +1473,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
   REAL8Vector *logLs;
         
   LALInferenceVariableItem *current;
-
+  
   /* Allocate the array */
   runState->livePoints = XLALCalloc( Nlive, sizeof(LALInferenceVariables *) );
   
@@ -1430,7 +1583,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
     
     /* Populate log likelihood */           
     logLs->data[i] = runState->likelihood( runState->livePoints[i],
-                                           runState->data, runState->template);
+                                           runState->data, runState->template );
   }
         
 }
@@ -1468,7 +1621,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
   
     /* copy model parameters to data parameters */
     LALInferenceCopyVariables( vars, data->modelParams );
-  
+      
     /* get pulsar model */
     get_model( data );
   
@@ -1582,9 +1735,12 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   
   /* set model parameters (including rescaling) */
   rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "h0_scale" );
-  pars.h0 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "h0" ) * rescale;
-  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "cosiota_scale" );
-  pars.cosiota = *(REAL8*)LALInferenceGetVariable( data->modelParams, "cosiota" ) * rescale;
+  pars.h0 = *(REAL8*)LALInferenceGetVariable( data->modelParams, "h0" ) *
+    rescale;
+  rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, 
+                                              "cosiota_scale" );
+  pars.cosiota = *(REAL8*)LALInferenceGetVariable( data->modelParams, 
+                                                   "cosiota" ) * rescale;
   rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "psi_scale" );
   pars.psi = *(REAL8*)LALInferenceGetVariable( data->modelParams, "psi" ) * rescale;
   rescale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "phi0_scale" );
@@ -2431,6 +2587,14 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
   
   changepoint = find_change_point( data, &logodds, chunkMin );
   
+  /* set threshold based on empirical tests that only give a 1% chance of
+     splitting Gaussian data of various lengths. The relation is approximately:
+     T = 1.305*log10(length) + 0.254 + 2.531
+     where the first two terms come from a fit to odds ratios for a Monte Carlo
+     of Gaussian noise (with real and imaginary components) of various lengths,
+     and the final term comes from an offset to give the 1% false alarm rate. */
+  threshold = 1.305*log10(length) + 0.254 + 2.531;
+  
   if ( logodds > threshold ){
     UINT4Vector *cp1 = NULL;
     UINT4Vector *cp2 = NULL;
@@ -2728,7 +2892,7 @@ REAL8Vector *sum_data( LALInferenceIFOData *data ){
   for( i = 0 ; i < length ; i+= chunkLength ){
     chunkLength = chunkLengths->data[count];
     sumData->data[count] = 0.;
-
+    
     for( j = i ; j < i + chunkLength ; j++){
       B.re = data->compTimeData->data->data[j].re;
       B.im = data->compTimeData->data->data[j].im;
@@ -2924,6 +3088,27 @@ INT4 count_csv( CHAR *csvline ){
   }
     
   return count+1;
+}
+
+
+/* function to check whether a given parameter is one of the recognised
+   parameters listed in the header file */
+INT4 recognised_parameter( CHAR *parname ){
+  INT4 i = 0;
+  
+  for( i = 0; i < NUMAMPPARS; i++ )
+    if (!strcmp(parname, amppars[i])) return 1;
+    
+  for( i = 0; i < NUMFREQPARS; i++ )
+    if (!strcmp(parname, freqpars[i])) return 1;
+    
+  for( i = 0; i < NUMSKYPARS; i++ )
+    if (!strcmp(parname, skypars[i])) return 1;
+    
+  for( i = 0; i < NUMBINPARS; i++ )
+    if (!strcmp(parname, binpars[i])) return 1;
+    
+  return 0;
 }
 
 /*----------------------- END OF HELPER FUNCTIONS ----------------------------*/

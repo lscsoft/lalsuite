@@ -191,6 +191,10 @@ void rescaleOutput( LALInferenceRunState *runState );
 
 INT4 count_csv( CHAR *csvline );
 
+void gridOutput( LALInferenceRunState *runState );
+
+INT4 recognised_parameter( CHAR *parname );
+
 #ifdef __cplusplus
 }
 #endif
