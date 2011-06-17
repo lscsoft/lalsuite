@@ -164,7 +164,7 @@ Initialisation arguments:\n\
 void initializeTemplate(LALInferenceRunState *runState)
 {
 	char help[]="\
-(--template [LAL,LALSTPN,PhenSpin]\tSpecify template (default LAL)\n";
+(--template [LAL,LALSTPN,PhenSpin,LALGenerateInspiral]\tSpecify template (default LAL)\n";
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	/* Print command line arguments if help requested */
@@ -182,7 +182,9 @@ void initializeTemplate(LALInferenceRunState *runState)
 			runState->template=&LALInferenceTemplateLALSTPN;
 		if(!strcmp("PhenSpin",ppt->value))
 			runState->template=&LALInferenceTemplatePSTRD;
-	}	
+		if(!strcmp("LALGenerateInspiral",ppt->value))
+			runState->template=&LALInferenceTemplateLALGenerateInspiral;
+	}
 	return;
 }
 
@@ -334,6 +336,8 @@ Parameter arguments:\n\
 (--injXML injections.xml)\tInjection XML file to use\n\
 (--Mmin mchirp)\tMinimum chirp mass\n\
 (--Mmax mchirp)\tMaximum chirp mass\n\
+(--etamin eta)\tMinimum eta\n\
+(--etamax eta)\tMaximum eta\n\
 (--dt time)\tWidth of time prior, centred around trigger (0.1s)\n\
 (--trigtime time)\tTrigger time to use\n\
 (--Dmin dist)\tMinimum distance in Mpc (1)\n\
@@ -405,6 +409,14 @@ Parameter arguments:\n\
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Mmax");
 	if(ppt)	mcMax=atof(ppt->value);
 	
+	ppt=LALInferenceGetProcParamVal(commandLine,"--etamin");
+	if(ppt)
+		etaMin=atof(ppt->value);
+	
+	ppt=LALInferenceGetProcParamVal(commandLine,"--etamax");
+	if(ppt)
+		etaMax=atof(ppt->value);
+	
 	/* Over-ride component masses */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
 	if(ppt)	mMin=atof(ppt->value);
@@ -429,14 +441,14 @@ Parameter arguments:\n\
 
 	tmpVal=0.24;
 	LALInferenceAddVariable(currentParams, "massratio",       &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
+    	LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
 	
-    LALInferenceAddVariable(currentParams, "time",            &endtime   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
+    	LALInferenceAddVariable(currentParams, "time",            &endtime   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
 	tmpMin=endtime-0.5*dt; tmpMax=endtime+0.5*dt;
 	LALInferenceAddMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);	
 
 	tmpVal=1.0;
-    LALInferenceAddVariable(currentParams, "phase",           &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+    	LALInferenceAddVariable(currentParams, "phase",           &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	LALInferenceAddMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	

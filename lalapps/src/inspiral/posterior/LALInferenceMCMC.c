@@ -206,6 +206,10 @@ void initializeMCMC(LALInferenceRunState *runState)
       runState->template=&LALInferenceTemplate3525TD;
 			fprintf(stdout,"Template function called is \"template3525TD\"\n");
     }
+    else if(strstr(ppt->value,"PhenSpinTaylorRD")) {
+        runState->template=&LALInferenceTemplatePSTRD;
+            fprintf(stdout,"Template function called is \"templatePSTRD\"\n");
+    }
 		else {
 			runState->template=&LALInferenceTemplateLALGenerateInspiral;
 			fprintf(stdout,"Template function called is \"templateLALGenerateInspiral\"\n");
@@ -372,6 +376,8 @@ void initVariables(LALInferenceRunState *state)
 	//INT4 numberI4 = TaylorT3;
 	//INT4 approx=TaylorF2;
 	LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
+    UINT4 event=0;
+    UINT4 i=0;
 	REAL8 logDmin=log(1.0);
 	REAL8 logDmax=log(100.0);
 	REAL8 Dmin=1.0;
@@ -458,10 +464,18 @@ void initVariables(LALInferenceRunState *state)
 			MPI_Finalize();
 			exit(1);
 		}
-		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
-		AmpOrder=injTable->amp_order;
-		LALGetOrderFromString(&status,injTable->waveform,&PhaseOrder);
-		LALGetApproximantFromString(&status,injTable->waveform,&approx);
+        ppt=LALInferenceGetProcParamVal(commandLine,"--event");
+        if(ppt){
+            event= atoi(ppt->value);
+            fprintf(stderr,"Reading event %d from file\n",event);
+            i=0;
+            while(i<event) {i++; injTable=injTable->next;} /* select event */
+		
+            endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
+            AmpOrder=injTable->amp_order;
+            LALGetOrderFromString(&status,injTable->waveform,&PhaseOrder);
+            LALGetApproximantFromString(&status,injTable->waveform,&approx);
+        }
 	}	
 	
 	/* Over-ride approximant if user specifies */
@@ -770,7 +784,7 @@ void initVariables(LALInferenceRunState *state)
 	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
 	ppt=LALInferenceGetProcParamVal(commandLine, "--noSpin");
-	if((approx==SpinTaylor || approx==SpinTaylorFrameless) && !ppt){
+	if((approx==SpinTaylor || approx==SpinTaylorFrameless || approx==PhenSpinTaylorRD) && !ppt){
 		
 
       ppt=LALInferenceGetProcParamVal(commandLine, "--spinAligned");
@@ -989,7 +1003,6 @@ void initVariables(LALInferenceRunState *state)
           gsl_matrix *covM = gsl_matrix_alloc(N,N);
           gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
           REAL8Vector *sigmaVec = XLALCreateREAL8Vector(N);
-          UINT4 i;
 
 
           if (readSquareMatrix(covM, N, inp)) {
@@ -1091,7 +1104,6 @@ void initVariables(LALInferenceRunState *state)
           if (!LALInferenceCheckVariable(state->proposalArgs, SIGMAVECTORNAME)) {
             /* We need a sigma vector for adaptable jumps. */
             REAL8Vector *sigmas = XLALCreateREAL8Vector(N);
-            UINT4 i = 0;
             
             for (i = 0; i < N; i++) {
               sigmas->data[i] = 1e-4;
@@ -1107,7 +1119,6 @@ void initVariables(LALInferenceRunState *state)
   
           REAL8Vector *PacceptCount = XLALCreateREAL8Vector(N);
           REAL8Vector *PproposeCount = XLALCreateREAL8Vector(N);
-          UINT4 i;
 
           for (i = 0; i < N; i++) {
             PacceptCount->data[i] = 0.0;
