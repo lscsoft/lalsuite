@@ -201,12 +201,13 @@ RingDataSegments *coh_PTF_get_segments(
     REAL4TimeSeries         *channel,
     REAL4FrequencySeries    *invspec,
     REAL4FFTPlan            *fwdplan,
+    InterferometerNumber     NumberIFO,
     struct coh_PTF_params   *params
     )
 {
   RingDataSegments *segments = NULL;
   COMPLEX8FrequencySeries  *response = NULL;
-  UINT4  sgmnt,i;
+  UINT4  sgmnt,i, slidSegNum;
   UINT4  segListToDo[params->numOverlapSegments];
 
   segments = LALCalloc( 1, sizeof( *segments ) );
@@ -291,6 +292,8 @@ RingDataSegments *coh_PTF_get_segments(
       else
       {
         if ( is_in_list( sgmnt, params->segmentsToDoList ) )
+      /* we are sliding the names of segments here */
+          slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
           compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
             invspec, response, params->segmentDuration, params->strideDuration,
             fwdplan );
