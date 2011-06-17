@@ -209,7 +209,7 @@ int main( int argc, char **argv )
       /* create the segments */
       segments[ifoNumber] = coh_PTF_get_segments( channel[ifoNumber],
                                                   invspec[ifoNumber],
-                                                  fwdplan, params );
+                                                  fwdplan, ifoNumber, params );
       
       numSegments = segments[ifoNumber]->numSgmnt;
 
@@ -316,7 +316,7 @@ int main( int argc, char **argv )
     /* create the segments */
     segments[ifoNumber] = coh_PTF_get_segments( channel[ifoNumber],
                                                 invspec[ifoNumber],
-                                                fwdplan, params );
+                                                fwdplan, ifoNumber, params );
 
     numSegments = segments[ifoNumber]->numSgmnt;
 
