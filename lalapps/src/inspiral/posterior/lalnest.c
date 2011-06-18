@@ -330,7 +330,7 @@ void initialise(int argc, char *argv[]){
 		{"chimax",required_argument,0,91},
 		{"mc_flag",no_argument,0,100},
 		{"snrfile",required_argument,0,123},
-		{"skyloc",no_argument,&skylocprior,92},
+		{"skyloc",no_argument,0,13},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
@@ -608,7 +608,7 @@ void initialise(int argc, char *argv[]){
 			fLow=atof(optarg);
 			fLowFlag=1;
 			break;
-		case 92:
+		case 13:
 			skylocprior=1;
 			break;
 		default:
