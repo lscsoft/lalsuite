@@ -9,7 +9,6 @@ check_PROGRAMS = \
 	CoarseTest2 \
 	FindChirpBCVSpinTest \
 	FindChirpBankVetoTest \
-	FindChirpTDTest \
 	GenerateInspiralWaveform \
 	GeneratePPNAmpCorInspiralTest \
 	GeneratePPNInspiralTest \
@@ -46,6 +45,7 @@ endif
 # LALHybridTest
 # NRWaveIOTest
 # SpaceCovering
+# FindChirpTDTest
 
 # requires lalstochastic
 # CoherentInspiralFilterTest
