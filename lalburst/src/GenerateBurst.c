@@ -131,7 +131,7 @@ int XLALGenerateSimBurst(
 
 static const TimeSlide *find_sim_burst_time_slide_row(const TimeSlide *time_slide, long time_slide_id, const char *channel)
 {
-	for(; time_slide && time_slide->time_slide_id != time_slide_id && strstr(channel, time_slide->instrument) != channel; time_slide = time_slide->next);
+	for(; time_slide && time_slide->time_slide_id != time_slide_id && time_slide->instrument && strncmp(channel, time_slide->instrument, strlen(time_slide->instrument)); time_slide = time_slide->next);
 	return time_slide;
 }
 
