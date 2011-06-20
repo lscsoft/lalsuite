@@ -90,6 +90,7 @@ Optional OPTIONS:\n \
 [--chimax NUM\t:\tMax value of chi spin parameter]\n\
 [--snrpath PATH\t:\tOutput SNRs to a file in PATH]\n\
 [--skyloc\t:\tUse Sky localisation prior for Larry's injections]\n\
+[--m1m2\t:\tUse m1 and m2 as mass parameters instead of chirp mass and eta]\n\
 \n\n \
 Optional PhenSpinTaylorRD_template OPTIONS:\n \
 [--onespin_flag INT\t:\tSet S2=(0,0,0) in PhenSpinTaylorRD template waveform]\n \
@@ -184,6 +185,7 @@ INT4 ampOrder=0;
 INT4 phaseOrder=4;
 char *pinned_params=NULL;
 UINT4 fLowFlag=0;
+UINT4 m1m2Flag=0;
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 int checkParamInList(const char *list, const char *param);
@@ -331,12 +333,16 @@ void initialise(int argc, char *argv[]){
 		{"mc_flag",no_argument,0,100},
 		{"snrfile",required_argument,0,123},
 		{"skyloc",no_argument,0,13},
+		{"m1m2",no_argument,0,24},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
 	while((i=getopt_long(argc,argv,"hi:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFVvb",long_options,&i))!=-1){ switch(i) {
 		case 64:
 			manual_chi_min=atof(optarg);
+			break;
+		case 24:
+			m1m2Flag=1;
 			break;
 		case 91:
 			manual_chi_max=atof(optarg);
@@ -1538,13 +1544,22 @@ void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT)
 	deltaEta=etaMax-etaMin;
 	double lmmin=log(inMc-deltaM);
 	double lmmax=log(inMc+deltaM);
-	XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	double m_comp_min=1.0;
+	double m_comp_max=15.0;
+	
+	if(m1m2Flag){
+		XLALMCMCAddParam(parameter,"m1",m_comp_min+(m_comp_max-m_comp_min)*gsl_rng_uniform(RNG),m_comp_min,m_comp_max,0);
+		XLALMCMCAddParam(parameter,"m2",m_comp_min+(m_comp_max-m_comp_min)*gsl_rng_uniform(RNG),m_comp_min,m_comp_max,0);
+	}
+	else{
+		XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 
 	/*  XLALMCMCAddParam(parameter,"mchirp",(gsl_rng_uniform(RNG)-0.5)*deltaM + inMc,inMc-0.5*deltaM,inMc+0.5*deltaM,0);*/
-	XLALMCMCAddParam(parameter,"eta",(gsl_rng_uniform(RNG))*deltaEta + etaMin,etaMin,etaMax,0);
+		XLALMCMCAddParam(parameter,"eta",(gsl_rng_uniform(RNG))*deltaEta + etaMin,etaMin,etaMax,0);
+	}
 	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow+inTime,inTime-0.5*timewindow,inTime+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter,"distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
+	XLALMCMCAddParam(parameter,"logdist", (log(40.0)-log(10.0))*gsl_rng_uniform(RNG)+log(10.0), log(10.0), log(40.0), 0);
 	XLALMCMCAddParam(parameter,"ra",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter,"dec",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"psi",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,1);

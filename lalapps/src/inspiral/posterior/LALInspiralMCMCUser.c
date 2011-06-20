@@ -372,26 +372,32 @@ REAL8 NestPriorSkyLoc(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter)
 	/* With total mass < 20 */
 	REAL8 minCompMass=1.0, maxCompMass=15.0;
 	REAL8 maxTotalMass=20.0;
-	REAL8 mc,m1,m2,eta,tmp;
+	REAL8 mc=0.0,m1,m2,eta,tmp;
 	(void) inputMCMC;
 	/* Work out the implicit prior density on mc/eta */
-	if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
-	else mc=XLALMCMCGetParameter(parameter,"mchirp");
-	eta=XLALMCMCGetParameter(parameter,"eta");
-	m1 = mc2mass1(mc,eta);
-	m2 = mc2mass2(mc,eta);
-	if(m2>m1) {
-		tmp=m1; m1=m2; m2=tmp;
+	if(XLALMCMCCheckParameter(parameter,"m1") && XLALMCMCCheckParameter(parameter,"m2")){
+		/* Flat on m1,m2 */
+		m1=XLALMCMCGetParameter(parameter,"m1");
+		m2=XLALMCMCGetParameter(parameter,"m2");
 	}
-	parameter->logPrior=0.0;
-	if(XLALMCMCCheckParameter(parameter,"logmc")) parameter->logPrior+=(m1+m2)*(m1+m2)*(m1+m2)/(m1-m2);
-	else parameter->logPrior+=(m1+m2)*(m1+m2)/(pow(eta,0.6)*(m1-m2));
-	
+	else {
+		if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
+		else if(XLALMCMCCheckParameter(parameter,"mchirp")) mc=XLALMCMCGetParameter(parameter,"mchirp");
+		eta=XLALMCMCGetParameter(parameter,"eta");
+		m1 = mc2mass1(mc,eta);
+		m2 = mc2mass2(mc,eta);
+		if(m2>m1) {
+			tmp=m1; m1=m2; m2=tmp;
+		}
+		parameter->logPrior=0.0;
+		if(XLALMCMCCheckParameter(parameter,"logmc")) parameter->logPrior+=(m1+m2)*(m1+m2)*(m1+m2)/(m1-m2);
+		else parameter->logPrior+=(m1+m2)*(m1+m2)/(pow(eta,0.6)*(m1-m2));
+	}	
 	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
 	
 	ParamInRange(parameter);
-	if(m1<minCompMass || m1>maxCompMass || m2<minCompMass || m2>maxCompMass || (m1+m2)>maxTotalMass)
+	if(m1<minCompMass || m1>maxCompMass || m2<minCompMass || m2>maxCompMass || (m1+m2)>maxTotalMass || m2>m1)
 		parameter->logPrior=-DBL_MAX;
 	return parameter->logPrior;
 }
@@ -662,6 +668,7 @@ in the frequency domain */
 	REAL8 TimeFromGC; /* Time delay from geocentre */
 	static LALStatus status;
 	REAL8 resp_r,resp_i,ci;
+	REAL8 m1,m2;
 	InspiralTemplate template;
 	UINT4 Nmodel; /* Length of the model */
 	UINT4 idx;
@@ -681,11 +688,19 @@ in the frequency domain */
 		parameter->logLikelihood=0.0;
 		return 0.0;
 	}
-	if(XLALMCMCCheckParameter(parameter,"logmc")) mchirp=exp(XLALMCMCGetParameter(parameter,"logmc"));
+	if(XLALMCMCCheckParameter(parameter,"m1") && XLALMCMCCheckParameter(parameter,"m2")){
+		m1=XLALMCMCGetParameter(parameter,"m1");
+		m2=XLALMCMCGetParameter(parameter,"m2");
+		eta=(m1*m2)/((m1+m2)*(m1+m2));
+		mchirp=(m1+m2)*pow(eta,0.6);
+		mtot=m1+m2;
+	}
+	else{
+		if(XLALMCMCCheckParameter(parameter,"logmc")) mchirp=exp(XLALMCMCGetParameter(parameter,"logmc"));
         else mchirp=XLALMCMCGetParameter(parameter,"mchirp");
-
-	eta = XLALMCMCGetParameter(parameter,"eta");
-	mtot=mc2mt(mchirp,eta);
+		eta = XLALMCMCGetParameter(parameter,"eta");
+		mtot=mc2mt(mchirp,eta);
+	}
 	template.totalMass = mtot;
 	template.eta = eta;
 	template.massChoice = totalMassAndEta;
