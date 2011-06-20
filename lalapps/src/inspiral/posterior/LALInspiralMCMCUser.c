@@ -463,6 +463,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	static LALStatus status;
 	CoherentGW coherent_gw;
 	InspiralTemplate template;
+	memset(&template,0,sizeof(template));
 	PPNParamStruc PPNparams;
 	LALDetAMResponse det_resp;
 	REAL4TimeSeries *h_p_t=NULL,*h_c_t=NULL;
