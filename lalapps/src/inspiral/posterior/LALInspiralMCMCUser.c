@@ -462,6 +462,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	DetectorResponse det;
 	static LALStatus status;
 	CoherentGW coherent_gw;
+	InspiralTemplate template;
 	PPNParamStruc PPNparams;
 	LALDetAMResponse det_resp;
 	REAL4TimeSeries *h_p_t=NULL,*h_c_t=NULL;
@@ -490,9 +491,35 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	PPNparams.fStopIn=0.5/inputMCMC->deltaT;
 	PPNparams.deltaT=inputMCMC->deltaT;
 	PPNparams.ampOrder = inputMCMC->ampOrder;
-
-	/* Call LALGeneratePPNAmpCorInspiral */
-	LALGeneratePPNAmpCorInspiral(&status,&coherent_gw,&PPNparams);
+	
+	if(inputMCMC->approximant==EOBNR){
+		template.totalMass = PPNparams.mTot;
+		template.eta = eta;
+		template.massChoice = totalMassAndEta;
+		template.fLower = inputMCMC->fLow;
+		/* EOBNR takes distance in metres */
+		if(XLALMCMCCheckParameter(parameter,"distMpc"))
+			template.distance = LAL_PC_SI*1e6*XLALMCMCGetParameter(parameter,"distMpc"); /* This must be in Mpc, contrary to the docs */
+		else if(XLALMCMCCheckParameter(parameter,"logdist"))
+			template.distance=LAL_PC_SI*1e6*exp(XLALMCMCGetParameter(parameter,"logdist"));
+		
+		template.order=inputMCMC->phaseOrder;
+		template.approximant=inputMCMC->approximant;
+		template.tSampling = 1.0/inputMCMC->deltaT;
+		template.fCutoff = 0.5/inputMCMC->deltaT -1.0;
+		template.nStartPad = 0;
+		template.nEndPad =0;
+		template.startPhase = XLALMCMCGetParameter(parameter,"phi");
+		template.startTime = 0.0;
+		template.ieta = 1;
+		template.next = NULL;
+		template.fine = NULL;
+		LALEOBWaveformForInjection(&status,&coherent_gw, &template, &PPNparams);
+	}
+	else {
+		/* Call LALGeneratePPNAmpCorInspiral */
+		LALGeneratePPNAmpCorInspiral(&status,&coherent_gw,&PPNparams);
+	}
 	if(status.statusCode)
 	{
 		REPORTSTATUS(&status);
