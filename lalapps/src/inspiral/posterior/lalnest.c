@@ -1752,7 +1752,7 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	double etamax = 0.25;
 	mc=m2mc(injTable->mass1,injTable->mass2);
 	mcmin=manual_mass_low;
-
+	REAL8 m_comp_min=1., m_comp_max=15.;
 	mcmax=manual_mass_high;
 
 	lmmin=log(mcmin);
@@ -1761,17 +1761,27 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	
 	LALMCMCParam *head;
 	
-	if(checkParamInList(pinned_params,"logmc")||checkParamInList(pinned_params,"mchirp"))
-		XLALMCMCAddParam(parameter,"logmc",log(injTable->mchirp),lmmin,lmmax,-1);
-	else
-		XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
-	/*XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
-
-	if(checkParamInList(pinned_params,"eta"))
-		XLALMCMCAddParam(parameter,"eta",injTable->eta,etamin,etamax,-1);
-	else
-		XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
-	
+	if(m1m2Flag){
+		if(checkParamInList(pinned_params,"m1")||checkParamInList(pinned_params,"m2"))
+		{XLALMCMCAddParam(parameter,"m1",injTable->mass1,m_comp_min,m_comp_max,0);
+		XLALMCMCAddParam(parameter,"m2",injTable->mass2,m_comp_min,m_comp_max,0);
+		}
+		else {
+			XLALMCMCAddParam(parameter,"m1",m_comp_min+(m_comp_max-m_comp_min)*gsl_rng_uniform(RNG),m_comp_min,m_comp_max,0);
+			XLALMCMCAddParam(parameter,"m2",m_comp_min+(m_comp_max-m_comp_min)*gsl_rng_uniform(RNG),m_comp_min,m_comp_max,0);
+		}
+	}
+	else{
+		if(checkParamInList(pinned_params,"logmc")||checkParamInList(pinned_params,"mchirp"))
+			XLALMCMCAddParam(parameter,"logmc",log(injTable->mchirp),lmmin,lmmax,-1);
+		else
+			XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+		if(checkParamInList(pinned_params,"eta"))
+			XLALMCMCAddParam(parameter,"eta",injTable->eta,etamin,etamax,-1);
+		else
+			XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
+		
+	}
 	if(checkParamInList(pinned_params,"time"))
 		XLALMCMCAddParam(parameter,"time",trg_time,trg_time-0.5*timewindow,trg_time+0.5*timewindow,-1);
 	else
