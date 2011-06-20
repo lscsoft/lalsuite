@@ -58,6 +58,7 @@
 #include <lal/FindChirpPTF.h>
 #include <lal/RingUtils.h>
 #include <LALAppsVCSInfo.h>
+#include <lal/SkyCoordinates.h>
 
 #include "lalapps.h"
 #include "getdata.h"
@@ -220,11 +221,12 @@ typedef struct tagRingDataSegments
 }
 RingDataSegments;
 
-struct coh_PTF_skyPoints {
-  UINT4 numPoints;
-  REAL4 *rightAscension;
-  REAL4 *declination;
-};
+typedef struct tagCohPTFSkyPositions
+{
+  UINT4       numPoints;
+  SkyPosition *data;
+}
+CohPTFSkyPositions; 
 
 /* ENUM for sky location looping */
 
@@ -664,19 +666,41 @@ int generate_file_name(
     int dt
 );
 
-/* generate array of sky points based on RA, DEC and DECERROR */
-/* should return linked list */
-void coh_PTF_generate_sky_points(
-    struct coh_PTF_skyPoints *skyPoints,
+/* generate array of sky points based on RA, Dec, error radius, and timing
+ * accuracy */
+
+CohPTFSkyPositions *coh_PTF_generate_sky_points(
     struct coh_PTF_params *params
 );
 
-void coh_PTF_sky_grid(
-    struct coh_PTF_skyPoints *skyPoints,
+CohPTFSkyPositions *coh_PTF_generate_sky_grid(
     struct coh_PTF_params *params
 );
 
-struct coh_PTF_skyPoints coh_PTF_circular_grid(
+CohPTFSkyPositions *coh_PTF_circular_grid(
     REAL4 angularResolution,
     REAL4 skyError
+);
+
+CohPTFSkyPositions *coh_PTF_parse_time_delays(
+    CohPTFSkyPositions *skyPoints,
+    struct coh_PTF_params *params
+);
+
+void coh_PTF_rotate_skyPoints(
+    CohPTFSkyPositions *skyPoints,
+    REAL4 axis[3],
+    REAL4 angle
+);
+
+void crossProduct(
+    REAL4 out[3],
+    REAL4 x[3],
+    REAL4 y[3]
+);
+
+void rotationMatrix(
+    REAL4 matrix[3][3],
+    REAL4 axis[3],
+    REAL4 angle
 );

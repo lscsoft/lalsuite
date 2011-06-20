@@ -674,30 +674,53 @@ SnglInspiralTable *conv_insp_tmpl_to_sngl_table(
   return cnvTemplate;
 }
 
-/* construct list of of (ra, dec) pairs for multiple sky points */
+/*
+ *
+ * construct CohPTFSkyPositions structures for the different sky patching cases:
+ *
+ * if all sky:
+ *   FAIL - not implemented yet
+ * if two-detectors with patch:
+ *   generate an arc of points perpendicular to the line of constant time-delay
+ * if multiple-detector patch or single point:
+ *   generate a grid of concentric circles around trigger point
+ *
+ */
 
-void coh_PTF_generate_sky_points( 
-    struct coh_PTF_skyPoints *skyPoints,
+CohPTFSkyPositions *coh_PTF_generate_sky_points( 
     struct coh_PTF_params *params
     )
 {
 
+  CohPTFSkyPositions *skyPoints = NULL;
+
   /* if all sky */
   if ( params->skyLooping == ALL_SKY || params->skyLooping == TWO_DET_ALL_SKY )
   {
-    fprintf( stderr, "all sky mode is not implemented yet, please provide --declination" );
-    exit(1);
+    error("all sky mode is not implemented yet, please provide --declination");
 
     //skyPoints = coh_PTF_sky_grid()
   }
 
   /* if sky region */
   else if ( params->skyLooping == SKY_POINT_ERROR\
-            || params->skyLooping == TWO_DET_SKY_POINT_ERROR
+            || params->skyLooping == TWO_DET_SKY_POINT_ERROR\
             || params->skyLooping == SINGLE_SKY_POINT )
   {
-    coh_PTF_sky_grid( skyPoints, params );
+    skyPoints = coh_PTF_generate_sky_grid(params);
   }
+
+  /* if two-detectors, remove time-delay degeneracy */
+  if (params->skyLooping == TWO_DET_SKY_POINT_ERROR\
+      || params->skyLooping == TWO_DET_ALL_SKY)
+  {
+    verbose("Generated necessary sky grid with %d points, ",
+            skyPoints->numPoints);
+    verbose("parsing for time-delay degeneracy\n");
+    skyPoints = coh_PTF_parse_time_delays(skyPoints, params);
+  }
+
+  return skyPoints;
 
 }
 
@@ -706,12 +729,12 @@ void coh_PTF_generate_sky_points(
  * the xpipeline.
  */
 
-void coh_PTF_sky_grid(
-    struct coh_PTF_skyPoints *skyPoints,
+CohPTFSkyPositions *coh_PTF_generate_sky_grid(
     struct coh_PTF_params *params    
     )
 {
-  UINT4 ifoNumber,i,j,k;
+  CohPTFSkyPositions *skyPoints = NULL;
+  UINT4 ifoNumber,i,j;
   LALDetector *detectors[LAL_NUM_IFO];
   REAL4 angle;   /* opening angle between 2 IFO baseline and sky localisation */
   REAL4 lambdamin,lambdamax,lambda; /* opening angle closest to pi/2 */
@@ -719,46 +742,44 @@ void coh_PTF_sky_grid(
   alpha = 0;                         
   REAL4 angularResolution;          /* angular resolution of grid in radians */
   double baseline,lightTravelTime;
-  REAL4 theta,phi;                  /* sky parameters */
   REAL4 raNp  = 0.;                 /* north */
-  REAL4 decNp = LAL_PI_2;        /* pole */
+  REAL4 decNp = LAL_PI_2;           /* pole */
 
   REAL4 rho;                        /* magnitude of rotation vector */
   REAL4 axis[3];                    /* rotation axis vector */
   REAL4 npPos[3];                   /* north pole position */
   REAL4 trigPos[3];                 /* trigger position */
-  REAL4 pos[3],rotPos[3];           /* sky point position (orig & rotated) */
 
   /* get site coordinates */
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  for(ifoNumber=0; ifoNumber<LAL_NUM_IFO; ifoNumber++)
   {
-    detectors[ifoNumber] = LALCalloc( 1, sizeof( *detectors[ifoNumber] ) );
-    XLALReturnDetector( detectors[ifoNumber], ifoNumber );
+    detectors[ifoNumber] = LALCalloc(1, sizeof(*detectors[ifoNumber]));
+    XLALReturnDetector(detectors[ifoNumber], ifoNumber);
   }
 
   /* find pair of detectors whose opening angle to the GRB ±error is closest */
   /* to 90 degrees */
-  for ( i = 0; i < LAL_NUM_IFO; i++ )
+  for (i=0; i<LAL_NUM_IFO; i++)
   {
-    if ( params->haveTrig[i] )
+    if (params->haveTrig[i])
     {
-      for ( j = i+1; j < LAL_NUM_IFO; j++ )
+      for (j=i+1; j<LAL_NUM_IFO; j++)
       {
-        if ( params->haveTrig[j] )
+        if (params->haveTrig[j])
         {
           /* get dot product (time delay) between sites */
-          baseline = XLALArrivalTimeDiff( detectors[i]->location,
-                                          detectors[j]->location,
-                                          params->rightAscension,
-                                          params->declination,
-                                          &params->trigTime );
+          baseline = XLALArrivalTimeDiff(detectors[i]->location,
+                                         detectors[j]->location,
+                                         params->rightAscension,
+                                         params->declination,
+                                         &params->trigTime);
 
           /* get light travel time */
-          lightTravelTime = XLALLightTravelTime( detectors[i], detectors[j] );
+          lightTravelTime = XLALLightTravelTime(detectors[i], detectors[j]);
           lightTravelTime *= 1e-9;
 
           /* calculate opening angle */
-          angle  = acos( baseline/lightTravelTime );
+          angle  = acos(baseline/lightTravelTime);
 
           /* generate angular window with sky error */
           lambdamin = angle-params->skyError;
@@ -766,19 +787,19 @@ void coh_PTF_sky_grid(
    
           /* if pi/2 is in the range, choose that, 
            * otherwise get as close as possible */
-          if ( lambdamin < LAL_PI_2 && lambdamax > LAL_PI_2 )
+          if (lambdamin < LAL_PI_2 && lambdamax > LAL_PI_2)
           {
             lambda = LAL_PI_2;
           }
           else
-            if ( abs( LAL_PI_2 - lambdamin) < abs( LAL_PI_2 - lambdamax ) )
+            if (abs(LAL_PI_2-lambdamin) < abs(LAL_PI_2-lambdamax))
               lambda = lambdamin;
             else
               lambda = lambdamax;
 
           /* calculate alpha */
-          detalpha = lightTravelTime * sin( lambda );
-          if ( detalpha > alpha )
+          detalpha = lightTravelTime * sin(lambda);
+          if (detalpha > alpha)
             alpha = detalpha;
     
         }
@@ -790,7 +811,7 @@ void coh_PTF_sky_grid(
   angularResolution = 2. * params->timingAccuracy / alpha;
 
   /* generate sky grid using sinusoidal map */
-  *skyPoints = coh_PTF_circular_grid( angularResolution, params->skyError );
+  skyPoints = coh_PTF_circular_grid(angularResolution, params->skyError);
 
   /*
    * Rotate sky grid to centre on the given (ra,dec)
@@ -821,72 +842,29 @@ void coh_PTF_sky_grid(
   for ( i=0; i<3; i++ )
     axis[i] /= rho;
 
-  /* generate rotation matrix */
-  REAL4 R[3][3];
-
-  R[0][0] = cos(angle) + pow(axis[0],2) * ( 1 - cos(angle) );
-  R[0][1] = axis[0] * axis[1] * ( 1 - cos(angle) ) - axis[2] * sin(angle);
-  R[0][2] = axis[0] * axis[2] * ( 1 - cos(angle) ) + axis[1] * sin(angle);
-
-  R[1][0] = axis[1] * axis[0] * ( 1 - cos(angle) ) + axis[2] * sin(angle);
-  R[1][1] = cos(angle) + pow(axis[1],2) * ( 1 - cos(angle) );
-  R[1][2] = axis[1] * axis[2] * ( 1 - cos(angle) ) - axis[0] * sin(angle);
-
-  R[2][0] = axis[2] * axis[0] * ( 1 - cos(angle) ) - axis[1] * sin(angle);
-  R[2][1] = axis[2] * axis[1] * ( 1 - cos(angle) ) + axis[0] * sin(angle);
-  R[2][2] = cos(angle) + pow(axis[2],2) * ( 1 - cos(angle) );
-
-  /* loop over points rotating by angle around axis */
-  for ( i=0; i < skyPoints->numPoints; i++ )
-  {
-
-    /* convert to spherical */
-    phi   = skyPoints->rightAscension[i];
-    theta = LAL_PI_2 - skyPoints->declination[i];
-    
-    /* convert to cartesian */
-    pos[0] = sin(theta)*cos(phi);
-    pos[1] = sin(theta)*sin(phi);
-    pos[2] = cos(theta);
-
-
-    /* rotate */
-    for ( k=0; k<3; k++ )
-    {
-      rotPos[k] = R[k][0]*pos[0] + R[k][1]*pos[1] + R[k][2]*pos[2];
-    }
-
-    /* convert back to (phi,theta) */
-    theta = acos(rotPos[2]);
-    phi   = atan2(rotPos[1],rotPos[0]);
-    skyPoints->rightAscension[i] = phi;
-    skyPoints->declination[i]    = LAL_PI_2 - theta;
-
-    if ( skyPoints->rightAscension[i] < 0.0 )
-      skyPoints->rightAscension[i] += LAL_TWOPI;
-    if ( skyPoints->rightAscension[i] >= LAL_TWOPI )
-      skyPoints->rightAscension[i] -= LAL_TWOPI;
-
-  }
-
+  /* rotate sky points */
+  coh_PTF_rotate_skyPoints(skyPoints, axis, angle);
+  
+  /* free memory */
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     if ( detectors[ifoNumber] )
       LALFree(detectors[ifoNumber]);
   }
 
+  return skyPoints;
 
 }
 
 /*
- * generate cicular map of sky points centred on north pole:
+ * generate circular map of sky points centred on north pole:
  *  * place central point
  *  * step out in declination by angularResolution
  *  * place a ring of points separated by angularResolution
  *  * repeat until maximum skyError radius passed
  */
 
-struct coh_PTF_skyPoints coh_PTF_circular_grid(
+CohPTFSkyPositions *coh_PTF_circular_grid(
     REAL4        angularResolution,
     REAL4        skyError
     )
@@ -897,7 +875,7 @@ struct coh_PTF_skyPoints coh_PTF_circular_grid(
   UINT4                    numTheta;            /* number of rings */
   REAL4                    dPhi,phi,theta;      /* sky point parameters */
   UINT4                    numSkyPoints    = 0; /* total number of sky points */
-  struct coh_PTF_skyPoints skyPoints;
+  CohPTFSkyPositions       *skyPoints;
 
   /* set range of theta */
   numTheta = (int) ceil( skyError / angularResolution ) + 1;
@@ -914,9 +892,9 @@ struct coh_PTF_skyPoints coh_PTF_circular_grid(
   }
 
   /* assign memory for sky points */
-  skyPoints.rightAscension = LALCalloc(1, numSkyPoints*sizeof( REAL4 ));
-  skyPoints.declination    = LALCalloc(1, numSkyPoints*sizeof( REAL4 ));
-  skyPoints.numPoints      = numSkyPoints;
+  skyPoints = LALCalloc(1, sizeof(*skyPoints));
+  skyPoints->numPoints = numSkyPoints;
+  skyPoints->data      = LALCalloc(1, numSkyPoints*sizeof(SkyPosition));
 
   /* loop over rings on sky, and around each ring */
   for ( i=0; i < numTheta; i++ )
@@ -928,13 +906,10 @@ struct coh_PTF_skyPoints coh_PTF_circular_grid(
       /* calculate phi */
       phi = ( -LAL_PI + dPhi / 2. ) + dPhi * j;
       /* assign sky point */
-      skyPoints.rightAscension[p] = phi;
-      skyPoints.declination[p]    = LAL_PI_2 - theta;
-
-      if ( skyPoints.rightAscension[p] < 0.0 )
-        skyPoints.rightAscension[p] += LAL_TWOPI;
-      else if ( skyPoints.rightAscension[p] >= LAL_TWOPI )
-        skyPoints.rightAscension[p] -= LAL_TWOPI;
+      skyPoints->data[p].longitude  = phi;
+      skyPoints->data[p].latitude = LAL_PI_2 - theta;
+      skyPoints->data[p].system = COORDINATESYSTEM_EQUATORIAL;
+      XLALNormalizeSkyPosition(&skyPoints->data[p]);
 
       p++;
     }
@@ -943,6 +918,91 @@ struct coh_PTF_skyPoints coh_PTF_circular_grid(
 
   return skyPoints;
 
+}
+
+CohPTFSkyPositions *coh_PTF_parse_time_delays(
+    CohPTFSkyPositions    *skyPoints,
+    struct coh_PTF_params *params
+)
+{
+
+  CohPTFSkyPositions *parsedSkyPoints;
+  UINT4              numTimeDelays = 0;
+  UINT4              i, p, ifoNumber, appendPoint[skyPoints->numPoints];
+  REAL8              timeDelay, timeDelays[skyPoints->numPoints];
+  LALDetector        *detectors[params->numIFO];
+  REAL8              dt = params->timingAccuracy;
+
+  /* get site coordinates */
+  i=0; 
+  for(ifoNumber=0; ifoNumber<LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      detectors[i] = LALCalloc(1, sizeof(*detectors[i]));
+      XLALReturnDetector(detectors[i], ifoNumber);
+      i++;
+    }
+  }
+
+  for (p = 0; p < skyPoints->numPoints; p++)
+  {
+
+    /* set default timeDelay to zero */
+    timeDelays[p] = 0;
+    /* set default stance to keep point */
+    appendPoint[p] = 0;
+    timeDelay = XLALArrivalTimeDiff(detectors[0]->location,
+                                    detectors[1]->location,
+                                    skyPoints->data[p].longitude,
+                                    skyPoints->data[p].latitude,
+                                    &params->trigTime);
+
+    /* loop over timeDelays list */
+    for (i = 0; i < p; i++)
+    {
+      /* if we haven't assigned this timeDelay, move on */
+      if (timeDelays[i]==0)
+      {
+        continue;
+      }
+
+      /* if we already have a timeDelay within the timing accuracy,
+       * we don't want another one */
+      if (fabsf(timeDelay-timeDelays[i]) < dt)
+      {
+        appendPoint[p] = 1;
+        break;
+      }
+    } 
+
+    /* if we want to keep this point, save the time delay and increment the
+     * counter */
+    if (appendPoint[p] == 0)
+    {
+      numTimeDelays++;
+      timeDelays[p] = timeDelay;
+    }
+  }
+
+  /* assign memory for sky points */
+  parsedSkyPoints = LALCalloc(1, sizeof(*parsedSkyPoints));
+  parsedSkyPoints->numPoints = numTimeDelays;
+  parsedSkyPoints->data =
+      LALCalloc(1, numTimeDelays*sizeof(*parsedSkyPoints->data));
+
+  /* save the new list of points */
+  i = 0;
+  for (p = 0; p < skyPoints->numPoints; p++)
+  {
+    if (appendPoint[p] == 0)
+    {
+      parsedSkyPoints->data[i] = skyPoints->data[p];
+      i++;
+    }
+  }
+
+  return parsedSkyPoints;
 }
 
 long int timeval_subtract(struct timeval *t1)
@@ -964,3 +1024,85 @@ void timeval_print(struct timeval *tv)
   strftime(buffer, 30, "%m-%d-%Y  %T", localtime(&curtime));
   printf(" = %s.%06ld\n", buffer, tv->tv_usec);
 }
+
+/*
+ *
+ * rotate a vector about a given angle in three dimensions
+ *
+ */
+
+void coh_PTF_rotate_skyPoints(
+    CohPTFSkyPositions *skyPoints,
+    REAL4 axis[],
+    REAL4 angle
+)
+{
+  /* initialise variables */
+  UINT4 i,k;
+  REAL4 phi,theta;
+  REAL4 pos[3];    /* original position vector */
+  REAL4 rotPos[3]; /* rotated position vector */
+  REAL4 matrix[3][3];
+
+  rotationMatrix(matrix, axis, angle);
+
+  /* loop over points rotating by angle around axis */
+  for ( i=0; i < skyPoints->numPoints; i++ )
+  {
+
+    /* convert to spherical */
+    phi   = skyPoints->data[i].longitude;
+    theta = LAL_PI_2 - skyPoints->data[i].latitude;
+    /* convert to cartesian */
+    pos[0] = sin(theta)*cos(phi);
+    pos[1] = sin(theta)*sin(phi);
+    pos[2] = cos(theta);
+
+    /* rotate */
+    for ( k=0; k<3; k++ )
+    {
+      rotPos[k] = matrix[k][0]*pos[0] + matrix[k][1]*pos[1] +
+                  matrix[k][2]*pos[2];
+    }
+
+    /* convert back to (phi,theta) */
+    theta = acos(rotPos[2]);
+    phi   = atan2(rotPos[1],rotPos[0]);
+    skyPoints->data[i].longitude = phi;
+    skyPoints->data[i].latitude  = LAL_PI_2 - theta;
+    XLALNormalizeSkyPosition(&skyPoints->data[i]);
+  }
+}
+
+void crossProduct(
+    REAL4 out[3],
+    REAL4 x[3],
+    REAL4 y[3]
+)
+{
+  out[0]=x[1]*y[2] - x[2]*y[1];
+  out[1]=y[0]*x[2] - x[0]*y[2];
+  out[2]=x[0]*y[1] - x[1]*y[0];
+  return;
+}
+
+void rotationMatrix(
+    REAL4 matrix[3][3],
+    REAL4 axis[3],
+    REAL4 angle
+)
+{
+
+  matrix[0][0] = cos(angle) + pow(axis[0],2)*(1-cos(angle));
+  matrix[0][1] = axis[0]*axis[1]*(1-cos(angle)) - axis[2]*sin(angle);
+  matrix[0][2] = axis[0]*axis[2]*(1-cos(angle)) + axis[1]*sin(angle);
+
+  matrix[1][0] = axis[1]*axis[0]*(1-cos(angle)) + axis[2]*sin(angle);
+  matrix[1][1] = cos(angle) + pow(axis[1],2)*(1-cos(angle));
+  matrix[1][2] = axis[1]*axis[2]*(1-cos(angle)) - axis[0]*sin(angle);
+
+  matrix[2][0] = axis[2]*axis[0]*(1-cos(angle)) - axis[1]*sin(angle);
+  matrix[2][1] = axis[2]*axis[1]*(1-cos(angle)) + axis[0]*sin(angle);
+  matrix[2][2] = cos(angle) + pow(axis[2],2)*(1-cos(angle));
+}
+

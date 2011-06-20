@@ -40,7 +40,7 @@ int main( int argc, char **argv )
 
   /* sky position structures */
   UINT4                    numSkyPoints;
-  struct coh_PTF_skyPoints *skyPoints               = NULL;
+  CohPTFSkyPositions       *skyPoints               = NULL;
 
   /* FFT structures */
   REAL4FFTPlan             *fwdplan                 = NULL;
@@ -224,8 +224,7 @@ int main( int argc, char **argv )
    *------------------------------------------------------------------------*/
 
   /* generate sky points array */
-  skyPoints = LALCalloc( 1, sizeof( struct coh_PTF_skyPoints ) );
-  coh_PTF_generate_sky_points( skyPoints, params );
+  skyPoints = coh_PTF_generate_sky_points(params);
   numSkyPoints = skyPoints->numPoints;
 
   verbose( "Generated necessary sky grid with %d points %ld \n",\
@@ -234,7 +233,7 @@ int main( int argc, char **argv )
   for ( sp=0; sp<numSkyPoints; sp++ )
   {
     verbose( "ra = %f dec = %f\n",
-             skyPoints->rightAscension[sp], skyPoints->declination[sp] );
+             skyPoints->data[sp].longitude, skyPoints->data[sp].latitude );
   }
 
   /* allocate memory */ 
@@ -802,15 +801,15 @@ int main( int argc, char **argv )
               /* calculate time offsets */
               timeOffsets[ifoNumber] =
                   XLALTimeDelayFromEarthCenter( detLoc,
-                                                skyPoints->rightAscension[sp],
-                                                skyPoints->declination[sp],
+                                                skyPoints->data[sp].longitude,
+                                                skyPoints->data[sp].latitude,
                                                 &segStartTime );
               /* calculate response functions */
               XLALComputeDetAMResponse( &Fplus[ifoNumber],
                                         &Fcross[ifoNumber],
                                         detectors[ifoNumber]->response,
-                                        skyPoints->rightAscension[sp],
-                                        skyPoints->declination[sp],0.,
+                                        skyPoints->data[sp].longitude,
+                                        skyPoints->data[sp].latitude,0.,
                                         XLALGreenwichMeanSiderealTime(
                                             &segStartTime) );
             }
@@ -836,8 +835,8 @@ int main( int argc, char **argv )
                                             pValues, gammaBeta, snrComps,
                                             nullSNR, traceSNR, bankVeto,
                                             autoVeto, chiSquare, PTFM,
-                                            skyPoints->rightAscension[sp],
-                                            skyPoints->declination[sp] );
+                                            skyPoints->data[sp].longitude,
+                                            skyPoints->data[sp].latitude );
             verbose( "Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime) );
 
 
@@ -929,10 +928,8 @@ int main( int argc, char **argv )
   params->numEvents = XLALCountMultiInspiral( eventList );
   coh_PTF_output_events_xml( params->outputFile, eventList, procpar, params );
 
-  if (skyPoints->rightAscension)
-    LALFree(skyPoints->rightAscension);
-  if (skyPoints->declination)
-    LALFree(skyPoints->declination);
+  if (skyPoints->data)
+    LALFree(skyPoints->data);
   if (skyPoints)
     LALFree(skyPoints);
 
