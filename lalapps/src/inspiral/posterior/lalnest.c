@@ -1230,8 +1230,11 @@ doneinit:
 	if(studentt) inputMCMC.funcLikelihood = MCMCSTLikelihoodMultiCoherentF;
 	else inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
 	if(inputMCMC.approximant==AmpCorPPN) inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentAmpCor;
-	if(inputMCMC.approximant==EOBNR) inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentAmpCor; /* EOBNR uses CoherentGW the same way */
-	
+	if(inputMCMC.approximant==EOBNR) {
+		inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentAmpCor; /* EOBNR uses CoherentGW the same way */
+		inputMCMC.phaseOrder = LAL_PNORDER_PSEUDO_FOUR;
+	}
+		
 	inputMCMC.funcPrior = NestPrior;
 	if(GRBflag) {inputMCMC.funcPrior = GRBPrior;
 		inputMCMC.funcInit = NestInitGRB;
