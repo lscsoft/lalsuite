@@ -258,12 +258,12 @@ int plan_problem(char type,            /**< 'r' for real or 'c' for complex tran
  */
 int main(int argc, char **argv)
 {
-  static int measurelvl=3;   /**< Level of FFTW planning: 0, 1, 2 or 3 */
-  static int nosys=0;        /**< Flag to turn off import of system wisdom */
-  UINT4 transform_size;      /**< Size of current transform; read from input file */
-  char input_line[LINE_MAX]; /**< Buffer containing current line from input file */
-  char type;                /**< Type (real or complex) of current transform; read from input file */
-  char direc;               /**< Direction (forward or backward) of current transform; read from input file */
+  static int measurelvl=3;
+  static int nosys=0;
+  UINT4 transform_size;
+  char input_line[LINE_MAX];
+  char type;
+  char direc;
   FILE *infp=NULL, *outfp=NULL, *wisfp=NULL;
   int optindex, optreturn, retval;
 

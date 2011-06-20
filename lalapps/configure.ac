@@ -75,6 +75,7 @@ LALAPPS_ENABLE_STATIC_BINARIES
 
 LALAPPS_ENABLE_MPI
 
+LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
@@ -224,6 +225,21 @@ AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library]
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
+# check for fftw libraries
+if test "${fftw}" = "true"; then
+  PKG_CHECK_MODULES([FFTW3],[fftw3 fftw3f],[true],[false])
+  CPPFLAGS="$CPPFLAGS $FFTW3_CFLAGS"
+  LIBS="$LIBS $FFTW3_LIBS"
+  AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_WARN([could not find the fftw3f library])],[-lm])
+  AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_WARN([could not find the fftw3 library])],[-lm])
+fi
+
+# check for fftw headers
+if test "${fftw}" = "true"; then
+  AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_WARN([could not find the fftw3.h header])])
+fi
+LALSUITE_ENABLE_MODULE([FFTW],[fftw])
+
 # check for libFrame
 if test "${frame}" = "true"; then
   PKG_CHECK_MODULES([FRAME],[libframe],[true],[false])
@@ -310,6 +326,7 @@ if test "${pss}" = "true"; then
                  [pss="false"]
                  [LIBS="$lal_pre_pss_LIBS"])
 fi
+
 
 # check for pss headers
 if test "${pss}" = "true"; then
@@ -405,6 +422,7 @@ echo "
 
         LALApps has now been successfully configured:
 
+                FFTW library support is $FFTW_ENABLE_VAL
                 Frame library support is $FRAME_ENABLE_VAL
                 MetaIO library support is $METAIO_ENABLE_VAL
                 LAL Frame library support is $LALFRAME_ENABLE_VAL

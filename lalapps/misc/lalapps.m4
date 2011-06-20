@@ -1,6 +1,6 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 7
+# serial 8
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -108,6 +108,18 @@ AC_DEFUN([LALAPPS_ENABLE_MPI],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-mpi) ;;
     esac
   ], [ mpi=false ] )
+])
+
+AC_DEFUN([LALAPPS_ENABLE_FFTW],
+[AC_ARG_ENABLE(
+  [fftw],
+  AC_HELP_STRING([--enable-fftw],[compile code that requires FFTW3 library [default=yes]]),
+  [ case "${enableval}" in
+      yes) fftw=true;;
+      no)  fftw=false ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-fftw) ;;
+    esac
+  ], [ fftw=true ] )
 ])
 
 AC_DEFUN([LALAPPS_ENABLE_FRAME],
