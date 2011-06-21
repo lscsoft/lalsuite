@@ -186,6 +186,7 @@ def finalise_DAG(dag, parents=[]):
 
   dag.write_sub_files()
   dag.write_dag()
+  dag.write_script()
   dagfile    = os.path.split(dag.get_dag_file())
   DAGManJob  = pipeline.CondorDAGManJob(dagfile[1],dagfile[0])
   DAGManNode = pipeline.CondorDAGManNode(DAGManJob)
@@ -240,6 +241,9 @@ The default is to run the full post processing pipeline, various steps can be sk
                     help="output directory for post processing, "+\
                          "default: %default")
 
+  parser.add_option("-V", "--veto-directory", type="string", action="store",\
+                    default=None, help="Directory of veto files.")
+
   parser.add_option("-i", "--ifo-tag", type="string", action="store",\
                     default="H1L1V1", help="IFO tag, default: %default")
 
@@ -293,8 +297,8 @@ The default is to run the full post processing pipeline, various steps can be sk
 # =============================================================================
 
 def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
-         logdir=None, run_combiner=True, run_clustering=True, run_injfind=True,\
-         run_sbvplotter=True, run_efficiency=True):
+         logdir=None, vetoDir=None,run_combiner=True, run_clustering=True,\
+         run_injfind=True, run_sbvplotter=True, run_efficiency=True):
 
   # load ini files
   if verbose:
@@ -326,6 +330,14 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   cp = ConfigParser.ConfigParser()
   cp.optionxform = str
   cp.read(inifile)
+
+  # Add veto directory if needed
+  if vetoDir:
+    if run_sbvplotter:
+      cp.set('sbv_plotter','veto-directory',vetoDir)
+    if run_efficiency:
+      cp.set('efficiency','veto-directory',vetoDir)
+      cp.set('injection-efficiency','veto-directory',vetoDir)
 
   # load inj file
   if injfile:
@@ -633,9 +645,12 @@ if __name__=='__main__':
   injfile = opts.inj_config_file
   if injfile:
     injfile = os.path.abspath(injfile)
+  vetoDir = None
+  if opts.veto_directory:
+    vetoDir = opts.veto_directory
 
   main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=verbose,\
-       logdir=logdir,\
+       logdir=logdir,vetoDir=vetoDir,\
        run_combiner=not opts.skip_trig_combiner,\
        run_clustering=not opts.skip_clustering,\
        run_injfind=not opts.skip_injfind,\
