@@ -111,7 +111,7 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
 	      lalapps_compare_ini lalapps_link_old_ihope \
 	      lalapps_generate_upper_limits lalapps_followup0_page \
 	      lalapps_cbc_pipedown lalapps_glitch_probe \
-              lalapps_cohPTF_hipe
+              lalapps_cohPTF_hipe lalapps_coh_PTF_post_processing
 pkgpython_DATA = inspiral.py inspiralutils.py
 endif
 
@@ -194,6 +194,9 @@ lalapps_followup0_page: $(srcdir)/followup0_page.in python_config.sed
 lalapps_cbc_pipedown: $(srcdir)/cbc_pipedown.in python_config.sed
 	sed -f python_config.sed $(srcdir)/cbc_pipedown.in > lalapps_cbc_pipedown
 	chmod +x lalapps_cbc_pipedown
+lalapps_coh_PTF_post_processing: $(srcdir)/coh_PTF_post_processing.in python_config.sed
+	sed -f python_config.sed $(srcdir)/coh_PTF_post_processing.in > lalapps_coh_PTF_post_processing
+	chmod +x lalapps_coh_PTF_post_processing
 
 
 pkgdata_DATA = BNSMasses.dat inspsrcs100Mpc.errors inspiral_pipe.ini inspiral_hipe.ini online.ini online_inject_bbh.ini cbc_pipedown.ini followup0_pipe.ini plot_hipe.ini write_ihope_page.ini write_ihope_style.css s5_background_H0H1-RDS_R_L1-cbc.txt s5_background_H0H1-RDS_R_L1-seismic-cbc.txt s5_background_H0H2-RDS_R_L1-cbc.txt s5_background_H0H2-RDS_R_L1-seismic-cbc.txt s5_background_H1_hoft_cbc.txt s5_background_H2_hoft_cbc.txt s5_background_L0L1-RDS_R_L1-cbc.txt s5_background_L0L1-RDS_R_L1-seismic-cbc.txt s5_background_L1_hoft_cbc.txt s5_background_V1-raw-cbc.txt s5_background_V1-raw-seismic-cbc.txt s5_background_V1_hoft_cbc.txt s5_foreground_H0H1-RDS_R_L1-cbc.txt s5_foreground_H0H1-RDS_R_L1-seismic-cbc.txt s5_foreground_H0H2-RDS_R_L1-cbc.txt s5_foreground_H0H2-RDS_R_L1-seismic-cbc.txt s5_foreground_H1_hoft_cbc.txt s5_foreground_H2_hoft_cbc.txt s5_foreground_L0L1-RDS_R_L1-cbc.txt s5_foreground_L0L1-RDS_R_L1-seismic-cbc.txt s5_foreground_L1_hoft_cbc.txt s5_foreground_V1-raw-cbc.txt s5_foreground_V1-raw-seismic-cbc.txt s5_foreground_V1_hoft_cbc.txt s6_background_H0H1-RDS_R_L1-cbc.txt s6_background_H0H1-RDS_R_L1-seismic-cbc.txt s6_background_H1_hoft_cbc.txt s6_background_L0L1-RDS_R_L1-cbc.txt s6_background_L0L1-RDS_R_L1-seismic-cbc.txt s6_background_L1_hoft_cbc.txt s6_background_V1-raw-cbc.txt s6_background_V1-raw-seismic-cbc.txt s6_background_V1_hoft_cbc.txt s6_foreground_H0H1-RDS_R_L1-cbc.txt s6_foreground_H0H1-RDS_R_L1-seismic-cbc.txt s6_foreground_H1_hoft_cbc.txt s6_foreground_L0L1-RDS_R_L1-cbc.txt s6_foreground_L0L1-RDS_R_L1-seismic-cbc.txt s6_foreground_L1_hoft_cbc.txt s6_foreground_V1-raw-cbc.txt s6_foreground_V1-raw-seismic-cbc.txt s6_foreground_V1_hoft_cbc.txt ratioTest.pickle remove_h1h2.sql cluster.sql simplify.sql mcmcsummary.R
