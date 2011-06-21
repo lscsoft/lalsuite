@@ -988,7 +988,15 @@ void initVariables(LALInferenceRunState *state)
     
   }  
   
-  
+  /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES. 
+  (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enought */
+  if(state->prior(state, currentParams)<=-DBL_MAX){
+    LALInferenceVariables *temp; //
+    temp=XLALCalloc(1,sizeof(LALInferenceVariables));
+    memset(temp,0,sizeof(LALInferenceVariables));
+    PTMCMCLALInferenceDrawFromPrior(state, temp);
+    LALInferenceCopyVariables(temp, currentParams);
+  }
         /* Make sure that our initial value is within the
            prior-supported volume. */
         LALInferenceCyclicReflectiveBound(currentParams, priorArgs);

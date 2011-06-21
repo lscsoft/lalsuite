@@ -61,3 +61,6 @@ void PTMCMCLALInferenceDifferentialEvolutionMasses(LALInferenceRunState *state, 
 void PTMCMCLALInferenceDifferentialEvolutionAmp(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 void PTMCMCLALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 void PTMCMCLALInferenceDifferentialEvolutionSky(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
+
+/*draws a value from the prior, uniformly in individual parameters used for jumps.*/
+void PTMCMCLALInferenceDrawFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);

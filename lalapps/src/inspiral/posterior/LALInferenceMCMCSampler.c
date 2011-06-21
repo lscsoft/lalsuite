@@ -2549,3 +2549,29 @@ void PTMCMCLALInferenceDifferentialEvolutionSky(LALInferenceRunState *runState, 
   const char *names[] = {"rightascension", "declination", NULL};
   PTMCMCLALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
+
+/*draws a value from the prior, uniformly in individual parameters used for jumps.*/
+void PTMCMCLALInferenceDrawFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+
+  REAL8 value=0, min=0, max=0;
+  //printf("%s\n",runState->currentParams->head->name);
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+  LALInferenceVariableItem *item=proposedParams->head;
+  
+  do {
+    item=proposedParams->head;
+  	for(;item;item=item->next){
+      if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
+        continue;
+      else
+      {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, item->name, (void *)&min, (void *)&max);
+        value=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
+        LALInferenceSetVariable(proposedParams, item->name, &(value));
+        //printf("%s\t%f\t%f\t%f\t%f\n",item->name, *(REAL8 *)item->value, value, min, max);
+      }
+    }
+    //LALInferencePrintVariables(proposedParams);
+    //printf("%f\n",runState->prior(runState, proposedParams));
+  } while(runState->prior(runState, proposedParams)<=-DBL_MAX);
+}
