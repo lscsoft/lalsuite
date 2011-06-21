@@ -299,11 +299,13 @@ LALNewGetAMCoeffs(LALStatus *status,			/**< [in/out] LAL status structure pointe
 
   sin_cos_LUT (&sin1delta, &cos1delta, delta );
   sin_cos_LUT (&sin1alpha, &cos1alpha, alpha );
-  xi1 = - sin1alpha;
-  xi2 =  cos1alpha;
-  eta1 = sin1delta * cos1alpha;
-  eta2 = sin1delta * sin1alpha;
-  eta3 = - cos1delta;
+  // see Eq.(17) in CFSv2 notes (version v3):
+  // https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?docid=1665&version=3
+  xi1 =   sin1alpha;
+  xi2 =  -cos1alpha;
+  eta1 = -sin1delta * cos1alpha;
+  eta2 = -sin1delta * sin1alpha;
+  eta3 = cos1delta;
 
   /*---------- Compute the a(t_i) and b(t_i) ---------- */
   coeffs->A = 0;
