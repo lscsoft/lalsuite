@@ -360,7 +360,8 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
 /*  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
   if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX; */
-  if(m1+m2>Mtot_max) parameter->logPrior=-DBL_MAX;
+	if(inputMCMC->approximant==EOBNR)
+		if(m1+m2>Mtot_max) parameter->logPrior=-DBL_MAX;
 
   return parameter->logPrior;
 }
