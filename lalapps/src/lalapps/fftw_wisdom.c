@@ -251,6 +251,7 @@ int plan_problem(char type,            /**< 'r' for real or 'c' for complex tran
 }
 
 /** Main function
+ *
  *  Reads command line specifying input and output files, and optionally wisdom file,
  *  measure level, and flag preventing import of system wide wisdom, and then creates
  *  plans for each problem specified in the input file.  Accumulated wisdom is written
