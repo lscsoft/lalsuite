@@ -56,8 +56,7 @@ Basically, you can provide all the arguments from the InspiralTemplate structure
 
 NRCSID( LALGENERATEINSPIRALWAVEFORMC, "$Id$" );
 
-/*INT4 lalDebugLevel=1;*/
-INT4 lalDebugLevel=33;
+INT4 lalDebugLevel=1;
 #define ERROR( code, msg, statement )                                \
 do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \
@@ -117,7 +116,6 @@ void LALGenerateInspiralWaveformHelp(void);
 void readPSD(REAL8 *psd, REAL4 Df, UINT4 length);
 void buildhoft(LALStatus *status, REAL4Vector *wave, 
         InspiralTemplate *params, OtherParamIn *otherIn);
-SimInspiralTable ConstructSimInspiralTable(void);
 
 
 /* --- Main part --- */
@@ -232,9 +230,11 @@ int main (int argc , char **argv) {
     case TaylorF2:
     case FindChirpSP:
     case BCV:
+    case BCVC:
     case BCVSpin:
     case IMRPhenomFA:
     case IMRPhenomFB:
+    case PhenSpinTaylorRDF:
       switch( otherIn.output )
       {
         default:
@@ -284,6 +284,7 @@ int main (int argc , char **argv) {
     case SpinTaylorT3:
     case SpinTaylor:
     case SpinTaylorFrameless:
+    case PhenSpinTaylorRD:
     case IMRPhenomA:
     case IMRPhenomB:
     case Eccentricity:
@@ -633,7 +634,8 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
   ppnParams.ppn      = NULL;
 
   /* Construct a SimInspiralTable... */
-  SimInspiralTable simTable = ConstructSimInspiralTable();
+  SimInspiralTable simTable;
+  memset( &simTable, 0, sizeof(SimInspiralTable) );
   /* ... and populate it with desired parameter values */
   /*simTable.waveform = otherIn->waveformString;*/
   memcpy( simTable.waveform, otherIn->waveformString, 
@@ -730,69 +732,5 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
   }
 
   return;
-}
-
-SimInspiralTable ConstructSimInspiralTable()
-{
-  LIGOTimeGPS defaultTime = {0,0};
-  SimInspiralTable output = 
-    { 
-      NULL,                             /* next pointer */
-      "TaylorT4threePointFivePN",       /* waveform */
-      defaultTime,                      /* geocent_end_time */
-      defaultTime,                      /* h_end_time */
-      defaultTime,                      /* l_end_time */
-      defaultTime,                      /* g_end_time */
-      defaultTime,                      /* t_end_time */
-      defaultTime,                      /* v_end_time */
-      0.,                               /* end_time_gmst */
-      "",                               /* source */
-      1.4,                              /* mass1 */
-      1.4,                              /* mass2 */
-      0.25,                             /* eta */
-      1.,                               /* distance */
-      0.,                               /* longitude */
-      0.,                               /* latitude */
-      0.,                               /* inclination */
-      0.,                               /* coa_phase */
-      0.,                               /* polarization */
-      0.,                               /* psi0 */
-      0.,                               /* psi3 */
-      0.,                               /* alpha */
-      0.,                               /* alpha1 */
-      0.,                               /* alpha2 */
-      0.,                               /* alpha3 */
-      0.,                               /* alpha4 */
-      0.,                               /* alpha5 */
-      0.,                               /* alpha6 */
-      0.,                               /* beta */
-      0.,                               /* spin1x */
-      0.,                               /* spin1y */
-      0.,                               /* spin1z */
-      0.,                               /* spin2x */
-      0.,                               /* spin2y */
-      0.,                               /* spin2z */
-      0.,                               /* theta0 */
-      0.,                               /* phi0 */
-      40.,                              /* f_lower */
-      2048.,                            /* f_final */
-      1.2187707886145736,               /* mchirp */
-      1.,                               /* eff_dist_h */
-      1.,                               /* eff_dist_l */
-      1.,                               /* eff_dist_g */
-      1.,                               /* eff_dist_t */
-      1.,                               /* eff_dist_v */
-      0.,                               /* qmParameter1 */
-      0.,                               /* qmParameter2 */
-      NULL,                             /* event_id */
-      4,                                /* numrel_mode_min */
-      8,                                /* numrel_mode_max */
-      "abc",                            /* numrel_data */
-      0,                                /* amp_order */
-      "TAPER_NONE",                     /* taper */
-      0                                 /* bandpass */
-    };
-
-  return output;
 }
 
