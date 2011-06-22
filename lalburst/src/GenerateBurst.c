@@ -133,7 +133,8 @@ int XLALGenerateSimBurst(
  * like "H1:LSC-STRAIN" to be passed to this function without having to
  * explicitly construct a new string containing just the instrument part of
  * the channel name.  TimeSlide objects with no instrument name set or
- * whose instrument name is a zero-length string are ignored.
+ * whose instrument name is a zero-length string are ignored.  Returns NULL
+ * if no matching row is found.
  */
 
 
