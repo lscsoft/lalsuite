@@ -62,6 +62,7 @@
  *  into the file input_plans (say) and run:
  *
  *        cp /etc/fftw/wisdom_description new_description
+ *
  *        lalapps_fftw_wisdom -i input_plans -o new_wisdom -l 3 >> new_description
  *
  *  When this has finished you can (as root) move new_wisdom to /etc/fftw/wisdom and
