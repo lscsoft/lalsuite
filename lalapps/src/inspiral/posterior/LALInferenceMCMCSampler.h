@@ -64,3 +64,7 @@ void PTMCMCLALInferenceDifferentialEvolutionSky(LALInferenceRunState *state, LAL
 
 /*draws a value from the prior, uniformly in individual parameters used for jumps.*/
 void PTMCMCLALInferenceDrawFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+/*draws a value from the prior, using Von Neumann rejection sampling.*/
+void PTMCMCLALInferenceDrawUniformlyFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+// Von Neumann rejection sampler for the prior !!
+void VNRPriorOneStep(LALInferenceRunState *runState);

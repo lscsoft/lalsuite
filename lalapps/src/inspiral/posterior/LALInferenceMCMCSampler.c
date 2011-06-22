@@ -931,6 +931,17 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	LALInferenceDestroyVariables(&proposedParams);	
 }
 
+void VNRPriorOneStep(LALInferenceRunState *runState)
+// Von Neumann rejection sampler for the prior !!
+{  
+  LALInferenceVariables proposedParams;
+	proposedParams.head = NULL;
+	proposedParams.dimension = 0;
+  
+  PTMCMCLALInferenceDrawUniformlyFromPrior(runState, &proposedParams);
+  runState->currentPrior = runState->prior(runState, &proposedParams);
+  LALInferenceCopyVariables(&proposedParams, runState->currentParams);
+}
 //Test LALEvolveOneStepFunction
 void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 // Metropolis-Hastings sampler.
@@ -1136,6 +1147,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
         REAL8 IOTADISTANCEFRAC=0.0; /* Not symmetric! Stop! */
         REAL8 DIFFFULLFRAC;
         REAL8 DIFFPARTIALFRAC;
+        REAL8 PRIORFRAC=0.05;
         ProcessParamsTable *ppt;
         
         if(LALInferenceCheckVariable(proposedParams,"inclination")) INCFRAC=0.05;
@@ -1164,7 +1176,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
         while(ifo){ifo=ifo->next; nIFO++;}
         
         if (nIFO < 2) {
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC, DIFFFULLFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC, DIFFFULLFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, PRIORFRAC};
           LALInferenceProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceInclinationFlip,
@@ -1178,12 +1190,13 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
                                           &PTMCMCLALInferenceDifferentialEvolutionAmp,
                                           &PTMCMCLALInferenceDifferentialEvolutionSpins,
                                           &PTMCMCLALInferenceDifferentialEvolutionSky,
+                                          &PTMCMCLALInferenceDrawUniformlyFromPrior,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
           return;
         } else if (nIFO < 3) {
           /* Removed the rotate sky function from proposal because it's not symmetric. */
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC, DIFFFULLFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC, DIFFFULLFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, PRIORFRAC};
           LALInferenceProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceRotateSky,
@@ -1198,11 +1211,27 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
                                           &PTMCMCLALInferenceDifferentialEvolutionAmp,
                                           &PTMCMCLALInferenceDifferentialEvolutionSpins,
                                           &PTMCMCLALInferenceDifferentialEvolutionSky,
+                                          &PTMCMCLALInferenceDrawUniformlyFromPrior,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
         } else {
           /* Removed the rotate sky function because it's not symmetric. */
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, 0.0 /* SKYFRAC */, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC, DIFFFULLFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC};
+          REAL8 weights[] = { BLOCKFRAC, 
+                              SINGLEFRAC, 
+                              0.0 /* SKYFRAC */, 
+                              0.0 /* SKYFRAC */, 
+                              INCFRAC, 
+                              PHASEFRAC, 
+                              SPINROTFRAC, 
+                              COVEIGENFRAC, 
+                              SKYLOCSMALLWANDERFRAC, 
+                              IOTADISTANCEFRAC, 
+                              DIFFFULLFRAC, 
+                              DIFFPARTIALFRAC, 
+                              DIFFPARTIALFRAC, 
+                              DIFFPARTIALFRAC, 
+                              DIFFPARTIALFRAC,  
+                              PRIORFRAC};
           LALInferenceProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceRotateSky,
@@ -1218,6 +1247,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
                                           &PTMCMCLALInferenceDifferentialEvolutionAmp,
                                           &PTMCMCLALInferenceDifferentialEvolutionSpins,
                                           &PTMCMCLALInferenceDifferentialEvolutionSky,
+                                          &PTMCMCLALInferenceDrawUniformlyFromPrior,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
         }
@@ -2575,3 +2605,35 @@ void PTMCMCLALInferenceDrawFromPrior(LALInferenceRunState *runState, LALInferenc
     //printf("%f\n",runState->prior(runState, proposedParams));
   } while(runState->prior(runState, proposedParams)<=-DBL_MAX);
 }
+
+/*draws a value from the prior, using Von Neumann rejection sampling.*/
+void PTMCMCLALInferenceDrawUniformlyFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  
+  REAL8 value=0, min=0, max=0, b=0.01, alpha=0;
+  //printf("%s\n",runState->currentParams->head->name);
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+  LALInferenceVariableItem *item=proposedParams->head;
+  if(LALInferenceCheckVariable(runState->priorArgs, "densityVNR")){
+  b = *((REAL8 *)LALInferenceGetVariable(runState->priorArgs, "densityVNR"));
+  }
+  
+  do {
+    item=proposedParams->head;
+  	for(;item;item=item->next){
+      if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
+        continue;
+      else
+      {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, item->name, (void *)&min, (void *)&max);
+        value=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
+        LALInferenceSetVariable(proposedParams, item->name, &(value));
+        //printf("%s\t%f\t%f\t%f\t%f\n",item->name, *(REAL8 *)item->value, value, min, max);
+      }
+    }
+    alpha=gsl_rng_uniform(runState->GSLrandom);
+    //LALInferencePrintVariables(proposedParams);
+  } while(exp(runState->prior(runState, proposedParams))<=alpha*b);
+  //printf("%f\t%f\t%f\n",exp(runState->prior(runState, proposedParams)),alpha*b,b);
+}
+
+

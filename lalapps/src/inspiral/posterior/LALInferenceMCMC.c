@@ -180,6 +180,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 	/* Set up the appropriate functions for the MCMC algorithm */
 	runState->algorithm=&PTMCMCAlgorithm;
 	runState->evolve=PTMCMCOneStep;
+  //runState->evolve=&VNRPriorOneStep;
 	//runState->evolve=&PTMCMCAdaptationOneStep;
 	runState->proposal=&PTMCMCLALProposal;
 	//runState->proposal=&PTMCMCLALSingleProposal;
@@ -240,6 +241,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 	//runState->prior=&LALInferenceInspiralPrior;
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
     runState->prior=&LALInferenceInspiralSkyLocPrior;
+    
   }else{
     runState->prior=&LALInferenceInspiralPriorNormalised;
   }
@@ -453,6 +455,8 @@ void initVariables(LALInferenceRunState *state)
     mMax=15.0;
     Dmin=10.0;
     Dmax=40.0;
+    REAL8 densityVNR=1000.0;
+    LALInferenceAddVariable(state->priorArgs,"densityVNR", &densityVNR , LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   }
   
 	/* Read injection XML file for parameters if specified */
