@@ -62,6 +62,7 @@
  *  into the file input_plans (say) and run:
  *
  *        cp /etc/fftw/wisdomf_description new_description
+ *
  *        lalapps_fftwf_wisdom -i input_plans -o new_wisdom -l 3 >> new_description
  *
  *  When this has finished you can (as root) move new_wisdom to /etc/fftw/wisdomf and
@@ -250,6 +251,7 @@ int plan_problem(char type,            /**< 'r' for real or 'c' for complex tran
 }
 
 /** Main function
+ *
  *  Reads command line specifying input and output files, and optionally wisdom file,
  *  measure level, and flag preventing import of system wide wisdom, and then creates
  *  plans for each problem specified in the input file.  Accumulated wisdom is written

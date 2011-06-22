@@ -360,7 +360,8 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
 /*  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
   if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX; */
-  if(m1+m2>Mtot_max) parameter->logPrior=-DBL_MAX;
+	if(inputMCMC->approximant==EOBNR)
+		if(m1+m2>Mtot_max) parameter->logPrior=-DBL_MAX;
 
   return parameter->logPrior;
 }
@@ -374,6 +375,7 @@ REAL8 NestPriorSkyLoc(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter)
 	REAL8 maxTotalMass=20.0;
 	REAL8 mc=0.0,m1,m2,eta,tmp;
 	(void) inputMCMC;
+	parameter->logPrior=0.0;
 	/* Work out the implicit prior density on mc/eta */
 	if(XLALMCMCCheckParameter(parameter,"m1") && XLALMCMCCheckParameter(parameter,"m2")){
 		/* Flat on m1,m2 */
@@ -389,7 +391,6 @@ REAL8 NestPriorSkyLoc(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter)
 		if(m2>m1) {
 			tmp=m1; m1=m2; m2=tmp;
 		}
-		parameter->logPrior=0.0;
 		if(XLALMCMCCheckParameter(parameter,"logmc")) parameter->logPrior+=(m1+m2)*(m1+m2)*(m1+m2)/(m1-m2);
 		else parameter->logPrior+=(m1+m2)*(m1+m2)/(pow(eta,0.6)*(m1-m2));
 	}	
