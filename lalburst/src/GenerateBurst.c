@@ -124,14 +124,22 @@ int XLALGenerateSimBurst(
 }
 
 
-/*
- * find the row in the time_slide table for a sim_burst
+/**
+ * Find the first element in the linked list of TimeSlide objects whose
+ * time_slide_id and instrument name match the values given.  NOTE:  a
+ * TimeSlide object's instrument is considered to match the requested
+ * instrument name as long as it matches the first characters in the
+ * requested instrument name.  This has been done to allow a channel name
+ * like "H1:LSC-STRAIN" to be passed to this function without having to
+ * explicitly construct a new string containing just the instrument part of
+ * the channel name.  TimeSlide objects with no instrument name set or
+ * whose instrument name is a zero-length string are ignored.
  */
 
 
-static const TimeSlide *find_sim_burst_time_slide_row(const TimeSlide *time_slide, long time_slide_id, const char *channel)
+static const TimeSlide *XLALTimeSlideGetByIDAndInstrument(const TimeSlide *time_slide, long time_slide_id, const char *instrument)
 {
-	for(; time_slide && time_slide->time_slide_id != time_slide_id && time_slide->instrument && strncmp(channel, time_slide->instrument, strlen(time_slide->instrument)); time_slide = time_slide->next);
+	for(; time_slide && time_slide->time_slide_id != time_slide_id && time_slide->instrument && strlen(time_slide->instrument) && strncmp(instrument, time_slide->instrument, strlen(time_slide->instrument)); time_slide = time_slide->next);
 	return time_slide;
 }
 
@@ -179,7 +187,7 @@ int XLALBurstInjectSignals(
 
 		/* determine the offset to be applied to this injection */
 
-		time_slide_row = find_sim_burst_time_slide_row(time_slide_table_head, sim_burst->time_slide_id, series->name);
+		time_slide_row = XLALTimeSlideGetByIDAndInstrument(time_slide_table_head, sim_burst->time_slide_id, series->name);
 		if(!time_slide_row) {
 			XLALPrintError("%s(): cannot find time shift offset for injection 'sim_burst:simulation_id:%ld'.  need 'time_slide:time_slide_id:%ld' for instrument for channel '%s'", __func__, sim_burst->simulation_id, sim_burst->time_slide_id, series->name);
 			XLAL_ERROR(__func__, XLAL_EINVAL);
