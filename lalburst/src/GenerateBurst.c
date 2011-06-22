@@ -181,10 +181,11 @@ int XLALBurstInjectSignals(
 
 		time_slide_row = find_sim_burst_time_slide_row(time_slide_table_head, sim_burst->time_slide_id, series->name);
 		if(!time_slide_row) {
-			XLALPrintError("%s(): cannot find time shift offset for injection \"sim_burst:simulation_id:%ld\".  need \"time_slide:time_slide_id:%ld\" for instrument for channel %s", __func__, sim_burst->simulation_id, sim_burst->time_slide_id, series->name);
+			XLALPrintError("%s(): cannot find time shift offset for injection 'sim_burst:simulation_id:%ld'.  need 'time_slide:time_slide_id:%ld' for instrument for channel '%s'", __func__, sim_burst->simulation_id, sim_burst->time_slide_id, series->name);
 			XLAL_ERROR(__func__, XLAL_EINVAL);
 		}
 
+		XLALPrintInfo("%s(): shifting injection 'sim_burst:simulation_id:%ld' in '%s' at %d.%09u s by %.16g s\n", __func__, sim_burst->simulation_id, series->name, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, -time_slide_row->offset);
 		time_geocent_gps = sim_burst->time_geocent_gps;
 		XLALGPSAdd(&time_geocent_gps, -time_slide_row->offset);
 
@@ -230,103 +231,5 @@ int XLALBurstInjectSignals(
 
 	/* done */
 
-	return 0;
-}
-
-
-int XLALBurstInjectHNullSignals(
-	REAL8TimeSeries *series,
-	const SimBurst *sim_burst,
-	const TimeSlide *time_slide_table_head
-)
-{
-	REAL8TimeSeries *hplus, *hcross; /* + and x time series for injection waveform */
-	REAL8TimeSeries *h; /* injection time series */
-	/* skip injections whose geocentre times are more than this many
-	* seconds outside of the target time series */
-	const double injection_window = 100.0;
-	unsigned p;
-	REAL8 rand_amp;
-	/* FIXME:  fix the const entanglement so as to get rid of this */
-	LALDetector detector_copy = lalCachedDetectors[LAL_LHO_4K_DETECTOR];
-
-	gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-	if(!rng) {
-		XLALPrintError("%s(): failure creating random number generator\n", __func__);
-		XLAL_ERROR(__func__, XLAL_ENOMEM);
-	}
-
-	/* iterate over injections */
-	for(; sim_burst; sim_burst = sim_burst->next) {
-		LIGOTimeGPS time_geocent_gps;
-		const TimeSlide *time_slide_row;
-
-		/* determine the offset to be applied to this injection */
-
-		time_slide_row = find_sim_burst_time_slide_row(time_slide_table_head, sim_burst->time_slide_id, series->name);
-		if(!time_slide_row) {
-			XLALPrintError("%s(): cannot find time shift offset for injection \"sim_burst:simulation_id:%ld\".  need \"time_slide:time_slide_id:%ld\" for instrument for channel %s", __func__, sim_burst->simulation_id, sim_burst->time_slide_id, series->name);
-			XLAL_ERROR(__func__, XLAL_EINVAL);
-		}
-
-		time_geocent_gps = sim_burst->time_geocent_gps;
-		XLALGPSAdd(&time_geocent_gps, -time_slide_row->offset);
-
-		/* skip injections whose "times" are too far outside of the target time series */
-		
-		if(XLALGPSDiff(&series->epoch, &time_geocent_gps) > injection_window || XLALGPSDiff(&time_geocent_gps, &series->epoch) > (series->data->length * series->deltaT + injection_window))
-			continue;
-
-		/* construct the h+ and hx time series for the injection
-		 * waveform.  in the time series produced by this function,
-		 * t = 0 is the "time" of the injection. */
-
-		if(XLALGenerateSimBurst(&hplus, &hcross, sim_burst, series->deltaT)) {
-			gsl_rng_free(rng);
-			XLAL_ERROR(__func__, XLAL_EFUNC);
-		}
-
-		/* add the time of the injection at the geocentre to the
-		 * start times of the h+ and hx time series.  after this,
-		 * their epochs mark the start of those time series at the
-		 * geocentre. */
-
-		XLALGPSAddGPS(&hcross->epoch, &time_geocent_gps);
-		XLALGPSAddGPS(&hplus->epoch, &time_geocent_gps);
-
-		/* project the wave onto the detector to produce the strain
-		 * in the H1 detector. */
-
-		h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, &detector_copy);
-		XLALDestroyREAL8TimeSeries(hplus);
-		XLALDestroyREAL8TimeSeries(hcross);
-		if(!h) {
-			gsl_rng_free(rng);
-			XLAL_ERROR(__func__, XLAL_EFUNC);
-		}
-
-		/* random amplitude calibration uncertainty = 10% */
-		/* FIXME: 10% is for S5, Is there a LAL function to get the amplitude uncertainty? */
-
-		rand_amp = gsl_ran_gaussian(rng, 0.1);
-		XLALPrintInfo("%s(): amplitude calibration uncertainty = %.2f \%\n", __func__, rand_amp*100);
-
-		/* what's left after H1-H2 subtraction */
-		for (p=0 ; p< h->data->length; p++)
-			h->data->data[p] *= rand_amp;
-
-		/* add the injection strain time series to the detector data */
-		if(XLALSimAddInjectionREAL8TimeSeries(series, h, NULL)) {
-			XLALDestroyREAL8TimeSeries(h);
-			gsl_rng_free(rng);
-			XLAL_ERROR(__func__, XLAL_EFUNC);
-		}
-
-		/* cleaning */
-		XLALDestroyREAL8TimeSeries(h);
-	} 
-	gsl_rng_free(rng);
-
-	/* done */
 	return 0;
 }
