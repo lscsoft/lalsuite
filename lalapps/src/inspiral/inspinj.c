@@ -132,7 +132,6 @@ char *exttrigFileName = NULL;
 INT4 outCompress = 0;
 INT4 ninjaMass   = 0;
 
-
 INT4 logSNR      = 0;
 REAL4 minSNR     = -1;
 REAL4 maxSNR     = -1;
@@ -162,6 +161,7 @@ REAL4 longitude=181.0;
 REAL4 latitude=91.0;
 REAL4 epsAngle=1e-7;
 int spinInjections=-1;
+int spinAligned=-1;
 REAL4 minSpin1=-1.0;
 REAL4 maxSpin1=-1.0;
 REAL4 minSpin2=-1.0;
@@ -179,6 +179,7 @@ REAL4 deltaMass2=-1;
 INT4 bandPassInj = 0;
 INT4 writeSimRing = 0;
 InspiralApplyTaper taperInj = INSPIRAL_TAPER_NONE;
+AlignmentType alignInj = notAligned;
 REAL8 redshift;
 
 static LALStatus status;
@@ -617,6 +618,8 @@ static void print_usage(char *program)
       "  --disable-spin           disables spinning injections\n"\
       "  --enable-spin            enables spinning injections\n"\
       "                           One of these is required.\n"\
+      "  --aligned                enforces the spins to be along the direction\n"\
+      "                           of orbital angular momentum.\n"\
       "  [--min-spin1] spin1min   Set the minimum spin1 to spin1min (0.0)\n"\
       "  [--max-spin1] spin1max   Set the maximum spin1 to spin1max (0.0)\n"\
       "  [--min-spin2] spin2min   Set the minimum spin2 to spin2min (0.0)\n"\
@@ -1276,8 +1279,6 @@ int main( int argc, char *argv[] )
 
   REAL8 targetSNR;
 
-  int aligned  = 0;
-
 
   status=blank_status;
 
@@ -1352,6 +1353,7 @@ int main( int argc, char *argv[] )
     {"version",                 no_argument,       0,                'V'},
     {"enable-spin",             no_argument,       0,                'T'},
     {"disable-spin",            no_argument,       0,                'W'},
+    {"aligned",                 no_argument,       0,                '@'},
     {"write-compress",          no_argument,       &outCompress,       1},
     {"taper-injection",         required_argument, 0,                '*'},
     {"band-pass-injection",     no_argument,       0,                '}'},
@@ -1360,7 +1362,7 @@ int main( int argc, char *argv[] )
   };
   int c;
 
-  /* set up inital debugging values */
+  /* set up initial debugging values */
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "1" );
 
@@ -2133,7 +2135,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'T':
-        /* enable spining injections */
+        /* enable spinning injections */
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
               "" );
@@ -2141,11 +2143,19 @@ int main( int argc, char *argv[] )
         break;
 
       case 'W':
-        /* disable spining injections */
+        /* disable spinning injections */
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
               "" );
         spinInjections = 0;
+        break;
+
+      case '@':
+        /* enforce aligned spins */
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
+              "" );
+        spinAligned = 1;
         break;
 
       case '}':
@@ -2374,14 +2384,14 @@ int main( int argc, char *argv[] )
   if ( !massFileName && mDistr==massFromSourceFile )
   {
     fprintf( stderr,
-        "Must specify either a file contining the masses (--mass-file) "\
+        "Must specify either a file contining the masses (--mass-file) "
         "or choose another mass-distribution (--m-distr).\n" );
     exit( 1 );
   }
   if ( !nrFileName && mDistr==massFromNRFile )
   {
     fprintf( stderr,
-        "Must specify either a file contining the masses (--nr-file) "\
+        "Must specify either a file contining the masses (--nr-file) "
         "or choose another mass-distribution (--m-distr).\n" );
     exit( 1 );
   }
@@ -2402,7 +2412,7 @@ int main( int argc, char *argv[] )
   if ( lDistr == locationFromExttrigFile && !exttrigFileName )
   {
     fprintf( stderr,
-        "If --l-distr exttrig is specified, must specify " \
+        "If --l-distr exttrig is specified, must specify "
         "external trigger XML file using --exttrig-file.\n");
     exit( 1 );
   }
@@ -2434,14 +2444,14 @@ int main( int argc, char *argv[] )
   if ( ( iDistr == gaussianInclDist ) && ( inclStd < 0.0 ) )
   {
     fprintf( stderr,
-        "Must specify width for gaussian inclination distribution; "\
+        "Must specify width for gaussian inclination distribution; \n"
         "use --incl-std.\n" );
     exit( 1 );
   }
   if ( ( iDistr == fixedInclDist ) && ( fixed_inc < 0. ) )
   {
     fprintf( stderr,
-        "Must specify an inclination if you want it fixed; "\
+        "Must specify an inclination if you want it fixed; \n"
         "use --fixed-inc.\n" );
     exit( 1 );
   }
@@ -2459,7 +2469,7 @@ int main( int argc, char *argv[] )
         meanMass2 <= 0.0 || massStdev2 <= 0.0))
   {
     fprintf( stderr,
-        "Must specify --mean-mass1/2 and --stdev-mass1/2 if choosing"
+        "Must specify --mean-mass1/2 and --stdev-mass1/2 if choosing \n"
         " --m-distr=gaussian\n" );
     exit( 1 );
   }
@@ -2502,8 +2512,8 @@ int main( int argc, char *argv[] )
       && (minMassRatio < 0.0 || maxMassRatio < 0.0) )
   {
     fprintf( stderr,
-        "Must specify --min-mass-ratio and --max-mass-ratio if choosing"
-        " --m-distr=totalMassRatio or --m-distr=logTotalMassUniformMassRatio"
+        "Must specify --min-mass-ratio and --max-mass-ratio if choosing \n"
+        " --m-distr=totalMassRatio or --m-distr=logTotalMassUniformMassRatio \n"
         " or --m-distr=totalMassFraction\n");
     exit( 1 );
   }
@@ -2511,15 +2521,15 @@ int main( int argc, char *argv[] )
   if ( dDistr!=distFromSourceFile && (dmin<0.0 || dmax<0.0) )
   {
     fprintf( stderr,
-        "Must specify --min-distance and --max-distance if "
+        "Must specify --min-distance and --max-distance if \n"
         "--d-distr is not source.\n" );
     exit( 1 );
   }
 
   if ( dDistr==sfr && (dmax<0.2 || dmax>1.0) )
   {
-        fprintf( stderr,
-        "Maximal redshift can only take values between 0.2 and 1 .\n" );
+    fprintf( stderr,
+        "Maximal redshift can only take values between 0.2 and 1.\n" );
     exit( 1 );
   }
 
@@ -2557,8 +2567,31 @@ int main( int argc, char *argv[] )
   if ( spinInjections==-1 && mDistr != massFromNRFile )
   {
     fprintf( stderr,
-        "Must specify --disable-spin or --enable-spin\n"\
-        "Unless doing NR injections\n" );
+        "Must specify --disable-spin or --enable-spin\n"
+        "unless doing NR injections\n" );
+    exit( 1 );
+  }
+
+  if ( spinInjections==0 && spinAligned==1 )
+  {
+    fprintf( stderr,
+        "Must enable spin to obtain aligned spin injections.\n" );
+    exit( 1 );
+  }
+
+  if ( spinInjections==1 && strncmp(waveform, "IMRPhenomB", 10)==0 && spinAligned==-1 )
+  {
+    fprintf( stderr,
+        "Spinning IMRPhenomB injections must have the --aligned option.\n" );
+    exit( 1 );
+  }
+
+  if ( spinInjections==1 && spinAligned==1 && strncmp(waveform, "IMRPhenomB", 10)
+    && strncmp(waveform, "SpinTaylor", 10) )
+  {
+    fprintf( stderr,
+        "Sorry, I only know to make spin aligned injections for \n"
+        "IMRPhenomB, SpinTaylor and SpinTaylorFrameless waveforms.\n" );
     exit( 1 );
   }
 
@@ -2585,7 +2618,7 @@ int main( int argc, char *argv[] )
         (minabsKappa1 > 0.0 || maxabsKappa1 < 1.0) )
     {
       fprintf( stderr,
-          "Either the options [--min-kappa1,--max-kappa1] or\n"\
+          "Either the options [--min-kappa1,--max-kappa1] or\n"
           "[--min-abskappa1,--max-abskappa1] can be specified\n" );
       exit( 1 );
     }
@@ -2879,16 +2912,26 @@ int main( int argc, char *argv[] )
     /* populate spins, if required */
     if (spinInjections)
     {
-      /* FIXME Temporary measure until we figure out how to better handle
-         spin distributions for waveforms under development */
-      if ( ! strcmp(waveform, "IMRPhenomBpseudoFourPN"))
-        aligned = 1;
+      if (spinAligned==1)
+      {
+        if (strncmp(waveform, "IMRPhenomB", 10)==0)
+          alignInj = alongzAxis;
+        else if (strncmp(waveform, "SpinTaylor", 10)==0)
+          alignInj = inxzPlane;
+        else
+        {
+          fprintf( stderr, "Unknown waveform type for aligned spin injections.\n" );
+          exit( 1 );
+        }
+      }
+      else
+        alignInj = notAligned;
       simTable = XLALRandomInspiralSpins( simTable, randParams,
           minSpin1, maxSpin1,
           minSpin2, maxSpin2,
           minKappa1, maxKappa1,
           minabsKappa1, maxabsKappa1,
-          aligned);
+          alignInj );
     }
 
     if ( ifos != NULL )
@@ -2929,7 +2972,7 @@ int main( int argc, char *argv[] )
                  break;
             default: /* Never reach here */
                  fprintf( stderr, "unknown error while populating sim_inspiral taper options\n" );
-                 exit (1);
+                 exit(1);
         }
 
     }
