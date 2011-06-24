@@ -22,7 +22,6 @@
 \file
 \ingroup pulsarTODO
 
-\heading{Module \ref FitToPulsar.c}
 Calculates the best fit parameters for a GW signal originating from a
 non-precessing pulsar.
 
@@ -295,12 +294,8 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
 /**
 \author Dupuis, R.J.
 \file
-*/
 
-/**
-\heading{Program \ref FitToPulsarTest.c}
-
-This test program demonstrates the correct usage of the functions
+\brief This test program demonstrates the correct usage of the functions
 \c LALCoarseFitToPulsar and \c LALFineFitToPulsar.
 
 \heading{Usage}

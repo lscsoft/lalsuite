@@ -32,9 +32,7 @@
  * This program uses InspiralBCVSpinBank() to generate a template bank from
  * command line parameter input.
  *
- * \subsubsection TODOref Command line options
- * <dl>
- * </dl>
+ * \heading{Command line options}
  *
  * \heading{Notes}
  *

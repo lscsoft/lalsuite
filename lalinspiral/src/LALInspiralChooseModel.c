@@ -226,10 +226,9 @@ static REAL8 Ft7(REAL8 v, expnCoeffs *ak)
 }
 
 
-/**
-/\*   *\/
+/*
 static REAL8 ep0(REAL8 v, expnCoeffs *ak)
-{ /\*   *\/
+{
    REAL8 x, energy;
    ak = NULL;
    x = v*v;
@@ -265,10 +264,9 @@ static REAL8 ep6(REAL8 v, expnCoeffs *ak)
    return (energy);
 }
 
-/**
-/\*   *\/
+/*
 static REAL8 dEp0(REAL8 v, expnCoeffs *ak)
-{ /\*   *\/
+{
    REAL8 energy, denergy, Energy, dEnergy, y;
    energy = ep0(v, ak);
    y = sqrt(1.+energy);
@@ -325,10 +323,9 @@ static REAL8 dEp6(REAL8 v, expnCoeffs *ak)
 
 
 
-/**
-/\*   *\/
+/*
 static REAL8 Fp0(REAL8 v, expnCoeffs *ak)
-{ /\*   *\/
+{
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
    v4 = v2*v2;
@@ -339,10 +336,9 @@ static REAL8 Fp0(REAL8 v, expnCoeffs *ak)
 }
 */
 
-/**
-/\*   *\/
+/*
 static REAL8 Fp1(REAL8 v, expnCoeffs *ak)
-{ /\*   *\/
+{
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
    v4 = v2*v2;
@@ -353,10 +349,9 @@ static REAL8 Fp1(REAL8 v, expnCoeffs *ak)
 }
 */
 
-/**
-/\*   *\/
+/*
 static REAL8 Fp2(REAL8 v, expnCoeffs *ak)
-{ /\*   *\/
+{
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
    v4 = v2*v2;
@@ -439,10 +434,9 @@ static REAL8 Fp7(REAL8 v, expnCoeffs *ak)
    return (flux);
 }
 
-/**
-/\*   *\/
+/*
 static REAL8 Fp8(REAL8 v, expnCoeffs *ak)
-{ /\*   *\/
+{
    REAL8 flux,v2,v4,v6,v8,v10, l6, l8;
    v2 = v*v;
    v4 = v2*v2;

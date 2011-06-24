@@ -40,7 +40,7 @@
  *
  * \heading{Description}
  * This program uses InspiralSpinBankwNDTemplateBank() to generate a template bank from command line
- * parameter input.  It also has the option to make a \MATHEMATICA notebook using
+ * parameter input.  It also has the option to make a MATHEMATICA notebook using
  * LALMath3DPlot() which will plot the 3D template bank.
  *
  *
@@ -51,7 +51,7 @@
  * </dd><dt>-x</dt><dd>Specifies the maximum smaller mass between 0 and 5.0 \f$M\odot\f$.</dd>
  * <dt>-m</dt><dd>Specifies the minimum mismatch threshold (typically 0.03) but for the sake of testing
  * it is best to pick a value \f$O[1]\f$ to save compiling time.</dd>
- * <dt>-p</dt><dd>Specifies that the program should generate a \MATHEMATICA notebook "Math3DNotebook.nb".</dd>
+ * <dt>-p</dt><dd>Specifies that the program should generate a MATHEMATICA notebook "Math3DNotebook.nb".</dd>
  * </dl>
  *
  *
@@ -61,7 +61,7 @@
  * total mass \f$<15M\odot\f$ where the minimum larger mass is at least twice the maximum
  * smaller mass.  Choosing mass values that violate these conditions will cause an
  * error message.
- * </li><li> It is unlikely that you will be able to run a \MATHEMATICA notebook that
+ * </li><li> It is unlikely that you will be able to run a MATHEMATICA notebook that
  * contains more than 10,000 tiles.  Adjust your parameters accordingly if you plan to
  * view a plot.
  * </li></ul>

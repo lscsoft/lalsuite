@@ -73,7 +73,8 @@
  * </li> <li> <tt>l,</tt> Input, spherical harmonic l-number of the ring-down mode
  * </li> <li> <tt>m,</tt> Input, spherical harmonic m-number of the ring-down mode
  * </li> <li> <tt>finalMass,</tt> Input, estimated final mass of the black hole
- * </li> <li> <tt>finalSpin,</tt> Input, estimated final spin of the black hole
+ * </li> <li> <tt>finalSpin,</tt> Input, estimated final spin of the black hole</li>
+ * </ul>
  *
  * \heading{Description}
  * This module generate ring-down waveforms.
