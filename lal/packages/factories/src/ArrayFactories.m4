@@ -1,75 +1,37 @@
-/*-----------------------------------------------------------------------
+/**
 
-File Name: ArrayFactories.c
+\file
+\ingroup AVFactories_h
 
-<lalVerbatim file="ArrayFactoriesCV">
-Revision: $Id$
-</lalVerbatim>
+\brief Create/destroy \<datatype\>Array objects.
 
--------------------------------------------------------------------------*/
+\heading{Description}
 
-/* <lalLaTeX>
+The \c CreateArray family of functions create a
+\<datatype\>Array of the appropriate dimensions.
 
-\subsection{Module \texttt{ArrayFactories.c}}
-\label{ss:ArrayFactories.c}
+The \c DestroyArray family of functions return the storage allocated by
+the \c CreateArray functions to the system.
 
-Create/destroy $\langle\mbox{datatype}\rangle$Array objects.
+\heading{Algorithm}
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{ArrayFactoriesD}
-\idx{LALZCreateArray()}
-\idx{LALCCreateArray()}
-\idx{LALDCreateArray()}
-\idx{LALSCreateArray()}
-\idx{LALI2CreateArray()}
-\idx{LALI4CreateArray()}
-\idx{LALI8CreateArray()}
-\idx{LALU2CreateArray()}
-\idx{LALU4CreateArray()}
-\idx{LALU8CreateArray()}
-\idx{LALCreateArray()}
-\idx{LALZDestroyArray()}
-\idx{LALCDestroyArray()}
-\idx{LALDDestroyArray()}
-\idx{LALSDestroyArray()}
-\idx{LALI2DestroyArray()}
-\idx{LALI4DestroyArray()}
-\idx{LALI8DestroyArray()}
-\idx{LALU2DestroyArray()}
-\idx{LALU4DestroyArray()}
-\idx{LALU8DestroyArray()}
-\idx{LALDestroyArray()}
-
-\subsubsection*{Description}
-
-The \texttt{CreateArray} family of functions create a
-$\langle\mbox{datatype}\rangle$\texttt{Array} of the appropriate dimensions.
-
-The \texttt{DestroyArray} family of functions return the storage allocated by
-the \texttt{CreateArray} functions to the system.
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALMalloc()
 LALFree()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{ArrayFactoriesCV}}
-
-</lalLaTeX> */
+*/
 
 #include <string.h>
 #include "LALStdlib.h"
 #include "AVFactories.h"
 
-/* <lalVerbatim file="ArrayFactoriesNRCSID"> */
+
 NRCSID( ARRAYFACTORIESC, "$Id$" );
-/* </lalVerbatim> */
+
 
 define(`TYPECODE',`Z')
 include(`CreateArray.m4')

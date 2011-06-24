@@ -106,9 +106,9 @@ ATYPE * XFUNC ( ATYPE *array, UINT4Vector *dimLength )
   return array;
 }
 
-/* <lalVerbatim file="ArrayFactoriesD"> */
+
 void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength )
-{  /* </lalVerbatim> */
+{
   ATYPE *tmparr = NULL;
 
   INITSTATUS (status, "FUNC", ARRAYFACTORIESC);

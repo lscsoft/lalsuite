@@ -29,9 +29,9 @@ void XFUNC ( ATYPE *array )
   return;
 }
 
-/* <lalVerbatim file="ArrayFactoriesD"> */
+
 void FUNC ( LALStatus *status, ATYPE **array )
-{ /* </lalVerbatim> */
+{
   INITSTATUS (status, "FUNC", ARRAYFACTORIESC);
 
   ASSERT (array,          status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR);

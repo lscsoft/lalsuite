@@ -37,9 +37,9 @@ VTYPE * XFUNC ( VTYPE * vector, UINT4 length )
 }
 
 
-/* <lalVerbatim file="VectorFactoriesD"> */
+
 void RESIZEVECTOR ( LALStatus *status, VTYPE **vector, UINT4 length )
-{ /* </lalVerbatim> */
+{
   /*
    * Initialize status structure
    */

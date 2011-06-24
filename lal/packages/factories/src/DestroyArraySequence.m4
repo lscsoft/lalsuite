@@ -13,9 +13,9 @@ ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`STYPE',`format(`%sArraySequence',TYPE)')
 define(`FUNC',`format(`LAL%sDestroyArraySequence',TYPECODE)')
 
-/* <lalVerbatim file="ArraySequenceFactoriesD"> */
+
 void FUNC ( LALStatus *status, STYPE **aseq )
-{ /* </lalVerbatim> */
+{
   /*
    * Initialize status
    */

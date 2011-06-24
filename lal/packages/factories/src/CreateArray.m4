@@ -111,9 +111,9 @@ ATYPE * XFUNC ( UINT4Vector *dimLength )
 }
 
 
-/* <lalVerbatim file="ArrayFactoriesD"> */
+
 void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength )
-{ /* </lalVerbatim> */
+{
   INITSTATUS (status, "FUNC", ARRAYFACTORIESC);
 
   /* make sure arguments are sane */

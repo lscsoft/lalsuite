@@ -2,79 +2,43 @@
 
 File Name: VectorFactories.c
 
-<lalVerbatim file="VectorFactoriesCV">
-Revision: $Id$
-</lalVerbatim>
-
 -------------------------------------------------------------------------*/
 
-/* <lalLaTeX>
+/**
+\file
+\ingroup AVFactories_h
 
-\subsection{Module \texttt{VectorFactories.c}}
-\label{ss:VectorFactories.c}
+\brief Create/destroy \<datatype\>%Vector objects.
 
-Create/destroy $\langle\mbox{datatype}\rangle$Vector objects.
+\heading{Description}
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{VectorFactoriesD}
-\idx{LALZCreateVector()}
-\idx{LALCCreateVector()}
-\idx{LALDCreateVector()}
-\idx{LALSCreateVector()}
-\idx{LALI2CreateVector()}
-\idx{LALI4CreateVector()}
-\idx{LALI8CreateVector()}
-\idx{LALU2CreateVector()}
-\idx{LALU4CreateVector()}
-\idx{LALU8CreateVector()}
-\idx{LALCHARCreateVector()}
-\idx{LALCreateVector()}
-\idx{LALZDestroyVector()}
-\idx{LALCDestroyVector()}
-\idx{LALDDestroyVector()}
-\idx{LALSDestroyVector()}
-\idx{LALI2DestroyVector()}
-\idx{LALI4DestroyVector()}
-\idx{LALI8DestroyVector()}
-\idx{LALU2DestroyVector()}
-\idx{LALU4DestroyVector()}
-\idx{LALU8DestroyVector()}
-\idx{LALCHARDestroyVector()}
-\idx{LALDestroyVector()}
+The \c CreateVector family of functions create a
+\<datatype\>%Vector of the appropriate dimensions.
 
-\subsubsection*{Description}
+The \c ResizeVector family of functions changes the amount of
+storage allocated by the \c CreateVector functions.
 
-The \texttt{CreateVector} family of functions create a
-$\langle\mbox{datatype}\rangle$\texttt{Vector} of the appropriate
-dimensions.
+The \c DestroyVector family of functions return the storage allocated by
+the \c CreateVector functions to the system.
 
-The \texttt{ResizeVector} family of functions changes the amount of
-storage allocated by the \texttt{CreateVector} functions.
+\heading{Algorithm}
 
-The \texttt{DestroyVector} family of functions return the storage allocated by
-the \texttt{CreateVector} functions to the system.
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALMalloc()
 LALFree()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{VectorFactoriesCV}}
-
-</lalLaTeX> */
+*/
 
 #include "LALStdlib.h"
 #include "AVFactories.h"
 
-/* <lalVerbatim file="VectorFactoriesNRCSID"> */
+
 NRCSID( VECTORFACTORIESC, "$Id$" );
-/* </lalVerbatim> */
+
 
 define(`TYPECODE',`Z')
 include(`CreateVector.m4')

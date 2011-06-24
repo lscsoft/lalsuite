@@ -45,9 +45,9 @@ STYPE * XFUNC ( UINT4 length, UINT4 veclen )
   return seq;
 }
 
-/* <lalVerbatim file="VectorSequenceFactoriesD"> */
+
 void FUNC ( LALStatus *status, STYPE **vseq, CreateVectorSequenceIn *in )
-{ /* </lalVerbatim> */
+{
   /*
    * Initialize status
    */

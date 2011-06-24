@@ -28,9 +28,9 @@ void XFUNC ( VTYPE *vector )
   return;
 }
 
-/* <lalVerbatim file="VectorFactoriesD"> */
+
 void FUNC ( LALStatus *status, VTYPE **vector )
-{ /* </lalVerbatim> */
+{
   /*
    * Initialize status
    */

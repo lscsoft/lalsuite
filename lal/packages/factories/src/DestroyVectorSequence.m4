@@ -30,9 +30,9 @@ void XFUNC ( STYPE *vseq )
   return;
 }
 
-/* <lalVerbatim file="VectorSequenceFactoriesD"> */
+
 void FUNC ( LALStatus *status, STYPE **vseq )
-{ /* </lalVerbatim> */
+{
   /*
    * Initialize status
    */
