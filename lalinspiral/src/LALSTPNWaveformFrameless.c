@@ -154,7 +154,7 @@ static int XLALSTPNAdaptiveTest(double t,const double values[],double dvalues[],
 	}
 }
 
-static int XLALSTPNAdaptiveDerivativesFrameless(double t,const double values[],double dvalues[],void *mparams) {
+static int XLALSTPNFramelessAdaptiveDerivatives(double t,const double values[],double dvalues[],void *mparams) {
 	/* coordinates and derivatives */
   REAL8  s,  omega,  LNhx,  LNhy,  LNhz,  S1x,  S1y,  S1z,  S2x,  S2y,  S2z, E1x, E1y, E1z;
   REAL8 ds, domega, dLNhx, dLNhy, dLNhz, dS1x, dS1y, dS1z, dS2x, dS2y, dS2z, dE1x, dE1y, dE1z;
@@ -282,7 +282,7 @@ static int XLALSTPNAdaptiveDerivativesFrameless(double t,const double values[],d
 }
 
 void
-LALSTPNWaveformFrameless(
+LALSTPNFramelessWaveform(
 			    LALStatus        *status,
 			    REAL4Vector      *signalvec,
 			    InspiralTemplate *params
@@ -291,7 +291,7 @@ LALSTPNWaveformFrameless(
 
     UINT4 count;
     InspiralInit paramsInit;
-    INITSTATUS(status, "LALSTPNWaveformFrameless", LALSTPNWAVEFORMFRAMELESSC);
+    INITSTATUS(status, "LALSTPNFramelessWaveform", LALSTPNWAVEFORMFRAMELESSC);
     ATTATCHSTATUSPTR(status);
 
     ASSERT(signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -316,7 +316,7 @@ LALSTPNWaveformFrameless(
 
     memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));   
     /* Call the engine function */
-    LALSTPNAdaptiveWaveformEngineFrameless(status->statusPtr, signalvec, NULL, 
+    LALSTPNFramelessAdaptiveWaveformEngine(status->statusPtr, signalvec, NULL, 
       &count, params, &paramsInit);
     CHECKSTATUSPTR( status );
 
@@ -325,7 +325,7 @@ LALSTPNWaveformFrameless(
 }
 
 void
-LALSTPNWaveformTemplatesFrameless(
+LALSTPNFramelessWaveformTemplates(
 			    LALStatus        *status,
 			    REAL4Vector      *signalvec1,
 			    REAL4Vector      *signalvec2,
@@ -335,7 +335,8 @@ LALSTPNWaveformTemplatesFrameless(
 
     UINT4 count;
     InspiralInit paramsInit;
-    INITSTATUS(status, "LALSTPNWaveformFrameless", LALSTPNWAVEFORMFRAMELESSC);
+    INITSTATUS(status, "LALSTPNFramelessWaveformTemplates", 
+        LALSTPNWAVEFORMFRAMELESSC);
     ATTATCHSTATUSPTR(status);
 
     ASSERT(signalvec1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -360,7 +361,7 @@ LALSTPNWaveformTemplatesFrameless(
     memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));   
     memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));   
     /* Call the engine function */
-    LALSTPNAdaptiveWaveformEngineFrameless(status->statusPtr, 
+    LALSTPNFramelessAdaptiveWaveformEngine(status->statusPtr, 
       signalvec1, signalvec2, &count, params, &paramsInit);
     CHECKSTATUSPTR( status );
 
@@ -372,7 +373,7 @@ LALSTPNWaveformTemplatesFrameless(
 NRCSID (LALSTPNWAVEFORMFRAMELESSFORINJECTIONC,"$Id$");
 
 void
-LALSTPNWaveformFramelessForInjection (
+LALSTPNFramelessWaveformForInjection (
 			     LALStatus        *status,
 			     CoherentGW       *waveform,
 			     InspiralTemplate *params,
@@ -389,7 +390,7 @@ LALSTPNWaveformFramelessForInjection (
 
   CreateVectorSequenceIn in;
 
-  INITSTATUS(status, "LALSTPNWaveformFramelessForInjection", LALSTPNWAVEFORMFRAMELESSFORINJECTIONC);
+  INITSTATUS(status, "LALSTPNFramelessWaveformForInjection", LALSTPNWAVEFORMFRAMELESSFORINJECTIONC);
   ATTATCHSTATUSPTR(status);
 
 
@@ -423,7 +424,7 @@ LALSTPNWaveformFramelessForInjection (
 
 
   /* Call the engine function */
-  LALSTPNAdaptiveWaveformEngineFrameless(status->statusPtr, hplus, hcross, &count, params, &paramsInit);
+  LALSTPNFramelessAdaptiveWaveformEngine(status->statusPtr, hplus, hcross, &count, params, &paramsInit);
 
   BEGINFAIL( status )
   {
@@ -519,7 +520,7 @@ LALSTPNWaveformFramelessForInjection (
 
 
 void
-LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
+LALSTPNFramelessAdaptiveWaveformEngine( LALStatus *status,
         REAL4Vector *signalvec1,REAL4Vector *signalvec2,
         UINT4 *countback,
         InspiralTemplate *params,InspiralInit *paramsInit )
@@ -540,7 +541,8 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
   REAL8 hpluscos, hplussin, hcrosscos, hcrosssin;
 
 
-  INITSTATUS(status, "LALSTPNWaveformFrameless", LALSTPNWAVEFORMFRAMELESSC);
+  INITSTATUS(status, "LALSTPNFramelessAdaptiveWaveformEngine", 
+    LALSTPNWAVEFORMFRAMELESSC);
   ATTATCHSTATUSPTR(status);
 
  	/* Make sure parameter and waveform structures exist. */
@@ -583,9 +585,9 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
   xlalErrno = 0;
 
 	/* allocate the integrator */
-	integrator = XLALAdaptiveRungeKutta4Init(14,XLALSTPNAdaptiveDerivativesFrameless,XLALSTPNAdaptiveTest,1.0e-6,1.0e-6);
+	integrator = XLALAdaptiveRungeKutta4Init(14,XLALSTPNFramelessAdaptiveDerivatives,XLALSTPNAdaptiveTest,1.0e-6,1.0e-6);
   if (!integrator) {
-		fprintf(stderr,"LALSTPNWaveformFrameless: Cannot allocate integrator.\n");
+		fprintf(stderr,"LALSTPNFramelessAdaptiveWaveformEngine: Cannot allocate integrator.\n");
     if (XLALClearErrno() == XLAL_ENOMEM)
       ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
     else
@@ -605,14 +607,14 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
     if (XLALClearErrno() == XLAL_ENOMEM) {
       ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
     } else {
-			fprintf(stderr,"LALSTPNWaveformFrameless: integration failed with errorcode %d.\n",intreturn);
+			fprintf(stderr,"LALSTPNFramelessAdaptiveWaveformEngine: integration failed with errorcode %d.\n",intreturn);
 			ABORTXLAL(status);
 		}
 	}
 
 	/* report on abnormal termination (TO DO: throw some kind of LAL error?) */
 	if (intreturn != 0 && intreturn != LALSTPN_TEST_ENERGY && intreturn != LALSTPN_TEST_OMEGADOT) {
-		fprintf(stderr,"LALSTPNWaveformFrameless WARNING: integration terminated with code %d.\n",intreturn);
+		fprintf(stderr,"LALSTPNFramelessAdaptiveWaveformEngine WARNING: integration terminated with code %d.\n",intreturn);
     fprintf(stderr,"                          Waveform parameters were m1 = %e, m2 = %e, s1 = (%e,%e,%e), s2 = (%e,%e,%e), inc = %e.",
      							 params->mass1, params->mass2,
      							 params->spin1[0], params->spin1[1], params->spin1[2],
@@ -628,11 +630,11 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
 
 	/* if we have enough space, compute the waveform components; otherwise abort */
   if (signalvec1 && len >= signalvec1->length) {
-      fprintf(stderr,"LALSTPNWaveformFrameless: no space to write in signalvec1: %d vs. %d\n",len,signalvec1->length);
+      fprintf(stderr,"LALSTPNFramelessAdaptiveWaveformEngine: no space to write in signalvec1: %d vs. %d\n",len,signalvec1->length);
       ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   }
   if (signalvec2 && len >= signalvec2->length) {
-      fprintf(stderr,"LALSTPNWaveformFrameless: no space to write in signalvec2: %d vs. %d\n",len,signalvec2->length);
+      fprintf(stderr,"LALSTPNFramelessAdaptiveWaveformEngine: no space to write in signalvec2: %d vs. %d\n",len,signalvec2->length);
       ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   }
 
@@ -698,7 +700,7 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
   /*-------------------------------------------*/
       
   params->fFinal = (REAL4)(omega[len-1]/unitHz);
-  params->tC = yout->data[len-1] * m;
+  params->tC = yout->data[len-1] * m; /* m converts from t/m to t in seconds */
 
   if (yout) XLALDestroyREAL8Array(yout);
 
