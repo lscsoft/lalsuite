@@ -59,52 +59,57 @@ None
 
 
 
-#define  INSPIRALTEMPLATE_APPROXIMANT 	TaylorT4
-#define  INSPIRALTEMPLATE_ORDER 	LAL_PNORDER_TWO
-#define  INSPIRALTEMPLATE_AMPORDER 	LAL_PNORDER_TWO
-#define  INSPIRALTEMPLATE_MASS1  	10.
-#define  INSPIRALTEMPLATE_MASS2 	10.
-#define  INSPIRALTEMPLATE_FCUTOFF 	1000.
-#define  INSPIRALTEMPLATE_FLOWER 	40.
-#define  INSPIRALTEMPLATE_TSAMPLING 	2048.
-#define  INSPIRALTEMPLATE_DISTANCE 	1.   /*MPC*/
-#define  INSPIRALTEMPLATE_SIGNALAMPLITUDE 1.
-#define  INSPIRALTEMPLATE_STARTPHASE    0.
-#define  INSPIRALTEMPLATE_STARTTIME     0.
+#define  INSPIRALTEMPLATE_APPROXIMANT           TaylorT4
+#define  INSPIRALTEMPLATE_ORDER                 LAL_PNORDER_THREE_POINT_FIVE
+#define  INSPIRALTEMPLATE_AMPORDER              LAL_PNORDER_NEWTONIAN
+#define  INSPIRALTEMPLATE_MASS1                 10.
+#define  INSPIRALTEMPLATE_MASS2                 10.
+#define  INSPIRALTEMPLATE_FCUTOFF               1000.
+#define  INSPIRALTEMPLATE_FLOWER                40.
+#define  INSPIRALTEMPLATE_TSAMPLING             2048.
+#define  INSPIRALTEMPLATE_DISTANCE              1.   /*MPC*/
+#define  INSPIRALTEMPLATE_SIGNALAMPLITUDE       1.
+#define  INSPIRALTEMPLATE_STARTPHASE            0.
+#define  INSPIRALTEMPLATE_STARTTIME             0.
 
-#define  INSPIRALTEMPLATE_THETA 	0.
-#define  INSPIRALTEMPLATE_ZETA2 	0.
-#define  INSPIRALTEMPLATE_OMEGAS	0.
+#define  INSPIRALTEMPLATE_THETA                 0.
+#define  INSPIRALTEMPLATE_ZETA2                 0.
+#define  INSPIRALTEMPLATE_OMEGAS                0.
 
-#define  INSPIRALTEMPLATE_ALPHA 	0.
-#define  INSPIRALTEMPLATE_PSI0 		100000.
-#define  INSPIRALTEMPLATE_PSI3 		-1000.
+#define  INSPIRALTEMPLATE_ALPHA                 0.
+#define  INSPIRALTEMPLATE_PSI0                  100000.
+#define  INSPIRALTEMPLATE_PSI3                  -1000.
 
-#define  INSPIRALTEMPLATE_ALPHA1 	0.
-#define  INSPIRALTEMPLATE_ALPHA2 	0.
-#define  INSPIRALTEMPLATE_ALPHA3 	0.
-#define  INSPIRALTEMPLATE_ALPHA4 	0.
-#define  INSPIRALTEMPLATE_ALPHA5 	0.
-#define  INSPIRALTEMPLATE_ALPHA6 	0.
-#define  INSPIRALTEMPLATE_BETA 		0.
+#define  INSPIRALTEMPLATE_ALPHA1                0.
+#define  INSPIRALTEMPLATE_ALPHA2                0.
+#define  INSPIRALTEMPLATE_ALPHA3                0.
+#define  INSPIRALTEMPLATE_ALPHA4                0.
+#define  INSPIRALTEMPLATE_ALPHA5                0.
+#define  INSPIRALTEMPLATE_ALPHA6                0.
+#define  INSPIRALTEMPLATE_BETA                  0.
 
-#define  INSPIRALTEMPLATE_INCLINATION 	0.
-#define  INSPIRALTEMPLATE_ECCENTRICITY 	0.
-#define  INSPIRALTEMPLATE_ORBITTHETA0 	0.7
-#define  INSPIRALTEMPLATE_ORBITPHI0 	0.1
-#define  INSPIRALTEMPLATE_SPIN1X        0.1
-#define  INSPIRALTEMPLATE_SPIN1Y        0.2
-#define  INSPIRALTEMPLATE_SPIN1Z        0.3
-#define  INSPIRALTEMPLATE_SPIN2X        0.4
-#define  INSPIRALTEMPLATE_SPIN2Y        0.5
-#define  INSPIRALTEMPLATE_SPIN2Z        0.6
+#define  INSPIRALTEMPLATE_INCLINATION           0.1
+#define  INSPIRALTEMPLATE_ECCENTRICITY          0.
+#define  INSPIRALTEMPLATE_ORBITTHETA0           0.0
+#define  INSPIRALTEMPLATE_ORBITPHI0             0.0
+#define  INSPIRALTEMPLATE_SPIN1X                0.0
+#define  INSPIRALTEMPLATE_SPIN1Y                0.0
+#define  INSPIRALTEMPLATE_SPIN1Z                0.0
+#define  INSPIRALTEMPLATE_SPIN2X                0.0
+#define  INSPIRALTEMPLATE_SPIN2Y                0.0
+#define  INSPIRALTEMPLATE_SPIN2Z                0.0
 
-#define  INSPIRALTEMPLATE_CHI 			0.
-#define  INSPIRALTEMPLATE_KAPPA 		0.
+#define  INSPIRALTEMPLATE_CHI                   0.
+#define  INSPIRALTEMPLATE_KAPPA                 0.
 
-#define  INSPIRALTEMPLATE_SOURCETHETA 		0.
-#define  INSPIRALTEMPLATE_SOURCEPHI 		0.
-#define  INSPIRALTEMPLATE_POLARISATIONANGLE 0.
+#define  INSPIRALTEMPLATE_SOURCETHETA           0.
+#define  INSPIRALTEMPLATE_SOURCEPHI             0.
+#define  INSPIRALTEMPLATE_POLARISATIONANGLE     0.
+
+#define INSPIRALTEMPLATE_SPININTERACTION        LAL_SOInter
+#define INSPIRALTEMPLATE_AXISCHOICE             View
+#define INSPIRALTEMPLATE_FIXEDSTEP              0
+#define INSPIRALTEMPLATE_INSPIRALONLY           0
 
 NRCSID (LALINSPIRALPARSEPARAMETERSC, "");
 
@@ -288,6 +293,38 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	params->chi = atof(argv[++i]); }
       else if (strcmp(argv[i],"--kappa")==0){
 	params->kappa = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--spinInteraction")==0)
+      {
+        if (strcmp(argv[++i],"LAL_NOInter")==0){
+          params->spinInteraction = LAL_NOInter; }
+        else if (strcmp(argv[i],"LAL_SOInter")==0){
+          params->spinInteraction = LAL_SOInter; }
+        else if (strcmp(argv[i],"LAL_SSInter")==0){
+          params->spinInteraction = LAL_SSInter; }
+        else if (strcmp(argv[i],"LAL_SSselfInter")==0){
+          params->spinInteraction = LAL_SSselfInter; }
+        else if (strcmp(argv[i],"LAL_QMInter")==0){
+          params->spinInteraction = LAL_QMInter; }
+        else if (strcmp(argv[i],"LAL_AllInter")==0){
+          params->spinInteraction = LAL_AllInter; }
+        else
+          fprintf(stderr,"Invalid choice of --spinInteraction\n");
+      }
+      else if (strcmp(argv[i],"--axisChoice")==0)
+      {
+        if (strcmp(argv[++i],"TotalJ")==0){
+          params->spinInteraction = TotalJ; }
+        else if (strcmp(argv[i],"View")==0){
+          params->spinInteraction = View; }
+        else if (strcmp(argv[i],"OrbitalL")==0){
+          params->spinInteraction = OrbitalL; }
+        else
+          fprintf(stderr,"Invalid choice of --axisChoice\n");
+      }
+      else if (strcmp(argv[i],"--fixedStep")==0){
+        params->fixedStep = atoi(argv[++i]); }
+      else if (strcmp(argv[i],"--inspiralOnly")==0){
+        params->inspiralOnly = atoi(argv[++i]); }
       i++;
    }
 
@@ -303,69 +340,73 @@ void LALInspiralITStructurePrint(LALStatus *status,
 
 {
   /* Print values of all parameters to screen */
-  printf("# approximant 		= %-15.12d\n", params.approximant);
-  printf("# order       		= %-15.12d\n", params.order);
-  printf("# ampOrder    		= %-15.12d\n", params.ampOrder);
-  printf("# mass1       		= %-15.12f\n", params.mass1);
-  printf("# mass2       		= %-15.12f\n", params.mass2);
-  printf("# fLower      		= %-15.12f\n", params.fLower);
-  printf("# fCutoff     		= %-15.12f\n", params.fCutoff);
-  printf("# distance    		= %-15.12f\n", params.distance);
-  printf("# startPhase  		= %-15.12f\n", params.startPhase);
-  printf("# startTime   		= %-15.12f\n", params.startTime);
-  printf("# inclination 		= %-15.12f\n", params.inclination);
-  printf("# sourceTheta 		= %-15.12f\n", params.sourceTheta);
-  printf("# sourcePhi   		= %-15.12f\n", params.sourcePhi);
-  printf("# polarisationAngle 	= %-15.12f\n", params.polarisationAngle);
-  printf("# spin1 x     		= %-15.12f\n", params.spin1[0]);
-  printf("# spin1 y     		= %-15.12f\n", params.spin1[1]);
-  printf("# spin1 z     		= %-15.12f\n", params.spin1[2]);
-  printf("# spin2 x     		= %-15.12f\n", params.spin2[0]);
-  printf("# spin2 y     		= %-15.12f\n", params.spin2[1]);
-  printf("# spin2 z     		= %-15.12f\n", params.spin2[2]);
-  printf("# tSampling   		= %-15.12f\n", params.tSampling);
-  printf("# nStartPad   		= %-15.12d\n", params.nStartPad);
-  printf("# nEndPad     		= %-15.12d\n", params.nStartPad);
-  printf("# eccentricity		= %-15.12f\n", params.eccentricity);
-  printf("# ieta       			= %-15.12d\n", params.ieta);
-  printf("# Theta       		= %-15.12f\n", params.Theta);
-  printf("# Zeta2       		= %-15.12f\n", params.Zeta2);
-  printf("# OmegaS      		= %-15.12f\n", params.OmegaS);
-  printf("# alpha       		= %-15.12f\n", params.alpha);
-  printf("# psi0        		= %-15.12f\n", params.psi0);
-  printf("# psi3        		= %-15.12f\n", params.psi3);
-  printf("# alpha1      		= %-15.12f\n", params.alpha1);
-  printf("# alpha2      		= %-15.12f\n", params.alpha2);
-  printf("# alpha3      		= %-15.12f\n", params.alpha3);
-  printf("# alpha4      		= %-15.12f\n", params.alpha4);
-  printf("# alpha5      		= %-15.12f\n", params.alpha5);
-  printf("# alpha6      		= %-15.12f\n", params.alpha6);
-  printf("# beta        		= %-15.12f\n", params.beta);
-  printf("# chi	        		= %-15.12f\n", params.chi);
-  printf("# kappa	        	= %-15.12f\n", params.kappa);
-  printf("# orbitTheta0        	= %-15.12f\n", params.orbitTheta0);
-  printf("# orbitPhi0        	= %-15.12f\n", params.orbitPhi0);
+  printf("# approximant         = %-15.12d\n", params.approximant);
+  printf("# order               = %-15.12d\n", params.order);
+  printf("# ampOrder            = %-15.12d\n", params.ampOrder);
+  printf("# mass1               = %-15.12f\n", params.mass1);
+  printf("# mass2               = %-15.12f\n", params.mass2);
+  printf("# fLower              = %-15.12f\n", params.fLower);
+  printf("# fCutoff             = %-15.12f\n", params.fCutoff);
+  printf("# distance            = %-15.12f\n", params.distance);
+  printf("# startPhase          = %-15.12f\n", params.startPhase);
+  printf("# startTime           = %-15.12f\n", params.startTime);
+  printf("# inclination         = %-15.12f\n", params.inclination);
+  printf("# sourceTheta         = %-15.12f\n", params.sourceTheta);
+  printf("# sourcePhi           = %-15.12f\n", params.sourcePhi);
+  printf("# polarisationAngle   = %-15.12f\n", params.polarisationAngle);
+  printf("# spin1 x             = %-15.12f\n", params.spin1[0]);
+  printf("# spin1 y             = %-15.12f\n", params.spin1[1]);
+  printf("# spin1 z             = %-15.12f\n", params.spin1[2]);
+  printf("# spin2 x             = %-15.12f\n", params.spin2[0]);
+  printf("# spin2 y             = %-15.12f\n", params.spin2[1]);
+  printf("# spin2 z             = %-15.12f\n", params.spin2[2]);
+  printf("# tSampling           = %-15.12f\n", params.tSampling);
+  printf("# nStartPad           = %-15.12d\n", params.nStartPad);
+  printf("# nEndPad             = %-15.12d\n", params.nStartPad);
+  printf("# eccentricity        = %-15.12f\n", params.eccentricity);
+  printf("# ieta                = %-15.12d\n", params.ieta);
+  printf("# Theta               = %-15.12f\n", params.Theta);
+  printf("# Zeta2               = %-15.12f\n", params.Zeta2);
+  printf("# OmegaS              = %-15.12f\n", params.OmegaS);
+  printf("# alpha               = %-15.12f\n", params.alpha);
+  printf("# psi0                = %-15.12f\n", params.psi0);
+  printf("# psi3                = %-15.12f\n", params.psi3);
+  printf("# alpha1              = %-15.12f\n", params.alpha1);
+  printf("# alpha2              = %-15.12f\n", params.alpha2);
+  printf("# alpha3              = %-15.12f\n", params.alpha3);
+  printf("# alpha4              = %-15.12f\n", params.alpha4);
+  printf("# alpha5              = %-15.12f\n", params.alpha5);
+  printf("# alpha6              = %-15.12f\n", params.alpha6);
+  printf("# beta                = %-15.12f\n", params.beta);
+  printf("# chi                 = %-15.12f\n", params.chi);
+  printf("# kappa               = %-15.12f\n", params.kappa);
+  printf("# orbitTheta0         = %-15.12f\n", params.orbitTheta0);
+  printf("# orbitPhi0           = %-15.12f\n", params.orbitPhi0);
+  printf("# spinInteraction     = %-15.12d\n", params.spinInteraction);
+  printf("# axisChoice          = %-15.12d\n", params.axisChoice);
+  printf("# fixedStep           = %-15.12d\n", params.fixedStep);
+  printf("# inspiralOnly        = %-15.12d\n", params.inspiralOnly);
 
 /* Paramters which are computed using LALInspiralParameterCalc */
 
-  printf("# chirpMass   		= %-15.12f\n", params.chirpMass);
-  printf("# eta         		= %-15.12f\n", params.eta);
-  printf("# totalMass   		= %-15.12f\n", params.totalMass);
-  printf("# mu			   		= %-15.12f\n", params.mu);
-  printf("# fFinal      		= %-15.12f\n", params.fFinal);
-  printf("# t0          		= %-15.12f\n", params.t0);
-  printf("# t2          		= %-15.12f\n", params.t2);
-  printf("# t3          		= %-15.12f\n", params.t3);
-  printf("# t4          		= %-15.12f\n", params.t4);
-  printf("# t5          		= %-15.12f\n", params.t5);
-  printf("# t6          		= %-15.12f\n", params.t6);
-  printf("# t7          		= %-15.12f\n", params.t7);
-  printf("# tC          		= %-15.12f\n", params.tC);
-  printf("# signalAmplitude  	= %-15.12f\n", params.signalAmplitude);
-  printf("# vFinal 			 	= %-15.12f\n", params.vFinal);
-  printf("# end_time (s)	  	= %-15.12d\n", params.end_time.gpsSeconds);
-  printf("# end_time (ns)	  	= %-15.12d\n", params.end_time.gpsNanoSeconds);
-  printf("# massChoice  		= %-15.12d\n", params.massChoice);
+  printf("# chirpMass           = %-15.12f\n", params.chirpMass);
+  printf("# eta                 = %-15.12f\n", params.eta);
+  printf("# totalMass           = %-15.12f\n", params.totalMass);
+  printf("# mu                  = %-15.12f\n", params.mu);
+  printf("# fFinal              = %-15.12f\n", params.fFinal);
+  printf("# t0                  = %-15.12f\n", params.t0);
+  printf("# t2                  = %-15.12f\n", params.t2);
+  printf("# t3                  = %-15.12f\n", params.t3);
+  printf("# t4                  = %-15.12f\n", params.t4);
+  printf("# t5                  = %-15.12f\n", params.t5);
+  printf("# t6                  = %-15.12f\n", params.t6);
+  printf("# t7                  = %-15.12f\n", params.t7);
+  printf("# tC                  = %-15.12f\n", params.tC);
+  printf("# signalAmplitude     = %-15.12f\n", params.signalAmplitude);
+  printf("# vFinal              = %-15.12f\n", params.vFinal);
+  printf("# end_time (s)        = %-15.12d\n", params.end_time.gpsSeconds);
+  printf("# end_time (ns)       = %-15.12d\n", params.end_time.gpsNanoSeconds);
+  printf("# massChoice          = %-15.12d\n", params.massChoice);
 
   RETURN(status);
 }
@@ -378,52 +419,55 @@ void LALInspiralITStructureSetDefault(LALStatus *status,
 
 {
 
-  params->approximant  			= INSPIRALTEMPLATE_APPROXIMANT;
-  params->order        			= INSPIRALTEMPLATE_ORDER ;
-  params->ampOrder     			= INSPIRALTEMPLATE_AMPORDER ;
-  params->mass1        			= INSPIRALTEMPLATE_MASS1 ;
-  params->mass2        			= INSPIRALTEMPLATE_MASS2 ;
-  params->massChoice   			= m1Andm2;
-  params->fLower       			= INSPIRALTEMPLATE_FLOWER;
-  params->fCutoff      			= INSPIRALTEMPLATE_FCUTOFF;
-  params->fFinal       			= INSPIRALTEMPLATE_FCUTOFF;
-  params->distance     			= INSPIRALTEMPLATE_DISTANCE;
-  params->startPhase   			= INSPIRALTEMPLATE_STARTPHASE;
-  params->startTime    			= INSPIRALTEMPLATE_STARTTIME;
-  params->inclination  			= INSPIRALTEMPLATE_INCLINATION;
-  params->sourceTheta  			= INSPIRALTEMPLATE_SOURCETHETA;
-  params->sourcePhi    			= INSPIRALTEMPLATE_SOURCEPHI;
-  params->polarisationAngle 	= INSPIRALTEMPLATE_POLARISATIONANGLE;
-  params->spin1[0]     			= INSPIRALTEMPLATE_SPIN1X;
-  params->spin1[1]     			= INSPIRALTEMPLATE_SPIN1Y;
-  params->spin1[2]     			= INSPIRALTEMPLATE_SPIN1Z;
-  params->spin2[0]     			= INSPIRALTEMPLATE_SPIN2X;
-  params->spin2[1]     			= INSPIRALTEMPLATE_SPIN2Y;
-  params->spin2[2]     			= INSPIRALTEMPLATE_SPIN2Z;
-  params->tSampling    			= INSPIRALTEMPLATE_TSAMPLING;
-  params->nStartPad    			= 0;
-  params->nEndPad      			= 0;
-  params->eccentricity 			= INSPIRALTEMPLATE_ECCENTRICITY;
-  params->Theta        			= INSPIRALTEMPLATE_THETA;
-  params->Zeta2        			= INSPIRALTEMPLATE_ZETA2;
-  params->OmegaS       			= INSPIRALTEMPLATE_OMEGAS;
-  params->alpha        			= INSPIRALTEMPLATE_ALPHA;
-  params->psi0         			= INSPIRALTEMPLATE_PSI0;
-  params->psi3         			= INSPIRALTEMPLATE_PSI3;
-  params->alpha1       			= INSPIRALTEMPLATE_ALPHA1;
-  params->alpha2       			= INSPIRALTEMPLATE_ALPHA2;
-  params->alpha3       			= INSPIRALTEMPLATE_ALPHA3;
-  params->alpha4       			= INSPIRALTEMPLATE_ALPHA4;
-  params->alpha5       			= INSPIRALTEMPLATE_ALPHA5;
-  params->alpha6       			= INSPIRALTEMPLATE_ALPHA6;
-  params->beta         			= INSPIRALTEMPLATE_BETA;
-  params->orbitTheta0         	= INSPIRALTEMPLATE_ORBITTHETA0;
-  params->orbitPhi0         	= INSPIRALTEMPLATE_ORBITPHI0;
-  params->chi         			= INSPIRALTEMPLATE_CHI;
-  params->kappa         		= INSPIRALTEMPLATE_KAPPA;
-
-  params->signalAmplitude 		= INSPIRALTEMPLATE_SIGNALAMPLITUDE;
-  params->ieta         			= 1.;
+  params->approximant                   = INSPIRALTEMPLATE_APPROXIMANT;
+  params->order                         = INSPIRALTEMPLATE_ORDER ;
+  params->ampOrder                      = INSPIRALTEMPLATE_AMPORDER ;
+  params->mass1                         = INSPIRALTEMPLATE_MASS1 ;
+  params->mass2                         = INSPIRALTEMPLATE_MASS2 ;
+  params->massChoice                    = m1Andm2;
+  params->fLower                        = INSPIRALTEMPLATE_FLOWER;
+  params->fCutoff                       = INSPIRALTEMPLATE_FCUTOFF;
+  params->fFinal                        = INSPIRALTEMPLATE_FCUTOFF;
+  params->distance                      = INSPIRALTEMPLATE_DISTANCE;
+  params->startPhase                    = INSPIRALTEMPLATE_STARTPHASE;
+  params->startTime                     = INSPIRALTEMPLATE_STARTTIME;
+  params->inclination                   = INSPIRALTEMPLATE_INCLINATION;
+  params->sourceTheta                   = INSPIRALTEMPLATE_SOURCETHETA;
+  params->sourcePhi                     = INSPIRALTEMPLATE_SOURCEPHI;
+  params->polarisationAngle             = INSPIRALTEMPLATE_POLARISATIONANGLE;
+  params->spin1[0]                      = INSPIRALTEMPLATE_SPIN1X;
+  params->spin1[1]                      = INSPIRALTEMPLATE_SPIN1Y;
+  params->spin1[2]                      = INSPIRALTEMPLATE_SPIN1Z;
+  params->spin2[0]                      = INSPIRALTEMPLATE_SPIN2X;
+  params->spin2[1]                      = INSPIRALTEMPLATE_SPIN2Y;
+  params->spin2[2]                      = INSPIRALTEMPLATE_SPIN2Z;
+  params->tSampling                     = INSPIRALTEMPLATE_TSAMPLING;
+  params->nStartPad                     = 0;
+  params->nEndPad                       = 0;
+  params->eccentricity                  = INSPIRALTEMPLATE_ECCENTRICITY;
+  params->Theta                         = INSPIRALTEMPLATE_THETA;
+  params->Zeta2                         = INSPIRALTEMPLATE_ZETA2;
+  params->OmegaS                        = INSPIRALTEMPLATE_OMEGAS;
+  params->alpha                         = INSPIRALTEMPLATE_ALPHA;
+  params->psi0                          = INSPIRALTEMPLATE_PSI0;
+  params->psi3                          = INSPIRALTEMPLATE_PSI3;
+  params->alpha1                        = INSPIRALTEMPLATE_ALPHA1;
+  params->alpha2                        = INSPIRALTEMPLATE_ALPHA2;
+  params->alpha3                        = INSPIRALTEMPLATE_ALPHA3;
+  params->alpha4                        = INSPIRALTEMPLATE_ALPHA4;
+  params->alpha5                        = INSPIRALTEMPLATE_ALPHA5;
+  params->alpha6                        = INSPIRALTEMPLATE_ALPHA6;
+  params->beta                          = INSPIRALTEMPLATE_BETA;
+  params->orbitTheta0                   = INSPIRALTEMPLATE_ORBITTHETA0;
+  params->orbitPhi0                     = INSPIRALTEMPLATE_ORBITPHI0;
+  params->chi                           = INSPIRALTEMPLATE_CHI;
+  params->kappa                         = INSPIRALTEMPLATE_KAPPA;
+  params->spinInteraction               = INSPIRALTEMPLATE_SPININTERACTION;
+  params->axisChoice                    = INSPIRALTEMPLATE_AXISCHOICE;
+  params->fixedStep                     = INSPIRALTEMPLATE_FIXEDSTEP;
+  params->inspiralOnly                  = INSPIRALTEMPLATE_INSPIRALONLY;
+  params->signalAmplitude               = INSPIRALTEMPLATE_SIGNALAMPLITUDE;
+  params->ieta                          = 1.;
 
   RETURN(status);
 }
@@ -486,5 +530,23 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"--kappa       (PTF spin angle cosine)\n");
   fprintf(stderr,"--orbitTheta0 (initial orientation of L - not used)\n");
   fprintf(stderr,"--orbitPhi0   (initial orientation of L - not used)\n");
+  fprintf(stderr,"--spinInteraction  (used by PhenSpinTaylorRD to control spin effects included)\n");
+  fprintf(stderr,"              LAL_NOInter - no spin effects\n");
+  fprintf(stderr,"              LAL_SOInter - spin-orbit effects (default)\n");
+  fprintf(stderr,"              LAL_SSInter - spin-spin effects\n");
+  fprintf(stderr,"              LAL_SSselfInter - self spin-spin effects\n");
+  fprintf(stderr,"              LAL_QMInter - quadrupole-monopole effects\n");
+  fprintf(stderr,"              LAL_AllInter - all of the above effects\n");
+  fprintf(stderr,"--inputAxis   (used by PhenSpinTaylorRD to set frame z-axis)\n");
+  fprintf(stderr,"              TotalJ - z-axis along initial total angular momentum\n");
+  fprintf(stderr,"              View - z-axis along line of sight\n");
+  fprintf(stderr,"              OrbitalL - z-axis along initial orbital angular momentum\n");
+  fprintf(stderr,"--fixedStep   (used by PhenSpinTaylorRD to set integrator)\n");
+  fprintf(stderr,"              1     - use fixed step integrator\n");
+  fprintf(stderr,"              other - use adaptive step integrator (default)\n");
+  fprintf(stderr,"--inspiralOnly     (used by PhenSpinTaylorRD to attach RD or not)\n");
+  fprintf(stderr,"              1     - inspiral-only waveform\n");
+  fprintf(stderr,"              other - attach ringdown for IMR waveform (default)\n");
+
 
 }

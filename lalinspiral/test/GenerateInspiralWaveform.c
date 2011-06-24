@@ -671,7 +671,8 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
   simTable.f_lower = params->fLower;
   simTable.f_final = params->fFinal;
   simTable.amp_order = params->ampOrder;
-  /* We'll taper (or not) afterwards, don't need to set simTable->taper */
+  sprintf(simTable.taper, "TAPER_NONE");
+  /* We'll taper (or not) later in code, so just set TAPER_NONE here */
     
   theta = params->sourceTheta;
   phi   = params->sourcePhi;
