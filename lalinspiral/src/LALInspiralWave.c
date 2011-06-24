@@ -214,7 +214,7 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
 	   break;
       case SpinTaylorFrameless:
-           LALSTPNWaveformFrameless(status->statusPtr, signalvec, params);
+           LALSTPNFramelessWaveform(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
            break;
       case PhenSpinTaylorRD:
@@ -322,12 +322,14 @@ LALInspiralWaveTemplates(
       case PadeF1:
       case BCV:
       case BCVSpin:
+           ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+	   break;
       case SpinTaylor:
            LALSTPNWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
            break;
       case SpinTaylorFrameless:
-           LALSTPNWaveformTemplatesFrameless(status->statusPtr, signalvec1, signalvec2, params);
+           LALSTPNFramelessWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
            break;
       case PhenSpinTaylorRD:
@@ -409,7 +411,7 @@ LALInspiralWaveForInjection(
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 	   break;
       case SpinTaylorFrameless:
-           LALSTPNWaveformFramelessForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+           LALSTPNFramelessWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
      break;
       case SpinTaylor:

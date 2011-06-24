@@ -1066,25 +1066,17 @@ LALSTPNWaveformForInjection (
 			    PPNParamStruc  *ppnParams);
 
 void
-LALSTPNWaveformFrameless (
-    		LALStatus        *status,
-    		REAL4Vector      *signalvec,
-    		InspiralTemplate *params);
+LALSTPNWaveformTemplates (
+   LALStatus        *status,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
+   InspiralTemplate *params
+   ) ;
 
-void
-LALSTPNWaveformTemplatesFrameless (
-    		LALStatus        *status,
-    		REAL4Vector      *signalvec1,
-    		REAL4Vector      *signalvec2,
-    		InspiralTemplate *params);
-
-void
-LALSTPNWaveformFramelessForInjection (
-                             LALStatus        *status,
-                             CoherentGW       *waveform,
-                             InspiralTemplate *params,
-                             PPNParamStruc    *ppnParams
-                            );
+void LALSTPNWaveform(
+     LALStatus *status,
+     REAL4Vector *signalvec,
+     InspiralTemplate *params);
 
 void
 LALSTPNWaveformEngine (
@@ -1099,18 +1091,27 @@ LALSTPNWaveformEngine (
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 );
-void
-LALSTPNWaveformTemplates (
-   LALStatus        *status,
-   REAL4Vector      *signalvec1,
-   REAL4Vector      *signalvec2,
-   InspiralTemplate *params
-   ) ;
 
-void LALSTPNWaveform(
-     LALStatus *status,
-     REAL4Vector *signalvec,
-     InspiralTemplate *params);
+void
+LALSTPNFramelessWaveform (
+    		LALStatus        *status,
+    		REAL4Vector      *signalvec,
+    		InspiralTemplate *params);
+
+void
+LALSTPNFramelessWaveformTemplates (
+    		LALStatus        *status,
+    		REAL4Vector      *signalvec1,
+    		REAL4Vector      *signalvec2,
+    		InspiralTemplate *params);
+
+void
+LALSTPNFramelessWaveformForInjection (
+                             LALStatus        *status,
+                             CoherentGW       *waveform,
+                             InspiralTemplate *params,
+                             PPNParamStruc    *ppnParams
+                            );
 
 /* Phen-Spin waveform functions*/
 
