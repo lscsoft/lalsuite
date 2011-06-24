@@ -42,6 +42,7 @@
 #include <lal/LALSimBurst.h>
 #include <lal/LALSimulation.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
@@ -94,22 +95,22 @@ int XLALGenerateSimBurst(
 		}
 		gsl_rng_set(rng, sim_burst->waveform_number);
 
-		XLALPrintInfo("%s(): BTLWNB @ %9d.%09u: f = %.16g Hz, df = %.16g Hz, dt = %.16g s, hdot^2 = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->bandwidth, sim_burst->duration, int_hdot_squared_dt);
+		XLALPrintInfo("%s(): BTLWNB @ %9d.%09u s (GPS): f = %.16g Hz, df = %.16g Hz, dt = %.16g s, hdot^2 = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->bandwidth, sim_burst->duration, int_hdot_squared_dt);
 		if(XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(hplus, hcross, sim_burst->duration, sim_burst->frequency, sim_burst->bandwidth, int_hdot_squared_dt, delta_t, rng)) {
 			gsl_rng_free(rng);
 			XLAL_ERROR(__func__, XLAL_EFUNC);
 		}
 		gsl_rng_free(rng);
 	} else if(!strcmp(sim_burst->waveform, "StringCusp")) {
-	  XLALPrintInfo("%s(): string cusp @ %9d.%09u: A = %.16g, fhigh = %.16g Hz\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude, sim_burst->frequency);
+		XLALPrintInfo("%s(): string cusp @ %9d.%09u s (GPS): A = %.16g, fhigh = %.16g Hz\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude, sim_burst->frequency);
 		if(XLALGenerateStringCusp(hplus, hcross, sim_burst->amplitude, sim_burst->frequency, delta_t))
 			XLAL_ERROR(__func__, XLAL_EFUNC);
 	} else if(!strcmp(sim_burst->waveform, "SineGaussian")) {
-		XLALPrintInfo("%s(): sine-Gaussian @ %9d.%09u: f = %.16g Hz, Q = %.16g, hrss = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->q, sim_burst->hrss);
+		XLALPrintInfo("%s(): sine-Gaussian @ %9d.%09u s (GPS): f = %.16g Hz, Q = %.16g, hrss = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->q, sim_burst->hrss);
 		if(XLALSimBurstSineGaussian(hplus, hcross, sim_burst->q, sim_burst->frequency, sim_burst->hrss, sim_burst->pol_ellipse_e, sim_burst->pol_ellipse_angle, delta_t))
 			XLAL_ERROR(__func__, XLAL_EFUNC);
 	} else if(!strcmp(sim_burst->waveform, "Impulse")) {
-		XLALPrintInfo("%s(): impulse @ %9d.%09u: hpeak = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude, delta_t);
+		XLALPrintInfo("%s(): impulse @ %9d.%09u s (GPS): hpeak = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude, delta_t);
 		if(XLALGenerateImpulseBurst(hplus, hcross, sim_burst->amplitude, delta_t))
 			XLAL_ERROR(__func__, XLAL_EFUNC);
 	} else {
@@ -125,30 +126,9 @@ int XLALGenerateSimBurst(
 
 
 /**
- * Find the first element in the linked list of TimeSlide objects whose
- * time_slide_id and instrument name match the values given.  NOTE:  a
- * TimeSlide object's instrument is considered to match the requested
- * instrument name as long as it matches the first characters in the
- * requested instrument name.  This has been done to allow a channel name
- * like "H1:LSC-STRAIN" to be passed to this function without having to
- * explicitly construct a new string containing just the instrument part of
- * the channel name.  TimeSlide objects with no instrument name set or
- * whose instrument name is a zero-length string are ignored.  Returns NULL
- * if no matching row is found.
- */
-
-
-static const TimeSlide *XLALTimeSlideGetByIDAndInstrument(const TimeSlide *time_slide, long time_slide_id, const char *instrument)
-{
-	for(; time_slide && time_slide->time_slide_id != time_slide_id && time_slide->instrument && strlen(time_slide->instrument) && strncmp(instrument, time_slide->instrument, strlen(time_slide->instrument)); time_slide = time_slide->next);
-	return time_slide;
-}
-
-
-/*
- * Convenience wrapper to iterate over the entries in a sim_burst linked
- * list and inject them into a time series.  Passing NULL for the response
- * disables it (input time series is strain).
+ * Wrapper to iterate over the entries in a sim_burst linked list and
+ * inject them into a time series.  Passing NULL for the response disables
+ * it (input time series is strain).
  */
 
 
@@ -188,13 +168,12 @@ int XLALBurstInjectSignals(
 
 		/* determine the offset to be applied to this injection */
 
-		time_slide_row = XLALTimeSlideGetByIDAndInstrument(time_slide_table_head, sim_burst->time_slide_id, series->name);
+		time_slide_row = XLALTimeSlideConstGetByIDAndInstrument(time_slide_table_head, sim_burst->time_slide_id, detector->frDetector.prefix);
 		if(!time_slide_row) {
-			XLALPrintError("%s(): cannot find time shift offset for injection 'sim_burst:simulation_id:%ld'.  need 'time_slide:time_slide_id:%ld' for instrument for channel '%s'", __func__, sim_burst->simulation_id, sim_burst->time_slide_id, series->name);
+			XLALPrintError("%s(): cannot find time shift offset for injection 'sim_burst:simulation_id:%ld'.  need 'time_slide:time_slide_id:%ld' for instrument '%s'", __func__, sim_burst->simulation_id, sim_burst->time_slide_id, detector->frDetector.prefix);
 			XLAL_ERROR(__func__, XLAL_EINVAL);
 		}
 
-		XLALPrintInfo("%s(): shifting injection 'sim_burst:simulation_id:%ld' in '%s' at %d.%09u s by %.16g s\n", __func__, sim_burst->simulation_id, series->name, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, -time_slide_row->offset);
 		time_geocent_gps = sim_burst->time_geocent_gps;
 		XLALGPSAdd(&time_geocent_gps, -time_slide_row->offset);
 
@@ -203,6 +182,7 @@ int XLALBurstInjectSignals(
 
 		if(XLALGPSDiff(&series->epoch, &time_geocent_gps) > injection_window || XLALGPSDiff(&time_geocent_gps, &series->epoch) > (series->data->length * series->deltaT + injection_window))
 			continue;
+		XLALPrintInfo("%s(): injection 'sim_burst:simulation_id:%ld' in '%s' at %d.%09u s (GPS) will be shifted by %.16g s to %d.%09u s (GPS)\n", __func__, sim_burst->simulation_id, series->name, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, -time_slide_row->offset, time_geocent_gps.gpsSeconds, time_geocent_gps.gpsNanoSeconds);
 
 		/* construct the h+ and hx time series for the injection
 		 * waveform.  in the time series produced by this function,
@@ -210,6 +190,21 @@ int XLALBurstInjectSignals(
 
 		if(XLALGenerateSimBurst(&hplus, &hcross, sim_burst, series->deltaT))
 			XLAL_ERROR(__func__, XLAL_EFUNC);
+#if 0
+		{
+		char name[100];
+		FILE *f;
+		unsigned i;
+		sprintf(name, "%d.%09u_%s.txt", sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, series->name);
+		f = fopen(name, "w");
+		for(i = 0; i < hplus->data->length; i++) {
+			LIGOTimeGPS t = hplus->epoch;
+			XLALGPSAdd(&t, i * hplus->deltaT);
+			fprintf(f, "%.16g %.16g %.16g\n", XLALGPSGetREAL8(&t), hplus->data->data[i], hcross->data->data[i]);
+		}
+		fclose(f);
+		}
+#endif
 
 		/* add the time of the injection at the geocentre to the
 		 * start times of the h+ and hx time series.  after this,
@@ -227,6 +222,21 @@ int XLALBurstInjectSignals(
 		XLALDestroyREAL8TimeSeries(hcross);
 		if(!h)
 			XLAL_ERROR(__func__, XLAL_EFUNC);
+#if 0
+		{
+		char name[100];
+		FILE *f;
+		unsigned i;
+		sprintf(name, "%d.%09u_%s.txt", sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, series->name);
+		f = fopen(name, "w");
+		for(i = 0; i < h->data->length; i++) {
+			LIGOTimeGPS t = h->epoch;
+			XLALGPSAdd(&t, i * h->deltaT);
+			fprintf(f, "%d.%09u %.16g\n", t.gpsSeconds, t.gpsNanoSeconds, h->data->data[i]);
+		}
+		fclose(f);
+		}
+#endif
 
 		/* add the injection strain time series to the detector
 		 * data */
