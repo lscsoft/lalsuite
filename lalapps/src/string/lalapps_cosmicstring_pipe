@@ -248,6 +248,9 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		# vectors
 		assert len(time_slides) == 1
 
+		# get the largest injection offset's magnitude
+		maxoffset = max(abs(offset) for offsetvectorlist in time_slides.values() for offsetvector in offsetvectorlist for offset in offsetvector.values())
+
 		# to save disk space and speed the dag along we don't
 		# generate a single injection list for the entire analysis
 		# run, instead a separate list is constructed for each
@@ -262,8 +265,8 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		# injections_offset is a number between 0 and 1 in units of
 		# the period between injections
 
-		for seg in seglists.union(seglists).protract(power.binjjob.time_step).coalesce().contract(power.binjjob.time_step):
-			binjnodes |= power.make_binj_fragment(dag, seg, time_slides.keys()[0], tag, offset = injections_offset)
+		for seg in seglists.union(seglists).protract(power.binjjob.time_step + maxoffset).coalesce().contract(power.binjjob.time_step + maxoffset):
+			binjnodes |= power.make_binj_fragment(dag, seg.protract(maxoffset), time_slides.keys()[0], tag, offset = injections_offset)
 
 		# artificial parent-child relationship to induce dagman to
 		# submit binj jobs as the corresponding datafinds complete
