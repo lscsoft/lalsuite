@@ -489,6 +489,10 @@ void coh_PTF_cleanup(
     {
       LALFree( thisEvent->event_id );
     }
+    if ( thisEvent->time_slide_id )
+    {
+      LALFree( thisEvent->time_slide_id );
+    }
     LALFree( thisEvent );
   }
   while ( PTFbankhead )
