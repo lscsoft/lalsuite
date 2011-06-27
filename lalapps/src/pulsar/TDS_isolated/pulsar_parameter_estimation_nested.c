@@ -892,12 +892,18 @@ void readDoublePulsarData( LALInferenceRunState *runState ){
         exit(0);
       }
       
-      for( i = 0; i < numDets; i++ ){
+      for( i = 0; i < 2*numDets; i+=2 ){
         CHAR *tmpstr = NULL;
         
         tmppsd = strsep( &tmppsds, "," );
         XLALStringCopy( psdval, tmppsd, strlen(tmppsd)+1 );
         fpsds[i] = atof(psdval);
+	fprintf(stderr,"psdval1: %e,\t",fpsds[i]);
+	tmppsd = strsep( &tmppsds, "," );
+	XLALStringCopy( psdval, tmppsd, strlen(tmppsd)+1 );
+	fpsds[i+1] = atof(psdval);
+	fprintf(stderr,"psdval2: %e,\n",fpsds[i+1]);
+	
         
         /* set detector */
         tempdet = strsep( &tempdets, "," );
@@ -1177,6 +1183,7 @@ defined!\n");
     FILE *fp = NULL;
     
     count = 0;
+    fprintf(stderr,"reading in data file\n");
     
     /* initialise random number generator */
     /* Moved into det loop so same random seed can be used with */
@@ -1218,10 +1225,14 @@ defined!\n");
     /*============================ GET DATA ==================================*/
     /* get i'th filename from the comma separated list */
     if ( !ppt2 ){ /* if using real data read in from the file */
-      while ( count <= i ){
+      /*while ( count <= i ){
         datafile = strsep(&filestr, ",");
         count++;
-      }
+	fprintf(stderr,"data file count: %d\n",count);
+	fprintf(stderr,"data file: %s\n",datafile);
+      }*/
+      datafile = strsep(&filestr, ",");
+      fprintf(stderr,"data file: %s\n",datafile);
    
       /* open data file */
       if( (fp = fopen(datafile, "r")) == NULL ){
@@ -1334,7 +1345,7 @@ defined!\n");
     if ( ifodata->compTimeData->data->length > maxlen )
       maxlen = ifodata->compTimeData->data->length;
     
-    i2+=(i%2);
+    i2+=(i%2);/*adds only onto i2 when i is odd, so it does not increment when on same det but 2nd file*/
   }
   
   /* set global variable logfactorial */
@@ -2227,8 +2238,8 @@ REAL8 pulsar_double_log_likelihood( LALInferenceVariables *vars, LALInferenceIFO
           /*fprintf(stderr,"nan....logliketmp: %e, chunkLength: %e, chisquare: %e, chisquare2: %e\n", logliketmp, chunkLength, chiSquare, chiSquare2);
 	  fprintf(stderr,"model: %e, model2: %e, data: %e, data2: %e\n", sumDataModel,
 	  sumDataModel2, sumModel, sumModel2);*/
-	  fprintf(stderr,"sumData: %e, check: %e\n",sumData->data[count], sumdata);
-	  fprintf(stderr,"----------------------------------\n");
+	  /*fprintf(stderr,"sumData: %e, check: %e\n",sumData->data[count], sumdata);
+	  fprintf(stderr,"----------------------------------\n");*/
       }
     
       count++;
