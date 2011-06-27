@@ -69,11 +69,6 @@ int XLALBurstInjectSignals(
 	const COMPLEX16FrequencySeries *response
 );
 
-int XLALBurstInjectHNullSignals(
-	REAL8TimeSeries *series,
-	const SimBurst *sim_burst,
-	const TimeSlide *time_slide_table_head
-);
 
 #if 0
 { /* so that editors will match succeeding brace */

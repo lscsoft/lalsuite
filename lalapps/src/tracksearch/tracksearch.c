@@ -2382,19 +2382,14 @@ LALappsDoTimeSeriesAnalysis(TSSearchParams      params,
     }
   if ((params.verbosity >= printFiles) && (injectSet != NULL))
     print_real4tseries(injectSet,"CreatedSoftwareInjectableData.diag");
-  /*
-   * Wed-Oct-24-2007:200710241539 
-   * Edit function to fill buffered segments
-   */
-  if (params.verbosity >= quiet)
+
+  if (params.verbosity > quiet)
     {
       fprintf(stdout,"Preparing the data for filling segments.\n");
       fflush(stdout);
     }
   LALappsTrackSearchPrepareData(dataset,injectSet,SegVec,params);
-  /*
-   * Remove the dataset variable to make room in RAM for TFRs
-   */
+
   if (params.verbosity > quiet)
     {
       fprintf(stdout,"Freeing RAM associated with original time series data.\n");

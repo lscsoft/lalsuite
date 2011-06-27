@@ -107,6 +107,10 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "timing-accuracy",         required_argument, 0, 'G' },
     { "approximant",             required_argument, 0, 'C' },
     { "order",                   required_argument, 0, 'v' },
+    { "h1-slide-segment",        required_argument, 0, '!' }, 
+    { "h2-slide-segment",        required_argument, 0, '&' },
+    { "l1-slide-segment",        required_argument, 0, '(' },
+    { "v1-slide-segment",        required_argument, 0, ')' },
     { 0, 0, 0, 0 }
   };
   char args[] = "a:A:b:B:c:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z:<:>";
@@ -369,6 +373,18 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case 'W': /* pad-data */
         localparams.padData = atof( optarg );
         break;
+      case '!': /* h1-slide-segment */
+        localparams.slideSegments[LAL_IFO_H1] = atoi( optarg );
+        break;
+      case '&': /* h2-slide-segments */
+        localparams.slideSegments[LAL_IFO_H2] = atoi( optarg );
+        break;
+      case '(': /* l1-slide-segments */
+        localparams.slideSegments[LAL_IFO_L1] = atoi( optarg );
+        break;
+      case ')': /* v1-slide-segments */
+        localparams.slideSegments[LAL_IFO_V1] = atoi( optarg );
+        break;
       case 'V': /* version */
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
@@ -462,6 +478,7 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   UINT4 ifoNumber;
   INT8  startTime;
   INT8  endTime;
+  UINT4 slideSegments;
 
   if ( params->getSpectrum ) /* need data and response if not strain data */
     sanity_check( params->getData && (params->strainData) );
@@ -669,6 +686,10 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--segment-duration=duration  duration of a data segment (sec)\n" );
   fprintf( stderr, "--block-duration=duration    duration of an analysis block (sec)\n" );
   fprintf( stderr, "--pad-data=duration          input data padding (sec)\n" );
+  fprintf( stderr, "--h1-slide-segment=amount    amount to be slid H1\n" );
+  fprintf( stderr, "--h2-slide-segment=amount    amount to be slid H2\n" );
+  fprintf( stderr, "--l1-slide-segment=amount    amount to be slid L1\n" );
+  fprintf( stderr, "--v1-slide-segment=amount    amount to be slid V1\n" );
 
   fprintf( stderr, "\npower spectrum options:\n" );
   fprintf( stderr, "--white-spectrum           use uniform white power spectrum\n" );

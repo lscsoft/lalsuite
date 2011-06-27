@@ -1197,6 +1197,31 @@ void XLALDestroyTimeSlideTable(TimeSlide *head)
 
 
 /**
+ * Find and return the address of the first element in the linked list of
+ * TimeSlide objects whose time_slide_id and instrument name equal the
+ * values given.  TimeSlide elements whose instrument pointer is NULL are
+ * skipped.  Returns NULL if no matching row is found.  There are two
+ * versions, one for cost * TimeSlide rows and one for non-const (neither
+ * modifies the TimeSlide rows, the two versions are identical, they are
+ * provided to allow the const'ness to be "passed" through the function).
+ */
+
+
+const TimeSlide *XLALTimeSlideConstGetByIDAndInstrument(const TimeSlide *time_slide, long time_slide_id, const char *instrument)
+{
+	for(; time_slide && (time_slide->time_slide_id != time_slide_id || !time_slide->instrument || strcmp(time_slide->instrument, instrument)); time_slide = time_slide->next);
+	return time_slide;
+}
+
+
+TimeSlide *XLALTimeSlideGetByIDAndInstrument(TimeSlide *time_slide, long time_slide_id, const char *instrument)
+{
+	for(; time_slide && (time_slide->time_slide_id != time_slide_id || !time_slide->instrument || strcmp(time_slide->instrument, instrument)); time_slide = time_slide->next);
+	return time_slide;
+}
+
+
+/**
  * Create a SearchSummaryTable structure.
  */
 

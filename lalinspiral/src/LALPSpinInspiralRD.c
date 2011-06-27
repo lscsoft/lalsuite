@@ -1033,7 +1033,7 @@ static int XLALSpinInspiralFillH2Modes(
   REAL8 amp20 = amp * sqrtOnePointFive;
   REAL8 v2    = v*v;
   REAL8 omega = v*v*v;
-  const REAL8 omegaC = 0.5;
+  const REAL8 omegaC = 0.05;
   const REAL8 Afac   = .5;
   REAL8 damp  = omega > omegaC ? 1. : exp(-Afac*(1.-omegaC/omega)*(1.-omegaC/omega));
 
@@ -1145,8 +1145,8 @@ static int XLALSpinInspiralFillH3Modes(
 				     sin(  Psi + 3. * alpha) * an.s2i2 * an.c4i2 -
 				     9. * sin(3. * (Psi + alpha)) * an.c6i2) -
 				    v2 * 4. * an.si * (1. - 3. * eta) *
-				    (   - sin(2. * Psi - 3. * alpha) * an.s5i2 * an.ci2
-					- sin(2. * Psi + 3. * alpha) * an.c5i2 * an.si2 ) );
+				    (   - sin(2. * Psi - 3. * alpha) * an.s4i2
+					- sin(2. * Psi + 3. * alpha) * an.c4i2 ) );
 
   h3P2->data[2 * j] = amp32 * ( v * dm / 3. *
 				( 27. * cos(3. * Psi - 2. * alpha) * an.si*an.s4i2 +
@@ -2186,7 +2186,6 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   S2S2=params->spin2[0]*params->spin2[0]+params->spin2[1]*params->spin2[1]+params->spin2[2]*params->spin2[2];
 
   omegaMatch = OmMatch(LNhS1,LNhS2,S1S1,S1S2,S2S2);
-  //printf("omM %12.6e  fr %12.6e\n",omegaMatch,fracRD(LNhS1,LNhS2,S1S1,S1S2,S2S2));
 
   if ( initomega > omegaMatch ) {
     /*if ((params->spin1[0]==params->spin1[1])&&(params->spin1[1]==params->spin2[0])&&(params->spin2[0]==params->spin2[1])&&(params->spin2[1]==0.)) {
@@ -2477,7 +2476,6 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     errcode = XLALSpinInspiralAdaptiveEngine(neqs,yinit,amp22ini,&mparams,h2P2,h2M2,h2P1,h2M1,h20,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,fap,phap,&phenPars);
   }
   intreturn=phenPars.intreturn;
-  //printf("intreturn %d\n",intreturn);
 
   /* report on abnormal termination:
      Termination is fine if omegamatch is passed or if energy starts 
@@ -2675,7 +2673,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 
 	errcode += XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,count,amp33,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
 
-	errcode += XLALSpinInspiralFillH4Modes(h4P4,h4M4,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,count,amp44,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
+	errcode += XLALSpinInspiralFillH4Modes(h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,count,amp44,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
 
 	fap->data[count] = om;
 	phap->data[count] = Psi;
@@ -2872,12 +2870,17 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 
   for (i = 0; i < length; i++) {
     fap->data[i] /= unitHz;
+    sigp->data[i] = 0.;
+    sigc->data[i] = 0.;
+  }
+
+  for (i = 0; i < length; i++) {
     x0 = h2P2->data[2 * i];
     x1 = h2P2->data[2 * i + 1];
     x2 = h2M2->data[2 * i];
     x3 = h2M2->data[2 * i + 1];
-    sigp->data[i] =   x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-    sigc->data[i] = - x0 * MultSphHarmP.im - x1 * MultSphHarmP.re - x2 * MultSphHarmM.im - x3 * MultSphHarmM.re;
+    sigp->data[i] +=   x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+    sigc->data[i] += - x0 * MultSphHarmP.im - x1 * MultSphHarmP.re - x2 * MultSphHarmM.im - x3 * MultSphHarmM.re;
   }
 
   errcode  = XLALSphHarm(&MultSphHarmP, 2, 1, inc, 0.);
@@ -2912,6 +2915,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 
   errcode  = XLALSphHarm(&MultSphHarmP, 3, 3, inc, 0.);
   errcode += XLALSphHarm(&MultSphHarmM, 3, -3, inc, 0.);
+
   if (errcode != XLAL_SUCCESS) {
     XLALDestroyREAL8Vector(h3P3);
     XLALDestroyREAL8Vector(h3M3);

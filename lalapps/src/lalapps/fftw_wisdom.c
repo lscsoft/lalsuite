@@ -62,6 +62,7 @@
  *  into the file input_plans (say) and run:
  *
  *        cp /etc/fftw/wisdom_description new_description
+ *
  *        lalapps_fftw_wisdom -i input_plans -o new_wisdom -l 3 >> new_description
  *
  *  When this has finished you can (as root) move new_wisdom to /etc/fftw/wisdom and
@@ -250,6 +251,7 @@ int plan_problem(char type,            /**< 'r' for real or 'c' for complex tran
 }
 
 /** Main function
+ *
  *  Reads command line specifying input and output files, and optionally wisdom file,
  *  measure level, and flag preventing import of system wide wisdom, and then creates
  *  plans for each problem specified in the input file.  Accumulated wisdom is written
@@ -258,12 +260,12 @@ int plan_problem(char type,            /**< 'r' for real or 'c' for complex tran
  */
 int main(int argc, char **argv)
 {
-  static int measurelvl=3;   /**< Level of FFTW planning: 0, 1, 2 or 3 */
-  static int nosys=0;        /**< Flag to turn off import of system wisdom */
-  UINT4 transform_size;      /**< Size of current transform; read from input file */
-  char input_line[LINE_MAX]; /**< Buffer containing current line from input file */
-  char type;                /**< Type (real or complex) of current transform; read from input file */
-  char direc;               /**< Direction (forward or backward) of current transform; read from input file */
+  static int measurelvl=3;
+  static int nosys=0;
+  UINT4 transform_size;
+  char input_line[LINE_MAX];
+  char type;
+  char direc;
   FILE *infp=NULL, *outfp=NULL, *wisfp=NULL;
   int optindex, optreturn, retval;
 
