@@ -191,9 +191,14 @@ void rescaleOutput( LALInferenceRunState *runState );
 
 INT4 count_csv( CHAR *csvline );
 
+INT4 recognised_parameter( CHAR *parname );
+
+/* testing functions */
 void gridOutput( LALInferenceRunState *runState );
 
-INT4 recognised_parameter( CHAR *parname );
+REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
+                                    LALInferenceIFOData *data,
+                                    LALInferenceTemplateFunction *get_model );
 
 #ifdef __cplusplus
 }
