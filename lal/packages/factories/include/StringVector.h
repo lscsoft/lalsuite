@@ -20,10 +20,15 @@
 /**
  * \author Reinhard Prix
  * \date 2008
- * \file
+ * \defgroup StringVector StringVector
  * \ingroup factories
- * \brief Creation/destruction/manipulation API for 'StringVector' type objects,
+ * \brief Creation/destruction/manipulation API for ::LALStringVector objects,
  *  which are just LAL 'vectors' of CHAR * pointers.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/StringVector.h>
+ * \endcode
  *
  */
 

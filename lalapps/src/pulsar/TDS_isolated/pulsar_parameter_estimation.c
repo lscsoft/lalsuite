@@ -962,7 +962,7 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
 
   /* get the sum over the data */
   sum_data(data);
-
+  
   /* calculate likelihood array */
   for( i = 0 ; i < mesh.phiSteps ; i++ ){
     if( verbose )
@@ -1111,7 +1111,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
         model.re = plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2;
         model.im = plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2;
       }
-
+      
       /* sum over the model */
       sumModel += model.re*model.re + model.im*model.im;
 
@@ -1125,7 +1125,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
       chiSquare = data.sumData->data[count];
       chiSquare -= 2.*vars.h0*sumDataModel;
       chiSquare += vars.h0*vars.h0*sumModel;
-
+                
       /* log(likelihood)
          logL = (m-1)log(2) + log(m!) - m*log(sum((Bk - yk)^2)) */
 

@@ -1,52 +1,41 @@
-dnl $Id$
-/*************** <lalVerbatim file="VectorFactoriesTestCV"> ****
-$Id$
-**************** </lalVerbatim> *******************************/
+/**
+\file
+\ingroup AVFactories_h
 
-/* <lalLaTeX>
+\brief A program to test create/destroy vector routines.
 
-\subsection{Program \texttt{VectorFactoriesTest.c}}
-\label{ss:VectorFactoriesTest.c}
-
-A program to test create/destroy vector routines.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 VectorFactoriesTest [options]
 Options:
   -h         print help
   -q         quiet: run silently
   -v         verbose: print extra information
   -d level   set lalDebugLevel to level
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
-\subsubsection*{Exit codes}
-\begin{tabular}{|c|l|}
-\hline
- Code & Explanation                   \\
-\hline
-\tt 0 & Success, normal exit.         \\
-\tt 1 & Subroutine failed.            \\
-\hline
-\end{tabular}
+\heading{Exit codes}
+<table><tr><th>Code</th><th>Explanation</th></tr>
+<tr><td>0</td><td>Success, normal exit.</td></tr>
+<tr><td>1</td><td>Subroutine failed.</td></tr>
+</table>
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
-TYPECODECreateVector()
-TYPECODEResizeVector()
-TYPECODEDestroyVector()
-\end{verbatim}
+\<datatype\>CreateVector()
+\<datatype\>ResizeVector()
+\<datatype\>DestroyVector()
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{VectorFactoriesTestCV}}
-
-</lalLaTeX> */
+*/
+/** \cond DONT_DOXYGEN */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -261,3 +250,4 @@ ParseOptions (int argc, char *argv[])
   return;
 }
 
+/** \endcond DONT_DOXYGEN */

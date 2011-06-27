@@ -215,6 +215,22 @@ for filename in options.injection_time_slides:
 
 
 #
+# check for duplicate offset vectors
+#
+
+def check_for_reused_offsetvectors(background_time_slides, injection_time_slides):
+	# make sure none of the injection run offset vectors is also used
+	# for a non-injection run
+
+	for background_cache_entry, background_offsetvector in [(cache_entry, offsetvector) for cache_entry, offsetvectors in background_time_slides.items() for offsetvector in offsetvectors]:
+		for injection_cache_entry, injection_offsetvector in [(cache_entry, offsetvector) for cache_entry, offsetvectors in injection_time_slides.items() for offsetvector in offsetvectors]:
+			if not cmp(background_offsetvector, injection_offsetvector):
+				raise ValueError, "injections offset vector %s from %s is the same as non-injections offset vector %s from %s.  to avoid a self-selection bias, injections must not be performed at the same relative time shifts as a non-injection run" % (str(injection_offsetvector), injection_cache_entry.url, str(background_offsetvector), background_cache_entry.url)
+
+check_for_reused_offsetvectors(background_time_slides, injection_time_slides)
+
+
+#
 # =============================================================================
 #
 #                                  Build DAG
@@ -248,6 +264,9 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		# vectors
 		assert len(time_slides) == 1
 
+		# get the largest injection offset's magnitude
+		maxoffset = max(abs(offset) for offsetvectorlist in time_slides.values() for offsetvector in offsetvectorlist for offset in offsetvector.values())
+
 		# to save disk space and speed the dag along we don't
 		# generate a single injection list for the entire analysis
 		# run, instead a separate list is constructed for each
@@ -262,8 +281,8 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		# injections_offset is a number between 0 and 1 in units of
 		# the period between injections
 
-		for seg in seglists.union(seglists).protract(power.binjjob.time_step).coalesce().contract(power.binjjob.time_step):
-			binjnodes |= power.make_binj_fragment(dag, seg, time_slides.keys()[0], tag, offset = injections_offset)
+		for seg in seglists.union(seglists).protract(power.binjjob.time_step + maxoffset).coalesce().contract(power.binjjob.time_step + maxoffset):
+			binjnodes |= power.make_binj_fragment(dag, seg.protract(maxoffset), time_slides.keys()[0], tag, offset = injections_offset)
 
 		# artificial parent-child relationship to induce dagman to
 		# submit binj jobs as the corresponding datafinds complete

@@ -22,9 +22,8 @@ TESTS = VectorFactoriesTest \
         VectorSequenceFactoriesTest \
         ArrayFactoriesTest \
         ArraySequenceFactoriesTest
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
-dvi-local: .dvi-dep
+MOSTLYCLEANFILES =
+DISTCLEANFILES =
 
 
 EXTRA_DIST = \
@@ -45,4 +44,3 @@ ArrayFactoriesTest.c: ArrayFactoriesTest.m4 ArrayFactoriesTestFunction.m4
 
 ArraySequenceFactoriesTest.c: ArraySequenceFactoriesTest.m4 ArraySequenceFactoriesTestFunction.m4
 	cd $(srcdir) && @M4@ ArraySequenceFactoriesTest.m4 > ArraySequenceFactoriesTest.c
-@DVIMKFILE@

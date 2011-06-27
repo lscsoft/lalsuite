@@ -71,8 +71,8 @@ extern "C" {
 /* default values */
 #define CHUNKMIN 5
 #define CHUNKMAX 0
-#define PSIBINS 50
-#define TIMEBINS 1440
+#define PSIBINS 200
+#define TIMEBINS 2880
 
 /* INCREASE THESE VALUES IF ADDING ADDITIONAL PARAMETERS */
 /* number of amplitude parameters e.g. h0, phi0, psi, ciota */
@@ -190,6 +190,15 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detAndSource,
 void rescaleOutput( LALInferenceRunState *runState );
 
 INT4 count_csv( CHAR *csvline );
+
+INT4 recognised_parameter( CHAR *parname );
+
+/* testing functions */
+void gridOutput( LALInferenceRunState *runState );
+
+REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
+                                    LALInferenceIFOData *data,
+                                    LALInferenceTemplateFunction *get_model );
 
 #ifdef __cplusplus
 }

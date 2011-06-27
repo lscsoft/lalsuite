@@ -1,76 +1,37 @@
-/*-----------------------------------------------------------------------
+/**
 
-File Name: ArraySequenceFactories.c
+\file
+\ingroup SeqFactories_h
 
-<lalVerbatim file="ArraySequenceFactoriesCV">
-Revision: $Id$
-</lalVerbatim>
+\brief Create/destroy \<datatype\>ArraySequence objects.
 
--------------------------------------------------------------------------*/
+\heading{Description}
 
-/* <lalLaTeX>
+The \c CreateArraySequence family of functions create a
+\<datatype\>ArraySequence of the appropriate dimensions.
 
-\subsection{Module \texttt{ArraySequenceFactories.c}}
-\label{ss:ArraySequenceFactories.c}
+The \c DestroyArraySequence family of functions return the storage
+allocated by the \c CreateArraySequence functions to the system.
 
-Create/destroy $\langle\mbox{datatype}\rangle$ArraySequence objects.
+\heading{Algorithm}
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{ArraySequenceFactoriesD}
-\idx{LALZCreateArraySequence()}
-\idx{LALCCreateArraySequence()}
-\idx{LALDCreateArraySequence()}
-\idx{LALSCreateArraySequence()}
-\idx{LALI2CreateArraySequence()}
-\idx{LALI4CreateArraySequence()}
-\idx{LALI8CreateArraySequence()}
-\idx{LALU2CreateArraySequence()}
-\idx{LALU4CreateArraySequence()}
-\idx{LALU8CreateArraySequence()}
-\idx{LALCreateArraySequence()}
-\idx{LALZDestroyArraySequence()}
-\idx{LALCDestroyArraySequence()}
-\idx{LALDDestroyArraySequence()}
-\idx{LALSDestroyArraySequence()}
-\idx{LALI2DestroyArraySequence()}
-\idx{LALI4DestroyArraySequence()}
-\idx{LALI8DestroyArraySequence()}
-\idx{LALU2DestroyArraySequence()}
-\idx{LALU4DestroyArraySequence()}
-\idx{LALU8DestroyArraySequence()}
-\idx{LALDestroyArraySequence()}
-
-\subsubsection*{Description}
-
-The \texttt{CreateArraySequence} family of functions create a
-$\langle\mbox{datatype}\rangle$\texttt{ArraySequence} of the
-appropriate dimensions.
-
-The \texttt{DestroyArraySequence} family of functions return the storage
-allocated by the \texttt{CreateArraySequence} functions to the system.
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALMalloc()
 LALFree()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{ArraySequenceFactoriesCV}}
-
-</lalLaTeX> */
+*/
 
 #include "LALStdlib.h"
 #include "AVFactories.h"
 #include "SeqFactories.h"
 
-/* <lalVerbatim file="ArraySequenceFactoriesNRCSID"> */
+
 NRCSID( ARRAYSEQUENCEFACTORIESC, "$Id$" );
-/* </lalVerbatim> */
+
 
 define(`TYPECODE',`Z')
 include(`CreateArraySequence.m4')

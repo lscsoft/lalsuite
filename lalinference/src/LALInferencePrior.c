@@ -125,7 +125,7 @@ LALInferenceVariables *priorArgs){
         !LALInferenceCheckMinMaxPrior(priorArgs, paraHead->name) ) continue;
 
     LALInferenceGetMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
-         
+   
     if(paraHead->vary==LALINFERENCE_PARAM_CIRCULAR) /* For cyclic boundaries */
     {
        delta = max-min;

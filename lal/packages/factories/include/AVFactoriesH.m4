@@ -2,26 +2,7 @@
 
 File Name: AVFactories.h
 
-<lalVerbatim file="AVFactoriesHV">
-Revision: $Id$
-</lalVerbatim>
-
 -------------------------------------------------------------------------*/
-
-/* <lalLaTeX>
-
-\section{Header \texttt{AVFactories.h}}
-\label{s:AVFactories.h}
-
-Provides prototype and status code information for use of CreateVector,
-CreateArray, ResizeVector, ResizeArray, DestroyVector and DestroyArray
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/AVFactories.h>
-\end{verbatim}
-
-</lalLaTeX> */
 
 #ifndef _AVFACTORIES_H
 #define _AVFACTORIES_H
@@ -35,42 +16,21 @@ extern "C" {
 
 NRCSID (AVFACTORIESH, "$Id$");
 
-/* <lalLaTeX>
+/**
+\defgroup AVFactories_h AVFactories_h
+\ingroup factories
 
-\subsection*{Error conditions}
-\input{AVFactoriesHErrTab}
+\brief Provides prototype and status code information for use of CreateVector,
+CreateArray, ResizeVector, ResizeArray, DestroyVector and DestroyArray
 
-</lalLaTeX> */
-
-/*
-<lalErrTable file="AVFactoriesHErrTab">
-*/
-#define AVFACTORIESH_ELENGTH 1
-#define AVFACTORIESH_EVPTR   2
-#define AVFACTORIESH_EUPTR   4
-#define AVFACTORIESH_EDPTR   8
-#define AVFACTORIESH_EMALLOC 16
-#define AVFACTORIESH_MSGELENGTH  "Illegal length."
-#define AVFACTORIESH_MSGEVPTR    "Null vector/array handle."
-#define AVFACTORIESH_MSGEUPTR    "Non-null vector/array pointer."
-#define AVFACTORIESH_MSGEDPTR    "Null vector/array data."
-#define AVFACTORIESH_MSGEMALLOC  "Malloc failure."
-/*
-</lalErrTable>
-*/
-
-/* Function prototypes. */
-/* <lalLaTeX>
-\newpage\input{VectorFactoriesC}
-\newpage\input{ArrayFactoriesC}
-
-\newpage
-\subsection{XLAL Functions}
-
-\subsubsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/AVFactories.h>
+\endcode
 
+\section secXLALfcts XLAL Functions
+
+\code
 REAL4Vector * XLALCreateVector(UINT4 length);
 REAL4Vector * XLALResizeVector(REAL4Vector *vector, UINT4 length);
 void XLALDestroyVector(REAL4Vector *vector, UINT4 length);
@@ -94,142 +54,136 @@ void XLALDestroyArray(REAL4Array *array);
 <arrtype> * XLALResize<arrtype>V(<arrtype> *array, UINT4 ndim, UINT4 *dims);
 <arrtype> * XLALResize<arrtype>(<arrtype> *array, UINT4Vector *dimLength);
 void XLALDestroy<arrtype>(<arrtype> *array);
-\end{verbatim}
-\idx{XLALCreateVector}
-\idx{XLALResizeVector}
-\idx{XLALDestroyVector}
-\idx{XLALCreateArrayL}
-\idx{XLALCreateArrayV}
-\idx{XLALCreateArray}
-\idx{XLALResizeArrayL}
-\idx{XLALResizeArrayV}
-\idx{XLALResizeArray}
-\idx{XLALDestroyArray}
-\idx{XLALCreate<type>Vector}
-\idx{XLALResize<type>Vector}
-\idx{XLALDestroy<type>Vector}
-\idx{XLALCreate<type>ArrayL}
-\idx{XLALCreate<type>ArrayV}
-\idx{XLALCreate<type>Array}
-\idx{XLALResize<type>ArrayL}
-\idx{XLALResize<type>ArrayV}
-\idx{XLALResize<type>Array}
-\idx{XLALDestroy<type>Array}
+\endcode
 
-Here \verb+<vectype>+ is one of
-\verb+COMPLEX16Vector+,
-\verb+COMPLEX8Vector+,
-\verb+REAL8Vector+,
-\verb+REAL4Vector+,
-\verb+INT8Vector+,
-\verb+INT4Vector+,
-\verb+INT2Vector+,
-\verb+UINT8Vector+,
-\verb+UINT4Vector+,
-\verb+UINT2Vector+, or
-\verb+CHARVector+,
-and \verb+<arrtype>+ is one of
-\verb+COMPLEX16Array+,
-\verb+COMPLEX8Array+,
-\verb+REAL8Array+,
-\verb+REAL4Array+,
-\verb+INT8Array+,
-\verb+INT4Array+,
-\verb+INT2Array+,
-\verb+UINT8Array+,
-\verb+UINT4Array+, or
-\verb+UINT2Array+.
+Here <tt>\<vectype\></tt> is one of
+\c COMPLEX16Vector,
+\c COMPLEX8Vector,
+\c REAL8Vector,
+\c REAL4Vector,
+\c INT8Vector,
+\c INT4Vector,
+\c INT2Vector,
+\c UINT8Vector,
+\c UINT4Vector,
+\c UINT2Vector, or
+\c CHARVector,
+and <tt>\<arrtype\></tt> is one of
+\c COMPLEX16Array,
+\c COMPLEX8Array,
+\c REAL8Array,
+\c REAL4Array,
+\c INT8Array,
+\c INT4Array,
+\c INT2Array,
+\c UINT8Array,
+\c UINT4Array, or
+\c UINT2Array.
 
-\subsubsection*{Description}
+\subsection ss_AVF_desc Description
 
-The \verb+XLALCreate<type>Vector+ functions create vectors of the specified
-\verb+length+ number of objects of type \verb+<type>+.  The function
-\verb+XLALCreateVector+ is the same as \verb+XLALCreateREAL4Vector+.
+The <tt>XLALCreate\<type\>%Vector</tt> functions create vectors of the specified
+\c length number of objects of type <tt>\<type\></tt>.  The function
+\c XLALCreateVector() is the same as \c XLALCreateREAL4Vector().
 
-The \verb+XLALDestroy<type>Vector+ functions deallocate the memory allocation
-pointed to by \verb+vector+ including its contents.  The function
-\verb+XLALDestroyVector+ is the same as \verb+XLALDestroyREAL4Vector+.
+The <tt>XLALDestroy\<type\>%Vector</tt> functions deallocate the memory allocation
+pointed to by \c vector including its contents.  The function
+\c XLALDestroyVector() is the same as \c XLALDestroyREAL4Vector().
 
-The \verb+XLALResize<type>Vector+ functions resize the supplied vector
-\verb+vector+ to the new size \verb+length+.  If \verb+vector+ is \verb+NULL+
-then this is equivalent to \verb+XLALCreate<type>Vector+.  If \verb+length+
-is zero then this is equivalent to \verb+XLALDestroy<type>Vector+ and the
-routine returns \verb+NULL+.  Otherwise, the amount of data in the vector
-is realloced using \verb+LALRealloc+.  The function
-\verb+XLALResizeVector+ is the same as \verb+XLALResizeREAL4Vector+.
+The <tt>XLALResize\<type\>%Vector</tt> functions resize the supplied vector
+\c vector to the new size \c length.  If \c vector is \c NULL
+then this is equivalent to <tt>XLALCreate\<type\>%Vector</tt>.  If \c length
+is zero then this is equivalent to <tt>XLALDestroy\<type\>%Vector</tt> and the
+routine returns \c NULL.  Otherwise, the amount of data in the vector
+is realloced using \c LALRealloc().  The function
+\c XLALResizeVector() is the same as \c XLALResizeREAL4Vector().
 
-The \verb+XLALCreate<type>Array+
-\verb+XLALCreate<type>ArrayL+
-\verb+XLALCreate<type>ArrayV+
-all create an object of type \verb+<type>Array+.  They differ in the way
+The <tt>XLALCreate\<type\>Array</tt>
+<tt>XLALCreate\<type\>ArrayL</tt>
+<tt>XLALCreate\<type\>ArrayV</tt>
+all create an object of type <tt>\<type\>Array</tt>.  They differ in the way
 that the dimensions of the array are specified.  The function
-\verb+XLALCreate<type>Array+ allocates an array with dimensions specified
-by the \verb+UINT4Vector+ \verb+dimLength+ which is a vector of dimension
+<tt>XLALCreate\<type\>Array</tt> allocates an array with dimensions specified
+by the \c UINT4Vector \c dimLength which is a vector of dimension
 lengths for the array.  The function
-\verb+XLALCreate<type>ArrayV+ provides these dimensions with two arguments:
-\verb+ndim+ is the number of dimensions and \verb+dims+ is an array of
-\verb+UINT4+ values for the dimensions.  The function
-\verb+XLALCreate<type>ArrayL+ also specifies the dimensions as arguments.
-Here, the first argument, \verb+ndim+, is the number of dimensions, and
-this is followed by \verb+ndim+ arguments that provide the dimensions.
+<tt>XLALCreate\<type\>ArrayV</tt> provides these dimensions with two arguments:
+\c ndim is the number of dimensions and \c dims is an array of
+\c UINT4 values for the dimensions.  The function
+<tt>XLALCreate\<type\>ArrayL</tt> also specifies the dimensions as arguments.
+Here, the first argument, \c ndim, is the number of dimensions, and
+this is followed by \c ndim arguments that provide the dimensions.
 Note that for this function, a maximum of 16 dimensions can be provided
-(that is, \verb+ndim+ cannot be more than 16 and there cannot be more than
+(that is, \c ndim cannot be more than 16 and there cannot be more than
 16 arguments after the first).
-The \verb+XLALCreateArray+
-\verb+XLALCreateArrayL+
-\verb+XLALCreateArrayV+
+The \c XLALCreateArray()
+\c XLALCreateArrayL()
+\c XLALCreateArrayV()
 functions are equivalent to the
-\verb+XLALCreateREAL4Array+
-\verb+XLALCreateREAL4ArrayL+
-\verb+XLALCreateREAL4ArrayV+
+\c XLALCreateREAL4Array()
+\c XLALCreateREAL4ArrayL()
+\c XLALCreateREAL4ArrayV()
 functions respectively.
 
-The \verb+XLALDestroy<type>Array+ functions deallocate the memory allocation
-pointed to by \verb+array+ including its contents.  The function
-\verb+XLALDestroyArray+ is the same as \verb+XLALDestroyREAL4Array+.
+The <tt>XLALDestroy\<type\>Array</tt> functions deallocate the memory allocation
+pointed to by \c array including its contents.  The function
+\c XLALDestroyArray() is the same as \c XLALDestroyREAL4Array().
 
-The \verb+XLALResize<type>Array+
-\verb+XLALResize<type>ArrayL+
-\verb+XLALResize<type>ArrayV+
-functions resize the provided array \verb+array+.  The arguments after the
+The <tt>XLALResize\<type\>Array</tt>
+<tt>XLALResize\<type\>ArrayL</tt>
+<tt>XLALResize\<type\>ArrayV</tt>
+functions resize the provided array \c array.  The arguments after the
 first are interpreted in the same way as for the
-\verb+XLALCreate<type>Array+
-\verb+XLALCreate<type>ArrayL+
-\verb+XLALCreate<type>ArrayV+
-functions.  If \verb+array+ is \verb+NULL+, the resize functions are equivalent
-to the corresponding create function.  If \verb+ndim+ is zero for
-\verb+XLALResize<type>ArrayL+ or
-\verb+XLALResize<type>ArrayV+, or if \verb+dimLength+ is \verb+NULL+ for
-\verb+XLALResize<type>Array+, then these functions are equivalent to
-\verb+XLALDestroy<type>Array+.
-The \verb+XLALResizeArray+
-\verb+XLALResizeArrayL+
-\verb+XLALResizeArrayV+
+<tt>XLALCreate\<type\>Array</tt>
+<tt>XLALCreate\<type\>ArrayL</tt>
+<tt>XLALCreate\<type\>ArrayV</tt>
+functions.  If \c array is \c NULL, the resize functions are equivalent
+to the corresponding create function.  If \c ndim is zero for
+<tt>XLALResize\<type\>ArrayL</tt> or
+<tt>XLALResize\<type\>ArrayV</tt>, or if \c dimLength is \c NULL for
+<tt>XLALResize\<type\>Array</tt>, then these functions are equivalent to
+<tt>XLALDestroy\<type\>Array</tt>.
+The \c XLALResizeArray()
+\c XLALResizeArrayL()
+\c XLALResizeArrayV()
 functions are equivalent to the
-\verb+XLALResizeREAL4Array+
-\verb+XLALResizeREAL4ArrayL+
-\verb+XLALResizeREAL4ArrayV+
+\c XLALResizeREAL4Array()
+\c XLALResizeREAL4ArrayL()
+\c XLALResizeREAL4ArrayV()
 functions respectively.
 
-\subsubsection*{Return Values}
+\subsection ss_AVF_return Return Values
 
 If successful, the create and resize functions return a pointer to the same
 data that was passed to the function.  The resize functions will return
-a \verb+NULL+ pointer if the size of the new object was zero.  Upon failure
-these routines will return \verb+NULL+ and will set \verb+xlalErrno+ to
-one of these values: \verb+XLAL_ENOMEM+ if a memory allocation failed,
-\verb+XLAL_EBADLEN+ if an invalid length was provided (for example, a
-zero-size allocation with a create function), \verb+XLAL_EINVAL+ if an
+a \c NULL pointer if the size of the new object was zero.  Upon failure
+these routines will return \c NULL and will set \c xlalErrno to
+one of these values: \c #XLAL_ENOMEM if a memory allocation failed,
+\c #XLAL_EBADLEN if an invalid length was provided (for example, a
+zero-size allocation with a create function), \c XLAL_EINVAL if an
 invalid argument is provided (for example, if the pointer to an
-array of dimensions is \verb+NULL+).
+array of dimensions is \c NULL).
 
 The destroy function does not return any value.  If the function is passed a
-\verb+NULL+ pointer, it will set \verb+xlalErrno+ to \verb+XLAL_EFAULT+.
+\c NULL pointer, it will set \c xlalErrno to \c #XLAL_EFAULT.
 If the function is passed an object that appears corrupted (e.g., a
-vector with zero length or will a \verb+NULL+ data pointer) it will set
-\verb+xlalErrno+ to \verb+XLAL_EINVAL+.
+vector with zero length or will a \c NULL data pointer) it will set
+\c xlalErrno to \c #XLAL_EINVAL.
 
-</lalLaTeX> */
+*/
+/*@{ */
+/** \name Error Codes *//*@{*/
+#define AVFACTORIESH_ELENGTH 1
+#define AVFACTORIESH_EVPTR   2
+#define AVFACTORIESH_EUPTR   4
+#define AVFACTORIESH_EDPTR   8
+#define AVFACTORIESH_EMALLOC 16
+#define AVFACTORIESH_MSGELENGTH  "Illegal length."
+#define AVFACTORIESH_MSGEVPTR    "Null vector/array handle."
+#define AVFACTORIESH_MSGEUPTR    "Non-null vector/array pointer."
+#define AVFACTORIESH_MSGEDPTR    "Null vector/array data."
+#define AVFACTORIESH_MSGEMALLOC  "Malloc failure."
+/*@}*/
+/*@}*/
 
 dnl There is no CHARArray type
 define(`TYPECODE',`CHAR')
@@ -278,13 +232,6 @@ include(`AFactoriesBaseH.m4')
 define(`TYPECODE',`')
 include(`VFactoriesBaseH.m4')
 include(`AFactoriesBaseH.m4')
-
-/* Test program. */
-
-/* <lalLaTeX>
-\newpage\input{VectorFactoriesTestC}
-\newpage\input{ArrayFactoriesTestC}
-</lalLaTeX> */
 
 #ifdef  __cplusplus
 }
