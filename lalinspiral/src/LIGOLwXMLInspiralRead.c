@@ -2594,6 +2594,7 @@ LALMultiInspiralTableFromLIGOLw (
           {"crossCorrNullSq",         -1, 93},
           {"ampMetricEigenVal1",      -1, 94},
           {"ampMetricEigenVal2",      -1, 95},
+          {"time_slide_id",           -1, 96},
           {NULL,                       0, 0}
     };
 
@@ -3083,6 +3084,28 @@ LALMultiInspiralTableFromLIGOLw (
       else if ( tableDir[j].idx == 95 )
       {
         thisEvent->ampMetricEigenVal2 = r8colData;
+      }
+      else if ( tableDir[j].idx == 96 )
+      {
+        if ( tableDir[j].pos > 0 )
+        {
+          INT8 i8colData;
+          if ( column_type == METAIO_TYPE_INT_8S )
+            i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+          else
+          {
+            i8colData = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "multi_inspiral", "time_slide_id");
+            if ( i8colData < 0 )
+              return -1;
+          }
+          if ( i8colData )
+          {
+            thisEvent->time_slide_id = LALCalloc( 1,\
+                                        sizeof(*thisEvent->time_slide_id) );
+            thisEvent->time_slide_id->id = i8colData;
+            thisEvent->time_slide_id->multiInspiralTable = thisEvent;
+          }
+        }
       }
       else
       {
