@@ -143,6 +143,8 @@ REAL8 priorFunction( LALInferenceRunState *runState,
 /* model functions */
 void get_pulsar_model( LALInferenceIFOData *data );
 
+REAL8 rescale_parameter( LALInferenceIFOData *data, const CHAR *parname );
+
 void get_triaxial_pulsar_model( BinaryPulsarParams params, 
                                 LALInferenceIFOData *data );
 
