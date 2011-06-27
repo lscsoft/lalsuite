@@ -1836,6 +1836,9 @@ UINT8 coh_PTF_add_triggers(
         currEvent->event_id = (EventIDColumn *) 
             LALCalloc(1, sizeof(EventIDColumn) );
         currEvent->event_id->id=eventId;
+        currEvent->time_slide_id = (EventIDColumn *)
+            LALCalloc(1, sizeof(EventIDColumn) );
+        currEvent->time_slide_id->id=eventId;
         eventId++;
         trigTime = cohSNR->epoch;
         XLALGPSAdd(&trigTime,i*cohSNR->deltaT);
@@ -2069,6 +2072,10 @@ void coh_PTF_cluster_triggers(
       if ( currEvent->event_id )
       {
         LALFree( currEvent->event_id );
+      }
+      if ( currEvent->time_slide_id)
+      {
+        LALFree( currEvent->time_slide_id);
       }
       currEvent2 = currEvent->next;
       LALFree( currEvent );  
