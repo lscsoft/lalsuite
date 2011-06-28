@@ -3632,7 +3632,7 @@ void rescaleOutput( LALInferenceRunState *runState ){
         sprintf(value, "%s", strtok(NULL, "'\t'"));
       
       sprintf(scalename, "%s_scale", item->name);
-      sprintf(scaleminname, "%s_scale", item->name);
+      sprintf(scaleminname, "%s_scale_min", item->name);
       
       if( strcmp(item->name, "model") ){
         scalefac = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, 
