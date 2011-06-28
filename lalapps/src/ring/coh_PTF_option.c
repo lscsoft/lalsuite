@@ -430,11 +430,12 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
   /* overall, default values are zero */
   memset( params, 0, sizeof( *params ) );
 
-  /* Right Ascension and declination must be provided */
+  /* set default sky location params */
   params->rightAscension = -1000.;
   params->declination = -1000.;
   params->skyError = 0.;
   params->timingAccuracy = 0.0005;
+  params->skyPositionsFile = NULL;
   params->skyLooping = ALL_SKY;
 
   /* dynamic range factor must be greater than zero */
