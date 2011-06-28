@@ -170,7 +170,7 @@ struct coh_PTF_params {
   const char  *noSpinBank;
   char         userTag[256];
   char         ifoTag[256];
-  UINT4        slideSegments[LAL_NUM_IFO];
+  UINT4        slideSegments[LAL_NUM_IFO+1];
   /* flags */
   int          strainData;
   int          doubleData;
@@ -228,6 +228,13 @@ typedef struct tagCohPTFSkyPositions
   SkyPosition *data;
 }
 CohPTFSkyPositions; 
+
+typedef struct tagTimeSlideVectorList
+{
+  REAL4       timeSlideVectors[LAL_NUM_IFO];
+  INT8        timeSlideID;
+}
+TimeSlideVectorList;
 
 /* ENUM for sky location looping */
 
@@ -298,7 +305,8 @@ UINT8 coh_PTF_add_triggers(
     REAL4TimeSeries         *chiSquare,
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL4                   rightAscension,
-    REAL4                   declination
+    REAL4                   declination,
+    INT8                    slideId
 );
 void coh_PTF_cluster_triggers(
   MultiInspiralTable      **eventList,
@@ -351,7 +359,8 @@ RingDataSegments *coh_PTF_get_segments(
     REAL4FrequencySeries    *invspec,
     REAL4FFTPlan            *fwdplan,
     InterferometerNumber     NumberIFO,
-    struct coh_PTF_params      *params
+    REAL4                   *timeSlideVectors,
+    struct coh_PTF_params   *params
 );
 
 void coh_PTF_calculate_bmatrix(
@@ -636,6 +645,7 @@ int coh_PTF_output_events_xml(
     char               *outputFile,
     MultiInspiralTable *events,
     ProcessParamsTable *processParamsTable,
+    TimeSlide          *time_slide_head,
     struct coh_PTF_params *params
 );
 

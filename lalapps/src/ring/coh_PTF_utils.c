@@ -202,6 +202,7 @@ RingDataSegments *coh_PTF_get_segments(
     REAL4FrequencySeries    *invspec,
     REAL4FFTPlan            *fwdplan,
     InterferometerNumber     NumberIFO,
+    REAL4                   *timeSlideVectors,
     struct coh_PTF_params   *params
     )
 {
@@ -248,8 +249,13 @@ RingDataSegments *coh_PTF_get_segments(
     segments->numSgmnt = params->numOverlapSegments;
     segments->sgmnt = LALCalloc( segments->numSgmnt, sizeof(*segments->sgmnt) );
     for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
+    {
+      slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
+      timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] = 
+          (sgmnt-slidSegNum)*params->segmentDuration;
       compute_data_segment( &segments->sgmnt[sgmnt], sgmnt, channel, invspec,
           response, params->segmentDuration, params->strideDuration, fwdplan );
+    }
   }
   else  /* only do the segments in the todo list */
   {
@@ -293,10 +299,14 @@ RingDataSegments *coh_PTF_get_segments(
       {
         if ( is_in_list( sgmnt, params->segmentsToDoList ) )
       /* we are sliding the names of segments here */
+        {
           slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
+          timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] =
+              ((INT4)slidSegNum-(INT4)sgmnt)*params->segmentDuration/2.;
           compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
             invspec, response, params->segmentDuration, params->strideDuration,
             fwdplan );
+        }
       }
     }
   }

@@ -94,6 +94,7 @@ int main( int argc, char **argv )
   REAL8                    *Fplustrig;
   REAL8                    *Fcrosstrig;
   REAL8                    detLoc[3];
+  REAL4                    *timeSlideVectors;
 
   /* coherent statistic structures */
   REAL4TimeSeries          *cohSNR                  = NULL;
@@ -177,6 +178,11 @@ int main( int argc, char **argv )
    * read the data, generate segments and the PSD                           *
    *------------------------------------------------------------------------*/
 
+  timeSlideVectors=LALCalloc(1,
+     LAL_NUM_IFO*params->numOverlapSegments*sizeof( REAL4 ));
+  memset( timeSlideVectors, 0,
+          LAL_NUM_IFO * params->numOverlapSegments * sizeof(REAL4) );
+
   /* loop over ifos */ 
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -207,14 +213,100 @@ int main( int argc, char **argv )
                                                 revplan, params );
 
       /* create the segments */
+
       segments[ifoNumber] = coh_PTF_get_segments( channel[ifoNumber],
-                                                  invspec[ifoNumber],
-                                                  fwdplan, ifoNumber, params );
+                                invspec[ifoNumber],fwdplan, ifoNumber,
+                                timeSlideVectors, params );
       
       numSegments = segments[ifoNumber]->numSgmnt;
 
+      for (i =0; i < numSegments; i++)
+      {
+        fprintf(stderr,"%d %d %e\n",ifoNumber,i,timeSlideVectors[ifoNumber*params->numOverlapSegments+i]);
+      }
+
       verbose( "Created segments for one ifo %ld \n",
                timeval_subtract(&startTime) );
+    }
+  }
+
+  /* Create a list of time slide ids for each segment and create time slide
+     table. */
+
+  TimeSlideVectorList timeSlideList[numSegments];
+  UINT4 slideCount = 0;
+  INT8  slideIDList[numSegments];
+  
+  for (i = 0 ; i < numSegments ; i++ )
+  {
+    UINT4 slideDuplicate = 0;
+    if (slideCount)
+    {
+      for (uj = 0; uj < slideCount; uj++)
+      {
+        UINT4 slideChecking = 1;
+        for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+        {
+          if ( params->haveTrig[ifoNumber] )
+          {
+            if (timeSlideVectors[ifoNumber*params->numOverlapSegments+i] != \
+                timeSlideList[uj].timeSlideVectors[ifoNumber])
+            {
+              slideChecking = 0;
+            }
+          }
+        }
+        if (slideChecking)
+        {
+          slideDuplicate = 1;
+          slideIDList[i] = timeSlideList[uj].timeSlideID;
+        }
+      }
+    }
+    if (! slideDuplicate)
+    {
+      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if ( params->haveTrig[ifoNumber] )
+        {
+          timeSlideList[slideCount].timeSlideVectors[ifoNumber] = \
+              timeSlideVectors[ifoNumber*params->numOverlapSegments+i];
+        }
+      }
+      timeSlideList[slideCount].timeSlideID = slideCount;
+      slideIDList[i] = timeSlideList[slideCount].timeSlideID;
+      slideCount++;
+    }
+    fprintf(stderr,"%d %ld \n",i,slideIDList[i]);
+  }
+
+  TimeSlide *time_slide_head=NULL;
+  TimeSlide *curr_slide = NULL;
+
+  for ( ui = 0 ; ui < slideCount; ui++)
+  {
+    for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    {
+      if ( params->haveTrig[ifoNumber] )
+      {
+        if (! time_slide_head)
+        {
+          time_slide_head=XLALCreateTimeSlide();
+          curr_slide= time_slide_head;
+        }
+        else
+        {
+          curr_slide->next=XLALCreateTimeSlide();
+          curr_slide = curr_slide->next;
+        }
+        curr_slide->time_slide_id = timeSlideList[ui].timeSlideID;
+        /* FIXME */
+        CHAR ifo[LIGOMETA_STRING_MAX];
+        XLALReturnIFO(ifo,ifoNumber);
+        strncpy(curr_slide->instrument,ifo,sizeof(curr_slide->instrument)-1);
+        curr_slide->offset = timeSlideList[ui].timeSlideVectors[ifoNumber];
+        curr_slide->process_id=0;
+      }
     }
   }
 
@@ -314,8 +406,8 @@ int main( int argc, char **argv )
 
     /* create the segments */
     segments[ifoNumber] = coh_PTF_get_segments( channel[ifoNumber],
-                                                invspec[ifoNumber],
-                                                fwdplan, ifoNumber, params );
+                              invspec[ifoNumber],fwdplan, ifoNumber, NULL,
+                              params );
 
     numSegments = segments[ifoNumber]->numSgmnt;
 
@@ -836,7 +928,8 @@ int main( int argc, char **argv )
                                             nullSNR, traceSNR, bankVeto,
                                             autoVeto, chiSquare, PTFM,
                                             skyPoints->data[sp].longitude,
-                                            skyPoints->data[sp].latitude );
+                                            skyPoints->data[sp].latitude,
+                                            slideIDList[j] );
             verbose( "Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime) );
 
 
@@ -926,7 +1019,8 @@ int main( int argc, char **argv )
   } // Main loop is ended here
   /* calulate number of events */
   params->numEvents = XLALCountMultiInspiral( eventList );
-  coh_PTF_output_events_xml( params->outputFile, eventList, procpar, params );
+  coh_PTF_output_events_xml( params->outputFile, eventList, procpar,\
+                             time_slide_head, params );
 
   if (skyPoints->data)
     LALFree(skyPoints->data);
@@ -934,6 +1028,8 @@ int main( int argc, char **argv )
     LALFree(skyPoints);
 
   // This function cleans up memory usage
+  XLALDestroyTimeSlideTable(time_slide_head);
+  LALFree(timeSlideVectors);
   coh_PTF_cleanup(procpar,fwdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,Fplustrig,Fcrosstrig);
@@ -1788,7 +1884,8 @@ UINT8 coh_PTF_add_triggers(
     REAL4TimeSeries         *chiSquare,
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL4                   rightAscension,
-    REAL4                   declination
+    REAL4                   declination,
+    INT8                    slideId
 )
 {
   // This function adds a trigger to the event list
@@ -1838,7 +1935,7 @@ UINT8 coh_PTF_add_triggers(
         currEvent->event_id->id=eventId;
         currEvent->time_slide_id = (EventIDColumn *)
             LALCalloc(1, sizeof(EventIDColumn) );
-        currEvent->time_slide_id->id=eventId;
+        currEvent->time_slide_id->id=slideId;
         eventId++;
         trigTime = cohSNR->epoch;
         XLALGPSAdd(&trigTime,i*cohSNR->deltaT);
