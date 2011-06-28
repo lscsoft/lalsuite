@@ -108,7 +108,7 @@ E & = & E_0 + \Delta E\times\left\{\begin{array}{l@{\qquad}c}
 	\end{array}\right. \nonumber
 \f}
 where we have explicitly written \f$\sinh^{-1}\f$ in terms of functions in
-\ref math.h.  Once \f$E\f$ is found, we can compute
+math.h.  Once \f$E\f$ is found, we can compute
 \f$t=E(12+E^2)/(12\dot{\upsilon}_p)\f$ (where again \f$1/12\dot{\upsilon}_p\f$
 can be precomputed), and hence \f$f\f$ and \f$\phi\f$ via
 Eqs.\eqref{eq_taylorcw-freq} and\eqref{eq_taylorcw-phi}.  The

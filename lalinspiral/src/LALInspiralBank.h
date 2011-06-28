@@ -98,8 +98,8 @@ ComputeMoments;
 space.  This is one of the members of the InspiralCoarseBankIn structure.
 
 This enum allows users to choose template bank either in the \f$(\tau_0, \tau_2)\f$
-space of chirptimes (the choice made by \c Tau0Tau2) or in the
-\f$(\tau_0, \tau_3)\f$ space of chirptimes (the choice made by \c Tau0Tau3).
+space of chirptimes (the choice made by #Tau0Tau2) or in the
+\f$(\tau_0, \tau_3)\f$ space of chirptimes (the choice made by #Tau0Tau3).
 This was implemented in releases before May 25, 2002. On May 25 we migrated to a
 new, slightly faster, computation of the metric in which, at present, only the
 choice \c Tau0Tau3 can be made. Since October 2003 a new choice \c Psi0Psi3
@@ -110,11 +110,11 @@ space (intrinsic and extrinsic parameters).
 */
 typedef enum
 {
-  Tau0Tau2,
-  Tau0Tau3,
-  Psi0Psi3,
-  PTFIntrinsic,
-  PTFFull
+  Tau0Tau2,	/**< \f$(\tau_0, \tau_2)\f$ space of chirptimes */
+  Tau0Tau3,	/**< \f$(\tau_0, \tau_3)\f$ space of chirptimes */
+  Psi0Psi3,	/**< for BCV templates */
+  PTFIntrinsic,	/**< a PTF metric in only the intrinsic parameters (a \f$4\times 4\f$ matrix) */
+  PTFFull	/**< PTF metric in the full parameter space (intrinsic and extrinsic parameters). */
 }
 CoordinateSpace;
 
@@ -128,12 +128,12 @@ which should be used for future searches.
 */
 typedef enum
 {
-  SquareNotOriented,
-  Square,
-  HexagonalNotOriented,
-  Hexagonal,
-  HybridHexagonal,
-  S2BCV
+  SquareNotOriented,	/**< UNDOCUMENTED */
+  Square,		/**< UNDOCUMENTED */
+  HexagonalNotOriented,	/**< UNDOCUMENTED */
+  Hexagonal,		/**< UNDOCUMENTED */
+  HybridHexagonal,	/**< UNDOCUMENTED */
+  S2BCV			/**< UNDOCUMENTED */
 }
 GridSpacing;
 

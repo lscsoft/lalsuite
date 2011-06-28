@@ -32,18 +32,18 @@
  *  The transforms to be planned must be specified in an input file, with one transform
  *  per line.  The format is:
  *
- *  <type><direc><size>
+ *  \<type\>\<direc\>\<size\>
  *
  *  where:
  *
- *  - <type>     may be 'c' for a complex transform, or 'r' for a real transform
- *  - <direc>    may be 'f' for a forward transform, or either 'r' or 'b' for a reverse or
+ *  - \<type\>     may be 'c' for a complex transform, or 'r' for a real transform
+ *  - \<direc\>    may be 'f' for a forward transform, or either 'r' or 'b' for a reverse or
  *               backward transform. The latter two are equivalent; the dual notation is
  *               designed to support both the 'backward' terminology of FFTW and the
  *               'reverse' terminology of LAL.
- *  - <size>     is the size of the desired transform.
+ *  - \<size\>     is the size of the desired transform.
  *
- *  Both the <type> and <direc> specifiers are insensitive to case.
+ *  Both the \<type\> and \<direc\> specifiers are insensitive to case.
  *
  *  The invocation must also specify an output file, where the wisdom itself will be
  *  written.  You may redirect stdout to save the human-readable description. This should
@@ -63,7 +63,7 @@
  *
  *        cp /etc/fftw/wisdomf_description new_description
  *
- *        lalapps_fftwf_wisdom -i input_plans -o new_wisdom -l 3 >> new_description
+ *        lalapps_fftwf_wisdom -i input_plans -o new_wisdom -l 3 \>\> new_description
  *
  *  When this has finished you can (as root) move new_wisdom to /etc/fftw/wisdomf and
  *  new_description to /etc/fftw/wisdomf_description.  The same results could also be
@@ -76,11 +76,11 @@
  *    if you do NOT want the wisdom there to be incorporated into the wisdom file you generate
  *    (for instance, if it is outdated because of hardware or FFTW library change). In such a
  *    case you should also not append to the existing human readable description, but replace it.
- *  - -w <FILE> or --wisdom=<FILE>  Read in existing wisdom from <FILE>.  Program exits if this
+ *  - -w \<FILE\> or --wisdom=\<FILE\>  Read in existing wisdom from \<FILE\>.  Program exits if this
  *    option is given but the corresponding file is not readable. As with the system wisdom, you
  *    should append to a human readable description of the wisdom in this file; what is there
  *    already will not be descirbed in the output of lalapps_fftwf_wisdom.
- *  - -l <int> or --measurelvl=<int>  The planning measure level used in creating the plans.
+ *  - -l \<int\> or --measurelvl=\<int\>  The planning measure level used in creating the plans.
  *    Defaults to 3 (exhaustive) if not given.  Levels 0 or 1 (estimate and measure, respectively)
  *    are possible, but not appropriate for a system-wide wisdom file, as plans of those levels
  *    can be efficiently generated on the fly in application code. Level 3 (exhaustive) is the

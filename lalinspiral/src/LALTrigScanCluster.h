@@ -46,28 +46,31 @@
 
 NRCSID( LALTRIGSCANCLUSTERH, "$Id$");
 
+/** UNDOCUMENTED */
 typedef enum {
-    trigScanNone,
-    T0T3Tc,
-    Psi0Psi3Tc,
-    NUM_TRIGSCAN_TYPE
+    trigScanNone,	/**< UNDOCUMENTED */
+    T0T3Tc,		/**< UNDOCUMENTED */
+    Psi0Psi3Tc,		/**< UNDOCUMENTED */
+    NUM_TRIGSCAN_TYPE	/**< UNDOCUMENTED */
 }
 trigScanType;
 
+/** UNDOCUMENTED */
 typedef struct
 tagTrigScanCluster
 {
-  INT4                      nelements;
-  TriggerErrorList          *element;
-  struct tagTrigScanCluster *next;
+  INT4                      nelements;	/**< UNDOCUMENTED */
+  TriggerErrorList          *element;	/**< UNDOCUMENTED */
+  struct tagTrigScanCluster *next;	/**< UNDOCUMENTED */
 } TrigScanCluster;
 
+/** UNDOCUMENTED */
 typedef enum
 {
-  TRIGSCAN_SUCCESS,
-  TRIGSCAN_ERROR,
-  TRIGSCAN_NUM_STATUS
-} TrigScanStatus;
+  TRIGSCAN_SUCCESS,	/**< UNDOCUMENTED */
+  TRIGSCAN_ERROR,	/**< UNDOCUMENTED */
+  TRIGSCAN_NUM_STATUS	/**< UNDOCUMENTED */
+} TrigScanStatus;	/**< UNDOCUMENTED */
 
 
 int XLALTrigScanClusterTriggers( SnglInspiralTable **table,

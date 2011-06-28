@@ -22,7 +22,6 @@
 \file
 \ingroup pulsarTODO
 
-\heading{Header \ref FitToPulsar.h}
 Provides routines for finding the best fit of the measured data to the strain expected from
 non-precessing pulsar.
 

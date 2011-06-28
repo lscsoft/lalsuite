@@ -190,7 +190,7 @@ void ComputeFStatFreqBand ( LALStatus *status,				/**< pointer to LALStatus stru
 
 
 
-/** Function to compute (multi-IFO) F-statistic for given parameter-space point ::doppler,
+/** Function to compute (multi-IFO) F-statistic for given parameter-space point \a doppler,
  *  normalized SFT-data (normalized by <em>double-sided</em> PSD Sn), noise-weights
  *  and detector state-series
  *

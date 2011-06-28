@@ -32,7 +32,7 @@
  *
  * This program uses InspiralSpinBank() to generate a template bank from
  * command line parameter input.  It also has the option to make a
- * \MATHEMATICA notebook using LALMath3DPlot() which will plot the 3D
+ * MATHEMATICA notebook using LALMath3DPlot() which will plot the 3D
  * template bank. If the <tt>-b</tt> option is specified, the program will
  * read the template bank from an XML file instead of generating it. (This
  * only works if LAL is compiled with metaio.)
@@ -49,7 +49,7 @@
  * Specifies the minimum mismatch threshold (typically 0.03) but for the
  * sake of testing it is best to pick a value \f$O[1]\f$ to save compiling time.
  * </dd><dt>-p</dt><dd>
- * Specifies that the program should generate a \MATHEMATICA notebook
+ * Specifies that the program should generate a MATHEMATICA notebook
  * "Math3DNotebook.nb".
  * </dd></dl>
  *

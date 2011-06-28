@@ -22,7 +22,6 @@
 \file
 \ingroup pulsarTODO
 
-\heading{Module \ref FitToPulsar.c}
 \brief Calculates the best fit parameters for a GW signal originating from a
 non-precessing pulsar.
 
