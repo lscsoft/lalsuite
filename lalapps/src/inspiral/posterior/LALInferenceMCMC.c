@@ -207,10 +207,10 @@ void initializeMCMC(LALInferenceRunState *runState)
       runState->template=&LALInferenceTemplate3525TD;
 			fprintf(stdout,"Template function called is \"template3525TD\"\n");
     }
-    else if(strstr(ppt->value,"PhenSpinTaylorRD")) {
-        runState->template=&LALInferenceTemplatePSTRD;
-            fprintf(stdout,"Template function called is \"templatePSTRD\"\n");
-    }
+    //else if(strstr(ppt->value,"PhenSpinTaylorRD")) {
+    //    runState->template=&LALInferenceTemplatePSTRD;
+    //        fprintf(stdout,"Template function called is \"templatePSTRD\"\n");
+    //}
 		else {
 			runState->template=&LALInferenceTemplateLALGenerateInspiral;
 			fprintf(stdout,"Template function called is \"templateLALGenerateInspiral\"\n");
@@ -681,7 +681,7 @@ void initVariables(LALInferenceRunState *state)
 	    LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	}
     LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
-	
+
 	tmpMin=endtime-dt; tmpMax=endtime+dt;
 
         /* Set up start time. */
@@ -755,7 +755,7 @@ void initVariables(LALInferenceRunState *state)
 	}
 	LALInferenceAddMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
     
-	tmpMin=0.0; tmpMax=LAL_PI;
+	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	//tmpVal=0.2000;
 	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=0.64546;
@@ -990,8 +990,8 @@ void initVariables(LALInferenceRunState *state)
 		}
     LALInferenceAddMinMaxPrior(priorArgs, "ppelowerb",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
     
-  }  
-  
+  }
+
   /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES. 
   (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enought */
   if(state->prior(state, currentParams)<=-DBL_MAX){
