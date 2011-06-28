@@ -1,0 +1,7 @@
+/**
+\defgroup fft fft
+\ingroup genMath
+
+\brief This package contains various routines for performing FFTs.
+
+*/

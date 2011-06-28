@@ -218,12 +218,6 @@ B.J.\ Owen, Phys.\ Rev.\ D 53, 6749 (1996).
   Performance of maximum-likelihood and cross-correlation statistics",
   unpublished.
 
-\anchor Frigo1998 <b>[Frigo1998]</b>
-  M. Frigo and S. G. Johnson,
-  <em>FFTW User's Manual</em>,
-  (Massachusetts Institute of Technology, Cambridge, USA, 1998).
-  URL: <a href="http://www.fftw.org/doc/">http://www.fftw.org/doc/</a>
-
 \anchor ab1999 <b>[ab1999]</b>
 Warren G. Anderson and R. Balasubramanian, <em>Time-frequency
 detection of gravitational waves</em>, gr-qc/9905023, and references
@@ -300,5 +294,11 @@ Int. J. Modern. Phys. D.
 \anchor iso8601 <b>[iso8601]</b>
   <em>International Standard ISO 8601</em> (International Organization for
   Standardization, Switzerland, 1988, http://www.iso.ch)
+
+\anchor fj_1998 <b>[fj_1998]</b>
+  M. Frigo and S. G. Johnson, <em>FFTW User's Manual</em>,
+  (Massachusetts Institute of Technology, Cambridge, USA, 1998).
+  URL: http://www.fftw.org/doc
+
 
 */

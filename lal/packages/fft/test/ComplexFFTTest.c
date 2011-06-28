@@ -17,44 +17,36 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="ComplexFFTTestCV">
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
+/**
+ * \file
+ * \ingroup ComplexFFT_h
  *
- * \subsection{Program \texttt{ComplexFFTTest.c}}
- * \label{ss:ComplexFFTTest.c}
+ * \brief Tests the routines in \ref ComplexFFT.h.
  *
- * Tests the routines in \verb+ComplexFFT.h+.
- *
- * \subsection*{Usage}
- * \begin{verbatim}
+ * \heading{Usage}
+ * \code
  * ComplexFFTTest [options]
  * Options:
  *   -h         print this message
  *   -q         quiet: run silently
  *   -v         verbose: print extra information
  *   -d level   set lalDebugLevel to level
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Description}
- * \subsubsection*{Exit codes}
- * \begin{tabular}{|c|l|}
- * \hline
- * Code & Explanation                   \\
- * \hline
- * \tt 0 & Success, normal exit.         \\
- * \tt 1 & Subroutine failed.            \\
- * \hline
- * \end{tabular}
+ * \heading{Exit codes}
+ * <table><tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>1</td><td>Subroutine failed.</td></tr>
+ * </table>
  *
- * \subsubsection*{Uses}
- * \subsubsection*{Notes}
+ * \heading{Uses}
+ * \heading{Notes}
  *
- * \vfill{\footnotesize\input{ComplexFFTTestCV}}
  *
- **** </lalLaTeX> */
+ *
+*/
+
+/** \cond DONT_DOXYGEN */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -425,3 +417,4 @@ ParseOptions( int argc, char *argv[] )
   return;
 }
 
+/** \endcond */

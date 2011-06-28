@@ -17,94 +17,78 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="TimeFreqFFTCV">
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Module \texttt{TimeFreqFFT.c}}
- * \label{ss:TimeFreqFFT.c}
+/**
+ * \addtogroup TimeFreqFFT_h
  *
- * Functions for time to frequency Fourier transforms.
+ * \heading{Description}
  *
- * \subsubsection*{Prototypes}
- * \vspace{0.1in}
- * \input{TimeFreqFFTCP}
- * \idx{LALTimeFreqRealFFT()}
- * \idx{LALFreqTimeRealFFT()}
- * \idx{LALTimeFreqComplexFFT()}
- * \idx{LALFreqTimeComplexFFT()}
- * \idx{LALREAL4AverageSpectrum()}
- *
- * \subsubsection*{Description}
- *
- * The routines \verb+LALTimeFreqRealFFT()+ and \verb+LALTimeFreqComplexFFT()+
- * transform time series $h_j$, $0\le j<n$, into a frequency series
- * $\tilde{h}_k$.  For \verb+LALTimeFreqRealFFT()+,
- * \[
+ * The routines LALTimeFreqRealFFT() and LALTimeFreqComplexFFT()
+ * transform time series \f$h_j\f$, \f$0\le j<n\f$, into a frequency series
+ * \f$\tilde{h}_k\f$.  For LALTimeFreqRealFFT(),
+ * \f[
  *    \tilde{h}_k = \Delta t \times H_k \;
- *    \mbox{for $0\le k\le\lfloor n/2\rfloor$.}
- * \]
+ *    \mbox{for \f$0\le k\le\lfloor n/2\rfloor\f$.}
+ * \f]
  * The packing covers the range from dc (inclusive) to Nyquist (inclusive if
- * $n$ is even).
- * For \verb+LALTimeFreqComplexFFT()+,
- * \[
+ * \f$n\f$ is even).
+ * For LALTimeFreqComplexFFT(),
+ * \f[
  *    \tilde{h}_k = \Delta t \left\{
  *    \begin{array}{ll}
  *      H_{k+\lfloor(n+1)/2\rfloor} &
- *        \mbox{for $0\le k<\lfloor n/2\rfloor$}, \\
+ *        \mbox{for \f$0\le k<\lfloor n/2\rfloor\f$}, \\
  *      H_{k-\lfloor n/2\rfloor} &
- *        \mbox{for $\lfloor n/2\rfloor\le k<n$}. \\
+ *        \mbox{for \f$\lfloor n/2\rfloor\le k<n\f$}. \\
  *    \end{array}
  *    \right.
- * \]
- * The packing covers the range from negative Nyquist (inclusive if $n$ is
+ * \f]
+ * The packing covers the range from negative Nyquist (inclusive if \f$n\f$ is
  * even) up to (but not including) positive Nyquist.
- * Here $H_k$ is the DFT of $h_j$:
- * \[
+ * Here \f$H_k\f$ is the DFT of \f$h_j\f$:
+ * \f[
  *   H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}.
- * \]
- * The units of $\tilde{h}_k$ are equal to the units of $h_j$ times seconds.
+ * \f]
+ * The units of \f$\tilde{h}_k\f$ are equal to the units of \f$h_j\f$ times seconds.
  *
- * The routines \verb+LALFreqTimeRealFFT()+ and \verb+LALFreqTimeComplexFFT()+
- * perform the inverse transforms from $\tilde{h}_k$ back to $h_j$.  This is
+ * The routines LALFreqTimeRealFFT() and LALFreqTimeComplexFFT()
+ * perform the inverse transforms from \f$\tilde{h}_k\f$ back to \f$h_j\f$.  This is
  * done by shuffling the data, performing the reverse DFT, and multiplying by
- * $\Delta f$.
+ * \f$\Delta f\f$.
  *
- * The routine \verb+LALREAL4AverageSpectrum()+ uses Welch's method to compute
+ * The routine LALREAL4AverageSpectrum() uses Welch's method to compute
  * the average power spectrum of the time series stored in the input structure
- * \verb+tSeries+ and return it in the output structure \verb+fSeries+.  A
+ * \c tSeries and return it in the output structure \c fSeries.  A
  * Welch PSD estimate is defined by an FFT length, overlap length, choice of
  * window function and averaging method. These are specified in the
  * parameter structure; the FFT length is obtained from the length of the
- * \verb|REAL4Window| in the parameters.
+ * \c REAL4Window in the parameters.
  *
- * On entry the parameter structure \verb+params+ must contain a valid
- * \verb+REAL4Window+, an integer that determines the overlap as described
+ * On entry the parameter structure \c params must contain a valid
+ * \c REAL4Window, an integer that determines the overlap as described
  * below and a forward FFT plan for transforming data of the specified
  * window length into the time domain. The method used to compute the
  * average must also be set.
  *
- * If the length of the window is $N$, then the FFT length is defined to be
- * $N/2-1$. The input data of length $M$ is divided into $i$ segments which
- * overlap by $o$, where
- * \begin{equation}
+ * If the length of the window is \f$N\f$, then the FFT length is defined to be
+ * \f$N/2-1\f$. The input data of length \f$M\f$ is divided into \f$i\f$ segments which
+ * overlap by \f$o\f$, where
+ * \f{equation}{
  * i = \frac{M-o}{N-o}.
- * \end{equation}
+ * \f}
  *
  * The PSD of each segment is obtained. The Welch PSD estimate is the average
- * of these $i$ sub-estimates.  The average is computed using the mean or
+ * of these \f$i\f$ sub-estimates.  The average is computed using the mean or
  * median method, as specified in the parameter structure.
  *
  * Note: the return PSD estimate is a one-sided power spectral density
  * normalized as defined in the conventions document. When the averaging
  * method is choosen to be mean and the window type Hann, the result is the
- * same as returned by the LDAS datacondAPI \texttt{psd()} action for a real
+ * same as returned by the LDAS datacondAPI <tt>psd()</tt> action for a real
  * sequence without detrending.
  *
- * \subsubsection*{Operating Instructions}
+ * \heading{Operating Instructions}
  *
- * \begin{verbatim}
+ * \code
  * const UINT4 n  = 65536;
  * const REAL4 dt = 1.0 / 16384.0;
  * static LALStatus status; compute average power spectrum
@@ -151,18 +135,18 @@
  * LALCDestroyVector( &status, &z.data );
  * LALCDestroyVector( &status, &X.data );
  * LALSDestroyVector( &status, &x.data );
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Notes}
+ * \heading{Notes}
  *
- * \begin{enumerate}
- * \item The routines do not presently work properly with heterodyned data,
- * i.e., the original time series data should have \verb+f0+ equal to zero.
- * \end{enumerate}
+ * <ol>
+ * <li> The routines do not presently work properly with heterodyned data,
+ * i.e., the original time series data should have \c f0 equal to zero.
+ * </li></ol>
  *
- * \vfill{\footnotesize\input{TimeFreqFFTCV}}
  *
- **** </lalLaTeX> */
+ *
+*/
 
 
 #include <math.h>
@@ -642,7 +626,7 @@ int XLALCOMPLEX16FreqTimeFFT(
  */
 
 
-/* <lalVerbatim file="TimeFreqFFTCP"> */
+
 void
 LALTimeFreqRealFFT(
     LALStatus               *status,
@@ -650,7 +634,7 @@ LALTimeFreqRealFFT(
     REAL4TimeSeries         *time,
     RealFFTPlan             *plan
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALTimeFreqRealFFT", TIMEFREQFFTC );
   XLALPrintDeprecationWarning("LALTimeFreqRealFFT", "XLALREAL4TimeFreqFFT");
 
@@ -673,7 +657,7 @@ LALTimeFreqRealFFT(
 }
 
 
-/* <lalVerbatim file="TimeFreqFFTCP"> */
+
 void
 LALFreqTimeRealFFT(
     LALStatus               *status,
@@ -681,7 +665,7 @@ LALFreqTimeRealFFT(
     COMPLEX8FrequencySeries *freq,
     RealFFTPlan             *plan
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALFreqTimeRealFFT", TIMEFREQFFTC );
   XLALPrintDeprecationWarning("LALFreqTimeRealFFT", "XLALREAL4FreqTimeFFT");
   ATTATCHSTATUSPTR( status );
@@ -780,7 +764,7 @@ MedianSpec(
  */
 
 
-/* <lalVerbatim file="TimeFreqFFTCP"> */
+
 void
 LALREAL4AverageSpectrum (
     LALStatus                   *status,
@@ -788,7 +772,7 @@ LALREAL4AverageSpectrum (
     REAL4TimeSeries             *tSeries,
     AverageSpectrumParams       *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 i, j, k;          /* seg, ts and freq counters       */
   UINT4                 numSeg;           /* number of segments in average   */
@@ -1006,7 +990,7 @@ LALREAL4AverageSpectrum (
   RETURN( status );
 }
 
-/* <lalVerbatim file="TimeFreqFFTCP"> */
+
 void
 LALCOMPLEX8AverageSpectrum (
     LALStatus                   *status,
@@ -1015,7 +999,7 @@ LALCOMPLEX8AverageSpectrum (
     REAL4TimeSeries             *tSeries1,
     AverageSpectrumParams       *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 i, j, k, l;          /* seg, ts and freq counters       */
   UINT4                 numSeg;           /* number of segments in average   */
@@ -1184,7 +1168,7 @@ LALCOMPLEX8AverageSpectrum (
 
 
 
-/* <lalVerbatim file="TimeFreqFFTCP"> */
+
 void
 LALTimeFreqComplexFFT(
     LALStatus               *status,
@@ -1192,7 +1176,7 @@ LALTimeFreqComplexFFT(
     COMPLEX8TimeSeries      *time,
     ComplexFFTPlan          *plan
     )
-{ /* </lalVerbatim> */
+{
   UINT4 n;
 
   INITSTATUS( status, "LALTimeFreqComplexFFT", TIMEFREQFFTC );
@@ -1217,7 +1201,7 @@ LALTimeFreqComplexFFT(
 }
 
 
-/* <lalVerbatim file="TimeFreqFFTCP"> */
+
 void
 LALFreqTimeComplexFFT(
     LALStatus               *status,
@@ -1225,7 +1209,7 @@ LALFreqTimeComplexFFT(
     COMPLEX8FrequencySeries *freq,
     ComplexFFTPlan          *plan
     )
-{ /* </lalVerbatim> */
+{
   UINT4 n;
 
   INITSTATUS( status, "LALFreqTimeComplexFFT", TIMEFREQFFTC );

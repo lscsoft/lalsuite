@@ -34,7 +34,8 @@
 #include <lal/LALRCSID.h>
 NRCSID (AVERAGESPECTRUMC,"$Id$");
 
-
+/** \ingroup TimeFreqFFT_h */
+/*@{*/
 
 
 /**
@@ -1812,3 +1813,5 @@ int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, 
 
   return 0;
 }
+
+/*@}*/
