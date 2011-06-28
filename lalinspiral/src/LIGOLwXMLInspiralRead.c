@@ -3003,7 +3003,7 @@ LALMultiInspiralTableFromLIGOLw (
             if ( i8colData < 0 )
               return -1;
           }
-          if ( i8colData )
+          if ( i8colData >= 0 )
           {
             thisEvent->event_id = LALCalloc( 1, sizeof(*thisEvent->event_id) );
             thisEvent->event_id->id = i8colData;
@@ -3104,7 +3104,7 @@ LALMultiInspiralTableFromLIGOLw (
             if ( i8colData < 0 )
               return -1;
           }
-          if ( i8colData )
+          if ( i8colData >= 0)
           {
             thisEvent->time_slide_id = LALCalloc( 1,\
                                         sizeof(*thisEvent->time_slide_id) );

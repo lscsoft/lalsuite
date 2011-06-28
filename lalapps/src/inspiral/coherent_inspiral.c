@@ -1085,6 +1085,10 @@ int main( int argc, char *argv[] )
             thisEventTemp->event_id = (EventIDColumn *) 
               LALCalloc(1, sizeof(EventIDColumn) );
             thisEventTemp->event_id->id=eventID;
+            /* Also 0 the time slide id column */
+            thisEventTemp->time_slide_id = (EventIDColumn *)
+              LALCalloc(1, sizeof(EventIDColumn) );
+            thisEventTemp->time_slide_id->id=0;
             thisEventTemp = thisEventTemp->next;
           }
         
@@ -1140,6 +1144,8 @@ int main( int argc, char *argv[] )
                 MultiInspiralTable *tempEvent = thisEvent;
                 thisEvent = thisEvent->next;
                 LALFree( tempEvent->event_id );
+                if ( tempEvent->time_slide_id )
+                  LALFree( tempEvent->time_slide_id );
                 LALFree( tempEvent );
               }
           }
@@ -1434,6 +1440,8 @@ int main( int argc, char *argv[] )
               {
                 MultiInspiralTable *tempEvent2 = savedEvents.multiInspiralTable;
                 savedEvents.multiInspiralTable = savedEvents.multiInspiralTable->next;
+                if (tempEvent2->time_slide_id)
+                  LALFree( tempEvent2->time_slide_id);
                 LALFree( tempEvent2->event_id );
                 LALFree( tempEvent2 );
               }
@@ -1553,6 +1561,8 @@ int main( int argc, char *argv[] )
 	MultiInspiralTable *tempEvent2 = savedEvents.multiInspiralTable;
 	savedEvents.multiInspiralTable = savedEvents.multiInspiralTable->next;
 	LALFree( tempEvent2->event_id );
+        if (tempEvent2->time_slide_id)
+          LALFree( tempEvent2->time_slide_id);
 	LALFree( tempEvent2 );
       }
     
