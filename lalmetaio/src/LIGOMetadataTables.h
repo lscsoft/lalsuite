@@ -1110,13 +1110,11 @@ FilterTable;
 
 Document table.
 
-<<<<<<< HEAD:lalmetaio/src/LIGOMetadataTables.h
 \subsubsection*{Type \texttt{MetadataTable}}
 
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
-=======
 /** This structure corresponds to one row of a time_slide table.
 */
 typedef struct
@@ -1130,8 +1128,6 @@ tagTimeSlide
 }
 TimeSlide;
 
-
->>>>>>> 7992a08... Fix 3824:lalmetaio/src/LIGOMetadataTables.h
 typedef union
 tagMetadataTable
 {
