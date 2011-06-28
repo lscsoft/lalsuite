@@ -220,11 +220,6 @@ int main( int argc, char **argv )
       
       numSegments = segments[ifoNumber]->numSgmnt;
 
-      for (i =0; i < numSegments; i++)
-      {
-        fprintf(stderr,"%d %d %e\n",ifoNumber,i,timeSlideVectors[ifoNumber*params->numOverlapSegments+i]);
-      }
-
       verbose( "Created segments for one ifo %ld \n",
                timeval_subtract(&startTime) );
     }
@@ -277,7 +272,6 @@ int main( int argc, char **argv )
       slideIDList[i] = timeSlideList[slideCount].timeSlideID;
       slideCount++;
     }
-    fprintf(stderr,"%d %ld \n",i,slideIDList[i]);
   }
 
   TimeSlide *time_slide_head=NULL;
