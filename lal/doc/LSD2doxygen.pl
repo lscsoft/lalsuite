@@ -351,6 +351,8 @@ sub cleanupLSD {
         # convert formulae
         $text =~ s!\$\$(.+?)\$\$!\\f[$1\\f]!sg;
         $text =~ s!\$(.+?)\$!\\f\$$1\\f\$!sg;
+        $text =~ s!\\\[!\\f[!sg;
+        $text =~ s!\\\]!\\f]!sg;
         $text =~ s!\\begin$n*{displaymath}!\\f[!mg;
         $text =~ s!\\end$n*{displaymath}!\\f]!mg;
         $text =~ s{\\begin$n*{(equation\*?|eqnarray\*?)}(.*?)\\end$n*{\1}}{
@@ -491,8 +493,8 @@ sub cleanupLSD {
         # replace \href{} hyperlinks
         $text =~ s!\\href\s*{(.*)}{(.*)}!<a href="$1">$2</a>!g;
 
-        # replace protected space "~" by "\ " which is understood by doxygen
-        $text =~ s!([^\\])~!$1\\ !g;
+        # replace protected space "~" by " "
+        $text =~ s!([^\\])~!$1 !g;
 
         # remove any empty LaTeX comments
         $text =~ s!^$n*%$n*$!!mg;
