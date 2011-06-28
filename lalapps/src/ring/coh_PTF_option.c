@@ -111,9 +111,10 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "h2-slide-segment",        required_argument, 0, '&' },
     { "l1-slide-segment",        required_argument, 0, '(' },
     { "v1-slide-segment",        required_argument, 0, ')' },
+    { "sky-positions-file",       required_argument, 0, '#' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z:<:>";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:<:>:!:&:(:):#";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -388,6 +389,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case 'V': /* version */
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
+     case '#': /* sky grid file */
+        localparams.skyPositionsFile = optarg;
+        break;
       case '?':
         error( "unknown error while parsing options\n" );
       default:
@@ -460,7 +464,6 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
   params->nullStatThreshold = 5.25;
   params->nullStatGradOn = 30.;
   params->nullStatGradient = 50./700.;
-  params->skyLooping = SKY_POINT_ERROR;
 
   params->approximant = NumApproximants;
   params->order = LAL_PNORDER_NUM_ORDER;
@@ -548,15 +551,20 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
       sanity_check( params->timingAccuracy > 0. );
 
       if ( params->numIFO == 2 )
-        params->skyLooping = TWO_DET_SKY_POINT_ERROR;
+        params->skyLooping = TWO_DET_SKY_PATCH;
       else
-        params->skyLooping = SKY_POINT_ERROR;
+        params->skyLooping = SKY_PATCH;
     }
     else
     {
       params->skyLooping = SINGLE_SKY_POINT;
     }
   }
+  else if (params->skyPositionsFile)
+  {
+    params->skyLooping = SKY_PATCH;
+  }
+
   else
   {
     if ( params->numIFO == 2 )
@@ -705,10 +713,15 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
   fprintf( stderr, "--analyze-inj-segs-only  Only analyze times when injections have been made\n" );
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
-  fprintf( stderr, "--right-ascension=ra right ascension of external trigger in degrees\n" );
-  fprintf( stderr, "--declination=dec declination of external trigger in degrees\n" );
-  fprintf( stderr, "--sky-error=err 1-sigma error radius in sky location of external trigger in degrees\n" );
-  fprintf( stderr, "--timing-accuracy=t_acc Accuracy ( in seconds ) of timing information\n" );
+
+  fprintf( stderr, "\nsky location options:\n" );
+  fprintf( stderr, "--right-ascension=ra       right ascension of external trigger in degrees\n" );
+  fprintf( stderr, "--declination=dec          declination of external trigger in degrees\n" );
+  fprintf( stderr, "--sky-error=err            1-sigma error radius in sky location of external trigger in degrees\n" );
+  fprintf( stderr, "--timing-accuracy=t_acc    Accuracy ( in seconds ) of timing information\n" );
+  fprintf( stderr, "--sky-positions-file=name  Location of sky locations file for IPN\n" );
+
+  fprintf( stderr, "\ninjection options:\n" );
   fprintf( stderr, "--injection-file=file list of software injections to make into the data. If this option is not given injections are not made\n");
 
   fprintf( stderr, "\nTrigger extraction options:\n" );

@@ -352,14 +352,15 @@ int main( int argc, char **argv )
       segStartTime = params->trigTime;
       /* calculate time offsets */
       timeOffsets[ifoNumber] =
-          XLALTimeDelayFromEarthCenter( detLoc, params->rightAscension,
-                                        params->declination, &segStartTime );
+          XLALTimeDelayFromEarthCenter(detLoc, skyPoints->data[0].longitude,
+                                       skyPoints->data[0].latitude,
+                                       &segStartTime);
       /* calculate response functions for trigger */
-      XLALComputeDetAMResponse( &Fplustrig[ifoNumber], &Fcrosstrig[ifoNumber],
-                                detectors[ifoNumber]->response,
-                                params->rightAscension,
-                                params->declination, 0.,
-                                XLALGreenwichMeanSiderealTime(&segStartTime) );
+      XLALComputeDetAMResponse(&Fplustrig[ifoNumber], &Fcrosstrig[ifoNumber],
+                               detectors[ifoNumber]->response,
+                               skyPoints->data[0].longitude,
+                               skyPoints->data[0].latitude, 0.,
+                               XLALGreenwichMeanSiderealTime(&segStartTime));
 
     }
   }
@@ -870,8 +871,8 @@ int main( int argc, char **argv )
       switch(params->skyLooping)
       {
         case SINGLE_SKY_POINT:
-        case TWO_DET_SKY_POINT_ERROR:
-        case SKY_POINT_ERROR:
+        case TWO_DET_SKY_PATCH:
+        case SKY_PATCH:
 
           /* set 'segStartTime' to trigger time */
           segStartTime = params->trigTime;

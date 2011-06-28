@@ -711,24 +711,33 @@ CohPTFSkyPositions *coh_PTF_generate_sky_points(
 
   CohPTFSkyPositions *skyPoints = NULL;
 
-  /* if all sky */
-  if ( params->skyLooping == ALL_SKY || params->skyLooping == TWO_DET_ALL_SKY )
+  /* if given file */
+  if ( params->skyPositionsFile != NULL )
   {
-    error("all sky mode is not implemented yet, please provide --declination");
+    UINT4 raColumn  = 0;
+    UINT4 decColumn = 1;
+    skyPoints = coh_PTF_read_grid_from_file(params->skyPositionsFile,\
+                                            raColumn, decColumn);
+  }
+
+  /* if all sky */
+  else if ( params->skyLooping == ALL_SKY || params->skyLooping == TWO_DET_ALL_SKY )
+  {
+    error("all sky mode is not implemented yet, however, you can use --sky-positions-file\n");
 
     //skyPoints = coh_PTF_sky_grid()
   }
 
   /* if sky region */
-  else if ( params->skyLooping == SKY_POINT_ERROR\
-            || params->skyLooping == TWO_DET_SKY_POINT_ERROR\
+  else if ( params->skyLooping == SKY_PATCH\
+            || params->skyLooping == TWO_DET_SKY_PATCH\
             || params->skyLooping == SINGLE_SKY_POINT )
   {
     skyPoints = coh_PTF_generate_sky_grid(params);
   }
 
   /* if two-detectors, remove time-delay degeneracy */
-  if (params->skyLooping == TWO_DET_SKY_POINT_ERROR\
+  if (params->skyLooping == TWO_DET_SKY_PATCH\
       || params->skyLooping == TWO_DET_ALL_SKY)
   {
     verbose("Generated necessary sky grid with %d points, ",
@@ -1123,3 +1132,71 @@ void rotationMatrix(
   matrix[2][2] = cos(angle) + pow(axis[2],2)*(1-cos(angle));
 }
 
+CohPTFSkyPositions *coh_PTF_read_grid_from_file(
+    const char *fname,
+    UINT4      raColumn,
+    UINT4      decColumn
+)
+{
+
+  UINT4              j, i=0, numSkyPoints=0; /* counters */
+  CohPTFSkyPositions *skyPoints;             /* sky positions structure */
+  char               *value, line[256]; /* string holders */
+  FILE               *data;                  /* file object */
+
+  /* read file */
+  data = fopen(fname, "r");
+
+  /* check file */
+  if (data == NULL)
+  {
+    error("Error reading sky locations file %s. Please verify this path and try again\n", fname);
+  }
+
+  /* find number of lines */
+  while (fgets(line, sizeof(line), data))
+  {
+    numSkyPoints += 1;
+  }
+
+  /* seek to start of file again */
+  fseek(data, 0, SEEK_SET);  
+
+  /* assign memory for sky points */
+  skyPoints = LALCalloc(1, sizeof(*skyPoints));
+  skyPoints->numPoints = numSkyPoints;
+  skyPoints->data      = LALCalloc(1, numSkyPoints*sizeof(SkyPosition));
+
+  /* find last column we need */
+  UINT4 lastColumn = raColumn;
+  if (decColumn > raColumn)
+    lastColumn = decColumn;
+
+  /* read data line by line */
+  while (fgets(line, sizeof(line), data))
+  {
+    /* set counter */
+    j = 0;
+
+    /* extract first value */
+    value = strtok(line, " ");
+
+    /* loop over the columns and extract the correct ones */
+    while (j <= lastColumn)
+    {
+      if (j==raColumn)
+        skyPoints->data[i].longitude = (REAL4) atof(value) * LAL_PI_180;
+      else if (j==decColumn)
+        skyPoints->data[i].latitude  = (REAL4) atof(value) * LAL_PI_180;
+
+      /* move on to next column */
+      value = strtok(NULL, " ");
+      j++;
+    }
+
+    i++;
+  }
+
+  return skyPoints;
+
+}

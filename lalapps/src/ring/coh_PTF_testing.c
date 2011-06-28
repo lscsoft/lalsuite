@@ -870,8 +870,8 @@ int main( int argc, char **argv )
       switch(params->skyLooping)
       {
         case SINGLE_SKY_POINT:
-        case TWO_DET_SKY_POINT_ERROR:
-        case SKY_POINT_ERROR:
+        case TWO_DET_SKY_PATCH:
+        case SKY_PATCH:
 
           /* set 'segStartTime' to trigger time */
           segStartTime = params->trigTime;

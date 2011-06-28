@@ -147,6 +147,7 @@ struct coh_PTF_params {
   REAL4        declination;
   REAL4        skyError;
   REAL4        timingAccuracy;
+  const char  *skyPositionsFile;
   UINT4        skyLooping;
   const char  *bankFile;
   const char  *segmentsToDoList;
@@ -241,8 +242,8 @@ TimeSlideVectorList;
 typedef enum
 {
   SINGLE_SKY_POINT,
-  TWO_DET_SKY_POINT_ERROR,
-  SKY_POINT_ERROR,
+  TWO_DET_SKY_PATCH,
+  SKY_PATCH,
   ALL_SKY,
   TWO_DET_ALL_SKY
 }
@@ -697,6 +698,12 @@ CohPTFSkyPositions *coh_PTF_circular_grid(
 CohPTFSkyPositions *coh_PTF_parse_time_delays(
     CohPTFSkyPositions *skyPoints,
     struct coh_PTF_params *params
+);
+
+CohPTFSkyPositions *coh_PTF_read_grid_from_file(
+    const char *fname,
+    UINT4      raColumn,
+    UINT4      decColumn
 );
 
 void coh_PTF_rotate_skyPoints(
