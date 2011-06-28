@@ -2958,6 +2958,8 @@ int main( int argc, char *argv[] )
 
   if (source_data)
     LALFree(source_data);
+  if (mass_data)
+    LALFree(mass_data);
 
 
   LALCheckMemoryLeaks();
