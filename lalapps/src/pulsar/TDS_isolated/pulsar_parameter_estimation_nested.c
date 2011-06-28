@@ -1530,9 +1530,9 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     
     /* get chunk lengths of data */
     
-    /* chunkLength = get_chunk_lengths( data, chunkMax ); */
+    chunkLength = get_chunk_lengths( data, chunkMax );
     
-    chunkLength = chop_n_merge( data, chunkMin, chunkMax );
+    /* chunkLength = chop_n_merge( data, chunkMin, chunkMax ); */
     
     LALInferenceAddVariable( data->dataParams, "chunkLength", &chunkLength, 
                              LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_FIXED );
@@ -1897,7 +1897,7 @@ set.\n", propfile, tempPar);
       LALInferenceGetGaussianPrior( runState->priorArgs, checkPrior->name, (void *)&mu,
                         (void *)&sigma );
       
-      /* set the scale factor to be the mean value */
+      /* set the scale factor to be the sigma value */
       scale = sigma;
       scaleMin = mu;
       tempVar = (tempVar - scaleMin) / scale;
@@ -1905,7 +1905,7 @@ set.\n", propfile, tempPar);
       /* scale the parameter value and reset it */
       memcpy( checkPrior->value, &tempVar, LALInferenceTypeSize[checkPrior->type] );
       
-      mu = mu - scaleMin;
+      mu -= scaleMin;
       sigma /= scale;
       
       /* remove the Gaussian prior values and reset as scaled values */
@@ -2316,8 +2316,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
 	LALInferenceGetMinMaxPrior( runState->priorArgs, item->name, 
                                     (void *)&min, (void *)&max );
       
-        if( (*(REAL8 *) item->value)*scale < min*scale || 
-          (*(REAL8 *)item->value)*scale > max*scale ){
+        if( (*(REAL8 *) item->value) < min || (*(REAL8 *)item->value) > max ){
           return -DBL_MAX;
         }
         else prior -= log( (max - min) * scale );
@@ -2484,8 +2483,9 @@ void get_triaxial_pulsar_model( BinaryPulsarParams params,
   XLALDestroyREAL8Vector( dphi );
 }
 
+
 void get_pinsf_pulsar_model( BinaryPulsarParams params, 
-                                LALInferenceIFOData *data ){
+                             LALInferenceIFOData *data ){
   REAL8Vector *dphi = NULL;
   INT4 i = 0, length = 0;
   
@@ -2766,6 +2766,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
   }
   
 }
+
 
 void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
   INT4 i = 0, length;
@@ -3635,8 +3636,12 @@ void rescaleOutput( LALInferenceRunState *runState ){
       sprintf(scaleminname, "%s_scale_min", item->name);
       
       if( strcmp(item->name, "model") ){
-        scalefac = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, 
-                                          scalename );
+        scalefac = 
+          *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, 
+                                             scalename );
+        scalemin = 
+           *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, 
+                                              scaleminname );             
       }
       
       switch (item->type) {
