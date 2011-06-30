@@ -19,14 +19,11 @@
 
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu
-\file
-\ingroup stochastic
+\addtogroup ZeroPadAndFFT_c
 
 \brief Routines for zero-padding and Fourier transforming a time series.
 
-\heading{Description}
-
-As described in \ref StochasticCrossCorrelation.c, data
+As described in \ref StochasticCrossCorrelation_c, data
 streams to be cross-correlated need to be zero-padded to the same
 length as the optimal filter via
 
@@ -124,6 +121,7 @@ t\f$ times the discrete Fourier transform.</li>
 </li>
 </ul>
 
+@{
 */
 
 #include <lal/LALStdlib.h>
@@ -490,3 +488,5 @@ LALCZeroPadAndFFT(
   RETURN(status);
 
 } /* CZeroPadAndFFT() */
+
+/** @} */

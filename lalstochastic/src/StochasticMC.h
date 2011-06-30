@@ -20,8 +20,7 @@
 
 /**
 \author Tania Regimbau, Sukanta Bose, Jeff Noel
-\file
-\ingroup stochastic
+\addtogroup StochasticMC_h
 
 \brief Routine used by the stochastic DSO to do software injection.
 
@@ -30,6 +29,7 @@
 #include <lal/StochasticMC.h>
 \endcode
 
+@{
 */
 
 #ifndef _STOCHASTICMC_H
@@ -48,14 +48,16 @@ extern "C" {
   NRCSID( STOCHASTICMCH, "$Id$" );
 
 /**\name Error Codes */ /*@{*/
-#define STOCHASTICMCH_ENULLP        1
-#define STOCHASTICMCH_ENULLLEN      2
-#define STOCHASTICMCH_ENULLSEG      3
-#define STOCHASTICMCH_ENULLSRATE    4
-#define STOCHASTICMCH_ENEGFMIN      5
-#define STOCHASTICMCH_EMMEPOCH      6
-#define STOCHASTICMCH_EMMUNITS      7
+#define STOCHASTICMCH_ENULLP        1	/**< Null pointer */
+#define STOCHASTICMCH_ENULLLEN      2	/**< Negative or zero length for data member of time series */
+#define STOCHASTICMCH_ENULLSEG      3	/**< Negative or zero number of segment */
+#define STOCHASTICMCH_ENULLSRATE    4	/**< Negative or zero sampling rate */
+#define STOCHASTICMCH_ENEGFMIN      5	/**< negative start frequency */
+#define STOCHASTICMCH_EMMEPOCH      6	/**< Mismatch in epochs */
+#define STOCHASTICMCH_EMMUNITS      7	/**< Mismatch in units */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define STOCHASTICMCH_MSGENULLP       "Null pointer"
 #define STOCHASTICMCH_MSGENULLLEN     "Negative or zero length for data member of time series"
 #define STOCHASTICMCH_MSGENULLSEG      "Negative or zero number of segment"
@@ -63,7 +65,7 @@ extern "C" {
 #define STOCHASTICMCH_MSGENEGFMIN      "negative start frequency"
 #define STOCHASTICMCH_MSGEMMEPOCH      "Mismatch in epochs"
 #define STOCHASTICMCH_MSGEMMUNITS      "Mismatch in units"
-/*@}*/
+/** \endcond */
 
   typedef struct tagStochasticMCInput {
     CalibrationFunctions         calfuncs1;
@@ -106,6 +108,8 @@ extern "C" {
      SSSimStochBGOutput *MCoutput,
      StochasticMCInput  *MCinput,
      StochasticMCParams *MCparams);
+
+/** @} */
 
 #ifdef  __cplusplus
 }

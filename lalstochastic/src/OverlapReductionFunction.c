@@ -19,13 +19,10 @@
 
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu
-\file
-\ingroup stochastic
+\addtogroup OverlapReductionFunction_c
 
 \brief Calculates the values of the overlap reduction function for a pair
 of gravitational wave detectors.
-
-\heading{Description}
 
 <tt>LALOverlapReductionFunction()</tt> calculates the values of the overlap reduction:
 
@@ -133,12 +130,11 @@ j_2
 
 \f$j_0\f$, \f$j_1\f$, and \f$j_2\f$ are the standard spherical Bessel functions:
 
-\anchor stochastic_e_closed3 \f{eqnarray}{
-j_0(\alpha)&=&{\sin\alpha\over\alpha} ,\nonumber\\
-j_1(\alpha)&=&{\sin\alpha\over\alpha^2}-{\cos\alpha\over\alpha}\ ,
-\label{stochastic_e_closed3}\\
+\f{eqnarray*}{
+j_0(\alpha)&=&{\sin\alpha\over\alpha} ,\\
+j_1(\alpha)&=&{\sin\alpha\over\alpha^2}-{\cos\alpha\over\alpha}\ ,\\
 j_2(\alpha)&=&3\ {\sin\alpha\over\alpha^3}-3\ {\cos\alpha\over\alpha^2}
--{\sin\alpha\over\alpha}\ ,\nonumber
+-{\sin\alpha\over\alpha}\ ,
 \f}
 
 \f$\vec s\f$ is a unit vector pointing in the direction of
@@ -215,6 +211,8 @@ strncpy()
   which has units of strain.
 </li>
 </ul>
+
+@{
 */
 
 #include <lal/LALStdlib.h>
@@ -469,3 +467,5 @@ static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3])
 {
   return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
+
+/** @} */

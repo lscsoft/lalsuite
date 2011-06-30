@@ -20,7 +20,7 @@
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu
 \file
-\ingroup stochastic
+\ingroup OverlapReductionFunction_c
 
 \brief A program to test <tt>LALOverlapReductionFunction()</tt>.
 
@@ -49,7 +49,7 @@ the overlap reduction\eqref{stochastic_e_gamma} for a pair of gravitational
 wave detectors.
 
 First, it tests that the correct error codes
-(cf. \ref StochasticCrossCorrelation.h)
+(cf. \ref StochasticCrossCorrelation_h)
 are generated for the following error conditions (tests in
 \e italics are not performed if \c LAL_NDEBUG is set, as
 the corresponding checks in the code are made using the ASSERT macro):
@@ -138,6 +138,22 @@ LALCheckMemoryLeaks()
 
 */
 
+/**\name Error Codes */ /*@{*/
+#define OVERLAPREDUCTIONFUNCTIONTESTC_ENOM 0	/**< Nominal exit */
+#define OVERLAPREDUCTIONFUNCTIONTESTC_EARG 1	/**< Error parsing command-line arguments */
+#define OVERLAPREDUCTIONFUNCTIONTESTC_ECHK 2	/**< Error checking failed to catch bad data */
+#define OVERLAPREDUCTIONFUNCTIONTESTC_EFLS 3	/**< Incorrect answer for valid data */
+#define OVERLAPREDUCTIONFUNCTIONTESTC_EUSE 4	/**< Bad user-entered data */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define OVERLAPREDUCTIONFUNCTIONTESTC_MSGENOM "Nominal exit"
+#define OVERLAPREDUCTIONFUNCTIONTESTC_MSGEARG "Error parsing command-line arguments"
+#define OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK "Error checking failed to catch bad data"
+#define OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS "Incorrect answer for valid data"
+#define OVERLAPREDUCTIONFUNCTIONTESTC_MSGEUSE "Bad user-entered data"
+
+
 #include <lal/LALStdlib.h>
 
 #include <math.h>
@@ -189,19 +205,6 @@ Usage (const char *program, int exitflag);
 
 static void
 ParseOptions (int argc, char *argv[]);
-
-/**\name Error Codes */ /*@{*/
-#define OVERLAPREDUCTIONFUNCTIONTESTC_ENOM 0
-#define OVERLAPREDUCTIONFUNCTIONTESTC_EARG 1
-#define OVERLAPREDUCTIONFUNCTIONTESTC_ECHK 2
-#define OVERLAPREDUCTIONFUNCTIONTESTC_EFLS 3
-#define OVERLAPREDUCTIONFUNCTIONTESTC_EUSE 4
-#define OVERLAPREDUCTIONFUNCTIONTESTC_MSGENOM "Nominal exit"
-#define OVERLAPREDUCTIONFUNCTIONTESTC_MSGEARG "Error parsing command-line arguments"
-#define OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK "Error checking failed to catch bad data"
-#define OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS "Incorrect answer for valid data"
-#define OVERLAPREDUCTIONFUNCTIONTESTC_MSGEUSE "Bad user-entered data"
-/*@}*/
 
 int main( int argc, char *argv[] )
 {
@@ -713,3 +716,5 @@ ParseOptions (int argc, char *argv[])
 
   return;
 }
+
+/** \endcond */

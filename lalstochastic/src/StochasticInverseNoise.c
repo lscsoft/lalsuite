@@ -19,16 +19,13 @@
 
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu
-\file
-\ingroup stochastic
+\addtogroup StochasticInverseNoise_c
 
 \brief Calculates the values of the calibrated and half-calibrated inverse
 noise power spectra from the uncalibrated noise power spectrum and the
 frequency-domain instrument response function.
 
-\heading{Description}
-
-As described in \ref StochasticOptimalFilter.c,
+As described in \ref StochasticOptimalFilter_c,
 the most convenient combinations of the noise \f$P(f)\f$ (defined by \f$\langle h(f)h(f')^*\rangle=\delta(f-f')P(f)\f$) and
 instrument response
 \f$\widetilde{R}(f)=h(f)/h(f)\f$ to use in
@@ -88,6 +85,8 @@ strncpy()
     = 10^{18}\,\textrm{Hz}\,\textrm{strain}^{-1}\,\textrm{count}^{-1}
   \f}</li>
 </ul>
+
+@{
 */
 
 
@@ -98,14 +97,14 @@ strncpy()
 #include <lal/FrequencySeries.h>
 #include <string.h>
 
+/** \cond DONT_DOXYGEN */
 #define invNoise output->calibratedInverseNoisePSD
 #define hwInvNoise output->halfCalibratedInverseNoisePSD
 #define wNoise input->unCalibratedNoisePSD
 #define wFilter input->responseFunction
 
-
-
 NRCSID(STOCHASTICINVERSENOISEC, "$Id$");
+/** \endcond */
 
 void
 LALStochasticInverseNoiseCal(
@@ -522,3 +521,5 @@ LALStochasticInverseNoise(
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* LALStochasticInverseNoise() */
+
+/** @} */

@@ -17,15 +17,23 @@
 *  MA  02111-1307  USA
 */
 
-/**
+
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <math.h>
+#include <string.h>
+#include <lal/StochasticCrossCorrelation.h>
+
+NRCSID(XLALOVERLAPREDUCTIONFUNCTIONC, "$Id$");
+
+static void evaluateBessels(REAL4 rho[3], REAL4 alpha);
+static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
+
+/** \ingroup OverlapReductionFunction_c
 \author UTB Relativity Group; contact whelan@phys.utb.edu
-\file
-\ingroup stochastic
 
 \brief Calculates the values of the overlap reduction function for a pair
 of gravitational wave detectors.
-
-\heading{Description}
 
 XLALOverlapReductionFunction() calculates the values of the overlap reduction:
 
@@ -133,12 +141,12 @@ j_2
 
 \f$j_0\f$, \f$j_1\f$, and \f$j_2\f$ are the standard spherical Bessel functions:
 
-\anchor stochastic_e_closed3 \f{eqnarray}{
-j_0(\alpha)&=&{\sin\alpha\over\alpha} ,\nonumber\\
+\f{eqnarray*}{
+j_0(\alpha)&=&{\sin\alpha\over\alpha} ,\\
 j_1(\alpha)&=&{\sin\alpha\over\alpha^2}-{\cos\alpha\over\alpha}\ ,
-\label{stochastic_e_closed3}\\
+\\
 j_2(\alpha)&=&3\ {\sin\alpha\over\alpha^3}-3\ {\cos\alpha\over\alpha^2}
--{\sin\alpha\over\alpha}\ ,\nonumber
+-{\sin\alpha\over\alpha}\ ,
 \f}
 
 \f$\vec s\f$ is a unit vector pointing in the direction of
@@ -218,18 +226,6 @@ strncpy()
 </ul>
 
 */
-
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <math.h>
-#include <string.h>
-#include <lal/StochasticCrossCorrelation.h>
-
-NRCSID(XLALOVERLAPREDUCTIONFUNCTIONC, "$Id$");
-
-static void evaluateBessels(REAL4 rho[3], REAL4 alpha);
-static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
-
 
 void
 XLALOverlapReductionFunction(

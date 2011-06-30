@@ -20,7 +20,7 @@
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu
 \file
-\ingroup stochastic
+\ingroup ZeroPadAndFFT_c
 
 \brief Test suite for <tt>LALSZeroPadAndFFT()</tt>.
 
@@ -45,7 +45,7 @@ zero-pads and Fourier transforms a real time series of length \f$N\f$ to
 produce a complex frequency series of length \f$[M/2]+1\f$.
 
 First, it tests that the correct error codes
-(cf. \ref StochasticCrossCorrelation.h)
+(cf. \ref StochasticCrossCorrelation_h)
 are generated for the following error conditions (tests in
 \e italics are not performed if \c LAL_NDEBUG is set, as
 the corresponding checks in the code are made using the ASSERT macro):
@@ -87,8 +87,6 @@ If the \c filename arguments are present, it also reads a time
 series from a file, calls <tt>LALSZeroPadAndFFT()</tt>, and writes the
 results to the specified output file.
 
-\heading{Exit codes}
-
 \heading{Uses}
 \code
 LALSZeroPadAndFFT()
@@ -127,6 +125,22 @@ fabs()
 </ul>
 
 */
+
+/**\name Error Codes */ /*@{*/
+#define SZEROPADANDFFTTESTC_ENOM 0	/**< Nominal exit */
+#define SZEROPADANDFFTTESTC_EARG 1	/**< Error parsing command-line arguments */
+#define SZEROPADANDFFTTESTC_ECHK 2	/**< Error checking failed to catch bad data */
+#define SZEROPADANDFFTTESTC_EFLS 3	/**< Incorrect answer for valid data */
+#define SZEROPADANDFFTTESTC_EUSE 4	/**< Bad user-entered data */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define SZEROPADANDFFTTESTC_MSGENOM "Nominal exit"
+#define SZEROPADANDFFTTESTC_MSGEARG "Error parsing command-line arguments"
+#define SZEROPADANDFFTTESTC_MSGECHK "Error checking failed to catch bad data"
+#define SZEROPADANDFFTTESTC_MSGEFLS "Incorrect answer for valid data"
+#define SZEROPADANDFFTTESTC_MSGEUSE "Bad user-entered data"
+
 
 #include <lal/LALStdlib.h>
 #include <lal/Window.h>
@@ -188,20 +202,6 @@ Usage (const char *program, int exitflag);
 
 static void
 ParseOptions (int argc, char *argv[]);
-
-/**\name Error Codes */ /*@{*/
-#define SZEROPADANDFFTTESTC_ENOM 0
-#define SZEROPADANDFFTTESTC_EARG 1
-#define SZEROPADANDFFTTESTC_ECHK 2
-#define SZEROPADANDFFTTESTC_EFLS 3
-#define SZEROPADANDFFTTESTC_EUSE 4
-
-#define SZEROPADANDFFTTESTC_MSGENOM "Nominal exit"
-#define SZEROPADANDFFTTESTC_MSGEARG "Error parsing command-line arguments"
-#define SZEROPADANDFFTTESTC_MSGECHK "Error checking failed to catch bad data"
-#define SZEROPADANDFFTTESTC_MSGEFLS "Incorrect answer for valid data"
-#define SZEROPADANDFFTTESTC_MSGEUSE "Bad user-entered data"
-/*@}*/
 
 /*
  * ADDED -- JC
@@ -916,3 +916,5 @@ ParseOptions (int argc, char *argv[])
 
   return;
 }
+
+/** \endcond */

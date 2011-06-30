@@ -19,9 +19,9 @@
 
 
 /**
-\author Regimbau T.
 \file
-\ingroup stochastic
+\author Regimbau T.
+\ingroup AstroOmega_h
 
 \brief Compute the energy density spectrum of stochastic backgrounds produced
 by cosmological population of astrophysical sources.
@@ -162,7 +162,6 @@ int main ()
     printf("omega(%f)= %.2e\n", nu, test);}
    return 0;
   }
-
 
 \endcode
 

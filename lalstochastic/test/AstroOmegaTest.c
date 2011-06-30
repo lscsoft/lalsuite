@@ -21,7 +21,7 @@
 /**
 \author Regimbau Tania
 \file
-\ingroup stochastic
+\ingroup AstroOmega_h
 
 \brief This programs verifies that the routine LALAstroOmega() gives the expected results (computed separetly with mathematica) for a set of input parameters.
 

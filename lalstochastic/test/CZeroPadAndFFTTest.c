@@ -20,7 +20,7 @@
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu
 \file
-\ingroup stochastic
+\ingroup ZeroPadAndFFT_c
 
 \brief Test suite for <tt>LALCZeroPadAndFFT()</tt>.
 
@@ -45,7 +45,7 @@ zero-pads and Fourier transforms a complex time series of length \f$N\f$ to
 produce a complex frequency series of length \f$2N-1\f$.
 
 First, it tests that the correct error codes
-(cf. \ref StochasticCrossCorrelation.h)
+(cf. \ref StochasticCrossCorrelation_h)
 are generated for the following error conditions (tests in
 \e italics are not performed if \c LAL_NDEBUG is set, as
 the corresponding checks in the code are made using the ASSERT macro):
@@ -85,9 +85,6 @@ If the \c filename arguments are present, it also reads a time
 series from a file, calls <tt>LALCZeroPadAndFFT()</tt>, and writes the
 results to the specified output file.
 
-\heading{Exit codes}
-
-
 \heading{Uses}
 \code
 LALCZeroPadAndFFT()
@@ -123,9 +120,23 @@ fabs()
   the user-specified data will be silently ignored.</li>
 </ul>
 
-
-
 */
+
+/**\name Error Codes */ /*@{*/
+#define CZEROPADANDFFTTESTC_ENOM 0	/**< Nominal exit */
+#define CZEROPADANDFFTTESTC_EARG 1	/**< Error parsing command-line arguments */
+#define CZEROPADANDFFTTESTC_ECHK 2	/**< Error checking failed to catch bad data */
+#define CZEROPADANDFFTTESTC_EFLS 3	/**< Incorrect answer for valid data */
+#define CZEROPADANDFFTTESTC_EUSE 4	/**< Bad user-entered data */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define CZEROPADANDFFTTESTC_MSGENOM "Nominal exit"
+#define CZEROPADANDFFTTESTC_MSGEARG "Error parsing command-line arguments"
+#define CZEROPADANDFFTTESTC_MSGECHK "Error checking failed to catch bad data"
+#define CZEROPADANDFFTTESTC_MSGEFLS "Incorrect answer for valid data"
+#define CZEROPADANDFFTTESTC_MSGEUSE "Bad user-entered data"
+
 
 #include <lal/LALStdlib.h>
 #include <lal/Window.h>
@@ -189,20 +200,6 @@ Usage (const char *program, int exitflag);
 
 static void
 ParseOptions (int argc, char *argv[]);
-
-/**\name Error Codes */ /*@{*/
-#define CZEROPADANDFFTTESTC_ENOM 0
-#define CZEROPADANDFFTTESTC_EARG 1
-#define CZEROPADANDFFTTESTC_ECHK 2
-#define CZEROPADANDFFTTESTC_EFLS 3
-#define CZEROPADANDFFTTESTC_EUSE 4
-
-#define CZEROPADANDFFTTESTC_MSGENOM "Nominal exit"
-#define CZEROPADANDFFTTESTC_MSGEARG "Error parsing command-line arguments"
-#define CZEROPADANDFFTTESTC_MSGECHK "Error checking failed to catch bad data"
-#define CZEROPADANDFFTTESTC_MSGEFLS "Incorrect answer for valid data"
-#define CZEROPADANDFFTTESTC_MSGEUSE "Bad user-entered data"
-/*@}*/
 
 int
 main( int argc, char *argv[] )
@@ -867,3 +864,4 @@ ParseOptions (int argc, char *argv[])
 
   return;
 }
+/** \endcond */
