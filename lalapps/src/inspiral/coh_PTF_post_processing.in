@@ -98,7 +98,6 @@ def trig_cluster_setup(job, category, trigfile, outdir):
   node.add_var_opt('trig-file', trigfile)
   node.add_var_opt('output-dir', os.path.abspath(outdir))
 
-
   return node
 
 # =============================================================================
@@ -127,6 +126,21 @@ def injfind_setup(job, category, injdir, injrun, ifotag, grb,\
   node.set_category(category)
   node.add_var_opt('cache', trigcachefile)
   node.add_var_opt('inj-cache', injcachefile)
+
+  return node
+
+# =============================================================================
+# Write arguments for injcombiner job
+# =============================================================================
+
+def injcombiner_setup(job, category, outdir, fmcache, injpattern, inclination):
+
+  node = pipeline.CondorDAGNode(job)
+  node.set_category(category)
+  node.add_var_opt('inj-cache', fmcache)
+  node.add_var_opt('output-dir', outdir)
+  node.add_var_opt('inj-string', injpattern)
+  node.add_var_opt('max-inclination', inclination)
 
   return node
 
@@ -203,7 +217,7 @@ def parse_command_line():
 
   usage = """usage: %prog [options]
 
-lalapps_coh_PTF_post_processing will set up a DAG to run post processing for the coh_PTF triggered pipeline end to end. It will set up five sub DAGs for each of the following jobs:
+lalapps_coh_PTF_post_processing will set up a DAG to run post processing for the coh_PTF triggered pipeline end to end. It will set up six sub DAGs for each of the following jobs:
 
 1) trig_combiner: combines triggers from onoff coh_PTF_inspiral jobs and
    separates into 'ONSOURCE' 'OFF_TRIAL_X' etc
@@ -212,10 +226,12 @@ lalapps_coh_PTF_post_processing will set up a DAG to run post processing for the
 
 3) injfinder: tests found/missed status of all injections
 
-4) sbv_plotter: calculates signal-based-vetoes and final detection statistic,
+4) injcombiner: combines GRB injection sets based on inclination angles
+
+5) sbv_plotter: calculates signal-based-vetoes and final detection statistic,
    and plots a whole bunch of stuff
 
-5) efficiency: calculates inverse false-alarm rate (IFAR) for all injections
+6) efficiency: calculates inverse false-alarm rate (IFAR) for all injections
    and detection candidate events, and calculates search 90% efficiency
    distances. This is split into two submit files, separating onoff jobs and
    injection jobs.
@@ -261,7 +277,7 @@ The default is to run the full post processing pipeline, various steps can be sk
 
   parser.add_option("-T", "--skip-trig-combiner", action="store_true",\
                     default=False,\
-                    help="skip trip combiner, default: %default")
+                    help="skip trig combiner, default: %default")
 
   parser.add_option("-C", "--skip-clustering", action="store_true",\
                     default=False, help="skip clustering, default: %default")
@@ -269,6 +285,11 @@ The default is to run the full post processing pipeline, various steps can be sk
   parser.add_option("-I", "--skip-injfind", action="store_true",\
                     default=False,\
                     help="skip injection finding, default: %default")
+
+  parser.add_option("-J", "--skip-injcombiner", action="store_true",\
+                    default=False,\
+                    help="skip injection combining by inclination angle, "+\
+                         "default: %default")
 
   parser.add_option("-S", "--skip-sbv-plotter", action="store_true",\
                     default=False, help="skip SBV plotter, default: %default")
@@ -298,7 +319,8 @@ The default is to run the full post processing pipeline, various steps can be sk
 
 def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
          logdir=None, vetoDir=None,run_combiner=True, run_clustering=True,\
-         run_injfind=True, run_sbvplotter=True, run_efficiency=True):
+         run_injfind=True, run_sbvplotter=True, run_efficiency=True,\
+         run_injcombiner=True):
 
   # load ini files
   if verbose:
@@ -510,7 +532,48 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     parents = []
     DAGManNode[tag] = finalise_DAG(dag, parents)
     uberdag.add_node(DAGManNode[tag])
-    
+
+  # ===========
+  # injcombiner
+  # ===========
+
+  if run_injcombiner:
+
+    tag = 'injcombiner'
+    exe = cp.get('condor', tag)
+
+    # generate job
+    dag = init_subDAG(tag, outdir, logdir, cp)
+    job = init_job(exe, universe, tag, outdir, logdir, cp, minmemory)
+
+    # get necessary configuration variables
+    injpatterns = cp.get('%s-meta' % tag, 'injection-patterns').split(',')
+    inclinations = map(int, cp.get('%s-meta' % tag,\
+                                   'injection-inclinations').split(','))
+
+    # generate cache of FOUND/MISSED files
+    fmcachefile = '%s/%s-GRB%s_FOUNDMISSED-%s-%s.cache'\
+                  % (outdir, ifotag, grb, datastart, dataduration)
+    fmfiles = ['%s/%s-INJECTION_GRB%s_%s_FOUND-%s-%s.xml'\
+               % (outdir, ifotag, grb, injrun, datastart, dataduration)\
+               for injrun in injruns] + \
+              ['%s/%s-INJECTION_GRB%s_%s_MISSED-%s-%s.xml'\
+               % (outdir, ifotag, grb, injrun, datastart, dataduration)\
+               for injrun in injruns]
+    fmcache = lal.Cache.from_urls(fmfiles)
+    fmcache.tofile(open(fmcachefile, 'w'))
+
+    for injpattern in injpatterns:
+      for inc in inclinations:
+        node = injcombiner_setup(job, tag, outdir, fmcache, injpattern, inc)
+        dag.add_node(node)
+
+    # finalise DAG
+    parents = []
+    if run_injfind: parents.append(DAGManNode['injfinder'])
+    DAGManNode[tag] = finalise_DAG(dag, parents)
+    uberdag.add_node(DAGManNode[tag])
+
   # ===========
   # sbv_plotter
   # ===========
@@ -655,4 +718,5 @@ if __name__=='__main__':
        run_clustering=not opts.skip_clustering,\
        run_injfind=not opts.skip_injfind,\
        run_sbvplotter=not opts.skip_sbv_plotter,\
-       run_efficiency=not opts.skip_efficiency)
+       run_efficiency=not opts.skip_efficiency,\
+       run_injcombiner=not opts.skip_injcombiner)
