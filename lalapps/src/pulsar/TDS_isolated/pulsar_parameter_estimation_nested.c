@@ -31,6 +31,11 @@ UINT4 varyskypos = 0;
    whether the binary system barycentring needs recalculating */
 UINT4 varybinary = 0; 
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /* Usage format string */
 #define USAGE \
@@ -98,6 +103,8 @@ UINT4 varybinary = 0;
 " --fake-dt           the data sample rate (in seconds) for the fake data for\n\
                      each detector. If not specified this will default to\n\
                      60s.\n"\
+" --snr-scale         give a (multi-detector) SNR value to which you want to\n\
+                     scale the injection. This is 1 by default.\n"\
 "\n"
 
 
@@ -209,6 +216,9 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   runState.algorithm( &runState );
   printf("Done nested sampling algorithm\n");
 
+  /* get SNR of highest likelihood point */
+  get_loudest_snr( &runState );
+  
   /* re-read in output samples and rescale appropriately */
   rescaleOutput( &runState );
   
@@ -2085,7 +2095,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
   
     REAL8Vector *sumData = NULL;
     UINT4Vector *chunkLengths = NULL;
-
+    
     sumData = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "sumData" );
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams,
                                                  "chunkLength" );
@@ -2124,7 +2134,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
       
         /* sum over the model */
         sumModel += M.re*M.re + M.im*M.im;
-
+        
         /* sum over that data and model */
         sumDataModel += B.re*M.re + B.im*M.im;
       }
@@ -2132,9 +2142,9 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
       chiSquare = sumData->data[count];
       chiSquare -= 2.*sumDataModel;
       chiSquare += sumModel;
-
+      
       logliketmp -= chunkLength*log(chiSquare);
-    
+      
       count++;
     }
   
@@ -2457,7 +2467,7 @@ void get_triaxial_pulsar_model( BinaryPulsarParams params,
   /* the timeData vector within the LALIFOData structure contains the
      phase calculated using the initial (heterodyne) values of the phase
      parameters */
-  
+ 
   /* get difference in phase and perform extra heterodyne with it */
   if ( varyphase ){
     if ( (dphi = get_phase_model( params, data )) != NULL ){
@@ -2750,7 +2760,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
   for( i=0; i<length; i++ ){
     /* set the psi bin for the lookup table */
     psibin = (INT4)ROUND( ( pars.psi + LAL_PI/4. ) * ( psteps-1. )/LAL_PI_2 );
-    
+
     /* set the time bin for the lookup table */
     /* sidereal day in secs*/
     T = fmod( XLALGPSGetREAL8(&data->dataTimes->data[i]) - tstart,
@@ -2764,7 +2774,6 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
     data->compModelData->data->data[i].re = plus*Xpcosphi + cross*Xcsinphi;
     data->compModelData->data->data[i].im = plus*Xpsinphi - cross*Xccosphi;
   }
-  
 }
 
 
@@ -2887,12 +2896,16 @@ REAL8 noise_only_model( LALInferenceIFOData *data ){
 void injectSignal( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
   
-  CHAR *injectfile = NULL;
+  CHAR *injectfile = NULL, *snrfile = NULL;
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
   CHAR *modeltype = NULL;
   
   BinaryPulsarParams injpars;
+  
+  REAL8 snrmulti = 0., snrscale = 1.;
+  FILE *fpsnr = NULL; /* output file for SNRs */
+  INT4 ndets = 0;
   
   ppt = LALInferenceGetProcParamVal( commandLine, "--inject-file" );
   if( ppt ){
@@ -2913,13 +2926,89 @@ parameter file %s is wrong.\n", injectfile);
   else{
     return;
   }
+ 
+  ppt = LALInferenceGetProcParamVal( commandLine, "--scale-snr" );
+  if ( ppt ){
+    snrscale = atof( LALInferenceGetProcParamVal( commandLine, 
+                                                  "--scale-snr" )->value );
+  }
+ 
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
+  if( !ppt ){
+    fprintf(stderr, "Error... no output file specified!\n");
+    exit(0);
+  }
   
-  /* create signal to inject and add to the data */
+  snrfile = XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine,
+                                 "--outfile" )->value );
+  snrfile = XLALStringAppend( snrfile, "_SNR" );
+  
+  if( (fpsnr = fopen(snrfile, "w")) == NULL ){
+    fprintf(stderr, "Error... cannot open output SNR file!\n");
+    exit(0);
+  }
+        
+  /* create signal to inject */
+  while( data ){
+    /* for injection always attempt to include the signal phase model even if
+       the search is not going to be over phase */
+    UINT4 varyphasetmp = varyphase;
+    varyphase = 1;
+    
+    get_triaxial_pulsar_model( injpars, data );
+    
+    /* reset varyphase to its original value */
+    varyphase = varyphasetmp;
+    
+    data = data->next;
+  }
+  
+  /* reset data to head */
+  data = runState->data;
+  
+  /* calculate SNRs */
   while ( data ){
+    REAL8 snrval = calculate_time_domain_snr( data );
+    
+    ndets++;
+    
+    snrmulti += SQUARE(snrval);
+    
+    fprintf(fpsnr, "%le\t", snrval);
+                             
+    data = data->next; 
+  }
+  
+  /* get overall multi-detector SNR */
+  snrmulti = sqrt( snrmulti );
+  
+  /* only need to print out multi-detector snr if the were multiple detectors */
+  if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
+  else fprintf(fpsnr, "\n");
+  
+  fclose( fpsnr );
+  
+  /* scale scale factor to rescale the signal to the required SNR */
+  if ( snrscale != 1. ){
+    if ( injpars.h0 == 0. ){
+      fprintf(stderr, "Error... cannot rescale signal to an SNR of %lf as the \
+injected signal amplitude is zero!\n", snrscale);
+      exit(0);
+    }
+    
+    snrscale /= snrmulti;
+  }
+  
+  /* reset data to head */
+  data = runState->data;
+  
+  /* add signal to data and scale SNR if necessary */
+  while( data ){
     FILE *fp = NULL, *fpso = NULL;
     ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal( commandLine,
                                                             "--inject-output" );
-    
+    INT4 i = 0, length = data->dataTimes->length;                              
+                        
     /* check whether to output the data */
     if ( ppt2 ){
       /* add the site prefix to the start of the output name */
@@ -2978,11 +3067,15 @@ injection\n", signalonly);
     
     /* add the signal to the data */
     for ( i = 0; i < length; i++ ){
+      /* rescale signal data to required SNR */
+      data->compModelData->data->data[i].re *= snrscale;
+      data->compModelData->data->data[i].im *= snrscale;
+      
       data->compTimeData->data->data[i].re +=
         data->compModelData->data->data[i].re;
       data->compTimeData->data->data[i].im +=
         data->compModelData->data->data[i].im;
-      
+        
       /* write out injection to file */
       if( fp != NULL && fpso != NULL ){
         /* print out data - time stamp, real and imaginary parts of data
@@ -3006,11 +3099,9 @@ injection\n", signalonly);
     if ( fp != NULL ) fclose( fp );
     if ( fpso != NULL ) fclose( fpso );
     
-    /* reset varyphase to its original value */
-    varyphase = varyphasetmp;
-    
     data = data->next; 
   }
+  
 }
 
 /*-------------------- END OF SOFTWARE INJECTION FUNCTIONS -------------------*/
@@ -3731,6 +3822,99 @@ INT4 recognised_parameter( CHAR *parname ){
   return 0;
 }
 
+
+REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
+  REAL8 snrval = 0.;
+  COMPLEX16 snrc = {0., 0.}, vari = {0., 0.};
+                                                   
+  INT4 i = 0, length = data->dataTimes->length;
+   
+  /* add the signal to the data */
+  for ( i = 0; i < length; i++ ){
+    /* calculate data variance prior to signal injection */
+    vari.re += SQUARE(data->compTimeData->data->data[i].re);
+    vari.im += SQUARE(data->compTimeData->data->data[i].im);
+      
+    /* calculate signal power */
+    snrc.re += SQUARE(data->compModelData->data->data[i].re);
+    snrc.im += SQUARE(data->compModelData->data->data[i].im);
+  }
+    
+  vari.re /= (REAL8)(length - 1.);
+  vari.im /= (REAL8)(length - 1.);
+  
+  snrval = sqrt( (snrc.re / vari.re) + (snrc.im / vari.im) );
+   
+  return snrval;
+}
+
+
+void get_loudest_snr( LALInferenceRunState *runState ){
+  REAL8 lMax = 0.;
+  INT4 ndets = 0;
+  INT4 Nlive = *(INT4 *)LALInferenceGetVariable( runState->algorithmParams,
+                                                 "Nlive" );
+  REAL8 snrmulti = 0.;
+  
+  CHAR *snrfile = NULL;
+  FILE *fpsnr = NULL;
+  
+  ProcessParamsTable *ppt;
+  ProcessParamsTable *commandLine = runState->commandLine;
+  
+  LALInferenceVariables *loudestParams = NULL;
+  LALInferenceIFOData *data;
+  
+  loudestParams = calloc( 1, sizeof(LALInferenceVariables) );
+ 
+  /* max likelihood point should have been sorted to be the final value */
+  LALInferenceCopyVariables( runState->livePoints[Nlive-1], loudestParams );
+  
+  lMax = runState->likelihood( loudestParams, runState->data,
+                               runState->template );
+  
+  LALFree( loudestParams );
+  
+  /* setup output file */
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
+  if( !ppt ){
+    fprintf(stderr, "Error... no output file specified!\n");
+    exit(0);
+  }
+  
+  snrfile = XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine,
+                                 "--outfile" )->value );
+  snrfile = XLALStringAppend( snrfile, "_SNR" );
+  
+  /* append to previous injection SNR file if it exists */
+  if( (fpsnr = fopen(snrfile, "a")) == NULL ){
+    fprintf(stderr, "Error... cannot open output SNR file!\n");
+    exit(0);
+  }
+  
+  /* get SNR of loudest point and print out to file */
+  data = runState->data;
+  
+  while( data ){
+    REAL8 snrval = calculate_time_domain_snr( data );
+    
+    ndets++;
+    
+    snrmulti += SQUARE( snrval );
+    
+    /* print out SNR value */
+    fprintf(fpsnr, "%le\t", snrval);
+    
+    data = data->next;
+  }
+ 
+  /* print out multi-detector SNR value */
+  if ( ndets > 1 ) fprintf(fpsnr, "%le\n", sqrt(snrmulti));
+  else fprintf(fpsnr, "\n");
+  
+  fclose( fpsnr );
+}
+
 /*----------------------- END OF HELPER FUNCTIONS ----------------------------*/
 
 /******************************************************************************/
@@ -3887,7 +4071,8 @@ void gridOutput( LALInferenceRunState *runState ){
 
 REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
                                     LALInferenceIFOData *data,
-                                    LALInferenceTemplateFunction *get_model ){
+                                    LALInferenceTemplateFunction UNUSED
+                                      *get_model ){
   REAL8 loglike = 0.; /* the log likelihood */
   
   REAL8 like_mean = 0.5;

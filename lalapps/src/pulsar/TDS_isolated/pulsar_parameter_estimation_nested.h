@@ -201,6 +201,10 @@ INT4 count_csv( CHAR *csvline );
 
 INT4 recognised_parameter( CHAR *parname );
 
+REAL8 calculate_time_domain_snr( LALInferenceIFOData *data );
+
+void get_loudest_snr( LALInferenceRunState *runState );
+
 /* testing functions */
 void gridOutput( LALInferenceRunState *runState );
 
