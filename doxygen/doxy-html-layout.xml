@@ -133,15 +133,15 @@
     <detaileddescription title=""/>
     <groupgraph visible="$GROUP_GRAPHS"/>
     <memberdecl>
+      <nestedgroups visible="yes" title=""/>
+      <functions title="Prototypes"/>
       <classes visible="yes" title=""/>
       <namespaces visible="yes" title=""/>
       <dirs visible="yes" title=""/>
-      <nestedgroups visible="yes" title=""/>
       <typedefs title=""/>
       <enums title=""/>
       <enumvalues title=""/>
       <defines title=""/>
-      <functions title=""/>
       <files visible="yes" title=""/>
       <variables title=""/>
       <signals title=""/>
