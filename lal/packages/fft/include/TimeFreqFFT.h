@@ -39,8 +39,7 @@ extern "C" {
 NRCSID( TIMEFREQFFTH, "$Id$" );
 
 /**
- * \defgroup TimeFreqFFT_h TimeFreqFFT_h
- * \ingroup fft
+ * \addtogroup TimeFreqFFT_h
  *
  * \brief Performs real-to-complex, complex-to-real FFTs and average power spectrum estimation.
  *

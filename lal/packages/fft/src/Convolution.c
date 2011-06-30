@@ -33,8 +33,7 @@
 NRCSID (CONVOLUTIONC,"$Id$");
 
 /**
- * \defgroup Convolution Convolution
- * \ingroup fft
+ * \addtogroup Convolution
  * \brief Convolutions of time-series
  *
  * @{

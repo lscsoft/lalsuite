@@ -49,9 +49,7 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
 
 /**
  *
- * \defgroup RealFFT_h RealFFT_h
- * \ingroup fft
- *
+ * \addtogroup RealFFT_h
  * \brief Performs real-to-complex and complex-to-real FFTs.
  *
  * \heading{Synopsis}

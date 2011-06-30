@@ -41,8 +41,7 @@ extern "C" {
 NRCSID( COMPLEXFFTH, "$Id$" );
 
 /**
- * \defgroup ComplexFFT_h ComplexFFT_h
- * \ingroup fft
+ * \addtogroup ComplexFFT_h
  *
  * \brief Performs complex-to-complex FFTs.
  *
