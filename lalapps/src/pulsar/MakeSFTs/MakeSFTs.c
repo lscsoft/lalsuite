@@ -614,7 +614,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->useSingle = 0;        /* 11/19/05 gam; default is to use double precision, not single. */
   CLA->frameStructType=NULL; /* 01/10/07 gam */
   CLA->PSSCleaning = 0;	     /* 1=YES and 0=NO*/
-  CLA->PSSCleanHPf = 0.0;    /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES.*/
+  CLA->PSSCleanHPf = 100.0;  /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES. defaults to 100Hz */
 
   strcat(allargs, "Command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
   for(i = 0; i < argc; i++)
