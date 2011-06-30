@@ -1803,16 +1803,16 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
               IFOdata->timeModelhCross->data->data[i]= a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
             }
           }
-				}else if(waveform.h && approximant == SpinTaylorFrameless){
-          for (i=0; i<IFOdata->timeData->data->length; i++){
-            if((i+1)>=((unsigned long int)(waveform.h->data->length) - 1)){
-              IFOdata->timeModelhPlus->data->data[i] = 0;
-              IFOdata->timeModelhCross->data->data[i] = 0;		
-            }else{
-              IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[i];
-              IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[i+(int)(waveform.h->data->length)];
-            }
-          }
+				//}else if(waveform.h && approximant == SpinTaylorFrameless){
+        //  for (i=0; i<IFOdata->timeData->data->length; i++){
+        //    if((i+1)>=((unsigned long int)(waveform.h->data->length) - 1)){
+        //      IFOdata->timeModelhPlus->data->data[i] = 0;
+        //      IFOdata->timeModelhCross->data->data[i] = 0;		
+        //    }else{
+        //      IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[i];
+        //      IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[i+(int)(waveform.h->data->length)];
+        //    }
+        //  }
         }else if(waveform.h){
           for (i=0; i<IFOdata->timeData->data->length; i++){
             if((i+1)>=((unsigned long int)(waveform.h->data->length) - 1)){
