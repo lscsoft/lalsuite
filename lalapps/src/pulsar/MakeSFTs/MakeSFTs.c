@@ -1,5 +1,6 @@
 /*
 *  Copyright (C) 2007 Gregory Mendell
+*  Copyright (C) 2010,2011 Bernd Machenschalk
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -20,7 +21,7 @@
 /**
  * \file
  * \ingroup pulsarApps
- * \author Gregory Mendell, Xavier Siemens, Bruce Allen
+ * \author Gregory Mendell, Xavier Siemens, Bruce Allen, Bernd Machenschalk
  * \brief generate SFTs
  */
 
