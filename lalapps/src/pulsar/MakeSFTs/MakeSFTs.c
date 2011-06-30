@@ -448,7 +448,8 @@ void printExampleVersion2SFTDataGoingToFile(struct CommandLineArgsTag CLA, SFTty
 
 #ifdef PSS_ENABLED
 /* debug function */
-int PrintREAL4ArrayToFile(char*name,REAL4*array,UINT4 length) {
+int PrintREAL4ArrayToFile(const char*name, REAL4*array, UINT4 length);
+int PrintREAL4ArrayToFile(const char*name, REAL4*array, UINT4 length) {
   UINT4 i;
   FILE*fp=fopen(name,"w");
   if(!fp) {
