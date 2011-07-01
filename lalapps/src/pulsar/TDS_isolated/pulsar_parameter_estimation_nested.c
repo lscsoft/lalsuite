@@ -1540,9 +1540,9 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     
     /* get chunk lengths of data */
     
-    chunkLength = get_chunk_lengths( data, chunkMax );
+    /* chunkLength = get_chunk_lengths( data, chunkMax ); */
     
-    /* chunkLength = chop_n_merge( data, chunkMin, chunkMax ); */
+    chunkLength = chop_n_merge( data, chunkMin, chunkMax );
     
     LALInferenceAddVariable( data->dataParams, "chunkLength", &chunkLength, 
                              LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_FIXED );

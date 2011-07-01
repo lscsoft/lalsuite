@@ -309,7 +309,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
                                         (void *)cvm);
                 }
 	}
-	while(iter<Nlive ||  dZ> TOLERANCE);
+	while( iter<Nlive ||  dZ> TOLERANCE );
         
 
 	/* Sort the remaining points (not essential, just nice)*/
