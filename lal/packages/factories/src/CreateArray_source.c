@@ -1,20 +1,22 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
-ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
-define(`ATYPE',`format(`%sArray',TYPE)')
-define(`FUNC',`format(`LAL%sCreateArray',TYPECODE)')
-ifelse( TYPECODE, `', `define(`XFUNC',`XLALCreateArray')', `define(`XFUNC',`format(`XLALCreate%s',ATYPE)')' )
-ifelse( TYPECODE, `', `define(`XFUNCL',`XLALCreateArrayL')', `define(`XFUNCL',`format(`XLALCreate%sL',ATYPE)')' )
-ifelse( TYPECODE, `', `define(`XFUNCV',`XLALCreateArrayV')', `define(`XFUNCV',`format(`XLALCreate%sV',ATYPE)')' )
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define ATYPE CONCAT2(TYPE,Array)
+
+#ifdef TYPECODE
+#define FUNC CONCAT3(LAL,TYPECODE,CreateArray)
+#define XFUNC CONCAT2(XLALCreate,ATYPE)
+#define XFUNCL CONCAT3(XLALCreate,ATYPE,L)
+#define XFUNCV CONCAT3(XLALCreate,ATYPE,V)
+#else
+#define FUNC LALCreateArray
+#define XFUNC XLALCreateArray
+#define XFUNCL XLALCreateArrayL
+#define XFUNCV XLALCreateArrayV
+#endif
 
 ATYPE * XFUNCL ( UINT4 ndim, ... )
 {
@@ -25,9 +27,9 @@ ATYPE * XFUNCL ( UINT4 ndim, ... )
   UINT4 dim;
 
   if ( ! ndim )
-    XLAL_ERROR_NULL( "XFUNCL", XLAL_EBADLEN );
+    XLAL_ERROR_NULL( STRING(XFUNCL), XLAL_EBADLEN );
   if ( ndim > maxdim )
-    XLAL_ERROR_NULL( "XFUNCL", XLAL_EINVAL );
+    XLAL_ERROR_NULL( STRING(XFUNCL), XLAL_EINVAL );
 
   va_start( ap, ndim );
   for ( dim = 0; dim < ndim; ++dim )
@@ -36,7 +38,7 @@ ATYPE * XFUNCL ( UINT4 ndim, ... )
 
   arr = XFUNCV ( ndim, dims );
   if ( ! arr )
-    XLAL_ERROR_NULL( "XFUNCL", XLAL_EFUNC );
+    XLAL_ERROR_NULL( STRING(XFUNCL), XLAL_EFUNC );
   return arr;
 }
 
@@ -46,16 +48,16 @@ ATYPE * XFUNCV ( UINT4 ndim, UINT4 *dims )
   UINT4Vector dimLength;
 
   if ( ! ndim )
-    XLAL_ERROR_NULL( "XFUNCV", XLAL_EBADLEN );
+    XLAL_ERROR_NULL( STRING(XFUNCV), XLAL_EBADLEN );
   if ( ! dims )
-    XLAL_ERROR_NULL( "XFUNCV", XLAL_EFAULT );
+    XLAL_ERROR_NULL( STRING(XFUNCV), XLAL_EFAULT );
 
   dimLength.length = ndim;
   dimLength.data   = dims;
 
   arr = XFUNC ( &dimLength );
   if ( ! arr )
-    XLAL_ERROR_NULL( "XFUNCV", XLAL_EFUNC );
+    XLAL_ERROR_NULL( STRING(XFUNCV), XLAL_EFUNC );
   return arr;
 }
 
@@ -68,23 +70,23 @@ ATYPE * XFUNC ( UINT4Vector *dimLength )
   UINT4 dim;
 
   if ( ! dimLength )
-    XLAL_ERROR_NULL( "XFUNC", XLAL_EFAULT );
+    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EFAULT );
   if ( ! dimLength->length )
-    XLAL_ERROR_NULL( "XFUNC", XLAL_EBADLEN );
+    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EBADLEN );
   if ( ! dimLength->data )
-    XLAL_ERROR_NULL( "XFUNC", XLAL_EINVAL );
+    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EINVAL );
 
   ndim = dimLength->length;
   for ( dim = 0; dim < ndim; ++dim )
     size *= dimLength->data[dim];
 
   if ( ! size )
-    XLAL_ERROR_NULL( "XFUNC", XLAL_EBADLEN );
+    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EBADLEN );
 
   /* create array */
   arr = LALMalloc( sizeof( *arr ) );
   if ( ! arr )
-    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_ENOMEM );
 
   /* create array dimensions */
   arr->dimLength = XLALCreateUINT4Vector( ndim );
@@ -114,7 +116,7 @@ ATYPE * XFUNC ( UINT4Vector *dimLength )
 
 void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength )
 {
-  INITSTATUS (status, "FUNC", ARRAYFACTORIESC);
+  INITSTATUS (status, STRING(FUNC), ARRAYFACTORIESC);
 
   /* make sure arguments are sane */
 
@@ -151,3 +153,8 @@ void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength )
   RETURN (status);
 }
 
+#undef ATYPE
+#undef FUNC
+#undef XFUNC
+#undef XFUNCL
+#undef XFUNCV

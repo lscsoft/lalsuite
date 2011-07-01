@@ -1,24 +1,26 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
-ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
-ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
-define(`ATYPE',`format(`%sArray',TYPE)')
-define(`FUNC',`format(`LAL%sResizeArray',TYPECODE)')
-ifelse( TYPECODE, `', `define(`XFUNC',`XLALResizeArray')', `define(`XFUNC',`format(`XLALResize%s',ATYPE)')' )
-ifelse( TYPECODE, `', `define(`XFUNCL',`XLALResizeArrayL')', `define(`XFUNCL',`format(`XLALResize%sL',ATYPE)')' )
-ifelse( TYPECODE, `', `define(`XFUNCV',`XLALResizeArrayV')', `define(`XFUNCV',`format(`XLALResize%sV',ATYPE)')' )
-ifelse( TYPECODE, `', `define(`XCFUNC',`XLALCreateArray')', `define(`XCFUNC',`format(`XLALCreate%s',ATYPE)')' )
-ifelse( TYPECODE, `', `define(`XDFUNC',`XLALDestroyArray')', `define(`XDFUNC',`format(`XLALDestroy%s',ATYPE)')' )
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
 
+#define ATYPE CONCAT2(TYPE,Array)
+
+#ifdef TYPECODE
+#define FUNC CONCAT3(LAL,TYPECODE,ResizeArray)
+#define XFUNC CONCAT2(XLALResize,ATYPE)
+#define XFUNCL CONCAT3(XLALResize,ATYPE,L)
+#define XFUNCV CONCAT3(XLALResize,ATYPE,V)
+#define XCFUNC CONCAT2(XLALCreate,ATYPE)
+#define XDFUNC CONCAT2(XLALDestroy,ATYPE)
+#else
+#define FUNC LALResizeArray
+#define XFUNC XLALResizeArray
+#define XFUNCL XLALResizeArrayL
+#define XFUNCV XLALResizeArrayV
+#define XCFUNC XLALCreateArray
+#define XDFUNC XLALDestroyArray
+#endif
 
 ATYPE * XFUNCL ( ATYPE *array, UINT4 ndim, ... )
 {
@@ -33,7 +35,7 @@ ATYPE * XFUNCL ( ATYPE *array, UINT4 ndim, ... )
     return NULL;
   }
   if ( ndim > maxdim )
-    XLAL_ERROR_NULL( "XFUNCL", XLAL_EINVAL );
+    XLAL_ERROR_NULL( STRING(XFUNCL), XLAL_EINVAL );
 
   va_start( ap, ndim );
   for ( dim = 0; dim < ndim; ++dim )
@@ -53,7 +55,7 @@ ATYPE * XFUNCV ( ATYPE *array, UINT4 ndim, UINT4 *dims )
     return NULL;
   }
   if ( ! dims )
-    XLAL_ERROR_NULL( "XFUNCV", XLAL_EINVAL );
+    XLAL_ERROR_NULL( STRING(XFUNCV), XLAL_EINVAL );
 
   dimLength.length = ndim;
   dimLength.data   = dims;
@@ -75,23 +77,23 @@ ATYPE * XFUNC ( ATYPE *array, UINT4Vector *dimLength )
     return NULL;
   }
   if ( ! dimLength->length )
-    XLAL_ERROR_NULL( "XFUNC", XLAL_EBADLEN );
+    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EBADLEN );
   if ( ! dimLength->data )
-    XLAL_ERROR_NULL( "XFUNC", XLAL_EINVAL );
+    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EINVAL );
 
   ndim = dimLength->length;
   for ( dim = 0; dim < ndim; ++dim )
     size *= dimLength->data[dim];
 
   if ( ! size )
-    XLAL_ERROR_NULL( "XFUNC", XLAL_EBADLEN );
+    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EBADLEN );
 
   /* resize array->dimLength vector if needed */
   if ( array->dimLength->length != ndim )
   {
     array->dimLength = XLALResizeUINT4Vector( array->dimLength, ndim );
     if ( ! array->dimLength )
-      XLAL_ERROR_NULL( "XFUNC", XLAL_EFUNC );
+      XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EFUNC );
   }
 
   /* copy dimension lengths */
@@ -101,7 +103,7 @@ ATYPE * XFUNC ( ATYPE *array, UINT4Vector *dimLength )
   /* reallocate data storage */
   array->data = LALRealloc( array->data, size * sizeof( *array->data ) );
   if ( ! array->data )
-    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_ENOMEM );
 
   return array;
 }
@@ -111,7 +113,7 @@ void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength )
 {
   ATYPE *tmparr = NULL;
 
-  INITSTATUS (status, "FUNC", ARRAYFACTORIESC);
+  INITSTATUS (status, STRING(FUNC), ARRAYFACTORIESC);
 
   ASSERT ( array != NULL, status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR );
 
@@ -151,3 +153,11 @@ void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength )
 
   RETURN (status);
 }
+
+#undef ATYPE
+#undef FUNC
+#undef XFUNC
+#undef XFUNCL
+#undef XFUNCV
+#undef XCFUNC
+#undef XDFUNC

@@ -84,7 +84,6 @@ packages/date/test/TestStrToGPS
 packages/date/test/TestUTCtoGPS
 packages/factories/include/AVFactories.h
 packages/factories/include/SeqFactories.h
-packages/factories/src/ArrayFactories.c
 packages/factories/src/ArraySequenceFactories.c
 packages/factories/src/VectorFactories.c
 packages/factories/src/VectorSequenceFactories.c
