@@ -188,8 +188,6 @@ XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
 				integrator->returncode = status;
 				break;
 			}
-    } else if (!integrator->stopontestonly && t >= tend) {
-			break;
 		}
 
 		/* ready to try stepping! */
