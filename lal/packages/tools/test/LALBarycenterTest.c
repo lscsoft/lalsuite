@@ -84,7 +84,6 @@ INT4 t1998 = 630720013-730*86400-1;/* gps at Jan 1,1998 00:00:00 UTC*/
 int
 main( void )
 {
-  const char *fn = __func__;
   static LALStatus stat;
 
   INT4 i,k; /*dummy indices*/
@@ -268,7 +267,7 @@ sensible in degrees, but radians)*/
 
     XLALBarycenterEarth ( &earth_xlal, &tGPS, edat);
     if ( xlalErrno ) {
-      XLALPrintError ("%s: XLALBarycenterEarth() failed with xlalErrno = %d\n", fn, xlalErrno );
+      XLALPrintError ("%s: XLALBarycenterEarth() failed with xlalErrno = %d\n", __func__, xlalErrno );
       return XLAL_EFAILED;
     }
 
@@ -296,7 +295,7 @@ sensible in degrees, but radians)*/
       }
 
       if ( XLALBarycenter ( &emit_xlal, &baryinput, &earth_xlal ) != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: XLALBarycenter() failed with xlalErrno = %d\n", fn, xlalErrno );
+        XLALPrintError ("%s: XLALBarycenter() failed with xlalErrno = %d\n", __func__, xlalErrno );
         return XLAL_EFAILED;
       }
 
@@ -339,34 +338,32 @@ sensible in degrees, but radians)*/
 int
 compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
 {
-  const char *fn = __func__;
-
   if ( !edat1 || !edat2 ) {
-    XLALPrintError ("%s: invalid NULL input edat1=%p, edat2=%p\n", fn, edat1, edat2 );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input edat1=%p, edat2=%p\n", __func__, edat1, edat2 );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   if ( edat1->nentriesE != edat2->nentriesE ) {
-    XLALPrintError ("%s: different nentriesE (%d != %d)\n", fn, edat1->nentriesE, edat2->nentriesE );
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: different nentriesE (%d != %d)\n", __func__, edat1->nentriesE, edat2->nentriesE );
+    XLAL_ERROR ( XLAL_EFAILED );
   }
   if ( edat1->nentriesS != edat2->nentriesS ) {
-    XLALPrintError ("%s: different nentriesS (%d != %d)\n", fn, edat1->nentriesS, edat2->nentriesS );
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: different nentriesS (%d != %d)\n", __func__, edat1->nentriesS, edat2->nentriesS );
+    XLAL_ERROR ( XLAL_EFAILED );
   }
   if ( edat1->dtEtable != edat2->dtEtable ) {
-    XLALPrintError ("%s: different dtEtable (%g != %g)\n", fn, edat1->dtEtable, edat2->dtEtable );
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: different dtEtable (%g != %g)\n", __func__, edat1->dtEtable, edat2->dtEtable );
+    XLAL_ERROR ( XLAL_EFAILED );
   }
   if ( edat1->dtStable != edat2->dtStable ) {
-    XLALPrintError ("%s: different dtStable (%g != %g)\n", fn, edat1->dtStable, edat2->dtStable );
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: different dtStable (%g != %g)\n", __func__, edat1->dtStable, edat2->dtStable );
+    XLAL_ERROR ( XLAL_EFAILED );
   }
 
   /* compare earth ephemeris data */
   if ( !edat1->ephemE || !edat2->ephemE ) {
-    XLALPrintError ("%s: invalid NULL ephemE pointer edat1 (%p), edat2 (%p)\n", fn, edat1->ephemE, edat2->ephemE );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL ephemE pointer edat1 (%p), edat2 (%p)\n", __func__, edat1->ephemE, edat2->ephemE );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   INT4 i;
   for ( i=0; i < edat1->nentriesE; i ++ )
@@ -386,7 +383,7 @@ compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
            edat1->ephemE[i].acc[2] != edat2->ephemE[i].acc[2]
            )
         {
-          XLALPrintError ("%s: Inconsistent earth-entry %d:\n", fn, i );
+          XLALPrintError ("%s: Inconsistent earth-entry %d:\n", __func__, i );
           XLALPrintError ("    edat1 = %g, (%g, %g, %g), (%g, %g, %g), (%g, %g, %g)\n",
                           edat1->ephemE[i].gps,
                           edat1->ephemE[i].pos[0], edat1->ephemE[i].pos[1], edat1->ephemE[i].pos[2],
@@ -399,15 +396,15 @@ compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
                           edat2->ephemE[i].vel[0], edat2->ephemE[i].vel[1], edat2->ephemE[i].vel[2],
                           edat2->ephemE[i].acc[0], edat2->ephemE[i].acc[1], edat2->ephemE[i].acc[2]
                           );
-          XLAL_ERROR ( fn, XLAL_EFAILED );
+          XLAL_ERROR ( XLAL_EFAILED );
         } /* if difference in data-set i */
 
     } /* for i < nentriesE */
 
   /* compare sun ephemeris data */
   if ( !edat1->ephemS || !edat2->ephemS ) {
-    XLALPrintError ("%s: invalid NULL ephemS pointer edat1 (%p), edat2 (%p)\n", fn, edat1->ephemS, edat2->ephemS );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL ephemS pointer edat1 (%p), edat2 (%p)\n", __func__, edat1->ephemS, edat2->ephemS );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   for ( i=0; i < edat1->nentriesS; i ++ )
     {
@@ -426,7 +423,7 @@ compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
            edat1->ephemS[i].acc[2] != edat2->ephemS[i].acc[2]
            )
         {
-          XLALPrintError ("%s: Inconsistent sun-entry %d:\n", fn, i );
+          XLALPrintError ("%s: Inconsistent sun-entry %d:\n", __func__, i );
           XLALPrintError ("    edat1 = %g, (%g, %g, %g), (%g, %g, %g), (%g, %g, %g)\n",
                           edat1->ephemS[i].gps,
                           edat1->ephemS[i].pos[0], edat1->ephemS[i].pos[1], edat1->ephemS[i].pos[2],
@@ -439,7 +436,7 @@ compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
                           edat2->ephemS[i].vel[0], edat2->ephemS[i].vel[1], edat2->ephemS[i].vel[2],
                           edat2->ephemS[i].acc[0], edat2->ephemS[i].acc[1], edat2->ephemS[i].acc[2]
                           );
-          XLAL_ERROR ( fn, XLAL_EFAILED );
+          XLAL_ERROR ( XLAL_EFAILED );
         } /* if difference in data-set i */
 
     } /* for i < nentriesE */

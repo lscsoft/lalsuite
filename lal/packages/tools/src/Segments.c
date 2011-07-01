@@ -93,26 +93,25 @@ XLALSegSet( LALSeg *seg, const LIGOTimeGPS *start, const LIGOTimeGPS *end,
 	    const INT4 id )
 
 {
-  static const char func[] = "XLALSegSet";
 
   /* Make sure a non-null pointer was passed for the segment to be set */
   if ( ! seg ) {
-    XLALPrintError( "NULL LALSeg pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LALSeg pointer passed to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   /* Make sure non-null pointers were passed for the GPS times */
   if ( ! start || ! end ) {
-    XLALPrintError( "NULL LIGOTimeGPS pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LIGOTimeGPS pointer passed to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   /* Check that segment end time is equal to or later than start time */
   if ( XLALGPSCmp(start,end) > 0 ) {
     XLALPrintError( "Inconsistent times passed to %s (%d.%09d > %d.%09d)\n",
-        func, start->gpsSeconds, start->gpsNanoSeconds,
+        __func__, start->gpsSeconds, start->gpsNanoSeconds,
         end->gpsSeconds, end->gpsNanoSeconds );
-    XLAL_ERROR( func, XLAL_EDOM );
+    XLAL_ERROR( XLAL_EDOM );
   }
 
   /* Store the times and the id */
@@ -138,21 +137,20 @@ XLALSegCreate( const LIGOTimeGPS *start, const LIGOTimeGPS *end,
 	       const INT4 id )
 
 {
-  static const char func[] = "XLALSegCreate";
   LALSeg *segptr;
 
   /* Make sure non-null pointers were passed for the GPS times */
   if ( ! start || ! end ) {
-    XLALPrintError( "NULL LIGOTimeGPS pointer passed to %s\n", func );
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LIGOTimeGPS pointer passed to %s\n", __func__ );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   }
 
   /* Check that segment end time is equal to or later than start time */
   if ( XLALGPSCmp(start,end) > 0 ) {
     XLALPrintError( "Inconsistent times passed to %s (%d.%09d > %d.%09d)\n",
-        func, start->gpsSeconds, start->gpsNanoSeconds,
+        __func__, start->gpsSeconds, start->gpsNanoSeconds,
         end->gpsSeconds, end->gpsNanoSeconds );
-    XLAL_ERROR_NULL( func, XLAL_EDOM );
+    XLAL_ERROR_NULL( XLAL_EDOM );
   }
 
   /* Allocate memory for the new LALSeg object */
@@ -160,7 +158,7 @@ XLALSegCreate( const LIGOTimeGPS *start, const LIGOTimeGPS *end,
 
   /* Check for a memory allocation failure */
   if ( ! segptr ) {
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   /* Store the times and the id */
@@ -241,12 +239,10 @@ INT4
 XLALSegListInit( LALSegList *seglist )
 
 {
-  static const char func[] = "XLALSegListInit";
-
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
-    XLALPrintError( "NULL LALSegList pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LALSegList pointer passed to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   /* Initialize values for this segment list */
@@ -291,18 +287,16 @@ INT4
 XLALSegListClear( LALSegList *seglist )
 
 {
-  static const char func[] = "XLALSegListClear";
-
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
-    XLALPrintError( "NULL LALSegList pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LALSegList pointer passed to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   /* Make sure the segment list has been properly initialized */
   if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
-    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", func );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* Clear the memory (if any) that has been allocated for segments */
@@ -349,7 +343,6 @@ INT4
 XLALSegListAppend( LALSegList *seglist, const LALSeg *seg )
 
 {
-  static const char func[] = "XLALSegListAppend";
   LALSeg *segptr;
   LALSeg *prev;
   size_t newSize;
@@ -357,28 +350,28 @@ XLALSegListAppend( LALSegList *seglist, const LALSeg *seg )
 
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
-    XLALPrintError( "NULL LALSegList pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LALSegList pointer passed to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   /* Make sure a non-null pointer was passed for the segment */
   if ( ! seg ) {
-    XLALPrintError( "NULL LALSeg pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LALSeg pointer passed to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   /* Make sure the segment list has been properly initialized */
   if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
-    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", func );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* Check that segment end time is equal to or later than start time */
   if ( XLALGPSCmp(&(seg->start),&(seg->end)) > 0 ) {
     XLALPrintError( "Invalid segment passed to %s (%d.%09d > %d.%09d)\n",
-        func, seg->start.gpsSeconds, seg->start.gpsNanoSeconds,
+        __func__, seg->start.gpsSeconds, seg->start.gpsNanoSeconds,
         seg->end.gpsSeconds, seg->end.gpsNanoSeconds );
-    XLAL_ERROR( func, XLAL_EDOM );
+    XLAL_ERROR( XLAL_EDOM );
   }
 
   /* See whether we need to extend (or create) the segment array */
@@ -400,7 +393,7 @@ XLALSegListAppend( LALSegList *seglist, const LALSeg *seg )
 
     /* Check for a memory allocation failure */
     if ( ! segptr ) {
-      XLAL_ERROR( func, XLAL_ENOMEM );
+      XLAL_ERROR( XLAL_ENOMEM );
     }
 
     /* If we get here, then the memory allocation succeeded */
@@ -466,18 +459,16 @@ INT4
 XLALSegListSort( LALSegList *seglist )
 
 {
-  static const char func[] = "XLALSegListSort";
-
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
-    XLALPrintError( "NULL LALSegList pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LALSegList pointer passed to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   /* Make sure the segment list has been properly initialized */
   if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
-    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", func );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* If segment list is known to be sorted already, just return */
@@ -521,21 +512,20 @@ INT4
 XLALSegListCoalesce( LALSegList *seglist )
 
 {
-  static const char func[] = "XLALSegListCoalesce";
   LALSeg *rp, *wp;   /* Read and write pointers for stepping through array */
   size_t newLength;
   LALSeg *segptr;
 
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
-    XLALPrintError( "NULL LALSegList pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LALSegList pointer passed to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   /* Make sure the segment list has been properly initialized */
   if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
-    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", func );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* If segment list is empty or has only one segment, just return */
@@ -574,7 +564,7 @@ XLALSegListCoalesce( LALSegList *seglist )
 
     /* Check for a memory allocation failure */
     if ( ! segptr ) {
-      XLAL_ERROR( func, XLAL_ENOMEM );
+      XLAL_ERROR( XLAL_ENOMEM );
     }
 
     /* If we get here, then the memory reallocation succeeded */
@@ -651,7 +641,6 @@ LALSeg *
 XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
 
 {
-  static const char func[] = "XLALSegListSearch";
   int cmp;
   LALSeg *bstart = NULL;
   size_t bcount = 0;
@@ -660,20 +649,20 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
 
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
-    XLALPrintError( "NULL LALSegList pointer passed to %s\n", func );
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LALSegList pointer passed to %s\n", __func__ );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   }
 
   /* Make sure a non-null pointer was passed for the GPS time */
   if ( ! gps ) {
-    XLALPrintError( "NULL LIGOTimeGPS pointer passed to %s\n", func );
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LIGOTimeGPS pointer passed to %s\n", __func__ );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   }
 
   /* Make sure the segment list has been properly initialized */
   if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
-    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", func );
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", __func__ );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   /* If the segment list is empty, simply return */
@@ -878,25 +867,24 @@ INT4
 XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *shift )
 
 {
-  static const char func[] = "XLALSegListShift";
   unsigned i;
 
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
-    XLALPrintError( "NULL LALSegList pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LALSegList pointer passed to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   /* Make sure a non-null pointer was passed for the GPS time */
   if ( ! shift ) {
-    XLALPrintError( "NULL LIGOTimeGPS pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLALPrintError( "NULL LIGOTimeGPS pointer passed to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   /* Make sure the segment list has been properly initialized */
   if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
-    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", func );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", __func__ );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* time shift each segment in this list */
@@ -916,27 +904,26 @@ INT4
 XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeGPS *end )
 
 {
-  static const char func[] = "XLALSegListKeep";
   LALSegList workspace;
   unsigned i;
   INT8 startNS, endNS;
 
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
-    XLALPrintError( "%s(): NULL LALSegList\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLALPrintError( "%s(): NULL LALSegList\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   /* Make sure a non-null pointer was passed for the GPS time */
   if ( !start || !end ) {
-    XLALPrintError( "%s(): NULL boundaries\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLALPrintError( "%s(): NULL boundaries\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   /* Make sure the segment list has been properly initialized */
   if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
-    XLALPrintError( "%s(): unintialized LALSegList\n", func );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "%s(): unintialized LALSegList\n", __func__ );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* init the temporary list */
@@ -946,8 +933,8 @@ XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeG
   startNS = XLALGPSToINT8NS( start );
   endNS = XLALGPSToINT8NS( end );
   if ( startNS >= endNS ) {
-    XLALPrintError( "%s(): zero-length or improper interval\n", func );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "%s(): zero-length or improper interval\n", __func__ );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* loop over all segments in this list */

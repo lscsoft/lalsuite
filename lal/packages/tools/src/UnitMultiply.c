@@ -66,18 +66,17 @@ standard form.
  */
 LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1, const LALUnit *unit2 )
 {
-  static const char *func = "XLALUnitMultiply";
   LALUnit     unReduced;
   UINT2        i;
   INT4         numer;
   UINT4        denom, denom1, denom2;
 
   if ( ! output || ! unit1 || ! unit2 )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
 
   numer = unit1->powerOfTen + unit2->powerOfTen;
   if ( numer >= 32767L || numer <= -32768L )
-    XLAL_ERROR_NULL( func, XLAL_ERANGE );
+    XLAL_ERROR_NULL( XLAL_ERANGE );
 
   unReduced.powerOfTen = numer;
   for (i=0; i<LALNumUnits; ++i) {
@@ -86,7 +85,7 @@ LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1, const LALUnit
     denom = denom1 * denom2;
 
     if ( denom >= 65535L )
-      XLAL_ERROR_NULL( func, XLAL_ERANGE );
+      XLAL_ERROR_NULL( XLAL_ERANGE );
 
     /* One could use the gcd function to find the common factors of
        denom1 and denom2, but we have to reduce the fractions after
@@ -96,14 +95,14 @@ LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1, const LALUnit
       + ((INT4) denom1) * unit2->unitNumerator[i];
 
     if ( numer >= 32767L || numer <= -32768L )
-      XLAL_ERROR_NULL( func, XLAL_ERANGE );
+      XLAL_ERROR_NULL( XLAL_ERANGE );
 
     unReduced.unitNumerator[i] = numer;
   } /* for i */
 
   *output = unReduced;
   if ( XLALUnitNormalize( output ) == XLAL_FAILURE )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
 
   return output;
 }
@@ -111,13 +110,12 @@ LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1, const LALUnit
 
 LALUnit * XLALUnitDivide( LALUnit *output, const LALUnit *unit1, const LALUnit *unit2 )
 {
-  static const char *func = "XLALUnitDivide";
   LALUnit scratch;
   /* invert unit2 and then multiply by unit1 */
   if ( ! XLALUnitInvert( &scratch, unit2 ) )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   if ( ! XLALUnitMultiply( output, unit1, &scratch ) )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   return output;
 }
 

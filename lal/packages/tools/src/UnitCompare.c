@@ -40,7 +40,7 @@ int XLALUnitIsDimensionless(const LALUnit *unit)
   int i;
 
   if(!unit)
-    XLAL_ERROR("XLALUnitIsDimensionless", XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
 
   for(i = 0; i < LALNumUnits; i++)
     if(unit->unitNumerator[i] != unit->unitDenominatorMinusOne[i])
@@ -53,7 +53,7 @@ int XLALUnitIsDimensionless(const LALUnit *unit)
 REAL8 XLALUnitPrefactor(const LALUnit *unit)
 {
   if(!unit)
-    XLAL_ERROR_REAL8("XLALUnitPrefactor", XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   return pow(10.0, unit->powerOfTen);
 }
 
@@ -63,16 +63,15 @@ REAL8 XLALUnitPrefactor(const LALUnit *unit)
  */
 REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2)
 {
-  static const char func[] = "XLALUnitRatio";
   LALUnit tmp;
 
   if(!unit1 || !unit2)
-    XLAL_ERROR_REAL8(func, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   XLALUnitDivide(&tmp, unit1, unit2);
   if(XLALUnitIsDimensionless(&tmp))
     return XLALUnitPrefactor(&tmp);
-  XLAL_ERROR_REAL8(func, XLAL_EDIMS);
+  XLAL_ERROR_REAL8(XLAL_EDIMS);
 }
 
 
@@ -92,20 +91,19 @@ REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2)
  */
 int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 )
 {
-  static const char func[] = "XLALUnitCompare";
   LALUnit  unitOne, unitTwo;
 
   if ( ! unit1 || ! unit2 )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   unitOne = *unit1;
   unitTwo = *unit2;
 
   /* normalize the units */
   if ( XLALUnitNormalize( &unitOne ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   if ( XLALUnitNormalize( &unitTwo ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* factors of 10 disagree? */
   if ( unitOne.powerOfTen != unitTwo.powerOfTen )
