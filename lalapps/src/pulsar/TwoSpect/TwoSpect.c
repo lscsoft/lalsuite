@@ -46,7 +46,7 @@
 
 
 //Global variables
-FILE *LOG = NULL, *TFDATA = NULL, *FFDATA = NULL;
+FILE *LOG = NULL, *ULFILE = NULL;
 CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir = NULL;
 
 
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
    INT4 ii, jj, kk, ll;       //counter variables
    LALStatus status;          //LALStatus structure
    status.statusPtr = NULL;   //Set statuspointer to NULL
-   char s[20000], t[20000], u[20000];     //Path and file name to TFDATA, FFDATA, and LOG
+   char s[20000], t[20000];     //Path and file name to LOG and ULFILE
    
    //Turn off gsl error handler
    gsl_set_error_handler_off();
@@ -83,17 +83,9 @@ int main(int argc, char *argv[])
    lalDebugLevel = args_info.verbosity_arg;
    
    //Create directory
-   if (args_info.outdirectory_given) {
-      mkdir(args_info.outdirectory_arg, 0777);
-      snprintf(s, 20000, "%s/logfile.txt", args_info.outdirectory_arg);
-      snprintf(t, 20000, "%s/tfdata.dat", args_info.outdirectory_arg);
-      snprintf(u, 20000, "%s/ffdata.dat", args_info.outdirectory_arg);
-   } else {
-      mkdir("output",0777);
-      snprintf(s, 20000, "%s/logfile.txt", "output");
-      snprintf(t, 20000, "%s/tfdata.dat", "output");
-      snprintf(u, 20000, "%s/ffdata.dat", "output");
-   }
+   mkdir(args_info.outdirectory_arg, 0777);
+   snprintf(s, 20000, "%s/%s", args_info.outdirectory_arg, args_info.outfilename_arg);
+   snprintf(t, 20000, "%s/%s", args_info.outdirectory_arg, args_info.ULfilename_arg);
    
    //Open log file
    LOG = fopen(s,"w");
@@ -456,9 +448,9 @@ int main(int argc, char *argv[])
       XLALDestroyREAL4Vector(TFdata_slided);
       XLALDestroyREAL4Vector(background_slided);
       XLALDestroyREAL4Vector(antweights);
-      TFDATA = fopen(t,"w");
+      /* FILE *TFDATA = fopen("./output/tfdata.dat","w");
       for (jj=0; jj<(INT4)TFdata_weighted->length; jj++) fprintf(TFDATA,"%.6f\n",TFdata_weighted->data[jj]);
-      fclose(TFDATA);
+      fclose(TFDATA); */
       
       //Calculation of average TF noise per frequency bin ratio to total mean
       REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
@@ -485,13 +477,12 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: makeSecondFFT() failed.\n", fn);
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
-      //for (ii=0; ii<(INT4)ffdata->ffdata->length; ii++) ffdata->ffdata->data[ii] *= (backgroundmeannormfactor*backgroundmeannormfactor);  //TODO: remove this
       
       REAL4 secFFTmean = calcMean(ffdata->ffdata);
       
       XLALDestroyREAL4Vector(TFdata_weighted);
       fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, calcStddev(ffdata->ffdata), calcMean(aveNoise)*calcMean(aveTFnoisePerFbinRatio));
-      /* FFDATA = fopen(u,"w");
+      /* FILE *FFDATA = fopen(./output/ffdata.dat,"w");
       for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
       fclose(FFDATA); */
       
@@ -530,7 +521,7 @@ int main(int argc, char *argv[])
       }
       fprintf(LOG, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
       fprintf(stderr, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
-      for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g, h0=%g\n", ii, ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].h0);
+      for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) fprintf(stderr, "%d %g %g %g %g\n", ii, ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].h0);
 ////////End of the IHS step
       
 ////////Start of the Gaussian template search!
@@ -548,15 +539,16 @@ int main(int argc, char *argv[])
          for (ii=0; ii<(INT4)gaussCandidates1->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates1->data[ii].fsig, gaussCandidates1->data[ii].period, gaussCandidates1->data[ii].moddepth);
       } /* if IHSonly is not given */
       else {
-         if (exactCandidates2->length < ihsCandidates->numofcandidates) {
-            exactCandidates2 = resize_candidateVector(exactCandidates2, ihsCandidates->numofcandidates);
+         if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates->numofcandidates) {
+            exactCandidates2 = resize_candidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates->numofcandidates);
             if (exactCandidates2->data==NULL) {
                fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, ihsCandidates->numofcandidates);
                XLAL_ERROR(fn, XLAL_EFUNC);
             }
          }
+         INT4 numofcandidatesalready = exactCandidates2->numofcandidates;
          for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
-            loadCandidateData(&exactCandidates2->data[ii], ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].ra, ihsCandidates->data[ii].dec, ihsCandidates->data[ii].stat, ihsCandidates->data[ii].h0, 0.0, 0, ihsCandidates->data[ii].normalization);
+            loadCandidateData(&(exactCandidates2->data[ii+numofcandidatesalready]), ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].ra, ihsCandidates->data[ii].dec, ihsCandidates->data[ii].stat, ihsCandidates->data[ii].h0, 0.0, 0, ihsCandidates->data[ii].normalization);
             (exactCandidates2->numofcandidates)++;
          }
       } /* if IHSonly is given */
@@ -982,7 +974,7 @@ int main(int argc, char *argv[])
                      XLAL_ERROR(fn, XLAL_EFUNC);
                   }
                }
-               loadCandidateData(&exactCandidates2->data[exactCandidates2->numofcandidates], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, exactCandidates1->data[0].normalization);
+               loadCandidateData(&(exactCandidates2->data[exactCandidates2->numofcandidates]), bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, exactCandidates1->data[0].normalization);
                (exactCandidates2->numofcandidates)++;
                
                fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, exactCandidates2->data[exactCandidates2->numofcandidates-1].fsig, exactCandidates1->data[exactCandidates2->numofcandidates-1].period, exactCandidates1->data[exactCandidates2->numofcandidates-1].moddepth);
@@ -1009,8 +1001,9 @@ int main(int argc, char *argv[])
       //Determine upper limits
       upperlimits->data[upperlimits->length-1].alpha = (REAL4)dopplerpos.Alpha;
       upperlimits->data[upperlimits->length-1].delta = (REAL4)dopplerpos.Delta;
-      upperlimits->data[upperlimits->length-1].ULval = skypoint95UL(ihsfarstruct, inputParams, ffdata, ihsmaxima, aveNoise, aveTFnoisePerFbinRatio);
-      if (XLAL_IS_REAL8_FAIL_NAN(upperlimits->data[upperlimits->length-1].ULval)) {
+      upperlimits->data[upperlimits->length-1].normalization = ffdata->ffnormalization;
+      skypoint95UL(&(upperlimits->data[upperlimits->length-1]), ihsfarstruct, inputParams, ffdata, ihsmaxima, aveNoise, aveTFnoisePerFbinRatio);
+      if (xlalErrno!=0) {
          fprintf(stderr, "%s: skypoint95UL() failed.\n", fn);
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
@@ -1038,13 +1031,16 @@ int main(int argc, char *argv[])
       for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) {
          fprintf(LOG, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %.12f, Prob = %.4f, Error code = %d, FF normalization = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0, exactCandidates2->data[ii].prob, exactCandidates2->data[ii].proberrcode, exactCandidates2->data[ii].normalization);
          fprintf(stderr, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %.12f, Prob = %.4f, Error code = %d, FF normalization = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0, exactCandidates2->data[ii].prob, exactCandidates2->data[ii].proberrcode, exactCandidates2->data[ii].normalization);
-         //fprintf(stderr,"%.4f %.6f\n",exactCandidates2->data[ii].stat,exactCandidates2->data[ii].h0);
       } /* for ii < exactCandidates2->numofcandidates */
    } /* if exactCandidates2->numofcandidates != 0 */
    
-   /* FILE *ULVALS = fopen("./output/uls.dat","w");
-   for (ii=0; ii<(INT4)upperlimits->length-1; ii++) fprintf(ULVALS, "%.6f %.6f %.6g", upperlimits->data[ii].alpha, upperlimits->data[ii].delta, upperlimits->data[ii].ULval);
-   fclose(ULVALS); */
+   ULFILE = fopen(t,"w");
+   if (ULFILE==NULL) {
+      fprintf(stderr, "%s: UL file could not be opened.\n", fn);
+      XLAL_ERROR(fn, XLAL_EINVAL);
+   }
+   for (ii=0; ii<(INT4)upperlimits->length-1; ii++) fprintf(ULFILE, "%.6f %.6f %.6g %.6f %.6f %.6f %.6g %d\n", upperlimits->data[ii].alpha, upperlimits->data[ii].delta, upperlimits->data[ii].ULval, upperlimits->data[ii].fsig, upperlimits->data[ii].period, upperlimits->data[ii].moddepth, upperlimits->data[ii].normalization, upperlimits->data[ii].iterations2reachUL);
+   fclose(ULFILE);
    
    //Destroy varaibles
    XLALDestroyREAL4Vector(background);
@@ -1295,8 +1291,7 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
    INT4 ii, jj;
    INT4 totalfbins = numfbins + blksize - 1;
    
-   //Blocksize of running median. This needs to be >=501 bins because of accuracy in
-   //determination of background is essential for 2nd PSD computation.
+   //Blocksize of running median
    LALRunningMedianPar block = {blksize};
    
    //Running median bias calculation
@@ -1309,7 +1304,7 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
    } else {
       bias = LAL_LN2;
    }
-   REAL8 invbias = 1.0/(bias*1.0059321649368);  //TODO: remove the extra number
+   REAL8 invbias = 1.0/(bias*1.0099993480677538);  //TODO: StackSlide normalization for 101 bins
    
    REAL4Vector *inpsd = XLALCreateREAL4Vector(totalfbins);
    REAL4Vector *mediansout = XLALCreateREAL4Vector(numfbins);
@@ -1324,7 +1319,6 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
       //If the SFT values were not zero, then compute the running median
       if (tfdata->data[ii*totalfbins]!=0.0) {
          //Determine running median value, convert to mean value
-         //for (jj=0; jj<(INT4)inpsd->length; jj++) inpsd->data[jj] = tfdata->data[ii*(numfbins+blksize-1) + jj];
          memcpy(inpsd->data, &(tfdata->data[ii*inpsd->length]), sizeof(REAL4)*inpsd->length);
          
          //calculate running median
@@ -1425,18 +1419,7 @@ void tfMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, INT4 numffts, IN
    
    INT4 ii, jj;
    
-   //INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);    //Number of FFTs
-   //INT4 numfbins = (INT4)(round(input->fspan*input->Tcoh)+1+2*input->maxbinshift);     //Number of frequency bins
-   
-   for (ii=0; ii<numffts; ii++) {
-      if (rngMeans->data[ii*numfbins]!=0.0) {
-         for (jj=0; jj<numfbins; jj++) tfdata->data[ii*numfbins+jj] -= rngMeans->data[ii*numfbins+jj];
-      }
-      /* for (jj=0; jj<numfbins; jj++) {
-         if (rngMeans->data[ii*numfbins] != 0.0) output->data[ii*numfbins + jj] = (REAL4)(tfdata->data[ii*numfbins+jj] - rngMeans->data[ii*numfbins+jj]);
-         else output->data[ii*numfbins+jj] = 0.0;
-      } */ /* for jj < numfbins */
-   } /* for ii < numffts */
+   for (ii=0; ii<numffts; ii++) if (rngMeans->data[ii*numfbins]!=0.0) for (jj=0; jj<numfbins; jj++) tfdata->data[ii*numfbins+jj] -= rngMeans->data[ii*numfbins+jj];
    
 } /* tfMeanSubtract() */
 
@@ -1898,7 +1881,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    }
    
    //TODO: remove this extra factor
-   *(normalization) /= 1.0169768109605346;
+   *(normalization) /= 1.0414;
    
    //fclose(BACKGRND);
 

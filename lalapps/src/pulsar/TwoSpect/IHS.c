@@ -43,9 +43,6 @@ ihsMaximaStruct * new_ihsMaxima(INT4 fbins, INT4 rows)
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    
-   //INT4 ii;
-   //INT4 numberofmaxima = 0;
-   //for (ii=2; ii<=rows; ii++) numberofmaxima += fbins - (ii-1);
    INT4 numberofmaxima = fbins*rows - fbins - (INT4)((rows*rows-rows)/2);
    
    ihsmaxima->maxima = XLALCreateREAL4Vector(numberofmaxima);
@@ -341,9 +338,9 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    INT4 ii, jj;
    REAL8 Tobs = params->Tobs;
    
-   INT4 trials = (INT4)round(10000*0.0001/params->ihsfar);    //Number of trials to determine FAR value
-   if (params->ihsfomfar!=0.0 && trials<(INT4)round(10000*0.0001/params->ihsfomfar)) {
-      trials = (INT4)round(10000*0.0001/params->ihsfomfar);
+   INT4 trials = (INT4)round(1*0.000001/params->ihsfar);    //Number of trials to determine FAR value
+   if (params->ihsfomfar!=0.0 && trials<(INT4)round(1*0.000001/params->ihsfomfar)) {
+      trials = (INT4)round(1*0.000001/params->ihsfomfar);
    }
    trials += rows;
    
@@ -647,8 +644,10 @@ void ihsSums2_withFAR(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4Vec
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       
+      REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
+      REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
       for (ii=0; ii<(INT4)aveNoise->length; ii++) {
-         if (fabs(params->Tobs/(24.0*3600.0)-ii)<=1.0 || fabs(params->Tobs/(12.0*3600.0)-ii)<=1.0 || fabs(params->Tobs/(8.0*3600.0)-ii)<=1.0 || fabs(params->Tobs/(6.0*3600.0)-ii)<=1.0) tempaveNoise->data[ii] = 0.0;
+         if (fabs(dailyharmonic-ii)<=1.0 || fabs(dailyharmonic2-ii)<=1.0 || fabs(dailyharmonic3-ii)<=1.0 || fabs(dailyharmonic4-ii)<=1.0) tempaveNoise->data[ii] = 0.0;
          else tempaveNoise->data[ii] = aveNoise->data[ii];
       }
       incHarmSumVector(ihsvalsfromaveNoise, tempaveNoise);
@@ -678,6 +677,7 @@ void ihsSums2_withFAR(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4Vec
       if (ii==1) {
          memcpy(output->maximaForEachFbin->data, ihss->data, sizeof(REAL4)*ihss->length);
          memcpy(output->locationsForEachFbin->data, locs->data, sizeof(INT4)*locs->length);
+         //fprintf(stderr, "Finished row %d\n", ii);
       } else if (ii==2) {
          rowsequencemaxima = XLALCreateREAL4Vector(ii);
          fbinmeanvals = XLALCreateREAL4Vector(ii);
@@ -744,6 +744,10 @@ void ihsSums2_withFAR(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4Vec
                XLAL_ERROR_VOID(fn, XLAL_EFUNC);
             } */
             tempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
+            if (tempihsvals==NULL) {
+               fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, (ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
+               XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+            }
             memcpy(tempihsvals->data, tworows2->data, sizeof(REAL4)*tempihsvals->length);
             sampledtempihsvals = sampleREAL4Vector(tempihsvals, 10000);
             for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
@@ -797,6 +801,8 @@ void ihsSums2_withFAR(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4Vec
          fbinmeanvals = NULL;
          XLALDestroyINT4Vector(rowsequencelocs);
          rowsequencelocs = NULL;
+         
+         //fprintf(stderr, "Finished row %d\n", ii);
       } else {
          rowsequencemaxima = XLALCreateREAL4Vector(ii);
          fbinmeanvals = XLALCreateREAL4Vector(ii);
@@ -813,14 +819,12 @@ void ihsSums2_withFAR(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4Vec
          }
          
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
-            for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) {
-               tworows->data[jj*ihsvectorsequence->vectorLength + kk] = tworows->data[jj*ihsvectorsequence->vectorLength + kk] + ihsvectorsequence->data[(ii-1+jj)*ihsvectorsequence->vectorLength + kk];
-            }
+            for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) tworows->data[jj*ihsvectorsequence->vectorLength + kk] += ihsvectorsequence->data[(ii-1+jj)*ihsvectorsequence->vectorLength + kk];
             memcpy(singlerow->data, &(tworows->data[jj*ihsvectorsequence->vectorLength]), sizeof(REAL4)*ihsvectorsequence->vectorLength);
             output->locations->data[(ii-2)*ihss->length-((ii-1)*(ii-1)-(ii-1))/2+jj] = max_index(singlerow) + 5;
             output->maxima->data[(ii-2)*ihss->length-((ii-1)*(ii-1)-(ii-1))/2+jj] = singlerow->data[output->locations->data[(ii-2)*ihss->length-((ii-1)*(ii-1)-(ii-1))/2+jj]-5];
             
-            if (calcPInvVals!=0) for (kk=0; kk<(INT4)ihsvalsfromaveNoise->length; kk++) tworows2->data[jj*ihsvalsfromaveNoise->length + kk] = tworows2->data[jj*ihsvalsfromaveNoise->length + kk] + ihsvalsfromaveNoise->data[kk]*randvals->data[ii-1+jj];
+            if (calcPInvVals!=0) for (kk=0; kk<(INT4)ihsvalsfromaveNoise->length; kk++) tworows2->data[jj*ihsvalsfromaveNoise->length + kk] += ihsvalsfromaveNoise->data[kk]*randvals->data[ii-1+jj];
             
             memcpy(rowsequencemaxima->data, &(ihss->data[jj]), sizeof(REAL4)*ii);
             memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
@@ -929,6 +933,8 @@ void ihsSums2_withFAR(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4Vec
          fbinmeanvals = NULL;
          XLALDestroyINT4Vector(rowsequencelocs);
          rowsequencelocs = NULL;
+         
+         //fprintf(stderr, "Finished row %d\n", ii);
       }
    } /* for ii <= rows */
    XLALDestroyREAL4Vector(singlerow);
@@ -1056,7 +1062,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
    INT4 ii, jj;
    REAL8 fsig, per0, B;
    
-   //INT4 numberofIHSvalsChecked = 0, numberofIHSvalsExceededThresh = 0;
+   INT4 numberofIHSvalsChecked = 0, numberofIHSvalsExceededThresh = 0, numberPassingBoth = 0;
    
    INT4 numfbins = ffdata->numfbins;
    
@@ -1084,12 +1090,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
       for (jj=0; jj<(INT4)numfbins-(ii-1); jj++) {
       
          //Noise in the range of the rows, mean and rms values for IHS
-         //for (kk=0; kk<ii; kk++) {
-            //ihsexpect->data[kk] = 0.5*ihsfarstruct->ihsdistMean->data[0]*fbinavgs->data[jj+kk];
-            //ihsexpect->data[kk] = ihsfarstruct->ihsdistMean->data[0];
-         //} /* for kk <= ii */
          memcpy(avgsinrange->data, &(fbinavgs->data[jj]), sizeof(REAL4)*ii);
-         
          REAL4 meanNoise = calcMean(avgsinrange);
          if (XLAL_IS_REAL4_FAIL_NAN(meanNoise)) {
             fprintf(stderr,"%s: calcMean() failed.\n", fn);
@@ -1101,23 +1102,19 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
          }
          
-         //numberofIHSvalsChecked++;
+         numberofIHSvalsChecked++;
          
          INT4 locationinmaximastruct = (ii-2)*numfbins-((ii-1)*(ii-1)-(ii-1))/2+jj;
          
          //Check the IHS sum against the FAR (scaling FAR with mean of the noise in the range of rows)
          if (ihsmaxima->maxima->data[locationinmaximastruct] > ihsfarstruct->ihsfar->data[ii-2]*meanNoise) {
             
-            //numberofIHSvalsExceededThresh++;
+            numberofIHSvalsExceededThresh++;
             
             if (ihsfarstruct->fomfarthresh->data[ii-2]==-1.0 || ihsmaxima->foms->data[locationinmaximastruct]<=ihsfarstruct->fomfarthresh->data[ii-2]) {
-               /* memcpy(ihss->data, &(ihsmaxima->maximaForEachFbin->data[jj]), sizeof(REAL4)*ii);
-               memcpy(locs->data, &(ihsmaxima->locations->data[jj]), sizeof(INT4)*ii);
-               REAL4 loc = ihsLoc(ihss, locs, ihsexpect);
-               if (XLAL_IS_REAL4_FAIL_NAN(loc)) {
-                  fprintf(stderr,"%s: ihsLoc() failed.\n", fn);
-                  XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-               } */
+               
+               numberPassingBoth++;
+               
                INT4 loc = ihsmaxima->locations->data[locationinmaximastruct];
                //Candidate frequency
                fsig = params->fmin + (0.5*(ii-1) + jj)/params->Tcoh;
@@ -1151,7 +1148,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
       
    } /* for ii < ihsfarstruct->ihsfar->length */
    
-   //fprintf(stderr,"Number of IHS vals checked = %d, number exceeding threshold = %d\n", numberofIHSvalsChecked, numberofIHSvalsExceededThresh);
+   fprintf(stderr,"Number of IHS vals checked = %d, number exceeding IHS threshold = %d, number passing both = %d\n", numberofIHSvalsChecked, numberofIHSvalsExceededThresh, numberPassingBoth);
    
 } /* findIHScandidates() */
 
@@ -1160,14 +1157,26 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
 REAL8 ihs2h0(REAL8 ihsval, INT4 location, INT4 lowestfrequencybin, INT4 rows, inputParamsStruct *params, REAL4Vector *aveNoise, REAL4Vector *fbinavgs)
 {
    
-   //const CHAR *fn = __func__;
-   REAL8 noise = aveNoise->data[location] + aveNoise->data[location*2] + aveNoise->data[location*3] + aveNoise->data[location*4] + aveNoise->data[location*5];;
+   const CHAR *fn = __func__;
+   
+   REAL8 noise = aveNoise->data[location] + aveNoise->data[location*2] + aveNoise->data[location*3] + aveNoise->data[location*4] + aveNoise->data[location*5];
    INT4 ii;
-   for (ii=1; ii<=5; ii++) if (fabs(params->Tobs/(24.0*3600.0)-ii*location)<=1.0 || fabs(params->Tobs/(12.0*3600.0)-ii*location)<=1.0 || fabs(params->Tobs/(8.0*3600.0)-ii*location)<=1.0 || fabs(params->Tobs/(6.0*3600.0)-ii*location)<=1.0) noise -= aveNoise->data[location*ii];
+   for (ii=1; ii<=5; ii++) {
+      if (fabs(params->Tobs/(24.0*3600.0)-ii*location)<=1.0 || fabs(params->Tobs/(12.0*3600.0)-ii*location)<=1.0 || fabs(params->Tobs/(8.0*3600.0)-ii*location)<=1.0 || fabs(params->Tobs/(6.0*3600.0)-ii*location)<=1.0) {
+         noise -= aveNoise->data[location*ii];
+      }
+   }
    REAL8 totalnoise = 0.0;
    for (ii=0; ii<rows; ii++) totalnoise += noise*fbinavgs->data[lowestfrequencybin+ii];
-   //REAL8 h0 = 4.25*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
-   REAL8 h0 = 1.0*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
+   
+   if (ihsval-totalnoise<=0.0) {
+      fprintf(stderr, "%s: IHS value is less than expected noise\n", fn);
+      return 0.0;
+   }
+   
+   //REAL8 h0 = 1.0*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
+   //h0 *= 4.6;
+   REAL8 h0 = 4.6*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
    
    return h0;
    

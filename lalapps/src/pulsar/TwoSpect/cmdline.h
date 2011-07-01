@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.0"
+#define CMDLINE_PARSER_VERSION "1.1.1"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -94,9 +94,15 @@ struct gengetopt_args_info
   int blksize_arg;	/**< @brief Blocksize for running median of 1st FFT band (default='1001').  */
   char * blksize_orig;	/**< @brief Blocksize for running median of 1st FFT band original value given at command line.  */
   const char *blksize_help; /**< @brief Blocksize for running median of 1st FFT band help description.  */
-  char * outdirectory_arg;	/**< @brief Output directory.  */
+  char * outdirectory_arg;	/**< @brief Output directory (default='output').  */
   char * outdirectory_orig;	/**< @brief Output directory original value given at command line.  */
   const char *outdirectory_help; /**< @brief Output directory help description.  */
+  char * outfilename_arg;	/**< @brief Output file name (default='logfile.txt').  */
+  char * outfilename_orig;	/**< @brief Output file name original value given at command line.  */
+  const char *outfilename_help; /**< @brief Output file name help description.  */
+  char * ULfilename_arg;	/**< @brief Upper limit file name (default='uls.dat').  */
+  char * ULfilename_orig;	/**< @brief Upper limit file name original value given at command line.  */
+  const char *ULfilename_help; /**< @brief Upper limit file name help description.  */
   char * sftDir_arg;	/**< @brief Directory containing SFTs (default='./').  */
   char * sftDir_orig;	/**< @brief Directory containing SFTs original value given at command line.  */
   const char *sftDir_help; /**< @brief Directory containing SFTs help description.  */
@@ -163,6 +169,8 @@ struct gengetopt_args_info
   unsigned int avesqrtSh_given ;	/**< @brief Whether avesqrtSh was given.  */
   unsigned int blksize_given ;	/**< @brief Whether blksize was given.  */
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
+  unsigned int outfilename_given ;	/**< @brief Whether outfilename was given.  */
+  unsigned int ULfilename_given ;	/**< @brief Whether ULfilename was given.  */
   unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
   unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */
   unsigned int ephemYear_given ;	/**< @brief Whether ephemYear was given.  */

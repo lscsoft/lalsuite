@@ -394,28 +394,22 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    
    const CHAR *fn = __func__;
    
-   INT4 ii;
+   INT4 ii = 0;
    REAL8 prob = 0.0;
    REAL8 sumwsq = 0.0;
    INT4 numweights = 0;
    for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) {
-      if (templatestruct->templatedata->data[ii]!=0.0) numweights++;
-      sumwsq += templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii];
+      if (templatestruct->templatedata->data[ii]!=0.0) {
+         numweights++;
+         sumwsq += templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii];
+      }
    }
    
    REAL8Vector *newweights = XLALCreateREAL8Vector((UINT4)numweights);
-   //REAL8Vector *noncentrality = XLALCreateREAL8Vector((UINT4)numweights);
-   //INT4Vector *dofs = XLALCreateINT4Vector((UINT4)numweights);
    INT4Vector *sorting = XLALCreateINT4Vector((UINT4)numweights);
    if (newweights==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numweights);
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-   //} else if (noncentrality==NULL) {
-      //fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numweights);
-      //XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-   //} else if (dofs==NULL) {
-      //fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, numweights);
-      //XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
    } else if (sorting==NULL) {
       fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, numweights);
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
@@ -424,17 +418,15 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    REAL8 Rpr = R;
    for (ii=0; ii<(INT4)newweights->length; ii++) {
       newweights->data[ii] = 0.5*templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]/sumwsq;
-      //noncentrality->data[ii] = 0.0;
-      //dofs->data[ii] = 2;
       Rpr += templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]/sumwsq;
       sorting->data[ii] = ii;  //This is for the fact that a few steps later (before using Davies' algorithm, we sort the weights)
    }
    
    qfvars vars;
    vars.weights = newweights;
-   //vars.noncentrality = noncentrality;
-   //vars.dofs = dofs;
    vars.sorting = sorting;
+   vars.dofs = NULL;
+   vars.noncentrality = NULL;
    vars.ndtsrt = 0;           //Set because we do the sorting outside of Davies' algorithm with qsort
    vars.lim = 1000000;
    vars.c = Rpr;
@@ -571,11 +563,8 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    
    //Cleanup
    XLALDestroyREAL8Vector(newweights);
-   //XLALDestroyREAL8Vector(noncentrality);
-   //XLALDestroyINT4Vector(dofs);
    XLALDestroyINT4Vector(sorting);
    
-   //return prob;
    if (estimatedTheProb==1) {
       return logprobest;
    } else {
@@ -660,6 +649,9 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    
    INT4 ii, jj, numfbins, numffts, N;
    
+   //Reset the data values to zero, just in case
+   for (ii=0; ii<(INT4)output->templatedata->length; ii++) output->templatedata->data[ii] = 0.0;
+   
    numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);   //Number of frequency bins
    numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);   //Number of FFTs
    N = (INT4)floor(params->Tobs/input.period);     //Number of Gaussians
@@ -703,27 +695,6 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    INT4 fnumstart = -1;
    INT4 fnumend = -1;
    for (ii=0; ii<numfbins; ii++) {
-      /* if (mextent != 0) {
-         if (ii < m0-mextent-2 || ii > m0+mextent+2) {
-            scale->data[ii] = 0.0;
-         } else if (ii == m0-mextent-2 || ii == m0+mextent+2) {
-            scale->data[ii] = sincxoverxsqminusone(overage-1.0)*sincxoverxsqminusone(overage-1.0);
-         } else if (ii == m0-mextent-1 || ii == m0+mextent+1) {
-            scale->data[ii] = sincxoverxsqminusone(overage)*sincxoverxsqminusone(overage);
-         } else {
-            scale->data[ii] = 1.0;
-         }
-      } else {
-         if (ii < m0-2 || ii > m0+2) {
-            scale->data[ii] = 0.0;
-         } else if (ii == m0-2 || ii == m0+2) {
-            scale->data[ii] = sincxoverxsqminusone(overage-1.0)*sincxoverxsqminusone(overage-1.0);
-         } else if (ii == m0-1 || ii == m0+1) {
-            scale->data[ii] = sincxoverxsqminusone(overage)*sincxoverxsqminusone(overage);
-         } else {
-            scale->data[ii] = 1.0;
-         }
-      } */ /* if mextent!=0 else ... */
       if (ii < m0-mextent-2 || ii > m0+mextent+2) {
          scale->data[ii] = 0.0;
       } else if (ii == m0-mextent-2 || ii == m0+mextent+2) {
@@ -777,22 +748,20 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    
    //Create template
    REAL8 sum = 0.0;
-   REAL8 dataval;
+   REAL8 dataval = 0.0;
    for (ii=0; ii<(INT4)sigmas->length; ii++) {
       REAL8 s = sigmas->data[ii];
       REAL8 scale1 = 1.0/(1.0+exp(-phi_actual->data[ii+fnumstart]*phi_actual->data[ii+fnumstart]*0.5/(s*s)));
       for (jj=0; jj<(INT4)fpr->length; jj++) {
          
+         REAL8 omega = LAL_TWOPI*fpr->data[jj];
          if (jj==0 || jj==1 || jj==2 || jj==3) {
             dataval = 0.0;
-         } else if (fabs(cos(input.period*LAL_TWOPI*fpr->data[jj])-1.0)<1e-5) {
-            dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * LAL_TWOPI * LAL_TWOPI * fpr->data[jj] * fpr->data[jj]) * (cos(phi_actual->data[ii+fnumstart] * LAL_TWOPI * fpr->data[jj]) + 1.0) * N * N;
+         } else if (fabs(cos(input.period*omega)-1.0)<1e-5) {
+            dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * omega * omega) * (cos(phi_actual->data[ii+fnumstart] * omega) + 1.0) * N * N;
          } else {
-            dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * LAL_TWOPI * LAL_TWOPI * fpr->data[jj] * fpr->data[jj]) * (cos(N * input.period * LAL_TWOPI * fpr->data[jj]) - 1.0) * (cos(phi_actual->data[ii+fnumstart] * LAL_TWOPI * fpr->data[jj]) + 1.0) / (cos(input.period * LAL_TWOPI * fpr->data[jj]) - 1.0);
+            dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * omega * omega) * (cos(N * input.period * omega) - 1.0) * (cos(phi_actual->data[ii+fnumstart] * omega) + 1.0) / (cos(input.period * omega) - 1.0);
          }
-         
-         //Set any bin below 1e-8 to 0.0
-         //if (dataval <= 1.0e-8) dataval = 0.0;
          
          //Sum up the weights in total
          sum += dataval;
@@ -825,7 +794,14 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    
    const CHAR *fn = __func__;
    
+   //Set data for output template
+   output->f0 = input.fsig;
+   output->period = input.period;
+   output->moddepth = input.moddepth;
+   
    INT4 ii, jj, numfbins, numffts;
+   
+   for (ii=0; ii<(INT4)output->templatedata->length; ii++) output->templatedata->data[ii] = 0.0;
    
    numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);   //Number of frequency bins
    numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);   //Number of FFTs
@@ -912,11 +888,10 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       
       //Scale the data points by 1/N and window factor and (1/fs)
       //Order of vector is by second frequency then first frequency
-      //Ignore the DC and 1st frequency bins
+      //Ignore the DC to 3rd frequency bins
       if (doSecondFFT==1) {
          for (jj=4; jj<(INT4)psd->length; jj++) {
             REAL4 correctedValue = psd->data[jj]*winFactor/x->length*0.5*params->Tcoh;
-            //if (correctedValue<=1.0e-8) correctedValue = 0.0;
             
             //Sum the total weights
             sum += correctedValue;

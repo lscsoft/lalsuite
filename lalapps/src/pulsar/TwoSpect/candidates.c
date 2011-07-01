@@ -146,15 +146,6 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
       usedcandidate->data[ii] = 0;
    }
    
-   //If not equal, make output vector the same length as the input vector
-   /* if (output->length < input->length) {
-      output = resize_candidateVector(output, input->length);
-      if (output->length < input->length) {
-         fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, input->length);
-         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-      }
-   } */
-   
    //Set default if bad option given
    if (option!=0 || option!=1) option = 0;
    
@@ -304,12 +295,6 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                         }
                      }
                      
-                     /* numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios, params->rootFindingMethod);
-                     if (xlalErrno!=0) {
-                        fprintf(stderr,"%s: numericFAR() failed.\n", fn);
-                        XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-                     } */
-                     
                      REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
                      REAL8 prob = probR(template, ffplanenoise, fbinaveratios, R, &proberrcode);
                      if (XLAL_IS_REAL8_FAIL_NAN(R)) {
@@ -321,7 +306,6 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                      }
                      REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
                      
-                     //if (R > farval->far && prob < bestProb) {
                      if (prob < bestProb) {
                         besth0 = h0;
                         bestmoddepth = mindf + kk*0.5/params->Tcoh;

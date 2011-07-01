@@ -90,7 +90,12 @@ typedef struct
 {
    REAL4 alpha;
    REAL4 delta;
+   REAL8 fsig;
+   REAL8 period;
+   REAL8 moddepth;
    REAL8 ULval;
+   REAL8 normalization;
+   INT4 iterations2reachUL;
 } UpperLimit;
 
 typedef struct

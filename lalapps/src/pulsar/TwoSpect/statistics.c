@@ -54,12 +54,12 @@ REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator)
 
 
 
+//Matlab's version
 REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 {
    
    const CHAR *fn = __func__;
    
-   //Matlab's version
    REAL8 prob = 0.0;
    REAL8 err = LAL_REAL8_EPS;
    REAL8 halfdelta = 0.5*delta;
@@ -151,10 +151,10 @@ void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT4 counter, REA
 }
 
 
+//Like Matlabs ncx2pdf
 REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
 {
    
-   //Like Matlabs ncx2pdf
    REAL8 dofint = 0.5*dof-1.0;
    REAL8 x1 = sqrt(x);
    REAL8 delta1 = sqrt(delta);

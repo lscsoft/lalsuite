@@ -53,7 +53,9 @@ const char *gengetopt_args_info_full_help[] = {
   "      --tmplfar=DOUBLE          Template FAR threshold  (default=`0.01')",
   "      --avesqrtSh=DOUBLE        Expected average of square root of Sh  \n                                  (default=`1.0')",
   "      --blksize=INT             Blocksize for running median of 1st FFT band  \n                                  (default=`1001')",
-  "      --outdirectory=STRING     Output directory",
+  "      --outdirectory=STRING     Output directory  (default=`output')",
+  "      --outfilename=STRING      Output file name  (default=`logfile.txt')",
+  "      --ULfilename=STRING       Upper limit file name  (default=`uls.dat')",
   "      --sftDir=STRING           Directory containing SFTs  (default=`./')",
   "      --ephemDir=STRING         Path to ephemeris files  \n                                  (default=`/opt/lscsoft/lalpulsar/share/lalpulsar')",
   "      --ephemYear=STRING        Year or year range (e.g. 08-11) of ephemeris \n                                  files  (default=`08-11')",
@@ -110,11 +112,13 @@ init_help_array(void)
   gengetopt_args_info_help[30] = gengetopt_args_info_full_help[30];
   gengetopt_args_info_help[31] = gengetopt_args_info_full_help[31];
   gengetopt_args_info_help[32] = gengetopt_args_info_full_help[32];
-  gengetopt_args_info_help[33] = 0; 
+  gengetopt_args_info_help[33] = gengetopt_args_info_full_help[33];
+  gengetopt_args_info_help[34] = gengetopt_args_info_full_help[34];
+  gengetopt_args_info_help[35] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[34];
+const char *gengetopt_args_info_help[36];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -185,6 +189,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->avesqrtSh_given = 0 ;
   args_info->blksize_given = 0 ;
   args_info->outdirectory_given = 0 ;
+  args_info->outfilename_given = 0 ;
+  args_info->ULfilename_given = 0 ;
   args_info->sftDir_given = 0 ;
   args_info->ephemDir_given = 0 ;
   args_info->ephemYear_given = 0 ;
@@ -235,8 +241,12 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->avesqrtSh_orig = NULL;
   args_info->blksize_arg = 1001;
   args_info->blksize_orig = NULL;
-  args_info->outdirectory_arg = NULL;
+  args_info->outdirectory_arg = gengetopt_strdup ("output");
   args_info->outdirectory_orig = NULL;
+  args_info->outfilename_arg = gengetopt_strdup ("logfile.txt");
+  args_info->outfilename_orig = NULL;
+  args_info->ULfilename_arg = gengetopt_strdup ("uls.dat");
+  args_info->ULfilename_orig = NULL;
   args_info->sftDir_arg = gengetopt_strdup ("./");
   args_info->sftDir_orig = NULL;
   args_info->ephemDir_arg = gengetopt_strdup ("/opt/lscsoft/lalpulsar/share/lalpulsar");
@@ -293,23 +303,25 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->avesqrtSh_help = gengetopt_args_info_full_help[19] ;
   args_info->blksize_help = gengetopt_args_info_full_help[20] ;
   args_info->outdirectory_help = gengetopt_args_info_full_help[21] ;
-  args_info->sftDir_help = gengetopt_args_info_full_help[22] ;
-  args_info->ephemDir_help = gengetopt_args_info_full_help[23] ;
-  args_info->ephemYear_help = gengetopt_args_info_full_help[24] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[25] ;
-  args_info->templateLength_help = gengetopt_args_info_full_help[26] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[27] ;
-  args_info->SFToverlap_help = gengetopt_args_info_full_help[28] ;
-  args_info->sftType_help = gengetopt_args_info_full_help[29] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[30] ;
-  args_info->keepOneCandidate_help = gengetopt_args_info_full_help[31] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[32] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[33] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[34] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[35] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[36] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[37] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[38] ;
+  args_info->outfilename_help = gengetopt_args_info_full_help[22] ;
+  args_info->ULfilename_help = gengetopt_args_info_full_help[23] ;
+  args_info->sftDir_help = gengetopt_args_info_full_help[24] ;
+  args_info->ephemDir_help = gengetopt_args_info_full_help[25] ;
+  args_info->ephemYear_help = gengetopt_args_info_full_help[26] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[27] ;
+  args_info->templateLength_help = gengetopt_args_info_full_help[28] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[29] ;
+  args_info->SFToverlap_help = gengetopt_args_info_full_help[30] ;
+  args_info->sftType_help = gengetopt_args_info_full_help[31] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[32] ;
+  args_info->keepOneCandidate_help = gengetopt_args_info_full_help[33] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[34] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[35] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[36] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[37] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[38] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[39] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[40] ;
   
 }
 
@@ -421,6 +433,10 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->blksize_orig));
   free_string_field (&(args_info->outdirectory_arg));
   free_string_field (&(args_info->outdirectory_orig));
+  free_string_field (&(args_info->outfilename_arg));
+  free_string_field (&(args_info->outfilename_orig));
+  free_string_field (&(args_info->ULfilename_arg));
+  free_string_field (&(args_info->ULfilename_orig));
   free_string_field (&(args_info->sftDir_arg));
   free_string_field (&(args_info->sftDir_orig));
   free_string_field (&(args_info->ephemDir_arg));
@@ -509,6 +525,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "blksize", args_info->blksize_orig, 0);
   if (args_info->outdirectory_given)
     write_into_file(outfile, "outdirectory", args_info->outdirectory_orig, 0);
+  if (args_info->outfilename_given)
+    write_into_file(outfile, "outfilename", args_info->outfilename_orig, 0);
+  if (args_info->ULfilename_given)
+    write_into_file(outfile, "ULfilename", args_info->ULfilename_orig, 0);
   if (args_info->sftDir_given)
     write_into_file(outfile, "sftDir", args_info->sftDir_orig, 0);
   if (args_info->ephemDir_given)
@@ -823,6 +843,8 @@ cmdline_parser_internal (
         { "avesqrtSh",	1, NULL, 0 },
         { "blksize",	1, NULL, 0 },
         { "outdirectory",	1, NULL, 0 },
+        { "outfilename",	1, NULL, 0 },
+        { "ULfilename",	1, NULL, 0 },
         { "sftDir",	1, NULL, 0 },
         { "ephemDir",	1, NULL, 0 },
         { "ephemYear",	1, NULL, 0 },
@@ -1124,9 +1146,37 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->outdirectory_arg), 
                  &(args_info->outdirectory_orig), &(args_info->outdirectory_given),
-                &(local_args_info.outdirectory_given), optarg, 0, 0, ARG_STRING,
+                &(local_args_info.outdirectory_given), optarg, 0, "output", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "outdirectory", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Output file name.  */
+          else if (strcmp (long_options[option_index].name, "outfilename") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->outfilename_arg), 
+                 &(args_info->outfilename_orig), &(args_info->outfilename_given),
+                &(local_args_info.outfilename_given), optarg, 0, "logfile.txt", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "outfilename", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Upper limit file name.  */
+          else if (strcmp (long_options[option_index].name, "ULfilename") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->ULfilename_arg), 
+                 &(args_info->ULfilename_orig), &(args_info->ULfilename_given),
+                &(local_args_info.ULfilename_given), optarg, 0, "uls.dat", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "ULfilename", '-',
                 additional_error))
               goto failure;
           
