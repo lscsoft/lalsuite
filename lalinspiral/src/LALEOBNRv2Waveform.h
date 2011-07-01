@@ -369,10 +369,10 @@ XLALGetFactorizedWaveform(
                      );
 
 int  XLALEOBNonQCCorrection(
-                      COMPLEX16             *nqc,
-                      REAL8Vector           *values,
-                      const REAL8           omega,
-                      EOBNonQCCoeffs        *coeffs
+                      COMPLEX16      * restrict nqc,
+                      REAL8Vector    * restrict values,
+                      const REAL8               omega,
+                      EOBNonQCCoeffs * restrict coeffs
                      );
 
 int XLALCalculateNQCCoefficients(

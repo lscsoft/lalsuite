@@ -18,98 +18,37 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALEOBPPWaveformCV">
-Author: Sathyaprakash, B. S., Cokelaer T.
-$Id$
-</lalVerbatim>  */
+/**
 
-/*  <lalLaTeX>
+\author Craig Robinson
 
-\subsection{Module \texttt{LALEOBPPWaveform.c} and
-\texttt{LALEOBPPWaveformTemplates.c}}
+\file
 
-Module to generate effective-one-body waveforms.
+\brief Functions to generate the EOBNRv2 waveforms, as defined in 
+Pan et al, arXiv:1106.1021v1 [gr-qc].
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALEOBPPWaveformCP}
-\index{\verb&LALEOBPPWaveform()&}
-\begin{itemize}
-\item {\tt signalvec:} Output containing the inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+\heading{Prototypes}
+<tt>LALEOBPPWaveform()</tt>
+<ul>
+    <li><tt>signalvec: </tt> Output containing the inspiral waveform.
+    <li><tt> params:</tt> Input containing binary chirp parameters.
+</ul>
 
-\input{LALEOBPPWaveformTemplatesCP}
-\index{\verb&LALEOBPPWaveformTemplates()&}
-\begin{itemize}
-\item {\tt signalvec1:} Output containing the 0-phase inspiral waveform.
-\item {\tt signalvec2:} Output containing the $\pi/2$-phase inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+<tt> LALEOBPPWaveformTemplates() </tt>
+<ul>
+    <li><tt> signalvec1:</tt> Output containing the 0-phase inspiral waveform.
+    <li><tt> signalvec2:</tt> Output containing the $\pi/2$-phase inspiral waveform.
+    <li><tt> params:</tt> Input containing binary chirp parameters.
+</ul>
 
-\input{LALEOBPPWaveformForInjectionCP}
-\index{\verb&LALEOBPPWaveformForInjection()&}
-\begin{itemize}
-\item {\tt inject\_hc:} Output containing the 0-phase inspiral waveform.
-\item {\tt inject\_hp:} Output containing the $\pi/2$-phase inspiral waveform.
-\item {\tt inject\_phase:} Output containing the phase of inspiral waveform.
-\item {\tt inject\_freq:} Output containing the frequency of inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+<tt> LALEOBPPWaveformForInjection() </tt>
+<ul>
+    <li><tt> waveform: </tt> Coherent GW structure containing output waveform 
+    <li><tt> params: </tt> Input containing inspiral template parameters.
+    <li><tt> ppnParams </tt> Input containing other necessary parameters.
+</ul>
+*/
 
-
-\subsubsection*{Description}
-By solving four coupled ordinary differential equations in
-Eq.~(\ref{eq:3.28})-(\ref{3.31}) this module computes the
-waveform in Eq.~(\ref{4.1}) (see discussion in Sec.~\ref{sec:EOB}
-for details on how the initial conditions are chosen, when the
-waveform is terminated and so on).
-No quasi-normal mode oscillations are added to the plunge signal
-so the waveform is terminated around $2.8\,M$.
-\subsection*{3PN vs 2PN}
-At 3PN, two additional parameters exist namely OmegaS and Zeta2.
-The first parameters should be set to zero. If the  second parameter
-is also set to zero then the waveform correponds to the standard
-waveforms.
-\subsubsection*{Algorithm}
-A fourth order Runge-Kutta is used to solve the differential equations.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-   LALInspiralSetup
-   LALInspiralChooseModel
-   LALInspiralVelocity
-   LALInspiralPhasing1
-   LALDBisectionFindRoot
-   LALRungeKutta4
-   LALHCapDerivatives
-   LALHCapDerivatives3PN
-   LALHCapDerivativesP4PN
-   LALlightRingRadius
-   LALlightRingRadius3PN
-   LALlightRingRadiusP4PN
-   LALpphiInit
-   LALpphiInit3PN
-   LALpphiInitP4PN
-   LALprInit
-   LALprInit3PN
-   LALprInitP4PN
-   LALrOfOmega
-   LALrOfOmega3PN
-   LALrOfOmegaP4PN
-\end{verbatim}
-
-\subsubsection*{Notes}
-The length of the waveform returned by {\tt LALInspiralWaveLength} is
-occassionally smaller than what is required to hold an EOB waveform.
-This is because EOB goes beyond the last stable orbit up to the light
-ring while {\tt LALInspiralWaveLength} assumes that the waveform terminates
-at the last stable orbit. It is recommended that a rather generous
-{\tt params->nEndPad} be used to prevent the code from crashing.
-
-\vfill{\footnotesize\input{LALEOBPPWaveformCV}}
-
-</lalLaTeX>  */
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALEOBNRv2Waveform.h>
@@ -1045,7 +984,7 @@ XLALFirstStoppingCondition(double UNUSED t,
 
 /**
  * Function which will calculate the stopping condition for the 
- * initial sampling rate
+ * higher sampling rate
  */
 static int
 XLALHighSRStoppingCondition(double UNUSED t,
@@ -1189,14 +1128,13 @@ GetRingdownAttachCombSize( INT4 l, INT4 m )
 
 /*-------------------------------------------------------------------*/
 
-/*  <lalVerbatim file="LALEOBPPWaveformCP"> */
 void
 LALEOBPPWaveform (
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim> */
+{ 
 
    UINT4 count;
    InspiralInit paramsInit;
@@ -1237,11 +1175,7 @@ LALEOBPPWaveform (
    RETURN(status);
 }
 
-
-NRCSID (LALEOBPPWAVEFORMTEMPLATESC,
-"$Id$");
-
-/*  <lalVerbatim file="LALEOBPPWaveformTemplatesCP"> */
+NRCSID (LALEOBPPWAVEFORMTEMPLATESC, "$Id$");
 
 void
 LALEOBPPWaveformTemplates (
@@ -1250,7 +1184,7 @@ LALEOBPPWaveformTemplates (
    REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim> */
+{ 
 
    UINT4 count;
 
@@ -1303,7 +1237,6 @@ LALEOBPPWaveformTemplates (
 /*======INJECTION =========================================*/
 /*=========================================================*/
 
-/*  <lalVerbatim file="LALEOBPPWaveformForInjectionCP"> */
 void
 LALEOBPPWaveformForInjection (
 			    LALStatus        *status,
@@ -1312,7 +1245,7 @@ LALEOBPPWaveformForInjection (
 			    PPNParamStruc    *ppnParams
 			    )
 {
-  /* </lalVerbatim> */
+
   UINT4 count, i;
 
   REAL4Vector *h=NULL;/* pointers to generated polarization data */

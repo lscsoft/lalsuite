@@ -25,7 +25,7 @@
  * a non-quasicircular correction to bring the peak of the EOB frequency
  * into agreement with that of NR simulations. This file contains the functions
  * used to calculate these NQC corrections. The fits to NR peak amplitude,
- * frequency, and their derivatives, are taken from Pan et al, in preparation.
+ * frequency, and their derivatives, are taken from Pan et al, arXiv:1106.1021v1 [gr-qc].
  * 
  */
 
@@ -365,9 +365,6 @@ int XLALCalculateNQCCoefficients(
                  REAL8                     eta,
                  EOBNonQCCoeffs * restrict coeffs )
 {
-
-  /* Code for 2,2 at the moment */
-  /* Easily extended later */
 
   UINT4 i;
 

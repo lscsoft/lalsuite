@@ -279,6 +279,7 @@ int main (int argc , char **argv) {
     case EOB:
     case EOBNR:
     case EOBNRv2:
+    case EOBNRv2HM:
     case PadeT1:
     case GeneratePPN:
     case AmpCorPPN:
@@ -353,7 +354,7 @@ int main (int argc , char **argv) {
         if (f>params.fLower)
         {
           if (params.approximant != EOBNR && params.approximant != EOBNRv2
-               && params.fFinal > f)
+               && params.approximant != EOBNRv2HM && params.fFinal > f)
             rhosq += sSq;
           else
             rhosq += sSq;
