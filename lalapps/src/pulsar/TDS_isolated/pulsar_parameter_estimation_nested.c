@@ -3033,13 +3033,6 @@ injection\n", outfile);
 injection\n", signalonly);
       }
     }
-                                                   
-    INT4 i = 0, length = data->dataTimes->length;
-   
-    /* for injection always attempt to include the signal phase model even if
-       the search is not going to be over phase */
-    UINT4 varyphasetmp = varyphase;
-    varyphase = 1;
                                                             
     /* create the signal */
     modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
