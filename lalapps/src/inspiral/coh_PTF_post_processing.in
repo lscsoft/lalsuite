@@ -553,19 +553,19 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
 
     # generate cache of FOUND/MISSED files
     fmcachefile = '%s/%s-GRB%s_FOUNDMISSED-%s-%s.cache'\
-                  % (outdir, ifotag, grb, datastart, dataduration)
+                  % (outdir, ifotag, grb, start, duration)
     fmfiles = ['%s/%s-INJECTION_GRB%s_%s_FOUND-%s-%s.xml'\
-               % (outdir, ifotag, grb, injrun, datastart, dataduration)\
+               % (outdir, ifotag, grb, injrun, start, duration)\
                for injrun in injruns] + \
               ['%s/%s-INJECTION_GRB%s_%s_MISSED-%s-%s.xml'\
-               % (outdir, ifotag, grb, injrun, datastart, dataduration)\
+               % (outdir, ifotag, grb, injrun, start, duration)\
                for injrun in injruns]
     fmcache = lal.Cache.from_urls(fmfiles)
     fmcache.tofile(open(fmcachefile, 'w'))
 
     for injpattern in injpatterns:
       for inc in inclinations:
-        node = injcombiner_setup(job, tag, outdir, fmcache, injpattern, inc)
+        node = injcombiner_setup(job, tag, outdir, fmcachefile, injpattern, inc)
         dag.add_node(node)
 
     # finalise DAG
@@ -577,6 +577,36 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   # ===========
   # sbv_plotter
   # ===========
+
+  filteredInjRuns = []
+  filteredDistRuns = {}
+  # Append runs that have not been split
+  for run in injruns:
+    append = True
+    for injpattern in injpatterns:
+      if injpattern in run:
+        append = False
+        break
+    if append:
+      filteredInjRuns.append(run)
+      filteredDistRuns[run]=run
+
+  # and append the runs that have been split
+  for injpattern in injpatterns:
+    distRun = None
+    for run in injruns:
+      if injpattern in run:
+        distRun = run
+        break
+    if not distRun:
+      raise BrokenError, "Cannot find any injections matching %s in ini file"\
+                         % (injpattern)
+    for inc in inclinations:
+      injrun = 'injectionsAstro%s_FILTERED_%d' % (injpattern,inc)
+      filteredInjRuns.append(injrun)
+      filteredDistRuns[injrun] = distRun
+      
+
 
   if run_sbvplotter:
 
@@ -597,7 +627,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
       node = sbv_setup(job, tag, clstfile[timetype], grb, sbvoutpath, grbdir)
       dag.add_node(node)
 
-    for injrun in injruns:
+    for injrun in filteredInjRuns: 
       # setup SBV injection plots
       injfile = '%s/%s-INJECTION_GRB%s_%s_FOUND-%d-%d.xml'\
                 % (outdir, ifotag, grb, injrun, start, duration)
@@ -614,7 +644,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     # finalise DAG
     parents = []
     if run_clustering: parents.append(DAGManNode['trig_cluster'])
-    if run_injfind:    parents.append(DAGManNode['injfinder'])
+    if run_injcombiner:    parents.append(DAGManNode['injcombiner'])
     DAGManNode[tag] = finalise_DAG(dag, parents)
     uberdag.add_node(DAGManNode[tag])
  
@@ -649,22 +679,21 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     for timetype in timetags:
       if timetype in [ 'OFFSOURCE', 'ALL_TIMES' ]:  continue
 
-      for injrun in injruns:
+      for injrun in filteredInjRuns:
         # setup injection efficiency jobs
         found = '%s/%s-INJECTION_GRB%s_%s_FOUND-%d-%d.xml'\
                 % (outdir, ifotag, grb, injrun, start, duration)
         missed = found.replace('FOUND', 'MISSED')
         effoutdir = '%s/%s/%s/efficiency' % (outdir, plotdir, injrun)
         node = injection_efficiency_setup(job, tag, effoutdir, grbdir,\
-                                          clstfile['OFFSOURCE'],\
-                                          clstfile[timetype], injrun, injcp,\
-                                          found, missed)
+                           clstfile['OFFSOURCE'],clstfile[timetype],\
+                           filteredDistRuns[injrun], injcp,found, missed)
         dag.add_node(node)
 
     # finalise DAG
     parents = []
     if run_clustering: parents.append(DAGManNode['trig_cluster'])
-    if run_injfind:    parents.append(DAGManNode['injfinder'])
+    if run_injcombiner:    parents.append(DAGManNode['injcombiner'])
     DAGManNode[tag] = finalise_DAG(dag, parents)
     uberdag.add_node(DAGManNode[tag])
 
