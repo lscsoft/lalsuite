@@ -1593,7 +1593,7 @@ INT4 XLALGenerateHybridWaveDerivatives (
 	REAL4Vector		*rwave,
 	REAL4Vector		*dwave,
 	REAL4Vector		*ddwave,
-        REAL8Vector             *time,
+        REAL8Vector             *timeVec,
 	REAL4Vector		*wave,
 	REAL8Vector		*matchrange,
 	InspiralTemplate	*params
@@ -1633,7 +1633,7 @@ INT4 XLALInspiralHybridAttachRingdownWave (
         REAL4Vector  	 *signalvec2,
         INT4             l,
         INT4             m,
-        REAL8Vector      *time,
+        REAL8Vector      *timeVec,
 	REAL8Vector	 *matchrange,
         InspiralTemplate *params);
 
