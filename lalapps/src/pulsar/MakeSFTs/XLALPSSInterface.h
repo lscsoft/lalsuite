@@ -11,15 +11,27 @@
 #include "pss_sfdb.h"
 #include <lal/LALDatatypes.h>
 
+#define PSS_PI PIG
+
+#define XLALPSS_SET_ABS  (1<<0)
+#define XLALPSS_SET_TAU  (1<<1)
+#define XLALPSS_SET_FACT (1<<2)
+#define XLALPSS_SET_CR   (1<<3)
+#define XLALPSS_SET_EDGE (1<<4)
+
+typedef struct {
+  UINT4 set; /* specify which PSS parameters to modify in XLALCreatePSSEventParams(),
+		ORed list of XLALPSS_SET flags */
+  REAL4 abs, tau, fact, cr, edge; /* new values for the PSS parameters */
+} XLALPSSParamSet;
+
 /* PSS interface datatypes based on PSS datatypes */
 typedef GD           PSSTimeseries;
 typedef EVEN_PARAM   PSSEventParams;
 typedef HEADER_PARAM PSSHeaderParams;
 
-#define PSS_PI PIG
-
 /* creator & destructor functions */
-extern PSSEventParams *XLALCreatePSSEventParams(UINT4 length);
+extern PSSEventParams *XLALCreatePSSEventParams(UINT4 length, XLALPSSParamSet setpar);
 extern PSSTimeseries  *XLALCreatePSSTimeseries(UINT4 length);
 extern void XLALDestroyPSSTimeseries(PSSTimeseries *ts);
 extern void XLALDestroyPSSEventParams(PSSEventParams *ts);

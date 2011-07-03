@@ -180,6 +180,10 @@ COMPLEX16Vector *fftDataDouble = NULL;
 REAL4FFTPlan *fftPlanSingle;           /* 11/19/05 gam; fft plan and data container, single precision case */
 COMPLEX8Vector *fftDataSingle = NULL;
 
+#ifdef PSS_ENABLED
+XLALPSSParamSet XLALPSSParams;
+#endif
+
 CHAR allargs[16384]; /* 06/26/07 gam; copy all command line args into commentField, based on /lalapps/src/calibration/ComputeStrainDriver.c */
 /***************************************************************************/
 
@@ -585,8 +589,15 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"ifo",                  required_argument, NULL,          'i'},
     {"window-type",          required_argument, NULL,          'w'},
     {"overlap-fraction",     required_argument, NULL,          'P'},
-    {"td-cleaning-freq",     required_argument, NULL,          'b'},
     {"td-cleaning",          no_argument,       NULL,          'a'},
+#ifdef PSS_ENABLED
+    {"pss-freq",             required_argument, NULL,          'b'},
+    {"pss-abs",              required_argument, NULL,          512},
+    {"pss-tau",              required_argument, NULL,          513},
+    {"pss-fact",             required_argument, NULL,          514},
+    {"pss-cr",               required_argument, NULL,          515},
+    {"pss-edge",             required_argument, NULL,          516},
+#endif
     {"ht-data",              no_argument,       NULL,          'H'},
     {"use-single",           no_argument,       NULL,          'S'},
     {"help",                 no_argument,       NULL,          'h'},
@@ -722,6 +733,28 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'b':
       CLA->PSSCleanHPf = atof(optarg);
       break;
+#ifdef PSS_ENABLED
+    case 512:
+      XLALPSSParams.abs  = atof(optarg);
+      XLALPSSParams.set |= XLALPSS_SET_ABS;
+      break;
+    case 513:
+      XLALPSSParams.tau  = atof(optarg);
+      XLALPSSParams.set |= XLALPSS_SET_TAU;
+      break;
+    case 514:
+      XLALPSSParams.fact = atof(optarg);
+      XLALPSSParams.set |= XLALPSS_SET_FACT;
+      break;
+    case 515:
+      XLALPSSParams.cr   = atof(optarg);
+      XLALPSSParams.set |= XLALPSS_SET_CR;
+      break;
+    case 516:
+      XLALPSSParams.edge = atof(optarg);
+      XLALPSSParams.set |= XLALPSS_SET_EDGE;
+      break;
+#endif
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
@@ -745,15 +778,25 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tht-data (-H)\t\tFLAG\t (optional) Input data is h(t) data (input is PROC_REAL8 data ).\n");
       fprintf(stdout,"\tuse-single (-S)\t\tFLAG\t (optional) Use single precision for window, plan, and fft; double precision filtering is always done.\n");
       fprintf(stdout,"\tframe-struct-type (-u)\tSTRING\t (optional) String specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.\n");
-      fprintf(stdout,"\ttd-cleaning (-a)\tFLAG\t Use time-domain cleaning with PSS routines");
-      fprintf(stdout,"\ttd-cleaning-freq (-b) \tFLOAT\t(optional) Cut frequency for the bilateral highpass filter for time-domain cleaning");
+      fprintf(stdout,"\ttd-cleaning (-a)\tFLAG\t Use time-domain cleaning with PSS routines\n");
+#ifdef PSS_ENABLED
+      fprintf(stdout,"\tpss-freq (-b)      \tFLOAT\t Cut frequency for the bilateral highpass filter for time-domain cleaning\n");
+      fprintf(stdout,"\tpss-abs            \tFLOAT\t (optional) Set PSS parameter 'abs' for time-domain cleaning\n");
+      fprintf(stdout,"\tpss-tau            \tFLOAT\t (optional) Set PSS parameter 'tau' for time-domain cleaning\n");
+      fprintf(stdout,"\tpss-fact           \tFLOAT\t (optional) Set PSS parameter 'fact' for time-domain cleaning\n");
+      fprintf(stdout,"\tpss-cr             \tFLOAT\t (optional) Set PSS parameter 'cr' for time-domain cleaning\n");
+      fprintf(stdout,"\tpss-edge           \tFLOAT\t (optional) Set PSS parameter 'edge' for time-domain cleaning\n");
+#endif
       fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message.\n");
       exit(0);
       break;
     default:
       /* unrecognized option */
       errflg++;
-      fprintf(stderr,"Unrecognized option argument %c\n",c);
+      if((c>=48) && (c<128))
+	fprintf(stderr,"Unrecognized option '%c'\n",c);
+      else
+	fprintf(stderr,"Unrecognized option %d\n",c);
       exit(1);
       break;
     }
@@ -1620,7 +1663,7 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
   /* creation / memory allocation */
   /* there can't be more events than there are samples,
      so we prepare for as many events as we have samples */
-  if( (eventParams = XLALCreatePSSEventParams(samples)) == NULL) {
+  if( (eventParams = XLALCreatePSSEventParams(samples, XLALPSSParams)) == NULL) {
     fprintf(stderr,"XLALCreatePSSEventParams call failed %s,%d\n",__FILE__,__LINE__);
     retval = -1;
     goto PSSTDCleaningREAL8FreeNothing;
