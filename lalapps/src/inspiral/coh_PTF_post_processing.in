@@ -317,7 +317,11 @@ The default is to run the full post processing pipeline, various steps can be sk
   if not opts.config_file:
     parser.error('Must give --config-file')
 
-  #if not opts.inj_config_file:
+  if not opts.inj_config_file:
+    print >>sys.stdout,\
+         "Injection config file not given. Running with no injections."
+    opts.skip_injfind=True
+    opts.skip_injcombiner=True
   #  parser.error('Must give --inj-config-file')
 
   return opts, args
@@ -590,31 +594,31 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   filteredInjRuns = []
   filteredDistRuns = {}
   # Append runs that have not been split
-  for run in injruns:
-    append = True
-    for injpattern in injpatterns:
-      if injpattern in run:
-        append = False
-        break
-    if append:
-      filteredInjRuns.append(run)
-      filteredDistRuns[run]=run
-
-  # and append the runs that have been split
-  for injpattern in injpatterns:
-    distRun = None
+  if injruns:
     for run in injruns:
-      if injpattern in run:
-        distRun = run
-        break
-    if not distRun:
-      raise BrokenError, "Cannot find any injections matching %s in ini file"\
-                         % (injpattern)
-    for inc in inclinations:
-      injrun = 'injectionsAstro%s_FILTERED_%d' % (injpattern,inc)
-      filteredInjRuns.append(injrun)
-      filteredDistRuns[injrun] = distRun
-      
+      append = True
+      for injpattern in injpatterns:
+        if injpattern in run:
+          append = False
+          break
+      if append:
+        filteredInjRuns.append(run)
+        filteredDistRuns[run]=run
+
+    # and append the runs that have been split
+    for injpattern in injpatterns:
+      distRun = None
+      for run in injruns:
+        if injpattern in run:
+          distRun = run
+          break
+      if not distRun:
+        raise BrokenError, "Cannot find any injections matching %s in ini file"\
+                           % (injpattern)
+      for inc in inclinations:
+        injrun = 'injectionsAstro%s_FILTERED_%d' % (injpattern,inc)
+        filteredInjRuns.append(injrun)
+        filteredDistRuns[injrun] = distRun
 
 
   if run_sbvplotter:
