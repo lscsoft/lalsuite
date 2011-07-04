@@ -148,7 +148,8 @@ def injcombiner_setup(job, category, outdir, fmcache, injpattern, inclination):
 # write sbv_plotter args
 # =============================================================================
 
-def sbv_setup(job, category, trigfile, grb, outdir, grbdir, injfile=None):
+def sbv_setup(job, category, trigfile, grb, outdir, grbdir, vetodir=None,\
+              injfile=None):
 
   node = pipeline.CondorDAGNode(job)
   node.set_category(category)
@@ -156,6 +157,8 @@ def sbv_setup(job, category, trigfile, grb, outdir, grbdir, injfile=None):
   node.add_var_opt('grb-name', grb)
   node.add_var_opt('segment-dir', grbdir)
   node.add_var_opt('output-path', os.path.abspath(outdir))
+  if vetodir:
+    node.add_var_opt('veto-directory',vetodir)
   if injfile:
     node.add_var_arg('--inj-file %s ' % injfile)
 
@@ -165,7 +168,8 @@ def sbv_setup(job, category, trigfile, grb, outdir, grbdir, injfile=None):
 # write efficiency args
 # =============================================================================
 
-def onoff_efficiency_setup(job, category, outdir, segdir, offsource, onsource):
+def onoff_efficiency_setup(job, category, outdir, segdir, offsource, onsource,\
+                           vetodir=None):
 
   node = pipeline.CondorDAGNode(job)
   node.set_category(category)
@@ -173,22 +177,27 @@ def onoff_efficiency_setup(job, category, outdir, segdir, offsource, onsource):
   node.add_var_opt('offsource-file', offsource)
   node.add_var_opt('onsource-file', onsource)
   node.add_var_opt('segment-dir', segdir)
+  if vetodir:
+    node.add_var_opt('veto-directory',vetodir)
 
   return node
 
 def injection_efficiency_setup(job, category, outdir, segdir, offsource,\
-                               onsource, injrun, cp, found, missed): 
+                               onsource, injrun, cp, found, missed,\
+                               vetodir=None): 
 
   node = pipeline.CondorDAGNode(job)
   node.set_category(category)
   node.add_var_opt('output-path', outdir)
-  node.add_var_opt('upper-inj-dist', cp.getfloat(injrun, 'max-distance'))
-  node.add_var_opt('lower-inj-dist', cp.getfloat(injrun, 'min-distance'))
+  node.add_var_opt('upper-inj-dist', cp.getfloat(injrun, 'max-distance')/1000.)
+  node.add_var_opt('lower-inj-dist', cp.getfloat(injrun, 'min-distance')/1000.)
   node.add_var_opt('offsource-file', offsource)
   node.add_var_opt('onsource-file', onsource)
   node.add_var_opt('found-file', found)
   node.add_var_opt('missed-file', missed)
   node.add_var_opt('segment-dir', segdir)
+  if vetodir:
+    node.add_var_opt('veto-directory',vetodir)
 
   return node
 
@@ -620,11 +629,13 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     for timetype in [ 'ALL_TIMES', 'OFFSOURCE' ]:
       # setup SBV plotting job
       sbvoutpath = '%s/%s/%s/plots' % (outdir, plotdir, timetype)
-      node = sbv_setup(job, tag, trigfile[timetype], grb, sbvoutpath, grbdir)
+      node = sbv_setup(job, tag, trigfile[timetype], grb, sbvoutpath, grbdir,\
+                       vetodir=rundir)
       dag.add_node(node)
       # setup SBV clustered plotting job
       sbvoutpath = '%s/%s/%s/plots_clustered' % (outdir, plotdir, timetype)
-      node = sbv_setup(job, tag, clstfile[timetype], grb, sbvoutpath, grbdir)
+      node = sbv_setup(job, tag, clstfile[timetype], grb, sbvoutpath, grbdir,\
+                       vetodir=rundir)
       dag.add_node(node)
 
     for injrun in filteredInjRuns: 
@@ -633,12 +644,12 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
                 % (outdir, ifotag, grb, injrun, start, duration)
       sbvoutpath = '%s/%s/%s/plots' % (outdir, plotdir, injrun)
       node = sbv_setup(job, tag, trigfile[timetype], grb, sbvoutpath, grbdir,\
-                       injfile)
+                       vetodir=rundir,injfile=injfile)
       dag.add_node(node)
       # setup SBV clusterd injection plots
       sbvoutpath = '%s/%s/%s/plots_clustered' % (outdir, plotdir, injrun)
       node = sbv_setup(job, tag, clstfile[timetype], grb, sbvoutpath, grbdir,\
-                       injfile)
+                       vetodir=rundir,injfile=injfile)
       dag.add_node(node)
 
     # finalise DAG
@@ -669,7 +680,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
       # setup onoff efficiency jobs
       effoutdir = '%s/%s/%s/efficiency' % (outdir, plotdir, timetype)
       node = onoff_efficiency_setup(job, tag, effoutdir, grbdir,\
-                                    clstfile['OFFSOURCE'], clstfile[timetype])
+                                    clstfile['OFFSOURCE'], clstfile[timetype],\
+                                    vetodir=rundir)
       dag.add_node(node)
 
     # define new job for inejction efficiency
@@ -687,7 +699,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
         effoutdir = '%s/%s/%s/efficiency' % (outdir, plotdir, injrun)
         node = injection_efficiency_setup(job, tag, effoutdir, grbdir,\
                            clstfile['OFFSOURCE'],clstfile[timetype],\
-                           filteredDistRuns[injrun], injcp,found, missed)
+                           filteredDistRuns[injrun], injcp,found, missed,\
+                           vetodir=rundir)
         dag.add_node(node)
 
     # finalise DAG
