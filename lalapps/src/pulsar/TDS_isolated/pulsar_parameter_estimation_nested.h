@@ -71,7 +71,7 @@ extern "C" {
 /* default values */
 #define CHUNKMIN 5
 #define CHUNKMAX 0
-#define PSIBINS 2000
+#define PSIBINS 500
 #define TIMEBINS 2880
 
 /* INCREASE THESE VALUES IF ADDING ADDITIONAL PARAMETERS */

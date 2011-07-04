@@ -156,7 +156,9 @@ INT4 main( INT4 argc, CHAR *argv[] ){
       exit(0);
     }
   }
-  else readPulsarData( &runState );/*defaults to read in one stream of data per ifo*/
+  else 
+    readPulsarData( &runState );/*defaults to read in one stream of data
+                                 per ifo*/
   
   /* read in data using command line arguments */
   /*readPulsarData( &runState );*/
@@ -164,32 +166,37 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* set the pulsar model type */
   setSignalModelType( &runState );
   
+  /* set modeltype variable of not previously set */
+  if ( modeltype == NULL ){
+    modeltype = XLALStringDuplicate( *(CHAR**)LALInferenceGetVariable
+      (runState.data->dataParams, "modeltype") );
+  }
+  
   /* set algorithm to use Nested Sampling */
   runState.algorithm = &LALInferenceNestedSamplingAlgorithm;
   runState.evolve = &LALInferenceNestedSamplingOneStep;
   
-  if ( !strcmp( modeltype, "triaxial" ) ){
-      runState.likelihood = &pulsar_log_likelihood;
-    }
-    else if ( !strcmp( modeltype, "pinsf" ) ){
-      runState.likelihood = &pulsar_double_log_likelihood;
-    }
-    else{
-      fprintf(stderr, "Error... model '%s' is not defined!\n", modeltype);
-      exit(0);
-    }
   /* set likelihood function */
-  /*runState.likelihood = &pulsar_log_likelihood;*/
+  if ( !strcmp( modeltype, "triaxial" ) ){
+    runState.likelihood = &pulsar_log_likelihood;
+  }
+  else if ( !strcmp( modeltype, "pinsf" ) ){
+    runState.likelihood = &pulsar_double_log_likelihood;
+  }
+  else{
+    fprintf(stderr, "Error... model '%s' is not defined!\n", modeltype);
+    exit(0);
+  }
   
   /* set prior function */
   runState.prior = &priorFunction;
   
   /* set signal model/template */
   runState.template = get_pulsar_model;
-  
+ 
   /* Generate the lookup tables and read parameters from par file */
   setupFromParFile( &runState );
-  
+ 
   /* add injections if requested */
   injectSignal( &runState );
   
@@ -2716,10 +2723,13 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
     
   INT4 i = 0, length;
   
-  REAL8 psteps, tsteps;
-  INT4 psibin, timebin;
+  REAL8 psteps, tsteps, psv, tsv;
+  INT4 psibinMin, psibinMax, timebinMin, timebinMax;
   REAL8 tstart;
   REAL8 plus, cross;
+  REAL8 plus00, plus01, plus10, plus11, cross00, cross01, cross10, cross11;
+  REAL8 psiScaled, timeScaled;
+  REAL8 psiMin, psiMax, timeMin, timeMax;
   REAL8 T;
   REAL8 Xplus, Xcross;
   REAL8 Xpcosphi, Xccosphi, Xpsinphi, Xcsinphi;
@@ -2733,8 +2743,10 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
   psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
   tsteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "timeSteps" );
   
-  LU_Fplus = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fplus");
-  LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fcross");
+  LU_Fplus = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, 
+                                                     "LU_Fplus");
+  LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, 
+                                                      "LU_Fcross");
   
   sin_cos_LUT( &sinphi, &cosphi, pars.phi0 );
   
@@ -2757,18 +2769,48 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
  
   tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] ); /*time of first B_k*/
   
+  /* set the psi bin for the lookup table */
+  psv = LAL_PI_2 / ( psteps - 1. );
+  psibinMin = (INT4)floor( ( pars.psi + LAL_PI/4. )/psv );
+  psiMin = -(LAL_PI/4.) + psibinMin*psv;
+  psibinMax = psibinMin + 1;
+  psiMax = psiMin + psv;
+  
+  /* rescale psi for bilinear interpolation on a unit square */
+  psiScaled = (pars.psi - psiMin)/(psiMax - psiMin);
+  
+  tsv = LAL_DAYSID_SI / tsteps;
+  
   for( i=0; i<length; i++ ){
-    /* set the psi bin for the lookup table */
-    psibin = (INT4)ROUND( ( pars.psi + LAL_PI/4. ) * ( psteps-1. )/LAL_PI_2 );
-
     /* set the time bin for the lookup table */
     /* sidereal day in secs*/
     T = fmod( XLALGPSGetREAL8(&data->dataTimes->data[i]) - tstart,
               LAL_DAYSID_SI );
-    timebin = (INT4)fmod( ROUND(T*tsteps/LAL_DAYSID_SI), tsteps );
-
-    plus = gsl_matrix_get( LU_Fplus, psibin, timebin );
-    cross = gsl_matrix_get( LU_Fcross, psibin, timebin );
+    timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
+    timeMin = timebinMin*tsv;
+    timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
+    timeMax = timeMin + tsv;
+    
+    /* get values of matrix for bilinear interpolation */
+    plus00 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMin );
+    plus01 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMax );
+    plus10 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMin );
+    plus11 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMax );
+    
+    cross00 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMin );
+    cross01 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMax );
+    cross10 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMin );
+    cross11 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMax );
+    
+    /* rescale time for bilinear interpolation on a unit square */
+    timeScaled = (T - timeMin)/(timeMax - timeMin);
+    
+    plus = plus00*(1. - psiScaled)*(1. - timeScaled) + 
+      plus10*psiScaled*(1. - timeScaled) + plus01*(1. - psiScaled)*timeScaled +
+      plus11*psiScaled*timeScaled;
+    cross = cross00*(1. - psiScaled)*(1. - timeScaled) + 
+      cross10*psiScaled*(1. - timeScaled) + cross01*(1. - psiScaled)*timeScaled
+      + cross11*psiScaled*timeScaled;
     
     /* create the complex signal amplitude model */
     data->compModelData->data->data[i].re = plus*Xpcosphi + cross*Xcsinphi;
@@ -2780,8 +2822,11 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
 void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
   INT4 i = 0, length;
   
-  REAL8 psteps, tsteps;
-  INT4 psibin, timebin;
+  REAL8 psteps, tsteps, psv, tsv;
+  INT4 psibinMin, psibinMax, timebinMin, timebinMax;
+  REAL8 plus00, plus01, plus10, plus11, cross00, cross01, cross10, cross11;
+  REAL8 psiScaled, timeScaled;
+  REAL8 psiMin, psiMax, timeMin, timeMax;
   REAL8 tstart;
   REAL8 plus, cross;
   REAL8 T;
@@ -2822,20 +2867,50 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
  
   tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] ); /*time of first B_k*/
   
+  /* set the psi bin for the lookup table */
+  psv = LAL_PI_2 / ( psteps - 1. );
+  psibinMin = (INT4)floor( ( pars.psi + LAL_PI/4. )/psv );
+  psiMin = -(LAL_PI/4.) + psibinMin*psv;
+  psibinMax = psibinMin + 1;
+  psiMax = psiMin + psv;
+  
+  /* rescale psi for bilinear interpolation on a unit square */
+  psiScaled = (pars.psi - psiMin)/(psiMax - psiMin);
+  
+  tsv = LAL_DAYSID_SI / tsteps;
+  
   /*fprintf(stderr,"lambda: %f, theta: %f, h1: %f\n",pars.lambda, pars.theta, pars.h1);*/
   
   for( i=0; i<length; i++ ){
-    /* set the psi bin for the lookup table */
-    psibin = (INT4)ROUND( ( pars.psi + LAL_PI/4. ) * ( psteps-1. )/LAL_PI_2 );
-
     /* set the time bin for the lookup table */
-    /* sidereal day in secs*/
+    /* sidereal day in secs*/    
     T = fmod( XLALGPSGetREAL8(&data->dataTimes->data[i]) - tstart,
               LAL_DAYSID_SI );
-    timebin = (INT4)fmod( ROUND(T*tsteps/LAL_DAYSID_SI), tsteps );
-
-    plus = gsl_matrix_get( LU_Fplus, psibin, timebin );
-    cross = gsl_matrix_get( LU_Fcross, psibin, timebin );
+    timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
+    timeMin = timebinMin*tsv;
+    timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
+    timeMax = timeMin + tsv;
+    
+    /* get values of matrix for bilinear interpolation */
+    plus00 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMin );
+    plus01 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMax );
+    plus10 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMin );
+    plus11 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMax );
+    
+    cross00 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMin );
+    cross01 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMax );
+    cross10 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMin );
+    cross11 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMax );
+    
+    /* rescale time for bilinear interpolation on a unit square */
+    timeScaled = (T - timeMin)/(timeMax - timeMin);
+    
+    plus = plus00*(1. - psiScaled)*(1. - timeScaled) + 
+      plus10*psiScaled*(1. - timeScaled) + plus01*(1. - psiScaled)*timeScaled +
+      plus11*psiScaled*timeScaled;
+    cross = cross00*(1. - psiScaled)*(1. - timeScaled) + 
+      cross10*psiScaled*(1. - timeScaled) + cross01*(1. - psiScaled)*timeScaled
+      + cross11*psiScaled*timeScaled;
     
     /* create the complex signal amplitude model */
     /*at f*/
