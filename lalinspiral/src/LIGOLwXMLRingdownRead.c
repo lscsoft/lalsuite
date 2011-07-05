@@ -222,7 +222,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
       {
         thisEvent->snr = r4colData;
       }
-      else if ( tableDir[j].idx == 17)
+      else if ( tableDir[j].idx == 17 )
       {
         thisEvent->eff_dist = r4colData;
       }
