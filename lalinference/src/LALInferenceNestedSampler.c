@@ -250,9 +250,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
 	do {
-		/* Find minimum likelihood sample to replace */
+                /* Find minimum likelihood sample to replace */
 		minpos=0;
-		for(i=1;i<Nlive;i++){
+                for(i=1;i<Nlive;i++){
 			if(logLikelihoods[i]<logLikelihoods[minpos])
 				minpos=i;
 		}
@@ -279,15 +279,16 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		/* Generate a new live point */
 		do{ /* This loop is here in case it is necessary to find a different sample */
 			/* Clone an old live point and evolve it */
-			while((j=gsl_rng_uniform_int(runState->GSLrandom,Nlive)==minpos)){};
+                        while((j=gsl_rng_uniform_int(runState->GSLrandom,Nlive))==minpos){};
 			LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
 			LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
 			runState->evolve(runState);
-			LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);
-			logLikelihoods[minpos]=runState->currentLikelihood;
 			itercounter++;
-		}while(runState->currentLikelihood<=logLmin || *(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
+		}while( runState->currentLikelihood<=logLmin ||  *(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
 
+                LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);
+                logLikelihoods[minpos]=runState->currentLikelihood;
+                
 		if (runState->currentLikelihood>logLmax)
 			logLmax=runState->currentLikelihood;
 
@@ -296,7 +297,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
 		if(verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",
 									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")/(REAL8)itercounter
-									   ,H,H/log(2.0),logLmin,runState->currentLikelihood,logZ,dZ,10.0*log10(exp(1.0))*(logZ-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise")));
+                                                                           ,H,H/log(2.0),logLmin,runState->currentLikelihood,logZ,dZ,10.0*log10(exp(1.0))*( logZ-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise")));
 
 		/* Flush output file */
 		if(fpout && !(iter%100)) fflush(fpout);
@@ -309,8 +310,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
                                         (void *)cvm);
                 }
 	}
-	while( iter<Nlive ||  dZ> TOLERANCE );
-        
+	while( iter<Nlive ||  dZ> TOLERANCE ); 
 
 	/* Sort the remaining points (not essential, just nice)*/
 		for(i=0;i<Nlive-1;i++){
@@ -363,21 +363,19 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 	REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
 	REAL8 logPriorOld,logPriorNew,logLnew;
 	newParams=calloc(1,sizeof(LALInferenceVariables));
-        
-        /* Make a copy of the parameters passed through currentParams */
-	LALInferenceCopyVariables(runState->currentParams,newParams);
+
 	/* Evolve the sample until it is accepted */
 	logPriorOld=runState->prior(runState,runState->currentParams);
  
 	do{
 		mcmc_iter++;
-		LALInferenceCopyVariables(runState->currentParams,newParams);  
+		/* Make a copy of the parameters passed through currentParams */
+                LALInferenceCopyVariables(runState->currentParams,newParams);  
                 runState->proposal(runState,newParams);
 		logPriorNew=runState->prior(runState,newParams);
                
 		/* If rejected, continue to next iteration */
-	
-if(log(gsl_rng_uniform(runState->GSLrandom)) > logPriorNew-logPriorOld)
+                if(log(gsl_rng_uniform(runState->GSLrandom)) > logPriorNew-logPriorOld)
 			continue;
 		/* Otherwise, check that logL is OK */
 		logLnew=runState->likelihood(newParams,runState->data,runState->template);
@@ -387,6 +385,7 @@ if(log(gsl_rng_uniform(runState->GSLrandom)) > logPriorNew-logPriorOld)
 			LALInferenceCopyVariables(newParams,runState->currentParams);
 			runState->currentLikelihood=logLnew;
 		}
+		
 	} while(mcmc_iter<Nmcmc);
         
 	LALInferenceDestroyVariables(newParams);

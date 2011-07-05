@@ -71,13 +71,14 @@ extern "C" {
 /* default values */
 #define CHUNKMIN 5
 #define CHUNKMAX 0
-#define PSIBINS 2000
+#define PSIBINS 500
 #define TIMEBINS 2880
 
 /* INCREASE THESE VALUES IF ADDING ADDITIONAL PARAMETERS */
 /* number of amplitude parameters e.g. h0, phi0, psi, ciota */
-#define NUMAMPPARS 4
-CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi", "cosiota" };
+#define NUMAMPPARS 7
+CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi", "cosiota", "h1",
+                                          "lambda", "theta" };
 
 /* number of frequency parameters e.g. f0 */
 #define NUMFREQPARS 7
