@@ -301,23 +301,18 @@ LALCompareSnglRingdownByTime (
   }
 }
 
-
-
 /** Compare theparameters of two ringdown triggers according to
  * the specified coincidence test.
  */
 
-void
-LALCompareRingdowns (
-    LALStatus                *status,
+REAL8
+XLALCompareRingdowns (
     SnglRingdownTable        *aPtr,
     SnglRingdownTable        *bPtr,
     RingdownAccuracyList     *params
     )
 
 {
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR( status );
   SnglRingdownAccuracy aAcc, bAcc;
   InterferometerNumber ifoaNum,  ifobNum;
 
@@ -340,12 +335,12 @@ LALCompareRingdowns (
   /* check that triggers come from different IFOs */
   if( strcmp(aPtr->ifo, bPtr->ifo) )
   {
-    LALInfo( status, "Triggers from different IFOs");
+    XLALPrintInfo( "Triggers from different IFOs");
     params->match = 1;
   }
   else
   {
-    LALInfo( status, "Triggers from same IFO");
+    XLALPrintInfo( "Triggers from same IFO");
     params->match = 0;
     goto exit;
   }
@@ -362,6 +357,7 @@ LALCompareRingdowns (
      else
      {
        params->match = 0;
+       ds2 = 1.0 / 0.0;
        goto exit;
      }
   }
@@ -377,6 +373,7 @@ LALCompareRingdowns (
     else
     {
       params->match = 0;
+      ds2 = 1.0 / 0.0;
     }
   }
   else if ( params->test == LALRINGDOWN_DS_SQ )
@@ -397,30 +394,6 @@ LALCompareRingdowns (
     if ( ds2 < (aAcc.ds_sq + bAcc.ds_sq)/2. )
     {
       params->match = 1;
-      if ( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"H2")==0)
-        ||(strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"H1")==0) )
-      {
-        aPtr->ds2_H1H2=ds2;
-        bPtr->ds2_H1H2=ds2;
-      }
-      else if( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"L1")==0)
-        || (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H1")==0) )
-      {
-        aPtr->ds2_H1L1=ds2;
-        bPtr->ds2_H1L1=ds2;
-      }
-      else if( (strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"L1")==0)
-        || (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H2")==0) )
-      {
-        aPtr->ds2_H2L1=ds2;
-        bPtr->ds2_H2L1=ds2;
-      }
-      else
-      {
-        LALInfo( status, "Unknown pair of ifo's" );
-        params->match = 0;
-        goto exit;
-      }
     }
     else
     {
@@ -429,15 +402,13 @@ LALCompareRingdowns (
   }
   else
   {
-    LALInfo( status, "error: unknown test\n" );
-    params->match = 0;
-    goto exit;
+    /* Invalid Coincidence Test */
+    XLALPrintError( "error: unknown coincidence test\n" );
+    XLAL_ERROR(XLAL_EIO);
   }
   exit:
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return ds2;
 }
-
 
 /** Two dimensional (frequency and quality) coincidence test */
 REAL8
