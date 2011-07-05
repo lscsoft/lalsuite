@@ -822,6 +822,7 @@ defined!\n");
     logfactorial[i] = logfactorial[i-1] + log((REAL8)i);
 }
 
+
 void readDoublePulsarData( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL, *ppt2 = NULL;
   ProcessParamsTable *commandLine = runState->commandLine;
@@ -1825,10 +1826,10 @@ set.\n", propfile, tempPar);
     if ( LALInferenceCheckVariable(runState->priorArgs, tempParPrior) )
       LALInferenceRemoveGaussianPrior( runState->priorArgs, tempPar );
     
-    scale = high;
+    scale = high - low;
     scaleMin = low;
     
-    /* set the scale factor to be the high value of the prior */
+    /* set the scale factor to be the width of the prior */
     while( datatemp ){
       scaleType = LALInferenceGetVariableType( datatemp->dataParams, 
                                                tempParScale );
@@ -2085,7 +2086,8 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
 /*                     LIKELIHOOD AND PRIOR FUNCTIONS                         */
 /******************************************************************************/
 
-REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *data,
+REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, 
+                             LALInferenceIFOData *data,
                              LALInferenceTemplateFunction *get_model ){
   REAL8 loglike = 0.; /* the log likelihood */
   UINT4 i = 0;
@@ -2103,9 +2105,10 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
     REAL8Vector *sumData = NULL;
     UINT4Vector *chunkLengths = NULL;
     
-    sumData = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "sumData" );
+    sumData = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, 
+                                                        "sumData" );
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams,
-                                                 "chunkLength" );
+                                                             "chunkLength" );
     chunkMin = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMin" );
     chunkMax = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMax" );
   
@@ -2163,8 +2166,10 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
   return loglike;
 }
 
-REAL8 pulsar_double_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *data,
-                             LALInferenceTemplateFunction *get_model ){
+
+REAL8 pulsar_double_log_likelihood( LALInferenceVariables *vars, 
+                                    LALInferenceIFOData *data,
+                                    LALInferenceTemplateFunction *get_model ){
   REAL8 loglike = 0.; /* the log likelihood */
   UINT4 i = 0, counter=0;
   
@@ -2291,6 +2296,7 @@ REAL8 pulsar_double_log_likelihood( LALInferenceVariables *vars, LALInferenceIFO
   }
   return loglike;
 }
+
 
 REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *params ){
   LALInferenceIFOData *data = runState->data;
@@ -3765,12 +3771,12 @@ void rescaleOutput( LALInferenceRunState *runState ){
   do{
     LALInferenceVariableItem *item = current->head;
     
-    CHAR line[1000];
+    CHAR line[2000];
     CHAR value[128] = "";
     UINT4 i = 0;
     
     /* read in one line of the file */
-    if( fgets(line, 1000*sizeof(CHAR), fp) == NULL && !feof(fp) ){
+    if( fgets(line, 2000*sizeof(CHAR), fp) == NULL && !feof(fp) ){
       fprintf(stderr, "Error... cannot read line from file %s.\n", outfile);
       exit(3);
     }
