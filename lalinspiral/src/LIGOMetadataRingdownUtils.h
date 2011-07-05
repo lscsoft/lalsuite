@@ -137,6 +137,13 @@ LALCompareRingdowns (
     RingdownAccuracyList     *params
     );
 
+REAL8
+XLALCompareRingdowns (
+    SnglRingdownTable        *aPtr,
+    SnglRingdownTable        *bPtr,
+    RingdownAccuracyList     *params
+    );
+
 void
 LALClusterSnglRingdownTable (
     LALStatus                  *status,
@@ -343,9 +350,8 @@ XLALAddSnglRingdownToCoinc(
     SnglRingdownTable          *snglRingdown
     );
 
-void
-LALSnglRingdownCoincTest(
-    LALStatus                  *status,
+REAL8
+XLALSnglRingdownCoincTest(
     CoincRingdownTable         *coincRingdown,
     SnglRingdownTable          *snglRingdown,
     RingdownAccuracyList       *accuracyParams
