@@ -738,6 +738,9 @@ tagCoincRingdownTable
   INT4                numIfos;
   SnglRingdownTable  *snglRingdown[LAL_NUM_IFO];
   SimRingdownTable   *simRingdown;
+  REAL4              ds2_H1H2;
+  REAL4              ds2_H1L1;
+  REAL4              ds2_H2L1;
 }
 CoincRingdownTable;
 
