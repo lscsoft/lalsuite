@@ -53,8 +53,7 @@ xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varit
 
 VOTABLE_DATATYPE LALInferenceVariableType2VOT(const LALInferenceVariableType litype);
 
-
-
+xmlNodePtr LALInferenceVariableItem2VOTFieldNode(LALInferenceVariableItem *varitem);
 
 
 
