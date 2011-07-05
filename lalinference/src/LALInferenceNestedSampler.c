@@ -252,7 +252,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	do {
                 /* Find minimum likelihood sample to replace */
 		minpos=0;
-                for(i=0;i<Nlive;i++){
+                for(i=1;i<Nlive;i++){
 			if(logLikelihoods[i]<logLikelihoods[minpos])
 				minpos=i;
 		}
