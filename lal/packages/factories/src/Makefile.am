@@ -10,27 +10,22 @@ libfactories_la_SOURCES = \
 noinst_HEADERS = \
 	CreateArraySequence_source.c \
 	CreateArray_source.c \
+	CreateVector_source.c \
 	DestroyArraySequence_source.c \
 	DestroyArray_source.c \
-	ResizeArray_source.c
+	DestroyVector_source.c \
+	ResizeArray_source.c \
+	ResizeVector_source.c
 
 MAINTAINERCLEANFILES = \
-	VectorFactories.c \
 	VectorSequenceFactories.c
 
 EXTRA_DIST = \
-	VectorFactories.m4 \
-	CreateVector.m4 \
-	ResizeVector.m4 \
-	DestroyVector.m4 \
 	VectorSequenceFactories.m4 \
 	CreateVectorSequence.m4 \
 	DestroyVectorSequence.m4
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-
-VectorFactories.c: VectorFactories.m4 CreateVector.m4 DestroyVector.m4 ResizeVector.m4
-	cd $(srcdir) && @M4@ VectorFactories.m4 > VectorFactories.c
 
 VectorSequenceFactories.c: VectorSequenceFactories.m4 CreateVectorSequence.m4 DestroyVectorSequence.m4
 	cd $(srcdir) && @M4@ VectorSequenceFactories.m4 > VectorSequenceFactories.c

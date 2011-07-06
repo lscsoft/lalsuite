@@ -93,7 +93,6 @@ printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 echo "00boot: creating sources"
 
 cd packages/factories/src || fail "creating sources in packages/factories/src"
-${M4} VectorFactories.m4 > VectorFactories.c || fail "creating sources in packages/factories/src"
 ${M4} VectorSequenceFactories.m4 > VectorSequenceFactories.c || fail "creating sources in packages/factories/src"
 cd ../../..  || fail "creating sources in packages/factories/src"
 

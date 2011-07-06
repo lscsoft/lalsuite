@@ -1,26 +1,25 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
-ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
-ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
-define(`VTYPE',`format(`%sVector',TYPE)')
-define(`FUNC',`format(`LAL%sCreateVector',TYPECODE)')
-ifelse( TYPECODE, `', `define(`XFUNC',`XLALCreateVector')', `define(`XFUNC',`format(`XLALCreate%s',VTYPE)')' )
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define VTYPE CONCAT2(TYPE,Vector)
+
+#ifdef TYPECODE
+#define FUNC CONCAT3(LAL,TYPECODE,CreateVector)
+#define XFUNC CONCAT2(XLALCreate,VTYPE)
+#else
+#define FUNC LALCreateVector
+#define XFUNC XLALCreateVector
+#endif
 
 VTYPE * XFUNC ( UINT4 length )
 {
   VTYPE * vector;
   vector = LALMalloc( sizeof( *vector ) );
   if ( ! vector )
-    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_ENOMEM );
   vector->length = length;
   if ( ! length ) /* zero length: set data pointer to be NULL */
     vector->data = NULL;
@@ -30,7 +29,7 @@ VTYPE * XFUNC ( UINT4 length )
     if ( ! vector->data )
     {
       LALFree( vector );
-      XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+      XLAL_ERROR_NULL( STRING(XFUNC), XLAL_ENOMEM );
     }
   }
   return vector;
@@ -43,7 +42,7 @@ void FUNC ( LALStatus *status, VTYPE **vector, UINT4 length )
    * Initialize status structure
    */
 
-  INITSTATUS( status, "FUNC", VECTORFACTORIESC );
+  INITSTATUS( status, STRING(FUNC), VECTORFACTORIESC );
 
   /* Check sequence length: report error if 0
    * Use of unsigned for length means we can't check if negative
@@ -76,3 +75,7 @@ void FUNC ( LALStatus *status, VTYPE **vector, UINT4 length )
 
   RETURN( status );
 }
+
+#undef VTYPE
+#undef FUNC
+#undef XFUNC
