@@ -1829,6 +1829,13 @@ set.\n", propfile, tempPar);
     scale = high - low;
     scaleMin = low;
     
+    /* don't rescale phi0, so that it varies over 0-2*pi - required by the 
+       LALInferenceAngularVariance function when calculating the covariance */
+    if( !strcmp(tempPar, "phi0") ){
+      scale = 1.;
+      scaleMin = 0.;
+    }
+    
     /* set the scale factor to be the width of the prior */
     while( datatemp ){
       scaleType = LALInferenceGetVariableType( datatemp->dataParams, 
@@ -1844,7 +1851,7 @@ set.\n", propfile, tempPar);
                                
       datatemp = datatemp->next;
     }
-      
+    
     /* scale variable and priors */
     tempVar = (tempVar - scaleMin) / scale;
     low = 0.;

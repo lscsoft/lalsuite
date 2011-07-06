@@ -83,7 +83,7 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 	UINT4 i,j,k;
 	UINT4 ND=0;
 	LALInferenceVariableItem *item,*k_item,*j_item;
-	REAL8 *means;
+	REAL8 *means, *ms, *mc;
 	
 	/* Find the number of dimensions which vary in the covariance matrix */
 	for(item=Live[0]->head;item!=NULL;item=item->next)
@@ -103,33 +103,85 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 
 	/* Find the means */
 	if(NULL==(means = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
-	for(i=0;i<ND;i++) means[i]=0.0;
+	if(NULL==(ms = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
+	if(NULL==(mc = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
+	for(i=0;i<ND;i++){ 
+          means[i]=0.0;
+          ms[i] = 0.;
+          mc[i] = 0.;
+        }
 	for(i=0;i<Nlive;i++){
-		for(item=Live[i]->head,j=0;item;item=item->next) {
-			if(item->vary==LALINFERENCE_PARAM_LINEAR || item->vary==LALINFERENCE_PARAM_CIRCULAR ) {
+                   for(item=Live[i]->head,j=0;item;item=item->next) {
+			/*if(item->vary==LALINFERENCE_PARAM_LINEAR || item->vary==LALINFERENCE_PARAM_CIRCULAR ) {
 				if (item->type==LALINFERENCE_REAL4_t) means[j]+=*(REAL4 *)item->value;
 				if (item->type==LALINFERENCE_REAL8_t) means[j]+=*(REAL8 *)item->value;
 				j++;
-			}
+			}*/
+                        if(item->vary==LALINFERENCE_PARAM_LINEAR ) {
+                                if (item->type==LALINFERENCE_REAL4_t) means[j]+=*(REAL4 *)item->value;
+                                if (item->type==LALINFERENCE_REAL8_t) means[j]+=*(REAL8 *)item->value;
+                                j++;
+                        }
+			else if( item->vary==LALINFERENCE_PARAM_CIRCULAR ){
+                               if(item->type==LALINFERENCE_REAL4_t){
+                                 ms[j] += sin(*(REAL4 *)item->value);
+                                 mc[j] += cos(*(REAL4 *)item->value);
+                               }
+                               if(item->type==LALINFERENCE_REAL8_t){
+                                 ms[j] += sin(*(REAL8 *)item->value);
+                                 mc[j] += cos(*(REAL8 *)item->value);
+                               }
+
+                               j++;
+                        }
 		}
 	}
-	for(j=0;j<ND;j++) means[j]/=(REAL8)Nlive;
-	
+	/* for(j=0;j<ND;j++) means[j]/=(REAL8)Nlive; */
+        for(item=Live[0]->head,j=0;item;item=item->next){ 
+          if( item->vary==LALINFERENCE_PARAM_LINEAR ){
+            means[j]/=(REAL8)Nlive;
+            j++;
+          }
+          if( item->vary==LALINFERENCE_PARAM_CIRCULAR ){
+            ms[j]/=(REAL8)Nlive;
+            mc[j]/=(REAL8)Nlive;
+            
+            means[j] = atan2(ms[j], mc[j]);
+            means[j] = means[j]<0? 2.0*LAL_PI + means[j] : means[j];
+            
+            j++;
+          }
+        }
+        
+        free(ms);
+        free(mc);
+        
 	/* Find the (co)-variances */
 	for(i=0;i<Nlive;i++){
 		k_item = j_item = item = Live[i]->head;
 
 		for( j_item=item,j=0; j_item; j_item=j_item->next ){
-			if(j_item->vary!=LALINFERENCE_PARAM_LINEAR && j_item->vary!=LALINFERENCE_PARAM_CIRCULAR) {
+		  REAL8 jval = 0.;	
+                  if(j_item->vary!=LALINFERENCE_PARAM_LINEAR && j_item->vary!=LALINFERENCE_PARAM_CIRCULAR) {
 				continue;}
 			
-			for( k_item=item, k=0; k<=j; k_item=k_item->next ){
-				if(k_item->vary!=LALINFERENCE_PARAM_LINEAR && k_item->vary!=LALINFERENCE_PARAM_CIRCULAR) {
+			if( j_item->vary==LALINFERENCE_PARAM_CIRCULAR )
+                          jval = LALInferenceAngularDistance(*(REAL8 *)j_item->value, means[j]);
+                        else if( j_item->vary==LALINFERENCE_PARAM_LINEAR )
+                          jval = *(REAL8 *)j_item->value - means[j];
+			
+			for( k_item=item, k=0; k<=j; k_item=k_item->next ){	
+                          REAL8 kval = 0.;
+                          if(k_item->vary!=LALINFERENCE_PARAM_LINEAR && k_item->vary!=LALINFERENCE_PARAM_CIRCULAR) {
 					continue;}
+                                        
+                                        if( k_item->vary==LALINFERENCE_PARAM_CIRCULAR )
+                                          kval = LALInferenceAngularDistance(*(REAL8 *)k_item->value, means[k]);
+                                        else if( k_item->vary==LALINFERENCE_PARAM_LINEAR )
+                                          kval = *(REAL8 *)k_item->value - means[k];
 
 					gsl_matrix_set(*cvm,j,k,gsl_matrix_get(*cvm,j,k) +
-							   (*(REAL8 *)k_item->value - means[k])*
-							   (*(REAL8 *)j_item->value - means[j]));
+							   kval*jval);
 					k++;
 			}
 			j++;
@@ -141,7 +193,7 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 	free(means);
         
 	/* Fill in variances for circular parameters */
-	for(item=Live[0]->head,j=0;item;item=item->next) {
+	/*for(item=Live[0]->head,j=0;item;item=item->next) {
 		if(item->vary!=LALINFERENCE_PARAM_CIRCULAR && item->vary!=LALINFERENCE_PARAM_LINEAR) continue;
 		if(item->vary==LALINFERENCE_PARAM_CIRCULAR) {
 			for(k=0;k<j;k++) gsl_matrix_set(*cvm,j,k,0.0);
@@ -149,7 +201,7 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 			for(k=j+1;k<ND;k++) gsl_matrix_set(*cvm,k,j,0.0);
 		}
 		j++;
-	}
+	}*/
 	
 	/* the other half */
 	for(i=0;i<ND;i++) for(j=0;j<i;j++) gsl_matrix_set(*cvm,j,i,gsl_matrix_get(*cvm,i,j));
@@ -182,7 +234,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	REAL8 *logLikelihoods=NULL;
 	UINT4 verbose=0;
         LALInferenceVariableItem *param_ptr;
- 
+
         if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
           if (runState->data->modelDomain == LALINFERENCE_DOMAIN_FREQUENCY )
             logZnoise=LALInferenceNullLogLikelihood(runState->data);
@@ -322,13 +374,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
 		if(verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",
 									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")/(REAL8)itercounter
-                                                                           ,H,H/log(2.0),logLmin,runState->currentLikelihood,logZ,dZ,10.0*log10(exp(1.0))*( logZ-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise")));
+                                                                           ,H,H/LAL_LN2,logLmin,runState->currentLikelihood,logZ,dZ,10.0*LAL_LOG10E*( logZ-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise")));
 
 		/* Flush output file */
 		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
 		/* Update the covariance matrix */
-		if(!(iter%(Nlive/4))) {
+		if(!(iter%(Nlive/4))) {                    
                   LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
                   
                   LALInferenceSetVariable(runState->proposalArgs,"LiveCVM",
@@ -403,7 +455,7 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 			continue;
 		/* Otherwise, check that logL is OK */
 		logLnew=runState->likelihood(newParams,runState->data,runState->template);
-		if(logLnew>logLmin){
+		if(logLnew > logLmin){
 			Naccepted++;
 			logPriorOld=logPriorNew;
 			LALInferenceCopyVariables(newParams,runState->currentParams);
