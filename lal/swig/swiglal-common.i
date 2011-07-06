@@ -690,19 +690,19 @@ swiglal_conv_ctype(COMPLEX16);
   }
 
   // Disable keyword arguments for this method
-  %feature("kwargs", 0) NAME##_getel(const size_t);
+  %feature("kwargs", 0) NAME##_getel(const size_t i);
 
   // Set 'action' and 'except' features for this method to no-ops
-  %feature("action") NAME##_getel(const size_t) "";
-  %feature("except") NAME##_getel(const size_t) "";
+  %feature("action") NAME##_getel(const size_t i) "";
+  %feature("except") NAME##_getel(const size_t i) "";
 
   // Declare method, so SWIG will define and then wrap it
-  TYPE* NAME##_getel(const size_t);
+  TYPE* NAME##_getel(const size_t i);
 
   // Clear the custom features, so they can't be accidentally re-used
-  %feature("kwargs", "") NAME##_getel(const size_t);
-  %feature("action", "") NAME##_getel(const size_t);
-  %feature("except", "") NAME##_getel(const size_t);
+  %feature("kwargs", "") NAME##_getel(const size_t i);
+  %feature("action", "") NAME##_getel(const size_t i);
+  %feature("except", "") NAME##_getel(const size_t i);
 
   // Clear the 'out' typemap, so it can't be accidentally re-used
   %clear TYPE* NAME##_getel;
@@ -741,19 +741,19 @@ swiglal_conv_ctype(COMPLEX16);
   }
 
   // Disable keyword arguments for this method
-  %feature("kwargs", 0) NAME##_setel(const size_t, TYPE NAME##_setel_elem);
+  %feature("kwargs", 0) NAME##_setel(const size_t i, TYPE NAME##_setel_elem);
 
   // Set 'action' and 'except' features for this method to no-ops
-  %feature("action") NAME##_setel(const size_t, TYPE NAME##_setel_elem) "";
-  %feature("except") NAME##_setel(const size_t, TYPE NAME##_setel_elem) "";
+  %feature("action") NAME##_setel(const size_t i, TYPE NAME##_setel_elem) "";
+  %feature("except") NAME##_setel(const size_t i, TYPE NAME##_setel_elem) "";
 
   // Declare method, so SWIG will define and then wrap it
-  void NAME##_setel(const size_t, TYPE NAME##_setel_elem);
+  void NAME##_setel(const size_t i, TYPE NAME##_setel_elem);
 
   // Clear the custom features, so they can't be accidentally re-used
-  %feature("kwargs", "") NAME##_setel(const size_t, TYPE NAME##_setel_elem);
-  %feature("action", "") NAME##_getel(const size_t, TYPE NAME##_setel_elem);
-  %feature("except", "") NAME##_getel(const size_t, TYPE NAME##_setel_elem);
+  %feature("kwargs", "") NAME##_setel(const size_t i, TYPE NAME##_setel_elem);
+  %feature("action", "") NAME##_getel(const size_t i, TYPE NAME##_setel_elem);
+  %feature("except", "") NAME##_getel(const size_t i, TYPE NAME##_setel_elem);
 
   // Clear the 'in' typemap, so it can't be accidentally re-used
   %clear TYPE NAME##_setel_elem;
@@ -785,19 +785,19 @@ swiglal_conv_ctype(COMPLEX16);
   }
 
   // Disable keyword arguments for this method
-  %feature("kwargs", 0) NAME##_getel(const size_t, const size_t);
+  %feature("kwargs", 0) NAME##_getel(const size_t i, const size_t j);
 
   // Set 'action' and 'except' features for this method to no-ops
-  %feature("action") NAME##_getel(const size_t, const size_t) "";
-  %feature("except") NAME##_getel(const size_t, const size_t) "";
+  %feature("action") NAME##_getel(const size_t i, const size_t j) "";
+  %feature("except") NAME##_getel(const size_t i, const size_t j) "";
 
   // Declare method, so SWIG will define and then wrap it
-  TYPE* NAME##_getel(const size_t, const size_t);
+  TYPE* NAME##_getel(const size_t i, const size_t j);
 
   // Clear the custom features, so they can't be accidentally re-used
-  %feature("kwargs", "") NAME##_getel(const size_t, const size_t);
-  %feature("action", "") NAME##_getel(const size_t, const size_t);
-  %feature("except", "") NAME##_getel(const size_t, const size_t);
+  %feature("kwargs", "") NAME##_getel(const size_t i, const size_t j);
+  %feature("action", "") NAME##_getel(const size_t i, const size_t j);
+  %feature("except", "") NAME##_getel(const size_t i, const size_t j);
 
   // Clear the 'out' typemap, so it can't be accidentally re-used
   %clear TYPE* NAME##_getel;
@@ -832,19 +832,19 @@ swiglal_conv_ctype(COMPLEX16);
   }
 
   // Disable keyword arguments for this method
-  %feature("kwargs", 0) NAME##_setel(const size_t, const size_t, TYPE NAME##_setel_elem);
+  %feature("kwargs", 0) NAME##_setel(const size_t i, const size_t j, TYPE NAME##_setel_elem);
 
   // Set 'action' and 'except' features for this method to no-ops
-  %feature("action") NAME##_setel(const size_t, const size_t, TYPE NAME##_setel_elem) "";
-  %feature("except") NAME##_setel(const size_t, const size_t, TYPE NAME##_setel_elem) "";
+  %feature("action") NAME##_setel(const size_t i, const size_t j, TYPE NAME##_setel_elem) "";
+  %feature("except") NAME##_setel(const size_t i, const size_t j, TYPE NAME##_setel_elem) "";
 
   // Declare method, so SWIG will define and then wrap it
-  void NAME##_setel(const size_t, const size_t, TYPE NAME##_setel_elem);
+  void NAME##_setel(const size_t i, const size_t j, TYPE NAME##_setel_elem);
 
   // Clear the custom features, so they can't be accidentally re-used
-  %feature("kwargs", "") NAME##_setel(const size_t, const size_t, TYPE NAME##_setel_elem);
-  %feature("action", "") NAME##_getel(const size_t, const size_t, TYPE NAME##_setel_elem);
-  %feature("except", "") NAME##_setel(const size_t, const size_t, TYPE NAME##_setel_elem);
+  %feature("kwargs", "") NAME##_setel(const size_t i, const size_t j, TYPE NAME##_setel_elem);
+  %feature("action", "") NAME##_getel(const size_t i, const size_t j, TYPE NAME##_setel_elem);
+  %feature("except", "") NAME##_setel(const size_t i, const size_t j, TYPE NAME##_setel_elem);
 
   // Clear the 'in' typemap, so it can't be accidentally re-used
   %clear TYPE NAME##_setel_elem;
