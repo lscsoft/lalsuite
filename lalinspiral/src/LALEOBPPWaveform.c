@@ -1124,6 +1124,12 @@ GetRingdownAttachCombSize( INT4 l, INT4 m )
        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
        break;
   }
+
+  /* It should not be possible to get to this point */
+  /* Put an return path here to avoid compiler warningd */
+  XLALPrintError( "We shouldn't ever reach this point!\n" );
+  XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+
 }
 
 /*-------------------------------------------------------------------*/
