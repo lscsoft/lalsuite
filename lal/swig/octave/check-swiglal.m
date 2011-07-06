@@ -58,7 +58,7 @@ msg("passed string conversions");
 if !cvar.swiglal_debug
   msg("skipping static vector/matrix conversions");
 else
-  sts = new_swiglal_static_test_struct();
+  sts = new_swiglal_test_static_struct();
   assert(length(sts.vector) == 3);
   assert(length(sts.enum_vector) == 3);
   assert(all(size(sts.matrix) == [2, 3]));
@@ -76,15 +76,15 @@ else
     assert(sts.enum_vector_getel(i-1) == (2*i + 3));
   endfor
   clear sts;
-  assert(!any(cvar.swiglal_static_test_vector));
-  assert(!any(cvar.swiglal_static_test_matrix(:)));
-  assert(!any(cvar.swiglal_static_test_enum_vector));
-  assert(!any(cvar.swiglal_static_test_enum_matrix(:)));
-  cvar.swiglal_static_test_vector = cvar.swiglal_static_test_const_vector;
-  assert(all(cvar.swiglal_static_test_vector == [1, 2, 4]));
-  assert(swiglal_static_test_const_vector_getel(2) == 4);
+  assert(!any(cvar.swiglal_test_static_vector));
+  assert(!any(cvar.swiglal_test_static_matrix(:)));
+  assert(!any(cvar.swiglal_test_static_enum_vector));
+  assert(!any(cvar.swiglal_test_static_enum_matrix(:)));
+  cvar.swiglal_test_static_vector = cvar.swiglal_test_static_const_vector;
+  assert(all(cvar.swiglal_test_static_vector == [1, 2, 4]));
+  assert(swiglal_test_static_const_vector_getel(2) == 4);
   try
-    swiglal_static_test_const_vector_getel(20);
+    swiglal_test_static_const_vector_getel(20);
     error("expected exception");
   end_try_catch
   msg("passed static vector/matrix conversions");
