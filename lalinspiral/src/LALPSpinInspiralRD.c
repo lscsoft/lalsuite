@@ -260,7 +260,7 @@ static void XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspi
   mparams->dt           = 1./params->tSampling;
   mparams->OmCutoff     = params->fCutoff*params->totalMass * LAL_MTSUN_SI * (REAL8) LAL_PI;
   mparams->lengths      = (5.0 / 256.0) / LAL_PI * pow(LAL_PI * params->chirpMass * LAL_MTSUN_SI * params->fLower,-5.0 / 3.0) / params->fLower;
-  mparams->omMoffset    = (params->fixedStep==1) ? 0 : 0.01;
+  mparams->omMoffset    = (params->fixedStep==1) ? 0 : 0.02;
 
   /* setup coefficients for PN equations */
   mparams->m     = params->totalMass;
@@ -930,7 +930,7 @@ void LALPSpinInspiralRDFreqDom(LALStatus * status,
 
     memset(signalvec->data, 0, length * sizeof(REAL4));
     memset(tsignalvec->data, 0, nbins * sizeof(REAL8));
-    memset(fsignalvec->data, 0, nbins * sizeof(REAL8));
+    memset(fsignalvec->data, 0, nbins * sizeof(REAL4));
 
     /* Call the engine function */
     LALPSpinInspiralRDEngine(status->statusPtr, tsignalvec, NULL, NULL, NULL, NULL, &count, params, &paramsInit);
