@@ -61,6 +61,20 @@ for i in range(0,4):
 XLALDestroyStringVector(sv)
 msg("passed string conversions")
 
+# check vector/matrix struct type accessors
+if not cvar.swiglal_debug:
+    msg("skipping vector/matrix struct type accessors")
+else:
+    swiglal_test_struct_vector_setel(0, cvar.swiglal_test_struct_const)
+    assert(swiglal_test_struct_vector_getel(0).a == cvar.swiglal_test_struct_const.a)
+    assert(swiglal_test_struct_vector_getel(0).b == cvar.swiglal_test_struct_const.b)
+    assert(swiglal_test_struct_vector_getel(0).c == cvar.swiglal_test_struct_const.c)
+    swiglal_test_struct_matrix_setel(0, 0, cvar.swiglal_test_struct_const)
+    assert(swiglal_test_struct_matrix_getel(0, 0).a == cvar.swiglal_test_struct_const.a)
+    assert(swiglal_test_struct_matrix_getel(0, 0).b == cvar.swiglal_test_struct_const.b)
+    assert(swiglal_test_struct_matrix_getel(0, 0).c == cvar.swiglal_test_struct_const.c)
+    msg("passed vector/matrix struct type accessors")
+
 # check static vector/matrix conversions
 if not cvar.swiglal_debug:
     msg("skipping static vector/matrix conversions")

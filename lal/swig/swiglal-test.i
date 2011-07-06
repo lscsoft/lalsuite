@@ -1,6 +1,21 @@
 // tests of SWIG interface code
 // Author: Karl Wette, 2011
 
+// Test variables/vectors/matrices for arrays of struct types.
+// Use to test that *_getel/*_setel accessors work correctly.
+%inline %{
+  struct swiglal_test_struct_type {
+    int a;
+    float b;
+    char c[10];
+  };
+  const swiglal_test_struct_type swiglal_test_struct_const = {3, 5.7, "abcde"};
+  swiglal_test_struct_type swiglal_test_struct_vector[1];
+  swiglal_test_struct_type swiglal_test_struct_matrix[1][1];
+%}
+SWIGLAL_GLOBAL_FIXED_1DARRAY_ELEM(swiglal_test_struct_type, swiglal_test_struct_vector);
+SWIGLAL_GLOBAL_FIXED_2DARRAY_ELEM(swiglal_test_struct_type, swiglal_test_struct_matrix);
+
 // Not all of the static vector/matrix member/global variable/enum
 // combinations appear to exist in LAL code, so the following definitions
 // exist to ensure all possible combinations are tested. They also test

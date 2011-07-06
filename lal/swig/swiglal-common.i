@@ -309,12 +309,19 @@
   }
 
   // Use SWIG_ConvertPtr to convert a swig_type wrapped object 'in' into a
-  // TYPE '*out', if possible, using the type information supplied by 'out_ti'.
+  // TYPE*, if possible, using the type information supplied by 'out_ti'.
   // The return value indicates whether the conversion was successful. The
   // last argument to SWIG_ConvertPtr is zero since we are recovering an
-  // existing C pointer and do not want to own/disown it.
+  // existing C pointer and do not want to own/disown it. If the conversion
+  // is successful, (struct-)copy the TYPE* 'out_v' to 'out'.
   template<class TYPE> SWIGINTERNINLINE int swiglal_as_val(SWIG_Object in, TYPE *out, swig_type_info *out_ti, int flags) {
-    return SWIG_ConvertPtr(in, %as_voidptrptr(&out), out_ti, 0);
+    void *out_v = NULL;
+    int ecode = SWIG_ConvertPtr(in, &out_v, out_ti, 0);
+    if (!SWIG_IsOK(ecode)) {
+      return ecode;
+    }
+    *out = *%static_cast(out_v, TYPE*);
+    return ecode;
   }
 
   // Check that the enumeration TYPE is the same size as an int, then cast
@@ -720,7 +727,7 @@ swiglal_conv_ctype(COMPLEX16);
   // method and then wrap it. For this to work, we need to
   // provide custom 'action' features, which do nothing instead
   // of trying to call the (non-existent) method function.
-  %typemap(in, noblock=1) TYPE NAME##_setel_elem (int ecode = 0) {
+  %typemap(in, noblock=1) TYPE* NAME##_setel_elem (int ecode = 0) {
     // Check that the vector exists
     if (!swiglal_check_ptr(DATA)) {
       swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NAME<<"'");
@@ -741,22 +748,22 @@ swiglal_conv_ctype(COMPLEX16);
   }
 
   // Disable keyword arguments for this method
-  %feature("kwargs", 0) NAME##_setel(const size_t i, TYPE NAME##_setel_elem);
+  %feature("kwargs", 0) NAME##_setel(const size_t i, TYPE* NAME##_setel_elem);
 
   // Set 'action' and 'except' features for this method to no-ops
-  %feature("action") NAME##_setel(const size_t i, TYPE NAME##_setel_elem) "";
-  %feature("except") NAME##_setel(const size_t i, TYPE NAME##_setel_elem) "";
+  %feature("action") NAME##_setel(const size_t i, TYPE* NAME##_setel_elem) "";
+  %feature("except") NAME##_setel(const size_t i, TYPE* NAME##_setel_elem) "";
 
   // Declare method, so SWIG will define and then wrap it
-  void NAME##_setel(const size_t i, TYPE NAME##_setel_elem);
+  void NAME##_setel(const size_t i, TYPE* NAME##_setel_elem);
 
   // Clear the custom features, so they can't be accidentally re-used
-  %feature("kwargs", "") NAME##_setel(const size_t i, TYPE NAME##_setel_elem);
-  %feature("action", "") NAME##_getel(const size_t i, TYPE NAME##_setel_elem);
-  %feature("except", "") NAME##_getel(const size_t i, TYPE NAME##_setel_elem);
+  %feature("kwargs", "") NAME##_setel(const size_t i, TYPE* NAME##_setel_elem);
+  %feature("action", "") NAME##_getel(const size_t i, TYPE* NAME##_setel_elem);
+  %feature("except", "") NAME##_getel(const size_t i, TYPE* NAME##_setel_elem);
 
   // Clear the 'in' typemap, so it can't be accidentally re-used
-  %clear TYPE NAME##_setel_elem;
+  %clear TYPE* NAME##_setel_elem;
 
 %enddef // swiglal_vector_set_elem
 
@@ -808,7 +815,7 @@ swiglal_conv_ctype(COMPLEX16);
 %define swiglal_matrix_set_elem(TYPE, NAME, DATA, I, NI, J, NJ, PTR_TO_DATA_IJ, FLAGS)
 
   // For an explanation of the typemap, see swiglal_vector_set_elem.
-  %typemap(in, noblock=1) TYPE NAME##_setel_elem (int ecode = 0) {
+  %typemap(in, noblock=1) TYPE* NAME##_setel_elem (int ecode = 0) {
     // Check that the matrix exists
     if (!swiglal_check_ptr(DATA)) {
       swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NAME<<"'");
@@ -832,22 +839,22 @@ swiglal_conv_ctype(COMPLEX16);
   }
 
   // Disable keyword arguments for this method
-  %feature("kwargs", 0) NAME##_setel(const size_t i, const size_t j, TYPE NAME##_setel_elem);
+  %feature("kwargs", 0) NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
 
   // Set 'action' and 'except' features for this method to no-ops
-  %feature("action") NAME##_setel(const size_t i, const size_t j, TYPE NAME##_setel_elem) "";
-  %feature("except") NAME##_setel(const size_t i, const size_t j, TYPE NAME##_setel_elem) "";
+  %feature("action") NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem) "";
+  %feature("except") NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem) "";
 
   // Declare method, so SWIG will define and then wrap it
-  void NAME##_setel(const size_t i, const size_t j, TYPE NAME##_setel_elem);
+  void NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
 
   // Clear the custom features, so they can't be accidentally re-used
-  %feature("kwargs", "") NAME##_setel(const size_t i, const size_t j, TYPE NAME##_setel_elem);
-  %feature("action", "") NAME##_getel(const size_t i, const size_t j, TYPE NAME##_setel_elem);
-  %feature("except", "") NAME##_setel(const size_t i, const size_t j, TYPE NAME##_setel_elem);
+  %feature("kwargs", "") NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
+  %feature("action", "") NAME##_getel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
+  %feature("except", "") NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
 
   // Clear the 'in' typemap, so it can't be accidentally re-used
-  %clear TYPE NAME##_setel_elem;
+  %clear TYPE* NAME##_setel_elem;
 
 %enddef // swiglal_matrix_set_elem
 
