@@ -1,28 +1,27 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
-ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
-ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
-define(`STYPE',`format(`%sVectorSequence',TYPE)')
-define(`FUNC',`format(`LAL%sDestroyVectorSequence',TYPECODE)')
-ifelse( TYPECODE, `', `define(`XFUNC',`XLALDestroyVectorSequence')', `define(`XFUNC',`format(`XLALDestroy%s',STYPE)')' )
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define STYPE CONCAT2(TYPE,VectorSequence)
+
+#ifdef TYPECODE
+#define FUNC CONCAT3(LAL,TYPECODE,DestroyVectorSequence)
+#define XFUNC CONCAT2(XLALDestroy,STYPE)
+#else
+#define FUNC LALDestroyVectorSequence
+#define XFUNC XLALDestroyVectorSequence
+#endif
 
 void XFUNC ( STYPE *vseq )
 {
   if ( ! vseq )
     return;
   if ( ( ! vseq->length || ! vseq->vectorLength ) && vseq->data )
-    XLAL_ERROR_VOID( "XFUNC", XLAL_EINVAL );
+    XLAL_ERROR_VOID( STRING(XFUNC), XLAL_EINVAL );
   if ( ! vseq->data && ( vseq->length || vseq->vectorLength ) )
-    XLAL_ERROR_VOID( "XFUNC", XLAL_EINVAL );
+    XLAL_ERROR_VOID( STRING(XFUNC), XLAL_EINVAL );
   if ( vseq->data )
     LALFree( vseq->data );
   vseq->data = NULL; /* leave lengths as they are to indicate freed vector */
@@ -37,7 +36,7 @@ void FUNC ( LALStatus *status, STYPE **vseq )
    * Initialize status
    */
 
-  INITSTATUS( status, "FUNC", VECTORSEQUENCEFACTORIESC );
+  INITSTATUS( status, STRING(FUNC), VECTORSEQUENCEFACTORIESC );
 
   /*
    * Check vseq: is it non-NULL?
@@ -79,3 +78,7 @@ void FUNC ( LALStatus *status, STYPE **vseq )
 
   RETURN (status);
 }
+
+#undef STYPE
+#undef FUNC
+#undef XFUNC
