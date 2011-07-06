@@ -700,7 +700,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
         found = '%s/%s-INJECTION_GRB%s_%s_FOUND-%d-%d.xml'\
                 % (outdir, ifotag, grb, injrun, start, duration)
         missed = found.replace('FOUND', 'MISSED')
-        effoutdir = '%s/%s/%s/efficiency' % (outdir, plotdir, injrun)
+        effoutdir = '%s/%s/%s/efficiency_%s' % \
+                    (outdir, plotdir, injrun, timetype)
         node = injection_efficiency_setup(job, tag, effoutdir, grbdir,\
                            clstfile['OFFSOURCE'],clstfile[timetype],\
                            filteredDistRuns[injrun], injcp,found, missed,\
