@@ -349,17 +349,15 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   # generate post processing directory
   if not os.path.isdir(outdir):
     os.makedirs(outdir)
-
+  # generat subdirectories
   os.chdir(outdir)
   plotdir = 'output'
   exedir = 'executables'
-  if not os.path.isdir(exedir):
-    os.mkdir(exedir)
-
   if not logdir:
     logdir = '%s/%s' % (outdir, 'logs')
-  if not os.path.isdir(logdir):
-    os.makedirs(logdir)
+  for d in [plotdir, exedir, logdir]:
+    if not os.path.isdir(d):
+      os.mkdir(d)
 
   # load ini file
   cp = ConfigParser.ConfigParser()
