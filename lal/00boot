@@ -95,7 +95,6 @@ echo "00boot: creating sources"
 cd packages/factories/src || fail "creating sources in packages/factories/src"
 ${M4} VectorFactories.m4 > VectorFactories.c || fail "creating sources in packages/factories/src"
 ${M4} VectorSequenceFactories.m4 > VectorSequenceFactories.c || fail "creating sources in packages/factories/src"
-${M4} ArraySequenceFactories.m4 > ArraySequenceFactories.c || fail "creating sources in packages/factories/src"
 cd ../../..  || fail "creating sources in packages/factories/src"
 
 cd packages/factories/include || fail "creating sources in packages/factories/include"

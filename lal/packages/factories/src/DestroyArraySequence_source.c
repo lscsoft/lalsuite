@@ -1,18 +1,16 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
-ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
-define(`STYPE',`format(`%sArraySequence',TYPE)')
-define(`FUNC',`format(`LAL%sDestroyArraySequence',TYPECODE)')
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
 
+#define STYPE CONCAT2(TYPE,ArraySequence)
+
+#ifdef TYPECODE
+#define FUNC CONCAT3(LAL,TYPECODE,DestroyArraySequence)
+#else
+#define FUNC LALDestroyArraySequence
+#endif
 
 void FUNC ( LALStatus *status, STYPE **aseq )
 {
@@ -20,7 +18,7 @@ void FUNC ( LALStatus *status, STYPE **aseq )
    * Initialize status
    */
 
-  INITSTATUS( status, "FUNC", ARRAYSEQUENCEFACTORIESC );
+  INITSTATUS( status, STRING(FUNC), ARRAYSEQUENCEFACTORIESC );
   ATTATCHSTATUSPTR( status );
 
   /*
@@ -61,3 +59,6 @@ void FUNC ( LALStatus *status, STYPE **aseq )
   DETATCHSTATUSPTR( status );
   RETURN (status);
 }
+
+#undef STYPE
+#undef FUNC
