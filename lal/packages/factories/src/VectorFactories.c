@@ -119,6 +119,14 @@ NRCSID( VECTORFACTORIESC, "$Id$" );
 #undef TYPECODE
 #undef TYPE
 
+#define TYPECODE CHAR
+#define TYPE CHAR
+#include "CreateVector_source.c"
+#include "DestroyVector_source.c"
+#include "ResizeVector_source.c"
+#undef TYPECODE
+#undef TYPE
+
 #define TYPE REAL4
 #include "CreateVector_source.c"
 #include "DestroyVector_source.c"

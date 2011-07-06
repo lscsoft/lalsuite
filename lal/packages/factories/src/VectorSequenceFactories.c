@@ -99,6 +99,13 @@ NRCSID( VECTORSEQUENCEFACTORIESC, "$Id$" );
 #undef TYPECODE
 #undef TYPE
 
+#define TYPECODE CHAR
+#define TYPE CHAR
+#include "CreateVectorSequence_source.c"
+#include "DestroyVectorSequence_source.c"
+#undef TYPECODE
+#undef TYPE
+
 #define TYPE REAL4
 #include "CreateVectorSequence_source.c"
 #include "DestroyVectorSequence_source.c"
