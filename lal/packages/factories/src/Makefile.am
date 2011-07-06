@@ -13,7 +13,6 @@ noinst_HEADERS = \
 	ResizeArray_source.c
 
 MAINTAINERCLEANFILES = \
-	ArrayFactories.c \
 	ArraySequenceFactories.c \
 	VectorFactories.c \
 	VectorSequenceFactories.c
