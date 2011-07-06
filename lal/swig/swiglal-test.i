@@ -20,6 +20,7 @@
   swiglal_test_static_enum swiglal_test_static_enum_vector[3];
   swiglal_test_static_enum swiglal_test_static_enum_matrix[2][3];
   const int swiglal_test_static_const_vector[3] = {1, 2, 4};
+  const int swiglal_test_static_const_matrix[2][3] = {{1, 2, 4}, {2, 4, 8}};
 %}
 SWIGLAL_FIXED_1DARRAY_ELEM(int, vector,
                            swiglal_test_static_struct);
@@ -34,3 +35,4 @@ SWIGLAL_GLOBAL_FIXED_2DARRAY_ELEM(int, swiglal_test_static_matrix);
 SWIGLAL_GLOBAL_FIXED_1DARRAY_ELEM(swiglal_test_static_enum, swiglal_test_static_enum_vector);
 SWIGLAL_GLOBAL_FIXED_2DARRAY_ELEM(swiglal_test_static_enum, swiglal_test_static_enum_matrix);
 SWIGLAL_GLOBAL_CONST_FIXED_1DARRAY_ELEM(int, swiglal_test_static_const_vector);
+SWIGLAL_GLOBAL_CONST_FIXED_2DARRAY_ELEM(int, swiglal_test_static_const_matrix);

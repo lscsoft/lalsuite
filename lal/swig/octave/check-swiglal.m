@@ -80,9 +80,16 @@ else
   assert(!any(cvar.swiglal_test_static_matrix(:)));
   assert(!any(cvar.swiglal_test_static_enum_vector));
   assert(!any(cvar.swiglal_test_static_enum_matrix(:)));
+  swiglal_test_static_vector_setel(0, 10);
+  assert(swiglal_test_static_vector_getel(0) == 10);
+  swiglal_test_static_matrix_setel(0, 0, 11);
+  assert(swiglal_test_static_matrix_getel(0, 0) == 11);
   cvar.swiglal_test_static_vector = cvar.swiglal_test_static_const_vector;
   assert(all(cvar.swiglal_test_static_vector == [1, 2, 4]));
   assert(swiglal_test_static_const_vector_getel(2) == 4);
+  cvar.swiglal_test_static_matrix = cvar.swiglal_test_static_const_matrix;
+  assert(all(cvar.swiglal_test_static_matrix == [[1, 2, 4]; [2, 4, 8]]));
+  assert(swiglal_test_static_const_matrix_getel(1, 2) == 8);
   try
     swiglal_test_static_const_vector_getel(20);
     error("expected exception");

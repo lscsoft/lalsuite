@@ -87,9 +87,16 @@ else:
     assert(not cvar.swiglal_test_static_matrix.any())
     assert(not cvar.swiglal_test_static_enum_vector.any())
     assert(not cvar.swiglal_test_static_enum_matrix.any())
+    swiglal_test_static_vector_setel(0, 10)
+    assert(swiglal_test_static_vector_getel(0) == 10)
+    swiglal_test_static_matrix_setel(0, 0, 11)
+    assert(swiglal_test_static_matrix_getel(0, 0) == 11)
     cvar.swiglal_test_static_vector = cvar.swiglal_test_static_const_vector
     assert((cvar.swiglal_test_static_vector == [1, 2, 4]).all())
     assert(swiglal_test_static_const_vector_getel(2) == 4)
+    cvar.swiglal_test_static_matrix = cvar.swiglal_test_static_const_matrix
+    assert((cvar.swiglal_test_static_matrix == [[1, 2, 4], [2, 4, 8]]).all())
+    assert(swiglal_test_static_const_matrix_getel(1, 2) == 8)
     try:
         swiglal_test_static_const_vector_getel(20)
         raise error("expected exception")

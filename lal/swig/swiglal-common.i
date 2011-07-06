@@ -881,8 +881,8 @@ swiglal_conv_ctype(COMPLEX16);
   }
 %enddef
 
-// These macros can be used to apply the swiglal_vector_{get,set}_elem
-// code to statically-allocated global (constant) vector variables.
+// These macros can be used to apply the swiglal_{vector,matrix}_{get,set}_elem
+// code to statically-allocated global (constant) vector and matrix variables.
 %define SWIGLAL_GLOBAL_FIXED_1DARRAY_ELEM(TYPE, DATA)
   swiglal_vector_get_elem(TYPE, DATA, DATA,
                           arg1, sizeof(DATA) / sizeof(DATA[0]),
@@ -891,10 +891,26 @@ swiglal_conv_ctype(COMPLEX16);
                           arg1, sizeof(DATA) / sizeof(DATA[0]),
                           swiglal_fix_1Darray_ptr, SL_AV_LALALLOC);
 %enddef
+%define SWIGLAL_GLOBAL_FIXED_2DARRAY_ELEM(TYPE, DATA, STRUCT...)
+  swiglal_matrix_get_elem(TYPE, DATA, DATA,
+                          arg1, sizeof(DATA) / sizeof(DATA[0]),
+                          arg2, sizeof(DATA[0]) / sizeof(DATA[0][0]),
+                          swiglal_fix_2Darray_ptr);
+  swiglal_matrix_set_elem(TYPE, DATA, DATA,
+                          arg1, sizeof(DATA) / sizeof(DATA[0]),
+                          arg2, sizeof(DATA[0]) / sizeof(DATA[0][0]),
+                          swiglal_fix_2Darray_ptr, SL_AV_LALALLOC);
+%enddef
 %define SWIGLAL_GLOBAL_CONST_FIXED_1DARRAY_ELEM(TYPE, DATA)
   swiglal_vector_get_elem(TYPE, DATA, DATA,
                           arg1, sizeof(DATA) / sizeof(DATA[0]),
                           swiglal_fix_1Darray_ptr);
+%enddef
+%define SWIGLAL_GLOBAL_CONST_FIXED_2DARRAY_ELEM(TYPE, DATA, STRUCT...)
+  swiglal_matrix_get_elem(TYPE, DATA, DATA,
+                          arg1, sizeof(DATA) / sizeof(DATA[0]),
+                          arg2, sizeof(DATA[0]) / sizeof(DATA[0][0]),
+                          swiglal_fix_2Darray_ptr);
 %enddef
 
 /////////////// Static vector / matrix type conversion ///////////////
