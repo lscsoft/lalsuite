@@ -3,7 +3,9 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 noinst_HEADERS = \
 	ArrayFactoriesTest_source.c \
-	ArraySequenceFactoriesTest_source.c
+	ArraySequenceFactoriesTest_source.c \
+	VectorFactoriesTest_source.c \
+	VectorSequenceFactoriesTest_source.c
 
 check_PROGRAMS = \
 	ArrayFactoriesTest \
@@ -16,19 +18,3 @@ TESTS = \
 	ArraySequenceFactoriesTest \
 	VectorFactoriesTest \
 	VectorSequenceFactoriesTest
-
-EXTRA_DIST = \
-	VectorFactoriesTest.m4 \
-	VectorFactoriesTestFunction.m4 \
-	VectorSequenceFactoriesTest.m4 \
-	VectorSequenceFactoriesTestFunction.m4
-
-MAINTAINERCLEANFILES = \
-	VectorFactoriesTest.c \
-	VectorSequenceFactoriesTest.c
-
-VectorFactoriesTest.c: VectorFactoriesTest.m4 VectorFactoriesTestFunction.m4
-	cd $(srcdir) && @M4@ VectorFactoriesTest.m4 > VectorFactoriesTest.c
-
-VectorSequenceFactoriesTest.c: VectorSequenceFactoriesTest.m4 VectorSequenceFactoriesTestFunction.m4
-	cd $(srcdir) && @M4@ VectorSequenceFactoriesTest.m4 > VectorSequenceFactoriesTest.c

@@ -87,9 +87,7 @@ packages/factories/include/SeqFactories.h
 packages/factories/test/ArrayFactoriesTest
 packages/factories/test/ArraySequenceFactoriesTest
 packages/factories/test/VectorFactoriesTest
-packages/factories/test/VectorFactoriesTest.c
 packages/factories/test/VectorSequenceFactoriesTest
-packages/factories/test/VectorSequenceFactoriesTest.c
 packages/fft/src/CudaFFT.c
 packages/fft/src/CudaFFT.linkinfo
 packages/fft/test/*.dat
