@@ -63,12 +63,10 @@
 #include <lal/LogPrintf.h>
 #include <lal/ComputeFstat.h>
 
+#include <lal/TransientCW_utils.h>
+#include <lal/ProbabilityDensity.h>
 
 #include <lalapps.h>
-
-
-#include "../transientCW_utils.h"
-#include "../ProbabilityDensity.h"
 
 /*---------- DEFINES ----------*/
 #define EPHEM_YEARS  "05-09"	/**< default range, covering S5: override with --ephemYear */
