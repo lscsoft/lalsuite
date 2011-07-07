@@ -550,6 +550,7 @@ INT4 XLALGenerateHybridWaveDerivatives (
   /* Free gsl variables */
   gsl_spline_free(spline);
   gsl_interp_accel_free(acc);
+  LALFree( tlist );
   LALFree(y);
 
   return errcode;

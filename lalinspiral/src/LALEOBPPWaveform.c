@@ -1465,12 +1465,6 @@ LALEOBPPWaveformEngine (
    REAL8 tStepBack; /* We need to step back 6M to attach ringdown */
    UINT4 nStepBack; /* Num points to step back */
 
-   /* Keeping track of previous points so we can step back */
-   REAL8Vector *pPrev = NULL;
-   REAL8Vector *qPrev = NULL;
-   REAL8Vector *rPrev = NULL;
-   REAL8Vector *sPrev = NULL;
-
    /* Stuff at higher sample rate */
    REAL4Vector             *sig1Hi, *sig2Hi, *freqHi;
    REAL8Vector             *phseHi, *omegaHi;
@@ -1623,12 +1617,6 @@ LALEOBPPWaveformEngine (
   }
 
   funcParams3 = (void *) &eobParams;
-
-   /* Allocate vectors to keep track of previous values */
-   pPrev = XLALCreateREAL8Vector( nStepBack );
-   qPrev = XLALCreateREAL8Vector( nStepBack );
-   rPrev = XLALCreateREAL8Vector( nStepBack );
-   sPrev = XLALCreateREAL8Vector( nStepBack );
 
    /* Calculate the resample factor for attaching the ringdown */
    /* We want it to be a power of 2 */
@@ -2102,6 +2090,7 @@ LALEOBPPWaveformEngine (
        XLALDestroyREAL4Vector( freq );
        ABORTXLAL( status );
      }
+     XLALDestroyREAL8Vector( rdMatchPoint );
      params->tSampling = tmpSamplingRate;
 
      for(j=0; j<sig1Hi->length; j+=resampFac)
@@ -2211,6 +2200,12 @@ LALEOBPPWaveformEngine (
    XLALDestroyREAL4Vector ( freqHi );
    XLALDestroyREAL8Vector ( phseHi );
    XLALDestroyREAL8Vector ( omegaHi );
+   XLALDestroyREAL8Vector( ampNQC );
+   XLALDestroyREAL8Vector( q1 );
+   XLALDestroyREAL8Vector( q2 );
+   XLALDestroyREAL8Vector( q3 );
+   XLALDestroyREAL8Vector( p1 );
+   XLALDestroyREAL8Vector( p2 );
 
    DETATCHSTATUSPTR(status);
    RETURN(status);
