@@ -1,20 +1,21 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
-ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
-define(`VTYPE',`format(`%sArraySequence',TYPE)')
-define(`CFUNC',`format(`LAL%sCreateArraySequence',TYPECODE)')
-define(`DFUNC',`format(`LAL%sDestroyArraySequence',TYPECODE)')
-define(`FUNC',`format(`%sArraySequenceFactoriesTest',TYPECODE)')
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRINGx(a) #a
+#define STRING(a) STRINGx(a)
 
+#define VTYPE CONCAT2(TYPE,ArraySequence)
+
+#ifdef TYPECODE
+#define CFUNC CONCAT3(LAL,TYPECODE,CreateArraySequence)
+#define DFUNC CONCAT3(LAL,TYPECODE,DestroyArraySequence)
+#define FUNC CONCAT2(TYPECODE,ArraySequenceFactoriesTest)
+#else
+#define CFUNC LALCreateArraySequence
+#define DFUNC LALDestroyArraySequence
+#define FUNC ArraySequenceFactoriesTest
+#endif
 
 static void FUNC ( void )
 {
@@ -95,7 +96,12 @@ static void FUNC ( void )
 
 
   LALCheckMemoryLeaks();
-  printf( "PASS: tests of CFUNC and DFUNC \n" );
+  printf( "PASS: tests of %s and %s\n", STRING(CFUNC), STRING(DFUNC));
 
   return;
 }
+
+#undef CFUNC
+#undef RFUNC
+#undef DFUNC
+#undef FUNC

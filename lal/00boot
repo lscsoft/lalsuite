@@ -100,7 +100,6 @@ cd ../../.. || fail "creating sources in packages/factories/include"
 cd packages/factories/test || fail "creating sources in packages/factories/include"
 ${M4} VectorFactoriesTest.m4 > VectorFactoriesTest.c || fail "creating sources in packages/factories/test"
 ${M4} VectorSequenceFactoriesTest.m4 > VectorSequenceFactoriesTest.c || fail "creating sources in packages/factories/test"
-${M4} ArraySequenceFactoriesTest.m4 > ArraySequenceFactoriesTest.c || fail "creating sources in packages/factories/test"
 cd ../../.. || fail "creating sources in packages/factories/test"
 
 cd packages/vectorops/src || fail "creating sources in packages/vectorops/src"
