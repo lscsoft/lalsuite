@@ -168,7 +168,6 @@ typedef struct {
   transientWindowRange_t transientInjectRange;	/**< transient-window range for injections (flat priors) */
 
   MultiDetectorStateSeries *multiDetStates;	/**< multi-detector state series covering observation time */
-  MultiLIGOTimeGPSVector *multiTS;		/**< corresponding timestamps vector for convenience */
 
   gsl_rng *rng;			/**< gsl random-number generator */
   CHAR *logString;		/**< logstring for file-output, containing cmdline-options + code VCS version info */
@@ -207,8 +206,8 @@ EphemerisData * XLALInitEphemeris (const CHAR *ephemYear );
 /* exportable API */
 int XLALDrawCorrelatedNoise ( PulsarAmplitudeVect n_mu, const gsl_matrix *L, gsl_rng * rng );
 
-FstatAtomVector* XLALGenerateFstatAtomVector ( const LIGOTimeGPSVector *TS, const AMCoeffs *amcoeffs );
-MultiFstatAtomVector* XLALGenerateMultiFstatAtomVector ( const  MultiLIGOTimeGPSVector *multiTS, const MultiAMCoeffs *multiAM );
+FstatAtomVector* XLALGenerateFstatAtomVector ( const DetectorStateSeries *detStates, const AMCoeffs *amcoeffs );
+MultiFstatAtomVector* XLALGenerateMultiFstatAtomVector ( const MultiDetectorStateSeries *multiDetStates, const MultiAMCoeffs *multiAM );
 
 int XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms, gsl_rng * rng );
 int XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms, gsl_rng * rng );
@@ -216,13 +215,21 @@ int XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms, gsl_r
 REAL8 XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, AntennaPatternMatrix *M_mu_nu, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
 REAL8 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, AntennaPatternMatrix *M_mu_nu, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
 
-MultiFstatAtomVector *XLALSynthesizeTransientAtoms ( InjParams_t *injParams, const ConfigVariables *cfg, multiAMBuffer_t *multiAMBuffer );
-
 int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 rescale );
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
 
 int write_InjParams_to_fp ( FILE * fp, const InjParams_t *par, UINT4 dataStartGPS );
 
+MultiFstatAtomVector *
+XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,
+                               SkyPosition skypos,
+                               AmplitudePrior_t AmpPrior,
+                               transientWindowRange_t transientInjectRange,
+                               const MultiDetectorStateSeries *multiDetStates,
+                               BOOLEAN SignalOnly,
+                               multiAMBuffer_t *multiAMBuffer,
+                               gsl_rng *rng
+                               );
 
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
@@ -329,17 +336,18 @@ int main(int argc,char *argv[])
 
   for ( i=0; i < uvar.numDraws; i ++ )
     {
-      InjParams_t injParams = empty_InjParams_t;
+      InjParams_t injParamsDrawn = empty_InjParams_t;
 
       /* ----- generate signal random draws from ranges and generate Fstat atoms */
       MultiFstatAtomVector *multiAtoms;
-      if ( (multiAtoms = XLALSynthesizeTransientAtoms ( &injParams, &cfg, &multiAMBuffer )) == NULL ) {
+      multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
+      if ( multiAtoms ==NULL ) {
         LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", fn, xlalErrno );
         XLAL_ERROR ( fn, XLAL_EFUNC );
       }
 
       /* ----- if requested, output signal injection parameters into file */
-      if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParams, uvar.dataStartGPS ) != XLAL_SUCCESS ) ) {
+      if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParamsDrawn, uvar.dataStartGPS ) != XLAL_SUCCESS ) ) {
         XLAL_ERROR ( fn, XLAL_EFUNC );
       } /* if fpInjParams & failure*/
 
@@ -544,7 +552,6 @@ int main(int argc,char *argv[])
 
   /* ----- free memory ---------- */
   XLALDestroyMultiDetectorStateSeries ( cfg.multiDetStates );
-  XLALDestroyMultiTimestamps ( cfg.multiTS );
   XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
   XLALDestroyExpLUT();
   /* ----- free amplitude prior pdfs ----- */
@@ -798,17 +805,20 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
       multiTS->data[0]->data[i].gpsSeconds = ti;
       multiTS->data[0]->data[i].gpsNanoSeconds = 0;
     }
-  cfg->multiTS = multiTS;   /* store timestamps vector */
 
   /* get detector states */
   if ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( multiTS, multiDet, edat, 0.5 * uvar->TAtom )) == NULL ) {
     XLALPrintError ( "%s: XLALGetMultiDetectorStates() failed.\n", fn );
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
+
+  /* get rid of all temporary memory allocated for this step */
   XLALDestroyMultiLALDetector ( multiDet );
   XLALFree(edat->ephemE);
   XLALFree(edat->ephemS);
   XLALFree ( edat );
+  XLALDestroyMultiTimestamps ( multiTS );
+  multiTS = NULL;
 
 
   /* ---------- initialize transient window ranges, for injection ... ---------- */
@@ -972,24 +982,24 @@ XLALDrawCorrelatedNoise ( PulsarAmplitudeVect n_mu,	/**< [out] 4d vector of nois
  * Simply creates FstatAtomVector and initializes with antenna-pattern function.
  */
 FstatAtomVector*
-XLALGenerateFstatAtomVector ( const LIGOTimeGPSVector *TS,	/**< input timestamps vector t_i */
-                              const AMCoeffs *amcoeffs		/**< input antenna-pattern functions {a_i, b_i} */
+XLALGenerateFstatAtomVector ( const DetectorStateSeries *detStates,	/**< input detector-state series, only used for timestamps */
+                              const AMCoeffs *amcoeffs			/**< input antenna-pattern functions {a_i, b_i} */
                               )
 {
   const char *fn = __func__;
 
   /* check input consistency */
-  if ( !TS || !TS->data ) {
-    XLALPrintError ("%s: invalid NULL input in TS=%p or TS->data=%p\n", fn, TS, TS->data );
+  if ( !detStates || !detStates->data ) {
+    XLALPrintError ("%s: invalid NULL input in detStates=%p or detStates->data=%p\n", fn, detStates, detStates->data );
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
   if ( !amcoeffs || !amcoeffs->a || !amcoeffs->b ) {
     XLALPrintError ("%s: invalid NULL input in amcoeffs=%p or amcoeffs->a=%p, amcoeffs->b=%p\n", fn, amcoeffs, amcoeffs->a, amcoeffs->b );
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
-  UINT4 numAtoms = TS->length;
+  UINT4 numAtoms = detStates->length;
   if ( numAtoms != amcoeffs->a->length || numAtoms != amcoeffs->b->length ) {
-    XLALPrintError ("%s: inconsistent lengths numTS=%d amcoeffs->a = %d, amecoeffs->b = %d\n", fn, numAtoms, amcoeffs->a->length, amcoeffs->b->length );
+    XLALPrintError ("%s: inconsistent lengths numAtoms=%d amcoeffs->a = %d, amecoeffs->b = %d\n", fn, numAtoms, amcoeffs->a->length, amcoeffs->b->length );
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
 
@@ -999,15 +1009,15 @@ XLALGenerateFstatAtomVector ( const LIGOTimeGPSVector *TS,	/**< input timestamps
     XLALPrintError ("%s: XLALCreateFstatAtomVector(%d) failed.\n", fn, numAtoms );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
-  atoms->TAtom = TS->deltaT;
 
+  atoms->TAtom = detStates->deltaT;
   UINT4 alpha;
   for ( alpha=0; alpha < numAtoms; alpha ++ )
     {
       REAL8 a = amcoeffs->a->data[alpha];
       REAL8 b = amcoeffs->b->data[alpha];
 
-      atoms->data[alpha].timestamp = TS->data[alpha].gpsSeconds;	/* don't care about nanoseconds for atoms */
+      atoms->data[alpha].timestamp = detStates->data[alpha].tGPS.gpsSeconds - 0.5*detStates->deltaT;	/* shift back to SFT start-time */
       atoms->data[alpha].a2_alpha = a * a;
       atoms->data[alpha].b2_alpha = b * b;
       atoms->data[alpha].ab_alpha = a * b;
@@ -1026,15 +1036,15 @@ XLALGenerateFstatAtomVector ( const LIGOTimeGPSVector *TS,	/**< input timestamps
  * Simply creates MultiFstatAtomVector and initializes with antenna-pattern function.
  */
 MultiFstatAtomVector*
-XLALGenerateMultiFstatAtomVector ( const MultiLIGOTimeGPSVector *multiTS,	/**< input multi-timestamps vector t_i */
-                                   const MultiAMCoeffs *multiAM			/**< input antenna-pattern functions {a_i, b_i} */
+XLALGenerateMultiFstatAtomVector ( const MultiDetectorStateSeries *multiDetStates, 	/**< [in] multi-detector state series, only used for timestamps */
+                                   const MultiAMCoeffs *multiAM				/**< input antenna-pattern functions {a_i, b_i} */
                                    )
 {
   const char *fn = __func__;
 
   /* check input consistency */
-  if ( !multiTS || !multiTS->data ) {
-    XLALPrintError ("%s: invalid NULL input in 'multiTS'\n", fn );
+  if ( !multiDetStates || !multiDetStates->data ) {
+    XLALPrintError ("%s: invalid NULL input in 'multiDetStates'\n", fn );
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
   if ( !multiAM || !multiAM->data || !multiAM->data[0] ) {
@@ -1042,9 +1052,9 @@ XLALGenerateMultiFstatAtomVector ( const MultiLIGOTimeGPSVector *multiTS,	/**< i
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
 
-  UINT4 numDet = multiTS->length;
+  UINT4 numDet = multiDetStates->length;
   if ( numDet != multiAM->length ) {
-    XLALPrintError ("%s: inconsistent number of detectors in multiTS (%d) and multiAM (%d)\n", fn, multiTS->length, multiAM->length );
+    XLALPrintError ("%s: inconsistent number of detectors in multiDetStates (%d) and multiAM (%d)\n", fn, multiDetStates->length, multiAM->length );
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
 
@@ -1065,7 +1075,7 @@ XLALGenerateMultiFstatAtomVector ( const MultiLIGOTimeGPSVector *multiTS,	/**< i
   UINT4 X;
   for ( X=0; X < numDet; X ++ )
     {
-      if ( ( multiAtoms->data[X] = XLALGenerateFstatAtomVector ( multiTS->data[X], multiAM->data[X] )) == NULL ) {
+      if ( ( multiAtoms->data[X] = XLALGenerateFstatAtomVector ( multiDetStates->data[X], multiAM->data[X] )) == NULL ) {
         XLALPrintError ("%s: XLALGenerateFstatAtomVector() failed.\n", fn );
         XLALDestroyMultiFstatAtomVector ( multiAtoms );
         XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
@@ -1437,26 +1447,29 @@ XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
  *
  */
 MultiFstatAtomVector *
-XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summary of injected signal parameters (can be NULL) */
-                               const ConfigVariables *cfg,	/**< [in] input params for transient atoms synthesis */
-                               multiAMBuffer_t *multiAMBuffer	/**< buffer for AM-coefficients if re-using same skyposition (must be !=NULL) */
+XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return summary of injected signal parameters (can be NULL) */
+                               SkyPosition skypos,				/**< (Alpha,Delta,system). Use Alpha < 0 to signal 'allsky' */
+                               AmplitudePrior_t AmpPrior,			/**< [in] amplitude-parameter priors to draw signals from */
+                               transientWindowRange_t transientInjectRange,	/**< transient-window range for injections (flat priors) */
+                               const MultiDetectorStateSeries *multiDetStates, 	/**< [in] multi-detector state series covering observation time */
+                               BOOLEAN SignalOnly,				/**< [in] switch to generate signal draws without noise */
+                               multiAMBuffer_t *multiAMBuffer,			/**< [in/out] buffer for AM-coefficients if re-using same skyposition (must be !=NULL) */
+                               gsl_rng *rng					/**< [in/out] gsl random-number generator */
                                )
 {
   const char *fn = __func__;
 
   /* check input */
-  if ( !cfg || !cfg->rng || !multiAMBuffer ) {
-    XLALPrintError ("%s: invalid NULL input in cfg, random-number generator cfg->rng, or multiAMBuffer\n", fn );
+  if ( !rng || !multiAMBuffer || !multiDetStates ) {
+    XLALPrintError ("%s: invalid NULL input\n", fn );
     XLAL_ERROR_NULL (fn, XLAL_EINVAL );
   }
 
-  SkyPosition skypos;
-
   /* -----  if Alpha < 0 ==> draw skyposition isotropically from all-sky */
-  if ( cfg->skypos.longitude < 0 )
+  if ( skypos.longitude < 0 )
     {
-      skypos.longitude = gsl_ran_flat ( cfg->rng, 0, LAL_TWOPI );	/* alpha uniform in [ 0, 2pi ] */
-      skypos.latitude  = acos ( gsl_ran_flat ( cfg->rng, -1, 1 ) ) - LAL_PI_2;	/* cos(delta) uniform in [ -1, 1 ] */
+      skypos.longitude = gsl_ran_flat ( rng, 0, LAL_TWOPI );	/* alpha uniform in [ 0, 2pi ] */
+      skypos.latitude  = acos ( gsl_ran_flat ( rng, -1, 1 ) ) - LAL_PI_2;	/* cos(delta) uniform in [ -1, 1 ] */
       skypos.system    = COORDINATESYSTEM_EQUATORIAL;
       /* never re-using buffered AM-coeffs here, as we randomly draw new skypositions */
       if ( multiAMBuffer->multiAM ) XLALDestroyMultiAMCoeffs ( multiAMBuffer->multiAM );
@@ -1465,19 +1478,18 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
   else /* otherwise: re-use AM-coeffs if already computed, or initialize them if for the first time */
     {
       if ( multiAMBuffer->multiAM )
-        if ( multiAMBuffer->skypos.longitude != cfg->skypos.longitude ||
-             multiAMBuffer->skypos.latitude  != cfg->skypos.latitude  ||
-             multiAMBuffer->skypos.system    != cfg->skypos.system )
+        if ( multiAMBuffer->skypos.longitude != skypos.longitude ||
+             multiAMBuffer->skypos.latitude  != skypos.latitude  ||
+             multiAMBuffer->skypos.system    != skypos.system )
           {
             XLALDestroyMultiAMCoeffs ( multiAMBuffer->multiAM );
             multiAMBuffer->multiAM = NULL;
           }
-      skypos = cfg->skypos;
     } /* if single skypos given */
 
   /* ----- generate antenna-pattern functions for this sky-position */
   const MultiNoiseWeights *weights = NULL;	/* NULL = unit weights */
-  if ( !multiAMBuffer->multiAM && (multiAMBuffer->multiAM = XLALComputeMultiAMCoeffs ( cfg->multiDetStates, weights, skypos )) == NULL ) {
+  if ( !multiAMBuffer->multiAM && (multiAMBuffer->multiAM = XLALComputeMultiAMCoeffs ( multiDetStates, weights, skypos )) == NULL ) {
     XLALPrintError ( "%s: XLALComputeMultiAMCoeffs() failed with xlalErrno = %d\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
@@ -1485,23 +1497,23 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
 
   /* ----- generate a pre-initialized F-stat atom vector containing only the antenna-pattern coefficients */
   MultiFstatAtomVector *multiAtoms;
-  if ( (multiAtoms = XLALGenerateMultiFstatAtomVector ( cfg->multiTS, multiAMBuffer->multiAM )) == NULL ) {
+  if ( (multiAtoms = XLALGenerateMultiFstatAtomVector ( multiDetStates, multiAMBuffer->multiAM )) == NULL ) {
     XLALPrintError ( "%s: XLALGenerateMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
 
   /* ----- draw amplitude vector A^mu from given ranges in {h0, cosi, psi, phi0} */
   PulsarAmplitudeParams Amp;
-  if ( cfg->AmpPrior.fixedSNR > 0 )	/* special treatment of fixed-SNR: use h0=1, later rescale signal */
+  if ( AmpPrior.fixedSNR > 0 )	/* special treatment of fixed-SNR: use h0=1, later rescale signal */
     Amp.h0 = 1.0;
-  else if ( cfg->AmpPrior.fixedSNR == 0 )/* same as setting h0 = 0 */
+  else if ( AmpPrior.fixedSNR == 0 )/* same as setting h0 = 0 */
     Amp.h0 = 0;
   else					/* otherwise, draw from h0-prior */
-    Amp.h0 = XLALDrawFromPDF1D ( cfg->AmpPrior.pdf_h0Nat, cfg->rng );
+    Amp.h0 = XLALDrawFromPDF1D ( AmpPrior.pdf_h0Nat, rng );
 
-  Amp.cosi = XLALDrawFromPDF1D ( cfg->AmpPrior.pdf_cosi, cfg->rng );
-  Amp.psi  = XLALDrawFromPDF1D ( cfg->AmpPrior.pdf_psi,  cfg->rng );
-  Amp.phi0 = XLALDrawFromPDF1D ( cfg->AmpPrior.pdf_phi0, cfg->rng );
+  Amp.cosi = XLALDrawFromPDF1D ( AmpPrior.pdf_cosi, rng );
+  Amp.psi  = XLALDrawFromPDF1D ( AmpPrior.pdf_psi,  rng );
+  Amp.phi0 = XLALDrawFromPDF1D ( AmpPrior.pdf_phi0, rng );
 
   /* convert amplitude params to 'canonical' vector coordinates */
   PulsarAmplitudeVect A_Mu;
@@ -1512,11 +1524,11 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
 
   /* ----- draw transient-window parameters from given ranges using flat priors */
   transientWindow_t injectWindow = empty_transientWindow;
-  injectWindow.type = cfg->transientInjectRange.type;
+  injectWindow.type = transientInjectRange.type;
   if ( injectWindow.type != TRANSIENT_NONE )	/* nothing to be done if no window */
     {
-      injectWindow.t0  = (UINT4) gsl_ran_flat ( cfg->rng, cfg->transientInjectRange.t0, cfg->transientInjectRange.t0 + cfg->transientInjectRange.t0Band );
-      injectWindow.tau = (UINT4) gsl_ran_flat ( cfg->rng, cfg->transientInjectRange.tau, cfg->transientInjectRange.tau + cfg->transientInjectRange.tauBand );
+      injectWindow.t0  = (UINT4) gsl_ran_flat ( rng, transientInjectRange.t0, transientInjectRange.t0 + transientInjectRange.t0Band );
+      injectWindow.tau = (UINT4) gsl_ran_flat ( rng, transientInjectRange.tau, transientInjectRange.tau + transientInjectRange.tauBand );
     }
 
   /* ----- add transient signal to the Fstat atoms */
@@ -1531,18 +1543,18 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
   REAL8 detM1o8 = sqrt ( M_mu_nu.Sinv_Tsft ) * pow ( M_mu_nu.Dd, 0.25 );	// (detM)^(1/8) = sqrt(Tsft/Sn) * (Dp)^(1/4)
 
   /* 1) if fixedSNR signal is requested: rescale everything to the desired SNR now */
-  if ( (cfg->AmpPrior.fixedSNR > 0) || cfg->AmpPrior.fixRhohMax )
+  if ( (AmpPrior.fixedSNR > 0) || AmpPrior.fixRhohMax )
     {
-      if ( (cfg->AmpPrior.fixedSNR > 0) && cfg->AmpPrior.fixRhohMax ) { /* double-check consistency: only one is allowed */
-        XLALPrintError ("%s: Something went wrong: both [cfg->fixedSNR = %f > 0] and [cfg->fixedRhohMax==true] are not allowed!\n", fn, cfg->AmpPrior.fixedSNR );
+      if ( (AmpPrior.fixedSNR > 0) && AmpPrior.fixRhohMax ) { /* double-check consistency: only one is allowed */
+        XLALPrintError ("%s: Something went wrong: both [fixedSNR = %f > 0] and [fixedRhohMax==true] are not allowed!\n", fn, AmpPrior.fixedSNR );
         XLAL_ERROR_NULL ( fn, XLAL_EDOM );
       }
 
       REAL8 rescale = 1.0;
 
-      if ( cfg->AmpPrior.fixedSNR > 0 )
-        rescale = cfg->AmpPrior.fixedSNR / sqrt(rho2);	// rescale atoms by this factor, such that SNR = cfg->fixedSNR
-      if ( cfg->AmpPrior.fixRhohMax )
+      if ( AmpPrior.fixedSNR > 0 )
+        rescale = AmpPrior.fixedSNR / sqrt(rho2);	// rescale atoms by this factor, such that SNR = fixedSNR
+      if ( AmpPrior.fixRhohMax )
         rescale = 1.0 / detM1o8;	// we drew h0 in [0, rhohMax], so we now need to rescale as h0Max = rhohMax/(detM)^(1/8)
 
       if ( XLALRescaleMultiFstatAtomVector ( multiAtoms, rescale ) != XLAL_SUCCESS ) {	      /* rescale atoms */
@@ -1558,23 +1570,23 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
     } /* if fixedSNR > 0 OR fixedRhohMax */
 
   /* ----- add noise to the Fstat atoms, unless --SignalOnly was specified */
-  if ( !cfg->SignalOnly )
-    if ( XLALAddNoiseToMultiFstatAtomVector ( multiAtoms, cfg->rng ) != XLAL_SUCCESS ) {
+  if ( !SignalOnly )
+    if ( XLALAddNoiseToMultiFstatAtomVector ( multiAtoms, rng ) != XLAL_SUCCESS ) {
       XLALPrintError ("%s: XLALAddNoiseToMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
       XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
     }
 
   /* ----- if requested: return all inject signal parameters */
-  if ( injParams )
+  if ( injParamsOut )
     {
-      injParams->skypos = skypos;
-      injParams->ampParams = Amp;
-      UINT4 i; for (i=0; i < 4; i ++) injParams->ampVect[i] = A_Mu[i];
-      injParams->M_mu_nu = M_mu_nu;
-      injParams->transientWindow = injectWindow;
-      injParams->SNR = sqrt(rho2);
-      injParams->detM1o8 = detM1o8;
-    } /* if injParams */
+      injParamsOut->skypos = skypos;
+      injParamsOut->ampParams = Amp;
+      UINT4 i; for (i=0; i < 4; i ++) injParamsOut->ampVect[i] = A_Mu[i];
+      injParamsOut->M_mu_nu = M_mu_nu;
+      injParamsOut->transientWindow = injectWindow;
+      injParamsOut->SNR = sqrt(rho2);
+      injParamsOut->detM1o8 = detM1o8;
+    } /* if injParamsOut */
 
 
   return multiAtoms;
