@@ -2,11 +2,11 @@
 \file
 \ingroup SeqFactories_h
 
-\brief A program to test create/destroy vector sequence routines.
+\brief A program to test create/destroy array sequence routines.
 
 \heading{Usage}
 \code
-VectorSequenceFactoriesTest [options]
+ArraySequenceFactoriesTest [options]
 Options:
   -h         print help
   -q         quiet: run silently
@@ -25,8 +25,8 @@ Options:
 \heading{Uses}
 \code
 lalDebugLevel
-<datatype>CreateVectorSequence()
-<datatype>DestroyVectorSequence()
+<datatype>CreateArraySequence()
+<datatype>DestroyArraySequence()
 \endcode
 
 \heading{Notes}
@@ -71,41 +71,69 @@ ParseOptions (int argc, char *argv[]);
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
-define(`TYPECODE',`Z')
-include(`VectorSequenceFactoriesTestFunction.m4')
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#include "ArraySequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`C')
-include(`VectorSequenceFactoriesTestFunction.m4')
+#define TYPECODE C
+#define TYPE COMPLEX8
+#include "ArraySequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`D')
-include(`VectorSequenceFactoriesTestFunction.m4')
+#define TYPECODE D
+#define TYPE REAL8
+#include "ArraySequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`S')
-include(`VectorSequenceFactoriesTestFunction.m4')
+#define TYPECODE S
+#define TYPE REAL4
+#include "ArraySequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`I2')
-include(`VectorSequenceFactoriesTestFunction.m4')
+#define TYPECODE I2
+#define TYPE INT2
+#include "ArraySequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`I4')
-include(`VectorSequenceFactoriesTestFunction.m4')
+#define TYPECODE I4
+#define TYPE INT4
+#include "ArraySequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`I8')
-include(`VectorSequenceFactoriesTestFunction.m4')
+#define TYPECODE I8
+#define TYPE INT8
+#include "ArraySequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`U2')
-include(`VectorSequenceFactoriesTestFunction.m4')
+#define TYPECODE U2
+#define TYPE UINT2
+#include "ArraySequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`U4')
-include(`VectorSequenceFactoriesTestFunction.m4')
+#define TYPECODE U4
+#define TYPE UINT4
+#include "ArraySequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`U8')
-include(`VectorSequenceFactoriesTestFunction.m4')
+#define TYPECODE U8
+#define TYPE UINT8
+#include "ArraySequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`CHAR')
-include(`VectorSequenceFactoriesTestFunction.m4')
-
-define(`TYPECODE',`')
-include(`VectorSequenceFactoriesTestFunction.m4')
+#define TYPE REAL4
+#include "ArraySequenceFactoriesTest_source.c"
+#undef TYPE
 
 int main( int argc, char *argv[] )
 {
@@ -113,18 +141,17 @@ int main( int argc, char *argv[] )
 
   ParseOptions( argc, argv );
 
-  VectorSequenceFactoriesTest();
-  ZVectorSequenceFactoriesTest();
-  CVectorSequenceFactoriesTest();
-  DVectorSequenceFactoriesTest();
-  SVectorSequenceFactoriesTest();
-  I2VectorSequenceFactoriesTest();
-  I4VectorSequenceFactoriesTest();
-  I8VectorSequenceFactoriesTest();
-  U2VectorSequenceFactoriesTest();
-  U4VectorSequenceFactoriesTest();
-  U8VectorSequenceFactoriesTest();
-  CHARVectorSequenceFactoriesTest();
+  ArraySequenceFactoriesTest();
+  ZArraySequenceFactoriesTest();
+  CArraySequenceFactoriesTest();
+  DArraySequenceFactoriesTest();
+  SArraySequenceFactoriesTest();
+  I2ArraySequenceFactoriesTest();
+  I4ArraySequenceFactoriesTest();
+  I8ArraySequenceFactoriesTest();
+  U2ArraySequenceFactoriesTest();
+  U4ArraySequenceFactoriesTest();
+  U8ArraySequenceFactoriesTest();
 
   return 0;
 }
@@ -246,3 +273,4 @@ ParseOptions (int argc, char *argv[])
   return;
 }
 
+/** \endcond DONT_DOXYGEN */

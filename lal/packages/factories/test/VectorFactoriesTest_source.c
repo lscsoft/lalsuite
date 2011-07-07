@@ -1,24 +1,27 @@
 /* -*- C -*- */
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
-ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
-ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
-define(`VTYPE',`format(`%sVector',TYPE)')
-define(`CFUNC',`format(`LAL%sCreateVector',TYPECODE)')
-define(`RFUNC',`format(`LAL%sResizeVector',TYPECODE)')
-define(`DFUNC',`format(`LAL%sDestroyVector',TYPECODE)')
-define(`PRINTVEC',`format(`LAL%sPrintVector',TYPECODE)')
-define(`FUNC',`format(`%sVectorFactoriesTest',TYPECODE)')
 
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRINGx(a) #a
+#define STRING(a) STRINGx(a)
+
+#define VTYPE CONCAT2(TYPE,Vector)
+
+#ifdef TYPECODE
+#define CFUNC CONCAT3(LAL,TYPECODE,CreateVector)
+#define RFUNC CONCAT3(LAL,TYPECODE,ResizeVector)
+#define DFUNC CONCAT3(LAL,TYPECODE,DestroyVector)
+#define PRINTVEC CONCAT3(LAL,TYPECODE,PrintVector)
+#define FUNC CONCAT2(TYPECODE,VectorFactoriesTest)
+#else
+#define CFUNC LALCreateVector
+#define RFUNC LALResizeVector
+#define DFUNC LALDestroyVector
+#define PRINTVEC LALPrintVector
+#define FUNC VectorFactoriesTest
+#endif
 
 static void FUNC ( void )
 {
@@ -166,7 +169,13 @@ static void FUNC ( void )
 #endif
 
   LALCheckMemoryLeaks();
-  printf( "PASS: tests of CFUNC, RFUNC, and DFUNC \n" );
+  printf( "PASS: tests of %s, %s, and %s\n", STRING(CFUNC), STRING(RFUNC), STRING(DFUNC));
 
   return;
 }
+
+#undef CFUNC
+#undef RFUNC
+#undef DFUNC
+#undef PRINTVEC
+#undef FUNC

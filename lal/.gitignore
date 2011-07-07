@@ -85,13 +85,9 @@ packages/date/test/TestUTCtoGPS
 packages/factories/include/AVFactories.h
 packages/factories/include/SeqFactories.h
 packages/factories/test/ArrayFactoriesTest
-packages/factories/test/ArrayFactoriesTest.c
 packages/factories/test/ArraySequenceFactoriesTest
-packages/factories/test/ArraySequenceFactoriesTest.c
 packages/factories/test/VectorFactoriesTest
-packages/factories/test/VectorFactoriesTest.c
 packages/factories/test/VectorSequenceFactoriesTest
-packages/factories/test/VectorSequenceFactoriesTest.c
 packages/fft/src/CudaFFT.c
 packages/fft/src/CudaFFT.linkinfo
 packages/fft/test/*.dat

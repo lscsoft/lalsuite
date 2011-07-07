@@ -75,41 +75,75 @@ ParseOptions (int argc, char *argv[]);
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
-define(`TYPECODE',`Z')
-include(`VectorFactoriesTestFunction.m4')
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#include "VectorFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`C')
-include(`VectorFactoriesTestFunction.m4')
+#define TYPECODE C
+#define TYPE COMPLEX8
+#include "VectorFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`D')
-include(`VectorFactoriesTestFunction.m4')
+#define TYPECODE D
+#define TYPE REAL8
+#include "VectorFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`S')
-include(`VectorFactoriesTestFunction.m4')
+#define TYPECODE S
+#define TYPE REAL4
+#include "VectorFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`I2')
-include(`VectorFactoriesTestFunction.m4')
+#define TYPECODE I2
+#define TYPE INT2
+#include "VectorFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`I4')
-include(`VectorFactoriesTestFunction.m4')
+#define TYPECODE I4
+#define TYPE INT4
+#include "VectorFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`I8')
-include(`VectorFactoriesTestFunction.m4')
+#define TYPECODE I8
+#define TYPE INT8
+#include "VectorFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`U2')
-include(`VectorFactoriesTestFunction.m4')
+#define TYPECODE U2
+#define TYPE UINT2
+#include "VectorFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`U4')
-include(`VectorFactoriesTestFunction.m4')
+#define TYPECODE U4
+#define TYPE UINT4
+#include "VectorFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`U8')
-include(`VectorFactoriesTestFunction.m4')
+#define TYPECODE U8
+#define TYPE UINT8
+#include "VectorFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`CHAR')
-include(`VectorFactoriesTestFunction.m4')
+#define TYPECODE CHAR
+#define TYPE CHAR
+#include "VectorFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`')
-include(`VectorFactoriesTestFunction.m4')
+#define TYPE REAL4
+#include "VectorFactoriesTest_source.c"
+#undef TYPE
 
 int main( int argc, char *argv[] )
 {

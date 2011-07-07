@@ -1,20 +1,18 @@
 /**
 \file
-\ingroup AVFactories_h
+\ingroup SeqFactories_h
 
-\brief A program to test create/destroy array routines.
+\brief A program to test create/destroy vector sequence routines.
 
 \heading{Usage}
 \code
-ArrayFactoriesTest [options]
+VectorSequenceFactoriesTest [options]
 Options:
   -h         print help
   -q         quiet: run silently
   -v         verbose: print extra information
   -d level   set lalDebugLevel to level
 \endcode
-
-\heading{Description}
 
 \heading{Exit codes}
 <table><tr><th>Code</th><th>Explanation</th></tr>
@@ -27,8 +25,8 @@ Options:
 \heading{Uses}
 \code
 lalDebugLevel
-\<datatype\>CreateArray()
-\<datatype\>DestroyArray()
+<datatype>CreateVectorSequence()
+<datatype>DestroyVectorSequence()
 \endcode
 
 \heading{Notes}
@@ -51,7 +49,7 @@ lalDebugLevel
 #endif
 
 #include <lal/LALStdlib.h>
-#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
@@ -73,45 +71,75 @@ ParseOptions (int argc, char *argv[]);
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
-/* debugging is turned off */
-#else
-static void
-ClearStatus (LALStatus *status);
-#endif
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#include "VectorSequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`Z')
-include(`ArrayFactoriesTestFunction.m4')
+#define TYPECODE C
+#define TYPE COMPLEX8
+#include "VectorSequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`C')
-include(`ArrayFactoriesTestFunction.m4')
+#define TYPECODE D
+#define TYPE REAL8
+#include "VectorSequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`D')
-include(`ArrayFactoriesTestFunction.m4')
+#define TYPECODE S
+#define TYPE REAL4
+#include "VectorSequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`S')
-include(`ArrayFactoriesTestFunction.m4')
+#define TYPECODE I2
+#define TYPE INT2
+#include "VectorSequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`I2')
-include(`ArrayFactoriesTestFunction.m4')
+#define TYPECODE I4
+#define TYPE INT4
+#include "VectorSequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`I4')
-include(`ArrayFactoriesTestFunction.m4')
+#define TYPECODE I8
+#define TYPE INT8
+#include "VectorSequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`I8')
-include(`ArrayFactoriesTestFunction.m4')
+#define TYPECODE U2
+#define TYPE UINT2
+#include "VectorSequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`U2')
-include(`ArrayFactoriesTestFunction.m4')
+#define TYPECODE U4
+#define TYPE UINT4
+#include "VectorSequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`U4')
-include(`ArrayFactoriesTestFunction.m4')
+#define TYPECODE U8
+#define TYPE UINT8
+#include "VectorSequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`U8')
-include(`ArrayFactoriesTestFunction.m4')
+#define TYPECODE CHAR
+#define TYPE CHAR
+#include "VectorSequenceFactoriesTest_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`')
-include(`ArrayFactoriesTestFunction.m4')
+#define TYPE REAL4
+#include "VectorSequenceFactoriesTest_source.c"
+#undef TYPE
 
 int main( int argc, char *argv[] )
 {
@@ -119,17 +147,18 @@ int main( int argc, char *argv[] )
 
   ParseOptions( argc, argv );
 
-  ArrayFactoriesTest();
-  ZArrayFactoriesTest();
-  CArrayFactoriesTest();
-  DArrayFactoriesTest();
-  SArrayFactoriesTest();
-  I2ArrayFactoriesTest();
-  I4ArrayFactoriesTest();
-  I8ArrayFactoriesTest();
-  U2ArrayFactoriesTest();
-  U4ArrayFactoriesTest();
-  U8ArrayFactoriesTest();
+  VectorSequenceFactoriesTest();
+  ZVectorSequenceFactoriesTest();
+  CVectorSequenceFactoriesTest();
+  DVectorSequenceFactoriesTest();
+  SVectorSequenceFactoriesTest();
+  I2VectorSequenceFactoriesTest();
+  I4VectorSequenceFactoriesTest();
+  I8VectorSequenceFactoriesTest();
+  U2VectorSequenceFactoriesTest();
+  U4VectorSequenceFactoriesTest();
+  U8VectorSequenceFactoriesTest();
+  CHARVectorSequenceFactoriesTest();
 
   return 0;
 }
@@ -179,29 +208,6 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
   fprintf (stderr, "\nExiting to system with code %d\n", exitcode);
   exit (exitcode);
 }
-
-
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
-/* debugging is turned off */
-#else
-/*
- *
- * ClearStatus ()
- *
- * Recursively applies DETATCHSTATUSPTR() to status structure to destroy
- * linked list of statuses.
- *
- */
-static void
-ClearStatus (LALStatus *status)
-{
-  if (status->statusPtr)
-  {
-    ClearStatus      (status->statusPtr);
-    DETATCHSTATUSPTR (status);
-  }
-}
-#endif
 
 /*
  * Usage ()
@@ -274,4 +280,3 @@ ParseOptions (int argc, char *argv[])
   return;
 }
 
-/** \endcond DONT_DOXYGEN */
