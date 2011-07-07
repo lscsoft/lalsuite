@@ -54,9 +54,9 @@
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Window.h>
 
-#include <lalapps.h>
+#include <lal/TransientCW_utils.h>
 
-#include "../transientCW_utils.h"
+#include <lalapps.h>
 
 RCSID ("$Id$");
 

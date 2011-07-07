@@ -36,7 +36,7 @@ extern "C" {
 
 #include "config.h"
 
-#include "ProbabilityDensity.h"
+#include <lal/ProbabilityDensity.h>
 
 /* ---------- System includes ---------- */
 /* gsl-includes */

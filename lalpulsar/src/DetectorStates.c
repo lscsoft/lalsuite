@@ -684,6 +684,9 @@ XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps,	/**< array of GPS t
   /* enter detector-info into the head of the state-vector */
   ret->detector = (*detector);
 
+  /* set 'time-span' associated with each timestamp */
+  ret->deltaT = timestamps->deltaT;
+
   /* set SSB coordinate system used: EQUATORIAL for Earth-based, ECLIPTIC for LISA */
   if ( detector->frDetector.prefix[0] == 'Z' )	/* LISA */
     ret->system = COORDINATESYSTEM_ECLIPTIC;

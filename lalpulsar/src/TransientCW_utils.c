@@ -37,8 +37,8 @@
 #include <lal/AVFactories.h>
 #include <lal/LogPrintf.h>
 
-#include "ProbabilityDensity.h"
-#include "transientCW_utils.h"
+#include <lal/ProbabilityDensity.h>
+#include <lal/TransientCW_utils.h>
 
 
 /* ----- MACRO definitions ---------- */

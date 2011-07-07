@@ -40,7 +40,7 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALStdlib.h>
 
-#include "ProbabilityDensity.h"
+#include <lal/ProbabilityDensity.h>
 
 /* ----- MACRO definitions ---------- */
 

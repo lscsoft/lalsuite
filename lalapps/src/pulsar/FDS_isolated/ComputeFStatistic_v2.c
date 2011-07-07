@@ -65,14 +65,14 @@ int finite(double);
 #include <lal/DopplerFullScan.h>
 #include <lal/BinaryPulsarTiming.h>
 
+#include <lal/TransientCW_utils.h>
+
 #include <lalapps.h>
 
 /* local includes */
 #include "HeapToplist.h"
 
 #include "OptimizedCFS/ComputeFstatREAL4.h"
-
-#include "../transientCW_utils.h"
 
 RCSID( "$Id$");
 

@@ -37,6 +37,7 @@ lalpulsarinclude_HEADERS = \
 	LatticeCovering.h \
 	NormalizeSFTRngMed.h \
 	PHMD.h \
+	ProbabilityDensity.h \
 	PtoleMetric.h \
 	PulsarCat.h \
 	PulsarCrossCorr.h \
@@ -48,6 +49,8 @@ lalpulsarinclude_HEADERS = \
 	SFTutils.h \
 	StackMetric.h \
 	Statistics.h \
+	SynthesizeCWDraws.h \
+	TransientCW_utils.h \
 	TwoDMesh.h \
 	UniversalDopplerMetric.h \
 	Velocity.h \
@@ -98,6 +101,7 @@ liblalpulsar_la_SOURCES = \
 	PatchGrid.c \
 	Peak2PHMD.c \
 	PolycoToTimingDifference.c \
+	ProbabilityDensity.c \
 	ProjectMetric.c \
 	PtoleMetric.c \
 	PulsarCat.c \
@@ -112,8 +116,10 @@ liblalpulsar_la_SOURCES = \
 	StackMetric.c \
 	Statistics.c \
 	Stereographic.c \
+	SynthesizeCWDraws.c \
 	TBaryPtolemaic.c \
 	TComp.c \
+	TransientCW_utils.c \
 	TSpin.c \
 	TwoDMesh.c \
 	TwoDMeshInternal.c \

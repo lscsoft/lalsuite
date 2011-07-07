@@ -47,9 +47,9 @@
 #include <lal/LALHough.h>
 #include <lal/LogPrintf.h>
 
-#include <lalapps.h>
+#include <lal/TransientCW_utils.h>
 
-#include "../transientCW_utils.h"
+#include <lalapps.h>
 
 /* local includes */
 
