@@ -49,6 +49,7 @@ lalpulsarinclude_HEADERS = \
 	SFTutils.h \
 	StackMetric.h \
 	Statistics.h \
+	SynthesizeCWDraws.h \
 	TransientCW_utils.h \
 	TwoDMesh.h \
 	UniversalDopplerMetric.h \
@@ -115,6 +116,7 @@ liblalpulsar_la_SOURCES = \
 	StackMetric.c \
 	Statistics.c \
 	Stereographic.c \
+	SynthesizeCWDraws.c \
 	TBaryPtolemaic.c \
 	TComp.c \
 	TransientCW_utils.c \

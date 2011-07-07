@@ -43,7 +43,7 @@ extern "C" {
 #include <gsl/gsl_randist.h>
 
 /* LAL-includes */
-
+#include <lal/LALDatatypes.h>
 
 /* ---------- exported API defines ---------- */
 
