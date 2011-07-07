@@ -145,6 +145,7 @@ typedef struct
   DetectorState *data;		/**< array of DetectorState entries */
   LALDetector detector;		/**< detector-info corresponding to this timeseries */
   CoordinateSystem system; 	/**< The coordinate system used for detector's position/velocity and detector-tensor */
+  REAL8 deltaT;			/**< timespan centered on each timestamp (e.g. typically Tsft) */
 } DetectorStateSeries;
 
 /** Multi-IFO time-series of DetectorStates */
