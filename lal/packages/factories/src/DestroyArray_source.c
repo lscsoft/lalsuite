@@ -22,7 +22,7 @@ void XFUNC ( ATYPE *array )
       || ! array->dimLength->length
       || ! array->dimLength->data
       || ! array->data )
-    XLAL_ERROR_VOID( "XFUNC", XLAL_EINVAL );
+    XLAL_ERROR_VOID( STRING(XFUNC), XLAL_EINVAL );
   XLALDestroyUINT4Vector( array->dimLength );
   LALFree( array->data );
   LALFree( array );
