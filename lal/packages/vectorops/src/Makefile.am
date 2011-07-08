@@ -24,11 +24,8 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MAINTAINERCLEANFILES = \
 	VectorIndexRange.c
 
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
-
-dvi-local: .dvi-dep
+MOSTLYCLEANFILES =
+DISTCLEANFILES =
 
 VectorIndexRange.c: VectorIndexRangeC.m4 VectorIndexRangeBaseC.m4
 	cd $(srcdir) && @M4@ VectorIndexRangeC.m4 > VectorIndexRange.c
-@DVIMKFILE@

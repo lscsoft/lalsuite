@@ -17,31 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="VectorOpsHV">
- * Author: J. D. E. Creighton, T. D. Creighton, A. M. Sintes
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
+/**
+ * \addtogroup VectorOps_h
+ * \author J. D. E. Creighton, T. D. Creighton, A. M. Sintes
  *
- * \section{Header \texttt{VectorOps.h}}
+ * \brief Basic vector manipulation operations.
  *
- * Basic vector manipulation operations.
- *
- * \subsection*{Synopsis}
- * \begin{verbatim}
+ * \heading{Synopsis}
+ * \code
  * #include <lal/VectorOps.h>
- * \end{verbatim}
+ * \endcode
  *
- * \subsection*{Error conditions}
- * \input{VectorOpsHE}
+ * @{
+ * \defgroup VectorMultiply_c Module VectorMultiply.c
+ * \defgroup VectorPolar_c    Module VectorPolar.c
  *
- * \vfill{\footnotesize\input{VectorOpsHV}}
- * \newpage\input{VectorMultiplyC}
- * \newpage\input{VectorPolarC}
- * \newpage\input{VectorOpsTestC}
- *
- **** </lalLaTeX> */
+ */
 
 #ifndef _VECTOROPS_H
 #define _VECTOROPS_H
@@ -54,20 +45,22 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
+/** \name Error Codes
+ * @{*/
+#define VECTOROPSH_ENULL 1	/**< Null pointer */
+#define VECTOROPSH_ESIZE 2	/**< Invalid input size */
+#define VECTOROPSH_ESZMM 4	/**< Size mismatch */
+#define VECTOROPSH_ESAME 8	/**< Input/Output data vectors are the same */
+/** @}*/
+/** @}*/
 
-NRCSID (VECTOROPSH, "$Id$");
-
-/**** <lalErrTable file="VectorOpsHE"> */
-#define VECTOROPSH_ENULL 1
-#define VECTOROPSH_ESIZE 2
-#define VECTOROPSH_ESZMM 4
-#define VECTOROPSH_ESAME 8
 
 #define VECTOROPSH_MSGENULL "Null pointer"
 #define VECTOROPSH_MSGESIZE "Invalid input size"
 #define VECTOROPSH_MSGESZMM "Size mismatch"
 #define VECTOROPSH_MSGESAME "Input/Output data vectors are the same"
-/**** </lalErrTable> */
+
+NRCSID (VECTOROPSH, "$Id$");
 
 /*
  *

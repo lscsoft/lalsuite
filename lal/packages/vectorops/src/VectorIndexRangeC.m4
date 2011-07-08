@@ -1,29 +1,4 @@
 /* -*- C -*- */
-/******** <lalVerbatim file="VectorIndexRangeCV"> ********
-Author: David Chin <dwchin@umich.edu> +1-734-709-9119
-$Id$
-********* </lalVerbatim> ********/
-
-/******************************* <lalLaTeX file="VectorIndexRangeC">
-\subsection{Module \texttt{VectorIndexRange.c}}
-\label{s:VectorIndexRange.c}
-
-
-\subsection*{Description}
-
-\subsection*{Algorithms}
-
-\subsection*{Uses}
-
-\begin{itemize}
-\item \texttt{LAL*CreateVector}
-\end{itemize}
-
-\subsection*{Notes}
-
-\subsubsection*{Prototypes}
-
- *************************************************** </lalLaTeX> */
 
 #include <math.h>
 #include "VectorIndexRange.h"
@@ -63,8 +38,5 @@ include(`VectorIndexRangeBaseC.m4')
 define(`TYPECODE',`Z')
 include(`VectorIndexRangeBaseC.m4')
 
-/******************************* <lalLaTeX file="VectorIndexRangeC">
 
-\vfill{\footnotesize\input{VectorIndexRangeCV}}
 
- *************************************************** </lalLaTeX> */

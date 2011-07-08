@@ -18,11 +18,6 @@ define(`VPAIRTYPE',`format(`%sVectorPair',TYPE)')
 define(`F2',`format(`LAL%sVectorIndexHole',TYPECODE)')
 */
 
-/******************************* <lalLaTeX file="VectorIndexRangeC">
-\begin{verbatim}void F1 ( LALStatus *status, VTYPE **result,
-       VTYPE *A, const UINT4Vector *indexVector )\end{verbatim}
-*************************************************** </lalLaTeX> */
-
 /* Take a vector, and remove a range entries by given indices, then stuff
    that truncated vector in to the result vector */
 void F1 (
