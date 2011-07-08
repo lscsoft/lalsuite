@@ -32,6 +32,7 @@ lalDebugLevel
 \heading{Notes}
 
 */
+
 /** \cond DONT_DOXYGEN */
 
 #include <stdlib.h>
@@ -280,3 +281,4 @@ ParseOptions (int argc, char *argv[])
   return;
 }
 
+/** \endcond */

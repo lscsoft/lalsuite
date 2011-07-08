@@ -24,7 +24,7 @@
 
 \file
 
-\brief Functions to generate the EOBNRv2 waveforms, as defined in 
+\brief Functions to generate the EOBNRv2 waveforms, as defined in
 Pan et al, arXiv:1106.1021v1 [gr-qc].
 
 \heading{Prototypes}
@@ -37,13 +37,13 @@ Pan et al, arXiv:1106.1021v1 [gr-qc].
 <tt> LALEOBPPWaveformTemplates() </tt>
 <ul>
     <li><tt> signalvec1:</tt> Output containing the 0-phase inspiral waveform.
-    <li><tt> signalvec2:</tt> Output containing the $\pi/2$-phase inspiral waveform.
+    <li><tt> signalvec2:</tt> Output containing the \f$\pi/2\f$-phase inspiral waveform.
     <li><tt> params:</tt> Input containing binary chirp parameters.
 </ul>
 
 <tt> LALEOBPPWaveformForInjection() </tt>
 <ul>
-    <li><tt> waveform: </tt> Coherent GW structure containing output waveform 
+    <li><tt> waveform: </tt> Coherent GW structure containing output waveform
     <li><tt> params: </tt> Input containing inspiral template parameters.
     <li><tt> ppnParams </tt> Input containing other necessary parameters.
 </ul>
@@ -179,7 +179,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
         INT4 status;
         INT4 i;
 
-        REAL8 eta;	
+        REAL8 eta;
 	REAL8 r, pr, pp, Omega, v2, vh, vh3, k, hathatk, eulerlogxabs;
 	REAL8 Hreal, Heff, Slm, deltalm, rholm, rholmPwrl;
 	COMPLEX16 Tlm;
@@ -200,7 +200,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	{
 	  XLAL_ERROR( func, XLAL_EINVAL );
 	}
-	
+
 
         eta = params->eta;
 
@@ -216,12 +216,12 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
           memset( hlm, 0, sizeof( COMPLEX16 ) );
           return XLAL_SUCCESS;
         }
-        
+
 	r	= values->data[0];
         pr	= values->data[2];
 	pp	= values->data[3];
 
-	Heff	= XLALEffectiveHamiltonian( eta, r, pr, pp, params->aCoeffs ); 
+	Heff	= XLALEffectiveHamiltonian( eta, r, pr, pp, params->aCoeffs );
 	Hreal	= sqrt( 1.0 + 2.0 * eta * ( Heff - 1.0) );
 	v2	= v * v;
         Omega   = v2 * v;
@@ -246,7 +246,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 
         /* Calculate the source term */
 	if ( ( (l+m)%2 ) == 0)
-	{ 
+	{
 	  Slm = Heff;
 	}
 	else
@@ -254,7 +254,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	  Slm = v * pp;
 	}
 
-        /* Calculate the Tail term */	
+        /* Calculate the Tail term */
 	k	= m * Omega;
 	hathatk = Hreal * k;
 	XLAL_CALLGSL( status = gsl_sf_lngamma_complex_e( l+1.0, -2.0*hathatk, &lnr1, &arg1 ) );
@@ -269,7 +269,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	  XLALPrintError("Error in GSL function\n" );
 	  XLAL_ERROR( func, XLAL_EFUNC );
 	}
-	Tlm = XLALCOMPLEX16Exp( XLALCOMPLEX16Rect( lnr1.val + LAL_PI * hathatk, 
+	Tlm = XLALCOMPLEX16Exp( XLALCOMPLEX16Rect( lnr1.val + LAL_PI * hathatk,
 				arg1.val + 2.0 * hathatk * log(4.0*k/sqrt(LAL_E)) ) );
         Tlm = XLALCOMPLEX16DivReal( Tlm, z2.val );
 
@@ -289,26 +289,26 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
                 hNQC = 1. + (pr*pr / (r*r*Omega*Omega)) * ( a1
                        + a2 / r + a3 / (r*sqrt(r)) );
 
-	        deltalm = vh3*(hCoeffs->delta22vh3 + vh3*(hCoeffs->delta22vh6 
-			+ vh*vh*(hCoeffs->delta22vh8 + hCoeffs->delta22vh9*vh))) 
+	        deltalm = vh3*(hCoeffs->delta22vh3 + vh3*(hCoeffs->delta22vh6
+			+ vh*vh*(hCoeffs->delta22vh8 + hCoeffs->delta22vh9*vh)))
 			+ hCoeffs->delta22v5 *v*v2*v2;
 		rholm	= 1. + v2*(hCoeffs->rho22v2 + v*(hCoeffs->rho22v3
 			+ v*(hCoeffs->rho22v4
-			+ v*(hCoeffs->rho22v5 + v*(hCoeffs->rho22v6 
-			+ hCoeffs->rho22v6l*eulerlogxabs + v*(hCoeffs->rho22v7 
-			+ v*(hCoeffs->rho22v8 + hCoeffs->rho22v8l*eulerlogxabs 
+			+ v*(hCoeffs->rho22v5 + v*(hCoeffs->rho22v6
+			+ hCoeffs->rho22v6l*eulerlogxabs + v*(hCoeffs->rho22v7
+			+ v*(hCoeffs->rho22v8 + hCoeffs->rho22v8l*eulerlogxabs
 			+ (hCoeffs->rho22v10 + hCoeffs->rho22v10l * eulerlogxabs)*v2)))))));
 	        break;
 	      case 1:
                 {
 	        deltalm = vh3*(hCoeffs->delta21vh3 + vh3*(hCoeffs->delta21vh6
-			+ vh*(hCoeffs->delta21vh7 + (hCoeffs->delta21vh9)*vh*vh))) 
+			+ vh*(hCoeffs->delta21vh7 + (hCoeffs->delta21vh9)*vh*vh)))
 			+ hCoeffs->delta21v5*v*v2*v2 + hCoeffs->delta21v7*v2*v2*v2*v;
 		rholm	= 1. + v*(hCoeffs->rho21v1
-			+ v*( hCoeffs->rho21v2 + v*(hCoeffs->rho21v3 + v*(hCoeffs->rho21v4 
-			+ v*(hCoeffs->rho21v5 + v*(hCoeffs->rho21v6 + hCoeffs->rho21v6l*eulerlogxabs 
-			+ v*(hCoeffs->rho21v7 + hCoeffs->rho21v7l * eulerlogxabs 
-			+ v*(hCoeffs->rho21v8 + hCoeffs->rho21v8l * eulerlogxabs 
+			+ v*( hCoeffs->rho21v2 + v*(hCoeffs->rho21v3 + v*(hCoeffs->rho21v4
+			+ v*(hCoeffs->rho21v5 + v*(hCoeffs->rho21v6 + hCoeffs->rho21v6l*eulerlogxabs
+			+ v*(hCoeffs->rho21v7 + hCoeffs->rho21v7l * eulerlogxabs
+			+ v*(hCoeffs->rho21v8 + hCoeffs->rho21v8l * eulerlogxabs
 			+ (hCoeffs->rho21v10 + hCoeffs->rho21v10l * eulerlogxabs)*v2))))))));
                 }
 	        break;
@@ -321,26 +321,26 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	    switch (m)
 	    {
 	      case 3:
-	        deltalm = vh3*(hCoeffs->delta33vh3 + vh3*(hCoeffs->delta33vh6 + hCoeffs->delta33vh9*vh3)) 
+	        deltalm = vh3*(hCoeffs->delta33vh3 + vh3*(hCoeffs->delta33vh6 + hCoeffs->delta33vh9*vh3))
                         + hCoeffs->delta33v5*v*v2*v2 + hCoeffs->delta33v7*v2*v2*v2*v;
-		rholm	= 1. + v2*(hCoeffs->rho33v2 + v*(hCoeffs->rho33v3 + v*(hCoeffs->rho33v4 
+		rholm	= 1. + v2*(hCoeffs->rho33v2 + v*(hCoeffs->rho33v3 + v*(hCoeffs->rho33v4
 			+ v*(hCoeffs->rho33v5 + v*(hCoeffs->rho33v6 + hCoeffs->rho33v6l*eulerlogxabs
 			+ v*(hCoeffs->rho33v7 + (hCoeffs->rho33v8 + hCoeffs->rho33v8l*eulerlogxabs)*v))))));
 	        break;
 	      case 2:
 		deltalm = vh3*(hCoeffs->delta32vh3 + vh*(hCoeffs->delta32vh4 + vh*vh*(hCoeffs->delta32vh6
 			+ hCoeffs->delta32vh9*vh3)));
-		rholm	= 1. + v*(hCoeffs->rho32v 
+		rholm	= 1. + v*(hCoeffs->rho32v
 			+ v*(hCoeffs->rho32v2 + v*(hCoeffs->rho32v3 + v*(hCoeffs->rho32v4 + v*(hCoeffs->rho32v5
 			+ v*(hCoeffs->rho32v6 + hCoeffs->rho32v6l*eulerlogxabs
 			+ (hCoeffs->rho32v8 + hCoeffs->rho32v8l*eulerlogxabs)*v2))))));
 		break;
 	      case 1:
 		deltalm = vh3*(hCoeffs->delta31vh3 + vh3*(hCoeffs->delta31vh6
-			+ vh*(hCoeffs->delta31vh7 + hCoeffs->delta31vh9*vh*vh))) 
+			+ vh*(hCoeffs->delta31vh7 + hCoeffs->delta31vh9*vh*vh)))
 			+ hCoeffs->delta31v5*v*v2*v2;
-		rholm	= 1. + v2*(hCoeffs->rho31v2 + v*(hCoeffs->rho31v3 + v*(hCoeffs->rho31v4 
-			+ v*(hCoeffs->rho31v5 + v*(hCoeffs->rho31v6 + hCoeffs->rho31v6l*eulerlogxabs 
+		rholm	= 1. + v2*(hCoeffs->rho31v2 + v*(hCoeffs->rho31v3 + v*(hCoeffs->rho31v4
+			+ v*(hCoeffs->rho31v5 + v*(hCoeffs->rho31v6 + hCoeffs->rho31v6l*eulerlogxabs
 			+ v*(hCoeffs->rho31v7 + (hCoeffs->rho31v8 + hCoeffs->rho31v8l*eulerlogxabs)*v))))));
 		break;
               default:
@@ -352,7 +352,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	    switch (m)
 	    {
 	      case 4:
-                
+
 	        deltalm = vh3*(hCoeffs->delta44vh3 + hCoeffs->delta44vh6 *vh3)
                           + hCoeffs->delta44v5*v2*v2*v;
 		rholm	= 1. + v2*(hCoeffs->rho44v2
@@ -361,7 +361,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 			+ hCoeffs->rho44v6l*eulerlogxabs)*v))));
 	        break;
 	      case 3:
-	        deltalm = vh3*(hCoeffs->delta43vh3 + vh*(hCoeffs->delta43vh4 
+	        deltalm = vh3*(hCoeffs->delta43vh3 + vh*(hCoeffs->delta43vh4
 			+ hCoeffs->delta43vh6*vh*vh));
 		rholm	= 1. + v*(hCoeffs->rho43v
 			+ v*(hCoeffs->rho43v2
@@ -377,9 +377,9 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	      case 1:
 		deltalm = vh3*(hCoeffs->delta41vh3 + vh*(hCoeffs->delta41vh4
 			+ hCoeffs->delta41vh6*vh*vh));
-		rholm	= 1. + v*(hCoeffs->rho41v 
+		rholm	= 1. + v*(hCoeffs->rho41v
 			+ v*(hCoeffs->rho41v2
-			+ v2*(hCoeffs->rho41v4 + v*(hCoeffs->rho41v5 
+			+ v2*(hCoeffs->rho41v4 + v*(hCoeffs->rho41v5
 			+ (hCoeffs->rho41v6 +  hCoeffs->rho41v6l*eulerlogxabs)*v))));
 		break;
 	      default:
@@ -392,8 +392,8 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	    {
 	      case 5:
 	        deltalm = hCoeffs->delta55vh3*vh3 + hCoeffs->delta55v5*v2*v2*v;
-		rholm	= 1. + v2*( hCoeffs->rho55v2 
-			+ v*(hCoeffs->rho55v3 + v*(hCoeffs->rho55v4 
+		rholm	= 1. + v2*( hCoeffs->rho55v2
+			+ v*(hCoeffs->rho55v3 + v*(hCoeffs->rho55v4
                         + v*(hCoeffs->rho55v5 + hCoeffs->rho55v6*v))));
 	        break;
 	      case 4:
@@ -403,7 +403,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 		break;
 	      case 3:
 	        deltalm = hCoeffs->delta53vh3 * vh3;
-		rholm	= 1. + v2*(hCoeffs->rho53v2 
+		rholm	= 1. + v2*(hCoeffs->rho53v2
 			+ v*(hCoeffs->rho53v3 + v*(hCoeffs->rho53v4 + hCoeffs->rho53v5*v)));
 	        break;
 	      case 2:
@@ -413,7 +413,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 		break;
 	      case 1:
 		deltalm = hCoeffs->delta51vh3 * vh3;
-		rholm	= 1. + v2*(hCoeffs->rho51v2 
+		rholm	= 1. + v2*(hCoeffs->rho51v2
 			+ v*(hCoeffs->rho51v3 + v*(hCoeffs->rho51v4 + hCoeffs->rho51v5*v)));
 		break;
 	      default:
@@ -534,7 +534,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	    break;
 	  default:
             XLAL_ERROR( func, XLAL_EINVAL );
-            break; 
+            break;
 	}
 
         /* Raise rholm to the lth power */
@@ -545,7 +545,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
           rholmPwrl *= rholm;
         }
 
-	*hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ), 
+	*hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ),
 				     Slm*rholmPwrl*hNQC );
         *hlm = XLALCOMPLEX16Mul( *hlm, hNewton );
 
@@ -558,7 +558,7 @@ REAL8 XLALCalculateA5( const REAL8 eta )
   return - 5.82827 - 143.486 * eta + 447.045 * eta * eta;
 }
 
-static inline 
+static inline
 REAL8 XLALCalculateA6( const REAL8 UNUSED eta )
 {
   return 184.0;
@@ -590,7 +590,7 @@ int XLALCalculateEOBACoefficients(
 
   coeffs->n4 =  -64. + 12.*a4 + 4.*a5 + a6 + 64.*eta - 4.*eta2;
   coeffs->n5 = 32. -4.*a4 - a5 - 24.*eta;
-  coeffs->d0 = 4.*a4*a4 + 4.*a4*a5 + a5*a5 - a4*a6 + 16.*a6 
+  coeffs->d0 = 4.*a4*a4 + 4.*a4*a5 + a5*a5 - a4*a6 + 16.*a6
              + (32.*a4 + 16.*a5 - 8.*a6) * eta + 4.*a4*eta2 + 32.*eta3;
   coeffs->d1 = 4.*a4*a4 + a4*a5 + 16.*a5 + 8.*a6 + (32.*a4 - 2.*a6)*eta + 32.*eta2 + 8.*eta3;
   coeffs->d2 = 16.*a4 + 8.*a5 + 4.*a6 + (8.*a4 + 2.*a5)*eta + 32.*eta2;
@@ -611,7 +611,7 @@ REAL8 XLALCalculateEOBA( const REAL8 r,
 
   /* Note that this function uses pre-computed coefficients,
    * and assumes they have been calculated. Since this is a static function,
-   * so only used here, I assume it is okay to neglect error checking 
+   * so only used here, I assume it is okay to neglect error checking
    */
 
   r2 = r*r;
@@ -632,7 +632,7 @@ REAL8 XLALCalculateEOBA( const REAL8 r,
 
   return NA/DA;
 }
-  
+
 
 static
 REAL8 XLALCalculateEOBdAdr( const REAL8 r,
@@ -680,8 +680,8 @@ REAL8 XLALCalculateEOBD( REAL8   r,
 	u = 1./r;
 	u2 = u*u;
 	u3 = u2*u;
-	
-	return 1./(1.+6.*eta*u2+2.*eta*(26.-3.*eta)*u3);	
+
+	return 1./(1.+6.*eta*u2+2.*eta*(26.-3.*eta)*u3);
 }
 
 
@@ -724,7 +724,7 @@ LALpphiInitP4PN(
   REAL8 u, u2, A, dA;
 
   u  = 1. / r;
-  u2 = u*u; 
+  u2 = u*u;
 
   /* Comparing this expression with the old one, I *think* I will need to multiply */
   /* dA by - r^2. TODO: Check that this should be the case */
@@ -832,7 +832,7 @@ nonKeplerianCoefficient(
 
 /*-------------------------------------------------------------------*/
 
-REAL8 
+REAL8
 XLALrOfOmegaP4PN(
             REAL8 r,
             void *params )
@@ -959,7 +959,7 @@ REAL8 XLALCalculateOmega(   REAL8 eta,
 }
 
 /**
- * Function which will calculate the stopping condition for the 
+ * Function which will calculate the stopping condition for the
  * initial sampling rate
  */
 static int
@@ -983,7 +983,7 @@ XLALFirstStoppingCondition(double UNUSED t,
 }
 
 /**
- * Function which will calculate the stopping condition for the 
+ * Function which will calculate the stopping condition for the
  * higher sampling rate
  */
 static int
@@ -1053,7 +1053,7 @@ REAL8 LALvrP4PN( const REAL8 r,
        + 20. * aCoeffs->d5 * r3;
 
   A      = NA/DA;
-  dAdr   = ( dNA * DA - dDA * NA ) / (DA*DA); 
+  dAdr   = ( dNA * DA - dDA * NA ) / (DA*DA);
   d2Adr2 = (d2NA*DA - d2DA*NA - 2.*dDA*DA*dAdr)/(DA*DA);
 
   /* The next derivatives are with respect to u, not r */
@@ -1140,7 +1140,7 @@ LALEOBPPWaveform (
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
-{ 
+{
 
    UINT4 count;
    InspiralInit paramsInit;
@@ -1173,7 +1173,7 @@ LALEOBPPWaveform (
    memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALEOBPPWaveformEngine(status->statusPtr, signalvec, NULL, 
+   LALEOBPPWaveformEngine(status->statusPtr, signalvec, NULL,
 			NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
@@ -1190,7 +1190,7 @@ LALEOBPPWaveformTemplates (
    REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
-{ 
+{
 
    UINT4 count;
 
@@ -1230,7 +1230,7 @@ LALEOBPPWaveformTemplates (
    memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALEOBPPWaveformEngine(status->statusPtr, signalvec1, signalvec2, 
+   LALEOBPPWaveformEngine(status->statusPtr, signalvec1, signalvec2,
 			   NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
@@ -1303,7 +1303,7 @@ LALEOBPPWaveformForInjection (
 
   /* Call the engine function */
   params->startPhase = ppnParams->phi;
-  LALEOBPPWaveformEngine(status->statusPtr, NULL, NULL, h, 
+  LALEOBPPWaveformEngine(status->statusPtr, NULL, NULL, h,
 			   &phiC, &count, params, &paramsInit);
   BEGINFAIL( status )
   {
@@ -1405,7 +1405,7 @@ LALEOBPPWaveformEngine (
    /* Variables for the integrator */
    ark4GSLIntegrator       *integrator = NULL;
    REAL8Array              *dynamics   = NULL;
-   REAL8Array              *dynamicsHi = NULL;  
+   REAL8Array              *dynamicsHi = NULL;
    INT4                    retLen;
    REAL8                   tMax;
 
@@ -1426,7 +1426,7 @@ LALEOBPPWaveformEngine (
    /* Variables to allow the waveform to be generated */
    /* from a specific fLower */
    REAL8                   sInit, sSub = 0.0;  /* Initial phase, and phase to subtract */
-   
+
    REAL8                   rmin = 20;        /* Smallest value of r at which to generate the waveform */
    COMPLEX16  MultSphHarmP;    /* Spin-weighted spherical harmonics */
    COMPLEX16  MultSphHarmM;    /* Spin-weighted spherical harmonics */
@@ -1434,7 +1434,7 @@ LALEOBPPWaveformEngine (
    COMPLEX16  hNQC;            /* Non-quasicircular correction */
    REAL4      x1, x2;
    UINT4      i, j, k, modeL;
-   INT4       modeM;         
+   INT4       modeM;
    INT4       nModes;         /* number of modes required */
    REAL4      inclination;    /* binary inclination       */
    REAL4      coa_phase;      /* binary coalescence phase */
@@ -1850,7 +1850,7 @@ LALEOBPPWaveformEngine (
    /* We want to use a different stopping criterion for the higher sample rate */
    integrator->stop = XLALHighSRStoppingCondition;
 
-   retLen = XLALAdaptiveRungeKutta4( integrator, &eobParams, values->data, 
+   retLen = XLALAdaptiveRungeKutta4( integrator, &eobParams, values->data,
      0, (lengthHiSR-1)*dt/m, dt/m, &dynamicsHi );
 
    rVecHi.length  = phiVecHi.length = prVecHi.length = pPhiVecHi.length = tVecHi.length = retLen;
@@ -1891,7 +1891,7 @@ LALEOBPPWaveformEngine (
        values->data[2] = p = prVecHi.data[i];
        values->data[3] = q = pPhiVecHi.data[i];
 
-       v = cbrt( omega ); 
+       v = cbrt( omega );
 
        xlalStatus = XLALGetFactorizedWaveform( &hLM, values, v, modeL, modeM, &eobParams );
 
@@ -1920,7 +1920,7 @@ LALEOBPPWaveformEngine (
 
     /* Stuff to find the actual peak time */
     gsl_spline    *spline = NULL;
-    gsl_interp_accel *acc = NULL;  
+    gsl_interp_accel *acc = NULL;
     REAL8 omegaDeriv1, omegaDeriv2;
     REAL8 time1, time2;
     REAL8 timePeak, omegaDerivMid;
@@ -2150,7 +2150,7 @@ LALEOBPPWaveformEngine (
        x1 = sig1->data[i];
        x2 = sig2->data[i];
        sig1->data[i] = (x1 * y_1) + (x2 * y_2);
-       sig2->data[i] = (x1 * z1) + (x2 * z2);     
+       sig2->data[i] = (x1 * z1) + (x2 * z2);
      }
 
      /*------------------------------------------------------
