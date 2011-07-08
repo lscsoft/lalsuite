@@ -93,7 +93,7 @@ ATYPE * XFUNC ( UINT4Vector *dimLength )
   if ( ! arr->dimLength )
   {
     LALFree( arr );
-    XLAL_ERROR_NULL( "XFUNC", XLAL_EFUNC );
+    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EFUNC );
   }
 
   /* copy dimension lengths */
@@ -106,7 +106,7 @@ ATYPE * XFUNC ( UINT4Vector *dimLength )
   {
     XLALDestroyUINT4Vector( arr->dimLength );
     LALFree( arr );
-    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_ENOMEM );
   }
 
   return arr;
