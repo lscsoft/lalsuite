@@ -19,7 +19,7 @@ void XFUNC ( VTYPE *vector )
   if ( ! vector )
     return;
   if ( ( ! vector->length || ! vector->data ) && ( vector->length || vector->data  ) )
-    XLAL_ERROR_VOID( STRING(XFUNC), XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
   if ( vector->data )
     LALFree( vector->data );
   vector->data = NULL; /* leave length non-zero to detect repeated frees */
