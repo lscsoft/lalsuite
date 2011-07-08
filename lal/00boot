@@ -97,10 +97,6 @@ ${M4} SeqFactoriesH.m4 > SeqFactories.h || fail "creating sources in packages/fa
 ${M4} AVFactoriesH.m4 > AVFactories.h || fail "creating sources in packages/factories/include"
 cd ../../.. || fail "creating sources in packages/factories/include"
 
-cd packages/vectorops/src || fail "creating sources in packages/vectorops/src"
-${M4} VectorIndexRangeC.m4 > VectorIndexRange.c || fail "creating sources in packages/vectorops/src"
-cd ../../.. || fail "creating sources in packages/vectorops/src"
-
 cd packages/vectorops/include || fail "creating sources in packages/vectorops/include"
 ${M4} VectorIndexRangeH.m4 > VectorIndexRange.h || fail "creating sources in packages/vectorops/include"
 cd ../../.. || fail "creating sources in packages/vectorops/include"

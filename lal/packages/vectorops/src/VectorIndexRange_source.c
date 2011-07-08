@@ -1,22 +1,18 @@
 /** -*- C -*- **/
-/*
-dnl $Id$
-ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
-define(`VTYPE',`format(`%sVector',TYPE)')
-define(`F1',`format(`LAL%sVectorIndexRange',TYPECODE)')
-define(`VPAIRTYPE',`format(`%sVectorPair',TYPE)')
-define(`F2',`format(`LAL%sVectorIndexHole',TYPECODE)')
-*/
+
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define VTYPE CONCAT2(TYPE,Vector)
+#define VPAIRTYPE CONCAT2(TYPE,VectorPair)
+
+#define F1 CONCAT3(LAL,TYPECODE,VectorIndexRange)
+#define F2 CONCAT3(LAL,TYPECODE,VectorIndexHole)
+#define CFUNC CONCAT3(LAL,TYPECODE,CreateVector)
+#define DFUNC CONCAT3(LAL,TYPECODE,DestroyVector)
 
 /* Take a vector, and remove a range entries by given indices, then stuff
    that truncated vector in to the result vector */
@@ -31,7 +27,7 @@ void F1 (
   UINT4 iter;
   UINT4 rslt_length;
 
-  INITSTATUS( status, "F1" , VECTORINDEXRANGEC );
+  INITSTATUS( status, STRING(F1) , VECTORINDEXRANGEC );
   ATTATCHSTATUSPTR( status );
 
   /*
@@ -51,12 +47,12 @@ void F1 (
   /* Handle memory */
   if ((*p_result != NULL) && ((*p_result)->length != rslt_length))
     {
-      TRY(LAL`'TYPECODE`'DestroyVector(status->statusPtr, p_result),
+      TRY(DFUNC(status->statusPtr, p_result),
           status);
     }
 
   /* allocate */
-  TRY(LAL`'TYPECODE`'CreateVector(status->statusPtr, p_result, rslt_length),
+  TRY(CFUNC(status->statusPtr, p_result, rslt_length),
       status);
 
   /* fill in the result vector */
@@ -80,7 +76,7 @@ void F2 ( LALStatus  *status,
   UINT4Vector *head_index_range = NULL;
   UINT4Vector *tail_index_range = NULL;
 
-  INITSTATUS( status, "F2" , VECTORINDEXRANGEC );
+  INITSTATUS( status, STRING(F2) , VECTORINDEXRANGEC );
   ATTATCHSTATUSPTR( status );
 
 
@@ -108,13 +104,13 @@ void F2 ( LALStatus  *status,
   tail_index_range->data[0] = p_indexVector->data[1] + 1;
   tail_index_range->data[1] = p_v->length - 1;
 
-  TRY(LAL`'TYPECODE`'VectorIndexRange(status->statusPtr, p_result_pair->head,
+  TRY(F1(status->statusPtr, p_result_pair->head,
                                       p_v, head_index_range), status);
 
-  LAL`'TYPECODE`'VectorIndexRange(status->statusPtr, p_result_pair->tail,
+  F1(status->statusPtr, p_result_pair->tail,
                                   p_v, tail_index_range);
   BEGINFAIL(status)
-    TRY(LAL`'TYPECODE`'DestroyVector(status->statusPtr, p_result_pair->head),
+    TRY(DFUNC(status->statusPtr, p_result_pair->head),
         status);
   ENDFAIL(status);
 
@@ -124,3 +120,10 @@ void F2 ( LALStatus  *status,
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
+
+#undef VTYPE
+#undef VPAIRTYPE
+#undef F1
+#undef F2
+#undef CFUNC
+#undef DFUNC
