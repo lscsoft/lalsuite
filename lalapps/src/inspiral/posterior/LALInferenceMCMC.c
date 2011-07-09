@@ -20,10 +20,6 @@
  *  MA  02111-1307  USA
  */
 
-/* example command line: */
-/* 
-./InferenceTest --IFO [H1] --cache [/Users/john/data/triple/H1/frames.cache] --PSDstart 864162143.0 --PSDlength 1000 --srate 1024 --seglen 10 --trigtime 864162943.0
-*/
 
 #include <stdio.h>
 #include <lal/Date.h>
@@ -41,7 +37,6 @@
 #include <lal/LALInferenceReadData.h>
 
 #include <mpi.h>
-//#include "mpi.h"
 
 
 int MPIrank, MPIsize;
@@ -59,27 +54,24 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
 	LALInferenceRunState *irs=NULL;
 	LALInferenceIFOData *ifoPtr, *ifoListStart;
-	//ProcessParamsTable *ppt=NULL;
-
-	//int MPIrank;
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	
 	irs = calloc(1, sizeof(LALInferenceRunState));
 	/* read data from files: */
-	fprintf(stdout, " LALInferenceReadData(): started.\n");
+	fprintf(stdout, " ==== LALInferenceReadData(): started. ====\n");
 	irs->commandLine=commandLine;
 	irs->data = LALInferenceReadData(commandLine);
 	/* (this will already initialise each LALInferenceIFOData's following elements:  */
 	/*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
 	/*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
-	fprintf(stdout, " LALInferenceReadData(): finished.\n");
+	fprintf(stdout, " ==== LALInferenceReadData(): finished. ====\n");
 	if (irs->data != NULL) {
-		fprintf(stdout, " initialize(): successfully read data.\n");
+		fprintf(stdout, " ==== initialize(): successfully read data. ====\n");
 		
-		fprintf(stdout, " LALInferenceInjectInspiralSignal(): started.\n");
+		fprintf(stdout, " ==== LALInferenceInjectInspiralSignal(): started. ====\n");
 		LALInferenceInjectInspiralSignal(irs->data,commandLine);
-		fprintf(stdout, " LALInferenceInjectInspiralSignal(): finished.\n");
+		fprintf(stdout, " ==== LALInferenceInjectInspiralSignal(): finished. ====\n");
 		
 		ifoPtr = irs->data;
 		ifoListStart = irs->data;
@@ -149,11 +141,11 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 void initializeMCMC(LALInferenceRunState *runState)
 {
 	char help[]="\
-	[--Niter] N\tNumber of iterations(2*10^6)\n\
-	[--Nskip] n\tNumber of iterations between disk save(100)\n\
-	[--tempMax T]\tHighest temperature for parallel tempering(40.0)\n\
-	[--randomseed seed]\tRandom seed of sampling distribution\n\
-        [--tdlike]\tCompute likelihood in the time domain\n";
+(--Niter N)                     Number of iterations(2*10^6)\n\
+(--Nskip n)                     Number of iterations between disk save(100)\n\
+(--tempMax T)                   Highest temperature for parallel tempering(40.0)\n\
+(--randomseed seed)             Random seed of sampling distribution(random)\n\
+(--tdlike)                      Compute likelihood in the time domain\n";
 	
 	INT4 verbose=0,tmpi=0;
 	unsigned int randomseed=0;
@@ -165,10 +157,10 @@ void initializeMCMC(LALInferenceRunState *runState)
 	struct timeval tv;
 	
 	/* Print command line arguments if help requested */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
-	if(ppt)
+	if(LALInferenceGetProcParamVal(runState->commandLine,"--help"))
 	{
 		fprintf(stdout,"%s",help);
+    	runState->algorithm=&PTMCMCAlgorithm;
 		return;
 	}
 	
@@ -363,6 +355,44 @@ static INT4 readSquareMatrix(gsl_matrix *m, UINT4 N, FILE *inp) {
 
 void initVariables(LALInferenceRunState *state)
 {
+  
+  char help[]="\
+(--injXML injections.xml)       Injection XML file to use\n\
+(--Mmin mchirp)                 Minimum chirp mass\n\
+(--Mmax mchirp)                 Maximum chirp mass\n\
+(--dt time)                     Width of time prior, centred around trigger (0.1s)\n\
+(--trigtime time)               Trigger time to use\n\
+(--mc mchirp)                   Trigger chirpmass to use\n\
+(--eta eta)                     Trigger eta to use\n\
+(--phi phase)                   Trigger phase to use\n\
+(--iota inclination)            Trigger inclination to use\n\
+(--dist dist)                   Trigger distance\n\
+(--ra ra)                       Trigger RA\n\
+(--dec dec)                     Trigger declination\n\
+(--psi psi)                     Trigger psi\n\
+(--a1 a1)                       Trigger a1\n\
+(--theta1 theta1)               Trigger theta1\n\
+(--phi1 phi1)                   Trigger phi1\n\
+(--a2 a2)                       Trigger a2\n\
+(--theta2 theta2)               Trigger theta2\n\
+(--phi2 phi2)                   Trigger phi2\n\
+(--time time)                   Waveform time (overrides random about trigtime)\n\
+(--Dmin dist)                   Minimum distance in Mpc (1)\n\
+(--Dmax dist)                   Maximum distance in Mpc (100)\n\
+(--approx ApproximantorderPN)   Specify a waveform to use, (default TaylorF2twoPN)\n\
+(--mincomp min)                 Minimum component mass (1.0)\n\
+(--maxcomp max)                 Maximum component mass (30.0)\n\
+(--MTotMax max)                 Maximum total mass (35.0)\n\
+(--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n";
+
+/* Print command line arguments if help requested */
+if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
+{
+	fprintf(stdout,"%s",help);
+		return;
+	}
+  
+  
 	LALStatus status;
 	memset(&status,0,sizeof(status));
 	SimInspiralTable *injTable=NULL;
@@ -411,43 +441,6 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 start_phi_spin2	=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
 	
 	memset(currentParams,0,sizeof(LALInferenceVariables));
-	
-	char help[]="\
-	[--injXML injections.xml]\tInjection XML file to use\
-	[--Mmin mchirp]\tMinimum chirp mass\
-	[--Mmax mchirp]\tMaximum chirp mass\
-	[--dt time]\tWidth of time prior, centred around trigger (0.1s)\
-	[--trigtime time]\tTrigger time to use\
-	[--mc mchirp]\tTrigger chirpmass to use\
-	[--eta eta]\tTrigger eta to use\
-	[--phi phase]\tTrigger phase to use\
-	[--iota inclination]\tTrigger inclination to use\
-        [--dist dist]\tTrigger distance\
-        [--ra ra]\tTrigger RA\
-        [--dec dec]\tTrigger declination\
-        [--psi psi]\tTrigger psi\
-        [--a1 a1]\tTrigger a1\
-        [--theta1 theta1]\tTrigger theta1\
-        [--phi1 phi1]\tTrigger phi1\
-        [--a2 a2]\tTrigger a2\
-        [--theta2 theta2]\tTrigger theta2\
-        [--phi2 phi2]\tTrigger phi2\
-        [--time time]\tWaveform time (overrides random about trigtime)\
-	[--Dmin dist]\tMinimum distance in Mpc (1)\
-	[--Dmax dist]\tMaximum distance in Mpc (100)\
-	[--approx ApproximantorderPN]\tSpecify a waveform to use, (default TaylorF2twoPN)\
-	[--mincomp min]\tMinimum component mass (1.0)\
-	[--maxcomp max]\tMaximum component mass (30.0)\
-	[--MTotMax] \t Maximum total mass (35.0)\
-        [--covarianceMatrix file]\tFind the Cholesky decomposition of the covariance matrix for jumps in file";
-	
-	/* Print command line arguments if help requested */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
-	if(ppt)
-	{
-		fprintf(stdout,"%s",help);
-		return;
-	}
 	
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
     MTotMax=20.0;
@@ -1348,7 +1341,7 @@ int main(int argc, char *argv[]){
 	/* Set up currentParams with variables to be used */
 	initVariables(runState);
 	}//NOT analyticLogLike
-	printf(" ==== This is thread %d of %d ====\n ", MPIrank, MPIsize);
+	printf(" ==== This is thread %d of %d ====\n", MPIrank, MPIsize);
 	MPI_Barrier(MPI_COMM_WORLD);
 	/* Call MCMC algorithm */
 	runState->algorithm(runState);
@@ -1360,69 +1353,3 @@ int main(int argc, char *argv[]){
 
 
 
-
-//void PTMCMCTest(void)
-//{
-//	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-//	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
-//
-//	fprintf(stdout, "PTMCMC test\n");
-//
-//	runstate->algorithm=PTMCMCAlgorithm;
-//	runstate->evolve=PTMCMCOneStep;
-//	runstate->prior=PTUniformLALPrior;
-//	//runstate->prior=PTUniformGaussianPrior;
-//	runstate->proposal=PTMCMCLALProposal;
-//	//runstate->proposal=PTMCMCLALAdaptationProposal;
-//	//runstate->proposal=PTMCMCGaussianProposal;
-//	runstate->proposalArgs = malloc(sizeof(LALInferenceVariables));
-//	runstate->proposalArgs->head=NULL;
-//	runstate->proposalArgs->dimension=0;
-//	runstate->likelihood=FreqDomainLogLikelihood;
-//	//runstate->likelihood=GaussianLikelihood;
-//	runstate->template=templateLAL;
-//	
-//	
-//	SimInspiralTable *injTable=NULL;
-//	printf("Ninj: %d\n", SimInspiralTableFromLIGOLw(&injTable,LALInferenceGetProcParamVal(ppt,"--injXML")->value,0,0));
-//	
-//	REAL8 mc = injTable->mchirp;
-//	REAL8 eta = injTable->eta;
-//    REAL8 iota = injTable->inclination;
-//    REAL8 phi = injTable->coa_phase;
-//	LIGOTimeGPS trigger_time=injTable->geocent_end_time;
-//	REAL8 tc = XLALGPSGetREAL8(&trigger_time);
-//	REAL8 ra_current = injTable->longitude;
-//	REAL8 dec_current = injTable->latitude;
-//	REAL8 psi_current = injTable->polarization;
-//	REAL8 distMpc_current = injTable->distance;
-//	
-//    numberI4 = TaylorF2;
-//    LALInferenceAddVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-//    numberI4 = LAL_PNORDER_TWO;
-//    LALInferenceAddVariable(&currentParams, "LAL_PNORDER",     &numberI4,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-//	
-//	LALInferenceAddVariable(&currentParams, "chirpmass",       &mc,              LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-//    LALInferenceAddVariable(&currentParams, "massratio",       &eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-//    LALInferenceAddVariable(&currentParams, "inclination",     &iota,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-//    LALInferenceAddVariable(&currentParams, "phase",           &phi,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-//    LALInferenceAddVariable(&currentParams, "time",            &tc   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
-//    LALInferenceAddVariable(&currentParams, "rightascension",  &ra_current,      LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-//    LALInferenceAddVariable(&currentParams, "declination",     &dec_current,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-//    LALInferenceAddVariable(&currentParams, "polarisation",    &psi_current,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-//    LALInferenceAddVariable(&currentParams, "distance",        &distMpc_current, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-//	
-//	
-////	REAL8 x0 = 0.9;
-////	LALInferenceAddVariable(&currentParams, "x0", &x0,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-//	
-//	
-//	
-//	
-//	runstate->currentParams=&currentParams;
-//	MPI_Barrier(MPI_COMM_WORLD);
-//
-//	PTMCMCAlgorithm(runstate);
-//	if (MPIrank == 0) fprintf(stdout, "End of PTMCMC test\n");
-//}
-//

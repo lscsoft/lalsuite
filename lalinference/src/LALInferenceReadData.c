@@ -77,16 +77,16 @@ static REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS 
 	return out;
 }
 #define USAGE "\
- --IFO   [IFO1,IFO2,...]        IFOs can be H1,L1,V1\n\
+ --IFO [IFO1,IFO2,...]          IFOs can be H1,L1,V1\n\
  --cache [cache1,cache2,...]    LAL cache files (LALLIGO, LALAdLIGO, LALVirgo to simulate these detectors)\n\
- --PSDstart  GPStime            GPS start time of PSD estimation data\n\
+ --PSDstart GPStime             GPS start time of PSD estimation data\n\
  --PSDlength length             length of PSD estimation data in seconds\n\
- --seglen    length             length of segments for PSD estimation and analysis in seconds\n\
- --trigtime  GPStime            GPS time of the trigger to analyse\n\
-(--srate     rate )             Downsample data to rate in Hz\n\
-(--fLow  [freq1,freq2,...] )    Specify lower frequency cutoff for overlap integral\n\
-(--fHigh [freq1,freq2,...] )    Specify higher frequency cutoff for overlap integral\n\
-(--channel [chan1,chan2,...]  ) Specify channel names when reading cache files\n \
+ --seglen length                length of segments for PSD estimation and analysis in seconds\n\
+ --trigtime GPStime             GPS time of the trigger to analyse\n\
+(--srate rate)                  Downsample data to rate in Hz\n\
+(--fLow [freq1,freq2,...])      Specify lower frequency cutoff for overlap integral\n\
+(--fHigh [freq1,freq2,...])     Specify higher frequency cutoff for overlap integral\n\
+(--channel [chan1,chan2,...])   Specify channel names when reading cache files\n\
 (--dataseed number)             Specify random seed to use when generating data\n"
 
 LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)

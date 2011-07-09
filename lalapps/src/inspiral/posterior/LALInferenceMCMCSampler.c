@@ -55,6 +55,17 @@ int LALwaveformToSPINspiralwaveform(int waveform);
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
+
+  const char *USAGE="\
+(--appendOutput fname)          Basename of the file to append outputs to.\n";
+  
+  if(LALInferenceGetProcParamVal(runState->commandLine,"--help"))
+	{
+		fprintf(stdout,"%s",USAGE);
+		return;
+	}
+  
+  
 	int i,t,p,lowerRank,upperRank,x; //indexes for for() loops
 	int tempSwapCount=0;
 	REAL8 tempDelta;
@@ -99,8 +110,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 	UINT4 nIFO=0;
 	LALInferenceIFOData *ifodata1=runState->data;
-        const char *USAGE = 
-          "[--appendOutput fname\tBasename of the file to append outputs to.]";
 	ProcessParamsTable *ppt;//,*ppt1,*ppt2,*ppt3;	
 
 	ppt=LALInferenceGetProcParamVal(runState->commandLine, "--help");
