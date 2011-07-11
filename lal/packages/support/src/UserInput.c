@@ -138,11 +138,9 @@ int XLALRegisterUserVar ( const CHAR *name,	/**< name of user-variable to regist
                           void *cvar		/**< pointer to the actual C-variabe to link to this user-variable */
                           )
 {
-  const char *fn = __func__;
-
   if (cvar == NULL || name == NULL ) {
-    XLALPrintError ("%s: invalue NULL input 'cvar' or 'name'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalue NULL input 'cvar' or 'name'\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   LALUserVariable *ptr = NULL;
@@ -152,19 +150,19 @@ int XLALRegisterUserVar ( const CHAR *name,	/**< name of user-variable to regist
   while ( ptr->next && (ptr = ptr->next) )
     {
       if ( name && ptr->name && !strcmp(name, ptr->name) ) {
-        XLALPrintError ("%s: Long-option name '--%s' is already taken!\n", fn, name );
-        XLAL_ERROR ( fn, XLAL_EINVAL );
+        XLALPrintError ("%s: Long-option name '--%s' is already taken!\n", __func__, name );
+        XLAL_ERROR ( XLAL_EINVAL );
       }
       if ( optchar && ptr->optchar && (optchar == ptr->optchar) ) {
-        XLALPrintError ("%s: Short-option '-%c' is already taken (by '--%s')!\n", fn, ptr->optchar, ptr->name );
-        XLAL_ERROR ( fn, XLAL_EINVAL );
+        XLALPrintError ("%s: Short-option '-%c' is already taken (by '--%s')!\n", __func__, ptr->optchar, ptr->name );
+        XLAL_ERROR ( XLAL_EINVAL );
       }
     } /* while user-var list */
 
   /* create new entry */
   if ( (ptr->next = XLALCalloc (1, sizeof(LALUserVariable))) == NULL ) {
-    XLALPrintError ("%s: Failed to XLALCalloc (1, sizeof(LALUserVariable)\n", fn );
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: Failed to XLALCalloc (1, sizeof(LALUserVariable)\n", __func__ );
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
 
   /* set pointer to newly created entry (Note: the head remains empty!) */
@@ -233,8 +231,6 @@ XLALDestroyUserVars( void )
 int
 XLALUserVarReadCmdline ( int argc, char *argv[] )
 {
-  const char *fn = __func__;
-
   INT4 c;
   UINT4 pos;
   UINT4 numvars;
@@ -246,12 +242,12 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
   LALStringVector *csv;
 
   if (!argv ) {
-    XLALPrintError ("%s: Input error, NULL argv[] pointer passed.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: Input error, NULL argv[] pointer passed.\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( !UVAR_vars.next ) {
-    XLALPrintError ("%s: Internal error, no UVAR memory allocated. Did you register any user-variables?", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: Internal error, no UVAR memory allocated. Did you register any user-variables?", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* build optstring of short-options */
@@ -321,9 +317,9 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
   while ( (c = getopt_long(argc, argv, optstring, long_options, &longindex)) != -1 )
     {
       if (c == '?') {
-	XLALPrintError ( "%s: ERROR: unkown command-line option encountered\n", fn );
+	XLALPrintError ( "%s: ERROR: unkown command-line option encountered\n", __func__ );
 	XLALPrintError ( "see '%s --help' for usage-help\n\n", argv[0]);
-	XLAL_ERROR ( fn, XLAL_EDOM );
+	XLAL_ERROR ( XLAL_EDOM );
       }
       if (c != 0) 	/* find short-option character */
 	{
@@ -342,8 +338,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	} /* if long-option */
 
       if (ptr == NULL) {	/* should not be possible: nothing found at all... */
-	XLALPrintError ( "%s: ERROR: failed to find option.. this points to a coding-error!\n", fn);
-	XLAL_ERROR (fn, XLAL_EDOM );
+	XLALPrintError ( "%s: ERROR: failed to find option.. this points to a coding-error!\n", __func__);
+	XLAL_ERROR ( XLAL_EDOM );
       }
 
       /* if we found the debug-switch, ignore it (has been handled already */
@@ -371,7 +367,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	    {
 	      /* get rid of case ambiguities */
 	      if ( XLALLowerCaseString (optarg) != XLAL_SUCCESS ) {
-                XLAL_ERROR ( fn, XLAL_EFUNC );
+                XLAL_ERROR ( XLAL_EFUNC );
               }
 
 	      if      ( !strcmp(optarg, "yes") || !strcmp(optarg, "true") || !strcmp(optarg,"1") )
@@ -379,8 +375,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	      else if ( !strcmp (optarg, "no") || !strcmp(optarg,"false") || !strcmp(optarg,"0") )
 		ans = 0;
 	      else {	/* failed to parse BOOL properly */
-		XLALPrintError ( "%s: Illegal bool-value `%s`\n\n", fn, optarg);
-		XLAL_ERROR (fn, XLAL_EDOM );
+		XLALPrintError ( "%s: Illegal bool-value `%s`\n\n", __func__, optarg);
+		XLAL_ERROR ( XLAL_EDOM );
 	      }
 	    } /* parse bool-argument */
 
@@ -395,8 +391,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	case UVAR_INT4:
 	  if ( 1 != sscanf ( optarg, "%" LAL_INT4_FORMAT, (INT4*)(ptr->varp)) )
 	    {
-	      XLALPrintError ("%s: Illegal INT4 commandline argument to --%s: '%s'\n\n", fn, ptr->name, optarg);
-	      XLAL_ERROR ( fn, XLAL_EDOM );
+	      XLALPrintError ("%s: Illegal INT4 commandline argument to --%s: '%s'\n\n", __func__, ptr->name, optarg);
+	      XLAL_ERROR ( XLAL_EDOM );
 	    }
 
 	  check_and_mark_as_set ( ptr );
@@ -405,8 +401,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	case UVAR_REAL8:
 	  if ( 1 != sscanf ( optarg, "%" LAL_REAL8_FORMAT, (REAL8*)(ptr->varp)) )
 	    {
-	      XLALPrintError ("%s: Illegal REAL8 commandline argument to --%s: '%s'\n\n", fn, ptr->name, optarg);
-	      XLAL_ERROR ( fn, XLAL_EDOM );
+	      XLALPrintError ("%s: Illegal REAL8 commandline argument to --%s: '%s'\n\n", __func__, ptr->name, optarg);
+	      XLAL_ERROR ( XLAL_EDOM );
 	    }
 
 	  check_and_mark_as_set ( ptr );
@@ -414,15 +410,15 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 
 	case UVAR_STRING:
 	  if (!optarg) {	/* should not be possible, but let's be paranoid */
-	    XLALPrintError ( "%s: optarg==NULL, something went badly wrong ...\n", fn );
-            XLAL_ERROR ( fn, XLAL_EFAULT );
+	    XLALPrintError ( "%s: optarg==NULL, something went badly wrong ...\n", __func__ );
+            XLAL_ERROR ( XLAL_EFAULT );
 	  }
 	  strp = *(CHAR**)(ptr->varp);
 	  if ( strp != NULL) 	 /* something allocated here before? */
 	    XLALFree ( strp );
 	  if ( (strp = copy_string_unquoted ( optarg )) == NULL ) {
-            XLALPrintError ("%s: copy_string_unquoted() failed.\n", fn );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: copy_string_unquoted() failed.\n", __func__ );
+            XLAL_ERROR ( XLAL_EFUNC );
 	  }
 	  /* return value */
 	  *(CHAR**)(ptr->varp) = strp;
@@ -435,8 +431,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	    XLALDestroyStringVector ( csv );
           }
 	  if ( (csv = XLALParseCSV2StringVector ( optarg )) == NULL ) {
-            XLALPrintError ("%s: XLALParseCSV2StringVector() failed on '%s'\n", fn, optarg );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: XLALParseCSV2StringVector() failed on '%s'\n", __func__, optarg );
+            XLAL_ERROR ( XLAL_EFUNC );
 	  }
 	  /* return value */
 	  *(LALStringVector**)(ptr->varp) = csv;
@@ -444,8 +440,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  break;
 
 	default:
-	  XLALPrintError ( "%s: ERROR: unkown UserVariable-type encountered... points to a coding error!\n", fn );
-	  XLAL_ERROR ( fn, XLAL_EINVAL );
+	  XLALPrintError ( "%s: ERROR: unkown UserVariable-type encountered... points to a coding error!\n", __func__ );
+	  XLAL_ERROR ( XLAL_EINVAL );
 	  break;
 
 	} /* switch ptr->type */
@@ -468,8 +464,6 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 int
 XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file */
 {
-  const char *fn = __func__;
-
   LALParsedDataFile *cfg = NULL;
   CHAR *stringbuf, *strp;
   LALUserVariable *ptr;
@@ -477,13 +471,13 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
   LALStringVector *csv;
 
   if ( !UVAR_vars.next ) {
-    XLALPrintError ("%s: no memory allocated in UVAR_vars.next, did you register any user-variables?\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: no memory allocated in UVAR_vars.next, did you register any user-variables?\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   if ( XLALParseDataFile ( &cfg, cfgfile ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: Call to XLALParseDataFile() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: Call to XLALParseDataFile() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* step through all user-variable: read those with names from config-file */
@@ -499,21 +493,21 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 	{
 	case UVAR_BOOL:
           if ( XLALReadConfigBOOLVariable(ptr->varp, cfg, NULL, ptr->name, &wasRead) != XLAL_SUCCESS ) {
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 	  if (wasRead)
 	    check_and_mark_as_set ( ptr );
 	  break;
 	case UVAR_INT4:
 	  if ( XLALReadConfigINT4Variable(ptr->varp, cfg, NULL, ptr->name, &wasRead) != XLAL_SUCCESS ) {
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 	  if (wasRead)
 	    check_and_mark_as_set ( ptr );
 	  break;
 	case UVAR_REAL8:
 	  if ( XLALReadConfigREAL8Variable(ptr->varp, cfg, NULL, ptr->name, &wasRead) != XLAL_SUCCESS ) {
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 	  if (wasRead)
 	    check_and_mark_as_set ( ptr );
@@ -521,7 +515,7 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 	case UVAR_STRING:
 	  stringbuf = NULL;
 	  if ( XLALReadConfigSTRINGVariable( &stringbuf, cfg, NULL, ptr->name, &wasRead) != XLAL_SUCCESS ) {
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 	  if ( wasRead && stringbuf)	/* did we find something? */
 	    {
@@ -537,7 +531,7 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 	case UVAR_CSVLIST:
 	  stringbuf = NULL;
 	  if ( XLALReadConfigSTRINGVariable(&stringbuf, cfg, NULL, ptr->name,&wasRead) != XLAL_SUCCESS ) {
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 	  if ( wasRead && stringbuf)	/* did we find something? */
 	    {
@@ -546,8 +540,8 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 		XLALDestroyStringVector ( csv );
               }
 	      if ( (csv = XLALParseCSV2StringVector ( stringbuf )) == NULL ) {
-                XLALPrintError ("%s: XLALParseCSV2StringVector() failed with code %d\n", fn, xlalErrno );
-                XLAL_ERROR ( fn, XLAL_EFUNC );
+                XLALPrintError ("%s: XLALParseCSV2StringVector() failed with code %d\n", __func__, xlalErrno );
+                XLAL_ERROR ( XLAL_EFUNC );
 	      }
 	      XLALFree ( stringbuf );
 	      *(LALStringVector**)(ptr->varp) = csv;
@@ -555,8 +549,8 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 	    } /* if stringbuf */
 	  break;
 	default:
-	  XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered...points to a coding error!\n", fn);
-          XLAL_ERROR ( fn, XLAL_EFAILED );
+	  XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered...points to a coding error!\n", __func__);
+          XLAL_ERROR ( XLAL_EFAILED );
           break;
 
 	} /* switch ptr->type */
@@ -565,12 +559,12 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 
   /* ok, that should be it: check if there were more definitions we did not read */
   if ( XLALCheckConfigReadComplete (cfg, CONFIGFILE_WARN) != XLAL_SUCCESS ) {
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   if ( XLALDestroyParsedDataFile (&cfg) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALDestroyParsedDataFile() failed, code = %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALDestroyParsedDataFile() failed, code = %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
@@ -586,8 +580,6 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 CHAR *
 XLALUserVarHelpString ( const CHAR *progname )
 {
-  const char *fn = __func__;
-
   CHAR strbuf[UVAR_MAXHELPLINE];	/* should be enough for one line...*/
   CHAR defaultstr[UVAR_MAXDEFSTR]; 	/* for display of default-value */
   CHAR fmtStr[UVAR_MAXFMTLEN];		/* for building a dynamic format-string */
@@ -602,16 +594,16 @@ XLALUserVarHelpString ( const CHAR *progname )
 
   /* check input consistency */
   if ( !UVAR_vars.next ) {
-    XLALPrintError ("%s: Internal error, no UVAR memory allocated. Did you register any user-variables?", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: Internal error, no UVAR memory allocated. Did you register any user-variables?", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* prepare first lines of help-string: info about config-file reading */
   newlen = 0;
   sprintf (strbuf, "Usage: %s [@ConfigFile] [options], where options are:\n\n", progname);
   if ( (helpstr = XLALCalloc (1, strlen(strbuf) + 1)) == NULL) {
-    XLALPrintError ("%s: failed to XLALCalloc(1,%d)\n", fn, strlen(strbuf) + 1 );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: failed to XLALCalloc(1,%d)\n", __func__, strlen(strbuf) + 1 );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   strcpy (helpstr, strbuf);
   newlen += strlen (strbuf) + 1;
@@ -641,8 +633,8 @@ XLALUserVarHelpString ( const CHAR *progname )
       sprintf (strbuf, fmtStr, ptr->optchar, " ", typestr[ptr->type], ptr->help, *(INT4*)(ptr->varp) );
       newlen += strlen (strbuf);
       if ( (helpstr = XLALRealloc (helpstr, newlen)) == NULL ) {
-        XLALPrintError ("%s: failed to XLALRealloc (helpstr, %d)\n", fn, newlen );
-        XLAL_ERROR_NULL (fn, XLAL_ENOMEM );
+        XLALPrintError ("%s: failed to XLALRealloc (helpstr, %d)\n", __func__, newlen );
+        XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
       strcat (helpstr, strbuf);	/* add this line to the helpstring */
@@ -668,7 +660,7 @@ XLALUserVarHelpString ( const CHAR *progname )
 	{
 	  CHAR *valstr = NULL;
 	  if ( (valstr = XLALUvarValue2String(ptr)) == NULL ) {
-            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+            XLAL_ERROR_NULL ( XLAL_EFUNC );
           }
 	  strncpy (defaultstr, valstr, UVAR_MAXDEFSTR);	/* cut short for default-entry */
 	  defaultstr[UVAR_MAXDEFSTR-1] = 0;
@@ -691,8 +683,8 @@ XLALUserVarHelpString ( const CHAR *progname )
       /* now increase allocated memory by the right amount */
       newlen += strlen (strbuf);
       if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
-        XLALPrintError ("%s: failed to LALRealloc (helpstr, %d)\n", fn, newlen );
-	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+        XLALPrintError ("%s: failed to LALRealloc (helpstr, %d)\n", __func__, newlen );
+	XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
       strcat (helpstr, strbuf);	/* add this line to the helpstring */
@@ -713,8 +705,8 @@ XLALUserVarHelpString ( const CHAR *progname )
       sprintf (strbuf, "\n ----- Hint: use help with lalDebugLevel > 0 %s to see all 'developer-options' ----- \n", buf);
       newlen += strlen (strbuf);
       if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
-        XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", fn, newlen );
-        XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+        XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", __func__, newlen );
+        XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
       strcat (helpstr, strbuf);	/* add this line to the helpstring */
@@ -726,8 +718,8 @@ XLALUserVarHelpString ( const CHAR *progname )
 	     "for most users:----------\n\n");
       newlen += strlen (strbuf);
       if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
-        XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", fn, newlen );
-        XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+        XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", __func__, newlen );
+        XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
       strcat (helpstr, strbuf);	/* add this line to the helpstring */
@@ -743,7 +735,7 @@ XLALUserVarHelpString ( const CHAR *progname )
 	  haveDevOpt = 1;
 
 	  if ( (valstr = XLALUvarValue2String(ptr)) == NULL ) {
-            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+            XLAL_ERROR_NULL ( XLAL_EFUNC );
           }
 	  strncpy (defaultstr, valstr, UVAR_MAXDEFSTR);	/* cut short for default-entry */
 	  defaultstr[UVAR_MAXDEFSTR-1] = 0;
@@ -765,8 +757,8 @@ XLALUserVarHelpString ( const CHAR *progname )
 	  /* now increase allocated memory by the right amount */
 	  newlen += strlen (strbuf);
           if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
-            XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", fn, newlen );
-            XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+            XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", __func__, newlen );
+            XLAL_ERROR_NULL ( XLAL_ENOMEM );
           }
 
 	  strcat (helpstr, strbuf);	/* add this line to the helpstring */
@@ -778,8 +770,8 @@ XLALUserVarHelpString ( const CHAR *progname )
 	  strcpy(strbuf, "   -- NONE --\n\n");
 	  newlen += strlen (strbuf);
           if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
-            XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", fn, newlen );
-            XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+            XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", __func__, newlen );
+            XLAL_ERROR_NULL ( XLAL_ENOMEM );
           }
 
 	  strcat (helpstr, strbuf);	/* add this line to the helpstring */
@@ -800,8 +792,6 @@ XLALUserVarHelpString ( const CHAR *progname )
 int
 XLALUserVarReadAllInput ( int argc, char *argv[] )
 {
-  const char *fn = __func__;
-
   INT4 i;
   CHAR* fname = NULL;
   CHAR *tmp;
@@ -809,8 +799,8 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
   BOOLEAN skipCheckRequired = FALSE;
 
   if ( !UVAR_vars.next ) {
-    XLALPrintError ("%s: Internal error, no UVAR memory allocated. Did you register any user-variables?", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: Internal error, no UVAR memory allocated. Did you register any user-variables?", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   program_name = argv[0];	/* keep modul-local pointer to executable name */
@@ -822,14 +812,14 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
       if ( *tmp == '@' )
 	{
 	  if (fname != NULL) {
-            XLALPrintError ("%s: can handle only one config-file passed on commandline!\n", fn );
-            XLAL_ERROR ( fn, XLAL_EDOM );
+            XLALPrintError ("%s: can handle only one config-file passed on commandline!\n", __func__ );
+            XLAL_ERROR ( XLAL_EDOM );
 	  }
 
 	  tmp ++;
 	  if ( (fname = XLALCalloc (1, strlen(tmp) + 5 )) == NULL) {
-            XLALPrintError("%s: XLALCalloc (1, %s) failed.\n", fn, strlen(tmp) + 5 );
-            XLAL_ERROR ( fn, XLAL_ENOMEM );
+            XLALPrintError("%s: XLALCalloc (1, %s) failed.\n", __func__, strlen(tmp) + 5 );
+            XLAL_ERROR ( XLAL_ENOMEM );
 	  }
 	  /* NOTE: if the filename given is not a relative or absolute path,
 	   * we want to ensure it is interpreted relative to the CURRENT directory,
@@ -851,8 +841,8 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
   /* if config-file specified, read from that first */
   if (fname) {
     if ( XLALUserVarReadCfgfile (fname) != XLAL_SUCCESS ) {
-      XLALPrintError ("%s: XLALUserVarReadCfgfile (%s) failed with code %d\n", fn, fname, xlalErrno );
-      XLAL_ERROR ( fn, XLAL_EFUNC );
+      XLALPrintError ("%s: XLALUserVarReadCfgfile (%s) failed with code %d\n", __func__, fname, xlalErrno );
+      XLAL_ERROR ( XLAL_EFUNC );
     }
     XLALFree (fname);
     fname=NULL;
@@ -860,8 +850,8 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
 
   /* now do proper cmdline parsing: overloads config-file settings */
   if ( XLALUserVarReadCmdline (argc, argv) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALUserVarReadCmdline() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALUserVarReadCmdline() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* now check if help-string was requested */
@@ -872,8 +862,8 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
 	{
 	  CHAR *helpstring = NULL;
 	  if ( ( helpstring = XLALUserVarHelpString(argv[0])) == NULL ) {
-            XLALPrintError ("%s: XLALUserVarHelpString() failed.\n");
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: XLALUserVarHelpString() failed.\n", __func__);
+            XLAL_ERROR ( XLAL_EFUNC );
           }
           printf ("\n%s\n", helpstring);
 	  XLALFree (helpstring);
@@ -888,7 +878,7 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
   /* check that all required input-variables have been specified */
   if ( !skipCheckRequired ) {
     if ( XLALUserVarCheckRequired() != XLAL_SUCCESS ) {
-      XLAL_ERROR ( fn, XLAL_EFUNC );
+      XLAL_ERROR ( XLAL_EFUNC );
     }
   } /* !skipCheckRequired */
 
@@ -904,12 +894,11 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
 int
 XLALUserVarWasSet (const void *cvar)
 {
-  const char *fn = __func__;
   LALUserVariable *ptr;
 
   if (!cvar) {
-    XLALPrintError ("%s: invalid NULL input\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* find this varname in the list of user-variables */
@@ -919,8 +908,8 @@ XLALUserVarWasSet (const void *cvar)
       break;
 
   if (ptr == NULL) {
-    XLALPrintError ("%s: Variable passed to UVARwasSet is not a registered User-variable\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: Variable passed to UVARwasSet is not a registered User-variable\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* we found it: has it been set by user? */
@@ -935,8 +924,6 @@ XLALUserVarWasSet (const void *cvar)
 int
 XLALUserVarCheckRequired (void)
 {
-  const char *fn = __func__;
-
   LALUserVariable *ptr;
 
   /* go through list of uvars */
@@ -944,8 +931,8 @@ XLALUserVarCheckRequired (void)
   while ( (ptr = ptr->next) != NULL)
     if ( (ptr->state & UVAR_REQUIRED) && !(ptr->state & UVAR_WAS_SET))
       {
-	XLALPrintError ("%s: Required user-variable `%s` has not been specified!\n\n", fn, ptr->name);
-	XLAL_ERROR ( fn, XLAL_EDOM );
+	XLALPrintError ("%s: Required user-variable `%s` has not been specified!\n\n", __func__, ptr->name);
+	XLAL_ERROR ( XLAL_EDOM );
       }
 
   return XLAL_SUCCESS;
@@ -964,8 +951,6 @@ XLALUserVarCheckRequired (void)
 int
 XLALGetDebugLevel (int argc, char *argv[], CHAR optchar)
 {
-  const char *fn = __func__;
-
   static const char *help = "set lalDebugLevel";
   static INT4 defaultDebugLevel;
 
@@ -973,12 +958,12 @@ XLALGetDebugLevel (int argc, char *argv[], CHAR optchar)
   CHAR *ptr;
 
   if ( !argv ) {
-    XLALPrintError ("%s: NULL argv[] passed as input.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: NULL argv[] passed as input.\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( UVAR_vars.next != NULL || UVAR_vars.varp ) {
-    XLALPrintError ("%s: lalDebugLevel can only be read before ANY mallocs(), even hidden..\n", fn );
-    XLAL_ERROR ( fn, XLAL_EFAULT );
+    XLALPrintError ("%s: lalDebugLevel can only be read before ANY mallocs(), even hidden..\n", __func__ );
+    XLAL_ERROR ( XLAL_EFAULT );
   }
 
   /* "register" the debug-level variable in the head of the UVAR-list,
@@ -1005,8 +990,8 @@ XLALGetDebugLevel (int argc, char *argv[], CHAR optchar)
 	    ptr = argv[i+1];
 
 	  if ( (ptr == NULL) || (sscanf ( ptr, "%d", &lalDebugLevel) != 1) ) {
-	    XLALPrintError ("%s: Setting debug-level `-%c` requires an argument\n", fn, optchar);
-	    XLAL_ERROR ( fn, XLAL_EDOM );
+	    XLALPrintError ("%s: Setting debug-level `-%c` requires an argument\n", __func__, optchar);
+	    XLAL_ERROR ( XLAL_EDOM );
 	  }
 	  break;
 	} /* if debug-switch found */
@@ -1026,8 +1011,6 @@ CHAR *
 XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as config-file or command-line */
                     )
 {
-  const char *fn = __func__;
-
   LALUserVariable *ptr = NULL;
   CHAR *record = NULL;
   CHAR *valstr;		/* buffer to hold value-string */
@@ -1044,8 +1027,8 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
     {
       len += strlen ( program_name );
       if ( (record = XLALRealloc (record, len+1)) == NULL ) {
-        XLALPrintError ("%s: XLALRealloc (%d, %d) failed.\n", fn, record, len+1);
-        XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+        XLALPrintError ("%s: XLALRealloc (%d, %d) failed.\n", __func__, record, len+1);
+        XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
       strcat (record, program_name);
     }
@@ -1059,16 +1042,16 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
       valstr = NULL;
       typestr = NULL;
       if ( (valstr = XLALUvarValue2String ( ptr )) == NULL ) {
-        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
       if ( (typestr = XLALUvarType2String ( ptr )) == NULL ) {
-        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
 
       appendlen = strlen(ptr->name) + strlen(valstr) + strlen(typestr) + 10;
       if ( (append = XLALMalloc(appendlen)) == NULL) {
-        XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, appendlen );
-	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+        XLALPrintError ("%s: XLALMalloc(%d) failed.\n", __func__, appendlen );
+	XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
       switch (format)
@@ -1083,15 +1066,15 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
 	  sprintf (append, "--%s = %s :%s;", ptr->name, valstr, typestr);
 	  break;
 	default:
-          XLALPrintError ("%s: Unknown format for recording user-input: '%s'\n", fn, format );
-          XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+          XLALPrintError ("%s: Unknown format for recording user-input: '%s'\n", __func__, format );
+          XLAL_ERROR_NULL ( XLAL_EINVAL );
 	  break;
 	} /* switch (format) */
 
       len += strlen(append);
       if ( (record = LALRealloc (record, len+1)) == NULL ) {
-        XLALPrintError("%s: LALRealloc (%d, %d) failed.\n", fn, record, len+1);
-	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+        XLALPrintError("%s: LALRealloc (%d, %d) failed.\n", __func__, record, len+1);
+	XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
       strcat (record, append);
@@ -1115,14 +1098,12 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
 CHAR *
 XLALUvarType2String ( LALUserVariable *uvar )
 {
-  const char *fn = __func__;
-
   CHAR *ret=NULL;
   CHAR buf[16];
 
   if ( !uvar ) {
-    XLALPrintError ("%s: invalid NULL input\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   switch (uvar->type)
@@ -1143,14 +1124,14 @@ XLALUvarType2String ( LALUserVariable *uvar )
       sprintf(buf, "list");
       break;
     default:
-      XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered\n", fn );
-      XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+      XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered\n", __func__ );
+      XLAL_ERROR_NULL ( XLAL_EINVAL );
       break;
     } /* switch */
 
   if ( (ret = XLALMalloc (strlen(buf) + 1)) == NULL) {
-    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, strlen(buf)+1);
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", __func__, strlen(buf)+1);
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   strcpy (ret, buf);
 
@@ -1166,15 +1147,13 @@ XLALUvarType2String ( LALUserVariable *uvar )
 CHAR *
 XLALUvarValue2String ( LALUserVariable *uvar )
 {
-  const char *fn = __func__;
-
   CHAR *str = NULL;
   CHAR *ptr;
   CHAR buf[512];	/* buffer for producing non-string values */
 
   if ( !uvar || !uvar->varp ) {
-    XLALPrintError ("%s: illegal NULL in input uvar struct\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: illegal NULL in input uvar struct\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   switch (uvar->type)	      /* info on default-value for this variable */
@@ -1196,8 +1175,8 @@ XLALUvarValue2String ( LALUserVariable *uvar )
       if ( ptr != NULL )
 	{
 	  if ( (str = XLALMalloc ( strlen(ptr) + 3 )) == NULL) {
-            XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, strlen(ptr)+3);
-            XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+            XLALPrintError ("%s: XLALMalloc(%d) failed.\n", __func__, strlen(ptr)+3);
+            XLAL_ERROR_NULL ( XLAL_ENOMEM );
 	  }
 	  sprintf (str, "\"%s\"", ptr);
 	}
@@ -1231,8 +1210,8 @@ XLALUvarValue2String ( LALUserVariable *uvar )
       }
       break;
     default:
-      XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered... this points to a coding error!\n", fn );
-      XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+      XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered... this points to a coding error!\n", __func__ );
+      XLAL_ERROR_NULL ( XLAL_EINVAL );
       break;
 
     } /* switch uvar->type */
@@ -1240,8 +1219,8 @@ XLALUvarValue2String ( LALUserVariable *uvar )
   if (str == NULL)
     {
       if ( (str = XLALMalloc (strlen(buf) + 1)) == NULL) {
-        XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, strlen(buf)+1);
-        XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+        XLALPrintError ("%s: XLALMalloc(%d) failed.\n", __func__, strlen(buf)+1);
+        XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
       strcpy (str, buf);
     }
