@@ -88,7 +88,7 @@ gsl_vector *XLALGSLVectorFromLALStringVector(
   for (i = 0; i < (INT4)args->length; ++i) {
     if (sscanf(args->data[i], "%le", &x) != 1) {
       XLALPrintError("'%s' is not numeric\n", args->data[i]);
-      XLAL_ERROR_NULL("An element of 'args' is not numeric", XLAL_EINVAL);
+      XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     gsl_vector_set(result, i, x);
   }

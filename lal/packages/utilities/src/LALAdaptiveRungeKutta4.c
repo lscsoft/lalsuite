@@ -56,14 +56,12 @@ ark4GSLIntegrator *XLALAdaptiveRungeKutta4Init( int dim,
                              double eps_abs, double eps_rel
                   				 )
 {
-  static const char *func = "XLALAdaptiveRungeKutta4Init"; /* TO DO: is this correct XLAL etiquette? */
-
   ark4GSLIntegrator *integrator;
 
 	/* allocate our custom integrator structure */
   if (!(integrator = (ark4GSLIntegrator *) LALCalloc(1, sizeof(ark4GSLIntegrator))))
 	{
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+		XLAL_ERROR_NULL(XLAL_ENOMEM);
 	}
 
   /* allocate the GSL ODE components */
@@ -78,7 +76,7 @@ ark4GSLIntegrator *XLALAdaptiveRungeKutta4Init( int dim,
   if ( !(integrator->step) || !(integrator->control) || !(integrator->evolve) || !(integrator->sys) )
   {
     XLALAdaptiveRungeKutta4Free(integrator);
-    XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+    XLAL_ERROR_NULL(XLAL_ENOMEM);
   }
 
   integrator->dydt = dydt;
@@ -118,8 +116,6 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
                          REAL8Array **yout
                          )
 {
-  static const char *func = "XLALAdaptiveRungeKutta4"; /* TO DO: is this correct XLAL etiquette? */
-
   int status; /* used throughout */
 
 	/* needed for the integration */
@@ -301,7 +297,7 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
   if (interp)  XLAL_CALLGSL( gsl_spline_free(interp) );
   if (accel)   XLAL_CALLGSL( gsl_interp_accel_free(accel) );
 
-  if (status == XLAL_ENOMEM) XLAL_ERROR(func, XLAL_ENOMEM);	/* TO DO: will this return? */
+  if (status == XLAL_ENOMEM) XLAL_ERROR(XLAL_ENOMEM);	/* TO DO: will this return? */
 
 	*yout = output;
   return outputlen; /* TO DO: check XLAL error reporting conventions */
