@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
    
    const CHAR *fn = __func__;
    
-   INT4 ii, jj, kk, ll;       //counter variables
+   INT4 ii, jj;//, kk, ll;       //counter variables
    LALStatus status;          //LALStatus structure
    status.statusPtr = NULL;   //Set statuspointer to NULL
    char s[20000], t[20000];     //Path and file name to LOG and ULFILE
@@ -278,14 +278,14 @@ int main(int argc, char *argv[])
    
    //I wrote this to compensate for a bad input of the expected noise floor and for non-present SFTs
    REAL8 backgroundmeannormfactor = 0.0;
-   INT4 avefact = 0;
+   INT8 avefact = 0;
    for (ii=0; ii<(INT4)background->length; ii++) {
       if (background->data[ii]!=0.0) {
          backgroundmeannormfactor += background->data[ii];
          avefact++;
       }
    }
-   backgroundmeannormfactor = avefact/backgroundmeannormfactor;
+   backgroundmeannormfactor = (REAL8)avefact/backgroundmeannormfactor;
    //for (ii=0; ii<(INT4)background->length; ii++) background->data[ii] *= backgroundmeannormfactor;
    ffdata->tfnormalization *= backgroundmeannormfactor;
    fprintf(LOG, "done\n");
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
    for (ii=0; ii<ffdata->numffts; ii++) memcpy(&(usableTFdata->data[ii*(ffdata->numfbins+2*inputParams->maxbinshift)]), &(tfdata->data[ii*(tempnumfbins+2*inputParams->maxbinshift) + (INT4)round(0.5*(inputParams->blksize-1))]), sizeof(REAL4)*(ffdata->numfbins+2*inputParams->maxbinshift));
    for (ii=0; ii<(INT4)usableTFdata->length; ii++) {
       if (usableTFdata->data[ii]!=0.0) {
-         //usableTFdata->data[ii] *= backgroundmeannormfactor;
+         usableTFdata->data[ii] *= backgroundmeannormfactor;
          background->data[ii] *= backgroundmeannormfactor;
       }
    }
@@ -344,6 +344,7 @@ int main(int argc, char *argv[])
    REAL4 antweightsrms = 0.0;
    
    INT4 proberrcode = 0;
+   ffdata->tfnormalization *= 0.5*inputParams->Tcoh;
    
    //Print message that we start the analysis
    fprintf(LOG, "Starting TwoSpect analysis...\n");
@@ -578,16 +579,26 @@ int main(int argc, char *argv[])
          gaussCandidates1->numofcandidates = 0;
          
 ////////Start detailed Gaussian template search!
-         REAL4 tcohfactor = 1.49e-3*inputParams->Tcoh + 1.76;
+         //REAL4 tcohfactor = 1.49e-3*inputParams->Tcoh + 1.76;
          for (ii=0; ii<(INT4)gaussCandidates2->numofcandidates; ii++) {
             
-            REAL8Vector *trialf, *trialb, *trialp;
+            if (gaussCandidates3->numofcandidates == gaussCandidates3->length-1) {
+               gaussCandidates3 = resize_candidateVector(gaussCandidates3, 2*gaussCandidates3->length);
+               if (gaussCandidates3->data==NULL) {
+                  fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*gaussCandidates3->length);
+                  XLAL_ERROR(fn, XLAL_EFUNC);
+               }
+            }
+            bruteForceTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], gaussCandidates2->data[ii].fsig-2.5/inputParams->Tcoh, gaussCandidates2->data[ii].fsig+2.5/inputParams->Tcoh, 11, 5, gaussCandidates2->data[ii].moddepth-2.5/inputParams->Tcoh, gaussCandidates2->data[ii].moddepth+2.5/inputParams->Tcoh, 11, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
+            gaussCandidates3->numofcandidates++;
+            
+            /* REAL8Vector *trialf, *trialb, *trialp;
             REAL8 minf, maxf, minb, maxb;
             UINT4 numf, numb, nump;
             
             //Set up parameters of modulation depth search
-            minb = gaussCandidates2->data[ii].moddepth-3.0/inputParams->Tcoh;
-            maxb = gaussCandidates2->data[ii].moddepth+3.0/inputParams->Tcoh;
+            minb = gaussCandidates2->data[ii].moddepth-2.5/inputParams->Tcoh;
+            maxb = gaussCandidates2->data[ii].moddepth+2.5/inputParams->Tcoh;
             if (minb<(0.5/inputParams->Tcoh-1.0e-9)) minb = 0.5/inputParams->Tcoh;
             numb = (UINT4)round(2*(maxb-minb)*inputParams->Tcoh)+1;
             trialb = XLALCreateREAL8Vector(numb);
@@ -600,8 +611,8 @@ int main(int argc, char *argv[])
             //trialb->data[0] = gaussCandidates2[ii]->moddepth;
             
             //Set up parameters of signal frequency search
-            minf = gaussCandidates2->data[ii].fsig-5.0/inputParams->Tcoh;
-            maxf = gaussCandidates2->data[ii].fsig+5.0/inputParams->Tcoh;
+            minf = gaussCandidates2->data[ii].fsig-2.5/inputParams->Tcoh;
+            maxf = gaussCandidates2->data[ii].fsig+2.5/inputParams->Tcoh;
             if (minf<inputParams->fmin) minf = inputParams->fmin;
             if (maxf>inputParams->fmin+inputParams->fspan) maxf = inputParams->fmin+inputParams->fspan;
             numf = (UINT4)round(2*(maxf-minf)*inputParams->Tcoh)+1;
@@ -611,13 +622,13 @@ int main(int argc, char *argv[])
                XLAL_ERROR(fn, XLAL_EFUNC);
             }
             for (jj=0; jj<(INT4)numf; jj++) trialf->data[jj] = minf + 0.5*jj/inputParams->Tcoh;
-            /* minf = gaussCandidates2[ii]->fsig-8.0/inputParams->Tcoh;
-            maxf = gaussCandidates2[ii]->fsig+8.0/inputParams->Tcoh;
-            if (minf<inputParams->fmin) minf = inputParams->fmin;
-            if (maxf>inputParams->fmin+inputParams->fspan) maxf = inputParams->fmin+inputParams->fspan;
-            numf = (UINT4)roundf(4*(maxf-minf)*inputParams->Tcoh)+1;
-            trialf = XLALCreateREAL4Vector(numf);
-            for (jj=0; jj<(INT4)numf; jj++) trialf->data[jj] = minf + 0.25*jj/inputParams->Tcoh; */
+            //minf = gaussCandidates2[ii]->fsig-8.0/inputParams->Tcoh;
+            //maxf = gaussCandidates2[ii]->fsig+8.0/inputParams->Tcoh;
+            //if (minf<inputParams->fmin) minf = inputParams->fmin;
+            //if (maxf>inputParams->fmin+inputParams->fspan) maxf = inputParams->fmin+inputParams->fspan;
+            //numf = (UINT4)roundf(4*(maxf-minf)*inputParams->Tcoh)+1;
+            //trialf = XLALCreateREAL4Vector(numf);
+            //for (jj=0; jj<(INT4)numf; jj++) trialf->data[jj] = minf + 0.25*jj/inputParams->Tcoh;
             
             //Search over 9 different periods
             nump = 9;
@@ -705,10 +716,10 @@ int main(int argc, char *argv[])
                            bestproberrcode = proberrcode;
                         }
                         
-                     } /* if within boundaries */
-                  } /* for ll < trialp */
-               } /* for kk < trialb */
-            } /* for jj < trialf */
+                     } // if within boundaries
+                  } // for ll < trialp
+               } // for kk < trialb
+            } // for jj < trialf
             free_templateStruct(template);
             template = NULL;
             if (inputParams->calcRthreshold) {
@@ -728,14 +739,14 @@ int main(int argc, char *argv[])
                }
                loadCandidateData(&gaussCandidates3->data[gaussCandidates3->numofcandidates], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, gaussCandidates2->data[0].normalization);
                (gaussCandidates3->numofcandidates)++;
-            }
+            } */
             
-            XLALDestroyREAL8Vector(trialf);
-            XLALDestroyREAL8Vector(trialb);
-            XLALDestroyREAL8Vector(trialp);
-            trialf = NULL;
-            trialb = NULL;
-            trialp = NULL;
+            //XLALDestroyREAL8Vector(trialf);
+            //XLALDestroyREAL8Vector(trialb);
+            //XLALDestroyREAL8Vector(trialp);
+            //trialf = NULL;
+            //trialb = NULL;
+            //trialp = NULL;
          } /* for ii < numofcandidates */
           
          for (ii=0; ii<(INT4)gaussCandidates3->numofcandidates; ii++) fprintf(stderr,"Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates3->data[ii].fsig, gaussCandidates3->data[ii].period, gaussCandidates3->data[ii].moddepth);
@@ -834,8 +845,24 @@ int main(int argc, char *argv[])
 
 ////////Start detailed "exact" template search!
          for (ii=0; ii<(INT4)exactCandidates1->numofcandidates; ii++) {
-         
-            REAL8Vector *trialf, *trialb, *trialp;
+            
+            if (exactCandidates2->numofcandidates == exactCandidates2->length-1) {
+               exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
+               if (exactCandidates2->data==NULL) {
+                  fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*exactCandidates2->length);
+                  XLAL_ERROR(fn, XLAL_EFUNC);
+               }
+            }
+            
+            if (!args_info.gaussTemplatesOnly_given) {
+               bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 5, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
+            } else {
+               bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 5, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
+            }
+            exactCandidates2->numofcandidates++;
+
+            
+            /* REAL8Vector *trialf, *trialb, *trialp;
             REAL8 minf, maxf, minb, maxb;
             UINT4 numf, numb, nump;
             
@@ -901,7 +928,16 @@ int main(int argc, char *argv[])
                   for (ll=0; ll<(INT4)trialp->length; ll++) {
                      //if ( trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll]>=5.0 && trialp->data[ll] >= 2.0*3600.0) {
                      //We make this more restrictive to be within what the user has input as searchable parameters
-                     if ( (trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh)>inputParams->fmin && (trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh)<(inputParams->fmin+inputParams->fspan) && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll]>minPeriod(trialb->data[kk], inputParams->Tcoh) && trialp->data[ll]<=(0.2*inputParams->Tobs) && trialp->data[ll]>=(2.0*3600.0) && trialb->data[kk]<=inputParams->dfmax && trialb->data[kk]>=inputParams->dfmin && trialp->data[ll]>=inputParams->Pmin && trialp->data[ll]<=inputParams->Pmax ) {
+                     if ( (trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh)>inputParams->fmin && 
+                         (trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh)<(inputParams->fmin+inputParams->fspan) && 
+                         trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && 
+                         trialp->data[ll]>minPeriod(trialb->data[kk], inputParams->Tcoh) && 
+                         trialp->data[ll]<=(0.2*inputParams->Tobs) && 
+                         trialp->data[ll]>=(2.0*3600.0) && 
+                         trialb->data[kk]<=inputParams->dfmax && 
+                         trialb->data[kk]>=inputParams->dfmin && 
+                         trialp->data[ll]>=inputParams->Pmin && 
+                         trialp->data[ll]<=inputParams->Pmax ) {
                         
                         loadCandidateData(&cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0, 0.0, 0, 0.0);
                         
@@ -948,16 +984,16 @@ int main(int argc, char *argv[])
                            bestProb = prob;
                            bestproberrcode = proberrcode;
                            
-                           /* FILE *TEMPLATEOUT = fopen("./templatevalues.dat","w");
-                           INT4 mm;
-                           for (mm=0; mm<(INT4)template->templatedata->length; mm++) fprintf(TEMPLATEOUT,"%g %g %g %d %d %d\n",template->templatedata->data[mm],ffdata->ffdata->data[template->pixellocations->data[mm]],aveNoise->data[template->secondfftfrequencies->data[mm]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[mm]],template->pixellocations->data[mm],template->firstfftfrequenciesofpixels->data[mm],template->secondfftfrequencies->data[mm]);
-                           fclose(TEMPLATEOUT); */
+                           //FILE *TEMPLATEOUT = fopen("./templatevalues.dat","w");
+                           //INT4 mm;
+                           //for (mm=0; mm<(INT4)template->templatedata->length; mm++) fprintf(TEMPLATEOUT,"%g %g %g %d %d %d\n",template->templatedata->data[mm],ffdata->ffdata->data[template->pixellocations->data[mm]],aveNoise->data[template->secondfftfrequencies->data[mm]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[mm]],template->pixellocations->data[mm],template->firstfftfrequenciesofpixels->data[mm],template->secondfftfrequencies->data[mm]);
+                           //fclose(TEMPLATEOUT);
                         }
                         
-                     } /* if within boundaries */
-                  } /* for ll < trialp */
-               } /* for kk < trialb */
-            } /* for jj < trialf */
+                     } // if within boundaries
+                  } // for ll < trialp
+               } // for kk < trialb
+            } // for jj < trialf
             free_templateStruct(template);
             template = NULL;
             if (inputParams->calcRthreshold) {
@@ -978,7 +1014,7 @@ int main(int argc, char *argv[])
                (exactCandidates2->numofcandidates)++;
                
                fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, exactCandidates2->data[exactCandidates2->numofcandidates-1].fsig, exactCandidates1->data[exactCandidates2->numofcandidates-1].period, exactCandidates1->data[exactCandidates2->numofcandidates-1].moddepth);
-            } /* if bestProb != 0 */
+            } // if bestProb != 0
             
             //Destroy parameter space values
             XLALDestroyREAL8Vector(trialf);
@@ -986,7 +1022,9 @@ int main(int argc, char *argv[])
             XLALDestroyREAL8Vector(trialp);
             trialf = NULL;
             trialb = NULL;
-            trialp = NULL;
+            trialp = NULL; */
+            
+            fprintf(stderr,"Candidate %d: f0=%g, P=%g, df=%g\n", ii, exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth);
          } /* for ii < numofcandidates */
 ////////End of detailed search
          
@@ -1001,12 +1039,14 @@ int main(int argc, char *argv[])
       //Determine upper limits
       upperlimits->data[upperlimits->length-1].alpha = (REAL4)dopplerpos.Alpha;
       upperlimits->data[upperlimits->length-1].delta = (REAL4)dopplerpos.Delta;
-      upperlimits->data[upperlimits->length-1].normalization = ffdata->ffnormalization;
-      skypoint95UL(&(upperlimits->data[upperlimits->length-1]), ihsfarstruct, inputParams, ffdata, ihsmaxima, aveNoise, aveTFnoisePerFbinRatio);
+      upperlimits->data[upperlimits->length-1].normalization = ffdata->tfnormalization;
+      //skypoint95UL(&(upperlimits->data[upperlimits->length-1]), ihsfarstruct, inputParams, ffdata, ihsmaxima, aveNoise, aveTFnoisePerFbinRatio);
+      skypoint95UL(&(upperlimits->data[upperlimits->length-1]), inputParams, ffdata, ihsmaxima, aveNoise, aveTFnoisePerFbinRatio);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: skypoint95UL() failed.\n", fn);
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
+      upperlimits->data[upperlimits->length-1].ULval /= sqrt(ffdata->tfnormalization);
       upperlimits = resize_UpperLimitVector(upperlimits, upperlimits->length+1);
       if (upperlimits->data==NULL) {
          fprintf(stderr,"%s: resize_UpperLimitVector(%d) failed.\n", fn, upperlimits->length+1);
@@ -1029,12 +1069,12 @@ int main(int argc, char *argv[])
       fprintf(stderr, "\n**Report of candidates:**\n");
       
       for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) {
-         fprintf(LOG, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %.12f, Prob = %.4f, Error code = %d, FF normalization = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0, exactCandidates2->data[ii].prob, exactCandidates2->data[ii].proberrcode, exactCandidates2->data[ii].normalization);
-         fprintf(stderr, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %.12f, Prob = %.4f, Error code = %d, FF normalization = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0, exactCandidates2->data[ii].prob, exactCandidates2->data[ii].proberrcode, exactCandidates2->data[ii].normalization);
+         fprintf(LOG, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %g, Prob = %.4f, TF norm = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0/sqrt(ffdata->tfnormalization), exactCandidates2->data[ii].prob, ffdata->tfnormalization);
+         fprintf(stderr, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %g, Prob = %.4f, TF norm = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0/sqrt(ffdata->tfnormalization), exactCandidates2->data[ii].prob, ffdata->tfnormalization);
       } /* for ii < exactCandidates2->numofcandidates */
    } /* if exactCandidates2->numofcandidates != 0 */
    
-   ULFILE = fopen(t,"w");
+   ULFILE = fopen(t,"a");
    if (ULFILE==NULL) {
       fprintf(stderr, "%s: UL file could not be opened.\n", fn);
       XLAL_ERROR(fn, XLAL_EINVAL);

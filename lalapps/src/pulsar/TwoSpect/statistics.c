@@ -97,6 +97,7 @@ REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
          dp = P*C;
          pk += dp;
          if (!(ok==1 && (REAL8)counter<halfdelta && dp>=err*pk)) ok = 0;
+         //if ((REAL8)counter>=halfdelta || dp<err*pk || ok!=1) ok = 0;
       }
       prob = pk;
    }
@@ -149,6 +150,56 @@ void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT4 counter, REA
    }
    
 }
+REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
+{
+   
+   const CHAR *fn = __func__;
+   
+   REAL8 prob = 0.0;
+   REAL8 err = (REAL8)LAL_REAL4_EPS;
+   REAL8 halfdelta = 0.5*delta;
+   INT4 counter = (INT4)floor(halfdelta);
+   REAL8 P = gsl_ran_poisson_pdf(counter, halfdelta);
+   REAL8 C = gsl_cdf_chisq_P(x, dof+2.0*counter);
+   REAL8 E = exp((dof*0.5+counter-1)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
+   
+   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
+   if (xlalErrno!=0) {
+      fprintf(stderr,"%s: sumseries() failed.\n", fn);
+      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+   }
+   counter--;
+   if (counter<0) return GSL_MIN(prob, 1.0);
+   
+   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
+   if (xlalErrno!=0) {
+      fprintf(stderr,"%s: sumseries() failed.\n", fn);
+      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+   }
+   
+   INT4 fromzero = 0;
+   if (prob==0.0) fromzero = 1;
+   if (fromzero==1) {
+      counter = 0;
+      REAL8 pk = gsl_ran_poisson_pdf(0, halfdelta)*gsl_cdf_chisq_P(x, dof);
+      REAL8 dp = 0.0;
+      INT4 ok = 0;
+      if ((REAL8)counter<halfdelta) ok = 1;
+      while (ok==1) {
+         counter++;
+         P = gsl_ran_poisson_pdf(counter, halfdelta);
+         C = gsl_cdf_chisq_P(x, dof+2.0*counter);
+         dp = P*C;
+         pk += dp;
+         if (!(ok==1 && (REAL8)counter<halfdelta && dp>=err*pk)) ok = 0;
+         //if ((REAL8)counter>=halfdelta || dp<err*pk || ok!=1) ok = 0;
+      }
+      prob = pk;
+   }
+   
+   return (REAL4)GSL_MIN(prob, 1.0);
+   
+}
 
 
 //Like Matlabs ncx2pdf
@@ -159,13 +210,15 @@ REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
    REAL8 x1 = sqrt(x);
    REAL8 delta1 = sqrt(delta);
    
+   REAL8 logreal8min = -708.3964185322641;
+   
    REAL8 ul = 0.0;
    if (dofint<=-0.5) {
       ul = -0.5*(delta+x) + 0.5*x1*delta1/(dofint+1.0) + dofint*(log(x)-LAL_LN2) - LAL_LN2 - lgamma(dofint+1.0);
    } else {
       ul = -0.5*(delta1-x1)*(delta1-x1) + dofint*(log(x)-LAL_LN2) - LAL_LN2 - lgamma(dofint+1.0) + (dofint+0.5)*log((dofint+0.5)/(x1*delta1+dofint+0.5));
    }
-   if (ul<log(LAL_REAL8_MIN)) {
+   if (ul<logreal8min) {
       return 0.0;
    }
    
@@ -199,7 +252,7 @@ REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
    while (keep==1) {
       term *= (dofint+k)*k/dx;
       sumK += term;
-      if (k<0 || term<LAL_REAL8_EPS) keep = 0;
+      if (k<=0 || term<=epsval(sumK) || keep!=1) keep = 0;
       k--;
    }
    keep = 1;
@@ -208,7 +261,7 @@ REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
    while (keep==1) {
       term /= (dofint+k)*k/dx;
       sumK += term;
-      if (term<LAL_REAL8_EPS) keep = 0;
+      if (term<=epsval(sumK) || keep!=1) keep = 0;
       k++;
    }
    return 0.5*exp(lntK + log(sumK));
@@ -240,6 +293,17 @@ REAL8 binodeviance(REAL8 x, REAL8 np)
       return x*log(x/np)+np-x;
    }
 
+}
+REAL8 epsval(REAL8 val)
+{
+   
+   //Same as matlab
+   REAL8 absval = fabs(val);
+   int exponentval = 0;
+   frexp(absval, &exponentval);
+   exponentval -= LAL_REAL8_MANT;
+   return ldexp(1.0, exponentval);
+   
 }
 
 //Matlab's ncx2inv() function

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -44,11 +44,14 @@ void free_templateStruct(templateStruct *nameoftemplate);
 void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsStruct *params);
 void makeTemplate(templateStruct *output, candidate intput, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan);
 void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc, INT4 firstfftfreq, INT4 secfftfreq);
+void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fmin, REAL8 fmax, INT4 numfsteps, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates);
 
 REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, REAL8 R, INT4 *errcode);
 REAL8 sincxoverxsqminusone(REAL8 overage);
+REAL8 sqsincxoverxsqminusone(REAL8 x);
 
-
+int twospect_sin_cos_2PI_LUT(REAL8 *sin2pix, REAL8 *cos2pix, REAL8 x);
+int twospect_sin_cos_LUT(REAL8 *sinx, REAL8 *cosx, REAL8 x);
 
 #endif
 

@@ -384,15 +384,15 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
    INT4Vector *markedharmonics = XLALCreateINT4Vector(aveNoise->length);
    for (ii=0; ii<(INT4)markedharmonics->length; ii++) {
-      if (fabs(dailyharmonic-ii)<=1.0 || fabs(dailyharmonic2-ii)<=1.0 || fabs(dailyharmonic3-ii)<=1.0 || fabs(dailyharmonic4-ii)<=1.0) markedharmonics->data[ii] = 0;
-      else markedharmonics->data[ii] = 1;
+      if (fabs(dailyharmonic-ii)<=1.0 || fabs(dailyharmonic2-ii)<=1.0 || fabs(dailyharmonic3-ii)<=1.0 || fabs(dailyharmonic4-ii)<=1.0) markedharmonics->data[ii] = 1;
+      else markedharmonics->data[ii] = 0;
    }
    for (ii=0; ii<trials; ii++) {
       REAL8 randval = 1.0 + 2.0*gsl_ran_gaussian(rng, singleIHSsigma);
       while (randval<0.0) randval = 1.0 + 2.0*gsl_ran_gaussian(rng, singleIHSsigma);
       //Make exponential noise removing harmonics of 24 hours to match with the same method as real analysis
       for (jj=0; jj<(INT4)aveNoise->length; jj++) {
-         if (markedharmonics->data[jj]==1) noise->data[jj] = (REAL4)(gsl_ran_exponential(rng, aveNoise->data[jj])*randval);
+         if (markedharmonics->data[jj]==0) noise->data[jj] = (REAL4)(gsl_ran_exponential(rng, aveNoise->data[jj])*randval);
          else noise->data[jj] = 0.0;
       } /* for jj < aveNoise->length */
       
@@ -1125,7 +1125,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                //Candidate period
                per0 = params->Tobs/loc;
                //Candidate h0
-               REAL8 h0 = ihs2h0(ihsmaxima->maxima->data[locationinmaximastruct], loc, jj, ii, params, aveNoise, fbinavgs);
+               REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[locationinmaximastruct], loc, jj, ii, params, aveNoise, fbinavgs);
                
                if (candlist->numofcandidates == candlist->length-1) {
                   candlist = resize_candidateVector(candlist, 2*(candlist->length));
@@ -1134,7 +1134,8 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                   }
                }
-               loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
+               //loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
+               loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, ffdata->tfnormalization);
                (candlist->numofcandidates)++;
             } /* if fom is below or equal to threshold fom */
          } /* if val exceeds threshold */
@@ -1156,7 +1157,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
 
 
 
-REAL8 ihs2h0(REAL8 ihsval, INT4 location, INT4 lowestfrequencybin, INT4 rows, inputParamsStruct *params, REAL4Vector *aveNoise, REAL4Vector *fbinavgs)
+REAL8 ihs2h0_withNoiseSubtraction(REAL8 ihsval, INT4 location, INT4 lowestfrequencybin, INT4 rows, inputParamsStruct *params, REAL4Vector *aveNoise, REAL4Vector *fbinavgs)
 {
    
    const CHAR *fn = __func__;
@@ -1179,13 +1180,19 @@ REAL8 ihs2h0(REAL8 ihsval, INT4 location, INT4 lowestfrequencybin, INT4 rows, in
    }
    
    //REAL8 h0 = 1.0*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
-   //h0 *= 4.6;
-   REAL8 h0 = 4.6*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
+   //REAL8 h0 = 4.6*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
+   //return h0;
    
+   REAL8 h0 = ihs2h0(2.0*ihsval-2.0*totalnoise, params);  //With 2.0 for chi-square with 2 d.o.f.
    return h0;
    
 }
-
+REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params)
+{
+   
+   return 4.7*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
+   
+}
 
 
 

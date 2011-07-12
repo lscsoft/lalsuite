@@ -33,10 +33,12 @@ REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator);
 REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta);
 REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta);
 REAL8 binodeviance(REAL8 x, REAL8 np);
+REAL8 epsval(REAL8 val);
 REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta);
 REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma);
 REAL8 ks_test_exp(REAL4Vector *vector);
 
+REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta);
 REAL4 calcMean(REAL4Vector *vector);
 REAL4 calcStddev(REAL4Vector *vector);
 REAL4 calcRms(REAL4Vector *vector);
