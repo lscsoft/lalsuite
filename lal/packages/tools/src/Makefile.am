@@ -26,22 +26,20 @@ libtools_la_SOURCES = \
 	UnitNormalize.c \
 	UnitRaise.c
 
+noinst_HEADERS = \
+	FrequencySeriesComplex_source.c \
+	FrequencySeries_source.c
+
 MAINTAINERCLEANFILES = \
-	FrequencySeries.c \
 	Sequence.c \
 	TimeSeries.c
 
 EXTRA_DIST = \
-	FrequencySeries.m4 \
 	Sequence.m4 \
 	TimeSeries.m4 \
 	MakeTemplateBank.c \
-	FrequencySeriesC.m4 \
 	SequenceC.m4 \
 	TimeSeriesC.m4
-
-FrequencySeries.c : FrequencySeries.m4 FrequencySeriesC.m4
-	cd $(srcdir) && @M4@ FrequencySeries.m4 > FrequencySeries.c
 
 Sequence.c : Sequence.m4 SequenceC.m4
 	cd $(srcdir) && @M4@ Sequence.m4 > Sequence.c
