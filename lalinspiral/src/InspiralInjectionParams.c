@@ -192,6 +192,36 @@ SimInspiralTable* XLALRandomInspiralOrientation(
 }
 
 /** Generates random masses for an inspiral injection. */
+SimInspiralTable* XLALSquareGridInspiralMasses(
+    SimInspiralTable *inj,   /**< injection for which masses will be set*/
+    REAL4  minTotalMass,     /**< minimum total mass of binaty */
+    REAL4  maxTotalMass,     /**< maximum total mass of binary */
+    REAL4  mass1Delta,       /**< m1 grid spacing */
+    REAL4  mass2Delta,       /**< m2 grid spacing */
+    INT4   mass1Pnt,           /**< number of grid points along m1 */
+    INT4   mass2Pnt,           /**< number of grid points along m1 */
+    INT4   injNum
+    )
+{
+  INT4  nCycles;
+  REAL4 mTotal = maxTotalMass +1;
+
+  while ( mTotal < minTotalMass || mTotal > maxTotalMass )
+  {
+      nCycles = (int) ceil( ((float) injNum) / mass1Pnt ); 
+      inj->mass1 = mass1Min + mass1Delta * (injNum % mass1Pnt - 1 );
+      inj->mass2 = mass2Min + mass2Delta * (nCycles % mass2Pnt - 1 );
+      mTotal = inj->mass1 + inj->mass2 ;
+  }
+
+  inj->eta = inj->mass1 * inj->mass2 / ( mTotal * mTotal );
+  inj->mchirp = mTotal * pow(inj->eta, 0.6);
+
+  return ( inj );
+}
+
+
+/** Generates random masses for an inspiral injection. */
 SimInspiralTable* XLALRandomInspiralMasses(
     SimInspiralTable *inj,   /**< injection for which masses will be set*/
     RandomParams *randParams,/**< random parameter details*/

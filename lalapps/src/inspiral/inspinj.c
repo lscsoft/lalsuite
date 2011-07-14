@@ -170,6 +170,10 @@ REAL4 minKappa1=-1.0;
 REAL4 maxKappa1=1.0;
 REAL4 minabsKappa1=0.0;
 REAL4 maxabsKappa1=1.0;
+INT4  pntMass1=1;
+INT4  pntMass2=1;
+REAL4 deltaMass1=-1;
+REAL4 deltaMass2=-1;
 INT4 bandPassInj = 0;
 INT4 writeSimRing = 0;
 InspiralApplyTaper taperInj = INSPIRAL_TAPER_NONE;
@@ -585,6 +589,7 @@ static void print_usage(char *program)
       " [--ninja2-mass]           use the NINJA 2 mass-selection algorithm\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
       " [--nr-file] nrFile        read mass/spin parameters from xml nrFile\n"\
+      " [--square-grid]           distribute masses on a square grid \n"\
       " [--min-mass1] m1min       set the minimum component mass to m1min\n"\
       " [--max-mass1] m1max       set the maximum component mass to m1max\n"\
       " [--min-mass2] m2min       set the min component mass2 to m2min\n"\
@@ -596,7 +601,9 @@ static void print_usage(char *program)
       " [--mean-mass2] m2mean     set the mean value for mass2\n"\
       " [--stdev-mass2] m2std     set the standard deviation for mass2\n"\
       " [--min-mratio] minr       set the minimum mass ratio\n"\
-      " [--max-mratio] maxr       set the maximum mass ratio\\n");
+      " [--max-mratio] maxr       set the maximum mass ratio\n"\
+      " [--mass1-points] m1pnt    set the number of grid points in the m1 direction if '--square-grid' is chosen\n"\
+      " [--mass2-points] m2pnt    set the number of grid points in the m2 direction if '--square-grid' is chosen\\n");
   fprintf(stderr,
       "Spin distribution information:\n"\
       "  --disable-spin           disables spinning injections\n"\
@@ -1295,6 +1302,8 @@ int main( int argc, char *argv[] )
     {"mean-mass1",              required_argument, 0,                'n'},
     {"mean-mass2",              required_argument, 0,                'N'},
     {"ninja2-mass",             no_argument,       &ninjaMass,         1},
+    {"mass1-points",            required_argument, 0,                ':'},
+    {"mass2-points",            required_argument, 0,                ';'},    
     {"stdev-mass1",             required_argument, 0,                'o'},
     {"stdev-mass2",             required_argument, 0,                'O'},
     {"min-mratio",              required_argument, 0,                'x'},
@@ -1641,12 +1650,16 @@ int main( int argc, char *argv[] )
         }
         else if (!strcmp(dummy, "logTotalMassUniformMassRatio"))
           mDistr=logMassUniformTotalMassRatio;
+        else if (!strcmp(dummy, "squareGrid"))
+        {
+          mDistr=squareGrid;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown mass distribution: %s must be one of\n"
               "(source, nrwaves, totalMass, componentMass, gaussian, log,\n"
-              "totalMassRatio, logTotalMassUniformMassRatio)\n",
+              "totalMassRatio, logTotalMassUniformMassRatio, squareGrid)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -1734,6 +1747,20 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", maxMassRatio );
+        break;
+
+      case ':':
+        pntMass1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "int", "%d", pntMass1 );
+        break;
+
+      case ';':
+        pntMass2 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "int", "%d", pntMass2 );
         break;
 
       case 'p':
@@ -2458,6 +2485,22 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  /* check if number of grid points is specified */
+  if ( mDistr==squareGrid )
+  {
+    if ( pntMass1<2 || pntMass2<2 )
+    {
+    fprintf( stderr, "--mass1-Points and --mass2-points must be specified"
+        "and >= 2 if choosing --square-grid \n" );
+    exit( 1 );
+    }
+    else
+    {
+      deltaMass1 = ( maxMass1 - minMass1 ) / (REAL4) ( pntMass1 -1 );
+      deltaMass2 = ( maxMass2 - minMass2 ) / (REAL4) ( pntMass2 -1 );
+    }
+  }
+
   /* check if waveform is specified */
   if ( !*waveform )
   {
@@ -2681,7 +2724,11 @@ int main( int argc, char *argv[] )
       simTable=XLALRandomInspiralTotalMassRatio(simTable, randParams,
           mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
     }
-
+    else if ( mDistr==squareGrid )
+    {
+      simTable=XLALSquareGridInspiralMasses( simTable,minMass1, maxMass1, minMass2, maxMass2,
+          minMtotal, maxMtotal, deltaMass1, deltaMass2, pntMass1, pntMass2, ninj);
+    }
     else {
       simTable=XLALRandomInspiralMasses( simTable, randParams, mDistr,
           minMass1, maxMass1,
