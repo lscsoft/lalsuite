@@ -108,7 +108,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    
    REAL4Vector *twiceAveNoise = XLALCreateREAL4Vector(aveNoise->length);
    if (twiceAveNoise==NULL) {
-      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ii);
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, aveNoise->length);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    memcpy(twiceAveNoise->data, aveNoise->data, sizeof(REAL4)*aveNoise->length);

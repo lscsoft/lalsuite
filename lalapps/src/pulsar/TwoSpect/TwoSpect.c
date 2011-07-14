@@ -1921,7 +1921,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    }
    
    //TODO: remove this extra factor
-   *(normalization) /= 1.0414;
+   *(normalization) /= 1.0245545525190294;
    
    //fclose(BACKGRND);
 
