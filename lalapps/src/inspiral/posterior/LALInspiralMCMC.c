@@ -1678,7 +1678,7 @@ XLALCheckPositiveDefinite(
 int PriorIsSane(LALMCMCParameter *parameter)
 {
 UINT4 i;
-int inrange=1;
+//int inrange=1;
 LALMCMCParam *p=parameter->param;
 for(i=0;i<parameter->dimension;i++){
         if(p->core->maxVal < p->core->minVal)

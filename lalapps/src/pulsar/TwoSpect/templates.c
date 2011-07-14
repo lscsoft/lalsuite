@@ -956,7 +956,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
 }
 
 
-void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fmin, REAL8 fmax, INT4 numfsteps, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
+void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
    
    const CHAR *fn = __func__;
@@ -977,15 +977,15 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fmin, RE
    for (ii=0; ii<numdfsteps; ii++) trialb->data[ii] = dfmin + dfstepsize*ii;
    
    //Set up parameters of signal frequency search
-   if (fmin<params->fmin) fmin = params->fmin;
-   if (fmax>params->fmin+params->fspan) fmax = params->fmin+params->fspan;
+   if (fminimum<params->fmin) fminimum = params->fmin;
+   if (fmaximum>params->fmin+params->fspan) fmaximum = params->fmin+params->fspan;
    trialf = XLALCreateREAL8Vector(numfsteps);
    if (trialf==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numfsteps);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
-   fstepsize = (fmax-fmin)/(REAL8)(numfsteps-1);
-   for (ii=0; ii<numfsteps; ii++) trialf->data[ii] = fmin + fstepsize*ii;
+   fstepsize = (fmaximum-fminimum)/(REAL8)(numfsteps-1);
+   for (ii=0; ii<numfsteps; ii++) trialf->data[ii] = fminimum + fstepsize*ii;
    
    //Search over numperiods different periods
    trialp = XLALCreateREAL8Vector(numperiods);
