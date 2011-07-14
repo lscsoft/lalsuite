@@ -196,6 +196,8 @@ SimInspiralTable* XLALSquareGridInspiralMasses(
     SimInspiralTable *inj,   /**< injection for which masses will be set*/
     REAL4  minTotalMass,     /**< minimum total mass of binaty */
     REAL4  maxTotalMass,     /**< maximum total mass of binary */
+    REAL4  mass1Min,         /**< minimum mass for first component */
+    REAL4  mass2Min,         /**< minimum mass for second component */
     REAL4  mass1Delta,       /**< m1 grid spacing */
     REAL4  mass2Delta,       /**< m2 grid spacing */
     INT4   mass1Pnt,           /**< number of grid points along m1 */
