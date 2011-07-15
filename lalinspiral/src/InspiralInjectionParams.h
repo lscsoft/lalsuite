@@ -122,15 +122,16 @@ SimInspiralTable* XLALRandomInspiralOrientation( SimInspiralTable *inj,
     REAL4   inclinationPeak  );
 
 SimInspiralTable* XLALSquareGridInspiralMasses( SimInspiralTable *inj,
+    REAL4  mass1Min,
+    REAL4  mass2Min,
     REAL4  minTotalMass,
     REAL4  maxTotalMass,
     REAL4  mass1Delta,
     REAL4  mass2Delta,
-    REAL4  mass1Min,
-    REAL4  mass2Min,
     INT4   mass1Pnt,
     INT4   mass2Pnt,
-    INT4   injNum
+    INT4   injNum,
+    INT4   *count
     );
 
 SimInspiralTable* XLALRandomInspiralMasses( SimInspiralTable *inj,

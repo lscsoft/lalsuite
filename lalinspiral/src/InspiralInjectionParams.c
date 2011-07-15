@@ -194,31 +194,36 @@ SimInspiralTable* XLALRandomInspiralOrientation(
 /** Generates random masses for an inspiral injection. */
 SimInspiralTable* XLALSquareGridInspiralMasses(
     SimInspiralTable *inj,   /**< injection for which masses will be set*/
-    REAL4  minTotalMass,     /**< minimum total mass of binaty */
-    REAL4  maxTotalMass,     /**< maximum total mass of binary */
     REAL4  mass1Min,         /**< minimum mass for first component */
     REAL4  mass2Min,         /**< minimum mass for second component */
+    REAL4  minTotalMass,     /**< minimum total mass of binaty */
+    REAL4  maxTotalMass,     /**< maximum total mass of binary */
     REAL4  mass1Delta,       /**< m1 grid spacing */
     REAL4  mass2Delta,       /**< m2 grid spacing */
     INT4   mass1Pnt,           /**< number of grid points along m1 */
     INT4   mass2Pnt,           /**< number of grid points along m1 */
-    INT4   injNum
+    INT4   injNum,
+    INT4   *count
     )
 {
-  INT4  nCycles;
+  INT4  nIndex, nCycles;
   REAL4 mTotal = maxTotalMass +1;
 
   while ( mTotal < minTotalMass || mTotal > maxTotalMass )
   {
-      nCycles = (int) ceil( ((float) injNum) / mass1Pnt ); 
-      inj->mass1 = mass1Min + mass1Delta * (injNum % mass1Pnt - 1 );
-      inj->mass2 = mass2Min + mass2Delta * (nCycles % mass2Pnt - 1 );
+      fprintf(stderr,"dentro il loop!\n");
+      nIndex = injNum + *count;
+      nCycles = (int) ( ceil( ((float) nIndex) / mass1Pnt ));
+      inj->mass1 = mass1Min + mass1Delta * (nIndex % mass1Pnt );
+      inj->mass2 = mass2Min + mass2Delta * (nCycles % mass2Pnt );
       mTotal = inj->mass1 + inj->mass2 ;
+      if ( mTotal < minTotalMass || mTotal > maxTotalMass ) (*count)++;
+      fprintf(stderr,"fine del loop!\n");
   }
 
   inj->eta = inj->mass1 * inj->mass2 / ( mTotal * mTotal );
   inj->mchirp = mTotal * pow(inj->eta, 0.6);
-
+  
   return ( inj );
 }
 
