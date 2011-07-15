@@ -1881,6 +1881,12 @@ LALEOBPPWaveformEngine (
      modeL = lmModes[currentMode][0];
      modeM = lmModes[currentMode][1];
 
+     /* If we have an equal mass system, some modes will be zero */
+     if ( eta == 0.25 && modeM % 2 )
+     {
+       continue;
+     }
+
      for ( i=0; i < (UINT4)retLen; i++ )
      {
        omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );

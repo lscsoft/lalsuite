@@ -238,10 +238,10 @@ INT4 XLALInspiralHybridRingdownWave (
  #endif
 
   /* Call gsl LU decomposition to solve the linear system */
-  gslStatus = gsl_linalg_LU_decomp(coef, p, &s);
+  XLAL_CALLGSL( gslStatus = gsl_linalg_LU_decomp(coef, p, &s) );
   if ( gslStatus == GSL_SUCCESS )
   {
-    gslStatus = gsl_linalg_LU_solve(coef, p, hderivs, x);
+    XLAL_CALLGSL( gslStatus = gsl_linalg_LU_solve(coef, p, hderivs, x) );
   }
   if ( gslStatus != GSL_SUCCESS )
   {
