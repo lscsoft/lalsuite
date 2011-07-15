@@ -23,8 +23,8 @@
 int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay)
 {  
 	int j = amp->length-1, jstep, k;
-	int nfilters = 0, decimationFactor;
-	double freqj, phase_ddot, phase_dot;
+	int nfilters = 0, decimationFactor = 1;
+	double phase_ddot, phase_dot;
 
 	/* FIXME: Add error checking for lengths of amp and phase */
 	if (amp->length != phase->length) 
@@ -34,15 +34,10 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 	*b0 = XLALCreateCOMPLEX16Vector(0);
 	*delay = XLALCreateINT4Vector(0);
 
-	fprintf(stderr, "amp length = %d\n", amp->length);
 	while (j >= 0 ) {
-		/* Get normalised frequency for downsampling */
-		freqj = (11.0/6.0*phase->data[j] -3.0*phase->data[j-1] +1.5*phase->data[j-2] -1.0/3.0*phase->data[j-3]) /(2.0*LAL_PI);
-		decimationFactor = ((int ) pow(2.0,-ceil(log(4.0*freqj)/log(2.0))));
-		if (decimationFactor < 1 ) decimationFactor = 1;
 
 		/* Reset j so that the delay will be an integar number of decimated rate */
-		//j = amp->length - (int) floor((amp->length-j)/decimationFactor + 0.5)*decimationFactor; /* FIXME: Check if this is actually correct */
+		j = amp->length-1 - (int) floor((amp->length-1-j)/decimationFactor + 0.5)*decimationFactor;
 
 		/* Get error term */
 		phase_ddot = (phase->data[j-2] - 2.0 * phase->data[j-1] + phase->data[j]) / (2.0 * LAL_PI);
@@ -53,6 +48,9 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 		nfilters++;
 
 		phase_dot = (-phase->data[k+2] + 8 * (phase->data[k+1] - phase->data[k-1]) + phase->data[k-2]) / 12.0; // Five-point stencil first derivative of phase
+		//fprintf(stderr, "%3.0d, %6.0d, %3.0d, %11.2f, %11.8f\n",nfilters, amp->length-1-j, decimationFactor, ((double) (amp->length-1-j))/((double) decimationFactor), phase_dot/(2.0*LAL_PI)*2048.0);
+		decimationFactor = ((int ) pow(2.0,-ceil(log(4.0*phase_dot/(2.0*LAL_PI))/log(2.0))));
+		if (decimationFactor < 1 ) decimationFactor = 1;
 
 		/* FIXME: Should think about being smarter about allocating memory for these (linked list??) */
 		*a1 = XLALResizeCOMPLEX16Vector(*a1, nfilters);
@@ -62,9 +60,9 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 		/* Record a1, b0 and delay */
 		(*a1)->data[nfilters-1] = XLALCOMPLEX16Polar((double) exp(-beta / ((double) jstep)), -phase_dot);
 		(*b0)->data[nfilters-1] = XLALCOMPLEX16Polar(amp->data[k], phase->data[k] + phase_dot * ((double) (j - k)) );
-		(*delay)->data[nfilters-1] = amp->length - j;
+		(*delay)->data[nfilters-1] = amp->length - 1 - j;
 
-		fprintf(stderr, "%d, %d, %d, %d, %d, %e, %e\n",nfilters, j, jstep, k, (*delay)->data[nfilters-1], phase_ddot, phase->data[j]);
+
 
 		/* Calculate the next data point step */
 		j -= jstep;
