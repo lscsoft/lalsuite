@@ -557,8 +557,6 @@ int main(int argc, char *argv[])
 ////////End of the Gaussian template search
 
       //Reset IHS candidates, but keep length the same (doesn't reset actual values in the vector)
-      //if (inputParams->keepOneIHS) ihsCandidates->numofcandidates = 1;
-      //else ihsCandidates->numofcandidates = 0;
       ihsCandidates->numofcandidates = 0;
       
       //Search the IHS templates further if user has not specified IHSonly flag
@@ -1958,7 +1956,6 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->noiseWeightOff = args_info.noiseWeightOff_given;
    params->calcRthreshold = args_info.calcRthreshold_given;
    params->markBadSFTs = args_info.markBadSFTs_given;
-   params->keepOneIHS = args_info.keepOneCandidate_given;
    params->FFTplanFlag = args_info.FFTplanFlag_arg;
    
    //Non-default arguments

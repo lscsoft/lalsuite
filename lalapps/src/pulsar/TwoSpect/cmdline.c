@@ -65,7 +65,6 @@ const char *gengetopt_args_info_full_help[] = {
   "      --SFToverlap=DOUBLE       SFT overlap in seconds, usually Tcoh/2  \n                                  (default=`900')",
   "      --sftType=STRING          Expected SFT from either 'MFD' \n                                  (Makefakedata_v4) or 'vladimir' (Vladimir's \n                                  SFT windowed version) which uses a factor of \n                                  2 rather than sqrt(8/3) for the window \n                                  normalization  (default=`vladimir')",
   "      --markBadSFTs             Mark bad SFTs  (default=off)",
-  "      --keepOneCandidate        Keep a single IHS candidate and let process \n                                  through the pipeline  (default=off)",
   "      --FFTplanFlag=INT         0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive  \n                                  (default=`3')",
   "      --IHSonly                 IHS stage only is run. Output statistic is the \n                                  IHS statistic.  (default=off)",
   "      --calcRthreshold          Calculate the threshold value for R given the \n                                  template false alarm rate  (default=off)",
@@ -113,12 +112,11 @@ init_help_array(void)
   gengetopt_args_info_help[31] = gengetopt_args_info_full_help[31];
   gengetopt_args_info_help[32] = gengetopt_args_info_full_help[32];
   gengetopt_args_info_help[33] = gengetopt_args_info_full_help[33];
-  gengetopt_args_info_help[34] = gengetopt_args_info_full_help[34];
-  gengetopt_args_info_help[35] = 0; 
+  gengetopt_args_info_help[34] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[36];
+const char *gengetopt_args_info_help[35];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -200,7 +198,6 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->SFToverlap_given = 0 ;
   args_info->sftType_given = 0 ;
   args_info->markBadSFTs_given = 0 ;
-  args_info->keepOneCandidate_given = 0 ;
   args_info->FFTplanFlag_given = 0 ;
   args_info->IHSonly_given = 0 ;
   args_info->calcRthreshold_given = 0 ;
@@ -264,7 +261,6 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->sftType_arg = gengetopt_strdup ("vladimir");
   args_info->sftType_orig = NULL;
   args_info->markBadSFTs_flag = 0;
-  args_info->keepOneCandidate_flag = 0;
   args_info->FFTplanFlag_arg = 3;
   args_info->FFTplanFlag_orig = NULL;
   args_info->IHSonly_flag = 0;
@@ -314,14 +310,13 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->SFToverlap_help = gengetopt_args_info_full_help[30] ;
   args_info->sftType_help = gengetopt_args_info_full_help[31] ;
   args_info->markBadSFTs_help = gengetopt_args_info_full_help[32] ;
-  args_info->keepOneCandidate_help = gengetopt_args_info_full_help[33] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[34] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[35] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[36] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[37] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[38] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[39] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[40] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[33] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[34] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[35] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[36] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[37] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[38] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[39] ;
   
 }
 
@@ -547,8 +542,6 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "sftType", args_info->sftType_orig, 0);
   if (args_info->markBadSFTs_given)
     write_into_file(outfile, "markBadSFTs", 0, 0 );
-  if (args_info->keepOneCandidate_given)
-    write_into_file(outfile, "keepOneCandidate", 0, 0 );
   if (args_info->FFTplanFlag_given)
     write_into_file(outfile, "FFTplanFlag", args_info->FFTplanFlag_orig, 0);
   if (args_info->IHSonly_given)
@@ -854,7 +847,6 @@ cmdline_parser_internal (
         { "SFToverlap",	1, NULL, 0 },
         { "sftType",	1, NULL, 0 },
         { "markBadSFTs",	0, NULL, 0 },
-        { "keepOneCandidate",	0, NULL, 0 },
         { "FFTplanFlag",	1, NULL, 0 },
         { "IHSonly",	0, NULL, 0 },
         { "calcRthreshold",	0, NULL, 0 },
@@ -1301,18 +1293,6 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->markBadSFTs_flag), 0, &(args_info->markBadSFTs_given),
                 &(local_args_info.markBadSFTs_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "markBadSFTs", '-',
-                additional_error))
-              goto failure;
-          
-          }
-          /* Keep a single IHS candidate and let process through the pipeline.  */
-          else if (strcmp (long_options[option_index].name, "keepOneCandidate") == 0)
-          {
-          
-          
-            if (update_arg((void *)&(args_info->keepOneCandidate_flag), 0, &(args_info->keepOneCandidate_given),
-                &(local_args_info.keepOneCandidate_given), optarg, 0, 0, ARG_FLAG,
-                check_ambiguity, override, 1, 0, "keepOneCandidate", '-',
                 additional_error))
               goto failure;
           
