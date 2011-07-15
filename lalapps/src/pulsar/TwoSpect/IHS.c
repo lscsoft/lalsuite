@@ -1089,6 +1089,8 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       
+      REAL8 highestval = 0.0;
+      INT4 highestvalloc = -1, jjloc = 0;
       for (jj=0; jj<(INT4)numfbins-(ii-1); jj++) {
       
          //Noise in the range of the rows, mean and rms values for IHS
@@ -1117,29 +1119,38 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                
                numberPassingBoth++;
                
-               INT4 loc = ihsmaxima->locations->data[locationinmaximastruct];
-               //Candidate frequency
-               fsig = params->fmin + (0.5*(ii-1) + jj)/params->Tcoh;
-               //Candidate modulation depth
-               B = 0.5*(ii-1)/params->Tcoh;
-               //Candidate period
-               per0 = params->Tobs/loc;
-               //Candidate h0
-               REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[locationinmaximastruct], loc, jj, ii, params, aveNoise, fbinavgs);
-               
-               if (candlist->numofcandidates == candlist->length-1) {
-                  candlist = resize_candidateVector(candlist, 2*(candlist->length));
-                  if (candlist->data==NULL) {
-                     fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
-                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-                  }
+               if (ihsmaxima->maxima->data[locationinmaximastruct] > highestval) {
+                  highestval = ihsmaxima->maxima->data[locationinmaximastruct];
+                  highestvalloc = locationinmaximastruct;
+                  jjloc = jj;
                }
-               //loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
-               loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, ffdata->tfnormalization);
-               (candlist->numofcandidates)++;
+               
             } /* if fom is below or equal to threshold fom */
          } /* if val exceeds threshold */
       } /* for jj < numfbins-(ii-1) */
+      
+      if (highestval != -1) {
+         INT4 loc = ihsmaxima->locations->data[highestvalloc];
+         //Candidate frequency
+         fsig = params->fmin + (0.5*(ii-1) + jjloc)/params->Tcoh;
+         //Candidate modulation depth
+         B = 0.5*(ii-1)/params->Tcoh;
+         //Candidate period
+         per0 = params->Tobs/loc;
+         //Candidate h0
+         REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[highestvalloc], loc, jjloc, ii, params, aveNoise, fbinavgs);
+         
+         if (candlist->numofcandidates == candlist->length-1) {
+            candlist = resize_candidateVector(candlist, 2*(candlist->length));
+            if (candlist->data==NULL) {
+               fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+               XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+            }
+         }
+         //loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
+         loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, 0.0, 0, ffdata->tfnormalization);
+         (candlist->numofcandidates)++;
+      }
       
       //Destroy
       XLALDestroyREAL4Vector(ihss);
