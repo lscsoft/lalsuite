@@ -191,7 +191,7 @@ SimInspiralTable* XLALRandomInspiralOrientation(
   return ( inj );
 }
 
-/** Generates random masses for an inspiral injection. */
+/** Places masses on a square grid for an inspiral injection. */
 SimInspiralTable* XLALSquareGridInspiralMasses(
     SimInspiralTable *inj,   /**< injection for which masses will be set*/
     REAL4  mass1Min,         /**< minimum mass for first component */
@@ -227,6 +227,23 @@ SimInspiralTable* XLALSquareGridInspiralMasses(
   return ( inj );
 }
 
+/** Set masses to fixed values for an inspiral injection. */
+SimInspiralTable* XLALFixedInspiralMasses(
+    SimInspiralTable *inj,   /**< injection for which masses will be set*/
+    REAL4  mass1Fix,         /**< fixed mass of first component */
+    REAL4  mass2Fix          /**< fixed mass of second component */
+    )
+{
+  REAL4 mTotal;
+
+  inj->mass1 = mass1Fix;
+  inj->mass2 = mass2Fix;
+  mTotal = inj->mass1 + inj->mass2 ;
+  inj->eta = inj->mass1 * inj->mass2 / ( mTotal * mTotal );
+  inj->mchirp = mTotal * pow(inj->eta, 0.6);
+  
+  return ( inj );
+}
 
 /** Generates random masses for an inspiral injection. */
 SimInspiralTable* XLALRandomInspiralMasses(

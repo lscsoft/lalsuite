@@ -60,7 +60,8 @@ typedef enum
   gaussianMassDist,
   uniformTotalMassRatio,
   logMassUniformTotalMassRatio,
-  squareGrid
+  squareGrid,
+  fixMasses
 }
 MassDistribution;
 
@@ -132,6 +133,12 @@ SimInspiralTable* XLALSquareGridInspiralMasses( SimInspiralTable *inj,
     INT4   mass2Pnt,
     INT4   injNum,
     INT4   *count
+    );
+
+SimInspiralTable* XLALFixedInspiralMasses(
+    SimInspiralTable *inj,
+    REAL4  mass1Fix,
+    REAL4  mass2Fix
     );
 
 SimInspiralTable* XLALRandomInspiralMasses( SimInspiralTable *inj,

@@ -170,6 +170,8 @@ REAL4 minKappa1=-1.0;
 REAL4 maxKappa1=1.0;
 REAL4 minabsKappa1=0.0;
 REAL4 maxabsKappa1=1.0;
+REAL4 fixedMass1=-1.0;
+REAL4 fixedMass2=-1.0;
 INT4  pntMass1=1;
 INT4  pntMass2=1;
 REAL4 deltaMass1=-1;
@@ -587,6 +589,7 @@ static void print_usage(char *program)
       "                           logTotalMassUniformMassRatio: log distribution in total mass\n"\
       "                           and uniform in total mass ratio\n"\
       "                           squareGrid: masses on a square grid\n"\
+      "                           fixMasses: fix m1 and m2 to specific values\n"\
       " [--ninja2-mass]           use the NINJA 2 mass-selection algorithm\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
       " [--nr-file] nrFile        read mass/spin parameters from xml nrFile\n"\
@@ -596,6 +599,8 @@ static void print_usage(char *program)
       " [--max-mass2] m2max       set the max component mass2 to m2max\n"\
       " [--min-mtotal] minTotal   sets the minimum total mass to minTotal\n"\
       " [--max-mtotal] maxTotal   sets the maximum total mass to maxTotal\n"\
+      " [--fixed-mass1] fixMass1  set mass1 to fixMass1\n"\
+      " [--fixed-mass2] fixMass2  set mass2 to fixMass2\n"\
       " [--mean-mass1] m1mean     set the mean value for mass1\n"\
       " [--stdev-mass1] m1std     set the standard deviation for mass1\n"\
       " [--mean-mass2] m2mean     set the mean value for mass2\n"\
@@ -1300,6 +1305,8 @@ int main( int argc, char *argv[] )
     {"max-mass2",               required_argument, 0,                'K'},
     {"min-mtotal",              required_argument, 0,                'A'},
     {"max-mtotal",              required_argument, 0,                'L'},
+    {"fixed-mass1",             required_argument, 0,                ']'},
+    {"fixed-mass2",             required_argument, 0,                '['},
     {"mean-mass1",              required_argument, 0,                'n'},
     {"mean-mass2",              required_argument, 0,                'N'},
     {"ninja2-mass",             no_argument,       &ninjaMass,         1},
@@ -1655,6 +1662,10 @@ int main( int argc, char *argv[] )
         {
           mDistr=squareGrid;
         }
+        else if (!strcmp(dummy, "fixMasses"))
+        {
+          mDistr=fixMasses;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1762,6 +1773,20 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "int", "%d", pntMass2 );
+        break;
+      
+      case ']':
+        fixedMass1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%d", fixedMass1 );
+        break;
+      
+      case '[':
+        fixedMass2 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%d", fixedMass2 );
         break;
 
       case 'p':
@@ -2502,6 +2527,14 @@ int main( int argc, char *argv[] )
     }
   }
 
+  /* check if fixed-mass1 and fixed-mass2 are specified */
+  if ( mDistr==fixMasses && ( fixedMass1<0.0 || fixedMass2<0.0 ) )
+  {
+    fprintf( stderr, "--fixed-mass1 and --fixed-mass2 must be specified "
+        "and >= 0 if --m-distr=fixMasses\n" );
+    exit( 1 );
+  }
+
   /* check if waveform is specified */
   if ( !*waveform )
   {
@@ -2728,10 +2761,13 @@ int main( int argc, char *argv[] )
     }
     else if ( mDistr==squareGrid )
     {
-      fprintf(stderr,"hai scelto squareGrid!\n");
       simTable=XLALSquareGridInspiralMasses( simTable, minMass1, minMass2,
           minMtotal, maxMtotal, deltaMass1, deltaMass2, pntMass1, pntMass2, 
           ninj, &ncount);
+    }
+    else if ( mDistr==fixMasses )
+    {
+      simTable=XLALFixedInspiralMasses( simTable, fixedMass1, fixedMass2);
     }
     else {
       simTable=XLALRandomInspiralMasses( simTable, randParams, mDistr,
