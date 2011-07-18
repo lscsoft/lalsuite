@@ -2455,12 +2455,12 @@ int main( int argc, char *argv[] )
   }
 
   /* check if the mass area is properly specified */
-  if ( mDistr!=gaussianMassDist && (minMass1 <=0.0 || minMass2 <=0.0 ||
-         maxMass1 <=0.0 || maxMass2 <=0.0) )
+  if ( (mDistr!=gaussianMassDist || mDistr!=fixMasses) && 
+      (minMass1 <=0.0 || minMass2 <=0.0 || maxMass1 <=0.0 || maxMass2 <=0.0) )
   {
     fprintf( stderr,
         "Must specify --min-mass1/2 and --max-mass1/2 if choosing"
-        " --m-distr not gaussian\n" );
+        " --m-distr not gaussian or fixMasses\n" );
     exit( 1 );
   }
 
