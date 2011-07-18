@@ -346,7 +346,7 @@ SimInspiralTable* XLALRandomInspiralTotalMassFraction(
   if ( mDist==uniformTotalMassFraction)
   {
     mtotal = minTotalMass + (XLALUniformDeviate(randParams) * (maxTotalMass - minTotalMass));
-    minfraction = 1 / (1 + 1 / minMassRatio); 
+    minfraction = 1 / (1 + 1 / minMassRatio);
     maxfraction = 1 / (1 + 1 / maxMassRatio);
     fraction = minfraction + (XLALUniformDeviate(randParams) * (maxfraction - minfraction));
   }
@@ -401,7 +401,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
   cosinc   = cos( inc );
   sininc   = sin( inc );
   kappa    = -2.0;
-  
+
   /* spin1Mag */
   spin1Mag =  spin1Min + XLALUniformDeviate( randParams ) *
     (spin1Max - spin1Min);
@@ -429,12 +429,12 @@ SimInspiralTable* XLALRandomInspiralSpins(
 	  zmax = spin1Mag * ( cosinc * kappa + sininc * sintheta );
 	  inj->spin1z = zmin + XLALUniformDeviate( randParams ) * (zmax - zmin);
   }
-  else if (aligned) 
+  else if (aligned)
   {
 	  inj->spin1z = spin1Mag * cosinc;
   }
-  else 
-  { 
+  else
+  {
 	  inj->spin1z = (XLALUniformDeviate( randParams ) - 0.5) * 2 * (spin1Mag);
   }
 
@@ -465,7 +465,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
 
   /* aligned case */
 
-  if (aligned) 
+  if (aligned)
   {
 	  inj->spin2z = spin2Mag * cosinc;
 	  inj->spin2x = spin2Mag * sininc;

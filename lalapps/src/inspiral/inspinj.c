@@ -1643,7 +1643,7 @@ int main( int argc, char *argv[] )
           mDistr=uniformTotalMassRatio;
         }
         else if (!strcmp(dummy, "logTotalMassUniformMassRatio"))
-        {  
+        {
           mDistr=logMassUniformTotalMassRatio;
         }
         else if (!strcmp(dummy, "totalMassFraction"))
@@ -2694,10 +2694,10 @@ int main( int argc, char *argv[] )
     }
     else if ( mDistr==uniformTotalMassFraction )
     {
-      simTable=XLALRandomInspiralTotalMassFraction(simTable, randParams, 
+      simTable=XLALRandomInspiralTotalMassFraction(simTable, randParams,
           mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
     }
-    
+
     else {
       simTable=XLALRandomInspiralMasses( simTable, randParams, mDistr,
           minMass1, maxMass1,
