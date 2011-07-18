@@ -43,7 +43,7 @@ extern "C" {
 
 #include <lal/LALInference.h>
 
-xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables **varsArray, UINT4 N);
+xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *varsArray, UINT4 N);
 
 xmlNodePtr XLALInferenceVariables2VOTNode(const LALInferenceVariables *const vars, const char *name);
 

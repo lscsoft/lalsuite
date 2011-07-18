@@ -67,7 +67,7 @@
 
 
 
-xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables **varsArray, UINT4 N)
+xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *varsArray, UINT4 N)
 {
   xmlNodePtr fieldNodeList=NULL;
   xmlNodePtr paramNodeList=NULL;
@@ -92,7 +92,7 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables **va
 	
 	field_ptr=fieldNodeList;
 	param_ptr=paramNodeList;
-	varitem=varsArray[0]->head;
+	varitem=varsArray[0].head;
 	
   /* Build a list of PARAM and FIELD elements */
   while(varitem)
@@ -129,12 +129,12 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables **va
     const xmlChar *name=field_ptr->name;
     char parname[VARNAME_MAX];
     sprintf(parname,"%s",name);
-    UINT4 typesize=LALInferenceTypeSize[LALInferenceGetVariableType(varsArray[0],parname)];
+    UINT4 typesize=LALInferenceTypeSize[LALInferenceGetVariableType(&varsArray[0],parname)];
     valuearrays[j]=calloc(N,typesize);
     dataTypes[j]=field_ptr->type;
     for(i=0;i<N;i++)
     {
-      memcpy((char *)valuearrays[j]+i*typesize,LALInferenceGetVariable(varsArray[i],parname),typesize);    
+      memcpy((char *)valuearrays[j]+i*typesize,LALInferenceGetVariable(&varsArray[i],parname),typesize);    
     }
   }
   UINT4 row,col;
