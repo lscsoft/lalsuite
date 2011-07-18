@@ -54,7 +54,7 @@ size_t LALInferenceTypeSize[] = {sizeof(INT4),
 static char *colNameToParamName(const char *colName);
 
 
-LALInferenceVariableItem *LALInferenceGetItem(LALInferenceVariables *vars,const char *name)
+LALInferenceVariableItem *LALInferenceGetItem(const LALInferenceVariables *vars,const char *name)
 /* (this function is only to be used internally) */
 /* Returns pointer to item for given item name.  */
 {
@@ -94,7 +94,7 @@ LALInferenceParamVaryType LALInferenceGetVariableVaryType(LALInferenceVariables 
 }
 
 
-void *LALInferenceGetVariable(LALInferenceVariables * vars,const char * name)
+void *LALInferenceGetVariable(const LALInferenceVariables * vars,const char * name)
 /* Return the value of variable name from the vars structure by walking the list */
 {
   LALInferenceVariableItem *item;
@@ -130,7 +130,7 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
 }
 
 
-LALInferenceVariableType LALInferenceGetVariableType(LALInferenceVariables *vars, const char *name)
+LALInferenceVariableType LALInferenceGetVariableType(const LALInferenceVariables *vars, const char *name)
 {
 	return LALInferenceGetItem(vars,name)->type;
 }

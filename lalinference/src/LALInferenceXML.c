@@ -71,16 +71,15 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables **va
 {
   xmlNodePtr fieldNodeList=NULL;
   xmlNodePtr paramNodeList=NULL;
-  xmlNodePtr dataContentNode=NULL;
   xmlNodePtr xmlTABLEDATAnode=NULL;
   xmlNodePtr VOTtableNode=NULL;
   xmlNodePtr tmpNode=NULL;
-  xmlNodePtr field_ptr,param_ptr,data_ptr;
+  xmlNodePtr field_ptr,param_ptr;
   LALInferenceVariableItem *varitem=NULL;
-  void *valuearray=NULL;
   void **valuearrays=NULL;
-  UINT4 Nfields=0,i,j,field;
+  UINT4 Nfields=0,i,j;
   const char *fn = __func__;
+  char *tablename=NULL;
   int err;
 
   
@@ -123,18 +122,21 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables **va
 	}
 
   valuearrays=calloc(Nfields,sizeof(void *));
+  VOTABLE_DATATYPE *dataTypes=calloc(Nfields,sizeof(VOTABLE_DATATYPE));
   /* Build array of DATA */
   for(field_ptr=fieldNodeList,j=0;field_ptr!=NULL;field_ptr=field_ptr->next,j++)
   {
-    const char *name=field_ptr->name;
-    UINT4 typesize=LALInferenceTypeSize[LALInferenceGetVariableType(varsArray[0],name)];
+    const xmlChar *name=field_ptr->name;
+    char parname[VARNAME_MAX];
+    sprintf(parname,"%s",name);
+    UINT4 typesize=LALInferenceTypeSize[LALInferenceGetVariableType(varsArray[0],parname)];
     valuearrays[j]=calloc(N,typesize);
+    dataTypes[j]=field_ptr->type;
     for(i=0;i<N;i++)
     {
-      memcpy(&(valuearrays[j][i]),LALInferenceGetVariable(varsArray[i],name),typesize);    
+      memcpy((char *)valuearrays[j]+i*typesize,LALInferenceGetVariable(varsArray[i],parname),typesize);    
     }
   }
-  va_list ap=NULL;
   UINT4 row,col;
   
      /* create TABLEDATA node */
@@ -161,7 +163,7 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables **va
         }
 
         /* ----- loop over columns and generate each table element */
-        for ( col = 0; col < nFields; col ++ )
+        for ( col = 0; col < Nfields; col ++ )
           {
             /* create TD node */
             xmlNodePtr xmlThisEntryNode = NULL;
@@ -199,15 +201,15 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables **va
 
       } /* for row < numRows */
 
-  }
+  
   
   /* Create a TABLE from the FIELDs and TABLEDATA nodes */
-  
+  sprintf(tablename,"LALInferenceXMLTable");
   VOTtableNode= XLALCreateVOTTableNode (tablename, fieldNodeList, xmlTABLEDATAnode );
   
   /* Attach PARAMs to TABLE node */
-  if(paramNodeList!=xmlAddChildNodeList(VOTtableNode,paramNodeList)){
-    XLALPrintError("%s: xmlAddChildNodeList failed\n",fn);
+  if(!xmlAddChildList(VOTtableNode,paramNodeList)){
+    XLALPrintError("%s: xmlAddChildList failed\n",fn);
     err=XLAL_EFAILED;
     goto failed;
   }
@@ -301,7 +303,7 @@ xmlNodePtr LALInferenceVariableItem2VOTFieldNode(LALInferenceVariableItem *varit
 	
 	/* Special case for string */
 	if(varitem->type==LALINFERENCE_string_t)
-		return(XLALCreateVOTFieldNode(varitem->name,unitName,VOT_CHAR,"*");
+		return(XLALCreateVOTFieldNode(varitem->name,unitName,VOT_CHAR,"*"));
 	
   /* Check the type of the item */
   vo_type=LALInferenceVariableType2VOT(varitem->type);
@@ -321,7 +323,7 @@ xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varit
 
 	/* Special case for string */
 	if(varitem->type==LALINFERENCE_string_t)
-		return(XLALCreateVOTParamNode(varitem->name,unitName,VOT_CHAR,"*",varitem->value);
+		return(XLALCreateVOTParamNode(varitem->name,unitName,VOT_CHAR,"*",varitem->value));
 	
   /* Check the type of the item */
   vo_type=LALInferenceVariableType2VOT(varitem->type);

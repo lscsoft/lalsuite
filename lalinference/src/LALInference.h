@@ -158,7 +158,7 @@ void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr);
 
 
 /** Return a pointer to the variable asked for */
-void *LALInferenceGetVariable(LALInferenceVariables * vars, const char * name);
+void *LALInferenceGetVariable(const LALInferenceVariables * vars, const char * name);
 /** Get number of dimensions in this variable */
 INT4 LALInferenceGetVariableDimension(LALInferenceVariables *vars);
 /** Get number of dimensions which are not fixed to a certain value */
@@ -169,7 +169,7 @@ LALInferenceVariableType LALInferenceGetVariableTypeByIndex(LALInferenceVariable
 
 
 /** Get the type of the variable, returns LALInferenceVariableType (see above) */
-LALInferenceVariableType LALInferenceGetVariableType(LALInferenceVariables *vars, const char *name);
+LALInferenceVariableType LALInferenceGetVariableType(const LALInferenceVariables *vars, const char *name);
 
 /** Get the LALInferenceParamVaryType of the variable, see types above */
 LALInferenceParamVaryType LALInferenceGetVariableVaryType(LALInferenceVariables *vars, const char *name);
@@ -334,7 +334,7 @@ void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);
 void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata);
 
 /** Return the list node for "name" - do not rely on this */
-LALInferenceVariableItem *LALInferenceGetItem(LALInferenceVariables *vars,const char *name);
+LALInferenceVariableItem *LALInferenceGetItem(const LALInferenceVariables *vars,const char *name);
 /** Return the list node for the idx-th item - do not rely on this */
 LALInferenceVariableItem *LALInferenceGetItemNr(LALInferenceVariables *vars, int idx);
 
