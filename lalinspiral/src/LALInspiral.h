@@ -1715,6 +1715,7 @@ int XLALInspiralGenerateIIRSet(
 	double                  epsilon,
 	double                  alpha,
 	double                  beta,
+	double                  padding,
 	COMPLEX16Vector     **a1,
 	COMPLEX16Vector     **b0,
 	INT4Vector          **delay
