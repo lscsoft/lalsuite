@@ -338,7 +338,7 @@ SimInspiralTable* XLALGaussianInspiralMasses(
   return ( inj );
 }
 
-/* generate masses for an inspiral injection. Total mass and mass ratio
+/** Generates masses for an inspiral injection. Total mass and mass ratio
  * are uniformly distributed */
 SimInspiralTable* XLALRandomInspiralTotalMassRatio(
     SimInspiralTable *inj,   /**< injection for which masses will be set */
@@ -378,7 +378,7 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio(
   return ( inj );
 }
 
-/* generate masses for an inspiral injection. Total mass and mass fraction
+/** Generates masses for an inspiral injection. Total mass and mass fraction
  * m1 / M are uniformly distributed */
 SimInspiralTable* XLALRandomInspiralTotalMassFraction(
     SimInspiralTable *inj,   /**< injection for which masses will be set */
@@ -415,10 +415,18 @@ SimInspiralTable* XLALRandomInspiralTotalMassFraction(
   return ( inj );
 }
 
-/** Generates spins for an inspiral injection.  Spin magnitudes lie between the
- * specified max and min values.  Orientation for spin1 can be constrained by
- * the specified values of kappa1, otherwise are random. Orientation for spin2
- * are random
+/** Generates spins for an inspiral injection.
+ * Spin magnitudes lie between the specified max and min values.
+ *
+ * The parameter alignInj controls whether spins are aligned with the orbital
+ * angular momentum according to two separate coordinate conventions (along z-axis
+ * as for IMRPhenom, or in x-z plane as for SpinTaylor).
+ *
+ * For single-spin-like systems as treated in the 'PTF' paper (Pan, Buonanno, Chen and 
+ * Vallisneri, gr-qc/03100034) the component of spin1 along the direction of orbital
+ * angular momentum (where m1>m2) is specified by the kappa1 bounds. 
+ *
+ * Otherwise, orientations for spin1 and spin2 are random.
  */
 SimInspiralTable* XLALRandomInspiralSpins(
     SimInspiralTable *inj,   /**< injection for which spins will be set*/
@@ -427,11 +435,11 @@ SimInspiralTable* XLALRandomInspiralSpins(
     REAL4  spin1Max,         /**< maximum magnitude of spin1 */
     REAL4  spin2Min,         /**< minimum magnitude of spin2 */
     REAL4  spin2Max,          /**< maximum magnitude of spin2 */
-    REAL4  kappa1Min,		/**< FIXME: !TO BE DOCUMENTED! */
-    REAL4  kappa1Max,		/**< FIXME: !TO BE DOCUMENTED! */
-    REAL4  abskappa1Min,	/**< FIXME: !TO BE DOCUMENTED! */
-    REAL4  abskappa1Max,	/**< FIXME: !TO BE DOCUMENTED! */
-    AlignmentType alignInj	/** type of spin alignment */
+    REAL4  kappa1Min,		/**< minimum value of spin1 . L_N */
+    REAL4  kappa1Max,		/**< maximum value of spin1 . L_N */
+    REAL4  abskappa1Min,	/**< minimum absolute value of spin1 . L_N */
+    REAL4  abskappa1Max,	/**< maximum absolute value of spin1 . L_N */
+    AlignmentType alignInj	/**< choice of convention for aligned spins */
     )
 {
   REAL4 spin1Mag;
@@ -572,7 +580,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
 SimInspiralTable* XLALRandomNRInjectTotalMass(
     SimInspiralTable *inj,   /**< injection for which masses will be set*/
     RandomParams *randParams,/**< random parameter details*/
-    REAL4  minTotalMass,     /**< minimum total mass of binaty */
+    REAL4  minTotalMass,     /**< minimum total mass of binary */
     REAL4  maxTotalMass,     /**< maximum total mass of binary */
     SimInspiralTable *nrInjParams   /**< parameters of NR injection*/
     )
