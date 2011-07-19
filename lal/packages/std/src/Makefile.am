@@ -23,7 +23,6 @@ EXTRA_TEXSOURCES = LALPrimer.c
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
-MAINTAINERCLEANFILES = Grid.c
 
 dvi-local: .dvi-dep
 
