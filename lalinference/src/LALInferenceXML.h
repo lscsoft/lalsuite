@@ -49,6 +49,8 @@ xmlNodePtr XLALInferenceVariables2VOTNode(const LALInferenceVariables *const var
 
 INT4 XLALVOTDoc2LALInferenceVariablesByName(const xmlDocPtr xmlDocument, const char *name, LALInferenceVariables *bop);
 
+xmlNodePtr LALInferenceVariables2VOTParamNodes(LALInferenceVariables *vars);
+
 xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varitem);
 
 VOTABLE_DATATYPE LALInferenceVariableType2VOT(const LALInferenceVariableType litype);

@@ -130,7 +130,6 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 		}
 		varitem=varitem->next;
 	}
-	printf("Finished walking through param list\n");
   valuearrays=calloc(Nfields,sizeof(void *));
   VOTABLE_DATATYPE *dataTypes=calloc(Nfields,sizeof(VOTABLE_DATATYPE));
   /* Build array of DATA for fields */
@@ -154,14 +153,12 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 	}
 
   UINT4 row,col;
-  printf("creating TABLEDATA node\n");
      /* create TABLEDATA node */
     if ( ( xmlTABLEDATAnode = xmlNewNode ( NULL, CAST_CONST_XMLCHAR("TABLEDATA") ))== NULL ) {
       XLALPrintError ("%s: xmlNewNode() failed to create 'TABLEDATA' node.\n", fn );
       err = XLAL_ENOMEM;
       goto failed;
     }
-	printf("TABLEDATA = %lx\n",(unsigned long int)xmlTABLEDATAnode);
     /* ---------- loop over data-arrays and generate each table-row */
     for ( row = 0; row < N; row ++ )
       {
@@ -195,7 +192,6 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
             }
 
             const char* tmptxt;
-						printf("Creating node for datatype %i, value %lf\n",dataTypes[col],((double *)valuearrays[col])[0]);
             if ( (tmptxt = XLALVOTprintfFromArray ( dataTypes[col], NULL, valuearrays[col], row )) == NULL ){
               XLALPrintError ("%s: XLALVOTprintfFromArray() failed for row = %d, col = %d. errno = %d.\n", fn, row, col, xlalErrno );
               err = XLAL_EFUNC;
@@ -218,16 +214,11 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 
       } /* for row < numRows */
 
-  printf("Done creating TABLEDATA tree\n");
   
   /* Create a TABLE from the FIELDs and TABLEDATA nodes */
   sprintf(tablename,"LALInferenceXMLTable");
-	printf("Creating table node\n");
-	printf("fieldNodeList = %lx\n",(long unsigned int)fieldNodeList);
-	printf("xmlTABLEDATAnode = %lx\n",(long unsigned int)xmlTABLEDATAnode);
 
   VOTtableNode= XLALCreateVOTTableNode (tablename, fieldNodeList, xmlTABLEDATAnode );
-  printf("VOTTableNode = %lx\n",(long unsigned int)VOTtableNode);
   /* Attach PARAMs to TABLE node */
   if(!(xmlAddChildList(VOTtableNode,paramNodeList))){
     XLALPrintError("%s: xmlAddChild failed\n",fn);
@@ -248,7 +239,7 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
  * \brief Serializes a \c LALInferenceVariables structure into a VOTable XML %node
  *
  * This function takes a \c LALInferenceVariables structure and serializes it into a VOTable
- * \c RESOURCE %node identified by the given name. The returned \c xmlNode can then be
+ * \c PARAM %node identified by the given name. The returned \c xmlNode can then be
  * embedded into an existing %node hierarchy or turned into a full VOTable document.
  *
  * \param vars [in] Pointer to the \c LALInferenceVariables structure to be serialized
@@ -280,10 +271,10 @@ xmlNodePtr XLALInferenceVariables2VOTNode (const LALInferenceVariables *const va
   while(marker){
     *xmlChildNodePtr = (LALInferenceVariableItem2VOTParamNode(marker));
         if(!*xmlChildNodePtr) {
-        /* clean up */
-        xmlFreeNodeList(xmlChildNodeList);
-        XLALPrintError("Couldn't create PARAM node: %s.%s\n", name,marker->name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+					/* clean up */
+					xmlFreeNodeList(xmlChildNodeList);
+					XLALPrintError("Couldn't create PARAM node: %s.%s\n", name,marker->name);
+					XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
     marker=marker->next;
     xmlChildNodePtr = &((*xmlChildNodePtr)->next);
@@ -295,7 +286,7 @@ xmlNodePtr XLALInferenceVariables2VOTNode (const LALInferenceVariables *const va
  * \brief Serializes a \c LALInferenceVariableItem structure into a VOTable XML %node
  *
  * This function takes a \c LALInferenceVariableItem structure and serializes it into a VOTable
- * \c RESOURCE %node identified by the given name. The returned \c xmlNode can then be
+ * \c FIELD %node identified by the given name. The returned \c xmlNode can then be
  * embedded into an existing %node hierarchy or turned into a full VOTable document.
  *
  * \param varitem [in] Pointer to the \c LALInferenceVariables structure to be serialized

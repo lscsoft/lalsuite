@@ -93,6 +93,9 @@ int testLALInferenceVariables(void){
     }
     printf ("ok.\n");
     
+		FILE *outDoc=fopen("test_vot.xml","w");
+	fprintf(outDoc,"%s",xmlString);
+	fclose(outDoc);
     
     xmlFreeDoc(xmlDocument);
     xmlFreeNode ( xmlTable );
