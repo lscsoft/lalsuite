@@ -79,7 +79,7 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
   void **valuearrays=NULL;
   UINT4 Nfields=0,i,j;
   const char *fn = __func__;
-  char *tablename=NULL;
+  char tablename[512]="\0";
   int err;
 
   
@@ -103,14 +103,24 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 			case LALINFERENCE_PARAM_OUTPUT:
 			{
 				tmpNode=LALInferenceVariableItem2VOTFieldNode(varitem);
-				field_ptr=xmlAddNextSibling(field_ptr,tmpNode);
+				if(field_ptr) field_ptr=xmlAddNextSibling(field_ptr,tmpNode);
+				else {field_ptr=tmpNode; fieldNodeList=field_ptr;}
+				if(!field_ptr) {
+					XLALPrintError ("%s: xmlAddNextSibling() failed to add next field node.\n", fn );
+					XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+				}
 				Nfields++;
 				break;
 			}
 			case LALINFERENCE_PARAM_FIXED:
 			{
 				tmpNode=LALInferenceVariableItem2VOTParamNode(varitem);
-				param_ptr=xmlAddNextSibling(param_ptr,tmpNode);
+				if(param_ptr) param_ptr=xmlAddNextSibling(param_ptr,tmpNode);
+				else {param_ptr=tmpNode; paramNodeList=param_ptr;}
+				if(!param_ptr) {
+					XLALPrintError ("%s: xmlAddNextSibling() failed to add next param node.\n", fn );
+					XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+				}
 				break;
 			}
 			default: 
@@ -120,32 +130,38 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 		}
 		varitem=varitem->next;
 	}
-
+	printf("Finished walking through param list\n");
   valuearrays=calloc(Nfields,sizeof(void *));
   VOTABLE_DATATYPE *dataTypes=calloc(Nfields,sizeof(VOTABLE_DATATYPE));
-  /* Build array of DATA */
-  for(field_ptr=fieldNodeList,j=0;field_ptr!=NULL;field_ptr=field_ptr->next,j++)
-  {
-    const xmlChar *name=field_ptr->name;
-    char parname[VARNAME_MAX];
-    sprintf(parname,"%s",name);
-    UINT4 typesize=LALInferenceTypeSize[LALInferenceGetVariableType(&varsArray[0],parname)];
-    valuearrays[j]=calloc(N,typesize);
-    dataTypes[j]=field_ptr->type;
-    for(i=0;i<N;i++)
-    {
-      memcpy((char *)valuearrays[j]+i*typesize,LALInferenceGetVariable(&varsArray[i],parname),typesize);    
-    }
-  }
+  /* Build array of DATA for fields */
+	for(j=0,varitem=varsArray[0].head; varitem; varitem=varitem->next)
+	{
+		switch(varitem->vary){
+			case LALINFERENCE_PARAM_LINEAR:
+			case LALINFERENCE_PARAM_CIRCULAR:
+			case LALINFERENCE_PARAM_OUTPUT:
+			{
+				UINT4 typesize = LALInferenceTypeSize[LALInferenceGetVariableType(&varsArray[0],varitem->name)];
+				valuearrays[j]=calloc(N,typesize);
+				dataTypes[j]=LALInferenceVariableType2VOT(varitem->type);
+				for(i=0;i<N;i++)
+					memcpy((char *)valuearrays[j]+i*typesize,LALInferenceGetVariable(&varsArray[i],varitem->name),typesize);
+				j++;
+			}	
+			default:
+				continue;
+		}
+	}
+
   UINT4 row,col;
-  
+  printf("creating TABLEDATA node\n");
      /* create TABLEDATA node */
     if ( ( xmlTABLEDATAnode = xmlNewNode ( NULL, CAST_CONST_XMLCHAR("TABLEDATA") ))== NULL ) {
       XLALPrintError ("%s: xmlNewNode() failed to create 'TABLEDATA' node.\n", fn );
       err = XLAL_ENOMEM;
       goto failed;
     }
-
+	printf("TABLEDATA = %lx\n",(unsigned long int)xmlTABLEDATAnode);
     /* ---------- loop over data-arrays and generate each table-row */
     for ( row = 0; row < N; row ++ )
       {
@@ -179,6 +195,7 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
             }
 
             const char* tmptxt;
+						printf("Creating node for datatype %i, value %lf\n",dataTypes[col],((double *)valuearrays[col])[0]);
             if ( (tmptxt = XLALVOTprintfFromArray ( dataTypes[col], NULL, valuearrays[col], row )) == NULL ){
               XLALPrintError ("%s: XLALVOTprintfFromArray() failed for row = %d, col = %d. errno = %d.\n", fn, row, col, xlalErrno );
               err = XLAL_EFUNC;
@@ -201,15 +218,19 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 
       } /* for row < numRows */
 
-  
+  printf("Done creating TABLEDATA tree\n");
   
   /* Create a TABLE from the FIELDs and TABLEDATA nodes */
   sprintf(tablename,"LALInferenceXMLTable");
+	printf("Creating table node\n");
+	printf("fieldNodeList = %lx\n",(long unsigned int)fieldNodeList);
+	printf("xmlTABLEDATAnode = %lx\n",(long unsigned int)xmlTABLEDATAnode);
+
   VOTtableNode= XLALCreateVOTTableNode (tablename, fieldNodeList, xmlTABLEDATAnode );
-  
+  printf("VOTTableNode = %lx\n",(long unsigned int)VOTtableNode);
   /* Attach PARAMs to TABLE node */
-  if(!xmlAddChildList(VOTtableNode,paramNodeList)){
-    XLALPrintError("%s: xmlAddChildList failed\n",fn);
+  if(!(xmlAddChildList(VOTtableNode,paramNodeList))){
+    XLALPrintError("%s: xmlAddChild failed\n",fn);
     err=XLAL_EFAILED;
     goto failed;
   }

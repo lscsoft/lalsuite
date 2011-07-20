@@ -3,7 +3,6 @@
 #include <lal/LALXML.h>
 #include <lal/LALXMLVOTableCommon.h>
 #include <lal/LALXMLVOTableSerializers.h>
-
 #include <string.h>
 
 #include <libxml/parser.h>
@@ -20,15 +19,20 @@ int testLALInferenceVariables(void){
   xmlDocPtr xmlDocument = NULL;
   var.dimension=0;
   var.head=NULL;
-  REAL8 r8test=42.0;
-  xmlNodePtr xmlFragment;
+  REAL8 r8test=42.8,r8test2=101.0;
+  INT4 i4test=12;
+	xmlNodePtr xmlFragment;
   xmlNodePtr xmlTable;
   
   LALInferenceAddVariable(&var, "real8 test", (void *)&r8test, 
 	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(&var, "param test", (void *)&r8test,
 	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  
+	LALInferenceAddVariable(&var, "field test 2",(void *)&r8test2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_CIRCULAR);
+	LALInferenceAddVariable(&var, "int test",(void *)&i4test,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+	LALInferenceAddVariable(&var, "int field test",(void *)&i4test,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+
+	
   printf("Initial LALInferenceVariables:\n");
   LALInferencePrintVariables(&var);
   printf( "--> Serializing into XML string ... ");
@@ -57,12 +61,21 @@ int testLALInferenceVariables(void){
     XLALFree ( xmlString );
     
     /* Convert array of variables into table */
+    printf( "--> Serializing array of variables into XML Table ... ");
+
     vars=calloc(3,sizeof(LALInferenceVariables));
-    for(int i=0;i<3;i++)
+    int i;
+    for(i=0;i<3;i++)
+    {
+      printf("Copying %i\n",i);
       LALInferenceCopyVariables(&var,&(vars[i]));
-    
+    }
+    printf("Creating XML Table...\n");
       xmlTable=XLALInferenceVariablesArray2VOTTable(vars, 3);
-      if( (xmlString = XLALCreateVOTStringFromTree ( xmlTable )) == NULL ) {
+      printf("Created XML Table, tree = %lx ...\n",(long unsigned int)xmlTable);
+      xmlString = XLALCreateVOTStringFromTree ( xmlTable );
+      printf("Created XML String %s\n",xmlString);
+      if(xmlString == NULL ) {
       XLALPrintError ("%s: XLALCreateVOTStringFromTree() failed.\n", __func__);
       return 1;
     }
@@ -90,5 +103,6 @@ int testLALInferenceVariables(void){
 
 int main(void)
 {
+  lalDebugLevel=5;
   return(testLALInferenceVariables());
 }
