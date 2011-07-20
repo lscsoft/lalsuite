@@ -44,7 +44,7 @@
 /* double logadd(double a,double b); */
 
 /* Append sample to an array maintained elsewhere */
-void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
+void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);
 
 /** NestedSamplingAlgorithm implements the nested sampling algorithm,
  see e.g. Sivia "Data Analysis: A Bayesian Tutorial, 2nd edition */
@@ -112,6 +112,7 @@ XLALMultiStudentDeviates(REAL4Vector  *vector,
 /* Check that the gsl_matrix is positive definite. dim = number of dimensions */
 UINT4 LALInferenceCheckPositiveDefinite(gsl_matrix *matrix, UINT4 dim);
 void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState);
+
 
 #endif
 
