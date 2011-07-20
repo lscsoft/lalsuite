@@ -498,9 +498,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		LALInferenceSetVariable(runState->proposalArgs, "temperature", &(tempLadder[MPIrank]));  //update temperature of the chain
 		LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
 		//LALInferenceSetVariable(runState->proposalArgs, "tempIndex", &(tempIndex));
+    if (adaptationOn == 1 && i == 1000001) {
+        adaptationOn = 0;  //turn adaptation off after 10^6 iterations
+    }
     if (adaptationOn == 1) {
       //s_gamma=10.0*exp(-(1.0/6.0)*log((double)i));
-      s_gamma=10.0*exp(-(1.0/6.0)*log((double)i));
+      s_gamma=10.0*exp(-(1.0/6.0)*log((double)i))-1;
       LALInferenceSetVariable(runState->proposalArgs, "s_gamma", &(s_gamma));
     }
 
@@ -555,26 +558,28 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
                   fprintf(chainoutput,"\n");
                   fflush(chainoutput);
 
-                  if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose") || LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")) {
-                    if(MPIrank == 0){
-          
-                      fseek(stat, 0L, SEEK_END);
-                      fprintf(stat,"%d\t",i);
-                      
-                      //printf("MPIrank=%d\tT=%f\ts_gamma=%f\t",MPIrank,*(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature"),s_gamma);
-                      if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")){
-                        fprintf(stat,"%f\t",s_gamma);
-                        for (p=0; p<nPar; ++p) {
-                          fprintf(stat,"%f\t",sigmas->data[p]);
+                  if (adaptationOn == 1) {
+                    if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose") || LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")) {
+                      if(MPIrank == 0){
+            
+                        fseek(stat, 0L, SEEK_END);
+                        fprintf(stat,"%d\t",i);
+                        
+                        //printf("MPIrank=%d\tT=%f\ts_gamma=%f\t",MPIrank,*(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature"),s_gamma);
+                        if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")){
+                          fprintf(stat,"%f\t",s_gamma);
+                          for (p=0; p<nPar; ++p) {
+                            fprintf(stat,"%f\t",sigmas->data[p]);
+                          }
                         }
-                      }
-                      if(LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")){
-                        for (p=0; p<nPar; ++p) {
-                          fprintf(stat,"%f\t",PacceptCount->data[p]/( PproposeCount->data[p]==0 ? 1.0 : PproposeCount->data[p] ));
+                        if(LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")){
+                          for (p=0; p<nPar; ++p) {
+                            fprintf(stat,"%f\t",PacceptCount->data[p]/( PproposeCount->data[p]==0 ? 1.0 : PproposeCount->data[p] ));
+                          }
                         }
+                        fprintf(stat,"\n");
+                        fflush(stat);
                       }
-                      fprintf(stat,"\n");
-                      fflush(stat);
                     }
                   }
                 }
