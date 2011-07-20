@@ -239,6 +239,9 @@ typedef void (LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState
 /** Type declaration for an algorithm function; will distinguish MCMC from NestedSampling, etc */
 typedef void (LALInferenceAlgorithm) (struct tagLALInferenceRunState *runState);
 
+/** Type declaration for output logging function, can be user-declared */
+typedef void (LALInferenceLogOutput) (struct tagLALInferenceRunState *runState, LALInferenceVariables *vars);
+
 /** Structure containing inference run state
  * This includes pointers to the function types required to run
  * the algorithm, and data structures as required */
@@ -252,6 +255,7 @@ tagLALInferenceRunState
   LALInferenceLikelihoodFunction     *likelihood; /** The likelihood function */
   LALInferenceProposalFunction       *proposal; /** The proposal function */
   LALInferenceTemplateFunction       *template; /** The template generation function */
+	LALInferenceLogOutput							 *logsample; /** Log sample, i.e. to disk */
   struct tagLALInferenceIFOData      *data; /** The data from the interferometers */
   LALInferenceVariables              *currentParams, /** The current parameters */
     *priorArgs,                                      /** Any special arguments for the prior function */

@@ -43,6 +43,9 @@
 /* logadd(a,b) = log(exp(a) + exp(b)) using Stirling's approximation */
 /* double logadd(double a,double b); */
 
+/* Append sample to an array maintained elsewhere */
+void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
+
 /** NestedSamplingAlgorithm implements the nested sampling algorithm,
  see e.g. Sivia "Data Analysis: A Bayesian Tutorial, 2nd edition */
 void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState);

@@ -12,6 +12,8 @@
 
 #include <lal/LALStdlib.h>
 
+#include <lal/LALInferenceXML.h>
+
 RCSID("$Id$");
 #define PROGRAM_NAME "LALInferenceNestedSampler.c"
 #define CVS_ID_STRING "$Id$"
@@ -26,7 +28,8 @@ static void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
 static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
 static double logadd(double a,double b);
 static REAL8 mean(REAL8 *array,int N);
-
+static LALInferenceVariables *output_array=NULL;
+static UINT4 N_output_array=0;
 
 static double logadd(double a,double b){
 	if(a>b) return(a+log(1.0+exp(b-a)));
@@ -41,7 +44,14 @@ static REAL8 mean(REAL8 *array,int N){
 	return sum/((REAL8) N);
 }
 
-
+/** Append the sample to an array which is maintained elsewhere */
+void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
+{
+	output_array=realloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables));
+	LALInferenceCopyVariables(vars,output_array[N_output_array]);
+	N_output_array++;
+	return;
+}
 
 /* Calculate shortest angular distance between a1 and a2 */
 REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2){
@@ -235,8 +245,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	REAL8 *logLikelihoods=NULL;
 	UINT4 verbose=0;
         LALInferenceVariableItem *param_ptr;
-
-        if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
+  	char *outVOTable=NULL;
+        
+	if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
           if (runState->data->modelDomain == LALINFERENCE_DOMAIN_FREQUENCY )
             logZnoise=LALInferenceNullLogLikelihood(runState->data);
 	
@@ -276,6 +287,15 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		exit(1);
 	}
 	char *outfile=ppt->value;
+	
+	ProcessParamsTable *ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
+	if(!ppt){
+		fprintf(stderr,"Can specify --outXML <filename.dat> for VOTable output\n");
+	}
+	else{
+		outVOTable=ppt->value;
+	}
+	
 	fpout=fopen(outfile,"w");
  	FILE *lout=NULL;
         char param_list[FILENAME_MAX];
@@ -346,6 +366,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
                 
 		/* Write out old sample */
+		if(runState->logOutput) runState->logOutput(runState,runState->livePoints[minpos]);
 		LALInferencePrintSample(fpout,runState->livePoints[minpos]);
 		fprintf(fpout,"%lf\n",logLikelihoods[minpos]);
 
@@ -415,7 +436,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]);
 		}
-
+		if(runState->logOutput) runState->logOutput(runState,runState->livePoints[minpos]);
 		LALInferencePrintSample(fpout,runState->livePoints[i]);
 		fprintf(fpout,"%lf\n",logLikelihoods[i]);
 	}
@@ -427,6 +448,16 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	fpout=fopen(bayesfile,"w");
 	fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
 	fclose(fpout);
+	
+	/* Write out the XML if requested */
+	if(output_array && outVOTable && N_output_array>0){
+		xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array);
+		fpout=fopen(outVOTable,"w");
+		char *xmlString = XLALCreateVOTStringFromTree ( xmlTable );
+		fprintf(fpout,"%s",xmlString);
+		fclose(fpout);
+	}
+	if(output_array) free(output_array);
 }
 
 /* Evolve nested sampling algorithm by one step, i.e.
