@@ -81,6 +81,7 @@ LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
 LALAPPS_ENABLE_PSS
+LALAPPS_ENABLE_GDS
 
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
@@ -243,9 +244,10 @@ LALSUITE_ENABLE_MODULE([FFTW],[fftw])
 
 # check for GDS system: we check if we can link against libawg which is in GDS
 # GDS is a requirements for building 'online_psinject', which is used for hardware injections
-gds="true";
-AC_CHECK_LIB([awg],[awgGetChannelNames],,[gds="false"])
-AC_CHECK_HEADERS([gdstype.h],,[gds="false"])
+if test "${gds}" = "true"; then
+  AC_CHECK_LIB([awg],[awgGetChannelNames],,[gds="false"])
+  AC_CHECK_HEADERS([gdstype.h],,[gds="false"])
+fi
 LALSUITE_ENABLE_MODULE([GDS],[gds])
 
 # check for libFrame
