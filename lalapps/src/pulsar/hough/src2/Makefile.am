@@ -107,6 +107,7 @@ erp_execinfo_plus.o: EinsteinAtHome/erp_execinfo_plus.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 TESTS = testRecalcHS.sh
+EXTRA_DIST = testRecalcHS.sh
 
 TESTS_ENVIRONMENT = \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \

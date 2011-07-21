@@ -98,5 +98,5 @@ else
 fi
 
 if [ -z "$NOCLEANUP" ]; then
-    rm $HS_OUT $RC_OUT1 $RC_OUT2
+    rm $HS_OUT $RC_OUT1 $RC_OUT2 $SFTs
 fi
