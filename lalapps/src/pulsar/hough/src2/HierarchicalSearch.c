@@ -3445,6 +3445,12 @@ void GetSemiCohToplist(LALStatus            *status,
     line.MeanSig = (in->list[k].meanSig - meanN) / sigmaN;
     line.VarianceSig = in->list[k].varianceSig / (sigmaN * sigmaN);
 
+    /* initialize LV postprocessing entries to zero.
+     * These fields in the HoughFStatOutputEntry struct are not used by this code, only by RecalcHSCandidates.
+     */
+    line.sumTwoF = -1;    	/* sum of 2F-values for LV postprocessing */
+    line.sumTwoFX = NULL; 	/* sum of 2F-values per detector for LV postprocessing */
+
     debug = INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
 
   }

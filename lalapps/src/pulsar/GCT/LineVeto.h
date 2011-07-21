@@ -49,7 +49,9 @@ extern "C" {
 #include <lalapps.h>
 
 /* additional includes */
-#include "HierarchSearchGCT.h"
+#include "OptimizedCFS/ComputeFstatREAL4.h"
+#include "GCTtoplist.h"
+#include "../hough/src2/HoughFStatToplist.h"
 
 /*---------- exported DEFINES ----------*/
 
@@ -86,6 +88,7 @@ extern const LVcomponents empty_LVcomponents;
 /*---------- exported prototypes [API] ----------*/
 int
 XLALComputeExtraStatsForToplist ( toplist_t *list,
+				  const char *listEntryTypeName,
 				  const MultiSFTVectorSequence *multiSFTs,
 				  const MultiNoiseWeightsSequence *multiNoiseWeights,
 				  const MultiDetectorStateSeriesSequence *multiDetStates,

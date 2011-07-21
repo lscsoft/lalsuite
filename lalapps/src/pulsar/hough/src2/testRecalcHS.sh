@@ -39,6 +39,8 @@ SFTs="./allSFTs.sft"
 HS_OUT="./HS_out.dat"
 RC_OUT1="./RC_out1.dat"
 RC_OUT2="./RC_out2.dat"
+RC_OUT3="./RC_out3.dat"
+RC_OUT4="./RC_out4.dat"
 
 Freq0=100.5
 dFreq0=1.3e-5
@@ -83,12 +85,34 @@ if ! eval $cmdline; then
     exit 1
 fi
 
+echo "## ----- STEP 3c: '$RC_OUT1' -- re-run 'RecalcHSCandidates' on original output candidate file, with outputFX option"
+cmdline="$code_RC --DataFiles1=$SFTs --tStack=$tStack --nStacksMax=$nStacks --followupList=$HS_OUT --WU_Freq=$Freq0 --WU_dFreq=$dFreq0 --fnameout=$RC_OUT3 --outputFX -d1"
+
+echo $cmdline;
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cmdline' ..."
+    exit 1
+fi
+
+echo "## ----- STEP 3d: '$RC_OUT2' -- re-re-run RecalcHSCandidates, with outputFX option, on its own output to test stability"
+## NOTE: this time we don't use any HS-frequency bug corrections (--WU_Freq), as RC outputs frequencies correctly!
+cmdline="$code_RC --DataFiles1=$SFTs --tStack=$tStack --nStacksMax=$nStacks --followupList=$RC_OUT3 --WU_dFreq=$dFreq0 --fnameout=$RC_OUT4 --outputFX -d1"
+
+echo $cmdline;
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cmdline' ..."
+    exit 1
+fi
+
 ## currently not really testing these results, just output them for user to look at:
 echo "$HS_OUT: --------------------"
 cat $HS_OUT
 echo "$RC_OUT1: --------------------"
 cat $RC_OUT1
 echo "----------------------------------------"
+cat $RC_OUT3
+echo "----------------------------------------"
+
 
 if ! diff -q RC_out1.dat RC_out2.dat ; then
     echo "$RC_OUT1 and RC_OUT2 differ ... something is wrong!"
@@ -96,7 +120,13 @@ if ! diff -q RC_out1.dat RC_out2.dat ; then
 else
     echo "$RC_OUT1 and RC_OUT2 are identical ... OK!"
 fi
+if ! diff -q RC_out3.dat RC_out4.dat ; then
+    echo "$RC_OUT3 and RC_OUT4 differ ... something is wrong!"
+    exit 1;
+else
+    echo "$RC_OUT3 and RC_OUT4 are identical ... OK!"
+fi
 
 if [ -z "$NOCLEANUP" ]; then
-    rm $HS_OUT $RC_OUT1 $RC_OUT2 $SFTs
+    rm $HS_OUT $RC_OUT1 $RC_OUT2 $RC_OUT3 $RC_OUT4 $SFTs
 fi
