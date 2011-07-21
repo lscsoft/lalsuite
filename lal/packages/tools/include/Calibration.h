@@ -17,22 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="CalibrationHV">
- * Author: P. R. Brady, J. D. E. Creighton
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- *
- * \section{Header \texttt{Calibration.h}}
- *
- * \subsection*{Synopsis}
- * \begin{verbatim}
- * #include <lal/Calibration.h>
- * \end{verbatim}
- *
- **** </lalLaTeX> */
-
 #ifndef _CALIBRATION_H
 #define _CALIBRATION_H
 
@@ -52,39 +36,37 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/**** <lalLaTeX>
+/**
+ * \author P. R. Brady, J. D. E. Creighton
+ * \addtogroup Calibration_h
  *
- * \subsection*{Error conditions}
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/Calibration.h>
+ * \endcode
  *
- **** </lalLaTeX> */
-/**** <lalErrTable> */
-#define CALIBRATIONH_ENULL 001
-#define CALIBRATIONH_ESIZE 002
-#define CALIBRATIONH_ESZMM 004
-#define CALIBRATIONH_EZERO 010
-#define CALIBRATIONH_ETIME 020
-#define CALIBRATIONH_EUNIT 040
+ */
+/** @{ */
 
+/**\name Error Codes */ /*@{*/
+#define CALIBRATIONH_ENULL 001	/**< Null pointer */
+#define CALIBRATIONH_ESIZE 002	/**< Invalid size */
+#define CALIBRATIONH_ESZMM 004	/**< Size mismatch */
+#define CALIBRATIONH_EZERO 010	/**< Zero factor */
+#define CALIBRATIONH_ETIME 020	/**< Time out of range */
+#define CALIBRATIONH_EUNIT 040	/**< Incompatible units */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define CALIBRATIONH_MSGENULL "Null pointer"
 #define CALIBRATIONH_MSGESIZE "Invalid size"
 #define CALIBRATIONH_MSGESZMM "Size mismatch"
 #define CALIBRATIONH_MSGEZERO "Zero factor"
 #define CALIBRATIONH_MSGETIME "Time out of range"
 #define CALIBRATIONH_MSGEUNIT "Incompatible units"
-/**** </lalErrTable> */
+/** \endcond */
 
-/**** <lalLaTeX>
- *
- * \subsection*{Structures}
- * \idx[Type]{CalibrationType}
- * \idx[Type]{CalibrationRecord}
- * \idx[Type]{CalibrationFunctions}
- * \idx[Type]{CalibrationUpdateParams}
- *
- * \subsubsection*{Type \texttt{CalibrationType}}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+/** UNDOCUMENTED */
 typedef enum
 {
   CalibrationAmplitude = 001,
@@ -94,16 +76,9 @@ typedef enum
   CalibrationZPG       = 020
 }
 CalibrationType;
-/**** </lalVerbatim> */
 
-/**** <lalLaTeX>
- *
- * Document \verb+CalibrationType+
- *
- * \subsubsection*{Type \texttt{CalFactors}}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+
+/** UNDOCUMENTED */
 typedef struct
 tagCalFactors
 {
@@ -116,16 +91,9 @@ tagCalFactors
   COMPLEX16 darm;
 }
 CalFactors;
-/**** </lalVerbatim> */
 
-/**** <lalLaTeX>
- *
- * Document \verb+CalibrationType+
- *
- * \subsubsection*{Type \texttt{UpdateFactorsParams}}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+
+/** UNDOCUMENTED */
 typedef struct
 tagUpdateFactorsParams
 {
@@ -139,16 +107,9 @@ tagUpdateFactorsParams
    REAL4TimeSeries *exc;
 }
 UpdateFactorsParams;
-/**** </lalVerbatim> */
 
-/**** <lalLaTeX>
- *
- * Document \verb+CalibrationType+
- *
- * \subsubsection*{Type \texttt{CalibrationRecord}}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+
+/** UNDOCUMENTED */
 typedef struct
 tagCalibrationRecord
 {
@@ -168,17 +129,12 @@ tagCalibrationRecord
   REAL8                    gain;
 }
 CalibrationRecord;
-/**** </lalVerbatim> */
 
-
-/**** <lalLaTeX>
- *
- * Document \verb+CalibrationRecord+
- *
- * \subsubsection*{Type \texttt{CalibrationFunctions}}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+/** The type CalibrationFunctions contains two calibration functions,
+ * the sensing function \f$C(f)\f$ and the response function \f$R(f)\f$.  While the
+ * response function is the function that is most often wanted, the sensing
+ * function is needed in updating calibration from one epoch to another.
+ */
 typedef struct
 tagCalibrationFunctions
 {
@@ -187,17 +143,20 @@ tagCalibrationFunctions
   COMPLEX8FrequencySeries *sensingFunction;
 }
 CalibrationFunctions;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
- * The type \texttt{CalibrationFunctions} contains two calibration functions,
- * the sensing function $C(f)$ and the response function $R(f)$.  While the
- * response function is the function that is most often wanted, the sensing
- * function is needed in updating calibration from one epoch to another.
- *
- * \subsubsection*{Type \texttt{CalibrationUpdateParams}}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+
+/** The type \c CalibrationUpdateParams contains two time series
+ * representing an overall gain factor for the open-loop gain function \f$H(f)\f$
+ * and the sensing function \f$C(f)\f$.  These transfer functions are known to
+ * change (by an overall factor) with time, and these two factors can be
+ * tracked using the injected calibration lines.  The factors are stored
+ * in this structure as (very-slowly varying) time series, and are to be
+ * used in updating the calibration functions described previously.
+ * (The response function can be computed from the open-loop gain and the
+ * sensing function.  It is simply \f$R(f)=[1+H(f)]/C(f)\f$.)  In addition, this
+ * structure contains the present epoch and the duration of the data to be
+ * calibrated to identify the particular set of
+ * factors (from those recorded in the time series) to use.
+ */
 typedef struct
 tagCalibrationUpdateParams
 {
@@ -211,81 +170,64 @@ tagCalibrationUpdateParams
   COMPLEX8TimeSeries *sensingFactor;
 }
 CalibrationUpdateParams;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
- * The type \texttt{CalibrationUpdateParams} contains two time series
- * representing an overall gain factor for the open-loop gain function $H(f)$
- * and the sensing function $C(f)$.  These transfer functions are known to
- * change (by an overall factor) with time, and these two factors can be
- * tracked using the injected calibration lines.  The factors are stored
- * in this structure as (very-slowly varying) time series, and are to be
- * used in updating the calibration functions described previously.
- * (The response function can be computed from the open-loop gain and the
- * sensing function.  It is simply $R(f)=[1+H(f)]/C(f)$.)  In addition, this
- * structure contains the present epoch and the duration of the data to be
- * calibrated to identify the particular set of
- * factors (from those recorded in the time series) to use.
- *
- * \vfill{\footnotesize\input{CalibrationHV}}
- * \newpage\input{ComputeTransferC}
- *
- **** </lalLaTeX> */
 
+/** UNDOCUMENTED */
 typedef
 struct StrainOutTag {
   SWIGLAL_STRUCT_LALALLOC();
-  REAL8TimeSeries h;         /* timeseries containing h(t) */
-  REAL8TimeSeries hC;         /* timeseries containing the control signal */
-  REAL8TimeSeries hR;         /* timeseries containing the residual signal */
-  COMPLEX16TimeSeries alpha; /* alpha time series */
-  COMPLEX16TimeSeries beta;  /* beta time series */
-  COMPLEX16TimeSeries alphabeta; /* alpha time series */
-  INT2TimeSeries science_mode;   /* flag = 1 for science mode, 0 otherwise */
+  REAL8TimeSeries h;         	/**<  timeseries containing h(t) */
+  REAL8TimeSeries hC;         	/**< timeseries containing the control signal */
+  REAL8TimeSeries hR;         	/**< timeseries containing the residual signal */
+  COMPLEX16TimeSeries alpha; 	/**< alpha time series */
+  COMPLEX16TimeSeries beta;  	/**< beta time series */
+  COMPLEX16TimeSeries alphabeta;/**< alpha time series */
+  INT2TimeSeries science_mode;  /**< flag = 1 for science mode, 0 otherwise */
 } StrainOut;
 
+/** UNDOCUMENTED */
 typedef
 struct StrainInTag {
   SWIGLAL_STRUCT_LALALLOC();
-  REAL4TimeSeries AS_Q ;   /* timeseries containing ASQ */
-  REAL4TimeSeries DARM_ERR;/* timeseries containing DARM_ERR */
-  REAL4TimeSeries DARM ;   /* timeseries containing DARM_CTRL */
-  REAL4TimeSeries EXC ;    /* timeseries containing the excitation */
-  REAL4TimeSeries StateVector;  /* timeseries containing the State Vector (IFO-SV_STATE_VECTOR) */
-  REAL4TimeSeries LAX;     /* timeseries containing the Light-in-X-arm (LSC-LA_PTRX_NORM) */
-  REAL4TimeSeries LAY;     /* timeseries containing the Light-in-Y-arm (LSC-LA_PTRY_NORM) */
-  COMPLEX16 Do;            /* digital filter at cal line frequency */
-  COMPLEX16 Go;            /* OLG at cal line frequency */
-  COMPLEX16 Wo;            /* Whitening filter at cal line frequency */
-  REAL8 f;                 /* calibration line frequency */
-  REAL4 To;                /* factors integration time */
-  char filter_vc_info[1024];  /* version control information in the filters file */
-  char filter_chksum[64];  /* checksum of the contents of the filters file */
-  REAL8IIRFilter *Cinv;    /* Filters for inverse of sensing function */
-  INT4 CinvUSF;            /* Upsampling factor for sensing function */
-  INT4 CinvDelay;          /* Overall inverse sensing function delay */
-  REAL8IIRFilter *A;      /* Filters for analog actuation function */
-  REAL8IIRFilter *D;      /* Filters for analog actuation function */
-  REAL8IIRFilter *AW;      /* Filters for analog actuation function */
-  REAL8 gamma_fudgefactor;
-  INT4 delta;
-  INT4 usefactors;
-  INT4 wings;               /* size of wings in seconds */
-  INT4 fftconv;
-  INT4 outalphas;
-  INT4 darmctrl;
+  REAL4TimeSeries AS_Q ;   /**< timeseries containing ASQ */
+  REAL4TimeSeries DARM_ERR;/**< timeseries containing DARM_ERR */
+  REAL4TimeSeries DARM ;   /**< timeseries containing DARM_CTRL */
+  REAL4TimeSeries EXC ;    /**< timeseries containing the excitation */
+  REAL4TimeSeries StateVector; /**< timeseries containing the State Vector (IFO-SV_STATE_VECTOR) */
+  REAL4TimeSeries LAX;     /**< timeseries containing the Light-in-X-arm (LSC-LA_PTRX_NORM) */
+  REAL4TimeSeries LAY;     /**< timeseries containing the Light-in-Y-arm (LSC-LA_PTRY_NORM) */
+  COMPLEX16 Do;            /**< digital filter at cal line frequency */
+  COMPLEX16 Go;            /**< OLG at cal line frequency */
+  COMPLEX16 Wo;            /**< Whitening filter at cal line frequency */
+  REAL8 f;                 /**< calibration line frequency */
+  REAL4 To;                /**< factors integration time */
+  char filter_vc_info[1024]; /**< version control information in the filters file */
+  char filter_chksum[64];  /**< checksum of the contents of the filters file */
+  REAL8IIRFilter *Cinv;    /**< Filters for inverse of sensing function */
+  INT4 CinvUSF;            /**< Upsampling factor for sensing function */
+  INT4 CinvDelay;          /**< Overall inverse sensing function delay */
+  REAL8IIRFilter *A;      /**< Filters for analog actuation function */
+  REAL8IIRFilter *D;      /**< Filters for analog actuation function */
+  REAL8IIRFilter *AW;      /**< Filters for analog actuation function */
+  REAL8 gamma_fudgefactor; /**< UNDOCUMENTED */
+  INT4 delta; /**< UNDOCUMENTED */
+  INT4 usefactors; /**< UNDOCUMENTED */
+  INT4 wings;               /**< size of wings in seconds */
+  INT4 fftconv;	/**< UNDOCUMENTED */
+  INT4 outalphas;/**< UNDOCUMENTED */
+  INT4 darmctrl;/**< UNDOCUMENTED */
   /* Stuff needed to run old IIR code */
-  REAL8IIRFilter *AA;      /* Filters for analog actuation function */
-  INT4 AADelay;            /* Overall analog actuation function delay */
-  REAL8IIRFilter *AX;      /* Digital filters for x arm actuation function */
-  REAL8IIRFilter *AY;      /* Digital filters for y arm actuation function */
-  INT4 NCinv;              /* Numbers of filters of each type */
-  INT4 ND;
-  INT4 NAA;
-  INT4 NAX;
-  INT4 NAY;
-
+  REAL8IIRFilter *AA;      /**< Filters for analog actuation function */
+  INT4 AADelay;            /**< Overall analog actuation function delay */
+  REAL8IIRFilter *AX;      /**< Digital filters for x arm actuation function */
+  REAL8IIRFilter *AY;      /**< Digital filters for y arm actuation function */
+  INT4 NCinv;              /**< Numbers of filters of each type */
+  INT4 ND;/**< UNDOCUMENTED */
+  INT4 NAA;/**< UNDOCUMENTED */
+  INT4 NAX;/**< UNDOCUMENTED */
+  INT4 NAY;/**< UNDOCUMENTED */
 } StrainIn;
 
+/** UNDOCUMENTED */
 typedef
 struct MyIIRFilter {
   SWIGLAL_STRUCT_LALALLOC();
@@ -297,7 +239,9 @@ struct MyIIRFilter {
   REAL8 xhist[20];
 } MyIIRFilter;
 
+/** @} */
 
+/* ----- Prototypes ----- */
 
 void LALComputeTransfer( LALStatus *status, CalibrationRecord *calrec );
 
@@ -375,7 +319,6 @@ void LALCopyFilter(LALStatus *status, REAL8IIRFilter **F2, REAL8IIRFilter *F1, i
 int XLALDivideTimeSeries(REAL8TimeSeries *hR, REAL8TimeSeries *ALPHAS);
 int XLALUpsample(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
 int XLALUpsampleLinear(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
-
 
 #if 0
 { /* so that editors will match succeeding brace */

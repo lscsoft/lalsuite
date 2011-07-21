@@ -17,25 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="ComputeTransferTestCV">
+/*
  * Author: Patrick R. Brady
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Program \texttt{ComputeTransferTest.c}}
- *
- * Tests the computation of transfer functions.
- *
- * \subsubsection*{Usage}
- *
- * \begin{verbatim}
- * ComputeTransferTest
- * \end{verbatim}
- *
- * \subsubsection*{Description}
- *
- **** </lalLaTeX> */
+ */
 
 #include <stdio.h>
 #include <string.h>

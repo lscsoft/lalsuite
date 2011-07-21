@@ -1,5 +1,8 @@
 DOCSOURCEFILES = \
-	frequencyseries.tex \
+	tools.dox \
+	sequence.dox \
+	frequencyseries.dox \
+	timeseries.dox \
 	resamp_1000x4.eps \
 	resamp_1000x4.pdf \
 	resamp_1000x8.eps \
@@ -12,21 +15,11 @@ DOCSOURCEFILES = \
 	resamp_100x4.pdf \
 	resamp_10x4.eps \
 	resamp_10x4.pdf \
-	sequence.tex \
-	timeseries.tex \
-	tools.tex
+	resamp_figs1.pdf resamp_figs1.png \
+	resamp_figs2.pdf resamp_figs2.png \
+	resamp_figs3.pdf resamp_figs3.png
 
-MOSTLYCLEANFILES = .dvi-dep
-CLEANFILES = \
-	main.dvi \
-	main.pdf \
-	main.ps
+MOSTLYCLEANFILES =
+CLEANFILES =
 
 EXTRA_DIST = $(DOCSOURCEFILES)
-
-dvi-local: .dvi-dep
-
-distclean-local:
-	-rm -fr .adoc
-
-@DOCMKFILE@

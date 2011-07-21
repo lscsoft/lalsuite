@@ -17,25 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="ComputeCalibrationFactorsTestCV">
+/*
  * Author: X. Siemens
- * $Id$
- **** </lalVerbatim> */
+ */
 
-/**** <lalLaTeX>
- * \subsection{Program \texttt{ComputeCalibrationFactorsTest.c}}
- *
- * Tests the computation of calibration factors.
- *
- * \subsubsection*{Usage}
- *
- * \begin{verbatim}
- * ComputeCalibrationFactorsTest
- * \end{verbatim}
- *
- * \subsubsection*{Description}
- *
- **** </lalLaTeX> */
 #include <lal/LALConfig.h>
 #ifndef LAL_FRAME_ENABLED
 int main( void ) { return 77; }
@@ -611,4 +596,3 @@ int FreeMem(void)
   return 0;
 }
 #endif
-

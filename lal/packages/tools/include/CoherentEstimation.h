@@ -17,11 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/*************************** <lalVerbatim file="CoherentEstimation">
-Author: Sylvestre, J.
-$Id$
-**************************************************** </lalVerbatim> */
-
 #ifndef _COHERENTESTIMATION_H
 #define _COHERENTESTIMATION_H
 
