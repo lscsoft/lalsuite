@@ -40,7 +40,7 @@ int main( int argc, char **argv )
 
   /* sky position structures */
   UINT4                    numSkyPoints;
-  struct coh_PTF_skyPoints *skyPoints               = NULL;
+  CohPTFSkyPositions       *skyPoints               = NULL;
 
   /* FFT structures */
   REAL4FFTPlan             *fwdplan                 = NULL;
@@ -94,6 +94,7 @@ int main( int argc, char **argv )
   REAL8                    *Fplustrig;
   REAL8                    *Fcrosstrig;
   REAL8                    detLoc[3];
+  REAL4                    *timeSlideVectors;
 
   /* coherent statistic structures */
   REAL4TimeSeries          *cohSNR                  = NULL;
@@ -177,6 +178,11 @@ int main( int argc, char **argv )
    * read the data, generate segments and the PSD                           *
    *------------------------------------------------------------------------*/
 
+  timeSlideVectors=LALCalloc(1,
+     LAL_NUM_IFO*params->numOverlapSegments*sizeof( REAL4 ));
+  memset( timeSlideVectors, 0,
+          LAL_NUM_IFO * params->numOverlapSegments * sizeof(REAL4) );
+
   /* loop over ifos */ 
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -207,14 +213,100 @@ int main( int argc, char **argv )
                                                 revplan, params );
 
       /* create the segments */
+
       segments[ifoNumber] = coh_PTF_get_segments( channel[ifoNumber],
-                                                  invspec[ifoNumber],
-                                                  fwdplan, ifoNumber, params );
+                                invspec[ifoNumber],fwdplan, ifoNumber,
+                                timeSlideVectors, params );
       
       numSegments = segments[ifoNumber]->numSgmnt;
 
+      for (i =0; i < numSegments; i++)
+      {
+        fprintf(stderr,"%d %d %e\n",ifoNumber,i,timeSlideVectors[ifoNumber*params->numOverlapSegments+i]);
+      }
+
       verbose( "Created segments for one ifo %ld \n",
                timeval_subtract(&startTime) );
+    }
+  }
+
+  /* Create a list of time slide ids for each segment and create time slide
+     table. */
+
+  TimeSlideVectorList timeSlideList[numSegments];
+  UINT4 slideCount = 0;
+  INT8  slideIDList[numSegments];
+  
+  for (i = 0 ; i < numSegments ; i++ )
+  {
+    UINT4 slideDuplicate = 0;
+    if (slideCount)
+    {
+      for (uj = 0; uj < slideCount; uj++)
+      {
+        UINT4 slideChecking = 1;
+        for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+        {
+          if ( params->haveTrig[ifoNumber] )
+          {
+            if (timeSlideVectors[ifoNumber*params->numOverlapSegments+i] != \
+                timeSlideList[uj].timeSlideVectors[ifoNumber])
+            {
+              slideChecking = 0;
+            }
+          }
+        }
+        if (slideChecking)
+        {
+          slideDuplicate = 1;
+          slideIDList[i] = timeSlideList[uj].timeSlideID;
+        }
+      }
+    }
+    if (! slideDuplicate)
+    {
+      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if ( params->haveTrig[ifoNumber] )
+        {
+          timeSlideList[slideCount].timeSlideVectors[ifoNumber] = \
+              timeSlideVectors[ifoNumber*params->numOverlapSegments+i];
+        }
+      }
+      timeSlideList[slideCount].timeSlideID = slideCount;
+      slideIDList[i] = timeSlideList[slideCount].timeSlideID;
+      slideCount++;
+    }
+    fprintf(stderr,"%d %ld \n",i,slideIDList[i]);
+  }
+
+  TimeSlide *time_slide_head=NULL;
+  TimeSlide *curr_slide = NULL;
+
+  for ( ui = 0 ; ui < slideCount; ui++)
+  {
+    for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    {
+      if ( params->haveTrig[ifoNumber] )
+      {
+        if (! time_slide_head)
+        {
+          time_slide_head=XLALCreateTimeSlide();
+          curr_slide= time_slide_head;
+        }
+        else
+        {
+          curr_slide->next=XLALCreateTimeSlide();
+          curr_slide = curr_slide->next;
+        }
+        curr_slide->time_slide_id = timeSlideList[ui].timeSlideID;
+        /* FIXME */
+        CHAR ifo[LIGOMETA_STRING_MAX];
+        XLALReturnIFO(ifo,ifoNumber);
+        strncpy(curr_slide->instrument,ifo,sizeof(curr_slide->instrument)-1);
+        curr_slide->offset = timeSlideList[ui].timeSlideVectors[ifoNumber];
+        curr_slide->process_id=0;
+      }
     }
   }
 
@@ -224,8 +316,7 @@ int main( int argc, char **argv )
    *------------------------------------------------------------------------*/
 
   /* generate sky points array */
-  skyPoints = LALCalloc( 1, sizeof( struct coh_PTF_skyPoints ) );
-  coh_PTF_generate_sky_points( skyPoints, params );
+  skyPoints = coh_PTF_generate_sky_points(params);
   numSkyPoints = skyPoints->numPoints;
 
   verbose( "Generated necessary sky grid with %d points %ld \n",\
@@ -234,7 +325,7 @@ int main( int argc, char **argv )
   for ( sp=0; sp<numSkyPoints; sp++ )
   {
     verbose( "ra = %f dec = %f\n",
-             skyPoints->rightAscension[sp], skyPoints->declination[sp] );
+             skyPoints->data[sp].longitude, skyPoints->data[sp].latitude );
   }
 
   /* allocate memory */ 
@@ -315,8 +406,8 @@ int main( int argc, char **argv )
 
     /* create the segments */
     segments[ifoNumber] = coh_PTF_get_segments( channel[ifoNumber],
-                                                invspec[ifoNumber],
-                                                fwdplan, ifoNumber, params );
+                              invspec[ifoNumber],fwdplan, ifoNumber, NULL,
+                              params );
 
     numSegments = segments[ifoNumber]->numSgmnt;
 
@@ -779,8 +870,8 @@ int main( int argc, char **argv )
       switch(params->skyLooping)
       {
         case SINGLE_SKY_POINT:
-        case TWO_DET_SKY_POINT_ERROR:
-        case SKY_POINT_ERROR:
+        case TWO_DET_SKY_PATCH:
+        case SKY_PATCH:
 
           /* set 'segStartTime' to trigger time */
           segStartTime = params->trigTime;
@@ -802,15 +893,15 @@ int main( int argc, char **argv )
               /* calculate time offsets */
               timeOffsets[ifoNumber] =
                   XLALTimeDelayFromEarthCenter( detLoc,
-                                                skyPoints->rightAscension[sp],
-                                                skyPoints->declination[sp],
+                                                skyPoints->data[sp].longitude,
+                                                skyPoints->data[sp].latitude,
                                                 &segStartTime );
               /* calculate response functions */
               XLALComputeDetAMResponse( &Fplus[ifoNumber],
                                         &Fcross[ifoNumber],
                                         detectors[ifoNumber]->response,
-                                        skyPoints->rightAscension[sp],
-                                        skyPoints->declination[sp],0.,
+                                        skyPoints->data[sp].longitude,
+                                        skyPoints->data[sp].latitude,0.,
                                         XLALGreenwichMeanSiderealTime(
                                             &segStartTime) );
             }
@@ -836,8 +927,9 @@ int main( int argc, char **argv )
                                             pValues, gammaBeta, snrComps,
                                             nullSNR, traceSNR, bankVeto,
                                             autoVeto, chiSquare, PTFM,
-                                            skyPoints->rightAscension[sp],
-                                            skyPoints->declination[sp] );
+                                            skyPoints->data[sp].longitude,
+                                            skyPoints->data[sp].latitude,
+                                            slideIDList[j] );
             verbose( "Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime) );
 
 
@@ -927,16 +1019,16 @@ int main( int argc, char **argv )
   } // Main loop is ended here
   /* calulate number of events */
   params->numEvents = XLALCountMultiInspiral( eventList );
-  coh_PTF_output_events_xml( params->outputFile, eventList, procpar, params );
+  coh_PTF_output_events_xml( params->outputFile, eventList, procpar,\
+                             time_slide_head, params );
 
-  if (skyPoints->rightAscension)
-    LALFree(skyPoints->rightAscension);
-  if (skyPoints->declination)
-    LALFree(skyPoints->declination);
+  if (skyPoints->data)
+    LALFree(skyPoints->data);
   if (skyPoints)
     LALFree(skyPoints);
 
   // This function cleans up memory usage
+  XLALDestroyTimeSlideTable(time_slide_head);
   coh_PTF_cleanup(procpar,fwdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,Fplustrig,Fcrosstrig);
@@ -1157,10 +1249,10 @@ void coh_PTF_statistic(
   }
 
   /* This loop takes the time offset in seconds and converts to time offset
-  * in data points */
+  * in data points (rounded) */
   for (i = 0; i < LAL_NUM_IFO; i++ )
   {
-    timeOffsetPoints[i]=(int)(timeOffsets[i]/deltaT);
+    timeOffsetPoints[i] = (int) floor(timeOffsets[i]/deltaT + 0.5);
   }
 
   v1p = LALCalloc(vecLengthTwo , sizeof(REAL4));
@@ -1810,7 +1902,8 @@ UINT8 coh_PTF_add_triggers(
     REAL4TimeSeries         *chiSquare,
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL4                   rightAscension,
-    REAL4                   declination
+    REAL4                   declination,
+    INT8                    slideId
 )
 {
   // This function adds a trigger to the event list
@@ -1860,7 +1953,7 @@ UINT8 coh_PTF_add_triggers(
         currEvent->event_id->id=eventId;
         currEvent->time_slide_id = (EventIDColumn *)
             LALCalloc(1, sizeof(EventIDColumn) );
-        currEvent->time_slide_id->id=eventId;
+        currEvent->time_slide_id->id=slideId;
         eventId++;
         trigTime = cohSNR->epoch;
         XLALGPSAdd(&trigTime,i*cohSNR->deltaT);
@@ -1872,7 +1965,10 @@ UINT8 coh_PTF_add_triggers(
         currEvent->mchirp = PTFTemplate.totalMass*pow(PTFTemplate.eta,3.0/5.0);
         currEvent->eta = PTFTemplate.eta;
         currEvent->end_time = trigTime;
-        currEvent->ra = rightAscension;
+        /* add sky position, but need to track back to sky fixed sky position */
+        currEvent->ra = rightAscension - 
+                            XLALGreenwichMeanSiderealTime(&params->trigTime) + 
+                            XLALGreenwichMeanSiderealTime(&currEvent->end_time);
         currEvent->dec = declination;
         if (params->doNullStream)
           currEvent->null_statistic = nullSNR->data->data[i];

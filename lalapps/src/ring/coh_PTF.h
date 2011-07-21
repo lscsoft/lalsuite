@@ -58,6 +58,7 @@
 #include <lal/FindChirpPTF.h>
 #include <lal/RingUtils.h>
 #include <LALAppsVCSInfo.h>
+#include <lal/SkyCoordinates.h>
 
 #include "lalapps.h"
 #include "getdata.h"
@@ -146,6 +147,7 @@ struct coh_PTF_params {
   REAL4        declination;
   REAL4        skyError;
   REAL4        timingAccuracy;
+  const char  *skyPositionsFile;
   UINT4        skyLooping;
   const char  *bankFile;
   const char  *segmentsToDoList;
@@ -169,7 +171,7 @@ struct coh_PTF_params {
   const char  *noSpinBank;
   char         userTag[256];
   char         ifoTag[256];
-  UINT4        slideSegments[LAL_NUM_IFO];
+  UINT4        slideSegments[LAL_NUM_IFO+1];
   /* flags */
   int          strainData;
   int          doubleData;
@@ -221,19 +223,27 @@ typedef struct tagRingDataSegments
 }
 RingDataSegments;
 
-struct coh_PTF_skyPoints {
-  UINT4 numPoints;
-  REAL4 *rightAscension;
-  REAL4 *declination;
-};
+typedef struct tagCohPTFSkyPositions
+{
+  UINT4       numPoints;
+  SkyPosition *data;
+}
+CohPTFSkyPositions; 
+
+typedef struct tagTimeSlideVectorList
+{
+  REAL4       timeSlideVectors[LAL_NUM_IFO];
+  INT8        timeSlideID;
+}
+TimeSlideVectorList;
 
 /* ENUM for sky location looping */
 
 typedef enum
 {
   SINGLE_SKY_POINT,
-  TWO_DET_SKY_POINT_ERROR,
-  SKY_POINT_ERROR,
+  TWO_DET_SKY_PATCH,
+  SKY_PATCH,
   ALL_SKY,
   TWO_DET_ALL_SKY
 }
@@ -296,7 +306,8 @@ UINT8 coh_PTF_add_triggers(
     REAL4TimeSeries         *chiSquare,
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL4                   rightAscension,
-    REAL4                   declination
+    REAL4                   declination,
+    INT8                    slideId
 );
 void coh_PTF_cluster_triggers(
   MultiInspiralTable      **eventList,
@@ -349,7 +360,8 @@ RingDataSegments *coh_PTF_get_segments(
     REAL4FrequencySeries    *invspec,
     REAL4FFTPlan            *fwdplan,
     InterferometerNumber     NumberIFO,
-    struct coh_PTF_params      *params
+    REAL4                   *timeSlideVectors,
+    struct coh_PTF_params   *params
 );
 
 void coh_PTF_calculate_bmatrix(
@@ -635,6 +647,7 @@ int coh_PTF_output_events_xml(
     char               *outputFile,
     MultiInspiralTable *events,
     ProcessParamsTable *processParamsTable,
+    TimeSlide          *time_slide_head,
     struct coh_PTF_params *params
 );
 
@@ -667,19 +680,47 @@ int generate_file_name(
     int dt
 );
 
-/* generate array of sky points based on RA, DEC and DECERROR */
-/* should return linked list */
-void coh_PTF_generate_sky_points(
-    struct coh_PTF_skyPoints *skyPoints,
+/* generate array of sky points based on RA, Dec, error radius, and timing
+ * accuracy */
+
+CohPTFSkyPositions *coh_PTF_generate_sky_points(
     struct coh_PTF_params *params
 );
 
-void coh_PTF_sky_grid(
-    struct coh_PTF_skyPoints *skyPoints,
+CohPTFSkyPositions *coh_PTF_generate_sky_grid(
     struct coh_PTF_params *params
 );
 
-struct coh_PTF_skyPoints coh_PTF_circular_grid(
+CohPTFSkyPositions *coh_PTF_circular_grid(
     REAL4 angularResolution,
     REAL4 skyError
+);
+
+CohPTFSkyPositions *coh_PTF_parse_time_delays(
+    CohPTFSkyPositions *skyPoints,
+    struct coh_PTF_params *params
+);
+
+CohPTFSkyPositions *coh_PTF_read_grid_from_file(
+    const char *fname,
+    UINT4      raColumn,
+    UINT4      decColumn
+);
+
+void coh_PTF_rotate_skyPoints(
+    CohPTFSkyPositions *skyPoints,
+    REAL4 axis[3],
+    REAL4 angle
+);
+
+void crossProduct(
+    REAL4 out[3],
+    REAL4 x[3],
+    REAL4 y[3]
+);
+
+void rotationMatrix(
+    REAL4 matrix[3][3],
+    REAL4 axis[3],
+    REAL4 angle
 );
