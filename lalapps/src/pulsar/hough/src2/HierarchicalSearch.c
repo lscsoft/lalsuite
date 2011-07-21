@@ -436,6 +436,8 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_version = 0;
   INT4 uvar_partitionIndex = 0;
 
+  BOOLEAN uvar_correctFreqs = TRUE;
+
 #ifndef GPUREADY_DEFAULT
 #define GPUREADY_DEFAULT 0
 #endif
@@ -525,6 +527,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
   LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_DEVELOPER,"Resolution in residual fdot values (default=df1dot/nf1dotRes)", &uvar_df1dotRes), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "GPUready",     0, UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines", &uvar_GPUready), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "correctFreqs", 0, UVAR_DEVELOPER, "Correct candidate output frequencies (ie fix bug #147). Allows reproducing 'historical results'", &uvar_correctFreqs), &status);
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
 
   /* read all command line variables */
@@ -825,7 +828,17 @@ int MAIN( int argc, char *argv[]) {
     LogPrintfVerbatim(LOG_DETAIL, "\n");
   } /* loop over stacks */
 
-
+  /** fix frequency-quantization offset bug #147, by applying a fixed frequency-correction to all candidates */
+  REAL8 FreqBugCorrection = 0;
+  if ( uvar_correctFreqs )
+    {
+      FreqBugCorrection = uvar_Freq - uvar_dFreq * floor ( uvar_Freq / uvar_dFreq + 0.5 );
+      printf ("Applying frequency-correction shift of %.9g Hz \n", FreqBugCorrection );
+    }
+  else
+    {
+      printf ("WARNING: turned off frequency-shift bug correction! I hope you know what you're doing!\n");
+    }
 
   /*---------- set up F-statistic calculation stuff ---------*/
 
@@ -1178,6 +1191,12 @@ int MAIN( int argc, char *argv[]) {
 	       optimized functions from a local file instead of the standard ComputeFstatHoughMap()
 	       below that refers to the LALHOUGH functions in LAL */
 	    LAL_CALL ( COMPUTEFSTATHOUGHMAP ( &status, &semiCohCandList, &pgV, &semiCohPar), &status);
+
+            /* ----- now apply frequency-shift correction to fix bug #147 to all candidates returned */
+            INT4 iCand;
+            for ( iCand = 0; iCand < semiCohCandList.nCandidates; iCand ++ )
+              semiCohCandList.list[iCand].freq += FreqBugCorrection;
+            /* ------------------------------------------------------------ */
 
 	    /* free peakgrams -- we don't need them now because we have the Hough maps */
 	    for (k=0; k<nStacks; k++)
