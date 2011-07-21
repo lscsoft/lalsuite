@@ -103,7 +103,7 @@ UINT4 varybinary = 0;
 " --fake-dt           the data sample rate (in seconds) for the fake data for\n\
                      each detector. If not specified this will default to\n\
                      60s.\n"\
-" --snr-scale         give a (multi-detector) SNR value to which you want to\n\
+" --scale-snr         give a (multi-detector) SNR value to which you want to\n\
                      scale the injection. This is 1 by default.\n"\
 "\n"
 
@@ -3088,8 +3088,6 @@ parameter file %s is wrong.\n", injectfile);
   if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
   else fprintf(fpsnr, "\n");
   
-  fclose( fpsnr );
-  
   /* scale scale factor to rescale the signal to the required SNR */
   if ( snrscale != 1. ){
     if ( injpars.h0 == 0. ){
@@ -3099,7 +3097,9 @@ injected signal amplitude is zero!\n", snrscale);
     }
     
     snrscale /= snrmulti;
+    fprintf(fpsnr,"snr scale applied, set to: %f\n",snrscale);
   }
+  fclose( fpsnr );
   
   /* reset data to head */
   data = runState->data;
