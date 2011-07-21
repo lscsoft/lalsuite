@@ -1832,7 +1832,7 @@ void ComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structur
 
   LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%d bins)\n",
 	    fBinIni*deltaF, fBinFin*deltaF, fBinFin - fBinIni + 1);
-  ASSERT ( fBinIni < fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( fBinIni <= fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
   /* initialise number of candidates -- this means that any previous candidates
      stored in the list will be lost for all practical purposes*/
