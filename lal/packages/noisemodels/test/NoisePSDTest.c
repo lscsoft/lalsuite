@@ -17,28 +17,18 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="NoisePSDTestCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
-/* <lalLaTeX>
-\subsection{Program \texttt{NoisePSDTest.c}}
-\label{ss:NoisePSDTest.c}
+/**
+\author Sathyaprakash, B. S.
+\ingroup LALNoiseModels_h
+\file
 
-This program can be used generate expected noise
+\brief This program can be used generate expected noise
 NoiseSpectralDensity in various interferometers.
 See the beginning of the NoiseModels module to see details on how
 this test program works.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{NoisePSDTestCP}
-\idx{NoisePSDTest()}
-
-\subsubsection*{Description}
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALDCreateVector
 LALNoiseSpectralDensity
 LALGEOPsd
@@ -48,21 +38,20 @@ LALVIRGOPsd
 LALAdvLIGOPsd
 LALDDestroyVector
 LALCheckMemoryLeaks
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{NoisePSDTestCV}}
-</lalLaTeX>  */
+*/
 #include <lal/AVFactories.h>
 #include <lal/LALNoiseModels.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID (NOISEPSDTESTC,"$Id$");
 
 INT4 lalDebugLevel=1;
-/*  <lalVerbatim file="NoisePSDTestCP"> */
+/** \endcond */
+
 int main ( void )
-{  /*  </lalVerbatim>  */
+{
 
    static LALStatus status;
    REAL8Vector *psd=NULL;
@@ -115,4 +104,3 @@ int main ( void )
    LALCheckMemoryLeaks();
    return 0;
 }
-
