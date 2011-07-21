@@ -25,15 +25,8 @@
 
 #include <string.h>
 
-#include <libxml/parser.h>
-#include <libxml/tree.h>
-#include <libxml/xpath.h>
-
 #include <lal/XLALError.h>
 
-#include <lal/LALXML.h>
-#include <lal/LALXMLVOTableCommon.h>
-#include <lal/LALXMLVOTableSerializers.h>
 #include <lal/LALInferenceXML.h>
 
 #define INT4STR_MAXLEN          15

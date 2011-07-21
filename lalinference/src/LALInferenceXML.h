@@ -33,14 +33,13 @@
 extern "C" {
 #endif
 
-
-#include <libxml/tree.h>
-#include <lal/LALXML.h>
+/*#include <libxml/tree.h>
+#include <libxml/xpath.h>
+*/
 #include <lal/LALXML.h>
 #include <lal/LALXMLVOTableCommon.h>
 #include <lal/LALXMLVOTableSerializers.h>
 #include <lal/LALDatatypes.h>
-
 #include <lal/LALInference.h>
 
 xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *varsArray, UINT4 N);

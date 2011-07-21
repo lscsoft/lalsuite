@@ -134,7 +134,15 @@ LALSUITE_CHECK_LIB([LALInspiral],[1.1.0.2],[LALInspiralParameterCalc],[lal/LALIn
 LALSUITE_CHECK_LIB([LALPulsar],[1.1.0.2],[XLALComputeFaFb],[lal/ComputeFstat.h])
 
 # check for lalxml
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.0.0.2],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.0.3],[XLALXMLFilePrintElements],[lal/LALXML.h])
+
+if test "$lalxml" = "true"; then
+  # check for libxml2
+  PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
+  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
+  LIBS="$LIBS $LIBXML2_LIBS"
+  AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_WARN([cannot find the xml2 library])])
+fi
 
 # add gcc specific flags
 if test "$GCC" = yes; then
