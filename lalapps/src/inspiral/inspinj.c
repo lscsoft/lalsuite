@@ -1662,6 +1662,7 @@ int main( int argc, char *argv[] )
         else if (!strcmp(dummy, "logTotalMassUniformMassRatio"))
         {
           mDistr=logMassUniformTotalMassRatio;
+        }
         else if (!strcmp(dummy, "m1m2SquareGrid"))
         {
           mDistr=m1m2SquareGrid;
