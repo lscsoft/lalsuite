@@ -30,7 +30,6 @@ MAINTAINERCLEANFILES = \
 	FrequencySeries.c \
 	Sequence.c \
 	TimeSeries.c
-DISTCLEANFILES = *.tex
 
 EXTRA_DIST = \
 	FrequencySeries.m4 \
@@ -41,12 +40,6 @@ EXTRA_DIST = \
 	SequenceC.m4 \
 	TimeSeriesC.m4
 
-EXTRA_TEXSOURCES = MakeTemplateBank.c
-
-MOSTLYCLEANFILES = .dvi-dep
-
-dvi-local: .dvi-dep
-
 FrequencySeries.c : FrequencySeries.m4 FrequencySeriesC.m4
 	cd $(srcdir) && @M4@ FrequencySeries.m4 > FrequencySeries.c
 
@@ -55,5 +48,3 @@ Sequence.c : Sequence.m4 SequenceC.m4
 
 TimeSeries.c : TimeSeries.m4 TimeSeriesC.m4
 	cd $(srcdir) && @M4@ TimeSeries.m4 > TimeSeries.c
-
-@DVIMKFILE@

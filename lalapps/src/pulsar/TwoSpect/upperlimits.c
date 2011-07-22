@@ -96,14 +96,23 @@ void free_UpperLimitVector(UpperLimitVector *vector)
 
 
 
-void skypoint95UL(UpperLimit *ul, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs)
+//void skypoint95UL(UpperLimit *ul, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs)
+void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs)
 {
    
    const CHAR *fn = __func__;
    
-   INT4 ii, jj;
+   INT4 ii, jj, kk;
    
    INT4 minrows = (INT4)round(2.0*params->dfmin*params->Tcoh)+1;
+   
+   REAL4Vector *twiceAveNoise = XLALCreateREAL4Vector(aveNoise->length);
+   if (twiceAveNoise==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, aveNoise->length);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
+   memcpy(twiceAveNoise->data, aveNoise->data, sizeof(REAL4)*aveNoise->length);
+   for (ii=0; ii<(INT4)aveNoise->length; ii++) twiceAveNoise->data[ii] *= 2.0;
    
    //Initialize solver
    const gsl_root_fsolver_type *T = gsl_root_fsolver_brent;
@@ -113,36 +122,52 @@ void skypoint95UL(UpperLimit *ul, ihsfarStruct *ihsfarstruct, inputParamsStruct 
    
    INT4 totaliterations = 0;
    REAL8 highesth0 = 0.0, fsig = 0.0, period = 0.0, moddepth = 0.0;
+   REAL8 dailyharmonic = params->Tobs/(24.0*3600);
+   REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
    for (ii=minrows; ii<=ihsmaxima->rows; ii++) {
-      REAL8 loudestoutlier = 0.0;
+      REAL8 loudestoutlier = 0.0, loudestoutlierminusnoise = 0.0, loudestoutliernoise = 0.0;
       INT4 jjbinofloudestoutlier = 0, locationofloudestoutlier = 0;
       for (jj=0; jj<ffdata->numfbins-(ii-1); jj++) {
-         if (ihsmaxima->maxima->data[(ii-2)*ffdata->numfbins-((ii-1)*(ii-1)-(ii-1))/2+jj]>loudestoutlier) {
-            loudestoutlier = ihsmaxima->maxima->data[(ii-2)*ffdata->numfbins-((ii-1)*(ii-1)-(ii-1))/2+jj];
-            locationofloudestoutlier = ihsmaxima->locations->data[(ii-2)*ffdata->numfbins-((ii-1)*(ii-1)-(ii-1))/2+jj];
+         INT4 locationinmaximavector = (ii-2)*ffdata->numfbins - ((ii-1)*(ii-1)-(ii-1))/2 + jj;
+         INT4 location = ihsmaxima->locations->data[locationinmaximavector];
+         
+         REAL8 noise = aveNoise->data[location] + aveNoise->data[location*2] + aveNoise->data[location*3] + aveNoise->data[location*4] + aveNoise->data[location*5];
+         for (kk=1; kk<=5; kk++) if (fabs(dailyharmonic-kk*location)<=1.0 || fabs(dailyharmonic2-kk*location)<=1.0 || fabs(dailyharmonic3-kk*location)<=1.0 || fabs(dailyharmonic4-kk*location)<=1.0) noise -= aveNoise->data[location*kk];
+         REAL8 totalnoise = 0.0;
+         for (kk=0; kk<ii; kk++) totalnoise += noise*fbinavgs->data[jj+kk];
+         REAL8 ihsminusnoise = ihsmaxima->maxima->data[locationinmaximavector] - totalnoise;
+         
+         if (ihsminusnoise>loudestoutlierminusnoise) {
+            loudestoutlier = ihsmaxima->maxima->data[locationinmaximavector];
+            loudestoutliernoise = totalnoise;
+            loudestoutlierminusnoise = ihsminusnoise;
+            locationofloudestoutlier = ihsmaxima->locations->data[locationinmaximavector];
             jjbinofloudestoutlier = jj;
          }
       }
       
-      REAL4Vector *tempfbinavgs = XLALCreateREAL4Vector(ii);
+      /* REAL4Vector *tempfbinavgs = XLALCreateREAL4Vector(ii);
       if (tempfbinavgs==NULL) {
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ii);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       memcpy(tempfbinavgs->data, &(fbinavgs->data[jjbinofloudestoutlier]), sizeof(REAL4)*ii);
       REAL4 avenoiseinrange = calcMean(tempfbinavgs);
-      XLALDestroyREAL4Vector(tempfbinavgs);
+      XLALDestroyREAL4Vector(tempfbinavgs); */
       
-      REAL8 initialguess = ncx2inv(0.95, 2.0*avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2], 2.0*(loudestoutlier-avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2]));
+      //REAL8 initialguess = ncx2inv(0.95, 2.0*avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2], 2.0*(loudestoutlier-avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2]));
+      REAL8 initialguess = ncx2inv(0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
       if (XLAL_IS_REAL8_FAIL_NAN(initialguess)) {
-         fprintf(stderr, "%s: ncx2inv(%f,%f,%f) failed.\n",fn, 0.95, 2.0*avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2], 2.0*(loudestoutlier-avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2]));
+         //fprintf(stderr, "%s: ncx2inv(%f,%f,%f) failed.\n",fn, 0.95, 2.0*avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2], 2.0*(loudestoutlier-avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2]));
+         fprintf(stderr, "%s: ncx2inv(%f,%f,%f) failed.\n",fn, 0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
-      REAL8 lo = 0.1*initialguess, hi = 10.0*initialguess;
+      REAL8 lo = 0.125*initialguess, hi = 8.0*initialguess;
       pars.val = 2.0*loudestoutlier;
-      pars.dof = 2.0*avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2];
+      //pars.dof = 2.0*avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2];
+      pars.dof = 2.0*loudestoutliernoise;
       pars.ULpercent = 0.95;
-      F.function = &gsl_ncx2cdf_solver;
+      F.function = &gsl_ncx2cdf_float_solver;
       F.params = &pars;
       if (gsl_root_fsolver_set(s, &F, lo, hi) != 0) {
          fprintf(stderr,"%s: gsl_root_fsolver_set() failed.\n", fn);
@@ -164,7 +189,7 @@ void skypoint95UL(UpperLimit *ul, ihsfarStruct *ihsfarstruct, inputParamsStruct 
          //fprintf(stderr, "root = %.8f\n", root);
          lo = gsl_root_fsolver_x_lower(s);
          hi = gsl_root_fsolver_x_upper(s);
-         status = gsl_root_test_interval(lo, hi, 0.0, 0.005);
+         status = gsl_root_test_interval(lo, hi, 0.0, 0.001);
          if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
             fprintf(stderr,"%s: gsl_root_test_interval() failed with code %d.\n", fn, status);
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
@@ -180,7 +205,8 @@ void skypoint95UL(UpperLimit *ul, ihsfarStruct *ihsfarstruct, inputParamsStruct 
       
       totaliterations += jj;
       
-      REAL8 h0 = ihs2h0(0.5*root+loudestoutlier, locationofloudestoutlier, jjbinofloudestoutlier, ii, params, aveNoise, fbinavgs);
+      //REAL8 h0 = ihs2h0(0.5*root+loudestoutlier, locationofloudestoutlier, jjbinofloudestoutlier, ii, params, aveNoise, fbinavgs);
+      REAL8 h0 = ihs2h0(root+pars.dof, params);
       if (XLAL_IS_REAL8_FAIL_NAN(h0)) {
          fprintf(stderr, "%s: ihs2h0() failed.\n", fn);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
@@ -191,7 +217,8 @@ void skypoint95UL(UpperLimit *ul, ihsfarStruct *ihsfarstruct, inputParamsStruct 
          period = params->Tobs/locationofloudestoutlier;
          moddepth = 0.5*(ii-1)/params->Tcoh;
       }
-   }
+      //fprintf(stderr, "%d done\n", ii);
+   } /* for ii=minrows --> maximum rows */
    
    ul->ULval = highesth0;
    ul->fsig = fsig;
@@ -200,6 +227,7 @@ void skypoint95UL(UpperLimit *ul, ihsfarStruct *ihsfarstruct, inputParamsStruct 
    ul->iterations2reachUL = totaliterations;
    
    gsl_root_fsolver_free(s);
+   XLALDestroyREAL4Vector(twiceAveNoise);
    
 }
 REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p)
@@ -207,6 +235,13 @@ REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p)
    
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
    return ncx2cdf(params->val, params->dof, x) - (1.0-params->ULpercent);
+   
+}
+REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p)
+{
+   
+   struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
+   return (REAL8)(ncx2cdf_float((REAL4)params->val, (REAL4)params->dof, (REAL4)x) - (1.0-params->ULpercent));
    
 }
 

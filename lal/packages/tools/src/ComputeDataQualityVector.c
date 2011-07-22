@@ -24,7 +24,7 @@
 NRCSID( COMPUTEDATAQUALITYVECTORC, "$Id$" );
 RCSID("$Id$");
 
-/*
+/**
  * Compute the Data Quality Vector as defined in
  * https://www.lsc-group.phys.uwm.edu/daswg/wiki/S6OnlineGroup/CalibratedData
  *

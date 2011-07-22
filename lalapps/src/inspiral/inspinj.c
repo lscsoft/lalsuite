@@ -578,10 +578,13 @@ static void print_usage(char *program)
       "                           totalMass: uniform distribution in total mass\n"\
       "                           componentMass: uniform in m1 and m2\n"\
       "                           gaussian: gaussian mass distribution\n"\
-      "                           log: log distribution in comonent mass\n"\
-      "                           totalMassRatio: uniform distribution in total mass ratio\n"\
+      "                           log: log distribution in component mass\n"\
+      "                           totalMassRatio: uniform distribution in total mass and\n"\
+      "                           mass ratio m1 / m2\n"\
       "                           logTotalMassUniformMassRatio: log distribution in total mass\n"\
-      "                           and uniform in total mass ratio\n"\
+      "                           and uniform in mass ratio\n"\
+      "                           totalMassFraction: uniform distribution in total mass and\n"\
+      "                           in `mass fraction' m1 / (m1+m2)\n"\
       " [--ninja2-mass]           use the NINJA 2 mass-selection algorithm\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
       " [--nr-file] nrFile        read mass/spin parameters from xml nrFile\n"\
@@ -596,7 +599,7 @@ static void print_usage(char *program)
       " [--mean-mass2] m2mean     set the mean value for mass2\n"\
       " [--stdev-mass2] m2std     set the standard deviation for mass2\n"\
       " [--min-mratio] minr       set the minimum mass ratio\n"\
-      " [--max-mratio] maxr       set the maximum mass ratio\\n");
+      " [--max-mratio] maxr       set the maximum mass ratio\n");
   fprintf(stderr,
       "Spin distribution information:\n"\
       "  --disable-spin           disables spinning injections\n"\
@@ -1640,13 +1643,19 @@ int main( int argc, char *argv[] )
           mDistr=uniformTotalMassRatio;
         }
         else if (!strcmp(dummy, "logTotalMassUniformMassRatio"))
+        {
           mDistr=logMassUniformTotalMassRatio;
+        }
+        else if (!strcmp(dummy, "totalMassFraction"))
+        {
+          mDistr=uniformTotalMassFraction;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown mass distribution: %s must be one of\n"
               "(source, nrwaves, totalMass, componentMass, gaussian, log,\n"
-              "totalMassRatio, logTotalMassUniformMassRatio)\n",
+              "totalMassRatio, totalMassFraction , logTotalMassUniformMassRatio)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -2434,12 +2443,14 @@ int main( int argc, char *argv[] )
   }
 
   /* check if mass ratios are specified */
-  if ( (mDistr==uniformTotalMassRatio || mDistr==logMassUniformTotalMassRatio)
+  if ( (mDistr==uniformTotalMassRatio || mDistr==logMassUniformTotalMassRatio
+        || mDistr==uniformTotalMassFraction)
       && (minMassRatio < 0.0 || maxMassRatio < 0.0) )
   {
     fprintf( stderr,
         "Must specify --min-mass-ratio and --max-mass-ratio if choosing"
-        " --m-distr=totalMassRatio or --m-distr=logTotalMassUniformMassRatio\n");
+        " --m-distr=totalMassRatio or --m-distr=logTotalMassUniformMassRatio"
+        " or --m-distr=totalMassFraction\n");
     exit( 1 );
   }
 
@@ -2679,6 +2690,11 @@ int main( int argc, char *argv[] )
     else if ( mDistr==logMassUniformTotalMassRatio )
     {
       simTable=XLALRandomInspiralTotalMassRatio(simTable, randParams,
+          mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
+    }
+    else if ( mDistr==uniformTotalMassFraction )
+    {
+      simTable=XLALRandomInspiralTotalMassFraction(simTable, randParams,
           mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
     }
 

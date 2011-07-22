@@ -1385,11 +1385,9 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 				   UINT4                 blocksRngMed,
 				   UINT4                 excludePercentile)
 {
-  REAL8 Tsft_Sn=0.0, Tsft_sumSn=0.0;
   UINT4 Y, X, alpha, k, numifos, numsfts, lengthsft, numsftsTot;
   MultiNoiseWeights *weights;
   REAL8 Tsft = 1.0 / rngmed->data[0]->data[0].deltaF;
-  REAL8 Tsft_calS;	/* overall noise-normalization */
 
   INITSTATUS (status, "LALComputeMultiNoiseWeights", SFTUTILSC);
   ATTATCHSTATUSPTR (status);
@@ -1413,6 +1411,8 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
   }
 
   numsftsTot = 0;
+  REAL8 sumWeights = 0;
+
   for ( X = 0; X < numifos; X++)
     {
       numsfts = rngmed->data[X]->length;
@@ -1433,6 +1433,7 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 	  REAL8FrequencySeries *thisrm;
 	  UINT4 halfBlock = blocksRngMed/2;
 	  UINT4 excludeIndex, halfLength, length;
+          REAL8 wXa;
 
 	  thisrm = &(rngmed->data[X]->data[alpha]);
 
@@ -1448,28 +1449,33 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 	  excludeIndex =  excludePercentile * halfLength ; /* integer arithmetic */
 	  excludeIndex /= 100; /* integer arithmetic */
 
-	  Tsft_Sn = 0.0;
+	  REAL8 Tsft_avgS2 = 0.0;	// 'S2' refers to double-sided PSD
 	  for ( k = halfBlock + excludeIndex; k < lengthsft - halfBlock - excludeIndex; k++)
-	    Tsft_Sn += thisrm->data->data[k];
-	  Tsft_Sn /= lengthsft - 2*halfBlock - 2*excludeIndex;
+	    Tsft_avgS2 += thisrm->data->data[k];
+	  Tsft_avgS2 /= lengthsft - 2*halfBlock - 2*excludeIndex;
 
-	  Tsft_sumSn += Tsft_Sn; /* sumSn is just a normalization factor */
+          wXa = 1.0/Tsft_avgS2;	// unnormalized weight
+	  weights->data[X]->data[alpha] = wXa;
 
-	  weights->data[X]->data[alpha] = 1.0/Tsft_Sn;
+	  sumWeights += wXa;	// sum the weights to normalize this at the end
 	} /* end loop over sfts for each ifo */
 
     } /* end loop over ifos */
 
-  Tsft_calS = Tsft_sumSn/numsftsTot;	/* overall noise-normalization is the average Tsft * <S_{X,\alpha}> */
+  /* overall noise-normalization factor Sinv = 1/Nsft sum_Xa Sinv_Xa,
+   * see Eq.(60) in CFSv2 notes:
+   * https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?docid=1665&version=3
+   */
+  REAL8 TsftS2_inv = sumWeights / numsftsTot;	// this is double-sided PSD 'S2'
 
-  /* make weights of order unity by myltiplying by sumSn/total number of sfts */
+  /* make weights of order unity by normalizing with TsftS2_inv, see Eq.(58) in CFSv2 notes (v3) */
   for ( X = 0; X < numifos; X ++) {
     numsfts = weights->data[X]->length;
     for ( alpha = 0; alpha < numsfts; alpha ++)
-      weights->data[X]->data[alpha] *= Tsft_calS;
+      weights->data[X]->data[alpha] /= TsftS2_inv;
   }
 
-  weights->Sinv_Tsft = 0.5 * Tsft*Tsft / Tsft_calS;		/* 'Sinv * Tsft' normalization factor uses single-sided PSD!! */
+  weights->Sinv_Tsft = 0.5 * Tsft*Tsft * TsftS2_inv;		/* 'Sinv * Tsft' refers to single-sided PSD!! Eq.(60) in CFSv2 notes (v3)*/
 
   *out = weights;
 

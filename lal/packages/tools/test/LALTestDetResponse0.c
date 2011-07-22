@@ -17,36 +17,8 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="LALTestDetResponse0CV">
-   Author: David Chin <dwchin@umich.edu> +1-734-709-9119
-   $Id$
-   </lalVerbatim>
-*/
-
 /*
-<lalLaTeX>
-
-\subsection{Program {\texttt{LALTestDetResponse0.c}}
-\label{ss:LALTestDetResponse0.c}
-
-\subsubsection*{Usage}
-
-\subsubsection*{Description}
-
-Performs zeroth-order test of \texttt{LALComputeDetAMResponse()} and
-\texttt{LALComputeDetAMResponseSeries()}.
-
-\subsubsection*{Exit codes}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALComputeDetAMResponse()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-</lalLaTeX>
+   Author: David Chin <dwchin@umich.edu> +1-734-709-9119
 */
 
 #include <stdio.h>

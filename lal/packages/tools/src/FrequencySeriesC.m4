@@ -165,7 +165,7 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 		, DATATYPE, COMPLEX16,
 		arg1->data->data[i].re += arg2->data->data[j].re * unit_ratio;
 		arg1->data->data[i].im += arg2->data->data[j].im * unit_ratio;
-		, 
+		,
 		arg1->data->data[i] += arg2->data->data[j] * unit_ratio;)
 	}
 
@@ -234,7 +234,7 @@ SERIESTYPE *`XLALMultiply'SERIESTYPE (
 			arg1->data->data[i] = LAL_COMPLEX8_ZERO;
 			, DATATYPE, COMPLEX16,
 			arg1->data->data[i] = LAL_COMPLEX16_ZERO;
-			, 
+			,
 			arg1->data->data[i] = 0.0;)
 		}
 
@@ -257,7 +257,7 @@ SERIESTYPE *`XLALMultiply'SERIESTYPE (
 		REAL8 im = arg2->data->data[j].im * unit_ratio;
 		arg1->data->data[i].re = arg1->data->data[i].re * re - arg1->data->data[i].im * im;
 		arg1->data->data[i].im = arg1->data->data[i].re * im + arg1->data->data[i].im * re;
-		, 
+		,
 		arg1->data->data[i] *= arg2->data->data[j] * unit_ratio;)
 	}
 
@@ -268,7 +268,7 @@ SERIESTYPE *`XLALMultiply'SERIESTYPE (
 		arg1->data->data[i] = LAL_COMPLEX8_ZERO;
 		, DATATYPE, COMPLEX16,
 		arg1->data->data[i] = LAL_COMPLEX16_ZERO;
-		, 
+		,
 		arg1->data->data[i] = 0.0;)
 	}
 

@@ -32,6 +32,7 @@
 #include "templates.h"
 #include "cdfwchisq.h"
 #include "statistics.h"
+#include "candidates.h"
 
 //////////////////////////////////////////////////////////////
 // Allocate memory for farStruct struct  -- done
@@ -698,9 +699,19 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       if (ii < m0-mextent-2 || ii > m0+mextent+2) {
          scale->data[ii] = 0.0;
       } else if (ii == m0-mextent-2 || ii == m0+mextent+2) {
-         scale->data[ii] = sincxoverxsqminusone(overage-1.0)*sincxoverxsqminusone(overage-1.0);
+         //scale->data[ii] = sincxoverxsqminusone(overage-1.0)*sincxoverxsqminusone(overage-1.0);
+         
+         //scale->data[ii] = sincxoverxsqminusone(overage-1.0);
+         //scale->data[ii] *= scale->data[ii];
+         
+         scale->data[ii] = sqsincxoverxsqminusone(overage-1.0);
       } else if (ii == m0-mextent-1 || ii == m0+mextent+1) {
-         scale->data[ii] = sincxoverxsqminusone(overage)*sincxoverxsqminusone(overage);
+         //scale->data[ii] = sincxoverxsqminusone(overage)*sincxoverxsqminusone(overage);
+         
+         //scale->data[ii] = sincxoverxsqminusone(overage);
+         //scale->data[ii] *= scale->data[ii];
+         
+         scale->data[ii] = sqsincxoverxsqminusone(overage);
       } else {
          scale->data[ii] = 1.0;
       }
@@ -735,7 +746,13 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       REAL8 sigbinvelocity = fabs(-input.moddepth*sin(LAL_TWOPI*periodf*((ii+1)*params->Tcoh*0.5))*params->Tcoh*0.5*params->Tcoh*LAL_TWOPI*periodf);
       REAL8 sigma = 0.5 * params->Tcoh * ((383.85*LAL_1_PI)*(0.5*6.1e-3) / ((sigbinvelocity+0.1769)*(sigbinvelocity+0.1769)+(0.5*6.1e-3)*(0.5*6.1e-3)) + 0.3736);   //Derived fit from simulation
       for (jj=0; jj<(INT4)sigmas->length; jj++) {
-         allsigmas->data[ii*sigmas->length + jj] = sincxoverxsqminusone(sigbin-round(params->fmin*params->Tcoh+jj+fnumstart))*sincxoverxsqminusone(sigbin-round(params->fmin*params->Tcoh+jj+fnumstart))*sigma;
+         //allsigmas->data[ii*sigmas->length + jj] = sincxoverxsqminusone(sigbin-round(params->fmin*params->Tcoh+jj+fnumstart))*sincxoverxsqminusone(sigbin-round(params->fmin*params->Tcoh+jj+fnumstart))*sigma;
+         
+         //allsigmas->data[ii*sigmas->length + jj] = sincxoverxsqminusone(sigbin-round(params->fmin*params->Tcoh+jj+fnumstart));
+         //allsigmas->data[ii*sigmas->length + jj] *= allsigmas->data[ii*sigmas->length + jj];
+         //allsigmas->data[ii*sigmas->length + jj] *= sigma;
+         
+         allsigmas->data[ii*sigmas->length + jj] = sqsincxoverxsqminusone(sigbin-round(params->fmin*params->Tcoh+jj+fnumstart))*sigma;
       }
    } /* for ii < wvals->length */
    for (ii=0; ii<(INT4)sigmas->length; ii++) {
@@ -747,20 +764,30 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    
    
    //Create template
-   REAL8 sum = 0.0;
-   REAL8 dataval = 0.0;
+   REAL8 sum = 0.0, dataval = 0.0;
+   REAL8 sin2pix = 0.0, cos2pix = 0.0, sinx = 0.0, cosx = 0.0;
    for (ii=0; ii<(INT4)sigmas->length; ii++) {
       REAL8 s = sigmas->data[ii];
       REAL8 scale1 = 1.0/(1.0+exp(-phi_actual->data[ii+fnumstart]*phi_actual->data[ii+fnumstart]*0.5/(s*s)));
       for (jj=0; jj<(INT4)fpr->length; jj++) {
          
          REAL8 omega = LAL_TWOPI*fpr->data[jj];
+         twospect_sin_cos_LUT(&sinx, &cosx, input.period*omega);
          if (jj==0 || jj==1 || jj==2 || jj==3) {
             dataval = 0.0;
-         } else if (fabs(cos(input.period*omega)-1.0)<1e-5) {
-            dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * omega * omega) * (cos(phi_actual->data[ii+fnumstart] * omega) + 1.0) * N * N;
+         } else if (fabs(cosx-1.0)<1e-5) {
+         //} else if (fabs(cos(input.period*omega)-1.0)<1e-5) {
+            //dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * omega * omega) * (cos(phi_actual->data[ii+fnumstart] * omega) + 1.0) * N * N;
+            twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
+            dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * omega * omega) * (cos2pix + 1.0) * N * N;
          } else {
-            dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * omega * omega) * (cos(N * input.period * omega) - 1.0) * (cos(phi_actual->data[ii+fnumstart] * omega) + 1.0) / (cos(input.period * omega) - 1.0);
+            //dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * omega * omega) * (cos(N * input.period * omega) - 1.0) * (cos(phi_actual->data[ii+fnumstart] * omega) + 1.0) / (cos(input.period * omega) - 1.0);
+            twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, N*input.period*fpr->data[jj]);
+            dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * omega * omega) * (cos2pix - 1.0);
+            twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
+            dataval *= (cos2pix + 1.0);
+            twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, input.period*fpr->data[jj]);
+            dataval /= (cos2pix - 1.0);
          }
          
          //Sum up the weights in total
@@ -824,13 +851,24 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    
    //Determine the signal modulation in bins with time at center of coherence time and create
    //Hann windowed PSDs
+   REAL8 sin2pix = 0.0, cos2pix = 0.0;
    for (ii=0; ii<numffts; ii++) {
       REAL4 t = 0.5*params->Tcoh*ii;  //Assumed 50% overlapping SFTs
-      REAL4 n0 = B*sin(LAL_TWOPI*periodf*t) + input.fsig*params->Tcoh;
+      //REAL4 n0 = B*sin(LAL_TWOPI*periodf*t) + input.fsig*params->Tcoh;
+      twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, periodf*t);
+      REAL4 n0 = B*sin2pix + input.fsig*params->Tcoh;
       if (sftexist->data[ii]==1) {
          for (jj=0; jj<numfbins; jj++) {
             //Create windowed PSD values
-            if ( fabs(n0-freqbins->data[jj]) <= 5.0 ) psd1->data[ii*numfbins + jj] = 2.0/3.0*params->Tcoh*sincxoverxsqminusone(n0-freqbins->data[jj])*sincxoverxsqminusone(n0-freqbins->data[jj]);
+            //if ( fabs(n0-freqbins->data[jj]) <= 5.0 ) psd1->data[ii*numfbins + jj] = 2.0/3.0*params->Tcoh*sincxoverxsqminusone(n0-freqbins->data[jj])*sincxoverxsqminusone(n0-freqbins->data[jj]);
+            
+            //if ( fabs(n0-freqbins->data[jj]) <= 5.0 ) {
+               //psd1->data[ii*numfbins + jj] = sincxoverxsqminusone(n0-freqbins->data[jj]);
+               //psd1->data[ii*numfbins + jj] *= psd1->data[ii*numfbins + jj];
+               //psd1->data[ii*numfbins + jj] *= (2.0/3.0)*params->Tcoh;
+            //}
+            
+            if ( fabs(n0-freqbins->data[jj]) <= 5.0 ) psd1->data[ii*numfbins + jj] = sqsincxoverxsqminusone(n0-freqbins->data[jj])*(2.0/3.0)*params->Tcoh;
             else psd1->data[ii*numfbins + jj] = 0.0;
          } /* for jj < numfbins */
       } else {
@@ -918,6 +956,345 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
 }
 
 
+void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
+{
+   
+   const CHAR *fn = __func__;
+   
+   INT4 ii, jj, kk;
+   REAL8Vector *trialf, *trialb, *trialp;
+   REAL8 fstepsize, dfstepsize;
+   REAL4 tcohfactor = 1.49e-3*params->Tcoh + 1.76;
+   
+   //Set up parameters of modulation depth search
+   if (dfmin<(0.5/params->Tcoh-1.0e-9)) dfmin = 0.5/params->Tcoh;
+   trialb = XLALCreateREAL8Vector(numdfsteps);
+   if (trialb==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numdfsteps);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
+   dfstepsize = (dfmax-dfmin)/(REAL8)(numdfsteps-1);
+   for (ii=0; ii<numdfsteps; ii++) trialb->data[ii] = dfmin + dfstepsize*ii;
+   
+   //Set up parameters of signal frequency search
+   if (fminimum<params->fmin) fminimum = params->fmin;
+   if (fmaximum>params->fmin+params->fspan) fmaximum = params->fmin+params->fspan;
+   trialf = XLALCreateREAL8Vector(numfsteps);
+   if (trialf==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numfsteps);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
+   fstepsize = (fmaximum-fminimum)/(REAL8)(numfsteps-1);
+   for (ii=0; ii<numfsteps; ii++) trialf->data[ii] = fminimum + fstepsize*ii;
+   
+   //Search over numperiods different periods
+   trialp = XLALCreateREAL8Vector(numperiods);
+   if (trialp==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numperiods);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
+   
+   //Now search over the parameter space. Frequency, then modulation depth, then period
+   //Initialze best values as the initial point we are searching around
+   INT4 bestproberrcode = 0;
+   REAL8 bestf = 0.0, bestp = 0.0, bestdf = 0.0, bestR = 0.0, besth0 = 0.0, bestProb = 0.0;
+   candidate cand;
+   templateStruct *template = new_templateStruct(params->templatelength);
+   if (template==NULL) {
+      fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, params->templatelength);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC); 
+   }
+   farStruct *farval = NULL;
+   if (params->calcRthreshold) {
+      farval = new_farStruct();
+      if (farval==NULL) {
+         fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
+         XLAL_ERROR_VOID(fn, XLAL_EFUNC); 
+      }
+   }
+   
+   INT4 midposition = (INT4)roundf((numperiods-1)*0.5), proberrcode = 0;
+   for (ii=0; ii<(INT4)trialf->length; ii++) {
+      for (jj=0; jj<(INT4)trialb->length; jj++) {
+         //Start with period of the first guess, then determine nearest neighbor from the
+         //modulation depth amplitude to find the other period guesses. These parameters 
+         //are determined from simulation to scale the N.N. distance w.r.t. mod. depth with
+         //20% mismatch parameter
+         trialp->data[midposition] = input.period;
+         for (kk=0; kk<midposition; kk++) {
+            REAL8 nnp = trialp->data[midposition+kk]*trialp->data[midposition+kk]*(1+trialp->data[midposition+kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
+            trialp->data[midposition+(kk+1)] = trialp->data[midposition+kk] + nnp;
+            nnp = trialp->data[midposition-kk]*trialp->data[midposition-kk]*(1+trialp->data[midposition-kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
+            trialp->data[midposition-(kk+1)] = trialp->data[midposition-kk] - nnp;
+         }
+         
+         for (kk=0; kk<(INT4)trialp->length; kk++) {
+            if ( (trialf->data[ii]-trialb->data[jj]-6.0/params->Tcoh)>params->fmin && 
+                (trialf->data[ii]+trialb->data[jj]+6.0/params->Tcoh)<(params->fmin+params->fspan) && 
+                trialb->data[jj]<maxModDepth(trialp->data[kk], params->Tcoh) && 
+                trialp->data[kk]>minPeriod(trialb->data[jj], params->Tcoh) && 
+                trialp->data[kk]<=(0.2*params->Tobs) && 
+                trialp->data[kk]>=(2.0*3600.0) && 
+                trialb->data[jj]>=params->dfmin && 
+                trialb->data[jj]<=params->dfmax && 
+                trialp->data[kk]<=params->Pmax && 
+                trialp->data[kk]>=params->Pmin ) {
+               
+               loadCandidateData(&cand, trialf->data[ii], trialp->data[kk], trialb->data[jj], input.ra, input.dec, 0, 0, 0.0, 0, 0.0);
+               
+               if (useExactTemplates!=0) {
+                  makeTemplate(template, cand, params, sftexist, secondFFTplan);
+                  if (xlalErrno!=0) {
+                     fprintf(stderr,"%s: makeTemplate() failed.\n", fn);
+                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                  }
+               } else {
+                  makeTemplateGaussians(template, cand, params);
+                  if (xlalErrno!=0) {
+                     fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
+                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                  }
+               }
+               
+               if (params->calcRthreshold && bestProb==0.0) {
+                  numericFAR(farval, template, params->templatefar, aveNoise, aveTFnoisePerFbinRatio, params->rootFindingMethod);
+                  if (xlalErrno!=0) {
+                     fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                  }
+               }
+               
+               REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+               if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+                  fprintf(stderr,"%s: calculateR() failed.\n", fn);
+                  XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+               }
+               REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
+               if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                  fprintf(stderr,"%s: probR() failed.\n", fn);
+                  XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+               }
+               
+               REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
+               
+               if ( (bestProb!=0.0 && prob < bestProb) || (bestProb==0.0 && !params->calcRthreshold && prob<log10(params->templatefar)) || (bestProb==0.0 && params->calcRthreshold && R > farval->far) ) {
+                  bestf = trialf->data[ii];
+                  bestp = trialp->data[kk];
+                  bestdf = trialb->data[jj];
+                  bestR = R;
+                  besth0 = h0;
+                  bestProb = prob;
+                  bestproberrcode = proberrcode;
+               }
+               
+            } /* if within boundaries */
+         } /* for kk < trialp */
+      } /* for jj < trialb */
+   } /* for ii < trialf */
+   free_templateStruct(template);
+   template = NULL;
+   if (params->calcRthreshold) {
+      free_farStruct(farval);
+      farval = NULL;
+   }
+   XLALDestroyREAL8Vector(trialf);
+   XLALDestroyREAL8Vector(trialb);
+   XLALDestroyREAL8Vector(trialp);
+   trialf = NULL;
+   trialb = NULL;
+   trialp = NULL;
+   
+   if (bestProb==0.0) {
+      loadCandidateData(output, input.fsig, input.period, input.moddepth, input.ra, input.dec, input.stat, input.h0, input.prob, input.proberrcode, input.normalization);
+   } else {
+      loadCandidateData(output, bestf, bestp, bestdf, input.ra, input.dec, bestR, besth0, bestProb, bestproberrcode, input.normalization);
+   }
+   
+}
+
+
+/* void efficientTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, REAL8 minfstep, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, REAL8 minDfstep, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
+{
+   
+   const CHAR *fn = __func__;
+   
+   INT4 bestproberrcode = 0, ii, jj, kk;
+   REAL8 bestf = input.fsig, bestp = input.period, bestdf = input.moddepth, bestR = input.stat, besth0 = input.h0, bestProb = input.prob, fstepsize = 0.25*(fmaximum-fminimum), dfstepsize = 0.25*(dfmax-dfmin);
+   REAL4 tcohfactor = 1.49e-3*params->Tcoh + 1.76;
+   candidate cand;
+   
+   templateStruct *template = new_templateStruct(params->templatelength);
+   if (template==NULL) {
+      fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, params->templatelength);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC); 
+   }
+   farStruct *farval = NULL;
+   if (params->calcRthreshold) {
+      farval = new_farStruct();
+      if (farval==NULL) {
+         fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
+         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+      }
+   }
+   
+   //Search over numperiods different periods
+   REAL8Vector *trialp = XLALCreateREAL8Vector(numperiods);
+   if (trialp==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numperiods);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
+   INT4 midposition = (INT4)roundf((numperiods-1)*0.5), proberrcode = 0;
+   trialp->data[midposition] = input.period;
+   
+   REAL8Vector *trialf = XLALCreateREAL8Vector(2);
+   if (trialf==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, 2);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
+   REAL8Vector *trialb = XLALCreateREAL8Vector(2);
+   if (trialb==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, 2);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
+   
+   while (fstepsize-minfstep>1.0e-8 && dfstepsize-minDfstep>1.0e-8) {
+      //Initial point with template
+      loadCandidateData(&cand, input.fsig, input.period, input.moddepth, input.ra, input.dec, 0, 0, 0.0, 0, 0.0);
+      if (useExactTemplates!=0) {
+         makeTemplate(template, cand, params, sftexist, secondFFTplan);
+         if (xlalErrno!=0) {
+            fprintf(stderr,"%s: makeTemplate() failed.\n", fn);
+            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+         }
+      } else {
+         makeTemplateGaussians(template, cand, params);
+         if (xlalErrno!=0) {
+            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
+            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+         }
+      }
+      if (params->calcRthreshold && bestProb==0.0) {
+         numericFAR(farval, template, params->templatefar, aveNoise, aveTFnoisePerFbinRatio, params->rootFindingMethod);
+         if (xlalErrno!=0) {
+            fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+         }
+      }
+      bestR = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+      if (XLAL_IS_REAL8_FAIL_NAN(bestR)) {
+         fprintf(stderr,"%s: calculateR() failed.\n", fn);
+         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+      }
+      bestProb = probR(template, aveNoise, aveTFnoisePerFbinRatio, bestR, &bestproberrcode);
+      if (XLAL_IS_REAL8_FAIL_NAN(bestProb)) {
+         fprintf(stderr,"%s: probR() failed.\n", fn);
+         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+      }
+      besth0 = 2.7426*pow(bestR/(params->Tcoh*params->Tobs),0.25);
+      
+      for (ii=0; ii<(INT4)trialf->length; ii++) {
+         if (ii==0) trialf->data[ii] = bestf - fstepsize;
+         else trialf->data[ii] = bestf + fstepsize;
+      }
+      for (ii=0; ii<(INT4)trialb->length; ii++) {
+         if (ii==0) trialb->data[ii] = bestdf - dfstepsize;
+         else trialb->data[ii] = bestdf + dfstepsize;
+      }
+      
+      INT4 movedtoabetterpoint = 0;
+      for (ii=0; ii<(INT4)trialf->length; ii++) {
+         for (jj=0; jj<(INT4)trialb->length; jj++) {
+            for (kk=0; kk<midposition; kk++) {
+               REAL8 nnp = trialp->data[midposition+kk]*trialp->data[midposition+kk]*(1+trialp->data[midposition+kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
+               trialp->data[midposition+(kk+1)] = trialp->data[midposition+kk] + nnp;
+               nnp = trialp->data[midposition-kk]*trialp->data[midposition-kk]*(1+trialp->data[midposition-kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
+               trialp->data[midposition-(kk+1)] = trialp->data[midposition-kk] - nnp;
+            }
+            for (kk=0; kk<(INT4)trialp->length; kk++) {
+               if ( (trialf->data[ii]-trialb->data[jj]-6.0/params->Tcoh)>params->fmin && 
+                   (trialf->data[ii]+trialb->data[jj]+6.0/params->Tcoh)<(params->fmin+params->fspan) && 
+                   trialb->data[jj]<maxModDepth(trialp->data[kk], params->Tcoh) && 
+                   trialp->data[kk]>minPeriod(trialb->data[jj], params->Tcoh) && 
+                   trialp->data[kk]<=(0.2*params->Tobs) && 
+                   trialp->data[kk]>=(2.0*3600.0) && 
+                   trialb->data[jj]>=params->dfmin && 
+                   trialb->data[jj]<=params->dfmax && 
+                   trialp->data[kk]<=params->Pmax && 
+                   trialp->data[kk]>=params->Pmin ) {
+                  
+                  loadCandidateData(&cand, trialf->data[ii], trialp->data[kk], trialb->data[jj], input.ra, input.dec, 0, 0, 0.0, 0, 0.0);
+                  
+                  if (useExactTemplates!=0) {
+                     makeTemplate(template, cand, params, sftexist, secondFFTplan);
+                     if (xlalErrno!=0) {
+                        fprintf(stderr,"%s: makeTemplate() failed.\n", fn);
+                        XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                     }
+                  } else {
+                     makeTemplateGaussians(template, cand, params);
+                     if (xlalErrno!=0) {
+                        fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
+                        XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                     }
+                  }
+                  
+                  if (params->calcRthreshold && bestProb==0.0) {
+                     numericFAR(farval, template, params->templatefar, aveNoise, aveTFnoisePerFbinRatio, params->rootFindingMethod);
+                     if (xlalErrno!=0) {
+                        fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                        XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                     }
+                  }
+                  
+                  REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+                  if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+                     fprintf(stderr,"%s: calculateR() failed.\n", fn);
+                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                  }
+                  REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
+                  if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                     fprintf(stderr,"%s: probR() failed.\n", fn);
+                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                  }
+                  
+                  REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
+                  
+                  if ( (bestProb!=0.0 && prob < bestProb) || (bestProb==0.0 && !params->calcRthreshold && prob<log10(params->templatefar)) || (bestProb==0.0 && params->calcRthreshold && R > farval->far) ) {
+                     bestf = trialf->data[ii];
+                     bestp = trialp->data[kk];
+                     bestdf = trialb->data[jj];
+                     bestR = R;
+                     besth0 = h0;
+                     bestProb = prob;
+                     bestproberrcode = proberrcode;
+                     movedtoabetterpoint = 1;
+                  }
+                  
+               } // if within boundaries
+            }
+         }
+      }
+      
+   }
+   
+   
+   
+   
+   
+   
+   free_templateStruct(template);
+   template = NULL;
+   if (params->calcRthreshold) {
+      free_farStruct(farval);
+      farval = NULL;
+   }
+   XLALDestroyREAL8Vector(trialp);
+   XLALDestroyREAL8Vector(trialf);
+   XLALDestroyREAL8Vector(trialb);
+   
+} */
+
+
 //////////////////////////////////////////////////////////////
 // Does the insertion sort for the template weights
 void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc, INT4 firstfftfreq, INT4 secfftfreq)
@@ -953,6 +1330,81 @@ REAL8 sincxoverxsqminusone(REAL8 x)
    else return gsl_sf_sinc(x)/(x*x-1.0);
    
 } /* sincxoverxsqminusone() */
+REAL8 sqsincxoverxsqminusone(REAL8 x)
+{
+   
+   REAL8 val = sincxoverxsqminusone(x);
+   return val*val;
+   
+} /* sqsincxoverxsqminusone() */
+
+
+//Stolen from computeFstat.c with higher resolution
+#define OOTWOPI         (1.0 / LAL_TWOPI)
+int twospect_sin_cos_LUT(REAL8 *sinx, REAL8 *cosx, REAL8 x)
+{
+   return twospect_sin_cos_2PI_LUT( sinx, cosx, x * OOTWOPI );
+} /* twospect_sin_cos_LUT() */
+#define LUT_RES         1024      /* resolution of lookup-table */
+#define LUT_RES_F       (1.0 * LUT_RES)
+#define OO_LUT_RES      (1.0 / LUT_RES)
+#define X_TO_IND        (1.0 * LUT_RES * OOTWOPI )
+#define IND_TO_X        (LAL_TWOPI * OO_LUT_RES)
+#define TRUE (1==1)
+#define FALSE (1==0)
+int twospect_sin_cos_2PI_LUT(REAL8 *sin2pix, REAL8 *cos2pix, REAL8 x)
+{
+   REAL8 xt;
+   INT4 i0;
+   REAL8 d, d2;
+   REAL8 ts, tc;
+   REAL8 dummy;
+   
+   static BOOLEAN firstCall = TRUE;
+   static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
+   
+   /* the first time we get called, we set up the lookup-table */
+   if ( firstCall ) {
+      UINT4 k;
+      for (k=0; k <= LUT_RES; k++) {
+         sinVal[k] = sin( LAL_TWOPI * k * OO_LUT_RES );
+         cosVal[k] = cos( LAL_TWOPI * k * OO_LUT_RES );
+      }
+      firstCall = FALSE;
+   }
+
+   /* we only need the fractional part of 'x', which is number of cylces,
+   * this was previously done using
+   *   xt = x - (INT4)x;
+   * which is numerically unsafe for x > LAL_INT4_MAX ~ 2e9
+   * for saftey we therefore rather use modf(), even if that
+   * will be somewhat slower...
+   */
+   //xt = modf(x, &dummy);/* xt in (-1, 1) */
+   if (x<9.2233720368547e18) xt = x - (INT8)x;  // if x < roughly LAL_REAL8_MAX
+   else xt = modf(x, &dummy);
+   
+   if ( xt < 0.0 ) xt += 1.0;                  /* xt in [0, 1 ) */
+   #ifndef LAL_NDEBUG
+      if ( xt < 0.0 || xt > 1.0 ) {
+         XLALPrintError("\nFailed numerica in twospect_sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
+         return XLAL_FAILURE;
+      }
+   #endif
+   
+   i0 = (INT4)( xt * LUT_RES_F + 0.5 );  /* i0 in [0, LUT_RES ] */
+   d = d2 = LAL_TWOPI * (xt - OO_LUT_RES * i0);
+   d2 *= 0.5 * d;
+   
+   ts = sinVal[i0];
+   tc = cosVal[i0];
+   
+   /* use Taylor-expansions for sin/cos around LUT-points */
+   (*sin2pix) = ts + d * tc - d2 * ts;
+   (*cos2pix) = tc - d * ts - d2 * tc;
+   
+   return XLAL_SUCCESS;
+} /* twospect_sin_cos_2PI_LUT() */
 
 
 

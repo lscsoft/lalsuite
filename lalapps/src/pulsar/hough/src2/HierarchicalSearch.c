@@ -1402,19 +1402,22 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   deltaFsft = catalog->data[0].header.deltaF;
   timebase = 1.0/deltaFsft;
 
-  /* calculate start and end times and tobs from catalog*/
-  tStartGPS = catalog->data[0].header.epoch;
-  in->tStartGPS = tStartGPS;
-  tEndGPS = catalog->data[catalog->length - 1].header.epoch;
-  XLALGPSAdd(&tEndGPS, timebase);
-  tObs = XLALGPSDiff(&tEndGPS, &tStartGPS);
-  in->tObs = tObs;
-
   /* get sft catalogs for each stack */
   TRY( SetUpStacks( status->statusPtr, &catalogSeq, in->tStack, catalog, in->nStacks), status);
 
   /* reset number of stacks */
-  in->nStacks = catalogSeq.length;
+  UINT4 numSegments = catalogSeq.length;
+  in->nStacks = numSegments;
+
+  /* calculate start and end times and tobs from segmented catalog*/
+  tStartGPS = catalogSeq.data[0].data[0].header.epoch;
+  in->tStartGPS = tStartGPS;
+  SFTCatalog *LastSegmentCat = &(catalogSeq.data[numSegments - 1]);
+  UINT4 numSFTsInLastSeg = LastSegmentCat->length;
+  tEndGPS = LastSegmentCat->data[numSFTsInLastSeg-1].header.epoch;
+  XLALGPSAdd(&tEndGPS, timebase);
+  tObs = XLALGPSDiff(&tEndGPS, &tStartGPS);
+  in->tObs = tObs;
 
   /* get timestamps of start and mid of each stack */
   /* set up vector containing mid times of stacks */
@@ -1829,7 +1832,7 @@ void ComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structur
 
   LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%d bins)\n",
 	    fBinIni*deltaF, fBinFin*deltaF, fBinFin - fBinIni + 1);
-  ASSERT ( fBinIni < fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( fBinIni <= fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
   /* initialise number of candidates -- this means that any previous candidates
      stored in the list will be lost for all practical purposes*/
@@ -2607,6 +2610,7 @@ void DumpLUT2file(LALStatus       *status,
   /* construct a fake peakgram to print all borders
      -- peakgram should be 1,0,1,0,1,0.... */
   for (k = 0; k < pg.length; ++k){
+   /*  pg.peak[k] = 4*k+3; */
     pg.peak[k] = 2*k;
   }
 

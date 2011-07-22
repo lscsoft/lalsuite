@@ -17,50 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="UnitRaiseCV">
-Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$
-************************************* </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{UnitRaise.c}}
-\label{tools:ss:UnitRaise.c}
-
-Raises an \texttt{LALUnit} structure to a specified rational power.
-
-\subsubsection*{Prototypes}
-\input{UnitRaiseCP}
-\idx{LALUnitRaise()}
-
-\subsubsection*{Description}
-
-This function raises the \texttt{LALUnit} structure \texttt{*input} to
-the rational power \texttt{*power}.  In this way, units such as
-s$^{1/2}$ and m$^{-1}$ can be created using existing units.
-
-\subsubsection*{Algorithm}
-
-The function first multiplies the overall power of ten
-\texttt{input->powerOfTen} by the rational number \texttt{*power},
-checking to make sure that the resulting power is still an integer.
-It then multiplies each of the rational powers in \texttt{*input} by
-\texttt{*power} by na\"{\i}ve multiplication of rational numbers
-$$
-\left(\frac{N_1}{1+D_1}\right)\left( \frac{N_2}{1+D_2} \right)
-= \frac{N_1 N_2}{1 + (1+D_1)(1+D_2)-1}
-$$
-and then calls \texttt{LALUnitNormalize()} to bring the result into
-standard form.
-
-\subsubsection*{Uses}
-
-\texttt{LALUnitNormalize()}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{UnitRaiseCV}}
-
-******************************************************* </lalLaTeX> */
 #define TRUE 1
 #define FALSE 0
 
@@ -69,6 +25,38 @@ standard form.
 
 NRCSID( UNITRAISEC, "$Id$" );
 
+/**
+\author J. T. Whelan <john.whelan@ligo.org>
+\addtogroup UnitRaise_c
+
+\brief Raises an \c LALUnit structure to a specified rational power.
+
+This function raises the \c LALUnit structure <tt>*input</tt> to
+the rational power <tt>*power</tt>.  In this way, units such as
+\f$\mathrm{s}^{1/2}\f$ and \f$\mathrm{m}^{-1}\f$ can be created using existing units.
+
+\heading{Algorithm}
+
+The function first multiplies the overall power of ten
+<tt>input->powerOfTen</tt> by the rational number <tt>*power</tt>,
+checking to make sure that the resulting power is still an integer.
+It then multiplies each of the rational powers in <tt>*input</tt> by
+<tt>*power</tt> by naïve multiplication of rational numbers
+\f[
+\left(\frac{N_1}{1+D_1}\right)\left( \frac{N_2}{1+D_2} \right)
+= \frac{N_1 N_2}{1 + (1+D_1)(1+D_2)-1}
+\f]
+and then calls <tt>LALUnitNormalize()</tt> to bring the result into
+standard form.
+
+\heading{Uses}
+
+<tt>LALUnitNormalize()</tt>
+
+*/
+
+/** Raises a ::LALUnit structure to a rational power given by the ::RAT4 structure \c power.
+ */
 LALUnit * XLALUnitRaiseRAT4( LALUnit *output, const LALUnit *input,
     const RAT4 *power )
 {
@@ -117,7 +105,8 @@ LALUnit * XLALUnitRaiseRAT4( LALUnit *output, const LALUnit *input,
   return output;
 }
 
-
+/** Raises a ::LALUnit structure to an integer power \c power.
+ */
 LALUnit * XLALUnitRaiseINT2( LALUnit *output, const LALUnit *input,
     INT2 power )
 {
@@ -130,7 +119,8 @@ LALUnit * XLALUnitRaiseINT2( LALUnit *output, const LALUnit *input,
   return output;
 }
 
-
+/** Produces the square of a ::LALUnit structure.
+ */
 LALUnit * XLALUnitSquare( LALUnit *output, const LALUnit *input )
 {
   static const char *func = "XLALUnitRaiseSquare";
@@ -142,7 +132,8 @@ LALUnit * XLALUnitSquare( LALUnit *output, const LALUnit *input )
   return output;
 }
 
-
+/** Produces the square-root of a ::LALUnit structure.
+ */
 LALUnit * XLALUnitSqrt( LALUnit *output, const LALUnit *input )
 {
   static const char *func = "XLALUnitRaiseSqrt";
@@ -167,11 +158,15 @@ LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input )
 }
 
 
-/* <lalVerbatim file="UnitRaiseCP"> */
+/** \ingroup UnitRaise_c
+ * This function raises the \c LALUnit structure <tt>*input</tt> to
+ * the rational power <tt>*power</tt>.  In this way, units such as
+ * \f$\mathrm{s}^{1/2}\f$ and \f$\mathrm{m}^{-1}\f$ can be created using existing units.
+ *
+ * \deprecated Use XLALUnitRaise() instead.
+ */
 void
 LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RAT4 *power)
-/* </lalVerbatim> */
-     /* Raise a Unit variable to a rational power */
 {
   UINT4       denom2;
 

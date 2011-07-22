@@ -131,12 +131,14 @@ void runIHS(ihsMaximaStruct *output, ffdataStruct *input, inputParamsStruct *par
    }
    
    //Loop through the rows, 1 frequency at a time
+   REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
+   REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
    for (ii=0; ii<(INT4)ihss->length; ii++) {
    
       //For each row, populate it with the data for that frequency bin, excluding harmonics of antenna pattern modulation
       memcpy(row->data, &(input->ffdata->data[ii*numfprbins]), sizeof(REAL4)*row->length);
       for (jj=0; jj<(INT4)row->length; jj++) {
-         if (fabs(params->Tobs/(24.0*3600.0)-jj)<=1.0 || fabs(params->Tobs/(12.0*3600.0)-jj)<=1.0 || fabs(params->Tobs/(8.0*3600.0)-jj)<=1.0 || fabs(params->Tobs/(6.0*3600.0)-jj)<=1.0) row->data[jj] = 0.0;
+         if (fabs(dailyharmonic-jj)<=1.0 || fabs(dailyharmonic2-jj)<=1.0 || fabs(dailyharmonic3-jj)<=1.0 || fabs(dailyharmonic4-jj)<=1.0) row->data[jj] = 0.0;
       }
       
       //Run the IHS algorithm on the row
@@ -382,15 +384,15 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
    INT4Vector *markedharmonics = XLALCreateINT4Vector(aveNoise->length);
    for (ii=0; ii<(INT4)markedharmonics->length; ii++) {
-      if (fabs(dailyharmonic-ii)<=1.0 || fabs(dailyharmonic2-ii)<=1.0 || fabs(dailyharmonic3-ii)<=1.0 || fabs(dailyharmonic4-ii)<=1.0) markedharmonics->data[ii] = 0;
-      else markedharmonics->data[ii] = 1;
+      if (fabs(dailyharmonic-ii)<=1.0 || fabs(dailyharmonic2-ii)<=1.0 || fabs(dailyharmonic3-ii)<=1.0 || fabs(dailyharmonic4-ii)<=1.0) markedharmonics->data[ii] = 1;
+      else markedharmonics->data[ii] = 0;
    }
    for (ii=0; ii<trials; ii++) {
       REAL8 randval = 1.0 + 2.0*gsl_ran_gaussian(rng, singleIHSsigma);
       while (randval<0.0) randval = 1.0 + 2.0*gsl_ran_gaussian(rng, singleIHSsigma);
       //Make exponential noise removing harmonics of 24 hours to match with the same method as real analysis
       for (jj=0; jj<(INT4)aveNoise->length; jj++) {
-         if (markedharmonics->data[jj]==1) noise->data[jj] = (REAL4)(gsl_ran_exponential(rng, aveNoise->data[jj])*randval);
+         if (markedharmonics->data[jj]==0) noise->data[jj] = (REAL4)(gsl_ran_exponential(rng, aveNoise->data[jj])*randval);
          else noise->data[jj] = 0.0;
       } /* for jj < aveNoise->length */
       
@@ -1087,6 +1089,8 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       
+      REAL8 highestval = 0.0;
+      INT4 highestvalloc = -1, jjloc = 0;
       for (jj=0; jj<(INT4)numfbins-(ii-1); jj++) {
       
          //Noise in the range of the rows, mean and rms values for IHS
@@ -1115,28 +1119,38 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                
                numberPassingBoth++;
                
-               INT4 loc = ihsmaxima->locations->data[locationinmaximastruct];
-               //Candidate frequency
-               fsig = params->fmin + (0.5*(ii-1) + jj)/params->Tcoh;
-               //Candidate modulation depth
-               B = 0.5*(ii-1)/params->Tcoh;
-               //Candidate period
-               per0 = params->Tobs/loc;
-               //Candidate h0
-               REAL8 h0 = ihs2h0(ihsmaxima->maxima->data[locationinmaximastruct], loc, jj, ii, params, aveNoise, fbinavgs);
-               
-               if (candlist->numofcandidates == candlist->length-1) {
-                  candlist = resize_candidateVector(candlist, 2*(candlist->length));
-                  if (candlist->data==NULL) {
-                     fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
-                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-                  }
+               if (ihsmaxima->maxima->data[locationinmaximastruct] > highestval) {
+                  highestval = ihsmaxima->maxima->data[locationinmaximastruct];
+                  highestvalloc = locationinmaximastruct;
+                  jjloc = jj;
                }
-               loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
-               (candlist->numofcandidates)++;
+               
             } /* if fom is below or equal to threshold fom */
          } /* if val exceeds threshold */
       } /* for jj < numfbins-(ii-1) */
+      
+      if (highestval != -1) {
+         INT4 loc = ihsmaxima->locations->data[highestvalloc];
+         //Candidate frequency
+         fsig = params->fmin + (0.5*(ii-1) + jjloc)/params->Tcoh;
+         //Candidate modulation depth
+         B = 0.5*(ii-1)/params->Tcoh;
+         //Candidate period
+         per0 = params->Tobs/loc;
+         //Candidate h0
+         REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[highestvalloc], loc, jjloc, ii, params, aveNoise, fbinavgs);
+         
+         if (candlist->numofcandidates == candlist->length-1) {
+            candlist = resize_candidateVector(candlist, 2*(candlist->length));
+            if (candlist->data==NULL) {
+               fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+               XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+            }
+         }
+         //loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
+         loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, 0.0, 0, ffdata->tfnormalization);
+         (candlist->numofcandidates)++;
+      }
       
       //Destroy
       XLALDestroyREAL4Vector(ihss);
@@ -1154,15 +1168,17 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
 
 
 
-REAL8 ihs2h0(REAL8 ihsval, INT4 location, INT4 lowestfrequencybin, INT4 rows, inputParamsStruct *params, REAL4Vector *aveNoise, REAL4Vector *fbinavgs)
+REAL8 ihs2h0_withNoiseSubtraction(REAL8 ihsval, INT4 location, INT4 lowestfrequencybin, INT4 rows, inputParamsStruct *params, REAL4Vector *aveNoise, REAL4Vector *fbinavgs)
 {
    
    const CHAR *fn = __func__;
    
    REAL8 noise = aveNoise->data[location] + aveNoise->data[location*2] + aveNoise->data[location*3] + aveNoise->data[location*4] + aveNoise->data[location*5];
-   INT4 ii;
+   REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
+   REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
+   INT4 ii = 0;
    for (ii=1; ii<=5; ii++) {
-      if (fabs(params->Tobs/(24.0*3600.0)-ii*location)<=1.0 || fabs(params->Tobs/(12.0*3600.0)-ii*location)<=1.0 || fabs(params->Tobs/(8.0*3600.0)-ii*location)<=1.0 || fabs(params->Tobs/(6.0*3600.0)-ii*location)<=1.0) {
+      if (fabs(dailyharmonic-ii*location)<=1.0 || fabs(dailyharmonic2-ii*location)<=1.0 || fabs(dailyharmonic3-ii*location)<=1.0 || fabs(dailyharmonic4-ii*location)<=1.0) {
          noise -= aveNoise->data[location*ii];
       }
    }
@@ -1175,13 +1191,19 @@ REAL8 ihs2h0(REAL8 ihsval, INT4 location, INT4 lowestfrequencybin, INT4 rows, in
    }
    
    //REAL8 h0 = 1.0*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
-   //h0 *= 4.6;
-   REAL8 h0 = 4.6*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
+   //REAL8 h0 = 4.6*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
+   //return h0;
    
+   REAL8 h0 = ihs2h0(2.0*ihsval-2.0*totalnoise, params);  //With 2.0 for chi-square with 2 d.o.f.
    return h0;
    
 }
-
+REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params)
+{
+   
+   return 4.7*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
+   
+}
 
 
 

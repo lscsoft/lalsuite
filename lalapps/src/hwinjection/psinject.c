@@ -721,7 +721,8 @@ int main(int argc, char *argv[]){
 	frame->GTimeS = gpstime + counter;
 	frame->GTimeN = 0;
 	frame->dt = ndata/sampleRate;
-	sim = FrSimDataNew(frame,"CW_simulated", sampleRate, ndata, -32);
+        char tmpString[] = "CW_simulated";
+	sim = FrSimDataNew(frame, tmpString, sampleRate, ndata, -32);
 	for (m=0; m < ndata; m++) {
 	    sim->data->dataF[m] = total[m];
 	}

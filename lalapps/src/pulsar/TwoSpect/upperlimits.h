@@ -33,8 +33,10 @@ UpperLimitVector * new_UpperLimitVector(UINT4 length);
 UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 length);
 void free_UpperLimitVector(UpperLimitVector *vector);
 
-void skypoint95UL(UpperLimit *ul, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs);
+//void skypoint95UL(UpperLimit *ul, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs);
+void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs);
 REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p);
+REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p);
 
 void outputUpperLimitsToFile(FILE *outputfile, UpperLimitVector *ulvector);
 

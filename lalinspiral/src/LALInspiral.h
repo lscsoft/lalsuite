@@ -1304,11 +1304,21 @@ void LALInspiralPhasing2_0PN (
      REAL8 v,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralPhasing2_0PN (
+      REAL8 v,
+      expnCoeffs *ak);
+
+#if 0 /* DO NOT EXIST */
 void LALInspiralPhasing2_1PN (
      LALStatus *status,
      REAL8 *phase,
      REAL8 v,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralPhasing2_1PN (
+      REAL8 v,
+      expnCoeffs *ak);
+#endif
 
 void LALInspiralPhasing2_2PN (
      LALStatus *status,
@@ -1316,11 +1326,19 @@ void LALInspiralPhasing2_2PN (
      REAL8 v,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralPhasing2_2PN (
+      REAL8 v,
+      expnCoeffs *ak);
+
 void LALInspiralPhasing2_3PN (
      LALStatus *status,
      REAL8 *phase,
      REAL8 v,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralPhasing2_3PN (
+      REAL8 v,
+      expnCoeffs *ak);
 
 void LALInspiralPhasing2_4PN (
      LALStatus *status,
@@ -1328,11 +1346,19 @@ void LALInspiralPhasing2_4PN (
      REAL8 v,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralPhasing2_4PN (
+      REAL8 v,
+      expnCoeffs *ak);
+
 void LALInspiralPhasing2_5PN (
      LALStatus *status,
      REAL8 *phase,
      REAL8 v,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralPhasing2_5PN (
+      REAL8 v,
+      expnCoeffs *ak);
 
 void LALInspiralPhasing2_6PN (
      LALStatus *status,
@@ -1340,11 +1366,19 @@ void LALInspiralPhasing2_6PN (
      REAL8 v,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralPhasing2_6PN (
+      REAL8 v,
+      expnCoeffs *ak);
+
 void LALInspiralPhasing2_7PN (
      LALStatus *status,
      REAL8 *phase,
      REAL8 v,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralPhasing2_7PN (
+      REAL8 v,
+      expnCoeffs *ak);
 
 
 
@@ -1430,11 +1464,21 @@ void LALInspiralTiming2_0PN (
      REAL8 f,
      void *params);
 
+REAL8 XLALInspiralTiming2_0PN (
+      REAL8 f,
+      void *params);
+
+#if 0 /* DO NOT EXIST */
 void LALInspiralTiming2_1PN (
      LALStatus *,
      REAL8 *toff,
      REAL8 f,
      void *params);
+
+REAL8 XLALInspiralTiming2_1PN (
+      REAL8 f,
+      void *params);
+#endif
 
 void LALInspiralTiming2_2PN (
      LALStatus *,
@@ -1442,11 +1486,19 @@ void LALInspiralTiming2_2PN (
      REAL8 f,
      void *params);
 
+REAL8 XLALInspiralTiming2_2PN (
+      REAL8 f,
+      void *params);
+
 void LALInspiralTiming2_3PN (
      LALStatus *,
      REAL8 *toff,
      REAL8 f,
      void *params);
+
+REAL8 XLALInspiralTiming2_3PN (
+      REAL8 f,
+      void *params);
 
 void LALInspiralTiming2_4PN (
      LALStatus *,
@@ -1454,6 +1506,9 @@ void LALInspiralTiming2_4PN (
      REAL8 f,
      void *params);
 
+REAL8 XLALInspiralTiming2_4PN (
+      REAL8 f,
+      void *params);
 
 void LALInspiralTiming2_5PN (
      LALStatus *,
@@ -1461,11 +1516,19 @@ void LALInspiralTiming2_5PN (
      REAL8 f,
      void *params);
 
+REAL8 XLALInspiralTiming2_5PN (
+      REAL8 f,
+      void *params);
+
 void LALInspiralTiming2_6PN (
      LALStatus *,
      REAL8 *toff,
      REAL8 f,
      void *params);
+
+REAL8 XLALInspiralTiming2_6PN (
+      REAL8 f,
+      void *params);
 
 void LALInspiralTiming2_7PN (
      LALStatus *,
@@ -1473,6 +1536,9 @@ void LALInspiralTiming2_7PN (
      REAL8 f,
      void *params);
 
+REAL8 XLALInspiralTiming2_7PN (
+      REAL8 f,
+      void *params);
 
 
 
@@ -1483,11 +1549,21 @@ void LALInspiralFrequency3_0PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralFrequency3_0PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
+#if 0 /* DO NOT EXIST */
 void LALInspiralFrequency3_1PN (
      LALStatus *status,
      REAL8 *frequency,
      REAL8 td,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralFrequency3_1PN (
+      REAL8 td,
+      expnCoeffs *ak);
+#endif
 
 void LALInspiralFrequency3_2PN (
      LALStatus *status,
@@ -1495,11 +1571,19 @@ void LALInspiralFrequency3_2PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralFrequency3_2PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
 void LALInspiralFrequency3_3PN (
      LALStatus *status,
      REAL8 *frequency,
      REAL8 td,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralFrequency3_3PN (
+      REAL8 td,
+      expnCoeffs *ak);
 
 void LALInspiralFrequency3_4PN (
      LALStatus *status,
@@ -1507,11 +1591,19 @@ void LALInspiralFrequency3_4PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralFrequency3_4PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
 void LALInspiralFrequency3_5PN (
      LALStatus *status,
      REAL8 *frequency,
      REAL8 td,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralFrequency3_5PN (
+      REAL8 td,
+      expnCoeffs *ak);
 
 void LALInspiralFrequency3_6PN (
      LALStatus *status,
@@ -1519,11 +1611,19 @@ void LALInspiralFrequency3_6PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralFrequency3_6PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
 void LALInspiralFrequency3_7PN (
      LALStatus *status,
      REAL8 *frequency,
      REAL8 td,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralFrequency3_7PN (
+      REAL8 td,
+      expnCoeffs *ak);
 
 REAL4 LALInspiralHPlusPolarization(
      REAL8 phase,
@@ -1715,6 +1815,7 @@ int XLALInspiralGenerateIIRSet(
 	double                  epsilon,
 	double                  alpha,
 	double                  beta,
+	double                  padding,
 	COMPLEX16Vector     **a1,
 	COMPLEX16Vector     **b0,
 	INT4Vector          **delay

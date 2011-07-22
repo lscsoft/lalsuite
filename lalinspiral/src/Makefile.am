@@ -33,6 +33,8 @@ lalinspiralinclude_HEADERS = \
         LALPSpinInspiralRD.h \
 	LALSBBH-Metric.h \
 	LALSimInspiral.h \
+	LALSimInspiralTaylorT3.h \
+	LALSimInspiralTaylorT4.h \
 	LALTrigScanCluster.h \
 	LALSTPNWaveform2.h \
 	LALSTPNWaveformFrameless.h \
@@ -198,6 +200,8 @@ liblalinspiral_la_SOURCES = \
 	LALSQTPNWaveformInterface.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
+	LALSimInspiralTaylorT3.c \
+	LALSimInspiralTaylorT4.c \
 	LALTrigScanCluster.c \
 	LALTruncateInvSpectrum.c \
 	LIGOLwXMLInspiralRead.c \

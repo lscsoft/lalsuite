@@ -40,7 +40,7 @@ before reading further:
 
 ./makefakedata_v2 -h
 ./s3inject -h
-    
+
 In this document we assume you will inject 5 pulsar signals total.
 
 [1] HOW TO USE IT -- CREATE PULSAR PARAMETER FILES
@@ -204,7 +204,7 @@ The s3inject executable can inject up to three calibration
 lines.  Here they are denoted by L==low, M==medium and H==high to
 indicate the frequency.  They are defined by:
 
-  DARM = A_L sin(2 pi f_L (GPS-GPS_0)) + 
+  DARM = A_L sin(2 pi f_L (GPS-GPS_0)) +
          A_M sin(2 pi f_M (GPS-GPS_0)) +
          A_H sin(2 pi f_H (GPS-GPS_0))
 
@@ -267,7 +267,7 @@ than pulsars.  To use it in this way, your code must do the following:
 (2) take a command line argument which is GPS seconds and start its
     output at that time:
     -G secs
- 
+
 (3) be able to run faster than real time under solaris.  It should
 produce data at a sample rate of 16384 Hz in blocks of an integer
 number of seconds (called S below).
@@ -286,9 +286,9 @@ main() {
 
     while (1) {
 	compute next output data.  May be time-consuming.
-   
+
         fwrite(&data, sizeof(float), len, stdout);
-     
+
         fflush(stdout);
     }
 }
@@ -298,4 +298,3 @@ will have time to compute its next block of data BEFORE it is needed
 by s3 inject.
 
 (5) create an in.N file for your executable.  See description above.
-
