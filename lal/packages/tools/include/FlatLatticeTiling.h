@@ -19,7 +19,7 @@
 
 /**
  * \author Karl Wette
- * \file
+ * \ingroup pulsarTODO
  * \brief Lattice-based template generation for flat metric parameter spaces
  */
 

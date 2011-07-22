@@ -29,10 +29,7 @@
  */
 
 #if 0
-<lalVerbatim file="EllipsoidOverlapToolsHV">
 Author: Robinson, C. A. and Sengupta, A. S.
-$Id$
-</lalVerbatim>
 #endif
 
 #ifndef _ELLIPSOIDOVERLAPTOOLS_H

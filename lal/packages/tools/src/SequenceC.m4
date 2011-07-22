@@ -159,7 +159,7 @@ DATATYPE `XLAL'DATATYPE`Sum' (
 		sum = XLALCOMPLEX8Add(sum, *data);
 		, DATATYPE, COMPLEX16,
 		sum = XLALCOMPLEX16Add(sum, *data);
-		, 
+		,
 		sum += *data;)
 
 	return sum;
@@ -179,7 +179,7 @@ SQUAREDATATYPE `XLAL'DATATYPE`SumSquares' (
 		sum += XLALCOMPLEX8Abs2(*data);
 		, DATATYPE, COMPLEX16,
 		sum += XLALCOMPLEX16Abs2(*data);
-		, 
+		,
 		sum += *data * *data;)
 
 	return sum;

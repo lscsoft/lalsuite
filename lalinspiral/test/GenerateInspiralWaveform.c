@@ -103,6 +103,7 @@ typedef struct{
   INT4 output;
   INT4 psd_data_file;
   INT4 taper;
+  INT4 realImag;
   char tag[200];
   char waveformString[LIGOMETA_WAVEFORM_MAX];
 } OtherParamIn;
@@ -144,6 +145,7 @@ int main (int argc , char **argv) {
   /* ---  we start real computation here --- */
   otherIn.PrintParameters = 0; /* by default we don't print the parameters */
   otherIn.output = 0;          /* by default we don't output the waveforms */
+  otherIn.realImag = 0;        /* by default output FD waveforms as |h(f)| */
   strncpy(otherIn.tag, "1", sizeof(otherIn.tag));/*default tag for file names*/
   ParseParameters(argc, argv, &otherIn);/* let's parse user parameters */
   SUB( LALInspiralITStructureSetDefault(&status, &params),
@@ -328,7 +330,7 @@ int main (int argc , char **argv) {
   }
   if(otherIn.output) printf_timeseries (f1, n, signal1->data, dt);
   {
-    REAL8 df, f, sSq, sRe, sIm, rho, rhosq=0, rhoDet=8.;
+    REAL8 df, f, hSq, sSq, hMag, sMag, sRe, sIm, rho, rhosq=0, rhoDet=8.;
 
     SUB( LALREAL4VectorFFT(&status, signal2, signal1, frwd), &status);
     df = 1./(n * dt);
@@ -346,11 +348,12 @@ int main (int argc , char **argv) {
       f = (double)i*df;
       if (psd->data[i])
       {
-        double hSq;
-        sRe = signal2->data[i];
-        sIm = signal2->data[j];
-        hSq = (sRe*sRe + sIm*sIm);
-        sSq = hSq / (psd->data[i]) ;
+        sRe  = signal2->data[i] * dt;
+        sIm  = signal2->data[j] * dt;
+        hSq  = sRe*sRe + sIm*sIm;
+        hMag = sqrt(hSq);
+        sSq  = hSq / (psd->data[i]) ;
+        sMag = hMag / (psd->data[i]) ;
         if (f>params.fLower)
         {
           if (params.approximant != EOBNR && params.approximant != EOBNRv2
@@ -359,10 +362,20 @@ int main (int argc , char **argv) {
           else
             rhosq += sSq;
         }
-        signal2->data[i] = sRe / sqrt(psd->data[i]) / (double)nby2;
-        signal2->data[j] = sIm / sqrt(psd->data[i]) / (double)nby2;
-        if(otherIn.output) fprintf(f3, "%e %e %e\n",f, sSq, sqrt(psd->data[i]));
-        if(otherIn.output) fprintf(f4, "%e %e\n", f, hSq);
+        signal2->data[i] = sRe / sqrt(psd->data[i]);
+        signal2->data[j] = sIm / sqrt(psd->data[i]);
+        if( otherIn.realImag == 1 )
+        {
+          if(otherIn.output) fprintf(f3, "%e %e %e %e\n", f, 
+            sRe/(psd->data[i]), sIm/(psd->data[i]), psd->data[i]);
+          if(otherIn.output) fprintf(f4, "%e %e %e\n", f, sRe, sIm);
+        }
+        else
+        {
+          if(otherIn.output) fprintf(f3, "%e %e %e\n", 
+            f, sMag, psd->data[i]);
+          if(otherIn.output) fprintf(f4, "%e %e\n", f, hMag);
+        }
       }
       else
       {
@@ -371,15 +384,19 @@ int main (int argc , char **argv) {
         sSq = 0.;
       }
     }
-    /* The normalization for rho^2 is dt^2 df. dt^2 is for two factors
-     * of H(f), and df for the SNR integral.  A factor of 4 comes from
-     * the definition of the scalar product.
+    /* Above, 'rhosq' = \Sum_i | h(f_i) |^2 / Sn(f_i)
+     * Therefore, SNR^2 = 4 \int | h(f) |^2 / Sn(f) df ~= 4 * rhosq * df
+     * so SNR = rho = sqrt(4 * rhosq * df)
      */
-    rho = sqrt(4. * rhosq *dt*dt*df);
-    /* Distance in Mpc at which the SNR is 10 */
+    rho = sqrt(4. * rhosq * df);
+    /* Distance in Mpc at which the SNR is 8 */
     dist = (params.distance/(LAL_PC_SI*1e6))*(rho/rhoDet);
-    fprintf(stdout, "%e %e %e %e %e %d\n", params.mass1, params.mass2,
-      params.totalMass, rho, dist, signal2->length);
+    if( otherIn.PrintParameters )
+    {
+      fprintf(stderr, "mass1: %e, mass2: %e, # samples: %d,\nSNR: %e, " 
+          "distance at which SNR=8: %e\n", params.mass1, params.mass2, 
+          signal2->length, rho, dist);
+    }
     signal2->data[0] = 0.;
     signal2->data[nby2] = 0.;
     SUB( LALREAL4VectorFFT(&status, signal1, signal2, revp), &status);
@@ -392,11 +409,12 @@ int main (int argc , char **argv) {
   SUB( LALSDestroyVector(&status, &signal2), &status);
   SUB( LALDDestroyVector(&status, &psd), &status);
 
-  fprintf(stderr, "fFinal = %f Hz tFinal = %f seconds\n" , 
-      params.fFinal, params.tC);
   if (otherIn.PrintParameters)
   {
-    fprintf(stderr, "the inspiral structure after the call to the waveform generation:\n");
+    fprintf(stderr, "fFinal = %f Hz tFinal = %f seconds\n" , 
+        params.fFinal, params.tC);
+    fprintf(stderr, "the inspiral structure after the call "
+        "to the waveform generation:\n");
     SUB( LALInspiralITStructurePrint(&status, params),  &status);
   }
   /*
@@ -466,6 +484,10 @@ ParseParameters( UINT4              argc,
       else if( strcmp(argv[i],"--order") == 0 )
       {
         order = atoi(argv[++i]);
+      }
+      else if( strcmp(argv[i],"--real-imag") == 0 )
+      {
+        otherIn->realImag = atoi(argv[++i]);
       }
       i++;
     }
@@ -539,6 +561,9 @@ void LALGenerateInspiralWaveformHelp(void)
   fprintf(stderr,"         N = 2 calls LALInspiralWaveTemplates()\n");
   fprintf(stderr,"         N = 3 calls LALInspiralWaveForInjection() via LALGenerateInspiral()\n");
   fprintf(stderr,"If the approximant you want fails, make it callable from these functions\n");
+  fprintf(stderr,"--real-imag=N controls output of complex FD and NW waveforms:\n");
+  fprintf(stderr,"         N = 0 - output | h(f) | (default)\n");
+  fprintf(stderr,"         N = 1 - output Re(h(f)) and Im(h(f))\n");
   fprintf(stderr,"---------------------------------------------------------\n");
   LALInspiralITStructureHelp();
 

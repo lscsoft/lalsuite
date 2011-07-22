@@ -20,7 +20,7 @@
 #include <math.h>
 #include <complex.h>
 
-int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay)
+int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, double padding, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay)
 {  
 	int j = amp->length-1, jstep, k;
 	int nfilters = 0, decimationFactor = 1;
@@ -49,7 +49,7 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 
 		phase_dot = (-phase->data[k+2] + 8 * (phase->data[k+1] - phase->data[k-1]) + phase->data[k-2]) / 12.0; // Five-point stencil first derivative of phase
 		//fprintf(stderr, "%3.0d, %6.0d, %3.0d, %11.2f, %11.8f\n",nfilters, amp->length-1-j, decimationFactor, ((double) (amp->length-1-j))/((double) decimationFactor), phase_dot/(2.0*LAL_PI)*2048.0);
-		decimationFactor = ((int ) pow(2.0,-ceil(log(4.0*phase_dot/(2.0*LAL_PI))/log(2.0))));
+		decimationFactor = ((int ) pow(2.0,-ceil(log(2.0*padding*phase_dot/(2.0*LAL_PI))/log(2.0))));
 		if (decimationFactor < 1 ) decimationFactor = 1;
 
 		/* FIXME: Should think about being smarter about allocating memory for these (linked list??) */

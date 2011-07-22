@@ -17,62 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/*<lalVerbatim file="DetResponseCV">
-
-Author: David Chin <dwchin@umich.edu> +1-734-709-9119, Kipp Cannon <kipp@gravity.phys.uwm.edu>
-$Id$
-
-</lalVerbatim> */
-
-/*
-<lalLaTeX>
-
-\subsection{Module \texttt{DetResponse.c}}
-\label{ss:DetResponse.c}
-
-Computes the response of a detector.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{DetResponseCP}
-\idx{LALComputeDetAMResponse()}
-\idx{XLALComputeDetAMResponse()}
-\idx{LALComputeDetAMResponseSeries()}
-\idx{XLALComputeDetAMResponseSeries()}
-
-\subsubsection*{Description}
-
-These routines compute the antenna beam pattern for all supported detector
-types.  \texttt{XLALComputeDetAMResponse()} computes the response at one
-instance in time, and \texttt{XLALComputeDetAMResponseSeries()} computes a
-vector of response for some length of time.
-
-\subsubsection*{Algorithm}
-
-This code is a translation of the algorithm in the Maple worksheet by
-Anderson, \textit{et al.}~\cite{tools:Anderson:2000}.  We compute the $h$-tensors for
-$+$- and $\times$-polarized in the Earth-fixed frame, and then contract
-them (take the scalar product) with the detector response tensors as
-described in the \texttt{DetectorSite.h} section of the \texttt{tools}
-package.
-
-\texttt{DetectorSite.h} in the \texttt{tools} package  provides predefined
-\texttt{LALDetector} structures representing most current detectors,
-including LIGO (Hanford and Livingston), and GEO.
-
-\subsubsection*{Uses}
-\texttt{LALGPStoGMST1()}
-
-\subsubsection*{Notes}
-
-For examples of usage, please see the test programs in the \texttt{test}
-directory.
-
-\vfill{\footnotesize\input{DetResponseCV}}
-
-</lalLaTeX>
-*/
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -88,19 +32,17 @@ directory.
 NRCSID(DETRESPONSEC, "$Id$");
 
 
-/** XLALComputeDetAMResponse
+/**
  *
  * An implementation of the detector response formulae in Anderson et al
- * PRD 63 042003 (2001) [ABCF].
+ * PRD 63 042003 (2001) [\ref ABCF2001].
  *
  * Computes F+ and Fx for a source at a specified sky position,
  * polarization angle, and sidereal time.  Also requires the detector's
  * response matrix which is defined by Eq. (B6) of [ABCF] using either
- * Table 1 of [ABCF] or Eqs. (B11)--(B17) of [ABCF] to compute the arm
+ * Table 1 of [\ref ABCF2001] or Eqs. (B11)--(B17) to compute the arm
  * direction unit vectors.
  */
-
-/* <lalVerbatim file="DetResponseCP"> */
 void XLALComputeDetAMResponse(
 	double *fplus,		/**< Returned value of F+ */
 	double *fcross, 	/**< Returned value of Fx */
@@ -110,7 +52,7 @@ void XLALComputeDetAMResponse(
 	const double psi,	/**< Polarization angle of source (radians) */
 	const double gmst	/**< Greenwich mean sidereal time (radians) */
 )
-{				/* </lalVerbatim> */
+{
 	int i;
 	double X[3];
 	double Y[3];
@@ -152,9 +94,10 @@ void XLALComputeDetAMResponse(
 }
 
 
-/* <lalVerbatim file="DetResponseCP"> */
+/** \deprecated Use XLALComputeDetAMResponse() instead.
+ */
 void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, const LALDetAndSource * pDetAndSrc, const LIGOTimeGPS * gps)
-{				/* </lalVerbatim> */
+{
 	double fplus, fcross;
 
 	INITSTATUS(status, "LALComputeDetAMResponse", DETRESPONSEC);
@@ -180,10 +123,9 @@ void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, c
 }
 
 
-/*
- * Computes REAL4TimeSeries containing time series of response amplitudes.
+/** Computes REAL4TimeSeries containing time series of response amplitudes.
+ * \see XLALComputeDetAMResponse() for more details.
  */
-
 int XLALComputeDetAMResponseSeries(
 	REAL4TimeSeries **fplus,
 	REAL4TimeSeries **fcross,
@@ -229,13 +171,11 @@ int XLALComputeDetAMResponseSeries(
 }
 
 
-/*
- * Computes REAL4TimeSeries containing time series of response amplitudes.
+/** Computes REAL4TimeSeries containing time series of response amplitudes.
+ * \deprecated Use XLALComputeDetAMResponseSeries() instead.
  */
-
-/* <lalVerbatim file="DetResponseCP"> */
 void LALComputeDetAMResponseSeries(LALStatus * status, LALDetAMResponseSeries * pResponseSeries, const LALDetAndSource * pDetAndSource, const LALTimeIntervalAndNSample * pTimeInfo)
-{				/* </lalVerbatim> */
+{
 	/* Want to loop over the time and call LALComputeDetAMResponse() */
 	LALDetAMResponse instResponse;
 	unsigned i;

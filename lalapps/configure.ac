@@ -46,6 +46,7 @@ AC_CONFIG_FILES([\
   src/pulsar/SFTReferenceLibrary/Makefile \
   src/tracksearch/Makefile \
   src/online/Makefile \
+  src/hwinjection/Makefile \
 ])
 AM_INIT_AUTOMAKE([foreign])
 AH_TOP([
@@ -80,6 +81,7 @@ LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
 LALAPPS_ENABLE_PSS
+LALAPPS_ENABLE_GDS
 
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
@@ -239,6 +241,14 @@ if test "${fftw}" = "true"; then
   AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_WARN([could not find the fftw3.h header])])
 fi
 LALSUITE_ENABLE_MODULE([FFTW],[fftw])
+
+# check for GDS system: we check if we can link against libawg which is in GDS
+# GDS is a requirements for building 'online_psinject', which is used for hardware injections
+if test "${gds}" = "true"; then
+  AC_CHECK_LIB([awg],[awgGetChannelNames],,[gds="false"])
+  AC_CHECK_HEADERS([gdstype.h],,[gds="false"])
+fi
+LALSUITE_ENABLE_MODULE([GDS],[gds])
 
 # check for libFrame
 if test "${frame}" = "true"; then
@@ -438,6 +448,7 @@ echo "
                 Condor support is $CONDOR_ENABLE_VAL
                 BOINC support is $BOINC_ENABLE_VAL
                 MPI support is $MPI_ENABLE_VAL
+                GDS support is $GDS_ENABLE_VAL
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps
