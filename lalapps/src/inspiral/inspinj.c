@@ -2761,7 +2761,7 @@ int main( int argc, char *argv[] )
     }
     else if ( mDistr==m1m2SquareGrid )
     {
-      simTable=XLALm1m2SquareGridInspiral( simTable, minMass1, minMass2,
+      simTable=XLALm1m2SquareGridInspiralMasses( simTable, minMass1, minMass2,
           minMtotal, maxMtotal, deltaMass1, deltaMass2, pntMass1, pntMass2, 
           ninj, &ncount);
     }
