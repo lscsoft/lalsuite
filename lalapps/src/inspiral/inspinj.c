@@ -588,7 +588,7 @@ static void print_usage(char *program)
       "                           totalMassRatio: uniform distribution in total mass ratio\n"\
       "                           logTotalMassUniformMassRatio: log distribution in total mass\n"\
       "                           and uniform in total mass ratio\n"\
-      "                           squareGrid: masses on a square grid\n"\
+      "                           m1m2SquareGrid: component masses on a square grid\n"\
       "                           fixMasses: fix m1 and m2 to specific values\n"\
       " [--ninja2-mass]           use the NINJA 2 mass-selection algorithm\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
@@ -607,8 +607,8 @@ static void print_usage(char *program)
       " [--stdev-mass2] m2std     set the standard deviation for mass2\n"\
       " [--min-mratio] minr       set the minimum mass ratio\n"\
       " [--max-mratio] maxr       set the maximum mass ratio\n"\
-      " [--mass1-points] m1pnt    set the number of grid points in the m1 direction if '--m-distr=squareGrid'\n"\
-      " [--mass2-points] m2pnt    set the number of grid points in the m2 direction if '--m-distr=squareGrid'\n\n");
+      " [--mass1-points] m1pnt    set the number of grid points in the m1 direction if '--m-distr=m1m2SquareGrid'\n"\
+      " [--mass2-points] m2pnt    set the number of grid points in the m2 direction if '--m-distr=m1m2SquareGrid'\n\n");
   fprintf(stderr,
       "Spin distribution information:\n"\
       "  --disable-spin           disables spinning injections\n"\
@@ -1658,9 +1658,9 @@ int main( int argc, char *argv[] )
         }
         else if (!strcmp(dummy, "logTotalMassUniformMassRatio"))
           mDistr=logMassUniformTotalMassRatio;
-        else if (!strcmp(dummy, "squareGrid"))
+        else if (!strcmp(dummy, "m1m2SquareGrid"))
         {
-          mDistr=squareGrid;
+          mDistr=m1m2SquareGrid;
         }
         else if (!strcmp(dummy, "fixMasses"))
         {
@@ -1671,7 +1671,7 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown mass distribution: %s must be one of\n"
               "(source, nrwaves, totalMass, componentMass, gaussian, log,\n"
-              "totalMassRatio, logTotalMassUniformMassRatio, squareGrid)\n",
+              "totalMassRatio, logTotalMassUniformMassRatio, m1m2SquareGrid)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -2455,7 +2455,7 @@ int main( int argc, char *argv[] )
   }
 
   /* check if the mass area is properly specified */
-  if ( (mDistr!=gaussianMassDist || mDistr!=fixMasses) && 
+  if ( (mDistr!=gaussianMassDist && mDistr!=fixMasses) && 
       (minMass1 <=0.0 || minMass2 <=0.0 || maxMass1 <=0.0 || maxMass2 <=0.0) )
   {
     fprintf( stderr,
@@ -2512,12 +2512,12 @@ int main( int argc, char *argv[] )
   }
 
   /* check if number of grid points is specified */
-  if ( mDistr==squareGrid )
+  if ( mDistr==m1m2SquareGrid )
   {
     if ( pntMass1<2 || pntMass2<2 )
     {
     fprintf( stderr, "--mass1-points and --mass2-points must be specified "
-        "and >= 2 if --m-distr=squareGrid \n" );
+        "and >= 2 if --m-distr=m1m2SquareGrid \n" );
     exit( 1 );
     }
     else
@@ -2759,9 +2759,9 @@ int main( int argc, char *argv[] )
       simTable=XLALRandomInspiralTotalMassRatio(simTable, randParams,
           mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
     }
-    else if ( mDistr==squareGrid )
+    else if ( mDistr==m1m2SquareGrid )
     {
-      simTable=XLALSquareGridInspiralMasses( simTable, minMass1, minMass2,
+      simTable=XLALm1m2SquareGridInspiral( simTable, minMass1, minMass2,
           minMtotal, maxMtotal, deltaMass1, deltaMass2, pntMass1, pntMass2, 
           ninj, &ncount);
     }
