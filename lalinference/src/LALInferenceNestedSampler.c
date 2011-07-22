@@ -181,7 +181,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	REAL8 zero=0.0;
 	REAL8 *logLikelihoods=NULL;
 	UINT4 verbose=0;
-        
+        LALInferenceVariableItem *param_ptr;
+ 
         if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
           if (runState->data->modelDomain == LALINFERENCE_DOMAIN_FREQUENCY )
             logZnoise=LALInferenceNullLogLikelihood(runState->data);
@@ -224,8 +225,14 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	char *outfile=ppt->value;
 	fpout=fopen(outfile,"w");
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s!\n",outfile);
-
+	//fprintf(fpout,"chirpmass\tdistance\tLAL_APPROXIMANT\tLAL_PNORDER\tlogmc\tmassratio\ttime\tphase\tlogdistance\trightascension\tdeclination\tpolarisation\tinclination\ta_spin1\ta_spin2\ttheta_spin1\ttheta_spin2\tphi_spin1\tphi_spin2\t logL\n");	
 	/* Set up arrays for parallel runs */
+	minpos=0;
+	           for(param_ptr=runState->livePoints[minpos]->head;param_ptr;param_ptr=param_ptr->next)
+   {
+        fprintf(fpout,"%s\t",param_ptr->name);
+    }	
+	fprintf(fpout,"logL\n");
 	logZarray = calloc(Nruns,sizeof(REAL8));
 	oldZarray = calloc(Nruns,sizeof(REAL8));
 	Harray = calloc(Nruns,sizeof(REAL8));
@@ -257,7 +264,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 				minpos=i;
 		}
 		logLmin=logLikelihoods[minpos];
-
+	
+	
 		/* Update evidence array */
 		for(j=0;j<Nruns;j++){
 			logZarray[j]=logadd(logZarray[j],logLikelihoods[minpos]+ logwarray[j]);
@@ -288,7 +296,12 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
                 LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);
                 logLikelihoods[minpos]=runState->currentLikelihood;
-                
+     
+    //            for(param_ptr=runState->livePoints[minpos]->head;param_ptr;param_ptr=param_ptr->next)
+   // {
+      //  fprintf(fpout,"%s\t",param_ptr->name);
+    //}        
+	//fprintf(fpout,"chirpmass\tdistance\tLAL_APPROXIMANT\tLAL_PNORDER\tlogmc\tmassratio\ttime\tphase\tlogdistance\trightascension\tdeclination\tpolarisation\tinclination\ta_spin1\ta_spin2\ttheta_spin1\ttheta_spin2\tphi_spin1\tphi_spin2\t logL\n"); 
 		if (runState->currentLikelihood>logLmax)
 			logLmax=runState->currentLikelihood;
 
@@ -329,7 +342,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			logLikelihoods[minpos]=logLikelihoods[i];
 			logLikelihoods[i]=logLmin;
 		}
-
 	/* final corrections */
         for(i=0;i<Nlive;i++){
 		logZ=logadd(logZ,logLikelihoods[i]+logw);

@@ -416,6 +416,15 @@ Parameter arguments:\n\
 	ppt=LALInferenceGetProcParamVal(commandLine,"--etamax");
 	if(ppt)
 		etaMax=atof(ppt->value);
+	/* Over-ride Spin prior if specified*/
+
+	ppt=LALInferenceGetProcParamVal(commandLine,"--s1max");
+        if(ppt)
+                a_spin1_max=atof(ppt->value);
+
+	ppt=LALInferenceGetProcParamVal(commandLine,"--s1min");
+	if(ppt)
+		a_spin1_min=atof(ppt->value);
 	
 	/* Over-ride component masses */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
@@ -479,15 +488,17 @@ Parameter arguments:\n\
 		tmpVal=a_spin1_min+(a_spin1_max-a_spin1_min)/2.0;
 		LALInferenceAddVariable(currentParams, "a_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 		LALInferenceAddMinMaxPrior(priorArgs, "a_spin1",     &a_spin1_min, &a_spin1_max,   LALINFERENCE_REAL8_t); 
-	
+	        
+		tmpVal=a_spin1_min+(a_spin1_max-a_spin1_min)/2.0;
 		LALInferenceAddVariable(currentParams, "a_spin2",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
-		LALInferenceAddMinMaxPrior(priorArgs, "a_spin2",     &a_spin2_min, &a_spin2_max,   LALINFERENCE_REAL8_t); 
+		LALInferenceAddMinMaxPrior(priorArgs, "a_spin2",     &a_spin1_min, &a_spin1_max,   LALINFERENCE_REAL8_t); 
 	
 		tmpVal=theta_spin1_min+(theta_spin1_max - theta_spin1_min)/2.0;
 	
 		LALInferenceAddVariable(currentParams,"theta_spin1",	&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 		LALInferenceAddMinMaxPrior(priorArgs, "theta_spin1",     &theta_spin1_min, &theta_spin1_max,   LALINFERENCE_REAL8_t); 
 	
+		tmpVal=theta_spin1_min+(theta_spin1_max - theta_spin1_min)/2.0;
 		LALInferenceAddVariable(currentParams,"theta_spin2",	&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 		LALInferenceAddMinMaxPrior(priorArgs, "theta_spin2",     &theta_spin1_min, &theta_spin1_max,   LALINFERENCE_REAL8_t); 
 	
@@ -496,6 +507,7 @@ Parameter arguments:\n\
 		LALInferenceAddVariable(currentParams,"phi_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 		LALInferenceAddMinMaxPrior(priorArgs, "phi_spin1",     &phi_spin1_min, &phi_spin1_max,   LALINFERENCE_REAL8_t); 
 	
+		tmpVal=phi_spin1_min+(phi_spin1_max - phi_spin1_min)/2.0;
 		LALInferenceAddVariable(currentParams,"phi_spin2",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 		LALInferenceAddMinMaxPrior(priorArgs, "phi_spin2",     &phi_spin1_min, &phi_spin1_max,   LALINFERENCE_REAL8_t);
 	}

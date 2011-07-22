@@ -441,7 +441,6 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	static LALStatus status;
 	memset(&status,0,sizeof(LALStatus));
 	InspiralTemplate template;
-	
 	memset(&template,0,sizeof(InspiralTemplate));
 	UINT4 idx=0;
 	
@@ -469,18 +468,20 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	}
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "a_spin2")){		
-		a_spin1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "a_spin2");
+		a_spin2 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "a_spin2");
 	}
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "theta_spin2")){
-		theta_spin1	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "theta_spin2");
+		theta_spin2	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "theta_spin2");
 	}
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "phi_spin2")){
-		phi_spin1= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_spin2");
+		phi_spin2= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_spin2");
 	}
 	
-	
+        double distance = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams,"logdistance");
+        template.distance = exp(distance)*LAL_PC_SI*1.e6;  
+
 	/* spin variables still need to be initialised */
 	
 	double mc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
@@ -534,7 +535,7 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	
 	XLALDestroyREAL4Vector(hPlus);
 	XLALDestroyREAL4Vector(hCross);
-	// executeFT(LALIFOData *IFOdata); //for phenspin we need to transform each of the states separately so i think you can do it with this function, but can you check just incase
+	//executeFT(LALIFOData *IFOdata); //for phenspin we need to transform each of the states separately so i think you can do it with this function, but can you check just incase
 	
 	double tc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time");
 	LALInferenceSetVariable(IFOdata->modelParams, "time", &tc);
