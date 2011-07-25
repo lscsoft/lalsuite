@@ -57,7 +57,7 @@ lalapps_RecalcHSCandidates_SOURCES = RecalcHSCandidates.c HierarchicalSearch.h \
 				  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h \
 				  $(FDSsrc)/ComputeFStatistic.h \
 				  $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4.h $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4.c \
-				  $(LVsrc)/LineVeto.c (LVsrc)/LineVeto.h
+				  $(LVsrc)/LineVeto.c $(LVsrc)/LineVeto.h
 
 
 HSLocalSources = $(FDSsrc)/OptimizedCFS/LocalComputeFstat.c EinsteinAtHome/LocalComputeFstatHoughMap.c
