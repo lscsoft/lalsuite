@@ -384,7 +384,7 @@ int MAIN( int argc, char *argv[]) {
 
   BOOLEAN uvar_printFstat1 = FALSE;
   BOOLEAN uvar_useWeights  = FALSE;
-  BOOLEAN uvar_outputFX    = FALSE; /* Do additional analysis for all toplist candidates, output F and FXvector for postprocessing */
+  BOOLEAN uvar_outputFX    = TRUE; /* Do additional analysis for all toplist candidates, output F and FXvector for postprocessing */
 
   REAL8 uvar_peakThrF = FSTATTHRESHOLD; /* threshold of Fstat to select peaks */
 
