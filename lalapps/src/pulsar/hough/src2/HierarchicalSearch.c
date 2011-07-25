@@ -3419,6 +3419,8 @@ void GetSemiCohToplist(LALStatus            *status,
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( in->length >= in->nCandidates, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
+  INIT_MEM ( line );
+
   /* go through candidates and insert into toplist if necessary */
   for ( k = 0; k < in->nCandidates; k++) {
 
@@ -3426,7 +3428,7 @@ void GetSemiCohToplist(LALStatus            *status,
     line.Alpha = in->list[k].alpha;
     line.Delta = in->list[k].delta;
     line.f1dot = in->list[k].fdot;
-    line.HoughFStat = (in->list[k].significance - meanN)/sigmaN; 
+    line.HoughFStat = (in->list[k].significance - meanN)/sigmaN;
     /* for debugging */
     /* line.HoughFStat = in->list[k].significance; */
     /* if (line.HoughFStat > 121) */
@@ -3445,14 +3447,7 @@ void GetSemiCohToplist(LALStatus            *status,
     line.MeanSig = (in->list[k].meanSig - meanN) / sigmaN;
     line.VarianceSig = in->list[k].varianceSig / (sigmaN * sigmaN);
 
-    /* initialize LV postprocessing entries to zero.
-     * These fields in the HoughFStatOutputEntry struct are not used by this code, only by RecalcHSCandidates.
-     */
-    line.sumTwoF = -1;    	/* sum of 2F-values for LV postprocessing */
-    line.sumTwoFX = NULL; 	/* sum of 2F-values per detector for LV postprocessing */
-
     debug = INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
-
   }
 
   DETATCHSTATUSPTR (status);
