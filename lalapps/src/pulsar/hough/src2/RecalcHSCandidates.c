@@ -113,6 +113,7 @@
 
 #include "OptimizedCFS/ComputeFstatREAL4.h"
 #include "HierarchicalSearch.h"
+#include "../../GCT/LineVeto.h"
 
 
 RCSID( "$Id$");
@@ -293,6 +294,7 @@ const SemiCohCandidate empty_SemiCohCandidate;
 /* ==================== ==================== */
 
 int MAIN( int argc, char *argv[]) {
+  const char *fn = __func__;
 
   LALStatus status = blank_status;
 
@@ -382,6 +384,7 @@ int MAIN( int argc, char *argv[]) {
 
   BOOLEAN uvar_printFstat1 = FALSE;
   BOOLEAN uvar_useWeights  = FALSE;
+  BOOLEAN uvar_outputFX    = TRUE; /* Do additional analysis for all toplist candidates, output F and FXvector for postprocessing */
 
   REAL8 uvar_peakThrF = FSTATTHRESHOLD; /* threshold of Fstat to select peaks */
 
@@ -446,6 +449,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useWeights",   0,  UVAR_OPTIONAL, "Weight each stack using noise and AM?", &uvar_useWeights ), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "outputFX",     0,  UVAR_OPTIONAL, "Additional analysis for toplist candidates, output 2FX?", &uvar_outputFX ), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
 
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacksMax",   0,  UVAR_OPTIONAL, "Maximum No. of 1st stage stacks", &uvar_nStacksMax ),&status);
@@ -981,6 +985,18 @@ int MAIN( int argc, char *argv[]) {
     } /* for InputCandList */
 
   LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
+
+  /* Also compute F, FX (for line veto statistics) for all candidates in final toplist */
+  if ( uvar_outputFX ) {
+    LogPrintfVerbatim ( LOG_DEBUG, "Computing FX ...");
+    xlalErrno = 0;
+    XLALComputeExtraStatsForToplist ( semiCohToplist, "HoughFStat", &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, FALSE );
+    if ( xlalErrno != 0 ) {
+      XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", fn, __LINE__, xlalErrno );
+      return(HIERARCHICALSEARCH_EBAD);
+    }
+    LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
+  }
 
   LogPrintf(LOG_DETAIL, "Finished analysis and now printing results and cleaning up...");
 
@@ -3019,6 +3035,12 @@ void GetSemiCohToplist(LALStatus            *status,
     line.DeltaBest = in->list[k].deltaBest;
     line.MeanSig = (in->list[k].meanSig - meanN) / sigmaN;
     line.VarianceSig = in->list[k].varianceSig / (sigmaN * sigmaN);
+
+    /* initialize LV postprocessing entries to zero.
+     * This will be filled later, if user requested it.
+     */
+    line.sumTwoF = -1;    	/* sum of 2F-values for LV postprocessing */
+    line.sumTwoFX = NULL; 	/* sum of 2F-values per detector for LV postprocessing */
 
     debug = INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
 

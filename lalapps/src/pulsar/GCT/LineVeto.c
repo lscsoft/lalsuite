@@ -62,6 +62,7 @@ const LVcomponents empty_LVcomponents;
 
 /** XLAL function to go through toplist and compute Line Veto statistics for each candidate */
 int XLALComputeExtraStatsForToplist ( toplist_t *list,                                        /**< list of cancidates with f, sky position etc. - no output so far */
+				      const char *listEntryTypeName,                          /**< type of toplist entries, give as name string */
 				      const MultiSFTVectorSequence *multiSFTsV,               /**< data files (SFTs) for all detectors and segments */
 				      const MultiNoiseWeightsSequence *multiNoiseWeightsV,    /**< noise weights for all detectors and segments */
 				      const MultiDetectorStateSeriesSequence *multiDetStatesV,/**< some state info for all detectors */
@@ -74,7 +75,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
   const char *fn = __func__;
 
   /* check input parameters and report errors */
-  if ( !list || !multiSFTsV || !multiNoiseWeightsV || !multiDetStatesV || !CFparams ) {
+  if ( !list || !multiSFTsV || !listEntryTypeName || !multiNoiseWeightsV || !multiDetStatesV || !CFparams ) {
     XLALPrintError ("\nError in function %s, line %d : Empty pointer as input parameter!\n\n", fn, __LINE__);
     XLAL_ERROR ( fn, XLAL_EFAULT);
   }
@@ -86,6 +87,17 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
   if ( list->elems == 0 ) {
     XLALPrintError ("\nError in function %s, line %d : Input toplist has zero length!\n\n", fn, __LINE__);
+    XLAL_ERROR ( fn, XLAL_EBADLEN );
+  }
+
+  /* check listEntryTypeName only once by strcmp, afterwards by int, to be faster */
+  UINT4 listEntryType = 0;
+  if (strcmp(listEntryTypeName, "GCTtop") == 0 )
+    listEntryType = 1;
+  if (strcmp(listEntryTypeName, "HoughFStat") == 0 )
+    listEntryType = 2;
+  if ( listEntryType == 0 ) {
+    XLALPrintError ("\nError in function %s, line %d : Unsupported entry type for input toplist! Supported types currently are: GCTtop, HoughFStat.\n\n", fn, __LINE__);
     XLAL_ERROR ( fn, XLAL_EBADLEN );
   }
 
@@ -124,36 +136,70 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
   /* loop over toplist: re-compute sumTwoF and sumTwoFX for all candidates */
   for (j = 0; j < numElements; j++ )
     {
-      GCTtopOutputEntry *elem = toplist_elem ( list, j );
+      if ( listEntryType == 1 ) {
+        GCTtopOutputEntry *elem = toplist_elem ( list, j );
 
-      if ( (elem->sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", fn, numDetectors );
-        XLAL_ERROR ( fn, XLAL_EFUNC );
+        if ( (elem->sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+          XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", fn, numDetectors );
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
+
+        /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
+        candidateDopplerParams.Alpha = elem->Alpha;
+        candidateDopplerParams.Delta = elem->Delta;
+        fkdotTMP[0] = elem->Freq;
+        fkdotTMP[1] = elem->F1dot;
+
+        /* extrapolate pulsar spins to correct time (more stable against large deltaTau than directly resetting refTime) */
+        if ( XLALExtrapolatePulsarSpins( candidateDopplerParams.fkdot, fkdotTMP, deltaTau ) != XLAL_SUCCESS ) {
+          XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", fn, __LINE__);
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
+
+        /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
+        XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, CFparams, SignalOnly );
+        if ( xlalErrno != 0 ) {
+          XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoSemiCoherent().\n\n", fn, __LINE__);
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
+
+        /* save values in toplist */
+        elem->sumTwoFnew         = lineVeto.TwoF;
+        for ( X = 0; X < numDetectors; X ++ )
+          elem->sumTwoFX->data[X]  = lineVeto.TwoFX->data[X];
       }
+      if ( listEntryType == 2 ) {
+        HoughFStatOutputEntry *elem = toplist_elem ( list, j );
 
-      /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
-      candidateDopplerParams.Alpha = elem->Alpha;
-      candidateDopplerParams.Delta = elem->Delta;
-      fkdotTMP[0] = elem->Freq;
-      fkdotTMP[1] = elem->F1dot;
+        if ( (elem->sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+          XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", fn, numDetectors );
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
 
-      /* extrapolate pulsar spins to correct time (more stable against large deltaTau than directly resetting refTime) */
-      if ( XLALExtrapolatePulsarSpins( candidateDopplerParams.fkdot, fkdotTMP, deltaTau ) != XLAL_SUCCESS ) {
-        XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", fn, __LINE__);
-        XLAL_ERROR ( fn, XLAL_EFUNC );
+        /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
+        candidateDopplerParams.Alpha = elem->Alpha;
+        candidateDopplerParams.Delta = elem->Delta;
+        fkdotTMP[0] = elem->Freq;
+        fkdotTMP[1] = elem->f1dot;
+
+        /* extrapolate pulsar spins to correct time (more stable against large deltaTau than directly resetting refTime) */
+        if ( XLALExtrapolatePulsarSpins( candidateDopplerParams.fkdot, fkdotTMP, deltaTau ) != XLAL_SUCCESS ) {
+          XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", fn, __LINE__);
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
+
+        /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
+        XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, CFparams, SignalOnly );
+        if ( xlalErrno != 0 ) {
+          XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoSemiCoherent().\n\n", fn, __LINE__);
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
+
+        /* save values in toplist */
+        elem->sumTwoF         = lineVeto.TwoF;
+        for ( X = 0; X < numDetectors; X ++ )
+          elem->sumTwoFX->data[X]  = lineVeto.TwoFX->data[X];
       }
-
-      /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
-      XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, CFparams, SignalOnly );
-      if ( xlalErrno != 0 ) {
-        XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoSemiCoherent().\n\n", fn, __LINE__);
-        XLAL_ERROR ( fn, XLAL_EFUNC );
-      }
-
-      /* save values in toplist */
-      elem->sumTwoFnew         = lineVeto.TwoF;
-      for ( X = 0; X < numDetectors; X ++ )
-        elem->sumTwoFX->data[X]  = lineVeto.TwoFX->data[X];
 
     } /* for j < numElements */
 
