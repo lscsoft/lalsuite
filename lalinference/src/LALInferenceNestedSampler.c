@@ -224,15 +224,27 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	}
 	char *outfile=ppt->value;
 	fpout=fopen(outfile,"w");
+ 	FILE *lout=NULL;
+        char param_list[FILENAME_MAX];
+        sprintf(param_list,"%s_params.txt",outfile);
+        lout=fopen(param_list,"w");
+	minpos=0;
+                   for(param_ptr=runState->livePoints[minpos]->head;param_ptr;param_ptr=param_ptr->next)
+   {
+        fprintf(lout,"%s\t",param_ptr->name);
+    }
+        fprintf(lout,"logL\n");
+        fclose(lout);	
+
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s!\n",outfile);
 	//fprintf(fpout,"chirpmass\tdistance\tLAL_APPROXIMANT\tLAL_PNORDER\tlogmc\tmassratio\ttime\tphase\tlogdistance\trightascension\tdeclination\tpolarisation\tinclination\ta_spin1\ta_spin2\ttheta_spin1\ttheta_spin2\tphi_spin1\tphi_spin2\t logL\n");	
 	/* Set up arrays for parallel runs */
 	minpos=0;
-	           for(param_ptr=runState->livePoints[minpos]->head;param_ptr;param_ptr=param_ptr->next)
+	        /*   for(param_ptr=runState->livePoints[minpos]->head;param_ptr;param_ptr=param_ptr->next)
    {
         fprintf(fpout,"%s\t",param_ptr->name);
     }	
-	fprintf(fpout,"logL\n");
+	fprintf(fpout,"logL\n");*/
 	logZarray = calloc(Nruns,sizeof(REAL8));
 	oldZarray = calloc(Nruns,sizeof(REAL8));
 	Harray = calloc(Nruns,sizeof(REAL8));
