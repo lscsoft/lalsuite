@@ -190,7 +190,7 @@ void rechop_data( UINT4Vector *segs, INT4 chunkMax, INT4 chunkMin );
 
 void merge_data( COMPLEX16Vector *data, UINT4Vector *segs );
 
-REAL8Vector * sum_data( LALInferenceIFOData *data );
+void sumData( LALInferenceRunState *runState );
 
 void response_lookup_table( REAL8 t0, LALDetAndSource detAndSource,
                             INT4 timeSteps, INT4 psiSteps, gsl_matrix *LUfplus,
@@ -203,6 +203,8 @@ INT4 count_csv( CHAR *csvline );
 INT4 recognised_parameter( CHAR *parname );
 
 REAL8 calculate_time_domain_snr( LALInferenceIFOData *data );
+
+REAL8 calculate_double_time_domain_snr( LALInferenceIFOData *data );
 
 void get_loudest_snr( LALInferenceRunState *runState );
 
