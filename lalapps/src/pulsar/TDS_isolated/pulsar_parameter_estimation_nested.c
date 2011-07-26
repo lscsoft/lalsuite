@@ -2190,10 +2190,8 @@ REAL8 pulsar_double_log_likelihood( LALInferenceVariables *vars, LALInferenceIFO
     REAL8Vector *sumDat = NULL, *sumDat2 = NULL;
     UINT4Vector *chunkLengths = NULL;
 
-    sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
-                                                       "sumData" );
-    sumDat2 = *(REAL8Vector **)LALInferenceGetVariable( data->next->dataParams,
-                                                        "sumData" );
+    sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "sumData" );
+    sumDat2 = *(REAL8Vector **)LALInferenceGetVariable( data->next->dataParams, "sumData" );
     
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams,
                                                  "chunkLength" );
@@ -2242,25 +2240,25 @@ REAL8 pulsar_double_log_likelihood( LALInferenceVariables *vars, LALInferenceIFO
         sumModel += M.re*M.re + M.im*M.im;
         /* sum over that data and model */
         sumDataModel += B.re*M.re + B.im*M.im;
-	sumdata+= (B.re-M.re)*(B.re-M.re) + (B.im-M.im)*(B.im-M.im);
+        /*sumdata+= (B.re)*(B.re) + (B.im)*(B.im);*/
 	
-	B.re = data->next->compTimeData->data->data[j].re;
+        B.re = data->next->compTimeData->data->data[j].re;
         B.im = data->next->compTimeData->data->data[j].im;
 
         M.re = data->next->compModelData->data->data[j].re;
         M.im = data->next->compModelData->data->data[j].im;
 	
-	/* sum over the model */
+        /* sum over the model */
         sumModel2 += M.re*M.re + M.im*M.im;
         /* sum over that data and model */
         sumDataModel2 += B.re*M.re + B.im*M.im;
-	sumdata2+= (B.re-M.re)*(B.re-M.re) + (B.im-M.im)*(B.im-M.im);
+        /*sumdata2+= (B.re)*(B.re) + (B.im)*(B.im);*/
       }
  
-      chiSquare = sumdata;
+      chiSquare = sumDat->data[count];
       chiSquare -= 2.*sumDataModel;
       chiSquare += sumModel;
-      chiSquare2 = sumdata2;
+      chiSquare2 = sumDat2->data[count];
       chiSquare2 -= 2.*sumDataModel2;
       chiSquare2 += sumModel2;
       
