@@ -77,7 +77,8 @@ REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG){
 
 /* estimateCovarianceMatrix reads the list of live points,
  and works out the covariance matrix of the varying parameters
- with varyType==PARAM_LINEAR */
+ - CIRCULAR parameters are wrapped around before the calculation and must be
+ scaled to the range 0 -> 2pi */
 void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4 Nlive)
 {
 	UINT4 i,j,k;
@@ -136,7 +137,7 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
                         }
 		}
 	}
-	/* for(j=0;j<ND;j++) means[j]/=(REAL8)Nlive; */
+
         for(item=Live[0]->head,j=0;item;item=item->next){ 
           if( item->vary==LALINFERENCE_PARAM_LINEAR ){
             means[j]/=(REAL8)Nlive;
@@ -355,7 +356,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
 			LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
 			runState->evolve(runState);
-			itercounter++;
+			itercounter++;			
 		}while( runState->currentLikelihood<=logLmin ||  *(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
 
                 LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);
@@ -455,7 +456,8 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 			continue;
 		/* Otherwise, check that logL is OK */
 		logLnew=runState->likelihood(newParams,runState->data,runState->template);
-		if(logLnew > logLmin){
+                
+                if(logLnew > logLmin){
 			Naccepted++;
 			logPriorOld=logPriorNew;
 			LALInferenceCopyVariables(newParams,runState->currentParams);

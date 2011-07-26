@@ -130,6 +130,10 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   
   REAL8Vector *logLikelihoods = NULL;
   
+  /* set error handler to abort in main function */
+  /* XLALErrorHandler = XLALAbortErrorHandler;
+  const char *fn = __func__; */
+  
   /* Get ProcParamsTable from input arguments */
   param_table = LALInferenceParseCommandLine( argc, argv );
   runState.commandLine = param_table;
@@ -199,6 +203,9 @@ INT4 main( INT4 argc, CHAR *argv[] ){
  
   /* add injections if requested */
   injectSignal( &runState );
+  
+  /* create sum square of the data to speed up the likelihood calculation */
+  sumData( &runState );
   
   /* Initialise the prior distribution given the command line arguments */
   /* Initialise the proposal distribution given the command line arguments */
@@ -570,7 +577,7 @@ void readPulsarData( LALInferenceRunState *runState ){
         fdt[i] = atof(dtval);
       }
     }
-    else /* set default (60 sesonds) */
+    else /* set default (60 seconds) */
       for(i = 0; i < numDets; i++) fdt[i] = 60.;
       
   }
@@ -1517,7 +1524,6 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
   else timeBins = TIMEBINS; /* default time bins */
     
   while(data){
-    REAL8Vector *sumData = NULL;
     UINT4Vector *chunkLength = NULL;
     
     LALInferenceAddVariable( data->dataParams, "psiSteps", &psiBins, LALINFERENCE_INT4_t, 
@@ -1554,12 +1560,6 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     
     LALInferenceAddVariable( data->dataParams, "chunkLength", &chunkLength, 
                              LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_FIXED );
-
-    /* get sum of data for each chunk */
-    sumData = sum_data( data );
-    
-    LALInferenceAddVariable( data->dataParams, "sumData", &sumData, 
-                             LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 
     data = data->next;
   }
@@ -2109,11 +2109,11 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     REAL8 chiSquare = 0.;
     COMPLEX16 B, M;
   
-    REAL8Vector *sumData = NULL;
+    REAL8Vector *sumDat = NULL;
     UINT4Vector *chunkLengths = NULL;
     
-    sumData = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, 
-                                                        "sumData" );
+    sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, 
+                                                       "sumData" );
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams,
                                                              "chunkLength" );
     chunkMin = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMin" );
@@ -2156,7 +2156,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
         sumDataModel += B.re*M.re + B.im*M.im;
       }
  
-      chiSquare = sumData->data[count];
+      chiSquare = sumDat->data[count];
       chiSquare -= 2.*sumDataModel;
       chiSquare += sumModel;
       
@@ -2166,7 +2166,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     }
   
     loglike += logliketmp;
-  
+    
     data = data->next;
   }
   
@@ -2197,11 +2197,13 @@ REAL8 pulsar_double_log_likelihood( LALInferenceVariables *vars,
 
     INT4 first = 0, through = 0;
   
-    REAL8Vector *sumData = NULL, *sumData2 = NULL;
+    REAL8Vector *sumDat = NULL, *sumDat2 = NULL;
     UINT4Vector *chunkLengths = NULL;
 
-    sumData = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "sumData" );
-    sumData2 = *(REAL8Vector **)LALInferenceGetVariable( data->next->dataParams, "sumData" );
+    sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
+                                                       "sumData" );
+    sumDat2 = *(REAL8Vector **)LALInferenceGetVariable( data->next->dataParams,
+                                                        "sumData" );
     
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams,
                                                  "chunkLength" );
@@ -2952,19 +2954,19 @@ REAL8 noise_only_model( LALInferenceIFOData *data ){
   
   while ( datatemp ){
     UINT4Vector *chunkLengths = NULL;
-    REAL8Vector *sumData = NULL;
+    REAL8Vector *sumDat = NULL;
   
     REAL8 chunkLength = 0.;
   
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, 
                                                              "chunkLength" );
-    sumData = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
+    sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
                                                         "sumData" );
   
     for (i=0; i<chunkLengths->length; i++){
       chunkLength = (REAL8)chunkLengths->data[i];
    
-      logL -= chunkLength * log(sumData->data[i]);
+      logL -= chunkLength * log(sumDat->data[i]);
     }
   
     datatemp = datatemp->next;
@@ -3043,7 +3045,19 @@ parameter file %s is wrong.\n", injectfile);
     UINT4 varyphasetmp = varyphase;
     varyphase = 1;
     
-    get_triaxial_pulsar_model( injpars, data );
+    modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
+    if ( !strcmp( modeltype, "triaxial" ) ){
+        fprintf(stderr,"injecting triaxial signal into data\n");
+      get_triaxial_pulsar_model( injpars, data );
+    }
+    else if ( !strcmp( modeltype, "pinsf" ) ){
+      fprintf(stderr,"injecting signal into data\n");
+      get_pinsf_pulsar_model( injpars, data );
+    }
+    else{
+        exit(0);
+        fprintf(stderr,"Model type incorrectly specified\n");
+    }
     
     /* reset varyphase to its original value */
     varyphase = varyphasetmp;
@@ -3121,30 +3135,6 @@ injection\n", outfile);
 injection\n", signalonly);
       }
     }
-                                                            
-    /* create the signal */
-    modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
-    if ( !strcmp( modeltype, "triaxial" ) ){
-	fprintf(stderr,"injecting triaxial signal into data\n");
-      get_triaxial_pulsar_model( injpars, data );
-    }
-    else if ( !strcmp( modeltype, "pinsf" ) ){
-      fprintf(stderr,"injecting signal into data\n");
-      get_pinsf_pulsar_model( injpars, data );
-
-      for ( i = 0; i < length; i++ ){
-	data->compTimeData->data->data[i].re +=
-	    data->compModelData->data->data[i].re;
-	data->compTimeData->data->data[i].im +=
-	    data->compModelData->data->data[i].im;
-      }
-      data = data->next; 
-    }
-    else{
-	exit(0);
-	fprintf(stderr,"Model type incorrectly specified\n");
-    }
-    /*get_triaxial_pulsar_model( injpars, data );*/
     
     /* add the signal to the data */
     for ( i = 0; i < length; i++ ){
@@ -3659,37 +3649,49 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
 
 
 /* a function to sum over the data */
-REAL8Vector *sum_data( LALInferenceIFOData *data ){
-  INT4 chunkLength = 0, length = 0, i = 0, j = 0, count = 0;
-  COMPLEX16 B;
-  REAL8Vector *sumData = NULL; 
+void sumData( LALInferenceRunState *runState ){
+  LALInferenceIFOData *data = runState->data;
+  
+  while( data ){
+    REAL8Vector *sumdat = NULL;
+  
+    INT4 chunkLength = 0, length = 0, i = 0, j = 0, count = 0;
+    COMPLEX16 B; 
 
-  UINT4Vector *chunkLengths;
+    UINT4Vector *chunkLengths;
   
-  chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, 
-                                               "chunkLength" );
-  
-  length = data->dataTimes->length + 1 -
-    chunkLengths->data[chunkLengths->length - 1];
-
-  sumData = XLALCreateREAL8Vector( chunkLengths->length );
-  
-  for( i = 0 ; i < length ; i+= chunkLength ){
-    chunkLength = chunkLengths->data[count];
-    sumData->data[count] = 0.;
+    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, 
+                                                             "chunkLength" );
     
-    for( j = i ; j < i + chunkLength ; j++){
-      B.re = data->compTimeData->data->data[j].re;
-      B.im = data->compTimeData->data->data[j].im;
+    length = data->dataTimes->length + 1 -
+      chunkLengths->data[chunkLengths->length - 1];
+    
+    sumdat = XLALCreateREAL8Vector( chunkLengths->length );
+    
+    for( i = 0 ; i < length ; i+= chunkLength ){
+      chunkLength = chunkLengths->data[count];
+    
+      sumdat->data[count] = 0.;
+    
+      for( j = i ; j < i + chunkLength ; j++){
+        B.re = data->compTimeData->data->data[j].re;
+        B.im = data->compTimeData->data->data[j].im;
 
-      /* sum up the data */
-      sumData->data[count] += (B.re*B.re + B.im*B.im);
+        /* sum up the data */
+        sumdat->data[count] += (B.re*B.re + B.im*B.im);
+      }
+
+      count++;
     }
-
-    count++;
+    
+    LALInferenceAddVariable( data->dataParams, "sumData", &sumdat, 
+                             LALINFERENCE_REAL8Vector_t,
+                             LALINFERENCE_PARAM_FIXED);
+  
+    data = data->next;
   }
   
-  return sumData;
+  return;
 }
 
 
