@@ -108,7 +108,7 @@ XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
 				    const BOOLEAN SignalOnly);
 
 REAL8
-XLALComputeFstatFromAtoms ( const Fcomponents *Fstat,
+XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,
 			    const UINT4 X );
 
 REAL8

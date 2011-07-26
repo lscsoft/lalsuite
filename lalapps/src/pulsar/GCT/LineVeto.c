@@ -299,7 +299,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
       /* recompute single-detector Fstats from atoms */
       for (X = 0; X < numDetectorsSeg; X++)
         {
-          REAL8 twoFX = 2.0 * XLALComputeFstatFromAtoms ( &Fstat, X );
+          REAL8 twoFX = 2.0 * XLALComputeFstatFromAtoms ( Fstat.multiFstatAtoms, X );
           if ( xlalErrno != 0 ) {
             XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", fn, __LINE__);
             XLAL_ERROR ( fn, XLAL_EFUNC );
@@ -344,29 +344,29 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 
 
 /** XLAL function to compute single-IFO Fstat from multi-IFO Atoms: */
-REAL8 XLALComputeFstatFromAtoms ( const Fcomponents *Fstat,   /**< multi-detector Fstat */
-				  const UINT4       X        /**< detector number */
+REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   /**< multi-detector atoms */
+				  const UINT4                 X                  /**< detector number */
 				  )
 {
   const char *fn = __func__;
 
   /* check input parameters and report errors */
-  if ( !Fstat || !Fstat->multiFstatAtoms || !Fstat->multiFstatAtoms->data || !Fstat->multiFstatAtoms->data[0]->data ) {
+  if ( !multiFstatAtoms || !multiFstatAtoms->data || !multiFstatAtoms->data[0]->data ) {
     XLALPrintError ("\nError in function %s, line %d : Empty pointer as input parameter!\n\n", fn, __LINE__);
     XLAL_ERROR ( fn, XLAL_EFAULT);
   }
 
-  if ( Fstat->multiFstatAtoms->length == 0 ) {
+  if ( multiFstatAtoms->length == 0 ) {
     XLALPrintError ("\nError in function %s, line %d : Input MultiFstatAtomVector has zero length! (no detectors)\n\n", fn, __LINE__);
     XLAL_ERROR ( fn, XLAL_EBADLEN );
   }
 
-  if ( X > Fstat->multiFstatAtoms->length-1 ) {
-    XLALPrintError ("\nError in function %s, line %d : Invalid detector number!\nRequested X=%d, but FstatAtoms only have length %d.\n\n", fn, __LINE__, X, Fstat->multiFstatAtoms->length);
+  if ( X > multiFstatAtoms->length-1 ) {
+    XLALPrintError ("\nError in function %s, line %d : Invalid detector number!\nRequested X=%d, but FstatAtoms only have length %d.\n\n", fn, __LINE__, X, multiFstatAtoms->length);
     XLAL_ERROR ( fn, XLAL_EDOM );
   }
 
-  if ( Fstat->multiFstatAtoms->data[X]->length == 0 ) {
+  if ( multiFstatAtoms->data[X]->length == 0 ) {
     XLALPrintError ("\nError in function %s, line %d : Input FstatAtomVector has zero length! (no timestamps for detector X=%d)\n\n", fn, __LINE__, X);
     XLAL_ERROR ( fn, XLAL_EDOM );
   }
@@ -376,7 +376,7 @@ REAL8 XLALComputeFstatFromAtoms ( const Fcomponents *Fstat,   /**< multi-detecto
   REAL8 FX = 0.0;
   COMPLEX8 Fa, Fb;
   UINT4 alpha;
-  UINT4 numSFTs = Fstat->multiFstatAtoms->data[X]->length;
+  UINT4 numSFTs = multiFstatAtoms->data[X]->length;
 
   /* sum up matrix elements and Fa, Fb */
   Fa.re = 0.0;
@@ -385,7 +385,7 @@ REAL8 XLALComputeFstatFromAtoms ( const Fcomponents *Fstat,   /**< multi-detecto
   Fb.im = 0.0;
   for ( alpha = 0; alpha < numSFTs; alpha++)
     {
-      FstatAtom *thisAtom = &Fstat->multiFstatAtoms->data[X]->data[alpha];
+      FstatAtom *thisAtom = &multiFstatAtoms->data[X]->data[alpha];
 
       mmatrixA += thisAtom->a2_alpha;
       mmatrixB += thisAtom->b2_alpha;
