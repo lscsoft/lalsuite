@@ -51,6 +51,8 @@ typedef struct
    REAL4 ihsfom;
    REAL4 ihsfomfar;
    REAL8 templatefar;
+   REAL8 ULmindf;
+   REAL8 ULmaxdf;
    INT4 blksize;
    INT4 maxbinshift;
    INT4 templatelength;
@@ -59,10 +61,10 @@ typedef struct
    CHAR* sftType;
    INT4 markBadSFTs;
    INT4 FFTplanFlag;
-   INT4 keepOneIHS;
    INT4 calcRthreshold;
    INT4 antennaOff;
    INT4 noiseWeightOff;
+   INT4 printAllULvalues;
 } inputParamsStruct;
 
 typedef struct
@@ -90,12 +92,12 @@ typedef struct
 {
    REAL4 alpha;
    REAL4 delta;
-   REAL8 fsig;
-   REAL8 period;
-   REAL8 moddepth;
-   REAL8 ULval;
+   REAL8Vector *fsig;
+   REAL8Vector *period;
+   REAL8Vector *moddepth;
+   REAL8Vector *ULval;
+   INT4Vector *iterations2reachUL;
    REAL8 normalization;
-   INT4 iterations2reachUL;
 } UpperLimit;
 
 typedef struct

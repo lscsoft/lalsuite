@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.1"
+#define CMDLINE_PARSER_VERSION "1.1.2"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -103,6 +103,12 @@ struct gengetopt_args_info
   char * ULfilename_arg;	/**< @brief Upper limit file name (default='uls.dat').  */
   char * ULfilename_orig;	/**< @brief Upper limit file name original value given at command line.  */
   const char *ULfilename_help; /**< @brief Upper limit file name help description.  */
+  double ULminimumDeltaf_arg;	/**< @brief Minimum modulation depth counted in the upper limit value (default='0.0').  */
+  char * ULminimumDeltaf_orig;	/**< @brief Minimum modulation depth counted in the upper limit value original value given at command line.  */
+  const char *ULminimumDeltaf_help; /**< @brief Minimum modulation depth counted in the upper limit value help description.  */
+  double ULmaximumDeltaf_arg;	/**< @brief Maximum modulation depth counted in the upper limit value (default='0.1').  */
+  char * ULmaximumDeltaf_orig;	/**< @brief Maximum modulation depth counted in the upper limit value original value given at command line.  */
+  const char *ULmaximumDeltaf_help; /**< @brief Maximum modulation depth counted in the upper limit value help description.  */
   char * sftDir_arg;	/**< @brief Directory containing SFTs (default='./').  */
   char * sftDir_orig;	/**< @brief Directory containing SFTs original value given at command line.  */
   const char *sftDir_help; /**< @brief Directory containing SFTs help description.  */
@@ -129,11 +135,11 @@ struct gengetopt_args_info
   const char *sftType_help; /**< @brief Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization help description.  */
   int markBadSFTs_flag;	/**< @brief Mark bad SFTs (default=off).  */
   const char *markBadSFTs_help; /**< @brief Mark bad SFTs help description.  */
-  int keepOneCandidate_flag;	/**< @brief Keep a single IHS candidate and let process through the pipeline (default=off).  */
-  const char *keepOneCandidate_help; /**< @brief Keep a single IHS candidate and let process through the pipeline help description.  */
   int FFTplanFlag_arg;	/**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive (default='3').  */
   char * FFTplanFlag_orig;	/**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive original value given at command line.  */
   const char *FFTplanFlag_help; /**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive help description.  */
+  int allULvalsPerSkyLoc_flag;	/**< @brief Print all UL values in the band specified by ULminimumDeltaf and ULmaximumDeltaf (default is to print only the maximum UL value in the band) (default=off).  */
+  const char *allULvalsPerSkyLoc_help; /**< @brief Print all UL values in the band specified by ULminimumDeltaf and ULmaximumDeltaf (default is to print only the maximum UL value in the band) help description.  */
   int IHSonly_flag;	/**< @brief IHS stage only is run. Output statistic is the IHS statistic. (default=off).  */
   const char *IHSonly_help; /**< @brief IHS stage only is run. Output statistic is the IHS statistic. help description.  */
   int calcRthreshold_flag;	/**< @brief Calculate the threshold value for R given the template false alarm rate (default=off).  */
@@ -171,6 +177,8 @@ struct gengetopt_args_info
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
   unsigned int outfilename_given ;	/**< @brief Whether outfilename was given.  */
   unsigned int ULfilename_given ;	/**< @brief Whether ULfilename was given.  */
+  unsigned int ULminimumDeltaf_given ;	/**< @brief Whether ULminimumDeltaf was given.  */
+  unsigned int ULmaximumDeltaf_given ;	/**< @brief Whether ULmaximumDeltaf was given.  */
   unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
   unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */
   unsigned int ephemYear_given ;	/**< @brief Whether ephemYear was given.  */
@@ -180,8 +188,8 @@ struct gengetopt_args_info
   unsigned int SFToverlap_given ;	/**< @brief Whether SFToverlap was given.  */
   unsigned int sftType_given ;	/**< @brief Whether sftType was given.  */
   unsigned int markBadSFTs_given ;	/**< @brief Whether markBadSFTs was given.  */
-  unsigned int keepOneCandidate_given ;	/**< @brief Whether keepOneCandidate was given.  */
   unsigned int FFTplanFlag_given ;	/**< @brief Whether FFTplanFlag was given.  */
+  unsigned int allULvalsPerSkyLoc_given ;	/**< @brief Whether allULvalsPerSkyLoc was given.  */
   unsigned int IHSonly_given ;	/**< @brief Whether IHSonly was given.  */
   unsigned int calcRthreshold_given ;	/**< @brief Whether calcRthreshold was given.  */
   unsigned int BrentsMethod_given ;	/**< @brief Whether BrentsMethod was given.  */

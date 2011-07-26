@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.1"
+version "1.1.2"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
@@ -25,6 +25,8 @@ option "blksize"  - "Blocksize for running median of 1st FFT band" int default="
 option "outdirectory"   - "Output directory" string default="output" optional
 option "outfilename"    - "Output file name" string default="logfile.txt" optional
 option "ULfilename"     - "Upper limit file name" string default="uls.dat" optional
+option "ULminimumDeltaf"  - "Minimum modulation depth counted in the upper limit value" double default="0.0" optional
+option "ULmaximumDeltaf"  - "Maximum modulation depth counted in the upper limit value" double default="0.1" optional
 option "sftDir"         - "Directory containing SFTs" string default="./" optional
 option "ephemDir"      - "Path to ephemeris files" string default="/opt/lscsoft/lalpulsar/share/lalpulsar" optional
 option "ephemYear"     - "Year or year range (e.g. 08-11) of ephemeris files" string default="08-11" optional
@@ -34,8 +36,8 @@ option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec
 option "SFToverlap"    - "SFT overlap in seconds, usually Tcoh/2" double default="900" optional
 option "sftType"  - "Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization" string default="vladimir" optional
 option "markBadSFTs"   - "Mark bad SFTs" flag off
-option "keepOneCandidate"  - "Keep a single IHS candidate and let process through the pipeline" flag off
 option "FFTplanFlag"   - "0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive" int default="3" optional
+option "allULvalsPerSkyLoc"  - "Print all UL values in the band specified by ULminimumDeltaf and ULmaximumDeltaf (default is to print only the maximum UL value in the band)" flag off
 
 option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off hidden
 option "calcRthreshold"    - "Calculate the threshold value for R given the template false alarm rate" flag off hidden

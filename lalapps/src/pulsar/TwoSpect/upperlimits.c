@@ -32,6 +32,8 @@ UpperLimitVector * new_UpperLimitVector(UINT4 length)
    
    const CHAR *fn = __func__;
    
+   INT4 ii;
+   
    UpperLimitVector *vector = XLALMalloc(sizeof(*vector));
    if (vector==NULL) {
       fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", fn, sizeof(*vector));
@@ -47,6 +49,7 @@ UpperLimitVector * new_UpperLimitVector(UINT4 length)
          fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", fn, length*sizeof(*vector->data));
          XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
       }
+      for (ii=0; ii<(INT4)length; ii++) reset_UpperLimitStruct(&(vector->data[ii]));
    }
    
    return vector;
@@ -66,6 +69,9 @@ UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 lengt
       return NULL;
    }
    
+   UINT4 oldlength = vector->length;
+   INT4 ii;
+   
    vector->data = XLALRealloc(vector->data, length*sizeof(*vector->data));
    if (vector->data==NULL) {
       vector->length = 0;
@@ -73,6 +79,7 @@ UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 lengt
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    vector->length = length;
+   for (ii=(INT4)oldlength; ii<(INT4)length; ii++) reset_UpperLimitStruct(&(vector->data[ii]));
    
    return vector;
    
@@ -84,15 +91,57 @@ void free_UpperLimitVector(UpperLimitVector *vector)
 {
    
    const CHAR *fn = __func__;
+   INT4 ii;
    
    if (vector==NULL) return;
    if ((!vector->length || !vector->data) && (vector->length || vector->data)) XLAL_ERROR_VOID(fn, XLAL_EINVAL);
-   if (vector->data) XLALFree((UpperLimit*)vector->data);
+   if (vector->data) {
+      for (ii=0; ii<(INT4)vector->length; ii++) free_UpperLimitStruct(&(vector->data[ii]));
+      XLALFree((UpperLimit*)vector->data);
+   }
    vector->data = NULL;
    XLALFree((UpperLimitVector*)vector);
    return;
    
 } /* free_UpperLimitVector() */
+
+
+
+void reset_UpperLimitStruct(UpperLimit *ul)
+{
+   
+   ul->fsig = NULL;
+   ul->period = NULL;
+   ul->moddepth = NULL;
+   ul->ULval = NULL;
+   ul->iterations2reachUL = NULL;
+   
+}
+void free_UpperLimitStruct(UpperLimit *ul)
+{
+   
+   if (ul->fsig) {
+      XLALDestroyREAL8Vector(ul->fsig);
+      ul->fsig = NULL;
+   }
+   if (ul->period) {
+      XLALDestroyREAL8Vector(ul->period);
+      ul->period = NULL;
+   }
+   if (ul->moddepth) {
+      XLALDestroyREAL8Vector(ul->moddepth);
+      ul->moddepth = NULL;
+   }
+   if (ul->ULval) {
+      XLALDestroyREAL8Vector(ul->ULval);
+      ul->ULval = NULL;
+   }
+   if (ul->iterations2reachUL) {
+      XLALDestroyINT4Vector(ul->iterations2reachUL);
+      ul->iterations2reachUL = NULL;
+   }
+   
+}
 
 
 
@@ -105,6 +154,28 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    INT4 ii, jj, kk;
    
    INT4 minrows = (INT4)round(2.0*params->dfmin*params->Tcoh)+1;
+   
+   ul->fsig = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
+   ul->period = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
+   ul->moddepth = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
+   ul->ULval = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
+   ul->iterations2reachUL = XLALCreateINT4Vector((ihsmaxima->rows-minrows)+1);
+   if (ul->fsig==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", fn, (ihsmaxima->rows-minrows)+1);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   } else if (ul->period==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", fn, (ihsmaxima->rows-minrows)+1);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   } else if (ul->moddepth==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", fn, (ihsmaxima->rows-minrows)+1);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   } else if (ul->ULval==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", fn, (ihsmaxima->rows-minrows)+1);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   } else if (ul->iterations2reachUL==NULL) {
+      fprintf(stderr, "%s: XLALCreateINT4Vector(%d) failed.\n", fn, (ihsmaxima->rows-minrows)+1);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
    
    REAL4Vector *twiceAveNoise = XLALCreateREAL4Vector(aveNoise->length);
    if (twiceAveNoise==NULL) {
@@ -121,7 +192,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    struct ncx2cdf_solver_params pars;
    
    INT4 totaliterations = 0;
-   REAL8 highesth0 = 0.0, fsig = 0.0, period = 0.0, moddepth = 0.0;
+   //REAL8 highesth0 = 0.0, fsig = 0.0, period = 0.0, moddepth = 0.0;
    REAL8 dailyharmonic = params->Tobs/(24.0*3600);
    REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
    for (ii=minrows; ii<=ihsmaxima->rows; ii++) {
@@ -162,7 +233,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          fprintf(stderr, "%s: ncx2inv(%f,%f,%f) failed.\n",fn, 0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
-      REAL8 lo = 0.125*initialguess, hi = 8.0*initialguess;
+      REAL8 lo = 0.05*initialguess, hi = 5.0*initialguess;
       pars.val = 2.0*loudestoutlier;
       //pars.dof = 2.0*avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2];
       pars.dof = 2.0*loudestoutliernoise;
@@ -186,7 +257,6 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
          }
          root = gsl_root_fsolver_root(s);
-         //fprintf(stderr, "root = %.8f\n", root);
          lo = gsl_root_fsolver_x_lower(s);
          hi = gsl_root_fsolver_x_upper(s);
          status = gsl_root_test_interval(lo, hi, 0.0, 0.001);
@@ -205,26 +275,30 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
       
       totaliterations += jj;
       
-      //REAL8 h0 = ihs2h0(0.5*root+loudestoutlier, locationofloudestoutlier, jjbinofloudestoutlier, ii, params, aveNoise, fbinavgs);
-      REAL8 h0 = ihs2h0(root+pars.dof, params);
+      REAL8 h0 = ihs2h0(root+pars.dof, params, ii);
       if (XLAL_IS_REAL8_FAIL_NAN(h0)) {
          fprintf(stderr, "%s: ihs2h0() failed.\n", fn);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
-      if (h0>highesth0) {
+      /* if (h0>highesth0) {
          highesth0 = h0;
          fsig = params->fmin + (0.5*(ii-1) + jjbinofloudestoutlier)/params->Tcoh;
          period = params->Tobs/locationofloudestoutlier;
          moddepth = 0.5*(ii-1)/params->Tcoh;
-      }
+      } */
+      ul->fsig->data[ii-minrows] = params->fmin + (0.5*(ii-1.0) + jjbinofloudestoutlier)/params->Tcoh;
+      ul->period->data[ii-minrows] = params->Tobs/locationofloudestoutlier;
+      ul->moddepth->data[ii-minrows] = 0.5*(ii-1.0)/params->Tcoh;
+      ul->ULval->data[ii-minrows] = h0;
+      ul->iterations2reachUL->data[ii-minrows] = jj;
       //fprintf(stderr, "%d done\n", ii);
    } /* for ii=minrows --> maximum rows */
    
-   ul->ULval = highesth0;
+   /* ul->ULval = highesth0;
    ul->fsig = fsig;
    ul->period = period;
    ul->moddepth = moddepth;
-   ul->iterations2reachUL = totaliterations;
+   ul->iterations2reachUL = totaliterations; */
    
    gsl_root_fsolver_free(s);
    XLALDestroyREAL4Vector(twiceAveNoise);
@@ -247,12 +321,26 @@ REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p)
 
 
 
-void outputUpperLimitsToFile(FILE *outputfile, UpperLimitVector *ulvector)
+void outputUpperLimitToFile(FILE *outputfile, UpperLimit ul, REAL8 dfmin, REAL8 dfmax, INT4 printAllULvalues)
 {
    
-   INT4 ii;
-   for (ii=0; ii<(INT4)ulvector->length; ii++) {
-      fprintf(outputfile,"%.5f %.5f %.6f", ulvector->data[ii].alpha, ulvector->data[ii].delta, ulvector->data[ii].ULval);
+   INT4 ii, numofiterations;
+   REAL8 highesth0 = 0.0, fsig = 0.0, period = 0.0, moddepth = 0.0;
+   for (ii=0; ii<(INT4)ul.moddepth->length; ii++) {
+      if (ul.moddepth->data[ii]>=dfmin && ul.moddepth->data[ii]<=dfmax) {
+         if (printAllULvalues==1) {
+            fprintf(outputfile, "%.6f %.6f %.6g %.6f %.6f %.6f %.6g %d\n", ul.alpha, ul.delta, ul.ULval->data[ii], ul.fsig->data[ii], ul.period->data[ii], ul.moddepth->data[ii], ul.normalization, ul.iterations2reachUL->data[ii]);
+         } else if (ul.ULval->data[ii]>highesth0) {
+            highesth0 = ul.ULval->data[ii];
+            fsig = ul.fsig->data[ii];
+            period = ul.period->data[ii];
+            moddepth = ul.moddepth->data[ii];
+            numofiterations = ul.iterations2reachUL->data[ii];
+         }
+      }
+   }
+   if (printAllULvalues==0) {
+      fprintf(outputfile, "%.6f %.6f %.6g %.6f %.6f %.6f %.6g %d\n", ul.alpha, ul.delta, highesth0, fsig, period, moddepth, ul.normalization, numofiterations);
    }
    
 }

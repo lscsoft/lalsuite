@@ -340,9 +340,9 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    INT4 ii, jj;
    REAL8 Tobs = params->Tobs;
    
-   INT4 trials = (INT4)round(1*0.000001/params->ihsfar);    //Number of trials to determine FAR value
-   if (params->ihsfomfar!=0.0 && trials<(INT4)round(1*0.000001/params->ihsfomfar)) {
-      trials = (INT4)round(1*0.000001/params->ihsfomfar);
+   INT4 trials = (INT4)round(1.0*0.000001/params->ihsfar);    //Number of trials to determine FAR value
+   if (params->ihsfomfar!=0.0 && trials<(INT4)round(1.0*0.000001/params->ihsfomfar)) {
+      trials = (INT4)round(1.0*0.000001/params->ihsfomfar);
    }
    trials += rows;
    
@@ -1100,11 +1100,11 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
             fprintf(stderr,"%s: calcMean() failed.\n", fn);
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
          }
-         REAL4 rmsNoise = calcRms(avgsinrange);
+         /* REAL4 rmsNoise = calcRms(avgsinrange);
          if (XLAL_IS_REAL4_FAIL_NAN(rmsNoise)) {
             fprintf(stderr,"%s: calcRms() failed.\n", fn);
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-         }
+         } */
          
          numberofIHSvalsChecked++;
          
@@ -1124,12 +1124,30 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   highestvalloc = locationinmaximastruct;
                   jjloc = jj;
                }
+               /* INT4 loc = ihsmaxima->locations->data[locationinmaximastruct];
+               //Candidate frequency
+               fsig = params->fmin + (0.5*(ii-1) + jj)/params->Tcoh;
+               //Candidate modulation depth
+               B = 0.5*(ii-1)/params->Tcoh;
+               //Candidate period
+               per0 = params->Tobs/loc;
+               //Candidate h0
+               REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[locationinmaximastruct], loc, jj, ii, params, aveNoise, fbinavgs);
+               if (candlist->numofcandidates == candlist->length-1) {
+                  candlist = resize_candidateVector(candlist, 2*(candlist->length));
+                  if (candlist->data==NULL) {
+                     fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                  }
+               }
+               loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, ffdata->tfnormalization);
+               (candlist->numofcandidates)++; */
                
             } /* if fom is below or equal to threshold fom */
          } /* if val exceeds threshold */
       } /* for jj < numfbins-(ii-1) */
       
-      if (highestval != -1) {
+      if (highestvalloc != -1) {
          INT4 loc = ihsmaxima->locations->data[highestvalloc];
          //Candidate frequency
          fsig = params->fmin + (0.5*(ii-1) + jjloc)/params->Tcoh;
@@ -1194,14 +1212,17 @@ REAL8 ihs2h0_withNoiseSubtraction(REAL8 ihsval, INT4 location, INT4 lowestfreque
    //REAL8 h0 = 4.6*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
    //return h0;
    
-   REAL8 h0 = ihs2h0(2.0*ihsval-2.0*totalnoise, params);  //With 2.0 for chi-square with 2 d.o.f.
+   REAL8 h0 = ihs2h0(2.0*ihsval-2.0*totalnoise, params, rows);  //With 2.0 for chi-square with 2 d.o.f.
    return h0;
    
 }
-REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params)
+REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params, INT4 rows)
 {
    
-   return 4.7*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
+   //return 4.6*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
+   //REAL8 prefact = fmax(4.6, 10.2*pow(0.5*((REAL8)rows-1.0)/params->Tcoh,0.25));
+   REAL8 prefact = 4.4*pow(0.5*((REAL8)rows-1.0)/params->Tcoh/7.334e-3,.1);
+   return prefact*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
    
 }
 
