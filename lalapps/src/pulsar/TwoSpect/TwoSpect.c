@@ -177,6 +177,9 @@ int main(int argc, char *argv[])
    candidateVector *exactCandidates2 = new_candidateVector(100);
    candidateVector *ihsCandidates = new_candidateVector(100);
    UpperLimitVector *upperlimits = new_UpperLimitVector(1);
+   upperlimits = resize_UpperLimitVector(upperlimits, 2);
+   free_UpperLimitVector(upperlimits);
+   upperlimits = new_UpperLimitVector(1);
    if (gaussCandidates1==NULL) {
       fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", fn, 100);
       XLAL_ERROR(fn, XLAL_EFUNC);
@@ -587,6 +590,7 @@ int main(int argc, char *argv[])
                   XLAL_ERROR(fn, XLAL_EFUNC);
                }
             }
+            efficientTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], gaussCandidates2->data[ii].fsig-2.5/inputParams->Tcoh, gaussCandidates2->data[ii].fsig+2.5/inputParams->Tcoh, 0.125/inputParams->Tcoh, 5, gaussCandidates2->data[ii].moddepth-2.5/inputParams->Tcoh, gaussCandidates2->data[ii].moddepth+2.5/inputParams->Tcoh, 0.125/inputParams->Tcoh, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
             bruteForceTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], gaussCandidates2->data[ii].fsig-2.5/inputParams->Tcoh, gaussCandidates2->data[ii].fsig+2.5/inputParams->Tcoh, 11, 5, gaussCandidates2->data[ii].moddepth-2.5/inputParams->Tcoh, gaussCandidates2->data[ii].moddepth+2.5/inputParams->Tcoh, 11, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
             gaussCandidates3->numofcandidates++;
             
@@ -1044,7 +1048,7 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: skypoint95UL() failed.\n", fn);
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
-      upperlimits->data[upperlimits->length-1].ULval /= sqrt(ffdata->tfnormalization);
+      for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization);
       upperlimits = resize_UpperLimitVector(upperlimits, upperlimits->length+1);
       if (upperlimits->data==NULL) {
          fprintf(stderr,"%s: resize_UpperLimitVector(%d) failed.\n", fn, upperlimits->length+1);
@@ -1072,12 +1076,12 @@ int main(int argc, char *argv[])
       } /* for ii < exactCandidates2->numofcandidates */
    } /* if exactCandidates2->numofcandidates != 0 */
    
-   ULFILE = fopen(t,"a");
+   ULFILE = fopen(t,"w");
    if (ULFILE==NULL) {
       fprintf(stderr, "%s: UL file could not be opened.\n", fn);
       XLAL_ERROR(fn, XLAL_EINVAL);
    }
-   for (ii=0; ii<(INT4)upperlimits->length-1; ii++) fprintf(ULFILE, "%.6f %.6f %.6g %.6f %.6f %.6f %.6g %d\n", upperlimits->data[ii].alpha, upperlimits->data[ii].delta, upperlimits->data[ii].ULval, upperlimits->data[ii].fsig, upperlimits->data[ii].period, upperlimits->data[ii].moddepth, upperlimits->data[ii].normalization, upperlimits->data[ii].iterations2reachUL);
+   for (ii=0; ii<(INT4)upperlimits->length-1; ii++) outputUpperLimitToFile(ULFILE, upperlimits->data[ii], inputParams->ULmindf, inputParams->ULmaxdf, inputParams->printAllULvalues);
    fclose(ULFILE);
    
    //Destroy varaibles
@@ -1919,7 +1923,8 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    }
    
    //TODO: remove this extra factor
-   *(normalization) /= 1.0245545525190294;
+   //*(normalization) /= 1.0245545525190294;
+   *normalization /= 1.040916688722758;
    
    //fclose(BACKGRND);
 
@@ -1951,12 +1956,15 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->templatelength = args_info.templateLength_arg;
    params->ihsfar = args_info.ihsfar_arg;
    params->templatefar = args_info.tmplfar_arg;
+   params->ULmindf = args_info.ULminimumDeltaf_arg;
+   params->ULmaxdf = args_info.ULmaximumDeltaf_arg;
    params->rootFindingMethod = args_info.BrentsMethod_given;
    params->antennaOff = args_info.antennaOff_given;
    params->noiseWeightOff = args_info.noiseWeightOff_given;
    params->calcRthreshold = args_info.calcRthreshold_given;
    params->markBadSFTs = args_info.markBadSFTs_given;
    params->FFTplanFlag = args_info.FFTplanFlag_arg;
+   params->printAllULvalues = args_info.allULvalsPerSkyLoc_given;
    
    //Non-default arguments
    if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;
