@@ -170,6 +170,12 @@ REAL4 minKappa1=-1.0;
 REAL4 maxKappa1=1.0;
 REAL4 minabsKappa1=0.0;
 REAL4 maxabsKappa1=1.0;
+REAL4 fixedMass1=-1.0;
+REAL4 fixedMass2=-1.0;
+INT4  pntMass1=1;
+INT4  pntMass2=1;
+REAL4 deltaMass1=-1;
+REAL4 deltaMass2=-1;
 INT4 bandPassInj = 0;
 INT4 writeSimRing = 0;
 InspiralApplyTaper taperInj = INSPIRAL_TAPER_NONE;
@@ -585,6 +591,8 @@ static void print_usage(char *program)
       "                           and uniform in mass ratio\n"\
       "                           totalMassFraction: uniform distribution in total mass and\n"\
       "                           in `mass fraction' m1 / (m1+m2)\n"\
+      "                           m1m2SquareGrid: component masses on a square grid\n"\
+      "                           fixMasses: fix m1 and m2 to specific values\n"\
       " [--ninja2-mass]           use the NINJA 2 mass-selection algorithm\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
       " [--nr-file] nrFile        read mass/spin parameters from xml nrFile\n"\
@@ -594,12 +602,16 @@ static void print_usage(char *program)
       " [--max-mass2] m2max       set the max component mass2 to m2max\n"\
       " [--min-mtotal] minTotal   sets the minimum total mass to minTotal\n"\
       " [--max-mtotal] maxTotal   sets the maximum total mass to maxTotal\n"\
+      " [--fixed-mass1] fixMass1  set mass1 to fixMass1\n"\
+      " [--fixed-mass2] fixMass2  set mass2 to fixMass2\n"\
       " [--mean-mass1] m1mean     set the mean value for mass1\n"\
       " [--stdev-mass1] m1std     set the standard deviation for mass1\n"\
       " [--mean-mass2] m2mean     set the mean value for mass2\n"\
       " [--stdev-mass2] m2std     set the standard deviation for mass2\n"\
       " [--min-mratio] minr       set the minimum mass ratio\n"\
-      " [--max-mratio] maxr       set the maximum mass ratio\n");
+      " [--max-mratio] maxr       set the maximum mass ratio\n"\
+      " [--mass1-points] m1pnt    set the number of grid points in the m1 direction if '--m-distr=m1m2SquareGrid'\n"\
+      " [--mass2-points] m2pnt    set the number of grid points in the m2 direction if '--m-distr=m1m2SquareGrid'\n\n");
   fprintf(stderr,
       "Spin distribution information:\n"\
       "  --disable-spin           disables spinning injections\n"\
@@ -1239,6 +1251,7 @@ int main( int argc, char *argv[] )
   UINT4 useChirpDist = 0;
   REAL4 minMass10, maxMass10, minMass20, maxMass20, minMtotal0, maxMtotal0, meanMass10, meanMass20, massStdev10, massStdev20; /* masses at z=0 */
   REAL8 pzmax=0; /* maximal value of the probability distribution of the redshift */
+  INT4 ncount;
   size_t ninj;
   int rand_seed = 1;
 
@@ -1295,9 +1308,13 @@ int main( int argc, char *argv[] )
     {"max-mass2",               required_argument, 0,                'K'},
     {"min-mtotal",              required_argument, 0,                'A'},
     {"max-mtotal",              required_argument, 0,                'L'},
+    {"fixed-mass1",             required_argument, 0,                ']'},
+    {"fixed-mass2",             required_argument, 0,                '['},
     {"mean-mass1",              required_argument, 0,                'n'},
     {"mean-mass2",              required_argument, 0,                'N'},
     {"ninja2-mass",             no_argument,       &ninjaMass,         1},
+    {"mass1-points",            required_argument, 0,                ':'},
+    {"mass2-points",            required_argument, 0,                ';'},    
     {"stdev-mass1",             required_argument, 0,                'o'},
     {"stdev-mass2",             required_argument, 0,                'O'},
     {"min-mratio",              required_argument, 0,                'x'},
@@ -1646,6 +1663,14 @@ int main( int argc, char *argv[] )
         {
           mDistr=logMassUniformTotalMassRatio;
         }
+        else if (!strcmp(dummy, "m1m2SquareGrid"))
+        {
+          mDistr=m1m2SquareGrid;
+        }
+        else if (!strcmp(dummy, "fixMasses"))
+        {
+          mDistr=fixMasses;
+        }
         else if (!strcmp(dummy, "totalMassFraction"))
         {
           mDistr=uniformTotalMassFraction;
@@ -1655,7 +1680,8 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown mass distribution: %s must be one of\n"
               "(source, nrwaves, totalMass, componentMass, gaussian, log,\n"
-              "totalMassRatio, totalMassFraction , logTotalMassUniformMassRatio)\n",
+              "totalMassRatio, totalMassFraction, logTotalMassUniformMassRatio,\n"
+              "m1m2SquareGrid)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -1743,6 +1769,34 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", maxMassRatio );
+        break;
+
+      case ':':
+        pntMass1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "int", "%d", pntMass1 );
+        break;
+
+      case ';':
+        pntMass2 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "int", "%d", pntMass2 );
+        break;
+      
+      case ']':
+        fixedMass1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%d", fixedMass1 );
+        break;
+      
+      case '[':
+        fixedMass2 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%d", fixedMass2 );
         break;
 
       case 'p':
@@ -2411,12 +2465,12 @@ int main( int argc, char *argv[] )
   }
 
   /* check if the mass area is properly specified */
-  if ( mDistr!=gaussianMassDist && (minMass1 <=0.0 || minMass2 <=0.0 ||
-         maxMass1 <=0.0 || maxMass2 <=0.0) )
+  if ( (mDistr!=gaussianMassDist && mDistr!=fixMasses) && 
+      (minMass1 <=0.0 || minMass2 <=0.0 || maxMass1 <=0.0 || maxMass2 <=0.0) )
   {
     fprintf( stderr,
         "Must specify --min-mass1/2 and --max-mass1/2 if choosing"
-        " --m-distr not gaussian\n" );
+        " --m-distr not gaussian or fixMasses\n" );
     exit( 1 );
   }
 
@@ -2466,6 +2520,30 @@ int main( int argc, char *argv[] )
   {
         fprintf( stderr,
         "Maximal redshift can only take values between 0.2 and 1 .\n" );
+    exit( 1 );
+  }
+
+  /* check if number of grid points is specified */
+  if ( mDistr==m1m2SquareGrid )
+  {
+    if ( pntMass1<2 || pntMass2<2 )
+    {
+    fprintf( stderr, "--mass1-points and --mass2-points must be specified "
+        "and >= 2 if --m-distr=m1m2SquareGrid \n" );
+    exit( 1 );
+    }
+    else
+    {
+      deltaMass1 = ( maxMass1 - minMass1 ) / (REAL4) ( pntMass1 -1 );
+      deltaMass2 = ( maxMass2 - minMass2 ) / (REAL4) ( pntMass2 -1 );
+    }
+  }
+
+  /* check if fixed-mass1 and fixed-mass2 are specified */
+  if ( mDistr==fixMasses && ( fixedMass1<0.0 || fixedMass2<0.0 ) )
+  {
+    fprintf( stderr, "--fixed-mass1 and --fixed-mass2 must be specified "
+        "and >= 0 if --m-distr=fixMasses\n" );
     exit( 1 );
   }
 
@@ -2629,6 +2707,7 @@ int main( int argc, char *argv[] )
 
   /* loop over parameter generation until end time is reached */
   ninj = 0;
+  ncount = 0;
   currentGpsTime = gpsStartTime;
   while ( 1 )
   {
@@ -2692,19 +2771,28 @@ int main( int argc, char *argv[] )
       simTable=XLALRandomInspiralTotalMassRatio(simTable, randParams,
           mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
     }
+    else if ( mDistr==m1m2SquareGrid )
+    {
+      simTable=XLALm1m2SquareGridInspiralMasses( simTable, minMass1, minMass2,
+          minMtotal, maxMtotal, deltaMass1, deltaMass2, pntMass1, pntMass2, 
+          ninj, &ncount);
+    }
+    else if ( mDistr==fixMasses )
+    {
+      simTable=XLALFixedInspiralMasses( simTable, fixedMass1, fixedMass2);
+    }
     else if ( mDistr==uniformTotalMassFraction )
     {
       simTable=XLALRandomInspiralTotalMassFraction(simTable, randParams,
           mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
     }
-
     else {
       simTable=XLALRandomInspiralMasses( simTable, randParams, mDistr,
           minMass1, maxMass1,
           minMass2, maxMass2,
           minMtotal, maxMtotal);
     }
-
+    
     /* draw location and distances */
     drawFromSource( &drawnRightAscension, &drawnDeclination, &drawnDistance,
         drawnSourceName );

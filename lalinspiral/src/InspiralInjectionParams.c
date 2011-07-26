@@ -191,6 +191,58 @@ SimInspiralTable* XLALRandomInspiralOrientation(
   return ( inj );
 }
 
+/** Places component masses on a square grid for an inspiral injection. */
+SimInspiralTable* XLALm1m2SquareGridInspiralMasses(
+    SimInspiralTable *inj,   /**< injection for which masses will be set*/
+    REAL4  mass1Min,         /**< minimum mass for first component */
+    REAL4  mass2Min,         /**< minimum mass for second component */
+    REAL4  minTotalMass,     /**< minimum total mass of binary */
+    REAL4  maxTotalMass,     /**< maximum total mass of binary */
+    REAL4  mass1Delta,       /**< m1 grid spacing */
+    REAL4  mass2Delta,       /**< m2 grid spacing */
+    INT4   mass1Pnt,         /**< number of grid points along m1 */
+    INT4   mass2Pnt,         /**< number of grid points along m2 */
+    INT4   injNum,           /**< injection number */  
+    INT4   *count            /**< unsuccessful injection counter */
+    )
+{
+  INT4  nIndex, nCycles;
+  REAL4 mTotal = maxTotalMass +1;
+
+  while ( mTotal < minTotalMass || mTotal > maxTotalMass )
+  {
+      nIndex = injNum + *count;
+      nCycles = (int) ( ceil( ((float) nIndex) / mass1Pnt ));
+      inj->mass1 = mass1Min + mass1Delta * (nIndex % mass1Pnt );
+      inj->mass2 = mass2Min + mass2Delta * (nCycles % mass2Pnt );
+      mTotal = inj->mass1 + inj->mass2 ;
+      if ( mTotal < minTotalMass || mTotal > maxTotalMass ) (*count)++;
+  }
+
+  inj->eta = inj->mass1 * inj->mass2 / ( mTotal * mTotal );
+  inj->mchirp = mTotal * pow(inj->eta, 0.6);
+  
+  return ( inj );
+}
+
+/** Set masses to fixed values for an inspiral injection. */
+SimInspiralTable* XLALFixedInspiralMasses(
+    SimInspiralTable *inj,   /**< injection for which masses will be set*/
+    REAL4  mass1Fix,         /**< fixed mass of first component */
+    REAL4  mass2Fix          /**< fixed mass of second component */
+    )
+{
+  REAL4 mTotal;
+
+  inj->mass1 = mass1Fix;
+  inj->mass2 = mass2Fix;
+  mTotal = inj->mass1 + inj->mass2 ;
+  inj->eta = inj->mass1 * inj->mass2 / ( mTotal * mTotal );
+  inj->mchirp = mTotal * pow(inj->eta, 0.6);
+  
+  return ( inj );
+}
+
 /** Generates random masses for an inspiral injection. */
 SimInspiralTable* XLALRandomInspiralMasses(
     SimInspiralTable *inj,   /**< injection for which masses will be set*/
