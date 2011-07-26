@@ -2964,6 +2964,9 @@ parameter file %s is wrong.\n", injectfile);
     UINT4 varyphasetmp = varyphase;
     varyphase = 1;
     
+    /* create the signal */
+    INT4 i = 0, length = data->dataTimes->length;
+    
     modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
     if ( !strcmp( modeltype, "triaxial" ) ){
       fprintf(stderr,"injecting triaxial signal into data\n");
