@@ -573,7 +573,28 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 		if(status.statusCode) REPORTSTATUS(&status);
 
 		XLALDestroyCOMPLEX8FrequencySeries(resp);
+
 		
+    /* Checking the lenght of the injection waveform with respect of IFOdata->timeData->data->length */
+    CoherentGW            waveform;
+    PPNParamStruc         ppnParams;
+    memset( &waveform, 0, sizeof(CoherentGW) );
+    memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+    ppnParams.deltaT   = IFOdata->timeData->deltaT;
+    ppnParams.lengthIn = 0;
+    ppnParams.ppn      = NULL;
+    unsigned lengthTest = 0;
+    
+    LALGenerateInspiral(&status, &waveform, injEvent, &ppnParams ); //Recompute the waveform just to get access to ppnParams.tc and waveform.h->data->length or waveform.phi->data->length
+    
+    if(waveform.h){lengthTest = waveform.h->data->length;}
+    if(waveform.phi){lengthTest = waveform.phi->data->length;}
+    
+    if(lengthTest>IFOdata->timeData->data->length){
+      fprintf(stderr, "WARNING: waveform length = %u is longer than IFOdata->timeData->data->length = %d.\n", lengthTest, IFOdata->timeData->data->length);
+      fprintf(stderr, "The waveform injected is %f seconds long. Consider increasing the %f seconds segment length (--seglen). (in %s, line %d)\n",ppnParams.tc , IFOdata->timeData->data->length * IFOdata->timeData->deltaT, __FILE__, __LINE__);
+    }
+    
 		/* Now we cut the injection buffer down to match the time domain wave size */
 		injectionBuffer=(REAL4TimeSeries *)XLALCutREAL4TimeSeries(injectionBuffer,realStartSample,IFOdata->timeData->data->length);
 		
