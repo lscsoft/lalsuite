@@ -1,0 +1,880 @@
+/*
+ * Copyright (C) 2010 Reinhard Prix
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
+
+/*********************************************************************************/
+/** \author R. Prix, D. Keitel
+ * \file
+ * \brief
+ * Generate N samples of various statistics (F-stat, LV-stat,...) drawn from their
+ * respective distributions, assuming Gaussian noise, and drawing signal params from
+ * their (given) priors
+ *
+ * This is based on synthesizeBstat and synthesizeTransientStats, and is mostly meant
+ * to be used for Monte-Carlos studies of ROC curves
+ *
+ *********************************************************************************/
+
+/*
+ *
+ * Some possible use-cases to consider
+ * - transient search BF-stat (synthesize atoms)
+ * - line-veto studies (generate line-realizations)
+ * - different B-stats from different prior models (to avoid integration)
+ *
+ */
+
+#include "config.h"
+
+/* System includes */
+#include <stdio.h>
+#include <stdbool.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+/* GSL includes */
+#include <gsl/gsl_rng.h>
+
+/* LAL-includes */
+#include <lal/SkyCoordinates.h>
+#include <lal/AVFactories.h>
+#include <lal/LALInitBarycenter.h>
+#include <lal/UserInput.h>
+#include <lal/LogPrintf.h>
+#include <lal/ComputeFstat.h>
+
+#include <lal/TransientCW_utils.h>
+#include <lal/ProbabilityDensity.h>
+
+#include <lal/SynthesizeCWDraws.h>
+
+#include <../GCT/LineVeto.h>
+
+#include <lal/StringVector.h>
+
+#include <lalapps.h>
+
+/*---------- DEFINES ----------*/
+#define EPHEM_YEARS  "05-09"	/**< default range, covering S5: override with --ephemYear */
+#define SQ(x) ((x)*(x))
+#define SQUARE(x) ( (x) * (x) )
+#define CUBE(x) ((x)*(x)*(x))
+#define QUAD(x) ((x)*(x)*(x)*(x))
+
+/*----- Macros ----- */
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+
+
+/* ---------- local types ---------- */
+
+/** User-variables: can be set from config-file or command-line */
+typedef struct {
+  BOOLEAN help;		/**< trigger output of help string */
+
+  /* amplitude parameters + ranges: 4 alternative ways to specify the h0-prior (set to < 0 to deactivate all but one!) */
+  REAL8 fixedh0Nat;	/**< Alternative 1: if >=0 ==> fix the GW amplitude: h0/sqrt(Sn) */
+  REAL8 fixedSNR;	/**< Alternative 2: if >=0 ==> fix the optimal SNR of the injected signals */
+  REAL8 fixedh0NatMax;	/**< Alternative 3: if >=0 ==> draw GW amplitude h0 in [0, h0NatMax ]: <==> 'regularized' F-stat prior (obsolete) */
+  REAL8 fixedRhohMax;	/**< Alternative 4: if >=0 ==> draw rhoh=h0*(detM)^(1/8) in [0, rhohMax]: <==> canonical F-stat prior */
+
+  REAL8 cosi;		/**< cos(inclination angle). If not set: randomize within [-1,1] */
+  REAL8 psi;		/**< polarization angle psi. If not set: randomize within [-pi/4,pi/4] */
+  REAL8 phi0;		/**< initial GW phase phi_0. If not set: randomize within [0, 2pi] */
+  INT4 AmpPriorType;	/**< enumeration of types of amplitude-priors: 0=physical, 1=canonical */
+
+  /* Doppler parameters */
+  REAL8 Alpha;		/**< skyposition Alpha (RA) in radians */
+  REAL8 Delta;		/**< skyposition Delta (Dec) in radians */
+
+  /* other parameters */
+  CHAR *IFO;		/**< IFO names */
+  INT4 dataStartGPS;	/**< data start-time in GPS seconds */
+  INT4 dataDuration;	/**< data-span to generate */
+  INT4 TAtom;		/**< Fstat atoms time baseline */
+
+  BOOLEAN computeLV; /**< Also compute LineVeto-statistic */
+  INT4 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
+
+  CHAR *outputStats;	/**< output file to write numDraw resulting statistics into */
+  CHAR *outputAtoms;	/**< output F-statistic atoms into a file with this basename */
+  CHAR *outputInjParams;/**< output injection parameters into this file */
+  BOOLEAN SignalOnly;	/**< dont generate noise-draws: will result in non-random 'signal only' values of F and B */
+
+  BOOLEAN useFReg;	/**< use 'regularized' Fstat (1/D)*e^F for marginalization, or 'standard' e^F */
+
+  CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
+
+  BOOLEAN version;	/**< output version-info */
+  INT4 randSeed;	/**< GSL random-number generator seed value to use */
+} UserInput_t;
+
+/** Configuration settings required for and defining a coherent pulsar search.
+ * These are 'pre-processed' settings, which have been derived from the user-input.
+ */
+typedef struct {
+  AmplitudePrior_t AmpPrior;	/**< amplitude-parameter priors to draw signals from */
+
+  SkyPosition skypos;		/**< (Alpha,Delta,system). Use Alpha < 0 to signal 'allsky' */
+  BOOLEAN SignalOnly;		/**< dont generate noise-draws: will result in non-random 'signal only' values of F and B */
+
+  transientWindowRange_t transientSearchRange;	/**< transient-window range for the search (flat priors) */
+  transientWindowRange_t transientInjectRange;	/**< transient-window range for injections (flat priors) */
+
+  MultiDetectorStateSeries *multiDetStates;	/**< multi-detector state series covering observation time */
+
+  gsl_rng *rng;			/**< gsl random-number generator */
+  CHAR *logString;		/**< logstring for file-output, containing cmdline-options + code VCS version info */
+
+} ConfigVariables;
+
+/* ---------- local prototypes ---------- */
+int main(int argc,char *argv[]);
+
+int XLALInitUserVars ( UserInput_t *uvar );
+int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
+EphemerisData * XLALInitEphemeris (const CHAR *ephemYear );
+int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
+MultiLIGOTimeGPSVector * XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
+int write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDopplerParams *dopplerParams_in );
+
+/* exportable API */
+
+/*---------- Global variables ----------*/
+extern int vrbflg;		/**< defined in lalapps.c */
+
+/*---------- empty initializers ---------- */
+ConfigVariables empty_ConfigVariables;
+UserInput_t empty_UserInput;
+
+/*----------------------------------------------------------------------*/
+/* Main Function starts here */
+/*----------------------------------------------------------------------*/
+/**
+ * MAIN function
+ * Generates samples of B-stat and F-stat according to their pdfs for given signal-params.
+ */
+int main(int argc,char *argv[])
+{
+  const char *fn = __func__;
+
+  UserInput_t uvar = empty_UserInput;
+  ConfigVariables cfg = empty_ConfigVariables;		/**< various derived configuration settings */
+
+  lalDebugLevel = 0;
+  vrbflg = 1;	/* verbose error-messages */
+  LogSetLevel(lalDebugLevel);
+
+  /* turn off default GSL error handler */
+  gsl_set_error_handler_off ();
+
+  /* ----- register and read all user-variables ----- */
+  if ( XLALGetDebugLevel ( argc, argv, 'v') != XLAL_SUCCESS ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALGetDebugLevel() failed with errno=%d\n", fn, xlalErrno );
+    return 1;
+  }
+  LogSetLevel(lalDebugLevel);
+
+  if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", fn, xlalErrno );
+    return 1;
+  }
+
+  /* do ALL cmdline and cfgfile handling */
+  if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALUserVarReadAllInput() failed with errno=%d\n", fn, xlalErrno );
+    return 1;
+  }
+
+  if (uvar.help)	/* if help was requested, we're done here */
+    return 0;
+
+  if ( uvar.version ) {
+    /* output verbose VCS version string if requested */
+    CHAR *vcs;
+    if ( (vcs = XLALGetVersionString (lalDebugLevel)) == NULL ) {
+      LogPrintf ( LOG_CRITICAL, "%s:XLALGetVersionString(%d) failed with errno=%d.\n", fn, lalDebugLevel, xlalErrno );
+      return 1;
+    }
+    printf ( "%s\n", vcs );
+    XLALFree ( vcs );
+    return 0;
+  }
+
+  /* ---------- Initialize code-setup ---------- */
+  if ( XLALInitCode( &cfg, &uvar ) != XLAL_SUCCESS ) {
+    LogPrintf (LOG_CRITICAL, "%s: XLALInitCode() failed with error = %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  /* ----- prepare stats output ----- */
+  FILE *fpStats = NULL;
+  if ( uvar.outputStats )
+    {
+      if ( (fpStats = fopen (uvar.outputStats, "wb")) == NULL)
+	{
+	  LogPrintf (LOG_CRITICAL, "Error opening file '%s' for writing..\n\n", uvar.outputStats );
+	  XLAL_ERROR ( fn, XLAL_EIO );
+	}
+      fprintf (fpStats, "%s", cfg.logString );		/* write search log comment */
+//       if ( write_LV_candidate_to_fp ( fpStats, NULL, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
+//         XLAL_ERROR ( fn, XLAL_EFUNC );
+//       }
+    } /* if outputStats */
+
+  /* ----- prepare injection params output ----- */
+  FILE *fpInjParams = NULL;
+  if ( uvar.outputInjParams )
+    {
+      if ( (fpInjParams = fopen (uvar.outputInjParams, "wb")) == NULL)
+	{
+	  LogPrintf (LOG_CRITICAL, "Error opening file '%s' for writing..\n\n", uvar.outputInjParams );
+	  XLAL_ERROR ( fn, XLAL_EIO );
+	}
+      fprintf (fpInjParams, "%s", cfg.logString );		/* write search log comment */
+      if ( write_InjParams_to_fp ( fpInjParams, NULL, 0 ) != XLAL_SUCCESS ) { /* write header-line comment */
+        XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
+    } /* if outputInjParams */
+
+  /* ----- main MC loop over numDraws trials ---------- */
+  multiAMBuffer_t multiAMBuffer = empty_multiAMBuffer;	  /* prepare AM-buffer */
+  INT4 i;
+
+  for ( i=0; i < uvar.numDraws; i ++ )
+    {
+      InjParams_t injParamsDrawn = empty_InjParams_t;
+
+      /* ----- generate signal random draws from ranges and generate Fstat atoms */
+      MultiFstatAtomVector *multiAtoms;
+      multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
+      if ( multiAtoms ==NULL ) {
+        LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", fn, xlalErrno );
+        XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
+
+      /* ----- if requested, output signal injection parameters into file */
+      if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParamsDrawn, uvar.dataStartGPS ) != XLAL_SUCCESS ) ) {
+        XLAL_ERROR ( fn, XLAL_EFUNC );
+      } /* if fpInjParams & failure*/
+
+      /* initialise LVcomponents structure and allocate memory */
+      UINT4 numDetectors = multiAtoms->length;
+      REAL8 rhomax = 4.0;
+      LVcomponents   lvstats;      /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
+      if ( (lvstats.TwoFX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+        XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", fn, numDetectors );
+        XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
+
+      REAL8Vector *linepriorX;
+      if ( (linepriorX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+        XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", fn, numDetectors );
+        XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
+
+      /* compute F and LV statistics from atoms */
+      UINT4 X;
+      for ( X=0; X < numDetectors; X++ )    {
+        linepriorX->data[X] = 0.5;
+        lvstats.TwoFX->data[X] = 2.0*XLALComputeFstatFromAtoms ( multiAtoms, X );
+        if ( xlalErrno != 0 ) {
+          XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", fn, __LINE__);
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
+      }
+
+      lvstats.TwoF = 2.0*XLALComputeFstatFromAtoms ( multiAtoms, -1 );
+      if ( xlalErrno != 0 ) {
+        XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", fn, __LINE__);
+        XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
+
+      if ( uvar.computeLV ) {
+        lvstats.LV = XLALComputeLineVeto ( lvstats.TwoF, lvstats.TwoFX, rhomax, linepriorX );
+        if ( xlalErrno != 0 ) {
+          XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVeto().\n\n", fn, __LINE__);
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
+      }
+      else {
+       lvstats.LV = 0.0;
+      }
+
+      /* ----- if requested, output atoms-vector into file */
+      if ( uvar.outputAtoms )
+        {
+
+          FILE *fpAtoms;
+          char *fnameAtoms;
+          UINT4 len = strlen ( uvar.outputAtoms ) + 20;
+          if ( (fnameAtoms = XLALCalloc ( 1, len )) == NULL ) {
+            XLALPrintError ("%s: failed to XLALCalloc ( 1, %d )\n", fn, len );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+          sprintf ( fnameAtoms, "%s_%04d_of_%04d.dat", uvar.outputAtoms, i + 1, uvar.numDraws );
+
+          if ( ( fpAtoms = fopen ( fnameAtoms, "wb" )) == NULL ) {
+            XLALPrintError ("%s: failed to open atoms-output file '%s' for writing.\n", fn, fnameAtoms );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+	  fprintf ( fpAtoms, "%s", cfg.logString );	/* output header info */
+
+	  if ( write_MultiFstatAtoms_to_fp ( fpAtoms, multiAtoms ) != XLAL_SUCCESS ) {
+            XLALPrintError ("%s: failed to write atoms to output file '%s'. xlalErrno = %d\n", fn, fnameAtoms, xlalErrno );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+
+          XLALFree ( fnameAtoms );
+	  fclose (fpAtoms);
+        } /* if outputAtoms */
+
+
+      /* ----- if requested, output transient-cand statistics */
+      if ( fpStats && write_LV_candidate_to_fp ( fpStats, &lvstats, NULL ) != XLAL_SUCCESS ) {
+        XLALPrintError ( "%s: write_transientCandidate_to_fp() failed.\n", fn );
+        XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
+
+      /* ----- free Memory */
+      XLALDestroyREAL8Vector ( lvstats.TwoFX );
+      XLALDestroyREAL8Vector ( linepriorX );
+      XLALDestroyMultiFstatAtomVector ( multiAtoms );
+      XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
+
+    } /* for i < numDraws */
+
+  /* ----- close files ----- */
+  if ( fpStats ) fclose ( fpStats );
+  if ( fpInjParams ) fclose ( fpInjParams );
+
+  /* ----- free memory ---------- */
+  XLALDestroyMultiDetectorStateSeries ( cfg.multiDetStates );
+//   XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
+  XLALDestroyExpLUT();
+  /* ----- free amplitude prior pdfs ----- */
+  XLALDestroyPDF1D ( cfg.AmpPrior.pdf_h0Nat );
+  XLALDestroyPDF1D ( cfg.AmpPrior.pdf_cosi );
+  XLALDestroyPDF1D ( cfg.AmpPrior.pdf_psi );
+  XLALDestroyPDF1D ( cfg.AmpPrior.pdf_phi0 );
+
+  if ( cfg.logString ) XLALFree ( cfg.logString );
+  gsl_rng_free ( cfg.rng );
+
+  XLALDestroyUserVars();
+
+  /* did we forget anything ? (doesn't cover gsl-memory!) */
+  LALCheckMemoryLeaks();
+
+  return 0;
+
+} /* main() */
+
+/**
+ * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
+ * Here we set defaults for some user-variables and register them with the UserInput module.
+ */
+int
+XLALInitUserVars ( UserInput_t *uvar )
+{
+  const char *fn = __func__;
+
+  /* set a few defaults */
+  uvar->help = 0;
+  uvar->outputStats = NULL;
+
+  uvar->Alpha = -1;	/* Alpha < 0 indicates "allsky" */
+  uvar->Delta = 0;
+
+  uvar->phi0 = 0;
+  uvar->psi = 0;
+
+  uvar->dataStartGPS = 814838413;	/* 1 Nov 2005, ~ start of S5 */
+  uvar->dataDuration = LAL_YRSID_SI;	/* 1 year of data */
+
+  uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEARS)+1);
+  strcpy (uvar->ephemYear, EPHEM_YEARS);
+
+  uvar->numDraws = 1;
+  uvar->TAtom = 1800;
+
+  uvar->computeLV = 0;
+  uvar->useFReg = 0;
+
+  uvar->fixedh0Nat = -1;
+  uvar->fixedSNR = -1;
+  uvar->fixedh0NatMax = -1;
+  uvar->fixedRhohMax = -1;
+
+#define DEFAULT_IFO "H1"
+  uvar->IFO = XLALMalloc ( strlen(DEFAULT_IFO)+1 );
+  strcpy ( uvar->IFO, DEFAULT_IFO );
+
+  /* ---------- transient window defaults ---------- */
+#define DEFAULT_TRANSIENT "rect"
+
+  /* register all our user-variables */
+  XLALregBOOLUserStruct ( help, 		'h',     UVAR_HELP, "Print this message");
+
+  /* signal Doppler parameters */
+  XLALregREALUserStruct ( Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians [Default:allsky]");
+  XLALregREALUserStruct ( Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians [Default:allsky]");
+
+  /* signal amplitude parameters */
+  XLALregREALUserStruct ( fixedh0Nat,		 0, UVAR_OPTIONAL, "Alternative 1: if >=0 fix the GW amplitude: h0/sqrt(Sn)");
+  XLALregREALUserStruct ( fixedSNR, 		 0, UVAR_OPTIONAL, "Alternative 2: if >=0 fix the optimal SNR of the injected signals");
+  XLALregREALUserStruct ( fixedh0NatMax,	 0, UVAR_OPTIONAL, "Alternative 3: if >=0 draw GW amplitude h0 in [0, h0NatMax ] (FReg prior)");
+  XLALregREALUserStruct ( fixedRhohMax, 	 0, UVAR_OPTIONAL, "Alternative 4: if >=0 draw rhoh=h0*(detM)^(1/8) in [0, rhohMax] (canonical F-stat prior)");
+
+  XLALregREALUserStruct ( cosi,			'i', UVAR_OPTIONAL, "cos(inclination angle). If not set: randomize within [-1,1].");
+  XLALregREALUserStruct ( psi,			 0,  UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
+  XLALregREALUserStruct ( phi0,		 	 0,  UVAR_OPTIONAL, "initial GW phase phi_0. If not set: randomize within [0, 2pi]");
+
+  XLALregINTUserStruct  ( AmpPriorType,	 	 0,  UVAR_OPTIONAL, "Enumeration of types of amplitude-priors: 0=physical, 1=canonical");
+
+  XLALregSTRINGUserStruct ( IFO,	        'I', UVAR_OPTIONAL, "Detectors, enter as comma-separated list: 'G1','L1','H1,'H2', 'V1', ... ");
+  XLALregINTUserStruct ( dataStartGPS,	 	 0,  UVAR_OPTIONAL, "data start-time in GPS seconds");
+  XLALregINTUserStruct ( dataDuration,	 	 0,  UVAR_OPTIONAL, "data-span to generate (in seconds)");
+
+  /* misc params */
+  XLALregBOOLUserStruct ( computeLV,	 0, UVAR_OPTIONAL, "Also compute LineVeto-statistic" );
+
+  XLALregINTUserStruct  ( numDraws,		'N', UVAR_OPTIONAL,"Number of random 'draws' to simulate");
+  XLALregINTUserStruct  ( randSeed,		 0, UVAR_OPTIONAL, "GSL random-number generator seed value to use");
+
+  XLALregSTRINGUserStruct ( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of stats");
+  XLALregSTRINGUserStruct ( outputAtoms,	 0,  UVAR_OPTIONAL, "Output F-statistic atoms into a file with this basename");
+  XLALregSTRINGUserStruct ( outputInjParams,	 0,  UVAR_OPTIONAL,  "Output injection parameters into this file");
+
+  XLALregBOOLUserStruct ( SignalOnly,        	'S', UVAR_OPTIONAL, "Signal only: generate pure signal without noise");
+  XLALregBOOLUserStruct ( useFReg,        	 0,  UVAR_OPTIONAL, "use 'regularized' Fstat (1/D)*e^F (if TRUE) for marginalization, or 'standard' e^F (if FALSE)");
+
+  XLALregSTRINGUserStruct( ephemYear, 	        'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+
+  XLALregBOOLUserStruct ( version,        	'V', UVAR_SPECIAL,  "Output code version");
+
+  /* 'hidden' stuff */
+  XLALregINTUserStruct ( TAtom,		  	  0, UVAR_DEVELOPER, "Time baseline for Fstat-atoms (typically Tsft) in seconds." );
+
+
+  if ( xlalErrno ) {
+    XLALPrintError ("%s: something failed in initializing user variabels .. errno = %d.\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+} /* XLALInitUserVars() */
+
+
+/** Initialize Fstat-code: handle user-input and set everything up. */
+int
+XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
+{
+  const char *fn = __func__;
+
+  /* generate log-string for file-output, containing cmdline-options + code VCS version info */
+  char *vcs;
+  if ( (vcs = XLALGetVersionString(0)) == NULL ) {	  /* short VCS version string */
+    XLALPrintError ( "%s: XLALGetVersionString(0) failed with errno=%d.\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  char *cmdline;
+  if ( (cmdline = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) == NULL ) {
+    XLALPrintError ( "%s: XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE ) failed with errno=%d.\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  const char fmt[] = "%%%% cmdline: %s\n%%%%\n%s%%%%\n";
+  UINT4 len = strlen(vcs) + strlen(cmdline) + strlen(fmt) + 1;
+  if ( ( cfg->logString = XLALMalloc ( len  )) == NULL ) {
+    XLALPrintError ("%s: XLALMalloc ( %d ) failed.\n", len );
+    XLAL_ERROR ( fn, XLAL_ENOMEM );
+  }
+  sprintf ( cfg->logString, fmt, cmdline, vcs );
+  XLALFree ( cmdline );
+  XLALFree ( vcs );
+
+  /* trivial settings from user-input */
+  cfg->SignalOnly = uvar->SignalOnly;
+
+  /* ----- parse user-input on signal amplitude-paramters + ranges ----- */
+  /* skypos */
+  cfg->skypos.longitude = uvar->Alpha;	/* Alpha < 0 indicates 'allsky' */
+  cfg->skypos.latitude  = uvar->Delta;
+  cfg->skypos.system = COORDINATESYSTEM_EQUATORIAL;
+
+  /* ----- amplitude-params: create prior pdfs reflecting the user-input */
+  if ( XLALInitAmplitudePrior ( &cfg->AmpPrior, uvar ) != XLAL_SUCCESS )
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+
+  /* ----- initialize random-number generator ----- */
+  /* read out environment variables GSL_RNG_xxx
+   * GSL_RNG_SEED: use to set random seed: default = 0, override by using --randSeed on cmdline
+   * GSL_RNG_TYPE: type of random-number generator to use: default = 'mt19937'
+   */
+  gsl_rng_env_setup ();
+  /* allow overriding the random-seed per command-line */
+  if ( XLALUserVarWasSet ( &uvar->randSeed ) )
+    gsl_rng_default_seed = uvar->randSeed;
+  cfg->rng = gsl_rng_alloc (gsl_rng_default);
+
+  LogPrintf ( LOG_DEBUG, "random-number generator type: %s\n", gsl_rng_name (cfg->rng));
+  LogPrintf ( LOG_DEBUG, "seed = %lu\n", gsl_rng_default_seed );
+
+  /* init ephemeris-data */
+  EphemerisData *edat;
+  if ( (edat = XLALInitEphemeris ( uvar->ephemYear )) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "%s: Failed to init ephemeris data for year-span '%s'\n", fn, uvar->ephemYear );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  /* init detector info */
+  LALStringVector *detectorIDs = NULL;
+  char *ifostrng = strtok( uvar->IFO, ",");
+  while ( ifostrng != NULL )
+  {
+    if ( (detectorIDs = XLALAppendString2Vector ( detectorIDs, ifostrng) ) == NULL )
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+    ifostrng = strtok ( NULL, "," );
+  }
+  UINT4 numDetectors = detectorIDs->length;
+  UINT4 X;
+  MultiLALDetector *multiDet;
+  if ( (multiDet = XLALCreateMultiLALDetector ( numDetectors )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateMultiLALDetector(1) failed with errno=%d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  LALDetector *site = NULL;
+  for ( X=0; X < numDetectors; X++ )    {
+    if ( (site = XLALGetSiteInfo ( detectorIDs->data[X] )) == NULL ) {
+      XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", fn, uvar->IFO );
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+    }
+    multiDet->data[X] = (*site); 	/* copy! */
+    XLALFree ( site );
+  }
+
+  /* init timestamps vector covering observation time */
+  UINT4 numSteps = (UINT4) ceil ( uvar->dataDuration / uvar->TAtom );
+  MultiLIGOTimeGPSVector * multiTS;
+  if ( (multiTS = XLALCreateMultiLIGOTimeGPSVector (numDetectors)) == NULL ) {
+     XLALPrintError ("%s: XLALCreateMultiLIGOTimeGPSVector(%d) failed.\n", fn, numDetectors );
+  }
+
+  for ( X=0; X < numDetectors; X++ )    {
+    if ( (multiTS->data[X] = XLALCreateTimestampVector (numSteps)) == NULL ) {
+      XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", fn, numSteps );
+    }
+    multiTS->data[X]->deltaT = uvar->TAtom;
+    UINT4 i;
+    for ( i=0; i < numSteps; i ++ )
+      {
+	UINT4 ti = uvar->dataStartGPS + i * uvar->TAtom;
+	multiTS->data[X]->data[i].gpsSeconds = ti;
+	multiTS->data[X]->data[i].gpsNanoSeconds = 0;
+      }
+  }
+
+  /* get detector states */
+  if ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( multiTS, multiDet, edat, 0.5 * uvar->TAtom )) == NULL ) {
+    XLALPrintError ( "%s: XLALGetMultiDetectorStates() failed.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  /* get rid of all temporary memory allocated for this step */
+  XLALDestroyMultiLALDetector ( multiDet );
+  XLALFree(edat->ephemE);
+  XLALFree(edat->ephemS);
+  XLALFree ( edat );
+  XLALDestroyMultiTimestamps ( multiTS );
+  XLALDestroyStringVector ( detectorIDs );
+  multiTS = NULL;
+
+  /* ---------- initialize transient window ranges, for injection ... ---------- */
+  cfg->transientInjectRange.type = TRANSIENT_NONE;			/* default: no transient signal window */
+  /* apply correct defaults if unset: t0=dataStart, t0Band=dataDuration-3*tauMax */
+//   cfg->transientInjectRange.t0 = uvar->dataStartGPS + uvar->injectWindow_t0Days * DAY24;
+
+  cfg->transientSearchRange = cfg->transientInjectRange;
+  return XLAL_SUCCESS;
+
+} /* XLALInitCode() */
+
+
+/** Load Ephemeris from ephemeris data-files
+ */
+EphemerisData *
+XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
+{
+  const char *fn = __func__;
+
+#define FNAME_LENGTH 1024
+  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
+  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
+
+  /* check input consistency */
+  if ( !ephemYear ) {
+    XLALPrintError ("%s: invalid NULL input for 'ephemYear'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
+  snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
+
+  EphemEarth[FNAME_LENGTH-1]=0;
+  EphemSun[FNAME_LENGTH-1]=0;
+
+  EphemerisData *edat;
+  if ( (edat = XLALInitBarycenter ( EphemEarth, EphemSun)) == NULL ) {
+    XLALPrintError ("%s: XLALInitBarycenter() failed.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* return ephemeris */
+  return edat;
+
+} /* XLALInitEphemeris() */
+
+
+/** Initialize amplitude-prior pdfs from the user-input
+ */
+int
+XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
+{
+  const char *fn = __func__;
+
+  const UINT4 AmpPriorBins = 100;	// defines the binnning accuracy of our prior-pdfs
+
+  /* consistency check */
+  if ( !AmpPrior || !uvar ) {
+    XLALPrintError ( "%s: invalid NULL input 'AmpPrior' or 'uvar'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( AmpPrior->pdf_h0Nat || AmpPrior->pdf_cosi || AmpPrior->pdf_psi || AmpPrior->pdf_phi0 ) {
+    XLALPrintError ("%s: AmplitudePriors must be set to NULL before calling this function!\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  /* first check that user only provided *one* method of determining the amplitude-prior range */
+  UINT4 numSets = 0;
+  if ( uvar->fixedh0Nat >= 0 ) numSets ++;
+  if ( uvar->fixedSNR >= 0 ) numSets ++;
+  if ( uvar->fixedh0NatMax >= 0 ) numSets ++ ;
+  if ( uvar->fixedRhohMax >= 0 ) numSets ++;
+  if ( numSets != 1 ) {
+    XLALPrintError ("%s: Specify (>=0) exactly *ONE* amplitude-prior range of {fixedh0Nat, fixedSNR, fixedh0NatMax, fixedRhohMax}\n", fn);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  /* ===== first pass: deal with all user-supplied fixed values ==> singular priors! ===== */
+
+  /* ----- h0 ----- */
+  if ( uvar->fixedh0Nat >= 0 )	/* fix h0Nat */
+    if ( (AmpPrior->pdf_h0Nat = XLALCreateSingularPDF1D ( uvar->fixedh0Nat )) == NULL )
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+
+  if ( uvar->fixedSNR >= 0 )   /* dummy-pdf, as signal will be computed with h0Nat=1 then rescaled to fixedSNR */
+    if ( (AmpPrior->pdf_h0Nat = XLALCreateSingularPDF1D ( 1.0 )) == NULL )
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+
+  AmpPrior->fixedSNR   = uvar->fixedSNR;
+  AmpPrior->fixRhohMax = (uvar->fixedRhohMax >= 0);
+
+  /* ----- cosi ----- */
+  if ( XLALUserVarWasSet ( &uvar->cosi ) )
+    if ( (AmpPrior->pdf_cosi = XLALCreateSingularPDF1D (  uvar->cosi )) == NULL )
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+  /* ----- psi ----- */
+  if ( XLALUserVarWasSet ( &uvar->psi ) )
+    if ( (AmpPrior->pdf_psi = XLALCreateSingularPDF1D (  uvar->psi )) == NULL )
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+  /* ----- phi0 ----- */
+  if ( XLALUserVarWasSet ( &uvar->phi0 ) )
+    if ( (AmpPrior->pdf_phi0 = XLALCreateSingularPDF1D (  uvar->phi0 )) == NULL )
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+
+
+  /* ===== second pass: deal with non-singular prior ranges, taking into account the type of priors to use */
+  REAL8 h0NatMax = 0;
+  if (  uvar->fixedh0NatMax >= 0 ) /* draw h0Nat from [0, h0NatMax] */
+    h0NatMax = uvar->fixedh0NatMax;
+  if ( uvar->fixedRhohMax >= 0 ) /* draw h0 from [0, rhohMax/(detM)^(1/8)] */
+    h0NatMax = uvar->fixedRhohMax;	/* at first, will be rescaled by (detM)^(1/8) after the fact */
+
+  switch ( uvar->AmpPriorType )
+    {
+    case AMP_PRIOR_TYPE_PHYSICAL:
+
+      /* ----- h0 ----- */ // uniform in [0, h0NatMax] : not that 'physical', but simple
+      if ( AmpPrior->pdf_h0Nat == NULL )
+        if ( (AmpPrior->pdf_h0Nat = XLALCreateUniformPDF1D ( 0, h0NatMax )) == NULL )
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+      /* ----- cosi ----- */
+      if ( AmpPrior->pdf_cosi == NULL )
+        if ( (AmpPrior->pdf_cosi = XLALCreateUniformPDF1D ( -1.0, 1.0 )) == NULL )
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+      /* ----- psi ----- */
+      if ( AmpPrior->pdf_psi == NULL )
+        if ( (AmpPrior->pdf_psi = XLALCreateUniformPDF1D ( -LAL_PI_4, LAL_PI_4 )) == NULL )
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+      /* ----- phi0 ----- */
+      if ( AmpPrior->pdf_phi0 == NULL )
+        if ( (AmpPrior->pdf_phi0 = XLALCreateUniformPDF1D ( 0, LAL_TWOPI )) == NULL )
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+
+      break;
+
+    case AMP_PRIOR_TYPE_CANONICAL:
+      /* ----- pdf(h0) ~ h0^3 ----- */
+      if ( AmpPrior->pdf_h0Nat == NULL )
+        {
+          UINT4 i;
+          pdf1D_t *pdf;
+          if ( ( pdf = XLALCreateDiscretePDF1D ( 0, h0NatMax, AmpPriorBins )) == NULL )
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+
+          for ( i=0; i < pdf->probDens->length; i ++ )
+            {
+              REAL8 xMid = 0.5 * ( pdf->xTics->data[i] + pdf->xTics->data[i+1] );
+              pdf->probDens->data[i] = CUBE( xMid );	// pdf(h0) ~ h0^3
+            }
+          AmpPrior->pdf_h0Nat = pdf;
+        }
+      /* ----- pdf(cosi) ~ ( 1 - cosi^2)^3 ----- */
+      if ( AmpPrior->pdf_cosi == NULL )
+        {
+          UINT4 i;
+          pdf1D_t *pdf;
+          if ( ( pdf = XLALCreateDiscretePDF1D ( -1.0, 1.0, AmpPriorBins )) == NULL )
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+
+          for ( i=0; i < pdf->probDens->length; i ++ )
+            {
+              REAL8 xMid = 0.5 * ( pdf->xTics->data[i] + pdf->xTics->data[i+1] );
+              REAL8 y = 1.0 - SQ(xMid);
+              pdf->probDens->data[i] = CUBE( y );
+            }
+          AmpPrior->pdf_cosi = pdf;
+        }
+      /* ----- psi ----- */
+      if ( AmpPrior->pdf_psi == NULL )
+        if ( (AmpPrior->pdf_psi = XLALCreateUniformPDF1D ( -LAL_PI_4, LAL_PI_4 )) == NULL )
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+      /* ----- phi0 ----- */
+      if ( AmpPrior->pdf_phi0 == NULL )
+        if ( (AmpPrior->pdf_phi0 = XLALCreateUniformPDF1D ( 0, LAL_TWOPI )) == NULL )
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+
+      break;
+
+    default:
+      XLALPrintError ("%s: something went wrong ... unknown priorType = %d\n", fn, uvar->AmpPriorType );
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+      break;
+
+    } // switch( uvar->AmpPriorType )
+
+  return XLAL_SUCCESS;
+
+} /* XLALInitAmplitudePrior() */
+
+
+/** Simple creator function for MultiLIGOTimeGPSVector with numDetectors entries
+ */
+MultiLIGOTimeGPSVector *
+XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors )
+{
+  const char *fn = __func__;
+  MultiLIGOTimeGPSVector *ret;
+
+  if ( (ret = XLALMalloc ( sizeof(*ret) )) == NULL ) {
+    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, sizeof(*ret) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  ret->length = numDetectors;
+  if ( (ret->data = XLALCalloc ( numDetectors, sizeof(*ret->data) )) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc(%d, %d) failed.\n", fn, numDetectors, sizeof(*ret->data) );
+    XLALFree ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  return ret;
+
+} /* XLALCreateMultiLIGOTimeGPSVector() */
+
+
+/** Write one line for given LV candidate into output file.
+ *
+ * NOTE: input dopplerParams can be NULL pointer, then just writes 0 in doppler fields (useful for synthetic LV draws)
+ *
+ */
+int
+write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDopplerParams *dopplerParams_in )
+{
+  const char *fn = __func__;
+
+  /* sanity checks */
+  if ( !fp ) {
+    XLALPrintError ( "%s: invalid NULL filepointer input.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( !LVstat || !LVstat->TwoFX || !LVstat->TwoFX->data ) {
+    XLALPrintError ("\nError in function %s, line %d : Empty LVstat pointer as input parameter!\n\n", fn, __LINE__);
+    XLAL_ERROR ( fn, XLAL_EFAULT);
+  }
+
+  PulsarDopplerParams dopplerParams = empty_PulsarDopplerParams;
+  INIT_MEM( dopplerParams.fkdot );
+  if ( dopplerParams_in == NULL ) { /* just write zeros */
+    dopplerParams.Alpha = 0.0;
+    dopplerParams.Delta = 0.0;
+  }
+  else {
+    dopplerParams = *dopplerParams_in;
+  }
+
+  /* add output-field containing twoF and per-detector sumTwoFX */
+  char statString[256] = "";	/* defaults to empty */
+  char buf0[256];
+  snprintf ( statString, sizeof(statString), " %.6f", LVstat->TwoF );
+  UINT4 numDet = LVstat->TwoFX->length;
+  UINT4 X;
+  for ( X = 0; X < numDet ; X ++ ) {
+    snprintf ( buf0, sizeof(buf0), " %.6f", LVstat->TwoFX->data[X] );
+    UINT4 len1 = strlen ( statString ) + strlen ( buf0 ) + 1;
+    if ( len1 > sizeof ( statString ) ) {
+      XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(statString));
+      break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
+    }
+    strcat ( statString, buf0 );
+  } /* for X < numDet */
+  snprintf ( buf0, sizeof(buf0), " %.6f", LVstat->LV );
+  strcat ( statString, buf0 );
+  fprintf (fp, "%.16g %.13g %.13g %.13g%s\n",
+		dopplerParams.fkdot[0],
+		dopplerParams.Alpha,
+		dopplerParams.Delta,
+		dopplerParams.fkdot[1],
+		statString
+	    );
+
+  return XLAL_SUCCESS;
+
+} /* write_LV_candidate_to_fp() */
