@@ -1812,15 +1812,15 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
               fprintf(stderr, "WARNING: waveform.phi->data->length = %d is longer than IFOdata->timeData->data->length = %d.\n", waveform.phi->data->length, IFOdata->timeData->data->length);
               fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.phi->data->length - IFOdata->timeData->data->length , __FILE__, __LINE__);
             }
-            for (i=IFOdata->timeData->data->length;i==0; i--){
-              a1		= waveform.a->data->data[2*i+waveform.phi->data->length-IFOdata->timeData->data->length-1];
-              a2		= waveform.a->data->data[2*i+1+waveform.phi->data->length-IFOdata->timeData->data->length-1];
-              phi     = waveform.phi->data->data[i+waveform.phi->data->length-IFOdata->timeData->data->length-1];
-              if (waveform.shift) shift   = waveform.shift->data->data[i+waveform.phi->data->length-IFOdata->timeData->data->length-1];
+            for (i=0; i<IFOdata->timeData->data->length; i++){
+              a1		= waveform.a->data->data[2*(i+waveform.phi->data->length-IFOdata->timeData->data->length)];
+              a2		= waveform.a->data->data[2*(i+waveform.phi->data->length-IFOdata->timeData->data->length)+1];
+              phi     = waveform.phi->data->data[i+waveform.phi->data->length-IFOdata->timeData->data->length];
+              if (waveform.shift) shift   = waveform.shift->data->data[i+waveform.phi->data->length-IFOdata->timeData->data->length];
               else shift = 0.0;
               
-              IFOdata->timeModelhPlus->data->data[i-1] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
-              IFOdata->timeModelhCross->data->data[i-1]= a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
+              IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
+              IFOdata->timeModelhCross->data->data[i]= a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
             }
             instant-= (waveform.phi->data->length-IFOdata->timeData->data->length)*IFOdata->timeData->deltaT;
             LALInferenceSetVariable(IFOdata->modelParams, "time", &instant);
@@ -1852,9 +1852,9 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
               fprintf(stderr, "WARNING: waveform.h->data->length = %d is longer than IFOdata->timeData->data->length = %d.\n", waveform.h->data->length, IFOdata->timeData->data->length);
               fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.h->data->length - IFOdata->timeData->data->length , __FILE__, __LINE__);
             }
-            for (i=IFOdata->timeData->data->length;i==0; i--){
-              IFOdata->timeModelhPlus->data->data[i-1] = waveform.h->data->data[2*i+waveform.h->data->length-IFOdata->timeData->data->length-1];
-              IFOdata->timeModelhCross->data->data[i-1] = waveform.h->data->data[2*i+1+waveform.h->data->length-IFOdata->timeData->data->length-1];
+            for (i=0; i<IFOdata->timeData->data->length; i++){
+              IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[2*(i+waveform.h->data->length-IFOdata->timeData->data->length)];
+              IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[2*(i+waveform.h->data->length-IFOdata->timeData->data->length)+1];
             }
           instant-= (waveform.h->data->length-IFOdata->timeData->data->length)*IFOdata->timeData->deltaT;
           LALInferenceSetVariable(IFOdata->modelParams, "time", &instant);
