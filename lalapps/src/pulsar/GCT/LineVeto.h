@@ -109,7 +109,7 @@ XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
 
 REAL8
 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,
-			    const UINT4 X );
+			    const INT4 X );
 
 REAL8
 XLALComputeLineVeto ( const REAL8 TwoF,

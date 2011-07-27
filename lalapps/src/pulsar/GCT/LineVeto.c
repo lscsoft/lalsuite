@@ -343,9 +343,9 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 } /* XLALComputeExtraStatsSemiCoherent() */
 
 
-/** XLAL function to compute single-IFO Fstat from multi-IFO Atoms: */
+/** XLAL function to compute single-or multi-IFO Fstat from multi-IFO Atoms: */
 REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   /**< multi-detector atoms */
-				  const UINT4                 X                  /**< detector number */
+				  const INT4                 X                   /**< detector number, give -1 for multi-Fstat */
 				  )
 {
   const char *fn = __func__;
@@ -361,32 +361,49 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
     XLAL_ERROR ( fn, XLAL_EBADLEN );
   }
 
-  if ( X > multiFstatAtoms->length-1 ) {
+  if ( X < -1 ) {
+    XLALPrintError ("\nError in function %s, line %d : Invalid detector number X=%d, only nonnegative numbers or -1 for multi-F are allowed!\n\n", fn, __LINE__, X);
+    XLAL_ERROR ( fn, XLAL_EDOM );
+  }
+
+  if ( ( X >= 0 ) && ( fabs(X) > multiFstatAtoms->length-1 ) ) {
     XLALPrintError ("\nError in function %s, line %d : Invalid detector number!\nRequested X=%d, but FstatAtoms only have length %d.\n\n", fn, __LINE__, X, multiFstatAtoms->length);
     XLAL_ERROR ( fn, XLAL_EDOM );
   }
 
-  if ( multiFstatAtoms->data[X]->length == 0 ) {
+  if ( ( X >= 0 ) && ( multiFstatAtoms->data[X]->length == 0 ) ) {
     XLALPrintError ("\nError in function %s, line %d : Input FstatAtomVector has zero length! (no timestamps for detector X=%d)\n\n", fn, __LINE__, X);
     XLAL_ERROR ( fn, XLAL_EDOM );
   }
 
-  /* set up temporary variables and structs */
-  REAL8 mmatrixA = 0.0, mmatrixB = 0.0, mmatrixC = 0.0;
-  REAL8 FX = 0.0;
-  COMPLEX8 Fa, Fb;
-  UINT4 alpha;
-  UINT4 numSFTs = multiFstatAtoms->data[X]->length;
+  /* internal detector index Y to do both single- and multi-F case */
+  UINT4 Y, Ystart, Yend;
+  UINT4 alpha, numSFTs;
+  if ( X == -1 ) { /* loop through all detectors to get multi-Fstat */
+    numSFTs = multiFstatAtoms->data[0]->length;
+    Ystart = 0;
+    Yend   = multiFstatAtoms->length-1;
+  }
+  else { /* just compute single-Fstat for 1 IFO */
+    numSFTs = multiFstatAtoms->data[X]->length;
+    Ystart = X;
+    Yend   = X;
+  }
 
-  /* sum up matrix elements and Fa, Fb */
+  /* set up temporary Fatoms and matrix elements for summations */
+  REAL8 mmatrixA = 0.0, mmatrixB = 0.0, mmatrixC = 0.0;
+  REAL8 F = 0.0;
+  COMPLEX8 Fa, Fb;
   Fa.re = 0.0;
   Fa.im = 0.0;
   Fb.re = 0.0;
   Fb.im = 0.0;
-  for ( alpha = 0; alpha < numSFTs; alpha++)
-    {
-      FstatAtom *thisAtom = &multiFstatAtoms->data[X]->data[alpha];
 
+  for (Y = Ystart; Y <= Yend; Y++) {  /* loop through detectors */
+
+    for ( alpha = 0; alpha < numSFTs; alpha++) { /* loop through SFTs */
+      FstatAtom *thisAtom = &multiFstatAtoms->data[Y]->data[alpha];
+      /* sum up matrix elements and Fa, Fb */
       mmatrixA += thisAtom->a2_alpha;
       mmatrixB += thisAtom->b2_alpha;
       mmatrixC += thisAtom->ab_alpha;
@@ -394,14 +411,15 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
       Fa.im    += thisAtom->Fa_alpha.im;
       Fb.re    += thisAtom->Fb_alpha.re;
       Fb.im    += thisAtom->Fb_alpha.im;
+    } /* loop through SFTs */
 
-    } /* for alpha < numSFTs */
+  } /* loop through detectors */
 
   /* compute determinant and final Fstat (not twoF!) */
   REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQUARE(mmatrixC) );
-  FX = Dinv * ( mmatrixB * ( SQUARE(Fa.re) + SQUARE(Fa.im) ) + mmatrixA * ( SQUARE(Fb.re) + SQUARE(Fb.im) ) - 2.0 * mmatrixC * (Fa.re*Fb.re + Fa.im*Fb.im) );
+  F = Dinv * ( mmatrixB * ( SQUARE(Fa.re) + SQUARE(Fa.im) ) + mmatrixA * ( SQUARE(Fb.re) + SQUARE(Fb.im) ) - 2.0 * mmatrixC * (Fa.re*Fb.re + Fa.im*Fb.im) );
 
-  return FX;
+  return(F);
 
 } /* XLALComputeFstatFromAtoms() */
 
