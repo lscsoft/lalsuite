@@ -1,34 +1,182 @@
 /* functions to create the likelihood for a pulsar search to be used with the
 LALInference tools */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Matthew Pitkin, John Veitch, Colin Gill
+ *
+ * \brief Parameter estimation code for known pulsar searches using the nested
+ * sampling algorithm.
+
+\heading{Description}
+This code is used to perform parameter estimation and evidence calculation in
+targeted/semi-targeted searches for gravitational waves from known pulsars. It
+may also be used to follow-up on signal candidates from semi-coherent all-sky
+searches for unknown sources.
+
+It uses the Bayesian technique of 'Nested Sampling' to sample over a defined
+prior parameter space (unknown signal parameters such as the gravitational wave
+amplitude). These samples can then be used to create posterior probability
+density functions of the unknown parameters. The samples are also used to
+calculate the Bayesian evidence, also known as the marginal likelihood, for a
+given signal model. This can be compared with other models, in particular the
+model that the data is described by Gaussian noise alone.
+
+As input the code requires time domain data that has been heterodyned using the
+known (or close to) phase evolution of the pulsar. The time domain input should
+consist of a three column text file containing the GPS time stamp of the data
+point, the real part of the heterodyned data and the imaginary part of the
+heterodyned data, e.g.
+900000000.000000  1.867532e-24  -7.675329e-25
+900000060.000000  2.783651e-24  3.654386e-25
+...
+
+Most commonly such data will have a sample rate of 1/60 Hz, giving a bandwidth
+of the same amount.
+
+The code also requires that you specify which parameters are to be searched
+over, and the prior ranges over these. Any of the signal parameters can be
+searched over, including frequency, sky position and binary system parameters,
+although the bandwidth of the data and search efficiency need to be taken into
+account.
+
+The 'Nested Sampling' algorithm used is that defined in
+LALinferenceNestedSampler (add ref to Veitch and Vecchio). It is essentially an
+efficient way to perform the integral
+\f[
+Z = \int^{\mathbf{\theta}} p(d|\mathbf{\theta}) p(\mathbf{\theta}) {\rm
+d}\mathbf{\theta},
+\f]
+where \f$ \mathbf{\theta} \f$ is a vector of parameters, \f$
+p(d|\mathbf{\theta}) \f$ is the likelihood of the data given the parameters,
+and \f$ p(\mathbf{\theta}) \f$ is the prior on the parameters. It does this by
+changing the multi-dimensional integral over N parameters into a
+one-dimensional integral
+\f[
+Z = \int^X L(X) {\rm d}X \approx \sum_i L(X_i) \Delta{}X_i,
+\f]
+where \f$ L(X) \f$ is the likelihood, and \f$ X \f$ is the prior mass. The
+algorithm will draw a number (\f$ N \f$) of samples (live points) from the
+parameter priors, calculate the likelihood for each point and find the lowest
+likelihood value. The lowest likelihood value will be added to the summation in
+the above equation, with \f$ \log{\Delta{}X_i} \approx \f$
+\log{\Delta{}X_i} - 1/N \f$ coming from the fact that the prior would be
+normalised to unity and therefore each point should occupy an equal fraction
+and at each iteration the prior volume will decrease geometrically (for \f$
+\log{\Delta{}X_0} = 0). A new point is then drawn from the prior with the
+criterion that it has a higher likelihood than the previous lowest point and
+substitutes that point. To draw the new point a Markov Chain Monte Carlo (MCMC)
+procedure is used - there are two methods used to sample points within this:
+i) drawing from a proposal distributions based on the covariance matrix if the
+current live points (although to keep things computationally efficient this no
+updated at every iteration), ii) picking a point via differential evolution
+(two random live points are selected and a new point half way between the two
+is created). The probability of using either method is currently set at 80\%
+and 20\% respectively. The procedure is continued until a stopping criterion is
+reached, which in this case is that the remaining prior volume is less than the
+\c tolerance value set (see below). The implementation of this can be seen in
+Veitch and Vecchio.
+
+\heading{Usage}
+The usage format is given below and can also be found by running the code with
+\code
+lalapps_pulsar_parameter_estimation_nested --help
+\endcode
+
+An example of running the code on to search over the four unknown parameters
+\f$ h_0 \f$, \f$ \phi_0 \f$, \f$ \psi \f$ and \f$ \cos{\iota} \f$, for pulsar
+J0534-2200, given heterodyned time domain data from the H1 detector in the file
+\c finehet_J0534-2200_H1, is:
+\code
+lalapps_pulsar_parameter_estimation_nested --detectors H1 --par-file
+J0534-2200.par --input-files finehet_J0534-2200_H1 --outfile ns_J0534-2200
+--prop-file prop_J0534-2200.txt --ephem-earth
+lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun
+lscsoft/share/lalpulsar/sun05-09.dat --model-type triaxial --Nlive 1000 --Nmcmc
+100 --Nruns 1 --tolerance 0.25
+\endcode
+The \c par-file is a TEMPO-style file containing the parameters of the
+pulsar used to perform the heterodyne (the frequency parameters are the
+rotation frequency and therefore not necessarily the gravitational wave
+frequency) e.g.
+\code
+RA      12:54:31.87523895
+DEC     -54:12:43.6572033
+PMRA    1.7
+PMDEC   2.8
+POSEPOCH 54320.8531
+F0  123.7896438753
+F1  4.592e-15
+PEPOCH 54324.8753
+\endcode
+The \c prop-file is a text file containing a list of the parameters to be
+searched over and their given upper and lower prior ranges e.g.
+\code
+h0 0 1e-21
+phi0 0 6.283185307179586
+cosiota -1 1
+psi -0.785398163397448 0.785398163397448
+\endcode
+Note that if searching over frequency parameters the ranges specified in the 
+\c prop-file should be given in terms of the pulsars rotation frequency and not
+necessarily the gravitational wave frequency e.g. for a triaxial star emitting
+gravitational waves at 100 Hz (which will be at twice the rotation frequency)
+if you wanted to search over 99.999 to 100.001 Hz then you should used
+\code
+f0 49.9995 50.0005
+\endcode
+
+An example of running the code as above, but this time on fake data created
+using the Advanced LIGO design noise curves and with a signal injected into the
+data is:
+\code
+lalapps_pulsar_parameter_estimation_nested --fake-data AH1 --inject-file
+fake.par --par-file fake.par --outfile ns_fake --prop-file prop_fake.txt
+--ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun
+lscsoft/share/lalpulsar/sun05-09.dat --model-type triaxial --Nlive 1000 --Nmcmc
+100 --Nruns 1 --tolerance 0.25
+\endcode
+In this case the \c inject-file parameter file must contain the values of \c
+h0, \c phi0, \c psi and \c cosiota, otherwise these will be set to zero by
+default. The parameter files given for \c inject-file and \c par-file do not
+have to be the same - the injection can be offset from the 'heterodyned' values,
+which will be reflected in the data. If an \c inject-output file is also
+specified then the fake data containing the signal, and a fake signal-only data
+set, will be output.
+ */
+
 #include "pulsar_parameter_estimation_nested.h"
 
+/** The inverse of the factorials of the numbers 0 to 6. */
+static const REAL8 inv_fact[7] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0),
+(1.0/120.0), (1.0/720.0) };
 
-#define NUM_FACT 7
-static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0),
-(1.0/24.0), (1.0/120.0), (1.0/720.0) };
-
-/* maximum number of different detectors */
+/** The maximum number of different detectors allowable. */
 #define MAXDETS 6
 
 RCSID("$Id$");
 
 /* global variables */
+/** The flag to specify verbose output. */
 INT4 verbose = 0;
 
-/* array to contain the log of factorials up to a certain number */
+/** An array to contain the log of factorials up to a certain number. */
 REAL8 *logfactorial = NULL;
 
-/* set if phase parameters are being searched over and therefore the pulsar
-   model requires phase evolution to be re-calculated */ 
+/** A flag to specify if phase parameters are being searched over and
+ * therefore the pulsar model requires phase evolution to be re-calculated (0 =
+ * no, 1 = yes). */ 
 UINT4 varyphase = 0; 
 
-/* set if the sky position will be searched over, and therefore whether the
-   solar system barycentring needs recalculating */
+/** A flag to specify if the sky position will be searched over, and therefore
+ * whether the solar system barycentring needs recalculating (0 = no, 1 = yes).
+*/
 UINT4 varyskypos = 0; 
 
-/* set if the binary system parameters will be searched over, and therefore
-   whether the binary system barycentring needs recalculating */
+/** A flag to specify if the binary system parameters will be searched over,
+ * and therefore whether the binary system barycentring needs recalculating (0 =
+ * no, 1 = yes) */
 UINT4 varybinary = 0; 
 
 #ifdef __GNUC__
@@ -37,7 +185,7 @@ UINT4 varybinary = 0;
 #define UNUSED
 #endif
 
-/* Usage format string */
+/** The usage format for the code.  */
 #define USAGE \
 "Usage: %s [options]\n\n"\
 " --help              display this message\n"\
@@ -45,7 +193,6 @@ UINT4 varybinary = 0;
 " --detectors         all IFOs with data to be analysed e.g. H1,H2\n\
                      (delimited by commas) (if generating fake data these\n\
                      should not be set)\n"\
-" --pulsar            name of pulsar e.g. J0534+2200\n"\
 " --par-file          pulsar parameter (.par) file (full path) \n"\
 " --input-files       full paths and file names for the data for each\n\
                      detector in the list (must be in the same order)\n\
@@ -107,7 +254,8 @@ UINT4 varybinary = 0;
                      scale the injection. This is 1 by default.\n"\
 "\n"
 
-
+/** The usage format for the test case of performing the analysis on a
+ * one-dimensional grid. */
 #define USAGEGRID \
 "Usage: %s [options]\n\n"\
 " --grid              perform the posterior evalution on a 1D grid over the\n\
@@ -236,6 +384,20 @@ INT4 main( INT4 argc, CHAR *argv[] ){
 /*                      INITIALISATION FUNCTIONS                              */
 /******************************************************************************/
 
+/** \brief Initialises the nested sampling algorithm control
+ * 
+ * Memory is allocated for the parameters, priors and proposals. The nested
+ * sampling control parameters are set: the number of live points \c Nlive, the
+ * number of points for each MCMC \c Nmcmc, the number of independent runs
+ * within the algorithm \c Nruns, and the stopping criterion \c tolerance.
+ *
+ * The random number generator is initialise (the GSL Mersenne
+ * Twister algorithm \c gsl_rng_mt19937) using either a user defined seed \c
+ * randomseed, the system defined \c /dev/random file, or the system clock
+ * time. 
+ * 
+ * \param runState [in] A pointer to the LALInferenceRunState
+ */ 
 void initialiseAlgorithm( LALInferenceRunState *runState )
 /* Populates the structures for the algorithm control in runState, given the
  commandLine arguments. Includes setting up a random number generator.*/
@@ -321,7 +483,51 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
   return;
 }
 
-
+/** \brief Reads in the input gravitational wave data files, or creates fake
+ * data sets.
+ * 
+ * The function will check whether data files are being input of fake data is
+ * to be generated. If using real data the \c detectors command line input must
+ * list the names of the detectors from which each of the data sets comes, with
+ * names separated by commas - allowed detector names are H1, H2, L1, V1, G1
+ * or T1, for LIGO Hanford Observatory 1, LIGO Hanford Observatory 2, LIGO
+ * Livingston Observatory, Virgo, GEO600/HF and TAMA300 respectively. If
+ * requiring fake data to be generated then the \c fake-data command line
+ * argument must list the detectors for which fake data is required (again
+ * separated by commas) - these can be the same names as above, although if an
+ * 'A' is appended to the LIGO of Virgo detector name then the Advanced
+ * detector is assumed (for use if generating data from designed sensitivity
+ * curves).
+ * 
+ * If generating fake data the noise floor can either be created using models
+ * of the detector design sensitivities (if just \c fake-data is set), or with
+ * noise levels defined using the \c fake-psd command line argument. If using \c
+ * fake-psd it should list the signle-sided power spectral density required for
+ * each detector listed in \c fake-data (again separated by commas). If using
+ * the design sensitivity models the \c par-file argument will be used to find
+ * the noise at the correct frequency, which is here assumed to be twice the
+ * rotation frequency. The start time (in GPS seconds), data length (in seconds)
+ * and sample interval (in seconds) can be specified for each fake data set by
+ * supplying comma separated lists to the \c fake-starts, \c fake-lengths and \c
+ * fake-dt command line arguments. By default these values are GPS 900000000 
+ * (13th July 2008 at 15:59:46 UTC), 86400 seconds (1 solar day) and 60 seconds
+ * (1/60 Hz sample rate) respectively. The fake data is drawn from a normal
+ * distribution using \c XLALNormalDeviates and scaled with the appropriate PSD.
+ * 
+ * If using real data the files must be specified in the \c input-files command
+ * line argument - these should be comma separated for mulitple files and be in
+ * the same order at the associated detector from which they came given by the
+ * \c detectors command.
+ * 
+ * The function also check that valid Earth and Sun ephemeris files (from the
+ * lalpulsar suite) are set with the \c ephem-earth and \c ephem-sun arguments,
+ * and that a valid output file for the nested samples is set via the \c outfile
+ * argument.
+ * 
+ * The \c log_factorial array is also filled in.
+ * 
+ * \param runState [in] A pointer to the LALInferenceRunState
+ */
 void readPulsarData( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL, *ppt2 = NULL;
   ProcessParamsTable *commandLine = runState->commandLine;
@@ -1373,7 +1579,18 @@ defined!\n");
 }
 
 
-/* function to set the model of the pulsar that is being used */
+/** \brief Set the model of the pulsar that is being used 
+ *
+ * Set the model of the pulsar signal that is being used via the \c model-type
+ * command line argument.
+ * 
+ * The default model is \c triaxial which assumes a signal based on the
+ * quadrupole emission from a rigidly rotating triaxial star that has been
+ * heterodyned at twice the star's rotation frequency (see e.g. the model
+ * defined in Dupius and Woan).
+ *
+ * \param runState [in] A pointer to the LALInferenceRunState
+ */
 void setSignalModelType( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
   
