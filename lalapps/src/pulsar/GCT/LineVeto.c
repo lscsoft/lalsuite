@@ -366,26 +366,18 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
     XLAL_ERROR ( fn, XLAL_EDOM );
   }
 
-  if ( ( X >= 0 ) && ( fabs(X) > multiFstatAtoms->length-1 ) ) {
+  if ( ( X >= 0 ) && ( (UINT4)(X) > multiFstatAtoms->length-1 ) ) {
     XLALPrintError ("\nError in function %s, line %d : Invalid detector number!\nRequested X=%d, but FstatAtoms only have length %d.\n\n", fn, __LINE__, X, multiFstatAtoms->length);
-    XLAL_ERROR ( fn, XLAL_EDOM );
-  }
-
-  if ( ( X >= 0 ) && ( multiFstatAtoms->data[X]->length == 0 ) ) {
-    XLALPrintError ("\nError in function %s, line %d : Input FstatAtomVector has zero length! (no timestamps for detector X=%d)\n\n", fn, __LINE__, X);
     XLAL_ERROR ( fn, XLAL_EDOM );
   }
 
   /* internal detector index Y to do both single- and multi-F case */
   UINT4 Y, Ystart, Yend;
-  UINT4 alpha, numSFTs;
   if ( X == -1 ) { /* loop through all detectors to get multi-Fstat */
-    numSFTs = multiFstatAtoms->data[0]->length;
     Ystart = 0;
     Yend   = multiFstatAtoms->length-1;
   }
   else { /* just compute single-Fstat for 1 IFO */
-    numSFTs = multiFstatAtoms->data[X]->length;
     Ystart = X;
     Yend   = X;
   }
@@ -400,6 +392,13 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
   Fb.im = 0.0;
 
   for (Y = Ystart; Y <= Yend; Y++) {  /* loop through detectors */
+
+    UINT4 alpha, numSFTs;
+    numSFTs = multiFstatAtoms->data[Y]->length;
+    if ( numSFTs == 0 ) {
+      XLALPrintError ("\nError in function %s, line %d : Input FstatAtomVector has zero length! (no timestamps for detector X=%d)\n\n", fn, __LINE__, Y);
+      XLAL_ERROR ( fn, XLAL_EDOM );
+    }
 
     for ( alpha = 0; alpha < numSFTs; alpha++) { /* loop through SFTs */
       FstatAtom *thisAtom = &multiFstatAtoms->data[Y]->data[alpha];

@@ -104,7 +104,7 @@ typedef struct {
   REAL8 Delta;		/**< skyposition Delta (Dec) in radians */
 
   /* other parameters */
-  CHAR *IFO;		/**< IFO names */
+  LALStringVector* IFOs; /**< list of detector-names "H1,H2,L1,.." or single detector*/
   INT4 dataStartGPS;	/**< data start-time in GPS seconds */
   INT4 dataDuration;	/**< data-span to generate */
   INT4 TAtom;		/**< Fstat atoms time baseline */
@@ -422,9 +422,10 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->fixedh0NatMax = -1;
   uvar->fixedRhohMax = -1;
 
-#define DEFAULT_IFO "H1"
-  uvar->IFO = XLALMalloc ( strlen(DEFAULT_IFO)+1 );
-  strcpy ( uvar->IFO, DEFAULT_IFO );
+  if ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) == NULL ) {
+    LogPrintf (LOG_CRITICAL, "Call to XLALCreateStringVector() failed with xlalErrno = %d\n", xlalErrno );
+    XLAL_ERROR ( __func__, XLAL_ENOMEM );
+  }
 
   /* ---------- transient window defaults ---------- */
 #define DEFAULT_TRANSIENT "rect"
@@ -448,7 +449,7 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   XLALregINTUserStruct  ( AmpPriorType,	 	 0,  UVAR_OPTIONAL, "Enumeration of types of amplitude-priors: 0=physical, 1=canonical");
 
-  XLALregSTRINGUserStruct ( IFO,	        'I', UVAR_OPTIONAL, "Detectors, enter as comma-separated list: 'G1','L1','H1,'H2', 'V1', ... ");
+  XLALregLISTUserStruct( IFOs,                  'I', UVAR_OPTIONAL, "Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
   XLALregINTUserStruct ( dataStartGPS,	 	 0,  UVAR_OPTIONAL, "data start-time in GPS seconds");
   XLALregINTUserStruct ( dataDuration,	 	 0,  UVAR_OPTIONAL, "data-span to generate (in seconds)");
 
@@ -544,16 +545,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
 
-  /* init detector info */
-  LALStringVector *detectorIDs = NULL;
-  char *ifostrng = strtok( uvar->IFO, ",");
-  while ( ifostrng != NULL )
-  {
-    if ( (detectorIDs = XLALAppendString2Vector ( detectorIDs, ifostrng) ) == NULL )
-      XLAL_ERROR ( fn, XLAL_EFUNC );
-    ifostrng = strtok ( NULL, "," );
-  }
-  UINT4 numDetectors = detectorIDs->length;
+  UINT4 numDetectors = uvar->IFOs->length;
   UINT4 X;
   MultiLALDetector *multiDet;
   if ( (multiDet = XLALCreateMultiLALDetector ( numDetectors )) == NULL ) {
@@ -562,8 +554,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   }
   LALDetector *site = NULL;
   for ( X=0; X < numDetectors; X++ )    {
-    if ( (site = XLALGetSiteInfo ( detectorIDs->data[X] )) == NULL ) {
-      XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", fn, uvar->IFO );
+    if ( (site = XLALGetSiteInfo ( uvar->IFOs->data[X] )) == NULL ) {
+      XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", fn, uvar->IFOs->data[X] );
       XLAL_ERROR ( fn, XLAL_EFUNC );
     }
     multiDet->data[X] = (*site); 	/* copy! */
@@ -603,7 +595,6 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   XLALFree(edat->ephemS);
   XLALFree ( edat );
   XLALDestroyMultiTimestamps ( multiTS );
-  XLALDestroyStringVector ( detectorIDs );
   multiTS = NULL;
 
   /* ---------- initialize transient window ranges, for injection ... ---------- */
