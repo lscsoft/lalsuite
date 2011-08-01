@@ -143,14 +143,13 @@ LALRungeKutta4(
 }
 
 
-/*  <lalVerbatim file="LALRungeKutta4CP"> */
 int
 XLALRungeKutta4(
    REAL8Vector      *yout,
    rk4GSLIntegrator *integrator,
    void             *params
    )
-{ /* </lalVerbatim>  */
+{
 
    int gslStatus;
 
