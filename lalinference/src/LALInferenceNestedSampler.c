@@ -226,7 +226,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 Nruns=1;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
 	REAL8 TOLERANCE=0.5;
-	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,deltaZ,H,logZnoise,dZ=0;
+	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,H,logZnoise,dZ=0;//deltaZ - set but not used
 	LALInferenceVariables *temp;
 	FILE *fpout=NULL;
 	gsl_matrix **cvm=calloc(1,sizeof(gsl_matrix *));
@@ -339,7 +339,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			+ exp(oldZarray[j]-logZarray[j])*(Harray[j]+oldZarray[j])-logZarray[j];
 		}
 		logZnew=mean(logZarray,Nruns);
-		deltaZ=logZnew-logZ;
+		//deltaZ=logZnew-logZ; - set but not used
 		H=mean(Harray,Nruns);
 		logZ=logZnew;
 		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
@@ -769,13 +769,13 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 									   LALInferenceVariables *parameter)
 	{
 		LALInferenceVariables **Live=runState->livePoints;
-		int i=0,j=0,dim=0,same=1;
+		int i=0,j=0,same=1;//dim=0 - set but not used
 		INT4 Nlive = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
 		LALInferenceVariableItem *paraHead=NULL;
 		LALInferenceVariableItem *paraA=NULL;
 		LALInferenceVariableItem *paraB=NULL;
 		
-		dim = parameter->dimension;
+		//dim = parameter->dimension; - set but not used
 		/* Select two other samples A and B*/
 		i=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
 		/* Draw two different samples from the basket. Will loop back here if the original sample is chosen*/
@@ -951,7 +951,7 @@ INT4 LALInferenceReflectDetPlane(
 	static LALStatus status;
 	UINT4 i;
 	int DetCollision=0;
-	REAL4 randnum;
+	//REAL4 randnum; - set but not used
 	REAL8 longi,lat;
 	REAL8 dist;
 	REAL8 pos[3];
@@ -991,7 +991,7 @@ INT4 LALInferenceReflectDetPlane(
 	do {
 		IFO2=gsl_rng_uniform_int(state->GSLrandom,nIFO);
 	}while(IFO1==IFO2 || IFOs[IFO1]==IFOs[IFO2]);
-	randnum=gsl_rng_uniform(state->GSLrandom);
+	//randnum=gsl_rng_uniform(state->GSLrandom); - set but not used
 	do {
 		IFO3 = gsl_rng_uniform_int(state->GSLrandom,nIFO);
 	}while(IFO3==IFO1

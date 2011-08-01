@@ -107,7 +107,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	REAL8 padding=0.4;//Default was 1.0 second. However for The Event the Common Inputs specify a Tukey parameter of 0.1, so 0.4 second of padding for 8 seconds of data.
 	UINT4 Ncache=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
 	UINT4 i,j;
-	int FakeFlag=0;
+	//int FakeFlag=0; - set but not used
 	char strainname[]="LSC-STRAIN";
 	
 	typedef void (NoiseFunc)(LALStatus *statusPtr,REAL8 *psd,REAL8 f);
@@ -220,7 +220,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 		if(!(strcmp(caches[i],"LALLIGO") && strcmp(caches[i],"LALVirgo") && strcmp(caches[i],"LALGEO") && strcmp(caches[i],"LALEGO")
 			 && strcmp(caches[i],"LALAdLIGO")))
 		{
-			FakeFlag=1;
+			//FakeFlag=1; - set but not used
 			datarandparam=XLALCreateRandomParams(dataseed?dataseed+(int)i:dataseed);
 			/* Selection of the noise curve */
 			if(!strcmp(caches[i],"LALLIGO")) {PSD = &LALLIGOIPsd; scalefactor=9E-46;}

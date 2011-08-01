@@ -234,14 +234,14 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 	LALInferenceVariables *priorParams=runState->priorArgs;
 	REAL8 min, max;
 	REAL8 logmc=0.0;
-	REAL8 m1,m2,eta=0.0;
+	REAL8 m1,m2;//eta=0.0; - set but not used
 	REAL8 etaMin=0.0, etaMax=0.0;
 	REAL8 MTotMax=0.0;
 	char normName[VARNAME_MAX];
 	REAL8 norm=0.0;
 	
 	if(LALInferenceCheckVariable(params,"massratio")){
-		eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
+		//eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio"); - set but not used
 		LALInferenceGetMinMaxPrior(priorParams, "massratio", (void *)&etaMin, (void *)&etaMax);
 	}
 	

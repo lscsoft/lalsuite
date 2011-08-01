@@ -44,6 +44,12 @@ RCSID("$Id$");
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 extern int newswitch; //temporay global variable to use the new LALSTPN
 static void destroyCoherentGW( CoherentGW *waveform );
 
@@ -146,7 +152,7 @@ fprintf(stdout, "Timeshift %g\n", timeShift);
 	
 	/* Shifting waveform to account for timeShift: */
 			
-	REAL8 p, ap, ac;
+	REAL8 p,ap;//ac - set but not used
 	INT4 integerLeftShift = ceil(-timeShift/IFOdata->timeData->deltaT);
 	REAL8 fractionalRightShift = (IFOdata->timeData->deltaT*integerLeftShift+timeShift)/IFOdata->timeData->deltaT;
 		
@@ -173,7 +179,7 @@ fprintf(file, "%lg \t %lg\n", phiData[i], aData[i]);
 		else{
 			p = (1.0-fractionalRightShift)*phiData[i+integerLeftShift] + fractionalRightShift*phiData[i+integerLeftShift+1];
 			ap = (1.0-fractionalRightShift)*aData[2*(i+integerLeftShift)] + fractionalRightShift*aData[2*(i+integerLeftShift)+2];
-			ac = (1.0-fractionalRightShift)*aData[2*(i+integerLeftShift)+1] + fractionalRightShift*aData[2*(i+integerLeftShift)+3];
+			//ac = (1.0-fractionalRightShift)*aData[2*(i+integerLeftShift)+1] + fractionalRightShift*aData[2*(i+integerLeftShift)+3]; - set but not used
 			IFOdata->timeModelhPlus->data->data[i] = ap*cos(p);
 			IFOdata->timeModelhCross->data->data[i] = ap*sin(p);
 		}
@@ -522,7 +528,7 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	
 	template.next = NULL;
 	template.fine = NULL;
-	INT4 errnum;
+	int UNUSED errnum;
 	XLAL_TRY(LALInspiralParameterCalc(&status,&template),errnum);
 	
 	REAL4Vector *hPlus = XLALCreateREAL4Vector(IFOdata->timeModelhPlus->data->length);
@@ -1992,7 +1998,7 @@ void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LA
 {
   FILE *outfile=NULL; 
   LALInferenceIFOData *dataPtr;
-  double deltaT, deltaF, t, epoch;
+  double deltaT, t, epoch; // deltaF - set but not used
   UINT4 i;
 
   LALInferenceCopyVariables(currentParams, data->modelParams);
@@ -2005,7 +2011,7 @@ void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LA
     outfile = fopen(filename, "w");
     fprintf(outfile, "\"t\",\"signalPlus\",\"signalCross\"\n");
     deltaT = dataPtr->timeData->deltaT;
-    deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
+    //deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT); - set but not used
     epoch = XLALGPSGetREAL8(&data->timeData->epoch);
     for (i=0; i<data->timeModelhPlus->data->length; ++i){
       t =  epoch + ((double) i) * deltaT;

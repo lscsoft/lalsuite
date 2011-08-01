@@ -580,7 +580,7 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
   REAL8 ChiSquared=0.0, dxp, xp, x, norm, binPower, nextBin;
   REAL8 lowerF, upperF, deltaT, deltaF;
   REAL8 *segnorm;
-  INT4  i, chisqPt, imax, kmin, kmax, numBins=0;
+  INT4  i, chisqPt, imax,  kmax, numBins=0;//kmin - set but not used
   INT4  *chisqBin;
   LALInferenceIFOData *ifoPtr=data;
   COMPLEX16Vector *freqModelResponse=NULL;
@@ -608,7 +608,7 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
    
     /* Generate bin boundaries */
     numBins = *(INT4*) LALInferenceGetVariable(currentParams, "numbins");
-    kmin = ceil(ifoPtr->fLow / deltaF);
+    //kmin = ceil(ifoPtr->fLow / deltaF); - set but not used
     kmax = floor(ifoPtr->fHigh / deltaF);
     imax = kmax > (INT4) ifoPtr->freqData->data->length-1 ? (INT4) ifoPtr->freqData->data->length-1 : kmax;
     
