@@ -117,6 +117,7 @@ NRCSID(LALPSPININSPIRALRDC, "$Id$");
 #define sqrtOnePointFive 1.22474
 #define sqrtPoint15      0.387298
 #define sqrtFiveOver2    1.1183
+#define minIntLen        4
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
 
@@ -1804,7 +1805,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     XLAL_ERROR(func, XLAL_ESIZE);
   }
 
-  if ( intlen < 2 ) {
+  if ( intlen < minIntLen ) {
     fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: incorrect integration with length %d\n",intlen);
     XLAL_ERROR(func, XLAL_ESIZE);
   }
@@ -1832,7 +1833,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     S2S2=(S2x[0]*S2x[0]+S2y[0]*S2y[0]+S2z[0]*S2z[0])/mparams->m2msq/mparams->m2msq;
     omegaMatch=OmMatch(LNhS1,LNhS2,S1S1,S1S2,S2S2);
 
-    UINT4 Npoints = 1;
+    UINT4 Npoints = minIntLen;
     while ((omega[intlen-Npoints]>(omegaMatch-mparams->omMoffset))&&(Npoints<intlen)) {
       if ((Npoints*2)<intlen) Npoints*=2;
       else Npoints=intlen;
@@ -1888,7 +1889,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     errcode += XLALGenerateWaveDerivative(dLNhy,LNhy_s,dt);
     errcode += XLALGenerateWaveDerivative(dLNhz,LNhz_s,dt);
     if (errcode != 0) {
-      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating derivatives\n");
+      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating derivatives: #points %d\n",Npoints);
       XLAL_ERROR(func,XLAL_EFAILED);
     }
 
