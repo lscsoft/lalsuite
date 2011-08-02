@@ -151,6 +151,55 @@ LALInferenceVariables *priorArgs){
    return;
 }
 
+/** \brief Rotate initial phase if polarisation angle is cyclic around ranges
+ * 
+ * If the polarisation angle parameter \f$\psi\f$ is cyclic about its upper and
+ * lower ranges of \f$-\pi/4\f$ to \f$\psi/4\f$ then the transformation for
+ * crossing a boundary requires the initial phase parameter \f$\phi_0\f$ to be
+ * rotated through \f$\pi\f$ radians. The function assumes the value of
+ * \f$\psi\f$ has been rescaled to be between 0 and \f$2\pi\f$ - this is a
+ * requirement of the covariance matrix routine \c LALInferenceNScalcCVM
+ * function.  
+ * 
+ * This is particularly relevant for pulsar analyses.
+ * 
+ * \param parameter [in] Pointer to an array of parameters
+ * \param priorArgs [in] Pointer to an array of prior ranges
+ */
+void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter){
+  LALInferenceVariableItem *paraHead = NULL;
+  LALInferenceVariableItem *paraPhi0 = parameter->head;
+  REAL8 rotphi0 = 0.;
+  UINT4 idx1 = 0, idx2 = 0;
+  
+  for(paraHead=parameter->head;paraHead;paraHead=paraHead->next){
+    if (paraHead->vary == LALINFERENCE_PARAM_CIRCULAR &&
+        !strcmp(paraHead->name, "psi") ){
+      /* if psi is outside the -pi/4 -> pi/4 boundary the set to rotate phi0
+         by pi (psi will have been rescaled to be between 0 to 2pi as a 
+         circular parameter).*/
+      if (*(REAL8 *)paraHead->value > LAL_TWOPI || 
+        *(REAL8 *)paraHead->value < 0. ) rotphi0 = LAL_PI;
+    
+      idx1++;
+    }
+    
+    if (paraHead->vary == LALINFERENCE_PARAM_CIRCULAR &&
+        !strcmp(paraHead->name, "phi0") ){
+      idx1++; 
+      idx2++;
+    }
+    
+    if ( idx2 == 0 ) paraPhi0 = paraPhi0->next;
+    if ( idx1 == 2 ) break;
+  }
+
+  if( rotphi0 != 0. ) *(REAL8 *)paraPhi0->value += rotphi0;
+  
+  return;
+}
+
+
 /* Return the log Prior of the variables specified for the sky localisation project, ref: https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/SkyLocComparison#priors, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
 {

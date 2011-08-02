@@ -751,7 +751,7 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALInfere
 			i++;
 		}
 	}
-	     
+	LALInferenceRotateInitialPhase(parameter);
         LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
         
         /* destroy the vectors */
@@ -796,6 +796,7 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 		}
 		if(same==1) goto drawtwo;
 		/* Bring the sample back into bounds */
+                LALInferenceRotateInitialPhase(parameter);
 		LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
 		return;
 	}

@@ -290,38 +290,24 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Include setting up random number generator etc */
   initialiseAlgorithm( &runState );
   
-  /*read in data, 2 datastreams if pinsf, one if triaxial*/
-  ppt = LALInferenceGetProcParamVal( param_table, "--model-type" );
-  if( ppt ){
-    modeltype  = XLALStringDuplicate( 
-    LALInferenceGetProcParamVal( param_table, "--model-type" )->value );
-    if ( !strcmp( modeltype, "triaxial" ) ){
-      fprintf(stderr,"Model type set as triaxial\n");
-      readPulsarData( &runState );
-    }
-    else if ( !strcmp( modeltype, "pinsf" ) ){
-      fprintf(stderr,"Model type set as pinsf\n");
-      readDoublePulsarData( &runState );
-    }
-    else{
-      fprintf(stderr, "Error... model '%s' is not defined!\n", modeltype);
-      exit(0);
-    }
-  }
-  else 
-    readPulsarData( &runState );/*defaults to read in one stream of data
-                                 per ifo*/
-  
-  /* read in data using command line arguments */
-  /*readPulsarData( &runState );*/
-  
   /* set the pulsar model type */
   setSignalModelType( &runState );
   
-  /* set modeltype variable of not previously set */
-  if ( modeltype == NULL ){
-    modeltype = XLALStringDuplicate( *(CHAR**)LALInferenceGetVariable
-      (runState.data->dataParams, "modeltype") );
+  modeltype = XLALStringDuplicate( *(CHAR**)LALInferenceGetVariable
+      (runState.data->dataParams, "modeltype")
+  
+  /*read in data, 2 datastreams if pinsf, one if triaxial*/
+  if ( !strcmp( modeltype, "triaxial" ) ){
+    fprintf(stderr,"Model type set as triaxial\n");
+    readPulsarData( &runState );
+  }
+  else if ( !strcmp( modeltype, "pinsf" ) ){
+    fprintf(stderr,"Model type set as pinsf\n");
+    readDoublePulsarData( &runState );
+  }
+  else{
+    fprintf(stderr, "Error... model '%s' is not defined!\n", modeltype);
+    exit(0);
   }
   
   /* set algorithm to use Nested Sampling */
@@ -2211,6 +2197,15 @@ set.\n", propfile, tempPar);
       }
     }
     
+    /* if psi is covering the range -pi/4 to pi/4 scale it, so that it cover
+       the 0 to 2pi range of a circular parameter */
+    if( !strcmp(tempPar, "psi") ){
+      if ( scale/LAL_PI_2 > 0.99 && scale/LAL_PI_2 < 1.01 ){ 
+        scale = 0.25;
+        scaleMin = -LAL_PI/4.;
+      }
+    }
+    
     /* set the scale factor to be the width of the prior */
     while( datatemp ){
       scaleType = LALInferenceGetVariableType( datatemp->dataParams, 
@@ -2233,8 +2228,10 @@ set.\n", propfile, tempPar);
     high = (high - scaleMin) / scale;
     
     /* re-add variable */    
-    if( !strcmp(tempPar, "phi0") && scale/LAL_TWOPI > 0.99 && 
-      scale/LAL_TWOPI < 1.01 ) varyType = LALINFERENCE_PARAM_CIRCULAR;
+    if( !strcmp(tempPar, "phi0") && scale == 1. ) 
+      varyType = LALINFERENCE_PARAM_CIRCULAR;
+    else if ( !strcmp(tempPar, "phi0") && scale == 0.25 ) 
+      varyType = LALINFERENCE_PARAM_CIRCULAR;
     else varyType = LALINFERENCE_PARAM_LINEAR;
     
     LALInferenceAddVariable( runState->currentParams, tempPar, &tempVar, type,
@@ -3050,23 +3047,39 @@ void get_pinsf_pulsar_model( BinaryPulsarParams params,
 
 
 /** \brief The phase evolution of a source
- * 
- * 
- * 
+ *
  * This function will calculate the phase evolution of a source at a particular
  * sky location as observed at Earth. The phase evolution is described by a 
  * Taylor expansion:
  * \f[
- * \phi(t) = \sum_1^n \frac{f^(n-1)}{n!} T^n,
+ * \phi(T) = \sum_1^n \frac{f^(n-1)}{n!} T^n,
  * \f]
  * where \f$f^x\f$ is the xth time derivative of the gravitational wave
- * frequency, and  
+ * frequency, and \f$T\f$ is the pulsar proper time. Frequency time derivatives
+ * are currently allowed up to the fifth derivative. The pulsar proper time is 
+ * calculated by correcting the time of arrival at Earth, \f$t\f$ to the solar
+ * system barycentre and if necessary the binary system barycenter, so \f$T =
+ * t + \delta{}t_{\rm SSB} + \delta{}t_{\rm BSB}\f$.
+ * 
+ * In this function the time delay caused needed to correct to the solar system
+ * barycenter is only calculated if required i.e. if it's not been previously
+ * calculated and an update is required due to a change in the sky position. The
+ * same is true for the binary system time delay, which is only calculated if
+ * it has not previously been obtained or needs updating due to a change in the
+ * binary system parameters.
+ * 
+ * The solar system barycentre delay does not have to be explicitly computed
+ * for every time stamp passed to it, but instead will just use linear
+ * interpolation within a time range set by \c interptime.
  * 
  * \param params [in] A set of pulsar parameters
  * \param data [in] The data structure containing the detector data and
  * additional info
  * 
  * \return A vector of rotational phase values
+ * 
+ * \sa get_ssb_delay
+ * \sa get_bsb_delay
  */
 REAL8Vector *get_phase_model( BinaryPulsarParams params, 
                               LALInferenceIFOData *data ){
@@ -3126,7 +3139,33 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
 }
 
 
-/* function to get the solar system barycentring time delay */
+/** \brief Computes the delay between a GPS time at Earth and the solar system 
+ * barycentre
+ *
+ * This function calculate the time delay between a GPS time at a specific 
+ * location (e.g. a gravitational wave detector) on Earth and the solar system
+ * barycentre. The delay consists of three components: the geometric time delay
+ * (Roemer delay) \f$t_R = \mathbf{r}(t)\hat{n}/c\f$ (where \f$\mathbf{r}(t)\f$
+ * is the detector's position vector at time \f$t\f$), the special relativistic
+ * Einstein delay \f$t_E\f$, and the general relativistic Shapiro delay
+ * \f$t_S\f$.
+ * 
+ * Rather than computing the time delay at every time stamp passed to the
+ * function it is instead (if requested) able to perform linear interpolation
+ * to a point within a range given by \c interptime. 
+ *  
+ * \param pars [in] A set of pulsar parameters
+ * \param datatimes [in] A vector of GPS times at Earth
+ * \param ephem [in] Information on the solar system ephemeris
+ * \param detector [in] Information on the detector position on the Earth
+ * \param interptime [in] The time (in seconds) between explicit recalculations
+ * of the time delay
+ * 
+ * \return A vector of time delays in seconds
+ *
+ * \sa LALBarycenter
+ * \sa LALBarycenterEarth
+ */
 REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, 
                             LIGOTimeGPSVector *datatimes,
                             EphemerisData *ephem,
@@ -3224,7 +3263,23 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars,
 }
 
 
-/* function to get the binary system barycentring time delay */
+/** \brief Computes the delay between a pulsar in a binary system and the
+ * barycentre of the system
+ *
+ * This function uses \c XLALBinaryPulsarDeltaT to calculate the time delay
+ * between for a pulsar in a binary system between the time at the pulsar and
+ * the time at the barycentre of the system. This includes Roemer delays and
+ * relativistic delays. The orbit may be described by different models and can
+ * be purely Keplarian or include various relativistic corrections.
+ *
+ * \param pars [in] A set of pulsar parameters
+ * \param datatimes [in] A vector of GPS times
+ * \param dts [in] A vector of solar system barycentre time delays
+ * 
+ * \return A vector of time delays in seconds
+ * 
+ * \sa XLALBinaryPulsarDeltaT
+ */
 REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
                             LIGOTimeGPSVector *datatimes,
                             REAL8Vector *dts ){
@@ -3248,6 +3303,37 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
 }
 
 
+/** \brief The amplitude model of a complex heterodyned traxial neutron star
+ * 
+ * This function calculates the complex heterodyned time series model for a 
+ * triaxial neutron star (see Dupuis and Woan). It is defined as:
+ * \f{eqnarray*}{
+ * y(t) & = & \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
+ * (1+\cos^2\iota)\cos{\phi_0} + F_{\times}(t,\psi)\cos{\iota}\sin{\phi_0}
+ * \right) + \\
+ *  & & i\frac{h_0}{2}\left( \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
+ * (1+\cos^2\iota)\sin{\phi_0} - F_{\times}(t,\psi)\cos{\iota}\cos{\phi_0}
+ * \right),
+ * \f}
+ * where \f$F_+\f$ and \f$F_{\times}\f$ are the antenna response functions for
+ * the plus and cross polarisations.
+ * 
+ * The antenna pattern functions are contained in a 2D lookup table, so within
+ * this function the correct value for the given time and \f$\psi\f$ are
+ * interpolated from this lookup table using bilinear interpolation (e.g.):
+ * \f{eqnarray*}{
+ * F_+(\psi, t) = F_+(\psi_i, t_j)(1-\psi)(1-t) + F_+(\psi_{i+1}, t_j)\psi(1-t)
+ * + F_+(\psi_i, t_{j+1})(1-\psi)t + F_+(\psi_{i+1}, t_{j+1})\psi{}t,
+ * \f}
+ * where \f$\psi\f$ and \f$t\f$ have been scaled to be within a unit square,
+ * and \f$\psi_i\f$ and \f$t_j\f$ are the closest points within the lookup
+ * table to the required values.
+ * 
+ * \param pars [in] A set of pulsar parameters
+ * \param data [in] The data parameters giving information on the data and
+ * detector
+ * 
+ */
 void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
     
   INT4 i = 0, length;
@@ -3457,9 +3543,20 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
 }
 
 
-/* calculate the likelihood for the data just being noise - we still have a
-students-t likelihood, so this basically involves taking that likelihood and
-setting the signal to zero */
+/** \brief Calculate the natural logarithm of the evidence that the data
+ * consists of only Gaussian noise
+ * 
+ * The function will calculate the natural logarithm of the evidence that the
+ * data (from one or more detectors) consists of stationary segments/chunks 
+ * describe by a Gaussian with zero mean and unknown variance.
+ * 
+ * The evidence is obtained from the joint likelihood given in \c
+ * pulsar_log_likelihood with the model term \f$y\f$ set to zero.
+ * 
+ * \param data [in] Structure containing detector data
+ * 
+ * \return The natural logarithm of the noise only evidence
+ */
 REAL8 noise_only_model( LALInferenceIFOData *data ){
   LALInferenceIFOData *datatemp = data;
   
