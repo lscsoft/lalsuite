@@ -256,7 +256,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	REAL8 *logLikelihoods=NULL;
 	UINT4 verbose=0;
         LALInferenceVariableItem *param_ptr;
-  	char *outVOTable=NULL;
         
 #ifdef HAVE_LIBLALXML
   	char *outVOTable=NULL;
