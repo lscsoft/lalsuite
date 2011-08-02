@@ -363,20 +363,35 @@ void initVariables(LALInferenceRunState *state)
 (--dt time)                     Width of time prior, centred around trigger (0.1s)\n\
 (--trigtime time)               Trigger time to use\n\
 (--mc mchirp)                   Trigger chirpmass to use\n\
+(--fixMc)                       Do not allow chirpmass to vary\n\
 (--eta eta)                     Trigger eta to use\n\
+(--fixEta)                      Do not allow mass ratio to vary\n\
 (--phi phase)                   Trigger phase to use\n\
+(--fixPhi)                      Do not allow phase to vary\n\
 (--iota inclination)            Trigger inclination to use\n\
+(--fixIota)                     Do not allow inclination to vary\n\
 (--dist dist)                   Trigger distance\n\
+(--fixDist)                     Do not allow distance to vary\n\
 (--ra ra)                       Trigger RA\n\
+(--fixRa)                       Do not allow RA to vary\n\
 (--dec dec)                     Trigger declination\n\
+(--fixDec)                      Do not allow declination to vary\n\
 (--psi psi)                     Trigger psi\n\
+(--fixPsi)                      Do not allow polarization to vary\n\
 (--a1 a1)                       Trigger a1\n\
+(--fixA1)                       Do not allow spin to vary\n\
 (--theta1 theta1)               Trigger theta1\n\
+(--fixTheta1)                   Do not allow spin 1 colatitude to vary\n\
 (--phi1 phi1)                   Trigger phi1\n\
+(--fixPhi1)                     Do not allow spin 1 longitude to vary\n\
 (--a2 a2)                       Trigger a2\n\
+(--fixA2)                       Do not allow spin 2 to vary\n\
 (--theta2 theta2)               Trigger theta2\n\
+(--fixTheta2)                   Do not allow spin 2 colatitude to vary\n\
 (--phi2 phi2)                   Trigger phi2\n\
+(--fixPhi2)                     Do not allow spin 2 longitude to vary\n\
 (--time time)                   Waveform time (overrides random about trigtime)\n\
+(--fixTime)                     Do not allow coalescence time to vary\n\
 (--Dmin dist)                   Minimum distance in Mpc (1)\n\
 (--Dmax dist)                   Maximum distance in Mpc (100)\n\
 (--approx ApproximantorderPN)   Specify a waveform to use, (default TaylorF2twoPN)\n\
