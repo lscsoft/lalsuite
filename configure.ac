@@ -6,15 +6,12 @@ AC_CONFIG_FILES([
   Makefile \
   gnuscripts/Makefile \
   doxygen/Makefile \
-  doxygen/doxy-html-config.cfg \
-  doxygen/doxy-pdf-config.cfg \
   doxygen/src/Makefile
 ])
 AM_INIT_AUTOMAKE([foreign])
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 
 # for building doxygen
-AC_SUBST([abs_lalsuite_srcdir],[`cd ${srcdir} && pwd`])
 AC_PROG_LN_S
 AC_CHECK_PROGS([GIT], [git], [])
 
