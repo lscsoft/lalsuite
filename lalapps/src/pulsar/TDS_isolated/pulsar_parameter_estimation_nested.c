@@ -291,7 +291,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   
   /* read in data */
   readPulsarData( &runState );
-
+  
   /* set algorithm to use Nested Sampling */
   runState.algorithm = &LALInferenceNestedSamplingAlgorithm;
   runState.evolve = &LALInferenceNestedSamplingOneStep;
@@ -307,7 +307,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
  
   /* Generate the lookup tables and read parameters from par file */
   setupFromParFile( &runState );
- 
+  
   /* add injections if requested */
   injectSignal( &runState );
   
@@ -958,7 +958,6 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     /* get i'th filename from the comma separated list */
     if ( !ppt2 ){ /* if using real data read in from the file */
       datafile = strsep(&filestr, ",");
-      fprintf(stderr,"data file: %s\n",datafile);
    
       /* open data file */
       if( (fp = fopen(datafile, "r")) == NULL ){
@@ -973,26 +972,20 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
 
       /* read in data */
       while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
-        /* check that size of data file is not to large */      
-        if( j == MAXLENGTH ){
-          fprintf(stderr, "Error... size of MAXLENGTH not large enough.\n");
-          exit(3);
-        }
+        /* dynamically allocate more memory */
+        ifodata->compTimeData =
+          XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, j+1 );
+
+        ifodata->compModelData = 
+          XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, j+1 );
+          
+        temptimes = XLALResizeREAL8Vector( temptimes, j+1 );
 
         temptimes->data[j] = times;
         ifodata->compTimeData->data->data[j].re = dataVals.re;
         ifodata->compTimeData->data->data[j].im = dataVals.im;
       
         j++;
-        
-        /* dynamically allocate more memory */
-        ifodata->compTimeData =
-          XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, j );
-
-        ifodata->compModelData = 
-          XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, j );
-          
-        temptimes = XLALResizeREAL8Vector( temptimes, j );
       }
     
       fclose(fp);
@@ -1083,7 +1076,6 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
   XLALFree( flengths );
   XLALFree( fstarts );
   XLALFree( fpsds );
-  XLALDestroyREAL8Vector( modelFreqFactors );
 }
 
 
@@ -1200,9 +1192,9 @@ void setupFromParFile( LALInferenceRunState *runState )
       LALInferenceAddVariable( data->dataParams, "bsb_delays", &bdts,
                               LALINFERENCE_REAL8Vector_t, 
                               LALINFERENCE_PARAM_FIXED );
-    
+
       phase_vector = get_phase_model( pulsar, data, freqFactors->data[j] );
-    
+      
       data->timeData = NULL;
       data->timeData = XLALCreateREAL8TimeSeries( "",
                                                   &data->dataTimes->data[0], 
@@ -1222,8 +1214,6 @@ void setupFromParFile( LALInferenceRunState *runState )
     
       data = data->next;
     }
-    
-    XLALDestroyREAL8Vector( freqFactors );
   }
                                      
   return;
@@ -1313,10 +1303,10 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     LALInferenceAddVariable( data->dataParams, "LU_Fcross", &LUfcross,
                              LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED );
 
-    LALInferenceAddVariable( data->dataParams, "chunkMin", &chunkMin, LALINFERENCE_INT4_t, 
-                             LALINFERENCE_PARAM_FIXED );
-    LALInferenceAddVariable( data->dataParams, "chunkMax", &chunkMax, LALINFERENCE_INT4_t, 
-                             LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( data->dataParams, "chunkMin", &chunkMin, 
+                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( data->dataParams, "chunkMax", &chunkMax, 
+                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
     
     /* get chunk lengths of data */
     /* chunkLength = get_chunk_lengths( data, chunkMax ); */
@@ -2829,7 +2819,6 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   
   tsv = LAL_DAYSID_SI / tsteps;
   
-  /*fprintf(stderr,"lambda: %f, theta: %f, h1: %f\n",pars.lambda, pars.theta, pars.h1);*/
   /* set model for 1f component */
   length = data->dataTimes->length;
   tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] ); /*time of first B_k*/

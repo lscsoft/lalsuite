@@ -151,6 +151,7 @@ LALInferenceVariables *priorArgs){
    return;
 }
 
+
 /** \brief Rotate initial phase if polarisation angle is cyclic around ranges
  * 
  * If the polarisation angle parameter \f$\psi\f$ is cyclic about its upper and
@@ -177,8 +178,8 @@ void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter){
         !strcmp(paraHead->name, "psi") ){
       /* if psi is outside the -pi/4 -> pi/4 boundary the set to rotate phi0
          by pi (psi will have been rescaled to be between 0 to 2pi as a 
-         circular parameter).*/
-      if (*(REAL8 *)paraHead->value > LAL_TWOPI || 
+        circular parameter).*/
+     if (*(REAL8 *)paraHead->value > LAL_TWOPI || 
         *(REAL8 *)paraHead->value < 0. ) rotphi0 = LAL_PI;
     
       idx1++;
@@ -195,7 +196,7 @@ void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter){
   }
 
   if( rotphi0 != 0. ) *(REAL8 *)paraPhi0->value += rotphi0;
-  
+ 
   return;
 }
 

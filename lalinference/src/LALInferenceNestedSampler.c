@@ -317,6 +317,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	}
 	/* Add the covariance matrix for proposal distribution */
 	LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
+        
 	LALInferenceAddVariable(runState->proposalArgs,"LiveCVM",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
         
         fprintf(stdout,"Starting nested sampling loop!\n");
@@ -343,7 +344,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		H=mean(Harray,Nruns);
 		logZ=logZnew;
 		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
-
+                
 		/* Write out old sample */
 		LALInferencePrintSample(fpout,runState->livePoints[minpos]);
 		fprintf(fpout,"%lf\n",logLikelihoods[minpos]);
@@ -355,7 +356,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
                         while((j=gsl_rng_uniform_int(runState->GSLrandom,Nlive))==minpos){};
 			LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
 			LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
-			runState->evolve(runState);
+                        runState->evolve(runState);
 			itercounter++;			
 		}while( runState->currentLikelihood<=logLmin ||  *(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
 
@@ -442,12 +443,12 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 	newParams=calloc(1,sizeof(LALInferenceVariables));
 
 	/* Evolve the sample until it is accepted */
-	logPriorOld=runState->prior(runState,runState->currentParams);
+        logPriorOld=runState->prior(runState,runState->currentParams);
  
 	do{
 		mcmc_iter++;
 		/* Make a copy of the parameters passed through currentParams */
-                LALInferenceCopyVariables(runState->currentParams,newParams);  
+                LALInferenceCopyVariables(runState->currentParams,newParams);
                 runState->proposal(runState,newParams);
 		logPriorNew=runState->prior(runState,newParams);
                
@@ -578,8 +579,6 @@ XLALMultiNormalDeviates(
 						RandomParams *randParam
 						)
 {/* </lalVerbatim> */
-	static LALStatus status;
-	
 	UINT4 i=0;
 	gsl_matrix *work=NULL;
 	gsl_vector *result = NULL;
@@ -601,7 +600,7 @@ XLALMultiNormalDeviates(
 	gsl_linalg_cholesky_decomp(work);
 	
 	/* retrieve the normal distributed random numbers (LAL procedure) */
-	LALNormalDeviates( &status, vector, randParam);
+	XLALNormalDeviates( vector, randParam );
 	
 	/* store this into a gsl vector */
 	result = gsl_vector_alloc ( (int)dim );
@@ -637,8 +636,6 @@ XLALMultiStudentDeviates(
 { /* </lalVerbatim> */
 	static const char *func = "LALMultiStudentDeviates";
 	
-	static LALStatus status;
-	
 	REAL4Vector *dummy=NULL;
 	REAL4 chi=0.0, factor;
 	UINT4 i;
@@ -655,15 +652,14 @@ XLALMultiStudentDeviates(
 	
 	
 	/* first draw from MVN */
-	XLALMultiNormalDeviates( vector, matrix, dim, randParam);
-	
-	
+        XLALMultiNormalDeviates( vector, matrix, dim, randParam);
+       
 	/* then draw from chi-square with n degrees of freedom;
      this is the sum d_i*d_i with d_i drawn from a normal 
      distribution. */
-	LALSCreateVector( &status, &dummy, n);
-	LALNormalDeviates( &status, dummy, randParam);
-	
+        dummy = XLALCreateREAL4Vector( n );
+        XLALNormalDeviates( dummy, randParam );
+
 	/* calculate the chisquare distributed value */
 	for (i=0; i<n; i++) 
 	{
@@ -671,7 +667,7 @@ XLALMultiStudentDeviates(
 	}
 	
 	/* destroy the helping vector */
-	LALSDestroyVector( &status, &dummy );
+        XLALDestroyREAL4Vector( dummy );
 	
 	/* now, finally, calculate the distribution value */
 	factor=sqrt(n/chi);
@@ -695,7 +691,6 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALInfere
 	RandomParams *randParam;
 	UINT4 randomseed = gsl_rng_get(runState->GSLrandom);
 	
-
 	REAL8 proposal_scale=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,"proposal_scale");
 	randParam=XLALCreateRandomParams(randomseed);
 	
@@ -707,10 +702,10 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALInfere
 	
 	/* copy matrix into workspace and scale it appriopriately */
 	work =  gsl_matrix_alloc(dim,dim); 
-	
+
 	gsl_matrix_memcpy( work, covMat );
 	gsl_matrix_scale( work, proposal_scale);
-	
+
 	/* check if the matrix if positive definite */
 	while ( !LALInferenceCheckPositiveDefinite( work, dim) ) {
 		printf("WARNING: Matrix not positive definite!\n");
@@ -735,10 +730,10 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALInfere
 		}
 		exit(0);
 	}
-    
+
 	/* draw multivariate student distribution with n=2 */
 	XLALMultiStudentDeviates( step, work, dim, 2, randParam);
-               
+
         /* loop over all parameters */
 	for (paraHead=parameter->head,i=0; paraHead; paraHead=paraHead->next)
 	{ 
@@ -751,6 +746,7 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALInfere
 			i++;
 		}
 	}
+
 	LALInferenceRotateInitialPhase(parameter);
         LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
         
