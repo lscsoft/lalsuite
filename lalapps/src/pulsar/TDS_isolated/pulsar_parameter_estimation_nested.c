@@ -41,9 +41,9 @@ searched over, including frequency, sky position and binary system parameters,
 although the bandwidth of the data and search efficiency need to be taken into
 account.
 
-The 'Nested Sampling' algorithm used is that defined in
-LALinferenceNestedSampler (add ref to Veitch and Vecchio). It is essentially an
-efficient way to perform the integral
+The 'Nested Sampling' algorithm (developed by [\ref Skilling2006]) used is that
+defined in LALinferenceNestedSampler (see [\ref VeitchVecchio2010]). It is
+essentially an efficient way to perform the integral
 \f[
 Z = \int^{\mathbf{\theta}} p(d|\mathbf{\theta}) p(\mathbf{\theta}) {\rm
 d}\mathbf{\theta},
@@ -76,7 +76,7 @@ is created). The probability of using either method is currently set at 80\%
 and 20\% respectively. The procedure is continued until a stopping criterion is
 reached, which in this case is that the remaining prior volume is less than the
 \c tolerance value set (see below). The implementation of this can be seen in
-Veitch and Vecchio.
+[\ref VeitchVecchio2010].
 
 \heading{Usage}
 The usage format is given below and can also be found by running the code with
@@ -271,10 +271,9 @@ UINT4 varybinary = 0;
 
 
 INT4 main( INT4 argc, CHAR *argv[] ){
-  ProcessParamsTable *param_table, *ppt;
+  ProcessParamsTable *param_table;
   LALInferenceRunState runState;
   REAL8 logZnoise = 0.;
-  CHAR *modeltype = NULL;
   
   REAL8Vector *logLikelihoods = NULL;
   
@@ -290,41 +289,15 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Include setting up random number generator etc */
   initialiseAlgorithm( &runState );
   
-  /* set the pulsar model type */
-  setSignalModelType( &runState );
-  
-  modeltype = XLALStringDuplicate( *(CHAR**)LALInferenceGetVariable
-      (runState.data->dataParams, "modeltype")
-  
-  /*read in data, 2 datastreams if pinsf, one if triaxial*/
-  if ( !strcmp( modeltype, "triaxial" ) ){
-    fprintf(stderr,"Model type set as triaxial\n");
-    readPulsarData( &runState );
-  }
-  else if ( !strcmp( modeltype, "pinsf" ) ){
-    fprintf(stderr,"Model type set as pinsf\n");
-    readDoublePulsarData( &runState );
-  }
-  else{
-    fprintf(stderr, "Error... model '%s' is not defined!\n", modeltype);
-    exit(0);
-  }
-  
+  /* read in data */
+  readPulsarData( &runState );
+
   /* set algorithm to use Nested Sampling */
   runState.algorithm = &LALInferenceNestedSamplingAlgorithm;
   runState.evolve = &LALInferenceNestedSamplingOneStep;
   
   /* set likelihood function */
-  if ( !strcmp( modeltype, "triaxial" ) ){
-    runState.likelihood = &pulsar_log_likelihood;
-  }
-  else if ( !strcmp( modeltype, "pinsf" ) ){
-    runState.likelihood = &pulsar_double_log_likelihood;
-  }
-  else{
-    fprintf(stderr, "Error... model '%s' is not defined!\n", modeltype);
-    exit(0);
-  }
+  runState.likelihood = &pulsar_log_likelihood;
   
   /* set prior function */
   runState.prior = &priorFunction;
@@ -507,6 +480,33 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
  * (1/60 Hz sample rate) respectively. The fake data is drawn from a normal
  * distribution using \c XLALNormalDeviates and scaled with the appropriate PSD.
  * 
+ * The number of data files required to be read in, or number of fake data sets
+ * generated depends on the pulsar model type, specified by the \c model-type 
+ * command line argument. At the moment two models are available (although this
+ * can be expanded):
+ * <ol>
+ * <li>the triaxial model - this assumes that for each specified detector there
+ * is <b>one</b> input file containing data heterodyned at twice the rotation
+ * frequency of the pulsar (see e.g. that defined in [\ref DupiusWoan2005].</li>
+ * <li>the pinned superfluid model - this assumes for each specified detector
+ * there are two input files containing data heterodyned and the rotation 
+ * frequency <i>and</i> twice the rotation frequency (see 
+ * [\ref Jones2010]).</li>
+ * </ol> 
+ * The default model, if none is specified, is the triaxial model.
+ * 
+ * If creating fake data for a specific model then the number of PSDs, start
+ * time, lengths and sample intervals specified must be equivalent to the number
+ * of input files that would have been required e.g. if using the pinned 
+ * superfluid model and requiring data for H1 and L1 then four fake PSDs would
+ * be required (the first pair at the pulsars rotation frequency and twice that
+ * in H1, and the seconds pair at the pulsars rotation frequency and twice that
+ * in L1). These most be specified in the same order as the detectors.
+ * 
+ * Any new models added can require and arbitrary number of inputs for a given
+ * detector, however the heterodyned frequencies of each input must be 
+ * hardcoded into the function.
+ * 
  * If using real data the files must be specified in the \c input-files command
  * line argument - these should be comma separated for mulitple files and be in
  * the same order at the associated detector from which they came given by the
@@ -539,9 +539,9 @@ void readPulsarData( LALInferenceRunState *runState ){
   CHAR *tempdets=NULL;
   CHAR *tempdet=NULL;
  
-  REAL8 fpsds[MAXDETS];
+  REAL8 *fpsds = NULL;
   CHAR *fakestarts = NULL, *fakelengths = NULL, *fakedt = NULL;
-  REAL8 fstarts[MAXDETS], flengths[MAXDETS], fdt[MAXDETS];
+  REAL8 *fstarts = NULL, *flengths = NULL, *fdt = NULL;
   
   CHAR dets[MAXDETS][256];
   INT4 numDets = 0, i = 0, numPsds = 0, numLengths = 0, numStarts = 0;
@@ -554,515 +554,50 @@ void readPulsarData( LALInferenceRunState *runState ){
   UINT4 seed = 0; /* seed for data generation */
   RandomParams *randomParams = NULL;
   
+  CHAR *modeltype = NULL;
+  REAL8Vector *modelFreqFactors = NULL;
+  INT4 ml = 1;
+  
   runState->data = NULL;
+  
+  /* check pulsar model required */
+  ppt = LALInferenceGetProcParamVal( commandLine, "--model-type" );
+  if ( ppt ){
+    modeltype = XLALStringDuplicate( ppt->value );
+  }
+  else{
+    /* default model type is triaxial */
+    modeltype = XLALStringDuplicate( "triaxial" );
+  }
+  
+  /* set parameters to read in data for different models - if adding a new
+     model different parameters may be required. Different models may use sets
+     of data at multiple frequencies. */
+  modelFreqFactors = XLALCreateREAL8Vector( ml );
+  if( !strcmp( modeltype, "triaxial" ) ){
+    /* this model requires 1 set of data for each detector at a frequency
+       of twice the pulsars rotation rate */
+    modelFreqFactors->data[0] = 2.;
+  }
+  else if( !strcmp( modeltype, "pinsf" ) ){
+    /* this model requires 2 sets of data for each detector at a frequency
+       of once and twice the pulsars rotation rate */
+    ml = 2;
+    modelFreqFactors = XLALResizeREAL8Vector( modelFreqFactors, ml );
+    modelFreqFactors->data[0] = 1.;
+    modelFreqFactors->data[1] = 2.;
+  }
+  /* ADD EXTRA MODELS HERE */
+  else{
+    fprintf(stderr, "Error... model type %s is unknown!\n", modeltype);
+    exit(0);
+  }
   
   /* get the detectors - must */
   ppt = LALInferenceGetProcParamVal( commandLine, "--detectors" );
   ppt2 = LALInferenceGetProcParamVal( commandLine, "--fake-data" );
   if( ppt && !ppt2 ){
-    detectors = XLALStringDuplicate( 
-      LALInferenceGetProcParamVal(commandLine,"--detectors")->value );
-      
-    /* count the number of detectors from command line argument of comma
-       separated vales and set their names */
-    tempdets = XLALStringDuplicate( detectors );
-    
-    if ( (numDets = count_csv( detectors )) > MAXDETS ){
-      fprintf(stderr, "Error... too many detectors specified. Increase MAXDETS\
- to be greater than %d if necessary.\n", MAXDETS);
-      exit(0);
-    }
-    
-    for( i = 0; i < numDets; i++ ){
-      tempdet = strsep( &tempdets, "," );
-      XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
-    }
-  }
-  else if( ppt2 && !ppt ){
-    detectors = XLALStringDuplicate( 
-      LALInferenceGetProcParamVal(commandLine,"--fake-data")->value );
-   
-    if ( (numDets = count_csv( detectors )) > MAXDETS ){
-      fprintf(stderr, "Error... too many detectors specified. Increase MAXDETS\
- to be greater than %d if necessary.\n", MAXDETS);
-      exit(0);
-    }
-      
-    /* get noise psds if specified */
-    ppt = LALInferenceGetProcParamVal(commandLine,"--fake-psd");
-    if( ppt ){
-      CHAR *psds = NULL, *tmppsds = NULL, *tmppsd = NULL, psdval[256];
-      
-      psds = XLALStringDuplicate(
-        LALInferenceGetProcParamVal(commandLine,"--fake-psd")->value );
-      
-      tmppsds = XLALStringDuplicate( psds );
-      tempdets = XLALStringDuplicate( detectors );
-      
-      /* count the number of PSDs (comma seperated values) to compare to number
-         of detectors */
-      if( (numPsds = count_csv( psds )) != numDets ){
-        fprintf(stderr, "Error... number of PSDs for fake data must be equal to\
- the number of detectors specified = %d!\n", numDets);
-        exit(0);
-      }
-      
-      for( i = 0; i < numDets; i++ ){
-        CHAR *tmpstr = NULL;
-        
-        tmppsd = strsep( &tmppsds, "," );
-        XLALStringCopy( psdval, tmppsd, strlen(tmppsd)+1 );
-        fpsds[i] = atof(psdval);
-        
-        /* set detector */
-        tempdet = strsep( &tempdets, "," );
-        
-        if( (tmpstr = strstr(tempdet, "A")) != NULL ) /* have advanced */
-          XLALStringCopy( dets[i], tmpstr+1, strlen(tmpstr)+1 );
-        else
-          XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
-      }
-    }
-    else{ /* get PSDs from model functions and set detectors */
-      CHAR *parFile = NULL;
-      BinaryPulsarParams pulsar;
-      REAL8 pfreq = 0.;
-      
-      ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
-      if( ppt == NULL ) { 
-        fprintf(stderr,"Must specify --par-file!\n"); exit(1);
-      }
-      parFile = ppt->value;
-        
-      /* get the pulsar parameters to give a value of f */
-      XLALReadTEMPOParFile( &pulsar, parFile );
-      
-      /* putting in pulsar frequency at 2*f here - this will need to be
-         check when making the code more flexible for new models */
-      pfreq = 2.0 * pulsar.f0;
-      
-      tempdets = XLALStringDuplicate( detectors );
-      
-      for( i = 0; i < numDets; i++ ){
-        LALStatus status;
-        
-        CHAR *tmpstr = NULL;
-        REAL8 psdvalf = 0.;
-        
-        numPsds++;
-       
-        tempdet = strsep( &tempdets, "," );
-        
-        if( (tmpstr = strstr(tempdet, "A")) != NULL ){ /* have Advanced */
-          XLALStringCopy( dets[i], tmpstr+1, strlen(tmpstr)+1 );
-          
-          if( !strcmp(dets[i], "H1") || !strcmp(dets[i], "L1") ||  
-              !strcmp(dets[i], "H2") ){ /* ALIGO */
-            LALAdvLIGOPsd( &status, &psdvalf, pfreq );
-            psdvalf *= 1.e-49; /* scale factor in LALAdvLIGOPsd.c */
-          }
-          else if( !strcmp(dets[i], "V1") ){ /* AVirgo */
-            LALEGOPsd( &status, &psdvalf, pfreq ); 
-          }
-          else{
-            fprintf(stderr, "Error... trying to use Advanced detector that is\
- not available!\n");
-            exit(0);
-          }
-        }
-        else{ /* initial detector */
-          XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
-          
-          if( !strcmp(dets[i], "H1") || !strcmp(dets[i], "L1") ||  
-              !strcmp(dets[i], "H2") ){ /* Initial LIGO */
-            psdvalf = XLALLIGOIPsd( pfreq );
-          
-            /* divide H2 psd by 2 */
-            if( !strcmp(dets[i], "H2") ) psdvalf /= 2.; 
-          }
-          else if( !strcmp(dets[i], "V1") ){ /* Initial Virgo */
-            LALVIRGOPsd( &status, &psdvalf, pfreq ); 
-          }
-          else if( !strcmp(dets[i], "G1") ){ /* GEO 600 */
-            LALGEOPsd( &status, &psdvalf, pfreq );
-            psdvalf *= 1.e-46; /* scale factor in LALGEOPsd.c */
-          }
-          else if( !strcmp(dets[i], "T1") ){ /* TAMA300 */
-            LALTAMAPsd( &status, &psdvalf, pfreq );
-            psdvalf *= 75. * 1.e-46; /* scale factor in LALTAMAPsd.c */
-          }
-          else{
-            fprintf(stderr, "Error... trying to use detector that is\
- not available!\n");
-            exit(0);
-          }
-        }
-        
-        fpsds[i] = psdvalf;
-      }
-    }
-    
-    ppt = LALInferenceGetProcParamVal(commandLine,"--fake-starts");
-    if( ppt ){
-      CHAR *tmpstarts = NULL, *tmpstart = NULL, startval[256];
-      
-      fakestarts = XLALStringDuplicate( 
-        LALInferenceGetProcParamVal(commandLine,"--fake-starts")->value );
-      
-      if( (numStarts = count_csv( fakestarts )) != numDets ){
-        fprintf(stderr, "Error... number of start times for fake data must be\
- equal to the number of detectors specified = %d!\n", numDets);
-        exit(0);
-      }
-      
-      tmpstarts = XLALStringDuplicate( fakestarts );
-      
-      for( i = 0; i < numDets; i++ ){
-        tmpstart = strsep( &tmpstarts, "," );
-        XLALStringCopy( startval, tmpstart, strlen(tmpstart)+1 );
-        fstarts[i] = atof(startval);
-      }
-    }
-    else /* set default GPS 900000000 - 13th July 2008 at 15:59:46 */
-      for(i = 0; i < numDets; i++) fstarts[i] = 900000000.;
-      
-    ppt = LALInferenceGetProcParamVal(commandLine,"--fake-lengths");
-    if( ppt ){
-      CHAR *tmplengths = NULL, *tmplength = NULL, lengthval[256];
-      
-      fakelengths = XLALStringDuplicate( 
-        LALInferenceGetProcParamVal(commandLine,"--fake-lengths")->value );
-      
-      if( (numLengths = count_csv( fakelengths )) != numDets ){
-        fprintf(stderr, "Error... number of lengths for fake data must be\
- equal to the number of detectors specified = %d!\n", numDets);
-        exit(0);
-      }
-      
-      tmplengths = XLALStringDuplicate( fakelengths );
-      
-      for( i = 0; i < numDets; i++ ){
-        tmplength = strsep( &tmplengths, "," );
-        XLALStringCopy( lengthval, tmplength, strlen(tmplength)+1 );
-        flengths[i] = atof(lengthval);
-      }
-    }
-    else /* set default (86400 seconds or 1 day) */
-      for(i = 0; i < numDets; i++) flengths[i] = 86400.;
-      
-    ppt = LALInferenceGetProcParamVal(commandLine,"--fake-dt");
-    if( ppt ){
-      CHAR *tmpdts = NULL, *tmpdt = NULL, dtval[256];
-      
-      fakedt = XLALStringDuplicate( 
-        LALInferenceGetProcParamVal(commandLine,"--fake-dt")->value );
-      
-      if( (numDt = count_csv( fakedt )) != numDets ){
-        fprintf(stderr, "Error... number of sample rates for fake data must be\
- equal to the number of detectors specified = %d!\n", numDets);
-        exit(0);
-      }
-      
-      tmpdts = XLALStringDuplicate( fakedt );
-      
-      for( i = 0; i < numDets; i++ ){
-        tmpdt = strsep( &tmpdts, "," );
-        XLALStringCopy( dtval, tmpdt, strlen(tmpdt)+1 );
-        fdt[i] = atof(dtval);
-      }
-    }
-    else /* set default (60 seconds) */
-      for(i = 0; i < numDets; i++) fdt[i] = 60.;
-      
-  }
-  else{
-    fprintf(stderr, "Error... --detectors OR --fake-data needs to be set.\n");
-    fprintf(stderr, USAGE, commandLine->program);
-    exit(0);
-  }
-  
-  ppt = LALInferenceGetProcParamVal( commandLine,"--input-files" );
-  if( ppt ){
-    inputfile = 
-      XLALStringDuplicate(
-        LALInferenceGetProcParamVal(commandLine,"--input-files")->value );
-  }
-  
-  if ( inputfile == NULL && !ppt2 ){
-    fprintf(stderr, "Error... an input file or fake data needs to be set.\n");
-    fprintf(stderr, USAGE, commandLine->program);
-    exit(0);
-  }
-  
-  /* get the output directory */
-  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-  if( ppt ){
-    outfile = 
-      XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine, "--outfile" )->value );
-  }
-  else{
-    fprintf(stderr, "Error... --outfile needs to be set.\n");
-    fprintf(stderr, USAGE, commandLine->program);
-    exit(0);
-  }
-  
-  /* get ephemeris files */
-  ppt = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
-  if( ppt ){
-  efile = 
-    XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--ephem-earth")->value );
-  }
-  ppt = LALInferenceGetProcParamVal( commandLine, "--ephem-sun" );
-  if( ppt ){
-    sfile = 
-      XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--ephem-sun")->value );
-  }
-
-  /* check ephemeris files exist and if not output an error message */
-  if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
-    fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
-defined!\n");
-    exit(3);
-  }
-  
-  /* count the number of input files (by counting commas) and check it's equal
-     to the number of detectors */
-  if ( !ppt2 ){ /* if using real data */
-    count = count_csv( inputfile );
-    
-    if ( count != numDets ){
-      fprintf(stderr, "Error... Number of input files given is not equal to the\
- number of detectors given!\n");
-      exit(0);
-    }
-  }
-  
-  /* set random number generator in case when that fake data is used */
-  ppt = LALInferenceGetProcParamVal( commandLine, "--randomseed" );
-  if ( ppt != NULL ) seed = atoi( ppt->value );
-  else seed = 0; /* will be set from system clock */
-      
-  /* reset filestr if using real data (i.e. not fake) */
-  if ( !ppt2 )
-    filestr = XLALStringDuplicate( inputfile );
-  
-  /* read in data */
-  for( i = 0, prev=NULL ; i < numDets ; i++, prev=ifodata ){
-    CHAR *datafile = NULL;
-    REAL8 times = 0;
-    LIGOTimeGPS gpstime;
-    COMPLEX16 dataVals;
-    REAL8Vector *temptimes = NULL;
-    INT4 j = 0, k = 0;
-    
-    FILE *fp = NULL;
-    
-    count = 0;
-    
-    /* initialise random number generator */
-    /* Moved into det loop so same random seed can be used with */
-    /* Different detector combos and still get same noise realisation */
-    randomParams = XLALCreateRandomParams( seed +i );
-  
-    ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
-    ifodata->modelParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-    ifodata->modelDomain = LALINFERENCE_DOMAIN_TIME;
-    ifodata->next = NULL;
-    ifodata->dataParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-    
-    if( i == 0 ) runState->data = ifodata;
-    if( i > 0 ) prev->next = ifodata;
-
-    /* set detector */
-    ifodata->detector = XLALGetSiteInfo( dets[i] );
-    
-    /* set dummy initial time */
-    gpstime.gpsSeconds = 0;
-    gpstime.gpsNanoSeconds = 0;
-    
-    /* allocate time domain data */
-    ifodata->compTimeData = NULL;
-    ifodata->compTimeData = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0.,
-                                                            1., &lalSecondUnit,
-                                                            MAXLENGTH );
-    
-    /* allocate data time stamps */
-    ifodata->dataTimes = NULL;
-    ifodata->dataTimes = XLALCreateTimestampVector( MAXLENGTH );
-    
-    /* allocate time domain model */
-    ifodata->compModelData = NULL;
-    ifodata->compModelData = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0.,
-                                                            1., &lalSecondUnit,
-                                                            MAXLENGTH );
-    
-    /*============================ GET DATA ==================================*/
-    /* get i'th filename from the comma separated list */
-    if ( !ppt2 ){ /* if using real data read in from the file */
-      while ( count <= i ){
-        datafile = strsep(&filestr, ",");
-      
-        count++;
-      }
-   
-      /* open data file */
-      if( (fp = fopen(datafile, "r")) == NULL ){
-        fprintf(stderr, "Error... can't open data file %s!\n", datafile);
-        exit(0);
-      }
-
-      j=0;
-
-      /* read in data */
-      temptimes = XLALCreateREAL8Vector( MAXLENGTH );
-
-      /* read in data */
-      while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
-        /* check that size of data file is not to large */      
-        if( j == MAXLENGTH ){
-          fprintf(stderr, "Error... size of MAXLENGTH not large enough.\n");
-          exit(3);
-        }
-
-        temptimes->data[j] = times;
-        ifodata->compTimeData->data->data[j].re = dataVals.re;
-        ifodata->compTimeData->data->data[j].im = dataVals.im;
-      
-        j++;
-      }
-    
-      fclose(fp);
-    
-      /* resize the data */
-      ifodata->compTimeData =
-        XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, j );
-
-      ifodata->compModelData = 
-        XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, j );
-    
-      /* fill in time stamps as LIGO Time GPS Vector */
-      for ( k = 0; k<j; k++ )
-        XLALGPSSetREAL8( &ifodata->dataTimes->data[k], temptimes->data[k] );
-      
-      ifodata->dataTimes->data = XLALRealloc( ifodata->dataTimes->data, 
-                                              j * sizeof(LIGOTimeGPS) );
-      ifodata->dataTimes->length = (UINT4)j;
-      
-      ifodata->compTimeData->epoch = ifodata->dataTimes->data[0];
-      ifodata->compModelData->epoch = ifodata->dataTimes->data[0];
-      
-      XLALDestroyREAL8Vector( temptimes );
-    }
-    else{ /* set up fake data */
-      INT4 datalength = flengths[i] / fdt[i];
-      
-      /* temporary real and imaginary data vectors */
-      REAL4Vector *realdata = NULL;
-      REAL4Vector *imagdata = NULL;
-      
-      REAL8 psdscale = 0.;
-      
-      /* resize data time stamps */
-      ifodata->dataTimes->data = XLALRealloc( ifodata->dataTimes->data, 
-                                              datalength*sizeof(LIGOTimeGPS) );
-      ifodata->dataTimes->length = (UINT4)datalength;
-      
-      /* resize the data and model times series */
-      ifodata->compTimeData =
-        XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, datalength );
-        
-      ifodata->compModelData = 
-        XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, datalength );
-        
-      /* create data drawn from normal distribution with zero mean and unit
-         variance */
-      realdata = XLALCreateREAL4Vector( datalength );
-      imagdata = XLALCreateREAL4Vector( datalength );
-      
-      XLALNormalDeviates( realdata, randomParams );
-      XLALNormalDeviates( imagdata, randomParams );
-      
-      /* converts single sided psd into double sided psd, and then into a time
-         domain noise standard deviation */
-      psdscale = sqrt( ( fpsds[i] / 2.) / ( 2. * fdt[i] ) );
-      
-      /* create time stamps and scale data with the PSD */
-      for( k = 0; k < datalength; k++ ){
-        /* set time stamp */
-        XLALGPSSetREAL8( &ifodata->dataTimes->data[k], 
-                         fstarts[i] + fdt[i] * (REAL8)k );
-        
-        ifodata->compTimeData->data->data[k].re = (REAL8)realdata->data[k] *
-          psdscale;
-        ifodata->compTimeData->data->data[k].im = (REAL8)imagdata->data[k] *
-          psdscale;
-      }
-      
-      ifodata->compTimeData->epoch = ifodata->dataTimes->data[0];
-      ifodata->compModelData->epoch = ifodata->dataTimes->data[0];
-      
-      XLALDestroyREAL4Vector( realdata );
-      XLALDestroyREAL4Vector( imagdata );
-    }
-      
-    /* set ephemeris data */
-    ifodata->ephem = XLALMalloc( sizeof(EphemerisData) );
-    
-    /* set up ephemeris information */
-    ifodata->ephem = XLALInitBarycenter( efile, sfile );
-    XLALDestroyRandomParams( randomParams );
-    
-    /* get maximum data length */
-    if ( ifodata->compTimeData->data->length > maxlen )
-      maxlen = ifodata->compTimeData->data->length;
-  }
-  
-  /* set global variable logfactorial */
-  logfactorial = XLALCalloc( maxlen+1, sizeof(REAL8) );
-  for ( i = 2; i < (INT4)(maxlen+1); i++ )
-    logfactorial[i] = logfactorial[i-1] + log((REAL8)i);
-}
-
-
-void readDoublePulsarData( LALInferenceRunState *runState ){
-  ProcessParamsTable *ppt = NULL, *ppt2 = NULL;
-  ProcessParamsTable *commandLine = runState->commandLine;
-  
-  CHAR *detectors = NULL;
-  CHAR *outfile = NULL;
-  CHAR *inputfile = NULL;
-  
-  CHAR *filestr = NULL;
-  
-  CHAR *efile = NULL;
-  CHAR *sfile = NULL;
-  
-  CHAR *tempdets=NULL;
-  CHAR *tempdet=NULL;
- 
-  REAL8 fpsds[MAXDETS];
-  CHAR *fakestarts = NULL, *fakelengths = NULL, *fakedt = NULL;
-  REAL8 fstarts[MAXDETS], flengths[MAXDETS], fdt[MAXDETS];
-  
-  CHAR dets[MAXDETS][256];
-  INT4 numDets = 0, i = 0, numPsds = 0, numLengths = 0, numStarts = 0, i2=0;
-  INT4 numDt = 0, count = 0;
-  UINT4 maxlen = 0;
-  
-  LALInferenceIFOData *ifodata = NULL;
-  LALInferenceIFOData *prev = NULL;
-  
-  UINT4 seed = 0; /* seed for data generation */
-  RandomParams *randomParams = NULL;
-  
-  runState->data = NULL;
-  
-  /* get the detectors - must */
-  ppt = LALInferenceGetProcParamVal( commandLine, "--detectors" );
-  ppt2 = LALInferenceGetProcParamVal( commandLine, "--fake-data" );
-  if( ppt && !ppt2 ){
-    detectors = XLALStringDuplicate( 
-      LALInferenceGetProcParamVal(commandLine,"--detectors")->value );
+    detectors = XLALStringDuplicate( ppt->value );
       
     /* count the number of detectors from command line argument of comma
        separated vales and set their names */
@@ -1083,9 +618,10 @@ void readDoublePulsarData( LALInferenceRunState *runState ){
   /*=========================================================================*/
   /*if using fake data and no detectors are specified*/
   else if( ppt2 && !ppt ){
-    detectors = XLALStringDuplicate( 
-      LALInferenceGetProcParamVal(commandLine,"--fake-data")->value );
+    detectors = XLALStringDuplicate( ppt2->value );
    
+    fpsds = XLALCalloc( MAXDETS * ml, sizeof(REAL8) );
+    
     if ( (numDets = count_csv( detectors )) > MAXDETS ){
       fprintf(stderr, "Error... too many detectors specified. Increase MAXDETS\
  to be greater than %d if necessary.\n", MAXDETS);
@@ -1096,41 +632,39 @@ void readDoublePulsarData( LALInferenceRunState *runState ){
     ppt = LALInferenceGetProcParamVal(commandLine,"--fake-psd");
     if( ppt ){
       CHAR *psds = NULL, *tmppsds = NULL, *tmppsd = NULL, psdval[256];
-      
-      psds = XLALStringDuplicate(
-        LALInferenceGetProcParamVal(commandLine,"--fake-psd")->value );
+  
+      psds = XLALStringDuplicate( ppt->value );
       
       tmppsds = XLALStringDuplicate( psds );
       tempdets = XLALStringDuplicate( detectors );
       
       /* count the number of PSDs (comma seperated values) to compare to number
          of detectors */
-      if( (numPsds = count_csv( psds )) != 2*numDets ){
-        fprintf(stderr, "Error... number of PSDs for fake data must be equal to\
- twice the number of detectors specified for model type pinsf = %d!\n", numDets);
+      if( (numPsds = count_csv( psds )) != ml*numDets ){
+        fprintf(stderr, "Error... for model type \"%s\" number of PSDs for fake\
+ data must be %d times the number of detectors specified (no. dets = %d)\n",
+                modeltype, ml, numDets);
         exit(0);
       }
       
-      for( i = 0; i < 2*numDets; i+=2 ){
+      for( i = 0; i < ml*numDets; i++ ){
         CHAR *tmpstr = NULL;
         
         tmppsd = strsep( &tmppsds, "," );
         XLALStringCopy( psdval, tmppsd, strlen(tmppsd)+1 );
         fpsds[i] = atof(psdval);
-	fprintf(stderr,"psdval1: %e,\t",fpsds[i]);
-	tmppsd = strsep( &tmppsds, "," );
-	XLALStringCopy( psdval, tmppsd, strlen(tmppsd)+1 );
-	fpsds[i+1] = atof(psdval);
-	fprintf(stderr,"psdval2: %e,\n",fpsds[i+1]);
-	
-        
+
         /* set detector */
-        tempdet = strsep( &tempdets, "," );
+        if ( i%ml == 0 ){
+          tempdet = strsep( &tempdets, "," );
         
-        if( (tmpstr = strstr(tempdet, "A")) != NULL ) /* have advanced */
-          XLALStringCopy( dets[i], tmpstr+1, strlen(tmpstr)+1 );
-        else
-          XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
+          if( (tmpstr = strstr(tempdet, "A")) != NULL ) /* have advanced */
+            XLALStringCopy( dets[FACTOR(i,ml)],
+              tmpstr+1, strlen(tmpstr)+1 );
+          else
+            XLALStringCopy( dets[FACTOR(i,ml)],
+              tempdet, strlen(tempdet)+1 );
+        }
       }
     }
     /*------------------------------------------------------------------------*/
@@ -1143,39 +677,39 @@ void readDoublePulsarData( LALInferenceRunState *runState ){
       if( ppt == NULL ) { 
         fprintf(stderr,"Must specify --par-file!\n"); exit(1);
       }
-      parFile = ppt->value;
+      parFile = XLALStringDuplicate( ppt->value );
         
       /* get the pulsar parameters to give a value of f */
       XLALReadTEMPOParFile( &pulsar, parFile );
       
-      /* putting in pulsar frequency at f here - need to multiply by two for 2f datatstream */
+      /* putting in pulsar frequency at f here */
       pfreq = pulsar.f0;
       
       tempdets = XLALStringDuplicate( detectors );
       
-      for( i = 0; i < 2*numDets; i+=2 ){
+      for( i = 0; i < ml*numDets; i++ ){
         LALStatus status;
 	
         CHAR *tmpstr = NULL;
-        REAL8 psdvalf = 0., psdval2f =0.;
+        REAL8 psdvalf = 0.;
         
         numPsds++;
        
-        tempdet = strsep( &tempdets, "," );
+        if( i%ml == 0 ) tempdet = strsep( &tempdets, "," );
         
         if( (tmpstr = strstr(tempdet, "A")) != NULL ){ /* have Advanced */
-          XLALStringCopy( dets[i2], tmpstr+1, strlen(tmpstr)+1 );
+          XLALStringCopy( dets[FACTOR(i,ml)], tmpstr+1, strlen(tmpstr)+1 );
           
-          if( !strcmp(dets[i2], "H1") || !strcmp(dets[i2], "L1") ||  
-              !strcmp(dets[i2], "H2") ){ /* ALIGO */
-            LALAdvLIGOPsd( &status, &psdvalf, pfreq );
-	    LALAdvLIGOPsd( &status, &psdval2f, 2*pfreq );
+          if( !strcmp(dets[FACTOR(i,ml)], "H1") || 
+              !strcmp(dets[FACTOR(i,ml)], "L1") ||  
+              !strcmp(dets[FACTOR(i,ml)], "H2") ){ /* ALIGO */
+            LALAdvLIGOPsd( &status, &psdvalf, 
+                           pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
             psdvalf *= 1.e-49; /* scale factor in LALAdvLIGOPsd.c */
-	    psdval2f *= 1.e-49; /* scale factor in LALAdvLIGOPsd.c */
           }
-          else if( !strcmp(dets[i2], "V1") ){ /* AVirgo */
-            LALEGOPsd( &status, &psdvalf, pfreq ); 
-	    LALEGOPsd( &status, &psdval2f, 2*pfreq ); 
+          else if( !strcmp(dets[FACTOR(i,ml)], "V1") ){ /* AVirgo */
+            LALEGOPsd( &status, &psdvalf,
+                       pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           }
           else{
             fprintf(stderr, "Error... trying to use Advanced detector that is\
@@ -1184,34 +718,32 @@ void readDoublePulsarData( LALInferenceRunState *runState ){
           }
         }
         else{ /* initial detector */
-          XLALStringCopy( dets[i2], tempdet, strlen(tempdet)+1 );
+          XLALStringCopy( dets[FACTOR(i,ml)], tempdet, strlen(tempdet)+1 );
           
-          if( !strcmp(dets[i2], "H1") || !strcmp(dets[i2], "L1") ||  
-              !strcmp(dets[i2], "H2") ){ /* Initial LIGO */
-            psdvalf = XLALLIGOIPsd( pfreq );
-	    psdval2f = XLALLIGOIPsd( 2*pfreq );
+          if( !strcmp(dets[FACTOR(i,ml)], "H1") || 
+              !strcmp(dets[FACTOR(i,ml)], "L1") ||  
+              !strcmp(dets[FACTOR(i,ml)], "H2") ){ /* Initial LIGO */
+            psdvalf = 
+              XLALLIGOIPsd( pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           
             /* divide H2 psds by 2 */
-            if( !strcmp(dets[i2], "H2") ){
-		psdvalf /= 2.; 
-		psdval2f /= 2.; 
-	    }
+            if( !strcmp(dets[FACTOR(i,ml)], "H2") ){
+              psdvalf /= 2.;
+            }
           }
-          else if( !strcmp(dets[i2], "V1") ){ /* Initial Virgo */
-            LALVIRGOPsd( &status, &psdvalf, pfreq ); 
-	    LALVIRGOPsd( &status, &psdval2f, 2*pfreq );
+          else if( !strcmp(dets[FACTOR(i,ml)], "V1") ){ /* Initial Virgo */
+            LALVIRGOPsd( &status, &psdvalf,
+                         pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           }
-          else if( !strcmp(dets[i2], "G1") ){ /* GEO 600 */
-            LALGEOPsd( &status, &psdvalf, pfreq );
-	    LALGEOPsd( &status, &psdval2f, 2*pfreq );
+          else if( !strcmp(dets[FACTOR(i,ml)], "G1") ){ /* GEO 600 */
+            LALGEOPsd( &status, &psdvalf,
+                       pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
             psdvalf *= 1.e-46; /* scale factor in LALGEOPsd.c */
-	    psdval2f *= 1.e-46; /* scale factor in LALGEOPsd.c */
           }
-          else if( !strcmp(dets[i2], "T1") ){ /* TAMA300 */
-            LALTAMAPsd( &status, &psdvalf, pfreq );
-	    LALTAMAPsd( &status, &psdval2f, 2*pfreq );
+          else if( !strcmp(dets[FACTOR(i,ml)], "T1") ){ /* TAMA300 */
+            LALTAMAPsd( &status, &psdvalf,
+                        pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
             psdvalf *= 75. * 1.e-46; /* scale factor in LALTAMAPsd.c */
-	    psdval2f *= 75. * 1.e-46; /* scale factor in LALTAMAPsd.c */
           }
           else{
             fprintf(stderr, "Error... trying to use detector that is\
@@ -1221,9 +753,6 @@ void readDoublePulsarData( LALInferenceRunState *runState ){
         }
         
         fpsds[i] = psdvalf;
-	fpsds[i+1] = psdval2f;
-	fprintf(stderr,"psds1: %e, psd2: %e\n",psdvalf, psdval2f);
-	i2++;
       }
     }
     /*generate the fake data timestamps.*/
@@ -1233,86 +762,80 @@ void readDoublePulsarData( LALInferenceRunState *runState ){
     if( ppt ){
       CHAR *tmpstarts = NULL, *tmpstart = NULL, startval[256];
       
-      fakestarts = XLALStringDuplicate( 
-        LALInferenceGetProcParamVal(commandLine,"--fake-starts")->value );
+      fstarts = XLALCalloc( MAXDETS*ml, sizeof(REAL8) );
       
-      if( (numStarts = count_csv( fakestarts )) != numDets ){
-        fprintf(stderr, "Error... number of start times for fake data must be\
- equal to the number of detectors specified = %d!\n", numDets);
+      fakestarts = XLALStringDuplicate( ppt->value );
+      
+      if( (numStarts = count_csv( fakestarts )) != numDets*ml ){
+        fprintf(stderr, "Error... for model type \"%s\" number of start times\
+ for fake data must be %d times the number of detectors specified (no. dets =\
+ %d)\n", modeltype, ml, numDets);
         exit(0);
       }
       
       tmpstarts = XLALStringDuplicate( fakestarts );
-      for( i = 0; i < 2*numDets; i+=2 ){
-	tmpstart = strsep( &tmpstarts, "," );
-	XLALStringCopy( startval, tmpstart, strlen(tmpstart)+1 );
-	
+      for( i = 0; i < ml*numDets; i++ ){
+        tmpstart = strsep( &tmpstarts, "," );
+        XLALStringCopy( startval, tmpstart, strlen(tmpstart)+1 );
+
         fstarts[i] = atof(startval);
-	fstarts[i+1] = atof(startval);
       }
     }
     else{ /* set default GPS 900000000 - 13th July 2008 at 15:59:46 */
-      for(i = 0; i < 2*numDets; i+=2){
-	  fstarts[i] = 900000000.;
-	  fstarts[i+1] = 900000000.;
-      }
+      for(i = 0; i < ml*numDets; i++ ) fstarts[i] = 900000000.;
     }
       
     ppt = LALInferenceGetProcParamVal(commandLine,"--fake-lengths");
     if( ppt ){
       CHAR *tmplengths = NULL, *tmplength = NULL, lengthval[256];
       
-      fakelengths = XLALStringDuplicate( 
-        LALInferenceGetProcParamVal(commandLine,"--fake-lengths")->value );
+      flengths = XLALCalloc( MAXDETS*ml, sizeof(REAL8) );
       
-      if( (numLengths = count_csv( fakelengths )) != numDets ){
-        fprintf(stderr, "Error... number of lengths for fake data must be\
- equal to the number of detectors specified = %d!\n", numDets);
+      fakelengths = XLALStringDuplicate( ppt->value );
+      
+      if( (numLengths = count_csv( fakelengths )) != numDets*ml ){
+        fprintf(stderr, "Error... for model type \"%s\" number of data lengths\
+ for fake data must be %d times the number of detectors specified (no. dets =\
+ %d)\n", modeltype, ml, numDets);
         exit(0);
       }
       
       tmplengths = XLALStringDuplicate( fakelengths );
-      for( i = 0; i < 2*numDets; i+=2 ){
+      for( i = 0; i < ml*numDets; i++ ){
         tmplength = strsep( &tmplengths, "," );
         XLALStringCopy( lengthval, tmplength, strlen(tmplength)+1 );
         flengths[i] = atof(lengthval);
-	flengths[i+1] = atof(lengthval);
       }
     }
     else{ /* set default (86400 seconds or 1 day) */
-      for(i = 0; i < 2*numDets; i+=2){
-	  flengths[i] = 86400.;
-	  flengths[i+1] = 86400.;
-      }
+      for(i = 0; i < ml*numDets; i++ ) flengths[i] = 86400.;
     }
       
     ppt = LALInferenceGetProcParamVal(commandLine,"--fake-dt");
     if( ppt ){
       CHAR *tmpdts = NULL, *tmpdt = NULL, dtval[256];
       
-      fakedt = XLALStringDuplicate( 
-        LALInferenceGetProcParamVal(commandLine,"--fake-dt")->value );
+      fdt = XLALCalloc( MAXDETS*ml, sizeof(REAL8) );
+      
+      fakedt = XLALStringDuplicate( ppt->value );
       
       if( (numDt = count_csv( fakedt )) != numDets ){
-        fprintf(stderr, "Error... number of sample rates for fake data must be\
- equal to the number of detectors specified = %d!\n", numDets);
+        fprintf(stderr, "Error... for model type \"%s\" number of sample time\
+ steps for fake data must be %d times the number of detectors specified (no.\
+ dets =\%d)\n", modeltype, ml, numDets);
         exit(0);
       }
       
       tmpdts = XLALStringDuplicate( fakedt );
       
-      for( i = 0; i < 2*numDets; i+=2 ){
+      for( i = 0; i < ml*numDets; i++ ){
         tmpdt = strsep( &tmpdts, "," );
         XLALStringCopy( dtval, tmpdt, strlen(tmpdt)+1 );
         fdt[i] = atof(dtval);
-	fdt[i+1] = atof(dtval);
       }
     }
     else{ /* set default (60 sesonds) */
-      for(i = 0; i < 2*numDets; i+=2){
-	fdt[i] = 60.;
-	fdt[i+1] = 60.;
-      }
+      for(i = 0; i < ml*numDets; i++) fdt[i] = 60.;
     }
       
   }
@@ -1325,11 +848,7 @@ void readDoublePulsarData( LALInferenceRunState *runState ){
   }
   
   ppt = LALInferenceGetProcParamVal( commandLine,"--input-files" );
-  if( ppt ){
-    inputfile = 
-      XLALStringDuplicate(
-        LALInferenceGetProcParamVal(commandLine,"--input-files")->value );
-  }
+  if( ppt ) inputfile = XLALStringDuplicate( ppt->value );
   
   if ( inputfile == NULL && !ppt2 ){
     fprintf(stderr, "Error... an input file or fake data needs to be set.\n");
@@ -1339,10 +858,7 @@ void readDoublePulsarData( LALInferenceRunState *runState ){
   
   /* get the output directory */
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-  if( ppt ){
-    outfile = 
-      XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine, "--outfile" )->value );
-  }
+  if( ppt ) outfile = XLALStringDuplicate( ppt->value );
   else{
     fprintf(stderr, "Error... --outfile needs to be set.\n");
     fprintf(stderr, USAGE, commandLine->program);
@@ -1351,15 +867,10 @@ void readDoublePulsarData( LALInferenceRunState *runState ){
   
   /* get ephemeris files */
   ppt = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
-  if( ppt ){
-  efile = 
-    XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--ephem-earth")->value );
-  }
+  if( ppt ) efile = XLALStringDuplicate( ppt->value );
+  
   ppt = LALInferenceGetProcParamVal( commandLine, "--ephem-sun" );
-  if( ppt ){
-    sfile = 
-      XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--ephem-sun")->value );
-  }
+  if( ppt ) sfile = XLALStringDuplicate( ppt->value );
 
   /* check ephemeris files exist and if not output an error message */
   if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
@@ -1373,9 +884,10 @@ defined!\n");
   if ( !ppt2 ){ /* if using real data */
     count = count_csv( inputfile );
     
-    if ( count != 2*numDets ){
-      fprintf(stderr, "Error... Number of input files given is not equal to twice the\
- number of detectors given!\n");
+    if ( count != ml*numDets ){
+      fprintf(stderr, "Error... for model type \"%s\" number of input files\
+given must be %d times the number of detectors specified (no. dets =\%d)\n",
+              modeltype, ml, numDets);
       exit(0);
     }
   }
@@ -1386,12 +898,10 @@ defined!\n");
   else seed = 0; /* will be set from system clock */
       
   /* reset filestr if using real data (i.e. not fake) */
-  if ( !ppt2 )
-    filestr = XLALStringDuplicate( inputfile );
-  
-  i2=0;
+  if ( !ppt2 ) filestr = XLALStringDuplicate( inputfile );
+ 
   /* read in data, needs to read in two sets of data for each ifo! */
-  for( i = 0, prev=NULL ; i < 2*numDets ; i++, prev=ifodata ){
+  for( i = 0, prev=NULL ; i < ml*numDets ; i++, prev=ifodata ){
     CHAR *datafile = NULL;
     REAL8 times = 0;
     LIGOTimeGPS gpstime;
@@ -1402,12 +912,11 @@ defined!\n");
     FILE *fp = NULL;
     
     count = 0;
-    fprintf(stderr,"reading in data file\n");
     
     /* initialise random number generator */
     /* Moved into det loop so same random seed can be used with */
     /* Different detector combos and still get same noise realisation */
-    randomParams = XLALCreateRandomParams( seed +i );
+    randomParams = XLALCreateRandomParams( seed+i );
   
     ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
     ifodata->modelParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
@@ -1415,41 +924,39 @@ defined!\n");
     ifodata->next = NULL;
     ifodata->dataParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
     
+    /* add the pulsar model */
+    LALInferenceAddVariable( ifodata->dataParams, "modeltype", &modeltype,
+                             LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
+    
+    /* add frequency factors variable */
+    LALInferenceAddVariable( ifodata->dataParams, "freqfactors",
+      &modelFreqFactors, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+    
     if( i == 0 ) runState->data = ifodata;
     if( i > 0 ) prev->next = ifodata;
 
     /* set detector */
-    ifodata->detector = XLALGetSiteInfo( dets[i2] );
+    ifodata->detector = XLALGetSiteInfo( dets[FACTOR(i,ml)] );
     
     /* set dummy initial time */
     gpstime.gpsSeconds = 0;
     gpstime.gpsNanoSeconds = 0;
     
-    /* allocate time domain data */
+    /* allocate time domain data - will be dynamically allocated as data read*/
     ifodata->compTimeData = NULL;
     ifodata->compTimeData = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0.,
                                                             1., &lalSecondUnit,
-                                                            MAXLENGTH );
-    
-    /* allocate data time stamps */
-    ifodata->dataTimes = NULL;
-    ifodata->dataTimes = XLALCreateTimestampVector( MAXLENGTH );
+                                                            1 );
     
     /* allocate time domain model */
     ifodata->compModelData = NULL;
     ifodata->compModelData = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0.,
                                                             1., &lalSecondUnit,
-                                                            MAXLENGTH );
+                                                            1 );
     
     /*============================ GET DATA ==================================*/
     /* get i'th filename from the comma separated list */
     if ( !ppt2 ){ /* if using real data read in from the file */
-      /*while ( count <= i ){
-        datafile = strsep(&filestr, ",");
-        count++;
-	fprintf(stderr,"data file count: %d\n",count);
-	fprintf(stderr,"data file: %s\n",datafile);
-      }*/
       datafile = strsep(&filestr, ",");
       fprintf(stderr,"data file: %s\n",datafile);
    
@@ -1462,7 +969,7 @@ defined!\n");
       j=0;
 
       /* read in data */
-      temptimes = XLALCreateREAL8Vector( MAXLENGTH );
+      temptimes = XLALCreateREAL8Vector( 1 );
 
       /* read in data */
       while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
@@ -1477,24 +984,26 @@ defined!\n");
         ifodata->compTimeData->data->data[j].im = dataVals.im;
       
         j++;
+        
+        /* dynamically allocate more memory */
+        ifodata->compTimeData =
+          XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, j );
+
+        ifodata->compModelData = 
+          XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, j );
+          
+        temptimes = XLALResizeREAL8Vector( temptimes, j );
       }
     
       fclose(fp);
     
-      /* resize the data */
-      ifodata->compTimeData =
-        XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, j );
-
-      ifodata->compModelData = 
-        XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, j );
+      /* allocate data time stamps */
+      ifodata->dataTimes = NULL;
+      ifodata->dataTimes = XLALCreateTimestampVector( j );
     
       /* fill in time stamps as LIGO Time GPS Vector */
       for ( k = 0; k<j; k++ )
         XLALGPSSetREAL8( &ifodata->dataTimes->data[k], temptimes->data[k] );
-      
-      ifodata->dataTimes->data = XLALRealloc( ifodata->dataTimes->data, 
-                                              j * sizeof(LIGOTimeGPS) );
-      ifodata->dataTimes->length = (UINT4)j;
       
       ifodata->compTimeData->epoch = ifodata->dataTimes->data[0];
       ifodata->compModelData->epoch = ifodata->dataTimes->data[0];
@@ -1510,10 +1019,9 @@ defined!\n");
       
       REAL8 psdscale = 0.;
       
-      /* resize data time stamps */
-      ifodata->dataTimes->data = XLALRealloc( ifodata->dataTimes->data, 
-                                              datalength*sizeof(LIGOTimeGPS) );
-      ifodata->dataTimes->length = (UINT4)datalength;
+      /* allocate data time stamps */
+      ifodata->dataTimes = NULL;
+      ifodata->dataTimes = XLALCreateTimestampVector( (UINT4)datalength );
       
       /* resize the data and model times series */
       ifodata->compTimeData =
@@ -1563,52 +1071,19 @@ defined!\n");
     /* get maximum data length */
     if ( ifodata->compTimeData->data->length > maxlen )
       maxlen = ifodata->compTimeData->data->length;
-    
-    i2+=(i%2);/*adds only onto i2 when i is odd, so it does not increment when on same det but 2nd file*/
   }
   
   /* set global variable logfactorial */
   logfactorial = XLALCalloc( maxlen+1, sizeof(REAL8) );
   for ( i = 2; i < (INT4)(maxlen+1); i++ )
     logfactorial[i] = logfactorial[i-1] + log((REAL8)i);
-}
-
-
-/** \brief Set the model of the pulsar that is being used 
- *
- * Set the model of the pulsar signal that is being used via the \c model-type
- * command line argument.
- * 
- * The default model is \c triaxial which assumes a signal based on the
- * quadrupole emission from a rigidly rotating triaxial star that has been
- * heterodyned at twice the star's rotation frequency (see e.g. the model
- * defined in Dupius and Woan).
- *
- * \param runState [in] A pointer to the LALInferenceRunState
- */
-void setSignalModelType( LALInferenceRunState *runState ){
-  LALInferenceIFOData *data = runState->data;
   
-  ProcessParamsTable *ppt;
-  ProcessParamsTable *commandLine = runState->commandLine;
-  
-  CHAR *modeltype = NULL;
-  
-  ppt = LALInferenceGetProcParamVal( commandLine, "--model-type" );
-  if( ppt ){
-    modeltype  = XLALStringDuplicate( 
-      LALInferenceGetProcParamVal( commandLine, "--model-type" )->value );
-  }
-  else{ /* set default model to triaxial */
-    modeltype = XLALStringDuplicate( "triaxial" );
-    fprintf(stderr,"Signal model set to triaxial as default\n");
-  }
-  
-  while( data ){
-    LALInferenceAddVariable( data->dataParams, "modeltype", &modeltype,
-                             LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
-    data = data->next;
-  }
+  /* free memory */
+  XLALFree( fdt );
+  XLALFree( flengths );
+  XLALFree( fstarts );
+  XLALFree( fpsds );
+  XLALDestroyREAL8Vector( modelFreqFactors );
 }
 
 
@@ -1701,41 +1176,54 @@ void setupFromParFile( LALInferenceRunState *runState )
                                      
   /* Setup initial phase, and barycentring delays */
   while( data ){
-    UINT4 i = 0;
-    LALInferenceVariableItem *scaleitem = scaletemp->head;
-    REAL8Vector *dts = NULL, *bdts = NULL;
-
-    dts = get_ssb_delay( pulsar, data->dataTimes, data->ephem, data->detector,
-                         0. );
+    REAL8Vector *freqFactors = NULL;
+    UINT4 j = 0;
+    
+    freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, 
+                                                            "freqfactors" );
+    
+    for( j = 0; j < freqFactors->length; j++ ){
+      UINT4 i = 0;
+      LALInferenceVariableItem *scaleitem = scaletemp->head;
+      REAL8Vector *dts = NULL, *bdts = NULL;
+ 
+    
+      dts = get_ssb_delay( pulsar, data->dataTimes, data->ephem, data->detector,
+                           0. );
    
-    bdts = get_bsb_delay( pulsar, data->dataTimes, dts );
+      bdts = get_bsb_delay( pulsar, data->dataTimes, dts );
     
-    LALInferenceAddVariable( data->dataParams, "ssb_delays", &dts,
-                             LALINFERENCE_REAL8Vector_t, 
-                             LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( data->dataParams, "ssb_delays", &dts,
+                              LALINFERENCE_REAL8Vector_t, 
+                              LALINFERENCE_PARAM_FIXED );
     
-    LALInferenceAddVariable( data->dataParams, "bsb_delays", &bdts,
-                             LALINFERENCE_REAL8Vector_t, 
-                             LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( data->dataParams, "bsb_delays", &bdts,
+                              LALINFERENCE_REAL8Vector_t, 
+                              LALINFERENCE_PARAM_FIXED );
     
-    phase_vector = get_phase_model( pulsar, data );
+      phase_vector = get_phase_model( pulsar, data, freqFactors->data[j] );
     
-    data->timeData = NULL;
-    data->timeData = XLALCreateREAL8TimeSeries( "", &data->dataTimes->data[0], 
-                                                0., 1., &lalSecondUnit,
-                                                phase_vector->length );
-    for ( i=0; i<phase_vector->length; i++ )
-      data->timeData->data->data[i] = phase_vector->data[i];
+      data->timeData = NULL;
+      data->timeData = XLALCreateREAL8TimeSeries( "",
+                                                  &data->dataTimes->data[0], 
+                                                  0., 1., &lalSecondUnit,
+                                                  phase_vector->length );
       
-    /* add the scale factors from scaletemp into the data->dataParams
-       structure */
-    for( ; scaleitem; scaleitem = scaleitem->next ){
-      LALInferenceAddVariable( data->dataParams, scaleitem->name, 
-                               scaleitem->value, scaleitem->type,
-                               scaleitem->vary );
+      for ( i=0; i<phase_vector->length; i++ )
+        data->timeData->data->data[i] = phase_vector->data[i];
+      
+      /* add the scale factors from scaletemp into the data->dataParams
+         structure */
+      for( ; scaleitem; scaleitem = scaleitem->next ){
+        LALInferenceAddVariable( data->dataParams, scaleitem->name, 
+                                 scaleitem->value, scaleitem->type,
+                                 scaleitem->vary );
+      }
+    
+      data = data->next;
     }
     
-    data = data->next;
+    XLALDestroyREAL8Vector( freqFactors );
   }
                                      
   return;
@@ -2502,8 +1990,8 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
  * the calculation here the unnecessary proportionality factors are left out
  * (this would effect the actual value of the marginal likelihood/evidence, but
  * since we are only interested in evidence ratios/Bayes factors these
- * factors would cancel out anyway. See Dupuis and Woan for a more detailed
- * description.
+ * factors would cancel out anyway. See [\ref DupuisWoan2005] for a more
+ * detailed description.
  *
  * In this function data in chunks smaller than a certain minimum length 
  * \c chunkMin are ignored.
@@ -2519,6 +2007,20 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
                              LALInferenceTemplateFunction *get_model ){
   REAL8 loglike = 0.; /* the log likelihood */
   UINT4 i = 0;
+  
+  LALInferenceIFOData *datatemp1 = data, *datatemp2 = data;
+  
+  /* copy model parameters to data parameters */
+  while( datatemp1 ){
+    LALInferenceCopyVariables( vars, datatemp1->modelParams );
+    datatemp1 = datatemp1->next;
+  }
+  
+  /* get pulsar model */
+  while( datatemp2 ){
+    get_model( datatemp2 );
+    datatemp2 = datatemp2->next;
+  }
   
   while ( data ){
     UINT4 j = 0, count = 0, cl = 0;
@@ -2539,12 +2041,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
                                                              "chunkLength" );
     chunkMin = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMin" );
     chunkMax = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMax" );
-  
-    /* copy model parameters to data parameters */
-    LALInferenceCopyVariables( vars, data->modelParams );
-      
-    /* get pulsar model */
-    get_model( data );
   
     length = data->compTimeData->data->length;
   
@@ -2591,139 +2087,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     data = data->next;
   }
   
-  return loglike;
-}
-
-
-REAL8 pulsar_double_log_likelihood( LALInferenceVariables *vars, 
-                                    LALInferenceIFOData *data,
-                                    LALInferenceTemplateFunction *get_model ){
-  REAL8 loglike = 0.; /* the log likelihood */
-  UINT4 i = 0, counter=0;
-  
-  while ( data ){
-    counter++;
-    /*fprintf(stderr,"Log like calc counter: %d\n",counter);*/
-    UINT4 j = 0, count = 0, cl = 0;
-    UINT4 length = 0, chunkMin, chunkMax;
-    REAL8 chunkLength = 0.;
-    REAL8 logliketmp = 0.;
-
-    REAL8 sumModel = 0., sumDataModel = 0.;
-    REAL8 sumModel2 = 0., sumDataModel2 = 0.;
-    REAL8 sumdata=0., sumdata2=0.;
-    REAL8 chiSquare = 0., chiSquare2 = 0.;
-    REAL8 test;
-    COMPLEX16 B, M;
-
-    INT4 first = 0, through = 0;
-  
-    REAL8Vector *sumDat = NULL, *sumDat2 = NULL;
-    UINT4Vector *chunkLengths = NULL;
-
-    sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
-                                                       "sumData" );
-    sumDat2 = *(REAL8Vector **)LALInferenceGetVariable( data->next->dataParams,
-                                                        "sumData" );
-    
-    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams,
-                                                 "chunkLength" );
-    chunkMin = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMin" );
-    chunkMax = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMax" );
-  
-    /* copy model parameters to data parameters */
-    LALInferenceCopyVariables( vars, data->modelParams );
-  
-    /* get pulsar model */
-    get_model( data );
-  
-    length = data->compTimeData->data->length;
-  
-    for( i = 0 ; i < length ; i += chunkLength ){
-      chunkLength = (REAL8)chunkLengths->data[count];
-      /*fprintf(stderr,"chunkLength: %e\n", chunkLength);*/
-    
-      /* skip section of data if its length is less than the minimum allowed
-        chunk length */
-      if( chunkLength < chunkMin ){
-        count++;
-        if( through == 0 ) first = 0;
-	fprintf(stderr,"Chunk length less than allowed\n");
-        continue;
-      }
-      through = 1;
-
-      sumdata=0.;
-      sumdata=0.;
-      sumModel = 0.;
-      sumDataModel = 0.;
-      sumModel2 = 0.;
-      sumDataModel2 = 0.;
-
-      cl = i + (INT4)chunkLength;
-    
-      for( j = i ; j < cl ; j++ ){
-        B.re = data->compTimeData->data->data[j].re;
-        B.im = data->compTimeData->data->data[j].im;
-
-        M.re = data->compModelData->data->data[j].re;
-        M.im = data->compModelData->data->data[j].im;
-      
-        /* sum over the model */
-        sumModel += M.re*M.re + M.im*M.im;
-        /* sum over that data and model */
-        sumDataModel += B.re*M.re + B.im*M.im;
-	sumdata+= (B.re-M.re)*(B.re-M.re) + (B.im-M.im)*(B.im-M.im);
-	
-	B.re = data->next->compTimeData->data->data[j].re;
-        B.im = data->next->compTimeData->data->data[j].im;
-
-        M.re = data->next->compModelData->data->data[j].re;
-        M.im = data->next->compModelData->data->data[j].im;
-	
-	/* sum over the model */
-        sumModel2 += M.re*M.re + M.im*M.im;
-        /* sum over that data and model */
-        sumDataModel2 += B.re*M.re + B.im*M.im;
-	sumdata2+= (B.re-M.re)*(B.re-M.re) + (B.im-M.im)*(B.im-M.im);
-      }
- 
-      chiSquare = sumdata;
-      chiSquare -= 2.*sumDataModel;
-      chiSquare += sumModel;
-      chiSquare2 = sumdata2;
-      chiSquare2 -= 2.*sumDataModel2;
-      chiSquare2 += sumModel2;
-      
-      if( first == 0 ){
-        logliketmp = 0.;
-        first++;
-      }
-      /*fprintf(stderr,"logliketmp: %e, chunkLength: %e, chisquare: %e\n", logliketmp, chunkLength, chiSquare);*/
-      test=(chiSquare+chiSquare2);	
-      if(test<=0){
-	  /*fprintf(stderr,"NAN warning, sumData2: %e, sumData %e, sumModel2: %e, sumDataModel2: %e\n", sumData2->data[count],sumData->data[count], sumModel2, 2*sumDataModel2);*/
-	  /*fprintf(stderr,"B.re: %e, B.im: %e, M.re: %e, M.im: %e\n", B.re, B.im, M.re, M.im);*/
-	  /*fprintf(stderr,"----------------------------------------------------------------\n");*/
-      }
-      logliketmp -= chunkLength*log(chiSquare);
-      logliketmp -= chunkLength*log(chiSquare2);
-      if(isnan(logliketmp)){
-          /*fprintf(stderr,"nan....logliketmp: %e, chunkLength: %e, chisquare: %e, chisquare2: %e\n", logliketmp, chunkLength, chiSquare, chiSquare2);
-	  fprintf(stderr,"model: %e, model2: %e, data: %e, data2: %e\n", sumDataModel,
-	  sumDataModel2, sumModel, sumModel2);*/
-	  /*fprintf(stderr,"sumData: %e, check: %e\n",sumData->data[count], sumdata);
-	  fprintf(stderr,"----------------------------------\n");*/
-      }
-    
-      count++;
-    }
-  
-    loglike += logliketmp;
-  
-    data = data->next;
-    data = data->next;
-  }
   return loglike;
 }
 
@@ -2804,27 +2167,16 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
  * template to be used in the analysis. It also uses \c rescale_parameter to
  * scale any parameters back to there true values for use in the model and 
  * places them into a \c BinaryPulsarParams structure.
- *
- * The function requires that the pulsar model is set using the \c model-type
- * command line argument (this is set in \c main, and if not specified defaults
- * to a \c triaxial model). Currently the model can be \c triaxial for
- * quadrupole emission from a triaxial star at twice the rotation freqeuncy, or
- * \c pinsf for a two component emission model with emission at the rotation
- * frequency <i>and</i> twice the rotation frequency. Depending on the specified
- * model the function calls the appropriate model function.
  * 
  * Note: Any additional models should be added into this function.
  * 
  * \param data [in] The data structure hold data and current parameter info
  * 
  * \sa rescale_parameter
- * \sa get_triaxial_pulsar_model
- * \sa get_pinsf_pulsar_model
+ * \sa pulsar_model
  */
 void get_pulsar_model( LALInferenceIFOData *data ){
   BinaryPulsarParams pars;
-  
-  CHAR *modeltype = NULL;
   
   /* set model parameters (including rescaling) */
   pars.h0 = rescale_parameter( data, "h0" );
@@ -2853,6 +2205,7 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   pars.f4 = rescale_parameter( data, "f4" );
   pars.f5 = rescale_parameter( data, "f5" );
   
+  /* binary system model - NOT pulsar model */
   pars.model = *(CHAR**)LALInferenceGetVariable( data->modelParams, "model" );
 
   /* binary parameters */
@@ -2898,20 +2251,8 @@ void get_pulsar_model( LALInferenceIFOData *data ){
     pars.m2 = rescale_parameter( data, "m2" );
   }
 
-  modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
-
-  /* model specific for a triaxial pulsar emitting at twice the rotation
-     frequency - other models can be added later */
-  if ( !strcmp( modeltype, "triaxial" ) ){
-    get_triaxial_pulsar_model( pars, data );
-  }
-  else if ( !strcmp( modeltype, "pinsf" ) ){
-    get_pinsf_pulsar_model( pars, data );
-  }
-  else{
-    fprintf(stderr, "Error... model '%s' is not defined!\n", modeltype);
-    exit(0);
-  }
+  /* now get pulsar model */
+  pulsar_model( pars, data );
     
 }
 
@@ -2946,10 +2287,14 @@ REAL8 rescale_parameter( LALInferenceIFOData *data, const CHAR *parname ){
 
 
 /** \brief Generate a model of a triaxial neutron star
- * 
- * This function is a wrapper around other functions that will generate a time
- * domain model of a heterodyned signal from a triaxial neutron star (see Dupuis
- * and Woan). 
+ *
+ * The function requires that the pulsar model is set using the \c model-type
+ * command line argument (this is set in \c main, and if not specified defaults
+ * to a \c triaxial model). Currently the model can be \c triaxial for
+ * quadrupole emission from a triaxial star at twice the rotation freqeuncy, or
+ * \c pinsf for a two component emission model with emission at the rotation
+ * frequency <i>and</i> twice the rotation frequency. Depending on the specified
+ * model the function calls the appropriate model function.
  * 
  * Firstly the time varying amplitude of the signal will be calculated based on 
  * the antenna pattern and amplitude parameters. Then, if searching over phase 
@@ -2967,82 +2312,71 @@ REAL8 rescale_parameter( LALInferenceIFOData *data, const CHAR *parname ){
  * \param data [in] The data structure containing the detector data and
  * additional info
  * 
- * \sa get_amplitude_model
+ * \sa get_triaxial_amplitude_model
+ * \sa get_pinsf_amplitude_model
  * \sa get_phase_model
  */
-void get_triaxial_pulsar_model( BinaryPulsarParams params, 
-                                LALInferenceIFOData *data ){
-  REAL8Vector *dphi = NULL;
+void pulsar_model( BinaryPulsarParams params, 
+                   LALInferenceIFOData *data ){
   INT4 i = 0, length = 0;
+  UINT4 j = 0;
+  CHAR *modeltype = NULL;
   
-  get_amplitude_model( params, data );
-  length = data->compModelData->data->length;
+  /* check model type to get amplitude model */
+  modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
   
-  /* the timeData vector within the LALIFOData structure contains the
+  if ( !strcmp( modeltype, "triaxial" ) ){
+    get_triaxial_amplitude_model( params, data );
+  }
+  else if ( !strcmp( modeltype, "pinsf" ) ){
+    get_pinsf_amplitude_model( params, data );
+  }
+  /* ADD NEW MODELS HERE */
+  else{
+    fprintf(stderr, "Error... model '%s' is not defined!\n", modeltype);
+    exit(0);
+  }
+   
+  /* get difference in phase for f component and perform extra heterodyne */
+  REAL8Vector *freqFactors = NULL;
+  freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
+                                                          "freqfactors" );
+  
+  for( j = 0; j < freqFactors->length; j++ ){
+    REAL8Vector *dphi = NULL;
+    
+    length = data->compModelData->data->length;
+    /* the timeData vector within the LALIFOData structure contains the
      phase calculated using the initial (heterodyne) values of the phase
      parameters */
- 
-  /* get difference in phase and perform extra heterodyne with it */
-  if ( varyphase ){
-    if ( (dphi = get_phase_model( params, data )) != NULL ){
-      for( i=0; i<length; i++ ){
-        COMPLEX16 M;
-        REAL8 dphit;
-        REAL4 sp, cp;
+    if ( varyphase ){
+      if ( (dphi = get_phase_model( params, data, 
+        freqFactors->data[j] )) != NULL ){
+        for( i=0; i<length; i++ ){
+          COMPLEX16 M;
+          REAL8 dphit;
+          REAL4 sp, cp;
     
-        dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
+          dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
     
-        sin_cos_2PI_LUT( &sp, &cp, dphit );
+          sin_cos_2PI_LUT( &sp, &cp, dphit );
     
-        M.re = data->compModelData->data->data[i].re;
-        M.im = data->compModelData->data->data[i].im;
+          M.re = data->compModelData->data->data[i].re;
+          M.im = data->compModelData->data->data[i].im;
     
-        /* heterodyne */
-        data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
-        data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
+          /* heterodyne */
+          data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
+          data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
+        }
       }
     }
+    
+    XLALDestroyREAL8Vector( dphi );
+    
+    /* move data pointer along one as one iteration of the model is held over
+      j data structures */
+    if ( j > 0 ) data = data->next;
   }
-  
-  XLALDestroyREAL8Vector( dphi );
-}
-
-
-void get_pinsf_pulsar_model( BinaryPulsarParams params, 
-                             LALInferenceIFOData *data ){
-  REAL8Vector *dphi = NULL;
-  INT4 i = 0, length = 0;
-  
-  get_pinsf_amplitude_model( params, data );
-  length = data->compModelData->data->length;
-  
-  /* the timeData vector within the LALIFOData structure contains the
-     phase calculated using the initial (heterodyne) values of the phase
-     parameters */
-  
-  /* get difference in phase and perform extra heterodyne with it */ 
-  if ( varyphase ){
-    if ( (dphi = get_phase_model( params, data )) != NULL ){
-      for( i=0; i<length; i++ ){
-        COMPLEX16 M;
-        REAL8 dphit;
-        REAL4 sp, cp;
-    
-        dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
-    
-        sin_cos_2PI_LUT( &sp, &cp, dphit );
-    
-        M.re = data->compModelData->data->data[i].re;
-        M.im = data->compModelData->data->data[i].im;
-    
-        /* heterodyne */
-        data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
-        data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
-      }
-    }
-  }
-  
-  XLALDestroyREAL8Vector( dphi );
 }
 
 
@@ -3075,6 +2409,8 @@ void get_pinsf_pulsar_model( BinaryPulsarParams params,
  * \param params [in] A set of pulsar parameters
  * \param data [in] The data structure containing the detector data and
  * additional info
+ * \param freqFactor [in] the multiplicative factor on the pulsar frequency for
+ * a particular model
  * 
  * \return A vector of rotational phase values
  * 
@@ -3082,7 +2418,8 @@ void get_pinsf_pulsar_model( BinaryPulsarParams params,
  * \sa get_bsb_delay
  */
 REAL8Vector *get_phase_model( BinaryPulsarParams params, 
-                              LALInferenceIFOData *data ){
+                              LALInferenceIFOData *data,
+                              REAL8 freqFactor ){
   INT4 i = 0, length = 0;
 
   REAL8 T0 = 0., DT = 0., deltat = 0., deltat2 = 0.;
@@ -3127,7 +2464,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
     
     /* work out phase */
     deltat2 = deltat*deltat;
-    phis->data[i] = 2.*deltat*(params.f0 + 
+    phis->data[i] = freqFactor*deltat*(params.f0 + 
       inv_fact[2]*params.f1*deltat +
       inv_fact[3]*params.f2*deltat2 +
       inv_fact[4]*params.f3*deltat*deltat2 +
@@ -3306,7 +2643,7 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
 /** \brief The amplitude model of a complex heterodyned traxial neutron star
  * 
  * This function calculates the complex heterodyned time series model for a 
- * triaxial neutron star (see Dupuis and Woan). It is defined as:
+ * triaxial neutron star (see [\ref DupuisWoan2005]). It is defined as:
  * \f{eqnarray*}{
  * y(t) & = & \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
  * (1+\cos^2\iota)\cos{\phi_0} + F_{\times}(t,\psi)\cos{\iota}\sin{\phi_0}
@@ -3334,8 +2671,8 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
  * detector
  * 
  */
-void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
-    
+void get_triaxial_amplitude_model( BinaryPulsarParams pars, 
+                                   LALInferenceIFOData *data ){
   INT4 i = 0, length;
   
   REAL8 psteps, tsteps, psv, tsv;
@@ -3451,8 +2788,6 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   
   gsl_matrix *LU_Fplus, *LU_Fcross;
   
-  length = data->dataTimes->length;
-  
   /* set lookup table parameters */
   psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
   tsteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "timeSteps" );
@@ -3480,7 +2815,7 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
     + ( pars.h1*(sin(pars.theta)*sin(pars.theta)) );
   B2=sin(2*pars.lambda)*cos(pars.theta);
  
-  tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] ); /*time of first B_k*/
+  tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] );
   
   /* set the psi bin for the lookup table */
   psv = LAL_PI_2 / ( psteps - 1. );
@@ -3495,6 +2830,9 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   tsv = LAL_DAYSID_SI / tsteps;
   
   /*fprintf(stderr,"lambda: %f, theta: %f, h1: %f\n",pars.lambda, pars.theta, pars.h1);*/
+  /* set model for 1f component */
+  length = data->dataTimes->length;
+  tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] ); /*time of first B_k*/
   
   for( i=0; i<length; i++ ){
     /* set the time bin for the lookup table */
@@ -3532,12 +2870,55 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
     data->compModelData->data->data[i].re = plus*Xplusf*((A1*cosphi)-(A2*sinphi)) + ( cross*Xcrossf*((A2*cosphi)-(A1*sinphi)) );
     
     data->compModelData->data->data[i].im = plus*Xplusf*((A2*cosphi)+(A1*sinphi)) + ( cross*Xcrossf*((A2*sinphi)-(A1*cosphi)) );
+       
+    data->next->compModelData->data->data[i].im =
+      plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) -
+      cross*Xcross2f*((B1*cos2phi)-(B2*sin2phi));
+  }
+  
+  /* set model for 2f component */
+  length = data->next->dataTimes->length;
+  tstart = XLALGPSGetREAL8( &data->next->dataTimes->data[0] );
+  
+  for( i=0; i<length; i++ ){
+    /* set the time bin for the lookup table */
+    /* sidereal day in secs*/    
+    T = fmod( XLALGPSGetREAL8(&data->next->dataTimes->data[i]) - tstart,
+              LAL_DAYSID_SI );
+    timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
+    timeMin = timebinMin*tsv;
+    timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
+    timeMax = timeMin + tsv;
     
-    /*at 2f*/
-    data->next->compModelData->data->data[i].re = plus*Xplus2f*((B1*cos2phi)-(B2*sin2phi)) + cross*Xcross2f*((B2*cos2phi)+(B1*sin2phi));
+    /* get values of matrix for bilinear interpolation */
+    plus00 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMin );
+    plus01 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMax );
+    plus10 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMin );
+    plus11 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMax );
     
-    data->next->compModelData->data->data[i].im = plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) - cross*Xcross2f*((B1*cos2phi)-(B2*sin2phi));
+    cross00 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMin );
+    cross01 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMax );
+    cross10 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMin );
+    cross11 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMax );
     
+    /* rescale time for bilinear interpolation on a unit square */
+    timeScaled = (T - timeMin)/(timeMax - timeMin);
+    
+    plus = plus00*(1. - psiScaled)*(1. - timeScaled) + 
+      plus10*psiScaled*(1. - timeScaled) + plus01*(1. - psiScaled)*timeScaled +
+      plus11*psiScaled*timeScaled;
+    cross = cross00*(1. - psiScaled)*(1. - timeScaled) + 
+      cross10*psiScaled*(1. - timeScaled) + cross01*(1. - psiScaled)*timeScaled
+      + cross11*psiScaled*timeScaled;
+    
+    /* create the complex signal amplitude model at 2f*/
+    data->next->compModelData->data->data[i].re =
+      plus*Xplus2f*((B1*cos2phi)-(B2*sin2phi)) +
+      cross*Xcross2f*((B2*cos2phi)+(B1*sin2phi));
+    
+    data->next->compModelData->data->data[i].im =
+      plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) -
+      cross*Xcross2f*((B1*cos2phi)-(B2*sin2phi));
   }
   
 }
@@ -3600,7 +2981,6 @@ void injectSignal( LALInferenceRunState *runState ){
   CHAR *injectfile = NULL, *snrfile = NULL;
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
-  CHAR *modeltype = NULL;
   
   BinaryPulsarParams injpars;
   
@@ -3611,8 +2991,7 @@ void injectSignal( LALInferenceRunState *runState ){
   ppt = LALInferenceGetProcParamVal( commandLine, "--inject-file" );
   if( ppt ){
 
-    injectfile = XLALStringDuplicate( 
-      LALInferenceGetProcParamVal( commandLine, "--inject-file" )->value );
+    injectfile = XLALStringDuplicate( ppt->value );
     
     /* check that the file exists */
     if ( access(injectfile, F_OK) != 0 ){
@@ -3630,8 +3009,7 @@ parameter file %s is wrong.\n", injectfile);
  
   ppt = LALInferenceGetProcParamVal( commandLine, "--scale-snr" );
   if ( ppt ){
-    snrscale = atof( LALInferenceGetProcParamVal( commandLine, 
-                                                  "--scale-snr" )->value );
+    snrscale = atof( ppt->value );
   }
  
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
@@ -3640,8 +3018,7 @@ parameter file %s is wrong.\n", injectfile);
     exit(0);
   }
   
-  snrfile = XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine,
-                                 "--outfile" )->value );
+  snrfile = XLALStringDuplicate( ppt->value );
   snrfile = XLALStringAppend( snrfile, "_SNR" );
   
   if( (fpsnr = fopen(snrfile, "w")) == NULL ){
@@ -3656,19 +3033,7 @@ parameter file %s is wrong.\n", injectfile);
     UINT4 varyphasetmp = varyphase;
     varyphase = 1;
     
-    modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
-    if ( !strcmp( modeltype, "triaxial" ) ){
-        fprintf(stderr,"injecting triaxial signal into data\n");
-      get_triaxial_pulsar_model( injpars, data );
-    }
-    else if ( !strcmp( modeltype, "pinsf" ) ){
-      fprintf(stderr,"injecting signal into data\n");
-      get_pinsf_pulsar_model( injpars, data );
-    }
-    else{
-        exit(0);
-        fprintf(stderr,"Model type incorrectly specified\n");
-    }
+    pulsar_model( injpars, data );
     
     /* reset varyphase to its original value */
     varyphase = varyphasetmp;
@@ -3730,8 +3095,7 @@ injected signal amplitude is zero!\n", snrscale);
       
       outfile = XLALStringDuplicate( data->detector->frDetector.prefix );
       
-      outfile = XLALStringAppend( outfile, LALInferenceGetProcParamVal(
-        commandLine, "--inject-output" )->value );
+      outfile = XLALStringAppend( outfile, ppt2->value );
       
       if ( (fp = fopen(outfile, "w")) == NULL ){
         fprintf(stderr, "Non-fatal error... unable to open file %s to output \
@@ -3775,9 +3139,7 @@ injection\n", signalonly);
                 data->compModelData->data->data[i].im );
       }
     }
-    
-    
-    
+
     if ( fp != NULL ) fclose( fp );
     if ( fpso != NULL ) fclose( fpso );
     
@@ -4576,8 +3938,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     exit(0);
   }
   
-  snrfile = XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine,
-                                 "--outfile" )->value );
+  snrfile = XLALStringDuplicate( ppt->value );
   snrfile = XLALStringAppend( snrfile, "_SNR" );
   
   /* append to previous injection SNR file if it exists */
@@ -4647,8 +4008,7 @@ void gridOutput( LALInferenceRunState *runState ){
     ppt2 = LALInferenceGetProcParamVal( commandLine, "--gridpar" );
     
     if( ppt2 ){
-      parname = XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine,
-        "--gridpar" )->value );
+      parname = XLALStringDuplicate( ppt2->value );
         
       if( !recognised_parameter( parname ) ){
         fprintf(stderr, "Error... parameter %s not recognised\n", parname );
@@ -4665,26 +4025,17 @@ void gridOutput( LALInferenceRunState *runState ){
     
     ppt2 = LALInferenceGetProcParamVal( commandLine, "--gridmin" );
     
-    if( ppt2 ){
-      h0min = atof( LALInferenceGetProcParamVal(commandLine, 
-                                                "--gridmin")->value );
-    }
+    if( ppt2 ) h0min = atof( ppt2->value );
     else h0min = 0.; /* default to zero */
     
     ppt2 = LALInferenceGetProcParamVal( commandLine, "--gridmax" );
     
-    if( ppt2 ){
-      h0max = atof( LALInferenceGetProcParamVal(commandLine, 
-                                                "--gridmax")->value );
-    }
+    if( ppt2 ) h0max = atof( ppt2->value );  
     else h0max = 1.; /* default to 1 */
     
     ppt2 = LALInferenceGetProcParamVal( commandLine, "--gridsteps" );
     
-    if( ppt2 ){
-      h0steps = atoi( LALInferenceGetProcParamVal(commandLine, 
-                                                "--gridsteps")->value );
-    }
+    if( ppt2 ) h0steps = atoi( ppt2->value );
     else h0steps = 100; /* default to 100 steps */
   }
   else{

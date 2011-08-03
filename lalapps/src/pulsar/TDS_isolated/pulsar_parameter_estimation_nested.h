@@ -75,6 +75,9 @@ extern "C" {
 + e^y)}\f$. */
 #define LOGPLUS(x,y) ( x>y ? x+log(1.+exp(y-x)) : y+log(1.+exp(x-y)) )
 
+/** Macro that gives the integer number of times that \c x goes in to \c y. */
+#define FACTOR(x,y) ((INT4)floor(x/y))
+
 /** Macro to square a value. */
 #define SQUARE(x) ( (x) * (x) );
 
@@ -144,10 +147,6 @@ void initialiseAlgorithm( LALInferenceRunState *runState );
 
 void readPulsarData( LALInferenceRunState *runState );
 
-void readDoublePulsarData( LALInferenceRunState *runState );
-
-void setSignalModelType( LALInferenceRunState *runState );
-
 void setupFromParFile( LALInferenceRunState *runState );
 
 void setupLookupTables(LALInferenceRunState *runState, LALSource *source);
@@ -170,10 +169,6 @@ void setupLivePointsArray( LALInferenceRunState *runState );
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, 
                              LALInferenceIFOData *data,
                              LALInferenceTemplateFunction *get_pulsar_model );
-
-REAL8 pulsar_double_log_likelihood( LALInferenceVariables *vars, 
-                             LALInferenceIFOData *data,
-                             LALInferenceTemplateFunction *get_pulsar_model );
                              
 REAL8 priorFunction( LALInferenceRunState *runState, 
                      LALInferenceVariables *params );
@@ -183,14 +178,12 @@ void get_pulsar_model( LALInferenceIFOData *data );
 
 REAL8 rescale_parameter( LALInferenceIFOData *data, const CHAR *parname );
 
-void get_triaxial_pulsar_model( BinaryPulsarParams params, 
-                                LALInferenceIFOData *data );
-
-void get_pinsf_pulsar_model( BinaryPulsarParams params, 
+void pulsar_model( BinaryPulsarParams params, 
                                 LALInferenceIFOData *data );
 
 REAL8Vector *get_phase_model( BinaryPulsarParams params, 
-                              LALInferenceIFOData *data );
+                              LALInferenceIFOData *data,
+                              REAL8 freqFactor );
 
 REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, 
                             LIGOTimeGPSVector *datatimes,
@@ -202,7 +195,8 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
                             LIGOTimeGPSVector *datatimes,
                             REAL8Vector *dts );                
                               
-void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
+void get_triaxial_amplitude_model( BinaryPulsarParams pars, 
+                                   LALInferenceIFOData *data );
 
 void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
   
