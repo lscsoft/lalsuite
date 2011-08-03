@@ -135,17 +135,18 @@ LALInferenceVariables *priorArgs){
        while ( *(REAL8 *)paraHead->value < min) 
          *(REAL8 *)paraHead->value += delta;
      }
-     else if(paraHead->vary==LALINFERENCE_PARAM_LINEAR) /* Use reflective boundaries */
+     /* Disable reflective boundary which violates detailled balance */
+/*
+     else if(paraHead->vary==LALINFERENCE_PARAM_LINEAR)
      {
        while(max<*(REAL8 *)paraHead->value || min>*(REAL8 *)paraHead->value){
-       /*      printf("%s: max=%lf,
-min=%lf, val=%lf\n",paraHead->name,max,min,*(REAL8 *)paraHead->value); */
          if(max < *(REAL8 *)paraHead->value)
            *(REAL8 *)paraHead->value -= 2.0*(*(REAL8 *)paraHead->value - max);
          if(min > *(REAL8 *)paraHead->value) 
            *(REAL8 *)paraHead->value+=2.0*(min - *(REAL8 *)paraHead->value);
        }
      }
+*/
    }
    return;
 }
