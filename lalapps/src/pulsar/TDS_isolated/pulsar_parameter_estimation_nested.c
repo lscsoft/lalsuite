@@ -3868,27 +3868,79 @@ INT4 recognised_parameter( CHAR *parname ){
 }
 
 
+/** \brief Calculates the optimal matched filter signal-to-noise ratio for a
+ * given signal 
+ * 
+ * This function calculates the optimal matched filter signal-to-noise ratio of
+ * a given signal model for a set of detector data via:
+ * \f[
+ * \rho = \sqrt{\sum_{i=1}^N \frac{d_i^2}{\sigma^2}}.
+ * \f]
+ * As the data and model used here are complex the real and imaginary SNRs are 
+ * added in quadrature to give the total SNR.
+ * 
+ * The data variance \f$\sigma\f$ is calculated on data that has had the
+ * running median subtracted in order to remove any underlying trends (e.g.
+ * caused by a string signal). The variance is assumed constant over segments
+ * given in the \c chunkLength vector and the SNR from each segment is added in
+ * quadrature.
+ * 
+ * \param data [in] A data pointer containing detector data and the signal model
+ * 
+ * \return The optimal matched filter signal-to-noise ratio
+ */
 REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
-  REAL8 snrval = 0.;
+  REAL8 snrval = 0., chunkLength;
   COMPLEX16 snrc = {0., 0.}, vari = {0., 0.};
                                                    
-  INT4 i = 0, length = data->dataTimes->length;
-   
-  /* add the signal to the data */
-  for ( i = 0; i < length; i++ ){
-    /* calculate data variance prior to signal injection */
-    vari.re += SQUARE(data->compTimeData->data->data[i].re);
-    vari.im += SQUARE(data->compTimeData->data->data[i].im);
-      
-    /* calculate signal power */
-    snrc.re += SQUARE(data->compModelData->data->data[i].re);
-    snrc.im += SQUARE(data->compModelData->data->data[i].im);
-  }
-    
-  vari.re /= (REAL8)(length - 1.);
-  vari.im /= (REAL8)(length - 1.);
+  INT4 i = 0, j = 0, length = 0, cl = 0;
   
-  snrval = sqrt( (snrc.re / vari.re) + (snrc.im / vari.im) );
+  COMPLEX16Vector *meddata = NULL;
+  INT4 chunkMin = 0, count = 0;
+  
+  /* subtract a running median value from the data to remove any underlying
+     trends (e.g. caused by a string signal) */
+  meddata = subtract_running_median( data->compTimeData->data );
+  
+  UINT4Vector *chunkLengths = NULL;
+  chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams,
+                                                             "chunkLength" );
+  chunkMin = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMin" );
+  
+  length = data->compTimeData->data->length;
+  
+  /* add the signal to the data */
+  for ( i = 0; i < length; i+=chunkLength ){
+    chunkLength = (REAL8)chunkLengths->data[count];
+    
+    /* skip section of data if its length is less than the minimum allowed
+      chunk length */
+    if( chunkLength < chunkMin ){
+      count++;
+      continue;
+    }
+    
+    cl = i + (INT4)chunkLength;
+    
+    for( j = i ; j < cl ; j++ ){
+      vari.re += SQUARE(meddata->data[j].re);
+      vari.im += SQUARE(meddata->data[j].im);
+      
+      /* calculate optimal signal power */
+      snrc.re += SQUARE(data->compModelData->data->data[j].re);
+      snrc.im += SQUARE(data->compModelData->data->data[j].im);
+    }
+    
+    vari.re /= (chunkLength - 1.);
+    vari.re /= (chunkLength - 1.);
+    
+    /* add SNRs for each chunk in quadrature */
+    snrval += (snrc.re/vari.re) + (snrc.im/vari.im);
+    
+    count++;
+  }
+  
+  snrval = sqrt( snrval );
    
   return snrval;
 }
