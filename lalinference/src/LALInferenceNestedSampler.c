@@ -260,8 +260,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 #ifdef HAVE_LIBLALXML
   	char *outVOTable=NULL;
 	runState->logsample=LALInferenceLogSampleToArray;
+	printf("Using XML output");
 #else
 	runState->logsample=NULL;
+	printf("Not using XML output");
 #endif
 
         if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
