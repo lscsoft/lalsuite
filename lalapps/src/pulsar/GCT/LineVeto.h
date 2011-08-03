@@ -63,6 +63,7 @@ extern "C" {
 #define LINEVETOC_EMEM   	4
 #define LINEVETOC_EXLAL		5
 #define LINEVETOC_EIEEE		6
+#define LINEVETOC_EFILE		7
 
 #define LINEVETOC_MSGENULL 	"Arguments contained an unexpected null pointer"
 #define LINEVETOC_MSGENONULL 	"Output pointer is non-NULL"
@@ -70,6 +71,7 @@ extern "C" {
 #define LINEVETOC_MSGEMEM   	"Out of memory. Bad."
 #define LINEVETOC_MSGEXLAL	"XLAL function call failed"
 #define LINEVETOC_MSGEIEEE	"Floating point failure"
+#define LINEVETOC_MSGEFILE	"Could not create output file"
 /*@}*/
 
 /*---------- exported types ----------*/
@@ -95,7 +97,8 @@ XLALComputeExtraStatsForToplist ( toplist_t *list,
 				  const ComputeFParams *CFparams,
 				  const LIGOTimeGPS refTimeGPS,
 				  const LIGOTimeGPS tMidGPS,
-				  const BOOLEAN SignalOnly );
+				  const BOOLEAN SignalOnly,
+				  const char* outputSingleSegStats );
 
 int
 XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
@@ -105,7 +108,8 @@ XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
 				    const MultiDetectorStateSeriesSequence *multiDetStates,
 				    const LALStringVector *detectorIDs,
 				    const ComputeFParams *CFparams,
-				    const BOOLEAN SignalOnly);
+				    const BOOLEAN SignalOnly,
+				    FILE *singleSegStatsFile );
 
 REAL8
 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,

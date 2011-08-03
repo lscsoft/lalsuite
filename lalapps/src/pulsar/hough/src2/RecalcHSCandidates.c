@@ -410,6 +410,7 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_fnameout = NULL;
   CHAR *uvar_DataFiles1 = NULL;
   BOOLEAN uvar_version = 0;
+  CHAR *uvar_outputSingleSegStats = NULL; /* Additionally output single-segment Fstats for each final toplist candidate */
 
   CHAR *uvar_followupList = NULL;	/* Hough candidate list to be 'followed up': compute Hough top-cand, F1, F2, multi-F */
   REAL8 uvar_WU_Freq = 0;	/* if given, use to compute frequency-correction of input-candidates coming from HS-code */
@@ -488,6 +489,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "GPUready",     0, UVAR_DEVELOPER, "Use single-precision 'GPU-ready' core routines", &uvar_GPUready), &status);
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_OPTIONAL, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -990,7 +992,7 @@ int MAIN( int argc, char *argv[]) {
   if ( uvar_outputFX ) {
     LogPrintfVerbatim ( LOG_DEBUG, "Computing FX ...");
     xlalErrno = 0;
-    XLALComputeExtraStatsForToplist ( semiCohToplist, "HoughFStat", &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, FALSE );
+    XLALComputeExtraStatsForToplist ( semiCohToplist, "HoughFStat", &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, FALSE, uvar_outputSingleSegStats );
     if ( xlalErrno != 0 ) {
       XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", fn, __LINE__, xlalErrno );
       return(HIERARCHICALSEARCH_EBAD);

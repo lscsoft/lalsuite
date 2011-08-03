@@ -69,7 +69,8 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 				      const ComputeFParams *CFparams,                         /**< additional parameters needed for ComputeFStat */
 				      const LIGOTimeGPS refTimeGPS,                           /**< reference time, needed for ExtrapolatePulsarSpins */
 				      const LIGOTimeGPS tMidGPS,                              /**< reference time, needed for ExtrapolatePulsarSpins */
-				      const BOOLEAN SignalOnly                                /**< flag for case with no noise, makes some extra checks necessary */
+				      const BOOLEAN SignalOnly,                               /**< flag for case with no noise, makes some extra checks necessary */
+				      const char* outputSingleSegStats                        /**< base filename to output Fstats for each segment individually */
 				    )
 {
   const char *fn = __func__;
@@ -136,6 +137,28 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
   /* loop over toplist: re-compute sumTwoF and sumTwoFX for all candidates */
   for (j = 0; j < numElements; j++ )
     {
+
+      /* set up file for individual-segment Fstat output */
+      FILE *singleSegStatsFile = NULL;
+      if ( outputSingleSegStats ) {
+        char jstring[16];
+        snprintf ( jstring, sizeof(jstring), "%d", j );
+        char *singleSegStatsFileName = NULL;
+        singleSegStatsFileName = LALCalloc( strlen(outputSingleSegStats) + 6 +  strlen(jstring) + 4 + 1, sizeof(CHAR) );
+        strcpy(singleSegStatsFileName, outputSingleSegStats);
+        strcat(singleSegStatsFileName, "_cand_");
+        strcat(singleSegStatsFileName, jstring);
+        strcat(singleSegStatsFileName, ".dat");
+        /* open the file for writing */
+        if ((singleSegStatsFile = fopen(singleSegStatsFileName, "wb")) == NULL) {
+          fprintf(stderr, "Unable to open file %s for writing\n", singleSegStatsFileName);
+          LALFree(singleSegStatsFile);
+         /*exit*/
+         return(LINEVETOC_EFILE);
+        }
+        LALFree(singleSegStatsFileName);
+      }
+
       if ( listEntryType == 1 ) {
         GCTtopOutputEntry *elem = toplist_elem ( list, j );
 
@@ -150,6 +173,10 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         fkdotTMP[0] = elem->Freq;
         fkdotTMP[1] = elem->F1dot;
 
+        /* write header information into segment-Fstats file */
+        if ( singleSegStatsFile )
+          fprintf ( singleSegStatsFile, "%%%% Freq: %.16g\n%%%% RA: %.13g\n%%%% Dec: %.13g\n%%%% f1dot: %.13g\n", fkdotTMP[0], candidateDopplerParams.Alpha, candidateDopplerParams.Delta, fkdotTMP[1] );
+
         /* extrapolate pulsar spins to correct time (more stable against large deltaTau than directly resetting refTime) */
         if ( XLALExtrapolatePulsarSpins( candidateDopplerParams.fkdot, fkdotTMP, deltaTau ) != XLAL_SUCCESS ) {
           XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", fn, __LINE__);
@@ -157,7 +184,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         }
 
         /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
-        XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, CFparams, SignalOnly );
+        XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, CFparams, SignalOnly, singleSegStatsFile );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoSemiCoherent().\n\n", fn, __LINE__);
           XLAL_ERROR ( fn, XLAL_EFUNC );
@@ -182,6 +209,10 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         fkdotTMP[0] = elem->Freq;
         fkdotTMP[1] = elem->f1dot;
 
+        /* write header information into segment-Fstats file */
+        if ( singleSegStatsFile )
+          fprintf ( singleSegStatsFile, "%%%% Freq: %.16g\n%%%% RA: %.13g\n%%%% Dec: %.13g\n%%%% f1dot: %.13g\n", fkdotTMP[0], candidateDopplerParams.Alpha, candidateDopplerParams.Delta, fkdotTMP[1] );
+
         /* extrapolate pulsar spins to correct time (more stable against large deltaTau than directly resetting refTime) */
         if ( XLALExtrapolatePulsarSpins( candidateDopplerParams.fkdot, fkdotTMP, deltaTau ) != XLAL_SUCCESS ) {
           XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", fn, __LINE__);
@@ -189,7 +220,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         }
 
         /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
-        XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, CFparams, SignalOnly );
+        XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, CFparams, SignalOnly, singleSegStatsFile );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoSemiCoherent().\n\n", fn, __LINE__);
           XLAL_ERROR ( fn, XLAL_EFUNC );
@@ -200,6 +231,10 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         for ( X = 0; X < numDetectors; X ++ )
           elem->sumTwoFX->data[X]  = lineVeto.TwoFX->data[X];
       }
+
+      /* close single-segment Fstat file */
+      if ( singleSegStatsFile )
+        fclose (singleSegStatsFile);
 
     } /* for j < numElements */
 
@@ -225,7 +260,8 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 					const MultiDetectorStateSeriesSequence *multiDetStatesV,/**< some state info for all detectors */
 					const LALStringVector *detectorIDs,                     /**< name strings of all detectors present in multiSFTsV */
 					const ComputeFParams *CFparams,                         /**< additional parameters needed for ComputeFStat */
-					const BOOLEAN SignalOnly                                /**< flag for case with no noise, makes some extra checks necessary */
+					const BOOLEAN SignalOnly,                               /**< flag for case with no noise, makes some extra checks necessary */
+					FILE *singleSegStatsFile                                /**< pointer to file to output Fstats for each segment individually */
 				      )
 {
   const char *fn = __func__;
@@ -275,10 +311,20 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
     numSegmentsX[X] = 0;
   }
 
+  REAL8Vector *twoFXseg = NULL;
+  if ( (twoFXseg = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", fn, numDetectors );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
   /* compute single- and multi-detector Fstats for each data segment and sum up */
   UINT4 k;
   for (k = 0; k < numSegments; k++)
     {
+      /* initialize temporary single-IFO Fstat vector */
+      for (X = 0; X < numDetectors; X++)
+        twoFXseg->data[X] = 0.0;
+
       /* recompute multi-detector Fstat and atoms */
       fakeStatus = blank_status;
       ComputeFStat ( &fakeStatus, &Fstat, dopplerParams, multiSFTsV->data[k], multiNoiseWeightsV->data[k], multiDetStatesV->data[k], &CFparams_internal, NULL );
@@ -294,21 +340,13 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 
       lineVeto->TwoF  += 2.0 * Fstat.F; /* sum up multi-detector Fstat for this segment*/
 
-      numDetectorsSeg = multiSFTsV->data[k]->length; /* for each segment, could be smaller than overall number */
+      if ( singleSegStatsFile )
+        fprintf ( singleSegStatsFile, "%.6f", 2.0*Fstat.F );
 
       /* recompute single-detector Fstats from atoms */
+      numDetectorsSeg = multiSFTsV->data[k]->length; /* for each segment, could be smaller than overall number */
       for (X = 0; X < numDetectorsSeg; X++)
         {
-          REAL8 twoFX = 2.0 * XLALComputeFstatFromAtoms ( Fstat.multiFstatAtoms, X );
-          if ( xlalErrno != 0 ) {
-            XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", fn, __LINE__);
-            XLAL_ERROR ( fn, XLAL_EFUNC );
-          }
-
-          if ( SignalOnly ) {                      /* normalization factor correction (TwoF=2.0*F has been done before, this time!) */
-            twoFX *= 4.0 / Tsft;
-            twoFX += 4;
-          }
 
           /* match detector ID in this segment to one from detectorIDs list, sum up the corresponding twoFX */
           detid = -1;
@@ -323,9 +361,27 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
             XLAL_ERROR ( fn, XLAL_EFAILED );
           }
           numSegmentsX[detid] += 1; /* have to keep this for correct averaging */
-          lineVeto->TwoFX->data[detid]  += twoFX; /* sum up single-detector Fstat for this segment*/
+
+          twoFXseg->data[detid] = 2.0 * XLALComputeFstatFromAtoms ( Fstat.multiFstatAtoms, X );
+          if ( xlalErrno != 0 ) {
+            XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", fn, __LINE__);
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+
+          if ( SignalOnly ) {                      /* normalization factor correction (TwoF=2.0*F has been done before, this time!) */
+            twoFXseg->data[detid] *= 4.0 / Tsft;
+            twoFXseg->data[detid] += 4;
+          }
+
+          lineVeto->TwoFX->data[detid]  += twoFXseg->data[detid]; /* sum up single-detector Fstat for this segment*/
 
         } /* for X < numDetectorsSeg */
+
+      if ( singleSegStatsFile ) {
+        for (X = 0; X < numDetectors; X++)
+          fprintf ( singleSegStatsFile, " %.6f",twoFXseg->data[X] );
+        fprintf ( singleSegStatsFile, "\n" );
+      }
 
       /* free memory for atoms that was allocated within ComputeFStat  */
       XLALDestroyMultiFstatAtomVector ( Fstat.multiFstatAtoms );
@@ -337,6 +393,8 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
   for (X = 0; X < numDetectors; X++) {
     lineVeto->TwoFX->data[X] /= numSegmentsX[X];
   }
+
+  XLALDestroyREAL8Vector(twoFXseg);
 
   return(XLAL_SUCCESS);
 
