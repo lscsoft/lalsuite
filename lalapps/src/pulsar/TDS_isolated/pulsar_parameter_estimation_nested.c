@@ -250,7 +250,7 @@ UINT4 varybinary = 0;
 " --fake-dt           the data sample rate (in seconds) for the fake data for\n\
                      each detector. If not specified this will default to\n\
                      60s.\n"\
-" --snr-scale         give a (multi-detector) SNR value to which you want to\n\
+" --scale-snr         give a (multi-detector) SNR value to which you want to\n\
                      scale the injection. This is 1 by default.\n"\
 "\n"
 
@@ -2963,7 +2963,30 @@ REAL8 noise_only_model( LALInferenceIFOData *data ){
 /*                       SOFTWARE INJECTION FUNCTIONS                         */
 /******************************************************************************/
 
-
+/** \brief Inject a simulated signal into the data 
+ *
+ * This function will create an simulated signal (of the required model) to
+ * inject into the data from multiple detectors. The parameters of the signal
+ * to be injected must be specified in a TEMPO-stype .par file given with the
+ * \c inject-file command line argument. The parameters do not have to be the 
+ * same as those in the .par file controlling the analysis (although should
+ * ideally contain a signal within the bandwidth of the data).
+ * 
+ * If a signal of a specific signal-to-noise ratio is required then the \c
+ * scale-snr command line argument can be used to give the multi-detector SNR to
+ * which the signal needs to be scaled.
+ * 
+ * The injected signal can be output if \c inject-output is set. Two
+ * files will be output: one containing the signal only, and one containing the
+ * signal plus noise. These will both be in the format of a standard data input 
+ * file. The files will have names given by the \c inject-output value, with a
+ * prefix of the detector name, and a suffix of of \c _signal_only,
+ * respectively. 
+ * 
+ * \param runState [in] the program information structure
+ * 
+ * \sa calculate_time_domain_snr
+ */
 void injectSignal( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
   
@@ -2973,7 +2996,7 @@ void injectSignal( LALInferenceRunState *runState ){
   
   BinaryPulsarParams injpars;
   
-  REAL8 snrmulti = 0., snrscale = 1.;
+  REAL8 snrmulti = 0., snrscale = 0.;
   FILE *fpsnr = NULL; /* output file for SNRs */
   INT4 ndets = 0;
   
@@ -3055,8 +3078,8 @@ parameter file %s is wrong.\n", injectfile);
   
   fclose( fpsnr );
   
-  /* scale scale factor to rescale the signal to the required SNR */
-  if ( snrscale != 1. ){
+  /* SNR scale factor to rescale the signal to the required SNR */
+  if ( snrscale != 0. ){
     if ( injpars.h0 == 0. ){
       fprintf(stderr, "Error... cannot rescale signal to an SNR of %lf as the \
 injected signal amplitude is zero!\n", snrscale);
@@ -3065,6 +3088,7 @@ injected signal amplitude is zero!\n", snrscale);
     
     snrscale /= snrmulti;
   }
+  else snrscale = 1.; /* do not apply any scaling */
   
   /* reset data to head */
   data = runState->data;
@@ -3144,7 +3168,21 @@ injection\n", signalonly);
 /*                            HELPER FUNCTIONS                                */
 /******************************************************************************/
 
-/* function to get the lengths of consecutive chunks of data */
+/** \brief Split the data into segments
+ * 
+ * This function is deprecated to \c chop_n_merger, but gives the functionality 
+ * of the old code.
+ * 
+ * It cuts the data into as many contiguous segments of data as possible of 
+ * length \c chunkMax. Where contiguous is defined as containing consecutive
+ * point within 180 seconds of each other. The length of segments that do not
+ * fit into a \c chunkMax length are also included. 
+ * 
+ * \param data [in] a data structure
+ * \param chunkMax [in] the maximum length of a data chunk/segment
+ * 
+ * \return A vector of chunk/segment lengths
+ */
 UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
   INT4 i = 0, j = 0, count = 0;
   INT4 length;
@@ -3193,6 +3231,37 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
 /* function to use change point analysis to chop up and remerge the data to
    find stationary chunks (i.e. lengths of data which look like they have the
    same statistics e.g. the same standard deviation) */
+/** \brief Chops and remerges data into stationary segments
+ * 
+ * This function finds segments of data that appear to be stationary (have the
+ * same standard deviation).
+ * 
+ * The function first attempts to chop up the data into as many stationary 
+ * segments as possible. The splitting may not be optimal, so it then tries 
+ * remerging consecutive segments to see if the merged segments show more
+ * evidence of stationarity. It then, if necessary, chops the segments again to
+ * make sure there are none greater than the required \c chunkMax. The default
+ * \c chunkMax is 0, so this rechopping will not normally happen.
+ * 
+ * This is all performed on data that has had a running median subtracted, to 
+ * try and removed any underlying trends in the data (e.g. those caused by a 
+ * strong signal), which might affect the calculations (which assume the data is
+ * Gaussian with zero mean).
+ * 
+ * if the \c verbose flag is set then a list of the segments will be output to
+ * a file called \c data_segment_list.txt, with a prefix of the detector name.
+ * 
+ * \param data [in] A data structure
+ * \param chunkMin [in] The minimum length of a segment
+ * \param chunkMax [in] The maximum length of a segment
+ * 
+ * \return A vector of segment/chunk lengths
+ * 
+ * \sa subtract_running_median
+ * \sa chop_data
+ * \sa merge_data
+ * \sa rechop_data
+ */
 UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, 
                            INT4 chunkMax ){
   UINT4 j = 0;
@@ -3256,6 +3325,18 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin,
 }
 
 
+/** \brief Subtract the running median from complex data
+ * 
+ * This function uses \c gsl_stats_median_from_sorted_data to subtract a running
+ * median, calculated from the 30 consecutive point around a set point, from the
+ * data. At the start of the data running median is calculated from 30-15+(i-1)
+ * points, and at the end it is calculated from 15+(N-i) points, where i is the
+ * point index and N is the total number of data points.
+ * 
+ * \param data [in] A complex data vector
+ * 
+ * \return A complex vector containing data with the running median removed
+ */
 COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
   COMPLEX16Vector *submed = NULL;
   UINT4 length = data->length, i = 0, j = 0, n = 0; 
@@ -3309,7 +3390,32 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
 }
 
 
-/* function to find change points and chop up the data */
+/** \brief Chops the data into stationary segments based on Bayesian change
+ * point analysis
+ * 
+ * This function splits data into two (and recursively runs on those two
+ * segments) if it is found that the odds ratio for them being from two 
+ * independent Gaussian distributions is greater than a certain threshold.
+ * 
+ * The threshold is for the natural logarithm of the odds ratio is empirically
+ * set to be:
+ * \f[
+ * T = 1.305\log{}_{10} N + 0.245 + 2.531
+ * \f]
+ * where \f$N\f$ is the length of the data set. This comes from a fit to the 
+ * threshold value required to give a 1% chance of splitting actual Gaussian
+ * data (drawn from one distribution) for data of various lengths. The first
+ * two terms come from a fit to odds ratios for a Monte Carlo
+ * of Gaussian noise (with real and imaginary components) of various lengths,
+ * and the final term comes from an offset to give the 1% false alarm rate.
+ * 
+ * \param data [in] A complex data vector
+ * \param chunkMin [in] The minimum allowed segment length
+ * 
+ * \return A vector of segment lengths
+ * 
+ * \sa find_change_point
+ */
 UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
   UINT4Vector *chunkIndex = NULL;
   
@@ -3374,11 +3480,37 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
 }
 
 
-/* this function will go through the data and compare the "evidence" for it
-   being Gaussian with a single standard deviation, or it being two Gaussian's
-   with independent standard deviations. It will return the index of the index
-   of the point at with the data statistics change, and the log odds ratio of
-   the two hypotheses at that point. */ 
+/** \brief Find a change point in complex data
+ * 
+ * This function is based in the Bayesian Blocks algorithm of [\ref Scargle1998]
+ * that finds "change points" in data - points at which the statistics of the 
+ * data change. It is based on calculating evidence, or odds, ratios. The
+ * function first computes the marginal likelihood (or evidence) that the whole
+ * of the data is described by a single Gaussian (with mean of zero). This comes
+ * from taking a Gaussian likelihood function and analytically marginalising
+ * over the standard deviation (using a prior on the standard deviation of
+ * \f$1/\sigma\f$), giving (see [\ref DupuisWoan2005]) a Students-t
+ * distribution (see <a
+href="https://wiki.ligo.org/foswiki/pub/CW/
+PulsarParameterEstimationNestedSampling/studentst.pdf">here</a>).
+ * Following this the data is split into two segments (with lengths greater
+ * than, or equal to the minimum chunk length) for all possible combinations,
+ * and the joint evidence for each of the two segments consisting of independent
+ * Gaussian (basically multiplying the above equation calculated for each
+ * segment separately) is calculated and the split point recorded. However, the
+ * value required for comparing to that for the whole data set, to give the odds
+ * ratio, is the evidence that having any split is better than having no split,
+ * so the individual split data evidences need to be added incoherently to give
+ * the total evidence for a split. The index at which the evidence for a single
+ * split is maximum (i.e. the most favoured split point) that which is returned.
+ * 
+ * \param data [in] a complex data vector
+ * \param logodds [in] a pointer to return the natural logarithm of the odds
+ * ratio/Bayes factor
+ * \param minlength [in] the minimum chunk length
+ * 
+ * \return The position of the change point
+ */
 UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, 
                          INT4 minlength ){
   UINT4 changepoint = 0, i = 0;
@@ -3476,6 +3608,17 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds,
 }
 
 
+/** \brief Chop up the data into chunks smaller the the maximum allowed length
+ *
+ * This function chops any chunks that are greater than \c chunkMax into chunks
+ * smaller than, or equal to \c chunkMax, and greater than \c chunkMin. On some
+ * occasions this might result in a segment smaller than \c chunkMin, but these
+ * are ignored in the likelihood calculation anyway. 
+ * 
+ * \param chunkIndex [in] a vector of segment split positions
+ * \param chunkMax [in] the maximum allowed segment/chunk length
+ * \param chunkMin [in] the minimum allowed segment/chunk length
+ */ 
 void rechop_data( UINT4Vector *chunkIndex, INT4 chunkMax, INT4 chunkMin ){
   INT4 i = 0, j = 0, count = 0;
   INT4 length = chunkIndex->length;
@@ -3539,7 +3682,18 @@ which is less than chunkMin = %d.\n", count, n1, chunkMin);
 }
 
 
-/* function to merge chunks */
+/** \brief Merge adjacent segments
+ * 
+ * This function will attempt to remerge adjacent segments if statistically 
+ * favourable (as calculated by the odds ratio). For each pair of adjacent
+ * segments the joint likelihood of them being from two independent
+ * distributions is compared to the likelihood that combined they are from one
+ * distribution. If the likelihood is highest for the combined segments they are
+ * merged.
+ * 
+ * \param data [in] A complex data vector
+ * \param segs [in] A vector of split segment indexes
+ */
 void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
   UINT4 j = 0;
   REAL8 threshold = 0.; /* may need to be passed to function in the future, or
@@ -3610,7 +3764,19 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
 }
 
 
-/* a function to sum over the data */
+/** \brief Calculates the sum of the square of the data
+ * 
+ * This function calculates the sum of the square of the data:
+ * \f[
+ * s = \sum_i^N \Re{d_i}^2 + \Im{d_i}^2,
+ * \f]
+ * for each stationary segment given in the \c chunkLength vector. These value
+ * are used in the likelihood calculation in \c pulsar_log_likelihood and are 
+ * precomputed here to speed that calculation up. The vector of value is output
+ * in a \c sumData parameter of the \c data structure.
+ * 
+ * \param runState [in] The analysis information structure
+ */
 void sumData( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
   
@@ -3657,9 +3823,25 @@ void sumData( LALInferenceRunState *runState ){
 }
 
 
-/* detector response lookup table function  - this function will output a lookup
-table of points in time and psi, covering a sidereal day from the start time
-(t0) and from -pi/4 to pi/4 in psi */
+/** \brief Creates a lookup table of the detector antenna pattern
+ *
+ * This function creates a 2D lookup table of the 'plus' and 'cross' antenna 
+ * patterns for a given detector orientation and source sky position. The 
+ * lookup table spans one sidereal day in time (this being the period over which
+ * the antenna pattern changes) and goes between \f$\pm\pi/4\f$ radians in
+ * \f$\psi\f$.
+ * 
+ * \param t0 [in] initial GPS time of the data
+ * \param detNSource [in] structure containing the detector and source
+ * orientations and locations
+ * \param timeSteps [in] the number of grid bins to use in time
+ * \param psiSteps [in] the number of grid bins to use in polarisation angle
+ * \f$\psi\f$
+ * \param LUfplus [in] a matrix into which the 'plus' antenna pattern lookup
+ * table will be output
+ * \param LUfcross [in] a matrix into which the 'cross' antenna pattern lookup
+ * table will be output 
+ */
 void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, 
                             INT4 timeSteps, INT4 psiSteps, gsl_matrix *LUfplus,
                             gsl_matrix *LUfcross ){ 
@@ -3695,11 +3877,22 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource,
 }
 
 
+/** \brief Rescale the value output by the Nested Sampling algorithm
+ * 
+ * This function reads in the file of samples output from the Nested Sampling
+ * algorithm (in the file specified by \c outfile) and scales them back to 
+ * their true values.
+ * 
+ * Note: The output may soon be in an XML format, so this function will need to
+ * be amended. 
+ * 
+ * \param runState [in] The analysis information structure
+ */
 void rescaleOutput( LALInferenceRunState *runState ){
   /* Open original output output file */
-  CHAR *outfile, outfiletmp[256] = "", outfilepars[256] = "";
-  FILE *fp = NULL, *fptemp = NULL, *fppars = NULL;
-  UINT4 j = 0;
+  CHAR *outfile, outfiletmp[256] = "";
+  CHAR outfilepars[256] = "", outfileparstmp[256] = "";
+  FILE *fp = NULL, *fptemp = NULL, *fppars = NULL, *fpparstmp = NULL;
   
   LALInferenceVariables *current=XLALCalloc(1,sizeof(LALInferenceVariables));
   
@@ -3727,13 +3920,34 @@ void rescaleOutput( LALInferenceRunState *runState ){
     exit(3);
   }
  
-  /* open file for printing out list of parameter names */
-  sprintf(outfilepars, "%s_parnames.txt", outfile);
-  if( (fppars = fopen(outfilepars, "w")) == NULL ){
+  /* open file for printing out list of parameter names - this should already 
+     exist */
+  sprintf(outfilepars, "%s_params.txt", outfile);
+  if( (fppars = fopen(outfilepars, "r")) == NULL ){
     fprintf(stderr, "Error... cannot open parameter name output file %s.\n",
             outfilepars);
     exit(3);
   }
+  /* read in the parameter names and remove the "model" value */
+  sprintf(outfileparstmp, "%s_params.txt_tmp", outfile);
+  if( (fpparstmp = fopen(outfileparstmp, "w")) == NULL ){
+    fprintf(stderr, "Error... cannot open parameter name output file %s.\n",
+            outfileparstmp);
+    exit(3);
+  }
+  
+  CHAR v[128] = "";
+  while( fscanf(fppars, "%s", v) != EOF ){
+    /* reoutput everything but the "model" value to a temporary file */
+    if( strcmp(v, "model") != 0 )
+      fprintf(fpparstmp, "%s\t", v);
+  }
+  
+  fclose(fppars);
+  fclose(fpparstmp);
+  
+  /* move the temporary file name to the standard outfile_param name */
+  rename( outfileparstmp, outfilepars );
   
   /* copy variables from runState to current (this seems to switch the order,
      which is required! */
@@ -3783,15 +3997,12 @@ void rescaleOutput( LALInferenceRunState *runState ){
       switch (item->type) {
         case LALINFERENCE_INT4_t:
           fprintf(fptemp, "%d", (INT4)(atoi(value)*scalefac + scalemin));
-          if ( j == 0 ) fprintf(fppars, "%s\n", item->name);
           break;
         case LALINFERENCE_REAL4_t:
           fprintf(fptemp, "%.12e", atof(value)*scalefac + scalemin);
-          if ( j == 0 ) fprintf(fppars, "%s\n", item->name);
           break;
         case LALINFERENCE_REAL8_t:
           fprintf(fptemp, "%.12le", atof(value)*scalefac + scalemin);
-          if ( j == 0 ) fprintf(fppars, "%s\n", item->name);
           break;
         case LALINFERENCE_string_t:
           /* don't reprint out any string values */
@@ -3809,15 +4020,10 @@ void rescaleOutput( LALInferenceRunState *runState ){
        currentParams structure) */
     sprintf(value, "%s", strtok(NULL, "'\t'"));
     fprintf(fptemp, "%lf\n", atof(value));
-    
-    if ( j == 0 ) fprintf(fppars, "logLikelihood\n");
-    
-    j++;
   }while( !feof(fp) );
   
   fclose(fp);
   fclose(fptemp);
-  fclose(fppars);
   
   /* move the temporary file name to the standard outfile name */
   rename( outfiletmp, outfile );
@@ -3826,7 +4032,15 @@ void rescaleOutput( LALInferenceRunState *runState ){
 }
 
 
-/* function to count number of comma separated values in a string */
+/** \brief Counts the number of comma separated values in a string
+ *
+ * This function counts the number of comma separated values in a given input
+ * string.
+ * 
+ * \param csvline [in] Any string
+ * 
+ * \return The number of comma separated value in the input string
+ */
 INT4 count_csv( CHAR *csvline ){
   CHAR *inputstr = NULL;
   CHAR *tempstr = NULL;
@@ -3847,8 +4061,16 @@ INT4 count_csv( CHAR *csvline ){
 }
 
 
-/* function to check whether a given parameter is one of the recognised
-   parameters listed in the header file */
+/** \brief Checks if a given parameter is recognised
+ * 
+ * This function checks whether a given parameter is one of the defined 
+ * amplitude (\c amppars), frequency (\c freqpars), sky location (\c skypars)
+ * or binary system (\c binpars) parameters given in the header file.
+ * 
+ * \param parname [in] The name of a parameter
+ * 
+ * \return true (1) if the parameter is recognised and false (0) if not
+ */
 INT4 recognised_parameter( CHAR *parname ){
   INT4 i = 0;
   
@@ -3871,15 +4093,16 @@ INT4 recognised_parameter( CHAR *parname ){
 /** \brief Calculates the optimal matched filter signal-to-noise ratio for a
  * given signal 
  * 
- * This function calculates the optimal matched filter signal-to-noise ratio of
- * a given signal model for a set of detector data via:
+ * This function calculates the optimal matched filter signal-to-noise ratio
+ * (SNR) of a given signal model for a set of detector data via:
  * \f[
- * \rho = \sqrt{\sum_{i=1}^N \frac{d_i^2}{\sigma^2}}.
+ * \rho = \sqrt{\sum_{i=1}^N \frac{d_i^2}{\sigma^2}},
  * \f]
- * As the data and model used here are complex the real and imaginary SNRs are 
- * added in quadrature to give the total SNR.
+ * where \f$\{d\}\f$ is a time series of data, and \f$\sigma^2\f$ is its
+ * variance. As the data and model used here are complex the real and imaginary
+ * SNRs are added in quadrature to give the total SNR.
  * 
- * The data variance \f$\sigma\f$ is calculated on data that has had the
+ * The data variance \f$\sigma^2\f$ is calculated on data that has had the
  * running median subtracted in order to remove any underlying trends (e.g.
  * caused by a string signal). The variance is assumed constant over segments
  * given in the \c chunkLength vector and the SNR from each segment is added in
@@ -3946,6 +4169,21 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
 }
 
 
+/** \brief Get the signal-to-noise ratio of the maximum likelihood signal
+ * 
+ * The function uses the signal with the highest likelihood (which will be the 
+ * final point in the live points array) and calculates the optimal 
+ * signal-to-noise ratio (SNR) for it. This is output to a file based on the 
+ * \c outfile value, but with \c _SNR appended to it. For multiple detector, 
+ * and/or models with multiple data sets, the individual detector/data set SNR
+ * values will be output, with the final value being the multi-detector SNR. If
+ * a fake signal has been injected into the data this file will already
+ * contain the optimal SNR of the true signal. 
+ * 
+ * \param runState [in] The analysis information structure
+ * 
+ * \sa calculate_time_domain_snr
+ */
 void get_loudest_snr( LALInferenceRunState *runState ){
   REAL8 lMax = 0.;
   INT4 ndets = 0;
@@ -3999,7 +4237,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     snrmulti += SQUARE( snrval );
     
     /* print out SNR value */
-    fprintf(fpsnr, "%le\t", snrval);
+    fprintf(fpsnr, "%le\t", sqrt(snrval));
     
     data = data->next;
   }
@@ -4017,9 +4255,16 @@ void get_loudest_snr( LALInferenceRunState *runState ){
 /*                          TESTING FUNCTIONS                                 */
 /******************************************************************************/
 
-/* this is a testing function to output the posterior of 1 parameter as
-   calculated on a specified 1D grid, with all other values held fixed at there
-   values from the input par file */
+/** \brief A test function to calculate a 1D posterior on a grid
+ * 
+ * This function is only to be used as a check/test of the code and will be run
+ * if the \c grid command line argument is present. It will calculate the
+ * posterior for one parameter (given by \c gridpar), between the ranges given 
+ * by \c gridmin and \c gridmax (which default to 0 and 1) at a number of points
+ * given by \c gridsteps (which default to 100).
+ * 
+ * \param runState [in] The analysis information structure
+ */
 void gridOutput( LALInferenceRunState *runState ){
   REAL8 h0min = 0.;
   REAL8 h0max = 0.;
@@ -4155,6 +4400,21 @@ void gridOutput( LALInferenceRunState *runState ){
   LALInferenceSetVariable( runState->currentParams, parname, &tmpgridval );
 }
 
+
+/** \brief Test the sampler using a Gaussian likelihood
+ * 
+ * This is a testing function that can be substituted for the standard 
+ * likelihood function. It calculates only the \c h0 parameter posterior based
+ * on a Gaussian likelihood with mean of 0.5 and standard deviation of 0.025 - 
+ * these values can be changed if required. It is just to be used to test the
+ * sampling routine (e.g. Nested Sampling) with a well defined likelihood
+ * function.
+ * 
+ * \param vars [in] A set of pulsar parameters
+ * \param data [in] A data structure
+ * 
+ * \return Natural logarithm of the likelihood
+ */
 REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
                                     LALInferenceIFOData *data,
                                     LALInferenceTemplateFunction UNUSED
