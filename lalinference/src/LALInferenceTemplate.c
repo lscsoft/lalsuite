@@ -1637,6 +1637,9 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 	REAL8 m1,m2,mc,eta;
 	REAL8 chirplength;
 	
+  REAL8 padding=0.4; // hard coded value found in LALInferenceReadData(). Padding (in seconds) for the tuckey window.
+  UINT8 windowshift=(UINT8) ceil(padding/IFOdata->timeData->deltaT);
+  
 	memset( &status, 0, sizeof(LALStatus) );
 	memset( &waveform, 0, sizeof(CoherentGW) );
 	memset( &injParams, 0, sizeof(SimInspiralTable) );
@@ -1792,20 +1795,22 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 			/* write template (time axis) location in "->modelParams" so that     */
 			/* template corresponds to stored parameter values                    */
 			/* and other functions may time-shift template to where they want it: */
+      
+      instant=instant+windowshift*IFOdata->timeData->deltaT; //leave enough room for the tuckey windowing of the data.
 			LALInferenceSetVariable(IFOdata->modelParams, "time", &instant);
 			
 			
 				if(waveform.a && waveform.phi){
-          if(waveform.phi->data->length<=IFOdata->timeData->data->length){ //check whether the IFOdata->timeData->data vector is long enough to store the waveform produced
+          if(waveform.phi->data->length+2*windowshift<=IFOdata->timeData->data->length){ //check whether the IFOdata->timeData->data vector is long enough to store the waveform produced
             for (i=0; i<IFOdata->timeData->data->length; i++){
-              if((i+1)>=(waveform.phi->data->length - 1)){
+              if(i>(waveform.phi->data->length + windowshift) || i<windowshift){
                 IFOdata->timeModelhPlus->data->data[i] = 0;
                 IFOdata->timeModelhCross->data->data[i] = 0;		
               }else{
-                a1		= waveform.a->data->data[2*i];
-                a2		= waveform.a->data->data[2*i+1];
-                phi     = waveform.phi->data->data[i];
-                if (waveform.shift) shift   = waveform.shift->data->data[i];
+                a1		= waveform.a->data->data[2*(i-windowshift)];
+                a2		= waveform.a->data->data[2*(i-windowshift)+1];
+                phi     = waveform.phi->data->data[i-windowshift];
+                if (waveform.shift) shift   = waveform.shift->data->data[i-windowshift];
                 else shift = 0.0;
 					
                 IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
@@ -1815,20 +1820,25 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
           }else{
             if (!sizeWarning) {
               sizeWarning = 1;
-              fprintf(stderr, "WARNING: waveform.phi->data->length = %d is longer than IFOdata->timeData->data->length = %d.\n", waveform.phi->data->length, IFOdata->timeData->data->length);
-              fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.phi->data->length - IFOdata->timeData->data->length , __FILE__, __LINE__);
+              fprintf(stderr, "WARNING: waveform.phi->data->length = %d is longer than IFOdata->timeData->data->length = %d minus windowshift = %d.\n", waveform.phi->data->length, IFOdata->timeData->data->length,(int) windowshift);
+              fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.phi->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
             }
             for (i=0; i<IFOdata->timeData->data->length; i++){
-              a1		= waveform.a->data->data[2*(i+waveform.phi->data->length-IFOdata->timeData->data->length)];
-              a2		= waveform.a->data->data[2*(i+waveform.phi->data->length-IFOdata->timeData->data->length)+1];
-              phi     = waveform.phi->data->data[i+waveform.phi->data->length-IFOdata->timeData->data->length];
-              if (waveform.shift) shift   = waveform.shift->data->data[i+waveform.phi->data->length-IFOdata->timeData->data->length];
-              else shift = 0.0;
+              if(i>IFOdata->timeData->data->length-windowshift){
+                IFOdata->timeModelhPlus->data->data[i] = 0.0;
+                IFOdata->timeModelhCross->data->data[i] = 0.0;
+              }else{
+                a1		= waveform.a->data->data[2*(i+waveform.phi->data->length-IFOdata->timeData->data->length+windowshift)];
+                a2		= waveform.a->data->data[2*(i+waveform.phi->data->length-IFOdata->timeData->data->length+windowshift)+1];
+                phi     = waveform.phi->data->data[i+waveform.phi->data->length-IFOdata->timeData->data->length+windowshift];
+                if (waveform.shift) shift   = waveform.shift->data->data[i+waveform.phi->data->length-IFOdata->timeData->data->length+windowshift];
+                else shift = 0.0;
               
-              IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
-              IFOdata->timeModelhCross->data->data[i]= a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
+                IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
+                IFOdata->timeModelhCross->data->data[i]= a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
+              }
             }
-            instant-= (waveform.phi->data->length-IFOdata->timeData->data->length)*IFOdata->timeData->deltaT;
+            instant-= (waveform.phi->data->length-IFOdata->timeData->data->length+2*windowshift)*IFOdata->timeData->deltaT;
             LALInferenceSetVariable(IFOdata->modelParams, "time", &instant);
           }
 				//}else if(waveform.h && approximant == SpinTaylorFrameless){
@@ -1842,27 +1852,32 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
         //    }
         //  }
         }else if(waveform.h){
-          if(waveform.h->data->length<=IFOdata->timeData->data->length){ //check whether the IFOdata->timeData->data vector is long enough to store the waveform produced
+          if(waveform.h->data->length+2*windowshift<=IFOdata->timeData->data->length){ //check whether the IFOdata->timeData->data vector is long enough to store the waveform produced
             for (i=0; i<IFOdata->timeData->data->length; i++){
-              if((i+1)>=((unsigned long int)(waveform.h->data->length) - 1)){
+              if(i>((unsigned long int)(waveform.h->data->length) + windowshift)  || i<windowshift){
                 IFOdata->timeModelhPlus->data->data[i] = 0;
                 IFOdata->timeModelhCross->data->data[i] = 0;		
               }else{
-                IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[2*i];
-                IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[2*i+1];
+                IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[2*(i-windowshift)];
+                IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[2*(i-windowshift)+1];
               }
             }
           }else{
             if (!sizeWarning) {
               sizeWarning = 1;
-              fprintf(stderr, "WARNING: waveform.h->data->length = %d is longer than IFOdata->timeData->data->length = %d.\n", waveform.h->data->length, IFOdata->timeData->data->length);
-              fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.h->data->length - IFOdata->timeData->data->length , __FILE__, __LINE__);
+              fprintf(stderr, "WARNING: waveform.h->data->length = %d is longer than IFOdata->timeData->data->length = %d minus windowshift = %d.\n", waveform.h->data->length, IFOdata->timeData->data->length, (int) windowshift);
+              fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.h->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
             }
             for (i=0; i<IFOdata->timeData->data->length; i++){
-              IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[2*(i+waveform.h->data->length-IFOdata->timeData->data->length)];
-              IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[2*(i+waveform.h->data->length-IFOdata->timeData->data->length)+1];
+              if(i>IFOdata->timeData->data->length-windowshift){
+                IFOdata->timeModelhPlus->data->data[i] = 0.0;
+                IFOdata->timeModelhCross->data->data[i] = 0.0;
+              }else{                
+                IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[2*(i+waveform.h->data->length-IFOdata->timeData->data->length+windowshift)];
+                IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[2*(i+waveform.h->data->length-IFOdata->timeData->data->length+windowshift)+1];
+              }
             }
-          instant-= (waveform.h->data->length-IFOdata->timeData->data->length)*IFOdata->timeData->deltaT;
+          instant-= (waveform.h->data->length-IFOdata->timeData->data->length+2*windowshift)*IFOdata->timeData->deltaT;
           LALInferenceSetVariable(IFOdata->modelParams, "time", &instant);
           }
         }else{
