@@ -1,5 +1,10 @@
 INCLUDES = -I$(top_builddir)/include
 
+if LALXML
+XMLHDR = LALInferenceXML.h
+XMLSRC = LALInferenceXML.c
+endif
+
 lalinferenceincludedir = $(includedir)/lal
 
 HDR= \
@@ -10,7 +15,8 @@ HDR= \
 	LALInferencePrior.h \
 	LALInferenceReadData.h \
 	LALInferenceTemplate.h \
-	LALInferenceVCSInfo.h
+	LALInferenceVCSInfo.h \
+	$(XMLHDR)
 
 
 lib_LTLIBRARIES = liblalinference.la
@@ -22,16 +28,12 @@ SRC= \
 	LALInferencePrior.c \
 	LALInferenceReadData.c \
 	LALInferenceTemplate.c \
-	LALInferenceVCSInfo.c
+	LALInferenceVCSInfo.c \
+	$(XMLSRC)
 
-if LALXML
-XMLHDR = LALInferenceXML.h
-XMLSRC = LALInferenceXML.c
-endif
+lalinferenceinclude_HEADERS = $(HDR)
 
-lalinferenceinclude_HEADERS = $(HDR) $(XMLHDR)
-
-liblalinference_la_SOURCES = $(SRC) $(XMLSRC)
+liblalinference_la_SOURCES = $(SRC)
 
 liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
 
@@ -90,6 +92,8 @@ lalinference-user-env.csh: Makefile
 EXTRA_DIST = \
 	LALInferenceConfig.h.in \
 	LALInferenceVCSInfo.h.in \
+	LALInferenceXML.c \
+	LALInferenceXML.h \
 	generate_vcs_info.py
 
 LALInferenceVCSInfo.h: ._vcsinfo
