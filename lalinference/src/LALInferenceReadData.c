@@ -506,7 +506,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	REAL8 minFlow=IFOdata->fLow;
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
 	REAL4TimeSeries *injectionBuffer=NULL;
-	
+  REAL8 padding=0.4; //default, set in LALInferenceReadData()
+  
 	while(thisData){
           minFlow   = minFlow>thisData->fLow ? thisData->fLow : minFlow;
           MindeltaT = MindeltaT>thisData->timeData->deltaT ? thisData->timeData->deltaT : MindeltaT;
@@ -590,9 +591,9 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     if(waveform.h){lengthTest = waveform.h->data->length;}
     if(waveform.phi){lengthTest = waveform.phi->data->length;}
     
-    if(lengthTest>IFOdata->timeData->data->length){
-      fprintf(stderr, "WARNING: waveform length = %u is longer than IFOdata->timeData->data->length = %d.\n", lengthTest, IFOdata->timeData->data->length);
-      fprintf(stderr, "The waveform injected is %f seconds long. Consider increasing the %f seconds segment length (--seglen). (in %s, line %d)\n",ppnParams.tc , IFOdata->timeData->data->length * IFOdata->timeData->deltaT, __FILE__, __LINE__);
+    if(lengthTest>IFOdata->timeData->data->length-(UINT4)ceil((2.0*padding+2.0)/IFOdata->timeData->deltaT)){
+      fprintf(stderr, "WARNING: waveform length = %u is longer than IFOdata->timeData->data->length = %d minus the window width = %d and the 2.0 seconds after tc (total of %d points available).\n", lengthTest, IFOdata->timeData->data->length, (INT4)ceil((2.0*padding)/IFOdata->timeData->deltaT) , IFOdata->timeData->data->length-(INT4)ceil((2.0*padding+2.0)/IFOdata->timeData->deltaT));
+      fprintf(stderr, "The waveform injected is %f seconds long. Consider increasing the %f seconds segment length (--seglen) to be greater than %f. (in %s, line %d)\n",ppnParams.tc , IFOdata->timeData->data->length * IFOdata->timeData->deltaT, ppnParams.tc + 2.0*padding + 2.0, __FILE__, __LINE__);
     }
     
 		/* Now we cut the injection buffer down to match the time domain wave size */
