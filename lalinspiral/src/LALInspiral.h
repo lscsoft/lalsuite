@@ -640,27 +640,19 @@ typedef void (TestFunction)(
    REAL8Vector *vector2,
    void *params);
 
-typedef void (InspiralPhasing2)(
-   LALStatus *status,
-   REAL8 *phase,
+typedef REAL8 (InspiralPhasing2)(
    REAL8 v,
    expnCoeffs *ak);
 
-typedef void (InspiralPhasing3)(
-   LALStatus *status,
-   REAL8 *f,
+typedef REAL8 (InspiralPhasing3)(
    REAL8 td,
    expnCoeffs *ak);
 
-typedef void (InspiralFrequency3)(
-   LALStatus *status,
-   REAL8 *f,
+typedef REAL8 (InspiralFrequency3)(
    REAL8 td,
    expnCoeffs *ak);
 
-typedef void (InspiralTiming2) (
-   LALStatus *status,
-   REAL8 *toff,
+typedef REAL8 (InspiralTiming2) (
    REAL8 f,
    void *params);
 
@@ -1683,6 +1675,13 @@ void LALRungeKutta4(
      REAL8Vector *,
      rk4GSLIntegrator *,
      void *);
+
+int
+XLALRungeKutta4(
+   REAL8Vector      *yout,
+   rk4GSLIntegrator *integrator,
+   void             *params
+   );
 
 void XLALRungeKutta4Free(
      rk4GSLIntegrator *integrator);
