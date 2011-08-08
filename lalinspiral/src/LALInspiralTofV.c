@@ -120,7 +120,7 @@ XLALInspiralTofV (
    )
 {
    void *funcParams;
-   REAL8 (*function)(REAL8 x, void *params);
+   REAL8 (*funcToIntegrate)(REAL8, void *);
    REAL8 xmin, xmax;
    IntegralType type;
    TofVIntegrandIn in2;
@@ -141,7 +141,7 @@ XLALInspiralTofV (
 
    in1 = (TofVIn *) params;
 
-   function = XLALInspiralTofVIntegrand;
+   funcToIntegrate = XLALInspiralTofVIntegrand;
    xmin = in1->v0;
    xmax = v;
    type = ClosedInterval;
@@ -165,7 +165,7 @@ XLALInspiralTofV (
       sign = -1.0;
    }
 
-   answer = XLALREAL8RombergIntegrate (function, funcParams, xmin, xmax, type);
+   answer = XLALREAL8RombergIntegrate (funcToIntegrate, funcParams, xmin, xmax, type);
    if (XLAL_IS_REAL8_FAIL_NAN(answer))
       XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
 

@@ -9,8 +9,13 @@
 #include <stdlib.h>
 #include <float.h>
 #include <lal/TimeDelay.h>
+#include <lal/LALInferenceConfig.h>
 
 #include <lal/LALStdlib.h>
+
+#ifdef HAVE_LIBLALXML
+#include <lal/LALInferenceXML.h>
+#endif
 
 RCSID("$Id$");
 #define PROGRAM_NAME "LALInferenceNestedSampler.c"
@@ -26,7 +31,8 @@ static void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
 static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
 static double logadd(double a,double b);
 static REAL8 mean(REAL8 *array,int N);
-
+static LALInferenceVariables *output_array=NULL;
+static UINT4 N_output_array=0;
 
 static double logadd(double a,double b){
 	if(a>b) return(a+log(1.0+exp(b-a)));
@@ -41,7 +47,23 @@ static REAL8 mean(REAL8 *array,int N){
 	return sum/((REAL8) N);
 }
 
-
+/** Append the sample to an array which is maintained elsewhere */
+void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
+{
+	(void)state;
+	output_array=realloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables));
+	if(!output_array){
+	        XLALPrintError("Unable to allocate array for samples\n");
+		XLAL_ERROR_VOID( __func__, XLAL_EFAULT );
+	}
+	else
+	{
+		memset(&(output_array[N_output_array]),0,sizeof(LALInferenceVariables));
+		LALInferenceCopyVariables(vars,&output_array[N_output_array]);
+		N_output_array++;
+	}
+	return;
+}
 
 /* Calculate shortest angular distance between a1 and a2 */
 REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2){
@@ -235,6 +257,15 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	REAL8 *logLikelihoods=NULL;
 	UINT4 verbose=0;
         LALInferenceVariableItem *param_ptr;
+        
+#ifdef HAVE_LIBLALXML
+  	char *outVOTable=NULL;
+	runState->logsample=LALInferenceLogSampleToArray;
+	printf("Using XML output");
+#else
+	runState->logsample=NULL;
+	printf("Not using XML output");
+#endif
 
         if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
           if (runState->data->modelDomain == LALINFERENCE_DOMAIN_FREQUENCY )
@@ -276,6 +307,15 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		exit(1);
 	}
 	char *outfile=ppt->value;
+#ifdef HAVE_LIBLALXML	
+	ProcessParamsTable *ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
+	if(!ppt){
+		fprintf(stderr,"Can specify --outXML <filename.dat> for VOTable output\n");
+	}
+	else{
+		outVOTable=ppt->value;
+	}
+#endif	
 	fpout=fopen(outfile,"w");
  	FILE *lout=NULL;
         char param_list[FILENAME_MAX];
@@ -346,6 +386,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
                 
 		/* Write out old sample */
+		if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
 		LALInferencePrintSample(fpout,runState->livePoints[minpos]);
 		fprintf(fpout,"%lf\n",logLikelihoods[minpos]);
 
@@ -415,7 +456,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]);
 		}
-
+		if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
 		LALInferencePrintSample(fpout,runState->livePoints[i]);
 		fprintf(fpout,"%lf\n",logLikelihoods[i]);
 	}
@@ -427,6 +468,20 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	fpout=fopen(bayesfile,"w");
 	fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
 	fclose(fpout);
+
+#ifdef HAVE_LIBLALXML	
+	/* Write out the XML if requested */
+	if(output_array && outVOTable && N_output_array>0){
+		xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array);
+		fpout=fopen(outVOTable,"w");
+		char *xmlString = XLALCreateVOTStringFromTree ( xmlTable );
+		fprintf(fpout,"%s",xmlString);
+		fclose(fpout);
+		free(xmlString);
+	}
+#endif
+	if(output_array) free(output_array);
+
 }
 
 /* Evolve nested sampling algorithm by one step, i.e.

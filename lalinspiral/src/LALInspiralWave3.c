@@ -74,12 +74,12 @@ LALInspiralFrequency3 (via expnFunc)()
 
 typedef struct
 {
-	void (*func)(LALStatus *status, REAL8 *f, REAL8 tC, expnCoeffs *ak);
+	REAL8 (*func)(REAL8 tC, expnCoeffs *ak);
 	expnCoeffs ak;
 }
 ChirptimeFromFreqIn;
 
-static void LALInspiralFrequency3Wrapper(LALStatus *status, REAL8 *f, REAL8 tC, void *pars);
+static REAL8 XLALInspiralFrequency3Wrapper(REAL8 tC, void *pars);
 
 static void
 LALInspiralWave3Engine(
@@ -147,24 +147,24 @@ LALInspiralWave3 (
   RETURN(status);
 }
 
-static void LALInspiralFrequency3Wrapper(LALStatus *status, REAL8 *f, REAL8 tC, void *pars)
+static REAL8 XLALInspiralFrequency3Wrapper(REAL8 tC, void *pars)
 {
+  static const char *func = "XLALInspiralFrequency3Wrapper";
 
   ChirptimeFromFreqIn *in;
-  REAL8 freq;
-  INITSTATUS (status, "LALInspiralWave3", LALINSPIRALWAVE3C);
-  ATTATCHSTATUSPTR(status);
+  REAL8 freq, f;
 
   in = (ChirptimeFromFreqIn *) pars;
-  in->func(status->statusPtr, &freq, tC, &(in->ak));
-  *f = freq - in->ak.f0;
+  freq = in->func(tC, &(in->ak));
+  if (XLAL_IS_REAL8_FAIL_NAN(freq))
+    XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+  f = freq - in->ak.f0;
 
   /*
   fprintf(stderr, "Here freq=%e f=%e tc=%e f0=%e\n", freq, *f, tC, in->ak.f0);
    */
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return f;
 }
 
 NRCSID (LALINSPIRALWAVE3TEMPLATESC, "$Id$");
@@ -483,7 +483,8 @@ LALInspiralWave3Engine(
   INT4 i, startShift, count;
   REAL8 dt, fu, eta, tc, totalMass, t, td, c1, phi0, phi1, phi;
   REAL8 v, v2, f, fHigh, tmax, fOld, phase, omega;
-  DFindRootIn rootIn;
+  REAL8 xmin,xmax,xacc;
+  REAL8 (*frequencyFunction)(REAL8, void *);
   expnFunc func;
   expnCoeffs ak;
   ChirptimeFromFreqIn timeIn;
@@ -558,25 +559,27 @@ LALInspiralWave3Engine(
 
   timeIn.func = func.frequency3;
   timeIn.ak = ak;
-  rootIn.function = &LALInspiralFrequency3Wrapper;
-  rootIn.xmin = c1*params->tC/2.;
-  rootIn.xmax = c1*params->tC*2.;
-  rootIn.xacc = 1.e-6;
+  frequencyFunction = &XLALInspiralFrequency3Wrapper;
+  xmin = c1*params->tC/2.;
+  xmax = c1*params->tC*2.;
+  xacc = 1.e-6;
   pars = (void*) &timeIn;
   /* tc is the instant of coalescence */
 
-  rootIn.xmax = c1*params->tC*3 + 5.; /* we add 5 so that if tC is small then xmax
-                                         is always greater than a given value (here 5)*/
+  xmax = c1*params->tC*3 + 5.; /* we add 5 so that if tC is small then xmax
+                                  is always greater than a given value (here 5)*/
 
-  /* for x in [rootIn.xmin, rootIn.xmax], we search the value which gives the max frequency.
+  /* for x in [xmin, xmax], we search the value which gives the max frequency.
    and keep the corresponding rootIn.xmin. */
 
 
 
-  for (tc = c1*params->tC/1000.; tc < rootIn.xmax; tc+=c1*params->tC/1000.){
-    LALInspiralFrequency3Wrapper(status->statusPtr, &temp,  tc , pars);
+  for (tc = c1*params->tC/1000.; tc < xmax; tc+=c1*params->tC/1000.){
+    temp = XLALInspiralFrequency3Wrapper(tc , pars);
+    if (XLAL_IS_REAL8_FAIL_NAN(temp))
+      ABORTXLAL(status);
     if (temp > tempMax) {
-      rootIn.xmin = tc;
+      xmin = tc;
       tempMax = temp;
     }
     if (temp < tempMin) {
@@ -587,8 +590,9 @@ LALInspiralWave3Engine(
   /* if we have found a value positive then everything should be fine in the
      BissectionFindRoot function */
   if (tempMax > 0  &&  tempMin < 0){
-    LALDBisectionFindRoot (status->statusPtr, &tc, &rootIn, pars);
-    CHECKSTATUSPTR(status);
+    tc = XLALDBisectionFindRoot (frequencyFunction, xmin, xmax, xacc, pars);
+    if (XLAL_IS_REAL8_FAIL_NAN(tc))
+      ABORTXLAL(status);
   }
   else if (a)
   {
@@ -607,10 +611,12 @@ LALInspiralWave3Engine(
 
   t=0.0;
   td = c1*(tc-t);
-  func.phasing3(status->statusPtr, &phase, td, &ak);
-  CHECKSTATUSPTR(status);
-  func.frequency3(status->statusPtr, &f, td, &ak);
-  CHECKSTATUSPTR(status);
+  phase = func.phasing3(td, &ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(phase))
+    ABORTXLAL(status);
+  f = func.frequency3(td, &ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(f))
+    ABORTXLAL(status);
   phi0=-phase+phi;
   phi1=phi0+LAL_PI_2;
 
@@ -667,10 +673,12 @@ LALInspiralWave3Engine(
     ++count;
     t=count*dt;
     td = c1*(tc-t);
-    func.phasing3(status->statusPtr, &phase, td, &ak);
-    CHECKSTATUSPTR(status);
-    func.frequency3(status->statusPtr, &f, td, &ak);
-    CHECKSTATUSPTR(status);
+    phase = func.phasing3(td, &ak);
+    if (XLAL_IS_REAL8_FAIL_NAN(phase))
+      ABORTXLAL(status);
+    f = func.frequency3(td, &ak);
+    if (XLAL_IS_REAL8_FAIL_NAN(f))
+      ABORTXLAL(status);
   }
   params->fFinal = fOld;
   if (output1 && !output2) params->tC = t;

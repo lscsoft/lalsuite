@@ -436,7 +436,7 @@ XLALCreateVOTTableNode ( const char *name,		/**< [in] optional name attribute to
  */
 xmlNodePtr
 XLALCreateVOTTabledataNode ( xmlNode *fieldNodeList, 	/**< [in] linked list of FIELD \c xmlNodes (used for datatype information) */
-                             UINT4 numRows,			/**< [in] number of *rows* in the table [*must* be <= than the lenght of the data arrays!] */
+                             UINT4 numRows,			/**< [in] number of *rows* in the table [*must* be <= than the length of the data arrays!] */
                              const char *fmt,			/**< [in] optional CSV list of printf-format strings to use for writing data (may be NULL) */
                              ...				/**< [in] list of void-pointers to field column data: must match FIELD datatype specs! */
                              )
@@ -903,7 +903,7 @@ XLALReadVOTTabledataSimpleColumn ( const xmlDocPtr xmlDocument, 	/**< [in] The X
 
 
 
-/** Creator function for a VOTFieldVector of given number of fiels
+/** Creator function for a VOTFieldVector of given number of fields
  * Should be free'ed using XLALDestroyVOTFieldVector.
  */
 VOTFieldVector *
