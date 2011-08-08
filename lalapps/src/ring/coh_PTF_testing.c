@@ -220,11 +220,6 @@ int main( int argc, char **argv )
       
       numSegments = segments[ifoNumber]->numSgmnt;
 
-      for (i =0; i < numSegments; i++)
-      {
-        fprintf(stderr,"%d %d %e\n",ifoNumber,i,timeSlideVectors[ifoNumber*params->numOverlapSegments+i]);
-      }
-
       verbose( "Created segments for one ifo %ld \n",
                timeval_subtract(&startTime) );
     }
@@ -277,7 +272,6 @@ int main( int argc, char **argv )
       slideIDList[i] = timeSlideList[slideCount].timeSlideID;
       slideCount++;
     }
-    fprintf(stderr,"%d %ld \n",i,slideIDList[i]);
   }
 
   TimeSlide *time_slide_head=NULL;
@@ -352,14 +346,15 @@ int main( int argc, char **argv )
       segStartTime = params->trigTime;
       /* calculate time offsets */
       timeOffsets[ifoNumber] =
-          XLALTimeDelayFromEarthCenter( detLoc, params->rightAscension,
-                                        params->declination, &segStartTime );
+          XLALTimeDelayFromEarthCenter(detLoc, skyPoints->data[0].longitude,
+                                       skyPoints->data[0].latitude,
+                                       &segStartTime);
       /* calculate response functions for trigger */
-      XLALComputeDetAMResponse( &Fplustrig[ifoNumber], &Fcrosstrig[ifoNumber],
-                                detectors[ifoNumber]->response,
-                                params->rightAscension,
-                                params->declination, 0.,
-                                XLALGreenwichMeanSiderealTime(&segStartTime) );
+      XLALComputeDetAMResponse(&Fplustrig[ifoNumber], &Fcrosstrig[ifoNumber],
+                               detectors[ifoNumber]->response,
+                               skyPoints->data[0].longitude,
+                               skyPoints->data[0].latitude, 0.,
+                               XLALGreenwichMeanSiderealTime(&segStartTime));
 
     }
   }
@@ -495,7 +490,7 @@ int main( int argc, char **argv )
   }
 
 
-  fcTmpltParams->fwdPlan      = XLALCreateForwardREAL4FFTPlan( numPoints, 1 );
+  fcTmpltParams->fwdPlan      = XLALCreateForwardREAL4FFTPlan( numPoints, 0 );
   fcTmpltParams->deltaT       = 1.0/params->sampleRate;
   fcTmpltParams->fLow = params->lowTemplateFrequency;
 
@@ -519,7 +514,7 @@ int main( int argc, char **argv )
   }
 
   /* Create an inverse FFT plan */
-  invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 1 );
+  invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 0 );
 
   /*------------------------------------------------------------------------*
    * Read in the tmpltbank xml files                                        *
@@ -754,18 +749,6 @@ int main( int argc, char **argv )
           &segStartTime,PTFtemplate->fLower,
           (1.0/params->sampleRate),&lalDimensionlessUnit,
           3*numPoints/4 - numPoints/4);
-      if (params->doTraceSNR)
-      {
-        for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
-        {
-          if ( params->haveTrig[ifoNumber] )
-          {
-            snrComps[ifoNumber] = XLALCreateREAL4TimeSeries( "snrComps",
-                &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
-                &lalDimensionlessUnit,cohSNR->data->length);
-          }
-        }
-      }
       if (params->doNullStream)
         nullSNR = XLALCreateREAL4TimeSeries( "nullSNR",
             &segStartTime,PTFtemplate->fLower,
@@ -929,7 +912,7 @@ int main( int argc, char **argv )
                                             autoVeto, chiSquare, PTFM,
                                             skyPoints->data[sp].longitude,
                                             skyPoints->data[sp].latitude,
-                                            slideIDList[j] );
+                                            slideIDList[j],timeOffsets );
             verbose( "Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime) );
 
 
@@ -1029,6 +1012,7 @@ int main( int argc, char **argv )
 
   // This function cleans up memory usage
   XLALDestroyTimeSlideTable(time_slide_head);
+  LALFree(timeSlideVectors);
   coh_PTF_cleanup(procpar,fwdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,Fplustrig,Fcrosstrig);
@@ -1118,7 +1102,8 @@ void coh_PTF_statistic(
   /* This function generates the SNR for every point in time and, where
    * appropriate calculates the desired signal based vetoes. */
 
-  UINT4  i, j, k, m, vecLength, vecLengthTwo;
+  UINT4 check;
+  UINT4  i, j, k, m, vecLength, vecLengthTwo,ifoNumber;
   INT4   l;
   INT4   timeOffsetPoints[LAL_NUM_IFO];
   REAL4  deltaT    = cohSNR->deltaT;
@@ -1258,10 +1243,68 @@ void coh_PTF_statistic(
   v1p = LALCalloc(vecLengthTwo , sizeof(REAL4));
   v2p = LALCalloc(vecLengthTwo , sizeof(REAL4));
 
+  /* First, calculate the single detector SNR time series. Only do this for
+     the first sky point. */
+  /* NOT CORRECT FOR SPINNING FIXME! */
+
+  REAL4 reSNRcomp,imSNRcomp;
+  UINT4 ifoNum1,ifoNum2;
+
+  ifoNum1 = 0;
+  ifoNum2 = 0;
+
+  /* FIXME: For >2 detectors this should choose the 2 most sensitive ifos */
+  for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( params->haveTrig[ifoNumber])
+    {
+      if (ifoNum1 == 0)
+        ifoNum1 = ifoNumber;
+      else if (ifoNum2 == 0)
+        ifoNum2 = ifoNumber;
+    }
+  }
+  fprintf(stderr,"%d %d \n",ifoNum1,ifoNum2);
+
+  for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( params->haveTrig[ifoNumber] && (! snrComps[ifoNumber]) )
+    {
+      verbose("Calculating single detector SNR for ifo %d at %ld.\n",
+          ifoNumber,timeval_subtract(&startTime));
+      snrComps[ifoNumber] = XLALCreateREAL4TimeSeries( "snrComps",
+          &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
+          &lalDimensionlessUnit,3*numPoints/4 - numPoints/4 + 10000);
+      for ( i = (numPoints/4)-5000; i < (3*numPoints/4)+5000; ++i )
+      {  /* loop over time */
+        reSNRcomp = PTFqVec[ifoNumber]->data[i].re;
+        imSNRcomp = PTFqVec[ifoNumber]->data[i].im;
+        snrComps[ifoNumber]->data->data[i - ((numPoints/4)-5000)] =\
+            sqrt((reSNRcomp*reSNRcomp + imSNRcomp*imSNRcomp)/\
+            PTFM[ifoNumber]->data[0]);
+      }
+    }
+  }
+
+
   verbose( "Begin loop over time at %ld \n",timeval_subtract(&startTime));
 
   for ( i = numPoints/4; i < 3*numPoints/4; ++i ) /* Main loop over time */
   {
+    // Check if the single detector cut is passed
+    if (snrComps[ifoNum1]->data->data[i + 5000 + +timeOffsetPoints[ifoNum1]] \
+        < 4)
+    {
+      cohSNR->data->data[i-numPoints/4] = 0;
+      continue;
+    }
+    if (snrComps[ifoNum2]->data->data[i + 5000 + +timeOffsetPoints[ifoNum2]] \
+        < 4)
+    {
+      cohSNR->data->data[i-numPoints/4] = 0;
+      continue;
+    }
+
     // This function combines the various (Q_i | s) and rotates them into
     // the basis as discussed above.
     coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,a,b,
@@ -1296,8 +1339,6 @@ void coh_PTF_statistic(
 
   verbose( "Calculated all SNRs at %ld \n",timeval_subtract(&startTime));
 
-
-  UINT4 check;
   UINT4 chisqCheck = 0;
   REAL4 bestNR,snglSNRsq;
   INT4 numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
@@ -1334,7 +1375,7 @@ void coh_PTF_statistic(
         // The following block extracts the values of extrinsic parameters.
         // This follows the method set out in Diego's thesis to do this.
         /* FIXME: This is probably broke for coherent case now! */
-        /* FIXME: First block should be optimal! */
+        /* FIXME: First block should be optional! */
         if (0)
         {
           coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,a,b,timeOffsetPoints,
@@ -1538,10 +1579,10 @@ void coh_PTF_statistic(
                 * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2 ));
               }
               // This needs to be converted for spinning case!
-              snglSNRsq = v1[0]*v1[0] + v2[0]*v2[0];
+             /* snglSNRsq = v1[0]*v1[0] + v2[0]*v2[0];
               snglSNRsq = snglSNRsq/(a[k]*a[k]*PTFM[k]->data[0]);
               traceSNRsq += max_eigen;
-              snrComps[k]->data->data[i-numPoints/4]=sqrt(snglSNRsq);
+              snrComps[k]->data->data[i-numPoints/4]=sqrt(snglSNRsq);*/
             }
           }
           traceSNR->data->data[i-numPoints/4] = sqrt(traceSNRsq);
@@ -1903,7 +1944,8 @@ UINT8 coh_PTF_add_triggers(
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL4                   rightAscension,
     REAL4                   declination,
-    INT8                    slideId
+    INT8                    slideId,
+    REAL8                   *timeOffsets
 )
 {
   // This function adds a trigger to the event list
@@ -1911,10 +1953,17 @@ UINT8 coh_PTF_add_triggers(
   UINT4 i;
   INT4 j;
   UINT4 check;
+  REAL4  deltaT    = cohSNR->deltaT;
   INT4 numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
+  INT4   timeOffsetPoints[LAL_NUM_IFO];
   LIGOTimeGPS trigTime;
   MultiInspiralTable *lastEvent = NULL;
   MultiInspiralTable *currEvent = *thisEvent;
+
+  for (i = 0; i < LAL_NUM_IFO; i++ )
+  {
+    timeOffsetPoints[i] = (int) floor(timeOffsets[i]/deltaT + 0.5);
+  }
 
   for (i = 0 ; i < cohSNR->data->length ; i++)
   {
@@ -2024,32 +2073,33 @@ UINT8 coh_PTF_add_triggers(
         }
         if (snrComps[LAL_IFO_G1])
         {
-          currEvent->snr_g = snrComps[LAL_IFO_G1]->data->data[i];
+          currEvent->snr_g = snrComps[LAL_IFO_G1]->data->data[i+5000+timeOffsetPoints
+[LAL_IFO_G1]];
           currEvent->sigmasq_g = PTFM[LAL_IFO_G1]->data[0];
         }
         if (snrComps[LAL_IFO_H1])
         {
-          currEvent->snr_h1 = snrComps[LAL_IFO_H1]->data->data[i];
+          currEvent->snr_h1 = snrComps[LAL_IFO_H1]->data->data[i+5000+timeOffsetPoints[LAL_IFO_H1]];
           currEvent->sigmasq_h1 = PTFM[LAL_IFO_H1]->data[0];
         }
         if (snrComps[LAL_IFO_H2])
         {
-          currEvent->snr_h2 = snrComps[LAL_IFO_H2]->data->data[i];
+          currEvent->snr_h2 = snrComps[LAL_IFO_H2]->data->data[i+5000+timeOffsetPoints[LAL_IFO_H2]];
           currEvent->sigmasq_h2 = PTFM[LAL_IFO_H2]->data[0];
         }
         if (snrComps[LAL_IFO_L1])
         {
-          currEvent->snr_l = snrComps[LAL_IFO_L1]->data->data[i];
+          currEvent->snr_l = snrComps[LAL_IFO_L1]->data->data[i+5000+timeOffsetPoints[LAL_IFO_L1]];
           currEvent->sigmasq_l = PTFM[LAL_IFO_L1]->data[0];
         }
         if (snrComps[LAL_IFO_T1])
         {
-          currEvent->snr_t = snrComps[LAL_IFO_T1]->data->data[i];
+          currEvent->snr_t = snrComps[LAL_IFO_T1]->data->data[i+5000+timeOffsetPoints[LAL_IFO_T1]];
           currEvent->sigmasq_t = PTFM[LAL_IFO_T1]->data[0];
         }
         if (snrComps[LAL_IFO_V1])
         {
-          currEvent->snr_v = snrComps[LAL_IFO_V1]->data->data[i];
+          currEvent->snr_v = snrComps[LAL_IFO_V1]->data->data[i+5000+timeOffsetPoints[LAL_IFO_V1]];
           currEvent->sigmasq_v = PTFM[LAL_IFO_V1]->data[0];
         }
         if (spinTrigger == 1)
