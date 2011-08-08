@@ -590,14 +590,13 @@ INT4 XLALPSpinFinalMassSpin(
 
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
-  REAL8 qq,ll,eta, eta2;
+  REAL8 qq,ll,eta;
 
   /* See eq.(6) in arXiv:0904.2577 */
   REAL8 ma1,ma2,a12,a12l;
   REAL8 cosa1=0.;
   REAL8 cosa2=0.;
   REAL8 cosa12=0.;
-  REAL8 unitHz;
 
   REAL8 t0=-2.9;
   REAL8 t3=2.6;
@@ -607,9 +606,7 @@ INT4 XLALPSpinFinalMassSpin(
 
   /* get a local copy of the intrinstic parameters */
   qq=params->mass2/params->mass1;
-  unitHz = params->totalMass * LAL_MTSUN_SI * (REAL8)LAL_PI;
   eta = params->eta;
-  eta2 = eta * eta;
   /* done */
   ma1=sqrt( params->spin1[0]*params->spin1[0] + params->spin1[1]*params->spin1[1] + params->spin1[2]*params->spin1[2] );
   ma2=sqrt( params->spin2[0]*params->spin2[0] + params->spin2[1]*params->spin2[1] + params->spin2[2]*params->spin2[2] );
@@ -653,8 +650,8 @@ INT4 XLALPSpinFinalMassSpin(
   }
 
   /*For reference these are the formula used in the EOBNR construction*/
-  //*finalMass = 1. - 0.057191 * eta - 0.498 * eta2;
-  //*finalSpin = 3.464102 * eta - 2.9 * eta2;
+  //*finalMass = 1. - 0.057191 * eta - 0.498 * eta*eta;
+  //*finalSpin = 3.464102 * eta - 2.9 * eta*eta;
 
   return errcode;
 }
