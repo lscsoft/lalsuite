@@ -6,8 +6,7 @@ XMLSRC = LALInferenceXML.c
 endif
 
 lalinferenceincludedir = $(includedir)/lal
-
-HDR= \
+lalinferenceinclude_HEADERS = \
 	LALInference.h \
 	LALInferenceConfig.h \
 	LALInferenceLikelihood.h \
@@ -18,10 +17,8 @@ HDR= \
 	LALInferenceVCSInfo.h \
 	$(XMLHDR)
 
-
 lib_LTLIBRARIES = liblalinference.la
-
-SRC= \
+liblalinference_la_SOURCES = \
 	LALInference.c \
 	LALInferenceLikelihood.c \
 	LALInferenceNestedSampler.c \
@@ -30,10 +27,6 @@ SRC= \
 	LALInferenceTemplate.c \
 	LALInferenceVCSInfo.c \
 	$(XMLSRC)
-
-lalinferenceinclude_HEADERS = $(HDR)
-
-liblalinference_la_SOURCES = $(SRC)
 
 liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
 
