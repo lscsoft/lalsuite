@@ -307,7 +307,8 @@ UINT8 coh_PTF_add_triggers(
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL4                   rightAscension,
     REAL4                   declination,
-    INT8                    slideId
+    INT8                    slideId,
+    REAL8                   *timeOffsets
 );
 void coh_PTF_cluster_triggers(
   MultiInspiralTable      **eventList,
