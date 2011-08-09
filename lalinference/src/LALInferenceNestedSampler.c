@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <float.h>
 #include <lal/TimeDelay.h>
+#include <config.h>
 #include <lal/LALInferenceConfig.h>
 
 #include <lal/LALStdlib.h>
@@ -308,7 +309,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	}
 	char *outfile=ppt->value;
 #ifdef HAVE_LIBLALXML	
-	ProcessParamsTable *ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
+	ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
 	if(!ppt){
 		fprintf(stderr,"Can specify --outXML <filename.dat> for VOTable output\n");
 	}
@@ -473,11 +474,15 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	/* Write out the XML if requested */
 	if(output_array && outVOTable && N_output_array>0){
 		xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array);
+		xmlNodePtr nestResource=XLALCreateVOTResourceNode("LALInferenceVariablesTable","Nested samples",votable);
+		char *xmlString = XLALCreateVOTStringFromTree ( nestResource );
+		
+		/* Write to disk */
 		fpout=fopen(outVOTable,"w");
-		char *xmlString = XLALCreateVOTStringFromTree ( xmlTable );
 		fprintf(fpout,"%s",xmlString);
 		fclose(fpout);
 		free(xmlString);
+		
 	}
 #endif
 	if(output_array) free(output_array);
