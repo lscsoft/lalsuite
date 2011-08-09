@@ -1254,17 +1254,18 @@ void coh_PTF_statistic(
   ifoNum2 = 0;
 
   /* FIXME: For >2 detectors this should choose the 2 most sensitive ifos */
+  UINT4 numDetectors = 0;
   for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     if ( params->haveTrig[ifoNumber])
     {
+      numDetectors++;
       if (ifoNum1 == 0)
         ifoNum1 = ifoNumber;
       else if (ifoNum2 == 0)
         ifoNum2 = ifoNumber;
     }
   }
-  fprintf(stderr,"%d %d \n",ifoNum1,ifoNum2);
 
   for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -1289,52 +1290,57 @@ void coh_PTF_statistic(
 
   verbose( "Begin loop over time at %ld \n",timeval_subtract(&startTime));
 
+  /* These are declared to optimize what comes below */
+  INT4 tOffset1 = 5000 - numPoints/4 + timeOffsetPoints[ifoNum1];
+  INT4 tOffset2 = 5000 - numPoints/4 + timeOffsetPoints[ifoNum2];
+  INT4 sOffset = numPoints/4;
   for ( i = numPoints/4; i < 3*numPoints/4; ++i ) /* Main loop over time */
   {
     // Check if the single detector cut is passed
-    if (snrComps[ifoNum1]->data->data[i + 5000 + +timeOffsetPoints[ifoNum1]] \
-        < 4)
+    // THis is not yet implemented and may not be needed for 2 detectors
+    /*if (snrComps[ifoNum1]->data->data[i + tOffset1] < 4 && snrComps[ifoNum2]->data->data[i + tOffset2] < 4)
     {
-      cohSNR->data->data[i-numPoints/4] = 0;
+      cohSNR->data->data[i-sOffset] = 0;
       continue;
-    }
-    if (snrComps[ifoNum2]->data->data[i + 5000 + +timeOffsetPoints[ifoNum2]] \
-        < 4)
+    }*/
+    if (numDetectors == 2 && spinTemplate==0)
     {
-      cohSNR->data->data[i-numPoints/4] = 0;
-      continue;
-    }
-
-    // This function combines the various (Q_i | s) and rotates them into
-    // the basis as discussed above.
-    coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,a,b,
-      timeOffsetPoints,eigenvecs,eigenvals,numPoints,i,vecLength,vecLengthTwo);
-
-    /* Compute the dot products */
-    v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
-    for (j = 0; j < vecLengthTwo; j++)
-    {
-      v1_dot_u1 += v1p[j] * v1p[j];
-      v1_dot_u2 += v1p[j] * v2p[j];
-      v2_dot_u2 += v2p[j] * v2p[j];
-    }
-    // And SNR is calculated
-    // For non spin: v1p[0] * v1p[0] = ( \bf{F}_+\bf{h}_0 | \bf{s})^2
-    //               v1p[1] * v1p[1] = ( \bf{F}_x\bf{h}_0 | \bf{s})^2
-    //               v2p[0] * v2p[0] = ( \bf{F}_+\bf{h}_{\pi/2} | \bf{s})^2
-    //               v2p[1] * v2p[1] = ( \bf{F}_x\bf{h}_{\pi/2} | \bf{s})^2
-    //
-    // For spin this follows Diego's notation
-    if (spinTemplate == 0)
-    {
-      max_eigen = ( v1_dot_u1 + v2_dot_u2 );
+      cohSNR->data->data[i-sOffset] = sqrt(snrComps[ifoNum1]->data->data[i + tOffset1]*snrComps[ifoNum1]->data->data[i + tOffset1] + snrComps[ifoNum2]->data->data[i + tOffset2]*snrComps[ifoNum2]->data->data[i + tOffset2]);
     }
     else
     {
-      max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
-          * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2 ));
+      // This function combines the various (Q_i | s) and rotates them into
+      // the basis as discussed above.
+      coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,a,b,
+        timeOffsetPoints,eigenvecs,eigenvals,
+        numPoints,i,vecLength,vecLengthTwo);
+
+      /* Compute the dot products */
+      v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
+      for (j = 0; j < vecLengthTwo; j++)
+      {
+        v1_dot_u1 += v1p[j] * v1p[j];
+        v1_dot_u2 += v1p[j] * v2p[j];
+        v2_dot_u2 += v2p[j] * v2p[j];
+      }
+      // And SNR is calculated
+      // For non spin: v1p[0] * v1p[0] = ( \bf{F}_+\bf{h}_0 | \bf{s})^2
+      //               v1p[1] * v1p[1] = ( \bf{F}_x\bf{h}_0 | \bf{s})^2
+      //               v2p[0] * v2p[0] = ( \bf{F}_+\bf{h}_{\pi/2} | \bf{s})^2
+      //               v2p[1] * v2p[1] = ( \bf{F}_x\bf{h}_{\pi/2} | \bf{s})^2
+      //
+      // For spin this follows Diego's notation
+      if (spinTemplate == 0)
+      {
+        max_eigen = ( v1_dot_u1 + v2_dot_u2 );
+      }
+      else
+      {
+        max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
+            * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2 ));
+      }
+      cohSNR->data->data[i-sOffset] = sqrt(max_eigen);
     }
-    cohSNR->data->data[i-numPoints/4] = sqrt(max_eigen);
   }
 
   verbose( "Calculated all SNRs at %ld \n",timeval_subtract(&startTime));
