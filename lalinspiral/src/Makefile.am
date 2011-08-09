@@ -55,6 +55,7 @@ lib_LTLIBRARIES = liblalinspiral.la
 liblalinspiral_la_SOURCES = \
 	BandPassInspiralTemplate.c \
 	BlackHoleMode.c \
+	Chisq_CPU.c \
 	CoherentInspiralFilter.c \
 	CoherentInspiralInput.c \
 	CoincInspiralEllipsoid.c \
@@ -214,8 +215,6 @@ liblalinspiral_la_SOURCES = \
 
 if CUDA
 liblalinspiral_la_SOURCES += Chisq_GPU.cu
-else
-liblalinspiral_la_SOURCES += Chisq_CPU.c
 endif
 
 liblalinspiral_la_LDFLAGS = -version-info $(LIBVERSION)
