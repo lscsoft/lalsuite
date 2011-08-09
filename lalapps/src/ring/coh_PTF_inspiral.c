@@ -1264,7 +1264,6 @@ void coh_PTF_statistic(
         ifoNum2 = ifoNumber;
     }
   }
-  fprintf(stderr,"%d %d \n",ifoNum1,ifoNum2);
 
   for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -1289,21 +1288,24 @@ void coh_PTF_statistic(
 
   verbose( "Begin loop over time at %ld \n",timeval_subtract(&startTime));
 
+  /* These are declared to optimize what comes below */
+  INT4 tOffset1 = 5000 - numPoints/4 + timeOffsetPoints[ifoNum1];
+  INT4 tOffset2 = 5000 - numPoints/4 + timeOffsetPoints[ifoNum2];
+  INT4 sOffset = numPoints/4;
   for ( i = numPoints/4; i < 3*numPoints/4; ++i ) /* Main loop over time */
   {
     // Check if the single detector cut is passed
-    if (snrComps[ifoNum1]->data->data[i + 5000 + +timeOffsetPoints[ifoNum1]] \
-        < 4)
+    if (snrComps[ifoNum1]->data->data[i + tOffset1] < 4)
     {
-      cohSNR->data->data[i-numPoints/4] = 0;
+      cohSNR->data->data[i-sOffset] = 0;
       continue;
     }
-    if (snrComps[ifoNum2]->data->data[i + 5000 + +timeOffsetPoints[ifoNum2]] \
-        < 4)
+    if (snrComps[ifoNum2]->data->data[i + tOffset2] < 4)
     {
-      cohSNR->data->data[i-numPoints/4] = 0;
+      cohSNR->data->data[i-sOffset] = 0;
       continue;
     }
+
 
     // This function combines the various (Q_i | s) and rotates them into
     // the basis as discussed above.
