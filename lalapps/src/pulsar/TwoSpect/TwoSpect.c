@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -60,6 +61,11 @@ int main(int argc, char *argv[])
    LALStatus status;          //LALStatus structure
    status.statusPtr = NULL;   //Set statuspointer to NULL
    char s[20000], t[20000];     //Path and file name to LOG and ULFILE
+   time_t programstarttime, programendtime;
+   struct tm *ptm;
+   
+   time(&programstarttime);
+   ptm = localtime(&programstarttime);
    
    //Turn off gsl error handler
    gsl_set_error_handler_off();
@@ -68,6 +74,7 @@ int main(int argc, char *argv[])
    struct gengetopt_args_info args_info;
    struct cmdline_parser_params *configparams;
    configparams = cmdline_parser_params_create();
+   configparams->initialize = 0;
    if ( cmdline_parser(argc, argv, &args_info) ) {
       fprintf(stderr, "%s: cmdline_parser() failed.\n", fn);
       XLAL_ERROR(fn, XLAL_FAILURE);
@@ -93,6 +100,18 @@ int main(int argc, char *argv[])
       fprintf(stderr, "%s: Log file could not be opened.\n", fn);
       XLAL_ERROR(fn, XLAL_EINVAL);
    }
+   
+   //print start time
+   fprintf(stderr, "Program executed on %s\n", asctime(ptm));
+   fprintf(LOG, "Program executed on %s\n", asctime(ptm));
+   
+   //Print out the inputs and outputs
+   fprintf(stderr, "Input parameters file: %s\n", args_info.config_arg);
+   fprintf(LOG, "Input parameters file: %s\n", args_info.config_arg);
+   fprintf(stderr, "Input SFTs: %s/%s\n", args_info.sftDir_arg, "*.sft");
+   fprintf(LOG, "Input SFTs: %s/%s\n", args_info.sftDir_arg, "*.sft");
+   fprintf(stderr, "Output directory: %s\n", args_info.outdirectory_arg);
+   fprintf(LOG, "Output directory: %s\n", args_info.outdirectory_arg);
    
    //Allocate input parameters structure memory
    inputParamsStruct *inputParams = new_inputParams();
@@ -177,9 +196,6 @@ int main(int argc, char *argv[])
    candidateVector *exactCandidates2 = new_candidateVector(100);
    candidateVector *ihsCandidates = new_candidateVector(100);
    UpperLimitVector *upperlimits = new_UpperLimitVector(1);
-   upperlimits = resize_UpperLimitVector(upperlimits, 2);
-   free_UpperLimitVector(upperlimits);
-   upperlimits = new_UpperLimitVector(1);
    if (gaussCandidates1==NULL) {
       fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", fn, 100);
       XLAL_ERROR(fn, XLAL_EFUNC);
@@ -225,6 +241,9 @@ int main(int argc, char *argv[])
    fprintf(stderr, "Loading in SFTs... ");
    ffdata->tfnormalization = 2.0/inputParams->Tcoh/(args_info.avesqrtSh_arg*args_info.avesqrtSh_arg);
    REAL4Vector *tfdata = readInSFTs(inputParams, &(ffdata->tfnormalization));
+   /* XLALDestroyREAL4Vector(tfdata);
+   tfdata = NULL;
+   tfdata = simpleTFdata(100.0, 513864.0, 20.0*3.667e-3, inputParams->Tcoh, inputParams->Tobs, inputParams->SFToverlap, inputParams->fmin-(inputParams->maxbinshift+(inputParams->blksize-1)/2)/inputParams->Tcoh, inputParams->fmin+inputParams->fspan+(inputParams->maxbinshift+(inputParams->blksize-1)/2)/inputParams->Tcoh, 1.0); */
    if (tfdata==NULL) {
       fprintf(stderr, "\n%s: readInSFTs() failed.\n", fn);
       XLAL_ERROR(fn, XLAL_EFUNC);
@@ -235,7 +254,7 @@ int main(int argc, char *argv[])
    for (ii=0; ii<(INT4)tfdata->length; ii++) fprintf(rawtfdata, "%f\n", tfdata->data[ii]);
    fclose(rawtfdata); */
    
-   //TEST: Try removing some bad SFTs
+   //Removing bad SFTs
    if (inputParams->markBadSFTs!=0) {
       fprintf(stderr, "Marking and removing bad SFTs... ");
       INT4Vector *removeTheseSFTs = markBadSFTs(tfdata, inputParams);
@@ -422,9 +441,7 @@ int main(int argc, char *argv[])
       fclose(TFBACKGROUND); */
       
       //Check the RMS of the antenna weights, if bigger than standard deviation then reset the IHS FAR and the average noise background of the 2nd FFT
-      if (antweightsrms == 0.0) {
-         antweightsrms = currentAntWeightsRMS;
-      }
+      if (antweightsrms == 0.0) antweightsrms = currentAntWeightsRMS;
       if ( fabs(currentAntWeightsRMS-antweightsrms)/antweightsrms >= 0.01 ) {
          ihsfarstruct->ihsfar->data[0] = 0.0;
          antweightsrms = currentAntWeightsRMS;
@@ -432,7 +449,7 @@ int main(int argc, char *argv[])
       
       //Average noise floor of FF plane for each 1st FFT frequency bin
       ffdata->ffnormalization = 1.0;
-      ffPlaneNoise(aveNoise, inputParams, background_slided, antweights, &(ffdata->ffnormalization));
+      ffPlaneNoise(aveNoise, inputParams, background_slided, antweights, secondFFTplan, &(ffdata->ffnormalization));
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: ffPlaneNoise() failed.\n", fn);
          XLAL_ERROR(fn, XLAL_EFUNC);
@@ -1111,6 +1128,12 @@ int main(int argc, char *argv[])
    free_candidateVector(exactCandidates1);
    free_candidateVector(exactCandidates2);
    
+   //print end time
+   time(&programendtime);
+   ptm = localtime(&programendtime);
+   fprintf(stderr, "Program finished on %s\n", asctime(ptm));
+   fprintf(LOG, "Program finished on %s\n", asctime(ptm));
+   
    fclose(LOG);
    
    return 0;
@@ -1756,7 +1779,7 @@ REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
 
 //////////////////////////////////////////////////////////////
 // Measure of the average noise power in each 2st FFT frequency bin  -- 
-void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL8 *normalization)
+void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4FFTPlan *plan, REAL8 *normalization)
 {
    
    const CHAR *fn = __func__;
@@ -1783,12 +1806,8 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    //Set up for making the PSD
    for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] = 0.0;
    REAL4Window *win = XLALCreateHannREAL4Window((UINT4)numffts);
-   REAL4FFTPlan *plan = XLALCreateForwardREAL4FFTPlan((UINT4)numffts, 0 );
    REAL4Vector *psd = XLALCreateREAL4Vector((UINT4)numfprbins);   //Current PSD calculation
-   if (plan==NULL) {
-      fprintf(stderr,"%s: XLALCreateForwardREAL4FFTPlan(%d, 0) failed.\n", fn, numffts);
-      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-   } else if (win==NULL) {
+   if (win==NULL) {
       fprintf(stderr,"%s: XLALCreateHannREAL4Window(%d) failed.\n", fn, numffts);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    } else if (psd==NULL) {
@@ -1931,13 +1950,56 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    XLALDestroyREAL4Vector(x);
    XLALDestroyREAL4Vector(psd);
    XLALDestroyREAL4Window(win);
-   XLALDestroyREAL4FFTPlan(plan);
    XLALDestroyREAL4Vector(aveNoiseInTime);
    XLALDestroyREAL4Vector(rngMeansOverBand);
    XLALDestroyREAL8Vector(multiplicativeFactor);
    gsl_rng_free(rng);
 
 } /* ffPlaneNoise() */
+
+
+//For testing purposes only!!!!
+REAL4Vector * simpleTFdata(REAL8 fsig, REAL8 period, REAL8 moddepth, REAL8 Tcoh, REAL8 Tobs, REAL8 SFToverlap, REAL8 fminimum, REAL8 fmaximum, REAL8 sqrtSh)
+{
+   
+   const CHAR *fn = __func__;
+   
+   INT4 numfbins = (INT4)(round((fmaximum-fminimum)*Tcoh)+1);   //Number of frequency bins
+   INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1); //Number of FFTs
+   
+   REAL4Vector *output = XLALCreateREAL4Vector(numfbins*numffts);
+   
+   //Initialize the random number generator
+   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   if (rng==NULL) {
+      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", fn);
+      XLAL_ERROR_NULL(fn, XLAL_EFUNC);
+   }
+   gsl_rng_set(rng, 0);
+   
+   INT4 ii, jj;
+   REAL8 correlationfactor = 0.167, corrfactorsquared = correlationfactor*correlationfactor;
+   for (ii=0; ii<numffts; ii++) {
+      for (jj=0; jj<numfbins; jj++) {
+         if (ii==0) {
+            output->data[jj] = expRandNum(sqrtSh, rng);
+         } else {
+            output->data[ii*numfbins + jj] = corrfactorsquared*output->data[(ii-1)*numfbins + jj] + (1.0-corrfactorsquared)*expRandNum(sqrtSh, rng);
+         }
+
+      }
+   }
+   
+   for (ii=0; ii<numffts; ii++) {
+      REAL8 fbin = fsig + moddepth*sin(LAL_TWOPI*((ii+1)*SFToverlap)/period) - fminimum;
+      for (jj=0; jj<numfbins; jj++) output->data[ii*numfbins + jj] += 0.03*(2.0/3.0)*Tcoh*sqsincxoverxsqminusone(fbin*Tcoh-(REAL8)jj);
+   }
+   
+   gsl_rng_free(rng);
+   
+   return output;
+   
+}
 
 
 
@@ -1958,6 +2020,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->templatefar = args_info.tmplfar_arg;
    params->ULmindf = args_info.ULminimumDeltaf_arg;
    params->ULmaxdf = args_info.ULmaximumDeltaf_arg;
+   params->ihsfactor = args_info.ihsfactor_arg;
    params->rootFindingMethod = args_info.BrentsMethod_given;
    params->antennaOff = args_info.antennaOff_given;
    params->noiseWeightOff = args_info.noiseWeightOff_given;

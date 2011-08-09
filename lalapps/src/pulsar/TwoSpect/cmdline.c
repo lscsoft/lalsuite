@@ -46,6 +46,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --Pmax=DOUBLE             Maximum period to be searched",
   "      --dfmin=DOUBLE            Minimum modulation depth to search",
   "      --dfmax=DOUBLE            Maximum modulation depth to search",
+  "      --ihsfactor=INT           Number of harmonics to sum in IHS algorithm  \n                                  (default=`5')",
   "      --IFO=STRING              Interferometer of whose data is being analyzed  \n                                  (default=`H1')",
   "      --ihsfar=DOUBLE           IHS FAR threshold  (default=`0.01')",
   "      --ihsfom=DOUBLE           IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2",
@@ -118,11 +119,12 @@ init_help_array(void)
   gengetopt_args_info_help[34] = gengetopt_args_info_full_help[34];
   gengetopt_args_info_help[35] = gengetopt_args_info_full_help[35];
   gengetopt_args_info_help[36] = gengetopt_args_info_full_help[36];
-  gengetopt_args_info_help[37] = 0; 
+  gengetopt_args_info_help[37] = gengetopt_args_info_full_help[37];
+  gengetopt_args_info_help[38] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[38];
+const char *gengetopt_args_info_help[39];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -185,6 +187,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->Pmax_given = 0 ;
   args_info->dfmin_given = 0 ;
   args_info->dfmax_given = 0 ;
+  args_info->ihsfactor_given = 0 ;
   args_info->IFO_given = 0 ;
   args_info->ihsfar_given = 0 ;
   args_info->ihsfom_given = 0 ;
@@ -235,6 +238,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->Pmax_orig = NULL;
   args_info->dfmin_orig = NULL;
   args_info->dfmax_orig = NULL;
+  args_info->ihsfactor_arg = 5;
+  args_info->ihsfactor_orig = NULL;
   args_info->IFO_arg = gengetopt_strdup ("H1");
   args_info->IFO_orig = NULL;
   args_info->ihsfar_arg = 0.01;
@@ -305,35 +310,36 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->Pmax_help = gengetopt_args_info_full_help[11] ;
   args_info->dfmin_help = gengetopt_args_info_full_help[12] ;
   args_info->dfmax_help = gengetopt_args_info_full_help[13] ;
-  args_info->IFO_help = gengetopt_args_info_full_help[14] ;
-  args_info->ihsfar_help = gengetopt_args_info_full_help[15] ;
-  args_info->ihsfom_help = gengetopt_args_info_full_help[16] ;
-  args_info->ihsfomfar_help = gengetopt_args_info_full_help[17] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[18] ;
-  args_info->avesqrtSh_help = gengetopt_args_info_full_help[19] ;
-  args_info->blksize_help = gengetopt_args_info_full_help[20] ;
-  args_info->outdirectory_help = gengetopt_args_info_full_help[21] ;
-  args_info->outfilename_help = gengetopt_args_info_full_help[22] ;
-  args_info->ULfilename_help = gengetopt_args_info_full_help[23] ;
-  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[24] ;
-  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[25] ;
-  args_info->sftDir_help = gengetopt_args_info_full_help[26] ;
-  args_info->ephemDir_help = gengetopt_args_info_full_help[27] ;
-  args_info->ephemYear_help = gengetopt_args_info_full_help[28] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[29] ;
-  args_info->templateLength_help = gengetopt_args_info_full_help[30] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[31] ;
-  args_info->SFToverlap_help = gengetopt_args_info_full_help[32] ;
-  args_info->sftType_help = gengetopt_args_info_full_help[33] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[34] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[35] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[36] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[37] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[38] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[39] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[40] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[41] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[42] ;
+  args_info->ihsfactor_help = gengetopt_args_info_full_help[14] ;
+  args_info->IFO_help = gengetopt_args_info_full_help[15] ;
+  args_info->ihsfar_help = gengetopt_args_info_full_help[16] ;
+  args_info->ihsfom_help = gengetopt_args_info_full_help[17] ;
+  args_info->ihsfomfar_help = gengetopt_args_info_full_help[18] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[19] ;
+  args_info->avesqrtSh_help = gengetopt_args_info_full_help[20] ;
+  args_info->blksize_help = gengetopt_args_info_full_help[21] ;
+  args_info->outdirectory_help = gengetopt_args_info_full_help[22] ;
+  args_info->outfilename_help = gengetopt_args_info_full_help[23] ;
+  args_info->ULfilename_help = gengetopt_args_info_full_help[24] ;
+  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[25] ;
+  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[26] ;
+  args_info->sftDir_help = gengetopt_args_info_full_help[27] ;
+  args_info->ephemDir_help = gengetopt_args_info_full_help[28] ;
+  args_info->ephemYear_help = gengetopt_args_info_full_help[29] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[30] ;
+  args_info->templateLength_help = gengetopt_args_info_full_help[31] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[32] ;
+  args_info->SFToverlap_help = gengetopt_args_info_full_help[33] ;
+  args_info->sftType_help = gengetopt_args_info_full_help[34] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[35] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[36] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[37] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[38] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[39] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[40] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[41] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[42] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[43] ;
   
 }
 
@@ -435,6 +441,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->Pmax_orig));
   free_string_field (&(args_info->dfmin_orig));
   free_string_field (&(args_info->dfmax_orig));
+  free_string_field (&(args_info->ihsfactor_orig));
   free_string_field (&(args_info->IFO_arg));
   free_string_field (&(args_info->IFO_orig));
   free_string_field (&(args_info->ihsfar_orig));
@@ -523,6 +530,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "dfmin", args_info->dfmin_orig, 0);
   if (args_info->dfmax_given)
     write_into_file(outfile, "dfmax", args_info->dfmax_orig, 0);
+  if (args_info->ihsfactor_given)
+    write_into_file(outfile, "ihsfactor", args_info->ihsfactor_orig, 0);
   if (args_info->IFO_given)
     write_into_file(outfile, "IFO", args_info->IFO_orig, 0);
   if (args_info->ihsfar_given)
@@ -853,6 +862,7 @@ cmdline_parser_internal (
         { "Pmax",	1, NULL, 0 },
         { "dfmin",	1, NULL, 0 },
         { "dfmax",	1, NULL, 0 },
+        { "ihsfactor",	1, NULL, 0 },
         { "IFO",	1, NULL, 0 },
         { "ihsfar",	1, NULL, 0 },
         { "ihsfom",	1, NULL, 0 },
@@ -1057,6 +1067,20 @@ cmdline_parser_internal (
                 &(local_args_info.dfmax_given), optarg, 0, 0, ARG_DOUBLE,
                 check_ambiguity, override, 0, 0,
                 "dfmax", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Number of harmonics to sum in IHS algorithm.  */
+          else if (strcmp (long_options[option_index].name, "ihsfactor") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->ihsfactor_arg), 
+                 &(args_info->ihsfactor_orig), &(args_info->ihsfactor_given),
+                &(local_args_info.ihsfactor_given), optarg, 0, "5", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "ihsfactor", '-',
                 additional_error))
               goto failure;
           

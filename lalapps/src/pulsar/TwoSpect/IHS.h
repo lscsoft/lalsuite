@@ -28,8 +28,8 @@ void runIHS(ihsMaximaStruct *output, ffdataStruct *input, inputParamsStruct *par
 
 ihsVals * new_ihsVals(void);
 void free_ihsVals(ihsVals *ihsvals);
-void incHarmSum(ihsVals *output, REAL4Vector *input);
-void incHarmSumVector(REAL4Vector *output, REAL4Vector *input);
+void incHarmSum(ihsVals *output, REAL4Vector *input, INT4 ihsfactor);
+void incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor);
 
 ihsfarStruct * new_ihsfarStruct(INT4 rows);
 void free_ihsfarStruct(ihsfarStruct *ihsfarstruct);

@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.2"
+#define CMDLINE_PARSER_VERSION "1.1.4"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -73,6 +73,9 @@ struct gengetopt_args_info
   double dfmax_arg;	/**< @brief Maximum modulation depth to search.  */
   char * dfmax_orig;	/**< @brief Maximum modulation depth to search original value given at command line.  */
   const char *dfmax_help; /**< @brief Maximum modulation depth to search help description.  */
+  int ihsfactor_arg;	/**< @brief Number of harmonics to sum in IHS algorithm (default='5').  */
+  char * ihsfactor_orig;	/**< @brief Number of harmonics to sum in IHS algorithm original value given at command line.  */
+  const char *ihsfactor_help; /**< @brief Number of harmonics to sum in IHS algorithm help description.  */
   char * IFO_arg;	/**< @brief Interferometer of whose data is being analyzed (default='H1').  */
   char * IFO_orig;	/**< @brief Interferometer of whose data is being analyzed original value given at command line.  */
   const char *IFO_help; /**< @brief Interferometer of whose data is being analyzed help description.  */
@@ -167,6 +170,7 @@ struct gengetopt_args_info
   unsigned int Pmax_given ;	/**< @brief Whether Pmax was given.  */
   unsigned int dfmin_given ;	/**< @brief Whether dfmin was given.  */
   unsigned int dfmax_given ;	/**< @brief Whether dfmax was given.  */
+  unsigned int ihsfactor_given ;	/**< @brief Whether ihsfactor was given.  */
   unsigned int IFO_given ;	/**< @brief Whether IFO was given.  */
   unsigned int ihsfar_given ;	/**< @brief Whether ihsfar was given.  */
   unsigned int ihsfom_given ;	/**< @brief Whether ihsfom was given.  */

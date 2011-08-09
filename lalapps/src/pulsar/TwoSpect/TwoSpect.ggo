@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.2"
+version "1.1.4"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
@@ -15,6 +15,7 @@ option "Pmin"  - "Minimum period to be searched" double default="7200.0" optiona
 option "Pmax"  - "Maximum period to be searched" double optional
 option "dfmin" - "Minimum modulation depth to search" double optional
 option "dfmax" - "Maximum modulation depth to search" double optional
+option "ihsfactor" - "Number of harmonics to sum in IHS algorithm" int default="5" optional
 option "IFO"   - "Interferometer of whose data is being analyzed" string default="H1" optional
 option "ihsfar"   - "IHS FAR threshold" double default="0.01" optional
 option "ihsfom"    - "IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2" double optional
