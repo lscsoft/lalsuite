@@ -758,12 +758,10 @@ void readPulsarData( LALInferenceRunState *runState ){
     /*generate the fake data timestamps.*/
     /*====================================================================*/
     
+    fstarts = XLALCalloc( MAXDETS*ml, sizeof(REAL8) );
     ppt = LALInferenceGetProcParamVal(commandLine,"--fake-starts");
     if( ppt ){
-      CHAR *tmpstarts = NULL, *tmpstart = NULL, startval[256];
-      
-      fstarts = XLALCalloc( MAXDETS*ml, sizeof(REAL8) );
-      
+      CHAR *tmpstarts = NULL, *tmpstart = NULL, startval[256];  
       fakestarts = XLALStringDuplicate( ppt->value );
       
       if( (numStarts = count_csv( fakestarts )) != numDets*ml ){
@@ -785,12 +783,10 @@ void readPulsarData( LALInferenceRunState *runState ){
       for(i = 0; i < ml*numDets; i++ ) fstarts[i] = 900000000.;
     }
       
+    flengths = XLALCalloc( MAXDETS*ml, sizeof(REAL8) );
     ppt = LALInferenceGetProcParamVal(commandLine,"--fake-lengths");
     if( ppt ){
       CHAR *tmplengths = NULL, *tmplength = NULL, lengthval[256];
-      
-      flengths = XLALCalloc( MAXDETS*ml, sizeof(REAL8) );
-      
       fakelengths = XLALStringDuplicate( ppt->value );
       
       if( (numLengths = count_csv( fakelengths )) != numDets*ml ){
@@ -811,12 +807,10 @@ void readPulsarData( LALInferenceRunState *runState ){
       for(i = 0; i < ml*numDets; i++ ) flengths[i] = 86400.;
     }
       
+    fdt = XLALCalloc( MAXDETS*ml, sizeof(REAL8) );
     ppt = LALInferenceGetProcParamVal(commandLine,"--fake-dt");
     if( ppt ){
       CHAR *tmpdts = NULL, *tmpdt = NULL, dtval[256];
-      
-      fdt = XLALCalloc( MAXDETS*ml, sizeof(REAL8) );
-      
       fakedt = XLALStringDuplicate( ppt->value );
       
       if( (numDt = count_csv( fakedt )) != numDets ){
