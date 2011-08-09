@@ -1297,7 +1297,7 @@ void coh_PTF_statistic(
   for ( i = numPoints/4; i < 3*numPoints/4; ++i ) /* Main loop over time */
   {
     // Check if the single detector cut is passed
-    // THis is not yet implemented and may not be needed for 2 detectors
+    // This is not yet implemented and may not be needed for 2 detectors
     /*if (snrComps[ifoNum1]->data->data[i + tOffset1] < 4 && snrComps[ifoNum2]->data->data[i + tOffset2] < 4)
     {
       cohSNR->data->data[i-sOffset] = 0;
