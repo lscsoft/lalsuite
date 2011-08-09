@@ -177,8 +177,8 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
         elem->sumTwoFX = sumTwoFX;
         /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
-        candidateDopplerParams.Alpha = elem->Alpha;
-        candidateDopplerParams.Delta = elem->Delta;
+        candidateDopplerParams.Alpha = elem->AlphaBest;
+        candidateDopplerParams.Delta = elem->DeltaBest;
         fkdotTMP[0] = elem->Freq;
         fkdotTMP[1] = elem->f1dot;
       } /* if listEntryType 2 */
