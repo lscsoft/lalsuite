@@ -457,7 +457,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]);
 		}
-		if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
+		if(runState->logsample) runState->logsample(runState,runState->livePoints[i]);
 		LALInferencePrintSample(fpout,runState->livePoints[i]);
 		fprintf(fpout,"%lf\n",logLikelihoods[i]);
 	}
@@ -473,8 +473,15 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 #ifdef HAVE_LIBLALXML	
 	/* Write out the XML if requested */
 	if(output_array && outVOTable && N_output_array>0){
-		xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array);
-		xmlNodePtr nestResource=XLALCreateVOTResourceNode("LALInferenceVariablesTable","Nested samples",votable);
+		xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array, "Nest Samples");
+		xmlNodePtr stateResource=XLALInferenceStateVariables2VOTResource(runState, "Run State Configuration");
+		
+		xmlNodePtr nestResource=XLALCreateVOTResourceNode("LALInferenceVariablesTable","Nested sampling run",votable);
+		
+		if(stateResource)
+			xmlAddChild(nestResource,stateResource);
+		
+
 		char *xmlString = XLALCreateVOTStringFromTree ( nestResource );
 		
 		/* Write to disk */
