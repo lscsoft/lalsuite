@@ -1796,7 +1796,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 			/* template corresponds to stored parameter values                    */
 			/* and other functions may time-shift template to where they want it: */
       
-      instant=instant+(int)windowshift*IFOdata->timeData->deltaT; //leave enough room for the tuckey windowing of the data.
+      instant=instant+(INT8)windowshift*IFOdata->timeData->deltaT; //leave enough room for the tuckey windowing of the data.
 			LALInferenceSetVariable(IFOdata->modelParams, "time", &instant);
 			
 			
@@ -1838,7 +1838,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
                 IFOdata->timeModelhCross->data->data[i]= a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
               }
             }
-            instant-= (waveform.phi->data->length-IFOdata->timeData->data->length+2*(int)windowshift)*IFOdata->timeData->deltaT;
+            instant-= ((INT8)waveform.phi->data->length-(INT8)IFOdata->timeData->data->length+2*(INT8)windowshift)*IFOdata->timeData->deltaT;
             LALInferenceSetVariable(IFOdata->modelParams, "time", &instant);
           }
 				//}else if(waveform.h && approximant == SpinTaylorFrameless){
@@ -1877,7 +1877,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
                 IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[2*(i+waveform.h->data->length-IFOdata->timeData->data->length+windowshift)+1];
               }
             }
-          instant-= (waveform.h->data->length-IFOdata->timeData->data->length+2*(int)windowshift)*IFOdata->timeData->deltaT;
+          instant-= ((INT8)waveform.h->data->length-(INT8)IFOdata->timeData->data->length+2*(INT8)windowshift)*IFOdata->timeData->deltaT;
           LALInferenceSetVariable(IFOdata->modelParams, "time", &instant);
           }
         }else{
