@@ -468,6 +468,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	fpout=fopen(bayesfile,"w");
 	fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
 	fclose(fpout);
+	double logB=logZ-logZnoise;
+	/* Pass output back through algorithmparams */
+	LALInferenceAddVariable(runState->algorithmParams,"logZ",(void *)&logZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(runState->algorithmParams,"logB",(void *)&logB,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(runState->algorithmParams,"logLmax",(void *)&logLmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
 #ifdef HAVE_LIBLALXML	
 	/* Write out the XML if requested */

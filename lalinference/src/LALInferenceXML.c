@@ -229,28 +229,17 @@ xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *s
 	xmlNodePtr algNode=NULL;
 	xmlNodePtr priorNode=NULL;
 	xmlNodePtr propNode=NULL;
-	xmlNodePtr childNodeList=NULL;
+	xmlNodePtr resNode=NULL;
 	/* Serialise various params to VOT Table nodes */
+	resNode=XLALCreateVOTResourceNode("LALInferenceRunState Settings",name,NULL);
 	
 	algNode=XLALCreateVOTTableNode("Algorithm Params",XLALInferenceVariables2VOTParamNode(state->algorithmParams),NULL);
-	childNodeList=algNode;
+	if(algNode) xmlAddChild(resNode,algNode);
 	priorNode=XLALCreateVOTTableNode("Prior Arguments",XLALInferenceVariables2VOTParamNode(state->priorArgs),NULL);
-	if(childNodeList){
-		if(priorNode)
-			xmlAddSibling(childNodeList,priorNode);
-	}
-	else
-		childNodeList=priorNode;
-
+	if(priorNode) xmlAddChild(resNode,priorNode);
 	propNode=XLALCreateVOTTableNode("Proposal Arguments",XLALInferenceVariables2VOTParamNode(state->proposalArgs),NULL);
-	if(childNodeList){
-		if(propNode)
-			xmlAddSibling(childNodeList,propNode);
-	}
-	else
-		childNodeList=propNode;
-
-	return(XLALCreateVOTResourceNode("LALInferenceRunStateSettings",name,childNodeList));
+	if(propNode) xmlAddChild(resNode,propNode);
+	return(resNode);
 
 }
 
@@ -280,23 +269,25 @@ xmlNodePtr XLALInferenceVariables2VOTParamNode (const LALInferenceVariables *con
 {
   
   /* set up local variables */
-  const char *fn = __func__;
+  /*const char *fn = __func__;*/
   xmlNodePtr xmlChildNodeList = NULL;
+  xmlNodePtr xmlChild;
   LALInferenceVariableItem *marker=vars->head;
-  xmlNodePtr *xmlChildNodePtr=&xmlChildNodeList;
-
   
   /* Walk through the LALInferenceVariables adding each one */
   while(marker){
-    *xmlChildNodePtr = (LALInferenceVariableItem2VOTParamNode(marker));
-        if(!*xmlChildNodePtr) {
-					/* clean up */
-					xmlFreeNodeList(xmlChildNodeList);
-					XLALPrintError("Couldn't create PARAM node: %s\n", marker->name);
-					XLAL_ERROR_NULL(fn, XLAL_EFAILED);
-    }
+    xmlChild = (LALInferenceVariableItem2VOTParamNode(marker));
     marker=marker->next;
-    xmlChildNodePtr = &((*xmlChildNodePtr)->next);
+    if(!xmlChild) {
+					/* clean up */
+					/* if(xmlChildNodeList) xmlFreeNodeList(xmlChildNodeList); */
+					XLALPrintError("Couldn't create PARAM node: %s\n", marker->name);
+					/* XLAL_ERROR_NULL(fn, XLAL_EFAILED); */
+					continue;
+    }
+    if(!xmlChildNodeList) xmlChildNodeList=xmlChild;
+    else xmlAddSibling(xmlChildNodeList,xmlChild);
+    
   }
   return(xmlChildNodeList);
 }
@@ -354,7 +345,7 @@ xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varit
 
 	/* Special case for string */
 	if(varitem->type==LALINFERENCE_string_t)
-		return(XLALCreateVOTParamNode(varitem->name,unitName,VOT_CHAR,"*",varitem->value));
+		return(XLALCreateVOTParamNode(varitem->name,unitName,VOT_CHAR,"*",*(char **)varitem->value));
 	
   /* Check the type of the item */
   vo_type=LALInferenceVariableType2VOT(varitem->type);
