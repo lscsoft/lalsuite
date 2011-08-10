@@ -528,7 +528,7 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 			continue;
 		/* Otherwise, check that logL is OK */
 		logLnew=runState->likelihood(newParams,runState->data,runState->template);
-                
+        LALInferenceAddVariable(newParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
                 if(logLnew > logLmin){
 			Naccepted++;
 			logPriorOld=logPriorNew;
@@ -852,7 +852,7 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 		paraA=Live[i]->head; paraB=Live[j]->head;
 		/* Add the vector B-A */
 		same=1;
-		for(paraHead=parameter->head,paraA=Live[i]->head,paraB=Live[j]->head;paraHead;paraHead=paraHead->next,paraB=paraB->next,paraA=paraA->next)
+		for(paraHead=parameter->head,paraA=Live[i]->head,paraB=Live[j]->head;paraHead&&paraA&&paraB;paraHead=paraHead->next,paraB=paraB->next,paraA=paraA->next)
 		{
 			if(paraHead->vary!=LALINFERENCE_PARAM_LINEAR && paraHead->vary!=LALINFERENCE_PARAM_CIRCULAR) continue;
 			*(REAL8 *)paraHead->value+=*(REAL8 *)paraB->value;
@@ -1214,6 +1214,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 		}while(runState->prior(runState,runState->livePoints[i])==-DBL_MAX);
 		/* Populate log likelihood */
 		logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
+        LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
 	
 }

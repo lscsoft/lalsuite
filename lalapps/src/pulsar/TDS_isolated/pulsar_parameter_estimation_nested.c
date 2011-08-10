@@ -1937,6 +1937,7 @@ void setupLivePointsArray( LALInferenceRunState *runState ){
     /* Populate log likelihood */           
     logLs->data[i] = runState->likelihood( runState->livePoints[i],
                                            runState->data, runState->template );
+    LALInferenceAddVariable(runState->livePoints[i],"logL",&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   }
         
 }
@@ -3933,7 +3934,7 @@ void rescaleOutput( LALInferenceRunState *runState ){
   CHAR v[128] = "";
   while( fscanf(fppars, "%s", v) != EOF ){
     /* reoutput everything but the "model" value to a temporary file */
-    if( strcmp(v, "model") != 0 )
+    if( strcmp(v, "model") != 0 || strcmp(v,"logL")!=0 )
       fprintf(fpparstmp, "%s\t", v);
   }
   
@@ -3979,7 +3980,7 @@ void rescaleOutput( LALInferenceRunState *runState ){
       sprintf(scalename, "%s_scale", item->name);
       sprintf(scaleminname, "%s_scale_min", item->name);
       
-      if( strcmp(item->name, "model") ){
+      if( strcmp(item->name, "model") && strcmp(item->name, "logL")){
         scalefac = 
           *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, 
                                              scalename );
