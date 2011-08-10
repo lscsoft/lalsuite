@@ -137,6 +137,7 @@ struct CommandLineArgsTag {
   char *miscDesc;          /* 12/28/05 gam; string giving misc. part of the SFT description field in the filename */
   INT4 PSSCleaning;	   /* 1=YES and 0=NO*/
   REAL8 PSSCleanHPf;       /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES.*/
+  INT4 PSSCleanExt;        /* Extend the timeseries at the beginning before calculating the autoregressive mean */
   INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
   BOOLEAN useSingle;       /* 11/19/05 gam; use single rather than double precision */
@@ -208,7 +209,7 @@ int WindowDataHann(struct CommandLineArgsTag CLA);
 #ifdef PSS_ENABLED
 /* Time Domain Cleaning with PSS functions */
 int PSSTDCleaningDouble(struct CommandLineArgsTag CLA);
-int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency);
+int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency, INT4 extendTimeseries);
 #endif
 
 /* create an SFT */
@@ -597,6 +598,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"pss-fact",             required_argument, NULL,          514},
     {"pss-cr",               required_argument, NULL,          515},
     {"pss-edge",             required_argument, NULL,          516},
+    {"pss-ext",              required_argument, NULL,          517},
 #endif
     {"ht-data",              no_argument,       NULL,          'H'},
     {"use-single",           no_argument,       NULL,          'S'},
@@ -627,6 +629,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->frameStructType=NULL; /* 01/10/07 gam */
   CLA->PSSCleaning = 0;	     /* 1=YES and 0=NO*/
   CLA->PSSCleanHPf = 100.0;  /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES. defaults to 100Hz */
+  CLA->PSSCleanExt = 1;      /* by default, extend the timeseries */
 
   strcat(allargs, "Command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
   for(i = 0; i < argc; i++)
@@ -754,6 +757,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       XLALPSSParams.edge = atof(optarg);
       XLALPSSParams.set |= XLALPSS_SET_EDGE;
       break;
+    case 517:
+      CLA->PSSCleanExt = atoi(optarg);
+      break;
 #endif
     case 'h':
       /* print usage/help message */
@@ -786,6 +792,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tpss-fact           \tFLOAT\t (optional) Set PSS parameter 'fact' for time-domain cleaning\n");
       fprintf(stdout,"\tpss-cr             \tFLOAT\t (optional) Set PSS parameter 'cr' for time-domain cleaning\n");
       fprintf(stdout,"\tpss-edge           \tFLOAT\t (optional) Set PSS parameter 'edge' for time-domain cleaning\n");
+      fprintf(stdout,"\tpss-ext            \tINT\t (optional) Extend the timeseries at the beginning before calculating the autoregressive mean, defaults to 1, set to 0 for no\n");
 #endif
       fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message.\n");
       exit(0);
@@ -1635,7 +1642,7 @@ int CreateSFT(struct CommandLineArgsTag CLA)
   -3 if input parameters are invalid
    0 otherwise (all went well)
 */
-int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
+int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency, INT4 extendTimeseries) {
   UINT4 samples;                /**< number of samples in the timeseries */
   PSSTimeseries *originalTS;    /**< the timeseries converted to a PSS timeseries */
   PSSTimeseries *highpassTS;    /**< originalTS after high pass filtering */
@@ -1715,10 +1722,18 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
   if(debug)
     XLALPrintPSSTimeseriesToFile(highpassTS,"highpassTS.dat",0);
 
-  if( XLALPSSComputeExtARMeanAndStdev(eventParams, highpassTS, &headerParams) == NULL) {
-    fprintf(stderr,"XLALPSSComputeExtARMeanAndStdev call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
+  if( extendTimeseries ) {
+    if( XLALPSSComputeExtARMeanAndStdev(eventParams, highpassTS, &headerParams) == NULL) {
+      fprintf(stderr,"XLALPSSComputeExtARMeanAndStdev call failed %s,%d\n",__FILE__,__LINE__);
+      retval = -2;
+      goto PSSTDCleaningREAL8FreeAll;
+    }
+  } else {
+    if( XLALPSSComputeARMeanAndStdev(eventParams, highpassTS, &headerParams) == NULL) {
+      fprintf(stderr,"XLALPSSComputeARMeanAndStdev call failed %s,%d\n",__FILE__,__LINE__);
+      retval = -2;
+      goto PSSTDCleaningREAL8FreeAll;
+    }
   }
 
   if( XLALIdentifyPSSCleaningEvents(eventParams, highpassTS) == NULL) {
@@ -1782,7 +1797,7 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
 
 
 int PSSTDCleaningDouble(struct CommandLineArgsTag CLA) {
-  return(PSSTDCleaningREAL8(&dataDouble, CLA.PSSCleanHPf));
+  return(PSSTDCleaningREAL8(&dataDouble, CLA.PSSCleanHPf, CLA.PSSCleanExt));
 }
 
 #endif /* PSS_ENABLED */
