@@ -162,7 +162,10 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LALInference has now been successfully configured
+        LALInference has now been successfully configured:
+
+                LAL XML library support is $LALXML_ENABLE_VAL
+
         and will be installed under the directory:
 
           ${prefix}
