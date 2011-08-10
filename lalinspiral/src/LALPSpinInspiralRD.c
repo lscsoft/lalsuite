@@ -206,6 +206,7 @@ typedef struct LALPSpinInspiralRDstructparams {
   REAL8 OmCutoff;
   REAL8 lengths;
   REAL8 omOffset;
+  REAL8 polarization;
   UINT4 length;
   UINT4 inspiralOnly;
 } LALPSpinInspiralRDparams;
@@ -468,7 +469,7 @@ static int XLALSpinInspiralDerivatives(double t, const double values[], double d
     /* auxiliary variables*/
     REAL8 S1S2, S1S1, S2S2;     // Scalar products
     REAL8 alphadotcosi;         // alpha is the right ascension of L, i(iota) the angle between L and J
-    REAL8 v, v2, v3, v4, v5, v6, v7, v8;
+    REAL8 v, v2, v3, v4, v5, v6, v7;
     REAL8 tmpx, tmpy, tmpz, cross1x, cross1y, cross1z, cross2x, cross2y, cross2z, LNhxy;
 
     LALPSpinInspiralRDparams *params = (LALPSpinInspiralRDparams *) mparams;
@@ -499,7 +500,6 @@ static int XLALSpinInspiralDerivatives(double t, const double values[], double d
     v5 = omega * v2;
     v6 = omega * omega;
     v7 = v6 * v;
-    v8 = v6 * v2;
 
     // Omega derivative without spin effects up to 3.5 PN
     // this formula does not include the 1.5PN shift mentioned in arXiv:0810.5336, five lines below (3.11)
@@ -861,7 +861,7 @@ void LALPSpinInspiralRDForInjection(LALStatus        * status,
     waveform->phi->sampleUnits = lalDimensionlessUnit;
 
     waveform->position = ppnParams->position;
-    waveform->psi = ppnParams->psi;
+    waveform->psi = ppnParams->psi - params->polarisationAngle;
 
     snprintf(waveform->h->name, LALNameLength,  "PSpinInspiralRD amplitudes");
     snprintf(waveform->f->name, LALNameLength,  "PSpinInspiralRD frequency");
@@ -1595,6 +1595,10 @@ static void LALSpinInspiralEngine(LALStatus * status,
 
     energy = values.data[11] = newvalues.data[11];
 
+    if (count==0) {
+      mparams->polarization=atan2(LNhy,LNhx);
+    }
+
     alphaold = alpha;
     LNhxy = sqrt(LNhx * LNhx + LNhy * LNhy);
     if (LNhxy>0.)
@@ -1824,6 +1828,8 @@ static int XLALSpinInspiralAdaptiveEngine(
   REAL8 *S2y    = &yout->data[10*intlen];
   REAL8 *S2z    = &yout->data[11*intlen];
   REAL8 *energy = &yout->data[12*intlen];
+
+  mparams->polarization=2.*atan2(LNhy[1],LNhx[1])-atan2(LNhy[2],LNhx[2]);
 
   if (mparams->inspiralOnly!=1) {
 
@@ -2085,6 +2091,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   REAL8 initomega,initphi;
   REAL8 inc;
   REAL8 LNhmag,initJmag;
+  REAL8 LNhxy;
   REAL8 initS1[3],initS2[3],initLNh[3],initJ[3];
   REAL8 iS1[3],iS2[3];
   REAL8 phiJ,thetaJ;
@@ -2232,7 +2239,9 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
      initial frequency.
      The polarization angle is not used here, it enters the pattern
      functions along with the angles marking the sky position of the
-     source. */
+     source. However a misalignment of the line of nodes wrt to the standard
+     convention can take place when L is initially aligned with N, this is 
+     re-absorbed by a redefinition of the psi angle.*/
 
   // Physical magnitude of the orbital angular momentum
   LNhmag = params->eta * params->totalMass * params->totalMass / pow(initomega,oneby3);
@@ -2273,27 +2282,27 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     }
     initJ[2] += LNhmag;
     initJmag = sqrt(initJ[0] * initJ[0] + initJ[1] * initJ[1] + initJ[2] * initJ[2]);
-    if (initJ[0])
+    if (initJ[1])
       phiJ = atan2(initJ[1], initJ[0]);
     else
       phiJ = 0.;
     thetaJ = acos(initJ[2]/initJmag);
-    rz[0][0] = cos(phiJ);
-    rz[0][1] = sin(phiJ);
+    rz[0][0] = -cos(phiJ);
+    rz[0][1] = -sin(phiJ);
     rz[0][2] = 0.;
-    rz[1][0] = -sin(phiJ);
-    rz[1][1] = cos(phiJ);
+    rz[1][0] = sin(phiJ);
+    rz[1][1] = -cos(phiJ);
     rz[1][2] = 0.;
     rz[2][0] = 0.;
     rz[2][1] = 0.;
     rz[2][2] = 1.;
     ry[0][0] = cos(thetaJ);
     ry[0][1] = 0;
-    ry[0][2] = -sin(thetaJ);
+    ry[0][2] = sin(thetaJ);
     ry[1][0] = 0.;
     ry[1][1] = 1.;
     ry[1][2] = 0.;
-    ry[2][0] = sin(thetaJ);
+    ry[2][0] = -sin(thetaJ);
     ry[2][1] = 0.;
     ry[2][2] = cos(thetaJ);
     for (j = 0; j < 3; j++) {
@@ -2306,14 +2315,11 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
       }
     }
     inc = params->inclination;
-    if (initLNh[0]<0.)
-      for (j=0;j<2;j++) {
-	initS1[j] *=-1.;
-	initS2[j] *=-1.;
-	initLNh[j] *=-1.;
-      }
     break;
   }
+
+  if (initS1[0]*initS1[0]+initS1[1]*initS1[1]+initS2[0]*initS2[0]+initS2[1]*initS2[1]) LNhxy=sqrt(initLNh[0]*initLNh[0]+initLNh[1]*initLNh[1]);
+  else LNhxy=1.;
 
   /*All the PN formulas used in the differential equation integration 
     assume that the spin variables are the physical ones divided by
@@ -3092,6 +3098,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   }
 
   params->fFinal = params->tSampling / 2.;
+  if (LNhxy) params->polarisationAngle = 0.;
+  else       params->polarisationAngle = mparams.polarization;
 
   /*------------------------------------------------------
    * If required by the user copy other data sets to the

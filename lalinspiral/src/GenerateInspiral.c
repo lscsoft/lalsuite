@@ -195,6 +195,9 @@ LALGenerateInspiral(
     /* we populate the simInspiral table with the fFinal needed for
        template normalisation. */
     thisEvent->f_final = inspiralParams.fFinal;
+    // The following is necessary in the case the PhenSpin code performs a 
+    // rotation to a new frame axis, affecting the original psi.
+    if (approximant==PhenSpinTaylorRD) thisEvent->polarization = waveform->psi;
     CHECKSTATUSPTR(status);
   }
 
