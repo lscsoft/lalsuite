@@ -2143,8 +2143,8 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   REAL8 t0,tAs;
   REAL8 om0,om1,om;
   REAL8 Psi0,alpha0;
-  REAL8 diota1,dalpha0,dalpha1;
-  //REAL8 omold,iota0,diota0;
+  REAL8 dalpha0,dalpha1;
+  //REAL8 omold,iota0,diota0,diota1;
   REAL8 LNhS1,LNhS2;
   REAL8 S1S1,S1S2,S2S2;
 
@@ -2529,7 +2529,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     om0 = phenPars.omega - om1 / (1. - t0 / tAs);
     om  = phenPars.omega;
 
-    diota1 = phenPars.ddiota * tAs * (1. - t0 / tAs) * (1. - t0 / tAs);
+    //diota1 = phenPars.ddiota * tAs * (1. - t0 / tAs) * (1. - t0 / tAs);
     //diota0 = phenPars.diota - diota1 / (1. - t0 / tAs);
 
     dalpha1 = phenPars.ddalpha * tAs * (1. - t0 / tAs) * (1. - t0 / tAs);
