@@ -36,7 +36,7 @@ int testLALInferenceVariables(void){
   printf("Initial LALInferenceVariables:\n");
   LALInferencePrintVariables(&var);
   printf( "--> Serializing into XML string ... ");
-  xmlFragment=XLALInferenceVariables2VOTNode(&var, "test");
+  xmlFragment=XLALInferenceVariables2VOTParamNode(&var);
   /* convert VOTable tree into XML string */
    if( (xmlString = XLALCreateVOTStringFromTree ( xmlFragment )) == NULL ) {
       XLALPrintError ("%s: XLALCreateVOTStringFromTree() failed.\n", __func__);
@@ -71,7 +71,7 @@ int testLALInferenceVariables(void){
       LALInferenceCopyVariables(&var,&(vars[i]));
     }
     printf("Creating XML Table...\n");
-      xmlTable=XLALInferenceVariablesArray2VOTTable(vars, 3);
+      xmlTable=XLALInferenceVariablesArray2VOTTable(vars, 3, "Test table");
       printf("Created XML Table, tree = %lx ...\n",(long unsigned int)xmlTable);
       xmlString = XLALCreateVOTStringFromTree ( xmlTable );
       printf("Created XML String %s\n",xmlString);
