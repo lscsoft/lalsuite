@@ -25,7 +25,6 @@
 #include <gsl/gsl_odeiv.h>
 
 #include <lal/LALSimInspiral.h>
-#include <lal/LALSimInspiralTaylorT4.h>
 #define LAL_USE_COMPLEX_SHORT_MACROS
 #include <lal/LALComplex.h>
 #include <lal/LALConstants.h>

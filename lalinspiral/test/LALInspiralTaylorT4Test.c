@@ -43,7 +43,6 @@ LALInspiralWave4Templates routine.
 #include <lal/GenerateInspiral.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-#include <lal/LALSimInspiralTaylorT4.h>
 #include <lal/LALSimInspiral.h>
 
 NRCSID(LALINSPIRALTAYLORT4TESTC, "$Id$");

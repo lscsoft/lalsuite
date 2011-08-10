@@ -33,8 +33,6 @@ lalinspiralinclude_HEADERS = \
 	LALPSpinInspiralRD.h \
 	LALSBBH-Metric.h \
 	LALSimInspiral.h \
-	LALSimInspiralTaylorT3.h \
-	LALSimInspiralTaylorT4.h \
 	LALTrigScanCluster.h \
 	LALSTPNWaveform2.h \
 	LALSTPNWaveformFrameless.h \

@@ -20,7 +20,6 @@
 #include <math.h>
 
 #include <lal/LALSimInspiral.h>
-#include <lal/LALSimInspiralTaylorT3.h>
 #define LAL_USE_COMPLEX_SHORT_MACROS
 #include <lal/FindRoot.h>
 #include <lal/LALComplex.h>
@@ -129,8 +128,7 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	XLALInspiralSetup(&(paramsInit.ak), &(tmpltParams));
 	if (xlalErrno)
 		XLAL_ERROR(func, XLAL_EFUNC);
-	XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), &(tmpltParams));
-	if (xlalErrno)
+	if (XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), &(tmpltParams)))
 		XLAL_ERROR(func, XLAL_EFUNC);
 	XLALInspiralParameterCalc(&(tmpltParams));
 	if (xlalErrno)
