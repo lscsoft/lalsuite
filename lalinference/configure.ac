@@ -125,6 +125,14 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 # check for libmetaio headers
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
+if test "$lalxml" = "true"; then
+  # check for libxml2
+  PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
+  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
+  LIBS="$LIBS $LIBXML2_LIBS"
+  AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_WARN([cannot find the xml2 library])])
+fi
+
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[6.5.0.2],[LALVersion],[lal/LALStdio.h])
 LALSUITE_CHECK_LIB([LALSupport],[6.5.0],[LALOpenDataFile],[lal/FileIO.h])
@@ -135,14 +143,6 @@ LALSUITE_CHECK_LIB([LALPulsar],[1.1.0.2],[XLALComputeFaFb],[lal/ComputeFstat.h])
 
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.0.3],[XLALXMLFilePrintElements],[lal/LALXML.h])
-
-if test "$lalxml" = "true"; then
-  # check for libxml2
-  PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
-  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
-  LIBS="$LIBS $LIBXML2_LIBS"
-  AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_WARN([cannot find the xml2 library])])
-fi
 
 # add gcc specific flags
 if test "$GCC" = yes; then
