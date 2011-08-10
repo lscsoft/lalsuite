@@ -371,10 +371,11 @@ Parameter arguments:\n\
 	/* Over-ride approximant if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
 	if(ppt){
-		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
-		LALGetApproximantFromString(&status,ppt->value,&approx);
 		if(strstr(ppt->value,"TaylorF2")) approx=TaylorF2;
-		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
+		else
+		    LALGetApproximantFromString(&status,ppt->value,&approx);
+        LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
+        fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 	}
 	
 	/* Over-ride end time if specified */
