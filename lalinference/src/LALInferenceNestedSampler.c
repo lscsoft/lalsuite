@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <float.h>
 #include <lal/TimeDelay.h>
-#include <config.h>
 #include <lal/LALInferenceConfig.h>
 
 #include <lal/LALStdlib.h>
