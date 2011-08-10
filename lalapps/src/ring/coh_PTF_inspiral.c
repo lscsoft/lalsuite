@@ -1291,24 +1291,56 @@ void coh_PTF_statistic(
   verbose( "Begin loop over time at %ld \n",timeval_subtract(&startTime));
 
   /* These are declared to optimize what comes below */
-  INT4 tOffset1 = 5000 - numPoints/4 + timeOffsetPoints[ifoNum1];
-  INT4 tOffset2 = 5000 - numPoints/4 + timeOffsetPoints[ifoNum2];
+  REAL4 coincSNR;
+  INT4 tOffset0 = 5000 - numPoints/4;
+  INT4 tOffset1 = tOffset0 + timeOffsetPoints[ifoNum1];
+  INT4 tOffset2 = tOffset0 + timeOffsetPoints[ifoNum2];
   INT4 sOffset = numPoints/4;
   for ( i = numPoints/4; i < 3*numPoints/4; ++i ) /* Main loop over time */
   {
-    // Check if the single detector cut is passed
-    // This is not yet implemented and may not be needed for 2 detectors
-    /*if (snrComps[ifoNum1]->data->data[i + tOffset1] < 4 && snrComps[ifoNum2]->data->data[i + tOffset2] < 4)
+    /* Don't bother calculating coherent SNR if all ifo's SNR is less than
+       some value */
+    for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    {
+      if ( params->haveTrig[ifoNumber] )
+      {
+        if (snrComps[ifoNumber]->data->data[i + tOffset0 \
+                + timeOffsetPoints[ifoNumber]] > 4)
+        {
+          break;
+        }
+      }
+    }
+    if (ifoNumber == LAL_NUM_IFO)
     {
       cohSNR->data->data[i-sOffset] = 0;
       continue;
-    }*/
+    }
+
     if (numDetectors == 2 && spinTemplate==0)
     {
       cohSNR->data->data[i-sOffset] = sqrt(snrComps[ifoNum1]->data->data[i + tOffset1]*snrComps[ifoNum1]->data->data[i + tOffset1] + snrComps[ifoNum2]->data->data[i + tOffset2]*snrComps[ifoNum2]->data->data[i + tOffset2]);
     }
     else
     {
+      coincSNR = 0;
+      // We do not need to calculate coherent SNR if coinc SNR < threshold
+      for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if ( params->haveTrig[ifoNumber] )
+        {
+          coincSNR += snrComps[ifoNumber]->data->data[\
+              i + tOffset0 + timeOffsetPoints[ifoNumber]]
+              * snrComps[ifoNumber]->data->data[\
+              i + tOffset0 + timeOffsetPoints[ifoNumber]];
+        }
+      }
+      if (coincSNR < params->threshold)
+      {
+        cohSNR->data->data[i-sOffset] = 0;
+        continue;
+      }
+
       // This function combines the various (Q_i | s) and rotates them into
       // the basis as discussed above.
       coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,a,b,
