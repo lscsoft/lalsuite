@@ -1,6 +1,5 @@
 pkginclude_HEADERS = \
 	Inject.h \
-	LALSimulation.h \
 	SimulateCoherentGW.h \
 	SkyCoordinates.h \
 	SkyCoordinatesLaldoc.h

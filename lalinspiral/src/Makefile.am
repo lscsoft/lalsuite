@@ -32,11 +32,6 @@ lalinspiralinclude_HEADERS = \
 	LALNoiseModelsInspiral.h \
 	LALPSpinInspiralRD.h \
 	LALSBBH-Metric.h \
-	LALSimInspiral.h \
-	LALSimInspiraldEnergyFlux.h \
-	LALSimInspiralTaylorT3.h \
-	LALSimInspiralPhasing3.h \
-	LALSimInspiralFrequency3.h \
 	LALTrigScanCluster.h \
 	LALSTPNWaveform2.h \
 	LALSTPNWaveformFrameless.h \
@@ -200,16 +195,6 @@ liblalinspiral_la_SOURCES = \
 	LALSQTPNIntegrator.c \
 	LALSQTPNWaveform.c \
 	LALSQTPNWaveformInterface.c \
-	LALSimInspiral.c \
-	LALSimInspiralPNMode.c \
-	LALSimInspiraldEnergyFlux.c \
-	LALSimInspiralPhasing3.c \
-	LALSimInspiralFrequency3.c \
-	LALSimInspiralTofVIntegrand.c \
-	LALSimInspiralTofV.c \
-	LALSimInspiralSetup.c \
-	LALSimInspiralTaylorT3.c \
-	LALSimInspiralTaylorT4.c \
 	LALTrigScanCluster.c \
 	LALTruncateInvSpectrum.c \
 	LIGOLwXMLInspiralRead.c \

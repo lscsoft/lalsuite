@@ -1,11 +1,11 @@
-AC_INIT([lalburst],[1.0.1.3],[lal-discuss@gravity.phys.uwm.edu])
-AM_CONFIG_HEADER([include/config.h src/LALBurstConfig.h])
-AC_CONFIG_SRCDIR([src/EPSearch.c])
+AC_INIT([lalsimulation],[0.0.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AM_CONFIG_HEADER([include/config.h src/LALSimulationConfig.h])
+AC_CONFIG_SRCDIR([src/LALSimulation.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalburst.spec \
-  lalburst.pc \
+  lalsimulation.spec \
+  lalsimulation.pc \
   Makefile \
   gnuscripts/Makefile \
   debian/Makefile \
@@ -34,13 +34,13 @@ LALSUITE_ARG_VAR
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[1])
+AC_SUBST([LIBCURRENT],[0])
 AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[1])
+AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # default install path
-AC_PREFIX_DEFAULT([/opt/lscsoft/lalburst])
+AC_PREFIX_DEFAULT([/opt/lscsoft/lalsimulation])
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
@@ -49,26 +49,26 @@ LALSUITE_ENABLE_NIGHTLY
 LALSUITE_ENABLE_DEBUG
 
 # put version/configure info in config header
-lalburst_version_major=`echo "$VERSION" | cut -d. -f1`
-lalburst_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalburst_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalburst_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalburst_version_micro" && lalburst_version_micro=0
-test -z "$lalburst_version_devel" && lalburst_version_devel=0
-lalburst_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALBURST_VERSION],["$VERSION"],[LALBurst Version])
-AC_DEFINE_UNQUOTED([LALBURST_VERSION_MAJOR],[$lalburst_version_major],
-                   [LALBurst Version Major Number])
-AC_DEFINE_UNQUOTED([LALBURST_VERSION_MINOR],[$lalburst_version_minor],
-                   [LALBurst Version Minor Number])
-AC_DEFINE_UNQUOTED([LALBURST_VERSION_MICRO],[$lalburst_version_micro],
-                   [LALBurst Version Micro Number])
-AC_DEFINE_UNQUOTED([LALBURST_VERSION_DEVEL],[$lalburst_version_devel],
-                   [LALBurst Version Devel Number])
-AC_DEFINE_UNQUOTED([LALBURST_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALBurst Configure Arguments])
-AC_DEFINE_UNQUOTED([LALBURST_CONFIGURE_DATE],["$lalburst_configure_date"],
-                   [LALBurst Configure Date])
+lalsimulation_version_major=`echo "$VERSION" | cut -d. -f1`
+lalsimulation_version_minor=`echo "$VERSION" | cut -d. -f2`
+lalsimulation_version_micro=`echo "$VERSION" | cut -d. -f3`
+lalsimulation_version_devel=`echo "$VERSION" | cut -d. -f4-`
+test -z "$lalsimulation_version_micro" && lalsimulation_version_micro=0
+test -z "$lalsimulation_version_devel" && lalsimulation_version_devel=0
+lalsimulation_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
+AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION],["$VERSION"],[LALSimulation Version])
+AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION_MAJOR],[$lalsimulation_version_major],
+                   [LALSimulation Version Major Number])
+AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION_MINOR],[$lalsimulation_version_minor],
+                   [LALSimulation Version Minor Number])
+AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION_MICRO],[$lalsimulation_version_micro],
+                   [LALSimulation Version Micro Number])
+AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION_DEVEL],[$lalsimulation_version_devel],
+                   [LALSimulation Version Devel Number])
+AC_DEFINE_UNQUOTED([LALSIMULATION_CONFIGURE_ARGS],["$ac_configure_args"],
+                   [LALSimulation Configure Arguments])
+AC_DEFINE_UNQUOTED([LALSIMULATION_CONFIGURE_DATE],["$lalsimulation_configure_date"],
+                   [LALSimulation Configure Date])
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
@@ -80,12 +80,16 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 # use silent build rules if available
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
+# SWIG wrapping requires a c++ compiler
+AC_PROG_CXX
+
 # checks for programs
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 LT_INIT
 AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
+AC_CHECK_PROGS([M4],[gm4 m4],[m4])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -96,6 +100,13 @@ LALSUITE_USE_LIBTOOL
 # check for header files
 AC_HEADER_STDC
 
+# check for gethostname in unistd.h
+AC_MSG_CHECKING([for gethostname prototype in unistd.h])
+AC_EGREP_HEADER([gethostname],[unistd.h],[AC_MSG_RESULT([yes])]
+AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],
+          [Define if gethostname prototype is in unistd.h]),
+          [AC_MSG_RESULT]([no]))
+
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
@@ -105,25 +116,13 @@ CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$LIBS $GSL_LIBS"
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
-LALSUITE_ENABLE_FAST_GSL
 
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
-# metaio
-PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
-CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-LIBS="$LIBS $METAIO_LIBS"
-AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
-
-# check for libmetaio headers
-AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
-
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.5.0.4],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[6.5.0],[LALVersion],[lal/LALStdio.h])
 LALSUITE_CHECK_LIB([LALSupport],[6.5.0],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_LIB([LALMetaIO],[1.0.1],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_LIB([LALSimulation],[0.0.0.1],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -137,18 +136,18 @@ fi
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
-AC_SUBST_FILE(LAL_HEADER_LINK)
+AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
 ================================================================
 
-        LALBurst has now been successfully configured
+        LALSimulation has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LALBurst
-        and run 'make install' to install LALBurst
+        Now run 'make' to build LALSimulation
+        and run 'make install' to install LALSimulation
 
 ================================================================="

@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 22
+# serial 23
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -198,6 +198,18 @@ AC_ARG_ENABLE(
   ], [ lalxml=${all_lal:-false} ] )
 ])
 
+AC_DEFUN([LALSUITE_ENABLE_LALSIMULATION],
+[AC_ARG_ENABLE(
+  [lalsimulation],
+  AC_HELP_STRING([--enable-lalsimulation],[compile code that requires lalsimulation library [default=yes]]),
+  [ case "${enableval}" in
+      yes) lalsimulation=true;;
+      no) lalsimulation=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalsimulation) ;;
+    esac
+  ], [ lalsimulation=${all_lal:-true} ] )
+])
+
 AC_DEFUN([LALSUITE_ENABLE_LALBURST],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
@@ -211,7 +223,11 @@ AC_ARG_ENABLE(
   ], [ lalburst=${all_lal:-true} ] )
 if test "$lalmetaio" = "false"; then
   lalburst=false
-fi])
+fi
+if test "$lalsimulation" = "false"; then
+  lalburst=false
+fi
+])
 
 AC_DEFUN([LALSUITE_ENABLE_LALINSPIRAL],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
@@ -225,6 +241,9 @@ AC_ARG_ENABLE(
     esac
   ], [ lalinspiral=${all_lal:-true} ] )
 if test "$lalmetaio" = "false"; then
+  lalinspiral=false
+fi
+if test "$lalsimulation" = "false"; then
   lalinspiral=false
 fi
 ])

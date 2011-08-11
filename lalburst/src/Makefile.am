@@ -7,7 +7,6 @@ lalburstinclude_HEADERS = \
 	GenerateBurst.h \
 	LALBurstConfig.h \
 	LALBurstVCSInfo.h \
-	LALSimBurst.h \
 	LIGOLwXMLBurstRead.h \
 	LIGOMetadataBurstUtils.h \
 	TFTransform.h \
@@ -33,7 +32,6 @@ liblalburst_la_SOURCES = \
 	GenerateBurst.c \
 	HarmonicFinder.c \
 	LALBurstVCSInfo.c \
-	LALSimBurst.c \
 	LIGOLwXMLBurstRead.c \
 	RefInterference.c \
 	SnglBurstUtils.c \
