@@ -480,7 +480,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array, "Nest Samples");
 		xmlNodePtr stateResource=XLALInferenceStateVariables2VOTResource(runState, "Run State Configuration");
 		
-		xmlNodePtr nestResource=XLALCreateVOTResourceNode("LALInferenceVariablesTable","Nested sampling run",votable);
+		xmlNodePtr nestResource=XLALCreateVOTResourceNode("lalinference:results","Nested sampling run",votable);
 		
 		if(stateResource)
 			xmlAddChild(nestResource,stateResource);
