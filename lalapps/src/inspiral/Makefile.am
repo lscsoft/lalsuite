@@ -213,7 +213,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
 	     write_ihope_page.in compare_ini.in link_old_ihope.in \
 	     generate_upper_limits.in followup0_page.in cbc_pipedown.in \
 	     ihope_daily_page.in check_flag.in flag_triggers.in \
-	     glitch_probe.in $(DATA)
+	     glitch_probe.in coh_PTF_post_processing.in $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
