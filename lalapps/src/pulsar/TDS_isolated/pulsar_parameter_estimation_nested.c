@@ -1750,10 +1750,6 @@ set.\n", propfile, tempPar);
     REAL8 mu, sigma;
     
     LALInferenceIFOData *datatemp = data;
-    
-    LALInferenceVariableType scaleType;
-    CHAR tempParScale[VARNAME_MAX] = "";
-    CHAR tempParScaleMin[VARNAME_MAX] = "";
     CHAR tempParPrior[VARNAME_MAX] = "";
 
     sprintf(tempParPrior,"%s_gaussian_mean",checkPrior->name);
@@ -1762,8 +1758,8 @@ set.\n", propfile, tempPar);
       tempVar = *(REAL8 *)checkPrior->value;
       
       /* get the mean and standard deviation of the Gaussian prior */
-      LALInferenceGetGaussianPrior( runState->priorArgs, checkPrior->name, (void *)&mu,
-                        (void *)&sigma );
+      LALInferenceGetGaussianPrior( runState->priorArgs, checkPrior->name, 
+                                    (void *)&mu, (void *)&sigma );
       
       /* set the scale factor to be the sigma value */
       scale = sigma;
@@ -1771,7 +1767,8 @@ set.\n", propfile, tempPar);
       tempVar = (tempVar - scaleMin) / scale;
       
       /* scale the parameter value and reset it */
-      memcpy( checkPrior->value, &tempVar, LALInferenceTypeSize[checkPrior->type] );
+      memcpy( checkPrior->value, &tempVar, 
+              LALInferenceTypeSize[checkPrior->type] );
       
       mu -= scaleMin;
       sigma /= scale;
@@ -1780,12 +1777,16 @@ set.\n", propfile, tempPar);
       LALInferenceRemoveGaussianPrior( runState->priorArgs, checkPrior->name );
       LALInferenceAddGaussianPrior( runState->priorArgs, checkPrior->name, 
                         (void *)&mu, (void *)&sigma, checkPrior->type );
-      
-      sprintf(tempParScale, "%s_scale", checkPrior->name);
-      sprintf(tempParScale, "%s_scale_min", checkPrior->name);
         
       /* set scale factor in data structure */
       while( datatemp ){
+        LALInferenceVariableType scaleType;
+        CHAR tempParScale[VARNAME_MAX] = "";
+        CHAR tempParScaleMin[VARNAME_MAX] = "";
+        
+        sprintf(tempParScale,"%s_scale",checkPrior->name);
+        sprintf(tempParScaleMin,"%s_scale_min",checkPrior->name);
+        
         scaleType = LALInferenceGetVariableType( datatemp->dataParams, 
                                                  tempParScale );
         LALInferenceRemoveVariable( datatemp->dataParams, tempParScale );
@@ -3082,6 +3083,7 @@ injected signal amplitude is zero!\n", snrscale);
     }
     
     snrscale /= snrmulti;
+    snrscale = sqrt(snrscale);
   }
   else snrscale = 1.; /* do not apply any scaling */
   
