@@ -358,8 +358,10 @@ void initVariables(LALInferenceRunState *state)
   
   char help[]="\
 (--injXML injections.xml)       Injection XML file to use\n\
-(--Mmin mchirp)                 Minimum chirp mass\n\
-(--Mmax mchirp)                 Maximum chirp mass\n\
+(--mc-min mchirp)               Minimum chirp mass\n\
+(--mc-max mchirp)               Maximum chirp mass\n\
+(--eta-min etaMin)              Minimum eta\n\
+(--eta-max etaMax)              Maximum eta\n\
 (--dt time)                     Width of time prior, centred around trigger (0.1s)\n\
 (--trigtime time)               Trigger time to use\n\
 (--mc mchirp)                   Trigger chirpmass to use\n\
@@ -395,8 +397,8 @@ void initVariables(LALInferenceRunState *state)
 (--Dmin dist)                   Minimum distance in Mpc (1)\n\
 (--Dmax dist)                   Maximum distance in Mpc (100)\n\
 (--approx ApproximantorderPN)   Specify a waveform to use, (default TaylorF2twoPN)\n\
-(--mincomp min)                 Minimum component mass (1.0)\n\
-(--maxcomp max)                 Maximum component mass (30.0)\n\
+(--comp-min min)                Minimum component mass (1.0)\n\
+(--comp-min max)                Maximum component mass (30.0)\n\
 (--MTotMax max)                 Maximum total mass (35.0)\n\
 (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n";
 
@@ -625,21 +627,60 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 		Dmax=atof(ppt->value);
 	}
 	
-	/* Over-ride Mass prior if specified */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--Mmin");
-	if(ppt){
+	/* Over-ride Mass priors if specified */
+	ppt=LALInferenceGetProcParamVal(commandLine,"--mc-min");
+	if(ppt) 
+        {
 		mcMin=atof(ppt->value);
+		if (mcMin < 0) 
+		{
+			fprintf(stderr,"ERROR: Minimum value of mchirp must be > 0");
+			exit(1);
+		}
 	}
-	ppt=LALInferenceGetProcParamVal(commandLine,"--Mmax");
-	if(ppt)	mcMax=atof(ppt->value);
+
+	ppt=LALInferenceGetProcParamVal(commandLine,"--mc-max");
+	if(ppt)	
+        {
+                mcMax=atof(ppt->value);
+		if (mcMax <= 0) 
+		{
+			fprintf(stderr,"ERROR: Maximum value of mchirp must be > 0");
+			exit(1);
+		}
+	}
+
+	ppt=LALInferenceGetProcParamVal(commandLine,"--eta-min");
+	if(ppt)	
+        {
+		etaMin=atof(ppt->value);
+                if (etaMin < 0.0) 
+		{
+			fprintf(stderr,"ERROR: Minimum value of eta must be > 0");
+			exit(1);
+		}
+	}
+
+	ppt=LALInferenceGetProcParamVal(commandLine,"--eta-max");
+	if(ppt)	
+        {
+		etaMax=atof(ppt->value);
+                if (etaMax > 0.25 || etaMax <= 0.0) 
+		{
+			fprintf(stderr,"ERROR: Maximum value of eta must be between 0 and 0.25\n");
+			exit(1);
+		}
+	}
 	
 	/* Over-ride component masses */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--comp-min");
 	if(ppt)	mMin=atof(ppt->value);
 	LALInferenceAddVariable(priorArgs,"component_min",&mMin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-	ppt=LALInferenceGetProcParamVal(commandLine,"--compmax");
+
+	ppt=LALInferenceGetProcParamVal(commandLine,"--comp-max");
 	if(ppt)	mMax=atof(ppt->value);
 	LALInferenceAddVariable(priorArgs,"component_max",&mMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+
 	ppt=LALInferenceGetProcParamVal(commandLine,"--MTotMax");
 	if(ppt)	MTotMax=atof(ppt->value);
 	LALInferenceAddVariable(priorArgs,"MTotMax",&MTotMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
