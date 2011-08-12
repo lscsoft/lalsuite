@@ -33,10 +33,21 @@
 
 #include <lal/LALInference.h>
 
-/** Read IFO data according to command line arguments */
+/** \brief Read IFO data according to command line arguments.
+ * This function reads command line arguments and returns a \c LALInferenceIFOData linked
+ * list.
+ * \param commandLine [in] Pointer to a ProcessParamsTable containing command line arguments
+ * \return Pointer to a new \LALInferenceIFOData linked list containing the data, or NULL upon error.
+ * \author John Veitch\n
+ */
 struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * commandLine);
 
-/** Convenience function to inject a signal into the data, using a SimInspiralTable */
+/** \brief Convenience function to inject a signal into the data, using a SimInspiralTable
+ * Injects a signal from a SimInspiralTable into a pre-existing \c IFOdata structure,
+ * based on command line arguments (see --help for details).
+ * \param commandLine [in] Pointer to a ProcessParamsTable containing command line arguments
+ * \param IFOdata [in] Pointer to an already existing IFOdata structure.
+ */
 void LALInferenceInjectInspiralSignal(struct tagLALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 
 #endif
