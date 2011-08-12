@@ -22,7 +22,7 @@
 
 int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, double padding, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay)
 {  
-	int j = amp->length-1, jstep, k;
+	int j = amp->length-1, jstep, k, prej;
 	int nfilters = 0, decimationFactor = 1;
 	double phase_ddot, phase_dot;
 
@@ -37,6 +37,7 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 	while (j >= 0 ) {
 
 		/* Reset j so that the delay will be an integar number of decimated rate */
+		prej = j;
 		j = amp->length-1 - (int) floor((amp->length-1-j)/decimationFactor + 0.5)*decimationFactor;
 
 		/* Get error term */
@@ -47,7 +48,13 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 		if (k <= 2) break;
 		nfilters++;
 
-		phase_dot = (-phase->data[k+2] + 8 * (phase->data[k+1] - phase->data[k-1]) + phase->data[k-2]) / 12.0; // Five-point stencil first derivative of phase
+		if (k > (int) amp->length-3) {
+			phase_dot = (11.0/6.0*phase->data[k] - 3.0*phase->data[k-1] + 1.5*phase->data[k-2] - 1.0/3.0*phase->data[k-3]);
+		}
+		else {
+			phase_dot = (-phase->data[k+2] + 8 * (phase->data[k+1] - phase->data[k-1]) + phase->data[k-2]) / 12.0; // Five-point stencil first derivative of phase
+		}
+		//fprintf(stderr, "prej = %d, j = %d, k=%d, jstep = %d, decimation rate = %d, L = %d, nFreq = %e, phase[k] = %e\n", prej, j, k, jstep, decimationFactor, amp->length, phase_dot/(2.0*LAL_PI), phase->data[k]);
 		//fprintf(stderr, "%3.0d, %6.0d, %3.0d, %11.2f, %11.8f\n",nfilters, amp->length-1-j, decimationFactor, ((double) (amp->length-1-j))/((double) decimationFactor), phase_dot/(2.0*LAL_PI)*2048.0);
 		decimationFactor = ((int ) pow(2.0,-ceil(log(2.0*padding*phase_dot/(2.0*LAL_PI))/log(2.0))));
 		if (decimationFactor < 1 ) decimationFactor = 1;
