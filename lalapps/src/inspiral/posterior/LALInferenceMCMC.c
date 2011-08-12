@@ -398,7 +398,7 @@ void initVariables(LALInferenceRunState *state)
 (--Dmax dist)                   Maximum distance in Mpc (100)\n\
 (--approx ApproximantorderPN)   Specify a waveform to use, (default TaylorF2twoPN)\n\
 (--comp-min min)                Minimum component mass (1.0)\n\
-(--comp-min max)                Maximum component mass (30.0)\n\
+(--comp-max max)                Maximum component mass (30.0)\n\
 (--MTotMax max)                 Maximum total mass (35.0)\n\
 (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n";
 
