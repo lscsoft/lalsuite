@@ -15,13 +15,14 @@ SUBDIRS = src
 .PHONY: html pdf
 
 DOXYINPUT = lal/packages \
-            lalframe \
-            lalmetaio \
-            lalxml \
             lalburst \
+            lalframe \
+            lalinference \
             lalinspiral \
+            lalmetaio \
             lalpulsar \
             lalstochastic \
+            lalxml \
             lalapps/src
 
 override doxy_abs_top_srcdir = $(shell cd $(top_srcdir) && pwd)
