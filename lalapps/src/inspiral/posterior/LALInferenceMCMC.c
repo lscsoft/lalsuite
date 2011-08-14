@@ -496,10 +496,11 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
 	if(ppt){
 		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
-		LALGetApproximantFromString(&status,ppt->value,&approx);
+		
 		//printf("%d\n",approx);
 		if(strstr(ppt->value,"TaylorF2")) {approx=TaylorF2;}//numberI4 = TaylorF2;}		LALGetApproximantFromString DOES NOT HAVE TaylorF2 !!!!!!
-		//if(strstr(ppt->value,"TaylorT3")) {approx=TaylorT3;}//numberI4 = TaylorT3;}
+		else{LALGetApproximantFromString(&status,ppt->value,&approx);}
+    //if(strstr(ppt->value,"TaylorT3")) {approx=TaylorT3;}//numberI4 = TaylorT3;}
 		//if(strstr(ppt->value,"SpinTaylor")) {approx=SpinTaylor;}//numberI4 = SpinTaylor;}
 		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 		//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",numberI4,PhaseOrder);
