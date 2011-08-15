@@ -181,6 +181,10 @@ void XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params);
  * @param[out]	dvalues	: the derived values and the last element is the MECO
  * @param[in]	params	: the LALSQTPN_Generator's parameters
  */
+int XLALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[],
+		void * params);
+
+// LAL wrapper of above XLAL function
 int LALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[],
 		void * params);
 
