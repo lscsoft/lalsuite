@@ -219,12 +219,13 @@ typedef enum {
  *	shift \f$\alpha\f$, and phase \f$\Phi\f$.
  *	The \f$\alpha\f$ is defined with equation (5) in the documentation of the
  *	LALSQTPNDerivator() function.
- * @param[in,out]	status		: LAL universal status structure
  * @param[out]		waveform	: the generated waveform
  * @param[in]		params		: the input parameters
  */
-void
-LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform,
+int XLALSQTPNGenerator(LALSQTPNWave *waveform, LALSQTPNWaveformParams *params);
+
+// LAL wrapper to the XLAL function above
+void LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform,
 		LALSQTPNWaveformParams *params);
 
 #ifdef __cplusplus
