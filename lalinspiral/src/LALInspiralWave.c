@@ -178,13 +178,11 @@ LALInspiralWave(
 	   break;
       case IMRPhenomA:
       case IMRPhenomB:
-           LALBBHPhenWaveTimeDom(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
+           if (XLALBBHPhenWaveTimeDom(signalvec, params)) ABORTXLAL(status);
            break;
       case IMRPhenomFA:
       case IMRPhenomFB:
-           LALBBHPhenWaveFreqDom(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
+           if (XLALBBHPhenWaveFreqDom(signalvec, params)) ABORTXLAL(status);
            break;
       case BCV:
            LALBCVWaveform(status->statusPtr, signalvec, params);
@@ -318,13 +316,13 @@ LALInspiralWaveTemplates(
            break;
       case IMRPhenomA:
       case IMRPhenomB:
-           LALBBHPhenWaveTimeDomTemplates(status->statusPtr, signalvec1, signalvec2, params);
-           CHECKSTATUSPTR(status);
+           if (XLALBBHPhenWaveTimeDomTemplates(signalvec1, signalvec2, params))
+               ABORTXLAL(status);
            break;
       case IMRPhenomFA:
       case IMRPhenomFB:
-           LALBBHPhenWaveFreqDomTemplates(status->statusPtr, signalvec1, signalvec2, params);
-           CHECKSTATUSPTR(status);
+           if (XLALBBHPhenWaveFreqDomTemplates(signalvec1, signalvec2, params))
+               ABORTXLAL(status);
            break;
       case TaylorF1:
       case TaylorF2:
@@ -412,8 +410,8 @@ LALInspiralWaveForInjection(
        break;
      case IMRPhenomA:
      case IMRPhenomB:
-       LALBBHPhenWaveTimeDomForInjection (status->statusPtr, waveform, inspiralParams, ppnParams);
-       CHECKSTATUSPTR(status);
+       if (XLALBBHPhenWaveTimeDomForInjection(waveform, inspiralParams, ppnParams))
+           ABORTXLAL(status);
        break;
       case BCV:
 	/*       LALBCVWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);*/

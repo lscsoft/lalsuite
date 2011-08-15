@@ -1246,39 +1246,86 @@ void LALPSpinInspiralRDEngine (
 
 /* Phenomenological waveform generation functions */
 
-void LALBBHPhenWaveFreqDom ( LALStatus        *status,
-			     REAL4Vector      *signalvec,
-			     InspiralTemplate *params);
+int XLALBBHPhenWaveFreqDom (
+    REAL4Vector      *signalvec,
+    InspiralTemplate *params);
 
-void LALBBHPhenWaveFreqDomTemplates( LALStatus        *status,
-				     REAL4Vector      *signalvec1,
-				     REAL4Vector      *signalvec2,
-				     InspiralTemplate *params);
+int XLALBBHPhenWaveFreqDomTemplates(
+    REAL4Vector      *signalvec1,
+    REAL4Vector      *signalvec2,
+    InspiralTemplate *params);
 
-void LALBBHPhenWaveTimeDom ( LALStatus        *status,
-			     REAL4Vector      *signalvec,
-			     InspiralTemplate *insp_template);
+int XLALBBHPhenWaveTimeDom (
+    REAL4Vector      *signalvec,
+    InspiralTemplate *insp_template);
 
-void LALBBHPhenWaveTimeDomTemplates( LALStatus        *status,
-				     REAL4Vector      *signalvec1,
-				     REAL4Vector      *signalvec2,
-				     InspiralTemplate *params);
+int XLALBBHPhenWaveTimeDomTemplates(
+    REAL4Vector      *signalvec1,
+    REAL4Vector      *signalvec2,
+    InspiralTemplate *insp_template);
 
-void LALBBHPhenTimeDomEngine( LALStatus        *status,
-			      REAL4Vector      *signalvec1,
-			      REAL4Vector      *signalvec2,
-			      REAL4Vector      *h,
-			      REAL4Vector      *a,
-			      REAL4Vector      *f,
-			      REAL8Vector      *phiOut,
-				  UINT4            *countback,
-			      InspiralTemplate *params);
+int XLALBBHPhenTimeDomEngine(
+    REAL4Vector      *signalvec1,
+    REAL4Vector      *signalvec2,
+    REAL4Vector      *h,
+    REAL4Vector      *aVec,
+    REAL4Vector      *freqVec,
+    REAL8Vector      *phiVec,
+    UINT4            *countback,
+    InspiralTemplate *params);
 
-void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
-					CoherentGW       *waveform,
-					InspiralTemplate *params,
-					PPNParamStruc    *ppnParams);
+int XLALBBHPhenWaveTimeDomForInjection (
+    CoherentGW       *waveform,
+    InspiralTemplate *params,
+    PPNParamStruc    *ppnParams);
 
+/* DEPRECATED: Compatibility layer for phenomenological waveforms */
+
+void LALBBHPhenWaveFreqDom (
+    LALStatus        *status,
+    REAL4Vector      *signalvec,
+    InspiralTemplate *params);
+
+void LALBBHPhenWaveFreqDomTemplates(
+    LALStatus        *status,
+    REAL4Vector      *signalvec1,
+    REAL4Vector      *signalvec2,
+    InspiralTemplate *params);
+
+void LALBBHPhenWaveTimeDom (
+    LALStatus        *status,
+    REAL4Vector      *signalvec,
+    InspiralTemplate *insp_template);
+
+void LALBBHPhenWaveFreqDomTemplates(
+    LALStatus        *status,
+    REAL4Vector      *signalvec1,
+    REAL4Vector      *signalvec2,
+    InspiralTemplate *params);
+void LALBBHPhenWaveTimeDomTemplates(
+    LALStatus        *status,
+    REAL4Vector      *signalvec1,
+    REAL4Vector      *signalvec2,
+    InspiralTemplate *insp_template);
+
+void LALBBHPhenTimeDomEngine(
+    LALStatus        *status,
+    REAL4Vector      *signalvec1,
+    REAL4Vector      *signalvec2,
+    REAL4Vector      *h,
+    REAL4Vector      *aVec,
+    REAL4Vector      *freqVec,
+    REAL8Vector      *phiVec,
+    UINT4            *countback,
+    InspiralTemplate *params);
+
+void LALBBHPhenWaveTimeDomForInjection (
+    LALStatus        *status,
+    CoherentGW       *waveform,
+    InspiralTemplate *params,
+    PPNParamStruc    *ppnParams);
+
+/* end DEPRECATED */
 
 /* --- OTHER PROTOTYPES --- */
 
