@@ -27,7 +27,10 @@
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-#include <lal/LALInspiral.h>
+#include <lal/LALSimInspiralTaylorT3.h>
+#include <lal/LALSimInspiraldEnergyFlux.h>
+#include <lal/LALSimInspiralPhasing3.h>
+#include <lal/LALSimInspiralFrequency3.h>
 
 #include "check_series_macros.h"
 
@@ -42,19 +45,19 @@ NRCSID(LALSIMINSPIRALTAYLORT3C, "$Id$");
 
 typedef struct
 {
-	REAL8 (*func)(REAL8 tC, expnCoeffs *ak);
-	expnCoeffs ak;
+	REAL8 (*func)(REAL8 tC, expnCoeffsTaylorT3 *ak);
+	expnCoeffsTaylorT3 ak;
 }
-ChirptimeFromFreqIn;
+FreqInFromChirptime;
 
 static REAL8 XLALInspiralFrequency3Wrapper(REAL8 tC, void *pars)
 {
   static const char *func = "XLALInspiralFrequency3Wrapper";
 
-  ChirptimeFromFreqIn *in;
+  FreqInFromChirptime *in;
   REAL8 freq, f;
 
-  in = (ChirptimeFromFreqIn *) pars;
+  in = (FreqInFromChirptime *) pars;
   freq = in->func(tC, &(in->ak));
   if (XLAL_IS_REAL8_FAIL_NAN(freq))
     XLAL_ERROR_REAL8(func, XLAL_EFUNC);
@@ -83,36 +86,22 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 		int O                  /**< twice post-Newtonian order */
 		)
 {
-	static const char *func = "XLALSimInspiralPNEvolveOrbitTaylorT3";
 	const UINT4 blocklen = 1024;
 	const REAL8 xisco = 1.0 / 6.0;
 	REAL8 m = m1 + m2;
 	REAL8 nu = m1 * m2 / m / m;
 	m *= LAL_G_SI / pow(LAL_C_SI, 3.0); /* convert m from kilograms to seconds */
-	REAL8 tC, c1, xmin, xmax, xacc, v, v2, phase, fOld, t, td, temp, tempMin = 0, tempMax = 0;
-	REAL8 (*function)(REAL8, void *);
+	REAL8 mass1 = m1 / LAL_MSUN_SI; /* convert m1 from kilograms to solar masses */
+	REAL8 mass2 = m2 / LAL_MSUN_SI; /* convert m2 from kilograms to solar masses */
+	REAL8 tmptC, tC, c1, xmin, xmax, xacc, v, v2, phase, fOld, t, td, temp, tempMin = 0, tempMax = 0;
+	REAL8 (*freqfunction)(REAL8, void *);
 	UINT4 j;
 	REAL8 f;
 	void *pars;
 
-	InspiralTemplate tmpltParams;
-	InspiralInit paramsInit;
-	expnFunc expnfunc;
-	expnCoeffs ak;
-	ChirptimeFromFreqIn timeIn;
-
-	memset( &tmpltParams, 0, sizeof(InspiralTemplate) );
-	tmpltParams.approximant = TaylorT3;
-	tmpltParams.order = (LALPNOrder) O;
-	tmpltParams.ampOrder = LAL_PNORDER_NEWTONIAN;
-	tmpltParams.mass1 = m1 / LAL_MSUN_SI;
-	tmpltParams.mass2 = m2 / LAL_MSUN_SI;
-	tmpltParams.totalMass = tmpltParams.mass1 + tmpltParams.mass2;
-	tmpltParams.eta = nu;
-	tmpltParams.tSampling = 1. / deltaT;
-	tmpltParams.fCutoff = tmpltParams.tSampling / 2. - 1.;
-	tmpltParams.fLower = f_min;
-	tmpltParams.ieta = 1;
+	expnFuncTaylorT3 expnfunc;
+	expnCoeffsTaylorT3 ak;
+	FreqInFromChirptime timeIn;
 
 	/* allocate memory */
 
@@ -120,23 +109,14 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 		blocklen);
 	*phi = XLALCreateREAL8TimeSeries("ORBITAL_PHASE", tc, 0.0, deltaT, &lalDimensionlessUnit, blocklen);
 	if (!x || !phi)
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 
 
-	/* initialize InspiralInit structure */
+	/* initialize expnCoeffsTaylorT3 and expnFuncTaylorT3 structures */
+	if (XLALSimInspiralTaylorT3Setup(&ak, &expnfunc, deltaT, mass1, mass2, f_min, O))
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 
-	XLALInspiralSetup(&(paramsInit.ak), &(tmpltParams));
-	if (xlalErrno)
-		XLAL_ERROR(func, XLAL_EFUNC);
-	if (XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), &(tmpltParams)))
-		XLAL_ERROR(func, XLAL_EFUNC);
-	XLALInspiralParameterCalc(&(tmpltParams));
-	if (xlalErrno)
-		XLAL_ERROR(func, XLAL_EFUNC);
-
-	ak = paramsInit.ak;
-	expnfunc = paramsInit.func;
-
+	tC = XLALSimInspiralChirpLength(m1, m2, f_min, O);
 	c1 = nu/(5.*m);
 
 	/*
@@ -150,26 +130,26 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 
 	timeIn.func = expnfunc.frequency3;
 	timeIn.ak = ak;
-	function = &XLALInspiralFrequency3Wrapper;
-	xmin = c1*tmpltParams.tC/2.;
-	xmax = c1*tmpltParams.tC*2.;
+	freqfunction = &XLALInspiralFrequency3Wrapper;
+	xmin = c1*tC/2.;
+	xmax = c1*tC*2.;
 	xacc = 1.e-6;
 	pars = (void*) &timeIn;
 	/* tc is the instant of coalescence */
 
 	/* we add 5 so that if tC is small then xmax
 	 * is always greater than a given value (here 5)*/
-	xmax = c1*tmpltParams.tC*3 + 5.;
+	xmax = c1*tC*3 + 5.;
 
 	/* for x in [xmin, xmax], we search the value which gives the max
 	 * frequency.  and keep the corresponding rootIn.xmin. */
 
-	for (tC = c1*tmpltParams.tC/1000.; tC < xmax; tC+=c1*tmpltParams.tC/1000.){
-		temp = XLALInspiralFrequency3Wrapper(tC , pars);
+	for (tmptC = c1*tC/1000.; tmptC < xmax; tmptC+=c1*tC/1000.){
+		temp = XLALInspiralFrequency3Wrapper(tmptC , pars);
 		if (XLAL_IS_REAL8_FAIL_NAN(temp))
-			XLAL_ERROR(func, XLAL_EFUNC);
+			XLAL_ERROR(__func__, XLAL_EFUNC);
 		if (temp > tempMax) {
-			xmin = tC;
+			xmin = tmptC;
 			tempMax = temp;
 		}
 		if (temp < tempMin) {
@@ -180,22 +160,16 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	/* if we have found a value positive then everything should be fine in
 	 * the BissectionFindRoot function */
 	if (tempMax > 0  &&  tempMin < 0){
-		tC = XLALDBisectionFindRoot (function, xmin, xmax, xacc, pars);
+		tC = XLALDBisectionFindRoot (freqfunction, xmin, xmax, xacc, pars);
 		if (XLAL_IS_REAL8_FAIL_NAN(tC))
-			XLAL_ERROR(func, XLAL_EFUNC);
+			XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 	else{
-		XLALPrintError(LALINSPIRALH_MSGEROOTINIT);
-		XLAL_ERROR(func, XLAL_EMAXITER);
+		XLALPrintError("Can't find good bracket for BisectionFindRoot");
+		XLAL_ERROR(__func__, XLAL_EMAXITER);
 	}
 
 	tC /= c1;
-
-	/* Add user given startTime to instant of coalescence of the compact
-	 * objects */
-
-	tC += tmpltParams.startTime;
-
 
 	/* start waveform generation */
 
@@ -203,12 +177,12 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	td = c1 * (tC - t);
 	phase = expnfunc.phasing3(td, &ak);
 	if (XLAL_IS_REAL8_FAIL_NAN(phase))
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	f = expnfunc.frequency3(td, &ak);
 	if (XLAL_IS_REAL8_FAIL_NAN(f))
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 
-	v = pow(f * LAL_PI * m, oneby3);
+	v = cbrt(f * LAL_PI * m);
 	v2 = v * v;
 	(*x)->data->data[0] = v2;
 	(*phi)->data->data[0] = phase / 2.;
@@ -224,25 +198,25 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 		td = c1 * (tC - t);
 		phase = expnfunc.phasing3(td, &ak);
 		if (XLAL_IS_REAL8_FAIL_NAN(phase))
-			XLAL_ERROR(func, XLAL_EFUNC);
+			XLAL_ERROR(__func__, XLAL_EFUNC);
 		f = expnfunc.frequency3(td, &ak);
 		if (XLAL_IS_REAL8_FAIL_NAN(f))
-			XLAL_ERROR(func, XLAL_EFUNC);
-		v = pow(f * LAL_PI * m, oneby3);
+			XLAL_ERROR(__func__, XLAL_EFUNC);
+		v = cbrt(f * LAL_PI * m);
 		v2 = v * v;
 
 		/* check termination conditions */
 
 		if (t >= tC) {
-			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at coalesence time\n", func);
+			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at coalesence time\n", __func__);
 			break;
 		}
 		if (v2 >= xisco) {
-			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", func);
+			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", __func__);
 			break;
 		}
 		if (f <= fOld) {
-			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated when frequency stalled\n", func);
+			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated when frequency stalled\n", __func__);
 			break;
 		}
 	
@@ -250,9 +224,9 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 
 		if ( j >= (*x)->data->length ) {
 			if ( ! XLALResizeREAL8TimeSeries(*x, 0, (*x)->data->length + blocklen) )
-				XLAL_ERROR(func, XLAL_EFUNC);
+				XLAL_ERROR(__func__, XLAL_EFUNC);
 			if ( ! XLALResizeREAL8TimeSeries(*phi, 0, (*phi)->data->length + blocklen) )
-				XLAL_ERROR(func, XLAL_EFUNC);
+				XLAL_ERROR(__func__, XLAL_EFUNC);
 		}
 		(*x)->data->data[j] = v2;
 		(*phi)->data->data[j] = phase / 2.;
@@ -261,9 +235,9 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	/* make the correct length */
 
 	if ( ! XLALResizeREAL8TimeSeries(*x, 0, j) )
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	if ( ! XLALResizeREAL8TimeSeries(*phi, 0, j) )
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 
 	/* adjust to correct tc and phic */
 
