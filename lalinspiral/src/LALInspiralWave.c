@@ -223,12 +223,10 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
            break;
       case PhenSpinTaylorRD:
-           LALPSpinInspiralRD(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
+           XLALPSpinInspiralRD(signalvec, params);
 	   break;
       case PhenSpinTaylorRDF:
-           LALPSpinInspiralRDFreqDom(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
+           XLALPSpinInspiralRDFreqDom(signalvec, params);
            break;
       case SpinQuadTaylor:
            TRY(LALSQTPNWaveform(status->statusPtr, signalvec, params), status);
@@ -343,8 +341,7 @@ LALInspiralWaveTemplates(
            CHECKSTATUSPTR(status);
            break;
       case PhenSpinTaylorRD:
-	   LALPSpinInspiralRDTemplates(status->statusPtr, signalvec1, signalvec2, params);
-           CHECKSTATUSPTR(status);
+	   XLALPSpinInspiralRDTemplates(signalvec1, signalvec2, params);
 	   break;
       case SpinQuadTaylor:
            TRY(LALSTPNWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params), status);
@@ -428,18 +425,17 @@ LALInspiralWaveForInjection(
       case SpinTaylorFrameless:
            LALSTPNFramelessWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
-     break;
+	   break;
       case SpinTaylor:
            LALSTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
-     break;
-      case PhenSpinTaylorRD:
-	   LALPSpinInspiralRDForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
-           CHECKSTATUSPTR(status);
 	   break;
-	  case SpinQuadTaylor:
-		   TRY(LALSQTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams), status);
-     break;
+      case PhenSpinTaylorRD:
+	   XLALPSpinInspiralRDForInjection(waveform, inspiralParams, ppnParams);
+	   break;
+      case SpinQuadTaylor:
+	   TRY(LALSQTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams), status);
+	   break;
       case AmpCorPPN:
 	   LALInspiralAmplitudeCorrectedWaveForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
 	   CHECKSTATUSPTR(status);
