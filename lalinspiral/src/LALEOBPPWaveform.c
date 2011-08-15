@@ -187,10 +187,6 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
         /* Non-Keplerian velocity */
         REAL8 vPhi;
 
-        /* Non-quasicircular correction in dynamics */
-        REAL8 a1, a2, a3;
-        REAL8 hNQC = 1.0;
-
         /* Pre-computed coefficients */
         FacWaveformCoeffs *hCoeffs = params->hCoeffs;
 
@@ -278,15 +274,6 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	    switch( abs(m) )
 	    {
 	      case 2:
-
-                /* For 2,2 mode, calculate the NQC correction */
-                a1 = -4.55919 + 18.761 * eta - 24.226 * eta*eta;
-                a2 = 37.683 - 201.468 * eta + 324.591 * eta*eta;
-                a3 = - 39.6024 + 228.899 * eta - 387.222 * eta * eta;
-
-                hNQC = 1. + (pr*pr / (r*r*Omega*Omega)) * ( a1
-                       + a2 / r + a3 / (r*sqrt(r)) );
-
 	        deltalm = vh3*(hCoeffs->delta22vh3 + vh3*(hCoeffs->delta22vh6
 			+ vh*vh*(hCoeffs->delta22vh8 + hCoeffs->delta22vh9*vh)))
 			+ hCoeffs->delta22v5 *v*v2*v2;
@@ -544,7 +531,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
         }
 
 	*hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ),
-				     Slm*rholmPwrl*hNQC );
+				     Slm*rholmPwrl );
         *hlm = XLALCOMPLEX16Mul( *hlm, hNewton );
 
 	return XLAL_SUCCESS;
@@ -2220,14 +2207,19 @@ XLALEOBPPWaveformEngine (
      z2 =   MultSphHarmM.re - MultSphHarmP.re;
 
      /* Next, compute h+ and hx from hLM, hLM*, YLM, YL-M */
+     char outFileName[25];
+     snprintf( outFileName, 25, "realAndImag-%d%d.dat", modeL, abs(modeM) );
+     FILE *out = fopen( outFileName, "w" );
      for ( i = 0; i < sig1->length; i++)
      {
        freq->data[i] /= unitHz;
        x1 = sig1->data[i];
        x2 = sig2->data[i];
+       fprintf( out, "%.12e %.12e %.12e\n", (REAL8)i/(params->tSampling*m), x1, x2 );  
        sig1->data[i] = (x1 * y_1) + (x2 * y_2);
        sig2->data[i] = (x1 * z1) + (x2 * z2);
      }
+     fclose( out );
 
      /*------------------------------------------------------
       * If required by the user copy other data sets to the

@@ -315,6 +315,43 @@ REAL8 GetNRPeakOmegaDot( INT4 l, INT4 m, REAL8 eta )
   }
 }
 
+
+/**
+ * For the 2,2 mode, there are fits available for the NQC coefficients.
+ * This function provides the values of these coefficients, so the 
+ * correction can be used in the dynamics prior to finding the more
+ * accurate NQC values later on.
+ */
+int XLALGetCalibratedNQCCoeffs( EOBNonQCCoeffs *coeffs,
+                                INT4            l,
+                                INT4            m,
+                                REAL8           eta 
+                                )
+{
+
+#ifndef LAL_NDEBUG
+  if ( !coeffs )
+  {
+    XLAL_ERROR( __func__, XLAL_EINVAL );
+  }
+#endif
+
+  if ( l != 2 || m != 2 )
+  {
+    XLALPrintError( "Mode %d,%d is not supported by this function.\n", l, m );
+    XLAL_ERROR( __func__, XLAL_EINVAL );
+  }
+
+  memset( coeffs, 0, sizeof( *coeffs ) );
+
+  coeffs->a1 = -4.55919 + 18.761 * eta - 24.226 * eta*eta;
+  coeffs->a2 = 37.683 - 201.468 * eta + 324.591 * eta*eta;
+  coeffs->a3 = - 39.6024 + 228.899 * eta - 387.222 * eta * eta;
+
+  return XLAL_SUCCESS;
+}
+
+
 int  XLALEOBNonQCCorrection(
                       COMPLEX16             * restrict nqc,
                       REAL8Vector           * restrict values,
