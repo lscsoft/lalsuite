@@ -81,16 +81,14 @@ ChirptimeFromFreqIn;
 
 static REAL8 XLALInspiralFrequency3Wrapper(REAL8 tC, void *pars);
 
-static void
-LALInspiralWave3Engine(
-                LALStatus        *status,
+static int
+XLALInspiralWave3Engine(
                 REAL4Vector      *output1,
                 REAL4Vector      *output2,
                 REAL4Vector      *h,
                 REAL4Vector      *a,
                 REAL4Vector      *ff,
                 REAL8Vector      *phi,
-                UINT4            *countback,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 );
@@ -109,7 +107,7 @@ LALInspiralWave3 (
 {
 
 
-  UINT4 count;
+  INT4 count;
   InspiralInit paramsInit;
 
   INITSTATUS (status, "LALInspiralWave3", LALINSPIRALWAVE3C);
@@ -138,8 +136,10 @@ LALInspiralWave3 (
   memset( output->data, 0, output->length * sizeof(REAL4) );
 
   /* Call the engine function */
-  LALInspiralWave3Engine(status->statusPtr, output, NULL, NULL,
-			NULL, NULL, NULL, &count, params, &paramsInit);
+  count = XLALInspiralWave3Engine(output, NULL, NULL,
+			NULL, NULL, NULL, params, &paramsInit);
+  if (count < 0)
+    ABORTXLAL(status);
 
   CHECKSTATUSPTR(status);
 
@@ -181,7 +181,7 @@ LALInspiralWave3Templates (
 
 {
 
-  UINT4 count;
+  INT4 count;
 
   InspiralInit paramsInit;
 
@@ -217,8 +217,10 @@ LALInspiralWave3Templates (
   memset(output2->data, 0, output2->length * sizeof(REAL4));
 
   /* Call the engine function */
-  LALInspiralWave3Engine(status->statusPtr, output1, output2, NULL,
-			    NULL, NULL, NULL, &count, params, &paramsInit);
+  count = XLALInspiralWave3Engine(output1, output2, NULL,
+			    NULL, NULL, NULL, params, &paramsInit);
+  if (count < 0)
+    ABORTXLAL(status);
   CHECKSTATUSPTR(status);
 
   DETATCHSTATUSPTR(status);
@@ -243,7 +245,8 @@ LALInspiralWave3ForInjection (
 
 {
 
-  UINT4 count, i;
+  INT4 count;
+  UINT4 i;
   REAL4Vector *h=NULL;
   REAL4Vector *a=NULL;
   REAL4Vector *ff=NULL ;
@@ -305,7 +308,9 @@ LALInspiralWave3ForInjection (
   }
 
   /* Call the engine function */
-  LALInspiralWave3Engine(status->statusPtr, NULL, NULL, h, a, ff, phiv, &count, params, &paramsInit);
+  count = XLALInspiralWave3Engine(NULL, NULL, h, a, ff, phiv, params, &paramsInit);
+  if (count < 0)
+    ABORTXLAL(status);
   BEGINFAIL( status ) {
      LALSDestroyVector(status->statusPtr, &ff);
      CHECKSTATUSPTR(status);
@@ -352,7 +357,7 @@ LALInspiralWave3ForInjection (
 
       /*wrap the phase vector*/
       phiC =  phiv->data[count-1] ;
-      for (i=0; i<count;i++)
+      for (i=0; i<(UINT4)count;i++)
 	{
 	  phiv->data[i] =  phiv->data[i] -phiC + ppnParams->phi;
 	}
@@ -465,16 +470,14 @@ LALInspiralWave3ForInjection (
 
 
 /* Engine function used to generate the waveforms */
-static void
-LALInspiralWave3Engine(
-                LALStatus        *status,
+static int
+XLALInspiralWave3Engine(
                 REAL4Vector      *output1,
                 REAL4Vector      *output2,
                 REAL4Vector      *h,
                 REAL4Vector      *a,
                 REAL4Vector      *ff,
                 REAL8Vector      *phiv,
-                UINT4            *countback,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 )
@@ -497,9 +500,6 @@ LALInspiralWave3Engine(
   REAL8 cosI = 0.;/* cosine of system inclination */
   REAL8 apFac = 0., acFac = 0.;/* extra factor in plus and cross amplitudes */
 
-
-  INITSTATUS (status, "LALInspiralWave3Engine", LALINSPIRALWAVE3TEMPLATESC);
-  ATTATCHSTATUSPTR(status);
 
   ak   = paramsInit->ak;
   func = paramsInit->func;
@@ -540,8 +540,17 @@ LALInspiralWave3Engine(
    the Nyquist theorum
 */
 
-  ASSERT(fHigh < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(fHigh > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  if (fHigh >= 0.5/dt)
+  {
+    XLALPrintError("fHigh must be less than Nyquist frequency\n");
+    XLAL_ERROR(__func__, XLAL_EDOM);
+  }
+
+  if (fHigh <= params->fLower)
+  {
+    XLALPrintError("fHigh must be larger than fLower\n");
+    XLAL_ERROR(__func__, XLAL_EDOM);
+  }
 
 /* Here's the part which calculates the waveform */
 
@@ -577,7 +586,7 @@ LALInspiralWave3Engine(
   for (tc = c1*params->tC/1000.; tc < xmax; tc+=c1*params->tC/1000.){
     temp = XLALInspiralFrequency3Wrapper(tc , pars);
     if (XLAL_IS_REAL8_FAIL_NAN(temp))
-      ABORTXLAL(status);
+      XLAL_ERROR(__func__, XLAL_EFUNC);
     if (temp > tempMax) {
       xmin = tc;
       tempMax = temp;
@@ -592,17 +601,19 @@ LALInspiralWave3Engine(
   if (tempMax > 0  &&  tempMin < 0){
     tc = XLALDBisectionFindRoot (frequencyFunction, xmin, xmax, xacc, pars);
     if (XLAL_IS_REAL8_FAIL_NAN(tc))
-      ABORTXLAL(status);
+      XLAL_ERROR(__func__, XLAL_EFUNC);
   }
   else if (a)
   {
     /* Otherwise we return an empty waveform for injection */
-    DETATCHSTATUSPTR( status );
-    RETURN( status );
+    return 0;
   }
   else
+  {
     /* Or abort if not injection */
-    ABORT( status, LALINSPIRALH_EROOTINIT, LALINSPIRALH_MSGEROOTINIT );
+    XLALPrintError("Can't find good bracket for BisectionFindRoot\n");
+    XLAL_ERROR(__func__, XLAL_EFAILED);
+  }
 
   tc /= c1;
 
@@ -613,10 +624,10 @@ LALInspiralWave3Engine(
   td = c1*(tc-t);
   phase = func.phasing3(td, &ak);
   if (XLAL_IS_REAL8_FAIL_NAN(phase))
-    ABORTXLAL(status);
+    XLAL_ERROR(__func__, XLAL_EFUNC);
   f = func.frequency3(td, &ak);
   if (XLAL_IS_REAL8_FAIL_NAN(f))
-    ABORTXLAL(status);
+    XLAL_ERROR(__func__, XLAL_EFUNC);
   phi0=-phase+phi;
   phi1=phi0+LAL_PI_2;
 
@@ -631,7 +642,8 @@ LALInspiralWave3Engine(
     /* Check we don't write past the end of the vector */
     if ((output1 && ((UINT4)i >= output1->length)) || (ff && ((UINT4)count >= ff->length)))
     {
-        ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+      XLALPrintError("Attempting to write beyond the end of vector\n");
+      XLAL_ERROR(__func__, XLAL_EBADLEN);
     }
 
     fOld = f;
@@ -675,18 +687,16 @@ LALInspiralWave3Engine(
     td = c1*(tc-t);
     phase = func.phasing3(td, &ak);
     if (XLAL_IS_REAL8_FAIL_NAN(phase))
-      ABORTXLAL(status);
+      XLAL_ERROR(__func__, XLAL_EFUNC);
     f = func.frequency3(td, &ak);
     if (XLAL_IS_REAL8_FAIL_NAN(f))
-      ABORTXLAL(status);
+      XLAL_ERROR(__func__, XLAL_EFUNC);
   }
   params->fFinal = fOld;
   if (output1 && !output2) params->tC = t;
 /*
   fprintf(stderr, "%e %e\n", f, fHigh);
 */
-  *countback = count;
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return count;
 }
