@@ -1,12 +1,5 @@
-lalinspiral (1.1.0-1lscsoft1) unstable; urgency=low
+lalinference (0.0.1-1lscsoft1) unstable; urgency=low
 
-  * LALInspiral 1.1.0
+  * LALInference 0.0.1
 
- -- Adam Mercer <adam.mercer@ligo.org>  Wed, 5 Jan 2011 16:05:38 -0600
-
-lalinspiral (1.0.0-1lscsoft1) unstable; urgency=low
-
-  * LALInspiral 1.0.0
-
- -- Adam Mercer <adam.mercer@ligo.org>  Wed, 5 May 2010 09:48:56 -0500
-
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 11 Aug 2011 11:50:02 -0500
