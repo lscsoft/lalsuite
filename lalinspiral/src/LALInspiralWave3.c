@@ -97,41 +97,36 @@ NRCSID (LALINSPIRALWAVE3C, "$Id$");
 
 
 
-void
-LALInspiralWave3 (
-   LALStatus        *status,
+int
+XLALInspiralWave3 (
    REAL4Vector      *output,
    InspiralTemplate *params
    )
 
 {
-
-
   INT4 count;
   InspiralInit paramsInit;
 
-  INITSTATUS (status, "LALInspiralWave3", LALINSPIRALWAVE3C);
-  ATTATCHSTATUSPTR(status);
+  if (output == NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (output->data == NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (params == NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (params->nStartPad < 0)
+    XLAL_ERROR(__func__, XLAL_EDOM);
+  if (params->fLower <= 0)
+    XLAL_ERROR(__func__, XLAL_EDOM);
+  if (params->tSampling <= 0)
+    XLAL_ERROR(__func__, XLAL_EDOM);
 
-  ASSERT(output, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(output->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  if (XLALInspiralInit(params, &paramsInit))
+    XLAL_ERROR(__func__, XLAL_EFUNC);
 
-  LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
-  CHECKSTATUSPTR(status);
-  LALInspiralChooseModel(status->statusPtr, &(paramsInit.func),
-					 &(paramsInit.ak), params);
-  CHECKSTATUSPTR(status);
-
-
-  LALInspiralParameterCalc (status->statusPtr, params);
-  CHECKSTATUSPTR(status);
-
-  ASSERT(params->totalMass >0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->eta >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  if (params->totalMass <= 0.)
+    XLAL_ERROR(__func__, XLAL_EDOM);
+  if (params->eta < 0.)
+    XLAL_ERROR(__func__, XLAL_EDOM);
 
   memset( output->data, 0, output->length * sizeof(REAL4) );
 
@@ -139,12 +134,9 @@ LALInspiralWave3 (
   count = XLALInspiralWave3Engine(output, NULL, NULL,
 			NULL, NULL, NULL, params, &paramsInit);
   if (count < 0)
-    ABORTXLAL(status);
+    XLAL_ERROR(__func__, XLAL_EFUNC);
 
-  CHECKSTATUSPTR(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return XLAL_SUCCESS;
 }
 
 static REAL8 XLALInspiralFrequency3Wrapper(REAL8 tC, void *pars)
@@ -171,9 +163,8 @@ NRCSID (LALINSPIRALWAVE3TEMPLATESC, "$Id$");
 
 
 
-void
-LALInspiralWave3Templates (
-   LALStatus        *status,
+int
+XLALInspiralWave3Templates (
    REAL4Vector      *output1,
    REAL4Vector      *output2,
    InspiralTemplate *params
@@ -185,32 +176,30 @@ LALInspiralWave3Templates (
 
   InspiralInit paramsInit;
 
-  INITSTATUS (status, "LALInspiralWave3Templates", LALINSPIRALWAVE3TEMPLATESC);
-  ATTATCHSTATUSPTR(status);
+  if (output1 == NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (output2 == NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (output1->data == NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (output2->data == NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (params == NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (params->nStartPad < 0)
+    XLAL_ERROR(__func__, XLAL_EDOM);
+  if (params->fLower <= 0)
+    XLAL_ERROR(__func__, XLAL_EDOM);
+  if (params->tSampling <= 0)
+    XLAL_ERROR(__func__, XLAL_EDOM);
 
-  ASSERT(output1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(output2, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(output1->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(output2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  if (XLALInspiralInit(params, &paramsInit))
+    XLAL_ERROR(__func__, XLAL_EFUNC);
 
-  LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
-  CHECKSTATUSPTR(status);
-  LALInspiralChooseModel(status->statusPtr, &(paramsInit.func),
-					&(paramsInit.ak), params);
-  CHECKSTATUSPTR(status);
-
-/* Calculate the three unknown paramaters in (m1,m2,M,eta,mu) from the two
-   which are given.  */
-
-  LALInspiralParameterCalc (status->statusPtr, params);
-  CHECKSTATUSPTR(status);
-
-  ASSERT(params->totalMass >0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->eta >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  if (params->totalMass <= 0.)
+    XLAL_ERROR(__func__, XLAL_EDOM);
+  if (params->eta < 0.)
+    XLAL_ERROR(__func__, XLAL_EDOM);
 
   /* Initialise the waveforms to zero */
   memset(output1->data, 0, output1->length * sizeof(REAL4));
@@ -220,11 +209,9 @@ LALInspiralWave3Templates (
   count = XLALInspiralWave3Engine(output1, output2, NULL,
 			    NULL, NULL, NULL, params, &paramsInit);
   if (count < 0)
-    ABORTXLAL(status);
-  CHECKSTATUSPTR(status);
+    XLAL_ERROR(__func__, XLAL_EFUNC);
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return XLAL_SUCCESS;
 }
 
 
@@ -235,23 +222,18 @@ NRCSID (LALINSPIRALWAVE3FORINJECTIONC, "$Id$");
 
 
 
-void
-LALInspiralWave3ForInjection (
-			      LALStatus        *status,
+int
+XLALInspiralWave3ForInjection (
 			      CoherentGW       *waveform,
 			      InspiralTemplate *params,
 			      PPNParamStruc  *ppnParams)
-
-
 {
-
   INT4 count;
   UINT4 i;
   REAL4Vector *h=NULL;
   REAL4Vector *a=NULL;
   REAL4Vector *ff=NULL ;
   REAL8Vector *phiv=NULL;
-  CreateVectorSequenceIn in;
 
   REAL8 phiC;/* phase at coalescence */
   CHAR message[256];
@@ -260,39 +242,46 @@ LALInspiralWave3ForInjection (
   InspiralInit paramsInit;
 
  /** -- -- */
-  INITSTATUS (status, "LALInspiralWave3ForInjection", LALINSPIRALWAVE3FORINJECTIONC);
-  ATTATCHSTATUSPTR(status);
 
   /* Make sure parameter and waveform structures exist. */
-  ASSERT( params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT( !( waveform->h ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  if (params == NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (waveform == NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (waveform->h != NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (waveform->a != NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (waveform->f != NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (waveform->phi != NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (waveform->shift != NULL)
+    XLAL_ERROR(__func__, XLAL_EFAULT);
 
   params->ampOrder = 0;
   sprintf(message, "WARNING: Amp Order has been reset to %d", params->ampOrder);
-  LALInfo(status, message);
+  XLALPrintInfo(message);
   /* Compute some parameters*/
-  LALInspiralInit(status->statusPtr, params, &paramsInit);
-  CHECKSTATUSPTR(status);
+  if (XLALInspiralInit(params, &paramsInit))
+    XLAL_ERROR(__func__, XLAL_EFUNC);
 
   if (paramsInit.nbins==0)
-    {
-      DETATCHSTATUSPTR(status);
-      RETURN (status);
-
-    }
+  {
+    /* FIXME: is this the correct thing to return? */
+    return XLAL_SUCCESS;
+  }
 
   /* Now we can allocate memory and vector for coherentGW structure*/
-  LALSCreateVector(status->statusPtr, &ff, paramsInit.nbins);
-  CHECKSTATUSPTR(status);
-  LALSCreateVector(status->statusPtr, &a, 2*paramsInit.nbins);
-  CHECKSTATUSPTR(status);
-  LALDCreateVector(status->statusPtr, &phiv, paramsInit.nbins);
-  CHECKSTATUSPTR(status);
+  ff = XLALCreateREAL4Vector(paramsInit.nbins);
+  if (ff == NULL)
+    XLAL_ERROR(__func__, XLAL_ENOMEM);
+  a = XLALCreateREAL4Vector(2*paramsInit.nbins);
+  if (a == NULL)
+    XLAL_ERROR(__func__, XLAL_ENOMEM);
+  phiv = XLALCreateREAL8Vector(paramsInit.nbins);
+  if (phiv == NULL)
+    XLAL_ERROR(__func__, XLAL_ENOMEM);
 
  /* By default the waveform is empty */
 
@@ -302,29 +291,25 @@ LALInspiralWave3ForInjection (
 
   if( params->ampOrder )
   {
-     LALSCreateVector(status->statusPtr, &h, 2*paramsInit.nbins);
-     CHECKSTATUSPTR(status);
-     memset(h->data,  0, h->length * sizeof(REAL4));
+    h = XLALCreateREAL4Vector(2*paramsInit.nbins);
+    if (h == NULL)
+      XLAL_ERROR(__func__, XLAL_ENOMEM);
+    memset(h->data,  0, h->length * sizeof(REAL4));
   }
 
   /* Call the engine function */
   count = XLALInspiralWave3Engine(NULL, NULL, h, a, ff, phiv, params, &paramsInit);
   if (count < 0)
-    ABORTXLAL(status);
-  BEGINFAIL( status ) {
-     LALSDestroyVector(status->statusPtr, &ff);
-     CHECKSTATUSPTR(status);
-     LALSDestroyVector(status->statusPtr, &a);
-     CHECKSTATUSPTR(status);
-     LALDDestroyVector(status->statusPtr, &phiv);
-     CHECKSTATUSPTR(status);
-     if( params->ampOrder )
-     {
-       LALSDestroyVector(status->statusPtr, &h);
-       CHECKSTATUSPTR(status);
-     }
+  {
+    XLALDestroyREAL4Vector(ff);
+    XLALDestroyREAL4Vector(a);
+    XLALDestroyREAL8Vector(phiv);
+    if( h )
+    {
+      XLALDestroyREAL4Vector(h);
+    }
+    XLAL_ERROR(__func__, XLAL_EFUNC);
   }
-  ENDFAIL(status);
 
   /* Check an empty waveform hasn't been returned */
   for (i = 0; i < phiv->length; i++)
@@ -333,15 +318,16 @@ LALInspiralWave3ForInjection (
     /* If the waveform returned is empty, return now */
     if (i == phiv->length - 1)
     {
-      LALSDestroyVector(status->statusPtr, &ff);
-      CHECKSTATUSPTR(status);
-      LALSDestroyVector(status->statusPtr, &a);
-      CHECKSTATUSPTR(status);
-      LALDDestroyVector(status->statusPtr, &phiv);
-      CHECKSTATUSPTR(status);
+      XLALDestroyREAL4Vector(ff);
+      XLALDestroyREAL4Vector(a);
+      XLALDestroyREAL8Vector(phiv);
+      if( h )
+      {
+        XLALDestroyREAL4Vector(h);
+      }
 
-      DETATCHSTATUSPTR(status);
-      RETURN(status);
+      /* FIXME: is this the correct thing to return? */
+      return XLAL_SUCCESS;
     }
   }
 
@@ -353,119 +339,106 @@ LALInspiralWave3ForInjection (
 
   }
   else*/
+  {
+
+    /*wrap the phase vector*/
+    phiC =  phiv->data[count-1] ;
+    for (i=0; i<(UINT4)count;i++)
     {
+      phiv->data[i] =  phiv->data[i] -phiC + ppnParams->phi;
+    }
+    /* Allocate the waveform structures. */
+    waveform->a = (REAL4TimeVectorSeries *) XLALMalloc( sizeof(REAL4TimeVectorSeries) );
+    if ( waveform->a == NULL )
+      XLAL_ERROR(__func__, XLAL_ENOMEM);
+    memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
 
-      /*wrap the phase vector*/
-      phiC =  phiv->data[count-1] ;
-      for (i=0; i<(UINT4)count;i++)
-	{
-	  phiv->data[i] =  phiv->data[i] -phiC + ppnParams->phi;
-	}
-      /* Allocate the waveform structures. */
-      if ( ( waveform->a = (REAL4TimeVectorSeries *)
-	     LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
-	ABORT( status, LALINSPIRALH_EMEM,
-	       LALINSPIRALH_MSGEMEM );
-      }
-      memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
-      if ( ( waveform->f = (REAL4TimeSeries *)
-	     LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
-	LALFree( waveform->a ); waveform->a = NULL;
-	ABORT( status, LALINSPIRALH_EMEM,
-	       LALINSPIRALH_MSGEMEM );
-      }
-      memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
-      if ( ( waveform->phi = (REAL8TimeSeries *)
-	     LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
-	LALFree( waveform->a ); waveform->a = NULL;
-	LALFree( waveform->f ); waveform->f = NULL;
-	ABORT( status, LALINSPIRALH_EMEM,
-	       LALINSPIRALH_MSGEMEM );
-      }
-      memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
+    waveform->f = (REAL4TimeSeries *) LALMalloc( sizeof(REAL4TimeSeries) );
+    if ( waveform->f == NULL )
+    {
+      XLALFree( waveform->a );
+      waveform->a = NULL;
+      XLAL_ERROR(__func__, XLAL_ENOMEM);
+    }
+    memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
+
+    waveform->phi = (REAL8TimeSeries *) LALMalloc( sizeof(REAL8TimeSeries) );
+    if ( waveform->phi == NULL )
+    {
+      XLALFree( waveform->a );
+      waveform->a = NULL;
+      XLALFree( waveform->f );
+      waveform->f = NULL;
+      XLAL_ERROR(__func__, XLAL_ENOMEM);
+    }
+    memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
 
 
+    waveform->a->data = XLALCreateREAL4VectorSequence(count, 2);
+    if (waveform->a->data == NULL)
+      XLAL_ERROR(__func__, XLAL_ENOMEM);
 
-      in.length = (UINT4)count;
-      in.vectorLength = 2;
-      LALSCreateVectorSequence( status->statusPtr,
-				&( waveform->a->data ), &in );
-      CHECKSTATUSPTR(status);
-      LALSCreateVector( status->statusPtr,
-			&( waveform->f->data ), count);
-      CHECKSTATUSPTR(status);
-      LALDCreateVector( status->statusPtr,
-			&( waveform->phi->data ), count );
-      CHECKSTATUSPTR(status);
+    waveform->f->data = XLALCreateREAL4Vector(count);
+    if (waveform->f->data == NULL)
+      XLAL_ERROR(__func__, XLAL_ENOMEM);
+    waveform->phi->data = XLALCreateREAL8Vector(count);
+    if (waveform->phi->data == NULL)
+      XLAL_ERROR(__func__, XLAL_ENOMEM);
 
 
+    memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
+    memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
+    memcpy(waveform->phi->data->data ,phiv->data, count*(sizeof(REAL8)));
 
+    waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT = 1./params->tSampling;
 
-      memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
-      memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
-      memcpy(waveform->phi->data->data ,phiv->data, count*(sizeof(REAL8)));
+    waveform->a->sampleUnits = lalStrainUnit;
+    waveform->f->sampleUnits = lalHertzUnit;
+    waveform->phi->sampleUnits = lalDimensionlessUnit;
+    waveform->position = ppnParams->position;
+    waveform->psi = ppnParams->psi;
 
+    snprintf( waveform->a->name, LALNameLength, "T3 inspiral amplitudes" );
+    snprintf( waveform->f->name, LALNameLength, "T3 inspiral frequency" );
+    snprintf( waveform->phi->name, LALNameLength, "T3 inspiral phase" );
 
+    /* --- fill some output ---*/
 
+    ppnParams->tc     = (double)(count-1) / params->tSampling ;
+    ppnParams->length = count;
+    ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] - waveform->f->data->data[count-2])) * ppnParams->deltaT;
+    ppnParams->fStop  = params->fFinal;
+    ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
+    ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
 
-      waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
-	= 1./params->tSampling;
+    ppnParams->fStart   = ppnParams->fStartIn;
 
-      waveform->a->sampleUnits = lalStrainUnit;
-      waveform->f->sampleUnits = lalHertzUnit;
-      waveform->phi->sampleUnits = lalDimensionlessUnit;
-      waveform->position = ppnParams->position;
-      waveform->psi = ppnParams->psi;
+    if( params->ampOrder )
+    {
+      waveform->h = (REAL4TimeVectorSeries *) XLALMalloc( sizeof(REAL4TimeVectorSeries) );
+      if ( waveform->h == NULL )
+        XLAL_ERROR(__func__, XLAL_ENOMEM);
+      memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
 
-      snprintf( waveform->a->name, LALNameLength, "T3 inspiral amplitudes" );
-      snprintf( waveform->f->name, LALNameLength, "T3 inspiral frequency" );
-      snprintf( waveform->phi->name, LALNameLength, "T3  inspiral phase" );
-
-      /* --- fill some output ---*/
-
-      ppnParams->tc     = (double)(count-1) / params->tSampling ;
-      ppnParams->length = count;
-      ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1]
-			- waveform->f->data->data[count-2])) * ppnParams->deltaT;
-      ppnParams->fStop  = params->fFinal;
-      ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
-      ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
-
-      ppnParams->fStart   = ppnParams->fStartIn;
-
-      if( params->ampOrder )
-      {
-        if ( ( waveform->h = (REAL4TimeVectorSeries *)
-	       LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL )
-        {
-	  ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
-        }
-        memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
-        LALSCreateVectorSequence( status->statusPtr,
-				  &( waveform->h->data ), &in );
-        CHECKSTATUSPTR(status);
-        memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
-        waveform->h->deltaT = 1./params->tSampling;
-        waveform->h->sampleUnits = lalStrainUnit;
-        snprintf( waveform->h->name, LALNameLength, "T3 inspiral polarizations" );
-        LALSDestroyVector(status->statusPtr, &h);
-        CHECKSTATUSPTR(status);
-      }
-    }    /*end of coherentGW storage */
+      waveform->h->data = XLALCreateREAL4VectorSequence(count, 2);
+      if ( waveform->h->data == NULL )
+        XLAL_ERROR(__func__, XLAL_ENOMEM);
+      memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
+      waveform->h->deltaT = 1./params->tSampling;
+      waveform->h->sampleUnits = lalStrainUnit;
+      snprintf( waveform->h->name, LALNameLength, "T3 inspiral polarizations" );
+      XLALDestroyREAL4Vector(h);
+      h = NULL;
+    }
+  }    /*end of coherentGW storage */
 
 
   /* --- free memory --- */
-  LALSDestroyVector(status->statusPtr, &ff);
-  CHECKSTATUSPTR(status);
-  LALSDestroyVector(status->statusPtr, &a);
-  CHECKSTATUSPTR(status);
-  LALDDestroyVector(status->statusPtr, &phiv);
-  CHECKSTATUSPTR(status);
+  XLALDestroyREAL4Vector(ff);
+  XLALDestroyREAL4Vector(a);
+  XLALDestroyREAL8Vector(phiv);
 
-
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return XLAL_SUCCESS;
 }
 
 

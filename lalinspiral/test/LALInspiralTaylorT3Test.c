@@ -74,7 +74,7 @@ int main(void) {
 	m = m1 + m2;
 	nu = m1 * m2 / m / m;
 
-	O = 7;
+	O = 0;
 	switch (O)
 	{
 		case 0:
@@ -148,7 +148,7 @@ int main(void) {
 	fprintf(stderr, "Lower cut-off frequency used will be %fHz\n", params.fLower);
 
 	/* --- now we can call the injection function --- */
-	LALInspiralWave3Templates(&mystatus, h_plus->data, h_cross->data, &params);
+	XLALInspiralWave3Templates(h_plus->data, h_cross->data, &params);
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;
 	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);

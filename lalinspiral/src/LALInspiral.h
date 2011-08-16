@@ -981,19 +981,16 @@ void LALInspiralWave2ForInjection(
 
 
 
-void LALInspiralWave3 (
-     LALStatus *status,
+int  XLALInspiralWave3 (
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
-void LALInspiralWave3Templates (
-     LALStatus *status,
+int  XLALInspiralWave3Templates (
      REAL4Vector *signalvec1,
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
-void LALInspiralWave3ForInjection(
-     LALStatus        *status,
+int  XLALInspiralWave3ForInjection(
      CoherentGW *waveform,
      InspiralTemplate *params,
      PPNParamStruc  *ppnParams);
