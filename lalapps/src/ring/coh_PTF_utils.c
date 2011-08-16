@@ -1060,10 +1060,10 @@ void timeval_print(struct timeval *tv)
   char buffer[30];
   time_t curtime;
 
-  printf("%ld.%06ld", tv->tv_sec, tv->tv_usec);
+  printf("%lu.%06lu", (unsigned long)tv->tv_sec, (unsigned long)tv->tv_usec);
   curtime = tv->tv_sec;
   strftime(buffer, 30, "%m-%d-%Y  %T", localtime(&curtime));
-  printf(" = %s.%06ld\n", buffer, tv->tv_usec);
+  printf(" = %s.%06lu\n", buffer, (unsigned long)tv->tv_usec);
 }
 
 /*
