@@ -111,7 +111,7 @@ XLALInspiralInit (InspiralTemplate *params,
   if ( XLALInspiralChooseModel(&(paramsInit->func), &(paramsInit->ak), params) 
        == XLAL_FAILURE )
   {
-    XLAL_ERROR_(__func__, XLAL_EFUNC);
+    XLAL_ERROR(__func__, XLAL_EFUNC);
   }
 
   /* The parameters have been initialized now. However, we can have some problems
