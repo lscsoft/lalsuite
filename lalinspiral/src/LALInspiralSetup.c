@@ -76,15 +76,15 @@ LALInspiralSetup (
    INITSTATUS (status, "LALInspiralSetup", LALINSPIRALSETUPC);
    ATTATCHSTATUSPTR(status);
 
-   XLALInspiralSetup(ak, params);
-   if (xlalErrno)
+   if ( XLALInspiralSetup(ak, params) == XLAL_FAILURE )
+   {
       ABORTXLAL(status);
-
+   }
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }
 
-void
+int
 XLALInspiralSetup (
    expnCoeffs       *ak,
    InspiralTemplate *params
@@ -103,21 +103,21 @@ XLALInspiralSetup (
    REAL8 chi1, chi2;
 
    if (ak == NULL)
-      XLAL_ERROR_VOID(__func__, XLAL_EFAULT);
+      XLAL_ERROR(__func__, XLAL_EFAULT);
    if (params == NULL)
-      XLAL_ERROR_VOID(__func__, XLAL_EFAULT);
+      XLAL_ERROR(__func__, XLAL_EFAULT);
    if (params->mass1 <= 0)
-      XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+      XLAL_ERROR(__func__, XLAL_EDOM);
    if (params->mass2 <= 0)
-      XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+      XLAL_ERROR(__func__, XLAL_EDOM);
    if (params->fLower <= 0)
-      XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+      XLAL_ERROR(__func__, XLAL_EDOM);
    if (params->fCutoff <= 0)
-      XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+      XLAL_ERROR(__func__, XLAL_EDOM);
    if (params->tSampling <= 0)
-      XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+      XLAL_ERROR(__func__, XLAL_EDOM);
    if (params->tSampling <= 2*params->fCutoff)
-      XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+      XLAL_ERROR(__func__, XLAL_EDOM);
 
    vpole = 0.0;
    ak->omegaS = params->OmegaS;
@@ -387,7 +387,7 @@ XLALInspiralSetup (
          break;
       default:
          XLALPrintError("XLAL Error - %s: Unknown PN order in switch\n", __func__);
-         XLAL_ERROR_VOID(__func__, XLAL_EINVAL);
+         XLAL_ERROR(__func__, XLAL_EINVAL);
          break;
    }
 
@@ -554,6 +554,8 @@ XLALInspiralSetup (
    padecoeffs[3], padecoeffs[4], padecoeffs[5], padecoeffs[6], padecoeffs[7]);
 
 */
+  return XLAL_SUCCESS;
+
 }
 
 /* pade_coeffs.f -- translated by f2c (version 20000531).  */
