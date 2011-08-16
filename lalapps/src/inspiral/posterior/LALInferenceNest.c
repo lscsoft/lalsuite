@@ -317,8 +317,8 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 mcMin=1.0;
 	REAL8 mcMax=20.5;
 	REAL8 logmcMax,logmcMin,mMin=1.0,mMax=30.0;
-	REAL8 a_spin2_max=1.0, a_spin1_max=1.0;
-	REAL8 a_spin2_min=0.0, a_spin1_min=0.0;
+	REAL8 a_spin1_max=1.0;
+	REAL8 a_spin1_min=0.0;
 	REAL8 phi_spin1_min=-LAL_PI;
 	REAL8 phi_spin1_max=LAL_PI;
 	REAL8 theta_spin1_min=-LAL_PI/2.0;
