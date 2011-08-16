@@ -223,10 +223,12 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
            break;
       case PhenSpinTaylorRD:
-           XLALPSpinInspiralRD(signalvec, params);
-	   break;
+           if(XLAL_FAILURE==XLALPSpinInspiralRD(signalvec, params))
+						 XLAL_ERROR_VOID(__func__,XLAL_EFUNC);
+					 break;
       case PhenSpinTaylorRDF:
-           XLALPSpinInspiralRDFreqDom(signalvec, params);
+           if(XLAL_FAILURE==XLALPSpinInspiralRDFreqDom(signalvec, params))
+						 XLAL_ERROR_VOID(__func__,XLAL_EFUNC);
            break;
       case SpinQuadTaylor:
            TRY(LALSQTPNWaveform(status->statusPtr, signalvec, params), status);
