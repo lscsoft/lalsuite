@@ -783,7 +783,7 @@ void LALInspiralParameterCalc (
      LALStatus *status,
      InspiralTemplate *params);
 
-void XLALInspiralParameterCalc (
+int XLALInspiralParameterCalc (
      InspiralTemplate *params);
 
 
