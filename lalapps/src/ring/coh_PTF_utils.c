@@ -253,8 +253,9 @@ RingDataSegments *coh_PTF_get_segments(
       slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
       timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] = 
           (sgmnt-slidSegNum)*params->segmentDuration;
-      compute_data_segment( &segments->sgmnt[sgmnt], sgmnt, channel, invspec,
-          response, params->segmentDuration, params->strideDuration, fwdplan );
+      compute_data_segment( &segments->sgmnt[sgmnt], slidSegNum, channel,
+          invspec, response, params->segmentDuration, params->strideDuration,
+          fwdplan );
     }
   }
   else  /* only do the segments in the todo list */
@@ -303,7 +304,7 @@ RingDataSegments *coh_PTF_get_segments(
           slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
           timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] =
               ((INT4)slidSegNum-(INT4)sgmnt)*params->segmentDuration/2.;
-          compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
+          compute_data_segment( &segments->sgmnt[count++], slidSegNum, channel,
             invspec, response, params->segmentDuration, params->strideDuration,
             fwdplan );
         }
