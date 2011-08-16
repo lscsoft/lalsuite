@@ -59,6 +59,7 @@
 #include <lal/RingUtils.h>
 #include <LALAppsVCSInfo.h>
 #include <lal/SkyCoordinates.h>
+#include <lal/XLALError.h>
 
 #include "lalapps.h"
 #include "getdata.h"
@@ -75,6 +76,7 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_blas.h>
+#include <lal/GSLSupport.h>
 
 #define BUFFER_SIZE 256
 #define FILENAME_SIZE 256
@@ -708,18 +710,41 @@ CohPTFSkyPositions *coh_PTF_read_grid_from_file(
 
 void coh_PTF_rotate_skyPoints(
     CohPTFSkyPositions *skyPoints,
-    REAL4 axis[3],
-    REAL4 angle
+    gsl_vector *axis,
+    REAL8 angle
 );
 
-void crossProduct(
-    REAL4 out[3],
-    REAL4 x[3],
-    REAL4 y[3]
+void coh_PTF_rotate_SkyPosition(
+    SkyPosition *skyPoint,
+    gsl_matrix  *matrix
 );
 
-void rotationMatrix(
-    REAL4 matrix[3][3],
-    REAL4 axis[3],
-    REAL4 angle
+CohPTFSkyPositions *coh_PTF_two_det_sky_grid(
+    struct coh_PTF_params *params
+);
+
+CohPTFSkyPositions *coh_PTF_three_det_sky_grid(
+    struct coh_PTF_params *params
+);
+
+void normalise(
+    gsl_vector *vec
+);
+
+void cross_product(
+    gsl_vector *product,
+    const gsl_vector *u,
+    const gsl_vector *v
+);
+
+void rotation_matrix(
+    gsl_matrix *matrix,
+    gsl_vector *axis,
+    REAL8 angle
+);
+
+void REALToGSLVector(
+    const REAL8 *input,
+    gsl_vector  *output,
+    size_t      size
 );
