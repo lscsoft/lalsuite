@@ -29,7 +29,7 @@ NRCSID (LALSQTPNWAVEFORMC, "$Id LALSQTPN_Waveform.c$");
 	(product)[1] = ((left)[2] * (right)[0] - (left)[0] * (right)[2]);\
 	(product)[2] = ((left)[0] * (right)[1] - (left)[1] * (right)[0]);
 
-void XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
+int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 
 	// variable declaration and initialization
 	REAL8 thetahat = 1039. / 4620.;
@@ -143,9 +143,13 @@ void XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 			params->coeff.domega[LAL_PNORDER_HALF] = 0.;
 		case LAL_PNORDER_NEWTONIAN:
 			params->coeff.domega[LAL_PNORDER_NEWTONIAN] = 1.;
+			break;
 		default:
+			XLAL_ERROR(__func__, XLAL_EINVAL);
 			break;
 	}
+
+	return XLAL_SUCCESS;
 }
 
 int LALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[], 
@@ -295,8 +299,10 @@ int XLALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[],
 		case LAL_PNORDER_ONE:
 		case LAL_PNORDER_HALF:
 		case LAL_PNORDER_NEWTONIAN:
-		default:
 			break;
+		default:
+			XLALPrintError("XLAL Error - %s: The PN order requested is not implemented for this approximant\n", __func__);
+			return XLAL_FAILURE;
 	}
 	dvalues[LALSQTPN_OMEGA] *= params->coeff.domegaGlobal * omegaPowi_3[7]
 			* omegaPowi_3[4];
@@ -357,11 +363,10 @@ int XLALSQTPNGenerator(LALSQTPNWave *waveform, LALSQTPNWaveformParams *params) {
 
 	// filling the LALSQTPNCoefficients
 	xlalErrno = 0;
-	XLALSQTPNFillCoefficients(params);
-	if (xlalErrno) {
+	if( XLALSQTPNFillCoefficients(params) )
 		XLAL_ERROR(__func__, XLAL_EFUNC);
-	}
-	XLALSQTPNDerivator(time, values, dvalues, params);
+	if( XLALSQTPNDerivator(time, values, dvalues, params) )
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	dvalues[LALSQTPN_MECO] = -1.; // to be able to start the loop
 	i = 0;
 	do {
@@ -423,7 +428,8 @@ int XLALSQTPNGenerator(LALSQTPNWave *waveform, LALSQTPNWaveformParams *params) {
 				|| isnan(values[LALSQTPN_CHIH2_3])) {
 			break;
 		}
-		XLALSQTPNDerivator(time, values, dvalues, params);
+		if( XLALSQTPNDerivator(time, values, dvalues, params) )
+			XLAL_ERROR(__func__, XLAL_EFUNC);
 		if ((waveform->waveform && 
 				i == waveform->waveform->f->data->length) ||
 				(waveform->hp && i == waveform->hp->length) ||

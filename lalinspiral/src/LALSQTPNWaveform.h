@@ -124,7 +124,7 @@ typedef struct tagLALSQTPNWaveformParams{
  *	effects.
  * @param[in,out]	params	: the LALSQTPN_Generator's parameters
  */
-void XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params);
+int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params);
 
 /**		The function calculates the derived values.
  * The formulae are:

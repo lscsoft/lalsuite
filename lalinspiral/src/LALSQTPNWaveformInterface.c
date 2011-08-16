@@ -148,7 +148,8 @@ int XLALSQTPNWaveformForInjection(CoherentGW *waveform,
 	if (xlalErrno)
 		XLAL_ERROR(__func__, XLAL_EFUNC);
 	if (paramsInit.nbins == 0) {
-		return XLAL_FAILURE; // FIXME!!!
+		XLALPrintWarning("Warning! Waveform of zero length requested in %s. Returning empty waveform.\n ", __func__);
+		return XLAL_SUCCESS;
 	}
 
 	// Allocate the waveform structures.
