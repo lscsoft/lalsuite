@@ -171,7 +171,6 @@ XLALInspiralWave3Templates (
    )
 
 {
-
   INT4 count;
 
   InspiralInit paramsInit;
@@ -226,7 +225,8 @@ int
 XLALInspiralWave3ForInjection (
 			      CoherentGW       *waveform,
 			      InspiralTemplate *params,
-			      PPNParamStruc  *ppnParams)
+			      PPNParamStruc  *ppnParams
+			      )
 {
   INT4 count;
   UINT4 i;
@@ -373,18 +373,15 @@ XLALInspiralWave3ForInjection (
     }
     memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
 
-
     waveform->a->data = XLALCreateREAL4VectorSequence(count, 2);
     if (waveform->a->data == NULL)
       XLAL_ERROR(__func__, XLAL_ENOMEM);
-
     waveform->f->data = XLALCreateREAL4Vector(count);
     if (waveform->f->data == NULL)
       XLAL_ERROR(__func__, XLAL_ENOMEM);
     waveform->phi->data = XLALCreateREAL8Vector(count);
     if (waveform->phi->data == NULL)
       XLAL_ERROR(__func__, XLAL_ENOMEM);
-
 
     memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
     memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
