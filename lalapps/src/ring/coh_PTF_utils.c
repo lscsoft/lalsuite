@@ -756,11 +756,18 @@ CohPTFSkyPositions *coh_PTF_generate_sky_points(
     verbose("Generated necessary sky grid with %d points, ",
             skyPoints->numPoints);
     verbose("parsing for time-delay degeneracy\n");
-    skyPoints = coh_PTF_parse_time_delays(skyPoints, params);
+    CohPTFSkyPositions *parsedSkyPoints = NULL; 
+    parsedSkyPoints = coh_PTF_parse_time_delays(skyPoints, params);
+    if (skyPoints->data)
+      LALFree(skyPoints->data);
+    if (skyPoints)
+      LALFree(skyPoints);
+    return parsedSkyPoints;
   }
-
-  return skyPoints;
-
+  else
+  {
+    return skyPoints;
+  }
 }
 
 /*
@@ -1041,6 +1048,13 @@ CohPTFSkyPositions *coh_PTF_parse_time_delays(
       parsedSkyPoints->data[i] = skyPoints->data[p];
       i++;
     }
+  }
+
+  /* free memory */
+  for(ifoNumber = 0; ifoNumber < params->numIFO; ifoNumber++)
+  {
+    if (detectors[ifoNumber])
+      LALFree(detectors[ifoNumber]);
   }
 
   return parsedSkyPoints;
