@@ -271,7 +271,7 @@ XLALInspiralParameterCalc (
 
          if (x1*x2 > 0) {
             params->eta = 0.;
-            return;
+            return XLAL_SUCCESS;
          } else {
             eta = XLALDBisectionFindRoot(function, xmin, xmax, xacc, pars);
             if (XLAL_IS_REAL8_FAIL_NAN(eta))
@@ -348,7 +348,7 @@ XLALInspiralParameterCalc (
 
 	 if (x1*x2 > 0) {
             params->eta = 0.;
-            return;
+            return XLAL_SUCCESS;
          } else {
             eta = XLALDBisectionFindRoot(function, xmin, xmax, xacc, pars);
             if (XLAL_IS_REAL8_FAIL_NAN(eta))
@@ -388,7 +388,7 @@ XLALInspiralParameterCalc (
       else
       {
 	      params->eta = 0.;
-	      return;
+	      return XLAL_SUCCESS;
       }
       break;
 
