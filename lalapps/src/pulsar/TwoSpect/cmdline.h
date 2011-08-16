@@ -136,9 +136,9 @@ struct gengetopt_args_info
   double SFToverlap_arg;	/**< @brief SFT overlap in seconds, usually Tcoh/2 (default='900').  */
   char * SFToverlap_orig;	/**< @brief SFT overlap in seconds, usually Tcoh/2 original value given at command line.  */
   const char *SFToverlap_help; /**< @brief SFT overlap in seconds, usually Tcoh/2 help description.  */
-  char * sftType_arg;	/**< @brief Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization (default='vladimir').  */
-  char * sftType_orig;	/**< @brief Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization original value given at command line.  */
-  const char *sftType_help; /**< @brief Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization help description.  */
+  char * sftType_arg;	/**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization (default='vladimir').  */
+  char * sftType_orig;	/**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization original value given at command line.  */
+  const char *sftType_help; /**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization help description.  */
   int markBadSFTs_flag;	/**< @brief Mark bad SFTs (default=off).  */
   const char *markBadSFTs_help; /**< @brief Mark bad SFTs help description.  */
   int FFTplanFlag_arg;	/**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive (default='3').  */
@@ -394,6 +394,10 @@ int cmdline_parser_string_ext (const char *cmdline, struct gengetopt_args_info *
  */
 int cmdline_parser_required (struct gengetopt_args_info *args_info,
   const char *prog_name);
+
+extern const char *cmdline_parser_IFO_values[];  /**< @brief Possible values for IFO. */
+extern const char *cmdline_parser_sftType_values[];  /**< @brief Possible values for sftType. */
+extern const char *cmdline_parser_FFTplanFlag_values[];  /**< @brief Possible values for FFTplanFlag. */
 
 
 #ifdef __cplusplus

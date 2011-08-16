@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
    struct cmdline_parser_params *configparams;
    configparams = cmdline_parser_params_create();
    configparams->initialize = 0;
+   configparams->override = 1;
    if ( cmdline_parser(argc, argv, &args_info) ) {
       fprintf(stderr, "%s: cmdline_parser() failed.\n", fn);
       XLAL_ERROR(fn, XLAL_FAILURE);
@@ -140,7 +141,7 @@ int main(int argc, char *argv[])
       XLAL_ERROR(fn, XLAL_EFUNC);
    }
    
-   //Parameters for the sky-grid
+   //Parameters for the sky-grid from a point/polygon or a sky-grid file
    if ((args_info.skyRegion_given && args_info.skyRegionFile_given) || (!args_info.skyRegion_given && !args_info.skyRegionFile_given)) {
       fprintf(stderr, "%s: You must choose either the the sky region (point or polygon) *or* a file.\n", fn);
       XLAL_ERROR(fn, XLAL_EINVAL);
@@ -181,7 +182,6 @@ int main(int argc, char *argv[])
       scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
       scanInit.Freq = args_info.fmin_arg+0.5*args_info.fspan_arg;  //Mid-point of the frequency band
    }
-   //XLALFree((CHAR*)sky);
    
    //Initialize the sky-grid
    InitDopplerSkyScan(&status, &scan, &scanInit);
@@ -821,6 +821,7 @@ int main(int argc, char *argv[])
    XLALFree((CHAR*)sft_dir);
    XLALFree((CHAR*)earth_ephemeris);
    XLALFree((CHAR*)sun_ephemeris);
+   XLALFree((CHAR*)sky);
    XLALDestroyEphemerisData(edat);
    cmdline_parser_free(&args_info);
    XLALFree(configparams);
