@@ -68,20 +68,21 @@ LALInspiralInit (LALStatus        *status,
 		 InspiralTemplate *params,
 		 InspiralInit     *paramsInit)
 {
-  XLALPrintDeprecationWarning("LALInspiralSetup", "XLALInspiralSetup");
+  XLALPrintDeprecationWarning("LALInspiralInit", "XLALInspiralInit");
 
   INITSTATUS (status, "LALInspiralInit", LALINSPIRALAMPLITUDEC );
   ATTATCHSTATUSPTR(status);
 
-  XLALInspiralInit(params, paramsInit);
-  if (xlalErrno)
-    ABORTXLAL(status);
+  if ( XLALInspiralInit(params, paramsInit) == XLAL_FAILURE )
+  {
+    ABORTXLAL( status );
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
-void
+int
 XLALInspiralInit (InspiralTemplate *params,
 		  InspiralInit     *paramsInit)
 {
@@ -91,23 +92,27 @@ XLALInspiralInit (InspiralTemplate *params,
 
 
   if (params == NULL)
-    XLAL_ERROR_VOID(__func__, XLAL_EFAULT);
+    XLAL_ERROR(__func__, XLAL_EFAULT);
 
-  XLALInspiralParameterCalc(params);
-  if (xlalErrno)
-    XLAL_ERROR_VOID(__func__, XLAL_EFUNC);
+  if ( XLALInspiralParameterCalc(params) == XLAL_FAILURE )
+  {
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
 
-  XLALInspiralRestrictedAmplitude(params);
-  if (xlalErrno)
-    XLAL_ERROR_VOID(__func__, XLAL_EFUNC);
+  if ( XLALInspiralRestrictedAmplitude(params) == XLAL_FAILURE )
+  {
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
 
-  XLALInspiralSetup(&(paramsInit->ak), params);
-  if (xlalErrno)
-    XLAL_ERROR_VOID(__func__, XLAL_EFUNC);
-
-  XLALInspiralChooseModel(&(paramsInit->func), &(paramsInit->ak), params);
-  if (xlalErrno)
-    XLAL_ERROR_VOID(__func__, XLAL_EFUNC);
+  if ( XLALInspiralSetup(&(paramsInit->ak), params) == XLAL_FAILURE )
+  {
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+  if ( XLALInspiralChooseModel(&(paramsInit->func), &(paramsInit->ak), params) 
+       == XLAL_FAILURE )
+  {
+    XLAL_ERROR_(__func__, XLAL_EFUNC);
+  }
 
   /* The parameters have been initialized now. However, we can have some problems
      with the LALInspiralChooseModel related to bad estimation of the length.
@@ -126,7 +131,7 @@ XLALInspiralInit (InspiralTemplate *params,
 	    paramsInit->ak.tn, params->fCutoff);
     XLALPrintInfo(message);
 
-    return;
+    return XLAL_SUCCESS;
   }
 
   if( paramsInit->ak.tn <=0 || params->tC <= 0){
@@ -136,7 +141,7 @@ XLALInspiralInit (InspiralTemplate *params,
 	    paramsInit->ak.tn);
     XLALPrintInfo(message);
 
-    return;
+    return XLAL_SUCCESS;
   }
 
   /* if everything is fine is ChooseModel then we
@@ -153,4 +158,6 @@ XLALInspiralInit (InspiralTemplate *params,
     paramsInit->ak.tn,
     paramsInit->nbins);
   XLALPrintInfo(message);
+
+  return XLAL_SUCCESS;
 }

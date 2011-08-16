@@ -849,7 +849,7 @@ LALInspiralInit(
 	InspiralTemplate *params,
 	InspiralInit     *paramsInit);
 
-void
+int
 XLALInspiralInit(
 	InspiralTemplate *params,
 	InspiralInit     *paramsInit);
