@@ -64,7 +64,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --ephemYear=STRING        Year or year range (e.g. 08-11) of ephemeris \n                                  files  (default=`08-11')",
   "      --dopplerMultiplier=DOUBLE\n                                Multiplier for the Doppler velocity  \n                                  (default=`1.0')",
   "      --templateLength=INT      Maximum number of pixels to use in the template \n                                   (default=`50')",
-  "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky  (default=`allsky')",
+  "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky",
+  "      --skyRegionFile=STRING    File with the grid points",
   "      --SFToverlap=DOUBLE       SFT overlap in seconds, usually Tcoh/2  \n                                  (default=`900')",
   "      --sftType=STRING          Expected SFT from either 'MFD' \n                                  (Makefakedata_v4) or 'vladimir' (Vladimir's \n                                  SFT windowed version) which uses a factor of \n                                  2 rather than sqrt(8/3) for the window \n                                  normalization  (default=`vladimir')",
   "      --markBadSFTs             Mark bad SFTs  (default=off)",
@@ -120,11 +121,12 @@ init_help_array(void)
   gengetopt_args_info_help[35] = gengetopt_args_info_full_help[35];
   gengetopt_args_info_help[36] = gengetopt_args_info_full_help[36];
   gengetopt_args_info_help[37] = gengetopt_args_info_full_help[37];
-  gengetopt_args_info_help[38] = 0; 
+  gengetopt_args_info_help[38] = gengetopt_args_info_full_help[38];
+  gengetopt_args_info_help[39] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[39];
+const char *gengetopt_args_info_help[40];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -206,6 +208,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->dopplerMultiplier_given = 0 ;
   args_info->templateLength_given = 0 ;
   args_info->skyRegion_given = 0 ;
+  args_info->skyRegionFile_given = 0 ;
   args_info->SFToverlap_given = 0 ;
   args_info->sftType_given = 0 ;
   args_info->markBadSFTs_given = 0 ;
@@ -272,8 +275,10 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->dopplerMultiplier_orig = NULL;
   args_info->templateLength_arg = 50;
   args_info->templateLength_orig = NULL;
-  args_info->skyRegion_arg = gengetopt_strdup ("allsky");
+  args_info->skyRegion_arg = NULL;
   args_info->skyRegion_orig = NULL;
+  args_info->skyRegionFile_arg = NULL;
+  args_info->skyRegionFile_orig = NULL;
   args_info->SFToverlap_arg = 900;
   args_info->SFToverlap_orig = NULL;
   args_info->sftType_arg = gengetopt_strdup ("vladimir");
@@ -329,17 +334,18 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[30] ;
   args_info->templateLength_help = gengetopt_args_info_full_help[31] ;
   args_info->skyRegion_help = gengetopt_args_info_full_help[32] ;
-  args_info->SFToverlap_help = gengetopt_args_info_full_help[33] ;
-  args_info->sftType_help = gengetopt_args_info_full_help[34] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[35] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[36] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[37] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[38] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[39] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[40] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[41] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[42] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[43] ;
+  args_info->skyRegionFile_help = gengetopt_args_info_full_help[33] ;
+  args_info->SFToverlap_help = gengetopt_args_info_full_help[34] ;
+  args_info->sftType_help = gengetopt_args_info_full_help[35] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[36] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[37] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[38] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[39] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[40] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[41] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[42] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[43] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[44] ;
   
 }
 
@@ -468,6 +474,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->templateLength_orig));
   free_string_field (&(args_info->skyRegion_arg));
   free_string_field (&(args_info->skyRegion_orig));
+  free_string_field (&(args_info->skyRegionFile_arg));
+  free_string_field (&(args_info->skyRegionFile_orig));
   free_string_field (&(args_info->SFToverlap_orig));
   free_string_field (&(args_info->sftType_arg));
   free_string_field (&(args_info->sftType_orig));
@@ -568,6 +576,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "templateLength", args_info->templateLength_orig, 0);
   if (args_info->skyRegion_given)
     write_into_file(outfile, "skyRegion", args_info->skyRegion_orig, 0);
+  if (args_info->skyRegionFile_given)
+    write_into_file(outfile, "skyRegionFile", args_info->skyRegionFile_orig, 0);
   if (args_info->SFToverlap_given)
     write_into_file(outfile, "SFToverlap", args_info->SFToverlap_orig, 0);
   if (args_info->sftType_given)
@@ -881,6 +891,7 @@ cmdline_parser_internal (
         { "dopplerMultiplier",	1, NULL, 0 },
         { "templateLength",	1, NULL, 0 },
         { "skyRegion",	1, NULL, 0 },
+        { "skyRegionFile",	1, NULL, 0 },
         { "SFToverlap",	1, NULL, 0 },
         { "sftType",	1, NULL, 0 },
         { "markBadSFTs",	0, NULL, 0 },
@@ -1330,9 +1341,23 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->skyRegion_arg), 
                  &(args_info->skyRegion_orig), &(args_info->skyRegion_given),
-                &(local_args_info.skyRegion_given), optarg, 0, "allsky", ARG_STRING,
+                &(local_args_info.skyRegion_given), optarg, 0, 0, ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "skyRegion", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* File with the grid points.  */
+          else if (strcmp (long_options[option_index].name, "skyRegionFile") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->skyRegionFile_arg), 
+                 &(args_info->skyRegionFile_orig), &(args_info->skyRegionFile_given),
+                &(local_args_info.skyRegionFile_given), optarg, 0, 0, ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "skyRegionFile", '-',
                 additional_error))
               goto failure;
           

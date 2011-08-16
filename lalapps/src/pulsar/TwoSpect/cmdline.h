@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.4"
+#define CMDLINE_PARSER_VERSION "1.1.5"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -127,9 +127,12 @@ struct gengetopt_args_info
   int templateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='50').  */
   char * templateLength_orig;	/**< @brief Maximum number of pixels to use in the template original value given at command line.  */
   const char *templateLength_help; /**< @brief Maximum number of pixels to use in the template help description.  */
-  char * skyRegion_arg;	/**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky (default='allsky').  */
+  char * skyRegion_arg;	/**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky.  */
   char * skyRegion_orig;	/**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky original value given at command line.  */
   const char *skyRegion_help; /**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky help description.  */
+  char * skyRegionFile_arg;	/**< @brief File with the grid points.  */
+  char * skyRegionFile_orig;	/**< @brief File with the grid points original value given at command line.  */
+  const char *skyRegionFile_help; /**< @brief File with the grid points help description.  */
   double SFToverlap_arg;	/**< @brief SFT overlap in seconds, usually Tcoh/2 (default='900').  */
   char * SFToverlap_orig;	/**< @brief SFT overlap in seconds, usually Tcoh/2 original value given at command line.  */
   const char *SFToverlap_help; /**< @brief SFT overlap in seconds, usually Tcoh/2 help description.  */
@@ -189,6 +192,7 @@ struct gengetopt_args_info
   unsigned int dopplerMultiplier_given ;	/**< @brief Whether dopplerMultiplier was given.  */
   unsigned int templateLength_given ;	/**< @brief Whether templateLength was given.  */
   unsigned int skyRegion_given ;	/**< @brief Whether skyRegion was given.  */
+  unsigned int skyRegionFile_given ;	/**< @brief Whether skyRegionFile was given.  */
   unsigned int SFToverlap_given ;	/**< @brief Whether SFToverlap was given.  */
   unsigned int sftType_given ;	/**< @brief Whether sftType was given.  */
   unsigned int markBadSFTs_given ;	/**< @brief Whether markBadSFTs was given.  */
