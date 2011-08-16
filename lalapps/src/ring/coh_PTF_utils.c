@@ -253,7 +253,7 @@ RingDataSegments *coh_PTF_get_segments(
       slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
       timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] = 
           (sgmnt-slidSegNum)*params->segmentDuration;
-      compute_data_segment( &segments->sgmnt[sgmnt], slidSegNum, channel, invspec,
+      compute_data_segment( &segments->sgmnt[sgmnt], sgmnt, channel, invspec,
           response, params->segmentDuration, params->strideDuration, fwdplan );
     }
   }
@@ -303,7 +303,7 @@ RingDataSegments *coh_PTF_get_segments(
           slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
           timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] =
               ((INT4)slidSegNum-(INT4)sgmnt)*params->segmentDuration/2.;
-          compute_data_segment( &segments->sgmnt[count++], slidSegNum, channel,
+          compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
             invspec, response, params->segmentDuration, params->strideDuration,
             fwdplan );
         }
@@ -721,11 +721,24 @@ CohPTFSkyPositions *coh_PTF_generate_sky_points(
   }
 
   /* if all sky */
-  else if ( params->skyLooping == ALL_SKY || params->skyLooping == TWO_DET_ALL_SKY )
+  else if (params->skyLooping == TWO_DET_ALL_SKY)
   {
-    error("all sky mode is not implemented yet, however, you can use --sky-positions-file\n");
+    verbose("Generating 2 detector all sky map...\n");
+    skyPoints = coh_PTF_two_det_sky_grid(params);
+  }
+
+  else if ((params->skyLooping == ALL_SKY) && (params->numIFO==3))
+  {
+    verbose("Generating 3 detector all sky map...\n");
+    skyPoints = coh_PTF_three_det_sky_grid(params);
+    //error("all sky mode is not implemented yet, however, you can use --sky-positions-file\n");
 
     //skyPoints = coh_PTF_sky_grid()
+  }
+
+  else if (params->skyLooping == ALL_SKY)
+  {
+    error("all sky mode is not implemented yet, however, you can use --sky-positions-file\n");
   }
 
   /* if sky region */
@@ -737,8 +750,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_points(
   }
 
   /* if two-detectors, remove time-delay degeneracy */
-  if (params->skyLooping == TWO_DET_SKY_PATCH\
-      || params->skyLooping == TWO_DET_ALL_SKY)
+  if (params->skyLooping == TWO_DET_SKY_PATCH)
   {
     verbose("Generated necessary sky grid with %d points, ",
             skyPoints->numPoints);
@@ -760,21 +772,19 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
     )
 {
   CohPTFSkyPositions *skyPoints = NULL;
-  UINT4 ifoNumber,i,j;
-  LALDetector *detectors[LAL_NUM_IFO];
-  REAL4 angle;   /* opening angle between 2 IFO baseline and sky localisation */
-  REAL4 lambdamin,lambdamax,lambda; /* opening angle closest to pi/2 */
-  REAL4 alpha,detalpha;
-  alpha = 0;                         
-  REAL4 angularResolution;          /* angular resolution of grid in radians */
-  double baseline,lightTravelTime;
-  REAL4 raNp  = 0.;                 /* north */
-  REAL4 decNp = LAL_PI_2;           /* pole */
+  UINT4              ifoNumber,i,j;
+  LALDetector        *detectors[LAL_NUM_IFO];
+  REAL4              angle;  /* angle between IFO baseline & sky localisation */
+  REAL4              lambdamin,lambdamax,lambda; /* angle closest to pi/2 */
+  REAL4              alpha=0,detalpha;
+  REAL4              angularResolution;
+  double             baseline,lightTravelTime;
+  REAL4              raNp  = 0.;                 /* north */
+  REAL4              decNp = LAL_PI_2;           /* pole */
 
-  REAL4 rho;                        /* magnitude of rotation vector */
-  REAL4 axis[3];                    /* rotation axis vector */
-  REAL4 npPos[3];                   /* north pole position */
-  REAL4 trigPos[3];                 /* trigger position */
+  gsl_vector         *axis;                       /* rotation axis vector */
+  gsl_vector         *npPos;                      /* north pole position */
+  gsl_vector         *trigPos;                    /* trigger position */
 
   /* get site coordinates */
   for(ifoNumber=0; ifoNumber<LAL_NUM_IFO; ifoNumber++)
@@ -852,21 +862,22 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
                  cos( raNp-params->rightAscension ) );
 
   /* calculate unit vector to rotate around */
-  npPos[0] = cos(decNp) * cos(raNp);
-  npPos[1] = cos(decNp) * sin(raNp);
-  npPos[2] = sin(decNp);
+  npPos = gsl_vector_alloc(3);
+  trigPos = gsl_vector_alloc(3);
+  axis = gsl_vector_alloc(3);
 
-  trigPos[0] = cos(params->declination) * cos(params->rightAscension);
-  trigPos[1] = cos(params->declination) * sin(params->rightAscension);
-  trigPos[2] = sin(params->declination);
+  gsl_vector_set(npPos, 0, 0.);
+  gsl_vector_set(npPos, 1, 0.);
+  gsl_vector_set(npPos, 2, 1.);
 
-  axis[0] = npPos[1]*trigPos[2] - npPos[2]*trigPos[1];
-  axis[1] = npPos[2]*trigPos[0] - npPos[0]*trigPos[2];
-  axis[2] = npPos[0]*trigPos[1] - npPos[1]*trigPos[0];
+  gsl_vector_set(trigPos, 0,\
+                 cos(params->declination)*cos(params->rightAscension));
+  gsl_vector_set(trigPos, 1,\
+                 cos(params->declination)*sin(params->rightAscension));
+  gsl_vector_set(trigPos, 2, sin(params->declination));
 
-  rho = sqrt( pow(axis[0],2) + pow(axis[1],2) + pow(axis[2],2) );
-  for ( i=0; i<3; i++ )
-    axis[i] /= rho;
+  cross_product(axis, npPos, trigPos);
+  normalise(axis);
 
   /* rotate sky points */
   coh_PTF_rotate_skyPoints(skyPoints, axis, angle);
@@ -877,6 +888,9 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
     if ( detectors[ifoNumber] )
       LALFree(detectors[ifoNumber]);
   }
+  FREE_GSL_VECTOR(npPos);
+  FREE_GSL_VECTOR(trigPos);
+  FREE_GSL_VECTOR(axis);
 
   return skyPoints;
 
@@ -953,7 +967,7 @@ CohPTFSkyPositions *coh_PTF_parse_time_delays(
 {
 
   CohPTFSkyPositions *parsedSkyPoints;
-  UINT4              numTimeDelays = 0;
+  UINT4              numSkyPoints = 0;
   UINT4              i, p, ifoNumber, appendPoint[skyPoints->numPoints];
   REAL8              timeDelay, timeDelays[skyPoints->numPoints];
   LALDetector        *detectors[params->numIFO];
@@ -1006,16 +1020,16 @@ CohPTFSkyPositions *coh_PTF_parse_time_delays(
      * counter */
     if (appendPoint[p] == 0)
     {
-      numTimeDelays++;
+      numSkyPoints++;
       timeDelays[p] = timeDelay;
     }
   }
 
   /* assign memory for sky points */
   parsedSkyPoints = LALCalloc(1, sizeof(*parsedSkyPoints));
-  parsedSkyPoints->numPoints = numTimeDelays;
+  parsedSkyPoints->numPoints = numSkyPoints;
   parsedSkyPoints->data =
-      LALCalloc(1, numTimeDelays*sizeof(*parsedSkyPoints->data));
+      LALCalloc(1, numSkyPoints*sizeof(*parsedSkyPoints->data));
 
   /* save the new list of points */
   i = 0;
@@ -1059,77 +1073,127 @@ void timeval_print(struct timeval *tv)
 
 void coh_PTF_rotate_skyPoints(
     CohPTFSkyPositions *skyPoints,
-    REAL4 axis[],
-    REAL4 angle
+    gsl_vector *axis,
+    REAL8 angle
 )
 {
   /* initialise variables */
-  UINT4 i,k;
-  REAL4 phi,theta;
-  REAL4 pos[3];    /* original position vector */
-  REAL4 rotPos[3]; /* rotated position vector */
-  REAL4 matrix[3][3];
+  UINT4 i;
+  gsl_matrix *matrix;
+  matrix = gsl_matrix_alloc(3, 3);
 
-  rotationMatrix(matrix, axis, angle);
+  /* construct rotation matrix */
+  rotation_matrix(matrix, axis, angle);
 
   /* loop over points rotating by angle around axis */
   for ( i=0; i < skyPoints->numPoints; i++ )
   {
-
-    /* convert to spherical */
-    phi   = skyPoints->data[i].longitude;
-    theta = LAL_PI_2 - skyPoints->data[i].latitude;
-    /* convert to cartesian */
-    pos[0] = sin(theta)*cos(phi);
-    pos[1] = sin(theta)*sin(phi);
-    pos[2] = cos(theta);
-
-    /* rotate */
-    for ( k=0; k<3; k++ )
-    {
-      rotPos[k] = matrix[k][0]*pos[0] + matrix[k][1]*pos[1] +
-                  matrix[k][2]*pos[2];
-    }
-
-    /* convert back to (phi,theta) */
-    theta = acos(rotPos[2]);
-    phi   = atan2(rotPos[1],rotPos[0]);
-    skyPoints->data[i].longitude = phi;
-    skyPoints->data[i].latitude  = LAL_PI_2 - theta;
-    XLALNormalizeSkyPosition(&skyPoints->data[i]);
+    coh_PTF_rotate_SkyPosition(&skyPoints->data[i], matrix);
   }
 }
 
-void crossProduct(
-    REAL4 out[3],
-    REAL4 x[3],
-    REAL4 y[3]
+void coh_PTF_rotate_SkyPosition(
+    SkyPosition *skyPoint,
+    gsl_matrix  *matrix
 )
 {
-  out[0]=x[1]*y[2] - x[2]*y[1];
-  out[1]=y[0]*x[2] - x[0]*y[2];
-  out[2]=x[0]*y[1] - x[1]*y[0];
-  return;
+  /* initialise variables */
+  REAL4 phi,theta;
+  gsl_vector *pos;    /* original position vector */
+  gsl_vector *rotPos; /* rotated position vector */
+
+  
+  phi   = skyPoint->longitude;
+  theta = LAL_PI_2 - skyPoint->latitude;
+  /* convert to cartesian */
+  pos = gsl_vector_alloc(3);
+  gsl_vector_set(pos, 0, sin(theta)*cos(phi));
+  gsl_vector_set(pos, 1, sin(theta)*sin(phi));
+  gsl_vector_set(pos, 2, cos(theta));
+
+  /* rotate */
+  rotPos = gsl_vector_alloc(3);
+  gsl_blas_dgemv(CblasNoTrans, 1.0, matrix, pos, 0.0, rotPos);
+
+  /* convert back to (phi,theta) */
+  theta = acos(gsl_vector_get(rotPos, 2));
+  phi   = atan2(gsl_vector_get(rotPos, 1), gsl_vector_get(rotPos, 0));
+  //verbose("theta2 = %e, phi2 = %e\n", theta, phi);
+  skyPoint->longitude = phi;
+  skyPoint->latitude  = LAL_PI_2 - theta;
+  XLALNormalizeSkyPosition(skyPoint);
+
+  /* free memory */
+  FREE_GSL_VECTOR(pos);
+  FREE_GSL_VECTOR(rotPos);
 }
 
-void rotationMatrix(
-    REAL4 matrix[3][3],
-    REAL4 axis[3],
-    REAL4 angle
+void cross_product(
+    gsl_vector *product,
+    const gsl_vector *u,
+    const gsl_vector *v
+)
+{
+  double p1 = gsl_vector_get(u, 1)*gsl_vector_get(v, 2)
+              - gsl_vector_get(u, 2)*gsl_vector_get(v, 1);
+
+  double p2 = gsl_vector_get(u, 2)*gsl_vector_get(v, 0)
+              - gsl_vector_get(u, 0)*gsl_vector_get(v, 2);
+
+  double p3 = gsl_vector_get(u, 0)*gsl_vector_get(v, 1)
+              - gsl_vector_get(u, 1)*gsl_vector_get(v, 0);
+
+  gsl_vector_set(product, 0, p1);
+  gsl_vector_set(product, 1, p2);
+  gsl_vector_set(product, 2, p3);
+}
+
+void normalise(
+    gsl_vector *vec
+)
+{
+  double mag;
+  /* calculate magnitude of vector */
+  gsl_blas_ddot(vec, vec, &mag);
+  mag = sqrt(mag);
+  /* scale vector by inverse magnitude */
+  gsl_vector_scale(vec, 1./mag);
+}
+
+void rotation_matrix(
+    gsl_matrix *matrix,
+    gsl_vector *axis,
+    REAL8 angle
 )
 {
 
-  matrix[0][0] = cos(angle) + pow(axis[0],2)*(1-cos(angle));
-  matrix[0][1] = axis[0]*axis[1]*(1-cos(angle)) - axis[2]*sin(angle);
-  matrix[0][2] = axis[0]*axis[2]*(1-cos(angle)) + axis[1]*sin(angle);
+  gsl_matrix_set(matrix, 0, 0, cos(angle) +\
+                               pow(gsl_vector_get(axis, 0),2)*(1-cos(angle)));
+  gsl_matrix_set(matrix, 0, 1, gsl_vector_get(axis, 0)*gsl_vector_get(axis, 1)*\
+                                   (1-cos(angle)) -\
+                               gsl_vector_get(axis, 2)*sin(angle));
+  gsl_matrix_set(matrix, 0, 2, gsl_vector_get(axis, 0)*gsl_vector_get(axis, 2)*\
+                                   (1-cos(angle)) +\
+                               gsl_vector_get(axis, 1)*sin(angle));
 
-  matrix[1][0] = axis[1]*axis[0]*(1-cos(angle)) + axis[2]*sin(angle);
-  matrix[1][1] = cos(angle) + pow(axis[1],2)*(1-cos(angle));
-  matrix[1][2] = axis[1]*axis[2]*(1-cos(angle)) - axis[0]*sin(angle);
+  gsl_matrix_set(matrix, 1, 0, gsl_vector_get(axis, 1)*gsl_vector_get(axis, 0)*\
+                                   (1-cos(angle)) +\
+                               gsl_vector_get(axis, 2)*sin(angle));
+  gsl_matrix_set(matrix, 1, 1, cos(angle) +\
+                               pow(gsl_vector_get(axis, 1),2)*(1-cos(angle)));
+  gsl_matrix_set(matrix, 1, 2, gsl_vector_get(axis, 1)*gsl_vector_get(axis, 2)*\
+                                  (1-cos(angle)) -\
+                               gsl_vector_get(axis, 0)*sin(angle));
 
-  matrix[2][0] = axis[2]*axis[0]*(1-cos(angle)) - axis[1]*sin(angle);
-  matrix[2][1] = axis[2]*axis[1]*(1-cos(angle)) + axis[0]*sin(angle);
-  matrix[2][2] = cos(angle) + pow(axis[2],2)*(1-cos(angle));
+  gsl_matrix_set(matrix, 2, 0, gsl_vector_get(axis, 2)*gsl_vector_get(axis, 0)*\
+                                   (1-cos(angle)) -\
+                               gsl_vector_get(axis, 1)*sin(angle));
+  gsl_matrix_set(matrix, 2, 1, gsl_vector_get(axis, 2)*gsl_vector_get(axis, 1)*\
+                                   (1-cos(angle)) +\
+                               gsl_vector_get(axis, 0)*sin(angle));
+  gsl_matrix_set(matrix, 2, 2, cos(angle) +\
+                               pow(gsl_vector_get(axis, 2),2)*(1-cos(angle)));
+
 }
 
 CohPTFSkyPositions *coh_PTF_read_grid_from_file(
@@ -1199,4 +1263,282 @@ CohPTFSkyPositions *coh_PTF_read_grid_from_file(
 
   return skyPoints;
 
+}
+
+CohPTFSkyPositions *coh_PTF_two_det_sky_grid(
+    struct coh_PTF_params *params
+)
+{
+  /* set up variables */
+  CohPTFSkyPositions *skyPoints;
+  CohPTFSkyPositions *geoSkyPoints;
+  LALDetector        *detectors[params->numIFO];
+  REAL8              lightTravelTime, timeDelay, angle;
+  gsl_vector         *locations[params->numIFO], *normal, *northPole, *axis;
+  UINT4              i, ifoNumber, numSkyPoints;
+
+  /* get site coordinates */
+  i=0;
+  for(ifoNumber=0; ifoNumber<LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      detectors[i] = LALCalloc(1, sizeof(*detectors[i]));
+      XLALReturnDetector(detectors[i], ifoNumber);
+      locations[i] = gsl_vector_alloc(3);
+      REALToGSLVector(detectors[i]->location, locations[i], 3);
+      i++;
+    }
+  }
+
+  /* get light travel time */
+  lightTravelTime = XLALLightTravelTime(detectors[0], detectors[1]);
+  lightTravelTime *= 1e-9;
+
+  /* calculate number of skypoints */
+  numSkyPoints = 2*(UINT4) floor(lightTravelTime/params->timingAccuracy) + 1;
+   
+  /* assign memory for sky points */
+  geoSkyPoints = LALCalloc(1, sizeof(CohPTFSkyPositions));
+  geoSkyPoints->numPoints = numSkyPoints;
+  geoSkyPoints->data = LALCalloc(1,geoSkyPoints->numPoints*sizeof(SkyPosition));
+
+  /* generate arc across equator */
+  for (i=0; i < numSkyPoints; i++)
+  {
+    timeDelay = (INT4) (i - numSkyPoints/2) * params->timingAccuracy;
+    //verbose("%f\n", timeDelay);
+    geoSkyPoints->data[i].longitude = acos(-timeDelay/lightTravelTime);
+    //verbose("%f\n", geoSkyPoints->data[i].longitude);
+    geoSkyPoints->data[i].latitude  = 0.;
+    geoSkyPoints->data[i].system    = COORDINATESYSTEM_GEOGRAPHIC;
+  }
+
+  /* calculate normal for time delay arc */
+  normal = gsl_vector_alloc(3);
+  cross_product(normal, locations[0], locations[1]);
+  normalise(normal);
+
+  /* calculate angle between this normal, and normal of equator */
+  /* calculate unit vector to rotate around */
+  northPole = gsl_vector_alloc(3);
+  gsl_vector_set(northPole, 0, 0);
+  gsl_vector_set(northPole, 1, 0);
+  gsl_vector_set(northPole, 2, 1);
+  gsl_blas_ddot(normal, northPole, &angle);
+  angle = acos(angle);
+ 
+  /* generate rotation vector */
+  axis = gsl_vector_alloc(3);
+  cross_product(axis, normal, northPole);
+
+  /* rotate arc into plane of detectors and earth centre */
+  coh_PTF_rotate_skyPoints(geoSkyPoints, axis, angle);
+  //verbose("\n");
+
+  /* convert from earth-fixed to sky-fixed */
+  LALStatus status = blank_status;
+  skyPoints = LALCalloc(1, sizeof(*skyPoints));
+  skyPoints->numPoints = geoSkyPoints->numPoints;
+  skyPoints->data      = LALCalloc(1, skyPoints->numPoints*sizeof(SkyPosition));
+  for (i=0; i<numSkyPoints; i++)
+  {
+    //verbose("%f\n", XLALArrivalTimeDiff(detectors[0]->location, detectors[1]->location, geoSkyPoints->data[i].longitude, geoSkyPoints->data[i].latitude, &params->trigTime));
+    LALGeographicToEquatorial(&status, &skyPoints->data[i],
+                              &geoSkyPoints->data[i], &params->trigTime);
+    XLALNormalizeSkyPosition(&skyPoints->data[i]);
+    //verbose("%f\n", XLALArrivalTimeDiff(detectors[0]->location, detectors[1]->location, skyPoints->data[i].longitude, skyPoints->data[i].latitude, &params->trigTime));
+  }
+
+  /* free memory */
+  for( ifoNumber = 0; ifoNumber < params->numIFO; ifoNumber++)
+  {
+    if (detectors[ifoNumber] )
+      LALFree(detectors[ifoNumber]);
+    if (locations[ifoNumber])
+      FREE_GSL_VECTOR(locations[ifoNumber]);
+  }
+  FREE_GSL_VECTOR(normal);
+  FREE_GSL_VECTOR(northPole);
+  FREE_GSL_VECTOR(axis);
+
+  return skyPoints;
+}
+
+/*
+ * Set up three detector sky grid by tiling time-delay between detector 0 and
+ * detector 1, and for each of those values tiling time-delay between detector
+ * 0 and detector 2
+ */
+
+CohPTFSkyPositions *coh_PTF_three_det_sky_grid(
+    struct coh_PTF_params *params
+){
+
+  /* set up variables */
+  CohPTFSkyPositions *skyPoints;
+  LALDetector        *detectors[params->numIFO];
+  gsl_vector         *locations[params->numIFO], *baseline[params->numIFO],\
+                     *northPole, *xaxis, *normal;
+  gsl_matrix         *matrix;
+  REAL8              T[params->numIFO], t2, t3, A, B, angle, xangle, zangle,\
+                     condition, xphi, nphi, ntheta;
+  UINT4              i, j, k, p, ifoNumber, numXPoints, numYPoints,\
+                     numSkyPoints, totalPoints;
+
+  /* get site coordinates */
+  i=0;
+  for(ifoNumber=0; ifoNumber<LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      detectors[i] = LALCalloc(1, sizeof(*detectors[i]));
+      XLALReturnDetector(detectors[i], ifoNumber);
+      locations[i] = gsl_vector_alloc(3);
+      REALToGSLVector(detectors[i]->location, locations[i], 3);
+      if (i>=1)
+      {
+        /* get light travel times relative to first detector */
+        T[i-1] = XLALLightTravelTime(detectors[0], detectors[i]);
+        T[i-1] *= 1e-9;
+        /* get detector baselines */
+        baseline[i-1] = gsl_vector_alloc(3);
+        gsl_vector_memcpy(baseline[i-1], locations[i]);
+        gsl_vector_sub(baseline[i-1], locations[0]);
+        normalise(baseline[i-1]);
+      } 
+      i++;
+    }
+  }
+
+  /* calculate angle between baselines */
+  gsl_blas_ddot(baseline[0], baseline[1], &angle);
+  angle = acos(angle);
+  verbose("angle = %e\n", angle);
+
+  /* calculate number of points spanning first two-detector time delay */
+  numXPoints = 2*(UINT4) floor(T[0]/params->timingAccuracy) + 1;
+  numYPoints = 2*(UINT4) floor(T[1]/params->timingAccuracy) + 1;
+  numSkyPoints = 0;
+
+  totalPoints = numXPoints * numYPoints;
+  REAL4 valid[totalPoints];
+
+  /* calculate number of points in y direction for each x */
+  k=0;
+  for (i=0; i<numXPoints; i++)
+  {
+    t2 = (INT4) (i - numXPoints/2) * params->timingAccuracy;
+    for (j=0; j<numYPoints; j++)
+    {
+      t3 = (INT4) (j - numYPoints/2) * params->timingAccuracy;
+      A = -T[1]/T[0] * t2 * cos(angle);
+      B = pow(T[1], 2) * (pow(t2/T[0], 2) - pow(sin(angle), 2));
+      condition = pow(t3, 2) + 2*A*t3 + B;
+      if (condition <= 0)
+      {
+        valid[k] = 0;
+        numSkyPoints++;
+      }
+      else
+      {
+        valid[k] = 1;
+      }
+      k++;
+    }
+  }
+
+  /* assign memory for sky points */
+  skyPoints = LALCalloc(1, sizeof(*skyPoints));
+  skyPoints->numPoints = numSkyPoints;
+  skyPoints->data      = LALCalloc(1, numSkyPoints*sizeof(SkyPosition));
+
+  /*
+   * Construct rotations from Rabaste network coordinates to geographical
+   * coordinates
+   */
+
+  normal = gsl_vector_alloc(3);
+  matrix = gsl_matrix_alloc(3, 3);
+  xaxis  = gsl_vector_alloc(3);
+
+  /* construct x-axis of network coordinates */
+  xangle = LAL_PI_2 - angle;
+  cross_product(normal, baseline[0], baseline[1]); 
+  rotation_matrix(matrix, normal, xangle);
+  /* apply rotation */
+  gsl_blas_dgemv(CblasNoTrans, 1.0, matrix, baseline[1], 0.0, xaxis);
+
+  /*
+   * Rabaste network coordinate system has z-axis as the baseline between
+   * detectors 1 and 2.
+   * We need to rotate that onto the geographical north pole:
+   */
+  
+  northPole = gsl_vector_alloc(3);
+
+  /* construct rotation matrix */
+  gsl_vector_set(northPole, 0, 0);
+  gsl_vector_set(northPole, 1, 0);
+  gsl_vector_set(northPole, 2, 1);
+  gsl_blas_ddot(baseline[0], northPole, &zangle);
+  zangle = acos(zangle);
+  cross_product(normal, baseline[0], northPole);
+  rotation_matrix(matrix, normal, zangle);
+
+  verbose("xangle = %e\n", xangle);
+  verbose("zangle = %e\n", zangle);
+
+  /* rotate xaxis */
+  gsl_vector *xaxis2 = gsl_vector_alloc(3);
+  gsl_blas_dgemv(CblasNoTrans, 1.0, matrix, xaxis2, 0.0, xaxis);
+  normalise(xaxis2);
+  xphi = atan2(gsl_vector_get(xaxis2, 1), gsl_vector_get(xaxis2, 0));
+
+  verbose("xphi = %e\n", xphi);
+
+  /* assign sky points */
+  /* calculate number of points in y direction for each x */
+  k = 0;
+  p = 0;
+  for (i=0; i<numXPoints; i++)
+  {
+    t2 = (INT4) (i - numXPoints/2) * params->timingAccuracy;
+    for (j=0; j<numYPoints; j++)
+    {
+      t3 = (INT4) (j - numYPoints/2) * params->timingAccuracy;
+      if (valid[k]==0)
+      {
+        /* calculate (phi, theta) in network coordinates */
+        ntheta = acos(-t2/T[0]);
+        nphi   = acos(-(T[0]*t3-T[1]*t2*cos(angle))/\
+                       (T[1]*sqrt(pow(T[0],2)-pow(t2,2))*sin(angle)));
+        skyPoints->data[p].longitude = nphi;
+        skyPoints->data[p].latitude  = ntheta-LAL_PI_2;
+        skyPoints->data[p].system    = COORDINATESYSTEM_EQUATORIAL;
+        XLALNormalizeSkyPosition(&skyPoints->data[p]);
+        coh_PTF_rotate_SkyPosition(&skyPoints->data[i], matrix);
+        skyPoints->data[p].longitude -= xphi;
+
+        p++;
+      }
+      k++;
+    }
+  }
+
+  return skyPoints;
+
+}
+
+void REALToGSLVector(
+    const REAL8 *input,
+    gsl_vector  *output,
+    size_t      size
+)
+{
+  UINT4 i;
+  for (i=0; i<size; i++)
+  {
+    gsl_vector_set(output, i, input[i]);
+  }
 }
