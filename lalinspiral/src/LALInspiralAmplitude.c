@@ -64,30 +64,33 @@ LALInspiralRestrictedAmplitude (LALStatus        *status,
   INITSTATUS (status, "LALInspiralAmplitude", LALINSPIRALAMPLITUDEC );
   ATTATCHSTATUSPTR(status);
 
-  XLALInspiralRestrictedAmplitude(params);
-  if (xlalErrno)
+  if ( XLALInspiralRestrictedAmplitude(params) == XLAL_FAILURE )
+  {
     ABORTXLAL(status);
-
+  }
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
-void
+int
 XLALInspiralRestrictedAmplitude (InspiralTemplate *params)
 {
   if (params == NULL)
-    XLAL_ERROR_VOID(__func__, XLAL_EFAULT);
+    XLAL_ERROR(__func__, XLAL_EFAULT);
   if ((INT4)params->massChoice < 0)
-    XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+    XLAL_ERROR(__func__, XLAL_EDOM);
   if ((INT4)params->massChoice > 15)
-    XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+    XLAL_ERROR(__func__, XLAL_EDOM);
 
   if (params->massChoice != totalMassAndEta)
   {
-    XLALInspiralParameterCalc(params);
-    if (xlalErrno)
-      XLAL_ERROR_VOID(__func__, XLAL_EFUNC);
+    if ( XLALInspiralParameterCalc(params) == XLAL_FAILURE )
+    {
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+    }
   }
 
   params->signalAmplitude = 4. * params->totalMass  * params->eta   /  (LAL_PC_SI * 1e6 *params->distance / LAL_MRSUN_SI);
+
+  return XLAL_SUCCESS;
 }
