@@ -1658,8 +1658,10 @@ static void LALSpinInspiralEngine(LALStatus * status,
   XLALRungeKutta4Free(integrator);
   LALFree(dummy.data);
 
-  if (count<Npoints) 
-    fprintf(stderr,"*** LALPSpinInspiralRD WARNING: inspiral integration vey short: %12.f sec\n",tm);
+  if (count<Npoints) {
+    fprintf(stderr,"*** LALPSpinInspiralRD ERROR: inspiral integration too short: %12.6e sec, integration steps %d, integration return code %d\n",tm,count,intreturn);
+    ABORTXLAL(status);
+  }
 
   errcode = XLALGenerateWaveDerivative(ddomega,domega,dt);
   errcode += XLALGenerateWaveDerivative(ddalpha,dalpha,dt);
@@ -1796,10 +1798,11 @@ static int XLALSpinInspiralAdaptiveEngine(
 
   /* Start of the integration checks*/
   if (!intlen) {
+    phenPars->intreturn=intreturn;
     if (XLALClearErrno() == XLAL_ENOMEM) {
       XLAL_ERROR( func,  XLAL_ENOMEM);
     } else {
-      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: integration failed with errorcode %d\n",intreturn);
+      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: integration failed with errorcode %d, integration length %d\n",intreturn,intlen);
       XLAL_ERROR( func, XLAL_EFAILED);
     }
   }
@@ -2171,8 +2174,6 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
 
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
-  params->spinInteraction = LAL_AllInter;
-
   if ((params->fCutoff<=0.)&&(params->inspiralOnly==1)) {
     fprintf(stderr,"*** LALPSIRD ERROR ***: fCutoff %12.6e, with inspiral flag on it is mandatory to specify a positive cutoff frequency\n",params->fCutoff);
     ABORTXLAL(status);
@@ -2191,7 +2192,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
   XLALPSpinInspiralRDSetParams(&mparams,params,paramsInit);
 
   /* Check that initial frequency is smaller than omegamatch ~ xxyy for m=100 Msun */
-  initphi   = params->startPhase;
+  initphi   = params->startPhase/2.;
   initomega = params->fLower*unitHz;
 
   /* Check that initial frequency is smaller than omegamatch ~ xxyy for m=100 Msun */
@@ -2262,16 +2263,7 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     inc = params->inclination;
     break;
 
-  case View:
-    //printf("*** View ***\n");
-    initLNh[0] = sin(params->inclination);
-    initLNh[1] = 0.;
-    initLNh[2] = cos(params->inclination);
-    inc = 0.;
-    break;
-
-  default:
-    //case TotalJ:
+  case TotalJ:
     //printf("*** TotalJ ***\n");
     for (j=0;j<3;j++) {
       iS1[j] = initS1[j];
@@ -2316,6 +2308,16 @@ void LALPSpinInspiralRDEngine(LALStatus   * status,
     }
     inc = params->inclination;
     break;
+
+  default:
+    //case View:
+    //printf("*** View ***\n");
+    initLNh[0] = sin(params->inclination);
+    initLNh[1] = 0.;
+    initLNh[2] = cos(params->inclination);
+    inc = 0.;
+    break;
+
   }
 
   if (initS1[0]*initS1[0]+initS1[1]*initS1[1]+initS2[0]*initS2[0]+initS2[1]*initS2[1]) LNhxy=sqrt(initLNh[0]*initLNh[0]+initLNh[1]*initLNh[1]);

@@ -521,6 +521,7 @@ ParseParameters( UINT4              argc,
           strcat( otherIn->waveformString, "oneHalfPN" );
           break;
         case 0:
+	  printf(" WARNING: you have chose Newtonian order\n");
           strcat( otherIn->waveformString, "newtonian" );
           break;
         default:
@@ -668,6 +669,38 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
   /*simTable.waveform = otherIn->waveformString;*/
   memcpy( simTable.waveform, otherIn->waveformString, 
           sizeof(otherIn->waveformString) );
+
+  if (strstr(simTable.waveform,"PhenSpinTaylorRD")) {
+    if (params->axisChoice==OrbitalL) {
+      strcat(simTable.waveform,"OrbitalL");}
+    else if (params->axisChoice==TotalJ) {
+      strcat(simTable.waveform,"TotalJ");
+    }
+    if (params->inspiralOnly==1) {
+      strcat(simTable.waveform,"inspiralOnly");
+    }
+    if (params->fixedStep==1) {
+      strcat(simTable.waveform,"fixedStep");
+    }
+  }
+  switch (params->spinInteraction) {
+  case LAL_NOInter:
+    strcat(simTable.waveform,"LAL_NOInter");
+    break;
+  case LAL_SOInter:
+    strcat(simTable.waveform,"LAL_SOInter");
+    break;
+  case LAL_SSselfInter:
+    strcat(simTable.waveform,"LAL_SSselfInter");
+    break;
+  case LAL_QMInter:
+    strcat(simTable.waveform,"LAL_QMInter");
+    break;
+  case LAL_AllInter:
+    strcat(simTable.waveform,"LAL_AllInter");
+    break;
+  }
+
   simTable.mass1 = params->mass1;
   simTable.mass2 = params->mass2;
   simTable.eta = params->eta;
@@ -745,7 +778,7 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
         cosphi = cos( waveform.phi->data->data[i] );
         sinphi = sin( waveform.phi->data->data[i] );
         hp = A1 * cosshift * cosphi - A2 * sinshift * sinphi;
-        hc = A1 * sinshift * cosphi - A2 * cosshift * sinphi;
+        hc = A1 * sinshift * cosphi + A2 * cosshift * sinphi;
         wave->data[i] = Fp * hp + Fc * hc;
       }
     }
@@ -759,6 +792,8 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
                     + Fc * waveform.h->data->data[2*i+1];
     }
   }
+
+  for (i=len;i<wave->length;i++) wave->data[i]=0.;
 
   return;
 }
