@@ -31,6 +31,11 @@
 /* System includes */
 #include <math.h>
 
+/* GSL includes */
+#define GSL_RANGE_CHECK_OFF 1
+#define GSL_C99_INLINE 1
+#define HAVE_INLINE 1
+
 /* LAL-includes */
 #include <lal/XLALError.h>
 #include <lal/Date.h>
