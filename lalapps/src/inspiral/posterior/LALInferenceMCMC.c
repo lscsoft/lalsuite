@@ -181,7 +181,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 	
 	/* This is the LAL template generator for inspiral signals */
 	
-	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
 	if(ppt){
 		/*if(strstr(ppt->value,"SpinTaylor")) {
 			runState->template=&templateLALSTPN;
@@ -396,7 +396,8 @@ void initVariables(LALInferenceRunState *state)
 (--fixTime)                     Do not allow coalescence time to vary\n\
 (--Dmin dist)                   Minimum distance in Mpc (1)\n\
 (--Dmax dist)                   Maximum distance in Mpc (100)\n\
-(--approx ApproximantorderPN)   Specify a waveform to use, (default TaylorF2twoPN)\n\
+(--approximant Approximant)     Specify a template approximant to use, (default TaylorF2)\n\
+(--order PNorder)               Specify a PN order to use, (default twoPN)\n\
 (--comp-min min)                Minimum component mass (1.0)\n\
 (--comp-max max)                Maximum component mass (30.0)\n\
 (--MTotMax max)                 Maximum total mass (35.0)\n\
@@ -493,17 +494,57 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 	}	
 	
 	/* Over-ride approximant if user specifies */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
 	if(ppt){
-		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
-		
-		//printf("%d\n",approx);
-		if(strstr(ppt->value,"TaylorF2")) {approx=TaylorF2;}//numberI4 = TaylorF2;}		LALGetApproximantFromString DOES NOT HAVE TaylorF2 !!!!!!
-		else{LALGetApproximantFromString(&status,ppt->value,&approx);}
-    //if(strstr(ppt->value,"TaylorT3")) {approx=TaylorT3;}//numberI4 = TaylorT3;}
-		//if(strstr(ppt->value,"SpinTaylor")) {approx=SpinTaylor;}//numberI4 = SpinTaylor;}
-		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
-		//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",numberI4,PhaseOrder);
+		approx=ppt->value;
+		fprintf(stdout,"Templates will run using Approximant %i\n",approx);
+	}
+	
+        /* Over-ride PN order if user specifies */
+	ppt=LALInferenceGetProcParamVal(commandLine,"--order");
+	if(ppt){
+        if ( ! strcmp( "newtonian", ppt ) )
+        {
+          PhaseOrder = LAL_PNORDER_NEWTONIAN;
+        }
+        else if ( ! strcmp( "oneHalfPN", ppt ) )
+        {
+          PhaseOrder = LAL_PNORDER_HALF;
+        }
+        else if ( ! strcmp( "onePN", ppt ) )
+        {
+          PhaseOrder = LAL_PNORDER_ONE;
+        }
+        else if ( ! strcmp( "onePointFivePN", ppt ) )
+        {
+          PhaseOrder = LAL_PNORDER_ONE_POINT_FIVE;
+        }
+        else if ( ! strcmp( "twoPN", ppt ) )
+        {
+          PhaseOrder = LAL_PNORDER_TWO;
+        }
+        else if ( ! strcmp( "twoPointFive", ppt ) )
+        {
+          PhaseOrder = LAL_PNORDER_TWO_POINT_FIVE;
+        }
+        else if ( ! strcmp( "threePN", ppt ) )
+        {
+          PhaseOrder = LAL_PNORDER_THREE;
+        }
+        else if ( ! strcmp( "threePointFivePN", ppt ) )
+        {
+          PhaseOrder = LAL_PNORDER_THREE_POINT_FIVE;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --order:\n"
+              "unknown order specified: "
+              "PN order must be one of: newtonian, oneHalfPN, onePN,\n"
+              "onePointFivePN, twoPN, twoPointFivePN, threePN or\n"
+              "threePointFivePN\n");
+          exit( 1 );
+        }
+	fprintf(stdout,"Templates will be generated at %i PN order\n",PhaseOrder);
 	}
 
         /* This flag was added to account for the broken Big Dog
