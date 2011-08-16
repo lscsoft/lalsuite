@@ -1680,9 +1680,10 @@ XLALEOBPPWaveformEngine (
    eobParams.eta = eta;
    eobParams.m1  = params->mass1;
    eobParams.m2  = params->mass2;
-   eobParams.aCoeffs  = &aCoeffs;
-   eobParams.hCoeffs  = &hCoeffs;
-   eobParams.prefixes = &prefixes;
+   eobParams.aCoeffs   = &aCoeffs;
+   eobParams.hCoeffs   = &hCoeffs;
+   eobParams.nqcCoeffs = &nqcCoeffs;
+   eobParams.prefixes  = &prefixes;
 
    if ( XLALCalculateEOBACoefficients( &aCoeffs, eta ) == XLAL_FAILURE )
    {
@@ -1698,6 +1699,13 @@ XLALEOBPPWaveformEngine (
          == XLAL_FAILURE )
   {
     XLAL_ERROR( __func__, XLAL_EFUNC );
+  }
+
+  /* For the dynamics, we need to use preliminary calculated versions   */
+  /*of the NQC coefficients for the (2,2) mode. We calculate them here. */
+  if ( XLALGetCalibratedNQCCoeffs( &nqcCoeffs, 2, 2, eta ) == XLAL_FAILURE )
+  {
+    ABORTXLAL( status );
   }
 
    /* Calculate the resample factor for attaching the ringdown */

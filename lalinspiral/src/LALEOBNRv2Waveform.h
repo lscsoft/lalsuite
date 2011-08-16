@@ -323,6 +323,7 @@ struct tagEOBParams
   REAL8 m2;
   EOBACoefficients        *aCoeffs;
   FacWaveformCoeffs       *hCoeffs;
+  EOBNonQCCoeffs          *nqcCoeffs;
   NewtonMultipolePrefixes *prefixes;
 }
 EOBParams;
