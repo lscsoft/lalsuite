@@ -959,23 +959,19 @@ void LALInspiralEccentricityForInjection(
 
 
 
-void LALInspiralWave2(
-     LALStatus *status,
+int  XLALInspiralWave2(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
-void LALInspiralWave2Templates (
-     LALStatus *status,
+int  XLALInspiralWave2Templates (
      REAL4Vector *signalvec1,
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
-void LALInspiralWave2ForInjection(
-     LALStatus        *status,
+int  XLALInspiralWave2ForInjection(
      CoherentGW *waveform,
      InspiralTemplate *params,
-     PPNParamStruc  *ppnParams
-     );
+     PPNParamStruc  *ppnParams);
 
 
 

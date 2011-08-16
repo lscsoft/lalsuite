@@ -159,8 +159,8 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorT2:
-           LALInspiralWave2(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
+           if (XLALInspiralWave2(signalvec, params))
+              ABORTXLAL(status);
 	   break;
       case TaylorT3:
            if (XLALInspiralWave3(signalvec, params))
@@ -299,11 +299,11 @@ LALInspiralWaveTemplates(
            CHECKSTATUSPTR(status);
       	   break;
       case TaylorT2:
-           LALInspiralWave2Templates(status->statusPtr, signalvec1, signalvec2, params);
-           CHECKSTATUSPTR(status);
+           if (XLALInspiralWave2Templates(signalvec1, signalvec2, params))
+              ABORTXLAL(status);
            break;
       case TaylorT3:
-           if(XLALInspiralWave3Templates(signalvec1, signalvec2, params))
+           if (XLALInspiralWave3Templates(signalvec1, signalvec2, params))
               ABORTXLAL(status);
       	   break;
       case EOB:
@@ -393,11 +393,11 @@ LALInspiralWaveForInjection(
        CHECKSTATUSPTR(status);
        break;
      case TaylorT2:
-       LALInspiralWave2ForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
-       CHECKSTATUSPTR(status);
+       if (XLALInspiralWave2ForInjection(waveform, inspiralParams, ppnParams))
+          ABORTXLAL(status);
        break;
      case TaylorT3:
-       if(XLALInspiralWave3ForInjection(waveform, inspiralParams, ppnParams))
+       if (XLALInspiralWave3ForInjection(waveform, inspiralParams, ppnParams))
           ABORTXLAL(status);
        break;
      case EOB:
