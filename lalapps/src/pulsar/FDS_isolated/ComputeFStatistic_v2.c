@@ -749,6 +749,30 @@ int main(int argc,char *argv[])
           toc = GETTIME();
           timing.tauTransMarg = toc - tic;
 
+          /* ----- compute parameter posteriors for {t0, tau} */
+          pdf1D_t *pdf_t0  = NULL;
+          pdf1D_t *pdf_tau = NULL;
+
+          if ( (pdf_t0 = XLALComputeTransientPosterior_t0 ( GV.transientWindowRange, transientCand.FstatMap )) == NULL ) {
+              XLALPrintError ("%s: failed to compute t0-posterior\n", fn );
+              XLAL_ERROR ( fn, xlalErrno );
+          }
+          if ( (pdf_tau = XLALComputeTransientPosterior_tau ( GV.transientWindowRange, transientCand.FstatMap )) == NULL ) {
+              XLALPrintError ("%s: failed to compute tau-posterior\n", fn );
+              XLAL_ERROR ( fn, xlalErrno );
+          }
+          /* get maximum-posterior estimate (MP) from the modes of these pdfs */
+          transientCand.t0_MP = XLALFindModeOfPDF1D ( pdf_t0 );
+          if ( xlalErrno ) {
+              XLALPrintError ("%s: mode-estimation failed for pdf_t0. xlalErrno = %d\n", fn, xlalErrno );
+              XLAL_ERROR ( fn, xlalErrno );
+          }
+          transientCand.tau_MP =  XLALFindModeOfPDF1D ( pdf_tau );
+          if ( xlalErrno ) {
+              XLALPrintError ("%s: mode-estimation failed for pdf_tau. xlalErrno = %d\n", fn, xlalErrno );
+              XLAL_ERROR ( fn, xlalErrno );
+          }
+
           /* record timing-relevant transient search params */
           timing.tauMin  = GV.transientWindowRange.tau;
           timing.tauMax  = timing.tauMin + GV.transientWindowRange.tauBand;
@@ -771,6 +795,8 @@ int main(int argc,char *argv[])
 
           /* free dynamically allocated F-stat map */
           XLALDestroyTransientFstatMap ( transientCand.FstatMap );
+          XLALDestroyPDF1D ( pdf_t0 );
+          XLALDestroyPDF1D ( pdf_tau );
 
         } /* if fpTransientStats */
 
