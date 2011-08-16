@@ -487,7 +487,7 @@ int main(int argc, char **argv)
   }
 
 
-  fcTmpltParams->fwdPlan      = XLALCreateForwardREAL4FFTPlan(numPoints, 0);
+  fcTmpltParams->fwdPlan      = XLALCreateForwardREAL4FFTPlan(numPoints, 1);
   fcTmpltParams->deltaT       = 1.0/params->sampleRate;
   fcTmpltParams->fLow = params->lowTemplateFrequency;
 
@@ -511,7 +511,7 @@ int main(int argc, char **argv)
   }
 
   /* Create an inverse FFT plan */
-  invPlan = XLALCreateReverseCOMPLEX8FFTPlan(numPoints, 0);
+  invPlan = XLALCreateReverseCOMPLEX8FFTPlan(numPoints, 1);
 
   /*------------------------------------------------------------------------*
    * Read in the tmpltbank xml files                                        *
@@ -925,7 +925,7 @@ int main(int argc, char **argv)
                                            skyPoints->data[sp].latitude,
                                            slideIDList[j], timeOffsets);
             params->numEvents = XLALCountMultiInspiral(eventList);
-            verbose("%d\n", params->numEvents);
+            verbose("There are currently %d triggers.\n", params->numEvents);
             verbose("Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime));
 
 
@@ -1015,7 +1015,7 @@ int main(int argc, char **argv)
   } // Main loop is ended here
   /* calulate number of events */
   params->numEvents = XLALCountMultiInspiral(eventList);
-  verbose("%d\n", params->numEvents);
+  verbose("There are %d total triggers.\n", params->numEvents);
   coh_PTF_output_events_xml(params->outputFile, eventList, procpar,\
                             time_slide_head, params);
 
@@ -1411,7 +1411,7 @@ void coh_PTF_statistic(
   verbose("Calculated all SNRs at %ld \n",timeval_subtract(&startTime));
 
   UINT4 chisqCheck = 0;
-  REAL4 bestNR,snglSNRsq;
+  REAL4 bestNR;
   INT4 numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
   struct bankCohTemplateOverlaps *bankCohOverlaps = NULL;
   struct bankCohTemplateOverlaps *autoCohOverlaps = NULL;

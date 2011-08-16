@@ -482,7 +482,7 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   UINT4 ifoNumber;
   INT8  startTime;
   INT8  endTime;
-  UINT4 slideSegments;
+//  UINT4 slideSegments; Currently unused FIXME
 
   if ( params->getSpectrum ) /* need data and response if not strain data */
     sanity_check( params->getData && (params->strainData) );
