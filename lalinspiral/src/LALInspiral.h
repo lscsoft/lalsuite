@@ -907,19 +907,28 @@ void LALInspiralWaveTemplates(
      REAL4Vector *filter2,
      InspiralTemplate *params);
 
-void
-LALInspiralWaveForInjection(
-   LALStatus        *status,
-   CoherentGW       *waveform,
-   InspiralTemplate *params,
-   PPNParamStruc  *ppnParams);
+void LALInspiralWaveForInjection(
+     LALStatus        *status,
+     CoherentGW       *waveform,
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams);
 
 
 
 
+void LALInspiralWave1 (
+     LALStatus *status,
+     REAL4Vector *signalvec,
+     InspiralTemplate *params);
 
 int  XLALInspiralWave1(
      REAL4Vector *signalvec,
+     InspiralTemplate *params);
+
+void LALInspiralWave1Templates (
+     LALStatus *status,
+     REAL4Vector *signalvec1,
+     REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
 int  XLALInspiralWave1Templates(
@@ -927,10 +936,17 @@ int  XLALInspiralWave1Templates(
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
+void LALInspiralWave1ForInjection (
+     LALStatus *status,
+     CoherentGW *waveform,
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams);
+
 int  XLALInspiralWave1ForInjection(
      CoherentGW *waveform,
      InspiralTemplate *params,
      PPNParamStruc  *ppnParams);
+
 
 
 void LALInspiralEccentricity(
@@ -953,14 +969,31 @@ void LALInspiralEccentricityForInjection(
 
 
 
+void LALInspiralWave2 (
+     LALStatus *status,
+     REAL4Vector *signalvec,
+     InspiralTemplate *params);
+
 int  XLALInspiralWave2(
      REAL4Vector *signalvec,
+     InspiralTemplate *params);
+
+void LALInspiralWave2Templates (
+     LALStatus *status,
+     REAL4Vector *signalvec1,
+     REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
 int  XLALInspiralWave2Templates (
      REAL4Vector *signalvec1,
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
+
+void LALInspiralWave2ForInjection(
+     LALStatus *status,
+     CoherentGW *waveform,
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams);
 
 int  XLALInspiralWave2ForInjection(
      CoherentGW *waveform,
@@ -971,14 +1004,31 @@ int  XLALInspiralWave2ForInjection(
 
 
 
+void LALInspiralWave3 (
+     LALStatus *status,
+     REAL4Vector *signalvec,
+     InspiralTemplate *params);
+
 int  XLALInspiralWave3 (
      REAL4Vector *signalvec,
+     InspiralTemplate *params);
+
+void LALInspiralWave3Templates (
+     LALStatus *status,
+     REAL4Vector *signalvec,
+     REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
 int  XLALInspiralWave3Templates (
      REAL4Vector *signalvec1,
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
+
+void LALInspiralWave3ForInjection(
+     LALStatus *status,
+     CoherentGW *waveform,
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams);
 
 int  XLALInspiralWave3ForInjection(
      CoherentGW *waveform,

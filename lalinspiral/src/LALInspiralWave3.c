@@ -96,13 +96,30 @@ XLALInspiralWave3Engine(
 NRCSID (LALINSPIRALWAVE3C, "$Id$");
 
 
+void
+LALInspiralWave3 (
+   LALStatus        *status,
+   REAL4Vector      *output,
+   InspiralTemplate *params
+   )
+{
+   XLALPrintDeprecationWarning("LALInspiralWave3", 
+         "XLALInspiralWave3");
+   INITSTATUS(status, "LALInspiralWave3", LALINSPIRALWAVE3C);
+   ATTATCHSTATUSPTR(status);
+
+   if( XLALInspiralWave3(output, params) )
+      ABORTXLAL(status);
+
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
+}
 
 int
 XLALInspiralWave3 (
    REAL4Vector      *output,
    InspiralTemplate *params
    )
-
 {
   INT4 count;
   InspiralInit paramsInit;
@@ -163,13 +180,32 @@ NRCSID (LALINSPIRALWAVE3TEMPLATESC, "$Id$");
 
 
 
+void
+LALInspiralWave3Templates (
+   LALStatus        *status,
+   REAL4Vector      *output1,
+   REAL4Vector      *output2,
+   InspiralTemplate *params
+   )
+{
+   XLALPrintDeprecationWarning("LALInspiralWave3Templates", 
+         "XLALInspiralWave3Templates");
+   INITSTATUS(status, "LALInspiralWave3Templates", LALINSPIRALWAVE3TEMPLATESC);
+   ATTATCHSTATUSPTR(status);
+
+   if( XLALInspiralWave3Templates(output1, output2, params) )
+      ABORTXLAL(status);
+
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
+}
+
 int
 XLALInspiralWave3Templates (
    REAL4Vector      *output1,
    REAL4Vector      *output2,
    InspiralTemplate *params
    )
-
 {
   INT4 count;
 
@@ -221,12 +257,32 @@ NRCSID (LALINSPIRALWAVE3FORINJECTIONC, "$Id$");
 
 
 
+void
+LALInspiralWave3ForInjection (
+   LALStatus        *status,
+   CoherentGW       *waveform,
+   InspiralTemplate *params,
+   PPNParamStruc  *ppnParams
+   )
+{
+   XLALPrintDeprecationWarning("LALInspiralWave3ForInjection", 
+         "XLALInspiralWave3ForInjection");
+   INITSTATUS(status, "LALInspiralWave3ForInjection", LALINSPIRALWAVE3FORINJECTIONC);
+   ATTATCHSTATUSPTR(status);
+
+   if( XLALInspiralWave3ForInjection(waveform, params, ppnParams) )
+      ABORTXLAL(status);
+
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
+}
+
 int
 XLALInspiralWave3ForInjection (
-			      CoherentGW       *waveform,
-			      InspiralTemplate *params,
-			      PPNParamStruc  *ppnParams
-			      )
+   CoherentGW       *waveform,
+   InspiralTemplate *params,
+   PPNParamStruc  *ppnParams
+   )
 {
   INT4 count;
   UINT4 i;

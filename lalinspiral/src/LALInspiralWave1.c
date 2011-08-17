@@ -95,6 +95,24 @@ XLALInspiralWave1Engine(
 NRCSID (LALINSPIRALWAVE1C, "$Id$");
 
 
+void
+LALInspiralWave1(
+   LALStatus        *status,
+   REAL4Vector      *output,
+   InspiralTemplate *params
+   )
+{
+   XLALPrintDeprecationWarning("LALInspiralWave1", "XLALInspiralWave1");
+   INITSTATUS(status, "LALInspiralWave1", LALINSPIRALWAVE1C);
+   ATTATCHSTATUSPTR(status);
+
+   if( XLALInspiralWave1(output, params) )
+      ABORTXLAL(status);
+
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
+}
+
 int
 XLALInspiralWave1(
    REAL4Vector      *output,
@@ -144,6 +162,25 @@ XLALInspiralWave1(
 
 NRCSID (LALINSPIRALWAVE1TEMPLATESC, "$Id$");
 
+
+void
+LALInspiralWave1Templates(
+   LALStatus        *status,
+   REAL4Vector      *output1,
+   REAL4Vector      *output2,
+   InspiralTemplate *params
+   )
+{
+   XLALPrintDeprecationWarning("LALInspiralWave1Templates", "XLALInspiralWave1Templates");
+   INITSTATUS(status, "LALInspiralWave1Templates", LALINSPIRALWAVE1TEMPLATESC);
+   ATTATCHSTATUSPTR(status);
+
+   if( XLALInspiralWave1Templates(output1, output2, params) )
+      ABORTXLAL(status);
+
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
+}
 
 int
 XLALInspiralWave1Templates(
@@ -201,12 +238,31 @@ XLALInspiralWave1Templates(
 NRCSID (LALINSPIRALWAVE1FORINJECTIONC, "$Id$");
 
 
+void
+LALInspiralWave1ForInjection(
+  LALStatus        *status,
+  CoherentGW       *waveform,
+  InspiralTemplate *params,
+  PPNParamStruc  *ppnParams
+  )
+{
+  XLALPrintDeprecationWarning("LALInspiralWave1ForInjection", "XLALInspiralWave1ForInjection");
+  INITSTATUS(status, "LALInspiralWave1ForInjection", LALINSPIRALWAVE1FORINJECTIONC);
+  ATTATCHSTATUSPTR(status);
+
+  if( XLALInspiralWave1ForInjection(waveform, params, ppnParams) )
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
 int
 XLALInspiralWave1ForInjection(
-			     CoherentGW       *waveform,
-			     InspiralTemplate *params,
-			     PPNParamStruc  *ppnParams
-			     )
+  CoherentGW       *waveform,
+  InspiralTemplate *params,
+  PPNParamStruc  *ppnParams
+  )
 {
   INT4        count, i;
   REAL8       p, phiC;

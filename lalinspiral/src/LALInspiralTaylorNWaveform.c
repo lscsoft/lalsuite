@@ -93,7 +93,7 @@ XLALTaylorNWaveformEngine (
   InspiralInit     *paramsInit
 );
 
-NRCSID (LALTAYLORETWAVEFORMC,
+NRCSID (LALTAYLORNWAVEFORMC,
 "$Id$");
 
 static REAL8 XLALxiInit4PN(
@@ -310,7 +310,7 @@ void LALTaylorNWaveform (
 {
    XLALPrintDeprecationWarning("LALTaylorNWaveform", 
          "XLALTaylorNWaveform");
-   INITSTATUS(status, "LALTaylorNWaveform", LALTAYLORETWAVEFORMC);
+   INITSTATUS(status, "LALTaylorNWaveform", LALTAYLORNWAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
    if (XLALTaylorNWaveform(signalvec, params))

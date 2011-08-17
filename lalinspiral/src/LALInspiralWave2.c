@@ -86,6 +86,24 @@ NRCSID (LALINSPIRALWAVE2C, "$Id$");
 
 
 
+void
+LALInspiralWave2 (
+   LALStatus        *status,
+   REAL4Vector      *output,
+   InspiralTemplate *params
+   )
+{
+  XLALPrintDeprecationWarning("LALInspiralWave2", "XLALInspiralWave2");
+  INITSTATUS(status, "LALInspiralWave2", LALINSPIRALWAVE2C);
+  ATTATCHSTATUSPTR(status);
+
+  if( XLALInspiralWave2(output, params) )
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
 int
 XLALInspiralWave2(
    REAL4Vector      *output,
@@ -132,15 +150,33 @@ NRCSID (LALINSPIRALWAVE2TEMPLATESC, "$Id$");
 
 
 
+void
+LALInspiralWave2Templates (
+  LALStatus        *status,
+  REAL4Vector      *output1,
+  REAL4Vector      *output2,
+  InspiralTemplate *params
+  )
+{
+  XLALPrintDeprecationWarning("LALInspiralWave2Templates", "XLALInspiralWave2Templates");
+  INITSTATUS(status, "LALInspiralWave2Templates", LALINSPIRALWAVE2TEMPLATESC);
+  ATTATCHSTATUSPTR(status);
+
+  if( XLALInspiralWave2Templates(output1, output2, params) )
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
 int
 XLALInspiralWave2Templates(
-			  REAL4Vector      *output1,
-			  REAL4Vector      *output2,
-			  InspiralTemplate *params
-			  )
+  REAL4Vector      *output1,
+  REAL4Vector      *output2,
+  InspiralTemplate *params
+  )
 {
   INT4 count;
-
   InspiralInit paramsInit;
 
   if (output1 == NULL)
@@ -189,14 +225,32 @@ NRCSID (LALINSPIRALWAVE2FORINJECTIONC, "$Id$");
 
 
 
+void
+LALInspiralWave2ForInjection (
+  LALStatus        *status,
+  CoherentGW       *waveform,
+  InspiralTemplate *params,
+  PPNParamStruc  *ppnParams
+  )
+{
+  XLALPrintDeprecationWarning("LALInspiralWave2ForInjection", "XLALInspiralWave2ForInjection");
+  INITSTATUS(status, "LALInspiralWave2ForInjection", LALINSPIRALWAVE2FORINJECTIONC);
+  ATTATCHSTATUSPTR(status);
+
+  if( XLALInspiralWave2ForInjection(waveform, params, ppnParams) )
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
 int
 XLALInspiralWave2ForInjection(
-   CoherentGW *waveform,
-   InspiralTemplate *params,
-   PPNParamStruc  *ppnParams
-   )
+  CoherentGW *waveform,
+  InspiralTemplate *params,
+  PPNParamStruc  *ppnParams
+  )
 {
-
   INT4 count;
   UINT4 i;
   REAL4Vector *a   = NULL;/* pointers to generated amplitude  data */
