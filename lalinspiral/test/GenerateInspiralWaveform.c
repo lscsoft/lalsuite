@@ -690,6 +690,9 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
   case LAL_SOInter:
     strcat(simTable.waveform,"LAL_SOInter");
     break;
+  case LAL_SSInter:
+    strcat(simTable.waveform,"LAL_SSInter");
+    break;
   case LAL_SSselfInter:
     strcat(simTable.waveform,"LAL_SSselfInter");
     break;
