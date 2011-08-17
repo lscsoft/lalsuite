@@ -496,42 +496,123 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 	/* Over-ride approximant if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
 	if(ppt){
-		approx=ppt->value;
+        if ( ! strcmp( "GenreatePPN", ppt->value ) )
+        {
+          approx = GeneratePPN;
+        }
+        else if ( ! strcmp( "TaylorT1", ppt->value ) )
+        {
+          approx = TaylorT1;
+        }
+        else if ( ! strcmp( "TaylorT2", ppt->value ) )
+        {
+          approx = TaylorT2;
+        }
+        else if ( ! strcmp( "TaylorT3", ppt->value ) )
+        {
+          approx = TaylorT3;
+        }
+        else if ( ! strcmp( "TaylorT4", ppt->value ) )
+        {
+          approx = TaylorT4;
+        }
+        else if ( ! strcmp( "TaylorF1", ppt->value ) )
+        {
+          approx = TaylorF1;
+        }
+        else if ( ! strcmp( "TaylorF2", ppt->value ) )
+        {
+          approx = TaylorF2;
+        }
+        else if ( ! strcmp( "EOB", ppt->value ) )
+        {
+          approx = EOB;
+        }
+        else if ( ! strcmp( "EOBNR", ppt->value ) )
+        {
+          approx = EOBNR;
+        }
+        else if ( ! strcmp( "EOBNRv2", ppt->value ) )
+        {
+          approx = EOBNRv2;
+        }
+        else if ( ! strcmp( "EOBNRv2HM", ppt->value ) )
+        {
+          approx = EOBNRv2HM;
+        }
+        else if ( ! strcmp( "SpinTaylor", ppt->value ) )
+        {
+          approx = SpinTaylor;
+        }
+        else if ( ! strcmp( "SpinTaylorT3", ppt->value ) )
+        {
+          approx = SpinTaylorT3;
+        }
+        else if ( ! strcmp( "SpinQuadTaylor", ppt->value ) )
+        {
+          approx = SpinQuadTaylor;
+        }
+        else if ( ! strcmp( "PhenSpinTaylorRD", ppt->value ) )
+        {
+          approx = PhenSpinTaylorRD;
+        }
+        else if ( ! strcmp( "NumRel", ppt->value ) )
+        {
+          approx = NumRel;
+        }
+        else if ( ! strcmp( "IMRPhenomA", ppt->value ) )
+        {
+          approx = IMRPhenomA;
+        }
+        else if ( ! strcmp( "IMRPhenomB", ppt->value ) )
+        {
+          approx = IMRPhenomB;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --approximant\n"
+              "unknown approximant %s specified: "
+              "Approximant must be one of: GenreatePPN, TaylorT1, TaylorT2,\n"
+              "TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
+              "EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor,\n"
+	      "PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
+          exit( 1 );
+        }
 		fprintf(stdout,"Templates will run using Approximant %i\n",approx);
 	}
 	
         /* Over-ride PN order if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--order");
 	if(ppt){
-        if ( ! strcmp( "newtonian", ppt ) )
+        if ( ! strcmp( "newtonian", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_NEWTONIAN;
         }
-        else if ( ! strcmp( "oneHalfPN", ppt ) )
+        else if ( ! strcmp( "oneHalfPN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_HALF;
         }
-        else if ( ! strcmp( "onePN", ppt ) )
+        else if ( ! strcmp( "onePN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_ONE;
         }
-        else if ( ! strcmp( "onePointFivePN", ppt ) )
+        else if ( ! strcmp( "onePointFivePN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_ONE_POINT_FIVE;
         }
-        else if ( ! strcmp( "twoPN", ppt ) )
+        else if ( ! strcmp( "twoPN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_TWO;
         }
-        else if ( ! strcmp( "twoPointFive", ppt ) )
+        else if ( ! strcmp( "twoPointFive", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_TWO_POINT_FIVE;
         }
-        else if ( ! strcmp( "threePN", ppt ) )
+        else if ( ! strcmp( "threePN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_THREE;
         }
-        else if ( ! strcmp( "threePointFivePN", ppt ) )
+        else if ( ! strcmp( "threePointFivePN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_THREE_POINT_FIVE;
         }
