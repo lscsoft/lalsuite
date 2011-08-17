@@ -1060,14 +1060,28 @@ void LALEOBWaveform(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
+int XLALEOBWaveform(
+     REAL4Vector *signalvec,
+     InspiralTemplate *params);
+
 void LALEOBWaveformTemplates(
      LALStatus *status,
      REAL4Vector *signalvec1,
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
+int XLALEOBWaveformTemplates(
+     REAL4Vector *signalvec1,
+     REAL4Vector *signalvec2,
+     InspiralTemplate *params);
+
 void LALEOBWaveformForInjection(
      LALStatus *status,
+     CoherentGW *waveform,
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams);
+
+int XLALEOBWaveformForInjection(
      CoherentGW *waveform,
      InspiralTemplate *params,
      PPNParamStruc  *ppnParams);
