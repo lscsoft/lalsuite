@@ -60,23 +60,22 @@ where \f$ L(X) \f$ is the likelihood, and \f$ X \f$ is the prior mass. The
 algorithm will draw a number (\f$ N \f$) of samples (live points) from the
 parameter priors, calculate the likelihood for each point and find the lowest
 likelihood value. The lowest likelihood value will be added to the summation in
-the above equation, with \f$ \log{\Delta{}X_i} \approx \f$
-\log{\Delta{}X_i} - 1/N \f$ coming from the fact that the prior would be
-normalised to unity and therefore each point should occupy an equal fraction
-and at each iteration the prior volume will decrease geometrically (for \f$
-\log{\Delta{}X_0} = 0). A new point is then drawn from the prior with the
-criterion that it has a higher likelihood than the previous lowest point and
-substitutes that point. To draw the new point a Markov Chain Monte Carlo (MCMC)
-procedure is used - there are two methods used to sample points within this:
-i) drawing from a proposal distributions based on the covariance matrix if the
-current live points (although to keep things computationally efficient this no
-updated at every iteration), ii) picking a point via differential evolution
-(two random live points are selected and a new point half way between the two
-is created). The probability of using either method is currently set at 80\%
-and 20\% respectively. The procedure is continued until a stopping criterion is
-reached, which in this case is that the remaining prior volume is less than the
-\c tolerance value set (see below). The implementation of this can be seen in
-[\ref VeitchVecchio2010].
+the above equation, with \f$ \log{\Delta{}X_i} \approx 1/N \f$ coming from the
+fact that the prior would be normalised to unity and therefore each point should
+occupy an equal fraction and at each iteration the prior volume will decrease
+geometrically (for \f$ \log{\Delta{}X_0} = 0 \f$). A new point is then drawn
+from the prior with the criterion that it has a higher likelihood than the
+previous lowest point and substitutes that point. To draw the new point a Markov
+Chain Monte Carlo (MCMC) procedure is used - there are two methods used to
+sample points within this: i) drawing from a proposal distributions based on the
+covariance matrix if the current live points (although to keep things
+computationally efficient this no updated at every iteration), ii) picking a
+point via differential evolution (two random live points are selected and a new
+point half way between the two is created). The probability of using either
+method is currently set at 80\% and 20\% respectively. The procedure is
+continued until a stopping criterion is reached, which in this case is that the
+remaining prior volume is less than the \c tolerance value set (see below). The
+implementation of this can be seen in [\ref VeitchVecchio2010].
 
 \heading{Usage}
 The usage format is given below and can also be found by running the code with
@@ -487,7 +486,7 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
  * <ol>
  * <li>the triaxial model - this assumes that for each specified detector there
  * is <b>one</b> input file containing data heterodyned at twice the rotation
- * frequency of the pulsar (see e.g. that defined in [\ref DupiusWoan2005].</li>
+ * frequency of the pulsar (see e.g. that defined in [\ref DupuisWoan2005].</li>
  * <li>the pinned superfluid model - this assumes for each specified detector
  * there are two input files containing data heterodyned and the rotation 
  * frequency <i>and</i> twice the rotation frequency (see 
@@ -1214,7 +1213,7 @@ void setupFromParFile( LALInferenceRunState *runState )
 }
 
 
-/** \brief Sets the time vs. polarisation angle antenna reponse lookup table
+/** \brief Sets the time vs polarisation angle antenna reponse lookup table
  * 
  * This function sets up a lookup table in time vs. polarisation angle
  * \f$\psi\f$ for each detector from which data exists (either real or fake). 
@@ -1578,11 +1577,11 @@ void add_variable_scale_prior( LALInferenceVariables *var,
  * LALINFERENCE_PARAM_LINEAR, (except \f$\phi_0\f$, which if it is defined
  * to have a prior covering \f$2\pi\f$ wraps around at the edges of its range
  * and has a \c LALINFERENCE_PARAM_CIRCULAR type). Parameters, and their priors,
- * which linear variable type are scaled such that parameter \c x with priors
- * in the range [\c a, \c b] will become \code (x - a) / (b - a) \endcode. As
- * such the new prior ranges will cover from 0 to 1. The parameter scale factor 
- * is set the to value of \code (b - a) \endcode and the minimum scale range is
- * set to \c a - this allows the true parameter value to be reconstructed.
+ * which linear variable type are scaled such that parameter x with priors
+ * in the range [a, b] will become (x - a) / (b - a). As such the new prior
+ * ranges will cover from 0 to 1. The parameter scale factor 
+ * is set the to value of (b - a) and the minimum scale range is
+ * set to a - this allows the true parameter value to be reconstructed.
  * 
  * For parameters with Gaussian priors set from the .par file the scale factor
  * is applied differently, so as to give a Gaussian with zero mean and unit
@@ -1807,7 +1806,7 @@ set.\n", propfile, tempPar);
 }
 
 
-/** \brief Set up the array of initial live points#
+/** \brief Set up the array of initial live points
  * 
  * This function draws the parameters for the initial set of live points from 
  * their prior ranges. For parameters with linear priors the value is drawn from
@@ -2272,7 +2271,7 @@ REAL8 rescale_parameter( LALInferenceIFOData *data, const CHAR *parname ){
 }
 
 
-/** \brief Generate a model of a triaxial neutron star
+/** \brief Generate the model of the neutron star signal
  *
  * The function requires that the pulsar model is set using the \c model-type
  * command line argument (this is set in \c main, and if not specified defaults
@@ -2290,7 +2289,7 @@ REAL8 rescale_parameter( LALInferenceIFOData *data, const CHAR *parname ){
  * will be calculated and the complex signal model, \f$M\f$, modified
  * accordingly:
  * \f[
- * \M'(t) = M(t)\exp{i(-(\phi(t)_n - \phi(t)_h))}. 
+ * M'(t) = M(t)\exp{i(-(\phi(t)_n - \phi(t)_h))}. 
  * \f]
  * 
  * \param params [in] A \c BinaryPulsarParams structure containing the model
@@ -2372,7 +2371,7 @@ void pulsar_model( BinaryPulsarParams params,
  * sky location as observed at Earth. The phase evolution is described by a 
  * Taylor expansion:
  * \f[
- * \phi(T) = \sum_1^n \frac{f^(n-1)}{n!} T^n,
+ * \phi(T) = \sum_{k=1}^n \frac{f^{(k-1)}{k!} T^k,
  * \f]
  * where \f$f^x\f$ is the xth time derivative of the gravitational wave
  * frequency, and \f$T\f$ is the pulsar proper time. Frequency time derivatives
@@ -2634,7 +2633,7 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
  * y(t) & = & \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
  * (1+\cos^2\iota)\cos{\phi_0} + F_{\times}(t,\psi)\cos{\iota}\sin{\phi_0}
  * \right) + \\
- *  & & i\frac{h_0}{2}\left( \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
+ *  & & i\frac{h_0}{2}\left( \frac{1}{2}F_+(t,\psi)
  * (1+\cos^2\iota)\sin{\phi_0} - F_{\times}(t,\psi)\cos{\iota}\cos{\phi_0}
  * \right),
  * \f}
