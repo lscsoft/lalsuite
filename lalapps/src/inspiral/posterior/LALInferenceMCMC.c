@@ -496,42 +496,44 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 	/* Over-ride approximant if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
 	if(ppt){
-		approx=ppt->value;
+          /* approx=ppt->value; */
+          fprintf(stderr, "Trying to set approximant, but not implemented yet!\n");
+          exit(1);
 		fprintf(stdout,"Templates will run using Approximant %i\n",approx);
 	}
 	
         /* Over-ride PN order if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--order");
 	if(ppt){
-        if ( ! strcmp( "newtonian", ppt ) )
+        if ( ! strcmp( "newtonian", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_NEWTONIAN;
         }
-        else if ( ! strcmp( "oneHalfPN", ppt ) )
+        else if ( ! strcmp( "oneHalfPN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_HALF;
         }
-        else if ( ! strcmp( "onePN", ppt ) )
+        else if ( ! strcmp( "onePN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_ONE;
         }
-        else if ( ! strcmp( "onePointFivePN", ppt ) )
+        else if ( ! strcmp( "onePointFivePN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_ONE_POINT_FIVE;
         }
-        else if ( ! strcmp( "twoPN", ppt ) )
+        else if ( ! strcmp( "twoPN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_TWO;
         }
-        else if ( ! strcmp( "twoPointFive", ppt ) )
+        else if ( ! strcmp( "twoPointFive", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_TWO_POINT_FIVE;
         }
-        else if ( ! strcmp( "threePN", ppt ) )
+        else if ( ! strcmp( "threePN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_THREE;
         }
-        else if ( ! strcmp( "threePointFivePN", ppt ) )
+        else if ( ! strcmp( "threePointFivePN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_THREE_POINT_FIVE;
         }
