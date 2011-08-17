@@ -4,9 +4,6 @@ lalsimulationincludedir = $(includedir)/lal
 lalsimulationinclude_HEADERS = \
 	LALSimBurst.h \
 	LALSimInspiral.h \
-	LALSimInspiralFrequency3.h \
-	LALSimInspiralPhasing3.h \
-	LALSimInspiralTaylorT3.h \
 	LALSimInspiraldEnergyFlux.h \
 	LALSimulation.h \
 	LALSimulationConfig.h \
@@ -16,10 +13,7 @@ lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
 	LALSimBurst.c \
 	LALSimInspiral.c \
-	LALSimInspiralFrequency3.c \
 	LALSimInspiralPNMode.c \
-	LALSimInspiralPhasing3.c \
-	LALSimInspiralSetup.c \
 	LALSimInspiralTaylorT3.c \
 	LALSimInspiralTaylorT4.c \
 	LALSimInspiralTofV.c \
