@@ -105,6 +105,7 @@ CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$LIBS $GSL_LIBS"
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
+LALSUITE_ENABLE_FAST_GSL
 
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
