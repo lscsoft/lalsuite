@@ -248,8 +248,8 @@ LALInspiralWave(
 	   CHECKSTATUSPTR(status);
       	   break;
       case TaylorN:
-   	   LALTaylorNWaveform(status->statusPtr, signalvec, params);
-	   CHECKSTATUSPTR(status);
+   	   if (XLALTaylorNWaveform(signalvec, params))
+              ABORTXLAL(status);
       	   break;
       default:
            ABORT( status, LALINSPIRALH_ESWITCH, LALINSPIRALH_MSGESWITCH );

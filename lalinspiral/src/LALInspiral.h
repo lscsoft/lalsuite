@@ -1095,6 +1095,9 @@ void LALTaylorNWaveform (
      REAL4Vector      *signalvec,
      InspiralTemplate *params);
 
+int  XLALTaylorNWaveform (
+     REAL4Vector      *signalvec,
+     InspiralTemplate *params);
 
 
 
