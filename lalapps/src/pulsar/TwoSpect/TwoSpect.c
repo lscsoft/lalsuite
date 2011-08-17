@@ -299,11 +299,15 @@ int main(int argc, char *argv[])
       fprintf(stderr, "\n%s: XLALCreateINT4Vector(%d) failed.\n", fn, ffdata->numffts);
       XLAL_ERROR(fn, XLAL_EFUNC);
    }
+   //FILE *timestamps = fopen("./output/timestamps.dat","w");
    for (ii=0; ii<ffdata->numffts; ii++) {
-      if (tfdata->data[ii*ffdata->numfbins+2*inputParams->maxbinshift+inputParams->blksize-1] == 0.0) sftexist->data[ii] = 0;
-      else sftexist->data[ii] = 1;
-
+      if (tfdata->data[ii*(ffdata->numfbins+2*inputParams->maxbinshift+inputParams->blksize-1)] == 0.0) sftexist->data[ii] = 0;
+      else {
+         sftexist->data[ii] = 1;
+         //fprintf(timestamps, "%d %d\n", (INT4)round(inputParams->searchstarttime+ii*(inputParams->Tcoh-inputParams->SFToverlap)), (INT4)round(inputParams->searchstarttime+ii*(inputParams->Tcoh-inputParams->SFToverlap)+inputParams->Tcoh));
+      }
    }
+   //fclose(timestamps);
    
    //Calculate the running mean values of the SFTs (output here is smaller than initialTFdata). Here,
    //numfbins needs to be the bins you expect to come out of the running means -- the band you are going
@@ -991,7 +995,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    for (ii=0; ii<numffts; ii++) {
       
       SFTDescriptor *sftdescription = &(catalog->data[ii - nonexistantsft]);
-      if (sftdescription->header.epoch.gpsSeconds == (INT4)(ii*(input->Tcoh-input->SFToverlap)+input->searchstarttime)) {
+      if (sftdescription->header.epoch.gpsSeconds == (INT4)round(ii*(input->Tcoh-input->SFToverlap)+input->searchstarttime)) {
          SFTtype *sft = &(sfts->data[ii - nonexistantsft]);
          for (jj=0; jj<sftlength; jj++) {
             COMPLEX8 sftcoeff = sft->data->data[jj];
