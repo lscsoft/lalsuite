@@ -21,11 +21,14 @@ extern "C" {
 #define LALSTPN_DERIVATIVE_OMEGANONPOS	1030
 #define LALSTPN_DERIVATIVE_COORDINATE		1031
 
-void
-LALSTPNFramelessAdaptiveWaveformEngine( LALStatus *status,
-    REAL4Vector *signalvec1,REAL4Vector *signalvec2,
-    UINT4 *countback,
+void LALSTPNFramelessAdaptiveWaveformEngine(LALStatus *status,
+    REAL4Vector *signalvec1, REAL4Vector *signalvec2, UINT4 *countback,
     InspiralTemplate *params,InspiralInit *paramsInit
+    );
+
+int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
+    REAL4Vector *signalvec2, UINT4 *countback, InspiralTemplate *params, 
+    InspiralInit *paramsInit
     );
 
 #ifdef  __cplusplus
