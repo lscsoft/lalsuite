@@ -578,7 +578,7 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 	      "PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
           exit( 1 );
         }
-		fprintf(stdout,"Templates will run using Approximant %i\n",approx);
+		fprintf(stdout,"Templates will run using Approximant %s\n",approx);
 	}
 	
         /* Over-ride PN order if user specifies */
