@@ -766,7 +766,7 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
         cosphi = cos( waveform.phi->data->data[i] );
         sinphi = sin( waveform.phi->data->data[i] );
         hp = A1 * cosshift * cosphi - A2 * sinshift * sinphi;
-        hc = A1 * sinshift * cosphi - A2 * cosshift * sinphi;
+        hc = A1 * sinshift * cosphi + A2 * cosshift * sinphi;
         wave->data[i] = Fp * hp + Fc * hc;
       }
     }
