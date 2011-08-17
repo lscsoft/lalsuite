@@ -643,8 +643,6 @@ XLALGenerateInspiralPopulateInspiral(
   inspiralParams->fLower  =  ppnParams->fStartIn; /* lower cutoff frequency */
   inspiralParams->fFinal  =  thisEvent->f_final;
   inspiralParams->fCutoff = 1./ (ppnParams->deltaT)/2.-1;
-  inspiralParams->alpha2  = thisEvent->theta0;
-  inspiralParams->beta    = thisEvent->phi0;
 
   /* -1 to be  in agreement with the inspiral assert. */
   inspiralParams->tSampling	  = 1./ (ppnParams->deltaT); /* sampling*/
@@ -663,8 +661,8 @@ XLALGenerateInspiralPopulateInspiral(
   inspiralParams->psi0	 = -1.;      /* bcv useless for the time being */
   inspiralParams->psi3	 = -1.;      /* bcv useless for the time being */
   inspiralParams->alpha1 = -1.;      /* bcv useless for the time being */
-  //inspiralParams->alpha2 = -1.;      /* bcv useless for the time being */
-  //inspiralParams->beta   = -1.;      /* bcv useless for the time being */
+  inspiralParams->alpha2 = -1.;      /* bcv useless for the time being */
+  inspiralParams->beta   = -1.;      /* bcv useless for the time being */
 
   /* inclination of the binary */
   /* inclination cannot be equal to zero for SpinTaylor injections */
