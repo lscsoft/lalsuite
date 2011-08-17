@@ -496,88 +496,88 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 	/* Over-ride approximant if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
 	if(ppt){
-        if ( ! strcmp( "GenreatePPN", ppt->value ) )
-        {
-          approx = GeneratePPN;
-        }
-        else if ( ! strcmp( "TaylorT1", ppt->value ) )
-        {
-          approx = TaylorT1;
-        }
-        else if ( ! strcmp( "TaylorT2", ppt->value ) )
-        {
-          approx = TaylorT2;
-        }
-        else if ( ! strcmp( "TaylorT3", ppt->value ) )
-        {
-          approx = TaylorT3;
-        }
-        else if ( ! strcmp( "TaylorT4", ppt->value ) )
-        {
-          approx = TaylorT4;
-        }
-        else if ( ! strcmp( "TaylorF1", ppt->value ) )
-        {
-          approx = TaylorF1;
-        }
-        else if ( ! strcmp( "TaylorF2", ppt->value ) )
-        {
-          approx = TaylorF2;
-        }
-        else if ( ! strcmp( "EOB", ppt->value ) )
-        {
-          approx = EOB;
-        }
-        else if ( ! strcmp( "EOBNR", ppt->value ) )
-        {
-          approx = EOBNR;
-        }
-        else if ( ! strcmp( "EOBNRv2", ppt->value ) )
-        {
-          approx = EOBNRv2;
-        }
-        else if ( ! strcmp( "EOBNRv2HM", ppt->value ) )
-        {
-          approx = EOBNRv2HM;
-        }
-        else if ( ! strcmp( "SpinTaylor", ppt->value ) )
-        {
-          approx = SpinTaylor;
-        }
-        else if ( ! strcmp( "SpinTaylorT3", ppt->value ) )
-        {
-          approx = SpinTaylorT3;
-        }
-        else if ( ! strcmp( "SpinQuadTaylor", ppt->value ) )
-        {
-          approx = SpinQuadTaylor;
-        }
-        else if ( ! strcmp( "PhenSpinTaylorRD", ppt->value ) )
-        {
-          approx = PhenSpinTaylorRD;
-        }
-        else if ( ! strcmp( "NumRel", ppt->value ) )
-        {
-          approx = NumRel;
-        }
-        else if ( ! strcmp( "IMRPhenomA", ppt->value ) )
-        {
-          approx = IMRPhenomA;
-        }
-        else if ( ! strcmp( "IMRPhenomB", ppt->value ) )
-        {
-          approx = IMRPhenomB;
-        }
-        else
-        {
-          fprintf( stderr, "invalid argument to --approximant\n"
-              "unknown approximant %s specified: "
-              "Approximant must be one of: GenreatePPN, TaylorT1, TaylorT2,\n"
-              "TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
-              "EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor,\n"
-	      "PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
-          exit( 1 );
-        }
+		if ( ! strcmp( "GeneratePPN", ppt->value ) )
+		{
+		approx = GeneratePPN;
+		}
+		else if ( ! strcmp( "TaylorT1", ppt->value ) )
+		{
+			approx = TaylorT1;
+		}
+		else if ( ! strcmp( "TaylorT2", ppt->value ) )
+		{
+			approx = TaylorT2;
+		}
+		else if ( ! strcmp( "TaylorT3", ppt->value ) )
+		{
+			approx = TaylorT3;
+		}
+		else if ( ! strcmp( "TaylorT4", ppt->value ) )
+		{
+			approx = TaylorT4;
+		}
+		else if ( ! strcmp( "TaylorF1", ppt->value ) )
+		{
+			approx = TaylorF1;
+		}
+		else if ( ! strcmp( "TaylorF2", ppt->value ) )
+		{
+			approx = TaylorF2;
+		}
+		else if ( ! strcmp( "EOB", ppt->value ) )
+		{
+			approx = EOB;
+		}
+		else if ( ! strcmp( "EOBNR", ppt->value ) )
+		{
+			approx = EOBNR;
+		}
+		else if ( ! strcmp( "EOBNRv2", ppt->value ) )
+		{
+			approx = EOBNRv2;
+		}
+		else if ( ! strcmp( "EOBNRv2HM", ppt->value ) )
+		{
+			approx = EOBNRv2HM;
+		}
+		else if ( ! strcmp( "SpinTaylor", ppt->value ) )
+		{
+			approx = SpinTaylor;
+		}
+		else if ( ! strcmp( "SpinTaylorT3", ppt->value ) )
+		{
+			approx = SpinTaylorT3;
+		}
+		else if ( ! strcmp( "SpinQuadTaylor", ppt->value ) )
+		{
+			approx = SpinQuadTaylor;
+		}
+		else if ( ! strcmp( "PhenSpinTaylorRD", ppt->value ) )
+		{
+			approx = PhenSpinTaylorRD;
+		}
+		else if ( ! strcmp( "NumRel", ppt->value ) )
+		{
+			approx = NumRel;
+		}
+		else if ( ! strcmp( "IMRPhenomA", ppt->value ) )
+		{
+			approx = IMRPhenomA;
+		}
+		else if ( ! strcmp( "IMRPhenomB", ppt->value ) )
+		{
+			approx = IMRPhenomB;
+		}
+		else
+		{
+			fprintf( stderr, "invalid argument to --approximant\n"
+					"unknown approximant %s specified: "
+					"Approximant must be one of: GeneratePPN, TaylorT1, TaylorT2,\n"
+					"TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
+					"EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor,\n"
+					"PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
+			exit( 1 );
+		}
 		fprintf(stdout,"Templates will run using Approximant %s\n",approx);
 	}
 	
