@@ -397,7 +397,7 @@ void initVariables(LALInferenceRunState *state)
 (--Dmin dist)                   Minimum distance in Mpc (1)\n\
 (--Dmax dist)                   Maximum distance in Mpc (100)\n\
 (--approximant Approximant)     Specify a template approximant to use, (default TaylorF2)\n\
-(--order PNorder)               Specify a PN order to use, (default twoPN)\n\
+(--order PNorder)               Specify a PN order to use, (default threePointFivePN)\n\
 (--comp-min min)                Minimum component mass (1.0)\n\
 (--comp-max max)                Maximum component mass (30.0)\n\
 (--MTotMax max)                 Maximum total mass (35.0)\n\
@@ -420,7 +420,7 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 	ProcessParamsTable *commandLine=state->commandLine;
 	ProcessParamsTable *ppt=NULL;
 	INT4 AmpOrder=0;
-	LALPNOrder PhaseOrder=LAL_PNORDER_TWO;
+	LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
 	Approximant approx=TaylorF2;
 	//INT4 numberI4 = TaylorF2;
 	//INT4 numberI4 = TaylorT3;
@@ -498,7 +498,7 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 	if(ppt){
 		if ( ! strcmp( "GeneratePPN", ppt->value ) )
 		{
-		approx = GeneratePPN;
+			approx = GeneratePPN;
 		}
 		else if ( ! strcmp( "TaylorT1", ppt->value ) )
 		{
@@ -578,7 +578,7 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 					"PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
 			exit( 1 );
 		}
-		fprintf(stdout,"Templates will run using Approximant %s\n",approx);
+		fprintf(stdout,"Templates will run using Approximant %s (%u)\n",ppt->value,approx);
 	}
 	
         /* Over-ride PN order if user specifies */
