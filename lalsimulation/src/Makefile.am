@@ -14,6 +14,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimBurst.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
+	LALSimInspiralTaylorT2.c \
 	LALSimInspiralTaylorT3.c \
 	LALSimInspiralTaylorT4.c \
 	LALSimInspiralTofV.c \

@@ -20,18 +20,18 @@
 /**
 \author Keppel, D.
 
-\brief Create waveforms based on the TaylorT3 model.
+\brief Create waveforms based on the TaylorT2 model.
 
 Outputs a two files with three columns corresponding to time (in seconds),
-\f$h_+\f$, and \f$h_\times\f$. The first output file is <tt>T3wave1.dat</tt> in
+\f$h_+\f$, and \f$h_\times\f$. The first output file is <tt>T2wave1.dat</tt> in
 the current directory. This is generated using the
-XLALSimInspiralTaylorT3PNRestricted routine. The seond output file is
-<tt>T3wave2.dat</tt> in the current directory. This is generated using the
+XLALSimInspiralTaylorT2PNRestricted routine. The seond output file is
+<tt>T2wave2.dat</tt> in the current directory. This is generated using the
 LALInspiralWave3Templates routine.
 
 \heading{Usage}
 
-<tt>LALInspiralTaylorT3Test</tt>
+<tt>LALInspiralTaylor22Test</tt>
 
 */
 
@@ -45,7 +45,7 @@ LALInspiralWave3Templates routine.
 #include <lal/Units.h>
 #include <lal/LALSimInspiral.h>
 
-NRCSID(LALInspiralTaylorT3TestC, "$Id$");
+NRCSID(LALInspiralTaylorT2TestC, "$Id$");
 
 int main(void) {
 	static LALStatus    mystatus;
@@ -101,7 +101,7 @@ int main(void) {
 			break;
 	}
 
-	params.approximant = TaylorT3;
+	params.approximant = TaylorT2;
 	params.ampOrder = LAL_PNORDER_NEWTONIAN;
 	params.mass1 = m1;
 	params.mass2 = m2;
@@ -118,7 +118,7 @@ int main(void) {
 	dt = 1. / params.tSampling;
 
 	start = clock();
-	length = XLALSimInspiralTaylorT3PNRestricted(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.fLower, params.distance, 0, O);
+	length = XLALSimInspiralTaylorT2PNRestricted(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.fLower, params.distance, 0, O);
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;
 	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
@@ -126,7 +126,7 @@ int main(void) {
 	fprintf(stderr, "length = %i\n", length);
 	fprintf(stderr, "T = %f\n", (float) length * dt);
 
-	outputfile = fopen("T3wave1.dat","w");
+	outputfile = fopen("T2wave1.dat","w");
 
 	length = hplus->data->length;
 
@@ -138,7 +138,7 @@ int main(void) {
 	}
 
 	fclose(outputfile);
-	fprintf(stdout,"waveform saved in T3wave1.dat\n" );
+	fprintf(stdout,"waveform saved in T2wave1.dat\n" );
 
 	start = clock();
 	h_plus = XLALCreateREAL4TimeSeries("", &tc, 0.0, dt, &lalDimensionlessUnit, 4096*3);
@@ -154,13 +154,13 @@ int main(void) {
 
 	if ( mystatus.statusCode )
 	{
-		fprintf( stderr, "LALInspiralTaylorT3Test: error generating waveform\n" );
+		fprintf( stderr, "LALInspiralTaylorT2Test: error generating waveform\n" );
 		exit( 1 );
 	}
 
 	/* --- and finally save in a file --- */
 
-	outputfile = fopen("T3wave2.dat","w");
+	outputfile = fopen("T2wave2.dat","w");
 
 	length = h_plus->data->length;
 
@@ -172,6 +172,6 @@ int main(void) {
 	}
 
 	fclose(outputfile);
-	fprintf(stdout,"waveform saved in T3wave2.dat\n" );
+	fprintf(stdout,"waveform saved in T2wave2.dat\n" );
 	return 0;
 }

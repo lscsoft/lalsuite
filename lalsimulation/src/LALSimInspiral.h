@@ -450,3 +450,88 @@ int XLALSimInspiralTaylorT3PNRestricted(
 	       	REAL8 i,                  /**< inclination of source (rad) */
 	       	int O                     /**< twice post-Newtonian phase order */
 		);
+
+
+/* TaylorT2 functions */
+
+/**
+ * Evolves a post-Newtonian orbit using the Taylor T2 method.
+ */
+int XLALSimInspiralTaylorT2PNEvolveOrbit(
+		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
+	       	LIGOTimeGPS *tc,       /**< coalescence time */
+	       	REAL8 phic,            /**< coalescence phase */
+	       	REAL8 deltaT,          /**< sampling interval */
+		REAL8 m1,              /**< mass of companion 1 */
+		REAL8 m2,              /**< mass of companion 2 */
+		REAL8 f_min,           /**< start frequency */
+		int O                  /**< twice post-Newtonian order */
+		);
+
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ *
+ * This routine allows the user to specify different pN orders
+ * for phasing calcuation vs. amplitude calculations.
+ */
+int XLALSimInspiralTaylorT2PNGenerator(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 f_min,              /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int amplitudeO,           /**< twice post-Newtonian amplitude order */
+	       	int phaseO                /**< twice post-Newtonian phase order */
+		);
+
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ *
+ * This routine uses the same pN order for phasing and amplitude
+ * (unless the order is -1 in which case the highest available
+ * order is used for both of these -- which might not be the same).
+ *
+ * Log terms in amplitudes are ignored.  This is a gauge choice.
+ */
+int XLALSimInspiralTaylorT2PN(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 f_min,              /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int O                     /**< twice post-Newtonian order */
+		);
+
+/**
+ * Driver routine to compute the restricted post-Newtonian inspiral waveform.
+ *
+ * This routine computes the phasing to the specified order, but
+ * only computes the amplitudes to the Newtonian (quadrupole) order.
+ *
+ * Log terms in amplitudes are ignored.  This is a gauge choice.
+ */
+int XLALSimInspiralTaylorT2PNRestricted(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 f_min,              /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int O                     /**< twice post-Newtonian phase order */
+		);
