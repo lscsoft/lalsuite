@@ -181,8 +181,10 @@ LALInspiralWave(
            if (XLALBBHPhenWaveTimeDom(signalvec, params)) ABORTXLAL(status);
            break;
       case IMRPhenomFA:
+           if (XLALBBHPhenWaveAFreqDom(signalvec, params)) ABORTXLAL(status);
+           break;
       case IMRPhenomFB:
-           if (XLALBBHPhenWaveFreqDom(signalvec, params)) ABORTXLAL(status);
+           if (XLALBBHPhenWaveBFreqDom(signalvec, params)) ABORTXLAL(status);
            break;
       case BCV:
            LALBCVWaveform(status->statusPtr, signalvec, params);
@@ -320,8 +322,11 @@ LALInspiralWaveTemplates(
                ABORTXLAL(status);
            break;
       case IMRPhenomFA:
+           if (XLALBBHPhenWaveAFreqDomTemplates(signalvec1, signalvec2, params))
+             ABORTXLAL(status);
+           break;
       case IMRPhenomFB:
-           if (XLALBBHPhenWaveFreqDomTemplates(signalvec1, signalvec2, params))
+           if (XLALBBHPhenWaveBFreqDomTemplates(signalvec1, signalvec2, params))
                ABORTXLAL(status);
            break;
       case TaylorF1:
