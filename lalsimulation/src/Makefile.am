@@ -3,6 +3,7 @@ INCLUDES = -I$(top_builddir)/include
 lalsimulationincludedir = $(includedir)/lal
 lalsimulationinclude_HEADERS = \
 	LALSimBurst.h \
+	LALSimIMR.h \
 	LALSimInspiral.h \
 	LALSimInspiraldEnergyFlux.h \
 	LALSimulation.h \
@@ -12,6 +13,7 @@ lalsimulationinclude_HEADERS = \
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
 	LALSimBurst.c \
+	LALSimIMRPhenom.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
 	LALSimInspiralTaylorT2.c \
