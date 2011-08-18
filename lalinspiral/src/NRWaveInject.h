@@ -48,6 +48,7 @@
 #include <lal/NRWaveIO.h>
 #include <lal/TimeDelay.h>
 #include <lal/DetResponse.h>
+#include <lal/SphericalHarmonics.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
@@ -180,14 +181,6 @@ XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc,
 INT4
 XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,
                                const REAL8TimeSeries *in);
-
-/** Spin weighted Spherical Harmonic  */
-INT4
-XLALSphHarm ( COMPLEX16 *out, /**< [out] the value of Y2_lm(theta,phi) */
-              UINT4   L,  /**< the aziuhtal quantum number */
-              INT4    M,  /**< the M value */
-              REAL4   theta, /**< position - azimuthal angle */
-              REAL4   phi ); /**< position - polar angle */
 
 /** channel name for nr data in frame file */
 CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, /**< either plus or cross */

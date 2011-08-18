@@ -11,7 +11,8 @@ pkginclude_HEADERS = \
 	ODE.h \
 	Random.h \
 	RngMedBias.h \
-	Sort.h
+	Sort.h \
+	SphericalHarmonics.h
 
 CLEANFILES =
 MOSTLYCLEANFILES = .dvi-dep

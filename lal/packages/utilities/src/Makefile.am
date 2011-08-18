@@ -18,7 +18,8 @@ libutilities_la_SOURCES = \
 	MersenneRandom.c \
 	ODE.c \
 	Random.c \
-	RngMedBias.c
+	RngMedBias.c \
+	SphericalHarmonics.c
 
 noinst_HEADERS = MatrixOps_source.c
 
