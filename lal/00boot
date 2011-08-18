@@ -106,7 +106,6 @@ ${M4} FrequencySeries.m4 > FrequencySeries.h || fail "creating sources in packag
 ${M4} Sequence.m4 > Sequence.h || fail "creating sources in packages/tools/include"
 ${M4} TimeSeries.m4 > TimeSeries.h || fail "creating sources in packages/tools/include"
 cd ../src || fail "creating sources in packages/tools/src"
-${M4} Sequence.m4 > Sequence.c || fail "creating sources in packages/tools/src"
 ${M4} TimeSeries.m4 > TimeSeries.c || fail "creating sources in packages/tools/src"
 cd ../../.. || fail "creating sources in packages/tools/src"
 
