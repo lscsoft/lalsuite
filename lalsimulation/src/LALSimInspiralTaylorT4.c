@@ -404,6 +404,7 @@ XLALSimInspiralTaylorT4Setup(
             f->angacc4 = &XLALSimInspiralAngularAcceleration4_6PN;
             break;
         case 7:
+        case -1:
             f->energy4 = &XLALSimInspiralEnergy4_6PN;
             f->angacc4 = &XLALSimInspiralAngularAcceleration4_7PN;
             break;
@@ -627,22 +628,23 @@ int XLALSimInspiralTaylorT4PNRestricted(
 
 #if 0
 #include <lal/PrintFTSeries.h>
+#include <lal/PrintFTSeries.h>
 extern int lalDebugLevel;
 int main(void)
 {
-	LIGOTimeGPS tc = LIGOTIMEGPSZERO;
-	REAL8 phic = 0.0;
-	REAL8 deltaT = 1.0/4096.;
-	REAL8 m1 = 5.*LAL_MSUN_SI;
-	REAL8 m2 = 5.*LAL_MSUN_SI;
+	LIGOTimeGPS tc = { 888888888, 222222222 };
+	REAL8 phic = 1.0;
+	REAL8 deltaT = 1.0/16384.0;
+	REAL8 m1 = 1.4*LAL_MSUN_SI;
+	REAL8 m2 = 1.4*LAL_MSUN_SI;
 	REAL8 r = 1e6*LAL_PC_SI;
 	REAL8 i = 0.5*LAL_PI;
-	REAL8 f_min = 40.0;
-	int O = 7;
+	REAL8 f_min = 100.0;
+	int O = -1;
 	REAL8TimeSeries *hplus;
 	REAL8TimeSeries *hcross;
 	lalDebugLevel = 7;
-	XLALSimInspiralTaylorT4PNGenerator(&hplus, &hcross, &tc, phic,0., deltaT, m1, m2, f_min, r, i,0, O);
+	XLALSimInspiralTaylorT4PN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, f_min, r, i, O);
 	LALDPrintTimeSeries(hplus, "hp.dat");
 	LALDPrintTimeSeries(hcross, "hc.dat");
 	XLALDestroyREAL8TimeSeries(hplus);
