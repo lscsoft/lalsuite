@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria
+ * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, E. Ochsner
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -234,6 +234,48 @@ int XLALSimInspiralPNPolarizationWaveforms(
         int ampO                  /**< twice PN order of the amplitude */
         );
 
+/**
+ * Computes polarizations h+ and hx for a spinning, precessing binary
+ * when provided time series of all the dynamical quantities.
+ * Amplitude can be chosen between 1.5PN and Newtonian orders (inclusive).
+ * 
+ * Based on K.G. Arun, Alesssandra Buonanno, Guillaume Faye and Evan Ochsner
+ * "Higher-order spin effects in the amplitude and phase of gravitational 
+ * waveforms emitted by inspiraling compact binaries: Ready-to-use 
+ * gravitational waveforms", Phys Rev. D 79, 104023 (2009), arXiv:0810.5336
+ * 
+ * HOWEVER, the formulae have been adapted to use the output of the so-called
+ * "Frameless" convention for evolving precessing binary dynamics, 
+ * which is not susceptible to hitting coordinate singularities.
+ *
+ * FIXME: Clean up and commit Mathematica NB Showing correctness. Cite here.
+ * 
+ * NOTE: The vectors MUST be given in the so-called radiation frame where
+ * Z is the direction of propagation, X is the principal '+' axis and Y = Z x X
+ */
+int XLALSimInspiralPrecessingPolarizationWaveforms(
+	REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
+	REAL8TimeSeries **hcross, /**< x-polarization waveform [returned] */
+	REAL8TimeSeries *V,       /**< post-Newtonian parameter */
+	REAL8TimeSeries *Phi,     /**< orbital phase */
+	REAL8TimeSeries *S1x,	  /**< Spin1 vector x component */
+	REAL8TimeSeries *S1y,	  /**< Spin1 vector y component */
+	REAL8TimeSeries *S1z,	  /**< Spin1 vector z component */
+	REAL8TimeSeries *S2x,	  /**< Spin2 vector x component */
+	REAL8TimeSeries *S2y,	  /**< Spin2 vector y component */
+	REAL8TimeSeries *S2z,	  /**< Spin2 vector z component */
+	REAL8TimeSeries *LNhatx,  /**< unit orbital ang. mom. x comp. */
+	REAL8TimeSeries *LNhaty,  /**< unit orbital ang. mom. y comp. */
+	REAL8TimeSeries *LNhatz,  /**< unit orbital ang. mom. z comp. */
+	REAL8TimeSeries *E1x,	  /**< orbital plane basis vector x comp. */
+	REAL8TimeSeries *E1y,	  /**< orbital plane basis vector y comp. */
+	REAL8TimeSeries *E1z,	  /**< orbital plane basis vector z comp. */
+	REAL8 m1,                 /**< mass of companion 1 (Msun) */
+	REAL8 m2,                 /**< mass of companion 2 (Msun) */
+	REAL8 r,                  /**< distance of source (Mpc) */
+	REAL8 v0,                 /**< tail-term gauge choice (default = 0) */
+	INT4 ampO	 	  /**< twice amp. post-Newtonian order */
+	);
 
 /* TaylorT4 functions */
 
