@@ -115,9 +115,6 @@ XLALCalculateNewtonianMultipole(
   }
   *multipole = XLALCOMPLEX16Mul( *multipole, y );
 
-  *multipole = XLALCOMPLEX16Mul( *multipole, XLALCOMPLEX16MulReal( 
-                     XLALCOMPLEX16Exp( XLALCOMPLEX16Rect( 0., - m * LAL_PI_2 ) ), -1. ) );
-
   return XLAL_SUCCESS;
 }
 
@@ -263,7 +260,7 @@ XLALAssociatedLegendreXIsZero( const int l,
           legendre = 0;
           break;
         case 1:
-          legendre = - 28.125;
+          legendre = - 1.875;
           break;
         default:
           XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
@@ -427,8 +424,10 @@ CalculateThisMultipolePrefix(
   else if ( epsilon == 1 )
   {
   
-     n.im = - m;
+     n.im = m;
      n = XLALCOMPLEX16PowReal( n, (REAL8)l );
+     n.re = -n.re;
+     n.im = -n.im;
 
      mult1 = 16.*LAL_PI / gsl_sf_doublefact( 2u*l + 1u );
 

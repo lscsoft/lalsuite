@@ -2215,19 +2215,14 @@ XLALEOBPPWaveformEngine (
      z2 =   MultSphHarmM.re - MultSphHarmP.re;
 
      /* Next, compute h+ and hx from hLM, hLM*, YLM, YL-M */
-     char outFileName[25];
-     snprintf( outFileName, 25, "realAndImag-%d%d.dat", modeL, abs(modeM) );
-     FILE *out = fopen( outFileName, "w" );
      for ( i = 0; i < sig1->length; i++)
      {
        freq->data[i] /= unitHz;
        x1 = sig1->data[i];
        x2 = sig2->data[i];
-       fprintf( out, "%.12e %.12e %.12e\n", (REAL8)i/(params->tSampling*m), x1, x2 );  
        sig1->data[i] = (x1 * y_1) + (x2 * y_2);
        sig2->data[i] = (x1 * z1) + (x2 * z2);
      }
-     fclose( out );
 
      /*------------------------------------------------------
       * If required by the user copy other data sets to the
