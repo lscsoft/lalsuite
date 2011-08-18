@@ -277,8 +277,8 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   REAL8Vector *logLikelihoods = NULL;
   
   /* set error handler to abort in main function */
-  /* XLALErrorHandler = XLALAbortErrorHandler;
-  const char *fn = __func__; */
+  lalDebugLevel = 7;
+  XLALSetErrorHandler(XLALAbortErrorHandler);
   
   /* Get ProcParamsTable from input arguments */
   param_table = LALInferenceParseCommandLine( argc, argv );
@@ -3166,7 +3166,7 @@ injection\n", signalonly);
 
 /** \brief Split the data into segments
  * 
- * This function is deprecated to \c chop_n_merger, but gives the functionality 
+ * This function is deprecated to \c chop_n_merge, but gives the functionality 
  * of the old code.
  * 
  * It cuts the data into as many contiguous segments of data as possible of 
@@ -3235,9 +3235,11 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
  * The function first attempts to chop up the data into as many stationary 
  * segments as possible. The splitting may not be optimal, so it then tries 
  * remerging consecutive segments to see if the merged segments show more
- * evidence of stationarity. It then, if necessary, chops the segments again to
- * make sure there are none greater than the required \c chunkMax. The default
- * \c chunkMax is 0, so this rechopping will not normally happen.
+ * evidence of stationarity. <b>[NOTE: Remerging is currently turned off and
+ * will make very little difference to the algorithm]</b>. It then, if
+ * necessary, chops the segments again to make sure there are none greater
+ * than the required \c chunkMax. The default \c chunkMax is 0, so this
+ * rechopping will not normally happen.
  * 
  * This is all performed on data that has had a running median subtracted, to 
  * try and removed any underlying trends in the data (e.g. those caused by a 
@@ -3274,7 +3276,8 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin,
   
   chunkIndex = chop_data( meddata, chunkMin );
   
-  merge_data( meddata, chunkIndex );
+  /* DON'T BOTHER WITH THE MERGING AS IT WILL MAKE VERY LITTLE DIFFERENCE */
+  /* merge_data( meddata, chunkIndex ); */
   
   /* if a maximum chunk length is defined then rechop up the data, to segment
      any chunks longer than this value */
