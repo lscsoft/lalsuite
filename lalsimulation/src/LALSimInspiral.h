@@ -183,14 +183,19 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 		);
 
 /**
- * Given an orbit evolution phasing, construct the waveform h+ and hx.
+ * Given time series for a binary's orbital dynamical variables, 
+ * construct the waveform polarizations h+ and hx as a sum of 
+ * -2 spin-weighted spherical harmonic modes, h_lm.
+ * NB: Valid only for non-precessing systems!
  *
  * Implements Equation (11) of:
  * Lawrence E. Kidder, "Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ *
+ * FIXME: change the PN variable from x to v = \sqrt{x}
  */
-int XLALSimInspiralPNPolarizationWaveforms(
+int XLALSimInspiralPNPolarizationWaveformsFromModes(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform [returned] */
 	       	REAL8TimeSeries *x,       /**< post-Newtonian parameter */
@@ -202,6 +207,32 @@ int XLALSimInspiralPNPolarizationWaveforms(
 	       	REAL8 i,                  /**< inclination of source (rad) */
 	       	int O                     /**< twice post-Newtonian order */
 		);
+
+/**
+ * Given time series for a binary's orbital dynamical variables, 
+ * construct the waveform polarizations h+ and hx directly.
+ * NB: Valid only for non-precessing binaries!
+ *
+ * Implements Equations (5.7) - (5.10) of:
+ * K. G. Arun, Bala R Iyer, Moh'd S S Qusailah, "The 2.5PN gravitational wave 
+ * polarisations from inspiralling compact binaries in circular orbits"
+ * Class. Quant. Grav. 21 (2004) 3771-3802; Erratum-ibid. 22 (2005) 3115
+ * arXiv: gr-qc/0404085
+ * 
+ * Note however, that we do not include the constant "memory" terms
+ */
+int XLALSimInspiralPNPolarizationWaveforms(
+        REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
+        REAL8TimeSeries **hcross, /**< x-polarization waveform [returned] */
+        REAL8TimeSeries *V,       /**< post-Newtonian (PN) parameter */
+        REAL8TimeSeries *Phi,     /**< orbital phase */
+        REAL8 x0,                 /**< tail-term gauge choice (default = 0) */
+        REAL8 m1,                 /**< mass of companion 1 (kg) */
+        REAL8 m2,                 /**< mass of companion 2 (kg) */
+        REAL8 r,                  /**< distance of source (m) */
+        REAL8 i,                  /**< inclination of source (rad) */
+        int ampO                  /**< twice PN order of the amplitude */
+        );
 
 
 /* TaylorT4 functions */
