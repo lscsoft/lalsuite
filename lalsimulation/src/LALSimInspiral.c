@@ -675,7 +675,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
     REAL8 hplus15, hcross15, hplusSpin1, hcrossSpin1;
     REAL8 hplusSpin15, hcrossSpin15, hplusTail15, hcrossTail15; 
     REAL8 M, eta, dm, phi, v, v2, dist, ampfac, logfac = 0.;
-    INT4 i, len;
+    INT4 idx, len;
 
     /* Macros to check time series vectors */
     LAL_CHECK_VALID_SERIES(V, 			XLAL_FAILURE);
@@ -718,33 +718,25 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
     memset((*hcross)->data->data, 0, 
             (*hcross)->data->length*sizeof(*(*hcross)->data->data));
 
-    /** 
-      * Compute mass parameters and overall amplitude factor.
-      * 'r' is in Mpc while 'm1', 'm2' are in solar masses.
-      * Note that 'LAL_MTSUN_SI' converts solar masses to seconds
-      * 'LAL_PC_SI' is 1 parsec in meters and 'LAL_C_SI' is the speed of light 
-      * in seconds. Therefore 'dist' is 'r' converted into seconds. 
-      * 'ampfac' (and the final polarizations) will be dimensionless 
-      * as numerator and denominator are both in units of seconds.
-      */
     M = m1 + m2;
-    eta = m1 * m2 / M / M;
-    dm = abs(m1 - m2) / M;
-    dist = r * (1.e06 * LAL_PC_SI) / LAL_C_SI;
-    ampfac = 2. * M * LAL_MTSUN_SI * eta / dist;
-
+    eta = m1 * m2 / M / M; // symmetric mass ratio - '\nu' in the paper
+    dm = abs(m1 - m2) / M; // frac. mass difference - \delta m/m in the paper
+    dist = r / LAL_C_SI;   // r (m) / c (m/s) --> dist in units of seconds
+    /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
+    ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
+    
     /* loop over time steps and compute polarizations h+ and hx */
     len = V->data->length;
-    for(i = 0; i < len; i++)
+    for(idx = 0; idx < len; idx++)
     {
         /* Abbreviated names in lower case for time series at this sample */
-        phi  = Phi->data->data[i]; 	v = V->data->data[i]; 	v2 = v * v;
-        lnhx = LNhatx->data->data[i]; 	e1x = E1x->data->data[i];
-        lnhy = LNhaty->data->data[i];	e1y = E1y->data->data[i];
-        lnhz = LNhatz->data->data[i];	e1z = E1z->data->data[i];
-        s1x  = S1x->data->data[i];	s2x = S2x->data->data[i];
-        s1y  = S1y->data->data[i];	s2y = S2y->data->data[i];
-        s1z  = S1z->data->data[i];	s2z = S2z->data->data[i];
+        phi  = Phi->data->data[idx]; 	v = V->data->data[idx];     v2 = v * v;
+        lnhx = LNhatx->data->data[idx]; e1x = E1x->data->data[idx];
+        lnhy = LNhaty->data->data[idx];	e1y = E1y->data->data[idx];
+        lnhz = LNhatz->data->data[idx];	e1z = E1z->data->data[idx];
+        s1x  = S1x->data->data[idx];	s2x = S2x->data->data[idx];
+        s1y  = S1y->data->data[idx];	s2y = S2y->data->data[idx];
+        s1z  = S1z->data->data[idx];	s2z = S2z->data->data[idx];
 
         /* E2 = LNhat x E1 */
         e2x = lnhy*e1z - lnhz*e1y;
@@ -896,13 +888,13 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
         } /* End switch on ampO */
 
         /* Fill the output polarization arrays */
-        (*hplus)->data->data[i] = ampfac * v2 * ( hplus0 
+        (*hplus)->data->data[idx] = ampfac * v2 * ( hplus0 
                 + v * ( hplus05 + v * ( hplus1 + hplusSpin1 
                 + v * ( hplus15 + hplusSpin15 + hplusTail15 ) ) ) );
-        (*hcross)->data->data[i] = ampfac * v2 * ( hcross0 
+        (*hcross)->data->data[idx] = ampfac * v2 * ( hcross0 
                 + v * ( hcross05 + v * ( hcross1 + hcrossSpin1 
                 + v * ( hcross15 + hcrossSpin15 + hcrossTail15 ) ) ) );
-    }
+    } /* end of loop over time samples, idx */
     return XLAL_SUCCESS;
 }
 
