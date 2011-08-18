@@ -564,13 +564,13 @@ static int XLALSimInspiralTaylorT3Setup(
 		)
 {
   expnCoeffsdEnergyFlux akEF;
-  REAL8 vpole, eta, lso, vlso, vn, tofv;
+  REAL8 eta, lso, vn, tofv,vlso;//vpole - set but not used
   REAL8 oneby6 = 1./6.;
   TofVIn in1;
   void *in2;
 
 
-  vpole = 0.0;
+  //vpole = 0.0; - set but not used
   ak->EulerC = LAL_GAMMA;
   ak->lambda = -1987./3080.;
   ak->theta = -11831./9240.;
@@ -650,7 +650,7 @@ static int XLALSimInspiralTaylorT3Setup(
   akEF.FTl8 =   52.74308390022676;
 
   lso = sqrt(oneby6);
-  vlso = 0;
+  vlso = 0; //- set but not used
 
 /* Location of the 0PN and 1PN T- and P-approximant last stable orbit: */
   akEF.vlsoT0 = lso;

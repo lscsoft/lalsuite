@@ -43,6 +43,114 @@
 NRCSID(LALSIMINSPIRALTAYLORT4C, "$Id$");
 
 /**
+ * This structure contains the intrinsic parameters and post-newtonian 
+ * co-efficients for the energy and angular acceleration expansions. 
+ * These are computed by XLALSimInspiralTaylorT4Setup routine.
+ */
+
+typedef struct
+tagexpnCoeffsTaylorT4 {
+   
+   /* */
+   REAL8 lambda,theta;
+   /* Taylor expansion coefficents in domega/dt*/
+   REAL8 aatN,aat2,aat3,aat4,aat5,aat6a,aat6b,aat7;
+   /* Taylor expansion coefficents for energy*/
+   REAL8 etN,et2,et4,et6;
+
+    /*Angular velocity co-efficient*/
+    REAL8 av;
+
+   /* symmetric mass ratio, total mass, component masses*/
+   REAL8 nu,m,m1,m2,mu;
+
+   
+}expnCoeffsTaylorT4;
+
+typedef REAL8 (SimInspiralEnergy4)(
+   REAL8 x, /**< post-Newtonian parameter */
+   expnCoeffsTaylorT4 *ak
+);
+
+typedef REAL8 (SimInspiralAngularAcceleration4)(
+   REAL8 x, /**< post-Newtonian parameter */
+   expnCoeffsTaylorT4 *ak
+);
+
+/**
+ * This strucuture contains pointers to the functions for calculating
+ * the post-newtonian terms at the desired order. They can be set by
+ * XLALSimInspiralTaylorT4Setup by passing an appropriate PN order. 
+ */
+
+typedef struct
+tagexpnFuncTaylorT4
+{
+   SimInspiralEnergy4 *energy4;
+   SimInspiralAngularAcceleration4 *angacc4;
+} expnFuncTaylorT4;
+
+/**
+ * Computes the orbital energy at a fixed frequency and pN order.
+ *
+ * Implements Equation (152) of
+ * Luc Blanchet,
+ * "Gravitational Radiation from Post-Newtonian Sources and Inspiralling
+ * Compact Binaries",
+ * <a href="http://www.livingreviews.org/lrr-2006-4">lrr-2006-4</a>.
+ *
+ * This is the same as Equation (10) (where the spin of the objects
+ * is zero) of:
+ * Yi Pan, Alessandra Buonanno, Yanbei Chen, and Michele Vallisneri,
+ * "A physical template family for gravitational waves from precessing
+ * binaries of spinning compact objects: Application to single-spin binaries"
+ * <a href="http://arxiv.org/abs/gr-qc/0310034">arXiv:gr-qc/0310034v3 </a>.
+ * Note: this equation is actually dx/dt rather than (domega/dt)/(omega)^2
+ * so the leading coefficient is different.
+ */
+
+static REAL8 
+XLALSimInspiralEnergy4_4PN(
+        REAL8 x,  /**< post-Newtonian parameter */
+        expnCoeffsTaylorT4 *ak /**< PN co-efficients and intrinsic parameters */
+)
+{
+    REAL8 ans = 0;
+
+    ans += ak->etN
+    //1PN
+    +ak->et2*x
+    //2PN
+    +ak->et4*x*x;
+
+    ans*=x;
+
+    return ans;
+}
+
+static REAL8 
+XLALSimInspiralEnergy4_6PN(
+        REAL8 x,  /**< post-Newtonian parameter */
+        expnCoeffsTaylorT4 *ak /**< PN co-efficients and intrinsic parameters */
+)
+{
+
+    REAL8 ans = 0;
+
+    ans += ak->etN
+    //1PN
+    +ak->et2*x
+    //2PN
+    +ak->et4*x*x
+    //3PN
+    +ak->et6*x*x*x;
+    
+    ans*=x;
+    
+    return ans;
+}
+
+/**
  * Computes the rate of increase of the orbital frequency for a post-Newtonian
  * inspiral.  This function returns dx/dt rather than the true angular
  * acceleration.
@@ -51,58 +159,134 @@ NRCSID(LALSIMINSPIRALTAYLORT4C, "$Id$");
  * Yi Pan, Alessandra Buonanno, Yanbei Chen, and Michele Vallisneri,
  * "A physical template family for gravitational waves from precessing
  * binaries of spinning compact objects: Application to single-spin binaries"
- * arXiv:gr-qc/0310034v3 (2007).
+ * <a href="http://arxiv.org/abs/gr-qc/0310034">arXiv:gr-qc/0310034v3 </a>.
  *
  * Note: this equation is actually dx/dt rather than (domega/dt)/(omega)^2
  * so the leading coefficient is different.  Also, this function applies
  * for non-spinning objects.
  *
- * Compare the overall coefficient, with nu=1/4, to Equation (45) of
+ * The overall co-efficient with nu=0.25 is the same as to Equation (45) of
  * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue,
  * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
  * "High-accuracy comparison of numerical relativity simulations with
  * post-Newtonian expansions"
- * arXiv:0710.0158v1 (2007).
+ * <a href="http://arxiv.org/abs/0710.0158v2">arXiv:0710.0158v2</a>.
  */
-REAL8 XLALSimInspiralTaylorT4PNAngularAcceleration(
-		REAL8 x,  /**< post-Newtonian parameter */
-	       	REAL8 m1, /**< mass of companion 1 */
-	       	REAL8 m2, /**< mass of companion 2 */
-	       	int O     /**< twice post-Newtonian order */
-		)
+ 
+static REAL8 
+XLALSimInspiralAngularAcceleration4_4PN(
+  REAL8       x, /**< post-Newtonian parameter */
+  expnCoeffsTaylorT4 *ak /**< PN co-efficients and intrinsic parameters */
+)
 {
-	static const char *func = "XLALSimInspiralTaylorT4PNAngularAcceleration";
-	const REAL8 theta = (1039.0/4620.0);
-	REAL8 m = m1 + m2;
-	REAL8 mu = m1*m2/m;
-	REAL8 nu = mu/m;
-	REAL8 ans = 0;
+    REAL8 ans;
+    REAL8 y,x2;
+    
+    y=sqrt(x);
+    x2=x*x;
+    
+    ans=ak->aatN
+    /*1PN*/
+    + ak->aat2*x
+    /*1.5PN*/
+    + ak->aat3*x*y
+    /*2PN*/
+    + ak->aat4*x2;
 
-	switch (O) {
-		default: /* unsupported pN order */
-			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", func, O/2, O%2?".5":"" );
-			XLAL_ERROR_REAL8(func, XLAL_EINVAL);
-		case -1: /* use highest available pN order */
-		case 7:
-			ans += (-(4415.0/4032.0) + (358675.0/6048.0)*nu + (91495.0/1512.0)*pow(nu, 2.0))*LAL_PI*pow(x, 3.5);
-		case 6:
-			ans += ( ( (16447322263.0/139708800.0) - (1712.0/105.0)*LAL_GAMMA + (16.0/3.0)*pow(LAL_PI, 2.0) ) + ( -(273811877.0/1088640.0) + (451.0/48.0)*pow(LAL_PI, 2.0) - (88.0/3.0)*theta )*nu + (541.0/896.0)*pow(nu, 2.0) - (5605.0/2592.0)*pow(nu, 3.0) - (856.0/105.0)*log(16.0*x) )*pow(x, 3.0);
-		case 5:
-			ans += ( -(4159.0/672.0) - (15876.0/672.0)*nu )*LAL_PI*pow(x, 2.5);
-		case 4:
-			ans += ( (34103.0/18144.0) + (13661.0/2016.0)*nu + (59.0/18.0)*pow(nu, 2.0) )*pow(x, 2.0);
-		case 3:
-			ans += 4.0*LAL_PI*pow(x, 1.5);
-		case 2:
-			ans += ( -(743.0/336.0) - (924.0/336.0)*nu )*x;
-		case 1:
-		case 0:
-			ans += 1.0;
-	}
-	ans *= ((64.0*pow(LAL_C_SI, 3.0))/(5.0*LAL_G_SI*m))*pow(x, 5.0)*nu;
-	return ans;
+    ans*=x2*x2*x;
+
+    return ans;
 }
 
+
+static REAL8 
+XLALSimInspiralAngularAcceleration4_5PN(
+  REAL8       x, /**< post-Newtonian parameter */
+  expnCoeffsTaylorT4 *ak /**< PN co-efficients and intrinsic parameters */
+)
+{
+    REAL8 ans;
+    REAL8 y,x2;
+    
+    y=sqrt(x);
+    x2=x*x;
+    
+    ans= ak->aatN
+    /*1PN*/
+    + ak->aat2*x
+    /*1.5PN*/
+    + ak->aat3*x*y
+    /*2PN*/
+    + ak->aat4*x2
+    /*2.5PN*/
+    + ak->aat5*x2*y;
+
+    ans*=x2*x2*x;
+
+    return ans;
+}
+
+static REAL8 
+XLALSimInspiralAngularAcceleration4_6PN(
+  REAL8       x, /**< post-Newtonian parameter */
+  expnCoeffsTaylorT4 *ak /**< PN co-efficients and intrinsic parameters */
+)
+{
+    REAL8 ans;
+    REAL8 y,x2,x3;
+    
+    y=sqrt(x);
+    x2=x*x;
+    x3=x*x2;
+    
+    ans= ak->aatN
+    /*1PN*/
+    + ak->aat2*x
+    /*1.5PN*/
+    + ak->aat3*x*y
+    /*2PN*/
+    + ak->aat4*x2
+    /*2.5PN*/
+    + ak->aat5*x2*y
+    /*3PN*/
+    + (ak->aat6a - ak->aat6b*log(16.*x))*x3;
+
+    ans*=x3*x2;
+
+    return ans;
+}
+
+static REAL8 
+XLALSimInspiralAngularAcceleration4_7PN(
+  REAL8       x, /**< post-Newtonian parameter */
+  expnCoeffsTaylorT4 *ak /**< PN co-efficients and intrinsic parameters */
+)
+{
+    REAL8 ans;
+    REAL8 y,x2,x3;
+    
+    y=sqrt(x);
+    x2=x*x;
+    x3=x*x2;
+    
+    ans= ak->aatN
+    /*1PN*/
+    + ak->aat2*x
+    /*1.5PN*/
+    + ak->aat3*x*y
+    /*2PN*/
+    + ak->aat4*x2
+    /*2.5PN*/
+    + ak->aat5*x2*y
+    /*3PN*/
+    + (ak->aat6a - ak->aat6b*log(16.*x))*x3
+    /*3.5PN*/
+    + ak->aat7*x3*y;
+
+    ans*=x3*x2;
+
+    return ans;
+}
 
 /**
  * Computes the orbital angular velocity from the quantity x.
@@ -113,84 +297,126 @@ REAL8 XLALSimInspiralTaylorT4PNAngularAcceleration(
  * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
  * "High-accuracy comparison of numerical relativity simulations with
  * post-Newtonian expansions"
- * arXiv:0710.0158v1 (2007).
+ * <a href="http://arxiv.org/abs/0710.0158v2">arXiv:0710.0158v2</a>.
  */
-REAL8 XLALSimInspiralTaylorT4PNAngularVelocity(
-		REAL8 x,  /**< post-Newtonian parameter */
-	       	REAL8 m1, /**< mass of companion 1 */
-	       	REAL8 m2  /**< mass of companion 2 */
-		)
+static REAL8 
+XLALSimInspiralTaylorT4PNAngularVelocity(
+    REAL8 x,  /**< post-Newtonian parameter */
+    expnCoeffsTaylorT4 *ak /**< PN co-efficients and intrinsic parameters */
+)
 {
-	REAL8 m = m1 + m2;
-	REAL8 ans;
-	ans = (pow(LAL_C_SI, 3.0)*pow(x, 1.5))/(LAL_G_SI*m);
-	return ans;
+    return ak->av*pow(x, 1.5);
+}
+
+typedef struct
+{
+    REAL8 (*func)(REAL8 x, expnCoeffsTaylorT4 *ak);
+    expnCoeffsTaylorT4 ak;
+}XLALSimInspiralTaylorT4PNEvolveOrbitParams;
+
+/** 
+ * This function is used in the call to the GSL integrator.
+ */
+static int 
+XLALSimInspiralTaylorT4PNEvolveOrbitIntegrand(double UNUSED t, const double y[], double ydot[], void *params)
+{
+	XLALSimInspiralTaylorT4PNEvolveOrbitParams* p = (XLALSimInspiralTaylorT4PNEvolveOrbitParams*)params;
+	ydot[0] = p->func(y[0],&p->ak);
+	ydot[1] = XLALSimInspiralTaylorT4PNAngularVelocity(y[0],&p->ak);
+	t = 0.0;
+	return GSL_SUCCESS;
 }
 
 
 /**
- * Computes the orbital energy at a fixed frequency and pN order.
+ * Set up the expnCoeffsTaylorT4 and expnFuncTaylorT4 structures for
+ * generating a TaylorT4 waveform and select the post-newtonian
+ * functions corresponding to the desired order. 
  *
- * Implements Equation (152) of
- * Luc Blanchet,
- * "Gravitational Radiation from Post-Newtonian Sources and Inspiralling
- * Compact Binaries",
- * http://www.livingreviews.org/lrr-2006-4/index.html
- *
- * This is the same as Equation (10) (where the spin of the objects
- * is zero) of:
- * Yi Pan, Alessandra Buonanno, Yanbei Chen, and Michele Vallisneri,
- * "A physical template family for gravitational waves from precessing
- * binaries of spinning compact objects: Application to single-spin binaries"
- * arXiv:gr-qc/0310034v3 (2007).
- * Note: this equation is actually dx/dt rather than (domega/dt)/(omega)^2
- * so the leading coefficient is different.
+ * Inputs given in SI units.
  */
-REAL8 XLALSimInspiralTaylorT4PNEnergy(
-		REAL8 x,  /**< post-Newtonian parameter */
-	       	REAL8 m1, /**< mass of companion 1 */
-	       	REAL8 m2, /**< mass of companion 2 */
-	       	int O     /**< twice post-Newtonian order */
-		)
+static int 
+XLALSimInspiralTaylorT4Setup(
+    expnCoeffsTaylorT4 *ak,	/**< coefficients for TaylorT4 evolution [modified] */
+    expnFuncTaylorT4 *f,	/**< functions for TaylorT4 evolution [modified] */
+    REAL8 m1,		/**< mass of companion 1 */
+    REAL8 m2,		/**< mass of companion 2 */
+    int O			/**< twice post-Newtonian order */
+)
 {
-	static const char *func = "XLALSimInspiralTaylorT4PNEnergy";
-	const REAL8 lambda = -(1987.0/3080.0);
-	REAL8 m = m1 + m2;
-	REAL8 mu = m1*m2/m;
-	REAL8 nu = mu/m;
-	REAL8 ans = 0;
-	switch (O) { /* note: fall through at each level */
-		default: /* unsupported pN order */
-			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", func, O/2, O%2?".5":"" );
-			XLAL_ERROR_REAL8(func, XLAL_EINVAL);
-		case -1: /* use highest available pN order */
-		case 7:
-		case 6:
-			ans += ( -(675.0/64.0) + ((209323.0/4032.0) - (205.0/96.0)*pow(LAL_PI, 2.0) - (110.0/9.0)*lambda)*nu - (155.0/96.0)*pow(nu, 2.0) - (35.0/5184.0)*pow(nu, 3.0) )*pow(x, 3.0);
-		case 5:
-		case 4:
-			ans += ( -(27.0/8.0) + (19.0/8.0)*nu - (1.0/24.0)*pow(nu, 2.0) )*pow(x, 2.0);
-		case 3:
-		case 2:
-			ans += ( -(3.0/4.0) - (1.0/12.0)*nu )*x;
-		case 1:
-		case 0:
-			ans += 1;
-	}
-	ans *= -0.5*mu*pow(LAL_C_SI, 2.0)*x;
-	return ans;
-}
-
-
-/* GSL integrand routine */
-struct XLALSimInspiralTaylorT4PNEvolveOrbitParams { REAL8 m1; REAL8 m2; int O; };
-static int XLALSimInspiralTaylorT4PNEvolveOrbitIntegrand(double UNUSED t, const double y[], double ydot[], void *params)
-{
-	struct XLALSimInspiralTaylorT4PNEvolveOrbitParams *p = params;
-	ydot[0] = XLALSimInspiralTaylorT4PNAngularAcceleration(y[0], p->m1, p->m2, p->O);
-	ydot[1] = XLALSimInspiralTaylorT4PNAngularVelocity(y[0], p->m1, p->m2);
-	t = 0.0;
-	return GSL_SUCCESS;
+    ak->m1 = m1;
+    ak->m2 = m2;
+    ak->m = ak->m1 + ak->m2;
+    ak->mu = m1 * m2 / ak->m;
+    ak->nu = ak->mu/ak->m;
+    ak->lambda = -(1987.0/3080.0);
+    ak->theta = (1039.0/4620.0);
+    
+    /* PN co-efficients for energy*/
+    //N
+    ak->etN=-0.5*ak->mu*pow(LAL_C_SI, 2.0);
+    //1PN
+    ak->et2=ak->etN*( -(3.0/4.0) - (1.0/12.0)*ak->nu );
+    //2PN
+    ak->et4=ak->etN*( -(27.0/8.0) + (19.0/8.0)*ak->nu - (1.0/24.0)*pow(ak->nu, 2.0) );
+    //3PN
+    ak->et6=ak->etN*( -(675.0/64.0) + ((209323.0/4032.0) - (205.0/96.0)*pow(LAL_PI, 2.0) - (110.0/9.0)*ak->lambda)*ak->nu - (155.0/96.0)*pow(ak->nu, 2.0) - (35.0/5184.0)*pow(ak->nu, 3.0) );
+    
+    /* PN co-efficients for angular acceleration*/
+    //N
+    ak->aatN = ((64.0*pow(LAL_C_SI, 3.0))/(5.0*LAL_G_SI*ak->m))*ak->nu;
+    //1PN
+    ak->aat2 = ak->aatN*( -(743.0/336.0) - (924.0/336.0)*ak->nu );
+    //1.5PN
+    ak->aat3 = ak->aatN*4.0*LAL_PI;
+    //2PN
+    ak->aat4 = ak->aatN*( (34103.0/18144.0) + (13661.0/2016.0)*ak->nu + (59.0/18.0)*pow(ak->nu, 2.0) );
+    //2.5PN
+    ak->aat5 = ak->aatN*( -(4159.0/672.0) - (15876.0/672.0)*ak->nu )*LAL_PI;
+    //3PN
+    ak->aat6a = ak->aatN*( ( (16447322263.0/139708800.0) - (1712.0/105.0)*LAL_GAMMA + (16.0/3.0)*pow(LAL_PI, 2.0) ) + ( -(273811877.0/1088640.0) + (451.0/48.0)*pow(LAL_PI, 2.0) - (88.0/3.0)*ak->theta )*ak->nu + (541.0/896.0)*ak->nu*ak->nu - (5605.0/2592.0)*ak->nu*ak->nu*ak->nu );
+    ak->aat6b = ak->aatN*(856.0/105.0);
+    //3.5PN
+    ak->aat7 = ak->aatN*(-(4415.0/4032.0) + (358675.0/6048.0)*ak->nu + (91495.0/1512.0)*pow(ak->nu, 2.0))*LAL_PI;
+    
+    /*Angular velocity co-efficient*/
+    ak->av = pow(LAL_C_SI, 3.0)/(LAL_G_SI*ak->m);
+    
+    switch (O)
+    {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+            XLALPrintError("XLAL Error - %s: PN approximant not supported for PN order %d\n", __func__,O);
+            XLAL_ERROR(__func__, XLAL_EINVAL);
+            break;
+        case 4:
+            f->energy4 = &XLALSimInspiralEnergy4_4PN;
+            f->angacc4 = &XLALSimInspiralAngularAcceleration4_4PN;
+            break;
+        case 5:
+            f->energy4 = &XLALSimInspiralEnergy4_4PN;
+            f->angacc4 = &XLALSimInspiralAngularAcceleration4_5PN;
+            break;
+        case 6:
+            f->energy4 = &XLALSimInspiralEnergy4_6PN;
+            f->angacc4 = &XLALSimInspiralAngularAcceleration4_6PN;
+            break;
+        case 7:
+            f->energy4 = &XLALSimInspiralEnergy4_6PN;
+            f->angacc4 = &XLALSimInspiralAngularAcceleration4_7PN;
+            break;
+        case 8:
+            XLALPrintError("XLAL Error - %s: PN approximant not supported for PN order %d\n", __func__,O);
+            XLAL_ERROR(__func__, XLAL_EINVAL);
+            break;
+        default:
+            XLALPrintError("XLAL Error - %s: Unknown PN order in switch\n", __func__);
+            XLAL_ERROR(__func__, XLAL_EINVAL);
+    }
+  
+  return 0;
 }
 
 
@@ -202,14 +428,14 @@ static int XLALSimInspiralTaylorT4PNEvolveOrbitIntegrand(double UNUSED t, const 
  * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
  * "High-accuracy comparison of numerical relativity simulations with
  * post-Newtonian expansions"
- * arXiv:0710.0158v1 (2007).
+ * <a href="http://arxiv.org/abs/0710.0158v2">arXiv:0710.0158v2</a>.
  */
 int XLALSimInspiralTaylorT4PNEvolveOrbit(
 		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
-	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
-	       	LIGOTimeGPS *tc,       /**< coalescence time */
-	       	REAL8 phic,            /**< coalescence phase */
-	       	REAL8 deltaT,          /**< sampling interval */
+        REAL8TimeSeries **phi, /**< orbital phase [returned] */
+        LIGOTimeGPS *tc,       /**< coalescence time */
+        REAL8 phic,            /**< coalescence phase */
+        REAL8 deltaT,          /**< sampling interval */
 		REAL8 m1,              /**< mass of companion 1 */
 		REAL8 m2,              /**< mass of companion 2 */
 		REAL8 f_min,           /**< start frequency */
@@ -218,9 +444,17 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 {
 	static const char *func = "XLALSimInspiralTaylorT4PNEvolveOrbit";
 	const UINT4 blocklen = 1024;
-	const REAL8 xisco = 1.0/6.0;
-	struct XLALSimInspiralTaylorT4PNEvolveOrbitParams params;
-	REAL8 m = m1 + m2;
+	const REAL8 xisco = 1./6.;
+	XLALSimInspiralTaylorT4PNEvolveOrbitParams params;
+    expnFuncTaylorT4 expnfunc;
+    expnCoeffsTaylorT4 ak;
+    
+    if(XLALSimInspiralTaylorT4Setup(&ak,&expnfunc,m1,m2,O))
+        XLAL_ERROR(__func__, XLAL_EFUNC);
+    
+    params.func=expnfunc.angacc4;
+    params.ak=ak;
+    
 	REAL8 E;
 	UINT4 j;
 	double y[2];
@@ -236,18 +470,14 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 	sys.params = &params;
 
 	/* allocate memory */
-	*x = XLALCreateREAL8TimeSeries( "ORBITAL_FREQUENCY_PARAMETER", tc, 0.0, deltaT, &lalDimensionlessUnit, blocklen );
-	*phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", tc, 0.0, deltaT, &lalDimensionlessUnit, blocklen );
+	*x = XLALCreateREAL8TimeSeries( "ORBITAL_FREQUENCY_PARAMETER", tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
+	*phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
 	if ( !x || !phi )
 		XLAL_ERROR(func, XLAL_EFUNC);
 
-	params.m1 = m1;
-	params.m2 = m2;
-	params.O  = O;
-
-	y[0] = (*x)->data->data[0] = pow(LAL_PI*LAL_G_SI*m*f_min/pow(LAL_C_SI,3.0), 2.0/3.0);
-	y[1] = (*phi)->data->data[0] = 0.0;
-	E = XLALSimInspiralTaylorT4PNEnergy(y[0], m1, m2, O);
+	y[0] = (*x)->data->data[0] = pow(LAL_PI*LAL_G_SI*ak.m*f_min/pow(LAL_C_SI,3.), 2./3.);
+	y[1] = (*phi)->data->data[0] = 0.;
+	E = expnfunc.energy4(y[0],&ak);
 	if (XLALIsREAL8FailNaN(E))
 		XLAL_ERROR(func, XLAL_EFUNC);
 	j = 0;
@@ -259,7 +489,7 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 		gsl_odeiv_step_apply(s, j*deltaT, deltaT, y, yerr, NULL, NULL, &sys);
 		/* MECO termination condition */
 		dE = -E;
-		dE += E = XLALSimInspiralTaylorT4PNEnergy(y[0], m1, m2, O);
+		dE += E = expnfunc.energy4(y[0],&ak);
 		if (XLALIsREAL8FailNaN(E))
 			XLAL_ERROR(func, XLAL_EFUNC);
 		if ( dE > 0.0 ) {
@@ -400,19 +630,19 @@ int XLALSimInspiralTaylorT4PNRestricted(
 extern int lalDebugLevel;
 int main(void)
 {
-	LIGOTimeGPS tc = { 888888888, 222222222 };
-	REAL8 phic = 1.0;
-	REAL8 deltaT = 1.0/16384.0;
-	REAL8 m1 = 1.4*LAL_MSUN_SI;
-	REAL8 m2 = 1.4*LAL_MSUN_SI;
+	LIGOTimeGPS tc = LIGOTIMEGPSZERO;
+	REAL8 phic = 0.0;
+	REAL8 deltaT = 1.0/4096.;
+	REAL8 m1 = 5.*LAL_MSUN_SI;
+	REAL8 m2 = 5.*LAL_MSUN_SI;
 	REAL8 r = 1e6*LAL_PC_SI;
 	REAL8 i = 0.5*LAL_PI;
-	REAL8 f_min = 100.0;
-	int O = -1;
+	REAL8 f_min = 40.0;
+	int O = 7;
 	REAL8TimeSeries *hplus;
 	REAL8TimeSeries *hcross;
 	lalDebugLevel = 7;
-	XLALSimInspiralTaylorT4PN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, f_min, r, i, O);
+	XLALSimInspiralTaylorT4PNGenerator(&hplus, &hcross, &tc, phic,0., deltaT, m1, m2, f_min, r, i,0, O);
 	LALDPrintTimeSeries(hplus, "hp.dat");
 	LALDPrintTimeSeries(hcross, "hc.dat");
 	XLALDestroyREAL8TimeSeries(hplus);

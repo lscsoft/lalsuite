@@ -207,77 +207,6 @@ int XLALSimInspiralPNPolarizationWaveforms(
 /* TaylorT4 functions */
 
 /**
- * Computes the rate of increase of the orbital frequency for a post-Newtonian
- * inspiral.  This function returns dx/dt rather than the true angular
- * acceleration.
- *
- * Implements Equation (6) of
- * Yi Pan, Alessandra Buonanno, Yanbei Chen, and Michele Vallisneri,
- * "A physical template family for gravitational waves from precessing
- * binaries of spinning compact objects: Application to single-spin binaries"
- * arXiv:gr-qc/0310034v3 (2007).
- *
- * Note: this equation is actually dx/dt rather than (domega/dt)/(omega)^2
- * so the leading coefficient is different.  Also, this function applies
- * for non-spinning objects.
- *
- * Compare the overall coefficient, with nu=1/4, to Equation (45) of
- * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue,
- * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
- * "High-accuracy comparison of numerical relativity simulations with
- * post-Newtonian expansions"
- * arXiv:0710.0158v1 (2007).
- */
-REAL8 XLALSimInspiralTaylorT4PNAngularAcceleration(
-		REAL8 x,  /**< post-Newtonian parameter */
-	       	REAL8 m1, /**< mass of companion 1 */
-	       	REAL8 m2, /**< mass of companion 2 */
-	       	int O     /**< twice post-Newtonian order */
-		);
-
-/**
- * Computes the orbital angular velocity from the quantity x.
- * This is from the definition of x.
- *
- * Implements Equation (46) of
- * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue,
- * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
- * "High-accuracy comparison of numerical relativity simulations with
- * post-Newtonian expansions"
- * arXiv:0710.0158v1 (2007).
- */
-REAL8 XLALSimInspiralTaylorT4PNAngularVelocity(
-		REAL8 x,  /**< post-Newtonian parameter */
-	       	REAL8 m1, /**< mass of companion 1 */
-	       	REAL8 m2  /**< mass of companion 2 */
-		);
-
-/**
- * Computes the orbital energy at a fixed frequency and pN order.
- *
- * Implements Equation (152) of
- * Luc Blanchet,
- * "Gravitational Radiation from Post-Newtonian Sources and Inspiralling
- * Compact Binaries",
- * http://www.livingreviews.org/lrr-2006-4/index.html
- *
- * This is the same as Equation (10) (where the spin of the objects
- * is zero) of:
- * Yi Pan, Alessandra Buonanno, Yanbei Chen, and Michele Vallisneri,
- * "A physical template family for gravitational waves from precessing
- * binaries of spinning compact objects: Application to single-spin binaries"
- * arXiv:gr-qc/0310034v3 (2007).
- * Note: this equation is actually dx/dt rather than (domega/dt)/(omega)^2
- * so the leading coefficient is different.
- */
-REAL8 XLALSimInspiralTaylorT4PNEnergy(
-		REAL8 x,  /**< post-Newtonian parameter */
-	       	REAL8 m1, /**< mass of companion 1 */
-	       	REAL8 m2, /**< mass of companion 2 */
-	       	int O     /**< twice post-Newtonian order */
-		);
-
-/**
  * Evolves a post-Newtonian orbit using the Taylor T4 method.
  *
  * See:
@@ -285,7 +214,7 @@ REAL8 XLALSimInspiralTaylorT4PNEnergy(
  * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
  * "High-accuracy comparison of numerical relativity simulations with
  * post-Newtonian expansions"
- * arXiv:0710.0158v1 (2007).
+ * <a href="http://arxiv.org/abs/0710.0158v2">arXiv:0710.0158v2</a>.
  */
 int XLALSimInspiralTaylorT4PNEvolveOrbit(
 		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */

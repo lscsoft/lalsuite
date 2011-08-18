@@ -533,10 +533,10 @@ static int XLALSimInspiralTaylorT2Setup(
 		int O			/**< twice post-Newtonian order */
 		)
 {
-  REAL8 vpole, eta, lso, vlso;
+  REAL8 eta, lso;// vlso,vpole ; - set but not used
   REAL8 oneby6 = 1./6.;
 
-  vpole = 0.0;
+  //vpole = 0.0; - set but not used
   ak->t0 = 0;
   ak->m1 = m1;
   ak->m2 = m2;
@@ -581,7 +581,7 @@ static int XLALSimInspiralTaylorT2Setup(
   ak->pvl6 = - 1712./21.;
 
   lso = sqrt(oneby6);
-  vlso = 0;
+  //vlso = 0; - set but not used
 
 /* Location of the 0PN and 1PN T- and P-approximant last stable orbit: */
   ak->vlsoT0 = lso;
