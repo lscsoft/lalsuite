@@ -48,14 +48,26 @@ extern "C" {
 NRCSID( SPHERICALHARMONICSH, "$Id$");
 
 /**
- * Computes the spin 2 weighted spherical harmonic.
+ * Computes the (s)Y(l,m) spin-weighted spherical harmonic.
+ *
+ * From somewhere ....
+ *
+ * See also:
+ * Implements Equations (II.9)-(II.13) of
+ * D. A. Brown, S. Fairhurst, B. Krishnan, R. A. Mercer, R. K. Kopparapu,
+ * L. Santamaria, and J. T. Whelan,
+ * "Data formats for numerical relativity waves",
+ * arXiv:0709.0093v1 (2007).
+ *
+ * Currently only supports s=-2, l=2,3,4,5,6,7,8 modes.
  */
-INT4 XLALSpinWeightedSphHarm ( COMPLEX16 *out, /**< output */
-                               UINT4   L,      /**< value of L */
-                               INT4 M,         /**< value of M */
-                               REAL4 theta,    /**< angle with respect to the z axis */
-                               REAL4   phi     /**< angle with respect to the x axis */
-                             );
+COMPLEX16 XLALSpinWeightedSphericalHarmonic(
+                                   REAL8 theta,  /**< polar angle (rad) */
+                                   REAL8 phi,    /**< azimuthal angle (rad) */
+                                   int s,        /**< spin weight */
+                                   int l,        /**< mode number l */
+                                   int m         /**< mode number m */
+    );
 
 /**
  * Computes the scalar spherical harmonic \f$ Y_{lm}(\theta, \phi) \f$.
