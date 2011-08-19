@@ -233,7 +233,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
    {
         fprintf(lout,"%s\t",param_ptr->name);
     }
-        fprintf(lout,"logL\n");
+        fprintf(lout,"logL");
         fclose(lout);	
 
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s!\n",outfile);

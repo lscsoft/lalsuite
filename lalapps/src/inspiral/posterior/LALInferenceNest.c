@@ -42,6 +42,19 @@ void initializeNS(LALInferenceRunState *runState);
 void initVariables(LALInferenceRunState *state);
 void initStudentt(LALInferenceRunState *state);
 void initializeTemplate(LALInferenceRunState *runState);
+static void mc2masses(double mc, double eta, double *m1, double *m2);
+
+static void mc2masses(double mc, double eta, double *m1, double *m2)
+/*  Compute individual companion masses (m1, m2)   */
+/*  for given chirp mass (m_c) & mass ratio (eta)  */
+/*  (note: m1 >= m2).                              */
+{
+  double root = sqrt(0.25-eta);
+  double fraction = (0.5+root) / (0.5-root);
+  *m2 = mc * (pow(1+fraction,0.2) / pow(fraction,0.6));
+  *m1 = mc * (pow(1+1.0/fraction,0.2) / pow(1.0/fraction,0.6));
+  return;
+}
 
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
@@ -316,7 +329,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 logDmax=log(100.0);
 	REAL8 mcMin=1.0;
 	REAL8 mcMax=20.5;
-	REAL8 logmcMax,logmcMin,mMin=1.0,mMax=30.0;
+	REAL8 logmcMax,logmcMin,mMin=1.0,mMax=45.0;
 	REAL8 a_spin2_max=1.0, a_spin1_max=1.0;
 	REAL8 a_spin2_min=0.0, a_spin1_min=0.0;
 	REAL8 phi_spin1_min=-LAL_PI;
@@ -327,7 +340,10 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 etaMax=0.25;
 	REAL8 dt=0.1;            /* Width of time prior */
 	REAL8 tmpMin,tmpMax,tmpVal;
-	
+	REAL8 m1_min=0.;	
+	REAL8 m1_max=0.;
+	REAL8 m2_min=0.;
+	REAL8 m2_max=0.;
 	memset(currentParams,0,sizeof(LALInferenceVariables));
 	memset(&status,0,sizeof(LALStatus));
 	
@@ -400,35 +416,42 @@ Parameter arguments:\n\
 	if(ppt){
 		logDmax=log(atof(ppt->value));
 	}
-	
+	ppt=LALInferenceGetProcParamVal(commandLine,"--etamin");
+        if(ppt)
+                etaMin=atof(ppt->value);
+
+        ppt=LALInferenceGetProcParamVal(commandLine,"--etamax");
+	if(ppt)
+                etaMax=atof(ppt->value);
 	/* Over-ride Mass prior if specified */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Mmin");
 	if(ppt){
 		mcMin=atof(ppt->value);
+		mc2masses( mcMin,  etaMin,  &m1_min,  &m2_min);
+		mMin=m2_min;
 	}
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Mmax");
-	if(ppt)	mcMax=atof(ppt->value);
-	
-	ppt=LALInferenceGetProcParamVal(commandLine,"--etamin");
-	if(ppt)
-		etaMin=atof(ppt->value);
-	
-	ppt=LALInferenceGetProcParamVal(commandLine,"--etamax");
-	if(ppt)
-		etaMax=atof(ppt->value);
+	if(ppt){	
+		mcMax=atof(ppt->value);
+		mc2masses(mcMax, etaMax, &m1_max, &m2_max);
+		mMax=m1_max;
+	}
 	/* Over-ride Spin prior if specified*/
 
 	ppt=LALInferenceGetProcParamVal(commandLine,"--s1max");
-        if(ppt)
-                a_spin1_max=atof(ppt->value);
-
+        if(ppt){
+                a_spin2_max=atof(ppt->value);
+		a_spin1_max=atof(ppt->value);
+	}
 	ppt=LALInferenceGetProcParamVal(commandLine,"--s1min");
-	if(ppt)
+	if(ppt){
+		a_spin2_min=atof(ppt->value);
 		a_spin1_min=atof(ppt->value);
-	
+	}
 	/* Over-ride component masses */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
 	if(ppt)	mMin=atof(ppt->value);
+	//fprintf(stderr,"Mmin %f, Mmax %f\n",mMin,mMax);
 	LALInferenceAddVariable(priorArgs,"component_min",&mMin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	ppt=LALInferenceGetProcParamVal(commandLine,"--compmax");
 	if(ppt)	mMax=atof(ppt->value);
@@ -489,9 +512,9 @@ Parameter arguments:\n\
 		LALInferenceAddVariable(currentParams, "a_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 		LALInferenceAddMinMaxPrior(priorArgs, "a_spin1",     &a_spin1_min, &a_spin1_max,   LALINFERENCE_REAL8_t); 
 	        
-		tmpVal=a_spin1_min+(a_spin1_max-a_spin1_min)/2.0;
+		tmpVal=a_spin2_min+(a_spin2_max-a_spin2_min)/2.0;
 		LALInferenceAddVariable(currentParams, "a_spin2",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
-		LALInferenceAddMinMaxPrior(priorArgs, "a_spin2",     &a_spin1_min, &a_spin1_max,   LALINFERENCE_REAL8_t); 
+		LALInferenceAddMinMaxPrior(priorArgs, "a_spin2",     &a_spin2_min, &a_spin2_max,   LALINFERENCE_REAL8_t); 
 	
 		tmpVal=theta_spin1_min+(theta_spin1_max - theta_spin1_min)/2.0;
 	

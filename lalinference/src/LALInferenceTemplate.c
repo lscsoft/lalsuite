@@ -445,13 +445,14 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	UINT4 idx=0;
 	
 	/* spin variables still need to be initialised */
-	double a_spin1		= 0.;
-	double theta_spin1	= 0.;
-	double phi_spin1	= 0.;
+	double a_spin1=0.		;
+	double theta_spin1=0.	;
+	double phi_spin1=0.	;
 	
-	double a_spin2		= 0.;
-	double theta_spin2	= 0.;
-	double phi_spin2	= 0.;
+	double a_spin2=0.	;
+	double theta_spin2=0.	;
+	double phi_spin2=0.	;
+	
 	/* spin variables still need to be initialised */	
 	
 	/* spin variables still need to be initialised */
@@ -484,7 +485,9 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 
 	/* spin variables still need to be initialised */
 	
-	double mc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
+	//double mc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
+	double logmc = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "logmc");
+	double mc = exp(logmc);
 	double eta      = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "massratio");
 	double phi      = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
 	double iota     = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "inclination");
@@ -532,11 +535,23 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	
 	for(idx=0;idx<hPlus->length;idx++) IFOdata->timeModelhPlus->data->data[idx]= (REAL8)hPlus->data[idx];
 	for(idx=0;idx<hCross->length;idx++) IFOdata->timeModelhCross->data->data[idx]= (REAL8)hCross->data[idx];
-	
 	XLALDestroyREAL4Vector(hPlus);
 	XLALDestroyREAL4Vector(hCross);
+
 	//executeFT(LALIFOData *IFOdata); //for phenspin we need to transform each of the states separately so i think you can do it with this function, but can you check just incase
-	
+
+	XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
+	XLALREAL8TimeFreqFFT(IFOdata->freqModelhCross, IFOdata->timeModelhCross, IFOdata->timeToFreqFFTPlan);
+	//for(idx=0;idx<hPlus->length;idx++) fprintf(stderr,"%12.6e\t %12.6ei\n",IFOdata->freqModelhCross->data->data[idx].re, IFOdata->freqModelhCross->data->data[idx].im);	
+	IFOdata->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+
+	for(idx=0;idx<IFOdata->timeModelhPlus->data->data[idx];idx++){
+	IFOdata->freqModelhPlus->data->data[idx].re*=IFOdata->timeData->deltaT;
+	IFOdata->freqModelhPlus->data->data[idx].im*=IFOdata->timeData->deltaT;
+	IFOdata->freqModelhCross->data->data[idx].re*=IFOdata->timeData->deltaT;
+	IFOdata->freqModelhCross->data->data[idx].im*=IFOdata->timeData->deltaT;
+	}
+		
 	double tc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time");
 	LALInferenceSetVariable(IFOdata->modelParams, "time", &tc);
 

@@ -774,13 +774,12 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
 	LALInferenceVariables intrinsicParams;
 	LALStatus status;
 	memset(&status,0,sizeof(status));
-
+	
 	double Fplus, Fcross;
 	double FplusScaled, FcrossScaled;
 	REAL8 plainTemplateReal, plainTemplateImag;
 	UINT4 i;
 	REAL8 mc;
-	
 	/* Fill in derived parameters if necessary */
 	if(LALInferenceCheckVariable(currentParams,"logdistance")){
 		distMpc=exp(*(REAL8 *) LALInferenceGetVariable(currentParams,"logdistance"));
@@ -799,6 +798,7 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
 	psi       = *(REAL8*) LALInferenceGetVariable(currentParams, "polarisation");   /* radian      */
 	GPSdouble = *(REAL8*) LALInferenceGetVariable(currentParams, "time");           /* GPS seconds */
 	distMpc   = *(REAL8*) LALInferenceGetVariable(currentParams, "distance");       /* Mpc         */
+
 		
 	/* figure out GMST: */
 	//XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
@@ -815,6 +815,8 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
 	LALInferenceRemoveVariable(&intrinsicParams, "polarisation");
 	LALInferenceRemoveVariable(&intrinsicParams, "time");
 	LALInferenceRemoveVariable(&intrinsicParams, "distance");
+
+
 	// TODO: add pointer to template function here.
 	// (otherwise same parameters but different template will lead to no re-computation!!)
       
