@@ -27,6 +27,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
+#include <LALSimInspiralPNCoefficients.c>
 
 #include "check_series_macros.h"
 
@@ -40,7 +41,6 @@ NRCSID(LALSIMINSPIRALTAYLORT3C, "$Id$");
 
 typedef struct
 tagexpnCoeffsTaylorT2 {
-   int ieta;
    /* Taylor expansion coefficents in t(v)*/
    REAL8 tvaN, tva2, tva3, tva4, tva5, tva6, tva7, tvl6;
    /* Taylor expansion coefficents in phi(v)*/
@@ -48,8 +48,8 @@ tagexpnCoeffsTaylorT2 {
 
    /* sampling rate and interval*/
    REAL8 samplingrate, samplinginterval;
-   /* symmetric mass ratio, total mass, component masses*/
-   REAL8 eta, totalmass, m1, m2;
+   /* symmetric mass ratio, total mass*/
+   REAL8 eta, totalmass;
 
    /* initial and final values of frequency, time, velocity; lso
     values of velocity and frequency; final phase.*/
@@ -296,7 +296,7 @@ XLALSimInspiralTiming2_6PN (
         + toffIn->t3 * v3
         + toffIn->t4 * v4
         + toffIn->t5 * v5
-        + (toffIn->t6 + toffIn->tl6 * log(4*v)) * v6);
+        + (toffIn->t6 + toffIn->tl6 * log(16.*v2)) * v6);
 
   return toff;
 }
@@ -337,7 +337,7 @@ XLALSimInspiralTiming2_7PN (
         + toffIn->t3 * v3
         + toffIn->t4 * v4
         + toffIn->t5 * v5
-        + (toffIn->t6 + toffIn->tl6 * log(4*v)) * v6
+        + (toffIn->t6 + toffIn->tl6 * log(16.*v2)) * v6
         + toffIn->t7 * v7);
 
   return toff;
@@ -481,7 +481,7 @@ XLALSimInspiralPhasing2_6PN (
          + ak->pva3 * v3
          + ak->pva4 * v4
          + ak->pva5 * log(v/ak->vlso) * v5
-         + (ak->pva6 + ak->pvl6*log(4*v)) * v6);
+         + (ak->pva6 + ak->pvl6*log(16.*v2)) * v6);
 
   return phase;
 }
@@ -510,7 +510,7 @@ XLALSimInspiralPhasing2_7PN (
          + ak->pva3 * v3
          + ak->pva4 * v4
          + ak->pva5 * log(v/ak->vlso) * v5
-         + (ak->pva6 + ak->pvl6*log(4*v)) * v6
+         + (ak->pva6 + ak->pvl6*log(16.*v2)) * v6
          + ak->pva7 * v7);
 
   return phase;
@@ -533,55 +533,38 @@ static int XLALSimInspiralTaylorT2Setup(
 		int O			/**< twice post-Newtonian order */
 		)
 {
-  REAL8 eta, lso;// vlso,vpole ; - set but not used
+  REAL8 eta, lso;
   REAL8 oneby6 = 1./6.;
 
-  //vpole = 0.0; - set but not used
   ak->t0 = 0;
-  ak->m1 = m1;
-  ak->m2 = m2;
-  ak->totalmass = ak->m1 + ak->m2;
+  ak->totalmass = m1 + m2;
   eta = ak->eta = m1 * m2 / (ak->totalmass * ak->totalmass);
-  ak->totalmass = ak->totalmass * LAL_MTSUN_SI;
+  ak->totalmass *= LAL_G_SI / pow(LAL_C_SI, 3.0); /* convert m from kilograms to seconds */
+
   ak->f0 = f_min;
   ak->samplinginterval = deltaT;
   ak->fn = 1. / (2. * ak->samplinginterval);
   ak->v0 = cbrt(LAL_PI * ak->totalmass * f_min);
 
-  ak->tvaN = -5.*ak->totalmass/(256.*eta);
-  ak->tva2 = (743./252. + 11./3. * eta);
-  ak->tva3 = -32./5. * LAL_PI;
-  ak->tva4 = 30.58673/5.08032 + 54.29/5.04*eta + 61.7/7.2*eta*eta;
-  ak->tva5 = -(77.29/2.52 -13./3.*eta) * LAL_PI;
-  ak->tva6 = - 1005.2469856691/2.3471078400
-           + (128./3.- 451./12.*eta) * LAL_PI*LAL_PI
-           + 68.48/1.05*LAL_GAMMA
-           + 1533.5597827/1.5240960 * eta
-           - 15.211/1.728*eta*eta
-           + 25.565/1.296*eta*eta*eta
-           + 352./3.*eta*-11831./9240.
-           - 2464./9.*eta*-1987./3080.;
-  ak->tva7 =  (-154.19335/1.27008  - 75703./756.*eta
-      +  14809./378.*eta*eta) * LAL_PI;
-  ak->tvl6 = 68.48/1.05;
+  ak->tvaN = XLALSimInspiralTaylorT2Timing_0PNCoeff(m1+m2, eta);
+  ak->tva2 = XLALSimInspiralTaylorT2Timing_2PNCoeff(eta);
+  ak->tva3 = XLALSimInspiralTaylorT2Timing_3PNCoeff(eta);
+  ak->tva4 = XLALSimInspiralTaylorT2Timing_4PNCoeff(eta);
+  ak->tva5 = XLALSimInspiralTaylorT2Timing_5PNCoeff(eta);
+  ak->tva6 = XLALSimInspiralTaylorT2Timing_6PNCoeff(eta);
+  ak->tva7 = XLALSimInspiralTaylorT2Timing_7PNCoeff(eta);
+  ak->tvl6 = XLALSimInspiralTaylorT2Timing_6PNLogCoeff(eta);
 
-  ak->pvaN = -1./(16.*eta);
-  ak->pva2 = (3715./1008. + 55./12.*eta);
-  ak->pva3 = -10.*LAL_PI;
-  ak->pva4 = (15293365./1016064. + 27145./1008.*eta
-             + 3085./144.*eta*eta);
-  ak->pva5 = (38645./672. - 65./8. * eta) * LAL_PI;
-  ak->pva6 = 1234.8611926451/1.8776862720 - 160./3. * LAL_PI*LAL_PI
-           - 1712./21. * LAL_GAMMA
-           + (-15335597827./12192768. + 2255./48. * LAL_PI*LAL_PI
-           + 3080./9.*-1987./3080. - 440./3. * -11831./9240.) * eta
-           + 76055./6912. * eta*eta - 127825./5184. * eta*eta*eta;
-  ak->pva7 = (77096675./2032128. + 378515./12096.*eta
-           - 74045./6048.*eta*eta) * LAL_PI;
-  ak->pvl6 = - 1712./21.;
+  ak->pvaN = XLALSimInspiralTaylorT2Phasing_0PNCoeff(eta);
+  ak->pva2 = XLALSimInspiralTaylorT2Phasing_2PNCoeff(eta);
+  ak->pva3 = XLALSimInspiralTaylorT2Phasing_3PNCoeff(eta);
+  ak->pva4 = XLALSimInspiralTaylorT2Phasing_4PNCoeff(eta);
+  ak->pva5 = XLALSimInspiralTaylorT2Phasing_5PNCoeff(eta);
+  ak->pva6 = XLALSimInspiralTaylorT2Phasing_6PNCoeff(eta);
+  ak->pva7 = XLALSimInspiralTaylorT2Phasing_7PNCoeff(eta);
+  ak->pvl6 = XLALSimInspiralTaylorT2Phasing_6PNLogCoeff(eta);
 
   lso = sqrt(oneby6);
-  //vlso = 0; - set but not used
 
 /* Location of the 0PN and 1PN T- and P-approximant last stable orbit: */
   ak->vlsoT0 = lso;
@@ -662,7 +645,7 @@ static int XLALSimInspiralTaylorT2Setup(
  * Computes a post-Newtonian orbit using the Taylor T2 method.
  */
 int XLALSimInspiralTaylorT2PNEvolveOrbit(
-		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
 	       	LIGOTimeGPS *tc,       /**< coalescence time */
 	       	REAL8 phi0,            /**< initial phase */
@@ -676,9 +659,7 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 	const UINT4 blocklen = 1024;
 	REAL8 m = m1 + m2;
 	m *= LAL_G_SI / pow(LAL_C_SI, 3.0); /* convert m from kilograms to seconds */
-	REAL8 mass1 = m1 / LAL_MSUN_SI; /* convert m1 from kilograms to solar masses */
-	REAL8 mass2 = m2 / LAL_MSUN_SI; /* convert m2 from kilograms to solar masses */
-	REAL8 tC, xmin, xmax, xacc, v, v2, phase, fOld;
+	REAL8 tC, xmin, xmax, xacc, v, phase, fOld;
 	REAL8 (*timing2)(REAL8, void *);
 	UINT4 j;
 	REAL8 f, fLso;
@@ -690,14 +671,14 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 
 	/* allocate memory */
 
-	*x = XLALCreateREAL8TimeSeries("ORBITAL_FREQUENCY_PARAMETER", tc, 0.0, deltaT, &lalDimensionlessUnit,
+	*V = XLALCreateREAL8TimeSeries("ORBITAL_FREQUENCY_PARAMETER", tc, 0.0, deltaT, &lalDimensionlessUnit,
 		blocklen);
 	*phi = XLALCreateREAL8TimeSeries("ORBITAL_PHASE", tc, 0.0, deltaT, &lalDimensionlessUnit, blocklen);
-	if (!x || !phi)
+	if (!V || !phi)
 		XLAL_ERROR(__func__, XLAL_EFUNC);
 
 	/* initialize expnCoeffsTaylorT3 and expnFuncTaylorT3 structures */
-	if (XLALSimInspiralTaylorT2Setup(&ak, &expnfunc, deltaT, mass1, mass2, f_min, O))
+	if (XLALSimInspiralTaylorT2Setup(&ak, &expnfunc, deltaT, m1, m2, f_min, O))
 		XLAL_ERROR(__func__, XLAL_EFUNC);
 
 	timing2 = expnfunc.timing2; /* function to solve for v, given t:*/
@@ -723,7 +704,6 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 		XLAL_ERROR(__func__, XLAL_EFUNC);
 	/* Reset chirp time in toffIn structure */
 	toffIn.tc = -tC;
-
 
 	/* If flso is less than the user inputted upper frequency cutoff fu */
 
@@ -754,8 +734,8 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 	do {
 		/* make sure we don't write past end of vectors */
 
-		if ( j >= (*x)->data->length ) {
-			if ( ! XLALResizeREAL8TimeSeries(*x, 0, (*x)->data->length + blocklen) )
+		if ( j >= (*V)->data->length ) {
+			if ( ! XLALResizeREAL8TimeSeries(*V, 0, (*V)->data->length + blocklen) )
 				XLAL_ERROR(__func__, XLAL_EFUNC);
 			if ( ! XLALResizeREAL8TimeSeries(*phi, 0, (*phi)->data->length + blocklen) )
 				XLAL_ERROR(__func__, XLAL_EFUNC);
@@ -768,10 +748,9 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 		phase = expnfunc.phasing2(v, &ak); /* phase at given v */
 		if (XLAL_IS_REAL8_FAIL_NAN(phase))
 			XLAL_ERROR(__func__, XLAL_EFUNC);
-		v2 = v * v;
 
-		(*x)->data->data[j] = v2;
-		(*phi)->data->data[j] = phase / 2.;
+		(*V)->data->data[j] = v;
+		(*phi)->data->data[j] = phase;
 
 		/* make next step */
 
@@ -803,7 +782,7 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 
 	/* make the correct length */
 
-	if ( ! XLALResizeREAL8TimeSeries(*x, 0, j) )
+	if ( ! XLALResizeREAL8TimeSeries(*V, 0, j) )
 		XLAL_ERROR(__func__, XLAL_EFUNC);
 	if ( ! XLALResizeREAL8TimeSeries(*phi, 0, j) )
 		XLAL_ERROR(__func__, XLAL_EFUNC);
@@ -811,7 +790,7 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 	/* adjust to correct tc and phic */
 
 	XLALGPSAdd(&(*phi)->epoch, -1.0*j*deltaT);
-	XLALGPSAdd(&(*x)->epoch, -1.0*j*deltaT);
+	XLALGPSAdd(&(*V)->epoch, -1.0*j*deltaT);
 
 	/* adjust so initial phase is phi0 */
 
@@ -819,7 +798,7 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 	for (j = 0; j < (*phi)->data->length; ++j)
 		(*phi)->data->data[j] += phi0;
 
-	return (int)(*x)->data->length;
+	return (int)(*V)->data->length;
 }
 
 
@@ -845,19 +824,18 @@ int XLALSimInspiralTaylorT2PNGenerator(
 	       	int phaseO                /**< twice post-Newtonian phase order */
 		)
 {
-	static const char *func = "XLALSimInspiralPNGenerator";
-	REAL8TimeSeries *x;
+	REAL8TimeSeries *V;
 	REAL8TimeSeries *phi;
 	int status;
 	int n;
-	n = XLALSimInspiralTaylorT2PNEvolveOrbit(&x, &phi, tc, phic, deltaT, m1, m2, f_min, phaseO);
+	n = XLALSimInspiralTaylorT2PNEvolveOrbit(&V, &phi, tc, phic, deltaT, m1, m2, f_min, phaseO);
 	if ( n < 0 )
-		XLAL_ERROR(func, XLAL_EFUNC);
-	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, x, phi, x0, m1, m2, r, i, amplitudeO);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
+	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, V, phi, x0, m1, m2, r, i, amplitudeO);
 	XLALDestroyREAL8TimeSeries(phi);
-	XLALDestroyREAL8TimeSeries(x);
+	XLALDestroyREAL8TimeSeries(V);
 	if ( status < 0 )
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	return n;
 }
 
