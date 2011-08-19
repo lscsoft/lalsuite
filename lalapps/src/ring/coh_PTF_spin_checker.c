@@ -158,7 +158,7 @@ int main( int argc, char **argv )
 
       /* create the segments */
       segments[ifoNumber] = coh_PTF_get_segments( channel[ifoNumber],\
-           invspec[ifoNumber], fwdplan, ifoNumber, params );
+           invspec[ifoNumber], fwdplan, ifoNumber, NULL, params );
       
       numSegments = segments[ifoNumber]->numSgmnt;
 

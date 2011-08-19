@@ -261,10 +261,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 #ifdef HAVE_LIBLALXML
   	char *outVOTable=NULL;
 	runState->logsample=LALInferenceLogSampleToArray;
-	printf("Using XML output");
+	printf("Using XML output\n");
 #else
 	runState->logsample=NULL;
-	printf("Not using XML output");
+	printf("Not using XML output\n");
 #endif
 
         if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
@@ -308,7 +308,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	}
 	char *outfile=ppt->value;
 #ifdef HAVE_LIBLALXML	
-	ProcessParamsTable *ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
+	ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
 	if(!ppt){
 		fprintf(stderr,"Can specify --outXML <filename.dat> for VOTable output\n");
 	}
@@ -456,7 +456,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]);
 		}
-		if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
+		if(runState->logsample) runState->logsample(runState,runState->livePoints[i]);
 		LALInferencePrintSample(fpout,runState->livePoints[i]);
 		fprintf(fpout,"%lf\n",logLikelihoods[i]);
 	}
@@ -468,16 +468,32 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	fpout=fopen(bayesfile,"w");
 	fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
 	fclose(fpout);
+	double logB=logZ-logZnoise;
+	/* Pass output back through algorithmparams */
+	LALInferenceAddVariable(runState->algorithmParams,"logZ",(void *)&logZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(runState->algorithmParams,"logB",(void *)&logB,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(runState->algorithmParams,"logLmax",(void *)&logLmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
 #ifdef HAVE_LIBLALXML	
 	/* Write out the XML if requested */
 	if(output_array && outVOTable && N_output_array>0){
-		xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array);
+		xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array, "Nested Samples");
+		xmlNodePtr stateResource=XLALInferenceStateVariables2VOTResource(runState, "Run State Configuration");
+		
+		xmlNodePtr nestResource=XLALCreateVOTResourceNode("lalinference:results","Nested sampling run",votable);
+		
+		if(stateResource)
+			xmlAddChild(nestResource,stateResource);
+		
+
+		char *xmlString = XLALCreateVOTStringFromTree ( nestResource );
+		
+		/* Write to disk */
 		fpout=fopen(outVOTable,"w");
-		char *xmlString = XLALCreateVOTStringFromTree ( xmlTable );
 		fprintf(fpout,"%s",xmlString);
 		fclose(fpout);
-		free(xmlString);
+		
+		
 	}
 #endif
 	if(output_array) free(output_array);
@@ -512,7 +528,7 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 			continue;
 		/* Otherwise, check that logL is OK */
 		logLnew=runState->likelihood(newParams,runState->data,runState->template);
-                
+        LALInferenceAddVariable(newParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
                 if(logLnew > logLmin){
 			Naccepted++;
 			logPriorOld=logPriorNew;
@@ -836,7 +852,7 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 		paraA=Live[i]->head; paraB=Live[j]->head;
 		/* Add the vector B-A */
 		same=1;
-		for(paraHead=parameter->head,paraA=Live[i]->head,paraB=Live[j]->head;paraHead;paraHead=paraHead->next,paraB=paraB->next,paraA=paraA->next)
+		for(paraHead=parameter->head,paraA=Live[i]->head,paraB=Live[j]->head;paraHead&&paraA&&paraB;paraHead=paraHead->next,paraB=paraB->next,paraA=paraA->next)
 		{
 			if(paraHead->vary!=LALINFERENCE_PARAM_LINEAR && paraHead->vary!=LALINFERENCE_PARAM_CIRCULAR) continue;
 			*(REAL8 *)paraHead->value+=*(REAL8 *)paraB->value;
@@ -1198,6 +1214,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 		}while(runState->prior(runState,runState->livePoints[i])==-DBL_MAX);
 		/* Populate log likelihood */
 		logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
+        LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
 	
 }

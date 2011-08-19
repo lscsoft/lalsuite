@@ -488,21 +488,45 @@ LALInspiralChooseModel(
    InspiralTemplate *params
    )
 {
+   XLALPrintDeprecationWarning("LALInspiralChooseModel", "XLALInspiralChooseModel");
+
+   INITSTATUS (status, "LALInspiralChooseModel", LALINSPIRALCHOOSEMODELC);
+   ATTATCHSTATUSPTR(status);
+
+   if (XLALInspiralChooseModel(f, ak, params))
+      ABORTXLAL(status);
+
+   DETATCHSTATUSPTR(status);
+   RETURN (status);
+}
+
+int
+XLALInspiralChooseModel(
+   expnFunc         *f,
+   expnCoeffs       *ak,
+   InspiralTemplate *params
+   )
+{
+   static const char *func = "XLALInspiralChooseModel";
 
    REAL8 vn, vlso;
    TofVIn in1;
    REAL8 tofv;
    void *in2;
 
-   INITSTATUS (status, "LALInspiralChooseModel", LALINSPIRALCHOOSEMODELC);
-   ATTATCHSTATUSPTR(status);
-
-   ASSERT (f,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (ak,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params->order != LAL_PNORDER_HALF,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
-   ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->order <= 8, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   if (f == NULL)
+      XLAL_ERROR(func, XLAL_EFAULT);
+   if (ak == NULL)
+      XLAL_ERROR(func, XLAL_EFAULT);
+   if (params == NULL)
+      XLAL_ERROR(func, XLAL_EFAULT);
+   if (params->order == LAL_PNORDER_HALF || (INT4)params->order < 0
+      || (INT4)params->order > 8)
+   {
+      XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", func,
+         ((INT4)params->order)/2, ((INT4)params->order)%2?".5":"");
+      XLAL_ERROR(func, XLAL_EINVAL);
+   }
 
    vlso = 0;
 
@@ -545,20 +569,24 @@ LALInspiralChooseModel(
          case TaylorEt:
          case TaylorT4:
          case TaylorN:
-            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+            XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          default:
-            break;
+            XLALPrintError("XLAL Error - %s: Unknown case in PN approximant switch\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
       }
       break;
       case LAL_PNORDER_HALF:
-        ABORT(status, LALINSPIRALH_ECHOICE, "LAL_PNORDER_HALF is not valid");
+        XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", func);
+        XLAL_ERROR(func, XLAL_EINVAL);
         break;
       case LAL_PNORDER_ONE:
       switch (params->approximant)
       {
          case Eccentricity:
-            ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            XLALPrintError("XLAL Error - %s: The PN order requested is not implemented for this approximant\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          case AmpCorPPN:
          case TaylorT1:
@@ -594,17 +622,20 @@ LALInspiralChooseModel(
          case TaylorEt:
          case TaylorT4:
          case TaylorN:
-            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+            XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          default:
-            break;
+            XLALPrintError("XLAL Error - %s: Unknown case in PN approximant switch\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
       }
       break;
       case LAL_PNORDER_ONE_POINT_FIVE:
       switch (params->approximant)
       {
          case Eccentricity:
-            ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            XLALPrintError("XLAL Error - %s: The PN order requested is not implemented for this approximant\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          case AmpCorPPN:
          case TaylorT1:
@@ -643,17 +674,20 @@ LALInspiralChooseModel(
          case TaylorEt:
          case TaylorT4:
          case TaylorN:
-            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+            XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          default:
-            break;
+            XLALPrintError("XLAL Error - %s: Unknown case in PN approximant switch\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
       }
       break;
       case LAL_PNORDER_TWO:
       switch (params->approximant)
       {
          case Eccentricity:
-            ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            XLALPrintError("XLAL Error - %s: The PN order requested is not implemented for this approximant\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          case AmpCorPPN:
          case TaylorT1:
@@ -696,17 +730,20 @@ LALInspiralChooseModel(
             f->flux = Fp4;
             break;
          case PadeF1:
-            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+            XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          default:
-            break;
+            XLALPrintError("XLAL Error - %s: Unknown case in PN approximant switch\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
       }
       break;
       case LAL_PNORDER_TWO_POINT_FIVE:
       switch (params->approximant)
       {
          case Eccentricity:
-            ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            XLALPrintError("XLAL Error - %s: The PN order requested is not implemented for this approximant\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          case AmpCorPPN:
          case TaylorT1:
@@ -749,18 +786,20 @@ LALInspiralChooseModel(
             f->flux = Fp5;
             break;
          case PadeF1:
-            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+            XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          default:
-            /* FIXME: TODO: DO SOMETHING HERE!!!! */
-            break;
+            XLALPrintError("XLAL Error - %s: Unknown case in PN approximant switch\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
       }
       break;
       case LAL_PNORDER_THREE:
       switch (params->approximant)
       {
          case Eccentricity:
-            ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            XLALPrintError("XLAL Error - %s: The PN order requested is not implemented for this approximant\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          case AmpCorPPN:
          case TaylorT1:
@@ -803,18 +842,20 @@ LALInspiralChooseModel(
             f->flux = Fp6;
             break;
          case PadeF1:
-            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+            XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          default:
-            /* FIXME: TODO: DO SOMETHING HERE!!!! */
-            break;
+            XLALPrintError("XLAL Error - %s: Unknown case in PN approximant switch\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
       }
       break;
       case LAL_PNORDER_THREE_POINT_FIVE:
       switch (params->approximant)
       {
          case Eccentricity:
-            ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            XLALPrintError("XLAL Error - %s: The PN order requested is not implemented for this approximant\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          case AmpCorPPN:
          case TaylorT1:
@@ -853,9 +894,12 @@ LALInspiralChooseModel(
             f->flux = Fp7;
             break;
          case PadeF1:
-            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+            XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          default:
+            XLALPrintError("XLAL Error - %s: Unknown case in PN approximant switch\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
       }
       break;
@@ -863,7 +907,8 @@ LALInspiralChooseModel(
       switch (params->approximant)
       {
          case Eccentricity:
-            ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            XLALPrintError("XLAL Error - %s: The PN order requested is not implemented for this approximant\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          case EOBNRv2:
          case EOBNRv2HM:
@@ -892,100 +937,106 @@ LALInspiralChooseModel(
          case SpinTaylor:
          case PhenSpinTaylorRD:
          case PhenSpinTaylorRDF:
-		 case SpinQuadTaylor:
+         case SpinQuadTaylor:
          case PadeT1:
          case PadeF1:
          case TaylorEt:
          case TaylorT4:
          case TaylorN:
-            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+            XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
          default:
+            XLALPrintError("XLAL Error - %s: Unknown case in PN approximant switch\n", func);
+            XLAL_ERROR(func, XLAL_EINVAL);
             break;
       }
+      break;
       default:
-         break;
+         XLALPrintError("XLAL Error - %s: Unknown PN order in switch\n", func);
+         XLAL_ERROR(func, XLAL_EINVAL);
    }
 
+   switch (params->approximant)
+   {
+      case AmpCorPPN:
+      case TaylorT1:
+      case TaylorT2:
+      case TaylorT3:
+      case TaylorF1:
+      case EOB:
+      case EOBNR:
+      case PadeT1:
+      case PadeF1:
+      case TaylorF2:
+      case SpinTaylorFrameless:
+      case SpinTaylorT3:
+      case SpinTaylor:
+      case PhenSpinTaylorRD:
+      case PhenSpinTaylorRDF:
+      case SpinQuadTaylor:
+      case TaylorEt:
+      case TaylorT4:
+      case TaylorN:
+         ak->flso = vlso * vlso * vlso /(LAL_PI * ak->totalmass);
 
-   switch (params->approximant){
-   case AmpCorPPN:
-   case TaylorT1:
-   case TaylorT2:
-   case TaylorT3:
-   case TaylorF1:
-   case EOB:
-   case EOBNR:
-   case PadeT1:
-   case PadeF1:
-   case TaylorF2:
-   case SpinTaylorFrameless:
-   case SpinTaylorT3:
-   case SpinTaylor:
-   case PhenSpinTaylorRD:
-   case PhenSpinTaylorRDF:
-   case SpinQuadTaylor:
-   case TaylorEt:
-   case TaylorT4:
-   case TaylorN:
-     ak->flso = vlso * vlso * vlso/(LAL_PI * ak->totalmass);
+         if (ak->fn)
+         {
+            vn = cbrt(LAL_PI * ak->totalmass * ak->fn);
+            ak->vn = (vn < vlso) ? vn :  vlso;
+         }
 
-     if (ak->fn) {
-       vn = cbrt(LAL_PI * ak->totalmass * ak->fn);
-       ak->vn = (vn < vlso) ? vn :  vlso;
-     }
+         in1.t=0.0;
+         in1.v0=ak->v0;
+         in1.t0=ak->t0;
+         in1.vlso=ak->vlso;
+         in1.totalmass = ak->totalmass;
+         in1.dEnergy = f->dEnergy;
+         in1.flux = f->flux;
+         in1.coeffs = ak;
 
-     in1.t=0.0;
-     in1.v0=ak->v0;
-     in1.t0=ak->t0;
-     in1.vlso=ak->vlso;
-     in1.totalmass = ak->totalmass;
-     in1.dEnergy = f->dEnergy;
-     in1.flux = f->flux;
-     in1.coeffs = ak;
+         in2 = (void *) &in1;
 
-     in2 = (void *) &in1;
+         tofv = XLALInspiralTofV(ak->vn, in2);
+         if (XLAL_IS_REAL8_FAIL_NAN(tofv))
+            XLAL_ERROR(func, XLAL_EFUNC);
 
-     tofv = XLALInspiralTofV(ak->vn, in2);
-     if (XLAL_IS_REAL8_FAIL_NAN(tofv))
-       ABORTXLAL(status);
+         ak->tn = -tofv - ak->samplinginterval;
+         params->fCutoff = ak->fn = pow(ak->vn, 3.)/(LAL_PI * ak->totalmass);
+         /*
+         for (v=0; v<ak->vn; v+=0.001)
+         {
+            FtN = Ft0(v,ak);
+            printf("%e %e %e %e %e %e %e\n", v,
+            Ft2(v,ak)/FtN, Ft3(v,ak)/FtN, Ft4(v,ak)/FtN, Ft5(v,ak)/FtN,
+            Ft6(v,ak)/FtN, Ft7(v,ak)/FtN);
+         }
+         exit(0);
+         */
+         break;
+      case BCV:
+      case BCVSpin:
+         ak->tn = 100.;
+         break;
+      case IMRPhenomA:
+      case IMRPhenomB:
+      case IMRPhenomFA:
+      case IMRPhenomFB:
+      case EOBNRv2:
+      case EOBNRv2HM:
+         ak->tn = 5.*ak->totalmass/(256.*ak->eta*pow(ak->v0,8.)) + 1000.*ak->totalmass;
+         break;
+      case Eccentricity:
+         /* The eccentric waveforms contain harmonic, so similarly to amplitude corrected waveforms
+          * the duration are longer than non eccentric waveform and starts at 2fl/3*/
+         ak->tn = 5.*ak->totalmass/256./ak->eta/pow(LAL_PI*ak->totalmass*params->fLower/3.*2.,8./3.);
+         ak->flso = vlso * vlso * vlso /(LAL_PI * ak->totalmass);
+         break;
+      default:
+         XLALPrintError("XLAL Error - %s: Unknown case in PN approximant switch\n", func);
+         XLAL_ERROR(func, XLAL_EINVAL);
+   }
 
-     ak->tn = -tofv - ak->samplinginterval;
-     params->fCutoff = ak->fn = ak->vn * ak->vn * ak->vn/(LAL_PI * ak->totalmass);
-     /*
-       for (v=0; v<ak->vn; v+=0.001)
-       {
-       FtN = Ft0(v,ak);
-       printf("%e %e %e %e %e %e %e\n", v,
-       Ft2(v,ak)/FtN, Ft3(v,ak)/FtN, Ft4(v,ak)/FtN, Ft5(v,ak)/FtN,
-       Ft6(v,ak)/FtN, Ft7(v,ak)/FtN);
-       }
-       exit(0);
-     */
-     break;
- case BCV:
- case BCVSpin:
-   ak->tn = 100.;
-   break;
- case IMRPhenomA:
- case IMRPhenomB:
- case IMRPhenomFA:
- case IMRPhenomFB:
- case EOBNRv2:
- case EOBNRv2HM:
-   ak->tn = 5.*ak->totalmass/(256.*ak->eta*pow(ak->v0,8.)) + 1000.*ak->totalmass;
-   break;
- case Eccentricity:
-   /* The eccentric waveforms contain harmonic, so similarly to amplitude corrected waveforms
-    * the duration are longer than non eccentric waveform and starts at 2fl/3*/
-   ak->tn = 5.*ak->totalmass/256./ak->eta/pow(LAL_PI*ak->totalmass*params->fLower/3.*2.,8./3.);
-   ak->flso = vlso * vlso * vlso /(LAL_PI * ak->totalmass);
-   break;
- default:
-   ABORT( status, LALINSPIRALH_ESWITCH, LALINSPIRALH_MSGESWITCH );
-}
-
-   DETATCHSTATUSPTR(status);
-   RETURN (status);
+  return 0;
 }
 

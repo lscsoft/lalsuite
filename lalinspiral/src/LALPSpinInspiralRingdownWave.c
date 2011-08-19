@@ -622,7 +622,7 @@ INT4 XLALPSpinFinalMassSpin(
 
   a12  = ma1*ma1 + ma2*ma2*qq*qq*qq*qq + 2.*ma1*ma2*qq*qq*cosa12 ;
   a12l = ma1*cosa1 + ma2*cosa2*qq*qq ;
-  ll = 2.*sqrt(3.)+ t2*params->eta + t3*params->eta*params->eta + s4*a12/(1.+qq*qq)/(1.+qq*qq) + (s5*params->eta+t0+2.)/(1.+qq*qq)*a12l;
+  ll = 2.*sqrt(3.)+ t2*eta + t3*eta*eta + s4*a12/(1.+qq*qq)/(1.+qq*qq) + (s5*eta+t0+2.)/(1.+qq*qq)*a12l;
 
   /* Estimate final mass by adding the negative binding energy to the rest mass*/
   *finalMass = 1. + energy;

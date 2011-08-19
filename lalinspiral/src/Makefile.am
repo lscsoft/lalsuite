@@ -30,7 +30,7 @@ lalinspiralinclude_HEADERS = \
 	LALInspiralRandomBank.h \
 	LALInspiralVCSInfo.h \
 	LALNoiseModelsInspiral.h \
-        LALPSpinInspiralRD.h \
+	LALPSpinInspiralRD.h \
 	LALSBBH-Metric.h \
 	LALSimInspiral.h \
 	LALSimInspiralTaylorT3.h \
@@ -182,7 +182,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralWaveOverlap.c \
 	LALInspiralWaveTaper.c \
 	LALInverse3.c \
-        LALNewtonianMultipole.c \
+	LALNewtonianMultipole.c \
 	LALMatrixTransform.c \
 	LALPhenomWaveform.c \
 	LALPSpinInspiralRD.c \

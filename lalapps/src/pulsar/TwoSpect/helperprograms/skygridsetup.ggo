@@ -1,0 +1,17 @@
+package "skygridsetup"
+version "1.0"
+purpose "Helper program to output the skygrid"
+
+args "--string-parser --conf-parser"
+
+option "config"   - "Configuration file in gengetopt format for passing parameters" string optional
+option "Tcoh"  - "SFT coherence time" double default="1800" optional
+option "fmin"  - "Minimum frequency of band" double optional
+option "fspan" - "Frequency span of band" double optional
+option "IFO"   - "Interferometer of whose data is being analyzed" string default="H1" optional
+option "outfilename"    - "Output file name" string default="logfile.txt" optional
+option "ephemDir"      - "Path to ephemeris files" string default="/opt/lscsoft/lalpulsar/share/lalpulsar" optional
+option "ephemYear"     - "Year or year range (e.g. 08-11) of ephemeris files" string default="08-11" optional
+option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string default="allsky" optional
+option "SFToverlap"    - "SFT overlap in seconds, usually Tcoh/2" double default="900" optional
+

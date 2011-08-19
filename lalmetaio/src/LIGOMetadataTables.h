@@ -496,6 +496,7 @@ tagMultiInspiralTable
   REAL4         crossCorrNullSq;
   REAL8         ampMetricEigenVal1;
   REAL8         ampMetricEigenVal2;
+  EventIDColumn *time_slide_id;
 }
 MultiInspiralTable;
 

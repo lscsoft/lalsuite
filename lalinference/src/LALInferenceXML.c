@@ -59,8 +59,7 @@
  */
 
 
-
-xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *varsArray, UINT4 N)
+xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *varsArray, UINT4 N, const char *tablename)
 {
   xmlNodePtr fieldNodeList=NULL;
   xmlNodePtr paramNodeList=NULL;
@@ -72,7 +71,6 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
   void **valuearrays=NULL;
   UINT4 Nfields=0,i,j;
   const char *fn = __func__;
-  char tablename[512]="\0";
   int err;
 
   
@@ -209,8 +207,6 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 
   
   /* Create a TABLE from the FIELDs and TABLEDATA nodes */
-  sprintf(tablename,"LALInferenceXMLTable");
-
   VOTtableNode= XLALCreateVOTTableNode (tablename, fieldNodeList, xmlTABLEDATAnode );
   /* Attach PARAMs to TABLE node */
   if(!(xmlAddChildList(VOTtableNode,paramNodeList))){
@@ -226,6 +222,25 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 
   return(NULL);
   
+}
+
+xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *state, const char *name)
+{
+	xmlNodePtr algNode=NULL;
+	xmlNodePtr priorNode=NULL;
+	xmlNodePtr propNode=NULL;
+	xmlNodePtr resNode=NULL;
+	/* Serialise various params to VOT Table nodes */
+	resNode=XLALCreateVOTResourceNode("LALInferenceRunState Settings",name,NULL);
+	
+	algNode=XLALCreateVOTTableNode("Algorithm Params",XLALInferenceVariables2VOTParamNode(state->algorithmParams),NULL);
+	if(algNode) xmlAddChild(resNode,algNode);
+	priorNode=XLALCreateVOTTableNode("Prior Arguments",XLALInferenceVariables2VOTParamNode(state->priorArgs),NULL);
+	if(priorNode) xmlAddChild(resNode,priorNode);
+	propNode=XLALCreateVOTTableNode("Proposal Arguments",XLALInferenceVariables2VOTParamNode(state->proposalArgs),NULL);
+	if(propNode) xmlAddChild(resNode,propNode);
+	return(resNode);
+
 }
 
 /**
@@ -250,27 +265,29 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
  * \author John Veitch\n
  * 
  */
-xmlNodePtr XLALInferenceVariables2VOTNode (const LALInferenceVariables *const vars,const char *name)
+xmlNodePtr XLALInferenceVariables2VOTParamNode (const LALInferenceVariables *const vars)
 {
   
   /* set up local variables */
-  const char *fn = __func__;
+  /*const char *fn = __func__;*/
   xmlNodePtr xmlChildNodeList = NULL;
+  xmlNodePtr xmlChild;
   LALInferenceVariableItem *marker=vars->head;
-  xmlNodePtr *xmlChildNodePtr=&xmlChildNodeList;
-
   
   /* Walk through the LALInferenceVariables adding each one */
   while(marker){
-    *xmlChildNodePtr = (LALInferenceVariableItem2VOTParamNode(marker));
-        if(!*xmlChildNodePtr) {
-					/* clean up */
-					xmlFreeNodeList(xmlChildNodeList);
-					XLALPrintError("Couldn't create PARAM node: %s.%s\n", name,marker->name);
-					XLAL_ERROR_NULL(fn, XLAL_EFAILED);
-    }
+    xmlChild = (LALInferenceVariableItem2VOTParamNode(marker));
     marker=marker->next;
-    xmlChildNodePtr = &((*xmlChildNodePtr)->next);
+    if(!xmlChild) {
+					/* clean up */
+					/* if(xmlChildNodeList) xmlFreeNodeList(xmlChildNodeList); */
+					XLALPrintError("Couldn't create PARAM node: %s\n", marker->name);
+					/* XLAL_ERROR_NULL(fn, XLAL_EFAILED); */
+					continue;
+    }
+    if(!xmlChildNodeList) xmlChildNodeList=xmlChild;
+    else xmlAddSibling(xmlChildNodeList,xmlChild);
+    
   }
   return(xmlChildNodeList);
 }
@@ -328,7 +345,7 @@ xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varit
 
 	/* Special case for string */
 	if(varitem->type==LALINFERENCE_string_t)
-		return(XLALCreateVOTParamNode(varitem->name,unitName,VOT_CHAR,"*",varitem->value));
+		return(XLALCreateVOTParamNode(varitem->name,unitName,VOT_CHAR,"*",*(char **)varitem->value));
 	
   /* Check the type of the item */
   vo_type=LALInferenceVariableType2VOT(varitem->type);

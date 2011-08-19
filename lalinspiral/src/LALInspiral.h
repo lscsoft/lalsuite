@@ -806,6 +806,12 @@ void LALInspiralChooseModel(
      expnCoeffs *ak,
      InspiralTemplate *params);
 
+int  XLALInspiralChooseModel(
+     expnFunc *func,
+     expnCoeffs *ak,
+     InspiralTemplate *params);
+
+
 
 
 

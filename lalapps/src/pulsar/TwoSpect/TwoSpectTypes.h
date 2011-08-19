@@ -53,6 +53,7 @@ typedef struct
    REAL8 templatefar;
    REAL8 ULmindf;
    REAL8 ULmaxdf;
+   INT4 ihsfactor;
    INT4 blksize;
    INT4 maxbinshift;
    INT4 templatelength;

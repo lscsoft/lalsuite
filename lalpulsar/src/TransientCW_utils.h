@@ -29,6 +29,11 @@
 #ifndef _TRANSIENTCW_UTILS_H
 #define _TRANSIENTCW_UTILS_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
@@ -40,10 +45,6 @@ extern "C" {
 
 /* ---------- System includes ---------- */
 /* gsl-includes */
-#define GSL_RANGE_CHECK_OFF 1
-#define GSL_C99_INLINE 1
-#define HAVE_INLINE 1
-
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
@@ -82,6 +83,7 @@ typedef enum {
 /** Struct defining one transient window instance */
 typedef struct
 {
+  SWIGLAL_STRUCT_LALALLOC();
   transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
   UINT4 t0;			/**< GPS start-time 't0' */
   UINT4 tau;			/**< transient timescale tau in seconds */
@@ -90,6 +92,7 @@ typedef struct
 /** Struct defining a range of transient windows */
 typedef struct
 {
+  SWIGLAL_STRUCT_LALALLOC();
   transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
   UINT4 t0;			/**< earliest GPS start-time 't0' in seconds */
   UINT4 t0Band;			/**< range of start-times 't0' to search, in seconds */
@@ -105,6 +108,7 @@ typedef struct
  *
  */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   gsl_matrix *F_mn;			/**< "payload" F-map: F_mn for t0_m = t0 + m*dt0, and tau_n = tau + n*dtau */
   REAL8 maxF;				/**< maximal F-value obtained over transientWindowRange */
   UINT4 t0_ML;				/**< maximum-likelihood estimator for start-time t0 of  max{2F} over transientWindowRange (in GPS seconds) */
@@ -114,6 +118,7 @@ typedef struct {
 
 /** Struct holding a transient CW candidate */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
   transientWindowRange_t windowRange;	/**< type and parameters specifying the transient window range in {t0, tau} covered */
   transientFstatMap_t *FstatMap;	/**< F-statistic over transient-window range {t0, tau} AND ML-estimators { Fmax, t0_Fmax, tau_Fmax } */
