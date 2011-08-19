@@ -4,7 +4,6 @@ lalsimulationincludedir = $(includedir)/lal
 lalsimulationinclude_HEADERS = \
 	LALSimBurst.h \
 	LALSimInspiral.h \
-	LALSimInspiralPNCoefficients.h \
 	LALSimInspiraldEnergyFlux.h \
 	LALSimulation.h \
 	LALSimulationConfig.h \
@@ -15,7 +14,6 @@ liblalsimulation_la_SOURCES = \
 	LALSimBurst.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
-	LALSimInspiralPNCoefficients.c \
 	LALSimInspiralTaylorT2.c \
 	LALSimInspiralTaylorT3.c \
 	LALSimInspiralTaylorT4.c \
