@@ -28,36 +28,287 @@
 #include <lal/LALSimIMR.h>
 #include <lal/XLALError.h>
 
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
+typedef enum tagGSApproximant {
+    GSApproximant_DEFAULT,
+    GSApproximant_IMRPhenomA,
+    GSApproximant_IMRPhenomB,
+    GSApproximant_NUM
+} GSApproximant;
 
-/*
- * main
- */
-int main (int UNUSED argc , char UNUSED **argv) {
-    FILE *f;
+typedef enum tagGSDomain {
+    GSDomain_TD,
+    GSDomain_FD
+} GSDomain;
+
+/* internal storage is in SI units! */
+typedef struct tagGSParams {
+    GSApproximant approximant;
+    GSDomain domain;
+    LIGOTimeGPS *tRef;        /**< time at fRef */
+    REAL8 phiRef;             /**< phase at fRef */
+    REAL8 fRef;               /**< reference frequency */
+    REAL8 deltaT;             /**< sampling interval */
+    REAL8 deltaF;             /**< frequency resolution */
+    REAL8 m1;                 /**< mass of companion 1 */
+    REAL8 m2;                 /**< mass of companion 2 */
+    REAL8 chi;                /**< dimensionless aligned-spin parameter */
+    REAL8 f_min;              /**< start frequency */
+    REAL8 f_max;              /**< end frequency */
+    REAL8 distance;           /**< distance of source */
+    REAL8 inclination;
+    char outname[256];        /**< file to which output should be written */
+    int verbose;
+} GSParams;
+
+const char * usage =
+"Generate a simulation using the lalsimulation library\n"
+"\n"
+"Various options are required depending on the approximant\n"
+"--approximant APPROX       Supported approximants:\n"
+"                             IMRPhenomA\n"
+"                             IMRPhenomB\n"
+"--domain DOM               'TD' for time domain or 'FD' for frequency\n"
+"                           domain; not all approximants support all domains\n"
+"--tRef N                   Reference time in GPS seconds\n"
+"--phiRef                   Phase at the reference frequency\n"
+"--fRef FREF                Reference frequency in Hz\n"
+"                           (default: FMIN)\n"
+"--deltaT DT                Sampling interval in seconds\n"
+"--deltaF DF                Sampling interval in seconds\n"
+"--m1 M1                    Mass of the first object in solar masses\n"
+"--m2 M2                    Mass of the second object in solar masses\n"
+"--chi CHI                  Dimensionless aligned-spin parameter\n"
+"--f-min FMIN               Frequency at which to start waveform in Hz\n"
+"--f-max FMAX               Frequency at which to stop waveform in Hz\n"
+"                           (default: generate as much as possible)\n"
+"--distance D               Distance in Mpc\n"
+"--inclination IOTA         Angle in radians between line of sight and \n"
+"                           orbital angular momentum at the reference\n"
+"                           (default: face on)\n"
+"--outname FNAME            File to which output should be written (overwrites)\n"
+;
+
+/* Parse command line, sanity check arguments, and return a newly
+ * allocated GSParams object */
+static GSParams *parse_args(ssize_t argc, char **argv) {
     ssize_t i;
-    REAL8 deltaF = 0.25;
-    LIGOTimeGPS tRef = {0., 0.};
-    COMPLEX16FrequencySeries *htilde = NULL;
-    COMPLEX16 *dataPtr;
+    char msg[256];
+    GSParams *params;
+    params = (GSParams *) XLALMalloc(sizeof(GSParams));
+    memset(params, 0, sizeof(GSParams));
 
-    /* fail hard */
-    XLALSetErrorHandler(XLALAbortErrorHandler);
+    /* special case for no arguments (for make check) */
+    if (argc == 1) {
+        params->approximant = GSApproximant_IMRPhenomA;
+        params->domain = GSDomain_FD;
+        params->m1 = 3. * LAL_MSUN_SI;
+        params->m2 = 3.1 * LAL_MSUN_SI;
+        params->deltaF = 0.125;
+        params->f_min = 40;
+        params->distance = 100 * 1e6 * LAL_PC_SI;
+    }
 
-    /* generate waveform */
-    XLALSimIMRPhenomAGenerateFD(&htilde, &tRef, 0., 10., deltaF, 5. * LAL_MSUN_SI, 5.1 * LAL_MSUN_SI, 10., 2000., 1e8 * LAL_PC_SI);
+    /* consume command line */
+    for (i = 1; i < argc; ++i) {
+        if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
+            printf("%s", usage);
+            if (params->tRef) XLALFree(params->tRef);
+            XLALFree(params);
+            exit(0);
+        } else if (strcmp(argv[i], "--approximant") == 0) {
+            i++;
+            if (strcmp(argv[i], "IMRPhenomA") == 0)
+                params->approximant = GSApproximant_IMRPhenomA;
+            else if (strcmp(argv[i], "IMRPhenomB") == 0)
+                params->approximant = GSApproximant_IMRPhenomB;
+            else {
+                XLALPrintError("Error: Unknown approximant\n");
+                goto fail;
+            }
+        } else if (strcmp(argv[i], "--domain") == 0) {
+            i++;
+            if (strcmp(argv[i], "TD") == 0)
+                params->domain = GSDomain_TD;
+            else if (strcmp(argv[i], "FD") == 0)
+                params->domain = GSDomain_FD;
+            else {
+                XLALPrintError("Error: Unknown domain\n");
+                goto fail;
+            }
+        } else if (strcmp(argv[i], "--tRef") == 0) {
+            params->tRef = (LIGOTimeGPS *) XLALMalloc(sizeof(LIGOTimeGPS));
+            XLALINT8NSToGPS(params->tRef, 1000000000L * atof(argv[++i]));
+        } else if (strcmp(argv[i], "--phiRef") == 0) {
+            params->phiRef = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--fRef") == 0) {
+            params->fRef = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--deltaT") == 0) {
+            params->deltaT = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--deltaF") == 0) {
+            params->deltaF = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--m1") == 0) {
+            params->m1 = atof(argv[++i]) * LAL_MSUN_SI;
+        } else if (strcmp(argv[i], "--m2") == 0) {
+            params->m2 = atof(argv[++i]) * LAL_MSUN_SI;
+        } else if (strcmp(argv[i], "--chi") == 0) {
+            params->chi = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--f-min") == 0) {
+            params->f_min = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--f-max") == 0) {
+            params->f_min = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--distance") == 0) {
+            params->distance = atof(argv[++i]) * 1e6 * LAL_PC_SI;
+        } else if (strcmp(argv[i], "--inclination") == 0) {
+            params->inclination = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--outname") == 0) {
+            strncpy(params->outname, argv[++i], 256);
+        } else {
+            snprintf(msg, 256, "Error: invalid option: %s\n", argv[i]);
+            XLALPrintError(msg);
+            goto fail;
+        }
+    }
 
-    /* dump file */
-    f = fopen("test.dat", "w");
+    /* generic domain checks */
+    if (params->approximant == GSApproximant_DEFAULT) {
+        XLALPrintError("Error: --approximant is a required parameter\n");
+        goto fail;
+    }
+    if ((params->m1 <= 0.) || (params->m2 <= 0.)) {
+        XLALPrintError("Error: masses are required and must be positive\n");
+        goto fail;
+    } else if (fabs(params->chi) > 1) {
+        XLALPrintError("Error: chi must be within -1 and 1\n");
+        goto fail;
+    } else if (params->f_min <= 0.) {
+        XLALPrintError("Error: --f-min is required and must be positive\n");
+        goto fail;
+    } else if (params->f_max < 0.) {   /* f_max == 0 is OK */
+        XLALPrintError("Error: --f-max must be positive\n");
+        goto fail;
+    } else if (params->distance <= 0.) {
+        XLALPrintError("Error: --distance is required and must be positive\n");
+        goto fail;
+    } else if ((params->inclination < 0) || (params->inclination > LAL_PI)) {
+        XLALPrintError("Error: --inclination must be between 0 and pi\n");
+        goto fail;
+    }
+
+    /* waveform-specific checks for presence
+     * tRef, masses, f_min, and distance have already been checked. */
+    switch (params->approximant) {
+        case GSApproximant_IMRPhenomA:
+        case GSApproximant_IMRPhenomB:
+            /* no additional checks required */
+            break;
+        default:
+            XLALPrintError("Error: some lazy developer forgot to update waveform-specific checks\n");
+    }
+
+    /* fill in defaults */
+    if (!params->tRef) {
+        params->tRef = (LIGOTimeGPS *) XLALMalloc(sizeof(LIGOTimeGPS));
+        *(params->tRef) = (LIGOTimeGPS) {0., 0.};
+    }
+    if (params->fRef == 0) params->fRef = params->f_min;
+    if (*params->outname == '\0')
+        strncpy(params->outname, "simulation.dat", 256);
+
+    return params;
+
+    fail:
+    printf("%s", usage);
+    XLALFree(params);
+    exit(1);
+}
+
+static int dump_FD(FILE *f, COMPLEX16FrequencySeries *htilde) {
+    ssize_t i;
+    COMPLEX16 *dataPtr = htilde->data->data;
+
     fprintf(f, "# f htilde.re htilde.im\n");
     dataPtr = htilde->data->data;
     for (i=0; i < htilde->data->length; i++)
-      fprintf(f, "%e %e %e\n", i * deltaF, dataPtr[i].re, dataPtr[i].im);
+      fprintf(f, "%e %e %e\n", i * htilde->deltaF, dataPtr[i].re, dataPtr[i].im);
+    return 0;
+}
+
+static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
+    ssize_t i;
+    if (hplus->data->length != hcross->data->length) {
+        XLALPrintError("Error: hplus and hcross are not the same length\n");
+        return 1;
+    } else if (hplus->deltaT != hcross->deltaT) {
+        XLALPrintError("Error: hplus and hcross do not have the same sample rate\n");
+        return 1;
+    }
+
+    fprintf(f, "# f hplus hcross\n");
+    for (i=0; i < hplus->data->length; i++)
+      fprintf(f, "%e %e %e\n", i * hplus->deltaT, hplus->data->data[i], hcross->data->data[i]);
+    return 0;
+}
+/*
+ * main
+ */
+int main (int argc , char **argv) {
+    FILE *f;
+    int status;
+    LIGOTimeGPS tRef;
+    COMPLEX16FrequencySeries *htilde = NULL;
+    REAL8TimeSeries *hplus = NULL;
+    REAL8TimeSeries *hcross = NULL;
+    GSParams *params;
+
+    /* set us up to fail hard */
+    lalDebugLevel = 7;
+    XLALSetErrorHandler(XLALAbortErrorHandler);
+
+    /* parse commandline */
+    params = parse_args(argc, argv);
+
+    /* generate waveform */
+    if (params->domain == GSDomain_FD) {
+        switch (params->approximant) {
+            case GSApproximant_IMRPhenomA:
+                XLALSimIMRPhenomAGenerateFD(&htilde, &tRef, params->phiRef, params->fRef, params->deltaF, params->m1, params->m2, params->f_min, params->f_max, params->distance);
+                break;
+            case GSApproximant_IMRPhenomB:
+                XLALSimIMRPhenomBGenerateFD(&htilde, &tRef, params->phiRef, params->fRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance);
+                break;
+            default:
+                XLALPrintError("Error: some lazy programmer forgot to add their waveform generation function\n");
+        }
+        if (!htilde) {
+            XLALPrintError("Error: waveform generation failed\n");
+            goto fail;
+        }
+    } else if (params->domain == GSDomain_TD) {
+        XLALPrintError("Error: TD not yet supported\n");
+        if (!hplus || !hcross) {
+            XLALPrintError("Error: waveform generation failed\n");
+            goto fail;
+        }
+    }
+
+    /* dump file */
+    f = fopen(params->outname, "w");
+    if (params->domain == GSDomain_FD)
+        status = dump_FD(f, htilde);
+    else
+        status = dump_TD(f, hplus, hcross);
     fclose(f);
+    if (status) goto fail;
+
+    /* clean up */
+    XLALFree(params->tRef);
+    XLALFree(params);
     XLALDestroyCOMPLEX16FrequencySeries(htilde);
     return 0;
+
+    fail:
+    XLALFree(params->tRef);
+    XLALFree(params);
+    XLALDestroyCOMPLEX16FrequencySeries(htilde);
+    return 1;
 }
