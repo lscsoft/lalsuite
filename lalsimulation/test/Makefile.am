@@ -3,7 +3,7 @@ LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalsimulation.la
 
 if LALSUPPORT
 check_PROGRAMS = \
-	GenerateInspiralWaveform
+	GenerateSimulation
 TESTS = $(check_PROGRAMS)
 endif
 
