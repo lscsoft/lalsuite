@@ -756,7 +756,7 @@ static int XLALSimInspiralTaylorT3Setup(
  * Computes a post-Newtonian orbit using the Taylor T3 method.
  */
 int XLALSimInspiralTaylorT3PNEvolveOrbit(
-		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
 	       	LIGOTimeGPS *t_end,    /**< time at end of waveform */
 	       	REAL8 phi_end,         /**< GW phase at end of waveform */
@@ -768,11 +768,11 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 		)
 {
 	const UINT4 blocklen = 1024;
-	const REAL8 xisco = 1.0 / 6.0;
+	const REAL8 visco = sqrt(1.0/6.0);
 	REAL8 m = m1 + m2;
 	REAL8 nu = m1 * m2 / m / m;
 	m *= LAL_G_SI / pow(LAL_C_SI, 3.0); /* convert m from kilograms to seconds */
-	REAL8 tmptC, tC, c1, xmin, xmax, xacc, v, v2, phase, fOld, t, td, temp, tempMin = 0, tempMax = 0;
+	REAL8 tmptC, tC, c1, xmin, xmax, xacc, v, phase, fOld, t, td, temp, tempMin = 0, tempMax = 0;
 	REAL8 (*freqfunction)(REAL8, void *);
 	UINT4 j;
 	REAL8 f;
@@ -784,10 +784,10 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 
 	/* allocate memory */
 
-	*x = XLALCreateREAL8TimeSeries("ORBITAL_FREQUENCY_PARAMETER", t_end, 0.0, deltaT, &lalDimensionlessUnit,
+	*V = XLALCreateREAL8TimeSeries("ORBITAL_FREQUENCY_PARAMETER", t_end, 0.0, deltaT, &lalDimensionlessUnit,
 		blocklen);
 	*phi = XLALCreateREAL8TimeSeries("ORBITAL_PHASE", t_end, 0.0, deltaT, &lalDimensionlessUnit, blocklen);
-	if (!x || !phi)
+	if (!V || !phi)
 		XLAL_ERROR(__func__, XLAL_EFUNC);
 
 
@@ -862,9 +862,8 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 		XLAL_ERROR(__func__, XLAL_EFUNC);
 
 	v = cbrt(f * LAL_PI * m);
-	v2 = v * v;
-	(*x)->data->data[0] = v2;
-	(*phi)->data->data[0] = phase / 2.;
+	(*V)->data->data[0] = v;
+	(*phi)->data->data[0] = phase;
 
 	j = 0;
 	while (1) {
@@ -882,7 +881,6 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 		if (XLAL_IS_REAL8_FAIL_NAN(f))
 			XLAL_ERROR(__func__, XLAL_EFUNC);
 		v = cbrt(f * LAL_PI * m);
-		v2 = v * v;
 
 		/* check termination conditions */
 
@@ -890,7 +888,7 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at coalesence time\n", __func__);
 			break;
 		}
-		if (v2 >= xisco) {
+		if (v >= visco) {
 			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", __func__);
 			break;
 		}
@@ -901,19 +899,19 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	
 		/* save current values in vectors but first make sure we don't write past end of vectors */
 
-		if ( j >= (*x)->data->length ) {
-			if ( ! XLALResizeREAL8TimeSeries(*x, 0, (*x)->data->length + blocklen) )
+		if ( j >= (*V)->data->length ) {
+			if ( ! XLALResizeREAL8TimeSeries(*V, 0, (*V)->data->length + blocklen) )
 				XLAL_ERROR(__func__, XLAL_EFUNC);
 			if ( ! XLALResizeREAL8TimeSeries(*phi, 0, (*phi)->data->length + blocklen) )
 				XLAL_ERROR(__func__, XLAL_EFUNC);
 		}
-		(*x)->data->data[j] = v2;
-		(*phi)->data->data[j] = phase / 2.;
+		(*V)->data->data[j] = v;
+		(*phi)->data->data[j] = phase;
 	}
 
 	/* make the correct length */
 
-	if ( ! XLALResizeREAL8TimeSeries(*x, 0, j) )
+	if ( ! XLALResizeREAL8TimeSeries(*V, 0, j) )
 		XLAL_ERROR(__func__, XLAL_EFUNC);
 	if ( ! XLALResizeREAL8TimeSeries(*phi, 0, j) )
 		XLAL_ERROR(__func__, XLAL_EFUNC);
@@ -921,7 +919,7 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	/* adjust to correct tc and phic */
 
 	XLALGPSAdd(&(*phi)->epoch, -1.0*j*deltaT);
-	XLALGPSAdd(&(*x)->epoch, -1.0*j*deltaT);
+	XLALGPSAdd(&(*V)->epoch, -1.0*j*deltaT);
 
 	/* phi here is the orbital phase = 1/2 * GW phase.
 	 * End GW phase specified on command line.
@@ -931,7 +929,7 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	phi_end -= (*phi)->data->data[j-1];
 	for (j = 0; j < (*phi)->data->length; ++j)
 		(*phi)->data->data[j] += phi_end;
-	return (int)(*x)->data->length;
+	return (int)(*V)->data->length;
 }
 
 
@@ -957,19 +955,18 @@ int XLALSimInspiralTaylorT3PNGenerator(
 	       	int phaseO                /**< twice post-Newtonian phase order */
 		)
 {
-	static const char *func = "XLALSimInspiralPNGenerator";
-	REAL8TimeSeries *x;
+	REAL8TimeSeries *V;
 	REAL8TimeSeries *phi;
 	int status;
 	int n;
-	n = XLALSimInspiralTaylorT3PNEvolveOrbit(&x, &phi, t_end, phi_end, deltaT, m1, m2, f_min, phaseO);
+	n = XLALSimInspiralTaylorT3PNEvolveOrbit(&V, &phi, t_end, phi_end, deltaT, m1, m2, f_min, phaseO);
 	if ( n < 0 )
-		XLAL_ERROR(func, XLAL_EFUNC);
-	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, x, phi, x0, m1, m2, r, i, amplitudeO);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
+	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, V, phi, x0, m1, m2, r, i, amplitudeO);
 	XLALDestroyREAL8TimeSeries(phi);
-	XLALDestroyREAL8TimeSeries(x);
+	XLALDestroyREAL8TimeSeries(V);
 	if ( status < 0 )
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	return n;
 }
 
