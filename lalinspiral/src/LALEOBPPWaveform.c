@@ -1705,7 +1705,7 @@ XLALEOBPPWaveformEngine (
   /*of the NQC coefficients for the (2,2) mode. We calculate them here. */
   if ( XLALGetCalibratedNQCCoeffs( &nqcCoeffs, 2, 2, eta ) == XLAL_FAILURE )
   {
-    ABORTXLAL( status );
+    XLAL_ERROR( __func__, XLAL_EFUNC );
   }
 
    /* Calculate the resample factor for attaching the ringdown */
