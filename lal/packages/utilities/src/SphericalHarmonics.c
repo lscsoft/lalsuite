@@ -420,7 +420,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
     } /* l==8 */
     else 
     {
-      XLALPrintError("XLAL Error - %s: Unsupported mode l=%d (only l in [2,8] implemented)\n", __func__, s);
+      XLALPrintError("XLAL Error - %s: Unsupported mode l=%d (only l in [2,8] implemented)\n", __func__, l);
       XLAL_ERROR_VAL(__func__, XLAL_EINVAL, czero);
     }
   }
