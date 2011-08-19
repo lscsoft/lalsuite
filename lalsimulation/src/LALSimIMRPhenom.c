@@ -26,7 +26,6 @@
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/RealFFT.h>
-#include <lal/BBHPhenomCoeffs.h>
 #include <lal/Units.h>
 
 #ifdef __GNUC__
@@ -94,45 +93,45 @@ static BBHPhenomParams *ComputeIMRPhenomAParams(REAL8 m1, REAL8 m2) {
   eta = m1 * m2 / (totalMass * totalMass);
   piM = totalMass * LAL_PI * LAL_MTSUN_SI;
 
-  fMerg_a = BBHPHENOMCOEFFSH_FMERG_A;
-  fMerg_b = BBHPHENOMCOEFFSH_FMERG_B;
-  fMerg_c = BBHPHENOMCOEFFSH_FMERG_C;
+  fMerg_a = 6.6389e-01;
+  fMerg_b = -1.0321e-01;
+  fMerg_c = 1.0979e-01;
 
-  fRing_a = BBHPHENOMCOEFFSH_FRING_A;
-  fRing_b = BBHPHENOMCOEFFSH_FRING_B;
-  fRing_c = BBHPHENOMCOEFFSH_FRING_C;
+  fRing_a = 1.3278e+00;
+  fRing_b = -2.0642e-01;
+  fRing_c = 2.1957e-01;
 
-  sigma_a = BBHPHENOMCOEFFSH_SIGMA_A;
-  sigma_b = BBHPHENOMCOEFFSH_SIGMA_B;
-  sigma_c = BBHPHENOMCOEFFSH_SIGMA_C;
+  sigma_a = 1.1383e+00;
+  sigma_b = -1.7700e-01;
+  sigma_c = 4.6834e-02;
 
-  fCut_a = BBHPHENOMCOEFFSH_FCUT_A;
-  fCut_b = BBHPHENOMCOEFFSH_FCUT_B;
-  fCut_c = BBHPHENOMCOEFFSH_FCUT_C;
+  fCut_a = 1.7086e+00;
+  fCut_b = -2.6592e-01;
+  fCut_c = 2.8236e-01;
 
-  psi0_a = BBHPHENOMCOEFFSH_PSI0_X;
-  psi0_b = BBHPHENOMCOEFFSH_PSI0_Y;
-  psi0_c = BBHPHENOMCOEFFSH_PSI0_Z;
+  psi0_a = -1.5829e-01;
+  psi0_b = 8.7016e-02;
+  psi0_c = -3.3382e-02;
 
-  psi2_a = BBHPHENOMCOEFFSH_PSI2_X;
-  psi2_b = BBHPHENOMCOEFFSH_PSI2_Y;
-  psi2_c = BBHPHENOMCOEFFSH_PSI2_Z;
+  psi2_a = 3.2967e+01;
+  psi2_b = -1.9000e+01;
+  psi2_c = 2.1345e+00;
 
-  psi3_a = BBHPHENOMCOEFFSH_PSI3_X;
-  psi3_b = BBHPHENOMCOEFFSH_PSI3_Y;
-  psi3_c = BBHPHENOMCOEFFSH_PSI3_Z;
+  psi3_a = -3.0849e+02;
+  psi3_b = 1.8211e+02;
+  psi3_c = -2.1727e+01;
 
-  psi4_a = BBHPHENOMCOEFFSH_PSI4_X;
-  psi4_b = BBHPHENOMCOEFFSH_PSI4_Y;
-  psi4_c = BBHPHENOMCOEFFSH_PSI4_Z;
+  psi4_a = 1.1525e+03;
+  psi4_b = -7.1477e+02;
+  psi4_c = 9.9692e+01;
 
-  psi6_a = BBHPHENOMCOEFFSH_PSI6_X;
-  psi6_b = BBHPHENOMCOEFFSH_PSI6_Y;
-  psi6_c = BBHPHENOMCOEFFSH_PSI6_Z;
+  psi6_a = 1.2057e+03;
+  psi6_b = -8.4233e+02;
+  psi6_c = 1.8046e+02;
 
-  psi7_a = BBHPHENOMCOEFFSH_PSI7_X;
-  psi7_b = BBHPHENOMCOEFFSH_PSI7_Y;
-  psi7_c = BBHPHENOMCOEFFSH_PSI7_Z;
+  psi7_a = 0.;
+  psi7_b = 0.;
+  psi7_c = 0.;
 
   /* Evaluate the polynomials. See Eq. (4.18) of P. Ajith et al
    * arXiv:0710.2335 [gr-qc] */
@@ -566,14 +565,11 @@ static int IMRPhenomGenerateFD(
   else
     n = (ssize_t) ceil(params->fCut / deltaF) + 1;
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", tRef, 0.0, deltaF, &lalStrainUnit, n);
+  memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
   XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
   if (!(*htilde)) XLAL_ERROR(__func__, XLAL_EFUNC);
 
   shft = LAL_TWOPI * (tRef->gpsSeconds + 1e-9 * tRef->gpsNanoSeconds);
-
-  /* fill the zero and Nyquist frequency with zeros */
-  ((*htilde)->data->data)[0] = (COMPLEX16) {0., 0.};
-  ((*htilde)->data->data)[n-1] = (COMPLEX16) {0., 0.};
 
   /* now generate the waveform at all frequency bins */
   for (i=1; i < n - 1; i++) {
