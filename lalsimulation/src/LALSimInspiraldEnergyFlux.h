@@ -96,6 +96,18 @@ XLALSimInspiralTofVIntegrand(
    );
 
 
+REAL8 Et0(REAL8 v, expnCoeffsdEnergyFlux *ak);
+
+
+REAL8 Et2(REAL8 v, expnCoeffsdEnergyFlux *ak);
+
+
+REAL8 Et4(REAL8 v, expnCoeffsdEnergyFlux *ak);
+
+
+REAL8 Et6(REAL8 v, expnCoeffsdEnergyFlux *ak);
+
+
 REAL8 dEt0(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 

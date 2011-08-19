@@ -57,6 +57,41 @@ Spinning waveforms are only defined at the highest PN order.</li>
 #include <lal/LALSimInspiraldEnergyFlux.h>
 
 
+
+REAL8 Et0(REAL8 v, expnCoeffsdEnergyFlux *ak)
+{
+   REAL8 dEnergy;
+   dEnergy = ak->ETaN * v;
+   return (dEnergy);
+}
+
+REAL8 Et2(REAL8 v, expnCoeffsdEnergyFlux *ak)
+{
+   REAL8 Energy;
+   REAL8 x = v*v;
+   Energy = ak->ETaN * x * (1. + ak->ETa1*x);
+   return Energy;
+}
+
+REAL8 Et4(REAL8 v, expnCoeffsdEnergyFlux *ak)
+{
+   REAL8 Energy;
+   REAL8 x = v*v;
+   REAL8 x2 = x*x;
+   Energy = ak->ETaN * x * (1. + ak->ETa1*x + ak->ETa2*x2);
+   return Energy;
+}
+
+REAL8 Et6(REAL8 v, expnCoeffsdEnergyFlux *ak)
+{
+   REAL8 Energy;
+   REAL8 x = v*v;
+   REAL8 x2 = x*x;
+   REAL8 x3 = x*x2;
+   Energy = ak->ETaN * x * (1. + ak->ETa1*x + ak->ETa2*x2 + ak->ETa3*x3);
+   return Energy;
+}
+
 REAL8 dEt0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 dEnergy;
