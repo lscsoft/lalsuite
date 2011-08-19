@@ -135,7 +135,11 @@ XLALInspiralWave1(
    if (params->tSampling <= 0)
       XLAL_ERROR(__func__, XLAL_EDOM);
 
-   if (XLALInspiralInit(params, &paramsInit))
+   if (XLALInspiralParameterCalc(params))
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+   if (XLALInspiralSetup(&(paramsInit.ak), params))
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+   if (XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), params))
       XLAL_ERROR(__func__, XLAL_EFUNC);
 
    if (params->totalMass <= 0.)
@@ -210,7 +214,11 @@ XLALInspiralWave1Templates(
    if (params->tSampling <= 0)
       XLAL_ERROR(__func__, XLAL_EDOM);
 
-   if (XLALInspiralInit(params, &paramsInit))
+   if (XLALInspiralParameterCalc(params))
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+   if (XLALInspiralSetup(&(paramsInit.ak), params))
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+   if (XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), params))
       XLAL_ERROR(__func__, XLAL_EFUNC);
 
    if (params->totalMass <= 0.)
