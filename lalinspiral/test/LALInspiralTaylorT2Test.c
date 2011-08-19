@@ -73,7 +73,7 @@ int main(void) {
 	m = m1 + m2;
 	nu = m1 * m2 / m / m;
 
-	O = 0;
+	O = 7;
 	switch (O)
 	{
 		case 0:
@@ -141,13 +141,13 @@ int main(void) {
 	fprintf(stdout,"waveform saved in T2wave1.dat\n" );
 
 	start = clock();
-	h_plus = XLALCreateREAL4TimeSeries("", &tc, 0.0, dt, &lalDimensionlessUnit, 4096*3);
-	h_cross = XLALCreateREAL4TimeSeries("", &tc, 0.0, dt, &lalDimensionlessUnit, 4096*3);
+	h_plus = XLALCreateREAL4TimeSeries("", &tc, 0.0, dt, &lalDimensionlessUnit, params.tSampling*3);
+	h_cross = XLALCreateREAL4TimeSeries("", &tc, 0.0, dt, &lalDimensionlessUnit, params.tSampling*3);
 
 	fprintf(stderr, "Lower cut-off frequency used will be %fHz\n", params.fLower);
 
 	/* --- now we can call the injection function --- */
-	XLALInspiralWave3Templates(h_plus->data, h_cross->data, &params);
+	XLALInspiralWave2Templates(h_plus->data, h_cross->data, &params);
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;
 	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
