@@ -62,6 +62,7 @@ const LVcomponents empty_LVcomponents;
 
 /** XLAL function to go through toplist and compute Line Veto statistics for each candidate */
 int XLALComputeExtraStatsForToplist ( toplist_t *list,                                        /**< list of cancidates with f, sky position etc. - no output so far */
+				      const char *listEntryTypeName,                          /**< type of toplist entries, give as name string */
 				      const MultiSFTVectorSequence *multiSFTsV,               /**< data files (SFTs) for all detectors and segments */
 				      const MultiNoiseWeightsSequence *multiNoiseWeightsV,    /**< noise weights for all detectors and segments */
 				      const MultiDetectorStateSeriesSequence *multiDetStatesV,/**< some state info for all detectors */
@@ -74,7 +75,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
   const char *fn = __func__;
 
   /* check input parameters and report errors */
-  if ( !list || !multiSFTsV || !multiNoiseWeightsV || !multiDetStatesV || !CFparams ) {
+  if ( !list || !multiSFTsV || !listEntryTypeName || !multiNoiseWeightsV || !multiDetStatesV || !CFparams ) {
     XLALPrintError ("\nError in function %s, line %d : Empty pointer as input parameter!\n\n", fn, __LINE__);
     XLAL_ERROR ( fn, XLAL_EFAULT);
   }
@@ -86,6 +87,17 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
   if ( list->elems == 0 ) {
     XLALPrintError ("\nError in function %s, line %d : Input toplist has zero length!\n\n", fn, __LINE__);
+    XLAL_ERROR ( fn, XLAL_EBADLEN );
+  }
+
+  /* check listEntryTypeName only once by strcmp, afterwards by int, to be faster */
+  UINT4 listEntryType = 0;
+  if (strcmp(listEntryTypeName, "GCTtop") == 0 )
+    listEntryType = 1;
+  if (strcmp(listEntryTypeName, "HoughFStat") == 0 )
+    listEntryType = 2;
+  if ( listEntryType == 0 ) {
+    XLALPrintError ("\nError in function %s, line %d : Unsupported entry type for input toplist! Supported types currently are: GCTtop, HoughFStat.\n\n", fn, __LINE__);
     XLAL_ERROR ( fn, XLAL_EBADLEN );
   }
 
@@ -124,36 +136,70 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
   /* loop over toplist: re-compute sumTwoF and sumTwoFX for all candidates */
   for (j = 0; j < numElements; j++ )
     {
-      GCTtopOutputEntry *elem = toplist_elem ( list, j );
+      if ( listEntryType == 1 ) {
+        GCTtopOutputEntry *elem = toplist_elem ( list, j );
 
-      if ( (elem->sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", fn, numDetectors );
-        XLAL_ERROR ( fn, XLAL_EFUNC );
+        if ( (elem->sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+          XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", fn, numDetectors );
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
+
+        /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
+        candidateDopplerParams.Alpha = elem->Alpha;
+        candidateDopplerParams.Delta = elem->Delta;
+        fkdotTMP[0] = elem->Freq;
+        fkdotTMP[1] = elem->F1dot;
+
+        /* extrapolate pulsar spins to correct time (more stable against large deltaTau than directly resetting refTime) */
+        if ( XLALExtrapolatePulsarSpins( candidateDopplerParams.fkdot, fkdotTMP, deltaTau ) != XLAL_SUCCESS ) {
+          XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", fn, __LINE__);
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
+
+        /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
+        XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, CFparams, SignalOnly );
+        if ( xlalErrno != 0 ) {
+          XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoSemiCoherent().\n\n", fn, __LINE__);
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
+
+        /* save values in toplist */
+        elem->sumTwoFnew         = lineVeto.TwoF;
+        for ( X = 0; X < numDetectors; X ++ )
+          elem->sumTwoFX->data[X]  = lineVeto.TwoFX->data[X];
       }
+      if ( listEntryType == 2 ) {
+        HoughFStatOutputEntry *elem = toplist_elem ( list, j );
 
-      /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
-      candidateDopplerParams.Alpha = elem->Alpha;
-      candidateDopplerParams.Delta = elem->Delta;
-      fkdotTMP[0] = elem->Freq;
-      fkdotTMP[1] = elem->F1dot;
+        if ( (elem->sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+          XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", fn, numDetectors );
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
 
-      /* extrapolate pulsar spins to correct time (more stable against large deltaTau than directly resetting refTime) */
-      if ( XLALExtrapolatePulsarSpins( candidateDopplerParams.fkdot, fkdotTMP, deltaTau ) != XLAL_SUCCESS ) {
-        XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", fn, __LINE__);
-        XLAL_ERROR ( fn, XLAL_EFUNC );
+        /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
+        candidateDopplerParams.Alpha = elem->Alpha;
+        candidateDopplerParams.Delta = elem->Delta;
+        fkdotTMP[0] = elem->Freq;
+        fkdotTMP[1] = elem->f1dot;
+
+        /* extrapolate pulsar spins to correct time (more stable against large deltaTau than directly resetting refTime) */
+        if ( XLALExtrapolatePulsarSpins( candidateDopplerParams.fkdot, fkdotTMP, deltaTau ) != XLAL_SUCCESS ) {
+          XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", fn, __LINE__);
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
+
+        /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
+        XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, CFparams, SignalOnly );
+        if ( xlalErrno != 0 ) {
+          XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoSemiCoherent().\n\n", fn, __LINE__);
+          XLAL_ERROR ( fn, XLAL_EFUNC );
+        }
+
+        /* save values in toplist */
+        elem->sumTwoF         = lineVeto.TwoF;
+        for ( X = 0; X < numDetectors; X ++ )
+          elem->sumTwoFX->data[X]  = lineVeto.TwoFX->data[X];
       }
-
-      /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
-      XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, CFparams, SignalOnly );
-      if ( xlalErrno != 0 ) {
-        XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoSemiCoherent().\n\n", fn, __LINE__);
-        XLAL_ERROR ( fn, XLAL_EFUNC );
-      }
-
-      /* save values in toplist */
-      elem->sumTwoFnew         = lineVeto.TwoF;
-      for ( X = 0; X < numDetectors; X ++ )
-        elem->sumTwoFX->data[X]  = lineVeto.TwoFX->data[X];
 
     } /* for j < numElements */
 
@@ -253,7 +299,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
       /* recompute single-detector Fstats from atoms */
       for (X = 0; X < numDetectorsSeg; X++)
         {
-          REAL8 twoFX = 2.0 * XLALComputeFstatFromAtoms ( &Fstat, X );
+          REAL8 twoFX = 2.0 * XLALComputeFstatFromAtoms ( Fstat.multiFstatAtoms, X );
           if ( xlalErrno != 0 ) {
             XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", fn, __LINE__);
             XLAL_ERROR ( fn, XLAL_EFUNC );
@@ -297,50 +343,66 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 } /* XLALComputeExtraStatsSemiCoherent() */
 
 
-/** XLAL function to compute single-IFO Fstat from multi-IFO Atoms: */
-REAL8 XLALComputeFstatFromAtoms ( const Fcomponents *Fstat,   /**< multi-detector Fstat */
-				  const UINT4       X        /**< detector number */
+/** XLAL function to compute single-or multi-IFO Fstat from multi-IFO Atoms: */
+REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   /**< multi-detector atoms */
+				  const INT4                 X                   /**< detector number, give -1 for multi-Fstat */
 				  )
 {
   const char *fn = __func__;
 
   /* check input parameters and report errors */
-  if ( !Fstat || !Fstat->multiFstatAtoms || !Fstat->multiFstatAtoms->data || !Fstat->multiFstatAtoms->data[0]->data ) {
+  if ( !multiFstatAtoms || !multiFstatAtoms->data || !multiFstatAtoms->data[0]->data ) {
     XLALPrintError ("\nError in function %s, line %d : Empty pointer as input parameter!\n\n", fn, __LINE__);
     XLAL_ERROR ( fn, XLAL_EFAULT);
   }
 
-  if ( Fstat->multiFstatAtoms->length == 0 ) {
+  if ( multiFstatAtoms->length == 0 ) {
     XLALPrintError ("\nError in function %s, line %d : Input MultiFstatAtomVector has zero length! (no detectors)\n\n", fn, __LINE__);
     XLAL_ERROR ( fn, XLAL_EBADLEN );
   }
 
-  if ( X > Fstat->multiFstatAtoms->length-1 ) {
-    XLALPrintError ("\nError in function %s, line %d : Invalid detector number!\nRequested X=%d, but FstatAtoms only have length %d.\n\n", fn, __LINE__, X, Fstat->multiFstatAtoms->length);
+  if ( X < -1 ) {
+    XLALPrintError ("\nError in function %s, line %d : Invalid detector number X=%d, only nonnegative numbers or -1 for multi-F are allowed!\n\n", fn, __LINE__, X);
     XLAL_ERROR ( fn, XLAL_EDOM );
   }
 
-  if ( Fstat->multiFstatAtoms->data[X]->length == 0 ) {
-    XLALPrintError ("\nError in function %s, line %d : Input FstatAtomVector has zero length! (no timestamps for detector X=%d)\n\n", fn, __LINE__, X);
+  if ( ( X >= 0 ) && ( (UINT4)(X) > multiFstatAtoms->length-1 ) ) {
+    XLALPrintError ("\nError in function %s, line %d : Invalid detector number!\nRequested X=%d, but FstatAtoms only have length %d.\n\n", fn, __LINE__, X, multiFstatAtoms->length);
     XLAL_ERROR ( fn, XLAL_EDOM );
   }
 
-  /* set up temporary variables and structs */
+  /* internal detector index Y to do both single- and multi-F case */
+  UINT4 Y, Ystart, Yend;
+  if ( X == -1 ) { /* loop through all detectors to get multi-Fstat */
+    Ystart = 0;
+    Yend   = multiFstatAtoms->length-1;
+  }
+  else { /* just compute single-Fstat for 1 IFO */
+    Ystart = X;
+    Yend   = X;
+  }
+
+  /* set up temporary Fatoms and matrix elements for summations */
   REAL8 mmatrixA = 0.0, mmatrixB = 0.0, mmatrixC = 0.0;
-  REAL8 FX = 0.0;
+  REAL8 F = 0.0;
   COMPLEX8 Fa, Fb;
-  UINT4 alpha;
-  UINT4 numSFTs = Fstat->multiFstatAtoms->data[X]->length;
-
-  /* sum up matrix elements and Fa, Fb */
   Fa.re = 0.0;
   Fa.im = 0.0;
   Fb.re = 0.0;
   Fb.im = 0.0;
-  for ( alpha = 0; alpha < numSFTs; alpha++)
-    {
-      FstatAtom *thisAtom = &Fstat->multiFstatAtoms->data[X]->data[alpha];
 
+  for (Y = Ystart; Y <= Yend; Y++) {  /* loop through detectors */
+
+    UINT4 alpha, numSFTs;
+    numSFTs = multiFstatAtoms->data[Y]->length;
+    if ( numSFTs == 0 ) {
+      XLALPrintError ("\nError in function %s, line %d : Input FstatAtomVector has zero length! (no timestamps for detector X=%d)\n\n", fn, __LINE__, Y);
+      XLAL_ERROR ( fn, XLAL_EDOM );
+    }
+
+    for ( alpha = 0; alpha < numSFTs; alpha++) { /* loop through SFTs */
+      FstatAtom *thisAtom = &multiFstatAtoms->data[Y]->data[alpha];
+      /* sum up matrix elements and Fa, Fb */
       mmatrixA += thisAtom->a2_alpha;
       mmatrixB += thisAtom->b2_alpha;
       mmatrixC += thisAtom->ab_alpha;
@@ -348,14 +410,15 @@ REAL8 XLALComputeFstatFromAtoms ( const Fcomponents *Fstat,   /**< multi-detecto
       Fa.im    += thisAtom->Fa_alpha.im;
       Fb.re    += thisAtom->Fb_alpha.re;
       Fb.im    += thisAtom->Fb_alpha.im;
+    } /* loop through SFTs */
 
-    } /* for alpha < numSFTs */
+  } /* loop through detectors */
 
   /* compute determinant and final Fstat (not twoF!) */
   REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQUARE(mmatrixC) );
-  FX = Dinv * ( mmatrixB * ( SQUARE(Fa.re) + SQUARE(Fa.im) ) + mmatrixA * ( SQUARE(Fb.re) + SQUARE(Fb.im) ) - 2.0 * mmatrixC * (Fa.re*Fb.re + Fa.im*Fb.im) );
+  F = Dinv * ( mmatrixB * ( SQUARE(Fa.re) + SQUARE(Fa.im) ) + mmatrixA * ( SQUARE(Fb.re) + SQUARE(Fb.im) ) - 2.0 * mmatrixC * (Fa.re*Fb.re + Fa.im*Fb.im) );
 
-  return FX;
+  return(F);
 
 } /* XLALComputeFstatFromAtoms() */
 

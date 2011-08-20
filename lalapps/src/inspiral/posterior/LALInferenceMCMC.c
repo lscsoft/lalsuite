@@ -181,7 +181,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 	
 	/* This is the LAL template generator for inspiral signals */
 	
-	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
 	if(ppt){
 		/*if(strstr(ppt->value,"SpinTaylor")) {
 			runState->template=&templateLALSTPN;
@@ -358,30 +358,48 @@ void initVariables(LALInferenceRunState *state)
   
   char help[]="\
 (--injXML injections.xml)       Injection XML file to use\n\
-(--Mmin mchirp)                 Minimum chirp mass\n\
-(--Mmax mchirp)                 Maximum chirp mass\n\
+(--mc-min mchirp)               Minimum chirp mass\n\
+(--mc-max mchirp)               Maximum chirp mass\n\
+(--eta-min etaMin)              Minimum eta\n\
+(--eta-max etaMax)              Maximum eta\n\
 (--dt time)                     Width of time prior, centred around trigger (0.1s)\n\
 (--trigtime time)               Trigger time to use\n\
 (--mc mchirp)                   Trigger chirpmass to use\n\
+(--fixMc)                       Do not allow chirpmass to vary\n\
 (--eta eta)                     Trigger eta to use\n\
+(--fixEta)                      Do not allow mass ratio to vary\n\
 (--phi phase)                   Trigger phase to use\n\
+(--fixPhi)                      Do not allow phase to vary\n\
 (--iota inclination)            Trigger inclination to use\n\
+(--fixIota)                     Do not allow inclination to vary\n\
 (--dist dist)                   Trigger distance\n\
+(--fixDist)                     Do not allow distance to vary\n\
 (--ra ra)                       Trigger RA\n\
+(--fixRa)                       Do not allow RA to vary\n\
 (--dec dec)                     Trigger declination\n\
+(--fixDec)                      Do not allow declination to vary\n\
 (--psi psi)                     Trigger psi\n\
+(--fixPsi)                      Do not allow polarization to vary\n\
 (--a1 a1)                       Trigger a1\n\
+(--fixA1)                       Do not allow spin to vary\n\
 (--theta1 theta1)               Trigger theta1\n\
+(--fixTheta1)                   Do not allow spin 1 colatitude to vary\n\
 (--phi1 phi1)                   Trigger phi1\n\
+(--fixPhi1)                     Do not allow spin 1 longitude to vary\n\
 (--a2 a2)                       Trigger a2\n\
+(--fixA2)                       Do not allow spin 2 to vary\n\
 (--theta2 theta2)               Trigger theta2\n\
+(--fixTheta2)                   Do not allow spin 2 colatitude to vary\n\
 (--phi2 phi2)                   Trigger phi2\n\
+(--fixPhi2)                     Do not allow spin 2 longitude to vary\n\
 (--time time)                   Waveform time (overrides random about trigtime)\n\
+(--fixTime)                     Do not allow coalescence time to vary\n\
 (--Dmin dist)                   Minimum distance in Mpc (1)\n\
 (--Dmax dist)                   Maximum distance in Mpc (100)\n\
-(--approx ApproximantorderPN)   Specify a waveform to use, (default TaylorF2twoPN)\n\
-(--mincomp min)                 Minimum component mass (1.0)\n\
-(--maxcomp max)                 Maximum component mass (30.0)\n\
+(--approximant Approximant)     Specify a template approximant to use, (default TaylorF2)\n\
+(--order PNorder)               Specify a PN order to use, (default threePointFivePN)\n\
+(--comp-min min)                Minimum component mass (1.0)\n\
+(--comp-max max)                Maximum component mass (30.0)\n\
 (--MTotMax max)                 Maximum total mass (35.0)\n\
 (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n";
 
@@ -402,7 +420,7 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 	ProcessParamsTable *commandLine=state->commandLine;
 	ProcessParamsTable *ppt=NULL;
 	INT4 AmpOrder=0;
-	LALPNOrder PhaseOrder=LAL_PNORDER_TWO;
+	LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
 	Approximant approx=TaylorF2;
 	//INT4 numberI4 = TaylorF2;
 	//INT4 numberI4 = TaylorT3;
@@ -476,16 +494,138 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 	}	
 	
 	/* Over-ride approximant if user specifies */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
 	if(ppt){
-		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
-		LALGetApproximantFromString(&status,ppt->value,&approx);
-		//printf("%d\n",approx);
-		if(strstr(ppt->value,"TaylorF2")) {approx=TaylorF2;}//numberI4 = TaylorF2;}		LALGetApproximantFromString DOES NOT HAVE TaylorF2 !!!!!!
-		//if(strstr(ppt->value,"TaylorT3")) {approx=TaylorT3;}//numberI4 = TaylorT3;}
-		//if(strstr(ppt->value,"SpinTaylor")) {approx=SpinTaylor;}//numberI4 = SpinTaylor;}
-		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
-		//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",numberI4,PhaseOrder);
+		if ( ! strcmp( "GeneratePPN", ppt->value ) )
+		{
+			approx = GeneratePPN;
+		}
+		else if ( ! strcmp( "TaylorT1", ppt->value ) )
+		{
+			approx = TaylorT1;
+		}
+		else if ( ! strcmp( "TaylorT2", ppt->value ) )
+		{
+			approx = TaylorT2;
+		}
+		else if ( ! strcmp( "TaylorT3", ppt->value ) )
+		{
+			approx = TaylorT3;
+		}
+		else if ( ! strcmp( "TaylorT4", ppt->value ) )
+		{
+			approx = TaylorT4;
+		}
+		else if ( ! strcmp( "TaylorF1", ppt->value ) )
+		{
+			approx = TaylorF1;
+		}
+		else if ( ! strcmp( "TaylorF2", ppt->value ) )
+		{
+			approx = TaylorF2;
+		}
+		else if ( ! strcmp( "EOB", ppt->value ) )
+		{
+			approx = EOB;
+		}
+		else if ( ! strcmp( "EOBNR", ppt->value ) )
+		{
+			approx = EOBNR;
+		}
+		else if ( ! strcmp( "EOBNRv2", ppt->value ) )
+		{
+			approx = EOBNRv2;
+		}
+		else if ( ! strcmp( "EOBNRv2HM", ppt->value ) )
+		{
+			approx = EOBNRv2HM;
+		}
+		else if ( ! strcmp( "SpinTaylor", ppt->value ) )
+		{
+			approx = SpinTaylor;
+		}
+		else if ( ! strcmp( "SpinTaylorT3", ppt->value ) )
+		{
+			approx = SpinTaylorT3;
+		}
+		else if ( ! strcmp( "SpinQuadTaylor", ppt->value ) )
+		{
+			approx = SpinQuadTaylor;
+		}
+		else if ( ! strcmp( "PhenSpinTaylorRD", ppt->value ) )
+		{
+			approx = PhenSpinTaylorRD;
+		}
+		else if ( ! strcmp( "NumRel", ppt->value ) )
+		{
+			approx = NumRel;
+		}
+		else if ( ! strcmp( "IMRPhenomA", ppt->value ) )
+		{
+			approx = IMRPhenomA;
+		}
+		else if ( ! strcmp( "IMRPhenomB", ppt->value ) )
+		{
+			approx = IMRPhenomB;
+		}
+		else
+		{
+			fprintf( stderr, "invalid argument to --approximant\n"
+					"unknown approximant %s specified: "
+					"Approximant must be one of: GeneratePPN, TaylorT1, TaylorT2,\n"
+					"TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
+					"EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor,\n"
+					"PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
+			exit( 1 );
+		}
+		fprintf(stdout,"Templates will run using Approximant %s (%u)\n",ppt->value,approx);
+	}
+	
+        /* Over-ride PN order if user specifies */
+	ppt=LALInferenceGetProcParamVal(commandLine,"--order");
+	if(ppt){
+        if ( ! strcmp( "newtonian", ppt->value ) )
+        {
+          PhaseOrder = LAL_PNORDER_NEWTONIAN;
+        }
+        else if ( ! strcmp( "oneHalfPN", ppt->value ) )
+        {
+          PhaseOrder = LAL_PNORDER_HALF;
+        }
+        else if ( ! strcmp( "onePN", ppt->value ) )
+        {
+          PhaseOrder = LAL_PNORDER_ONE;
+        }
+        else if ( ! strcmp( "onePointFivePN", ppt->value ) )
+        {
+          PhaseOrder = LAL_PNORDER_ONE_POINT_FIVE;
+        }
+        else if ( ! strcmp( "twoPN", ppt->value ) )
+        {
+          PhaseOrder = LAL_PNORDER_TWO;
+        }
+        else if ( ! strcmp( "twoPointFive", ppt->value ) )
+        {
+          PhaseOrder = LAL_PNORDER_TWO_POINT_FIVE;
+        }
+        else if ( ! strcmp( "threePN", ppt->value ) )
+        {
+          PhaseOrder = LAL_PNORDER_THREE;
+        }
+        else if ( ! strcmp( "threePointFivePN", ppt->value ) )
+        {
+          PhaseOrder = LAL_PNORDER_THREE_POINT_FIVE;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --order:\n"
+              "unknown order specified: "
+              "PN order must be one of: newtonian, oneHalfPN, onePN,\n"
+              "onePointFivePN, twoPN, twoPointFivePN, threePN or\n"
+              "threePointFivePN\n");
+          exit( 1 );
+        }
+	fprintf(stdout,"Templates will be generated at %i PN order\n",PhaseOrder);
 	}
 
         /* This flag was added to account for the broken Big Dog
@@ -610,21 +750,60 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 		Dmax=atof(ppt->value);
 	}
 	
-	/* Over-ride Mass prior if specified */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--Mmin");
-	if(ppt){
+	/* Over-ride Mass priors if specified */
+	ppt=LALInferenceGetProcParamVal(commandLine,"--mc-min");
+	if(ppt) 
+        {
 		mcMin=atof(ppt->value);
+		if (mcMin < 0) 
+		{
+			fprintf(stderr,"ERROR: Minimum value of mchirp must be > 0");
+			exit(1);
+		}
 	}
-	ppt=LALInferenceGetProcParamVal(commandLine,"--Mmax");
-	if(ppt)	mcMax=atof(ppt->value);
+
+	ppt=LALInferenceGetProcParamVal(commandLine,"--mc-max");
+	if(ppt)	
+        {
+                mcMax=atof(ppt->value);
+		if (mcMax <= 0) 
+		{
+			fprintf(stderr,"ERROR: Maximum value of mchirp must be > 0");
+			exit(1);
+		}
+	}
+
+	ppt=LALInferenceGetProcParamVal(commandLine,"--eta-min");
+	if(ppt)	
+        {
+		etaMin=atof(ppt->value);
+                if (etaMin < 0.0) 
+		{
+			fprintf(stderr,"ERROR: Minimum value of eta must be > 0");
+			exit(1);
+		}
+	}
+
+	ppt=LALInferenceGetProcParamVal(commandLine,"--eta-max");
+	if(ppt)	
+        {
+		etaMax=atof(ppt->value);
+                if (etaMax > 0.25 || etaMax <= 0.0) 
+		{
+			fprintf(stderr,"ERROR: Maximum value of eta must be between 0 and 0.25\n");
+			exit(1);
+		}
+	}
 	
 	/* Over-ride component masses */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--comp-min");
 	if(ppt)	mMin=atof(ppt->value);
 	LALInferenceAddVariable(priorArgs,"component_min",&mMin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-	ppt=LALInferenceGetProcParamVal(commandLine,"--compmax");
+
+	ppt=LALInferenceGetProcParamVal(commandLine,"--comp-max");
 	if(ppt)	mMax=atof(ppt->value);
 	LALInferenceAddVariable(priorArgs,"component_max",&mMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+
 	ppt=LALInferenceGetProcParamVal(commandLine,"--MTotMax");
 	if(ppt)	MTotMax=atof(ppt->value);
 	LALInferenceAddVariable(priorArgs,"MTotMax",&MTotMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
@@ -988,6 +1167,7 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
   /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES. 
   (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enought */
   if(state->prior(state, currentParams)<=-DBL_MAX){
+    fprintf(stderr, "Warning initial parameter randlomy drawn from prior. (in %s, line %d)\n",__FILE__, __LINE__);
     LALInferenceVariables *temp; //
     temp=XLALCalloc(1,sizeof(LALInferenceVariables));
     memset(temp,0,sizeof(LALInferenceVariables));

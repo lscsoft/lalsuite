@@ -317,11 +317,11 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
       else if (strcmp(argv[i],"--axisChoice")==0)
       {
         if (strcmp(argv[++i],"TotalJ")==0){
-          params->spinInteraction = TotalJ; }
+          params->axisChoice = TotalJ; }
         else if (strcmp(argv[i],"View")==0){
-          params->spinInteraction = View; }
+          params->axisChoice = View; }
         else if (strcmp(argv[i],"OrbitalL")==0){
-          params->spinInteraction = OrbitalL; }
+          params->axisChoice = OrbitalL; }
         else
           fprintf(stderr,"Invalid choice of --axisChoice\n");
       }

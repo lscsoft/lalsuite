@@ -354,4 +354,32 @@ Int. J. Modern. Phys. D.
   gravitational waves with interferometers and resonant spheres",
   Phys. Rev. D \c 62, 024004 (2000); <a href="http://www.arXiv.org/abs/gr-qc/9907055">gr-qc/9907055</a>
 
+\anchor DupuisWoan2005 <b>[DupuisWoan2005]</b>
+  R. Dupuis and G. Woan, <i>Bayesian estimation of pulsar parameters from
+  gravitational wave data</i>, <a
+  href="http://adsabs.harvard.edu/abs/2005PhRvD..72j2002D">Phys. Rev. D,
+  <b>72</b>, 102002 (2005)</a>
+
+\anchor Jones2010 <b>Jones2010</b> 
+  D. I. Jones, <i>Gravitational wave emission from rotating superfluid neutron
+  stars</i>, <a href="http://adsabs.harvard.edu/abs/2010MNRAS.402.2503J">MNRAS,
+  <b>402</b>, 4, 2503-2519 (2010)</a>
+
+\anchor VeitchVecchio2010 <b>VeitchVecchio2010</b>
+  J. Veitch and A. Vecchio, <i>Bayesian coherent analysis of in-spiral
+  gravitational wave signals with a detector network</i>, <a
+  href="http://adsabs.harvard.edu/abs/2010PhRvD..81f2003V">Phys. Rev. D, 
+  <b>81</b>, 062003 (2010)</a>
+
+\anchor Skilling2006 <b>Skilling2006</b>
+  J. Skilling, <i>Nested sampling for general Bayesian computation</i>, <a
+href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.117.5542&rep=rep1
+&type=pdf">Bayesian Analysis, <b>1</b>, 4, 833-860 (2006)</a>
+
+\anchor Scargle1998 <b>Scargle1998</b>
+  J. D. Scargle, <i>Studies in Astronomical Time Series Analysis. V. Bayesian
+Blocks, a New Method to Analyze Structure in Photon Counting Data</i>, <a
+href="http://adsabs.harvard.edu/abs/1998ApJ...504..405S">Ap. J., <b>504</b>,
+  405 (1998)</a>
+
 */

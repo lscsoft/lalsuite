@@ -590,14 +590,13 @@ INT4 XLALPSpinFinalMassSpin(
 
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
-  REAL8 qq,ll,eta, eta2;
+  REAL8 qq,ll,eta;
 
   /* See eq.(6) in arXiv:0904.2577 */
   REAL8 ma1,ma2,a12,a12l;
   REAL8 cosa1=0.;
   REAL8 cosa2=0.;
   REAL8 cosa12=0.;
-  REAL8 unitHz;
 
   REAL8 t0=-2.9;
   REAL8 t3=2.6;
@@ -607,9 +606,7 @@ INT4 XLALPSpinFinalMassSpin(
 
   /* get a local copy of the intrinstic parameters */
   qq=params->mass2/params->mass1;
-  unitHz = params->totalMass * LAL_MTSUN_SI * (REAL8)LAL_PI;
   eta = params->eta;
-  eta2 = eta * eta;
   /* done */
   ma1=sqrt( params->spin1[0]*params->spin1[0] + params->spin1[1]*params->spin1[1] + params->spin1[2]*params->spin1[2] );
   ma2=sqrt( params->spin2[0]*params->spin2[0] + params->spin2[1]*params->spin2[1] + params->spin2[2]*params->spin2[2] );
@@ -625,7 +622,7 @@ INT4 XLALPSpinFinalMassSpin(
 
   a12  = ma1*ma1 + ma2*ma2*qq*qq*qq*qq + 2.*ma1*ma2*qq*qq*cosa12 ;
   a12l = ma1*cosa1 + ma2*cosa2*qq*qq ;
-  ll = 2.*sqrt(3.)+ t2*params->eta + t3*params->eta*params->eta + s4*a12/(1.+qq*qq)/(1.+qq*qq) + (s5*params->eta+t0+2.)/(1.+qq*qq)*a12l;
+  ll = 2.*sqrt(3.)+ t2*eta + t3*eta*eta + s4*a12/(1.+qq*qq)/(1.+qq*qq) + (s5*eta+t0+2.)/(1.+qq*qq)*a12l;
 
   /* Estimate final mass by adding the negative binding energy to the rest mass*/
   *finalMass = 1. + energy;
@@ -653,8 +650,8 @@ INT4 XLALPSpinFinalMassSpin(
   }
 
   /*For reference these are the formula used in the EOBNR construction*/
-  //*finalMass = 1. - 0.057191 * eta - 0.498 * eta2;
-  //*finalSpin = 3.464102 * eta - 2.9 * eta2;
+  //*finalMass = 1. - 0.057191 * eta - 0.498 * eta*eta;
+  //*finalSpin = 3.464102 * eta - 2.9 * eta*eta;
 
   return errcode;
 }

@@ -17,67 +17,58 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="LALCorrelationTestCV">
-Author: Yakushin, Igor
-$Id$
-********************************* </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{LALCorrelationTest.c}}
-
-[One-line description of test program]
-
-\subsubsection*{Usage}
-\begin{verbatim}
-LALCorrelationTest
-\end{verbatim}
-
-\subsubsection*{Description}
-
-\subsubsection*{Exit codes}
-\input{LALCorrelationTestCE}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALCorrelationTest()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALCorrelationTestCV}}
-******************************************************* </lalLaTeX> */
-
-/******* INCLUDE STANDARD LIBRARY HEADERS; ************/
+/* ****** INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
 #include <math.h>
 
-/******* INCLUDE ANY LDAS LIBRARY HEADERS ************/
+/* ****** INCLUDE ANY LDAS LIBRARY HEADERS ************/
 
-/******* INCLUDE ANY LAL HEADERS ************/
+/* ****** INCLUDE ANY LAL HEADERS ************/
 #include <lal/LALStdlib.h>
 #include <lal/LALCorrelation.h>
 #include <lal/AVFactories.h>
 
-/******* DEFINE RCS ID STRING ************/
+/* ****** DEFINE RCS ID STRING ************/
 
 NRCSID( LALCORRELATIONTESTC, "$Id$" );
 
-/******* DEFINE LOCAL CONSTANTS AND MACROS ************/
+/* ****** DEFINE LOCAL CONSTANTS AND MACROS ************/
 
-/***************************** <lalErrTable file="LALCorrelationTestCE"> */
-#define LALCORRELATIONTESTC_ENOM 0
-#define LALCORRELATIONTESTC_ECHK 1
-#define LALCORRELATIONTESTC_EFLS 2
-#define LALCORRELATIONTESTC_EIO  3
-#define LALCORRELATIONTESTC_EUP  4
+/**
+\author Yakushin, Igor
+\file
+\ingroup LALCorrelation_h
 
+\brief [One-line description of test program]
+
+\heading{Usage}
+\code
+LALCorrelationTest
+\endcode
+
+\heading{Description}
+
+\heading{Uses}
+\code
+LALCorrelationTest()
+\endcode
+
+*/
+
+/* *\name Error Codes */ /*@{*/
+#define LALCORRELATIONTESTC_ENOM 0	/**< Nominal exit */
+#define LALCORRELATIONTESTC_ECHK 1	/**< Error checking failed to catch bad data */
+#define LALCORRELATIONTESTC_EFLS 2	/**< Incorrect answer for valid data */
+#define LALCORRELATIONTESTC_EIO  3	/**< Input/output error */
+#define LALCORRELATIONTESTC_EUP  4	/**< Unexpected parameter values */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define LALCORRELATIONTESTC_MSGENOM "Nominal exit"
 #define LALCORRELATIONTESTC_MSGECHK "Error checking failed to catch bad data"
 #define LALCORRELATIONTESTC_MSGEFLS "Incorrect answer for valid data"
 #define LALCORRELATIONTESTC_MSGEIO  "Input/output error"
 #define LALCORRELATIONTESTC_MSGEUP "Unexpected parameter values"
-
-/***************************** </lalErrTable> */
 
 
 #define LALCORRELATIONTESTC_TOL    1.0e-6
@@ -130,7 +121,7 @@ int main( void )
     return comparison;             ;
   }
 
-  /*******  CLEAN UP  ************/
+  /* ******  CLEAN UP  ************/
 
   LALFree(params);
   LALFree(input->one->data->data);
@@ -293,5 +284,4 @@ static INT4 compareOutputs(OutputCorrelation *is, OutputCorrelation *should)
   return 0;
 }
 
-
-
+/** \endcond */

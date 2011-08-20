@@ -35,6 +35,8 @@ typedef struct {
   REAL8 DeltaBest;      /**< skyposition of best candidate: latitude */
   REAL8 MeanSig;        /**< mean of significance values in hough map*/
   REAL8 VarianceSig;    /**< variance of significance values in hough map*/
+  REAL4 sumTwoF;        /**< sum of 2F-values as recomputed in LV postprocessing */
+  REAL4Vector *sumTwoFX; /**< sum of 2F-values per detector, computed in LV postprocessing */
 } HoughFStatOutputEntry;
 
 

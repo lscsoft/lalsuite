@@ -35,7 +35,9 @@ code_HS="${builddir}/lalapps_HierarchicalSearch"
 code_RC="${builddir}/lalapps_RecalcHSCandidates"
 
 ## ----- parameters
-SFTs="./allSFTs.sft"
+SFTsH1="./allSFTs_H1.sft"
+SFTsL1="./allSFTs_L1.sft"
+
 HS_OUT="./HS_out.dat"
 RC_OUT1="./RC_out1.dat"
 RC_OUT2="./RC_out2.dat"
@@ -47,7 +49,7 @@ nStacks=10
 Tspan=36000	## should be >= nStacks * tStack
 
 echo "----- STEP 1: produce some fake data:"
-cmdline="$code_MFD -I H1 --outSingleSFT --outSFTbname=$SFTs -y 05-09 -G 820108814 --duration=$Tspan --noiseSqrtSh=3e-23 --fmin=100 --Band=1 --randSeed=1 -v1"
+cmdline="$code_MFD -I H1 --outSingleSFT --outSFTbname=$SFTsH1 -y 05-09 -G 820108814 --duration=$Tspan --noiseSqrtSh=3e-23 --fmin=100 --Band=1 --randSeed=1 -v1"
 
 echo $cmdline;
 if ! eval $cmdline; then
@@ -55,8 +57,17 @@ if ! eval $cmdline; then
     exit 1
 fi
 
+cmdline="$code_MFD -I L1 --outSingleSFT --outSFTbname=$SFTsL1 -y 05-09 -G 820108814 --duration=$Tspan --noiseSqrtSh=3e-23 --fmin=100 --Band=1 --randSeed=2 -v1"
+
+echo $cmdline;
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cmdline' ..."
+    exit 1
+fi
+
+
 echo "----- STEP 2: '$HS_OUT' -- run original HierarchicalSearch code on this data, producing some candidates:"
-cmdline="$code_HS --method=0 --DataFiles=$SFTs --skyRegion='(1,1)' --Freq=$Freq0 --FreqBand=1e-5 --dFreq=$dFreq0 --tStack=$tStack --nStacksMax=$nStacks --printCand1 --nf1dotRes=1 --semiCohToplist -o $HS_OUT -d1"
+cmdline="$code_HS --method=0 --DataFiles=\"$SFTsH1;$SFTsL1\" --skyRegion='(1,1)' --Freq=$Freq0 --FreqBand=1e-5 --dFreq=$dFreq0 --tStack=$tStack --nStacksMax=$nStacks --printCand1 --nf1dotRes=1 --semiCohToplist -o $HS_OUT -d1"
 
 echo $cmdline;
 if ! eval $cmdline; then
@@ -65,7 +76,7 @@ if ! eval $cmdline; then
 fi
 
 echo "## ----- STEP 3a: '$RC_OUT1' -- run 'RecalcHSCandidates' on this output candidate file"
-cmdline="$code_RC --DataFiles1=$SFTs --tStack=$tStack --nStacksMax=$nStacks --followupList=$HS_OUT --WU_Freq=$Freq0 --WU_dFreq=$dFreq0 --fnameout=$RC_OUT1 -d1"
+cmdline="$code_RC --DataFiles1=\"$SFTsH1;$SFTsL1\" --tStack=$tStack --nStacksMax=$nStacks --followupList=$HS_OUT --WU_Freq=$Freq0 --WU_dFreq=$dFreq0 --fnameout=$RC_OUT1 --outputFX=true -d1"
 
 echo $cmdline;
 if ! eval $cmdline; then
@@ -75,7 +86,7 @@ fi
 
 echo "## ----- STEP 3b: '$RC_OUT2' -- re-run RecalcHSCandidates on its own output to test stability"
 ## NOTE: this time we don't use any HS-frequency bug corrections (--WU_Freq), as RC outputs frequencies correctly!
-cmdline="$code_RC --DataFiles1=$SFTs --tStack=$tStack --nStacksMax=$nStacks --followupList=$RC_OUT1 --WU_dFreq=$dFreq0 --fnameout=$RC_OUT2 -d1"
+cmdline="$code_RC --DataFiles1=\"$SFTsH1;$SFTsL1\" --tStack=$tStack --nStacksMax=$nStacks --followupList=$RC_OUT1 --WU_dFreq=$dFreq0 --fnameout=$RC_OUT2 --outputFX=true -d1"
 
 echo $cmdline;
 if ! eval $cmdline; then
@@ -83,12 +94,12 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-## currently not really testing these results, just output them for user to look at:
+## currently not really testing these results against HS, just output them for user to look at:
 echo "$HS_OUT: --------------------"
 cat $HS_OUT
 echo "$RC_OUT1: --------------------"
 cat $RC_OUT1
-echo "----------------------------------------"
+
 
 if ! diff -q RC_out1.dat RC_out2.dat ; then
     echo "$RC_OUT1 and RC_OUT2 differ ... something is wrong!"
@@ -98,5 +109,5 @@ else
 fi
 
 if [ -z "$NOCLEANUP" ]; then
-    rm $HS_OUT $RC_OUT1 $RC_OUT2 $SFTs
+    rm $HS_OUT $RC_OUT1 $RC_OUT2 $SFTsH1 $SFTsL1
 fi

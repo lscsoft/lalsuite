@@ -777,7 +777,8 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.multiInspiralTable->autoCorrNullSq,
 	      tablePtr.multiInspiralTable->crossCorrNullSq,
 	      tablePtr.multiInspiralTable->ampMetricEigenVal1,
-	      tablePtr.multiInspiralTable->ampMetricEigenVal2
+	      tablePtr.multiInspiralTable->ampMetricEigenVal2,
+              tablePtr.multiInspiralTable->time_slide_id->id
               );
         tablePtr.multiInspiralTable = tablePtr.multiInspiralTable->next;
         ++(xml->rowCount);

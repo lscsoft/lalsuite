@@ -219,7 +219,12 @@ VOTABLE_DATATYPE XLALVOTString2Datatype ( const CHAR *datatypeString );
 const char* XLALVOTElement2String ( VOTABLE_ELEMENT element );
 const char* XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute );
 
-
+const char *
+XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of element to write */
+                         const char *fmt,		/**< [in] format string: if NULL we use default-fmt for datatype */
+                         void *arrayPtr,			/**< [in] pointer to array of data values */
+                         UINT4 arrayIndex		/**< [in] index of element to write: arrayPtr[index] */
+                         );
 
 
 /* C++ protection */

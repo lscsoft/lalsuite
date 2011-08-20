@@ -35,6 +35,7 @@
 
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *variables);
 void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter, LALInferenceVariables *priorArgs);
+void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter );
 
 REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState,

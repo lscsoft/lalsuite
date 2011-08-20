@@ -12,6 +12,15 @@
   $Id$
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Matthew Pitkin, John Veitch, Colin Gill
+ *
+ * \brief Header file for the parameter estimation code for known pulsar
+ * searches using the nested sampling algorithm.
+ */
+
 #ifndef _PULSAR_PARAMETER_ESTIMATION_H
 #define _PULSAR_PARAMETER_ESTIMATION_H
 
@@ -59,39 +68,71 @@
 extern "C" {
 #endif
 
-/** define macros */
+/** Macro to round a value to the nearest integer. */
 #define ROUND(x) (floor(x+0.5))
 
-/* macro to perform logarithmic addition log(exp(x) + exp(y)) */
+/** Macro to perform addition of two values within logarithm space \f$ \log{(e^x
++ e^y)}\f$. */
 #define LOGPLUS(x,y) ( x>y ? x+log(1.+exp(y-x)) : y+log(1.+exp(x-y)) )
+
+/** Macro that gives the integer number of times that \c x goes in to \c y. */
+#define FACTOR(x,y) ((INT4)floor(x/y))
+
+/** Macro to square a value. */
 #define SQUARE(x) ( (x) * (x) );
 
+/** The maximum allowable length of the input data stream. Note: this may be
+ * removed in the future with memory allocated dynamically. */
 #define MAXLENGTH 1000000
 
 /* default values */
+/** Default value of the minimum length into which the data can be split. */
 #define CHUNKMIN 5
+/** Default value of the maximum length into which the data can be split. */
 #define CHUNKMAX 0
+/** Default number of bins in polarisation angle \f$ \psi \f$ for the time vs.
+ * \f$ \psi \f$ antenna pattern lookup table. */
 #define PSIBINS 500
+/** Default number of bins in time (over one sidereal day) for the time vs.
+ * \f$ \psi \f$ antenna pattern lookup table. */
 #define TIMEBINS 2880
 
-/* INCREASE THESE VALUES IF ADDING ADDITIONAL PARAMETERS */
-/* number of amplitude parameters e.g. h0, phi0, psi, ciota */
+/** The total number of 'amplitude' parameters that can define a signal e.g.
+ * gravitational wave amplitude from a triaxial star \f$ h_0 \f$, initial phase
+ * of the signal \f$ \phi_0 \f$, polarisation angle \f$ psi \f$, and cosine of
+ * the inclination angle \f$ \cos{\iota} \f$. 
+ * 
+ * Note: These should be increased if additional model parameters are added.
+ */ 
 #define NUMAMPPARS 7
+/** A list of the amplitude parameters. The names given here are those that are
+ * recognised within the code. */
 CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi", "cosiota", "h1",
                                           "lambda", "theta" };
 
-/* number of frequency parameters e.g. f0 */
+/** The total number of frequency parameters that can defined a signal e.g.
+ * the signal frequency and its time derivatives, and the frequency (period)
+ * epoch. */
 #define NUMFREQPARS 7
+/** A list of the frequency parameters. The names given here are those that are
+ * recognised within the code. */
 CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "f0", "f1", "f2", "f3", "f4", "f5",
                                             "pepoch" };
 
-/* number of sky position parameters e.g. ra, dec */ 
+/** The total number of sky position parameters that can define a signal e.g.
+ * right ascension, declination, proper motion and the positional epoch. */ 
 #define NUMSKYPARS 5
+/** A list of the sky position parameters. The names given here are those that
+ * are recognised within the code. */
 CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "ra", "pmra", "dec", "pmdec",
                                           "posepoch" };
-
-/* number of binary parameters e.g. e, x */       
+     
+/** The total number of binary system parameters that can define a signal e.g.
+ * binary period, orbital eccentricity, projected semi-major axis, time of
+ * periastron and angle of periastron. */
 #define NUMBINPARS 33
+/** A list of the binary system parameters. The names given here are those that
+ * are recognised within the code. */
 CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1", "eps2", "T0",
                                           "Tasc", "x", "w0", "Pb2", "e2", "T02",
                                           "x2", "w02", "Pb3", "e3", "T03", "x3",
@@ -100,16 +141,11 @@ CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1", "eps2", "T0",
                                           "edot", "s", "dr", "dth", "a0", "b0",
                                           "M", "m2" };
 
-/** define functions */
 
 /* initialisation functions */
 void initialiseAlgorithm( LALInferenceRunState *runState );
 
 void readPulsarData( LALInferenceRunState *runState );
-
-void readDoublePulsarData( LALInferenceRunState *runState );
-
-void setSignalModelType( LALInferenceRunState *runState );
 
 void setupFromParFile( LALInferenceRunState *runState );
 
@@ -133,10 +169,6 @@ void setupLivePointsArray( LALInferenceRunState *runState );
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, 
                              LALInferenceIFOData *data,
                              LALInferenceTemplateFunction *get_pulsar_model );
-
-REAL8 pulsar_double_log_likelihood( LALInferenceVariables *vars, 
-                             LALInferenceIFOData *data,
-                             LALInferenceTemplateFunction *get_pulsar_model );
                              
 REAL8 priorFunction( LALInferenceRunState *runState, 
                      LALInferenceVariables *params );
@@ -146,14 +178,12 @@ void get_pulsar_model( LALInferenceIFOData *data );
 
 REAL8 rescale_parameter( LALInferenceIFOData *data, const CHAR *parname );
 
-void get_triaxial_pulsar_model( BinaryPulsarParams params, 
-                                LALInferenceIFOData *data );
-
-void get_pinsf_pulsar_model( BinaryPulsarParams params, 
+void pulsar_model( BinaryPulsarParams params, 
                                 LALInferenceIFOData *data );
 
 REAL8Vector *get_phase_model( BinaryPulsarParams params, 
-                              LALInferenceIFOData *data );
+                              LALInferenceIFOData *data,
+                              REAL8 freqFactor );
 
 REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, 
                             LIGOTimeGPSVector *datatimes,
@@ -165,7 +195,8 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
                             LIGOTimeGPSVector *datatimes,
                             REAL8Vector *dts );                
                               
-void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
+void get_triaxial_amplitude_model( BinaryPulsarParams pars, 
+                                   LALInferenceIFOData *data );
 
 void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
   
@@ -190,7 +221,7 @@ void rechop_data( UINT4Vector *segs, INT4 chunkMax, INT4 chunkMin );
 
 void merge_data( COMPLEX16Vector *data, UINT4Vector *segs );
 
-REAL8Vector * sum_data( LALInferenceIFOData *data );
+void sumData( LALInferenceRunState *runState );
 
 void response_lookup_table( REAL8 t0, LALDetAndSource detAndSource,
                             INT4 timeSteps, INT4 psiSteps, gsl_matrix *LUfplus,
@@ -203,6 +234,8 @@ INT4 count_csv( CHAR *csvline );
 INT4 recognised_parameter( CHAR *parname );
 
 REAL8 calculate_time_domain_snr( LALInferenceIFOData *data );
+
+REAL8 calculate_double_time_domain_snr( LALInferenceIFOData *data );
 
 void get_loudest_snr( LALInferenceRunState *runState );
 

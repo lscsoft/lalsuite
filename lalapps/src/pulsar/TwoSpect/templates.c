@@ -1113,7 +1113,7 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
 }
 
 
-/* void efficientTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, REAL8 minfstep, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, REAL8 minDfstep, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
+void efficientTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, REAL8 minfstep, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, REAL8 minDfstep, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
    
    const CHAR *fn = __func__;
@@ -1159,7 +1159,7 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
    
    while (fstepsize-minfstep>1.0e-8 && dfstepsize-minDfstep>1.0e-8) {
       //Initial point with template
-      loadCandidateData(&cand, input.fsig, input.period, input.moddepth, input.ra, input.dec, 0, 0, 0.0, 0, 0.0);
+      loadCandidateData(&cand, bestf, bestp, bestdf, input.ra, input.dec, 0, 0, 0.0, 0, 0.0);
       if (useExactTemplates!=0) {
          makeTemplate(template, cand, params, sftexist, secondFFTplan);
          if (xlalErrno!=0) {
@@ -1220,7 +1220,11 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
                    trialb->data[jj]>=params->dfmin && 
                    trialb->data[jj]<=params->dfmax && 
                    trialp->data[kk]<=params->Pmax && 
-                   trialp->data[kk]>=params->Pmin ) {
+                   trialp->data[kk]>=params->Pmin && 
+                   trialf->data[ii]>=fminimum && 
+                   trialf->data[ii]<=fmaximum && 
+                   trialb->data[jj]>=dfmin && 
+                   trialb->data[jj]<=dfmax ) {
                   
                   loadCandidateData(&cand, trialf->data[ii], trialp->data[kk], trialb->data[jj], input.ra, input.dec, 0, 0, 0.0, 0, 0.0);
                   
@@ -1259,7 +1263,7 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
                   
                   REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
                   
-                  if ( (bestProb!=0.0 && prob < bestProb) || (bestProb==0.0 && !params->calcRthreshold && prob<log10(params->templatefar)) || (bestProb==0.0 && params->calcRthreshold && R > farval->far) ) {
+                  if ( prob < bestProb ) {
                      bestf = trialf->data[ii];
                      bestp = trialp->data[kk];
                      bestdf = trialb->data[jj];
@@ -1271,15 +1275,19 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
                   }
                   
                } // if within boundaries
-            }
-         }
+            } // for kk < trialp->length
+         } // for jj < trialb->length
+      } // for ii < trialf->length
+      
+      if (movedtoabetterpoint==0) {
+         fstepsize *= 0.5;
+         dfstepsize *= 0.5;
       }
       
-   }
+   } // while
    
    
-   
-   
+   loadCandidateData(output, bestf, bestp, bestdf, input.ra, input.dec, bestR, besth0, bestProb, bestproberrcode, input.normalization);
    
    
    free_templateStruct(template);
@@ -1292,7 +1300,7 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
    XLALDestroyREAL8Vector(trialf);
    XLALDestroyREAL8Vector(trialb);
    
-} */
+}
 
 
 //////////////////////////////////////////////////////////////

@@ -1,10 +1,8 @@
 /**
-\author Tibbits, M M
-\file
-
-\brief Routine to compute various moments of data.
+\addtogroup LALMoment_h
 
 \heading{Description}
+
 The data structure passed in is either a REAL8 or a REAL4 Sequence.  The only parameter is which
 moment to calculate. The function the sums the data, calculates the average and then it returns the
 average for the first moment, it returns the variance for the second moment, and it returns the n-th
@@ -34,7 +32,6 @@ Determination of a specific moment of a set of data.
 <li> <em>The result structure must be Non-NULL when passed in.</em></li>
 <li> <em>The function assumes that the length member of the data passed in is correct.</em></li>
 </ul>
-
 
 
 */

@@ -143,20 +143,71 @@ LALInferenceVariables *priorArgs){
        while ( *(REAL8 *)paraHead->value < min) 
          *(REAL8 *)paraHead->value += delta;
      }
-     else if(paraHead->vary==LALINFERENCE_PARAM_LINEAR) /* Use reflective boundaries */
+     /* Disable reflective boundary which violates detailled balance */
+/*
+     else if(paraHead->vary==LALINFERENCE_PARAM_LINEAR)
      {
        while(max<*(REAL8 *)paraHead->value || min>*(REAL8 *)paraHead->value){
-       /*      printf("%s: max=%lf,
-min=%lf, val=%lf\n",paraHead->name,max,min,*(REAL8 *)paraHead->value); */
          if(max < *(REAL8 *)paraHead->value)
            *(REAL8 *)paraHead->value -= 2.0*(*(REAL8 *)paraHead->value - max);
          if(min > *(REAL8 *)paraHead->value) 
            *(REAL8 *)paraHead->value+=2.0*(min - *(REAL8 *)paraHead->value);
        }
      }
+*/
    }
    return;
 }
+
+
+/** \brief Rotate initial phase if polarisation angle is cyclic around ranges
+ * 
+ * If the polarisation angle parameter \f$\psi\f$ is cyclic about its upper and
+ * lower ranges of \f$-\pi/4\f$ to \f$\psi/4\f$ then the transformation for
+ * crossing a boundary requires the initial phase parameter \f$\phi_0\f$ to be
+ * rotated through \f$\pi\f$ radians. The function assumes the value of
+ * \f$\psi\f$ has been rescaled to be between 0 and \f$2\pi\f$ - this is a
+ * requirement of the covariance matrix routine \c LALInferenceNScalcCVM
+ * function.  
+ * 
+ * This is particularly relevant for pulsar analyses.
+ * 
+ * \param parameter [in] Pointer to an array of parameters
+ * \param priorArgs [in] Pointer to an array of prior ranges
+ */
+void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter){
+  LALInferenceVariableItem *paraHead = NULL;
+  LALInferenceVariableItem *paraPhi0 = parameter->head;
+  REAL8 rotphi0 = 0.;
+  UINT4 idx1 = 0, idx2 = 0;
+  
+  for(paraHead=parameter->head;paraHead;paraHead=paraHead->next){
+    if (paraHead->vary == LALINFERENCE_PARAM_CIRCULAR &&
+        !strcmp(paraHead->name, "psi") ){
+      /* if psi is outside the -pi/4 -> pi/4 boundary the set to rotate phi0
+         by pi (psi will have been rescaled to be between 0 to 2pi as a 
+        circular parameter).*/
+     if (*(REAL8 *)paraHead->value > LAL_TWOPI || 
+        *(REAL8 *)paraHead->value < 0. ) rotphi0 = LAL_PI;
+    
+      idx1++;
+    }
+    
+    if (paraHead->vary == LALINFERENCE_PARAM_CIRCULAR &&
+        !strcmp(paraHead->name, "phi0") ){
+      idx1++; 
+      idx2++;
+    }
+    
+    if ( idx2 == 0 ) paraPhi0 = paraPhi0->next;
+    if ( idx1 == 2 ) break;
+  }
+
+  if( rotphi0 != 0. ) *(REAL8 *)paraPhi0->value += rotphi0;
+ 
+  return;
+}
+
 
 /* Return the log Prior of the variables specified for the sky localisation project, ref: https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/SkyLocComparison#priors, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
@@ -242,14 +293,14 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 	LALInferenceVariables *priorParams=runState->priorArgs;
 	REAL8 min, max;
 	REAL8 logmc=0.0;
-	REAL8 m1,m2,eta=0.0;
+	REAL8 m1,m2;//eta=0.0; - set but not used
 	REAL8 etaMin=0.0, etaMax=0.0;
 	REAL8 MTotMax=0.0;
 	char normName[VARNAME_MAX];
 	REAL8 norm=0.0;
 	
 	if(LALInferenceCheckVariable(params,"massratio")){
-		eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
+		//eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio"); - set but not used
 		LALInferenceGetMinMaxPrior(priorParams, "massratio", (void *)&etaMin, (void *)&etaMax);
 	}
 	

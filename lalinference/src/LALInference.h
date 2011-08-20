@@ -35,6 +35,7 @@
 # include <stdlib.h>
 
 #define VARNAME_MAX 128
+#define VARVALSTRINGSIZE_MAX 128
 
 # include <lal/LALStdlib.h>
 # include <lal/LALConstants.h>
@@ -152,8 +153,12 @@ char **LALInferenceGetHeaderLine(FILE *inp);
 const char *LALInferenceTranslateInternalToExternalParamName(const char *inName);
 INT4 LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params);
 
+/** Prints a variable item to a string (must be pre-allocated!) */
+void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr);
+
+
 /** Return a pointer to the variable asked for */
-void *LALInferenceGetVariable(LALInferenceVariables * vars, const char * name);
+void *LALInferenceGetVariable(const LALInferenceVariables * vars, const char * name);
 /** Get number of dimensions in this variable */
 INT4 LALInferenceGetVariableDimension(LALInferenceVariables *vars);
 /** Get number of dimensions which are not fixed to a certain value */
@@ -164,7 +169,7 @@ LALInferenceVariableType LALInferenceGetVariableTypeByIndex(LALInferenceVariable
 
 
 /** Get the type of the variable, returns LALInferenceVariableType (see above) */
-LALInferenceVariableType LALInferenceGetVariableType(LALInferenceVariables *vars, const char *name);
+LALInferenceVariableType LALInferenceGetVariableType(const LALInferenceVariables *vars, const char *name);
 
 /** Get the LALInferenceParamVaryType of the variable, see types above */
 LALInferenceParamVaryType LALInferenceGetVariableVaryType(LALInferenceVariables *vars, const char *name);
@@ -234,6 +239,9 @@ typedef void (LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState
 /** Type declaration for an algorithm function; will distinguish MCMC from NestedSampling, etc */
 typedef void (LALInferenceAlgorithm) (struct tagLALInferenceRunState *runState);
 
+/** Type declaration for output logging function, can be user-declared */
+typedef void (LALInferenceLogFunction) (struct tagLALInferenceRunState *runState, LALInferenceVariables *vars);
+
 /** Structure containing inference run state
  * This includes pointers to the function types required to run
  * the algorithm, and data structures as required */
@@ -247,6 +255,7 @@ tagLALInferenceRunState
   LALInferenceLikelihoodFunction     *likelihood; /** The likelihood function */
   LALInferenceProposalFunction       *proposal; /** The proposal function */
   LALInferenceTemplateFunction       *template; /** The template generation function */
+  LALInferenceLogFunction	     *logsample; /** Log sample, i.e. to disk */
   struct tagLALInferenceIFOData      *data; /** The data from the interferometers */
   LALInferenceVariables              *currentParams, /** The current parameters */
     *priorArgs,                                      /** Any special arguments for the prior function */
@@ -329,7 +338,7 @@ void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);
 void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata);
 
 /** Return the list node for "name" - do not rely on this */
-LALInferenceVariableItem *LALInferenceGetItem(LALInferenceVariables *vars,const char *name);
+LALInferenceVariableItem *LALInferenceGetItem(const LALInferenceVariables *vars,const char *name);
 /** Return the list node for the idx-th item - do not rely on this */
 LALInferenceVariableItem *LALInferenceGetItemNr(LALInferenceVariables *vars, int idx);
 

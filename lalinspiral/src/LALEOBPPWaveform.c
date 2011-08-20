@@ -744,9 +744,9 @@ LALprInitP4PN(
              void *params
              )
 {
-  REAL8   u, u2, u3, u4, p2, p3, p4, q2, A;
+  REAL8  u, u2, p2, p3, p4, A;
   REAL8  onebyD, AbyD, Heff, HReal, etahH;
-  REAL8 eta, eta2, z3, r, vr, q;
+  REAL8 eta, z3, r, vr, q;
   pr3In *ak;
 
   /* TODO: Change this to use tortoise coord */
@@ -757,17 +757,12 @@ LALprInitP4PN(
   vr = ak->vr;
   r = ak->r;
   q = ak->q;
-  eta2 = eta*eta;
-
 
    p2 = p*p;
    p3 = p2*p;
    p4 = p2*p2;
-   q2 = q*q;
    u = 1./ r;
    u2 = u*u;
-   u3 = u2 * u;
-   u4 = u2 * u2;
    z3 = 2. * (4. - 3. * eta) * eta;
 
    A = XLALCalculateEOBA( r, ak->aCoeffs );
@@ -870,8 +865,7 @@ LALHCapDerivativesP4PN( double UNUSED t,
 
   REAL8 eta, omega;
 
-  double r, s, p, q;
-  double dr, ds, dp, dq;
+  double r, p, q;
   REAL8 r2, p2, p4, q2;
   REAL8 u, u2, u3;
   REAL8 A, AoverSqrtD, dAdr, Heff, Hreal;
@@ -893,7 +887,6 @@ LALHCapDerivativesP4PN( double UNUSED t,
   z3   = 2. * ( 4. - 3. * eta ) * eta;
 
   r = values[0];
-  s = values[1];
   p = values[2];
   q = values[3];
 
@@ -919,22 +912,23 @@ LALHCapDerivativesP4PN( double UNUSED t,
 
   HeffHreal = Heff * Hreal;
 
-  dr = dvalues[0] = AoverSqrtD * u2 * p * (r2 + 2. * p2 * z3 * A ) / HeffHreal;
-  ds = dvalues[1] = omega = q * A * u2 / HeffHreal;
+  /* rDot */
+  dvalues[0] = AoverSqrtD * u2 * p * (r2 + 2. * p2 * z3 * A ) / HeffHreal;
+
+  /* sDot */
+  dvalues[1] = omega = q * A * u2 / HeffHreal;
 
   /* Note that the only field of dvalues used in the flux is dvalues->data[1] */
   /* which we have already calculated. */
   flux = XLALInspiralFactorizedFlux( &valuesVec, omega, params, lMax );
 
-  dp = dvalues[2] = 0.5 * AoverSqrtD * u3 * (  2.0 * ( q2 + p4 * z3) * A
+  /* pDot */
+  dvalues[2] = 0.5 * AoverSqrtD * u3 * (  2.0 * ( q2 + p4 * z3) * A
                      - r * ( q2 + r2 + p4 * z3 ) * dAdr ) / HeffHreal
                      - (p / q) * (flux / (eta * omega));
 
-  dq = flux;
-  /* This function can fail */
-  /* TODO: Implement proper error checking */
-
-  dq = dvalues[3] = - dq / (eta * omega);
+  /* qDot */
+  dvalues[3] = - flux / (eta * omega);
 
   return GSL_SUCCESS;
 }
@@ -1007,7 +1001,7 @@ REAL8 LALvrP4PN( const REAL8 r,
                  pr3In *params )
 {
   REAL8 A, dAdr, d2Adr2, dA, d2A, NA, DA, dDA, dNA, d2DA, d2NA;
-  REAL8 r2, r3, r4, r5, u, u2, u3, u4, v, x1;
+  REAL8 r2, r3, r4, r5, u, u2, v, x1;
   REAL8 eta, FDIS;
   REAL8 twoUAPlusu2dA;
 
@@ -1022,8 +1016,6 @@ REAL8 LALvrP4PN( const REAL8 r,
   u = 1./ r;
 
   u2 = u*u;
-  u3 = u2*u;
-  u4 = u2*u2;
 
   NA = r4 * aCoeffs->n4
      + r5 * aCoeffs->n5;
@@ -1397,7 +1389,7 @@ LALEOBPPWaveformEngine (
    REAL8                   eta, m, r, s, p, q, dt, t, v, omega, f, ampl0;
    REAL8                   omegaOld;
 
-   void                    *funcParams1, *funcParams2, *funcParams3;
+   void                    *funcParams;
 
    REAL8Vector             *values, *dvalues;
    InspiralDerivativesIn   in3;
@@ -1412,7 +1404,6 @@ LALEOBPPWaveformEngine (
    pr3In                   pr3in;
    expnCoeffs              ak;
    expnFunc                func;
-   rOfOmegaIn              rofomegain;
    DFindRootIn             rootIn2, rootIn3;
 
    /* Stuff for pre-computed EOB values */
@@ -1425,7 +1416,7 @@ LALEOBPPWaveformEngine (
 
    /* Variables to allow the waveform to be generated */
    /* from a specific fLower */
-   REAL8                   sInit, sSub = 0.0;  /* Initial phase, and phase to subtract */
+   REAL8                   /*sInit,*/ sSub = 0.0;  /* Initial phase, and phase to subtract */
 
    REAL8                   rmin = 20;        /* Smallest value of r at which to generate the waveform */
    COMPLEX16  MultSphHarmP;    /* Spin-weighted spherical harmonics */
@@ -1452,8 +1443,6 @@ LALEOBPPWaveformEngine (
 
    /* Variables used in injection */
    REAL8 unitHz;
-   REAL8 cosI;/* cosine of system inclination */
-   REAL8 apFac, acFac;/* extra factor in plus and cross amplitudes */
 
    /* Accuracy of root finding algorithms */
    const REAL8 xacc = 1.0e-12;
@@ -1536,9 +1525,6 @@ LALEOBPPWaveformEngine (
 
    /* only used in injection case */
    unitHz = m*(REAL8)LAL_PI;
-   cosI   = cos( params->inclination );
-   apFac  = -2.0 * (1.0 + cosI*cosI) * eta * params->totalMass * LAL_MRSUN_SI/params->distance;
-   acFac  = -4.0 * cosI * eta * params->totalMass * LAL_MRSUN_SI/params->distance;
 
    /* Set the amplitude depending on whether the distance is given */
    if ( params->distance > 0.0 )
@@ -1616,8 +1602,6 @@ LALEOBPPWaveformEngine (
     ABORTXLAL( status );
   }
 
-  funcParams3 = (void *) &eobParams;
-
    /* Calculate the resample factor for attaching the ringdown */
    /* We want it to be a power of 2 */
    /* Of course, we only want to do this if the required SR > current SR... */
@@ -1653,11 +1637,9 @@ LALEOBPPWaveformEngine (
 
    /* Then the initial phase */
    s = params->startPhase / 2.;
-   sInit = s;
+   /*sInit = s;*/
 
    /* initial r as a function of omega - where to start evolution */
-   rofomegain.eta = eta;
-   rofomegain.omega = omega;
    rootIn3.xacc = xacc;
    rootIn2.xmax = 1000.;
    rootIn2.xmin = 3.;
@@ -1677,13 +1659,11 @@ LALEOBPPWaveformEngine (
    in3.coeffs = &ak;
    in3.nqcCoeffs = &nqcCoeffs;
 
-   funcParams1 = (void *) &rofomegain;
-
    switch (params->order)
    {
      case LAL_PNORDER_PSEUDO_FOUR:
        rOfOmegaFunc = XLALrOfOmegaP4PN;
-       funcParams2 = (void *) &pr3in;
+       funcParams = (void *) &pr3in;
        break;
      default:
        XLALPrintError( "There are no EOBNRv2 waveforms implemented at order %d\n", params->order);
@@ -1692,7 +1672,7 @@ LALEOBPPWaveformEngine (
        ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
    }
    r = XLALDBisectionFindRoot( rOfOmegaFunc, rootIn2.xmin,
-              rootIn2.xmax, xacc, funcParams2);
+              rootIn2.xmax, xacc, funcParams);
    if ( XLAL_IS_REAL8_FAIL_NAN( r ) )
    {
      ABORTXLAL( status );
@@ -1721,10 +1701,10 @@ LALEOBPPWaveformEngine (
        rootIn3.function = LALprInitP4PN;
        /* first we compute vr (we need coeef->Fp6) */
        pr3in.q = q;
-       funcParams2 = (void *) &pr3in;
+       funcParams = (void *) &pr3in;
        pr3in.vr = LALvrP4PN(r, omega, (void *) &pr3in);
        /* then we compute the initial value of p */
-       LALDBisectionFindRoot(status->statusPtr, &p, &rootIn3, funcParams2);
+       LALDBisectionFindRoot(status->statusPtr, &p, &rootIn3, funcParams);
        CHECKSTATUSPTR(status);
        /* We need to change P to be the tortoise co-ordinate */
        /* TODO: Change prInit to calculate this directly */
@@ -1927,7 +1907,7 @@ LALEOBPPWaveformEngine (
     /* Stuff to find the actual peak time */
     gsl_spline    *spline = NULL;
     gsl_interp_accel *acc = NULL;
-    REAL8 omegaDeriv1, omegaDeriv2;
+    REAL8 omegaDeriv1;
     REAL8 time1, time2;
     REAL8 timePeak, omegaDerivMid;
 
@@ -1941,11 +1921,9 @@ LALEOBPPWaveformEngine (
     if ( omegaDeriv1 > 0. )
     {
       time2 = dynamicsHi->data[peakIdx+1];
-      omegaDeriv2 = gsl_spline_eval_deriv( spline, time2, acc );
     }
     else
     {
-      omegaDeriv2 = omegaDeriv1;
       time2 = time1;
       time1 = dynamicsHi->data[peakIdx-1];
       peakIdx--;
@@ -1959,7 +1937,6 @@ LALEOBPPWaveformEngine (
 
       if ( omegaDerivMid * omegaDeriv1 < 0.0 )
       {
-        omegaDeriv2 = omegaDerivMid;
         time2 = timePeak;
       }
       else

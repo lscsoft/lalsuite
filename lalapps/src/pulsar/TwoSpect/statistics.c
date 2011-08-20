@@ -66,7 +66,7 @@ REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
    INT4 counter = (INT4)floor(halfdelta);
    REAL8 P = gsl_ran_poisson_pdf(counter, halfdelta);
    REAL8 C = gsl_cdf_chisq_P(x, dof+2.0*counter);
-   REAL8 E = exp((dof*0.5+counter-1)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
+   REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
    
    sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
    if (xlalErrno!=0) {
@@ -74,7 +74,7 @@ REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
    }
    counter--;
-   if (counter<0) return GSL_MIN(prob, 1.0);
+   if (counter<0) return fmin(prob, 1.0);
    
    sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
    if (xlalErrno!=0) {
@@ -102,7 +102,7 @@ REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
       prob = pk;
    }
    
-   return GSL_MIN(prob, 1.0);
+   return fmin(prob, 1.0);
    
 }
 void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT4 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown)
@@ -116,7 +116,7 @@ void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT4 counter, REA
    if (countdown!=0) {
       if (counterint>=0) j = 1;
       if (j==1) {
-         Pint *= (counterint+1)/halfdelta;
+         Pint *= (counterint+1.0)/halfdelta;
          Cint += E;
       } else {
          counterint = -1;
@@ -138,13 +138,13 @@ void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT4 counter, REA
       
       if (countdown!=0) {
          counterint--;
-         Pint *= (counterint+1)/halfdelta;
-         Eint *= (0.5*dof + counterint+1)/(x*0.5);
+         Pint *= (counterint+1.0)/halfdelta;
+         Eint *= (0.5*dof + counterint+1.0)/(x*0.5);
          Cint += Eint;
       } else {
          counterint++;
          Pint *= halfdelta/counterint;
-         Eint *= (0.5*x)/(0.5*dof+counterint-1);
+         Eint *= (0.5*x)/(0.5*dof+counterint-1.0);
          Cint -= Eint;
       }
    }
@@ -161,7 +161,7 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
    INT4 counter = (INT4)floor(halfdelta);
    REAL8 P = gsl_ran_poisson_pdf(counter, halfdelta);
    REAL8 C = gsl_cdf_chisq_P(x, dof+2.0*counter);
-   REAL8 E = exp((dof*0.5+counter-1)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
+   REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
    
    sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
    if (xlalErrno!=0) {
@@ -169,7 +169,7 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
    }
    counter--;
-   if (counter<0) return GSL_MIN(prob, 1.0);
+   if (counter<0) return fminf(prob, 1.0);
    
    sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
    if (xlalErrno!=0) {
@@ -197,7 +197,7 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
       prob = pk;
    }
    
-   return (REAL4)GSL_MIN(prob, 1.0);
+   return fminf(prob, 1.0);
    
 }
 
@@ -237,7 +237,7 @@ REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
    //Okay, now recursion
    REAL8 lnsr2pi = log(sqrt(LAL_TWOPI));
    REAL8 dx = delta*x*0.25;
-   INT4 K = GSL_MAX(0, (INT4)floor(0.5*(sqrt(dofint*dofint+4.0*dx) - dofint)));
+   INT4 K = GSL_MAX_INT(0, (INT4)floor(0.5*(sqrt(dofint*dofint+4.0*dx) - dofint)));
    REAL8 lntK = 0.0;
    if (K==0) {
       lntK = -lnsr2pi - 0.5*(delta+log(dofint)) - (lgamma(dofint+1)-0.5*log(LAL_TWOPI*dofint)+dofint*log(dofint)-dofint) - binodeviance(dofint, 0.5*x);
@@ -281,7 +281,7 @@ REAL8 binodeviance(REAL8 x, REAL8 np)
       while (ok==1) {
          ej *= v*v;
          jj++;
-         s1 = s + ej/(2.0*jj+1);
+         s1 = s + ej/(2.0*jj+1.0);
          if (s1!=s) {
             s = s1;
          } else {
@@ -329,7 +329,7 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
       count++;
       REAL8 f = ncx2pdf(xk, dof, delta);
       h = (F-pk)/f;
-      REAL8 xnew = GSL_MAX(0.2*xk, GSL_MIN(5.0*xk, xk-h));
+      REAL8 xnew = fmax(0.2*xk, fmin(5.0*xk, xk-h));
       REAL8 newF = ncx2cdf(xnew, dof, delta);
       INT4 worse = 0;
       while (worse==0) {
@@ -395,7 +395,7 @@ REAL8 ks_test_exp(REAL4Vector *vector)
    for (ii=0; ii<(INT4)tempvect->length; ii++) {
       testval1 = fabs((1.0+ii)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean));
       testval2 = fabs(ii*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean));
-      testval = GSL_MAX(testval1, testval2);
+      testval = fmax(testval1, testval2);
       if (testval>ksvalue) ksvalue = testval;
    }
    

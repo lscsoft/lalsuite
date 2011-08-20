@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Stas Babak, David Churches, Jolien Creighton, B.S. Sathyaprakash, Craig Robinson , Thomas Cokelaer
+*  Copyright (C) 2007 Stas Babak, David Churches, Jolien Creighton, B.S. Sathyaprakash, Craig Robinson , Thomas Cokelaer, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -422,7 +422,8 @@ LALInspiralWave2Engine(
   REAL8 amp, dt, fs, fu, fHigh, phase0, phase1, tC;
   REAL8 phase, v, totalMass, fLso, freq, fOld;
   INT4 i, startShift, count;
-  DFindRootIn rootIn;
+  REAL8 xmin,xmax,xacc;
+  REAL8 (*timing2)(REAL8, void *);
   InspiralToffInput toffIn;
   void *funcParams;
   expnCoeffs ak;
@@ -456,7 +457,7 @@ LALInspiralWave2Engine(
   phase0 = params->startPhase;    /* initial phasea */
   phase1 = phase0 + LAL_PI_2;
 
-  rootIn.function = func.timing2; /* function to solve for v, given t:*/
+  timing2 = func.timing2; /* function to solve for v, given t:*/
 
   if (a || h)           /* Only used in injection case */
   {
@@ -502,16 +503,18 @@ LALInspiralWave2Engine(
   toffIn.t = 0.;
   toffIn.tc = 0.;
   funcParams = (void *) &toffIn;
-  func.timing2(status->statusPtr, &tC, fs, funcParams);
-  CHECKSTATUSPTR(status);
+  tC = func.timing2(fs, funcParams);
+  if (XLAL_IS_REAL8_FAIL_NAN(tC))
+    ABORTXLAL(status);
   /* Reset chirp time in toffIn structure */
   toffIn.tc = -tC;
 
   /* Determine the initial phase: it is phasing2(v0) with ak.phiC=0 */
   v = pow(fs * LAL_PI * totalMass, oneby3);
   ak.phiC = 0.0;
-  func.phasing2(status->statusPtr, &phase, v, &ak);
-  CHECKSTATUSPTR(status);
+  phase = func.phasing2(v, &ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(phase))
+    ABORTXLAL(status);
   ak.phiC = -phase;
 
   /*
@@ -529,9 +532,9 @@ LALInspiralWave2Engine(
   ASSERT(fHigh < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(fHigh > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-  rootIn.xmax = 1.2*fu;
-  rootIn.xacc = 1.0e-8;
-  rootIn.xmin = 0.999999*fs;
+  xmax = 1.2*fu;
+  xacc = 1.0e-8;
+  xmin = 0.999999*fs;
 
   i = startShift;
 
@@ -555,8 +558,10 @@ LALInspiralWave2Engine(
 
     fOld = freq;
     v = pow(freq*toffIn.piM, oneby3);
-    func.phasing2(status->statusPtr, &phase, v, &ak); /* phase at given v */
-    CHECKSTATUSPTR(status);
+    phase = func.phasing2(v, &ak); /* phase at given v */
+    if (XLAL_IS_REAL8_FAIL_NAN(phase))
+      ABORTXLAL(status);
+
     amp = params->signalAmplitude*v*v;
 
     if (output1)
@@ -590,9 +595,10 @@ LALInspiralWave2Engine(
     /*
        Determine the frequency at the current time by solving timing2(v;tC,t)=0
     */
-    rootIn.xmin = 0.8*freq;
-    LALDBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
-    CHECKSTATUSPTR(status);
+    xmin = 0.8*freq;
+    freq = XLALDBisectionFindRoot(timing2, xmin, xmax, xacc, funcParams);
+    if (XLAL_IS_REAL8_FAIL_NAN(freq))
+      ABORTXLAL(status);
     } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
   params->fFinal = fOld;
   if (output1 && !(output2))   params->tC = toffIn.t;

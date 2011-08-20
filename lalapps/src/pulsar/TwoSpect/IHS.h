@@ -28,8 +28,8 @@ void runIHS(ihsMaximaStruct *output, ffdataStruct *input, inputParamsStruct *par
 
 ihsVals * new_ihsVals(void);
 void free_ihsVals(ihsVals *ihsvals);
-void incHarmSum(ihsVals *output, REAL4Vector *input);
-void incHarmSumVector(REAL4Vector *output, REAL4Vector *input);
+void incHarmSum(ihsVals *output, REAL4Vector *input, INT4 ihsfactor);
+void incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor);
 
 ihsfarStruct * new_ihsfarStruct(INT4 rows);
 void free_ihsfarStruct(ihsfarStruct *ihsfarstruct);
@@ -46,7 +46,8 @@ REAL4 ihsFOM(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma, INT4 locat
 REAL4 ihsLoc(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma);
 
 REAL8 ihs2h0_withNoiseSubtraction(REAL8 ihsval, INT4 location, INT4 lowestfrequencybin, INT4 rows, inputParamsStruct *params, REAL4Vector *aveNoise, REAL4Vector *fbinavgs);
-REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params);
+//REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params);
+REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params, INT4 rows);
 
 #endif
 

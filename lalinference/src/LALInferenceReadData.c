@@ -107,7 +107,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	REAL8 padding=0.4;//Default was 1.0 second. However for The Event the Common Inputs specify a Tukey parameter of 0.1, so 0.4 second of padding for 8 seconds of data.
 	UINT4 Ncache=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
 	UINT4 i,j;
-	int FakeFlag=0;
+	//int FakeFlag=0; - set but not used
 	char strainname[]="LSC-STRAIN";
 	
 	typedef void (NoiseFunc)(LALStatus *statusPtr,REAL8 *psd,REAL8 f);
@@ -220,7 +220,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 		if(!(strcmp(caches[i],"LALLIGO") && strcmp(caches[i],"LALVirgo") && strcmp(caches[i],"LALGEO") && strcmp(caches[i],"LALEGO")
 			 && strcmp(caches[i],"LALAdLIGO")))
 		{
-			FakeFlag=1;
+			//FakeFlag=1; - set but not used
 			datarandparam=XLALCreateRandomParams(dataseed?dataseed+(int)i:dataseed);
 			/* Selection of the noise curve */
 			if(!strcmp(caches[i],"LALLIGO")) {PSD = &LALLIGOIPsd; scalefactor=9E-46;}
@@ -506,7 +506,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	REAL8 minFlow=IFOdata->fLow;
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
 	REAL4TimeSeries *injectionBuffer=NULL;
-	
+  REAL8 padding=0.4; //default, set in LALInferenceReadData()
+  
 	while(thisData){
           minFlow   = minFlow>thisData->fLow ? thisData->fLow : minFlow;
           MindeltaT = MindeltaT>thisData->timeData->deltaT ? thisData->timeData->deltaT : MindeltaT;
@@ -573,7 +574,28 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 		if(status.statusCode) REPORTSTATUS(&status);
 
 		XLALDestroyCOMPLEX8FrequencySeries(resp);
+
 		
+    /* Checking the lenght of the injection waveform with respect of IFOdata->timeData->data->length */
+    CoherentGW            waveform;
+    PPNParamStruc         ppnParams;
+    memset( &waveform, 0, sizeof(CoherentGW) );
+    memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+    ppnParams.deltaT   = IFOdata->timeData->deltaT;
+    ppnParams.lengthIn = 0;
+    ppnParams.ppn      = NULL;
+    unsigned lengthTest = 0;
+    
+    LALGenerateInspiral(&status, &waveform, injEvent, &ppnParams ); //Recompute the waveform just to get access to ppnParams.tc and waveform.h->data->length or waveform.phi->data->length
+    
+    if(waveform.h){lengthTest = waveform.h->data->length;}
+    if(waveform.phi){lengthTest = waveform.phi->data->length;}
+    
+    if(lengthTest>IFOdata->timeData->data->length-(UINT4)ceil((2.0*padding+2.0)/IFOdata->timeData->deltaT)){
+      fprintf(stderr, "WARNING: waveform length = %u is longer than IFOdata->timeData->data->length = %d minus the window width = %d and the 2.0 seconds after tc (total of %d points available).\n", lengthTest, IFOdata->timeData->data->length, (INT4)ceil((2.0*padding)/IFOdata->timeData->deltaT) , IFOdata->timeData->data->length-(INT4)ceil((2.0*padding+2.0)/IFOdata->timeData->deltaT));
+      fprintf(stderr, "The waveform injected is %f seconds long. Consider increasing the %f seconds segment length (--seglen) to be greater than %f. (in %s, line %d)\n",ppnParams.tc , IFOdata->timeData->data->length * IFOdata->timeData->deltaT, ppnParams.tc + 2.0*padding + 2.0, __FILE__, __LINE__);
+    }
+    
 		/* Now we cut the injection buffer down to match the time domain wave size */
 		injectionBuffer=(REAL4TimeSeries *)XLALCutREAL4TimeSeries(injectionBuffer,realStartSample,IFOdata->timeData->data->length);
 		

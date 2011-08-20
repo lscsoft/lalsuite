@@ -37,9 +37,6 @@
 #if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
 #define SWIGLAL_STRUCT_LALALLOC(...)
 #endif
-#if !defined(SWIG) && !defined(SWIGLAL_FIXED_1DARRAY_ELEM)
-#define SWIGLAL_FIXED_1DARRAY_ELEM(...)
-#endif
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -71,6 +68,7 @@ typedef enum {
 /** Signal (amplitude) parameter ranges
  */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   pdf1D_t *pdf_h0Nat;	/**< pdf for h0/sqrt{Sn} */
   REAL8 fixedSNR;	/**< alternative 1: adjust h0 to fix the optimal SNR of the signal */
   BOOLEAN fixRhohMax;	/**< alternative 2: draw h0 with fixed rhohMax = h0Max * (detM)^(1/8) <==> canonical Fstat prior */
@@ -83,6 +81,7 @@ typedef struct {
 /** struct for buffering of AM-coeffs, if signal for same sky-position is injected
  */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   SkyPosition skypos;		/**< sky-position for which we have AM-coeffs computed already */
   MultiAMCoeffs *multiAM;;	/**< pre-computed AM-coeffs for skypos */
 } multiAMBuffer_t;
@@ -91,6 +90,7 @@ typedef struct {
  */
 typedef struct
 {
+  SWIGLAL_STRUCT_LALALLOC();
   SkyPosition skypos;
   PulsarAmplitudeParams ampParams;
   PulsarAmplitudeVect ampVect;
@@ -116,8 +116,8 @@ MultiFstatAtomVector*XLALGenerateMultiFstatAtomVector ( const MultiDetectorState
 int XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms, gsl_rng * rng );
 int XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms, gsl_rng * rng );
 
-REAL8 XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, AntennaPatternMatrix *M_mu_nu, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
-REAL8 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, AntennaPatternMatrix *M_mu_nu, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
+REAL8 XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, AntennaPatternMatrix *M_mu_nu, constPulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
+REAL8 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, AntennaPatternMatrix *M_mu_nu, constPulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
 
 int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 rescale );
 int write_InjParams_to_fp ( FILE * fp, const InjParams_t *par, UINT4 dataStartGPS );

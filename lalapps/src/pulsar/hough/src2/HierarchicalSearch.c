@@ -3419,6 +3419,8 @@ void GetSemiCohToplist(LALStatus            *status,
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( in->length >= in->nCandidates, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
+  INIT_MEM ( line );
+
   /* go through candidates and insert into toplist if necessary */
   for ( k = 0; k < in->nCandidates; k++) {
 
@@ -3426,7 +3428,7 @@ void GetSemiCohToplist(LALStatus            *status,
     line.Alpha = in->list[k].alpha;
     line.Delta = in->list[k].delta;
     line.f1dot = in->list[k].fdot;
-    line.HoughFStat = (in->list[k].significance - meanN)/sigmaN; 
+    line.HoughFStat = (in->list[k].significance - meanN)/sigmaN;
     /* for debugging */
     /* line.HoughFStat = in->list[k].significance; */
     /* if (line.HoughFStat > 121) */
@@ -3446,7 +3448,6 @@ void GetSemiCohToplist(LALStatus            *status,
     line.VarianceSig = in->list[k].varianceSig / (sigmaN * sigmaN);
 
     debug = INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
-
   }
 
   DETATCHSTATUSPTR (status);

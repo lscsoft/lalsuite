@@ -13,7 +13,8 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_monteint lalapps_zellepolka		\
 	lalapps_PredictFStat  lalapps_ComputeFStatistic_v2 \
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit	\
-	lalapps_synthesizeBstatMC lalapps_synthesizeTransientStats
+	lalapps_synthesizeBstatMC lalapps_synthesizeTransientStats \
+	lalapps_synthesizeLVStats
 
 check_PROGRAMS = testFstat_v3
 
@@ -27,6 +28,8 @@ EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat \
 #else
 #bin_PROGRAMS += lalapps_ComputeFStatistic_v2
 #endif
+
+LVsrc = ../GCT
 
 lalapps_zellepolka_SOURCES = zellepolka.c
 lalapps_monteint_SOURCES = monteint.c
@@ -85,6 +88,9 @@ lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticM
 
 lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c
+lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c \
+				  HeapToplist.c HeapToplist.h \
+				  $(LVsrc)/LineVeto.c $(LVsrc)/LineVeto.h
 
 lalapps_CFSv3_SOURCES = CFSv3.c Fstat_v3.c Fstat_v3.h
 

@@ -640,27 +640,19 @@ typedef void (TestFunction)(
    REAL8Vector *vector2,
    void *params);
 
-typedef void (InspiralPhasing2)(
-   LALStatus *status,
-   REAL8 *phase,
+typedef REAL8 (InspiralPhasing2)(
    REAL8 v,
    expnCoeffs *ak);
 
-typedef void (InspiralPhasing3)(
-   LALStatus *status,
-   REAL8 *f,
+typedef REAL8 (InspiralPhasing3)(
    REAL8 td,
    expnCoeffs *ak);
 
-typedef void (InspiralFrequency3)(
-   LALStatus *status,
-   REAL8 *f,
+typedef REAL8 (InspiralFrequency3)(
    REAL8 td,
    expnCoeffs *ak);
 
-typedef void (InspiralTiming2) (
-   LALStatus *status,
-   REAL8 *toff,
+typedef REAL8 (InspiralTiming2) (
    REAL8 f,
    void *params);
 
@@ -813,6 +805,12 @@ void LALInspiralChooseModel(
      expnFunc *func,
      expnCoeffs *ak,
      InspiralTemplate *params);
+
+int  XLALInspiralChooseModel(
+     expnFunc *func,
+     expnCoeffs *ak,
+     InspiralTemplate *params);
+
 
 
 
@@ -1028,10 +1026,6 @@ void LALEOBPPWaveformForInjection(
      CoherentGW *waveform,
      InspiralTemplate *params,
      PPNParamStruc  *ppnParams);
-
-/*  <lalLaTeX>
-\newpage\input{LALBCVWaveformC}
-</lalLaTeX>  */
 
 void LALBCVWaveform(
      LALStatus *status,
@@ -1391,11 +1385,21 @@ void LALInspiralPhasing3_0PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralPhasing3_0PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
+#if 0 /* DO NOT EXIST */
 void LALInspiralPhasing3_1PN (
      LALStatus *status,
      REAL8 *phase,
      REAL8 td,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralPhasing3_1PN (
+      REAL8 td,
+      expnCoeffs *ak);
+#endif
 
 void LALInspiralPhasing3_2PN (
      LALStatus *status,
@@ -1403,11 +1407,19 @@ void LALInspiralPhasing3_2PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralPhasing3_2PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
 void LALInspiralPhasing3_3PN (
      LALStatus *status,
      REAL8 *phase,
      REAL8 td,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralPhasing3_3PN (
+      REAL8 td,
+      expnCoeffs *ak);
 
 void LALInspiralPhasing3_4PN (
      LALStatus *status,
@@ -1415,11 +1427,19 @@ void LALInspiralPhasing3_4PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralPhasing3_4PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
 void LALInspiralPhasing3_5PN (
      LALStatus *status,
      REAL8 *phase,
      REAL8 td,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralPhasing3_5PN (
+      REAL8 td,
+      expnCoeffs *ak);
 
 void LALInspiralPhasing3_6PN (
      LALStatus *,
@@ -1427,11 +1447,20 @@ void LALInspiralPhasing3_6PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralPhasing3_6PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
 void LALInspiralPhasing3_7PN (
      LALStatus *status,
      REAL8 *phase,
      REAL8 td,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralPhasing3_7PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
 
 
 
@@ -1443,6 +1472,9 @@ void LALInspiralTofV (
      REAL8,
      void *);
 
+REAL8 XLALInspiralTofV (
+      REAL8,
+      void *);
 
 
 
@@ -1454,9 +1486,10 @@ void LALInspiralTofVIntegrand (
      REAL8,
      void *);
 
-
-
-
+REAL8 XLALInspiralTofVIntegrand (
+   REAL8      v,
+   void      *params
+   );
 
 void LALInspiralTiming2_0PN (
      LALStatus *,
@@ -1648,6 +1681,13 @@ void LALRungeKutta4(
      REAL8Vector *,
      rk4GSLIntegrator *,
      void *);
+
+int
+XLALRungeKutta4(
+   REAL8Vector      *yout,
+   rk4GSLIntegrator *integrator,
+   void             *params
+   );
 
 void XLALRungeKutta4Free(
      rk4GSLIntegrator *integrator);

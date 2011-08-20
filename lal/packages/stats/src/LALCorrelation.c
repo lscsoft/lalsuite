@@ -17,73 +17,23 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="LALCorrelationCV">
-Author: Yakushin, Igor
-$Id$
-************************************* </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{LALCorrelation.c}}
-
-[A one-line description of the function(s) defined in this module.]
-
-\subsubsection*{Prototypes}
-\input{LALCorrelationCP}
-\index{\texttt{LALCorrelation()}}
-
-\subsubsection*{Description}
-
-\textbf{LALCorrelation} is designed to compute a time shifted correlation between
-two time series given in \textbf{input->one} and \textbf{input->two}.
-The maximum time shift in nanoseconds is given in \textbf{params->maxTimeShiftNan}. The output consists of a correlation for each
-time shift in the range \textbf{out->timeShiftedCorrelation}, maximum and minimum values of correlations and corresponding time shifts.
-The original intention is to use this function to test coincendence bursts found in two detectors for correlation.
-For this to work one must apply a response function to the raw time series in order to get rid of hardware specific contributions
-to each time series. The signature of the coincendence event is a clear maximum above some threshold in the graph of correlation vs time shift
-(no more than 10 ms).
-
-One might, of course, try to use the code to search for any correlations in the data caused by any kind of gravitational waves but
-that seems to be too computationally expensive.
-
-\subsubsection*{Algorithm}
-
-Just a straightforward computation of correlation for different time shifts. This computation is applied to time series of the length
-$originalLength - maxShift$.
-
-\subsubsection*{Uses}
-
-% List any external functions called by this function.
-\begin{verbatim}
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-One must figure out how to prefilter the raw data, what length of time series s appropriate to use, what
-threshold on the maximum correlation value should be applied to declare a good correlation.
-
-%\input{LALCorrelationCTODO}
-
-\vfill{\footnotesize\input{LALCorrelationCV}}
-
-******************************************************* </lalLaTeX> */
-
-/******* INCLUDE STANDARD LIBRARY HEADERS; ************/
+/* ****** INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
 
-/******* INCLUDE ANY LDAS LIBRARY HEADERS ************/
+/* ****** INCLUDE ANY LDAS LIBRARY HEADERS ************/
 
-/******* INCLUDE ANY LAL HEADERS ************/
+/* ****** INCLUDE ANY LAL HEADERS ************/
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALCorrelation.h>
 #include <math.h>
 
-/******* DEFINE RCS ID STRING ************/
+/* ****** DEFINE RCS ID STRING ************/
 NRCSID( LALCORRELATIONC, "$Id$" );
 
-/******* DEFINE LOCAL CONSTANTS AND MACROS ************/
+/* ****** DEFINE LOCAL CONSTANTS AND MACROS ************/
 
-/******* DECLARE LOCAL (static) FUNCTIONS ************/
+/* ****** DECLARE LOCAL (static) FUNCTIONS ************/
 /* (definitions can go here or at the end of the file) */
 
 static REAL4 findMean( REAL4 data[], UINT4 length );
@@ -93,18 +43,41 @@ static REAL4 findVariance( REAL4 data[], REAL4 mean, UINT4 length );
 static REAL4 findCrossProduct( REAL4 data1[], REAL4 mean1, REAL4 data2[], REAL4 mean2, UINT4 length );
 
 
-/******* DEFINE GLOBAL FUNCTIONS ************/
+/* ****** DEFINE GLOBAL FUNCTIONS ************/
 
-/* <lalVerbatim file="LALCorrelationCP"> */
+/** \ingroup LALCorrelation_h
+\author Yakushin, Igor
+\brief LALCorrelation() is designed to compute a time shifted correlation between two time series given in <tt>input->one</tt> and <tt>input->two</tt>.
+
+The maximum time shift in nanoseconds is given in <tt>params->maxTimeShiftNan</tt>. The output consists of a correlation for each
+time shift in the range <tt>out->timeShiftedCorrelation</tt>, maximum and minimum values of correlations and corresponding time shifts.
+The original intention is to use this function to test coincendence bursts found in two detectors for correlation.
+For this to work one must apply a response function to the raw time series in order to get rid of hardware specific contributions
+to each time series. The signature of the coincendence event is a clear maximum above some threshold in the graph of correlation vs time shift
+(no more than 10 ms).
+
+One might, of course, try to use the code to search for any correlations in the data caused by any kind of gravitational waves but
+that seems to be too computationally expensive.
+
+\heading{Algorithm}
+
+Just a straightforward computation of correlation for different time shifts. This computation is applied to time series of the length
+\f$originalLength - maxShift\f$.
+
+\heading{Notes}
+
+One must figure out how to prefilter the raw data, what length of time series s appropriate to use, what
+threshold on the maximum correlation value should be applied to declare a good correlation.
+*/
 void
 LALCorrelation( LALStatus                      *status,
 		OutputCorrelation              **out,
 		const InputCorrelation         *input,
 		const CorrelationParams        *params)
 
-/* </lalVerbatim> */
+
 {
-  /******* DECLARE VARIABLES; for example: ************/
+  /* ****** DECLARE VARIABLES; for example: ************/
 
   REAL4 mean1, mean2, var1, var2, cov12, cor;
   INT4 shift;
@@ -116,7 +89,7 @@ LALCorrelation( LALStatus                      *status,
   INITSTATUS( status, "LALCorrelation", LALCORRELATIONC );
   ATTATCHSTATUSPTR (status);
 
-  /******* CHECK VALIDITY OF ARGUMENTS; for example ************/
+  /* ****** CHECK VALIDITY OF ARGUMENTS; for example ************/
 
 
   if ( input == NULL || params == NULL ) {
@@ -140,7 +113,7 @@ LALCorrelation( LALStatus                      *status,
 
   output=(OutputCorrelation*)LALMalloc(sizeof(OutputCorrelation));
 
-  /******* EXTRACT INPUTS AND PARAMETERS ************/
+  /* ****** EXTRACT INPUTS AND PARAMETERS ************/
 
 /*    printf("LALCorrelation: maxTimeShiftNan=%g, deltaT=%g\n",params->maxTimeShiftNan, input->one->deltaT); */
 
@@ -157,7 +130,7 @@ LALCorrelation( LALStatus                      *status,
 
   output->shift=shift;
 
-  /******* DO ANALYSIS ************/
+  /* ****** DO ANALYSIS ************/
 
   for(i=-shift;i<=shift;i++){
     data1=input->one->data->data;
@@ -196,7 +169,7 @@ LALCorrelation( LALStatus                      *status,
 
 
 
-  /******* CONSTRUCT OUTPUT ************/
+  /* ****** CONSTRUCT OUTPUT ************/
 
   output->start = input->one->epoch;
   output->length = input->one->data->length;

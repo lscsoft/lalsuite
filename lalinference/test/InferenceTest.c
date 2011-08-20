@@ -111,6 +111,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	unsigned long int randomseed;
 	struct timeval tv;
 	FILE *devrandom;
+	int tmp;
 	
 	irs = calloc(1, sizeof(LALInferenceRunState));
 	/* read data from files: */
@@ -194,7 +195,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 			randomseed = tv.tv_sec + tv.tv_usec;
 		} 
 		else {
-			fread(&randomseed, sizeof(randomseed), 1, devrandom);
+			tmp=fread(&randomseed, sizeof(randomseed), 1, devrandom);
 			fclose(devrandom);
 		}
 	}

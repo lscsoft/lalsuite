@@ -65,6 +65,7 @@ src/inspiral/lalapps_cbc_pipedown
 src/inspiral/lalapps_check_flag
 src/inspiral/lalapps_check_hipe_times
 src/inspiral/lalapps_cohPTF_hipe
+src/inspiral/lalapps_coh_PTF_post_processing
 src/inspiral/lalapps_coherent_inspiral
 src/inspiral/lalapps_coherentbank
 src/inspiral/lalapps_cohire
@@ -160,6 +161,7 @@ src/pulsar/FDS_isolated/lalapps_makeInvetofile
 src/pulsar/FDS_isolated/lalapps_monteint
 src/pulsar/FDS_isolated/lalapps_polka
 src/pulsar/FDS_isolated/lalapps_synthesizeBstatMC
+src/pulsar/FDS_isolated/lalapps_synthesizeLVStats
 src/pulsar/FDS_isolated/lalapps_synthesizeTransientStats
 src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
@@ -208,6 +210,7 @@ src/pulsar/hough/src2/lalapps_HierarchicalSearchGC
 src/pulsar/hough/src2/lalapps_HierarchicalSearch_v2
 src/pulsar/hough/src2/lalapps_HoughMismatch
 src/pulsar/hough/src2/lalapps_HoughValidateAM
+src/pulsar/hough/src2/lalapps_RecalcHSCandidates
 src/pulsar/lalapps_Calibrate1800SFTs
 src/pulsar/lalapps_Calibrate60sSFTs
 src/pulsar/lalapps_ComputePSD

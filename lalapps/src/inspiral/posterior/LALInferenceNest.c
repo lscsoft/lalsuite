@@ -329,7 +329,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 logDmax=log(100.0);
 	REAL8 mcMin=1.0;
 	REAL8 mcMax=20.5;
-	REAL8 logmcMax,logmcMin,mMin=1.0,mMax=45.0;
+	REAL8 logmcMax,logmcMin,mMin=1.0,mMax=30.0;
 	REAL8 a_spin2_max=1.0, a_spin1_max=1.0;
 	REAL8 a_spin2_min=0.0, a_spin1_min=0.0;
 	REAL8 phi_spin1_min=-LAL_PI;
@@ -387,10 +387,11 @@ Parameter arguments:\n\
 	/* Over-ride approximant if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
 	if(ppt){
-		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
-		LALGetApproximantFromString(&status,ppt->value,&approx);
 		if(strstr(ppt->value,"TaylorF2")) approx=TaylorF2;
-		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
+		else
+		    LALGetApproximantFromString(&status,ppt->value,&approx);
+        LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
+        fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 	}
 	
 	/* Over-ride end time if specified */
