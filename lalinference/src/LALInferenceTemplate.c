@@ -532,9 +532,13 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	REAL4Vector *hCross = XLALCreateREAL4Vector(IFOdata->timeModelhCross->data->length);
 	
 	XLAL_TRY(LALPSpinInspiralRDTemplates(&status,hPlus,hCross,&template),errnum);
-	
+
+	REAL4 WinNorm = sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
 	for(idx=0;idx<hPlus->length;idx++) IFOdata->timeModelhPlus->data->data[idx]= (REAL8)hPlus->data[idx];
 	for(idx=0;idx<hCross->length;idx++) IFOdata->timeModelhCross->data->data[idx]= (REAL8)hCross->data[idx];
+	for(idx=0;idx<hPlus->length;idx++) IFOdata->timeModelhPlus->data->data[idx]*=IFOdata->window->data->data[idx]/WinNorm;
+        for(idx=0;idx<hCross->length;idx++) IFOdata->timeModelhCross->data->data[idx]*=IFOdata->window->data->data[idx]/WinNorm;
+
 	XLALDestroyREAL4Vector(hPlus);
 	XLALDestroyREAL4Vector(hCross);
 
@@ -545,13 +549,13 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	//for(idx=0;idx<hPlus->length;idx++) fprintf(stderr,"%12.6e\t %12.6ei\n",IFOdata->freqModelhCross->data->data[idx].re, IFOdata->freqModelhCross->data->data[idx].im);	
 	IFOdata->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
 
-	for(idx=0;idx<IFOdata->timeModelhPlus->data->data[idx];idx++){
+/*	for(idx=0;idx<IFOdata->timeModelhPlus->data->data[idx];idx++){
 	IFOdata->freqModelhPlus->data->data[idx].re*=IFOdata->timeData->deltaT;
 	IFOdata->freqModelhPlus->data->data[idx].im*=IFOdata->timeData->deltaT;
 	IFOdata->freqModelhCross->data->data[idx].re*=IFOdata->timeData->deltaT;
 	IFOdata->freqModelhCross->data->data[idx].im*=IFOdata->timeData->deltaT;
 	}
-		
+*/		
 	double tc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time");
 	LALInferenceSetVariable(IFOdata->modelParams, "time", &tc);
 
