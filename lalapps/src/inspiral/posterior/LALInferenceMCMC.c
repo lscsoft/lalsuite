@@ -626,7 +626,7 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
               "threePointFivePN\n");
           exit( 1 );
         }
-	fprintf(stdout,"Templates will be generated at %i PN order\n",PhaseOrder);
+	fprintf(stdout,"Templates will be generated at %.1f PN order\n",((float)(PhaseOrder))/2.0);
 	}
 
         /* This flag was added to account for the broken Big Dog
