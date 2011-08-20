@@ -28,12 +28,6 @@
 #include <lal/RealFFT.h>
 #include <lal/Units.h>
 
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
-
 typedef struct tagBBHPhenomParams{
   REAL8 fMerger;
   REAL8 fRing;
@@ -58,9 +52,9 @@ BBHPhenomParams;
  */
 
 static BBHPhenomParams *ComputeIMRPhenomAParams(REAL8 m1, REAL8 m2);
-static UNUSED BBHPhenomParams *ComputeIMRPhenomBParams(REAL8 m1, REAL8 m2, REAL8 chi);
+static BBHPhenomParams *ComputeIMRPhenomBParams(REAL8 m1, REAL8 m2, REAL8 chi);
 
-static REAL8 EstimateSafeFMinForTD(REAL8 m1, REAL8 m2, REAL8 f_min);
+static REAL8 EstimateSafeFMinForTD(REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT);
 static REAL8 EstimateSafeFMaxForTD(REAL8 f_max, REAL8 dt);
 static REAL8 ComputeTau0(REAL8 m1, REAL8 m2, REAL8 f_min);
 
@@ -69,6 +63,7 @@ static REAL8 LorentzianFn(REAL8 freq, REAL8 fRing, REAL8 sigma);
 static int IMRPhenomGenerateFD(COMPLEX16FrequencySeries **htilde, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaF, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
 static int IMRPhenomGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
 static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD, LIGOTimeGPS *tRef, REAL8 totalMass, REAL8 deltaT, REAL8 f_min, REAL8 f_max, REAL8 f_min_wide, REAL8 f_max_wide);
+static int apply_inclination(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 inclination);
 
 /*********************************************************************/
 /* Compute phenomenological parameters for non-spinning binaries     */
@@ -258,12 +253,12 @@ static REAL8 ComputeTau0(REAL8 m1, REAL8 m2, REAL8 f_min) {
  * time) such that the waveform has a minimum length of tau0. This is
  * necessary to avoid FFT artifacts.
  */
-static REAL8 EstimateSafeFMinForTD(REAL8 m1, REAL8 m2, REAL8 f_min) {
+static REAL8 EstimateSafeFMinForTD(REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT) {
   REAL8 temp_f_min, totalMass, eta, tau0;
 
   totalMass = m1 + m2;
   eta = m1 * m2 / (totalMass * totalMass);
-  tau0 = 64.;
+  tau0 = deltaT * (1 << (int) ceil(log2(1.05 * ComputeTau0(m1, m2, f_min) / deltaT)));
   temp_f_min = pow((tau0 * 256. * eta * pow(totalMass * LAL_MTSUN_SI, 5./3.) / 5.), -3./8.) / LAL_PI;
   if (temp_f_min > f_min) temp_f_min = f_min;
   if (temp_f_min < 0.5) temp_f_min = 0.5;
@@ -273,12 +268,12 @@ static REAL8 EstimateSafeFMinForTD(REAL8 m1, REAL8 m2, REAL8 f_min) {
 /**
  * Find a higher value of f_max so that we can safely apply a window later.
  */
-static REAL8 EstimateSafeFMaxForTD(REAL8 f_max, REAL8 dt) {
+static REAL8 EstimateSafeFMaxForTD(REAL8 f_max, REAL8 deltaT) {
   REAL8 temp_f_max;
   temp_f_max = 1.025 * f_max;
 
   /* make sure that these frequencies are not too out of range */
-  if (temp_f_max > dt / 2. - 100.) temp_f_max = dt / 2. - 100.;
+  if (temp_f_max > 2. / deltaT - 100.) temp_f_max = 2. / deltaT - 100.;
   return temp_f_max;
 }
 
@@ -340,6 +335,9 @@ int XLALSimIMRPhenomAGenerateFD(
   params = ComputeIMRPhenomAParams(m1, m2);
   if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
 
+  /* default f_max to params->fCut */
+  if (f_max == 0.) f_max = params->fCut;
+
   return IMRPhenomGenerateFD(htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min, f_max, distance, params);
 }
 
@@ -366,7 +364,7 @@ int XLALSimIMRPhenomAGenerateTD(
     REAL8 f_min,              /**< start frequency */
     REAL8 f_max,              /**< end frequency */
     REAL8 distance,           /**< distance of source */
-    REAL8 UNUSED inclination         /**< inclination of source */
+    REAL8 inclination         /**< inclination of source */
 ) {
   BBHPhenomParams *params;
 
@@ -390,14 +388,17 @@ int XLALSimIMRPhenomAGenerateTD(
   params = ComputeIMRPhenomAParams(m1, m2);
   if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
 
-  /* generate plus */
+  /* default f_max to params->fCut */
+  if (f_max == 0.) f_max = params->fCut;
+
+  /* generate hplus */
   IMRPhenomGenerateTD(hplus, tRef, phiRef, fRef, deltaT, m1, m2, f_min, f_max, distance, params);
   if (!(*hplus)) {
       XLALFree(params);
       XLAL_ERROR(__func__, XLAL_EFUNC);
   }
 
-  /* generate cross, phase-shifted by pi/2 */
+  /* generate hcross, which is hplus phase-shifted by pi/2 */
   IMRPhenomGenerateTD(hcross, tRef, phiRef + LAL_PI / 2, fRef, deltaT, m1, m2, f_min, f_max, distance, params);
   XLALFree(params);
   if (!(*hcross)) {
@@ -406,7 +407,8 @@ int XLALSimIMRPhenomAGenerateTD(
       XLAL_ERROR(__func__, XLAL_EFUNC);
   }
 
-  return XLAL_SUCCESS;
+  /* apply inclination */
+  return apply_inclination(hplus, hcross, inclination);
 }
 
 /**
@@ -432,7 +434,7 @@ int XLALSimIMRPhenomBGenerateTD(
     REAL8 f_min,              /**< start frequency */
     REAL8 f_max,              /**< end frequency */
     REAL8 distance,           /**< distance of source */
-    REAL8 UNUSED inclination         /**< inclination of source */
+    REAL8 inclination         /**< inclination of source */
 ) {
   BBHPhenomParams *params;
 
@@ -457,6 +459,9 @@ int XLALSimIMRPhenomBGenerateTD(
   params = ComputeIMRPhenomBParams(m1, m2, chi);
   if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
 
+  /* default f_max to params->fCut */
+  if (f_max == 0.) f_max = params->fCut;
+
   /* generate plus */
   IMRPhenomGenerateTD(hplus, tRef, phiRef, fRef, deltaT, m1, m2, f_min, f_max, distance, params);
   if (!(*hplus)) {
@@ -473,7 +478,8 @@ int XLALSimIMRPhenomBGenerateTD(
       XLAL_ERROR(__func__, XLAL_EFUNC);
   }
 
-  return XLAL_SUCCESS;
+  /* apply inclination */
+  return apply_inclination(hplus, hcross, inclination);
 }
 
 
@@ -522,6 +528,9 @@ int XLALSimIMRPhenomBGenerateFD(
   /* phenomenological parameters*/
   params = ComputeIMRPhenomBParams(m1, m2, chi);
   if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
+
+  /* default f_max to params->fCut */
+  if (f_max == 0.) f_max = params->fCut;
 
   status = IMRPhenomGenerateFD(htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min, f_max, distance, params);
   LALFree(params);
@@ -619,9 +628,9 @@ static int IMRPhenomGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phi
    * f_min chosen. Also the cutoff frequency is higher than the f_max. We
    * will later apply a window function, and truncate the time-domain waveform
    * below an instantaneous frequency f_min. */
-  f_min_wide = EstimateSafeFMinForTD(m1, m2, f_min);
-  f_max_wide = EstimateSafeFMaxForTD(f_max || params->fCut, deltaT);
-  deltaF = deltaT / (1 << (int) ceil(log2(ComputeTau0(m1, m2, f_min_wide) * deltaT))); /* nvf: I don't understand why we should quantize T * dT */
+  f_min_wide = EstimateSafeFMinForTD(m1, m2, f_min, deltaT);
+  f_max_wide = EstimateSafeFMaxForTD(f_max, deltaT);
+  deltaF = 1. / (deltaT * (1 << (int) ceil(log2(ComputeTau0(m1, m2, f_min_wide) / deltaT))));
 
   /* generate in frequency domain */
   if (IMRPhenomGenerateFD(&htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(__func__, XLAL_EFUNC);
@@ -640,37 +649,36 @@ static int IMRPhenomGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phi
  * FD waveform is modified.
  */
 static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD, LIGOTimeGPS *tRef, REAL8 totalMass, REAL8 deltaT, REAL8 f_min, REAL8 f_max, REAL8 f_min_wide, REAL8 f_max_wide) {
-  REAL8 f, fRes, winFLo, winFHi, sigLo, sigHi, softWin, windowLength;
+  REAL8 f, fRes, winFLo, winFHi, softWin, windowLength;
   REAL8FFTPlan *revPlan;
-  ssize_t n, k;
+  ssize_t nf, nt, k;
 
   /* check inputs */
   if (f_min_wide >= f_min) XLAL_ERROR(__func__, XLAL_EDOM);
   if (f_max_wide <= f_max) XLAL_ERROR(__func__, XLAL_EDOM);
 
   /* apply the softening window function */
-  n = signalFD->data->length;
-  fRes = deltaT / n;
+  nf = signalFD->data->length;
+  nt = 2 * (nf - 1);
+  fRes = 1 / (deltaT * nt);
 
   winFLo = (f_min + f_min_wide)/2.;
   winFHi = (f_max + f_max_wide)/2.;
-  sigLo = 4.;
-  sigHi = 4.;
 
   signalFD->data->data[0] = (COMPLEX16) {0., 0.};
-  for (k = 1; k <= n; k++) {
+  for (k = 1; k <= nf; k++) {
     f = k*fRes;
-    softWin = (1 + tanh(4. * (f - winFLo) / sigLo))
-            * (1 - tanh(4. * (f - winFHi) / sigHi)) / 4.;  // XXX: f_max_wide -> winFHi
+    softWin = (1 + tanh(f - winFLo))
+            * (1 - tanh(f - winFHi)) / 4.;  // XXX: f_max_wide -> winFHi
     signalFD->data->data[k].re *= softWin;
     signalFD->data->data[k].im *= softWin;
   }
 
   /* allocate output */
-  *signalTD = XLALCreateREAL8TimeSeries("h", tRef, 0.0, deltaT, &lalStrainUnit, n);
+  *signalTD = XLALCreateREAL8TimeSeries("h", tRef, 0.0, deltaT, &lalStrainUnit, nt);
 
   /* Inverse Fourier transform */
-  revPlan = XLALCreateReverseREAL8FFTPlan(n, 0);
+  revPlan = XLALCreateReverseREAL8FFTPlan(nt, 1);
   if (!revPlan) {
     XLALDestroyREAL8TimeSeries(*signalTD);
     *signalTD = NULL;
@@ -681,15 +689,30 @@ static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD
   if (!(*signalTD)) XLAL_ERROR(__func__, XLAL_EFUNC);
 
   /* Normalisation; the LAL implementation of the FFT omits the factor 1/n.*/
-  for (k = 0; k < n; k++)
-      (*signalTD)->data->data[k] *= deltaT / n;
+  for (k = 0; k < nf; k++)
+      (*signalTD)->data->data[k] *= 1 / (deltaT * nt);
 
   /* apply a linearly decreasing window at the end
    * of the waveform in order to avoid edge effects. */
-  windowLength = 10. * totalMass * LAL_MTSUN_SI * deltaT;
+  windowLength = 10. * totalMass * LAL_MTSUN_SI / deltaT;
   for (k = 0; k < windowLength; k++)
-    (*signalTD)->data->data[n-k-1] *= k / windowLength;
+    (*signalTD)->data->data[nt-k-1] *= k / windowLength;
 
   return XLAL_SUCCESS;
 }
 
+static int apply_inclination(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 inclination) {
+  REAL8 inclFacPlus, inclFacCross, cosI;
+  ssize_t k;
+
+  cosI = cos(inclination);
+
+  inclFacPlus = -0.5 * (1. + cosI * cosI);
+  inclFacCross = -cosI;
+  for (k = 0; k < (*hplus)->data->length; k++) {
+      (*hplus)->data->data[k] *= inclFacPlus;
+      (*hcross)->data->data[k] *= inclFacCross;
+  }
+
+  return XLAL_SUCCESS;
+}
