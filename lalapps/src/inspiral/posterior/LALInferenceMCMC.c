@@ -33,6 +33,7 @@
 #include "LALInferenceMCMCSampler.h"
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceTemplate.h>
+#include <lal/LALinferenceProposal.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceReadData.h>
 
