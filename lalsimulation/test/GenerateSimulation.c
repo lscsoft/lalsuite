@@ -19,6 +19,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
@@ -86,6 +87,7 @@ const char * usage =
 "                           orbital angular momentum at the reference\n"
 "                           (default: face on)\n"
 "--outname FNAME            File to which output should be written (overwrites)\n"
+"--verbose                  Provide this flag to add verbose output\n"
 ;
 
 /* Parse command line, sanity check arguments, and return a newly
@@ -162,6 +164,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             params->inclination = atof(argv[++i]);
         } else if (strcmp(argv[i], "--outname") == 0) {
             strncpy(params->outname, argv[++i], 256);
+        } else if (strcmp(argv[i], "--verbose") == 0) {
+            params->verbose = 1;
         } else {
             snprintf(msg, 256, "Error: invalid option: %s\n", argv[i]);
             XLALPrintError(msg);
@@ -173,8 +177,13 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     if (params->approximant == GSApproximant_DEFAULT) {
         XLALPrintError("Error: --approximant is a required parameter\n");
         goto fail;
-    }
-    if ((params->m1 <= 0.) || (params->m2 <= 0.)) {
+    } else if ((params->domain == GSDomain_TD) ^ (params->deltaT > 0)) {
+        XLALPrintError("Error: time-domain waveforms require --deltaT\n");
+        goto fail;
+    } else if ((params->domain == GSDomain_FD) ^ (params->deltaF > 0)) {
+        XLALPrintError("Error: frequency-domain waveforms require --deltaF\n");
+        goto fail;
+    } else if ((params->m1 <= 0.) || (params->m2 <= 0.)) {
         XLALPrintError("Error: masses are required and must be positive\n");
         goto fail;
     } else if (fabs(params->chi) > 1) {
@@ -254,6 +263,7 @@ static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
 int main (int argc , char **argv) {
     FILE *f;
     int status;
+    int start_time;
     LIGOTimeGPS tRef;
     COMPLEX16FrequencySeries *htilde = NULL;
     REAL8TimeSeries *hplus = NULL;
@@ -268,28 +278,42 @@ int main (int argc , char **argv) {
     params = parse_args(argc, argv);
 
     /* generate waveform */
-    if (params->domain == GSDomain_FD) {
-        switch (params->approximant) {
-            case GSApproximant_IMRPhenomA:
-                XLALSimIMRPhenomAGenerateFD(&htilde, &tRef, params->phiRef, params->fRef, params->deltaF, params->m1, params->m2, params->f_min, params->f_max, params->distance);
-                break;
-            case GSApproximant_IMRPhenomB:
-                XLALSimIMRPhenomBGenerateFD(&htilde, &tRef, params->phiRef, params->fRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance);
-                break;
-            default:
-                XLALPrintError("Error: some lazy programmer forgot to add their waveform generation function\n");
-        }
-        if (!htilde) {
-            XLALPrintError("Error: waveform generation failed\n");
-            goto fail;
-        }
-    } else if (params->domain == GSDomain_TD) {
-        XLALPrintError("Error: TD not yet supported\n");
-        if (!hplus || !hcross) {
-            XLALPrintError("Error: waveform generation failed\n");
-            goto fail;
-        }
+    start_time = time(NULL);
+    switch (params->domain) {
+        case GSDomain_FD:
+            switch (params->approximant) {
+                case GSApproximant_IMRPhenomA:
+                    XLALSimIMRPhenomAGenerateFD(&htilde, &tRef, params->phiRef, params->fRef, params->deltaF, params->m1, params->m2, params->f_min, params->f_max, params->distance);
+                    break;
+                case GSApproximant_IMRPhenomB:
+                    XLALSimIMRPhenomBGenerateFD(&htilde, &tRef, params->phiRef, params->fRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance);
+                    break;
+                default:
+                    XLALPrintError("Error: some lazy programmer forgot to add their FD waveform generation function\n");
+            }
+            break;
+        case GSDomain_TD:
+            switch (params->approximant) {
+                case GSApproximant_IMRPhenomA:
+                    XLALSimIMRPhenomAGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->fRef, params->deltaT, params->m1, params->m2, params->f_min, params->f_max, params->distance, params->inclination);
+                    break;
+                case GSApproximant_IMRPhenomB:
+                    XLALSimIMRPhenomBGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->fRef, params->deltaT, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance, params->inclination);
+                    break;
+                default:
+                    XLALPrintError("Error: some lazy programmer forgot to add their TD waveform generation function\n");
+            }
+            break;
+        default:
+            XLALPrintError("Error: only TD and FD waveform generation supported\n");
     }
+    if (((params->domain == GSDomain_FD) && !htilde) ||
+        ((params->domain == GSDomain_TD) && (!hplus || !hcross))) {
+        XLALPrintError("Error: waveform generation failed\n");
+        goto fail;
+    }
+    if (params->verbose)
+        XLALPrintInfo("Generation took %.1f seconds\n", difftime(time(NULL), start_time));
 
     /* dump file */
     f = fopen(params->outname, "w");
