@@ -145,7 +145,6 @@ packages/tdfilter/test/LPCTest
 packages/tools/include/FrequencySeries.h
 packages/tools/include/Sequence.h
 packages/tools/include/TimeSeries.h
-packages/tools/src/TimeSeries.c
 packages/tools/test/CoherentEstimationTest
 packages/tools/test/ComputeTransferTest
 packages/tools/test/DetectorSiteTest
