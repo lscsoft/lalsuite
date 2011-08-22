@@ -928,7 +928,7 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 	}
 	LALInferenceAddMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
     
-	tmpMin=0.0; tmpMax=LAL_TWOPI;
+	tmpMin=0.0; tmpMax=LAL_PI;
 	//tmpVal=0.2000;
 	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=0.64546;
