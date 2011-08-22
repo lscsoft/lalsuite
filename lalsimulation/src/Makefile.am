@@ -1,7 +1,10 @@
 INCLUDES = -I$(top_builddir)/include
 
+bin_PROGRAMS = lalsim-bh-qnmode lalsim-bh-sphwf lalsim-bh-ringdown
+
 lalsimulationincludedir = $(includedir)/lal
 lalsimulationinclude_HEADERS = \
+	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
 	LALSimIMR.h \
 	LALSimInspiral.h \
@@ -12,6 +15,7 @@ lalsimulationinclude_HEADERS = \
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
+	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \
 	LALSimIMRPhenom.c \
 	LALSimInspiral.c \
@@ -27,6 +31,13 @@ liblalsimulation_la_SOURCES = \
 	check_series_macros.h
 
 liblalsimulation_la_LDFLAGS = -version-info $(LIBVERSION)
+
+lalsim_bh_qnmode_SOURCES = bh_qnmode.c
+lalsim_bh_qnmode_LDADD = $(top_builddir)/src/liblalsimulation.la
+lalsim_bh_sphwf_SOURCES = bh_sphwf.c
+lalsim_bh_sphwf_LDADD = $(top_builddir)/src/liblalsimulation.la
+lalsim_bh_ringdown_SOURCES = bh_ringdown.c
+lalsim_bh_ringdown_LDADD = $(top_builddir)/src/liblalsimulation.la
 
 CLEANFILES = \
 	lalsimulation-user-env.sh \
