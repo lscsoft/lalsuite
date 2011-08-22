@@ -64,3 +64,4 @@ void PTMCMCLALInferenceDrawUniformlyFromPrior(LALInferenceRunState *runState, LA
 //void VNRPriorOneStep(LALInferenceRunState *runState);
 
 #endif
+
