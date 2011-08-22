@@ -788,9 +788,9 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
 	       	REAL8 m2,                 /**< mass of companion 2 */
 	       	REAL8 f_min,              /**< start frequency */
 	       	REAL8 r,                  /**< distance of source */
-	       	REAL8 iota,                  /**< inclination of source (rad) */
-		REAL8 spin1[3],		  /**< Spin vector on mass1 */
-		REAL8 spin2[3],		  /**< Spin vector on mass2 */
+	       	REAL8 iota,               /**< inclination of source (rad) */
+					REAL8 spin1[3],						/**< Spin vector on mass1 */
+					REAL8 spin2[3],						/**< Spin vector on mass2 */
 	       	int amplitudeO,           /**< twice post-Newtonian amplitude order */
 	       	int phaseO                /**< twice post-Newtonian phase order */
 		);
@@ -903,7 +903,8 @@ INT4 XLALPSpinInspiralRDEngine(
 
   if(!params) XLAL_ERROR(__func__, XLAL_EFAULT);
 
-  mass = (m1+m2) * LAL_MTSUN_SI;
+  mass = (m1+m2) * LAL_MTSUN_SI; /* Total mass in seconds */
+	mu = eta * totalMass; /* Reduced mass in solar masses */
   unitHz = (m1+m2) * LAL_MTSUN_SI * (REAL8) LAL_PI;
 
   if ((signalvec2)||(hh))
@@ -1039,11 +1040,11 @@ INT4 XLALPSpinInspiralRDEngine(
     ry[2][2] = cos(thetaJ);
     for (j = 0; j < 3; j++) {
       for (k = 0; k < 3; k++) {
-	initLNh[j] += ry[j][k] * rz[k][2];
-	for (l = 0; l < 3; l++) {
+				initLNh[j] += ry[j][k] * rz[k][2];
+				for (l = 0; l < 3; l++) {
            initS1[j] += ry[j][k] * rz[k][l] * iS1[l];
            initS2[j] += ry[j][k] * rz[k][l] * iS2[l];
-	}
+				}
       }
     }
     inc = iota;
@@ -1187,7 +1188,7 @@ INT4 XLALPSpinInspiralRDEngine(
   /* Here there used to be a check that OmegaRD is smaller than Nyquist, it
      has been taken out */
 
-    amp22ini = -2.0 * params->mu * LAL_MRSUN_SI / r * sqrt(16. * LAL_PI / 5.);
+    amp22ini = -2.0 * mu * LAL_MRSUN_SI / r * sqrt(16. * LAL_PI / 5.);
  
   /* initialize the coordinates */
   yinit[0] = initphi;     /* phi */
