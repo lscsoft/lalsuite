@@ -553,6 +553,10 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 		{
 			approx = SpinQuadTaylor;
 		}
+		else if ( ! strcmp( "SpinTaylorFrameless", ppt->value ) )
+		{
+			approx = SpinTaylorFrameless;
+		}    
 		else if ( ! strcmp( "PhenSpinTaylorRD", ppt->value ) )
 		{
 			approx = PhenSpinTaylorRD;
@@ -575,7 +579,7 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 					"unknown approximant %s specified: "
 					"Approximant must be one of: GeneratePPN, TaylorT1, TaylorT2,\n"
 					"TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
-					"EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor,\n"
+					"EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor, SpinTaylorFrameless,\n"
 					"PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
 			exit( 1 );
 		}
