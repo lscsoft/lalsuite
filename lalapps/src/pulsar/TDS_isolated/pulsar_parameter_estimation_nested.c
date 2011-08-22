@@ -3399,7 +3399,7 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
  * The threshold is for the natural logarithm of the odds ratio is empirically
  * set to be:
  * \f[
- * T = 1.305\log{}_{10} N + 0.245 + 2.531
+ * T = 0.57\ln{N} + 2.71,
  * \f]
  * where \f$N\f$ is the length of the data set. This comes from a fit to the 
  * threshold value required to give a 1% chance of splitting actual Gaussian
@@ -3431,11 +3431,11 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
   
   /* set threshold based on empirical tests that only give a 1% chance of
      splitting Gaussian data of various lengths. The relation is approximately:
-     T = 1.305*log10(length) + 0.254 + 2.531
-     where the first two terms come from a fit to odds ratios for a Monte Carlo
+     T = 0.57*ln(length) + 2.71
+     where this comes from a fit to odds ratios for a Monte Carlo
      of Gaussian noise (with real and imaginary components) of various lengths,
-     and the final term comes from an offset to give the 1% false alarm rate. */
-  threshold = 1.305*log10(length) + 0.254 + 2.531;
+     with an offset to give the 1% false alarm rate. */
+  threshold = 0.57*log(length) + 2.71;
   
   if ( logodds > threshold ){
     UINT4Vector *cp1 = NULL;
@@ -4206,8 +4206,8 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   
   lMax = runState->likelihood( loudestParams, runState->data,
                                runState->template );
-  
-  LALFree( loudestParams );
+ 
+  LALInferenceDestroyVariables( loudestParams );
   
   /* setup output file */
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
