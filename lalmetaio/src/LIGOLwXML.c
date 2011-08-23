@@ -87,36 +87,30 @@ list of all the files which must be updated.
 <ul>
 <li>  Update the LAL table definition in \ref LIGOMetaDataTables.h</li>
 
-<li>  Update the LIGOLwXML writing code:
+<li>  Update the LIGOLwXML writing code:</li>
+   <ol>
+   <li>  Change the table header written at to the LIGOLwXML file.  This is
+   \#defined in \ref LIGOLwXMLHeaders.h.  For example, to change the
+   \c sngl_inspiral table, you must edit \c LIGOLW_XML_SNGL_INSPIRAL.</li>
 
-<ol></li>
-<li>  Change the table header written at to the LIGOLwXML file.  This is
-\ref #define</tt>d in <tt>LIGOLwXMLHeaders.h.  For example, to change the
-\c sngl_inspiral table, you must edit \c LIGOLW_XML_SNGL_INSPIRAL.</li>
+   <li> Change the row format of the LIGOLwXML file.  This is \#defined in
+   \ref LIGOLwXMLHeaders.h.  For example, to change the <tt> sngl_inspiral</tt>
+   table, you must edit \c SNGL_INSPIRAL_ROW.</li>
 
-<li> Change the row format of the LIGOLwXML file.  This is <tt>#define</tt>d in
-\ref LIGOLwXMLHeaders.h.  For example, to change the <tt> sngl_inspiral</tt>
-table, you must edit \c SNGL_INSPIRAL_ROW.</li>
+   <li> Change the fprintf command which writes the table rows.  This is contained
+   in \ref LIGOLwXML.c.
+   </ol>
 
-<li> Change the fprintf command which writes the table rows.  This is contained
-in \ref LIGOLwXML.c.
+<li> Update the LIGOLwXML reading code:</li>
+   <ol>
+   <li> Add/remove columns from the table directory of the table in question.
+   This is contained in \ref LIGOLwXMLRead.c, either in
+   \c LALCreateMetaTableDir or in the specific reading function.</li>
 
-</ol></li>
-
-<li> Update the LIGOLwXML reading code:
-
-<ol></li>
-
-<li> Add/remove columns from the table directory of the table in question.
-This is contained in \ref LIGOLwXMLRead.c, either in
-\c LALCreateMetaTableDir or in the specific reading function.</li>
-
-<li> Check that all columns read in from the XML table are stored in memory.
-This requires editing the table specific reading codes in
-\ref LIGOLwXMLRead.c.
-
-</ol>
-</li>
+   <li> Check that all columns read in from the XML table are stored in memory.
+   This requires editing the table specific reading codes in
+   \ref LIGOLwXMLRead.c.</li>
+   </ol>
 </ul>
 
 */
@@ -783,7 +777,8 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.multiInspiralTable->autoCorrNullSq,
 	      tablePtr.multiInspiralTable->crossCorrNullSq,
 	      tablePtr.multiInspiralTable->ampMetricEigenVal1,
-	      tablePtr.multiInspiralTable->ampMetricEigenVal2
+	      tablePtr.multiInspiralTable->ampMetricEigenVal2,
+              tablePtr.multiInspiralTable->time_slide_id->id
               );
         tablePtr.multiInspiralTable = tablePtr.multiInspiralTable->next;
         ++(xml->rowCount);
@@ -1507,14 +1502,11 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	const SimBurst *sim_burst
 )
 {
-	static const char func[] = "XLALWriteLIGOLwXMLSimBurstTable";
 	const char *row_head = "\n\t\t\t";
-
-
 
 	if(xml->table != no_table) {
 		XLALPrintError("a table is still open");
-		XLAL_ERROR(func, XLAL_EFAILED);
+		XLAL_ERROR(__func__, XLAL_EFAILED);
 	}
 
 	/* table header */
@@ -1539,15 +1531,16 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	fputs("\t\t<Column Name=\"sim_burst:hrss\" Type=\"real_8\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sim_burst:egw_over_rsquared\" Type=\"real_8\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sim_burst:waveform_number\" Type=\"int_8u\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:time_slide_id\" Type=\"ilwd:char\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sim_burst:simulation_id\" Type=\"ilwd:char\"/>\n", xml->fp);
 	fputs("\t\t<Stream Name=\"sim_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 
 	/* rows */
 
 	for(; sim_burst; sim_burst = sim_burst->next) {
-		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",%.16g,%.16g,%.16g,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%lu,\"sim_burst:simulation_id:%ld\"",
+		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",%.16g,%.16g,%.16g,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%lu,\"time_slide:time_slide_id:%ld\",\"sim_burst:simulation_id:%ld\"",
 			row_head,
 			sim_burst->process_id,
 			sim_burst->waveform,
@@ -1567,21 +1560,77 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 			sim_burst->hrss,
 			sim_burst->egw_over_rsquared,
 			sim_burst->waveform_number,
+			sim_burst->time_slide_id,
 			sim_burst->simulation_id
 		) < 0)
-			XLAL_ERROR(func, XLAL_EFUNC);
+			XLAL_ERROR(__func__, XLAL_EFUNC);
 		row_head = ",\n\t\t\t";
 	}
 
 	/* table footer */
 
 	if(fputs("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 
 	/* done */
 
 	return 0;
 }
+
+
+/**
+ * Write a sim_burst table to an XML file.
+ */
+
+
+int XLALWriteLIGOLwXMLTimeSlideTable(
+	LIGOLwXMLStream *xml,
+	const TimeSlide *time_slide
+)
+{
+	const char *row_head = "\n\t\t\t";
+
+	if(xml->table != no_table) {
+		XLALPrintError("a table is still open");
+		XLAL_ERROR(__func__, XLAL_EFAILED);
+	}
+
+	/* table header */
+
+	XLALClearErrno();
+	fputs("\t<Table Name=\"time_slide:table\">\n", xml->fp);
+	fputs("\t\t<Column Name=\"time_slide:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"time_slide:time_slide_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"time_slide:instrument\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"time_slide:offset\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Stream Name=\"time_slide:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
+	if(XLALGetBaseErrno())
+		XLAL_ERROR(__func__, XLAL_EFUNC);
+
+	/* rows */
+
+	for(; time_slide; time_slide = time_slide->next) {
+		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"time_slide:time_slide_id:%ld\",\"%s\",%.16g",
+			row_head,
+			time_slide->process_id,
+			time_slide->time_slide_id,
+			time_slide->instrument,
+			time_slide->offset
+		) < 0)
+			XLAL_ERROR(__func__, XLAL_EFUNC);
+		row_head = ",\n\t\t\t";
+	}
+
+	/* table footer */
+
+	if(fputs("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+		XLAL_ERROR(__func__, XLAL_EFUNC);
+
+	/* done */
+
+	return 0;
+}
+
 
 /**
  * Creates a XML filename accordingly to document T050017

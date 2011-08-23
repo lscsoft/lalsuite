@@ -17,15 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \file
- *
- * \author Reinhard Prix
- * \ingroup factories
- * \brief  Creation/destruction/manipulation functions for 'LALStringVector' type objects.
- *
- */
-
 /*---------- INCLUDES ----------*/
 #include <string.h>
 #include <stdlib.h>
@@ -45,6 +36,12 @@ const LALStringVector empty_LALStringVector;
 /*---------- Global variables ----------*/
 /*---------- internal prototypes ----------*/
 
+
+/**
+ * \author Reinhard Prix
+ * \addtogroup StringVector
+ *
+ * @{ */
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -359,3 +356,6 @@ XLALFindStringInVector ( const char *needle, const LALStringVector *haystack )
   return -1;	// didn't find matching entry
 
 } /* XLALFindStringInVector() */
+
+
+/** @}*/

@@ -1672,9 +1672,18 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   XLALINT8NSToGPS(&(waveform->a->epoch), waveformStartTime );
   
-  memcpy( &(waveform->f->epoch), &(waveform->a->epoch), sizeof(LIGOTimeGPS) );
-  memcpy( &(waveform->phi->epoch), &(waveform->a->epoch), sizeof(LIGOTimeGPS) );
+  //memcpy( &(waveform->f->epoch), &(waveform->a->epoch), sizeof(LIGOTimeGPS) );
+  //memcpy( &(waveform->phi->epoch), &(waveform->a->epoch), sizeof(LIGOTimeGPS) );
 
+  waveform->f->epoch = waveform->a->epoch;
+  waveform->phi->epoch = waveform->a->epoch;
+
+  if ( waveform->shift )
+    {
+      waveform->shift->epoch = waveform->a->epoch;
+    }
+  
+  
 	/* set the start time of the signal vector to the start time of ifo[ifonr]->FTstart */
   
   

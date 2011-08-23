@@ -22,7 +22,7 @@ extern "C" {
 #define LALSTPN_DERIVATIVE_COORDINATE		1031
 
 void
-LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
+LALSTPNFramelessAdaptiveWaveformEngine( LALStatus *status,
     REAL4Vector *signalvec1,REAL4Vector *signalvec2,
     UINT4 *countback,
     InspiralTemplate *params,InspiralInit *paramsInit

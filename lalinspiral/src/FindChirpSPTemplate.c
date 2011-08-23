@@ -24,49 +24,38 @@
  *
  * Author: Brown D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpSPTemplateCV">
-Author: Brown, D. A.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpSPTemplate.c}}
-\label{ss:FindChirpSPTemplate.c}
+\author Brown, D. A.
+\file
+\ingroup FindChirpSP_h
 
-Provides functions to create stationary phase inspiral templates in a
-form that can be used by the \texttt{FindChirpFilter()} function.
+\brief Provides functions to create stationary phase inspiral templates in a
+form that can be used by the <tt>FindChirpFilter()</tt> function.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpSPTemplateCP}
-\idx{LALFindChirpSPTemplate()}
+\heading{Prototypes}
 
-The function \texttt{LALFindChirpSPTemplate()} creates the stationary phase
+The function <tt>LALFindChirpSPTemplate()</tt> creates the stationary phase
 template as described by the algorithm below.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 Blah.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpSPTemplateCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -98,12 +87,12 @@ XLALFindChirpChirpTime (double m1,
     {
     case 8:
     case 7:
-      c7T = LAL_PI * (14809.0 * eta * eta - 75703.0 * eta / 756.0 - 15419335.0 / 127008.0);
+      c7T = LAL_PI * (14809.0 * eta * eta / 378.0 - 75703.0 * eta / 756.0 - 15419335.0 / 127008.0);
     case 6:
       c6T = LAL_GAMMA * 6848.0 / 105.0 - 10052469856691.0 / 23471078400.0 + LAL_PI * LAL_PI * 128.0 / 3.0 + eta * (3147553127.0 / 3048192.0 - LAL_PI * LAL_PI * 451.0 / 12.0) - eta * eta * 15211.0 / 1728.0 + eta * eta * eta * 25565.0 / 1296.0 + log (4.0) * 6848.0 / 105.0;
       c6LogT = 6848.0 / 105.0;
     case 5:
-      c5T = 13.0 * LAL_PI * eta / 3.0 - 7729.0 / 252.0;
+      c5T = 13.0 * LAL_PI * eta / 3.0 - 7729.0 * LAL_PI / 252.0;
     case 4:
       c4T = 3058673.0 / 508032.0 + eta * (5429.0 / 504.0 + eta * 617.0 / 72.0);
       c3T = -32.0 * LAL_PI / 5.0;
@@ -137,7 +126,7 @@ XLALFindChirpChirpTime (double m1,
 
 
 
-/* <lalVerbatim file="FindChirpSPTemplateCP"> */
+
 void
 LALFindChirpSPTemplate (
     LALStatus                  *status,
@@ -145,7 +134,7 @@ LALFindChirpSPTemplate (
     InspiralTemplate           *tmplt,
     FindChirpTmpltParams       *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4         numPoints  = 0;
   REAL4         deltaF     = 0.0;

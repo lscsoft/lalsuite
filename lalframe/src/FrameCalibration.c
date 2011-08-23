@@ -21,12 +21,10 @@
  * \author Brown, D. A.
  * \file
  *
- * \heading{Module \ref FrameCalibration.c}
- * \label{ss:FrameCalibration.c}
+ * \brief This module contains code used to extract calibration information contained
+ * in frame files, and to construct a response (or transfer) function.
  *
- * This module contains code used to extract calibration information contained
- * in frame files, and to construct a response (or transfer) function.  This
- * is supposed to provide a high-level interface for search authors to obtain a
+ * This is supposed to provide a high-level interface for search authors to obtain a
  * response function in the desired form.
  *
  * \heading{Prototypes}

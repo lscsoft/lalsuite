@@ -1,10 +1,10 @@
 package "lalapps_TwoSpect"
-version "1.0.6"
+version "1.1.5"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
 
-option "config"   - "Configuration file in gengetopt format for passing parameters" string optional
+option "config"   - "Configuration file in gengetopt format for passing parameters" string typestr="filename" optional
 option "verbosity" v "Verbosity level" int default="0" optional
 option "Tobs"  - "Total observation time" double optional
 option "Tcoh"  - "SFT coherence time" double default="1800" optional
@@ -15,27 +15,36 @@ option "Pmin"  - "Minimum period to be searched" double default="7200.0" optiona
 option "Pmax"  - "Maximum period to be searched" double optional
 option "dfmin" - "Minimum modulation depth to search" double optional
 option "dfmax" - "Maximum modulation depth to search" double optional
-option "IFO"   - "Interferometer of whose data is being analyzed" string default="H1" optional
+option "ihsfactor" - "Number of harmonics to sum in IHS algorithm" int default="5" optional
+option "IFO"   - "Interferometer of whose data is being analyzed" string typestr="IFO code" values="H1","H2","L1","V1" default="H1" optional
 option "ihsfar"   - "IHS FAR threshold" double default="0.01" optional
 option "ihsfom"    - "IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2" double optional
 option "ihsfomfar" - "IHS FOM FAR threshold" double optional
 option "tmplfar"  - "Template FAR threshold" double default="0.01" optional
 option "avesqrtSh"    - "Expected average of square root of Sh" double default="1.0" optional
 option "blksize"  - "Blocksize for running median of 1st FFT band" int default="1001" optional
-option "outdirectory"   - "Output directory" string optional
-option "sftDir"         - "Directory containing SFTs" string default="./" optional
-option "ephemDir"      - "Path to ephemeris files" string default="/opt/lscsoft/lalpulsar/share/lalpulsar" optional
+option "outdirectory"   - "Output directory" string typestr="directory" default="output" optional
+option "outfilename"    - "Output file name" string typestr="filename" default="logfile.txt" optional
+option "ULfilename"     - "Upper limit file name" string typestr="filename" default="uls.dat" optional
+option "ULminimumDeltaf"  - "Minimum modulation depth counted in the upper limit value" double default="0.0" optional
+option "ULmaximumDeltaf"  - "Maximum modulation depth counted in the upper limit value" double default="0.1" optional
+option "sftDir"         - "Directory containing SFTs" string typestr="directory" default="./" optional
+option "ephemDir"      - "Path to ephemeris files" string typestr="directory" default="/opt/lscsoft/lalpulsar/share/lalpulsar" optional
 option "ephemYear"     - "Year or year range (e.g. 08-11) of ephemeris files" string default="08-11" optional
 option "dopplerMultiplier" - "Multiplier for the Doppler velocity" double default="1.0" optional
 option "templateLength" - "Maximum number of pixels to use in the template" int default="50" optional
-option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string default="allsky" optional
+option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string optional
+option "skyRegionFile"  - "File with the grid points" string typestr="filename" optional
 option "SFToverlap"    - "SFT overlap in seconds, usually Tcoh/2" double default="900" optional
-option "sftType"  - "Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization" string default="vladimir" optional
+option "sftType"  - "SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization" string values="MFD","vladimir" default="vladimir" optional
 option "markBadSFTs"   - "Mark bad SFTs" flag off
-option "keepOneCandidate"  - "Keep a single IHS candidate and let process through the pipeline" flag off
-option "FFTplanFlag"   - "0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive" int default="3" optional
+option "FFTplanFlag"   - "0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive" int values="0","1","2","3" default="3" optional
+option "allULvalsPerSkyLoc"  - "Print all UL values in the band specified by ULminimumDeltaf and ULmaximumDeltaf (default is to print only the maximum UL value in the band)" flag off
+
 option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off hidden
+option "calcRthreshold"    - "Calculate the threshold value for R given the template false alarm rate" flag off hidden
 option "BrentsMethod"  - "Use Brent's method in the root finding algorithm." flag off hidden
 option "antennaOff"  - "Antenna pattern weights are /NOT/ used if this flag is used" flag off hidden
 option "noiseWeightOff"     - "Turn off noise weighting if this flag is used" flag off hidden
 option "gaussTemplatesOnly" - "Gaussian templates only throughout the pipeline if this flag is used" flag off hidden
+

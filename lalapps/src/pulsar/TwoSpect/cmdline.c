@@ -35,7 +35,7 @@ const char *gengetopt_args_info_full_help[] = {
   "  -h, --help                    Print help and exit",
   "      --full-help               Print help, including hidden options, and exit",
   "  -V, --version                 Print version and exit",
-  "      --config=STRING           Configuration file in gengetopt format for \n                                  passing parameters",
+  "      --config=filename         Configuration file in gengetopt format for \n                                  passing parameters",
   "  -v, --verbosity=INT           Verbosity level  (default=`0')",
   "      --Tobs=DOUBLE             Total observation time",
   "      --Tcoh=DOUBLE             SFT coherence time  (default=`1800')",
@@ -46,26 +46,33 @@ const char *gengetopt_args_info_full_help[] = {
   "      --Pmax=DOUBLE             Maximum period to be searched",
   "      --dfmin=DOUBLE            Minimum modulation depth to search",
   "      --dfmax=DOUBLE            Maximum modulation depth to search",
-  "      --IFO=STRING              Interferometer of whose data is being analyzed  \n                                  (default=`H1')",
+  "      --ihsfactor=INT           Number of harmonics to sum in IHS algorithm  \n                                  (default=`5')",
+  "      --IFO=IFO code            Interferometer of whose data is being analyzed  \n                                  (possible values=\"H1\", \"H2\", \"L1\", \n                                  \"V1\" default=`H1')",
   "      --ihsfar=DOUBLE           IHS FAR threshold  (default=`0.01')",
   "      --ihsfom=DOUBLE           IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2",
   "      --ihsfomfar=DOUBLE        IHS FOM FAR threshold",
   "      --tmplfar=DOUBLE          Template FAR threshold  (default=`0.01')",
   "      --avesqrtSh=DOUBLE        Expected average of square root of Sh  \n                                  (default=`1.0')",
   "      --blksize=INT             Blocksize for running median of 1st FFT band  \n                                  (default=`1001')",
-  "      --outdirectory=STRING     Output directory",
-  "      --sftDir=STRING           Directory containing SFTs  (default=`./')",
-  "      --ephemDir=STRING         Path to ephemeris files  \n                                  (default=`/opt/lscsoft/lalpulsar/share/lalpulsar')",
+  "      --outdirectory=directory  Output directory  (default=`output')",
+  "      --outfilename=filename    Output file name  (default=`logfile.txt')",
+  "      --ULfilename=filename     Upper limit file name  (default=`uls.dat')",
+  "      --ULminimumDeltaf=DOUBLE  Minimum modulation depth counted in the upper \n                                  limit value  (default=`0.0')",
+  "      --ULmaximumDeltaf=DOUBLE  Maximum modulation depth counted in the upper \n                                  limit value  (default=`0.1')",
+  "      --sftDir=directory        Directory containing SFTs  (default=`./')",
+  "      --ephemDir=directory      Path to ephemeris files  \n                                  (default=`/opt/lscsoft/lalpulsar/share/lalpulsar')",
   "      --ephemYear=STRING        Year or year range (e.g. 08-11) of ephemeris \n                                  files  (default=`08-11')",
   "      --dopplerMultiplier=DOUBLE\n                                Multiplier for the Doppler velocity  \n                                  (default=`1.0')",
   "      --templateLength=INT      Maximum number of pixels to use in the template \n                                   (default=`50')",
-  "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky  (default=`allsky')",
+  "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky",
+  "      --skyRegionFile=filename  File with the grid points",
   "      --SFToverlap=DOUBLE       SFT overlap in seconds, usually Tcoh/2  \n                                  (default=`900')",
-  "      --sftType=STRING          Expected SFT from either 'MFD' \n                                  (Makefakedata_v4) or 'vladimir' (Vladimir's \n                                  SFT windowed version) which uses a factor of \n                                  2 rather than sqrt(8/3) for the window \n                                  normalization  (default=`vladimir')",
+  "      --sftType=STRING          SFT from either 'MFD' (Makefakedata_v4) or \n                                  'vladimir' (Vladimir's SFT windowed version) \n                                  which uses a factor of 2 rather than \n                                  sqrt(8/3) for the window normalization  \n                                  (possible values=\"MFD\", \"vladimir\" \n                                  default=`vladimir')",
   "      --markBadSFTs             Mark bad SFTs  (default=off)",
-  "      --keepOneCandidate        Keep a single IHS candidate and let process \n                                  through the pipeline  (default=off)",
-  "      --FFTplanFlag=INT         0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive  \n                                  (default=`3')",
+  "      --FFTplanFlag=INT         0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive  \n                                  (possible values=\"0\", \"1\", \"2\", \"3\" \n                                  default=`3')",
+  "      --allULvalsPerSkyLoc      Print all UL values in the band specified by \n                                  ULminimumDeltaf and ULmaximumDeltaf (default \n                                  is to print only the maximum UL value in the \n                                  band)  (default=off)",
   "      --IHSonly                 IHS stage only is run. Output statistic is the \n                                  IHS statistic.  (default=off)",
+  "      --calcRthreshold          Calculate the threshold value for R given the \n                                  template false alarm rate  (default=off)",
   "      --BrentsMethod            Use Brent's method in the root finding \n                                  algorithm.  (default=off)",
   "      --antennaOff              Antenna pattern weights are /NOT/ used if this \n                                  flag is used  (default=off)",
   "      --noiseWeightOff          Turn off noise weighting if this flag is used  \n                                  (default=off)",
@@ -109,11 +116,17 @@ init_help_array(void)
   gengetopt_args_info_help[30] = gengetopt_args_info_full_help[30];
   gengetopt_args_info_help[31] = gengetopt_args_info_full_help[31];
   gengetopt_args_info_help[32] = gengetopt_args_info_full_help[32];
-  gengetopt_args_info_help[33] = 0; 
+  gengetopt_args_info_help[33] = gengetopt_args_info_full_help[33];
+  gengetopt_args_info_help[34] = gengetopt_args_info_full_help[34];
+  gengetopt_args_info_help[35] = gengetopt_args_info_full_help[35];
+  gengetopt_args_info_help[36] = gengetopt_args_info_full_help[36];
+  gengetopt_args_info_help[37] = gengetopt_args_info_full_help[37];
+  gengetopt_args_info_help[38] = gengetopt_args_info_full_help[38];
+  gengetopt_args_info_help[39] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[34];
+const char *gengetopt_args_info_help[40];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -156,6 +169,10 @@ free_cmd_list(void)
 }
 
 
+const char *cmdline_parser_IFO_values[] = {"H1", "H2", "L1", "V1", 0}; /*< Possible values for IFO. */
+const char *cmdline_parser_sftType_values[] = {"MFD", "vladimir", 0}; /*< Possible values for sftType. */
+const char *cmdline_parser_FFTplanFlag_values[] = {"0", "1", "2", "3", 0}; /*< Possible values for FFTplanFlag. */
+
 static char *
 gengetopt_strdup (const char *s);
 
@@ -176,6 +193,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->Pmax_given = 0 ;
   args_info->dfmin_given = 0 ;
   args_info->dfmax_given = 0 ;
+  args_info->ihsfactor_given = 0 ;
   args_info->IFO_given = 0 ;
   args_info->ihsfar_given = 0 ;
   args_info->ihsfom_given = 0 ;
@@ -184,18 +202,24 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->avesqrtSh_given = 0 ;
   args_info->blksize_given = 0 ;
   args_info->outdirectory_given = 0 ;
+  args_info->outfilename_given = 0 ;
+  args_info->ULfilename_given = 0 ;
+  args_info->ULminimumDeltaf_given = 0 ;
+  args_info->ULmaximumDeltaf_given = 0 ;
   args_info->sftDir_given = 0 ;
   args_info->ephemDir_given = 0 ;
   args_info->ephemYear_given = 0 ;
   args_info->dopplerMultiplier_given = 0 ;
   args_info->templateLength_given = 0 ;
   args_info->skyRegion_given = 0 ;
+  args_info->skyRegionFile_given = 0 ;
   args_info->SFToverlap_given = 0 ;
   args_info->sftType_given = 0 ;
   args_info->markBadSFTs_given = 0 ;
-  args_info->keepOneCandidate_given = 0 ;
   args_info->FFTplanFlag_given = 0 ;
+  args_info->allULvalsPerSkyLoc_given = 0 ;
   args_info->IHSonly_given = 0 ;
+  args_info->calcRthreshold_given = 0 ;
   args_info->BrentsMethod_given = 0 ;
   args_info->antennaOff_given = 0 ;
   args_info->noiseWeightOff_given = 0 ;
@@ -221,6 +245,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->Pmax_orig = NULL;
   args_info->dfmin_orig = NULL;
   args_info->dfmax_orig = NULL;
+  args_info->ihsfactor_arg = 5;
+  args_info->ihsfactor_orig = NULL;
   args_info->IFO_arg = gengetopt_strdup ("H1");
   args_info->IFO_orig = NULL;
   args_info->ihsfar_arg = 0.01;
@@ -233,8 +259,16 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->avesqrtSh_orig = NULL;
   args_info->blksize_arg = 1001;
   args_info->blksize_orig = NULL;
-  args_info->outdirectory_arg = NULL;
+  args_info->outdirectory_arg = gengetopt_strdup ("output");
   args_info->outdirectory_orig = NULL;
+  args_info->outfilename_arg = gengetopt_strdup ("logfile.txt");
+  args_info->outfilename_orig = NULL;
+  args_info->ULfilename_arg = gengetopt_strdup ("uls.dat");
+  args_info->ULfilename_orig = NULL;
+  args_info->ULminimumDeltaf_arg = 0.0;
+  args_info->ULminimumDeltaf_orig = NULL;
+  args_info->ULmaximumDeltaf_arg = 0.1;
+  args_info->ULmaximumDeltaf_orig = NULL;
   args_info->sftDir_arg = gengetopt_strdup ("./");
   args_info->sftDir_orig = NULL;
   args_info->ephemDir_arg = gengetopt_strdup ("/opt/lscsoft/lalpulsar/share/lalpulsar");
@@ -245,17 +279,20 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->dopplerMultiplier_orig = NULL;
   args_info->templateLength_arg = 50;
   args_info->templateLength_orig = NULL;
-  args_info->skyRegion_arg = gengetopt_strdup ("allsky");
+  args_info->skyRegion_arg = NULL;
   args_info->skyRegion_orig = NULL;
+  args_info->skyRegionFile_arg = NULL;
+  args_info->skyRegionFile_orig = NULL;
   args_info->SFToverlap_arg = 900;
   args_info->SFToverlap_orig = NULL;
   args_info->sftType_arg = gengetopt_strdup ("vladimir");
   args_info->sftType_orig = NULL;
   args_info->markBadSFTs_flag = 0;
-  args_info->keepOneCandidate_flag = 0;
   args_info->FFTplanFlag_arg = 3;
   args_info->FFTplanFlag_orig = NULL;
+  args_info->allULvalsPerSkyLoc_flag = 0;
   args_info->IHSonly_flag = 0;
+  args_info->calcRthreshold_flag = 0;
   args_info->BrentsMethod_flag = 0;
   args_info->antennaOff_flag = 0;
   args_info->noiseWeightOff_flag = 0;
@@ -282,30 +319,37 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->Pmax_help = gengetopt_args_info_full_help[11] ;
   args_info->dfmin_help = gengetopt_args_info_full_help[12] ;
   args_info->dfmax_help = gengetopt_args_info_full_help[13] ;
-  args_info->IFO_help = gengetopt_args_info_full_help[14] ;
-  args_info->ihsfar_help = gengetopt_args_info_full_help[15] ;
-  args_info->ihsfom_help = gengetopt_args_info_full_help[16] ;
-  args_info->ihsfomfar_help = gengetopt_args_info_full_help[17] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[18] ;
-  args_info->avesqrtSh_help = gengetopt_args_info_full_help[19] ;
-  args_info->blksize_help = gengetopt_args_info_full_help[20] ;
-  args_info->outdirectory_help = gengetopt_args_info_full_help[21] ;
-  args_info->sftDir_help = gengetopt_args_info_full_help[22] ;
-  args_info->ephemDir_help = gengetopt_args_info_full_help[23] ;
-  args_info->ephemYear_help = gengetopt_args_info_full_help[24] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[25] ;
-  args_info->templateLength_help = gengetopt_args_info_full_help[26] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[27] ;
-  args_info->SFToverlap_help = gengetopt_args_info_full_help[28] ;
-  args_info->sftType_help = gengetopt_args_info_full_help[29] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[30] ;
-  args_info->keepOneCandidate_help = gengetopt_args_info_full_help[31] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[32] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[33] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[34] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[35] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[36] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[37] ;
+  args_info->ihsfactor_help = gengetopt_args_info_full_help[14] ;
+  args_info->IFO_help = gengetopt_args_info_full_help[15] ;
+  args_info->ihsfar_help = gengetopt_args_info_full_help[16] ;
+  args_info->ihsfom_help = gengetopt_args_info_full_help[17] ;
+  args_info->ihsfomfar_help = gengetopt_args_info_full_help[18] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[19] ;
+  args_info->avesqrtSh_help = gengetopt_args_info_full_help[20] ;
+  args_info->blksize_help = gengetopt_args_info_full_help[21] ;
+  args_info->outdirectory_help = gengetopt_args_info_full_help[22] ;
+  args_info->outfilename_help = gengetopt_args_info_full_help[23] ;
+  args_info->ULfilename_help = gengetopt_args_info_full_help[24] ;
+  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[25] ;
+  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[26] ;
+  args_info->sftDir_help = gengetopt_args_info_full_help[27] ;
+  args_info->ephemDir_help = gengetopt_args_info_full_help[28] ;
+  args_info->ephemYear_help = gengetopt_args_info_full_help[29] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[30] ;
+  args_info->templateLength_help = gengetopt_args_info_full_help[31] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[32] ;
+  args_info->skyRegionFile_help = gengetopt_args_info_full_help[33] ;
+  args_info->SFToverlap_help = gengetopt_args_info_full_help[34] ;
+  args_info->sftType_help = gengetopt_args_info_full_help[35] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[36] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[37] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[38] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[39] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[40] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[41] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[42] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[43] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[44] ;
   
 }
 
@@ -407,6 +451,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->Pmax_orig));
   free_string_field (&(args_info->dfmin_orig));
   free_string_field (&(args_info->dfmax_orig));
+  free_string_field (&(args_info->ihsfactor_orig));
   free_string_field (&(args_info->IFO_arg));
   free_string_field (&(args_info->IFO_orig));
   free_string_field (&(args_info->ihsfar_orig));
@@ -417,6 +462,12 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->blksize_orig));
   free_string_field (&(args_info->outdirectory_arg));
   free_string_field (&(args_info->outdirectory_orig));
+  free_string_field (&(args_info->outfilename_arg));
+  free_string_field (&(args_info->outfilename_orig));
+  free_string_field (&(args_info->ULfilename_arg));
+  free_string_field (&(args_info->ULfilename_orig));
+  free_string_field (&(args_info->ULminimumDeltaf_orig));
+  free_string_field (&(args_info->ULmaximumDeltaf_orig));
   free_string_field (&(args_info->sftDir_arg));
   free_string_field (&(args_info->sftDir_orig));
   free_string_field (&(args_info->ephemDir_arg));
@@ -427,6 +478,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->templateLength_orig));
   free_string_field (&(args_info->skyRegion_arg));
   free_string_field (&(args_info->skyRegion_orig));
+  free_string_field (&(args_info->skyRegionFile_arg));
+  free_string_field (&(args_info->skyRegionFile_orig));
   free_string_field (&(args_info->SFToverlap_orig));
   free_string_field (&(args_info->sftType_arg));
   free_string_field (&(args_info->sftType_orig));
@@ -437,13 +490,54 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   clear_given (args_info);
 }
 
+/**
+ * @param val the value to check
+ * @param values the possible values
+ * @return the index of the matched value:
+ * -1 if no value matched,
+ * -2 if more than one value has matched
+ */
+static int
+check_possible_values(const char *val, const char *values[])
+{
+  int i, found, last;
+  size_t len;
+
+  if (!val)   /* otherwise strlen() crashes below */
+    return -1; /* -1 means no argument for the option */
+
+  found = last = 0;
+
+  for (i = 0, len = strlen(val); values[i]; ++i)
+    {
+      if (strncmp(val, values[i], len) == 0)
+        {
+          ++found;
+          last = i;
+          if (strlen(values[i]) == len)
+            return i; /* exact macth no need to check more */
+        }
+    }
+
+  if (found == 1) /* one match: OK */
+    return last;
+
+  return (found ? -2 : -1); /* return many values or none matched */
+}
+
 
 static void
 write_into_file(FILE *outfile, const char *opt, const char *arg, const char *values[])
 {
-  FIX_UNUSED (values);
+  int found = -1;
   if (arg) {
-    fprintf(outfile, "%s=\"%s\"\n", opt, arg);
+    if (values) {
+      found = check_possible_values(arg, values);      
+    }
+    if (found >= 0)
+      fprintf(outfile, "%s=\"%s\" # %s\n", opt, arg, values[found]);
+    else
+      fprintf(outfile, "%s=\"%s\"\n", opt, arg);
   } else {
     fprintf(outfile, "%s\n", opt);
   }
@@ -489,8 +583,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "dfmin", args_info->dfmin_orig, 0);
   if (args_info->dfmax_given)
     write_into_file(outfile, "dfmax", args_info->dfmax_orig, 0);
+  if (args_info->ihsfactor_given)
+    write_into_file(outfile, "ihsfactor", args_info->ihsfactor_orig, 0);
   if (args_info->IFO_given)
-    write_into_file(outfile, "IFO", args_info->IFO_orig, 0);
+    write_into_file(outfile, "IFO", args_info->IFO_orig, cmdline_parser_IFO_values);
   if (args_info->ihsfar_given)
     write_into_file(outfile, "ihsfar", args_info->ihsfar_orig, 0);
   if (args_info->ihsfom_given)
@@ -505,6 +601,14 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "blksize", args_info->blksize_orig, 0);
   if (args_info->outdirectory_given)
     write_into_file(outfile, "outdirectory", args_info->outdirectory_orig, 0);
+  if (args_info->outfilename_given)
+    write_into_file(outfile, "outfilename", args_info->outfilename_orig, 0);
+  if (args_info->ULfilename_given)
+    write_into_file(outfile, "ULfilename", args_info->ULfilename_orig, 0);
+  if (args_info->ULminimumDeltaf_given)
+    write_into_file(outfile, "ULminimumDeltaf", args_info->ULminimumDeltaf_orig, 0);
+  if (args_info->ULmaximumDeltaf_given)
+    write_into_file(outfile, "ULmaximumDeltaf", args_info->ULmaximumDeltaf_orig, 0);
   if (args_info->sftDir_given)
     write_into_file(outfile, "sftDir", args_info->sftDir_orig, 0);
   if (args_info->ephemDir_given)
@@ -517,18 +621,22 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "templateLength", args_info->templateLength_orig, 0);
   if (args_info->skyRegion_given)
     write_into_file(outfile, "skyRegion", args_info->skyRegion_orig, 0);
+  if (args_info->skyRegionFile_given)
+    write_into_file(outfile, "skyRegionFile", args_info->skyRegionFile_orig, 0);
   if (args_info->SFToverlap_given)
     write_into_file(outfile, "SFToverlap", args_info->SFToverlap_orig, 0);
   if (args_info->sftType_given)
-    write_into_file(outfile, "sftType", args_info->sftType_orig, 0);
+    write_into_file(outfile, "sftType", args_info->sftType_orig, cmdline_parser_sftType_values);
   if (args_info->markBadSFTs_given)
     write_into_file(outfile, "markBadSFTs", 0, 0 );
-  if (args_info->keepOneCandidate_given)
-    write_into_file(outfile, "keepOneCandidate", 0, 0 );
   if (args_info->FFTplanFlag_given)
-    write_into_file(outfile, "FFTplanFlag", args_info->FFTplanFlag_orig, 0);
+    write_into_file(outfile, "FFTplanFlag", args_info->FFTplanFlag_orig, cmdline_parser_FFTplanFlag_values);
+  if (args_info->allULvalsPerSkyLoc_given)
+    write_into_file(outfile, "allULvalsPerSkyLoc", 0, 0 );
   if (args_info->IHSonly_given)
     write_into_file(outfile, "IHSonly", 0, 0 );
+  if (args_info->calcRthreshold_given)
+    write_into_file(outfile, "calcRthreshold", 0, 0 );
   if (args_info->BrentsMethod_given)
     write_into_file(outfile, "BrentsMethod", 0, 0 );
   if (args_info->antennaOff_given)
@@ -691,7 +799,18 @@ int update_arg(void *field, char **orig_field,
       return 1; /* failure */
     }
 
-  FIX_UNUSED (default_value);
+  if (possible_values && (found = check_possible_values((value ? value : default_value), possible_values)) < 0)
+    {
+      if (short_opt != '-')
+        fprintf (stderr, "%s: %s argument, \"%s\", for option `--%s' (`-%c')%s\n", 
+          package_name, (found == -2) ? "ambiguous" : "invalid", value, long_opt, short_opt,
+          (additional_error ? additional_error : ""));
+      else
+        fprintf (stderr, "%s: %s argument, \"%s\", for option `--%s'%s\n", 
+          package_name, (found == -2) ? "ambiguous" : "invalid", value, long_opt,
+          (additional_error ? additional_error : ""));
+      return 1; /* failure */
+    }
     
   if (field_given && *field_given && ! override)
     return 0;
@@ -809,6 +928,7 @@ cmdline_parser_internal (
         { "Pmax",	1, NULL, 0 },
         { "dfmin",	1, NULL, 0 },
         { "dfmax",	1, NULL, 0 },
+        { "ihsfactor",	1, NULL, 0 },
         { "IFO",	1, NULL, 0 },
         { "ihsfar",	1, NULL, 0 },
         { "ihsfom",	1, NULL, 0 },
@@ -817,18 +937,24 @@ cmdline_parser_internal (
         { "avesqrtSh",	1, NULL, 0 },
         { "blksize",	1, NULL, 0 },
         { "outdirectory",	1, NULL, 0 },
+        { "outfilename",	1, NULL, 0 },
+        { "ULfilename",	1, NULL, 0 },
+        { "ULminimumDeltaf",	1, NULL, 0 },
+        { "ULmaximumDeltaf",	1, NULL, 0 },
         { "sftDir",	1, NULL, 0 },
         { "ephemDir",	1, NULL, 0 },
         { "ephemYear",	1, NULL, 0 },
         { "dopplerMultiplier",	1, NULL, 0 },
         { "templateLength",	1, NULL, 0 },
         { "skyRegion",	1, NULL, 0 },
+        { "skyRegionFile",	1, NULL, 0 },
         { "SFToverlap",	1, NULL, 0 },
         { "sftType",	1, NULL, 0 },
         { "markBadSFTs",	0, NULL, 0 },
-        { "keepOneCandidate",	0, NULL, 0 },
         { "FFTplanFlag",	1, NULL, 0 },
+        { "allULvalsPerSkyLoc",	0, NULL, 0 },
         { "IHSonly",	0, NULL, 0 },
+        { "calcRthreshold",	0, NULL, 0 },
         { "BrentsMethod",	0, NULL, 0 },
         { "antennaOff",	0, NULL, 0 },
         { "noiseWeightOff",	0, NULL, 0 },
@@ -1012,6 +1138,20 @@ cmdline_parser_internal (
               goto failure;
           
           }
+          /* Number of harmonics to sum in IHS algorithm.  */
+          else if (strcmp (long_options[option_index].name, "ihsfactor") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->ihsfactor_arg), 
+                 &(args_info->ihsfactor_orig), &(args_info->ihsfactor_given),
+                &(local_args_info.ihsfactor_given), optarg, 0, "5", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "ihsfactor", '-',
+                additional_error))
+              goto failure;
+          
+          }
           /* Interferometer of whose data is being analyzed.  */
           else if (strcmp (long_options[option_index].name, "IFO") == 0)
           {
@@ -1019,7 +1159,7 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->IFO_arg), 
                  &(args_info->IFO_orig), &(args_info->IFO_given),
-                &(local_args_info.IFO_given), optarg, 0, "H1", ARG_STRING,
+                &(local_args_info.IFO_given), optarg, cmdline_parser_IFO_values, "H1", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "IFO", '-',
                 additional_error))
@@ -1117,9 +1257,65 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->outdirectory_arg), 
                  &(args_info->outdirectory_orig), &(args_info->outdirectory_given),
-                &(local_args_info.outdirectory_given), optarg, 0, 0, ARG_STRING,
+                &(local_args_info.outdirectory_given), optarg, 0, "output", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "outdirectory", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Output file name.  */
+          else if (strcmp (long_options[option_index].name, "outfilename") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->outfilename_arg), 
+                 &(args_info->outfilename_orig), &(args_info->outfilename_given),
+                &(local_args_info.outfilename_given), optarg, 0, "logfile.txt", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "outfilename", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Upper limit file name.  */
+          else if (strcmp (long_options[option_index].name, "ULfilename") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->ULfilename_arg), 
+                 &(args_info->ULfilename_orig), &(args_info->ULfilename_given),
+                &(local_args_info.ULfilename_given), optarg, 0, "uls.dat", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "ULfilename", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Minimum modulation depth counted in the upper limit value.  */
+          else if (strcmp (long_options[option_index].name, "ULminimumDeltaf") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->ULminimumDeltaf_arg), 
+                 &(args_info->ULminimumDeltaf_orig), &(args_info->ULminimumDeltaf_given),
+                &(local_args_info.ULminimumDeltaf_given), optarg, 0, "0.0", ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "ULminimumDeltaf", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Maximum modulation depth counted in the upper limit value.  */
+          else if (strcmp (long_options[option_index].name, "ULmaximumDeltaf") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->ULmaximumDeltaf_arg), 
+                 &(args_info->ULmaximumDeltaf_orig), &(args_info->ULmaximumDeltaf_given),
+                &(local_args_info.ULmaximumDeltaf_given), optarg, 0, "0.1", ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "ULmaximumDeltaf", '-',
                 additional_error))
               goto failure;
           
@@ -1201,9 +1397,23 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->skyRegion_arg), 
                  &(args_info->skyRegion_orig), &(args_info->skyRegion_given),
-                &(local_args_info.skyRegion_given), optarg, 0, "allsky", ARG_STRING,
+                &(local_args_info.skyRegion_given), optarg, 0, 0, ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "skyRegion", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* File with the grid points.  */
+          else if (strcmp (long_options[option_index].name, "skyRegionFile") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->skyRegionFile_arg), 
+                 &(args_info->skyRegionFile_orig), &(args_info->skyRegionFile_given),
+                &(local_args_info.skyRegionFile_given), optarg, 0, 0, ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "skyRegionFile", '-',
                 additional_error))
               goto failure;
           
@@ -1222,14 +1432,14 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization.  */
+          /* SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization.  */
           else if (strcmp (long_options[option_index].name, "sftType") == 0)
           {
           
           
             if (update_arg( (void *)&(args_info->sftType_arg), 
                  &(args_info->sftType_orig), &(args_info->sftType_given),
-                &(local_args_info.sftType_given), optarg, 0, "vladimir", ARG_STRING,
+                &(local_args_info.sftType_given), optarg, cmdline_parser_sftType_values, "vladimir", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "sftType", '-',
                 additional_error))
@@ -1248,18 +1458,6 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* Keep a single IHS candidate and let process through the pipeline.  */
-          else if (strcmp (long_options[option_index].name, "keepOneCandidate") == 0)
-          {
-          
-          
-            if (update_arg((void *)&(args_info->keepOneCandidate_flag), 0, &(args_info->keepOneCandidate_given),
-                &(local_args_info.keepOneCandidate_given), optarg, 0, 0, ARG_FLAG,
-                check_ambiguity, override, 1, 0, "keepOneCandidate", '-',
-                additional_error))
-              goto failure;
-          
-          }
           /* 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive.  */
           else if (strcmp (long_options[option_index].name, "FFTplanFlag") == 0)
           {
@@ -1267,9 +1465,21 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->FFTplanFlag_arg), 
                  &(args_info->FFTplanFlag_orig), &(args_info->FFTplanFlag_given),
-                &(local_args_info.FFTplanFlag_given), optarg, 0, "3", ARG_INT,
+                &(local_args_info.FFTplanFlag_given), optarg, cmdline_parser_FFTplanFlag_values, "3", ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "FFTplanFlag", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Print all UL values in the band specified by ULminimumDeltaf and ULmaximumDeltaf (default is to print only the maximum UL value in the band).  */
+          else if (strcmp (long_options[option_index].name, "allULvalsPerSkyLoc") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->allULvalsPerSkyLoc_flag), 0, &(args_info->allULvalsPerSkyLoc_given),
+                &(local_args_info.allULvalsPerSkyLoc_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "allULvalsPerSkyLoc", '-',
                 additional_error))
               goto failure;
           
@@ -1282,6 +1492,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->IHSonly_flag), 0, &(args_info->IHSonly_given),
                 &(local_args_info.IHSonly_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "IHSonly", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Calculate the threshold value for R given the template false alarm rate.  */
+          else if (strcmp (long_options[option_index].name, "calcRthreshold") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->calcRthreshold_flag), 0, &(args_info->calcRthreshold_given),
+                &(local_args_info.calcRthreshold_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "calcRthreshold", '-',
                 additional_error))
               goto failure;
           

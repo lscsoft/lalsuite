@@ -18,10 +18,11 @@
 */
 
 /**
+\addtogroup StochasticCrossCorrelation_h
+
 \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-\file
-\ingroup stochastic
-\brief Provides prototype and error code information for the module \ref StochasticCrossCorrelation.c.
+
+\brief Provides prototype and error code information for the \ref StochasticCrossCorrelation_c.
 
 Provides prototype and error code information for the modules needed
 to calculate the standard optimally-filtered cross-correlation
@@ -32,40 +33,41 @@ noise in each detector.  The relationship among these modules is
 illustrated in Fig.\figref{stochastic_CrossCorrFlowchart}.
 
 \floatfig{htbp,stochastic_CrossCorrFlowchart}
-\image html stochastic_CrossCorrFlowchart.png "Fig. [stochastic_CrossCorrFlowchart]: Relationship between the modules in \ref StochasticCrossCorrelation.h"
-\image latex stochastic_CrossCorrFlowchart.pdf "Relationship between the modules in \texttt{StochasticCrossCorrelation.h}"
+\image html stochastic_CrossCorrFlowchart.png "Fig. [stochastic_CrossCorrFlowchart]: Relationship between the modules in StochasticCrossCorrelation.h"
+\image latex stochastic_CrossCorrFlowchart.pdf "Relationship between the modules in StochasticCrossCorrelation.h"
 
 Figure \figref{stochastic_CrossCorrFlowchart} illustrates the relationship among the modules
-dependent on \ref StochasticCrossCorrelation.h, which are used to calculate the cross-correlation
+dependent on \ref StochasticCrossCorrelation_h, which are used to calculate the cross-correlation
 statistic \f$Y\f$ and its theoretical variance per unit time \f$\sigma^2/T\f$ from (uncalibrated)
 stretches of data \f$h_1(t)\f$, \f$h_2(t)\f$, from two detectors, using metadata on the power
 spectral densities \f$P_1(f)\f$, \f$P_2(f)\f$ and transfer functions \f$\tilde{R}_1(f)\f$,
 \f$\tilde{R}_2(f)\f$ for each detector.
 
-\c CrossCorr represents the module \ref StochasticCrossCorrelation.c (containing the functions
+\c CrossCorr represents the \ref StochasticCrossCorrelation_c (containing the functions
 <tt>LALStochasticCrossCorrelationStatistic()</tt>,  <tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>,
 and <tt>LALStochasticCrossCorrelationSpectrum()</tt>),
 
-\c ZeroPadAndFFT represents the module \ref ZeroPadAndFFT.c (containing the functions
+\c ZeroPadAndFFT represents the \ref ZeroPadAndFFT_c (containing the functions
 <tt>LALSZeroPadAndFFT()</tt> and <tt>LALCZeroPadAndFFT()</tt>)
 
-\c OptimalFilter represents the module \ref StochasticOptimalFilter.c (containing the function
+\c OptimalFilter represents the \ref StochasticOptimalFilter_c (containing the function
 <tt>LALStochasticOptimalFilter()</tt>)
 
-\c Normalization represents the module \ref StochasticOptimalFilterNormalization.c
+\c Normalization represents the \ref StochasticOptimalFilterNormalization_c
 (containing the function <tt>LALStochasticOptimalFilterNormalization()</tt>)
 
-\c InverseNoise represents the module \ref StochasticInverseNoise.c  (containing the function
+\c InverseNoise represents the \ref StochasticInverseNoise_c  (containing the function
 <tt>LALStochasticInverseNoise()</tt>)
-\c OmegaGW represents the module \ref StochasticOmegaGW.c (containing the function <tt>LALStochasticOmegaGW()</tt>)
+\c OmegaGW represents the \ref StochasticOmegaGW_c (containing the function <tt>LALStochasticOmegaGW()</tt>)
 
-\c Overlap represents the module \ref OverlapReductionFunction.c (containing the function <tt>OverlapReductionFunction()</tt>)
+\c Overlap represents the \ref OverlapReductionFunction_c (containing the function <tt>OverlapReductionFunction()</tt>)
 
 \heading{Synopsis}
 \code
 #include <lal/StochasticCrossCorrelation.h>
 \endcode
 
+@{
 */
 
 #ifndef _STOCHASTICCROSSCORRELATION_H
@@ -83,26 +85,27 @@ extern "C" {
 NRCSID( STOCHASTICCROSSCORRELATIONH, "$Id$" );
 
 /**\name Error Codes */ /*@{*/
-#define STOCHASTICCROSSCORRELATIONH_ENULLPTR        1
-#define STOCHASTICCROSSCORRELATIONH_ESAMEPTR        2
-#define STOCHASTICCROSSCORRELATIONH_EZEROLEN        3
-#define STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF   4
-#define STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT   5
-#define STOCHASTICCROSSCORRELATIONH_ENEGFMIN        6
-#define STOCHASTICCROSSCORRELATIONH_EMMTIME         7
-#define STOCHASTICCROSSCORRELATIONH_EMMHETERO       8
-#define STOCHASTICCROSSCORRELATIONH_EMMFMIN         9
-#define STOCHASTICCROSSCORRELATIONH_EMMDELTAF      10
-#define STOCHASTICCROSSCORRELATIONH_EMMLEN         11
-#define STOCHASTICCROSSCORRELATIONH_EOORFREF       12
-#define STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA   13
-#define STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ     14
-#define STOCHASTICCROSSCORRELATIONH_ENONZEROHETERO 15
-#define STOCHASTICCROSSCORRELATIONH_EWRONGUNITS    16
-#define STOCHASTICCROSSCORRELATIONH_ENONPOSWIN     17
-#define STOCHASTICCROSSCORRELATIONH_EMEMORY        18
-#define STOCHASTICCROSSCORRELATIONH_ENOTYETHETERO 255
-
+#define STOCHASTICCROSSCORRELATIONH_ENULLPTR        1	/**< Null pointer */
+#define STOCHASTICCROSSCORRELATIONH_ESAMEPTR        2	/**< Input and Output pointers the same */
+#define STOCHASTICCROSSCORRELATIONH_EZEROLEN        3	/**< Zero length for data member of series */
+#define STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF   4	/**< Negative or zero frequency spacing */
+#define STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT   5	/**< Negative or zero time spacing */
+#define STOCHASTICCROSSCORRELATIONH_ENEGFMIN        6	/**< Negative start frequency */
+#define STOCHASTICCROSSCORRELATIONH_EMMTIME         7	/**< Mismatch in epochs */
+#define STOCHASTICCROSSCORRELATIONH_EMMHETERO       8	/**< Mismatch in heterodyning frequencies */
+#define STOCHASTICCROSSCORRELATIONH_EMMFMIN         9	/**< Mismatch in start frequencies */
+#define STOCHASTICCROSSCORRELATIONH_EMMDELTAF      10	/**< Mismatch in frequency spacings */
+#define STOCHASTICCROSSCORRELATIONH_EMMLEN         11	/**< Mismatch in sequence lengths */
+#define STOCHASTICCROSSCORRELATIONH_EOORFREF       12	/**< Out of range reference frequency */
+#define STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA   13	/**< Negative stochastic background strength */
+#define STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ     14	/**< Non-symmetric response tensor */
+#define STOCHASTICCROSSCORRELATIONH_ENONZEROHETERO 15	/**< Non-zero heterodyning frequency specified for real time series */
+#define STOCHASTICCROSSCORRELATIONH_EWRONGUNITS    16	/**< Inconsistent input units */
+#define STOCHASTICCROSSCORRELATIONH_ENONPOSWIN     17	/**< Zero or negative total for window functions */
+#define STOCHASTICCROSSCORRELATIONH_EMEMORY        18	/**< Memory error */
+#define STOCHASTICCROSSCORRELATIONH_ENOTYETHETERO 255	/**< Non-zero heterodyning frequency not yet implemented */
+/*@}*/
+/** \cond DONT_DOXYGEN */
 #define STOCHASTICCROSSCORRELATIONH_MSGENULLPTR    "Null pointer"
 #define STOCHASTICCROSSCORRELATIONH_MSGESAMEPTR    "Input and Output pointers the same"
 #define STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN    "Zero length for data member of series"
@@ -122,7 +125,7 @@ NRCSID( STOCHASTICCROSSCORRELATIONH, "$Id$" );
 #define STOCHASTICCROSSCORRELATIONH_MSGENONPOSWIN  "Zero or negative total for window functions"
 #define STOCHASTICCROSSCORRELATIONH_MSGEMEMORY     "Memory error"
 #define STOCHASTICCROSSCORRELATIONH_MSGENOTYETHETERO   "Non-zero heterodyning frequency not yet implemented"
-/*@}*/
+/** \endcond */
 
   /*************************************************************
    *                                                           *
@@ -644,7 +647,7 @@ LALOverlapReductionFunction(
                    const LALDetectorPair                      *detectors,
                    const OverlapReductionFunctionParameters   *parameters);
 
-
+/** @} */
 
 #ifdef  __cplusplus
 }

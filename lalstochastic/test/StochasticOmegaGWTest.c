@@ -20,7 +20,7 @@
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu
 \file
-\ingroup stochastic
+\ingroup StochasticOmegaGW_c
 
 \brief A program to test <tt>LALStochasticOmegaGW()</tt>.
 
@@ -55,7 +55,7 @@ h_{100}^2\Omega_{\mathrm{GW}}(f)
 \f}
 
 First, it tests that the correct error codes
-(cf. \ref StochasticCrossCorrelation.h)
+(cf. \ref StochasticCrossCorrelation_h)
 are generated for the following error conditions (tests in
 \e italics are not performed if \c LAL_NDEBUG is set, as
 the corresponding checks in the code are made using the ASSERT macro):
@@ -93,9 +93,6 @@ StochasticOmegaGWTest -e 1 -n 1000 -F 100 -O 1e-6 -a 2 -o OmegaGW.dat
 \image html  stochasticOmegaGWQuadratic.png "Fig. [stochastic_quadOmega]: A quadratic stochastic gravitational-wave background spectrum."
 \image latex stochasticOmegaGWQuadratic.pdf "A quadratic stochastic gravitational-wave background spectrum."  width=4in
 
-\heading{Exit codes}
-
-
 \heading{Uses}
 
 \code
@@ -116,10 +113,10 @@ LALCheckMemoryLeaks()
 will cause a bad data error.  If other arguments are unspecified, the
 following defaults are used:
 <dl>
-<dt>\c alpha</dt><dd> 0</dd>
-<dt>\c f0</dt><dd> 0</dd>
-<dt>\c fRef</dt><dd> 1\,Hz</dd>
-<dt>\c omegaRef</dt><dd> 1</dd>
+<dt>alpha</dt><dd> 0</dd>
+<dt>f0</dt><dd> 0</dd>
+<dt>fRef</dt><dd> 1\,Hz</dd>
+<dt>omegaRef</dt><dd> 1</dd>
 </dl></li>
 <li> The routine <tt>LALStochasticOmegaGW()</tt> will eventually be generalized to
 include "broken" power law spectra
@@ -135,6 +132,23 @@ h_{100}^2\Omega_{\mathrm{GW}}
 </ul>
 
 */
+
+/**\name Error Codes */ /*@{*/
+#define STOCHASTICOMEGAGWTESTC_ENOM 0	/**< Nominal exit */
+#define STOCHASTICOMEGAGWTESTC_EARG 1	/**< Error parsing command-line arguments */
+#define STOCHASTICOMEGAGWTESTC_ECHK 2	/**< Error checking failed to catch bad data */
+#define STOCHASTICOMEGAGWTESTC_EFLS 3	/**< Incorrect answer for valid data */
+#define STOCHASTICOMEGAGWTESTC_EUSE 4	/**< Bad user-entered data */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define STOCHASTICOMEGAGWTESTC_MSGENOM "Nominal exit"
+#define STOCHASTICOMEGAGWTESTC_MSGEARG "Error parsing command-line arguments"
+#define STOCHASTICOMEGAGWTESTC_MSGECHK "Error checking failed to catch bad data"
+#define STOCHASTICOMEGAGWTESTC_MSGEFLS "Incorrect answer for valid data"
+#define STOCHASTICOMEGAGWTESTC_MSGEUSE "Bad user-entered data"
+
+
 
 #include <lal/LALStdlib.h>
 
@@ -190,19 +204,6 @@ Usage (const char *program, int exitflag);
 
 static void
 ParseOptions (int argc, char *argv[]);
-
-/**\name Error Codes */ /*@{*/
-#define STOCHASTICOMEGAGWTESTC_ENOM 0
-#define STOCHASTICOMEGAGWTESTC_EARG 1
-#define STOCHASTICOMEGAGWTESTC_ECHK 2
-#define STOCHASTICOMEGAGWTESTC_EFLS 3
-#define STOCHASTICOMEGAGWTESTC_EUSE 4
-#define STOCHASTICOMEGAGWTESTC_MSGENOM "Nominal exit"
-#define STOCHASTICOMEGAGWTESTC_MSGEARG "Error parsing command-line arguments"
-#define STOCHASTICOMEGAGWTESTC_MSGECHK "Error checking failed to catch bad data"
-#define STOCHASTICOMEGAGWTESTC_MSGEFLS "Incorrect answer for valid data"
-#define STOCHASTICOMEGAGWTESTC_MSGEUSE "Bad user-entered data"
-/*@}*/
 
 int main( int argc, char *argv[] )
 {
@@ -657,3 +658,4 @@ ParseOptions (int argc, char *argv[])
 
   return;
 }
+/** \endcond */

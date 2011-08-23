@@ -49,24 +49,19 @@ handler, sets \c xlalErrno to the appropriate XLAL error code, and
 returns a particular value as noted below:
 
 <ul>
-
 <li>
 Functions which return an integer status code (XLALSegSet(),
-XLALSegListInit(), XLALSegListClear(),
-XLALSegListAppend(), XLALSegListSort(),
-XLALSegListCoalesce() return \c XLAL_SUCCESS if successful
-or \c XLAL_FAILURE if an error occurs.</li>
-
+XLALSegListInit(), XLALSegListClear(), XLALSegListAppend(), XLALSegListSort(),
+XLALSegListCoalesce() return XLAL_SUCCESS if successful
+or XLAL_FAILURE if an error occurs.</li>
 <li>
-\c XLALGPSInSeg() and \c XLALSegCmp() normally return a
-comparison value (negative, \f$0\f$, or positive).</li>
-
+XLALGPSInSeg() and XLALSegCmp() normally return a
+comparison value (negative, 0, or positive).</li>
 <li>
-\c XLALSegCreate() normally returns a pointer to the created
+XLALSegCreate() normally returns a pointer to the created
 segment.  If an error occurs, it returns NULL.</li>
-
 <li>
-\c XLALSegListSearch() returns a pointer to a segment in the list which
+XLALSegListSearch() returns a pointer to a segment in the list which
 contains the time being searched for, or NULL if there is no such segment.
 If more than one segment in the list contains the time, then this function
 returns a pointer to \e one of the segments which contains it, not
@@ -77,9 +72,6 @@ returns NULL; however, this is not really an error, use \c xlalErrno
 to differentiate between failure and non-failure.
 </li>
 </ul>
-
-
-
 
 */
 

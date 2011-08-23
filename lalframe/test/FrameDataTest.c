@@ -19,14 +19,7 @@
 
 /**
 \file
-
-
-
-
-\heading{Program \ref FrameDataTest.c}
-\latexonly\label{ss_FrameDataTest_c}\endlatexonly
-
-Tests the routines in \ref FrameData.h.
+\brief Tests the routines in \ref FrameData.h.
 
 \heading{Usage}
 \code
@@ -45,22 +38,15 @@ Unless the <tt>-f</tt> option is used, the environment variable
 
 \heading{Description}
 \heading{Exit codes}
-<table><tr><td>
-
- Code</td><td>Explanation</td></tr>
-<tr><td>
-\tt 0</td><td>Success, normal exit.</td></tr>
-<tr><td>\tt 1</td><td>Subroutine failed.</td></tr>
-<tr><td>\tt77</td><td>Ignored failure: \c LAL_FRAME_PATH not set.</td></tr>
-<tr><td>
-</td></tr></table>
+<table>
+<tr><th> Code</th><th>Explanation</th></tr>
+<tr><td>\c 0</td><td>Success, normal exit.</td></tr>
+<tr><td>\c 1</td><td>Subroutine failed.</td></tr>
+<tr><td>\c 77</td><td>Ignored failure: \c LAL_FRAME_PATH not set.</td></tr>
+</table>
 
 \heading{Uses}
 \heading{Notes}
-
-
-
-
 
 */
 

@@ -1,15 +1,14 @@
-/********************** <lalVerbatim file="COMPLETEFindChirpACTDTestCV">
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Program \texttt{FindChirpACTDlTest.c}}
-\label{ss:FindChirpACTDTest.c}
-
-Provides the necessary function to test the AmpCorPPN filter.
 
 
-****************************************** </lalLaTeX><lalErrTable> */
+
+/**
+\file
+\ingroup FindChirpACTD_h
+
+\brief Provides the necessary function to test the AmpCorPPN filter.
+
+*/
+
 
 #include <math.h>
 #include <stdio.h>

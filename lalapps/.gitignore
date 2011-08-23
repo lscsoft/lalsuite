@@ -56,6 +56,8 @@ src/frametools/lalapps_frinfo
 src/frametools/lalapps_frjoin
 src/frametools/lalapps_frread
 src/frametools/lalapps_frview
+src/hwinjection/lalapps_psinject
+src/hwinjection/online_psinject
 src/inspiral/lalapps_bbhinj
 src/inspiral/lalapps_blindinj
 src/inspiral/lalapps_calcexpsnr
@@ -63,6 +65,7 @@ src/inspiral/lalapps_cbc_pipedown
 src/inspiral/lalapps_check_flag
 src/inspiral/lalapps_check_hipe_times
 src/inspiral/lalapps_cohPTF_hipe
+src/inspiral/lalapps_coh_PTF_post_processing
 src/inspiral/lalapps_coherent_inspiral
 src/inspiral/lalapps_coherentbank
 src/inspiral/lalapps_cohire
@@ -123,6 +126,7 @@ src/inspiral/posterior/python_config.sed
 src/lalapps/LALAppsVCSInfo.h
 src/lalapps/defaults.py
 src/lalapps/lalapps_cache
+src/lalapps/lalapps_fftw*_wisdom
 src/lalapps/lalapps_tconvert
 src/lalapps/lalapps_version
 src/online/lalapps_online_datafind
@@ -157,6 +161,7 @@ src/pulsar/FDS_isolated/lalapps_makeInvetofile
 src/pulsar/FDS_isolated/lalapps_monteint
 src/pulsar/FDS_isolated/lalapps_polka
 src/pulsar/FDS_isolated/lalapps_synthesizeBstatMC
+src/pulsar/FDS_isolated/lalapps_synthesizeLVStats
 src/pulsar/FDS_isolated/lalapps_synthesizeTransientStats
 src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
@@ -184,6 +189,7 @@ src/pulsar/SideBand/lalapps_GetTimeStamps
 src/pulsar/SideBand/lalapps_SideBandMCMC
 src/pulsar/TDS_isolated/lalapps_heterodyne_pulsar
 src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation
+src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation_nested
 src/pulsar/TimingTests/lalapps_TEMPOcomparison
 src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr
@@ -204,6 +210,7 @@ src/pulsar/hough/src2/lalapps_HierarchicalSearchGC
 src/pulsar/hough/src2/lalapps_HierarchicalSearch_v2
 src/pulsar/hough/src2/lalapps_HoughMismatch
 src/pulsar/hough/src2/lalapps_HoughValidateAM
+src/pulsar/hough/src2/lalapps_RecalcHSCandidates
 src/pulsar/lalapps_Calibrate1800SFTs
 src/pulsar/lalapps_Calibrate60sSFTs
 src/pulsar/lalapps_ComputePSD

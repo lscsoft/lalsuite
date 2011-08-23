@@ -92,32 +92,10 @@ printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 # run m4 to generate sources
 echo "00boot: creating sources"
 
-cd packages/factories/src || fail "creating sources in packages/factories/src"
-${M4} VectorFactories.m4 > VectorFactories.c || fail "creating sources in packages/factories/src"
-${M4} VectorSequenceFactories.m4 > VectorSequenceFactories.c || fail "creating sources in packages/factories/src"
-${M4} ArrayFactories.m4 > ArrayFactories.c || fail "creating sources in packages/factories/src"
-${M4} ArraySequenceFactories.m4 > ArraySequenceFactories.c || fail "creating sources in packages/factories/src"
-cd ../../..  || fail "creating sources in packages/factories/src"
-
 cd packages/factories/include || fail "creating sources in packages/factories/include"
 ${M4} SeqFactoriesH.m4 > SeqFactories.h || fail "creating sources in packages/factories/include"
 ${M4} AVFactoriesH.m4 > AVFactories.h || fail "creating sources in packages/factories/include"
 cd ../../.. || fail "creating sources in packages/factories/include"
-
-cd packages/factories/test || fail "creating sources in packages/factories/include"
-${M4} VectorFactoriesTest.m4 > VectorFactoriesTest.c || fail "creating sources in packages/factories/test"
-${M4} VectorSequenceFactoriesTest.m4 > VectorSequenceFactoriesTest.c || fail "creating sources in packages/factories/test"
-${M4} ArrayFactoriesTest.m4 > ArrayFactoriesTest.c || fail "creating sources in packages/factories/test"
-${M4} ArraySequenceFactoriesTest.m4 > ArraySequenceFactoriesTest.c || fail "creating sources in packages/factories/test"
-cd ../../.. || fail "creating sources in packages/factories/test"
-
-cd packages/vectorops/src || fail "creating sources in packages/vectorops/src"
-${M4} MatrixDivide.m4 > MatrixDivide.c || fail "creating sources in packages/vectorops/src"
-${M4} MatrixMultiply.m4 > MatrixMultiply.c || fail "creating sources in packages/vectorops/src"
-${M4} MatrixPower.m4 > MatrixPower.c || fail "creating sources in packages/vectorops/src"
-${M4} MiscMatlab.m4 > MiscMatlab.c || fail "creating sources in packages/vectorops/src"
-${M4} VectorIndexRangeC.m4 > VectorIndexRange.c || fail "creating sources in packages/vectorops/src"
-cd ../../.. || fail "creating sources in packages/vectorops/src"
 
 cd packages/vectorops/include || fail "creating sources in packages/vectorops/include"
 ${M4} VectorIndexRangeH.m4 > VectorIndexRange.h || fail "creating sources in packages/vectorops/include"
@@ -127,12 +105,6 @@ cd packages/tools/include || fail "creating sources in packages/tools/include"
 ${M4} FrequencySeries.m4 > FrequencySeries.h || fail "creating sources in packages/tools/include"
 ${M4} Sequence.m4 > Sequence.h || fail "creating sources in packages/tools/include"
 ${M4} TimeSeries.m4 > TimeSeries.h || fail "creating sources in packages/tools/include"
-cd ../src || fail "creating sources in packages/tools/src"
-${M4} FrequencySeries.m4 > FrequencySeries.c || fail "creating sources in packages/tools/src"
-${M4} Sequence.m4 > Sequence.c || fail "creating sources in packages/tools/src"
-${M4} TimeSeries.m4 > TimeSeries.c || fail "creating sources in packages/tools/src"
-cd ../../.. || fail "creating sources in packages/tools/src"
-
 
 # don't build the build system if --only-build-sources option is specified
 if test "$only_build_sources" = "false"; then
@@ -149,12 +121,6 @@ if test "$only_build_sources" = "false"; then
 # generate build system
 echo "00boot: running autoreconf"
 LIBTOOLIZE=true $AUTORECONF || fail "autoreconf"
-
-# if there is a lalapps subdirectory run 00boot within this directory too
-if test -d lalapps ; then
-  echo "00boot: running 00boot within lalapps subdir"
-  ( cd lalapps && ./00boot )  || fail "lalapps 00boot"
-fi
 
 # report success
 echo "00boot: success"

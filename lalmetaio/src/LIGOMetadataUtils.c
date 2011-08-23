@@ -1080,6 +1080,21 @@ void XLALDestroyProcessTable(ProcessTable *head)
 
 
 /**
+ * Return the next available process ID.
+ */
+
+
+long XLALProcessTableGetNextID(ProcessTable *head)
+{
+  long highest = -1;
+  for(; head; head = head->next)
+    if(head->process_id > highest)
+      highest = head->process_id;
+  return highest + 1;
+}
+
+
+/**
  * Create a ProcessParamsTable structure.
  */
 
@@ -1129,6 +1144,80 @@ void XLALDestroyProcessParamsTable(ProcessParamsTable *head)
     XLALDestroyProcessParamsTableRow(head);
     head = next;
   }
+}
+
+
+/**
+ * Create a TimeSlide structure.
+ */
+
+
+TimeSlide *XLALCreateTimeSlide(void)
+{
+  TimeSlide *new = XLALMalloc(sizeof(*new));
+
+  if(!new)
+    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+
+  new->next = NULL;
+  new->process_id = -1;
+  new->time_slide_id = -1;
+  memset(new->instrument, 0, sizeof(new->instrument));
+  new->offset = 0;
+
+  return new;
+}
+
+
+/**
+ * Destroy a TimeSlide structure.
+ */
+
+
+void XLALDestroyTimeSlide(TimeSlide *row)
+{
+  XLALFree(row);
+}
+
+
+/**
+ * Destroy a TimeSlide linked list.
+ */
+
+
+void XLALDestroyTimeSlideTable(TimeSlide *head)
+{
+  while(head)
+  {
+    TimeSlide *next = head->next;
+    XLALDestroyTimeSlide(head);
+    head = next;
+  }
+}
+
+
+/**
+ * Find and return the address of the first element in the linked list of
+ * TimeSlide objects whose time_slide_id and instrument name equal the
+ * values given.  TimeSlide elements whose instrument pointer is NULL are
+ * skipped.  Returns NULL if no matching row is found.  There are two
+ * versions, one for cost * TimeSlide rows and one for non-const (neither
+ * modifies the TimeSlide rows, the two versions are identical, they are
+ * provided to allow the const'ness to be "passed" through the function).
+ */
+
+
+const TimeSlide *XLALTimeSlideConstGetByIDAndInstrument(const TimeSlide *time_slide, long time_slide_id, const char *instrument)
+{
+	for(; time_slide && (time_slide->time_slide_id != time_slide_id || !time_slide->instrument || strcmp(time_slide->instrument, instrument)); time_slide = time_slide->next);
+	return time_slide;
+}
+
+
+TimeSlide *XLALTimeSlideGetByIDAndInstrument(TimeSlide *time_slide, long time_slide_id, const char *instrument)
+{
+	for(; time_slide && (time_slide->time_slide_id != time_slide_id || !time_slide->instrument || strcmp(time_slide->instrument, instrument)); time_slide = time_slide->next);
+	return time_slide;
 }
 
 

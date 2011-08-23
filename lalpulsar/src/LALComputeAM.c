@@ -99,7 +99,7 @@ static const EarthState empty_EarthState;
  * in the most economical way possible.
  */
 void
-LALGetAMCoeffs(LALStatus *status,
+LALGetAMCoeffs(LALStatus *status,				/**< [in/out] LAL status structure pointer */
 	       AMCoeffs *coeffs,				/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
 	       const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
 	       SkyPosition skypos				/**< {alpha,delta} of the source */
@@ -261,9 +261,9 @@ LALGetAMCoeffs(LALStatus *status,
  * needed.)
  */
 void
-LALNewGetAMCoeffs(LALStatus *status,
+LALNewGetAMCoeffs(LALStatus *status,			/**< [in/out] LAL status structure pointer */
 	       AMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
-	       const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
+	       const DetectorStateSeries *DetectorStates,/**< timeseries of detector states */
 	       SkyPosition skypos			/**< {alpha,delta} of the source */
 	       )
 {
@@ -299,11 +299,13 @@ LALNewGetAMCoeffs(LALStatus *status,
 
   sin_cos_LUT (&sin1delta, &cos1delta, delta );
   sin_cos_LUT (&sin1alpha, &cos1alpha, alpha );
-  xi1 = - sin1alpha;
-  xi2 =  cos1alpha;
-  eta1 = sin1delta * cos1alpha;
-  eta2 = sin1delta * sin1alpha;
-  eta3 = - cos1delta;
+  // see Eq.(17) in CFSv2 notes (version v3):
+  // https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?docid=1665&version=3
+  xi1 =   sin1alpha;
+  xi2 =  -cos1alpha;
+  eta1 = -sin1delta * cos1alpha;
+  eta2 = -sin1delta * sin1alpha;
+  eta3 = cos1delta;
 
   /*---------- Compute the a(t_i) and b(t_i) ---------- */
   coeffs->A = 0;
@@ -467,7 +469,7 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
  * use XLALDestroyMultiAMCoeffs() to free this.
  */
 void
-LALGetMultiAMCoeffs (LALStatus *status,
+LALGetMultiAMCoeffs (LALStatus *status,			/**< [in/out] LAL status structure pointer */
 		     MultiAMCoeffs **multiAMcoef,	/**< [out] AM-coefficients for all input detector-state series */
 		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
 		     SkyPosition skypos			/**< source sky-position [in equatorial coords!] */

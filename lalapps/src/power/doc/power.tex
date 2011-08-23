@@ -1710,13 +1710,15 @@ E
 [\option{--ra-dec}~\parm{radians},\parm{radians}]
 [\option{--seed}~\parm{value}]
 [\option{--time-step}~\parm{value}]
+\option{--time-slide-file}~\parm{filename}
 [\option{--user-tag}~\parm{string}]
 
 \item[Description] 
 \prog{lalapps\_binj} produces a LIGO Light-Weight XML file containing a
 sim\_burst table describing a sequence of burst software injections.  This
-file can be read by \prog{lalapps\_power}, which will perform the software
-injections described therein while analyzing data.
+file can be read by \prog{lalapps\_power} and \prog{lalapps\_StringSearch},
+which will perform the software injections described therein while
+analyzing data.
 
 \prog{lalapps\_binj} produces one of three injection populations:  an
 injection population simulating cosmological string cusp burst events, an
@@ -1735,6 +1737,18 @@ where \texttt{USERTAG} is the user tag specfied on the command line, and
 \texttt{GPSSTART} and \texttt{DURATION} describes the GPS time interval
 that the file covers.  If a \option{--user-tag} is not specified on the
 command line, the \texttt{\_USERTAG} part of the filename will be omitted.
+
+sim\_burst injections can be performed into non-zero-lag data.  The vector
+of time offsets to be applied to the instruments is stored in a time\_slide
+table, and each sim\_burst injection carries a time\_slide\_id to indicate
+the appropriate vector.  Note that the actual time of the injection in each
+instrument is obtained by \emph{subtracting} the offsets from the times
+recorded in the sim\_burst table.  This convention is used for consistency
+with the interpretation of use of vectors for burst<-->burst coincidences:
+if the offsets are subtracted from the injection times to obtain the actual
+times in the instruments, then when the same offset vector is added to the
+times of the triggers that result from the injection (as will be done by
+the coincidence code) they will re-align and form a coincidence.
 
 \item[Options]\leavevmode
 \begin{entry}
@@ -1836,6 +1850,13 @@ files do not contain the same injections.
 
 \item[\option{--time-step} \parm{value}]
 Set the time interval between injections in seconds.
+
+\item[\option{--time-slide-file}~\parm{filename}]
+Set the name of the LIGO Light-Weight XML file from which to load the time
+slide table.  The document must contain exactly 1 time slide vector, and
+only the contents of the process, process\_params, search\_summary
+(optional), sim\_burst (optional), and time\_slide tables will be copied
+into lalapps\_binj's output.
 
 \item[\option{--user-tag} \parm{string}]
 Set the user tag appearing in the output filename, and in the metadata

@@ -132,7 +132,6 @@ char *exttrigFileName = NULL;
 INT4 outCompress = 0;
 INT4 ninjaMass   = 0;
 
-
 INT4 logSNR      = 0;
 REAL4 minSNR     = -1;
 REAL4 maxSNR     = -1;
@@ -162,6 +161,7 @@ REAL4 longitude=181.0;
 REAL4 latitude=91.0;
 REAL4 epsAngle=1e-7;
 int spinInjections=-1;
+int spinAligned=-1;
 REAL4 minSpin1=-1.0;
 REAL4 maxSpin1=-1.0;
 REAL4 minSpin2=-1.0;
@@ -170,9 +170,16 @@ REAL4 minKappa1=-1.0;
 REAL4 maxKappa1=1.0;
 REAL4 minabsKappa1=0.0;
 REAL4 maxabsKappa1=1.0;
+REAL4 fixedMass1=-1.0;
+REAL4 fixedMass2=-1.0;
+INT4  pntMass1=1;
+INT4  pntMass2=1;
+REAL4 deltaMass1=-1;
+REAL4 deltaMass2=-1;
 INT4 bandPassInj = 0;
 INT4 writeSimRing = 0;
 InspiralApplyTaper taperInj = INSPIRAL_TAPER_NONE;
+AlignmentType alignInj = notAligned;
 REAL8 redshift;
 
 static LALStatus status;
@@ -578,10 +585,15 @@ static void print_usage(char *program)
       "                           totalMass: uniform distribution in total mass\n"\
       "                           componentMass: uniform in m1 and m2\n"\
       "                           gaussian: gaussian mass distribution\n"\
-      "                           log: log distribution in comonent mass\n"\
-      "                           totalMassRatio: uniform distribution in total mass ratio\n"\
+      "                           log: log distribution in component mass\n"\
+      "                           totalMassRatio: uniform distribution in total mass and\n"\
+      "                           mass ratio m1 / m2\n"\
       "                           logTotalMassUniformMassRatio: log distribution in total mass\n"\
-      "                           and uniform in total mass ratio\n"\
+      "                           and uniform in mass ratio\n"\
+      "                           totalMassFraction: uniform distribution in total mass and\n"\
+      "                           in `mass fraction' m1 / (m1+m2)\n"\
+      "                           m1m2SquareGrid: component masses on a square grid\n"\
+      "                           fixMasses: fix m1 and m2 to specific values\n"\
       " [--ninja2-mass]           use the NINJA 2 mass-selection algorithm\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
       " [--nr-file] nrFile        read mass/spin parameters from xml nrFile\n"\
@@ -591,17 +603,23 @@ static void print_usage(char *program)
       " [--max-mass2] m2max       set the max component mass2 to m2max\n"\
       " [--min-mtotal] minTotal   sets the minimum total mass to minTotal\n"\
       " [--max-mtotal] maxTotal   sets the maximum total mass to maxTotal\n"\
+      " [--fixed-mass1] fixMass1  set mass1 to fixMass1\n"\
+      " [--fixed-mass2] fixMass2  set mass2 to fixMass2\n"\
       " [--mean-mass1] m1mean     set the mean value for mass1\n"\
       " [--stdev-mass1] m1std     set the standard deviation for mass1\n"\
       " [--mean-mass2] m2mean     set the mean value for mass2\n"\
       " [--stdev-mass2] m2std     set the standard deviation for mass2\n"\
       " [--min-mratio] minr       set the minimum mass ratio\n"\
-      " [--max-mratio] maxr       set the maximum mass ratio\\n");
+      " [--max-mratio] maxr       set the maximum mass ratio\n"\
+      " [--mass1-points] m1pnt    set the number of grid points in the m1 direction if '--m-distr=m1m2SquareGrid'\n"\
+      " [--mass2-points] m2pnt    set the number of grid points in the m2 direction if '--m-distr=m1m2SquareGrid'\n\n");
   fprintf(stderr,
       "Spin distribution information:\n"\
       "  --disable-spin           disables spinning injections\n"\
       "  --enable-spin            enables spinning injections\n"\
       "                           One of these is required.\n"\
+      "  --aligned                enforces the spins to be along the direction\n"\
+      "                           of orbital angular momentum.\n"\
       "  [--min-spin1] spin1min   Set the minimum spin1 to spin1min (0.0)\n"\
       "  [--max-spin1] spin1max   Set the maximum spin1 to spin1max (0.0)\n"\
       "  [--min-spin2] spin2min   Set the minimum spin2 to spin2min (0.0)\n"\
@@ -1236,6 +1254,7 @@ int main( int argc, char *argv[] )
   UINT4 useChirpDist = 0;
   REAL4 minMass10, maxMass10, minMass20, maxMass20, minMtotal0, maxMtotal0, meanMass10, meanMass20, massStdev10, massStdev20; /* masses at z=0 */
   REAL8 pzmax=0; /* maximal value of the probability distribution of the redshift */
+  INT4 ncount;
   size_t ninj;
   int rand_seed = 1;
 
@@ -1259,8 +1278,6 @@ int main( int argc, char *argv[] )
   CHAR  drawnSourceName[LIGOMETA_SOURCE_MAX];
 
   REAL8 targetSNR;
-
-  int aligned  = 0;
 
 
   status=blank_status;
@@ -1292,9 +1309,13 @@ int main( int argc, char *argv[] )
     {"max-mass2",               required_argument, 0,                'K'},
     {"min-mtotal",              required_argument, 0,                'A'},
     {"max-mtotal",              required_argument, 0,                'L'},
+    {"fixed-mass1",             required_argument, 0,                ']'},
+    {"fixed-mass2",             required_argument, 0,                '['},
     {"mean-mass1",              required_argument, 0,                'n'},
     {"mean-mass2",              required_argument, 0,                'N'},
     {"ninja2-mass",             no_argument,       &ninjaMass,         1},
+    {"mass1-points",            required_argument, 0,                ':'},
+    {"mass2-points",            required_argument, 0,                ';'},    
     {"stdev-mass1",             required_argument, 0,                'o'},
     {"stdev-mass2",             required_argument, 0,                'O'},
     {"min-mratio",              required_argument, 0,                'x'},
@@ -1332,6 +1353,7 @@ int main( int argc, char *argv[] )
     {"version",                 no_argument,       0,                'V'},
     {"enable-spin",             no_argument,       0,                'T'},
     {"disable-spin",            no_argument,       0,                'W'},
+    {"aligned",                 no_argument,       0,                '@'},
     {"write-compress",          no_argument,       &outCompress,       1},
     {"taper-injection",         required_argument, 0,                '*'},
     {"band-pass-injection",     no_argument,       0,                '}'},
@@ -1340,7 +1362,7 @@ int main( int argc, char *argv[] )
   };
   int c;
 
-  /* set up inital debugging values */
+  /* set up initial debugging values */
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "1" );
 
@@ -1640,13 +1662,28 @@ int main( int argc, char *argv[] )
           mDistr=uniformTotalMassRatio;
         }
         else if (!strcmp(dummy, "logTotalMassUniformMassRatio"))
+        {
           mDistr=logMassUniformTotalMassRatio;
+        }
+        else if (!strcmp(dummy, "m1m2SquareGrid"))
+        {
+          mDistr=m1m2SquareGrid;
+        }
+        else if (!strcmp(dummy, "fixMasses"))
+        {
+          mDistr=fixMasses;
+        }
+        else if (!strcmp(dummy, "totalMassFraction"))
+        {
+          mDistr=uniformTotalMassFraction;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown mass distribution: %s must be one of\n"
               "(source, nrwaves, totalMass, componentMass, gaussian, log,\n"
-              "totalMassRatio, logTotalMassUniformMassRatio)\n",
+              "totalMassRatio, totalMassFraction, logTotalMassUniformMassRatio,\n"
+              "m1m2SquareGrid)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -1734,6 +1771,34 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", maxMassRatio );
+        break;
+
+      case ':':
+        pntMass1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "int", "%d", pntMass1 );
+        break;
+
+      case ';':
+        pntMass2 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "int", "%d", pntMass2 );
+        break;
+      
+      case ']':
+        fixedMass1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%d", fixedMass1 );
+        break;
+      
+      case '[':
+        fixedMass2 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%d", fixedMass2 );
         break;
 
       case 'p':
@@ -2070,7 +2135,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'T':
-        /* enable spining injections */
+        /* enable spinning injections */
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
               "" );
@@ -2078,11 +2143,19 @@ int main( int argc, char *argv[] )
         break;
 
       case 'W':
-        /* disable spining injections */
+        /* disable spinning injections */
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
               "" );
         spinInjections = 0;
+        break;
+
+      case '@':
+        /* enforce aligned spins */
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
+              "" );
+        spinAligned = 1;
         break;
 
       case '}':
@@ -2311,14 +2384,14 @@ int main( int argc, char *argv[] )
   if ( !massFileName && mDistr==massFromSourceFile )
   {
     fprintf( stderr,
-        "Must specify either a file contining the masses (--mass-file) "\
+        "Must specify either a file contining the masses (--mass-file) "
         "or choose another mass-distribution (--m-distr).\n" );
     exit( 1 );
   }
   if ( !nrFileName && mDistr==massFromNRFile )
   {
     fprintf( stderr,
-        "Must specify either a file contining the masses (--nr-file) "\
+        "Must specify either a file contining the masses (--nr-file) "
         "or choose another mass-distribution (--m-distr).\n" );
     exit( 1 );
   }
@@ -2339,7 +2412,7 @@ int main( int argc, char *argv[] )
   if ( lDistr == locationFromExttrigFile && !exttrigFileName )
   {
     fprintf( stderr,
-        "If --l-distr exttrig is specified, must specify " \
+        "If --l-distr exttrig is specified, must specify "
         "external trigger XML file using --exttrig-file.\n");
     exit( 1 );
   }
@@ -2371,14 +2444,14 @@ int main( int argc, char *argv[] )
   if ( ( iDistr == gaussianInclDist ) && ( inclStd < 0.0 ) )
   {
     fprintf( stderr,
-        "Must specify width for gaussian inclination distribution; "\
+        "Must specify width for gaussian inclination distribution; \n"
         "use --incl-std.\n" );
     exit( 1 );
   }
   if ( ( iDistr == fixedInclDist ) && ( fixed_inc < 0. ) )
   {
     fprintf( stderr,
-        "Must specify an inclination if you want it fixed; "\
+        "Must specify an inclination if you want it fixed; \n"
         "use --fixed-inc.\n" );
     exit( 1 );
   }
@@ -2396,18 +2469,18 @@ int main( int argc, char *argv[] )
         meanMass2 <= 0.0 || massStdev2 <= 0.0))
   {
     fprintf( stderr,
-        "Must specify --mean-mass1/2 and --stdev-mass1/2 if choosing"
+        "Must specify --mean-mass1/2 and --stdev-mass1/2 if choosing \n"
         " --m-distr=gaussian\n" );
     exit( 1 );
   }
 
   /* check if the mass area is properly specified */
-  if ( mDistr!=gaussianMassDist && (minMass1 <=0.0 || minMass2 <=0.0 ||
-         maxMass1 <=0.0 || maxMass2 <=0.0) )
+  if ( (mDistr!=gaussianMassDist && mDistr!=fixMasses) && 
+      (minMass1 <=0.0 || minMass2 <=0.0 || maxMass1 <=0.0 || maxMass2 <=0.0) )
   {
     fprintf( stderr,
         "Must specify --min-mass1/2 and --max-mass1/2 if choosing"
-        " --m-distr not gaussian\n" );
+        " --m-distr not gaussian or fixMasses\n" );
     exit( 1 );
   }
 
@@ -2434,27 +2507,53 @@ int main( int argc, char *argv[] )
   }
 
   /* check if mass ratios are specified */
-  if ( (mDistr==uniformTotalMassRatio || mDistr==logMassUniformTotalMassRatio)
+  if ( (mDistr==uniformTotalMassRatio || mDistr==logMassUniformTotalMassRatio
+        || mDistr==uniformTotalMassFraction)
       && (minMassRatio < 0.0 || maxMassRatio < 0.0) )
   {
     fprintf( stderr,
-        "Must specify --min-mass-ratio and --max-mass-ratio if choosing"
-        " --m-distr=totalMassRatio or --m-distr=logTotalMassUniformMassRatio\n");
+        "Must specify --min-mass-ratio and --max-mass-ratio if choosing \n"
+        " --m-distr=totalMassRatio or --m-distr=logTotalMassUniformMassRatio \n"
+        " or --m-distr=totalMassFraction\n");
     exit( 1 );
   }
 
   if ( dDistr!=distFromSourceFile && (dmin<0.0 || dmax<0.0) )
   {
     fprintf( stderr,
-        "Must specify --min-distance and --max-distance if "
+        "Must specify --min-distance and --max-distance if \n"
         "--d-distr is not source.\n" );
     exit( 1 );
   }
 
   if ( dDistr==sfr && (dmax<0.2 || dmax>1.0) )
   {
-        fprintf( stderr,
-        "Maximal redshift can only take values between 0.2 and 1 .\n" );
+    fprintf( stderr,
+        "Maximal redshift can only take values between 0.2 and 1.\n" );
+    exit( 1 );
+  }
+
+  /* check if number of grid points is specified */
+  if ( mDistr==m1m2SquareGrid )
+  {
+    if ( pntMass1<2 || pntMass2<2 )
+    {
+    fprintf( stderr, "--mass1-points and --mass2-points must be specified "
+        "and >= 2 if --m-distr=m1m2SquareGrid \n" );
+    exit( 1 );
+    }
+    else
+    {
+      deltaMass1 = ( maxMass1 - minMass1 ) / (REAL4) ( pntMass1 -1 );
+      deltaMass2 = ( maxMass2 - minMass2 ) / (REAL4) ( pntMass2 -1 );
+    }
+  }
+
+  /* check if fixed-mass1 and fixed-mass2 are specified */
+  if ( mDistr==fixMasses && ( fixedMass1<0.0 || fixedMass2<0.0 ) )
+  {
+    fprintf( stderr, "--fixed-mass1 and --fixed-mass2 must be specified "
+        "and >= 0 if --m-distr=fixMasses\n" );
     exit( 1 );
   }
 
@@ -2468,8 +2567,31 @@ int main( int argc, char *argv[] )
   if ( spinInjections==-1 && mDistr != massFromNRFile )
   {
     fprintf( stderr,
-        "Must specify --disable-spin or --enable-spin\n"\
-        "Unless doing NR injections\n" );
+        "Must specify --disable-spin or --enable-spin\n"
+        "unless doing NR injections\n" );
+    exit( 1 );
+  }
+
+  if ( spinInjections==0 && spinAligned==1 )
+  {
+    fprintf( stderr,
+        "Must enable spin to obtain aligned spin injections.\n" );
+    exit( 1 );
+  }
+
+  if ( spinInjections==1 && strncmp(waveform, "IMRPhenomB", 10)==0 && spinAligned==-1 )
+  {
+    fprintf( stderr,
+        "Spinning IMRPhenomB injections must have the --aligned option.\n" );
+    exit( 1 );
+  }
+
+  if ( spinInjections==1 && spinAligned==1 && strncmp(waveform, "IMRPhenomB", 10)
+    && strncmp(waveform, "SpinTaylor", 10) )
+  {
+    fprintf( stderr,
+        "Sorry, I only know to make spin aligned injections for \n"
+        "IMRPhenomB, SpinTaylor and SpinTaylorFrameless waveforms.\n" );
     exit( 1 );
   }
 
@@ -2496,7 +2618,7 @@ int main( int argc, char *argv[] )
         (minabsKappa1 > 0.0 || maxabsKappa1 < 1.0) )
     {
       fprintf( stderr,
-          "Either the options [--min-kappa1,--max-kappa1] or\n"\
+          "Either the options [--min-kappa1,--max-kappa1] or\n"
           "[--min-abskappa1,--max-abskappa1] can be specified\n" );
       exit( 1 );
     }
@@ -2618,6 +2740,7 @@ int main( int argc, char *argv[] )
 
   /* loop over parameter generation until end time is reached */
   ninj = 0;
+  ncount = 0;
   currentGpsTime = gpsStartTime;
   while ( 1 )
   {
@@ -2681,14 +2804,28 @@ int main( int argc, char *argv[] )
       simTable=XLALRandomInspiralTotalMassRatio(simTable, randParams,
           mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
     }
-
+    else if ( mDistr==m1m2SquareGrid )
+    {
+      simTable=XLALm1m2SquareGridInspiralMasses( simTable, minMass1, minMass2,
+          minMtotal, maxMtotal, deltaMass1, deltaMass2, pntMass1, pntMass2, 
+          ninj, &ncount);
+    }
+    else if ( mDistr==fixMasses )
+    {
+      simTable=XLALFixedInspiralMasses( simTable, fixedMass1, fixedMass2);
+    }
+    else if ( mDistr==uniformTotalMassFraction )
+    {
+      simTable=XLALRandomInspiralTotalMassFraction(simTable, randParams,
+          mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
+    }
     else {
       simTable=XLALRandomInspiralMasses( simTable, randParams, mDistr,
           minMass1, maxMass1,
           minMass2, maxMass2,
           minMtotal, maxMtotal);
     }
-
+    
     /* draw location and distances */
     drawFromSource( &drawnRightAscension, &drawnDeclination, &drawnDistance,
         drawnSourceName );
@@ -2775,16 +2912,26 @@ int main( int argc, char *argv[] )
     /* populate spins, if required */
     if (spinInjections)
     {
-      /* FIXME Temporary measure until we figure out how to better handle
-         spin distributions for waveforms under development */
-      if ( ! strcmp(waveform, "IMRPhenomBpseudoFourPN"))
-        aligned = 1;
+      if (spinAligned==1)
+      {
+        if (strncmp(waveform, "IMRPhenomB", 10)==0)
+          alignInj = alongzAxis;
+        else if (strncmp(waveform, "SpinTaylor", 10)==0)
+          alignInj = inxzPlane;
+        else
+        {
+          fprintf( stderr, "Unknown waveform type for aligned spin injections.\n" );
+          exit( 1 );
+        }
+      }
+      else
+        alignInj = notAligned;
       simTable = XLALRandomInspiralSpins( simTable, randParams,
           minSpin1, maxSpin1,
           minSpin2, maxSpin2,
           minKappa1, maxKappa1,
           minabsKappa1, maxabsKappa1,
-          aligned);
+          alignInj );
     }
 
     if ( ifos != NULL )
@@ -2825,7 +2972,7 @@ int main( int argc, char *argv[] )
                  break;
             default: /* Never reach here */
                  fprintf( stderr, "unknown error while populating sim_inspiral taper options\n" );
-                 exit (1);
+                 exit(1);
         }
 
     }
@@ -2958,6 +3105,8 @@ int main( int argc, char *argv[] )
 
   if (source_data)
     LALFree(source_data);
+  if (mass_data)
+    LALFree(mass_data);
 
 
   LALCheckMemoryLeaks();

@@ -65,14 +65,14 @@ int finite(double);
 #include <lal/DopplerFullScan.h>
 #include <lal/BinaryPulsarTiming.h>
 
+#include <lal/TransientCW_utils.h>
+
 #include <lalapps.h>
 
 /* local includes */
 #include "HeapToplist.h"
 
 #include "OptimizedCFS/ComputeFstatREAL4.h"
-
-#include "../transientCW_utils.h"
 
 RCSID( "$Id$");
 
@@ -1232,10 +1232,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     }
 
   /* deduce start- and end-time of the observation spanned by the data */
-  cfg->NSFTs = catalog->length;
+  UINT4 numSFTfiles = catalog->length;
   cfg->Tsft = 1.0 / catalog->data[0].header.deltaF;
   startTime = catalog->data[0].header.epoch;
-  endTime   = catalog->data[cfg->NSFTs-1].header.epoch;
+  endTime   = catalog->data[numSFTfiles - 1].header.epoch;
   XLALGPSAdd(&endTime, cfg->Tsft);	/* add on Tsft to last SFT start-time */
 
   /* ----- get reference-times (from user if given, use startTime otherwise): ----- */
@@ -1342,6 +1342,11 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMin, fMax ), status );
     LogPrintfVerbatim (LOG_DEBUG, "done.\n");
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
+    /* count total number of SFTs loaded */
+    UINT4 X, NSFTs = 0;
+    for ( X=0; X < cfg->multiSFTs->length; X ++)
+      NSFTs += cfg->multiSFTs->data[X]->length;
+    cfg->NSFTs = NSFTs;
   }
   { /* ----- load ephemeris-data ----- */
     CHAR *ephemDir;

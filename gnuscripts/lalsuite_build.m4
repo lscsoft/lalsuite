@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 17
+# serial 21
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -251,6 +251,30 @@ if test "$lalmetaio" = "false"; then
 fi
 ])
 
+AC_DEFUN([LALSUITE_ENABLE_LALINFERENCE],
+[AC_ARG_ENABLE(
+  [lalinference],
+  AC_HELP_STRING([--enable-lalinference],[compile code that requires lalinference library [default=yes]]),
+  [ case "${enableval}" in
+      yes) lalinference=true;;
+      no) lalinference=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalinference) ;;
+    esac
+  ], [ lalinference=true ] )
+if test "$lalmetaio" = "false"; then
+  lalinference=false
+fi
+if test "$lalframe" = "false"; then
+  lalinference=false
+fi
+if test "$lalinspiral" = "false"; then
+  lalinference=false
+fi
+if test "$lalpulsar" = "false"; then
+  lalinference=false
+fi
+])
+
 AC_DEFUN([LALSUITE_ENABLE_BOINC],
 [AC_ARG_ENABLE(
   [boinc],
@@ -329,10 +353,27 @@ AC_DEFUN([LALSUITE_WITH_CUDA],
   LALSUITE_ENABLE_MODULE([CUDA],[cuda])
 ])
 
+AC_DEFUN([LALSUITE_ENABLE_FAST_GSL],[
+  AC_ARG_ENABLE(
+    [fast_gsl],
+    AC_HELP_STRING([--enable-fast-gsl],[enable fast/inline GSL code [default=no]]),
+    [ case "${enableval}" in
+        yes)
+          AC_DEFINE([HAVE_INLINE],[1],[Define to 1 to use inline code])
+          AC_DEFINE([GSL_C99_INLINE],[1],[Define to 1 to use GSL C99 inline code])
+          AC_DEFINE([GSL_RANGE_CHECK_OFF],[1],[Define to 1 to turn GSL range checking off])
+          ;;
+        no) ;;
+        *)  AC_MSG_ERROR([bad value ${enableval} for --enable-fast-gsl]);;
+      esac
+    ]
+  )
+])
+
 AC_DEFUN([LALSUITE_ENABLE_OSX_VERSION_CHECK],
 [AC_ARG_ENABLE(
   [osx_version_check],
-  AC_HELP_STRING([--enable-osx-version-check][disable OS X version check [default=yes]]),
+  AC_HELP_STRING([--enable-osx-version-check],[disable OS X version check [default=yes]]),
   [ case "${enableval}" in
       yes) osx_version_check=true;;
       no) osx_version_check=false;;
@@ -356,7 +397,7 @@ if test "x${osx_version_check}" = "xtrue"; then
       10.0*|10.1*|10.2*|10.3*)
         AC_MSG_ERROR([This version of Mac OS X is not supported])
         ;;
-      10.4*|10.5*|10.6*)
+      10.4*|10.5*|10.6*|10.7*)
         # supported version
         ;;
       *)

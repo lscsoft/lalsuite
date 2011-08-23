@@ -22,6 +22,7 @@ lalinspiralinclude_HEADERS = \
 	GenerateRing.h \
 	InspiralInjectionParams.h \
 	LALAdaptiveRungeKutta4.h \
+	LALEOBNRv2Waveform.h \
 	LALInspiral.h \
 	LALInspiralBCVSpinBank.h \
 	LALInspiralBank.h \
@@ -29,8 +30,11 @@ lalinspiralinclude_HEADERS = \
 	LALInspiralRandomBank.h \
 	LALInspiralVCSInfo.h \
 	LALNoiseModelsInspiral.h \
+	LALPSpinInspiralRD.h \
 	LALSBBH-Metric.h \
 	LALSimInspiral.h \
+	LALSimInspiralTaylorT3.h \
+	LALSimInspiralTaylorT4.h \
 	LALTrigScanCluster.h \
 	LALSTPNWaveform2.h \
 	LALSTPNWaveformFrameless.h \
@@ -103,11 +107,15 @@ liblalinspiral_la_SOURCES = \
 	LALBCVWaveform.c \
 	LALDeterminant3.c \
 	LALDiscoverInspiralEvents.c \
+	LALEOBGetFactorizedWaveform.c \
 	LALEOBWaveform.c \
+	LALEOBNonQCCorrection.c \
+	LALEOBPPWaveform.c \
 	LALEstimateEffectiveDistance.c \
 	LALEtaTau02.c \
 	LALEtaTau04.c \
 	LALEvaluateInspiralChisqTest.c \
+	LALFactorizedFlux.c \
 	LALHexagonVertices.c \
 	LALInsidePolygon.c \
 	LALInspiralAmplitude.c \
@@ -174,6 +182,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralWaveOverlap.c \
 	LALInspiralWaveTaper.c \
 	LALInverse3.c \
+	LALNewtonianMultipole.c \
 	LALMatrixTransform.c \
 	LALPhenomWaveform.c \
 	LALPSpinInspiralRD.c \
@@ -191,6 +200,8 @@ liblalinspiral_la_SOURCES = \
 	LALSQTPNWaveformInterface.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
+	LALSimInspiralTaylorT3.c \
+	LALSimInspiralTaylorT4.c \
 	LALTrigScanCluster.c \
 	LALTruncateInvSpectrum.c \
 	LIGOLwXMLInspiralRead.c \

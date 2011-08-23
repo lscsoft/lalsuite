@@ -17,26 +17,24 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="CoarseTestCV">
-Author: Churches, D. K. and Sathyaprakash, B. S., Cokelaer, T
-$Id$
-</lalVerbatim> */
+/**
+\author Churches, D. K. and Sathyaprakash, B. S., Cokelaer, T
+\file
+\ingroup LALInspiralBank_h
 
-/* <lalLaTeX>
-\subsection{Program \texttt{CoarseTest.c}}
-\label{ss:CoarseTest.c}
+\brief Test code for the inspiral modules.
 
-Test code for the inspiral modules. A template bank can be created either using
-a full range for component masses of the binary $m_1$ and $m_2$, that is
-\texttt{(mMin,mMax),} OR minimum value of the component masses \texttt{mMin} and
-maximum value of the total mass \texttt{MMax.} In the first case chirptimes
-satisfying the constraint \texttt{mMin}~$\le m_1, m_2 \le$~\texttt{mMax} are accepted
+A template bank can be created either using
+a full range for component masses of the binary \f$m_1\f$ and \f$m_2\f$, that is
+<tt>(mMin,mMax),</tt> OR minimum value of the component masses \c mMin and
+maximum value of the total mass <tt>MMax.</tt> In the first case chirptimes
+satisfying the constraint \c mMin\ \f$\le m_1, m_2 \le\f$\ \c mMax are accepted
 as valid systems. In the second case chirptimes satisfying the
-constraint \texttt{mMin}~$\le m_1, m_2,$ and \texttt{MMax}$\le m=m_1+m_2,$
-are treated as valid.  Users are expected to provide both \texttt{mMax} and \texttt{MMax}.
+constraint \c mMin\ \f$\le m_1, m_2,\f$ and \c MMax\f$\le m=m_1+m_2,\f$
+are treated as valid.  Users are expected to provide both \c mMax and \c MMax.
 
-For \texttt{LALLIGOIPsd} the choice \texttt{mMin}$=1M_\odot$ \texttt{mMax}$=20 M_\odot$
-gives 2292 templates, while the same \texttt{mMin} but choosing \texttt{MMax}$=40 M_\odot$
+For \c LALLIGOIPsd the choice \c mMin\f$=1M_\odot\f$ \c mMax\f$=20 M_\odot\f$
+gives 2292 templates, while the same \c mMin but choosing \c MMax\f$=40 M_\odot\f$
 instead gives 2512 templates -- about 10\% incrase. However, the extra templates are ALL
 short-lived templates and therefore potentially trigger a large number of false alarms,
 as noted by Brown in E7 analysis.
@@ -45,95 +43,88 @@ This test code creates a template bank and stores it into CoarseTest.out . Then,
 a finer template bank around a sub-set of the original template bank and stores it in the
 same output file.
 
-\subsubsection*{Usage}
+\heading{Usage}
 Input the following values of the InspiralCoarseBankIn structure to
 create a template bank:
 
-\begin{itemize}
-   \item Minimum component mass in solar masses.
-   \texttt{mMin = 1.0;}
+<ul>
+   <li> Minimum component mass in solar masses.
+   <tt>mMin = 1.0;</tt>
 
-   \item Maximum component mass in solar masses.
-   \texttt{mMax = 20.0;}
+   </li><li> Maximum component mass in solar masses.
+   <tt>mMax = 20.0;</tt>
 
-   \item Maximum total mass. {\bf This should be specified independently of
-   whether or not mMax is specified.} It is used in setting up a
+   </li><li> Maximum total mass. <tt>This should be specified independently of
+   whether or not mMax is specified.</tt> It is used in setting up a
    rectangular area in the space of chirptimes where the templates will
    be laid.
-   \texttt{MMax = 40.0;  }
+   <tt>MMax = 40.0;  </tt>
 
-   \item The type of search space.
-   \texttt{massRange = MinComponentMassMaxTotalMass;} OR
-   \texttt{massRange = MinMaxComponentMasses;}
+   </li><li> The type of search space.
+   <tt>massRange = MinComponentMassMaxTotalMass;</tt> OR
+   <tt>massRange = MinMaxComponentMasses;</tt>
 
-   \item Coarse bank minimal match
-   \texttt{coarseIn->mmCoarse = 0.80;}
+   </li><li> Coarse bank minimal match
+   <tt>coarseIn->mmCoarse = 0.80;</tt>
 
-   \item Fine bank minimal match
-   \texttt{mmFine = 0.97;}
+   </li><li> Fine bank minimal match
+   <tt>mmFine = 0.97;</tt>
 
-   \item Lower frequency cutoff
-   \texttt{fLower = 40.;}
+   </li><li> Lower frequency cutoff
+   <tt>fLower = 40.;</tt>
 
-   \item Upper frequency cutoff
-   \texttt{fUpper = 1024L;}
+   </li><li> Upper frequency cutoff
+   <tt>fUpper = 1024L;</tt>
 
-   \item Whether or not lso should be used as an upper frequency cutoff
-   (Currently not used; so please specify \texttt{fUpper}.
-   \texttt{coarseIn->iflso = 0;}
+   </li><li> Whether or not lso should be used as an upper frequency cutoff
+   (Currently not used; so please specify \c fUpper.
+   <tt>coarseIn->iflso = 0;</tt>
 
-   \item Sampling rate
-   \texttt{tSampling = 4000L;}
+   </li><li> Sampling rate
+   <tt>tSampling = 4000L;</tt>
 
-   \item Space in which templates should be created: whether $(\tau_0,\tau_2)$
-   or $(\tau_0, \tau_3).$
-   \texttt{coarseIn->space = Tau0Tau2;} OR
-   \texttt{coarseIn->space = Tau0Tau3;} OR
+   </li><li> Space in which templates should be created: whether \f$(\tau_0,\tau_2)\f$
+   or \f$(\tau_0, \tau_3).\f$
+   <tt>coarseIn->space = Tau0Tau2;</tt> OR
+   <tt>coarseIn->space = Tau0Tau3;</tt> OR
 
-   \item Order and type of the approximant to be used in template generation.
+   </li><li> Order and type of the approximant to be used in template generation.
    These members will NOT be used in creating a template bank but in
-   filling up the \texttt{InspiralTemplate} structure created by the bank.
+   filling up the \c InspiralTemplate structure created by the bank.
 
-   \texttt{order = twoPN;}
-   \texttt{coarseIn->approximant = TaylorT1;}
+   <tt>order = twoPN;</tt>
+   <tt>coarseIn->approximant = TaylorT1;</tt>
 
-   \item minimum value of eta
-   \texttt{etamin = mMin * ( MMax - mMin)/pow(MMax,2.);}
+   </li><li> minimum value of eta
+   <tt>etamin = mMin * ( MMax - mMin)/pow(MMax,2.);</tt>
 
-   \item Finally, fill the psd structure (see test code for an example).
-   This involves allocating memory to vector \texttt{shf.data} and filling it with
+   </li><li> Finally, fill the psd structure (see test code for an example).
+   This involves allocating memory to vector <tt>shf.data</tt> and filling it with
    noise PSD as also choosing the starting frequency and the frequency resolution.
+</li>
+</ul>
 
-\end{itemize}
-
-\begin{verbatim}
+\code
 CoarseTest
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
-This test code gives an example of how one calls \texttt{LALInspiralCreateCoarseBank}
-and \texttt{LALInspiralCreateFineBank} modules.
+This test code gives an example of how one calls \c LALInspiralCreateCoarseBank
+and \c LALInspiralCreateFineBank modules.
 
-\subsubsection*{Exit codes}
-\input{CoarseTestCE}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
 LALInspiralCreateCoarseBank
 LALInspiralCreateFineBank
 LALFree
 LALCheckMemoryLeaks
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{CoarseTestCV}}
-</lalLaTeX> */
-
-/* <lalErrTable file="CoarseTestCE"> */
-/* </lalErrTable> */
+*/
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>

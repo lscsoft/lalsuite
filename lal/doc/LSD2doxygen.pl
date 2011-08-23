@@ -313,7 +313,7 @@ sub cleanupLSD {
         my $wbbk = qr!\[((?:[^[\]]*$bbk)*[^[\]]*)\]!;
 
         # regex substitution for illegal \ref characters
-        my $illref = sub { $_[0] =~ s![:.]!_!g; $_[0] };
+        my $illref = sub { $_[0] =~ s![:.()^\-]!_!g; $_[0] };
 
         # remove these LaTeX commands:
         # environments
@@ -325,12 +325,12 @@ sub cleanupLSD {
                    providecommand
                    )$bbr$bbr!!mgx;
         # two arguments, first optional
-        $text =~ s!\\(?:
-                   idx
-                   )$bbk?$bbr!!mgx;
+        #$text =~ s!\\(?:
+        #idx
+        #)$bbk?$bbr!!mgx;
         # one argument
         $text =~ s!\\(?:
-                   input|vfill|vspace
+                   vfill|vspace
                    )$bbr!!mgx;
         # no arguments
         $text =~ s!\\(?:
@@ -351,6 +351,8 @@ sub cleanupLSD {
         # convert formulae
         $text =~ s!\$\$(.+?)\$\$!\\f[$1\\f]!sg;
         $text =~ s!\$(.+?)\$!\\f\$$1\\f\$!sg;
+        $text =~ s!\\\[!\\f[!sg;
+        $text =~ s!\\\]!\\f]!sg;
         $text =~ s!\\begin$n*{displaymath}!\\f[!mg;
         $text =~ s!\\end$n*{displaymath}!\\f]!mg;
         $text =~ s{\\begin$n*{(equation\*?|eqnarray\*?)}(.*?)\\end$n*{\1}}{
@@ -427,15 +429,21 @@ sub cleanupLSD {
                 ($e eq 'tt' ? "<tt>$_</tt>" : "<em>$_</em>" )
         }sge;
 
+        # special treatment of 'Synopsis/Prototypes/Description/Uses/Algorithm/Notes' sections: turn into 'heading'
+        $text =~ s!\\(?:sub)*section\*?{(Synopsis|Description|Prototypes|Algorithm|Notes|Uses|Usage)}!\\heading{$1}!g;
+
         # rephrase (sub)section commands, turning labels (if present) into anchors
-        $text =~ s{\\((?:sub)*section\*?)\s*$wbbr\n(?<LBL>\\label\s*$bbr)?}{
+        $text =~ s{\\((?:sub)*section)\*?\s*$wbbr\n(?<LBL>\\label\s*$bbr)?}{
+            my $level = $1;
+            my $title = $2;
             my $lbl = $+{LBL};
             if (defined($lbl)) {
                 $lbl =~ s!\\label\s*$wbbr!$1!;
             } else {
                 $lbl = "TODOref";
             }
-            $_ = '\\' . $1 . ' ' . $lbl . ' '. $2 . "\n";
+            $lbl = &$illref($lbl);
+            $_ = '\\' . $level . ' ' . $lbl . ' '. $title . "\n";
             $_
         }sge;
 
@@ -447,36 +455,52 @@ sub cleanupLSD {
             $_ = $1;
             '\TODOref{' . &$illref($_) . '}'
         }sge;
-        $text =~ s![Ee]q(s?)\.?\\TODOref!Eq\1.\\eqref!mg;
+
+        ## intelligent guess about equation references
+        $text =~ s!([Ee]qs?|[Ee]quations?)[.\\~]*\\TODOref!\1.\\eqref!mg;
+        ## intelligent guess about figure references
+        $text =~ s!([Ff]igs?|[Ff]igures?)[.\\~]*\\TODOref!\1.\\figref!mg;
+        ## intelligent guess about table references
+        $text =~ s!([Tt]ab?|[Tt]ables?)[.\\~]*\\TODOref!\1.\\tableref!mg;
 
         # replace probable filenames with references
         $text =~ s!<tt>(.*?\.[ch])</tt>!\\ref \1!mg;
 
         # replace citations by refs
         $text =~ s{\\cite\s*$wbbr}{
-            $_ = $1;
-            s/[:\s-]//g;
-            '[\ref ' . $_ .']'
+            my $ref = $1;
+            $ref = &$illref($ref);
+            '[\ref ' . $ref .']'
         }mge;
 
         # replace bibitems by anchors
         $text =~ s{\\bibitem\s*$wbbr}{
-            $_ = $1;
-            s/[:\s-]//g;
-            '\anchor ' . $_ . ' <b>[' . $_ . "]</b>\n"
+            my $ref = $1;
+            $ref = &$illref($ref);
+            '\anchor ' . $ref . ' <b>[' . $ref . "]</b> "
         }mge;
         # and get rid of 'bibliography'
         $text =~ s!\\begin{thebibliography}{.*}!(MANUAL INTERVENTION begin bibliography)!;
         $text =~ s!\\end{thebibliography}!(MANUAL INTERVENTION end bibliography)!;
 
+        # replace LaTeX's "\_" by "_"
+        $text =~ s!\\_!_!g;
 
         # replace miscellaneous LaTeX commands
         $text =~ s!\\lq!`!g;
         $text =~ s!``|''!"!g;
 
+        # replace \href{} hyperlinks
+        $text =~ s!\\href\s*{(.*)}{(.*)}!<a href="$1">$2</a>!g;
+
+        # replace protected space "~" by " "
+        $text =~ s!([^\\])~!$1 !g;
+
         # remove any empty LaTeX comments
         $text =~ s!^$n*%$n*$!!mg;
 
+        # mark input commands as 'TODO'
+        $text =~ s!\\input$wbbr!\TODOinput{$1}!g
     }
 
     # get rid of empty comments

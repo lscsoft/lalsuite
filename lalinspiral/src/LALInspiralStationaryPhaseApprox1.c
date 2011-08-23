@@ -17,79 +17,67 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="LALInspiralStationaryPhaseApprox1CV">
- * Author: B.S. Sathyaprakash
- **** </lalVerbatim> */
+/**
+ * \author B.S. Sathyaprakash
+\file
+\ingroup LALInspiral_h
 
-/**** <lalLaTeX>
+\brief This module computes the stationary phase approximation to the
+Fourier transform of a chirp waveform by integrating Eq.\eqref{eq_InspiralFourierPhase}.
+
+ * \heading{Prototypes}
  *
- * %% A one-line description of the function(s) defined in this module.
- * \subsection{Module \texttt{LALInspiralStationaryPhaseApprox1.c}}
- * This module computes the stationary phase approximation to the
- * Fourier transform of a chirp waveform by integrating Eq.~\ref{eq:InspiralFourierPhase}.
+ * <tt>LALInspiralStationaryPhaseApprox1()</tt>
+ * <ul>
+ * <li> \c signalvec: Output containing the inspiral waveform.
+ * </li><li> \c params: Input containing binary chirp parameters.
+ * </li></ul>
  *
- * \subsubsection*{Prototypes}
- * \input{LALInspiralStationaryPhaseApprox1CP}
- * \idx{LALInspiralStationaryPhaseApprox1()}
- * \begin{itemize}
- * \item {\tt signalvec:} Output containing the inspiral waveform.
- * \item {\tt params:} Input containing binary chirp parameters.
- * \end{itemize}
+ * \heading{Description}
  *
- * \subsubsection*{Description}
- *
- * %% A description of the data analysis task performed by this function;
- * %% this is the main place to document the module.
  * This module generates the Fourier domain waveform that is analogous of
- * the time-domain approximant {\tt TaylorT1.} Instead of re-expanding the
+ * the time-domain approximant <tt>TaylorT1.</tt> Instead of re-expanding the
  * the energy and flux functions they are kept in tact and the integral
- * in Eq.~(\ref{eq:InspiralFourierPhase}) is solved numerically.
+ * in Eq.\eqref{eq_InspiralFourierPhase} is solved numerically.
  * The code returns the Fourier transform packed in the same way as fftw
  * would for the Fourier transform of a real vector.  For a signal vector
- * of length {\tt n=signalvec->length} ({\tt n} even):
- * \begin{itemize}
- * \item {\tt signalvec->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
- * \item {\tt signalvec->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
- * \item {\tt signalvec->data[k]} and {\tt signalvec->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
- * the real and imaginary parts of the Fourier transform at a frequency $k\Delta f=k/T,$ $T$ being
- * the duration of the signal and $\Delta f=1/T$ is the frequency resolution.
- * \end{itemize}
+ * of length <tt>n=signalvec->length</tt> (\c n even):
+ * <ul>
+ * <li> <tt>signalvec->data[0]</tt> is the \e real 0th frequency component of the Fourier transform.
+ * </li><li> <tt>signalvec->data[n/2]</tt> is the \e real Nyquist frequency component of the Fourier transform.
+ * </li><li> <tt>signalvec->data[k]</tt> and <tt>signalvec->data[n-k],</tt> for <tt>k=1,..., n/2-1,</tt> are
+ * the real and imaginary parts of the Fourier transform at a frequency \f$k\Delta f=k/T,\f$ \f$T\f$ being
+ * the duration of the signal and \f$\Delta f=1/T\f$ is the frequency resolution.
+ * </li></ul>
  *
- * \subsubsection*{Algorithm}
+ * \heading{Algorithm}
  *
- * %% A description of the method used to perform the calculation.
- * The lal code {\tt LALDRomberIntegrate} is used to solve the
- * integral in Eq.~(\ref{eq:InspiralFourierPhase}).
+ * The lal code \c LALDRombergIntegrate() is used to solve the
+ * integral in Eq.\eqref{eq_InspiralFourierPhase}.
  * The reference points are chosen so that on inverse Fourier transforming
  * the time-domain waveform will
- * \begin{itemize}
- * \item be padded with zeroes in the first {\tt params->nStartPad} bins,
- * \item begin with a phase shift of {\tt params->nStartPhase} radians,
- * \item have an amplitude of ${\tt n} v^2.$
- * \end{itemize}
+ * <ul>
+ * <li> be padded with zeroes in the first <tt>params->nStartPad</tt> bins,
+ * </li><li> begin with a phase shift of <tt>params->nStartPhase</tt> radians,
+ * </li><li> have an amplitude of \f$n v^2.\f$
+ * </li></ul>
  *
- * \subsubsection*{Uses}
+ * \heading{Uses}
  *
- * %% List of any external functions called by this function.
- * \begin{verbatim}
-   LALInspiralSetup
-   LALInspiralChooseModel
-   LALDRombergIntegrate
- * \end{verbatim}
- * \subsubsection*{Notes}
+ * \code
+   LALInspiralSetup()
+   LALInspiralChooseModel()
+   LALDRombergIntegrate()
+ * \endcode
+ * \heading{Notes}
  *
- * %% Any relevant notes.
  * If it is required to compare the output of this module with a time domain
  * signal one should use an inverse Fourier transform routine that packs data
  * in the same way as fftw. Moreover, one should divide the resulting inverse
- * Fourier transform by a factor ${\tt n}/2$ to be consistent with the
+ * Fourier transform by a factor \f$n/2\f$ to be consistent with the
  * amplitude used in time-domain signal models.
  *
- *
- *
- * \vfill{\footnotesize\input{LALInspiralStationaryPhaseApprox1CV}}
- *
- **** </lalLaTeX> */
+*/
 
 #include <lal/LALInspiral.h>
 #include <lal/Integrate.h>
@@ -113,14 +101,14 @@ NRCSID (LALINSPIRALSTATIONARYPHASEAPPROX1C, "$Id$");
 
 /* This is the main function to compute the stationary phase approximation */
 
-/*  <lalVerbatim file="LALInspiralStationaryPhaseApprox1CP"> */
+
 void
 LALInspiralStationaryPhaseApprox1 (
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim>  */
+{
    REAL8 t, pimmc, f0, fn, f, v, df, shft, phi, amp0, amp, psif, psi, sign;
    INT4 n, i, nby2;
    void *funcParams;

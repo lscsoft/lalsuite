@@ -17,24 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalLaTeX>
-\subsection{Module \texttt{ComputeStrain.c}}
-
-\subsubsection*{Description}
-
-
-\subsubsection*{Algorithm}
-
-
-\subsubsection*{Uses}
-\begin{verbatim}
-None
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-</lalLaTeX> */
-
 #include <math.h>
 #include <stdio.h>
 #include <lal/LALStdlib.h>
@@ -518,4 +500,3 @@ void LALCopyFilter(LALStatus *status, REAL8IIRFilter **F2, REAL8IIRFilter *F1, i
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
-

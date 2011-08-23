@@ -727,9 +727,10 @@ NRCSID(LALBARYCENTERC, "$Id$");
 /** \endcond */
 
 /** Deprecated LAL wrapper to XLALBarycenterEarth()
+ * \deprecated use XLALBarycenterEarth() instead.
  */
 void
-LALBarycenterEarth(LALStatus *status,
+LALBarycenterEarth(LALStatus *status,		/**< [in/out] LAL status structure pointer */
 		   EarthState *earth, 		/**< [out] the earth's state at time tGPS */
 		   const LIGOTimeGPS *tGPS, 	/**< [in] GPS time tgps */
 		   const EphemerisData *edat) 	/**< [in] ephemeris-files */
@@ -747,9 +748,10 @@ LALBarycenterEarth(LALStatus *status,
 } /* LALBarycenterEarth() */
 
 /** Deprecated LAL wrapper to XLALBarycenter()
+ * \deprecated use XLALBarycenter() instead.
  */
 void
-LALBarycenter(LALStatus *status,
+LALBarycenter(LALStatus *status,		/**< [in/out] LAL status structure pointer */
 	      EmissionTime *emit, 		/**< [out] emission-time information */
 	      const BarycenterInput *baryinput, /**< [in] info about detector and source-location */
 	      const EarthState *earth) 		/**< [in] earth-state (from LALBarycenterEarth()) */

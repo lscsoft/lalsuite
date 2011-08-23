@@ -1,32 +1,22 @@
 /* -*- C -*- */
-/******** <lalVerbatim file="VectorIndexRangeHV"> ********
-Author: David Chin <dwchin@umich.edu> +1-734-709-9119
-$Id$
-********* </lalVerbatim> ********/
-
-/**** <lalLaTeX>
+/**
+ * \author David Chin <dwchin@umich.edu> +1-734-709-9119
+ * \addtogroup VectorIndexRange_h
  *
- * \section{Header \texttt{VectorIndexRange.h}}
+ * \section TODOref Header \ref VectorIndexRange.h
  *
- * Routines to slice up vectors/sequences by
- * specifying starting and ending indices, inclusive.
- * \texttt{VectorIndexHole()}
- * is "complementary" to \texttt{VectorIndexRange()}, in the sense that
- * it returns the two segments of the vector that would remain after
- * \texttt{VectorIndexRange()} acts.
+ * \brief Routines to slice up vectors/sequences by specifying starting and ending indices, inclusive.
  *
- * \subsection*{Synopsis}
- * \begin{verbatim}
+ * VectorIndexHole() is "complementary" to VectorIndexRange(), in the sense that
+ * it returns the two segments of the vector that would remain after VectorIndexRange() acts.
+ *
+ * \heading{Synopsis}
+ * \code
  * #include <lal/VectorIndexRange.h>
- * \end{verbatim}
+ * \endcode
  *
- * \subsection*{Error conditions}
- * \input{VectorIndexRangeHE}
- *
- * \vfill{\footnotesize\input{VectorIndexRangeHV}}
- * \newpage\input{VectorIndexRangeC}
- *
- ***** </lalLaTeX> */
+ * @{
+ */
 
 #include <math.h>
 #include <lal/LALRCSID.h>
@@ -37,23 +27,30 @@ $Id$
 #ifndef __LALVECTORINDEXRANGE_H__
 #define __LALVECTORINDEXRANGE_H__
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* C++ */
 
-NRCSID( VECTORINDEXRANGEH, "$Id$" );
+/**\name Error Codes */ /*@{*/
+#define VECTORINDEXRANGEH_EARG 1	/**< Error parsing command-line arguments */
+#define VECTORINDEXRANGEH_ECHK 2	/**< Error checking failed to catch bad data */
+#define VECTORINDEXRANGEH_EFLS 3	/**< Incorrect answer for valid data */
+#define VECTORINDEXRANGEH_EUSE 4	/**< Bad user-entered data */
+#define VECTORINDEXRANGEH_ENULL 5	/**< Null Pointer */
+#define VECTORINDEXRANGEH_EALOC 6	/**< Memory Allocation Error */
+#define VECTORINDEXRANGEH_EFPMS 7	/**< Filter Parameter Structure Error */
+#define VECTORINDEXRANGEH_ENUMZ 8	/**< Incorrect number of command line arguments */
+#define VECTORINDEXRANGEH_ELNTH 9	/**< Vector/Array of Improper Length */
+#define VECTORINDEXRANGEH_ENNUL 10	/**< Non-Null Pointer that should be NULL */
+/** @}*/
 
-/**** <lalErrTable file="VectorIndexRangeHE"> ****/
-#define VECTORINDEXRANGEH_EARG 1
-#define VECTORINDEXRANGEH_ECHK 2
-#define VECTORINDEXRANGEH_EFLS 3
-#define VECTORINDEXRANGEH_EUSE 4
-#define VECTORINDEXRANGEH_ENULL 5
-#define VECTORINDEXRANGEH_EALOC 6
-#define VECTORINDEXRANGEH_EFPMS 7
-#define VECTORINDEXRANGEH_ENUMZ 8
-#define VECTORINDEXRANGEH_ELNTH 9
-#define VECTORINDEXRANGEH_ENNUL 10
+/** @}*/
+
 #define VECTORINDEXRANGEH_MSGEARG "Error parsing command-line arguments"
 #define VECTORINDEXRANGEH_MSGECHK "Error checking failed to catch bad data"
 #define VECTORINDEXRANGEH_MSGEFLS "Incorrect answer for valid data"
@@ -64,7 +61,9 @@ NRCSID( VECTORINDEXRANGEH, "$Id$" );
 #define VECTORINDEXRANGEH_MSGENUMZ "Incorrect number of command line arguments"
 #define VECTORINDEXRANGEH_MSGELNTH "Vector/Array of Improper Length"
 #define VECTORINDEXRANGEH_MSGENNUL "Non-Null Pointer that should be NULL"
-/**** </lalErrTable> ****/
+
+
+NRCSID( VECTORINDEXRANGEH, "$Id$" );
 
 /* typedefs */
 

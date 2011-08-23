@@ -17,58 +17,56 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="DetectorSiteTestCV">
-Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$
-********************************* </lalVerbatim> */
+/**
+\author J. T. Whelan <john.whelan@ligo.org>
+\file
+\ingroup LALDetectors_h
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{DetectorSiteTest.c}}
-\label{tools:ss:DetectorSiteTest.c}
-
-Tests the detector response and site parameter structures and the
+\brief Tests the detector response and site parameter structures and the
 routine to create one from the other.
 
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
 
-\subsubsection*{Usage}
-\begin{verbatim}
+\code
 DetectorSiteTest [options]
 Options:
   -h         print help
   -q         quiet: run silently
   -v         verbose: print extra information
   -d level   set lalDebugLevel to level
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 Right now the test routine does very little.  It contains a static
-function \texttt{PrintLALDetector()} which will print the fields of a
-\texttt{LALDetector} to standard output in the same format that would
+function <tt>PrintLALDetector()</tt> which will print the fields of a
+\c LALDetector to standard output in the same format that would
 be used for a C initialization.  This function is not currently
-called.  It also contains a static function \texttt{CheckDetector()}
-which extracts the \texttt{LALFrDetector} and type from a
-\texttt{LALDetector}, changes the name of the \texttt{LALFrDetector}
+called.  It also contains a static function <tt>CheckDetector()</tt>
+which extracts the \c ::LALFrDetector and type from a
+\c ::LALDetector, changes the name of the \c ::LALFrDetector
 (in case it's one of the predefined constant detectors), constructs a
-new \texttt{LALDetector} and compares the values of the fields of the
+new \c ::LALDetector and compares the values of the fields of the
 old and new structures.  The program currently performs this check
 for the two LIGO sites.
 
-
-\subsubsection*{Exit codes}
-\input{DetectorSiteTestCE}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCreateDetector()
-\end{verbatim}
+\endcode
+*/
 
-\subsubsection*{Notes}
+/**\name Error Codes */ /*@{*/
+#define DETECTORSITETESTC_ENOM 0	/**< Nominal exit */
+#define DETECTORSITETESTC_ECHK 1	/**< Error checking failed to catch bad data */
+#define DETECTORSITETESTC_EFLS 2	/**< Incorrect answer for valid data */
+/*@}*/
 
-\vfill{\footnotesize\input{DetectorSiteTestCV}}
-******************************************************* </lalLaTeX> */
+/** \cond DONT_DOXYGEN */
+
+#define DETECTORSITETESTC_MSGENOM "Nominal exit"
+#define DETECTORSITETESTC_MSGECHK "Error checking failed to catch bad data"
+#define DETECTORSITETESTC_MSGEFLS "Incorrect answer for valid data"
 
 #include <stdlib.h>
 
@@ -106,15 +104,6 @@ NRCSID( DETECTORSITETESTC, "$Id$" );
 
 #define DETECTORSITETESTC_LOCTOL 3e-2
 #define DETECTORSITETESTC_RESTOL 1e-06
-
-/***************************** <lalErrTable file="DetectorSiteTestCE"> */
-#define DETECTORSITETESTC_ENOM 0
-#define DETECTORSITETESTC_ECHK 1
-#define DETECTORSITETESTC_EFLS 2
-#define DETECTORSITETESTC_MSGENOM "Nominal exit"
-#define DETECTORSITETESTC_MSGECHK "Error checking failed to catch bad data"
-#define DETECTORSITETESTC_MSGEFLS "Incorrect answer for valid data"
-/***************************** </lalErrTable> */
 
 #if 0
 static void
@@ -528,3 +517,4 @@ ParseOptions (int argc, char *argv[])
   return;
 }
 
+/** \endcond */

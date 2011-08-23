@@ -54,9 +54,9 @@
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Window.h>
 
-#include <lalapps.h>
+#include <lal/TransientCW_utils.h>
 
-#include "../transientCW_utils.h"
+#include <lalapps.h>
 
 RCSID ("$Id$");
 
@@ -709,7 +709,10 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	  }
 	disc = sqrt ( SQ(uvar_aPlus) - SQ(uvar_aCross) );
 	cfg->pulsar.Amp.h0   = uvar_aPlus + disc;
-	cfg->pulsar.Amp.cosi = uvar_aCross / cfg->pulsar.Amp.h0;
+        if ( cfg->pulsar.Amp.h0 > 0 )
+          cfg->pulsar.Amp.cosi = uvar_aCross / cfg->pulsar.Amp.h0;	// avoid division by 0!
+        else
+          cfg->pulsar.Amp.cosi = 0;
       }
     else {
       cfg->pulsar.Amp.h0 = 0.0;

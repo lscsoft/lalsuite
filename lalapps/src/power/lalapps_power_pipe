@@ -319,9 +319,10 @@ def make_coinc_branch(dag, datafinds, seglistdict, time_slides, timing_params, p
 
 
 	if do_injections:
+		assert len(time_slides) == 1
 		if verbose:
 			print >>sys.stderr, "Building lalapps_binj jobs ..."
-		binjnodes = power.make_multibinj_fragment(dag, seglistdict.extent_all(), tag)
+		binjnodes = power.make_binj_fragment(dag, seglistdict.extent_all(), time_slides.keys()[0], tag, 0.0, float(power.powerjob.get_opts()["low-freq-cutoff"]), float(power.powerjob.get_opts()["low-freq-cutoff"]) + float(power.powerjob.get_opts()["bandwidth"]))
 		# add binj nodes as parents of the datafinds to force the binj's to
 		# be run first.  this ensures that once a datafind has run the
 		# power jobs that follow it will immediately be able to run, which
@@ -348,13 +349,24 @@ def make_coinc_branch(dag, datafinds, seglistdict, time_slides, timing_params, p
 
 	coinc_nodes = set()
 	binj_cache = set([cache_entry for node in binjnodes for cache_entry in node.get_output_cache()])
+	# otherwise too many copies of the offset vector will be fed into
+	# burca
+	assert len(binj_cache) < 2
 	for n, (time_slides_cache_entry, these_time_slides) in enumerate(time_slides.items()):
 		if verbose:
 			print >>sys.stderr, "%s %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path())
 		tisi_cache = set([time_slides_cache_entry])
+		if do_injections:
+			# lalapps_binj has already copied the time slide
+			# document into its own output
+			extra_input_cache = set()
+		else:
+			# ligolw_add needs to copy the time slide document
+			# into is output
+			extra_input_cache = tisi_cache
 		nodes = set()
 		for seg, parents, cache, clipseg in power.group_coinc_parents(trigger_nodes, these_time_slides, verbose = verbose):
-			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, remove_input = do_injections, preserve_cache = binj_cache | tisi_cache)
+			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = extra_input_cache, remove_input = do_injections, preserve_cache = binj_cache | tisi_cache)
 		if enable_clustering:
 			if verbose:
 				print >>sys.stderr, "building post-lladd bucluster jobs ..."

@@ -22,16 +22,8 @@
 \file
 \ingroup pulsarTODO
 
-\heading{Module \ref GenerateParabolicSpinOrbitCW.c}
-\latexonly\label{ss_GenerateParabolicSpinOrbitCW_c}\endlatexonly
-
-Computes a continuous waveform with frequency drift and Doppler
+\brief Computes a continuous waveform with frequency drift and Doppler
 modulation from a parabolic orbital trajectory.
-
-\heading{Prototypes}
-
-
-
 
 \heading{Description}
 
@@ -55,7 +47,7 @@ function will create and allocate space for <tt>output->a</tt>,
 \heading{Algorithm}
 
 For parabolic orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
-\TODOref{eq_spinorbit-t}, and\TODOref{eq_spinorbit-upsilon} to get \f$t_r\f$
+\eqref{eq_spinorbit-t}, and\eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
 directly as a function of \f$E\f$:
 \anchor eq_cubic-e \f{equation}{
 \label{eq_cubic-e}
@@ -116,10 +108,10 @@ E & = & E_0 + \Delta E\times\left\{\begin{array}{l@{\qquad}c}
 	\end{array}\right. \nonumber
 \f}
 where we have explicitly written \f$\sinh^{-1}\f$ in terms of functions in
-\ref math.h.  Once \f$E\f$ is found, we can compute
+math.h.  Once \f$E\f$ is found, we can compute
 \f$t=E(12+E^2)/(12\dot{\upsilon}_p)\f$ (where again \f$1/12\dot{\upsilon}_p\f$
 can be precomputed), and hence \f$f\f$ and \f$\phi\f$ via
-Eqs.\eqref{eq_taylorcw-freq} and\TODOref{eq_taylorcw-phi}.  The
+Eqs.\eqref{eq_taylorcw-freq} and\eqref{eq_taylorcw-phi}.  The
 frequency \f$f\f$ must then be divided by the Doppler factor:
 \f[
 1 + \frac{\dot{R}}{c} = 1 + \frac{v_p}{4+E^2}\left(

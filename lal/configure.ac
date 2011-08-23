@@ -1,4 +1,4 @@
-AC_INIT([lal],[6.5.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.5.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
@@ -16,6 +16,9 @@ AC_CONFIG_FILES([ \
   include/lal/Makefile \
   lib/Makefile \
   misc/Makefile \
+  swig/Makefile \
+  swig/octave/Makefile \
+  swig/python/Makefile \
   packages/Makefile \
   packages/std/Makefile \
   packages/std/doc/Makefile \
@@ -279,6 +282,7 @@ LIBS="$LIBS $GSL_LIBS"
 AC_CHECK_LIB([gslcblas],[main])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 LAL_CHECK_GSL_VERSION([1.9])
+LALSUITE_ENABLE_FAST_GSL
 
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
@@ -355,6 +359,9 @@ if test "${boinc}" = "true"; then
   AC_SUBST(BOINC_LIBS)
 fi
 
+# check for SWIG wrapping
+LALSUITE_ENABLE_SWIG
+
 # record the libraries needed for linking lal
 LAL_LIBADD="$LIBS"
 AC_SUBST(LAL_LIBADD)
@@ -409,6 +416,8 @@ echo "
 
                 CUDA support is $CUDA_ENABLE_VAL
                 BOINC support is $BOINC_ENABLE_VAL
+                SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
+                SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
 
         Now run 'make' to build LAL
         and run 'make install' to install LAL

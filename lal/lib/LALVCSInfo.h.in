@@ -22,6 +22,11 @@
 #ifndef _LALVCSINFO_H
 #define _LALVCSINFO_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALConfig.h>
 
 #ifdef __cplusplus
@@ -48,18 +53,22 @@ extern "C" {
 #define LAL_VCS_IDENT_STATUS "$" "LALStatus: @STATUS@ " "$"
 
 /* global variables for vcs information, defined in LALVCSInfo.c */
-extern const char *lalVCSVersion;
-extern const char *lalVCSId;
-extern const char *lalVCSDate;
-extern const char *lalVCSBranch;
-extern const char *lalVCSTag;
-extern const char *lalVCSAuthor;
-extern const char *lalVCSCommitter;
-extern const char *lalVCSStatus;
+extern const char *const lalVCSVersion;
+extern const char *const lalVCSId;
+extern const char *const lalVCSDate;
+extern const char *const lalVCSBranch;
+extern const char *const lalVCSTag;
+extern const char *const lalVCSAuthor;
+extern const char *const lalVCSCommitter;
+extern const char *const lalVCSStatus;
 
 /* define vcs information structure */
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALVCSInfo;
+#endif /* SWIG */
 typedef struct tagLALVCSInfo
 {
+  SWIGLAL_STRUCT_LALALLOC();
   const char *name;
   const char *version;
   const char *vcsId;

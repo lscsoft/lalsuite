@@ -26,55 +26,30 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="PlaygroundCV">
-Author: Brown D. A.
-</lalVerbatim>
-
-<lalLaTeX>
-\subsection{Module \texttt{Playground.c}}
-\label{ss:Playground.c}
-
-Determines if a given time (or segment) is playground data.
-
-\subsection*{Prototypes}
-\vspace{0.1in}
-\input{PlaygroundCP}
-\idx{XLALINT8NanoSecIsPlayground()}
-
-\subsubsection*{Description}
-
-This module contains two routines to determine if a given time is in the data
-designated as playground or not. The first routines takes input as
-\texttt{INT8} nanoseconds and the second as a \texttt{LIGOTimeGPS} structure.
-The third routine decides if some or all of a given time interval is
-playground or not.
-
-\subsubsection*{Algorithm}
-
-The playground algorithm is given in LIGO techincal document T030020-01.
-Briefly, $t$ is playground if
-\begin{equation}
-t - 729273613 \% 6370 < 600.
-\end{equation}
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{PlaygroundCV}}
-</lalLaTeX>
-#endif
-
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
-/* <lalVerbatim file="PlaygroundCP"> */
+
+/**
+\author Brown D. A.
+\ingroup Date_h
+
+\brief Determines if a given time is playground data.
+
+\heading{Algorithm}
+
+The playground algorithm is given in LIGO techincal document T030020-01.
+Briefly, \f$t\f$ is playground if
+\f{equation}{
+t - 729273613 \% 6370 < 600.
+\f}
+
+*/
 int
 XLALINT8NanoSecIsPlayground (
     INT8         ns
     )
-/* </lalVerbatim> */
+
 {
   const INT8 start = 729273613 * XLAL_BILLION_INT8;
   const INT8 interval = 6370 * XLAL_BILLION_INT8;

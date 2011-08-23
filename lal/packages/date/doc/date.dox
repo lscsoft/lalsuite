@@ -1,0 +1,11 @@
+/**
+
+\defgroup date date
+\ingroup general
+
+This package provides routines related to date and time manipulations
+(\ref Date.h).  It also provides routines to compute the
+difference in time of arrival of a signal (\ref TimeDelay_h) at two detector locations,
+and also between a detector and the center of the Earth-fixed frame.
+
+*/

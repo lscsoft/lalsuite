@@ -112,10 +112,17 @@ LALPlaygroundDataMask;
 ProcessTable *XLALCreateProcessTableRow(void);
 void XLALDestroyProcessTableRow(ProcessTable *);
 void XLALDestroyProcessTable(ProcessTable *);
+long XLALProcessTableGetNextID(ProcessTable *);
 
 ProcessParamsTable *XLALCreateProcessParamsTableRow(const ProcessTable *);
 void XLALDestroyProcessParamsTableRow(ProcessParamsTable *);
 void XLALDestroyProcessParamsTable(ProcessParamsTable *);
+
+TimeSlide *XLALCreateTimeSlide(void);
+void XLALDestroyTimeSlide(TimeSlide *);
+void XLALDestroyTimeSlideTable(TimeSlide *);
+const TimeSlide *XLALTimeSlideConstGetByIDAndInstrument(const TimeSlide *, long, const char *);
+TimeSlide *XLALTimeSlideGetByIDAndInstrument(TimeSlide *, long, const char *);
 
 SearchSummaryTable *XLALCreateSearchSummaryTableRow(const ProcessTable *);
 void XLALDestroySearchSummaryTableRow(SearchSummaryTable *);

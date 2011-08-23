@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Anand Sengupta, Thomas Cokelaer
+*  Copyright (C) 2007 Anand Sengupta, Thomas Cokelaer, Evan Ochsner
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -17,24 +17,19 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALGenerateInspiralWaveformCV">
-Author: Sathyaprakash, B. S., Cokelaer T.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S., Cokelaer T.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Test program \texttt{LALGenerateInspiralWaveform.c}}
-Test routine for wave generation codes.
+\brief Test routine for wave generation codes.
 
 To get some help just type the name of the executable and the option --h
 
 Basically, you can provide all the arguments from the InspiralTemplate structure such as
 --approximant, --order ....
 
-\vfill{\footnotesize\input{LALGenerateInspiralWaveformCV}}
-
-</lalLaTeX> */
+*/
 
 
 #define LALGENERATEINSPIRALWAVEFORMC_ENORM 0
@@ -47,7 +42,7 @@ Basically, you can provide all the arguments from the InspiralTemplate structure
 #define LALGENERATEINSPIRALWAVEFORMC_MSGENORM "Normal exit"
 #define LALGENERATEINSPIRALWAVEFORMC_MSGESUB  "Subroutine failed"
 #define LALGENERATEINSPIRALWAVEFORMC_MSGEARG  "Error parsing arguments"
-#define LALGENERATEINSPIRALWAVEFORMC_MSGEVAL  "Input argument out of valid range"
+#define LALGENERATEINSPIRALWAVEFORMC_MSGEVAL "Input argument out of valid range"
 #define LALGENERATEINSPIRALWAVEFORMC_MSGEFILE "Could not open file"
 #define LALGENERATEINSPIRALWAVEFORMC_MSGEMEM  "Out of memory"
 
@@ -57,6 +52,7 @@ Basically, you can provide all the arguments from the InspiralTemplate structure
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
 #include <lal/Random.h>
+#include <lal/GenerateInspiral.h>
 
 NRCSID( LALGENERATEINSPIRALWAVEFORMC, "$Id$" );
 
@@ -66,8 +62,8 @@ do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
-		 "        %s %s\n", (code), program, __FILE__,       \
-		 __LINE__, LALGENERATEINSPIRALWAVEFORMC, statement ? statement :  \
+         "        %s %s\n", (code), program, __FILE__,       \
+         __LINE__, LALGENERATEINSPIRALWAVEFORMC, statement ? statement :  \
                  "", (msg) );                                        \
 }                                                                    \
 while (0)
@@ -77,8 +73,8 @@ do                                                                   \
 if ( lalDebugLevel & LALWARNING )                                    \
 {                                                                    \
   LALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
-		 "        %s\n", program, __FILE__, __LINE__,        \
-		 LALGENERATEINSPIRALWAVEFORMC, (statement) );                         \
+         "        %s\n", program, __FILE__, __LINE__,        \
+         LALGENERATEINSPIRALWAVEFORMC, (statement) );                         \
 }                                                                    \
 while (0)
 
@@ -87,8 +83,8 @@ do                                                                   \
 if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
   LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
-		 "        %s\n", program, __FILE__, __LINE__,        \
-		 LALGENERATEINSPIRALWAVEFORMC, (statement) );                         \
+         "        %s\n", program, __FILE__, __LINE__,        \
+         LALGENERATEINSPIRALWAVEFORMC, (statement) );                         \
 }                                                                    \
 while (0)
 
@@ -107,25 +103,31 @@ typedef struct{
   INT4 output;
   INT4 psd_data_file;
   INT4 taper;
+  INT4 realImag;
+  char tag[200];
+  char waveformString[LIGOMETA_WAVEFORM_MAX];
 } OtherParamIn;
 
 char *program;
 
-void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal1, REAL8 delta) ;
-void printf_timeseries2 (UINT4 n, REAL4 *signal1, REAL4 *signal2, REAL8 delta) ;
+void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal1, REAL8 delta);
+void printf_timeseries2 (UINT4 n, REAL4 *signal1, REAL4 *signal2, REAL8 delta);
 void ParseParameters(UINT4 argc, CHAR **argv, OtherParamIn *otherIn);
 void LALGenerateInspiralWaveformHelp(void);
 void readPSD(REAL8 *psd, REAL4 Df, UINT4 length);
+void buildhoft(LALStatus *status, REAL4Vector *wave, 
+        InspiralTemplate *params, OtherParamIn *otherIn);
 
 
 /* --- Main part --- */
 int main (int argc , char **argv) {
   REAL4Vector *signal1 = NULL;   /* storing waveforms */
   REAL4Vector *signal2 = NULL;   /* storing waveforms */
+  REAL4Vector *dummy = NULL;     /* stores h+ when hx desired */
   REAL8Vector *psd=NULL;
   static LALStatus status;
   InspiralTemplate params;       /* the parameters */
-  REAL8 dt, cosI, apFac, dist;   /* sampling interval, etc */
+  REAL8 dt, cosI, ampFac, plusFac, crossFac, dist;
   UINT4 n,i;
   UINT4 nby2;
   InspiralInit paramsInit;
@@ -135,24 +137,25 @@ int main (int argc , char **argv) {
   RealFFTPlan *frwd =NULL;
   char name1[256];
 
-  static OtherParamIn otherIn; /* some extra parameters to parse*/
-  FILE *f1=NULL, *f2=NULL, *f3=NULL, *f4=NULL;
+  static OtherParamIn otherIn; /* some extra parameters to parse */
+  FILE *f1=NULL, *f2=NULL, *f3=NULL, *f4=NULL; /* output file pointers */
 
   program = *argv;
 
   /* ---  we start real computation here --- */
   otherIn.PrintParameters = 0; /* by default we don't print the parameters */
-  otherIn.output = 0; /* by default we don't print the parameters */
-  ParseParameters(argc, argv, &otherIn);/*let's parse user parameters     */
+  otherIn.output = 0;          /* by default we don't output the waveforms */
+  otherIn.realImag = 0;        /* by default output FD waveforms as |h(f)| */
+  strncpy(otherIn.tag, "1", sizeof(otherIn.tag));/*default tag for file names*/
+  ParseParameters(argc, argv, &otherIn);/* let's parse user parameters */
   SUB( LALInspiralITStructureSetDefault(&status, &params),
-       &status); /*  */
+       &status);
 
   SUB( LALInspiralITStructureParseParameters(&status, argc, argv, &params),
-       &status);/*parse user inspiral template parameters */
+       &status); /* parse user inspiral template parameters */
 
 
-  SUB(  LALInspiralInit(&status, &params, &paramsInit), &status);
-  /*  params.signalAmplitude =1;*/
+  SUB( LALInspiralInit(&status, &params, &paramsInit), &status);
 
   /**************************************************************
    * The following are used only when the psd is read from a
@@ -176,24 +179,24 @@ int main (int argc , char **argv) {
 
   if(otherIn.output)
   {
-    sprintf(name1, "wave-TD-%d.dat", params.approximant); f1 = fopen(name1, "w");
-    sprintf(name1, "wave-OT-%d.dat", params.approximant); f2 = fopen(name1, "w");
-    sprintf(name1, "wave-SS-%d.dat", params.approximant); f3 = fopen(name1, "w");
-    sprintf(name1, "wave-SI-%d.dat", params.approximant); f4 = fopen(name1, "w");
+    sprintf(name1, "wave-TD-%s.dat", otherIn.tag); f1 = fopen(name1, "w");
+    sprintf(name1, "wave-OT-%s.dat", otherIn.tag); f2 = fopen(name1, "w");
+    sprintf(name1, "wave-NW-%s.dat", otherIn.tag); f3 = fopen(name1, "w");
+    sprintf(name1, "wave-FD-%s.dat", otherIn.tag); f4 = fopen(name1, "w");
   }
 
 
 
-  if (otherIn.PrintParameters){
+  if (otherIn.PrintParameters)
+  {
     fprintf(stderr, "the inspiral structure (your parameters) before the call to the waveform generation:\n");
-      SUB( LALInspiralITStructurePrint(&status, params),  &status);
+    SUB( LALInspiralITStructurePrint(&status, params),  &status);
   }
 
   /* force those parameters */
-
-  dt 	= 1./params.tSampling;
-  n 	= paramsInit.nbins;
-  nby2 = n/2;
+  dt     = 1./params.tSampling;
+  n      = paramsInit.nbins;
+  nby2   = n/2;
 
   if( params.approximant  == AmpCorPPN )
   {
@@ -203,16 +206,15 @@ int main (int argc , char **argv) {
   if (otherIn.PrintParameters)
   {
     fprintf(stderr, "#Testing Inspiral Signal Generation Codes:\n");
-    fprintf(stderr, "#Signal n=%d, t0=%e, t2=%e, t3=%e\n", n, params.t0, params.t2, params.t3);
+    fprintf(stderr, "#Signal n=%d, t0=%e, t2=%e, t3=%e\n", 
+        n, params.t0, params.t2, params.t3);
     fprintf(stderr,"#size in bins %d\n",n);
     fprintf(stderr,"#size in seconds %f\n",params.tC);
   }
 
-  /*
-  params.ampOrder = 0;
-   */
   SUB( LALSCreateVector(&status, &(signal1), n), &status);
   SUB( LALSCreateVector(&status, &(signal2), n), &status);
+  SUB( LALSCreateVector(&status, &(dummy), n), &status);
   SUB( LALCreateForwardRealFFTPlan(&status, &frwd, n, 0), &status);
   SUB( LALCreateReverseRealFFTPlan(&status, &revp, n, 0), &status);
   LALDCreateVector(&status, &psd, (nby2+1));
@@ -221,25 +223,55 @@ int main (int argc , char **argv) {
 
   LALInspiralSetup (&status, &ak, &params);
 
-  /*
-  for (v=0.01; v<0.6; v+=0.01)
-  {
-	  double lum = paramsInit.func.flux(v, &paramsInit.ak)/(pow(v,10.)*paramsInit.ak.FTaN);
-	  fprintf(stdout, "%e %e\n", v, lum);
-  }
-  exit(0);
-  */
 
   switch (params.approximant)
   {
+    /* These FD approximants generate h(f) and IFFT to get h(t) */
+    case PadeF1:
     case TaylorF1:
     case TaylorF2:
+    case FindChirpSP:
     case BCV:
+    case BCVC:
     case BCVSpin:
-      SUB( LALInspiralWave(&status, signal2, &params), &status);
-      SUB( LALREAL4VectorFFT(&status, signal1, signal2, revp), &status);
+    case IMRPhenomFA:
+    case IMRPhenomFB:
+    case PhenSpinTaylorRDF:
+      switch( otherIn.output )
+      {
+        default:
+        case 0:
+        case 1:
+          cosI = cos(params.inclination);
+          params.distance *= LAL_PC_SI*1e6;
+          ampFac  = -2.0 * params.mu * LAL_MRSUN_SI/params.distance;
+          plusFac = ampFac * (1.0 + cosI*cosI);
+          params.signalAmplitude = plusFac;
+          SUB(LALInspiralWave(&status, signal2, &params), &status);
+          SUB(LALREAL4VectorFFT(&status, signal1, signal2, revp), &status);
+          break;
+        case 2:
+          cosI = cos(params.inclination);
+          params.distance *= LAL_PC_SI*1e6;
+          ampFac  = -2.0 * params.mu * LAL_MRSUN_SI/params.distance;
+          crossFac = ampFac * 2.0 * cosI;
+          params.signalAmplitude = crossFac;
+          SUB(LALInspiralWaveTemplates(&status, dummy, signal2, &params), 
+              &status);
+          SUB(LALREAL4VectorFFT(&status, signal1, signal2, revp), &status);
+          break;
+        case 3:
+          buildhoft(&status, signal2, &params, &otherIn);
+          SUB(LALREAL4VectorFFT(&status, signal1, signal2, revp), &status);
+          break;
+      }
       break;
-    case SpinTaylorT3:
+    /* For default case, print a warning, but continue */
+    /* If a new waveform was implemented, it may succeed */
+    /* Otherwise, the call to LALInspiral, etc. will still fail */
+    default:
+      fprintf(stderr, "Warning! approximant appears to be unknown\n");
+    /* These TD approximants generate h(t), h+(t), hx(t) directly */
     case TaylorT1:
     case TaylorT2:
     case TaylorT3:
@@ -248,34 +280,57 @@ int main (int argc , char **argv) {
     case TaylorN:
     case EOB:
     case EOBNR:
+    case EOBNRv2:
+    case EOBNRv2HM:
     case PadeT1:
+    case GeneratePPN:
     case AmpCorPPN:
+    case SpinTaylorT3:
     case SpinTaylor:
+    case SpinTaylorFrameless:
+    case PhenSpinTaylorRD:
+    case IMRPhenomA:
+    case IMRPhenomB:
     case Eccentricity:
-      cosI = cos(params.inclination);
-      /* We are expecting that the distance input to  this routine will be in Mpc */
-      params.distance *= LAL_PC_SI*1e6;
-      apFac  = -2.0 * params.mu * LAL_MRSUN_SI/params.distance;
-      apFac *= (1.0 + cosI*cosI);
-      params.signalAmplitude = apFac;
-      SUB(LALInspiralWave(&status, signal1, &params), &status);
-      if(otherIn.taper)
+      switch( otherIn.output )
       {
-	InspiralApplyTaper bookends;
-	bookends = 0;
-	if (otherIn.taper==1) bookends = INSPIRAL_TAPER_START;
-	if (otherIn.taper==2) bookends = INSPIRAL_TAPER_END;
-	if (otherIn.taper==3) bookends = INSPIRAL_TAPER_STARTEND;
+        default:
+        case 0:
+        case 1:
+          cosI = cos(params.inclination);
+          params.distance *= LAL_PC_SI*1e6;
+          ampFac  = -2.0 * params.mu * LAL_MRSUN_SI/params.distance;
+          plusFac = ampFac * (1.0 + cosI*cosI);
+          params.signalAmplitude = plusFac;
+          SUB(LALInspiralWave(&status, signal1, &params), &status);
+          break;
+        case 2:
+          cosI = cos(params.inclination);
+          params.distance *= LAL_PC_SI*1e6;
+          ampFac  = -2.0 * params.mu * LAL_MRSUN_SI/params.distance;
+          crossFac = ampFac * 2.0 * cosI;
+          params.signalAmplitude = crossFac;
+          SUB(LALInspiralWaveTemplates(&status, dummy, signal1, &params), 
+              &status);
+          break;
+        case 3:
+          buildhoft(&status, signal1, &params, &otherIn);
+          break;
+      }
+      if(otherIn.taper) /* Taper if requested */
+      {
+        InspiralApplyTaper bookends;
+        bookends = 0;
+        if (otherIn.taper==1) bookends = INSPIRAL_TAPER_START;
+        if (otherIn.taper==2) bookends = INSPIRAL_TAPER_END;
+        if (otherIn.taper==3) bookends = INSPIRAL_TAPER_STARTEND;
         XLALInspiralWaveTaper(signal1, bookends);
       }
-      break;
-    case PadeF1:
-    default:
       break;
   }
   if(otherIn.output) printf_timeseries (f1, n, signal1->data, dt);
   {
-    REAL8 df, f, sSq, sRe, sIm, rho, rhosq=0, rhoDet=8.;
+    REAL8 df, f, hSq, sSq, hMag, sMag, sRe, sIm, rho, rhosq=0, rhoDet=8.;
 
     SUB( LALREAL4VectorFFT(&status, signal2, signal1, frwd), &status);
     df = 1./(n * dt);
@@ -293,39 +348,55 @@ int main (int argc , char **argv) {
       f = (double)i*df;
       if (psd->data[i])
       {
-        double hSq;
-	sRe = signal2->data[i];
-	sIm = signal2->data[j];
-	hSq = (sRe*sRe + sIm*sIm);
-	sSq = hSq / (psd->data[i]) ;
-	if (f>params.fLower)
-	{
-          if (params.approximant != EOBNR && params.fFinal > f)
+        sRe  = signal2->data[i] * dt;
+        sIm  = signal2->data[j] * dt;
+        hSq  = sRe*sRe + sIm*sIm;
+        hMag = sqrt(hSq);
+        sSq  = hSq / (psd->data[i]) ;
+        sMag = hMag / (psd->data[i]) ;
+        if (f>params.fLower)
+        {
+          if (params.approximant != EOBNR && params.approximant != EOBNRv2
+               && params.approximant != EOBNRv2HM && params.fFinal > f)
             rhosq += sSq;
-	  else
-	    rhosq += sSq;
-	}
-	signal2->data[i] = sRe / sqrt(psd->data[i]) / (double)nby2;
-	signal2->data[j] = sIm / sqrt(psd->data[i]) / (double)nby2;
-	if(otherIn.output) fprintf(f3, "%e %e %e\n", f, sSq, sqrt(psd->data[i]));
-	if(otherIn.output) fprintf(f4, "%e %e\n", f, hSq);
+          else
+            rhosq += sSq;
+        }
+        signal2->data[i] = sRe / sqrt(psd->data[i]);
+        signal2->data[j] = sIm / sqrt(psd->data[i]);
+        if( otherIn.realImag == 1 )
+        {
+          if(otherIn.output) fprintf(f3, "%e %e %e %e\n", f, 
+            sRe/(psd->data[i]), sIm/(psd->data[i]), psd->data[i]);
+          if(otherIn.output) fprintf(f4, "%e %e %e\n", f, sRe, sIm);
+        }
+        else
+        {
+          if(otherIn.output) fprintf(f3, "%e %e %e\n", 
+            f, sMag, psd->data[i]);
+          if(otherIn.output) fprintf(f4, "%e %e\n", f, hMag);
+        }
       }
       else
       {
         signal2->data[i] = 0.;
-	signal2->data[j] = 0.;
-	sSq = 0.;
+        signal2->data[j] = 0.;
+        sSq = 0.;
       }
     }
-    /* The normalization for rho^2 is dt^2 df. dt^2 is for two factors
-     * of H(f), and df for the SNR integral.  A factor of 4 comes from
-     * the definition of the scalar product.
+    /* Above, 'rhosq' = \Sum_i | h(f_i) |^2 / Sn(f_i)
+     * Therefore, SNR^2 = 4 \int | h(f) |^2 / Sn(f) df ~= 4 * rhosq * df
+     * so SNR = rho = sqrt(4 * rhosq * df)
      */
-    rho = sqrt(4. * rhosq *dt*dt*df);
-    /* Distance in Mpc at which the SNR is 10 */
+    rho = sqrt(4. * rhosq * df);
+    /* Distance in Mpc at which the SNR is 8 */
     dist = (params.distance/(LAL_PC_SI*1e6))*(rho/rhoDet);
-    fprintf(stdout, "%e %e %e %e %e %d\n", params.mass1, params.mass2,
-      params.totalMass, rho, dist, signal2->length);
+    if( otherIn.PrintParameters )
+    {
+      fprintf(stderr, "mass1: %e, mass2: %e, # samples: %d,\nSNR: %e, " 
+          "distance at which SNR=8: %e\n", params.mass1, params.mass2, 
+          signal2->length, rho, dist);
+    }
     signal2->data[0] = 0.;
     signal2->data[nby2] = 0.;
     SUB( LALREAL4VectorFFT(&status, signal1, signal2, revp), &status);
@@ -338,10 +409,12 @@ int main (int argc , char **argv) {
   SUB( LALSDestroyVector(&status, &signal2), &status);
   SUB( LALDDestroyVector(&status, &psd), &status);
 
-  fprintf(stderr, "fFinal = %f Hz tFinal = %f seconds\n" , params.fFinal, params.tC) ;
   if (otherIn.PrintParameters)
   {
-    fprintf(stderr, "the inspiral structure after the call to the waveform generation:\n");
+    fprintf(stderr, "fFinal = %f Hz tFinal = %f seconds\n" , 
+        params.fFinal, params.tC);
+    fprintf(stderr, "the inspiral structure after the call "
+        "to the waveform generation:\n");
     SUB( LALInspiralITStructurePrint(&status, params),  &status);
   }
   /*
@@ -354,71 +427,108 @@ int main (int argc , char **argv) {
     fclose(f3);
     fclose(f4);
   }
-  if(otherIn.output)
-  {
-    unsigned int useed;
-    REAL4Vector  *buff=NULL;
-    static RandomParams *randomparams;
-
-    useed = 1234567890;
-
-    SUB( LALSCreateVector(&status, &(buff), n), &status);
-    LALCreateRandomParams(&status, &randomparams, useed);
-    LALNormalDeviates(&status, buff, randomparams);
-    LALDestroyRandomParams(&status, &randomparams);
-    sprintf(name1, "wave-Random-%d.dat", params.approximant);
-    f4 = fopen(name1, "w");
-    printf_timeseries (f4, n, buff->data, dt);
-    SUB( LALSDestroyVector(&status, &(buff)), &status);
-    fclose(f4);
-
-  }
 
   return 0;
 }
 
 void
-ParseParameters(	UINT4 			argc,
-			CHAR 			**argv,
-			OtherParamIn    	*otherIn)
+ParseParameters( UINT4              argc,
+                 CHAR             **argv,
+                 OtherParamIn     *otherIn)
 {
-  UINT4 		i = 1;
+  UINT4 i = 1, i1 = 0;
+  INT4 order = 0;
 
   while(i < argc)
     {
-      if ( strcmp(argv[i],	"--verbose") 	== 0 )
+      if ( strcmp(argv[i],    "--verbose")     == 0 )
       {
-	otherIn->PrintParameters = 1;
+        otherIn->PrintParameters = 1;
       }
-      else if ( strcmp(argv[i],	"--output") 	== 0 )
+      else if ( strcmp(argv[i],    "--output")     == 0 )
       {
-	otherIn->output = 1;
+        otherIn->output = atoi(argv[++i]);
       }
-      else if ( strcmp(argv[i],	"--taper") 	== 0 )
+      else if ( strcmp(argv[i],    "--taper")     == 0 )
       {
-	otherIn->taper = atoi(argv[++i]);
+        otherIn->taper = atoi(argv[++i]);
       }
-      else if ( strcmp(argv[i],	"--psd-data-file") == 0 )
+      else if ( strcmp(argv[i],    "--psd-data-file") == 0 )
       {
-	otherIn->psd_data_file = 1;
+        otherIn->psd_data_file = 1;
       }
-      else if( strcmp(argv[i],	"--h") 	== 0 )
+      else if( strcmp(argv[i],    "--h")     == 0 )
       {
-	LALGenerateInspiralWaveformHelp();
+        LALGenerateInspiralWaveformHelp();
       }
-      else if( strcmp(argv[i],"-h") 	== 0 )
+      else if( strcmp(argv[i],"-h")     == 0 )
       {
-	LALGenerateInspiralWaveformHelp();
+        LALGenerateInspiralWaveformHelp();
       }
-      else if( strcmp(argv[i],"-help") 	== 0 )
+      else if( strcmp(argv[i],"-help")     == 0 )
       {
-	LALGenerateInspiralWaveformHelp();
+        LALGenerateInspiralWaveformHelp();
       }
-      else if( strcmp(argv[i],"--help")	== 0 )
+      else if( strcmp(argv[i],"--help")    == 0 )
       {
-	LALGenerateInspiralWaveformHelp();
+        LALGenerateInspiralWaveformHelp();
+      }
+      else if( strcmp(argv[i],"--tag") == 0 )
+      {
+        strncpy(otherIn->tag, argv[++i], sizeof(otherIn->tag));
+      }
+      else if( strcmp(argv[i],"--approximant") == 0 )
+      {
+        i1 = i + 1;
+      }
+      else if( strcmp(argv[i],"--order") == 0 )
+      {
+        order = atoi(argv[++i]);
+      }
+      else if( strcmp(argv[i],"--real-imag") == 0 )
+      {
+        otherIn->realImag = atoi(argv[++i]);
       }
       i++;
+    }
+    if( otherIn->output == 3 )
+    { /* concatenate approximant and order in a string for SimInspiralTable */
+      strcpy( otherIn->waveformString, argv[i1] );
+      switch( order )
+      {
+        case 8:
+          strcat( otherIn->waveformString, "pseudoFourPN" );
+          break;
+        case 7:
+          strcat( otherIn->waveformString, "threePointFivePN" );
+          break;
+        case 6:
+          strcat( otherIn->waveformString, "threePN" );
+          break;
+        case 5:
+          strcat( otherIn->waveformString, "twoPointFivePN" );
+          break;
+        case 4:
+          strcat( otherIn->waveformString, "twoPN" );
+          break;
+        case 3:
+          strcat( otherIn->waveformString, "onePointFivePN" );
+          break;
+        case 2:
+          strcat( otherIn->waveformString, "onePN" );
+          break;
+        case 1:
+          strcat( otherIn->waveformString, "oneHalfPN" );
+          break;
+        case 0:
+	  printf(" WARNING: you have chose Newtonian order\n");
+          strcat( otherIn->waveformString, "newtonian" );
+          break;
+        default:
+          printf("Invalid PN order requested, using 3.5PN\n");
+          strcat( otherIn->waveformString, "threePointFivePN" );
+          break;
+      }
     }
 }
 
@@ -426,11 +536,36 @@ ParseParameters(	UINT4 			argc,
 void LALGenerateInspiralWaveformHelp(void)
 {
 
-  fprintf(stderr,"LALGenerateInspiralWaveform Help\n");
-  fprintf(stderr, "-----------------------------------------------\n");
-  fprintf(stderr, "--h for help\n");
-  fprintf(stderr, "--verbose to print Inspiral Template parameters\n");
-  fprintf(stderr, "-----------------------------------------------\n");
+  fprintf(stderr,"GenerateInspiralWaveform Help\n");
+  fprintf(stderr,"---------------------------------------------------------\n");
+  fprintf(stderr,"All unspecified parameters use default values.\n");
+  fprintf(stderr,"If you don't know what a parameter does it's");
+  fprintf(stderr," (probably) safe to omit it.\n");
+  fprintf(stderr,"---------------------------------------------------------\n");
+  fprintf(stderr,"--h for help\n");
+  fprintf(stderr,"--verbose to print Inspiral Template parameters\n");
+  fprintf(stderr,"--tag TAG adds 'TAG' identifier to file names\n");
+  fprintf(stderr,"--psd-data-file file.dat reads noise curve from file.dat (NOT WORKING YET!)\n");
+  fprintf(stderr,"\t Initial LIGO design PSD used if no PSD file is given\n");
+  fprintf(stderr,"--output=N to generate time and freq. domain waveforms:\n");
+  fprintf(stderr,"         N = 0 - do not output any files (default)\n");
+  fprintf(stderr,"         N = 1 - output plus polarization h+\n");
+  fprintf(stderr,"         N = 2 - output cross polarization hx\n");
+  fprintf(stderr,"         N = 3 - output measured strain h = F+ h+ + Fx hx\n");
+  fprintf(stderr,"For N != 0, the waveform will be written to these files:\n");
+  fprintf(stderr,"         wave-TD-TAG.dat (time domain)\n");
+  fprintf(stderr,"         wave-OT-TAG.dat (TD (Wiener) optimal template)\n");
+  fprintf(stderr,"         wave-FD-TAG.dat (frequency domain)\n");
+  fprintf(stderr,"         wave-NW-TAG.dat (noise-weighted FD)\n");
+  fprintf(stderr,"Note: Not all approximants support all types of output\n");
+  fprintf(stderr,"         N = 1 calls LALInspiralWave()\n");
+  fprintf(stderr,"         N = 2 calls LALInspiralWaveTemplates()\n");
+  fprintf(stderr,"         N = 3 calls LALInspiralWaveForInjection() via LALGenerateInspiral()\n");
+  fprintf(stderr,"If the approximant you want fails, make it callable from these functions\n");
+  fprintf(stderr,"--real-imag=N controls output of complex FD and NW waveforms:\n");
+  fprintf(stderr,"         N = 0 - output | h(f) | (default)\n");
+  fprintf(stderr,"         N = 1 - output Re(h(f)) and Im(h(f))\n");
+  fprintf(stderr,"---------------------------------------------------------\n");
   LALInspiralITStructureHelp();
 
 }
@@ -509,6 +644,159 @@ void readPSD(REAL8 *psd, REAL4 Df, UINT4 length)
     psd[j] = 0;
   }
   fclose(f1);
+
+  return;
+}
+
+void buildhoft(LALStatus *status, REAL4Vector *wave, 
+        InspiralTemplate *params, OtherParamIn *otherIn)
+{
+  REAL4 Fp, Fc, hp, hc, A1, A2, cosshift, sinshift;
+  REAL4 cosphi, sinphi, theta, phi, psi;
+  UINT4 i, len;
+  CoherentGW waveform;
+  memset( &waveform, 0, sizeof(CoherentGW) );
+  PPNParamStruc ppnParams;
+  memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+  ppnParams.deltaT   = 1./params->tSampling;
+  ppnParams.lengthIn = 0;
+  ppnParams.ppn      = NULL;
+
+  /* Construct a SimInspiralTable... */
+  SimInspiralTable simTable;
+  memset( &simTable, 0, sizeof(SimInspiralTable) );
+  /* ... and populate it with desired parameter values */
+  /*simTable.waveform = otherIn->waveformString;*/
+  memcpy( simTable.waveform, otherIn->waveformString, 
+          sizeof(otherIn->waveformString) );
+
+  if (strstr(simTable.waveform,"PhenSpinTaylorRD")) {
+    if (params->axisChoice==OrbitalL) {
+      strcat(simTable.waveform,"OrbitalL");}
+    else if (params->axisChoice==TotalJ) {
+      strcat(simTable.waveform,"TotalJ");
+    }
+    if (params->inspiralOnly==1) {
+      strcat(simTable.waveform,"inspiralOnly");
+    }
+    if (params->fixedStep==1) {
+      strcat(simTable.waveform,"fixedStep");
+    }
+  }
+  switch (params->spinInteraction) {
+  case LAL_NOInter:
+    strcat(simTable.waveform,"LAL_NOInter");
+    break;
+  case LAL_SOInter:
+    strcat(simTable.waveform,"LAL_SOInter");
+    break;
+  case LAL_SSInter:
+    strcat(simTable.waveform,"LAL_SSInter");
+    break;
+  case LAL_SSselfInter:
+    strcat(simTable.waveform,"LAL_SSselfInter");
+    break;
+  case LAL_QMInter:
+    strcat(simTable.waveform,"LAL_QMInter");
+    break;
+  case LAL_AllInter:
+    strcat(simTable.waveform,"LAL_AllInter");
+    break;
+  }
+
+  simTable.mass1 = params->mass1;
+  simTable.mass2 = params->mass2;
+  simTable.eta = params->eta;
+  simTable.mchirp = params->chirpMass;
+  simTable.distance = params->distance;
+  simTable.longitude = params->sourceTheta;
+  simTable.latitude = params->sourcePhi;
+  simTable.inclination = params->inclination;
+  simTable.coa_phase = params->startPhase; /* Is this what I want?? */
+  simTable.polarization = params->polarisationAngle;
+  simTable.psi0 = params->psi0;
+  simTable.psi3 = params->psi3;
+  simTable.alpha = params->alpha;
+  simTable.alpha1 = params->alpha1;
+  simTable.alpha2 = params->alpha2;
+  simTable.alpha3 = params->alpha3;
+  simTable.alpha4 = params->alpha4;
+  simTable.alpha5 = params->alpha5;
+  simTable.alpha6 = params->alpha6;
+  simTable.beta = params->beta;
+  simTable.spin1x = params->spin1[0];
+  simTable.spin1y = params->spin1[1];
+  simTable.spin1z = params->spin1[2];
+  simTable.spin2x = params->spin2[0];
+  simTable.spin2y = params->spin2[1];
+  simTable.spin2z = params->spin2[2];
+  simTable.theta0 = params->orbitTheta0;
+  simTable.phi0 = params->orbitPhi0;
+  simTable.f_lower = params->fLower;
+  simTable.f_final = params->fFinal;
+  simTable.amp_order = params->ampOrder;
+  sprintf(simTable.taper, "TAPER_NONE");
+  /* We'll taper (or not) later in code, so just set TAPER_NONE here */
+    
+  theta = params->sourceTheta;
+  phi   = params->sourcePhi;
+  psi   = params->polarisationAngle;
+  Fp    = 0.5 * (1. + cos(theta)*cos(theta) ) * cos(2.*phi) * cos(2.*psi)
+              - cos(theta) * sin(2.*phi) * sin(2.*psi);
+  Fc    = 0.5 * (1. + cos(theta)*cos(theta) ) * cos(2.*phi) * sin(2.*psi)
+              + cos(theta) * sin(2.*phi) * cos(2.*psi);
+
+  /* This function fills a CoherentGW with info to construct h(t) */
+  LALGenerateInspiral(status, &waveform, &simTable, &ppnParams);
+
+    
+  if( waveform.h == NULL ) /* build h(t) from a, phi, shift */
+  {
+    len = waveform.phi->data->length;
+    /* Some approximants do not set waveform.shift. We use shift(t) if set. */
+    /* Otherwise, we assume the shift is a constant 0 */
+    if( waveform.shift == NULL )
+    {
+      for(i = 0; i < len; i++)
+      {
+        A1 = waveform.a->data->data[2*i];
+        A2 = waveform.a->data->data[2*i+1];
+        cosshift = 1.;
+        sinshift = 0.;
+        cosphi = cos( waveform.phi->data->data[i] );
+        sinphi = sin( waveform.phi->data->data[i] );
+        hp = A1 * cosshift * cosphi - A2 * sinshift * sinphi;
+        hc = A1 * sinshift * cosphi + A2 * cosshift * sinphi;
+        wave->data[i] = Fp * hp + Fc * hc;
+      }
+    }
+    else
+    {
+      for(i = 0; i < len; i++)
+      {
+        A1 = waveform.a->data->data[2*i];
+        A2 = waveform.a->data->data[2*i+1];
+        cosshift = cos( waveform.shift->data->data[i] );
+        sinshift = sin( waveform.shift->data->data[i] );
+        cosphi = cos( waveform.phi->data->data[i] );
+        sinphi = sin( waveform.phi->data->data[i] );
+        hp = A1 * cosshift * cosphi - A2 * sinshift * sinphi;
+        hc = A1 * sinshift * cosphi + A2 * cosshift * sinphi;
+        wave->data[i] = Fp * hp + Fc * hc;
+      }
+    }
+  }
+  else /* build h(t) from h+ and hx in waveform->h */
+  {
+    len = waveform.h->data->length;
+    for(i = 0; i < len; i++)
+    {
+      wave->data[i] = Fp * waveform.h->data->data[2*i] 
+                    + Fc * waveform.h->data->data[2*i+1];
+    }
+  }
+
+  for (i=len;i<wave->length;i++) wave->data[i]=0.;
 
   return;
 }

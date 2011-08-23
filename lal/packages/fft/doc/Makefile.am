@@ -1,9 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-DOCSOURCEFILES = fft.tex
-MOSTLYCLEANFILES = .dvi-dep
-CLEANFILES = main.dvi main.pdf main.ps
+DOCSOURCEFILES = fft.dox
+MOSTLYCLEANFILES =
+CLEANFILES =
 EXTRA_DIST = $(DOCSOURCEFILES)
-dvi-local: .dvi-dep
-distclean-local:
-	-rm -fr .adoc
-@DOCMKFILE@

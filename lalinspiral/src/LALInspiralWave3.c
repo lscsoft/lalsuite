@@ -17,62 +17,53 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralWave3CV">
+/**
 
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief These modules generate a time-domain chirp waveform of type #TaylorT3.
 
-\subsection{Module \texttt{LALInspiralWave3.c} and \texttt{LALInspiralWave3Templates.c}}
-These modules generate a time-domain chirp waveform of type {\tt TaylorT3}.
+\heading{Prototypes}
 
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralWave3CP}
-\index{\verb&LALInspiralWave3()&}
-\begin{itemize}
-\item {\tt output:} Output containing the inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
-\vspace{0.1in}
-\input{LALInspiralWave3TemplatesCP}
-\index{\verb&LALInspiralWave3Templates()&}
-\begin{itemize}
-\item {\tt output1:} Output containing the 0-phase inspiral waveform.
-\item {\tt output2:} Output containing the $\pi/2$-phase inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+<tt>LALInspiralWave3()</tt>
+<ul>
+<li> \c output: Output containing the inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
 
 
-\subsubsection*{Description}
-{\tt LALInspiralWave3} generates {\tt TaylorT3} approximant which
+<tt>LALInspiralWave3Templates()</tt>
+<ul>
+<li> \c output1: Output containing the 0-phase inspiral waveform.</li>
+<li> \c output2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
+
+
+\heading{Description}
+LALInspiralWave3() generates #TaylorT3 approximant which
 corresponds to the case wherein
 the phase of the waveform is given as an explicit function of time
-as in Equation (\ref{eq:InspiralWavePhase3}).
+as in Equation.\eqref{eq_InspiralWavePhase3}.
 
-{\tt LALInspiralWave3Templates} simultaneously generates
+LALInspiralWave3Templates() simultaneously generates
 two inspiral waveforms and the two differ in
-phase by $\pi/2$.
+phase by \f$\pi/2\f$.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
+\code
+LALInspiralParameterCalc()
+LALInspiralChooseModel()
+LALInspiralSetup()
+LALInspiralPhasing3 (via expnFunc)()
+LALInspiralFrequency3 (via expnFunc)()
+\endcode
 
-\texttt{LALInspiralParameterCalc} \\
-\texttt{LALInspiralChooseModel} \\
-\texttt{LALInspiralSetup} \\
-\texttt{LALInspiralPhasing3} (via expnFunc)\\
-\texttt{LALInspiralFrequency3}. (via expnFunc)\\
-
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralWave3CV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
@@ -83,12 +74,12 @@ phase by $\pi/2$.
 
 typedef struct
 {
-	void (*func)(LALStatus *status, REAL8 *f, REAL8 tC, expnCoeffs *ak);
+	REAL8 (*func)(REAL8 tC, expnCoeffs *ak);
 	expnCoeffs ak;
 }
 ChirptimeFromFreqIn;
 
-static void LALInspiralFrequency3Wrapper(LALStatus *status, REAL8 *f, REAL8 tC, void *pars);
+static REAL8 XLALInspiralFrequency3Wrapper(REAL8 tC, void *pars);
 
 static void
 LALInspiralWave3Engine(
@@ -106,7 +97,7 @@ LALInspiralWave3Engine(
 
 NRCSID (LALINSPIRALWAVE3C, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWave3CP"> */
+
 
 void
 LALInspiralWave3 (
@@ -115,7 +106,7 @@ LALInspiralWave3 (
    InspiralTemplate *params
    )
 
-{ /* </lalVerbatim>  */
+{
 
 
   UINT4 count;
@@ -156,29 +147,29 @@ LALInspiralWave3 (
   RETURN(status);
 }
 
-static void LALInspiralFrequency3Wrapper(LALStatus *status, REAL8 *f, REAL8 tC, void *pars)
+static REAL8 XLALInspiralFrequency3Wrapper(REAL8 tC, void *pars)
 {
+  static const char *func = "XLALInspiralFrequency3Wrapper";
 
   ChirptimeFromFreqIn *in;
-  REAL8 freq;
-  INITSTATUS (status, "LALInspiralWave3", LALINSPIRALWAVE3C);
-  ATTATCHSTATUSPTR(status);
+  REAL8 freq, f;
 
   in = (ChirptimeFromFreqIn *) pars;
-  in->func(status->statusPtr, &freq, tC, &(in->ak));
-  *f = freq - in->ak.f0;
+  freq = in->func(tC, &(in->ak));
+  if (XLAL_IS_REAL8_FAIL_NAN(freq))
+    XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+  f = freq - in->ak.f0;
 
   /*
   fprintf(stderr, "Here freq=%e f=%e tc=%e f0=%e\n", freq, *f, tC, in->ak.f0);
    */
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return f;
 }
 
 NRCSID (LALINSPIRALWAVE3TEMPLATESC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWave3TemplatesCP"> */
+
 
 void
 LALInspiralWave3Templates (
@@ -188,7 +179,7 @@ LALInspiralWave3Templates (
    InspiralTemplate *params
    )
 
-{ /* </lalVerbatim>  */
+{
 
   UINT4 count;
 
@@ -240,7 +231,7 @@ LALInspiralWave3Templates (
 
 NRCSID (LALINSPIRALWAVE3FORINJECTIONC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWave3ForInjectionCP"> */
+
 
 void
 LALInspiralWave3ForInjection (
@@ -249,7 +240,7 @@ LALInspiralWave3ForInjection (
 			      InspiralTemplate *params,
 			      PPNParamStruc  *ppnParams)
 
-     /* </lalVerbatim>  */
+
 {
 
   UINT4 count, i;
@@ -492,7 +483,8 @@ LALInspiralWave3Engine(
   INT4 i, startShift, count;
   REAL8 dt, fu, eta, tc, totalMass, t, td, c1, phi0, phi1, phi;
   REAL8 v, v2, f, fHigh, tmax, fOld, phase, omega;
-  DFindRootIn rootIn;
+  REAL8 xmin,xmax,xacc;
+  REAL8 (*frequencyFunction)(REAL8, void *);
   expnFunc func;
   expnCoeffs ak;
   ChirptimeFromFreqIn timeIn;
@@ -567,25 +559,27 @@ LALInspiralWave3Engine(
 
   timeIn.func = func.frequency3;
   timeIn.ak = ak;
-  rootIn.function = &LALInspiralFrequency3Wrapper;
-  rootIn.xmin = c1*params->tC/2.;
-  rootIn.xmax = c1*params->tC*2.;
-  rootIn.xacc = 1.e-6;
+  frequencyFunction = &XLALInspiralFrequency3Wrapper;
+  xmin = c1*params->tC/2.;
+  xmax = c1*params->tC*2.;
+  xacc = 1.e-6;
   pars = (void*) &timeIn;
   /* tc is the instant of coalescence */
 
-  rootIn.xmax = c1*params->tC*3 + 5.; /* we add 5 so that if tC is small then xmax
-                                         is always greater than a given value (here 5)*/
+  xmax = c1*params->tC*3 + 5.; /* we add 5 so that if tC is small then xmax
+                                  is always greater than a given value (here 5)*/
 
-  /* for x in [rootIn.xmin, rootIn.xmax], we search the value which gives the max frequency.
+  /* for x in [xmin, xmax], we search the value which gives the max frequency.
    and keep the corresponding rootIn.xmin. */
 
 
 
-  for (tc = c1*params->tC/1000.; tc < rootIn.xmax; tc+=c1*params->tC/1000.){
-    LALInspiralFrequency3Wrapper(status->statusPtr, &temp,  tc , pars);
+  for (tc = c1*params->tC/1000.; tc < xmax; tc+=c1*params->tC/1000.){
+    temp = XLALInspiralFrequency3Wrapper(tc , pars);
+    if (XLAL_IS_REAL8_FAIL_NAN(temp))
+      ABORTXLAL(status);
     if (temp > tempMax) {
-      rootIn.xmin = tc;
+      xmin = tc;
       tempMax = temp;
     }
     if (temp < tempMin) {
@@ -596,8 +590,9 @@ LALInspiralWave3Engine(
   /* if we have found a value positive then everything should be fine in the
      BissectionFindRoot function */
   if (tempMax > 0  &&  tempMin < 0){
-    LALDBisectionFindRoot (status->statusPtr, &tc, &rootIn, pars);
-    CHECKSTATUSPTR(status);
+    tc = XLALDBisectionFindRoot (frequencyFunction, xmin, xmax, xacc, pars);
+    if (XLAL_IS_REAL8_FAIL_NAN(tc))
+      ABORTXLAL(status);
   }
   else if (a)
   {
@@ -616,10 +611,12 @@ LALInspiralWave3Engine(
 
   t=0.0;
   td = c1*(tc-t);
-  func.phasing3(status->statusPtr, &phase, td, &ak);
-  CHECKSTATUSPTR(status);
-  func.frequency3(status->statusPtr, &f, td, &ak);
-  CHECKSTATUSPTR(status);
+  phase = func.phasing3(td, &ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(phase))
+    ABORTXLAL(status);
+  f = func.frequency3(td, &ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(f))
+    ABORTXLAL(status);
   phi0=-phase+phi;
   phi1=phi0+LAL_PI_2;
 
@@ -676,10 +673,12 @@ LALInspiralWave3Engine(
     ++count;
     t=count*dt;
     td = c1*(tc-t);
-    func.phasing3(status->statusPtr, &phase, td, &ak);
-    CHECKSTATUSPTR(status);
-    func.frequency3(status->statusPtr, &f, td, &ak);
-    CHECKSTATUSPTR(status);
+    phase = func.phasing3(td, &ak);
+    if (XLAL_IS_REAL8_FAIL_NAN(phase))
+      ABORTXLAL(status);
+    f = func.frequency3(td, &ak);
+    if (XLAL_IS_REAL8_FAIL_NAN(f))
+      ABORTXLAL(status);
   }
   params->fFinal = fOld;
   if (output1 && !output2) params->tC = t;

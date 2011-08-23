@@ -23,49 +23,40 @@
  *
  * Author: Brown D. A., Spinning BCV-Modifications: Jones, G
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpBCVSpinDataCV">
-Author: Brown, D. A., Spinning BCV-Modifications: Jones, G.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpBCVSpinData.c}}
-\label{ss:FindChirpBCVSpinData.c}
+\author Brown, D. A., Spinning BCV-Modifications: Jones, G.
+\file
+\ingroup FindChirpBCVSpin_h
 
-Provides functions to condition data prior to filtering with spinning BCV
+\brief Provides functions to condition data prior to filtering with spinning BCV
 detection templates.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpBCVDataCP}
-\idx{LALFindChirpBCVData()}
+\heading{Prototypes}
 
-The function \texttt{LALFindChirpBCVSpinData()} constions the data
+The function <tt>LALFindChirpBCVSpinData()</tt> constions the data
 as described by the algorithm below.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 Blah.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpBCVSpinDataCV}}
-</lalLaTeX>
-#endif
+
+
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -82,7 +73,7 @@ LALDestroyVector()
 
 NRCSID (FINDCHIRPBCVSPINDATAC, "$Id$");
 
-/* <lalVerbatim file="FindChirpBCVSpinDataCP"> */
+
 void
 LALFindChirpBCVSpinData (
     LALStatus                  *status,
@@ -90,7 +81,7 @@ LALFindChirpBCVSpinData (
     DataSegmentVector          *dataSegVec,
     FindChirpDataParams        *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 i, k;
   UINT4                 cut;

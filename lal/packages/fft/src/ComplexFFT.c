@@ -17,54 +17,39 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="ComplexFFTCV">
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Module \texttt{ComplexFFT.c}}
- * \label{ss:ComplexFFT.c}
+/**
+ * \addtogroup ComplexFFT_h
  *
- * Functions for performing complex FFTs.
+ * \heading{Description}
  *
- * \subsubsection*{Prototypes}
- * \vspace{0.1in}
- * \input{ComplexFFTCP}
- * \idx{LALCreateForwardComplexFFTPlan()}
- * \idx{LALCreateReverseComplexFFTPlan()}
- * \idx{LALDestroyComplexFFTPlan()}
- * \idx{LALCOMPLEX8VectorFFT()}
+ * This package provides a (X)LAL-style interface with the FFTW fast Fourier
+ * transform package [\ref fj_1998].
  *
- * \subsubsection*{Description}
- *
- * This package provides a LAL-style interface with the FFTW fast Fourier
- * transform package~\cite{fj:1998}.
- *
- * The routines \texttt{LALCreateForwardComplexFFTPlan()} and
- * \texttt{LALCreateReverseComplexFFTPlan()} create plans for computing the
+ * The routines LALCreateForwardComplexFFTPlan() and
+ * LALCreateReverseComplexFFTPlan() create plans for computing the
  * forward and reverse FFTs of a given size.  The optimum plan is either
  * estimated (reasonably fast) if the measure flag is zero, or measured (can be
  * time-consuming, but gives better performance) if the measure flag is
- * non-zero.  The routine \texttt{LALDestroyComplexFFTPlan()} destroys either
+ * non-zero.  The routine LALDestroyComplexFFTPlan() destroys either
  * of these flavours of plans.
  *
- * The routine \texttt{LALCOMPLEX8VectorFFT()} performs either the forward or
- * reverse FFT depending on the plan.  The discrete Fourier transform $H_k$,
- * $k=0\ldots n-1$ of a vector $h_j$, $j=0\ldots n-1$, of length $n$ is defined
+ * The routine LALCOMPLEX8VectorFFT() performs either the forward or
+ * reverse FFT depending on the plan.  The discrete Fourier transform \f$H_k\f$,
+ * \f$k=0\ldots n-1\f$ of a vector \f$h_j\f$, \f$j=0\ldots n-1\f$, of length \f$n\f$ is defined
  * by
- * \[
+ * \f[
  *   H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
- * \]
- * and, similarly, the \emph{inverse} Fourier transform is defined by
- * \[
+ * \f]
+ * and, similarly, the \e inverse Fourier transform is defined by
+ * \f[
  *   h_j = \frac{1}{n}\sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}.
- * \]
- * However, the present implementation of the \emph{reverse} FFT omits the
- * factor of $1/n$.  The input and output vectors must be distinct.
+ * \f]
+ * However, the present implementation of the \e reverse FFT omits the
+ * factor of \f$1/n\f$.  The input and output vectors must be distinct.
  *
- * \subsubsection*{Operating Instructions}
+ * \heading{Operating Instructions}
  *
- * \begin{verbatim}
+ * \code
  * const UINT4 n = 17;
  * static LALStatus status;
  * ComplexFFTPlan *pfwd = NULL;
@@ -89,36 +74,36 @@
  * LALCDestroyVector( &status, &avec );
  * LALCDestroyVector( &status, &bvec );
  * LALCDestroyVector( &status, &cvec );
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Algorithm}
+ * \heading{Algorithm}
  *
- * The FFTW~\cite{fj:1998} is used.
+ * The FFTW [\ref fj_1998] is used.
  *
- * \subsubsection*{Uses}
+ * \heading{Uses}
  *
- * \subsubsection*{Notes}
+ * \heading{Notes}
  *
- * \begin{enumerate}
- * \item The sign convention used here is the opposite of the definition in
- * \textit{Numerical Recipes}~\cite{ptvf:1992}, but agrees with the one used
- * by FFTW~\cite{fj:1998} and the other LIGO software components.
- * \item The result of the inverse FFT must be multiplied by $1/n$ to recover
- * the original vector.  This is different from the \texttt{datacondAPI} where
+ * <ol>
+ * <li> The sign convention used here is the opposite of the definition in
+ * <em>Numerical Recipes</em> [\ref ptvf1992], but agrees with the one used
+ * by FFTW [\ref fj_1998] and the other LIGO software components.
+ * </li><li> The result of the inverse FFT must be multiplied by \f$1/n\f$ to recover
+ * the original vector.  This is different from the \c datacondAPI where
  * the factor is applied by default.
- * \item The size $n$ of the transform can be any positive integer; the
- * performance is $O(n\log n)$.  However, better performance is obtained if $n$
+ * </li><li> The size \f$n\f$ of the transform can be any positive integer; the
+ * performance is \f$O(n\log n)\f$.  However, better performance is obtained if \f$n\f$
  * is the product of powers of 2, 3, 5, 7, and zero or one power of either 11
- * or 13.  Transforms when $n$ is a power of 2 are especially fast.  See
- * Ref.~\cite{fj:1998}.
- * \item LALMalloc() is used by all the fftw routines.
- * \item The input and output vectors for \texttt+LALCOMPLEX8VectorFFT()+ must
+ * or 13.  Transforms when \f$n\f$ is a power of 2 are especially fast.  See
+ * Ref. [\ref fj_1998].
+ * </li><li> LALMalloc() is used by all the fftw routines.
+ * </li><li> The input and output vectors for LALCOMPLEX8VectorFFT() must
  * be distinct.
- * \end{enumerate}
+ * </li></ol>
  *
- * \vfill{\footnotesize\input{ComplexFFTCV}}
  *
- **** </lalLaTeX> */
+ *
+*/
 
 #include <config.h>
 
@@ -132,7 +117,9 @@
 NRCSID( COMPLEXFFTC, "$Id$" );
 
 
-/** Plan to perform an FFT of COMPLEX8 data */
+/** Plan to perform an FFT of COMPLEX8 data
+ * \ingroup ComplexFFT_h
+ */
 struct
 tagCOMPLEX8FFTPlan
 {
@@ -141,7 +128,9 @@ tagCOMPLEX8FFTPlan
   fftwf_plan plan; /*< the FFTW plan */
 };
 
-/** Plan to perform an FFT of COMPLEX16 data */
+/** Plan to perform an FFT of COMPLEX16 data
+ * \ingroup ComplexFFT_h
+ */
 struct
 tagCOMPLEX16FFTPlan
 {
@@ -432,7 +421,7 @@ int XLALCOMPLEX16VectorFFT( COMPLEX16Vector *output, COMPLEX16Vector *input,
  */
 
 
-/* <lalVerbatim file="ComplexFFTCP"> */
+
 void
 LALCreateForwardCOMPLEX8FFTPlan(
     LALStatus       *status,
@@ -440,7 +429,7 @@ LALCreateForwardCOMPLEX8FFTPlan(
     UINT4            size,
     INT4             measure
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALCreateForwardCOMPLEX8FFTPlan", COMPLEXFFTC );
   XLALPrintDeprecationWarning("LALCreateForwardCOMPLEX8FFTPlan", "XLALCreateForwardCOMPLEX8FFTPlan");
 
@@ -470,7 +459,7 @@ LALCreateForwardCOMPLEX8FFTPlan(
 }
 
 
-/* <lalVerbatim file="ComplexFFTCP"> */
+
 void
 LALCreateReverseCOMPLEX8FFTPlan(
     LALStatus       *status,
@@ -478,7 +467,7 @@ LALCreateReverseCOMPLEX8FFTPlan(
     UINT4            size,
     INT4             measure
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALCreateReverseCOMPLEX8FFTPlan", COMPLEXFFTC );
   XLALPrintDeprecationWarning("LALCreateReverseCOMPLEX8FFTPlan", "XLALCreateReverseCOMPLEX8FFTPlan");
 
@@ -508,13 +497,13 @@ LALCreateReverseCOMPLEX8FFTPlan(
 }
 
 
-/* <lalVerbatim file="ComplexFFTCP"> */
+
 void
 LALDestroyCOMPLEX8FFTPlan (
     LALStatus       *status,
     COMPLEX8FFTPlan **plan
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALDestroyCOMPLEX8FFTPlan", COMPLEXFFTC );
   XLALPrintDeprecationWarning("LALDestroyCOMPLEX8FFTPlan", "XLALDestroyCOMPLEX8FFTPlan");
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -536,7 +525,7 @@ LALDestroyCOMPLEX8FFTPlan (
 }
 
 
-/* <lalVerbatim file="ComplexFFTCP"> */
+
 void
 LALCOMPLEX8VectorFFT (
     LALStatus      *status,
@@ -544,7 +533,7 @@ LALCOMPLEX8VectorFFT (
     COMPLEX8Vector *input,
     COMPLEX8FFTPlan *plan
     )
-{ /* </lalVerbatim> */
+{
   int code;
   INITSTATUS( status, "LALCOMPLEX8VectorFFT", COMPLEXFFTC );
   XLALPrintDeprecationWarning("LALCOMPLEX8VectorFFT", "XLALCOMPLEX8VectorFFT");
@@ -605,7 +594,7 @@ LALCOMPLEX8VectorFFT (
  */
 
 
-/* <lalVerbatim file="ComplexFFTCP"> */
+
 void
 LALCreateForwardCOMPLEX16FFTPlan(
     LALStatus       *status,
@@ -613,7 +602,7 @@ LALCreateForwardCOMPLEX16FFTPlan(
     UINT4            size,
     INT4             measure
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALCreateForwardCOMPLEX16FFTPlan", COMPLEXFFTC );
   XLALPrintDeprecationWarning("LALCreateForwardCOMPLEX16FFTPlan", "XLALCreateForwardCOMPLEX16FFTPlan");
 
@@ -643,7 +632,7 @@ LALCreateForwardCOMPLEX16FFTPlan(
 }
 
 
-/* <lalVerbatim file="ComplexFFTCP"> */
+
 void
 LALCreateReverseCOMPLEX16FFTPlan(
     LALStatus       *status,
@@ -651,7 +640,7 @@ LALCreateReverseCOMPLEX16FFTPlan(
     UINT4            size,
     INT4             measure
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALCreateReverseCOMPLEX16FFTPlan", COMPLEXFFTC );
   XLALPrintDeprecationWarning("LALCreateReverseCOMPLEX16FFTPlan", "XLALCreateReverseCOMPLEX16FFTPlan");
 
@@ -681,13 +670,13 @@ LALCreateReverseCOMPLEX16FFTPlan(
 }
 
 
-/* <lalVerbatim file="ComplexFFTCP"> */
+
 void
 LALDestroyCOMPLEX16FFTPlan (
     LALStatus       *status,
     COMPLEX16FFTPlan **plan
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALDestroyCOMPLEX16FFTPlan", COMPLEXFFTC );
   XLALPrintDeprecationWarning("LALDestroyCOMPLEX16FFTPlan", "XLALDestroyCOMPLEX16FFTPlan");
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -709,7 +698,7 @@ LALDestroyCOMPLEX16FFTPlan (
 }
 
 
-/* <lalVerbatim file="ComplexFFTCP"> */
+
 void
 LALCOMPLEX16VectorFFT (
     LALStatus      *status,
@@ -717,7 +706,7 @@ LALCOMPLEX16VectorFFT (
     COMPLEX16Vector *input,
     COMPLEX16FFTPlan *plan
     )
-{ /* </lalVerbatim> */
+{
   int code;
   INITSTATUS( status, "LALCOMPLEX16VectorFFT", COMPLEXFFTC );
   XLALPrintDeprecationWarning("LALCOMPLEX16VectorFFT", "XLALCOMPLEX16VectorFFT");
@@ -769,4 +758,3 @@ LALCOMPLEX16VectorFFT (
 
   RETURN( status );
 }
-

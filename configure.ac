@@ -1,4 +1,4 @@
-AC_INIT([lalsuite],[6.5.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalsuite],[6.5.0.4],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -6,15 +6,12 @@ AC_CONFIG_FILES([
   Makefile \
   gnuscripts/Makefile \
   doxygen/Makefile \
-  doxygen/doxy-html-config.cfg \
-  doxygen/doxy-pdf-config.cfg \
   doxygen/src/Makefile
 ])
 AM_INIT_AUTOMAKE([foreign])
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 
 # for building doxygen
-AC_SUBST([abs_lalsuite_srcdir],[`cd ${srcdir} && pwd`])
 AC_PROG_LN_S
 AC_CHECK_PROGS([GIT], [git], [])
 
@@ -26,6 +23,7 @@ LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALSTOCHASTIC
 LALSUITE_ENABLE_LALPULSAR
+LALSUITE_ENABLE_LALINFERENCE
 
 lalsuite_top_builddir='$(top_builddir)/..'
 lalsuite_top_srcdir='$(top_srcdir)/..'
@@ -34,7 +32,7 @@ LALSUITE_TOP_SRCDIR="${lalsuite_top_srcdir}"
 LAL_LIBS="${lalsuite_top_builddir}/lal/lib/liblal.la"
 LAL_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
 export LALSUITE_BUILD LALSUITE_TOP_SRCDIR LAL_LIBS LAL_CFLAGS
-LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalsupport.la"
+LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalsupport.la ${lalsuite_top_builddir}/lal/lib/liblal.la"
 LALSUPPORT_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
 export LALSUPPORT_LIBS LALSUPPORT_CFLAGS
 
@@ -80,6 +78,12 @@ if test "$lalpulsar" = "true"; then
   export LALPULSAR_LIBS LALPULSAR_CFLAGS
 fi
 
+if test "$lalinference" = "true"; then
+  LALINFERENCE_LIBS="${lalsuite_top_builddir}/lalinference/src/liblalinference.la"
+  LALINFERENCE_CFLAGS="-I${lalsuite_top_builddir}/lalinference/include"
+  export LALINFERENCE_LIBS LALINFERENCE_CFLAGS
+fi
+
 AC_CONFIG_SUBDIRS([lal])
 
 if test "$lalframe" = "true"; then
@@ -108,6 +112,10 @@ fi
 
 if test "$lalpulsar" = "true"; then
   AC_CONFIG_SUBDIRS([lalpulsar])
+fi
+
+if test "$lalinference" = "true"; then
+  AC_CONFIG_SUBDIRS([lalinference])
 fi
 
 AC_CONFIG_SUBDIRS([lalapps])

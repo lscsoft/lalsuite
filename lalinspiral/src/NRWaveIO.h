@@ -23,14 +23,10 @@
  *
  * \brief Module for reading/writing Numrel waveforms
  *
-
- *
  */
 
 /** \file NRWaveIO.h
  *  \ingroup NRWaveIO
- * \date $Date$
- *
  *
  */
 

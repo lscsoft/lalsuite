@@ -77,8 +77,10 @@ enum { LALMSGLVL3  = LALERROR | LALWARNING | LALINFO };
 enum { LALMEMTRACE = LALTRACE | LALMEMINFO };
 enum { LALALLDBG   = ~( LALNMEMDBG | LALNMEMPAD | LALNMEMTRK ) };
 
+#ifndef SWIG /* exclude from SWIG interface */
 extern int  ( *lalRaiseHook )( int, const char *, ... );
 extern void ( *lalAbortHook )( const char *, ... );
+#endif /* SWIG */
 
 int
 LALPrintError( const char *fmt, ... );

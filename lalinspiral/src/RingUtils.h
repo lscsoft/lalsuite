@@ -17,91 +17,91 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="RingHV">
- * Author: Jolien Creighton
- * $Id$
- **** </lalVerbatim> */
+/**
+ * \defgroup RingUtils_h RingUtils_h
+ * \ingroup CBC_ring
+ */
 
-/**** <lalLaTeX>
- *
- * \section{Header \texttt{RingUtils.h}}
- * \label{sec:Ring.h}
+/**
+ * \author Jolien Creighton
+ * \file
+ * \ingroup RingUtils_h
  *
  * Black hole ringdown waveform generation.
  *
- * \subsection*{Synopsis}
- * \begin{verbatim}
+ * \heading{Synopsis}
+ * \code
  * #include <lal/RingUtils.h>
- * \end{verbatim}
+ * \endcode
  *
  * Routines for generating waveforms for black hole ringdown.
  *
  * The ringdown waveform is an exponentially-damped sinusoid
- * \begin{equation}
+ * \f{equation}{
  *   r(t) = \left\{
  *   \begin{array}{ll}
- *     e^{-\pi ft/Q}\cos(2\pi ft + \phi_0) & \mbox{for $t\ge0$} \\
- *     0 & \mbox{for $t<0$}
+ *     e^{-\pi ft/Q}\cos(2\pi ft + \phi_0) & \mbox{for \f$t\ge0\f$} \\
+ *     0 & \mbox{for \f$t<0\f$}
  *   \end{array}
  *   \right.
- * \end{equation}
- * where $f$ is the central frequency of the ringdown waveform, $Q$ is
- * the quality factor, and $\phi_0$ is the initial phase of the waveform.
- * Note that Ref.~\cite{JDECreighton} adopted the
- * normalization convention $q(t)=(2\pi)^{1/2}r(t)$.
+ * \f}
+ * where \f$f\f$ is the central frequency of the ringdown waveform, \f$Q\f$ is
+ * the quality factor, and \f$\phi_0\f$ is the initial phase of the waveform.
+ * Note that Ref.\ [\ref JDECreighton99] adopted the
+ * normalization convention \f$q(t)=(2\pi)^{1/2}r(t)\f$.
  *
  * For a black hole ringdown, the gravitational waveform produced, averaged
  * over the various angles, is
- * \begin{equation}
+ * \f{equation}{
  *   h(t) = A_qq(t)
- * \end{equation}
+ * \f}
  * where the central frequency and quality of the ringdown are determined from
  * the mass and spin of the black holes.  An analytic approximation
- * yields~\cite{EWLeaver,FEcheverria}
- * \begin{equation}
+ * yields\ [\ref EWLeaver85,\ref FEcheverria89]
+ * \f{equation}{
  *   f \simeq 32\,\textrm{kHz}\times[1-0.63(1-{\hat{a}})^{3/10}](M_\odot/M)
- * \end{equation}
+ * \f}
  * and
- * \begin{equation}
+ * \f{equation}{
  *   Q \simeq 2(1-{\hat{a}})^{-9/20}
- * \end{equation}
- * with the black hole mass given by $M$ and its spin by $S={\hat{a}}GM^2/c$
- * (where $G$ is Newton's constant and $c$ is the speed of light).  The
- * dimensionless spin parameter ${\hat{a}}$ lies between zero (for a
+ * \f}
+ * with the black hole mass given by \f$M\f$ and its spin by \f$S={\hat{a}}GM^2/c\f$
+ * (where \f$G\f$ is Newton's constant and \f$c\f$ is the speed of light).  The
+ * dimensionless spin parameter \f${\hat{a}}\f$ lies between zero (for a
  * Schwarzschild black hole) and unity (for an extreme Kerr black hole).
  * The amplitude of the waveform depends on these quantities as well as the
- * distance $r$ to the source and the fractional mass loss $\epsilon$ radiated
- * in gravitational waves~\cite{JDECreighton}:
- * \begin{equation}
+ * distance \f$r\f$ to the source and the fractional mass loss \f$\epsilon\f$ radiated
+ * in gravitational waves\ [\ref JDECreighton99]:
+ * \f{equation}{
  *   A_q = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
  *   \left(\frac{\textrm{Mpc}}{r}\right)
  *   \left(\frac{M}{M_\odot}\right)
  *   \left(\frac{\epsilon}{0.01}\right)^{1/2}.
- * \end{equation}
- * Note that this is the amplitude factor for the waveform $q(t)$, whereas
- * the amplitude factor for $r(t)$ would be $(2\pi)^{1/2}A_q$.
+ * \f}
+ * Note that this is the amplitude factor for the waveform \f$q(t)\f$, whereas
+ * the amplitude factor for \f$r(t)\f$ would be \f$(2\pi)^{1/2}A_q\f$.
  *
- * The mismatch between two nearby templates is given by $ds^2$, which can be
- * thought of as the line interval for a mismatch-based metric on the $(f,Q)$
- * parameter space~\cite{BJOwen,JDECreighton}:
- * \begin{equation}
+ * The mismatch between two nearby templates is given by \f$ds^2\f$, which can be
+ * thought of as the line interval for a mismatch-based metric on the \f$(f,Q)\f$
+ * parameter space\ [\ref Owen_96,\ref JDECreighton99]:
+ * \f{equation}{
  *   ds^2 = \frac{1}{8} \biggl\{ \frac{3+16Q^4}{Q^2(1+4Q^2)^2}\,dQ^2
  *   - 2\frac{3+4Q^2}{fQ(1+4Q^2)}\,dQ\,df + \frac{3+8Q^2}{f^2}\,df^2 \biggr\}.
- * \end{equation}
- * When expressed in terms of $\log f$ rather than $f$, the metric coefficients
- * depend on $Q$ alone.  We can exploit this property for the task of template
- * placement.  The method is the following:  First, choose a ``surface'' of
- * constant~$Q=Q_{\mathrm{\scriptstyle min}}$, and on this surface place
- * templates at intervals in $\phi=\log f$ of~$d\phi=d\ell/\surd g_{\phi\phi}$
- * for the entire range of~$\phi$.  Here,
- * $d\ell=\surd(2ds^2_{\mathrm{\scriptstyle threshold}})$.  Then choose the
- * next surface of constant $Q$ with~$dQ=d\ell/\surd g_{QQ}$ and repeat the
+ * \f}
+ * When expressed in terms of \f$\log f\f$ rather than \f$f\f$, the metric coefficients
+ * depend on \f$Q\f$ alone.  We can exploit this property for the task of template
+ * placement.  The method is the following:  First, choose a "surface" of
+ * constant\ \f$Q=Q_{\mathrm{\scriptstyle min}}\f$, and on this surface place
+ * templates at intervals in \f$\phi=\log f\f$ of\ \f$d\phi=d\ell/\surd g_{\phi\phi}\f$
+ * for the entire range of\ \f$\phi\f$.  Here,
+ * \f$d\ell=\surd(2ds^2_{\mathrm{\scriptstyle threshold}})\f$.  Then choose the
+ * next surface of constant \f$Q\f$ with\ \f$dQ=d\ell/\surd g_{QQ}\f$ and repeat the
  * placement of templates on this surface.  This can be iterated until the
- * entire range of~$Q$ has been covered; the collection of templates should now
+ * entire range of\ \f$Q\f$ has been covered; the collection of templates should now
  * cover the entire parameter region with no point in the region being farther
- * than~$ds^2_{\mathrm{\scriptstyle threshold}}$ from the nearest template.
+ * than\ \f$ds^2_{\mathrm{\scriptstyle threshold}}\f$ from the nearest template.
  *
- **** </lalLaTeX> */
+*/
 
 #ifndef _RING_H
 #define _RING_H
@@ -116,19 +116,22 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/**** <lalLaTeX>
- * \subsection*{Error conditions}
- **** </lalLaTeX> */
-/**** <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define RINGH_ENULL 01
 #define RINGH_ENNUL 02
 #define RINGH_EALOC 04
 #define RINGH_MSGENULL "Null pointer"
 #define RINGH_MSGENNUL "Non-null pointer"
 #define RINGH_MSGEALOC "Memory allocation error"
-/**** </lalErrTable> */
+/*@}*/
 
-/**** <lalVerbatim> */
+/** This structure contains a bank of ringdown waveforms.  The fields are:
+ * <dl>
+ * <dt>numTmplt</dt><dd> The number of templates in the bank.</dd>
+ * <dt>tmplt</dt><dd> Array of ringdown templates.</dd>
+ * </dl>
+ *
+*/
 typedef struct
 tagRingTemplateBank
 {
@@ -136,20 +139,21 @@ tagRingTemplateBank
   SnglRingdownTable *tmplt;
 }
 RingTemplateBank;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
+
+/** This structure contains the parameters required for generating a ringdown
+ * template bank.  The fields are:
+ * <dl>
+ * <dt>minQuality</dt><dd> The minimum quality factor in the bank.</dd>
+ * <dt>maxQuality</dt><dd> The maximum quality factor in the bank.</dd>
+ * <dt>minFrequency</dt><dd> The minimum central frequency in the bank (in Hz).</dd>
+ * <dt>maxFrequency</dt><dd> The minimum central frequency in the bank (in Hz).</dd>
+ * <dt>maxMismatch</dt><dd> The maximum mismatch allowed between templates in the bank.</dd>
+ * <dt>templatePhase</dt><dd> The phase of the ringdown templates, in
+ *     radians.  Zero is a cosine-phase template; \f$-\pi/2\f$ is a sine-phase
+ *     template.
+ * </dd></dl>
  *
- * This structure contains a bank of ringdown waveforms.  The fields are:
- * \begin{description}
- * \item[\texttt{numTmplt}] The number of templates in the bank.
- * \item[\texttt{tmplt}] Array of ringdown templates.
- * \end{description}
- *
- * \subsubsection*{Type \texttt{RingTemplateBankInput}}
- * \idx[Type]{RingTemplateBankInput}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+*/
 typedef struct
 tagRingTemplateBankInput
 {
@@ -163,26 +167,7 @@ tagRingTemplateBankInput
   REAL4 templateEpsilon;
 }
 RingTemplateBankInput;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
- *
- * This structure contains the parameters required for generating a ringdown
- * template bank.  The fields are:
- * \begin{description}
- * \item[\texttt{minQuality}] The minimum quality factor in the bank.
- * \item[\texttt{maxQuality}] The maximum quality factor in the bank.
- * \item[\texttt{minFrequency}] The minimum central frequency in the bank
- *     (in Hz).
- * \item[\texttt{maxFrequency}] The minimum central frequency in the bank
- *     (in Hz).
- * \item[\texttt{maxMismatch}] The maximum mismatch allowed between templates
- *     in the bank.
- * \item[\texttt{templatePhase}] The phase of the ringdown templates, in
- *     radians.  Zero is a cosine-phase template; $-\pi/2$ is a sine-phase
- *     template.
- * \end{description}
- *
- **** </lalLaTeX> */
+
 
 REAL4 XLALBlackHoleRingSpin( REAL4 Q );
 REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q );
@@ -207,12 +192,12 @@ int XLALComputeBlackHoleRing(
 RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input );
 void XLALDestroyRingTemplateBank( RingTemplateBank *bank );
 
-/**** <lalLaTeX>
+/**
  *
- * \vfill{\footnotesize\input{RingHV}}
- * \newpage\input{RingC}
  *
- **** </lalLaTeX> */
+ *
+ *
+*/
 
 #if 0
 { /* so that editors will match succeeding brace */

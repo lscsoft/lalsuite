@@ -17,61 +17,57 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="LALInspiralSetSearchLimitsCV">
-Author: Churches, D. K.
-$Id$
-</lalVerbatim>  */
+/**
+\author Churches, D. K.
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
+\brief Function which calculates the minimum and maximum values of \f$\tau_{0}\f$ and \f$\tau_{3}\f$.
 
-\subsection{Module \texttt{LALInspiralSetSearchLimits.c}}
+\heading{Prototypes}
 
-Function which calculates the minimum and maximum values of $\tau_{0}$ and $\tau_{3}$.
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralSetSearchLimitsCP}
-\idx{LALInspiralSetSearchLimits()}
-\begin{itemize}
-   \item \texttt{bankParams,} Output containing the boundary of search, current lattice point, etc.
-   \item \texttt{coarseIn,} Input, specifies the parameters of the search space.
-\end{itemize}
+<tt>LALInspiralSetSearchLimits()</tt>
+<ul>
+   <li> <tt>bankParams,</tt> Output containing the boundary of search, current lattice point, etc.
+   </li><li> <tt>coarseIn,</tt> Input, specifies the parameters of the search space.</li>
+</ul>
 
-This Function calculates the minimum and maximum values of $\tau_{0}$ and $\tau_{3}$
-as determined by the total mass of the binary $m$ and the symmetric
-mass ratio $\eta$.  The function also calulates the coordinates of the
-first template in the bank. These coordinates are $\tau_{0}=\tau_{0min}$,
-$\tau_{3}=\tau_{3min}$.
+This Function calculates the minimum and maximum values of \f$\tau_{0}\f$ and \f$\tau_{3}\f$
+as determined by the total mass of the binary \f$m\f$ and the symmetric
+mass ratio \f$\eta\f$.  The function also calulates the coordinates of the
+first template in the bank. These coordinates are \f$\tau_{0}=\tau_{0min}\f$,
+\f$\tau_{3}=\tau_{3min}\f$.
 
-\subsubsection*{Description}
+\heading{Description}
 
-We start with the definition of the chirp times $\tau_{0}$ and $\tau_{3}$,
-\begin{equation}
+We start with the definition of the chirp times \f$\tau_{0}\f$ and \f$\tau_{3}\f$,
+\f{equation}{
 \tau_{0} = \frac{5}{256 (\pi f_{a} )^{8/3} m^{5/3} \eta}
-\end{equation}
+\f}
 
 and
 
-\begin{equation}
+\f{equation}{
 \tau_{3} = \frac{1}{8 (\pi^{2} f_{a}^{5} )^{1/3} m^{2/3} \eta}
-\end{equation}
+\f}
 
-$\tau_{0}$ is minimised when $\eta=1/4$ and $\mathtt{m=MMax}$.
-$\tau_{0}$ is maximised when $\eta=1/4$ and $\mathtt{m=2mMin}$.
-$\tau_{3}$ is minimised when $\eta=1/4$ and $\mathtt{m=MMax}$.
-$\tau_{3}$ is maximised when
-$\eta=\mathtt{ mMin(MMax-mMin)/MMax^{2} }$.
-
-
-\subsubsection*{Algorithm}
+\f$\tau_{0}\f$ is minimised when \f$\eta=1/4\f$ and \f$\mathtt{m=MMax}\f$.
+\f$\tau_{0}\f$ is maximised when \f$\eta=1/4\f$ and \f$\mathtt{m=2mMin}\f$.
+\f$\tau_{3}\f$ is minimised when \f$\eta=1/4\f$ and \f$\mathtt{m=MMax}\f$.
+\f$\tau_{3}\f$ is maximised when
+\f$\eta=\mathtt{ mMin(MMax-mMin)/MMax^{2} }\f$.
 
 
-\subsubsection*{Uses}
+\heading{Algorithm}
 
-\subsubsection*{Notes}
 
-\vfill{\footnotesize\input{LALInspiralSetSearchLimitsCV}}
+\heading{Uses}
 
-</lalLaTeX>  */
+\heading{Notes}
+
+
+
+*/
 
 
 
@@ -81,14 +77,14 @@ $\eta=\mathtt{ mMin(MMax-mMin)/MMax^{2} }$.
 
 NRCSID (LALINSPIRALSETSEARCHLIMITSC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralSetSearchLimitsCP">  */
+
 void
 LALInspiralSetSearchLimits (
     LALStatus            *status,
     InspiralBankParams   *bankParams,
     InspiralCoarseBankIn  coarseIn
     )
-/* </lalVerbatim> */
+
 {
    InspiralTemplate *Pars1=NULL, *Pars2=NULL, *Pars3=NULL, *Pars4=NULL;
 

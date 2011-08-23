@@ -328,8 +328,8 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   REAL8 m1,m2;
   parameter->logPrior=0.0;
   REAL8 mc,eta;
-  REAL8 minCompMass = 1.0;
-  REAL8 maxCompMass = 100.0;
+  /* Maximum total mass for ISCO to be at fLow +1 */
+  REAL8 Mtot_max=1.0/((inputMCMC->fLow+1.0) * pow(6.0,3./2.) *LAL_PI * LAL_MTSUN_SI);
 
   /* Check in range */
   if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
@@ -347,11 +347,60 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
   parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
   /*      parameter->logPrior+=logJacobianMcEta(mc,eta);*/
+  
+	/* Spin prior for theta angles */
+	if(XLALMCMCCheckParameter(parameter,"theta1")){
+		parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"theta1"))));
+	}
+	if(XLALMCMCCheckParameter(parameter,"theta2")){
+		parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"theta2"))));
+	}
+	
   ParamInRange(parameter);
   if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
-  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
-  if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
+/*  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
+  if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX; */
+	if(inputMCMC->approximant==EOBNR)
+		if(m1+m2>Mtot_max) parameter->logPrior=-DBL_MAX;
+
   return parameter->logPrior;
+}
+
+REAL8 NestPriorSkyLoc(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter)
+{
+	/* Prior is uniform on log10(dist) */
+        /* Uniform on component masses between 1 and 15 */
+	/* With total mass < 20 */
+	REAL8 minCompMass=1.0, maxCompMass=15.0;
+	REAL8 maxTotalMass=20.0;
+	REAL8 mc=0.0,m1,m2,eta,tmp;
+	(void) inputMCMC;
+	parameter->logPrior=0.0;
+	/* Work out the implicit prior density on mc/eta */
+	if(XLALMCMCCheckParameter(parameter,"m1") && XLALMCMCCheckParameter(parameter,"m2")){
+		/* Flat on m1,m2 */
+		m1=XLALMCMCGetParameter(parameter,"m1");
+		m2=XLALMCMCGetParameter(parameter,"m2");
+	}
+	else {
+		if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
+		else if(XLALMCMCCheckParameter(parameter,"mchirp")) mc=XLALMCMCGetParameter(parameter,"mchirp");
+		eta=XLALMCMCGetParameter(parameter,"eta");
+		m1 = mc2mass1(mc,eta);
+		m2 = mc2mass2(mc,eta);
+		if(m2>m1) {
+			tmp=m1; m1=m2; m2=tmp;
+		}
+		if(XLALMCMCCheckParameter(parameter,"logmc")) parameter->logPrior+=(m1+m2)*(m1+m2)*(m1+m2)/(m1-m2);
+		else parameter->logPrior+=(m1+m2)*(m1+m2)/(pow(eta,0.6)*(m1-m2));
+	}	
+	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
+	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
+	
+	ParamInRange(parameter);
+	if(m1<minCompMass || m1>maxCompMass || m2<minCompMass || m2>maxCompMass || (m1+m2)>maxTotalMass || m2>m1)
+		parameter->logPrior=-DBL_MAX;
+	return parameter->logPrior;
 }
 
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
@@ -386,53 +435,21 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
 	/*	parameter->logPrior+=logJacobianMcEta(mc,eta);*/
+	
+	/* Spin prior for theta angles */
+	if(XLALMCMCCheckParameter(parameter,"theta1")){
+		parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"theta1"))));
+	}
+	if(XLALMCMCCheckParameter(parameter,"theta2")){
+		parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"theta2"))));
+	}	
+	
 	ParamInRange(parameter);
 	if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
 	if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
 	if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
 	if(m1+m2>MAX_MTOT) parameter->logPrior=-DBL_MAX;
 	return parameter->logPrior;
-}
-
-
-REAL8 NestPriorPhenSpin(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
-{
-
-    (void)inputMCMC;
-    REAL8 m1,m2;
-        parameter->logPrior=0.0;
-        REAL8 mc,eta;
-        REAL8 minCompMass = 1.;
-        REAL8 maxCompMass = 34.;
-	REAL8 maxMTotal= 35.;
-
-/* Check in range */
-        if(XLALMCMCCheckParameter(parameter,"logmc")) mc=exp(XLALMCMCGetParameter(parameter,"logmc"));
-        else mc=XLALMCMCGetParameter(parameter,"mchirp");
-        double logmc=log(mc);
-        eta=XLALMCMCGetParameter(parameter,"eta");
-        m1 = mc2mass1(mc,eta);
-        m2 = mc2mass2(mc,eta);
-        /* This term is the sqrt of m-m term in F.I.M, ignoring dependency on f and eta */
-        parameter->logPrior+=-(5.0/6.0)*logmc;
-        if(XLALMCMCCheckParameter(parameter,"logdist"))
-                parameter->logPrior+=3.0*XLALMCMCGetParameter(parameter,"logdist");
-        else
-                parameter->logPrior+=2.0*log(XLALMCMCGetParameter(parameter,"distance"));
-        parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
-        parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
-        ParamInRange(parameter);
-
-        if(m1<minCompMass || m2<minCompMass) {
-          parameter->logPrior=-DBL_MAX;
-        }
-        if(m1>maxCompMass || m2>maxCompMass) {
-          parameter->logPrior=-DBL_MAX;
-        }
-        if(m1+m2>maxMTotal) {
-          parameter->logPrior=-DBL_MAX;
-	}
-        return parameter->logPrior;
 }
 
 
@@ -446,6 +463,8 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	DetectorResponse det;
 	static LALStatus status;
 	CoherentGW coherent_gw;
+	InspiralTemplate template;
+	memset(&template,0,sizeof(template));
 	PPNParamStruc PPNparams;
 	LALDetAMResponse det_resp;
 	REAL4TimeSeries *h_p_t=NULL,*h_c_t=NULL;
@@ -474,9 +493,35 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	PPNparams.fStopIn=0.5/inputMCMC->deltaT;
 	PPNparams.deltaT=inputMCMC->deltaT;
 	PPNparams.ampOrder = inputMCMC->ampOrder;
-
-	/* Call LALGeneratePPNAmpCorInspiral */
-	LALGeneratePPNAmpCorInspiral(&status,&coherent_gw,&PPNparams);
+	
+	if(inputMCMC->approximant==EOBNR){
+		template.totalMass = PPNparams.mTot;
+		template.eta = eta;
+		template.massChoice = totalMassAndEta;
+		template.fLower = inputMCMC->fLow;
+		/* EOBNR takes distance in metres */
+		if(XLALMCMCCheckParameter(parameter,"distMpc"))
+			template.distance = LAL_PC_SI*1e6*XLALMCMCGetParameter(parameter,"distMpc"); /* This must be in Mpc, contrary to the docs */
+		else if(XLALMCMCCheckParameter(parameter,"logdist"))
+			template.distance=LAL_PC_SI*1e6*exp(XLALMCMCGetParameter(parameter,"logdist"));
+		
+		template.order=inputMCMC->phaseOrder;
+		template.approximant=inputMCMC->approximant;
+		template.tSampling = 1.0/inputMCMC->deltaT;
+		template.fCutoff = 0.5/inputMCMC->deltaT -1.0;
+		template.nStartPad = 0;
+		template.nEndPad =0;
+		template.startPhase = XLALMCMCGetParameter(parameter,"phi");
+		template.startTime = 0.0;
+		template.ieta = 1;
+		template.next = NULL;
+		template.fine = NULL;
+		LALEOBWaveformForInjection(&status,&coherent_gw, &template, &PPNparams);
+	}
+	else {
+		/* Call LALGeneratePPNAmpCorInspiral */
+		LALGeneratePPNAmpCorInspiral(&status,&coherent_gw,&PPNparams);
+	}
 	if(status.statusCode)
 	{
 		REPORTSTATUS(&status);
@@ -652,6 +697,7 @@ in the frequency domain */
 	REAL8 TimeFromGC; /* Time delay from geocentre */
 	static LALStatus status;
 	REAL8 resp_r,resp_i,ci;
+	REAL8 m1,m2;
 	InspiralTemplate template;
 	UINT4 Nmodel; /* Length of the model */
 	UINT4 idx;
@@ -671,11 +717,19 @@ in the frequency domain */
 		parameter->logLikelihood=0.0;
 		return 0.0;
 	}
-	if(XLALMCMCCheckParameter(parameter,"logmc")) mchirp=exp(XLALMCMCGetParameter(parameter,"logmc"));
+	if(XLALMCMCCheckParameter(parameter,"m1") && XLALMCMCCheckParameter(parameter,"m2")){
+		m1=XLALMCMCGetParameter(parameter,"m1");
+		m2=XLALMCMCGetParameter(parameter,"m2");
+		eta=(m1*m2)/((m1+m2)*(m1+m2));
+		mchirp=(m1+m2)*pow(eta,0.6);
+		mtot=m1+m2;
+	}
+	else{
+		if(XLALMCMCCheckParameter(parameter,"logmc")) mchirp=exp(XLALMCMCGetParameter(parameter,"logmc"));
         else mchirp=XLALMCMCGetParameter(parameter,"mchirp");
-
-	eta = XLALMCMCGetParameter(parameter,"eta");
-	mtot=mc2mt(mchirp,eta);
+		eta = XLALMCMCGetParameter(parameter,"eta");
+		mtot=mc2mt(mchirp,eta);
+	}
 	template.totalMass = mtot;
 	template.eta = eta;
 	template.massChoice = totalMassAndEta;

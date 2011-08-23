@@ -1,3 +1,9 @@
+lalapps (6.5.0-1lscsoft3) unstable; urgency=low
+
+  * LALApps 6.5.0, rewritten rules to use pyversions
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 17 Feb 2011 12:05:00 +0100
+
 lalapps (6.5.0-1lscsoft1) unstable; urgency=low
 
   * LALApps 6.5.0

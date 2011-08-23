@@ -35,6 +35,11 @@
 #ifndef _LALXML_H
 #define _LALXML_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 /* C++ protection */
 #ifdef __cplusplus
 extern "C" {
@@ -64,6 +69,7 @@ extern "C" {
  * Albert-Einstein-Institute Hannover, Germany
  */
 typedef struct {
+    SWIGLAL_STRUCT_LALALLOC();
     const xmlChar *prefix;
     const xmlChar *url;
 } XML_NAMESPACE;
@@ -79,6 +85,7 @@ typedef struct {
  * Albert-Einstein-Institute Hannover, Germany
  */
 typedef struct {
+    SWIGLAL_STRUCT_LALALLOC();
     const XML_NAMESPACE *items;
     const int count;
 } XML_NAMESPACE_VECTOR;

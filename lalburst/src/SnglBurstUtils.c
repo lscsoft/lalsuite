@@ -398,7 +398,7 @@ SimBurst *XLALCreateSimBurst(void)
 		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 
 	new->next = NULL;
-	new->process_id = new->simulation_id = -1;
+	new->process_id = new->time_slide_id = new->simulation_id = -1;
 	memset(new->waveform, 0, sizeof(new->waveform));
 	new->ra = XLAL_REAL8_FAIL_NAN;
 	new->dec = XLAL_REAL8_FAIL_NAN;
@@ -543,10 +543,12 @@ SimBurst **XLALSortSimBurst(
 long XLALSimBurstAssignIDs(
 	SimBurst *sim_burst,
 	long process_id,
+	long time_slide_id,
 	long simulation_id)
 {
 	for(; sim_burst; sim_burst = sim_burst->next) {
 		sim_burst->process_id = process_id;
+		sim_burst->time_slide_id = time_slide_id;
 		sim_burst->simulation_id = simulation_id++;
 	}
 	return simulation_id;

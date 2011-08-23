@@ -128,7 +128,7 @@ snprintf()
 
 At present the routine is kludged up to ignore pulsar position and
 frequency information from the command line, using hardwired
-parameters for \mbox{PSR J0034-0534} instead.  It can still override
+parameters for PSR\ J0034-0534 instead.  It can still override
 this with the <tt>-i</tt> option.
 
 */

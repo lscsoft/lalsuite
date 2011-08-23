@@ -21,11 +21,7 @@
 \author Creighton, T. D.
 \file
 
-\heading{Header \ref Grid.h}
-\latexonly\label{s_Grid_h}\endlatexonly
-
-Provides a structured datatype for a multidimensional rectilinear
-grid.
+\brief Provides a structured datatype for a multidimensional rectilinear grid.
 
 \heading{Synopsis}
 \code
@@ -42,6 +38,11 @@ space.
 
 #ifndef _GRID_H
 #define _GRID_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
 
 #include <lal/LALStdlib.h>
 
@@ -65,21 +66,11 @@ NRCSID( GRIDH, "$Id$" );
 
 \heading{Types}
 
-\heading{Structure <tt><datatype>Grid</tt>}
-
-
-
-
-
-
-
-
-
-
+\heading{Structure <tt>\<datatype\>Grid</tt>}
 
 This structure is a generalization of the LAL series types,
 storing data on an \f$m\f$-dimensional rectangular grid on a physical
-parameter space.  The values on the grid are of type <tt><datatype></tt>
+parameter space.  The values on the grid are of type <tt>\<datatype\></tt>
 which can be any LAL primitive \e numerical datatype (\c INT2,
 \c INT4, \c INT8, \c UINT2, \c UINT4, \c UINT8,
 \c REAL4, \c REAL8, \c COMPLEX8, \c COMPLEX16).  The
@@ -108,7 +99,7 @@ Must have dimensionality \f$m\f$.</dd>
 specifying the grid spacing in each dimension.  Must have
 dimensionality \f$m\f$.</dd>
 
-<dt><tt><datatype>Array *data</tt></dt><dd> Pointer to an array storing the
+<dt><tt>\<datatype\>Array *data</tt></dt><dd> Pointer to an array storing the
 data values at the corresponding grid points.  The data dimension
 \f$M=\f$<tt>data->dimLength->length</tt> must be greater than or equal to
 the grid dimension \f$m=\f$<tt>offset->length</tt>=<tt>interval->length</tt>.
@@ -124,6 +115,7 @@ element at each grid point), arranged in the manner discussed in
 */
 
 typedef struct tagINT2Grid {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR name[LALNameLength];
   LALUnit sampleUnits;
   LALUnit *dimUnits;
@@ -133,6 +125,7 @@ typedef struct tagINT2Grid {
 } INT2Grid;
 
 typedef struct tagINT4Grid {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR name[LALNameLength];
   LALUnit sampleUnits;
   LALUnit *dimUnits;
@@ -142,6 +135,7 @@ typedef struct tagINT4Grid {
 } INT4Grid;
 
 typedef struct tagINT8Grid {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR name[LALNameLength];
   LALUnit sampleUnits;
   LALUnit *dimUnits;
@@ -151,6 +145,7 @@ typedef struct tagINT8Grid {
 } INT8Grid;
 
 typedef struct tagUINT2Grid {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR name[LALNameLength];
   LALUnit sampleUnits;
   LALUnit *dimUnits;
@@ -160,6 +155,7 @@ typedef struct tagUINT2Grid {
 } UINT2Grid;
 
 typedef struct tagUINT4Grid {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR name[LALNameLength];
   LALUnit sampleUnits;
   LALUnit *dimUnits;
@@ -169,6 +165,7 @@ typedef struct tagUINT4Grid {
 } UINT4Grid;
 
 typedef struct tagUINT8Grid {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR name[LALNameLength];
   LALUnit sampleUnits;
   LALUnit *dimUnits;
@@ -178,6 +175,7 @@ typedef struct tagUINT8Grid {
 } UINT8Grid;
 
 typedef struct tagREAL4Grid {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR name[LALNameLength];
   LALUnit sampleUnits;
   LALUnit *dimUnits;
@@ -187,6 +185,7 @@ typedef struct tagREAL4Grid {
 } REAL4Grid;
 
 typedef struct tagREAL8Grid {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR name[LALNameLength];
   LALUnit sampleUnits;
   LALUnit *dimUnits;
@@ -196,6 +195,7 @@ typedef struct tagREAL8Grid {
 } REAL8Grid;
 
 typedef struct tagCOMPLEX8Grid {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR name[LALNameLength];
   LALUnit sampleUnits;
   LALUnit *dimUnits;
@@ -205,6 +205,7 @@ typedef struct tagCOMPLEX8Grid {
 } COMPLEX8Grid;
 
 typedef struct tagCOMPLEX16Grid {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR name[LALNameLength];
   LALUnit sampleUnits;
   LALUnit *dimUnits;

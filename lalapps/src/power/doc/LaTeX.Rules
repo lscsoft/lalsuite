@@ -124,6 +124,13 @@
 #	the info yourself (ii) the algorithm may be broken for your
 #	document.
 #
+# BBL_FILES
+# 	bibtex produces .bbl files as output from the .aux and .bib files,
+# 	and LaTeX will include its contents in subsequence passes.  By
+# 	default, the name of the .bbl file is $(DOCUMENT).bbl, but you can
+# 	manually override that default by setting the value of this
+# 	variable to a non-empty string before including this rules file.
+#
 # BSTINPUTS
 # BIBINPUTS
 #	The contents of these variables override the system default search
@@ -157,6 +164,7 @@ END_FILE  := $(shell "ls" $(DOCUMENT).end 2>/dev/null)
 AUX_FILES := $(DOCUMENT).aux
 TEX_FILES += $(DOCUMENT).tex
 OTHER_FILES := $(DOCUMENT).blg $(DOCUMENT).log $(DOCUMENT).out $(patsubst %.tex,%.aux,$(filter %.tex,$(TEX_FILES))) $(patsubst %.tex,%.out,$(filter %.tex,$(TEX_FILES))) $(patsubst %.tex,%.log,$(filter %.tex,$(TEX_FILES)))
+BEAMER_FILES := $(shell "ls" $(DOCUMENT).nav $(DOCUMENT).snm 2>/dev/null)
 
 # Grab the contents of \bibliograph{} commands.
 ifeq ($(BIB_FILES),)
@@ -165,7 +173,9 @@ ifeq ($(BIB_FILES),)
 endif
 
 ifneq ($(BIB_FILES),)
-	BBL_FILE := $(DOCUMENT).bbl
+	ifeq ($(BBL_FILES),)
+		BBL_FILES := $(DOCUMENT).bbl
+	endif
 endif
 ifneq ($(IDX_FILE),)
 	IND_FILE := $(DOCUMENT).ind
@@ -181,7 +191,7 @@ XFIG_TEX = $(strip $(XFIG_FILES:%.fig=%.fig.tex))
 
 # LaTeX will be run over and over and over again until the following files
 # stop changing.
-MONITOR_FILES := $(strip $(AUX_FILES) $(TOC_FILE) $(LOF_FILE) $(LOT_FILE) $(BBL_FILE) $(IND_FILE) $(END_FILE))
+MONITOR_FILES := $(strip $(AUX_FILES) $(TOC_FILE) $(LOF_FILE) $(LOT_FILE) $(BBL_FILES) $(IND_FILE) $(END_FILE) $(BEAMER_FILES))
 
 # The following files must be present or processing will fail.
 REQUIRED_FILES := $(strip $(TEX_FILES) $(BIB_FILES) $(GRAPHIC_FILES) $(TEXT_FILES) $(XFIG_FILES))
@@ -190,7 +200,7 @@ REQUIRED_FILES := $(strip $(TEX_FILES) $(BIB_FILES) $(GRAPHIC_FILES) $(TEXT_FILE
 LTX_MOSTLYCLEAN_FILES := $(strip $(MONITOR_FILES) $(MONITOR_FILES:%=%.old) $(OTHER_FILES) $(XFIG_AUX) $(XFIG_GFX) $(XFIG_TEX))
 
 # The (additional) files that should be deleted by the clean target
-LTX_CLEAN_FILES := $(strip $(DVI_FILE) $(PDF_FILE) $(PS_FILE))
+LTX_CLEAN_FILES := $(strip $(DVI_FILE) $(PDF_FILE) $(PS_FILE) $(BEAMER_FILES))
 
 # These facilitate incorporating these LaTeX rules into automake .am files.
 EXTRA_DIST += $(REQUIRED_FILES)
@@ -203,7 +213,7 @@ CONFIG_CLEAN_FILES += $(LTX_MOSTLYCLEAN_FILES) $(LTX_CLEAN_FILES)
 #
 ###############################################################################
 
-.PHONY : dvi pdf ps mostlyclean clean check_for_sources
+.PHONY : dvi dvi.local pdf pdf.local ps ps.local mostlyclean mostlyclean.local clean clean.local check_for_sources
 
 .SECONDARY : $(MONITOR_FILES) $(XFIG_AUX) $(XFIG_GFX) $(XFIG_TEX)
 
@@ -214,22 +224,27 @@ endif
 
 # set the order of the targets so that the correct one is the default
 ifeq ($(notdir $(LATEX)),pdflatex)
-pdf : $(PDF_FILE)
-dvi : $(DVI_FILE)
+pdf : $(PDF_FILE) pdf.local
+dvi : $(DVI_FILE) dvi.local
 else
-dvi : $(DVI_FILE)
-pdf : $(PDF_FILE)
+dvi : $(DVI_FILE) dvi.local
+pdf : $(PDF_FILE) pdf.local
 endif
+pdf.local :
+dvi.local :
 
 # what the user wants to build when they ask for the "ps" target
-ps : $(PS_FILE)
+ps.local :
+ps : $(PS_FILE) ps.local
 
 # how to clean intermediate files
-mostlyclean :
+mostlyclean.local :
+mostlyclean : mostlyclean.local
 	-rm -f $(LTX_MOSTLYCLEAN_FILES)
 
 # how to clean back to the original sources
-clean : mostlyclean
+clean.local :
+clean : mostlyclean clean.local
 	-rm -f $(LTX_CLEAN_FILES)
 
 
@@ -247,11 +262,11 @@ clean : mostlyclean
 #
 
 define run-latex
-	@function saveold () { for file ; do [ -f $${file} ] && "cp" -fp $${file} $${file}.old ; done ; "true" ; } ; \
-	function restoreold () { for file ; do [ -f $${file}.old ] && "mv" -f $${file}.old $${file} ; done ; "true" ; } ; \
-	function deleteold ()  { for file ; do "rm" -f $${file}.old ; done ; "true" ; } ; \
-	function makeobsolete () { "touch" -r $$("ls" *.old | "tail" -n 1) $${1} ; "true" ; } ; \
-	function nochange () { for file ; do [ ! -f $${1} ] || "cmp" $${1} $${1}.old >/dev/null || return ; done ; "true" ; } ; \
+	@saveold () { for file ; do [ -f $${file} ] && "cp" -fp $${file} $${file}.old ; done ; "true" ; } ; \
+	restoreold () { for file ; do [ -f $${file}.old ] && "mv" -f $${file}.old $${file} ; done ; "true" ; } ; \
+	deleteold ()  { for file ; do "rm" -f $${file}.old ; done ; "true" ; } ; \
+	makeobsolete () { "touch" -r $$("ls" *.old | "tail" -n 1) $${1} ; "true" ; } ; \
+	nochange () { for file ; do [ ! -f $${1} ] || "cmp" $${1} $${1}.old >/dev/null || return ; done ; "true" ; } ; \
 	saveold $(MONITOR_FILES) ; \
 	if $(LATEX) $* ; then \
 	   if nochange $(MONITOR_FILES) ; then \
@@ -339,7 +354,7 @@ else
 endif
 
 %.fig.pdf : %.fig
-	pushd $(dir $<) ; fig2dev -L pstex <$(notdir $<) | ps2pdf - - >$(notdir $@) ; popd
+	cd $(dir $<) && fig2dev -L pstex <$(notdir $<) | ps2pdf - - >$(notdir $@)
 
 %.fig.ps : %.fig
-	pushd $(dir $<) ; fig2dev -L pstex <$(notdir $<) >$(notdir $@) ; popd
+	cd $(dir $<) && fig2dev -L pstex <$(notdir $<) >$(notdir $@)

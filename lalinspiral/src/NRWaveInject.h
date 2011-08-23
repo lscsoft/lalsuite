@@ -24,14 +24,10 @@
  *
  * \brief Module for generating h(t) from Numrel waveforms
  *
-
- *
  */
 
 /** \file NRWaveInject.h
  *  \ingroup NRWaveInject
- * \date $Date$
- *
  *
  */
 

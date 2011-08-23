@@ -32,6 +32,16 @@
 */
 
 
+#if defined(__i386__) || defined(__x86_64__)
+#define __X86__ 1
+#ifdef __GNUC__
+#define __GNUX86__ 1
+#endif
+#else
+#undef __X86__
+#undef __GNUC__
+#endif
+
 /** INCLUDES **/
 
 /* BOINC includes - need to be before the #defines in hs_boinc_extras.h */
@@ -105,33 +115,70 @@ typedef enum gdbcmd { gdb_dump_core, gdb_attach } gdb_cmd;
 /** write the FPU status flags / exception mask bits to stderr */
 #define PRINT_FPU_EXCEPTION_MASK(fpstat) \
   if (fpstat & FPU_STATUS_PRECISION)	 \
-    fprintf(stderr," PRECISION");	 \
+    fputs(" PRECISION",stderr);		 \
   if (fpstat & FPU_STATUS_UNDERFLOW)	 \
-    fprintf(stderr," UNDERFLOW");	 \
+    fputs(" UNDERFLOW",stderr);		 \
   if (fpstat & FPU_STATUS_OVERFLOW)	 \
-    fprintf(stderr," OVERFLOW");	 \
+    fputs(" OVERFLOW",stderr);		 \
   if (fpstat & FPU_STATUS_ZERO_DIVIDE)	 \
-    fprintf(stderr," ZERO_DIVIDE");	 \
+    fputs(" ZERO_DIVIDE",stderr);	 \
   if (fpstat & FPU_STATUS_DENORMALIZED)	 \
-    fprintf(stderr," DENORMALIZED");	 \
+    fputs(" DENORMALIZED",stderr);	 \
   if (fpstat & FPU_STATUS_INVALID)	 \
-    fprintf(stderr," INVALID")
+    fputs(" INVALID",stderr)
 
 #define PRINT_FPU_STATUS_FLAGS(fpstat) \
   if (fpstat & FPU_STATUS_COND_3)      \
-    fprintf(stderr," COND_3");	       \
+    fputs(" COND_3",stderr);	       \
   if (fpstat & FPU_STATUS_COND_2)      \
-    fprintf(stderr," COND_2");	       \
+    fputs(" COND_2",stderr);	       \
   if (fpstat & FPU_STATUS_COND_1)      \
-    fprintf(stderr," COND_1");	       \
+    fputs(" COND_1",stderr);	       \
   if (fpstat & FPU_STATUS_COND_0)      \
-    fprintf(stderr," COND_0");	       \
+    fputs(" COND_0",stderr);	       \
   if (fpstat & FPU_STATUS_ERROR_SUMM)  \
-    fprintf(stderr," ERR_SUMM");       \
+    fputs(" ERR_SUMM",stderr);	       \
   if (fpstat & FPU_STATUS_STACK_FAULT) \
-    fprintf(stderr," STACK_FAULT");    \
+    fputs(" STACK_FAULT",stderr);      \
   PRINT_FPU_EXCEPTION_MASK(fpstat)
 
+static char* myultoa(unsigned long n) {
+  static char buf[12];
+  int i;
+  memset(buf,'\0',sizeof(buf));
+  for(i=sizeof(buf)-1; i>=0; i++) {
+    buf[i] = n % 10 + '0';
+    n /= 10;
+    if (!n)
+      break;
+  }
+  if (i > 0)
+    return buf + i;
+  return buf;
+}
+
+static char* myltoa(long n) {
+  static char buf[12];
+  int i, m=0;
+  memset(buf,'\0',sizeof(buf));
+  if (n<0) {
+    n = -n;
+    m = -1;
+  }
+  for(i=sizeof(buf)-1; i>=0; i++) {
+    buf[i] = n % 10 + '0';
+    n /= 10;
+    if (!n)
+      break;
+  }
+  if(m && i>0) {
+    i--;
+    buf[i] = '-';
+  }
+  if (i > 0)
+    return buf + i;
+  return buf;
+}
 
 /*^* global VARIABLES *^*/
 
@@ -319,19 +366,21 @@ static void sighandler(int sig)
   /* for glibc stacktrace */
   static void *stackframes[64];
   static size_t nostackframes;
+  static char **backtracesymbols = NULL;
   ucontext_t *uc = (ucontext_t *)secret;
 #endif
 
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
-  fputs("\n-- signal handler called\n",stderr);
-  fprintf(stderr, "APP DEBUG: Application caught signal %d.\n\n", sig );
+  fputs("\n-- signal handler called: signal ",stderr);
+  fputs(myultoa(sig), stderr);
+  fputs("\n",stderr);
 
   /* ignore TERM interrupts once  */
   if ( sig == SIGTERM || sig == SIGINT ) {
     killcounter ++;
     if ( killcounter >= 4 ) {
-      fprintf(stderr, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n\n");
+      fputs("App got 4th kill-signal, guess you mean it. Exiting.\n",stderr);
       boinc_finish(COMPUTEFSTAT_EXIT_USER);
     }
     else
@@ -339,35 +388,52 @@ static void sighandler(int sig)
   } /* termination signals */
 
 #ifdef __GLIBC__
-#ifdef __i386__
+#ifdef __X86__
   /* in case of a floating-point exception write out the FPU status */
   if ( sig == SIGFPE ) {
     fpuw_t fpstat = uc->uc_mcontext.fpregs->sw;
-    fprintf(stderr,"FPU status word %lx, flags: ", uc->uc_mcontext.fpregs->sw);
+    fputs("FPU status word: ",stderr);
+    fputs(myultoa(fpstat), stderr);
+    fputs(", flags: ",stderr);
     PRINT_FPU_STATUS_FLAGS(fpstat);
-    fprintf(stderr,"\n");
+    fputs("\n",stderr);
   }
-#endif /* __i386__ */
+#endif /* __X86__ */
   /* now get TRUE stacktrace */
   nostackframes = backtrace (stackframes, 64);
-  fprintf(stderr,   "Obtained %zd stack frames for this thread.\n", nostackframes);
-  fprintf(stderr,   "Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n");
+  fputs(myltoa(nostackframes), stderr);
+  fputs(" stack frames obtained for this thread:\n", stderr);
+#if defined(__X86__) && defined(EXT_STACKTRACE)
   /* overwrite sigaction with caller's address */
-#if defined(__i386__) && defined(EXT_STACKTRACE)
   stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
-  backtrace_symbols_fd_plus(stackframes, nostackframes, fileno(stderr));
-#else /* __i386__ */
+  backtracesymbols = backtrace_symbols(stackframes, nostackframes);
+  if(backtracesymbols != NULL) {
+    backtrace_symbols_fd_plus(backtracesymbols, nostackframes, fileno(stderr));
+    free(backtracesymbols);
+  }
+  fputs("\nEnd of stcaktrace\n",stderr);
+#else /* __X86__ */
+  fputs("Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n",stderr);
   backtrace_symbols_fd(stackframes, nostackframes, fileno(stderr));
-#endif /* __i386__ */
+#endif /* __X86__ */
 #endif /* __GLIBC__ */
 
   if (global_status)
-    fprintf(stderr,   "Stack trace of LAL functions in worker thread:\n");
+    fputs("Stack trace of LAL functions in worker thread:\n", stderr);
   while (global_status) {
-    fprintf(stderr,   "%s at line %d of file %s\n", global_status->function, global_status->line, global_status->file);
+    fputs(global_status->function, stderr);
+    fputs(" at ", stderr);
+    fputs(global_status->file, stderr);
+    fputs(":", stderr);
+    fputs(myultoa(global_status->line), stderr);
+    fputs("\n", stderr);
     if (!(global_status->statusPtr)) {
       const char *p=global_status->statusDescription;
-      fprintf(stderr,   "At lowest level status code = %d, description: %s\n", global_status->statusCode, p?p:"NO LAL ERROR REGISTERED");
+      fputs("At lowest level status code = ", stderr);
+      fputs(myltoa(global_status->statusCode), stderr);
+      fputs(": ", stderr);
+      fputs(p?p:"NO LAL ERROR REGISTERED", stderr);
+      fputs("\n", stderr);
     }
     global_status=global_status->statusPtr;
   }
@@ -896,7 +962,7 @@ static void worker (void) {
 
     /* record a help otion (to later write help for additional command-line options) */
     else if ((0 == strncmp("--help",argv[arg],strlen("--help"))) ||
-	     (0 == strncmp("-h",argv[arg],strlen("--help")))) {
+	     (0 == strncmp("-h",argv[arg],strlen("-h")))) {
       output_help = 1;
       rargv[rarg] = argv[arg];
     }
@@ -925,7 +991,7 @@ static void worker (void) {
   /* debug: dump the modified command line */
   {
     int i;
-    fprintf(stderr,"command line:");
+    fputs("command line:",stderr);
     for(i=0;i<rargc;i++)
       fprintf(stderr," %s",rargv[i]);
     fprintf(stderr,"\n");
@@ -969,6 +1035,12 @@ static void worker (void) {
 #endif
 #if __GNUC__
 	  ", GNUC"
+#endif
+#if __X86__
+          " X86"
+#endif
+#if __GNUX86__
+          " GNUX86"
 #endif
 #ifdef _MSC_VER
 	  ", _MSC_VER:%d\n",_MSC_VER
@@ -1047,12 +1119,12 @@ static void worker (void) {
       LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
     }
 
-#if defined(__GNUC__) && defined(__i386__)
+#ifdef __GNUX86__
     {
       fpuw_t fpstat = get_fpu_status();
-      fprintf(stderr,"FPU status flags: ");
+      fputs("FPU status flags: ",stderr);
       PRINT_FPU_STATUS_FLAGS(fpstat);
-      fprintf(stderr,"\n");
+      fputs("\n",stderr);
     }
 #endif
 
@@ -1464,7 +1536,7 @@ void write_and_close_checkpointed_file (void) {
 /** attach gdb to the running process and do something; for debugging. */
 void run_gdb(gdb_cmd command) {
 #ifdef __GLIBC__
-  fprintf(stderr,"attaching gdb...\n");
+  fputs("attaching gdb...\n",stderr);
   char cmd[256];
   pid_t pid=getpid();
   switch (command) {
@@ -1491,7 +1563,7 @@ void set_fpu_control_word(const fpuw_t cword) {
   fpucw = cword;
 #ifdef _MSC_VER
   __asm fldcw fpucw;
-#elif defined(__GNUC__) && defined(__i386__)
+#elif defined(__GNUX86__)
   __asm("fldcw %0\n\t" : : "m" (fpucw));
 #endif
 }
@@ -1501,7 +1573,7 @@ fpuw_t get_fpu_control_word(void) {
   static fpuw_t fpucw = 0;
 #ifdef _MSC_VER
   __asm fstcw fpucw;
-#elif defined(__GNUC__) && defined(__i386__)
+#elif defined(__GNUX86__)
   __asm("fstcw %0\n\t" : "=m" (fpucw));
 #endif
   return(fpucw);
@@ -1512,7 +1584,7 @@ fpuw_t get_fpu_status(void) {
   static fpuw_t fpusw = 0;
 #ifdef _MSC_VER
   __asm fnstsw fpusw;
-#elif defined(__GNUC__) && defined(__i386__)
+#elif defined(__GNUX86__)
   __asm("fnstsw %0\n\t" : "=m" (fpusw));
 #endif
   return(fpusw);
@@ -1524,7 +1596,7 @@ void set_sse_control_status(const ssew_t cword) {
   ssecw = cword;
 #ifdef _MSC_VER
   __asm ldmxcsr ssecw;
-#elif defined(__GNUC__) && defined(__i386__)
+#elif defined(__GNUX86__)
   __asm("ldmxcsr %0\n\t" : : "m" (ssecw));
 #endif
 }
@@ -1534,7 +1606,7 @@ ssew_t get_sse_control_status(void) {
   static ssew_t ssesw = 0;
 #ifdef _MSC_VER
   __asm stmxcsr ssesw;
-#elif defined(__GNUC__) && defined(__i386__)
+#elif defined(__GNUX86__)
   __asm("stmxcsr %0\n\t" : "=m" (ssesw));
 #endif
   return(ssesw);
@@ -1542,7 +1614,7 @@ ssew_t get_sse_control_status(void) {
 
 static void drain_fpu_stack(void) {
   static double dummy;
-#if defined(__GNUC__) && defined(__i386__)
+#ifdef __GNUX86__
   __asm(
 	"fstpl %0\n\t"
 	"fstpl %0\n\t"
@@ -1578,24 +1650,14 @@ static REAL4 get_nan(void) {
 
 
 void enable_floating_point_exceptions(void) {
-#if defined(_MSC_VER) && 0
-#define MY_INVALID 1 /* _EM_INVALID */
-  /*
-    _controlfp(MY_INVALID,_MCW_EM);
-    _controlfp_s(NULL,MY_INVALID,_MCW_EM);
-  */
-  {
-    unsigned int cw87, cwSSE;
-    __control87_2(MY_INVALID,_MCW_EM,&cw87,&cwSSE);
-  }
-#elif defined(_MSC_VER) || defined(__GNUC__) && defined(__i386__)
+#if defined(_MSC_VER) || defined(__GNUX86__)
   /* write out the masked FPU exceptions */
   /*
   {
     fpuw_t fpstat = get_fpu_status();
-    fprintf(stderr,"FPU status flags: ");
+    fputs("FPU status flags: ",stderr);
     PRINT_FPU_STATUS_FLAGS(fpstat);
-    fprintf(stderr,"\n");
+    fputs("\n",stderr);
   }
   */
 
@@ -1606,7 +1668,7 @@ void enable_floating_point_exceptions(void) {
     /*
     fprintf(stderr,"FPU masked exceptions now: %4x:",fpstat);
     PRINT_FPU_EXCEPTION_MASK(fpstat);
-    fprintf(stderr,"\n");
+    fputs("\n",stderr);
     */
 
     /* throw an exception at an invalid operation */
@@ -1616,7 +1678,7 @@ void enable_floating_point_exceptions(void) {
     /*
     fprintf(stderr,"FPU masked exceptions set: %4x:",fpstat);
     PRINT_FPU_EXCEPTION_MASK(fpstat);
-    fprintf(stderr,"\n");
+    fputs("\n",stderr);
     */
 
     /* this is weird - somtimes gcc seems to cache the fpstat value
@@ -1627,7 +1689,7 @@ void enable_floating_point_exceptions(void) {
     fpstat = get_fpu_control_word();
     fprintf(stderr,"FPU exception mask set to:  %4x:",fpstat);
     PRINT_FPU_EXCEPTION_MASK(fpstat);
-    fprintf(stderr,"\n");
+    fputs("\n",stderr);
     */
 #if __SSE__
     set_sse_control_status(get_sse_control_status() & ~SSE_MASK_INVALID);

@@ -96,6 +96,8 @@ required to have double-include protection.
 extern "C" {
 #endif
 
+#ifndef SWIG /* exclude from SWIG interface */
+
 #if !defined(lint)
 #  ifndef __GNUC__
 #    define RCSID(id)       static volatile const char *rcsid = (id)
@@ -110,6 +112,8 @@ extern "C" {
 #  define RCSID(id)	   typedef void useless
 #  define NRCSID(name,id)  typedef void useless
 #endif /* !lint */
+
+#endif /* SWIG */
 
 NRCSID (LALRCSIDH, "$Id$");
 

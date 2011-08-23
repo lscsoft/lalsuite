@@ -28,18 +28,12 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpClusterEventsCV">
-Author: Brown D. A., Woods D.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpClusterEvents.c}}
-\label{ss:FindChirpClusterEvents.c}
+\author Brown D. A., Woods D.
+\file
 
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <lal/LALStdio.h>
@@ -51,7 +45,7 @@ $Id$
 
 NRCSID (FINDCHIRPCLUSTEREVENTSC, "$Id$");
 
-/* <lalVerbatim file="FindChirpClusterEventsCP"> */
+
 void
 LALFindChirpClusterEvents (
     LALStatus                  *status,
@@ -62,7 +56,7 @@ LALFindChirpClusterEvents (
     UINT4                       subBankIndex,
     int                         writeCData
     )
-/* </lalVerbatim> */
+
 {
 
   int                   xlalRetCode = 0;

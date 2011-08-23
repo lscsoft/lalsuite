@@ -14,4 +14,5 @@ SUBDIRS = \
 	$(LALPULSARDIRS) \
 	inspiral \
 	tracksearch \
-	online
+	online \
+	hwinjection

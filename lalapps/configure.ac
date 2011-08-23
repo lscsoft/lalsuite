@@ -1,4 +1,4 @@
-AC_INIT([lalapps],[6.5.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.5.0.4],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([misc])
@@ -46,6 +46,7 @@ AC_CONFIG_FILES([\
   src/pulsar/SFTReferenceLibrary/Makefile \
   src/tracksearch/Makefile \
   src/online/Makefile \
+  src/hwinjection/Makefile \
 ])
 AM_INIT_AUTOMAKE([foreign])
 AH_TOP([
@@ -75,10 +76,12 @@ LALAPPS_ENABLE_STATIC_BINARIES
 
 LALAPPS_ENABLE_MPI
 
+LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
 LALAPPS_ENABLE_PSS
+LALAPPS_ENABLE_GDS
 
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
@@ -86,6 +89,7 @@ LALSUITE_ENABLE_LALXML
 LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALPULSAR
+LALSUITE_ENABLE_LALINFERENCE
 LALSUITE_ENABLE_LALSTOCHASTIC
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
@@ -219,9 +223,33 @@ CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$GSL_LIBS $LIBS"
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library])])
+LALSUITE_ENABLE_FAST_GSL
 
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
+
+# check for fftw libraries
+if test "${fftw}" = "true"; then
+  PKG_CHECK_MODULES([FFTW3],[fftw3 fftw3f],[true],[false])
+  CPPFLAGS="$CPPFLAGS $FFTW3_CFLAGS"
+  LIBS="$LIBS $FFTW3_LIBS"
+  AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_WARN([could not find the fftw3f library])],[-lm])
+  AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_WARN([could not find the fftw3 library])],[-lm])
+fi
+
+# check for fftw headers
+if test "${fftw}" = "true"; then
+  AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_WARN([could not find the fftw3.h header])])
+fi
+LALSUITE_ENABLE_MODULE([FFTW],[fftw])
+
+# check for GDS system: we check if we can link against libawg which is in GDS
+# GDS is a requirements for building 'online_psinject', which is used for hardware injections
+if test "${gds}" = "true"; then
+  AC_CHECK_LIB([awg],[awgGetChannelNames],,[gds="false"])
+  AC_CHECK_HEADERS([gdstype.h],,[gds="false"])
+fi
+LALSUITE_ENABLE_MODULE([GDS],[gds])
 
 # check for libFrame
 if test "${frame}" = "true"; then
@@ -310,6 +338,7 @@ if test "${pss}" = "true"; then
                  [LIBS="$lal_pre_pss_LIBS"])
 fi
 
+
 # check for pss headers
 if test "${pss}" = "true"; then
   lal_pre_pss_CPPFLAGS="$CPPFLAGS"
@@ -342,6 +371,7 @@ LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.0.1],[XLALCreateMetaTableDir],[lal/LIGOLwX
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.0.1],[XLALXMLFilePrintElements],[lal/LALXML.h])
 LALSUITE_CHECK_OPT_LIB([LALBurst],[1.0.1],[XLALEPSearch],[lal/EPSearch.h])
 LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.1.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALInference],[0.0.0.1],[LALInferenceAddVariable],[lal/LALInference.h])
 LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.1.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
 LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.1],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 
@@ -403,6 +433,7 @@ echo "
 
         LALApps has now been successfully configured:
 
+                FFTW library support is $FFTW_ENABLE_VAL
                 Frame library support is $FRAME_ENABLE_VAL
                 MetaIO library support is $METAIO_ENABLE_VAL
                 LAL Frame library support is $LALFRAME_ENABLE_VAL
@@ -412,11 +443,13 @@ echo "
                 LAL Inspiral library support is $LALINSPIRAL_ENABLE_VAL
                 LAL Stochastic library support is $LALSTOCHASTIC_ENABLE_VAL
                 LAL Pulsar library support is $LALPULSAR_ENABLE_VAL
+                LAL Inference library support is $LALINFERENCE_ENABLE_VAL
                 FITS library support is $CFITSIO_ENABLE_VAL
                 PSS library support is $PSS_ENABLE_VAL
                 Condor support is $CONDOR_ENABLE_VAL
                 BOINC support is $BOINC_ENABLE_VAL
                 MPI support is $MPI_ENABLE_VAL
+                GDS support is $GDS_ENABLE_VAL
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps

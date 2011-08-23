@@ -19,8 +19,7 @@
 
 /**
 \author Sukanta Bose
-\file
-\ingroup stochastic
+\addtogroup SimulateSB_h
 
 \brief Provides prototype and error code information for the modules needed
 to simulate a stochastic background signal.
@@ -35,6 +34,7 @@ detector transfer function in each detector.
 #include <lal/SimulateSB.h>
 \endcode
 
+@{
 */
 
 #ifndef _SIMULATESB_H
@@ -53,24 +53,26 @@ extern "C" {
   NRCSID( SIMULATESBH, "$Id$" );
 
 /**\name Error Codes */ /*@{*/
-#define SIMULATESBH_ENULLP          1
-#define SIMULATESBH_ENONPOSLEN      2
-#define SIMULATESBH_ENONPOSDELTAF   3
-#define SIMULATESBH_ENONPOSDELTAT   4
-#define SIMULATESBH_ENEGFMIN        5
-#define SIMULATESBH_EMMTIME         6
-#define SIMULATESBH_EMMHETERO       7
-#define SIMULATESBH_EMMFMIN         8
-#define SIMULATESBH_EMMDELTAF       9
-#define SIMULATESBH_EMMLEN         10
-#define SIMULATESBH_EOORFREF       11
-#define SIMULATESBH_ENONPOSOMEGA   12
-#define SIMULATESBH_EALOC          13
-#define SIMULATESBH_ENONZEROHETERO 14
-#define SIMULATESBH_EWRONGUNITS    15
-#define SIMULATESBH_ECOMPTIME      16
-#define SIMULATESBH_ENOTYETHETERO 255
+#define SIMULATESBH_ENULLP          1	/**< Null pointer */
+#define SIMULATESBH_ENONPOSLEN      2	/**< Negative or zero length for data member of time series */
+#define SIMULATESBH_ENONPOSDELTAF   3	/**< Negative or zero frequency spacing */
+#define SIMULATESBH_ENONPOSDELTAT   4	/**< Negative or zero time spacing */
+#define SIMULATESBH_ENEGFMIN        5	/**< Negative start frequency */
+#define SIMULATESBH_EMMTIME         6	/**< Mismatch in epochs */
+#define SIMULATESBH_EMMHETERO       7	/**< Mismatch in heterodyning frequencies */
+#define SIMULATESBH_EMMFMIN         8	/**< Mismatch in start frequencies */
+#define SIMULATESBH_EMMDELTAF       9	/**< Mismatch in frequency spacings */
+#define SIMULATESBH_EMMLEN         10	/**< Mismatch in sequence lengths */
+#define SIMULATESBH_EOORFREF       11	/**< Out of range reference frequency */
+#define SIMULATESBH_ENONPOSOMEGA   12	/**< Negative stochastic background strength */
+#define SIMULATESBH_EALOC          13	/**< Memory allocation error */
+#define SIMULATESBH_ENONZEROHETERO 14	/**< Non-zero heterodyning frequency specified for real time series */
+#define SIMULATESBH_EWRONGUNITS    15	/**< Inconsistent input units */
+#define SIMULATESBH_ECOMPTIME      16	/**< Time domain data complex instead of real */
+#define SIMULATESBH_ENOTYETHETERO 255	/**< Non-zero heterodyning frequency not yet implemented */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define SIMULATESBH_MSGENULLP         "Null pointer"
 #define SIMULATESBH_MSGENONPOSLEN     "Negative or zero length for data member of time series"
 #define SIMULATESBH_MSGENONPOSDELTAF  "Negative or zero frequency spacing"
@@ -88,7 +90,7 @@ extern "C" {
 #define SIMULATESBH_MSGEWRONGUNITS    "Inconsistent input units"
 #define SIMULATESBH_MSGECOMPTIME      "Time domain data complex instead of real"
 #define SIMULATESBH_MSGENOTYETHETERO  "Non-zero heterodyning frequency not yet implemented"
-/*@}*/
+/** \endcond */
 
   /*************************************************************
    *                                                           *
@@ -209,6 +211,9 @@ time series, in detector 2.
 			     SSSimStochBGOutput           *output,
 			     SSSimStochBGStrainInput            *input,
 			     SSSimStochBGStrainParams           *params );
+
+
+/** @} */
 
 #ifdef  __cplusplus
 }

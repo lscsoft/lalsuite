@@ -1,7 +1,5 @@
 #!/bin/sh
 
-c=1
-
 awk '{print $2,$3}' ../S5-H1segments-cat1.txt > S5h1.seg
 awk '{print $2,$3}' ../S5-H2segments-cat1.txt > S5h2.seg
 awk '{print $2,$3}' ../S5-L1segments-cat1.txt > S5l1.seg
@@ -11,6 +9,7 @@ awk '{print $2,$3}' ../S6-L1segments-cat1.txt > S6l1.seg
 awk '{print $2,$3}' ../S6-V1segments-cat1.txt > S6v1.seg
 
 while read line; do
+    c=`echo $line | awk '{print $1}'`
     chunk_start=`echo $line | awk '{print $2}'`
     chunk_end=`echo $line | awk '{print $3}'`
     if [ "$chunk_start" = "" ]; then continue; fi
@@ -46,7 +45,6 @@ while read line; do
     echo "L1 livetime=${l1_lt} sec"
     echo "V1 livetime=${v1_lt} sec"
 
-    let "c+=1"
 done < chunks.txt
 
 rm -f ./tmp

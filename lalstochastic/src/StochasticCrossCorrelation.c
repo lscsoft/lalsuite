@@ -19,15 +19,14 @@
 
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-\file
-\ingroup stochastic
+\addtogroup StochasticCrossCorrelation_c
 
 \brief Calculates the value of the standard optimally-filtered
 cross-correlation statistic for stochastic background searches.
 
 \heading{Description}
 
-\heading{<tt>LALStochasticCrossCorrelationStatistic()</tt>}
+\heading{LALStochasticCrossCorrelationStatistic()}
 
 The default version of the function, for handling non-heterodyned
 data, calculates the value of the standard optimally-filtered
@@ -103,13 +102,22 @@ of frequencies \f$f_0\le f< f_0 + (P-1)\delta f\f$, it is assumed that
 they were produced by discarding frequencies below \f$f_0\f$ from a longer
 frequency series, which was still the Fourier transform of a real time
 series.  In this case the cross-correlation statistic is calculated
-as\footnote{Note that the \f$P\f$th frequency bin is not treated
+as\latexonly\footnote{Note that the $P$th frequency bin is not treated
+  specially, as would be expected for the Nyquist frequency.  This is
+  the appropriate behavior if $M$ is an odd number (so that there is
+  no Nyquist bin) or if, as a result of coarse-graining, the Nyquist
+  bin has been removed from $\widetilde{Q}$.  At any rate, if there's
+  a significant contribution to the cross-correlation statistic from
+  the Nyquist frequency, something is wrong.}\endlatexonly
+\if HTML
+[Note that the \f$P\f$th frequency bin is not treated
   specially, as would be expected for the Nyquist frequency.  This is
   the appropriate behavior if \f$M\f$ is an odd number (so that there is
   no Nyquist bin) or if, as a result of coarse-graining, the Nyquist
   bin has been removed from \f$\widetilde{Q}\f$.  At any rate, if there's
   a significant contribution to the cross-correlation statistic from
-  the Nyquist frequency, something is wrong.}
+  the Nyquist frequency, something is wrong.]
+\endif
 \anchor stochastic_e_bandlimited \f{eqnarray}{
 Y&=&\
 \delta f\
@@ -134,7 +142,7 @@ the optimal filter is more coarsely sampled (for instance, if it
 varies in frequency too slowly to warrant the finer resolution), the
 data streams will be multiplied in the frequency domain and their
 product coarse-grained
-(cf. \ref CoarseGrainFrequencySeries_c to the
+(cf. \ref CoarseGrainFrequencySeries_h to the
 optimal filter resolution before calculating
 \eqref{stochastic_e_bandlimited}.
 
@@ -262,6 +270,7 @@ LALUnitMultiply()
   \f}</li>
 </ul>
 
+ @{
 */
 
 #include <lal/LALStdlib.h>
@@ -2541,3 +2550,5 @@ LALStochasticCrossCorrelationSpectrumStrain(
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* LALStochasticCrossCorrelationSpectrumStrain() */
+
+/** @} */

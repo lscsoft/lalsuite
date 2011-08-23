@@ -18,55 +18,42 @@
  */
 
 
-/* <lalVerbatim file="TimeDelayCV">
+/**
+\author David Chin, Kipp Cannon
+\addtogroup TimeDelay_h
 
-Author: Chin, David <dwchin@umich.edu> +1-734-709-9119, Kipp Cannon <kipp@gravity.phys.uwm.edu>
+\brief Computes difference in arrival time of the same signal at two different detectors.
 
-</lalVerbatim> */
-
-/* <lalLaTeX>
-
-\subsection{Module \texttt{TimeDelay.c}}
-\label{ss:TimeDelay.c}
-
-Computes difference in arrival time of the same signal at two different
-detectors.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{TimeDelayCP}
-
-
-\subsubsection*{Description}
+\heading{Description}
 
 The function XLALTimeDelayFromEarthCenter() Computes difference in arrival
 time of the same signal at detector and at center of Earth-fixed frame.
 
-The function XLALLightTravelTime() computes the light travel time between two detectors and returns the answer in \texttt{INT8} nanoseconds.
+The function XLALLightTravelTime() computes the light travel time between two detectors and returns the answer in \c INT8 nanoseconds.
 
-The function XLALPopulateAccuracyParams creates an instance of InspiralAccuracyList populated with the light-travel times between the detectors, using just the previous function.
-The function XLALPopulateAccuracyParamsExt, however, creates an instance of InspiralAccuracyList populated with the \textbf{real} travel time of a putative signal for the given time and the given sky location (in right ascension and declination, both given in degrees).
+The function XLALPopulateAccuracyParams() creates an instance of ::InspiralAccuracyList populated with
+the light-travel times between the detectors, using just the previous function.
+The function XLALPopulateAccuracyParamsExt(), however, creates an instance of ::InspiralAccuracyList
+populated with the \c real travel time of a putative signal for the given time and the given sky
+location (in right ascension and declination, both given in degrees).
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-TBA. See Anderson, \textit{et al.} \cite{tools:Anderson:2000} in the mean time.
+TBA. See Anderson, <em>et al.</em> [\ref ABCF2000] in the mean time.
 
 Note that GPS time is passed with both the detectors.  The GPS time of the
-second detector is \emph{ignored}, and the GPS time for the first detector
+second detector is \e ignored, and the GPS time for the first detector
 is taken to be the time when the signal arrives at the center of the
 Earth.  In practice, this time will be the time of detection of a signal at
-the first detector, but, as in Anderson, \textit{et al.}, we make this
+the first detector, but, as in Anderson, <em>et al.</em>, we make this
 approximation as it makes little difference.  This time is used to compute
 a GMST which gives us the orientation of the Earth.
 
-\subsubsection*{Uses}
+\heading{Uses}
 
+\heading{Notes}
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{TimeDelayCV}}
-
-</lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALConstants.h>
@@ -82,8 +69,8 @@ static double dotprod(const double vec1[3], const double vec2[3])
 	return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
 }
 
-
-/* <lalVerbatim file="TimeDelayCP"> */
+/** \ingroup TimeDelay_h */
+/*@{*/
 double
 XLALArrivalTimeDiff(
 	const double detector1_earthfixed_xyz_metres[3],
@@ -92,7 +79,7 @@ XLALArrivalTimeDiff(
 	const double source_declination_radians,
 	const LIGOTimeGPS *gpstime
 )
-{ /* </lalVerbatim> */
+{
 	double delta_xyz[3];
 	double ehat_src[3];
 	const double greenwich_hour_angle = XLALGreenwichMeanSiderealTime(gpstime) - source_right_ascension_radians;
@@ -128,14 +115,14 @@ XLALArrivalTimeDiff(
 }
 
 
-/* <lalVerbatim file="TimeDelayFromEarthCenterCP"> */
+
 double XLALTimeDelayFromEarthCenter(
 	const double detector_earthfixed_xyz_metres[3],
 	double source_right_ascension_radians,
 	double source_declination_radians,
 	const LIGOTimeGPS *gpstime
 )
-{/* </lalVerbatim> */
+{
 	static const double earth_center[3] = {0.0, 0.0, 0.0};
 
 	/*
@@ -147,13 +134,13 @@ double XLALTimeDelayFromEarthCenter(
 }
 
 
-/* <lalVerbatim file="TimeDelayCP"> */
+
 INT8
 XLALLightTravelTime(
 	const LALDetector *aDet,
 	const LALDetector *bDet
 )
-/* </lalVerbatim> */
+
 {
 	double deltaLoc[3];
 
@@ -163,3 +150,4 @@ XLALLightTravelTime(
 
 	return (INT8) (1e9 * sqrt(dotprod(deltaLoc, deltaLoc)) / LAL_C_SI);
 }
+/*@}*/

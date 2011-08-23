@@ -22,7 +22,6 @@
 \file
 \ingroup pulsarTODO
 
-\heading{Header \ref FitToPulsar.h}
 Provides routines for finding the best fit of the measured data to the strain expected from
 non-precessing pulsar.
 
@@ -92,6 +91,11 @@ This structure stores the parameters for the coarse fit.
 #ifndef _FITTOPULSAR_H
 #define _FITTOPULSAR_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 /******* INCLUDE ANY OTHER LAL HEADERS needed for header (NOT module) ****/
 
@@ -142,6 +146,7 @@ NRCSID (FITTOPULSARH, "$Id$");
 typedef struct
 tagCoarseFitInput
 {
+  SWIGLAL_STRUCT_LALALLOC();
   COMPLEX16Vector *B;     /* heterodyned, averaged and resampled data */
   COMPLEX16Vector *var;   /* variance of the rFactor points that were averaged */
   LIGOTimeGPS *t;        /* time stamp for each data point (not necessarily with equal time steps)*/
@@ -151,6 +156,7 @@ tagCoarseFitInput
 typedef struct
 tagCoarseFitOutput
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL8 h0;              /* best fit h0 */
   REAL8	eh0[3];		 /* standard error for h0, min standard error, max standard error */
   REAL8 cosIota;         /* best fit cosIota */
@@ -163,6 +169,7 @@ tagCoarseFitOutput
 typedef struct
 tagCoarseFitParams
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL8 meshH0[3];	  /* min h0, delta h0, number of steps */
   REAL8 meshCosIota[3];   /* min cosIota, delta cosIota, number of steps */
   REAL8 meshPhase[3];     /* min phase, delta phase, number of steps */

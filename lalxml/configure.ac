@@ -1,4 +1,4 @@
-AC_INIT([lalxml],[1.1.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalxml],[1.1.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALXMLConfig.h])
 AC_CONFIG_SRCDIR([src/LALXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -12,6 +12,9 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
+  swig/Makefile \
+  swig/octave/Makefile \
+  swig/python/Makefile \
   test/Makefile
 ])
 AM_INIT_AUTOMAKE([foreign])
@@ -80,6 +83,9 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 # use silent build rules if available
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
+# SWIG wrapping requires a c++ compiler
+AC_PROG_CXX
+
 # checks for programs
 AC_PROG_CPP
 AC_PROG_INSTALL
@@ -114,13 +120,17 @@ CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$LIBS $GSL_LIBS"
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
+LALSUITE_ENABLE_FAST_GSL
 
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.5.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[6.5.0.3],[LALVersion],[lal/LALStdio.h])
 LALSUITE_CHECK_LIB([LALSupport],[6.5.0],[LALOpenDataFile],[lal/FileIO.h])
+
+# check for SWIG wrapping
+LALSUITE_ENABLE_SWIG
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -140,7 +150,11 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LALXML has now been successfully configured
+        LALXML has now been successfully configured:
+
+                SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
+                SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+
         and will be installed under the directory:
 
           ${prefix}

@@ -19,12 +19,17 @@
 
 /**
  * \author Karl Wette
- * \file
+ * \ingroup pulsarTODO
  * \brief Lattice-based template generation for flat metric parameter spaces
  */
 
 #ifndef _FLATLATTICETILING_H
 #define _FLATLATTICETILING_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
 
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
@@ -75,6 +80,7 @@ typedef int (*FlatTilingLatticeGenerator)(
  * Flat lattice tiling state/input structure
  */
 typedef struct tagFlatLatticeTiling {
+  SWIGLAL_STRUCT_LALALLOC();
 
   /* Dimension of the parameter space */
   INT4 dimensions;

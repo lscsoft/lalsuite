@@ -24,16 +24,14 @@
  *
  * Author: Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
  *
- * Revision: $Id: LALTrigScanCluster.h,v 1.10 2007/06/08 14:41:57 bema Exp $
- *
  *----------------------------------------------------------------------- */
 
-#if 0
-<lalVerbatim file="LALTrigScanClusterHV">
-Author: Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
-$Id: LALTrigScanCluster.h,v 1.10 2007/06/08 14:41:57 bema Exp $
-</lalVerbatim>
-#endif
+/**
+
+\author Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
+\file
+\brief NONE
+*/
 
 #ifndef _LALTRIGSCANCLUSTER_H
 #define _LALTRIGSCANCLUSTER_H
@@ -46,32 +44,33 @@ $Id: LALTrigScanCluster.h,v 1.10 2007/06/08 14:41:57 bema Exp $
 #include    <lal/EllipsoidOverlapTools.h>
 #include    <lal/CoincInspiralEllipsoid.h>
 
-NRCSID( LALTRIGSCANCLUSTERH,
-        "$Id$");
+NRCSID( LALTRIGSCANCLUSTERH, "$Id$");
 
-
+/** UNDOCUMENTED */
 typedef enum {
-    trigScanNone,
-    T0T3Tc,
-    Psi0Psi3Tc,
-    NUM_TRIGSCAN_TYPE
+    trigScanNone,	/**< UNDOCUMENTED */
+    T0T3Tc,		/**< UNDOCUMENTED */
+    Psi0Psi3Tc,		/**< UNDOCUMENTED */
+    NUM_TRIGSCAN_TYPE	/**< UNDOCUMENTED */
 }
 trigScanType;
 
+/** UNDOCUMENTED */
 typedef struct
 tagTrigScanCluster
 {
-  INT4                      nelements;
-  TriggerErrorList          *element;
-  struct tagTrigScanCluster *next;
+  INT4                      nelements;	/**< UNDOCUMENTED */
+  TriggerErrorList          *element;	/**< UNDOCUMENTED */
+  struct tagTrigScanCluster *next;	/**< UNDOCUMENTED */
 } TrigScanCluster;
 
+/** UNDOCUMENTED */
 typedef enum
 {
-  TRIGSCAN_SUCCESS,
-  TRIGSCAN_ERROR,
-  TRIGSCAN_NUM_STATUS
-} TrigScanStatus;
+  TRIGSCAN_SUCCESS,	/**< UNDOCUMENTED */
+  TRIGSCAN_ERROR,	/**< UNDOCUMENTED */
+  TRIGSCAN_NUM_STATUS	/**< UNDOCUMENTED */
+} TrigScanStatus;	/**< UNDOCUMENTED */
 
 
 int XLALTrigScanClusterTriggers( SnglInspiralTable **table,

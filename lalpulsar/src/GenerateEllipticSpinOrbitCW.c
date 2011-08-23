@@ -22,16 +22,8 @@
 \file
 \ingroup pulsarTODO
 
-\heading{Module \ref GenerateEllipticSpinOrbitCW.c}
-\latexonly\label{ss_GenerateEllipticSpinOrbitCW_c}\endlatexonly
-
-Computes a continuous waveform with frequency drift and Doppler
+\brief Computes a continuous waveform with frequency drift and Doppler
 modulation from an elliptical orbital trajectory.
-
-\heading{Prototypes}
-
-
-
 
 \heading{Description}
 
@@ -56,7 +48,7 @@ function will create and allocate space for <tt>output->a</tt>,
 \heading{Algorithm}
 
 For elliptical orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
-\TODOref{eq_spinorbit-t}, and\TODOref{eq_spinorbit-upsilon} to get \f$t_r\f$
+\eqref{eq_spinorbit-t}, and\eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
 directly as a function of the eccentric anomaly \f$E\f$:
 \anchor eq_tr-e1 \f{eqnarray}{
 t_r = t_p & + & \left(\frac{r_p \sin i}{c}\right)\sin\omega \nonumber\\
@@ -73,15 +65,11 @@ period of the orbit.  For simplicity we write this as:
 \label{eq_tr-e2}
 t_r = T_p + \frac{1}{n}\left( E + A\sin E + B[\cos E - 1] \right) \;,
 \f}
-\begin{wrapfigure}{r}{0.28\textwidth}
 
+\wrapfig{r,0.28\textwidth,fig_binary-orbit_ell}
+\image html  inject_eanomaly.png "Fig. [fig_binary-orbit_ell]: Function to be inverted to find eccentric anomaly"
+\image latex inject_eanomaly.pdf "Function to be inverted to find eccentric anomaly" width=0.23\textwidth
 
-\resizebox{0.23\textwidth}{!}{\includegraphics{inject_eanomaly}} \\
-%\parbox{0.23\textwidth}{\caption{\label{fig:binary-orbit} Function to
-%be inverted to find eccentric anomaly.}}
-
-
-\end{wrapfigure}
 where \f$T_p\f$ is the \e observed time of periapsis passage and
 \f$n=2\pi/P\f$ is the mean angular speed around the orbit.  Thus the key
 numerical procedure in this routine is to invert the expression
@@ -122,9 +110,9 @@ Once a value of \f$E\f$ is found for a given timestep in the output
 series, we compute the system time \f$t\f$ via Eq.\eqref{eq_spinorbit-t},
 and use it to determine the wave phase and (non-Doppler-shifted)
 frequency via Eqs.\eqref{eq_taylorcw-freq}
-and\TODOref{eq_taylorcw-phi}.  The Doppler shift on the frequency is
+and\eqref{eq_taylorcw-phi}.  The Doppler shift on the frequency is
 then computed using Eqs.\eqref{eq_spinorbit-upsilon}
-and\TODOref{eq_orbit-rdot}.  We use \f$\upsilon\f$ as an intermediate in
+and\eqref{eq_orbit-rdot}.  We use \f$\upsilon\f$ as an intermediate in
 the Doppler shift calculations, since expressing \f$\dot{R}\f$ directly in
 terms of \f$E\f$ results in expression of the form \f$(1-e)/(1-e\cos E)\f$,
 which are difficult to simplify and face precision losses when

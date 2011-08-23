@@ -1439,7 +1439,7 @@ int MAIN( int argc, char *argv[]) {
       timeStamp1 = XLALGetTimeOfDay();
 
     xlalErrno = 0;
-    XLALComputeExtraStatsForToplist ( semiCohToplist, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, uvar_SignalOnly );
+    XLALComputeExtraStatsForToplist ( semiCohToplist, "GCTtop", &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, uvar_SignalOnly );
     if ( xlalErrno != 0 ) {
       XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", fn, __LINE__, xlalErrno );
       return(HIERARCHICALSEARCH_EXLAL);

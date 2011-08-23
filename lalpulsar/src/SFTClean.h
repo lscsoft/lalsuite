@@ -57,6 +57,11 @@ them to clean SFT data
 #ifndef _SFTCLEAN_H
 #define _SFTCLEAN_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 /*
  * 5. Includes. This header may include others; if so, they go immediately
  *    after include-loop protection. Includes should appear in the following
@@ -149,6 +154,7 @@ NRCSID (SFTCLEANH, "$Id$");
 
 /** structure for storing list of spectral lines -- constructed by expanding list of harmonics*/
   typedef struct tagLineNoiseInfo{
+    SWIGLAL_STRUCT_LALALLOC();
     INT4         nLines;     /**< number of lines */
     REAL8        *lineFreq;  /**< central frequency of the line in Hz */
     REAL8        *leftWing;  /**< width to the left from central frequency in Hz */
@@ -158,6 +164,7 @@ NRCSID (SFTCLEANH, "$Id$");
   /** structure for storing the contents of the input list of known
       spectral disturbances */
   typedef struct tagLineHarmonicsInfo{
+    SWIGLAL_STRUCT_LALALLOC();
     INT4         nHarmonicSets; /**< number of sets of harmonics */
     REAL8        *startFreq;    /**< starting frequency of set in Hz */
     REAL8        *gapFreq;      /**< frequency difference between adjacent harmonics in Hz */

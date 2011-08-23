@@ -1,6 +1,6 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 7
+# serial 9
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -110,6 +110,18 @@ AC_DEFUN([LALAPPS_ENABLE_MPI],
   ], [ mpi=false ] )
 ])
 
+AC_DEFUN([LALAPPS_ENABLE_FFTW],
+[AC_ARG_ENABLE(
+  [fftw],
+  AC_HELP_STRING([--enable-fftw],[compile code that requires FFTW3 library [default=yes]]),
+  [ case "${enableval}" in
+      yes) fftw=true;;
+      no)  fftw=false ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-fftw) ;;
+    esac
+  ], [ fftw=true ] )
+])
+
 AC_DEFUN([LALAPPS_ENABLE_FRAME],
 [AC_ARG_ENABLE(
   [frame],
@@ -156,6 +168,18 @@ AC_DEFUN([LALAPPS_ENABLE_PSS],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-pss) ;;
     esac
   ], [pss=false])
+])
+
+AC_DEFUN([LALAPPS_ENABLE_GDS],
+[AC_ARG_ENABLE(
+  [pss],
+  AC_HELP_STRING([--enable-gds],[compile code that requires GSD library [default=no]]),
+  [ case "${enableval}" in
+      yes) gds=true;;
+      no) gds=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-gds) ;;
+    esac
+  ], [gds=false])
 ])
 
 AC_DEFUN([LALAPPS_CHECK_QTHREAD],

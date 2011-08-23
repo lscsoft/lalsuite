@@ -19,16 +19,12 @@
 
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu
-\file
-\ingroup stochastic
+\addtogroup StochasticOptimalFilter_c
 
-\brief Calculates the values of the optimal filter function for the
-standard cross-correlation statistic.
-
-\heading{Description}
+\brief Calculates the values of the optimal filter function for the standard cross-correlation statistic.
 
 As described in
-\ref stochasticAllen1997, \ref stochasticAllen1999, \ref stochasticFinn2001,
+\ref Allen1997, \ref Allen1999, \ref Finn2001,
 the optimal filter \f$\widetilde{Q}^{\mathrm{C}}(f)\f$ which maximizes the ratio of the
 mean \f$\mu=\langle Y\rangle\f$ to the standard deviation
 \f$\sigma=\sqrt{\langle (Y-\mu)^2\rangle}\f$ of the cross-correlation
@@ -41,9 +37,9 @@ statistic\eqref{stochastic_e_ymax} is
 \f}
 
 where \f$\lambda\f$ is a normalization constant, \f$\gamma(f)\f$ is the
-overlap reduction function (\e cf \ref OverlapReductionFunction.c) for the two
+overlap reduction function (\e cf \ref OverlapReductionFunction_c) for the two
 detectors, \f$\Omega_{\mathrm{GW}}(f)\f$ is the stochastic
-gravitational wave background strength (\e cf \ref OverlapReductionFunction.c), and \f$P^{\mathrm{C}}_i(f)\f$ is
+gravitational wave background strength (\e cf \ref OverlapReductionFunction_c), and \f$P^{\mathrm{C}}_i(f)\f$ is
 the power spectral density (\f$\langle
 h^{\mathrm{C}}_i(f)h^{\mathrm{C}}_i(f')^*\rangle=\delta(f-f')P^{\mathrm{C}}_i(f)\f$)
 for the \f$i\f$th detector.
@@ -137,7 +133,7 @@ LALUnitCompare()
   assumes a large observation time continuum-limit approximation.  In
   this limit, the Dirichlet kernels (which appear in an exact
   expression for the standard cross-correlation statistic, when
-  evaluated in discrete time \ref stochasticFinn2001; see also
+  evaluated in discrete time [\ref Finn2001]; see also
   the documentation for the module Dirichlet.c in the utilities package)
   may be replaced by Dirac delta functions.</li>
 <li> Although \f$Q^{\mathrm{C}}(f)\f$ is real by construction, the uncalibrated optimal
@@ -163,23 +159,7 @@ LALUnitCompare()
   \f}</li>
 </ul>
 
-\bibitem{stochastic:Allen:1997}
-  B.~Allen
-  "The stochastic gravity-wave background: sources and detection"
-  in <em>Proceedings of the Les Houches School on Astrophysical Sources of
-  Gravitational Waves</em>,
-  eds. J.~A.~Marck and J.~P.~Lasota, Cambridge, 373 (1997);
-  \href{http://www.arXiv.org/abs/gr-qc/9604033}{gr-qc/9604033}
-\bibitem{stochastic:Allen:1999}
-  B.~Allen and J.~D.~Romano, "Detecting a stochastic background of
-  gravitational radiation: Signal processing strategies and
-  sensitivities"
-  Phys.\ Rev.\ D \c 59, 102001 (1999);
-  \href{http://www.arXiv.org/abs/gr-qc/9710117}{gr-qc/9710117}
-\bibitem{stochastic:Finn:2001}
-  L.~S.~Finn and J.~D.~Romano, "Detecting stochastic gravitational waves:
-  Performance of maximum-likelihood and cross-correlation statistics",
-  unpublished.
+  @{
 */
 
 #include <lal/LALStdlib.h>
@@ -402,7 +382,7 @@ LALStochasticOptimalFilterCal(
   /* All the powers we use are integers, so we can do this once here */
   power.denominatorMinusOne = 0;
 
-  /******* Set tmpUnit1 to dims of Omega/H0^2 ******/
+  /* Set tmpUnit1 to dims of Omega/H0^2 ******/
 
   /* First, set it to dims of H0 */
   tmpUnit1 = lalHertzUnit;
@@ -696,7 +676,7 @@ LALStochasticOptimalFilter(
   /* All the powers we use are integers, so we can do this once here */
   power.denominatorMinusOne = 0;
 
-  /******* Set tmpUnit1 to dims of Omega/H0^2 ******/
+  /* Set tmpUnit1 to dims of Omega/H0^2 ******/
 
   /* First, set it to dims of H0 */
 
@@ -784,3 +764,5 @@ LALStochasticOptimalFilter(
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* LALStochasticOptimalFilter() */
+
+/** @} */

@@ -448,6 +448,7 @@ int inspinj( REAL4TimeSeries *series, const char *inspinjfile, const char *calfi
 
 int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *calfile )
 {
+	TimeSlide *time_slide;
 	SimBurst *sim_burst;
 	REAL8TimeSeries *injections;
 	COMPLEX8FrequencySeries *response;
@@ -465,8 +466,9 @@ int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *cal
 
 	XLALGPSAdd(&tend, series->deltaT * series->data->length);
 
+	time_slide = XLALTimeSlideTableFromLIGOLw( burstinjfile );
 	sim_burst = XLALSimBurstTableFromLIGOLw( burstinjfile, &tbeg, &tend );
-	if ( !sim_burst ) {
+	if ( !sim_burst || !time_slide ) {
 		fprintf( stderr, "error: could not read file %s\n", burstinjfile );
 		exit( 1 );
 	}
@@ -478,19 +480,16 @@ int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *cal
 
 	injections = XLALCreateREAL8TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
 	/* FIXME:  new injection code requires double precision respose */
-	if(XLALBurstInjectSignals( injections, sim_burst, /*response*/ NULL )) {
-		fprintf( stderr, "error: signal injection failed\n" );
-		exit( 1 );
-	}
+	//if(XLALBurstInjectSignals( injections, sim_burst, time_slide, /*response*/ NULL )) {
+	//	fprintf( stderr, "error: signal injection failed\n" );
+	//	exit( 1 );
+	//}
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] += injections->data->data[i];
 	XLALDestroyREAL8TimeSeries(injections);
 
-	while ( sim_burst ) {
-		SimBurst *next = sim_burst->next;
-		XLALDestroySimBurst( sim_burst );
-		sim_burst = next;
-	}
+	XLALDestroyTimeSlideTable(time_slide);
+	XLALDestroySimBurstTable(sim_burst);
 	XLALDestroyCOMPLEX8FrequencySeries( response );
 
 	return 0;

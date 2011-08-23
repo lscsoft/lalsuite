@@ -1,6 +1,5 @@
 /*
-*  Copyright (C) 2010 Riccardo Sturani, based on LALEOBWaveform.c and 
-*  LALSTPNWaveform
+*  Copyright (C) 2011 Riccardo Sturani
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -18,71 +17,84 @@
 *  MA  02111-1307  USA
 */
 
-/****  <lalVerbatim file="LALPSpinInspiralRDCV">
- * $Id$
- **** </lalVerbatim> */
+/**
+\file
+\ingroup LALInspiral_h
 
-/****  <lalLaTeX>
+ * \brief Module to generate generic spinning binaries waveforms complete with ring-down
  *
- * \subsection{Module \texttt{LALPSpinInspiralRD.c},
- * \texttt{LALPSpinInspiralTemplates} and \texttt{LALPSpinInspiralForInjection}}
- * \label{ss:LALPSpinInspiralRD.c}
+ * \heading{Prototypes}
  *
- * Module to generate generic spinning binaries waveforms complete with ring-down
+ * <tt>LALPSpinInspiralRD()</tt>
+ * <dl>
+ * <dt>status:</dt><dd> Input/Output
+ * <dt>signalvec:</dt><dd> Output containing the inspiral waveform.</dd>
+ * <dt>params:</dt><dd> Input containing binary chirp parameters.</dd>
+ * </dl>
  *
- * \subsubsection*{Prototypes}
- * \vspace{0.1in}
- * \input{LALPSpinInspiralRDCP}
- * \idx{\verb&LALPSpinInspiralRD()&}
- * \begin{description}
- * \item {\tt signalvec:} Output containing the inspiral waveform.
- * \item {\tt params:} Input containing binary chirp parameters.
- * \end{description}
  *
- * \input{LALPSpinInspiralRDTemplatesCP}
- * \idx{\verb&LALPSpinInspiralRDTemplates()&}
- * \begin{description}
- * \item {\tt signalvec1:} Output containing the $+$ inspiral waveform.
- * \item {\tt signalvec2:} Output containing the $\times$ inspiral waveform.
- * \item {\tt params:} Input containing binary chirp parameters.
- * \end{description}
+ * <tt>LALPSpinInspiralRDTemplates()</tt>
+ * <dl>
+ * <dt>status:</dt><dd>Input/Output
+ * <dt>signalvec1:</dt><dd>Output containing the \f$+\f$ inspiral waveform.</dd>
+ * <dt>signalvec2:</dt><dd>Output containing the \f$\times\f$ inspiral waveform.</dd>
+ * <dt>params:</dt><dd>Input containing binary chirp parameters.</dd>
+ * </dl>
  *
- * \input{LALPSpinInspiralRDInjectionCP}
- * \idx{\verb&LALPSpinInspiralRDInjection()&}
- * \begin{description}
- * \item {\tt signalvec:} Output containing the inspiral waveform.
- * \item {\tt params:} Input containing binary chirp parameters.
- * \end{description}
  *
- * \subsubsection*{Description}
+ * <tt>LALPSpinInspiralRDInjection()</tt>
+ * <dl>
+ * <dt>status:</dt><dd> Input/Output
+ * <dt>signalvec:</dt><dd>Output containing the inspiral waveform.</dd>
+ * <dt>params:</dt><dd>Input containing binary chirp parameters.</dd>
+ * </dl>
+ *
+ * <tt>LALPSpinInspiralRDFreqDom()</tt>
+ * <dl>
+ * <dt>status:</dt><dd> Input/Output
+ * <dt>signalvec:</dt><dd>Output containing the inspiral waveform in frequency domain.</dd>
+ * <dt>params:</dt><dd>Input containing binary chirp parameters.</dd>
+ * </dl>
+ *
+ * \heading{Description}
  * This codes provide complete waveforms for generically spinning binary systems.
  * In order to construct the waveforms three phases are joined together:
  * an initial inspiral phase, a phenomenological phase encompassing the description
  * of the merger and the ring-down of the final black hole.
  * During the inspiral phase the system is evolved according to the standard
  * PN formulas, valid up to 3.5PN for the orbital motion,
- * to 2.5PN level for spin-orbital momentum and to 2PN for spin-spin contributions
+ * to 3PN level for spin-orbital momentum and to 2PN for spin-spin contributions
  * to the orbital phase.
  * Then a phenomenological phase is added during which the frequency of the
  * waveform has a pole-like behaviour. The stitching is performed in order to
  * ensure continuity of the phase, the frequency and its first and second
  * derivatives. Finally a ring-down phase is attached.
  *
- * \subsubsection*{Algorithm}
+ * \heading{Algorithm}
  *
- * \subsubsection*{Uses}
- * \begin{verbatim}
- * LALPSpinInspiralRDderivatives
- * LALInspiralSetup
- * LALInspiralChooseModel
- * LALRungeKutta4
- * \end{verbatim}
+ * \heading{Uses}
+ * \code
+ * LALPSpinInspiralRDderivatives()
+ * LALInspiralSetup()
+ * LALInspiralChooseModel()
+ * LALRungeKutta4()
+ * OmMatch()
+ * fracRD()
+ * XLALPSpinInspiralRDSetParams()
+ * XLALSpinInspiralTest()
+ * XLALSpinInspiralDerivatives()
+ * LALSpinInspiralDerivatives()
+ * XLALSpinInspiralFillH2Modes()
+ * XLALSpinInspiralFillH3Modes()
+ * XLALSpinInspiralFillH4Modes()
+ * LALSpinInspiralEngine()
+ * XLALSpinInspiralAdaptiveEngine()
+ * LALPSpinInspiralRDEngine()
+ * \endcode
  *
- * \subsubsection*{Notes}
+ * \heading{Notes}
  *
- * \vfill{\footnotesize\input{LALPSpinInspiralRDCV}}
- *
- **** </lalLaTeX>  */
+*/
 
 /** \defgroup psird Complete phenomenological spin-inspiral waveforms
  *
@@ -90,6 +102,9 @@
  * systems.
  *
  */
+
+#include <LALPSpinInspiralRD.h>
+#include <LALAdaptiveRungeKutta4.h>
 
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
@@ -99,42 +114,285 @@
 
 NRCSID(LALPSPININSPIRALRDC, "$Id$");
 
-typedef struct LALPSpinInspiralRDstructparams {
-    REAL8 eta;			///< symmetric mass ratio
-    REAL8 dm;			///< \f$m_1-m_2\f$
-    REAL8 m1m2;			///< \f$m_1/m_2\f$
-    REAL8 m2m1;			///< \f$m_2/m_1\f$
-    REAL8 m2m;
-    REAL8 m1m;
-    REAL8 wdotorb[8];		///< Coefficients of the analytic PN expansion of \f$\dot\omega_{orb}\f$
-    REAL8 wdotorblog;		///< Log coefficient of the PN expansion of of \f$\dot\omega_{orb}\f$
-    REAL8 wdotspin15S1LNh;
-    REAL8 wdotspin15S2LNh;
-    REAL8 wdotspin20S1S2;
-    REAL8 wdotspin20S1S1;	///< Coeff. of the \f$s_1s_1\f$ cntrb. to \f$\dot\omega\f$
-    REAL8 wdotspin20S1S2LNh;
-    REAL8 wdotspin25S1LNh;
-    REAL8 wdotspin25S2LNh;	///< Coeff. of the \f$s_2\cdot \hat L_N\f$ cntrb. to \f$\dot\omega\f$
-    REAL8 S1dot15;
-    REAL8 S2dot15;
-    REAL8 Sdot20;
-    REAL8 S1dot25;
-    REAL8 S2dot25;
-    REAL8 LNhdot15;
-    REAL8 LNhdot20;
-    REAL8 epnorb[4];		///< Coefficients of the PN expansion of the energy
-    REAL8 epnspin15S1dotLNh;	///< Coeff. of the \f$S_1\cdot L\f$ term in energy
-    REAL8 epnspin15S2dotLNh;	///< Coeff. of the \f$S_2\cdot L\f$ term in energy
-    REAL8 epnspin20S1S2;	///< Coeff. of the \f$S_1\cdot S_2\f$ term in energy
-    REAL8 epnspin20S1S2dotLNh;	///< Coeff. of the \f$S_{1,2}\cdot L\f$ term in energy
-    REAL8 epnspin20S1S1;	///< Coeff. of the \f$S_1\cdot S_1\f$ term in energy
-    REAL8 epnspin20S1S1dotLNh;
-    REAL8 epnspin20S2S2;	///< Coeff. of the \f$S_2\cdot S_2\f$ term in energy
-    REAL8 epnspin20S2S2dotLNh;
-    REAL8 epnspin25S1dotLNh;
-    REAL8 epnspin25S2dotLNh;
+#define sqrtOnePointFive 1.22474
+#define sqrtPoint15      0.387298
+#define sqrtFiveOver2    1.1183
+#define minIntLen        8
 
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
+static REAL8 OmMatch(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2) {
+
+  const REAL8 omM       = 0.0555;
+  const REAL8 omMsz12   =    9.97e-4;
+  const REAL8 omMs1d2   =  -2.032e-3;
+  const REAL8 omMssq    =   5.629e-3;
+  const REAL8 omMsz1d2  =   8.646e-3;
+  const REAL8 omMszsq   =  -5.909e-3;
+  const REAL8 omM3s1d2  =   1.801e-3;
+  const REAL8 omM3ssq   = -1.4059e-2;
+  const REAL8 omM3sz1d2 =  1.5483e-2;
+  const REAL8 omM3szsq  =   8.922e-3;
+
+  return omM + /*6.05e-3 * sqrtOneMinus4Eta +*/
+    omMsz12   * (LNhS1 + LNhS2) +
+    omMs1d2   * (S1S2) +
+    omMssq    * (S1S1 + S2S2) +
+    omMsz1d2  * (LNhS1 * LNhS2) +
+    omMszsq   * (LNhS1 * LNhS1 + LNhS2 * LNhS2) +
+    omM3s1d2  * (LNhS1 + LNhS2) * (S1S2) +
+    omM3ssq   * (LNhS1 + LNhS2) * (S1S1+S2S2) +
+    omM3sz1d2 * (LNhS1 + LNhS2) * (LNhS1*LNhS2) +
+    omM3szsq  * (LNhS1 + LNhS2) * (LNhS1*LNhS1+LNhS2*LNhS2);
+}
+
+static REAL8 fracRD(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2) {
+
+  const double frac0      = 0.840;
+  const double fracsz12   = -2.145e-2;
+  const double fracs1d2   = -4.421e-2;
+  const double fracssq    = -2.643e-2;
+  const double fracsz1d2  = -5.876e-2;
+  const double fracszsq   = -2.215e-2;
+
+  return frac0 +
+    fracsz12   * (LNhS1 + LNhS2) +
+    fracs1d2   * (S1S2) +
+    fracssq    * (S1S1 + S2S2) +
+    fracsz1d2  * (LNhS1 * LNhS2) +
+    fracszsq   * (LNhS1 * LNhS1 + LNhS2 * LNhS2);
+}
+
+typedef struct LALPSpinInspiralRDstructparams {
+  REAL8 dt;
+  REAL8 eta;                  ///< symmetric mass ratio
+  REAL8 dm;                   ///< \f$m_1-m_2\f$
+  REAL8 m1m2;                 ///< \f$m_1/m_2\f$
+  REAL8 m2m1;                 ///< \f$m_2/m_1\f$
+  REAL8 m1m;
+  REAL8 m2m;
+  REAL8 m1msq;
+  REAL8 m2msq;
+  REAL8 m;
+  REAL8 wdotorb[8];           ///< Coefficients of the analytic PN expansion of \f$\dot\omega_{orb}\f$
+  REAL8 wdotorblog;           ///< Log coefficient of the PN expansion of of \f$\dot\omega_{orb}\f$
+  REAL8 wdotspin15S1LNh;
+  REAL8 wdotspin15S2LNh;
+  REAL8 wdotspin20S1S2;
+  REAL8 wdotspin20S1S1;       ///< Coeff. of the \f$s_1s_1\f$ cntrb. to \f$\dot\omega\f$
+  REAL8 wdotspin20S1S2LNh;
+  REAL8 wdotspin25S1LNh;
+  REAL8 wdotspin25S2LNh;      ///< Coeff. of the \f$s_2\cdot \hat L_N\f$ cntrb. to \f$\dot\omega\f$
+  REAL8 wdotspin30S1LNh;
+  REAL8 wdotspin30S2LNh;
+  REAL8 S1dot15;
+  REAL8 S2dot15;
+  REAL8 Sdot20;
+  REAL8 Sdot20S;
+  REAL8 S1dot25;
+  REAL8 S2dot25;
+  REAL8 LNhdot15;
+  REAL8 epnorb[4];           ///< Coefficients of the PN expansion of the energy
+  REAL8 epnspin15S1dotLNh;   ///< Coeff. of the \f$S_1\cdot L\f$ term in energy
+  REAL8 epnspin15S2dotLNh;   ///< Coeff. of the \f$S_2\cdot L\f$ term in energy
+  REAL8 epnspin20S1S2;       ///< Coeff. of the \f$S_1\cdot S_2\f$ term in energy
+  REAL8 epnspin20S1S2dotLNh; ///< Coeff. of the \f$S_{1,2}\cdot L\f$ term in energy
+  REAL8 epnspin20S1S1;       ///< Coeff. of the \f$S_1\cdot S_1\f$ term in energy
+  REAL8 epnspin20S1S1dotLNh;
+  REAL8 epnspin20S2S2;       ///< Coeff. of the \f$S_2\cdot S_2\f$ term in energy
+  REAL8 epnspin20S2S2dotLNh;
+  REAL8 epnspin25S1dotLNh;
+  REAL8 epnspin25S2dotLNh;
+  REAL8 OmCutoff;
+  REAL8 lengths;
+  REAL8 omOffset;
+  REAL8 polarization;
+  UINT4 length;
+  UINT4 inspiralOnly;
 } LALPSpinInspiralRDparams;
+
+typedef struct LALPSpinInspiralPhenParsStruct {
+  REAL8 endtime;
+  REAL8 Psi;
+  REAL8 alpha;
+  REAL8 ci;
+  REAL8 omega;
+  REAL8 domega;
+  REAL8 ddomega;
+  REAL8 diota;
+  REAL8 ddiota;
+  REAL8 dalpha;
+  REAL8 ddalpha;
+  REAL8 energy;
+  REAL8 LNhS1;
+  REAL8 LNhS2;
+  REAL8 S1S1;
+  REAL8 S1S2;
+  REAL8 S2S2;
+  INT4  countback;
+  INT4  intreturn;
+} LALPSpinInspiralPhenPars;
+
+typedef struct LALSpinInspiralAngleStruct {
+  REAL8 ci2;
+  REAL8 si2;
+  REAL8 ci;
+  REAL8 si;
+  REAL8 c2i;
+  REAL8 s2i;
+  REAL8 c2i2;
+  REAL8 s2i2;
+  REAL8 c3i2;
+  REAL8 s3i2;
+  REAL8 c4i2;
+  REAL8 s4i2;
+  REAL8 c5i2;
+  REAL8 s5i2;
+  REAL8 c6i2;
+  REAL8 s6i2;
+  REAL8 c8i2;
+  REAL8 s8i2;
+  REAL8 cdi;
+  REAL8 sdi;
+} LALSpinInspiralAngle;
+
+static void XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,InspiralTemplate *params, InspiralInit *paramsInit) {
+
+  mparams->inspiralOnly = params->inspiralOnly;
+  mparams->dt           = 1./params->tSampling;
+  mparams->OmCutoff     = params->fCutoff*params->totalMass * LAL_MTSUN_SI * (REAL8) LAL_PI;
+  mparams->lengths      = (5.0 / 256.0) / LAL_PI * pow(LAL_PI * params->chirpMass * LAL_MTSUN_SI * params->fLower,-5.0 / 3.0) / params->fLower;
+  mparams->omOffset     = 0.006;
+
+  /* setup coefficients for PN equations */
+  mparams->m     = params->totalMass;
+  mparams->m2m1  = params->mass2 / params->mass1;
+  mparams->m1m2  = params->mass1 / params->mass2;
+  mparams->m1m   = params->mass1 / params->totalMass;
+  mparams->m2m   = params->mass2 / params->totalMass;
+  mparams->m1msq = mparams->m1m * mparams->m1m;
+  mparams->m2msq = mparams->m2m * mparams->m2m;
+  mparams->dm    = (params->mass1 - params->mass2) / params->totalMass;
+  
+  /* params->eta might have been set up before but just for safety, we
+   * recompute it here below.*/
+  params->eta = (params->mass1 * params->mass2) / (params->mass1 + params->mass2) / (params->mass1 + params->mass2);
+  mparams->eta = params->eta;
+
+  switch (params->order) {
+
+    case LAL_PNORDER_THREE_POINT_FIVE:
+      mparams->wdotorb[7] = paramsInit->ak.ST[8];
+
+    case LAL_PNORDER_THREE:
+      mparams->epnorb[3] = paramsInit->ak.ETa3;
+      mparams->wdotorb[6] = paramsInit->ak.ST[6];
+      mparams->wdotorblog = paramsInit->ak.ST[7];
+      mparams->wdotspin30S1LNh = -LAL_PI/3. * ( 188. - 151./2./mparams->m1m);
+      mparams->wdotspin30S2LNh = -LAL_PI/3. * ( 188. + 151./2./mparams->m2m);
+
+    case LAL_PNORDER_TWO_POINT_FIVE:
+      mparams->wdotorb[5] = paramsInit->ak.ST[5];
+      mparams->epnspin25S1dotLNh = 8. - 31. / 9. * mparams->eta + (3. - 10. / 3. * mparams->eta) * mparams->m2m1;
+      mparams->epnspin25S2dotLNh = 8. - 31. / 9. * mparams->eta + (3. - 10. / 3. * mparams->eta) * mparams->m1m2;
+      mparams->wdotspin25S1LNh = -31319. / 1008. + 1159. / 24. * mparams->eta + (-809. / 84. + 281. / 8. * mparams->eta) * mparams->m2m1;
+      mparams->wdotspin25S2LNh = -31319. / 1008. + 1159. / 24. * mparams->eta + (-809. / 84. + 281. / 8. * mparams->eta) * mparams->m1m2;
+      mparams->S1dot25 = 0.5625 + 1.25 * mparams->eta - mparams->eta * mparams->eta / 24. + mparams->dm * (-0.5625 + 0.625 * mparams->eta);
+      mparams->S2dot25 = 0.5625 + 1.25 * mparams->eta - mparams->eta * mparams->eta / 24. - mparams->dm * (-0.5625 + 0.625 * mparams->eta);
+
+    case LAL_PNORDER_TWO:
+      mparams->epnorb[2] = paramsInit->ak.ETa2;
+      mparams->wdotorb[4] = paramsInit->ak.ST[4];
+      mparams->wdotspin20S1S2 = -(1.0 / 48.0) / mparams->eta;
+      mparams->wdotspin20S1S1 = 1. / 96.;
+      mparams->Sdot20  = 0.5;
+      mparams->Sdot20S = 0.5;
+      mparams->epnspin20S1S2 = 1. / mparams->eta;
+      mparams->epnspin20S1S2dotLNh = -3. / mparams->eta;
+      mparams->epnspin20S1S1 = (1. + mparams->m2m1) * (1. + mparams->m2m1) / 2.;
+      mparams->epnspin20S2S2 = (1. + mparams->m1m2) * (1. + mparams->m1m2) / 2.;
+      mparams->epnspin20S1S1dotLNh = -3. * (1. + mparams->m2m1) * (1. + mparams->m2m1) / 2.;
+      mparams->epnspin20S2S2dotLNh = -3. * (1. + mparams->m1m2) * (1. + mparams->m1m2) / 2.;
+
+    case LAL_PNORDER_ONE_POINT_FIVE:
+      mparams->wdotorb[3] = paramsInit->ak.ST[3];
+      mparams->epnspin15S1dotLNh = 8. / 3. + 2. * mparams->m2m1;
+      mparams->epnspin15S2dotLNh = 8. / 3. + 2. * mparams->m1m2;
+      mparams->wdotspin15S1LNh = -(113.0 + 75.0 * mparams->m2m1) / 12.0;
+      mparams->wdotspin15S2LNh = -(113.0 + 75.0 * mparams->m1m2) / 12.0;
+      mparams->LNhdot15 = 0.5;
+      mparams->S1dot15 = (4.0 + 3.0 * mparams->m2m1) / 2.0 * mparams->eta;
+      mparams->S2dot15 = (4.0 + 3.0 * mparams->m1m2) / 2.0 * mparams->eta;
+
+    case LAL_PNORDER_ONE:
+      mparams->epnorb[1] = paramsInit->ak.ETa1;
+      mparams->wdotorb[2] = paramsInit->ak.ST[2];
+
+    case LAL_PNORDER_HALF:
+      mparams->wdotorb[1] = paramsInit->ak.ST[1];
+
+    case LAL_PNORDER_NEWTONIAN:
+      mparams->epnorb[0] = paramsInit->ak.ETaN;
+      mparams->wdotorb[0] = paramsInit->ak.ST[0];
+      break;
+
+    case LAL_PNORDER_PSEUDO_FOUR:
+      fprintf(stderr,"*** LALPhenSpinInspiralRD ERROR: PhenSpin approximant not available at pseudo4PN order\n");
+      break;
+
+    case LAL_PNORDER_NUM_ORDER:
+      fprintf(stderr,"*** LALPhenSpinInspiralRD ERROR: NUM_ORDER not a valid PN order\n");
+
+    default:
+      fprintf(stderr,"*** LALPhenSpinInspiralRD ERROR: Impossible to create waveform with %d order\n",params->order);
+      break;
+  }
+
+  switch (params->spinInteraction) {
+
+  case LAL_NOInter:
+    mparams->wdotspin30S1LNh   = 0.;
+    mparams->wdotspin30S2LNh   = 0.;
+    mparams->epnspin25S1dotLNh = 0.;
+    mparams->epnspin25S2dotLNh = 0.;
+    mparams->wdotspin25S1LNh   = 0.;
+    mparams->wdotspin25S2LNh   = 0.;
+    mparams->S1dot25           = 0.;
+    mparams->S2dot25           = 0.;
+    mparams->epnspin15S1dotLNh = 0.;
+    mparams->epnspin15S2dotLNh = 0.;
+    mparams->wdotspin15S1LNh   = 0.;
+    mparams->wdotspin15S2LNh   = 0.;
+    mparams->S1dot15           = 0.;
+    mparams->S2dot15           = 0.;
+
+  case LAL_SOInter:
+    mparams->wdotspin20S1S2      = 0.;
+    mparams->epnspin20S1S2       = 0.;
+    mparams->epnspin20S1S2dotLNh = 0.;
+
+  case LAL_SSInter:
+    mparams->wdotspin20S1S1 = 0.;
+    mparams->epnspin20S1S1 = 0.;
+    mparams->epnspin20S2S2 = 0.;
+    mparams->Sdot20S = 0.;
+    mparams->epnspin20S1S1 = 0.;
+    mparams->epnspin20S2S2 = 0.;
+    mparams->epnspin20S1S1dotLNh = 0.;
+    mparams->epnspin20S2S2dotLNh = 0.;
+    break;
+
+  case LAL_SSselfInter:
+    break;
+  case LAL_QMInter:
+    break;
+  case LAL_AllInter:
+    break;
+  default:
+    break;
+  }
+
+}
 
 /*
  *
@@ -142,112 +400,150 @@ typedef struct LALPSpinInspiralRDstructparams {
  *
  */
 
+static int XLALSpinInspiralTest(double t, const double values[], double dvalues[], void *mparams) {
+
+  LALPSpinInspiralRDparams *params = (LALPSpinInspiralRDparams *) mparams;
+
+  REAL8 omega;
+  REAL8 energy;
+  REAL8 denergy;
+
+  UNUSED(t);
+  omega   = values[1];
+  energy  = values[11];
+  denergy = dvalues[11];
+
+  REAL8 LNhS1=(values[2]*values[5]+values[3]*values[6]+values[4]*values[7])/params->m1msq;
+  REAL8 LNhS2=(values[2]*values[8]+values[3]*values[9]+values[4]*values[10])/params->m2msq;
+  REAL8 S1sq=(values[5]*values[5]+values[6]*values[6]+values[7]*values[7])/params->m1msq/params->m1msq;
+  REAL8 S2sq=(values[8]*values[8]+values[9]*values[9]+values[10]*values[10])/params->m2msq/params->m2msq;
+  REAL8 S1S2=(values[5]*values[8]+values[6]*values[9]+values[7]*values[10])/params->m1msq/params->m2msq;
+
+  REAL8 omegaMatch=OmMatch(LNhS1,LNhS2,S1sq,S1S2,S2sq)+params->omOffset;
+
+  if ( (energy > 0.0) || (( denergy > - 0.01*energy/params->dt*params->m*LAL_MTSUN_SI )&&(energy<0.) ) ) {
+    /*energy increase*/
+    /*fprintf(stdout,"** LALPSpinInspiralRD WARNING **: Energy increases dE %12.6e E %12.6e  m/M:(%12.4e, %12.4e)  om %12.6e vs. omM %12.6e\n",denergy, 0.01*energy, params->m1m, params->m2m, omega, omegaMatch);*/
+    return LALPSIRDPN_TEST_ENERGY;
+  }
+  else if (omega < 0.0) {
+    fprintf(stderr,"** LALPSpinInspiralRD WARNING **: Omega has become -ve, this should lead to nan's \n");
+    return LALPSIRDPN_TEST_OMEGANONPOS;
+  }
+  else if (dvalues[1] < 0.0) {
+    /* omegadot < 0 */
+    return LALPSIRDPN_TEST_OMEGADOT;
+  }
+  else if (isnan(omega)) {
+    /* omega is nan */
+    return LALPSIRDPN_TEST_OMEGANAN;
+  } 
+  else if ((params->inspiralOnly==1)&&(omega>params->OmCutoff)) {
+    return LALPSIRDPN_TEST_OMEGACUT;
+  }
+  else if ((params->inspiralOnly!=1)&&(omega>omegaMatch)) {
+    return LALPSIRDPN_TEST_OMEGAMATCH;
+  }
+  else
+    return GSL_SUCCESS;
+}
+
 /**
  * \ingroup psird
  * \brief Module to compute detivative of dynamical variables
  */
 
-void LALPSpinInspiralRDderivatives(REAL8Vector * values,
-				   REAL8Vector * dvalues, void *mparams)
-{
+static int XLALSpinInspiralDerivatives(double t, const double values[], double dvalues[], void *mparams) {
 
-    REAL8 Phi;			// half of the main GW phase, this is \f$Phi\f$ of eq.3.11 of arXiv:0810.5336
-    REAL8 omega;		// time-derivative of the orbital phase
-    REAL8 omega2;		// omega squared
-    REAL8 LNhx, LNhy, LNhz;	// orbital angolar momentum unit vector
-    REAL8 S1x, S1y, S1z;	// dimension-less spin variable S/M^2
+    REAL8 omega;                // time-derivative of the orbital phase
+    REAL8 LNhx, LNhy, LNhz;     // orbital angolar momentum unit vector
+    REAL8 S1x, S1y, S1z;        // dimension-less spin variable S/M^2
     REAL8 S2x, S2y, S2z;
-    REAL8 alphadotcosi;		// alpha is the right ascension of L, i(iota) the angle between L and J
-    REAL8 LNhS1, LNhS2;		// scalar products
-    REAL8 domega;		// derivative of omega
-    REAL8 dLNhx, dLNhy, dLNhz;	// derivatives of \f$\hat L_N\f$ components
-    REAL8 dS1x, dS1y, dS1z;	// derivative of \f$S_i\f$
+    REAL8 LNhS1, LNhS2;         // scalar products
+    REAL8 domega;               // derivative of omega
+    REAL8 dLNhx, dLNhy, dLNhz;  // derivatives of \f$\hat L_N\f$ components
+    REAL8 dS1x, dS1y, dS1z;     // derivative of \f$S_i\f$
     REAL8 dS2x, dS2y, dS2z;
-    REAL8 S1S2, S1S1, S2S2;	// Scalar products
-    REAL8 energy;
+    REAL8 energy,energyold;
 
-    LALPSpinInspiralRDparams *params =
-	(LALPSpinInspiralRDparams *) mparams;
+    /* auxiliary variables*/
+    REAL8 S1S2, S1S1, S2S2;     // Scalar products
+    REAL8 alphadotcosi;         // alpha is the right ascension of L, i(iota) the angle between L and J
+    REAL8 v, v2, v3, v4, v5, v6, v7;
+    REAL8 tmpx, tmpy, tmpz, cross1x, cross1y, cross1z, cross2x, cross2y, cross2z, LNhxy;
 
-    REAL8 v, v2, v3, v4, v5, v6, v7, v11;	// support variables
-    REAL8 tmpx, tmpy, tmpz, cross1x, cross1y, cross1z, cross2x, cross2y, cross2z, LNhxy;	// support variables
+    LALPSpinInspiralRDparams *params = (LALPSpinInspiralRDparams *) mparams;
+
+    UNUSED(t);
 
     /* --- computation start here --- */
-    Phi = values->data[0];
-    omega = values->data[1];
+    omega = values[1];
 
-    if (omega < 0.0) {
-	fprintf(stderr,
-		"WARNING: Omega has become -ve, this should lead to nan's \n");
-    }
+    LNhx = values[2];
+    LNhy = values[3];
+    LNhz = values[4];
 
-    LNhx = values->data[2];
-    LNhy = values->data[3];
-    LNhz = values->data[4];
+    S1x = values[5];
+    S1y = values[6];
+    S1z = values[7];
 
-    S1x = values->data[5];
-    S1y = values->data[6];
-    S1z = values->data[7];
+    S2x = values[8];
+    S2y = values[9];
+    S2z = values[10];
 
-    S2x = values->data[8];
-    S2y = values->data[9];
-    S2z = values->data[10];
+    energyold = values[11];
 
-    v = pow(omega, 1.0 / 3.0);
+    v = pow(omega, oneby3);
     v2 = v * v;
-    v3 = v2 * v;
-    v4 = v2 * v2;
-    v5 = v3 * v2;
-    v6 = v4 * v2;
-    v7 = v5 * v2;
-    v11 = v7 * v4;
+    v3 = omega;
+    v4 = omega * v;
+    v5 = omega * v2;
+    v6 = omega * omega;
+    v7 = v6 * v;
 
     // Omega derivative without spin effects up to 3.5 PN
     // this formula does not include the 1.5PN shift mentioned in arXiv:0810.5336, five lines below (3.11)
     domega = params->wdotorb[0]
-	+ v * (params->wdotorb[1]
-	       + v * (params->wdotorb[2]
-		      + v * (params->wdotorb[3]
-			     + v * (params->wdotorb[4]
-				    + v * (params->wdotorb[5]
-					   + v * (params->wdotorb[6] +
-						  params->wdotorblog *
-						  log(omega)
-						  +
-						  v *
-						  params->wdotorb[7]))))));
+            + v * (params->wdotorb[1]
+                   + v * (params->wdotorb[2]
+                          + v * (params->wdotorb[3]
+                                 + v * (params->wdotorb[4]
+                                        + v * (params->wdotorb[5]
+                                               + v * (params->wdotorb[6] + params->wdotorblog * log(omega)
+                                                      + v * params->wdotorb[7]))))));
 
-    // energy=-eta/2 * v^2 * [1-(9+\eta)/12 v^2 +...] up to 3PN without spin effects
     energy = (1. + v2 * (params->epnorb[1] +
-			 v2 * (params->epnorb[2] +
-			       v2 * params->epnorb[3])));
+                         v2 * (params->epnorb[2] +
+                               v2 * params->epnorb[3])));
 
-    // Adding spin effects to omega and energy
+    // Adding spin effects
     // L dot S1,2
     LNhS1 = (LNhx * S1x + LNhy * S1y + LNhz * S1z);
     LNhS2 = (LNhx * S2x + LNhy * S2y + LNhz * S2z);
 
     // wdotspin15SiLNh = -1/12 (...)
-    domega += v3 * (params->wdotspin15S1LNh * LNhS1 + params->wdotspin15S2LNh * LNhS2);	// see e.g. Buonanno et al. gr-qc/0211087
-    energy += v3 * (params->epnspin15S1dotLNh * LNhS1 + params->epnspin15S2dotLNh * LNhS2);	// see e.g. Blanchet et al. gr-qc/0605140
+    domega += v3 * (params->wdotspin15S1LNh * LNhS1 + params->wdotspin15S2LNh * LNhS2); // see e.g. Buonanno et al. gr-qc/0211087
+
+    energy += v3 * (params->epnspin15S1dotLNh * LNhS1 + params->epnspin15S2dotLNh * LNhS2);  // see e.g. Blanchet et al. gr-qc/0605140
 
     // wdotspin20S1S1 = -1/48 eta
     S1S1 = (S1x * S1x + S1y * S1y + S1z * S1z);
     S2S2 = (S2x * S2x + S2y * S2y + S2z * S2z);
     S1S2 = (S1x * S2x + S1y * S2y + S1z * S2z);
     domega += params->wdotspin20S1S2 * v4 * (247.0 * S1S2 - 721.0 * LNhS1 * LNhS2);	// see e.g. Buonanno et al. arXiv:0810.5336
-    domega += params->wdotspin20S1S1 * v4 * (719. * (LNhS1 * LNhS1 + LNhS2 * LNhS2) - 233. * (S1S1 + S2S2));	// see Racine et al. arXiv:0812.4413
+    domega += params->wdotspin20S1S1 * v4 * (719. * (LNhS1 * LNhS1 + LNhS2 * LNhS2) - 233. * (S1S1 + S2S2));   // see Racine et al. arXiv:0812.4413
 
-    energy += v4 * (params->epnspin20S1S2 * S1S2 + params->epnspin20S1S2dotLNh * LNhS1 * LNhS2);	// see e.g. Buonanno et al. as above
+    energy += v4 * (params->epnspin20S1S2 * S1S2 + params->epnspin20S1S2dotLNh * LNhS1 * LNhS2);    // see e.g. Buonanno et al. as above
     energy += v4 * (params->epnspin20S1S1 * S1S1 + params->epnspin20S2S2 * S2S2 + params->epnspin20S1S1dotLNh * LNhS1 * LNhS1 + params->epnspin20S2S2 * LNhS2 * LNhS2);	// see Racine et al. as above
 
     // wdotspin25SiLNh = see below
     domega += v5 * (params->wdotspin25S1LNh * LNhS1 + params->wdotspin25S2LNh * LNhS2);	//see (8.3) of Blanchet et al.
-    energy += v5 * (params->epnspin25S1dotLNh * LNhS1 + params->epnspin25S2dotLNh * LNhS2);	//see (7.9) of Blanchet et al.
+    energy += v5 * (params->epnspin25S1dotLNh * LNhS1 + params->epnspin25S2dotLNh * LNhS2);    //see (7.9) of Blanchet et al.
+
+    domega += v6 * (params->wdotspin30S1LNh * LNhS1 + params->wdotspin30S2LNh * LNhS2); // see (6.5) of arXiv:1104.5659
 
     // Setting the right pre-factor
-    omega2 = omega * omega;
-    domega *= 96. / 5. * params->eta * v5 * omega2;
+    domega *= 96. / 5. * params->eta * v5 * omega* omega;
 
     energy *= params->epnorb[0] * v2;
 
@@ -255,14 +551,9 @@ void LALPSpinInspiralRDderivatives(REAL8Vector * values,
 
     /* dS1, 1.5PN */
     /* S1dot15= (4+3m2/m1)/2 * eta */
-
     cross1x = (LNhy * S1z - LNhz * S1y);
     cross1y = (LNhz * S1x - LNhx * S1z);
     cross1z = (LNhx * S1y - LNhy * S1x);
-
-    cross2x = (LNhy * S2z - LNhz * S2y);
-    cross2y = (LNhz * S2x - LNhx * S2z);
-    cross2z = (LNhx * S2y - LNhy * S2x);
 
     dS1x = params->S1dot15 * v5 * cross1x;
     dS1y = params->S1dot15 * v5 * cross1y;
@@ -274,23 +565,14 @@ void LALPSpinInspiralRDderivatives(REAL8Vector * values,
     tmpy = S1x * S2z - S1z * S2x;
     tmpz = S1y * S2x - S1x * S2y;
 
-    // S1S2 contribution
-    dS1x += params->Sdot20 * omega2 * (tmpx - 3. * LNhS2 * cross1x);
-    dS1y += params->Sdot20 * omega2 * (tmpy - 3. * LNhS2 * cross1y);
-    dS1z += params->Sdot20 * omega2 * (tmpz - 3. * LNhS2 * cross1z);
+    // S1S2 contribution see. eq. 2.23 of arXiv:0812.4413
+    dS1x += params->Sdot20 * v6 * (tmpx - 3. * LNhS2 * cross1x);
+    dS1y += params->Sdot20 * v6 * (tmpy - 3. * LNhS2 * cross1y);
+    dS1z += params->Sdot20 * v6 * (tmpz - 3. * LNhS2 * cross1z);
     // S1S1 contribution
-    dS1x -=
-	3. * params->Sdot20 * omega2 * LNhS1 * cross1x * (1. +
-							  params->m2m1) *
-	params->m2m;
-    dS1y -=
-	3. * params->Sdot20 * omega2 * LNhS1 * cross1y * (1. +
-							  params->m2m1) *
-	params->m2m;
-    dS1z -=
-	3. * params->Sdot20 * omega2 * LNhS1 * cross1z * (1. +
-							  params->m2m1) *
-	params->m2m;
+    dS1x -= 3. * params->Sdot20S * v6 * LNhS1 * cross1x * (1. + params->m2m1) * params->m2m;
+    dS1y -= 3. * params->Sdot20S * v6 * LNhS1 * cross1y * (1. + params->m2m1) * params->m2m;
+    dS1z -= 3. * params->Sdot20S * v6 * LNhS1 * cross1z * (1. + params->m2m1) * params->m2m;
 
     // dS1, 2.5PN, eq. 7.8 of Blanchet et al. gr-qc/0605140
     // S1dot25= 9/8-eta/2.+eta+mparams->eta*29./24.+mparams->m1m2*(-9./8.+5./4.*mparams->eta)
@@ -299,28 +581,22 @@ void LALPSpinInspiralRDderivatives(REAL8Vector * values,
     dS1z += params->S1dot25 * v7 * cross1z;
 
     /* dS2, 1.5PN */
-    /*Attenzione all'errore qui! */
+    cross2x = (LNhy * S2z - LNhz * S2y);
+    cross2y = (LNhz * S2x - LNhx * S2z);
+    cross2z = (LNhx * S2y - LNhy * S2x);
+
     dS2x = params->S2dot15 * v5 * cross2x;
     dS2y = params->S2dot15 * v5 * cross2y;
     dS2z = params->S2dot15 * v5 * cross2z;
 
     /* dS2, 2PN */
-    dS2x += params->Sdot20 * omega2 * (-tmpx - 3.0 * LNhS1 * cross2x);
-    dS2y += params->Sdot20 * omega2 * (-tmpy - 3.0 * LNhS1 * cross2y);
-    dS2z += params->Sdot20 * omega2 * (-tmpz - 3.0 * LNhS1 * cross2z);
+    dS2x += params->Sdot20 * v6 * (-tmpx - 3.0 * LNhS1 * cross2x);
+    dS2y += params->Sdot20 * v6 * (-tmpy - 3.0 * LNhS1 * cross2y);
+    dS2z += params->Sdot20 * v6 * (-tmpz - 3.0 * LNhS1 * cross2z);
     // S2S2 contribution
-    dS2x -=
-	3. * params->Sdot20 * omega2 * LNhS2 * cross2x * (1. +
-							  params->m1m2) *
-	params->m1m;
-    dS2y -=
-	3. * params->Sdot20 * omega2 * LNhS2 * cross2y * (1. +
-							  params->m1m2) *
-	params->m1m;
-    dS2z -=
-	3. * params->Sdot20 * omega2 * LNhS2 * cross2z * (1. +
-							  params->m1m2) *
-	params->m1m;
+    dS2x -= 3. * params->Sdot20S * v6 * LNhS2 * cross2x * (1. + params->m1m2) * params->m1m;
+    dS2y -= 3. * params->Sdot20S * v6 * LNhS2 * cross2y * (1. + params->m1m2) * params->m1m;
+    dS2z -= 3. * params->Sdot20S * v6 * LNhS2 * cross2z * (1. + params->m1m2) * params->m1m;
 
     // dS2, 2.5PN, eq. 7.8 of Blanchet et al. gr-qc/0605140
     dS2x += params->S2dot25 * v7 * cross2x;
@@ -335,80 +611,84 @@ void LALPSpinInspiralRDderivatives(REAL8Vector * values,
     LNhxy = LNhx * LNhx + LNhy * LNhy;
 
     if (LNhxy > 0.0)
-	alphadotcosi = LNhz * (LNhx * dLNhy - LNhy * dLNhx) / LNhxy;
+      alphadotcosi = LNhz * (LNhx * dLNhy - LNhy * dLNhx) / LNhxy;
     else
+      {
+	//fprintf(stderr,"*** LALPSpinInspiralRD WARNING ***: alphadot set to 0 by hand LNh:(%12.4e %12.4e %12.4e)\n",LNhx,LNhy,LNhz);
 	alphadotcosi = 0.;
+      }
 
     /* dvalues->data[0] is the phase derivative */
     /* omega is the derivative of the orbital phase omega \neq dvalues->data[0] */
+    dvalues[0] = omega - alphadotcosi;
+    dvalues[1] = domega;
 
-    dvalues->data[0] = omega - alphadotcosi;
-    dvalues->data[1] = domega;
+    dvalues[2] = dLNhx;
+    dvalues[3] = dLNhy;
+    dvalues[4] = dLNhz;
 
-    dvalues->data[2] = dLNhx;
-    dvalues->data[3] = dLNhy;
-    dvalues->data[4] = dLNhz;
+    dvalues[5] = dS1x;
+    dvalues[6] = dS1y;
+    dvalues[7] = dS1z;
 
-    dvalues->data[5] = dS1x;
-    dvalues->data[6] = dS1y;
-    dvalues->data[7] = dS1z;
+    dvalues[8] = dS2x;
+    dvalues[9] = dS2y;
+    dvalues[10] = dS2z;
 
-    dvalues->data[8] = dS2x;
-    dvalues->data[9] = dS2y;
-    dvalues->data[10] = dS2z;
+    dvalues[11] = (energy-energyold)/params->dt*params->m*LAL_MTSUN_SI;
 
-    dvalues->data[11] = 0.;
+    return GSL_SUCCESS;
 
-    // energy value is stored
-    values->data[11] = energy;
+} /* end of XLALSpinInspiralDerivatives */
 
-}				/* end of LALPSpinInspiralRDderivatives */
 
+void LALSpinInspiralDerivatives(REAL8Vector * values, REAL8Vector * dvalues, void *mparams)
+{
+  XLALSpinInspiralDerivatives(0.,values->data,dvalues->data,mparams);
+}				/* end of LALSpinInspiralDerivatives */
 
 /**
  * \ingroup psird
- * \brief Main module to produce waveforms 
+ * \brief Main module to produce waveforms
  */
 
-void LALPSpinInspiralRD(LALStatus * status,
-			REAL4Vector * signalvec, InspiralTemplate * params)
+void LALPSpinInspiralRD(LALStatus * status, REAL4Vector * signalvec, InspiralTemplate * params)
 {
 
-    UINT4 count;
-    InspiralInit paramsInit;
-    INITSTATUS(status, "LALPSpinInspiralRD", LALPSPININSPIRALRDC);
-    ATTATCHSTATUSPTR(status);
+  UINT4 count=0;
+  InspiralInit paramsInit;
 
-    ASSERT(signalvec, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(signalvec->data, status,
-	   LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(params->nStartPad >= 0, status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-    ASSERT(params->nEndPad >= 0, status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-    ASSERT(params->fLower > 0, status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-    ASSERT(params->tSampling > 0, status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-    ASSERT(params->totalMass > 0., status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  INITSTATUS(status, "LALPSpinInspiralRD", LALPSPININSPIRALRDC);
+  ATTATCHSTATUSPTR(status);
 
-    LALInspiralSetup(status->statusPtr, &(paramsInit.ak), params);
-    CHECKSTATUSPTR(status);
-    LALInspiralChooseModel(status->statusPtr, &(paramsInit.func),
-			   &(paramsInit.ak), params);
-    CHECKSTATUSPTR(status);
+  ASSERT(signalvec,       status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(signalvec->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(params,          status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(params->nStartPad >= 0,  status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->nEndPad >= 0,    status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->fLower > 0,      status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->tSampling > 0,   status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->totalMass > 0.,  status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-    memset(signalvec->data, 0, signalvec->length * sizeof(REAL4));
-    /* Call the engine function */
-    LALPSpinInspiralRDEngine(status->statusPtr, signalvec, NULL, NULL,
-			     NULL, NULL, NULL, &count, params,
-			     &paramsInit);
-    CHECKSTATUSPTR(status);
+  LALInspiralSetup(status->statusPtr, &(paramsInit.ak), params);
+  CHECKSTATUSPTR(status);
+  LALInspiralChooseModel(status->statusPtr, &(paramsInit.func),&(paramsInit.ak), params);
+  CHECKSTATUSPTR(status);
 
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
+  REAL8Vector *s=XLALCreateREAL8Vector(signalvec->length);
+  memset(s->data, 0, s->length * sizeof(REAL8));
+
+  /* Call the engine function */
+  LALPSpinInspiralRDEngine(status->statusPtr, s, NULL, NULL, NULL, NULL, &count, params, &paramsInit);
+
+  UINT4 i;
+  for (i=0;i<s->length;i++) {
+    signalvec->data[i]=(REAL4) s->data[i];
+  }
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
 }
 
 
@@ -420,49 +700,51 @@ NRCSID(LALPSPININSPIRALRDTEMPLATESC, "$Id$");
  */
 
 void LALPSpinInspiralRDTemplates(LALStatus * status,
-				 REAL4Vector * signalvec1,
-				 REAL4Vector * signalvec2,
-				 InspiralTemplate * params)
+         REAL4Vector * signalvec1,
+         REAL4Vector * signalvec2,
+         InspiralTemplate * params)
 {
-    UINT4 count;
-
+    UINT4 count=0;
     InspiralInit paramsInit;
 
-    INITSTATUS(status, "LALPSpinInspiralRDTemplates",
-	       LALPSPININSPIRALRDTEMPLATESC);
+    INITSTATUS(status, "LALPSpinInspiralRDTemplates",LALPSPININSPIRALRDTEMPLATESC);
     ATTATCHSTATUSPTR(status);
 
-    ASSERT(signalvec1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(signalvec1->data, status,
-	   LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(signalvec2, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(signalvec2->data, status,
-	   LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(params->nStartPad >= 0, status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-    ASSERT(params->nEndPad >= 0, status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-    ASSERT(params->fLower > 0, status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-    ASSERT(params->tSampling > 0, status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-    ASSERT(params->totalMass > 0., status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+    ASSERT(signalvec1,       status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(signalvec1->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(signalvec2,       status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(signalvec2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(params,           status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+    ASSERT(params->nEndPad >= 0,   status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+    ASSERT(params->fLower > 0,     status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+    ASSERT(params->tSampling > 0,  status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+    ASSERT(params->totalMass > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
     LALInspiralSetup(status->statusPtr, &(paramsInit.ak), params);
     CHECKSTATUSPTR(status);
-    LALInspiralChooseModel(status->statusPtr, &(paramsInit.func),
-			   &(paramsInit.ak), params);
+    LALInspiralChooseModel(status->statusPtr, &(paramsInit.func), &(paramsInit.ak), params);
     CHECKSTATUSPTR(status);
 
-    memset(signalvec1->data, 0, signalvec1->length * sizeof(REAL4));
-    memset(signalvec2->data, 0, signalvec2->length * sizeof(REAL4));
+    REAL8Vector* s1=XLALCreateREAL8Vector(signalvec1->length);
+    REAL8Vector* s2=XLALCreateREAL8Vector(signalvec2->length);
 
-    LALPSpinInspiralRDEngine(status->statusPtr, signalvec1, signalvec2,
-			     NULL, NULL, NULL, NULL, &count, params,
-			     &paramsInit);
-    CHECKSTATUSPTR(status);
+    memset(s1->data, 0, signalvec1->length * sizeof(REAL8));
+    memset(s2->data, 0, signalvec2->length * sizeof(REAL8));
+
+    /* Call the engine function*/
+    LALPSpinInspiralRDEngine(status->statusPtr, s1, s2, NULL, NULL, NULL, &count, params, &paramsInit);
+
+    UINT4 i;
+    for (i=0;i<s1->length;i++) {
+      signalvec1->data[i]=(REAL4) s1->data[i];
+    }
+    for (i=0;i<s2->length;i++) {
+      signalvec2->data[i]=(REAL4) s2->data[i];
+    }
+
+    XLALDestroyREAL8Vector(s1);
+    XLALDestroyREAL8Vector(s2);
 
     DETATCHSTATUSPTR(status);
     RETURN(status);
@@ -476,161 +758,119 @@ NRCSID(LALPSPININSPIRALRDINJECTIONC, "$Id$");
  * \brief Module to produce injection waveforms
  */
 
-void LALPSpinInspiralRDForInjection(LALStatus * status,
-				    CoherentGW * waveform,
-				    InspiralTemplate * params,
-				    PPNParamStruc * ppnParams)
+void LALPSpinInspiralRDForInjection(LALStatus        * status,
+            CoherentGW       * waveform,
+            InspiralTemplate * params,
+            PPNParamStruc    * ppnParams)
 {
-    UINT4 count, i;
 
-    REAL4Vector *hh = NULL;	/* pointers to generated amplitude  data */
-    REAL4Vector *ff = NULL;	/* pointers to generated  frequency data */
+    REAL8Vector *h = NULL;	/* pointers to generated amplitude  data */
+    REAL8Vector *f = NULL;	/* pointers to generated  frequency data */
     REAL8Vector *phi = NULL;	/* pointer to generated phase data */
-    REAL4Vector *alpha = NULL;	/* pointer to generated phase data */
 
     InspiralInit paramsInit;
-    UINT4 nbins;
+    UINT4 nbins,count,i;
 
 
-    INITSTATUS(status, "LALPSpinInspiralRDInjection",
-	       LALPSPININSPIRALRDINJECTIONC);
+    INITSTATUS(status, "LALPSpinInspiralRDInjection", LALPSPININSPIRALRDINJECTIONC);
     ATTATCHSTATUSPTR(status);
 
     /* Make sure parameter and waveform structures exist. */
-    ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(params,   status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
     ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
     /* Make sure waveform fields don't exist. */
-    ASSERT(!(waveform->a), status,
-	   LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(!(waveform->f), status,
-	   LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(!(waveform->phi), status,
-	   LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(!(waveform->shift), status,
-	   LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(!(waveform->h), status,
-	   LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(!(waveform->a),   status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(!(waveform->f),   status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(!(waveform->phi), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(!(waveform->h),   status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
     /* Compute some parameters */
     LALInspiralInit(status->statusPtr, params, &paramsInit);
     CHECKSTATUSPTR(status);
     if (paramsInit.nbins == 0) {
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
+      DETATCHSTATUSPTR(status);
+      RETURN(status);
     }
 
     nbins = 2 * paramsInit.nbins;
 
     /* Now we can allocate memory and vector for coherentGW structure */
-    ff = XLALCreateREAL4Vector(nbins);
-    hh = XLALCreateREAL4Vector(2 * nbins);
+    f = XLALCreateREAL8Vector(nbins);
+    h = XLALCreateREAL8Vector(2 * nbins);
     phi = XLALCreateREAL8Vector(nbins);
-    alpha = XLALCreateREAL4Vector(nbins);
 
     /* By default the waveform is empty */
-    memset(ff->data, 0, nbins * sizeof(REAL4));
-    memset(hh->data, 0, 2 * nbins * sizeof(REAL4));
-    memset(phi->data, 0, nbins * sizeof(REAL8));
-    memset(alpha->data, 0, nbins * sizeof(REAL4));
+    memset(f->data,   0,     nbins * sizeof(REAL8));
+    memset(h->data,   0, 2 * nbins * sizeof(REAL8));
+    memset(phi->data, 0,     nbins * sizeof(REAL8));
 
     /* Call the engine function */
-
-    LALPSpinInspiralRDEngine(status->statusPtr, NULL, NULL, hh, ff, phi,
-			     alpha, &count, params, &paramsInit);
-
-    BEGINFAIL(status) {
-	XLALDestroyREAL4Vector(ff);
-	XLALDestroyREAL4Vector(hh);
-	XLALDestroyREAL8Vector(phi);
-	XLALDestroyREAL4Vector(alpha);
-    }
-    ENDFAIL(status);
+    LALPSpinInspiralRDEngine(status->statusPtr, NULL, NULL, h, f, phi, &count, params, &paramsInit);
 
     /* Check an empty waveform hasn't been returned */
     for (i = 0; i < phi->length; i++) {
-	if (phi->data[i] != 0.0)
-	    break;
-	if (i == phi->length - 1) {
-	    XLALDestroyREAL4Vector(ff);
-	    XLALDestroyREAL4Vector(hh);
-	    XLALDestroyREAL8Vector(phi);
-	    XLALDestroyREAL4Vector(alpha);
-	}
+      if (phi->data[i] != 0.0)
+	break;
+      if (i == phi->length - 1) {
+	XLALDestroyREAL8Vector(f);
+	XLALDestroyREAL8Vector(h);
+	XLALDestroyREAL8Vector(phi);
+      }
     }
 
     /* Allocate the waveform structures. */
     if ((waveform->h = (REAL4TimeVectorSeries *)
-	 LALMalloc(sizeof(REAL4TimeVectorSeries))) == NULL) {
-	ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+         LALMalloc(sizeof(REAL4TimeVectorSeries))) == NULL) {
+      ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
     }
     memset(waveform->h, 0, sizeof(REAL4TimeVectorSeries));
 
     if ((waveform->f = (REAL4TimeSeries *)
-	 LALMalloc(sizeof(REAL4TimeSeries))) == NULL) {
-	LALFree(waveform->h);
-	waveform->a = NULL;
-	ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+         LALMalloc(sizeof(REAL4TimeSeries))) == NULL) {
+      LALFree(waveform->h);
+      waveform->a = NULL;
+      ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
     }
     memset(waveform->f, 0, sizeof(REAL4TimeSeries));
 
     if ((waveform->phi = (REAL8TimeSeries *)
-	 LALMalloc(sizeof(REAL8TimeSeries))) == NULL) {
-	LALFree(waveform->h);
-	waveform->h = NULL;
-	LALFree(waveform->f);
-	waveform->f = NULL;
-	ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+         LALMalloc(sizeof(REAL8TimeSeries))) == NULL) {
+      LALFree(waveform->h);
+      waveform->h = NULL;
+      LALFree(waveform->f);
+      waveform->f = NULL;
+      ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
     }
     memset(waveform->phi, 0, sizeof(REAL8TimeSeries));
-
-    if ((waveform->shift = (REAL4TimeSeries *)
-	 LALMalloc(sizeof(REAL4TimeSeries))) == NULL) {
-	LALFree(waveform->h);
-	waveform->h = NULL;
-	LALFree(waveform->f);
-	waveform->f = NULL;
-	LALFree(waveform->phi);
-	waveform->phi = NULL;
-	ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
-    }
-    memset(waveform->shift, 0, sizeof(REAL4TimeSeries));
 
     waveform->h->data = XLALCreateREAL4VectorSequence(count, 2);
     waveform->f->data = XLALCreateREAL4Vector(count);
     waveform->phi->data = XLALCreateREAL8Vector(count);
-    waveform->shift->data = XLALCreateREAL4Vector(count);
 
-    memcpy(waveform->f->data->data, ff->data, count * (sizeof(REAL4)));
-    memcpy(waveform->h->data->data, hh->data, 2 * count * (sizeof(REAL4)));
-    memcpy(waveform->phi->data->data, phi->data, count * (sizeof(REAL8)));
-    memcpy(waveform->shift->data->data, alpha->data,
-	   count * (sizeof(REAL4)));
+    for (i=0; i<count; i++) {
+      waveform->f->data->data[i]     =(REAL4) f->data[i];
+      waveform->h->data->data[2*i]   =(REAL4) h->data[2*i];
+      waveform->h->data->data[2*i+1] =(REAL4) h->data[2*i+1];
+      waveform->phi->data->data[i]   = phi->data[i];
+    }
 
-    waveform->h->deltaT = waveform->f->deltaT = waveform->phi->deltaT =
-	waveform->shift->deltaT = 1. / params->tSampling;
+    waveform->h->deltaT = waveform->f->deltaT = waveform->phi->deltaT = 1. / params->tSampling;
 
     waveform->h->sampleUnits = lalStrainUnit;
     waveform->f->sampleUnits = lalHertzUnit;
     waveform->phi->sampleUnits = lalDimensionlessUnit;
-    waveform->shift->sampleUnits = lalDimensionlessUnit;
 
     waveform->position = ppnParams->position;
-    waveform->psi = ppnParams->psi;
+    waveform->psi = ppnParams->psi - params->polarisationAngle;
 
-    snprintf(waveform->h->name, LALNameLength,
-	     "PSpinInspiralRD amplitudes");
-    snprintf(waveform->f->name, LALNameLength,
-	     "PSpinInspiralRD frequency");
-    snprintf(waveform->phi->name, LALNameLength, "PSpinInspiralRD phase");
-    snprintf(waveform->shift->name, LALNameLength,
-	     "PSpinInspiralRD alpha");
+    snprintf(waveform->h->name, LALNameLength,  "PSpinInspiralRD amplitudes");
+    snprintf(waveform->f->name, LALNameLength,  "PSpinInspiralRD frequency");
+    snprintf(waveform->phi->name, LALNameLength,"PSpinInspiralRD main phase");
 
     /* --- fill some output --- */
     ppnParams->tc = (double) (count - 1) / params->tSampling;
     ppnParams->length = count;
-    ppnParams->dfdt = ((REAL4) (waveform->f->data->data[count - 1]
-				- waveform->f->data->data[count - 2]))
-	* ppnParams->deltaT;
+    ppnParams->dfdt = ((REAL4) (waveform->f->data->data[count - 1]- waveform->f->data->data[count - 2])) * ppnParams->deltaT;
     ppnParams->fStop = params->fFinal;
     ppnParams->termCode = GENERATEPPNINSPIRALH_EFSTOP;
     ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
@@ -639,121 +879,131 @@ void LALPSpinInspiralRDForInjection(LALStatus * status,
 
     /* --- free memory --- */
 
-    XLALDestroyREAL4Vector(ff);
-    XLALDestroyREAL4Vector(hh);
+    XLALDestroyREAL8Vector(f);
+    XLALDestroyREAL8Vector(h);
     XLALDestroyREAL8Vector(phi);
-    XLALDestroyREAL4Vector(alpha);
 
     DETATCHSTATUSPTR(status);
     RETURN(status);
 
-}				/* End LALPSpinInspiralRDForInjection */
+} /* End LALPSpinInspiralRDForInjection */
 
 void LALPSpinInspiralRDFreqDom(LALStatus * status,
 			       REAL4Vector * signalvec,
 			       InspiralTemplate * params)
 {
 
-    REAL4Vector *tsignalvec = NULL;
+    REAL8Vector *tsignalvec = NULL;
     REAL4Vector *fsignalvec = NULL;
     REAL4FFTPlan *forwPlan = NULL;
 
     InspiralInit paramsInit;
 
-    REAL4 mod, ph;
-
-    UINT4 count, nbins, sub;
-    UINT4 i, j;
+    UINT4 nbins,count,idx;
     UINT4 length = signalvec->length;
 
     INITSTATUS(status, "LALPSpinInspiralRDFReqDom", LALPSPININSPIRALRDC);
     ATTATCHSTATUSPTR(status);
 
-    ASSERT(signalvec, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(signalvec->data, status,
-	   LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(signalvec,       status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    ASSERT(signalvec->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
     ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-    ASSERT(params->nStartPad >= 0, status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-    ASSERT(params->nEndPad >= 0, status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-    ASSERT(params->fLower > 0, status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-    ASSERT(params->tSampling > 0, status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-    ASSERT(params->totalMass > 0., status,
-	   LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+    ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+    ASSERT(params->nEndPad >= 0,   status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+    ASSERT(params->fLower > 0,     status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+    ASSERT(params->tSampling > 0,  status,  LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+    ASSERT(params->totalMass > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
     LALInspiralInit(status->statusPtr, params, &paramsInit);
     CHECKSTATUSPTR(status);
 
     if (paramsInit.nbins == 0) {
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
+      DETATCHSTATUSPTR(status);
+      RETURN(status);
     }
     nbins = paramsInit.nbins;
-    if (nbins < signalvec->length)
-	nbins = signalvec->length;
-    tsignalvec = XLALCreateREAL4Vector(nbins);
+    if (nbins < length) nbins = length;
+    tsignalvec = XLALCreateREAL8Vector(nbins);
     fsignalvec = XLALCreateREAL4Vector(nbins);
 
-    memset(signalvec->data, 0, signalvec->length * sizeof(REAL4));
-    memset(tsignalvec->data, 0, nbins * sizeof(REAL4));
+    memset(signalvec->data, 0, length * sizeof(REAL4));
+    memset(tsignalvec->data, 0, nbins * sizeof(REAL8));
     memset(fsignalvec->data, 0, nbins * sizeof(REAL4));
 
     /* Call the engine function */
+    LALPSpinInspiralRDEngine(status->statusPtr, tsignalvec, NULL, NULL, NULL, NULL, &count, params, &paramsInit);
 
-    LALPSpinInspiralRDEngine(status->statusPtr, tsignalvec, NULL, NULL,
-			     NULL, NULL, NULL, &count, params,
-			     &paramsInit);
-    CHECKSTATUSPTR(status);
-
-    XLALInspiralWaveTaper(tsignalvec, 3);
+    REAL4Vector *tsigR4=XLALCreateREAL4Vector(nbins);
+    for (idx=0;idx<nbins;idx++) tsigR4->data[idx]=(REAL4) tsignalvec->data[idx];
+    XLALDestroyREAL8Vector(tsignalvec);
+    XLALInspiralWaveTaper(tsigR4, 3);
 
     forwPlan = XLALCreateForwardREAL4FFTPlan(nbins, 0);
-    if (forwPlan == NULL)
-	ABORTXLAL(status);
-    XLALREAL4VectorFFT(fsignalvec, tsignalvec, forwPlan);
-    for (i = 0; i < nbins; i++)
-	fsignalvec->data[i] /= params->tSampling / 2.;
-
-    sub = nbins / signalvec->length;
-    mod = 0.;
-    ph = 0.;
-    j = 1;
-    for (i = 1; i < nbins / 2; i++) {
-	mod +=
-	    sqrt(fsignalvec->data[i] * fsignalvec->data[i] +
-		 fsignalvec->data[nbins - i] * fsignalvec->data[nbins -
-								i]);
-	ph += atan2(fsignalvec->data[nbins - i], fsignalvec->data[i]);
-	if (i % sub == 0) {
-	    mod /= (REAL4) (sub);
-	    ph /= (REAL4) (sub);
-	    signalvec->data[j] = mod * cos(ph);
-	    signalvec->data[length - j] = mod * sin(ph);
-	    mod = 0.;
-	    ph = 0.;
-	    j++;
-	}
+    if (forwPlan == NULL) {
+      XLALDestroyREAL4Vector(fsignalvec);
+      XLALDestroyREAL8Vector(tsignalvec);
+      XLALDestroyREAL4Vector(tsigR4);
+      ABORTXLAL(status);
     }
-    signalvec->data[0] = 0.;
-    signalvec->data[nbins / 2] = 0.;
+    XLALREAL4VectorFFT(fsignalvec, tsigR4, forwPlan);
+    XLALDestroyREAL4Vector(tsigR4);
 
-    XLALDestroyREAL4Vector(tsignalvec);
+    for (idx = 0; idx < nbins; idx++) fsignalvec->data[idx] /= params->tSampling;
+
+    if (nbins > length) {
+      /*do interpolation*/
+      REAL8Vector *fsigRe  = XLALCreateREAL8Vector(nbins/2);
+      REAL8Vector *fsigIm  = XLALCreateREAL8Vector(nbins/2);
+      REAL8Vector *freq    = XLALCreateREAL8Vector(length/2);
+      REAL8Vector *freqSup = XLALCreateREAL8Vector(nbins/2);
+
+      REAL8 dF = 1./params->tSampling/((REAL8) length);
+      REAL8 dFsup = 1./params->tSampling/((REAL8) nbins);
+
+      for (idx=0; idx< length/2; idx++) freq->data[idx]=((REAL4) idx) *dF;
+
+      for (idx = 0; idx < nbins/2; idx++) {
+	fsigRe->data[idx]=(REAL8)fsignalvec->data[idx];
+	fsigIm->data[idx]=(REAL8)fsignalvec->data[nbins-idx];
+	freqSup->data[idx]=((REAL8) idx) *dFsup;
+      }
+
+      gsl_interp_accel* acc;
+      gsl_spline* spline_real;
+      gsl_spline* spline_imag;
+      XLAL_CALLGSL( spline_imag  = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, nbins/2));
+      XLAL_CALLGSL( spline_real  = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, nbins/2));
+      XLAL_CALLGSL( acc          = (gsl_interp_accel*) gsl_interp_accel_alloc());
+      XLAL_CALLGSL( gsl_spline_init(spline_real, freqSup->data, fsigRe->data, nbins/2));
+      XLAL_CALLGSL( gsl_spline_init(spline_imag, freqSup->data, fsigIm->data, nbins/2));
+
+      for (idx=0;idx<length/2;idx++){
+        signalvec->data[idx]        = gsl_spline_eval ( spline_real , freq->data[idx] , acc);
+        signalvec->data[length-idx] = gsl_spline_eval ( spline_imag , freq->data[idx] , acc);
+      }
+      signalvec->data[0] = 0.;
+      signalvec->data[nbins / 2] = 0.;
+
+      XLALDestroyREAL8Vector(fsigRe);
+      XLALDestroyREAL8Vector(fsigIm);
+      XLALDestroyREAL8Vector(freq);
+      XLALDestroyREAL8Vector(freqSup);
+      gsl_spline_free(spline_real);
+      gsl_spline_free(spline_imag);
+      gsl_interp_accel_free(acc);
+
+    }
+    else {
+      for (idx=0; idx<length; idx++)
+	signalvec->data[idx]=fsignalvec->data[idx];
+    }
+
     XLALDestroyREAL4Vector(fsignalvec);
     XLALDestroyREAL4FFTPlan(forwPlan);
 
     DETATCHSTATUSPTR(status);
     RETURN(status);
 }
-
-
-/*
- *
- * Main function
- *
- */
 
 NRCSID(LALPSPININSPIRALRDENGINEC, "$Id$");
 
@@ -762,1798 +1012,2153 @@ NRCSID(LALPSPININSPIRALRDENGINEC, "$Id$");
  * \brief Module actually computing PSIRD waveforms
  */
 
-void LALPSpinInspiralRDEngine(LALStatus * status,
-			      REAL4Vector * signalvec1,
-			      REAL4Vector * signalvec2,
-			      REAL4Vector * hh,
-			      REAL4Vector * ff,
-			      REAL8Vector * phi,
-			      REAL4Vector * shift,
-			      UINT4 * countback,
-			      InspiralTemplate * params,
-			      InspiralInit * paramsInit)
+static int XLALSpinInspiralFillH2Modes(
+				REAL8Vector* h2P2,
+				REAL8Vector* h2M2,
+				REAL8Vector* h2P1,
+				REAL8Vector* h2M1,
+				REAL8Vector* h20,
+				UINT4 j,
+				REAL4 amp,
+				REAL4 v,
+				REAL4 eta,
+				REAL4 dm,
+				REAL8 Psi,
+				REAL8 alpha,
+				LALSpinInspiralAngle an
+				){
+
+  REAL8 amp20 = amp * sqrtOnePointFive;
+  REAL8 v2    = v*v;
+  REAL8 omega = v*v*v;
+  const REAL8 omegaC = 0.05;
+  const REAL8 Afac   = .5;
+  REAL8 damp  = omega > omegaC ? 1. : exp(-Afac*(1.-omegaC/omega)*(1.-omegaC/omega));
+
+  h2P2->data[2 * j] = amp * ( ( 1. - damp * v2 / 42. * (107. - 55. * eta) )*
+                              ( cos(2. * (Psi + alpha)) * an.c4i2 + cos(2. * (Psi - alpha)) * an.s4i2) +
+                               v * dm / 3. * an.si *
+                              ( cos(Psi - 2. * alpha) * an.s2i2 + cos(Psi + 2. * alpha) * an.c2i2 ) );
+
+  h2M2->data[2 * j] = amp * ( ( 1. - damp * v2 / 42. * (107. - 55. * eta) )*
+				( cos(2. * (Psi + alpha)) * an.c4i2 + cos(2. * (Psi - alpha)) * an.s4i2) -
+                               v * dm / 3. * an.si *
+                              ( cos(Psi - 2. * alpha) * an.s2i2 + cos(Psi + 2. * alpha) * an.c2i2) );
+
+  h2P2->data[2 * j + 1] = amp * ( (1. - damp * v2 / 42. * (107. - 55. * eta) )*
+                                 ( -sin(2. * (Psi + alpha)) * an.c4i2 + sin(2. * (Psi - alpha)) * an.s4i2) +
+                                   v * dm / 3. * an.si *
+                                  ( sin(Psi - 2. * alpha) * an.s2i2 - sin(Psi + 2. * alpha) * an.c2i2) );
+
+  h2M2->data[2 * j + 1] = amp * ( (1. - damp * v2 / 42. * (107. - 55. * eta) )*
+                                  ( sin(2. * (Psi + alpha)) * an.c4i2 - sin(2. * (Psi - alpha)) * an.s4i2) +
+                                   v * dm / 3. * an.si *
+                                  ( sin(Psi - 2. * alpha) * an.s2i2 - sin(Psi + 2. * alpha) * an.c2i2) );
+
+  h2P1->data[2 * j] = amp * (an.si * (1. - damp * v2 / 42. * (107. - 55. * eta) ) *
+			     ( -cos(2. * Psi - alpha) * an.s2i2 + cos(2. * Psi + alpha) * an.c2i2) +
+			     v * dm / 3. *
+			     (-cos(Psi + alpha) * (an.ci + an.cdi)/2. -
+			      cos(Psi - alpha) * an.s2i2 * (1. + 2. * an.ci) ) );
+
+  h2M1->data[2 * j] = amp * (an.si * (1. - damp * v2 / 42. * (107. - 55. * eta)) *
+                               ( cos(2. * Psi - alpha) * an.s2i2 - cos(2. * Psi + alpha) * an.c2i2) +
+                                v * dm / 3. *
+                               (-cos(Psi + alpha) * (an.ci + an.cdi)/2. -
+                                cos(Psi - alpha) * an.s2i2 * (1. + 2. * an.ci) ) );
+
+  h2P1->data[2 * j + 1] = amp * (an.si * (1. - damp * v2 / 42. * (107. - 55. * eta) ) *
+                                  ( -sin(2. * Psi - alpha ) * an.s2i2 - sin(2. * Psi + alpha) * an.c2i2) +
+                                   v * dm / 3. *
+                                    (sin(Psi + alpha) * (an.ci + an.cdi)/2. -
+				     sin(Psi - alpha) * an.s2i2 * (1. + 2. * an.ci) ) );
+
+  h2M1->data[2 * j + 1] = amp * (an.si * (1. - damp * v2 / 42. * (107. - 55. * eta)) *
+                                  ( -sin(2. * Psi - alpha) * an.s2i2 - sin(2. * Psi + alpha) * an.c2i2) -
+                                   v * dm / 3. *
+                                   (sin(Psi + alpha) * (an.ci + an.cdi) / 2. -
+                                    sin(Psi - alpha) * an.s2i2 * (1. + 2. * an.ci) ) );
+
+  h20->data[2 * j] = amp20 * ( an.s2i * (1.- damp * v2/42. * (107. - 55.*eta) ) * cos(2. * Psi) );
+
+  h20->data[2 * j + 1] = amp20 * ( v * dm / 3. * an.sdi * sin(Psi) );
+
+  return 0;
+
+}
+
+static int XLALSpinInspiralFillH3Modes(
+				REAL8Vector* h3P3,
+				REAL8Vector* h3M3,
+				REAL8Vector* h3P2,
+				REAL8Vector* h3M2,
+				REAL8Vector* h3P1,
+				REAL8Vector* h3M1,
+				REAL8Vector* h30,
+				UINT4 j,
+				REAL4 amp,
+				REAL4 v,
+				REAL4 eta,
+				REAL4 dm,
+				REAL8 Psi,
+				REAL8 alpha,
+				LALSpinInspiralAngle an
+				){
+
+  REAL8 amp32 = amp * sqrtOnePointFive;
+  REAL8 amp31 = amp * sqrtPoint15;
+  REAL8 amp30 = amp / sqrtFiveOver2;
+  REAL8 v2    = v*v;
+
+  h3P3->data[2 * j] = amp * ( v * dm *
+				(-9. * cos(3. * (Psi - alpha)) * an.s6i2 -
+				cos(  Psi - 3. * alpha) * an.s4i2 * an.c2i2 +
+				cos(  Psi + 3. * alpha) * an.s2i2 * an.c4i2 +
+				9. * cos(3. * (Psi + alpha)) * an.c6i2) +
+                              v2 * 4. * an.si * (1. - 3. * eta) *
+                                (-cos(2. * Psi - 3. * alpha) * an.s4i2 +
+                                 cos(2. * Psi + 3. * alpha) * an.c4i2 ) );
+
+  h3M3->data[2 * j] = amp * (-v * dm *
+                                (-9. * cos(3. * (Psi - alpha)) * an.s6i2 -
+                                cos(  Psi - 3. * alpha) * an.s4i2 * an.c2i2 +
+                                cos(  Psi + 3. * alpha) * an.s2i2 * an.c4i2 +
+                                 9. * cos(3. * (Psi + alpha)) * an.c6i2) +
+                                v2 * 4. * an.si * (1. - 3. * eta) * 
+                                (-cos(2. * Psi - 3. * alpha) * an.s4i2 +
+                                 cos(2. * Psi + 3. * alpha) * an.c4i2 ) );
+
+  h3P3->data[2 * j + 1] = amp * ( v * dm *
+                                 (-9. * sin(3. * (Psi - alpha)) * an.s6i2 -
+                                  sin(  Psi - 3. * alpha) * an.s4i2 * an.c2i2 -
+                                  sin(  Psi + 3. * alpha) * an.s2i2 * an.c4i2 -
+                                   9. * sin(3. * (Psi + alpha)) * an.c6i2) +
+                                    v2 * 4. * an.si * (1. - 3. * eta) * 
+                                     (-sin(2. * Psi - 3. * alpha) * an.s4i2
+                                      -sin(2. * Psi + 3. * alpha) * an.c4i2 ) );
+
+  h3M3->data[2 * j + 1] = amp * ( v * dm *
+				    (-9. * sin(3. * (Psi - alpha)) * an.s6i2 -
+				     sin(  Psi - 3. * alpha) * an.s4i2 * an.c2i2 -
+				     sin(  Psi + 3. * alpha) * an.s2i2 * an.c4i2 -
+				     9. * sin(3. * (Psi + alpha)) * an.c6i2) -
+				    v2 * 4. * an.si * (1. - 3. * eta) *
+				    (   - sin(2. * Psi - 3. * alpha) * an.s4i2
+					- sin(2. * Psi + 3. * alpha) * an.c4i2 ) );
+
+  h3P2->data[2 * j] = amp32 * ( v * dm / 3. *
+				( 27. * cos(3. * Psi - 2. * alpha) * an.si*an.s4i2 +
+				  27. * cos(3. * Psi + 2. * alpha) * an.si*an.c4i2 +
+				  cos( Psi + 2. * alpha) * an.c3i2 * (5.*an.si2-3.*an.si*an.ci2-3.*an.ci*an.si2) /2. +
+				  cos( Psi - 2. * alpha) * an.s3i2 * (5.*an.ci2+3.*an.ci*an.ci2-3.*an.si*an.si2) /2.) +
+				v2*(1./3.-eta) *
+				( - 8.*an.c4i2*(3.*an.ci-2.)*cos(2.*(Psi+alpha)) +
+				  8.*an.s4i2*(3.*an.ci+2.)*cos(2.*(Psi-alpha)) ) );
+
+  h3M2->data[2 * j] = amp32 * ( v * dm / 3. *
+				( 27. * cos(3. * Psi - 2. * alpha) * an.si*an.s4i2 +
+				  27. * cos(3. * Psi + 2. * alpha) * an.si*an.c4i2 +
+				  cos( Psi + 2. * alpha) * an.c3i2 * (5.*an.si2-3.*an.si*an.ci2-3.*an.ci*an.si2) /2. +
+				  cos( Psi - 2. * alpha) * an.s3i2 * (5.*an.ci2+3.*an.ci*an.ci2-3.*an.si*an.si2) /2.) -
+				v2*(1./3.-eta) *
+				( 8.*an.c4i2*(3.*an.ci-2.)*cos(2.*(Psi+alpha)) -
+				  8.*an.s4i2*(3.*an.ci+2.)*cos(2.*(Psi-alpha)) ) );
+
+  h3P2->data[2 * j + 1 ] = amp32 * ( v * dm / 3. *
+				     ( 27. * sin(3. * Psi - 2. * alpha) * an.si*an.s4i2 -
+				       27. * cos(3. * Psi + 2. * alpha) * an.si*an.c4i2 -
+				       sin( Psi + 2. * alpha) * an.c3i2 * (5.*an.si2-3.*an.si*an.ci2-3.*an.ci*an.si2) /2. +
+				       sin( Psi - 2. * alpha) * an.s3i2 * (5.*an.ci2+3.*an.ci*an.ci2-3.*an.si*an.si2) /2.) +
+				     v2*(1./3.-eta) *
+				     ( 8.*an.c4i2*(3.*an.ci-2.)*sin(2.*(Psi+alpha)) +
+				       8.*an.s4i2*(3.*an.ci+2.)*sin(2.*(Psi-alpha)) ) );
+
+  h3M2->data[2 * j + 1 ] = amp32 * ( -v * dm / 3. *
+				       ( 27. * sin(3. * Psi - 2. * alpha) * an.si*an.s4i2 -
+					 27. * cos(3. * Psi + 2. * alpha) * an.si*an.c4i2 -
+					 sin( Psi + 2. * alpha) * an.c3i2 * (5.*an.si2-3.*an.si*an.ci2-3.*an.ci*an.si2) /2.+
+					 sin( Psi - 2. * alpha) * an.s3i2 * (5.*an.ci2+3.*an.ci*an.ci2-3.*an.si*an.si2) /2.)+
+				       v2*(1./3.-eta) *
+				       ( 8.*an.c4i2*(3.*an.ci-2.)*sin(2.*(Psi+alpha)) +
+					 8.*an.s4i2*(3.*an.ci+2.)*sin(2.*(Psi-alpha)) ) );
+
+  h3P1->data[2 * j] = amp31 * ( v * dm / 6. *
+                                  ( -135. * cos(3.*Psi - alpha) * an.s2i*an.s2i2 +
+                                    135. * cos(3.*Psi + alpha)  * an.s2i*an.c2i2 +
+                                    cos(Psi+alpha) * an.c2i2*(15.*an.cdi-20.*an.ci+13.)/2.-
+                                    cos(Psi-alpha) * an.s2i2*(15.*an.cdi+20.*an.ci+13.)/2. )
+                                   -v2 * (1./3.-eta)*
+                                   ( 20.*an.c3i2*cos(2.*Psi+alpha)*(3.*(an.si2*an.ci+an.ci2*an.si)-5.*an.si2) +
+                                    20.*an.s3i2*cos(2.*Psi-alpha)*(3.*(an.ci2*an.ci-an.si2*an.si)+5.*an.ci2) ) );
+
+  h3M1->data[2 * j] = amp31 * (-v * dm / 6. *
+                                  ( -135. * cos(3.*Psi - alpha) * an.s2i*an.s2i2 +
+                                    135. * cos(3.*Psi + alpha) * an.s2i*an.c2i2 +
+                                    cos(Psi+alpha) * an.c2i2*(15.*an.cdi-20.*an.ci+13.)/2.-
+                                    cos(Psi-alpha) * an.s2i2*(15.*an.cdi+20.*an.ci+13.)/2. )
+                                   -v2 * (1./3.-eta)*
+                                  ( 20.*an.c3i2*cos(2.*Psi+alpha)*(3.*(an.si2*an.ci+an.ci2*an.si)-5.*an.si2) +
+                                    20.*an.s3i2*cos(2.*Psi-alpha)*(3.*(an.ci2*an.ci-an.si2*an.si)+5.*an.ci2) ) );
+
+  h3P1->data[2 * j + 1] = amp31 * ( v * dm / 6. *
+                                      ( -135. * sin(3.*Psi - alpha) * an.s2i*an.s2i2 -
+                                        135.* sin(3.*Psi + alpha) * an.s2i*an.c2i2 -
+                                        sin(Psi+alpha) * an.c2i2*(15.*an.cdi-20.*an.ci+13.)/2.-
+                                        sin(Psi-alpha) * an.s2i2*(15.*an.cdi+20.*an.ci+13.)/2. )
+                                        +v2 * (1./3.-eta)*
+                                        ( 20.*an.c3i2*sin(2.*Psi+alpha)*(3.*(an.si2*an.ci+an.ci2*an.si)-5.*an.si2)
+                                         -20.*an.s3i2*sin(2.*Psi-alpha)*(3.*(an.ci2*an.ci-an.si2*an.si)+5.*an.ci2) ) );
+
+  h3M1->data[2 * j + 1] = amp31 * ( v * dm / 6. *
+                                      ( -135. * sin(3.*Psi - alpha) *an.s2i*an.s2i2 -
+                                         135. * sin(3.*Psi + alpha) *an.s2i*an.c2i2 -
+                                         sin(Psi+alpha) * an.c2i2*(15.*an.cdi-20.*an.ci+13.)/2.-
+                                         sin(Psi-alpha) * an.s2i2*(15.*an.cdi+20.*an.ci+13.)/2. )
+                                       -v2 * (1./3.-eta)*
+                                        ( 20.*an.c3i2*sin(2.*Psi+alpha)*(3.*(an.si2*an.ci+an.ci2*an.si)-5.*an.si2)
+                                         -20.*an.s3i2*sin(2.*Psi-alpha)*(3.*(an.ci2*an.ci-an.si2*an.si)+5.*an.ci2) ) );
+
+  h30->data[2 * j] = 0.;
+
+  h30->data[2 * j + 1] =  amp30 * ( v * dm *
+                                     ( cos(Psi) * an.si*(cos(2.*Psi)*(45.*an.s2i)-(25.*an.cdi-21.) ) )
+                                     +v2 * (1.-3.*eta) *
+                                     (80. * an.s2i*an.c2i*sin(2.*Psi) ) );
+
+    return 0;
+
+}
+
+static int XLALSpinInspiralFillH4Modes(
+				REAL8Vector* h4P4,
+				REAL8Vector* h4M4,
+				REAL8Vector* h4P3,
+				REAL8Vector* h4M3,
+				REAL8Vector* h4P2,
+				REAL8Vector* h4M2,
+				REAL8Vector* h4P1,
+				REAL8Vector* h4M1,
+				REAL8Vector* h40,
+				INT4  j,
+				REAL8 amp44,
+				REAL8 v,
+				REAL8 eta,
+				REAL8 dm,
+				REAL8 Psi,
+				REAL8 alpha,
+				LALSpinInspiralAngle an
+				){
+
+  UNUSED(v);
+  UNUSED(dm);
+
+  REAL8 amp43 = - amp44 * sqrt(2.);
+  REAL8 amp42 = amp44 * sqrt(7.)/2.;
+  REAL8 amp41 = amp44 * sqrt(3.5)/4.;
+  REAL8 amp40 = amp44 * sqrt(17.5)/16.;
+
+  h4P4->data[2 * j] = amp44 * (1. - 3.*eta) *
+    ( 4.* an.s8i2 * cos(4.*(Psi-alpha)) + cos(2.*Psi-4.*alpha) *an.s6i2*an.c2i2
+     + an.s2i2*an.c6i2* cos(2.*Psi+4.*alpha) + 4.*an.c8i2* cos(4.*(Psi+alpha)) );
+
+  h4M4->data[2 * j] = amp44 * (1. - 3.*eta) *
+    ( 4.* an.s8i2 * cos(4.*(Psi-alpha)) + cos(2.*Psi-4.*alpha) *an.s6i2*an.c2i2
+      + an.s2i2*an.c6i2* cos(2.*Psi+4.*alpha) + 4.*an.c8i2* cos(4.*(Psi+alpha)) );
+
+  h4P4->data[2 * j + 1] = amp44 * (1. - 3.*eta) *
+    ( 4.* an.s8i2 * sin(4.*(Psi-alpha)) + sin(2.*Psi-4.*alpha) *an.s6i2*an.c2i2
+      - an.s2i2*an.c6i2* sin(2.*Psi+4.*alpha) - 4.*an.c8i2* sin(4.*(Psi+alpha)) );
+
+  h4M4->data[2 * j + 1] = - amp44 * (1. - 3.*eta) *
+    ( 4.* an.s8i2 * sin(4.*(Psi-alpha)) + sin(2*Psi-4.*alpha) *an.s6i2*an.c2i2
+      - an.s2i2*an.c6i2* sin(2.*Psi+4.*alpha) - 4.*an.c8i2* sin(4.*(Psi+alpha)) );
+
+  h4P3->data[2 * j] = amp43 * (1. - 3.*eta) * an.si *
+    ( 4.*an.s6i2* cos(4.*Psi-3.*alpha) - 4.*an.c6i2* cos(4.*Psi+3.*alpha) -
+      an.s4i2*(an.ci+0.5)/2. * cos(2.*Psi-3.*alpha) - an.c4i2*(an.ci-0.5) * cos(2.*Psi+3.*alpha) );
+
+  h4M3->data[2 * j] = - amp43 * (1. - 3.*eta) * an.si *
+    ( 4.*an.s6i2* cos(4.*Psi-3.*alpha) - 4.*an.c6i2* cos(4.*Psi+3.*alpha) -
+      an.s4i2*(an.ci+0.5)/2. * cos(2.*Psi-3.*alpha) - an.c4i2*(an.ci-0.5) * cos(2.*Psi+3.*alpha) );
+
+  h4P3->data[2 * j + 1] = amp43 * (1. - 3.*eta) * an.si *
+    ( 4.*an.s6i2* sin(4.*Psi-3.*alpha) + 4.*an.c6i2* sin(4.*Psi+3.*alpha) -
+      an.s4i2*(an.ci+0.5)/2. * sin(2.*Psi-3.*alpha) + an.c4i2*(an.ci-0.5) * sin(2.*Psi+3.*alpha) );
+
+  h4M3->data[2 * j + 1] = amp43 * (1. - 3.*eta) * an.si *
+    ( 4.*an.s6i2* sin(4.*Psi-3.*alpha) + 4.*an.c6i2* sin(4.*Psi+3.*alpha) -
+      an.s4i2*(an.ci+0.5)/2. * sin(2.*Psi-3.*alpha) + an.c4i2*(an.ci-0.5) * sin(2.*Psi+3.*alpha) );
+
+  h4P2->data[2 * j] = amp42 * (1. - 3.*eta) *
+    ( 16.*an.s6i2*an.c2i2 * cos(4.*Psi-2.*alpha) + 16.*an.c6i2*an.s2i2 * cos(4.*Psi+2.*alpha)
+      - an.c4i2 * cos(2.*(Psi+alpha))*(an.cdi-2.*an.ci+9./7.)/2. - an.s4i2 * cos(2.*(Psi-alpha))*(an.cdi+2.*an.ci+9./7.)/2. );
+
+  h4M2->data[2 * j] = amp42 * (1. - 3.*eta) *
+    ( 16.*an.s6i2*an.c2i2 * cos(4.*Psi-2.*alpha) + 16.*an.c6i2*an.s2i2 * cos(4.*Psi+2.*alpha)
+      - an.c4i2 * cos(2.*(Psi+alpha))*(an.cdi-2.*an.ci+9./7.)/2. - an.s4i2 * cos(2.*(Psi-alpha))*(an.cdi+2.*an.ci+9./7.)/2. );
+
+  h4P2->data[2 * j + 1] = amp42 * (1. - 3.*eta) *
+    ( 16.*an.s6i2*an.c2i2 * sin(4.*Psi-2.*alpha) - 16.*an.c6i2*an.s2i2 * sin(4.*Psi+2.*alpha)
+      + an.c4i2 * sin(2.*(Psi+alpha))*(an.cdi-2.*an.ci+9./7.)/2. - an.s4i2 * sin(2.*(Psi-alpha))*(an.cdi+2.*an.ci+9./7.)/2. );
+
+  h4M2->data[2 * j + 1] = -amp42 * (1. - 3.*eta) *
+    ( 16.*an.s6i2*an.c2i2 * sin(4.*Psi-2.*alpha) - 16.*an.c6i2*an.s2i2 * sin(4.*Psi+2.*alpha)
+      + an.c4i2 * sin(2.*(Psi+alpha))*(an.cdi-2.*an.ci+9./7.)/2. - an.s4i2 * sin(2.*(Psi-alpha))*(an.cdi+2.*an.ci+9./7.)/2. );
+
+  h4P1->data[2 * j] = amp41 * (1. - 3.*eta) *
+    ( -64.*an.s5i2*an.c3i2 * cos(4.*Psi-alpha) +64.*an.s3i2*an.c5i2 * cos(4.*Psi+alpha) -
+      an.s3i2*cos(2.*Psi-alpha)*((an.cdi*an.ci2-an.sdi*an.si2)+2.*(an.ci2*an.ci-an.si2*an.si)+19./7.*an.ci2) +
+      an.c3i2*cos(2.*Psi+alpha)*((an.cdi*an.si2+an.sdi*an.ci2)-2.*(an.si*an.ci2+an.ci*an.si2)+19./7.*an.ci2) );
+
+  h4M1->data[2 * j] = -amp41 * (1. - 3.*eta) *
+    ( -64*an.s5i2*an.c3i2 * cos(4.*Psi-alpha) +64.*an.s3i2*an.c5i2 * cos(4.*Psi+alpha) -
+      an.s3i2*cos(2.*Psi-alpha)*((an.cdi*an.ci2-an.sdi*an.si2)+2.*(an.ci2*an.ci-an.si2*an.si)+19./7.*an.ci2) +
+      an.c3i2*cos(2.*Psi+alpha)*((an.cdi*an.si2+an.sdi*an.ci2)-2.*(an.si*an.ci2+an.ci*an.si2)+19./7.*an.ci2) );
+
+  h4P1->data[2 * j + 1] = amp41 * (1. - 3.*eta) *
+    ( -64.*an.s5i2*an.c3i2 * sin(4.*Psi-alpha) - 64.*an.s3i2*an.c5i2 * sin(4.*Psi+alpha) -
+      an.s3i2*sin(2.*Psi-alpha)*((an.cdi*an.ci2-an.sdi*an.si2)+2.*(an.ci2*an.ci-an.si2*an.si)+19./7.*an.ci2) -
+      an.c3i2*sin(2.*Psi+alpha)*((an.cdi*an.si2+an.sdi*an.ci2)-2.*(an.si*an.ci2+an.ci*an.si2)+19./7.*an.ci2) );
+
+  h4M1->data[2 * j + 1] = amp41 * (1. - 3.*eta) *
+    ( -64.*an.s5i2*an.c3i2 * sin(4.*Psi-alpha) - 64.*an.s3i2*an.c5i2 * sin(4.*Psi+alpha) -
+      an.s3i2*sin(2.*Psi-alpha)*((an.cdi*an.ci2-an.sdi*an.si2)+2.*(an.ci2*an.ci-an.si2*an.si)+19./7.*an.ci2) -
+      an.c3i2*sin(2.*Psi+alpha)*((an.cdi*an.si2+an.sdi*an.ci2)-2.*(an.si*an.ci2+an.ci*an.si2)+19./7.*an.ci2) );
+
+  h40->data[2 * j] = amp40 * (1.-3.*eta) * an.s2i * (8.*an.s2i*cos(4.*Psi) +
+                                                      cos(2.*Psi)*(an.cdi+5./7.) );
+  h40->data[2 * j +1] = 0.;
+
+  return 0;
+}
+
+NRCSID(LALSPININSPIRALENGINEC,"$Id$");
+
+static void LALSpinInspiralEngine(LALStatus * status,
+				UINT4 neqs, 
+				const REAL8 yinit[],
+				REAL8 amp22ini,
+				LALPSpinInspiralRDparams *mparams,
+				REAL8Vector* h2P2,
+				REAL8Vector* h2M2,
+				REAL8Vector* h2P1,
+				REAL8Vector* h2M1,
+				REAL8Vector* h20,
+				REAL8Vector* h3P3,
+				REAL8Vector* h3M3,
+				REAL8Vector* h3P2,
+				REAL8Vector* h3M2,
+				REAL8Vector* h3P1,
+				REAL8Vector* h3M1,
+				REAL8Vector* h30,
+				REAL8Vector* h4P4,
+				REAL8Vector* h4M4,
+				REAL8Vector* h4P3,
+				REAL8Vector* h4M3,
+				REAL8Vector* h4P2,
+				REAL8Vector* h4M2,
+				REAL8Vector* h4P1,
+				REAL8Vector* h4M1,
+				REAL8Vector* h40,
+				REAL8Vector* freq,
+				REAL8Vector* phase,
+				LALPSpinInspiralPhenPars *phenPars 
+				)
 {
+  INT4 intreturn;
+  UINT4 count=0;
+  UINT4 write=0;
+  UINT4 modcount=0;
+  UINT4 j;
 
-    /* declare model parameters */
-    LALPSpinInspiralRDparams PSIRDparameters;
+  REAL8 dt,tm,timewrite;
+  REAL8 Mass,dm;
+  REAL8 v,v2;
+  REAL8 Phi=0.;
+  REAL8 omega;
 
-    /* declare code parameters and variables */
-    INT4 nn = 11 + 1;		// number of dynamical variables, the extra one is the energy
-    UINT4 count, apcount, apcountM, write;	// integration steps performed
-    UINT4 estlength;		// maximum signal vector length
-    UINT4 length;		// signal vector length
-    UINT4 i, j, k, l;		// counters
-    UINT4 subsampling = 1;	// multiplies the rate
+  REAL8 LNhx,LNhy,LNhz;
+  REAL8 S1x,S1y,S1z;
+  REAL8 S2x,S2y,S2z;
+  REAL8 LNhxy;
+  REAL8 energy      = 0.;
+  REAL8 energywrite = 0.;
 
-    rk4In in4;			// used to setup the Runge-Kutta integration
-    rk4GSLIntegrator *integrator;
+  REAL8 LNhS1=0.;
+  REAL8 LNhS2=0.;
+  REAL8 S1S1=0.;
+  REAL8 S1S2=0.;
+  REAL8 S2S2=0.;
+  REAL8 dLNhx,dLNhy,dLNhz;
+  REAL8 LNhS1w = 0.;
+  REAL8 LNhS2w = 0.;
+  REAL8 S1S1w  = 0.;
+  REAL8 S2S2w  = 0.;
+  REAL8 S1S2w  = 0.;
 
-    expnCoeffs ak;		//Coefficients in a generic PN expansion (E, flux...)
+  //REAL8 Phiold;
+  REAL8 alpha,alphaold;
 
-    REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
-    // support variables
+  REAL8 Phiwrite     = 0.;
+  REAL8 alphawrite   = 0.;
+  REAL8 omegawrite   = 0.;
 
-    REAL8 lengths;		//length in seconds
-    REAL4 v = 0.;
-    REAL4 v2 = 0.;
-    REAL8 m;			// Total mass in SI units
-    REAL8 t;			// time (units of total mass)
-    REAL8 unitHz;
-    REAL8 dt;
-    REAL8 LNhztol = 1.0e-8;
+  REAL8 amp22,amp33,amp44;
+  REAL8 unitHz;
+  LALSpinInspiralAngle trigAngle;
 
-    /* declare initial values of dynamical variables */
-    REAL8 initPhi, initomega, initomwrite, initv;
+  UINT4 subsampling=1;
 
-    REAL8 initLNh[3], initS1[3], initS2[3];
-    REAL8 iJ[3], iJmod, initJh[3];
-    REAL8 iS1[3], iS2[3];
-    REAL8 ry[3][3], rz[3][3];
-    REAL8 thetaJ, phiJ;
+  UINT4 Npoints = 20;
+  INT4 errcode;
 
-    REAL8 ci, si, ci2, si2, c2i, s2i, c2i2, s2i2, c4i2, s4i2, c5i2, s5i2,
-	c6i2, s6i2;
-    REAL8 amp22, amp20, amp33, amp22ini;
-    /* Useful variables to define GW multipolar modes */
+  rk4In in4;      // used to setup the Runge-Kutta integration
+  rk4GSLIntegrator *integrator;
 
-    REAL4Vector *h2P2, *h2M2, *h2P1, *h2M1, *h20, *h3P3, *h3M3;
-    REAL4Vector *sig1, *sig2;
-    REAL4Vector *hap, *fap, *shift22;
-    REAL8Vector *phap;
+  REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
+  // support variables
 
-    /* support variables */
+  //static const char *func = "XLALSpinInspiralEngine";
+  INITSTATUS(status, "LALSpinInspiralEngine",LALSPININSPIRALENGINEC);
+  ATTATCHSTATUSPTR(status);
 
-    /* declare dynamical variables */
-    REAL8 Phi, omega, LNhx, LNhy, LNhz, LNhxy, S1x, S1y, S1z, S2x, S2y,
-	S2z;
-    REAL8 S1dotL, S2dotL, S1dotS1, S2dotS2, S1dotS2;
-    REAL8 dLNhx, dLNhy, dLNhz = 0.;
-    REAL8 Psi = 0.;
-    REAL8 omegaold = 0.;
-    REAL8 omegadot = 0.;
-    REAL8 omegadotold;
-    REAL8 omegaddot;
-    REAL8 alpha = 0.;
-    REAL8 iota = 0.;
-    REAL8 alphadot = 0.;
-    REAL8 iotadot = 0.;
-    REAL8 iotadot0, iotadot1, alphadot0, alphadot1;
-    REAL8 iotaddot, iotadotold, alphaddot, alphadotold;
+  dummy.length = neqs * 6;
 
-    REAL4 mchi1, mchi2;
-    REAL4 cosa1, cosa2, cosg;
-    REAL4 LNmag;
+  values.length = dvalues.length = newvalues.length = yt.length = dym.length = dyt.length = neqs;
+  
+  if (!(dummy.data = (REAL8 *) LALMalloc(sizeof(REAL8) * neqs * 6))) {
+    DETATCHSTATUSPTR(status);
+    RETURN(status);
+    //XLAL_ERROR(func, XLAL_ENOMEM);
+  }
 
-    REAL8 energy = 0.;
-    REAL8 enold;
-    REAL8 v2old;
+  dt=mparams->dt;
+  Mass=mparams->m * LAL_MTSUN_SI;
+  dm=mparams->dm;
+  unitHz= Mass * (REAL8) LAL_PI;
 
-    LALPSpinInspiralRDparams *mparams;
+  values.data    = &dummy.data[0];
+  dvalues.data   = &dummy.data[neqs];
+  newvalues.data = &dummy.data[2 * neqs];
+  yt.data        = &dummy.data[3 * neqs];
+  dym.data       = &dummy.data[4 * neqs];
+  dyt.data       = &dummy.data[5 * neqs];
 
-    /* used in the phen-phase attach procedure */
-    REAL8 tAs, om1, om0;
-    REAL8 t0, Psi0, alpha0, iota0;
+  /* Variables initializations */
+  for (j=0;j<neqs;j++) values.data[j]=yinit[j];
 
-    INT4 errcode, errcode2;
-    REAL8 finalMass, finalSpin;
+  omega  = values.data[1];
+  //Phiold = Phi;
+  Phi    = values.data[0];
+  v      = pow(omega,oneby3);
+  v2     = v*v;
+  alpha  = atan2(values.data[3],values.data[2]);
+  trigAngle.ci = LNhz = values.data[4];
 
-    /* used in the ring-down attach procedure */
-    REAL8 omegamatch, omegaRD = 0.;
-    COMPLEX8Vector *modefreqs;
-    INT4 xlalSt2P2, xlalSt2M2 = 0;
-    UINT4 nmodes;
-    COMPLEX16 MultSphHarm2P2;	// Spin-weighted spherical harmonics 2,2
-    COMPLEX16 MultSphHarm2M2;	// Spin-weighted spherical harmonics 2,-2
-    COMPLEX16 MultSphHarm2P1;	// Spin-weighted spherical harmonics 2,1
-    COMPLEX16 MultSphHarm2M1;	// Spin-weighted spherical harmonics 2,-1
-    COMPLEX16 MultSphHarm20;	// Spin-weighted spherical harmonics 2,0
-    COMPLEX16 MultSphHarm3P3;	// Spin-weighted spherical harmonics 3,3
-    COMPLEX16 MultSphHarm3M3;	// Spin-weighted spherical harmonics 3,-3
-    REAL4 x0, x1, x2, x3;
+  LNhS1 = (values.data[2]*values.data[5]+values.data[3]*values.data[6]+values.data[4]*values.data[7])/mparams->m1msq;
+  LNhS2 = (values.data[2]*values.data[8]+values.data[3]*values.data[9]+values.data[4]*values.data[10])/mparams->m2msq;
+  S1S1  = (values.data[5]*values.data[5]+values.data[6]*values.data[6]+values.data[7]*values.data[7])/mparams->m1msq/mparams->m1msq;
+  S2S2  = (values.data[8]*values.data[8]+values.data[9]*values.data[9]+values.data[10]*values.data[10])/mparams->m2msq/mparams->m2msq;
+  S1S2= (values.data[5]*values.data[8]+values.data[6]*values.data[9]+values.data[7]*values.data[10])/mparams->m1msq/mparams->m2msq;;
 
-    REAL4 inc;
-    REAL4 fracRD;
-    REAL4 sqrtOneMinus4Eta;
+  while ( (OmMatch(LNhS1,LNhS1,S1S1,S1S2,S2S2) * 16. / unitHz) > (REAL4) (subsampling) / dt ) {
+    subsampling *= 2;
+    dt /= (REAL8) (subsampling);
+  }
 
-    /* switch to keep track of matching of the linear frequency growth phase */
-    INT4 rett = 0;
+  in4.function = LALSpinInspiralDerivatives;
+  in4.y        = &values;
+  in4.dydx     = &dvalues;
+  in4.h        = dt / Mass;
+  in4.n        = neqs;
+  in4.yt       = &yt;
+  in4.dym      = &dym;
+  in4.dyt      = &dyt;
 
-    const double omM0 = 0.0595;
-    const double omMz1p2 = -5.02e-3;
-    const double omM12 = -4.29e-4;
-    const double omMsq = 5.78e-3;
-    const double omMz12 = 2.66e-3;
-    const double omMzsq = -9.27e-3;
+  /* Start of the calculation of the inspiral part via the fixed step integration method */
 
-    const double frac0 = 0.57;
-    const double frac1p2 = 1.42e-2;
-    const double frac12 = -3.71e-3;
-    const double fracsq = -1.201e-2;
-    const double fracz12 = -2.447e-2;
-    const double fraczsq = -1.930e-2;
+  /* Initialize GSL integrator */
+  if (!(integrator = XLALRungeKutta4Init(neqs, &in4))) {
+    LALFree(dummy.data);
+    /*INT4 errNum = XLALClearErrno();
+    if (errNum == XLAL_ENOMEM)
+      XLAL_ERROR(func,XLAL_ENOMEM);
+    else
+    XLAL_ERROR(func,XLAL_EDOM);*/
+    DETATCHSTATUSPTR(status);
+    RETURN(status);
+  }
 
+  count = write= 0;
+  tm = timewrite = 0.;
 
-    INITSTATUS(status, "LALPSpinInspiralRDEngine",
-	       LALPSPININSPIRALRDENGINEC);
-    ATTATCHSTATUSPTR(status);
+  LALSpinInspiralDerivatives(&values, &dvalues, (void *) mparams);
 
-    /* set parameters from InspiralTemplate structure */
+  omega  = values.data[1];
+  //Phiold = Phi;
+  Phi    = values.data[0];
+  v      = pow(omega,oneby3);
+  v2     = v*v;
+  alpha  = atan2(values.data[3],values.data[2]);
 
-    /* Make sure parameter and waveform structures exist. */
-    ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  /*===================*/
+  REAL8Vector *domega  = XLALCreateREAL8Vector(Npoints);
+  REAL8Vector *diota   = XLALCreateREAL8Vector(Npoints);
+  REAL8Vector *dalpha  = XLALCreateREAL8Vector(Npoints);
+  REAL8Vector *ddomega = XLALCreateREAL8Vector(Npoints);
+  REAL8Vector *ddiota  = XLALCreateREAL8Vector(Npoints);
+  REAL8Vector *ddalpha = XLALCreateREAL8Vector(Npoints);
 
-    /* Compute some parameters */
+  do {
 
-    if (paramsInit->nbins == 0) {
+    if (count%subsampling==0) {
+
+      modcount=0;
+
+      if (write >= mparams->length) {
+	XLALRungeKutta4Free(integrator);
+	LALFree(dummy.data);
 	DETATCHSTATUSPTR(status);
 	RETURN(status);
+	//XLAL_ERROR(func, XLAL_EDOM);
+      }
+
+      amp22 = amp22ini * v2;
+      amp33 = -amp22 / 4. * sqrt(5. / 42.);
+      amp44 = amp22 * v2 * 2.*sqrt(5./7.)/9.;
+
+      Phiwrite   = Phi;
+      omegawrite = omega;
+      alphawrite = alpha;
+      energywrite  = energy;
+      LNhS1w = LNhS1;
+      LNhS2w = LNhS2;
+      S1S1w  = S1S1;
+      S1S2w  = S1S2;
+      S2S2w  = S2S2;
+
+      trigAngle.ci   = LNhz;
+      trigAngle.cdi  = 2. * trigAngle.ci * trigAngle.ci - 1.;
+      trigAngle.c2i  = trigAngle.ci * trigAngle.ci;
+      trigAngle.s2i  = 1. - trigAngle.ci * trigAngle.ci;
+      trigAngle.si   = sqrt(trigAngle.s2i);
+      trigAngle.sdi  = 2. * trigAngle.ci * trigAngle.si;
+      trigAngle.c2i2 = (1. + trigAngle.ci) / 2.;
+      trigAngle.s2i2 = (1. - trigAngle.ci) / 2.;
+      trigAngle.ci2  = sqrt(trigAngle.c2i2);
+      trigAngle.si2  = sqrt(trigAngle.s2i2);
+      trigAngle.c3i2 = trigAngle.c2i2 * trigAngle.ci2;
+      trigAngle.s3i2 = trigAngle.s2i2 * trigAngle.si2;
+      trigAngle.c4i2 = trigAngle.c2i2 * trigAngle.c2i2;
+      trigAngle.s4i2 = trigAngle.s2i2 * trigAngle.s2i2;
+      trigAngle.c5i2 = trigAngle.c4i2 * trigAngle.ci2;
+      trigAngle.s5i2 = trigAngle.s4i2 * trigAngle.si2;
+      trigAngle.c6i2 = trigAngle.c4i2 * trigAngle.c2i2;
+      trigAngle.s6i2 = trigAngle.s4i2 * trigAngle.s2i2;
+      trigAngle.c8i2 = trigAngle.c4i2 * trigAngle.c4i2;
+      trigAngle.s8i2 = trigAngle.s4i2 * trigAngle.s4i2;
+
+      XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,write,amp22,v,mparams->eta,dm,Phiwrite,alphawrite,trigAngle);
+
+      XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,write,amp33,v,mparams->eta,dm,Phiwrite,alphawrite,trigAngle);
+
+      XLALSpinInspiralFillH4Modes(h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,write,amp44,v,mparams->eta,dm,Phiwrite,alphawrite,trigAngle);
+
+      freq->data[write]=omega;
+      phase->data[write]=Phi;
+
+      write++;
+
+      timewrite+=mparams->dt;
+
     }
-    ak = paramsInit->ak;
 
-    mparams = &PSIRDparameters;
+    in4.x = tm / mparams->m;
 
-    m = params->totalMass * LAL_MTSUN_SI;
-    unitHz = params->totalMass * LAL_MTSUN_SI * (REAL8) LAL_PI;
-    /*    tSampling is in Hz, so dt is in seconds */
-    dt = 1.0 / params->tSampling;
+    LALRungeKutta4(status->statusPtr, &newvalues, integrator,(void *) mparams);
+    CHECKSTATUSPTR(status);
+    /* updating values of dynamical variables */
 
-    /* -- length in seconds from Newtonian formula; */
-    lengths =
-	(5.0 / 256.0) / LAL_PI * pow(LAL_PI * params->chirpMass *
-				     LAL_MTSUN_SI * params->fLower,
-				     -5.0 / 3.0) / params->fLower;
+    Phi = values.data[0] = newvalues.data[0];
+    omega = values.data[1] = newvalues.data[1];
 
-    estlength = ceil(log10(lengths / dt) / log10(2.0));
-    estlength = pow(2, estlength);
-    estlength *= 2;
+    LNhx = values.data[2] = newvalues.data[2];
+    LNhy = values.data[3] = newvalues.data[3];
+    LNhz = values.data[4] = newvalues.data[4];
 
-    /* The analytical formula for omega_match is in the do-while loop. However
-       omegamatch can be controlled by fCutoff by un-commenting the following
-       line and commenting the definition of omegamatch in the loop. */
-    if (params->eta >= 0.25)
-	sqrtOneMinus4Eta = 0.;
+    S1x = values.data[5] = newvalues.data[5];
+    S1y = values.data[6] = newvalues.data[6];
+    S1z = values.data[7] = newvalues.data[7];
+
+    S2x = values.data[8] = newvalues.data[8];
+    S2y = values.data[9] = newvalues.data[9];
+    S2z = values.data[10] = newvalues.data[10];
+
+    energy = values.data[11] = newvalues.data[11];
+
+    if (count==0) {
+      mparams->polarization=atan2(LNhy,LNhx);
+    }
+
+    alphaold = alpha;
+    LNhxy = sqrt(LNhx * LNhx + LNhy * LNhy);
+    if (LNhxy>0.)
+      alpha = atan2(LNhy, LNhx);
     else
-	sqrtOneMinus4Eta = sqrt(1. - 4. * params->eta);
-    omegamatch = omM0 + 6.05e-3 * sqrtOneMinus4Eta;
+      alpha = alphaold;
 
-    while ((omegamatch * 16. / unitHz) >
-	   (REAL4) (subsampling) * params->tSampling)
-	subsampling *= 2;
-    dt /= (REAL4) (subsampling);
-
-    initPhi = params->startPhase;
-
-    /* set initial values of dynamical variables */
-    initomega = params->fLower * unitHz;
-    initomwrite = initomega;
-    if (initomega > 0.9 * omegamatch) {
-	initomega = 0.9 * omegamatch;
-    }
-    initv = pow(initomega, oneby3);
-
-    /* Here we use the following convention:
-       the coordinates of the spin vectors params->spin1,2 are assumed to
-       be fed to this engine macro either in the frame set by the orbital angular
-       momentum (params->directionChoice= OrbitalL or TotalJ) or int the frame
-       set by the viewing direction (params->directionChoice=View).
-       The gw spherical modes are computed in whichever of the three frames
-       specified by the params->directionChoice variable.
-       The spin magnitude are normalized to the individual mass^2, i.e.
-       they are dimension-less.
-       The modulus of the initial angular momentum is fixed by m1,m2 and
-       initial frequency, the inclination is the
-       angle between the view direction and the orbital angular momentum.
-       The polarization angle is not used here, it enters the pattern
-       functions along with the angles marking the sky position of the
-       source. */
-
-    LNmag = params->eta * params->totalMass * params->totalMass / initv;
-
-    mchi1 =
-	sqrt(params->spin1[0] * params->spin1[0] +
-	     params->spin1[1] * params->spin1[1] +
-	     params->spin1[2] * params->spin1[2]);
-    mchi2 =
-	sqrt(params->spin2[0] * params->spin2[0] +
-	     params->spin2[1] * params->spin2[1] +
-	     params->spin2[2] * params->spin2[2]);
-
-    /* Cosinus of the angle between the spin vectors */
-    cosg =
-	(params->spin1[0] * params->spin2[0] +
-	 params->spin1[1] * params->spin2[1] +
-	 params->spin1[2] * params->spin2[2]) / mchi1 / mchi2;
-
-    switch (params->axisChoice) {
-
-    case OrbitalL:
-	cosa1 = params->spin1[2] / mchi1;
-	cosa2 = params->spin2[2] / mchi2;
-	initLNh[0] = 0.;
-	initLNh[1] = 0.;
-	initLNh[2] = 1.;
-	for (i = 0; i < 3; i++) {
-	    initS1[i] = params->spin1[i] * params->mass1 * params->mass1;
-	    initS2[i] = params->spin2[i] * params->mass2 * params->mass2;
+    /*if (count>1) {
+      if ((alpha*alphaold)<0.) {
+	if (fabs(cos(2.*(Phi+alpha))-cos(2.*(Phiold+alphaold)))>0.2) {
+	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Possible problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi+alpha: %12.6e\n Step %d      Psiold+alphaold %12.6e\n",write,LNhy,LNhx,(Phi+alpha)/LAL_PI,write-1,(Phiold+alphaold)/LAL_PI);
+	fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
+	fprintf(stdout,"            S1: (%9.6f,%9.6f,%9.6f)\n",yinit[5]/mparams->m1msq,yinit[6]/mparams->m1msq,yinit[7]/mparams->m1msq);
+	fprintf(stdout,"            S2: (%9.6f,%9.6f,%9.6f)\n",yinit[8]/mparams->m2msq,yinit[9]/mparams->m2msq,yinit[10]/mparams->m2msq);
 	}
-	inc = params->inclination;
-	break;
+      }
+      }*/
 
-    case View:
-	cosa1 =
-	    (params->spin1[2] * cos(params->inclination) +
-	     params->spin1[0] * sin(params->inclination)) / mchi1;
-	cosa2 =
-	    (params->spin1[2] * cos(params->inclination) +
-	     params->spin2[0] * sin(params->inclination)) / mchi2;
-	for (i = 0; i < 3; i++) {
-	    initS1[i] = params->spin1[i] * params->mass1 * params->mass1;
-	    initS2[i] = params->spin2[i] * params->mass2 * params->mass2;
-	}
-	initLNh[0] = sin(params->inclination);
-	initLNh[1] = 0.;
-	initLNh[2] = cos(params->inclination);
-	inc = 0.;
-	break;
+    LNhS1 = (S1x * LNhx + S1y * LNhy + S1z * LNhz) / mparams->m1msq;
+    LNhS2 = (S2x * LNhx + S2y * LNhy + S2z * LNhz) / mparams->m2msq;
+    S1S1  = (S1x * S1x + S1y * S1y + S1z * S1z)/mparams->m1msq/mparams->m1msq;
+    S2S2  = (S2x * S2x + S2y * S2y + S2z * S2z)/mparams->m2msq/mparams->m2msq;
+    S1S2  = (S1x * S2x + S1y * S2y + S1z * S2z)/mparams->m1msq/mparams->m2msq;
 
-    default:	
-	//case TotalJ:
-	cosa1 = params->spin1[2] / mchi1;
-	cosa2 = params->spin2[2] / mchi2;
-	for (j = 0; j < 3; j++) {
-	    iS1[j] = params->spin1[j] * params->mass1 * params->mass1;
-	    iS2[j] = params->spin2[j] * params->mass2 * params->mass2;
-	    iJ[j] = iS1[j] + iS2[j];
-	}
-	iJ[2] += LNmag;
-	iJmod = sqrt(iJ[0] * iJ[0] + iJ[1] * iJ[1] + iJ[2] * iJ[2]);
-	for (j = 0; j < 3; j++) {
-	    initJh[j] = iJ[j] / iJmod;
-	    initLNh[j] = 0.;
-	    initS1[j] = 0.;
-	    initS2[j] = 0.;
-	}
-	if (initJh[0] == 0.)
-	    phiJ = 0.;
-	else
-	    phiJ = atan2(initJh[1], initJh[0]);
-	thetaJ = acos(initJh[2]);
-	rz[0][0] = cos(phiJ);
-	rz[0][1] = sin(phiJ);
-	rz[0][2] = 0.;
-	rz[1][0] = -sin(phiJ);
-	rz[1][1] = cos(phiJ);
-	rz[1][2] = 0.;
-	rz[2][0] = 0.;
-	rz[2][1] = 0.;
-	rz[2][2] = 1.;
-	ry[0][0] = cos(thetaJ);
-	ry[0][1] = 0;
-	ry[0][2] = -sin(thetaJ);
-	ry[1][0] = 0.;
-	ry[1][1] = 1.;
-	ry[1][2] = 0.;
-	ry[2][0] = sin(thetaJ);
-	ry[2][1] = 0.;
-	ry[2][2] = cos(thetaJ);
-	for (j = 0; j < 3; j++) {
-	    for (k = 0; k < 3; k++) {
-		initLNh[j] += ry[j][k] * rz[k][2];
-		for (l = 0; l < 3; l++) {
-		    initS1[j] += ry[j][k] * rz[k][l] * iS1[l];
-		    initS2[j] += ry[j][k] * rz[k][l] * iS2[l];
-		}
-	    }
-	}
-	inc = params->inclination;
-	break;
-    }
+    LALSpinInspiralDerivatives(&values, &dvalues, (void *) mparams);
 
-    /*All the PN formulas used in this code assume that the spin variables
-       are the physical ones divided by totalmasss^2, here we introduce the
-       correct normalization, changing the input one. */
-    for (j = 0; j < 3; j++) {
-	initS1[j] /= params->totalMass * params->totalMass;
-	initS2[j] /= params->totalMass * params->totalMass;
-    }
-
-    if (signalvec1) {
-	length = signalvec1->length;
+    dLNhx = dvalues.data[2];
+    dLNhy = dvalues.data[3];
+    dLNhz = dvalues.data[4];
+    if (LNhxy > 0.) {
+      diota->data[Npoints-1]  = -dLNhz / LNhxy;
+      dalpha->data[Npoints-1] = (LNhx * dLNhy - LNhy * dLNhx) / LNhxy;
     } else {
-	if (ff)
-	    length = ff->length;
-	else
-	    length = 0;
+      diota->data[Npoints-1]  = 0.;
+      dalpha->data[Npoints-1] = 0.;
     }
 
-    dummy.length = nn * 6;
+    v  = pow(omega,oneby3);
+    v2 = v*v;
 
-    values.length = dvalues.length = newvalues.length = yt.length =
-	dym.length = dyt.length = nn;
-
-    if (!(dummy.data = (REAL8 *) LALMalloc(sizeof(REAL8) * nn * 6))) {
-	ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+    for (j=0;j<Npoints-1;j++) {
+      domega->data[j] = domega->data[j+1];
+      diota->data[j]  = diota->data[j+1];
+      dalpha->data[j] = dalpha->data[j+1];
     }
+    domega->data[Npoints-1] = dvalues.data[1];
 
-    values.data = &dummy.data[0];
-    dvalues.data = &dummy.data[nn];
-    newvalues.data = &dummy.data[2 * nn];
-    yt.data = &dummy.data[3 * nn];
-    dym.data = &dummy.data[4 * nn];
-    dyt.data = &dummy.data[5 * nn];
+    tm += dt;
 
-    /* setup coefficients for PN equations */
-    mparams->m2m1 = params->mass2 / params->mass1;
-    mparams->m1m2 = params->mass1 / params->mass2;
-    mparams->m1m = params->mass1 / params->totalMass;
-    mparams->m2m = params->mass2 / params->totalMass;
-    mparams->dm = (params->mass1 - params->mass2) / params->totalMass;
+    count++;
+    modcount++;
 
-    /* params->eta might have been set up before but just for safety, we
-     * recompute it here below.*/
-    params->eta = (params->mass1 * params->mass2) /
-	(params->mass1 + params->mass2) / (params->mass1 + params->mass2);
-    mparams->eta = params->eta;
+    intreturn=XLALSpinInspiralTest(0.,values.data,dvalues.data,mparams);
 
-    for (j = LAL_PNORDER_NEWTONIAN; j <= params->order; j++) {
-	mparams->wdotorb[j] = ak.ST[j];
-    }
-    mparams->wdotorblog = 0.;
-    for (j = params->order + 1; j < 8; j++) {
-	mparams->wdotorb[j] = 0.;
-    }
-    if ((params->order) >= 6) {
-	mparams->wdotorblog = ak.ST[7];
-	if ((params->order) == 7)
-	    mparams->wdotorb[7] = ak.ST[8];
-    }
+  } while (intreturn==GSL_SUCCESS);
 
-    mparams->epnorb[0] = ak.ETaN;
+  XLALRungeKutta4Free(integrator);
+  LALFree(dummy.data);
 
-    switch (params->order) {
-    case LAL_PNORDER_NEWTONIAN:
-    case LAL_PNORDER_HALF:
-	break;
-    case LAL_PNORDER_ONE:
-	mparams->epnorb[1] = ak.ETa1;
-	break;
-    case LAL_PNORDER_ONE_POINT_FIVE:
+  if (count<Npoints) {
+    fprintf(stderr,"*** LALPSpinInspiralRD ERROR: inspiral integration too short: %12.6e sec, integration steps %d, integration return code %d\n",tm,count,intreturn);
+    ABORTXLAL(status);
+  }
 
-	mparams->epnorb[1] = ak.ETa1;
-	mparams->epnspin15S1dotLNh = 8. / 3. + 2. * mparams->m2m1;
-	mparams->epnspin15S2dotLNh = 8. / 3. + 2. * mparams->m1m2;
+  errcode = XLALGenerateWaveDerivative(ddomega,domega,dt);
+  errcode += XLALGenerateWaveDerivative(ddalpha,dalpha,dt);
+  errcode += XLALGenerateWaveDerivative(ddiota,diota,dt);
 
-	mparams->wdotspin15S1LNh = -(113.0 + 75.0 * mparams->m2m1) / 12.0;
-	mparams->wdotspin15S2LNh = -(113.0 + 75.0 * mparams->m1m2) / 12.0;
+  if (errcode != 0) {
+    fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating derivatives\n");
+    ABORTXLAL(status);
+  }
 
-	mparams->LNhdot15 = 0.5;
+  phenPars->endtime   = timewrite-mparams->dt;
+  phenPars->intreturn = intreturn;
+  phenPars->Psi       = Phiwrite;
+  phenPars->alpha     = alphawrite;
+  phenPars->energy    = energywrite;
+  phenPars->omega     = omegawrite;
+  phenPars->domega    = domega->data[Npoints-1-modcount]/Mass;
+  phenPars->ddomega   = ddomega->data[Npoints-1-modcount]/Mass;
+  phenPars->diota     = diota->data[Npoints-1-modcount];
+  phenPars->ddiota    = ddiota->data[Npoints-1-modcount];
+  phenPars->dalpha    = dalpha->data[Npoints-1-modcount] ;
+  phenPars->ddalpha   = ddalpha->data[Npoints-1-modcount];
+  phenPars->ci        = trigAngle.ci;
+  phenPars->countback = write-1;
+  phenPars->LNhS1     = LNhS1w;
+  phenPars->LNhS2     = LNhS2w;
+  phenPars->S1S2      = S1S2w;
+  phenPars->S1S1      = S1S1w;
+  phenPars->S2S2      = S2S2w;
 
-	mparams->S1dot15 =
-	    (4.0 + 3.0 * mparams->m2m1) / 2.0 * mparams->eta;
-	mparams->S2dot15 =
-	    (4.0 + 3.0 * mparams->m1m2) / 2.0 * mparams->eta;
+  XLALDestroyREAL8Vector(domega);
+  XLALDestroyREAL8Vector(diota);
+  XLALDestroyREAL8Vector(dalpha);
+  XLALDestroyREAL8Vector(ddomega);
+  XLALDestroyREAL8Vector(ddiota);
+  XLALDestroyREAL8Vector(ddalpha);
 
-	mparams->LNhdot15 = 0.5;
-	mparams->S1dot15 =
-	    (4.0 + 3.0 * mparams->m2m1) / 2.0 * mparams->eta;
-	mparams->S2dot15 =
-	    (4.0 + 3.0 * mparams->m1m2) / 2.0 * mparams->eta;
+}
 
-	break;
-    case LAL_PNORDER_TWO:
+static int XLALSpinInspiralAdaptiveEngine(
+					const UINT4 neqs, 
+					const REAL8 yinit[],  
+					REAL8 amp22ini, 
+					LALPSpinInspiralRDparams *mparams,
+					REAL8Vector* h2P2,
+					REAL8Vector* h2M2,
+					REAL8Vector* h2P1,
+					REAL8Vector* h2M1,
+					REAL8Vector* h20,
+					REAL8Vector* h3P3,
+					REAL8Vector* h3M3,
+					REAL8Vector* h3P2,
+					REAL8Vector* h3M2,
+					REAL8Vector* h3P1,
+					REAL8Vector* h3M1,
+					REAL8Vector* h30,
+					REAL8Vector* h4P4,
+					REAL8Vector* h4M4,
+					REAL8Vector* h4P3,
+					REAL8Vector* h4M3,
+					REAL8Vector* h4P2,
+					REAL8Vector* h4M2,
+					REAL8Vector* h4P1,
+					REAL8Vector* h4M1,
+					REAL8Vector* h40,
+					REAL8Vector* freq,
+					REAL8Vector* phase,
+					LALPSpinInspiralPhenPars *phenPars 
+					  )
+{
 
-	mparams->epnorb[1] = ak.ETa1;
-	mparams->epnspin15S1dotLNh = 8. / 3. + 2. * mparams->m2m1;
-	mparams->epnspin15S2dotLNh = 8. / 3. + 2. * mparams->m1m2;
-	mparams->epnorb[2] = ak.ETa2;
+  UINT4 j;
+  INT4 k;
+  INT4 kend=0;
+  INT4 jend=0;
+  UINT4 intlen;
+  UINT4 intreturn;
 
-	mparams->wdotspin15S1LNh = -(113.0 + 75.0 * mparams->m2m1) / 12.0;
-	mparams->wdotspin15S2LNh = -(113.0 + 75.0 * mparams->m1m2) / 12.0;
-	mparams->wdotspin20S1S2 = -(1.0 / 48.0) / mparams->eta;
-	mparams->wdotspin20S1S1 = 1. / 96.;
+  LALSpinInspiralAngle trigAngle;
 
-	mparams->LNhdot15 = 0.5;
-	mparams->LNhdot20 = -1.5 / mparams->eta;
+  REAL8Array *yout;
+  ark4GSLIntegrator *integrator;
 
-	mparams->S1dot15 =
-	    (4.0 + 3.0 * mparams->m2m1) / 2.0 * mparams->eta;
-	mparams->S2dot15 =
-	    (4.0 + 3.0 * mparams->m1m2) / 2.0 * mparams->eta;
-	mparams->Sdot20 = 0.5;
-	break;
-    case LAL_PNORDER_TWO_POINT_FIVE:
+  REAL8 Psi;
+  REAL8 alpha=0.;
+  REAL8 alphaold;
+  REAL8 v,v2;
+  REAL8 dt;
+  REAL8 Mass;
+  REAL8 amp22;
+  REAL8 amp33;
+  REAL8 amp44;
 
-	mparams->epnorb[1] = ak.ETa1;
-	mparams->epnspin15S1dotLNh = 8. / 3. + 2. * mparams->m2m1;
-	mparams->epnspin15S2dotLNh = 8. / 3. + 2. * mparams->m1m2;
-	mparams->epnorb[2] = ak.ETa2;
-	mparams->epnspin25S1dotLNh =
-	    8. - 31. / 9. * mparams->eta + (3. -
-					    10. / 3. * mparams->eta) *
-	    mparams->m2m1;
-	mparams->epnspin25S2dotLNh =
-	    8. - 31. / 9. * mparams->eta + (3. -
-					    10. / 3. * mparams->eta) *
-	    mparams->m1m2;
+  REAL8 LNhxy;
+  REAL8 LNhS1;
+  REAL8 LNhS2;
+  REAL8 S1S1;
+  REAL8 S1S2;
+  REAL8 S2S2;
+  REAL8 omegaMatch;
 
-	mparams->wdotspin15S1LNh = -(113.0 + 75.0 * mparams->m2m1) / 12.0;
-	mparams->wdotspin15S2LNh = -(113.0 + 75.0 * mparams->m1m2) / 12.0;
-	mparams->wdotspin20S1S2 = -(1.0 / 48.0) / mparams->eta;
-	mparams->wdotspin20S1S1 = 1. / 96.;
-	mparams->wdotspin25S1LNh =
-	    -31319. / 1008. + 1159. / 24. * mparams->eta + (-809. / 84. +
-							    281. / 8. *
-							    mparams->eta) *
-	    mparams->m2m1;
-	mparams->wdotspin25S2LNh =
-	    -31319. / 1008. + 1159. / 24. * mparams->eta + (-809. / 84. +
-							    281. / 8. *
-							    mparams->eta) *
-	    mparams->m1m2;
+  INT4 errcode;
 
-	mparams->LNhdot15 = 0.5;
-	mparams->LNhdot20 = -1.5 / mparams->eta;
+  static const char *func = "XLALSpinInspiralAdaptiveEngine";
 
-	mparams->S1dot15 =
-	    (4.0 + 3.0 * mparams->m2m1) / 2.0 * mparams->eta;
-	mparams->S2dot15 =
-	    (4.0 + 3.0 * mparams->m1m2) / 2.0 * mparams->eta;
-	mparams->Sdot20 = 0.5;
-	mparams->S1dot25 =
-	    0.5625 + 1.25 * mparams->eta -
-	    mparams->eta * mparams->eta / 24. + mparams->dm * (-0.5625 +
-							       0.625 *
-							       mparams->
-							       eta);
-	mparams->S2dot25 =
-	    0.5625 + 1.25 * mparams->eta -
-	    mparams->eta * mparams->eta / 24. - mparams->dm * (-0.5625 +
-							       0.625 *
-							       mparams->
-							       eta);
-	break;
-    case LAL_PNORDER_THREE:
-    case LAL_PNORDER_THREE_POINT_FIVE:
+  REAL8 *yin = (REAL8 *) LALMalloc(sizeof(REAL8) * neqs);
 
-	mparams->epnorb[1] = ak.ETa1;
-	mparams->epnspin15S1dotLNh = 8. / 3. + 2. * mparams->m2m1;
-	mparams->epnspin15S2dotLNh = 8. / 3. + 2. * mparams->m1m2;
-	mparams->epnorb[2] = ak.ETa2;
-	mparams->epnspin20S1S2 = 1. / mparams->eta;
-	mparams->epnspin20S1S2dotLNh = -3. / mparams->eta;
-	mparams->epnspin20S1S1 =
-	    (1. + mparams->m2m1) * (1. + mparams->m2m1) / 2.;
-	mparams->epnspin20S2S2 =
-	    (1. + mparams->m1m2) * (1. + mparams->m1m2) / 2.;
-	mparams->epnspin20S1S1dotLNh =
-	    -3. * (1. + mparams->m2m1) * (1. + mparams->m2m1) / 2.;
-	mparams->epnspin20S2S2dotLNh =
-	    -3. * (1. + mparams->m1m2) * (1. + mparams->m1m2) / 2.;
-	mparams->epnspin25S1dotLNh =
-	    8. - 31. / 9. * mparams->eta + (3. -
-					    10. / 3. * mparams->eta) *
-	    mparams->m2m1;
-	mparams->epnspin25S2dotLNh =
-	    8. - 31. / 9. * mparams->eta + (3. -
-					    10. / 3. * mparams->eta) *
-	    mparams->m1m2;
-	mparams->epnorb[3] = ak.ETa3;
-
-	mparams->wdotspin15S1LNh = -(113.0 + 75.0 * mparams->m2m1) / 12.0;
-	mparams->wdotspin15S2LNh = -(113.0 + 75.0 * mparams->m1m2) / 12.0;
-	mparams->wdotspin20S1S2 = -(1.0 / 48.0) / mparams->eta;
-	mparams->wdotspin20S1S1 = 1. / 96.;
-	mparams->wdotspin25S1LNh =
-	    -31319. / 1008. + 1159. / 24. * mparams->eta + (-809. / 84. +
-							    281. / 8. *
-							    mparams->eta) *
-	    mparams->m2m1;
-	mparams->wdotspin25S2LNh =
-	    -31319. / 1008. + 1159. / 24. * mparams->eta + (-809. / 84. +
-							    281. / 8. *
-							    mparams->eta) *
-	    mparams->m1m2;
-	mparams->S1dot15 =
-	    (4.0 + 3.0 * mparams->m2m1) / 2.0 * mparams->eta;
-	mparams->S2dot15 =
-	    (4.0 + 3.0 * mparams->m1m2) / 2.0 * mparams->eta;
-	mparams->Sdot20 = 0.5;
-
-	mparams->S1dot25 =
-	    0.5625 + 1.25 * mparams->eta -
-	    mparams->eta * mparams->eta / 24. + mparams->dm * (-0.5625 +
-							       0.625 *
-							       mparams->
-							       eta);
-	mparams->S2dot25 =
-	    0.5625 + 1.25 * mparams->eta -
-	    mparams->eta * mparams->eta / 24. - mparams->dm * (-0.5625 +
-							       0.625 *
-							       mparams->
-							       eta);
-	break;
-    case LAL_PNORDER_PSEUDO_FOUR:
-	fprintf(stderr,
-		"*** LALPhenSpinInspiralRD ERROR: PhenSpin approximant not available at pseudo4PN order\n");
-	break;
-    case LAL_PNORDER_NUM_ORDER:
-	fprintf(stderr,
-		"*** LALPhenSpinInspiralRD ERROR: NUM_ORDER not a valid PN order\n");
-    }
-
-    /* setup initial conditions for dynamical variables */
-
-    Phi = initPhi;
-    omega = initomega;
-
-    LNhx = initLNh[0];
-    LNhy = initLNh[1];
-    LNhz = initLNh[2];
-
-    S1x = initS1[0];
-    S1y = initS1[1];
-    S1z = initS1[2];
-
-    S2x = initS2[0];
-    S2y = initS2[1];
-    S2z = initS2[2];
-
-    /* copy everything in the "values" structure */
-
-    values.data[0] = Phi;
-    values.data[1] = omega;
-
-    values.data[2] = LNhx;
-    values.data[3] = LNhy;
-    values.data[4] = LNhz;
-
-    values.data[5] = S1x;
-    values.data[6] = S1y;
-    values.data[7] = S1z;
-
-    values.data[8] = S2x;
-    values.data[9] = S2y;
-    values.data[10] = S2z;
-
-    in4.function = LALPSpinInspiralRDderivatives;
-    in4.y = &values;
-    in4.dydx = &dvalues;
-    in4.h = dt / m;
-    in4.n = nn;
-    in4.yt = &yt;
-    in4.dym = &dym;
-    in4.dyt = &dyt;
-
-    /* Allocate memory for temporary arrays */
-    h2P2 = XLALCreateREAL4Vector(length * 2);
-    h2M2 = XLALCreateREAL4Vector(length * 2);
-    h2P1 = XLALCreateREAL4Vector(length * 2);
-    h2M1 = XLALCreateREAL4Vector(length * 2);
-    h20 = XLALCreateREAL4Vector(length * 2);
-    h3P3 = XLALCreateREAL4Vector(length * 2);
-    h3M3 = XLALCreateREAL4Vector(length * 2);
-    sig1 = XLALCreateREAL4Vector(length);
-    sig2 = XLALCreateREAL4Vector(length);
-    hap = XLALCreateREAL4Vector(length * 2);
-    fap = XLALCreateREAL4Vector(length);
-    phap = XLALCreateREAL8Vector(length);
-    shift22 = XLALCreateREAL4Vector(length);
-
-    if (!h2P2 || !h2M2 || !h2P1 || !h2M1 || !h20 || !sig1 || !sig2 || !fap
-	|| !phap || !shift22 || !hap || !h3P3 || !h3M3) {
-	if (h2P2)
-	    XLALDestroyREAL4Vector(h2P2);
-	if (h2M2)
-	    XLALDestroyREAL4Vector(h2M2);
-	if (h2P1)
-	    XLALDestroyREAL4Vector(h2P1);
-	if (h2M2)
-	    XLALDestroyREAL4Vector(h2M1);
-	if (h20)
-	    XLALDestroyREAL4Vector(h20);
-	if (h3P3)
-	    XLALDestroyREAL4Vector(h3P3);
-	if (h3M3)
-	    XLALDestroyREAL4Vector(h3M3);
-	if (sig1)
-	    XLALDestroyREAL4Vector(sig1);
-	if (sig2)
-	    XLALDestroyREAL4Vector(sig2);
-	if (fap)
-	    XLALDestroyREAL4Vector(fap);
-	if (hap)
-	    XLALDestroyREAL4Vector(hap);
-	if (phap)
-	    XLALDestroyREAL8Vector(phap);
-	if (shift22)
-	    XLALDestroyREAL4Vector(shift22);
-	LALFree(dummy.data);
-	ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
-    }
-
-    memset(h2P2->data, 0, h2P2->length * sizeof(REAL4));
-    memset(h2M2->data, 0, h2M2->length * sizeof(REAL4));
-    memset(h2P1->data, 0, h2P1->length * sizeof(REAL4));
-    memset(h2M1->data, 0, h2P1->length * sizeof(REAL4));
-    memset(h20->data, 0, h20->length * sizeof(REAL4));
-    memset(h3P3->data, 0, h3P3->length * sizeof(REAL4));
-    memset(h3M3->data, 0, h3M3->length * sizeof(REAL4));
-    memset(sig1->data, 0, sig1->length * sizeof(REAL4));
-    memset(sig2->data, 0, sig2->length * sizeof(REAL4));
-    memset(hap->data, 0, hap->length * sizeof(REAL4));
-    memset(fap->data, 0, fap->length * sizeof(REAL4));
-    memset(phap->data, 0, phap->length * sizeof(REAL8));
-    memset(shift22->data, 0, shift22->length * sizeof(REAL4));
-
-    xlalErrno = 0;
-    /* Initialize GSL integrator */
-    if (!(integrator = XLALRungeKutta4Init(nn, &in4))) {
-	INT4 errNum = XLALClearErrno();
-	LALFree(dummy.data);
-
-	if (errNum == XLAL_ENOMEM)
-	    ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
-	else
-	    ABORTXLAL(status);
-    }
-    /* main integration loop */
-
-    t = 0.0;
-    count = 0;
-    write = 0;
-
-    alpha = atan2(LNhy, LNhx);
-
-    LALPSpinInspiralRDderivatives(&values, &dvalues, (void *) mparams);
-
-    /* Injection: hh,ff; template: signalvec1,2 */
-
-    if (hh || signalvec2)
-	params->nStartPad = 0;	/* must be zero for templates and injection */
-
-    /* The number of Ring Down modes is hard-coded here, it cannot exceed 3 */
-    nmodes = 2;
-
-    /* For RD, check that the 220 QNM freq. is less than the Nyquist freq. */
-    /* Get QNM frequencies */
-    modefreqs = XLALCreateCOMPLEX8Vector(nmodes);
-
-    /* Call XLALFinalMassSpin() to get mass and spin of the final black hole */
-    errcode =
-	XLALPSpinFinalMassSpin(&finalMass, &finalSpin, params, energy,
-			       initLNh);
-    if (errcode != XLAL_SUCCESS) {
-	XLALDestroyCOMPLEX8Vector(modefreqs);
-	ABORTXLAL(status);
-    }
-
-    xlalSt2P2 =
-	XLALPSpinGenerateQNMFreq(modefreqs, params, 2, 2, nmodes,
-				 finalMass, finalSpin);
-    if (xlalSt2P2 != XLAL_SUCCESS) {
-	XLALDestroyCOMPLEX8Vector(modefreqs);
-	ABORTXLAL(status);
-    }
-
-    omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
-    /* If Nyquist freq. <  220 QNM freq., print warning message, but go on */
-    /* Note that we cancelled a factor of 2 occuring on both sides */
-  /*  if (params->tSampling < modefreqs->data[0].re / LAL_PI) {
-	fprintf(stdout,
-		"LALPhenSpin WARNING : Estimated ringdown freq larger than Nyquist freq.\n");
-	 XLALDestroyCOMPLEX8Vector( modefreqs ); 
-	   LALError(status->statusPtr, message);
-	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE); 
-   }*/
-
-    v2 = pow(omega, 2. / 3.);
-    v = sqrt(v2);
-
-
-    params->ampOrder = 0;
-
-    if (params->distance > 0.)
-	amp22ini =
-	    -2.0 * params->mu * LAL_MRSUN_SI / (params->distance) *
-	    sqrt(16. * LAL_PI / 5.);
+  /* allocate the integrator */
+  integrator = XLALAdaptiveRungeKutta4Init(neqs,XLALSpinInspiralDerivatives,XLALSpinInspiralTest,1.0e-6,1.0e-6);
+  if (!integrator) {
+    fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: Cannot allocate adaptive integrator.\n");
+    if (XLALClearErrno() == XLAL_ENOMEM)
+      XLAL_ERROR( func, XLAL_ENOMEM );
     else
-	amp22ini = 2. * sqrt(LAL_PI / 5.0) * params->signalAmplitude;
+      XLAL_ERROR( func, XLAL_EDOM );
+  }
+
+  /* stop the integration only when the test is true */
+  integrator->stopontestonly = 1;
+
+  /* run the integration; note: time is measured in units of total mass */
+
+  Mass = mparams->m * LAL_MTSUN_SI;
+  dt   = mparams->dt;
+
+  for (j=0; j<neqs; j++) yin[j]=yinit[j];
+
+  intlen = XLALAdaptiveRungeKutta4(integrator,(void *)mparams,yin,0.0,mparams->lengths/Mass,dt/Mass,&yout);
+
+  intreturn = integrator->returncode;
+  XLALAdaptiveRungeKutta4Free(integrator);
+
+  /* End integration*/
+
+  /* Start of the integration checks*/
+  if (!intlen) {
+    phenPars->intreturn=intreturn;
+    if (XLALClearErrno() == XLAL_ENOMEM) {
+      XLAL_ERROR( func,  XLAL_ENOMEM);
+    } else {
+      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: integration failed with errorcode %d, integration length %d\n",intreturn,intlen);
+      XLAL_ERROR( func, XLAL_EFAILED);
+    }
+  }
+
+  /* if we have enough space, compute the waveform components; otherwise abort */
+  if ( intlen >= mparams->length ) {
+    fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: no space to write in waveforms: %d vs. %d\n",intlen,mparams->length);
+    XLAL_ERROR(func, XLAL_ESIZE);
+  }
+
+  if ( intlen < minIntLen ) {
+    fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: incorrect integration with length %d\n",intlen);
+    XLAL_ERROR(func, XLAL_ESIZE);
+  }
+  /* End of integration checks*/
+
+  REAL8 *Phi    = &yout->data[1*intlen];
+  REAL8 *omega  = &yout->data[2*intlen];
+  REAL8 *LNhx   = &yout->data[3*intlen];
+  REAL8 *LNhy   = &yout->data[4*intlen];
+  REAL8 *LNhz   = &yout->data[5*intlen];
+  REAL8 *S1x    = &yout->data[6*intlen];
+  REAL8 *S1y    = &yout->data[7*intlen];
+  REAL8 *S1z    = &yout->data[8*intlen];
+  REAL8 *S2x    = &yout->data[9*intlen];
+  REAL8 *S2y    = &yout->data[10*intlen];
+  REAL8 *S2z    = &yout->data[11*intlen];
+  REAL8 *energy = &yout->data[12*intlen];
+
+  mparams->polarization=2.*atan2(LNhy[1],LNhx[1])-atan2(LNhy[2],LNhx[2]);
+
+  if (mparams->inspiralOnly!=1) {
+
+    j=intlen;
+    jend=0;
+
+    INT4 Npoints=10;
 
     do {
+      j--;
+      LNhS1=(LNhx[j]*S1x[j]+LNhy[j]*S1y[j]+LNhz[j]*S1z[j])/mparams->m1msq;
+      LNhS2=(LNhx[j]*S2x[j]+LNhy[j]*S2y[j]+LNhz[j]*S2z[j])/mparams->m2msq;
+      S1S1=(S1x[j]*S1x[j]+S1y[j]*S1y[j]+S1z[j]*S1z[j])/mparams->m1msq/mparams->m1msq;
+      S1S2=(S1x[j]*S2x[j]+S1y[j]*S2y[j]+S1z[j]*S2z[j])/mparams->m1msq/mparams->m2msq;
+      S2S2=(S2x[j]*S2x[j]+S2y[j]*S2y[j]+S2z[j]*S2z[j])/mparams->m2msq/mparams->m2msq;
+      omegaMatch=OmMatch(LNhS1,LNhS2,S1S1,S1S2,S2S2);
+      if (omegaMatch>omega[j]) {
+	if (omega[j-1]<omega[j]) jend=j;
+	// The numerical integrator sometimes stops and stores twice the last
+	// omega value, this 'if' instruction avoids keeping two identical 
+	// values of omega at the end of the integration.
+      }
+    } while ((j>0)&&(jend==0));
 
-	if (write >= length) {
-	    XLALRungeKutta4Free(integrator);
-	    LALFree(dummy.data);
-	    ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+    if (omegaMatch<omega[jend]) {
+      fprintf(stderr,"*** LALPSpinInspiralRD ERROR ***: Impossible to attach phenom. part\n");
+      XLAL_ERROR(func, XLAL_EFAILED);
+    }
+
+    kend=Npoints-1;
+    if (omega[jend+1]>omega[jend]) {
+      jend++;
+      kend--;
+    }
+    //We keep until the point where omega > omegaMatch for better derivative
+    // computation, but do the matching at the last point at which 
+    // omega < omegaMatch
+
+    if (Npoints > jend) Npoints = jend+1;
+
+    REAL8Vector *omega_s   = XLALCreateREAL8Vector(Npoints);
+    REAL8Vector *LNhx_s    = XLALCreateREAL8Vector(Npoints);
+    REAL8Vector *LNhy_s    = XLALCreateREAL8Vector(Npoints);
+    REAL8Vector *LNhz_s    = XLALCreateREAL8Vector(Npoints);
+    REAL8Vector *alpha_s   = XLALCreateREAL8Vector(Npoints);
+
+    REAL8Vector *domega    = XLALCreateREAL8Vector(Npoints);
+    REAL8Vector *dLNhx     = XLALCreateREAL8Vector(Npoints);
+    REAL8Vector *dLNhy     = XLALCreateREAL8Vector(Npoints);
+    REAL8Vector *dLNhz     = XLALCreateREAL8Vector(Npoints);
+    REAL8Vector *diota     = XLALCreateREAL8Vector(Npoints);
+    REAL8Vector *dalpha    = XLALCreateREAL8Vector(Npoints);
+
+    REAL8Vector *ddomega   = XLALCreateREAL8Vector(Npoints);
+    REAL8Vector *ddiota    = XLALCreateREAL8Vector(Npoints);
+    REAL8Vector *ddalpha   = XLALCreateREAL8Vector(Npoints);
+
+    for (k=0;k<Npoints;k++) {
+      j=k+jend-Npoints+1;
+      omega_s->data[k]  = omega[j];
+      LNhx_s->data[k]   = LNhx[j];
+      LNhy_s->data[k]   = LNhy[j];
+      LNhz_s->data[k]   = LNhz[j];
+      LNhxy = sqrt(LNhx_s->data[k] * LNhx_s->data[k] + LNhy_s->data[k] * LNhy_s->data[k]);
+      if (LNhxy > 0.) {
+	diota->data[k]  = -dLNhz->data[k] / LNhxy;
+	dalpha->data[k] = (LNhx_s->data[k] * dLNhy->data[k] - LNhy_s->data[k] * dLNhx->data[k]) / LNhxy;
+      } else {
+	diota->data[k]  = 0.;
+	dalpha->data[k] = 0.;
+      }
+    }
+
+    errcode  = XLALGenerateWaveDerivative(domega,omega_s,dt);
+    errcode += XLALGenerateWaveDerivative(dLNhx,LNhx_s,dt);
+    errcode += XLALGenerateWaveDerivative(dLNhy,LNhy_s,dt);
+    errcode += XLALGenerateWaveDerivative(dLNhz,LNhz_s,dt);
+    if (errcode != 0) {
+      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating first derivatives: #points %d\n",Npoints);
+      XLAL_ERROR(func,XLAL_EFAILED);
+    }
+
+    errcode  = XLALGenerateWaveDerivative(ddiota,diota,dt);
+    errcode += XLALGenerateWaveDerivative(ddalpha,dalpha,dt);
+    errcode += XLALGenerateWaveDerivative(ddomega,domega,dt);
+    if (errcode != 0) {
+      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating second derivatives\n");
+      XLAL_ERROR(func,XLAL_EFAILED);
+    }
+
+    if (ddomega->data[kend]<0.) {
+      fprintf(stdout,"*** LALPSpinInspiralRD WARNING: the attach of the phenom. phase has been shifted back: m1 %12.6f  m2 %12.6f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
+      fprintf(stdout,"  Integration returned %d\n   1025: Energy increases\n   1026: Omegadot -ve\n   1028: Omega NAN\n   1029: Omega > Omegamatch\n   1031: Omega -ve\n   1032: Omega > OmegaCut %12.6e\n",intreturn,mparams->OmCutoff); 
+      while ((kend>0)&&(ddomega->data[kend]<0.)) {
+	kend--;
+	jend--;
+      } 
+    }
+
+    phenPars->intreturn = intreturn;
+    phenPars->energy    = energy[jend];
+    phenPars->omega     = omega_s->data[kend];
+    phenPars->domega    = domega->data[kend];
+    phenPars->ddomega   = ddomega->data[kend];
+    phenPars->diota     = diota->data[kend];
+    phenPars->ddiota    = ddiota->data[kend];
+    phenPars->dalpha    = dalpha->data[kend];
+    phenPars->ddalpha   = ddalpha->data[kend];
+    phenPars->countback = jend;
+    phenPars->Psi       = Phi[jend];
+    phenPars->endtime   = ((REAL8) jend)*dt;
+    phenPars->ci        = LNhz[jend];
+    phenPars->LNhS1     = LNhS1;
+    phenPars->LNhS2     = LNhS2;
+    phenPars->S1S2      = S1S2;
+    phenPars->S1S1      = S1S1;
+    phenPars->S2S2      = S2S2;
+
+    XLALDestroyREAL8Vector(omega_s);
+    XLALDestroyREAL8Vector(LNhx_s);
+    XLALDestroyREAL8Vector(LNhy_s);
+    XLALDestroyREAL8Vector(LNhz_s);
+    XLALDestroyREAL8Vector(alpha_s);
+    XLALDestroyREAL8Vector(dLNhx);
+    XLALDestroyREAL8Vector(dLNhy);
+    XLALDestroyREAL8Vector(dLNhz);
+    XLALDestroyREAL8Vector(diota);
+    XLALDestroyREAL8Vector(dalpha);
+    XLALDestroyREAL8Vector(domega);
+    XLALDestroyREAL8Vector(ddomega);
+    XLALDestroyREAL8Vector(ddiota);
+    XLALDestroyREAL8Vector(ddalpha);
+  }
+  else {
+    jend=intlen-1;
+    phenPars->intreturn = intreturn;
+    phenPars->energy    = 0.;
+    phenPars->omega     = 0.;
+    phenPars->domega    = 0.;
+    phenPars->ddomega   = 0.;
+    phenPars->diota     = 0.;
+    phenPars->ddiota    = 0.;
+    phenPars->dalpha    = 0.;
+    phenPars->ddalpha   = 0.;
+    phenPars->countback = intlen-1;
+    phenPars->Psi       = 0.;
+    phenPars->endtime   = 0.;
+    phenPars->ci        = 0.;
+    phenPars->LNhS1     = 0.;
+    phenPars->LNhS2     = 0.;
+    phenPars->S1S2      = 0.;
+    phenPars->S1S1      = 0.;
+    phenPars->S2S2      = 0.;
+  }
+
+  /* Now fill the Hlm waveform structures*/
+
+  alphaold=alpha;
+  alpha=atan2(LNhy[0],LNhx[0]);
+  //REAL8 alphaoold = 0.;
+
+  for (j=0;j<=(UINT4)jend;j++) {
+
+    freq->data[j]=omega[j];
+    v=pow(omega[j],oneby3);
+    v2=v*v;
+
+    // amp22= -2.0 * params->mu * LAL_MRSUN_SI/(params->distance) * sqrt( 16.*LAL_PI/5.)*v2;
+    // amp20 = amp22*sqrt(3/2)
+    // Y22 \pm Y2-2= sqrt(5/PI)    ((1+cos^2 t)/4, (cos t)/2)
+    // Y21 \pm Y2-1= sqrt(5/PI)    ((sin t)/2, (sin 2t)/4)
+    // Y20         = sqrt(15/2 PI) (sin^2 t)/4
+
+    amp22 = amp22ini * v2;
+    amp33 = -amp22 / 4. * sqrt(5./42.); 
+    amp44 = amp22 * sqrt(5./7.) * 2./9.* v2;
+
+    Psi = phase->data[j] = Phi[j];// - 2. * omega[j] * log(omega[j]);
+
+    trigAngle.ci   = (LNhz[j]);
+    trigAngle.cdi  = 2. * trigAngle.ci * trigAngle.ci - 1.;
+    trigAngle.c2i  = trigAngle.ci * trigAngle.ci;
+    trigAngle.s2i  = 1. - trigAngle.ci * trigAngle.ci;
+    trigAngle.si   = sqrt(trigAngle.s2i);
+    trigAngle.sdi  = 2. * trigAngle.ci * trigAngle.si;
+    trigAngle.c2i2 = (1. + trigAngle.ci) / 2.;
+    trigAngle.s2i2 = (1. - trigAngle.ci) / 2.;
+    trigAngle.ci2  = sqrt(trigAngle.c2i2);
+    trigAngle.si2  = sqrt(trigAngle.s2i2);
+    trigAngle.c3i2 = trigAngle.c2i2 * trigAngle.ci2;
+    trigAngle.s3i2 = trigAngle.s2i2 * trigAngle.si2;
+    trigAngle.c4i2 = trigAngle.c2i2 * trigAngle.c2i2;
+    trigAngle.s4i2 = trigAngle.s2i2 * trigAngle.s2i2;
+    trigAngle.c5i2 = trigAngle.c4i2 * trigAngle.ci2;
+    trigAngle.s5i2 = trigAngle.s4i2 * trigAngle.si2;
+    trigAngle.c6i2 = trigAngle.c4i2 * trigAngle.c2i2;
+    trigAngle.s6i2 = trigAngle.s4i2 * trigAngle.s2i2;
+    trigAngle.c8i2 = trigAngle.c4i2 * trigAngle.c4i2;
+    trigAngle.s8i2 = trigAngle.s4i2 * trigAngle.s4i2;
+
+    //alphaoold = alphaold;
+    alphaold  = alpha;
+    if ((LNhy[j]*LNhy[j]+LNhx[j]*LNhx[j])>0.) {
+      alpha = atan2(LNhy[j], LNhx[j]);
+    }
+    else alpha = alphaold;
+
+    errcode  = XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
+
+    /*if (j>2) {
+      if ((alphaold*alphaoold)<0.) {
+	if ( fabs(cos(2.*(Phi[j-1]+alphaold))-cos(2.*(Phi[j-2]+alphaoold)))>0.2) {
+	fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Possible problem with coordinate singularity:\n Step %d  LNhy: %12.6e LNhx: %12.6e  Psi+alpha: %12.6e alpha %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+alpha: %12.6e  alpha %12.6e\n Step %d  LNhy: %12.6e  LNhx: %12.6e  Psi+alpha: %12.6e  alpha %12.6e\n",j,LNhy[j],LNhx[j],(Phi[j]+alpha)/LAL_PI,alpha/LAL_PI,j-1,LNhy[j-1],LNhx[j-1],(Phi[j-1]+alphaold)/LAL_PI,alphaold/LAL_PI,j-2,LNhy[j-2],LNhx[j-2],(Phi[j-2]+alphaoold)/LAL_PI,alphaoold/LAL_PI);
+	fprintf(stdout,"            m: (%12.6e,%12.6e)\n", mparams->m1m*mparams->m, mparams->m2m*mparams->m);
+	fprintf(stdout,"            S1: (%9.6f,%9.6f,%9.6f)\n",yinit[5]/mparams->m1msq,yinit[6]/mparams->m1msq,yinit[7]/mparams->m1msq);
+	fprintf(stdout,"            S2: (%9.6f,%9.6f,%9.6f)\n",yinit[8]/mparams->m2msq,yinit[9]/mparams->m2msq,yinit[10]/mparams->m2msq);
 	}
+      }
+      }*/
 
-	amp22 = amp22ini * v2;
-	amp20 = amp22 * sqrt(1.5);
-	amp33 = -amp22 / 4. * sqrt(5. / 42.);
+    errcode += XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,j,amp33,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
 
-	omegaold = omega;
-	omegadotold = omegadot;
-	enold = energy;
+    errcode += XLALSpinInspiralFillH4Modes(h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,j,amp44,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
 
-	Psi = Phi - 2. * omega * log(omega);
+  }
 
-	ci = (LNhz);
-	c2i = ci * ci;
-	s2i = 1. - ci * ci;
-	si = sqrt(s2i);
-	c2i2 = (1. + ci) / 2.;
-	s2i2 = (1. - ci) / 2.;
-	ci2 = sqrt(c2i2);
-	si2 = sqrt(s2i2);
-	c4i2 = c2i2 * c2i2;
-	s4i2 = s2i2 * s2i2;
-	c5i2 = c4i2 * ci2;
-	s5i2 = s4i2 * si2;
-	c6i2 = c4i2 * c2i2;
-	s6i2 = s4i2 * s2i2;
+  LALFree(yin);
+  XLALDestroyREAL8Array(yout);
 
-	if (omega > initomwrite) {
+  phenPars->alpha=alpha;
 
-	    if (count % subsampling == 0) {
+  return errcode;
 
-		// amp22= -2.0 * params->mu * LAL_MRSUN_SI/(params->distance) * sqrt( 16.*LAL_PI/5.)*v2;
-		// amp20 = amp22*sqrt(3/2)
-		// Y22 \pm Y2-2= sqrt(5/PI)    ((1+cos^2 t)/4, (cos t)/2)
-		// Y21 \pm Y2-1= sqrt(5/PI)    ((sin t)/2, (sin 2t)/4)
-		// Y20         = sqrt(15/2 PI) (sin^2 t)/4
+} /* End of the inspiral part created via the adaptive integration method */
 
-		h2P2->data[2 * write] =
-		    (REAL4) (amp22 *
-			     (1. /
-			      (1. +
-			       v2 / 42. * (107. -
-					   55. * mparams->eta)) * (cos(2. *
-								       (Psi
-									+
-									alpha))
-								   * c4i2 +
-								   cos(2. *
-								       (Psi
-									-
-									alpha))
-								   *
-								   s4i2) +
-			      v * mparams->dm / 3. * si *
-			      (cos(Psi - 2. * alpha) * s2i2 +
-			       cos(Psi + 2. * alpha) * c2i2)));
-		h2P2->data[2 * write + 1] =
-		    (REAL4) (amp22 *
-			     (1. /
-			      (1. +
-			       v2 / 42. * (107. -
-					   55. * mparams->eta)) * (sin(2. *
-								       (Psi
-									+
-									alpha))
-								   * c4i2 -
-								   sin(2. *
-								       (Psi
-									-
-									alpha))
-								   *
-								   s4i2) +
-			      v * mparams->dm / 3. * si *
-			      (-sin(Psi - 2. * alpha) * s2i2 +
-			       sin(Psi + 2. * alpha) * c2i2)));
+void LALPSpinInspiralRDEngine(LALStatus   * status,
+			REAL8Vector * signalvec1,
+			REAL8Vector * signalvec2,
+			REAL8Vector * hh,
+			REAL8Vector * ff,
+			REAL8Vector * phi,
+			UINT4 *countback,
+			InspiralTemplate *params,
+			InspiralInit     *paramsInit)
+{
 
-		h2M2->data[2 * write] =
-		    (REAL4) (amp22 *
-			     (1. /
-			      (1. +
-			       v2 / 42. * (107. -
-					   55. * mparams->eta)) * (cos(2. *
-								       (Psi
-									+
-									alpha))
-								   * c4i2 +
-								   cos(2. *
-								       (Psi
-									-
-									alpha))
-								   *
-								   s4i2) -
-			      v * mparams->dm / 3. * si *
-			      (cos(Psi - 2. * alpha) * s2i2 +
-			       cos(Psi + 2. * alpha) * c2i2)));
-		h2M2->data[2 * write + 1] =
-		    (REAL4) (amp22 *
-			     (1. /
-			      (1. +
-			       v2 / 42. * (107. -
-					   55. * mparams->eta)) * (sin(2. *
-								       (Psi
-									+
-									alpha))
-								   * c4i2 -
-								   sin(2. *
-								       (Psi
-									-
-									alpha))
-								   *
-								   s4i2) -
-			      v * mparams->dm / 3. * si *
-			      (-sin(Psi - 2. * alpha) * s2i2 +
-			       sin(Psi + 2. * alpha) * c2i2)));
+  /* declare code parameters and variables */
+  const INT4 neqs = 11+1;      // number of dynamical variables plus the energy function
+  UINT4 count,apcount;         // integration steps performed
+  UINT4 length;                // signal vector length
+  UINT4 i, j, k, l;            // counters
 
-		h2P1->data[2 * write] =
-		    (REAL4) (amp22 *
-			     (si /
-			      (1. +
-			       v2 / 84. * (107. -
-					   55. * mparams->eta)) *
-			      (-cos(2. * Psi - alpha) * s2i2 +
-			       cos(2. * Psi + alpha) * c2i2) +
-			      v * mparams->dm / 3. * (-cos(Psi + alpha) *
-						      (ci + c2i) / 2. -
-						      cos(Psi -
-							  alpha) * s2i2 *
-						      (1. + 2. * ci))));
-		h2P1->data[2 * write + 1] =
-		    (REAL4) (amp22 *
-			     (si /
-			      (1. +
-			       v2 / 84. * (107. -
-					   55. * mparams->eta)) * (sin(2. *
-								       Psi
-								       -
-								       alpha)
-								   * s2i2 +
-								   sin(2. *
-								       Psi
-								       +
-								       alpha)
-								   *
-								   c2i2) +
-			      v * mparams->dm / 3. * (-sin(Psi + alpha) *
-						      (ci + c2i) / 2. +
-						      sin(Psi -
-							  alpha) * s2i2 *
-						      (1. + 2. * ci))));
+  REAL8 v = 0.;
+  REAL8 v2 = 0.;
+  REAL8 v2old;
+  REAL8 mass;                  // Total mass in SI units
+  REAL8 tim;                   // time (units of total mass)
+  REAL8 unitHz;
+  REAL8 initomega,initphi;
+  REAL8 inc;
+  REAL8 LNhmag,initJmag;
+  REAL8 LNhxy;
+  REAL8 initS1[3],initS2[3],initLNh[3],initJ[3];
+  REAL8 iS1[3],iS2[3];
+  REAL8 phiJ,thetaJ;
+  REAL8 ry[3][3],rz[3][3];
+  REAL8 dt;
 
-		h2M1->data[2 * write] =
-		    (REAL4) (amp22 *
-			     (si /
-			      (1. +
-			       v2 / 84. * (107. -
-					   55. * mparams->eta)) *
-			      (-cos(2. * Psi - alpha) * s2i2 +
-			       cos(2. * Psi + alpha) * c2i2) -
-			      v * mparams->dm / 3. * (-cos(Psi + alpha) *
-						      (ci + c2i) / 2. -
-						      cos(Psi -
-							  alpha) * s2i2 *
-						      (1. + 2. * ci))));
-		h2M1->data[2 * write + 1] =
-		    (REAL4) (amp22 *
-			     (si /
-			      (1. +
-			       v2 / 84. * (107. -
-					   55. * mparams->eta)) * (sin(2. *
-								       Psi
-								       -
-								       alpha)
-								   * s2i2 +
-								   sin(2. *
-								       Psi
-								       +
-								       alpha)
-								   *
-								   c2i2) -
-			      v * mparams->dm / 3. * (-sin(Psi + alpha) *
-						      (ci + c2i) / 2. +
-						      sin(Psi -
-							  alpha) * s2i2 *
-						      (1. + 2. * ci))));
+  INT4  intreturn;
+  REAL8 yinit[neqs];
 
-		h20->data[2 * write] =
-		    (REAL4) (amp20 * (s2i * cos(2. * Psi)));
-		h20->data[2 * write + 1] =
-		    (REAL4) (amp20 *
-			     (-v * mparams->dm * 8 / 9. * si * sin(Psi)));
+  LALPSpinInspiralRDparams mparams;
 
-		h3P3->data[2 * write] =
-		    (REAL4) (amp33 *
-			     (v * mparams->dm *
-			      (-9. * cos(3. * (Psi - alpha)) * s6i2 -
-			       cos(Psi - 3. * alpha) * s4i2 * c2i2 +
-			       cos(Psi + 3. * alpha) * s2i2 * c4i2 +
-			       9. * cos(3. * (Psi + alpha)) * c6i2) +
-			      v2 * 8. * (1. -
-					 3. * mparams->eta) * (-cos(2. *
-								    Psi +
-								    3. *
-								    alpha)
-							       * s5i2 *
-							       ci2 +
-							       cos(2. *
-								   Psi -
-								   3. *
-								   alpha) *
-							       c5i2 *
-							       si2)));
-		h3P3->data[2 * write + 1] =
-		    (REAL4) (amp33 *
-			     (v * mparams->dm *
-			      (9. * sin(3. * (Psi - alpha)) * s6i2 +
-			       sin(Psi - 3. * alpha) * s4i2 * c2i2 +
-			       sin(Psi + 3. * alpha) * s2i2 * c4i2 +
-			       9. * sin(3. * (Psi + alpha)) * c6i2) +
-			      v2 * 8. * (1. -
-					 3. * mparams->eta) * (-sin(2. *
-								    Psi +
-								    3. *
-								    alpha)
-							       * s5i2 *
-							       ci2 +
-							       sin(2. *
-								   Psi -
-								   3. *
-								   alpha) *
-							       c5i2 *
-							       si2)));
+  REAL8Vector* h2P2;
+  REAL8Vector* h2M2;
+  REAL8Vector* h2P1;
+  REAL8Vector* h2M1;
+  REAL8Vector* h20;
+  REAL8Vector* h3P3;
+  REAL8Vector* h3M3;
+  REAL8Vector* h3P2;
+  REAL8Vector* h3M2;
+  REAL8Vector* h3P1;
+  REAL8Vector* h3M1;
+  REAL8Vector* h30;
+  REAL8Vector* h4P4;
+  REAL8Vector* h4M4;
+  REAL8Vector* h4P3;
+  REAL8Vector* h4M3;
+  REAL8Vector* h4P2;
+  REAL8Vector* h4M2;
+  REAL8Vector* h4P1;
+  REAL8Vector* h4M1;
+  REAL8Vector* h40;
 
-		h3M3->data[2 * write] =
-		    (REAL4) (amp33 *
-			     (-v * mparams->dm *
-			      (-9. * cos(3. * (Psi - alpha)) * s6i2 -
-			       cos(Psi - 3. * alpha) * s4i2 * c2i2 +
-			       cos(Psi + 3. * alpha) * s2i2 * c4i2 +
-			       9. * cos(3. * (Psi + alpha)) * c6i2) +
-			      v2 * 8. * (1. -
-					 3. * mparams->eta) * (-cos(2. *
-								    Psi +
-								    3. *
-								    alpha)
-							       * s5i2 *
-							       ci2 +
-							       cos(2. *
-								   Psi -
-								   3. *
-								   alpha) *
-							       c5i2 *
-							       si2)));
-		h3M3->data[2 * write + 1] =
-		    (REAL4) (amp33 *
-			     (-v * mparams->dm *
-			      (9. * sin(3. * (Psi - alpha)) * s6i2 +
-			       sin(Psi - 3. * alpha) * s4i2 * c2i2 +
-			       sin(Psi + 3. * alpha) * s2i2 * c4i2 +
-			       9. * sin(3. * (Psi + alpha)) * c6i2) +
-			      v2 * 8. * (1. -
-					 3. * mparams->eta) * (-sin(2. *
-								    Psi +
-								    3. *
-								    alpha)
-							       * s5i2 *
-							       ci2 +
-							       sin(2. *
-								   Psi -
-								   3. *
-								   alpha) *
-							       c5i2 *
-							       si2)));
+  REAL8Vector* sigp;
+  REAL8Vector* sigc;
+  REAL8Vector* fap;
+  REAL8Vector* hap;
+  REAL8Vector* phap;
 
-		fap->data[write] = (REAL4) (omega);
+  LALPSpinInspiralPhenPars phenPars;
 
-		phap->data[write] = (REAL8) (Psi);
+  REAL8 Psi=0.;
+  REAL8 amp22ini,amp22,amp33,amp44;
 
-		shift22->data[write] = alpha;
+  LALSpinInspiralAngle trigAngle;
 
-		write++;
+  REAL8 alpha=0.;
 
-	    }
+  REAL8 t0,tAs;
+  REAL8 om0,om1,om;
+  REAL8 Psi0,alpha0;
+  REAL8 dalpha0,dalpha1;
+  //REAL8 omold,iota0,diota0,diota1;
+  REAL8 LNhS1,LNhS2;
+  REAL8 S1S1,S1S2,S2S2;
 
+  COMPLEX8Vector *modefreqs;
+  COMPLEX16 MultSphHarmP;       // Generic spin-weighted spherical harmonics
+  COMPLEX16 MultSphHarmM;       // Generic spin-weighted spherical harmonics
+  REAL8 x0, x1, x2, x3;
+
+  /* The number of Ring Down modes is hard-coded here */
+  const UINT4 nmodes=2;
+  /* Nmodes should be restricted to either 1 or 2*/
+
+  UINT4 errcode;
+
+  REAL8 finalMass,finalSpin;
+  REAL8 energy=0.;
+  REAL8 omegaMatch;
+  REAL8 frOmRD,omegaRD;
+
+  //static const char *func = "XLALSpinInspiralEngine";
+
+  INITSTATUS(status, "LALPSpinInspiralRDEngine",LALPSPININSPIRALRDENGINEC);
+  ATTATCHSTATUSPTR(status);
+
+  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  if ((params->fCutoff<=0.)&&(params->inspiralOnly==1)) {
+    fprintf(stderr,"*** LALPSIRD ERROR ***: fCutoff %12.6e, with inspiral flag on it is mandatory to specify a positive cutoff frequency\n",params->fCutoff);
+    ABORTXLAL(status);
+  }
+
+  mass = params->totalMass * LAL_MTSUN_SI;
+  unitHz = params->totalMass * LAL_MTSUN_SI * (REAL8) LAL_PI;
+
+  if ((signalvec2)||(hh))
+    params->nStartPad = 0;    /* must be zero for templates and injection */
+  /* -- length in seconds from Newtonian formula; */
+
+  dt = 1. / params->tSampling;
+
+  /* setup coefficients for PN equations */
+  XLALPSpinInspiralRDSetParams(&mparams,params,paramsInit);
+
+  /* Check that initial frequency is smaller than omegamatch ~ xxyy for m=100 Msun */
+  initphi   = params->startPhase/2.;
+  initomega = params->fLower*unitHz;
+
+  /* Check that initial frequency is smaller than omegamatch ~ xxyy for m=100 Msun */
+
+  LNhS1=params->spin1[2];
+  LNhS2=params->spin2[2];
+  S1S1=params->spin1[0]*params->spin1[0]+params->spin1[1]*params->spin1[1]+params->spin1[2]*params->spin1[2];
+  S1S2=params->spin1[0]*params->spin2[0]+params->spin1[1]*params->spin2[1]+params->spin1[2]*params->spin2[2];
+  S2S2=params->spin2[0]*params->spin2[0]+params->spin2[1]*params->spin2[1]+params->spin2[2]*params->spin2[2];
+
+  omegaMatch = OmMatch(LNhS1,LNhS2,S1S1,S1S2,S2S2);
+
+  if ( initomega > omegaMatch ) {
+    /*if ((params->spin1[0]==params->spin1[1])&&(params->spin1[1]==params->spin2[0])&&(params->spin2[0]==params->spin2[1])&&(params->spin2[1]==0.)) {
+      //Beware, this correspond to a shift of the initial phase!
+      initomega = 0.95*omegaMatch;
+      fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Initial frequency reset from %12.6e to %12.6e Hz, m:(%12.4e,%12.4e)\n",params->fLower,initomega/unitHz,params->mass1,params->mass2);
+      }*/
+    /*else {*/
+    fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: Initial frequency too high: %11.5e for omM ~ %11.5e and m:(%8.3f, %8.3f)\n",params->fLower,omegaMatch/unitHz,params->mass1,params->mass2);
+    DETATCHSTATUSPTR(status);
+    RETURN(status);
+    //XLAL_ERROR(func,XLAL_EFAILED);
+    /*}*/
+  }
+
+  /* Here we use the following convention:
+     the coordinates of the spin vectors params->spin1,2 and the params->inclination 
+     variable refers to different physical parameters according to the value of 
+     params->axisChoice:
+     * OrbitalL: params->inclination denotes the angle between the view direction
+                 N and the initial L (initial L//z, N in the x-z plane) and the spin 
+		 coordinates are given with respect to initial L.
+     * View:     params->inclination denotes the angle between the initial L and N 
+                 (N//z, initial L in the x-z plane) and the spin coordinates 
+		 are given with respect to N.
+     * TotalJ:   params->inclination denotes the angle between the view directoin 
+                 and J (J is constant during the evolution, J//z, both N and initial 
+		 L are in the x-z plane) and the spin coordinates are given wrt 
+		 initial ** L **.
+     In order to reproduce the results of the SpinTaylor code View must be chosen.
+     The spin magnitude are normalized to the individual mass^2, i.e.
+     they are dimension-less.
+     The modulus of the initial angular momentum is fixed by m1,m2 and
+     initial frequency.
+     The polarization angle is not used here, it enters the pattern
+     functions along with the angles marking the sky position of the
+     source. However a misalignment of the line of nodes wrt to the standard
+     convention can take place when L is initially aligned with N, this is 
+     re-absorbed by a redefinition of the psi angle.*/
+
+  // Physical magnitude of the orbital angular momentum
+  LNhmag = params->eta * params->totalMass * params->totalMass / pow(initomega,oneby3);
+
+  // Physical values of the spins
+  for (i = 0; i < 3; i++) {
+    initS1[i] = params->spin1[i] * params->mass1 * params->mass1;
+    initS2[i] = params->spin2[i] * params->mass2 * params->mass2;
+  }
+
+  switch (params->axisChoice) {
+
+  case OrbitalL:
+    //printf("*** OrbitalL ***\n");
+    initLNh[0] = 0.;
+    initLNh[1] = 0.;
+    initLNh[2] = 1.;
+    inc = params->inclination;
+    break;
+
+  case TotalJ:
+    //printf("*** TotalJ ***\n");
+    for (j=0;j<3;j++) {
+      iS1[j] = initS1[j];
+      iS2[j] = initS2[j];
+      initJ[j] = iS1[j] + iS2[j];
+      initS1[j] = initS2[j]=0.;
+      initLNh[j] = 0.;
+    }
+    initJ[2] += LNhmag;
+    initJmag = sqrt(initJ[0] * initJ[0] + initJ[1] * initJ[1] + initJ[2] * initJ[2]);
+    if (initJ[1])
+      phiJ = atan2(initJ[1], initJ[0]);
+    else
+      phiJ = 0.;
+    thetaJ = acos(initJ[2]/initJmag);
+    rz[0][0] = -cos(phiJ);
+    rz[0][1] = -sin(phiJ);
+    rz[0][2] = 0.;
+    rz[1][0] = sin(phiJ);
+    rz[1][1] = -cos(phiJ);
+    rz[1][2] = 0.;
+    rz[2][0] = 0.;
+    rz[2][1] = 0.;
+    rz[2][2] = 1.;
+    ry[0][0] = cos(thetaJ);
+    ry[0][1] = 0;
+    ry[0][2] = sin(thetaJ);
+    ry[1][0] = 0.;
+    ry[1][1] = 1.;
+    ry[1][2] = 0.;
+    ry[2][0] = -sin(thetaJ);
+    ry[2][1] = 0.;
+    ry[2][2] = cos(thetaJ);
+    for (j = 0; j < 3; j++) {
+      for (k = 0; k < 3; k++) {
+	initLNh[j] += ry[j][k] * rz[k][2];
+	for (l = 0; l < 3; l++) {
+           initS1[j] += ry[j][k] * rz[k][l] * iS1[l];
+           initS2[j] += ry[j][k] * rz[k][l] * iS2[l];
 	}
+      }
+    }
+    inc = params->inclination;
+    break;
 
-	in4.x = t / m;
+  default:
+    //case View:
+    //printf("*** View ***\n");
+    initLNh[0] = sin(params->inclination);
+    initLNh[1] = 0.;
+    initLNh[2] = cos(params->inclination);
+    inc = 0.;
+    break;
 
-	LALRungeKutta4(status->statusPtr, &newvalues, integrator,
-		       (void *) mparams);
-	CHECKSTATUSPTR(status);
+  }
 
-	/* updating values of dynamical variables */
+  if (initS1[0]*initS1[0]+initS1[1]*initS1[1]+initS2[0]*initS2[0]+initS2[1]*initS2[1]) LNhxy=sqrt(initLNh[0]*initLNh[0]+initLNh[1]*initLNh[1]);
+  else LNhxy=1.;
 
-	Phi = values.data[0] = newvalues.data[0];
+  /*All the PN formulas used in the differential equation integration 
+    assume that the spin variables are the physical ones divided by
+    totalmasss^2, here we introduce the correct normalization, changing the
+    input one, where spin components were normalized on individual mass. */
+  for (j = 0; j < 3; j++) {
+    initS1[j] /= params->totalMass * params->totalMass;
+    initS2[j] /= params->totalMass * params->totalMass;
+  }
 
-	omega = values.data[1] = newvalues.data[1];
+  if (signalvec1) {
+    length = signalvec1->length;
+  } else {
+    if (ff)
+      length = ff->length;
+    else
+      length = 0;
+  }
+  mparams.length = length;
 
-	LNhx = values.data[2] = newvalues.data[2];
-	LNhy = values.data[3] = newvalues.data[3];
-	LNhz = values.data[4] = newvalues.data[4];
+  /* Allocate memory for temporary arrays */
 
-	S1x = values.data[5] = newvalues.data[5];
-	S1y = values.data[6] = newvalues.data[6];
-	S1z = values.data[7] = newvalues.data[7];
+  h2P2 = XLALCreateREAL8Vector(length * 2);
+  h2M2 = XLALCreateREAL8Vector(length * 2);
+  h2P1 = XLALCreateREAL8Vector(length * 2);
+  h2M1 = XLALCreateREAL8Vector(length * 2);
+  h20  = XLALCreateREAL8Vector(length * 2);
+  h3P3 = XLALCreateREAL8Vector(length * 2);
+  h3M3 = XLALCreateREAL8Vector(length * 2);
+  h3P2 = XLALCreateREAL8Vector(length * 2);
+  h3M2 = XLALCreateREAL8Vector(length * 2);
+  h3P1 = XLALCreateREAL8Vector(length * 2);
+  h3M1 = XLALCreateREAL8Vector(length * 2);
+  h30  = XLALCreateREAL8Vector(length * 2);
+  h4P4 = XLALCreateREAL8Vector(length * 2);
+  h4M4 = XLALCreateREAL8Vector(length * 2);
+  h4P3 = XLALCreateREAL8Vector(length * 2);
+  h4M3 = XLALCreateREAL8Vector(length * 2);
+  h4P2 = XLALCreateREAL8Vector(length * 2);
+  h4M2 = XLALCreateREAL8Vector(length * 2);
+  h4P1 = XLALCreateREAL8Vector(length * 2);
+  h4M1 = XLALCreateREAL8Vector(length * 2);
+  h40  = XLALCreateREAL8Vector(length * 2);
+  sigp = XLALCreateREAL8Vector(length);
+  sigc = XLALCreateREAL8Vector(length);
+  hap  = XLALCreateREAL8Vector(length * 2);
+  fap  = XLALCreateREAL8Vector(length);
+  phap = XLALCreateREAL8Vector(length);
 
-	S2x = values.data[8] = newvalues.data[8];
-	S2y = values.data[9] = newvalues.data[9];
-	S2z = values.data[10] = newvalues.data[10];
+  if (!h2P2 || !h2M2 || !h2P1 || !h2M1 || !h20 || !sigp || !sigc || !fap || !phap || !hap || !h3P3 || !h3M3 || !h3P2 || !h3M2 || !h3P1 || !h3M1 || !h30 || !h4P4 || !h4M4 || !h4P3 || !h4M3 || !h4P2 || !h4M2 || !h4P1 || !h4M1 || !h40 ) {
+    if (h2P2)
+      XLALDestroyREAL8Vector(h2P2);
+    if (h2M2)
+      XLALDestroyREAL8Vector(h2M2);
+    if (h2P1)
+      XLALDestroyREAL8Vector(h2P1);
+    if (h2M2)
+      XLALDestroyREAL8Vector(h2M1);
+    if (h20)
+      XLALDestroyREAL8Vector(h20);
+    if (h3P3)
+      XLALDestroyREAL8Vector(h3P3);
+    if (h3M3)
+      XLALDestroyREAL8Vector(h3M3);
+    if (h3P2)
+      XLALDestroyREAL8Vector(h3P2);
+    if (h3M2)
+      XLALDestroyREAL8Vector(h3M2);
+    if (h3P1)
+      XLALDestroyREAL8Vector(h3P1);
+    if (h3M1)
+      XLALDestroyREAL8Vector(h3M1);
+    if (h30)
+      XLALDestroyREAL8Vector(h30);
+    if (h4P4)
+      XLALDestroyREAL8Vector(h4P4);
+    if (h4M4)
+      XLALDestroyREAL8Vector(h4M4);
+    if (h4P3)
+      XLALDestroyREAL8Vector(h4P3);
+    if (h4M3)
+      XLALDestroyREAL8Vector(h4M3);
+    if (h4P2)
+      XLALDestroyREAL8Vector(h4P2);
+    if (h4M2)
+      XLALDestroyREAL8Vector(h4M2);
+    if (h4P1)
+      XLALDestroyREAL8Vector(h4P1);
+    if (h4M1)
+      XLALDestroyREAL8Vector(h4M1);
+    if (h40)
+      XLALDestroyREAL8Vector(h40);
+    if (sigp)
+      XLALDestroyREAL8Vector(sigp);
+    if (sigc)
+      XLALDestroyREAL8Vector(sigc);
+    if (fap)
+      XLALDestroyREAL8Vector(fap);
+    if (hap)
+      XLALDestroyREAL8Vector(hap);
+    if (phap)
+      XLALDestroyREAL8Vector(phap);
+    DETATCHSTATUSPTR(status);
+    RETURN(status);
+  }
 
-	alpha = atan2(LNhy, LNhx);
+  memset(h2P2->data, 0, h2P2->length * sizeof(REAL8));
+  memset(h2M2->data, 0, h2M2->length * sizeof(REAL8));
+  memset(h2P1->data, 0, h2P1->length * sizeof(REAL8));
+  memset(h2M1->data, 0, h2P1->length * sizeof(REAL8));
+  memset(h20->data,  0, h20->length  * sizeof(REAL8));
+  memset(h3P3->data, 0, h3P3->length * sizeof(REAL8));
+  memset(h3M3->data, 0, h3M3->length * sizeof(REAL8));
+  memset(h3P2->data, 0, h3P2->length * sizeof(REAL8));
+  memset(h3M2->data, 0, h3M2->length * sizeof(REAL8));
+  memset(h3P1->data, 0, h3P1->length * sizeof(REAL8));
+  memset(h3M1->data, 0, h3M1->length * sizeof(REAL8));
+  memset(h30->data,  0, h30->length  * sizeof(REAL8));
+  memset(h4P4->data, 0, h3P3->length * sizeof(REAL8));
+  memset(h4M4->data, 0, h3M3->length * sizeof(REAL8));
+  memset(h4P3->data, 0, h3P3->length * sizeof(REAL8));
+  memset(h4M3->data, 0, h3M3->length * sizeof(REAL8));
+  memset(h4P2->data, 0, h3P2->length * sizeof(REAL8));
+  memset(h4M2->data, 0, h3M2->length * sizeof(REAL8));
+  memset(h4P1->data, 0, h3P1->length * sizeof(REAL8));
+  memset(h4M1->data, 0, h3M1->length * sizeof(REAL8));
+  memset(h40->data,  0, h30->length  * sizeof(REAL8));
+  memset(sigp->data, 0, sigp->length * sizeof(REAL8));
+  memset(sigc->data, 0, sigc->length * sizeof(REAL8));
+  memset(hap->data,  0, hap->length  * sizeof(REAL8));
+  memset(fap->data,  0, fap->length  * sizeof(REAL8));
+  memset(phap->data, 0, phap->length * sizeof(REAL8));
 
-	S1dotL =
-	    (S1x * LNhx + S1y * LNhy +
-	     S1z * LNhz) * params->totalMass * params->totalMass /
-	    params->mass1 / params->mass1;
-	S2dotL =
-	    (S2x * LNhx + S2y * LNhy +
-	     S2z * LNhz) * params->totalMass * params->totalMass /
-	    params->mass2 / params->mass2;
-	S1dotS1 =
-	    (S1x * S1x + S1y * S1y +
-	     S1z * S1z) * params->totalMass * params->totalMass *
-	    params->totalMass * params->totalMass / params->mass1 /
-	    params->mass1 / params->mass1 / params->mass1;
-	S2dotS2 =
-	    (S2x * S2x + S2y * S2y +
-	     S2z * S2z) * params->totalMass * params->totalMass *
-	    params->totalMass * params->totalMass / params->mass2 /
-	    params->mass2 / params->mass2 / params->mass2;
-	S1dotS2 =
-	    (S1x * S2x + S1y * S2y +
-	     S1z * S2z) * params->totalMass * params->totalMass *
-	    params->totalMass * params->totalMass / params->mass1 /
-	    params->mass1 / params->mass2 / params->mass2;
+  /* Here there used to be a check that OmegaRD is smaller than Nyquist, it
+     has been taken out */
 
-	LALPSpinInspiralRDderivatives(&values, &dvalues, (void *) mparams);
+  params->ampOrder = 1;
+  if (params->distance > 0.)
+    amp22ini = -2.0 * params->mu * LAL_MRSUN_SI / params->distance * sqrt(16. * LAL_PI / 5.);
+  else
+    amp22ini = 2. * sqrt(LAL_PI / 5.0) * params->signalAmplitude;
 
-	dLNhx = dvalues.data[2];
-	dLNhy = dvalues.data[3];
-	dLNhz = dvalues.data[4];
+  /* initialize the coordinates */
+  yinit[0] = initphi;     /* phi */
+  yinit[1] = initomega;   /* omega (really pi M f) */
+  yinit[2] = initLNh[0];   /* LNh(x,y,z) */
+  yinit[3] = initLNh[1];
+  yinit[4] = initLNh[2];
 
-	LNhxy = sqrt(LNhx * LNhx + LNhy * LNhy);
-	alphadotold = alphadot;
-	iotadotold = iotadot;
-	if (LNhxy > 0.) {
-	    iotadot = -dLNhz / LNhxy;
-	    alphadot = (LNhx * dLNhy - LNhy * dLNhx) / LNhxy;
-	    iotaddot = (iotadot - iotadotold) / dt * m;
-	    alphaddot = (alphadot - alphadotold) / dt * m;
-	} else {
-	    iotadot = 0.;
-	    alphadot = 0.;
-	    iotaddot = 0.;
-	    alphaddot = 0.;
-	}
+  yinit[5] = initS1[0];   /* Spin1(x,y,z) */
+  yinit[6] = initS1[1];
+  yinit[7] = initS1[2];
 
-	energy = values.data[11];
-	v2 = pow(omega, 2. / 3.);
-	v = sqrt(v2);
+  yinit[8] = initS2[0];   /* Spin2(x,y,z) */
+  yinit[9] = initS2[1];
+  yinit[10]= initS2[2];
 
-	omegadot = dvalues.data[1];
-	omegaddot = (omegadot - omegadotold) / dt * m;
+  yinit[11]= 0.;
 
-	t = (++count - params->nStartPad) * dt;
+  phenPars.intreturn = 0;
+  phenPars.energy    = 0.;
+  phenPars.omega     = 0.;
+  phenPars.domega    = 0.;
+  phenPars.ddomega   = 0.;
+  phenPars.diota     = 0.;
+  phenPars.ddiota    = 0.;
+  phenPars.dalpha    = 0.;
+  phenPars.ddalpha   = 0.;
+  phenPars.countback = 0;
+  phenPars.endtime   = 0.;
+  phenPars.Psi       = 0.;
+  phenPars.alpha     = 0.;
+  phenPars.ci        = 0.;
+  phenPars.LNhS1     = 0.;
+  phenPars.LNhS2     = 0.;
+  phenPars.S1S1      = 0.;
+  phenPars.S1S2      = 0.;
+  phenPars.S2S2      = 0.;
 
-	//adjourn ommatch
+  if (params->fixedStep == 1) {
+    //printf("Fixed step integration\n");
+    LALSpinInspiralEngine(status->statusPtr,neqs,yinit,amp22ini,&mparams,h2P2,h2M2,h2P1,h2M1,h20,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,fap,phap,&phenPars);
+  }  else {
+    //printf("Adaptive integration\n");
+    errcode = XLALSpinInspiralAdaptiveEngine(neqs,yinit,amp22ini,&mparams,h2P2,h2M2,h2P1,h2M1,h20,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,fap,phap,&phenPars);
+  }
+  intreturn=phenPars.intreturn;
 
-	omegamatch =
-	    omM0 + 6.05e-3 * sqrtOneMinus4Eta + omMz1p2 * (S1dotL +
-							   S2dotL) +
-	    omM12 * (S1dotS2 - S1dotL * S2dotL) + omMsq * (S1dotS1 +
-							   S2dotS2 -
-							   S1dotL *
-							   S1dotL -
-							   S2dotL *
-							   S2dotL) +
-	    omMz12 * (S1dotL * S2dotL) + omMzsq * (S1dotL * S1dotL +
-						   S2dotL * S2dotL);
+  /* report on abnormal termination:
+     Termination is fine if omegamatch is passed or if energy starts 
+     increasing  */
 
+  if ( (intreturn!=LALPSIRDPN_TEST_OMEGACUT) && (intreturn != LALPSIRDPN_TEST_OMEGAMATCH) && (intreturn != LALPSIRDPN_TEST_ENERGY) )
+    {
+      fprintf(stderr,"** LALPSpinInspiralRD WARNING **: integration terminated with code %d.\n",intreturn);
+      fprintf(stderr,"  1025: Energy increases\n  1026: Omegadot -ve\n  1028: Omega NAN\n  1029: Omega > Omegamatch\n  1031: Omega -ve\n  1032: Omega > OmegaCut %12.6e\n",mparams.OmCutoff);
+      fprintf(stderr,"  Waveform parameters were m1 = %14.6e, m2 = %14.6e, inc = %10.6f,\n", params->mass1, params->mass2, params->inclination);
+      fprintf(stderr,"                           S1 = (%10.6f,%10.6f,%10.6f)\n", params->spin1[0], params->spin1[1], params->spin1[2]);
+      fprintf(stderr,"                           S2 = (%10.6f,%10.6f,%10.6f)\n", params->spin2[0], params->spin2[1], params->spin2[2]);
     }
 
-    /* Test that omega/unitHz < NYQUIST */
+  if ((params->inspiralOnly != 1)&&(intreturn==LALPSIRDPN_TEST_OMEGAMATCH)) {
 
-    while ((energy <= 0.99 * enold) && (omega >= 0.99 * omegaold)
-	   && (omega / unitHz < params->tSampling) && (!(isnan(omega)))
-	   && (omega < omegamatch));
+    tim = t0 = phenPars.endtime;
+    tAs = t0 + 2. * phenPars.domega / phenPars.ddomega;
+    om1 = phenPars.domega * tAs * (1. - t0 / tAs) * (1. - t0 / tAs);
+    om0 = phenPars.omega - om1 / (1. - t0 / tAs);
+    om  = phenPars.omega;
 
-    /* if code stopped since evolving quantities became nan write an error message */
-    if (omega / unitHz >= params->tSampling) {
-	fprintf(stderr,
-		"** LALPhenSpinInspiralRD ERROR **: f=%11.4e  rate=%11.4e "
-		"m1: %e, "
-		"m2: %e, "
-		"spin1x: %e, "
-		"spin1y: %e, "
-		"spin1z: %e, "
-		"spin2x: %e, "
-		"spin2y: %e, "
-		"spin2z: %e, "
-		"inclination: %e\n ",
-		omega / unitHz, params->tSampling,
-		params->mass1, params->mass2,
-		params->spin1[0], params->spin1[1], params->spin1[2],
-		params->spin2[0], params->spin2[1], params->spin2[2],
-		params->inclination);
-	ABORTXLAL(status);
-    } else if (isnan(omega)) {
-	fprintf(stderr,
-		"** LALPhenSpinInspiralRD ERROR **: omega has become nan. "
-		"m1: %e, "
-		"m2: %e, "
-		"spin1x: %e, "
-		"spin1y: %e, "
-		"spin1z: %e, "
-		"spin2x: %e, "
-		"spin2y: %e, "
-		"spin2z: %e, "
-		"inclination: %e\n ",
-		params->mass1, params->mass2,
-		params->spin1[0], params->spin1[1], params->spin1[2],
-		params->spin2[0], params->spin2[1], params->spin2[2],
-		params->inclination);
-	ABORTXLAL(status);
+    //diota1 = phenPars.ddiota * tAs * (1. - t0 / tAs) * (1. - t0 / tAs);
+    //diota0 = phenPars.diota - diota1 / (1. - t0 / tAs);
+
+    dalpha1 = phenPars.ddalpha * tAs * (1. - t0 / tAs) * (1. - t0 / tAs);
+    dalpha0 = phenPars.dalpha - dalpha1 / (1. - t0 / tAs);
+
+    //printf("time %12.6e  count %d\n",tim,phenPars.countback);
+
+    if ((tAs < t0) || (om1 < 0.)) {
+      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: Could not attach phen part for:\n");
+      fprintf(stderr," tAs %12.6e  t0 %12.6e  om1 %12.6e\n",tAs,t0,om1);
+      fprintf(stderr,"   m1 = %14.6e, m2 = %14.6e, inc = %10.6f,\n", params->mass1, params->mass2, params->inclination);
+      fprintf(stderr,"   S1 = (%10.6f,%10.6f,%10.6f)\n", params->spin1[0], params->spin1[1], params->spin1[2]);
+      fprintf(stderr,"   S2 = (%10.6f,%10.6f,%10.6f)\n", params->spin2[0], params->spin2[1], params->spin2[2]);
+      XLALDestroyREAL8Vector(h2P2);
+      XLALDestroyREAL8Vector(h2M2);
+      XLALDestroyREAL8Vector(h2P1);
+      XLALDestroyREAL8Vector(h2M1);
+      XLALDestroyREAL8Vector(h20);
+      XLALDestroyREAL8Vector(h3P3);
+      XLALDestroyREAL8Vector(h3M3);
+      XLALDestroyREAL8Vector(h3P2);
+      XLALDestroyREAL8Vector(h3M2);
+      XLALDestroyREAL8Vector(h3P1);
+      XLALDestroyREAL8Vector(h3M1);
+      XLALDestroyREAL8Vector(h30);
+      XLALDestroyREAL8Vector(h4P4);
+      XLALDestroyREAL8Vector(h4M4);
+      XLALDestroyREAL8Vector(h4P3);
+      XLALDestroyREAL8Vector(h4M3);
+      XLALDestroyREAL8Vector(h4P2);
+      XLALDestroyREAL8Vector(h4M2);
+      XLALDestroyREAL8Vector(h4P1);
+      XLALDestroyREAL8Vector(h4M1);
+      XLALDestroyREAL8Vector(h40);
+      XLALDestroyREAL8Vector(hap);
+      XLALDestroyREAL8Vector(fap);
+      XLALDestroyREAL8Vector(phap);
+      XLALDestroyREAL8Vector(sigp);
+      XLALDestroyREAL8Vector(sigc);
+      DETATCHSTATUSPTR(status);
+      RETURN(status);
+      //XLAL_ERROR(func, XLAL_EFAILED);
     }
-    /* if code stopped due to co-ord singularity write an error message */
-    else if ((LNhx * LNhx + LNhy * LNhy + LNhz * LNhz) < (1.0 - LNhztol)) {
-	fprintf(stderr,
-		"** LALPhenSpinInspiralRD ERROR **: waveform terminated, coord singularity. "
-		"m1: %e, "
-		"m2: %e, "
-		"spin1x: %e, "
-		"spin1y: %e, "
-		"spin1z: %e, "
-		"spin2x: %e, "
-		"spin2y: %e, "
-		"spin2z: %e, "
-		"inclination: %e\n ",
-		params->mass1, params->mass2,
-		params->spin1[0], params->spin1[1], params->spin1[2],
-		params->spin2[0], params->spin2[1], params->spin2[2],
-		params->inclination);
-	ABORTXLAL(status);
-    } else if ((energy > enold) && (omega < omegamatch)) {
-	fprintf(stderr,
-		"** LALPhenSpinInspiralRD ERROR **: waveform terminated, energy increases %11.3e > %11.3e  int. step=%d  omega=%11.3e\n",
-		energy, enold, count, omega);
-	ABORTXLAL(status);
-    } else if (omega < omegaold) {
-	fprintf(stderr,
-		"** LALPhenSpinInspiralRD ERROR **: waveform terminated, omega decrease "
-		"om: %e,  omold: %e"
-		"m1: %e, "
-		"m2: %e, "
-		"spin1x: %e, "
-		"spin1y: %e, "
-		"spin1z: %e, "
-		"spin2x: %e, "
-		"spin2y: %e, "
-		"spin2z: %e, "
-		"inclination: %e\n ",
-		omega, omegaold,
-		params->mass1, params->mass2,
-		params->spin1[0], params->spin1[1], params->spin1[2],
-		params->spin2[0], params->spin2[1], params->spin2[2],
-		params->inclination);
-    } else if (omega >= omegamatch) {
-	rett = 1;
-    }
+    else {
+      trigAngle.ci = phenPars.ci;
+      Psi    = phenPars.Psi;// - 2. * om * log(om);
+      Psi0   = Psi + tAs * (om1/mass -dalpha1*trigAngle.ci) * log(1. - t0 / tAs);
+      alpha0 = phenPars.alpha + tAs * dalpha1 * log(1. - t0 / tAs);
+      //iota0  = acos(phenPars.ci) + diota1 * tAs * log(1. - t0 / tAs);
+      energy = phenPars.energy;
+      count = phenPars.countback;
 
-    t0 = t - dt;
-    tAs = t0 + 2. * omegadot / omegaddot * m;
-    om1 = omegadot * tAs / m * (1. - t0 / tAs) * (1. - t0 / tAs);
-    om0 = omega - om1 / (1. - t0 / tAs);
-
-    iotadot1 = iotaddot * tAs / m * (1. - t0 / tAs) * (1. - t0 / tAs);
-    iotadot0 = iotadot - iotadot1 / (1. - t0 / tAs);
-
-    alphadot1 = alphaddot * tAs / m * (1. - t0 / tAs) * (1. - t0 / tAs);
-    alphadot0 = alphadot - alphadot1 / (1. - t0 / tAs);
-
-    if ((tAs < 0) || (om1 < 0.)) {
-	fprintf(stderr,
-		"** LALPSpinInspiralRD ERROR **: Could not attach phen part\n");
-	rett = 0;
-	ABORTXLAL(status);
-    }
-
-    dt = 1. / params->tSampling;
-    Psi0 = Psi + tAs * om1 * log(1. - t0 / tAs) / m;
-    alpha0 = alpha + tAs * alphadot1 * log(1. - t0 / tAs) / m;
-    iota0 = acos(LNhz) + iotadot1 * tAs / m * log(1. - t0 / tAs);
-
-    /* Get QNM frequencies */
-    modefreqs = XLALCreateCOMPLEX8Vector(nmodes);
-
-    errcode =
-	XLALPSpinFinalMassSpin(&finalMass, &finalSpin, params, energy,
-			       initLNh);
-    if (errcode != XLAL_SUCCESS) {
-	ABORTXLAL(status);
-    }
-
-    xlalSt2P2 =
-	XLALPSpinGenerateQNMFreq(modefreqs, params, 2, 2, nmodes,
-				 finalMass, finalSpin);
-    if (xlalSt2P2 != XLAL_SUCCESS) {
-	XLALDestroyCOMPLEX8Vector(modefreqs);
-	ABORTXLAL(status);
-    }
-
-    omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
-
-    fracRD =
-	frac0 + frac1p2 * (S1dotL + S2dotL) + frac12 * (S1dotS2 -
-							S1dotL * S2dotL) +
-	fracsq * (S1dotS1 + S2dotS2 - S1dotL * S1dotL - S2dotL * S2dotL) +
-	fracz12 * (S1dotL * S2dotL) + fraczsq * (S1dotL * S1dotL +
-						 S2dotL * S2dotL);
-
-    /* Now the phenomenological part is added */
-    if (rett == 1) {
-
-	count = write;
-
-	do {
-
-	    if (count >= length) {
-		fprintf(stderr,
-			"** LALPhenSpinInspiralRD ERROR**: phen part exceeds array length");
-		ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-	    }
-
-	    omegaold = omega;
-	    omega = om1 / (1. - t / tAs) + om0;
-	    fap->data[count] = omega;
-	    Psi =
-		Psi0 - tAs * om1 * log(1. - t / tAs) / m + om0 * (t -
-								  t0) / m;
-	    iota =
-		iotadot0 * (t - t0) / m - iotadot1 * tAs / m * log(1. -
-								   t /
-								   tAs) +
-		iota0;
-	    alpha =
-		alpha0 + alphadot0 * (t - t0) / m -
-		alphadot1 * tAs / m * log(1. - t / tAs);
-	    v2old = v2;
-	    v2 = pow(omega, 2. / 3.);
-	    v = sqrt(v2);
-	    amp22 *= v2 / v2old;
-	    amp20 = amp22 * sqrt(1.5);
-	    amp33 = -amp22 / 4. * sqrt(5. / 42.);
-
-	    ci = cos(iota);
-	    c2i2 = (1. + ci) / 2.;
-	    s2i2 = 1. - c2i2;
-	    ci2 = sqrt(c2i2);
-	    si = sqrt(1. - ci * ci);
-	    s2i = 1. - ci * ci;
-	    c4i2 = c2i2 * c2i2;
-	    s4i2 = s2i2 * s2i2;
-	    c5i2 = c4i2 * ci2;
-	    s5i2 = s4i2 * si2;
-	    c6i2 = c4i2 * c2i2;
-	    s6i2 = s4i2 * s2i2;
-
-	    h2P2->data[2 * count] =
-		(REAL4) (amp22 *
-			 (1. /
-			  (1. +
-			   v2 / 42. * (107. -
-				       55. * mparams->eta)) * (cos(2. *
-								   (Psi +
-								    alpha))
-							       * c4i2 +
-							       cos(2. *
-								   (Psi -
-								    alpha))
-							       * s4i2) +
-			  v * mparams->dm / 3. * si *
-			  (cos(Psi - 2. * alpha) * s2i2 +
-			   cos(Psi + 2. * alpha) * c2i2)));
-	    h2P2->data[2 * count + 1] =
-		(REAL4) (amp22 *
-			 (1. /
-			  (1. +
-			   v2 / 42. * (107. -
-				       55. * mparams->eta)) * (sin(2. *
-								   (Psi +
-								    alpha))
-							       * c4i2 -
-							       sin(2. *
-								   (Psi -
-								    alpha))
-							       * s4i2) +
-			  v * mparams->dm / 3. * si *
-			  (-sin(Psi - 2. * alpha) * s2i2 +
-			   sin(Psi + 2. * alpha) * c2i2)));
-
-	    h2M2->data[2 * count] =
-		(REAL4) (amp22 *
-			 (1. /
-			  (1. +
-			   v2 / 42. * (107. -
-				       55. * mparams->eta)) * (cos(2. *
-								   (Psi +
-								    alpha))
-							       * c4i2 +
-							       cos(2. *
-								   (Psi -
-								    alpha))
-							       * s4i2) -
-			  v * mparams->dm / 3. * si *
-			  (cos(Psi - 2. * alpha) * s2i2 +
-			   cos(Psi + 2. * alpha) * c2i2)));
-	    h2M2->data[2 * count + 1] =
-		(REAL4) (amp22 *
-			 (1. /
-			  (1. +
-			   v2 / 42. * (107. -
-				       55. * mparams->eta)) * (sin(2. *
-								   (Psi +
-								    alpha))
-							       * c4i2 -
-							       sin(2. *
-								   (Psi -
-								    alpha))
-							       * s4i2) -
-			  v * mparams->dm / 3. * si *
-			  (-sin(Psi - 2. * alpha) * s2i2 +
-			   sin(Psi + 2. * alpha) * c2i2)));
-
-	    h2P1->data[2 * count] =
-		(REAL4) (amp22 *
-			 (si /
-			  (1. +
-			   v2 / 84. * (107. -
-				       55. * mparams->eta)) * (-cos(2. *
-								    Psi -
-								    alpha)
-							       * s2i2 +
-							       cos(2. *
-								   Psi +
-								   alpha) *
-							       c2i2) +
-			  v * mparams->dm / 3. * (-cos(Psi + alpha) *
-						  (ci + c2i) / 2. -
-						  cos(Psi -
-						      alpha) * s2i2 * (1. +
-								       2. *
-								       ci))));
-	    h2P1->data[2 * count + 1] =
-		(REAL4) (amp22 *
-			 (si /
-			  (1. +
-			   v2 / 84. * (107. -
-				       55. * mparams->eta)) * (sin(2. *
-								   Psi -
-								   alpha) *
-							       s2i2 +
-							       sin(2. *
-								   Psi +
-								   alpha) *
-							       c2i2) +
-			  v * mparams->dm / 3. * (-sin(Psi + alpha) *
-						  (ci + c2i) / 2. +
-						  sin(Psi -
-						      alpha) * s2i2 * (1. +
-								       2. *
-								       ci))));
-
-	    h2M1->data[2 * count] =
-		(REAL4) (amp22 *
-			 (si /
-			  (1. +
-			   v2 / 84. * (107. -
-				       55. * mparams->eta)) * (-cos(2. *
-								    Psi -
-								    alpha)
-							       * s2i2 +
-							       cos(2. *
-								   Psi +
-								   alpha) *
-							       c2i2) -
-			  v * mparams->dm / 3. * (-cos(Psi + alpha) *
-						  (ci + c2i) / 2. -
-						  cos(Psi -
-						      alpha) * s2i2 * (1. +
-								       2. *
-								       ci))));
-	    h2M1->data[2 * count + 1] =
-		(REAL4) (amp22 *
-			 (si /
-			  (1. +
-			   v2 / 84. * (107. -
-				       55. * mparams->eta)) * (sin(2. *
-								   Psi -
-								   alpha) *
-							       s2i2 +
-							       sin(2. *
-								   Psi +
-								   alpha) *
-							       c2i2) -
-			  v * mparams->dm / 3. * (-sin(Psi + alpha) *
-						  (ci + c2i) / 2. +
-						  sin(Psi -
-						      alpha) * s2i2 * (1. +
-								       2. *
-								       ci))));
-
-	    h20->data[2 * count] = (REAL4) (amp20 * (s2i * cos(2. * Psi)));
-	    h20->data[2 * count + 1] =
-		(REAL4) (amp20 *
-			 (-v * mparams->dm * 8 / 9. * si * sin(Psi)));
-
-	    h3P3->data[2 * count] =
-		(REAL4) (amp33 *
-			 (v * mparams->dm *
-			  (-9. * cos(3. * (Psi - alpha)) * s6i2 -
-			   cos(Psi - 3. * alpha) * s4i2 * c2i2 + cos(Psi +
-								     3. *
-								     alpha)
-			   * s2i2 * c4i2 +
-			   9. * cos(3. * (Psi + alpha)) * c6i2) +
-			  v2 * 8. * (1. -
-				     3. * mparams->eta) * (-cos(2. * Psi +
-								3. *
-								alpha) *
-							   s5i2 * ci2 +
-							   cos(2. * Psi -
-							       3. *
-							       alpha) *
-							   c5i2 * si2)));
-	    h3P3->data[2 * count + 1] =
-		(REAL4) (amp33 *
-			 (v * mparams->dm *
-			  (9. * sin(3. * (Psi - alpha)) * s6i2 +
-			   sin(Psi - 3. * alpha) * s4i2 * c2i2 + sin(Psi +
-								     3. *
-								     alpha)
-			   * s2i2 * c4i2 +
-			   9. * sin(3. * (Psi + alpha)) * c6i2) +
-			  v2 * 8. * (1. -
-				     3. * mparams->eta) * (-sin(2. * Psi +
-								3. *
-								alpha) *
-							   s5i2 * ci2 +
-							   sin(2. * Psi -
-							       3. *
-							       alpha) *
-							   c5i2 * si2)));
-
-	    h3M3->data[2 * count] =
-		(REAL4) (amp33 *
-			 (-v * mparams->dm *
-			  (-9. * cos(3. * (Psi - alpha)) * s6i2 -
-			   cos(Psi - 3. * alpha) * s4i2 * c2i2 + cos(Psi +
-								     3. *
-								     alpha)
-			   * s2i2 * c4i2 +
-			   9. * cos(3. * (Psi + alpha)) * c6i2) +
-			  v2 * 8. * (1. -
-				     3. * mparams->eta) * (-cos(2. * Psi +
-								3. *
-								alpha) *
-							   s5i2 * ci2 +
-							   cos(2. * Psi -
-							       3. *
-							       alpha) *
-							   c5i2 * si2)));
-	    h3M3->data[2 * count + 1] =
-		(REAL4) (amp33 *
-			 (-v * mparams->dm *
-			  (9. * sin(3. * (Psi - alpha)) * s6i2 +
-			   sin(Psi - 3. * alpha) * s4i2 * c2i2 + sin(Psi +
-								     3. *
-								     alpha)
-			   * s2i2 * c4i2 +
-			   9. * sin(3. * (Psi + alpha)) * c6i2) +
-			  v2 * 8. * (1. -
-				     3. * mparams->eta) * (-sin(2. * Psi +
-								3. *
-								alpha) *
-							   s5i2 * ci2 +
-							   sin(2. * Psi -
-							       3. *
-							       alpha) *
-							   c5i2 * si2)));
-
-	    fap->data[count] = (REAL4) (omega);
-
-	    phap->data[count] = (REAL8) (Psi);
-
-	    shift22->data[count] = alpha;
-
-	    count++;
-	    t += dt;
-
-	} while ((omega < fracRD * omegaRD));
-
-    } else {
-	fprintf(stderr,
-		"** LALPhenSpinInspiralRD ERROR **: No phen part added\n");
-	fprintf(stderr, "** m (%11.4e  %11.4e)  f0 %11.4e\n",
-		params->mass1, params->mass2, params->fLower);
-	fprintf(stderr, "** S1 (%8.4f  %8.4f  %8.4f)\n", initS1[0],
-		initS1[1], initS1[2]);
-	fprintf(stderr, "** S2 (%8.4f  %8.4f  %8.4f)\n", initS2[0],
-		initS2[1], initS2[2]);
-	fprintf(stderr,
-		"** om (%11.4e  %11.4e)  E (%11.4e, %11.4e) count %d\n",
-		omega, omegaold, energy, enold, count);
-
-	ABORTXLAL(status);
-
-    }
-
-    *countback = count;
-
-    /*Now ringdown is inserted */
-
-    XLALRungeKutta4Free(integrator);
-    LALFree(dummy.data);
-
-  /*--------------------------------------------------------------
-   * Attach the ringdown waveform to the end of inspiral
-   -------------------------------------------------------------*/
-
-    apcount = count;
-    apcountM = count;
-    xlalSt2P2 =
-	XLALPSpinInspiralAttachRingdownWave(h2P2, params, &apcount, nmodes,
-					    2, 2, finalMass, finalSpin);
-    xlalSt2M2 =
-	XLALPSpinInspiralAttachRingdownWave(h2M2, params, &apcountM,
-					    nmodes, 2, -2, finalMass,
-					    finalSpin);
-    if ((xlalSt2P2 != XLAL_SUCCESS) || (xlalSt2M2 != XLAL_SUCCESS)) {
-	XLALDestroyREAL4Vector(h2P2);
-	XLALDestroyREAL4Vector(h2M2);
-	XLALDestroyREAL4Vector(h2P1);
-	XLALDestroyREAL4Vector(h2M1);
-	XLALDestroyREAL4Vector(h3P3);
-	XLALDestroyREAL4Vector(h3M3);
-	XLALDestroyREAL4Vector(fap);
+      /* Get QNM frequencies */
+      errcode = XLALPSpinFinalMassSpin(&finalMass, &finalSpin, params, energy, initLNh);
+      modefreqs=XLALCreateCOMPLEX8Vector(nmodes);
+      errcode+=XLALPSpinGenerateQNMFreq(modefreqs, params, 2, 2, nmodes, finalMass, finalSpin);
+      if (errcode != XLAL_SUCCESS) {
+	fprintf(stderr,"**** LALPhenSpinInspiralRD ERROR ****: impossible to generate RingDown frequency\n");
+	fprintf(stderr, "   m  (%11.4e  %11.4e)  f0 %11.4e\n",params->mass1, params->mass2, params->fLower);
+	fprintf(stderr, "   S1 (%8.4f  %8.4f  %8.4f)\n", initS1[0],initS1[1], initS1[2]);
+	fprintf(stderr, "   S2 (%8.4f  %8.4f  %8.4f)\n", initS2[0],initS2[1], initS2[2]);
+	XLALDestroyREAL8Vector(h2P2);
+	XLALDestroyREAL8Vector(h2M2);
+	XLALDestroyREAL8Vector(h2P1);
+	XLALDestroyREAL8Vector(h2M1);
+	XLALDestroyREAL8Vector(h20);
+	XLALDestroyREAL8Vector(h3P3);
+	XLALDestroyREAL8Vector(h3M3);
+	XLALDestroyREAL8Vector(h3P2);
+	XLALDestroyREAL8Vector(h3M2);
+	XLALDestroyREAL8Vector(h3P1);
+	XLALDestroyREAL8Vector(h3M1);
+	XLALDestroyREAL8Vector(h30);
+	XLALDestroyREAL8Vector(h4P4);
+	XLALDestroyREAL8Vector(h4M4);
+	XLALDestroyREAL8Vector(h4P3);
+	XLALDestroyREAL8Vector(h4M3);
+	XLALDestroyREAL8Vector(h4P2);
+	XLALDestroyREAL8Vector(h4M2);
+	XLALDestroyREAL8Vector(h4P1);
+	XLALDestroyREAL8Vector(h4M1);
+	XLALDestroyREAL8Vector(h40);
+	XLALDestroyREAL8Vector(fap);
 	XLALDestroyREAL8Vector(phap);
-	XLALDestroyREAL4Vector(shift22);
-	ABORTXLAL(status);
-    } else {
-	for (i = 2 * apcount; i < 2 * length; i++)
-	    h2P2->data[i] = 0.;
-	if (apcount > *countback)
-	    *countback = apcount;
-	for (i = 2 * apcountM; i < 2 * length; i++)
-	    h2M2->data[i] = 0.;
-	if (apcountM > *countback)
-	    *countback = apcountM;
+	XLALDestroyREAL8Vector(hap);
+	XLALDestroyREAL8Vector(sigp);
+	XLALDestroyREAL8Vector(sigc);
+	XLALDestroyCOMPLEX8Vector(modefreqs);
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
+	//XLAL_ERROR(func,XLAL_EFAILED);
+      }
+
+      omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
+      frOmRD = fracRD(phenPars.LNhS1,phenPars.LNhS2,phenPars.S1S1,phenPars.S1S2,phenPars.S2S2)*omegaRD;
+
+      v     = pow(om,oneby3);
+      v2    = v*v;
+      amp22 = amp22ini*v2;
+
+      do {
+
+	count++;
+	if (count >= length) {
+          fprintf(stderr,"**** LALPhenSpinInspiralRD ERROR ****: phen. part exceeds array length");
+          fprintf(stderr, "   m  (%11.4e  %11.4e)  f0 %11.4e\n",params->mass1, params->mass2, params->fLower);
+          fprintf(stderr, "   S1 (%8.4f  %8.4f  %8.4f)\n", initS1[0],initS1[1], initS1[2]);
+          fprintf(stderr, "   S2 (%8.4f  %8.4f  %8.4f)\n", initS2[0],initS2[1], initS2[2]);
+          XLALDestroyREAL8Vector(h2P2);
+          XLALDestroyREAL8Vector(h2M2);
+          XLALDestroyREAL8Vector(h2P1);
+          XLALDestroyREAL8Vector(h2M1);
+          XLALDestroyREAL8Vector(h20);
+          XLALDestroyREAL8Vector(h3P3);
+          XLALDestroyREAL8Vector(h3M3);
+          XLALDestroyREAL8Vector(h3P2);
+          XLALDestroyREAL8Vector(h3M2);
+          XLALDestroyREAL8Vector(h3P1);
+          XLALDestroyREAL8Vector(h3M1);
+          XLALDestroyREAL8Vector(h30);
+          XLALDestroyREAL8Vector(h4P4);
+          XLALDestroyREAL8Vector(h4M4);
+          XLALDestroyREAL8Vector(h4P3);
+          XLALDestroyREAL8Vector(h4M3);
+          XLALDestroyREAL8Vector(h4P2);
+          XLALDestroyREAL8Vector(h4M2);
+          XLALDestroyREAL8Vector(h4P1);
+          XLALDestroyREAL8Vector(h4M1);
+          XLALDestroyREAL8Vector(h40);
+          XLALDestroyREAL8Vector(hap);
+          XLALDestroyREAL8Vector(fap);
+          XLALDestroyREAL8Vector(phap);
+          XLALDestroyREAL8Vector(sigp);
+          XLALDestroyREAL8Vector(sigc);
+          XLALDestroyCOMPLEX8Vector(modefreqs);
+          DETATCHSTATUSPTR(status);
+          RETURN(status);
+          //XLAL_ERROR(func,XLAL_ENOMEM);
+	}
+
+	tim += dt;
+	v2old = v2;
+	//omold = om;
+	om = om1 / (1. - tim / tAs) + om0;
+	fap->data[count] = om;
+	Psi  = Psi0 + (- tAs * (om1/mass-dalpha1*trigAngle.ci) * log(1. - tim / tAs) + (om0/mass-dalpha0*trigAngle.ci) * (tim - t0) );
+	//trigAngle.ci = cos(diota0 * (tim - t0) - diota1 * tAs * log(1. - tim / tAs) + iota0);
+	alpha = alpha0 + ( dalpha0 * (tim - t0) - dalpha1 * tAs * log(1. - tim / tAs) );
+
+	v  = pow(om, oneby3);
+	v2 = v*v;
+	amp22 *= v2 / v2old;
+
+	amp33 = -amp22 / 4. * sqrt(5. / 42.);
+	amp44 = amp22 * sqrt(5./7.) * 2./9.   * v2;
+
+	trigAngle.cdi  = 2. * trigAngle.ci * trigAngle.ci - 1.;
+	trigAngle.c2i  = trigAngle.ci * trigAngle.ci;
+	trigAngle.s2i  = 1. - trigAngle.ci * trigAngle.ci;
+	trigAngle.si   = sqrt(trigAngle.s2i);
+	trigAngle.sdi  = 2. * trigAngle.ci * trigAngle.si;
+	trigAngle.c2i2 = (1. + trigAngle.ci) / 2.;
+	trigAngle.s2i2 = (1. - trigAngle.ci) / 2.;
+	trigAngle.ci2  = sqrt(trigAngle.c2i2);
+	trigAngle.si2  = sqrt(trigAngle.s2i2);
+	trigAngle.c3i2 = trigAngle.c2i2 * trigAngle.ci2;
+	trigAngle.s3i2 = trigAngle.s2i2 * trigAngle.si2;
+	trigAngle.c4i2 = trigAngle.c2i2 * trigAngle.c2i2;
+	trigAngle.s4i2 = trigAngle.s2i2 * trigAngle.s2i2;
+	trigAngle.c5i2 = trigAngle.c4i2 * trigAngle.ci2;
+	trigAngle.s5i2 = trigAngle.s4i2 * trigAngle.si2;
+	trigAngle.c6i2 = trigAngle.c4i2 * trigAngle.c2i2;
+	trigAngle.s6i2 = trigAngle.s4i2 * trigAngle.s2i2;
+	trigAngle.c8i2 = trigAngle.c4i2 * trigAngle.c4i2;
+	trigAngle.s8i2 = trigAngle.s4i2 * trigAngle.s4i2;
+
+	errcode=XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,count,amp22,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
+
+	errcode += XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,count,amp33,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
+
+	errcode += XLALSpinInspiralFillH4Modes(h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,count,amp44,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
+
+	fap->data[count] = om;
+	phap->data[count] = Psi;
+
+      } while ( (om < frOmRD) && (tim < tAs) );
+
+      XLALDestroyCOMPLEX8Vector(modefreqs);
+      *countback=count;
+
+      /*--------------------------------------------------------------
+       * Attach the ringdown waveform to the end of inspiral
+       -------------------------------------------------------------*/
+
+      //printf("time %12.6e  count %d\n",tim,count);
+
+      apcount  = *countback;
+      errcode  = XLALPSpinInspiralAttachRingdownWave(h2P2, params, &apcount, nmodes, 2, 2, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h2P2->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h2M2, params, &apcount, nmodes, 2, -2, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h2M2->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h2P1, params, &apcount, nmodes, 2, 1, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h2P1->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h2M1, params, &apcount, nmodes, 2, -1, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h2M1->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h20, params, &apcount, nmodes, 2, 0, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h20->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h3P3, params, &apcount, nmodes, 3, 3, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h3P3->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h3M3, params, &apcount, nmodes, 3, -3, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h3M3->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h3P2, params, &apcount, nmodes, 3, 2, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h3P2->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h3M2, params, &apcount, nmodes, 3, -2, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h3P2->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h3P1, params, &apcount, nmodes, 3, 1, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h3P1->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h3M1, params, &apcount, nmodes, 3, -1, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h3M1->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h30, params, &apcount, nmodes, 3, 0, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h30->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4P4, params, &apcount, nmodes, 4, 4, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4P4->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4M4, params, &apcount, nmodes, 4, -4, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4M4->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4P3, params, &apcount, nmodes, 4, 3, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4P3->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4M3, params, &apcount, nmodes, 4, -3, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4M3->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4P2, params, &apcount, nmodes, 4, 2, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4P4->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4M2, params, &apcount, nmodes, 4, -2, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4M4->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4P1, params, &apcount, nmodes, 4, 1, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4P3->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h4M1, params, &apcount, nmodes, 4, -1, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h4M3->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      apcount  = *countback;
+      errcode += XLALPSpinInspiralAttachRingdownWave(h40, params, &apcount, nmodes, 4, 0, finalMass, finalSpin);
+      for (i = 2 * apcount; i < 2 * length; i++) h40->data[i] = 0.;
+      if (apcount > count) count = apcount;
+
+      *countback=count;
+
+      if (errcode != XLAL_SUCCESS) {
+	fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: impossible to create RingDownWave\n");
+	XLALDestroyREAL8Vector(h2P2);
+	XLALDestroyREAL8Vector(h2M2);
+	XLALDestroyREAL8Vector(h2P1);
+	XLALDestroyREAL8Vector(h2M1);
+	XLALDestroyREAL8Vector(h20);
+	XLALDestroyREAL8Vector(h3P3);
+	XLALDestroyREAL8Vector(h3M3);
+	XLALDestroyREAL8Vector(h3P2);
+	XLALDestroyREAL8Vector(h3M2);
+	XLALDestroyREAL8Vector(h3P1);
+	XLALDestroyREAL8Vector(h3M1);
+	XLALDestroyREAL8Vector(h30);
+	XLALDestroyREAL8Vector(h4P4);
+	XLALDestroyREAL8Vector(h4M4);
+	XLALDestroyREAL8Vector(h4P3);
+	XLALDestroyREAL8Vector(h4M3);
+	XLALDestroyREAL8Vector(h4P2);
+	XLALDestroyREAL8Vector(h4M2);
+	XLALDestroyREAL8Vector(h4P1);
+	XLALDestroyREAL8Vector(h4M1);
+	XLALDestroyREAL8Vector(h40);
+	XLALDestroyREAL8Vector(hap);
+	XLALDestroyREAL8Vector(fap);
+	XLALDestroyREAL8Vector(phap);
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
+	//XLAL_ERROR(func,XLAL_EFAILED);
+      }
     }
 
-    apcount = count;
-    errcode =
-	XLALPSpinInspiralAttachRingdownWave(h2P1, params, &apcount, nmodes,
-					    2, 1, finalMass, finalSpin);
-    if (errcode != XLAL_SUCCESS) {
-	XLALDestroyREAL4Vector(h2P1);
-    } else {
-	for (i = 2 * apcount; i < 2 * length; i++)
-	    h2P1->data[i] = 0.;
-	if (apcount > *countback)
-	    *countback = apcount;
-    }
-    apcount = count;
-    errcode =
-	XLALPSpinInspiralAttachRingdownWave(h2M1, params, &apcount, nmodes,
-					    2, -1, finalMass, finalSpin);
-    if (errcode != XLAL_SUCCESS) {
-	XLALDestroyREAL4Vector(h2M1);
-    } else {
-	for (i = 2 * apcount; i < 2 * length; i++)
-	    h2M1->data[i] = 0.;
-	if (apcount > *countback)
-	    *countback = apcount;
-    }
-
-    apcount = count;
-    errcode =
-	XLALPSpinInspiralAttachRingdownWave(h20, params, &apcount, nmodes,
-					    2, 0, finalMass, finalSpin);
-    if (errcode != XLAL_SUCCESS) {
-	XLALDestroyREAL4Vector(h20);
-    } else {
-	for (i = 2 * apcount; i < 2 * length; i++)
-	    h20->data[i] = 0.;
-	if (apcount > *countback)
-	    *countback = apcount;
-    }
-
-    apcount = count;
-    errcode =
-	XLALPSpinInspiralAttachRingdownWave(h3P3, params, &apcount, nmodes,
-					    3, 3, finalMass, finalSpin);
-    if (errcode != XLAL_SUCCESS)
-	XLALDestroyREAL4Vector(h3P3);
-    else {
-	for (i = 2 * apcount; i < 2 * length; i++)
-	    h3P3->data[i] = 0.;
-	if (apcount > *countback)
-	    *countback = apcount;
-    }
-    apcount = count;
-    errcode =
-	XLALPSpinInspiralAttachRingdownWave(h3M3, params, &apcount, nmodes,
-					    3, -3, finalMass, finalSpin);
-    if (errcode != XLAL_SUCCESS)
-	XLALDestroyREAL4Vector(h3M3);
-    else {
-	for (i = 2 * apcount; i < 2 * length; i++)
-	    h3M3->data[i] = 0.;
-	if (apcount > *countback)
-	    *countback = apcount;
-    }
+  } /*End of if not inspiralonly and test_omegamatch*/
 
   /*-------------------------------------------------------------------
    * Compute the spherical harmonics required for constructing (h+,hx).
    -------------------------------------------------------------------*/
 
-    /* The angles theta for the spherical harmonics has been set according to 
-       the input inclination parameter and the axisChoice */
+  /* The angles theta for the spherical harmonics has been set according to 
+     the input inclination parameter and the axisChoice */
 
-    /* -----------------------------------------------------------------
-     * Attaching the (2,\pm 2), (2,\pm 1), (2,0), (3,\pm 3), Spherical Harmonics
-     *----------------------------------------*/
+  for (i = 0; i < length; i++) {
+    fap->data[i] /= unitHz;
+    sigp->data[i] = 0.;
+    sigc->data[i] = 0.;
+  }
 
-    xlalSt2P2 = XLALSphHarm(&MultSphHarm2P2, 2, 2, inc, 0.);
-    xlalSt2M2 = XLALSphHarm(&MultSphHarm2M2, 2, -2, inc, 0.);
-    if ((xlalSt2P2 != XLAL_SUCCESS) || (xlalSt2M2 != XLAL_SUCCESS)) {
-	XLALDestroyREAL4Vector(h2P2);
-	XLALDestroyREAL4Vector(h2M2);
-	XLALDestroyREAL4Vector(h2P1);
-	XLALDestroyREAL4Vector(h2M1);
-	XLALDestroyREAL4Vector(h20);
-	XLALDestroyREAL4Vector(h3P3);
-	XLALDestroyREAL4Vector(h3M3);
-	XLALDestroyREAL4Vector(fap);
-	XLALDestroyREAL8Vector(phap);
-	XLALDestroyREAL4Vector(shift22);
-	fprintf(stderr,
-		"** LALPSpinInspiralRD ERROR **: impossible to create Y22\n");
-	ABORTXLAL(status);
-    }
-
-    for (i = 0; i < length; i++) {
-	fap->data[i] /= unitHz;
-	x0 = h2P2->data[2 * i];
-	x1 = h2P2->data[2 * i + 1];
-	x2 = h2M2->data[2 * i];
-	x3 = h2M2->data[2 * i + 1];
-	sig1->data[i] =
-	    x0 * MultSphHarm2P2.re - x1 * MultSphHarm2P2.im +
-	    x2 * MultSphHarm2M2.re - x3 * MultSphHarm2M2.im;
-	sig2->data[i] =
-	    x0 * MultSphHarm2P2.im + x1 * MultSphHarm2P2.re +
-	    x2 * MultSphHarm2M2.im - x3 * MultSphHarm2M2.re;
-    }
-
-    errcode = XLALSphHarm(&MultSphHarm2P1, 2, 1, inc, 0.);
-    errcode2 = XLALSphHarm(&MultSphHarm2M1, 2, -1, inc, 0.);
-    if ((errcode != XLAL_SUCCESS) || (errcode2 != XLAL_SUCCESS)) {
-	XLALDestroyREAL4Vector(h2P1);
-	XLALDestroyREAL4Vector(h2M1);
-	fprintf(stdout, "** WARNING **: impossible to create Y21\n");
-    } else {
-	for (i = 0; i < length; i++) {
-	    x0 = h2P1->data[2 * i];
-	    x1 = h2P1->data[2 * i + 1];
-	    x2 = h2M1->data[2 * i];
-	    x3 = h2M1->data[2 * i + 1];
-	    sig1->data[i] +=
-		x0 * MultSphHarm2P1.re - x1 * MultSphHarm2P1.im +
-		x2 * MultSphHarm2M1.re - x3 * MultSphHarm2M1.im;
-	    sig2->data[i] +=
-		x0 * MultSphHarm2P1.im + x1 * MultSphHarm2P1.re +
-		x2 * MultSphHarm2M1.im - x3 * MultSphHarm2M1.re;
-	}
-    }
-
-    errcode = XLALSphHarm(&MultSphHarm20, 2, 0, inc, 0.);
-    if (errcode != XLAL_SUCCESS) {
-	XLALDestroyREAL4Vector(h20);
-	fprintf(stdout, "** WARNING **: impossible to create Y20\n");
-    } else {
-	for (i = 0; i < length; i++) {
-	    x0 = h20->data[2 * i];
-	    x1 = h20->data[2 * i + 1];
-	    sig1->data[i] += x1 * MultSphHarm20.re - x1 * MultSphHarm20.im;
-	    sig2->data[i] += x1 * MultSphHarm20.im + x1 * MultSphHarm20.re;
-	}
-    }
-
-    errcode = XLALSphHarm(&MultSphHarm3P3, 3, 3, inc, 0.);
-    errcode2 = XLALSphHarm(&MultSphHarm3M3, 3, -3, inc, 0.);
-    if ((errcode != XLAL_SUCCESS) || (errcode2 != XLAL_SUCCESS)) {
-	XLALDestroyREAL4Vector(h3P3);
-	XLALDestroyREAL4Vector(h3M3);
-	fprintf(stdout, "** WARNING **: impossible to create Y33,Y3-3\n");
-    } else {
-	for (i = 0; i < length; i++) {
-	    x0 = h3P3->data[2 * i];
-	    x1 = h3P3->data[2 * i + 1];
-	    x2 = h3M3->data[2 * i];
-	    x3 = h3M3->data[2 * i + 1];
-	    sig1->data[i] +=
-		x0 * MultSphHarm3P3.re - x1 * MultSphHarm3P3.im +
-		x2 * MultSphHarm3M3.re - x3 * MultSphHarm3M3.im;
-	    sig2->data[i] +=
-		x0 * MultSphHarm3P3.im + x1 * MultSphHarm3P3.re +
-		x2 * MultSphHarm3M3.im + x3 * MultSphHarm3M3.re;
-	}
-    }
-
-    params->fFinal = params->tSampling / 2.;
-
-   /*------------------------------------------------------
-    * If required by the user copy other data sets to the
-    * relevant arrays
-    ------------------------------------------------------*/
-
-    if (hh) {
-	for (i = 0; i < length; i++) {
-	    j = 2 * i;
-	    k = 2 * i + 1;
-	    hap->data[j] = sig1->data[i];
-	    hap->data[k] = sig2->data[i];
-	}
-    }
-
-    if (signalvec1)
-	memcpy(signalvec1->data, sig1->data, length * (sizeof(REAL4)));
-    if (signalvec2)
-	memcpy(signalvec2->data, sig2->data, length * (sizeof(REAL4)));
-    if (hh)
-	memcpy(hh->data, hap->data, 2 * length * (sizeof(REAL4)));
-    if (ff)
-	memcpy(ff->data, fap->data, length * (sizeof(REAL4)));
-    if (phi)
-	memcpy(phi->data, phap->data, length * (sizeof(REAL8)));
-    if (shift)
-	memcpy(shift->data, shift22->data, length * (sizeof(REAL4)));
-
-    /* Clean up */
-    XLALDestroyREAL4Vector(h2P2);
-    XLALDestroyREAL4Vector(h2M2);
-    XLALDestroyREAL4Vector(h2P1);
-    XLALDestroyREAL4Vector(h2M1);
-    XLALDestroyREAL4Vector(h20);
-    XLALDestroyREAL4Vector(h3P3);
-    XLALDestroyREAL4Vector(h3M3);
-    XLALDestroyREAL4Vector(shift22);
-    XLALDestroyREAL4Vector(fap);
+  errcode  = XLALSphHarm(&MultSphHarmP, 2, 2, inc, 0.);
+  errcode += XLALSphHarm(&MultSphHarmM, 2, -2, inc, 0.);
+  if (errcode != XLAL_SUCCESS) {
+    XLALDestroyREAL8Vector(h2P2);
+    XLALDestroyREAL8Vector(h2M2);
+    XLALDestroyREAL8Vector(h2P1);
+    XLALDestroyREAL8Vector(h2M1);
+    XLALDestroyREAL8Vector(h20);
+    XLALDestroyREAL8Vector(h3P3);
+    XLALDestroyREAL8Vector(h3M3);
+    XLALDestroyREAL8Vector(h3P2);
+    XLALDestroyREAL8Vector(h3M2);
+    XLALDestroyREAL8Vector(h3P1);
+    XLALDestroyREAL8Vector(h3M1);
+    XLALDestroyREAL8Vector(h30);
+    XLALDestroyREAL8Vector(h4P4);
+    XLALDestroyREAL8Vector(h4M4);
+    XLALDestroyREAL8Vector(h4P3);
+    XLALDestroyREAL8Vector(h4M3);
+    XLALDestroyREAL8Vector(h4P2);
+    XLALDestroyREAL8Vector(h4M2);
+    XLALDestroyREAL8Vector(h4P1);
+    XLALDestroyREAL8Vector(h4M1);
+    XLALDestroyREAL8Vector(h40);
+    XLALDestroyREAL8Vector(hap);
+    XLALDestroyREAL8Vector(fap);
     XLALDestroyREAL8Vector(phap);
-    XLALDestroyREAL4Vector(sig1);
-    XLALDestroyREAL4Vector(sig2);
-    XLALDestroyREAL4Vector(hap);
-
+    fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: impossible to create Y22 or Y2-2\n");
     DETATCHSTATUSPTR(status);
     RETURN(status);
+    //XLAL_ERROR(func,XLAL_EFAILED);
+  }
+  for (i = 0; i < length; i++) {
+    x0 = h2P2->data[2 * i];
+    x1 = h2P2->data[2 * i + 1];
+    x2 = h2M2->data[2 * i];
+    x3 = h2M2->data[2 * i + 1];
+    sigp->data[i] +=   x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+    sigc->data[i] += - x0 * MultSphHarmP.im - x1 * MultSphHarmP.re - x2 * MultSphHarmM.im - x3 * MultSphHarmM.re;
+  }
 
-    /*End */
+  errcode  = XLALSphHarm(&MultSphHarmP, 2, 1, inc, 0.);
+  errcode += XLALSphHarm(&MultSphHarmM, 2, -1, inc, 0.);
+  if (errcode != XLAL_SUCCESS){
+    XLALDestroyREAL8Vector(h2P1);
+    XLALDestroyREAL8Vector(h2M1);
+    fprintf(stdout, "** LALPSpinInspiralRD WARNING **: impossible to create Y21\n");
+  } else {
+    for (i = 0; i < length; i++) {
+      x0 = h2P1->data[2 * i];
+      x1 = h2P1->data[2 * i + 1];
+      x2 = h2M1->data[2 * i];
+      x3 = h2M1->data[2 * i + 1];
+      sigp->data[i] +=   x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] += - x0 * MultSphHarmP.im - x1 * MultSphHarmP.re - x2 * MultSphHarmM.im - x3 * MultSphHarmM.re;
+    }
+  }
+
+  errcode = XLALSphHarm(&MultSphHarmP, 2, 0, inc, 0.);
+  if (errcode != XLAL_SUCCESS) {
+    XLALDestroyREAL8Vector(h20);
+    fprintf(stdout, "** LALPSpinInspiralRD WARNING **: impossible to create Y20\n");
+  } else {
+    for (i = 0; i < length; i++) {
+      x0 = h20->data[2 * i];
+      x1 = h20->data[2 * i + 1];
+      sigp->data[i] += x1 * MultSphHarmP.re - x1 * MultSphHarmP.im;
+      sigc->data[i] -= x1 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+    }
+  }
+
+  errcode  = XLALSphHarm(&MultSphHarmP, 3, 3, inc, 0.);
+  errcode += XLALSphHarm(&MultSphHarmM, 3, -3, inc, 0.);
+
+  if (errcode != XLAL_SUCCESS) {
+    XLALDestroyREAL8Vector(h3P3);
+    XLALDestroyREAL8Vector(h3M3);
+    fprintf(stdout, "** LALPSpinInspiralRD WARNING **: impossible to create Y33,Y3-3\n");
+  } else {
+    for (i = 0; i < length; i++) {
+      x0 = h3P3->data[2 * i];
+      x1 = h3P3->data[2 * i + 1];
+      x2 = h3M3->data[2 * i];
+      x3 = h3M3->data[2 * i + 1];
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    }
+  }
+
+  errcode  = XLALSphHarm(&MultSphHarmP, 3, 2, inc, 0.);
+  errcode += XLALSphHarm(&MultSphHarmM, 3, -2, inc, 0.);
+  if (errcode != XLAL_SUCCESS) {
+    XLALDestroyREAL8Vector(h3P2);
+    XLALDestroyREAL8Vector(h3M2);
+    fprintf(stdout, "** LALPSpinInspiralRD WARNING **: impossible to create Y32,Y3-2\n");
+  } else {
+    for (i = 0; i < length; i++) {
+      x0 = h3P2->data[2 * i];
+      x1 = h3P2->data[2 * i + 1];
+      x2 = h3M2->data[2 * i];
+      x3 = h3M2->data[2 * i + 1];
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    }
+  }
+
+  errcode  = XLALSphHarm(&MultSphHarmP, 3, 1, inc, 0.);
+  errcode += XLALSphHarm(&MultSphHarmM, 3, -1, inc, 0.);
+  if (errcode != XLAL_SUCCESS) {
+    XLALDestroyREAL8Vector(h3P1);
+    XLALDestroyREAL8Vector(h3M1);
+    fprintf(stdout, "** LALPSpinInspiralRD WARNING **: impossible to create Y31,Y3-1\n");
+  } else {
+    for (i = 0; i < length; i++) {
+      x0 = h3P1->data[2 * i];
+      x1 = h3P1->data[2 * i + 1];
+      x2 = h3M1->data[2 * i];
+      x3 = h3M1->data[2 * i + 1];
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    }
+  }
+
+  errcode  = XLALSphHarm(&MultSphHarmP, 3, 0, inc, 0.);
+  if (errcode != XLAL_SUCCESS) {
+    XLALDestroyREAL8Vector(h30);
+    fprintf(stdout, "** LALPSpinInspiralRD WARNING **: impossible to create Y30\n");
+  } else {
+    for (i = 0; i < length; i++) {
+      x0 = h30->data[2 * i];
+      x1 = h30->data[2 * i + 1];    
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+    }
+  }
+
+  errcode  = XLALSphHarm(&MultSphHarmP, 4, 4, inc, 0.);
+  errcode += XLALSphHarm(&MultSphHarmM, 4, -4, inc, 0.);
+  if (errcode != XLAL_SUCCESS) {
+    XLALDestroyREAL8Vector(h4P4);
+    XLALDestroyREAL8Vector(h4M4);
+    fprintf(stdout, "** LALPSpinInspiralRD WARNING **: impossible to create Y44,Y4-4\n");
+  } else {
+    for (i = 0; i < length; i++) {
+      x0 = h4P4->data[2 * i];
+      x1 = h4P4->data[2 * i + 1];
+      x2 = h4P4->data[2 * i];
+      x3 = h4M4->data[2 * i + 1];
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    }
+  }
+
+  errcode  = XLALSphHarm(&MultSphHarmP, 4, 3, inc, 0.);
+  errcode += XLALSphHarm(&MultSphHarmM, 4, -3, inc, 0.);
+  if (errcode != XLAL_SUCCESS) {
+    XLALDestroyREAL8Vector(h4P3);
+    XLALDestroyREAL8Vector(h4M3);
+    fprintf(stdout, "** LALPSpinInspiralRD WARNING **: impossible to create Y43,Y4-3\n");
+  } else {
+    for (i = 0; i < length; i++) {
+      x0 = h4P3->data[2 * i];
+      x1 = h4P3->data[2 * i + 1];
+      x2 = h4M3->data[2 * i];
+      x3 = h4M3->data[2 * i + 1];
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    }
+  }
+
+  errcode  = XLALSphHarm(&MultSphHarmP, 4, 2, inc, 0.);
+  errcode += XLALSphHarm(&MultSphHarmM, 4, -2, inc, 0.);
+  if (errcode != XLAL_SUCCESS) {
+    XLALDestroyREAL8Vector(h4P2);
+    XLALDestroyREAL8Vector(h4M2);
+    fprintf(stdout, "** LALPSpinInspiralRD WARNING **: impossible to create Y42,Y4-2\n");
+  } else {
+    for (i = 0; i < length; i++) {
+      x0 = h4P2->data[2 * i];
+      x1 = h4P2->data[2 * i + 1];
+      x2 = h4M2->data[2 * i];
+      x3 = h4M2->data[2 * i + 1];
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    }
+  }
+
+  errcode  = XLALSphHarm(&MultSphHarmP, 4, 1, inc, 0.);
+  errcode += XLALSphHarm(&MultSphHarmM, 4, -1, inc, 0.);
+  if (errcode != XLAL_SUCCESS) {
+    XLALDestroyREAL8Vector(h4P1);
+    XLALDestroyREAL8Vector(h4M1);
+    fprintf(stdout, "** LALPSpinInspiralRD WARNING **: impossible to create Y41,Y4-1\n");
+  } else {
+    for (i = 0; i < length; i++) {
+      x0 = h4P1->data[2 * i];
+      x1 = h4P1->data[2 * i + 1];
+      x2 = h4M1->data[2 * i];
+      x3 = h4M1->data[2 * i + 1];
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    }
+  }
+
+  errcode  = XLALSphHarm(&MultSphHarmP, 4, 0, inc, 0.);
+  if (errcode != XLAL_SUCCESS) {
+    XLALDestroyREAL8Vector(h40);
+    fprintf(stdout, "** LALPSpinInspiralRD WARNING **: impossible to create Y40\n");
+  } else {
+    for (i = 0; i < length; i++) {
+      x0 = h40->data[2 * i];
+      x1 = h40->data[2 * i + 1];
+      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im;
+      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+    }
+  }
+
+  params->fFinal = params->tSampling / 2.;
+  if (LNhxy) params->polarisationAngle = 0.;
+  else       params->polarisationAngle = mparams.polarization;
+
+  /*------------------------------------------------------
+   * If required by the user copy other data sets to the
+   * relevant arrays
+   ------------------------------------------------------*/
+
+  if (hh) {
+    for (i = 0; i < length; i++) {
+      j = 2 * i;
+      k = 2 * i + 1;
+      hap->data[j] = sigp->data[i];
+      hap->data[k] = sigc->data[i];
+    }
+  }
+
+  if (signalvec1)
+    memcpy(signalvec1->data, sigp->data, length * (sizeof(REAL8)));
+  if (signalvec2)
+    memcpy(signalvec2->data, sigc->data, length * (sizeof(REAL8)));
+  if (hh)
+    memcpy(hh->data,         hap->data, 2 * length * (sizeof(REAL8)));
+  if (ff)
+    memcpy(ff->data,         fap->data, length * (sizeof(REAL8)));
+  if (phi)
+    memcpy(phi->data,        phap->data, length * (sizeof(REAL8)));
+
+  /* Clean up */
+  XLALDestroyREAL8Vector(h2P2);
+  XLALDestroyREAL8Vector(h2M2);
+  XLALDestroyREAL8Vector(h2P1);
+  XLALDestroyREAL8Vector(h2M1);
+  XLALDestroyREAL8Vector(h20);
+  XLALDestroyREAL8Vector(h3P3);
+  XLALDestroyREAL8Vector(h3M3);
+  XLALDestroyREAL8Vector(h3P2);
+  XLALDestroyREAL8Vector(h3M2);
+  XLALDestroyREAL8Vector(h3P1);
+  XLALDestroyREAL8Vector(h3M1);
+  XLALDestroyREAL8Vector(h30);
+  XLALDestroyREAL8Vector(h4P4);
+  XLALDestroyREAL8Vector(h4M4);
+  XLALDestroyREAL8Vector(h4P3);
+  XLALDestroyREAL8Vector(h4M3);
+  XLALDestroyREAL8Vector(h4P2);
+  XLALDestroyREAL8Vector(h4M2);
+  XLALDestroyREAL8Vector(h4P1);
+  XLALDestroyREAL8Vector(h4M1);
+  XLALDestroyREAL8Vector(h40);
+  XLALDestroyREAL8Vector(fap);
+  XLALDestroyREAL8Vector(phap);
+  XLALDestroyREAL8Vector(hap);
+  XLALDestroyREAL8Vector(sigp);
+  XLALDestroyREAL8Vector(sigc);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+  /*End */
 
 }
-

@@ -17,72 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/****************** <lalVerbatim file="LALMomentTestCV">
-Author: Tibbits, M. M.
-$Id$
-********************************* </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{LALMomentTest.c}}
-\label{s:LALMomentTest.c}
-
-A program to test \texttt{LALDMoment()}.
-- Note only the double precision is tested because both are derived from the same code.
-\subsubsection*{Usage}
-
-\begin{verbatim}
-./LALMomentTest [options]
-Options:
-  -h             print usage message
-  -q             quiet: run silently
-  -v             verbose: print extra information
-  -d level       set lalDebugLevel to level
-\end{verbatim}
-
-This program tests the function
-\texttt{LALDMoment()}, which calculates the moment
-of a given data set.
-
-First, it tests that the correct error codes
-are generated for the following error conditions (tests in
-\textit{italics} are not performed if \verb+LAL_NEDEBUG+ is set, as
-the corresponding checks in the code are made using the ASSERT macro):
-\begin{itemize}
-\item \textit{null pointer to output structure}
-\item \textit{null pointer to input structure}
-\item \textit{null pointer to data member of input structure}
-\item \textit{null pointer to data member of data member of input structure}
-\item \textit{zero length}
-\end{itemize}
-
-It then verifies that the correct moment (value and units) is
-generated for each of the following simple test cases:
-\begin{enumerate}
-\item data set all same value, find moments 2-5.
-\item mixed data set, find moments 2-5.
-\item evenly distributed data set, find moments 2-5.
-\end{enumerate}
-
-For each successful test
-(both of these valid data and the invalid ones described above), it
-prints ``\texttt{PASS}'' to standard output; if a test fails, it
-prints ``\texttt{FAIL}''.
-
-\subsubsection*{Exit codes}
-
-\subsubsection*{Uses}
-
-\begin{verbatim}
-LALDMoment()
-LALSMoment()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALMomentTestCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <lal/LALStdlib.h>
 
 #include <math.h>
@@ -103,6 +37,84 @@ LALSMoment()
 
 
 NRCSID (LALMOMENTTESTC, "$Id$");
+
+/**
+\author Tibbits, M. M.
+\file
+\ingroup LALMoment_h
+
+\brief A program to test LALDMoment().
+- Note only the double precision is tested because both are derived from the same code.
+
+\heading{Usage}
+
+\code
+./LALMomentTest [options]
+Options:
+  -h             print usage message
+  -q             quiet: run silently
+  -v             verbose: print extra information
+  -d level       set lalDebugLevel to level
+\endcode
+
+This program tests the function
+LALDMoment(), which calculates the moment
+of a given data set.
+
+First, it tests that the correct error codes
+are generated for the following error conditions (tests in
+\e italics are not performed if \c LAL_NDEBUG is set, as
+the corresponding checks in the code are made using the ASSERT macro):
+<ul>
+<li> <em>null pointer to output structure</em></li>
+<li> <em>null pointer to input structure</em></li>
+<li> <em>null pointer to data member of input structure</em></li>
+<li> <em>null pointer to data member of data member of input structure</em></li>
+<li> <em>zero length</em></li>
+</ul>
+
+It then verifies that the correct moment (value and units) is
+generated for each of the following simple test cases:
+<ol>
+<li> data set all same value, find moments 2-5.</li>
+<li> mixed data set, find moments 2-5.</li>
+<li> evenly distributed data set, find moments 2-5.</li>
+</ol>
+
+For each successful test
+(both of these valid data and the invalid ones described above), it
+prints "\c PASS" to standard output; if a test fails, it
+prints "\c FAIL".
+
+\heading{Uses}
+
+\code
+LALDMoment()
+LALSMoment()
+\endcode
+
+\heading{Notes}
+
+*/
+
+/**\name Error Codes */ /*@{*/
+#define	LALMOMENTTESTC_ENOM	0	/**< Nominal exit */
+#define	LALMOMENTTESTC_EARG	1	/**< Error parsing command-line arguments */
+#define	LALMOMENTTESTC_ECHK	2	/**< Error checking failed to catch bad data */
+#define	LALMOMENTTESTC_EFLS	3	/**< Incorrect answer for valid data */
+#define	LALMOMENTTESTC_EUSE	4	/**< Bad user-entered data */
+#define	LALMOMENTTESTC_ENULL	5	/**< Null Pointer. */
+#define	LALMOMENTTESTC_EALOC	6	/**< Memory Allocation Error */
+/* @} */
+
+/** \cond DONT_DOXYGEN */
+#define	LALMOMENTTESTC_MSGENOM	"Nominal exit"
+#define	LALMOMENTTESTC_MSGEARG	"Error parsing command-line arguments"
+#define	LALMOMENTTESTC_MSGECHK	"Error checking failed to catch bad data"
+#define	LALMOMENTTESTC_MSGEFLS	"Incorrect answer for valid data"
+#define	LALMOMENTTESTC_MSGEUSE	"Bad user-entered data"
+#define	LALMOMENTTESTC_MSGENULL	"Null Pointer."
+#define LALMOMENTTESTC_MSGEALOC	"Memory Allocation Error"
 
 
 /*  constants  */
@@ -133,25 +145,6 @@ static void ParseOptions
 	int		argc,
 	char		*argv[]
 );
-
-
-/*************** <lalErrTab > */
-#define	LALMOMENTTESTC_ENOM	0
-#define	LALMOMENTTESTC_EARG	1
-#define	LALMOMENTTESTC_ECHK	2
-#define	LALMOMENTTESTC_EFLS	3
-#define	LALMOMENTTESTC_EUSE	4
-#define	LALMOMENTTESTC_ENULL	5
-#define	LALMOMENTTESTC_EALOC	6
-#define	LALMOMENTTESTC_MSGENOM	"Nominal exit"
-#define	LALMOMENTTESTC_MSGEARG	"Error parsing command-line arguments"
-#define	LALMOMENTTESTC_MSGECHK	"Error checking failed to catch bad data"
-#define	LALMOMENTTESTC_MSGEFLS	"Incorrect answer for valid data"
-#define	LALMOMENTTESTC_MSGEUSE	"Bad user-entered data"
-#define	LALMOMENTTESTC_MSGENULL	"Null Pointer."
-#define LALMOMENTTESTC_MSGEALOC	"Memory Allocation Error"
-/***************************** </lalErrTab> */
-
 
 
 int main( int argc, char *argv[] )
@@ -263,7 +256,7 @@ int main( int argc, char *argv[] )
 		data[iterator] = 5.0;
 	}
 
-	/**********  First Test  **********/
+	/* *********  First Test  **********/
 	for(whichMoment = 2; whichMoment < 6; whichMoment++)
 	{
 		LALDMoment(&status, result, sequence, whichMoment);
@@ -282,7 +275,7 @@ int main( int argc, char *argv[] )
 		data[iterator] = ((REAL8)(20 - iterator));
 	}
 
-	/**********  Second Test  **********/
+	/* *********  Second Test  **********/
 	for(whichMoment = 2; whichMoment < 6; whichMoment++)
 	{
 		LALDMoment(&status, result, sequence, whichMoment);
@@ -301,7 +294,7 @@ int main( int argc, char *argv[] )
 		data[iterator] = ((REAL8)(constantData[iterator]));
 	}
 
-	/**********  Third Test  **********/
+	/* *********  Third Test  **********/
 	for(whichMoment = 2; whichMoment < 6; whichMoment++)
 	{
 		LALDMoment(&status, result, sequence, whichMoment);
@@ -323,7 +316,7 @@ int main( int argc, char *argv[] )
 		data[iterator] = ((REAL8)(constantData2[iterator]));
 	}
 
-	/**********  Fourth Test  **********/
+	/* *********  Fourth Test  **********/
 	for(whichMoment = 2; whichMoment < 6; whichMoment++)
 	{
 		LALDMoment(&status, result, sequence, whichMoment);
@@ -415,3 +408,5 @@ static void ParseOptions (int argc, char *argv[])
 
   return;
 }
+
+/** \endcond */

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Stas Babak, David Churches, Jolien Creighton, B.S. Sathyaprakash, Craig Robinson , Thomas Cokelaer
+*  Copyright (C) 2007 Stas Babak, David Churches, Jolien Creighton, B.S. Sathyaprakash, Craig Robinson , Thomas Cokelaer, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -17,59 +17,51 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralWave2CV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief These modules generate a time-domain chirp waveform of type #TaylorT2.
 
-\subsection{Module \texttt{LALInspiralWave2.c} and \texttt{LALInspiralWave2Templates.c}}
+\heading{Prototypes}
 
-These modules generate a time-domain chirp waveform of type {\tt TaylorT2}.
+<tt>LALInspiralWave2()</tt>
+<ul>
+<li> \c output: Output containing the inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralWave2CP}
-\index{\verb&LALInspiralWave2()&}
-\begin{itemize}
-\item {\tt output:} Output containing the inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
-\vspace{0.1in}
-\input{LALInspiralWave2TemplatesCP}
-\index{\verb&LALInspiralWave2Templates()&}
-\begin{itemize}
-\item {\tt output1:} Output containing the 0-phase inspiral waveform.
-\item {\tt output2:} Output containing the $\pi/2$-phase inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
 
-\subsubsection*{Description}
+<tt>LALInspiralWave2Templates()</tt>
+<ul>
+<li> \c output1: Output containing the 0-phase inspiral waveform.</li>
+<li> \c output2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
 
-\texttt{LALInspiralWave2} generates {\tt TaylorT2} approximant wherein
+\heading{Description}
+
+LALInspiralWave2() generates #TaylorT2 approximant wherein
 the phase of the waveform is given as an implicit function of time
-as in Equation (\ref{eq:InspiralWavePhase2}). A template is required
+as in Equation.\eqref{eq_InspiralWavePhase2}. A template is required
 to be sampled at equal intervals of time. Thus, first of the equations
-in Equation (\ref{eq:InspiralWavePhase2}) is solved for $v$ at equally
+in Equation.\eqref{eq_InspiralWavePhase2} is solved for \f$v\f$ at equally
 spaced values of the time steps
-$t_k$ and the resulting value of $v_k$ is used in the second equation to
-obtain the phase $\phi_k$.
+\f$t_k\f$ and the resulting value of \f$v_k\f$ is used in the second equation to
+obtain the phase \f$\phi_k\f$.
 
-\texttt{LALInspiralWave2Templates} is exactly the same as \texttt{LALInspiralWave2}
-except that it generates two waveforms that differ in phase by $\pi/2.$
+LALInspiralWave2Templates() is exactly the same as LALInspiralWave2()
+except that it generates two waveforms that differ in phase by \f$\pi/2.\f$
 
-\subsubsection*{Uses}
+\heading{Uses}
+\code
+LALInspiralParameterCalc()
+LALDBisectionFindRoot()
+LALInspiralPhasing2()
+\endcode
 
-\texttt{LALInspiralParameterCalc}\\
-\texttt{LALDBisectionFindRoot}\\
-\texttt{LALInspiralPhasing2}\\
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralWave2CV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
@@ -95,7 +87,7 @@ LALInspiralWave2Engine(
 
 NRCSID (LALINSPIRALWAVE2C, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWave2CP"> */
+
 
 void
 LALInspiralWave2(
@@ -103,7 +95,7 @@ LALInspiralWave2(
    REAL4Vector      *output,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim>  */
+{
 
   UINT4 count;
 
@@ -142,7 +134,7 @@ LALInspiralWave2(
 
 NRCSID (LALINSPIRALWAVE2TEMPLATESC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWave2TemplatesCP"> */
+
 
 void
 LALInspiralWave2Templates(
@@ -152,7 +144,7 @@ LALInspiralWave2Templates(
 			  InspiralTemplate *params
 			  )
 
-{ /* </lalVerbatim>  */
+{
 
   UINT4 count;
 
@@ -197,7 +189,7 @@ LALInspiralWave2Templates(
 
 NRCSID (LALINSPIRALWAVE2FORINJECTIONC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWave2ForInjectionCP"> */
+
 
 void
 LALInspiralWave2ForInjection(
@@ -207,7 +199,7 @@ LALInspiralWave2ForInjection(
    PPNParamStruc  *ppnParams
    )
 
-{ /* </lalVerbatim>  */
+{
 
   UINT4 count, i;
 
@@ -410,7 +402,7 @@ NRCSID (LALINSPIRALWAVE2ENGINEC, "$Id$");
 /* 'Engine' function upon which all the other functions invoke
     Craig Robinson 04/05 */
 
-/* <lalVerbatim file="LALInspiralWave2EngineCP"> */
+
 
 static void
 LALInspiralWave2Engine(
@@ -425,12 +417,13 @@ LALInspiralWave2Engine(
                 InspiralTemplate *params,
 		InspiralInit     *paramsInit
                 )
-{ /* </lalVerbatim> */
+{
 
   REAL8 amp, dt, fs, fu, fHigh, phase0, phase1, tC;
   REAL8 phase, v, totalMass, fLso, freq, fOld;
   INT4 i, startShift, count;
-  DFindRootIn rootIn;
+  REAL8 xmin,xmax,xacc;
+  REAL8 (*timing2)(REAL8, void *);
   InspiralToffInput toffIn;
   void *funcParams;
   expnCoeffs ak;
@@ -464,7 +457,7 @@ LALInspiralWave2Engine(
   phase0 = params->startPhase;    /* initial phasea */
   phase1 = phase0 + LAL_PI_2;
 
-  rootIn.function = func.timing2; /* function to solve for v, given t:*/
+  timing2 = func.timing2; /* function to solve for v, given t:*/
 
   if (a || h)           /* Only used in injection case */
   {
@@ -510,16 +503,18 @@ LALInspiralWave2Engine(
   toffIn.t = 0.;
   toffIn.tc = 0.;
   funcParams = (void *) &toffIn;
-  func.timing2(status->statusPtr, &tC, fs, funcParams);
-  CHECKSTATUSPTR(status);
+  tC = func.timing2(fs, funcParams);
+  if (XLAL_IS_REAL8_FAIL_NAN(tC))
+    ABORTXLAL(status);
   /* Reset chirp time in toffIn structure */
   toffIn.tc = -tC;
 
   /* Determine the initial phase: it is phasing2(v0) with ak.phiC=0 */
   v = pow(fs * LAL_PI * totalMass, oneby3);
   ak.phiC = 0.0;
-  func.phasing2(status->statusPtr, &phase, v, &ak);
-  CHECKSTATUSPTR(status);
+  phase = func.phasing2(v, &ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(phase))
+    ABORTXLAL(status);
   ak.phiC = -phase;
 
   /*
@@ -537,9 +532,9 @@ LALInspiralWave2Engine(
   ASSERT(fHigh < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(fHigh > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-  rootIn.xmax = 1.2*fu;
-  rootIn.xacc = 1.0e-8;
-  rootIn.xmin = 0.999999*fs;
+  xmax = 1.2*fu;
+  xacc = 1.0e-8;
+  xmin = 0.999999*fs;
 
   i = startShift;
 
@@ -563,8 +558,10 @@ LALInspiralWave2Engine(
 
     fOld = freq;
     v = pow(freq*toffIn.piM, oneby3);
-    func.phasing2(status->statusPtr, &phase, v, &ak); /* phase at given v */
-    CHECKSTATUSPTR(status);
+    phase = func.phasing2(v, &ak); /* phase at given v */
+    if (XLAL_IS_REAL8_FAIL_NAN(phase))
+      ABORTXLAL(status);
+
     amp = params->signalAmplitude*v*v;
 
     if (output1)
@@ -598,9 +595,10 @@ LALInspiralWave2Engine(
     /*
        Determine the frequency at the current time by solving timing2(v;tC,t)=0
     */
-    rootIn.xmin = 0.8*freq;
-    LALDBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
-    CHECKSTATUSPTR(status);
+    xmin = 0.8*freq;
+    freq = XLALDBisectionFindRoot(timing2, xmin, xmax, xacc, funcParams);
+    if (XLAL_IS_REAL8_FAIL_NAN(freq))
+      ABORTXLAL(status);
     } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
   params->fFinal = fOld;
   if (output1 && !(output2))   params->tC = toffIn.t;

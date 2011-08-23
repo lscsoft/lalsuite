@@ -1,31 +1,13 @@
-#if 0
-<lalVerbatim file="FindChirpACTDFilterCV">
-Author: Brown D. A., McKechan D. J. A.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpACTDFilter.c}}
-\label{ss:FindChirpACTDFilter.c}
+\author Brown D. A., McKechan D. J. A.
+\file
+\ingroup FindChirpACTD_h
 
-This module provides the core of the matched filter for amplitude corrected
+\brief This module provides the core of the matched filter for amplitude corrected
 binary inspiral chirps.
 
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpACTDFilterCP}
-\idx{LALFindChirpACTDFilterSegment()}
-
-\subsubsection*{Description}
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{FindChirpACTDFilterCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <lal/LALStdio.h>
@@ -45,7 +27,7 @@ extern int vrbflg;                      /* verbocity of lal function    */
 NRCSID (FINDCHIRPACTDFILTERC, "$Id$");
 
 
-/* <lalVerbatim file="FindChirpACTDFilterCP"> */
+
 void
 LALFindChirpACTDFilterSegment (
     LALStatus                  *status,
@@ -53,7 +35,7 @@ LALFindChirpACTDFilterSegment (
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 i, j, k, kmax;
   UINT4                 numPoints;

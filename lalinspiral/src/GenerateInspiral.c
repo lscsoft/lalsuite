@@ -17,90 +17,66 @@
 *  MA  02111-1307  USA
 */
 
-#if 0
-<lalVerbatim file="GenerateInspiralCV">
-Author: Thomas Cokelaer
-$Id$
-</lalVerbatim>
-#endif
+/**
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{GenerateInspiral.c}}
-\label{ss:GenerateInspiral.c}
-\noindent Generates a CoherentGW inspiral waveform for injection.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALGenerateInspiralCP}
-\input{LALGetApproxFromStringCP}
-\input{LALGetOrderFromStringCP}
-\input{LALGenerateInspiralPopulatePPNCP}
-\input{LALGenerateInspiralPopulateInspiralCP}
+\author Thomas Cokelaer
+\file
+\ingroup GenerateInspiral_h
 
 
-\idx{LALGenerateInspiral}
-\idx{LALGetApproxFromString}
-\idx{LALGetOrderFromString}
-\idx{LALGenerateInspiralPopulatePPN}
-\idx{LALGenerateInspiralPopulateInspiral}
-
-
-\begin{description}
-\item[\texttt{LALGenerateInspiral()}] create an inspiral binary
-waveform generated either by the \texttt{inspiral} package (EOB,
-EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor, PhenSpinTaylorRD, SpinQuadTaylor) 
-or the \texttt{inject} package (GeneratePPN).  It is used in the module
-\texttt{FindChirpSimulation} in \texttt{findchirp} package.
+<dl>
+<dt><tt>LALGenerateInspiral()</tt></dt><dd> create an inspiral binary
+waveform generated either by the \c inspiral package (EOB,
+EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor, PhenSpinTaylorRD, SpinQuadTaylor)
+or the \c inject package (GeneratePPN).  It is used in the module
+\c FindChirpSimulation in \c findchirp package.
 
 There are three  parsed arguments
-\begin{itemize}
-\item a \texttt{CoherentGW}  structure which stores amplitude,
-frequency and phase of the  waveform (output)
-\item a \texttt{thisEvent}  structure which provides some
-waveform parameters (input)
-\item a \texttt{PPNParamStruc} which gives some input
+<ul>
+<li> a \c CoherentGW  structure which stores amplitude,
+frequency and phase of the  waveform (output)</li>
+<li> a \c thisEvent  structure which provides some
+waveform parameters (input)</li>
+<li> a \c PPNParamStruc which gives some input
 parameters needed by the GeneratePPN waveform  generation. That
 arguments is also used as an output by all the different
-approximant  (output/input).
-\end{itemize}
+approximant  (output/input).</li>
+</ul>
 
 The input must be composed of a valid thisEvent structure as well as
 the  variable deltaT of the PPNparamsStruct. All others variables
-of the PPNParamStruc are populated within that function.
+of the PPNParamStruc are populated within that function.</dd>
 
-\item[\texttt{LALGetOrderFromString()}] convert a string
-provided by the \texttt{CoherentGW} structure in order to retrieve the
-order of the waveform to generate.
+<dt><tt>LALGetOrderFromString()</tt></dt><dd> convert a string
+provided by the \c CoherentGW structure in order to retrieve the
+order of the waveform to generate.</dd>
 
-\item[\texttt{LALGetApproximantFromString()}] convert a string
-provided by the \texttt{CoherentGW} structure in order to retrieve the
-approximant of the waveform to generate.
+<dt><tt>LALGetApproximantFromString()</tt></dt><dd> convert a string
+provided by the \c CoherentGW structure in order to retrieve the
+approximant of the waveform to generate.</dd>
 
-\item[\texttt{LALGenerateInspiralPopulatePPN()}] Populate the
-PPNParamsStruc with the input argument \texttt{thisEvent}. That
-structure is used by both inspiral waveforms inject waveforms.
+<dt><tt>LALGenerateInspiralPopulatePPN()</tt></dt><dd> Populate the
+PPNParamsStruc with the input argument \c thisEvent. That
+structure is used by both inspiral waveforms inject waveforms.</dd>
 
-\item[\texttt{LALGenerateInspiralPopulateInspiral()}]  Populate the
+<dt><tt>LALGenerateInspiralPopulateInspiral()</tt></dt><dd>  Populate the
 InspiralTemplate structure if the model chosen belongs to the
 inspiral package.
+</dd>
+</dl>
 
-\end{description}
+\heading{Algorithm}
+None.
 
-\subsubsection*{Algorithm}
-\noindent None.
-
-\subsubsection*{Notes}
+\heading{Notes}
 Inject only time-domain waveforms for the time being such as GeneratePPN,
   TaylorT1, TaylorT2, TaylorT3, PadeT1 and EOB , SpinTaylor, PhenSpinTaylorRD.
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 None.
-\end{verbatim}
+\endcode
 
-\vfill{\footnotesize\input{GenerateInspiralCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
@@ -112,7 +88,7 @@ None.
 NRCSID( GENERATEINSPIRALC,
 "$Id$" );
 
-/* <lalVerbatim file="LALGenerateInspiralCP"> */
+
 void
 LALGenerateInspiral(
     LALStatus		*status,
@@ -120,7 +96,7 @@ LALGenerateInspiral(
     SimInspiralTable	*thisEvent,
     PPNParamStruc	*ppnParams
     )
-/* </lalVerbatim> */
+
 {
   LALPNOrder        order;              /* Order of the model             */
   Approximant       approximant;        /* And its approximant value      */
@@ -188,11 +164,20 @@ LALGenerateInspiral(
   {
     inspiralParams.approximant = approximant;
     inspiralParams.order       = order;
-	if (approximant == SpinQuadTaylor) {
+    if ((approximant == SpinQuadTaylor)||(approximant == PhenSpinTaylorRD)) {
 		xlalErrno = 0;
 		if (XLALGetSpinInteractionFromString(&inspiralParams.spinInteraction, thisEvent->waveform) == XLAL_FAILURE) {
 			ABORTXLAL(status);
 		}
+	}
+
+	if (approximant == PhenSpinTaylorRD) {
+	  xlalErrno = 0;
+	  if ( (XLALGetAxisChoiceFromString(&inspiralParams.axisChoice, thisEvent->waveform) == XLAL_FAILURE) || 
+	       (XLALGetAdaptiveIntFromString(&inspiralParams.fixedStep, thisEvent->waveform) == XLAL_FAILURE) || 
+	       (XLALGetInspiralOnlyFromString(&inspiralParams.inspiralOnly, thisEvent->waveform) == XLAL_FAILURE ) ) {
+	    ABORTXLAL(status);
+	  }
 	}
 
     /* We fill ppnParams */
@@ -210,25 +195,30 @@ LALGenerateInspiral(
     /* we populate the simInspiral table with the fFinal needed for
        template normalisation. */
     thisEvent->f_final = inspiralParams.fFinal;
+    // The following is necessary in the case the PhenSpin code performs a 
+    // rotation to a new frame axis, affecting the original psi.
+    if (approximant==PhenSpinTaylorRD) thisEvent->polarization = waveform->psi;
     CHECKSTATUSPTR(status);
   }
 
   /* If no waveform has been generated. (AmpCorPPN and PhenSpinTaylorRD and SpinTaylorFrameless fill waveform.h) */
-  if ( waveform->a == NULL && approximant != AmpCorPPN && approximant != PhenSpinTaylorRD && approximant != SpinTaylorFrameless )
+  if ( waveform->a == NULL && approximant != AmpCorPPN && approximant != PhenSpinTaylorRD && approximant != SpinTaylorFrameless 
+       && approximant != EOBNRv2 && approximant != EOBNRv2HM )
   {
     snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "No waveform generated (check lower frequency)\n");
     LALInfo( status, warnMsg );
     ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
   }
-  if ( waveform->h == NULL && ( approximant == AmpCorPPN || approximant == PhenSpinTaylorRD || approximant == SpinTaylorFrameless ) )
+  if ( waveform->h == NULL && ( approximant == AmpCorPPN || approximant == PhenSpinTaylorRD || approximant == SpinTaylorFrameless
+       || approximant == EOBNRv2 || approximant == EOBNRv2HM ) )
   {
     snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
              "No waveform generated (check lower frequency)\n");
     LALInfo( status, warnMsg );
     ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
   }
-  
+
 
   /* If sampling problem. (AmpCorPPN may not be compatible) */
   if ( ppnParams->dfdt > 2.0 && approximant != AmpCorPPN )
@@ -280,22 +270,40 @@ LALGenerateInspiral(
 }
 
 
-/* <lalVerbatim file="LALGetOrderFromStringCP"> */
+
 void
 LALGetOrderFromString(
     LALStatus  *status,
     CHAR       *thisEvent,
     LALPNOrder *order
     )
-/* </lalVerbatim> */
+
 {
-  CHAR  warnMsg[1024];
 
   INITSTATUS( status, "LALGetOrderFromString", GENERATEINSPIRALC );
-  ATTATCHSTATUSPTR( status );
 
-  ASSERT( thisEvent, status,
-      GENERATEINSPIRALH_ENULL, GENERATEINSPIRALH_MSGENULL );
+  XLALPrintDeprecationWarning( "LALGetOrderFromString", "XLALGetOrderFromString" );
+
+  if ( XLALGetOrderFromString( thisEvent, order ) == XLAL_FAILURE )
+    ABORTXLAL( status );
+
+  RETURN( status );
+}
+
+int
+XLALGetOrderFromString(
+    CHAR       * restrict thisEvent,
+    LALPNOrder * restrict order
+    )
+{
+
+#ifndef LAL_NDEBUG
+  if ( !thisEvent )
+    XLAL_ERROR( __func__, XLAL_EFAULT );
+
+  if ( !order )
+    XLAL_ERROR( __func__, XLAL_EFAULT );
+#endif
 
   if ( strstr(thisEvent, "newtonian") )
   {
@@ -325,24 +333,21 @@ LALGetOrderFromString(
   {
     *order = LAL_PNORDER_THREE;
   }
-  else if ( strstr(thisEvent, 	"threePointFivePN") )
+  else if ( strstr(thisEvent, "threePointFivePN") )
   {
     *order = LAL_PNORDER_THREE_POINT_FIVE;
   }
-  else if ( strstr(thisEvent, 	"pseudoFourPN") )
+  else if ( strstr(thisEvent, "pseudoFourPN") )
   {
     *order = LAL_PNORDER_PSEUDO_FOUR;
   }
   else
   {
-    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-        "Cannot parse order from string: %s\n", thisEvent );
-    LALInfo( status, warnMsg );
-    ABORT(status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
+    XLALPrintError( "Cannot parse order from string: %s\n", thisEvent );
+    XLAL_ERROR( __func__, XLAL_EINVAL );
   }
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+  return XLAL_SUCCESS;
 }
 
 int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent) {
@@ -373,24 +378,73 @@ int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent)
 	return XLAL_SUCCESS;
 }
 
-/* <lalVerbatim file="LALGetApproxFromStringCP"> */
+int XLALGetAxisChoiceFromString(InputAxis *axisChoice, CHAR *thisEvent) {
+  //static const char *func = "XLALGetAxisChoiceFromString";
+  if (strstr(thisEvent, "TotalJ")) {
+    *axisChoice = TotalJ;
+  } else if  (strstr(thisEvent, "OrbitalL")) {
+    *axisChoice = OrbitalL;
+  }
+  else  
+    *axisChoice = View;
+  return XLAL_SUCCESS;
+}
+
+int XLALGetAdaptiveIntFromString(UINT4 *fixedStep, CHAR *thisEvent) {
+  //static const char *func = "XLALGetAdaptiveIntFromString";
+  if (strstr(thisEvent, "fixedStep")) {
+    *fixedStep = 1;
+  } else 
+    *fixedStep = 0;
+  return XLAL_SUCCESS;
+}
+
+int XLALGetInspiralOnlyFromString(UINT4 *inspiralOnly, CHAR *thisEvent) {
+  //static const char *func = "XLALGetinspiralOnlyFromString";
+  if (strstr(thisEvent, "inspiralOnly")) {
+    *inspiralOnly = 1;
+  }
+  else
+    *inspiralOnly = 0;
+  return XLAL_SUCCESS;
+}
+
 void
 LALGetApproximantFromString(
     LALStatus   *status,
     CHAR        *thisEvent,
     Approximant *approximant
     )
-/* </lalVerbatim> */
+
 {
-  /* Function to search for the approximant into a string */
-  CHAR warnMsg[1024];
 
   INITSTATUS( status, "LALGenerateInspiralGetApproxFromString",
       GENERATEINSPIRALC );
-  ATTATCHSTATUSPTR( status );
 
-  ASSERT( thisEvent, status,
-      GENERATEINSPIRALH_ENULL, GENERATEINSPIRALH_MSGENULL );
+  XLALPrintDeprecationWarning("LALGetApproximantFromString", "XLALGetApproximantFromString");
+
+  if ( XLALGetApproximantFromString( thisEvent, approximant) == XLAL_FAILURE )
+    ABORTXLAL( status );
+
+  RETURN( status );
+}
+
+int
+XLALGetApproximantFromString(
+    CHAR        * restrict thisEvent,
+    Approximant * restrict approximant
+    )
+{
+  /* Function to search for the approximant into a string */
+
+
+#ifndef LAL_NDEBUG
+  if ( !thisEvent )
+    XLAL_ERROR( __func__, XLAL_EFAULT );
+
+  if ( !approximant )
+    XLAL_ERROR( __func__, XLAL_EFAULT );
+#endif
 
   if ( strstr(thisEvent, "TaylorT1" ) )
   {
@@ -403,6 +457,14 @@ LALGetApproximantFromString(
   else if ( strstr(thisEvent, "TaylorT3" ) )
   {
     *approximant = TaylorT3;
+  }
+  else if ( strstr(thisEvent, "EOBNRv2HM" ) )
+  {
+    *approximant = EOBNRv2HM;
+  }
+  else if ( strstr(thisEvent, "EOBNRv2" ) )
+  {
+    *approximant = EOBNRv2;
   }
   else if ( strstr(thisEvent, "EOBNR" ) )
   {
@@ -462,30 +524,46 @@ LALGetApproximantFromString(
   }
   else
   {
-    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-        "Cannot parse approximant from string: %s \n", thisEvent );
-    LALInfo( status, warnMsg );
-    ABORT( status, LALINSPIRALH_EAPPROXIMANT, LALINSPIRALH_MSGEAPPROXIMANT );
+    XLALPrintError( "Cannot parse approximant from string: %s \n", thisEvent );
+    XLAL_ERROR( __func__, XLAL_EINVAL );
   }
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+  return XLAL_SUCCESS;
 }
 
 
-/* <lalVerbatim file="LALGenerateInspiralPopulatePPNCP"> */
+
 void
 LALGenerateInspiralPopulatePPN(
     LALStatus             *status,
     PPNParamStruc         *ppnParams,
     SimInspiralTable      *thisEvent
     )
-/* </lalVerbatim> */
+
 {
-  CHAR warnMsg[1024];
 
   INITSTATUS( status, "LALGenerateInspiralPopulatePPN", GENERATEINSPIRALC );
-  ATTATCHSTATUSPTR( status );
+
+  XLALPrintDeprecationWarning( "LALGenerateInspiralPopulatePPN", 
+      "XLALGenerateInspiralPopulatePPN" );
+
+  if ( XLALGenerateInspiralPopulatePPN( ppnParams, thisEvent )
+       == XLAL_FAILURE )
+    ABORTXLAL( status );
+
+  RETURN( status );
+}
+
+int
+XLALGenerateInspiralPopulatePPN(
+    PPNParamStruc    * restrict ppnParams,
+    SimInspiralTable * restrict thisEvent
+    )
+{
+#ifndef LAL_NDEBUG
+  if ( !ppnParams || !thisEvent )
+    XLAL_ERROR( __func__, XLAL_EFAULT );
+#endif
 
   /* input fields */
   ppnParams->mTot     = thisEvent->mass1 + thisEvent->mass2;
@@ -502,13 +580,12 @@ LALGenerateInspiralPopulatePPN(
   }
   else
   {
-    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    XLALPrintError( 
         "f_lower must be specified in the injection file generation.\n" );
-    LALInfo( status, warnMsg );
-    ABORT( status, LALINSPIRALH_EFLOWERINJ, LALINSPIRALH_MSGEFLOWERINJ );
+    XLAL_ERROR( __func__, XLAL_EINVAL );
   }
   ppnParams->fStopIn  = -1.0 /
-    (6.0 * sqrt(6.0) * LAL_PI * ppnParams->mTot * LAL_MTSUN_SI);
+    ( sqrt(216.0) * LAL_PI * ppnParams->mTot * LAL_MTSUN_SI);
 
   /* passed fields */
   ppnParams->position.longitude   = thisEvent->longitude;
@@ -518,12 +595,11 @@ LALGenerateInspiralPopulatePPN(
   ppnParams->epoch.gpsSeconds     = 0;
   ppnParams->epoch.gpsNanoSeconds = 0;
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+  return XLAL_SUCCESS;
 }
 
 
-/* <lalVerbatim file="LALGenerateInspiralPopulateInspiralCP"> */
+
 void
 LALGenerateInspiralPopulateInspiral(
     LALStatus           *status,
@@ -532,11 +608,34 @@ LALGenerateInspiralPopulateInspiral(
     PPNParamStruc       *ppnParams
     )
 
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALGenerateInspiralPopulateInspiral",
       GENERATEINSPIRALC );
-  ATTATCHSTATUSPTR( status );
+
+  XLALPrintDeprecationWarning( "LALGenerateInspiralPopulateInspiral",
+     "XLALGenerateInspiralPopulateInspiral" );
+
+  if ( XLALGenerateInspiralPopulateInspiral( inspiralParams, thisEvent, ppnParams )
+         == XLAL_FAILURE )
+    ABORTXLAL( status );
+
+  RETURN( status );
+}
+
+
+int
+XLALGenerateInspiralPopulateInspiral(
+    InspiralTemplate * restrict inspiralParams,
+    SimInspiralTable * restrict thisEvent,
+    PPNParamStruc    * restrict ppnParams
+    )
+{
+
+#ifndef LAL_NDEBUG
+  if ( !inspiralParams || !thisEvent || !ppnParams )
+    XLAL_ERROR( __func__, XLAL_EFAULT );
+#endif
 
   /* --- Let's fill the inspiral structure now --- */
   inspiralParams->mass1	  =  thisEvent->mass1;  	/* masses 1 */
@@ -563,13 +662,14 @@ LALGenerateInspiralPopulateInspiral(
   inspiralParams->psi3	 = -1.;      /* bcv useless for the time being */
   inspiralParams->alpha1 = -1.;      /* bcv useless for the time being */
   inspiralParams->alpha2 = -1.;      /* bcv useless for the time being */
-  inspiralParams->beta	 = -1.;      /* bcv useless for the time being */
+  inspiralParams->beta   = -1.;      /* bcv useless for the time being */
 
   /* inclination of the binary */
   /* inclination cannot be equal to zero for SpinTaylor injections */
   if ( inspiralParams->approximant == SpinTaylor && thisEvent->inclination == 0 )
   {
-    ABORT( status, GENERATEINSPIRALH_EZERO, GENERATEINSPIRALH_MSGEZERO );
+    XLALPrintError( "Inclination cannot be exactly zero for SpinTaylor approximant.\n");
+    XLAL_ERROR( __func__, XLAL_EINVAL );
   }
   inspiralParams->inclination =  thisEvent->inclination;
 
@@ -580,7 +680,6 @@ LALGenerateInspiralPopulateInspiral(
   inspiralParams->nEndPad   =  16384;
 
   inspiralParams->massChoice  = m1Andm2;
-  inspiralParams->axisChoice  = ppnParams->axisChoice;
 
   /* spin parameters */
   inspiralParams->sourceTheta = GENERATEINSPIRAL_SOURCETHETA;
@@ -597,6 +696,5 @@ LALGenerateInspiralPopulateInspiral(
   inspiralParams->qmParameter[0] = thisEvent->qmParameter1;
   inspiralParams->qmParameter[1] = thisEvent->qmParameter2;
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+  return XLAL_SUCCESS;
 }

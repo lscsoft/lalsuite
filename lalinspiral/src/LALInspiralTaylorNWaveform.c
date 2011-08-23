@@ -17,19 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALTaylorNWaveformCV">
-Author: Sathyaprakash, B. S., Cokelaer T.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S., Cokelaer T.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief NONE
 
-\subsection{Module \texttt{LALTaylorNWaveform.c} and
-\texttt{LALTaylorNWaveformTemplates.c}}
-
-\vfill{\footnotesize\input{LALTaylorNWaveformCV}}
-
-</lalLaTeX>  */
+*/
 /*-------------------------------------------------------------------*/
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
@@ -317,13 +312,13 @@ void LALTaylorNDerivatives7PN(
 }
 
 
-/*  <lalVerbatim file="LALTaylorNWaveformCP"> */
+
 void LALTaylorNWaveform (
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim> */
+{
 
    InspiralInit paramsInit;
    INITSTATUS(status, "LALTaylorNWaveform", LALTAYLORETWAVEFORMC);

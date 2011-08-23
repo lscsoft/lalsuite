@@ -842,7 +842,7 @@ XLALREAL8RombergIntegrate (
   enum { MaxSteps     = 20 };
   enum { Order        = 4  };
 
-  REAL8 (*Algorithm)(REAL8 integral, REAL8 (*f)(REAL8 x, void *params), void *params, REAL8 xmin, REAL8 xmax, IntegralType type, int refinement);
+  REAL8 (*Algorithm)(REAL8, REAL8 (*)(REAL8, void *), void *, REAL8, REAL8, IntegralType, int);
 
   REAL8          integral[MaxSteps + 1];
   REAL8          stepSize[MaxSteps + 1];

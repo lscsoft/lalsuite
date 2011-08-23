@@ -4,50 +4,39 @@
  *
  * Author: Brown, D. A., and Fazi, D.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpPTFWaveformCV">
-Author: Brown, D. A., and Fazi, D.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpPTFWaveform.c}}
-\label{ss:FindChirpPTFDerviatives.c}
+\author Brown, D. A., and Fazi, D.
+\file
+\ingroup FindChirpPTF_h
 
-Provides functions to create physical template family templates in a
-form that can be used by the \texttt{FindChirpPTFFilter()} function.
+\brief Provides functions to create physical template family templates in a
+form that can be used by the <tt>FindChirpPTFFilter()</tt> function.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpPTFTemplateCP}
-\idx{LALFindChirpPTFWaveform()}
+\heading{Prototypes}
 
-The function \texttt{LALFindChirpPTFWaveform()} creates vectors containing the
+The function <tt>LALFindChirpPTFWaveform()</tt> creates vectors containing the
 evolution of the dynamical variables needed by the physical template family
 template as described by the algorithm below.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 Blah.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpPTFWaveformCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <gsl/gsl_errno.h>
@@ -449,7 +438,7 @@ static REAL4 stpn_orbital_energy( REAL8 omega,
 
 /* Function for the evaluation of the time evolution of the phase, the */
 /* frequency and the e_i basis vectors in the precessing convention    */
-/* <lalVerbatim file="FindChirpPTFWaveformCP"> */
+
 INT4
 XLALFindChirpPTFWaveform(
     REAL4Vector         *PTFphi,
@@ -459,7 +448,7 @@ XLALFindChirpPTFWaveform(
     InspiralTemplate    *InspTmplt,
     REAL8                deltaT
     )
-/* </lalVerbatim> */
+
 {
   static const char* func = "XLALFindChirpPTFWaveform";
   UINT4 i, len;

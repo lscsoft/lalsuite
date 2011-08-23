@@ -17,50 +17,44 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralInitCV">
-Author: Cokelaer T.
-$Id$
-</lalVerbatim>  */
+/**
+\author Cokelaer T.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief Module to initialize some parameters for waveform generation.
 
-\subsection{Module \texttt{LALInspiralInit.c}}
-Module to initialize some parameters for waveform generation.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralRestrictedInitCP}
-\idx{LALInspiralRestrictedInit()}
-
-\subsubsection*{Description}
+\heading{Description}
 The input parameters is an InspiralTemplate structure which provides the waveform parameters
-such as masses, lower frequency\dots The function \texttt{LALInspiralInit} calls the
-\texttt{LALInspiralParameterCalc} function in order to  compute all the mass parameters. Then,
-\texttt{LALInspiralRestrictedAmplitude} function is called to get the restricted newtonian
+such as masses, lower frequency ... . The function \c LALInspiralInit calls the
+\c LALInspiralParameterCalc function in order to  compute all the mass parameters. Then,
+\c LALInspiralRestrictedAmplitude function is called to get the restricted newtonian
 amplitude. LALInspiralWavelength, LALInspiralSetup and LALInspiralChooseModel are also called
 in order to estimate the waveform length which is stored in an output structure called
-\texttt{InspiralInit}. We also stored Energy, flux and evolution function of flux and energy in
+\c InspiralInit. We also stored Energy, flux and evolution function of flux and energy in
 that structure.
 
-The  \texttt{LALInspiralChooseModel} function might failed or send a non zero status code.
+The  \c LALInspiralChooseModel function might failed or send a non zero status code.
 That function force it to be zero therefore the codes which  use LALInspiralInit (mainly
 injection code right now) won't stopped. Of course, if status code is non zero, we have to keep
 trace of it. Thus, the length of the waveform is fixed to zero in case of problems such as
-negative length, cutoff frequency lower than the lower cutoff frequency \dots.
+negative length, cutoff frequency lower than the lower cutoff frequency ... .
 
-\subsubsection*{Uses}
-\texttt{LALInspiralParameterCalc}\\
-\noindent\texttt{LALInspiralRestrictedAmplitude}\\
-\noindent\texttt{LALInspiralWaveLength}
-\noindent\texttt{LALInspiralChooseModel}
-\noindent\texttt{LALInspiralSetup}
+\heading{Uses}
+\code
+LALInspiralParameterCalc
+LALInspiralRestrictedAmplitude
+LALInspiralWaveLength
+LALInspiralChooseModel
+LALInspiralSetup
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 There is only one assert on the InspiralTemplate variable since  all relevant asserts
 are already included in the different functions which are called throughout the LALInspiralInit
 function.
-\vfill{\footnotesize\input{LALInspiralInitCV}}
-</lalLaTeX>  */
+
+*/
 
 
 #include <lal/LALInspiral.h>
@@ -68,12 +62,12 @@ function.
 
 NRCSID (LALINSPIRALAMPLITUDEC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralRestrictedInitCP"> */
+
 void
 LALInspiralInit (LALStatus        *status,
 		 InspiralTemplate *params,
 		 InspiralInit     *paramsInit)
-{ /* </lalVerbatim> */
+{
 
   UINT4 ndx;
   REAL8 x;
@@ -84,17 +78,14 @@ LALInspiralInit (LALStatus        *status,
 
   ASSERT( params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
 
-
   LALInspiralParameterCalc(status->statusPtr,  params);
   CHECKSTATUSPTR(status);
-
   LALInspiralRestrictedAmplitude(status->statusPtr, params);
   CHECKSTATUSPTR(status);
-
   LALInspiralSetup(status->statusPtr, &(paramsInit->ak), params);
   CHECKSTATUSPTR(status);
-
   LALInspiralChooseModel(status->statusPtr, &(paramsInit->func), &(paramsInit->ak), params);
+  CHECKSTATUSPTR(status);
 
   /* The parameters have been initialized now. However, we can have some problems
      with the LALInspiralChooseModel related to bad estimation of the length.
@@ -142,8 +133,6 @@ LALInspiralInit (LALStatus        *status,
 
 
     /*now we can free memory */
-    CHECKSTATUSPTR(status);
-
     sprintf(message, "#Estimated Length (seconds) = %f | Allocated length (bins) = %d",
 	    paramsInit->ak.tn,
 	    paramsInit->nbins);
@@ -163,7 +152,6 @@ LALInspiralInit (LALStatus        *status,
     paramsInit->nbins = 0;
 
     /*now we can free memory */
-    CHECKSTATUSPTR(status);
 
     DETATCHSTATUSPTR(status);
     RETURN(status);

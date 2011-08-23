@@ -29,14 +29,14 @@ NRCSID (LALSQTPNWAVEFORMINTERFACEH, "$Id LALSQTPNWaveformInterface.h$");
 
 void LALSQTPNWaveformTemplates (LALStatus *status, REAL4Vector *signalvec1, REAL4Vector *signalvec2, InspiralTemplate *params);
 
-/**		The function returns the generated waveform.
+/** The function returns the generated waveform.
  * @param[in,out]	status	: LAL universal status structure
  * @param[out]	signalvec	: array containing the waveform \f$(h_+, h_\times)\f$
  * @param[in]	params		: structure containing the inspiral parameters
  */
 void LALSQTPNWaveform (LALStatus *status, REAL4Vector *signalvec, InspiralTemplate *params);
 
-/**		The function returns the generated waveform for injection.
+/** The function returns the generated waveform for injection.
  * @param[in,out]	status	: LAL universal status structure
  * @param[out]	wave_out	: structure containing the waveform \f$(a_1,
  * a_2, \Phi, \alpha)\f$
@@ -46,19 +46,19 @@ void LALSQTPNWaveform (LALStatus *status, REAL4Vector *signalvec, InspiralTempla
 void LALSQTPNWaveformForInjection(LALStatus *status, CoherentGW *wave_out,
 		InspiralTemplate *params, PPNParamStruc *ppnParams);
 
-/**		The function allocates memory for the waveform's \f$a_1\f$, \f$a_2\f$,
+/** The function allocates memory for the waveform's \f$a_1\f$, \f$a_2\f$,
  * \f$\Phi\f$ and \f$\alpha\f$.
- * @param[out]		waveform	: pointer to the allocated waveform
- * @param[in]		length		: the length of the waveform
+ * @param[out]		wave	: pointer to the allocated waveform
+ * @param[in]		length	: the length of the waveform
  */
 int XLALSQTPNAllocateCoherentGW(CoherentGW *wave, UINT4 length);
 
-/**		The function deallocates memory of the waveform.
- * @param[out]		waveform	: pointer to the allocated waveform
+/** The function deallocates memory of the waveform.
+ * @param[out]		wave	: pointer to the allocated waveform
  */
 void XLALSQTPNDestroyCoherentGW(CoherentGW *wave);
 
-/**		The function calculates the parameters from the InspiralTemplate
+/** The function calculates the parameters from the InspiralTemplate
  * structure. <em>The used parameters are:</em>
  * <ul>
  *	<li>masses of the BHs (or NSs) \f$m_i\f$ in \f$M_\odot\f$</li>
@@ -69,9 +69,8 @@ void XLALSQTPNDestroyCoherentGW(CoherentGW *wave);
  *	<li>the distance \f$d\f$ in \f$Mpc\f$</li>
  *	<li>the sampling time \f$t_s\f$ in \f$s\f$</li>
  *	<li>the PN order, see #LALPNOrder</li>
- *	<li>level of accuracy in including spin and quadrupole contributions, see
- *	#LALSQTPNSpinInteraction</li>
- * <ul><br />
+ *	<li>level of accuracy in including spin and quadrupole contributions, see LALSQTPNSpinInteraction </li>
+ * </ul><br />
  * <em>The calculated parameters:</em>
  *	\f{center}{
  *	\begin{gather}

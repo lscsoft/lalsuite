@@ -17,45 +17,39 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralSetupCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralSetup.c}}
-
-Module to generate all the Taylor and Pade coefficients needed in
+\brief Module to generate all the Taylor and Pade coefficients needed in
 waveform generation.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralSetupCP}
-\idx{LALInspiralSetup()}
-\begin{itemize}
-\item {\tt ak:} Output containing PN expansion coefficients of various physical
-quantities such as energy, flux, frequency, phase and timing.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>LALInspiralSetup()</tt>
+<ul>
+<li> \c ak: Output containing PN expansion coefficients of various physical
+quantities such as energy, flux, frequency, phase and timing.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
+
+\heading{Description}
 
 Module to generate all the coefficiants needed in the Taylor and Pade expressions
-for the energy and flux functions $E^{\prime}(v)$ and $\mathcal{F}(v)$.
+for the energy and flux functions \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.
 These are used to solve the gravitational wave phasing formula.
-The coefficients are used by the function \texttt{LALInspiralChooseModel} to define
-the energy and flux functions by accessing the structure {\tt ak} and are tabulated
-in the two Tables \ref{table:energy} and \ref{table:flux}.
+The coefficients are used by the function \c LALInspiralChooseModel to define
+the energy and flux functions by accessing the structure \c ak and are tabulated
+in the two Tables\tableref{table_energy} and\tableref{table_flux}.
 
+\heading{Algorithm}
+None.
+\heading{Uses}
+None.
+\heading{Notes}
 
-\subsubsection*{Algorithm}
-None.
-\subsubsection*{Uses}
-None.
-\subsubsection*{Notes}
-\vfill{\footnotesize\input{LALInspiralSetupCV}}
-</lalLaTeX>  */
+*/
 
 
 
@@ -69,19 +63,19 @@ None.
 NRCSID (LALINSPIRALSETUPC, "$Id$");
 
 
-/*  <lalVerbatim file="LALInspiralSetupCP"> */
+
 void
 LALInspiralSetup (
    LALStatus        *status,
    expnCoeffs       *ak,
    InspiralTemplate *params
    )
-{  /* </lalVerbatim>  */
+{
 
    INT4 ieta;
    /*INT4  pnorder=7;
     * */
-   REAL8 lso, eta, vpole;
+   REAL8 lso, eta, vpole, vlso;
    REAL8 a1, a2, a3, a4, a5, a6, a7, a8;
    REAL8 c1, c2, c3, c4, c5, c6, c7, c8;
    REAL8 a12, a22, a32, a42, a52, a62, a72, a23, a33, a43, a53, a34, a44;
@@ -206,6 +200,10 @@ LALInspiralSetup (
               *(-2.*c3 - 2.*c2 - 2.*sqrt(-c2*c1)));
 /* The 3PN pole doesn't exist for eta=1/4. So decided to use 2PN pole always */
    ak->vpoleP6 = ak->vpoleP4;
+
+/* For the EOBPP model, vpole and vlso are tuned to NR */
+   ak->vpolePP = 0.85;
+   ak->vlsoPP  = 1.0;
 /*
    a = c1*c3;
    b = c1+c2+c3;
@@ -353,14 +351,31 @@ LALInspiralSetup (
          break;
       case LAL_PNORDER_THREE:
       case LAL_PNORDER_THREE_POINT_FIVE:
-            vpole = ak->vpoleP6;
+         vpole = ak->vpoleP6;
          break;
       case LAL_PNORDER_PSEUDO_FOUR:
-            vpole = ak->vpoleP6;
+         if ( params->approximant == EOBNRv2 || params->approximant == EOBNRv2HM )
+         {
+           vpole = ak->vpolePP;
+         }
+         else
+         {
+           vpole = ak->vpoleP6;
+         }
          break;
       default:
          ABORT( status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER );
          break;
+   }
+
+   /* We need a different vlso for the PP model */
+   if ( params->approximant == EOBNRv2  || params->approximant == EOBNRv2HM )
+   {
+     vlso = ak->vlsoPP;
+   }
+   else
+   {
+     vlso = ak->vlsoP4;
    }
 
    ak->fTa1 = ak->FTa1 - 1./vpole;
@@ -368,9 +383,9 @@ LALInspiralSetup (
    ak->fTa3 = ak->FTa3 - ak->FTa2/vpole;
    ak->fTa4 = ak->FTa4 - ak->FTa3/vpole;
    ak->fTa5 = ak->FTa5 - ak->FTa4/vpole;
-   ak->fTa6 = ak->FTa6 - ak->FTa5/vpole + ak->FTl6*log(ak->vlsoP4);
-   ak->fTa7 = ak->FTa7 - ( ak->FTa6 + ak->FTl6*log(ak->vlsoP4))/vpole;
-   ak->fTa8 = ak->FTa8 - ak->FTa7/vpole + ak->FTl8*log(ak->vlsoP4);
+   ak->fTa6 = ak->FTa6 - ak->FTa5/vpole + ak->FTl6*log(vlso);
+   ak->fTa7 = ak->FTa7 - ( ak->FTa6 + ak->FTl6*log(vlso))/vpole;
+   ak->fTa8 = ak->FTa8 - ak->FTa7/vpole + ak->FTl8*log(vlso);
 /*
    Pade coefficients of f(v);  assumes that a0=1 => c0=1
 */

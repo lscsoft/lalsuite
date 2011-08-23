@@ -17,48 +17,23 @@
 *  MA  02111-1307  USA
 */
 
-/*
-<lalVerbatim file="TestDelayCV">
+/**
+\author Chin, David <dwchin@umich.edu> +1-734-730-1274
+\file
+\ingroup TimeDelay_h
 
-Author: Chin, David <dwchin@umich.edu> +1-734-730-1274
-$Id$
+\brief Tests \c TimeDelay code.
 
-</lalVerbatim>
-*/
+\heading{Usage}
 
-/*
-<lalLaTeX>
-
-
-\subsection{Program \texttt{TestDelay.c}}
-\label{ss:TestDelay.c}
-
-Tests \verb@TimeDelay@ code.
-
-
-\subsubsection*{Usage}
-
-\begin{verbatim}
+\code
 TestDelay
-\end{verbatim}
+\endcode
 
+\heading{Description}
 
-\subsubsection*{Description}
+This program does zero-th order tests for XLALTimeDelayFromEarthCenter().
 
-This program does zero-th order tests for \texttt{LALTimeDelay()}.
-
-
-\subsubsection*{Exit codes}
-
-</lalLaTeX>
-*/
-
-/*
-<lalErrorTable>
-*/
-
-/*
-</lalErrorTable>
 */
 
 #include <math.h>

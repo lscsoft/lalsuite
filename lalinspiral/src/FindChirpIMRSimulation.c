@@ -23,54 +23,31 @@
  *
  * Author: L. M. Goggin
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-***UPDATE****
-<lalVerbatim file="FindChirpSimulationCV">
-Author: Brown, D. A. and Creighton, T. D
-$Id$
-</lalVerbatim>
+/**
+\author Brown, D. A. and Creighton, T. D
+\file
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpSimulation.c}}
-\label{ss:FindChirpSimulation.c}
-
-\noindent Provides an interface between code build from \texttt{findchirp} and
+\brief Provides an interface between code build from \c findchirp and
 various simulation packages for injecting chirps into data.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpSimulationCP}
-\idx{LALFindChirpInjectSignals()}
-\idx{LALRandomPPNParamStruc()}
+<dl>
+<dt>LALFindChirpInjectSignals()</dt><dd> injects the signals described
+in the linked list of \c SimInspiralTable structures \c events
+into the data \c chan. The response function \c resp should
+contain the response function to use when injecting the signals into the data.</dd>
+</dl>
 
-\begin{description}
-\item[\texttt{LALFindChirpInjectSignals()}] injects the signals described
-in the linked list of \texttt{SimInspiralTable} structures \texttt{events}
-into the data \texttt{chan}. The response function \texttt{resp} should
-contain the response function to use when injecting the signals into the data.
-\end{description}
-
-\subsubsection*{Algorithm}
-
-\noindent None.
-
-\subsubsection*{Notes}
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
 
-\vfill{\footnotesize\input{FindChirpSimulationCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <lal/Units.h>
 #include <lal/Date.h>
@@ -96,7 +73,7 @@ LALFree()
 
 NRCSID( FINDCHIRPIMRSIMULATIONC, "$Id$" );
 
-/* <lalVerbatim file="FindChirpIMRSimulationCP"> */
+
 void
 LALFindChirpInjectIMR (
     LALStatus                  *status,
@@ -106,7 +83,7 @@ LALFindChirpInjectIMR (
     COMPLEX8FrequencySeries    *resp,
     INT4                        injectSignalType
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 k;
   DetectorResponse      detector;
@@ -350,7 +327,7 @@ LALFindChirpInjectIMR (
         &signalvec, &waveform, &detector );
     CHECKSTATUSPTR( status );
 
-/******************************************************************************/
+/* *****************************************************************************/
 #if 0
     FILE *fp;
     char fname[512];
@@ -373,7 +350,7 @@ LALFindChirpInjectIMR (
     fclose( fp );
 #endif
 
-/*********************************************************************************/
+/* ********************************************************************************/
 #if 0
     FILE *fp;
     char fname[512];
@@ -391,7 +368,7 @@ LALFindChirpInjectIMR (
     fclose( fp );
 #endif
 
-/*********************************************************************************/
+/* ********************************************************************************/
 
 
     /* inject the signal into the data channel */

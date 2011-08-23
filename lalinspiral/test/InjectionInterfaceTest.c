@@ -17,24 +17,18 @@
 *  MA  02111-1307  USA
 */
 
-/***************************************** <lalVerbatim file="InterfaceTest">
-Author: Cokelaer, T.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Cokelaer, T.
+\file
 
-/********************************************************** <lalLaTeX>
+\brief Interface to generate any kind of gravitational waves signal.
 
-\subsection{Program \texttt{InterfaceTest.c}}
-\label{ss:InterfaceTest.c}
+\heading{Usage}
+\code
+\c InterfaceTest
+\endcode
 
-Interface to generate any kind of gravitational waves signal.
-
-\subsubsection*{Usage}
-\begin{verbatim}
-\texttt{InterfaceTest}
-\end{verbatim}
-
-\subsubsection*{Description}
+\heading{Description}
 Right now this test file read an input xml (injection.xml) file and for
 each valid line it computes the approriate waveform. Those waveforms are
 either produce within the inject package (PPN waveform) or within the
@@ -46,17 +40,14 @@ vectors needed for further injection including the data itself (noise, h(t))
 Finally, the injections are stored in a vector which is saved in "injection.dat"
 file.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 
+\endcode
+\heading{Notes}
+*/
 
-
-
-\end{verbatim}
-\subsubsection*{Notes}
-\vfill{\footnotesize\input{InterfaceTestCV}}
-
-</lalLaTeX><lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define INJECTIONINTERFACETESTC_ENORM 	0
 #define INJECTIONINTERFACETESTC_ESUB  	1
 #define INJECTIONINTERFACETESTC_EARG  	2
@@ -72,7 +63,7 @@ file.
 #define INJECTIONINTERFACETESTC_MSGEFILE 	"Could not open file"
 #define INJECTIONINTERFACETESTC_MSGEMEM  	"Out of memory"
 #define INJECTIONINTERFACETESTC_MSGEINJECT  	"No valid injection to do ... ? "
-/* </lalErrTable>*/
+/*@}*/
 
 /* --- the names of the files to be used --- */
 #define INJECTIONINTERFACETEST_INJECTIONXMLFILE    "injection.xml"

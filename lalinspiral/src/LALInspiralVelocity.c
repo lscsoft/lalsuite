@@ -17,46 +17,38 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralVelocityCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralVelocity.c}}
-
-The function \texttt{LALInspiralVelocity} calculates the velocity $v$ which corresponds to a time $t$ in
+\brief The function \c LALInspiralVelocity() calculates the velocity \f$v\f$ which corresponds to a time \f$t\f$ in
 the inspiralling binary system.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralVelocityCP}
-\idx{LALInspiralVelocity()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>LALInspiralVelocity()</tt>
 
-The function \texttt{LALInspiralVelocity} calculates the velocity $v$ corresponding to a time $t$
+\heading{Description}
+
+The function \c LALInspiralVelocity() calculates the velocity \f$v\f$ corresponding to a time \f$t\f$
 in the evolution of an inspiralling binary system.  It does this by iteratively solving
-\begin{equation}
+\anchor tofv \f{equation}{
 t(v) =  t_{0} - m \int_{v_{0}}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
 \label{tofv}
-\end{equation}
-\texttt{LALInspiralVelocity} calculates $v$, given $t(v)$,
-$t_{0}$, $m$, $v_{0}$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.
+\f}
+\c LALInspiralVelocity() calculates \f$v\f$, given \f$t(v)\f$,
+\f$t_{0}\f$, \f$m\f$, \f$v_{0}\f$, \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
+\heading{Uses}
 
-\subsubsection*{Uses}
+\c LALDBisectionFindRoot()
 
-\texttt{LALDBisectionFindRoot}
+\heading{Notes}
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralVelocityCV}}
-
-</lalLaTeX>  */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -65,14 +57,14 @@ $t_{0}$, $m$, $v_{0}$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.
 
 NRCSID (LALINSPIRALVELOCITYC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralVelocityCP"> */
+
 void
 LALInspiralVelocity(
    LALStatus *status,
    REAL8     *v,
    TofVIn    *ak
    )
-{ /* </lalVerbatim>  */
+{
 
   DFindRootIn rootIn;
   void *funcParams;

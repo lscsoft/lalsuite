@@ -91,7 +91,7 @@ the fields into passed fields (which are supplied to the final
 fields (that are used by the waveform generator), and output fields
 (that are set by the waveform generator).  They are:
 
-\bigskip<em>Passed fields:</em>
+<em>Passed fields:</em>
 <dl>
 <dt><tt>SkyPosition position</tt></dt><dd> The location of the source on the
 sky, normally in equatorial coordinates.</dd>
@@ -135,6 +135,11 @@ waveform.</dd>
 #ifndef _GENERATETAYLORCW_H
 #define _GENERATETAYLORCW_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
@@ -160,6 +165,7 @@ NRCSID( GENERATETAYLORCWH, "$Id$" );
 
 
 typedef struct tagTaylorCWParamStruc {
+  SWIGLAL_STRUCT_LALALLOC();
   /* Passed parameters. */
   SkyPosition position; /* location of source on sky */
   REAL4 psi;            /* polarization angle (radians) */

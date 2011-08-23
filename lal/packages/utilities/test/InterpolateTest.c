@@ -278,8 +278,11 @@ int main (int argc, char *argv[])
       printf ("\nInvalid size:\r");
     LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
     TestStatus (&status, CODES(INTERPOLATEH_ESIZE), 1);
-    LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
-    TestStatus (&status, CODES(INTERPOLATEH_ESIZE), 1);
+    dintout.dy = XLALREAL8PolynomialInterpolation (&(dintout.y), -0.3, dintpar.y, dintpar.x, dintpar.n);
+    if (xlalErrno == XLAL_ESIZE)
+      xlalErrno = 0;
+    else
+      abort();
     if ( verbose )
       printf ("Invalid size check passed.\n");
 
@@ -291,8 +294,11 @@ int main (int argc, char *argv[])
       printf ("\nZero divide:\r");
     LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
     TestStatus (&status, CODES(INTERPOLATEH_EZERO), 1);
-    LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
-    TestStatus (&status, CODES(INTERPOLATEH_EZERO), 1);
+    dintout.dy = XLALREAL8PolynomialInterpolation (&(dintout.y), -0.3, dintpar.y, dintpar.x, dintpar.n);
+    if (xlalErrno == XLAL_EFPDIV0)
+      xlalErrno = 0;
+    else
+      abort();
     if ( verbose )
       printf ("Zero divide check passed.\n");
   }

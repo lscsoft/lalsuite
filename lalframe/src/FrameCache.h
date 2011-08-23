@@ -40,6 +40,11 @@
 #ifndef _FRAMECACHE_H
 #define _FRAMECACHE_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
@@ -71,6 +76,7 @@ NRCSID( FRAMECACHEH, "$Id$" );
 typedef struct
 tagFrStat
 {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR *source;
   CHAR *description;
   INT4  startTime;
@@ -83,16 +89,16 @@ FrStat;
  *
  * This structure contains a frame file status.  The fields are:
  * <dl>
- * <dt>\c source</dt><dd> the source detector(s) of the data in the frame
+ * <dt>source</dt><dd> the source detector(s) of the data in the frame
  *     file, or other identifier.
- * </dd><dt>\c description</dt><dd> the description of the type of data contained
+ * </dd><dt>description</dt><dd> the description of the type of data contained
  *     in the frame file, or other identifier.
- * </dd><dt>\c startTime</dt><dd> the GPS time of the second equal to
+ * </dd><dt>startTime</dt><dd> the GPS time of the second equal to
  *     (or just before) the start of the data contained in the frame file.
- * </dd><dt>\c duration</dt><dd> the number of seconds between \c startTime
+ * </dd><dt>duration</dt><dd> the number of seconds between \c startTime
  *     and the GPS time of the second equal to (or just after) the end of the
  *     data contained in the frame file.
- * </dd><dt>\c url</dt><dd> the URL of the frame file.
+ * </dd><dt>url</dt><dd> the URL of the frame file.
  * </dd></dl>
  *
 */
@@ -100,6 +106,7 @@ FrStat;
 typedef struct
 tagFrCache
 {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4   numFrameFiles;
   FrStat *frameFiles;
 }
@@ -109,15 +116,21 @@ FrCache;
  *
  * This structure contains a list of all frame files available.  The fields are:
  * <dl>
- * <dt>\c numFrameFiles</dt><dd> the total number of frame files in the list.
- * </dd><dt>\c frameFiles</dt><dd> array of frame file status descriptors.
+ * <dt>numFrameFiles</dt><dd> the total number of frame files in the list.
+ * </dd><dt>frameFiles</dt><dd> array of frame file status descriptors.
  * </dd></dl>
  *
 */
 
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::srcRegEx;
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::dscRegEx;
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::urlRegEx;
+#endif /* SWIG */
 typedef struct
 tagFrCacheSieve
 {
+  SWIGLAL_STRUCT_LALALLOC();
   const CHAR *srcRegEx;
   const CHAR *dscRegEx;
   const CHAR *urlRegEx;
@@ -132,17 +145,17 @@ FrCacheSieve;
  * of interest from a cache.  The parameters include regular expressions and
  * time ranges.  The fields are:
  * <dl>
- * <dt>\c srcRegEx</dt><dd> regular expression to use in selecting frame files
- *     with a specified source identifier.  (Not used if \c NULL.)
- * </dd><dt>\c dscRegEx</dt><dd> regular expression to use in selecting frame files
- *     with a specified description identifier.  (Not used if \c NULL.)
- * </dd><dt>\c urlRegEx</dt><dd> regular expression to use in selecting frame files
- *     with a specified URL.  (Not used if \c NULL.)
- * </dd><dt>\c earliestTime</dt><dd> earliest time (GPS seconds) of frame files of
- *     interest.  (Not used if zero or less.)
- * </dd><dt>\c latestTime</dt><dd> latest time (GPS seconds) of frame files of
- *     interest.  (Not used if zero or less.)
- * </dd></dl>
+ * <dt>srcRegEx</dt><dd> regular expression to use in selecting frame files
+ *     with a specified source identifier.  (Not used if \c NULL.) </dd>
+ * <dt>dscRegEx</dt><dd> regular expression to use in selecting frame files
+ *     with a specified description identifier.  (Not used if \c NULL.)</dd>
+ * <dt>urlRegEx</dt><dd> regular expression to use in selecting frame files
+ *     with a specified URL.  (Not used if \c NULL.)</dd>
+ * <dt>earliestTime</dt><dd> earliest time (GPS seconds) of frame files of
+ *     interest.  (Not used if zero or less.)</dd>
+ * <dt>latestTime</dt><dd> latest time (GPS seconds) of frame files of
+ *     interest.  (Not used if zero or less.)</dd>
+ * </dl>
  *
  *
  *

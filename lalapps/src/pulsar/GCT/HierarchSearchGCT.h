@@ -131,24 +131,6 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     Segment_t *data;	/**< array of segments */
   } SegmentVector_t;
 
-  /** sequence of MultiSFT vectors -- for each stack */
-  typedef struct tagMultiSFTVectorSequence {
-    UINT4 length;     /**< number of stacks */
-    MultiSFTVector **data; /**< the SFT vectors */
-  } MultiSFTVectorSequence;
-
-  /** sequence of Multi-noise weights vectors -- for each stack */
-  typedef struct tagMultiNoiseWeightsSequence {
-    UINT4 length;     /**< number of stacks */
-    MultiNoiseWeights **data; /**< the noise weights */
-  } MultiNoiseWeightsSequence;
-
-  /** sequence of Multi-detector state vectors -- for each stack */
-  typedef struct tagMultiDetectorStateSeriesSequence {
-    UINT4 length;     /**< number of stacks */
-    MultiDetectorStateSeries **data; /**< the detector state series */
-  } MultiDetectorStateSeriesSequence;
-
   /* sequence of SFT catalogs -- for each stack */
   typedef struct tagSFTCatalogSequence {
     UINT4 length;     /**< the number of stacks */
