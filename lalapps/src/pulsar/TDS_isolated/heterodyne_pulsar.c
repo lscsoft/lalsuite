@@ -1703,20 +1703,14 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
     if(tempstart >= cache.starttime[i] 
         && tempstart < cache.starttime[i]+cache.duration[i] 
         && cache.starttime[i] < tempstop){
-      #define MAXLEN 512
-      CHAR tempstr[MAXLEN];
-      INT4 errcheck=0;
-
-      errcheck = snprintf(tempstr, MAXLEN, "%s %d %d ", cache.framelist[i], cache.starttime[i], cache.duration[i]);
-      if ( errcheck < 0 || errcheck > 512 ){
-        fprintf(stderr, "Error... something wrong with snprintf() creating file list! errcheck=%d\n", errcheck);
-        exit(1);
-      }    
-
-      if ( XLALStringAppend(smalllist, tempstr) == NULL ){
-        fprintf(stderr, "Error... something wrong creating frmae list with XLALStringAppend!\n");
+      if ( XLALStringAppend(smalllist, cache.framelist[i]) == NULL ){
+        fprintf(stderr, "Error... something wrong creating frame list with \
+XLALStringAppend!\n");
         exit(1);
       }
+      
+      /* add a space between frame filenames */
+      XLALStringAppend(smalllist, " ");
       
       tempstart += cache.duration[i];
       check++;
