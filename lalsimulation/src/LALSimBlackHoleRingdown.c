@@ -458,7 +458,7 @@ static complex XLALSimBlackHoleRingdownSpheroidalWaveFunctionNormLeaver(double a
 		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
 	norm = cabs(sphwf)/sphwf;
 
-	XLAL_TRY(sphwf = XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(-1.0, a, l, m, s, A, omega), errnum);
+	XLAL_TRY(sphwf = XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(-1.0 + EPS, a, l, m, s, A, omega), errnum);
 	if (errnum)
 		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
 	sphwf *= norm;
