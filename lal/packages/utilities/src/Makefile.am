@@ -13,6 +13,7 @@ libutilities_la_SOURCES = \
 	HeapSort.c \
 	Integrate.c \
 	Interpolate.c \
+	LALAdaptiveRungeKutta4.c \
 	LALRunningMedian.c \
 	MatrixOps.c \
 	MersenneRandom.c \

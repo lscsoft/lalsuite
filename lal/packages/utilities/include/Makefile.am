@@ -6,6 +6,7 @@ pkginclude_HEADERS = \
 	GSLSupport.h \
 	Integrate.h \
 	Interpolate.h \
+	LALAdaptiveRungeKutta4.h \
 	LALRunningMedian.h \
 	MatrixUtils.h \
 	ODE.h \
