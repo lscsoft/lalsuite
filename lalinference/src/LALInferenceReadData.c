@@ -622,8 +622,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 /*		for(j=0;j<injF->data->length;j++) printf("%lf\n",injF->data->data[j].re);*/
 		if(IFOdata->oneSidedNoisePowerSpectrum){
 			for(SNR=0.0,j=IFOdata->fLow/injF->deltaF;j<injF->data->length;j++){
-				SNR+=pow(injF->data->data[j].re,2.0)/IFOdata->oneSidedNoisePowerSpectrum->data->data[j];
-				SNR+=pow(injF->data->data[j].im,2.0)/IFOdata->oneSidedNoisePowerSpectrum->data->data[j];
+				SNR+=2.0*pow(injF->data->data[j].re,2.0)/(4.0*IFOdata->oneSidedNoisePowerSpectrum->data->data[j]);
+				SNR+=2.0*pow(injF->data->data[j].im,2.0)/(4.0*IFOdata->oneSidedNoisePowerSpectrum->data->data[j]);
 			}
 		}
 		NetworkSNR+=SNR;
