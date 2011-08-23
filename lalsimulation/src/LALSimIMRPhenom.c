@@ -60,10 +60,266 @@ static REAL8 ComputeTau0(REAL8 m1, REAL8 m2, REAL8 f_min);
 
 static REAL8 LorentzianFn(REAL8 freq, REAL8 fRing, REAL8 sigma);
 
-static int IMRPhenomGenerateFD(COMPLEX16FrequencySeries **htilde, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaF, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
-static int IMRPhenomGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
+static int IMRPhenomAGenerateFD(COMPLEX16FrequencySeries **htilde, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaF, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
+static int IMRPhenomBGenerateFD(COMPLEX16FrequencySeries **htilde, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaF, REAL8 m1, REAL8 m2, REAL8 chi, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
+static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
+static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 chi, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
 static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD, LIGOTimeGPS *tRef, REAL8 totalMass, REAL8 deltaT, REAL8 f_min, REAL8 f_max, REAL8 f_min_wide, REAL8 f_max_wide);
+static int cut_below_fmin(REAL8TimeSeries **h, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT);
 static int apply_inclination(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 inclination);
+
+
+/**
+ *
+ * main functions
+ *
+ */
+
+/**
+ * Driver routine to compute the non-spinning, inspiral-merger-ringdown
+ * phenomenological waveform IMRPhenomA in the frequency domain.
+ *
+ * Reference:
+ *   - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
+ *   - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
+ *                   Table I of http://arxiv.org/pdf/0712.0343
+ *
+ * All input parameters should be SI units.
+ */
+int XLALSimIMRPhenomAGenerateFD(
+    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    LIGOTimeGPS *tRef,                 /**< time at fRef */
+    REAL8 phiRef,                      /**< phase at fRef */
+    REAL8 fRef,                        /**< reference frequency */
+    REAL8 deltaF,                      /**< frequency resolution */
+    REAL8 m1,                          /**< mass of companion 1 */
+    REAL8 m2,                          /**< mass of companion 2 */
+    REAL8 f_min,                       /**< start frequency */
+    REAL8 f_max,                       /**< end frequency; if 0, set to fCut */
+    REAL8 distance                     /**< distance of source */
+) {
+  BBHPhenomParams *params;
+
+  /* check inputs for sanity */
+  if (*htilde) XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (!tRef) XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (fRef <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (deltaF <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (m1 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (m2 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (f_min <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (f_max < 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (distance <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+
+  /* external: SI; internal: solar masses */
+  m1 /= LAL_MSUN_SI;
+  m2 /= LAL_MSUN_SI;
+
+  /* phenomenological parameters*/
+  params = ComputeIMRPhenomAParams(m1, m2);
+  if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
+
+  /* default f_max to params->fCut */
+  if (f_max == 0.) f_max = params->fCut;
+
+  return IMRPhenomAGenerateFD(htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min, f_max, distance, params);
+}
+
+/**
+ * Driver routine to compute the non-spinning, inspiral-merger-ringdown
+ * phenomenological waveform IMRPhenomA in the time domain.
+ *
+ * Reference:
+ *   - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
+ *   - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
+ *                   Table I of http://arxiv.org/pdf/0712.0343
+ *
+ * All input parameters should be in SI units. Angles should be in radians.
+ */
+int XLALSimIMRPhenomAGenerateTD(
+    REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+    REAL8TimeSeries **hcross, /**< x-polarization waveform */
+    LIGOTimeGPS *tRef,        /**< time at fRef */
+    REAL8 phiRef,             /**< phase at fRef */
+    REAL8 fRef,               /**< reference frequency */
+    REAL8 deltaT,             /**< sampling interval */
+    REAL8 m1,                 /**< mass of companion 1 */
+    REAL8 m2,                 /**< mass of companion 2 */
+    REAL8 f_min,              /**< start frequency */
+    REAL8 f_max,              /**< end frequency */
+    REAL8 distance,           /**< distance of source */
+    REAL8 inclination         /**< inclination of source */
+) {
+  BBHPhenomParams *params;
+
+  /* check inputs for sanity */
+  if (*hplus) XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (*hcross) XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (!tRef) XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (fRef <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (deltaT <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (m1 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (m2 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (f_min <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (f_max < 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (distance <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+
+  /* external: SI; internal: solar masses */
+  m1 /= LAL_MSUN_SI;
+  m2 /= LAL_MSUN_SI;
+
+  /* phenomenological parameters*/
+  params = ComputeIMRPhenomAParams(m1, m2);
+  if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
+
+  /* default f_max to params->fCut */
+  if (f_max == 0.) f_max = params->fCut;
+
+  /* generate hplus */
+  IMRPhenomAGenerateTD(hplus, tRef, phiRef, fRef, deltaT, m1, m2, f_min, f_max, distance, params);
+  if (!(*hplus)) {
+      XLALFree(params);
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+
+  /* generate hcross, which is hplus phase-shifted by pi/2 */
+  IMRPhenomAGenerateTD(hcross, tRef, phiRef + LAL_PI / 2, fRef, deltaT, m1, m2, f_min, f_max, distance, params);
+  XLALFree(params);
+  if (!(*hcross)) {
+      XLALDestroyREAL8TimeSeries(*hplus);
+      *hplus = NULL;
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+
+  /* apply inclination */
+  return apply_inclination(hplus, hcross, inclination);
+}
+
+/**
+ * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
+ * phenomenological waveform IMRPhenomB in the time domain.
+ *
+ * Reference: http://arxiv.org/pdf/0909.2867
+ *   - Waveform: Eq.(1)
+ *   - Coefficients: Eq.(2) and Table I
+ *
+ * All input parameters should be in SI units. Angles should be in radians.
+ */
+int XLALSimIMRPhenomBGenerateTD(
+    REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+    REAL8TimeSeries **hcross, /**< x-polarization waveform */
+    LIGOTimeGPS *tRef,        /**< time at fRef */
+    REAL8 phiRef,             /**< phase at fRef */
+    REAL8 fRef,               /**< reference frequency */
+    REAL8 deltaT,             /**< sampling interval */
+    REAL8 m1,                 /**< mass of companion 1 */
+    REAL8 m2,                 /**< mass of companion 2 */
+    REAL8 chi,                /**< mass-weighted aligned-spin parameter */
+    REAL8 f_min,              /**< start frequency */
+    REAL8 f_max,              /**< end frequency */
+    REAL8 distance,           /**< distance of source */
+    REAL8 inclination         /**< inclination of source */
+) {
+  BBHPhenomParams *params;
+
+  /* check inputs for sanity */
+  if (*hplus) XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (*hcross) XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (!tRef) XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (fRef <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (deltaT <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (m1 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (m2 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (fabs(chi) > 1) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (f_min <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (f_max < 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (distance <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+
+  /* external: SI; internal: solar masses */
+  m1 /= LAL_MSUN_SI;
+  m2 /= LAL_MSUN_SI;
+
+  /* phenomenological parameters*/
+  params = ComputeIMRPhenomBParams(m1, m2, chi);
+  if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
+
+  /* default f_max to params->fCut */
+  if (f_max == 0.) f_max = params->fCut;
+
+  /* generate plus */
+  IMRPhenomBGenerateTD(hplus, tRef, phiRef, fRef, deltaT, m1, m2, chi, f_min, f_max, distance, params);
+  if (!(*hplus)) {
+      XLALFree(params);
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+
+  /* generate cross, phase-shifted by pi/2 */
+  IMRPhenomBGenerateTD(hcross, tRef, phiRef + LAL_PI / 2, fRef, deltaT, m1, m2, chi, f_min, f_max, distance, params);
+  XLALFree(params);
+  if (!(*hcross)) {
+      XLALDestroyREAL8TimeSeries(*hplus);
+      *hplus = NULL;
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+
+  /* apply inclination */
+  return apply_inclination(hplus, hcross, inclination);
+}
+
+
+/**
+ * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
+ * phenomenological waveform IMRPhenomB in the frequency domain.
+ *
+ * Reference: http://arxiv.org/pdf/0909.2867
+ *   - Waveform: Eq.(1)
+ *   - Coefficients: Eq.(2) and Table I
+ *
+ * All input parameters should be in SI units. Angles should be in radians.
+ */
+int XLALSimIMRPhenomBGenerateFD(
+    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    LIGOTimeGPS *tRef,                 /**< time at fRef */
+    REAL8 phiRef,                      /**< phase at fRef */
+    REAL8 fRef,                        /**< reference frequency */
+    REAL8 deltaF,                      /**< sampling interval */
+    REAL8 m1,                          /**< mass of companion 1 */
+    REAL8 m2,                          /**< mass of companion 2 */
+    REAL8 chi,                         /**< mass-weighted aligned-spin parameter */
+    REAL8 f_min,                       /**< start frequency */
+    REAL8 f_max,                       /**< end frequency */
+    REAL8 distance                     /**< distance of source */
+) {
+  BBHPhenomParams *params;
+  int status;
+
+  /* check inputs for sanity */
+  if (*htilde) XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (!tRef) XLAL_ERROR(__func__, XLAL_EFAULT);
+  if (fRef <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (deltaF <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (m1 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (m2 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (fabs(chi) > 1) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (f_min <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (f_max < 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (distance <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+
+  /* external: SI; internal: solar masses */
+  m1 /= LAL_MSUN_SI;
+  m2 /= LAL_MSUN_SI;
+
+  /* phenomenological parameters*/
+  params = ComputeIMRPhenomBParams(m1, m2, chi);
+  if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
+
+  /* default f_max to params->fCut */
+  if (f_max == 0.) f_max = params->fCut;
+
+  status = IMRPhenomBGenerateFD(htilde, tRef, phiRef, fRef, deltaF, m1, m2, chi, f_min, f_max, distance, params);
+  LALFree(params);
+  return status;
+}
 
 /*********************************************************************/
 /* Compute phenomenological parameters for non-spinning binaries     */
@@ -285,263 +541,11 @@ static REAL8 LorentzianFn (
     + sigma*sigma / 4.0));
 }
 
-/**
- *
- * main functions
- *
- */
 
 /**
- * Driver routine to compute the non-spinning, inspiral-merger-ringdown
- * phenomenological waveform IMRPhenomA in the frequency domain.
- *
- * Reference:
- *   - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
- *   - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
- *                   Table I of http://arxiv.org/pdf/0712.0343
- *
- * All input parameters should be SI units.
+ * Private function to generate IMRPhenomA frequency-domain waveforms given coefficients
  */
-int XLALSimIMRPhenomAGenerateFD(
-    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    LIGOTimeGPS *tRef,                 /**< time at fRef */
-    REAL8 phiRef,                      /**< phase at fRef */
-    REAL8 fRef,                        /**< reference frequency */
-    REAL8 deltaF,                      /**< frequency resolution */
-    REAL8 m1,                          /**< mass of companion 1 */
-    REAL8 m2,                          /**< mass of companion 2 */
-    REAL8 f_min,                       /**< start frequency */
-    REAL8 f_max,                       /**< end frequency; if 0, set to fCut */
-    REAL8 distance                     /**< distance of source */
-) {
-  BBHPhenomParams *params;
-
-  /* check inputs for sanity */
-  if (*htilde) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (!tRef) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (fRef <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (deltaF <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m1 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m2 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_min <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_max < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (distance <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-
-  /* external: SI; internal: solar masses */
-  m1 /= LAL_MSUN_SI;
-  m2 /= LAL_MSUN_SI;
-
-  /* phenomenological parameters*/
-  params = ComputeIMRPhenomAParams(m1, m2);
-  if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
-
-  /* default f_max to params->fCut */
-  if (f_max == 0.) f_max = params->fCut;
-
-  return IMRPhenomGenerateFD(htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min, f_max, distance, params);
-}
-
-/**
- * Driver routine to compute the non-spinning, inspiral-merger-ringdown
- * phenomenological waveform IMRPhenomA in the time domain.
- *
- * Reference:
- *   - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
- *   - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
- *                   Table I of http://arxiv.org/pdf/0712.0343
- *
- * All input parameters should be in SI units. Angles should be in radians.
- */
-int XLALSimIMRPhenomAGenerateTD(
-    REAL8TimeSeries **hplus,  /**< +-polarization waveform */
-    REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    LIGOTimeGPS *tRef,        /**< time at fRef */
-    REAL8 phiRef,             /**< phase at fRef */
-    REAL8 fRef,               /**< reference frequency */
-    REAL8 deltaT,             /**< sampling interval */
-    REAL8 m1,                 /**< mass of companion 1 */
-    REAL8 m2,                 /**< mass of companion 2 */
-    REAL8 f_min,              /**< start frequency */
-    REAL8 f_max,              /**< end frequency */
-    REAL8 distance,           /**< distance of source */
-    REAL8 inclination         /**< inclination of source */
-) {
-  BBHPhenomParams *params;
-
-  /* check inputs for sanity */
-  if (*hplus) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (*hcross) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (!tRef) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (fRef <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (deltaT <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m1 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m2 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_min <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_max < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (distance <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-
-  /* external: SI; internal: solar masses */
-  m1 /= LAL_MSUN_SI;
-  m2 /= LAL_MSUN_SI;
-
-  /* phenomenological parameters*/
-  params = ComputeIMRPhenomAParams(m1, m2);
-  if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
-
-  /* default f_max to params->fCut */
-  if (f_max == 0.) f_max = params->fCut;
-
-  /* generate hplus */
-  IMRPhenomGenerateTD(hplus, tRef, phiRef, fRef, deltaT, m1, m2, f_min, f_max, distance, params);
-  if (!(*hplus)) {
-      XLALFree(params);
-      XLAL_ERROR(__func__, XLAL_EFUNC);
-  }
-
-  /* generate hcross, which is hplus phase-shifted by pi/2 */
-  IMRPhenomGenerateTD(hcross, tRef, phiRef + LAL_PI / 2, fRef, deltaT, m1, m2, f_min, f_max, distance, params);
-  XLALFree(params);
-  if (!(*hcross)) {
-      XLALDestroyREAL8TimeSeries(*hplus);
-      *hplus = NULL;
-      XLAL_ERROR(__func__, XLAL_EFUNC);
-  }
-
-  /* apply inclination */
-  return apply_inclination(hplus, hcross, inclination);
-}
-
-/**
- * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
- * phenomenological waveform IMRPhenomB in the time domain.
- *
- * Reference: http://arxiv.org/pdf/0909.2867
- *   - Waveform: Eq.(1)
- *   - Coefficients: Eq.(2) and Table I
- *
- * All input parameters should be in SI units. Angles should be in radians.
- */
-int XLALSimIMRPhenomBGenerateTD(
-    REAL8TimeSeries **hplus,  /**< +-polarization waveform */
-    REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    LIGOTimeGPS *tRef,        /**< time at fRef */
-    REAL8 phiRef,             /**< phase at fRef */
-    REAL8 fRef,               /**< reference frequency */
-    REAL8 deltaT,             /**< sampling interval */
-    REAL8 m1,                 /**< mass of companion 1 */
-    REAL8 m2,                 /**< mass of companion 2 */
-    REAL8 chi,                /**< mass-weighted aligned-spin parameter */
-    REAL8 f_min,              /**< start frequency */
-    REAL8 f_max,              /**< end frequency */
-    REAL8 distance,           /**< distance of source */
-    REAL8 inclination         /**< inclination of source */
-) {
-  BBHPhenomParams *params;
-
-  /* check inputs for sanity */
-  if (*hplus) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (*hcross) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (!tRef) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (fRef <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (deltaT <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m1 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m2 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (fabs(chi) > 1) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_min <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_max < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (distance <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-
-  /* external: SI; internal: solar masses */
-  m1 /= LAL_MSUN_SI;
-  m2 /= LAL_MSUN_SI;
-
-  /* phenomenological parameters*/
-  params = ComputeIMRPhenomBParams(m1, m2, chi);
-  if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
-
-  /* default f_max to params->fCut */
-  if (f_max == 0.) f_max = params->fCut;
-
-  /* generate plus */
-  IMRPhenomGenerateTD(hplus, tRef, phiRef, fRef, deltaT, m1, m2, f_min, f_max, distance, params);
-  if (!(*hplus)) {
-      XLALFree(params);
-      XLAL_ERROR(__func__, XLAL_EFUNC);
-  }
-
-  /* generate cross, phase-shifted by pi/2 */
-  IMRPhenomGenerateTD(hcross, tRef, phiRef + LAL_PI / 2, fRef, deltaT, m1, m2, f_min, f_max, distance, params);
-  XLALFree(params);
-  if (!(*hcross)) {
-      XLALDestroyREAL8TimeSeries(*hplus);
-      *hplus = NULL;
-      XLAL_ERROR(__func__, XLAL_EFUNC);
-  }
-
-  /* apply inclination */
-  return apply_inclination(hplus, hcross, inclination);
-}
-
-
-/**
- * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
- * phenomenological waveform IMRPhenomB in the frequency domain.
- *
- * Reference: http://arxiv.org/pdf/0909.2867
- *   - Waveform: Eq.(1)
- *   - Coefficients: Eq.(2) and Table I
- *
- * All input parameters should be in SI units. Angles should be in radians.
- */
-int XLALSimIMRPhenomBGenerateFD(
-    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    LIGOTimeGPS *tRef,                 /**< time at fRef */
-    REAL8 phiRef,                      /**< phase at fRef */
-    REAL8 fRef,                        /**< reference frequency */
-    REAL8 deltaF,                      /**< sampling interval */
-    REAL8 m1,                          /**< mass of companion 1 */
-    REAL8 m2,                          /**< mass of companion 2 */
-    REAL8 chi,                         /**< mass-weighted aligned-spin parameter */
-    REAL8 f_min,                       /**< start frequency */
-    REAL8 f_max,                       /**< end frequency */
-    REAL8 distance                     /**< distance of source */
-) {
-  BBHPhenomParams *params;
-  int status;
-
-  /* check inputs for sanity */
-  if (*htilde) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (!tRef) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (fRef <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (deltaF <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m1 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m2 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (fabs(chi) > 1) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_min <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_max < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (distance <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-
-  /* external: SI; internal: solar masses */
-  m1 /= LAL_MSUN_SI;
-  m2 /= LAL_MSUN_SI;
-
-  /* phenomenological parameters*/
-  params = ComputeIMRPhenomBParams(m1, m2, chi);
-  if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
-
-  /* default f_max to params->fCut */
-  if (f_max == 0.) f_max = params->fCut;
-
-  status = IMRPhenomGenerateFD(htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min, f_max, distance, params);
-  LALFree(params);
-  return status;
-}
-
-
-/**
- * Private function to generate frequency-domain waveforms given coefficients
- */
-static int IMRPhenomGenerateFD(
+static int IMRPhenomAGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
     LIGOTimeGPS *tRef,                 /**< time at fRef */
     REAL8 phiRef,                      /**< phase at fRef */
@@ -550,11 +554,11 @@ static int IMRPhenomGenerateFD(
     REAL8 m1,                          /**< mass of companion 1 [solar masses] */
     REAL8 m2,                          /**< mass of companion 2 [solar masses] */
     REAL8 f_min,                       /**< start frequency */
-    REAL8 f_max,                       /**< end frequency; if 0, set to fCut */
+    REAL8 f_max,                       /**< end frequency */
     REAL8 distance,                    /**< distance of source */
     BBHPhenomParams *params            /**< from ComputeIMRPhenom{A,B}Params */
 ) {
-  REAL8 shft, amp0, ampEff, psiEff, fMerg, fRing, sigma, totalMass, eta;
+  REAL8 shft, amp0, fMerg, fRing, fCut, sigma, totalMass, eta;
   ssize_t i, n;
 
   fMerg = params->fMerger;
@@ -568,11 +572,8 @@ static int IMRPhenomGenerateFD(
     / pow(LAL_PI, 2./3.) * sqrt(5. * eta / 24.) / (distance / LAL_C_SI);
 
   /* allocate htilde */
-  /* When f_max is 0, use fCut to determine how many samples to allocate */
-  if (f_max > 0)
-    n = (ssize_t) ceil(f_max / deltaF) + 1;
-  else
-    n = (ssize_t) ceil(params->fCut / deltaF) + 1;
+  n = (ssize_t) (1 << (int) ceil(log2(f_max / deltaF))) + 1;
+  //n = (ssize_t) ceil(f_max / deltaF);
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", tRef, 0.0, deltaF, &lalStrainUnit, n);
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
   XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
@@ -580,14 +581,18 @@ static int IMRPhenomGenerateFD(
 
   shft = LAL_TWOPI * (tRef->gpsSeconds + 1e-9 * tRef->gpsNanoSeconds);
 
-  /* now generate the waveform at all frequency bins */
+  /* fCut here will specify where we stop generating frequencies */
+  fCut = fmin(params->fCut, f_max);
+
+  /* now generate the waveform at all frequency bins except DC and Nyquist */
   for (i=1; i < n - 1; i++) {
+    REAL8 ampEff, psiEff;
     /* Fourier frequency corresponding to this bin */
     REAL8 f = i * deltaF;
     REAL8 fNorm = f / fMerg;
 
     /* compute the amplitude */
-    if ((f < f_min) || (f > params->fCut)) continue;
+    if ((f < f_min) || (f > fCut)) continue;
     else if (f <= fMerg) ampEff = amp0 * pow(fNorm, -7./6.);
     else if ((f > fMerg) & (f <= fRing)) ampEff = amp0 * pow(fNorm, -2./3.);
     else if (f > fRing)
@@ -619,9 +624,121 @@ static int IMRPhenomGenerateFD(
 }
 
 /**
+ * Private function to generate IMRPhenomB frequency-domain waveforms given coefficients
+ */
+static int IMRPhenomBGenerateFD(
+    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    LIGOTimeGPS *tRef,                 /**< time at fRef */
+    REAL8 phiRef,                      /**< phase at fRef */
+    REAL8 fRef,                        /**< reference frequency */
+    REAL8 deltaF,                      /**< frequency resolution */
+    REAL8 m1,                          /**< mass of companion 1 [solar masses] */
+    REAL8 m2,                          /**< mass of companion 2 [solar masses] */
+    REAL8 chi,                         /**< mass-weighted aligned-spin parameter */
+    REAL8 f_min,                       /**< start frequency */
+    REAL8 f_max,                       /**< end frequency; if 0 */
+    REAL8 distance,                    /**< distance of source */
+    BBHPhenomParams *params            /**< from ComputeIMRPhenom{A,B}Params */
+) {
+  REAL8 shft, amp0, fMerg, fRing, fCut, sigma, totalMass, eta;
+  REAL8 alpha2, alpha3, mergPower, epsilon_1, epsilon_2, vMerg, vRing, w1, w2;
+  ssize_t i, n;
+
+  fMerg = params->fMerger;
+  fRing = params->fRing;
+  sigma = params->sigma;
+  totalMass = m1 + m2;
+  eta = m1 * m2 / (totalMass * totalMass);
+
+  /* compute the amplitude pre-factor */
+  amp0 = pow(LAL_MTSUN_SI*totalMass, 5./6.) * pow(fMerg, -7./6.)
+    / pow(LAL_PI, 2./3.) * sqrt(5. * eta / 24.) / (distance / LAL_C_SI);
+
+  /* allocate htilde */
+  n = (ssize_t) (1 << (int) ceil(log2(f_max / deltaF))) + 1;
+  //n = (ssize_t) ceil(f_max / deltaF);
+  *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", tRef, 0.0, deltaF, &lalStrainUnit, n);
+  memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
+  XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
+  if (!(*htilde)) XLAL_ERROR(__func__, XLAL_EFUNC);
+
+  shft = LAL_TWOPI * (tRef->gpsSeconds + 1e-9 * tRef->gpsNanoSeconds);
+
+  /***********************************************************************/
+  /* these are the parameters required for the "new" phenomenological IMR
+   * waveforms*/
+  /***********************************************************************/
+
+  /* PN corrections to the frequency domain amplitude of the (2,2) mode */
+  alpha2   = -323./224. + 451.*eta/168.;
+  alpha3   = (27./8. - 11.*eta/6.)*chi;
+
+  /* leading order power law of the merger amplitude */
+  mergPower = -2./3.;
+
+  /* spin-dependant corrections to the merger amplitude */
+  epsilon_1 =  1.4547*chi - 1.8897;
+  epsilon_2 = -1.8153*chi + 1.6557;
+
+  /* normalisation constant of the inspiral amplitude */
+  vMerg = pow(LAL_PI * totalMass * LAL_MTSUN_SI * fMerg, 1./3.);
+  vRing = pow(LAL_PI * totalMass * LAL_MTSUN_SI * fRing, 1./3.);
+
+  w1 = 1. + alpha2*pow(vMerg, 2.) + alpha3*pow(vMerg, 3.);
+  w1 = w1/(1. + epsilon_1 * vMerg + epsilon_2 * vMerg * vMerg);
+  w2 = w1 * (LAL_PI * sigma / 2.) * pow(fRing / fMerg, mergPower)
+          * (1. + epsilon_1 * vRing + epsilon_2 * vRing * vRing);
+
+  /* fCut here will specify where we stop generating frequencies */
+  fCut = fmin(params->fCut, f_max);
+
+  /* now generate the waveform at all frequency bins except DC and Nyquist */
+  for (i=1; i < n - 1; i++) {
+    REAL8 ampEff, psiEff;
+    REAL8 v, v2, v3, v4, v5, v6, v7, v8;
+
+    /* Fourier frequency corresponding to this bin */
+    REAL8 f = i * deltaF;
+    REAL8 fNorm = f / fMerg;
+
+    /* PN expansion parameter */
+    v = pow(LAL_PI*totalMass*LAL_MTSUN_SI*f, 1./3.);
+    v2 = v*v; v3 = v2*v; v4 = v2*v2; v5 = v4*v; v6 = v3*v3; v7 = v6*v, v8 = v7*v;
+
+    /* compute the amplitude */
+    if ((f < f_min) || (f > fCut))
+      continue;
+    else if (f <= fMerg)
+      ampEff = pow(fNorm, -7./6.)*(1. + alpha2 * v2 + alpha3 * v3);
+    else if ((f > fMerg) & (f <= fRing))
+      ampEff = w1 * pow(fNorm, mergPower) * (1. + epsilon_1 * v + epsilon_2 * v2);
+    else if (f > fRing)
+      ampEff = w2 * LorentzianFn(f, fRing, sigma);
+    else {
+      XLALDestroyCOMPLEX16FrequencySeries(*htilde);
+      *htilde = NULL;
+      XLAL_ERROR(__func__, XLAL_EDOM);
+    }
+
+    /* now compute the phase */
+    psiEff = shft * (f - fRef) + phiRef  /* use reference freq. and phase */
+      + 3./(128.*eta*v5)*(1 + params->psi2*v2
+      + params->psi3*v3 + params->psi4*v4
+      + params->psi5*v5 + params->psi6*v6
+      + params->psi7*v7 + params->psi8*v8);
+
+    /* generate the waveform */
+    ((*htilde)->data->data)[i].re = amp0 * ampEff * cos(psiEff);
+    ((*htilde)->data->data)[i].im = -amp0 * ampEff * sin(psiEff);
+  }
+
+  return XLAL_SUCCESS;
+}
+
+/**
  * Private function to generate time-domain waveforms given coefficients
  */
-static int IMRPhenomGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params) {
+static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params) {
   REAL8 f_min_wide, f_max_wide, deltaF;
   COMPLEX16FrequencySeries *htilde;
   /* We will generate the waveform from a frequency which is lower than the
@@ -633,15 +750,42 @@ static int IMRPhenomGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phi
   deltaF = 1. / (deltaT * (1 << (int) ceil(log2(ComputeTau0(m1, m2, f_min_wide) / deltaT))));
 
   /* generate in frequency domain */
-  if (IMRPhenomGenerateFD(&htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(__func__, XLAL_EFUNC);
+  if (IMRPhenomAGenerateFD(&htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(__func__, XLAL_EFUNC);
 
   /* convert to time domain */
   FDToTD(h, htilde, tRef, m1 + m2, deltaT, f_min, f_max, f_min_wide, f_max_wide);
   XLALDestroyCOMPLEX16FrequencySeries(htilde);
   if (!*h) XLAL_ERROR(__func__, XLAL_EFUNC);
-  return XLAL_SUCCESS;
+
+  /* clip the parts below f_min */
+  return cut_below_fmin(h, m1, m2, f_min, deltaT);
 }
 
+/**
+ * Private function to generate time-domain waveforms given coefficients
+ */
+static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 chi, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params) {
+  REAL8 f_min_wide, f_max_wide, deltaF;
+  COMPLEX16FrequencySeries *htilde;
+  /* We will generate the waveform from a frequency which is lower than the
+   * f_min chosen. Also the cutoff frequency is higher than the f_max. We
+   * will later apply a window function, and truncate the time-domain waveform
+   * below an instantaneous frequency f_min. */
+  f_min_wide = EstimateSafeFMinForTD(m1, m2, f_min, deltaT);
+  f_max_wide = EstimateSafeFMaxForTD(f_max, deltaT);
+  deltaF = 1. / (deltaT * (1 << (int) ceil(log2(ComputeTau0(m1, m2, f_min_wide) / deltaT))));
+
+  /* generate in frequency domain */
+  if (IMRPhenomBGenerateFD(&htilde, tRef, phiRef, fRef, deltaF, m1, m2, chi, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(__func__, XLAL_EFUNC);
+
+  /* convert to time domain */
+  FDToTD(h, htilde, tRef, m1 + m2, deltaT, f_min, f_max, f_min_wide, f_max_wide);
+  XLALDestroyCOMPLEX16FrequencySeries(htilde);
+  if (!*h) XLAL_ERROR(__func__, XLAL_EFUNC);
+
+  /* clip the parts below f_min */
+  return cut_below_fmin(h, m1, m2, f_min, deltaT);
+}
 
 /**
  * Window and IFFT a FD waveform to TD, then window in TD.
@@ -660,14 +804,13 @@ static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD
   /* apply the softening window function */
   nf = signalFD->data->length;
   nt = 2 * (nf - 1);
-  fRes = 1 / (deltaT * nt);
+  fRes = 2 / (deltaT * nt);
 
-  winFLo = (f_min + f_min_wide)/2.;
-  winFHi = (f_max + f_max_wide)/2.;
+  winFLo = (f_min + f_min_wide) / 2.;
+  winFHi = (f_max + f_max_wide) / 2.;
 
-  signalFD->data->data[0] = (COMPLEX16) {0., 0.};
-  for (k = 1; k <= nf; k++) {
-    f = k*fRes;
+  for (k = 0; k < nf; k++) {
+    f = k * fRes;
     softWin = (1 + tanh(f - winFLo))
             * (1 - tanh(f - winFHi)) / 4.;  // XXX: f_max_wide -> winFHi
     signalFD->data->data[k].re *= softWin;
@@ -688,18 +831,37 @@ static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD
   XLALDestroyREAL8FFTPlan(revPlan);
   if (!(*signalTD)) XLAL_ERROR(__func__, XLAL_EFUNC);
 
-  /* Normalisation; the LAL implementation of the FFT omits the factor 1/n.*/
-  for (k = 0; k < nf; k++)
-      (*signalTD)->data->data[k] *= 1 / (deltaT * nt);
+  /* Normalisation */
+  for (k = 0; k < nt; k++)
+      (*signalTD)->data->data[k] /= nt;
 
   /* apply a linearly decreasing window at the end
    * of the waveform in order to avoid edge effects. */
-  windowLength = 10. * totalMass * LAL_MTSUN_SI / deltaT;
+  windowLength = 20. * totalMass * LAL_MTSUN_SI / deltaT;
   for (k = 0; k < windowLength; k++)
     (*signalTD)->data->data[nt-k-1] *= k / windowLength;
 
   return XLAL_SUCCESS;
 }
+
+/* Cut a TD waveform below f_min when it has been generated down to f_min_wide */
+static int cut_below_fmin(REAL8TimeSeries **h, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT) {
+  ssize_t start_ind;
+  if (!(*h)) XLAL_ERROR(__func__, XLAL_EFAULT);
+
+  /* assume the Newtonian chirp is accurate for the early bit; add 1000 M for merger and ringdown */
+  start_ind = (ssize_t) (*h)->data->length - floor(ComputeTau0(m1, m2, f_min) / deltaT + 1000 * (m1 + m2) * LAL_MTSUN_SI);
+  if ((start_ind < 0) || (start_ind > (*h)->data->length))
+    XLAL_ERROR(__func__, XLAL_ERANGE);
+
+  /* shift waveform earlier */
+  *h = XLALResizeREAL8TimeSeries(*h, start_ind, (*h)->data->length - start_ind);
+  if (!(*h))
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+
+  return XLAL_SUCCESS;
+}
+
 
 static int apply_inclination(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 inclination) {
   REAL8 inclFacPlus, inclFacCross, cosI;
