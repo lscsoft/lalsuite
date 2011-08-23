@@ -157,7 +157,7 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         } else if (strcmp(argv[i], "--f-min") == 0) {
             params->f_min = atof(argv[++i]);
         } else if (strcmp(argv[i], "--f-max") == 0) {
-            params->f_min = atof(argv[++i]);
+            params->f_max = atof(argv[++i]);
         } else if (strcmp(argv[i], "--distance") == 0) {
             params->distance = atof(argv[++i]) * 1e6 * LAL_PC_SI;
         } else if (strcmp(argv[i], "--inclination") == 0) {
@@ -313,7 +313,7 @@ int main (int argc , char **argv) {
         goto fail;
     }
     if (params->verbose)
-        XLALPrintInfo("Generation took %.1f seconds\n", difftime(time(NULL), start_time));
+        XLALPrintInfo("Generation took %.3f seconds\n", difftime(time(NULL), start_time));
 
     /* dump file */
     f = fopen(params->outname, "w");
