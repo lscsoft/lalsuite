@@ -312,6 +312,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     ifodata1=ifodata1->next;
   }
   networkSNR=sqrt(networkSNR);
+  
+  REAL8 SampleRate=4096.0; //default value of the sample rate from LALInferenceReadData()
+  
+  if(LALInferenceGetProcParamVal(runState->commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(runState->commandLine,"--srate")->value);
+  
 	//for (t=0; t<nChain; ++t) {
 		outfileName = (char*)calloc(99,sizeof(char*));
                 ppt = LALInferenceGetProcParamVal(runState->commandLine, "--appendOutput");
@@ -332,11 +337,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 					"Detector","SNR","f_low","f_high","before tc","after tc","Sample start (GPS)","Sample length","Sample rate","Sample size","FT size");
 			ifodata1=runState->data;
 			while(ifodata1){
-				fprintf(chainoutput, "%16s  %16.8lf  %10.2lf  %10.2lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %12d  %12d  %12d\n",
+				fprintf(chainoutput, "%16s  %16.8lf  %10.2lf  %10.2lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %.1f  %12d  %12d\n",
 							ifodata1->detector->frDetector.name,ifodata1->SNR,ifodata1->fLow,ifodata1->fHigh,atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)-2.0,2.00,
-							XLALGPSGetREAL8(&(ifodata1->epoch)),atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value),atoi(LALInferenceGetProcParamVal(runState->commandLine,"--srate")->value),
-							(int)atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)*atoi(LALInferenceGetProcParamVal(runState->commandLine,"--srate")->value),
-							(int)atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)*atoi(LALInferenceGetProcParamVal(runState->commandLine,"--srate")->value));
+							XLALGPSGetREAL8(&(ifodata1->epoch)),atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value),SampleRate,
+							(int)(atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)*SampleRate),
+							(int)(atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)*SampleRate));
 				ifodata1=ifodata1->next;
 			}
 			fprintf(chainoutput, "\n\n%31s\n","");

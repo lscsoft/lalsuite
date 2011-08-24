@@ -83,9 +83,9 @@ static REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS 
  --PSDlength length             length of PSD estimation data in seconds\n\
  --seglen length                length of segments for PSD estimation and analysis in seconds\n\
  --trigtime GPStime             GPS time of the trigger to analyse\n\
-(--srate rate)                  Downsample data to rate in Hz\n\
-(--fLow [freq1,freq2,...])      Specify lower frequency cutoff for overlap integral\n\
-(--fHigh [freq1,freq2,...])     Specify higher frequency cutoff for overlap integral\n\
+(--srate rate)                  Downsample data to rate in Hz (4096.0,)\n\
+(--fLow [freq1,freq2,...])      Specify lower frequency cutoff for overlap integral (40.0)\n\
+(--fHigh [freq1,freq2,...])     Specify higher frequency cutoff for overlap integral (2048.0)\n\
 (--channel [chan1,chan2,...])   Specify channel names when reading cache files\n\
 (--dataseed number)             Specify random seed to use when generating data\n"
 
