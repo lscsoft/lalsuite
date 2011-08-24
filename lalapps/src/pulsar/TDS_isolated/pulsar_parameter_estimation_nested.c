@@ -592,11 +592,14 @@ void readPulsarData( LALInferenceRunState *runState ){
     exit(0);
   }
   
+  /* allocate memory for data sample intervals (in seconds) */
+  
+  
   /* get the detectors - must */
   ppt = LALInferenceGetProcParamVal( commandLine, "--detectors" );
   ppt2 = LALInferenceGetProcParamVal( commandLine, "--fake-data" );
   if( ppt && !ppt2 ){
-    detectors = XLALStringDuplicate( ppt->value );
+   detectors = XLALStringDuplicate( ppt->value );
       
     /* count the number of detectors from command line argument of comma
        separated vales and set their names */
@@ -611,7 +614,7 @@ void readPulsarData( LALInferenceRunState *runState ){
     for( i = 0; i < numDets; i++ ){
       tempdet = strsep( &tempdets, "," );
       XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
-    }
+    }      
   }
   /*Get psd values for generating fake data.*/
   /*=========================================================================*/
@@ -805,14 +808,14 @@ void readPulsarData( LALInferenceRunState *runState ){
     else{ /* set default (86400 seconds or 1 day) */
       for(i = 0; i < ml*numDets; i++ ) flengths[i] = 86400.;
     }
-      
+    
     fdt = XLALCalloc( MAXDETS*ml, sizeof(REAL8) );
     ppt = LALInferenceGetProcParamVal(commandLine,"--fake-dt");
     if( ppt ){
       CHAR *tmpdts = NULL, *tmpdt = NULL, dtval[256];
       fakedt = XLALStringDuplicate( ppt->value );
       
-      if( (numDt = count_csv( fakedt )) != numDets ){
+      if( (numDt = count_csv( fakedt )) != ml*numDets ){
         fprintf(stderr, "Error... for model type \"%s\" number of sample time\
  steps for fake data must be %d times the number of detectors specified (no.\
  dets =\%d)\n", modeltype, ml, numDets);
@@ -920,6 +923,10 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     /* add the pulsar model */
     LALInferenceAddVariable( ifodata->dataParams, "modeltype", &modeltype,
                              LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
+    
+    /* add data sample interval */
+    LALInferenceAddVariable( ifodata->dataParams, "dt", &fdt[i],
+                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
     
     /* add frequency factors variable */
     LALInferenceAddVariable( ifodata->dataParams, "freqfactors",
@@ -1065,7 +1072,6 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     logfactorial[i] = logfactorial[i-1] + log((REAL8)i);
   
   /* free memory */
-  XLALFree( fdt );
   XLALFree( flengths );
   XLALFree( fstarts );
   XLALFree( fpsds );
@@ -3059,7 +3065,7 @@ parameter file %s is wrong.\n", injectfile);
     
     snrmulti += SQUARE(snrval);
     
-    fprintf(fpsnr, "%le\t", snrval);
+    if ( snrscale == 0 ) fprintf(fpsnr, "%le\t", snrval);
                              
     data = data->next; 
   }
@@ -3068,28 +3074,53 @@ parameter file %s is wrong.\n", injectfile);
   snrmulti = sqrt( snrmulti );
   
   /* only need to print out multi-detector snr if the were multiple detectors */
-  if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
-  else fprintf(fpsnr, "\n");
-  
-  fclose( fpsnr );
-  
-  /* SNR scale factor to rescale the signal to the required SNR */
-  if ( snrscale != 0. ){
-    if ( injpars.h0 == 0. ){
-      fprintf(stderr, "Error... cannot rescale signal to an SNR of %lf as the \
-injected signal amplitude is zero!\n", snrscale);
-      exit(0);
-    }
+  if( snrscale == 0 ){
+    if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
+    else fprintf(fpsnr, "\n");
+  }
+  else{
+    /* rescale the signal and calculate the SNRs */
+    data = runState->data;
     
     snrscale /= snrmulti;
-    snrscale = sqrt(snrscale);
+    
+    /* rescale the h0 */
+    injpars.h0 *= snrscale;
+   
+    while( data ){
+      UINT4 varyphasetmp = varyphase;
+      REAL8 snrval = 0.;
+      varyphase = 1;
+      snrmulti = 0;
+      
+      /* recreate the signal */
+      pulsar_model( injpars, data );
+      
+      /* reset varyphase to its original value */
+      varyphase = varyphasetmp;
+      
+      /* recalculate the SNR */
+      snrval = calculate_time_domain_snr( data );
+      
+      snrmulti += SQUARE(snrval);
+      
+      fprintf(fpsnr, "%le\t", snrval);
+      
+      data = data->next;
+    }
+    
+    snrmulti = sqrt( snrmulti );
+    
+    if( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
+    else fprintf(fpsnr, "\n");
   }
-  else snrscale = 1.; /* do not apply any scaling */
   
+  fclose( fpsnr );
+   
   /* reset data to head */
   data = runState->data;
   
-  /* add signal to data and scale SNR if necessary */
+  /* add signal to data */
   while( data ){
     FILE *fp = NULL, *fpso = NULL;
     ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal( commandLine,
@@ -3122,10 +3153,6 @@ injection\n", signalonly);
     
     /* add the signal to the data */
     for ( i = 0; i < length; i++ ){
-      /* rescale signal data to required SNR */
-      data->compModelData->data->data[i].re *= snrscale;
-      data->compModelData->data->data[i].im *= snrscale;
-      
       data->compTimeData->data->data[i].re +=
         data->compModelData->data->data[i].re;
       data->compTimeData->data->data[i].im +=
@@ -4154,7 +4181,7 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
     }
     
     vari.re /= (chunkLength - 1.);
-    vari.re /= (chunkLength - 1.);
+    vari.im /= (chunkLength - 1.);
     
     /* add SNRs for each chunk in quadrature */
     snrval += (snrc.re/vari.re) + (snrc.im/vari.im);
@@ -4236,7 +4263,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     snrmulti += SQUARE( snrval );
     
     /* print out SNR value */
-    fprintf(fpsnr, "%le\t", sqrt(snrval));
+    fprintf(fpsnr, "%le\t", snrval);
     
     data = data->next;
   }

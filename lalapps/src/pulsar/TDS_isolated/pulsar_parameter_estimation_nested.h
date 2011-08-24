@@ -235,8 +235,6 @@ INT4 recognised_parameter( CHAR *parname );
 
 REAL8 calculate_time_domain_snr( LALInferenceIFOData *data );
 
-REAL8 calculate_double_time_domain_snr( LALInferenceIFOData *data );
-
 void get_loudest_snr( LALInferenceRunState *runState );
 
 /* testing functions */

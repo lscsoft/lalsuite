@@ -423,6 +423,8 @@ heterodyne.\n");  }
           rc = fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
           rc = fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
 
+          if( feof(fpin) ) break;
+          
           if(inputParams.scaleFac > 1.0){
             data->data->data[i].re *= inputParams.scaleFac;
             data->data->data[i].im *= inputParams.scaleFac;
@@ -498,7 +500,7 @@ heterodyne.\n");  }
     }
 
     XLALGPSSetREAL8(&data->epoch, hetParams.timestamp);
-
+    
     /* heterodyne data */
     heterodyne_data(data, times, hetParams, inputParams.freqfactor, filtresp);
     if( verbose ){ fprintf(stderr, "I've heterodyned the data.\n"); }
@@ -1109,7 +1111,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       t2 = times->data[i] + 1.; /* just add a second to get the gradient */
 
       baryinput2 = baryinput;
-        
+      
       XLALGPSSetREAL8(&baryinput.tgps, t);
       
       XLALGPSSetREAL8(&baryinput2.tgps, t2);
@@ -1703,14 +1705,15 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
     if(tempstart >= cache.starttime[i] 
         && tempstart < cache.starttime[i]+cache.duration[i] 
         && cache.starttime[i] < tempstop){
-      if ( XLALStringAppend(smalllist, cache.framelist[i]) == NULL ){
+      if ( (smalllist = XLALStringAppend(smalllist, cache.framelist[i])) 
+        == NULL ){
         fprintf(stderr, "Error... something wrong creating frame list with \
 XLALStringAppend!\n");
         exit(1);
       }
       
       /* add a space between frame filenames */
-      XLALStringAppend(smalllist, " ");
+      smalllist = XLALStringAppend(smalllist, " ");
       
       tempstart += cache.duration[i];
       check++;
@@ -1757,7 +1760,7 @@ void calibrate(COMPLEX16TimeSeries *series, REAL8Vector *datatimes,
   
   if(calfiles.calibcoefficientfile == NULL){
     fprintf(stderr, "No calibration coefficient file.\n\
-Assume calibration coefficients are 1 and use the response funtcion.\n");
+Assume calibration coefficients are 1 and use the response function.\n");
     /* get response function values */
     get_calibration_values(&Rfunc, &Rphase, calfiles.responsefunctionfile,
       frequency);
@@ -1779,7 +1782,7 @@ Assume calibration coefficients are 1 and use the response funtcion.\n");
 
     if((fpcoeff = fopen(calfiles.calibcoefficientfile, "r"))==NULL){
       fprintf(stderr, "Error... can't open calibration coefficient file %s.\n\
-Assume calibration coefficients are 1 and use the response funtcion.\n",
+Assume calibration coefficients are 1 and use the response function.\n",
         calfiles.calibcoefficientfile);
       exit(1);
     }
