@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.5"
+#define CMDLINE_PARSER_VERSION "1.1.6"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -106,6 +106,12 @@ struct gengetopt_args_info
   char * ULfilename_arg;	/**< @brief Upper limit file name (default='uls.dat').  */
   char * ULfilename_orig;	/**< @brief Upper limit file name original value given at command line.  */
   const char *ULfilename_help; /**< @brief Upper limit file name help description.  */
+  double ULfmin_arg;	/**< @brief Minimum signal frequency considered for the upper limit value.  */
+  char * ULfmin_orig;	/**< @brief Minimum signal frequency considered for the upper limit value original value given at command line.  */
+  const char *ULfmin_help; /**< @brief Minimum signal frequency considered for the upper limit value help description.  */
+  double ULfspan_arg;	/**< @brief Span of signal frequencies considered for the upper limit value.  */
+  char * ULfspan_orig;	/**< @brief Span of signal frequencies considered for the upper limit value original value given at command line.  */
+  const char *ULfspan_help; /**< @brief Span of signal frequencies considered for the upper limit value help description.  */
   double ULminimumDeltaf_arg;	/**< @brief Minimum modulation depth counted in the upper limit value (default='0.0').  */
   char * ULminimumDeltaf_orig;	/**< @brief Minimum modulation depth counted in the upper limit value original value given at command line.  */
   const char *ULminimumDeltaf_help; /**< @brief Minimum modulation depth counted in the upper limit value help description.  */
@@ -184,6 +190,8 @@ struct gengetopt_args_info
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
   unsigned int outfilename_given ;	/**< @brief Whether outfilename was given.  */
   unsigned int ULfilename_given ;	/**< @brief Whether ULfilename was given.  */
+  unsigned int ULfmin_given ;	/**< @brief Whether ULfmin was given.  */
+  unsigned int ULfspan_given ;	/**< @brief Whether ULfspan was given.  */
   unsigned int ULminimumDeltaf_given ;	/**< @brief Whether ULminimumDeltaf was given.  */
   unsigned int ULmaximumDeltaf_given ;	/**< @brief Whether ULmaximumDeltaf was given.  */
   unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */

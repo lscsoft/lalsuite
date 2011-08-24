@@ -57,6 +57,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --outdirectory=directory  Output directory  (default=`output')",
   "      --outfilename=filename    Output file name  (default=`logfile.txt')",
   "      --ULfilename=filename     Upper limit file name  (default=`uls.dat')",
+  "      --ULfmin=DOUBLE           Minimum signal frequency considered for the \n                                  upper limit value",
+  "      --ULfspan=DOUBLE          Span of signal frequencies considered for the \n                                  upper limit value",
   "      --ULminimumDeltaf=DOUBLE  Minimum modulation depth counted in the upper \n                                  limit value  (default=`0.0')",
   "      --ULmaximumDeltaf=DOUBLE  Maximum modulation depth counted in the upper \n                                  limit value  (default=`0.1')",
   "      --sftDir=directory        Directory containing SFTs  (default=`./')",
@@ -122,11 +124,13 @@ init_help_array(void)
   gengetopt_args_info_help[36] = gengetopt_args_info_full_help[36];
   gengetopt_args_info_help[37] = gengetopt_args_info_full_help[37];
   gengetopt_args_info_help[38] = gengetopt_args_info_full_help[38];
-  gengetopt_args_info_help[39] = 0; 
+  gengetopt_args_info_help[39] = gengetopt_args_info_full_help[39];
+  gengetopt_args_info_help[40] = gengetopt_args_info_full_help[40];
+  gengetopt_args_info_help[41] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[40];
+const char *gengetopt_args_info_help[42];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -204,6 +208,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->outdirectory_given = 0 ;
   args_info->outfilename_given = 0 ;
   args_info->ULfilename_given = 0 ;
+  args_info->ULfmin_given = 0 ;
+  args_info->ULfspan_given = 0 ;
   args_info->ULminimumDeltaf_given = 0 ;
   args_info->ULmaximumDeltaf_given = 0 ;
   args_info->sftDir_given = 0 ;
@@ -265,6 +271,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->outfilename_orig = NULL;
   args_info->ULfilename_arg = gengetopt_strdup ("uls.dat");
   args_info->ULfilename_orig = NULL;
+  args_info->ULfmin_orig = NULL;
+  args_info->ULfspan_orig = NULL;
   args_info->ULminimumDeltaf_arg = 0.0;
   args_info->ULminimumDeltaf_orig = NULL;
   args_info->ULmaximumDeltaf_arg = 0.1;
@@ -330,26 +338,28 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->outdirectory_help = gengetopt_args_info_full_help[22] ;
   args_info->outfilename_help = gengetopt_args_info_full_help[23] ;
   args_info->ULfilename_help = gengetopt_args_info_full_help[24] ;
-  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[25] ;
-  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[26] ;
-  args_info->sftDir_help = gengetopt_args_info_full_help[27] ;
-  args_info->ephemDir_help = gengetopt_args_info_full_help[28] ;
-  args_info->ephemYear_help = gengetopt_args_info_full_help[29] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[30] ;
-  args_info->templateLength_help = gengetopt_args_info_full_help[31] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[32] ;
-  args_info->skyRegionFile_help = gengetopt_args_info_full_help[33] ;
-  args_info->SFToverlap_help = gengetopt_args_info_full_help[34] ;
-  args_info->sftType_help = gengetopt_args_info_full_help[35] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[36] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[37] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[38] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[39] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[40] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[41] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[42] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[43] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[44] ;
+  args_info->ULfmin_help = gengetopt_args_info_full_help[25] ;
+  args_info->ULfspan_help = gengetopt_args_info_full_help[26] ;
+  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[27] ;
+  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[28] ;
+  args_info->sftDir_help = gengetopt_args_info_full_help[29] ;
+  args_info->ephemDir_help = gengetopt_args_info_full_help[30] ;
+  args_info->ephemYear_help = gengetopt_args_info_full_help[31] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[32] ;
+  args_info->templateLength_help = gengetopt_args_info_full_help[33] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[34] ;
+  args_info->skyRegionFile_help = gengetopt_args_info_full_help[35] ;
+  args_info->SFToverlap_help = gengetopt_args_info_full_help[36] ;
+  args_info->sftType_help = gengetopt_args_info_full_help[37] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[38] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[39] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[40] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[41] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[42] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[43] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[44] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[45] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[46] ;
   
 }
 
@@ -466,6 +476,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->outfilename_orig));
   free_string_field (&(args_info->ULfilename_arg));
   free_string_field (&(args_info->ULfilename_orig));
+  free_string_field (&(args_info->ULfmin_orig));
+  free_string_field (&(args_info->ULfspan_orig));
   free_string_field (&(args_info->ULminimumDeltaf_orig));
   free_string_field (&(args_info->ULmaximumDeltaf_orig));
   free_string_field (&(args_info->sftDir_arg));
@@ -605,6 +617,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "outfilename", args_info->outfilename_orig, 0);
   if (args_info->ULfilename_given)
     write_into_file(outfile, "ULfilename", args_info->ULfilename_orig, 0);
+  if (args_info->ULfmin_given)
+    write_into_file(outfile, "ULfmin", args_info->ULfmin_orig, 0);
+  if (args_info->ULfspan_given)
+    write_into_file(outfile, "ULfspan", args_info->ULfspan_orig, 0);
   if (args_info->ULminimumDeltaf_given)
     write_into_file(outfile, "ULminimumDeltaf", args_info->ULminimumDeltaf_orig, 0);
   if (args_info->ULmaximumDeltaf_given)
@@ -939,6 +955,8 @@ cmdline_parser_internal (
         { "outdirectory",	1, NULL, 0 },
         { "outfilename",	1, NULL, 0 },
         { "ULfilename",	1, NULL, 0 },
+        { "ULfmin",	1, NULL, 0 },
+        { "ULfspan",	1, NULL, 0 },
         { "ULminimumDeltaf",	1, NULL, 0 },
         { "ULmaximumDeltaf",	1, NULL, 0 },
         { "sftDir",	1, NULL, 0 },
@@ -1288,6 +1306,34 @@ cmdline_parser_internal (
                 &(local_args_info.ULfilename_given), optarg, 0, "uls.dat", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "ULfilename", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Minimum signal frequency considered for the upper limit value.  */
+          else if (strcmp (long_options[option_index].name, "ULfmin") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->ULfmin_arg), 
+                 &(args_info->ULfmin_orig), &(args_info->ULfmin_given),
+                &(local_args_info.ULfmin_given), optarg, 0, 0, ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "ULfmin", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Span of signal frequencies considered for the upper limit value.  */
+          else if (strcmp (long_options[option_index].name, "ULfspan") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->ULfspan_arg), 
+                 &(args_info->ULfspan_orig), &(args_info->ULfspan_given),
+                &(local_args_info.ULfspan_given), optarg, 0, 0, ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "ULfspan", '-',
                 additional_error))
               goto failure;
           

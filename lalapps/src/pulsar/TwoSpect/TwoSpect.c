@@ -1757,6 +1757,10 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    else params->dfmin = 0.5/(params->Tcoh);
    if (args_info.dfmax_given) params->dfmax = args_info.dfmax_arg;
    else params->dfmax = maxModDepth(params->Pmax, params->Tcoh);
+   if (args_info.ULfmin_given) params->ULfmin = args_info.ULfmin_arg;
+   else params->ULfmin = params->fmin;
+   if (args_info.ULfspan_given) params->ULfspan = args_info.ULfspan_arg;
+   else params->ULfspan = params->fspan;
    
    //Settings for IHS FOM
    if (args_info.ihsfomfar_given) params->ihsfomfar = args_info.ihsfomfar_arg;
