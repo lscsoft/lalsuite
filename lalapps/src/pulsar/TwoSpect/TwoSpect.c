@@ -837,6 +837,7 @@ int main(int argc, char *argv[])
    free_candidateVector(gaussCandidates4);
    free_candidateVector(exactCandidates1);
    free_candidateVector(exactCandidates2);
+   FreeDopplerSkyScan(&status, &scan);
    
    //print end time
    time(&programendtime);
@@ -845,6 +846,8 @@ int main(int argc, char *argv[])
    fprintf(LOG, "Program finished on %s\n", asctime(ptm));
    
    fclose(LOG);
+   
+   LALCheckMemoryLeaks();
    
    return 0;
 
