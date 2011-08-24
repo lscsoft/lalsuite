@@ -1044,6 +1044,12 @@ void LALInspiralStationaryPhaseApprox1 (
      InspiralTemplate *params);
 
 
+int
+XLALInspiralStationaryPhaseApprox1 (
+   REAL4Vector      *signalvec,
+   InspiralTemplate *params);
+ 
+
 
 
 void LALInspiralStationaryPhaseApprox2 (
@@ -1051,6 +1057,11 @@ void LALInspiralStationaryPhaseApprox2 (
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
+int
+XLALInspiralStationaryPhaseApprox2 (
+   REAL4Vector      *signalvec,
+   InspiralTemplate *params);
+ 
 
 
 

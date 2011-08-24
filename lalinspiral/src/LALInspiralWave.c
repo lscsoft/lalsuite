@@ -92,8 +92,8 @@ Depending on the user inputs one of the following functions is called:
 LALInspiralWave1()
 LALInspiralWave2()
 LALInspiralWave3()
-LALInspiralStationaryPhaseApprox1()
-LALInspiralStationaryPhaseApprox2()
+XLALInspiralStationaryPhaseApprox1()
+XLALInspiralStationaryPhaseApprox2()
 LALEOBWaveform()
 LALBCVWaveform()
 LALInspiralSpinModulatedWave()
@@ -195,12 +195,12 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorF1:
-	   LALInspiralStationaryPhaseApprox1(status->statusPtr, signalvec, params);
+	   XLALInspiralStationaryPhaseApprox1(signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorF2:
       case FindChirpSP:
-           LALInspiralStationaryPhaseApprox2(status->statusPtr, signalvec, params);
+           XLALInspiralStationaryPhaseApprox2(signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
       case PadeF1:
