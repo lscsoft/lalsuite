@@ -532,11 +532,11 @@ void readPulsarData( LALInferenceRunState *runState ){
   
   CHAR *filestr = NULL;
   
-  CHAR *efile = NULL;
-  CHAR *sfile = NULL;
+  CHAR efile[1024];
+  CHAR sfile[1024];
   
-  CHAR *tempdets=NULL;
-  CHAR *tempdet=NULL;
+  CHAR *tempdets = NULL;
+  CHAR *tempdet = NULL;
  
   REAL8 *fpsds = NULL;
   CHAR *fakestarts = NULL, *fakelengths = NULL, *fakedt = NULL;
@@ -860,21 +860,7 @@ void readPulsarData( LALInferenceRunState *runState ){
     fprintf(stderr, USAGE, commandLine->program);
     exit(0);
   }
-  
-  /* get ephemeris files */
-  ppt = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
-  if( ppt ) efile = XLALStringDuplicate( ppt->value );
-  
-  ppt = LALInferenceGetProcParamVal( commandLine, "--ephem-sun" );
-  if( ppt ) sfile = XLALStringDuplicate( ppt->value );
-
-  /* check ephemeris files exist and if not output an error message */
-  if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
-    fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
-defined!\n");
-    exit(3);
-  }
-  
+ 
   /* count the number of input files (by counting commas) and check it's equal
      to twice the number of detectors */
   if ( !ppt2 ){ /* if using real data */
@@ -903,7 +889,8 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     LIGOTimeGPS gpstime;
     COMPLEX16 dataVals;
     REAL8Vector *temptimes = NULL;
-    INT4 j = 0, k = 0;
+    INT4 j = 0, k = 0, datalength = 0;
+    ProcessParamsTable *ppte = NULL, *ppts = NULL;
     
     FILE *fp = NULL;
     
@@ -990,9 +977,11 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     
       fclose(fp);
     
+      datalength = j;
+      
       /* allocate data time stamps */
       ifodata->dataTimes = NULL;
-      ifodata->dataTimes = XLALCreateTimestampVector( j );
+      ifodata->dataTimes = XLALCreateTimestampVector( datalength );
     
       /* fill in time stamps as LIGO Time GPS Vector */
       for ( k = 0; k<j; k++ )
@@ -1004,7 +993,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
       XLALDestroyREAL8Vector( temptimes );
     }
     else{ /* set up fake data */
-      INT4 datalength = flengths[i] / fdt[i];
+      datalength = flengths[i] / fdt[i];
       
       /* temporary real and imaginary data vectors */
       REAL4Vector *realdata = NULL;
@@ -1056,6 +1045,33 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
       
     /* set ephemeris data */
     ifodata->ephem = XLALMalloc( sizeof(EphemerisData) );
+    
+    /* get ephemeris files */
+    ppte = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
+    ppts = LALInferenceGetProcParamVal( commandLine, "--ephem-sun" );
+    if( ppte && ppts ){
+      fprintf(stderr, "Think ephemeris files have been set!\n");
+      XLALStringCopy( efile, ppte->value, sizeof(efile) );
+      XLALStringCopy( sfile, ppts->value, sizeof(sfile) );
+    }
+    else{ /* try getting files automatically */
+      fprintf(stderr, "About to automatically set the ephemeris files\n");
+      if( XLALAutoSetEphemerisFiles( efile, sfile,
+        ifodata->dataTimes->data[0].gpsSeconds,
+        ifodata->dataTimes->data[datalength-1].gpsSeconds ) ){
+        fprintf(stderr, "Error... not been able to set ephemeris files!\n");
+        exit(3);
+      }
+    }
+
+    fprintf(stderr, "%s %s\n", efile, sfile);
+
+    /* check ephemeris files exist and if not output an error message */
+    if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
+      fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
+defined!\n");
+      exit(3);
+    }
     
     /* set up ephemeris information */
     ifodata->ephem = XLALInitBarycenter( efile, sfile );
@@ -4275,6 +4291,154 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   
   fclose( fpsnr );
 }
+
+
+/** \brief Automatically set the solar system ephemeris file based on
+ * environment variables and data time span
+ * 
+ * This function will attempt to find Earth and Sun ephemeris files based on
+ * LAL environment variables (as set up by <code> lalpulsar-user-env.(c)sh
+ * </code>) and a given start and end GPS time (presumably taken from the data
+ * that is to be analysed). It requires \c LALPULSAR is installed and the \c
+ * LALPULSAR_PREFIX variable is set, which should mean that ephemeris files are
+ * installed in the directory \c ${LALPULSAR_PREFIX}/share/lalpulsar/.
+ *
+ * Within this directory the should be ephemeris files of the format 
+ * earthXX-YY.dat, or earthXX.dat, where XX are two digit years e.g.
+ * earth11.dat and represent the year or years for which the ephemeris is
+ * valid. The function will find the appropriate ephemeris files that cover the 
+ * time range (in GPS seconds) required. If no files exist errors will be
+ * returned.
+ * 
+ * The function uses requires <code>dirent,h</code> and <code>time.h</code>. 
+ * 
+ * NOTE: This may want to be moved into LAL at some point.
+ * 
+ * \param efile [in] a string that will return the Earth ephemeris file
+ * \param sfile [in] a string that will return the Sun ephemeris file 
+ * \param gpsstart [in] the GPS time of the start of the data
+ * \param gpsend [in] the GPS time of the end of the data
+ * 
+ * \return Zero will be return on successful completion
+ */
+INT4 XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, 
+                                INT4 gpsstart, INT4 gpsend ){
+  struct tm utcstart,  utcend;
+  CHAR *eftmp = NULL, *sftmp = NULL;
+  INT4 buf = 3;
+  CHAR yearstart[buf], yearend[buf]; /* the two digit year i.e. 11 for 2011*/
+  INT4 ys = 0, ye = 0;
+  CHAR *lalpath = NULL, *lalpulsarpath = NULL;
+  
+  INT4 yr1 = 0, yr2 = 0, i = 0;
+    
+  CHAR tmpyr[6];
+    
+  struct dirent *entry;
+  DIR *dp;
+  
+  /* first check that the path to the Ephemeris files is available in the
+     environment variables */
+  if((lalpath = getenv("LALPULSAR_PREFIX")) == NULL){
+    XLALPrintError("LALPULSAR_PREFIX environment variable not set. Cannot \
+automatically generate ephemeris files!\n");
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+  
+  /* get the utc times of the start and end GPS times */
+  if( !XLALGPSToUTC( &utcstart, gpsstart ) )
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  if( !XLALGPSToUTC( &utcend, gpsend ) )
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  
+  /* get years */
+  if( strftime(yearstart, buf, "%y", &utcstart) != 2 )
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  
+  if( strftime(yearend, buf, "%y", &utcend) != 2 )
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  
+  ys = atoi(yearstart);
+  ye = atoi(yearend);
+  
+  lalpulsarpath = XLALStringDuplicate( lalpath );
+  
+  if ( (lalpulsarpath = XLALStringAppend(lalpulsarpath, "/share/lalpulsar/")) ==
+NULL )
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  
+  eftmp = XLALStringDuplicate(lalpulsarpath);
+  sftmp = XLALStringDuplicate(lalpulsarpath);
+  
+  eftmp = XLALStringAppend(eftmp, "earth");
+  sftmp = XLALStringAppend(sftmp, "sun");
+ 
+  /* find the ephemeris file that bounds the required range */
+  if ( ( dp = opendir(lalpulsarpath) ) == NULL ){
+    XLALPrintError("Error... cannot open directory path %s!\n", lalpulsarpath);
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+    
+  while( (entry = readdir(dp) ) ){
+    /* just use "earth" files rather than doubling up */
+    if ( strstr(entry->d_name, "earth") != NULL ){
+      /* get current set of ranges - filenames are of the format
+         earthXX-YY.dat, so find the '-' and extract two characters either
+         side */
+      if ( strchr(entry->d_name, '-') ){
+        sscanf(entry->d_name, "earth%d-%d.dat", &yr1, &yr2);
+        
+        if ( ys >= yr1 && ye <= yr2 ) {
+          snprintf(tmpyr, 6, "%02d-%02d", yr1, yr2);
+          
+          eftmp = XLALStringAppend(eftmp, tmpyr);
+          sftmp = XLALStringAppend(sftmp, tmpyr);
+          i++;
+          break;
+        }
+      }
+      /* get the single year value ephemeris file e.g. earthXX.dat */
+      else{
+        sscanf(entry->d_name, "earth%d.dat", &yr1);
+        
+        if ( ys == yr1 && ye == yr1 ){
+          snprintf(tmpyr, 3, "%02d", yr1);
+          eftmp = XLALStringAppend(eftmp, tmpyr);
+          sftmp = XLALStringAppend(sftmp, tmpyr);
+          i++;
+          break;
+        }
+      }
+    }
+  }
+    
+  closedir(dp);
+    
+  if( i == 0 ){
+    XLALPrintError("No ephemeris files in the time range %02d-%02d found!\n",
+                   ys, ye);
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+
+  /* add .dat extension */
+  eftmp = XLALStringAppend(eftmp, ".dat");
+  sftmp = XLALStringAppend(sftmp, ".dat");
+  
+  if ( eftmp == NULL || sftmp == NULL )
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+
+  XLALStringCopy( efile, eftmp, 1024 );
+  XLALStringCopy( sfile, sftmp, 1024 );
+  
+  /* double check that the files exist */
+  if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
+    XLALPrintError("Error... ephemeris files not, or incorrectly, defined!\n");
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+  
+  return 0;
+}
+
 
 /*----------------------- END OF HELPER FUNCTIONS ----------------------------*/
 
