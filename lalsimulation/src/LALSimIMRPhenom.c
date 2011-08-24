@@ -57,6 +57,8 @@ static BBHPhenomParams *ComputeIMRPhenomBParams(REAL8 m1, REAL8 m2, REAL8 chi);
 static REAL8 EstimateSafeFMinForTD(REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT);
 static REAL8 EstimateSafeFMaxForTD(REAL8 f_max, REAL8 dt);
 static REAL8 ComputeTau0(REAL8 m1, REAL8 m2, REAL8 f_min);
+static ssize_t EstimateIMRLength(REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT);
+static ssize_t NextPow2(ssize_t n);
 
 static REAL8 LorentzianFn(REAL8 freq, REAL8 fRing, REAL8 sigma);
 
@@ -505,6 +507,18 @@ static REAL8 ComputeTau0(REAL8 m1, REAL8 m2, REAL8 f_min) {
 }
 
 /**
+ * Estimate the length of a TD vector that can hold the waveform as the Newtonian
+ * chirp time tau0 plus 1000 M.
+ */
+static ssize_t EstimateIMRLength(REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT) {
+  return (ssize_t) floor((ComputeTau0(m1, m2, f_min) + 1000 * (m1 + m2) * LAL_MTSUN_SI) / deltaT);
+}
+
+static ssize_t NextPow2(ssize_t n) {
+  return 1 << (ssize_t) ceil(log2(n));
+}
+
+/**
  * Find a lower value for f_min (using the definition of Newtonian chirp
  * time) such that the waveform has a minimum length of tau0. This is
  * necessary to avoid FFT artifacts.
@@ -514,7 +528,7 @@ static REAL8 EstimateSafeFMinForTD(REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT
 
   totalMass = m1 + m2;
   eta = m1 * m2 / (totalMass * totalMass);
-  tau0 = deltaT * (1 << (int) ceil(log2(1.05 * ComputeTau0(m1, m2, f_min) / deltaT)));
+  tau0 = deltaT * NextPow2(1.025 * EstimateIMRLength(m1, m2, f_min, deltaT));
   temp_f_min = pow((tau0 * 256. * eta * pow(totalMass * LAL_MTSUN_SI, 5./3.) / 5.), -3./8.) / LAL_PI;
   if (temp_f_min > f_min) temp_f_min = f_min;
   if (temp_f_min < 0.5) temp_f_min = 0.5;
@@ -556,7 +570,7 @@ static int IMRPhenomAGenerateFD(
     REAL8 f_min,                       /**< start frequency */
     REAL8 f_max,                       /**< end frequency */
     REAL8 distance,                    /**< distance of source */
-    BBHPhenomParams *params            /**< from ComputeIMRPhenom{A,B}Params */
+    BBHPhenomParams *params            /**< from ComputeIMRPhenomAParams */
 ) {
   REAL8 shft, amp0, fMerg, fRing, fCut, sigma, totalMass, eta;
   ssize_t i, n;
@@ -572,7 +586,7 @@ static int IMRPhenomAGenerateFD(
     / pow(LAL_PI, 2./3.) * sqrt(5. * eta / 24.) / (distance / LAL_C_SI);
 
   /* allocate htilde */
-  n = (ssize_t) (1 << (int) ceil(log2(f_max / deltaF))) + 1;
+  n = NextPow2(f_max / deltaF) + 1;
   //n = (ssize_t) ceil(f_max / deltaF);
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", tRef, 0.0, deltaF, &lalStrainUnit, n);
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
@@ -638,7 +652,7 @@ static int IMRPhenomBGenerateFD(
     REAL8 f_min,                       /**< start frequency */
     REAL8 f_max,                       /**< end frequency; if 0 */
     REAL8 distance,                    /**< distance of source */
-    BBHPhenomParams *params            /**< from ComputeIMRPhenom{A,B}Params */
+    BBHPhenomParams *params            /**< from ComputeIMRPhenomBParams */
 ) {
   REAL8 shft, amp0, fMerg, fRing, fCut, sigma, totalMass, eta;
   REAL8 alpha2, alpha3, mergPower, epsilon_1, epsilon_2, vMerg, vRing, w1, w2;
@@ -655,7 +669,7 @@ static int IMRPhenomBGenerateFD(
     / pow(LAL_PI, 2./3.) * sqrt(5. * eta / 24.) / (distance / LAL_C_SI);
 
   /* allocate htilde */
-  n = (ssize_t) (1 << (int) ceil(log2(f_max / deltaF))) + 1;
+  n = NextPow2(f_max / deltaF) + 1;
   //n = (ssize_t) ceil(f_max / deltaF);
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", tRef, 0.0, deltaF, &lalStrainUnit, n);
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
@@ -721,7 +735,7 @@ static int IMRPhenomBGenerateFD(
     }
 
     /* now compute the phase */
-    psiEff = shft * (f - fRef) + phiRef  /* use reference freq. and phase */
+    psiEff = shft * (f - fRef) - phiRef  /* use reference freq. and phase; phi is flipped relative to IMRPhenomA */
       + 3./(128.*eta*v5)*(1 + params->psi2*v2
       + params->psi3*v3 + params->psi4*v4
       + params->psi5*v5 + params->psi6*v6
@@ -742,12 +756,14 @@ static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 ph
   REAL8 f_min_wide, f_max_wide, deltaF;
   COMPLEX16FrequencySeries *htilde;
   /* We will generate the waveform from a frequency which is lower than the
-   * f_min chosen. Also the cutoff frequency is higher than the f_max. We
+   * f_min chosen. Also the cutoff frequency may be higher than the f_max. We
    * will later apply a window function, and truncate the time-domain waveform
    * below an instantaneous frequency f_min. */
   f_min_wide = EstimateSafeFMinForTD(m1, m2, f_min, deltaT);
-  f_max_wide = EstimateSafeFMaxForTD(f_max, deltaT);
-  deltaF = 1. / (deltaT * (1 << (int) ceil(log2(ComputeTau0(m1, m2, f_min_wide) / deltaT))));
+  f_max_wide = 0.5 / deltaT;
+  if (EstimateSafeFMaxForTD(f_max, deltaT) > f_max_wide)
+    XLALPrintWarning("Warning: sampling rate too low to capture chosen f_max\n");
+  deltaF = 1. / (deltaT * NextPow2(EstimateIMRLength(m1, m2, f_min_wide, deltaT)));
 
   /* generate in frequency domain */
   if (IMRPhenomAGenerateFD(&htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(__func__, XLAL_EFUNC);
@@ -772,8 +788,10 @@ static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 ph
    * will later apply a window function, and truncate the time-domain waveform
    * below an instantaneous frequency f_min. */
   f_min_wide = EstimateSafeFMinForTD(m1, m2, f_min, deltaT);
-  f_max_wide = EstimateSafeFMaxForTD(f_max, deltaT);
-  deltaF = 1. / (deltaT * (1 << (int) ceil(log2(ComputeTau0(m1, m2, f_min_wide) / deltaT))));
+  f_max_wide = 0.5 / deltaT;
+  if (EstimateSafeFMaxForTD(f_max, deltaT) > f_max_wide)
+    XLALPrintWarning("Warning: sampling rate too low for expected spectral content\n");
+  deltaF = 1. / (deltaT * NextPow2(EstimateIMRLength(m1, m2, f_min_wide, deltaT)));
 
   /* generate in frequency domain */
   if (IMRPhenomBGenerateFD(&htilde, tRef, phiRef, fRef, deltaF, m1, m2, chi, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(__func__, XLAL_EFUNC);
@@ -793,26 +811,26 @@ static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 ph
  * FD waveform is modified.
  */
 static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD, LIGOTimeGPS *tRef, REAL8 totalMass, REAL8 deltaT, REAL8 f_min, REAL8 f_max, REAL8 f_min_wide, REAL8 f_max_wide) {
-  REAL8 f, fRes, winFLo, winFHi, softWin, windowLength;
+  REAL8 f, deltaF, winFLo, winFHi, softWin, windowLength;
   REAL8FFTPlan *revPlan;
   ssize_t nf, nt, k;
 
   /* check inputs */
   if (f_min_wide >= f_min) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_max_wide <= f_max) XLAL_ERROR(__func__, XLAL_EDOM);
 
   /* apply the softening window function */
   nf = signalFD->data->length;
   nt = 2 * (nf - 1);
-  fRes = 2 / (deltaT * nt);
+  deltaF = 2. / (deltaT * nt);
 
   winFLo = (f_min + f_min_wide) / 2.;
   winFHi = (f_max + f_max_wide) / 2.;
+  if (winFHi > 0.5 / deltaT) winFHi = 0.5 / deltaT;
 
   for (k = 0; k < nf; k++) {
-    f = k * fRes;
-    softWin = (1 + tanh(f - winFLo))
-            * (1 - tanh(f - winFHi)) / 4.;  // XXX: f_max_wide -> winFHi
+    f = k * deltaF;
+    softWin = (1. + tanh(f - winFLo))
+            * (1. - tanh(f - winFHi)) / 4.;
     signalFD->data->data[k].re *= softWin;
     signalFD->data->data[k].im *= softWin;
   }
@@ -850,7 +868,7 @@ static int cut_below_fmin(REAL8TimeSeries **h, REAL8 m1, REAL8 m2, REAL8 f_min, 
   if (!(*h)) XLAL_ERROR(__func__, XLAL_EFAULT);
 
   /* assume the Newtonian chirp is accurate for the early bit; add 1000 M for merger and ringdown */
-  start_ind = (ssize_t) (*h)->data->length - floor(ComputeTau0(m1, m2, f_min) / deltaT + 1000 * (m1 + m2) * LAL_MTSUN_SI);
+  start_ind = (ssize_t) (*h)->data->length - floor((ComputeTau0(m1, m2, f_min) + 1000 * (m1 + m2) * LAL_MTSUN_SI) / deltaT);
   if ((start_ind < 0) || (start_ind > (*h)->data->length))
     XLAL_ERROR(__func__, XLAL_ERANGE);
 
