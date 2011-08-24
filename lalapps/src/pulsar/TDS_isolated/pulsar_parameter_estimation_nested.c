@@ -1072,6 +1072,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     logfactorial[i] = logfactorial[i-1] + log((REAL8)i);
   
   /* free memory */
+  XLALFree( fdt );
   XLALFree( flengths );
   XLALFree( fstarts );
   XLALFree( fpsds );
