@@ -305,6 +305,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	char str[999];
 	LALInferencePrintCommandLine(runState->commandLine, str);
 
+  REAL8 networkSNR=0.0;
+  ifodata1=runState->data;
+  while(ifodata1){
+    networkSNR+=ifodata1->SNR*ifodata1->SNR;
+    ifodata1=ifodata1->next;
+  }
+  networkSNR=sqrt(networkSNR);
 	//for (t=0; t<nChain; ++t) {
 		outfileName = (char*)calloc(99,sizeof(char*));
                 ppt = LALInferenceGetProcParamVal(runState->commandLine, "--appendOutput");
@@ -320,13 +327,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			fprintf(chainoutput, "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
 					"nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tmax","Tchain","Network SNR","Waveform","pN order","Npar");
 			fprintf(chainoutput, "%10d  %10d  %u  %20.10lf  %6d %8d   %6d%10d%12.1f%14.6f  %9i  %9.1f  %8i\n",
-					Niter,0,randomseed,nullLikelihood,nIFO,0,nChain,(int)tempMax,tempLadder[MPIrank],0.0,waveform,(double)pnorder,nPar);
+					Niter,0,randomseed,nullLikelihood,nIFO,0,nChain,(int)tempMax,tempLadder[MPIrank],networkSNR,waveform,(double)pnorder,nPar);
 			fprintf(chainoutput, "\n%16s  %16s  %10s  %10s  %10s  %10s  %20s  %15s  %12s  %12s  %12s\n",
 					"Detector","SNR","f_low","f_high","before tc","after tc","Sample start (GPS)","Sample length","Sample rate","Sample size","FT size");
 			ifodata1=runState->data;
 			while(ifodata1){
 				fprintf(chainoutput, "%16s  %16.8lf  %10.2lf  %10.2lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %12d  %12d  %12d\n",
-							ifodata1->detector->frDetector.name,0.0,ifodata1->fLow,ifodata1->fHigh,atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)-2.0,2.00,
+							ifodata1->detector->frDetector.name,ifodata1->SNR,ifodata1->fLow,ifodata1->fHigh,atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)-2.0,2.00,
 							XLALGPSGetREAL8(&(ifodata1->epoch)),atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value),atoi(LALInferenceGetProcParamVal(runState->commandLine,"--srate")->value),
 							(int)atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)*atoi(LALInferenceGetProcParamVal(runState->commandLine,"--srate")->value),
 							(int)atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)*atoi(LALInferenceGetProcParamVal(runState->commandLine,"--srate")->value));

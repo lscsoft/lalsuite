@@ -394,7 +394,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 }
 
 	}
-	
+  
+	for (i=0;i<Nifo;i++) IFOdata[i].SNR=0.0; //SNR of the injection ONLY IF INJECTION. Set to 0.0 by default.
+  
 	for (i=0;i<Nifo-1;i++) IFOdata[i].next=&(IFOdata[i+1]);
 	
 	for(i=0;i<Nifo;i++) {
@@ -626,6 +628,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 				SNR+=2.0*pow(injF->data->data[j].im,2.0)/(4.0*IFOdata->oneSidedNoisePowerSpectrum->data->data[j]);
 			}
 		}
+    IFOdata->SNR=sqrt(SNR);
 		NetworkSNR+=SNR;
 		
 		/* Actually inject the waveform */
@@ -640,7 +643,7 @@ FILE* file=fopen("InjSignal.dat", "w");
 			IFOdata->freqData->data->data[j].im+=injF->data->data[j].im;
 fprintf(file, "%lg %lg \t %lg\n", IFOdata->freqData->deltaF*j, injF->data->data[j].re, injF->data->data[j].im);
 		}
-		fprintf(stdout,"Injected SNR in detector %s = %g\n",IFOdata->detector->frDetector.name,sqrt(SNR));
+		fprintf(stdout,"Injected SNR in detector %s = %g\n",IFOdata->detector->frDetector.name,IFOdata->SNR);
 fclose(file);		
 //fclose(file2);
 		
