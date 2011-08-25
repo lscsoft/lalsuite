@@ -21,6 +21,12 @@
 NRCSID(LALSIMIMRH, "$Id$");
 
 /**
+ * The number of e-folds of ringdown which should be attached for 
+ * EOBNR models
+ */
+#define EOB_RD_EFOLDS 10.0
+
+/**
  * Driver routine to compute the non-spinning, inspiral-merger-ringdown
  * phenomenological waveform IMRPhenomA in the frequency domain.
  *
