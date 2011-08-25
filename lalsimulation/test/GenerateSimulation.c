@@ -313,7 +313,7 @@ int main (int argc , char **argv) {
         goto fail;
     }
     if (params->verbose)
-        XLALPrintInfo("Generation took %.3f seconds\n", difftime(time(NULL), start_time));
+        XLALPrintInfo("Generation took %.0f seconds\n", difftime(time(NULL), start_time));
 
     /* dump file */
     f = fopen(params->outname, "w");
