@@ -247,7 +247,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
 	UINT4 Nruns=1;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
-	REAL8 TOLERANCE=0.5;
+	REAL8 TOLERANCE=0.1;
 	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,H,logZnoise,dZ=0;//deltaZ - set but not used
 	LALInferenceVariables *temp;
 	FILE *fpout=NULL;
@@ -430,7 +430,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
                                         (void *)cvm);
                 }
 	}
-	while( iter<Nlive ||  dZ> TOLERANCE ); 
+	while( iter <= Nlive ||  dZ> TOLERANCE ); 
 
 	/* Sort the remaining points (not essential, just nice)*/
 		for(i=0;i<Nlive-1;i++){

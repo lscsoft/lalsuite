@@ -539,11 +539,11 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	
 	XLAL_TRY(LALPSpinInspiralRDTemplates(&status,hPlus,hCross,&template),errnum);
 
-	REAL4 WinNorm = sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
+	//REAL4 WinNorm = sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
 	for(idx=0;idx<hPlus->length;idx++) IFOdata->timeModelhPlus->data->data[idx]= (REAL8)hPlus->data[idx];
 	for(idx=0;idx<hCross->length;idx++) IFOdata->timeModelhCross->data->data[idx]= (REAL8)hCross->data[idx];
-	for(idx=0;idx<hPlus->length;idx++) IFOdata->timeModelhPlus->data->data[idx]*=IFOdata->window->data->data[idx]/WinNorm;
-        for(idx=0;idx<hCross->length;idx++) IFOdata->timeModelhCross->data->data[idx]*=IFOdata->window->data->data[idx]/WinNorm;
+	//for(idx=0;idx<hPlus->length;idx++) IFOdata->timeModelhPlus->data->data[idx]*=IFOdata->window->data->data[idx]/WinNorm;
+        //for(idx=0;idx<hCross->length;idx++) IFOdata->timeModelhCross->data->data[idx]*=IFOdata->window->data->data[idx]/WinNorm;
 
 	XLALDestroyREAL4Vector(hPlus);
 	XLALDestroyREAL4Vector(hCross);

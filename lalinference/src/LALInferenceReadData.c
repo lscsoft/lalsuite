@@ -109,13 +109,13 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	UINT4 i,j;
 	//int FakeFlag=0; - set but not used
 	char strainname[]="LSC-STRAIN";
-	
+	UINT4 q=0;	
 	typedef void (NoiseFunc)(LALStatus *statusPtr,REAL8 *psd,REAL8 f);
 	NoiseFunc *PSD=NULL;
 	REAL8 scalefactor=1;
-
+	SimInspiralTable *injTable=NULL;
 	RandomParams *datarandparam;
-
+	UINT4 event=0;
 	char *chartmp=NULL;
 	char **channels=NULL;
 	char **caches=NULL;
@@ -123,9 +123,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	char **fLows=NULL,**fHighs=NULL;
 	LIGOTimeGPS GPSstart,GPStrig,segStart;
 	REAL8 PSDdatalength=0;
-
+	REAL8 trigtime=0;
 	if(!LALInferenceGetProcParamVal(commandLine,"--cache")||!LALInferenceGetProcParamVal(commandLine,"--IFO")||
-	   !LALInferenceGetProcParamVal(commandLine,"--PSDstart")||!LALInferenceGetProcParamVal(commandLine,"--trigtime")||
+	   !LALInferenceGetProcParamVal(commandLine,"--PSDstart")||//!LALInferenceGetProcParamVal(commandLine,"--trigtime") ||
 	   !LALInferenceGetProcParamVal(commandLine,"--PSDlength")||!LALInferenceGetProcParamVal(commandLine,"--seglen"))
 	{fprintf(stderr,USAGE); return(NULL);}
 	
@@ -157,10 +157,34 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	
 	IFOdata=headIFO=calloc(sizeof(LALInferenceIFOData),Nifo);
 	
+	procparam=LALInferenceGetProcParamVal(commandLine,"--injXML");
+        if(procparam){
+                SimInspiralTableFromLIGOLw(&injTable,procparam->value,0,0);
+                if(!injTable){
+                        fprintf(stderr,"Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
+                        exit(1);
+                }
+        }
+	
+        if(LALInferenceGetProcParamVal(commandLine,"--sw_inj")){
+        	event=atoi(LALInferenceGetProcParamVal(commandLine,"--event")->value);
+                while(q<event) {q++; injTable = injTable->next;}
+                trigtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
+	}		
+	
 	procparam=LALInferenceGetProcParamVal(commandLine,"--PSDstart");
 	LALStringToGPS(&status,&GPSstart,procparam->value,&chartmp);
+
+	if(LALInferenceGetProcParamVal(commandLine,"--trigtime")){
 	procparam=LALInferenceGetProcParamVal(commandLine,"--trigtime");
 	LALStringToGPS(&status,&GPStrig,procparam->value,&chartmp);
+	}
+	
+	else{
+	char tt[]="";
+	sprintf(tt,"%f",trigtime);
+	LALStringToGPS(&status,&GPStrig,tt,&chartmp);}
+	
 	PSDdatalength=atof(LALInferenceGetProcParamVal(commandLine,"--PSDlength")->value);
 	SegmentLength=atof(LALInferenceGetProcParamVal(commandLine,"--seglen")->value);
 	seglen=(size_t)(SegmentLength*SampleRate);

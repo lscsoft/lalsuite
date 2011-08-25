@@ -346,7 +346,8 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 m2_max=0.;
 	memset(currentParams,0,sizeof(LALInferenceVariables));
 	memset(&status,0,sizeof(LALStatus));
-	
+	INT4 event=0;	
+	INT4 i=0;
 	char help[]="\
 Parameter arguments:\n\
 (--injXML injections.xml)\tInjection XML file to use\n\
@@ -369,6 +370,7 @@ Parameter arguments:\n\
 		fprintf(stdout,"%s",help);
 		return;
 	}
+
 	
 	/* Read injection XML file for parameters if specified */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--injXML");
@@ -378,11 +380,17 @@ Parameter arguments:\n\
 			fprintf(stderr,"Unable to open injection file %s\n",ppt->value);
 			exit(1);
 		}
-		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
+	}
+	//Select event
+	ppt=LALInferenceGetProcParamVal(commandLine,"--event");
+	if(ppt){
+		event = atoi(ppt->value);
+		while(i<event) {i++; injTable = injTable->next;}
+		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));}
 		AmpOrder=injTable->amp_order;
 		LALGetOrderFromString(&status,injTable->waveform,&PhaseOrder);
 		LALGetApproximantFromString(&status,injTable->waveform,&approx);
-	}	
+	
 
 	/* Over-ride approximant if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
