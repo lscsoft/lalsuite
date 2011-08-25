@@ -21,6 +21,18 @@ NRCSID(LALSIMINSPIRALH, "$Id$");
 
 #define LAL_PN_MODE_L_MAX 3
 
+/** Enumeration to specify which component will be used in the waveform
+ * generation. Their combination also can be used by the bitwise or.
+ **/
+typedef enum {
+	LAL_NOInter = 0,                        /**< UNDOCUMENTED */
+	LAL_SOInter = 1,                        /**< Spin-orbit interaction */
+	LAL_SSInter = LAL_SOInter << 1,         /**< Spin-spin interaction */
+	LAL_SSselfInter = LAL_SSInter << 1,     /**<  Spin-spin-self interaction */
+	LAL_QMInter = LAL_SSselfInter << 1,     /**< quadrupole-monopole interaction */
+	LAL_AllInter = LAL_SOInter | LAL_SSInter | LAL_SSselfInter | LAL_QMInter /**< all interactions */
+} LALSimSpinInteraction;
+
 /**
  * Computes h(2,2) mode of spherical harmonic decomposition of
  * the post-Newtonian inspiral waveform.

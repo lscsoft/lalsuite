@@ -28,6 +28,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimulation.c \
 	LALSimulationVCSInfo.c \
+	LALSimInspiralPSpinInspiralRD.c \
 	check_series_macros.h
 
 liblalsimulation_la_LDFLAGS = -version-info $(LIBVERSION)
