@@ -855,10 +855,6 @@ static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD
   XLALDestroyREAL8FFTPlan(revPlan);
   if (!(*signalTD)) XLAL_ERROR(__func__, XLAL_EFUNC);
 
-  /* Normalisation */
-  for (k = 0; k < nt; k++)
-      (*signalTD)->data->data[k] /= nf;
-
   /* apply a linearly decreasing window at the end
    * of the waveform in order to avoid edge effects. */
   windowLength = 20. * totalMass * LAL_MTSUN_SI / deltaT;
