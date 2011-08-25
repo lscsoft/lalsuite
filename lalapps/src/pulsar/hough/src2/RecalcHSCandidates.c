@@ -385,6 +385,7 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_printFstat1 = FALSE;
   BOOLEAN uvar_useWeights  = FALSE;
   BOOLEAN uvar_outputFX    = TRUE; /* Do additional analysis for all toplist candidates, output F and FXvector for postprocessing */
+  BOOLEAN uvar_useFstatWeights = TRUE; /* Use noise weights in final toplist Fstat computation? */
 
   REAL8 uvar_peakThrF = FSTATTHRESHOLD; /* threshold of Fstat to select peaks */
 
@@ -451,6 +452,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useWeights",   0,  UVAR_OPTIONAL, "Weight each stack using noise and AM?", &uvar_useWeights ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "outputFX",     0,  UVAR_OPTIONAL, "Additional analysis for toplist candidates, output 2FX?", &uvar_outputFX ), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "useFstatWeights", 0,  UVAR_DEVELOPER, "Use noise weights in toplist Fstat computation?", &uvar_useFstatWeights ), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
 
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacksMax",   0,  UVAR_OPTIONAL, "Maximum No. of 1st stage stacks", &uvar_nStacksMax ),&status);
@@ -991,8 +993,15 @@ int MAIN( int argc, char *argv[]) {
   /* Also compute F, FX (for line veto statistics) for all candidates in final toplist */
   if ( uvar_outputFX ) {
     LogPrintfVerbatim ( LOG_DEBUG, "Computing FX ...");
+
+    MultiNoiseWeightsSequence *multiNoiseWeightsPointer;
+    if ( uvar_useFstatWeights )
+      multiNoiseWeightsPointer = &stackMultiNoiseWeights;
+    else
+      multiNoiseWeightsPointer = NULL;
+
     xlalErrno = 0;
-    XLALComputeExtraStatsForToplist ( semiCohToplist, "HoughFStat", &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, FALSE, uvar_outputSingleSegStats );
+    XLALComputeExtraStatsForToplist ( semiCohToplist, "HoughFStat", &stackMultiSFT, multiNoiseWeightsPointer, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, FALSE, uvar_outputSingleSegStats );
     if ( xlalErrno != 0 ) {
       XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", fn, __LINE__, xlalErrno );
       return(HIERARCHICALSEARCH_EBAD);

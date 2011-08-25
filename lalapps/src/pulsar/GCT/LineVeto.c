@@ -72,7 +72,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
   const char *fn = __func__;
 
   /* check input parameters and report errors */
-  if ( !list || !multiSFTsV || !listEntryTypeName || !multiNoiseWeightsV || !multiDetStatesV || !CFparams ) {
+  if ( !list || !multiSFTsV || !listEntryTypeName || !multiDetStatesV || !CFparams ) {
     XLALPrintError ("\nError in function %s, line %d : Empty pointer as input parameter!\n\n", fn, __LINE__);
     XLAL_ERROR ( fn, XLAL_EFAULT);
   }
@@ -254,7 +254,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
   const char *fn = __func__;
 
   /* check input parameters and report errors */
-  if ( !lineVeto || !lineVeto->TwoFX || !lineVeto->TwoFX->data || !dopplerParams || !multiSFTsV || !multiNoiseWeightsV || !multiDetStatesV || !CFparams ) {
+  if ( !lineVeto || !lineVeto->TwoFX || !lineVeto->TwoFX->data || !dopplerParams || !multiSFTsV || !multiDetStatesV || !CFparams ) {
     XLALPrintError ("\nError in function %s, line %d : Empty pointer as input parameter!\n\n", fn, __LINE__);
     XLAL_ERROR ( fn, XLAL_EFAULT);
   }
@@ -311,9 +311,15 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
       for (X = 0; X < numDetectors; X++)
         twoFXseg->data[X] = 0.0;
 
+      MultiNoiseWeights *multiNoiseWeightsThisSeg;
+      if ( multiNoiseWeightsV )
+        multiNoiseWeightsThisSeg = multiNoiseWeightsV->data[k];
+      else
+        multiNoiseWeightsThisSeg = NULL;
+
       /* recompute multi-detector Fstat and atoms */
       fakeStatus = blank_status;
-      ComputeFStat ( &fakeStatus, &Fstat, dopplerParams, multiSFTsV->data[k], multiNoiseWeightsV->data[k], multiDetStatesV->data[k], &CFparams_internal, NULL );
+      ComputeFStat ( &fakeStatus, &Fstat, dopplerParams, multiSFTsV->data[k], multiNoiseWeightsThisSeg, multiDetStatesV->data[k], &CFparams_internal, NULL );
       if ( fakeStatus.statusCode ) {
         XLALPrintError ("\%s, line %d : Failed call to LAL function ComputeFStat(). statusCode=%d\n\n", fn, __LINE__, fakeStatus.statusCode);
         XLAL_ERROR ( fn, XLAL_EFUNC );
