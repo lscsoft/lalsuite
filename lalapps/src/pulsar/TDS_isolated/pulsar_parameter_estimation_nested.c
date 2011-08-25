@@ -277,8 +277,8 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   REAL8Vector *logLikelihoods = NULL;
   
   /* set error handler to abort in main function */
-  /* XLALErrorHandler = XLALAbortErrorHandler;
-  const char *fn = __func__; */
+  lalDebugLevel = 7;
+  XLALSetErrorHandler(XLALAbortErrorHandler);
   
   /* Get ProcParamsTable from input arguments */
   param_table = LALInferenceParseCommandLine( argc, argv );
@@ -532,11 +532,11 @@ void readPulsarData( LALInferenceRunState *runState ){
   
   CHAR *filestr = NULL;
   
-  CHAR *efile = NULL;
-  CHAR *sfile = NULL;
+  CHAR efile[1024];
+  CHAR sfile[1024];
   
-  CHAR *tempdets=NULL;
-  CHAR *tempdet=NULL;
+  CHAR *tempdets = NULL;
+  CHAR *tempdet = NULL;
  
   REAL8 *fpsds = NULL;
   CHAR *fakestarts = NULL, *fakelengths = NULL, *fakedt = NULL;
@@ -592,11 +592,14 @@ void readPulsarData( LALInferenceRunState *runState ){
     exit(0);
   }
   
+  /* allocate memory for data sample intervals (in seconds) */
+  
+  
   /* get the detectors - must */
   ppt = LALInferenceGetProcParamVal( commandLine, "--detectors" );
   ppt2 = LALInferenceGetProcParamVal( commandLine, "--fake-data" );
   if( ppt && !ppt2 ){
-    detectors = XLALStringDuplicate( ppt->value );
+   detectors = XLALStringDuplicate( ppt->value );
       
     /* count the number of detectors from command line argument of comma
        separated vales and set their names */
@@ -611,7 +614,7 @@ void readPulsarData( LALInferenceRunState *runState ){
     for( i = 0; i < numDets; i++ ){
       tempdet = strsep( &tempdets, "," );
       XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
-    }
+    }      
   }
   /*Get psd values for generating fake data.*/
   /*=========================================================================*/
@@ -805,14 +808,14 @@ void readPulsarData( LALInferenceRunState *runState ){
     else{ /* set default (86400 seconds or 1 day) */
       for(i = 0; i < ml*numDets; i++ ) flengths[i] = 86400.;
     }
-      
+    
     fdt = XLALCalloc( MAXDETS*ml, sizeof(REAL8) );
     ppt = LALInferenceGetProcParamVal(commandLine,"--fake-dt");
     if( ppt ){
       CHAR *tmpdts = NULL, *tmpdt = NULL, dtval[256];
       fakedt = XLALStringDuplicate( ppt->value );
       
-      if( (numDt = count_csv( fakedt )) != numDets ){
+      if( (numDt = count_csv( fakedt )) != ml*numDets ){
         fprintf(stderr, "Error... for model type \"%s\" number of sample time\
  steps for fake data must be %d times the number of detectors specified (no.\
  dets =\%d)\n", modeltype, ml, numDets);
@@ -857,21 +860,7 @@ void readPulsarData( LALInferenceRunState *runState ){
     fprintf(stderr, USAGE, commandLine->program);
     exit(0);
   }
-  
-  /* get ephemeris files */
-  ppt = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
-  if( ppt ) efile = XLALStringDuplicate( ppt->value );
-  
-  ppt = LALInferenceGetProcParamVal( commandLine, "--ephem-sun" );
-  if( ppt ) sfile = XLALStringDuplicate( ppt->value );
-
-  /* check ephemeris files exist and if not output an error message */
-  if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
-    fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
-defined!\n");
-    exit(3);
-  }
-  
+ 
   /* count the number of input files (by counting commas) and check it's equal
      to twice the number of detectors */
   if ( !ppt2 ){ /* if using real data */
@@ -900,7 +889,8 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     LIGOTimeGPS gpstime;
     COMPLEX16 dataVals;
     REAL8Vector *temptimes = NULL;
-    INT4 j = 0, k = 0;
+    INT4 j = 0, k = 0, datalength = 0;
+    ProcessParamsTable *ppte = NULL, *ppts = NULL;
     
     FILE *fp = NULL;
     
@@ -920,6 +910,10 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     /* add the pulsar model */
     LALInferenceAddVariable( ifodata->dataParams, "modeltype", &modeltype,
                              LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
+    
+    /* add data sample interval */
+    LALInferenceAddVariable( ifodata->dataParams, "dt", &fdt[i],
+                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
     
     /* add frequency factors variable */
     LALInferenceAddVariable( ifodata->dataParams, "freqfactors",
@@ -983,9 +977,11 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     
       fclose(fp);
     
+      datalength = j;
+      
       /* allocate data time stamps */
       ifodata->dataTimes = NULL;
-      ifodata->dataTimes = XLALCreateTimestampVector( j );
+      ifodata->dataTimes = XLALCreateTimestampVector( datalength );
     
       /* fill in time stamps as LIGO Time GPS Vector */
       for ( k = 0; k<j; k++ )
@@ -997,7 +993,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
       XLALDestroyREAL8Vector( temptimes );
     }
     else{ /* set up fake data */
-      INT4 datalength = flengths[i] / fdt[i];
+      datalength = flengths[i] / fdt[i];
       
       /* temporary real and imaginary data vectors */
       REAL4Vector *realdata = NULL;
@@ -1049,6 +1045,33 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
       
     /* set ephemeris data */
     ifodata->ephem = XLALMalloc( sizeof(EphemerisData) );
+    
+    /* get ephemeris files */
+    ppte = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
+    ppts = LALInferenceGetProcParamVal( commandLine, "--ephem-sun" );
+    if( ppte && ppts ){
+      fprintf(stderr, "Think ephemeris files have been set!\n");
+      XLALStringCopy( efile, ppte->value, sizeof(efile) );
+      XLALStringCopy( sfile, ppts->value, sizeof(sfile) );
+    }
+    else{ /* try getting files automatically */
+      fprintf(stderr, "About to automatically set the ephemeris files\n");
+      if( XLALAutoSetEphemerisFiles( efile, sfile,
+        ifodata->dataTimes->data[0].gpsSeconds,
+        ifodata->dataTimes->data[datalength-1].gpsSeconds ) ){
+        fprintf(stderr, "Error... not been able to set ephemeris files!\n");
+        exit(3);
+      }
+    }
+
+    fprintf(stderr, "%s %s\n", efile, sfile);
+
+    /* check ephemeris files exist and if not output an error message */
+    if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
+      fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
+defined!\n");
+      exit(3);
+    }
     
     /* set up ephemeris information */
     ifodata->ephem = XLALInitBarycenter( efile, sfile );
@@ -3059,7 +3082,7 @@ parameter file %s is wrong.\n", injectfile);
     
     snrmulti += SQUARE(snrval);
     
-    fprintf(fpsnr, "%le\t", snrval);
+    if ( snrscale == 0 ) fprintf(fpsnr, "%le\t", snrval);
                              
     data = data->next; 
   }
@@ -3068,28 +3091,53 @@ parameter file %s is wrong.\n", injectfile);
   snrmulti = sqrt( snrmulti );
   
   /* only need to print out multi-detector snr if the were multiple detectors */
-  if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
-  else fprintf(fpsnr, "\n");
-  
-  fclose( fpsnr );
-  
-  /* SNR scale factor to rescale the signal to the required SNR */
-  if ( snrscale != 0. ){
-    if ( injpars.h0 == 0. ){
-      fprintf(stderr, "Error... cannot rescale signal to an SNR of %lf as the \
-injected signal amplitude is zero!\n", snrscale);
-      exit(0);
-    }
+  if( snrscale == 0 ){
+    if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
+    else fprintf(fpsnr, "\n");
+  }
+  else{
+    /* rescale the signal and calculate the SNRs */
+    data = runState->data;
     
     snrscale /= snrmulti;
-    snrscale = sqrt(snrscale);
+    
+    /* rescale the h0 */
+    injpars.h0 *= snrscale;
+   
+    while( data ){
+      UINT4 varyphasetmp = varyphase;
+      REAL8 snrval = 0.;
+      varyphase = 1;
+      snrmulti = 0;
+      
+      /* recreate the signal */
+      pulsar_model( injpars, data );
+      
+      /* reset varyphase to its original value */
+      varyphase = varyphasetmp;
+      
+      /* recalculate the SNR */
+      snrval = calculate_time_domain_snr( data );
+      
+      snrmulti += SQUARE(snrval);
+      
+      fprintf(fpsnr, "%le\t", snrval);
+      
+      data = data->next;
+    }
+    
+    snrmulti = sqrt( snrmulti );
+    
+    if( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
+    else fprintf(fpsnr, "\n");
   }
-  else snrscale = 1.; /* do not apply any scaling */
   
+  fclose( fpsnr );
+   
   /* reset data to head */
   data = runState->data;
   
-  /* add signal to data and scale SNR if necessary */
+  /* add signal to data */
   while( data ){
     FILE *fp = NULL, *fpso = NULL;
     ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal( commandLine,
@@ -3122,10 +3170,6 @@ injection\n", signalonly);
     
     /* add the signal to the data */
     for ( i = 0; i < length; i++ ){
-      /* rescale signal data to required SNR */
-      data->compModelData->data->data[i].re *= snrscale;
-      data->compModelData->data->data[i].im *= snrscale;
-      
       data->compTimeData->data->data[i].re +=
         data->compModelData->data->data[i].re;
       data->compTimeData->data->data[i].im +=
@@ -3166,7 +3210,7 @@ injection\n", signalonly);
 
 /** \brief Split the data into segments
  * 
- * This function is deprecated to \c chop_n_merger, but gives the functionality 
+ * This function is deprecated to \c chop_n_merge, but gives the functionality 
  * of the old code.
  * 
  * It cuts the data into as many contiguous segments of data as possible of 
@@ -3235,9 +3279,11 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
  * The function first attempts to chop up the data into as many stationary 
  * segments as possible. The splitting may not be optimal, so it then tries 
  * remerging consecutive segments to see if the merged segments show more
- * evidence of stationarity. It then, if necessary, chops the segments again to
- * make sure there are none greater than the required \c chunkMax. The default
- * \c chunkMax is 0, so this rechopping will not normally happen.
+ * evidence of stationarity. <b>[NOTE: Remerging is currently turned off and
+ * will make very little difference to the algorithm]</b>. It then, if
+ * necessary, chops the segments again to make sure there are none greater
+ * than the required \c chunkMax. The default \c chunkMax is 0, so this
+ * rechopping will not normally happen.
  * 
  * This is all performed on data that has had a running median subtracted, to 
  * try and removed any underlying trends in the data (e.g. those caused by a 
@@ -3274,7 +3320,8 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin,
   
   chunkIndex = chop_data( meddata, chunkMin );
   
-  merge_data( meddata, chunkIndex );
+  /* DON'T BOTHER WITH THE MERGING AS IT WILL MAKE VERY LITTLE DIFFERENCE */
+  /* merge_data( meddata, chunkIndex ); */
   
   /* if a maximum chunk length is defined then rechop up the data, to segment
      any chunks longer than this value */
@@ -3396,7 +3443,7 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
  * The threshold is for the natural logarithm of the odds ratio is empirically
  * set to be:
  * \f[
- * T = 1.305\log{}_{10} N + 0.245 + 2.531
+ * T = 0.57\ln{N} + 2.71,
  * \f]
  * where \f$N\f$ is the length of the data set. This comes from a fit to the 
  * threshold value required to give a 1% chance of splitting actual Gaussian
@@ -3428,11 +3475,11 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
   
   /* set threshold based on empirical tests that only give a 1% chance of
      splitting Gaussian data of various lengths. The relation is approximately:
-     T = 1.305*log10(length) + 0.254 + 2.531
-     where the first two terms come from a fit to odds ratios for a Monte Carlo
+     T = 0.57*ln(length) + 2.71
+     where this comes from a fit to odds ratios for a Monte Carlo
      of Gaussian noise (with real and imaginary components) of various lengths,
-     and the final term comes from an offset to give the 1% false alarm rate. */
-  threshold = 1.305*log10(length) + 0.254 + 2.531;
+     with an offset to give the 1% false alarm rate. */
+  threshold = 0.57*log(length) + 2.71;
   
   if ( logodds > threshold ){
     UINT4Vector *cp1 = NULL;
@@ -4151,7 +4198,7 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
     }
     
     vari.re /= (chunkLength - 1.);
-    vari.re /= (chunkLength - 1.);
+    vari.im /= (chunkLength - 1.);
     
     /* add SNRs for each chunk in quadrature */
     snrval += (snrc.re/vari.re) + (snrc.im/vari.im);
@@ -4203,8 +4250,8 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   
   lMax = runState->likelihood( loudestParams, runState->data,
                                runState->template );
-  
-  LALFree( loudestParams );
+ 
+  LALInferenceDestroyVariables( loudestParams );
   
   /* setup output file */
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
@@ -4233,7 +4280,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     snrmulti += SQUARE( snrval );
     
     /* print out SNR value */
-    fprintf(fpsnr, "%le\t", sqrt(snrval));
+    fprintf(fpsnr, "%le\t", snrval);
     
     data = data->next;
   }
@@ -4244,6 +4291,154 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   
   fclose( fpsnr );
 }
+
+
+/** \brief Automatically set the solar system ephemeris file based on
+ * environment variables and data time span
+ * 
+ * This function will attempt to find Earth and Sun ephemeris files based on
+ * LAL environment variables (as set up by <code> lalpulsar-user-env.(c)sh
+ * </code>) and a given start and end GPS time (presumably taken from the data
+ * that is to be analysed). It requires \c LALPULSAR is installed and the \c
+ * LALPULSAR_PREFIX variable is set, which should mean that ephemeris files are
+ * installed in the directory \c ${LALPULSAR_PREFIX}/share/lalpulsar/.
+ *
+ * Within this directory the should be ephemeris files of the format 
+ * earthXX-YY.dat, or earthXX.dat, where XX are two digit years e.g.
+ * earth11.dat and represent the year or years for which the ephemeris is
+ * valid. The function will find the appropriate ephemeris files that cover the 
+ * time range (in GPS seconds) required. If no files exist errors will be
+ * returned.
+ * 
+ * The function uses requires <code>dirent,h</code> and <code>time.h</code>. 
+ * 
+ * NOTE: This may want to be moved into LAL at some point.
+ * 
+ * \param efile [in] a string that will return the Earth ephemeris file
+ * \param sfile [in] a string that will return the Sun ephemeris file 
+ * \param gpsstart [in] the GPS time of the start of the data
+ * \param gpsend [in] the GPS time of the end of the data
+ * 
+ * \return Zero will be return on successful completion
+ */
+INT4 XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, 
+                                INT4 gpsstart, INT4 gpsend ){
+  struct tm utcstart,  utcend;
+  CHAR *eftmp = NULL, *sftmp = NULL;
+  INT4 buf = 3;
+  CHAR yearstart[buf], yearend[buf]; /* the two digit year i.e. 11 for 2011*/
+  INT4 ys = 0, ye = 0;
+  CHAR *lalpath = NULL, *lalpulsarpath = NULL;
+  
+  INT4 yr1 = 0, yr2 = 0, i = 0;
+    
+  CHAR tmpyr[6];
+    
+  struct dirent *entry;
+  DIR *dp;
+  
+  /* first check that the path to the Ephemeris files is available in the
+     environment variables */
+  if((lalpath = getenv("LALPULSAR_PREFIX")) == NULL){
+    XLALPrintError("LALPULSAR_PREFIX environment variable not set. Cannot \
+automatically generate ephemeris files!\n");
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+  
+  /* get the utc times of the start and end GPS times */
+  if( !XLALGPSToUTC( &utcstart, gpsstart ) )
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  if( !XLALGPSToUTC( &utcend, gpsend ) )
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  
+  /* get years */
+  if( strftime(yearstart, buf, "%y", &utcstart) != 2 )
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  
+  if( strftime(yearend, buf, "%y", &utcend) != 2 )
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  
+  ys = atoi(yearstart);
+  ye = atoi(yearend);
+  
+  lalpulsarpath = XLALStringDuplicate( lalpath );
+  
+  if ( (lalpulsarpath = XLALStringAppend(lalpulsarpath, "/share/lalpulsar/")) ==
+NULL )
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  
+  eftmp = XLALStringDuplicate(lalpulsarpath);
+  sftmp = XLALStringDuplicate(lalpulsarpath);
+  
+  eftmp = XLALStringAppend(eftmp, "earth");
+  sftmp = XLALStringAppend(sftmp, "sun");
+ 
+  /* find the ephemeris file that bounds the required range */
+  if ( ( dp = opendir(lalpulsarpath) ) == NULL ){
+    XLALPrintError("Error... cannot open directory path %s!\n", lalpulsarpath);
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+    
+  while( (entry = readdir(dp) ) ){
+    /* just use "earth" files rather than doubling up */
+    if ( strstr(entry->d_name, "earth") != NULL ){
+      /* get current set of ranges - filenames are of the format
+         earthXX-YY.dat, so find the '-' and extract two characters either
+         side */
+      if ( strchr(entry->d_name, '-') ){
+        sscanf(entry->d_name, "earth%d-%d.dat", &yr1, &yr2);
+        
+        if ( ys >= yr1 && ye <= yr2 ) {
+          snprintf(tmpyr, 6, "%02d-%02d", yr1, yr2);
+          
+          eftmp = XLALStringAppend(eftmp, tmpyr);
+          sftmp = XLALStringAppend(sftmp, tmpyr);
+          i++;
+          break;
+        }
+      }
+      /* get the single year value ephemeris file e.g. earthXX.dat */
+      else{
+        sscanf(entry->d_name, "earth%d.dat", &yr1);
+        
+        if ( ys == yr1 && ye == yr1 ){
+          snprintf(tmpyr, 3, "%02d", yr1);
+          eftmp = XLALStringAppend(eftmp, tmpyr);
+          sftmp = XLALStringAppend(sftmp, tmpyr);
+          i++;
+          break;
+        }
+      }
+    }
+  }
+    
+  closedir(dp);
+    
+  if( i == 0 ){
+    XLALPrintError("No ephemeris files in the time range %02d-%02d found!\n",
+                   ys, ye);
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+
+  /* add .dat extension */
+  eftmp = XLALStringAppend(eftmp, ".dat");
+  sftmp = XLALStringAppend(sftmp, ".dat");
+  
+  if ( eftmp == NULL || sftmp == NULL )
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+
+  XLALStringCopy( efile, eftmp, 1024 );
+  XLALStringCopy( sfile, sftmp, 1024 );
+  
+  /* double check that the files exist */
+  if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
+    XLALPrintError("Error... ephemeris files not, or incorrectly, defined!\n");
+    XLAL_ERROR(__func__, XLAL_EFUNC);
+  }
+  
+  return 0;
+}
+
 
 /*----------------------- END OF HELPER FUNCTIONS ----------------------------*/
 

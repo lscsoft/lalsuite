@@ -14,6 +14,7 @@ lalinferenceinclude_HEADERS = \
 	LALInferencePrior.h \
 	LALInferenceReadData.h \
 	LALInferenceTemplate.h \
+	LALInferenceProposal.h \
 	LALInferenceVCSInfo.h \
 	$(XMLHDR)
 
@@ -25,6 +26,7 @@ liblalinference_la_SOURCES = \
 	LALInferencePrior.c \
 	LALInferenceReadData.c \
 	LALInferenceTemplate.c \
+	LALInferenceProposal.c \
 	LALInferenceVCSInfo.c \
 	$(XMLSRC)
 

@@ -30,6 +30,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <sys/time.h>
 
 /* LAL headers */
@@ -54,6 +55,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/Units.h>
+#include <lal/Date.h>
 
 #include <lalapps.h>
 
@@ -235,9 +237,10 @@ INT4 recognised_parameter( CHAR *parname );
 
 REAL8 calculate_time_domain_snr( LALInferenceIFOData *data );
 
-REAL8 calculate_double_time_domain_snr( LALInferenceIFOData *data );
-
 void get_loudest_snr( LALInferenceRunState *runState );
+
+INT4 XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, INT4 gpsstart, 
+                                INT4 gpsend );
 
 /* testing functions */
 void gridOutput( LALInferenceRunState *runState );

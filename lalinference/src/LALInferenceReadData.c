@@ -83,9 +83,9 @@ static REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS 
  --PSDlength length             length of PSD estimation data in seconds\n\
  --seglen length                length of segments for PSD estimation and analysis in seconds\n\
  --trigtime GPStime             GPS time of the trigger to analyse\n\
-(--srate rate)                  Downsample data to rate in Hz\n\
-(--fLow [freq1,freq2,...])      Specify lower frequency cutoff for overlap integral\n\
-(--fHigh [freq1,freq2,...])     Specify higher frequency cutoff for overlap integral\n\
+(--srate rate)                  Downsample data to rate in Hz (4096.0,)\n\
+(--fLow [freq1,freq2,...])      Specify lower frequency cutoff for overlap integral (40.0)\n\
+(--fHigh [freq1,freq2,...])     Specify higher frequency cutoff for overlap integral (2048.0)\n\
 (--channel [chan1,chan2,...])   Specify channel names when reading cache files\n\
 (--dataseed number)             Specify random seed to use when generating data\n"
 
@@ -418,7 +418,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 }
 
 	}
-	
+  
+	for (i=0;i<Nifo;i++) IFOdata[i].SNR=0.0; //SNR of the injection ONLY IF INJECTION. Set to 0.0 by default.
+  
 	for (i=0;i<Nifo-1;i++) IFOdata[i].next=&(IFOdata[i+1]);
 	
 	for(i=0;i<Nifo;i++) {
@@ -646,10 +648,11 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 /*		for(j=0;j<injF->data->length;j++) printf("%lf\n",injF->data->data[j].re);*/
 		if(IFOdata->oneSidedNoisePowerSpectrum){
 			for(SNR=0.0,j=IFOdata->fLow/injF->deltaF;j<injF->data->length;j++){
-				SNR+=pow(injF->data->data[j].re,2.0)/IFOdata->oneSidedNoisePowerSpectrum->data->data[j];
-				SNR+=pow(injF->data->data[j].im,2.0)/IFOdata->oneSidedNoisePowerSpectrum->data->data[j];
+				SNR+=2.0*pow(injF->data->data[j].re,2.0)/(4.0*IFOdata->oneSidedNoisePowerSpectrum->data->data[j]);
+				SNR+=2.0*pow(injF->data->data[j].im,2.0)/(4.0*IFOdata->oneSidedNoisePowerSpectrum->data->data[j]);
 			}
 		}
+    IFOdata->SNR=sqrt(SNR);
 		NetworkSNR+=SNR;
 		
 		/* Actually inject the waveform */
@@ -664,7 +667,7 @@ FILE* file=fopen("InjSignal.dat", "w");
 			IFOdata->freqData->data->data[j].im+=injF->data->data[j].im;
 fprintf(file, "%lg %lg \t %lg\n", IFOdata->freqData->deltaF*j, injF->data->data[j].re, injF->data->data[j].im);
 		}
-		fprintf(stdout,"Injected SNR in detector %s = %g\n",IFOdata->detector->frDetector.name,sqrt(SNR));
+		fprintf(stdout,"Injected SNR in detector %s = %g\n",IFOdata->detector->frDetector.name,IFOdata->SNR);
 fclose(file);		
 //fclose(file2);
 		

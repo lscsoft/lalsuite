@@ -1822,14 +1822,14 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 				if(waveform.a && waveform.phi){
           if(waveform.phi->data->length+2*windowshift<=IFOdata->timeData->data->length){ //check whether the IFOdata->timeData->data vector is long enough to store the waveform produced
             for (i=0; i<IFOdata->timeData->data->length; i++){
-              if(i>(waveform.phi->data->length + windowshift) || i<windowshift){
+              if(i>=(waveform.phi->data->length + windowshift) || i<windowshift){
                 IFOdata->timeModelhPlus->data->data[i] = 0;
                 IFOdata->timeModelhCross->data->data[i] = 0;		
               }else{
-                a1		= waveform.a->data->data[2*(i-windowshift)];
-                a2		= waveform.a->data->data[2*(i-windowshift)+1];
-                phi     = waveform.phi->data->data[i-windowshift];
-                if (waveform.shift) shift   = waveform.shift->data->data[i-windowshift];
+                a1		= waveform.a->data->data[2*((INT8)i-(INT8)windowshift)];
+                a2		= waveform.a->data->data[2*((INT8)i-(INT8)windowshift)+1];
+                phi     = waveform.phi->data->data[(INT8)i-(INT8)windowshift];
+                if (waveform.shift) shift   = waveform.shift->data->data[(INT8)i-(INT8)windowshift];
                 else shift = 0.0;
 					
                 IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
@@ -1843,14 +1843,14 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
               fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.phi->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
             }
             for (i=0; i<IFOdata->timeData->data->length; i++){
-              if(i>IFOdata->timeData->data->length-windowshift){
+              if((INT8)i>=(INT8)IFOdata->timeData->data->length-(INT8)windowshift || (INT8)i+(INT8)waveform.phi->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift < 0){
                 IFOdata->timeModelhPlus->data->data[i] = 0.0;
                 IFOdata->timeModelhCross->data->data[i] = 0.0;
               }else{
-                a1		= waveform.a->data->data[2*(i+waveform.phi->data->length-IFOdata->timeData->data->length+windowshift)];
-                a2		= waveform.a->data->data[2*(i+waveform.phi->data->length-IFOdata->timeData->data->length+windowshift)+1];
-                phi     = waveform.phi->data->data[i+waveform.phi->data->length-IFOdata->timeData->data->length+windowshift];
-                if (waveform.shift) shift   = waveform.shift->data->data[i+waveform.phi->data->length-IFOdata->timeData->data->length+windowshift];
+                a1		= waveform.a->data->data[2*((INT8)i+(INT8)waveform.phi->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift)];
+                a2		= waveform.a->data->data[2*((INT8)i+(INT8)waveform.phi->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift)+1];
+                phi     = waveform.phi->data->data[(INT8)i+(INT8)waveform.phi->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift];
+                if (waveform.shift) shift   = waveform.shift->data->data[(INT8)i+(INT8)waveform.phi->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift];
                 else shift = 0.0;
               
                 IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
@@ -1873,12 +1873,12 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
         }else if(waveform.h){
           if(waveform.h->data->length+2*windowshift<=IFOdata->timeData->data->length){ //check whether the IFOdata->timeData->data vector is long enough to store the waveform produced
             for (i=0; i<IFOdata->timeData->data->length; i++){
-              if(i>((unsigned long int)(waveform.h->data->length) + windowshift)  || i<windowshift){
+              if(i>=((unsigned long int)(waveform.h->data->length) + windowshift)  || i<windowshift){
                 IFOdata->timeModelhPlus->data->data[i] = 0;
                 IFOdata->timeModelhCross->data->data[i] = 0;		
               }else{
-                IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[2*(i-windowshift)];
-                IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[2*(i-windowshift)+1];
+                IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[2*(i-(INT8)windowshift)];
+                IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[2*(i-(INT8)windowshift)+1];
               }
             }
           }else{
@@ -1888,12 +1888,12 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
               fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.h->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
             }
             for (i=0; i<IFOdata->timeData->data->length; i++){
-              if(i>IFOdata->timeData->data->length-windowshift){
+              if((INT8)i>=(INT8)IFOdata->timeData->data->length-(INT8)windowshift || (INT8)i+(INT8)waveform.h->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift < 0){
                 IFOdata->timeModelhPlus->data->data[i] = 0.0;
                 IFOdata->timeModelhCross->data->data[i] = 0.0;
               }else{                
-                IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[2*(i+waveform.h->data->length-IFOdata->timeData->data->length+windowshift)];
-                IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[2*(i+waveform.h->data->length-IFOdata->timeData->data->length+windowshift)+1];
+                IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[2*((INT8)i+(INT8)waveform.h->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift)];
+                IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[2*((INT8)i+(INT8)waveform.h->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift)+1];
               }
             }
           instant-= ((INT8)waveform.h->data->length-(INT8)IFOdata->timeData->data->length+2*(INT8)windowshift)*IFOdata->timeData->deltaT;

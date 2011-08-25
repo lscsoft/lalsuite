@@ -33,6 +33,7 @@
 #include "LALInferenceMCMCSampler.h"
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceTemplate.h>
+#include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceReadData.h>
 
@@ -125,9 +126,10 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 		irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
 		printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
 	}
-	else
+	else{
 		fprintf(stdout, " initialize(): no data read.\n");
-	
+    exit(1);
+	}
 	
 	return(irs);
 }
@@ -552,6 +554,10 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 		{
 			approx = SpinQuadTaylor;
 		}
+		else if ( ! strcmp( "SpinTaylorFrameless", ppt->value ) )
+		{
+			approx = SpinTaylorFrameless;
+		}    
 		else if ( ! strcmp( "PhenSpinTaylorRD", ppt->value ) )
 		{
 			approx = PhenSpinTaylorRD;
@@ -574,7 +580,7 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 					"unknown approximant %s specified: "
 					"Approximant must be one of: GeneratePPN, TaylorT1, TaylorT2,\n"
 					"TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
-					"EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor,\n"
+					"EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor, SpinTaylorFrameless,\n"
 					"PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
 			exit( 1 );
 		}
@@ -625,7 +631,7 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
               "threePointFivePN\n");
           exit( 1 );
         }
-	fprintf(stdout,"Templates will be generated at %i PN order\n",PhaseOrder);
+	fprintf(stdout,"Templates will be generated at %.1f PN order\n",((float)(PhaseOrder))/2.0);
 	}
 
         /* This flag was added to account for the broken Big Dog
@@ -927,7 +933,7 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
 	}
 	LALInferenceAddMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
     
-	tmpMin=0.0; tmpMax=LAL_TWOPI;
+	tmpMin=0.0; tmpMax=LAL_PI;
 	//tmpVal=0.2000;
 	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=0.64546;
