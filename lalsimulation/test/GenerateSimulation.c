@@ -28,11 +28,13 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 #include <lal/XLALError.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 
 typedef enum tagGSApproximant {
     GSApproximant_DEFAULT,
     GSApproximant_IMRPhenomA,
     GSApproximant_IMRPhenomB,
+    GSApproximant_SpinTaylorT4,
     GSApproximant_NUM
 } GSApproximant;
 
@@ -43,8 +45,10 @@ typedef enum tagGSDomain {
 
 /* internal storage is in SI units! */
 typedef struct tagGSParams {
-    GSApproximant approximant;
-    GSDomain domain;
+    GSApproximant approximant;/**< waveform family or "approximant" */
+    GSDomain domain;          /**< flag for time or frequency domain waveform */
+    int phaseO;               /**< twice PN order of the phase */
+    int ampO;                 /**< twice PN order of the amplitude */
     LIGOTimeGPS *tRef;        /**< time at fRef */
     REAL8 phiRef;             /**< phase at fRef */
     REAL8 fRef;               /**< reference frequency */
@@ -56,7 +60,13 @@ typedef struct tagGSParams {
     REAL8 f_min;              /**< start frequency */
     REAL8 f_max;              /**< end frequency */
     REAL8 distance;           /**< distance of source */
-    REAL8 inclination;
+    REAL8 inclination;        /**< inclination of L relative to line of sight */
+    REAL8 s1x;                /**< (x,y,z) components of spin of m1 body */
+    REAL8 s1y;                /**< z-axis along line of sight, L in x-z plane */
+    REAL8 s1z;                /**< dimensionless spin, Kerr bound: |s1| <= 1 */
+    REAL8 s2x;                /**< (x,y,z) component ofs spin of m2 body */
+    REAL8 s2y;                /**< z-axis along line of sight, L in x-z plane */
+    REAL8 s2z;                /**< dimensionless spin, Kerr bound: |s1| <= 1 */
     char outname[256];        /**< file to which output should be written */
     int verbose;
 } GSParams;
@@ -68,6 +78,9 @@ const char * usage =
 "--approximant APPROX       Supported approximants:\n"
 "                             IMRPhenomA\n"
 "                             IMRPhenomB\n"
+"                             SpinTaylorT4\n"
+"--phase-order ORD          Twice PN order of phase (e.g. ORD=7 <==> 3.5PN)\n"
+"--amp-order ORD            Twice PN order of amplitude\n"
 "--domain DOM               'TD' for time domain or 'FD' for frequency\n"
 "                           domain; not all approximants support all domains\n"
 "--tRef N                   Reference time in GPS seconds\n"
@@ -79,13 +92,19 @@ const char * usage =
 "--m1 M1                    Mass of the first object in solar masses\n"
 "--m2 M2                    Mass of the second object in solar masses\n"
 "--chi CHI                  Dimensionless aligned-spin parameter\n"
+"--inclination IOTA         Angle in radians between line of sight (N) and \n"
+"                           orbital angular momentum (L) at the reference\n"
+"                           (default: face on)\n"
+"--spin1x S1X               Vector components for spin of mass1\n"
+"--spin1y S1Y               z-axis=line of sight, L in x-z plane at reference\n"
+"--spin1z S1Z               Kerr limit: s1x^2 + s1y^2 + s1z^2 <= 1\n"
+"--spin2x S2X               Vector components for spin of mass2\n"
+"--spin2y S2Y               z-axis=line of sight, L in x-z plane at reference\n"
+"--spin2z S2Z               Kerr limit: s2x^2 + s2y^2 + s2z^2 <= 1\n"
 "--f-min FMIN               Frequency at which to start waveform in Hz\n"
 "--f-max FMAX               Frequency at which to stop waveform in Hz\n"
 "                           (default: generate as much as possible)\n"
 "--distance D               Distance in Mpc\n"
-"--inclination IOTA         Angle in radians between line of sight and \n"
-"                           orbital angular momentum at the reference\n"
-"                           (default: face on)\n"
 "--outname FNAME            File to which output should be written (overwrites)\n"
 "--verbose                  Provide this flag to add verbose output\n"
 ;
@@ -123,6 +142,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
                 params->approximant = GSApproximant_IMRPhenomA;
             else if (strcmp(argv[i], "IMRPhenomB") == 0)
                 params->approximant = GSApproximant_IMRPhenomB;
+            else if (strcmp(argv[i], "SpinTaylorT4") == 0)
+                params->approximant = GSApproximant_SpinTaylorT4;
             else {
                 XLALPrintError("Error: Unknown approximant\n");
                 goto fail;
@@ -137,6 +158,10 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
                 XLALPrintError("Error: Unknown domain\n");
                 goto fail;
             }
+        } else if (strcmp(argv[i], "--phase-order") == 0) {
+            params->phaseO = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--amp-order") == 0) {
+            params->ampO = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--tRef") == 0) {
             params->tRef = (LIGOTimeGPS *) XLALMalloc(sizeof(LIGOTimeGPS));
             XLALINT8NSToGPS(params->tRef, 1000000000L * atof(argv[++i]));
@@ -154,6 +179,18 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             params->m2 = atof(argv[++i]) * LAL_MSUN_SI;
         } else if (strcmp(argv[i], "--chi") == 0) {
             params->chi = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--spin1x") == 0) {
+            params->s1x = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--spin1y") == 0) {
+            params->s1y = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--spin1z") == 0) {
+            params->s1z = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--spin2x") == 0) {
+            params->s2x = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--spin2y") == 0) {
+            params->s2y = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--spin2z") == 0) {
+            params->s2z = atof(argv[++i]);
         } else if (strcmp(argv[i], "--f-min") == 0) {
             params->f_min = atof(argv[++i]);
         } else if (strcmp(argv[i], "--f-max") == 0) {
@@ -183,6 +220,12 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     } else if ((params->domain == GSDomain_FD) ^ (params->deltaF > 0)) {
         XLALPrintError("Error: frequency-domain waveforms require --deltaF\n");
         goto fail;
+    } else if ((params->phaseO < 0) || (params->phaseO > 8)) {
+        XLALPrintError("Error: Invalid PN order for the phase!\n");
+        goto fail;
+    } else if ((params->ampO < 0) || (params->ampO > 5)) {
+        XLALPrintError("Error: Invalid PN order for the amplitude!\n");
+        goto fail;
     } else if ((params->m1 <= 0.) || (params->m2 <= 0.)) {
         XLALPrintError("Error: masses are required and must be positive\n");
         goto fail;
@@ -208,6 +251,7 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     switch (params->approximant) {
         case GSApproximant_IMRPhenomA:
         case GSApproximant_IMRPhenomB:
+        case GSApproximant_SpinTaylorT4:
             /* no additional checks required */
             break;
         default:
@@ -265,10 +309,12 @@ int main (int argc , char **argv) {
     int status;
     int start_time;
     LIGOTimeGPS tRef;
+    REAL8 LNhatx = 0., LNhaty = 0., LNhatz = 0., E1x = 0., E1y = 0., E1z = 0.;
     COMPLEX16FrequencySeries *htilde = NULL;
     REAL8TimeSeries *hplus = NULL;
     REAL8TimeSeries *hcross = NULL;
     GSParams *params;
+    LALSpinFlags spinFlags = {1, 1, 0, 0, 0}; // For now, hardcode spin flags
 
     /* set us up to fail hard */
     lalDebugLevel = 7;
@@ -288,6 +334,8 @@ int main (int argc , char **argv) {
                 case GSApproximant_IMRPhenomB:
                     XLALSimIMRPhenomBGenerateFD(&htilde, &tRef, params->phiRef, params->fRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance);
                     break;
+                case GSApproximant_SpinTaylorT4:
+                    XLALPrintError("Error: SpinTaylorT4 is not an FD waveform!\n");
                 default:
                     XLALPrintError("Error: some lazy programmer forgot to add their FD waveform generation function\n");
             }
@@ -299,6 +347,21 @@ int main (int argc , char **argv) {
                     break;
                 case GSApproximant_IMRPhenomB:
                     XLALSimIMRPhenomBGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->fRef, params->deltaT, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance, params->inclination);
+                    break;
+                case GSApproximant_SpinTaylorT4:
+                    LNhatx = sin(params->inclination);
+                    LNhaty = 0.;
+                    LNhatz = cos(params->inclination);
+                    E1x = cos(params->inclination);
+                    E1y = 0.;
+                    E1z = - sin(params->inclination);
+                    XLALSimInspiralSpinTaylorT4(&hplus, &hcross, &tRef, 
+                            params->phiRef, 0., params->deltaT, params->m1, 
+                            params->m2, params->fRef, params->distance, 
+                            params->s1x, params->s1y, params->s1z, params->s2x,
+                            params->s2y, params->s2z, LNhatx, LNhaty, LNhatz, 
+                            E1x, E1y, E1z, &spinFlags, params->phaseO, 
+                            params->ampO);
                     break;
                 default:
                     XLALPrintError("Error: some lazy programmer forgot to add their TD waveform generation function\n");

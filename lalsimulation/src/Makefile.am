@@ -10,6 +10,7 @@ lalsimulationinclude_HEADERS = \
 	LALSimInspiral.h \
 	LALSimInspiraldEnergyFlux.h \
 	LALSimulation.h \
+	LALSimInspiralSpinTaylorT4.h \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h
 
@@ -27,6 +28,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTofVIntegrand.c \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimulation.c \
+	LALSimInspiralSpinTaylorT4.c \
 	LALSimulationVCSInfo.c \
 	LALSimInspiralPSpinInspiralRD.c \
 	check_series_macros.h

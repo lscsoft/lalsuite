@@ -528,3 +528,95 @@ int XLALSimInspiralTaylorT2PNRestricted(
 	       	REAL8 i,                  /**< inclination of source (rad) */
 	       	int O                     /**< twice post-Newtonian phase order */
 		);
+
+/**
+ * Functions for generic spinning waveforms. 
+ * Reproduce and extend old SpinTaylor(Frameless) and SQTPN waveforms 
+ */
+
+/** 
+ * Struct containing flags to control which spin effects are included
+ */
+typedef struct tagLALSpinFlags
+{
+	INT4 SOflag15;    /**< 1.5PN spin-orbit coupling */
+	INT4 SSflag2;     /**< 2PN spin-spin coupling */
+	INT4 SelfSSflag2; /**< 2PN self-sping coupling (i.e. s1-s1 or s2-s2) */
+	INT4 QMflag2;     /**< 2PN quadrupole-monopole coupling */
+	INT4 SOflag25;    /**< 2.5PN spin-orbit coupling */
+} LALSpinFlags;
+
+
+
+/**
+ * Driver routine to compute a precessing post-Newtonian inspiral waveform
+ * with phasing computed from energy balance using the so-called "T4" method.
+ *
+ * This routine allows the user to specify different pN orders
+ * for phasing calcuation vs. amplitude calculations.
+ */
+int XLALSimInspiralSpinTaylorT4(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+		REAL8TimeSeries **hcross, /**< x-polarization waveform */
+		LIGOTimeGPS *tStart,      /**< initial time (s) */
+		REAL8 phiStart,           /**< initial GW phase (rad) */
+		REAL8 v0,                 /**< tail gauge term (default = 0) */
+		REAL8 deltaT,             /**< sampling interval (s) */
+		REAL8 m1,                 /**< mass of companion 1 (kg) */
+		REAL8 m2,                 /**< mass of companion 2 (kg) */
+		REAL8 fStart,             /**< start GW frequency (Hz) */
+		REAL8 r,                  /**< distance of source (m) */
+		REAL8 s1x,                /**< initial value of S1x */
+		REAL8 s1y,                /**< initial value of S1y */
+		REAL8 s1z,                /**< initial value of S1z */
+		REAL8 s2x,                /**< initial value of S2x */
+		REAL8 s2y,                /**< initial value of S2y */
+		REAL8 s2z,                /**< initial value of S2z */
+		REAL8 lnhatx,             /**< initial value of LNhatx */
+		REAL8 lnhaty,             /**< initial value of LNhaty */
+		REAL8 lnhatz,             /**< initial value of LNhatz */
+		REAL8 e1x,                /**< initial value of E1x */
+		REAL8 e1y,                /**< initial value of E1y */
+		REAL8 e1z,                /**< initial value of E1z */
+		LALSpinFlags *spinFlags,  /**< flags to control spin effects */
+		int phaseO,               /**< twice PN phase order */
+		int amplitudeO            /**< twice PN amplitude order */
+                );
+
+
+
+/**
+ * Driver routine to compute a precessing post-Newtonian inspiral waveform
+ * with phasing computed from energy balance using the so-called "T4" method.
+ *
+ * This routine assumes leading-order amplitude dependence (restricted waveform)
+ * but allows hte user to specify the phase PN order
+ */
+int XLALSimInspiralRestrictedSpinTaylorT4(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+		REAL8TimeSeries **hcross, /**< x-polarization waveform */
+		LIGOTimeGPS *tStart,      /**< initial time (s) */
+		REAL8 phiStart,           /**< initial GW phase (rad) */
+		REAL8 v0,                 /**< tail gauge term (default = 0) */
+		REAL8 deltaT,             /**< sampling interval (s) */
+		REAL8 m1,                 /**< mass of companion 1 (kg) */
+		REAL8 m2,                 /**< mass of companion 2 (kg) */
+		REAL8 fStart,             /**< start GW frequency (Hz) */
+		REAL8 r,                  /**< distance of source (m) */
+		REAL8 s1x,                /**< initial value of S1x */
+		REAL8 s1y,                /**< initial value of S1y */
+		REAL8 s1z,                /**< initial value of S1z */
+		REAL8 s2x,                /**< initial value of S2x */
+		REAL8 s2y,                /**< initial value of S2y */
+		REAL8 s2z,                /**< initial value of S2z */
+		REAL8 lnhatx,             /**< initial value of LNhatx */
+		REAL8 lnhaty,             /**< initial value of LNhaty */
+		REAL8 lnhatz,             /**< initial value of LNhatz */
+		REAL8 e1x,                /**< initial value of E1x */
+		REAL8 e1y,                /**< initial value of E1y */
+		REAL8 e1z,                /**< initial value of E1z */
+		LALSpinFlags *spinFlags,  /**< flags to control spin effects */
+		int phaseO                /**< twice PN phase order */
+		);
+
+
