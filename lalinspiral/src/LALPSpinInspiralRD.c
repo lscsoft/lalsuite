@@ -103,8 +103,8 @@
  *
  */
 
-#include <LALPSpinInspiralRD.h>
-#include <LALAdaptiveRungeKutta4.h>
+#include <lal/LALPSpinInspiralRD.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
