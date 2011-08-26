@@ -77,7 +77,6 @@ XLALComputeExtraStatsForToplist ( toplist_t *list,
 				  const MultiDetectorStateSeriesSequence *multiDetStates,
 				  const ComputeFParams *CFparams,
 				  const LIGOTimeGPS refTimeGPS,
-				  const LIGOTimeGPS tMidGPS,
 				  const BOOLEAN SignalOnly,
 				  const char* outputSingleSegStats );
 

@@ -1039,7 +1039,7 @@ int MAIN( int argc, char *argv[]) {
       multiNoiseWeightsPointer = NULL;
 
     xlalErrno = 0;
-    XLALComputeExtraStatsForToplist ( semiCohToplist, "HoughFStat", &stackMultiSFT, multiNoiseWeightsPointer, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, FALSE, uvar_outputSingleSegStats );
+    XLALComputeExtraStatsForToplist ( semiCohToplist, "HoughFStat", &stackMultiSFT, multiNoiseWeightsPointer, &stackMultiDetStates, &CFparams, refTimeGPS, FALSE, uvar_outputSingleSegStats );
     if ( xlalErrno != 0 ) {
       XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", fn, __LINE__, xlalErrno );
       return(HIERARCHICALSEARCH_EBAD);

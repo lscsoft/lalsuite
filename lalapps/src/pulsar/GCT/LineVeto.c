@@ -63,8 +63,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 				      const MultiNoiseWeightsSequence *multiNoiseWeightsV,    /**< noise weights for all detectors and segments */
 				      const MultiDetectorStateSeriesSequence *multiDetStatesV,/**< some state info for all detectors */
 				      const ComputeFParams *CFparams,                         /**< additional parameters needed for ComputeFStat */
-				      const LIGOTimeGPS refTimeGPS,                           /**< reference time, needed for ExtrapolatePulsarSpins */
-				      const LIGOTimeGPS tMidGPS,                              /**< reference time, needed for ExtrapolatePulsarSpins */
+				      const LIGOTimeGPS refTimeGPS,                           /**< reference time for fkdot values in toplist */
 				      const BOOLEAN SignalOnly,                               /**< flag for case with no noise, makes some extra checks necessary */
 				      const char* outputSingleSegStats                        /**< base filename to output Fstats for each segment individually */
 				    )
@@ -105,14 +104,10 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
   /* set up temporary variables and structs */
   PulsarDopplerParams candidateDopplerParams = empty_PulsarDopplerParams; /* struct containing sky position, frequency and fdot for the current candidate */
-  PulsarSpins fkdotTMP; /* temporary spin parameters for XLALExtrapolatePulsarSpins */
-  REAL8 deltaTau;       /* temporary variable to convert LIGOTimeGPS into real number difference for XLALExtrapolatePulsarSpins */
   UINT4 X;
 
   /* initialize doppler parameters */
-  candidateDopplerParams.refTime = tMidGPS;  /* spin parameters will be given to ComputeFStat at this refTime */
-  INIT_MEM( fkdotTMP );
-  deltaTau = XLALGPSDiff( &candidateDopplerParams.refTime, &refTimeGPS );
+  candidateDopplerParams.refTime = refTimeGPS;  /* spin parameters in toplist refer to this refTime */
 
   /* initialise detector name vector for later identification */
   LALStringVector *detectorIDs;
@@ -169,8 +164,8 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
         candidateDopplerParams.Alpha = elem->Alpha;
         candidateDopplerParams.Delta = elem->Delta;
-        fkdotTMP[0] = elem->Freq;
-        fkdotTMP[1] = elem->F1dot;
+        candidateDopplerParams.fkdot[0] = elem->Freq;
+        candidateDopplerParams.fkdot[1] = elem->F1dot;
       } else if ( listEntryType == 2 ) {
         HoughFStatOutputEntry *elem = toplist_elem ( list, j );
         elemV = elem;
@@ -179,20 +174,14 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
         candidateDopplerParams.Alpha = elem->AlphaBest;
         candidateDopplerParams.Delta = elem->DeltaBest;
-        fkdotTMP[0] = elem->Freq;
-        fkdotTMP[1] = elem->f1dot;
+        candidateDopplerParams.fkdot[0] = elem->Freq;
+        candidateDopplerParams.fkdot[1] = elem->f1dot;
       } /* if listEntryType 2 */
 
       /* write header information into segment-Fstats file */
       if ( singleSegStatsFile )
         fprintf ( singleSegStatsFile, "%%%% Freq: %.16g\n%%%% RA: %.13g\n%%%% Dec: %.13g\n%%%% f1dot: %.13g\n%%%% reftime: %d\n",
-                  fkdotTMP[0], candidateDopplerParams.Alpha, candidateDopplerParams.Delta, fkdotTMP[1], refTimeGPS.gpsSeconds );
-
-      /* extrapolate pulsar spins to midtime of observation (more stable against large deltaTau than directly resetting refTime) */
-      if ( XLALExtrapolatePulsarSpins( candidateDopplerParams.fkdot, fkdotTMP, deltaTau ) != XLAL_SUCCESS ) {
-        XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", fn, __LINE__);
-        XLAL_ERROR ( fn, XLAL_EFUNC );
-      }
+                  candidateDopplerParams.fkdot[0], candidateDopplerParams.Alpha, candidateDopplerParams.Delta, candidateDopplerParams.fkdot[1], refTimeGPS.gpsSeconds );
 
       /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
       XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, CFparams, SignalOnly, singleSegStatsFile );
@@ -291,7 +280,6 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 
   /* variables necessary to catch segments where not all detectors have data */
   INT4 detid = -1; /* count through detector IDs for matching with name strings */
-  UINT4 numDetectorsSeg = 0; /* number of detectors with data might be different for each segment */
   UINT4 numSegmentsX[numDetectors];  /* number of segments with data might be different for each detector */
   for (X = 0; X < numDetectors; X++)
     numSegmentsX[X] = 0;
@@ -303,13 +291,34 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
 
+  /* internal dopplerParams structure, for extrapolating to correct reftimes for each segment */
+  PulsarDopplerParams dopplerParams_temp = empty_PulsarDopplerParams; /* struct containing sky position, frequency and fdot for the current candidate */
+  dopplerParams_temp.Alpha = dopplerParams->Alpha;
+  dopplerParams_temp.Delta = dopplerParams->Delta;
+  INIT_MEM( dopplerParams_temp.fkdot );
+
   /* compute single- and multi-detector Fstats for each data segment and sum up */
   UINT4 k;
   for (k = 0; k < numSegments; k++)
     {
+      UINT4 numDetectorsSeg = multiSFTsV->data[k]->length; /* for each segment, number of detectors with data might be smaller than overall number */
+
       /* initialize temporary single-IFO Fstat vector */
       for (X = 0; X < numDetectors; X++)
         twoFXseg->data[X] = 0.0;
+
+      /* starttime of segment: could be different for each detector, take minimum */
+      dopplerParams_temp.refTime.gpsSeconds = multiSFTsV->data[k]->data[0]->data[0].epoch.gpsSeconds;
+      for (X = 0; X < numDetectorsSeg; X++) {
+        if ( multiSFTsV->data[k]->data[X]->data[0].epoch.gpsSeconds < dopplerParams_temp.refTime.gpsSeconds )
+          dopplerParams_temp.refTime = multiSFTsV->data[k]->data[X]->data[0].epoch;
+      }
+      REAL8 deltaTau = XLALGPSDiff( &dopplerParams_temp.refTime, &dopplerParams->refTime ); /* convert LIGOTimeGPS into real number difference for XLALExtrapolatePulsarSpins */
+      /* extrapolate pulsar spins to correct time for this segment */
+      if ( XLALExtrapolatePulsarSpins( dopplerParams_temp.fkdot, dopplerParams->fkdot, deltaTau ) != XLAL_SUCCESS ) {
+        XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", fn, __LINE__);
+        XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
 
       MultiNoiseWeights *multiNoiseWeightsThisSeg;
       if ( multiNoiseWeightsV )
@@ -318,8 +327,10 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
         multiNoiseWeightsThisSeg = NULL;
 
       /* recompute multi-detector Fstat and atoms */
+      if ( singleSegStatsFile )
+        fprintf ( singleSegStatsFile, "%%%% Reftime: %d %%%% Freq: %.16g %%%% RA: %.13g %%%% Dec: %.13g %%%% f1dot: %.13g\n", dopplerParams_temp.refTime.gpsSeconds, dopplerParams_temp.fkdot[0], dopplerParams_temp.Alpha, dopplerParams_temp.Delta, dopplerParams_temp.fkdot[1] );
       fakeStatus = blank_status;
-      ComputeFStat ( &fakeStatus, &Fstat, dopplerParams, multiSFTsV->data[k], multiNoiseWeightsThisSeg, multiDetStatesV->data[k], &CFparams_internal, NULL );
+      ComputeFStat ( &fakeStatus, &Fstat, &dopplerParams_temp, multiSFTsV->data[k], multiNoiseWeightsThisSeg, multiDetStatesV->data[k], &CFparams_internal, NULL );
       if ( fakeStatus.statusCode ) {
         XLALPrintError ("\%s, line %d : Failed call to LAL function ComputeFStat(). statusCode=%d\n\n", fn, __LINE__, fakeStatus.statusCode);
         XLAL_ERROR ( fn, XLAL_EFUNC );
@@ -336,7 +347,6 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
         fprintf ( singleSegStatsFile, "%.6f", 2.0*Fstat.F );
 
       /* recompute single-detector Fstats from atoms */
-      numDetectorsSeg = multiSFTsV->data[k]->length; /* for each segment, could be smaller than overall number */
       for (X = 0; X < numDetectorsSeg; X++)
         {
 
