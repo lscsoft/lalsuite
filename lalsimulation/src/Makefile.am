@@ -18,6 +18,7 @@ lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
 	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \
+        LALSimIMREOBNRv2.c \
 	LALSimIMRPhenom.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \

@@ -17,6 +17,10 @@
  *  MA  02111-1307  USA
  */
 #include <lal/LALDatatypes.h>
+
+#ifndef _LALSIMINSPIRAL_H
+#define _LALSIMINSPIRAL_H
+
 NRCSID(LALSIMINSPIRALH, "$Id$");
 
 #define LAL_PN_MODE_L_MAX 3
@@ -620,3 +624,4 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
 		);
 
 
+#endif /* _LALSIMINSPIRAL_H */

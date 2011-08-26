@@ -18,6 +18,10 @@
  */
 
 #include <lal/LALDatatypes.h>
+
+#ifndef _LALSIMIMR_H
+#define _LALSIMIMR_H
+
 NRCSID(LALSIMIMRH, "$Id$");
 
 /**
@@ -25,6 +29,12 @@ NRCSID(LALSIMIMRH, "$Id$");
  * EOBNR models
  */
 #define EOB_RD_EFOLDS 10.0
+
+/**
+ * Constant which comes up in some of the EOB models. Its value is
+ * (94/3 -41/32*pi*pi)
+ */
+#define ninty4by3etc 18.687902694437592603
 
 /**
  * Driver routine to compute the non-spinning, inspiral-merger-ringdown
@@ -126,3 +136,40 @@ int XLALSimIMRPhenomBGenerateTD(
     REAL8 inclination         /**< inclination of source */
 );
 
+/**
+ * This function generates the plus and cross polarizations for the dominant
+ * (2,2) mode of the EOBNRv2 approximant. This model is defined in Pan et al,
+ * arXiv:1106.1021v1 [gr-qc].
+ */
+int XLALSimIMREOBNRv2DominantMode(
+    REAL8TimeSeries **hplus,      /**<< The +-polarization waveform (returned) */
+    REAL8TimeSeries **hcross,     /**<< The x-polarization waveform (returned) */
+    LIGOTimeGPS      *tC,         /**<< The coalescence time (defined as above) */
+    const REAL8       phiC,       /**<< The phase at the coalescence time */
+    const REAL8       deltaT,     /**<< Sampling interval (in seconds) */
+    const REAL8       m1SI,       /**<< First component mass (in kg) */
+    const REAL8       m2SI,       /**<< Second component mass (in kg) */
+    const REAL8       fLower,     /**<< Starting frequency (in Hz) */
+    const REAL8       distance,   /**<< Distance to source (in metres) */
+    const REAL8       inclination /**<< Inclination of the source (in radians) */
+);
+
+/**
+ * This function generates the plus and cross polarizations for the EOBNRv2 approximant
+ * with all available modes included. This model is defined in Pan et al,
+ * arXiv:1106.1021v1 [gr-qc].
+ */
+int XLALSimIMREOBNRv2AllModes(
+    REAL8TimeSeries **hplus,      /**<< The +-polarization waveform (returned) */
+    REAL8TimeSeries **hcross,     /**<< The x-polarization waveform (returned) */
+    LIGOTimeGPS      *tC,         /**<< The coalescence time (defined as above) */
+    const REAL8       phiC,       /**<< The phase at the coalescence time */
+    const REAL8       deltaT,     /**<< Sampling interval (in seconds) */
+    const REAL8       m1SI,       /**<< First component mass (in kg) */
+    const REAL8       m2SI,       /**<< Second component mass (in kg) */
+    const REAL8       fLower,     /**<< Starting frequency (in Hz) */
+    const REAL8       distance,   /**<< Distance to source (in metres) */
+    const REAL8       inclination /**<< Inclination of the source (in radians) */
+);
+
+#endif /* _LALSIMIMR_H */
