@@ -2762,16 +2762,16 @@ int main( int argc, char *argv[] )
     {
           redshift= drawRedshift(dmin,dmax,pzmax);        
 
-      minMass1 = redshift_mass(redshift,minMass10);
-      maxMass1 = redshift_mass(redshift,maxMass10);
-      meanMass1 = redshift_mass(redshift,meanMass10);
-      massStdev1 = redshift_mass(redshift,massStdev10);
-      minMass2 = redshift_mass(redshift,minMass20);
-      maxMass2 = redshift_mass(redshift,maxMass20);
-      meanMass2 = redshift_mass(redshift,meanMass20);
-      massStdev2 = redshift_mass(redshift,massStdev20);
-      minMtotal = redshift_mass(redshift,minMtotal0);
-      maxMtotal = redshift_mass(redshift,maxMtotal0);
+      minMass1 = redshift_mass(minMass10, redshift);
+      maxMass1 = redshift_mass(maxMass10, redshift);
+      meanMass1 = redshift_mass(meanMass10, redshift);
+      massStdev1 = redshift_mass(massStdev10, redshift);
+      minMass2 = redshift_mass(minMass20, redshift);
+      maxMass2 = redshift_mass(maxMass20, redshift);
+      meanMass2 = redshift_mass(meanMass20, redshift);
+      massStdev2 = redshift_mass(massStdev20, redshift);
+      minMtotal = redshift_mass(minMtotal0, redshift);
+      maxMtotal = redshift_mass(maxMtotal0, redshift);
     }
 
     /* populate masses */
