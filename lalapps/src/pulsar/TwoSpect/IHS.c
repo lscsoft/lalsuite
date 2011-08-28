@@ -29,6 +29,7 @@
 #include "IHS.h"
 #include "statistics.h"
 #include "candidates.h"
+#include "fastchisqinv.h"
 
 //////////////////////////////////////////////////////////////
 // Create vectors for IHS maxima struct
@@ -767,7 +768,8 @@ void ihsSums2_withFAR(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4Vec
             for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
                if (sampledtempihsvals->data[jj]!=0.0) {
                   averageval += 1.0;
-                  if (params->ihsfar != 1.0) farave += 0.5*gsl_cdf_chisq_Pinv(1.0-params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
+                  if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
+                  if (params->ihsfar != 1.0 && params->fastchisqinv) farave += 0.5*cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
                   //for (kk=0; kk<(INT4)orderedihsvals->length; kk++) cdftot->data[kk] += gsl_cdf_chisq_P(2.0*orderedihsvals->data[kk], 2.0*tempihsvals->data[jj]);
                } /* if sampledtempihsvals->data[jj] != 0.0 */
             } /* for jj < sampledtempihsvals->length */
@@ -874,7 +876,8 @@ void ihsSums2_withFAR(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4Vec
             for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
                if (sampledtempihsvals->data[jj]!=0.0) {
                   averageval += 1.0;
-                  if (params->ihsfar != 1.0) farave += 0.5*gsl_cdf_chisq_Pinv(1.0-params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
+                  if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
+                  if (params->ihsfar != 1.0 && params->fastchisqinv) farave += 0.5*cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
                }
             }
             outputfar->ihsfar->data[ii-2] = farave/averageval;

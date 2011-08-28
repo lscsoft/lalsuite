@@ -42,6 +42,7 @@ option "sftType"  - "SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vlad
 option "markBadSFTs"   - "Mark bad SFTs" flag off
 option "FFTplanFlag"   - "0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive" int values="0","1","2","3" default="3" optional
 option "allULvalsPerSkyLoc"  - "Print all UL values in the band specified by ULminimumDeltaf and ULmaximumDeltaf (default is to print only the maximum UL value in the band)" flag off
+option "fastchisqinv"  - "Use a faster central chi-sq inversion function (roughly float precision instead of double)" flag off
 
 option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off hidden
 option "calcRthreshold"    - "Calculate the threshold value for R given the template false alarm rate" flag off hidden

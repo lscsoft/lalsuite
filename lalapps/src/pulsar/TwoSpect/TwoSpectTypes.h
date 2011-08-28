@@ -68,6 +68,7 @@ typedef struct
    INT4 antennaOff;
    INT4 noiseWeightOff;
    INT4 printAllULvalues;
+   INT4 fastchisqinv;
 } inputParamsStruct;
 
 typedef struct

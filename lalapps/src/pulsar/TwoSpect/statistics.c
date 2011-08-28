@@ -358,6 +358,11 @@ REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma)
 }
 
 
+
+
+
+
+
 /* Critical values of KS test (from Bickel and Doksum). Does not apply directly (mean determined from distribution)
  alpha=0.01
  n       10      20      30      40      50      60      80      n>80
