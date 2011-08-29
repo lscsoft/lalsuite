@@ -55,25 +55,6 @@ extern "C" {
 
 /*---------- exported DEFINES ----------*/
 
-/** \name Error codes */
-/*@{*/
-#define LINEVETOC_ENULL 	1
-#define LINEVETOC_ENONULL 	2
-#define LINEVETOC_EINPUT   	3
-#define LINEVETOC_EMEM   	4
-#define LINEVETOC_EXLAL		5
-#define LINEVETOC_EIEEE		6
-#define LINEVETOC_EFILE		7
-
-#define LINEVETOC_MSGENULL 	"Arguments contained an unexpected null pointer"
-#define LINEVETOC_MSGENONULL 	"Output pointer is non-NULL"
-#define LINEVETOC_MSGEINPUT   	"Invalid input"
-#define LINEVETOC_MSGEMEM   	"Out of memory. Bad."
-#define LINEVETOC_MSGEXLAL	"XLAL function call failed"
-#define LINEVETOC_MSGEIEEE	"Floating point failure"
-#define LINEVETOC_MSGEFILE	"Could not create output file"
-/*@}*/
-
 /*---------- exported types ----------*/
 
   /** Type containing multi- and single-detector F statistics and Line Veto statistic */
