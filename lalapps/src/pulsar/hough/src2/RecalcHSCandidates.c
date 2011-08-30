@@ -420,6 +420,7 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_GPUready = GPUREADY_DEFAULT;
   global_status = &status;
 
+  BOOLEAN uvar_correctFreqs = TRUE;
 
   /* LALDebugLevel must be called before any LALMallocs have been used */
   lalDebugLevel = 0;
@@ -489,6 +490,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "GPUready",     0, UVAR_DEVELOPER, "Use single-precision 'GPU-ready' core routines", &uvar_GPUready), &status);
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_OPTIONAL, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "correctFreqs", 0, UVAR_DEVELOPER, "Correct candidate output frequencies (ie fix bug #147). Allows reproducing 'historical results'", &uvar_correctFreqs), &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -962,9 +964,12 @@ int MAIN( int argc, char *argv[]) {
       /* now correct the candidate frequency, which has suffered from a frequency-bin 'quantization' error in
        * the peak-gram step (which only stores fBinIni = round[f0/dFreq]). See bug #147.
        */
-      LogPrintf (LOG_DETAIL, "Correcting output candidate frequency: Hough f0 = %.9f, but actually f0 = %.9f (offset = %.9g)\n",
-                 semiCohCandList.list[0].freq, thisPoint.fkdot[0], semiCohCandList.list[0].freq - thisPoint.fkdot[0] );
-      semiCohCandList.list[0].freq = thisPoint.fkdot[0];
+      if ( uvar_correctFreqs )
+        {
+          LogPrintf (LOG_DETAIL, "Correcting output candidate frequency: Hough f0 = %.9f, but actually f0 = %.9f (offset = %.9g)\n",
+                     semiCohCandList.list[0].freq, thisPoint.fkdot[0], semiCohCandList.list[0].freq - thisPoint.fkdot[0] );
+          semiCohCandList.list[0].freq = thisPoint.fkdot[0];
+        }
 
       /* free peakgrams -- we don't need them now because we have the Hough maps */
       for (k=0; k<nStacks; k++)
@@ -1009,6 +1014,8 @@ int MAIN( int argc, char *argv[]) {
       LogPrintf ( LOG_CRITICAL, "Unable to open output-file '%s' for writing.\n", fnameSemiCohCand);
       return HIERARCHICALSEARCH_EFILE;
     }
+  /* write header-line comment explaining columns */
+  fprintf ( fpSemiCoh, "%%%% Freq       Alpha      Delta     f1dot  HoughFStat AlphaBest DeltaBest MeanSig VarSig <multiF> <F1> <F2> ...\n" );
 
   sort_houghFStat_toplist(semiCohToplist);
   if ( write_houghFStat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0)
