@@ -2191,3 +2191,67 @@ findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
 
   return maxorder;
 } /*  findHighestSpinOrder() */
+
+
+/** "DiagNormalize" a metric matrix.
+ * DiagNormalization means normalize metric by its diagonal, namely apply the transformation
+ * G_ij = g_ij /sqrt(g_ii * g_jj), to all elements, resulting in lower
+ * condition number and unit diagonal elements.
+ *
+ * return NULL on error, otherwise new matrix is allocated here.
+ */
+gsl_matrix *
+XLALDiagNormalizeMetric ( const gsl_matrix * g_ij )
+{
+  const char *fn = __func__;
+  UINT4 i,j, dim1, dim2;
+  gsl_matrix *ret_ij;
+
+  if ( !g_ij ) {
+    XLALPrintError ("%s: invalid NULL input 'g_ij'.\n", fn );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
+  }
+
+  dim1 = g_ij->size1;
+  dim2 = g_ij->size2;
+
+  if ( dim1 != dim2 ) {
+    XLALPrintError ( "%s: input matrix g_ij must be square! (got %d x %d)\n", fn, dim1, dim2 );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
+  }
+
+  if ( (ret_ij = gsl_matrix_alloc ( dim1, dim2 )) == NULL ) {
+    XLALPrintError ("%s: failed to gsl_matrix_alloc(%d, %d)\n", fn, dim1, dim2 );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
+  }
+
+  for ( i=0; i < dim1; i++)
+    {
+    for ( j=0; j < dim2; j++ )
+      {
+        if ( i == j )
+          {
+            gsl_matrix_set ( ret_ij, i, j, 1.0 );	/* use exact result on diagonal */
+          }
+        else
+          {
+            double gtmp_ii = gsl_matrix_get(g_ij, i, i);
+            double gtmp_jj = gsl_matrix_get(g_ij, j, j);
+
+            if ( (gtmp_ii <= 0) || (gtmp_jj <= 0 ) ) {
+              XLALPrintError ("%f: DiagNormalize not defined for non-positive diagonal elements! i=%d, j=%d, g_ii=%g, g_jj=%g\n", i, j, gtmp_ii, gtmp_jj );
+              XLAL_ERROR_NULL ( XLAL_EDOM );
+            }
+
+            double gtmp_ij = gsl_matrix_get(g_ij, i, j);
+            double new_ij = gtmp_ij / sqrt ( gtmp_ii * gtmp_jj );
+
+            gsl_matrix_set ( ret_ij, i, j, new_ij );
+          }
+      } /* for j < dim2 */
+
+    } /* for i < dim1 */
+
+  return ret_ij;
+
+} /* XLALDiagNormalizeMetric() */

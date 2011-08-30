@@ -644,6 +644,14 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
     {
       fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->g_ij );
       fprintf ( fp, "maxrelerr_gPh = %.2e;\n", metric->maxrelerr_gPh );
+
+      gsl_matrix *gDN_ij;
+      if ( (gDN_ij = XLALDiagNormalizeMetric ( metric->g_ij )) == NULL ) {
+        XLALPrintError ("%s: something failed NormDiagonalizing phase metric g_ij!\n", __func__ );
+        XLAL_ERROR ( XLAL_EFUNC );
+      }
+      fprintf ( fp, "\ngDN_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gDN_ij );
+      gsl_matrix_free ( gDN_ij );
     }
 
   /* ----- output F-metric (and related matrices ---------- */
