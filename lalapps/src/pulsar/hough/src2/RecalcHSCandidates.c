@@ -413,6 +413,9 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_followupList = NULL;	/* Hough candidate list to be 'followed up': compute Hough top-cand, F1, F2, multi-F */
   REAL8 uvar_WU_Freq = 0;	/* if given, use to compute frequency-correction of input-candidates coming from HS-code */
   REAL8 uvar_WU_dFreq;		/* Frequency-spacing of original HS search that produced the input candidates */
+  REAL8 uvar_WU_FreqBand;	/* if given, used to load original SFT band, in order to obtain identical noise-weights */
+  REAL8 uvar_WU_f1dot;		/* if given, used to load original SFT band, in order to obtain identical noise-weights */
+  REAL8 uvar_WU_f1dotBand;	/* if given, used to load original SFT band, in order to obtain identical noise-weights */
 
 #ifndef GPUREADY_DEFAULT
 #define GPUREADY_DEFAULT 0
@@ -458,8 +461,11 @@ int MAIN( int argc, char *argv[]) {
 
   /* ---------- */
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "followupList", 0,  UVAR_REQUIRED, "Hough candidate list to target (Freq Alpha Delta f1dot sig)", &uvar_followupList),  &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "WU_Freq",       0,  UVAR_OPTIONAL, "WU start-frequency: use to correct HS frequency-offset bug", &uvar_WU_Freq ),&status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "WU_dFreq",    0,  UVAR_REQUIRED, "Frequency-spacing of original HS search that produced the input candidates", &uvar_WU_dFreq ),&status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "WU_Freq",      0,  UVAR_OPTIONAL, "WU start-frequency: use to correct HS frequency-offset bug", &uvar_WU_Freq ),&status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "WU_dFreq",     0,  UVAR_REQUIRED, "Frequency-spacing of original HS search that produced the input candidates", &uvar_WU_dFreq ),&status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "WU_FreqBand",  0,  UVAR_OPTIONAL, "Used to load original SFT band, in order to obtain identical noise-weights", &uvar_WU_FreqBand ),&status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "WU_f1dot",     0,  UVAR_OPTIONAL, "Used to load original SFT band, in order to obtain identical noise-weights", &uvar_WU_f1dot ),&status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "WU_f1dotBand", 0,  UVAR_OPTIONAL, "Used to load original SFT band, in order to obtain identical noise-weights", &uvar_WU_f1dotBand ),&status);
 
   /* ---------- */
 
@@ -640,12 +646,33 @@ int MAIN( int argc, char *argv[]) {
   INIT_MEM ( usefulParams.spinRange_refTime );
   INIT_MEM ( usefulParams.spinRange_midTime );
 
-  /* copy user specified spin variables at reftime  */
-  /* the reference time value in spinRange_refTime will be set in SetUpSFTs() */
-  usefulParams.spinRange_refTime.fkdot[0] = InputCandList->FreqMin; 	/* frequency */
-  usefulParams.spinRange_refTime.fkdotBand[0] = InputCandList->FreqBand; /* frequency range */
-  usefulParams.spinRange_refTime.fkdot[1] = InputCandList->f1dotMin;  	/* 1st spindown */
-  usefulParams.spinRange_refTime.fkdotBand[1] = InputCandList->f1dotBand; /* spindown range */
+  /* either use WU-original band parameters if given, otherwise adapt to candidate-list range */
+  REAL8 Freq, FreqBand, f1dot, f1dotBand;
+  /* frequency */
+  if ( XLALUserVarWasSet(&uvar_WU_Freq) )
+    Freq = uvar_WU_Freq;
+  else
+    Freq = InputCandList->FreqMin;
+  /* frequency range */
+  if ( XLALUserVarWasSet(&uvar_WU_FreqBand) )
+    FreqBand = uvar_WU_FreqBand;
+  else
+    FreqBand = InputCandList->FreqBand;
+  /* 1st spindown */
+  if ( XLALUserVarWasSet(&uvar_WU_f1dot) )
+    f1dot = uvar_WU_f1dot;
+  else
+    f1dot = InputCandList->f1dotMin;
+  /* spindown range */
+  if ( XLALUserVarWasSet(&uvar_WU_f1dotBand) )
+    f1dotBand = uvar_WU_f1dotBand;
+  else
+    f1dotBand = InputCandList->f1dotBand;
+
+  usefulParams.spinRange_refTime.fkdot[0] = Freq;
+  usefulParams.spinRange_refTime.fkdotBand[0] = FreqBand;
+  usefulParams.spinRange_refTime.fkdot[1] = f1dot;
+  usefulParams.spinRange_refTime.fkdotBand[1] = f1dotBand;
 
   usefulParams.edat = edat;
   usefulParams.minStartTimeGPS = minStartTimeGPS;
