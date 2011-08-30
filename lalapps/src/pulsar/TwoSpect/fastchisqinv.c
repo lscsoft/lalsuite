@@ -319,7 +319,7 @@ REAL8 cdf_ugaussian_Qinv(REAL8 Q)
    if (Q < 0.5) return x;
    else return -x;
 }
-static REAL8 small(REAL8 q)
+REAL8 small(REAL8 q)
 {
    const REAL8 a[8] = { 3.387132872796366608, 133.14166789178437745,
       1971.5909503065514427, 13731.693765509461125,
@@ -339,7 +339,7 @@ static REAL8 small(REAL8 q)
    
    return x;
 }
-static REAL8 intermediate(REAL8 r)
+REAL8 intermediate(REAL8 r)
 {
    const REAL8 a[] = { 1.42343711074968357734, 4.6303378461565452959,
       5.7694972214606914055, 3.64784832476320460504,
@@ -357,7 +357,7 @@ static REAL8 intermediate(REAL8 r)
    
    return x;
 }
-static REAL8 tail(REAL8 r)
+REAL8 tail(REAL8 r)
 {
    const REAL8 a[] = { 6.6579046435011037772, 5.4637849111641143699,
       1.7848265399172913358, 0.29656057182850489123,
@@ -375,7 +375,7 @@ static REAL8 tail(REAL8 r)
    
    return x;
 }
-static REAL8 rat_eval(const REAL8 a[], const size_t na, const REAL8 b[], const size_t nb, const REAL8 x)
+REAL8 rat_eval(const REAL8 a[], const size_t na, const REAL8 b[], const size_t nb, const REAL8 x)
 {
    size_t i, j;
    REAL8 u, v, r;
@@ -784,82 +784,7 @@ REAL8 gamma_inc_Q_series(REAL8 a, REAL8 x)
    return (term1 + term2);
    
 }
-REAL8 gamma_inc_D(REAL8 a, REAL8 x)
-{
-   
-   const CHAR *fn = __func__;
-   
-   if (a < 10.0) {
-      REAL8 lnr = a * log(x) - x - lgamma(a+1.0);
-      return exp(lnr);
-   } else {
-      REAL8 gstar;
-      REAL8 ln_term;
-      REAL8 term1;
-      if (x < 0.5*a) {
-         REAL8 u = x/a;   
-         REAL8 ln_u = log(u);
-         ln_term = ln_u - u + 1.0;
-      } else {
-         REAL8 mu = (x-a)/a;
-         ln_term = gsl_sf_log_1plusx_mx(mu);  /* log(1+mu) - mu */
-      }
-      gstar = sf_gammastar(a);
-      if (XLAL_IS_REAL8_FAIL_NAN(gstar)) {
-         fprintf(stderr, "%s: sf_gammastar_float(%f) failed.\n", fn, a);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-      }
-      term1 = exp(a*ln_term)/sqrt(2.0*LAL_PI*a);
-      return term1/gstar;
-   }
-   
-}
-REAL8 sf_gammastar(REAL8 x)
-{
-   
-   const CHAR *fn = __func__;
-   
-   if(x <= 0.0) {
-      fprintf(stderr, "%s: Invalid input of zero or less: %f\n", fn, x);
-      XLAL_ERROR_REAL8(fn, XLAL_EINVAL);
-   } else if(x < 0.5) {
-      REAL8 lg = lgamma(x);
-      REAL8 lx = log(x);
-      REAL8 c  = 0.5*(LAL_LN2+M_LNPI);
-      REAL8 lnr_val = lg - (x-0.5)*lx + x - c;
-      return exp(lnr_val);
-   } else if(x < 2.0) {
-      REAL8 t = 4.0/3.0*(x-0.5) - 1.0;
-      REAL8 val = cheb_eval(&gstar_a_cs, t);
-      if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-         fprintf(stderr, "%s: cheb_eval(&gstar_a_cs,%f) failed.\n", fn, t);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-      }
-      return val;
-   } else if(x < 10.0) {
-      REAL8 t = 0.25*(x-2.0) - 1.0;
-      REAL8 c = cheb_eval(&gstar_b_cs, t);
-      if (XLAL_IS_REAL8_FAIL_NAN(c)) {
-         fprintf(stderr, "%s: cheb_eval(&gstar_b_cs,%f) failed.\n", fn, t);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-      }
-      return c/(x*x) + 1.0 + 1.0/(12.0*x);
-   } else if(x < 1.0/1.2207031250000000e-04) {
-      REAL8 val = gammastar_ser(x);
-      if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-         fprintf(stderr, "%s: gammastar_ser(%f) failed.\n", fn, x);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-      }
-      return val;
-   } else if(x < 1.0/LAL_REAL8_EPS) {
-      /* Use Stirling formula for Gamma(x).
-       */
-      REAL8 xi = 1.0/x;
-      return 1.0 + xi/12.0*(1.0 + xi/24.0*(1.0 - xi*(139.0/180.0 + 571.0/8640.0*xi)));
-   } else return 1.0;
-   
-}
-static inline REAL8 cheb_eval(const cheb_series * cs, REAL8 x)
+REAL8 twospect_cheb_eval(const cheb_series * cs, REAL8 x)
 {
    
    INT4 j;
@@ -880,6 +805,81 @@ static inline REAL8 cheb_eval(const cheb_series * cs, REAL8 x)
    }
    
    return d;
+   
+}
+REAL8 gamma_inc_D(REAL8 a, REAL8 x)
+{
+   
+   const CHAR *fn = __func__;
+   
+   if (a < 10.0) {
+      REAL8 lnr = a * log(x) - x - lgamma(a+1.0);
+      return exp(lnr);
+   } else {
+      REAL8 gstar;
+      REAL8 ln_term;
+      REAL8 term1;
+      if (x < 0.5*a) {
+         REAL8 u = x/a;   
+         REAL8 ln_u = log(u);
+         ln_term = ln_u - u + 1.0;
+      } else {
+         REAL8 mu = (x-a)/a;
+         ln_term = gsl_sf_log_1plusx_mx(mu);  /* log(1+mu) - mu */
+      }
+      gstar = twospect_sf_gammastar(a);
+      if (XLAL_IS_REAL8_FAIL_NAN(gstar)) {
+         fprintf(stderr, "%s: sf_gammastar_float(%f) failed.\n", fn, a);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      }
+      term1 = exp(a*ln_term)/sqrt(2.0*LAL_PI*a);
+      return term1/gstar;
+   }
+   
+}
+REAL8 twospect_sf_gammastar(REAL8 x)
+{
+   
+   const CHAR *fn = __func__;
+   
+   if(x <= 0.0) {
+      fprintf(stderr, "%s: Invalid input of zero or less: %f\n", fn, x);
+      XLAL_ERROR_REAL8(fn, XLAL_EINVAL);
+   } else if(x < 0.5) {
+      REAL8 lg = lgamma(x);
+      REAL8 lx = log(x);
+      REAL8 c  = 0.5*(LAL_LN2+M_LNPI);
+      REAL8 lnr_val = lg - (x-0.5)*lx + x - c;
+      return exp(lnr_val);
+   } else if(x < 2.0) {
+      REAL8 t = 4.0/3.0*(x-0.5) - 1.0;
+      REAL8 val = twospect_cheb_eval(&gstar_a_cs, t);
+      if (XLAL_IS_REAL8_FAIL_NAN(val)) {
+         fprintf(stderr, "%s: twospect_cheb_eval(&gstar_a_cs,%f) failed.\n", fn, t);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      }
+      return val;
+   } else if(x < 10.0) {
+      REAL8 t = 0.25*(x-2.0) - 1.0;
+      REAL8 c = twospect_cheb_eval(&gstar_b_cs, t);
+      if (XLAL_IS_REAL8_FAIL_NAN(c)) {
+         fprintf(stderr, "%s: twospect_cheb_eval(&gstar_b_cs,%f) failed.\n", fn, t);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      }
+      return c/(x*x) + 1.0 + 1.0/(12.0*x);
+   } else if(x < 1.0/1.2207031250000000e-04) {
+      REAL8 val = gammastar_ser(x);
+      if (XLAL_IS_REAL8_FAIL_NAN(val)) {
+         fprintf(stderr, "%s: gammastar_ser(%f) failed.\n", fn, x);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      }
+      return val;
+   } else if(x < 1.0/LAL_REAL8_EPS) {
+      /* Use Stirling formula for Gamma(x).
+       */
+      REAL8 xi = 1.0/x;
+      return 1.0 + xi/12.0*(1.0 + xi/24.0*(1.0 - xi*(139.0/180.0 + 571.0/8640.0*xi)));
+   } else return 1.0;
    
 }
 REAL8 gammastar_ser(REAL8 x)

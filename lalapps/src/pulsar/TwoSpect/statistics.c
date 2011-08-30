@@ -24,13 +24,12 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_cdf.h>
 #include <gsl/gsl_sf_bessel.h>
-#include <gsl/gsl_sf_erf.h>
 #include <gsl/gsl_statistics_double.h>
 
 #include <lal/LALConstants.h>
 
 #include "statistics.h"
-
+#include "fastchisqinv.h"
 
 
 //////////////////////////////////////////////////////////////
@@ -52,6 +51,19 @@ REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator)
    
 } /* expRandNum() */
 
+
+//Rougly REAL4 precision
+REAL8 twospect_cdf_chisq_P(REAL8 x, REAL8 nu)
+{
+   
+   const CHAR *fn = __func__;
+   REAL8 val = cdf_gamma_P(x, 0.5*nu, 2.0);
+   if (XLAL_IS_REAL8_FAIL_NAN(val)) {
+      fprintf(stderr,"%s: cdf_gamma_P(%f, %f, 2.0) failed.\n", fn, x, 0.5*nu);
+      XLAL_ERROR_REAL8(fn, XLAL_EFAULT);
+   }
+   return val;
+}
 
 
 //Matlab's version
@@ -160,7 +172,7 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
    REAL8 halfdelta = 0.5*delta;
    INT4 counter = (INT4)floor(halfdelta);
    REAL8 P = gsl_ran_poisson_pdf(counter, halfdelta);
-   REAL8 C = gsl_cdf_chisq_P(x, dof+2.0*counter);
+   REAL8 C = twospect_cdf_chisq_P((REAL8)x, (REAL8)(dof+2.0*counter));
    REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
    
    sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
@@ -174,25 +186,24 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
    sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
    if (xlalErrno!=0) {
       fprintf(stderr,"%s: sumseries() failed.\n", fn);
-      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      XLAL_ERROR_REAL4(fn, XLAL_EFUNC);
    }
    
    INT4 fromzero = 0;
    if (prob==0.0) fromzero = 1;
    if (fromzero==1) {
       counter = 0;
-      REAL8 pk = gsl_ran_poisson_pdf(0, halfdelta)*gsl_cdf_chisq_P(x, dof);
+      REAL8 pk = gsl_ran_poisson_pdf(0, halfdelta)*twospect_cdf_chisq_P(x, dof);
       REAL8 dp = 0.0;
       INT4 ok = 0;
       if ((REAL8)counter<halfdelta) ok = 1;
       while (ok==1) {
          counter++;
          P = gsl_ran_poisson_pdf(counter, halfdelta);
-         C = gsl_cdf_chisq_P(x, dof+2.0*counter);
+         C = twospect_cdf_chisq_P(x, dof+2.0*counter);
          dp = P*C;
          pk += dp;
          if (!(ok==1 && (REAL8)counter<halfdelta && dp>=err*pk)) ok = 0;
-         //if ((REAL8)counter>=halfdelta || dp<err*pk || ok!=1) ok = 0;
       }
       prob = pk;
    }
@@ -523,6 +534,35 @@ REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize)
    return output;
    
 }
+REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize)
+{
+   
+   const CHAR *fn = __func__;
+   
+   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   if (rng==NULL) {
+      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", fn);
+      XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
+   }
+   srand(time(NULL));
+   UINT8 randseed = rand();
+   gsl_rng_set(rng, randseed);
+   //gsl_rng_set(rng, 0);
+   
+   REAL4Vector *output = XLALCreateREAL4Vector(sampleSize);
+   if (output==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, sampleSize);
+      XLAL_ERROR_NULL(fn, XLAL_EFUNC);
+   }
+   
+   INT4 ii;
+   for (ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
+   
+   gsl_rng_free(rng);
+   
+   return output;
+   
+}
 
 
 //////////////////////////////////////////////////////////////
@@ -630,20 +670,27 @@ REAL8 calcStddevD(REAL8Vector *vector)
 INT4 max_index(REAL4Vector *vector)
 {
    
-   const CHAR *fn = __func__;
+   //const CHAR *fn = __func__;
    
-   INT4 ii;
+   INT4 ii = 0, indexval = 0;
+   REAL4 maxval = vector->data[0];
    
-   double *gslarray = XLALMalloc(sizeof(double)*vector->length);
+   /* double *gslarray = XLALMalloc(sizeof(double)*vector->length);
    if (gslarray==NULL) {
       fprintf(stderr,"%s: XLALMalloc(%d) failed.\n", fn, vector->length);
-      XLAL_ERROR_REAL4(fn, XLAL_ENOMEM);
+      XLAL_ERROR(fn, XLAL_ENOMEM);
    }
    for (ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = (double)vector->data[ii];
    
    INT4 indexval = gsl_stats_max_index(gslarray, 1, vector->length);
    
-   XLALFree((double*)gslarray);
+   XLALFree((double*)gslarray); */
+   for (ii=1; ii<(INT4)vector->length; ii++) {
+      if (vector->data[ii]>maxval) {
+         maxval = vector->data[ii];
+         indexval = ii;
+      }
+   }
    
    return indexval;
    
@@ -656,7 +703,22 @@ INT4 max_index_double(REAL8Vector *vector)
    return indexval;
    
 }
-
+INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorsequence, INT4 vectornum)
+{
+   
+   INT4 ii = 0, indexval = 0;
+   REAL4 maxval = vectorsequence->data[vectornum*vectorsequence->vectorLength];
+   
+   for (ii=1; ii<(INT4)vectorsequence->vectorLength; ii++) {
+      if (vectorsequence->data[vectornum*vectorsequence->vectorLength+ii]>maxval) {
+         maxval = vectorsequence->data[vectornum*vectorsequence->vectorLength+ii];
+         indexval = ii;
+      }
+   }
+   
+   return indexval;
+   
+}
 
 
 REAL4 calcMedian(REAL4Vector *vector)
@@ -667,7 +729,7 @@ REAL4 calcMedian(REAL4Vector *vector)
    REAL4Vector *tempvect = XLALCreateREAL4Vector(vector->length);
    if (tempvect==NULL) {
       fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, vector->length);
-      XLAL_ERROR(fn, XLAL_EFUNC);
+      XLAL_ERROR_REAL4(fn, XLAL_EFUNC);
    }
    
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);

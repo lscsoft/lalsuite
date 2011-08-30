@@ -34,6 +34,7 @@
 #include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
 #include <lal/DopplerScan.h>
+#include <lal/VectorOps.h>
 
 #include <gsl/gsl_math.h>
 
@@ -1224,8 +1225,8 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
    for (ii=0; ii<(INT4)rngMeanssq->length; ii++) rngMeanssq->data[ii] = 0.0;
    
    //for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
-   //antweightssq = XLALSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
-   antweightssq = SSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
+   antweightssq = XLALSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
+   //antweightssq = SSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
    if (xlalErrno!=0) {
       fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
@@ -1240,13 +1241,7 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
       }
       
       //If noiseWeightOff is given, then set all the noise weights to be 1.0
-      if (input->noiseWeightOff!=0) {
-         for (jj=0; jj<(INT4)rngMeanssq->length; jj++) {
-            if (rngMeanssq->data[jj]!=0.0) {
-               rngMeanssq->data[jj] = 1.0;
-            }
-         }
-      }
+      if (input->noiseWeightOff!=0) for (jj=0; jj<(INT4)rngMeanssq->length; jj++) if (rngMeanssq->data[jj]!=0.0) rngMeanssq->data[jj] = 1.0;
       
       //Get sum of antenna pattern weight/variances for each frequency bin as a function of time (only for existant SFTs)
       REAL8 sumofweights = 0.0;
@@ -1255,11 +1250,8 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
       
       //Now do noise weighting, antenna pattern weighting
       for (jj=0; jj<numffts; jj++) {
-         if (rngMeanssq->data[jj] != 0.0) {
-            output->data[jj*numfbins+ii] = (REAL4)(invsumofweights*antPatternWeights->data[jj]*tfdata->data[jj*numfbins+ii]/rngMeanssq->data[jj]);
-         } else {
-            output->data[jj*numfbins+ii] = 0.0;
-         }
+         if (rngMeanssq->data[jj] != 0.0) output->data[jj*numfbins+ii] = (REAL4)(invsumofweights*antPatternWeights->data[jj]*tfdata->data[jj*numfbins+ii]/rngMeanssq->data[jj]);
+         else output->data[jj*numfbins+ii] = 0.0;
       } /* for jj < numffts */
    } /* for ii < numfbins */
    
