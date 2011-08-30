@@ -305,9 +305,6 @@ int MAIN( int argc, char *argv[]) {
   /* in general any variable ending with 1 is for the
      first stage, 2 for the second and so on */
 
-  /* ephemeris */
-  EphemerisData *edat = NULL;
-
   /* timestamp vectors */
   LIGOTimeGPSVector *midTstack=NULL;
   LIGOTimeGPSVector *startTstack=NULL;
@@ -595,19 +592,12 @@ int MAIN( int argc, char *argv[]) {
 
   /*--------- Some initializations ----------*/
 
-  /* initialize ephemeris info */
-
-  edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
-  if ( edat == NULL) {
-    fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
-    return(HIERARCHICALSEARCH_EMEM);
-  }
-
-  (*edat).ephiles.earthEphemeris = uvar_ephemE;
-  (*edat).ephiles.sunEphemeris = uvar_ephemS;
-
   /* read in ephemeris data */
-  LAL_CALL( LALInitBarycenter( &status, edat), &status);
+  EphemerisData * edat;
+  if ( (edat = XLALInitBarycenter ( uvar_ephemE, uvar_ephemS )) == NULL ) {
+    XLALPrintError ("%s: XLALInitBarycenter() failed to load ephemeris files '%s' or '%s'\n", fn, uvar_ephemE, uvar_ephemS );
+    return XLAL_EFUNC;
+  }
 
   XLALGPSSetREAL8(&minStartTimeGPS, uvar_minStartTime1);
   XLALGPSSetREAL8(&maxEndTimeGPS, uvar_maxEndTime1);
