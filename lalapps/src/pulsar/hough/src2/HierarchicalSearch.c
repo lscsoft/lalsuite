@@ -1269,6 +1269,7 @@ int MAIN( int argc, char *argv[]) {
 	return HIERARCHICALSEARCH_EFILE;
       }
     if ( uvar_printCand1 && uvar_semiCohToplist ) {
+      fprintf ( fpSemiCoh, "%%%%  Freq            Alpha              Delta              f1dot                 HoughFStat        AlphaBest          DeltaBest          MeanSig    VarSig\n");
       sort_houghFStat_toplist(semiCohToplist);
       if ( write_houghFStat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0)
 	fprintf( stderr, "Error in writing toplist to file\n");

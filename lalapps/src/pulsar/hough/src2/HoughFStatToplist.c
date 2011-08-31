@@ -318,7 +318,7 @@ static int print_houghFStatline_to_str(HoughFStatOutputEntry fline, char* buf, i
       UINT4 X;
       for ( X = 0; X < numDet ; X ++ )
         {
-          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFX->data[X] );
+          snprintf ( buf0, sizeof(buf0), " %7.6f", fline.sumTwoFX->data[X] );
           UINT4 len1 = strlen ( extraFStr ) + strlen ( buf0 ) + 1;
           if ( len1 > sizeof ( extraFStr ) ) {
             XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(extraFStr ));
@@ -336,7 +336,7 @@ static int print_houghFStatline_to_str(HoughFStatOutputEntry fline, char* buf, i
 		   * f1dot:1e-5
 		   * F:1e-6 
 		   */
-		     "%.13g %.7g %.7g %.5g %.6g %.7g %.7g %.3g %.3g%s\n",
+		     "%16.15f %16.15f %- 16.15f %- 21.15g %- 16.15f %16.15f %- 16.15f %- 8.7f %8.7f%s\n",
 		     fline.Freq,
 		     fline.Alpha,
 		     fline.Delta,
@@ -737,14 +737,4 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   LogPrintf(LOG_DEBUG,"Successfully read checkpoint\n");
 
   return(0);
-}
-
-
-int write_hfs_oputput(const char*filename, toplist_t*tl) {
-  /* reduce the precision of the calculated values before doing the sort to
-     the precision we will write the result with. This should ensure a sorting
-     order that looks right to the validator, too */
-  reduce_houghFStat_toplist_precision(tl);
-  sort_houghFStat_toplist(tl);
-  return(_atomic_write_houghFStat_toplist_to_file(tl, filename, NULL, 1));
 }
