@@ -782,7 +782,10 @@ void readPulsarData( LALInferenceRunState *runState ){
       }
     }
     else{ /* set default GPS 900000000 - 13th July 2008 at 15:59:46 */
-      for(i = 0; i < ml*numDets; i++ ) fstarts[i] = 900000000.;
+      for(i = 0; i < ml*numDets; i++ ){ 
+        fstarts[i] = 900000000.;
+        fprintf(stderr,"fstarts created, i:%d\n",i);
+      }
     }
       
     flengths = XLALCalloc( MAXDETS*ml, sizeof(REAL8) );
@@ -895,6 +898,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     FILE *fp = NULL;
     
     count = 0;
+    fprintf(stderr,"creating data for i:%d\n",i);
     
     /* initialise random number generator */
     /* Moved into det loop so same random seed can be used with */
@@ -2015,6 +2019,9 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
                              LALInferenceTemplateFunction *get_model ){
   REAL8 loglike = 0.; /* the log likelihood */
   UINT4 i = 0;
+  CHAR *modeltype = NULL;/*need to check model type in this function*/
+  
+  modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
   
   LALInferenceIFOData *datatemp1 = data, *datatemp2 = data;
   
@@ -2024,10 +2031,16 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     datatemp1 = datatemp1->next;
   }
   
+  /*fprintf(stderr,"LOG LIKE\n");*/
   /* get pulsar model */
   while( datatemp2 ){
+    /*fprintf(stderr,"getting model in log like func\n");*/
     get_model( datatemp2 );
     datatemp2 = datatemp2->next;
+    
+    /* If modeltype is pinsf need to advance data on to next, so this loop only
+     runs once if there is only 1 det*/
+    if ( !strcmp( modeltype, "pinsf" ) ) datatemp2 = datatemp2->next;
   }
   
   while ( data ){
@@ -2796,6 +2809,7 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   
   gsl_matrix *LU_Fplus, *LU_Fcross;
   
+  
   /* set lookup table parameters */
   psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
   tsteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "timeSteps" );
@@ -2874,13 +2888,12 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
     
     /* create the complex signal amplitude model */
     /*at f*/
-    data->compModelData->data->data[i].re = plus*Xplusf*((A1*cosphi)-(A2*sinphi)) + ( cross*Xcrossf*((A2*cosphi)-(A1*sinphi)) );
+    data->compModelData->data->data[i].re = plus*Xplusf*((A1*cosphi)-(A2*sinphi)) + 
+    ( cross*Xcrossf*((A2*cosphi)-(A1*sinphi)) );
     
-    data->compModelData->data->data[i].im = plus*Xplusf*((A2*cosphi)+(A1*sinphi)) + ( cross*Xcrossf*((A2*sinphi)-(A1*cosphi)) );
-       
-    data->next->compModelData->data->data[i].im =
-      plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) -
-      cross*Xcross2f*((B1*cos2phi)-(B2*sin2phi));
+    data->compModelData->data->data[i].im = plus*Xplusf*((A2*cosphi)+(A1*sinphi)) + 
+    ( cross*Xcrossf*((A2*sinphi)-(A1*cosphi)) );
+
   }
   
   /* set model for 2f component */
@@ -3018,6 +3031,10 @@ void injectSignal( LALInferenceRunState *runState ){
   FILE *fpsnr = NULL; /* output file for SNRs */
   INT4 ndets = 0;
   
+  CHAR *modeltype = NULL;/*need to check model type in this function*/
+  
+  modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
+  
   ppt = LALInferenceGetProcParamVal( commandLine, "--inject-file" );
   if( ppt ){
 
@@ -3063,12 +3080,18 @@ parameter file %s is wrong.\n", injectfile);
     UINT4 varyphasetmp = varyphase;
     varyphase = 1;
     
+    fprintf(stderr,"Calling pulsar_model\n");
     pulsar_model( injpars, data );
     
     /* reset varyphase to its original value */
     varyphase = varyphasetmp;
     
     data = data->next;
+    
+    /* If modeltype is pinsf need to advance data on to next, so this loop only
+     runs once if there is only 1 det*/
+    if ( !strcmp( modeltype, "pinsf" ) ) data = data->next;
+    
   }
   
   /* reset data to head */
@@ -3084,7 +3107,8 @@ parameter file %s is wrong.\n", injectfile);
     
     if ( snrscale == 0 ) fprintf(fpsnr, "%le\t", snrval);
                              
-    data = data->next; 
+    data = data->next;
+
   }
   
   /* get overall multi-detector SNR */
