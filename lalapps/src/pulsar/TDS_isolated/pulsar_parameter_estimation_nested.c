@@ -2031,7 +2031,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     datatemp1 = datatemp1->next;
   }
   
-  /*fprintf(stderr,"LOG LIKE\n");*/
   /* get pulsar model */
   while( datatemp2 ){
     /*fprintf(stderr,"getting model in log like func\n");*/
