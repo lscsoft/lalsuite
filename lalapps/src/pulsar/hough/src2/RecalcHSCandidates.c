@@ -233,6 +233,13 @@ void GetXiInSingleStack (LALStatus         *status,
 
 void GetHoughPatchTopCandidate (LALStatus *status, SemiCohCandidate *topCand, HOUGHMapTotal *ht, HOUGHPatchGrid *patch, HOUGHDemodPar *parDem );
 
+void RCComputeFstatHoughMap (LALStatus *status,
+			     SemiCohCandidateList *out,
+			     HOUGHPeakGramVector *pgV,
+			     SemiCoherentParams *params,
+                             INT8 fBin0
+                             );
+
 
 /* default values for input variables */
 #define EARTHEPHEMERIS 		"earth05-09.dat"
@@ -842,6 +849,9 @@ int MAIN( int argc, char *argv[]) {
     return(HIERARCHICALSEARCH_EMEM);
   }
 
+  INT8 fBin0 = floor(usefulParams.spinRange_midTime.fkdot[0]/uvar_WU_dFreq + 0.5);
+  //printf ("Freq0 = %.16g, fBin0 = %d\n", usefulParams.spinRange_midTime.fkdot[0], (INT4)fBin0 );
+
   /* ==================== loop over candidates ==================== */
   LogPrintf(LOG_DEBUG, "Total candidates = %d. Progress: ", InputCandList->length);
 
@@ -878,6 +888,11 @@ int MAIN( int argc, char *argv[]) {
       semiCohPar.alpha = thisPoint.Alpha;
       semiCohPar.delta = thisPoint.Delta;
 
+      LogPrintf(LOG_DETAIL, "Stack weights for alpha = %f, delta = %f are:\n", skypos.longitude, skypos.latitude);
+      for (k = 0; k < nStacks; k++) {
+	LogPrintf(LOG_DETAIL, "%f\n", weightsV->data[k]);
+      }
+
       { /********Allocate fstat vector memory *****************/
 
 	/* extra bins for fstat due to skypatch and spindowns */
@@ -894,6 +909,7 @@ int MAIN( int argc, char *argv[]) {
 
 	/* allocate fstat memory */
 	binsFstatSearch = 1;
+	//binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/uvar_WU_dFreq + 1e-6) + 1;
 	binsFstat1 = binsFstatSearch + 2*semiCohPar.extraBinsFstat;
 
 	for (k = 0; k < nStacks; k++) {
@@ -982,11 +998,11 @@ int MAIN( int argc, char *argv[]) {
       /* convert fstat vector to peakgrams using the Fstat threshold */
       LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector, (REAL4)uvar_peakThrF), &status);
 
-      /* get candidates */
+     /* get candidates */
       /* this is the second most costly function. We here allow for using architecture-specific
-         optimized functions from a local file instead of the standard ComputeFstatHoughMap()
+         optimized functions from a local file instead of the standard RCComputeFstatHoughMap()
          below that refers to the LALHOUGH functions in LAL */
-      LAL_CALL ( ComputeFstatHoughMap ( &status, &semiCohCandList, &pgV, &semiCohPar ), &status);
+      LAL_CALL ( RCComputeFstatHoughMap ( &status, &semiCohCandList, &pgV, &semiCohPar, fBin0 ), &status);
 
       /* now correct the candidate frequency, which has suffered from a frequency-bin 'quantization' error in
        * the peak-gram step (which only stores fBinIni = round[f0/dFreq]). See bug #147.
@@ -1359,10 +1375,11 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     on demodulated data instead of SFTs.
 */
 void
-ComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structure */
-                     SemiCohCandidateList  *out,   /**< Candidates from thresholding Hough number counts */
-                     HOUGHPeakGramVector *pgV, 	/**< HOUGHPeakGramVector obtained after thresholding Fstatistic vectors */
-                     SemiCoherentParams *params	/**< pointer to HoughParams -- parameters for calculating Hough maps */
+RCComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structure */
+                       SemiCohCandidateList  *out,   /**< Candidates from thresholding Hough number counts */
+                       HOUGHPeakGramVector *pgV, 	/**< HOUGHPeakGramVector obtained after thresholding Fstatistic vectors */
+                       SemiCoherentParams *params,	/**< pointer to HoughParams -- parameters for calculating Hough maps */
+                       INT8 fBin0
                      )
 {
 
@@ -1394,7 +1411,7 @@ ComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structure */
   CHAR *fileStats = NULL;
   FILE *fpStats = NULL;
 
-  INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
+  INITSTATUS( status, "RCComputeFstatHoughMap", rcsid );
   ATTATCHSTATUSPTR (status);
 
   /* check input is not null */
@@ -1626,7 +1643,7 @@ ComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structure */
     UINT4 i,j;
     REAL8UnitPolarCoor sourceLocation;
 
-    parRes.f0Bin =  fBin;
+    parRes.f0Bin =  fBin0;	// *fix* this value to first bin if at WU start search-frequency
     TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
     xSide = parSize.xSide;
     ySide = parSize.ySide;
@@ -1892,7 +1909,7 @@ ComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structure */
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
-} /* ComputeFstatHoughMap() */
+} /* RCComputeFstatHoughMap() */
 
 
 /** Function for selecting frequency bins from a set of Fstatistic vectors.
