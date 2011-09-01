@@ -1330,7 +1330,6 @@ XLALSimIMREOBNRv2Generator(
    /* Therefore we will just choose it to be the point where the peak was */
    /* estimated to be here */
    sSub = phiVec.data[retLen - 1] - phiC/2.;
-   sSub = 0.;
 
    dt = dt/(REAL8)resampFac;
    values->data[0] = rVec.data[hiSRndx];
