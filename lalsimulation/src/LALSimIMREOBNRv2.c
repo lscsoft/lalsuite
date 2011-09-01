@@ -1143,6 +1143,9 @@ XLALSimIMREOBNRv2Generator(
    ||   XLALSimIMREOBComputeNewtonMultipolePrefixes( &prefixes, eobParams.m1, eobParams.m2 )
          == XLAL_FAILURE )
    {
+     XLALDestroyCOMPLEX16Vector( modefreqs );
+     XLALDestroyREAL8Vector( values );
+     XLALDestroyREAL8Vector( dvalues );
      XLAL_ERROR( __func__, XLAL_EFUNC );
    }
 
@@ -1150,6 +1153,9 @@ XLALSimIMREOBNRv2Generator(
    /*of the NQC coefficients for the (2,2) mode. We calculate them here. */
    if ( XLALSimIMREOBGetCalibratedNQCCoeffs( &nqcCoeffs, 2, 2, eta ) == XLAL_FAILURE )
    {
+     XLALDestroyCOMPLEX16Vector( modefreqs );
+     XLALDestroyREAL8Vector( values );
+     XLALDestroyREAL8Vector( dvalues );
      XLAL_ERROR( __func__, XLAL_EFUNC );
    }
 
@@ -1200,6 +1206,8 @@ XLALSimIMREOBNRv2Generator(
               rInitMax, xacc, &pr3in);
    if ( XLAL_IS_REAL8_FAIL_NAN( r ) )
    {
+     XLALDestroyREAL8Vector( values );
+     XLALDestroyREAL8Vector( dvalues );
      XLAL_ERROR( __func__, XLAL_EFUNC );
    }
 
@@ -1256,6 +1264,16 @@ XLALSimIMREOBNRv2Generator(
 
    if ( !sigReHi || !sigImHi || !phseHi )
    {
+     XLALDestroyREAL8Vector( sigReHi );
+     XLALDestroyREAL8Vector( sigImHi );
+     XLALDestroyREAL8Vector( phseHi );
+     XLALDestroyREAL8Vector( omegaHi );
+     XLALDestroyREAL8Vector( ampNQC );
+     XLALDestroyREAL8Vector( q1 );
+     XLALDestroyREAL8Vector( q2 );
+     XLALDestroyREAL8Vector( q3 );
+     XLALDestroyREAL8Vector( p1 );
+     XLALDestroyREAL8Vector( p2 );
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
      XLAL_ERROR( __func__, XLAL_ENOMEM );
@@ -1275,6 +1293,16 @@ XLALSimIMREOBNRv2Generator(
    /* Initialize the GSL integrator */
    if (!(integrator = XLALAdaptiveRungeKutta4Init(nn, LALHCapDerivativesP4PN, XLALFirstStoppingCondition, EPS_ABS, EPS_REL)))
    {
+     XLALDestroyREAL8Vector( sigReHi );
+     XLALDestroyREAL8Vector( sigImHi );
+     XLALDestroyREAL8Vector( phseHi );
+     XLALDestroyREAL8Vector( omegaHi );
+     XLALDestroyREAL8Vector( ampNQC );
+     XLALDestroyREAL8Vector( q1 );
+     XLALDestroyREAL8Vector( q2 );
+     XLALDestroyREAL8Vector( q3 );
+     XLALDestroyREAL8Vector( p1 );
+     XLALDestroyREAL8Vector( p2 );
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
      XLAL_ERROR( __func__, XLAL_EFUNC );
@@ -1286,7 +1314,6 @@ XLALSimIMREOBNRv2Generator(
 
    /* Use the new adaptive integrator */
    /* TODO: Implement error checking */
-   fprintf( stderr, "First RK...\n" );
    retLen = XLALAdaptiveRungeKutta4( integrator, &eobParams, values->data, 0., tMax/m, dt/m, &dynamics );
 
    /* We should have integrated to the peak of the frequency by now */
@@ -1331,7 +1358,19 @@ XLALSimIMREOBNRv2Generator(
    /* Now we have the dynamics, we tweak the factorized coefficients for the waveform */
   if ( XLALSimIMREOBModifyFacWaveformCoefficients( &hCoeffs, eta) == XLAL_FAILURE )
   {
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLALDestroyREAL8Vector( sigReHi );
+     XLALDestroyREAL8Vector( sigImHi );
+     XLALDestroyREAL8Vector( phseHi );
+     XLALDestroyREAL8Vector( omegaHi );
+     XLALDestroyREAL8Vector( ampNQC );
+     XLALDestroyREAL8Vector( q1 );
+     XLALDestroyREAL8Vector( q2 );
+     XLALDestroyREAL8Vector( q3 );
+     XLALDestroyREAL8Vector( p1 );
+     XLALDestroyREAL8Vector( p2 );
+     XLALDestroyREAL8Vector( values );
+     XLALDestroyREAL8Vector( dvalues );
+     XLAL_ERROR( __func__, XLAL_EFUNC );
   }
 
   /* We can now prepare to output the waveform */
@@ -1352,6 +1391,18 @@ XLALSimIMREOBNRv2Generator(
 
   if ( i == hiSRndx )
   {
+     XLALDestroyREAL8Vector( sigReHi );
+     XLALDestroyREAL8Vector( sigImHi );
+     XLALDestroyREAL8Vector( phseHi );
+     XLALDestroyREAL8Vector( omegaHi );
+     XLALDestroyREAL8Vector( ampNQC );
+     XLALDestroyREAL8Vector( q1 );
+     XLALDestroyREAL8Vector( q2 );
+     XLALDestroyREAL8Vector( q3 );
+     XLALDestroyREAL8Vector( p1 );
+     XLALDestroyREAL8Vector( p2 );
+     XLALDestroyREAL8Vector( values );
+     XLALDestroyREAL8Vector( dvalues );
     XLALPrintError( "We don't seem to have crossed the low frequency cut-off\n" );
     XLAL_ERROR( __func__, XLAL_EFAILED );
   }
@@ -1368,10 +1419,38 @@ XLALSimIMREOBNRv2Generator(
   /* Their length should be the length of the inspiral + the merger/ringdown */
   sigMode = XLALCreateCOMPLEX16TimeSeries( "H_MODE", &epoch, 0.0, deltaT, &lalStrainUnit,
        hiSRndx - startIdx + lengthHiSR / resampFac );
-  memset( sigMode->data->data, 0, sigMode->data->length * sizeof( COMPLEX16 ) );
 
   *hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &epoch, 0.0, deltaT, &lalStrainUnit, sigMode->data->length );
   *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &epoch, 0.0, deltaT, &lalStrainUnit, sigMode->data->length );
+
+  if ( !sigMode || !(*hplus) || !(*hcross) )
+  {
+    if ( sigMode ) XLALDestroyCOMPLEX16TimeSeries( sigMode );
+    if ( *hplus )  
+    { 
+      XLALDestroyREAL8TimeSeries( *hplus ); 
+      *hplus = NULL;
+    }
+    if ( *hcross )  
+    { 
+      XLALDestroyREAL8TimeSeries( *hcross ); 
+      *hplus = NULL;
+    }
+    XLALDestroyREAL8Vector( sigReHi );
+    XLALDestroyREAL8Vector( sigImHi );
+    XLALDestroyREAL8Vector( phseHi );
+    XLALDestroyREAL8Vector( omegaHi );
+    XLALDestroyREAL8Vector( ampNQC );
+    XLALDestroyREAL8Vector( q1 );
+    XLALDestroyREAL8Vector( q2 );
+    XLALDestroyREAL8Vector( q3 );
+    XLALDestroyREAL8Vector( p1 );
+    XLALDestroyREAL8Vector( p2 );
+    XLALDestroyREAL8Vector( values );
+    XLALDestroyREAL8Vector( dvalues );
+  }
+
+  memset( sigMode->data->data, 0, sigMode->data->length * sizeof( COMPLEX16 ) );
   memset( (*hplus)->data->data, 0, sigMode->data->length * sizeof( REAL8 ) );
   memset( (*hcross)->data->data, 0, sigMode->data->length * sizeof( REAL8 ) );
 
@@ -1530,11 +1609,45 @@ XLALSimIMREOBNRv2Generator(
       * Attach the ringdown waveform to the end of inspiral
        -------------------------------------------------------------*/
      rdMatchPoint = XLALCreateREAL8Vector( 3 );
+     if ( !rdMatchPoint )
+     {
+       XLALDestroyCOMPLEX16TimeSeries( sigMode );
+       XLALDestroyREAL8TimeSeries( *hplus );  *hplus  = NULL;
+       XLALDestroyREAL8TimeSeries( *hcross ); *hcross = NULL;
+       XLALDestroyREAL8Vector( sigReHi );
+       XLALDestroyREAL8Vector( sigImHi );
+       XLALDestroyREAL8Vector( phseHi );
+       XLALDestroyREAL8Vector( omegaHi );
+       XLALDestroyREAL8Vector( ampNQC );
+       XLALDestroyREAL8Vector( q1 );
+       XLALDestroyREAL8Vector( q2 );
+       XLALDestroyREAL8Vector( q3 );
+       XLALDestroyREAL8Vector( p1 );
+       XLALDestroyREAL8Vector( p2 );
+       XLALDestroyREAL8Vector( values );
+       XLALDestroyREAL8Vector( dvalues );
+       XLAL_ERROR( __func__, XLAL_ENOMEM );
+     }
 
      /* Check the first matching point is sensible */
      if ( ceil( tStepBack / ( 2.0 * dt ) ) > peakIdx )
      {
        XLALPrintError( "Invalid index for first ringdown matching point.\n" );
+       XLALDestroyCOMPLEX16TimeSeries( sigMode );
+       XLALDestroyREAL8TimeSeries( *hplus );  *hplus  = NULL;
+       XLALDestroyREAL8TimeSeries( *hcross ); *hcross = NULL;
+       XLALDestroyREAL8Vector( sigReHi );
+       XLALDestroyREAL8Vector( sigImHi );
+       XLALDestroyREAL8Vector( phseHi );
+       XLALDestroyREAL8Vector( omegaHi );
+       XLALDestroyREAL8Vector( ampNQC );
+       XLALDestroyREAL8Vector( q1 );
+       XLALDestroyREAL8Vector( q2 );
+       XLALDestroyREAL8Vector( q3 );
+       XLALDestroyREAL8Vector( p1 );
+       XLALDestroyREAL8Vector( p2 );
+       XLALDestroyREAL8Vector( values );
+       XLALDestroyREAL8Vector( dvalues );
        XLAL_ERROR( __func__, XLAL_EFAILED );
      }
 
@@ -1553,8 +1666,25 @@ XLALSimIMREOBNRv2Generator(
                    modeL, modeM, dt, mass1, mass2, &tVecHi, rdMatchPoint );
      if (xlalStatus != XLAL_SUCCESS )
      {
+       XLALDestroyREAL8Vector( rdMatchPoint );
+       XLALDestroyCOMPLEX16TimeSeries( sigMode );
+       XLALDestroyREAL8TimeSeries( *hplus );  *hplus  = NULL;
+       XLALDestroyREAL8TimeSeries( *hcross ); *hcross = NULL;
+       XLALDestroyREAL8Vector( sigReHi );
+       XLALDestroyREAL8Vector( sigImHi );
+       XLALDestroyREAL8Vector( phseHi );
+       XLALDestroyREAL8Vector( omegaHi );
+       XLALDestroyREAL8Vector( ampNQC );
+       XLALDestroyREAL8Vector( q1 );
+       XLALDestroyREAL8Vector( q2 );
+       XLALDestroyREAL8Vector( q3 );
+       XLALDestroyREAL8Vector( p1 );
+       XLALDestroyREAL8Vector( p2 );
+       XLALDestroyREAL8Vector( values );
+       XLALDestroyREAL8Vector( dvalues );
        XLAL_ERROR( __func__, XLAL_EFUNC );
      }
+
      XLALDestroyREAL8Vector( rdMatchPoint );
 
      for(j=0; j<sigReHi->length; j+=resampFac)
