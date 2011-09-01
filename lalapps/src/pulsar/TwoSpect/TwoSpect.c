@@ -300,15 +300,19 @@ int main(int argc, char *argv[])
       fprintf(stderr, "\n%s: XLALCreateINT4Vector(%d) failed.\n", fn, ffdata->numffts);
       XLAL_ERROR(fn, XLAL_EFUNC);
    }
+   REAL4 totalincludedsftnumber = 0.0;
    //FILE *timestamps = fopen("./output/timestamps.dat","w");
    for (ii=0; ii<ffdata->numffts; ii++) {
       if (tfdata->data[ii*(ffdata->numfbins+2*inputParams->maxbinshift+inputParams->blksize-1)] == 0.0) sftexist->data[ii] = 0;
       else {
          sftexist->data[ii] = 1;
+         totalincludedsftnumber += 1.0;
          //fprintf(timestamps, "%d %d\n", (INT4)round(inputParams->searchstarttime+ii*(inputParams->Tcoh-inputParams->SFToverlap)), 0);
       }
    }
    //fclose(timestamps);
+   REAL4 frac_tobs_complete = totalincludedsftnumber/sftexist->length;
+   REAL4 frac_tobs_incomplete = 1.0 - frac_tobs_complete;
    
    //Calculate the running mean values of the SFTs (output here is smaller than initialTFdata). Here,
    //numfbins needs to be the bins you expect to come out of the running means -- the band you are going
@@ -775,7 +779,8 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: skypoint95UL() failed.\n", fn);
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
-      for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization);
+      //for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization);
+      for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization)*frac_tobs_complete;   //TODO: verify the sft-loss parameter correction
       upperlimits = resize_UpperLimitVector(upperlimits, upperlimits->length+1);
       if (upperlimits->data==NULL) {
          fprintf(stderr,"%s: resize_UpperLimitVector(%d) failed.\n", fn, upperlimits->length+1);
@@ -1938,9 +1943,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
 REAL4Vector * SSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
 {
    
-   REAL4 *a;
-   REAL4 *b;
-   REAL4 *c;
+   REAL4 *a, *b, *c;
    INT4   n;
    
    a = input1->data + offset1;

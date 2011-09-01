@@ -1,3 +1,23 @@
+/*
+ *  Copyright (C) 2011 Evan Goetz
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
+
+//Bsed on GSL functions to determine chi-squared inversions
 
 #include <stdlib.h>
 #include <math.h>
@@ -644,45 +664,41 @@ REAL8 gamma_inc_P_series(REAL8 a, REAL8 x)
    }
    
    /* Normal case: sum the series */
+   REAL8 sum  = 1.0;
+   REAL8 term = 1.0;
+   REAL8 remainder;
+   INT4 n;
    
-   {
-      REAL8 sum  = 1.0;
-      REAL8 term = 1.0;
-      REAL8 remainder;
-      INT4 n;
-      
-      /* Handle lower part of the series where t_n is increasing, |x| > a+n */
-      
-      INT4 nlow = (x > a) ? (x - a): 0;
-      
-      for (n=1; n < nlow; n++) {
-         term *= x/(a+n);
-         sum  += term;
-      }
-      
-      /* Handle upper part of the series where t_n is decreasing, |x| < a+n */
-      
-      for (/* n = previous n */ ; n<nmax; n++)  {
-         term *= x/(a+n);
-         sum  += term;
-         if (fabs(term/sum) < LAL_REAL4_EPS) break;
-      }
-      
-      /*  Estimate remainder of series ~ t_(n+1)/(1-x/(a+n+1)) */
-      {
-         REAL8 tnp1 = (x/(a+n)) * term;
-         remainder =  tnp1 / (1.0 - x/(a + n + 1.0));
-      }
-      
-      REAL8 val = D * sum;
-      
-      if (n == nmax && fabs(remainder/sum) > sqrt(LAL_REAL4_EPS)) {
-         fprintf(stderr, "%s: gamma_inc_P_series_float failed to converge", fn);
-         XLAL_ERROR_REAL8(fn, XLAL_EMAXITER);
-      }
-      
-      return val;
+   /* Handle lower part of the series where t_n is increasing, |x| > a+n */
+   
+   INT4 nlow = (x > a) ? (x - a): 0;
+   
+   for (n=1; n < nlow; n++) {
+      term *= x/(a+n);
+      sum  += term;
    }
+   
+   /* Handle upper part of the series where t_n is decreasing, |x| < a+n */
+   
+   for (/* n = previous n */ ; n<nmax; n++)  {
+      term *= x/(a+n);
+      sum  += term;
+      if (fabs(term/sum) < LAL_REAL4_EPS) break;
+   }
+   
+   /*  Estimate remainder of series ~ t_(n+1)/(1-x/(a+n+1)) */
+   REAL8 tnp1 = (x/(a+n)) * term;
+   remainder =  tnp1 / (1.0 - x/(a + n + 1.0));
+   
+   REAL8 val = D * sum;
+   
+   if (n == nmax && fabs(remainder/sum) > sqrt(LAL_REAL4_EPS)) {
+      fprintf(stderr, "%s: gamma_inc_P_series_float failed to converge", fn);
+      XLAL_ERROR_REAL8(fn, XLAL_EMAXITER);
+   }
+   
+   return val;
+   
 }
 REAL8 gamma_inc_Q_series(REAL8 a, REAL8 x)
 {

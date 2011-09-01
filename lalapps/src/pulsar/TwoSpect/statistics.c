@@ -181,7 +181,7 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
    }
    counter--;
-   if (counter<0) return fminf(prob, 1.0);
+   if (counter<0) return (REAL4)fmin(prob, 1.0);
    
    sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
    if (xlalErrno!=0) {
@@ -208,7 +208,7 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
       prob = pk;
    }
    
-   return fminf(prob, 1.0);
+   return (REAL4)fmin(prob, 1.0);
    
 }
 
@@ -570,7 +570,7 @@ REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numbero
 REAL4 calcMean(REAL4Vector *vector)
 {
    
-   const CHAR *fn = __func__;
+   /* const CHAR *fn = __func__;
    
    INT4 ii;
    
@@ -582,9 +582,14 @@ REAL4 calcMean(REAL4Vector *vector)
    for (ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = (double)vector->data[ii];
    REAL4 meanval = (REAL4)gsl_stats_mean(gslarray, 1, vector->length);
    
-   XLALFree((double*)gslarray);
+   XLALFree((double*)gslarray); */
    
-   return meanval;
+   //Calculate mean from recurrance relation. Same as GSL
+   INT4 ii;
+   REAL8 meanval = 0.0;
+   for (ii=0; ii<(INT4)vector->length; ii++) meanval += (vector->data[ii] - meanval)/(ii+1);
+   
+   return (REAL4)meanval;
    
 } /* calcMean() */
 
