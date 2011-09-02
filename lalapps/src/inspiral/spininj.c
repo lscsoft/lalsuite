@@ -1000,25 +1000,7 @@ void XLALCheckInspiralInjectionParameters(InspiralInjectionParameters params)
                "gps-start-time", params.gpsStartTime.gpsSeconds );
       exit( 1 );
     } 
-  if ( params.gpsStartTime.gpsSeconds  > 999999999 )
-    {
-      fprintf( stderr, "invalid argument to --%s:\n"
-               "GPS start time is after " 
-               "Sep 14, 2011  01:46:26 UTC:\n"
-               "(%d specified)\n", 
-               "gps-start-time",  params.gpsStartTime.gpsSeconds);
-      exit( 1 );
-    }
   /* check that the start time is before the end time */
-  if ( params.gpsEndTime.gpsSeconds > 999999999 )
-    {
-      fprintf( stderr, "invalid argument to --%s:\n"
-               "GPS End time is after " 
-               "Sep 14, 2011  01:46:26 UTC:\n"
-               "(%d specified)\n", 
-               "gps-end-time", params.gpsEndTime.gpsSeconds );
-      exit( 1 );
-    } 
   if ( params.meanTimeStep <= 0 )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
