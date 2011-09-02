@@ -39,11 +39,11 @@ LALInspiralWave3Templates routine.
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
+#include <lal/LALSimInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-#include <lal/LALSimInspiral.h>
 
 NRCSID(LALInspiralTaylorT3TestC, "$Id$");
 

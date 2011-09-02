@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria
+ * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, D. Keppel
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -713,3 +713,193 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
     return XLAL_SUCCESS;
 }
 
+/**
+ * Chooses between different approximants when requesting a waveform to be generated
+ * For spinning waveforms, all known spin effects up to given PN order are included
+ */
+int XLALSimInspiralChooseWaveform(
+    REAL8TimeSeries **hplus,    /**< +-polarization waveform */
+    REAL8TimeSeries **hcross,   /**< x-polarization waveform */
+    LIGOTimeGPS *t0,            /**< start time */
+    REAL8 phi0,                 /**< start phase */
+    REAL8 deltaT,               /**< sampling interval */
+    REAL8 m1,                   /**< mass of companion 1 */
+    REAL8 m2,                   /**< mass of companion 2 */
+    REAL8 *S1,                  /**< dimensionless spin of companion 1 */
+    REAL8 *S2,                  /**< dimensionless spin of companion 2 */
+    REAL8 f_min,                /**< start frequency */
+    REAL8 r,                    /**< distance of source */
+    REAL8 i,                    /**< inclination of source (rad) */
+    int O,                      /**< twice post-Newtonian order */
+    Approximant approximant     /**< post-Newtonian approximant to use for waveform production */
+    )
+{
+    REAL8 S1vec[3], S2vec[3];
+    int ret;
+
+    if (S1 == NULL)
+    {
+        S1vec[0] = 0;
+        S1vec[1] = 0;
+        S1vec[2] = 0;
+        S1 = S1vec;
+    }
+
+    if (S2 == NULL)
+    {
+        S2vec[0] = 0;
+        S2vec[1] = 0;
+        S2vec[2] = 0;
+        S2 = S2vec;
+    }
+
+    switch (approximant)
+    {
+        /* non-spinning inspiral-only models */
+        case TaylorT2:
+            ret = XLALSimInspiralTaylorT2PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            break;
+        case TaylorT3:
+            ret = XLALSimInspiralTaylorT3PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            break;
+        case TaylorT4:
+            ret = XLALSimInspiralTaylorT4PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            break;
+
+        /* non-spinning inspiral-merger-ringdown models */
+        case IMRPhenomA:
+            // FIXME: decide proper f_max to pass here
+            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, t0, phi0, f_min, deltaT, m1, m2, f_min, .5/deltaT, r, i);
+            break;
+
+        /* spinning inspiral-only models */
+
+        // need to make a consistent choice for SpinTaylorT4 and PSpinInspiralRD waveform inputs
+        // proposal: TotalJ frame of PSpinInspiralRD
+        // inclination denotes the angle between the view directoin 
+        // and J (J is constant during the evolution, J//z, both N and initial 
+		// L are in the x-z plane) and the spin coordinates are given wrt 
+		// initial ** L **.
+        case SpinTaylorFrameless:
+            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, t0, phi0, 0., deltaT, m1, m2, f_min, r, S1vec[0], S1vec[1], S1vec[2], S2vec[0], S2vec[1], S2vec[2], 0., 0., 1., 1., 0., 0., LAL_AllInter, O, O);
+            break;
+
+        /* spinning inspiral-merger-ringdown models */
+        case IMRPhenomB:
+            {
+                REAL8 eta = m1*m2/(m1+m2)/(m1+m2);
+                REAL8 delta = sqrt(1.-4.*eta);
+                REAL8 chi = .5 * (S1[3]*(1. + delta) + S1[3]*(1. - delta));
+                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, t0, phi0, f_min, deltaT, m1, m2, chi, f_min, .5/deltaT, r, i);
+            }
+            break;
+        case PhenSpinTaylorRD:
+            ret = XLALSimInspiralPSpinInspiralRDGenerator(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, S1, S2, O, TotalJ);
+            break;
+
+        default:
+            XLALPrintError("approximant not implemented in lalsimulation\n");
+            XLAL_ERROR(__func__, XLAL_EINVAL);
+    }
+
+    if (ret == XLAL_FAILURE)
+        XLAL_ERROR(__func__, XLAL_EFUNC);
+
+    return XLAL_SUCCESS;
+}
+
+/**
+ * Chooses between different approximants when requesting a waveform to be generated
+ * with Newtonian-only amplitude
+ * For spinning waveforms, all known spin effects up to given PN order are included
+ */
+int XLALSimInspiralChooseRestrictedWaveform(
+    REAL8TimeSeries **hplus,    /**< +-polarization waveform */
+    REAL8TimeSeries **hcross,   /**< x-polarization waveform */
+    LIGOTimeGPS *t0,            /**< start time */
+    REAL8 phi0,                 /**< start phase */
+    REAL8 deltaT,               /**< sampling interval */
+    REAL8 m1,                   /**< mass of companion 1 */
+    REAL8 m2,                   /**< mass of companion 2 */
+    REAL8 *S1,                  /**< dimensionless spin of companion 1 */
+    REAL8 *S2,                  /**< dimensionless spin of companion 2 */
+    REAL8 f_min,                /**< start frequency */
+    REAL8 r,                    /**< distance of source */
+    REAL8 i,                    /**< inclination of source (rad) */
+    int O,                      /**< twice post-Newtonian order */
+    Approximant approximant     /**< post-Newtonian approximant to use for waveform production */
+    )
+{
+    REAL8 S1vec[3], S2vec[3];
+    int ret;
+
+    if (S1 == NULL)
+    {
+        S1vec[0] = 0;
+        S1vec[1] = 0;
+        S1vec[2] = 0;
+        S1 = S1vec;
+    }
+
+    if (S2 == NULL)
+    {
+        S2vec[0] = 0;
+        S2vec[1] = 0;
+        S2vec[2] = 0;
+        S2 = S2vec;
+    }
+
+    switch (approximant)
+    {
+        /* non-spinning inspiral-only models */
+        case TaylorT2:
+            ret = XLALSimInspiralTaylorT2PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            break;
+        case TaylorT3:
+            ret = XLALSimInspiralTaylorT3PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            break;
+        case TaylorT4:
+            ret = XLALSimInspiralTaylorT4PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            break;
+
+        /* non-spinning inspiral-merger-ringdown models */
+        case IMRPhenomA:
+            // FIXME: decide proper f_max to pass here
+            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, t0, phi0, f_min, deltaT, m1, m2, f_min, .5/deltaT, r, i);
+            break;
+
+        /* spinning inspiral-only models */
+
+        // need to make a consistent choice for SpinTaylorT4 and PSpinInspiralRD waveform inputs
+        // proposal: TotalJ frame of PSpinInspiralRD
+        // inclination denotes the angle between the view directoin 
+        // and J (J is constant during the evolution, J//z, both N and initial 
+		// L are in the x-z plane) and the spin coordinates are given wrt 
+		// initial ** L **.
+        case SpinTaylorFrameless:
+            ret = XLALSimInspiralRestrictedSpinTaylorT4(hplus, hcross, t0, phi0, 0., deltaT, m1, m2, f_min, r, S1vec[0], S1vec[1], S1vec[2], S2vec[0], S2vec[1], S2vec[2], 0., 0., 1., 1., 0., 0., LAL_AllInter, O);
+            break;
+
+        /* spinning inspiral-merger-ringdown models */
+        case IMRPhenomB:
+            {
+                REAL8 eta = m1*m2/(m1+m2)/(m1+m2);
+                REAL8 delta = sqrt(1.-4.*eta);
+                REAL8 chi = .5 * (S1[3]*(1. + delta) + S1[3]*(1. - delta));
+                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, t0, phi0, f_min, deltaT, m1, m2, chi, f_min, .5/deltaT, r, i);
+            }
+            break;
+        case PhenSpinTaylorRD:
+            ret = XLALSimInspiralPSpinInspiralRDGenerator(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, S1, S2, O, TotalJ);
+            break;
+
+        default:
+            XLALPrintError("approximant not implemented in lalsimulation\n");
+            XLAL_ERROR(__func__, XLAL_EINVAL);
+    }
+
+    if (ret == XLAL_FAILURE)
+        XLAL_ERROR(__func__, XLAL_EFUNC);
+
+    return XLAL_SUCCESS;
+}

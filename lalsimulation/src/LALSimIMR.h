@@ -17,10 +17,10 @@
  *  MA  02111-1307  USA
  */
 
-#include <lal/LALDatatypes.h>
-
 #ifndef _LALSIMIMR_H
 #define _LALSIMIMR_H
+
+#include <lal/LALDatatypes.h>
 
 NRCSID(LALSIMIMRH, "$Id$");
 

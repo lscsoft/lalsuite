@@ -19,8 +19,9 @@
 
 #include <math.h>
 #include <lal/Units.h>
-#include<lal/LALSimInspiralSpinTaylorT4.h>
-#include<lal/LALConstants.h>
+#include <lal/LALConstants.h>
+#include <lal/LALSimInspiral.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/TimeSeries.h>
 #include "check_series_macros.h"
 
@@ -107,41 +108,41 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(double t,
  * You must give the initial values in this frame, and the time series of the
  * vector components will also be returned in this frame
  */
-int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
-	REAL8TimeSeries **V,      /**< post-Newtonian parameter [returned]*/
-	REAL8TimeSeries **Phi,    /**< orbital phase            [returned]*/
-	REAL8TimeSeries **S1x,	  /**< Spin1 vector x component [returned]*/
-	REAL8TimeSeries **S1y,	  /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **S1z,	  /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **S2x,	  /**< Spin2 vector x component [returned]*/
-	REAL8TimeSeries **S2y,	  /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **S2z,	  /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **LNhatx, /**< unit orbital ang. mom. x [returned]*/
-	REAL8TimeSeries **LNhaty, /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **LNhatz, /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **E1x,	  /**< orb. plane basis vector x[returned]*/
-	REAL8TimeSeries **E1y,	  /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **E1z,	  /**< "    "    "  z component [returned]*/
-	REAL8 m1,              	  /**< mass of companion 1 (kg) */
-	REAL8 m2,              	  /**< mass of companion 2 (kg) */
-	LIGOTimeGPS *tStart,      /**< start time of output vectors */
-	REAL8 phiStart,           /**< orbital phase at initial time */
-	REAL8 s1x,                /**< initial value of S1x */
-	REAL8 s1y,                /**< initial value of S1y */
-	REAL8 s1z,                /**< initial value of S1z */
-	REAL8 s2x,                /**< initial value of S2x */
-	REAL8 s2y,                /**< initial value of S2y */
-	REAL8 s2z,                /**< initial value of S2z */
-	REAL8 lnhatx,             /**< initial value of LNhatx */
-	REAL8 lnhaty,             /**< initial value of LNhaty */
-	REAL8 lnhatz,             /**< initial value of LNhatz */
-	REAL8 e1x,                /**< initial value of E1x */
-	REAL8 e1y,                /**< initial value of E1y */
-	REAL8 e1z,                /**< initial value of E1z */
-	REAL8 deltaT,          	  /**< sampling interval (s) */
-	REAL8 fStart,             /**< start frequency */
-	LALSpinFlags *spinFlags,  /**< flags to control spin effects */
-	INT4 phaseO               /**< twice post-Newtonian order */
+static int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
+	REAL8TimeSeries **V,            /**< post-Newtonian parameter [returned]*/
+	REAL8TimeSeries **Phi,          /**< orbital phase            [returned]*/
+	REAL8TimeSeries **S1x,	        /**< Spin1 vector x component [returned]*/
+	REAL8TimeSeries **S1y,	        /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **S1z,	        /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **S2x,	        /**< Spin2 vector x component [returned]*/
+	REAL8TimeSeries **S2y,	        /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **S2z,	        /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **LNhatx,       /**< unit orbital ang. mom. x [returned]*/
+	REAL8TimeSeries **LNhaty,       /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **LNhatz,       /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **E1x,	        /**< orb. plane basis vector x[returned]*/
+	REAL8TimeSeries **E1y,	        /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **E1z,	        /**< "    "    "  z component [returned]*/
+	REAL8 m1,              	        /**< mass of companion 1 (kg) */
+	REAL8 m2,              	        /**< mass of companion 2 (kg) */
+	LIGOTimeGPS *tStart,            /**< start time of output vectors */
+	REAL8 phiStart,                 /**< orbital phase at initial time */
+	REAL8 s1x,                      /**< initial value of S1x */
+	REAL8 s1y,                      /**< initial value of S1y */
+	REAL8 s1z,                      /**< initial value of S1z */
+	REAL8 s2x,                      /**< initial value of S2x */
+	REAL8 s2y,                      /**< initial value of S2y */
+	REAL8 s2z,                      /**< initial value of S2z */
+	REAL8 lnhatx,                   /**< initial value of LNhatx */
+	REAL8 lnhaty,                   /**< initial value of LNhaty */
+	REAL8 lnhatz,                   /**< initial value of LNhatz */
+	REAL8 e1x,                      /**< initial value of E1x */
+	REAL8 e1y,                      /**< initial value of E1y */
+	REAL8 e1z,                      /**< initial value of E1z */
+	REAL8 deltaT,          	        /**< sampling interval (s) */
+	REAL8 fStart,                   /**< start frequency */
+	LALSpinInteraction spinFlags,   /**< flags to control spin effects */
+	INT4 phaseO                     /**< twice post-Newtonian order */
 	)
 {
     INT4 intreturn;
@@ -206,15 +207,27 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
         case 5:
             params.wdotcoeff[5] = -(1./672.) * LAL_PI * (4159. + 15876.*eta);
             params.Ecoeff[5] = 0.;
+            params.wdotSO25s1 	= 0.; /* ADD ME!! */
+            params.wdotSO25s2 	= 0.;	
         /* case LAL_PNORDER_TWO: */
         case 4:
             params.wdotcoeff[4] = (34103. + 122949.*eta 
                     + 59472.*eta*eta)/18144.;
             params.Ecoeff[4] = (-81. + 57.*eta - eta*eta)/24.;
+            params.LNhatSS2 	= -1.5 / eta;
+            params.wdotSS2  	= - 1. / 48. / eta;
+            params.ESS2	 	= 1. / eta;
+            params.wdotSelfSS2 	= 0.; /* ADD ME!! */
         /*case LAL_PNORDER_ONE_POINT_FIVE:*/
         case 3:
             params.wdotcoeff[3] = 4. * LAL_PI;
             params.Ecoeff[3] = 0.;
+            params.LNhatSO15s1	= 2. + 3./2. * m2m1;
+            params.LNhatSO15s2	= 2. + 3./2. * m1m2;
+            params.wdotSO15s1 	= - ( 113. + 75. * m2m1 ) / 12.;
+            params.wdotSO15s2 	= - ( 113. + 75. * m1m2 ) / 12.;
+            params.ESO15s1    	= 8./3. + 2. * m2m1;
+            params.ESO15s2    	= 8./3. + 2. * m1m2;
         /*case LAL_PNORDER_ONE:*/
         case 2:
             params.wdotcoeff[2] = -(1./336.) * (743. + 924.*eta);
@@ -241,29 +254,39 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
      * Flags control which spin corrections are included
      * FIXME: How to best set flags??
      */
-    if( spinFlags->SOflag15 && phaseO >= 3 )
-    {   /* constant part of 1.5PN SO corrections */
-        params.LNhatSO15s1	= 2. + 3./2. * m2m1;
-        params.LNhatSO15s2	= 2. + 3./2. * m1m2;
-        params.wdotSO15s1 	= - ( 113. + 75. * m2m1 ) / 12.;
-        params.wdotSO15s2 	= - ( 113. + 75. * m1m2 ) / 12.;
-        params.ESO15s1    	= 8./3. + 2. * m2m1;
-        params.ESO15s2    	= 8./3. + 2. * m1m2;
-    }
-    if( spinFlags->SSflag2 && phaseO >= 4 )
-    {   /* constant part of 2PN SS corrections */
-        params.LNhatSS2 	= -1.5 / eta;
-        params.wdotSS2  	= - 1. / 48. / eta;
-        params.ESS2	 	= 1. / eta;
-    }
-    if( spinFlags->SelfSSflag2 && phaseO >= 4 )
-    {   /* const. part of "self-spin" SS terms */
-        params.wdotSelfSS2 	= 0.; /* ADD ME!! */
-    }
-    if( spinFlags->SOflag25 && phaseO >= 5 )
-    {   /* constant part of 2.5PN SO corrections */
-        params.wdotSO25s1 	= 0.; /* ADD ME!! */
-        params.wdotSO25s2 	= 0.;	
+    switch (spinFlags)
+    {
+        case LAL_NOInter:
+            params.LNhatSO15s1  = 0.;
+            params.LNhatSO15s2  = 0.;
+            params.wdotSO15s1   = 0.;
+            params.wdotSO15s2   = 0.;
+            params.ESO15s1      = 0.;
+            params.ESO15s2      = 0.;
+            params.wdotSO25s1 	= 0.;
+            params.wdotSO25s2 	= 0.;
+            params.LNhatSS2     = 0.;
+            params.wdotSS2      = 0.;
+            params.ESS2         = 0.;
+            params.wdotSelfSS2 	= 0.;
+
+        case LAL_SOInter:
+            params.LNhatSS2     = 0.;
+            params.wdotSS2      = 0.;
+            params.ESS2         = 0.;
+
+        case LAL_SSInter:
+            params.wdotSelfSS2  = 0.;
+            break;
+    
+        case LAL_SSselfInter:
+            break;
+        case LAL_QMInter:
+            break;
+        case LAL_AllInter:
+            break;
+        default:
+            break;
     }
 
     /* length estimation (Newtonian) */
@@ -660,31 +683,31 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
  * for phasing calcuation vs. amplitude calculations.
  */
 int XLALSimInspiralSpinTaylorT4(
-	REAL8TimeSeries **hplus,  /**< +-polarization waveform */
-	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	LIGOTimeGPS *tStart,      /**< initial time (s) */
-	REAL8 phiStart,           /**< initial GW phase (rad) */
-	REAL8 v0,                 /**< tail gauge term (default = 0) */
-	REAL8 deltaT,             /**< sampling interval (s) */
-	REAL8 m1,                 /**< mass of companion 1 (kg) */
-	REAL8 m2,                 /**< mass of companion 2 (kg) */
-	REAL8 fStart,             /**< start GW frequency (Hz) */
-	REAL8 r,                  /**< distance of source (m) */
-	REAL8 s1x,                /**< initial value of S1x */
-	REAL8 s1y,                /**< initial value of S1y */
-	REAL8 s1z,                /**< initial value of S1z */
-	REAL8 s2x,                /**< initial value of S2x */
-	REAL8 s2y,                /**< initial value of S2y */
-	REAL8 s2z,                /**< initial value of S2z */
-	REAL8 lnhatx,             /**< initial value of LNhatx */
-	REAL8 lnhaty,             /**< initial value of LNhaty */
-	REAL8 lnhatz,             /**< initial value of LNhatz */
-	REAL8 e1x,                /**< initial value of E1x */
-	REAL8 e1y,                /**< initial value of E1y */
-	REAL8 e1z,                /**< initial value of E1z */
-	LALSpinFlags *spinFlags,  /**< flags to control spin effects */
-	int phaseO,               /**< twice PN phase order */
-	int amplitudeO            /**< twice PN amplitude order */
+	REAL8TimeSeries **hplus,        /**< +-polarization waveform */
+	REAL8TimeSeries **hcross,       /**< x-polarization waveform */
+	LIGOTimeGPS *tStart,            /**< initial time (s) */
+	REAL8 phiStart,                 /**< initial GW phase (rad) */
+	REAL8 v0,                       /**< tail gauge term (default = 0) */
+	REAL8 deltaT,                   /**< sampling interval (s) */
+	REAL8 m1,                       /**< mass of companion 1 (kg) */
+	REAL8 m2,                       /**< mass of companion 2 (kg) */
+	REAL8 fStart,                   /**< start GW frequency (Hz) */
+	REAL8 r,                        /**< distance of source (m) */
+	REAL8 s1x,                      /**< initial value of S1x */
+	REAL8 s1y,                      /**< initial value of S1y */
+	REAL8 s1z,                      /**< initial value of S1z */
+	REAL8 s2x,                      /**< initial value of S2x */
+	REAL8 s2y,                      /**< initial value of S2y */
+	REAL8 s2z,                      /**< initial value of S2z */
+	REAL8 lnhatx,                   /**< initial value of LNhatx */
+	REAL8 lnhaty,                   /**< initial value of LNhaty */
+	REAL8 lnhatz,                   /**< initial value of LNhatz */
+	REAL8 e1x,                      /**< initial value of E1x */
+	REAL8 e1y,                      /**< initial value of E1y */
+	REAL8 e1z,                      /**< initial value of E1z */
+	LALSpinInteraction spinFlags,   /**< flags to control spin effects */
+	int phaseO,                     /**< twice PN phase order */
+	int amplitudeO                  /**< twice PN amplitude order */
 	)
 {
     REAL8TimeSeries *V, *Phi, *S1x, *S1y, *S1z, *S2x, *S2y, *S2z;
@@ -733,30 +756,30 @@ int XLALSimInspiralSpinTaylorT4(
  * but allows hte user to specify the phase PN order
  */
 int XLALSimInspiralRestrictedSpinTaylorT4(
-	REAL8TimeSeries **hplus,  /**< +-polarization waveform */
-	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	LIGOTimeGPS *tStart,      /**< initial time (s) */
-	REAL8 phiStart,           /**< initial GW phase (rad) */
-	REAL8 v0,                 /**< tail gauge term (default = 0) */
-	REAL8 deltaT,             /**< sampling interval (s) */
-	REAL8 m1,                 /**< mass of companion 1 (kg) */
-	REAL8 m2,                 /**< mass of companion 2 (kg) */
-	REAL8 fStart,             /**< start GW frequency (Hz) */
-	REAL8 r,                  /**< distance of source (m) */
-	REAL8 s1x,                /**< initial value of S1x */
-	REAL8 s1y,                /**< initial value of S1y */
-	REAL8 s1z,                /**< initial value of S1z */
-	REAL8 s2x,                /**< initial value of S2x */
-	REAL8 s2y,                /**< initial value of S2y */
-	REAL8 s2z,                /**< initial value of S2z */
-	REAL8 lnhatx,             /**< initial value of LNhatx */
-	REAL8 lnhaty,             /**< initial value of LNhaty */
-	REAL8 lnhatz,             /**< initial value of LNhatz */
-	REAL8 e1x,                /**< initial value of E1x */
-	REAL8 e1y,                /**< initial value of E1y */
-	REAL8 e1z,                /**< initial value of E1z */
-	LALSpinFlags *spinFlags,  /**< flags to control spin effects */
-	int phaseO                /**< twice PN phase order */
+	REAL8TimeSeries **hplus,        /**< +-polarization waveform */
+	REAL8TimeSeries **hcross,       /**< x-polarization waveform */
+	LIGOTimeGPS *tStart,            /**< initial time (s) */
+	REAL8 phiStart,                 /**< initial GW phase (rad) */
+	REAL8 v0,                       /**< tail gauge term (default = 0) */
+	REAL8 deltaT,                   /**< sampling interval (s) */
+	REAL8 m1,                       /**< mass of companion 1 (kg) */
+	REAL8 m2,                       /**< mass of companion 2 (kg) */
+	REAL8 fStart,                   /**< start GW frequency (Hz) */
+	REAL8 r,                        /**< distance of source (m) */
+	REAL8 s1x,                      /**< initial value of S1x */
+	REAL8 s1y,                      /**< initial value of S1y */
+	REAL8 s1z,                      /**< initial value of S1z */
+	REAL8 s2x,                      /**< initial value of S2x */
+	REAL8 s2y,                      /**< initial value of S2y */
+	REAL8 s2z,                      /**< initial value of S2z */
+	REAL8 lnhatx,                   /**< initial value of LNhatx */
+	REAL8 lnhaty,                   /**< initial value of LNhaty */
+	REAL8 lnhatz,                   /**< initial value of LNhatz */
+	REAL8 e1x,                      /**< initial value of E1x */
+	REAL8 e1y,                      /**< initial value of E1y */
+	REAL8 e1z,                      /**< initial value of E1z */
+	LALSpinInteraction spinFlags,   /**< flags to control spin effects */
+	int phaseO                      /**< twice PN phase order */
 	)
 {
     REAL8TimeSeries *V, *Phi, *S1x, *S1y, *S1z, *S2x, *S2y, *S2z;
