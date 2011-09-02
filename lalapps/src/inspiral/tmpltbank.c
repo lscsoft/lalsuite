@@ -1537,15 +1537,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gstartt );
             exit( 1 );
           }
-          if ( gstartt > 999999999 )
-          {
-            fprintf( stderr, "invalid argument to --%s:\n"
-                "GPS start time is after "
-                "Sep 14, 2011  01:46:26 UTC:\n"
-                "(%ld specified)\n",
-                long_options[option_index].name, gstartt );
-            exit( 1 );
-          }
           gpsStartTime.gpsSeconds = (INT4) gstartt;
           gpsStartTime.gpsNanoSeconds = 0;
           ADD_PROCESS_PARAM( "int", "%ld", gstartt );
@@ -1555,16 +1546,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'b':
         {
           long int gendt = atol( optarg );
-          if ( gendt > 999999999 )
-          {
-            fprintf( stderr, "invalid argument to --%s:\n"
-                "GPS end time is after "
-                "Sep 14, 2011  01:46:26 UTC:\n"
-                "(%ld specified)\n",
-                long_options[option_index].name, gendt );
-            exit( 1 );
-          }
-          else if ( gendt < 441417609 )
+          if ( gendt < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
                 "GPS end time is prior to "
