@@ -39,6 +39,8 @@ void free_UpperLimitStruct(UpperLimit *ul);
 void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs);
 REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p);
 REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p);
+REAL8 gsl_ncx2cdf_withouttinyprob_solver(REAL8 x, void *p);
+REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(REAL8 x, void *p);
 
 void outputUpperLimitToFile(FILE *outputfile, UpperLimit ul, REAL8 dfmin, REAL8 dfmax, INT4 printAllULvalues);
 

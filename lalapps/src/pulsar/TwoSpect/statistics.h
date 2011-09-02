@@ -32,6 +32,7 @@ REAL8 calcMeanD(REAL8Vector *vector);
 REAL8 calcStddevD(REAL8Vector *vector);
 REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator);
 REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta);
+REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta);
 REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta);
 REAL8 binodeviance(REAL8 x, REAL8 np);
 REAL8 epsval(REAL8 val);
@@ -41,6 +42,7 @@ REAL8 ks_test_exp(REAL4Vector *vector);
 REAL8 twospect_cdf_chisq_P(REAL8 x, REAL8 nu);
 
 REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta);
+REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta);
 REAL4 calcMean(REAL4Vector *vector);
 REAL4 calcStddev(REAL4Vector *vector);
 REAL4 calcRms(REAL4Vector *vector);

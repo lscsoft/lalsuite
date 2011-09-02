@@ -240,7 +240,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
       //pars.dof = 2.0*avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2];
       pars.dof = 2.0*loudestoutliernoise;
       pars.ULpercent = 0.95;
-      F.function = &gsl_ncx2cdf_float_solver;
+      F.function = &gsl_ncx2cdf_float_withouttinyprob_solver;
       F.params = &pars;
       if (gsl_root_fsolver_set(s, &F, lo, hi) != 0) {
          fprintf(stderr,"%s: gsl_root_fsolver_set() failed.\n", fn);
@@ -318,6 +318,20 @@ REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p)
    
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
    return (REAL8)(ncx2cdf_float((REAL4)params->val, (REAL4)params->dof, (REAL4)x) - (1.0-params->ULpercent));
+   
+}
+REAL8 gsl_ncx2cdf_withouttinyprob_solver(REAL8 x, void *p)
+{
+   
+   struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
+   return ncx2cdf_withouttinyprob(params->val, params->dof, x) - (1.0-params->ULpercent);
+   
+}
+REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(REAL8 x, void *p)
+{
+   
+   struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
+   return (REAL8)(ncx2cdf_float_withouttinyprob((REAL4)params->val, (REAL4)params->dof, (REAL4)x) - (1.0-params->ULpercent));
    
 }
 
