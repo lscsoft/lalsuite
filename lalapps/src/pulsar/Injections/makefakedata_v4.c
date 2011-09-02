@@ -1936,7 +1936,7 @@ LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const Pul
     ABORT ( status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM );
   }
 
-  h0 = params->pulsar.aPlus + sqrt ( SQ(params->pulsar.aPlus) - SQ(params->pulsar.aCross) );
+  h0 = params->pulsar.aPlus + sqrt ( pow(params->pulsar.aPlus,2) - pow(params->pulsar.aCross,2) );
   omH = LAL_TWOPI * ( params->pulsar.f0 - params->fHeterodyne );
 
   for ( i=0; i < length; i++ )
