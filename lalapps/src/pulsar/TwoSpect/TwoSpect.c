@@ -312,7 +312,6 @@ int main(int argc, char *argv[])
    }
    //fclose(timestamps);
    REAL4 frac_tobs_complete = totalincludedsftnumber/sftexist->length;
-   REAL4 frac_tobs_incomplete = 1.0 - frac_tobs_complete;
    
    //Calculate the running mean values of the SFTs (output here is smaller than initialTFdata). Here,
    //numfbins needs to be the bins you expect to come out of the running means -- the band you are going
@@ -330,7 +329,7 @@ int main(int argc, char *argv[])
       XLAL_ERROR(fn, XLAL_EFUNC);
    }
    
-   //I wrote this to compensate for a bad input of the expected noise floor and for non-present SFTs
+   //I wrote this to compensate for a bad input of the expected noise floor
    REAL8 backgroundmeannormfactor = 0.0;
    INT8 avefact = 0;
    for (ii=0; ii<(INT4)background->length; ii++) {
@@ -340,7 +339,6 @@ int main(int argc, char *argv[])
       }
    }
    backgroundmeannormfactor = (REAL8)avefact/backgroundmeannormfactor;
-   //for (ii=0; ii<(INT4)background->length; ii++) background->data[ii] *= backgroundmeannormfactor;
    ffdata->tfnormalization *= backgroundmeannormfactor;
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");
