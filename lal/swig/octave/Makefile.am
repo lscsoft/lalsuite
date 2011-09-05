@@ -5,8 +5,6 @@ if SWIG_BUILD_OCTAVE
 swig_language = octave
 swig_wrapobj = $(swig_wrapname).oct
 
-octave_instdir = $(prefix)/$(OCTAVE_OCTFILEDIR)
-
 # start from scratch if build script changes
 $(swig_wrapobj) : $(srcdir)/mkoct.m
 
@@ -24,17 +22,17 @@ check-swig : $(swig_wrapobj)
 
 # install SWIG wrapping module
 install-exec-local :
-	$(MKDIR_P) $(octave_instdir)
-	$(INSTALL) $(swig_wrapobj) $(octave_instdir)
+	$(MKDIR_P) $(octfiledir)
+	$(INSTALL) $(swig_wrapobj) $(octfiledir)
 
 # uninstall SWIG wrapping module
 uninstall-local :
-	rm -f $(octave_instdir)/$(swig_wrapobj)
+	rm -f $(octfiledir)/$(swig_wrapobj)
 
 # generic environment setup for SWIG wrapping module
 $(swig_envfile).shell ::
 	@echo '# octave' > $@
-	@echo 'OCTAVE_PATH="$(octave_instdir):$${OCTAVE_PATH}"' >> $@
+	@echo 'OCTAVE_PATH="$(octfiledir):$${OCTAVE_PATH}"' >> $@
 
 # cleanup
 CLEANFILES = $(swig_cleanfiles) \

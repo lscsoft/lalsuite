@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011
 #
-# serial 6
+# serial 7
 
 # basic version string comparison
 # can only handle numeric versions separated by periods
@@ -318,12 +318,12 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE_OCTAVE],[
     octave_prefix=[`${OCTAVE_CONFIG} -p PREFIX | ${SED} 's|/*$||'`]
     AC_MSG_CHECKING([for octave .oct installation directory])
     octave_localoctfiledir=[`${OCTAVE_CONFIG} -p LOCALOCTFILEDIR | ${SED} 's|/*$||'`]
-    OCTAVE_OCTFILEDIR=[`echo ${octave_localoctfiledir} | ${SED} "s|^${octave_prefix}/||"`]
-    AS_IF([test -n "`echo ${OCTAVE_OCTFILEDIR} | ${SED} -n '\|^/|p'`"],[
-      AC_MSG_ERROR([could not build relative path from '${OCTAVE_OCTFILEDIR}'])
+    octave_octfiledir=[`echo ${octave_localoctfiledir} | ${SED} "s|^${octave_prefix}/||"`]
+    AS_IF([test -n "`echo ${octave_octfiledir} | ${SED} -n '\|^/|p'`"],[
+      AC_MSG_ERROR([could not build relative path from '${octave_octfiledir}'])
     ])
-    AC_MSG_RESULT([${OCTAVE_OCTFILEDIR}])
-    AC_SUBST(OCTAVE_OCTFILEDIR)
+    AC_MSG_RESULT([\${prefix}/${octave_octfiledir}])
+    AC_SUBST(octfiledir, [${prefix}/${octave_octfiledir}])
 
   ])
 ])
