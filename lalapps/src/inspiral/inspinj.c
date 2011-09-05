@@ -2475,13 +2475,13 @@ int main( int argc, char *argv[] )
   }
 
   /* check if total mass is specified */
-  if ( maxMtotal<0.0)
+  if ( mDistr != fixMasses && maxMtotal<0.0)
   {
     fprintf( stderr,
         "Must specify --max-mtotal.\n" );
     exit( 1 );
   }
-  if ( minMtotal<0.0)
+  if ( mDistr != fixMasses && minMtotal<0.0)
   {
     fprintf( stderr,
         "Must specify --min-mtotal.\n" );
