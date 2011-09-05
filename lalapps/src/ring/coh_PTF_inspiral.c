@@ -33,6 +33,8 @@ int main(int argc, char **argv)
   /* Declarations of parameters */
   INT4  i,j,k;
   UINT4 ui,uj,sp;
+  char name[LALNameLength];
+  CHAR ifoName[LIGOMETA_IFO_MAX];
 
   /* process structures */
   struct coh_PTF_params    *params                  = NULL;
@@ -104,9 +106,9 @@ int main(int argc, char **argv)
   REAL4TimeSeries          *traceSNR                = NULL;
 
   /* consistency test structures */
-  REAL4TimeSeries          *bankVeto                = NULL;
-  REAL4TimeSeries          *autoVeto                = NULL;
-  REAL4TimeSeries          *chiSquare               = NULL;
+  REAL4TimeSeries          *bankVeto[LAL_NUM_IFO+1];
+  REAL4TimeSeries          *autoVeto[LAL_NUM_IFO+1];
+  REAL4TimeSeries          *chiSquare[LAL_NUM_IFO+1];
 
   /* output event structures */
   MultiInspiralTable       *eventList               = NULL;
@@ -148,7 +150,13 @@ int main(int argc, char **argv)
   for (i = 0 ; i < LAL_NUM_IFO ; i++)
   {
     snrComps[i] = NULL;
+    bankVeto[i] = NULL;
+    autoVeto[i] = NULL;
+    chiSquare[i] = NULL;
   }
+  bankVeto[LAL_NUM_IFO] = NULL;
+  autoVeto[LAL_NUM_IFO] = NULL;
+  chiSquare[LAL_NUM_IFO] = NULL;
   gammaBeta[0] = NULL;
   gammaBeta[1] = NULL;
 
@@ -293,9 +301,8 @@ int main(int argc, char **argv)
         }
         curr_slide->time_slide_id = timeSlideList[ui].timeSlideID;
         /* FIXME */
-        CHAR ifo[LIGOMETA_STRING_MAX];
-        XLALReturnIFO(ifo,ifoNumber);
-        strncpy(curr_slide->instrument,ifo,sizeof(curr_slide->instrument)-1);
+        XLALReturnIFO(ifoName,ifoNumber);
+        strncpy(curr_slide->instrument,ifoName,sizeof(curr_slide->instrument)-1);
         curr_slide->offset = timeSlideList[ui].timeSlideVectors[ifoNumber];
         curr_slide->process_id=0;
       }
@@ -366,9 +373,16 @@ int main(int argc, char **argv)
   PTFM[ifoNumber]     = NULL;
   PTFN[ifoNumber]     = NULL;
   PTFqVec[ifoNumber]  = NULL;
-  struct bankDataOverlaps *chisqOverlaps        = NULL;
-  REAL4                   *frequencyRangesPlus  = NULL;
-  REAL4                   *frequencyRangesCross = NULL;
+  struct bankDataOverlaps *chisqOverlaps = NULL;
+  struct bankDataOverlaps *chisqSnglOverlaps = NULL;
+  REAL4                   *frequencyRangesPlus[LAL_NUM_IFO+1];
+  REAL4                   *frequencyRangesCross[LAL_NUM_IFO+1];
+
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO+1; ifoNumber++)
+  {
+    frequencyRangesPlus[ifoNumber] = NULL;
+    frequencyRangesCross[ifoNumber] = NULL;
+  }
 
   /*------------------------------------------------------------------------*
    * Construct the null stream, its segments and its PSD                    *
@@ -768,27 +782,82 @@ int main(int argc, char **argv)
                                              3*numPoints/4 - numPoints/4);
       if (params->doBankVeto)
       {
-        bankVeto = XLALCreateREAL4TimeSeries("bankVeto", &segStartTime,
+        if (params->numIFO != 1)
+        {
+          bankVeto[LAL_NUM_IFO] = XLALCreateREAL4TimeSeries("bank_veto",
+                                             &segStartTime,
                                              PTFtemplate->fLower,
                                              (1.0/params->sampleRate),
                                              &lalDimensionlessUnit,
                                              3*numPoints/4 - numPoints/4);
+        }
+        if (params->doSnglChiSquared)
+        {
+          for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+          {
+            if (params->haveTrig[ifoNumber])
+            {
+              XLALReturnIFO(ifoName,ifoNumber);
+              snprintf( name, sizeof( name ), "%s_bank_veto",ifoName);
+              bankVeto[ifoNumber] = XLALCreateREAL4TimeSeries(name,
+                  &segStartTime,PTFtemplate->fLower,(1.0/params->sampleRate),
+                  &lalDimensionlessUnit,3*numPoints/4 - numPoints/4);
+            }
+          }
+        }
       }
       if (params->doAutoVeto)
       {
-        autoVeto = XLALCreateREAL4TimeSeries("autoVeto", &segStartTime,
+        if (params->numIFO != 1)
+        {
+          autoVeto[LAL_NUM_IFO] = XLALCreateREAL4TimeSeries("auto_veto",
+                                             &segStartTime,
                                              PTFtemplate->fLower,
                                              (1.0/params->sampleRate),
                                              &lalDimensionlessUnit,
                                              3*numPoints/4 - numPoints/4);
+        }
+        if (params->doSnglChiSquared)
+        {
+          for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+          {
+            if (params->haveTrig[ifoNumber])
+            {
+              XLALReturnIFO(ifoName,ifoNumber);
+              snprintf( name, sizeof( name ), "%s_auto_veto",ifoName);
+              autoVeto[ifoNumber] = XLALCreateREAL4TimeSeries(name,
+                  &segStartTime,PTFtemplate->fLower,(1.0/params->sampleRate),
+                  &lalDimensionlessUnit,3*numPoints/4 - numPoints/4);
+            }
+          }
+        }
+
       }
       if (params->doChiSquare)
       {
-        chiSquare = XLALCreateREAL4TimeSeries("chiSquare", &segStartTime,
-                                              PTFtemplate->fLower,
-                                              (1.0/params->sampleRate),
-                                              &lalDimensionlessUnit,
-                                              3*numPoints/4 - numPoints/4);
+        if (params->numIFO != 1)
+        {
+          chiSquare[LAL_NUM_IFO] = XLALCreateREAL4TimeSeries("chi_square",
+                                                &segStartTime,
+                                                PTFtemplate->fLower,
+                                                (1.0/params->sampleRate),
+                                                &lalDimensionlessUnit,
+                                                3*numPoints/4 - numPoints/4);
+        }
+        if (params->doSnglChiSquared)
+        {
+          for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+          {
+            if (params->haveTrig[ifoNumber])
+            {
+              XLALReturnIFO(ifoName,ifoNumber);
+              snprintf( name, sizeof( name ), "%s_chi_square",ifoName);
+              chiSquare[ifoNumber] = XLALCreateREAL4TimeSeries(name,
+                  &segStartTime,PTFtemplate->fLower,(1.0/params->sampleRate),
+                  &lalDimensionlessUnit,3*numPoints/4 - numPoints/4);
+            }
+          }
+        }
       }
 
       /* Loop over ifos */
@@ -907,8 +976,8 @@ int main(int argc, char **argv)
                               chiSquare, subBankSize, bankOverlaps, 
                               bankNormOverlaps, dataOverlaps, autoTempOverlaps,
                               fcTmplt, invspec, segments, invPlan, 
-                              &chisqOverlaps, &frequencyRangesPlus,
-                              &frequencyRangesCross, startTime);
+                              &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
+                              frequencyRangesCross, startTime);
      
             verbose("Made coherent statistic for segment %d, template %d, "
                     "sky point %d at %ld \n", j, i, sp,
@@ -973,10 +1042,26 @@ int main(int argc, char **argv)
       }
       if (nullSNR) XLALDestroyREAL4TimeSeries(nullSNR);
       if (traceSNR) XLALDestroyREAL4TimeSeries(traceSNR);
-      if (bankVeto) XLALDestroyREAL4TimeSeries(bankVeto);
-      if (autoVeto) XLALDestroyREAL4TimeSeries(autoVeto);
-      if (chiSquare) XLALDestroyREAL4TimeSeries(chiSquare);
-      XLALDestroyREAL4TimeSeries(cohSNR);
+      if (cohSNR) XLALDestroyREAL4TimeSeries(cohSNR);
+
+      for (k = 0; k < LAL_NUM_IFO+1; k++)
+      {
+        if (bankVeto[k])
+        {
+          XLALDestroyREAL4TimeSeries(bankVeto[k]);
+          bankVeto[k]=NULL;
+        }
+        if (autoVeto[k])
+        {
+          XLALDestroyREAL4TimeSeries(autoVeto[k]);
+          autoVeto[k]=NULL;
+        }
+        if (chiSquare[k])
+        {
+          XLALDestroyREAL4TimeSeries(chiSquare[k]);
+          chiSquare[k]=NULL;
+        }
+      }
       if (chisqOverlaps)
       {
         for(uj = 0; uj < 2*params->numChiSquareBins; uj++)
@@ -992,12 +1077,34 @@ int main(int argc, char **argv)
         LALFree(chisqOverlaps);
         chisqOverlaps = NULL;
       }
-      if (frequencyRangesPlus)
-        LALFree(frequencyRangesPlus);
-        frequencyRangesPlus = NULL;
-      if (frequencyRangesCross)
-        LALFree(frequencyRangesCross);
-        frequencyRangesCross = NULL;
+      if (chisqSnglOverlaps)
+      {
+        for(uj = 0; uj < params->numChiSquareBins; uj++)
+        {
+          for(k = 0; k < LAL_NUM_IFO; k++)
+          {
+            if (chisqSnglOverlaps[uj].PTFqVec[k])
+            {
+              XLALDestroyCOMPLEX8VectorSequence(chisqSnglOverlaps[uj].PTFqVec[k]);
+            }
+          }
+        }
+        LALFree(chisqSnglOverlaps);
+        chisqSnglOverlaps = NULL;
+      }
+      for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO+1; ifoNumber++)
+      {
+        if (frequencyRangesPlus[ifoNumber])
+        {
+          LALFree(frequencyRangesPlus[ifoNumber]);
+          frequencyRangesPlus[ifoNumber] = NULL;
+        }
+        if (frequencyRangesCross[ifoNumber])
+        {
+          LALFree(frequencyRangesCross[ifoNumber]);
+          frequencyRangesCross[ifoNumber] = NULL;
+        }
+      }
     }
     if (params->doBankVeto)
     {
@@ -1090,9 +1197,9 @@ void coh_PTF_statistic(
     REAL4TimeSeries         *snrComps[LAL_NUM_IFO],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
-    REAL4TimeSeries         *bankVeto,
-    REAL4TimeSeries         *autoVeto,
-    REAL4TimeSeries         *chiSquare,
+    REAL4TimeSeries         *bankVeto[LAL_NUM_IFO+1],
+    REAL4TimeSeries         *autoVeto[LAL_NUM_IFO+1],
+    REAL4TimeSeries         *chiSquare[LAL_NUM_IFO+1],
     UINT4                   subBankSize,
     struct bankComplexTemplateOverlaps *bankOverlaps,
     struct bankTemplateOverlaps *bankNormOverlaps,
@@ -1103,8 +1210,9 @@ void coh_PTF_statistic(
     RingDataSegments        *segments[LAL_NUM_IFO+1],
     COMPLEX8FFTPlan         *invPlan,
     struct bankDataOverlaps **chisqOverlapsP,
-    REAL4 **frequencyRangesPlusP,
-    REAL4 **frequencyRangesCrossP,
+    struct bankDataOverlaps **chisqSnglOverlapsP,
+    REAL4 *frequencyRangesPlus[LAL_NUM_IFO+1],
+    REAL4 *frequencyRangesCross[LAL_NUM_IFO+1],
     struct timeval          startTime
 )
 
@@ -1122,8 +1230,7 @@ void coh_PTF_statistic(
   UINT4  numPoints = floor(params->segmentDuration*params->sampleRate+0.5);
 
   struct bankDataOverlaps *chisqOverlaps = *chisqOverlapsP;
-  REAL4  *frequencyRangesPlus            = *frequencyRangesPlusP;
-  REAL4  *frequencyRangesCross           = *frequencyRangesCrossP; 
+  struct bankDataOverlaps *chisqSnglOverlaps = *chisqSnglOverlapsP;
 
   /* Code works slightly differently if spin/non spin and single/coherent */
   if (spinTemplate)
@@ -1416,9 +1523,16 @@ void coh_PTF_statistic(
   struct bankCohTemplateOverlaps *bankCohOverlaps = NULL;
   struct bankCohTemplateOverlaps *autoCohOverlaps = NULL;
   COMPLEX8VectorSequence *tempqVec = NULL;
-  REAL4 *powerBinsPlus = NULL;
-  REAL4 *powerBinsCross = NULL;
+  REAL4 *powerBinsPlus[LAL_NUM_IFO+1];
+  REAL4 *powerBinsCross[LAL_NUM_IFO+1];
   REAL4 fLowPlus,fHighPlus,fLowCross,fHighCross;
+
+  for(k = 0; k < LAL_NUM_IFO+1; k++)
+  {
+    powerBinsPlus[k] = NULL;
+    powerBinsCross[k] = NULL;
+  }
+
 
   // Now we calculate all the extrinsic parameters and signal based vetoes
   // Only calculated if this will be a trigger
@@ -1440,7 +1554,6 @@ void coh_PTF_statistic(
           break;
         }
       }
-      check = 1;
       if (check)
       {
         // The following block extracts the values of extrinsic parameters.
@@ -1701,14 +1814,20 @@ void coh_PTF_statistic(
             }
             // In this function all the filters are combined to produce the
             // value of the bank veto.
-            bankVeto->data->data[i-numPoints/4] = coh_PTF_calculate_bank_veto(numPoints,i,subBankSize,a,b,params,bankCohOverlaps,dataOverlaps,PTFqVec,timeOffsetPoints,Bankeigenvecs,Bankeigenvals);
+            bankVeto[LAL_NUM_IFO]->data->data[i-numPoints/4] = coh_PTF_calculate_bank_veto(numPoints,i,subBankSize,a,b,params,bankCohOverlaps,NULL,dataOverlaps,NULL,PTFqVec,NULL,timeOffsetPoints,Bankeigenvecs,Bankeigenvals,LAL_NUM_IFO);
           }
-          // The single detector function is a little messy at the moment
-          // FIXME: Chisq single detector stuff doesn't really work at all
-          // currently we can produce a bank veto value only but the function
-          // is terribly written! This needs merging into the main functions
-          if (params->numIFO==1)
-            bankVeto->data->data[i-numPoints/4] = coh_PTF_calculate_bank_veto_max_phase(numPoints,i,subBankSize,PTFM,params,bankOverlaps,bankNormOverlaps,dataOverlaps,PTFqVec,timeOffsetPoints);
+          // Now, as well as the coherent bank veto calculated above, we can calculate
+          // the single detector bank veto
+          if (params->doSnglChiSquared)
+          {
+            for(k = 0; k < LAL_NUM_IFO; k++)
+            {
+              if (params->haveTrig[k])
+              {
+                bankVeto[k]->data->data[i-numPoints/4] = coh_PTF_calculate_bank_veto(numPoints,i,subBankSize,a,b,params,NULL,bankOverlaps,dataOverlaps,bankNormOverlaps,PTFqVec,PTFM,timeOffsetPoints,NULL,NULL,k);
+              }
+            }            
+          }
         }   
 
         // Now we do the auto veto
@@ -1741,9 +1860,20 @@ void coh_PTF_statistic(
                     Autoeigenvals,Autoeigenvecs,Autoeigenvals);
               }
             }
+            // Auto veto is calculated
+            autoVeto[LAL_NUM_IFO]->data->data[i-numPoints/4] = coh_PTF_calculate_auto_veto(numPoints,i,a,b,params,autoCohOverlaps,NULL,PTFqVec,NULL,timeOffsetPoints,Autoeigenvecs,Autoeigenvals,LAL_NUM_IFO);
           }
-          // Auto veto is calculated
-          autoVeto->data->data[i-numPoints/4] = coh_PTF_calculate_auto_veto(numPoints,i,a,b,params,autoCohOverlaps,PTFqVec,timeOffsetPoints,Autoeigenvecs,Autoeigenvals);
+          if (params->doSnglChiSquared)
+          {
+            for(k = 0; k < LAL_NUM_IFO; k++)
+            {
+              if (params->haveTrig[k])
+              {
+                autoVeto[k]->data->data[i-numPoints/4] = coh_PTF_calculate_auto_veto(numPoints,i,a,b,params,NULL,autoTempOverlaps,PTFqVec,PTFM,timeOffsetPoints,NULL,NULL,k);
+              }
+            }
+          }
+
         }
       }
     }
@@ -1842,8 +1972,8 @@ void coh_PTF_statistic(
           /* Is bank new SNR too large? */
           if (params->doBankVeto)
           {
-            if (bankVeto->data->data[i-numPoints/4] > 40)
-              bestNR = bestNR/pow((1 + pow(bankVeto->data->data[i-numPoints/4]/((REAL4)subBankSize*4.),params->bankVetoq/params->bankVeton))/2.,1./params->bankVetoq);
+            if (bankVeto[LAL_NUM_IFO]->data->data[i-numPoints/4] > 40)
+              bestNR = bestNR/pow((1 + pow(bankVeto[LAL_NUM_IFO]->data->data[i-numPoints/4]/((REAL4)subBankSize*4.),params->bankVetoq/params->bankVeton))/2.,1./params->bankVetoq);
             if (bestNR < params->chiSquareCalcThreshold)
               chisqCheck = 0;
           }
@@ -1853,8 +1983,8 @@ void coh_PTF_statistic(
           /* Is auto new SNR too large */
           if (params->doAutoVeto)
           {
-            if (autoVeto->data->data[i-numPoints/4] > 40)
-              bestNR = bestNR/pow((1 + pow(autoVeto->data->data[i-numPoints/4]/((REAL4)params->numAutoPoints*4.),params->autoVetoq/params->autoVeton))/2.,1./params->autoVetoq);
+            if (autoVeto[LAL_NUM_IFO]->data->data[i-numPoints/4] > 40)
+              bestNR = bestNR/pow((1 + pow(autoVeto[LAL_NUM_IFO]->data->data[i-numPoints/4]/((REAL4)params->numAutoPoints*4.),params->autoVetoq/params->autoVeton))/2.,1./params->autoVetoq);
             if (bestNR < params->chiSquareCalcThreshold)
               chisqCheck = 0;
           } 
@@ -1863,102 +1993,194 @@ void coh_PTF_statistic(
           chisqCheck = 1;
 
         /* If no problems then calculate chi squared */
-        if (params->doChiSquare && chisqCheck)
+        if (params->doChiSquare && params->numIFO != 1)
         {
-          if (! Autoeigenvecs)
+          if (chisqCheck)
           {
-            /* FIXME: Again hardcoded vector lengths */
-            Autoeigenvecs = gsl_matrix_alloc(2,2);
-            Autoeigenvals = gsl_vector_alloc(2);
-            // Again the eigenvectors/values are calculated
-            /* FIXME: Again these are the same as the SNR vecs.*/
-            coh_PTF_calculate_bmatrix(params,Autoeigenvecs,Autoeigenvals,
-                a,b,PTFM,1,2,5);
-          }
-          if (! frequencyRangesPlus)
-          {
-            frequencyRangesPlus = (REAL4 *)
-              LALCalloc(params->numChiSquareBins-1, sizeof(REAL4));
-            frequencyRangesCross = (REAL4 *)
-              LALCalloc(params->numChiSquareBins-1, sizeof(REAL4));
-            coh_PTF_calculate_standard_chisq_freq_ranges(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus,frequencyRangesCross,Autoeigenvecs);
-          }
-          if (! powerBinsPlus)
-          {
-            powerBinsPlus = (REAL4 *) 
-              LALCalloc(params->numChiSquareBins, sizeof(REAL4));
-            powerBinsCross = (REAL4 *)
-              LALCalloc(params->numChiSquareBins, sizeof(REAL4));
-            coh_PTF_calculate_standard_chisq_power_bins(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus,frequencyRangesCross,powerBinsPlus,powerBinsCross,Autoeigenvecs);
-          }
-          if (! tempqVec)
-            tempqVec = XLALCreateCOMPLEX8VectorSequence (1, numPoints);
-          if (! chisqOverlaps)
-          {
-            chisqOverlaps = LALCalloc(2*params->numChiSquareBins,sizeof(*chisqOverlaps));
-            for(j = 0; j < params->numChiSquareBins; j++)
+            // FIXME use the eigenvecs used in the SNR calculation
+            if (! Autoeigenvecs)
             {
-              if (params->numChiSquareBins == 1)
+              /* FIXME: Again hardcoded vector lengths */
+              Autoeigenvecs = gsl_matrix_alloc(2,2);
+              Autoeigenvals = gsl_vector_alloc(2);
+              // Again the eigenvectors/values are calculated
+              /* FIXME: Again these are the same as the SNR vecs.*/
+              coh_PTF_calculate_bmatrix(params,Autoeigenvecs,Autoeigenvals,
+                  a,b,PTFM,1,2,5);
+            }
+            if (! frequencyRangesPlus[LAL_NUM_IFO])
+            {
+              frequencyRangesPlus[LAL_NUM_IFO] = (REAL4 *)
+                LALCalloc(params->numChiSquareBins-1, sizeof(REAL4));
+              frequencyRangesCross[LAL_NUM_IFO] = (REAL4 *)
+                LALCalloc(params->numChiSquareBins-1, sizeof(REAL4));
+              coh_PTF_calculate_standard_chisq_freq_ranges(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus[LAL_NUM_IFO],frequencyRangesCross[LAL_NUM_IFO],Autoeigenvecs,LAL_NUM_IFO);
+            }
+            if (! powerBinsPlus[LAL_NUM_IFO])
+            {
+              powerBinsPlus[LAL_NUM_IFO] = (REAL4 *) 
+                LALCalloc(params->numChiSquareBins, sizeof(REAL4));
+              powerBinsCross[LAL_NUM_IFO] = (REAL4 *)
+                LALCalloc(params->numChiSquareBins, sizeof(REAL4));
+              coh_PTF_calculate_standard_chisq_power_bins(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus[LAL_NUM_IFO],frequencyRangesCross[LAL_NUM_IFO],powerBinsPlus[LAL_NUM_IFO],powerBinsCross[LAL_NUM_IFO],Autoeigenvecs,LAL_NUM_IFO);
+            }
+            if (! tempqVec)
+              tempqVec = XLALCreateCOMPLEX8VectorSequence (1, numPoints);
+            if (! chisqOverlaps)
+            {
+              chisqOverlaps = LALCalloc(2*params->numChiSquareBins,sizeof(*chisqOverlaps));
+              for(j = 0; j < params->numChiSquareBins; j++)
               {
-                fLowPlus = 0;
-                fHighPlus = 0;
-                fLowCross = 0;
-                fHighCross = 0;
-              }
-              else if (j == 0)
-              {
-                fLowPlus = 0;
-                fHighPlus = frequencyRangesPlus[0];
-                fLowCross = 0;
-                fHighCross = frequencyRangesCross[0];
-              }
-              else if (j == params->numChiSquareBins-1)
-              {
-                fLowPlus = frequencyRangesPlus[params->numChiSquareBins-2];
-                fHighPlus = 0;
-                fLowCross = frequencyRangesCross[params->numChiSquareBins-2];
-                fHighCross = 0;
-              }
-              else
-              {
-                fLowPlus = frequencyRangesPlus[j-1];
-                fHighPlus = frequencyRangesPlus[j];
-                fLowCross = frequencyRangesCross[j-1];
-                fHighCross = frequencyRangesCross[j];
-              }                 
-              for(k = 0; k < LAL_NUM_IFO; k++)
-              {
-                if (params->haveTrig[k])
+                if (params->numChiSquareBins == 1)
                 {
-                  chisqOverlaps[j].PTFqVec[k] =
-                      XLALCreateCOMPLEX8VectorSequence (1,
-                      3*numPoints/4 - numPoints/4 + 10000);
-                  coh_PTF_bank_filters(params,fcTmplt,0,
-                  &segments[k]->sgmnt[segmentNumber],invPlan,tempqVec,
-                  chisqOverlaps[j].PTFqVec[k],fLowPlus,fHighPlus);
-
-                  chisqOverlaps[j+params->numChiSquareBins].PTFqVec[k] =
-                      XLALCreateCOMPLEX8VectorSequence (1,
-                      3*numPoints/4 - numPoints/4 + 10000);
-                  coh_PTF_bank_filters(params,fcTmplt,0,
-                  &segments[k]->sgmnt[segmentNumber],invPlan,tempqVec,
-                  chisqOverlaps[j+params->numChiSquareBins].PTFqVec[k],
-                  fLowCross,fHighCross);
+                  fLowPlus = 0;
+                  fHighPlus = 0;
+                  fLowCross = 0;
+                  fHighCross = 0;
+                }
+                else if (j == 0)
+                {
+                  fLowPlus = 0;
+                  fHighPlus = frequencyRangesPlus[LAL_NUM_IFO][0];
+                  fLowCross = 0;
+                  fHighCross = frequencyRangesCross[LAL_NUM_IFO][0];
+                }
+                else if (j == params->numChiSquareBins-1)
+                {
+                  fLowPlus = frequencyRangesPlus[LAL_NUM_IFO][params->numChiSquareBins-2];
+                  fHighPlus = 0;
+                  fLowCross = frequencyRangesCross[LAL_NUM_IFO][params->numChiSquareBins-2];
+                  fHighCross = 0;
                 }
                 else
                 {
-                  chisqOverlaps[j].PTFqVec[k] = NULL;
-                  chisqOverlaps[j+params->numChiSquareBins].PTFqVec[k] = NULL;
+                  fLowPlus = frequencyRangesPlus[LAL_NUM_IFO][j-1];
+                  fHighPlus = frequencyRangesPlus[LAL_NUM_IFO][j];
+                  fLowCross = frequencyRangesCross[LAL_NUM_IFO][j-1];
+                  fHighCross = frequencyRangesCross[LAL_NUM_IFO][j];
+                }                 
+                fprintf(stderr,"Frequency ranges: %e %e %e %e\n",fLowPlus,fHighPlus,fLowCross,fHighCross);
+                for(k = 0; k < LAL_NUM_IFO; k++)
+                {
+                  if (params->haveTrig[k])
+                  {
+                    chisqOverlaps[j].PTFqVec[k] =
+                        XLALCreateCOMPLEX8VectorSequence (1,
+                        3*numPoints/4 - numPoints/4 + 10000);
+                    coh_PTF_bank_filters(params,fcTmplt,0,
+                    &segments[k]->sgmnt[segmentNumber],invPlan,tempqVec,
+                    chisqOverlaps[j].PTFqVec[k],fLowPlus,fHighPlus);
+
+                    chisqOverlaps[j+params->numChiSquareBins].PTFqVec[k] =
+                        XLALCreateCOMPLEX8VectorSequence (1,
+                        3*numPoints/4 - numPoints/4 + 10000);
+                    coh_PTF_bank_filters(params,fcTmplt,0,
+                    &segments[k]->sgmnt[segmentNumber],invPlan,tempqVec,
+                    chisqOverlaps[j+params->numChiSquareBins].PTFqVec[k],
+                    fLowCross,fHighCross);
+                  }
+                  else
+                  {
+                    chisqOverlaps[j].PTFqVec[k] = NULL;
+                    chisqOverlaps[j+params->numChiSquareBins].PTFqVec[k] = NULL;
+                  }
                 }
               }
             }
+            /* Calculate chi square here */
+            chiSquare[LAL_NUM_IFO]->data->data[i-numPoints/4] = coh_PTF_calculate_chi_square(params,numPoints,i,chisqOverlaps,PTFqVec,NULL,a,b,timeOffsetPoints,Autoeigenvecs,Autoeigenvals,powerBinsPlus[LAL_NUM_IFO],powerBinsCross[LAL_NUM_IFO],LAL_NUM_IFO);
           }
-          /* Calculate chi square here */
-          chiSquare->data->data[i-numPoints/4] = coh_PTF_calculate_chi_square(params,numPoints,i,chisqOverlaps,PTFqVec,a,b,timeOffsetPoints,Autoeigenvecs,Autoeigenvals,powerBinsPlus,powerBinsCross);
-        
+          else if (params->doChiSquare)
+            chiSquare[LAL_NUM_IFO]->data->data[i-numPoints/4] = 0;
         }
-        else if (params->doChiSquare)
-          chiSquare->data->data[i-numPoints/4] = 0;
+        if (params->doChiSquare && params->doSnglChiSquared)
+        {
+          //FIXME: Add a check on calculate single detector chi squared!!!!
+          if (! chisqSnglOverlaps)
+          {
+            chisqSnglOverlaps = LALCalloc(params->numChiSquareBins,sizeof(*chisqSnglOverlaps));
+            for (k = 0; k < LAL_NUM_IFO; k++)
+            {
+              for(j = 0; j < params->numChiSquareBins; j++)
+              {
+                chisqSnglOverlaps[j].PTFqVec[k] = NULL;
+              }
+            }
+          }
+          for(k = 0; k < LAL_NUM_IFO; k++)
+          {
+            if (params->haveTrig[k])
+            {
+              if (! frequencyRangesPlus[k])
+              {
+                frequencyRangesPlus[k] = (REAL4 *)
+                    LALCalloc(params->numChiSquareBins-1, sizeof(REAL4));
+                frequencyRangesCross[k] = (REAL4 *)
+                    LALCalloc(params->numChiSquareBins-1, sizeof(REAL4));
+                coh_PTF_calculate_standard_chisq_freq_ranges(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus[k],frequencyRangesCross[k],NULL,k);
+              }
+              if (! powerBinsPlus[k])
+              {
+                powerBinsPlus[k] = (REAL4 *) 
+                  LALCalloc(params->numChiSquareBins, sizeof(REAL4));
+                powerBinsCross[k] = (REAL4 *)
+                  LALCalloc(params->numChiSquareBins, sizeof(REAL4));
+                coh_PTF_calculate_standard_chisq_power_bins(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus[k],frequencyRangesCross[k],powerBinsPlus[k],powerBinsCross[k],NULL,k);
+              }
+              if (! tempqVec)
+                tempqVec = XLALCreateCOMPLEX8VectorSequence (1, numPoints);
+             
+              for(j = 0; j < params->numChiSquareBins; j++)
+              {
+                if (! chisqSnglOverlaps[j].PTFqVec[k])
+                {
+                  if (params->numChiSquareBins == 1)
+                  {
+                    fLowPlus = 0;
+                    fHighPlus = 0;
+                    fLowCross = 0;
+                    fHighCross = 0;
+                  }
+                  else if (j == 0)
+                  {
+                    fLowPlus = 0;
+                    fHighPlus = frequencyRangesPlus[k][0];
+                    fLowCross = 0;
+                    fHighCross = frequencyRangesCross[k][0];
+                  }
+                  else if (j == params->numChiSquareBins-1)
+                  {
+                    fLowPlus = frequencyRangesPlus[k][params->numChiSquareBins-2];
+                    fHighPlus = 0;
+                    fLowCross = frequencyRangesCross[k][params->numChiSquareBins-2];
+                    fHighCross = 0;
+                  }
+                  else
+                  {
+                    fLowPlus = frequencyRangesPlus[k][j-1];
+                    fHighPlus = frequencyRangesPlus[k][j];
+                    fLowCross = frequencyRangesCross[k][j-1];
+                    fHighCross = frequencyRangesCross[k][j];
+                  }
+                  // Set the overlaps, for single detector plus and cross must
+                  // be the same
+                  // FIXME: Do not need to calculate cross filters above!
+                  chisqSnglOverlaps[j].PTFqVec[k] =
+                        XLALCreateCOMPLEX8VectorSequence (1,
+                        3*numPoints/4 - numPoints/4 + 10000);
+                  coh_PTF_bank_filters(params,fcTmplt,0,
+                  &segments[k]->sgmnt[segmentNumber],invPlan,tempqVec,
+                  chisqSnglOverlaps[j].PTFqVec[k],fLowPlus,fHighPlus);
+                }
+              }
+              // Calculate chi squared
+              chiSquare[k]->data->data[i-numPoints/4] = coh_PTF_calculate_chi_square(params,numPoints,i,chisqSnglOverlaps,PTFqVec,PTFM,a,b,timeOffsetPoints,NULL,NULL,powerBinsPlus[k],powerBinsCross[k],k);
+ 
+            }
+          }
+        }
+              
+
       }
     }
   }
@@ -1972,10 +2194,13 @@ void coh_PTF_statistic(
       gsl_matrix_free(Autoeigenvecs);
     if (Autoeigenvals)
       gsl_vector_free(Autoeigenvals);
-    if (powerBinsPlus)
-      LALFree(powerBinsPlus);
-    if (powerBinsCross)
-      LALFree(powerBinsCross);
+    for(k = 0; k < LAL_NUM_IFO+1; k++)
+    {
+      if (powerBinsPlus[k])
+        LALFree(powerBinsPlus[k]);
+      if (powerBinsCross[k])
+        LALFree(powerBinsCross[k]);
+    }
     if (tempqVec)
       XLALDestroyCOMPLEX8VectorSequence(tempqVec);
   }
@@ -1991,8 +2216,8 @@ void coh_PTF_statistic(
   gsl_vector_free(eigenvalsNull);
 
   *chisqOverlapsP = chisqOverlaps;
-  *frequencyRangesPlusP = frequencyRangesPlus;
-  *frequencyRangesCrossP = frequencyRangesCross;
+  *chisqSnglOverlapsP = chisqSnglOverlaps;
+
 }
 
 UINT8 coh_PTF_add_triggers(
@@ -2008,9 +2233,9 @@ UINT8 coh_PTF_add_triggers(
     REAL4TimeSeries         *snrComps[LAL_NUM_IFO],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
-    REAL4TimeSeries         *bankVeto,
-    REAL4TimeSeries         *autoVeto,
-    REAL4TimeSeries         *chiSquare,
+    REAL4TimeSeries         *bankVeto[LAL_NUM_IFO+1],
+    REAL4TimeSeries         *autoVeto[LAL_NUM_IFO+1],
+    REAL4TimeSeries         *chiSquare[LAL_NUM_IFO+1],
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL4                   rightAscension,
     REAL4                   declination,
@@ -2095,21 +2320,108 @@ UINT8 coh_PTF_add_triggers(
           currEvent->trace_snr = traceSNR->data->data[i];
         if (params->doBankVeto)
         {
-          currEvent->bank_chisq = bankVeto->data->data[i];
-          /* FIXME: For now only coherent non-spin bank chisq
-          is implemented. When other versions are implemented
-          this should be changed. Same for auto and chisq */
-          currEvent->bank_chisq_dof = 4. * params->BVsubBankSize;
+          if (params->numIFO != 1)
+          {
+            currEvent->bank_chisq = bankVeto[LAL_NUM_IFO]->data->data[i];
+            currEvent->bank_chisq_dof = 4. * params->BVsubBankSize;
+          }
+          if (params->doSnglChiSquared)
+          {
+            if (bankVeto[LAL_IFO_G1])
+            {
+              currEvent->bank_chisq_g = bankVeto[LAL_IFO_G1]->data->data[i];
+            }
+            if (bankVeto[LAL_IFO_H1])
+            {
+              currEvent->bank_chisq_h1 = bankVeto[LAL_IFO_H1]->data->data[i];
+            }
+            if (bankVeto[LAL_IFO_H2])
+            {
+              currEvent->bank_chisq_h2 = bankVeto[LAL_IFO_H2]->data->data[i];
+            }
+            if (bankVeto[LAL_IFO_L1])
+            {
+              currEvent->bank_chisq_l = bankVeto[LAL_IFO_L1]->data->data[i];
+            }
+            if (bankVeto[LAL_IFO_T1])
+            {
+              currEvent->bank_chisq_t = bankVeto[LAL_IFO_T1]->data->data[i];
+            }
+            if (bankVeto[LAL_IFO_V1])
+            {
+              currEvent->bank_chisq_v = bankVeto[LAL_IFO_V1]->data->data[i];
+            }
+          }
         }
         if (params->doAutoVeto)
         {
-          currEvent->cont_chisq = autoVeto->data->data[i];
-          currEvent->cont_chisq_dof = 4. * params->numAutoPoints;
+          if (params->numIFO != 1)
+          {
+            currEvent->cont_chisq = autoVeto[LAL_NUM_IFO]->data->data[i];
+            currEvent->cont_chisq_dof = 4. * params->numAutoPoints;
+          }
+          if (params->doSnglChiSquared)
+          {
+            if (autoVeto[LAL_IFO_G1])
+            {
+              currEvent->cont_chisq_g = autoVeto[LAL_IFO_G1]->data->data[i];
+            }
+            if (autoVeto[LAL_IFO_H1])
+            {
+              currEvent->cont_chisq_h1 = autoVeto[LAL_IFO_H1]->data->data[i];
+            }
+            if (autoVeto[LAL_IFO_H2])
+            {
+              currEvent->cont_chisq_h2 = autoVeto[LAL_IFO_H2]->data->data[i];
+            }
+            if (autoVeto[LAL_IFO_L1])
+            {
+              currEvent->cont_chisq_l = autoVeto[LAL_IFO_L1]->data->data[i];
+            }
+            if (autoVeto[LAL_IFO_T1])
+            {
+              currEvent->cont_chisq_t = autoVeto[LAL_IFO_T1]->data->data[i];
+            }
+            if (autoVeto[LAL_IFO_V1])
+            {
+              currEvent->cont_chisq_v = autoVeto[LAL_IFO_V1]->data->data[i];
+            }
+          }
         }
         if (params->doChiSquare)
         {
-          currEvent->chisq = chiSquare->data->data[i];
-          currEvent->chisq_dof = 4. * (params->numChiSquareBins - 1);
+          if (params->numIFO != 1)
+          {
+            currEvent->chisq = chiSquare[LAL_NUM_IFO]->data->data[i];
+            currEvent->chisq_dof = 4. * (params->numChiSquareBins - 1);
+          }
+          if (params->doSnglChiSquared)
+          {
+            if (chiSquare[LAL_IFO_G1])
+            {
+              currEvent->chisq_g = chiSquare[LAL_IFO_G1]->data->data[i];
+            }
+            if (chiSquare[LAL_IFO_H1])
+            {
+              currEvent->chisq_h1 = chiSquare[LAL_IFO_H1]->data->data[i];
+            }
+            if (chiSquare[LAL_IFO_H2])
+            {
+              currEvent->chisq_h2 = chiSquare[LAL_IFO_H2]->data->data[i];
+            }
+            if (chiSquare[LAL_IFO_L1])
+            {
+              currEvent->chisq_l = chiSquare[LAL_IFO_L1]->data->data[i];
+            }
+            if (chiSquare[LAL_IFO_T1])
+            {
+              currEvent->chisq_t = chiSquare[LAL_IFO_T1]->data->data[i];
+            }
+            if (chiSquare[LAL_IFO_V1])
+            {
+              currEvent->chisq_v = chiSquare[LAL_IFO_V1]->data->data[i];
+            }
+          }
         }
         if (pValues[0])
           currEvent->amp_term_1 = pValues[0]->data->data[i];
