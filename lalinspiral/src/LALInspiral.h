@@ -1205,18 +1205,13 @@ XLALSTPNFramelessWaveformForInjection (
 
 /* Phen-Spin waveform functions*/
 
-INT4 XLALSpinInspiralDerivatives(
-																			 double t,
-																			 const double values[],
-																			 double dvalues[],
-																			 void *mparams);
 
 void LALSpinInspiralDerivatives(
                          REAL8Vector *values,
                          REAL8Vector *dvalues,
                          void *mparams );
 
-INT4 XLALPSpinInspiralRD(
+int XLALPSpinInspiralRD(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
@@ -1225,9 +1220,11 @@ void LALPSpinInspiralRD(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
-INT4 XLALPSpinInspiralRDTemplates(REAL4Vector * signalvec1,
-         REAL4Vector * signalvec2,
-         InspiralTemplate * params);
+int XLALPSpinInspiralRDTemplates (
+    REAL4Vector      *signalvec1,
+    REAL4Vector      *signalvec2,
+    InspiralTemplate *params
+   );
 
 void LALPSpinInspiralRDTemplates (
     LALStatus        *status,
@@ -1236,45 +1233,25 @@ void LALPSpinInspiralRDTemplates (
     InspiralTemplate *params
    );
 
-INT4 XLALPSpinInspiralRDFreqDom(REAL4Vector * signalvec,
-			       InspiralTemplate * params);
+int XLALPSpinInspiralRDFreqDom(
+				REAL4Vector * signalvec,
+				InspiralTemplate * params);
 
 void LALPSpinInspiralRDFreqDom (
 				LALStatus        *status,
 				REAL4Vector      *signalvec,
 				InspiralTemplate *params);
 
-INT4 XLALPSpinInspiralRDForInjection(CoherentGW       * waveform,
-            InspiralTemplate * params,
-            PPNParamStruc    * ppnParams);
+int XLALPSpinInspiralRDForInjection(
+                           CoherentGW       *waveform,
+                           InspiralTemplate *params,
+                           PPNParamStruc  *ppnParams);
 
 void LALPSpinInspiralRDForInjection(
                            LALStatus        *status,
                            CoherentGW       *waveform,
                            InspiralTemplate *params,
                            PPNParamStruc  *ppnParams);
-
-	/* Returns *countback, should be >0 */
-INT4 XLALPSpinInspiralRDEngine(REAL8Vector * signalvec1,
-			REAL8Vector * signalvec2,
-			REAL8Vector * hh,
-			REAL8Vector * ff,
-			REAL8Vector * phi,
-			UINT4 *countback,
-			InspiralTemplate *params,
-			InspiralInit     *paramsInit);
-
-void LALPSpinInspiralRDEngine (
-				LALStatus        *status,
-				REAL8Vector      *signalvec1,
-				REAL8Vector      *signalvec2,
-				REAL8Vector      *h,
-				REAL8Vector      *f,
-				REAL8Vector      *phi,
-				UINT4            *countback,
-				InspiralTemplate *params,
-				InspiralInit     *paramsInit
-				);
 
 /* Phenomenological waveform generation functions */
 
