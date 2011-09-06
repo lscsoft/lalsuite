@@ -218,9 +218,7 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
            break;
       case PhenSpinTaylorRD:
-           //if (XLALPSpinInspiralRD(signalvec, params)) ABORTXLAL(status);
-           LALPSpinInspiralRD(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
+           if (XLALPSpinInspiralRD(signalvec, params)) ABORTXLAL(status);
            break;
       case PhenSpinTaylorRDF:
            if (XLALPSpinInspiralRDFreqDom(signalvec, params)) ABORTXLAL(status);
