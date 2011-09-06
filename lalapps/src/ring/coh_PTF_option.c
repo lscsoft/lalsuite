@@ -76,6 +76,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "highpass-frequency",      required_argument, 0, 'E' },
     { "injection-file",          required_argument, 0, 'i' },
     { "snr-threshold",           required_argument, 0, 'j' },
+    { "sngl-snr-threshold",      required_argument, 0, '1' },
     { "trig-time-window",        required_argument, 0, 'J' },
     { "user-tag",                required_argument, 0, 'k' },
     { "ifo-tag",                 required_argument, 0, 'K' },
@@ -114,7 +115,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "sky-positions-file",       required_argument, 0, '#' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:<:>:!:&:(:):#";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:<:>:!:&:(:):#";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -298,6 +299,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'j':
         localparams.threshold = atof(optarg); 
+        break;
+      case '1':
+        localparams.snglSNRThreshold = atof(optarg);
         break;
       case 'J':
         localparams.timeWindow = atof(optarg);
@@ -727,6 +731,7 @@ int coh_PTF_usage( const char *program )
 
   fprintf( stderr, "\nTrigger extraction options:\n" );
   fprintf( stderr, "--snr-threshold=threshold Only keep triggers with a snr above threshold\n" );
+  fprintf( stderr, "--sngl-snr-threshold Only keep triggers if at least one ifo has snr above value\n" );
   fprintf( stderr, "--non-spin-snr2-threshold=value SNR squared value over which a non spin trigger is considered found for spin checker program\n" );
   fprintf( stderr, "--spin-snr2-threshold=value SNR squared value over which a spin trigger is considered found for spin checker program\n" );
   fprintf( stderr, "--trig-time-window=window Keep loudest trigger within window seconds\n" );

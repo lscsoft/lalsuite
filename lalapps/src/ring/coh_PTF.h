@@ -142,6 +142,7 @@ struct coh_PTF_params {
   LALPNOrder   order;
   REAL4        invSpecLen;
   REAL4        threshold;
+  REAL4        snglSNRThreshold;
   REAL4        timeWindow;
   REAL4        spinSNR2threshold;
   REAL4        nonspinSNR2threshold;

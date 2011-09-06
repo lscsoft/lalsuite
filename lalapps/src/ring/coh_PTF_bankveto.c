@@ -816,7 +816,8 @@ REAL4 *powerBinsCross
         v2Plus,a,b,timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
         position-numPoints/4+5000,1,2);
 
-    coh_PTF_calculate_rotated_vectors(params,chisqOverlaps[i].PTFqVec,v1Cross,
+    coh_PTF_calculate_rotated_vectors(params,
+        chisqOverlaps[i+numChiSquareBins].PTFqVec,v1Cross,
         v2Cross,a,b,timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
         position-numPoints/4+5000,1,2);
 
