@@ -47,6 +47,7 @@ REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b);
 REAL8 ran_gamma_pdf(REAL8 x, REAL8 a, REAL8 b);
 REAL8 sf_gamma_inc_P(REAL8 a, REAL8 x);
 REAL8 sf_gamma_inc_Q(REAL8 a, REAL8 x);
+REAL8 matlab_gamma_inc(REAL8 x, REAL8 a, INT4 tail);
 REAL8 gamma_inc_P_series(REAL8 a, REAL8 x);
 REAL8 gamma_inc_Q_series(REAL8 a, REAL8 x);
 REAL8 gamma_inc_D(REAL8 a, REAL8 x);

@@ -403,6 +403,18 @@ int main(int argc, char *argv[])
    fprintf(stderr, "Starting TwoSpect analysis...\n");
    
    
+   REAL4Vector *antweightsforihs2h0 = XLALCreateREAL4Vector(ffdata->numffts);
+   if (args_info.antennaOff_given) for (ii=0; ii<(INT4)antweightsforihs2h0->length; ii++) antweightsforihs2h0->data[ii] = 1.0;
+   else {
+      CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, inputParams->det);
+      if (xlalErrno!=0) {
+         fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", fn);
+         XLAL_ERROR(fn, XLAL_EFUNC);
+      }
+   }
+
+   
+   
    //Search over the sky region
    while (scan.state != STATE_FINISHED) {
       fprintf(LOG, "Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
@@ -475,6 +487,14 @@ int main(int argc, char *argv[])
       if ( fabs(currentAntWeightsRMS-antweightsrms)/antweightsrms >= 0.01 ) {
          ihsfarstruct->ihsfar->data[0] = 0.0;
          antweightsrms = currentAntWeightsRMS;
+      }
+      
+      //TODO: Test normalization
+      REAL8 skypointffnormalization = 1.0;
+      ffPlaneNoise(aveNoise, inputParams, background_slided, antweightsforihs2h0, secondFFTplan, &(skypointffnormalization));
+      if (xlalErrno!=0) {
+         fprintf(stderr, "%s: ffPlaneNoise() failed.\n", fn);
+         XLAL_ERROR(fn, XLAL_EFUNC);
       }
       
       //Average noise floor of FF plane for each 1st FFT frequency bin
@@ -600,6 +620,7 @@ int main(int argc, char *argv[])
          INT4 numofcandidatesalready = exactCandidates2->numofcandidates;
          for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
             loadCandidateData(&(exactCandidates2->data[ii+numofcandidatesalready]), ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].ra, ihsCandidates->data[ii].dec, ihsCandidates->data[ii].stat, ihsCandidates->data[ii].h0, 0.0, 0, ihsCandidates->data[ii].normalization);
+            exactCandidates2->data[ii+numofcandidatesalready].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //TODO: test moving this here
             (exactCandidates2->numofcandidates)++;
          }
       } /* if IHSonly is given */
@@ -753,6 +774,7 @@ int main(int argc, char *argv[])
             } else {
                bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 5, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
             }
+            exactCandidates2->data[exactCandidates2->numofcandidates].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);  //TODO: test moving this here
             exactCandidates2->numofcandidates++;
             
             fprintf(stderr,"Candidate %d: f0=%g, P=%g, df=%g\n", ii, exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth);
@@ -778,7 +800,8 @@ int main(int argc, char *argv[])
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
       //for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization);
-      for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization)*frac_tobs_complete;   //TODO: verify the sft-loss parameter correction
+      //for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete,0.25);   //TODO: verify the sft-loss parameter correction
+      for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);   //TODO: verify the sft-loss parameter correction and sky position normalization difference
       upperlimits = resize_UpperLimitVector(upperlimits, upperlimits->length+1);
       if (upperlimits->data==NULL) {
          fprintf(stderr,"%s: resize_UpperLimitVector(%d) failed.\n", fn, upperlimits->length+1);
@@ -801,8 +824,8 @@ int main(int argc, char *argv[])
       fprintf(stderr, "\n**Report of candidates:**\n");
       
       for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) {
-         fprintf(LOG, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %g, Prob = %.4f, TF norm = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0/sqrt(ffdata->tfnormalization), exactCandidates2->data[ii].prob, ffdata->tfnormalization);
-         fprintf(stderr, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %g, Prob = %.4f, TF norm = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0/sqrt(ffdata->tfnormalization), exactCandidates2->data[ii].prob, ffdata->tfnormalization);
+         fprintf(LOG, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %g, Prob = %.4f, TF norm = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0, exactCandidates2->data[ii].prob, ffdata->tfnormalization);
+         fprintf(stderr, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %g, Prob = %.4f, TF norm = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0, exactCandidates2->data[ii].prob, ffdata->tfnormalization);
       } /* for ii < exactCandidates2->numofcandidates */
    } /* if exactCandidates2->numofcandidates != 0 */
    
@@ -815,6 +838,7 @@ int main(int argc, char *argv[])
    fclose(ULFILE);
    
    //Destroy varaibles
+   XLALDestroyREAL4Vector(antweightsforihs2h0);
    XLALDestroyREAL4Vector(background);
    XLALDestroyREAL4Vector(usableTFdata);
    XLALDestroyREAL4Vector(detectorVelocities);
@@ -1650,7 +1674,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    }
    
    //TODO: remove this extra factor
-   //*(normalization) /= 1.0245545525190294;
+   // *(normalization) /= 1.0245545525190294;
    *normalization /= 1.040916688722758;
    
    //fclose(BACKGRND);
@@ -1903,13 +1927,17 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    if (strcmp("L1", IFO)==0) {
       fprintf(LOG,"IFO = %s\n", IFO);
       fprintf(stderr,"IFO = %s\n", IFO);
-      params->det = lalCachedDetectors[LALDetectorIndexLLODIFF]; //L1
+      params->det = lalCachedDetectors[LAL_LLO_4K_DETECTOR]; //L1
    } else if (strcmp("H1", IFO)==0) {
       fprintf(LOG,"IFO = %s\n", IFO);
       fprintf(stderr,"IFO = %s\n", IFO);
-      params->det = lalCachedDetectors[LALDetectorIndexLHODIFF]; //H1
+      params->det = lalCachedDetectors[LAL_LHO_4K_DETECTOR]; //H1
+   } else if (strcmp("V1", IFO)==0) {
+      fprintf(LOG,"IFO = %s\n", IFO);
+      fprintf(stderr,"IFO = %s\n", IFO);
+      params->det = lalCachedDetectors[LAL_VIRGO_DETECTOR]; //V1
    } else {
-      fprintf(stderr, "%s: Not using valid interferometer! Expected 'H1' or 'L1' not %s.\n", fn, IFO);
+      fprintf(stderr, "%s: Not using valid interferometer! Expected 'H1', 'L1', or 'V1' not %s.\n", fn, IFO);
       XLAL_ERROR(fn, XLAL_EINVAL);
    }
    XLALFree((CHAR*)IFO);

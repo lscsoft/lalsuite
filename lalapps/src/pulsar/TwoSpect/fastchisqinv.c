@@ -27,6 +27,7 @@
 #include <lal/LALConstants.h>
 
 #include "fastchisqinv.h"
+#include "statistics.h"
 
 /* Chebyshev coefficients for Gamma*(3/4(t+1)+1/2), -1<t<1
  */
@@ -426,6 +427,7 @@ REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b)
          fprintf(stderr, "%s: sf_gamma_inc_Q(%f, %f) failed.\n", fn, a, y);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       }
+      //REAL8 val2 = matlab_gamma_inc(y, a, 1);
       P = 1.0 - val;
    } else {
       P = sf_gamma_inc_P(a, y);
@@ -433,6 +435,7 @@ REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b)
          fprintf(stderr, "%s: sf_gamma_inc_P(%f, %f) failed.\n", fn, a, y);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       }
+      //REAL8 P2 = matlab_gamma_inc(y, a, 0);
    }
    
    return P;
@@ -451,6 +454,7 @@ REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b)
          fprintf(stderr, "%s: sf_gamma_inc_P(%f, %f) failed.\n", fn, a, y);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       }
+      //REAL8 val2 = matlab_gamma_inc(y, a, 0);
       Q = 1.0 - val;
    } else {
       Q = sf_gamma_inc_Q(a, y);
@@ -458,6 +462,7 @@ REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b)
          fprintf(stderr, "%s: sf_gamma_inc_Q(%f, %f) failed.\n", fn, a, y);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       }
+      //REAL8 Q2 = matlab_gamma_inc(y, a, 1);
    }
    
    return Q;
@@ -470,6 +475,62 @@ REAL8 ran_gamma_pdf(REAL8 x, REAL8 a, REAL8 b)
       else return 0.0;
    } else if (a == 1.0) return (exp(-x/b)/b);
    else return (exp((a - 1.0) * log(x/b) - x/b - lgamma(a))/b);
+}
+REAL8 matlab_gamma_inc(REAL8 x, REAL8 a, INT4 tail)
+{
+   const REAL8 amax = 1048576.0;
+   const REAL8 amaxthird = amax-1.0/3.0;
+   REAL8 xint = x;
+   REAL8 aint = a;
+   if (aint>amax) {
+      xint = fmax(amaxthird+sqrt(amax/a)*(xint-(aint-1.0/3.0)), 0.0);
+      aint = amax;
+   }
+   if (aint==0.0) {
+      if (tail==0) return 1.0;
+      else return 0.0;
+   } else if (xint==0.0) {
+      if (tail==0) return 0.0;
+      else return 1.0;
+   } else if (xint<aint+1.0) {
+      REAL8 ap = aint;
+      REAL8 del = 1.0;
+      REAL8 sum = del;
+      while (fabs(del)>=100.0*epsval(fabs(sum))) {
+         ap += 1.0;
+         del = xint*del/ap;
+         sum += del;
+      }
+      REAL8 b = sum * exp(-xint + aint*log(xint) - lgamma(aint+1.0));
+      if (xint>0.0 && b>1.0) b = 1.0;
+      if (tail==0) return b;
+      else return 1.0-b;
+   } else {
+      REAL8 a0 = 1.0;
+      REAL8 a1 = xint;
+      REAL8 b0 = 0.0;
+      REAL8 b1 = a0;
+      REAL8 fac = 1.0/a1;
+      INT8 n = 1;
+      REAL8 g = b1 * fac;
+      REAL8 gold = b0;
+      while (fabs(g-gold) >= 100*epsval(fabs(g))) {
+         gold = g;
+         REAL8 ana = n - a;
+         a0 = (a1 + a0 * ana) * fac;
+         b0 = (b1 + b0 * ana) * fac;
+         REAL8 anf = n*fac;
+         a1 = xint * a0 + anf * a1;
+         b1 = xint * b0 + anf * b1;
+         fac = 1.0/a1;
+         g = b1 * fac;
+         n++;
+      }
+      REAL8 b = exp(-xint + aint*log(xint) - lgamma(aint)) * g;
+      if (tail==0) return 1.0-b;
+      else return b;
+   }
+   
 }
 REAL8 sf_gamma_inc_P(REAL8 a, REAL8 x)
 {
@@ -1072,7 +1133,7 @@ REAL8 gamma_inc_F_CF(REAL8 a, REAL8 x)
 REAL8 gamma_inc_Q_large_x(REAL8 a, REAL8 x)
 {
    const CHAR *fn = __func__;
-   const INT4 nmax = 5000;
+   const INT4 nmax = 50000;
    
    REAL8 D = gamma_inc_D(a, x);
    
