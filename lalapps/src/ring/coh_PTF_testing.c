@@ -1320,7 +1320,7 @@ void coh_PTF_statistic(
   INT4  tOffset1 = tOffset0 + timeOffsetPoints[ifoNum1];
   INT4  tOffset2 = tOffset0 + timeOffsetPoints[ifoNum2];
   INT4  sOffset  = numPoints/4;
-  REAL4 SNRthresh = 4.0;
+  REAL4 SNRthresh = params->snglSNRThreshold;
 
   for (i = numPoints/4; i < 3*numPoints/4; ++i) /* Main loop over time */
   {
@@ -1440,7 +1440,6 @@ void coh_PTF_statistic(
           break;
         }
       }
-      check = 1;
       if (check)
       {
         // The following block extracts the values of extrinsic parameters.
