@@ -305,7 +305,7 @@ int main(int argc,char *argv[])
       }
 
       if ( uvar.computeLV ) {
-        lvstats.LV = XLALComputeLineVeto ( lvstats.TwoF, lvstats.TwoFX, rhomax, linepriorX );
+        lvstats.LV = XLALComputeLineVeto ( lvstats.TwoF, lvstats.TwoFX, rhomax, rhomax, linepriorX );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVeto().\n\n", __func__, __LINE__);
           XLAL_ERROR ( XLAL_EFUNC );

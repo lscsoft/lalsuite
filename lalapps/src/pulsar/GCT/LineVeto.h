@@ -98,7 +98,8 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,
 REAL8
 XLALComputeLineVeto ( const REAL8 TwoF,
 		      const REAL8Vector *TwoFX,
-		      const REAL8 rhomax,
+		      const REAL8 rhomaxline,
+		      const REAL8 rhomaxsig,
 		      const REAL8Vector *priorX );
 
 LALStringVector *
