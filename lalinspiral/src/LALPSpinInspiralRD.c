@@ -1932,14 +1932,6 @@ static int XLALSpinInspiralAdaptiveEngine(
       LNhx_s->data[k]   = LNhx[j];
       LNhy_s->data[k]   = LNhy[j];
       LNhz_s->data[k]   = LNhz[j];
-      LNhxy = sqrt(LNhx_s->data[k] * LNhx_s->data[k] + LNhy_s->data[k] * LNhy_s->data[k]);
-      if (LNhxy > 0.) {
-	diota->data[k]  = -dLNhz->data[k] / LNhxy;
-	dalpha->data[k] = (LNhx_s->data[k] * dLNhy->data[k] - LNhy_s->data[k] * dLNhx->data[k]) / LNhxy;
-      } else {
-	diota->data[k]  = 0.;
-	dalpha->data[k] = 0.;
-      }
     }
 
     errcode  = XLALGenerateWaveDerivative(domega,omega_s,dt);
@@ -1949,6 +1941,17 @@ static int XLALSpinInspiralAdaptiveEngine(
     if (errcode != XLAL_SUCCESS) {
       XLALPrintError("**** LALPSpinInspiralRD ERROR ****: error generating first derivatives: #points %d\n",Npoints);
       XLAL_ERROR(__func__, XLAL_EFAILED);
+    }
+
+    for (k=0;k<Npoints;k++) {
+      LNhxy = sqrt(LNhx_s->data[k] * LNhx_s->data[k] + LNhy_s->data[k] * LNhy_s->data[k]);
+      if (LNhxy > 0.) {
+	diota->data[k]  = -dLNhz->data[k] / LNhxy;
+	dalpha->data[k] = (LNhx_s->data[k] * dLNhy->data[k] - LNhy_s->data[k] * dLNhx->data[k]) / LNhxy;
+      } else {
+	diota->data[k]  = 0.;
+	dalpha->data[k] = 0.;
+      }
     }
 
     errcode  = XLALGenerateWaveDerivative(ddiota,diota,dt);
@@ -2608,6 +2611,26 @@ static int XLALPSpinInspiralRDEngine(
     }
     else {
       trigAngle.ci = phenPars.ci;
+      trigAngle.cdi  = 2. * trigAngle.ci * trigAngle.ci - 1.;
+      trigAngle.c2i  = trigAngle.ci * trigAngle.ci;
+      trigAngle.s2i  = 1. - trigAngle.ci * trigAngle.ci;
+      trigAngle.si   = sqrt(trigAngle.s2i);
+      trigAngle.sdi  = 2. * trigAngle.ci * trigAngle.si;
+      trigAngle.c2i2 = (1. + trigAngle.ci) / 2.;
+      trigAngle.s2i2 = (1. - trigAngle.ci) / 2.;
+      trigAngle.ci2  = sqrt(trigAngle.c2i2);
+      trigAngle.si2  = sqrt(trigAngle.s2i2);
+      trigAngle.c3i2 = trigAngle.c2i2 * trigAngle.ci2;
+      trigAngle.s3i2 = trigAngle.s2i2 * trigAngle.si2;
+      trigAngle.c4i2 = trigAngle.c2i2 * trigAngle.c2i2;
+      trigAngle.s4i2 = trigAngle.s2i2 * trigAngle.s2i2;
+      trigAngle.c5i2 = trigAngle.c4i2 * trigAngle.ci2;
+      trigAngle.s5i2 = trigAngle.s4i2 * trigAngle.si2;
+      trigAngle.c6i2 = trigAngle.c4i2 * trigAngle.c2i2;
+      trigAngle.s6i2 = trigAngle.s4i2 * trigAngle.s2i2;
+      trigAngle.c8i2 = trigAngle.c4i2 * trigAngle.c4i2;
+      trigAngle.s8i2 = trigAngle.s4i2 * trigAngle.s4i2;
+
       Psi    = phenPars.Psi;// - 2. * om * log(om);
       Psi0   = Psi + tAs * (om1/mass -dalpha1*trigAngle.ci) * log(1. - t0 / tAs);
       alpha0 = phenPars.alpha + tAs * dalpha1 * log(1. - t0 / tAs);
@@ -2714,26 +2737,6 @@ static int XLALPSpinInspiralRDEngine(
 
 	amp33 = -amp22 / 4. * sqrt(5. / 42.);
 	amp44 = amp22 * sqrt(5./7.) * 2./9.   * v2;
-
-	trigAngle.cdi  = 2. * trigAngle.ci * trigAngle.ci - 1.;
-	trigAngle.c2i  = trigAngle.ci * trigAngle.ci;
-	trigAngle.s2i  = 1. - trigAngle.ci * trigAngle.ci;
-	trigAngle.si   = sqrt(trigAngle.s2i);
-	trigAngle.sdi  = 2. * trigAngle.ci * trigAngle.si;
-	trigAngle.c2i2 = (1. + trigAngle.ci) / 2.;
-	trigAngle.s2i2 = (1. - trigAngle.ci) / 2.;
-	trigAngle.ci2  = sqrt(trigAngle.c2i2);
-	trigAngle.si2  = sqrt(trigAngle.s2i2);
-	trigAngle.c3i2 = trigAngle.c2i2 * trigAngle.ci2;
-	trigAngle.s3i2 = trigAngle.s2i2 * trigAngle.si2;
-	trigAngle.c4i2 = trigAngle.c2i2 * trigAngle.c2i2;
-	trigAngle.s4i2 = trigAngle.s2i2 * trigAngle.s2i2;
-	trigAngle.c5i2 = trigAngle.c4i2 * trigAngle.ci2;
-	trigAngle.s5i2 = trigAngle.s4i2 * trigAngle.si2;
-	trigAngle.c6i2 = trigAngle.c4i2 * trigAngle.c2i2;
-	trigAngle.s6i2 = trigAngle.s4i2 * trigAngle.s2i2;
-	trigAngle.c8i2 = trigAngle.c4i2 * trigAngle.c4i2;
-	trigAngle.s8i2 = trigAngle.s4i2 * trigAngle.s4i2;
 
 	errcode=XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,count,amp22,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
 
