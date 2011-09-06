@@ -2055,6 +2055,18 @@ static int XLALSpinInspiralAdaptiveEngine(
       LNhx_s->data[k]   = LNhx[j];
       LNhy_s->data[k]   = LNhy[j];
       LNhz_s->data[k]   = LNhz[j];
+    }
+
+    errcode  = XLALGenerateWaveDerivative(domega,omega_s,dt);
+    errcode += XLALGenerateWaveDerivative(dLNhx,LNhx_s,dt);
+    errcode += XLALGenerateWaveDerivative(dLNhy,LNhy_s,dt);
+    errcode += XLALGenerateWaveDerivative(dLNhz,LNhz_s,dt);
+    if (errcode != 0) {
+      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating first derivatives: #points %d\n",Npoints);
+      XLAL_ERROR(__func__,XLAL_EFAILED);
+    }
+
+    for (k=0;k<Npoints;k++) {
       LNhxy = sqrt(LNhx_s->data[k] * LNhx_s->data[k] + LNhy_s->data[k] * LNhy_s->data[k]);
       if (LNhxy > 0.) {
 				diota->data[k]  = -dLNhz->data[k] / LNhxy;
@@ -2064,16 +2076,7 @@ static int XLALSpinInspiralAdaptiveEngine(
 				dalpha->data[k] = 0.;
       }
     }
-		
-    errcode  = XLALGenerateWaveDerivative(domega,omega_s,dt);
-    errcode += XLALGenerateWaveDerivative(dLNhx,LNhx_s,dt);
-    errcode += XLALGenerateWaveDerivative(dLNhy,LNhy_s,dt);
-    errcode += XLALGenerateWaveDerivative(dLNhz,LNhz_s,dt);
-    if (errcode != 0) {
-      fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating first derivatives: #points %d\n",Npoints);
-      XLAL_ERROR(__func__,XLAL_EFAILED);
-    }
-		
+
     errcode  = XLALGenerateWaveDerivative(ddiota,diota,dt);
     errcode += XLALGenerateWaveDerivative(ddalpha,dalpha,dt);
     errcode += XLALGenerateWaveDerivative(ddomega,domega,dt);
