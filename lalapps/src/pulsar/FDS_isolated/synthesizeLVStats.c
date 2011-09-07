@@ -112,6 +112,8 @@ typedef struct {
   INT4 TAtom;		/**< Fstat atoms time baseline */
 
   BOOLEAN computeLV; /**< Also compute LineVeto-statistic */
+  REAL8 rhoMaxLine;  /**< prior rho_max_line for LineVeto-statistic */
+  REAL8 rhoMaxSig;   /**< prior rho_max_sig for LineVeto-statistic */
   INT4 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
 
   CHAR *outputStats;	/**< output file to write numDraw resulting statistics into */
@@ -276,7 +278,6 @@ int main(int argc,char *argv[])
 
       /* initialise LVcomponents structure and allocate memory */
       UINT4 numDetectors = multiAtoms->length;
-      REAL4 rhomax = 4.0;
       LVcomponents   lvstats;      /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
       if ( (lvstats.TwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
         XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
@@ -308,7 +309,7 @@ int main(int argc,char *argv[])
 
       if ( uvar.computeLV ) {
         BOOLEAN useAllTerms = TRUE;
-        lvstats.LV = XLALComputeLineVeto ( (REAL4)lvstats.TwoF, (REAL4Vector*)lvstats.TwoFX, rhomax, linepriorX, useAllTerms );
+        lvstats.LV = XLALComputeLineVeto ( (REAL4)lvstats.TwoF, (REAL4Vector*)lvstats.TwoFX, uvar.rhoMaxLine, uvar.rhoMaxSig, linepriorX, useAllTerms );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVeto().\n\n", __func__, __LINE__);
           XLAL_ERROR ( XLAL_EFUNC );
@@ -414,6 +415,8 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->TAtom = 1800;
 
   uvar->computeLV = 0;
+  uvar->rhoMaxLine = 4.0;
+  uvar->rhoMaxSig = 4.0;
   uvar->useFReg = 0;
 
   uvar->fixedh0Nat = -1;
@@ -454,6 +457,8 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   /* misc params */
   XLALregBOOLUserStruct ( computeLV,	 0, UVAR_OPTIONAL, "Also compute LineVeto-statistic" );
+  XLALregREALUserStruct ( rhoMaxLine,    0, UVAR_OPTIONAL, "prior rho_max_line for LineVeto-statistic");
+  XLALregREALUserStruct ( rhoMaxSig,     0, UVAR_OPTIONAL, "prior rho_max_signal for LineVeto-statistic");
 
   XLALregINTUserStruct  ( numDraws,		'N', UVAR_OPTIONAL,"Number of random 'draws' to simulate");
   XLALregINTUserStruct  ( randSeed,		 0, UVAR_OPTIONAL, "GSL random-number generator seed value to use");
