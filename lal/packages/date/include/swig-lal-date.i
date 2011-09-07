@@ -35,31 +35,40 @@
   #include <lal/Date.h>
 %}
 
-%extend LIGOTimeGPS {
+// Newer versions of SWIG require that %extend uses the tag name
+// (i.e. tagLIGOTimeGPS) for constructors, as opposed to the typedef name
+// (i.e. LIGOTimeGPS), which is apparently not legal C++ syntax.
+// This is a workaround to remain backward-compatible with earlier
+// SWIG versions.
+#if SWIG_VERSION < 0x020005
+#define tagLIGOTimeGPS LIGOTimeGPS
+#endif
+
+%extend tagLIGOTimeGPS {
 
   // Construct a new LIGOTimeGPS. SWIG doesn't provide its usual
   // default constructor if custom constructors are supplied (as
   // they are below); a destructor is still generated, however,
   // as is a copy constructor if %copyctor is enabled globally.
-  LIGOTimeGPS() {
+  tagLIGOTimeGPS() {
     return new LIGOTimeGPS();
   }
 
   // Construct a LIGOTimeGPS from a real number.
-  LIGOTimeGPS(REAL8 t) {
+  tagLIGOTimeGPS(REAL8 t) {
     return XLALGPSSetREAL8(new LIGOTimeGPS(), t);
   }
 
   // Construct a LIGOTimeGPS from integer seconds and nanoseconds.
-  LIGOTimeGPS(INT4 gpssec) {
+  tagLIGOTimeGPS(INT4 gpssec) {
     return XLALGPSSet(new LIGOTimeGPS(), gpssec, 0);
   }
-  LIGOTimeGPS(INT4 gpssec, INT4 gpsnan) {
+  tagLIGOTimeGPS(INT4 gpssec, INT4 gpsnan) {
     return XLALGPSSet(new LIGOTimeGPS(), gpssec, gpsnan);
   }
 
   // Construct a LIGOTimeGPS from a string
-  LIGOTimeGPS(const char* str) {
+  tagLIGOTimeGPS(const char* str) {
     LIGOTimeGPS *gps = new LIGOTimeGPS();
     char *end = NULL;
     if (XLALStrToGPS(gps, str, &end) < 0 || end == str) {
@@ -311,5 +320,10 @@
   }
 
 } // %extend LIGOTimeGPS
+
+// See comment above.
+#if SWIG_VERSION < 0x020005
+#undef tagLIGOTimeGPS
+#endif
 
 #endif // SWIG
