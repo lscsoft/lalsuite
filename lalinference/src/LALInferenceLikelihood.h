@@ -25,6 +25,24 @@
 /**
  * \file LALInferenceLikelihood.h
  * \brief Header file for likelihood functions used by LALInference codes
+ *
+ * LALInferenceLikelihood contains all the necessary routines to compute the likelihood 
+ * from a template (computed with LALInferenceTemplate) and the data (initialised with LALInferenceReadData).
+ *
+ * Likelihood functions follow the basic naming convention: LALInference<type_of>LogLikelihood()
+ * Takes as input:
+ * - a pointer to a LALInferenceVariable structure containing the parameters to compute the likelihood for,
+ * - a pointer to a LALInferenceIFOData structure containing the linked list of interferometer data,
+ * - a pointer to the LALInferenceTemplateFunction template function to be used.
+ * 
+ * Outputs as a REAL8 the natural logarithm value of the likelihood, as defined by:
+ *  
+ * Likelihood(\vec{x}|\vec{\lambda},M)=\exp(-\tfrac{1}{2}<\vec{x}-\vec{h_M}(\vec{\lambda})|\vec{x}-\vec{h_M}(\vec{\lambda})>)
+ * 
+ * where: <x|y>=4Re\left ( \int \frac{\tilde{x}\,\tilde{y}^*}{S_f}\, df \right )
+ * 
+ * Note that the likelihood is reported unnormalised.
+ * 
  */
 
 
