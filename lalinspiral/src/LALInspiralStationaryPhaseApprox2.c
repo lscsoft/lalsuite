@@ -247,7 +247,7 @@ XLALInspiralStationaryPhaseApprox2 (
    }
    params->fFinal = fn;
 
-   return 1;
+   return XLAL_SUCCESS;
 }
 
 
