@@ -107,6 +107,7 @@ typedef struct {
 
   /* other parameters */
   LALStringVector* IFOs; /**< list of detector-names "H1,H2,L1,.." or single detector*/
+  CHAR *lineIFO;         /**< name of IFO into which line gets inserted */
   INT4 dataStartGPS;	/**< data start-time in GPS seconds */
   INT4 dataDuration;	/**< data-span to generate */
   INT4 TAtom;		/**< Fstat atoms time baseline */
@@ -256,20 +257,98 @@ int main(int argc,char *argv[])
     } /* if outputInjParams */
 
   /* ----- main MC loop over numDraws trials ---------- */
-  multiAMBuffer_t multiAMBuffer = empty_multiAMBuffer;	  /* prepare AM-buffer */
   INT4 i;
+  UINT4 numDetectors = cfg.multiDetStates->length;
 
   for ( i=0; i < uvar.numDraws; i ++ )
     {
       InjParams_t injParamsDrawn = empty_InjParams_t;
 
       /* ----- generate signal random draws from ranges and generate Fstat atoms */
+      multiAMBuffer_t multiAMBuffer = empty_multiAMBuffer;      /* prepare AM-buffer */
       MultiFstatAtomVector *multiAtoms;
-      multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
-      if ( multiAtoms ==NULL ) {
-        LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", __func__, xlalErrno );
-        XLAL_ERROR ( XLAL_EFUNC );
+
+      if ( !uvar.lineIFO ) { /* signal injection in all detectors, 1 call to XLALSynthesizeTransientAtoms for multi-detector results */
+        multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
+        if ( multiAtoms ==NULL ) {
+          LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", __func__, xlalErrno );
+          XLAL_ERROR ( XLAL_EFUNC );
+        }
       }
+
+      else { /* inject a signal in detector lineIFO only, pure gaussian noise in the others */
+
+        /* prepare multiAtoms structure (will be filled by hand from single-IFO results of individual calls to XLALSynthesizeTransientAtoms ) */
+        if ( ( multiAtoms = XLALCalloc ( 1, sizeof(*multiAtoms) )) == NULL ) {
+          XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n", fn, sizeof(*multiAtoms) );
+          XLAL_ERROR ( fn, XLAL_ENOMEM );
+        }
+        multiAtoms->length = numDetectors;
+        if ( ( multiAtoms->data = XLALCalloc ( numDetectors, sizeof(*multiAtoms->data) ) ) == NULL ) {
+          XLALPrintError ("%s: XLALCalloc ( %d, %d) failed.\n", fn, numDetectors, sizeof(*multiAtoms->data) );
+          XLALFree ( multiAtoms );
+          XLAL_ERROR ( fn, XLAL_ENOMEM );
+        }
+
+        for ( UINT4 X=0; X < numDetectors; X++ ) { /* loop through detectors */
+
+          /* finish preparing multiAtoms structure for insertion of atoms for detector X */
+          UINT4 numAtoms = cfg.multiDetStates->data[X]->length;
+          if ( ( multiAtoms->data[X] = XLALCreateFstatAtomVector ( numAtoms ) ) == NULL ) {
+            XLALPrintError ("%s: XLALCreateFstatAtomVector(%d) failed.\n", fn, numAtoms );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+
+          MultiFstatAtomVector *multiAtomsX; /* temporary multiAtoms structure with only 1 detector entry */
+          AmplitudePrior_t AmpPriorX = cfg.AmpPrior; /* for all detectors without line, use temporary AmpPrior struct to set signal strength to 0 */
+          if ( strcmp( uvar.lineIFO, uvar.IFOs->data[X] ) != 0 )
+            AmpPriorX.fixedSNR = 0.0;
+
+          /* temporary DetectorStateSeries structure so that XLALSynthesizeTransientAtoms will only synth for detector X */
+          MultiDetectorStateSeries multiDetStatesX;
+          if ( ( multiDetStatesX.data = LALCalloc ( 1, sizeof( *(multiDetStatesX.data) ) )) == NULL ) {
+            XLALPrintError ("%s: LALCalloc ( %d, sizeof(%d)) failed\n", fn, 1, sizeof(*(multiDetStatesX.data)) );
+            XLAL_ERROR ( fn, XLAL_ENOMEM );
+          }
+          /* manually copy stuff over to avoid LALFree errors - should be done better! */
+          multiDetStatesX.length = 1;
+          multiDetStatesX.startTime = cfg.multiDetStates->startTime;
+          multiDetStatesX.Tspan = cfg.multiDetStates->Tspan;
+          multiDetStatesX.data[0] = XLALCreateDetectorStateSeries(cfg.multiDetStates->data[0]->length);
+          multiDetStatesX.data[0]->length = cfg.multiDetStates->data[X]->length;
+          multiDetStatesX.data[0]->detector = cfg.multiDetStates->data[X]->detector;
+          multiDetStatesX.data[0]->system = cfg.multiDetStates->data[X]->system;
+          multiDetStatesX.data[0]->deltaT = cfg.multiDetStates->data[X]->deltaT;
+          for ( UINT4 alpha=0; alpha < multiDetStatesX.data[0]->length; alpha++ )
+            multiDetStatesX.data[0]->data[alpha] = cfg.multiDetStates->data[X]->data[alpha];
+
+          /* finally, the synth call for this detector X with temporary DetStates and AmpPrior */
+          multiAtomsX = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, AmpPriorX, cfg.transientInjectRange, &multiDetStatesX, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
+          if ( multiAtomsX == NULL ) {
+            LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", fn, xlalErrno );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+
+          /* copy single-IFO atoms into multiAtoms struct (manually to avoid LALFree errors - should be done better! */
+          multiAtoms->data[X]->length = multiAtomsX->data[0]->length;
+          multiAtoms->data[X]->TAtom = multiAtomsX->data[0]->TAtom;
+          for ( UINT4 alpha=0; alpha < multiAtomsX->data[0]->length; alpha++ ) {
+            multiAtoms->data[X]->data[alpha].timestamp = multiAtomsX->data[0]->data[alpha].timestamp;
+            multiAtoms->data[X]->data[alpha].a2_alpha = multiAtomsX->data[0]->data[alpha].a2_alpha;
+            multiAtoms->data[X]->data[alpha].b2_alpha = multiAtomsX->data[0]->data[alpha].b2_alpha;
+            multiAtoms->data[X]->data[alpha].ab_alpha = multiAtomsX->data[0]->data[alpha].ab_alpha;
+            multiAtoms->data[X]->data[alpha].Fa_alpha = multiAtomsX->data[0]->data[alpha].Fa_alpha;
+            multiAtoms->data[X]->data[alpha].Fb_alpha = multiAtomsX->data[0]->data[alpha].Fb_alpha;
+          }
+
+          /* free temporary structs for this detector */
+          XLALDestroyDetectorStateSeries ( multiDetStatesX.data[0] );
+          XLALFree ( multiDetStatesX.data );
+          XLALDestroyMultiFstatAtomVector ( multiAtomsX );
+
+        } /* for X < numDetectorss */
+
+      } /* finished if/else statement for line injection */
 
       /* ----- if requested, output signal injection parameters into file */
       if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParamsDrawn, uvar.dataStartGPS ) != XLAL_SUCCESS ) ) {
@@ -277,7 +356,6 @@ int main(int argc,char *argv[])
       } /* if fpInjParams & failure*/
 
       /* initialise LVcomponents structure and allocate memory */
-      UINT4 numDetectors = multiAtoms->length;
       LVcomponents   lvstats;      /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
       if ( (lvstats.TwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
         XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
@@ -368,7 +446,6 @@ int main(int argc,char *argv[])
 
   /* ----- free memory ---------- */
   XLALDestroyMultiDetectorStateSeries ( cfg.multiDetStates );
-//   XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
   XLALDestroyExpLUT();
   /* ----- free amplitude prior pdfs ----- */
   XLALDestroyPDF1D ( cfg.AmpPrior.pdf_h0Nat );
@@ -428,6 +505,7 @@ XLALInitUserVars ( UserInput_t *uvar )
     LogPrintf (LOG_CRITICAL, "Call to XLALCreateStringVector() failed with xlalErrno = %d\n", xlalErrno );
     XLAL_ERROR ( XLAL_ENOMEM );
   }
+  uvar->lineIFO = NULL;
 
   /* ---------- transient window defaults ---------- */
 #define DEFAULT_TRANSIENT "rect"
@@ -452,6 +530,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregINTUserStruct  ( AmpPriorType,	 	 0,  UVAR_OPTIONAL, "Enumeration of types of amplitude-priors: 0=physical, 1=canonical");
 
   XLALregLISTUserStruct( IFOs,                  'I', UVAR_OPTIONAL, "Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
+  XLALregSTRINGUserStruct ( lineIFO,             0,  UVAR_OPTIONAL, "Insert a line (signal in this one IFO, pure gaussian noise in others), e.g. \"H1\"");
   XLALregINTUserStruct ( dataStartGPS,	 	 0,  UVAR_OPTIONAL, "data start-time in GPS seconds");
   XLALregINTUserStruct ( dataDuration,	 	 0,  UVAR_OPTIONAL, "data-span to generate (in seconds)");
 
