@@ -734,7 +734,7 @@ int XLALSimInspiralChooseWaveform(
     Approximant approximant     /**< post-Newtonian approximant to use for waveform production */
     )
 {
-    REAL8 S1vec[3], S2vec[3];
+    REAL8 S1vec[3], S2vec[3], LNhatx, LNhaty, LNhatz, E1x, E1y, E1z;
     int ret;
 
     if (S1 == NULL)
@@ -784,7 +784,13 @@ int XLALSimInspiralChooseWaveform(
 		// L are in the x-z plane) and the spin coordinates are given wrt 
 		// initial ** L **.
         case SpinTaylorFrameless:
-            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, t0, phi0, 0., deltaT, m1, m2, f_min, r, S1vec[0], S1vec[1], S1vec[2], S2vec[0], S2vec[1], S2vec[2], 0., 0., 1., 1., 0., 0., LAL_AllInter, O, O);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            E1x = cos(i);
+            E1y = 0.;
+            E1z = - sin(i);
+            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, t0, phi0, 0., deltaT, m1, m2, f_min, r, S1vec[0], S1vec[1], S1vec[2], S2vec[0], S2vec[1], S2vec[2], LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, LAL_AllInter, O, O);
             break;
 
         /* spinning inspiral-merger-ringdown models */
@@ -833,7 +839,7 @@ int XLALSimInspiralChooseRestrictedWaveform(
     Approximant approximant     /**< post-Newtonian approximant to use for waveform production */
     )
 {
-    REAL8 S1vec[3], S2vec[3];
+    REAL8 S1vec[3], S2vec[3], LNhatx, LNhaty, LNhatz, E1x, E1y, E1z;
     int ret;
 
     if (S1 == NULL)
@@ -883,7 +889,13 @@ int XLALSimInspiralChooseRestrictedWaveform(
 		// L are in the x-z plane) and the spin coordinates are given wrt 
 		// initial ** L **.
         case SpinTaylorFrameless:
-            ret = XLALSimInspiralRestrictedSpinTaylorT4(hplus, hcross, t0, phi0, 0., deltaT, m1, m2, f_min, r, S1vec[0], S1vec[1], S1vec[2], S2vec[0], S2vec[1], S2vec[2], 0., 0., 1., 1., 0., 0., LAL_AllInter, O);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            E1x = cos(i);
+            E1y = 0.;
+            E1z = - sin(i);
+            ret = XLALSimInspiralRestrictedSpinTaylorT4(hplus, hcross, t0, phi0, 0., deltaT, m1, m2, f_min, r, S1vec[0], S1vec[1], S1vec[2], S2vec[0], S2vec[1], S2vec[2], LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, LAL_AllInter, O);
             break;
 
         /* spinning inspiral-merger-ringdown models */
