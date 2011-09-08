@@ -30,6 +30,7 @@
  * from a template (computed with LALInferenceTemplate) and the data (initialised with LALInferenceReadData).
  *
  * Likelihood functions follow the basic naming convention: LALInference<type_of>LogLikelihood()
+ *
  * Takes as input:
  * - a pointer to a LALInferenceVariable structure containing the parameters to compute the likelihood for,
  * - a pointer to a LALInferenceIFOData structure containing the linked list of interferometer data,
@@ -37,10 +38,13 @@
  * 
  * Outputs as a REAL8 the natural logarithm value of the likelihood, as defined by:
  *  
+ * \f[
  * Likelihood(\vec{x}|\vec{\lambda},M)=\exp(-\tfrac{1}{2}<\vec{x}-\vec{h_M}(\vec{\lambda})|\vec{x}-\vec{h_M}(\vec{\lambda})>)
+ * \f] 
+ *
+ * where: \f$<x|y>=4Re\left ( \int \frac{\tilde{x}\,\tilde{y}^*}{S_f}\, df \right )\f$
  * 
- * where: <x|y>=4Re\left ( \int \frac{\tilde{x}\,\tilde{y}^*}{S_f}\, df \right )
- * 
+ *
  * Note that the likelihood is reported unnormalised.
  * 
  */
@@ -55,7 +59,7 @@
 /***********************************************************//**
  * (log-) likelihood function.                                 
  * Returns the non-normalised logarithmic likelihood.          
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ *
  * Required (`currentParams') parameters are:                  
  *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
  *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
@@ -76,7 +80,7 @@ REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables *currentParams, LALInf
  * Returns the non-normalised logarithmic likelihood.          
  * Slightly slower but cleaner than							   
  * UndecomposedFreqDomainLogLikelihood().          `		   
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ *
  * Required (`currentParams') parameters are:                  
  *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
  *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
@@ -91,7 +95,7 @@ REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams, 
  * Chi-Square function.                                        
  * Returns the chi square of a template:                       
  * chisq= p * sum_i (dx_i)^2, with dx_i  =  <s,h>_i  - <s,h>/p
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ * 
  * Required (`currentParams') parameters are:                  
  *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
  *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
@@ -112,7 +116,7 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
  * and projection onto this detector.                          
  * Result stored in freqResponse, assumed to be correctly      
  * initialized												   
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ *
  * Required (`currentParams') parameters are:                  
  *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
  *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
@@ -128,7 +132,7 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
  * Returns the non-normalised logarithmic likelihood.          
  * Mathematically equivalent to Frequency domain likelihood.   
  * Time domain version of LALInferenceFreqDomainLogLikelihood()
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ *
  * Required (`currentParams') parameters are:                  
  *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
  *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
@@ -150,7 +154,7 @@ REAL8 LALInferenceTimeDomainLogLikelihood(LALInferenceVariables *currentParams, 
  * and projection onto this detector.                          
  * Result stored in timeResponse, assumed to be correctly      
  * initialized												   
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ * 
  * Required (`currentParams') parameters are:                  
  *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
  *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
@@ -232,14 +236,14 @@ REAL8 LALInferenceTimeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeS
  *   http://dx.doi.org/10.1088/0264-9381/28/1/015010           
  *   http://arxiv.org/abs/0804.3853                            
  * Returns the non-normalised logarithmic likelihood.          
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ * 
  * Required (`currentParams') parameters are:                  
  *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
  *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
  *   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        
  *   - "distance"        (REAL8, Mpc, > 0)                     
  *   - "time"            (REAL8, GPS sec.)                     
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ * 
  * This function is essentially the same as the                
  * "UndecomposedFreqDomainLogLikelihood()" function.           
  * The additional parameter to be supplied is the (REAL8)      
@@ -259,7 +263,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
  * Artificial analytic likelihood surface.
  * Bimodal gaussian profile in either 1 or 2 dimentions depending
  * on the contents of `currentParams`.
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
  * Required (`currentParams') parameters are:                  
  *   - "x1"  (REAL8, dimentionless, -1 <= x1 <= 1)       
  * Optional (`currentParams') parameters are:                  
