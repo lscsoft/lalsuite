@@ -97,8 +97,10 @@ static void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *
 
 
 
-/** ============ Likelihood computations: ========== */
+/* ============ Likelihood computations: ========== */
 
+/** For testing purposes (for instance sampling the prior), likelihood that returns 0.0 = log(1) every
+ time.  Activated with the --zeroLogLike command flag. */
 REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables UNUSED *currentParams, LALInferenceIFOData UNUSED *data, LALInferenceTemplateFunction UNUSED *template) {
   return 0.0;
 }
@@ -686,10 +688,10 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
 REAL8 LALInferenceTimeDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                               LALInferenceTemplateFunction *template)
 /***************************************************************/
-/* (log-) likelihood function.                                 */
+/* Time domain (log-) likelihood function.                     */
 /* Returns the non-normalised logarithmic likelihood.          */
-/* Slightly slower but cleaner than							   */
-/* UndecomposedFreqDomainLogLikelihood().          `		   */
+/* Mathematically equivalent to Frequency domain likelihood.   */
+/* Time domain version of LALInferenceFreqDomainLogLikelihood()*/
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* Required (`currentParams') parameters are:                  */
 /*   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       */
@@ -1119,7 +1121,7 @@ REAL8 LALInferenceComputeFrequencyDomainOverlap(LALInferenceIFOData * dataPtr,
 }
 
 REAL8 LALInferenceNullLogLikelihood(LALInferenceIFOData *data)
-/*Idential to FreqDomainNullLogLikelihood                        */
+/*Identical to FreqDomainNullLogLikelihood                        */
 {
 	REAL8 loglikeli, totalChiSquared=0.0;
 	LALInferenceIFOData *ifoPtr=data;
