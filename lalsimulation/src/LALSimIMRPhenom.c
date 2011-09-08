@@ -57,8 +57,8 @@ static BBHPhenomParams *ComputeIMRPhenomBParams(REAL8 m1, REAL8 m2, REAL8 chi);
 static REAL8 EstimateSafeFMinForTD(REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT);
 static REAL8 EstimateSafeFMaxForTD(REAL8 f_max, REAL8 dt);
 static REAL8 ComputeTau0(REAL8 m1, REAL8 m2, REAL8 f_min);
-static ssize_t EstimateIMRLength(REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT);
-static ssize_t NextPow2(ssize_t n);
+static size_t EstimateIMRLength(REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT);
+static size_t NextPow2(size_t n);
 
 static REAL8 LorentzianFn(REAL8 freq, REAL8 fRing, REAL8 sigma);
 
@@ -67,7 +67,7 @@ static int IMRPhenomBGenerateFD(COMPLEX16FrequencySeries **htilde, LIGOTimeGPS *
 static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
 static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 chi, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
 static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD, LIGOTimeGPS *tRef, REAL8 totalMass, REAL8 deltaT, REAL8 f_min, REAL8 f_max, REAL8 f_min_wide, REAL8 f_max_wide);
-static ssize_t find_instant_freq(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 target, ssize_t start);
+static size_t find_instant_freq(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 target, size_t start);
 static int apply_inclination(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 inclination);
 
 
@@ -153,7 +153,7 @@ int XLALSimIMRPhenomAGenerateTD(
     REAL8 inclination         /**< inclination of source */
 ) {
   BBHPhenomParams *params;
-  ssize_t cut_ind;
+  size_t cut_ind;
 
   /* check inputs for sanity */
   if (*hplus) XLAL_ERROR(__func__, XLAL_EFAULT);
@@ -231,7 +231,7 @@ int XLALSimIMRPhenomBGenerateTD(
     REAL8 inclination         /**< inclination of source */
 ) {
   BBHPhenomParams *params;
-  ssize_t cut_ind;
+  size_t cut_ind;
 
   /* check inputs for sanity */
   if (*hplus) XLAL_ERROR(__func__, XLAL_EFAULT);
@@ -526,12 +526,12 @@ static REAL8 ComputeTau0(REAL8 m1, REAL8 m2, REAL8 f_min) {
  * Estimate the length of a TD vector that can hold the waveform as the Newtonian
  * chirp time tau0 plus 1000 M.
  */
-static ssize_t EstimateIMRLength(REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT) {
-  return (ssize_t) floor((ComputeTau0(m1, m2, f_min) + 1000 * (m1 + m2) * LAL_MTSUN_SI) / deltaT);
+static size_t EstimateIMRLength(REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 deltaT) {
+  return (size_t) floor((ComputeTau0(m1, m2, f_min) + 1000 * (m1 + m2) * LAL_MTSUN_SI) / deltaT);
 }
 
-static ssize_t NextPow2(ssize_t n) {
-  return 1 << (ssize_t) ceil(log2(n));
+static size_t NextPow2(size_t n) {
+  return 1 << (size_t) ceil(log2(n));
 }
 
 /**
@@ -589,7 +589,7 @@ static int IMRPhenomAGenerateFD(
     BBHPhenomParams *params            /**< from ComputeIMRPhenomAParams */
 ) {
   REAL8 shft, amp0, fMerg, fRing, sigma, totalMass, eta;
-  ssize_t i, n;
+  size_t i, n;
 
   fMerg = params->fMerger;
   fRing = params->fRing;
@@ -668,7 +668,7 @@ static int IMRPhenomBGenerateFD(
 ) {
   REAL8 shft, amp0, fMerg, fRing, sigma, totalMass, eta;
   REAL8 alpha2, alpha3, mergPower, epsilon_1, epsilon_2, vMerg, vRing, w1, w2;
-  ssize_t i, n;
+  size_t i, n;
 
   fMerg = params->fMerger;
   fRing = params->fRing;
@@ -819,7 +819,7 @@ static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 ph
 static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD, LIGOTimeGPS *tRef, REAL8 totalMass, REAL8 deltaT, REAL8 f_min, REAL8 f_max, REAL8 f_min_wide, REAL8 f_max_wide) {
   REAL8 f, deltaF, winFLo, winFHi, softWin, windowLength;
   REAL8FFTPlan *revPlan;
-  ssize_t nf, nt, k;
+  size_t nf, nt, k;
 
   /* check inputs */
   if (f_min_wide >= f_min) XLAL_ERROR(__func__, XLAL_EDOM);
@@ -866,8 +866,8 @@ static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD
 }
 
 /* return the index before the instantaneous frequency rises past target */
-static ssize_t find_instant_freq(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 target, ssize_t start) {
-  ssize_t k;
+static size_t find_instant_freq(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 target, size_t start) {
+  size_t k;
 
   /* Use second order differencing to find the instantaneous frequency as
    * h = A e^(2 pi i f t) ==> f = d/dt(h) / (2*pi*h) */
@@ -885,7 +885,7 @@ static ssize_t find_instant_freq(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8
 
 static int apply_inclination(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 inclination) {
   REAL8 inclFacPlus, inclFacCross, cosI;
-  ssize_t k;
+  size_t k;
 
   cosI = cos(inclination);
 
