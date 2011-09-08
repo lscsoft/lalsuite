@@ -288,6 +288,7 @@ int main (int argc , char **argv) {
     case SpinTaylorT3:
     case SpinTaylor:
     case SpinTaylorFrameless:
+    case SpinQuadTaylor:
     case PhenSpinTaylorRD:
     case IMRPhenomA:
     case IMRPhenomB:
