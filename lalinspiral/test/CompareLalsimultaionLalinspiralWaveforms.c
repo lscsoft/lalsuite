@@ -74,6 +74,9 @@ ParseParameters( UINT4            argc,
 
 int main(int argc , char **argv)
 {
+	/* set us up to fail hard */
+	lalDebugLevel = 7;
+	XLALSetErrorHandler(XLALAbortErrorHandler);
 	static LALStatus    mystatus;
 
 	/* variables for timing purposes */
@@ -158,17 +161,17 @@ int main(int argc , char **argv)
 	params.signalAmplitude = 4.0 * params.mu * LAL_MRSUN_SI/params.distance;
 	dt = 1. / params.tSampling;
 
-	LALInspiralInit(&mystatus, &params, &paramsInit);
+	XLALInspiralInit(&params, &paramsInit);
 
 	start = clock();
 	/* --- now we can call the lalsimulation function --- */
 	switch (params.approximant)
 	{
 		case EOBNRv2HM:
-			length = XLALSimInspiralChooseWaveform(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1, params.spin2, params.fLower, params.distance, 0, otherIn.order, params.approximant);
+			length = XLALSimInspiralChooseWaveform(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1, params.spin2, params.fLower, params.distance, params.inclination, otherIn.order, params.approximant);
 			break;
 		default:
-			length = XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1, params.spin2, params.fLower, params.distance, 0, otherIn.order, params.approximant);
+			length = XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1, params.spin2, params.fLower, params.distance, params.inclination, otherIn.order, params.approximant);
 	}
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;
@@ -178,14 +181,13 @@ int main(int argc , char **argv)
 		fprintf( stderr, "error generating lalsimulation waveform\n" );
 		exit( 1 );
 	}
+	length = hplus->data->length;
 
 	fprintf(stderr, "length = %i\n", length);
 	fprintf(stderr, "T = %f\n", (float) length * dt);
 
 	name = "wave1.dat";
 	outputfile = fopen(name,"w");
-
-	length = hplus->data->length;
 
 	for(i = 0; i < length; i++) {
 		fprintf(outputfile,"%e\t%e\t%e\n",
