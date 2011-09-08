@@ -784,7 +784,6 @@ void readPulsarData( LALInferenceRunState *runState ){
     else{ /* set default GPS 900000000 - 13th July 2008 at 15:59:46 */
       for(i = 0; i < ml*numDets; i++ ){ 
         fstarts[i] = 900000000.;
-        fprintf(stderr,"fstarts created, i:%d\n",i);
       }
     }
       
@@ -898,7 +897,6 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     FILE *fp = NULL;
     
     count = 0;
-    fprintf(stderr,"creating data for i:%d\n",i);
     
     /* initialise random number generator */
     /* Moved into det loop so same random seed can be used with */
@@ -2020,6 +2018,10 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
   REAL8 loglike = 0.; /* the log likelihood */
   UINT4 i = 0;
   CHAR *modeltype = NULL;/*need to check model type in this function*/
+  FILE *bugtest;
+  REAL8 h1=0.,lambda=0.,theta=0.,h0=0.;
+  
+  bugtest = fopen("bug_test.txt", "a");
   
   modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
   
@@ -2031,12 +2033,21 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     datatemp1 = datatemp1->next;
   }
   
+  h1 = *(REAL8 *)LALInferenceGetVariable( data->modelParams, "h1" );
+  h1=h1*5;
+  lambda = *(REAL8 *)LALInferenceGetVariable( data->modelParams, "lambda" );
+  lambda=lambda*1.57079632679489;
+  theta = *(REAL8 *)LALInferenceGetVariable( data->modelParams, "theta" );
+  theta=theta*0.785398163397448;
+  h0=*(REAL8 *)LALInferenceGetVariable( data->modelParams, "h0" );
+  h0=1e-20*h0;
+  if (h0<1e-25) fprintf(bugtest,"h0: %e\t",h0);
+  
   /* get pulsar model */
   while( datatemp2 ){
-    /*fprintf(stderr,"getting model in log like func\n");*/
+    /*fprintf(bugtest,"getting model in log like func\n");*/
     get_model( datatemp2 );
     datatemp2 = datatemp2->next;
-    
     /* If modeltype is pinsf need to advance data on to next, so this loop only
      runs once if there is only 1 det*/
     if ( !strcmp( modeltype, "pinsf" ) ) datatemp2 = datatemp2->next;
@@ -2054,6 +2065,8 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
   
     REAL8Vector *sumDat = NULL;
     UINT4Vector *chunkLengths = NULL;
+    
+    /*fprintf(bugtest,"calc log like for one set of data\n");*/
     
     sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, 
                                                        "sumData" );
@@ -2091,6 +2104,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
         
         /* sum over that data and model */
         sumDataModel += B.re*M.re + B.im*M.im;
+        /*fprintf(bugtest,"B.re= %e, B.im= %e, M.re: %e, M.im: %e\n",B.re, B.im, M.re, M.im);*/
       }
  
       chiSquare = sumDat->data[count];
@@ -2101,13 +2115,17 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
       
       count++;
     }
-  
+    /*if ((h1>1.9) && (h1<2.1) && (lambda>1.5) && (lambda<1.6) && (theta>0.7) && (theta<0.8)) fprintf(bugtest,"h1: %f\tlambda: %f\ttheta: %f\tloglike: %e\t",h1, lambda, theta, logliketmp);*/
+    if (h0<1e-25) fprintf(bugtest,"loglike: %e\t",logliketmp);
     loglike += logliketmp;
-    
     data = data->next;
   }
-  
+  /*if ((h1>1.9) && (h1<2.1) && (lambda>1.5) && (lambda<1.6) && (theta>0.7) && (theta<0.8)) fprintf(bugtest,"\n");*/
+  if (h0<1e-25) fprintf(bugtest,"\n");
+  fclose( bugtest );
+  /*exit(0);/*comment out if not using for bug testing*/
   return loglike;
+  
 }
 
 
@@ -2365,6 +2383,12 @@ void pulsar_model( BinaryPulsarParams params,
   for( j = 0; j < freqFactors->length; j++ ){
     REAL8Vector *dphi = NULL;
     
+    /* move data pointer along one as one iteration of the model is held over
+    j data structures, moved this from bottom of loop so actioned for 2nd run through the loop.*/
+    if ( j > 0 ){ 
+      data = data->next;
+    }
+    
     length = data->compModelData->data->length;
     /* the timeData vector within the LALIFOData structure contains the
      phase calculated using the initial (heterodyne) values of the phase
@@ -2390,12 +2414,7 @@ void pulsar_model( BinaryPulsarParams params,
         }
       }
     }
-    
     XLALDestroyREAL8Vector( dphi );
-    
-    /* move data pointer along one as one iteration of the model is held over
-      j data structures */
-    if ( j > 0 ) data = data->next;
   }
 }
 
@@ -2446,6 +2465,8 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
   REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
   
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
+  
+  
 
   /* if edat is NULL then return a NULL poniter */
   if( data->ephem == NULL )
@@ -2491,7 +2512,6 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
       inv_fact[5]*params.f4*deltat2*deltat2 +
       inv_fact[6]*params.f5*deltat2*deltat2*deltat);
   }
-
   return phis;
 }
 
@@ -2816,8 +2836,8 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   LU_Fplus = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fplus");
   LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fcross");
   
-  sin_cos_LUT( &sinphi, &cosphi, pars.phi0 );
-  sin_cos_LUT( &sin2phi, &cos2phi, 2*pars.phi0 );
+  sin_cos_LUT( &sinphi, &cosphi, 0.5*pars.phi0 );
+  sin_cos_LUT( &sin2phi, &cos2phi, pars.phi0 );
   
   /************************* CREATE MODEL *************************************/
   /* This model is a complex heterodyned time series for a pinned superfluid neutron
@@ -2835,7 +2855,7 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   B1=( (cos(pars.lambda)*cos(pars.lambda))*(cos(pars.theta)*cos(pars.theta)) ) - (sin(pars.lambda)*sin(pars.lambda)) 
     + ( pars.h1*(sin(pars.theta)*sin(pars.theta)) );
   B2=sin(2*pars.lambda)*cos(pars.theta);
- 
+
   tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] );
   
   /* set the psi bin for the lookup table */
@@ -3028,7 +3048,7 @@ void injectSignal( LALInferenceRunState *runState ){
   
   REAL8 snrmulti = 0., snrscale = 0.;
   FILE *fpsnr = NULL; /* output file for SNRs */
-  INT4 ndets = 0;
+  INT4 ndets = 0, j=1;
   
   CHAR *modeltype = NULL;/*need to check model type in this function*/
   
@@ -3079,7 +3099,6 @@ parameter file %s is wrong.\n", injectfile);
     UINT4 varyphasetmp = varyphase;
     varyphase = 1;
     
-    fprintf(stderr,"Calling pulsar_model\n");
     pulsar_model( injpars, data );
     
     /* reset varyphase to its original value */
@@ -3147,11 +3166,20 @@ parameter file %s is wrong.\n", injectfile);
       fprintf(fpsnr, "%le\t", snrval);
       
       data = data->next;
+      if ( !strcmp( modeltype, "pinsf" ) ){
+        snrval = calculate_time_domain_snr( data );
+        snrmulti += SQUARE(snrval);
+        fprintf(fpsnr, "%le\t", snrval);
+        data = data->next;
+      }
     }
     
     snrmulti = sqrt( snrmulti );
     
-    if( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
+    if( ndets > 1 ){ 
+      fprintf(fpsnr, "%le\n", snrmulti);
+      fprintf(stderr,"snr multi: %f\n",snrmulti);
+    }
     else fprintf(fpsnr, "\n");
   }
   
@@ -3165,7 +3193,7 @@ parameter file %s is wrong.\n", injectfile);
     FILE *fp = NULL, *fpso = NULL;
     ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal( commandLine,
                                                             "--inject-output" );
-    INT4 i = 0, length = data->dataTimes->length;                              
+    INT4 i = 0, length = data->dataTimes->length;
                         
     /* check whether to output the data */
     if ( ppt2 ){
@@ -3177,6 +3205,13 @@ parameter file %s is wrong.\n", injectfile);
       
       outfile = XLALStringAppend( outfile, ppt2->value );
       
+      if ( ( !strcmp( modeltype, "pinsf" ) ) && (fmod(j,2)==0) ){
+        outfile = XLALStringAppend( outfile, "_2f");
+      }
+      else if ( !strcmp( modeltype, "pinsf" )){
+        outfile = XLALStringAppend( outfile, "_1f");
+      }
+
       if ( (fp = fopen(outfile, "w")) == NULL ){
         fprintf(stderr, "Non-fatal error... unable to open file %s to output \
 injection\n", outfile);
@@ -3219,7 +3254,8 @@ injection\n", signalonly);
     if ( fp != NULL ) fclose( fp );
     if ( fpso != NULL ) fclose( fpso );
     
-    data = data->next; 
+    data = data->next;
+    j++;
   }
   
 }
