@@ -563,11 +563,11 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
      */
     if( params->wdotSO15s1 != 0. || params->wdotSO15s2 != 0. )
     {	/* Compute 1.5PN SO correction to omega derivative */
-        wspin15 += params->wdotSO15s1 * LNdotS1 + params->wdotSO15s2 * LNdotS2;
+        wspin15 = params->wdotSO15s1 * LNdotS1 + params->wdotSO15s2 * LNdotS2;
     }
     if( params->wdotSS2 != 0. )
     {	/* Compute 2PN SS correction to omega derivative */
-        wspin2 += 0.; /* ADDME!! */	
+        wspin2 = params->wdotSS2 * (247. * S1dotS2 - 721. * LNdotS1 * LNdotS2);
     }
     if( params->wdotSelfSS2 != 0. )
     {	/* Compute 2PN self-spin correction to omega derivative */
@@ -575,7 +575,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     }
     if( params->wdotSO25s1 != 0. || params->wdotSO25s2 != 0. )
     {	/* Compute 2.5PN SO correction to omega derivative */
-        wspin25 += 0.; /* ADDME!! */
+        wspin25 = 0.; /* ADDME!! */
     }
 
     domega  = params->wdotnewt * v11 * ( params->wdotcoeff[0] 
@@ -583,7 +583,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
             + v * ( params->wdotcoeff[3] + wspin15 
             + v * ( params->wdotcoeff[4] + wspin2 
             + v * ( params->wdotcoeff[5] + wspin25 
-            + v * ( params->wdotcoeff[6] + params->wdotlogcoeff * log(v)
+            + v * ( params->wdotcoeff[6] + params->wdotlogcoeff * log(omega)
             + v *   params->wdotcoeff[7] ) ) ) ) ) ) );
 
     /**
@@ -632,11 +632,11 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
      */
     /* \Omega_{S1} vector */
     OmegaSx = v5 * params->eta * params->LNhatSO15s1 * LNhx
-            + omega2 * (S2x - 3. * LNdotS2 * LNhx);
+            + omega2 * 0.5 * (S2x - 3. * LNdotS2 * LNhx);
     OmegaSy = v5 * params->eta * params->LNhatSO15s1 * LNhy
-            + omega2 * (S2y - 3. * LNdotS2 * LNhy);
+            + omega2 * 0.5 * (S2y - 3. * LNdotS2 * LNhy);
     OmegaSz = v5 * params->eta * params->LNhatSO15s1 * LNhz
-            + omega2 * (S2z - 3. * LNdotS2 * LNhz);
+            + omega2 * 0.5 * (S2z - 3. * LNdotS2 * LNhz);
 
     /* Take cross product of \Omega_{S1} with S_1 */
     dS1x = (-OmegaSz*S1y + OmegaSy*S1z);
@@ -652,11 +652,11 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
      */
     /* \Omega_{S2} vector */
     OmegaSx = v5 * params->eta * params->LNhatSO15s2 * LNhx
-            + omega2 * (S2x - 3. * LNdotS2 * LNhx);
+            + omega2 * 0.5 * (S1x - 3. * LNdotS1 * LNhx);
     OmegaSy = v5 * params->eta * params->LNhatSO15s2 * LNhy
-            + omega2 * (S2y - 3. * LNdotS2 * LNhy);
+            + omega2 * 0.5 * (S1y - 3. * LNdotS1 * LNhy);
     OmegaSz = v5 * params->eta * params->LNhatSO15s2 * LNhz
-            + omega2 * (S2z - 3. * LNdotS2 * LNhz);
+            + omega2 * 0.5 * (S1z - 3. * LNdotS1 * LNhz);
 
     /* Take cross product of \Omega_{S2} with S_2 */
     dS2x = (-OmegaSz*S2y + OmegaSy*S2z);
