@@ -25,7 +25,7 @@
 #include "cmdline.h"
 #include "TwoSpectTypes.h"
 
-inputParamsStruct * new_inputParams(void);
+inputParamsStruct * new_inputParams(INT4 numofIFOs);
 void free_inputParams(inputParamsStruct *input);
 
 ffdataStruct * new_ffdata(inputParamsStruct *input);

@@ -60,7 +60,8 @@ typedef struct
    INT4 maxbinshift;
    INT4 templatelength;
    INT4 rootFindingMethod;
-   LALDetector det;
+   INT4 numofIFOs;
+   LALDetector *det;
    CHAR* sftType;
    INT4 markBadSFTs;
    INT4 FFTplanFlag;

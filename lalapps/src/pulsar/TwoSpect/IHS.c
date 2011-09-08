@@ -1207,6 +1207,7 @@ REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params, INT4 rows)
    REAL8 dfinmHz = 0.5*(rows-1.0)/params->Tcoh*1000.0;
    REAL8 prefact = 1.0;
    prefact = -2.4e-4*dfinmHz*dfinmHz + 4.96e-2*dfinmHz + 3.49;
+   prefact = 7.2;
    return prefact*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
    
 }

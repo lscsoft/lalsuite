@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.6"
+#define CMDLINE_PARSER_VERSION "1.1.7"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -76,8 +76,10 @@ struct gengetopt_args_info
   int ihsfactor_arg;	/**< @brief Number of harmonics to sum in IHS algorithm (default='5').  */
   char * ihsfactor_orig;	/**< @brief Number of harmonics to sum in IHS algorithm original value given at command line.  */
   const char *ihsfactor_help; /**< @brief Number of harmonics to sum in IHS algorithm help description.  */
-  char * IFO_arg;	/**< @brief Interferometer of whose data is being analyzed (default='H1').  */
-  char * IFO_orig;	/**< @brief Interferometer of whose data is being analyzed original value given at command line.  */
+  char ** IFO_arg;	/**< @brief Interferometer of whose data is being analyzed (default='H1').  */
+  char ** IFO_orig;	/**< @brief Interferometer of whose data is being analyzed original value given at command line.  */
+  unsigned int IFO_min; /**< @brief Interferometer of whose data is being analyzed's minimum occurreces */
+  unsigned int IFO_max; /**< @brief Interferometer of whose data is being analyzed's maximum occurreces */
   const char *IFO_help; /**< @brief Interferometer of whose data is being analyzed help description.  */
   double ihsfar_arg;	/**< @brief IHS FAR threshold (default='0.01').  */
   char * ihsfar_orig;	/**< @brief IHS FAR threshold original value given at command line.  */
