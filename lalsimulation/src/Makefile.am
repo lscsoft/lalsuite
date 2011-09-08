@@ -1,6 +1,6 @@
 INCLUDES = -I$(top_builddir)/include
 
-bin_PROGRAMS = lalsim-bh-qnmode lalsim-bh-sphwf lalsim-bh-ringdown
+bin_PROGRAMS = lalsim-bh-qnmode lalsim-bh-sphwf lalsim-bh-ringdown lalsim-ligo-noise
 
 lalsimulationincludedir = $(includedir)/lal
 lalsimulationinclude_HEADERS = \
@@ -11,6 +11,7 @@ lalsimulationinclude_HEADERS = \
 	LALSimInspiraldEnergyFlux.h \
 	LALSimulation.h \
 	LALSimInspiralSpinTaylorT4.h \
+	LALSimNoise.h \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h
 
@@ -32,6 +33,8 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralSpinTaylorT4.c \
 	LALSimulationVCSInfo.c \
 	LALSimInspiralPSpinInspiralRD.c \
+	LALSimNoisePSD.c \
+	LALSimNoise.c \
 	check_series_macros.h
 
 liblalsimulation_la_LDFLAGS = -version-info $(LIBVERSION)
@@ -42,6 +45,8 @@ lalsim_bh_sphwf_SOURCES = bh_sphwf.c
 lalsim_bh_sphwf_LDADD = liblalsimulation.la
 lalsim_bh_ringdown_SOURCES = bh_ringdown.c
 lalsim_bh_ringdown_LDADD = liblalsimulation.la
+lalsim_ligo_noise_SOURCES = ligo_noise.c
+lalsim_ligo_noise_LDADD = liblalsimulation.la
 
 CLEANFILES = \
 	lalsimulation-user-env.sh \
