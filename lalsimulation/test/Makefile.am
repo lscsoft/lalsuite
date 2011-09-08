@@ -3,7 +3,8 @@ LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalsimulation.la
 
 if LALSUPPORT
 check_PROGRAMS = \
-	GenerateSimulation
+	GenerateSimulation \
+	TestSpinTaylorT4Dynamics
 TESTS = $(check_PROGRAMS)
 endif
 
