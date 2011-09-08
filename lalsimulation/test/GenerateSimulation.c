@@ -314,7 +314,7 @@ int main (int argc , char **argv) {
     REAL8TimeSeries *hplus = NULL;
     REAL8TimeSeries *hcross = NULL;
     GSParams *params;
-    LALSpinFlags spinFlags = {1, 1, 0, 0, 0}; // For now, hardcode spin flags
+    LALSpinInteraction spinFlags = LAL_AllInter; // For now, hardcode spin flags
 
     /* set us up to fail hard */
     lalDebugLevel = 7;
@@ -360,7 +360,7 @@ int main (int argc , char **argv) {
                             params->m2, params->fRef, params->distance, 
                             params->s1x, params->s1y, params->s1z, params->s2x,
                             params->s2y, params->s2z, LNhatx, LNhaty, LNhatz, 
-                            E1x, E1y, E1z, &spinFlags, params->phaseO, 
+                            E1x, E1y, E1z, spinFlags, params->phaseO, 
                             params->ampO);
                     break;
                 default:
