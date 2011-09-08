@@ -37,6 +37,16 @@ NRCSID(LALSIMIMRH, "$Id$");
 #define ninty4by3etc 18.687902694437592603
 
 /**
+ * Enumerator for choosing the reference frame associated with
+ * PSpinInspiralRD waveforms.
+ */
+typedef enum {
+  TotalJ,
+  View,
+  OrbitalL,
+} InputAxis;
+
+/**
  * Driver routine to compute the non-spinning, inspiral-merger-ringdown
  * phenomenological waveform IMRPhenomA in the frequency domain.
  *
@@ -172,4 +182,23 @@ int XLALSimIMREOBNRv2AllModes(
     const REAL8       inclination /**<< Inclination of the source (in radians) */
 );
 
+/**
+ * Driver routine to compute a precessing post-Newtonian inspiral-merger-ringdown waveform
+ */
+int XLALSimInspiralPSpinInspiralRDGenerator(
+    REAL8TimeSeries **hplus,    /**< +-polarization waveform */
+    REAL8TimeSeries **hcross,   /**< x-polarization waveform */
+    LIGOTimeGPS *t0,            /**< start time */
+    REAL8 phi0,                 /**< start phase */
+    REAL8 deltaT,               /**< sampling interval */
+    REAL8 m1,                   /**< mass of companion 1 */
+    REAL8 m2,                   /**< mass of companion 2 */
+    REAL8 f_min,                /**< start frequency */
+    REAL8 r,                    /**< distance of source */
+    REAL8 iota,                 /**< inclination of source (rad) */
+    REAL8 spin1[3],             /**< Spin vector on mass1 */
+    REAL8 spin2[3],             /**< Spin vector on mass2 */
+    int phaseO,                 /**< twice post-Newtonian phase order */
+    InputAxis axisChoice       	/**< Choice of axis for input spin params */
+    );
 #endif /* _LALSIMIMR_H */

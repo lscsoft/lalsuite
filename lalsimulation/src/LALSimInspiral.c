@@ -771,6 +771,9 @@ int XLALSimInspiralChooseWaveform(
             // FIXME: decide proper f_max to pass here
             ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, t0, phi0, f_min, deltaT, m1, m2, f_min, .5/deltaT, r, i);
             break;
+        case EOBNRv2HM:
+            ret = XLALSimIMREOBNRv2AllModes(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i);
+            break;
 
         /* spinning inspiral-only models */
 
@@ -805,7 +808,7 @@ int XLALSimInspiralChooseWaveform(
     if (ret == XLAL_FAILURE)
         XLAL_ERROR(__func__, XLAL_EFUNC);
 
-    return XLAL_SUCCESS;
+    return ret;
 }
 
 /**
@@ -867,6 +870,9 @@ int XLALSimInspiralChooseRestrictedWaveform(
             // FIXME: decide proper f_max to pass here
             ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, t0, phi0, f_min, deltaT, m1, m2, f_min, .5/deltaT, r, i);
             break;
+        case EOBNRv2:
+            ret = XLALSimIMREOBNRv2DominantMode(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i);
+            break;
 
         /* spinning inspiral-only models */
 
@@ -901,5 +907,5 @@ int XLALSimInspiralChooseRestrictedWaveform(
     if (ret == XLAL_FAILURE)
         XLAL_ERROR(__func__, XLAL_EFUNC);
 
-    return XLAL_SUCCESS;
+    return ret;
 }

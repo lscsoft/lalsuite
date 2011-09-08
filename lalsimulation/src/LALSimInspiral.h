@@ -90,12 +90,6 @@ typedef enum {
 	LAL_AllInter = LAL_SOInter | LAL_SSInter | LAL_SSselfInter | LAL_QMInter /**< all interactions */
 } LALSpinInteraction;
 
-typedef enum {
-  TotalJ,
-  View,
-  OrbitalL,
-} InputAxis;
-
 /**
  * Computes h(2,2) mode of spherical harmonic decomposition of
  * the post-Newtonian inspiral waveform.
@@ -724,26 +718,5 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
 		int phaseO                          /**< twice PN phase order */
 		);
 
-
-/**
- * Driver routine to compute a precessing post-Newtonian inspiral-merger-ringdown waveform
- */
-
-int XLALSimInspiralPSpinInspiralRDGenerator(
-    REAL8TimeSeries **hplus,    /**< +-polarization waveform */
-    REAL8TimeSeries **hcross,   /**< x-polarization waveform */
-    LIGOTimeGPS *t0,            /**< start time */
-    REAL8 phi0,                 /**< start phase */
-    REAL8 deltaT,               /**< sampling interval */
-    REAL8 m1,                   /**< mass of companion 1 */
-    REAL8 m2,                   /**< mass of companion 2 */
-    REAL8 f_min,                /**< start frequency */
-    REAL8 r,                    /**< distance of source */
-    REAL8 iota,                 /**< inclination of source (rad) */
-    REAL8 spin1[3],             /**< Spin vector on mass1 */
-    REAL8 spin2[3],             /**< Spin vector on mass2 */
-    int phaseO,                 /**< twice post-Newtonian phase order */
-    InputAxis axisChoice       	/**< Choice of axis for input spin params */
-    );
 
 #endif /* _LALSIMINSPIRAL_H */
