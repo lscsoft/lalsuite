@@ -149,6 +149,12 @@ typedef struct {
 
 } ConfigVariables;
 
+/** multi-detector array of InjParams_t types */
+typedef struct {
+   UINT4 length;            /**< number of detectors */
+   InjParams_t *data;       /**< array of InjParams_t (pointers), one for each detector X */
+ } MultiInjParams;
+
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 
@@ -158,6 +164,9 @@ EphemerisData * XLALInitEphemeris (const CHAR *ephemYear );
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
 MultiLIGOTimeGPSVector * XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
 int write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDopplerParams *dopplerParams_in );
+MultiInjParams * XLALCreateMultiInjParams ( UINT4 numDetectors );
+void XLALDestroyMultiInjParams ( MultiInjParams *multipar );
+InjParams_t * XLALCombineInjParamsForLine( const MultiInjParams *injParamsDrawnX, const UINT4 lineX );
 
 /* exportable API */
 
@@ -256,10 +265,22 @@ int main(int argc,char *argv[])
       }
     } /* if outputInjParams */
 
+  /* compare IFO name for line injection with IFO list, find the corresponding index, or throw an error if not found */
+  UINT4 numDetectors = cfg.multiDetStates->length;
+  INT4 lineX = -1;
+  if ( uvar.lineIFO ) {
+    for ( UINT4 X=0; X < numDetectors; X++ ) {
+      if ( strcmp( uvar.lineIFO, uvar.IFOs->data[X] ) == 0 )
+        lineX = X;
+    }
+    if ( lineX == -1 ) {
+      XLALPrintError ("\nError in function %s, line %d : Could not match detector ID \"%s\" for line injection to any detector.\n\n", fn, __LINE__, uvar.lineIFO);
+      XLAL_ERROR ( fn, XLAL_EFAILED );
+    }
+  }
+
   /* ----- main MC loop over numDraws trials ---------- */
   INT4 i;
-  UINT4 numDetectors = cfg.multiDetStates->length;
-
   for ( i=0; i < uvar.numDraws; i ++ )
     {
       InjParams_t injParamsDrawn = empty_InjParams_t;
@@ -290,6 +311,9 @@ int main(int argc,char *argv[])
           XLAL_ERROR ( fn, XLAL_ENOMEM );
         }
 
+        /* prepare array of injection parameters per detector, so that they can be combined for output afterwards */
+        MultiInjParams *injParamsDrawnX = XLALCreateMultiInjParams ( numDetectors );
+
         for ( UINT4 X=0; X < numDetectors; X++ ) { /* loop through detectors */
 
           /* finish preparing multiAtoms structure for insertion of atoms for detector X */
@@ -301,8 +325,9 @@ int main(int argc,char *argv[])
 
           MultiFstatAtomVector *multiAtomsX; /* temporary multiAtoms structure with only 1 detector entry */
           AmplitudePrior_t AmpPriorX = cfg.AmpPrior; /* for all detectors without line, use temporary AmpPrior struct to set signal strength to 0 */
-          if ( strcmp( uvar.lineIFO, uvar.IFOs->data[X] ) != 0 )
+          if ( X != (UINT4)(lineX) )
             AmpPriorX.fixedSNR = 0.0;
+          injParamsDrawnX->data[X] = empty_InjParams_t; /* initialize injection parameter structure for 1 detector */
 
           /* temporary DetectorStateSeries structure so that XLALSynthesizeTransientAtoms will only synth for detector X */
           MultiDetectorStateSeries multiDetStatesX;
@@ -323,7 +348,7 @@ int main(int argc,char *argv[])
             multiDetStatesX.data[0]->data[alpha] = cfg.multiDetStates->data[X]->data[alpha];
 
           /* finally, the synth call for this detector X with temporary DetStates and AmpPrior */
-          multiAtomsX = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, AmpPriorX, cfg.transientInjectRange, &multiDetStatesX, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
+          multiAtomsX = XLALSynthesizeTransientAtoms ( &injParamsDrawnX->data[X], cfg.skypos, AmpPriorX, cfg.transientInjectRange, &multiDetStatesX, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
           if ( multiAtomsX == NULL ) {
             LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", fn, xlalErrno );
             XLAL_ERROR ( fn, XLAL_EFUNC );
@@ -346,7 +371,11 @@ int main(int argc,char *argv[])
           XLALFree ( multiDetStatesX.data );
           XLALDestroyMultiFstatAtomVector ( multiAtomsX );
 
-        } /* for X < numDetectorss */
+        } /* for X < numDetectors */
+
+        /* combine single-IFO injection parameters into one struct for output, free temp struct afterwards */
+        injParamsDrawn = *XLALCombineInjParamsForLine( injParamsDrawnX, lineX );
+        XLALDestroyMultiInjParams ( injParamsDrawnX );
 
       } /* finished if/else statement for line injection */
 
@@ -943,3 +972,95 @@ write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDop
   return XLAL_SUCCESS;
 
 } /* write_LV_candidate_to_fp() */
+
+
+/** Simple creator function for MultiInjParams with numDetectors entries */
+MultiInjParams *
+XLALCreateMultiInjParams ( UINT4 numDetectors )
+{
+  const char *fn = __func__;
+  MultiInjParams *ret;
+
+  if ( (ret = XLALMalloc ( sizeof(*ret) )) == NULL ) {
+    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, sizeof(*ret) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  ret->length = numDetectors;
+  if ( (ret->data = XLALCalloc ( numDetectors, sizeof(*ret->data) )) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc(%d, %d) failed.\n", fn, numDetectors, sizeof(*ret->data) );
+    XLALFree ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  return ret;
+
+} /* XLALCreateMultiInjParams() */
+
+
+/** Corresponding destructor function for MultiInjParams.
+  * As usual this allows NULL input.
+  */
+void
+XLALDestroyMultiInjParams ( MultiInjParams *multipar )
+{
+  if ( !multipar )
+    return;
+
+  if ( multipar->data )
+    XLALFree ( multipar->data );
+
+  XLALFree ( multipar );
+
+  return;
+
+} /* XLALDestroyMultiInjParams() */
+
+
+InjParams_t *
+XLALCombineInjParamsForLine( const MultiInjParams *injParamsX,  /**< array of the single-IFO injection parameters */
+                      const UINT4 lineX                      /**< detector number where line was injected */
+                      )
+{
+  const char *fn = __func__;
+
+  /* check input parameters and report errors */
+  if ( !injParamsX ) {
+    XLALPrintError ("\nError in function %s, line %d : received empty injParamsX pointer!\n\n", fn, __LINE__);
+    XLAL_ERROR_NULL ( fn, XLAL_EFAULT);
+  }
+
+  UINT4 numDetectors = injParamsX->length;
+//   for ( UINT4 X=0; X < numDetectors; X ++ ) {
+//     if ( !injParamsX->data[X] ) {
+//       XLALPrintError ("\nError in function %s, line %d : injParams[%d] is empty!\n\n", fn, __LINE__, X);
+//       XLAL_ERROR_NULL ( fn, XLAL_EFAULT);
+//     }
+//   }
+
+  InjParams_t *multiInjParams = &empty_InjParams_t;
+
+  /* pulsar parameters (skypos, amplitudes, transient stuff) can be taken from the single IFO with a line injection */
+  multiInjParams->skypos = injParamsX->data[lineX].skypos;
+  multiInjParams->ampParams = injParamsX->data[lineX].ampParams;
+  for ( UINT4 i=0; i < 4; i++ )
+    multiInjParams->ampVect[i] = injParamsX->data[lineX].ampVect[i];
+  multiInjParams->transientWindow = injParamsX->data[lineX].transientWindow;
+
+  /* SNR and Mmunu have to be summed over detectors */
+  REAL8 rho2 = 0.0;
+  for ( UINT4 X=0; X < numDetectors; X ++ ) {
+    multiInjParams->M_mu_nu.Ad += injParamsX->data[X].M_mu_nu.Ad; /* multi-IFO M_mu_nu = sum_X M_mu_nu_X */
+    multiInjParams->M_mu_nu.Bd += injParamsX->data[X].M_mu_nu.Bd;
+    multiInjParams->M_mu_nu.Cd += injParamsX->data[X].M_mu_nu.Cd;
+    multiInjParams->M_mu_nu.Sinv_Tsft += injParamsX->data[X].M_mu_nu.Sinv_Tsft; /* noise adds harmonically 1/S = sum_X (1/S_X) */
+    rho2 += SQ(injParamsX->data[X].SNR); /* multi-IFO SNR^2 = sum_X SNR_X^2 */
+  } /* for X < numDetectors */
+
+  /* compute multi-SNR and -determinants */
+  multiInjParams->M_mu_nu.Dd = multiInjParams->M_mu_nu.Ad * multiInjParams->M_mu_nu.Bd - SQ(multiInjParams->M_mu_nu.Cd); /* update sub-determinant */
+  multiInjParams->SNR = sqrt(rho2); /* multi-IFO SNR^2 = sum_X SNR_X^2 */
+  multiInjParams->detM1o8 = sqrt ( multiInjParams->M_mu_nu.Sinv_Tsft ) * pow ( multiInjParams->M_mu_nu.Dd, 0.25 ); /* (detM)^(1/8) = sqrt(Tsft/Sn) * (Dp)^(1/4) */
+
+  return multiInjParams;
+} /* XLALCombineInjParamsForLine */
