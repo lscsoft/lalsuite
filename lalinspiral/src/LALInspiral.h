@@ -1354,6 +1354,9 @@ int XLALTaylorF2ReducedSpinTemplates(REAL4Vector *signal1,
         REAL4Vector *signal2,
         InspiralTemplate *params);
 
+REAL8 XLALChirpTimeReducedSpin(REAL8 v, REAL8 m1, REAL8 m2, REAL8 spin1,
+        REAL8 spin2, UINT4 pnOrder);
+
 /* --- OTHER PROTOTYPES --- */
 
 

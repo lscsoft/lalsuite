@@ -19,7 +19,9 @@
 
 #include <lal/LALInspiral.h>
 
-/* Generate reduced-spin templates. (http://arxiv.org/abs/1107.1267) */
+/** 
+Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267 
+*/
 int XLALTaylorF2ReducedSpin(REAL4Vector *signal, 
 		InspiralTemplate *params) {
 
@@ -223,7 +225,9 @@ int XLALTaylorF2ReducedSpin(REAL4Vector *signal,
     return XLAL_SUCCESS;
 }
 
-/* generate two orthogonal templates */
+/**
+Generate two orthogonal "reduced-spin" templates 
+*/
 int XLALTaylorF2ReducedSpinTemplates(REAL4Vector *signal1,
 		REAL4Vector *signal2,
 		InspiralTemplate *params) {
@@ -244,6 +248,53 @@ int XLALTaylorF2ReducedSpinTemplates(REAL4Vector *signal1,
     	XLAL_ERROR(__func__, XLAL_EFUNC);
 
     return XLAL_SUCCESS;
+}
+
+/**  
+Compute the chirp time of the "reduced-spin" templates 
+*/
+REAL8 XLALChirpTimeReducedSpin(REAL8 v, REAL8 m1, REAL8 m2, REAL8 spin1, 
+        REAL8 spin2, UINT4 pnOrder) {
+
+    REAL8 chis, chia, chis2, chia2;
+    REAL8 tau, tk[8], eta2, eta3;
+    UINT4 k;
+
+    REAL8 m = m1+m2; 
+    REAL8 eta = m1*m2/(m*m);
+    REAL8 delta = (m1-m2)/m;
+
+    chis  = (spin1+spin2)/2.;
+    chia  = (spin1-spin2)/2.;
+
+    eta2 = eta*eta;
+    eta3 = eta2*eta;
+    chis2 = chis*chis;
+    chia2 = chia*chia;
+
+    /* chirp time coefficients up to 3.5PN  */
+    tk[0] = (5.*m*LAL_MTSUN_SI)/(256.*pow(v,8)*eta); 
+    tk[1] = 0.;
+    tk[2] = 2.9484126984126986 + (11*eta)/3.;
+    tk[3] = (-32*LAL_PI)/5. + (226*chia*delta)/15. + chis*(15.066666666666666 - (152*eta)/15.);
+    tk[4] = 6.020630590199042 + ((233*chis*chia)/24. - (719*chia*chis)/24.)*delta + 
+       chia*chia*(4.854166666666667 - 20*eta) + chis2*(-14.979166666666666 - eta/12.) + 
+       chis*chis*(4.854166666666667 + (7*eta)/12.) + (5429*eta)/504. + (617*eta2)/72. + 
+       chia2*(-14.979166666666666 + 60*eta);
+    tk[5] = (-7729*LAL_PI)/252. + (13*LAL_PI*eta)/3. + delta*((146597*chia)/756. + (28*chia*eta)/3.) + 
+       chis*(193.91137566137567 - (4852*eta)/27. - (68*eta2)/3.);
+    tk[6] = -428.291776175525 + (128*LAL_PI*LAL_PI)/3. + (6848*LAL_GAMMA)/105. + (3147553127*eta)/3.048192e6 - 
+       (451*LAL_PI*LAL_PI*eta)/12. - (15211*eta2)/1728. + (25565*eta3)/1296. + (6848*log(4*v))/105.;  
+    tk[7] = (-15419335*LAL_PI)/127008. - (75703*LAL_PI*eta)/756. + (14809*LAL_PI*eta2)/378.;
+
+    /* compute chirp time. return it */
+    tau = 1.;
+    for (k = 2; k<=pnOrder; k++) {
+        tau = tau + tk[k]*pow(v, k);
+    }
+    tau = tau*tk[0];
+
+    return (tau);
 }
 
 
