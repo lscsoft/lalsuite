@@ -1069,6 +1069,10 @@ void LALBCVWaveform(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
+int XLALTaylorEtWaveform(
+     REAL4Vector *signalvec,
+     InspiralTemplate *params);
+
 void LALTaylorEtWaveform(
      LALStatus *status,
      REAL4Vector *signalvec,
