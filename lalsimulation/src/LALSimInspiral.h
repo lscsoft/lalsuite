@@ -45,6 +45,7 @@ typedef enum {
                          * the waveform given by \c TaylorT1 approximant (see [\ref dis2000] for details);
                          * Outputs a frequency-domain wave. */
    TaylorF2,		/**< The standard stationary phase approximation; Outputs a frequency-domain wave. */
+   TaylorF2RedSpin,		/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [\ref Ajith:2011ec]*/
    PadeT1,		/**< Time-domain P-approximant; Outputs a time-domain wave. */
    PadeF1,		/**< Frequency-domain P-approximant (not yet implemented). */
    EOB,			/**< Effective one-body waveform; Outputs a time-domain wave. */
@@ -68,10 +69,10 @@ typedef enum {
    EOBNR,		/**< UNDOCUMENTED */
    EOBNRv2,
    EOBNRv2HM,
-   IMRPhenomA,		/**< UNDOCUMENTED */
-   IMRPhenomB,		/**< UNDOCUMENTED */
-   IMRPhenomFA,		/**< UNDOCUMENTED */
-   IMRPhenomFB,		/**< UNDOCUMENTED */
+   IMRPhenomA,		/**< Time domain (non-spinning) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFA  */
+   IMRPhenomB,		/**< Time domain (non-precessing spins) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFB */
+   IMRPhenomFA,		/**< Frequency domain (non-spinning) inspiral-merger-ringdown templates of Ajith et al [\ref Ajith:2007kx] with phenomenological coefficients defined in the Table I of [\ref Ajith:2007xh]*/
+   IMRPhenomFB,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Ajith et al [\ref Ajith:2009bn] */
    TaylorEt,		/**< UNDOCUMENTED */
    TaylorT4,		/**< UNDOCUMENTED */
    TaylorN,		/**< UNDOCUMENTED */

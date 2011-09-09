@@ -1346,6 +1346,14 @@ void LALBBHPhenWaveTimeDomForInjection (
 
 /* end DEPRECATED */
 
+/* Reduced-spin PN templats */
+int XLALTaylorF2ReducedSpin(REAL4Vector *signal,
+        InspiralTemplate *params);
+
+int XLALTaylorF2ReducedSpinTemplates(REAL4Vector *signal1,
+        REAL4Vector *signal2,
+        InspiralTemplate *params);
+
 /* --- OTHER PROTOTYPES --- */
 
 

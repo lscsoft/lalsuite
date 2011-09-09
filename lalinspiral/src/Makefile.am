@@ -193,6 +193,7 @@ liblalinspiral_la_SOURCES = \
 	LALSQTPNIntegrator.c \
 	LALSQTPNWaveform.c \
 	LALSQTPNWaveformInterface.c \
+	LALTaylorF2ReducedSpin.c\
 	LALTrigScanCluster.c \
 	LALTruncateInvSpectrum.c \
 	LIGOLwXMLInspiralRead.c \

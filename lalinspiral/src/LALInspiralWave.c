@@ -54,7 +54,7 @@ Either a time- or a frequency-domain signal is returned depending upon the
 The code LALInspiralWave() is the user interface to the inspiral codes. It takes from the user all
 the physical parameters which specify the binary, and calls the relevent wave generation function.
 Currently ten different approximants are fully implemented. These are #TaylorT1, #TaylorT2,
-#TaylorT3, #TaylorF1, #TaylorF2, #PadeT1, #EOB, #BCV, #SpinTaylorT3, #PhenSpinTaylorRD.
+#TaylorT3, #TaylorF1, #TaylorF2, #TaylorF2RedSpin, #PadeT1, #EOB, #BCV, #SpinTaylorT3, #PhenSpinTaylorRD.
 \c Taylor approximants can all be generated at seven different post-Newtonian orders,
 from Newtonian to 3.5 PN order, #PadeT1 exists at order 1.5PN and higher,
 #EOB at orders 2 and higher. #SpinTaylorT3 is implemented only at 2PN order
@@ -105,7 +105,7 @@ LALInspiralSpinModulatedWave()
     <li> A time-domain waveform is returned when the ::Approximant is one of
     #TaylorT1, #TaylorT2, #TaylorT3, #PadeT1, #EOB, #SpinTaylorT3, #PhenSpinTaylorRD, #SpinQuadTaylor
     </li><li> A frequency-domain waveform is returned when the ::Approximant is one of
-         #TaylorF1, #TaylorF2, #BCV.
+         #TaylorF1, #TaylorF2, #TaylorF2RedSpin, #BCV.
          In these cases the code returns the real and imagninary parts of the
          Fourier domain signal in the convention of fftw. For a signal vector
          of length <tt>n=signalvec->length</tt> (\c n even):</li>
@@ -197,6 +197,9 @@ LALInspiralWave(
       case TaylorF2:
       case FindChirpSP:
            if (XLALInspiralStationaryPhaseApprox2(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
+	   break;
+      case TaylorF2RedSpin:
+           if (XLALTaylorF2ReducedSpin(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
 	   break;
       case PadeF1:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
@@ -316,6 +319,9 @@ LALInspiralWaveTemplates(
       case IMRPhenomFB:
            if (XLALBBHPhenWaveBFreqDomTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
            break;
+      case TaylorF2RedSpin:
+           if (XLALTaylorF2ReducedSpinTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
       case TaylorF1:
       case TaylorF2:
       case FindChirpSP:
@@ -407,6 +413,7 @@ LALInspiralWaveForInjection(
       case BCVSpin:
       case TaylorF1:
       case TaylorF2:
+      case TaylorF2RedSpin:
       case FindChirpSP:
       case PadeF1:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
