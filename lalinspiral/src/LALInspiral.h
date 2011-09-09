@@ -1347,11 +1347,11 @@ void LALBBHPhenWaveTimeDomForInjection (
 /* end DEPRECATED */
 
 /* Reduced-spin PN templats */
-int XLALTaylorF2ReducedSpin(REAL4Vector *signal,
+int XLALTaylorF2ReducedSpin(REAL4Vector *signalvec,
         InspiralTemplate *params);
 
-int XLALTaylorF2ReducedSpinTemplates(REAL4Vector *signal1,
-        REAL4Vector *signal2,
+int XLALTaylorF2ReducedSpinTemplates(REAL4Vector *signalvec1,
+        REAL4Vector *signalvec2,
         InspiralTemplate *params);
 
 REAL8 XLALChirpTimeReducedSpin(REAL8 v, REAL8 m1, REAL8 m2, REAL8 spin1,

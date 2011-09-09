@@ -22,7 +22,7 @@
 /** 
 Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267 
 */
-int XLALTaylorF2ReducedSpin(REAL4Vector *signal, 
+int XLALTaylorF2ReducedSpin(REAL4Vector *signalvec, 
 		InspiralTemplate *params) {
 
     REAL8 df, shft, phi0, amp0, amp, f, m, eta, delta, chi_s, chi_a, chi, t0, Psi;
@@ -32,11 +32,11 @@ int XLALTaylorF2ReducedSpin(REAL4Vector *signal,
     INT4 i, j, n, nBy2;
 
     /* check inputs */
-    if (!signal || !(signal->data) || !params) {
+    if (!signalvec || !(signalvec->data) || !params) {
         XLALPrintError(LALINSPIRALH_MSGENULL);
         XLAL_ERROR(__func__, XLAL_EFAULT);
     }
-    if ((signal->length < 2) || (params->fCutoff <= params->fLower)  
+    if ((signalvec->length < 2) || (params->fCutoff <= params->fLower)  
             || (params->mass1 <= 0) || (params->mass2 <= 0)
             || (params->spin1[0] != 0) || (params->spin1[1] != 0) 
             || (params->spin2[0] != 0) || (params->spin2[1] != 0)) {
@@ -45,7 +45,7 @@ int XLALTaylorF2ReducedSpin(REAL4Vector *signal,
     }
 
 	/* fill the waveform with zeros */
-	memset(signal->data, 0, signal->length * sizeof( REAL4 ));
+	memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
 
     /* compute total mass (secs), mass ratio and the reduced spin parameter */
     m = (params->mass1+params->mass2)*LAL_MTSUN_SI;
@@ -56,13 +56,13 @@ int XLALTaylorF2ReducedSpin(REAL4Vector *signal,
     chi = chi_s*(1. - 76.*eta/113.) + delta*chi_a;
 
     /* freq resolution and the low-freq bin */
-    df = params->tSampling/signal->length;
-    n = signal->length;
+    df = params->tSampling/signalvec->length;
+    n = signalvec->length;
 
     /* extrinsic parameters */
     phi0  = params->startPhase;
     amp0 = pow(m,5./6.)*sqrt(5.*eta/24.)/(pow(LAL_PI,2./3.)*params->distance/LAL_C_SI);
-    shft = -2.*LAL_PI * ((REAL8)signal->length/params->tSampling + 
+    shft = -2.*LAL_PI * ((REAL8)signalvec->length/params->tSampling + 
             params->nStartPad/params->tSampling + params->startTime);
     t0 = params->startTime;
     phi0 = params->startPhase;
@@ -173,8 +173,8 @@ int XLALTaylorF2ReducedSpin(REAL4Vector *signal,
     }
     
     /* fill the zero and Nyquist */
-    signal->data[0] = 0.;
-    signal->data[n/2] = 0.;
+    signalvec->data[0] = 0.;
+    signalvec->data[n/2] = 0.;
 
     mSevenBySix = -7./6.;
     piM = LAL_PI*m;
@@ -215,8 +215,8 @@ int XLALTaylorF2ReducedSpin(REAL4Vector *signal,
 
         }
 
-        signal->data[i] = (REAL4) (amp * cos(Psi+shft*f+phi0+LAL_PI/4.));   /* real */
-        signal->data[j] = (REAL4) -(amp * sin(Psi+shft*f+phi0+LAL_PI/4.));  /* imag */
+        signalvec->data[i] = (REAL4) (amp * cos(Psi+shft*f+phi0+LAL_PI/4.));   /* real */
+        signalvec->data[j] = (REAL4) -(amp * sin(Psi+shft*f+phi0+LAL_PI/4.));  /* imag */
 
     }    
 
@@ -228,23 +228,23 @@ int XLALTaylorF2ReducedSpin(REAL4Vector *signal,
 /**
 Generate two orthogonal "reduced-spin" templates 
 */
-int XLALTaylorF2ReducedSpinTemplates(REAL4Vector *signal1,
-		REAL4Vector *signal2,
+int XLALTaylorF2ReducedSpinTemplates(REAL4Vector *signalvec1,
+		REAL4Vector *signalvec2,
 		InspiralTemplate *params) {
 
 	/* check inputs */
-	if (!signal1 || !signal2 || !(signal1->data) || !(signal2->data)) {
+	if (!signalvec1 || !signalvec2 || !(signalvec1->data) || !(signalvec2->data)) {
     	XLALPrintError(LALINSPIRALH_MSGENULL);
     	XLAL_ERROR(__func__, LALINSPIRALH_ENULL);
   	}
 
   	/* generate one waveform with startPhase specified by the user */
-  	if (!XLALTaylorF2ReducedSpin(signal1, params))
+  	if (!XLALTaylorF2ReducedSpin(signalvec1, params))
     	XLAL_ERROR(__func__, XLAL_EFUNC);
 
   	/* generate another waveform orthogonal to it */
   	params->startPhase += LAL_PI_2;
-  	if (!XLALTaylorF2ReducedSpin(signal2, params))
+  	if (!XLALTaylorF2ReducedSpin(signalvec2, params))
     	XLAL_ERROR(__func__, XLAL_EFUNC);
 
     return XLAL_SUCCESS;
