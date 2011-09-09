@@ -335,17 +335,10 @@ int main(int argc,char *argv[])
             XLALPrintError ("%s: LALCalloc ( %d, sizeof(%d)) failed\n", fn, 1, sizeof(*(multiDetStatesX.data)) );
             XLAL_ERROR ( fn, XLAL_ENOMEM );
           }
-          /* manually copy stuff over to avoid LALFree errors - should be done better! */
           multiDetStatesX.length = 1;
           multiDetStatesX.startTime = cfg.multiDetStates->startTime;
           multiDetStatesX.Tspan = cfg.multiDetStates->Tspan;
-          multiDetStatesX.data[0] = XLALCreateDetectorStateSeries(cfg.multiDetStates->data[0]->length);
-          multiDetStatesX.data[0]->length = cfg.multiDetStates->data[X]->length;
-          multiDetStatesX.data[0]->detector = cfg.multiDetStates->data[X]->detector;
-          multiDetStatesX.data[0]->system = cfg.multiDetStates->data[X]->system;
-          multiDetStatesX.data[0]->deltaT = cfg.multiDetStates->data[X]->deltaT;
-          for ( UINT4 alpha=0; alpha < multiDetStatesX.data[0]->length; alpha++ )
-            multiDetStatesX.data[0]->data[alpha] = cfg.multiDetStates->data[X]->data[alpha];
+          multiDetStatesX.data[0] = cfg.multiDetStates->data[X];
 
           /* finally, the synth call for this detector X with temporary DetStates and AmpPrior */
           multiAtomsX = XLALSynthesizeTransientAtoms ( &injParamsDrawnX->data[X], cfg.skypos, AmpPriorX, cfg.transientInjectRange, &multiDetStatesX, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
@@ -357,17 +350,10 @@ int main(int argc,char *argv[])
           /* copy single-IFO atoms into multiAtoms struct (manually to avoid LALFree errors - should be done better! */
           multiAtoms->data[X]->length = multiAtomsX->data[0]->length;
           multiAtoms->data[X]->TAtom = multiAtomsX->data[0]->TAtom;
-          for ( UINT4 alpha=0; alpha < multiAtomsX->data[0]->length; alpha++ ) {
-            multiAtoms->data[X]->data[alpha].timestamp = multiAtomsX->data[0]->data[alpha].timestamp;
-            multiAtoms->data[X]->data[alpha].a2_alpha = multiAtomsX->data[0]->data[alpha].a2_alpha;
-            multiAtoms->data[X]->data[alpha].b2_alpha = multiAtomsX->data[0]->data[alpha].b2_alpha;
-            multiAtoms->data[X]->data[alpha].ab_alpha = multiAtomsX->data[0]->data[alpha].ab_alpha;
-            multiAtoms->data[X]->data[alpha].Fa_alpha = multiAtomsX->data[0]->data[alpha].Fa_alpha;
-            multiAtoms->data[X]->data[alpha].Fb_alpha = multiAtomsX->data[0]->data[alpha].Fb_alpha;
-          }
+          for ( UINT4 alpha=0; alpha < multiAtomsX->data[0]->length; alpha++ )
+            multiAtoms->data[X]->data[alpha] = multiAtomsX->data[0]->data[alpha];
 
           /* free temporary structs for this detector */
-          XLALDestroyDetectorStateSeries ( multiDetStatesX.data[0] );
           XLALFree ( multiDetStatesX.data );
           XLALDestroyMultiFstatAtomVector ( multiAtomsX );
 
