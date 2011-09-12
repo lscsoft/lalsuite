@@ -1,6 +1,10 @@
 INCLUDES = -I$(top_builddir)/include
 
-bin_PROGRAMS = lalsim-bh-qnmode lalsim-bh-sphwf lalsim-bh-ringdown lalsim-ligo-noise
+bin_PROGRAMS = \
+	lalsim-bh-qnmode \
+	lalsim-bh-ringdown \
+	lalsim-bh-sphwf \
+	lalsim-ligo-noise
 
 lalsimulationincludedir = $(includedir)/lal
 lalsimulationinclude_HEADERS = \
@@ -19,7 +23,7 @@ lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
 	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \
-        LALSimIMREOBNRv2.c \
+	LALSimIMREOBNRv2.c \
 	LALSimIMRPhenom.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
