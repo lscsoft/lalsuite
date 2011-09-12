@@ -23,4 +23,8 @@ src/LALSimulationConfig.h
 src/LALSimulationVCSInfo.h
 src/lalsimulation-user-env.csh
 src/lalsimulation-user-env.sh
+src/lalsim-bh-qnmode
+src/lalsim-bh-ringdown
+src/lalsim-bh-sphwf
+src/lalsim-ligo-noise
 src/stamp-h2
