@@ -10,6 +10,7 @@ lalsimulationincludedir = $(includedir)/lal
 lalsimulationinclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
+	LALSimIMREOBNRv2.h \
 	LALSimIMR.h \
 	LALSimInspiral.h \
 	LALSimInspiraldEnergyFlux.h \
