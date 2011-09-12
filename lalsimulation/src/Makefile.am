@@ -1,4 +1,5 @@
 INCLUDES = -I$(top_builddir)/include
+LDADD = liblalsimulation.la
 
 bin_PROGRAMS = \
 	lalsim-bh-qnmode \
@@ -53,13 +54,9 @@ liblalsimulation_la_SOURCES = \
 liblalsimulation_la_LDFLAGS = -version-info $(LIBVERSION)
 
 lalsim_bh_qnmode_SOURCES = bh_qnmode.c
-lalsim_bh_qnmode_LDADD = liblalsimulation.la
 lalsim_bh_sphwf_SOURCES = bh_sphwf.c
-lalsim_bh_sphwf_LDADD = liblalsimulation.la
 lalsim_bh_ringdown_SOURCES = bh_ringdown.c
-lalsim_bh_ringdown_LDADD = liblalsimulation.la
 lalsim_ligo_noise_SOURCES = ligo_noise.c
-lalsim_ligo_noise_LDADD = liblalsimulation.la
 
 CLEANFILES = \
 	lalsimulation-user-env.sh \
