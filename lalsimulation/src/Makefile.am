@@ -19,6 +19,14 @@ lalsimulationinclude_HEADERS = \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h
 
+noinst_HEADERS = \
+	LALSimIMREOBFactorizedFlux.c \
+	LALSimIMREOBFactorizedWaveform.c \
+	LALSimIMREOBHybridRingdown.c \
+	LALSimIMREOBNQCCorrection.c \
+	LALSimIMREOBNewtonianMultipole.c \
+	LALSimInspiralPNCoefficients.c
+
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
 	LALSimBlackHoleRingdown.c \

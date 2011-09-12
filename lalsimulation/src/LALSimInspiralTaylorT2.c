@@ -27,8 +27,8 @@
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-#include <LALSimInspiralPNCoefficients.c>
 
+#include "LALSimInspiralPNCoefficients.c"
 #include "check_series_macros.h"
 
 #ifdef __GNUC__
