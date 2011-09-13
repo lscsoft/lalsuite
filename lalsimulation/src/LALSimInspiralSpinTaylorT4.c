@@ -110,40 +110,40 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(double t,
  * vector components will also be returned in this frame
  */
 int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
-	REAL8TimeSeries **V,            /**< post-Newtonian parameter [returned]*/
-	REAL8TimeSeries **Phi,          /**< orbital phase            [returned]*/
-	REAL8TimeSeries **S1x,	        /**< Spin1 vector x component [returned]*/
-	REAL8TimeSeries **S1y,	        /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **S1z,	        /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **S2x,	        /**< Spin2 vector x component [returned]*/
-	REAL8TimeSeries **S2y,	        /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **S2z,	        /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **LNhatx,       /**< unit orbital ang. mom. x [returned]*/
-	REAL8TimeSeries **LNhaty,       /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **LNhatz,       /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **E1x,	        /**< orb. plane basis vector x[returned]*/
-	REAL8TimeSeries **E1y,	        /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **E1z,	        /**< "    "    "  z component [returned]*/
-	REAL8 m1,              	        /**< mass of companion 1 (kg) */
-	REAL8 m2,              	        /**< mass of companion 2 (kg) */
-	LIGOTimeGPS *tStart,            /**< start time of output vectors */
-	REAL8 phiStart,                 /**< orbital phase at initial time */
-	REAL8 s1x,                      /**< initial value of S1x */
-	REAL8 s1y,                      /**< initial value of S1y */
-	REAL8 s1z,                      /**< initial value of S1z */
-	REAL8 s2x,                      /**< initial value of S2x */
-	REAL8 s2y,                      /**< initial value of S2y */
-	REAL8 s2z,                      /**< initial value of S2z */
-	REAL8 lnhatx,                   /**< initial value of LNhatx */
-	REAL8 lnhaty,                   /**< initial value of LNhaty */
-	REAL8 lnhatz,                   /**< initial value of LNhatz */
-	REAL8 e1x,                      /**< initial value of E1x */
-	REAL8 e1y,                      /**< initial value of E1y */
-	REAL8 e1z,                      /**< initial value of E1z */
-	REAL8 deltaT,          	        /**< sampling interval (s) */
-	REAL8 fStart,                   /**< start frequency */
-	LALSpinInteraction spinFlags,   /**< flags to control spin effects */
-	INT4 phaseO                     /**< twice post-Newtonian order */
+	REAL8TimeSeries **V,          /**< post-Newtonian parameter [returned]*/
+	REAL8TimeSeries **Phi,        /**< orbital phase            [returned]*/
+	REAL8TimeSeries **S1x,	      /**< Spin1 vector x component [returned]*/
+	REAL8TimeSeries **S1y,	      /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **S1z,	      /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **S2x,	      /**< Spin2 vector x component [returned]*/
+	REAL8TimeSeries **S2y,	      /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **S2z,	      /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **LNhatx,     /**< unit orbital ang. mom. x [returned]*/
+	REAL8TimeSeries **LNhaty,     /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **LNhatz,     /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **E1x,	      /**< orb. plane basis vector x[returned]*/
+	REAL8TimeSeries **E1y,	      /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **E1z,	      /**< "    "    "  z component [returned]*/
+	REAL8 m1,              	      /**< mass of companion 1 (kg) */
+	REAL8 m2,              	      /**< mass of companion 2 (kg) */
+	LIGOTimeGPS *tStart,          /**< start time of output vectors */
+	REAL8 phiStart,               /**< orbital phase at initial time */
+	REAL8 s1x,                    /**< initial value of S1x */
+	REAL8 s1y,                    /**< initial value of S1y */
+	REAL8 s1z,                    /**< initial value of S1z */
+	REAL8 s2x,                    /**< initial value of S2x */
+	REAL8 s2y,                    /**< initial value of S2y */
+	REAL8 s2z,                    /**< initial value of S2z */
+	REAL8 lnhatx,                 /**< initial value of LNhatx */
+	REAL8 lnhaty,                 /**< initial value of LNhaty */
+	REAL8 lnhatz,                 /**< initial value of LNhatz */
+	REAL8 e1x,                    /**< initial value of E1x */
+	REAL8 e1y,                    /**< initial value of E1y */
+	REAL8 e1z,                    /**< initial value of E1z */
+	REAL8 deltaT,          	      /**< sampling interval (s) */
+	REAL8 fStart,                 /**< start frequency */
+	LALSpinInteraction spinFlags, /**< flags to control spin effects */
+	INT4 phaseO                   /**< twice post-Newtonian order */
 	)
 {
     INT4 intreturn;
