@@ -614,7 +614,8 @@ void readPulsarData( LALInferenceRunState *runState ){
     for( i = 0; i < numDets; i++ ){
       tempdet = strsep( &tempdets, "," );
       XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
-    }      
+    }
+    
   }
   /*Get psd values for generating fake data.*/
   /*=========================================================================*/
@@ -914,8 +915,8 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
                              LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
     
     /* add data sample interval */
-    LALInferenceAddVariable( ifodata->dataParams, "dt", &fdt[i],
-                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+    /*LALInferenceAddVariable( ifodata->dataParams, "dt", &fdt[i],
+                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );*/
     
     /* add frequency factors variable */
     LALInferenceAddVariable( ifodata->dataParams, "freqfactors",
@@ -2016,10 +2017,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
   REAL8 loglike = 0.; /* the log likelihood */
   UINT4 i = 0;
   CHAR *modeltype = NULL;/*need to check model type in this function*/
-  FILE *bugtest;
-  REAL8 h1=0.,lambda=0.,theta=0.,h0=0.;
-  
-  bugtest = fopen("bug_test.txt", "a");
   
   modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
   
@@ -2030,16 +2027,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     LALInferenceCopyVariables( vars, datatemp1->modelParams );
     datatemp1 = datatemp1->next;
   }
-  
-  h1 = *(REAL8 *)LALInferenceGetVariable( data->modelParams, "h1" );
-  h1=h1*5;
-  lambda = *(REAL8 *)LALInferenceGetVariable( data->modelParams, "lambda" );
-  lambda=lambda*1.57079632679489;
-  theta = *(REAL8 *)LALInferenceGetVariable( data->modelParams, "theta" );
-  theta=theta*0.785398163397448;
-  h0=*(REAL8 *)LALInferenceGetVariable( data->modelParams, "h0" );
-  h0=1e-20*h0;
-  if (h0<1e-25) fprintf(bugtest,"h0: %e\t",h0);
   
   /* get pulsar model */
   while( datatemp2 ){
@@ -2113,17 +2100,10 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
       
       count++;
     }
-    /*if ((h1>1.9) && (h1<2.1) && (lambda>1.5) && (lambda<1.6) && (theta>0.7) && (theta<0.8)) fprintf(bugtest,"h1: %f\tlambda: %f\ttheta: %f\tloglike: %e\t",h1, lambda, theta, logliketmp);*/
-    if (h0<1e-25) fprintf(bugtest,"loglike: %e\t",logliketmp);
     loglike += logliketmp;
     data = data->next;
   }
-  /*if ((h1>1.9) && (h1<2.1) && (lambda>1.5) && (lambda<1.6) && (theta>0.7) && (theta<0.8)) fprintf(bugtest,"\n");*/
-  if (h0<1e-25) fprintf(bugtest,"\n");
-  fclose( bugtest );
-  /*exit(0);/*comment out if not using for bug testing*/
   return loglike;
-  
 }
 
 
