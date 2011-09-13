@@ -639,6 +639,10 @@ void initVariables(LALInferenceRunState *state)
         {
           PhaseOrder = LAL_PNORDER_THREE_POINT_FIVE;
         }
+        else if ( ! strcmp( "pseudoFourPN", ppt->value ) )
+        {
+          PhaseOrder = LAL_PNORDER_PSEUDO_FOUR;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --order:\n"
