@@ -42,6 +42,9 @@
  *  The actual template waveforms then are stored in 
  *  the \c IFOdata->freqModelhPlus / \c IFOdata->freqModelhCross
  *  or \c IFOdata->timeModelhPlus / \c IFOdata->timeModelhCross slots.
+ *  The template's amplitude is (for physical models) scaled to
+ *  1 Mpc luminosity distance.
+ *
  */
 
 
@@ -53,7 +56,7 @@
 
 /** De-bugging function writing a (frequency-domain) signal template to a CSV file.
  *  File contains real & imaginary parts of plus & cross components.
- *  Template amplitude is scaled to 1 Mpc luminosity distance.                        
+ *  Template amplitude is (usually) scaled to 1 Mpc luminosity distance.                        
  */
 void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                             LALInferenceTemplateFunction *template, const char *filename);
@@ -61,7 +64,7 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
 
 /** De-bugging function writing a (time-domain) signal template to a CSV file.
  *  File contains time series of plus & cross components.
- *  Template amplitude is scaled to 1 Mpc luminosity distance.                        
+ *  Template amplitude is (usually) scaled to 1 Mpc luminosity distance.                        
  */
 void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                             LALInferenceTemplateFunction *template, const char *filename);
@@ -74,7 +77,7 @@ void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LA
 void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata);
 
 
-/** Generates a 2.0PN / 2.5PN stationary phase approximation inspiral template in frequency domain.
+/** 2.0PN / 2.5PN stationary phase approximation inspiral template in frequency domain.
  * 
  *  Computations are done 
  *  following  Tanaka/Tagoshi (2000), Phys.Rev.D 62(8):082001
@@ -85,6 +88,16 @@ void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata);
  *  Signal's amplitude corresponds to a luminosity distance
  *  of 1 Mpc; re-scaling will need to be taken care of e.g.
  *  in the calling likelihood function.
+ *
+ *  Required ( \c IFOdata->modelParams ) parameters:
+ *    - \c "chirpmass"        (REAL8, chirp mass, in units of solar masses)
+ *    - \c "massratio"        (REAL8, symmetric mass ratio:  0 < eta <= 0.25, dimensionless)
+ *    - \c "phase"            (REAL8, coalescence phase, radians)
+ *    - \c "time"             (REAL8, coalescence time, GPS seconds)
+ *    - \c "inclination"      (REAL8, inclination angle, radians)
+ *
+ *  Optional ( \c IFOdata->modelParams ) parameter:
+ *    - \c "PNOrder"          (REAL8, post-Newtonian order, either 2.0 or 2.5 (default))
  */
 void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata);
 
@@ -105,57 +118,39 @@ void LALInferenceTemplateNullTimedomain(LALInferenceIFOData *IFOdata);
  *  Will always return frequency-domain templates (numerically FT'ed
  *  in case the LAL function returns time-domain).
  *
- * Required ( \c IFOdata->modelParams ) parameters are:
- * 
- *   \c "chirpmass"        (REAL8, units of solar masses)
- * 
- *   \c "massratio"        (symmetric mass ratio:  0 < eta <= 0.25, REAL8)
- * 
- *   \c "phase"            (here: 'startPhase', not coalescence phase; REAL8, radians)
- * 
- *   \c "time"             (coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)
- * 
- *   \c "inclination"      (inclination angle, REAL8, radians)
- * 
- *   \c "LAL_APPROXIMANT"  (INT4 value corresponding to `enum approximant' definition in `LALInspiral.h'.
- *                         Templates that (seem to) work by now are:
- *                         TaylorF2, TaylorT1, TaylorT2, TaylorT3, BCV, IMRPhenomA, EOB, EOBNR)
- * 
- *   \c "LAL_PNORDER"      (INT4 value corresponding to `enum LALPNOrder' definition in `LALInspiral.h'.)
+ *  Required ( \c IFOdata->modelParams ) parameters are:
+ *    - \c "chirpmass"        (REAL8, chirp mass, in units of solar masses)
+ *    - \c "massratio"        (REAL8, symmetric mass ratio:  0 < eta <= 0.25, dimensionless)
+ *    - \c "phase"            (REAL8, here: 'startPhase', not coalescence phase, radians)
+ *    - \c "time"             (REAL8, coalescence time, or equivalent/analog/similar; GPS seconds)
+ *    - \c "inclination"      (REAL8, inclination angle, radians)
+ *    - \c "LAL_APPROXIMANT"  (INT4 value corresponding to `enum approximant' definition in `LALInspiral.h'.
+ *                            Templates that (seem to) work by now are:
+ *                            TaylorF2, TaylorT1, TaylorT2, TaylorT3, BCV, IMRPhenomA, EOB, EOBNR)
+ *    - \c "LAL_PNORDER"      (INT4 value corresponding to `enum LALPNOrder' definition in `LALInspiral.h'.)
  */
 void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata);
 
 
-/** Generate 3.5PN phase / 2.5PN amplitude time-domain inspiral templates.
+/** 3.5PN phase / 2.5PN amplitude time-domain binary inspiral template.
  *
- * following
- * 
- *   Blanchet et al. (2001),   gr-qc/0104084
- * 
- *   Blanchet at al. (2002),   PRD 65(6):061501,   gr-qc/0105099
- * 
- *   Blanchet at al. (2005),   PRD 71(12):129902
- * 
- *   Arun et al. (2004),       CQG 21(15):3771
- * 
- *   Arun et al. (2004),       CQG 22(14):3115
- * 
- *   Blanchet et al. (2004),   PRL 93(9):091101
+ *  following
+ *    - Blanchet et al. (2001),   gr-qc/0104084
+ *    - Blanchet at al. (2002),   PRD 65(6):061501,   gr-qc/0105099
+ *    - Blanchet at al. (2005),   PRD 71(12):129902
+ *    - Arun et al. (2004),       CQG 21(15):3771
+ *    - Arun et al. (2004),       CQG 22(14):3115
+ *    - Blanchet et al. (2004),   PRL 93(9):091101
  *
  *  This is essentially the implementation that was also used in the paper by
  *  Roever/Meyer/Guidi/Vicere/Christensen (2007), CQG 24(19):S607.
  *
  *  Required ( \c IFOdata->modelParams ) parameters are:
- * 
- *    \c "chirpmass"        (REAL8, units of solar masses)
- * 
- *    \c "massratio"        (symmetric mass ratio:  0 < eta <= 0.25, REAL8)
- * 
- *    \c "phase"            (coalescence phase; REAL8, radians)
- * 
- *    \c "time"             (coalescence time; REAL8, GPS seconds)
- * 
- *    \c "inclination"      (inclination angle, REAL8, radians)
+ *    - \c "chirpmass"        (REAL8, chirp mass, in units of solar masses)
+ *    - \c "massratio"        (REAL8, symmetric mass ratio:  0 < eta <= 0.25, dimensionless)
+ *    - \c "phase"            (REAL8, coalescence phase, radians)
+ *    - \c "time"             (REAL8, coalescence time, GPS seconds)
+ *    - \c "inclination"      (REAL8, inclination angle, radians)
  */
 void LALInferenceTemplate3525TD(LALInferenceIFOData *IFOdata);
 
@@ -163,24 +158,18 @@ void LALInferenceTemplate3525TD(LALInferenceIFOData *IFOdata);
 /** Sine-Gaussian (burst) template.
  * 
  *  The (plus-) waveform is given by:
- *    \f[ a \exp(-((t - \mu) / \sigma)^2) \times \sin(2 \pi f t - phi) \f]
+ *    \f[ a \times \exp(-((t - \mu) / \sigma)^2) \times \sin(2 \pi f t - phi) \f]
  *
  *  Note that by setting f=0, phi=pi/2 you get a "plain" Gaussian template.
  *
  *  Signal is (by now?) linearly polarised, i.e., the cross-component remains zero.    
  *
  *  Required ( \c IFOdata->modelParams ) parameters are:
- * 
- *    \c "time"       (the \f[ \mu \f[ parameter of the Gaussian part; REAL8, GPS seconds)
- * 
- *    \c "sigma"      (width, the \f[ \sigma \f[ parameter of the Gaussian part; REAL8, seconds)
- * 
- *    \c "frequency"  (frequency \f[ f \f[ of the sine part; REAL8, Hertz)
- * 
- *    \c "phase"      (phase \f[ \phi \f[ (at time \f[ \mu \f[); REAL8, radians)
- * 
- *    \c "amplitude"  (amplitude \f$ a \f$, REAL8)
- *
+ *    - \c "time"       (REAL8, the \f$ \mu \f$ parameter of the Gaussian part, in GPS seconds)
+ *    - \c "sigma"      (REAL8, width, the \f$ \sigma \f$ parameter of the Gaussian part, seconds)
+ *    - \c "frequency"  (REAL8, frequency \f$ f \f$ of the sine part, Hertz)
+ *    - \c "phase"      (REAL8, phase \f$ \phi \f$ (at time \f$ \mu \f$), radians)
+ *    - \c "amplitude"  (REAL8, amplitude \f$ a \f$)
  */
 void LALInferenceTemplateSineGaussian(LALInferenceIFOData *IFOdata);
 
@@ -194,14 +183,10 @@ void LALInferenceTemplateSineGaussian(LALInferenceIFOData *IFOdata);
  *  Signal is (by now?) linearly polarised, i.e., the cross-component remains zero.    
  *
  *  Required ( \c IFOdata->modelParams ) parameters are:
- * 
- *    \c "time"       (the instant at which the signal starts; REAL8, GPS seconds)
- * 
- *    \c "tau"        (width parameter \f$ \tau \f$; REAL8, seconds)
- * 
- *    \c "frequency"  (frequency \f$ f \f$ of the sine part; REAL8, Hertz)
- * 
- *    \c "amplitude"  (amplitude \f$ a \f$, REAL8)
+ *    - \c "time"       (REAL8, the instant at which the signal starts, in GPS seconds)
+ *    - \c "tau"        (REAL8, width parameter \f$ \tau \f$, seconds)
+ *    - \c "frequency"  (REAL8, frequency \f$ f \f$ of the sine part, Hertz)
+ *    - \c "amplitude"  (REAL8, amplitude \f$ a \f$)
  */
 void LALInferenceTemplateDampedSinusoid(LALInferenceIFOData *IFOdata);
 
@@ -209,100 +194,69 @@ void LALInferenceTemplateDampedSinusoid(LALInferenceIFOData *IFOdata);
 /** Sinc function (burst) template.
  *
  *  The (plus-) waveform is a sinc function of given frequency:
- *    \f[ a sinc(2 \pi f (t-time)) = a \sin(2 \pi f (t-time)) / (2 \pi f (t-time)) \f]
+ *    \f[ a \times sinc(2 \pi f (t-time)) = a \times \sin(2 \pi f (t-time)) / (2 \pi f (t-time)) \f]
  *  where "time" is the time parameter denoting the signal's central peak location.
  *
  *  Signal is (by now?) linearly polarised, i.e., the cross-component remains zero.    
  *
  *  Required ( \c IFOdata->modelParams ) parameters are:
- * 
- *    \c "time"       (the instant at which the signal peaks; REAL8, GPS seconds)
- * 
- *    \c "frequency"  (frequency \f$ f \f$ of the sine part; REAL8, Hertz)
- * 
- *    \c "amplitude"  (amplitude \f$ a \f$, REAL8)
+ *    - \c "time"       (REAL8, the instant at which the signal peaks, in GPS seconds)
+ *    - \c "frequency"  (REAL8, frequency \f$ f \f$ of the sine part, Hertz)
+ *    - \c "amplitude"  (REAL8, amplitude \f$ a \f$)
  */
 void LALInferenceTemplateSinc(LALInferenceIFOData *IFOdata);
 
 
-/** LALSTPN template
+/** "LALSTPN" template.
  *
  *  Required ( \c IFOdata->modelParams ) parameters are:
- * 
- *   \c "m1"           (mass of object 1; REAL8, solar mass)
- * 
- *   \c "m2"           (mass of object 1; REAL8, solar mass)
- * 
- *   \c "inclination"  (inclination angle; REAL8, radians)
- * 
- *   \c "coa_phase"    (phase angle; REAL8, radians)
- * 
- *   \c "spin1x"       (x component of the spin of object 1; REAL8)
- * 
- *   \c "spin1y"       (y component of the spin of object 1; REAL8)
- * 
- *   \c "spin1z"       (z component of the spin of object 1; REAL8)
- * 
- *   \c "spin2x"       (x component of the spin of object 2; REAL8)
- * 
- *   \c "spin2y"       (y component of the spin of object 2; REAL8)
- * 
- *   \c "spin2z"       (z component of the spin of object 2; REAL8)
- * 
- *   \c "shift0"       (shift offset; REAL8, radians)
- * 
- *   \c "time"         (coalescence time, or equivalent/analog/similar; REAL8, GPS seconds)
- * 
- *   \c "PNorder"      (Phase PN order; REAL8)
+ *    - \c "m1"           (REAL8, mass of object 1, solar masses)
+ *    - \c "m2"           (REAL8, mass of object 1, solar masses)
+ *    - \c "inclination"  (REAL8, inclination angle, radians)
+ *    - \c "coa_phase"    (REAL8, phase angle, radians)
+ *    - \c "spin1x"       (REAL8, x component of the spin of object 1)
+ *    - \c "spin1y"       (REAL8, y component of the spin of object 1)
+ *    - \c "spin1z"       (REAL8, z component of the spin of object 1)
+ *    - \c "spin2x"       (REAL8, x component of the spin of object 2)
+ *    - \c "spin2y"       (REAL8, y component of the spin of object 2)
+ *    - \c "spin2z"       (REAL8, z component of the spin of object 2)
+ *    - \c "shift0"       (REAL8, shift offset, radians)
+ *    - \c "time"         (REAL8, coalescence time, or equivalent/analog/similar, GPS seconds)
+ *    - \c "PNorder"      (REAL8, phase PN order)
  */
 void LALInferenceTemplateLALSTPN(LALInferenceIFOData *IFOdata);
 
 
-/** Trivial h(t) = A*sin(Omega*t) template
+/** Trivial h(t) = A*sin(Omega*t) template.
  *
  *  Required ( \c IFOdata->modelParams ) parameters are:
- * 
- *    \c "A"       (dimensionless amplitude, REAL8)
- * 
- *    \c "Omega"   (frequency; REAL8, radians/sec)
+ *    - \c "A"       (REAL8, dimensionless amplitude)
+ *    - \c "Omega"   (REAL8, frequency, radians/sec)
  */
 void LALInferenceTemplateASinOmegaT(LALInferenceIFOData *IFOdata);
 
 
-/** LALGenerateInspiral wrapper.
+/** "LALGenerateInspiral" wrapper.
  *
  *  Required ( \c IFOdata->modelParams ) parameters are:
- * 
- *    \c "m1"           (mass of object 1; REAL8, solar mass)
- * 
- *    \c "m2"           (mass of object 1; REAL8, solar mass)
- * 
- *    \c "inclination"  (inclination angle; REAL8, radians)
- * 
- *    \c "coa_phase"    (phase angle; REAL8, radians)
- * 
- *    \c "spin1x"       (x component of the spin of object 1; REAL8) (if SpinTaylor approx)
- * 
- *    \c "spin1y"       (y component of the spin of object 1; REAL8) (if SpinTaylor approx)
- * 
- *    \c "spin1z"       (z component of the spin of object 1; REAL8) (if SpinTaylor approx)
- * 
- *    \c "spin2x"       (x component of the spin of object 2; REAL8) (if SpinTaylor approx)
- * 
- *    \c "spin2y"       (y component of the spin of object 2; REAL8) (if SpinTaylor approx)
- * 
- *    \c "spin2z"       (z component of the spin of object 2; REAL8) (if SpinTaylor approx)
- * 
- *    \c "shift0"       (shift offset; REAL8, radians)
- * 
- *    \c "time"         (coalescence time, or equivalent/analog/similar; REAL8, GPS seconds)
- * 
- *    \c "PNorder"      (Phase PN order; REAL8)
+ *    - \c "m1"           (REAL8, mass of object 1, solar masses)
+ *    - \c "m2"           (REAL8, mass of object 1, solar masses)
+ *    - \c "inclination"  (REAL8, inclination angle, radians)
+ *    - \c "coa_phase"    (REAL8, phase angle, radians)
+ *    - \c "spin1x"       (REAL8, x component of the spin of object 1) (if "SpinTaylor" approx.)
+ *    - \c "spin1y"       (REAL8, y component of the spin of object 1) (if "SpinTaylor" approx.)
+ *    - \c "spin1z"       (REAL8, z component of the spin of object 1) (if "SpinTaylor" approx.)
+ *    - \c "spin2x"       (REAL8, x component of the spin of object 2) (if "SpinTaylor" approx.)
+ *    - \c "spin2y"       (REAL8, y component of the spin of object 2) (if "SpinTaylor" approx.)
+ *    - \c "spin2z"       (REAL8, z component of the spin of object 2) (if "SpinTaylor" approx.)
+ *    - \c "shift0"       (REAL8, shift offset, radians)
+ *    - \c "time"         (REAL8, coalescence time, or equivalent/analog/similar, GPS seconds)
+ *    - \c "PNorder"      (REAL8, Phase PN order)
  */
 void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata);
 
 
-/** Template function for PhenSpinTaylorRingDown waveforms. 
+/** Template function for "PhenSpinTaylorRingDown" waveforms. 
  *
  *  (untested!)
  */
