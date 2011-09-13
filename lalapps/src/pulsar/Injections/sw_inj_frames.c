@@ -128,7 +128,11 @@ int main(int argc, char **argv)
   FILE *logfile;
   char log_file[256];
 
-  sprintf(log_file, "%s/%s/injections.log", uvar->outputdir, uvar->logDir); /*How to name log files separately?*/
+  char logfiledir[6];
+  strncpy(logfiledir, (strrchr(uvar->gwfdir,'/')+1), 5);
+  logfiledir[sizeof(logfiledir)-1] = '\0';
+
+  sprintf(log_file, "%s/%s/injections-%s.log", uvar->outputdir, uvar->logDir,logfiledir); 
   /*fprintf(stderr, "Your log file is here: %s\n", log_file);*/
 
   /*Writing to .log file*/
