@@ -21,6 +21,7 @@
 #include <lal/Units.h>
 #include <lal/LALConstants.h>
 #include <lal/LALSimInspiral.h>
+#include <lal/LALSimInspiralSpinTaylorT4.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/TimeSeries.h>
 #include "check_series_macros.h"
@@ -66,10 +67,12 @@ typedef struct tagXLALSimInspiralSpinTaylorT4Coeffs
 	REAL8 wdotSO15s1, wdotSO15s2; 	// non-dynamical 1.5PN SO corrections
 	REAL8 wdotSS2; 			// non-dynamical 2PN SS correction
 	REAL8 wdotSelfSS2; 	// non-dynamical 2PN self-spin correction
+	REAL8 wdotQM2; 	// non-dynamical 2PN quadrupole-monopole correction
 	REAL8 wdotSO25s1, wdotSO25s2; 	// non-dynamical 2.5PN SO corrections
 	REAL8 ESO15s1, ESO15s2; 	// non-dynamical 1.5PN SO corrections
 	REAL8 ESS2; 			// non-dynamical 2PN SS correction
 	REAL8 ESelfSS2; 	// non-dynamical 2PN self-spin correction
+	REAL8 EQM2; 	// non-dynamical 2PN quadrupole-monopole correction
 	REAL8 ESO25s1, ESO25s2; 	// non-dynamical 2.5PN SO corrections 
 	REAL8 LNhatSO15s1, LNhatSO15s2; // non-dynamical 1.5PN SO corrections
 	REAL8 LNhatSS2; 		// non-dynamical 2PN SS correction 
@@ -95,8 +98,6 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(double t,
  * Note that LNhat and E1 completely specify the instantaneous orbital plane.
  * It also returns the time and phase of the final time step
  *
- * FIXME: Do we want tc, phic or tStart, phiStart or both or something else?
- *
  * For input, the function takes the two masses, the initial orbital phase, 
  * Values of S1, S2, LNhat, E1 vectors at starting time,
  * the desired time step size, the starting GW frequency, 
@@ -108,7 +109,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(double t,
  * You must give the initial values in this frame, and the time series of the
  * vector components will also be returned in this frame
  */
-static int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
+int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8TimeSeries **V,            /**< post-Newtonian parameter [returned]*/
 	REAL8TimeSeries **Phi,          /**< orbital phase            [returned]*/
 	REAL8TimeSeries **S1x,	        /**< Spin1 vector x component [returned]*/
@@ -181,7 +182,15 @@ static int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
      * Spin corrections must be recomputed at every step
      * because the relative orientations of S, L can change
      *
-     * FIXME: Add references
+     * The values can be found in Buonanno, Iyer, Ochsner, Pan and Sathyaprakash
+     * Phys. Rev. D 80, 084043 (2009) arXiv:0907.0700 (aka "BIOPS")
+     * Eq. 3.1 for the energy and Eq. 3.6 for \dot{\omega}
+     *
+     * Note that Eq. 3.6 actually gives dv/dt, but this relates to \omega by
+     * d (M \omega)/dt = d (v^3)/dt = 3 v^2 dv/dt
+     * so the PN corrections are the same 
+     * but the leading order is 3 v^2 times Eq. 3.6
+     *
      * FIXME: Move to separate function? May be re-usable for other codes
      */
     switch( phaseO )
@@ -207,27 +216,15 @@ static int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
         case 5:
             params.wdotcoeff[5] = -(1./672.) * LAL_PI * (4159. + 15876.*eta);
             params.Ecoeff[5] = 0.;
-            params.wdotSO25s1 	= 0.; /* ADD ME!! */
-            params.wdotSO25s2 	= 0.;	
         /* case LAL_PNORDER_TWO: */
         case 4:
             params.wdotcoeff[4] = (34103. + 122949.*eta 
                     + 59472.*eta*eta)/18144.;
             params.Ecoeff[4] = (-81. + 57.*eta - eta*eta)/24.;
-            params.LNhatSS2 	= -1.5 / eta;
-            params.wdotSS2  	= - 1. / 48. / eta;
-            params.ESS2	 	= 1. / eta;
-            params.wdotSelfSS2 	= 0.; /* ADD ME!! */
         /*case LAL_PNORDER_ONE_POINT_FIVE:*/
         case 3:
             params.wdotcoeff[3] = 4. * LAL_PI;
             params.Ecoeff[3] = 0.;
-            params.LNhatSO15s1	= 2. + 3./2. * m2m1;
-            params.LNhatSO15s2	= 2. + 3./2. * m1m2;
-            params.wdotSO15s1 	= - ( 113. + 75. * m2m1 ) / 12.;
-            params.wdotSO15s2 	= - ( 113. + 75. * m1m2 ) / 12.;
-            params.ESO15s1    	= 8./3. + 2. * m2m1;
-            params.ESO15s2    	= 8./3. + 2. * m1m2;
         /*case LAL_PNORDER_ONE:*/
         case 2:
             params.wdotcoeff[2] = -(1./336.) * (743. + 924.*eta);
@@ -252,41 +249,55 @@ static int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
      * Compute the non-dynamical coefficients of spin corrections 
      * to the evolution equations for omega, L, S1 and S2 and binary energy E.
      * Flags control which spin corrections are included
-     * FIXME: How to best set flags??
      */
-    switch (spinFlags)
+    params.LNhatSO15s1 	= 0.;
+    params.LNhatSO15s2 	= 0.;
+    params.wdotSO15s1 	= 0.;
+    params.wdotSO15s2 	= 0.;
+    params.ESO15s1 	= 0.;
+    params.ESO15s2 	= 0.;
+    params.LNhatSS2 	= 0.;
+    params.wdotSS2 	= 0.;
+    params.ESS2 	= 0.;
+    params.wdotSelfSS2 	= 0.;
+    params.ESelfSS2 	= 0.;
+    params.wdotQM2 	= 0.;
+    params.EQM2 	= 0.;
+    params.wdotSO25s1 	= 0.;
+    params.wdotSO25s2 	= 0.;
+    params.ESO25s1 	= 0.;
+    params.ESO25s2 	= 0.;
+    if( (spinFlags & LAL_SOInter) == LAL_SOInter )
     {
-        case LAL_NOInter:
-            params.LNhatSO15s1  = 0.;
-            params.LNhatSO15s2  = 0.;
-            params.wdotSO15s1   = 0.;
-            params.wdotSO15s2   = 0.;
-            params.ESO15s1      = 0.;
-            params.ESO15s2      = 0.;
-            params.wdotSO25s1 	= 0.;
-            params.wdotSO25s2 	= 0.;
-            params.LNhatSS2     = 0.;
-            params.wdotSS2      = 0.;
-            params.ESS2         = 0.;
-            params.wdotSelfSS2 	= 0.;
-
-        case LAL_SOInter:
-            params.LNhatSS2     = 0.;
-            params.wdotSS2      = 0.;
-            params.ESS2         = 0.;
-
-        case LAL_SSInter:
-            params.wdotSelfSS2  = 0.;
-            break;
-    
-        case LAL_SSselfInter:
-            break;
-        case LAL_QMInter:
-            break;
-        case LAL_AllInter:
-            break;
-        default:
-            break;
+        params.LNhatSO15s1 	= 2. + 3./2. * m2m1;
+        params.LNhatSO15s2	= 2. + 3./2. * m1m2;
+        params.wdotSO15s1 	= - ( 113. + 75. * m2m1 ) / 12.;
+        params.wdotSO15s2 	= - ( 113. + 75. * m1m2 ) / 12.;
+        params.ESO15s1 		= 8./3. + 2. * m2m1;
+        params.ESO15s2 		= 8./3. + 2. * m1m2;
+    }
+    if( (spinFlags & LAL_SSInter) == LAL_SSInter )
+    {
+        params.LNhatSS2 	= -1.5 / eta;
+        params.wdotSS2 		= - 1. / 48. / eta;
+        params.ESS2 		= 1. / eta;
+    }
+    if( (spinFlags & LAL_SSselfInter) == LAL_SSselfInter ) /* ADD ME!! */
+    {
+        params.wdotSelfSS2 	= 0.;
+        params.ESelfSS2 	= 0.;
+    }
+    if( (spinFlags & LAL_QMInter) == LAL_QMInter ) /* ADD ME!! */
+    {
+        params.wdotQM2 		= 0.;
+        params.EQM2 		= 0.;
+    }
+    if( (spinFlags & LAL_SO25Inter) == LAL_SO25Inter ) /* ADD ME!! */
+    {
+        params.wdotSO25s1 	= 0.;
+        params.wdotSO25s2 	= 0.;	
+        params.ESO25s1 		= 0.;
+        params.ESO25s2 		= 0.;	
     }
 
     /* length estimation (Newtonian) */

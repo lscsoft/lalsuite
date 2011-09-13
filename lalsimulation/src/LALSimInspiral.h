@@ -83,12 +83,13 @@ typedef enum {
  * generation. Their combination also can be used by the bitwise or.
  **/
 typedef enum {
-	LAL_NOInter = 0,                        /**< UNDOCUMENTED */
+	LAL_NOInter = 0,                        /**< No spin interactions */
 	LAL_SOInter = 1,                        /**< Spin-orbit interaction */
 	LAL_SSInter = LAL_SOInter << 1,         /**< Spin-spin interaction */
 	LAL_SSselfInter = LAL_SSInter << 1,     /**<  Spin-spin-self interaction */
 	LAL_QMInter = LAL_SSselfInter << 1,     /**< quadrupole-monopole interaction */
-	LAL_AllInter = LAL_SOInter | LAL_SSInter | LAL_SSselfInter | LAL_QMInter /**< all interactions */
+	LAL_SO25Inter = LAL_QMInter << 1,     /**<  next-to-leading order (2.5PN) Spin-orbit interaction */
+	LAL_AllInter = LAL_SOInter | LAL_SSInter | LAL_SSselfInter | LAL_QMInter | LAL_SO25Inter /**< all interactions */
 } LALSpinInteraction;
 
 /**

@@ -314,7 +314,8 @@ int main (int argc , char **argv) {
     REAL8TimeSeries *hplus = NULL;
     REAL8TimeSeries *hcross = NULL;
     GSParams *params;
-    LALSpinInteraction spinFlags = LAL_AllInter; // For now, hardcode spin flags
+    // For now, hardcode spin flags as 1.5PN SO + 2PN SS
+    LALSpinInteraction spinFlags = LAL_SOInter | LAL_SSInter;
 
     /* set us up to fail hard */
     lalDebugLevel = 7;

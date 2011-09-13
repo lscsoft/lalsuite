@@ -66,7 +66,7 @@ int main (int argc , char **argv)
     REAL8 phiStart = 0.;
     INT4 phaseO = 7;
     LIGOTimeGPS tStart = {0.,0.};
-    LALSpinFlags spinFlags = {1, 1, 0, 0, 0};
+    LALSpinInteraction spinFlags = LAL_SOInter | LAL_SSInter;
 
     lnhatx = sin(inclination);
     lnhaty = 0.;
@@ -81,7 +81,7 @@ int main (int argc , char **argv)
     status = XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, 
             &S1z, &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
             m1, m2, &tStart, phiStart, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, 
-            lnhaty, lnhatz, e1x, e1y, e1z, deltaT, fStart, &spinFlags, phaseO);
+            lnhaty, lnhatz, e1x, e1y, e1z, deltaT, fStart, spinFlags, phaseO);
 
     len = V->data->length;
 

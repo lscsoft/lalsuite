@@ -80,7 +80,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8 e1z,                /**< initial value of E1z */
 	REAL8 deltaT,             /**< sampling interval (s) */
 	REAL8 fStart,             /**< start frequency */
-	LALSpinFlags *spinFlags,  /**< flags to control spin effects */
+	LALSpinInteraction spinFlags,  /**< flags to control spin effects */
 	INT4 phaseO               /**< twice post-Newtonian order */
 	);
 
