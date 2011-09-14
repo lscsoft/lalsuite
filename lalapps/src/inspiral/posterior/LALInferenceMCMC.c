@@ -412,7 +412,8 @@ void initVariables(LALInferenceRunState *state)
 (--comp-min min)                Minimum component mass (1.0)\n\
 (--comp-max max)                Maximum component mass (30.0)\n\
 (--MTotMax max)                 Maximum total mass (35.0)\n\
-(--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n";
+(--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n\
+(--appendOutput fname)          Basename of the file to append outputs to\n";
 
 
   /* Print command line arguments if state was not allocated */
