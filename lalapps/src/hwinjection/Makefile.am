@@ -3,7 +3,7 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-if FRAME
+if LALFRAME
 frameprogs = lalapps_psinject
 if GDS
 frameprogs += online_psinject
