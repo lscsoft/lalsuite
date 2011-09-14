@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 21
+# serial 22
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -154,7 +154,8 @@ AC_DEFUN([LALSUITE_ENABLE_ALL_LAL],
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALFRAME],
-[AC_ARG_ENABLE(
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
   [lalframe],
   AC_HELP_STRING([--enable-lalframe],[compile code that requires lalframe library [default=yes]]),
   [ case "${enableval}" in
@@ -169,7 +170,8 @@ fi
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALMETAIO],
-[AC_ARG_ENABLE(
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
   [lalmetaio],
   AC_HELP_STRING([--enable-lalmetaio],[compile code that requires lalmetaio library [default=yes]]),
   [ case "${enableval}" in
@@ -184,7 +186,8 @@ fi
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALXML],
-[AC_ARG_ENABLE(
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
   [lalxml],
   AC_HELP_STRING([--enable-lalxml],[compile code that requires lalxml library [default=no]]),
   [ case "${enableval}" in
@@ -196,7 +199,8 @@ AC_DEFUN([LALSUITE_ENABLE_LALXML],
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALBURST],
-[AC_ARG_ENABLE(
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
   [lalburst],
   AC_HELP_STRING([--enable-lalburst],[compile code that requires lalburst library [default=yes]]),
   [ case "${enableval}" in
@@ -210,7 +214,8 @@ if test "$lalmetaio" = "false"; then
 fi])
 
 AC_DEFUN([LALSUITE_ENABLE_LALINSPIRAL],
-[AC_ARG_ENABLE(
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
   [lalinspiral],
   AC_HELP_STRING([--enable-lalinspiral],[compile code that requires lalinspiral library [default=yes]]),
   [ case "${enableval}" in
@@ -225,7 +230,8 @@ fi
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALPULSAR],
-[AC_ARG_ENABLE(
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
   [lalpulsar],
   AC_HELP_STRING([--enable-lalpulsar],[compile code that requires lalpulsar library [default=yes]]),
   [ case "${enableval}" in
@@ -237,7 +243,8 @@ AC_DEFUN([LALSUITE_ENABLE_LALPULSAR],
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALSTOCHASTIC],
-[AC_ARG_ENABLE(
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
   [lalstochastic],
   AC_HELP_STRING([--enable-lalstochastic],[compile code that requires lalstochastic library [default=yes]]),
   [ case "${enableval}" in
@@ -252,7 +259,8 @@ fi
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALINFERENCE],
-[AC_ARG_ENABLE(
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
   [lalinference],
   AC_HELP_STRING([--enable-lalinference],[compile code that requires lalinference library [default=yes]]),
   [ case "${enableval}" in
@@ -260,7 +268,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALINFERENCE],
       no) lalinference=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalinference) ;;
     esac
-  ], [ lalinference=true ] )
+  ], [ lalinference=${all_lal:-true} ] )
 if test "$lalmetaio" = "false"; then
   lalinference=false
 fi
