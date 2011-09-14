@@ -1092,7 +1092,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
         }
       else
         {
-          XLALPrintError ("%s: Window function '%s' was entered, currently only Hann windowing is supported.\n\n", uvar_window, fn );
+          XLALPrintError ("%s: Window function '%s' was entered, currently only Hann windowing is supported.\n\n", fn, uvar_window );
           ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
         }
     } /* if uvar_window */
