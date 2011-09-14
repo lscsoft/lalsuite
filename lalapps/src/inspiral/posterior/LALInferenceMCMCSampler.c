@@ -164,7 +164,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			}
 		}
     else if(LALInferenceGetProcParamVal(runState->commandLine, "--geomLadder")){
-      tempDelta=1.3;
+      tempDelta=pow(tempMax,1.0/(REAL8)(nChain-1));
       for (t=0;t<nChain; ++t) {
         tempLadder[t]=pow(tempDelta,t);
       }

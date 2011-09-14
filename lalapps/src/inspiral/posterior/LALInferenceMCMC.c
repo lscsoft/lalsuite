@@ -160,7 +160,7 @@ void initializeMCMC(LALInferenceRunState *runState)
   
 	INT4 verbose=0,tmpi=0;
 	unsigned int randomseed=0;
-	REAL8 tempMax = 40.0;
+	REAL8 tempMax = 10.0;
 	//REAL8 tmp=0;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	ProcessParamsTable *ppt=NULL;
