@@ -100,6 +100,8 @@ int main(int argc , char **argv)
 	memset( &params, 0, sizeof(InspiralTemplate) );
 
 	static OtherParamIn otherIn; /* some extra parameters to parse */
+        otherIn.order = 7; /* default order */
+        strncpy(otherIn.waveformString, "TaylorT3", sizeof(otherIn.waveformString)); /* default approximant */
 	ParseParameters(argc, argv, &otherIn);/* let's parse user parameters */
 	LALInspiralITStructureSetDefault(&mystatus, &params);
 	LALInspiralITStructureParseParameters(&mystatus, argc, argv, &params);
