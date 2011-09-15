@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 
   char logfiledir[6];
   strncpy(logfiledir, (strrchr(uvar->gwfdir,'/')+1), 5);
-  logfiledir[sizeof(logfiledir)-1] = '\0';
+  logfiledir[5] = '\0';
 
   sprintf(log_file, "%s/%s/injections-%s.log", uvar->outputdir, uvar->logDir,logfiledir); 
   /*fprintf(stderr, "Your log file is here: %s\n", log_file);*/
@@ -228,14 +228,15 @@ int main(int argc, char **argv)
   UINT4 numParFiles = (UINT4)n;
   UINT4 h=0;
   
+  char parname[256];
+  BinaryPulsarParams pulparams[numParFiles];
   /*clear . and .. in directory */
   free(parnamelist[0]); 
   free(parnamelist[1]);
   
   for (h=2; h < numParFiles; h++) {
     if(strstr(parnamelist[h]->d_name, ".par") == NULL){
-      fprintf(stderr, "Not using file %s\n",parnamelist[h]->d_name);
-      
+
       free(parnamelist[h]);
       
       continue;
@@ -247,7 +248,6 @@ int main(int argc, char **argv)
 	return 0;
       }
       else {
-	char parname[256];
 	sprintf(parname, "%s/%s", uvar->inputdir, parnamelist[h]->d_name);
 	char t[ 100 ];
 	struct stat b;
@@ -258,6 +258,18 @@ int main(int argc, char **argv)
         }
       }
       /* </log file> */
+
+      /* Save the pulsar parameter files to memory to be called later*/
+      /*sprintf(pulin,"%s/%s", uvar->inputdir, parnamelist[h]->d_name);*/
+      if (( inject = fopen ( parname, "r" )) == NULL ){
+	fprintf(stderr,"Error opening file: %s\n", parname);
+	XLAL_ERROR ( fn, XLAL_EIO );
+      }
+      /*BinaryPulsarParams pulparams[numParFiles];*/
+      XLALReadTEMPOParFile( &pulparams[h], parname );
+      fclose( inject );
+      /*fprintf(stderr,"You have now read in %s, saved in index %i", parname, h);*/
+
     } /*checking if file ends in .par*/
     
     free(parnamelist[h]);
@@ -415,79 +427,80 @@ int main(int argc, char **argv)
         
         for (h=0; h < numParFiles; h++) {
 	  if(strstr(parnamelist[h]->d_name, ".par") == NULL){
-	    fprintf(stderr, "Not using file %s\n",parnamelist[h]->d_name);
+	    /*fprintf(stderr, "Not using file %s\n",parnamelist[h]->d_name);*/
             
             free(parnamelist[h]);
 
 	    continue;
 	  }
 	  else{
-	    sprintf(pulin, "%s/%s", uvar->inputdir, parnamelist[h]->d_name);
+	    /*sprintf(pulin, "%s/%s", uvar->inputdir, parnamelist[h]->d_name);*/
 	    /*fprintf(stderr, "This is your pulsar file:%s\n", pulin);*/
-	    if (( inject = fopen ( pulin, "r" )) == NULL ){
-	      fprintf(stderr, "Error opening file: %s\n", pulin);
-	      XLAL_ERROR ( fn, XLAL_EIO );
-	    }
+	    /*if (( inject = fopen ( pulin, "r" )) == NULL ){*/
+	    /*fprintf(stderr, "Error opening file: %s\n", pulin);*/
+	    /*XLAL_ERROR ( fn, XLAL_EIO );*/
+	    /*}*/
 	    PulsarSignalParams params = empty_PulsarSignalParams; /*pulsar parameter structure*/
-	    BinaryPulsarParams pulparams; /* read from the .par file */
+	    /*BinaryPulsarParams pulparams; read from the .par file */
 	    if ( (params.pulsar.spindown = XLALCreateREAL8Vector(1))== NULL ) {
 	      XLALPrintError("Out of memory");
 	      XLAL_ERROR ( fn, XLAL_EFUNC );
 	    }
 	    /*read in parameters from .par file */
-	    XLALReadTEMPOParFile( &pulparams, pulin);
+	    /*XLALReadTEMPOParFile( &pulparams, pulin);*/
+
+	    fprintf(stderr,"Your fo is %f\n",pulparams[h].f0);
 	    
 	    /*Convert location with proper motion */
-	    if ( pulparams.posepoch == 0.0 )
-	      pulparams.posepoch = pulparams.pepoch; /*set posepoch to pepoch if position epoch not present */
-	    INT4 dtpos = epoch.gpsSeconds - (INT4)pulparams.posepoch; /*calculate time since posepoch */
+	    if ( pulparams[h].posepoch == 0.0 )
+	      pulparams[h].posepoch = pulparams[h].pepoch; /*set posepoch to pepoch if position epoch not present */
+	    INT4 dtpos = epoch.gpsSeconds - (INT4)pulparams[h].posepoch; /*calculate time since posepoch */
 	    
-	    params.pulsar.position.latitude = pulparams.dec + dtpos * pulparams.pmdec;
-	    params.pulsar.position.longitude = pulparams.ra + dtpos * pulparams.ra / cos(params.pulsar.position.latitude);
-	    
+	    params.pulsar.position.latitude = pulparams[h].dec + dtpos * pulparams[h].pmdec;
+	    params.pulsar.position.longitude = pulparams[h].ra + dtpos * pulparams[h].ra / cos(params.pulsar.position.latitude);
 	    params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
 	    
-	    params.pulsar.f0 = 2.*pulparams.f0;
-	    params.pulsar.spindown->data[0] = 2.*pulparams.f1; /*spindown is REAL8Vector ?? */
-	    if (( XLALGPSSetREAL8(&(params.pulsar.refTime),pulparams.pepoch) ) == NULL ){
+	    params.pulsar.f0 = 2.*pulparams[h].f0;
+	    params.pulsar.spindown->data[0] = 2.*pulparams[h].f1; /*spindown is REAL8Vector ?? */
+	    if (( XLALGPSSetREAL8(&(params.pulsar.refTime),pulparams[h].pepoch) ) == NULL ){
 	      XLAL_ERROR ( fn, XLAL_EFUNC );
 	    }
-	    params.pulsar.psi = pulparams.psi;
-	    params.pulsar.phi0 = pulparams.phi0;
+	    params.pulsar.psi = pulparams[h].psi;
+	    params.pulsar.phi0 = pulparams[h].phi0;
 	    /*Conversion from h0 and cosi to plus and cross */
-	    params.pulsar.aPlus = 0.5 * pulparams.h0 * (1. + pulparams.cosiota * pulparams.cosiota ); 
-	    params.pulsar.aCross = pulparams.h0 * pulparams.cosiota;
-	    
+	    params.pulsar.aPlus = 0.5 * pulparams[h].h0 * (1. + pulparams[h].cosiota * pulparams[h].cosiota ); 
+	    params.pulsar.aCross = pulparams[h].h0 * pulparams[h].cosiota;
+
 	    /*if binary */
-	    if (pulparams.model != NULL) {
-	      fprintf(stderr, "You have a binary! %s", pulin);
-	      params.orbit->asini = pulparams.x;
-	      params.orbit->period = pulparams.Pb*86400;
+	    if (pulparams[h].model != NULL) {
+	      /*fprintf(stderr, "You have a binary! %s", pulin);*/
+	      params.orbit->asini = pulparams[h].x;
+	      params.orbit->period = pulparams[h].Pb*86400;
 	      
 	      /*Taking into account ELL1 model option */
-	      if (strstr(pulparams.model,"ELL1") != NULL) {
+	      if (strstr(pulparams[h].model,"ELL1") != NULL) {
 		REAL8 w,e,eps1,eps2;
-		eps1 = pulparams.eps1;
-		eps2 = pulparams.eps2;
+		eps1 = pulparams[h].eps1;
+		eps2 = pulparams[h].eps2;
 		w = atan2(eps1,eps2);
 		e = sqrt(eps1*eps1+eps2*eps2);
 		params.orbit->argp = w;
 		params.orbit->ecc = e;
 	      }
 	      else {
-		params.orbit->argp = pulparams.w0;
-		params.orbit->ecc = pulparams.e;
+		params.orbit->argp = pulparams[h].w0;
+		params.orbit->ecc = pulparams[h].e;
 	      }
-	      if (strstr(pulparams.model,"ELL1") != NULL) {
+	      if (strstr(pulparams[h].model,"ELL1") != NULL) {
 		REAL8 fe, uasc, Dt;
 		fe = sqrt((1.0-params.orbit->ecc)/(1.0+params.orbit->ecc));
 		uasc = 2.0*atan(fe*tan(params.orbit->argp/2.0));
 		Dt = (params.orbit->period/LAL_TWOPI)*(uasc-params.orbit->ecc*sin(uasc));
-		pulparams.T0 = pulparams.Tasc + Dt;
+		pulparams[h].T0 = pulparams[h].Tasc + Dt;
 	      }
 	      
-	      params.orbit->tp.gpsSeconds = (UINT4)floor(pulparams.T0);
-	      params.orbit->tp.gpsNanoSeconds = (UINT4)floor((pulparams.T0 - params.orbit->tp.gpsSeconds)*1e9);
+	      params.orbit->tp.gpsSeconds = (UINT4)floor(pulparams[h].T0);
+	      params.orbit->tp.gpsNanoSeconds = (UINT4)floor((pulparams[h].T0 - params.orbit->tp.gpsSeconds)*1e9);
 	    } /* if pulparams.model is BINARY */
 	    else
 	      params.orbit = NULL; /*if pulparams.model = NULL -- isolated pulsar*/
@@ -497,7 +510,7 @@ int main(int argc, char **argv)
 	    params.duration = ndata; /*maybe want to take out conversion and keep this uvar->duration*/
 	    params.samplingRate = srate; /*same as above*/
 	    params.fHeterodyne = 0.; 
-	    
+
 	    REAL4TimeSeries *TSeries = NULL;
 	    /*fprintf(stderr, "status%i\n", status.statusCode);*/
 	    LALGeneratePulsarSignal (&status, &TSeries, &params);
@@ -522,7 +535,7 @@ int main(int argc, char **argv)
 	    /*fprintf(stderr, "your pulsar is %s\n", pulin);*/
 	    XLALDestroyREAL4TimeSeries (TSeries);
 	    XLALDestroyREAL8Vector(params.pulsar.spindown);
-	    fclose( inject ); /*close .par file */
+	    /*fclose( inject ); close .par file */
 	  } /* for strstr .par  */
 	
           free(parnamelist[h]);
@@ -530,7 +543,6 @@ int main(int argc, char **argv)
         } /*for k<num par files */
 	
 	free(parnamelist);
-        
 	/*add to series*/
 	for (i=0; i < series->data->length; i++){
 	  series->data->data[i] = gwfseries->data->data[i] + total_inject->data->data[i];
