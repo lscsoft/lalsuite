@@ -134,16 +134,16 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata);
 
 /** 3.5PN phase / 2.5PN amplitude time-domain binary inspiral template.
  *
- *  following
- *    - Blanchet et al. (2001),   gr-qc/0104084
- *    - Blanchet at al. (2002),   PRD 65(6):061501,   gr-qc/0105099
- *    - Blanchet at al. (2005),   PRD 71(12):129902
- *    - Arun et al. (2004),       CQG 21(15):3771
- *    - Arun et al. (2004),       CQG 22(14):3115
- *    - Blanchet et al. (2004),   PRL 93(9):091101
+ *  Following:
+ *    - Blanchet et al. (2001),   gr-qc/0104084                     http://arxiv.org/abs/gr-qc/0104084
+ *    - Blanchet at al. (2002),   PRD 65(6):061501, gr-qc/0105099   http://dx.doi.org/10.1103/PhysRevD.65.061501 , http://arxiv.org/abs/gr-qc/0105099
+ *    - Blanchet at al. (2005),   PRD 71(12):129902                 http://dx.doi.org/10.1103/PhysRevD.71.129902
+ *    - Arun et al. (2004),       CQG 21(15):3771                   http://dx.doi.org/10.1088/0264-9381/21/15/010
+ *    - Arun et al. (2004),       CQG 22(14):3115                   http://dx.doi.org/10.1088/0264-9381/22/14/C01
+ *    - Blanchet et al. (2004),   PRL 93(9):091101                  http://dx.doi.org/10.1103/PhysRevLett.93.091101
  *
- *  This is essentially the implementation that was also used in the paper by
- *  Roever/Meyer/Guidi/Vicere/Christensen (2007), CQG 24(19):S607.
+ *  This is essentially the implementation that was also used in the paper
+ *  Roever/Meyer/Guidi/Vicere/Christensen (2007), CQG 24(19):S607 http://dx.doi.org/10.1088/0264-9381/24/19/S23
  *
  *  Required ( \c IFOdata->modelParams ) parameters are:
  *    - \c "chirpmass"        (REAL8, chirp mass, in units of solar masses)
@@ -158,7 +158,7 @@ void LALInferenceTemplate3525TD(LALInferenceIFOData *IFOdata);
 /** Sine-Gaussian (burst) template.
  * 
  *  The (plus-) waveform is given by:
- *    \f[ a \times \exp(-((t - \mu) / \sigma)^2) \times \sin(2 \pi f t - phi) \f]
+ *    \f[ s(t) = a \times \exp(-((t - \mu) / \sigma)^2) \times \sin(2 \pi f (t-\mu) - \phi) \f]
  *
  *  Note that by setting f=0, phi=pi/2 you get a "plain" Gaussian template.
  *
@@ -177,7 +177,7 @@ void LALInferenceTemplateSineGaussian(LALInferenceIFOData *IFOdata);
 /** Damped Sinusoid template.
  *
  *  The (plus-) waveform is an exponentially decaying sine wave:
- *    \f[ a \exp((t-time) / \tau) \times  sin(2 \pi f (t-time)) \f]
+ *    \f[ s(t) = a \times \exp((t-time) / \tau) \times  sin(2 \pi f (t-time)) \f]
  *  where "time" is the time parameter denoting the instant at which the signal starts.
  *
  *  Signal is (by now?) linearly polarised, i.e., the cross-component remains zero.    
@@ -194,7 +194,7 @@ void LALInferenceTemplateDampedSinusoid(LALInferenceIFOData *IFOdata);
 /** Sinc function (burst) template.
  *
  *  The (plus-) waveform is a sinc function of given frequency:
- *    \f[ a \times sinc(2 \pi f (t-time)) = a \times \sin(2 \pi f (t-time)) / (2 \pi f (t-time)) \f]
+ *    \f[ s(t) = a \times sinc(2 \pi f (t-time)) = a \times \sin(2 \pi f (t-time)) / (2 \pi f (t-time)) \f]
  *  where "time" is the time parameter denoting the signal's central peak location.
  *
  *  Signal is (by now?) linearly polarised, i.e., the cross-component remains zero.    
