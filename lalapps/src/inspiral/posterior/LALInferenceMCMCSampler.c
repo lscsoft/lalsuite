@@ -51,10 +51,10 @@ RCSID("$Id$");
 #define CVS_NAME_STRING "$Name$"
 
 FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState);
+void LALInferenceDataDump(LALInferenceRunState *runState);
 
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-  
 	int i,t,p,lowerRank,upperRank,x; //indexes for for() loops
 	REAL8 tempDelta;
 	int nChain;
@@ -97,14 +97,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 	UINT4 nIFO=0;
 	LALInferenceIFOData *ifodata1=runState->data;
-	ProcessParamsTable *ppt;//,*ppt1,*ppt2,*ppt3;	
-
+	ProcessParamsTable *ppt;
+  
 	while(ifodata1){
 		nIFO++;
 		ifodata1=ifodata1->next;
 	}
 	
-
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
@@ -113,12 +112,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 	tempLadder = malloc(nChain * sizeof(REAL8));			//the temperature ladder
 	
-    if(MPIrank == 0){
-      parametersVec = (REAL8 *)malloc(MPIsize*nPar*sizeof(REAL8)); 
-      for (p=0;p<(nChain*nPar);++p){
-       parametersVec[p] = 0.0;
-     }
-   }
+  if(MPIrank == 0){
+    parametersVec = (REAL8 *)malloc(MPIsize*nPar*sizeof(REAL8)); 
+    for (p=0;p<(nChain*nPar);++p){
+      parametersVec[p] = 0.0;
+    }
+  }
   
   parameters = XLALCreateREAL8Vector(nPar);
   
@@ -271,76 +270,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		LALInferencePrintVariables(runState->currentParams);
 		printf(" MCMC iteration: 0\t");
 		printf("%f\t", runState->currentLikelihood - nullLikelihood); 
-		printf("0\n");
+		printf("\n");
 
                 /* Do a data dump. */
                 ppt = LALInferenceGetProcParamVal(runState->commandLine, "--data-dump");
                 if (ppt) {
-                  const UINT4 nameLength=256;
-                  char filename[nameLength];
-                  FILE *out;
-                  //LALInferenceIFOData *headData = runState->data;
-                  headData = runState->data;
-                  UINT4 ui;
-                  
-                  while (headData != NULL) {
-
-                    snprintf(filename, nameLength, "%s-freqModelhPlus.dat", headData->name);
-                    out = fopen(filename, "w");
-                    for (ui = 0; ui < headData->freqModelhPlus->data->length; ui++) {
-                      REAL8 f = headData->freqModelhPlus->deltaF * ui;
-                      COMPLEX16 d = headData->freqModelhPlus->data->data[ui];
-
-                      fprintf(out, "%g %g %g\n", f, d.re, d.im);
-                    }
-                    fclose(out);
-
-                    snprintf(filename, nameLength, "%s-freqModelhCross.dat", headData->name);
-                    out = fopen(filename, "w");
-                    for (ui = 0; ui < headData->freqModelhCross->data->length; ui++) {
-                      REAL8 f = headData->freqModelhCross->deltaF * ui;
-                      COMPLEX16 d = headData->freqModelhCross->data->data[ui];
-
-                      fprintf(out, "%g %g %g\n", f, d.re, d.im);
-                    }
-                    fclose(out);
-
-                    snprintf(filename, nameLength, "%s-timeModelhPlus.dat", headData->name);
-                    out = fopen(filename, "w");
-                    for (ui = 0; ui < headData->timeModelhPlus->data->length; ui++) {
-                      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhPlus->epoch)) + 
-                        ui * headData->timeModelhPlus->deltaT;
-                      REAL8 d = headData->timeModelhPlus->data->data[ui];
-
-                      fprintf(out, "%.6f %g\n", tt, d);
-                    }
-                    fclose(out);
-
-                    snprintf(filename, nameLength, "%s-timeModelhCross.dat", headData->name);
-                    out = fopen(filename, "w");
-                    for (ui = 0; ui < headData->timeModelhCross->data->length; ui++) {
-                      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) + 
-                        ui * headData->timeModelhCross->deltaT;
-                      REAL8 d = headData->timeModelhCross->data->data[ui];
-
-                      fprintf(out, "%.6f %g\n", tt, d);
-                    }
-                    fclose(out);
-
-                    snprintf(filename, nameLength, "%s-timeModel.dat", headData->name);
-                    out = fopen(filename, "w");
-                    for (ui = 0; ui < headData->timeModelhCross->data->length; ui++) {
-                      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) + 
-                        headData->timeshift + ui*headData->timeModelhCross->deltaT;
-                      REAL8 d = headData->fPlus*headData->timeModelhPlus->data->data[ui] + 
-                        headData->fCross*headData->timeModelhCross->data->data[ui];
-
-                      fprintf(out, "%.6f %g\n", tt, d);
-                    }
-                    fclose(out);
-
-                    headData = headData->next;
-                  }
+                  LALInferenceDataDump(runState);
                 }
 
 	}
@@ -647,6 +582,10 @@ void VNRPriorOneStep(LALInferenceRunState *runState)
   LALInferenceDestroyVariables(&proposedParams);
 }
 
+//-----------------------------------------
+// file output routines:
+//-----------------------------------------
+
 FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState)
 {
   
@@ -655,15 +594,15 @@ FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState)
   
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
 	INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
-	REAL8 tempMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");   //max temperature in the temperature ladder
+	REAL8 tempMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");
 	UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
   REAL8 nullLikelihood = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "nullLikelihood");
   INT4 nChain = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "nChain");
   REAL8 temperature = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature");
-  
+  REAL8 SampleRate=4096.0; //default value of the sample rate from LALInferenceReadData()
 	UINT4 nIFO=0;
 	LALInferenceIFOData *ifodata1=runState->data;
-	ProcessParamsTable *ppt;//,*ppt1,*ppt2,*ppt3;	
+	ProcessParamsTable *ppt;
   
 	while(ifodata1){
 		nIFO++;
@@ -689,11 +628,8 @@ FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState)
   }
   networkSNR=sqrt(networkSNR);
   
-  REAL8 SampleRate=4096.0; //default value of the sample rate from LALInferenceReadData()
-  
   if(LALInferenceGetProcParamVal(runState->commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(runState->commandLine,"--srate")->value);
   
-	//for (t=0; t<nChain; ++t) {
   outfileName = (char*)calloc(99,sizeof(char*));
   ppt = LALInferenceGetProcParamVal(runState->commandLine, "--appendOutput");
   if (ppt) {
@@ -749,4 +685,73 @@ FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState)
   free(outfileName);
   
   return chainoutput;
+}
+
+void LALInferenceDataDump(LALInferenceRunState *runState){
+  
+  const UINT4 nameLength=256;
+  char filename[nameLength];
+  FILE *out;
+  LALInferenceIFOData *headData = runState->data;
+  UINT4 ui;
+  
+  while (headData != NULL) {
+    
+    snprintf(filename, nameLength, "%s-freqModelhPlus.dat", headData->name);
+    out = fopen(filename, "w");
+    for (ui = 0; ui < headData->freqModelhPlus->data->length; ui++) {
+      REAL8 f = headData->freqModelhPlus->deltaF * ui;
+      COMPLEX16 d = headData->freqModelhPlus->data->data[ui];
+      
+      fprintf(out, "%g %g %g\n", f, d.re, d.im);
+    }
+    fclose(out);
+    
+    snprintf(filename, nameLength, "%s-freqModelhCross.dat", headData->name);
+    out = fopen(filename, "w");
+    for (ui = 0; ui < headData->freqModelhCross->data->length; ui++) {
+      REAL8 f = headData->freqModelhCross->deltaF * ui;
+      COMPLEX16 d = headData->freqModelhCross->data->data[ui];
+      
+      fprintf(out, "%g %g %g\n", f, d.re, d.im);
+    }
+    fclose(out);
+    
+    snprintf(filename, nameLength, "%s-timeModelhPlus.dat", headData->name);
+    out = fopen(filename, "w");
+    for (ui = 0; ui < headData->timeModelhPlus->data->length; ui++) {
+      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhPlus->epoch)) + 
+      ui * headData->timeModelhPlus->deltaT;
+      REAL8 d = headData->timeModelhPlus->data->data[ui];
+      
+      fprintf(out, "%.6f %g\n", tt, d);
+    }
+    fclose(out);
+    
+    snprintf(filename, nameLength, "%s-timeModelhCross.dat", headData->name);
+    out = fopen(filename, "w");
+    for (ui = 0; ui < headData->timeModelhCross->data->length; ui++) {
+      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) + 
+      ui * headData->timeModelhCross->deltaT;
+      REAL8 d = headData->timeModelhCross->data->data[ui];
+      
+      fprintf(out, "%.6f %g\n", tt, d);
+    }
+    fclose(out);
+    
+    snprintf(filename, nameLength, "%s-timeModel.dat", headData->name);
+    out = fopen(filename, "w");
+    for (ui = 0; ui < headData->timeModelhCross->data->length; ui++) {
+      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) + 
+      headData->timeshift + ui*headData->timeModelhCross->deltaT;
+      REAL8 d = headData->fPlus*headData->timeModelhPlus->data->data[ui] + 
+      headData->fCross*headData->timeModelhCross->data->data[ui];
+      
+      fprintf(out, "%.6f %g\n", tt, d);
+    }
+    fclose(out);
+    
+    headData = headData->next;
+  }
+  
 }
