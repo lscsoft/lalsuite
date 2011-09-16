@@ -1071,7 +1071,7 @@ INT4 PTMCMCLALInferenceReflectDetPlane(
 	static LALStatus status;
 	UINT4 i;
 	int DetCollision=0;
-	REAL4 randnum;
+//	REAL4 randnum; - set but not used error 
 	REAL8 longi,lat;
 	REAL8 dist;
 	REAL8 pos[3];
@@ -1113,7 +1113,7 @@ INT4 PTMCMCLALInferenceReflectDetPlane(
 	do {
 		IFO2=gsl_rng_uniform_int(state->GSLrandom,nIFO);
 	}while(IFO1==IFO2 || IFOs[IFO1]==IFOs[IFO2]);
-	randnum=gsl_rng_uniform(state->GSLrandom);
+	//randnum=gsl_rng_uniform(state->GSLrandom); - set but not used
 	do {
 		IFO3 = gsl_rng_uniform_int(state->GSLrandom,nIFO);
 	}while(IFO3==IFO1
