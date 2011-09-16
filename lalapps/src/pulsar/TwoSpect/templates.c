@@ -457,6 +457,9 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       }
       gsl_rng_set(rng, 0);
+      //srand(time(NULL));
+      //UINT8 randseed = rand();
+      //gsl_rng_set(rng, randseed);
       
       REAL8Vector *slopes = XLALCreateREAL8Vector(50);
       if (slopes==NULL) {
@@ -471,9 +474,9 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          c1 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
          vars.c = c1;
          tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
-         while (tempprob<=1.0e-11 || tempprob>=1.0e-9) {
+         while (tempprob<=1.0e-11 || tempprob>=1.0e-8) {
             if (tempprob<=1.0e-11) upperend = c1;
-            else if (tempprob>=1.0e-9) lowerend = c1;
+            else if (tempprob>=1.0e-8) lowerend = c1;
             c1 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
             vars.c = c1;
             tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
@@ -483,9 +486,9 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          c2 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
          vars.c = c2;
          tempprob2 = 1.0 - cdfwchisq_twospect(&vars, sigma, accuracy, &errcode2);
-         while (tempprob2<=1.0e-11 || tempprob2>=1.0e-9 || fabs(c1-c2)<=100.0*LAL_REAL8_EPS) {
+         while (tempprob2<=1.0e-11 || tempprob2>=1.0e-8 || fabs(c1-c2)<=100.0*LAL_REAL8_EPS) {
             if (tempprob2<=1.0e-11) upperend = c2;
-            else if (tempprob2>=1.0e-9) lowerend = c2;
+            else if (tempprob2>=1.0e-8) lowerend = c2;
             c2 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
             vars.c = c2;
             tempprob2 = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode2);
@@ -504,7 +507,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          
          slopes->data[ii] = (log10(tempprob)-log10(tempprob2))/(c1-c2);
          if (slopes->data[ii]>=0.0) {
-            fprintf(stderr, "%s: Slope calculation failed. Non-negative slope: %f", fn, probslope);
+            fprintf(stderr, "%s: Slope calculation failed. Non-negative slope: %f\n", fn, probslope);
             XLAL_ERROR_REAL8(fn, XLAL_EDIVERGE);
          }
       }

@@ -192,7 +192,6 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    struct ncx2cdf_solver_params pars;
    
    INT4 totaliterations = 0;
-   //REAL8 highesth0 = 0.0, fsig = 0.0, period = 0.0, moddepth = 0.0;
    REAL8 dailyharmonic = params->Tobs/(24.0*3600);
    REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
    for (ii=minrows; ii<=ihsmaxima->rows; ii++) {
@@ -219,25 +218,13 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          }
       }
       
-      /* REAL4Vector *tempfbinavgs = XLALCreateREAL4Vector(ii);
-      if (tempfbinavgs==NULL) {
-         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ii);
-         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-      }
-      memcpy(tempfbinavgs->data, &(fbinavgs->data[jjbinofloudestoutlier]), sizeof(REAL4)*ii);
-      REAL4 avenoiseinrange = calcMean(tempfbinavgs);
-      XLALDestroyREAL4Vector(tempfbinavgs); */
-      
-      //REAL8 initialguess = ncx2inv(0.95, 2.0*avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2], 2.0*(loudestoutlier-avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2]));
       REAL8 initialguess = ncx2inv(0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
       if (XLAL_IS_REAL8_FAIL_NAN(initialguess)) {
-         //fprintf(stderr, "%s: ncx2inv(%f,%f,%f) failed.\n",fn, 0.95, 2.0*avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2], 2.0*(loudestoutlier-avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2]));
          fprintf(stderr, "%s: ncx2inv(%f,%f,%f) failed.\n",fn, 0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       REAL8 lo = 0.05*initialguess, hi = 5.0*initialguess;
       pars.val = 2.0*loudestoutlier;
-      //pars.dof = 2.0*avenoiseinrange*ihsfarstruct->ihsdistMean->data[ii-2];
       pars.dof = 2.0*loudestoutliernoise;
       pars.ULpercent = 0.95;
       F.function = &gsl_ncx2cdf_float_withouttinyprob_solver;
@@ -309,29 +296,57 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
 REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p)
 {
    
+   const CHAR *fn = __func__;
+   
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
-   return ncx2cdf(params->val, params->dof, x) - (1.0-params->ULpercent);
+   REAL8 val = ncx2cdf(params->val, params->dof, x);
+   if (XLAL_IS_REAL8_FAIL_NAN(val)) {
+      fprintf(stderr, "%s: ncx2cdf(%f, %f, %f) failed.\n", fn, params->val, params->dof, x);
+      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+   }
+   return val - (1.0-params->ULpercent);
    
 }
 REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p)
 {
    
+   const CHAR *fn = __func__;
+   
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
-   return (REAL8)(ncx2cdf_float((REAL4)params->val, (REAL4)params->dof, (REAL4)x) - (1.0-params->ULpercent));
+   REAL4 val = ncx2cdf_float((REAL4)params->val, (REAL4)params->dof, (REAL4)x);
+   if (XLAL_IS_REAL4_FAIL_NAN(val)) {
+      fprintf(stderr, "%s: ncx2cdf_float(%f, %f, %f) failed.\n", fn, params->val, params->dof, x);
+      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+   }
+   return (REAL8)val - (1.0-params->ULpercent);
    
 }
 REAL8 gsl_ncx2cdf_withouttinyprob_solver(REAL8 x, void *p)
 {
    
+   const CHAR *fn = __func__;
+   
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
-   return ncx2cdf_withouttinyprob(params->val, params->dof, x) - (1.0-params->ULpercent);
+   REAL8 val = ncx2cdf_withouttinyprob(params->val, params->dof, x);
+   if (XLAL_IS_REAL8_FAIL_NAN(val)) {
+      fprintf(stderr, "%s: ncx2cdf_withouttinyprob(%f, %f, %f) failed.\n", fn, params->val, params->dof, x);
+      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+   }
+   else return val - (1.0-params->ULpercent);
    
 }
 REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(REAL8 x, void *p)
 {
    
+   const CHAR *fn = __func__;
+   
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
-   return (REAL8)(ncx2cdf_float_withouttinyprob((REAL4)params->val, (REAL4)params->dof, (REAL4)x) - (1.0-params->ULpercent));
+   REAL4 val = ncx2cdf_float_withouttinyprob((REAL4)params->val, (REAL4)params->dof, (REAL4)x);
+   if (XLAL_IS_REAL4_FAIL_NAN(val)) {
+      fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob(%f, %f, %f) failed.\n", fn, params->val, params->dof, x);
+      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+   }
+   else return (REAL8)val - (1.0-params->ULpercent);
    
 }
 
