@@ -21,7 +21,6 @@ lalinspiralinclude_HEADERS = \
 	GeneratePPNInspiral.h \
 	GenerateRing.h \
 	InspiralInjectionParams.h \
-	LALAdaptiveRungeKutta4.h \
 	LALEOBNRv2Waveform.h \
 	LALInspiral.h \
 	LALInspiralBCVSpinBank.h \
@@ -32,9 +31,6 @@ lalinspiralinclude_HEADERS = \
 	LALNoiseModelsInspiral.h \
 	LALPSpinInspiralRD.h \
 	LALSBBH-Metric.h \
-	LALSimInspiral.h \
-	LALSimInspiralTaylorT3.h \
-	LALSimInspiralTaylorT4.h \
 	LALTrigScanCluster.h \
 	LALSTPNWaveform2.h \
 	LALSTPNWaveformFrameless.h \
@@ -191,17 +187,13 @@ liblalinspiral_la_SOURCES = \
 	LALRandomInspiralSignal.c \
 	LALRectangleVertices.c \
 	LALRungeKutta4.c \
-	LALAdaptiveRungeKutta4.c \
 	LALSTPNWaveform.c \
 	LALSTPNWaveform2.c \
 	LALSTPNWaveformFrameless.c \
 	LALSQTPNIntegrator.c \
 	LALSQTPNWaveform.c \
 	LALSQTPNWaveformInterface.c \
-	LALSimInspiral.c \
-	LALSimInspiralPNMode.c \
-	LALSimInspiralTaylorT3.c \
-	LALSimInspiralTaylorT4.c \
+	LALTaylorF2ReducedSpin.c\
 	LALTrigScanCluster.c \
 	LALTruncateInvSpectrum.c \
 	LIGOLwXMLInspiralRead.c \

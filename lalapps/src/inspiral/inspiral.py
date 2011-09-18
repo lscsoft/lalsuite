@@ -3380,7 +3380,7 @@ class SearchUpperLimitJob(pipeline.SqliteJob):
     @sections: list of sections for cp to read from
     """
     exec_name = 'search_upper_limit'
-    pipeline.SqliteJob.__init__(self, cp, [], exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, ['upper-limit'], exec_name, dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
 class SearchUpperLimitNode(pipeline.SqliteNode):

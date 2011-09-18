@@ -1,4 +1,4 @@
-AC_INIT([lalinspiral],[1.1.0.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalinspiral],[1.1.0.4],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALInspiralConfig.h])
 AC_CONFIG_SRCDIR([src/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -123,9 +123,10 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.4.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[6.4.0.4],[LALVersion],[lal/LALStdio.h])
 LALSUITE_CHECK_LIB([LALSupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
 LALSUITE_CHECK_LIB([LALMetaIO],[1.0.1],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LALSimulation],[0.0.0.1],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_OPT_LIB([LALFrame],[1.0.1],[LALFrOpen],[lal/LALFrameL.h])
 
 # add gcc specific flags

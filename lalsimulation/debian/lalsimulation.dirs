@@ -1,0 +1,5 @@
+#opt/lscsoft/lalsimulation/bin
+opt/lscsoft/lalsimulation/etc
+opt/lscsoft/lalsimulation/lib
+#opt/lscsoft/lalsimulation/sbin
+opt/lscsoft/lalsimulation/share

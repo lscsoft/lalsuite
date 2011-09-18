@@ -124,7 +124,7 @@ typedef struct tagLALSQTPNWaveformParams{
  *	effects.
  * @param[in,out]	params	: the LALSQTPN_Generator's parameters
  */
-void XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params);
+int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params);
 
 /**		The function calculates the derived values.
  * The formulae are:
@@ -181,6 +181,10 @@ void XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params);
  * @param[out]	dvalues	: the derived values and the last element is the MECO
  * @param[in]	params	: the LALSQTPN_Generator's parameters
  */
+int XLALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[],
+		void * params);
+
+// LAL wrapper of above XLAL function
 int LALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[],
 		void * params);
 
@@ -219,12 +223,13 @@ typedef enum {
  *	shift \f$\alpha\f$, and phase \f$\Phi\f$.
  *	The \f$\alpha\f$ is defined with equation (5) in the documentation of the
  *	LALSQTPNDerivator() function.
- * @param[in,out]	status		: LAL universal status structure
  * @param[out]		waveform	: the generated waveform
  * @param[in]		params		: the input parameters
  */
-void
-LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform,
+int XLALSQTPNGenerator(LALSQTPNWave *waveform, LALSQTPNWaveformParams *params);
+
+// LAL wrapper to the XLAL function above
+void LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform,
 		LALSQTPNWaveformParams *params);
 
 #ifdef __cplusplus

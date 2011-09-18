@@ -34,7 +34,6 @@
 #include <lal/LALComplex.h>
 
 #include <gsl/gsl_sf_gamma.h>
-#include <gsl/gsl_sf_legendre.h>
 
 
 static REAL8
@@ -115,51 +114,6 @@ XLALCalculateNewtonianMultipole(
     *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0) );
   }
   *multipole = XLALCOMPLEX16Mul( *multipole, y );
-
-  *multipole = XLALCOMPLEX16Mul( *multipole, XLALCOMPLEX16MulReal( 
-                     XLALCOMPLEX16Exp( XLALCOMPLEX16Rect( 0., - m * LAL_PI_2 ) ), -1. ) );
-
-  return XLAL_SUCCESS;
-}
-
-int
-XLALScalarSphericalHarmonic(
-                         COMPLEX16 *y,
-                         UINT4 l,
-                         INT4  m,
-                         REAL8 theta,
-                         REAL8 phi)
-{
-
-  int   gslStatus;
-  gsl_sf_result pLm;
-
-  INT4 absM = abs( m );
-
-  if ( absM > (INT4) l )
-  {
-    XLAL_ERROR( __func__, XLAL_EINVAL );
-  }
-
-  /* For some reason GSL will not take negative m */
-  /* We will have to use the relation between sph harmonics of +ve and -ve m */
-  XLAL_CALLGSL( gslStatus = gsl_sf_legendre_sphPlm_e((INT4)l, absM, cos(theta), &pLm ) );
-  if (gslStatus != GSL_SUCCESS)
-  {
-    XLALPrintError("Error in GSL function\n" );
-    XLAL_ERROR( __func__, XLAL_EFUNC );
-  }
-
-  /* Compute the values for the spherical harmonic */
-  y->re = pLm.val * cos(m * phi);
-  y->im = pLm.val * sin(m * phi);
-
-  /* If m is negative, perform some jiggery-pokery */
-  if ( m < 0 && absM % 2  == 1 )
-  {
-    y->re = - y->re;
-    y->im = - y->im;
-  }
 
   return XLAL_SUCCESS;
 }
@@ -306,7 +260,7 @@ XLALAssociatedLegendreXIsZero( const int l,
           legendre = 0;
           break;
         case 1:
-          legendre = - 28.125;
+          legendre = - 1.875;
           break;
         default:
           XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
@@ -470,8 +424,10 @@ CalculateThisMultipolePrefix(
   else if ( epsilon == 1 )
   {
   
-     n.im = - m;
+     n.im = m;
      n = XLALCOMPLEX16PowReal( n, (REAL8)l );
+     n.re = -n.re;
+     n.im = -n.im;
 
      mult1 = 16.*LAL_PI / gsl_sf_doublefact( 2u*l + 1u );
 

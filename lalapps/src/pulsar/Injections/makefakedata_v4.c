@@ -1081,15 +1081,21 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     uvar_generationMode = GENERATE_PER_SFT;
 
   /*--------------------- Prepare windowing of time series ---------------------*/
-  {
-    BOOLEAN have_window = LALUserVarWasSet( &uvar_window );
-    if ( have_window ) {
-      REAL4Window *win = XLALCreateHannREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band) );
-      cfg->window = ( win );
-    } else {
-      cfg->window = NULL;
-    }
-  }
+  cfg->window = NULL;
+  if ( uvar_window )
+    {
+      XLALLowerCaseString ( uvar_window );	// get rid of case
+      if ( !strcmp ( uvar_window, "hann") || !strcmp ( uvar_window, "hanning") )
+        {
+          REAL4Window *win = XLALCreateHannREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band) );
+          cfg->window = win;
+        }
+      else
+        {
+          XLALPrintError ("%s: Window function '%s' was entered, currently only Hann windowing is supported.\n\n", fn, uvar_window );
+          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+        }
+    } /* if uvar_window */
 
   /* -------------------- Prepare quantities for barycentering -------------------- */
   {

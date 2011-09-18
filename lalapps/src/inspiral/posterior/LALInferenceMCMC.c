@@ -128,7 +128,8 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	}
 	else{
 		fprintf(stdout, " initialize(): no data read.\n");
-    exit(1);
+    irs = NULL;
+    return(irs);
 	}
 	
 	return(irs);
@@ -149,9 +150,17 @@ void initializeMCMC(LALInferenceRunState *runState)
 (--randomseed seed)             Random seed of sampling distribution(random)\n\
 (--tdlike)                      Compute likelihood in the time domain\n";
 	
+  /* Print command line arguments if runState was not allocated */
+	if(runState==NULL)
+	{
+		fprintf(stdout,"%s",help);
+		return;
+	}
+  
+  
 	INT4 verbose=0,tmpi=0;
 	unsigned int randomseed=0;
-	REAL8 tempMax = 40.0;
+	REAL8 tempMax = 10.0;
 	//REAL8 tmp=0;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	ProcessParamsTable *ppt=NULL;
@@ -403,12 +412,21 @@ void initVariables(LALInferenceRunState *state)
 (--comp-min min)                Minimum component mass (1.0)\n\
 (--comp-max max)                Maximum component mass (30.0)\n\
 (--MTotMax max)                 Maximum total mass (35.0)\n\
-(--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n";
+(--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n\
+(--appendOutput fname)          Basename of the file to append outputs to\n";
 
-/* Print command line arguments if help requested */
-if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
-{
-	fprintf(stdout,"%s",help);
+
+  /* Print command line arguments if state was not allocated */
+  if(state==NULL)
+  {
+    fprintf(stdout,"%s",help);
+		return;
+	}
+  
+  /* Print command line arguments if help requested */
+  if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
+  {
+	  fprintf(stdout,"%s",help);
 		return;
 	}
   
@@ -621,6 +639,10 @@ if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
         else if ( ! strcmp( "threePointFivePN", ppt->value ) )
         {
           PhaseOrder = LAL_PNORDER_THREE_POINT_FIVE;
+        }
+        else if ( ! strcmp( "pseudoFourPN", ppt->value ) )
+        {
+          PhaseOrder = LAL_PNORDER_PSEUDO_FOUR;
         }
         else
         {
@@ -1350,7 +1372,7 @@ int main(int argc, char *argv[]){
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
   MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
-  if (MPIrank == 0) fprintf(stdout," ========== LALInference_MCMCMPI ==========\n");
+  if (MPIrank == 0) fprintf(stdout," ========== LALInference_MCMC ==========\n");
 
 	LALInferenceRunState *runState;
 	ProcessParamsTable *procParams=NULL;
@@ -1520,13 +1542,18 @@ int main(int argc, char *argv[]){
 	/* And performing any injections specified */
 	/* And allocating memory */
 	runState = initialize(procParams);
-  
+
 	/* Set up structures for MCMC */
 	initializeMCMC(runState);
 
 	/* Set up currentParams with variables to be used */
 	initVariables(runState);
 	}//NOT analyticLogLike
+  if(runState==NULL) {
+    fprintf(stderr, "runState not allocated (%s, line %d).\n",
+            __FILE__, __LINE__);
+    exit(1);
+  }
 	printf(" ==== This is thread %d of %d ====\n", MPIrank, MPIsize);
 	MPI_Barrier(MPI_COMM_WORLD);
 	/* Call MCMC algorithm */
@@ -1536,6 +1563,7 @@ int main(int argc, char *argv[]){
   MPI_Finalize();
   return 0;
 }
+
 
 
 

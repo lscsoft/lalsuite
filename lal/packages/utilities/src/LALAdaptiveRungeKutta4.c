@@ -47,11 +47,10 @@ None so far...
 
 #include <lal/LALAdaptiveRungeKutta4.h>
 
-NRCSID (LALADAPTIVERUNGEKUTTA4C, "$Id$");
+NRCSID(LALADAPTIVERUNGEKUTTA4C, "$Id$");
 
 
-ark4GSLIntegrator *
-XLALAdaptiveRungeKutta4Init( int dim,
+ark4GSLIntegrator *XLALAdaptiveRungeKutta4Init( int dim,
                              int (* dydt) (double t, const double y[], double dydt[], void * params),  /* These are XLAL functions! */
                              int (* stop) (double t, const double y[], double dydt[], void * params),
                              double eps_abs, double eps_rel
@@ -97,8 +96,7 @@ XLALAdaptiveRungeKutta4Init( int dim,
 }
 
 
-void
-XLALAdaptiveRungeKutta4Free( ark4GSLIntegrator *integrator )
+void XLALAdaptiveRungeKutta4Free( ark4GSLIntegrator *integrator )
 {
   if (!integrator) return;
 
@@ -113,8 +111,7 @@ XLALAdaptiveRungeKutta4Free( ark4GSLIntegrator *integrator )
 }
 
 
-unsigned int
-XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
+int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
                          void *params,
                          REAL8 *yinit,
                          REAL8 tinit, REAL8 tend, REAL8 deltat,

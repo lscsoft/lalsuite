@@ -27,7 +27,7 @@ related chirp parameters.
 
 \heading{Prototypes}
 
-<tt>LALInspiralParameterCalc()</tt>
+<tt>XLALInspiralParameterCalc()</tt>
 <ul>
 <li>\c params: Input/Output, given a pair of binary parameters and a lower
 frequency cutoff, other equivalent parameters are computed by this function.</li>
@@ -97,9 +97,9 @@ chirptimes \f$(\tau_0,\, \tau_2)\f$ or \f$(\tau_0,\, \tau_4)\f$ is input.
 \heading{Uses}
 When appropriate this function calls:
 <code>
-LALDBisectionFindRoot()
-LALEtaTau02()
-LALEtaTau04()
+XLALDBisectionFindRoot()
+XLALEtaTau02()
+XLALEtaTau04()
 </code>
 
 \heading{Notes}
@@ -120,23 +120,41 @@ LALInspiralParameterCalc (
    InspiralTemplate *params
    )
 {
+   XLALPrintDeprecationWarning("LALInspiralParameterCalc", "XLALInspiralParameterCalc");
 
+   INITSTATUS (status, "LALInspiralParameterCalc", LALINSPIRALPARAMETERCALCC );
+   ATTATCHSTATUSPTR(status);
+
+   XLALInspiralParameterCalc(params);
+   if (xlalErrno)
+      ABORTXLAL(status);
+
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
+}
+
+int
+XLALInspiralParameterCalc (
+   InspiralTemplate *params
+   )
+{
    REAL8 m1, m2, totalMass, eta, mu, piFl, etamin, tiny, ieta;
    REAL8 x1, x2, A0, A2, A3, A4, B2, B4, C4,v,tN;
    REAL8 theta = -11831.L/9240.L;
    REAL8 lambda = -1987.L/3080.L;
    static REAL8 oneby4;
    void *pars;
-   DFindRootIn rootIn;
+   REAL8 (*function)(REAL8, void *);
+   REAL8 xmin, xmax, xacc;
    EtaTau02In Tau2In;
    EtaTau04In Tau4In;
 
-   INITSTATUS (status, "LALInspiralParameterCalc", LALINSPIRALPARAMETERCALCC );
-   ATTATCHSTATUSPTR(status);
-
-   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT((INT4)params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->massChoice <= 15, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   if (params == NULL)
+      XLAL_ERROR(__func__, XLAL_EFAULT);
+   if ((INT4)params->massChoice < 0)
+      XLAL_ERROR(__func__, XLAL_EDOM);
+   if ((INT4)params->massChoice > 15)
+      XLAL_ERROR(__func__, XLAL_EDOM);
 
    totalMass 	= 0.0;
    ieta 	= params->ieta;
@@ -154,13 +172,15 @@ LALInspiralParameterCalc (
       case m1Andm2:
       case fixedMasses:
 
-         ASSERT(params->mass1 > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->mass2 > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->mass1 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->mass2 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
          m1 = params->mass1;
          m2 = params->mass2;
          params->totalMass = totalMass = m1+m2;
-         params->eta = eta = m1*m2/pow(totalMass,2);
+         params->eta = eta = m1*m2/(totalMass*totalMass);
          if (params->eta > oneby4) {
       		 params->eta -= tiny;
          }
@@ -176,13 +196,16 @@ LALInspiralParameterCalc (
       case totalMassAndEta:
       case totalMassUAndEta:
 
-         ASSERT(params->totalMass > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->eta > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->totalMass <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->eta <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
          if (params->eta > oneby4) {
 		params->eta -= tiny;
-   	}
-         ASSERT(params->eta <= oneby4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         }
+         if (params->eta > oneby4)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
          totalMass = params->totalMass;
          eta = params->eta;
@@ -197,9 +220,12 @@ LALInspiralParameterCalc (
 
       case totalMassAndMu:
 
-         ASSERT(params->totalMass > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->mu > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->mu < params->totalMass, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->totalMass <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->mu <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->mu >= params->totalMass)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
          totalMass = params->totalMass;
          mu = params->mu;
@@ -219,8 +245,10 @@ LALInspiralParameterCalc (
 
       case t02:
 
-         ASSERT(params->t0 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->t2 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->t0 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->t2 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
          A0 = 5./ pow(piFl, eightby3)/256.;
          A2 = 3715.0/(64512.0*pow(piFl,2.0));
@@ -230,22 +258,24 @@ LALInspiralParameterCalc (
          Tau2In.B2 = B2;
 
 	 pars = (void *) &Tau2In;
-         rootIn.function = &LALEtaTau02;
-         rootIn.xmax = oneby4+tiny;
-         rootIn.xmin = etamin;
-         rootIn.xacc = 1.e-8;
-         LALEtaTau02(status->statusPtr, &x1, rootIn.xmax, pars);
-         CHECKSTATUSPTR(status);
-         LALEtaTau02(status->statusPtr, &x2, rootIn.xmin, pars);
-         CHECKSTATUSPTR(status);
+         function = &XLALEtaTau02;
+         xmax = oneby4+tiny;
+         xmin = etamin;
+         xacc = 1.e-8;
+         x1 = XLALEtaTau02(xmax, pars);
+         if (XLAL_IS_REAL8_FAIL_NAN(x1))
+            XLAL_ERROR(__func__, XLAL_EFUNC);
+         x2 = XLALEtaTau02(xmin, pars);
+         if (XLAL_IS_REAL8_FAIL_NAN(x2))
+            XLAL_ERROR(__func__, XLAL_EFUNC);
 
          if (x1*x2 > 0) {
             params->eta = 0.;
-            DETATCHSTATUSPTR(status);
-            RETURN(status);
+            return XLAL_SUCCESS;
          } else {
-            LALDBisectionFindRoot(status->statusPtr, &eta, &rootIn, pars);
-            CHECKSTATUSPTR(status);
+            eta = XLALDBisectionFindRoot(function, xmin, xmax, xacc, pars);
+            if (XLAL_IS_REAL8_FAIL_NAN(eta))
+               XLAL_ERROR(__func__, XLAL_EFUNC);
          }
          if (eta > oneby4) {
 		 eta-=tiny;
@@ -264,8 +294,10 @@ LALInspiralParameterCalc (
 
       case t03:
 
-         ASSERT(params->t0 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->t3 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->t0 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->t3 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
          A0 = 5./ pow(piFl, eightby3)/256.;
          A3 = LAL_PI / pow(piFl, fiveby3)/8.;
@@ -288,8 +320,10 @@ LALInspiralParameterCalc (
 
       case t04:
 
-         ASSERT(params->t0 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->t4 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->t0 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->t4 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
 	 A0 = 5./(256. * pow(piFl, eightby3));
          A4 = 5./(128.0 * pow(piFl,fourby3)) * 3058673./1016064.;
@@ -301,22 +335,24 @@ LALInspiralParameterCalc (
          Tau4In.C4 = C4;
 
 	 pars = (void *) &Tau4In;
-         rootIn.function = &LALEtaTau04;
-         rootIn.xmax = oneby4+tiny;
-         rootIn.xmin = etamin;
-         rootIn.xacc = 1.e-8;
-         LALEtaTau04(status->statusPtr, &x1, rootIn.xmax, pars);
-         CHECKSTATUSPTR(status);
-         LALEtaTau04(status->statusPtr, &x2, rootIn.xmin, pars);
-         CHECKSTATUSPTR(status);
+         function = &XLALEtaTau04;
+         xmax = oneby4+tiny;
+         xmin = etamin;
+         xacc = 1.e-8;
+         x1 = XLALEtaTau04(xmax, pars);
+         if (XLAL_IS_REAL8_FAIL_NAN(x1))
+            XLAL_ERROR(__func__, XLAL_EFUNC);
+         x2 = XLALEtaTau04(xmin, pars);
+         if (XLAL_IS_REAL8_FAIL_NAN(x2))
+            XLAL_ERROR(__func__, XLAL_EFUNC);
 
 	 if (x1*x2 > 0) {
             params->eta = 0.;
-            DETATCHSTATUSPTR(status);
-            RETURN(status);
+            return XLAL_SUCCESS;
          } else {
-            LALDBisectionFindRoot(status->statusPtr, &eta, &rootIn, pars);
-            CHECKSTATUSPTR(status);
+            eta = XLALDBisectionFindRoot(function, xmin, xmax, xacc, pars);
+            if (XLAL_IS_REAL8_FAIL_NAN(eta))
+               XLAL_ERROR(__func__, XLAL_EFUNC);
          }
          if (eta > oneby4) {
 		 eta-=tiny;
@@ -352,13 +388,13 @@ LALInspiralParameterCalc (
       else
       {
 	      params->eta = 0.;
-	      DETATCHSTATUSPTR(status);
-	      RETURN(status);
+	      return XLAL_SUCCESS;
       }
       break;
 
      default:
-      ABORT (status, LALINSPIRALH_EMASSCHOICE, LALINSPIRALH_MSGEMASSCHOICE);
+      XLALPrintError("XLAL Error - %s: Improper choice for massChoice\n", __func__);
+      XLAL_ERROR(__func__, XLAL_EINVAL);
       break;
    }
 
@@ -448,6 +484,6 @@ LALInspiralParameterCalc (
       break;
    }
 
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
+   return XLAL_SUCCESS;
+
 }

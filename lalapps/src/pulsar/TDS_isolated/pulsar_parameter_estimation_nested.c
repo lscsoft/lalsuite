@@ -614,7 +614,8 @@ void readPulsarData( LALInferenceRunState *runState ){
     for( i = 0; i < numDets; i++ ){
       tempdet = strsep( &tempdets, "," );
       XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
-    }      
+    }
+    
   }
   /*Get psd values for generating fake data.*/
   /*=========================================================================*/
@@ -914,8 +915,8 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
                              LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
     
     /* add data sample interval */
-    LALInferenceAddVariable( ifodata->dataParams, "dt", &fdt[i],
-                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+    /*LALInferenceAddVariable( ifodata->dataParams, "dt", &fdt[i],
+                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );*/
     
     /* add frequency factors variable */
     LALInferenceAddVariable( ifodata->dataParams, "freqfactors",
@@ -1052,12 +1053,10 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     ppte = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
     ppts = LALInferenceGetProcParamVal( commandLine, "--ephem-sun" );
     if( ppte && ppts ){
-      fprintf(stderr, "Think ephemeris files have been set!\n");
       XLALStringCopy( efile, ppte->value, sizeof(efile) );
       XLALStringCopy( sfile, ppts->value, sizeof(sfile) );
     }
     else{ /* try getting files automatically */
-      fprintf(stderr, "About to automatically set the ephemeris files\n");
       if( XLALAutoSetEphemerisFiles( efile, sfile,
         ifodata->dataTimes->data[0].gpsSeconds,
         ifodata->dataTimes->data[datalength-1].gpsSeconds ) ){
@@ -2018,10 +2017,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
   REAL8 loglike = 0.; /* the log likelihood */
   UINT4 i = 0;
   CHAR *modeltype = NULL;/*need to check model type in this function*/
-  FILE *bugtest;
-  REAL8 h1=0.,lambda=0.,theta=0.,h0=0.;
-  
-  bugtest = fopen("bug_test.txt", "a");
   
   modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
   
@@ -2032,16 +2027,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     LALInferenceCopyVariables( vars, datatemp1->modelParams );
     datatemp1 = datatemp1->next;
   }
-  
-  h1 = *(REAL8 *)LALInferenceGetVariable( data->modelParams, "h1" );
-  h1=h1*5;
-  lambda = *(REAL8 *)LALInferenceGetVariable( data->modelParams, "lambda" );
-  lambda=lambda*1.57079632679489;
-  theta = *(REAL8 *)LALInferenceGetVariable( data->modelParams, "theta" );
-  theta=theta*0.785398163397448;
-  h0=*(REAL8 *)LALInferenceGetVariable( data->modelParams, "h0" );
-  h0=1e-20*h0;
-  if (h0<1e-25) fprintf(bugtest,"h0: %e\t",h0);
   
   /* get pulsar model */
   while( datatemp2 ){
@@ -2115,17 +2100,10 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
       
       count++;
     }
-    /*if ((h1>1.9) && (h1<2.1) && (lambda>1.5) && (lambda<1.6) && (theta>0.7) && (theta<0.8)) fprintf(bugtest,"h1: %f\tlambda: %f\ttheta: %f\tloglike: %e\t",h1, lambda, theta, logliketmp);*/
-    if (h0<1e-25) fprintf(bugtest,"loglike: %e\t",logliketmp);
     loglike += logliketmp;
     data = data->next;
   }
-  /*if ((h1>1.9) && (h1<2.1) && (lambda>1.5) && (lambda<1.6) && (theta>0.7) && (theta<0.8)) fprintf(bugtest,"\n");*/
-  if (h0<1e-25) fprintf(bugtest,"\n");
-  fclose( bugtest );
-  /*exit(0);/*comment out if not using for bug testing*/
   return loglike;
-  
 }
 
 
@@ -3045,10 +3023,12 @@ void injectSignal( LALInferenceRunState *runState ){
   ProcessParamsTable *commandLine = runState->commandLine;
   
   BinaryPulsarParams injpars;
-  
-  REAL8 snrmulti = 0., snrscale = 0.;
+ 
   FILE *fpsnr = NULL; /* output file for SNRs */
-  INT4 ndets = 0, j=1;
+  INT4 ndets = 0, j = 1, k = 0, numSNRs = 1;
+  
+  REAL8Vector *freqFactors = NULL;
+  REAL8 *snrmulti = NULL, *snrscale = NULL;
   
   CHAR *modeltype = NULL;/*need to check model type in this function*/
   
@@ -3073,10 +3053,43 @@ parameter file %s is wrong.\n", injectfile);
     return;
   }
  
+  freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, 
+                                                          "freqfactors" );
+ 
+  snrscale = XLALCalloc(sizeof(REAL8), numSNRs);
+  
   ppt = LALInferenceGetProcParamVal( commandLine, "--scale-snr" );
   if ( ppt ){
-    snrscale = atof( ppt->value );
+    /* if there are more than one data streams the SNRs for the individual
+       (multi-detector) streams can be set, rather than having a combined SNR.
+       The SNR vales are set as comma separated values to --snr-scale. If only
+       one value is given, but the data has multiple streams then the combined
+       multi-stream SNR will still be used. */
+    CHAR *snrscales = NULL, *tmpsnrs = NULL, *tmpsnr = NULL, snrval[256];
+    
+    snrscales = XLALStringDuplicate( ppt->value );
+      
+    tmpsnrs = XLALStringDuplicate( snrscales );
+      
+    /* count the number of SNRs (comma seperated values) */
+    numSNRs = count_csv( snrscales );
+    
+    if( numSNRs != 1 || numSNRs != (INT4)freqFactors->length ){
+      fprintf(stderr, "Error... number of SNR values must either be 1, or equal\
+ to the number of data streams required for your model!\n");
+      exit(0);
+    }
+    
+    snrscale = XLALRealloc(snrscale, sizeof(REAL8)*numSNRs);
+    
+    for( k = 0; k < numSNRs; k++ ){
+      tmpsnr = strsep( &tmpsnrs, "," );
+      XLALStringCopy( snrval, tmpsnr, strlen(tmpsnr)+1 );
+      snrscale[k] = atof(snrval);
+    }
   }
+ 
+  snrmulti = XLALCalloc(sizeof(REAL8), numSNRs);
  
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
   if( !ppt ){
@@ -3106,10 +3119,9 @@ parameter file %s is wrong.\n", injectfile);
     
     data = data->next;
     
-    /* If modeltype is pinsf need to advance data on to next, so this loop only
-     runs once if there is only 1 det*/
-    if ( !strcmp( modeltype, "pinsf" ) ) data = data->next;
-    
+    /* If modeltype uses more than one data stream need to advance data on to
+       next, so this loop only runs once if there is only 1 det*/
+    for ( k = 1; k < (INT4)freqFactors->length; k++ ) data = data->next;
   }
   
   /* reset data to head */
@@ -3117,70 +3129,83 @@ parameter file %s is wrong.\n", injectfile);
   
   /* calculate SNRs */
   while ( data ){
-    REAL8 snrval = calculate_time_domain_snr( data );
+    for ( k = 0; k < numSNRs; k++ ){
+      REAL8 snrval = calculate_time_domain_snr( data );
+   
+      snrmulti[k] += SQUARE(snrval);
+    
+      if ( snrscale[k] == 0 ) fprintf(fpsnr, "%le\t", snrval);
+                             
+      data = data->next;
+    }
     
     ndets++;
-    
-    snrmulti += SQUARE(snrval);
-    
-    if ( snrscale == 0 ) fprintf(fpsnr, "%le\t", snrval);
-                             
-    data = data->next;
-
   }
   
   /* get overall multi-detector SNR */
-  snrmulti = sqrt( snrmulti );
+  for ( k = 0; k < numSNRs; k++ ) snrmulti[k] = sqrt( snrmulti[k] );
   
   /* only need to print out multi-detector snr if the were multiple detectors */
-  if( snrscale == 0 ){
-    if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
+  if( numSNRs == 1 && snrscale[0] == 0 ){
+    if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti[0]);
     else fprintf(fpsnr, "\n");
   }
   else{
     /* rescale the signal and calculate the SNRs */
     data = runState->data;
-    
-    snrscale /= snrmulti;
-    
-    /* rescale the h0 */
-    injpars.h0 *= snrscale;
    
+    for ( k = 0; k < numSNRs; k++ ) snrscale[k] /= snrmulti[k];
+    
+    /* rescale the h0 (and other amplitude factors for other models) */
+    if ( !strcmp(modeltype, "triaxial") || !strcmp(modeltype, "pinsf") ){
+      for ( k = 0; k < numSNRs; k++ ){
+        if ( freqFactors->data[k] == 2. ) injpars.h0 *= snrscale[k];
+        if ( freqFactors->data[k] == 1. ) injpars.h1 *= snrscale[k];
+      }
+    }
+    
+    /* recreate the signal with scale amplitude */
     while( data ){
       UINT4 varyphasetmp = varyphase;
-      REAL8 snrval = 0.;
       varyphase = 1;
-      snrmulti = 0;
       
-      /* recreate the signal */
       pulsar_model( injpars, data );
       
       /* reset varyphase to its original value */
       varyphase = varyphasetmp;
       
-      /* recalculate the SNR */
-      snrval = calculate_time_domain_snr( data );
-      
-      snrmulti += SQUARE(snrval);
-      
-      fprintf(fpsnr, "%le\t", snrval);
-      
-      data = data->next;
-      if ( !strcmp( modeltype, "pinsf" ) ){
+      for ( k = 1; k < (INT4)freqFactors->length; k++ ) data = data->next;
+    }
+    
+    data = runState->data;
+    
+    /* get new snrs */
+    for ( k = 0; k < numSNRs; k++ ) snrmulti[k] = 0;
+    
+    while( data ){
+      for ( k = 0; k < numSNRs; k++ ){
+        REAL8 snrval = 0.;
+
+        /* recalculate the SNR */
         snrval = calculate_time_domain_snr( data );
-        snrmulti += SQUARE(snrval);
+      
+        snrmulti[k] += SQUARE(snrval);
+      
         fprintf(fpsnr, "%le\t", snrval);
+      
         data = data->next;
       }
     }
     
-    snrmulti = sqrt( snrmulti );
+    for ( k = 0; k < numSNRs; k++ ) snrmulti[k] = sqrt( snrmulti[k] );
     
     if( ndets > 1 ){ 
-      fprintf(fpsnr, "%le\n", snrmulti);
-      fprintf(stderr,"snr multi: %f\n",snrmulti);
+      for ( k = 0; k < numSNRs; k++ ) fprintf(fpsnr, "%le\t", snrmulti[k]);
+      fprintf(fpsnr, "\n");
+      /*fprintf(stderr,"snr multi: %f\n",snrmulti); */
     }
     else fprintf(fpsnr, "\n");
+
   }
   
   fclose( fpsnr );
@@ -3258,6 +3283,8 @@ injection\n", signalonly);
     j++;
   }
   
+  XLALFree(snrmulti);
+  XLALFree(snrscale);
 }
 
 /*-------------------- END OF SOFTWARE INJECTION FUNCTIONS -------------------*/

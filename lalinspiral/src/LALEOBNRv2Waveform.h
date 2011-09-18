@@ -323,6 +323,7 @@ struct tagEOBParams
   REAL8 m2;
   EOBACoefficients        *aCoeffs;
   FacWaveformCoeffs       *hCoeffs;
+  EOBNonQCCoeffs          *nqcCoeffs;
   NewtonMultipolePrefixes *prefixes;
 }
 EOBParams;
@@ -367,6 +368,12 @@ XLALGetFactorizedWaveform(
                       const INT4            m,
                       EOBParams             *params
                      );
+
+int XLALGetCalibratedNQCCoeffs( EOBNonQCCoeffs *coeffs,
+                                INT4            l,
+                                INT4            m,
+                                REAL8           eta 
+                                );
 
 int  XLALEOBNonQCCorrection(
                       COMPLEX16      * restrict nqc,

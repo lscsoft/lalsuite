@@ -13,12 +13,14 @@ libutilities_la_SOURCES = \
 	HeapSort.c \
 	Integrate.c \
 	Interpolate.c \
+	LALAdaptiveRungeKutta4.c \
 	LALRunningMedian.c \
 	MatrixOps.c \
 	MersenneRandom.c \
 	ODE.c \
 	Random.c \
-	RngMedBias.c
+	RngMedBias.c \
+	SphericalHarmonics.c
 
 noinst_HEADERS = MatrixOps_source.c
 

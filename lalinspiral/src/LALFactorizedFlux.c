@@ -44,8 +44,8 @@ REAL8 XLALInspiralFactorizedFlux(
   COMPLEX16 hLM;
   INT4 l, m;
 
-  /*EOBNonQCCoeffs *nqcCoeffs = ak->nqcCoeffs;
-*/
+  EOBNonQCCoeffs *nqcCoeffs;
+  COMPLEX16       hNQC;
 
 #ifndef LAL_NDEBUG
   if ( !values || !ak )
@@ -59,12 +59,49 @@ REAL8 XLALInspiralFactorizedFlux(
     XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
   }
 
+  nqcCoeffs = ak->nqcCoeffs;
+
   /* Omegs is the derivative of phi */
   omegaSq = omega*omega;
 
   v = cbrt( omega );
 
-  for ( l = 2; l <= lMax; l++ )
+  /* We need to apply the NQC for the (2,2) mode */
+  /* To avoid having an if statement in the loop we will */
+  /* deal with (2,2) and (2,1) separately */
+  /* (2,2) */
+  l = 2;
+  m = 2;
+
+  if ( XLALEOBNonQCCorrection( &hNQC, values, omega, nqcCoeffs ) == XLAL_FAILURE )
+  {
+    XLAL_ERROR_REAL8( __func__, XLAL_EFUNC );
+  }
+
+  if ( XLALGetFactorizedWaveform( &hLM, values, v, l, m, ak )
+           == XLAL_FAILURE )
+  {
+    XLAL_ERROR_REAL8( __func__, XLAL_EFUNC );
+  }
+  /* For the 2,2 mode, we apply NQC correction to the flux */
+  hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+
+  flux = (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+
+  /* (2,1) */
+  l = 2;
+  m = 1;
+
+  if ( XLALGetFactorizedWaveform( &hLM, values, v, l, m, ak )
+           == XLAL_FAILURE )
+  {
+    XLAL_ERROR_REAL8( __func__, XLAL_EFUNC );
+  }
+
+  flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+
+  /* All other modes */
+  for ( l = 3; l <= lMax; l++ )
   {
     /*INT4 minM = l-3;
     if ( minM < 1 )
@@ -78,20 +115,7 @@ REAL8 XLALInspiralFactorizedFlux(
       {
         XLAL_ERROR_REAL8( __func__, XLAL_EFUNC );
       }
-      /* For the 2,2 mode, we apply NQC correction to the flux */
-      /*
-      if ( l == 2 && m == 2 )
-      {
-        if ( nqcCoeffs->a1 || nqcCoeffs->a2 || nqcCoeffs->a3
-            || nqcCoeffs->b1 || nqcCoeffs->b2 )
-        {
-          COMPLEX16 hNQC;
-          XLALEOBNonQCCorrection( &hNQC, values, dvalues, nqcCoeffs );
 
-          hLM = XLALCOMPLEX16Mul( hNQC, hLM );
-        }
-      }
-      */
       flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
     }
   }

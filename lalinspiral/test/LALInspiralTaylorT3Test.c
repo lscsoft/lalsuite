@@ -39,12 +39,11 @@ LALInspiralWave3Templates routine.
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
+#include <lal/LALSimInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-#include <lal/LALSimInspiralTaylorT3.h>
-#include <lal/LALSimInspiral.h>
 
 NRCSID(LALInspiralTaylorT3TestC, "$Id$");
 
@@ -62,7 +61,7 @@ int main(void) {
 	InspiralTemplate params;
 
 	FILE *outputfile;
-	INT4 i,length;
+	INT4 i,length,O;
 	REAL8 dt, m, m1, m2, nu;
 	LIGOTimeGPS tc = LIGOTIMEGPSZERO;
 
@@ -74,8 +73,35 @@ int main(void) {
 	m = m1 + m2;
 	nu = m1 * m2 / m / m;
 
+	O = 0;
+	switch (O)
+	{
+		case 0:
+		case 1:
+			O = 0;
+			params.order = LAL_PNORDER_NEWTONIAN;
+			break;
+		case 2:
+			params.order = LAL_PNORDER_ONE;
+			break;
+		case 3:
+			params.order = LAL_PNORDER_ONE_POINT_FIVE;
+			break;
+		case 4:
+			params.order = LAL_PNORDER_TWO;
+			break;
+		case 5:
+			params.order = LAL_PNORDER_TWO_POINT_FIVE;
+			break;
+		case 6:
+			params.order = LAL_PNORDER_THREE;
+			break;
+		case 7:
+			params.order = LAL_PNORDER_THREE_POINT_FIVE;
+			break;
+	}
+
 	params.approximant = TaylorT3;
-	params.order = LAL_PNORDER_THREE_POINT_FIVE;
 	params.ampOrder = LAL_PNORDER_NEWTONIAN;
 	params.mass1 = m1;
 	params.mass2 = m2;
@@ -87,10 +113,12 @@ int main(void) {
 	params.distance = 1e6 * LAL_PC_SI;
 	params.ieta = 1;
 
+	
+
 	dt = 1. / params.tSampling;
 
 	start = clock();
-	length = XLALSimInspiralTaylorT3PNRestricted(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.fLower, params.distance, 0, 7);
+	length = XLALSimInspiralTaylorT3PNRestricted(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.fLower, params.distance, 0, O);
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;
 	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
@@ -119,7 +147,7 @@ int main(void) {
 	fprintf(stderr, "Lower cut-off frequency used will be %fHz\n", params.fLower);
 
 	/* --- now we can call the injection function --- */
-	LALInspiralWave3Templates(&mystatus, h_plus->data, h_cross->data, &params);
+	XLALInspiralWave3Templates(h_plus->data, h_cross->data, &params);
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;
 	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);

@@ -26,6 +26,7 @@ DOXYINPUT = \
 	lalinspiral \
 	lalmetaio \
 	lalpulsar \
+	lalsimulation \
 	lalstochastic \
 	lalxml \
 	lalapps/src

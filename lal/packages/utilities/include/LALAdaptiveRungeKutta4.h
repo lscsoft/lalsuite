@@ -12,6 +12,11 @@ extern "C" {
 #pragma }
 #endif
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #define XLAL_BEGINGSL \
         { \
           gsl_error_handler_t *saveGSLErrorHandler_; \
@@ -27,6 +32,7 @@ extern "C" {
 typedef struct
 tagark4GSLIntegrator
 {
+  SWIGLAL_STRUCT_LALALLOC();
   gsl_odeiv_step    *step;
   gsl_odeiv_control *control;
   gsl_odeiv_evolve  *evolve;
@@ -46,18 +52,15 @@ tagark4GSLIntegrator
 /**
 \c ark4GSLIntegrator
 */
-ark4GSLIntegrator *
-XLALAdaptiveRungeKutta4Init( int dim,
+ark4GSLIntegrator *XLALAdaptiveRungeKutta4Init( int dim,
                              int (* dydt) (double t, const double y[], double dydt[], void * params),
                              int (* stop) (double t, const double y[], double dydt[], void * params),
                              double eps_abs, double eps_rel
                              );
 
-void
-XLALAdaptiveRungeKutta4Free( ark4GSLIntegrator *integrator );
+void XLALAdaptiveRungeKutta4Free( ark4GSLIntegrator *integrator );
 
-unsigned int
-XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
+int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
                          void *params,
                          REAL8 *yinit,
                          REAL8 tinit, REAL8 tend, REAL8 deltat,

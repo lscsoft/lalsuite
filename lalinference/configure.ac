@@ -139,6 +139,7 @@ LALSUITE_CHECK_LIB([LAL],[6.5.0.2],[LALVersion],[lal/LALStdio.h])
 LALSUITE_CHECK_LIB([LALSupport],[6.5.0],[LALOpenDataFile],[lal/FileIO.h])
 LALSUITE_CHECK_LIB([LALMetaIO],[1.0.1.2],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_LIB([LALFrame],[1.0.2.1],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_LIB([LALSimulation],[0.0.0.1],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_LIB([LALInspiral],[1.1.0.2],[LALInspiralParameterCalc],[lal/LALInspiral.h])
 LALSUITE_CHECK_LIB([LALPulsar],[1.1.0.2],[XLALComputeFaFb],[lal/ComputeFstat.h])
 

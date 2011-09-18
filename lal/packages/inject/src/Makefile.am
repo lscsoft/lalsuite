@@ -4,7 +4,6 @@ libinject_la_SOURCES = \
 	CelestialCoordinatesLaldoc.c \
 	InjectTimeSeries.c \
 	InjectVector.c \
-	LALSimulation.c \
 	SimulateCoherentGW.c \
 	SkyCoordinates.c \
 	TerrestrialCoordinates.c \

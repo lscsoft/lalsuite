@@ -1,4 +1,4 @@
-AC_INIT([lalsuite],[6.5.0.4],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalsuite],[6.5.0.5],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -19,6 +19,7 @@ LALSUITE_ENABLE_ALL_LAL
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALXML
+LALSUITE_ENABLE_LALSIMULATION
 LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALSTOCHASTIC
@@ -52,6 +53,12 @@ if test "$lalxml" = "true"; then
   LALXML_LIBS="${lalsuite_top_builddir}/lalxml/src/liblalxml.la"
   LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
   export LALXML_LIBS LALXML_CFLAGS
+fi
+
+if test "$lalsimulation" = "true"; then
+  LALSIMULATION_LIBS="${lalsuite_top_builddir}/lalsimulation/src/liblalsimulation.la"
+  LALSIMULATION_CFLAGS="-I${lalsuite_top_builddir}/lalsimulation/include"
+  export LALSIMULATION_LIBS LALSIMULATION_CFLAGS
 fi
 
 if test "$lalburst" = "true"; then
@@ -96,6 +103,10 @@ fi
 
 if test "$lalxml" = "true"; then
   AC_CONFIG_SUBDIRS([lalxml])
+fi
+
+if test "$lalsimulation" = "true"; then
+  AC_CONFIG_SUBDIRS([lalsimulation])
 fi
 
 if test "$lalburst" = "true"; then

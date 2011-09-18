@@ -230,6 +230,7 @@ int main (int argc , char **argv) {
     case PadeF1:
     case TaylorF1:
     case TaylorF2:
+    case TaylorF2RedSpin:
     case FindChirpSP:
     case BCV:
     case BCVC:
@@ -288,6 +289,7 @@ int main (int argc , char **argv) {
     case SpinTaylorT3:
     case SpinTaylor:
     case SpinTaylorFrameless:
+    case SpinQuadTaylor:
     case PhenSpinTaylorRD:
     case IMRPhenomA:
     case IMRPhenomB:
@@ -698,6 +700,9 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
     break;
   case LAL_QMInter:
     strcat(simTable.waveform,"LAL_QMInter");
+    break;
+  case LAL_SO25Inter:
+    strcat(simTable.waveform,"LAL_SO25Inter");
     break;
   case LAL_AllInter:
     strcat(simTable.waveform,"LAL_AllInter");
