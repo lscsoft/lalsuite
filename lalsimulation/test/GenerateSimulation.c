@@ -276,7 +276,7 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
 }
 
 static int dump_FD(FILE *f, COMPLEX16FrequencySeries *htilde) {
-    ssize_t i;
+    size_t i;
     COMPLEX16 *dataPtr = htilde->data->data;
 
     fprintf(f, "# f htilde.re htilde.im\n");
@@ -287,7 +287,7 @@ static int dump_FD(FILE *f, COMPLEX16FrequencySeries *htilde) {
 }
 
 static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
-    ssize_t i;
+    size_t i;
     if (hplus->data->length != hcross->data->length) {
         XLALPrintError("Error: hplus and hcross are not the same length\n");
         return 1;
