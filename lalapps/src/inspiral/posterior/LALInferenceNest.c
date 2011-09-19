@@ -193,10 +193,18 @@ void initializeTemplate(LALInferenceRunState *runState)
 	if(ppt) {
 		if(!strcmp("LALSTPN",ppt->value))
 			runState->template=&LALInferenceTemplateLALSTPN;
-		if(!strcmp("PhenSpin",ppt->value))
+		else if(!strcmp("PhenSpin",ppt->value))
 			runState->template=&LALInferenceTemplatePSTRD;
-		if(!strcmp("LALGenerateInspiral",ppt->value))
+		else if(!strcmp("LALGenerateInspiral",ppt->value))
 			runState->template=&LALInferenceTemplateLALGenerateInspiral;
+		else if(!strcmp("LAL",ppt->value))
+			runState->template=&LALInferenceTemplateLAL;
+		else {
+			XLALPrintError("Error: unknown template %s\n",ppt->value);
+			XLALPrintError(help);
+			XLAL_ERROR_VOID(__func__,XLAL_EINVAL);
+		}
+
 	}
 	return;
 }
@@ -323,7 +331,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 endtime;
 	ProcessParamsTable *ppt=NULL;
 	INT4 AmpOrder=0;
-	LALPNOrder PhaseOrder=LAL_PNORDER_TWO;
+	LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
 	Approximant approx=TaylorF2;
 	REAL8 logDmin=log(1.0);
 	REAL8 logDmax=log(100.0);
@@ -399,9 +407,9 @@ Parameter arguments:\n\
 		else
 		    LALGetApproximantFromString(&status,ppt->value,&approx);
         LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
-        fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 	}
-	
+	fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
+
 	/* Over-ride end time if specified */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--trigtime");
 	if(ppt){
