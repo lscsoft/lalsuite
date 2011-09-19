@@ -93,9 +93,9 @@ XLALInspiralPhasing1 (
    )
 {
    void *funcParams;
-   REAL8 (*function)(REAL8 x, void *params);
+   REAL8 (*integratedfunction)(REAL8, void *);
    REAL8 xmin, xmax;
-   IntegralType type;
+   IntegralType integrationtype;
    PhiofVIntegrandIn in2;
    InspiralPhaseIn *in1;
    REAL8 sign;
@@ -112,10 +112,10 @@ XLALInspiralPhasing1 (
 
    in1 = (InspiralPhaseIn *) params;
 
-   function = XLALInspiralPhiofVIntegrand;
+   integratedfunction = XLALInspiralPhiofVIntegrand;
    xmin = in1->v0;
    xmax = v;
-   type = ClosedInterval;
+   integrationtype = ClosedInterval;
 
    in2.dEnergy = in1->dEnergy;
    in2.flux = in1->flux;
@@ -133,7 +133,7 @@ XLALInspiralPhasing1 (
       sign = -1.0;
    }
 
-   answer = XLALREAL8RombergIntegrate (function, funcParams, xmin, xmax, type);
+   answer = XLALREAL8RombergIntegrate (integratedfunction, funcParams, xmin, xmax, integrationtype);
    if (XLAL_IS_REAL8_FAIL_NAN(answer))
       XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
 

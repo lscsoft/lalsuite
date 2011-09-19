@@ -144,7 +144,7 @@ XLALInspiralParameterCalc (
    REAL8 lambda = -1987.L/3080.L;
    static REAL8 oneby4;
    void *pars;
-   REAL8 (*function)(REAL8, void *);
+   REAL8 (*rootfunction)(REAL8, void *);
    REAL8 xmin, xmax, xacc;
    EtaTau02In Tau2In;
    EtaTau04In Tau4In;
@@ -258,7 +258,7 @@ XLALInspiralParameterCalc (
          Tau2In.B2 = B2;
 
 	 pars = (void *) &Tau2In;
-         function = &XLALEtaTau02;
+         rootfunction = &XLALEtaTau02;
          xmax = oneby4+tiny;
          xmin = etamin;
          xacc = 1.e-8;
@@ -273,7 +273,7 @@ XLALInspiralParameterCalc (
             params->eta = 0.;
             return XLAL_SUCCESS;
          } else {
-            eta = XLALDBisectionFindRoot(function, xmin, xmax, xacc, pars);
+            eta = XLALDBisectionFindRoot(rootfunction, xmin, xmax, xacc, pars);
             if (XLAL_IS_REAL8_FAIL_NAN(eta))
                XLAL_ERROR(__func__, XLAL_EFUNC);
          }
@@ -335,7 +335,7 @@ XLALInspiralParameterCalc (
          Tau4In.C4 = C4;
 
 	 pars = (void *) &Tau4In;
-         function = &XLALEtaTau04;
+         rootfunction = &XLALEtaTau04;
          xmax = oneby4+tiny;
          xmin = etamin;
          xacc = 1.e-8;
@@ -350,7 +350,7 @@ XLALInspiralParameterCalc (
             params->eta = 0.;
             return XLAL_SUCCESS;
          } else {
-            eta = XLALDBisectionFindRoot(function, xmin, xmax, xacc, pars);
+            eta = XLALDBisectionFindRoot(rootfunction, xmin, xmax, xacc, pars);
             if (XLAL_IS_REAL8_FAIL_NAN(eta))
                XLAL_ERROR(__func__, XLAL_EFUNC);
          }

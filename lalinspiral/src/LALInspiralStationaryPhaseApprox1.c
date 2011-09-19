@@ -138,8 +138,8 @@ XLALInspiralStationaryPhaseApprox1 (
    REAL8   xmin, xmax;
    INT4 n, i, nby2;
    void *funcParams;
-   REAL8 (*intfunc)(REAL8 x, void *params);
-   IntegralType inttype;
+   REAL8 (*integratedfunction)(REAL8, void *);
+   IntegralType integrationtype;
    TofVIntegrandIn psiIn;
    TofVIn tofvin;
    expnCoeffs ak;
@@ -204,8 +204,8 @@ XLALInspiralStationaryPhaseApprox1 (
    Compute the standard stationary phase approximation.
    */
    funcParams = (void *) &psiIn;
-   intfunc = XLALPsiOfT;
-   inttype = ClosedInterval;
+   integratedfunction = XLALPsiOfT;
+   integrationtype = ClosedInterval;
    for (i=1; i<nby2; i++)
    {
       f = i * df;
@@ -241,8 +241,8 @@ XLALInspiralStationaryPhaseApprox1 (
                sign = 1.0;
             } 
 
-	    psif = XLALREAL8RombergIntegrate(intfunc, funcParams, \
-					     xmin, xmax, inttype);
+	    psif = XLALREAL8RombergIntegrate(integratedfunction, funcParams, \
+					     xmin, xmax, integrationtype);
 	    if (XLAL_IS_REAL8_FAIL_NAN(psif))
 	      XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
 
