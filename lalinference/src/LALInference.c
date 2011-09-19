@@ -700,7 +700,6 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
   ProcessParamsTable *head, *ptr=NULL;
   /* always (even for argc==1, i.e. no arguments) put one element in list: */
   head = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
-  //strcpy(head->program, argv[0]);
   XLALStringCopy(head->program, argv[0], sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
   ptr = head;
   i=1;
