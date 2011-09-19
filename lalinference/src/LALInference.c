@@ -700,7 +700,8 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
   ProcessParamsTable *head, *ptr=NULL;
   /* always (even for argc==1, i.e. no arguments) put one element in list: */
   head = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
-  strcpy(head->program, argv[0]);
+  //strcpy(head->program, argv[0]);
+  XLALStringCopy(head->program, argv[0], sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
   ptr = head;
   i=1;
   while ((i<argc) & (state<=3)) {
@@ -709,8 +710,8 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
     /* react depending on current state: */
     if (state==1){ /* ('state 1' means handling very 1st argument) */
       if (dbldash) {
-        strcpy(head->param, argv[i]);
-        strcpy(ptr->type, "string");
+        XLALStringCopy(head->param, argv[i], sizeof(CHAR)*LIGOMETA_PARAM_MAX);
+        XLALStringCopy(ptr->type, "string", sizeof(CHAR)*LIGOMETA_TYPE_MAX);
         state = 2;
       }
       else { /* (very 1st argument needs to start with "--...") */
@@ -722,22 +723,24 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
       if (dbldash) {
         ptr->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
         ptr = ptr->next;
-        strcpy(ptr->program, argv[0]);
-        strcpy(ptr->param, argv[i]);
-        strcpy(ptr->type, "string");
+        XLALStringCopy(ptr->program, argv[0],
+sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
+        XLALStringCopy(ptr->param, argv[i], sizeof(CHAR)*LIGOMETA_PARAM_MAX);
+        XLALStringCopy(ptr->type, "string", sizeof(CHAR)*LIGOMETA_TYPE_MAX);
       }
       else {
         state = 3;
-        strcpy(ptr->value, argv[i]);          
+        XLALStringCopy(ptr->value, argv[i], sizeof(CHAR)*LIGOMETA_VALUE_MAX);
       }
     }
     else if (state==3) { /* ('state 3' means last entry was a value) */
       if (dbldash) {
         ptr->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
         ptr = ptr->next;
-        strcpy(ptr->program, argv[0]);
-        strcpy(ptr->param, argv[i]);
-        strcpy(ptr->type, "string");
+        XLALStringCopy(ptr->program, argv[0],
+                       sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
+        XLALStringCopy(ptr->param, argv[i], sizeof(CHAR)*LIGOMETA_PARAM_MAX);
+        XLALStringCopy(ptr->type, "string", sizeof(CHAR)*LIGOMETA_TYPE_MAX);
         state = 2;
       }
       else {
