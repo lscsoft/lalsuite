@@ -62,31 +62,22 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	LALStatus status;
 	memset(&status,0,sizeof(status));
 	REAL8 dummyR8 = 0.0;
-	//REAL8 temperature = 1.0;
 	INT4 acceptanceCount = 0;
 	REAL8 nullLikelihood;
 	REAL8 logChainSwap = 0.0;
 	int tempIndex;
-	//int *tempIndexVec = NULL;
-	//int dummyTemp;
 	REAL8 *tempLadder = NULL;			//the temperature ladder
 	INT4 *acceptanceCountLadder = NULL;	//array of acceptance counts to compute the acceptance ratios.
 	double *TcurrentLikelihood = NULL; //the current likelihood for each chain
   INT4 **pdf = NULL;
   REAL8 pdf_count = 0.0;
 	INT4 parameter=0;
-  //REAL8 *sigmaVec = NULL;
   REAL8Vector *sigmas = NULL;
-  //REAL8 *PacceptCountVec = NULL;
   REAL8Vector *PacceptCount = NULL;
-  //REAL8 *PproposeCountVec = NULL;
   REAL8Vector *PproposeCount = NULL;
-  
   REAL8 *parametersVec = NULL;
   REAL8Vector * parameters = NULL;
   
-	//LALVariables* TcurrentParams = malloc(sizeof(LALVariables));	//the current parameters for each chains
-	//LALVariables dummyLALVariable;
 	INT4 adaptationOn = 0;
   INT4 acceptanceRatioOn = 0;
 	INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
@@ -272,7 +263,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		printf("%f\t", runState->currentLikelihood - nullLikelihood); 
 		printf("\n");
 
-                /* Do a data dump. */
+                /* Print to file the contents of ->freqModelhPlus->data->length. */
                 ppt = LALInferenceGetProcParamVal(runState->commandLine, "--data-dump");
                 if (ppt) {
                   LALInferenceDataDump(runState);
@@ -288,7 +279,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
 
     if (adaptationOn == 1 && i == 1000001) {
-        adaptationOn = 0;  //turn adaptation off after 10^6 iterations
+      adaptationOn = 0;  //turn adaptation off after 10^6 iterations
+      LALInferenceRemoveVariable(runState->proposalArgs,"s_gamma");
+      LALInferenceRemoveVariable(runState->proposalArgs, SIGMAVECTORNAME);
     }
     if (adaptationOn == 1) {
       s_gamma=10.0*exp(-(1.0/6.0)*log((double)i))-1;
@@ -519,8 +512,12 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   }
 
         /* Adapt if desired. */
-        ppt = LALInferenceGetProcParamVal(commandLine, "--adapt");
-        if (ppt) {
+        if (LALInferenceCheckVariable(runState->proposalArgs, "proposedArrayNumber") &&
+            LALInferenceCheckVariable(runState->proposalArgs, "proposedVariableNumber") &&
+            LALInferenceCheckVariable(runState->proposalArgs, "s_gamma") &&
+            LALInferenceCheckVariable(runState->proposalArgs, SIGMAVECTORNAME) &&
+            LALInferenceCheckVariable(runState->proposalArgs, "adaptableStep")) {
+          
           adaptableStep = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptableStep"));
           if (adaptableStep) {
       
