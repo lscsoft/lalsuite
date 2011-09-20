@@ -275,3 +275,5 @@ src/tracksearch/lalapps_tracksearch_tune_pipe
 src/zmsearch/lalapps_build_zm_frames
 src/zmsearch/lalapps_zmcompare
 src/zmsearch/lalapps_zmdft
+src/inspiral/lalapps_cbc_stochasticbank
+src/inspiral/posterior/lalapps_vo_nest2pos
