@@ -568,8 +568,6 @@ void coh_PTF_cleanup(
       XLALDestroyVectorSequence( fcTmpltParams->PTFe1 );
     if ( fcTmpltParams->PTFe2 )
       XLALDestroyVectorSequence( fcTmpltParams->PTFe2 );
-    if ( fcTmpltParams->PTFQ )
-      XLALDestroyVectorSequence( fcTmpltParams->PTFQ );
     if ( fcTmpltParams->PTFphi )
       XLALDestroyVector( fcTmpltParams->PTFphi );
     if ( fcTmpltParams->PTFomega_2_3 )
@@ -580,6 +578,8 @@ void coh_PTF_cleanup(
   }
   if ( fcTmplt )
   {
+    if ( fcTmplt->PTFQ )
+      XLALDestroyVectorSequence( fcTmplt->PTFQ );
     if ( fcTmplt->PTFQtilde )
       XLALDestroyCOMPLEX8VectorSequence( fcTmplt->PTFQtilde );
     if ( fcTmplt->data )

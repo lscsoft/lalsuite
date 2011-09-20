@@ -95,13 +95,12 @@ coh_PTF_template_PTF (
   sanity_check( fcTmplt->PTFQtilde );
   sanity_check( fcTmplt->PTFQtilde->length == 5 );
   sanity_check( fcTmplt->PTFQtilde->data );
+  sanity_check( fcTmplt->PTFQ );
+  sanity_check( fcTmplt->PTFQ->length == 5 );
+  sanity_check( fcTmplt->PTFQ->data );
 
   /* check that the parameter structure exists */
   sanity_check( params );
-  sanity_check( params->PTFQ );
-  sanity_check( params->PTFQ->length == 5 );
-  sanity_check( params->PTFQ->data );
-
   sanity_check( params->fwdPlan );
 
   /* check that the timestep is positive */
@@ -125,7 +124,7 @@ coh_PTF_template_PTF (
   fcTmplt->tmplt.fLower = params->fLow = InspTmplt->fLower;
 
   /* Zero out the Q and Qtilde vectors */
-  memset( params->PTFQ->data, 0, 5 * N * sizeof(REAL4) );
+  memset( fcTmplt->PTFQ->data, 0, 5 * N * sizeof(REAL4) );
   memset( fcTmplt->PTFQtilde->data, 0, 5 * (N /2 + 1) * sizeof(COMPLEX8) );
 
  /* Point the dummy variables Q and Qtilde to the actual output structures */
@@ -133,7 +132,7 @@ coh_PTF_template_PTF (
   {
     Q[i].length      = N;
     Qtilde[i].length = N / 2 + 1;
-    Q[i].data        = params->PTFQ->data + (i * N);
+    Q[i].data        = fcTmplt->PTFQ->data + (i * N);
     Qtilde[i].data   = fcTmplt->PTFQtilde->data + (i * (N / 2 + 1)) ;
   }
 
