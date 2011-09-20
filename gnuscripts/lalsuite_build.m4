@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 23
+# serial 24
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -199,7 +199,8 @@ AC_ARG_ENABLE(
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALSIMULATION],
-[AC_ARG_ENABLE(
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
   [lalsimulation],
   AC_HELP_STRING([--enable-lalsimulation],[compile code that requires lalsimulation library [default=yes]]),
   [ case "${enableval}" in
