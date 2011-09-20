@@ -26,7 +26,9 @@ doc/lalapps.toc
 lalapps-*.tar.gz
 lalapps.spec
 libtool
-misc/lalapps-user-env.*sh
+misc/lalapps-user-env.shell
+misc/lalapps-user-env.csh
+misc/lalapps-user-env.sh
 src/*/python_config.sed
 src/calibration/lalapps_ComputeFactors
 src/calibration/lalapps_ComputeStrainDriver

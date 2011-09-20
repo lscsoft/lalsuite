@@ -22,6 +22,7 @@ libtool
 src/LALInspiralConfig.h
 src/LALInspiralVCSInfo.h
 src/git_version
+src/lalinspiral-user-env.shell
 src/lalinspiral-user-env.csh
 src/lalinspiral-user-env.sh
 src/stamp-h2

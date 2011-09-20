@@ -33,6 +33,7 @@ liblalinference_la_SOURCES = \
 liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = \
+	lalinference-user-env.shell \
 	lalinference-user-env.sh \
 	lalinference-user-env.csh
 
@@ -46,49 +47,25 @@ BUILT_SOURCES = \
 	lalinference-user-env.sh \
 	lalinference-user-env.csh
 
-lalinference-user-env.sh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LAL Inference" >$@ ;\
-	echo "LALINFERENCE_PREFIX=\"$(prefix)\"" >>$@ ;\
-	echo "export LALINFERENCE_PREFIX" >>$@ ;\
-	echo "PATH=\"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "MANPATH=\"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "LD_LIBRARY_PATH=\"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "DYLD_LIBRARY_PATH=\"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "PKG_CONFIG_PATH=\"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
-	echo "export PATH MANPATH LD_LIBRARY_PATH DYLD_LIBRARY_PATH PKG_CONFIG_PATH" >>$@
+lalinference-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
+	@echo "# generic user environment script" >$@
+	@echo "set LALINFERENCE_PREFIX $(prefix)" >>$@
+	@echo "prepend PATH $(bindir)" >>$@
+	@echo "prepend MANPATH $(mandir)" >>$@
+	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
+	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
-lalinference-user-env.csh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LAL Inference" >$@ ;\
-	echo "setenv LALINFERENCE_PREFIX \"$(prefix)\"" >>$@ ;\
-	echo "setenv PATH \"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "if ( \$$?MANPATH ) then" >>$@ ;\
-	echo "	setenv MANPATH \"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv MANPATH \"$(mandir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?LD_LIBRARY_PATH ) then" >>$@ ;\
-	echo "	setenv LD_LIBRARY_PATH \"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv LD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?DYLD_LIBRARY_PATH ) then" >>$@ ;\
-	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?PKG_CONFIG_PATH ) then" >>$@ ;\
-	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
-	echo "endif" >>$@
+lalinference-user-env.csh lalinference-user-env.sh: lalinference-user-env.shell $(srcdir)/generate_user_env.awk
+	@echo "creating $@"
+	@$(AWK) -f $(srcdir)/generate_user_env.awk -v package=$(PACKAGE_NAME) -v output=$@ $<
 
 EXTRA_DIST = \
 	LALInferenceConfig.h.in \
 	LALInferenceVCSInfo.h.in \
 	LALInferenceXML.c \
 	LALInferenceXML.h \
+	generate_user_env.awk \
 	generate_vcs_info.py
 
 LALInferenceVCSInfo.h: ._vcsinfo

@@ -146,6 +146,7 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
+AC_PROG_AWK
 
 # check for condor_compile
 AC_ENABLE_SHARED
