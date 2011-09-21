@@ -177,7 +177,7 @@ Initialisation arguments:\n\
 void initializeTemplate(LALInferenceRunState *runState)
 {
 	char help[]="\
-(--template [LAL,LALSTPN,PhenSpin,LALGenerateInspiral]\tSpecify template (default LAL)\n";
+(--template [LAL,PhenSpin,LALGenerateInspiral]\tSpecify template (default LAL)\n";
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	/* Print command line arguments if help requested */
@@ -191,8 +191,10 @@ void initializeTemplate(LALInferenceRunState *runState)
 	runState->template=&LALInferenceTemplateLAL;
 	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
 	if(ppt) {
-		if(!strcmp("LALSTPN",ppt->value))
-			runState->template=&LALInferenceTemplateLALSTPN;
+		if(!strcmp("LALSTPN",ppt->value)){
+			fprintf(stderr,"ERROR: --template LALSTPN is deprecated. Try LALGenerateInspiral instead\n");
+			exit(1);
+		}
 		else if(!strcmp("PhenSpin",ppt->value))
 			runState->template=&LALInferenceTemplatePSTRD;
 		else if(!strcmp("LALGenerateInspiral",ppt->value))
