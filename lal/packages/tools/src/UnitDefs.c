@@ -407,8 +407,11 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
   charPtr = string;
   charStopPtr = string + strlen(string);
 
-  /* Start with dimensionless (all zeros) and fill in from there */
-  *output = lalDimensionlessUnit;
+  /* Strip whitespace */
+  while(charPtr < charStopPtr && isspace(*charPtr))
+    charPtr++;
+  while(charPtr < charStopPtr && isspace(*(charStopPtr - 1)))
+    charStopPtr--;
 
   /* If the string is empty, it represents dimensionless */
   if (charPtr == charStopPtr)
