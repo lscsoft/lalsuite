@@ -370,8 +370,13 @@ Parameter arguments:\n\
 (--Dmin dist)\tMinimum distance in Mpc (1)\n\
 (--Dmax dist)\tMaximum distance in Mpc (100)\n\
 (--approx ApproximantorderPN)\tSpecify a waveform to use, (default TaylorF2threePointFivePN)\n\
-(--mincomp min)\tMinimum component mass (1.0)\n\
-(--maxcomp max)\tMaximum component mass (30.0)\n";
+(--compmin min)\tMinimum component mass (1.0)\n\
+(--compmax max)\tMaximum component mass (30.0)\n\
+(--enable-spin)\tEnable spin parameters\n\
+(--aligned-spin)\tUse only aligned spin parameters (uses spins between -1 and 1)\n\
+(--approx ApproximantphaseOrderPN)\tSet approximant (PhenSpin implicitly enables spin)\n\
+(--s1max SPIN)\tMax magnitude of spin (on both bodies!)\n\
+(--s1min SPIN)\tMin magnitude of spin (on both bodies!)\n";
 
 	/* Print command line arguments if help requested */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
@@ -458,8 +463,8 @@ Parameter arguments:\n\
 	/* Over-ride Spin prior if specified*/
 
 	ppt=LALInferenceGetProcParamVal(commandLine,"--s1max");
-        if(ppt){
-                a_spin2_max=atof(ppt->value);
+	if(ppt){
+		a_spin2_max=atof(ppt->value);
 		a_spin1_max=atof(ppt->value);
 	}
 	ppt=LALInferenceGetProcParamVal(commandLine,"--s1min");
