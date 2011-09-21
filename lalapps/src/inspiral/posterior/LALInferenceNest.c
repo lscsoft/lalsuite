@@ -367,7 +367,7 @@ Parameter arguments:\n\
 (--trigtime time)\tTrigger time to use\n\
 (--Dmin dist)\tMinimum distance in Mpc (1)\n\
 (--Dmax dist)\tMaximum distance in Mpc (100)\n\
-(--approx ApproximantorderPN)\tSpecify a waveform to use, (default TaylorF2twoPN)\n\
+(--approx ApproximantorderPN)\tSpecify a waveform to use, (default TaylorF2threePointFivePN)\n\
 (--mincomp min)\tMinimum component mass (1.0)\n\
 (--maxcomp max)\tMaximum component mass (30.0)\n";
 
