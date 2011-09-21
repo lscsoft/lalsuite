@@ -256,7 +256,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	REAL8 zero=0.0;
 	REAL8 *logLikelihoods=NULL;
 	UINT4 verbose=0;
-        LALInferenceVariableItem *param_ptr;
+    UINT4 displayprogress=0;
+    LALInferenceVariableItem *param_ptr;
         
 #ifdef HAVE_LIBLALXML
   	char *outVOTable=NULL;
@@ -281,6 +282,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         logLikelihoods=(REAL8 *)(*(REAL8Vector **)LALInferenceGetVariable(runState->algorithmParams,"logLikelihoods"))->data;
 
 	verbose=LALInferenceCheckVariable(runState->algorithmParams,"verbose");
+    displayprogress=verbose;
 	
 	/* Operate on parallel runs if requested */
 	if(LALInferenceCheckVariable(runState->algorithmParams,"Nruns"))
@@ -299,7 +301,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	/* Set up the proposal scale factor, for use in the multi-student jump step */
 	REAL8 propScale=0.1;
 	LALInferenceAddVariable(runState->proposalArgs,"proposal_scale",&propScale,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-	
+
 	/* Open output file */
 	ProcessParamsTable *ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
 	if(!ppt){
@@ -307,6 +309,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		exit(1);
 	}
 	char *outfile=ppt->value;
+    if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
+        displayprogress=1;
+
 #ifdef HAVE_LIBLALXML	
 	ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
 	if(!ppt){
@@ -415,7 +420,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		for(j=0;j<Nruns;j++) logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 		logw=mean(logwarray,Nruns);
 		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
-		if(verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",
+		if(displayprogress) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",
 									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")/(REAL8)itercounter
                                                                            ,H,H/LAL_LN2,logLmin,runState->currentLikelihood,logZ,dZ,10.0*LAL_LOG10E*( logZ-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise")));
 
