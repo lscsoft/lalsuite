@@ -1295,43 +1295,43 @@ void PTMCMCLALInferenceInclinationFlip(LALInferenceRunState *runState, LALInfere
 
   iota = *((REAL8 *) LALInferenceGetVariable(proposedParams, "inclination"));
   
-  if (runState->template==&LALInferenceTemplateLALSTPN) {
-    /* Handle spins. */
-    REAL8 dummyNorm, newIota, newPhi;
-    REAL8 theta1, theta2, phi1, phi2;
-    REAL8 L[3], a1[3], a2[3], xhat[3] = {1,0,0};
-
-    theta1 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "theta_spin1"));
-    theta2 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "theta_spin2"));
-
-    phi1 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "phi_spin1"));
-    phi2 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "phi_spin2"));
-
-    thetaPhiToVector(1.0, iota, 0.0, L);
-    thetaPhiToVector(1.0, theta1, phi1, a1);
-    thetaPhiToVector(1.0, theta2, phi2, a2);
-
-    rotateVectorAboutVector(L, xhat, M_PI-2.0*iota);
-    rotateVectorAboutVector(a1, xhat, M_PI-2.0*iota);
-    rotateVectorAboutVector(a2, xhat, M_PI-2.0*iota);
-
-    vectorToThetaPhi(&dummyNorm, &newIota, &newPhi, L);
-    vectorToThetaPhi(&dummyNorm, &theta1, &phi1, a1);
-    vectorToThetaPhi(&dummyNorm, &theta2, &phi2, a2);
-
-    if (fabs(newIota + iota - M_PI) > 1e-8 || fabs(newPhi) > 1e-8) {
-      fprintf(stderr, "ERROR: inclination swap not implemented properly.\n");
-      fprintf(stderr, "ERROR: should have new iota = Pi - iota, phi = 0 instead have\n");
-      fprintf(stderr, "ERROR: new iota = %g, old iota = %g, phi = %g\n", newIota, iota, newPhi);
-      exit(1);
-    }
-
-    LALInferenceSetVariable(proposedParams, "phi_spin1", &phi1);
-    LALInferenceSetVariable(proposedParams, "phi_spin2", &phi2);
-    LALInferenceSetVariable(proposedParams, "theta_spin1", &theta1);
-    LALInferenceSetVariable(proposedParams, "theta_spin2", &theta2);
-    /* Don't need to set iota because it will happen outside the if statement. */
-  }
+//   if (runState->template==&LALInferenceTemplateLALSTPN) {
+//     /* Handle spins. */
+//     REAL8 dummyNorm, newIota, newPhi;
+//     REAL8 theta1, theta2, phi1, phi2;
+//     REAL8 L[3], a1[3], a2[3], xhat[3] = {1,0,0};
+// 
+//     theta1 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "theta_spin1"));
+//     theta2 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "theta_spin2"));
+// 
+//     phi1 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "phi_spin1"));
+//     phi2 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "phi_spin2"));
+// 
+//     thetaPhiToVector(1.0, iota, 0.0, L);
+//     thetaPhiToVector(1.0, theta1, phi1, a1);
+//     thetaPhiToVector(1.0, theta2, phi2, a2);
+// 
+//     rotateVectorAboutVector(L, xhat, M_PI-2.0*iota);
+//     rotateVectorAboutVector(a1, xhat, M_PI-2.0*iota);
+//     rotateVectorAboutVector(a2, xhat, M_PI-2.0*iota);
+// 
+//     vectorToThetaPhi(&dummyNorm, &newIota, &newPhi, L);
+//     vectorToThetaPhi(&dummyNorm, &theta1, &phi1, a1);
+//     vectorToThetaPhi(&dummyNorm, &theta2, &phi2, a2);
+// 
+//     if (fabs(newIota + iota - M_PI) > 1e-8 || fabs(newPhi) > 1e-8) {
+//       fprintf(stderr, "ERROR: inclination swap not implemented properly.\n");
+//       fprintf(stderr, "ERROR: should have new iota = Pi - iota, phi = 0 instead have\n");
+//       fprintf(stderr, "ERROR: new iota = %g, old iota = %g, phi = %g\n", newIota, iota, newPhi);
+//       exit(1);
+//     }
+// 
+//     LALInferenceSetVariable(proposedParams, "phi_spin1", &phi1);
+//     LALInferenceSetVariable(proposedParams, "phi_spin2", &phi2);
+//     LALInferenceSetVariable(proposedParams, "theta_spin1", &theta1);
+//     LALInferenceSetVariable(proposedParams, "theta_spin2", &theta2);
+//     /* Don't need to set iota because it will happen outside the if statement. */
+//   }
 
   iota = M_PI - iota;
 
