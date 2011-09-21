@@ -224,9 +224,6 @@ fclose(file);
 	
 	
 	
-	LALCheckMemoryLeaks();
-	
-	
 //	INFO( GENERATEPPNINSPIRALTESTC_MSGENORM );
 //	return GENERATEPPNINSPIRALTESTC_ENORM;
 	
@@ -1499,7 +1496,6 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 			IFOdata->timeModelhPlus->data->data[i] = 0.0;
 		}
     destroyCoherentGW( &waveform );	
-    LALCheckMemoryLeaks();
 		return;
     }
 	
@@ -1666,7 +1662,6 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 
 	
 	destroyCoherentGW( &waveform );	
-	LALCheckMemoryLeaks();
 	
 	return;
 }
