@@ -269,7 +269,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 #endif
 
         if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
-          if (runState->data->modelDomain == LALINFERENCE_DOMAIN_FREQUENCY )
+          /*if (runState->data->modelDomain == LALINFERENCE_DOMAIN_FREQUENCY )*/
             logZnoise=LALInferenceNullLogLikelihood(runState->data);
 	
           LALInferenceAddVariable(runState->algorithmParams,"logZnoise",&logZnoise,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
