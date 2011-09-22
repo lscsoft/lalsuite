@@ -197,11 +197,11 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, vo
 	
   if(!value) {fprintf(stderr,"Unable to access value through null pointer in addVariable, trying to add %s\n",name); exit(1);}
 
-  LALInferenceVariableItem *new=malloc(sizeof(LALInferenceVariableItem));
+  LALInferenceVariableItem *new=XLALMalloc(sizeof(LALInferenceVariableItem));
 
   memset(new,0,sizeof(LALInferenceVariableItem));
 	if(new) {
-		new->value = (void *)malloc(LALInferenceTypeSize[type]);
+		new->value = (void *)XLALMalloc(LALInferenceTypeSize[type]);
 	}
   if(new==NULL||new->value==NULL) {
     XLALPrintError(" ERROR in addVariable(): unable to allocate memory for list item.\n");
@@ -660,7 +660,7 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
   }
   if (j!=2) fprintf(stderr, " ERROR: argument vector \"%s\" not well-formed!\n", input);
   /* now allocate memory for results: */
-  *strings  = (char**)  malloc(sizeof(char*) * (*n));
+  *strings  = (char**)  XLALMalloc(sizeof(char*) * (*n));
   for (i=0; i<(*n); ++i) (*strings)[i] = (char*) malloc(sizeof(char)*512);
   i=0; j=0; 
   k=0; /* string counter    */
