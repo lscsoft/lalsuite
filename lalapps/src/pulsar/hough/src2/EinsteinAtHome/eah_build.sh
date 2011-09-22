@@ -838,7 +838,7 @@ step5()
     log_start "${BUILD_LOCATION}/step5.log"
 
     ## options to be used to configure LAL
-    local lal_config_opts="--enable-frame=no --enable-metaio=no --enable-mpi=no --disable-shared ${eah_configure_args} --with-extra-cppflags=-DEAH_BOINC ${CROSS_CONFIG_OPTS}"
+    local lal_config_opts="--enable-frame=no --enable-metaio=no --enable-mpi=no --disable-shared ${eah_configure_args} --enable-boinc ${CROSS_CONFIG_OPTS}"
 
     log_and_do cd "${BUILD_LOCATION}/extra_sources"
 
