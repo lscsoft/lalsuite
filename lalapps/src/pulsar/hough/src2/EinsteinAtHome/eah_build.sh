@@ -1813,14 +1813,19 @@ fi
 
 ## ---------- copy binary plus screensaver-lib into build-dir
 
-for i in cfsBOINC starsphere compareFstats cfsBOINC.exe starsphere.exe; do 
+if [ "$eah_build_lalapps" = "yes" ]; then
+  f="${BUILD_LOCATION}/extra_sources/lalsuite/lalapps/src/pulsar/hough/src2/eah_HierarchicalSearch${eah_target_ext}"
+  test -f "$f" && cp -f "$f" "${BUILD_LOCATION}/cfsBOINC${eah_target_ext}"
+else
+  for i in cfsBOINC starsphere compareFstats cfsBOINC.exe starsphere.exe; do 
     ## delete any old versions from previous builds
     rm -f ${BUILD_LOCATION}/$i >& /dev/null 
     new_binary=${BUILD_LOCATION}/HS/$i
     if [ -r ${new_binary} ]; then
 	cp ${new_binary} ${BUILD_LOCATION} || fail
     fi
-done
+  done
+fi
 
 ## ---------- consistency-checks on final binary
 
