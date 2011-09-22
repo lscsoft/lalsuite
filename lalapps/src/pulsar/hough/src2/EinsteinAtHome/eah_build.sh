@@ -998,28 +998,12 @@ step6a()
     log_popup
 
     ## use the lalsuite checked out in step 5 (LAL)
-    log_and_do cd "${BUILD_LOCATION}/extra_sources"
+    cd "${BUILD_LOCATION}/extra_sources" >> "$LOGFILE" 2>&1 || fail
     if [ ! -d lalsuite/lalapps ]; then
 	echo "could not find $PWD/lalsuite/lalapps - run step 5 once first!" >> "$LOGFILE" 2>&1
 	fail
     fi
-    log_and_do cd lalsuite
-    if [ -z "$lalapps_git_branch" ]; then
-	if [ "$n0_git_repo" = "yes" ]; then
-	    lalapps_git_branch=eah_lalapps_cuda
-	else
-	    lalapps_git_branch=master
-	fi
-    fi
-    log_and_do git checkout "$lalapps_git_branch"
-    if [ "${eah_no_update}" != yes ]; then
-	log_and_do git pull
-    fi
-
-    ## revert to a given commit if specified
-    if [ -n "$lalapps_git_commit" ]; then
-	log_and_do git checkout "$lalapps_git_commit"
-    fi
+    cd lalsuite >> "$LOGFILE" 2>&1 || fail
 
     log_and_do cd lalapps
 
