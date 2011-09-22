@@ -841,63 +841,17 @@ step5()
     local lal_config_opts="--enable-frame=no --enable-metaio=no --enable-mpi=no --disable-shared ${eah_configure_args} --with-extra-cppflags=-DEAH_BOINC ${CROSS_CONFIG_OPTS}"
 
     log_and_do cd "${BUILD_LOCATION}/extra_sources"
-    echo -n Checking out lalsuite ...
-
-    ## set the git url if not already set
-    if [ -z "$lal_git_url" ]; then
-	if [ "$n0_git_repo" = "yes" ]; then
-	    #lal_git_url=git@git.aei.uni-hannover.de:shared/einsteinathome/lalsuite.git
-	    lal_git_url=git://git.aei.uni-hannover.de/shared/einsteinathome/lalsuite.git
-	else
-	    lal_git_url=git://ligo-vcs.phys.uwm.edu/lalsuite.git
-	fi
-    fi
-
-    ## set the git branch if not already set
-    if [ -z "$lal_git_branch" ]; then
-	if [ "$n0_git_repo" = "yes" ]; then
-	    lal_git_branch=eah_lalapps_cuda
-	else
-	    lal_git_branch=master
-	fi
-    fi
-
-    ## remove an existing repo if it hasn't been cloned from the given url
-    if [ -d lalsuite/.git ]; then
-	remote=`cd lalsuite && git remote`
-	# if there is more than one remote, pick "origin"
-	echo "$remote" | grep '^origin$' >/dev/null && remote="origin"
-	url=`cd lalsuite && git config --get remote.$remote.url`
-	if [ "$lal_git_url" != "$url" ]; then
-	    log_and_do rm -rf lalsuite
-	fi
-    fi
 
     if [ -d lalsuite/.git ]; then
-	## if there is a repo from the correct url, pull it
-	log_and_do cd lalsuite
-	log_and_do git checkout "$lal_git_branch"
-	if [ "${eah_no_update}" != yes ]; then
-	    log_and_do git pull
-	fi
+        echo -n Using lalsuite repo ...
     else
-	## clone a repo from url if there is none
-	log_and_do git clone "$lal_git_url"
-	log_and_do cd lalsuite
-	if [ "$n0_git_repo" = "yes" ]; then
-	    log_and_do git checkout -b eah_lalapps_cuda origin/eah_lalapps_cuda
-	else
-	    log_and_do git checkout "$lal_git_branch"
-	fi
+        echo -n Creating lalsuite link ...
+        rm -rf lalsuite
+        ln -s ../../../../../../../.. lalsuite
     fi
-
-    ## revert to a given commit if specified
-    if [ -n "$lal_git_commit" ]; then
-	log_and_do git checkout "$lal_git_commit"
-    fi
-
     echo \ done.
-    cd lal >> "$LOGFILE" 2>&1 || fail
+
+    cd lalsuite/lal >> "$LOGFILE" 2>&1 || fail
 
     ## run patch script if told to
     if [ -n "$LAL_PATCH" ]; then
@@ -955,17 +909,6 @@ step6()
 	fail
     fi
     cd lalsuite >> "$LOGFILE" 2>&1 || fail
-    if [ -z "$lalapps_git_branch" ]; then
-	if [ "$n0_git_repo" = "yes" ]; then
-	    lalapps_git_branch=eah_lalapps_cuda
-	else
-	    lalapps_git_branch=master
-	fi
-    fi
-    git checkout "$lalapps_git_branch" >> "$LOGFILE" 2>&1 || fail
-    if [ "${eah_no_update}" != yes ]; then
-	git pull >> "$LOGFILE" 2>&1 || fail
-    fi
 
     ## revert to a given commit if specified
     if [ -n "$lalapps_git_commit" ]; then
