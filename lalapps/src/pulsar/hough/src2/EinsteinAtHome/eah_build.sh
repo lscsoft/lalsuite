@@ -1234,7 +1234,7 @@ usage()
     echo "      --debug               add debugging switches to build"
     echo "      --profile             add profiling switches to build [implies --recompile]"
     echo "      --release <version>   build a portable release-binary <version> [implies --optimize,--recompile]"
-    echo "      --new-boinc           build with latest BOINC CVS-version [default: \$BOINC_TAG ]"
+    echo "      --new-boinc           build with latest BOINC SVN-version [default: \$BOINC_TAG ]"
     echo "      --no-graphics         force building of non-graphical Einstein@Home application"
     echo "      --no-dlopen           do not try to use dlopen for dynamical screensaver-lib under Linux"
     echo "      --with-ssl=<path>     pass path to ssl installation to BOINC configure"
