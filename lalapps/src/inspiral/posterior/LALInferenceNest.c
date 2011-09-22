@@ -250,7 +250,7 @@ Nested sampling arguments:\n\
 	runState->evolve=&LALInferenceNestedSamplingOneStep;
 	runState->proposal=&LALInferenceProposalNS;
 
-	runState->likelihood=&LALInferenceFreqDomainLogLikelihood;
+	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 	runState->prior = &LALInferenceInspiralPrior;
 	
 	ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
