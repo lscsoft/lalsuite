@@ -878,7 +878,32 @@ step5()
 	make clean >> "$LOGFILE" 2>&1 || fail
 	echo "done."
     fi
-    echo $ECHO_N "Building lal... $ECHO_C"
+    echo $ECHO_N "Building LAL ... $ECHO_C"
+    make >> "$LOGFILE" 2>&1 || fail
+    make install >> "$LOGFILE" 2>&1 || fail
+    echo "done."
+
+    cd ../lalpulsar >> "$LOGFILE" 2>&1 || fail
+
+    ## configure
+    echo $ECHO_N "Configuring LALPulsar... $ECHO_C"
+    if [ "${eah_recompile}" = yes -o ! -r configure ] ; then
+	./00boot >> "$LOGFILE" 2>&1 || fail
+    fi
+    if [ "${eah_recompile}" = yes -o ! -r config.status ]; then
+	eah_next="./configure --prefix=${BUILD_INSTALL} ${lal_config_opts}"
+	echo ${eah_next} >> "$LOGFILE" 2>&1
+	eval ${eah_next} >> "$LOGFILE" 2>&1 || fail
+    fi
+    echo "done."
+	
+    ## make
+    if [ "${eah_recompile}" = yes ]; then
+	echo $ECHO_N "Cleaning source-tree... $ECHO_C"
+	make clean >> "$LOGFILE" 2>&1 || fail
+	echo "done."
+    fi
+    echo $ECHO_N "Building LALPulsar ... $ECHO_C"
     make >> "$LOGFILE" 2>&1 || fail
     make install >> "$LOGFILE" 2>&1 || fail
     echo "done."
