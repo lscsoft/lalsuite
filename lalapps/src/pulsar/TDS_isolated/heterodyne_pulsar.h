@@ -161,7 +161,7 @@ typedef struct tagInputParams{
   REAL8 resamplerate;
 
   CHAR datafile[256];
-  CHAR channel[20];
+  CHAR channel[128];
 
   CHAR outputdir[256];
   CHAR segfile[256];
