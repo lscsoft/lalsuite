@@ -1119,7 +1119,7 @@ void TemplateDumpTest(void)
 	  LALInferenceAddVariable(&currentParams, "coa_phase",    &coa_phase,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);	  
 	  double PNorder = 3.5;
 	  LALInferenceAddVariable(&currentParams, "PNorder",      &PNorder,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);	  
-	  LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLALSTPN, "test_TTemplateLALSTPN.csv");
+	  LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLALGenerateInspiral, "test_TTemplateLALSTPN.csv");
 
 	  
     /* These are the LAL templates that (...seem to...) work right now: */
