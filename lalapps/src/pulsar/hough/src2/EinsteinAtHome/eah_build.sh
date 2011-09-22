@@ -1028,31 +1028,21 @@ step6a()
 	echo "could not find $PWD/lalsuite/lalapps - run step 5 once first!" >> "$LOGFILE" 2>&1
 	fail
     fi
-    cd lalsuite >> "$LOGFILE" 2>&1 || fail
-
-    log_and_do cd lalapps
+    log_and_do cd lalsuite/lalapps
 
     echo $ECHO_N "Configuring LALApps... $ECHO_C"
-    grep ^AC_PROG_CXX\$ configure.ac >/dev/null ||
-      log_and_do sed -i~ 's/^AC_PROG_CPP/AC_PROG_CPP\
-AC_PROG_CXX/' configure.ac
     log_and_do ./00boot
 
-    ## very ugly hack to link conftetst in C++ mode
-    (
-	test -z "$CC" && CC=gcc;
-	test -z "$CXX" && CXX=g++;
-	echo ln -s `which $CXX` $CC >> "$LOGFILE"
-	ln -s `which $CXX` $CC >> "$LOGFILE" 2>&1
-    )
-
-    eah_next="PATH='.:$PATH' ./configure ${eah_configure_args} ${CROSS_CONFIG_OPTS} LIBS='-lboinc_api -lboinc_zip -lboinc'"
+    eah_next="PATH='.:$PATH' ./configure --prefix=${BUILD_INSTALL} ${eah_configure_args} ${CROSS_CONFIG_OPTS}"
+    eah_next="$eah_next --disable-gcc-flags --disable-frame --disable-metaio --enable-boinc --disable-silent-rules"
     echo ${eah_next} >> "$LOGFILE" 2>&1 || fail
     eval ${eah_next} >> "$LOGFILE" 2>&1 || fail
     echo "done."
 
     echo $ECHO_N "Building Einstein@Home... $ECHO_C"
-    log_and_do cd src/pulsar/hough/src2
+    log_and_do cd src/lalapps
+    log_and_do make LALAppsVCSInfo.h liblalapps.la
+    log_and_do cd ../pulsar/hough/src2
     log_and_do make eah_HierarchicalSearch${eah_target_ext}
     echo "done."
 
