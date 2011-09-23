@@ -840,33 +840,31 @@ step5()
     ## options to be used to configure LAL
     local lal_config_opts="--enable-frame=no --enable-metaio=no --enable-mpi=no --disable-shared ${eah_configure_args} --enable-boinc ${CROSS_CONFIG_OPTS}"
 
-    log_and_do cd "${BUILD_LOCATION}/extra_sources"
+    log_and_do cd "${SOURCE_LOCATION}"
 
     if [ -d lalsuite/.git ]; then
         echo -n Using lalsuite repo ...
     else
         echo -n Creating lalsuite link ...
         rm -rf lalsuite
-        ln -s ../../../../../../../.. lalsuite
+        ln -s ../../../../../../.. lalsuite
     fi
     echo \ done.
 
-    cd lalsuite/lal >> "$LOGFILE" 2>&1 || fail
-
-    ## run patch script if told to
-    if [ -n "$LAL_PATCH" ]; then
-	echo $ECHO_N "Patching LAL... $ECHO_C"
-	cat $LAL_PATCH | patch -p0 >> "$LOGFILE" 2>&1 || fail
-	echo "done."
-    fi
-
     ## configure
+    log_and_do cd lalsuite/lal
     echo $ECHO_N "Configuring LAL... $ECHO_C"
     if [ "${eah_recompile}" = yes -o ! -r configure ] ; then
-	./00boot >> "$LOGFILE" 2>&1 || fail
+	log_and_do ./00boot
+	log_and_do cd ../lalpulsar
+	log_and_do ./00boot
     fi
+
+    log_and_do mkdir -p "${BUILD_LOCATION}/lalsuite/lal"
+    log_and_do cd "${BUILD_LOCATION}/lalsuite/lal"
+
     if [ "${eah_recompile}" = yes -o ! -r config.status ]; then
-	eah_next="./configure --prefix=${BUILD_INSTALL} ${lal_config_opts}"
+	eah_next="'${SOURCE_LOCATION}/lalsuite/lal/configure' --prefix=${BUILD_INSTALL} ${lal_config_opts}"
 	echo ${eah_next} >> "$LOGFILE" 2>&1
 	eval ${eah_next} >> "$LOGFILE" 2>&1 || fail
     fi
@@ -883,15 +881,13 @@ step5()
     make install >> "$LOGFILE" 2>&1 || fail
     echo "done."
 
-    cd ../lalpulsar >> "$LOGFILE" 2>&1 || fail
+    log_and_do mkdir -p ../lalpulsar
+    log_and_do cd ../lalpulsar
 
     ## configure
     echo $ECHO_N "Configuring LALPulsar... $ECHO_C"
-    if [ "${eah_recompile}" = yes -o ! -r configure ] ; then
-	./00boot >> "$LOGFILE" 2>&1 || fail
-    fi
     if [ "${eah_recompile}" = yes -o ! -r config.status ]; then
-	eah_next="./configure --prefix=${BUILD_INSTALL} ${lal_config_opts}"
+	eah_next="'${SOURCE_LOCATION}/lalsuite/lalpulsar/configure' --prefix=${BUILD_INSTALL} ${lal_config_opts}"
 	echo ${eah_next} >> "$LOGFILE" 2>&1
 	eval ${eah_next} >> "$LOGFILE" 2>&1 || fail
     fi
@@ -928,7 +924,7 @@ step6()
     log_popup
 
     ## use the lalsuite checked out in step 5 (LAL)
-    cd "${BUILD_LOCATION}/extra_sources" >> "$LOGFILE" 2>&1 || fail
+    cd "${SOURCE_LOCATION}" >> "$LOGFILE" 2>&1 || fail
     if [ ! -d lalsuite/lalapps ]; then
 	echo "could not find $PWD/lalsuite/lalapps - run step 5 once first!" >> "$LOGFILE" 2>&1
 	fail
@@ -938,7 +934,11 @@ step6()
     echo $ECHO_N "Configuring LALApps... $ECHO_C"
     log_and_do ./00boot
 
-    eah_next="PATH='.:$PATH' ./configure --prefix=${BUILD_INSTALL} ${eah_configure_args} ${CROSS_CONFIG_OPTS}"
+    log_and_do mkdir -p "${BUILD_LOCATION}/lalsuite/lalapps"
+    log_and_do cd "${BUILD_LOCATION}/lalsuite/lalapps"
+
+    eah_next="PATH='.:$PATH' '${SOURCE_LOCATION}/lalsuite/lalapps/configure'"
+    eah_next="$eah_next --prefix=${BUILD_INSTALL} ${eah_configure_args} ${CROSS_CONFIG_OPTS}"
     eah_next="$eah_next --disable-gcc-flags --disable-frame --disable-metaio --enable-boinc --disable-silent-rules"
     echo ${eah_next} >> "$LOGFILE" 2>&1 || fail
     eval ${eah_next} >> "$LOGFILE" 2>&1 || fail
