@@ -1709,7 +1709,7 @@ if [ ${startstep} -le 6 ]; then step6; fi
 
 ## ---------- copy binary into build-dir
 
-f="${BUILD_LOCATION}/extra_sources/lalsuite/lalapps/src/pulsar/hough/src2/eah_HierarchicalSearch${eah_target_ext}"
+f="${BUILD_LOCATION}/lalsuite/lalapps/src/pulsar/hough/src2/eah_HierarchicalSearch${eah_target_ext}"
 test -f "$f" && cp -f "$f" "${BUILD_LOCATION}/cfsBOINC${eah_target_ext}"
 
 ## ---------- consistency-checks on final binary
