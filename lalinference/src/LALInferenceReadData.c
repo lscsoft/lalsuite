@@ -673,7 +673,6 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 				SNR+=2.0*pow(injF->data->data[j].im,2.0)/(4.0*thisData->oneSidedNoisePowerSpectrum->data->data[j]);
 			}
 		}
-    SNR=SNR/4.0; //why?
     thisData->SNR=sqrt(SNR);
 		NetworkSNR+=SNR;
 		
