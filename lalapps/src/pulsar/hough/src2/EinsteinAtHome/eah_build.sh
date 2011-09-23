@@ -933,101 +933,6 @@ step6()
 	echo "could not find $PWD/lalsuite/lalapps - run step 5 once first!" >> "$LOGFILE" 2>&1
 	fail
     fi
-    cd lalsuite >> "$LOGFILE" 2>&1 || fail
-
-    ## revert to a given commit if specified
-    if [ -n "$lalapps_git_commit" ]; then
-	log_and_do git checkout "$lalapps_git_commit"
-    fi
-
-    ## only get the required parts of Einstein@Home:
-    local CFS_root="HierarchicalSearch"
-    get_pkg_cvs "${LSCSOFT_CVS}" "einsteinathome" "${CFS_root} ${CFS_root}/graphics ${CFS_root}/m4 ${CFS_root}/darwin_build" "${EAH_TAG}"
-
-    if [ ! -d ${BUILD_LOCATION}/HS ]; then
-	ln -s ${BUILD_LOCATION}/extra_sources/einsteinathome-CVS/HierarchicalSearch ${BUILD_LOCATION}/HS
-    fi
-
-    # ok, we're ready: Build Einstein@Home!
-    cd ${BUILD_LOCATION}/HS >> "$LOGFILE" 2>&1 || fail
-
-    # remove old deps
-    rm -rf .deps
-
-    # if there is a E@H Makefile.am in the LALApps git repository, override the one from E@H CVS
-    f="${BUILD_LOCATION}/extra_sources/lalsuite/lalapps/src/pulsar/hough/src2/EinsteinAtHome/Makefile.am"
-    test -r "$f" && cp "$f" .
-
-    echo $ECHO_N "Configuring Einstein@Home... $ECHO_C"
-    ./00boot >> "$LOGFILE" 2>&1 || fail
-
-    ## for linux-releases, we need some special vodoo in the configure-script
-    ## [ required in order to build a portable linux-binary ]
-    ## therefore we have to pass the switch --enable-linux-release to the E@H configure-script
-    if [ -n "${eah_release}" ] && [ "${eah_os}" = linux ] && [ -z "$TARGET_HOST" ]; then
-	eah_configure_args="${eah_configure_args} --enable-linux-release"
-    fi
-
-    ## enable cuda linking if wanted
-    if [ "${eah_cuda}" = "yes" ]; then
-	eah_configure_args="${eah_configure_args} --enable-cuda"
-    fi
-
-    ## enable OpenCL linking if wanted
-    if [ "${eah_opencl}" = "yes" ]; then
-	eah_configure_args="${eah_configure_args} --enable-opencl"
-    fi
-
-    ## allow user of this script to turn off graphical build and/or use of dlopen
-    if [ "${eah_graphics}" = no ]; then
-	eah_configure_args="${eah_configure_args} --disable-graphics"
-    fi
-    if [ "${eah_dlopen}" = no ]; then
-	eah_configure_args="${eah_configure_args} --disable-dlopen"
-    else
-	eah_configure_args="${eah_configure_args} --enable-dlopen"
-    fi
-
-    if [ "$eah_win32_cygwin_build" = "yes" ]; then
-	eah_configure_args="${eah_configure_args} --enable-win32-cygwin"
-    fi
-
-    ## ---------- Prepare configure-arguments ----------
-    eah_next="./configure ${eah_configure_args} LALAPPS_SRC=${BUILD_LOCATION}/extra_sources/lalsuite/lalapps BOINC_PREFIX=${BUILD_LOCATION}/extra_install ${CROSS_CONFIG_OPTS}"
-
-    echo ${eah_next} >> "$LOGFILE" 2>&1 || fail
-    eval ${eah_next} >> "$LOGFILE" 2>&1 || fail
-    echo "done."
-
-    echo $ECHO_N "Cleaning source-tree... $ECHO_C"
-    make clean >> "$LOGFILE" 2>&1 || fail
-    echo "done."
-
-    echo $ECHO_N "Building Einstein@Home... $ECHO_C"
-    make >> "$LOGFILE" 2>&1 || fail
-    echo "done."
-
-    log_close
-
-} ## step6()
-
-step6a()
-{
-    echo "----------------------------------------------------------------------"
-    echo "STEP6: LALApps and Einstein@Home"
-    echo "----------------------------------------------------------------------"
-    LOGFILE=${BUILD_LOCATION}/step6.log
-    rm -f  "$LOGFILE"
-    touch "$LOGFILE"
-
-    log_popup
-
-    ## use the lalsuite checked out in step 5 (LAL)
-    cd "${BUILD_LOCATION}/extra_sources" >> "$LOGFILE" 2>&1 || fail
-    if [ ! -d lalsuite/lalapps ]; then
-	echo "could not find $PWD/lalsuite/lalapps - run step 5 once first!" >> "$LOGFILE" 2>&1
-	fail
-    fi
     log_and_do cd lalsuite/lalapps
 
     echo $ECHO_N "Configuring LALApps... $ECHO_C"
@@ -1047,7 +952,7 @@ step6a()
     echo "done."
 
     log_close
-} ## step6a()
+} ## step6()
 
 
 ## ======================================================================
@@ -1189,7 +1094,6 @@ usage()
     echo "      --opencl              build a OpenCL app (highly experimental)"
     echo "      --64                  build a 64 bit app"
     echo "      --32                  force building a 32 bit app (on a 64 bit machine)"
-    echo "      --build-lalapps       build the Application using the Makefiles in LALApps"
     echo
     exit 0
 
@@ -1221,7 +1125,6 @@ eah_opencl=no
 eah_64bit=no
 eah_32bit=no
 n0_git_repo=no
-eah_build_lalapps=no
 eah_host_compile=no
 eah_force_aux=no
 ## only try to use dynamic screensaver-lib under Linux (can be turned off by user even then)
@@ -1324,9 +1227,6 @@ while [ -n "$1" ]; do
 	    ;;
 	--no-dlopen)
 	    eah_dlopen=no;
-	    ;;
-	--build-lalapps)
-	    eah_build_lalapps=yes;
 	    ;;
 	--with-ssl=*)
 	    with_ssl="$1";
@@ -1801,31 +1701,16 @@ fi
 if [ ${startstep} -le 3 ]; then step3; fi
 if [ ${startstep} -le 4 ]; then step4; fi
 if [ ${startstep} -le 5 ]; then step5; fi
-if [ "$eah_build_lalapps" = "yes" ]; then
-    if [ ${startstep} -le 6 ]; then step6a; fi
-else
-    if [ ${startstep} -le 6 ]; then step6; fi
-fi
+if [ ${startstep} -le 6 ]; then step6; fi
 
 ## ====================
 ## put final executables into build-directory
 ##====================
 
-## ---------- copy binary plus screensaver-lib into build-dir
+## ---------- copy binary into build-dir
 
-if [ "$eah_build_lalapps" = "yes" ]; then
-  f="${BUILD_LOCATION}/extra_sources/lalsuite/lalapps/src/pulsar/hough/src2/eah_HierarchicalSearch${eah_target_ext}"
-  test -f "$f" && cp -f "$f" "${BUILD_LOCATION}/cfsBOINC${eah_target_ext}"
-else
-  for i in cfsBOINC starsphere compareFstats cfsBOINC.exe starsphere.exe; do 
-    ## delete any old versions from previous builds
-    rm -f ${BUILD_LOCATION}/$i >& /dev/null 
-    new_binary=${BUILD_LOCATION}/HS/$i
-    if [ -r ${new_binary} ]; then
-	cp ${new_binary} ${BUILD_LOCATION} || fail
-    fi
-  done
-fi
+f="${BUILD_LOCATION}/extra_sources/lalsuite/lalapps/src/pulsar/hough/src2/eah_HierarchicalSearch${eah_target_ext}"
+test -f "$f" && cp -f "$f" "${BUILD_LOCATION}/cfsBOINC${eah_target_ext}"
 
 ## ---------- consistency-checks on final binary
 
