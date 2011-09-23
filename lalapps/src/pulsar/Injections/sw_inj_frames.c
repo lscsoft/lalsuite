@@ -457,7 +457,7 @@ int main(int argc, char **argv)
 	    INT4 dtpos = epoch.gpsSeconds - (INT4)pulparams[h].posepoch; /*calculate time since posepoch */
 	    
 	    params.pulsar.position.latitude = pulparams[h].dec + dtpos * pulparams[h].pmdec;
-	    params.pulsar.position.longitude = pulparams[h].ra + dtpos * pulparams[h].ra / cos(params.pulsar.position.latitude);
+	    params.pulsar.position.longitude = pulparams[h].ra + dtpos * pulparams[h].pmra / cos(params.pulsar.position.latitude);
 	    params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
 	    
 	    params.pulsar.f0 = 2.*pulparams[h].f0;
@@ -509,7 +509,7 @@ int main(int argc, char **argv)
 	    params.startTimeGPS = epoch;
 	    params.duration = ndata; /*maybe want to take out conversion and keep this uvar->duration*/
 	    params.samplingRate = srate; /*same as above*/
-	    params.fHeterodyne = 0.; 
+	    params.fHeterodyne = 0.;
 
 	    REAL4TimeSeries *TSeries = NULL;
 	    /*fprintf(stderr, "status%i\n", status.statusCode);*/

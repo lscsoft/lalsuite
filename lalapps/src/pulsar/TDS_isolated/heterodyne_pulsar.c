@@ -1320,11 +1320,9 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
         return NULL; /* couldn't read frame data */
       }
 
-      fprintf(stderr, "About to copy data\n");
       for(i=0;i<(INT4)length;i++)
         dblseries->data->data[i] = scalefac*frvect->dataD[i];
 
-      fprintf(stderr, "Copied data\n");
     }
     else{ /* Virgo data */
       /* check that data doesn't contain NaNs */
