@@ -281,7 +281,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (adaptationOn == 1 && i == 1000001) {
       adaptationOn = 0;  //turn adaptation off after 10^6 iterations
       LALInferenceRemoveVariable(runState->proposalArgs,"s_gamma");
-      LALInferenceRemoveVariable(runState->proposalArgs, SIGMAVECTORNAME);
+      //LALInferenceRemoveVariable(runState->proposalArgs, SIGMAVECTORNAME);
     }
     if (adaptationOn == 1) {
       s_gamma=10.0*exp(-(1.0/6.0)*log((double)i))-1;
