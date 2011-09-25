@@ -90,7 +90,7 @@ XLALInspiralVelocity(
   void *funcParams;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   rootfunction = XLALInspiralTofV;
   xmax = ak->vlso;
@@ -107,7 +107,7 @@ XLALInspiralVelocity(
 
   v = XLALDBisectionFindRoot(rootfunction, xmin, xmax, xacc, funcParams);
   if (XLAL_IS_REAL8_FAIL_NAN(v))
-    XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+    XLAL_ERROR_REAL8(XLAL_EFUNC);
 
   return v;
 }

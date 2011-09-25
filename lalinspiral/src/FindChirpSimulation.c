@@ -636,8 +636,6 @@ XLALFindChirpTagTemplateAndSegment (
         )
 
 {
-    static const char *func = "XLALFindChirpTagTemplateAndSegment";
-
     UINT4                s, t;  /* s over segments and t over templates */
     SnglInspiralTable    *thisEvent = NULL;
     InspiralTemplate     *thisTmplt = NULL;
@@ -649,17 +647,17 @@ XLALFindChirpTagTemplateAndSegment (
     /* Sanity checks on input arguments for debugging */
     if (!dataSegVec || !tmpltHead || !events || !(*events) ||
           !ifo || !analyseThisTmplt )
-       XLAL_ERROR( func, XLAL_EFAULT );
+       XLAL_ERROR( XLAL_EFAULT );
 
     if ( tdFast < 0.0 || tdFast > 1.0 )
-       XLAL_ERROR( func, XLAL_EINVAL );
+       XLAL_ERROR( XLAL_EINVAL );
 #endif
 
     /* Do a IFO cut on the coinc list */
     (*events) =  XLALIfoCutSingleInspiral( events, ifo);
 
     if ( XLALClearErrno() ) {
-       XLAL_ERROR( func, XLAL_EFUNC );
+       XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* make sure the sngl inspirals are time ordered */
@@ -1150,7 +1148,6 @@ XLALFindChirpBankSimInjectSignal (
     FindChirpBankSimParams     *simParams
     )
 {
-  static const char    *func = "XLALFindChirpBankSimInjectSignal";
   LALStatus             status;
   SimInspiralTable     *bankInjection;
   CHAR                  tmpChName[LALNameLength];
@@ -1169,7 +1166,7 @@ XLALFindChirpBankSimInjectSignal (
   {
     XLALPrintError(
         "XLAL Error: specify either a sim_inspiral table or sim params\n" );
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   /* create memory for the bank simulation */
@@ -1186,7 +1183,7 @@ XLALFindChirpBankSimInjectSignal (
     {
       XLALPrintError(
           "XLAL Error: frame name and channel name must be specified\n" );
-      XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
     }
 
     fprintf( stderr, "reading data from %s %s\n",
@@ -1242,16 +1239,16 @@ XLALFindChirpBankSimInjectSignal (
     if ( status.statusCode )
     {
       REPORTSTATUS( &status );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( XLAL_EFAILED );
     }
 
     XLALDestroyREAL4Vector( frameData.data );
 #endif
     XLALPrintError( "XLAL Error: frame reading not implemented\n" );
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 #else
     XLALPrintError( "XLAL Error: LAL not compiled with frame support\n" );
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 #endif
   }
   else
@@ -1327,7 +1324,7 @@ XLALFindChirpBankSimInjectSignal (
       {
         XLALPrintError(
             "error: unknown waveform for bank simulation injection\n" );
-        XLAL_ERROR_NULL( func, XLAL_EINVAL );
+        XLAL_ERROR_NULL( XLAL_EINVAL );
       }
 
       /* set the injection distance to 1 Mpc */
@@ -1345,7 +1342,7 @@ XLALFindChirpBankSimInjectSignal (
     if ( status.statusCode )
     {
       REPORTSTATUS( &status );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( XLAL_EFAILED );
     }
 
     /* restore the saved channel name */
@@ -1366,7 +1363,6 @@ XLALFindChirpBankSimSignalNorm(
     )
 {
   /* compute the minimal match normalization */
-  static const char *func = "XLALFindChirpBankSimSignalNorm";
   UINT4 k;
   REAL4 matchNorm = 0;
   REAL4 *tmpltPower = fcDataParams->tmpltPowerVec->data;
@@ -1403,7 +1399,7 @@ XLALFindChirpBankSimSignalNorm(
 
     default:
       XLALPrintError( "Error: unknown approximant\n" );
-      XLAL_ERROR_REAL4( func, XLAL_EINVAL );
+      XLAL_ERROR_REAL4( XLAL_EINVAL );
   }
 
   matchNorm *= ( 4.0 * (REAL4) fcSegVec->data->deltaT ) /
@@ -1478,10 +1474,10 @@ static int FindTimeSeriesStartAndEnd (
 
 #ifndef LAL_NDEBUG
   if ( !signalvec )
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if ( !signalvec->data )
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 #endif
 
   length = signalvec->length;

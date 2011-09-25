@@ -638,7 +638,6 @@ XLALIfoCutSingleRingdown(
     )
 
 {
-  static const char *func = "IfoCutSingleRingdown";
   SnglRingdownTable    *prevEvent   = NULL;
   SnglRingdownTable    *thisEvent   = NULL;
   SnglRingdownTable    *ifoHead     = NULL;
@@ -647,7 +646,7 @@ XLALIfoCutSingleRingdown(
   /* check that eventHead is non-null */
   if ( ! eventHead )
     {
-      XLAL_ERROR_NULL(func,XLAL_EIO);
+      XLAL_ERROR_NULL(XLAL_EIO);
      }
   /* Scan through a linked list of sngl_ringdown tables and return a
      pointer to the head of a linked list of tables for a specific IFO */

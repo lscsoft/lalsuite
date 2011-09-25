@@ -258,14 +258,14 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
   htData = LALCalloc(1, sizeof(*htData));
   if (!htData)
   {
-    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
   vecLength = strain->data->vectorLength;
   htData->data = XLALCreateREAL4Vector( vecLength );
   if ( ! htData->data )
   {
     LALFree( htData );
-    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   /* store the htData */
@@ -320,13 +320,13 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
   ret = LALCalloc(1, sizeof(*ret));
   if (!ret)
   {
-    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   ret->data = XLALCreateREAL4Vector( numPoints );
   if (! ret->data)
   {
-    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   ret->deltaT = 1./sampleRate;
@@ -393,13 +393,13 @@ XLALInterpolateNRWaveREAL8( REAL8TimeSeries *in,           /**< input strain tim
   ret = LALCalloc(1, sizeof(*ret));
   if (!ret)
   {
-    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   ret->data = XLALCreateREAL8Vector( numPoints );
   if (! ret->data)
   {
-    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   ret->deltaT = 1./sampleRate;
@@ -569,17 +569,17 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
   /* check arguments are sensible */
   if ( !out ) {
     LALPrintError ("\nOutput pointer is NULL !\n\n");
-    XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   if ( !nrCatalog ) {
     LALPrintError ("\n NR Catalog pointer is NULL !\n\n");
-    XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   if ( !inj ) {
     LALPrintError ("\n SimInspiralTable pointer is NULL !\n\n");
-    XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   /* we want to check for the highest mass before calculating the mass ratio */
@@ -602,7 +602,7 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
     /* check catalog data is not null */
     if ( nrCatalog->data + k == NULL ) {
       LALPrintError ("\n NR Catalog data is NULL !\n\n");
-      XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
 
     /* look for waveforms with correct mode values */
@@ -621,7 +621,7 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
   /* error checking if waveforms with input mode values were not found */
   if ( diff < 0) {
     LALPrintError ("\n Input mode numbers not found !\n\n");
-    XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   /* copy best match to output */
@@ -812,7 +812,7 @@ CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, UINT4 l, INT4 m)
   CHAR *channel=NULL;
 
   if ( !((strncmp(polarisation, "plus", 4) == 0) || (strncmp(polarisation, "cross", 5) == 0))) {
-    XLAL_ERROR_NULL( "XLALGetNinjaChannelName",   XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   /* allocate memory for channel */

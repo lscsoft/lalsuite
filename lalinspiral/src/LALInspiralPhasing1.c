@@ -102,11 +102,11 @@ XLALInspiralPhasing1 (
    REAL8 answer, phiofv;
 
    if (params == NULL)
-      XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+      XLAL_ERROR_REAL8(XLAL_EFAULT);
    if (v <= 0.)
-      XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+      XLAL_ERROR_REAL8(XLAL_EDOM);
    if (v >= 1.)
-      XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+      XLAL_ERROR_REAL8(XLAL_EDOM);
 
    sign = 1.0;
 
@@ -135,7 +135,7 @@ XLALInspiralPhasing1 (
 
    answer = XLALREAL8RombergIntegrate (integratedfunction, funcParams, xmin, xmax, integrationtype);
    if (XLAL_IS_REAL8_FAIL_NAN(answer))
-      XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
 
    phiofv = in1->phi0 - 2.0*sign*answer;
 

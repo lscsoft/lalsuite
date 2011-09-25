@@ -96,7 +96,7 @@ XLALInspiralPhasing3_0PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta5 = pow(td,-0.625);
   phase = (ak->ptaN/theta5);
@@ -141,7 +141,7 @@ XLALInspiralPhasing3_2PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -190,7 +190,7 @@ XLALInspiralPhasing3_3PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -241,7 +241,7 @@ XLALInspiralPhasing3_4PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -294,7 +294,7 @@ XLALInspiralPhasing3_5PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -348,7 +348,7 @@ XLALInspiralPhasing3_6PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -404,7 +404,7 @@ XLALInspiralPhasing3_7PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;

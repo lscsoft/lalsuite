@@ -802,7 +802,6 @@ XLALReturnSimInspiralEndTime (
     )
 
 {
-  static const char *func = "ReturnSimInspiralEndTime";
   if ( ! strcmp( "L1", ifo ) )
   {
     return( XLALGPSToINT8NS(&(event->l_end_time) ) );
@@ -826,7 +825,7 @@ XLALReturnSimInspiralEndTime (
   }
   else
   {
-    XLAL_ERROR(func,XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
 
 }
