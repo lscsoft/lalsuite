@@ -57,7 +57,6 @@ static void print_element_names(xmlNode *node)
 
 int XLALXMLFilePrintElements(const char *fname)
 {
-    const char *fn = __func__;
     xmlDoc  *doc;
 
     /* make sure that the shared library is the same as the
@@ -65,7 +64,7 @@ int XLALXMLFilePrintElements(const char *fname)
     LIBXML_TEST_VERSION
 
     if (!(doc = xmlReadFile(fname, NULL, 0)))
-        XLAL_ERROR(fn, XLAL_EIO);
+        XLAL_ERROR(XLAL_EIO);
     print_element_names(xmlDocGetRootElement(doc));
     xmlFreeDoc(doc);
     xmlCleanupParser(); /* free global variables in parser */
@@ -83,13 +82,12 @@ int XLALXMLFilePrintElements(const char *fname)
 const xmlNode *
 XLALfindNextNamedNode ( const xmlNode *startNode, const xmlChar *nodeName )
 {
-  const char *fn = __func__;
   const xmlNode *tmp;
 
   /* check input consistency */
   if ( !startNode || !nodeName ) {
-    XLALPrintError ("%s: invalid NULL input.\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input.\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   tmp = startNode;
@@ -108,14 +106,13 @@ XLALfindNextNamedNode ( const xmlNode *startNode, const xmlChar *nodeName )
 int
 XLALcountNamedNodes ( const xmlNode *startNode, const xmlChar *nodeName, UINT4 *count )
 {
-  const char *fn = __func__;
   UINT4 counter;
   const xmlNode *tmp;
 
   /* check input consistency */
   if ( !startNode || !nodeName || !count ) {
-    XLALPrintError ("%s: invalid NULL input.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input.\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   counter = 0;
@@ -159,7 +156,6 @@ XLALcountNamedNodes ( const xmlNode *startNode, const xmlChar *nodeName, UINT4 *
 xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const char *xpath, const XML_NAMESPACE_VECTOR *xmlNsVector)
 {
     /* set up local variables */
-    const char * fn = __func__;
     xmlXPathContextPtr xpathCtx = NULL;
     xmlChar const *xmlNsPrefix = NULL;
     xmlChar const *xmlNsUrl = NULL;
@@ -173,18 +169,18 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const cha
     /* sanity checks */
     if(!xmlDocument) {
         XLALPrintError("Invalid input parameter: xmlDocument\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(!xpath || strlen(xpath) <= 0) {
         XLALPrintError("Invalid input parameter: xpath\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
     /* prepare xpath context */
     xpathCtx = xmlXPathNewContext(xmlDocument);
     if(xpathCtx == NULL) {
         XLALPrintError("XPath context instantiation failed\n");
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* register namespaces */
@@ -196,7 +192,7 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const cha
                 /* clean up */
                 xmlXPathFreeContext(xpathCtx);
                 XLALPrintError("XPath namespace registration failed: %s=%s\n", xmlNsPrefix, xmlNsUrl);
-                XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+                XLAL_ERROR_NULL(XLAL_EFAILED);
             }
         }
     }
@@ -207,7 +203,7 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const cha
         /* clean up */
         xmlXPathFreeContext(xpathCtx);
         XLALPrintError("XPath statement preparation failed\n");
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* run xpath query */
@@ -217,7 +213,7 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const cha
         xmlFree(xpathExpr);
         xmlXPathFreeContext(xpathCtx);
         XLALPrintError("XPath evaluation failed\n");
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* retrieve node set returned by xpath query */
@@ -231,7 +227,7 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const cha
         xmlFree(xpathExpr);
         xmlXPathFreeContext(xpathCtx);
         XLALPrintError("XPath search didn't return any nodes\n");
-        XLAL_ERROR_NULL(fn, XLAL_EDOM);
+        XLAL_ERROR_NULL(XLAL_EDOM);
     }
     else if(nodeCount > 1) {
         /* clean up */
@@ -239,7 +235,7 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const cha
         xmlFree(xpathExpr);
         xmlXPathFreeContext(xpathCtx);
         XLALPrintError("XPath search did return %i nodes where only 1 was expected\n", nodeCount);
-        XLAL_ERROR_NULL(fn, XLAL_EDOM);
+        XLAL_ERROR_NULL(XLAL_EDOM);
     }
     else {
         nodeContent = xmlNodeListGetString(xmlDocument, xmlNodes->nodeTab[0]->xmlChildrenNode, 1);
@@ -276,7 +272,6 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const cha
 INT4 XLALValidateDocumentByInternalSchema(const xmlDocPtr xmlDocument)
 {
     /* set up local variables */
-    const char * fn = __func__;
     xmlNodePtr xmlRootNode = NULL;
     xmlChar *xmlSchemaLocation = NULL;
     INT4 result;
@@ -284,21 +279,21 @@ INT4 XLALValidateDocumentByInternalSchema(const xmlDocPtr xmlDocument)
     /* sanity checks */
     if(!xmlDocument) {
         XLALPrintError("Invalid input parameter: xmlDocument\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* get schema instance location */
     xmlRootNode = xmlDocGetRootElement(xmlDocument);
     if(!xmlRootNode) {
         XLALPrintError("Root element retrieval failed!\n");
-        XLAL_ERROR(fn, XLAL_EFAILED);
+        XLAL_ERROR(XLAL_EFAILED);
     }
     xmlSchemaLocation = xmlGetNsProp(xmlRootNode,
                                      CAST_CONST_XMLCHAR("noNamespaceSchemaLocation"),
                                      CAST_CONST_XMLCHAR("http://www.w3.org/2001/XMLSchema-instance"));
     if(!xmlSchemaLocation) {
         XLALPrintError("Schema location retrieval failed!\n");
-        XLAL_ERROR(fn, XLAL_EFAILED);
+        XLAL_ERROR(XLAL_EFAILED);
     }
 
     /* prepare and run validator */
@@ -332,7 +327,6 @@ INT4 XLALValidateDocumentByInternalSchema(const xmlDocPtr xmlDocument)
 INT4 XLALValidateDocumentByExternalSchema(const xmlDocPtr xmlDocument, const xmlChar *schemaUrl)
 {
     /* set up local variables */
-    const char * fn = __func__;
     xmlSchemaParserCtxtPtr xmlSchemaParser = NULL;
     xmlSchemaPtr xmlSchemaInstance = NULL;
     xmlSchemaValidCtxtPtr xmlSchemaValidator = NULL;
@@ -341,18 +335,18 @@ INT4 XLALValidateDocumentByExternalSchema(const xmlDocPtr xmlDocument, const xml
     /* sanity checks */
     if(!xmlDocument) {
         XLALPrintError("Invalid input parameter: xmlDocument\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
     if(!schemaUrl) {
         XLALPrintError("Invalid input parameter: schemaUrl\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* retrieve schema and prepare parser */
     xmlSchemaParser = xmlSchemaNewParserCtxt((const char*)schemaUrl);
     if(!xmlSchemaParser) {
             XLALPrintError("Schema parser creation failed!\n");
-            XLAL_ERROR(fn, XLAL_EFAILED);
+            XLAL_ERROR(XLAL_EFAILED);
     }
 
     /* parse schema and prepare validator */
@@ -361,7 +355,7 @@ INT4 XLALValidateDocumentByExternalSchema(const xmlDocPtr xmlDocument, const xml
         /* clean up */
         xmlSchemaFreeParserCtxt(xmlSchemaParser);
         XLALPrintError("Schema parsing failed!\n");
-        XLAL_ERROR(fn, XLAL_EFAILED);
+        XLAL_ERROR(XLAL_EFAILED);
     }
     xmlSchemaValidator = xmlSchemaNewValidCtxt(xmlSchemaInstance);
     if(!xmlSchemaValidator) {
@@ -369,7 +363,7 @@ INT4 XLALValidateDocumentByExternalSchema(const xmlDocPtr xmlDocument, const xml
         xmlSchemaFreeParserCtxt(xmlSchemaParser);
         xmlSchemaFree(xmlSchemaInstance);
         XLALPrintError("Schema validator creation failed!\n");
-        XLAL_ERROR(fn, XLAL_EFAILED);
+        XLAL_ERROR(XLAL_EFAILED);
     }
 
     /* prepare and run validator */
@@ -404,17 +398,16 @@ INT4 XLALValidateDocumentByExternalSchema(const xmlDocPtr xmlDocument, const xml
 INT4 XLALValidateDocument(const xmlDocPtr xmlDocument, const xmlSchemaValidCtxtPtr xmlSchemaValidator)
 {
     /* set up local variables */
-    const char * fn = __func__;
     int result;
 
     /* sanity checks */
     if(!xmlDocument) {
         XLALPrintError("Invalid input parameter: xmlDocument\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
     if(!xmlSchemaValidator) {
         XLALPrintError("Invalid input parameter: xmlSchemaValidator\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* validate document */
@@ -424,7 +417,7 @@ INT4 XLALValidateDocument(const xmlDocPtr xmlDocument, const xmlSchemaValidCtxtP
     }
     else if(result == -1) {
         XLALPrintError("Document validation failed due to an internal error!\n");
-        XLAL_ERROR(fn, XLAL_EFAILED);
+        XLAL_ERROR(XLAL_EFAILED);
     }
     else {
         return XLAL_FAILURE;
@@ -481,19 +474,18 @@ INT4 XLALReconcileDefaultNamespace(const xmlNodePtr xmlRootElement, const xmlNsP
 xmlDocPtr
 XLALXMLString2Doc ( const char *xmlString )
 {
-  const char * fn = __func__;
   xmlDocPtr ret = NULL;
 
   /* check input consistency */
   if ( !xmlString ) {
-    XLALPrintError ("%s: invalid NULL input.\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input.\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* parse XML document */
   if ( (ret = xmlReadMemory((const char*)xmlString, strlen((const char*)xmlString), NULL, "UTF-8", 0)) == NULL ) {
-    XLALPrintError ( "%s: XML document parsing xmlReadMemory() failed!\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ( "%s: XML document parsing xmlReadMemory() failed!\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* clean up */
@@ -515,16 +507,14 @@ XLALXMLString2Doc ( const char *xmlString )
 xmlChar *
 XLALXMLDoc2String ( xmlDoc *xmlDocument )
 {
-  const char * fn = __func__;
-
   /* set up local variables */
   int xmlStringBufferSize = 0;
   xmlChar *xmlString = NULL;
 
   /* check input consistency */
   if ( !xmlDocument ) {
-    XLALPrintError ("%s: invalid NULL input 'xmlDocument'\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'xmlDocument'\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* prepare XML serialization (here: indentation) */
@@ -533,8 +523,8 @@ XLALXMLDoc2String ( xmlDoc *xmlDocument )
   /* dump document to a string buffer */
   xmlDocDumpFormatMemory ( (xmlDocPtr)xmlDocument, &xmlString, &xmlStringBufferSize, 1);
   if(xmlStringBufferSize <= 0) {
-    XLALPrintError ("%s: XML document dump xmlDocDumpFormatMemory() failed!\n", fn);
-    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: XML document dump xmlDocDumpFormatMemory() failed!\n", __func__);
+    XLAL_ERROR_NULL ( XLAL_EFAILED );
   }
 
   return xmlString;
