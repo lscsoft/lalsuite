@@ -106,7 +106,7 @@ static int XLALSimSGWBSegment(REAL8TimeSeries **h, const LALDetector *detectors,
 #	define CLEANUP_AND_RETURN(errnum) do { \
 		if (htilde) for (i = 0; i < numDetectors; ++i) XLALDestroyCOMPLEX16FrequencySeries(htilde[i]); \
 		XLALFree(htilde); XLALDestroyREAL8FFTPlan(plan); gsl_matrix_free(R); \
-		if (errnum) XLAL_ERROR(__func__, errnum); else return 0; \
+		if (errnum) XLAL_ERROR(errnum); else return 0; \
 		} while (0)
 	REAL8FFTPlan *plan = NULL;
 	COMPLEX16FrequencySeries **htilde = NULL;
@@ -281,7 +281,7 @@ int XLALSimSGWB(
 #	define CLEANUP_AND_RETURN(errnum) do { \
 		if (overlap) for (i = 0; i < numDetectors; ++i) XLALDestroyREAL8Sequence(overlap[i]); \
 		XLALFree(overlap); \
-		if (errnum) XLAL_ERROR(__func__, errnum); else return 0; \
+		if (errnum) XLAL_ERROR(errnum); else return 0; \
 		} while (0)
 	REAL8Vector **overlap = NULL;
 	LIGOTimeGPS epoch;
@@ -298,17 +298,17 @@ int XLALSimSGWB(
 		if (h[i]->data->length != length
 				|| fabs(h[i]->deltaT - deltaT) > LAL_REAL8_EPS
 				|| XLALGPSCmp(&epoch, &h[i]->epoch))
-			XLAL_ERROR(__func__, XLAL_EINVAL);
+			XLAL_ERROR(XLAL_EINVAL);
 
 	/* make sure that the resolution of the frequency series is
 	 * commensurate with the requested time series */
 	if (length/2 + 1 != OmegaGW->data->length
 			|| (size_t)floor(0.5 + 1.0/(deltaT * OmegaGW->deltaF)) != length)
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 
 	/* stride cannot be longer than data length */
 	if (stride > length)
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 
 	if (stride == 0) { /* generate segment with no feathering */
 		XLALSimSGWBSegment(h, detectors, numDetectors, OmegaGW, H0, rng);
@@ -322,7 +322,7 @@ int XLALSimSGWB(
 
 	overlap = LALCalloc(numDetectors, sizeof(*overlap));
 	if (! overlap)
-		XLAL_ERROR(__func__, XLAL_ENOMEM);
+		XLAL_ERROR(XLAL_ENOMEM);
 	for (i = 0; i < numDetectors; ++i) {
 		overlap[i] = XLALCreateREAL8Sequence(length - stride);
 		if (! overlap[i])
@@ -442,10 +442,10 @@ int XLALSimSGWBFlatSpectrum(
 	deltaF = 1.0/(length * h[0]->deltaT);
 	OmegaGW = XLALSimSGWBOmegaGWFlatSpectrum(Omega0, flow, deltaF, length/2 + 1);
 	if (! OmegaGW)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	if (XLALSimSGWB(h, detectors, numDetectors, stride, OmegaGW, H0, rng)) {
 		XLALDestroyREAL8FrequencySeries(OmegaGW);
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	XLALDestroyREAL8FrequencySeries(OmegaGW);
 	return 0;
@@ -547,10 +547,10 @@ int XLALSimSGWBPowerLawSpectrum(
 	deltaF = 1.0/(length * h[0]->deltaT);
 	OmegaGW = XLALSimSGWBOmegaGWPowerLawSpectrum(Omegaref, alpha, fref, flow, deltaF, length/2 + 1);
 	if (! OmegaGW)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	if (! XLALSimSGWB(h, detectors, numDetectors, stride, OmegaGW, H0, rng)) {
 		XLALDestroyREAL8FrequencySeries(OmegaGW);
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	XLALDestroyREAL8FrequencySeries(OmegaGW);
 	return 0;

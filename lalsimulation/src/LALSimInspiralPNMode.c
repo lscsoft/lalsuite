@@ -45,7 +45,6 @@ COMPLEX16 XLALSimInspiralPNMode22(
 		int O         /**< twice post-Newtonian order */
 		)
 {
-	static const char *func = "XLALSimInspiralPNMode22";
 	REAL8 fac = -8.0*sqrt(LAL_PI/5.0)*LAL_G_SI*pow(LAL_C_SI, -2.0);
 	REAL8 m = m1 + m2;
 	REAL8 mu = m1*m2/m;
@@ -55,8 +54,8 @@ COMPLEX16 XLALSimInspiralPNMode22(
 	REAL8 im = 0.0;
 	switch (O) {
 		default: /* unsupported pN order */
-			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", func, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
+			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
+			XLAL_ERROR_VAL(XLAL_EINVAL, czero);
 		case -1: /* use highest available pN order */
 		case 6:
 			re += ((27027409.0/646800.0) - (856.0/105.0)*LAL_GAMMA + (2.0/3.0)*pow(LAL_PI, 2.0) - (1712.0/105.0)*log(2.0) - (428.0/105.0)*log(x) - 18.0*pow(logx, 2.0) - ((278185.0/33264.0) - (41.0/96.0)*pow(LAL_PI, 2.0))*nu - (20261.0/2772.0)*pow(nu, 2.0) + (114635.0/99792.0)*pow(nu, 3.0))*pow(x, 3.0);
@@ -99,7 +98,6 @@ COMPLEX16 XLALSimInspiralPNMode21(
 		int O         /**< twice post-Newtonian order */
 		)
 {
-	static const char *func = "XLALSimInspiralPNMode21";
 	REAL8 fac = -8.0*sqrt(LAL_PI/5.0)*LAL_G_SI*pow(LAL_C_SI, -2.0);
 	REAL8 m = m1 + m2;
 	REAL8 dm = m1 - m2;
@@ -110,8 +108,8 @@ COMPLEX16 XLALSimInspiralPNMode21(
 	REAL8 im = 0.0;
 	switch (O) {
 		default: /* unsupported pN order */
-			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", func, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
+			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
+			XLAL_ERROR_VAL(XLAL_EINVAL, czero);
 		case -1: /* use highest available pN order */
 		case 5:
 			re -= ((43.0/126.0) + (509.0/126.0)*nu - (79.0/168.0)*pow(nu, 2.0))*pow(x, 2.0);
@@ -150,7 +148,6 @@ COMPLEX16 XLALSimInspiralPNMode33(
 		int O         /**< twice post-Newtonian order */
 		)
 {
-	static const char *func = "XLALSimInspiralPNMode33";
 	REAL8 fac = 3.0*sqrt(6.0*LAL_PI/7.0)*LAL_G_SI*pow(LAL_C_SI, -2.0);
 	REAL8 m = m1 + m2;
 	REAL8 dm = m1 - m2;
@@ -161,8 +158,8 @@ COMPLEX16 XLALSimInspiralPNMode33(
 	REAL8 im = 0.0;
 	switch (O) {
 		default: /* unsupported pN order */
-			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", func, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
+			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
+			XLAL_ERROR_VAL(XLAL_EINVAL, czero);
 		case -1: /* use highest available pN order */
 		case 5:
 			re += ((123.0/110.0) - (1838.0/165.0)*nu - (887.0/330.0)*pow(nu, 2.0))*pow(x, 2.0);
@@ -202,7 +199,6 @@ COMPLEX16 XLALSimInspiralPNMode32(
 		int O         /**< twice post-Newtonian order */
 		)
 {
-	static const char *func = "XLALSimInspiralPNMode32";
 	REAL8 fac = -(8.0/3.0)*sqrt(LAL_PI/7.0)*LAL_G_SI*pow(LAL_C_SI, -2.0);
 	REAL8 m = m1 + m2;
 	REAL8 mu = m1*m2/m;
@@ -212,8 +208,8 @@ COMPLEX16 XLALSimInspiralPNMode32(
 	REAL8 im = 0.0;
 	switch (O) {
 		default: /* unsupported pN order */
-			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", func, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
+			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
+			XLAL_ERROR_VAL(XLAL_EINVAL, czero);
 		case -1: /* use highest available pN order */
 		case 5:
 			re += 2.0*LAL_PI*(1.0 - 3.0*nu)*pow(x, 1.5);
@@ -251,7 +247,6 @@ COMPLEX16 XLALSimInspiralPNMode31(
 		int O         /**< twice post-Newtonian order */
 		)
 {
-	static const char *func = "XLALSimInspiralPNMode31";
 	REAL8 fac = -(1.0/3.0)*sqrt(2.0*LAL_PI/35.0)*LAL_G_SI*pow(LAL_C_SI, -2.0);
 	REAL8 m = m1 + m2;
 	REAL8 dm = m1 - m2;
@@ -262,8 +257,8 @@ COMPLEX16 XLALSimInspiralPNMode31(
 	REAL8 im = 0.0;
 	switch (O) {
 		default: /* unsupported pN order */
-			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", func, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
+			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
+			XLAL_ERROR_VAL(XLAL_EINVAL, czero);
 		case -1: /* use highest available pN order */
 		case 5:
 			re += ((607.0/198.0) - (136.0/99.0)*nu - (247.0/198.0)*pow(nu, 2.0))*pow(x, 2.0);

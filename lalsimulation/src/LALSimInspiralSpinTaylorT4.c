@@ -241,7 +241,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
         default: 
             XLALPrintError("XLAL Error - %s: Invalid phase. PN order %s\n", 
                     __func__, phaseO );
-            XLAL_ERROR(__func__, XLAL_EINVAL);
+            XLAL_ERROR(XLAL_EINVAL);
             break;
     }
 
@@ -336,7 +336,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     {
         XLALPrintError("XLAL Error - %s: Cannot allocate integrator\n", 
                 __func__);
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
     }
 
     /* stop the integration only when the test is true */
@@ -352,7 +352,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     if (!len) 
     {
         XLALPrintError("XLAL Error - %s: integration failed with errorcode %d.\n", __func__, intreturn);
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
     }
 
     /* Print warning about abnormal termination */
@@ -395,7 +395,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
             || !LNhatx || !LNhaty || !LNhatz || !E1x || !E1y || !E1z )
     {
         XLALDestroyREAL8Array(yout);
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
     }
 
     /* Copy time series of dynamical variables */
@@ -737,7 +737,7 @@ int XLALSimInspiralSpinTaylorT4(
             m1, m2, tStart, phiStart, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, 
             lnhaty, lnhatz, e1x, e1y, e1z, deltaT, fStart, spinFlags, phaseO);
     if( n < 0 )
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
 
     /* Use the dynamical variables to build the polarizations */
     status = XLALSimInspiralPrecessingPolarizationWaveforms(hplus, hcross,
@@ -760,7 +760,7 @@ int XLALSimInspiralSpinTaylorT4(
     XLALDestroyREAL8TimeSeries(E1y);
     XLALDestroyREAL8TimeSeries(E1z);
     if( status < 0 )
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
 
     return n;
 }
@@ -809,7 +809,7 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
             m1, m2, tStart, phiStart, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, 
             lnhaty, lnhatz, e1x, e1y, e1z, deltaT, fStart, spinFlags, phaseO);
     if( n < 0 )
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
 
     /* Use the dynamical variables to build the polarizations */
     status = XLALSimInspiralPrecessingPolarizationWaveforms(hplus, hcross,
@@ -832,7 +832,7 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
     XLALDestroyREAL8TimeSeries(E1y);
     XLALDestroyREAL8TimeSeries(E1z);
     if( status < 0 )
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
 
     return n;
 }

@@ -197,7 +197,7 @@ Blanchet et. al, Phys. Rev. Lett. 93, 091101 (2004) */
 static int XLALSimInspiralSpinTaylorCoeffs(REAL8 ST[9], /** Output: spin coefficients array */
 		      REAL8 eta /** Symmetric mass ratio */ )
 {
-  if(!ST) XLAL_ERROR(__func__,XLAL_EFAULT);
+  if(!ST) XLAL_ERROR(XLAL_EFAULT);
   
    ST[0/*LAL_PNORDER_NEWTONIAN*/] = 1.0;
    ST[1/*LAL_PNORDER_HALF*/] = 0.0;
@@ -369,17 +369,17 @@ static int XLALPSpinInspiralRDparamsSetup(
 
     case 8:
       XLALPrintError("*** LALPhenSpinInspiralRD ERROR: PhenSpin approximant not available at pseudo4PN order\n");
-			XLAL_ERROR(__func__,XLAL_EDOM);
+			XLAL_ERROR(XLAL_EDOM);
       break;
 
     case 9:
       XLALPrintError("*** LALPhenSpinInspiralRD ERROR: NUM_ORDER not a valid PN order\n");
-			XLAL_ERROR(__func__,XLAL_EDOM);
+			XLAL_ERROR(XLAL_EDOM);
 			break;
 
     default:
       XLALPrintError("*** LALPhenSpinInspiralRD ERROR: Impossible to create waveform with %d order\n",order);
-			XLAL_ERROR(__func__,XLAL_EFAILED);
+			XLAL_ERROR(XLAL_EFAILED);
       break;
   }
 
@@ -638,7 +638,7 @@ static int XLALGenerateWaveDerivative (
   gsl_spline *spline;
 
   if (wave->length!=dwave->length)
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* Getting interpolation and derivatives of the waveform using gsl spline routine */
   /* Initialize arrays and supporting variables for gsl */
@@ -650,7 +650,7 @@ static int XLALGenerateWaveDerivative (
   {
     if ( x ) LALFree (x);
     if ( y ) LALFree (y);
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   for (j = 0; j < wave->length; ++j)
@@ -667,7 +667,7 @@ static int XLALGenerateWaveDerivative (
     if ( spline ) gsl_spline_free(spline);
     LALFree( x );
     LALFree( y );
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   /* Gall gsl spline interpolation */
@@ -678,7 +678,7 @@ static int XLALGenerateWaveDerivative (
     gsl_interp_accel_free(acc);
     LALFree( x );
     LALFree( y );
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Getting first and second order time derivatives from gsl interpolations */
@@ -691,7 +691,7 @@ static int XLALGenerateWaveDerivative (
       gsl_interp_accel_free(acc);
       LALFree( x );
       LALFree( y );
-      XLAL_ERROR( __func__, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
     dwave->data[j]  = (REAL8)(dy / dt);
   }
@@ -1141,9 +1141,9 @@ static int XLALSpinInspiralAdaptiveEngine(
   if (!integrator) {
     fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: Cannot allocate adaptive integrator.\n");
     if (XLALClearErrno() == XLAL_ENOMEM)
-      XLAL_ERROR( __func__, XLAL_ENOMEM );
+      XLAL_ERROR( XLAL_ENOMEM );
     else
-      XLAL_ERROR( __func__, XLAL_EDOM );
+      XLAL_ERROR( XLAL_EDOM );
   }
 	
   /* stop the integration only when the test is true */
@@ -1162,7 +1162,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   if (intlen == XLAL_FAILURE)
   {
     XLALPrintError("Error in Adaptive Integrator\n");
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* End integration*/
@@ -1171,10 +1171,10 @@ static int XLALSpinInspiralAdaptiveEngine(
   if (!intlen) {
     phenPars->intreturn=intreturn;
     if (XLALClearErrno() == XLAL_ENOMEM) {
-      XLAL_ERROR( __func__,  XLAL_ENOMEM);
+      XLAL_ERROR(  XLAL_ENOMEM);
     } else {
       fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: integration failed with errorcode %d, integration length %d\n",intreturn,intlen);
-      XLAL_ERROR( __func__, XLAL_EFAILED);
+      XLAL_ERROR( XLAL_EFAILED);
     }
   }
 	
@@ -1183,12 +1183,12 @@ static int XLALSpinInspiralAdaptiveEngine(
 fprintf(stderr, "%i\n", intlen);
 fprintf(stderr, "%i\n", mparams->length);
     fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: no space to write in waveforms: %d vs. %d\n",intlen,mparams->length);
-    XLAL_ERROR(__func__, XLAL_ESIZE);
+    XLAL_ERROR(XLAL_ESIZE);
   }
 	
   if ( intlen < minIntLen ) {
     fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: incorrect integration with length %d\n",intlen);
-    XLAL_ERROR(__func__, XLAL_ESIZE);
+    XLAL_ERROR(XLAL_ESIZE);
   }
   /* End of integration checks*/
 	
@@ -1232,7 +1232,7 @@ fprintf(stderr, "%i\n", mparams->length);
 		
     if (omegaMatch<omega[jend]) {
       fprintf(stderr,"*** LALPSpinInspiralRD ERROR ***: Impossible to attach phenom. part\n");
-      XLAL_ERROR(__func__, XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
 		
     kend=Npoints-1;
@@ -1277,7 +1277,7 @@ fprintf(stderr, "%i\n", mparams->length);
     errcode += XLALGenerateWaveDerivative(dLNhz,LNhz_s,dt);
     if (errcode != 0) {
       fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating first derivatives: #points %d\n",Npoints);
-      XLAL_ERROR(__func__,XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
 
     for (k=0;k<Npoints;k++) {
@@ -1296,7 +1296,7 @@ fprintf(stderr, "%i\n", mparams->length);
     errcode += XLALGenerateWaveDerivative(ddomega,domega,dt);
     if (errcode != 0) {
       fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating second derivatives\n");
-      XLAL_ERROR(__func__,XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
 		
     if (ddomega->data[kend]<0.) {
@@ -1501,7 +1501,7 @@ static int XLALPSpinFinalMassSpin(
   if (*finalMass < 0.) {
     fprintf(stderr,"*** LALPSpinInspiralRingdownWave ERROR: Estimated final mass <0 : %12.6f\n ",*finalMass);
     fprintf(stderr,"***                                    Final mass set to initial mass\n");
-    XLAL_ERROR( __func__, XLAL_ERANGE);
+    XLAL_ERROR( XLAL_ERANGE);
     *finalMass = 1.;
   }
 	
@@ -1517,7 +1517,7 @@ static int XLALPSpinFinalMassSpin(
 			fprintf(stderr,"      (m1=%8.3f  m2=%8.3f s1=(%8.3f,%8.3f,%8.3f) s2=(%8.3f,%8.3f,%8.3f) )\n",m1,m2,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2]); 
 			fprintf(stderr,"***                                    Code aborts\n");
       *finalSpin = 0.;
-      XLAL_ERROR( __func__, XLAL_ERANGE);
+      XLAL_ERROR( XLAL_ERANGE);
     }
   }
 	
@@ -1732,7 +1732,7 @@ static int XLALPSpinGenerateQNMFreq(
 												}
 												else {
 													fprintf(stderr,"*** LALPSpinInspiralRingdownWave ERROR: Ringdown modes for l=%d m=%d not availbale\n",l,m);
-													XLAL_ERROR( __func__ , XLAL_EDOM );
+													XLAL_ERROR( XLAL_EDOM );
 												}
 											}
 										}
@@ -1779,7 +1779,7 @@ static int XLALPSpinInspiralRingdownWave (
 	
   if ( modefreqs->length != nmodes )
 	{
-		XLAL_ERROR( __func__, XLAL_EBADLEN );
+		XLAL_ERROR( XLAL_EBADLEN );
 	}
 	
   /* Solving the linear system for QNMs amplitude coefficients using gsl routine */
@@ -1796,7 +1796,7 @@ static int XLALPSpinInspiralRingdownWave (
 		if (hderivs) gsl_vector_free(hderivs);
 		if (x)       gsl_vector_free(x);
 		if (p)       gsl_permutation_free(p);
-		XLAL_ERROR( __func__, XLAL_ENOMEM );
+		XLAL_ERROR( XLAL_ENOMEM );
 	}
 	
   /* Define the linear system Ax=y */
@@ -1837,7 +1837,7 @@ static int XLALPSpinInspiralRingdownWave (
 					gsl_vector_free(hderivs);
 					gsl_vector_free(x);
 					gsl_permutation_free(p);
-					XLAL_ERROR( __func__, XLAL_EDOM );
+					XLAL_ERROR( XLAL_EDOM );
 				}
       }
     }
@@ -1859,7 +1859,7 @@ static int XLALPSpinInspiralRingdownWave (
     gsl_vector_free(hderivs);
     gsl_vector_free(x);
     gsl_permutation_free(p);
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 	
   /* Putting solution to an XLAL vector */
@@ -1871,7 +1871,7 @@ static int XLALPSpinInspiralRingdownWave (
     gsl_vector_free(hderivs);
     gsl_vector_free(x);
     gsl_permutation_free(p);
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 	
   for (i = 0; i < 2*nmodes; i++) {
@@ -1936,13 +1936,13 @@ static int XLALPSpinInspiralAttachRingdownWave (
   modefreqs = XLALCreateCOMPLEX8Vector( nmodes );
   if ( !modefreqs )
   {
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
   errcode = XLALPSpinGenerateQNMFreq( modefreqs, l, m, nmodes, finalMass, finalSpin, totalMass);
   if ( errcode != XLAL_SUCCESS )
   {
     XLALDestroyCOMPLEX8Vector( modefreqs );
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Ringdown signal length: 10 times the decay time of the n=0 mode */
@@ -1956,7 +1956,7 @@ static int XLALPSpinInspiralAttachRingdownWave (
   {
   XLALPrintError( "Value of attpos inconsistent with given value of Npatch: atpos=%d  Npatch=%d, sign->length=%d, totalMass=11.5f\n",atpos,Npatch,sigl->length,totalMass);
   XLALDestroyCOMPLEX8Vector( modefreqs );
-  XLAL_ERROR( __func__, XLAL_EFAILED );
+  XLAL_ERROR( XLAL_EFAILED );
   }
 	
   /* Create memory for the ring-down and full waveforms, derivatives of inspirals 
@@ -1975,7 +1975,7 @@ static int XLALPSpinInspiralAttachRingdownWave (
     if (inspwave) XLALDestroyREAL8Vector( inspwave );
     if (dinspwave) XLALDestroyREAL8Vector( dinspwave );
     if (matchinspwave) XLALDestroyREAL8Vector( matchinspwave );
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 	
   /* Generate derivatives of the last part of inspiral waves */
@@ -1997,7 +1997,7 @@ static int XLALPSpinInspiralAttachRingdownWave (
           XLALDestroyREAL8Vector( inspwave );
           XLALDestroyREAL8Vector( dinspwave );
           XLALDestroyREAL8Vector( matchinspwave );
-          XLAL_ERROR( __func__, XLAL_EFUNC );
+          XLAL_ERROR( XLAL_EFUNC );
         }
         for (j=0; j<Npatch; j++) {
           inspwave->data[j]=dinspwave->data[j];
@@ -2013,7 +2013,7 @@ static int XLALPSpinInspiralAttachRingdownWave (
       XLALDestroyREAL8Vector( inspwave );
       XLALDestroyREAL8Vector( dinspwave );
       XLALDestroyREAL8Vector( matchinspwave );
-      XLAL_ERROR( __func__, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
     /* Generate full waveforms, by stitching inspiral and ring-down waveforms */
 		
@@ -2068,7 +2068,7 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
     *hcross = XLALCreateREAL8TimeSeries("Hx", t_start, 0.0, deltaT, &lalDimensionlessUnit, length);
 
   if(*hplus == NULL || *hcross == NULL)
-    XLAL_ERROR(__func__,XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
 
   REAL8Vector *hh=NULL;
   UINT4 countback=0;
@@ -2183,7 +2183,7 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
 			     mass2,			/** Mass 2 */
 			     LAL_AllInter,	/** Spin interaction */
 			     phaseO		/** PN Order in Phase */ ))
-    XLAL_ERROR(__func__,XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   /* Check that initial frequency is smaller than omegamatch ~ xxyy for m=100 Msun */
   initphi   = phi_start;
@@ -2207,7 +2207,7 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
       }*/
     /*else {*/
     XLALPrintError("**** LALPSpinInspiralRD ERROR ****: Initial frequency too high: %11.5e for omM ~ %11.5e and m:(%8.3f, %8.3f)\n",f_min,omegaMatch/unitHz,mass1,mass2);
-    XLAL_ERROR(__func__,XLAL_EFAILED);
+    XLAL_ERROR(XLAL_EFAILED);
     /*}*/
   }
 
@@ -2412,7 +2412,7 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
       XLALDestroyREAL8Vector(hap);
     if (phap)
       XLALDestroyREAL8Vector(phap);
-    XLAL_ERROR(__func__,XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   memset(h2P2->data, 0, h2P2->length * sizeof(REAL8));
@@ -2486,7 +2486,7 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
 
   //printf("Adaptive integration\n");
   errcode = XLALSpinInspiralAdaptiveEngine(neqs,yinit,amp22ini,&mparams,h2P2,h2M2,h2P1,h2M1,h20,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,fap,phap,&phenPars);
-  if(errcode) XLAL_ERROR(__func__,XLAL_EFUNC);
+  if(errcode) XLAL_ERROR(XLAL_EFUNC);
   intreturn=phenPars.intreturn;
 
   /* report on abnormal termination:
@@ -2550,7 +2550,7 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
       XLALDestroyREAL8Vector(phap);
       XLALDestroyREAL8Vector(sigp);
       XLALDestroyREAL8Vector(sigc);
-      XLAL_ERROR(__func__, XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
     else {
       trigAngle.ci = phenPars.ci;
@@ -2597,7 +2597,7 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
         XLALDestroyREAL8Vector(sigp);
         XLALDestroyREAL8Vector(sigc);
         XLALDestroyCOMPLEX8Vector(modefreqs);
-        XLAL_ERROR(__func__,XLAL_EFAILED);
+        XLAL_ERROR(XLAL_EFAILED);
       }
 
       omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
@@ -2641,7 +2641,7 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
           XLALDestroyREAL8Vector(sigp);
           XLALDestroyREAL8Vector(sigc);
           XLALDestroyCOMPLEX8Vector(modefreqs);
-          XLAL_ERROR(__func__,XLAL_ENOMEM);
+          XLAL_ERROR(XLAL_ENOMEM);
         }
 
         tim += dt;
@@ -2833,7 +2833,7 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
 	XLALDestroyREAL8Vector(hap);
 	XLALDestroyREAL8Vector(fap);
 	XLALDestroyREAL8Vector(phap);
-	XLAL_ERROR(__func__,XLAL_EFAILED);
+	XLAL_ERROR(XLAL_EFAILED);
       }
     }
 
@@ -2880,7 +2880,7 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
     XLALDestroyREAL8Vector(fap);
     XLALDestroyREAL8Vector(phap);
     XLALPrintError("**** LALPSpinInspiralRD ERROR ****: impossible to create Y22 or Y2-2\n");
-    XLAL_ERROR(__func__,XLAL_EFAILED);
+    XLAL_ERROR(XLAL_EFAILED);
   }
   for (i = 0; i < length; i++) {
     x0 = h2P2->data[2 * i];
