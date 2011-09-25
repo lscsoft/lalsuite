@@ -57,14 +57,14 @@ REAL8 XLALChisqCdf(
 
 	/* Arguments chi2 and dof must be non-negative */
 	if((chi2 < 0.0) || (dof <= 0.0))
-		XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+		XLAL_ERROR_REAL8(XLAL_EDOM);
 
 	/* use GSL because our previous version sucked */
 	XLAL_CALLGSL(prob = gsl_cdf_chisq_P(chi2, dof));
 
 	/* Check that final answer is a legal probability.  */
 	if((prob < 0.0) || (prob > 1.0))
-		XLAL_ERROR_REAL8(__func__, XLAL_ERANGE);
+		XLAL_ERROR_REAL8(XLAL_ERANGE);
 
 	return prob;
 }
@@ -90,14 +90,14 @@ REAL8 XLALOneMinusChisqCdf(
 	double prob;
 
 	if((chi2 < 0.0) || (dof <= 0.0))
-		XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+		XLAL_ERROR_REAL8(XLAL_EDOM);
 
 	/* Use GSL because our previous version sucked */
 	XLAL_CALLGSL(prob = gsl_cdf_chisq_Q(chi2, dof));
 
 	/* Check that final answer is a legal probability. */
 	if((prob < 0.0) || (prob > 1.0))
-		XLAL_ERROR_REAL8(__func__, XLAL_ERANGE);
+		XLAL_ERROR_REAL8(XLAL_ERANGE);
 
 	return prob;
 }
@@ -133,7 +133,7 @@ REAL8 XLALlnOneMinusChisqCdf(
 	int i;
 
 	if((chi2 < 0.0) || (dof <= 0.0))
-		XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+		XLAL_ERROR_REAL8(XLAL_EDOM);
 
 	/* start with a high precision technique for large probabilities */
 	XLAL_CALLGSL(ln_prob = log(gsl_cdf_chisq_Q(chi2, dof)));
@@ -154,7 +154,7 @@ REAL8 XLALlnOneMinusChisqCdf(
 
 	/* check that the final answer is the log of a legal probability */
 	if(ln_prob > 0.0)
-		XLAL_ERROR_REAL8(__func__, XLAL_ERANGE);
+		XLAL_ERROR_REAL8(XLAL_ERANGE);
 
 	return ln_prob;
 }
@@ -201,7 +201,7 @@ REAL8 XLALNoncChisqCdf(
 	if((dof <= 0.0) ||
 	   (chi2 < 0.0) ||
 	   (nonCentral < 0.0))
-		XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+		XLAL_ERROR_REAL8(XLAL_EDOM);
 
 	/* Add terms from the series until either sufficient accuracy is
 	 * achieved, or we exceed the maximum allowed number of terms */
@@ -211,15 +211,15 @@ REAL8 XLALNoncChisqCdf(
 	do {
 		double P = XLALChisqCdf(chi2, dof + 2.0 * n);
 		if(XLALIsREAL8FailNaN(P))
-			XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+			XLAL_ERROR_REAL8(XLAL_EFUNC);
 		sum += term = exp(-nonCentral / 2.0 + n * log(nonCentral / 2.0)) * P / Factorial(n);
 		if(++n >= maxloop)
-			XLAL_ERROR_REAL8(__func__, XLAL_EMAXITER);
+			XLAL_ERROR_REAL8(XLAL_EMAXITER);
 	} while(fabs(term / sum) > epsilon);
 
 	/* check that final answer is a legal probability. */
 	if((sum < 0.0) || (sum > 1.0))
-		XLAL_ERROR_REAL8(__func__, XLAL_ERANGE);
+		XLAL_ERROR_REAL8(XLAL_ERANGE);
 
 	return sum;
 }
@@ -243,7 +243,7 @@ REAL8 XLALChi2Threshold(
 	 * must be between 0 and 1 */
 	if((dof <= 0.0) ||
 	   (falseAlarm <= 0.0) || (falseAlarm >= 1.0))
-		XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+		XLAL_ERROR_REAL8(XLAL_EDOM);
 
 	/* call GSL */
 	XLAL_CALLGSL(chi2 = gsl_cdf_chisq_Qinv(falseAlarm, dof));
@@ -296,7 +296,7 @@ REAL8 XLALRhoThreshold(
 	   (chi2 < 0.0) ||
 	   (falseDismissal <= 0.0) ||
 	   (falseDismissal >= 1.0))
-		XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+		XLAL_ERROR_REAL8(XLAL_EDOM);
 
 	/* Setup NoncChisqCdf() parameters */
 	params.chi2 = chi2;

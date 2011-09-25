@@ -91,32 +91,32 @@ int XLALGenerateSimBurst(
 
 		if(!rng) {
 			XLALPrintError("%s(): failure creating random number generator\n", __func__);
-			XLAL_ERROR(__func__, XLAL_ENOMEM);
+			XLAL_ERROR(XLAL_ENOMEM);
 		}
 		gsl_rng_set(rng, sim_burst->waveform_number);
 
 		XLALPrintInfo("%s(): BTLWNB @ %9d.%09u s (GPS): f = %.16g Hz, df = %.16g Hz, dt = %.16g s, hdot^2 = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->bandwidth, sim_burst->duration, int_hdot_squared_dt);
 		if(XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(hplus, hcross, sim_burst->duration, sim_burst->frequency, sim_burst->bandwidth, int_hdot_squared_dt, delta_t, rng)) {
 			gsl_rng_free(rng);
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		}
 		gsl_rng_free(rng);
 	} else if(!strcmp(sim_burst->waveform, "StringCusp")) {
 		XLALPrintInfo("%s(): string cusp @ %9d.%09u s (GPS): A = %.16g, fhigh = %.16g Hz\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude, sim_burst->frequency);
 		if(XLALGenerateStringCusp(hplus, hcross, sim_burst->amplitude, sim_burst->frequency, delta_t))
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 	} else if(!strcmp(sim_burst->waveform, "SineGaussian")) {
 		XLALPrintInfo("%s(): sine-Gaussian @ %9d.%09u s (GPS): f = %.16g Hz, Q = %.16g, hrss = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->q, sim_burst->hrss);
 		if(XLALSimBurstSineGaussian(hplus, hcross, sim_burst->q, sim_burst->frequency, sim_burst->hrss, sim_burst->pol_ellipse_e, sim_burst->pol_ellipse_angle, delta_t))
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 	} else if(!strcmp(sim_burst->waveform, "Impulse")) {
 		XLALPrintInfo("%s(): impulse @ %9d.%09u s (GPS): hpeak = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude, delta_t);
 		if(XLALGenerateImpulseBurst(hplus, hcross, sim_burst->amplitude, delta_t))
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 	} else {
 		/* unrecognized waveform */
 		XLALPrintError("%s(): error: unrecognized waveform\n", __func__);
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 
 	/* done */
@@ -156,7 +156,7 @@ int XLALBurstInjectSignals(
 
 	detector = XLALInstrumentNameToLALDetector(series->name);
 	if(!detector)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	XLALPrintInfo("%s(): channel name is '%s', instrument appears to be '%s'\n", __func__, series->name, detector->frDetector.prefix);
 	detector_copy = *detector;
 
@@ -171,7 +171,7 @@ int XLALBurstInjectSignals(
 		time_slide_row = XLALTimeSlideConstGetByIDAndInstrument(time_slide_table_head, sim_burst->time_slide_id, detector->frDetector.prefix);
 		if(!time_slide_row) {
 			XLALPrintError("%s(): cannot find time shift offset for injection 'sim_burst:simulation_id:%ld'.  need 'time_slide:time_slide_id:%ld' for instrument '%s'", __func__, sim_burst->simulation_id, sim_burst->time_slide_id, detector->frDetector.prefix);
-			XLAL_ERROR(__func__, XLAL_EINVAL);
+			XLAL_ERROR(XLAL_EINVAL);
 		}
 
 		time_geocent_gps = sim_burst->time_geocent_gps;
@@ -189,7 +189,7 @@ int XLALBurstInjectSignals(
 		 * t = 0 is the "time" of the injection. */
 
 		if(XLALGenerateSimBurst(&hplus, &hcross, sim_burst, series->deltaT))
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 #if 0
 		{
 		char name[100];
@@ -221,7 +221,7 @@ int XLALBurstInjectSignals(
 		XLALDestroyREAL8TimeSeries(hplus);
 		XLALDestroyREAL8TimeSeries(hcross);
 		if(!h)
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 #if 0
 		{
 		char name[100];
@@ -243,7 +243,7 @@ int XLALBurstInjectSignals(
 
 		if(XLALSimAddInjectionREAL8TimeSeries(series, h, response)) {
 			XLALDestroyREAL8TimeSeries(h);
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		}
 		XLALDestroyREAL8TimeSeries(h);
 	}
