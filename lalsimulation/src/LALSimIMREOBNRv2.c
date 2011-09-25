@@ -42,7 +42,7 @@ Pan et al, arXiv:1106.1021v1 [gr-qc].
 #include <gsl/gsl_sf_gamma.h>
 
 
-#include "LALSimIMREOBNRv2.h"
+#include <lal/LALSimIMREOBNRv2.h>
 
 /* Include all the static function files we need */
 #include "LALSimIMREOBFactorizedWaveform.c"
