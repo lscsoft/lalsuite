@@ -105,7 +105,7 @@ cov_Phi_ij ( const cov_params_t *params )
   if ( stat != 0 )
     {
       XLALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_i Phi_j> failed!\n");
-      XLAL_ERROR_REAL8( "cov_Phi_ij", XLAL_EFUNC );
+      XLAL_ERROR_REAL8( XLAL_EFUNC );
     }
   /*
   printf ( "Integration of <Phi_i Phi_j> succeeded with abserr = %g, neval = %d: result = %g\n", abserr, neval, av_ij );
@@ -117,7 +117,7 @@ cov_Phi_ij ( const cov_params_t *params )
   if ( stat != 0 )
     {
       XLALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_i> failed!\n");
-      XLAL_ERROR_REAL8( "cov_Phi_ij", XLAL_EFUNC );
+      XLAL_ERROR_REAL8( XLAL_EFUNC );
     }
   /*
   printf ( "Integration of <Phi_i> succeeded with abserr = %g, neval = %d: result = %g\n", abserr, neval, av_i );
@@ -129,7 +129,7 @@ cov_Phi_ij ( const cov_params_t *params )
   if ( stat != 0 )
     {
       XLALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_j> failed!\n");
-      XLAL_ERROR_REAL8( "cov_Phi_ij", XLAL_EFUNC );
+      XLAL_ERROR_REAL8( XLAL_EFUNC );
     }
   /*
   printf ( "Integration of <Phi_i> succeeded with abserr = %g, neval = %d: result = %g\n", abserr, neval, av_j );

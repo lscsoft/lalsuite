@@ -67,17 +67,16 @@ XLALDrawCorrelatedNoise ( PulsarAmplitudeVect n_mu,	/**< [out] 4d vector of nois
                           gsl_rng * rng			/**< gsl random-number generator */
                           )
 {
-  const CHAR *fn = __func__;
   int gslstat;
 
   /* ----- check input arguments ----- */
   if ( !L || (L->size1 != 4) || (L->size2 != 4) ) {
-    XLALPrintError ( "%s: Invalid correlator matrix, n_mu must be pre-allocate 4x4 matrix", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ( "%s: Invalid correlator matrix, n_mu must be pre-allocate 4x4 matrix", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( !rng ) {
-    XLALPrintError ("%s: invalid NULL input as gsl random-number generator!\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input as gsl random-number generator!\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* ----- generate 4 normal-distributed, uncorrelated random numbers ----- */
@@ -99,8 +98,8 @@ XLALDrawCorrelatedNoise ( PulsarAmplitudeVect n_mu,	/**< [out] 4d vector of nois
    * for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
    */
   if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, 1.0, L, &n_view.vector, 0.0, &n_mu_view.vector)) != 0 ) {
-    XLALPrintError ( "%s: gsl_blas_dgemv(L * norm) failed: %s\n", fn, gsl_strerror (gslstat) );
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ( "%s: gsl_blas_dgemv(L * norm) failed: %s\n", __func__, gsl_strerror (gslstat) );
+    XLAL_ERROR ( XLAL_EFAILED );
   }
 
   return XLAL_SUCCESS;
@@ -115,28 +114,26 @@ XLALGenerateFstatAtomVector ( const DetectorStateSeries *detStates,	/**< input d
                               const AMCoeffs *amcoeffs			/**< input antenna-pattern functions {a_i, b_i} */
                               )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !detStates || !detStates->data ) {
-    XLALPrintError ("%s: invalid NULL input in detStates=%p or detStates->data=%p\n", fn, detStates, detStates->data );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input in detStates=%p or detStates->data=%p\n", __func__, detStates, detStates->data );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
   if ( !amcoeffs || !amcoeffs->a || !amcoeffs->b ) {
-    XLALPrintError ("%s: invalid NULL input in amcoeffs=%p or amcoeffs->a=%p, amcoeffs->b=%p\n", fn, amcoeffs, amcoeffs->a, amcoeffs->b );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input in amcoeffs=%p or amcoeffs->a=%p, amcoeffs->b=%p\n", __func__, amcoeffs, amcoeffs->a, amcoeffs->b );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
   UINT4 numAtoms = detStates->length;
   if ( numAtoms != amcoeffs->a->length || numAtoms != amcoeffs->b->length ) {
-    XLALPrintError ("%s: inconsistent lengths numAtoms=%d amcoeffs->a = %d, amecoeffs->b = %d\n", fn, numAtoms, amcoeffs->a->length, amcoeffs->b->length );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: inconsistent lengths numAtoms=%d amcoeffs->a = %d, amecoeffs->b = %d\n", __func__, numAtoms, amcoeffs->a->length, amcoeffs->b->length );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* prepare output vector */
   FstatAtomVector *atoms;
   if ( ( atoms = XLALCreateFstatAtomVector ( numAtoms ) ) == NULL ) {
-    XLALPrintError ("%s: XLALCreateFstatAtomVector(%d) failed.\n", fn, numAtoms );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALCreateFstatAtomVector(%d) failed.\n", __func__, numAtoms );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   atoms->TAtom = detStates->deltaT;
@@ -169,35 +166,33 @@ XLALGenerateMultiFstatAtomVector ( const MultiDetectorStateSeries *multiDetState
                                    const MultiAMCoeffs *multiAM				/**< input antenna-pattern functions {a_i, b_i} */
                                    )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !multiDetStates || !multiDetStates->data ) {
-    XLALPrintError ("%s: invalid NULL input in 'multiDetStates'\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input in 'multiDetStates'\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
   if ( !multiAM || !multiAM->data || !multiAM->data[0] ) {
-    XLALPrintError ("%s: invalid NULL input in 'mutiAM'\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input in 'mutiAM'\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   UINT4 numDet = multiDetStates->length;
   if ( numDet != multiAM->length ) {
-    XLALPrintError ("%s: inconsistent number of detectors in multiDetStates (%d) and multiAM (%d)\n", fn, multiDetStates->length, multiAM->length );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: inconsistent number of detectors in multiDetStates (%d) and multiAM (%d)\n", __func__, multiDetStates->length, multiAM->length );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* create multi-atoms vector */
   MultiFstatAtomVector *multiAtoms;
   if ( ( multiAtoms = XLALCalloc ( 1, sizeof(*multiAtoms) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n", fn, sizeof(*multiAtoms) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n", __func__, sizeof(*multiAtoms) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   multiAtoms->length = numDet;
   if ( ( multiAtoms->data = XLALCalloc ( numDet, sizeof(*multiAtoms->data) ) ) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc ( %d, %d) failed.\n", fn, numDet, sizeof(*multiAtoms->data) );
+    XLALPrintError ("%s: XLALCalloc ( %d, %d) failed.\n", __func__, numDet, sizeof(*multiAtoms->data) );
     XLALFree ( multiAtoms );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   /* loop over detectors and generate each atoms-vector individually */
@@ -205,9 +200,9 @@ XLALGenerateMultiFstatAtomVector ( const MultiDetectorStateSeries *multiDetState
   for ( X=0; X < numDet; X ++ )
     {
       if ( ( multiAtoms->data[X] = XLALGenerateFstatAtomVector ( multiDetStates->data[X], multiAM->data[X] )) == NULL ) {
-        XLALPrintError ("%s: XLALGenerateFstatAtomVector() failed.\n", fn );
+        XLALPrintError ("%s: XLALGenerateFstatAtomVector() failed.\n", __func__ );
         XLALDestroyMultiFstatAtomVector ( multiAtoms );
-        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
 
     } /* for X < numDet */
@@ -224,20 +219,18 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
                                 gsl_rng * rng		/**< random-number generator */
                                 )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !atoms || !rng ) {
-    XLALPrintError ("%s: invalid NULL input for 'atoms'=%p or random-number generator 'rng'=%p\n", fn, atoms, rng );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input for 'atoms'=%p or random-number generator 'rng'=%p\n", __func__, atoms, rng );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   UINT4 numAtoms = atoms->length;
 
   /* prepare gsl-matrix for correlator L = 1/2 * [ a, a ; b , b ] */
   gsl_matrix *Lcor;
   if ( (Lcor = gsl_matrix_calloc ( 4, 4 )) == NULL ) {
-    XLALPrintError ("%s: gsl_matrix_calloc ( 4, 4 ) failed.\n", fn );
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: gsl_matrix_calloc ( 4, 4 ) failed.\n", __func__ );
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
   /* prepare placeholder for 4 n_mu noise draws */
   PulsarAmplitudeVect n_mu;
@@ -272,8 +265,8 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
       gsl_matrix_set ( Lcor, 3, 3, b_by_2);
 
       if ( XLALDrawCorrelatedNoise ( n_mu, Lcor, rng ) != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: failed to XLALDrawCorrelatedNoise().\n", fn );
-        XLAL_ERROR ( fn, XLAL_EFUNC );
+        XLALPrintError ("%s: failed to XLALDrawCorrelatedNoise().\n", __func__ );
+        XLAL_ERROR ( XLAL_EFUNC );
       }
       REAL8 x1,x2,x3,x4;
       x1 = n_mu[0];
@@ -305,16 +298,14 @@ XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms,	/**< inpu
                                      gsl_rng * rng			/**< random-number generator */
                                      )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !multiAtoms || !multiAtoms->data ) {
-    XLALPrintError ("%s: invalid NULL input in 'multiAtoms'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input in 'multiAtoms'\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( !rng ) {
-    XLALPrintError ("%s: invalid NULL input for random-number generator 'rng'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input for random-number generator 'rng'\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   UINT4 numDetectors = multiAtoms->length;
@@ -323,8 +314,8 @@ XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms,	/**< inpu
   for ( X=0; X < numDetectors; X ++ )
     {
       if ( XLALAddNoiseToFstatAtomVector ( multiAtoms->data[X], rng ) != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: XLALAddNoiseToFstatAtomVector() failed.\n", fn );
-        XLAL_ERROR ( fn, XLAL_EFUNC );
+        XLALPrintError ("%s: XLALAddNoiseToFstatAtomVector() failed.\n", __func__ );
+        XLAL_ERROR ( XLAL_EFUNC );
       }
 
     } /* for X < numDetectors */
@@ -347,31 +338,30 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
                                  transientWindow_t transientWindow /**< transient signal window */
                                  )
 {
-  const char *fn = __func__;
   int gslstat;
 
   /* check input consistency */
   if ( !atoms || !atoms->data ) {
-    XLALPrintError ( "%s: Invalid NULL input 'atoms'\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+    XLALPrintError ( "%s: Invalid NULL input 'atoms'\n", __func__ );
+    XLAL_ERROR_REAL8 ( XLAL_EINVAL );
   }
   if ( !M_mu_nu ) {
-    XLALPrintError ( "%s: Invalid NULL input 'M_mu_nu'\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+    XLALPrintError ( "%s: Invalid NULL input 'M_mu_nu'\n", __func__ );
+    XLAL_ERROR_REAL8 ( XLAL_EINVAL );
   }
 
   /* prepare transient-window support */
   UINT4 t0, t1;
   if ( XLALGetTransientWindowTimespan ( &t0, &t1, transientWindow ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", __func__ );
+    XLAL_ERROR_REAL8 ( XLAL_EFUNC );
   }
 
   /* prepare gsl-matrix for Mh_mu_nu = [ a^2, a*b ; a*b , b^2 ] */
   gsl_matrix *Mh_mu_nu;
   if ( (Mh_mu_nu = gsl_matrix_calloc ( 4, 4 )) == NULL ) {
-    XLALPrintError ("%s: gsl_matrix_calloc ( 4, 4 ) failed.\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: gsl_matrix_calloc ( 4, 4 ) failed.\n", __func__ );
+    XLAL_ERROR_REAL8 ( XLAL_ENOMEM );
   }
 
   gsl_vector_const_view A_Mu_view = gsl_vector_const_view_array ( A_Mu, 4 );
@@ -432,8 +422,8 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
        */
       REAL8 norm_s = sqrt(TAtom / 2.0);
       if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, norm_s, Mh_mu_nu, &A_Mu_view.vector, 0.0, &sh_mu_view.vector)) != 0 ) {
-        XLALPrintError ( "%s: gsl_blas_dgemv(L * norm) failed: %s\n", fn, gsl_strerror (gslstat) );
-        XLAL_ERROR_REAL8 ( fn, XLAL_EFAILED );
+        XLALPrintError ( "%s: gsl_blas_dgemv(L * norm) failed: %s\n", __func__, gsl_strerror (gslstat) );
+        XLAL_ERROR_REAL8 ( XLAL_EFAILED );
       }
 
       /* add this signal to the atoms, using the relation Fa,Fb <--> x_mu: see Eq.(72) in CFSv2-LIGO-T0900149-v2.pdf */
@@ -490,16 +480,14 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
                                       transientWindow_t transientWindow /**< transient signal window */
                                       )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !multiAtoms || !multiAtoms->data ) {
-    XLALPrintError ( "%s: Invalid NULL input 'multiAtoms'\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+    XLALPrintError ( "%s: Invalid NULL input 'multiAtoms'\n", __func__ );
+    XLAL_ERROR_REAL8 ( XLAL_EINVAL );
   }
   if ( !M_mu_nu ) {
-    XLALPrintError ( "%s: Invalid NULL input 'M_mu_nu'\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+    XLALPrintError ( "%s: Invalid NULL input 'M_mu_nu'\n", __func__ );
+    XLAL_ERROR_REAL8 ( XLAL_EINVAL );
   }
 
   UINT4 numDet = multiAtoms->length;
@@ -514,8 +502,8 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
       AntennaPatternMatrix M_mu_nu_X;
       rho2X = XLALAddSignalToFstatAtomVector ( multiAtoms->data[X], &M_mu_nu_X, A_Mu, transientWindow );
       if ( xlalErrno ) {
-        XLALPrintError ("%s: XLALAddSignalToFstatAtomVector() failed.\n", fn );
-        XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
+        XLALPrintError ("%s: XLALAddSignalToFstatAtomVector() failed.\n", __func__ );
+        XLAL_ERROR_REAL8 ( XLAL_EFUNC );
       }
 
       rho2 += rho2X;			/* multi-IFO SNR^2 = sum_X SNR_X^2 */
@@ -551,12 +539,10 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
                                gsl_rng *rng					/**< [in/out] gsl random-number generator */
                                )
 {
-  const char *fn = __func__;
-
   /* check input */
   if ( !rng || !multiAMBuffer || !multiDetStates ) {
-    XLALPrintError ("%s: invalid NULL input\n", fn );
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* -----  if Alpha < 0 ==> draw skyposition isotropically from all-sky */
@@ -584,16 +570,16 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
   /* ----- generate antenna-pattern functions for this sky-position */
   const MultiNoiseWeights *weights = NULL;	/* NULL = unit weights */
   if ( !multiAMBuffer->multiAM && (multiAMBuffer->multiAM = XLALComputeMultiAMCoeffs ( multiDetStates, weights, skypos )) == NULL ) {
-    XLALPrintError ( "%s: XLALComputeMultiAMCoeffs() failed with xlalErrno = %d\n", fn, xlalErrno );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: XLALComputeMultiAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   multiAMBuffer->skypos = skypos; /* store buffered skyposition */
 
   /* ----- generate a pre-initialized F-stat atom vector containing only the antenna-pattern coefficients */
   MultiFstatAtomVector *multiAtoms;
   if ( (multiAtoms = XLALGenerateMultiFstatAtomVector ( multiDetStates, multiAMBuffer->multiAM )) == NULL ) {
-    XLALPrintError ( "%s: XLALGenerateMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: XLALGenerateMultiFstatAtomVector() failed with xlalErrno = %d\n", __func__, xlalErrno );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   /* ----- draw amplitude vector A^mu from given ranges in {h0, cosi, psi, phi0} */
@@ -612,8 +598,8 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
   /* convert amplitude params to 'canonical' vector coordinates */
   PulsarAmplitudeVect A_Mu;
   if ( XLALAmplitudeParams2Vect ( A_Mu, Amp ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALAmplitudeParams2Vect() failed with xlalErrno = %d\n", fn, xlalErrno );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALAmplitudeParams2Vect() failed with xlalErrno = %d\n", __func__, xlalErrno );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   /* ----- draw transient-window parameters from given ranges using flat priors */
@@ -629,8 +615,8 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
   AntennaPatternMatrix M_mu_nu;
   REAL8 rho2 = XLALAddSignalToMultiFstatAtomVector ( multiAtoms, &M_mu_nu, A_Mu, injectWindow );
   if ( xlalErrno ) {
-    XLALPrintError ( "%s: XLALAddSignalToMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: XLALAddSignalToMultiFstatAtomVector() failed with xlalErrno = %d\n", __func__, xlalErrno );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   /* ----- special signal rescaling if 1) fixedSNR OR 2) fixed rhohMax */
@@ -640,8 +626,8 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
   if ( (AmpPrior.fixedSNR > 0) || AmpPrior.fixRhohMax )
     {
       if ( (AmpPrior.fixedSNR > 0) && AmpPrior.fixRhohMax ) { /* double-check consistency: only one is allowed */
-        XLALPrintError ("%s: Something went wrong: both [fixedSNR = %f > 0] and [fixedRhohMax==true] are not allowed!\n", fn, AmpPrior.fixedSNR );
-        XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+        XLALPrintError ("%s: Something went wrong: both [fixedSNR = %f > 0] and [fixedRhohMax==true] are not allowed!\n", __func__, AmpPrior.fixedSNR );
+        XLAL_ERROR_NULL ( XLAL_EDOM );
       }
 
       REAL8 rescale = 1.0;
@@ -652,8 +638,8 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
         rescale = 1.0 / detM1o8;	// we drew h0 in [0, rhohMax], so we now need to rescale as h0Max = rhohMax/(detM)^(1/8)
 
       if ( XLALRescaleMultiFstatAtomVector ( multiAtoms, rescale ) != XLAL_SUCCESS ) {	      /* rescale atoms */
-        XLALPrintError ( "%s: XLALRescaleMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
-        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+        XLALPrintError ( "%s: XLALRescaleMultiFstatAtomVector() failed with xlalErrno = %d\n", __func__, xlalErrno );
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
 
       Amp.h0 *= rescale;	      /* rescale amplitude-params for consistency */
@@ -666,8 +652,8 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
   /* ----- add noise to the Fstat atoms, unless --SignalOnly was specified */
   if ( !SignalOnly )
     if ( XLALAddNoiseToMultiFstatAtomVector ( multiAtoms, rng ) != XLAL_SUCCESS ) {
-      XLALPrintError ("%s: XLALAddNoiseToMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
-      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      XLALPrintError ("%s: XLALAddNoiseToMultiFstatAtomVector() failed with xlalErrno = %d\n", __func__, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
     }
 
   /* ----- if requested: return all inject signal parameters */
@@ -695,12 +681,10 @@ XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	/**< [in/out
                                   REAL8 rescale				/**< rescale factor: Fa' = rescale * Fa, and Fb'= rescale * Fb */
                                   )
 {
-  const char *fn = __func__;
-
   /* check input */
   if ( !multiAtoms ) {
-    XLALPrintError ("%s: invalid NULL input 'multiAtoms'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'multiAtoms'\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   UINT4 numDet = multiAtoms->length;
@@ -739,12 +723,10 @@ write_InjParams_to_fp ( FILE * fp,		/**< [in] file-pointer to output file */
                         UINT4 dataStartGPS	/**< [in] data start-time in GPS seconds (used to turn window 't0' into offset from dataStartGPS) */
                         )
 {
-  const char *fn = __func__;
-
   /* input consistency */
   if ( ! fp ) {
-    XLALPrintError ("%s: invalid NULL input 'fp'\n", fn);
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'fp'\n", __func__);
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   int ret;
@@ -752,8 +734,8 @@ write_InjParams_to_fp ( FILE * fp,		/**< [in] file-pointer to output file */
   if ( par == NULL ) {
     ret = fprintf(fp, "%%%%Alpha Delta      SNR       h0   cosi    psi   phi0          A1       A2       A3       A4         Ad       Bd       Cd       Dd       t0[d]     tau[d] type   (detMp)^(1/8)\n");
     if ( ret < 0 ) {
-      XLALPrintError ("%s: failed to fprintf() to given file-pointer 'fp'.\n", fn );
-      XLAL_ERROR ( fn, XLAL_EIO );
+      XLALPrintError ("%s: failed to fprintf() to given file-pointer 'fp'.\n", __func__ );
+      XLAL_ERROR ( XLAL_EIO );
     }
 
     return XLAL_SUCCESS;	/* we're done here */
@@ -774,8 +756,8 @@ write_InjParams_to_fp ( FILE * fp,		/**< [in] file-pointer to output file */
                   par->detM1o8										/* rescale parameter (detMp)^(1/8) */
                   );
   if ( ret < 0 ) {
-    XLALPrintError ("%s: failed to fprintf() to given file-pointer 'fp'.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EIO );
+    XLALPrintError ("%s: failed to fprintf() to given file-pointer 'fp'.\n", __func__ );
+    XLAL_ERROR ( XLAL_EIO );
   }
 
  return XLAL_SUCCESS;
