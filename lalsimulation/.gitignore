@@ -29,3 +29,7 @@ src/lalsim-sgwb
 src/lalsimulation-user-env.csh
 src/lalsimulation-user-env.sh
 src/stamp-h2
+test/GenerateSimulation
+test/ST4-dynamics.dat
+test/TestSpinTaylorT4Dynamics
+test/simulation.dat
