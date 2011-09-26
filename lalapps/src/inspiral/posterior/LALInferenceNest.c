@@ -36,6 +36,7 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
+#include <lal/LALInferenceProposal.h>
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
@@ -248,7 +249,18 @@ Nested sampling arguments:\n\
 	/* Set up the appropriate functions for the nested sampling algorithm */
 	runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
 	runState->evolve=&LALInferenceNestedSamplingOneStep;
-	runState->proposal=&LALInferenceProposalNS;
+	if(LALInferenceGetProcParamVal(commandLine,"--mcmcprop")){
+	  /* Use the PTMCMC proposal to sample prior */
+	  runState->proposal=&NSWrapMCMCLALProposal;
+	  REAL8 temp=1.0;
+	  UINT4 dummy=0;
+	  LALInferenceAddVariable(runState->proposalArgs, "adaptableStep", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	  LALInferenceAddVariable(runState->proposalArgs, "proposedVariableNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	  LALInferenceAddVariable(runState->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	  LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+	}
+	else
+	  runState->proposal=&LALInferenceProposalNS;
 
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 	runState->prior = &LALInferenceInspiralPrior;
