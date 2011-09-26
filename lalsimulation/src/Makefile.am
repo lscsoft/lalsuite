@@ -104,3 +104,7 @@ LALSimulationVCSInfo.h: ._vcsinfo
 	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALSimulation $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@
+
+swig_headers = $(lalsimulationinclude_HEADERS)
+CLEANFILES += $(swig_clean)
+@SWIG_HEADER_MK@

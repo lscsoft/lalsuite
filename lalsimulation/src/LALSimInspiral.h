@@ -20,6 +20,11 @@
 #ifndef _LALSIMINSPIRAL_H
 #define _LALSIMINSPIRAL_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALDatatypes.h>
 #include <lal/LALSimIMR.h>
 
