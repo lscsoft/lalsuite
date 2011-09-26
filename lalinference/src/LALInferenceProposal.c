@@ -106,6 +106,32 @@ static void PTMCMCCombinedProposal(LALInferenceRunState *runState, LALInferenceV
   return;
 }
 
+void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
+{ /* PTMCMCLALProposal needs a few params converted */
+  REAL8 distance=0.0,mc=0.0;
+  
+  /* PTMCMC likes to read this directly so we have to plug our mangled values in*/
+  LALInferenceVariables *currentParamsBackup=runState->currentParams;
+  
+  if(!LALInferenceCheckVariable(proposedParams,"distance")){
+    if(LALInferenceCheckVariable(proposedParams,"logdistance"))
+    {
+      distance=exp(*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"));
+      LALInferenceAddVariable(proposedParams,"distance",&distance,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    }
+  }
+  if(!LALInferenceCheckVariable(proposedParams,"chirpmass")){
+    if(LALInferenceCheckVariable(proposedParams,"logmc")){
+      mc=exp(*(REAL8 *)LALInferenceGetVariable(proposedParams,"logmc"));
+      LALInferenceAddVariable(proposedParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+     }
+   }
+  runState->currentParams=proposedParams; 
+  PTMCMCLALProposal(runState,proposedParams);
+  /* Restore currentParams */
+  runState->currentParams=currentParamsBackup;
+}
+
 void PTMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
 {
 	UINT4 nIFO=0;
