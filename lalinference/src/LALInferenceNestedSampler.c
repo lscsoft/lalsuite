@@ -390,6 +390,14 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	
 	LALInferenceAddVariable(runState->proposalArgs,COVMATRIXNAME,cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
         
+	/* Sprinkle points */
+	LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
+	for(i=0;i<Nlive;i++) {
+	  runState->currentParams=runState->livePoints[i];
+	  LALInferenceNestedSamplingOneStep(runState);
+	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
+	}
+	
         fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
 	do {
@@ -455,7 +463,20 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		/* Update the covariance matrix */
 		if(!(iter%(Nlive/4))) {                    
                   LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
-                  
+		  gsl_matrix_memcpy(covCopy, *cvm);
+		  
+		  if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
+		    XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
+		    XLAL_ERROR_VOID(__func__,XLAL_EFAILED);
+		  }
+		  
+		  for (i = 0; i < N; i++) {
+		    eigenValues->data[i] = gsl_vector_get(eValues,i);
+		  }
+		  
+		  LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+		  LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+		  
 		  LALInferenceSetVariable(runState->proposalArgs,COVMATRIXNAME,
                                         (void *)cvm);
                 }
@@ -1187,7 +1208,6 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	fprintf(stdout,"Sprinkling %i live points, may take some time\n",Nlive);
 	for(i=0;i<Nlive;i++)
 	{
-		if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 		runState->livePoints[i]=calloc(1,sizeof(LALInferenceVariables));
 		
 		/* Copy the param structure */
