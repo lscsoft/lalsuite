@@ -1042,7 +1042,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
    
    const CHAR *fn = __func__;
    
-   INT4 ii, jj;
+   INT4 ii, jj, kk;
    REAL8 fsig, per0, B;
    
    INT4 numberofIHSvalsChecked = 0, numberofIHSvalsExceededThresh = 0, numberPassingBoth = 0;
@@ -1053,6 +1053,9 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
    
    REAL4Vector *ihss, *avgsinrange;
    INT4Vector *locs;
+   
+   REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
+   REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
    
    //Check the IHS values against the FAR, checking between IHS width values
    for (ii=minrows; ii<=(INT4)ihsfarstruct->ihsfar->length+1; ii++) {
@@ -1100,20 +1103,30 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                
                numberPassingBoth++;
                
-               if (ihsmaxima->maxima->data[locationinmaximastruct] > highestval) {
-                  highestval = ihsmaxima->maxima->data[locationinmaximastruct];
+               INT4 loc = ihsmaxima->locations->data[locationinmaximastruct];
+               
+               //Test this here
+               REAL8 noise = 0.0;
+               for (kk=1; kk<=params->ihsfactor; kk++) if (!(fabs(dailyharmonic-(REAL8)(kk*loc))<=1.0 || fabs(dailyharmonic2-(REAL8)(kk*loc))<=1.0 || fabs(dailyharmonic3-(REAL8)(kk*loc))<=1.0 || fabs(dailyharmonic4-(REAL8)(kk*loc))<=1.0)) noise += aveNoise->data[kk*loc];
+               REAL8 totalnoise = 0.0;
+               for (kk=0; kk<ii; kk++) totalnoise += noise*fbinavgs->data[jj+kk];
+               
+               //if (ihsmaxima->maxima->data[locationinmaximastruct] > highestval) {
+               if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval) {
+                  //highestval = ihsmaxima->maxima->data[locationinmaximastruct];
+                  highestval = ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise;
                   highestvalloc = locationinmaximastruct;
                   jjloc = jj;
                }
-               /* INT4 loc = ihsmaxima->locations->data[locationinmaximastruct];
-               //Candidate frequency
+               /* //Candidate frequency
                fsig = params->fmin + (0.5*(ii-1) + jj)/params->Tcoh;
                //Candidate modulation depth
                B = 0.5*(ii-1)/params->Tcoh;
                //Candidate period
                per0 = params->Tobs/loc;
                //Candidate h0
-               REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[locationinmaximastruct], loc, jj, ii, params, aveNoise, fbinavgs);
+               //REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[locationinmaximastruct], loc, jj, ii, params, aveNoise, fbinavgs);
+               REAL8 h0 = ihs2h0(ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise, params);
                if (candlist->numofcandidates == candlist->length-1) {
                   candlist = resize_candidateVector(candlist, 2*(candlist->length));
                   if (candlist->data==NULL) {
@@ -1137,7 +1150,10 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
          //Candidate period
          per0 = params->Tobs/loc;
          //Candidate h0
-         REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[highestvalloc], loc, jjloc, ii, params, aveNoise, fbinavgs);
+         //REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[highestvalloc], loc, jjloc, ii, params, aveNoise, fbinavgs);
+         REAL8 h0 = ihs2h0(highestval, params);
+         REAL8 significance = 0.0;
+         //significance = log10(significance_of_IHSval(ihsmaxima->maxima->data[highestvalloc], loc, jjloc, ii, params, aveNoise, fbinavgs));
          
          if (candlist->numofcandidates == candlist->length-1) {
             candlist = resize_candidateVector(candlist, 2*(candlist->length));
@@ -1147,7 +1163,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
             }
          }
          //loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
-         loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, 0.0, 0, ffdata->tfnormalization);
+         loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, significance, 0, ffdata->tfnormalization);
          (candlist->numofcandidates)++;
       }
       
@@ -1191,29 +1207,43 @@ REAL8 ihs2h0_withNoiseSubtraction(REAL8 ihsval, INT4 location, INT4 lowestfreque
       return 0.0;
    }
    
-   //REAL8 h0 = 1.0*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
-   //REAL8 h0 = 4.6*pow((ihsval-totalnoise)/(params->Tcoh*params->Tobs),0.25);
-   //return h0;
-   
-   REAL8 h0 = ihs2h0(2.0*ihsval-2.0*totalnoise, params, rows);  //With 2.0 for chi-square with 2 d.o.f.
+   REAL8 h0 = ihs2h0(2.0*ihsval-2.0*totalnoise, params);  //With 2.0 for chi-square with 2 d.o.f.
    return h0;
    
 }
-REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params, INT4 rows)
+REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params)
 {
    
    //return 4.6*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
-   //REAL8 prefact = 4.4*pow(0.5*((REAL8)rows-1.0)/params->Tcoh/7.334e-3,.1);
-   REAL8 dfinmHz = 0.5*(rows-1.0)/params->Tcoh*1000.0;
    REAL8 prefact = 1.0;
-   prefact = -2.4e-4*dfinmHz*dfinmHz + 4.96e-2*dfinmHz + 3.49;
    prefact = 7.2;
    return prefact*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
    
 }
 
 
-
+REAL8 significance_of_IHSval(REAL8 ihsval, INT4 location, INT4 lowestfrequencybin, INT4 rows, inputParamsStruct *params, REAL4Vector *aveNoise, REAL4Vector *fbinavgs)
+{
+   
+   INT4 ii;
+   
+   REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
+   REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
+   REAL8 noise = 0.0;
+   for (ii=1; ii<=params->ihsfactor; ii++) {
+      if (!(fabs(dailyharmonic-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic2-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic3-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic4-(REAL8)(ii*location))<=1.0)) {
+         noise += aveNoise->data[ii*location];
+      }
+   }
+   
+   REAL8 totalnoise = 0.0;
+   for (ii=0; ii<rows; ii++) totalnoise += noise*fbinavgs->data[lowestfrequencybin+ii];
+   
+   REAL8 significance = gsl_cdf_chisq_Q(2.0*ihsval, 2.0*totalnoise);
+   
+   return significance;
+   
+}
 
 
 

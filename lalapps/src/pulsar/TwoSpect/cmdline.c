@@ -36,7 +36,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --full-help               Print help, including hidden options, and exit",
   "  -V, --version                 Print version and exit",
   "      --config=filename         Configuration file in gengetopt format for \n                                  passing parameters",
-  "  -v, --verbosity=INT           Verbosity level  (default=`0')",
+  "  -v, --verbosity=INT           LAL debug level  (default=`0')",
   "      --Tobs=DOUBLE             Total observation time",
   "      --Tcoh=DOUBLE             SFT coherence time  (default=`1800')",
   "      --t0=DOUBLE               Start time of the search in GPS seconds",
@@ -65,7 +65,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --ephemDir=directory      Path to ephemeris files  \n                                  (default=`/opt/lscsoft/lalpulsar/share/lalpulsar')",
   "      --ephemYear=STRING        Year or year range (e.g. 08-11) of ephemeris \n                                  files  (default=`08-11')",
   "      --dopplerMultiplier=DOUBLE\n                                Multiplier for the Doppler velocity  \n                                  (default=`1.0')",
-  "      --templateLength=INT      Maximum number of pixels to use in the template \n                                   (default=`50')",
+  "      --minTemplateLength=INT   Maximum number of pixels to use in the template \n                                   (default=`50')",
+  "      --maxTemplateLength=INT   Maximum number of pixels to use in the template \n                                   (default=`50')",
   "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky",
   "      --skyRegionFile=filename  File with the grid points",
   "      --SFToverlap=DOUBLE       SFT overlap in seconds, usually Tcoh/2  \n                                  (default=`900')",
@@ -128,11 +129,12 @@ init_help_array(void)
   gengetopt_args_info_help[39] = gengetopt_args_info_full_help[39];
   gengetopt_args_info_help[40] = gengetopt_args_info_full_help[40];
   gengetopt_args_info_help[41] = gengetopt_args_info_full_help[41];
-  gengetopt_args_info_help[42] = 0; 
+  gengetopt_args_info_help[42] = gengetopt_args_info_full_help[42];
+  gengetopt_args_info_help[43] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[43];
+const char *gengetopt_args_info_help[44];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -220,7 +222,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->ephemDir_given = 0 ;
   args_info->ephemYear_given = 0 ;
   args_info->dopplerMultiplier_given = 0 ;
-  args_info->templateLength_given = 0 ;
+  args_info->minTemplateLength_given = 0 ;
+  args_info->maxTemplateLength_given = 0 ;
   args_info->skyRegion_given = 0 ;
   args_info->skyRegionFile_given = 0 ;
   args_info->SFToverlap_given = 0 ;
@@ -290,8 +293,10 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->ephemYear_orig = NULL;
   args_info->dopplerMultiplier_arg = 1.0;
   args_info->dopplerMultiplier_orig = NULL;
-  args_info->templateLength_arg = 50;
-  args_info->templateLength_orig = NULL;
+  args_info->minTemplateLength_arg = 50;
+  args_info->minTemplateLength_orig = NULL;
+  args_info->maxTemplateLength_arg = 50;
+  args_info->maxTemplateLength_orig = NULL;
   args_info->skyRegion_arg = NULL;
   args_info->skyRegion_orig = NULL;
   args_info->skyRegionFile_arg = NULL;
@@ -354,21 +359,22 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->ephemDir_help = gengetopt_args_info_full_help[30] ;
   args_info->ephemYear_help = gengetopt_args_info_full_help[31] ;
   args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[32] ;
-  args_info->templateLength_help = gengetopt_args_info_full_help[33] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[34] ;
-  args_info->skyRegionFile_help = gengetopt_args_info_full_help[35] ;
-  args_info->SFToverlap_help = gengetopt_args_info_full_help[36] ;
-  args_info->sftType_help = gengetopt_args_info_full_help[37] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[38] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[39] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[40] ;
-  args_info->fastchisqinv_help = gengetopt_args_info_full_help[41] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[42] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[43] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[44] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[45] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[46] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[47] ;
+  args_info->minTemplateLength_help = gengetopt_args_info_full_help[33] ;
+  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[34] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[35] ;
+  args_info->skyRegionFile_help = gengetopt_args_info_full_help[36] ;
+  args_info->SFToverlap_help = gengetopt_args_info_full_help[37] ;
+  args_info->sftType_help = gengetopt_args_info_full_help[38] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[39] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[40] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[41] ;
+  args_info->fastchisqinv_help = gengetopt_args_info_full_help[42] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[43] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[44] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[45] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[46] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[47] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[48] ;
   
 }
 
@@ -541,7 +547,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->ephemYear_arg));
   free_string_field (&(args_info->ephemYear_orig));
   free_string_field (&(args_info->dopplerMultiplier_orig));
-  free_string_field (&(args_info->templateLength_orig));
+  free_string_field (&(args_info->minTemplateLength_orig));
+  free_string_field (&(args_info->maxTemplateLength_orig));
   free_string_field (&(args_info->skyRegion_arg));
   free_string_field (&(args_info->skyRegion_orig));
   free_string_field (&(args_info->skyRegionFile_arg));
@@ -694,8 +701,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "ephemYear", args_info->ephemYear_orig, 0);
   if (args_info->dopplerMultiplier_given)
     write_into_file(outfile, "dopplerMultiplier", args_info->dopplerMultiplier_orig, 0);
-  if (args_info->templateLength_given)
-    write_into_file(outfile, "templateLength", args_info->templateLength_orig, 0);
+  if (args_info->minTemplateLength_given)
+    write_into_file(outfile, "minTemplateLength", args_info->minTemplateLength_orig, 0);
+  if (args_info->maxTemplateLength_given)
+    write_into_file(outfile, "maxTemplateLength", args_info->maxTemplateLength_orig, 0);
   if (args_info->skyRegion_given)
     write_into_file(outfile, "skyRegion", args_info->skyRegion_orig, 0);
   if (args_info->skyRegionFile_given)
@@ -1329,7 +1338,8 @@ cmdline_parser_internal (
         { "ephemDir",	1, NULL, 0 },
         { "ephemYear",	1, NULL, 0 },
         { "dopplerMultiplier",	1, NULL, 0 },
-        { "templateLength",	1, NULL, 0 },
+        { "minTemplateLength",	1, NULL, 0 },
+        { "maxTemplateLength",	1, NULL, 0 },
         { "skyRegion",	1, NULL, 0 },
         { "skyRegionFile",	1, NULL, 0 },
         { "SFToverlap",	1, NULL, 0 },
@@ -1363,7 +1373,7 @@ cmdline_parser_internal (
           cmdline_parser_free (&local_args_info);
           exit (EXIT_SUCCESS);
 
-        case 'v':	/* Verbosity level.  */
+        case 'v':	/* LAL debug level.  */
         
         
           if (update_arg( (void *)&(args_info->verbosity_arg), 
@@ -1787,15 +1797,29 @@ cmdline_parser_internal (
           
           }
           /* Maximum number of pixels to use in the template.  */
-          else if (strcmp (long_options[option_index].name, "templateLength") == 0)
+          else if (strcmp (long_options[option_index].name, "minTemplateLength") == 0)
           {
           
           
-            if (update_arg( (void *)&(args_info->templateLength_arg), 
-                 &(args_info->templateLength_orig), &(args_info->templateLength_given),
-                &(local_args_info.templateLength_given), optarg, 0, "50", ARG_INT,
+            if (update_arg( (void *)&(args_info->minTemplateLength_arg), 
+                 &(args_info->minTemplateLength_orig), &(args_info->minTemplateLength_given),
+                &(local_args_info.minTemplateLength_given), optarg, 0, "50", ARG_INT,
                 check_ambiguity, override, 0, 0,
-                "templateLength", '-',
+                "minTemplateLength", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Maximum number of pixels to use in the template.  */
+          else if (strcmp (long_options[option_index].name, "maxTemplateLength") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->maxTemplateLength_arg), 
+                 &(args_info->maxTemplateLength_orig), &(args_info->maxTemplateLength_given),
+                &(local_args_info.maxTemplateLength_given), optarg, 0, "50", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "maxTemplateLength", '-',
                 additional_error))
               goto failure;
           

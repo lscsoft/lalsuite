@@ -58,7 +58,8 @@ typedef struct
    INT4 ihsfactor;
    INT4 blksize;
    INT4 maxbinshift;
-   INT4 templatelength;
+   INT4 mintemplatelength;
+   INT4 maxtemplatelength;
    INT4 rootFindingMethod;
    INT4 numofIFOs;
    LALDetector *det;
