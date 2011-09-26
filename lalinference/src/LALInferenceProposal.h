@@ -25,7 +25,7 @@
  * \author Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys, John Veitch, and Will M. Farr.
  * \date 2011
  * \file
- * \ingroup lalinference
+ * \ingroup LALInference
  * \brief Jump proposals for exploring the GW signal parameter space. 
  *
  * For exploring the parameter space of GW signals, it is convenient

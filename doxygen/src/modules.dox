@@ -28,7 +28,7 @@
 
 /** \defgroup lalframe LAL Framedata Interface (optional) */
 
-/** \defgroup lalinference LAL Bayesian Inference */
+/** \defgroup LALInference LAL Bayesian Inference */
 
 
 /***************************************************************/
