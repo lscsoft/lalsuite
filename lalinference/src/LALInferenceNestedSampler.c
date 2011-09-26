@@ -580,7 +580,7 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 		else logProposalRatio=0.0;
 		
 		/* If rejected, continue to next iteration */
-		if(logPriorNew==-DBL_MAX) continue;
+		if(logPriorNew==-DBL_MAX || isnan(logPriorNew)) continue;
                 if(log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
 			continue;
 		/* Otherwise, check that logL is OK */
