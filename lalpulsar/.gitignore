@@ -27,6 +27,7 @@ src/lalpulsar-user-env.sh
 src/stamp-h2
 test/ExtrapolatePulsarSpinsTest
 test/FitToPulsarTest
+test/FlatMeshTest
 test/FoldAmplitudesTest
 test/GeneralMeshTest
 test/GeneralMetricTest
@@ -37,6 +38,7 @@ test/H-1_H1_60SFT_test-000012465-61.sft
 test/H-1_H1_60SFT_test-000012585-61.sft
 test/H-1_H1_60SFT_test-000012765-61.sft
 test/H-1_H1_60SFT_test-000012825-61.sft
+test/H-1_H1_60SFT_test-concat.sft
 test/HeterodynePulsarTest
 test/LALPulsarXMLTest
 test/NewGetAMCoeffsTest
@@ -64,6 +66,7 @@ test/TestStatistics
 test/TestVelocity
 test/TwoDMeshTest
 test/UniversalDopplerMetricTest
+test/XLALComputeAMTest
 test/outputsft_v1.sft
 test/outputsft_v2.sft
 test/outputsftv2_v1.sft
