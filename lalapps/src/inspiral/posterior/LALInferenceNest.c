@@ -538,7 +538,7 @@ Parameter arguments:\n\
 	if(LALInferenceGetProcParamVal(commandLine,"--enable-spin")) enable_spin=1;
 	
 	/* If aligned spins use magnitude in (-1,1) */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--spin-aligned");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--aligned-spin");
 	if(ppt) {enable_spin=1; aligned_spin=1; a_spin1_min=-1; a_spin2_min=-1;}
 		
 	if(enable_spin){
