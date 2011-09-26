@@ -723,7 +723,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
     params.startTime = (tc - XLALGPSGetREAL8(&IFOdata->timeData->epoch)) - chirptime;
     LALInspiralParameterCalc(&status, &params); /* (re-calculation necessary? probably not...) */
   }
-	
+
   if (params.approximant == TaylorF2) {	
 	expnCoeffs ak;
 	expnFunc expnFunction;

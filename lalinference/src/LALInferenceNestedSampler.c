@@ -394,7 +394,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
 	for(i=0;i<Nlive;i++) {
 	  runState->currentParams=runState->livePoints[i];
-	  LALInferenceNestedSamplingOneStep(runState);
+	  runState->evolve(runState);
+	  logLikelihoods[i]=runState->currentLikelihood;
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
 	
@@ -561,7 +562,7 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 	UINT4 mcmc_iter=0,Naccepted=0;
 	UINT4 Nmcmc=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc");
 	REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
-	REAL8 logPriorOld,logPriorNew,logLnew;
+	REAL8 logPriorOld,logPriorNew,logLnew=DBL_MAX;
 	REAL8 logProposalRatio;
 	newParams=calloc(1,sizeof(LALInferenceVariables));
 
@@ -582,17 +583,21 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
                 if(log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
 			continue;
 		/* Otherwise, check that logL is OK */
-		logLnew=runState->likelihood(newParams,runState->data,runState->template);
-        LALInferenceAddVariable(newParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+		if(logLmin!=-DBL_MAX){
+		  logLnew=runState->likelihood(newParams,runState->data,runState->template);
+		}
                 if(logLnew > logLmin){
 			Naccepted++;
 			logPriorOld=logPriorNew;
 			LALInferenceCopyVariables(newParams,runState->currentParams);
-			runState->currentLikelihood=logLnew;
 		}
 		
 	} while(mcmc_iter<Nmcmc);
-        
+	/* Update information to pass back out */
+	if(logLnew==DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
+	LALInferenceAddVariable(runState->currentParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	runState->currentLikelihood=logLnew;
+	
 	LALInferenceDestroyVariables(newParams);
 	free(newParams);
 	REAL8 accept_rate=(REAL8)Naccepted/(REAL8)mcmc_iter;
