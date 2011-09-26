@@ -573,7 +573,7 @@ void VNRPriorOneStep(LALInferenceRunState *runState)
 	proposedParams.head = NULL;
 	proposedParams.dimension = 0;
   
-  PTMCMCLALInferenceDrawUniformlyFromPrior(runState, &proposedParams);
+  LALInferenceDrawUniformlyFromPrior(runState, &proposedParams);
   runState->currentPrior = runState->prior(runState, &proposedParams);
   LALInferenceCopyVariables(&proposedParams, runState->currentParams);
   LALInferenceDestroyVariables(&proposedParams);

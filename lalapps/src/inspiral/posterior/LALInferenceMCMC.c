@@ -183,12 +183,8 @@ void initializeMCMC(LALInferenceRunState *runState)
 	/* Set up the appropriate functions for the MCMC algorithm */
 	runState->algorithm=&PTMCMCAlgorithm;
 	runState->evolve=PTMCMCOneStep;
-  //runState->evolve=&VNRPriorOneStep;
-	//runState->evolve=&PTMCMCAdaptationOneStep;
-	runState->proposal=&PTMCMCLALProposal;
-	//runState->proposal=&PTMCMCLALSingleProposal;
-	//runState->proposal=&PTMCMCLALAdaptationProposal;
-	//runState->proposal=PTMCMCGaussianProposal;
+
+	runState->proposal=&LALInferenceDefaultProposal;
 	
 	/* This is the LAL template generator for inspiral signals */
 	
@@ -1199,7 +1195,7 @@ void initVariables(LALInferenceRunState *state)
     LALInferenceVariables *temp; //
     temp=XLALCalloc(1,sizeof(LALInferenceVariables));
     memset(temp,0,sizeof(LALInferenceVariables));
-    PTMCMCLALInferenceDrawFromPrior(state, temp);
+    LALInferenceDrawFromPrior(state, temp);
     LALInferenceCopyVariables(temp, currentParams);
   }
         /* Make sure that our initial value is within the
@@ -1230,7 +1226,7 @@ void initVariables(LALInferenceRunState *state)
             sigmaVec->data[i] = sqrt(gsl_matrix_get(covM, i, i)); /* Single-parameter sigma. */
           }
 
-          LALInferenceAddVariable(state->proposalArgs, SIGMAVECTORNAME, &sigmaVec, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+          LALInferenceAddVariable(state->proposalArgs, LALInferenceSigmaJumpName, &sigmaVec, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 
           /* Set up eigenvectors and eigenvalues. */
           gsl_matrix *eVectors = gsl_matrix_alloc(N,N);

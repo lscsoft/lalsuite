@@ -28,6 +28,8 @@
 
 /** \defgroup lalframe LAL Framedata Interface (optional) */
 
+/** \defgroup lalinference LAL Bayesian Inference */
+
 
 /***************************************************************/
 /* the original sectioning from lsd.tex is given here:
