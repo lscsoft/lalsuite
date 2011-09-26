@@ -227,7 +227,7 @@ Nested sampling arguments:\n\
 (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
-(--mcmcprop)\rUse PTMCMC proposal engine\n\
+(--mcmcprop)\tUse PTMCMC proposal engine\n\
 \t(--iotaDistance FRAC)\tPTMCMC: Use iota-distance jump FRAC of the time\n\
 \t(--covarianceMatrix)\tPTMCMC: Propose jumps from covariance matrix of current live points\n\
 \t(--differential-evolution)\tPTMCMC:Use differential evolution jumps\n\
