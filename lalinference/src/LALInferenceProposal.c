@@ -244,6 +244,8 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionSpins, TINYWEIGHT);
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionSky, TINYWEIGHT);
   } 
+
+  LALInferenceRandomizeProposalCycle(runState);
 }
 
 void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
