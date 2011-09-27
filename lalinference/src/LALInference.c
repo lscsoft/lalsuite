@@ -75,7 +75,7 @@ LALInferenceVariableItem *LALInferenceGetItemNr(LALInferenceVariables *vars, int
   int i=1;
   if (idx < i) {
     XLALPrintError(" Error in getItemNr(): requesting zero or negative idx entry.\n");
-    XLAL_ERROR_NULL("LALInferenceGetItemNr",XLAL_EINVAL);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
   }
   LALInferenceVariableItem *this=vars->head;
   while (this != NULL) { 
@@ -101,7 +101,7 @@ void *LALInferenceGetVariable(const LALInferenceVariables * vars,const char * na
   item=LALInferenceGetItem(vars,name);
   if(!item) {
     XLALPrintError(" ERROR in getVariable(): entry \"%s\" not found.\n", name);
-    XLAL_ERROR_NULL(__func__,XLAL_EFAILED);
+    XLAL_ERROR_NULL(XLAL_EFAILED);
   }
   return(item->value);
 }
@@ -205,7 +205,7 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, vo
 	}
   if(new==NULL||new->value==NULL) {
     XLALPrintError(" ERROR in addVariable(): unable to allocate memory for list item.\n");
-    XLAL_ERROR_VOID("LALInferenceAddVariable",XLAL_ENOMEM);
+    XLAL_ERROR_VOID(XLAL_ENOMEM);
   }
   memcpy(new->name,name,VARNAME_MAX);
   new->type = type;
@@ -223,7 +223,7 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
 {
   LALInferenceVariableItem *this;
   if(!vars)
-    XLAL_ERROR_VOID(__func__,XLAL_EFAULT);
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   this=vars->head;  
   LALInferenceVariableItem *parent=NULL;
   while(this){
@@ -291,7 +291,7 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
   if(!ptr)
   {
 	  XLALPrintError("Bad LALInferenceVariable structure found while trying to copy\n");
-	  XLAL_ERROR_VOID(__func__,XLAL_EFAULT);
+	  XLAL_ERROR_VOID(XLAL_EFAULT);
   }
   while (ptr != NULL) {
 	  if(!ptr->value || !ptr->name){
@@ -309,11 +309,11 @@ void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr)
 {
   if(ptr==NULL) {
     XLALPrintError("Null LALInferenceVariableItem *");
-    XLAL_ERROR_VOID("LALInferencePrintVariableItem",XLAL_EFAULT);
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   }
   if(out==NULL) {
     XLALPrintError("Null output string *");
-    XLAL_ERROR_VOID("LALInferencePrintVariableItem",XLAL_EFAULT);
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   }
   switch (ptr->type) {
         case LALINFERENCE_INT4_t:
@@ -756,7 +756,7 @@ sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
   }
   if (state==4) {
     XLALPrintError(" ERROR in parseCommandLine(): failed parsing command line options.\n");
-    XLAL_ERROR_NULL("LALInferenceParseCommandLine",XLAL_EFAILED);
+    XLAL_ERROR_NULL(XLAL_EFAILED);
   }
   return(head);
 }
@@ -822,17 +822,17 @@ void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata)
   while (IFOdata != NULL) {
     if (IFOdata->freqToTimeFFTPlan==NULL) {
       XLALPrintError(" ERROR in executeInvFT(): encountered unallocated 'freqToTimeFFTPlan'.\n");
-      XLAL_ERROR_VOID("LALInferenceExecuteInvFT",XLAL_EFAULT);
+      XLAL_ERROR_VOID(XLAL_EFAULT);
     }
 
     /*  h+ :  */
     if (IFOdata->timeModelhPlus==NULL) {
       XLALPrintError(" ERROR in executeInvFT(): encountered unallocated 'timeModelhPlus'.\n");
-      XLAL_ERROR_VOID("LALInferenceExecuteInvFT",XLAL_EFAULT);
+      XLAL_ERROR_VOID(XLAL_EFAULT);
     }
     if (IFOdata->freqModelhPlus==NULL) {
       XLALPrintError(" ERROR in executeInvFT(): encountered unallocated 'freqModelhPlus'.\n");
-      XLAL_ERROR_VOID("LALInferenceExecuteInvFT",XLAL_EFAULT);
+      XLAL_ERROR_VOID(XLAL_EFAULT);
     }
     
     XLALREAL8FreqTimeFFT(IFOdata->timeModelhPlus, IFOdata->freqModelhPlus, IFOdata->freqToTimeFFTPlan);
@@ -846,11 +846,11 @@ void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata)
     /*  hx :  */
     if (IFOdata->timeModelhCross==NULL) {
       XLALPrintError(" ERROR in executeInvFT(): encountered unallocated 'timeModelhCross'.\n");
-      XLAL_ERROR_VOID("LALInferenceExecuteInvFT",XLAL_EFAULT);
+      XLAL_ERROR_VOID(XLAL_EFAULT);
     }
     if (IFOdata->freqModelhCross==NULL) {
       XLALPrintError(" ERROR in executeInvFT(): encountered unallocated 'freqModelhCross'.\n");
-      XLAL_ERROR_VOID("LALInferenceExecuteInvFT",XLAL_EFAULT);
+      XLAL_ERROR_VOID(XLAL_EFAULT);
     }
     
     XLALREAL8FreqTimeFFT(IFOdata->timeModelhCross, IFOdata->freqModelhCross, IFOdata->freqToTimeFFTPlan);

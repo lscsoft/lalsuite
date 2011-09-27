@@ -751,7 +751,7 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
     default:
       XLALPrintError ("%s: Trying to randomise a non-numeric \
 parameter!\n", __func__ );
-      XLAL_ERROR_VOID ( __func__, XLAL_EFUNC );
+      XLAL_ERROR_VOID ( XLAL_EFUNC );
       break;
   }
 }
