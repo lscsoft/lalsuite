@@ -433,7 +433,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		LALInferenceSortVariablesByName(runState->livePoints[minpos]);
 		if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
 		LALInferencePrintSample(fpout,runState->livePoints[minpos]);
-
+		fprintf(fpout,"\n");
+		
 		UINT4 itercounter=0;
 		/* Generate a new live point */
 		do{ /* This loop is here in case it is necessary to find a different sample */
