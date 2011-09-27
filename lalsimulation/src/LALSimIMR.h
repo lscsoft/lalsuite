@@ -22,6 +22,12 @@
 
 #include <lal/LALDatatypes.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 NRCSID(LALSIMIMRH, "$Id$");
 
 /**
@@ -201,4 +207,11 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
     int phaseO,                 /**< twice post-Newtonian phase order */
     InputAxis axisChoice       	/**< Choice of axis for input spin params */
     );
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
+
 #endif /* _LALSIMIMR_H */
