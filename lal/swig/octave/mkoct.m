@@ -29,7 +29,7 @@ inclflags = strcat("-I", strsplit(getdefenv("swig_inclpath"), " ", true));
 libflags = strcat("-L", strsplit(getdefenv("swig_libpath"), " ", true));
 
 ## run-time library directory
-rtlibdir = strcat("-Wl,-rpath=", getdefenv("swig_libdir"));
+rtlibdir = {"-Wl,-rpath", strcat("-Wl,", getdefenv("swig_libdir"))};
 
 ## libraries to link against
 libs = strcat("-l", strsplit(getdefenv("swig_libs"), " ", true));
@@ -46,7 +46,7 @@ mkoctfilebin = fullfile(
 ## arguments to mkoctfile
 cmdargs = {"-v", "-Wall", \
            defflags{:}, inclflags{:}, \
-           libflags{:}, libs{:}, rtlibdir, \
+           libflags{:}, libs{:}, rtlibdir{:}, \
            srcfile};
 
 ## build command line
