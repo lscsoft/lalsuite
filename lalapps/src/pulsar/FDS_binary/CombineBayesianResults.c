@@ -139,9 +139,8 @@ UserInput_t empty_UserInput;
 /** The main function of semicoherentbinary.c
  *
  */
-int main( int argc, char *argv[] )  {
-
-  static const char *fn = __func__;               /* store function name for log output */
+int main( int argc, char *argv[] )
+{
   UserInput_t uvar = empty_UserInput;             /* user input variables */
   CHAR *clargs = NULL;                            /* store the command line args */
   BayesianResultsFileList *resultsfiles = NULL;   /* the input results files */
@@ -156,17 +155,17 @@ int main( int argc, char *argv[] )  {
 
   /* setup LAL debug level */
   if (XLALGetDebugLevel(argc, argv, 'v')) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALGetDebugLevel() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALGetDebugLevel() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */
   if (XLALReadUserVars(argc,argv,&uvar,&clargs)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALReadUserVars() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALReadUserVars() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : read in uservars\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : read in uservars\n",__func__);
 
   /**********************************************************************************/
   /* READ FILES */
@@ -174,7 +173,7 @@ int main( int argc, char *argv[] )  {
 
   /* get a list of results file names */
   if (XLALReadResultsDir(&resultsfiles,uvar.inputdir,uvar.obsid_pattern)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALReadResultsDir() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALReadResultsDir() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
 
@@ -184,7 +183,7 @@ int main( int argc, char *argv[] )  {
 
   /* combine the results into a single result */
   if (XLALCombineBayesianResults(&combinedresult,resultsfiles)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCombineBayesianResults() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCombineBayesianResults() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
  
@@ -194,7 +193,7 @@ int main( int argc, char *argv[] )  {
   
   /* output combined results to file */
   if (XLALOutputCombinedBayesResults(uvar.outputdir,combinedresult,clargs,uvar.obsid_pattern,uvar.source)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALOutputCombinedBayesResults() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALOutputCombinedBayesResults() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
 
@@ -241,9 +240,9 @@ int main( int argc, char *argv[] )  {
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
-  LogPrintf(LOG_DEBUG,"%s : successfully checked memory leaks.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : successfully checked memory leaks.\n",__func__);
 
-  LogPrintf(LOG_DEBUG,"%s : successfully completed.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : successfully completed.\n",__func__);
   return 0;
   
 } /* end of main */
@@ -257,8 +256,6 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 		     CHAR **clargs        /**< [out] the command line args string */
 		     )
 {
-
-  const CHAR *fn = __func__;   /* store function name for log output */
   CHAR *version_string;
   INT4 i;
 
@@ -282,8 +279,8 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
   /* do ALL cmdline and cfgfile handling */
   if (XLALUserVarReadAllInput(argc, argv)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   /* if help was requested, we're done here */
@@ -309,7 +306,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
     strcat(*clargs," ");
   }
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
   
 }
@@ -321,8 +318,6 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 		       CHAR *pattern                               /**< [in] the input APID pattern */
 		       )
 {
-  
-  const CHAR *fn = __func__;      /* store function name for log output */
   INT4 nfiles;                    /* the number of returned files from glob */
   INT4 i,j,k;                     /* counters */
   glob_t pglob;
@@ -330,45 +325,45 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 
   /* check input arguments */
   if ((*resultsfiles) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input results file list structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input results file list structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   if (inputdir == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input directory string == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input directory string == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
 
   /* if we have a filename patttern then set the global variable */
   if (pattern != NULL) snprintf(glob_pattern,STRINGLENGTH,"%s/*%s*.txt",inputdir,pattern); 
   else snprintf(glob_pattern,STRINGLENGTH,"%s/*.txt",inputdir); 
-  LogPrintf(LOG_DEBUG,"%s : searching for file pattern %s\n",fn,glob_pattern);
+  LogPrintf(LOG_DEBUG,"%s : searching for file pattern %s\n",__func__,glob_pattern);
   
   /* get the mode1 FITS file (apID 55) */
   if (glob(glob_pattern,0,NULL,&pglob)) {
-    LogPrintf(LOG_CRITICAL,"%s : glob() failed to return a filelist.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : glob() failed to return a filelist.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   nfiles = pglob.gl_pathc;
   if (nfiles>0) {
-    for (i=0;i<nfiles;i++) LogPrintf(LOG_DEBUG,"%s : found file %s\n",fn,pglob.gl_pathv[i]);
+    for (i=0;i<nfiles;i++) LogPrintf(LOG_DEBUG,"%s : found file %s\n",__func__,pglob.gl_pathv[i]);
   }
   else if (nfiles == -1) {
-    LogPrintf(LOG_CRITICAL,"%s : glob() failed.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : glob() failed.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   else if (nfiles == 0) {
-    LogPrintf(LOG_CRITICAL,"%s : could not find any results files in directory %s matching pattern %s.\n",fn,inputdir,pattern);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : could not find any results files in directory %s matching pattern %s.\n",__func__,inputdir,pattern);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   
   /* allocate memory for filelist structure */
   if (((*resultsfiles) = (BayesianResultsFileList *)XLALCalloc(1,sizeof(BayesianResultsFileList))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for results filelist structure.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for results filelist structure.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if (((*resultsfiles)->file = (BayesianResultsFile *)XLALCalloc(nfiles,sizeof(BayesianResultsFile))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for results file structures.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for results file structures.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   snprintf((*resultsfiles)->dir,STRINGLENGTH,"%s",inputdir);
   (*resultsfiles)->length = nfiles;
@@ -382,28 +377,28 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
     
     /* open the frame file */
     if ((fp = fopen(pglob.gl_pathv[i],"r")) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : unable to open file %s.\n",fn,pglob.gl_pathv[i]);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s : unable to open file %s.\n",__func__,pglob.gl_pathv[i]);
+      XLAL_ERROR(XLAL_EINVAL);
     } 
-    LogPrintf(LOG_DEBUG,"%s : opened file %s.\n",fn,pglob.gl_pathv[i]);
+    LogPrintf(LOG_DEBUG,"%s : opened file %s.\n",__func__,pglob.gl_pathv[i]);
       
     /* allocate memory for the parameter name and prior type */
     if (((*resultsfiles)->file[i].name = (CHAR **)XLALCalloc(NBINMAX+1,sizeof(CHAR*))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for name of parameter.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for name of parameter.\n",__func__);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     if (((*resultsfiles)->file[i].prior = (CHAR **)XLALCalloc(NBINMAX+1,sizeof(CHAR*))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for type of prior.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for type of prior.\n",__func__);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     for (j=0;j<NBINMAX+1;j++) {
       if (((*resultsfiles)->file[i].name[j] = (CHAR *)XLALCalloc(STRINGLENGTH,sizeof(CHAR))) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for name of parameter.\n",fn);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for name of parameter.\n",__func__);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
       if (((*resultsfiles)->file[i].prior[j] = (CHAR *)XLALCalloc(STRINGLENGTH,sizeof(CHAR))) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for type of prior.\n",fn);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for type of prior.\n",__func__);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
     }
 
@@ -423,16 +418,16 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 	
 	/* allocate mem for the Bayesfactors per segment */
 	if (((*resultsfiles)->file[i].Bayes_perseg = XLALCreateREAL8Vector((*resultsfiles)->file[i].nseg)) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for Bayes factor vector.\n",fn);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for Bayes factor vector.\n",__func__);
+	  XLAL_ERROR(XLAL_ENOMEM);
 	}
 	if (((*resultsfiles)->file[i].Bayes_start = XLALCreateUINT4Vector((*resultsfiles)->file[i].nseg)) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for Bayes factor vector.\n",fn);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for Bayes factor vector.\n",__func__);
+	  XLAL_ERROR(XLAL_ENOMEM);
 	}
 	if (((*resultsfiles)->file[i].Bayes_end = XLALCreateUINT4Vector((*resultsfiles)->file[i].nseg)) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for Bayes factor vector.\n",fn);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for Bayes factor vector.\n",__func__);
+	  XLAL_ERROR(XLAL_ENOMEM);
 	}
 
 	/* if we've found the Bayes factor information line then the actual individual Bayes factors are 3 lines later */
@@ -442,7 +437,7 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 	  sscanf(line,"%d %d %lf",&((*resultsfiles)->file[i].Bayes_start->data[k]),
 		 &((*resultsfiles)->file[i].Bayes_end->data[k]),
 		 &((*resultsfiles)->file[i].Bayes_perseg->data[k]));
-	 /*  LogPrintf(LOG_DEBUG,"%s : read Bayes factors as %d %d %lf\n",fn,((*resultsfiles)->file[i].Bayes_start->data[k]), */
+	 /*  LogPrintf(LOG_DEBUG,"%s : read Bayes factors as %d %d %lf\n",__func__,((*resultsfiles)->file[i].Bayes_start->data[k]), */
 /* 		 ((*resultsfiles)->file[i].Bayes_end->data[k]), */
 /* 		 ((*resultsfiles)->file[i].Bayes_perseg->data[k])); */
 	}
@@ -481,16 +476,16 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 	  
 	  /* allocate mem for the pdfs */
 	  if (((*resultsfiles)->file[i].logprior[j] = XLALCreateREAL8Vector((*resultsfiles)->file[i].length[j])) == NULL) {
-	    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for prior vector.\n",fn);
-	    XLAL_ERROR(fn,XLAL_ENOMEM);
+	    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for prior vector.\n",__func__);
+	    XLAL_ERROR(XLAL_ENOMEM);
 	  }
 	  if (((*resultsfiles)->file[i].logposterior[j] = XLALCreateREAL8Vector((*resultsfiles)->file[i].length[j])) == NULL) {
-	    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for posterior vector.\n",fn);
-	    XLAL_ERROR(fn,XLAL_ENOMEM);
+	    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for posterior vector.\n",__func__);
+	    XLAL_ERROR(XLAL_ENOMEM);
 	  }
 	  if (((*resultsfiles)->file[i].logposterior_fixed[j] = XLALCreateREAL8Vector((*resultsfiles)->file[i].length[j])) == NULL) {
-	    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for posterior vector.\n",fn);
-	    XLAL_ERROR(fn,XLAL_ENOMEM);
+	    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for posterior vector.\n",__func__);
+	    XLAL_ERROR(XLAL_ENOMEM);
 	  }
 	  
 	}
@@ -506,7 +501,7 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 		   &((*resultsfiles)->file[i].logprior[j]->data[k]));
 	    /* log the prior for smother later interpolation */
 	    (*resultsfiles)->file[i].logprior[j]->data[k] = log((*resultsfiles)->file[i].logprior[j]->data[k]);
-	   /*  LogPrintf(LOG_DEBUG,"%s : read input as %lf %lf %lf\n",fn,((*resultsfiles)->file[i].logposterior[j]->data[k]), */
+	   /*  LogPrintf(LOG_DEBUG,"%s : read input as %lf %lf %lf\n",__func__,((*resultsfiles)->file[i].logposterior[j]->data[k]), */
 /* 		   ((*resultsfiles)->file[i].logposterior_fixed[j]->data[k]), */
 /* 		   ((*resultsfiles)->file[i].logprior[j]->data[k])); */
 	    
@@ -521,25 +516,25 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
     /* fill in extra info */
     snprintf((*resultsfiles)->file[i].filename,STRINGLENGTH,"%s",pglob.gl_pathv[i]);
 
-   /*  LogPrintf(LOG_DEBUG,"%s : read tstart as %d\n",fn,((*resultsfiles)->file[i].tstart)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read tspan as %f\n",fn,((*resultsfiles)->file[i].tspan)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read tobs as %f\n",fn,((*resultsfiles)->file[i].tobs)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read nseg as %d\n",fn,((*resultsfiles)->file[i].nseg)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read ndim as %d\n",fn,((*resultsfiles)->file[i].ndim)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read ampdim as %d\n",fn,((*resultsfiles)->file[i].ampdim)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read mismatch as %f\n",fn,((*resultsfiles)->file[i].mm)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read Bayes as %f\n",fn,((*resultsfiles)->file[i].Bayes)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read Bayes_fixed as %f\n",fn,((*resultsfiles)->file[i].Bayes_fixed)); */
+   /*  LogPrintf(LOG_DEBUG,"%s : read tstart as %d\n",__func__,((*resultsfiles)->file[i].tstart)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read tspan as %f\n",__func__,((*resultsfiles)->file[i].tspan)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read tobs as %f\n",__func__,((*resultsfiles)->file[i].tobs)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read nseg as %d\n",__func__,((*resultsfiles)->file[i].nseg)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read ndim as %d\n",__func__,((*resultsfiles)->file[i].ndim)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read ampdim as %d\n",__func__,((*resultsfiles)->file[i].ampdim)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read mismatch as %f\n",__func__,((*resultsfiles)->file[i].mm)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read Bayes as %f\n",__func__,((*resultsfiles)->file[i].Bayes)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read Bayes_fixed as %f\n",__func__,((*resultsfiles)->file[i].Bayes_fixed)); */
   
 /*     for (j=0;j<NBINMAX+1;j++) { */
-/*       LogPrintf(LOG_DEBUG,"%s : read name[%d] as %s\n",fn,j,((*resultsfiles)->file[i].name[j])); */
-/*       LogPrintf(LOG_DEBUG,"%s : read min[%d] as %f\n",fn,j,((*resultsfiles)->file[i].min[j])); */
-/*       LogPrintf(LOG_DEBUG,"%s : read max[%d] as %f\n",fn,j,((*resultsfiles)->file[i].max[j])); */
-/*       LogPrintf(LOG_DEBUG,"%s : read sig[%d] as %f\n",fn,j,((*resultsfiles)->file[i].sig[j])); */
-/*       LogPrintf(LOG_DEBUG,"%s : read start[%d] as %f\n",fn,j,((*resultsfiles)->file[i].start[j])); */
-/*       LogPrintf(LOG_DEBUG,"%s : read delta[%d] as %f\n",fn,j,((*resultsfiles)->file[i].delta[j])); */
-/*       LogPrintf(LOG_DEBUG,"%s : read length[%d] as %d\n",fn,j,((*resultsfiles)->file[i].length[j])); */
-/*       LogPrintf(LOG_DEBUG,"%s : read prior[%d] as %s\n",fn,j,((*resultsfiles)->file[i].prior[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read name[%d] as %s\n",__func__,j,((*resultsfiles)->file[i].name[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read min[%d] as %f\n",__func__,j,((*resultsfiles)->file[i].min[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read max[%d] as %f\n",__func__,j,((*resultsfiles)->file[i].max[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read sig[%d] as %f\n",__func__,j,((*resultsfiles)->file[i].sig[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read start[%d] as %f\n",__func__,j,((*resultsfiles)->file[i].start[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read delta[%d] as %f\n",__func__,j,((*resultsfiles)->file[i].delta[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read length[%d] as %d\n",__func__,j,((*resultsfiles)->file[i].length[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read prior[%d] as %s\n",__func__,j,((*resultsfiles)->file[i].prior[j])); */
 /*     } */
 
     /* close the frame file */
@@ -553,32 +548,32 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
   for (i=1;i<(INT4)(*resultsfiles)->length;i++) {
     
     if ((*resultsfiles)->file[i].tstart != (*resultsfiles)->file[0].tstart) {
-      LogPrintf(LOG_CRITICAL,"%s : inconsistent start times for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent start times for files %s and %s.\n",__func__,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
+      XLAL_ERROR(XLAL_EINVAL);
     }
     if ((*resultsfiles)->file[i].tspan != (*resultsfiles)->file[0].tspan) {
-      LogPrintf(LOG_CRITICAL,"%s : inconsistent time spans for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent time spans for files %s and %s.\n",__func__,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
+      XLAL_ERROR(XLAL_EINVAL);
     }
     if ((*resultsfiles)->file[i].tobs != (*resultsfiles)->file[0].tobs) {
-      LogPrintf(LOG_CRITICAL,"%s : inconsistent observation times for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent observation times for files %s and %s.\n",__func__,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
+      XLAL_ERROR(XLAL_EINVAL);
     }
     if ((*resultsfiles)->file[i].nseg != (*resultsfiles)->file[0].nseg) {
-      LogPrintf(LOG_CRITICAL,"%s : inconsistent numbers of segments for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent numbers of segments for files %s and %s.\n",__func__,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
+      XLAL_ERROR(XLAL_EINVAL);
     }
     if ((*resultsfiles)->file[i].ndim != (*resultsfiles)->file[0].ndim) {
-      LogPrintf(LOG_CRITICAL,"%s : inconsistent number of search dimensions for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent number of search dimensions for files %s and %s.\n",__func__,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
+      XLAL_ERROR(XLAL_EINVAL);
     }
     if ((*resultsfiles)->file[i].ampdim != (*resultsfiles)->file[0].ampdim) {
-      LogPrintf(LOG_CRITICAL,"%s : inconsistent number of amplitude dimensions for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent number of amplitude dimensions for files %s and %s.\n",__func__,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
+      XLAL_ERROR(XLAL_EINVAL);
     }
     if ((*resultsfiles)->file[i].mm != (*resultsfiles)->file[0].mm) {
-      LogPrintf(LOG_CRITICAL,"%s : inconsistent mismatches for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent mismatches for files %s and %s.\n",__func__,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
+      XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* check parameter space consistency */
@@ -588,20 +583,20 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
       if (strcmp((*resultsfiles)->file[i].name[j],"nu")) {
 
 	if ((*resultsfiles)->file[i].min[j] != (*resultsfiles)->file[0].min[j]) {
-	  LogPrintf(LOG_CRITICAL,"%s : inconsistent min values for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
-	  XLAL_ERROR(fn,XLAL_EINVAL);
+	  LogPrintf(LOG_CRITICAL,"%s : inconsistent min values for files %s and %s.\n",__func__,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
+	  XLAL_ERROR(XLAL_EINVAL);
 	}
 	if ((*resultsfiles)->file[i].max[j] != (*resultsfiles)->file[0].max[j]) {
-	  LogPrintf(LOG_CRITICAL,"%s : inconsistent max values for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
-	  XLAL_ERROR(fn,XLAL_EINVAL);
+	  LogPrintf(LOG_CRITICAL,"%s : inconsistent max values for files %s and %s.\n",__func__,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
+	  XLAL_ERROR(XLAL_EINVAL);
 	}
 	if ((*resultsfiles)->file[i].sig[j] != (*resultsfiles)->file[0].sig[j]) {
-	  LogPrintf(LOG_CRITICAL,"%s : inconsistent sigma values for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
-	  XLAL_ERROR(fn,XLAL_EINVAL);
+	  LogPrintf(LOG_CRITICAL,"%s : inconsistent sigma values for files %s and %s.\n",__func__,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
+	  XLAL_ERROR(XLAL_EINVAL);
 	}
 	if (strcmp((*resultsfiles)->file[i].prior[j],(*resultsfiles)->file[0].prior[j])) {
-	  LogPrintf(LOG_CRITICAL,"%s : inconsistent prior types for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
-	  XLAL_ERROR(fn,XLAL_EINVAL);
+	  LogPrintf(LOG_CRITICAL,"%s : inconsistent prior types for files %s and %s.\n",__func__,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
+	  XLAL_ERROR(XLAL_EINVAL);
 	}
 
       }
@@ -612,7 +607,7 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
   /* free original filelist */
   globfree(&pglob);
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
   
 }
@@ -624,26 +619,24 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 			       BayesianResultsFileList *resultsfiles
 			       )
 {
-
-  const CHAR *fn = __func__;      /* store function name for log output */
   UINT4 i,j,k;                    /* counters */
   REAL8 totalband = 0.0;          /* the total bandwidth */
   REAL8 *deltaband;               /* the bandwidths of each file */
 
   /* check input arguments */
   if ((*combinedresult) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input combinedresult structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input combinedresult structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   if (resultsfiles == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, resultsfiles structure == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, resultsfiles structure == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   /* allocate memory for the combined result */
   if (((*combinedresult) = (BayesianResultsFile *)XLALCalloc(1,sizeof(BayesianResultsFile))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output Bayesian results.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output Bayesian results.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   
   /* fill in some parameters */
@@ -657,8 +650,8 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 
   /* allocate mem for bandwidths */
   if ((deltaband = (REAL8 *)XLALCalloc(resultsfiles->length,sizeof(REAL8))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for delta band widths.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for delta band widths.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   /* compute entire bandwidth */
@@ -675,16 +668,16 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 
   /* allocate memory for the combined result */
   if (((*combinedresult)->Bayes_perseg = XLALCreateREAL8Vector(resultsfiles->file[0].nseg)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output Bayesian segment results.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output Bayesian segment results.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if (((*combinedresult)->Bayes_start = XLALCreateUINT4Vector(resultsfiles->file[0].nseg)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output Bayesian segment results.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output Bayesian segment results.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if (((*combinedresult)->Bayes_end = XLALCreateUINT4Vector(resultsfiles->file[0].nseg)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output Bayesian segment results.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output Bayesian segment results.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   /* combine Bayes factors per segment - remember that they are log(B) so have to be added carefully */
@@ -702,7 +695,7 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
       
       (*combinedresult)->Bayes_perseg->data[j] = XLALLogSumExp(temp1,temp2);
     }
-    LogPrintf(LOG_DEBUG,"%s : combined individual segment Bayes factors %d %d %lf\n",fn,(*combinedresult)->Bayes_start->data[j],
+    LogPrintf(LOG_DEBUG,"%s : combined individual segment Bayes factors %d %d %lf\n",__func__,(*combinedresult)->Bayes_start->data[j],
 	   (*combinedresult)->Bayes_end->data[j],
 	   (*combinedresult)->Bayes_perseg->data[j]);
     
@@ -722,7 +715,7 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
       (*combinedresult)->Bayes = XLALLogSumExp(temp1,temp2);
       (*combinedresult)->Bayes_fixed = XLALLogSumExp(temp3,temp4);
   }
-  LogPrintf(LOG_DEBUG,"%s : combined Bayes factors %lf %lf\n",fn,(*combinedresult)->Bayes,(*combinedresult)->Bayes_fixed);
+  LogPrintf(LOG_DEBUG,"%s : combined Bayes factors %lf %lf\n",__func__,(*combinedresult)->Bayes,(*combinedresult)->Bayes_fixed);
 
   /************************************************/
   /* combine posteriors */
@@ -732,21 +725,21 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 
   /* allocate memory for the parameter name and prior type */
   if (((*combinedresult)->name = (CHAR **)XLALCalloc(NBINMAX+1,sizeof(CHAR*))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for name of parameter.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for name of parameter.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if (((*combinedresult)->prior = (CHAR **)XLALCalloc(NBINMAX+1,sizeof(CHAR*))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for type of prior.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for type of prior.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   for (j=0;j<NBINMAX+1;j++) {
     if (((*combinedresult)->name[j] = (CHAR *)XLALCalloc(STRINGLENGTH,sizeof(CHAR))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for name of parameter.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for name of parameter.\n",__func__);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     if (((*combinedresult)->prior[j] = (CHAR *)XLALCalloc(STRINGLENGTH,sizeof(CHAR))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for type of prior.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for type of prior.\n",__func__);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
   }
   
@@ -756,7 +749,7 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
     /* check for nu parameter since we add that differently */
     if (strcmp(resultsfiles->file[0].name[k],"nu")) {
       
-      LogPrintf(LOG_DEBUG,"%s : working on parameter %s\n",fn,resultsfiles->file[0].name[k]);
+      LogPrintf(LOG_DEBUG,"%s : working on parameter %s\n",__func__,resultsfiles->file[0].name[k]);
       UINT4 maxlen = 0;
       UINT4 newlen = 0;
       for (i=0;i<resultsfiles->length;i++) {
@@ -766,20 +759,20 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
       /* define over-res length (only if we have more than one point) */
       if (maxlen>1) newlen = (UINT4)(0.5 + OVERRES*maxlen);
       else newlen = maxlen;
-      LogPrintf(LOG_DEBUG,"%s : determined max pdf length and over-res length as %d %d\n",fn,maxlen,newlen);
+      LogPrintf(LOG_DEBUG,"%s : determined max pdf length and over-res length as %d %d\n",__func__,maxlen,newlen);
 
       /* we define an over-resolved interpolation scheme with OVERRES more points than the max value */
       if (((*combinedresult)->logprior[k] = XLALCreateREAL8Vector(newlen)) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude prior results.\n",fn);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude prior results.\n",__func__);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
       if (((*combinedresult)->logposterior[k] = XLALCreateREAL8Vector(newlen)) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",__func__);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
       if (((*combinedresult)->logposterior_fixed[k] = XLALCreateREAL8Vector(newlen)) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",__func__);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
       (*combinedresult)->length[k] = newlen;
 
@@ -821,20 +814,20 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	
 	/* allocate memory for the temporary data */
 	if ((x = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",__func__);
+	  XLAL_ERROR(XLAL_ENOMEM);
 	}
 	if ((y = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",__func__);
+	  XLAL_ERROR(XLAL_ENOMEM);
 	}
 	if ((y_fixed = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",__func__);
+	  XLAL_ERROR(XLAL_ENOMEM);
 	}
 	if ((y_prior = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",__func__);
+	  XLAL_ERROR(XLAL_ENOMEM);
 	}
 
 	/* fill in gsl interpolation input data */
@@ -923,12 +916,12 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
       /* output results to screen */ 
       {
 	REAL8 z = (*combinedresult)->start[k];
-	LogPrintf(LOG_DEBUG,"%s : combined result on %s %f %f %f %f\n",fn,
+	LogPrintf(LOG_DEBUG,"%s : combined result on %s %f %f %f %f\n",__func__,
 		  (*combinedresult)->name[k],z,(*combinedresult)->logposterior[k]->data[0],
 		  (*combinedresult)->logposterior_fixed[k]->data[0],(*combinedresult)->logprior[k]->data[0]);
 	LogPrintf(LOG_DEBUG,"%s ...\n");
 	z = (*combinedresult)->start[k] + ((*combinedresult)->logposterior[k]->length-1)*(*combinedresult)->delta[k];
-	LogPrintf(LOG_DEBUG,"%s : combined result on %s %f %f %f %f\n",fn,
+	LogPrintf(LOG_DEBUG,"%s : combined result on %s %f %f %f %f\n",__func__,
 		  (*combinedresult)->name[k],z,(*combinedresult)->logposterior[k]->data[((*combinedresult)->logposterior[k]->length-1)],
 		  (*combinedresult)->logposterior_fixed[k]->data[((*combinedresult)->logposterior[k]->length-1)],(*combinedresult)->logprior[k]->data[((*combinedresult)->logposterior[k]->length-1)]);
       }
@@ -960,24 +953,24 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
       (*combinedresult)->minfreq = numin;
       (*combinedresult)->band = numax - numin;
       
-      LogPrintf(LOG_DEBUG,"%s : setting nu start as %f\n",fn,(*combinedresult)->start[k]);
-      LogPrintf(LOG_DEBUG,"%s : setting nu delta as %f\n",fn,(*combinedresult)->delta[k]);
-      LogPrintf(LOG_DEBUG,"%s : setting nu length as %d\n",fn,(*combinedresult)->length[k]);
-      LogPrintf(LOG_DEBUG,"%s : setting nu min as %f\n",fn,(*combinedresult)->min[k]);
-      LogPrintf(LOG_DEBUG,"%s : setting nu max as %f\n",fn,(*combinedresult)->max[k]);
+      LogPrintf(LOG_DEBUG,"%s : setting nu start as %f\n",__func__,(*combinedresult)->start[k]);
+      LogPrintf(LOG_DEBUG,"%s : setting nu delta as %f\n",__func__,(*combinedresult)->delta[k]);
+      LogPrintf(LOG_DEBUG,"%s : setting nu length as %d\n",__func__,(*combinedresult)->length[k]);
+      LogPrintf(LOG_DEBUG,"%s : setting nu min as %f\n",__func__,(*combinedresult)->min[k]);
+      LogPrintf(LOG_DEBUG,"%s : setting nu max as %f\n",__func__,(*combinedresult)->max[k]);
       
       /* we define an over-resolved interpolation scheme with OVERRES more points than the max value */
       if (((*combinedresult)->logprior[k] = XLALCreateREAL8Vector((*combinedresult)->length[k])) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude prior results.\n",fn);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude prior results.\n",__func__);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
       if (((*combinedresult)->logposterior[k] = XLALCreateREAL8Vector((*combinedresult)->length[k])) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",__func__);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
       if (((*combinedresult)->logposterior_fixed[k] = XLALCreateREAL8Vector((*combinedresult)->length[k])) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",__func__);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
 
       /* setup interpolation on nu */
@@ -996,20 +989,20 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	
 	/* allocate memory for the temporary data */
 	if ((x = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",__func__);
+	  XLAL_ERROR(XLAL_ENOMEM);
 	}
 	if ((y = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",__func__);
+	  XLAL_ERROR(XLAL_ENOMEM);
 	}
 	if ((y_fixed = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",__func__);
+	  XLAL_ERROR(XLAL_ENOMEM);
 	}
 	if ((y_prior = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",__func__);
+	  XLAL_ERROR(XLAL_ENOMEM);
 	}
 
 	/* loop over results files and read */
@@ -1056,13 +1049,13 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
       /* output results to screen */
       {
 	REAL8 z = (*combinedresult)->start[k];
-	LogPrintf(LOG_DEBUG,"%s : combined results on %s %f %f %f %f\n",fn,(*combinedresult)->name[k],
+	LogPrintf(LOG_DEBUG,"%s : combined results on %s %f %f %f %f\n",__func__,(*combinedresult)->name[k],
 		  z,(*combinedresult)->logposterior[k]->data[0],
 		  (*combinedresult)->logposterior_fixed[k]->data[0],
 		  (*combinedresult)->logprior[k]->data[0]);
 	LogPrintf(LOG_DEBUG,"%s ...\n");
 	z = (*combinedresult)->start[k] + ((*combinedresult)->logposterior[k]->length-1)*(*combinedresult)->delta[k];
-	LogPrintf(LOG_DEBUG,"%s : combined results on %s %f %f %f %f\n",fn,(*combinedresult)->name[k],
+	LogPrintf(LOG_DEBUG,"%s : combined results on %s %f %f %f %f\n",__func__,(*combinedresult)->name[k],
 		  z,(*combinedresult)->logposterior[k]->data[(*combinedresult)->logposterior[k]->length-1],
 		  (*combinedresult)->logposterior_fixed[k]->data[(*combinedresult)->logposterior[k]->length-1],
 		  (*combinedresult)->logprior[k]->data[(*combinedresult)->logposterior[k]->length-1]);
@@ -1075,7 +1068,7 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
   /* free memory*/
   XLALFree(deltaband);
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
  
 }
@@ -1117,7 +1110,6 @@ int XLALOutputCombinedBayesResults(CHAR *outputdir,                 /**< [in] th
 				   CHAR *source                     /**< [in] the source */
 				   )
 {
-  const CHAR *fn = __func__;            /* store function name for log output */
   CHAR outputfile[LONGSTRINGLENGTH];    /* the output filename */
   time_t curtime = time(NULL);          /* get the current time */
   CHAR *time_string = NULL;             /* stores the current time */
@@ -1128,19 +1120,19 @@ int XLALOutputCombinedBayesResults(CHAR *outputdir,                 /**< [in] th
 
   /* validate input */
   if (outputdir == NULL) { 
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output directory string == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output directory string == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (results == NULL) { 
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, Bayesian results structure == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, Bayesian results structure == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   
   /* find nu index */
   for (i=0;i<NBINMAX+1;i++) if (!strcmp(results->name[i],"nu")) nuidx = i;
   if (nuidx<0) {
-    LogPrintf(LOG_CRITICAL,"%s: Cannot find index corresponding to the nu parameter.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Cannot find index corresponding to the nu parameter.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   
   /* define the output filename */
@@ -1156,12 +1148,12 @@ int XLALOutputCombinedBayesResults(CHAR *outputdir,                 /**< [in] th
     else snprintf(outputfile,LONGSTRINGLENGTH,"%s/CombinedBayesianResults-%s-%s-%04d_%03d_%04d_%03d.txt",
 		  outputdir,source,obsid_pattern,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
   }
-  LogPrintf(LOG_DEBUG,"%s : output %s\n",fn,outputfile);
+  LogPrintf(LOG_DEBUG,"%s : output %s\n",__func__,outputfile);
 
   /* open the output file */
   if ((fp = fopen(outputfile,"w")) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Error, failed to open file %s for writing.  Exiting.\n",fn,outputfile);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Error, failed to open file %s for writing.  Exiting.\n",__func__,outputfile);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   
   /* Convert time to local time representation */
@@ -1271,7 +1263,7 @@ int XLALOutputCombinedBayesResults(CHAR *outputdir,                 /**< [in] th
   XLALFree(time_string);
   XLALFree(version_string);
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }

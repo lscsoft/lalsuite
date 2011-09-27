@@ -108,9 +108,8 @@ UserInput_t empty_UserInput;
 /** The main function of semicoherentbinary.c
  *
  */
-int main( int argc, char *argv[] )  {
-
-  static const char *fn = __func__;             /* store function name for log output */
+int main( int argc, char *argv[] )
+{
   LALStatus status = blank_status;              /* empty LAL status structure */
   UserInput_t uvar = empty_UserInput;           /* user input variables */
   CHAR *clargs = NULL;                          /* store the command line args */
@@ -131,17 +130,17 @@ int main( int argc, char *argv[] )  {
 
   /* setup LAL debug level */
   if (XLALGetDebugLevel(argc, argv, 'v')) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALGetDebugLevel() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALGetDebugLevel() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */
   if (XLALReadUserVars(argc,argv,&uvar,&clargs)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALReadUserVars() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALReadUserVars() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : read in uservars\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : read in uservars\n",__func__);
  
   /* if coordinates input in hh:mm:ss.s format then convert to radians */
   if (XLALUserVarWasSet(&(uvar.ra))) alpha = LALDegsToRads(uvar.ra,"ra");
@@ -159,18 +158,18 @@ int main( int argc, char *argv[] )  {
   /* convert MJD to TT GPS time */
   if (strstr(uvar.HJDconv,"TT")) {
     helio_gps = LALTTMJDtoGPS(uvar.HJD-2400000.5);
-    LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(TT) %6.12f\n",fn,uvar.HJD,helio_gps);
+    LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(TT) %6.12f\n",__func__,uvar.HJD,helio_gps);
   }
   else if (strstr(uvar.HJDconv,"TDB")) {
     helio_gps = LALTDBMJDtoGPS(uvar.HJD-2400000.5);
-    LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(TDB) %6.12f\n",fn,uvar.HJD,helio_gps);
+    LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(TDB) %6.12f\n",__func__,uvar.HJD,helio_gps);
   }
   else if (strstr(uvar.HJDconv,"UTC")) {
     helio_gps = LALUTCMJDtoGPS(uvar.HJD-2400000.5);
-    LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(UTC) %6.12f\n",fn,uvar.HJD,helio_gps);
+    LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(UTC) %6.12f\n",__func__,uvar.HJD,helio_gps);
   }
   else {
-    LogPrintf(LOG_CRITICAL,"%s : Can only convert HJD times in TT, TDB and UTC at present.  Exiting.\n",fn);
+    LogPrintf(LOG_CRITICAL,"%s : Can only convert HJD times in TT, TDB and UTC at present.  Exiting.\n",__func__);
     return 1;
   }
 
@@ -180,26 +179,26 @@ int main( int argc, char *argv[] )  {
 
   /* initialise the barycentering routines */
   if ((ephemeris = XLALInitBarycenter(earthfile,sunfile)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALInitBaryCenter() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALInitBaryCenter() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : read in ephemeris files\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : read in ephemeris files\n",__func__);
 
   /* allocate memory for gsl input vectors */
   if ((t = XLALCalloc(ephemeris->nentriesS,sizeof(REAL8))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   if ((x = XLALCalloc(ephemeris->nentriesS,sizeof(REAL8))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   if ((y = XLALCalloc(ephemeris->nentriesS,sizeof(REAL8))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   if ((z = XLALCalloc(ephemeris->nentriesS,sizeof(REAL8))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
 
@@ -210,7 +209,7 @@ int main( int argc, char *argv[] )  {
     y[i] = ephemeris->ephemS[i].pos[1];
     z[i] = ephemeris->ephemS[i].pos[2];
   }  
-  LogPrintf(LOG_DEBUG,"%s : time spans %6.12f -> %6.12f\n",fn,t[0],t[ephemeris->nentriesS-1]);
+  LogPrintf(LOG_DEBUG,"%s : time spans %6.12f -> %6.12f\n",__func__,t[0],t[ephemeris->nentriesS-1]);
   acc_x = gsl_interp_accel_alloc();
   acc_y = gsl_interp_accel_alloc();
   acc_z = gsl_interp_accel_alloc();
@@ -235,10 +234,10 @@ int main( int argc, char *argv[] )  {
 
   /* check if result is within original ephemeris boundaries */
   if ((te>=t[0]) && (te<=t[ephemeris->nentriesS-1])) {
-    LogPrintf(LOG_NORMAL,"%s : solved to find SSB time = %6.2f +/- 0.01 (sec)\n",fn,te); 
+    LogPrintf(LOG_NORMAL,"%s : solved to find SSB time = %6.2f +/- 0.01 (sec)\n",__func__,te); 
   }
   else {
-    LogPrintf(LOG_CRITICAL,"%s : input ephemeris files do not span desired epoch.  Exptroplated result is unreliable.\n",fn,te); 
+    LogPrintf(LOG_CRITICAL,"%s : input ephemeris files do not span desired epoch.  Exptroplated result is unreliable.\n",__func__,te); 
     return 1;
   }
 
@@ -263,9 +262,9 @@ int main( int argc, char *argv[] )  {
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
-  LogPrintf(LOG_DEBUG,"%s : successfully checked memory leaks.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : successfully checked memory leaks.\n",__func__);
 
-  LogPrintf(LOG_DEBUG,"%s : successfully completed.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : successfully completed.\n",__func__);
   return 0;
   
 } /* end of main */
@@ -306,8 +305,6 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 		     CHAR **clargs        /**< [out] the command line args string */
 		     )
 {
-
-  const CHAR *fn = __func__;   /* store function name for log output */
   CHAR *version_string;
   INT4 i;
 
@@ -326,8 +323,8 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
   /* do ALL cmdline and cfgfile handling */
   if (XLALUserVarReadAllInput(argc, argv)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   
   /* if help was requested, we're done here */
@@ -345,12 +342,12 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALFree(version_string);
 
   if ((!XLALUserVarWasSet(&(uvar->ra))) && (!XLALUserVarWasSet(&(uvar->ra_rads)))) {
-    LogPrintf(LOG_CRITICAL,"%s : user must specify at least ra or ra_rads !  Exiting.\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : user must specify at least ra or ra_rads !  Exiting.\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if ((!XLALUserVarWasSet(&(uvar->dec))) && (!XLALUserVarWasSet(&(uvar->dec_rads)))) {
-    LogPrintf(LOG_CRITICAL,"%s : user must specify at least dec or dec_rads !  Exiting.\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : user must specify at least dec or dec_rads !  Exiting.\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   /* put clargs into string */
@@ -362,7 +359,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
     strcat(*clargs," ");
   }
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
   
 }

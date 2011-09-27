@@ -517,7 +517,7 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
       /* prepend a new event to the linked list */
       new = XLALCreateSnglBurst();
       if ( ! new )
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
       new->next = *head;
       *head = new;
 
@@ -934,7 +934,7 @@ REAL8FrequencySeries *AvgSpectrum(struct CommandLineArgsTag CLA, REAL8TimeSeries
   REAL8FrequencySeries *Spec;
   Spec  = XLALCreateREAL8FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, seg_length / 2 + 1);
   if(!Spec)
-    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+    XLAL_ERROR_NULL(XLAL_EFUNC);
 
   if (CLA.fakenoiseflag && CLA.whitespectrumflag){
     unsigned p;
@@ -946,10 +946,10 @@ REAL8FrequencySeries *AvgSpectrum(struct CommandLineArgsTag CLA, REAL8TimeSeries
     unsigned segmentStride = seg_length/2;
     REAL8Window *window = XLALCreateHannREAL8Window( seg_length );
     if(!window)
-      XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
 
     if(XLALREAL8AverageSpectrumMedianMean( Spec, ht, seg_length, segmentStride, window, fplan ))
-      XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
 
     XLALDestroyREAL8Window( window );
   }
@@ -1002,11 +1002,11 @@ REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA){
     /* create Frame cache, open frame stream and delete frame cache */
     cache = XLALFrImportCache(CLA.FrCacheFile);
     if(!cache)
-      XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
     stream = XLALFrCacheOpen(cache);
     XLALFrDestroyCache(cache);
     if(!stream)
-      XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
 
     /* turn on checking for missing data */
     XLALFrSetMode(stream, LAL_FR_VERBOSE_MODE);
@@ -1015,7 +1015,7 @@ REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA){
     series_type = XLALFrGetTimeSeriesType(CLA.ChannelName, stream);
     if((int) series_type < 0) {
       XLALFrClose(stream);
-      XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
     }
 
     /* read data */
@@ -1025,7 +1025,7 @@ REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA){
       REAL4TimeSeries *ht_V = XLALFrReadREAL4TimeSeries(stream, CLA.ChannelName, &CLA.GPSStart, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart), 0);
       if(!ht_V) {
         XLALFrClose(stream);
-        XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+        XLAL_ERROR_NULL(XLAL_EFUNC);
       }
 
       /* cast to double precision */
@@ -1043,13 +1043,13 @@ REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA){
       ht = XLALFrReadREAL8TimeSeries(stream, CLA.ChannelName, &CLA.GPSStart, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart), 0);
       if(!ht) {
         XLALFrClose(stream);
-        XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+        XLAL_ERROR_NULL(XLAL_EFUNC);
       }
       break;
 
     default:
       XLALFrClose(stream);
-      XLAL_ERROR_NULL(__func__, XLAL_EINVAL);
+      XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
     /* close */

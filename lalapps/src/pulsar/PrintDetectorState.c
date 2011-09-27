@@ -101,8 +101,6 @@ RCSID("$Id");
 int
 main(int argc, char *argv[])
 {
-  const CHAR *fn = argv[0];
-
   LALStatus status = blank_status;
   ConfigVariables config = empty_ConfigVariables;
   UserVariables_t uvar = empty_UserVariables;
@@ -132,8 +130,8 @@ main(int argc, char *argv[])
 
   /* basic setup and initializations */
   if ( XLALInitCode( &config, &uvar, argv[0] ) != XLAL_SUCCESS ) {
-    XLALPrintError("%s: XInitCode() failed with xlalErrno = %d.\n\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError("%s: XInitCode() failed with xlalErrno = %d.\n\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* ----- allocate memory for AM-coeffs ----- */
@@ -147,7 +145,7 @@ main(int argc, char *argv[])
 
   if ( !AMold.a || !AMold.b || !AMnew1.a || !AMnew1.b || !AMnew2.a || !AMnew2.a ) {
     XLALPrintError ("Failed to XLALCreateREAL4Vector ( 1 )!\n");
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
 
   /* ----- get detector-state series ----- */
@@ -157,16 +155,16 @@ main(int argc, char *argv[])
   /* ----- compute associated SSB timing info ----- */
   SSBtimes *tSSB = NULL;
   if ( (tSSB = XLALCalloc (1, sizeof(*tSSB))) == NULL ){
-    XLALPrintError("%s: XCalloc (1, %s) failed.\n", fn, sizeof(*tSSB) );
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
+    XLALPrintError("%s: XCalloc (1, %s) failed.\n", __func__, sizeof(*tSSB) );
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
   if ( (tSSB->DeltaT = XLALCreateREAL8Vector (1)) == NULL ) {
-    XLALPrintError ("%s: XLALCreateREAL8Vector (1) failed.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALCreateREAL8Vector (1) failed.\n", __func__ );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   if ( (tSSB->Tdot = XLALCreateREAL8Vector (1)) == NULL ) {
-    XLALPrintError ("%s: XLALCreateREAL8Vector (1) failed.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALCreateREAL8Vector (1) failed.\n", __func__ );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   LAL_CALL ( LALGetSSBtimes (&status, tSSB, detStates, config.skypos, config.timeGPS, SSBPREC_RELATIVISTIC ), &status);
@@ -205,22 +203,22 @@ main(int argc, char *argv[])
   /* ===== 2) compute AM-coeffs the 'new way' using LALNewGetAMCoeffs() */
   LALGetAMCoeffs ( &status, &AMnew1, detStates, config.skypos );
   if ( status.statusCode ) {
-    XLALPrintError ("%s: call to LALGetAMCoeffs() failed, status = %d\n\n", fn, status.statusCode );
-    XLAL_ERROR ( fn, status.statusCode & XLAL_EFUNC );
+    XLALPrintError ("%s: call to LALGetAMCoeffs() failed, status = %d\n\n", __func__, status.statusCode );
+    XLAL_ERROR (  status.statusCode & XLAL_EFUNC );
   }
 
   /* ===== 3) compute AM-coeffs the 'newer way' using LALNewGetAMCoeffs() [used in CFSv2] */
   LALNewGetAMCoeffs ( &status, &AMnew2, detStates, config.skypos );
   if ( status.statusCode ) {
-    XLALPrintError ("%s: call to LALNewGetAMCoeffs() failed, status = %d\n\n", fn, status.statusCode );
-    XLAL_ERROR ( fn, status.statusCode & XLAL_EFUNC );
+    XLALPrintError ("%s: call to LALNewGetAMCoeffs() failed, status = %d\n\n", __func__, status.statusCode );
+    XLAL_ERROR (  status.statusCode & XLAL_EFUNC );
   }
 
   /* ===== 4) use standalone version of the above [used in FstatMetric_v2] */
   REAL8 a0,b0;
   if ( XLALComputeAntennaPatternCoeffs ( &a0, &b0, &config.skypos, &config.timeGPS, config.det, config.edat ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALComputeAntennaPatternCoeffs() failed.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALComputeAntennaPatternCoeffs() failed.\n", __func__ );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
 
@@ -254,7 +252,7 @@ main(int argc, char *argv[])
 
   /* ----- done: free all memory */
   if ( XLALDestroyConfig( &config ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLADestroyConfig() failed, xlalErrno = %d.\n\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLADestroyConfig() failed, xlalErrno = %d.\n\n", __func__, xlalErrno );
     exit(1);
   }
   XLALDestroyDetectorStateSeries ( detStates );
@@ -318,39 +316,37 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
 int
 XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name)
 {
-  const CHAR *fn = __func__;
-
   if ( !cfg || !uvar || !app_name ) {
-    XLALPrintError ("%s: illegal NULL pointer input.\n\n", fn );
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    XLALPrintError ("%s: illegal NULL pointer input.\n\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* init ephemeris data */
   if ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear)) == NULL ) {
-    XLALPrintError ("%s: InitEphemeris() Failed to initialize ephemeris data!\n\n", fn);
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: InitEphemeris() Failed to initialize ephemeris data!\n\n", __func__);
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* convert input REAL8 time into LIGOTimeGPS */
   if ( XLALGPSSetREAL8( &cfg->timeGPS, uvar->timeGPS ) == NULL ) {
-    XLALPrintError ("%s: failed to convert input GPS %g into LIGOTimeGPS\n", fn, uvar->timeGPS );
-    XLAL_ERROR (fn, XLAL_EFUNC );
+    XLALPrintError ("%s: failed to convert input GPS %g into LIGOTimeGPS\n", __func__, uvar->timeGPS );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* set up dummy timestamps vector containing just this one timestamps
    * (used to interface with LALComputeAM(), LALGetAMCoeffs() and LALNewGetAMCoeffs())
    */
   if ( (cfg->timestamps = XLALCreateTimestampVector( 1 )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateTimestampVector( 1 ) failed.", fn );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALCreateTimestampVector( 1 ) failed.", __func__ );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   cfg->timestamps->data[0] = cfg->timeGPS;
 
   /* convert detector name into site-info */
   if ( ( cfg->det = XLALGetSiteInfo ( uvar->detector )) == NULL )
     {
-      XLALPrintError ("%s: XLALGetSiteInfo('%s') failed.\n", fn, uvar->detector );
-      XLAL_ERROR (fn, XLAL_EFUNC );
+      XLALPrintError ("%s: XLALGetSiteInfo('%s') failed.\n", __func__, uvar->detector );
+      XLAL_ERROR ( XLAL_EFUNC );
     }
 
   /* NOTE: contrary to ComputeAM() and LALGetAMCoffs(), the new function LALNewGetAMCoeffs()
@@ -377,19 +373,17 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 int
 XLALDestroyConfig ( ConfigVariables *cfg )
 {
-  const CHAR *fn = "XLALDestroyConfig()";
-
   LALStatus status = blank_status;
 
   if ( !cfg ) {
-    XLALPrintError ("%s: invalid NULL input!\n\n", fn );
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input!\n\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   LALDestroyUserVars ( &status );
   if ( status.statusCode ) {
-    XLALPrintError ("%s: call to LALDestroyUserVars() failed, status = %d\n\n", fn, status.statusCode );
-    XLAL_ERROR ( fn, status.statusCode & XLAL_EFUNC );
+    XLALPrintError ("%s: call to LALDestroyUserVars() failed, status = %d\n\n", __func__, status.statusCode );
+    XLAL_ERROR (  status.statusCode & XLAL_EFUNC );
   }
 
   XLALDestroyTimestampVector ( cfg->timestamps );
@@ -413,14 +407,13 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
 	       )
 {
 #define FNAME_LENGTH 1024
-  const CHAR *fn = "InitEphemeris()";
   LALStatus status = blank_status;
   EphemerisData *edat;
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
 
   if ( !ephemYear ) {
-    XLALPrintError ("\n%s: NULL pointer passed as ephemeris year range!\n", fn);
+    XLALPrintError ("\n%s: NULL pointer passed as ephemeris year range!\n", __func__);
     return NULL;
   }
 
@@ -440,7 +433,7 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
 
   /* allocate memory for ephemeris-data to be returned */
   if ( (edat = XLALCalloc ( 1, sizeof(*edat))) == NULL ) {
-    XLALPrintError("%s: XLALCalloc(1, %d) failed.\n", fn, sizeof(*edat) );
+    XLALPrintError("%s: XLALCalloc(1, %d) failed.\n", __func__, sizeof(*edat) );
     return NULL;
   }
 
@@ -453,7 +446,7 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
   LALInitBarycenter(&status, edat);
 
   if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: LALInitBarycenter() failed! code = %d, msg = '%s'", fn, status.statusCode, status.statusDescription );
+    XLALPrintError ( "%s: LALInitBarycenter() failed! code = %d, msg = '%s'", __func__, status.statusCode, status.statusDescription );
     return NULL;
   }
 

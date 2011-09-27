@@ -202,7 +202,6 @@ UserInput_t empty_UserInput;
  */
 int main(int argc,char *argv[])
 {
-  const char *fn = "main()";
   LALStatus status = blank_status;
   UserInput_t uvar = empty_UserInput;
   ConfigVariables GV = empty_ConfigVariables;		/**< various derived configuration settings */
@@ -267,7 +266,7 @@ int main(int argc,char *argv[])
 
   /* ----- data = noise + signal: x_mu = n_mu + s_mu  ----- */
   if ( ( x_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%d,4) failed.\n", fn, uvar.numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%d,4) failed.\n", __func__, uvar.numDraws);
     return XLAL_ENOMEM;
   }
 
@@ -281,18 +280,18 @@ int main(int argc,char *argv[])
   else
     {
       if ( ( n_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL ) {
-	LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%d,4) failed.\n", fn, uvar.numDraws);
+	LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%d,4) failed.\n", __func__, uvar.numDraws);
 	return XLAL_ENOMEM;
       }
     } /* if SignalOnly */
 
   if ( (gslstat = gsl_matrix_memcpy (x_mu_i, n_mu_i))  ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_memcpy() failed): %s\n", fn, gsl_strerror (gslstat) );
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_memcpy() failed): %s\n", __func__, gsl_strerror (gslstat) );
     return XLAL_EDOM;
   }
 
   if ( (gslstat = gsl_matrix_add (x_mu_i, s_mu_i)) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_add() failed): %s\n", fn, gsl_strerror (gslstat) );
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_add() failed): %s\n", __func__, gsl_strerror (gslstat) );
     return XLAL_EDOM;
   }
 
@@ -472,14 +471,12 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 int
 InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 {
-  const char *fn = "InitCode()";
-
   /* ----- parse user-input on signal amplitude-paramters + ranges ----- */
 
   if ( LALUserVarWasSet ( &uvar->SNR ) && ( LALUserVarWasSet ( &uvar->h0Nat ) || LALUserVarWasSet (&uvar->h0NatBand) ) )
     {
       LogPrintf (LOG_CRITICAL, "Don't specify either of {--h0,--h0Band} and --SNR\n");
-      XLAL_ERROR( fn, SYNTHBSTAT_EINPUT );
+      XLAL_ERROR( SYNTHBSTAT_EINPUT );
     }
 
   cfg->AmpRange.h0Nat = uvar->h0Nat;
@@ -520,8 +517,8 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ----- set up M_mu_nu matrix ----- */
   if ( ( cfg->M_mu_nu = gsl_matrix_calloc ( 4, 4 )) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "%s: gsl_matrix_calloc(4,4) failed.\n", fn);
-    XLAL_ERROR( fn, SYNTHBSTAT_EMEM );
+    LogPrintf (LOG_CRITICAL, "%s: gsl_matrix_calloc(4,4) failed.\n", __func__);
+    XLAL_ERROR( SYNTHBSTAT_EMEM );
   }
 
   gsl_matrix_set (cfg->M_mu_nu, 0, 0,   uvar->A );
@@ -570,7 +567,6 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 			UINT4 numDraws			/**< number of random draws to synthesize */
 			)
 {
-  const char *fn = "XLALsynthesizeSignals()";
   UINT4 row;
 
   REAL8 h0NatMin, h0NatMax;
@@ -587,34 +583,34 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 
   /* ----- check input arguments ----- */
   if ( !M_mu_nu || M_mu_nu->size1 != M_mu_nu->size2 || M_mu_nu->size1 != 4 ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, M_mu_nu must be a 4x4 matrix.", fn );
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, M_mu_nu must be a 4x4 matrix.", __func__ );
     return XLAL_EINVAL;
   }
   if ( ! (numDraws > 0) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", fn );
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", __func__ );
     return XLAL_EINVAL;
   }
   if ( ((*A_Mu_i) != NULL) || ((*s_mu_i) != NULL ) || ( (*Amp_i) != NULL ) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Invalid input: output-vectors A_Mu_i, s_mu_i and Amp_i must be set to NULL.", fn );
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input: output-vectors A_Mu_i, s_mu_i and Amp_i must be set to NULL.", __func__ );
     return XLAL_EINVAL;
   }
 
   /* ----- allocate return signal amplitude vectors ---------- */
   if ( ( (*A_Mu_i) = gsl_matrix_calloc ( numDraws, 4 )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc (%d, 4) failed.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc (%d, 4) failed.\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
   if ( ( (*s_mu_i) = gsl_matrix_calloc ( numDraws, 4 )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc (%d, 4) failed.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc (%d, 4) failed.\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
   if ( ( (*Amp_i) = gsl_matrix_calloc ( numDraws, 4 )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc (%d, 4) failed.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc (%d, 4) failed.\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
 
   if ( ( (*rho2_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
 
@@ -667,13 +663,13 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
        * is CblasLower then the lower triangle and diagonal of A are used.
        */
       if ( (gslstat = gsl_blas_dsymv (CblasUpper, 1.0, M_mu_nu, &A_Mu.vector, 0.0, &s_mu.vector)) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: gsl_blas_dsymv(M_mu_nu * A^mu failed): %s\n", fn, gsl_strerror (gslstat) );
+	LogPrintf ( LOG_CRITICAL, "%s: gsl_blas_dsymv(M_mu_nu * A^mu failed): %s\n", __func__, gsl_strerror (gslstat) );
 	return XLAL_EDOM;
       }
 
       /* compute optimal SNR for this signal: rho2 = A^mu M_{mu,nu} A^nu = A^mu s_mu */
       if ( (gslstat = gsl_blas_ddot (&A_Mu.vector, &s_mu.vector, &res_rho2)) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: lnL = gsl_blas_ddot(A^mu * s_mu) failed: %s\n", fn, gsl_strerror (gslstat) );
+	LogPrintf ( LOG_CRITICAL, "%s: lnL = gsl_blas_ddot(A^mu * s_mu) failed: %s\n", __func__, gsl_strerror (gslstat) );
 	return XLAL_EDOM;
       }
 
@@ -720,7 +716,6 @@ XLALsynthesizeNoise ( gsl_matrix **n_mu_i,		/**< [OUT] list of numDraws 4D line-
 		      UINT4 numDraws			/**< number of random draws to synthesize */
 		      )
 {
-  const CHAR *fn = "XLALsynthesizeNoise()";
   gsl_matrix *tmp, *M_chol;
   UINT4 row, col;
   gsl_matrix *normal;
@@ -728,39 +723,39 @@ XLALsynthesizeNoise ( gsl_matrix **n_mu_i,		/**< [OUT] list of numDraws 4D line-
 
   /* ----- check input arguments ----- */
   if ( !M_mu_nu || M_mu_nu->size1 != M_mu_nu->size2 || M_mu_nu->size1 != 4 ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, M_mu_nu must be a 4x4 matrix.", fn );
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, M_mu_nu must be a 4x4 matrix.", __func__ );
     return XLAL_EINVAL;
   }
   if ( ! (numDraws > 0) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", fn );
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", __func__ );
     return XLAL_EINVAL;
   }
   if ( ((*n_mu_i) != NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Invalid input: output vector n_mu_i must be set to NULL.", fn );
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input: output vector n_mu_i must be set to NULL.", __func__ );
     return XLAL_EINVAL;
   }
 
   /* ----- allocate return vector of nnoise components n_mu ----- */
   if ( ( (*n_mu_i) = gsl_matrix_calloc ( numDraws, 4 )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc (%d, 4) failed.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc (%d, 4) failed.\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
 
   /* ----- Cholesky decompose M_mu_nu = L . L^T ----- */
   if ( (M_chol = gsl_matrix_calloc ( 4, 4 ) ) == NULL) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(4,4) failed\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(4,4) failed\n", __func__);
     return XLAL_ENOMEM;
   }
   if ( (tmp = gsl_matrix_calloc ( 4, 4 ) ) == NULL) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(4,4) failed\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(4,4) failed\n", __func__);
     return XLAL_ENOMEM;
   }
   if ( (gslstat = gsl_matrix_memcpy ( tmp, M_mu_nu )) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_memcpy() failed: %s\n", fn, gsl_strerror (gslstat) );
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_memcpy() failed: %s\n", __func__, gsl_strerror (gslstat) );
     return XLAL_EDOM;
   }
   if ( (gslstat = gsl_linalg_cholesky_decomp ( tmp ) ) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_cholesky_decomp(M_mu_nu) failed: %s\n", fn, gsl_strerror (gslstat) );
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_cholesky_decomp(M_mu_nu) failed: %s\n", __func__, gsl_strerror (gslstat) );
     return XLAL_EDOM;
   }
   /* copy lower triangular matrix, which is L */
@@ -770,7 +765,7 @@ XLALsynthesizeNoise ( gsl_matrix **n_mu_i,		/**< [OUT] list of numDraws 4D line-
 
   /* ----- generate 'numDraws' normal-distributed random numbers ----- */
   if ( (normal = gsl_matrix_calloc ( numDraws, 4 ) ) == NULL) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%d,4) failed\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%d,4) failed\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
 
@@ -795,7 +790,7 @@ XLALsynthesizeNoise ( gsl_matrix **n_mu_i,		/**< [OUT] list of numDraws 4D line-
        * for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
        */
       if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, 1.0, M_chol, &(normi.vector), 0.0, &(ni.vector))) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: gsl_blas_dgemv(M_chol * ni) failed: %s\n", fn, gsl_strerror (gslstat) );
+	LogPrintf ( LOG_CRITICAL, "%s: gsl_blas_dgemv(M_chol * ni) failed: %s\n", __func__, gsl_strerror (gslstat) );
 	return 1;
       }
     } /* for row < numDraws */
@@ -820,7 +815,6 @@ XLALcomputeLogLikelihood ( gsl_vector **lnL_i,		/**< [OUT] log-likelihood vector
 			   const gsl_matrix *x_mu_i	/**< numDraws x 4D data-vectors x_mu */
 			   )
 {
-  const char *fn = "XLALcomputeLogLikelihood()";
   int gslstat;
   UINT4 row, numDraws;
   gsl_matrix *tmp;
@@ -828,42 +822,42 @@ XLALcomputeLogLikelihood ( gsl_vector **lnL_i,		/**< [OUT] log-likelihood vector
 
   /* ----- check input arguments ----- */
   if ( (*lnL_i) != NULL )  {
-    LogPrintf ( LOG_CRITICAL, "%s: output vector 'lnL_i' must be set to NULL.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: output vector 'lnL_i' must be set to NULL.\n", __func__);
     return XLAL_EINVAL;
   }
   if ( !A_Mu_i || !s_mu_i || !x_mu_i ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input vectors A_Mu_i, s_mu_i must not be NULL.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: input vectors A_Mu_i, s_mu_i must not be NULL.\n", __func__);
     return XLAL_EINVAL;
   }
 
   numDraws = A_Mu_i->size1;
   if ( ! (numDraws > 0) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", fn );
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", __func__ );
     return XLAL_EINVAL;
   }
 
   if ( (A_Mu_i->size1 != numDraws) || (A_Mu_i->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input Amplitude-vector A^mu must be numDraws(=%d) x 4D.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: input Amplitude-vector A^mu must be numDraws(=%d) x 4D.\n", __func__, numDraws);
     return XLAL_EINVAL;
   }
   if ( (s_mu_i->size1 != numDraws) || (s_mu_i->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input Amplitude-vector s_mu must be numDraws(=%d) x 4D.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: input Amplitude-vector s_mu must be numDraws(=%d) x 4D.\n", __func__, numDraws);
     return XLAL_EINVAL;
   }
   if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws(=%d) x 4.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws(=%d) x 4.\n", __func__, numDraws);
     return XLAL_EINVAL;
   }
 
   /* ----- allocate return statistics vector ---------- */
   if ( ( (*lnL_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
 
   /* ----- allocate temporary internal storage ---------- */
   if ( (tmp = gsl_matrix_alloc ( numDraws, 4 ) ) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_alloc(%d,4) failed.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_alloc(%d,4) failed.\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
 
@@ -883,7 +877,7 @@ XLALcomputeLogLikelihood ( gsl_vector **lnL_i,		/**< [OUT] log-likelihood vector
        * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
        */
       if ( (gslstat = gsl_blas_ddot (&A_Mu.vector, &d_mu.vector, &res_lnL)) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: lnL = gsl_blas_ddot(A^mu * (x_mu - 0.5 s_mu) failed: %s\n", fn, gsl_strerror (gslstat) );
+	LogPrintf ( LOG_CRITICAL, "%s: lnL = gsl_blas_ddot(A^mu * (x_mu - 0.5 s_mu) failed: %s\n", __func__, gsl_strerror (gslstat) );
 	return 1;
       }
 
@@ -908,8 +902,6 @@ XLALcomputeFstatistic ( gsl_vector **Fstat_i,		/**< [OUT] F-statistic vector */
 			const gsl_matrix *x_mu_i	/**< data-vectors x_mu: numDraws x 4 */
 			)
 {
-  const char *fn = "XLALcomputeFstatistic()";
-
   int sig;
   gsl_permutation *perm = gsl_permutation_calloc ( 4 );
   gsl_matrix *Mmunu_LU = gsl_matrix_calloc ( 4, 4 );
@@ -918,36 +910,36 @@ XLALcomputeFstatistic ( gsl_vector **Fstat_i,		/**< [OUT] F-statistic vector */
 
   /* ----- check input arguments ----- */
   if ( !M_mu_nu || !x_mu_i ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input M_mu_nu and x_mu_i must not be NULL.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: input M_mu_nu and x_mu_i must not be NULL.\n", __func__);
     return XLAL_EINVAL;
   }
   if ( ((*Fstat_i) != NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Fstat_i' must be set to NULL.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Fstat_i' must be set to NULL.\n", __func__);
     return XLAL_EINVAL;
   }
 
   numDraws = x_mu_i->size1;
   if ( ! (numDraws > 0) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", fn );
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", __func__ );
     return XLAL_EINVAL;
   }
 
   if ( (M_mu_nu->size1 != 4) || (M_mu_nu->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", __func__);
     return XLAL_EINVAL;
   }
   if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws(=%d) x 4.\n", numDraws, fn);
+    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws(=%d) x 4.\n", numDraws, __func__);
     return XLAL_EINVAL;
   }
 
   /* ----- allocate return statistics vector ---------- */
   if ( ( (*Fstat_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
   if ( ( (*A_Mu_MLE_i) = gsl_matrix_calloc ( numDraws, 4 )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc (%d)x4 failed.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc (%d)x4 failed.\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
 
@@ -966,7 +958,7 @@ XLALcomputeFstatistic ( gsl_vector **Fstat_i,		/**< [OUT] F-statistic vector */
    * (Golub & Van Loan, Matrix Computations, Algorithm 3.4.1).
    */
   if( (gslstat = gsl_linalg_LU_decomp (Mmunu_LU, perm, &sig)) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_decomp (Mmunu) failed: %s\n", fn, gsl_strerror (gslstat) );
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_decomp (Mmunu) failed: %s\n", __func__, gsl_strerror (gslstat) );
     return 1;
   }
 
@@ -989,7 +981,7 @@ XLALcomputeFstatistic ( gsl_vector **Fstat_i,		/**< [OUT] F-statistic vector */
        * gsl_linalg_LU_decomp or gsl_linalg_complex_LU_decomp.
        */
       if ( (gslstat = gsl_linalg_LU_solve (Mmunu_LU, perm, &(xi.vector), &(x_Mu.vector))) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_solve (x^Mu = M^{mu,nu} x_nu) failed: %s\n", fn, gsl_strerror (gslstat) );
+	LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_solve (x^Mu = M^{mu,nu} x_nu) failed: %s\n", __func__, gsl_strerror (gslstat) );
 	return 1;
       }
 
@@ -1011,7 +1003,7 @@ XLALcomputeFstatistic ( gsl_vector **Fstat_i,		/**< [OUT] F-statistic vector */
        * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
        */
       if ( (gslstat = gsl_blas_ddot (&(xi.vector), &(x_Mu.vector), &x2)) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: row = %d: int gsl_blas_ddot (x_mu x^mu) failed: %s\n", fn, row, gsl_strerror (gslstat) );
+	LogPrintf ( LOG_CRITICAL, "%s: row = %d: int gsl_blas_ddot (x_mu x^mu) failed: %s\n", __func__, row, gsl_strerror (gslstat) );
 	return 1;
       }
 
@@ -1041,8 +1033,6 @@ XLALcomputeBstatisticMC ( gsl_vector **Bstat_i,		/**< [OUT] vector of numDraws B
 			  UINT4 numMCpoints		/**< number of points to use in Monte-Carlo integration */
 			  )
 {
-  const char *fn = "XLALcomputeBstatisticMC()";
-
   gsl_monte_vegas_state * MCS_vegas = gsl_monte_vegas_alloc ( 2 );
   gsl_monte_function F;
   integrationParams_t pars;
@@ -1051,32 +1041,32 @@ XLALcomputeBstatisticMC ( gsl_vector **Bstat_i,		/**< [OUT] vector of numDraws B
 
   /* ----- check input arguments ----- */
   if ( !M_mu_nu || !x_mu_i || !rng) {
-    LogPrintf ( LOG_CRITICAL, "%s: input M_mu_nu, x_mu_i and rng must not be NULL.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: input M_mu_nu, x_mu_i and rng must not be NULL.\n", __func__);
     return XLAL_EINVAL;
   }
   if ( ((*Bstat_i) != NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bstat_i' must be set to NULL.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bstat_i' must be set to NULL.\n", __func__);
     return XLAL_EINVAL;
   }
 
   numDraws = x_mu_i->size1;
   if ( ! (numDraws > 0) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", fn );
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", __func__ );
     return XLAL_EINVAL;
   }
 
   if ( (M_mu_nu->size1 != 4) || (M_mu_nu->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", __func__);
     return XLAL_EINVAL;
   }
   if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws(=%d) x 4.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws(=%d) x 4.\n", __func__, numDraws);
     return XLAL_EINVAL;
   }
 
   /* ----- allocate return signal amplitude vectors ---------- */
   if ( ( (*Bstat_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
 
@@ -1120,7 +1110,7 @@ XLALcomputeBstatisticMC ( gsl_vector **Bstat_i,		/**< [OUT] vector of numDraws B
        * s->chisq, and must be consistent with 1 for the weighted average to be reliable.
        */
       if ( (gslstat = gsl_monte_vegas_integrate ( &F, AmpLower, AmpUpper, 2, numMCpoints, rng, MCS_vegas, &Bb, &abserr)) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: row = %d: gsl_monte_vegas_integrate() failed: %s\n", fn, row, gsl_strerror (gslstat) );
+	LogPrintf ( LOG_CRITICAL, "%s: row = %d: gsl_monte_vegas_integrate() failed: %s\n", __func__, row, gsl_strerror (gslstat) );
 	return 1;
       }
       gsl_vector_set ( *Bstat_i, row, 2.0 * log(Bb) );
@@ -1144,8 +1134,6 @@ XLALcomputeBstatisticGauss ( gsl_vector **Bstat_i,	/**< [OUT] vector of numDraws
 			     const gsl_matrix *x_mu_i	/**< data-vectors x_mu: numDraws x 4 */
 			     )
 {
-  const char *fn = "XLALcomputeBstatisticGauss()";
-
   UINT4 row, numDraws;
   int gslstat;
   double epsabs = 0;
@@ -1158,33 +1146,33 @@ XLALcomputeBstatisticGauss ( gsl_vector **Bstat_i,	/**< [OUT] vector of numDraws
 
   /* ----- check input arguments ----- */
   if ( !M_mu_nu || !x_mu_i ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input M_mu_nu, x_mu_i must not be NULL.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: input M_mu_nu, x_mu_i must not be NULL.\n", __func__);
     return XLAL_EINVAL;
   }
 
   if ( ((*Bstat_i) != NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bstat_i' must be set to NULL.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bstat_i' must be set to NULL.\n", __func__);
     return XLAL_EINVAL;
   }
 
   numDraws = x_mu_i->size1;
   if ( ! (numDraws > 0) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", fn );
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", __func__ );
     return XLAL_EINVAL;
   }
 
   if ( (M_mu_nu->size1 != 4) || (M_mu_nu->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", __func__);
     return XLAL_EINVAL;
   }
   if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws x 4.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws x 4.\n", __func__);
     return XLAL_EINVAL;
   }
 
   /* ----- allocate return signal amplitude vectors ---------- */
   if ( ( (*Bstat_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
 
@@ -1221,7 +1209,7 @@ XLALcomputeBstatisticGauss ( gsl_vector **Bstat_i,	/**< [OUT] vector of numDraws
        */
       if ( (gslstat = gsl_integration_qags ( &F, CosiLower, CosiUpper, epsabs, epsrel, 1000, w, &Bb, &abserr)) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: row = %d: gsl_integration_qag() failed: res=%f, abserr=%f, intervals=%d, %s\n",
-		    fn, row, Bb, abserr, w->size, gsl_strerror (gslstat) );
+		    __func__, row, Bb, abserr, w->size, gsl_strerror (gslstat) );
 	return 1;
       }
 
@@ -1245,7 +1233,6 @@ XLALcomputeBstatisticGauss ( gsl_vector **Bstat_i,	/**< [OUT] vector of numDraws
 double
 BstatIntegrandOuter ( double cosi, void *p )
 {
-  const char *fn = "BstatIntegrandOuter()";
   integrationParams_t *par = (integrationParams_t *) p;
   gsl_function F;
   double epsabs = 0;
@@ -1279,7 +1266,7 @@ BstatIntegrandOuter ( double cosi, void *p )
    */
   if ( (gslstat = gsl_integration_qags ( &F, PsiLower, PsiUpper, epsabs, epsrel, 1000, w, &ret, &abserr)) ) {
     LogPrintf ( LOG_CRITICAL, "%s: gsl_integration_qag() failed: res=%f, abserr=%f, intervals=%d, %s\n",
-		fn, ret, abserr, w->size, gsl_strerror (gslstat) );
+		__func__, ret, abserr, w->size, gsl_strerror (gslstat) );
     return 1;
   }
 
@@ -1298,7 +1285,6 @@ BstatIntegrandOuter ( double cosi, void *p )
 double
 BstatIntegrandInner ( double psi, void *p )
 {
-  const char __attribute__((unused)) *fn = "BstatIntegrandInner()";
   integrationParams_t *par = (integrationParams_t *) p;
   double Amp[2], ret;
 
@@ -1383,8 +1369,6 @@ XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vecto
 			   const gsl_matrix *x_mu_i	/**< data-vectors x_mu: numDraws x 4 */
 			   )
 {
-  const char *fn = "XLALcomputeBhatStatistic()";
-
   gsl_matrix *ADA_D;
   gsl_matrix *CC;
   gsl_matrix *MpCC_LU;
@@ -1399,33 +1383,33 @@ XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vecto
 
   /* ----- check input arguments ----- */
   if ( !M_mu_nu || !x_mu_i ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input M_mu_nu, x_mu_i must not be NULL.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: input M_mu_nu, x_mu_i must not be NULL.\n", __func__);
     return XLAL_EINVAL;
   }
 
   numDraws = x_mu_i->size1;
   if ( ! (numDraws > 0) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", fn );
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", __func__ );
     return XLAL_EINVAL;
   }
 
   if ( (M_mu_nu->size1 != 4) || (M_mu_nu->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", __func__);
     return XLAL_EINVAL;
   }
   if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws x 4.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws x 4.\n", __func__);
     return XLAL_EINVAL;
   }
 
   if ( ((*Bhat_i) != NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bhat_i' must be set to NULL.\n", fn);
+    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bhat_i' must be set to NULL.\n", __func__);
     return XLAL_EINVAL;
   }
 
   /* ----- allocate return statistics vectors ---------- */
   if ( ( (*Bhat_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", __func__, numDraws);
     return XLAL_ENOMEM;
   }
 
@@ -1493,7 +1477,7 @@ XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vecto
 
 	      /* prepare matrix inversion: first get LU-decomposition [see XLALcomputeFstatistic()] */
 	      if( (gslstat = gsl_linalg_LU_decomp (MpCC_LU, perm, &sig)) ) {
-		LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_decomp (MpCC_LU) failed: %s\n", fn, gsl_strerror (gslstat) );
+		LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_decomp (MpCC_LU) failed: %s\n", __func__, gsl_strerror (gslstat) );
 		return 1;
 	      }
 
@@ -1504,7 +1488,7 @@ XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vecto
 	       * gsl_linalg_LU_decomp or gsl_linalg_complex_LU_decomp.
 	       */
 	      if ( (gslstat = gsl_linalg_LU_solve (MpCC_LU, perm, &(xi.vector), Ahat)) ) {
-		LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_solve (M+CC). Ahat = x failed: %s\n", fn, gsl_strerror (gslstat) );
+		LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_solve (M+CC). Ahat = x failed: %s\n", __func__, gsl_strerror (gslstat) );
 		return 1;
 	      }
 	      /*
@@ -1522,7 +1506,7 @@ XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vecto
        * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
        */
       if ( (gslstat = gsl_blas_ddot ( Ahat, &(xi.vector), &tmp )) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: row = %d: int gsl_blas_ddot (Ahat . x) failed: %s\n", fn, row, gsl_strerror (gslstat) );
+	LogPrintf ( LOG_CRITICAL, "%s: row = %d: int gsl_blas_ddot (Ahat . x) failed: %s\n", __func__, row, gsl_strerror (gslstat) );
 	return 1;
       }
 

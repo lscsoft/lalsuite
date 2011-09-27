@@ -178,8 +178,6 @@ UserInput_t empty_UserInput;
  */
 int main(int argc,char *argv[])
 {
-  const char *fn = __func__;
-
   UserInput_t uvar = empty_UserInput;
   ConfigVariables cfg = empty_ConfigVariables;		/**< various derived configuration settings */
 
@@ -192,19 +190,19 @@ int main(int argc,char *argv[])
 
   /* ----- register and read all user-variables ----- */
   if ( XLALGetDebugLevel ( argc, argv, 'v') != XLAL_SUCCESS ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALGetDebugLevel() failed with errno=%d\n", fn, xlalErrno );
+    LogPrintf ( LOG_CRITICAL, "%s: XLALGetDebugLevel() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
   LogSetLevel(lalDebugLevel);
 
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", fn, xlalErrno );
+    LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
 
   /* do ALL cmdline and cfgfile handling */
   if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALUserVarReadAllInput() failed with errno=%d\n", fn, xlalErrno );
+    LogPrintf ( LOG_CRITICAL, "%s: XLALUserVarReadAllInput() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
 
@@ -215,7 +213,7 @@ int main(int argc,char *argv[])
     /* output verbose VCS version string if requested */
     CHAR *vcs;
     if ( (vcs = XLALGetVersionString (lalDebugLevel)) == NULL ) {
-      LogPrintf ( LOG_CRITICAL, "%s:XLALGetVersionString(%d) failed with errno=%d.\n", fn, lalDebugLevel, xlalErrno );
+      LogPrintf ( LOG_CRITICAL, "%s:XLALGetVersionString(%d) failed with errno=%d.\n", __func__, lalDebugLevel, xlalErrno );
       return 1;
     }
     printf ( "%s\n", vcs );
@@ -225,8 +223,8 @@ int main(int argc,char *argv[])
 
   /* ---------- Initialize code-setup ---------- */
   if ( XLALInitCode( &cfg, &uvar ) != XLAL_SUCCESS ) {
-    LogPrintf (LOG_CRITICAL, "%s: XLALInitCode() failed with error = %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    LogPrintf (LOG_CRITICAL, "%s: XLALInitCode() failed with error = %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* ----- prepare stats output ----- */
@@ -236,11 +234,11 @@ int main(int argc,char *argv[])
       if ( (fpTransientStats = fopen (uvar.outputStats, "wb")) == NULL)
 	{
 	  LogPrintf (LOG_CRITICAL, "Error opening file '%s' for writing..\n\n", uvar.outputStats );
-	  XLAL_ERROR ( fn, XLAL_EIO );
+	  XLAL_ERROR ( XLAL_EIO );
 	}
       fprintf (fpTransientStats, "%s", cfg.logString );		/* write search log comment */
       if ( write_transientCandidate_to_fp ( fpTransientStats, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
-        XLAL_ERROR ( fn, XLAL_EFUNC );
+        XLAL_ERROR ( XLAL_EFUNC );
       }
     } /* if outputStats */
 
@@ -251,11 +249,11 @@ int main(int argc,char *argv[])
       if ( (fpInjParams = fopen (uvar.outputInjParams, "wb")) == NULL)
 	{
 	  LogPrintf (LOG_CRITICAL, "Error opening file '%s' for writing..\n\n", uvar.outputInjParams );
-	  XLAL_ERROR ( fn, XLAL_EIO );
+	  XLAL_ERROR ( XLAL_EIO );
 	}
       fprintf (fpInjParams, "%s", cfg.logString );		/* write search log comment */
       if ( write_InjParams_to_fp ( fpInjParams, NULL, 0 ) != XLAL_SUCCESS ) { /* write header-line comment */
-        XLAL_ERROR ( fn, XLAL_EFUNC );
+        XLAL_ERROR ( XLAL_EFUNC );
       }
     } /* if outputInjParams */
 
@@ -271,13 +269,13 @@ int main(int argc,char *argv[])
       MultiFstatAtomVector *multiAtoms;
       multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
       if ( multiAtoms ==NULL ) {
-        LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", fn, xlalErrno );
-        XLAL_ERROR ( fn, XLAL_EFUNC );
+        LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", __func__, xlalErrno );
+        XLAL_ERROR ( XLAL_EFUNC );
       }
 
       /* ----- if requested, output signal injection parameters into file */
       if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParamsDrawn, uvar.dataStartGPS ) != XLAL_SUCCESS ) ) {
-        XLAL_ERROR ( fn, XLAL_EFUNC );
+        XLAL_ERROR ( XLAL_EFUNC );
       } /* if fpInjParams & failure*/
 
 
@@ -292,8 +290,8 @@ int main(int argc,char *argv[])
         {
           /* compute Fstat map F_mn over {t0, tau} */
           if ( (cand.FstatMap = XLALComputeTransientFstatMap ( multiAtoms, cand.windowRange, uvar.useFReg)) == NULL ) {
-            XLALPrintError ("%s: XLALComputeTransientFstatMap() failed with xlalErrno = %d.\n", fn, xlalErrno );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: XLALComputeTransientFstatMap() failed with xlalErrno = %d.\n", __func__, xlalErrno );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
         } /* if we'll need the Fstat-map F_mn */
 
@@ -303,8 +301,8 @@ int main(int argc,char *argv[])
           cand.logBstat = XLALComputeTransientBstat ( cand.windowRange, cand.FstatMap );
           UINT4 err = xlalErrno;
           if ( err ) {
-            XLALPrintError ("%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, err );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", __func__, err );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 
           if ( uvar.SignalOnly )
@@ -321,23 +319,23 @@ int main(int argc,char *argv[])
       if ( fpTransientStats || uvar.outputPosteriors )
         {
           if ( (pdf_t0 = XLALComputeTransientPosterior_t0 ( cand.windowRange, cand.FstatMap )) == NULL ) {
-            XLALPrintError ("%s: failed to compute t0-posterior\n", fn );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to compute t0-posterior\n", __func__ );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
           if ( (pdf_tau = XLALComputeTransientPosterior_tau ( cand.windowRange, cand.FstatMap )) == NULL ) {
-            XLALPrintError ("%s: failed to compute tau-posterior\n", fn );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to compute tau-posterior\n", __func__ );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
           /* get maximum-posterior estimate (MP) from the modes of these pdfs */
           cand.t0_MP = XLALFindModeOfPDF1D ( pdf_t0 );
           if ( xlalErrno ) {
-            XLALPrintError ("%s: mode-estimation failed for pdf_t0. xlalErrno = %d\n", fn, xlalErrno );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: mode-estimation failed for pdf_t0. xlalErrno = %d\n", __func__, xlalErrno );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
           cand.tau_MP =  XLALFindModeOfPDF1D ( pdf_tau );
           if ( xlalErrno ) {
-            XLALPrintError ("%s: mode-estimation failed for pdf_tau. xlalErrno = %d\n", fn, xlalErrno );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: mode-estimation failed for pdf_tau. xlalErrno = %d\n", __func__, xlalErrno );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 
         } // if posteriors required
@@ -352,8 +350,8 @@ int main(int argc,char *argv[])
 
           BOOLEAN useFReg = false;
           if ( (FtotalMap = XLALComputeTransientFstatMap ( multiAtoms, winRangeAll, useFReg)) == NULL ) {
-            XLALPrintError ("%s: XLALComputeTransientFstatMap() failed with xlalErrno = %d.\n", fn, xlalErrno );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: XLALComputeTransientFstatMap() failed with xlalErrno = %d.\n", __func__, xlalErrno );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 
           /* we only use twoFtotal = 2 * maxF from this single-Fstat calculation */
@@ -377,20 +375,20 @@ int main(int argc,char *argv[])
           char *fnameAtoms;
           UINT4 len = strlen ( uvar.outputAtoms ) + 20;
           if ( (fnameAtoms = XLALCalloc ( 1, len )) == NULL ) {
-            XLALPrintError ("%s: failed to XLALCalloc ( 1, %d )\n", fn, len );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to XLALCalloc ( 1, %d )\n", __func__, len );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
           sprintf ( fnameAtoms, "%s_%04d_of_%04d.dat", uvar.outputAtoms, i + 1, uvar.numDraws );
 
           if ( ( fpAtoms = fopen ( fnameAtoms, "wb" )) == NULL ) {
-            XLALPrintError ("%s: failed to open atoms-output file '%s' for writing.\n", fn, fnameAtoms );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to open atoms-output file '%s' for writing.\n", __func__, fnameAtoms );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 	  fprintf ( fpAtoms, "%s", cfg.logString );	/* output header info */
 
 	  if ( write_MultiFstatAtoms_to_fp ( fpAtoms, multiAtoms ) != XLAL_SUCCESS ) {
-            XLALPrintError ("%s: failed to write atoms to output file '%s'. xlalErrno = %d\n", fn, fnameAtoms, xlalErrno );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to write atoms to output file '%s'. xlalErrno = %d\n", __func__, fnameAtoms, xlalErrno );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 
           XLALFree ( fnameAtoms );
@@ -404,21 +402,21 @@ int main(int argc,char *argv[])
           char *fnameFstatMap;
           UINT4 len = strlen ( uvar.outputFstatMap ) + 20;
           if ( (fnameFstatMap = XLALCalloc ( 1, len )) == NULL ) {
-            XLALPrintError ("%s: failed to XLALCalloc ( 1, %d )\n", fn, len );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to XLALCalloc ( 1, %d )\n", __func__, len );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
           sprintf ( fnameFstatMap, "%s_%04d_of_%04d.dat", uvar.outputFstatMap, i + 1, uvar.numDraws );
 
           if ( ( fpFstatMap = fopen ( fnameFstatMap, "wb" )) == NULL ) {
-            XLALPrintError ("%s: failed to open Fstat-map output file '%s' for writing.\n", fn, fnameFstatMap );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to open Fstat-map output file '%s' for writing.\n", __func__, fnameFstatMap );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 	  fprintf ( fpFstatMap, "%s", cfg.logString );	/* output header info */
 
           fprintf (fpFstatMap, "\nFstat_mn = \\\n" );
           if ( XLALfprintfGSLmatrix ( fpFstatMap, "%.9g", cand.FstatMap->F_mn ) != XLAL_SUCCESS ) {
-            XLALPrintError ("%s: XLALfprintfGSLmatrix() failed.\n", fn );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: XLALfprintfGSLmatrix() failed.\n", __func__ );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 
           XLALFree ( fnameFstatMap );
@@ -433,25 +431,25 @@ int main(int argc,char *argv[])
           char *fnamePosteriors;
           UINT4 len = strlen ( uvar.outputPosteriors ) + 20;
           if ( (fnamePosteriors = XLALCalloc ( 1, len )) == NULL ) {
-            XLALPrintError ("%s: failed to XLALCalloc ( 1, %d )\n", fn, len );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to XLALCalloc ( 1, %d )\n", __func__, len );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
           sprintf ( fnamePosteriors, "%s_%04d_of_%04d.dat", uvar.outputPosteriors, i + 1, uvar.numDraws );
 
           if ( ( fpPosteriors = fopen ( fnamePosteriors, "wb" )) == NULL ) {
-            XLALPrintError ("%s: failed to open posteriors-output file '%s' for writing.\n", fn, fnamePosteriors );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to open posteriors-output file '%s' for writing.\n", __func__, fnamePosteriors );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 	  fprintf ( fpPosteriors, "%s", cfg.logString );	/* output header info */
 
           /* write them to file, using pdf-method */
 	  if ( XLALOutputPDF1D_to_fp ( fpPosteriors, pdf_t0, "pdf_t0" ) != XLAL_SUCCESS ) {
-            XLALPrintError ("%s: failed to output t0-posterior to file '%s'.\n", fn, fnamePosteriors );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to output t0-posterior to file '%s'.\n", __func__, fnamePosteriors );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 	  if ( XLALOutputPDF1D_to_fp ( fpPosteriors, pdf_tau, "pdf_tau" ) != XLAL_SUCCESS ) {
-            XLALPrintError ("%s: failed to output tau-posterior to file '%s'.\n", fn, fnamePosteriors );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to output tau-posterior to file '%s'.\n", __func__, fnamePosteriors );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 
           /* free mem, close file */
@@ -463,8 +461,8 @@ int main(int argc,char *argv[])
 
       /* ----- if requested, output transient-cand statistics */
       if ( fpTransientStats && write_transientCandidate_to_fp ( fpTransientStats, &cand ) != XLAL_SUCCESS ) {
-        XLALPrintError ( "%s: write_transientCandidate_to_fp() failed.\n", fn );
-        XLAL_ERROR ( fn, XLAL_EFUNC );
+        XLALPrintError ( "%s: write_transientCandidate_to_fp() failed.\n", __func__ );
+        XLAL_ERROR ( XLAL_EFUNC );
       }
 
       /* ----- free Memory */
@@ -508,8 +506,6 @@ int main(int argc,char *argv[])
 int
 XLALInitUserVars ( UserInput_t *uvar )
 {
-  const char *fn = __func__;
-
   /* set a few defaults */
   uvar->help = 0;
   uvar->outputStats = NULL;
@@ -629,8 +625,8 @@ XLALInitUserVars ( UserInput_t *uvar )
 
 
   if ( xlalErrno ) {
-    XLALPrintError ("%s: something failed in initializing user variabels .. errno = %d.\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: something failed in initializing user variabels .. errno = %d.\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
@@ -642,24 +638,22 @@ XLALInitUserVars ( UserInput_t *uvar )
 int
 XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 {
-  const char *fn = __func__;
-
   /* generate log-string for file-output, containing cmdline-options + code VCS version info */
   char *vcs;
   if ( (vcs = XLALGetVersionString(0)) == NULL ) {	  /* short VCS version string */
-    XLALPrintError ( "%s: XLALGetVersionString(0) failed with errno=%d.\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: XLALGetVersionString(0) failed with errno=%d.\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   char *cmdline;
   if ( (cmdline = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) == NULL ) {
-    XLALPrintError ( "%s: XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE ) failed with errno=%d.\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE ) failed with errno=%d.\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   const char fmt[] = "%%%% cmdline: %s\n%%%%\n%s%%%%\n";
   UINT4 len = strlen(vcs) + strlen(cmdline) + strlen(fmt) + 1;
   if ( ( cfg->logString = XLALMalloc ( len  )) == NULL ) {
     XLALPrintError ("%s: XLALMalloc ( %d ) failed.\n", len );
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
   sprintf ( cfg->logString, fmt, cmdline, vcs );
   XLALFree ( cmdline );
@@ -676,7 +670,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ----- amplitude-params: create prior pdfs reflecting the user-input */
   if ( XLALInitAmplitudePrior ( &cfg->AmpPrior, uvar ) != XLAL_SUCCESS )
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLAL_ERROR ( XLAL_EFUNC );
 
   /* ----- initialize random-number generator ----- */
   /* read out environment variables GSL_RNG_xxx
@@ -695,20 +689,20 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   /* init ephemeris-data */
   EphemerisData *edat;
   if ( (edat = XLALInitEphemeris ( uvar->ephemYear )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Failed to init ephemeris data for year-span '%s'\n", fn, uvar->ephemYear );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    LogPrintf ( LOG_CRITICAL, "%s: Failed to init ephemeris data for year-span '%s'\n", __func__, uvar->ephemYear );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* init detector info */
   LALDetector *site;
   if ( (site = XLALGetSiteInfo ( uvar->IFO )) == NULL ) {
-    XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", fn, uvar->IFO );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, uvar->IFO );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   MultiLALDetector *multiDet;
   if ( (multiDet = XLALCreateMultiLALDetector ( 1 )) == NULL ) {   /* currently only implemented for single-IFO case */
-    XLALPrintError ("%s: XLALCreateMultiLALDetector(1) failed with errno=%d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALCreateMultiLALDetector(1) failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   multiDet->data[0] = (*site); 	/* copy! */
   XLALFree ( site );
@@ -717,14 +711,14 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   UINT4 numSteps = (UINT4) ceil ( uvar->dataDuration / uvar->TAtom );
   MultiLIGOTimeGPSVector * multiTS;
   if ( (multiTS = XLALCalloc ( 1, sizeof(*multiTS))) == NULL ) {
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
   multiTS->length = 1;
   if ( (multiTS->data = XLALCalloc (1, sizeof(*multiTS->data))) == NULL ) {
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
   if ( (multiTS->data[0] = XLALCreateTimestampVector (numSteps)) == NULL ) {
-    XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", fn, numSteps );
+    XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", __func__, numSteps );
   }
   multiTS->data[0]->deltaT = uvar->TAtom;
   UINT4 i;
@@ -737,8 +731,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* get detector states */
   if ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( multiTS, multiDet, edat, 0.5 * uvar->TAtom )) == NULL ) {
-    XLALPrintError ( "%s: XLALGetMultiDetectorStates() failed.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: XLALGetMultiDetectorStates() failed.\n", __func__ );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* get rid of all temporary memory allocated for this step */
@@ -760,20 +754,20 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     InjectRange.type = TRANSIENT_EXPONENTIAL;		/* exponential window starting at t0, charact. time tau */
   else
     {
-      XLALPrintError ("%s: Illegal transient inject window '%s' specified: valid are 'none', 'rect' or 'exp'\n", fn, uvar->injectWindow_type);
-      XLAL_ERROR ( fn, XLAL_EINVAL );
+      XLALPrintError ("%s: Illegal transient inject window '%s' specified: valid are 'none', 'rect' or 'exp'\n", __func__, uvar->injectWindow_type);
+      XLAL_ERROR ( XLAL_EINVAL );
     }
   /* make sure user doesn't set window=none but sets window-parameters => indicates she didn't mean 'none' */
   if ( InjectRange.type == TRANSIENT_NONE )
     if ( XLALUserVarWasSet ( &uvar->injectWindow_t0Days ) || XLALUserVarWasSet ( &uvar->injectWindow_t0DaysBand ) ||
          XLALUserVarWasSet ( &uvar->injectWindow_tauDays ) || XLALUserVarWasSet ( &uvar->injectWindow_tauDaysBand ) ) {
-      XLALPrintError ("%s: ERROR: injectWindow_type == NONE, but window-parameters were set! Use a different window-type!\n", fn );
-      XLAL_ERROR ( fn, XLAL_EINVAL );
+      XLALPrintError ("%s: ERROR: injectWindow_type == NONE, but window-parameters were set! Use a different window-type!\n", __func__ );
+      XLAL_ERROR ( XLAL_EINVAL );
     }
 
   if ( uvar->injectWindow_t0DaysBand < 0 || uvar->injectWindow_tauDaysBand < 0 ) {
-    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", fn, uvar->injectWindow_t0DaysBand, uvar->injectWindow_tauDaysBand );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", __func__, uvar->injectWindow_t0DaysBand, uvar->injectWindow_tauDaysBand );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* apply correct defaults if unset: t0=dataStart, t0Band=dataDuration-3*tauMax */
@@ -800,8 +794,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     SearchRange.type = TRANSIENT_EXPONENTIAL;		/* exponential window starting at t0, charact. time tau */
   else
     {
-      XLALPrintError ("%s: Illegal transient search window '%s' specified: valid are 'none', 'rect' or 'exp'\n", fn, uvar->searchWindow_type);
-      XLAL_ERROR ( fn, XLAL_EINVAL );
+      XLALPrintError ("%s: Illegal transient search window '%s' specified: valid are 'none', 'rect' or 'exp'\n", __func__, uvar->searchWindow_type);
+      XLAL_ERROR ( XLAL_EINVAL );
     }
 
   /* apply correct defaults if unset: use inect window */
@@ -838,13 +832,13 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   if ( SearchRange.type == TRANSIENT_NONE )
     if ( XLALUserVarWasSet ( &uvar->searchWindow_t0Days ) || XLALUserVarWasSet ( &uvar->searchWindow_t0DaysBand ) ||
          XLALUserVarWasSet ( &uvar->searchWindow_tauDays ) || XLALUserVarWasSet ( &uvar->searchWindow_tauDaysBand ) ) {
-      XLALPrintError ("%s: ERROR: searchWindow_type == NONE, but window-parameters were set! Use a different window-type!\n", fn );
-      XLAL_ERROR ( fn, XLAL_EINVAL );
+      XLALPrintError ("%s: ERROR: searchWindow_type == NONE, but window-parameters were set! Use a different window-type!\n", __func__ );
+      XLAL_ERROR ( XLAL_EINVAL );
     }
 
   if (   uvar->searchWindow_t0DaysBand < 0 || uvar->searchWindow_tauDaysBand < 0 ) {
-    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", fn, uvar->searchWindow_t0DaysBand, uvar->searchWindow_tauDaysBand );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", __func__, uvar->searchWindow_t0DaysBand, uvar->searchWindow_tauDaysBand );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   cfg->transientSearchRange = SearchRange;
@@ -859,16 +853,14 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 EphemerisData *
 XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
 {
-  const char *fn = __func__;
-
 #define FNAME_LENGTH 1024
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
 
   /* check input consistency */
   if ( !ephemYear ) {
-    XLALPrintError ("%s: invalid NULL input for 'ephemYear'\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input for 'ephemYear'\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
@@ -879,8 +871,8 @@ XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
 
   EphemerisData *edat;
   if ( (edat = XLALInitBarycenter ( EphemEarth, EphemSun)) == NULL ) {
-    XLALPrintError ("%s: XLALInitBarycenter() failed.\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALInitBarycenter() failed.\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   /* return ephemeris */
@@ -894,18 +886,16 @@ XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
 int
 XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
 {
-  const char *fn = __func__;
-
   const UINT4 AmpPriorBins = 100;	// defines the binnning accuracy of our prior-pdfs
 
   /* consistency check */
   if ( !AmpPrior || !uvar ) {
-    XLALPrintError ( "%s: invalid NULL input 'AmpPrior' or 'uvar'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ( "%s: invalid NULL input 'AmpPrior' or 'uvar'\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( AmpPrior->pdf_h0Nat || AmpPrior->pdf_cosi || AmpPrior->pdf_psi || AmpPrior->pdf_phi0 ) {
-    XLALPrintError ("%s: AmplitudePriors must be set to NULL before calling this function!\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: AmplitudePriors must be set to NULL before calling this function!\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* first check that user only provided *one* method of determining the amplitude-prior range */
@@ -915,8 +905,8 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
   if ( uvar->fixedh0NatMax >= 0 ) numSets ++ ;
   if ( uvar->fixedRhohMax >= 0 ) numSets ++;
   if ( numSets != 1 ) {
-    XLALPrintError ("%s: Specify (>=0) exactly *ONE* amplitude-prior range of {fixedh0Nat, fixedSNR, fixedh0NatMax, fixedRhohMax}\n", fn);
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: Specify (>=0) exactly *ONE* amplitude-prior range of {fixedh0Nat, fixedSNR, fixedh0NatMax, fixedRhohMax}\n", __func__);
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* ===== first pass: deal with all user-supplied fixed values ==> singular priors! ===== */
@@ -924,11 +914,11 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
   /* ----- h0 ----- */
   if ( uvar->fixedh0Nat >= 0 )	/* fix h0Nat */
     if ( (AmpPrior->pdf_h0Nat = XLALCreateSingularPDF1D ( uvar->fixedh0Nat )) == NULL )
-      XLAL_ERROR ( fn, XLAL_EFUNC );
+      XLAL_ERROR ( XLAL_EFUNC );
 
   if ( uvar->fixedSNR >= 0 )   /* dummy-pdf, as signal will be computed with h0Nat=1 then rescaled to fixedSNR */
     if ( (AmpPrior->pdf_h0Nat = XLALCreateSingularPDF1D ( 1.0 )) == NULL )
-      XLAL_ERROR ( fn, XLAL_EFUNC );
+      XLAL_ERROR ( XLAL_EFUNC );
 
   AmpPrior->fixedSNR   = uvar->fixedSNR;
   AmpPrior->fixRhohMax = (uvar->fixedRhohMax >= 0);
@@ -936,15 +926,15 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
   /* ----- cosi ----- */
   if ( XLALUserVarWasSet ( &uvar->cosi ) )
     if ( (AmpPrior->pdf_cosi = XLALCreateSingularPDF1D (  uvar->cosi )) == NULL )
-      XLAL_ERROR ( fn, XLAL_EFUNC );
+      XLAL_ERROR ( XLAL_EFUNC );
   /* ----- psi ----- */
   if ( XLALUserVarWasSet ( &uvar->psi ) )
     if ( (AmpPrior->pdf_psi = XLALCreateSingularPDF1D (  uvar->psi )) == NULL )
-      XLAL_ERROR ( fn, XLAL_EFUNC );
+      XLAL_ERROR ( XLAL_EFUNC );
   /* ----- phi0 ----- */
   if ( XLALUserVarWasSet ( &uvar->phi0 ) )
     if ( (AmpPrior->pdf_phi0 = XLALCreateSingularPDF1D (  uvar->phi0 )) == NULL )
-      XLAL_ERROR ( fn, XLAL_EFUNC );
+      XLAL_ERROR ( XLAL_EFUNC );
 
 
   /* ===== second pass: deal with non-singular prior ranges, taking into account the type of priors to use */
@@ -961,19 +951,19 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
       /* ----- h0 ----- */ // uniform in [0, h0NatMax] : not that 'physical', but simple
       if ( AmpPrior->pdf_h0Nat == NULL )
         if ( (AmpPrior->pdf_h0Nat = XLALCreateUniformPDF1D ( 0, h0NatMax )) == NULL )
-          XLAL_ERROR ( fn, XLAL_EFUNC );
+          XLAL_ERROR ( XLAL_EFUNC );
       /* ----- cosi ----- */
       if ( AmpPrior->pdf_cosi == NULL )
         if ( (AmpPrior->pdf_cosi = XLALCreateUniformPDF1D ( -1.0, 1.0 )) == NULL )
-          XLAL_ERROR ( fn, XLAL_EFUNC );
+          XLAL_ERROR ( XLAL_EFUNC );
       /* ----- psi ----- */
       if ( AmpPrior->pdf_psi == NULL )
         if ( (AmpPrior->pdf_psi = XLALCreateUniformPDF1D ( -LAL_PI_4, LAL_PI_4 )) == NULL )
-          XLAL_ERROR ( fn, XLAL_EFUNC );
+          XLAL_ERROR ( XLAL_EFUNC );
       /* ----- phi0 ----- */
       if ( AmpPrior->pdf_phi0 == NULL )
         if ( (AmpPrior->pdf_phi0 = XLALCreateUniformPDF1D ( 0, LAL_TWOPI )) == NULL )
-          XLAL_ERROR ( fn, XLAL_EFUNC );
+          XLAL_ERROR ( XLAL_EFUNC );
 
       break;
 
@@ -984,7 +974,7 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
           UINT4 i;
           pdf1D_t *pdf;
           if ( ( pdf = XLALCreateDiscretePDF1D ( 0, h0NatMax, AmpPriorBins )) == NULL )
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLAL_ERROR ( XLAL_EFUNC );
 
           for ( i=0; i < pdf->probDens->length; i ++ )
             {
@@ -999,7 +989,7 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
           UINT4 i;
           pdf1D_t *pdf;
           if ( ( pdf = XLALCreateDiscretePDF1D ( -1.0, 1.0, AmpPriorBins )) == NULL )
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLAL_ERROR ( XLAL_EFUNC );
 
           for ( i=0; i < pdf->probDens->length; i ++ )
             {
@@ -1012,17 +1002,17 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
       /* ----- psi ----- */
       if ( AmpPrior->pdf_psi == NULL )
         if ( (AmpPrior->pdf_psi = XLALCreateUniformPDF1D ( -LAL_PI_4, LAL_PI_4 )) == NULL )
-          XLAL_ERROR ( fn, XLAL_EFUNC );
+          XLAL_ERROR ( XLAL_EFUNC );
       /* ----- phi0 ----- */
       if ( AmpPrior->pdf_phi0 == NULL )
         if ( (AmpPrior->pdf_phi0 = XLALCreateUniformPDF1D ( 0, LAL_TWOPI )) == NULL )
-          XLAL_ERROR ( fn, XLAL_EFUNC );
+          XLAL_ERROR ( XLAL_EFUNC );
 
       break;
 
     default:
-      XLALPrintError ("%s: something went wrong ... unknown priorType = %d\n", fn, uvar->AmpPriorType );
-      XLAL_ERROR ( fn, XLAL_EINVAL );
+      XLALPrintError ("%s: something went wrong ... unknown priorType = %d\n", __func__, uvar->AmpPriorType );
+      XLAL_ERROR ( XLAL_EINVAL );
       break;
 
     } // switch( uvar->AmpPriorType )

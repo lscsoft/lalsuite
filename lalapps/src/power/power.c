@@ -941,7 +941,6 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 
 static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *chname, LIGOTimeGPS start, LIGOTimeGPS end, size_t lengthlimit)
 {
-	static const char func[] = "get_time_series";
 	double duration = XLALGPSDiff(&end, &start);
 	FrCache *cache;
 	FrStream *stream;
@@ -949,7 +948,7 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	REAL8TimeSeries *series;
 
 	if(duration < 0)
-		XLAL_ERROR_NULL(func, XLAL_EINVAL);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
 
 	/*
 	 * Open frame stream.
@@ -957,11 +956,11 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 
 	cache = XLALFrImportCache(cachefilename);
 	if(!cache)
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	stream = XLALFrCacheOpen(cache);
 	XLALFrDestroyCache(cache);
 	if(!stream)
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/*
 	 * Turn on checking for missing data.
@@ -976,7 +975,7 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	series_type = XLALFrGetTimeSeriesType(chname, stream);
 	if((int) series_type < 0) {
 		XLALFrClose(stream);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	switch(series_type) {
@@ -989,13 +988,13 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 		unsigned i;
 		if(!tmp) {
 			XLALFrClose(stream);
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		series = XLALCreateREAL8TimeSeries(tmp->name, &tmp->epoch, tmp->f0, tmp->deltaT, &tmp->sampleUnits, tmp->data->length);
 		if(!series) {
 			XLALDestroyREAL4TimeSeries(tmp);
 			XLALFrClose(stream);
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		for(i = 0; i < tmp->data->length; i++)
 			series->data->data[i] = tmp->data->data[i];
@@ -1007,14 +1006,14 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 		series = XLALFrReadREAL8TimeSeries(stream, chname, &start, duration, lengthlimit);
 		if(!series) {
 			XLALFrClose(stream);
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		break;
 
 	default:
 		XLALPrintError("get_time_series(): error: invalid channel data type %d\n", series_type);
 		XLALFrClose(stream);
-		XLAL_ERROR_NULL(func, XLAL_EINVAL);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 
 	/*
@@ -1024,7 +1023,7 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	if(stream->state & LAL_FR_GAP) {
 		XLALPrintError("get_time_series(): error: gap in data detected between GPS times %d.%09u s and %d.%09u s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
 		XLALDestroyREAL8TimeSeries(series);
-		XLAL_ERROR_NULL(func, XLAL_EDATA);
+		XLAL_ERROR_NULL(XLAL_EDATA);
 	}
 
 	/*
@@ -1055,10 +1054,9 @@ static int XLALEPConditionData(
 	INT4 corruption
 )
 {
-	static const char func[] = "XLALEPConditionData";
 	const REAL8 epsilon = 1.0e-3;
 
-	XLALPrintInfo("%s(): conditioning %u samples (%.9f s) at GPS time %d.%09u s ...\n", func, series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
+	XLALPrintInfo("%s(): conditioning %u samples (%.9f s) at GPS time %d.%09u s ...\n", __func__, series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
 
 	/*
 	 * High-pass filter the time series.
@@ -1072,7 +1070,7 @@ static int XLALEPConditionData(
 		highpassParam.a2 = 0.9;
 		highpassParam.a1 = -1.0;
 		if(XLALButterworthREAL8TimeSeries(series, &highpassParam))
-			XLAL_ERROR(func, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	/*
@@ -1081,20 +1079,20 @@ static int XLALEPConditionData(
 
 	if(fabs(resampledeltaT - series->deltaT) / series->deltaT >= epsilon)
 		if(XLALResampleREAL8TimeSeries(series, resampledeltaT))
-			XLAL_ERROR(func, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 
 	/*
 	 * Chop off the ends of the time series.
 	 */
 
 	if(!XLALShrinkREAL8TimeSeries(series, corruption, series->data->length - 2 * corruption))
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/*
 	 * Done.
 	 */
 
-	XLALPrintInfo("%s(): %u samples (%.9f s) at GPS time %d.%09u s remain after conditioning\n", func, series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
+	XLALPrintInfo("%s(): %u samples (%.9f s) at GPS time %d.%09u s remain after conditioning\n", __func__, series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
 
 	return(0);
 }
@@ -1135,7 +1133,6 @@ static void gaussian_noise(REAL8TimeSeries *series, REAL8 rms, gsl_rng *rng)
 
 static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const char *channel_name, REAL8 deltaT, LIGOTimeGPS epoch, size_t length)
 {
-	static const char func[] = "generate_response";
 	/* length of time interval spanned by calibration */
 	const double duration = length * deltaT;
 	/* frequency resolution of response function */
@@ -1157,7 +1154,7 @@ static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const c
 
 		response = XLALCreateCOMPLEX8FrequencySeries(channel_name, &epoch, 0.0, deltaf, &strainPerCount, n);
 		if(!response)
-			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+			XLAL_ERROR_NULL(XLAL_ENOMEM);
 
 		XLALPrintInfo("generate_response(): generating unit response function\n");
 
@@ -1177,7 +1174,7 @@ static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const c
 					return response;
 			}
 		}
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 }
 
@@ -1227,7 +1224,6 @@ static void destroy_injection_document(struct injection_document *doc)
 
 static struct injection_document *load_injection_document(const char *filename, LIGOTimeGPS start, LIGOTimeGPS end)
 {
-	static const char func[] = "load_injection_document";
 	struct injection_document *new;
 	/* hard-coded speed hack.  only injections whose "times" are within
 	 * this many seconds of the requested interval will be loaded */
@@ -1235,7 +1231,7 @@ static struct injection_document *load_injection_document(const char *filename, 
 
 	new = malloc(sizeof(*new));
 	if(!new)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+		XLAL_ERROR_NULL(XLAL_ENOMEM);
 
 	/*
 	 * adjust start and end times
@@ -1287,7 +1283,7 @@ static struct injection_document *load_injection_document(const char *filename, 
 		(new->has_sim_inspiral_table && !new->sim_inspiral_table_head)
 	) {
 		destroy_injection_document(new);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/*
@@ -1305,17 +1301,15 @@ static struct injection_document *load_injection_document(const char *filename, 
 
 static int add_xml_injections(REAL8TimeSeries *h, const struct injection_document *injection_document, COMPLEX8FrequencySeries *response)
 {
-	static const char func[] = "add_xml_injections";
-
 	/*
 	 * sim_burst
 	 */
 
 	if(injection_document->sim_burst_table_head) {
-		XLALPrintInfo("%s(): computing sim_burst injections ...\n", func);
+		XLALPrintInfo("%s(): computing sim_burst injections ...\n", __func__);
 		if(XLALBurstInjectSignals(h, injection_document->sim_burst_table_head, injection_document->time_slide_table_head, NULL))
-			XLAL_ERROR(func, XLAL_EFUNC);
-		XLALPrintInfo("%s(): done\n", func);
+			XLAL_ERROR(XLAL_EFUNC);
+		XLALPrintInfo("%s(): done\n", __func__);
 	}
 
 	/*
@@ -1329,13 +1323,13 @@ static int add_xml_injections(REAL8TimeSeries *h, const struct injection_documen
 
 		mdc = XLALCreateREAL4TimeSeries(h->name, &h->epoch, h->f0, h->deltaT, &h->sampleUnits, h->data->length);
 		if(!mdc)
-			XLAL_ERROR(func, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		memset(mdc->data->data, 0, mdc->data->length * sizeof(*mdc->data->data));
 		memset(&stat, 0, sizeof(stat));
 
-		XLALPrintInfo("%s(): computing sim_inspiral injections ...\n", func);
+		XLALPrintInfo("%s(): computing sim_inspiral injections ...\n", __func__);
 		LAL_CALL(LALFindChirpInjectSignals(&stat, mdc, injection_document->sim_inspiral_table_head, response), &stat);
-		XLALPrintInfo("%s(): done\n", func);
+		XLALPrintInfo("%s(): done\n", __func__);
 
 		for(i = 0; i < h->data->length; i++)
 			h->data->data[i] += mdc->data->data[i];
@@ -1361,19 +1355,18 @@ static int add_xml_injections(REAL8TimeSeries *h, const struct injection_documen
 
 static REAL8TimeSeries *add_mdc_injections(const char *mdccachefile, const char *channel_name, REAL8TimeSeries *series)
 {
-	static const char func[] = "add_mdc_injections";
 	LIGOTimeGPS stop;
 	REAL8TimeSeries *mdc;
 	unsigned i;
 
-	XLALPrintInfo("%s(): mixing data from MDC frames\n", func);
+	XLALPrintInfo("%s(): mixing data from MDC frames\n", __func__);
 
 	stop = series->epoch;
 	XLALGPSAdd(&stop, series->data->length * series->deltaT);
 
 	mdc = get_time_series(mdccachefile, channel_name, series->epoch, stop, 0);
 	if(!mdc)
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	/* FIXME:  ARGH!!!  frame files cannot be trusted to provide units
 	 * for their contents!  */
 	series->sampleUnits = lalStrainUnit;
@@ -1404,11 +1397,10 @@ static REAL8TimeSeries *add_mdc_injections(const char *mdccachefile, const char 
 
 static SnglBurst **analyze_series(SnglBurst **addpoint, REAL8TimeSeries *series, int psd_length, int psd_shift, struct options *options)
 {
-	static const char func[] = "analyze_series";
 	unsigned i;
 
 	if((unsigned) psd_length > series->data->length) {
-		XLALPrintWarning("%s(): warning: PSD length (%.9lf s) exceeds available data (%.9lf s), skipping series\n", func, psd_length * series->deltaT, series->data->length * series->deltaT);
+		XLALPrintWarning("%s(): warning: PSD length (%.9lf s) exceeds available data (%.9lf s), skipping series\n", __func__, psd_length * series->deltaT, series->data->length * series->deltaT);
 		return addpoint;
 	}
 
@@ -1418,12 +1410,12 @@ static SnglBurst **analyze_series(SnglBurst **addpoint, REAL8TimeSeries *series,
 		REAL8TimeSeries *interval = XLALCutREAL8TimeSeries(series, start, psd_length);
 
 		if(!interval)
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 
-		XLALPrintInfo("%s(): ", func);
+		XLALPrintInfo("%s(): ", __func__);
 		XLALPrintProgressBar(i / (double) (series->data->length + psd_shift - psd_length));
 		XLALPrintInfo(" complete\n");
-		XLALPrintInfo("%s(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", func, start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
+		XLALPrintInfo("%s(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", __func__, start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
 		XLAL_TRY(*addpoint = XLALEPSearch(
 			options->diagnostics,
@@ -1443,7 +1435,7 @@ static SnglBurst **analyze_series(SnglBurst **addpoint, REAL8TimeSeries *series,
 
 		if(errnum) {
 			XLALSetErrno(errnum);
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 
 	}
