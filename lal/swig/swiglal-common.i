@@ -696,6 +696,10 @@ swiglal_conv_ctype(COMPLEX16);
     $result = swiglal_call_from(TYPE)(PTR_TO_DATA_I(DATA, I, NI), $1_descriptor);
   }
 
+  // Clear other typemaps
+  %typemap(argout, noblock=1) TYPE* NAME##_getel "";
+  %typemap(freearg, noblock=1) TYPE* NAME##_getel "";
+
   // Disable keyword arguments for this method
   %feature("kwargs", 0) NAME##_getel(const size_t i);
 
@@ -711,7 +715,7 @@ swiglal_conv_ctype(COMPLEX16);
   %feature("action", "") NAME##_getel(const size_t i);
   %feature("except", "") NAME##_getel(const size_t i);
 
-  // Clear the 'out' typemap, so it can't be accidentally re-used
+  // Clear the typemaps, so they can't be accidentally re-used
   %clear TYPE* NAME##_getel;
 
 %enddef // swiglal_vector_get_elem
@@ -747,6 +751,10 @@ swiglal_conv_ctype(COMPLEX16);
     }
   }
 
+  // Clear other typemaps
+  %typemap(argout, noblock=1) TYPE* NAME##_setel_elem "";
+  %typemap(freearg, noblock=1) TYPE* NAME##_setel_elem "";
+
   // Disable keyword arguments for this method
   %feature("kwargs", 0) NAME##_setel(const size_t i, TYPE* NAME##_setel_elem);
 
@@ -762,7 +770,7 @@ swiglal_conv_ctype(COMPLEX16);
   %feature("action", "") NAME##_getel(const size_t i, TYPE* NAME##_setel_elem);
   %feature("except", "") NAME##_getel(const size_t i, TYPE* NAME##_setel_elem);
 
-  // Clear the 'in' typemap, so it can't be accidentally re-used
+  // Clear the typemaps, so they can't be accidentally re-used
   %clear TYPE* NAME##_setel_elem;
 
 %enddef // swiglal_vector_set_elem
@@ -791,6 +799,10 @@ swiglal_conv_ctype(COMPLEX16);
     $result = swiglal_call_from(TYPE)(PTR_TO_DATA_IJ(DATA, I, NI, J, NJ), $1_descriptor);
   }
 
+  // Clear other typemaps
+  %typemap(argout, noblock=1) TYPE* NAME##_getel "";
+  %typemap(freearg, noblock=1) TYPE* NAME##_getel "";
+
   // Disable keyword arguments for this method
   %feature("kwargs", 0) NAME##_getel(const size_t i, const size_t j);
 
@@ -806,7 +818,7 @@ swiglal_conv_ctype(COMPLEX16);
   %feature("action", "") NAME##_getel(const size_t i, const size_t j);
   %feature("except", "") NAME##_getel(const size_t i, const size_t j);
 
-  // Clear the 'out' typemap, so it can't be accidentally re-used
+  // Clear the typemaps, so they can't be accidentally re-used
   %clear TYPE* NAME##_getel;
 
 %enddef // swiglal_matrix_get_elem
@@ -838,6 +850,10 @@ swiglal_conv_ctype(COMPLEX16);
     }
   }
 
+  // Clear other typemaps
+  %typemap(argout, noblock=1) TYPE* NAME##_setel_elem "";
+  %typemap(freearg, noblock=1) TYPE* NAME##_setel_elem "";
+
   // Disable keyword arguments for this method
   %feature("kwargs", 0) NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
 
@@ -853,7 +869,7 @@ swiglal_conv_ctype(COMPLEX16);
   %feature("action", "") NAME##_getel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
   %feature("except", "") NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
 
-  // Clear the 'in' typemap, so it can't be accidentally re-used
+  // Clear the typemaps, so they can't be accidentally re-used
   %clear TYPE* NAME##_setel_elem;
 
 %enddef // swiglal_matrix_set_elem
@@ -1048,6 +1064,10 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
     }
   }
 
+  // Clear other typemaps
+  %typemap(argout, noblock=1) TYPE* DATA "";
+  %typemap(freearg, noblock=1) TYPE* DATA "";
+
 %enddef // swiglal_dynamic_vector_begin
 
 // This macros clears the features and typemaps applied by
@@ -1101,6 +1121,10 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
     }
   }
 
+  // Clear other typemaps
+  %typemap(argout, noblock=1) TYPE* DATA "";
+  %typemap(freearg, noblock=1) TYPE* DATA "";
+
 %enddef // swiglal_dynamic_matrix_begin
 
 // This macros clears the features and typemaps applied by
@@ -1134,6 +1158,31 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
 %enddef
 
 /////////////// Additional typemaps / interface code ///////////////
+
+// Typemaps for double pointers:
+// * By default, treat arguments of type TYPE** as input/output arguments,
+//   which take a swig-wrapped TYPE* as input, pass a pointer to it to the
+//   C function, and return the result as output. If the input supplied TYPE*
+//   is NULL, SWIG assumes a new object is created and owns it.
+// * Also supply an OUTPUT typemap, which assumes that the argument is
+//   output-only, and therefore does not require a scripting-language input
+//   argument. This typemap can be %apply-d on a case-by-case basis.
+%typemap(in, noblock=1) SWIGTYPE ** (void  *argp = NULL, int res = 0, int owner = 0) {
+  res = SWIG_ConvertPtr($input, &argp, $*descriptor, $disown | %convertptr_flags);
+  if (!SWIG_IsOK(res)) { 
+    %argument_fail(res, "$type", $symname, $argnum); 
+  }
+  $1 = %reinterpret_cast(&argp, $ltype);
+  owner = (argp == NULL);
+}
+%typemap(in, noblock=1, numinputs=0) SWIGTYPE ** OUTPUT (void *argp = NULL, int owner = 0) {
+  $1 = %reinterpret_cast(&argp, $ltype);
+  owner = (argp == NULL);
+}
+%typemap(argout, noblock=1) SWIGTYPE ** {
+  %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, owner$argnum | %newpointer_flags));
+}
+%typemap(freearg) SWIGTYPE ** "";
 
 // Make the wrapping of printf-style LAL functions a little
 // safer, as suggested in the SWIG 1.3 documentation (section 13.5).
