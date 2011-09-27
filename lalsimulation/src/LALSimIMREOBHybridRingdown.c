@@ -760,14 +760,12 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       REAL8Vector		*ddinspwave;
       REAL8VectorSequence	*inspwaves1;
       REAL8VectorSequence	*inspwaves2;
-      REAL8 c1;
-      REAL8 tmatch;
       REAL8 mTot; /* In geometric units */
 
-      tmatch = matchrange->data[1];
-
       mTot  = (mass1 + mass2) * LAL_MTSUN_SI;
-      c1 = 1./(LAL_PI*mTot);
+
+      // UNUSED!!: REAL8 tmatch = matchrange->data[1];
+      // UNUSED!!: REAL8 c1 = 1./(LAL_PI*mTot);
 
       /* Create memory for the QNM frequencies */
       nmodes = 8;

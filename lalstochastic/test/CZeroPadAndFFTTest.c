@@ -231,15 +231,15 @@ main( int argc, char *argv[] )
 	 {+3.090169943749475e-01, +4.306254604896173e+00},
 	 {+2.208174802380956e-01, -4.325962305777781e+00} };
 
-   COMPLEX8TimeSeries             goodInput, badInput;
-   COMPLEX8FrequencySeries        goodOutput, badOutput;
+   COMPLEX8TimeSeries             goodInput;
+   COMPLEX8FrequencySeries        goodOutput;
 
    BOOLEAN                result;
    LALUnitPair            unitPair;
    LALUnit                expectedUnit;
    CHARVector             *unitString;
 
-   CZeroPadAndFFTParameters   goodParams, badParams;
+   CZeroPadAndFFTParameters   goodParams;
 
    lalDebugLevel = LALNDEBUG;
 
@@ -250,7 +250,9 @@ main( int argc, char *argv[] )
    /* build window */
    goodParams.window = XLALCreateRectangularREAL4Window(CZEROPADANDFFTTESTC_LENGTH);
 
-   badParams = goodParams;
+#ifndef LAL_NDEBUG
+   CZeroPadAndFFTParameters badParams = goodParams;
+#endif
 
    /* Fill in expected output */
 
@@ -272,8 +274,10 @@ main( int argc, char *argv[] )
    goodInput.data                 = NULL;
    goodOutput.data                = NULL;
 
-   badInput = goodInput;
-   badOutput = goodOutput;
+#ifndef LAL_NDEBUG
+   COMPLEX8TimeSeries badInput = goodInput;
+   COMPLEX8FrequencySeries badOutput = goodOutput;
+#endif
 
    /* construct plan */
    LALCreateForwardComplexFFTPlan(&status, &(goodParams.fftPlan),

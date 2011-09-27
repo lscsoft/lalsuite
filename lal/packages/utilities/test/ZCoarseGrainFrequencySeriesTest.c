@@ -237,8 +237,6 @@ main( int argc, char *argv[] )
    UINT4      i;
    REAL8      f;
 
-   COMPLEX16                   *zPtr;
-
    const COMPLEX16  testInputDataData[ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0]
      = {{0.0,0.0}, {1.0,0.0}, {2.0,0.0}, {3.0,0.0},
         {4.0,0.0}, {5.0,0.0}, {6.0,0.0}, {7.0,0.0}};
@@ -261,8 +259,8 @@ main( int argc, char *argv[] )
      = {{41.0, (1.0/40.0+2.0/41.0+1.0/42.0) / 4.0},
         {43.0, (1.0/42.0+2.0/43.0+1.0/44.0) / 4.0}};
 
-   COMPLEX16FrequencySeries             goodInput, badInput;
-   COMPLEX16FrequencySeries     goodOutput, badOutput;
+   COMPLEX16FrequencySeries             goodInput;
+   COMPLEX16FrequencySeries     goodOutput;
 
    BOOLEAN                result;
    LALUnitPair            unitPair;
@@ -289,8 +287,10 @@ main( int argc, char *argv[] )
    params.deltaF               = ZCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
    params.length               = ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0;
 
-   badInput = goodInput;
-   badOutput = goodOutput;
+#ifndef LAL_NDEBUG
+   COMPLEX16FrequencySeries badInput = goodInput;
+   COMPLEX16FrequencySeries badOutput = goodOutput;
+#endif
 
    /* allocate input and output vectors */
    LALZCreateVector(&status, &(goodInput.data),
@@ -375,7 +375,7 @@ main( int argc, char *argv[] )
      {
        return code;
      }
-     zPtr = badOutput.data->data;
+     COMPLEX16 *zPtr = badOutput.data->data;
      badOutput.data->data = NULL;
      LALZCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
      if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
@@ -550,8 +550,6 @@ main( int argc, char *argv[] )
        = ZCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
 
    } /* if ( ! lalNoDebug ) */
-#else
-  zPtr = NULL;
 #endif /* LAL_NDEBUG */
 
    LALZDestroyVector(&status, &(goodOutput.data));

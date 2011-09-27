@@ -168,8 +168,6 @@ LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input )
 void
 LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RAT4 *power)
 {
-  UINT4       denom2;
-
   INITSTATUS( status, "LALUnitRaise", UNITRAISEC );
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
@@ -178,9 +176,7 @@ LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RA
 
   ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
 
-  denom2 = power->denominatorMinusOne + 1;
-
-  ASSERT( input->powerOfTen % denom2 == 0, status,
+  ASSERT( input->powerOfTen % (power->denominatorMinusOne + 1) == 0, status,
 	  UNITSH_ENONINT, UNITSH_MSGENONINT);
 
 

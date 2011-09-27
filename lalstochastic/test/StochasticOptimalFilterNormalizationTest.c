@@ -233,7 +233,6 @@ int main(int argc, char *argv[])
 
   REAL4WithUnits           normOut, varOut;
 
-  REAL4FrequencySeries     realBadData;
   LIGOTimeGPS              epoch = {1,0};
 
   REAL4FrequencySeries     overlap;
@@ -262,8 +261,10 @@ int main(int argc, char *argv[])
   overlap.epoch  = epoch;
   overlap.data   = NULL;
   overlap.sampleUnits = lalDimensionlessUnit;
-
-  realBadData = omegaGW = invNoise1 = invNoise2 = overlap;
+  omegaGW = invNoise1 = invNoise2 = overlap;
+#ifndef LAL_NDEBUG
+  REAL4FrequencySeries     realBadData = omegaGW;
+#endif
 
   invNoise1.sampleUnits.unitNumerator[LALUnitIndexStrain] = -2;
   invNoise1.sampleUnits.unitNumerator[LALUnitIndexSecond] = -1;

@@ -22,7 +22,7 @@
 
 int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, double padding, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay)
 {  
-	int j = amp->length-1, jstep, k, prej;
+	int j = amp->length-1, jstep, k;
 	int nfilters = 0, decimationFactor = 1;
 	double phase_ddot, phase_dot;
 
@@ -35,9 +35,8 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 	*delay = XLALCreateINT4Vector(0);
 
 	while (j >= 0 ) {
-
+		//int prej = j;
 		/* Reset j so that the delay will be an integar number of decimated rate */
-		prej = j;
 		j = amp->length-1 - (int) floor((amp->length-1-j)/(double) decimationFactor + 0.5)*decimationFactor;
 
 		/* Get error term */

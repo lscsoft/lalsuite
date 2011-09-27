@@ -19,6 +19,7 @@ endif
 EXTRA_DIST =
 
 CLEANFILES = \
+	test_vot.xml \
 	*.out \
 	*.dat \
     *.xml

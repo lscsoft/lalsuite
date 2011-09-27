@@ -36,7 +36,7 @@
 int main (int argc , char **argv) 
 {
     FILE *f;
-    int status, i, len;
+    int i, len;
     REAL8 lnhatx, lnhaty, lnhatz, e1x, e1y, e1z;
     REAL8TimeSeries *V = NULL;
     REAL8TimeSeries *Phi = NULL;
@@ -78,7 +78,7 @@ int main (int argc , char **argv)
     UNUSED(argc);
     UNUSED(argv);
 
-    status = XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, 
+    XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, 
             &S1z, &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
             m1, m2, &tStart, phiStart, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, 
             lnhaty, lnhatz, e1x, e1y, e1z, deltaT, fStart, spinFlags, phaseO);

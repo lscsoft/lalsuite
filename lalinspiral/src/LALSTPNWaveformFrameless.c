@@ -179,7 +179,7 @@ static int XLALSTPNFramelessAdaptiveDerivatives(double t,
     const double values[], double dvalues[], void *mparams) 
 {
   /* coordinates and derivatives */
-  REAL8 s, omega, LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z, E1x, E1y, E1z;
+  REAL8 omega, LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z, E1x, E1y, E1z;
   REAL8 ds, domega, dLNhx, dLNhy, dLNhz, dS1x, dS1y, dS1z, dS2x, dS2y, dS2z; 
   REAL8 dE1x, dE1y, dE1z;
 
@@ -194,7 +194,8 @@ static int XLALSTPNFramelessAdaptiveDerivatives(double t,
   UNUSED(t);
 
   /* copy variables */
-  s    = values[0];  omega = values[1];
+  // UNUSED!!: s    = values[0];
+  omega = values[1];
   LNhx = values[2];  LNhy  = values[3];  LNhz = values[4] ;
   S1x  = values[5];  S1y   = values[6];  S1z  = values[7] ;
   S2x  = values[8];  S2y   = values[9];  S2z  = values[10];
@@ -431,8 +432,6 @@ int XLALSTPNFramelessWaveformForInjection(CoherentGW *waveform,
 
   InspiralInit paramsInit;
 
-  CreateVectorSequenceIn in;
-
   /* Compute some parameters*/
 
   /* The start phase is passed via coa_phase in the SimInspiralTable, */
@@ -484,9 +483,9 @@ int XLALSTPNFramelessWaveformForInjection(CoherentGW *waveform,
   }
   memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
 
-
-  in.length = (UINT4)count;
-  in.vectorLength = 2;
+  // UNUSED!! CreateVectorSequenceIn in;
+  // in.length = (UINT4)count;
+  // in.vectorLength = 2;
   // '2' is the number of vectors - 1 for each of h+ and hx
   waveform->h->data = XLALCreateREAL4VectorSequence( (UINT4) count, 2);
 
@@ -564,7 +563,7 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
 
   /* other computed values */
   REAL8 unitHz, dt, m, lengths, norm;
-  REAL8 E2x, E2y, E2z;
+  REAL8 E2x, E2y;
   REAL8 hpluscos, hplussin, hcrosscos, hcrosssin;
 
   /* units */
@@ -689,10 +688,10 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
 
     E2x = LNhy[i]*E1z[i] - LNhz[i]*E1y[i]; /* E2 = LNhat x E1 */
     E2y = LNhz[i]*E1x[i] - LNhx[i]*E1z[i];
-    E2z = LNhx[i]*E1y[i] - LNhy[i]*E1x[i];
 
     /*---- Uncomment the next line for debugging ----*/
-    /*fprintf(outFile,"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
+    /*    E2z = LNhx[i]*E1y[i] - LNhy[i]*E1x[i];
+          fprintf(outFile,"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
 		that[i] * m, vphi[i], omega[i], LNhx[i], LNhy[i], LNhz[i], 
 		S1x[i], S1y[i], S1z[i], S2x[i], S2y[i], S2z[i], 
 		E1x[i], E1y[i], E1z[i], E2x, E2y, E2z);*/

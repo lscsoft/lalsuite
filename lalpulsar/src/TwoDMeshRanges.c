@@ -73,14 +73,16 @@ NRCSID( TWODMESHRANGESC, "$Id$" );
 void
 LALInterpolateRangePolygon( LALStatus *stat, REAL4 range[2], REAL4 x, void *params )
 {
-  REAL4VectorSequence *p; /* params cast to a REAL4VectorSequence */
-
   INITSTATUS( stat, "LALGetNearestRange", TWODMESHRANGESC );
 
-  p = (REAL4VectorSequence *)params;
+  if ( !params )
+    ABORT ( stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
+
   /* This function may be called a lot.  Do error checking only in
      debug mode. */
-#ifndef NDEBUG
+#ifndef LAL_NDEBUG
+  REAL4VectorSequence *p; /* params cast to a REAL4VectorSequence */
+  p = (REAL4VectorSequence *)params;
   if ( lalDebugLevel ) {
     ASSERT( p, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
     ASSERT( p->data, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );

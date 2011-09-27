@@ -212,8 +212,6 @@ int main( int argc, char *argv[] )
   StochasticOmegaGWParameters   parameters;
   REAL4FrequencySeries     omegaGW;
 
-  REAL4FrequencySeries     dummyOutput;
-
   UINT4 i;
   REAL4 omega, f;
   INT4 code;
@@ -231,7 +229,11 @@ int main( int argc, char *argv[] )
 
   omegaGW.data = NULL;
 
+#ifndef LAL_NDEBUG
+  REAL4FrequencySeries     dummyOutput;
   dummyOutput.data = NULL;
+#endif
+
 
   ParseOptions( argc, argv );
 

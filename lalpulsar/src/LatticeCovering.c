@@ -109,7 +109,6 @@ LALLatticeCovering (LALStatus *status,			/**< pointer to LALStatus structure */
 		    LatticeType latticeType 		/**< [in] type of lattice to construct */
                     )
 {
-  UINT4 dim;	/* dimension of parameter-space */
   gsl_matrix *generator = NULL;
 
   INITSTATUS( status, "LALLatticeCovering", LATTICECOVERINGC );
@@ -123,11 +122,8 @@ LALLatticeCovering (LALStatus *status,			/**< pointer to LALStatus structure */
   ASSERT ( startPoint, status, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
   ASSERT ( startPoint->data, status, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
 
-  /* determine dimension of parameter-space from metric */
-  dim = metric->size1;
-
   /* check that startPoint has dimensions consistent with metric */
-  ASSERT ( dim == startPoint->length, status, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
+  ASSERT ( metric->size1 == startPoint->length, status, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
 
   /* 1) ----- get the generating matrix for a properly scaled An* lattice */
   if (XLALFindCoveringGenerator (&generator, latticeType, coveringRadius, metric ) < 0)

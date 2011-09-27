@@ -220,8 +220,6 @@ main( int argc, char *argv[] )
    UINT4      i;
    REAL8      f;
 
-   REAL4                   *sPtr;
-
    const REAL4    testInputDataData[SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0]
                      = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
 
@@ -231,8 +229,8 @@ main( int argc, char *argv[] )
    const REAL4 expectedOutput2DataData[SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2]
                      = {(2.0/3.0), 3.0, 6.0};
 
-   REAL4FrequencySeries             goodInput, badInput;
-   REAL4FrequencySeries     goodOutput, badOutput;
+   REAL4FrequencySeries             goodInput;
+   REAL4FrequencySeries     goodOutput;
 
    BOOLEAN                result;
    LALUnitPair            unitPair;
@@ -259,8 +257,10 @@ main( int argc, char *argv[] )
    params.deltaF               = SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
    params.length               = SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0;
 
-   badInput = goodInput;
-   badOutput = goodOutput;
+#ifndef LAL_NDEBUG
+   REAL4FrequencySeries   badInput = goodInput;
+   REAL4FrequencySeries   badOutput = goodOutput;
+#endif
 
    /* allocate input and output vectors */
    LALSCreateVector(&status, &(goodInput.data),
@@ -345,7 +345,7 @@ main( int argc, char *argv[] )
      {
        return code;
      }
-     sPtr = badOutput.data->data;
+     REAL4 *sPtr = badOutput.data->data;
      badOutput.data->data = NULL;
      LALSCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
      if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
@@ -525,8 +525,6 @@ main( int argc, char *argv[] )
        = SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
 
    } /* if ( ! lalNoDebug ) */
-#else
-   sPtr = NULL;
 #endif /* LAL_NDEBUG */
 
    LALSDestroyVector(&status, &(goodOutput.data));

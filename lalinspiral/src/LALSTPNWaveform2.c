@@ -154,7 +154,7 @@ static int XLALSTPNAdaptiveTest(double t,const double values[],double dvalues[],
 
 static int XLALSTPNAdaptiveDerivatives(double t,const double values[],double dvalues[],void *mparams) {
 	/* coordinates and derivatives */
-  REAL8  s,  omega,  LNhx,  LNhy,  LNhz,  S1x,  S1y,  S1z,  S2x,  S2y,  S2z;
+  REAL8  omega,  LNhx,  LNhy,  LNhz,  S1x,  S1y,  S1z,  S2x,  S2y,  S2z;
   REAL8 ds, domega, dLNhx, dLNhy, dLNhz, dS1x, dS1y, dS1z, dS2x, dS2y, dS2z;
 
 	/* auxiliary variables */
@@ -168,7 +168,8 @@ static int XLALSTPNAdaptiveDerivatives(double t,const double values[],double dva
 	UNUSED(t);
 
 	/* copy variables */
-	s    = values[0]; omega = values[1];
+	// UNUSED!!: REAL8 s    = values[0];
+        omega = values[1];
 	LNhx = values[2]; LNhy  = values[3]; LNhz = values[4] ;
 	S1x  = values[5]; S1y   = values[6]; S1z  = values[7] ;
 	S2x  = values[8]; S2y   = values[9]; S2z  = values[10];
