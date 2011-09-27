@@ -518,7 +518,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		LALInferenceSortVariablesByName(runState->livePoints[i]);
 		if(runState->logsample) runState->logsample(runState,runState->livePoints[i]);
 		LALInferencePrintSample(fpout,runState->livePoints[i]);
-		fprintf(fpout,"%lf\n",logLikelihoods[i]);
+		fprintf(fpout,"\n");
 	}
 
 	/* Write out the evidence */

@@ -321,7 +321,7 @@ xmlNodePtr LALInferenceVariableItem2VOTFieldNode(LALInferenceVariableItem *varit
   
   /* Special case for matrix */
   if(varitem->type==LALINFERENCE_gslMatrix_t)
-    return(XLALgsl_matrix2VOTNode((gsl_matrix *)varitem->value, varitem->name, unitName));
+    return(XLALgsl_matrix2VOTNode(*(gsl_matrix **)varitem->value, varitem->name, unitName));
 	
 	/* Special case for string */
 	if(varitem->type==LALINFERENCE_string_t)
@@ -341,7 +341,7 @@ xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varit
   
   /* Special case for matrix */
   if(varitem->type==LALINFERENCE_gslMatrix_t)
-    return(XLALgsl_matrix2VOTNode((gsl_matrix *)varitem->value, varitem->name, unitName));
+    return(XLALgsl_matrix2VOTNode(*(gsl_matrix **)varitem->value, varitem->name, unitName));
 
 	/* Special case for string */
 	if(varitem->type==LALINFERENCE_string_t)
