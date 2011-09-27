@@ -411,5 +411,8 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
    columns.  Returns 0 on success. */
 int LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariables *vars);
 
+void LALInferenceSortVariablesByName(LALInferenceVariables *vars);
+
+
 #endif
 

@@ -1841,7 +1841,7 @@ SummValueTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 8 )
       {
-        snprintf( thisValue->comment, LIGOMETA_SUMMVALUE_NAME_MAX *
+        snprintf( thisValue->comment, LIGOMETA_SUMMVALUE_COMM_MAX *
             sizeof(CHAR), "%s",
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }

@@ -33,11 +33,6 @@ ChiSquare_test_SOURCES = ChiSquare_test.c
 lalinference_nest_SOURCES = LALInferenceNest.c
 #lalinference_mcmcmpi_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceMCMCMPI.c LALInferenceMCMCMPISampler.c LALInferencePrior.c
 
-if MPI
-mpi_progs = lalinference_test
-lalinference_test_SOURCES = InferenceTest.c
-endif
-
 endif
 
 endif

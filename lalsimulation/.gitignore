@@ -21,10 +21,15 @@ lalsimulation.spec
 libtool
 src/LALSimulationConfig.h
 src/LALSimulationVCSInfo.h
-src/lalsimulation-user-env.csh
-src/lalsimulation-user-env.sh
 src/lalsim-bh-qnmode
 src/lalsim-bh-ringdown
 src/lalsim-bh-sphwf
 src/lalsim-ligo-noise
+src/lalsim-sgwb
+src/lalsimulation-user-env.csh
+src/lalsimulation-user-env.sh
 src/stamp-h2
+test/GenerateSimulation
+test/ST4-dynamics.dat
+test/TestSpinTaylorT4Dynamics
+test/simulation.dat

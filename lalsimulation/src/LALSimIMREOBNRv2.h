@@ -36,6 +36,12 @@
 #ifndef _LALSIMREOBNRv2_H
 #define _LALSIMREOBNRv2_H
 
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 /**
  * The maximum possible l we have 
  */
@@ -541,4 +547,11 @@ static
 REAL8 XLALCalculateEOBdAdr( const REAL8 r,                     /**<< Orbital separation (in units of total mass M) */
                             EOBACoefficients * restrict coeffs /**<< Pre-computed coefficients for the A function */
                           );
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
+
 #endif /* _LALSIMEOBNRv2_H */

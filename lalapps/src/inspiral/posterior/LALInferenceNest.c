@@ -36,6 +36,7 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
+#include <lal/LALInferenceProposal.h>
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
@@ -177,7 +178,7 @@ Initialisation arguments:\n\
 void initializeTemplate(LALInferenceRunState *runState)
 {
 	char help[]="\
-(--template [LAL,LALSTPN,PhenSpin,LALGenerateInspiral]\tSpecify template (default LAL)\n";
+(--template [LAL,PhenSpin,LALGenerateInspiral]\tSpecify template (default LAL)\n";
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	/* Print command line arguments if help requested */
@@ -191,8 +192,10 @@ void initializeTemplate(LALInferenceRunState *runState)
 	runState->template=&LALInferenceTemplateLAL;
 	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
 	if(ppt) {
-		if(!strcmp("LALSTPN",ppt->value))
-			runState->template=&LALInferenceTemplateLALSTPN;
+		if(!strcmp("LALSTPN",ppt->value)){
+			fprintf(stderr,"ERROR: --template LALSTPN is deprecated. Try LALGenerateInspiral instead\n");
+			exit(1);
+		}
 		else if(!strcmp("PhenSpin",ppt->value))
 			runState->template=&LALInferenceTemplatePSTRD;
 		else if(!strcmp("LALGenerateInspiral",ppt->value))
@@ -224,7 +227,12 @@ Nested sampling arguments:\n\
 (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
-(--verbose)\tProduce progress information\n\n";
+(--verbose)\tProduce progress information\n\
+(--mcmcprop)\tUse PTMCMC proposal engine\n\
+\t(--iotaDistance FRAC)\tPTMCMC: Use iota-distance jump FRAC of the time\n\
+\t(--covarianceMatrix)\tPTMCMC: Propose jumps from covariance matrix of current live points\n\
+\t(--differential-evolution)\tPTMCMC:Use differential evolution jumps\n";
+
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	/* Print command line arguments if help requested */
@@ -246,9 +254,20 @@ Nested sampling arguments:\n\
 	/* Set up the appropriate functions for the nested sampling algorithm */
 	runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
 	runState->evolve=&LALInferenceNestedSamplingOneStep;
-	runState->proposal=&LALInferenceProposalNS;
+	if(LALInferenceGetProcParamVal(commandLine,"--mcmcprop")){
+	  /* Use the PTMCMC proposal to sample prior */
+	  runState->proposal=&NSWrapMCMCLALProposal;
+	  REAL8 temp=1.0;
+	  UINT4 dummy=0;
+	  LALInferenceAddVariable(runState->proposalArgs, "adaptableStep", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	  LALInferenceAddVariable(runState->proposalArgs, "proposedVariableNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	  LALInferenceAddVariable(runState->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	  LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+	}
+	else
+	  runState->proposal=&LALInferenceProposalNS;
 
-	runState->likelihood=&LALInferenceFreqDomainLogLikelihood;
+	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 	runState->prior = &LALInferenceInspiralPrior;
 	
 	ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
@@ -356,6 +375,8 @@ void initVariables(LALInferenceRunState *state)
 	memset(&status,0,sizeof(LALStatus));
 	INT4 event=0;	
 	INT4 i=0;
+	INT4 enable_spin=0;
+	INT4 aligned_spin=0;
 	char help[]="\
 Parameter arguments:\n\
 (--injXML injections.xml)\tInjection XML file to use\n\
@@ -367,9 +388,14 @@ Parameter arguments:\n\
 (--trigtime time)\tTrigger time to use\n\
 (--Dmin dist)\tMinimum distance in Mpc (1)\n\
 (--Dmax dist)\tMaximum distance in Mpc (100)\n\
-(--approx ApproximantorderPN)\tSpecify a waveform to use, (default TaylorF2twoPN)\n\
-(--mincomp min)\tMinimum component mass (1.0)\n\
-(--maxcomp max)\tMaximum component mass (30.0)\n";
+(--approx ApproximantorderPN)\tSpecify a waveform to use, (default TaylorF2threePointFivePN)\n\
+(--compmin min)\tMinimum component mass (1.0)\n\
+(--compmax max)\tMaximum component mass (30.0)\n\
+(--enable-spin)\tEnable spin parameters\n\
+(--aligned-spin)\tUse only aligned spin parameters (uses spins between -1 and 1)\n\
+(--approx ApproximantphaseOrderPN)\tSet approximant (PhenSpin implicitly enables spin)\n\
+(--s1max SPIN)\tMax magnitude of spin (on both bodies!)\n\
+(--s1min SPIN)\tMin magnitude of spin (on both bodies!)\n";
 
 	/* Print command line arguments if help requested */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
@@ -456,8 +482,8 @@ Parameter arguments:\n\
 	/* Over-ride Spin prior if specified*/
 
 	ppt=LALInferenceGetProcParamVal(commandLine,"--s1max");
-        if(ppt){
-                a_spin2_max=atof(ppt->value);
+	if(ppt){
+		a_spin2_max=atof(ppt->value);
 		a_spin1_max=atof(ppt->value);
 	}
 	ppt=LALInferenceGetProcParamVal(commandLine,"--s1min");
@@ -510,7 +536,7 @@ Parameter arguments:\n\
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	LALInferenceAddMinMaxPrior(priorArgs, "rightascension",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 
-	LALInferenceAddVariable(currentParams, "declination",     &tmpVal,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+	LALInferenceAddVariable(currentParams, "declination",     &tmpVal,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	tmpMin=-LAL_PI/2.0; tmpMax=LAL_PI/2.0;
 	LALInferenceAddMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
     
@@ -518,13 +544,21 @@ Parameter arguments:\n\
 	tmpMin=0.0; tmpMax=LAL_PI;
 	LALInferenceAddMinMaxPrior(priorArgs, "polarisation",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
- 	LALInferenceAddVariable(currentParams, "inclination",     &tmpVal,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+ 	LALInferenceAddVariable(currentParams, "inclination",     &tmpVal,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
 	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
 	/* Additional parameters for spinning waveforms */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
-	if(ppt) if(!strcmp("PhenSpin",ppt->value)){
+	if(ppt) if(!strcmp("PhenSpin",ppt->value)){ enable_spin=1;}
+
+	if(LALInferenceGetProcParamVal(commandLine,"--enable-spin")) enable_spin=1;
+	
+	/* If aligned spins use magnitude in (-1,1) */
+	ppt=LALInferenceGetProcParamVal(commandLine,"--aligned-spin");
+	if(ppt) {enable_spin=1; aligned_spin=1; a_spin1_min=-1; a_spin2_min=-1;}
+		
+	if(enable_spin){
 		tmpVal=a_spin1_min+(a_spin1_max-a_spin1_min)/2.0;
 		LALInferenceAddVariable(currentParams, "a_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 		LALInferenceAddMinMaxPrior(priorArgs, "a_spin1",     &a_spin1_min, &a_spin1_max,   LALINFERENCE_REAL8_t); 
@@ -533,25 +567,35 @@ Parameter arguments:\n\
 		LALInferenceAddVariable(currentParams, "a_spin2",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
 		LALInferenceAddMinMaxPrior(priorArgs, "a_spin2",     &a_spin2_min, &a_spin2_max,   LALINFERENCE_REAL8_t); 
 	
-		tmpVal=theta_spin1_min+(theta_spin1_max - theta_spin1_min)/2.0;
+		
+		if(aligned_spin){ /* Set the spin angles to be parallel to orbital */
+			tmpVal=LAL_PI/2;
+			LALInferenceAddVariable(currentParams,"theta_spin1",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+			LALInferenceAddVariable(currentParams,"theta_spin2",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+			tmpVal=0;
+			LALInferenceAddVariable(currentParams,"phi_spin1",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+			LALInferenceAddVariable(currentParams,"phi_spin2",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+		}
+		else{ /* Use full spinning parameters */
+			tmpVal=theta_spin1_min+(theta_spin1_max - theta_spin1_min)/2.0;
+
+			LALInferenceAddVariable(currentParams,"theta_spin1",	&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+			LALInferenceAddMinMaxPrior(priorArgs, "theta_spin1",     &theta_spin1_min, &theta_spin1_max,   LALINFERENCE_REAL8_t); 
 	
-		LALInferenceAddVariable(currentParams,"theta_spin1",	&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-		LALInferenceAddMinMaxPrior(priorArgs, "theta_spin1",     &theta_spin1_min, &theta_spin1_max,   LALINFERENCE_REAL8_t); 
+			tmpVal=theta_spin1_min+(theta_spin1_max - theta_spin1_min)/2.0;
+			LALInferenceAddVariable(currentParams,"theta_spin2",	&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+			LALInferenceAddMinMaxPrior(priorArgs, "theta_spin2",     &theta_spin1_min, &theta_spin1_max,   LALINFERENCE_REAL8_t); 
 	
-		tmpVal=theta_spin1_min+(theta_spin1_max - theta_spin1_min)/2.0;
-		LALInferenceAddVariable(currentParams,"theta_spin2",	&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-		LALInferenceAddMinMaxPrior(priorArgs, "theta_spin2",     &theta_spin1_min, &theta_spin1_max,   LALINFERENCE_REAL8_t); 
+			tmpVal=phi_spin1_min+(phi_spin1_max - phi_spin1_min)/2.0;
 	
-		tmpVal=phi_spin1_min+(phi_spin1_max - phi_spin1_min)/2.0;
+			LALInferenceAddVariable(currentParams,"phi_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+			LALInferenceAddMinMaxPrior(priorArgs, "phi_spin1",     &phi_spin1_min, &phi_spin1_max,   LALINFERENCE_REAL8_t); 
 	
-		LALInferenceAddVariable(currentParams,"phi_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-		LALInferenceAddMinMaxPrior(priorArgs, "phi_spin1",     &phi_spin1_min, &phi_spin1_max,   LALINFERENCE_REAL8_t); 
-	
-		tmpVal=phi_spin1_min+(phi_spin1_max - phi_spin1_min)/2.0;
-		LALInferenceAddVariable(currentParams,"phi_spin2",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-		LALInferenceAddMinMaxPrior(priorArgs, "phi_spin2",     &phi_spin1_min, &phi_spin1_max,   LALINFERENCE_REAL8_t);
+			tmpVal=phi_spin1_min+(phi_spin1_max - phi_spin1_min)/2.0;
+			LALInferenceAddVariable(currentParams,"phi_spin2",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+			LALInferenceAddMinMaxPrior(priorArgs, "phi_spin2",     &phi_spin1_min, &phi_spin1_max,   LALINFERENCE_REAL8_t);
+		}
 	}
-	
 	
 	return;
 }

@@ -35,6 +35,7 @@ test/CoarseTest
 test/CoarseTest.out
 test/CoarseTest2
 test/CoarseTest2.out
+test/CompareLalsimultaionLalinspiralWaveforms
 test/FindChirpBCVSpinTest
 test/FindChirpBankVetoTest
 test/FindChirpTDTest
@@ -47,6 +48,9 @@ test/InspiralBCVSpinBankTest
 test/InspiralSpinBankTest
 test/LALHybridTest
 test/LALInspiralSpinningBHBinariesTest
+test/LALInspiralTaylorT2Test
+test/LALInspiralTaylorT3Test
+test/LALInspiralTaylorT4Test
 test/LALInspiralTest
 test/LALSTPNWaveformTest
 test/MetricTest
@@ -61,9 +65,16 @@ test/RandomInspiralSignalTest
 test/RandomInspiralSignalTest.out
 test/SpaceCovering
 test/SpaceCovering.out
+test/T2wave1.dat
+test/T2wave2.dat
+test/T3wave1.dat
+test/T3wave2.dat
+test/T4wave1.dat
+test/T4wave2.dat
 test/data.out
 test/injection.dat
 test/myderivs.dat
 test/sp_rhosq.out
 test/td_rhosq.out
 test/wave1.dat
+test/wave2.dat

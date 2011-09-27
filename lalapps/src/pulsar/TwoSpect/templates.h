@@ -40,6 +40,7 @@ REAL8 gsl_dprobRdR(REAL8 R, void *pars);
 void gsl_probRandDprobRdR(REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR);
 
 templateStruct * new_templateStruct(INT4 length);
+void resetTemplateStruct(templateStruct *templatestruct);
 void free_templateStruct(templateStruct *nameoftemplate);
 void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsStruct *params);
 void makeTemplate(templateStruct *output, candidate intput, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan);

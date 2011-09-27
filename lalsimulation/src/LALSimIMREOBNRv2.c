@@ -41,10 +41,8 @@ Pan et al, arXiv:1106.1021v1 [gr-qc].
 #include <lal/TimeSeries.h>
 #include <gsl/gsl_sf_gamma.h>
 
-
-#include "LALSimIMREOBNRv2.h"
-
 /* Include all the static function files we need */
+#include "LALSimIMREOBNRv2.h"
 #include "LALSimIMREOBFactorizedWaveform.c"
 #include "LALSimIMREOBFactorizedFlux.c"
 #include "LALSimIMREOBNQCCorrection.c"

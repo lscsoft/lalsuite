@@ -267,16 +267,15 @@ static int readString( char temp[UNITDEFSC_TEMPSIZE], const char **charPtrPtr )
  */
 char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
 {
-  static const char *func = "XLALUnitAsString";
   UINT2        i;
   CHAR         temp[UNITDEFSC_TEMPSIZE];
   INT2         numer;
   CHAR         *charPtr, *charStopPtr;
 
   if ( ! string || ! input )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( __func__, XLAL_EFAULT );
   if ( ! length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( __func__, XLAL_EBADLEN );
 
   charPtr = string;
   charStopPtr = string + length;
@@ -288,7 +287,7 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
   {
     sprintf(temp, "10^%d", input->powerOfTen);
     if ( charPtr + strlen(temp) >= charStopPtr)
-      XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+      XLAL_ERROR_NULL( __func__, XLAL_EBADLEN );
     strncpy(charPtr, temp, charStopPtr - charPtr);
     charPtr += strlen(temp);
   } /* if (input->powerOfTen != 0) */
@@ -319,7 +318,7 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
 		 input->unitDenominatorMinusOne[i] + 1);
       }
       if ( charPtr + strlen(temp) >= charStopPtr)
-        XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+        XLAL_ERROR_NULL( __func__, XLAL_EBADLEN );
       strncpy(charPtr, temp, charStopPtr - charPtr);
       charPtr += strlen(temp);
     } /* if (numer != 0) */
@@ -382,7 +381,6 @@ LALUnitAsString( LALStatus *status,
  */
 LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
 {
-  static const char *func = "XLALParseUnitString";
   UINT2        i;
   INT2         sign;
   CHAR         temp[20];
@@ -394,7 +392,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     output = LALMalloc( sizeof( *output ) );
     outputAllocated = 1;
     if ( ! output )
-      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+      XLAL_ERROR_NULL( __func__, XLAL_ENOMEM );
   }
 
   /* Start with dimensionless (all zeros) and fill in from there */
@@ -407,8 +405,11 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
   charPtr = string;
   charStopPtr = string + strlen(string);
 
-  /* Start with dimensionless (all zeros) and fill in from there */
-  *output = lalDimensionlessUnit;
+  /* Strip whitespace */
+  while(charPtr < charStopPtr && isspace(*charPtr))
+    charPtr++;
+  while(charPtr < charStopPtr && isspace(*(charStopPtr - 1)))
+    charStopPtr--;
 
   /* If the string is empty, it represents dimensionless */
   if (charPtr == charStopPtr)
@@ -437,7 +438,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     {
       if ( outputAllocated )
         LALFree( output );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
     }
     /* charPtr now points to one after end of power of ten */
 
@@ -451,7 +452,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     {
       if ( outputAllocated )
         LALFree( output );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
     }
 
     ++charPtr;
@@ -467,7 +468,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     {
       if ( outputAllocated )
         LALFree( output );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
     }
 
     /* charPtr now points to one after end of unit name */
@@ -479,7 +480,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
       {
         if ( outputAllocated )
           LALFree( output );
-        XLAL_ERROR_NULL( func, XLAL_EFAILED );
+        XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
       }
     }
 
@@ -488,7 +489,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     {
       if ( outputAllocated )
         LALFree( output );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
     }
 
     if ( *charPtr == ' ' || *charPtr == '\0' )
@@ -516,7 +517,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
       {
         if ( outputAllocated )
           LALFree( output );
-        XLAL_ERROR_NULL( func, XLAL_EFAILED );
+        XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
       }
       output->unitNumerator[i] = sign * atoi(temp);
 
@@ -531,7 +532,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
         {
           if ( outputAllocated )
             LALFree( output );
-          XLAL_ERROR_NULL( func, XLAL_EFAILED );
+          XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
         }
 	output->unitDenominatorMinusOne[i] = atoi(temp) - 1;
       } /* if ( *charPtr == '/' ) */
@@ -540,7 +541,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     {
       if ( outputAllocated )
         LALFree( output );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
     }
 
     if ( *charPtr == ' ') ++charPtr;

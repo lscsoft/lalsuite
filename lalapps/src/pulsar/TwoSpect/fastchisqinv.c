@@ -294,7 +294,7 @@ REAL8 cdf_ugaussian_Pinv(REAL8 P)
    }
    
    if (fabsf(dP) <= 0.425) {
-      x = small(dP);
+      x = twospect_small(dP);
       return x;
    }
    
@@ -302,8 +302,8 @@ REAL8 cdf_ugaussian_Pinv(REAL8 P)
    
    r = sqrt(-log(pp));
    
-   if (r <= 5.0) x = intermediate(r);
-   else x = tail(r);
+   if (r <= 5.0) x = twospect_intermediate(r);
+   else x = twospect_tail(r);
    
    if (P < 0.5) return -x;
    else return x;
@@ -326,7 +326,7 @@ REAL8 cdf_ugaussian_Qinv(REAL8 Q)
    }
    
    if (fabs(dQ) <= 0.425) {
-      x = small(dQ);
+      x = twospect_small(dQ);
       return -x;
    }
    
@@ -334,13 +334,13 @@ REAL8 cdf_ugaussian_Qinv(REAL8 Q)
    
    r = sqrt(-log(pp));
    
-   if (r <= 5.0) x = intermediate(r);
-   else x = tail(r);
+   if (r <= 5.0) x = twospect_intermediate(r);
+   else x = twospect_tail(r);
    
    if (Q < 0.5) return x;
    else return -x;
 }
-REAL8 small(REAL8 q)
+REAL8 twospect_small(REAL8 q)
 {
    const REAL8 a[8] = { 3.387132872796366608, 133.14166789178437745,
       1971.5909503065514427, 13731.693765509461125,
@@ -360,7 +360,7 @@ REAL8 small(REAL8 q)
    
    return x;
 }
-REAL8 intermediate(REAL8 r)
+REAL8 twospect_intermediate(REAL8 r)
 {
    const REAL8 a[] = { 1.42343711074968357734, 4.6303378461565452959,
       5.7694972214606914055, 3.64784832476320460504,
@@ -378,7 +378,7 @@ REAL8 intermediate(REAL8 r)
    
    return x;
 }
-REAL8 tail(REAL8 r)
+REAL8 twospect_tail(REAL8 r)
 {
    const REAL8 a[] = { 6.6579046435011037772, 5.4637849111641143699,
       1.7848265399172913358, 0.29656057182850489123,
@@ -427,7 +427,6 @@ REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b)
          fprintf(stderr, "%s: sf_gamma_inc_Q(%f, %f) failed.\n", fn, a, y);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       }
-      //REAL8 val2 = matlab_gamma_inc(y, a, 1);
       P = 1.0 - val;
    } else {
       P = sf_gamma_inc_P(a, y);
@@ -435,7 +434,23 @@ REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b)
          fprintf(stderr, "%s: sf_gamma_inc_P(%f, %f) failed.\n", fn, a, y);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       }
-      //REAL8 P2 = matlab_gamma_inc(y, a, 0);
+   }
+   
+   return P;
+}
+REAL8 cdf_gamma_P_usingmatlab(REAL8 x, REAL8 a, REAL8 b)
+{
+   
+   REAL8 P;
+   REAL8 y = x / b;
+   
+   if (x <= 0.0) return 0.0;
+   
+   if (y > a) {
+      REAL8 val = matlab_gamma_inc(y, a, 1);
+      P = 1.0 - val;
+   } else {
+      P = matlab_gamma_inc(y, a, 0);
    }
    
    return P;
@@ -454,7 +469,6 @@ REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b)
          fprintf(stderr, "%s: sf_gamma_inc_P(%f, %f) failed.\n", fn, a, y);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       }
-      //REAL8 val2 = matlab_gamma_inc(y, a, 0);
       Q = 1.0 - val;
    } else {
       Q = sf_gamma_inc_Q(a, y);
@@ -462,7 +476,23 @@ REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b)
          fprintf(stderr, "%s: sf_gamma_inc_Q(%f, %f) failed.\n", fn, a, y);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       }
-      //REAL8 Q2 = matlab_gamma_inc(y, a, 1);
+   }
+   
+   return Q;
+}
+REAL8 cdf_gamma_Q_usingmatlab(REAL8 x, REAL8 a, REAL8 b)
+{
+   
+   REAL8 Q;
+   REAL8 y = x / b;
+   
+   if (x <= 0.0) return 1.0;
+   
+   if (y < a) {
+      REAL8 val = matlab_gamma_inc(y, a, 0);
+      Q = 1.0 - val;
+   } else {
+      Q = matlab_gamma_inc(y, a, 1);
    }
    
    return Q;
@@ -476,7 +506,7 @@ REAL8 ran_gamma_pdf(REAL8 x, REAL8 a, REAL8 b)
    } else if (a == 1.0) return (exp(-x/b)/b);
    else return (exp((a - 1.0) * log(x/b) - x/b - lgamma(a))/b);
 }
-REAL8 matlab_gamma_inc(REAL8 x, REAL8 a, INT4 tail)
+REAL8 matlab_gamma_inc(REAL8 x, REAL8 a, INT4 upper)
 {
    const REAL8 amax = 1048576.0;
    const REAL8 amaxthird = amax-1.0/3.0;
@@ -487,10 +517,10 @@ REAL8 matlab_gamma_inc(REAL8 x, REAL8 a, INT4 tail)
       aint = amax;
    }
    if (aint==0.0) {
-      if (tail==0) return 1.0;
+      if (upper==0) return 1.0;
       else return 0.0;
    } else if (xint==0.0) {
-      if (tail==0) return 0.0;
+      if (upper==0) return 0.0;
       else return 1.0;
    } else if (xint<aint+1.0) {
       REAL8 ap = aint;
@@ -503,7 +533,7 @@ REAL8 matlab_gamma_inc(REAL8 x, REAL8 a, INT4 tail)
       }
       REAL8 b = sum * exp(-xint + aint*log(xint) - lgamma(aint+1.0));
       if (xint>0.0 && b>1.0) b = 1.0;
-      if (tail==0) return b;
+      if (upper==0) return b;
       else return 1.0-b;
    } else {
       REAL8 a0 = 1.0;
@@ -527,7 +557,7 @@ REAL8 matlab_gamma_inc(REAL8 x, REAL8 a, INT4 tail)
          n++;
       }
       REAL8 b = exp(-xint + aint*log(xint) - lgamma(aint)) * g;
-      if (tail==0) return 1.0-b;
+      if (upper==0) return 1.0-b;
       else return b;
    }
    
@@ -727,7 +757,7 @@ REAL8 gamma_inc_P_series(REAL8 a, REAL8 x)
    /* Normal case: sum the series */
    REAL8 sum  = 1.0;
    REAL8 term = 1.0;
-   REAL8 remainder;
+   REAL8 remainderval;
    INT4 n;
    
    /* Handle lower part of the series where t_n is increasing, |x| > a+n */
@@ -749,11 +779,11 @@ REAL8 gamma_inc_P_series(REAL8 a, REAL8 x)
    
    /*  Estimate remainder of series ~ t_(n+1)/(1-x/(a+n+1)) */
    REAL8 tnp1 = (x/(a+n)) * term;
-   remainder =  tnp1 / (1.0 - x/(a + n + 1.0));
+   remainderval =  tnp1 / (1.0 - x/(a + n + 1.0));
    
    REAL8 val = D * sum;
    
-   if (n == nmax && fabs(remainder/sum) > sqrt(LAL_REAL4_EPS)) {
+   if (n == nmax && fabs(remainderval/sum) > sqrt(LAL_REAL4_EPS)) {
       fprintf(stderr, "%s: gamma_inc_P_series_float failed to converge", fn);
       XLAL_ERROR_REAL8(fn, XLAL_EMAXITER);
    }
@@ -1096,10 +1126,10 @@ REAL8 gamma_inc_F_CF(REAL8 a, REAL8 x)
 {
    const CHAR *fn = __func__;
    INT4 nmax  =  5000;
-   const REAL8 small =  LAL_REAL8_EPS*LAL_REAL8_EPS*LAL_REAL8_EPS;
+   const REAL8 smallval =  LAL_REAL8_EPS*LAL_REAL8_EPS*LAL_REAL8_EPS;
    
    REAL8 hn = 1.0;           /* convergent */
-   REAL8 Cn = 1.0 / small;
+   REAL8 Cn = 1.0 / smallval;
    REAL8 Dn = 1.0;
    INT4 n;
    
@@ -1113,9 +1143,9 @@ REAL8 gamma_inc_F_CF(REAL8 a, REAL8 x)
       else an = (0.5*n-a)/x;
       
       Dn = 1.0 + an * Dn;
-      if ( fabs(Dn) < small ) Dn = small;
+      if ( fabs(Dn) < smallval ) Dn = smallval;
       Cn = 1.0 + an/Cn;
-      if ( fabs(Cn) < small ) Cn = small;
+      if ( fabs(Cn) < smallval ) Cn = smallval;
       Dn = 1.0 / Dn;
       delta = Cn * Dn;
       hn *= delta;

@@ -18,6 +18,12 @@
 */
 
 
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 typedef struct
 tagexpnCoeffsdEnergyFlux {
    /* coefficients in the Pade expression of new energy function */
@@ -204,3 +210,8 @@ REAL8 Fp8PP(REAL8 v, expnCoeffsdEnergyFlux *ak);
 REAL8 Fp8(REAL8 v, expnCoeffsdEnergyFlux *ak);
 */
 
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif

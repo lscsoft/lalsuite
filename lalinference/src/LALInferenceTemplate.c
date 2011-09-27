@@ -224,9 +224,6 @@ fclose(file);
 	
 	
 	
-	LALCheckMemoryLeaks();
-	
-	
 //	INFO( GENERATEPPNINSPIRALTESTC_MSGENORM );
 //	return GENERATEPPNINSPIRALTESTC_ENORM;
 	
@@ -726,7 +723,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
     params.startTime = (tc - XLALGPSGetREAL8(&IFOdata->timeData->epoch)) - chirptime;
     LALInspiralParameterCalc(&status, &params); /* (re-calculation necessary? probably not...) */
   }
-	
+
   if (params.approximant == TaylorF2) {	
 	expnCoeffs ak;
 	expnFunc expnFunction;
@@ -981,11 +978,11 @@ void LALInferenceTemplate3525TD(LALInferenceIFOData *IFOdata)
 /* Numbers referring to Arun et al (2004) are explicitly marked. */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *****************************/
 /* Required (`IFOdata->modelParams') parameters are:                                         */
-/*   - "chirpmass"        (REAL8,units of solar masses)                                      */
-/*   - "massratio"        (symmetric mass ratio:  0 < eta <= 0.25, REAL8)                    */
-/*   - "phase"            (here: 'startPhase', not coalescence phase; REAL8, radians)        */
-/*   - "time"             (coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)  */
-/*   - "inclination"      (inclination angle, REAL8, radians)                                */
+/*   - "chirpmass"        (REAL8, chirp mass, in units of solar masses)                      */
+/*   - "massratio"        (REAL8, symmetric mass ratio:  0 < eta <= 0.25, dimensionless)     */
+/*   - "phase"            (REAL8, coalescence phase, radians)                                */
+/*   - "time"             (REAL8, coalescence time, GPS seconds)                             */
+/*   - "inclination"      (REAL8, inclination angle, radians)                                */
 /*********************************************************************************************/
 {
   double mc    = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");  /* chirp mass m_c, solar masses  */
@@ -1344,282 +1341,6 @@ void LALInferenceTemplateASinOmegaT(LALInferenceIFOData *IFOdata)
   return;
 }
 
-void LALInferenceTemplateLALSTPN(LALInferenceIFOData *IFOdata) // DEPRECATED!!!!!!!!!!!!!!
-/********************************************************************************************/
-/* LALSTPN template																			*/
-/*  Required (`IFOdata->modelParams') parameters are:										*/
-/*   - "m1"				(mass of object 1; REAL8, solar mass)								*/
-/*   - "m2"				(mass of object 1; REAL8, solar mass)								*/
-/*   - "inclination"	(inclination angle; REAL8, radians)                                 */
-/*   - "coa_phase"      (phase angle; REAL8, radians)                                       */
-/*   - "spin1x"			(x component of the spin of object 1; REAL8)						*/
-/*   - "spin1y"			(y component of the spin of object 1; REAL8)						*/
-/*   - "spin1z"			(z component of the spin of object 1; REAL8)						*/
-/*   - "spin2x"			(x component of the spin of object 2; REAL8)						*/
-/*   - "spin2y"			(y component of the spin of object 2; REAL8)						*/
-/*   - "spin2z"			(z component of the spin of object 2; REAL8)						*/
-/*	 - "shift0"			(shift offset; REAL8, radians)			                            */
-/*   - "time"			(coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)	*/
-/*	 - "PNorder"		(Phase PN order; REAL8)												*/
-/********************************************************************************************/
-{
-
-	static LALStatus    status;
-	CoherentGW          waveform;
-	SimInspiralTable    injParams;
-	PPNParamStruc       ppnParams;
-	int approximant=0, order=0;
-	CHAR approximant_order[LIGOMETA_WAVEFORM_MAX];
-	unsigned long i;
-	
-	REAL8 a1,a2,phi,shift;
-	
-	memset( &status, 0, sizeof(LALStatus) );
-	memset( &waveform, 0, sizeof(CoherentGW) );
-	memset( &injParams, 0, sizeof(SimInspiralTable) );
-	memset( &ppnParams, 0, sizeof(PPNParamStruc) );
-
-	//LALInferencePrintVariables(IFOdata->modelParams);
-	newswitch = 0; //temporay global variable to use the new LALSTPN
-	
-	REAL8 m1,m2,mc,eta;
-	REAL8 chirplength;
-	mc  = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
-	eta = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "massratio");
-	
-	mc2masses(mc, eta, &m1, &m2);
-	
-	injParams.mass1			= m1;				/* stellar mass */
-	injParams.mass2			= m2;			    /* stellar mass */
-	injParams.inclination	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "inclination");	    /* inclination in radian */
-	injParams.coa_phase		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase");
-	
-	REAL8 a_spin1		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "a_spin1");
-	REAL8 theta_spin1	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "theta_spin1");
-	REAL8 phi_spin1		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_spin1");
-	
-	REAL8 a_spin2		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "a_spin2");
-	REAL8 theta_spin2	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "theta_spin2");
-	REAL8 phi_spin2		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_spin2");
-	
-	injParams.spin1x = (a_spin1 * sin(theta_spin1) * cos(phi_spin1));
-	injParams.spin1y = (a_spin1 * sin(theta_spin1) * sin(phi_spin1));
-	injParams.spin1z = (a_spin1 * cos(theta_spin1));
-	
-	injParams.spin2x = (a_spin2 * sin(theta_spin2) * cos(phi_spin2));
-	injParams.spin2y = (a_spin2 * sin(theta_spin2) * sin(phi_spin2));
-	injParams.spin2z = (a_spin2 * cos(theta_spin2));
-	
-	//REAL8 shift0			= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase");				/* initial phase */	
-	REAL8 desired_tc		= *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams, "time");   			/* time at coalescence */
-
-	if(desired_tc < (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)){
-		fprintf(stderr, "ERROR: Desired tc %f is before start of segment %f\n",desired_tc,(IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds));
-		exit(1);
-	}
-	
-	injParams.distance	= 1.;																	/* distance set at 1 Mpc */
-	//double PNorder = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "PNorder");					/* Phase PN order, i.e. 1.0 ; 1.5 ; 2.0; 2.5; 3.0 ; 3.5 */
-	
-	if (IFOdata->timeData==NULL) {
-		XLALPrintError(" ERROR in templateLALSTPN(): encountered unallocated 'timeData'.\n");
-		XLAL_ERROR_VOID("LALInferenceTemplateLALSTPN",XLAL_EFAULT);
-	}
-	
-	ppnParams.deltaT = IFOdata->timeData->deltaT;
-	double deltaT = IFOdata->timeData->deltaT;
-	
-	//injParams.f_final = IFOdata->fHigh; //(IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
-	injParams.f_lower = IFOdata->fLow; // IFOdata->fLow * 0.9;
-	
-	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT")){
-		approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
-		if((approximant!=SpinTaylor)){
-			fprintf(stderr, " WARNING in templateLALSTPN(): \"LAL_APPROXIMANT\" %d provided, but \"SpinTaylor\" is used.\n", approximant);
-			approximant = SpinTaylor;
-		}
-	}
-	
-	
-	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_PNORDER"))
-		order = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
-	else {
-	  XLALPrintError(" ERROR in templateLALSTPN(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
-	  XLAL_ERROR_VOID("LALInferenceTemplateLALSTPN",XLAL_EDATA);
-	}
-	
-	XLALInspiralGetApproximantString( approximant_order, LIGOMETA_WAVEFORM_MAX, (Approximant) approximant, (LALPNOrder)  order);
-	//LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),approximant_order);
-	snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",approximant_order);
-	
-	/*switch(order) {
-		case 2:
-			LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTayloronePN");
-			break;
-			
-		case 3:
-			LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTayloronePointFivePN");
-			break;
-			
-		case 4:
-			LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
-			break;
-			
-		case 5:
-			LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPointFivePN");
-			break;
-			
-		case 6:
-			LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylorthreePN");
-			break;
-			
-		case 7:
-			LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylorthreePointFivePN");
-			break;
-			
-		default:
-			fprintf(stderr, " ERROR in templateLALSTPN():  pN order%4.1f is not (yet) supported.\n",PNorder);
-			exit(1);
-	}*/
-	//REPORTSTATUS(&status);
-        /* LAL_CALL( LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams ),&status); */
-        LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams );
-	//REPORTSTATUS(&status);
-	
-    if ( status.statusCode )
-    {
-		fprintf( stderr, " ERROR in templateLALSTPN(): error generating waveform.\n" );
-		//REPORTSTATUS(&status);
-		for (i=0; i<IFOdata->timeData->data->length; i++){
-			
-			IFOdata->timeModelhPlus->data->data[i] = 0.0;
-			IFOdata->timeModelhPlus->data->data[i] = 0.0;
-		}
-		return;
-    }
-	
-	
-	
-	
-	//printf("/n/n waveform: %s/ /n/n","waveform");
-	
-	if(LALInferenceCheckVariable(IFOdata->modelParams, "INFERENCE_TAPER")){
-		if (*(LALInferenceApplyTaper*)LALInferenceGetVariable(IFOdata->modelParams, "INFERENCE_TAPER")==LALINFERENCE_RING){
-		
-			SimRingdownTable          thisRingdownEvent;
-			memset( &thisRingdownEvent, 0, sizeof(SimRingdownTable) );
-			int injectSignalType = LALRINGDOWN_IMR_INJECT;
-			CoherentGW *wfm = NULL;
-			wfm = XLALGenerateInspRing( &waveform, &injParams, &thisRingdownEvent, injectSignalType );
-		
-			if ( !wfm )
-			{
-				fprintf( stderr, "Failed to generate the waveform \n" );
-				if (xlalErrno == XLAL_EFAILED)
-				{
-					fprintf( stderr, "Too much merger\n");     
-					xlalErrno = XLAL_SUCCESS;
-					for (i=0; i<IFOdata->timeData->data->length; i++){
-						
-						IFOdata->timeModelhPlus->data->data[i] = 0.0;
-						IFOdata->timeModelhPlus->data->data[i] = 0.0;
-					}
-					
-					return;
-				}
-				else {
-					for (i=0; i<IFOdata->timeData->data->length; i++){
-						
-						IFOdata->timeModelhPlus->data->data[i] = 0.0;
-						IFOdata->timeModelhPlus->data->data[i] = 0.0;
-					}
-					return;
-				}
-			}
-		
-		waveform = *wfm;
-		
-	}
-	}	
-//bottom:
-	
-	chirplength=ppnParams.tc;	/*The waveform duration up to tc */
-	REAL8 timeShift = desired_tc - (chirplength + IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);   /* This is the difference between the desired start time and the actual start time */
-	INT4 integerLeftShift = ceil(-timeShift/deltaT);
-	REAL8 fractionalRightShift = (deltaT*integerLeftShift+timeShift)/deltaT;
-	
-	
-
-	for (i=0; i<IFOdata->timeData->data->length; i++){		
-		if(deltaT*i>desired_tc || (i+integerLeftShift+1)>=(waveform.phi->data->length - 1) || ((long)i+integerLeftShift)<0){	//set waveform to zero after desired tc, or if need to go past end of input
-			IFOdata->timeModelhPlus->data->data[i] = 0;
-			IFOdata->timeModelhCross->data->data[i] = 0;		
-		}
-			/* Shifting waveform to account for timeShift: */
-		else{
-		a1  = (1.0-fractionalRightShift)*waveform.a->data->data[2*(i+integerLeftShift)]+fractionalRightShift*waveform.a->data->data[2*(i+integerLeftShift)+2];
-        a2  = (1.0-fractionalRightShift)*waveform.a->data->data[2*(i+integerLeftShift)+1]+fractionalRightShift*waveform.a->data->data[2*(i+integerLeftShift)+3];
-        phi     = (1.0-fractionalRightShift)*waveform.phi->data->data[i+integerLeftShift]+fractionalRightShift*waveform.phi->data->data[i+integerLeftShift+1];
-        shift   = (1.0-fractionalRightShift)*waveform.shift->data->data[i+integerLeftShift]+fractionalRightShift*waveform.shift->data->data[i+integerLeftShift+1];
-		
-		IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
-		IFOdata->timeModelhCross->data->data[i] = a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
-		}
-	}	
-	
-	//TAPERING. This routine can and should be optimized. Allocation is happening at EVERY iteration
-	
-	if(LALInferenceCheckVariable(IFOdata->modelParams, "INFERENCE_TAPER")){
-		
-		if(*(LALInferenceApplyTaper*)LALInferenceGetVariable(IFOdata->modelParams, "INFERENCE_TAPER")<5 && *(LALInferenceApplyTaper*)LALInferenceGetVariable(IFOdata->modelParams, "INFERENCE_TAPER")>0){
-			
-			InspiralApplyTaper bookends = *(InspiralApplyTaper*) LALInferenceGetVariable(IFOdata->modelParams, "INFERENCE_TAPER");
-		
-			REAL4Vector *tempVec = NULL;
-			tempVec = (REAL4Vector *)XLALCreateREAL4Vector(IFOdata->timeData->data->length);
-		
-			for (i=0; i<IFOdata->timeData->data->length; i++){
-				tempVec->data[i]=(REAL4) IFOdata->timeModelhPlus->data->data[i];
-			}
-			XLALInspiralWaveTaper(tempVec,bookends);
-			for (i=0; i<IFOdata->timeData->data->length; i++){
-				IFOdata->timeModelhPlus->data->data[i]=(REAL8) tempVec->data[i];
-			}
-		
-			for (i=0; i<IFOdata->timeData->data->length; i++){
-				tempVec->data[i]=(REAL4) IFOdata->timeModelhCross->data->data[i];
-			}
-			XLALInspiralWaveTaper(tempVec,bookends);
-			for (i=0; i<IFOdata->timeData->data->length; i++){
-				IFOdata->timeModelhCross->data->data[i]=(REAL8) tempVec->data[i];
-			}
-			XLALDestroyREAL4Vector(tempVec);
-			
-		}
-	}
-	
-	IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
-
-
-	destroyCoherentGW( &waveform );
-	
-	
-	//LALSDestroyVectorSequence(&status, &( waveform.a->data ));
-	//LALSDestroyVector(&status, &( waveform.f->data ));
-	//LALDDestroyVector(&status, &( waveform.phi->data ));
-	//LALSDestroyVector(&status, &( waveform.shift->data ));
-	
-	//LALFree( waveform.a );
-	//LALFree( waveform.f ); 
-	//LALFree( waveform.phi) ;
-	//LALFree( waveform.shift );
-	
-	LALCheckMemoryLeaks();
-
-	return;
-}
-
-
 
 void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 /********************************************************************************************/
@@ -1775,7 +1496,6 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 			IFOdata->timeModelhPlus->data->data[i] = 0.0;
 		}
     destroyCoherentGW( &waveform );	
-    LALCheckMemoryLeaks();
 		return;
     }
 	
@@ -1942,7 +1662,6 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 
 	
 	destroyCoherentGW( &waveform );	
-	LALCheckMemoryLeaks();
 	
 	return;
 }

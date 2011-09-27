@@ -106,6 +106,34 @@ static void PTMCMCCombinedProposal(LALInferenceRunState *runState, LALInferenceV
   return;
 }
 
+void NSFillMCMCVariables(LALInferenceVariables *proposedParams)
+{
+  REAL8 distance=0.0,mc=0.0;
+  if(LALInferenceCheckVariable(proposedParams,"logdistance"))
+  {
+    distance=exp(*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"));
+    LALInferenceAddVariable(proposedParams,"distance",&distance,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  }
+  if(LALInferenceCheckVariable(proposedParams,"logmc")){
+    mc=exp(*(REAL8 *)LALInferenceGetVariable(proposedParams,"logmc"));
+    LALInferenceAddVariable(proposedParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  }
+  return;
+}
+
+void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
+{ /* PTMCMCLALProposal needs a few params converted */
+ 
+  /* PTMCMC likes to read this directly so we have to plug our mangled values in*/
+  LALInferenceVariables *currentParamsBackup=runState->currentParams;
+  NSFillMCMCVariables(proposedParams);
+
+  runState->currentParams=proposedParams; 
+  PTMCMCLALProposal(runState,proposedParams);
+  /* Restore currentParams */
+  runState->currentParams=currentParamsBackup;
+}
+
 void PTMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
 {
 	UINT4 nIFO=0;
@@ -698,6 +726,10 @@ void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALInferenceVar
 	LALInferenceSetVariable(proposedParams, "declination",    &dec_proposed);
 	LALInferenceSetVariable(proposedParams, "polarisation",   &psi_proposed);
 	LALInferenceSetVariable(proposedParams, "distance",       &dist_proposed);
+	if(LALInferenceCheckVariable(proposedParams,"logdistance")){
+	  REAL8 logdist=log(dist_proposed);
+	  LALInferenceSetVariable(proposedParams,"logdistance",&logdist);
+	}
 	
 	// return ratio of proposal densities (for back & forth jumps) 
 	// in "runState->proposalArgs" vector:
@@ -813,7 +845,11 @@ void PTMCMCLALAdaptationSingleProposal(LALInferenceRunState *runState, LALInfere
 			//dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
 			dist_proposed = dist * exp(gsl_ran_gaussian(GSLrandom,sigma[0])*big_sigma*0.1); // ~10% change
 			logProposalRatio *= dist_proposed / dist;
-			LALInferenceSetVariable(proposedParams, "distance",       &dist_proposed);
+			LALInferenceSetVariable(currentParams, "distance",       &dist_proposed);
+			if(LALInferenceCheckVariable(currentParams,"logdistance")){
+			  REAL8 logdist=log(dist_proposed);
+			  LALInferenceSetVariable(currentParams,"logdistance",&logdist);
+			}
 			break;
 	}
 	
@@ -1295,43 +1331,43 @@ void PTMCMCLALInferenceInclinationFlip(LALInferenceRunState *runState, LALInfere
 
   iota = *((REAL8 *) LALInferenceGetVariable(proposedParams, "inclination"));
   
-  if (runState->template==&LALInferenceTemplateLALSTPN) {
-    /* Handle spins. */
-    REAL8 dummyNorm, newIota, newPhi;
-    REAL8 theta1, theta2, phi1, phi2;
-    REAL8 L[3], a1[3], a2[3], xhat[3] = {1,0,0};
-
-    theta1 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "theta_spin1"));
-    theta2 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "theta_spin2"));
-
-    phi1 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "phi_spin1"));
-    phi2 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "phi_spin2"));
-
-    thetaPhiToVector(1.0, iota, 0.0, L);
-    thetaPhiToVector(1.0, theta1, phi1, a1);
-    thetaPhiToVector(1.0, theta2, phi2, a2);
-
-    rotateVectorAboutVector(L, xhat, M_PI-2.0*iota);
-    rotateVectorAboutVector(a1, xhat, M_PI-2.0*iota);
-    rotateVectorAboutVector(a2, xhat, M_PI-2.0*iota);
-
-    vectorToThetaPhi(&dummyNorm, &newIota, &newPhi, L);
-    vectorToThetaPhi(&dummyNorm, &theta1, &phi1, a1);
-    vectorToThetaPhi(&dummyNorm, &theta2, &phi2, a2);
-
-    if (fabs(newIota + iota - M_PI) > 1e-8 || fabs(newPhi) > 1e-8) {
-      fprintf(stderr, "ERROR: inclination swap not implemented properly.\n");
-      fprintf(stderr, "ERROR: should have new iota = Pi - iota, phi = 0 instead have\n");
-      fprintf(stderr, "ERROR: new iota = %g, old iota = %g, phi = %g\n", newIota, iota, newPhi);
-      exit(1);
-    }
-
-    LALInferenceSetVariable(proposedParams, "phi_spin1", &phi1);
-    LALInferenceSetVariable(proposedParams, "phi_spin2", &phi2);
-    LALInferenceSetVariable(proposedParams, "theta_spin1", &theta1);
-    LALInferenceSetVariable(proposedParams, "theta_spin2", &theta2);
-    /* Don't need to set iota because it will happen outside the if statement. */
-  }
+//   if (runState->template==&LALInferenceTemplateLALSTPN) {
+//     /* Handle spins. */
+//     REAL8 dummyNorm, newIota, newPhi;
+//     REAL8 theta1, theta2, phi1, phi2;
+//     REAL8 L[3], a1[3], a2[3], xhat[3] = {1,0,0};
+// 
+//     theta1 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "theta_spin1"));
+//     theta2 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "theta_spin2"));
+// 
+//     phi1 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "phi_spin1"));
+//     phi2 = *((REAL8 *) LALInferenceGetVariable(proposedParams, "phi_spin2"));
+// 
+//     thetaPhiToVector(1.0, iota, 0.0, L);
+//     thetaPhiToVector(1.0, theta1, phi1, a1);
+//     thetaPhiToVector(1.0, theta2, phi2, a2);
+// 
+//     rotateVectorAboutVector(L, xhat, M_PI-2.0*iota);
+//     rotateVectorAboutVector(a1, xhat, M_PI-2.0*iota);
+//     rotateVectorAboutVector(a2, xhat, M_PI-2.0*iota);
+// 
+//     vectorToThetaPhi(&dummyNorm, &newIota, &newPhi, L);
+//     vectorToThetaPhi(&dummyNorm, &theta1, &phi1, a1);
+//     vectorToThetaPhi(&dummyNorm, &theta2, &phi2, a2);
+// 
+//     if (fabs(newIota + iota - M_PI) > 1e-8 || fabs(newPhi) > 1e-8) {
+//       fprintf(stderr, "ERROR: inclination swap not implemented properly.\n");
+//       fprintf(stderr, "ERROR: should have new iota = Pi - iota, phi = 0 instead have\n");
+//       fprintf(stderr, "ERROR: new iota = %g, old iota = %g, phi = %g\n", newIota, iota, newPhi);
+//       exit(1);
+//     }
+// 
+//     LALInferenceSetVariable(proposedParams, "phi_spin1", &phi1);
+//     LALInferenceSetVariable(proposedParams, "phi_spin2", &phi2);
+//     LALInferenceSetVariable(proposedParams, "theta_spin1", &theta1);
+//     LALInferenceSetVariable(proposedParams, "theta_spin2", &theta2);
+//     /* Don't need to set iota because it will happen outside the if statement. */
+//   }
 
   iota = M_PI - iota;
 
@@ -1456,6 +1492,10 @@ void PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump(LALInferenceRunStat
   dNew = fabs((fPlus*(0.5*(1.0 + cosIotaNew*cosIotaNew)) + fCross*cosIotaNew) / norm);
 
   LALInferenceSetVariable(proposedParams, "distance", &dNew);
+  if(LALInferenceCheckVariable(proposedParams,"logdistance")){
+    REAL8 logdist=log(dNew);
+    LALInferenceSetVariable(proposedParams,"logdistance",&logdist);
+  }
   LALInferenceSetVariable(proposedParams, "inclination", &iotaNew);
 
   LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);

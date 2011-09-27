@@ -100,8 +100,8 @@ void *LALInferenceGetVariable(const LALInferenceVariables * vars,const char * na
   LALInferenceVariableItem *item;
   item=LALInferenceGetItem(vars,name);
   if(!item) {
-    fprintf(stderr, " ERROR in getVariable(): entry \"%s\" not found.\n", name);
-    exit(1);
+    XLALPrintError(" ERROR in getVariable(): entry \"%s\" not found.\n", name);
+    XLAL_ERROR_NULL(__func__,XLAL_EFAILED);
   }
   return(item->value);
 }
@@ -197,11 +197,11 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, vo
 	
   if(!value) {fprintf(stderr,"Unable to access value through null pointer in addVariable, trying to add %s\n",name); exit(1);}
 
-  LALInferenceVariableItem *new=malloc(sizeof(LALInferenceVariableItem));
+  LALInferenceVariableItem *new=XLALMalloc(sizeof(LALInferenceVariableItem));
 
   memset(new,0,sizeof(LALInferenceVariableItem));
 	if(new) {
-		new->value = (void *)malloc(LALInferenceTypeSize[type]);
+		new->value = (void *)XLALMalloc(LALInferenceTypeSize[type]);
 	}
   if(new==NULL||new->value==NULL) {
     XLALPrintError(" ERROR in addVariable(): unable to allocate memory for list item.\n");
@@ -221,7 +221,10 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, vo
 
 void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
 {
-  LALInferenceVariableItem *this=vars->head;
+  LALInferenceVariableItem *this;
+  if(!vars)
+    XLAL_ERROR_VOID(__func__,XLAL_EFAULT);
+  this=vars->head;  
   LALInferenceVariableItem *parent=NULL;
   while(this){
     if(!strcmp(this->name,name)) break;
@@ -230,8 +233,10 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
   if(!this) {fprintf(stderr," WARNING in removeVariable(): entry \"%s\" not found.\n",name); return;}
   if(!parent) vars->head=this->next;
   else parent->next=this->next;
-  free(this->value);
-  free(this);
+  XLALFree(this->value);
+  this->value=NULL;
+  XLALFree(this);
+  this=NULL;
   vars->dimension--;
   return;
 }
@@ -253,8 +258,8 @@ void LALInferenceDestroyVariables(LALInferenceVariables *vars)
   this=vars->head;
   if(this) next=this->next;
   while(this){
-    free(this->value);
-    free(this);
+    XLALFree(this->value);
+    XLALFree(this);
     this=next;
     if(this) next=this->next;
   }
@@ -266,6 +271,9 @@ void LALInferenceDestroyVariables(LALInferenceVariables *vars)
 void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariables *target)
 /*  copy contents of "origin" over to "target"  */
 {
+  /* Check that the source and origin differ */
+  if(origin==target) return;
+
   LALInferenceVariableItem *ptr;
   if(!origin)
   {
@@ -274,19 +282,16 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
   }
 
   /* Make sure the structure is initialised */
-	if(!target) fprintf(stderr,"ERROR: Unable to copy to uninitialised LALInferenceVariables structure\n");
-
-	
+  if(!target) fprintf(stderr,"ERROR: Unable to copy to uninitialised LALInferenceVariables structure\n");
   /* first dispose contents of "target" (if any): */
   LALInferenceDestroyVariables(target);
   
-	
   /* then copy over elements of "origin": */
   ptr = origin->head;
   if(!ptr)
   {
-	  fprintf(stderr,"Bad LALInferenceVariable structure found while trying to copy\n");
-	  exit(1);
+	  XLALPrintError("Bad LALInferenceVariable structure found while trying to copy\n");
+	  XLAL_ERROR_VOID(__func__,XLAL_EFAULT);
   }
   while (ptr != NULL) {
 	  if(!ptr->value || !ptr->name){
@@ -660,7 +665,7 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
   }
   if (j!=2) fprintf(stderr, " ERROR: argument vector \"%s\" not well-formed!\n", input);
   /* now allocate memory for results: */
-  *strings  = (char**)  malloc(sizeof(char*) * (*n));
+  *strings  = (char**)  XLALMalloc(sizeof(char*) * (*n));
   for (i=0; i<(*n); ++i) (*strings)[i] = (char*) malloc(sizeof(char)*512);
   i=0; j=0; 
   k=0; /* string counter    */
@@ -1012,4 +1017,24 @@ char *colNameToParamName(const char *colName) {
   return retstr;
 }
 
-
+void LALInferenceSortVariablesByName(LALInferenceVariables *vars)
+{
+  LALInferenceVariables tmp;
+  tmp.head=NULL;
+  tmp.dimension=0;
+  LALInferenceVariableItem *thisitem,*ptr;
+  LALInferenceVariables *new=calloc(1,sizeof(*new));
+  while(vars->head)
+  {
+    thisitem=vars->head;
+    for (ptr=thisitem->next;ptr;ptr=ptr->next){
+      if(strcmp(ptr->name,thisitem->name)<0)
+	thisitem=ptr;
+    }
+    LALInferenceAddVariable(&tmp, thisitem->name, thisitem->value, thisitem->type, thisitem->vary);
+    LALInferenceRemoveVariable(vars,thisitem->name);
+  }
+  vars->head=tmp.head;
+  vars->dimension=tmp.dimension;
+  return;
+}
