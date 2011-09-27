@@ -282,9 +282,7 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
   }
 
   /* Make sure the structure is initialised */
-	if(!target) fprintf(stderr,"ERROR: Unable to copy to uninitialised LALInferenceVariables structure\n");
-
-	
+  if(!target) fprintf(stderr,"ERROR: Unable to copy to uninitialised LALInferenceVariables structure\n");
   /* first dispose contents of "target" (if any): */
   LALInferenceDestroyVariables(target);
   
@@ -1019,4 +1017,24 @@ char *colNameToParamName(const char *colName) {
   return retstr;
 }
 
-
+void LALInferenceSortVariablesByName(LALInferenceVariables *vars)
+{
+  LALInferenceVariables tmp;
+  tmp.head=NULL;
+  tmp.dimension=0;
+  LALInferenceVariableItem *thisitem,*ptr;
+  LALInferenceVariables *new=calloc(1,sizeof(*new));
+  while(vars->head)
+  {
+    thisitem=vars->head;
+    for (ptr=thisitem->next;ptr;ptr=ptr->next){
+      if(strcmp(ptr->name,thisitem->name)<0)
+	thisitem=ptr;
+    }
+    LALInferenceAddVariable(&tmp, thisitem->name, thisitem->value, thisitem->type, thisitem->vary);
+    LALInferenceRemoveVariable(vars,thisitem->name);
+  }
+  vars->head=tmp.head;
+  vars->dimension=tmp.dimension;
+  return;
+}

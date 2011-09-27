@@ -110,5 +110,7 @@ void PTMCMCLALInferenceDrawUniformlyFromPrior(LALInferenceRunState *runState, LA
 // Von Neumann rejection sampler for the prior !!
 //void VNRPriorOneStep(LALInferenceRunState *runState);
 
+void NSFillMCMCVariables(LALInferenceVariables *proposedParams);
+
 #endif
 

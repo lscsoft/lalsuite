@@ -106,26 +106,28 @@ static void PTMCMCCombinedProposal(LALInferenceRunState *runState, LALInferenceV
   return;
 }
 
+void NSFillMCMCVariables(LALInferenceVariables *proposedParams)
+{
+  REAL8 distance=0.0,mc=0.0;
+  if(LALInferenceCheckVariable(proposedParams,"logdistance"))
+  {
+    distance=exp(*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"));
+    LALInferenceAddVariable(proposedParams,"distance",&distance,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  }
+  if(LALInferenceCheckVariable(proposedParams,"logmc")){
+    mc=exp(*(REAL8 *)LALInferenceGetVariable(proposedParams,"logmc"));
+    LALInferenceAddVariable(proposedParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  }
+  return;
+}
+
 void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
 { /* PTMCMCLALProposal needs a few params converted */
-  REAL8 distance=0.0,mc=0.0;
-  
+ 
   /* PTMCMC likes to read this directly so we have to plug our mangled values in*/
   LALInferenceVariables *currentParamsBackup=runState->currentParams;
-  
-  if(!LALInferenceCheckVariable(proposedParams,"distance")){
-    if(LALInferenceCheckVariable(proposedParams,"logdistance"))
-    {
-      distance=exp(*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"));
-      LALInferenceAddVariable(proposedParams,"distance",&distance,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-    }
-  }
-  if(!LALInferenceCheckVariable(proposedParams,"chirpmass")){
-    if(LALInferenceCheckVariable(proposedParams,"logmc")){
-      mc=exp(*(REAL8 *)LALInferenceGetVariable(proposedParams,"logmc"));
-      LALInferenceAddVariable(proposedParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-     }
-   }
+  NSFillMCMCVariables(proposedParams);
+
   runState->currentParams=proposedParams; 
   PTMCMCLALProposal(runState,proposedParams);
   /* Restore currentParams */
@@ -724,6 +726,10 @@ void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALInferenceVar
 	LALInferenceSetVariable(proposedParams, "declination",    &dec_proposed);
 	LALInferenceSetVariable(proposedParams, "polarisation",   &psi_proposed);
 	LALInferenceSetVariable(proposedParams, "distance",       &dist_proposed);
+	if(LALInferenceCheckVariable(proposedParams,"logdistance")){
+	  REAL8 logdist=log(dist_proposed);
+	  LALInferenceSetVariable(proposedParams,"logdistance",&logdist);
+	}
 	
 	// return ratio of proposal densities (for back & forth jumps) 
 	// in "runState->proposalArgs" vector:
@@ -839,7 +845,11 @@ void PTMCMCLALAdaptationSingleProposal(LALInferenceRunState *runState, LALInfere
 			//dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
 			dist_proposed = dist * exp(gsl_ran_gaussian(GSLrandom,sigma[0])*big_sigma*0.1); // ~10% change
 			logProposalRatio *= dist_proposed / dist;
-			LALInferenceSetVariable(proposedParams, "distance",       &dist_proposed);
+			LALInferenceSetVariable(currentParams, "distance",       &dist_proposed);
+			if(LALInferenceCheckVariable(currentParams,"logdistance")){
+			  REAL8 logdist=log(dist_proposed);
+			  LALInferenceSetVariable(currentParams,"logdistance",&logdist);
+			}
 			break;
 	}
 	
@@ -1482,6 +1492,10 @@ void PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump(LALInferenceRunStat
   dNew = fabs((fPlus*(0.5*(1.0 + cosIotaNew*cosIotaNew)) + fCross*cosIotaNew) / norm);
 
   LALInferenceSetVariable(proposedParams, "distance", &dNew);
+  if(LALInferenceCheckVariable(proposedParams,"logdistance")){
+    REAL8 logdist=log(dNew);
+    LALInferenceSetVariable(proposedParams,"logdistance",&logdist);
+  }
   LALInferenceSetVariable(proposedParams, "inclination", &iotaNew);
 
   LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
