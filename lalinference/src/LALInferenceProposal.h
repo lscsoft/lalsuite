@@ -136,13 +136,6 @@ void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVa
 void LALInferenceAdaptationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 void LALInferenceAdaptationSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-void LALInferenceRotateSky(LALInferenceRunState *state,LALInferenceVariables *parameter);
-INT4 LALInferenceReflectDetPlane(LALInferenceRunState *state,LALInferenceVariables *parameter);
-
-/* Jump in iota and distance so that approximate magnitude remains
-   constant in one of the detectors. */
-void LALInferenceInclinationDistanceConstAmplitudeJump(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
-
 /* Differential evolution */
 void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *state, LALInferenceVariables *proposedParams, const char *names[]);

@@ -226,11 +226,6 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   if(LALInferenceCheckVariable(proposedParams,"phase")) {
     LALInferenceAddProposalToCycle(runState, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
   }
-          
-  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--iotaDistance");
-  if (ppt) {
-    LALInferenceAddProposalToCycle(runState, &LALInferenceInclinationDistanceConstAmplitudeJump, TINYWEIGHT);
-  }
 
   ppt=LALInferenceGetProcParamVal(runState->commandLine, "--covarianceMatrix");
   if (ppt) {
@@ -498,7 +493,6 @@ void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALIn
     }
   } while ((proposeIterator = proposeIterator->next) != NULL && j < N);
 
-  LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
   LALInferenceSetLogProposalRatio(runState, 0.0);
 }
 
@@ -527,8 +521,6 @@ void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVa
   LALInferenceSetVariable(proposedParams, "declination", &newDEC);
 
   LALInferenceSetLogProposalRatio(runState, log(cos(DEC)/cos(newDEC)));
-
-  LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
 }
 
 void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
@@ -595,7 +587,6 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
   }
   
   LALInferenceSetLogProposalRatio(runState, 0.0); /* Symmetric proposal. */
-  LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
 }
 
 void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *runState, LALInferenceVariables *pp) {
@@ -676,5 +667,3 @@ void LALInferenceDrawUniformlyFromPrior(LALInferenceRunState *runState, LALInfer
   REAL8 logRatio = runState->prior(runState, runState->currentParams) - runState->prior(runState, proposedParams);
   LALInferenceSetLogProposalRatio(runState, logRatio);
 }
-
-
