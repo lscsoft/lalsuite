@@ -20,7 +20,17 @@
 #ifndef _LALSIMBLACKHOLERINGDOWN_H
 #define _LALSIMBLACKHOLERINGDOWN_H
 
+/* C++ cannot handle 'complex' because it confuses it with the template
+ * std::complex, which is brought into the global namespace if we
+ * include <complex.h> under g++.  Swig cannot handle 'double complex' either.
+ */
+#if defined(__cplusplus)
+#include <complex>
+typedef std::complex<double> complex;
+#else
 #include <complex.h>
+#endif
+
 #include <lal/LALDatatypes.h>
 
 #include <lal/LALRCSID.h>
