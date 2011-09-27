@@ -3824,6 +3824,9 @@ void sumData( LALInferenceRunState *runState ){
  * the antenna pattern changes) and goes between \f$\pm\pi/4\f$ radians in
  * \f$\psi\f$.
  * 
+ * Note: the may want to be converted into an XLAL function and moved into LAL 
+ * at some point.
+ * 
  * \param t0 [in] initial GPS time of the data
  * \param detNSource [in] structure containing the detector and source
  * orientations and locations
@@ -3887,7 +3890,7 @@ void rescaleOutput( LALInferenceRunState *runState ){
   CHAR outfilepars[256] = "", outfileparstmp[256] = "";
   FILE *fp = NULL, *fptemp = NULL, *fppars = NULL, *fpparstmp = NULL;
   
-  LALInferenceVariables *current=XLALCalloc(1,sizeof(LALInferenceVariables));
+  LALStringVector *paramsStr = NULL;
   
   ProcessParamsTable *ppt = LALInferenceGetProcParamVal( runState->commandLine,
                                                          "--outfile" );
@@ -3931,11 +3934,16 @@ void rescaleOutput( LALInferenceRunState *runState ){
   
   CHAR v[128] = "";
   while( fscanf(fppars, "%s", v) != EOF ){
-    /* reoutput everything but the "model" value to a temporary file */
+      paramsStr = XLALAppendString2Vector( paramsStr, v );
+    
+    /* re-output everything but the "model" value to a temporary file */
     if( strcmp(v, "model") != 0 || strcmp(v, "logL")!=0 
       || strcmp(v, "logPrior") )
       fprintf(fpparstmp, "%s\t", v);
   }
+  
+  /* we will put the logPrior and logLikelihood at the end of the lines */
+  fprintf(fpparstmp, "logPrior\tlogL\n");
   
   fclose(fppars);
   fclose(fpparstmp);
@@ -3943,78 +3951,49 @@ void rescaleOutput( LALInferenceRunState *runState ){
   /* move the temporary file name to the standard outfile_param name */
   rename( outfileparstmp, outfilepars );
   
-  /* copy variables from runState to current (this seems to switch the order,
-     which is required! */
-  LALInferenceCopyVariables(runState->currentParams, current);
-  
-  do{
-    LALInferenceVariableItem *item = current->head;
-    
-    CHAR line[2000];
-    CHAR value[128] = "";
+  while ( 1 ){
     UINT4 i = 0;
     
-    /* read in one line of the file */
-    if( fgets(line, 2000*sizeof(CHAR), fp) == NULL && !feof(fp) ){
-      fprintf(stderr, "Error... cannot read line from file %s.\n", outfile);
-      exit(3);
-    }
-    
-    if( feof(fp) ) break;
+    REAL8 logPrior = 0., logL = 0.;
     
     /* scan through line, get value and reprint out scaled value to temporary
        file */
-    while (item != NULL){
+    for( i = 0; i < paramsStr->length; i++ ){
       CHAR scalename[VARNAME_MAX] = "";
       CHAR scaleminname[VARNAME_MAX] = "";
       REAL8 scalefac = 1., scalemin = 0.;
+      CHAR value[128];
       
-      if( i == 0 ){
-        sprintf(value, "%s", strtok(line, "'\t'"));
-        i++;
-      }
-      else
-        sprintf(value, "%s", strtok(NULL, "'\t'"));
+      if( fscanf(fp, "%s", value) == EOF ) break;
       
-      sprintf(scalename, "%s_scale", item->name);
-      sprintf(scaleminname, "%s_scale_min", item->name);
+      sprintf(scalename, "%s_scale", paramsStr->data[i]);
+      sprintf(scaleminname, "%s_scale_min", paramsStr->data[i]);
       
-      if( strcmp(item->name, "model") && strcmp(item->name, "logL")){
+      if ( LALInferenceCheckVariable( runState->data->dataParams, scalename ) &&
+        LALInferenceCheckVariable( runState->data->dataParams, scaleminname ) ){
+      
         scalefac = 
           *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, 
                                              scalename );
         scalemin = 
-           *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, 
-                                              scaleminname );             
-      }
+          *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, 
+                                              scaleminname );
       
-      switch (item->type) {
-        case LALINFERENCE_INT4_t:
-          fprintf(fptemp, "%d", (INT4)(atoi(value)*scalefac + scalemin));
-          break;
-        case LALINFERENCE_REAL4_t:
-          fprintf(fptemp, "%.12e", atof(value)*scalefac + scalemin);
-          break;
-        case LALINFERENCE_REAL8_t:
-          fprintf(fptemp, "%.12le", atof(value)*scalefac + scalemin);
-          break;
-        case LALINFERENCE_string_t:
-          /* don't reprint out any string values */
-          break;
-        default:
-          fprintf(stderr, "No type specified for %s.\n", item->name);
+        fprintf(fptemp, "%.12le", atof(value)*scalefac + scalemin);
       }
-      
+      else if( !strcmp(paramsStr->data[i], "logL") )
+        logL = atof(value);
+      else if( !strcmp(paramsStr->data[i], "logPrior") )
+        logPrior = atof(value);
+        
       fprintf(fptemp, "\t");
-      
-      item = item->next;
     }
     
-    /* last item in the line should be the logLikelihood (which is not in the
-       currentParams structure) */
-    sprintf(value, "%s", strtok(NULL, "'\t'"));
-    fprintf(fptemp, "%lf\n", atof(value));
-  }while( !feof(fp) );
+    if( feof(fp) ) break;
+    
+    /* print out the last two items to be the logPrior and logLikelihood */
+    fprintf(fptemp, "%lf\t%lf\n", logPrior, logL);
+  }
   
   fclose(fp);
   fclose(fptemp);

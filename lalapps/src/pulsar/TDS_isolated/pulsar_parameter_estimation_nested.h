@@ -56,6 +56,7 @@
 #include <lal/LALNoiseModels.h>
 #include <lal/Units.h>
 #include <lal/Date.h>
+#include <lal/StringVector.h>
 
 #include <lalapps.h>
 
