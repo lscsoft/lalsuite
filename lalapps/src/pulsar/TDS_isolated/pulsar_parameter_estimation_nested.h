@@ -165,8 +165,6 @@ void add_variable_scale_prior( LALInferenceVariables *var,
 
 void initialiseProposal( LALInferenceRunState *runState );
 
-void setupLivePointsArray( LALInferenceRunState *runState );
-
 /* likelihood and prior */
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, 
                              LALInferenceIFOData *data,

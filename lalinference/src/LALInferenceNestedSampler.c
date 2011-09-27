@@ -1212,8 +1212,6 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	UINT4 i;
 	REAL8Vector *logLs;
 	REAL8 logPrior=0.0;
-	
-	LALInferenceVariableItem *current;
 
 	/* Allocate the array */
 	/* runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *)); */
@@ -1238,57 +1236,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 		
 		/* Sprinkle the varying points among prior */
 		do{
-			for(current=runState->livePoints[i]->head ;current!=NULL;
-				current=current->next){
-				if(current->vary==LALINFERENCE_PARAM_CIRCULAR || current->vary==LALINFERENCE_PARAM_LINEAR)
-				{
-					switch (current->type){
-						case LALINFERENCE_REAL4_t:
-						{
-							REAL4 tmp;
-							REAL4 min,max;
-							LALInferenceGetMinMaxPrior(runState->priorArgs,current->name, 
-										   (void *)&min,(void *)&max);
-							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
-							break;
-						}
-							
-						case LALINFERENCE_REAL8_t:
-						{
-							REAL8 tmp;
-							REAL8 min,max;
-							LALInferenceGetMinMaxPrior(runState->priorArgs,current->name, 
-										   (void *)&min,(void *)&max);
-							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
-							break;
-						}
-						case LALINFERENCE_INT4_t:
-						{
-							INT4 tmp;
-							INT4 min,max;
-							LALInferenceGetMinMaxPrior(runState->priorArgs,current->name,
-										   (void *)&min,(void *)&max);
-							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
-							break;
-						}
-						case LALINFERENCE_INT8_t:
-						{
-							INT8 tmp;
-							INT8 min,max;
-							LALInferenceGetMinMaxPrior(runState->priorArgs,current->name,
-										   (void *)&min,(void *)&max);
-							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
-							break;
-						}
-						default:
-							fprintf(stderr,"Trying to randomise a non-numeric parameter!");
-					}
-				}
-			}
+			LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );
 			logPrior=runState->prior(runState,runState->livePoints[i]);
 		}while(logPrior==-DBL_MAX || isnan(logPrior));
 		/* Populate log likelihood */

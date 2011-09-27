@@ -104,5 +104,15 @@ int LALInferenceCheckMinMaxPrior(LALInferenceVariables *priorArgs, const char *n
 /** Check for a Gaussian prior (with a mean and variance) */
 int LALInferenceCheckGaussianPrior(LALInferenceVariables *priorArgs, const char *name);
 
+/** Draw variables from the prior ranges */
+void LALInferenceDrawFromPrior( LALInferenceVariables *output, 
+                                LALInferenceVariables *priorArgs, 
+                                gsl_rng *rdm );
+
+/** Draw an individual variable from its prior range */
+void LALInferenceDrawNameFromPrior( LALInferenceVariables *output, 
+                                    LALInferenceVariables *priorArgs, 
+                                    char *name, LALInferenceVariableType type, 
+                                    gsl_rng *rdm );
 
 #endif

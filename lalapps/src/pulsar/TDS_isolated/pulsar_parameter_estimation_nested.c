@@ -327,7 +327,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
                
   /* Create live points array and fill initial parameters */
-  setupLivePointsArray( &runState );
+  LALInferenceSetupLivePointsArray( &runState );
   
   logLikelihoods = *(REAL8Vector **)
     LALInferenceGetVariable( runState.algorithmParams, "logLikelihoods" );
@@ -1829,142 +1829,6 @@ set.\n", propfile, tempPar);
   return;
 }
 
-
-/** \brief Set up the array of initial live points
- * 
- * This function draws the parameters for the initial set of live points from 
- * their prior ranges. For parameters with linear priors the value is drawn from
- * a uniform distribution in that range using \c gsl_rng_uniform and for 
- * parameters with Gaussian priors they are drawn from a Gaussian distribution 
- * using \c gsl_ran_gaussian.
- * 
- * The likelihood for each live point is calculated.
- * 
- * \param runState [in] A pointer to the LALInferenceRunState
- */
-void setupLivePointsArray( LALInferenceRunState *runState ){
-/* Set up initial basket of live points, drawn from prior,
-   by copying runState->currentParams to all entries in the array*/
-  UINT4 Nlive = (UINT4)*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
-  UINT4 i;
-  REAL8Vector *logLs;
-        
-  LALInferenceVariableItem *current;
-  
-  /* Allocate the array */
-  runState->livePoints = XLALCalloc( Nlive, sizeof(LALInferenceVariables *) );
-  
-  if( runState->livePoints == NULL ){
-    fprintf(stderr,"Unable to allocate memory for %i live points\n",Nlive);
-    exit(1);
-  }
-
-  logLs = XLALCreateREAL8Vector( Nlive );
-     
-  LALInferenceAddVariable( runState->algorithmParams, "logLikelihoods",
-               &logLs, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
-               
-  fprintf(stdout, "Sprinkling %i live points, may take some time\n", Nlive);
-  
-  for( i=0; i<Nlive; i++){
-    runState->livePoints[i] = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-                
-    /* Copy the param structure */
-    LALInferenceCopyVariables( runState->currentParams, runState->livePoints[i] );
-    
-    /* Sprinkle the varying points among prior */
-    do{
-      for( current=runState->livePoints[i]->head; current!=NULL;
-           current=current->next){
-        CHAR tempParPrior[VARNAME_MAX] = "";
-        UINT4 gp = 0;
-      
-        sprintf(tempParPrior,"%s_gaussian_mean",current->name);
-      
-        if( LALInferenceCheckVariable( runState->priorArgs, tempParPrior ) ) gp = 1;
-        
-        if( current->vary==LALINFERENCE_PARAM_CIRCULAR || current->vary==LALINFERENCE_PARAM_LINEAR )
-        {
-          switch (current->type){
-            case LALINFERENCE_REAL4_t:
-            {
-              REAL4 tmp;
-              REAL4 min, max, mu, sigma;
-                                                       
-              if( gp ){
-                LALInferenceGetGaussianPrior( runState->priorArgs, current->name, 
-                                  (void *)&mu, (void *)&sigma );
-                tmp = mu + gsl_ran_gaussian(runState->GSLrandom, (double)sigma);
-              }
-              else{
-                LALInferenceGetMinMaxPrior( runState->priorArgs, current->name, 
-                                (void *)&min, (void *)&max );
-                tmp = min + (max-min)*gsl_rng_uniform( runState->GSLrandom );
-              }
-                                                       
-              LALInferenceSetVariable( runState->livePoints[i], current->name, &tmp );
-              break;
-            }
-            case LALINFERENCE_REAL8_t:
-            {
-              REAL8 tmp;
-              REAL8 min, max, mu, sigma;
-                                                       
-              if( gp ){
-                LALInferenceGetGaussianPrior( runState->priorArgs, current->name, 
-                                  (void *)&mu, (void *)&sigma );
-                tmp = mu + gsl_ran_gaussian(runState->GSLrandom, (double)sigma);
-              }
-              else{
-                LALInferenceGetMinMaxPrior( runState->priorArgs, current->name, 
-                                (void *)&min, (void *)&max );
-                tmp = min + (max-min)*gsl_rng_uniform( runState->GSLrandom );
-              }
-                                                       
-              LALInferenceSetVariable( runState->livePoints[i], current->name, &tmp );
-              break;
-            }
-            case LALINFERENCE_INT4_t:
-            {
-              INT4 tmp;
-              INT4 min,max;
-                                                       
-              LALInferenceGetMinMaxPrior( runState->priorArgs, current->name, (void *)&min,
-                              (void *)&max );
-                                                       
-              tmp = min + (max-min)*gsl_rng_uniform(runState->GSLrandom);
-                                                       
-              LALInferenceSetVariable( runState->livePoints[i], current->name, &tmp );
-              break;
-            }
-            case LALINFERENCE_INT8_t:
-            {
-              INT8 tmp;
-              INT8 min, max;
-                                                       
-              LALInferenceGetMinMaxPrior( runState->priorArgs, current->name, (void *)&min,
-                              (void *)&max );
-                                                       
-              tmp = min + (max-min)*gsl_rng_uniform(runState->GSLrandom);
-                                                       
-              LALInferenceSetVariable( runState->livePoints[i], current->name, &tmp);
-              break;
-            }
-            default:
-              fprintf(stderr,"Trying to randomise a non-numeric parameter!");
-          }
-        }
-      }
-               
-    }while( runState->prior( runState,runState->livePoints[i] ) == -DBL_MAX );
-    
-    /* Populate log likelihood */           
-    logLs->data[i] = runState->likelihood( runState->livePoints[i],
-                                           runState->data, runState->template );
-    LALInferenceAddVariable(runState->livePoints[i],"logL",&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-  }
-        
-}
 
 /*------------------- END INITIALISATION FUNCTIONS ---------------------------*/
 
@@ -4068,7 +3932,8 @@ void rescaleOutput( LALInferenceRunState *runState ){
   CHAR v[128] = "";
   while( fscanf(fppars, "%s", v) != EOF ){
     /* reoutput everything but the "model" value to a temporary file */
-    if( strcmp(v, "model") != 0 || strcmp(v,"logL")!=0 )
+    if( strcmp(v, "model") != 0 || strcmp(v, "logL")!=0 
+      || strcmp(v, "logPrior") )
       fprintf(fpparstmp, "%s\t", v);
   }
   
