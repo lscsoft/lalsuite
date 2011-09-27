@@ -20,6 +20,12 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 NRCSID(LALSIMINSPIRALSPINTAYLORT4H, "$Id$");
 
 /**
@@ -84,3 +90,8 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	INT4 phaseO               /**< twice post-Newtonian order */
 	);
 
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
