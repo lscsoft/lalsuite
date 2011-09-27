@@ -23,6 +23,12 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALSimIMR.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 NRCSID(LALSIMINSPIRALH, "$Id$");
 
 #define LAL_PN_MODE_L_MAX 3
@@ -719,5 +725,11 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
 		LALSpinInteraction spinFlags, /**< flags to control spin effects */
 		int phaseO                 /**< twice PN phase order */
 		);
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
 
 #endif /* _LALSIMINSPIRAL_H */
