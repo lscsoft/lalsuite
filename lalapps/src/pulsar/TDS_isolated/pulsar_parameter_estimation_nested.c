@@ -3877,7 +3877,9 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource,
  * 
  * This function reads in the file of samples output from the Nested Sampling
  * algorithm (in the file specified by \c outfile) and scales them back to 
- * their true values.
+ * their true values. It removes the string variable "model" from the output
+ * and shifts the logPrior and logLikelihood values to the end of the parameter
+ * list.
  * 
  * Note: The output may soon be in an XML format, so this function will need to
  * be amended. 

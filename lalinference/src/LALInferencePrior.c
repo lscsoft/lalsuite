@@ -718,6 +718,10 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
     LALInferenceGetMinMaxPrior(priorArgs, name, (void *)&min, (void *)&max);
     tmp = min + (max-min)*gsl_rng_uniform( rdm );
   }
+  /* not a recognised prior type */
+  else{
+    return;
+  }
   
   switch ( type ){
     case LALINFERENCE_REAL4_t:
@@ -745,6 +749,9 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
       break;
     }
     default:
-      fprintf(stderr,"Trying to randomise a non-numeric parameter!");
+      XLALPrintError ("%s: Trying to randomise a non-numeric \
+parameter!\n", __func__ );
+      XLAL_ERROR_VOID ( __func__, XLAL_EFUNC );
+      break;
   }
 }
