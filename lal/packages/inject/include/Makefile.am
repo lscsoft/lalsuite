@@ -1,20 +1,15 @@
 pkginclude_HEADERS = \
 	Inject.h \
 	SimulateCoherentGW.h \
-	SkyCoordinates.h \
-	SkyCoordinatesLaldoc.h
+	SkyCoordinates.h
 
 CLEANFILES =
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
+MOSTLYCLEANFILES =
+DISTCLEANFILES =
 
 all-local: include-link
 
-dvi-local: .dvi-dep
-
 @INCLUDEMKFILE@
-
-@DVIMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)
 CLEANFILES += $(swig_clean)

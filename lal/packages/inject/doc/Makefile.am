@@ -1,42 +1,35 @@
 DOCSOURCEFILES = \
-	inject.tex \
+	inject.dox \
+	inject_ascend.png \
 	inject_ascend.eps \
-	inject_ascend.pdf \
+	inject_binary.png \
 	inject_binary.eps \
-	inject_binary.pdf \
+	inject_eanomaly.png \
 	inject_eanomaly.eps \
-	inject_eanomaly.pdf \
+	inject_ecliptic.png \
 	inject_ecliptic.eps \
-	inject_ecliptic.pdf \
+	inject_galactic.png \
 	inject_galactic.eps \
-	inject_galactic.pdf \
+	inject_geodetic.png \
 	inject_geodetic.eps \
-	inject_geodetic.pdf \
+	inject_geodeticsing.png \
 	inject_geodeticsing.eps \
-	inject_geodeticsing.pdf \
+	inject_geodetictest.png \
 	inject_geodetictest.eps \
-	inject_geodetictest.pdf \
+	inject_geographic.png \
 	inject_geographic.eps \
-	inject_geographic.pdf \
+	inject_hanomaly.png \
 	inject_hanomaly.eps \
-	inject_hanomaly.pdf \
+	inject_horizon.png \
 	inject_horizon.eps \
-	inject_horizon.pdf \
+	inject_lat_long.png \
 	inject_lat_long.eps \
-	inject_lat_long.pdf \
+	inject_phase_diagram.png \
 	inject_phase_diagram.eps \
-	inject_phase_diagram.pdf
+	SkyCoordinates_conversions.eps \
+	SkyCoordinates_conversions.png
 
-MOSTLYCLEANFILES = .dvi-dep
-CLEANFILES = \
-	main.dvi \
-	main.pdf \
-	main.ps
+MOSTLYCLEANFILES =
+CLEANFILES =
 
 EXTRA_DIST = $(DOCSOURCEFILES)
-
-dvi-local: .dvi-dep
-distclean-local:
-	-rm -fr .adoc
-
-@DOCMKFILE@
