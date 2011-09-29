@@ -588,6 +588,8 @@ parser.add_option("", "--skip-datafind", action="store_false", default=True,
   "the file caches in ./GRBxxxxxx/datafind/cache).")
 parser.add_option("", "--skip-onoff", action="store_false", default=True,
   dest="do_onoff", help="skip the onoff DAG")
+parser.add_option("", "--do-slides", action="store_true", default=False,
+  dest="do_slides", help="do time slides")
 parser.add_option("", "--do-coh-PTF", action="store_true", default=False,
   dest="do_coh_PTF", help="Use this flag if doing a coh PTF analysis")
 
@@ -745,8 +747,9 @@ for grb in ext_trigs:
   # generation script.  In slightly more detail, steps are:
   #
   # 1. datafind
-  # 3. onoff-source analysis
-  # 3. injection runs
+  # 2. onoff-source analysis
+  # 3. time-slide analysis
+  # 4. injection runs
   #    a. generate injections
   #    b. split injections into files so they are safely separated
   #    c. generate DAG
@@ -770,7 +773,7 @@ for grb in ext_trigs:
     datafind_node = None
 
   if opts.do_onoff:
-    if opts.verbose: print "Creating DAG for onoff analysis"
+    if opts.verbose: print "Creating DAG for zero lag analysis"
     if opts.do_coh_PTF:
       onoff_analysis = ptf_run(idirectory + "/onoff", cp, grb_ifolist,
                         opts.log_path, source_file, "zero_lag",
@@ -779,15 +782,32 @@ for grb in ext_trigs:
                         verbose=opts.verbose)
     else:
       onoff_analysis = hipe_run(idirectory + "/onoff", cp, grb_ifolist,
-                        opts.log_path, source_file, "onoff",
+                        opts.log_path, source_file, "zero_lag",
                         offSourceSegment,
-                        usertag=idirectory + "_ONOFF_CATEGORY_1",
+                        usertag=idirectory + "_ZERO_LAG_CATEGORY_1",
                         verbose=opts.verbose,
                         dont_run=["datafind"])
-
+    onoff_analysis.set_numslides(0)
     onoff_node = onoff_analysis.finalize(uberdag=uberdag, parent=datafind_node)
     hipe_caches.append(onoff_analysis.get_cache_name())
 
+  if opts.do_slides:
+    if opts.verbose: print "Creating DAG for time slide analysis"
+    if opts.do_coh_PTF:
+      slide_analysis = ptf_run(idirectory + "/timeslides", cp, grb_ifolist,
+                        opts.log_path, source_file, "slides",
+                        offSourceSegment,
+                        usertag=idirectory + "_TIME_SLIDES_CATEGORY_1",
+                        verbose=opts.verbose)
+    else:
+      slide_analysis = hipe_run(idirectory + "/timeslides", cp, grb_ifolist,
+                        opts.log_path, source_file, "slides",
+                        offSourceSegment,
+                        usertag=idirectory + "_TIME_SLIDES_CATEGORY_1",
+                        verbose=opts.verbose,
+                        dont_run=["datafind"])
+    slide_node = slide_analysis.finalize(uberdag=uberdag, parent=datafind_node)
+    hipe_caches.append(slide_analysis.get_cache_name()) 
   ############################################################################
   # create the config parser object and read in the ini file
   if opts.injection_config:
