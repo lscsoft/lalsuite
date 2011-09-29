@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011
 #
-# serial 7
+# serial 8
 
 # basic version string comparison
 # can only handle numeric versions separated by periods
@@ -67,6 +67,9 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
     SWIG_HEADERS=
     AC_SUBST(SWIG_HEADERS)
   ])
+
+  # string to add to user environment setup scripts
+  SWIG_USER_ENV=
 
   # configure SWIG target scripting languages
   swig_build=false
@@ -174,6 +177,9 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
     AS_IF([test ${swig_is_lal} = true],[
       SWIG_HEADERS="${SWIG_HEADERS} swiglal-common.i swiglal-gsl.i"
     ])
+
+    # string to add to user environment setup scripts
+    AC_SUBST(SWIG_USER_ENV)
 
     # path SWIG should look in for header files:
     # keep any -I options in CPPFLAGS, without the -I prefix
@@ -325,6 +331,9 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE_OCTAVE],[
     AC_MSG_RESULT([\${prefix}/${octave_octfiledir}])
     AC_SUBST(octfiledir, [${prefix}/${octave_octfiledir}])
 
+    # string to add to user environment setup scripts
+    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend OCTAVE_PATH $(octfiledir)~E~O~L~'
+
   ])
 ])
 
@@ -342,6 +351,9 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE_PYTHON],[
       AC_MSG_ERROR([could not import numpy])
     ])
     AC_MSG_RESULT([yes])
+
+    # string to add to user environment setup scripts
+    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend PYTHONPATH $(pyexecdir)~E~O~L~'
 
   ])
 ])

@@ -28,9 +28,6 @@ swig_wrapfile = $(swig_wrapname).cpp
 # name of the test script for the SWIG wrapping module
 swig_wrapcheck = $(srcdir)/check-$(swig_wrapname)
 
-# name of the SWIG environment setup files
-swig_envfile = $(swig_wrapname)-user-env
-
 # cleanup files
 swig_cleanfiles = $(swig_wrapfile) \
                   $(swig_iface) \
