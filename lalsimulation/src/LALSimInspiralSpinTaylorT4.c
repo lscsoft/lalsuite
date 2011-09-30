@@ -393,7 +393,10 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
             deltaT, &lalDimensionlessUnit, len); 
     if ( !V || !Phi || !S1x || !S1y || !S1z || !S2x || !S2y || !S2z 
             || !LNhatx || !LNhaty || !LNhatz || !E1x || !E1y || !E1z )
+    {
+        XLALDestroyREAL8Array(yout);
         XLAL_ERROR(__func__, XLAL_EFUNC);
+    }
 
     /* Copy time series of dynamical variables */
     /* from yout array returned by integrator to output time series */
@@ -415,6 +418,8 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
         (*E1y)->data->data[i] 		= yout->data[13*len+i];
         (*E1z)->data->data[i] 		= yout->data[14*len+i];
     }
+
+    XLALDestroyREAL8Array(yout);
 
     return XLAL_SUCCESS;
 }
