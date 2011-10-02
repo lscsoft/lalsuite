@@ -686,7 +686,7 @@ static REAL8 psd_weighted_filter_inner_product(
  */
 
 
-static COMPLEX16FrequencySeries *generate_filter(
+COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	REAL8 channel_flow,
 	REAL8 channel_width,
 	const REAL8FrequencySeries *psd,
@@ -805,7 +805,7 @@ LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 	new->unwhitened_cross = unwhitened_cross;
 
 	for(i = 0; i < n_channels; i++) {
-		basis_filters[i].fseries = generate_filter(flow + i * channel_bandwidth, channel_bandwidth, psd, two_point_spectral_correlation);
+		basis_filters[i].fseries = XLALCreateExcessPowerFilter(flow + i * channel_bandwidth, channel_bandwidth, psd, two_point_spectral_correlation);
 		if(!basis_filters[i].fseries) {
 			while(i--)
 				XLALDestroyCOMPLEX16FrequencySeries(basis_filters[i].fseries);
