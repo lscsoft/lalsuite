@@ -669,7 +669,7 @@ double XLALExcessPowerFilterInnerProduct(
 }
 
 
-/*
+/**
  * Generate the frequency domain channel filter function.  The filter is
  * nominally a Hann window twice the channel's width, centred on the
  * channel's centre frequency.  The filter is normalized so that its
@@ -681,10 +681,10 @@ double XLALExcessPowerFilterInnerProduct(
 
 
 COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
-	REAL8 channel_flow,
-	REAL8 channel_width,
-	const REAL8FrequencySeries *psd,
-	const REAL8Sequence *correlation
+	REAL8 channel_flow,	/*< Hz */
+	REAL8 channel_width,	/*< Hz */
+	const REAL8FrequencySeries *psd,	/*< power spectral density function.  see XLALREAL8AverageSpectrumWelch() and friends. */
+	const REAL8Sequence *correlation	/*< two-point spectral correlation function.  see XLALREAL8WindowTwoPointSpectralCorrelation(). */
 )
 {
 	char filter_name[100];
