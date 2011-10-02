@@ -620,40 +620,13 @@ void XLALDestroyTFPlane(
 static REAL8 filter_inner_product(
 	const COMPLEX16FrequencySeries *filter1,
 	const COMPLEX16FrequencySeries *filter2,
-	const REAL8Sequence *correlation
-)
-{
-	const int k10 = floor(filter1->f0 / filter1->deltaF + 0.5);
-	const int k20 = floor(filter2->f0 / filter2->deltaF + 0.5);
-	int k1, k2;
-	COMPLEX16 sum = {0, 0};
-
-	for(k1 = 0; k1 < (int) filter1->data->length; k1++) {
-		const COMPLEX16 *f1data = &filter1->data->data[k1];
-		for(k2 = 0; k2 < (int) filter2->data->length; k2++) {
-			const COMPLEX16 *f2data = &filter2->data->data[k2];
-			const unsigned delta_k = abs(k10 + k1 - k20 - k2);
-			const double sksk = (delta_k & 1 ? -1 : +1) * (delta_k < correlation->length ? correlation->data[delta_k] : 0);
-
-			sum.re += sksk * (f1data->re * f2data->re + f1data->im * f2data->im);
-			sum.im += sksk * (f1data->im * f2data->re - f1data->re * f2data->im);
-		}
-	}
-
-	return 2 * sqrt(sum.re * sum.re + sum.im * sum.im);
-}
-
-
-static REAL8 psd_weighted_filter_inner_product(
-	const COMPLEX16FrequencySeries *filter1,
-	const COMPLEX16FrequencySeries *filter2,
 	const REAL8Sequence *correlation,
 	const REAL8FrequencySeries *psd
 )
 {
 	const int k10 = floor(filter1->f0 / filter1->deltaF + 0.5);
 	const int k20 = floor(filter2->f0 / filter2->deltaF + 0.5);
-	const REAL8 *pdata = psd->data->data - (int) (psd->f0 / psd->deltaF);
+	const REAL8 *pdata = psd ? psd->data->data - (int) (psd->f0 / psd->deltaF) : NULL;
 	int k1, k2;
 	COMPLEX16 sum = {0, 0};
 
@@ -664,7 +637,7 @@ static REAL8 psd_weighted_filter_inner_product(
 			const unsigned delta_k = abs(k10 + k1 - k20 - k2);
 			double sksk = (delta_k & 1 ? -1 : +1) * (delta_k < correlation->length ? correlation->data[delta_k] : 0);
 
-			sksk *= sqrt(pdata[k10 + k1] * pdata[k20 + k2]);
+			sksk *= pdata ? sqrt(pdata[k10 + k1] * pdata[k20 + k2]) : 1;
 
 			sum.re += sksk * (f1data->re * f2data->re + f1data->im * f2data->im);
 			sum.im += sksk * (f1data->im * f2data->re - f1data->re * f2data->im);
@@ -752,7 +725,7 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	 * of the filter in bins.
 	 */
 
-	norm = sqrt((channel_width / filter->deltaF) / filter_inner_product(filter, filter, correlation));
+	norm = sqrt((channel_width / filter->deltaF) / filter_inner_product(filter, filter, correlation, NULL));
 	for(i = 0; i < filter->data->length; i++) {
 		filter->data->data[i].re *= norm;
 		filter->data->data[i].im *= norm;
@@ -816,14 +789,14 @@ LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 		}
 
 		/* compute the unwhitened root mean square for this channel */
-		basis_filters[i].unwhitened_rms = sqrt(psd_weighted_filter_inner_product(basis_filters[i].fseries, basis_filters[i].fseries, two_point_spectral_correlation, psd) * filter_deltaF / 2);
+		basis_filters[i].unwhitened_rms = sqrt(filter_inner_product(basis_filters[i].fseries, basis_filters[i].fseries, two_point_spectral_correlation, psd) * filter_deltaF / 2);
 	}
 
 	/* compute the cross terms for the channel normalizations and
 	 * unwhitened mean squares */
 	for(i = 0; i < new->n_filters - 1; i++) {
-		twice_channel_overlap->data[i] = 2 * filter_inner_product(basis_filters[i].fseries, basis_filters[i + 1].fseries, two_point_spectral_correlation);
-		unwhitened_cross->data[i] = psd_weighted_filter_inner_product(basis_filters[i].fseries, basis_filters[i + 1].fseries, two_point_spectral_correlation, psd) * psd->deltaF;
+		twice_channel_overlap->data[i] = 2 * filter_inner_product(basis_filters[i].fseries, basis_filters[i + 1].fseries, two_point_spectral_correlation, NULL);
+		unwhitened_cross->data[i] = filter_inner_product(basis_filters[i].fseries, basis_filters[i + 1].fseries, two_point_spectral_correlation, psd) * psd->deltaF;
 	}
 
 	return new;
