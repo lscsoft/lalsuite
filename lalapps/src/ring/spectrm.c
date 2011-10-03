@@ -106,6 +106,53 @@ REAL4FrequencySeries *compute_average_spectrum(
   return spectrum;
 }
 
+REAL4FrequencySeries *generate_theoretical_psd(
+    REAL4                    deltaT,
+    REAL8                    segmentDuration,
+    UINT4                    spectrumNumber
+)
+{
+  REAL4FrequencySeries *spectrum;
+  UINT4 segmentLength;
+  UINT4 segmentStride;
+
+  segmentLength  = floor( segmentDuration/series->deltaT + 0.5 );
+  segmentStride  = floor( strideDuration/series->deltaT + 0.5 );
+
+  spectrum       = LALCalloc( 1, sizeof( *spectrum ) );
+  spectrum->data = XLALCreateREAL4Vector( segmentLength/2 + 1 );
+
+  spectrum->epoch  = series->epoch;
+  spectrum->deltaF = 1.0/segmentDuration;
+
+  if (spectrum == WHITE_PSD) /* just return a constant spectrum */
+  {
+    UINT4 k;
+    REAL4 spec;
+    spec = 2.0 * deltaT;
+    verbose( "creating white spectrum with constant value %g\n", spec );
+    for ( k = 1; k < spectrum->data->length - 1; ++k )
+      spectrum->data->data[k] = spec;
+    /* DC and Nyquist */
+    spectrum->data->data[0] = 2.0 * spec;
+    spectrum->data->data[spectrum->data->length - 1] = 2.0 * spec;
+    snprintf( spectrum->name, sizeof( spectrum->name ),
+      "WHITE_NOISE_PSD" );
+  }
+  else if ( spectrum == ILIGO_PSD )
+  {
+    verbose( "Creating initial LIGO PSD" ); 
+    XLALSimNoisePSD(spectrum, flow, XLALSimNoisePSDiLIGOSRD);   
+    snprintf( spectrum->name, sizeof( spectrum->name ),
+      "iLIGO_PSD" );
+  }
+
+  return spectrum;
+}
+
+
+
+
 
 /* routine to invert and truncate (to have compact time support) a spectrum */
 int invert_spectrum(

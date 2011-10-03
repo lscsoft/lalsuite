@@ -42,6 +42,14 @@ REAL4FrequencySeries *compute_average_spectrum(
     );
 
 
+/* Routine to generate a theoretical PSD */
+REAL4FrequencySeries *generate_theoretical_psd(
+    REAL4                    deltaT,
+    REAL8                    segmentDuration,
+    UINT4                    spectrumNumber
+    );
+
+
 /* routine to invert and truncate (to have compact time support) a spectrum */
 int invert_spectrum(
     REAL4FrequencySeries *spectrum,
@@ -61,5 +69,12 @@ int calibrate_spectrum(
     REAL8                    lowCutoffFrequency,
     int                      inverse
     );
+
+typedef enum
+{
+  WHITE_PSD,
+  ILIGO_PSD
+}
+spectrumType;
 
 #endif /* INVSPEC_H */
