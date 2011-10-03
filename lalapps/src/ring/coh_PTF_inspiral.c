@@ -2060,7 +2060,6 @@ void coh_PTF_statistic(
                   fLowCross = frequencyRangesCross[LAL_NUM_IFO][j-1];
                   fHighCross = frequencyRangesCross[LAL_NUM_IFO][j];
                 }                 
-                fprintf(stderr,"Frequency ranges: %e %e %e %e\n",fLowPlus,fHighPlus,fLowCross,fHighCross);
                 for(k = 0; k < LAL_NUM_IFO; k++)
                 {
                   if (params->haveTrig[k])
