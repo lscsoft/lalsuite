@@ -112,10 +112,11 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "h2-slide-segment",        required_argument, 0, '&' },
     { "l1-slide-segment",        required_argument, 0, '(' },
     { "v1-slide-segment",        required_argument, 0, ')' },
-    { "sky-positions-file",       required_argument, 0, '#' },
+    { "sky-positions-file",      required_argument, 0, '#' },
+    { "fft-level",               required_argument, 0, '|' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:<:>:!:&:(:):#";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:<:>:!:&:(:):#:|";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -396,9 +397,12 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
      case '#': /* sky grid file */
         localparams.skyPositionsFile = optarg;
         break;
-      case '?':
+     case '|': /* FFT-level for plans */
+        localparams.fftLevel = atoi( optarg );
+        break;
+     case '?':
         error( "unknown error while parsing options\n" );
-      default:
+     default:
         error( "unknown error while parsing options\n" );
     }
   }
@@ -433,6 +437,9 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
 {
   /* overall, default values are zero */
   memset( params, 0, sizeof( *params ) );
+
+  /* FFT plan defaults to 1 */
+  params->fftLevel = 1;
 
   /* set default sky location params */
   params->rightAscension = -1000.;
@@ -694,6 +701,7 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "\ncalibration options:\n" );
   fprintf( stderr, "--strain-data              data is strain (already calibrated)\n" );
   fprintf( stderr, "--dynamic-range-factor=dynfac  scale calibration by factor dynfac\n" );
+  fprintf( stderr, "--fft-level=PLAN Set the fft plan to use level=PLAN\n" );
 
   fprintf( stderr, "\ndata segmentation options:\n" );
   fprintf( stderr, "--segment-duration=duration  duration of a data segment (sec)\n" );
