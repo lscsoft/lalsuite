@@ -25,4 +25,12 @@
  */
 %apply SWIGTYPE **OUTPUT {REAL8TimeSeries **hplus, REAL8TimeSeries **hcross};
 
+/*
+ * Every occurrence of the arguments
+ *   COMPLEX16FrequencySeries **htilde
+ * represents an output argument.  Apply the double-pointer typemap from
+ * swiglal-common.i.
+ */
+%apply SWIGTYPE **OUTPUT {COMPLEX16FrequencySeries **htilde};
+
 // LALSimulation header files which form the SWIG interface
