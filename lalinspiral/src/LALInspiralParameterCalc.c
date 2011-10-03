@@ -17,112 +17,94 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralParameterCalcCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralParameterCalc.c}}
-Given a pair of masses (or other equivalent parameters) compute
+\brief Given a pair of masses (or other equivalent parameters) compute
 related chirp parameters.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralParameterCalcCP}
-\idx{LALInspiralParameterCalc()}
-\begin{itemize}
-\item\texttt{params:} Input/Output, given a pair of binary parameters and a lower
-frequency cutoff, other equivalent parameters are computed by this function.
-\end{itemize}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>XLALInspiralParameterCalc()</tt>
+<ul>
+<li>\c params: Input/Output, given a pair of binary parameters and a lower
+frequency cutoff, other equivalent parameters are computed by this function.</li>
+</ul>
 
-The code takes as its input {\tt params->fLower} in Hz and
-a pair of masses (in units of $M_\odot$) or chirptimes (in seconds measured from {\tt params->fLower})
-and computes all the other {\em mass} parameters in the {\tt params} structure.
+\heading{Description}
+
+The code takes as its input <tt>params->fLower</tt> in Hz and
+a pair of masses (in units of \f$M_\odot\f$) or chirptimes (in seconds measured from <tt>params->fLower</tt>)
+and computes all the other {\em mass} parameters in the \c params structure.
 Users choice of input pair of {\em masses} should be specified by appropriately setting
-the variable {\tt params->massChoice} as described in the Table below:
-\begin{table}[h]
-\begin{center}
-\caption{For a given {\tt params->massChoice} in column 1 the user should specify the
+the variable <tt>params->massChoice</tt> as described in the Table below:
+
+<table align="center" class="doxtable">
+<caption align="top" style="text-align: left; font-weight: normal;">
+Table I. For a given <tt>params->massChoice</tt> in column 1 the user should specify the
 parameters as in column 2, in units as in column 3. Column 4 gives the conventional meaning
 of the parameters. Chirp times are measured from a lower frequency cutoff given
-in {\tt params->fLower.}}
-\begin{tabular}{cccc}
-\hline
-{\tt params->massChoice} & User should set & in units & which means \\
-\hline
-{\tt m1Andm2}         & ({\tt mass1, mass2})   & $(M_\odot, M_\odot)$          & $(m_1,m_2)$ \\
-{\tt totalMassAndEta} & ({\tt totalmass, eta}) & $(M_\odot, 0 < \eta \le 1/4)$ & $(m, \eta)$\\
-{\tt totalMassAndMu}  & ({\tt totalmass, mu})  & $(M_\odot, M_\odot)$          & $(m, \mu)$ \\
-{\tt t02}             & ({\tt t0, t2})         & (sec, sec) & $(\tau_0, \tau_2)$ \\
-{\tt t03}             & ({\tt t0, t3})         & (sec, sec) & $(\tau_0, \tau_3)$ \\
-{\tt t04}             & ({\tt t0, t4})         & (sec, sec) & $(\tau_0, \tau_4)$ \\
-\hline
-\end{tabular}
-\end{center}
-\end{table}
+in <tt>params->fLower.</tt></caption>
+<tr><th><tt>params->massChoice</tt></th><th>User should set</th><th>in units</th><th>which means</th></tr>
+<tr><td>m1Andm2</td><td>(<tt>mass1, mass2</tt>)</td><td>\f$(M_\odot, M_\odot)\f$</td><td>\f$(m_1,m_2)\f$</td></tr>
+<tr><td>totalMassAndEta</td><td>(<tt>totalmass, eta</tt>)</td><td>\f$(M_\odot, 0 < \eta \le 1/4)\f$</td><td>\f$(m, \eta)\f$</td></tr>
+<tr><td>totalMassAndMu</td><td>(<tt>totalmass, mu</tt>)</td><td>\f$(M_\odot, M_\odot)\f$</td><td>\f$(m, \mu)\f$</td></tr>
+<tr><td>t02</td><td>(<tt>t0, t2</tt>)</td><td>(sec, sec)</td><td>\f$(\tau_0, \tau_2)\f$</td></tr>
+<tr><td>t03</td><td>(<tt>t0, t3</tt>)</td><td>(sec, sec)</td><td>\f$(\tau_0, \tau_3)\f$</td></tr>
+<tr><td>t04</td><td>(<tt>t0, t4</tt>)</td><td>(sec, sec)</td><td>\f$(\tau_0, \tau_4)\f$</td></tr>
+</table>
 
-If \texttt{massChoice} is not set properly an error condition will occur and
+If \c massChoice is not set properly an error condition will occur and
 the function is aborted with status code defined by
-LALINSPIRALH\_EMASSCHOICE in LALInspiral.h.
-In the above list $m_{1}$ and $m_{2}$ are the masses of
-the two compact objects, $m=m_{1}+m_{2}$ is the total
-mass, $\eta=m_{1}m_{2}/(m_{1}+m_{2})^{2}$ is the
-symmetric mass ratio, $\mu=m_{1}m_{2}/(m_{1}+m_{2})$ is
-the reduced mass and $\tau$'s are the chirptimes
-defined in terms of $f_{a}$={\tt fLower} by:
-\begin{eqnarray}
+#LALINSPIRALH_EMASSCHOICE in \ref LALInspiral.h.
+In the above list \f$m_{1}\f$ and \f$m_{2}\f$ are the masses of
+the two compact objects, \f$m=m_{1}+m_{2}\f$ is the total
+mass, \f$\eta=m_{1}m_{2}/(m_{1}+m_{2})^{2}\f$ is the
+symmetric mass ratio, \f$\mu=m_{1}m_{2}/(m_{1}+m_{2})\f$ is
+the reduced mass and \f$\tau\f$'s are the chirptimes
+defined in terms of \f$f_{a}\f$=\c fLower by:
+\f{eqnarray}{
 \tau_{0} = \frac{5}{256 \eta m^{5/3} (\pi f_{a})^{8/3}}, \ \ \
 \tau_{2} = \frac{(3715 + 4620 \eta)}{64512 \eta m (\pi f_{a})^{2}}, \ \ \
 \tau_{3} = \frac{\pi}{8 \eta m^{2/3} (\pi f_{a})^{5/3}}\nonumber \\
 \tau_{4} = \frac{5}{128 \eta m^{1/3} (\pi f_{a})^{4/3}} \left[ \frac{3058673}{1016064} +
 \frac{5429}{1008} \eta + \frac{617}{144} \eta^{2} \right],\ \ \
 \tau_5 = \frac {5}{256\eta f_a}  \left (\frac {7729}{252} + \eta \right ).
-\end{eqnarray}
+\f}
 %% Beyond 2.5 PN order, chirp times do not have an
-%% explicit expression in terms of the masses and $f_a.$
+%% explicit expression in terms of the masses and \f$f_a.\f$
 Whichever pair of parameters is given to the function as an input, the function
 calculates the rest.  Apart from the various masses and chirptimes the function
-also calculates the chirp mass $\mathcal{M}=(\mu^{3} m^{2})^{1/5}$ and
-the total chirp time $\tau_C$ consistent with the approximation chosen:
-\begin{table}[h]
-\begin{center}
-\caption{$t_C$ will be set according to the PN order chosen in {\tt params->approximant.}}
-\begin{tabular}{cccccc}
-\hline
-& {\tt Newtonian} & {\tt onePN} & {\tt onePointFivePN} & {\tt twoPN} & {\tt twoPointFivePN}\\
-\hline
-  $\tau_C$
-& $\tau_0$
-& $\tau_0 + \tau_2$
-& $\tau_0 + \tau_2-\tau_3$
-& $\tau_0 + \tau_2-\tau_3 + \tau_4$
-& $\tau_0 + \tau_2-\tau_3 + \tau_4 - \tau_5$ \\
-\hline
-\end{tabular}
-\end{center}
-\end{table}
+also calculates the chirp mass \f$\mathcal{M}=(\mu^{3} m^{2})^{1/5}\f$ and
+the total chirp time \f$\tau_C\f$ consistent with the approximation chosen:
 
-\subsubsection*{Algorithm}
-Root finding by bisection method is used to solve for mass ratio $\eta$ when
-chirptimes $(\tau_0,\, \tau_2)$ or $(\tau_0,\, \tau_4)$ is input.
 
-\subsubsection*{Uses}
-When appropriate this function calls:\\
-\texttt{
-LALDBisectionFindRoot\\
-LALEtaTau02\\
-LALEtaTau04\\
-}
+<table align="center" class="doxtable">
+<caption align="top" style="text-align: left; font-weight: normal;">
+Table II: \f$t_C\f$ will be set according to the PN order chosen in <tt>params->approximant.</tt>
+</caption>
+<tr><th></th><th>Newtonian</th><th>onePN</th><th>onePointFivePN</th><th>twoPN</th><th>twoPointFivePN</th></tr>
+<tr><td>\f$\tau_C\f$</td><td>\f$\tau_0\f$</td><td>\f$\tau_0 + \tau_2\f$</td><td>\f$\tau_0 + \tau_2-\tau_3\f$
+</td><td>\f$\tau_0 + \tau_2-\tau_3 + \tau_4\f$</td><td>\f$\tau_0 + \tau_2-\tau_3 + \tau_4 - \tau_5\f$</td></tr>
+</table>
 
-\subsubsection*{Notes}
+\heading{Algorithm}
+Root finding by bisection method is used to solve for mass ratio \f$\eta\f$ when
+chirptimes \f$(\tau_0,\, \tau_2)\f$ or \f$(\tau_0,\, \tau_4)\f$ is input.
 
-\vfill{\footnotesize\input{LALInspiralParameterCalcCV}}
+\heading{Uses}
+When appropriate this function calls:
+<code>
+XLALDBisectionFindRoot()
+XLALEtaTau02()
+XLALEtaTau04()
+</code>
 
-</lalLaTeX>  */
+\heading{Notes}
+
+*/
 
 
 
@@ -131,30 +113,48 @@ LALEtaTau04\\
 
 NRCSID (LALINSPIRALPARAMETERCALCC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralParameterCalcCP"> */
+
 void
 LALInspiralParameterCalc (
    LALStatus        *status,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim> */
+{
+   XLALPrintDeprecationWarning("LALInspiralParameterCalc", "XLALInspiralParameterCalc");
 
+   INITSTATUS (status, "LALInspiralParameterCalc", LALINSPIRALPARAMETERCALCC );
+   ATTATCHSTATUSPTR(status);
+
+   XLALInspiralParameterCalc(params);
+   if (xlalErrno)
+      ABORTXLAL(status);
+
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
+}
+
+int
+XLALInspiralParameterCalc (
+   InspiralTemplate *params
+   )
+{
    REAL8 m1, m2, totalMass, eta, mu, piFl, etamin, tiny, ieta;
    REAL8 x1, x2, A0, A2, A3, A4, B2, B4, C4,v,tN;
    REAL8 theta = -11831.L/9240.L;
    REAL8 lambda = -1987.L/3080.L;
    static REAL8 oneby4;
    void *pars;
-   DFindRootIn rootIn;
+   REAL8 (*rootfunction)(REAL8, void *);
+   REAL8 xmin, xmax, xacc;
    EtaTau02In Tau2In;
    EtaTau04In Tau4In;
 
-   INITSTATUS (status, "LALInspiralParameterCalc", LALINSPIRALPARAMETERCALCC );
-   ATTATCHSTATUSPTR(status);
-
-   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT((INT4)params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->massChoice <= 15, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   if (params == NULL)
+      XLAL_ERROR(__func__, XLAL_EFAULT);
+   if ((INT4)params->massChoice < 0)
+      XLAL_ERROR(__func__, XLAL_EDOM);
+   if ((INT4)params->massChoice > 15)
+      XLAL_ERROR(__func__, XLAL_EDOM);
 
    totalMass 	= 0.0;
    ieta 	= params->ieta;
@@ -172,13 +172,15 @@ LALInspiralParameterCalc (
       case m1Andm2:
       case fixedMasses:
 
-         ASSERT(params->mass1 > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->mass2 > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->mass1 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->mass2 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
          m1 = params->mass1;
          m2 = params->mass2;
          params->totalMass = totalMass = m1+m2;
-         params->eta = eta = m1*m2/pow(totalMass,2);
+         params->eta = eta = m1*m2/(totalMass*totalMass);
          if (params->eta > oneby4) {
       		 params->eta -= tiny;
          }
@@ -194,13 +196,16 @@ LALInspiralParameterCalc (
       case totalMassAndEta:
       case totalMassUAndEta:
 
-         ASSERT(params->totalMass > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->eta > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->totalMass <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->eta <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
          if (params->eta > oneby4) {
 		params->eta -= tiny;
-   	}
-         ASSERT(params->eta <= oneby4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         }
+         if (params->eta > oneby4)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
          totalMass = params->totalMass;
          eta = params->eta;
@@ -215,9 +220,12 @@ LALInspiralParameterCalc (
 
       case totalMassAndMu:
 
-         ASSERT(params->totalMass > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->mu > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->mu < params->totalMass, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->totalMass <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->mu <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->mu >= params->totalMass)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
          totalMass = params->totalMass;
          mu = params->mu;
@@ -237,8 +245,10 @@ LALInspiralParameterCalc (
 
       case t02:
 
-         ASSERT(params->t0 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->t2 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->t0 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->t2 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
          A0 = 5./ pow(piFl, eightby3)/256.;
          A2 = 3715.0/(64512.0*pow(piFl,2.0));
@@ -248,22 +258,24 @@ LALInspiralParameterCalc (
          Tau2In.B2 = B2;
 
 	 pars = (void *) &Tau2In;
-         rootIn.function = &LALEtaTau02;
-         rootIn.xmax = oneby4+tiny;
-         rootIn.xmin = etamin;
-         rootIn.xacc = 1.e-8;
-         LALEtaTau02(status->statusPtr, &x1, rootIn.xmax, pars);
-         CHECKSTATUSPTR(status);
-         LALEtaTau02(status->statusPtr, &x2, rootIn.xmin, pars);
-         CHECKSTATUSPTR(status);
+         rootfunction = &XLALEtaTau02;
+         xmax = oneby4+tiny;
+         xmin = etamin;
+         xacc = 1.e-8;
+         x1 = XLALEtaTau02(xmax, pars);
+         if (XLAL_IS_REAL8_FAIL_NAN(x1))
+            XLAL_ERROR(__func__, XLAL_EFUNC);
+         x2 = XLALEtaTau02(xmin, pars);
+         if (XLAL_IS_REAL8_FAIL_NAN(x2))
+            XLAL_ERROR(__func__, XLAL_EFUNC);
 
          if (x1*x2 > 0) {
             params->eta = 0.;
-            DETATCHSTATUSPTR(status);
-            RETURN(status);
+            return XLAL_SUCCESS;
          } else {
-            LALDBisectionFindRoot(status->statusPtr, &eta, &rootIn, pars);
-            CHECKSTATUSPTR(status);
+            eta = XLALDBisectionFindRoot(rootfunction, xmin, xmax, xacc, pars);
+            if (XLAL_IS_REAL8_FAIL_NAN(eta))
+               XLAL_ERROR(__func__, XLAL_EFUNC);
          }
          if (eta > oneby4) {
 		 eta-=tiny;
@@ -282,8 +294,10 @@ LALInspiralParameterCalc (
 
       case t03:
 
-         ASSERT(params->t0 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->t3 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->t0 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->t3 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
          A0 = 5./ pow(piFl, eightby3)/256.;
          A3 = LAL_PI / pow(piFl, fiveby3)/8.;
@@ -306,8 +320,10 @@ LALInspiralParameterCalc (
 
       case t04:
 
-         ASSERT(params->t0 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->t4 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->t0 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
+         if (params->t4 <= 0)
+            XLAL_ERROR(__func__, XLAL_EDOM);
 
 	 A0 = 5./(256. * pow(piFl, eightby3));
          A4 = 5./(128.0 * pow(piFl,fourby3)) * 3058673./1016064.;
@@ -319,22 +335,24 @@ LALInspiralParameterCalc (
          Tau4In.C4 = C4;
 
 	 pars = (void *) &Tau4In;
-         rootIn.function = &LALEtaTau04;
-         rootIn.xmax = oneby4+tiny;
-         rootIn.xmin = etamin;
-         rootIn.xacc = 1.e-8;
-         LALEtaTau04(status->statusPtr, &x1, rootIn.xmax, pars);
-         CHECKSTATUSPTR(status);
-         LALEtaTau04(status->statusPtr, &x2, rootIn.xmin, pars);
-         CHECKSTATUSPTR(status);
+         rootfunction = &XLALEtaTau04;
+         xmax = oneby4+tiny;
+         xmin = etamin;
+         xacc = 1.e-8;
+         x1 = XLALEtaTau04(xmax, pars);
+         if (XLAL_IS_REAL8_FAIL_NAN(x1))
+            XLAL_ERROR(__func__, XLAL_EFUNC);
+         x2 = XLALEtaTau04(xmin, pars);
+         if (XLAL_IS_REAL8_FAIL_NAN(x2))
+            XLAL_ERROR(__func__, XLAL_EFUNC);
 
 	 if (x1*x2 > 0) {
             params->eta = 0.;
-            DETATCHSTATUSPTR(status);
-            RETURN(status);
+            return XLAL_SUCCESS;
          } else {
-            LALDBisectionFindRoot(status->statusPtr, &eta, &rootIn, pars);
-            CHECKSTATUSPTR(status);
+            eta = XLALDBisectionFindRoot(rootfunction, xmin, xmax, xacc, pars);
+            if (XLAL_IS_REAL8_FAIL_NAN(eta))
+               XLAL_ERROR(__func__, XLAL_EFUNC);
          }
          if (eta > oneby4) {
 		 eta-=tiny;
@@ -370,13 +388,13 @@ LALInspiralParameterCalc (
       else
       {
 	      params->eta = 0.;
-	      DETATCHSTATUSPTR(status);
-	      RETURN(status);
+	      return XLAL_SUCCESS;
       }
       break;
 
      default:
-      ABORT (status, LALINSPIRALH_EMASSCHOICE, LALINSPIRALH_MSGEMASSCHOICE);
+      XLALPrintError("XLAL Error - %s: Improper choice for massChoice\n", __func__);
+      XLAL_ERROR(__func__, XLAL_EINVAL);
       break;
    }
 
@@ -466,8 +484,6 @@ LALInspiralParameterCalc (
       break;
    }
 
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
+   return XLAL_SUCCESS;
+
 }
-
-

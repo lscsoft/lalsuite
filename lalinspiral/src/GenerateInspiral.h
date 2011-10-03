@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Drew Keppel, Duncan Brown, Gareth Jones, Peter Shawhan, Thomas Cokelaer
+*  Copyright (C) 2007 Drew Keppel, Duncan Brown, Gareth Jones, Peter Shawhan, Thomas Cokelaer, Laszlo Vereb
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -17,20 +17,19 @@
 *  MA  02111-1307  USA
 */
 
-#if 0
-<lalVerbatim file="GenerateInspiralHV">
-Author: Cokelaer, T.
-$Id$
-</lalVerbatim>
-#endif
+/**
+ * \defgroup GenerateInspiral_h GenerateInspiral_h
+ * \ingroup inject
+ */
 
-#if 0
-<lalLaTeX>
-\section{Header \texttt{GenerateInspiral.h}}
-\label{s:GenerateInspiral.h}
+/**
+\author Cokelaer, T.
+\file
+\ingroup GenerateInspiral_h
 
-Header file for the inspiral injection interface code. The
-code contained in GenerateInspiral.c is an interface between the
+\brief %Header file for the inspiral injection interface code.
+
+The code contained in GenerateInspiral.c is an interface between the
 injection package and the inspiral package. More precisely, the
 function GenerateInspiral.c is used within the FindChirpSimulation.c
 file of the FindChirp package in order to inject waveforms into real
@@ -43,12 +42,12 @@ waveform) and the inject package (so-called PPN waveform).
 also a test code as well which allows to check the output of
 code. It is called InjectionInterfaceTest.c
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/GenerateInspiral.h>
-\end{verbatim}
-</lalLaTeX>
-#endif
+\endcode
+
+*/
 
 #ifndef _GENERATEINSPIRAL_H
 #define _GENERATEINSPIRAL_H
@@ -62,21 +61,16 @@ code. It is called InjectionInterfaceTest.c
 
 #include <lal/Units.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( GENERATEINSPIRALH,
     "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-#endif
-
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define GENERATEINSPIRALH_ENORM 0
 #define GENERATEINSPIRALH_ENULL 1
 #define GENERATEINSPIRALH_EDFDT 2
@@ -85,7 +79,7 @@ NRCSID( GENERATEINSPIRALH,
 #define GENERATEINSPIRALH_MSGENULL "Null pointer"
 #define GENERATEINSPIRALH_MSGEDFDT "Waveform sampling interval is too large"
 #define GENERATEINSPIRALH_MSGEZERO "inclination zero for SpinTaylor waveform"
-/* </lalErrTable> */
+/*@}*/
 
 
 /* parameter for the EOB at 3PN. In principle, the three */
@@ -102,11 +96,7 @@ NRCSID( GENERATEINSPIRALH,
 /* Default low freqnecy cutoff for injections */
 #define GENERATEINSPIRAL_DEFAULT_FLOWER 40
 
-#if 0
-<lalLaTeX>
-\newpage\input{GenerateInspiralC}
-</lalLaTeX>
-#endif
+
 void
 LALGenerateInspiral(
     LALStatus        *status,
@@ -115,7 +105,7 @@ LALGenerateInspiral(
     PPNParamStruc    *ppnParamsInputOutput
     );
 
-
+/* Legacy wrappers for parsing approximants and orders */
 /* three function to read the order and approximant from a string */
 void
 LALGetOrderFromString(
@@ -130,6 +120,20 @@ LALGetApproximantFromString(
     CHAR        *message,
     Approximant *result
     );
+
+/**	Convert a string provided by the #CoherentGW structure in order to retrieve
+ *	the approximant of the waveform to generate.
+ *	@param[out]	inter	: the level of the spin interaction
+ *	@param[in]	thisEvent	: string containing the spin interaction
+ *	@return error code
+ */
+int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent);
+
+int XLALGetAxisChoiceFromString(InputAxis *axisChoice, CHAR *thisEvent);
+
+int XLALGetAdaptiveIntFromString(UINT4 *fixedStep, CHAR *thisEvent);
+
+int XLALGetInspiralOnlyFromString(UINT4 *inspiralOnly, CHAR *thisEvent);
 
 /*  three function to populate the needed structures */
 void
@@ -147,9 +151,36 @@ LALGenerateInspiralPopulateInspiral(
     PPNParamStruc       *ppnParams
     );
 
+/* XLAL functions for parsing approximants and orders */
+/* and also for populating structures */
+int
+XLALGetOrderFromString(
+    CHAR       * restrict message,
+    LALPNOrder * restrict result
+    );
 
-#ifdef  __cplusplus
-#pragma {
+int
+XLALGetApproximantFromString(
+    CHAR        * restrict message,
+    Approximant * restrict result
+    );
+
+int
+XLALGenerateInspiralPopulatePPN(
+    PPNParamStruc    * restrict ppnParams,
+    SimInspiralTable * restrict thisEvent
+    );
+
+int
+XLALGenerateInspiralPopulateInspiral(
+    InspiralTemplate * restrict inspiralParams,
+    SimInspiralTable * restrict thisEvent,
+    PPNParamStruc    * restrict ppnParams
+    );
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

@@ -17,19 +17,12 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALTaylorEtWaveformCV">
-Author: Sathyaprakash, B. S., Cokelaer T.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S., Cokelaer T.
+\file
+\brief NONE
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALTaylorEtWaveform.c} and
-\texttt{LALTaylorEtWaveformTemplates.c}}
-
-\vfill{\footnotesize\input{LALTaylorEtWaveformCV}}
-
-</lalLaTeX>  */
+*/
 /*-------------------------------------------------------------------*/
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
@@ -46,61 +39,52 @@ typedef struct tagzetaInitIn {
   REAL8 eta, omega, e0;
 } zetaInitIn;
 
-static void LALzetaInit4PN(
-  LALStatus *status,
-  REAL8     *x,
+static REAL8 XLALzetaInit4PN(
   REAL8      zeta,
   void      *params);
 
-static void LALzetaInit5PN(
-  LALStatus *status,
-  REAL8     *x,
+static REAL8 XLALzetaInit5PN(
   REAL8      zeta,
   void      *params);
 
-static void LALzetaInit6PN(
-  LALStatus *status,
-  REAL8     *x,
+static REAL8 XLALzetaInit6PN(
   REAL8      zeta,
   void      *params);
 
-static void LALzetaInit7PN(
-  LALStatus *status,
-  REAL8     *x,
+static REAL8 XLALzetaInit7PN(
   REAL8      zeta,
   void      *params);
 
 
-void LALTaylorEtDerivatives4PN(
+void XLALTaylorEtDerivatives4PN(
   REAL8Vector *values,
   REAL8Vector *dvalues,
   void        *funcParams
 );
-void LALTaylorEtDerivatives5PN(
+void XLALTaylorEtDerivatives5PN(
   REAL8Vector *values,
   REAL8Vector *dvalues,
   void        *funcParams
 );
-void LALTaylorEtDerivatives6PN(
+void XLALTaylorEtDerivatives6PN(
   REAL8Vector *values,
   REAL8Vector *dvalues,
   void        *funcParams
 );
-void LALTaylorEtDerivatives7PN(
+void XLALTaylorEtDerivatives7PN(
   REAL8Vector *values,
   REAL8Vector *dvalues,
   void        *funcParams
 );
 
-void LALTaylorEtWaveform (
+void LALTaylorEtWaveformEngine (
   LALStatus        *status,
   REAL4Vector      *signalvec,
-  InspiralTemplate *params
+  InspiralTemplate *params,
+  InspiralInit     *paramsInit
 );
 
-void
-LALTaylorEtWaveformEngine (
-  LALStatus        *status,
+int XLALTaylorEtWaveformEngine (
   REAL4Vector      *signalvec,
   InspiralTemplate *params,
   InspiralInit     *paramsInit
@@ -109,14 +93,15 @@ LALTaylorEtWaveformEngine (
 NRCSID (LALTAYLORETWAVEFORMC,
 "$Id$");
 
-static void LALzetaInit4PN(
-   LALStatus UNUSED *status,
-   REAL8     *x,
+static REAL8 XLALzetaInit4PN(
    REAL8      zeta,
    void      *params)
 {
+   if( !params )
+      XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+
    zetaInitIn *in;
-   REAL8 zeta2, zeta32, eta, eta2;
+   REAL8 x, zeta2, zeta32, eta, eta2;
 
    in = (zetaInitIn *) params;
    eta = in->eta;
@@ -124,19 +109,22 @@ static void LALzetaInit4PN(
    zeta2 = zeta*zeta;
    zeta32 = pow(zeta, 1.5);
 
-   *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
+   x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
      + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2 );
-   *x -= in->omega;
+   x -= in->omega;
+
+   return x;
 }
 
-static void LALzetaInit5PN(
-   LALStatus UNUSED *status,
-   REAL8     *x,
+static REAL8 XLALzetaInit5PN(
    REAL8      zeta,
    void      *params)
 {
+   if( !params )
+      XLAL_ERROR(__func__, XLAL_EFAULT);
+
    zetaInitIn *in;
-   REAL8 zeta2, zeta32, eta, eta2;
+   REAL8 x, zeta2, zeta32, eta, eta2;
 
    in = (zetaInitIn *) params;
    eta = in->eta;
@@ -144,19 +132,22 @@ static void LALzetaInit5PN(
    zeta2 = zeta*zeta;
    zeta32 = pow(zeta, 1.5);
 
-   *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
+   x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
      + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2 );
-   *x -= in->omega;
+   x -= in->omega;
+
+   return x;
 }
 
-static void LALzetaInit6PN(
-   LALStatus UNUSED *status,
-   REAL8     *x,
+static REAL8 XLALzetaInit6PN(
    REAL8      zeta,
    void      *params)
 {
+   if( !params )
+      XLAL_ERROR(__func__, XLAL_EFAULT);
+
    zetaInitIn *in;
-   REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
+   REAL8 x, zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
 
    in = (zetaInitIn *) params;
    eta = in->eta;
@@ -167,21 +158,24 @@ static void LALzetaInit6PN(
    zeta32 = pow(zeta, 1.5);
    pisq = LAL_PI*LAL_PI;
 
-   *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
+   x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
      + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2
      + (41445./1024. - (309715./3072. - 205./64.*pisq) * eta
      + 1215./1024.*eta2 + 45./1024*eta3) * zeta3);
-   *x -= in->omega;
+   x -= in->omega;
+
+   return x;
 }
 
-static void LALzetaInit7PN(
-   LALStatus UNUSED *status,
-   REAL8     *x,
+static REAL8 XLALzetaInit7PN(
    REAL8      zeta,
    void      *params)
 {
+   if( !params )
+      XLAL_ERROR(__func__, XLAL_EFAULT);
+
    zetaInitIn *in;
-   REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
+   REAL8 x, zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
 
    in = (zetaInitIn *) params;
    eta = in->eta;
@@ -192,19 +186,24 @@ static void LALzetaInit7PN(
    zeta32 = pow(zeta, 1.5);
    pisq = LAL_PI*LAL_PI;
 
-   *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
+   x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
      + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2
      + (41445./1024. - (309715./3072. - 205./64.*pisq) * eta
      + 1215./1024.*eta2 + 45./1024*eta3) * zeta3);
-   *x -= in->omega;
+   x -= in->omega;
+
+   return x;
 }
 
-void LALTaylorEtDerivatives4PN(
+void XLALTaylorEtDerivatives4PN(
   REAL8Vector *values,
   REAL8Vector *dvalues,
   void        *funcParams
 )
 {
+   /*if( !values || !dvalues || !funcParams )
+      XLAL_ERROR_NULL(__func__, XLAL_EFAULT);*/
+
    InspiralDerivativesIn *ak;
    REAL8 zeta, zeta2, zeta3, zeta5, zeta32, eta, eta2, fourpi;
 
@@ -229,12 +228,15 @@ void LALTaylorEtDerivatives4PN(
      + fourpi*zeta32 + (117857./18144. - 12017./2016.*eta + 2.5*eta2) * zeta2);
 }
 
-void LALTaylorEtDerivatives5PN(
+void XLALTaylorEtDerivatives5PN(
   REAL8Vector *values,
   REAL8Vector *dvalues,
   void        *funcParams
 )
 {
+   /*if( !values || !dvalues || !funcParams )
+      XLAL_ERROR_NULL(__func__, XLAL_EFAULT);*/
+
    InspiralDerivativesIn *ak;
    REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, eta, eta2, fourpi;
 
@@ -261,12 +263,15 @@ void LALTaylorEtDerivatives5PN(
      + (4913.*LAL_PI/672. - 177.*LAL_PI*eta/8.) * zeta52 );
 }
 
-void LALTaylorEtDerivatives6PN(
+void XLALTaylorEtDerivatives6PN(
   REAL8Vector *values,
   REAL8Vector *dvalues,
   void        *funcParams
 )
 {
+   /*if( !values || !dvalues || !funcParams )
+      XLAL_ERROR_NULL(__func__, XLAL_EFAULT);*/
+
    InspiralDerivativesIn *ak;
    REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, eta, eta2, eta3, pisq, fourpi;
 
@@ -300,12 +305,15 @@ void LALTaylorEtDerivatives6PN(
 	     - 1712.*LAL_GAMMA/105. + 37999588601./279417600.) * zeta3 );
 }
 
-void LALTaylorEtDerivatives7PN(
+void XLALTaylorEtDerivatives7PN(
   REAL8Vector *values,
   REAL8Vector *dvalues,
   void        *funcParams
 )
 {
+   /*if( !values || !dvalues || !funcParams )
+      XLAL_ERROR_NULL(__func__, XLAL_EFAULT);*/
+
    InspiralDerivativesIn *ak;
    REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi;
 
@@ -343,55 +351,78 @@ void LALTaylorEtDerivatives7PN(
 }
 
 
-/*  <lalVerbatim file="LALTaylorEtWaveformCP"> */
 void LALTaylorEtWaveform (
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim> */
-
-   InspiralInit paramsInit;
+{
+   XLALPrintDeprecationWarning("LALTaylorEtWaveform","XLALTaylorEtWaveform");
    INITSTATUS(status, "LALTaylorEtWaveform", LALTAYLORETWAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signalvec,  status,
-	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signalvec->data,  status,
-   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(params,  status,
-   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(params->nStartPad >= 0, status,
-   	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->nEndPad >= 0, status,
-   	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->fLower > 0, status,
-   	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->tSampling > 0, status,
-   	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->totalMass > 0., status,
-   	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
-   LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
-   CHECKSTATUSPTR(status);
-   LALInspiralChooseModel(status->statusPtr, &(paramsInit.func),
-					 &(paramsInit.ak), params);
-   CHECKSTATUSPTR(status);
-
-   memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
-
-   /* Call the engine function */
-   LALTaylorEtWaveformEngine(status->statusPtr, signalvec, params, &paramsInit);
-   CHECKSTATUSPTR( status );
+   if( XLALTaylorEtWaveform(signalvec, params) )
+      ABORTXLAL(status);
 
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
 
-/*---------------------------------------------------------*/
-void
-LALTaylorEtWaveformEngine (
+int XLALTaylorEtWaveform (
+   REAL4Vector      *signalvec,
+   InspiralTemplate *params
+   )
+{
+
+   InspiralInit paramsInit;
+
+   /* Check the relevant pointers */
+   if( !signalvec || !(signalvec->data) || !params )
+      XLAL_ERROR(__func__, XLAL_EFAULT);
+
+   /* Check the parameters are sane */
+   if( params->nStartPad < 0 || params->nEndPad < 0 || params->fLower <= 0 
+         || params->tSampling <= 0 || params->totalMass <= 0. )
+      XLAL_ERROR(__func__, XLAL_EINVAL);
+
+   if( XLALInspiralSetup(&(paramsInit.ak), params) )
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+
+   if( XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), params) )
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+
+   memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
+
+   /* Call the engine function */
+   if( XLALTaylorEtWaveformEngine(signalvec, params, &paramsInit) )
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+
+   return XLAL_SUCCESS;
+}
+
+/*---------------- Main engine function --------------*/
+/* LAL wrapper of XLAL engine function */
+void LALTaylorEtWaveformEngine (
                 LALStatus        *status,
+                REAL4Vector      *signalvec,
+                InspiralTemplate *params,
+                InspiralInit     *paramsInit
+                )
+{
+   XLALPrintDeprecationWarning("LALTaylorEtWaveformEngine", 
+         "XLALTaylorEtWaveformEngine");
+   INITSTATUS(status, "LALTaylorEtWaveform", LALTAYLORETWAVEFORMC);
+   ATTATCHSTATUSPTR(status);
+
+   if( XLALTaylorEtWaveformEngine(signalvec, params, paramsInit) )
+      ABORTXLAL(status);
+
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
+}
+
+/* Actual engine */
+int XLALTaylorEtWaveformEngine (
                 REAL4Vector      *signalvec,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
@@ -401,29 +432,25 @@ LALTaylorEtWaveformEngine (
    void                  *funcParams;
    UINT4                 length=0, count, ndx;
    INT4                  nn=2;
+   REAL8                 xmin, xmax, xacc;
    REAL8                 h, omega, omegaMax, t, dt, m, eta, phi, zeta, v;
    REAL8Vector           dummy, values, dvalues, newvalues, yt, dym, dyt;
    rk4GSLIntegrator      *integrator = NULL;
    InspiralDerivativesIn in2;
-   zetaInitIn              in3;
+   zetaInitIn            in3;
    rk4In                 in4;
    expnCoeffs            ak;
    expnFunc              func;
-   DFindRootIn           rootIn;
-   CHAR			 message[256];
+   REAL8 (*rootFunction)(REAL8, void *);
 
-
-   INITSTATUS(status, "LALTaylorEtWaveformEngine", LALTAYLORETWAVEFORMC);
-   ATTATCHSTATUSPTR(status);
 
 /* Allocate all the memory required to dummy and then point the various
    arrays to dummy - this makes it easier to handle memory failures */
 
    dummy.length = nn * 6;
 
-   if (!(dummy.data = (REAL8 * ) LALMalloc(sizeof(REAL8) * nn * 6))) {
-      ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
-   }
+   if (!(dummy.data = (REAL8 * ) LALMalloc(sizeof(REAL8) * nn * 6)))
+      XLAL_ERROR(__func__, XLAL_ENOMEM);
 
    values.length    = nn;
    dvalues.length   = nn;
@@ -441,7 +468,6 @@ LALTaylorEtWaveformEngine (
 
 
    /* Set dt to sampling interval specified by user */
-
    dt = 1./params->tSampling;
    ak   = paramsInit->ak;
    func = paramsInit->func;
@@ -453,30 +479,29 @@ LALTaylorEtWaveformEngine (
    /* Given omega compute zeta by solving Eq.(18b) of TG08 */
    omega = LAL_PI * params->fLower * m;
    v = pow(omega,1./3.);
-   rootIn.xacc = 1.0e-16;
-   rootIn.xmax = 1.;
-   rootIn.xmin = v*v/2.;
+
+   xmin = v*v/2.;
+   xmax = 1.;
+   xacc = 1.0e-16;
 
    /* Initialize the GSL integrator */
    switch (params->order)
    {
 	case LAL_PNORDER_TWO:
-	   rootIn.function = LALzetaInit4PN;
+	   rootFunction = &XLALzetaInit4PN;
 	   break;
 	case LAL_PNORDER_TWO_POINT_FIVE:
-	   rootIn.function = LALzetaInit5PN;
+	   rootFunction = &XLALzetaInit5PN;
 	   break;
 	case LAL_PNORDER_THREE:
-	   rootIn.function = LALzetaInit6PN;
+	   rootFunction = &XLALzetaInit6PN;
 	   break;
 	case LAL_PNORDER_THREE_POINT_FIVE:
-	   rootIn.function = LALzetaInit7PN;
+	   rootFunction = &XLALzetaInit7PN;
 	   break;
 	default:
-	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
-	   LALError( status, message );
-	   LALFree(dummy.data);
-	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+           XLALPrintError("XLAL Error: %s - There are no Et waveforms at order %d\n", __func__, params->order);
+           XLAL_ERROR(__func__, XLAL_EINVAL);
 	   break;
    }
    in3.eta = ak.eta;
@@ -484,9 +509,9 @@ LALTaylorEtWaveformEngine (
    funcParams = (void *) &in3;
 
 
-   LALDBisectionFindRoot(status->statusPtr, &zeta, &rootIn, funcParams);
-   CHECKSTATUSPTR(status);
-
+   zeta = XLALDBisectionFindRoot(rootFunction, xmin, xmax, xacc, funcParams);
+   if (XLAL_IS_REAL8_FAIL_NAN(zeta))
+      XLAL_ERROR(__func__, XLAL_EFUNC);
    /* End of initial conditions */
 
    values.data[0] = phi = params->startPhase;
@@ -499,22 +524,20 @@ LALTaylorEtWaveformEngine (
    switch (params->order)
    {
 	case LAL_PNORDER_TWO:
-	   in4.function = LALTaylorEtDerivatives4PN;
+	   in4.function = XLALTaylorEtDerivatives4PN;
 	   break;
 	case LAL_PNORDER_TWO_POINT_FIVE:
-	   in4.function = LALTaylorEtDerivatives5PN;
+	   in4.function = XLALTaylorEtDerivatives5PN;
 	   break;
 	case LAL_PNORDER_THREE:
-	   in4.function = LALTaylorEtDerivatives6PN;
+	   in4.function = XLALTaylorEtDerivatives6PN;
 	   break;
 case LAL_PNORDER_THREE_POINT_FIVE:
-	   in4.function = LALTaylorEtDerivatives7PN;
+	   in4.function = XLALTaylorEtDerivatives7PN;
 	   break;
 	default:
-	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
-	   LALError( status, message );
-	   LALFree(dummy.data);
-	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+           XLALPrintError("XLAL Error: %s - There are no Et waveforms at order %d\n", __func__, params->order);
+           XLAL_ERROR(__func__, XLAL_EINVAL);
 	   break;
    }
    in4.y = &values;
@@ -525,11 +548,9 @@ case LAL_PNORDER_THREE_POINT_FIVE:
    in4.dyt = &dyt;
    in4.x = 0.;
 
+   /* Initialize the integrator */
    if (!(integrator = XLALRungeKutta4Init(nn, &in4)))
-   {
-     LALFree(dummy.data);
-     ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
-   }
+      XLAL_ERROR(__func__, XLAL_EFUNC);
 
    in2.totalmass = ak.totalmass;
    in2.dEnergy = func.dEnergy;
@@ -555,8 +576,8 @@ case LAL_PNORDER_THREE_POINT_FIVE:
       if (count > length)
       {
         XLALRungeKutta4Free( integrator );
-	LALFree(dummy.data);
-	ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+	XLALFree(dummy.data);
+        XLAL_ERROR(__func__, XLAL_EBADLEN);
       }
 
       h = 4 * m * eta * zeta * sin(2.*phi)/1.e14;
@@ -566,13 +587,12 @@ case LAL_PNORDER_THREE_POINT_FIVE:
       /* Integrate one step forward */
       in4.dydx = &dvalues;
       in4.x = t/m;
-      LALRungeKutta4(status->statusPtr, &newvalues, integrator, funcParams);
-      BEGINFAIL( status )
+      if( XLALRungeKutta4(&newvalues, integrator, funcParams) )
       {
-        XLALRungeKutta4Free( integrator );
-        LALFree(dummy.data);
+         XLALRungeKutta4Free( integrator );
+         XLALFree(dummy.data);
+         XLAL_ERROR(__func__, XLAL_EFUNC);
       }
-      ENDFAIL( status );
 
       /* Update the values of the dynamical variables */
       phi = values.data[0] = newvalues.data[0];
@@ -598,9 +618,8 @@ case LAL_PNORDER_THREE_POINT_FIVE:
    /* fprintf(stdout, "Final velocity=%e, time=%e, frequency=%e\n", v, t, params->fFinal); */
 
    XLALRungeKutta4Free( integrator );
-   LALFree(dummy.data);
+   XLALFree(dummy.data);
 
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
+   return XLAL_SUCCESS;
 }
 /*---------------------------------------------------------*/

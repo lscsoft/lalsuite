@@ -35,6 +35,7 @@ SNEDSRC		= sned.c
 CORSESRC	= corse.c
 SKYMAPSRC	= skymap.c
 COINJSRC	= coinj.c
+STOCHBANKSRC	= stochasticbank.c
 
 if LALFRAME
 if LALMETAIO
@@ -49,38 +50,39 @@ LALFRAME_LALMETAIO_PROGS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_coherentbank lalapps_coinext \
                lalapps_randombank lalapps_ninja lalapps_fr_ninja \
                lalapps_mdc_ninja lalapps_calcexpsnr lalapps_sned \
-               lalapps_corse lalapps_skymap lalapps_coinj
-lalapps_inspiral_SOURCES 	= $(INSPIRALSRC)
-lalapps_cohire_SOURCES          = $(COHIRESRC)
-lalapps_coherentbank_SOURCES 	= $(COHEREBANK)
-lalapps_tmpltbank_SOURCES 	= $(TMPLTBANKSRC)
-lalapps_inca_SOURCES 		= $(INCASRC)
-lalapps_thinca_SOURCES 		= $(THINCASRC)
-lalapps_sire_SOURCES 		= $(SIRESRC)
-lalapps_coire_SOURCES 		= $(COIRESRC)
-lalapps_siva_SOURCES 		= $(SIVASRC)
-lalapps_inspinj_SOURCES 	= $(INSPINJSRC)
-lalapps_injcut_SOURCES 		= $(INJCUTSRC)
-lalapps_minj_SOURCES 		= $(MINJSRC)
-lalapps_bbhinj_SOURCES 		= $(BBHINJSRC)
-lalapps_blindinj_SOURCES 	= $(BLINDINJSRC)
-lalapps_splitbank_SOURCES 	= $(SPLITBANKSRC)
-lalapps_trigbank_SOURCES 	= $(TRIGBANKSRC)
-lalapps_populate_chisq_SOURCES 	= $(CHISQSRC)
-lalapps_trigscan_SOURCES 	= $(TRIGSCANSRC)
-lalapps_spininj_SOURCES 	= $(SPININJSRC)
-lalapps_inspfrinj_SOURCES 	= $(INSPFRINJSRC)
-lalapps_gwf2xml_SOURCES 	= $(GWF2XMLSRC)
-lalapps_coinext_SOURCES         = $(COINEXTSRC)
-lalapps_randombank_SOURCES 	= $(RANDOMBANKSRC)
-lalapps_ninja_SOURCES		= $(NINJASRC)
-lalapps_fr_ninja_SOURCES	= $(FRNINJASRC)
-lalapps_mdc_ninja_SOURCES	= $(MDCNINJASRC)
-lalapps_calcexpsnr_SOURCES	= $(CALCEXPSNRSRC)
-lalapps_sned_SOURCES		= $(SNEDSRC)
-lalapps_corse_SOURCES		= $(CORSESRC)
-lalapps_skymap_SOURCES		= $(SKYMAPSRC)
-lalapps_coinj_SOURCES		= $(COINJSRC)
+               lalapps_corse lalapps_skymap lalapps_coinj lalapps_cbc_stochasticbank
+lalapps_inspiral_SOURCES 		= $(INSPIRALSRC)
+lalapps_cohire_SOURCES          	= $(COHIRESRC)
+lalapps_coherentbank_SOURCES 		= $(COHEREBANK)
+lalapps_tmpltbank_SOURCES 		= $(TMPLTBANKSRC)
+lalapps_inca_SOURCES 			= $(INCASRC)
+lalapps_thinca_SOURCES 			= $(THINCASRC)
+lalapps_sire_SOURCES 			= $(SIRESRC)
+lalapps_coire_SOURCES 			= $(COIRESRC)
+lalapps_siva_SOURCES 			= $(SIVASRC)
+lalapps_inspinj_SOURCES 		= $(INSPINJSRC)
+lalapps_injcut_SOURCES 			= $(INJCUTSRC)
+lalapps_minj_SOURCES 			= $(MINJSRC)
+lalapps_bbhinj_SOURCES 			= $(BBHINJSRC)
+lalapps_blindinj_SOURCES 		= $(BLINDINJSRC)
+lalapps_splitbank_SOURCES 		= $(SPLITBANKSRC)
+lalapps_trigbank_SOURCES 		= $(TRIGBANKSRC)
+lalapps_populate_chisq_SOURCES 		= $(CHISQSRC)
+lalapps_trigscan_SOURCES 		= $(TRIGSCANSRC)
+lalapps_spininj_SOURCES 		= $(SPININJSRC)
+lalapps_inspfrinj_SOURCES 		= $(INSPFRINJSRC)
+lalapps_gwf2xml_SOURCES 		= $(GWF2XMLSRC)
+lalapps_coinext_SOURCES         	= $(COINEXTSRC)
+lalapps_randombank_SOURCES 		= $(RANDOMBANKSRC)
+lalapps_ninja_SOURCES			= $(NINJASRC)
+lalapps_fr_ninja_SOURCES		= $(FRNINJASRC)
+lalapps_mdc_ninja_SOURCES		= $(MDCNINJASRC)
+lalapps_calcexpsnr_SOURCES		= $(CALCEXPSNRSRC)
+lalapps_sned_SOURCES			= $(SNEDSRC)
+lalapps_corse_SOURCES			= $(CORSESRC)
+lalapps_skymap_SOURCES			= $(SKYMAPSRC)
+lalapps_coinj_SOURCES			= $(COINJSRC)
+lalapps_cbc_stochasticbank_SOURCES	= $(STOCHBANKSRC)
 endif
 endif
 endif

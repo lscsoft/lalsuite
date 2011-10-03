@@ -20,11 +20,17 @@
 #ifndef _TWODMESH_H
 #define _TWODMESH_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID(TWODMESHH,"$Id$");
@@ -122,6 +128,7 @@ parameter space search where the metric is not too poorly behaved.
  */
 typedef struct tagTwoDMeshNode
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL4 x, y; 	/**< The coordinates of the mesh point */
   REAL4 dx;	/**< The half-width of the tile centred on the mesh point */
   REAL4 dy[2];	/**< The heights of the two right-hand corners of the tile, relative to the mesh point */
@@ -140,6 +147,7 @@ typedef struct tagTwoDMeshNode
  */
 typedef struct tagTwoDMeshParamStruc
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL4 domain[2];	/**< The domain \f$[x_\mathrm{min},x_\mathrm{max}]\f$ spanned by the desired parameter region */
   void (*getRange)( LALStatus *, REAL4 [2], REAL4, void *); /**< A function that returns in its second argument the range
                                                              * \f$[y_1(x),y_2(x)]\f$ spanned by the parameter region for a specified \f$x\f$,
@@ -183,6 +191,7 @@ typedef struct tagTwoDMeshParamStruc
  */
 typedef struct tagTwoDColumnParamStruc
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL4 domain[2];	/**< The region in \f$x\f$ spanned by the column; We require that <tt>domain[1]</tt>\f$>\f$<tt>domain[0]</tt> */
   REAL4 leftRange[2];	/**< The values \f$y_1(x)\f$, \f$y_2(x)\f$ (in that order) of the boundary functions at \f$x=\f$<tt>domain[0]</tt> */
   REAL4 rightRange[2];  /**< The values of \f$y_1(x)\f$, \f$y_2(x)\f$ (in that order) of the boundary functions at \f$x=\f$<tt>domain[1]</tt> */
@@ -227,7 +236,7 @@ LALTwoDColumn( LALStatus            *status,
 
 void
 LALTwoDNodeCopy( LALStatus    *status,
-		 TwoDMeshNode **new,
+		 TwoDMeshNode **new_,
 		 TwoDMeshNode *old );
 
 
@@ -248,8 +257,9 @@ LALInterpolateRangeGrid( LALStatus *status, REAL4 range[2], REAL4 x, void *param
 
 /** \endcond */
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

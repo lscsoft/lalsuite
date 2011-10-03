@@ -20,6 +20,11 @@
 #ifndef _LALCALIBRATION_H
 #define _LALCALIBRATION_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALDatatypes.h>
 
 NRCSID( LALCALIBRATIONH, "$Id$" );
@@ -32,6 +37,7 @@ extern "C" {
  * factors for updating calibraiton to a particular time). */
 typedef struct tagLALCalData
 {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL4TimeSeries         *cavityFactors;
   REAL4TimeSeries         *openLoopFactors;
   COMPLEX8FrequencySeries *responseReference;

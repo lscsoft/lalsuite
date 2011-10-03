@@ -19,7 +19,6 @@
 
 /*
  * Author: David Chin <dwchin@umich.edu> +1-734-730-1274
- * Revision: $Id$
  */
 
 #include <stdio.h>
@@ -45,15 +44,11 @@ NRCSID (LALTESTINCREMENTGPSC, "$Id$");
 #define LONGESTSTR 256
 
 /* Error codes and messages */
-
-/************** <lalErrTable file="LALTESTINCREMENTGPSCErrorTable"> */
 #define LALTESTINCREMENTGPSC_ENORM 	0
 #define LALTESTINCREMENTGPSC_ESUB  	1
 
 #define LALTESTINCREMENTGPSC_MSGENORM "Normal exit"
 #define LALTESTINCREMENTGPSC_MSGESUB  "LAL Subroutine failed"
-/******************************************** </lalErrTable> */
-
 
 /* module-scope variable */
 BOOLEAN verbose_p = FALSE;

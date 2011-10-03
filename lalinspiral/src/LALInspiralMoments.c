@@ -17,76 +17,67 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralMomentsCV">
+/**
 Authors: Brown, D. A., Cokelaer, T. and  Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+\file
+\ingroup LALInspiralBank_h
 
-#if 0
-<lalLaTeX>
+\brief Module to calculate the moment of the noise power spectral density.
 
-\subsection{Module \texttt{LALInspiralMoments.c}}
+\heading{Prototypes}
 
-Module to calculate the moment of the noise power spectral density.
+<tt>LALInspiralMoments()</tt>:
+<ul>
+   <li> <tt>moment,</tt> Output, the value of the moment
+   </li><li> <tt>pars,</tt> Input</li>
+</ul>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralMomentsCP}
-\idx{LALInspiralMoments()}
-\begin{itemize}
-   \item \texttt{moment,} Output, the value of the moment
-   \item \texttt{pars,} Input
-\end{itemize}
-
-\subsubsection*{Description}
+\heading{Description}
 
 The moments of the noise curve are defined as
-\begin{equation}
+\f{equation}{
 I(q)  \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}}
 \frac{x^{-q}}{S_{h}(x)} \, dx \,.
-\end{equation}
+\f}
 Because in practice we will always divide one of these moments by another, we
-do not need to include the $S_{h}(f_{0})$ term, which always cancels.
+do not need to include the \f$S_{h}(f_{0})\f$ term, which always cancels.
 This function calculates the integral
-\begin{equation}
+\f{equation}{
 I = \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q}}{S_{h}(x)} \, dx \,.
-\end{equation}
+\f}
 It then divides this quantity by a normalisation constant which has been
 passed to the function. In the case of calculating the components of the
 metric for the signal manifold for the purpose of generating a template bank,
-this constant is given by $I(7)$, because of the definition of the quantity
-\begin{equation}
+this constant is given by \f$I(7)\f$, because of the definition of the quantity
+\f{equation}{
 J(q) \equiv \frac{I(q)}{I(7/3)} \,.
-\end{equation}
+\f}
 
-\subsubsection*{Algorithm}
-Given the exponent \texttt{pars.ndx} and limits of integration
-\texttt{pars.xmin} and \texttt{pars.xmax} this function returns the moment of
+\heading{Algorithm}
+Given the exponent <tt>pars.ndx</tt> and limits of integration
+<tt>pars.xmin</tt> and <tt>pars.xmax</tt> this function returns the moment of
 the power spectral density specified by the frequency series
-\texttt{pars.shf} according to
-\begin{equation}
+<tt>pars.shf</tt> according to
+\f{equation}{
 \mathtt{moment} = \int_{\mathtt{xmin}}^{\mathtt{xmax}}
 \frac{x^{-\mathtt{ndx}}}{S_h(x)}\, dx \, .
-\end{equation}
+\f}
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALDRombergIntegrate
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralMomentsCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 #include <lal/LALInspiralBank.h>
 #include <lal/Integrate.h>
 
 NRCSID( LALINSPIRALMOMENTSC, "$Id$" );
 
-/* <lalVerbatim file="LALInspiralMomentsCP"> */
+
 void
 LALGetInspiralMoments (
     LALStatus            *status,
@@ -94,7 +85,7 @@ LALGetInspiralMoments (
     REAL8FrequencySeries *psd,
     InspiralTemplate     *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4 k;
   InspiralMomentsIn in;
@@ -288,14 +279,14 @@ LALGetInspiralMomentsBCV (
 }
 
 
-/* <lalVerbatim file="LALInspiralMomentsCP"> */
+
 void
 LALInspiralMoments(
     LALStatus         *status,
     REAL8             *moment,
     InspiralMomentsIn  pars
     )
-/* </lalVerbatim> */
+
 {
   REAL8 f;
   REAL8 momentTmp;

@@ -17,22 +17,17 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="FrameStreamHV">
- * Author: Jolien D. E. Creighton
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
+/**
+ * \author Jolien D. E. Creighton
+ * \file
  *
- * \section{Header \texttt{FrameStream.h}}
+ * \brief Low-level routines for manupulating frame data streams.
  *
- * Low-level routines for manupulating frame data streams.
- *
- * \subsection*{Synopsis}
- * \begin{verbatim}
+ * \heading{Synopsis}
+ * \code
  * #include <stdio.h>
  * #include <lal/FrameStream.h>
- * \end{verbatim}
+ * \endcode
  *
  * A frame stream is like a file stream except that it streams along the set
  * of frames in a set of frame files.  These routines are low-level routines
@@ -40,7 +35,7 @@
  * similar to the standard C file stream manipulation routines and perform
  * similar functions.
  *
- **** </lalLaTeX> */
+*/
 
 #include <lal/LALDatatypes.h>
 #include <lal/FrameCache.h>
@@ -48,19 +43,20 @@
 #ifndef _FRAMESTREAM_H
 #define _FRAMESTREAM_H
 
-#ifdef __cplusplus
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( FRAMESTREAMH, "$Id$" );
 
-/**** <lalLaTeX>
- *
- * \subsection*{Error conditions}
- *
- **** </lalLaTeX> */
-/**** <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define FRAMESTREAMH_ENULL 00001
 #define FRAMESTREAMH_ENNUL 00002
 #define FRAMESTREAMH_EALOC 00004
@@ -90,21 +86,8 @@ NRCSID( FRAMESTREAMH, "$Id$" );
 #define FRAMESTREAMH_MSGEDONE "End of frame data"
 #define FRAMESTREAMH_MSGETREQ "No data at time requested"
 #define FRAMESTREAMH_MSGEDGAP "Gap in the data"
-/**** </lalErrTable> */
+/*@}*/
 
-/**** <lalLaTeX>
- *
- * \subsection*{Structures}
- * \idx[Type]{FrState}
- * \idx[Type]{FrFileInfo}
- * \idx[Type]{FrStream}
- * \idx[Type]{FrPos}
- * \idx[Type]{ChannelType}
- * \idx[Type]{FrChanIn}
- * \idx[Type]{FrOutPar}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
 typedef enum
 {
   LAL_FR_OK  = 0,  /* nominal */
@@ -130,6 +113,7 @@ FrMode;
 struct FrFile;
 typedef struct tagFrFileInfo
 {
+  SWIGLAL_STRUCT_LALALLOC();
   INT4  ind;
   CHAR *url;
   INT4  t0;
@@ -138,6 +122,7 @@ typedef struct tagFrFileInfo
 FrFileInfo;
 typedef struct tagFrStream
 {
+  SWIGLAL_STRUCT_LALALLOC();
   FrState        state;
   INT4           mode;
   LIGOTimeGPS    epoch;
@@ -148,39 +133,36 @@ typedef struct tagFrStream
   INT4           pos;
 }
 FrStream;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
+
+/**
  *
  * This structure details the state of the frame stream.  The contents are
  * private; you should not tamper with them!
  *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+*/
+
 typedef struct
 tagFrPos
 {
+  SWIGLAL_STRUCT_LALALLOC();
   LIGOTimeGPS epoch;
   UINT4       fnum;
   INT4        pos;
 }
 FrPos;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
+
+/**
  *
  * This structure contains a record of the state of a frame stream; this
  * record can be used to restore the stream to the state when the record
  * was made (provided the stream has not been closed).  The fields are:
- * \begin{description}
- * \item[\texttt{epoch}] the GPS time of the open frame when the record
- *     was made.
- * \item[\texttt{fnum}] the file number of a list of frame files that was
- *     open when the record was made.
- * \item[\texttt{pos}] the position within the
- *     frame file that was open when the record was made.
- * \end{description}
+ * <dl>
+ * <dt>epoch</dt><dd> the GPS time of the open frame when the record  was made.</dd>
+ * <dt>fnum</dt><dd> the file number of a list of frame files that was open when the record was made.</dd>
+ * <dt>pos</dt><dd> the position within the frame file that was open when the record was made.</dd>
+ * </dl>
  *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+*/
 typedef enum
 { LAL_ADC_CHAN, LAL_SIM_CHAN, LAL_PROC_CHAN }
 FrChanType;
@@ -189,38 +171,47 @@ FrChanType;
 #define ProcDataChannel LAL_PROC_CHAN
 #define ADCDataChannel  LAL_ADC_CHAN
 #define SimDataChannel  LAL_SIM_CHAN
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
+
+/**
  *
  * These are the various types of channel that can be specified for read/write.
- * They are ``post-processed data'' (\texttt{ProcDataChannel}), ``ADC data''
- * (\texttt{ADCDataChannel}), and ``simulated data'' (\texttt{SimDataChannel}).
+ * They are "post-processed data" (\c ProcDataChannel), "ADC data"
+ * (\c ADCDataChannel), and "simulated data" (\c SimDataChannel).
  *
- **** </lalLaTeX> */
+*/
 
-/**** <lalVerbatim> */
+
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrChanIn::name;
+#endif /* SWIG */
 typedef struct
 tagFrChanIn
 {
+  SWIGLAL_STRUCT_LALALLOC();
   const CHAR *name;
   ChannelType type;
 }
 FrChanIn;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
+
+/**
  *
  * This structure specifies the channel to read as input.  The fields are:
- * \begin{description}
- * \item[\texttt{name}] the name of the channel.
- * \item[\texttt{type}] the channel type.
- * \end{description}
+ * <dl>
+ * <dt>name</dt><dd> the name of the channel.
+ * </dd><dt>type</dt><dd> the channel type.
+ * </dd></dl>
  *
- **** </lalLaTeX> */
+*/
 
-/**** <lalVerbatim> */
+
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrOutPar::source;
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrOutPar::description;
+#endif /* SWIG */
 typedef struct
 tagFrOutPar
 {
+  SWIGLAL_STRUCT_LALALLOC();
   const CHAR *source;
   const CHAR *description;
   ChannelType type;
@@ -229,32 +220,25 @@ tagFrOutPar
   UINT4 run;
 }
 FrOutPar;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
+
+/**
  *
  * This structure specifies the parameters for output of data to a frame.
  * The fields are:
- * \begin{description}
- * \item[\texttt{source}] the source identifier to attach to the output
- *   frame file name.
- * \item[\texttt{description}] the description identifier to attach to the
- *   output frame file name.
- * \item[\texttt{type}] the type of channel to create in the output frames.
- * \item[\texttt{nframes}] the number of frames to output in the frame file.
- * \item[\texttt{frame}] the number the first frame of output.
- * \item[\texttt{run}] the number this data run.
- * \end{description}
+ * <dl>
+ * <dt>source</dt><dd> the source identifier to attach to the output frame file name.</dd>
+ * <dt>description</dt><dd> the description identifier to attach to the output frame file name.</dd>
+ * <dt>type</dt><dd> the type of channel to create in the output frames.</dd>
+ * <dt>nframes</dt><dd> the number of frames to output in the frame file.</dd>
+ * <dt>frame</dt><dd> the number the first frame of output.</dd>
+ * <dt>run</dt><dd> the number this data run.</dd>
+ * </dl>
  * The output frame file name will be
- * $\langle\mbox{source}\rangle$\verb+-+$\langle\mbox{description}\rangle$%
- * \verb+-+$\langle\mbox{GPS start time}\rangle$\verb+-+%
- * $\langle\mbox{duration}\rangle$\verb+.gwf+.
+ * \f$\langle\mbox{source}\rangle\f$<tt>-</tt>\f$\langle\mbox{description}\rangle\f$%
+ * <tt>-</tt>\f$\langle\mbox{GPS start time}\rangle\f$<tt>-</tt>%
+ * \f$\langle\mbox{duration}\rangle\f$<tt>.gwf</tt>.
  *
- * \vfill{\footnotesize\input{FrameStreamHV}}
- * \newpage\input{FrameStreamC}
- * \newpage\input{FrameSeriesC}
- * \newpage\input{FrameStreamTestC}
- *
- **** </lalLaTeX> */
+*/
 
 FrStream * XLALFrCacheOpen( FrCache *cache );
 FrStream * XLALFrOpen( const char *dirname, const char *pattern );
@@ -691,8 +675,9 @@ LALFrWriteCOMPLEX16FrequencySeries(
     INT4             subtype
     );
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

@@ -3,9 +3,12 @@ pkginclude_HEADERS = ComplexFFT.h RealFFT.h FFTWMutex.h TimeFreqFFT.h
 if CUDA
 pkginclude_HEADERS += CudaPlan.h
 endif
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
+CLEANFILES =
+MOSTLYCLEANFILES =
+DISTCLEANFILES =
 all-local: include-link
-dvi-local: .dvi-dep
 @INCLUDEMKFILE@
-@DVIMKFILE@
+
+swig_headers = $(pkginclude_HEADERS)
+CLEANFILES += $(swig_clean)
+@SWIG_HEADER_MK@

@@ -17,171 +17,122 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="UnitsHV">
-Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$
-********************************** </lalVerbatim> */
+/**
+\author J. T. Whelan <john.whelan@ligo.org>
+\addtogroup Units_h
 
-/* <lalLaTeX>
+\brief Provides prototypes for manipulation of units and declares
+\c extern constants for the basic and derived SI units.
 
-\section{Header \texttt{Units.h}}
-\label{tools:s:Units.h}
-
-Provides prototypes for manipulation of units and declares
-\texttt{extern} constants for the basic and derived SI units.
-
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/Units.h>
-\end{verbatim}
+\endcode
 
-\noindent This header provides prototypes for functions to manipulate
-the \texttt{LALUnit} structure.  It also defines \texttt{extern}
+This header provides prototypes for functions to manipulate
+the \c LALUnit structure.  It also defines \c extern
 constants for a set of predefined units, which are designed to make
 the structure easier to use.  For instance, to determine whether a
 quantity has units of strain per root hertz, one constructs the unit
-"strain per root hertz" from the predefined \texttt{lalStrainUnit} and
-\texttt{lalHertzUnit} constant structures using the
-\texttt{LALUnitRaise()} and \texttt{LALUnitMultiply()} functions, then
+"strain per root hertz" from the predefined \c lalStrainUnit and
+\c lalHertzUnit constant structures using the
+LALUnitRaise() and LALUnitMultiply() functions, then
 compares that to the unit structure in question using the
-\texttt{LALUnitCompare()} function.
+LALUnitCompare() function.
 
 The LALUnit datatype itself is included in the header
-\texttt{LALDatatypes.h}, and defines a unit in terms of an integer
+\ref LALDatatypes.h, and defines a unit in terms of an integer
 power of ten multiplier along with rational powers of the basic SI
 units (meters, kilograms, seconds, Amperes, and Kelvins) and two
 custom units (strain and ADC counts).
 
-\subsection*{Error conditions}
-\input{UnitsHErrTable}
+@{
+\defgroup UnitDefs_c Module UnitDefs.c
+\defgroup UnitNormalize_c Module UnitNormalize.c
+\defgroup UnitRaise_c Module UnitRaise.c
+\defgroup UnitMultiply_c Module UnitMultiply.c
+\defgroup UnitCompare_c Module UnitCompare.c
+\defgroup UnitXLALFunctions XLAL Functions
+@}
+*/
 
-\subsection*{Structures}
+/**
+\addtogroup UnitXLALFunctions
+\brief XLAL interface to Unit.h functions
 
-\subsubsection*{LALUnitPair}
-\idx[Type]{LALUnitPair}
-Consists of a pair of unit structures; used as an input structure for
-the \texttt{LALUnitCompare()} and \texttt{LALUnitMultiply()} functions.
-The fields are:
-\begin{description}
-\item[\texttt{LALUnit *unitOne}] The first unit.
-\item[\texttt{LALUnit *unitTwo}] The second unit.
-\end{description}
-
-\subsubsection*{RAT4}
-\idx[Type]{RAT4}
-A four-byte rational number, used as a parameter structure for
-\texttt{LALUnitRaise()}.  The fields are:
-\begin{description}
-\item[\texttt{INT2 numerator}] The numerator.
-\item[\texttt{UINT2 denominatorMinusOne}] One less than the denominator.
-\end{description}
-
-\vfill{\footnotesize\input{UnitsHV}}
-
-\newpage\input{UnitDefsC}
-\newpage\input{UnitNormalizeC}
-\newpage\input{UnitRaiseC}
-\newpage\input{UnitMultiplyC}
-\newpage\input{UnitCompareC}
-
-\newpage\subsection{XLAL Functions}
-
-\subsubsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/Units.h>
+\endcode
 
-char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input );
-LALUnit * XLALParseUnitString( LALUnit *output, const char *string );
-int XLALUnitNormalize( LALUnit *unit );
-int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 );
-LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1,
-    const LALUnit *unit2 );
-LALUnit * XLALUnitRaiseRAT4( LALUnit *output, const LALUnit *input,
-    const RAT4 *power );
-LALUnit * XLALUnitRaiseINT2( LALUnit *output, const LALUnit *input,
-    INT2 power );
-LALUnit * XLALUnitSquare( LALUnit *output, const LALUnit *input );
-LALUnit * XLALUnitSqrt( LALUnit *output, const LALUnit *input );
-\end{verbatim}
-\idx{XLALUnitAsString}
-\idx{XLALParseUnitString}
-\idx{XLALUnitNormalize}
-\idx{XLALUnitCompare}
-\idx{XLALUnitMultiply}
-\idx{XLALUnitRaiseRAT4}
-\idx{XLALUnitRaiseINT2}
-\idx{XLALUnitSquare}
-\idx{XLALUnitSqrt}
+\heading{Description}
 
-\subsubsection*{Description}
+XLALUnitAsString() converts a ::LALUnit structure into a character
+string of maximum length \c length (including NUL termination)
+representation of the units.  The inverse function, XLALParseUnitString()
+parses a character string to produce a \c LALUnit structure; if
+\c output is \c NULL, memory for the output is allocated.  If the input
+\c string is \c NULL or is empty then the output units are
+dimensionless: lalDimensionlessUnit.
 
-\verb+XLALUnitAsString+ converts a \verb+LALUnit+ structure into a character
-string of maximum length \verb+length+ (including NUL termination)
-representation of the units.  The inverse function, \verb+XLALParseUnitString+
-parses a character string to produce a \verb+LALUnit+ structure; if
-\verb+output+ is \verb+NULL+, memory for the output is allocated.  If the input
-\verb+string+ is \verb+NULL+ or is empty then the output units are
-dimensionless: \verb+lalDimensionlessUnit+.
-
-\verb+XLALUnitNormalize+ puts a \verb+LALUnit+ structure into normal form
+XLALUnitNormalize() puts a ::LALUnit structure into normal form
 by simplifying all unit exponent fractions to their simplest form.
 
-\verb+XLALUnitCompare+ compares two \verb+LALUnit+ structures: they are the
+XLALUnitCompare() compares two ::LALUnit structures: they are the
 same if their normal forms are identical.
 
-\verb+XLALUnitMultiply+ multiplies two \verb+LALUnit+ structures.  The result
+XLALUnitMultiply() multiplies two ::LALUnit structures.  The result
 is put into normal form.
 
-\verb+XLALUnitRaiseRAT4+ raises a \verb+LALUnit+ structure to a rational
-power given by the \verb+RAT4+ structure \verb+power+.
-\verb+XLALUnitRaiseINT2+ raises a \verb+LALUnit+ structure to an integer
-power \verb+power+.
-\verb+XLALUnitSquare+ produces the square of a \verb+LALUnit+ structure.
-\verb+XLALUnitSqrt+ produces the square-root of a \verb+LALUnit+ structure.
+XLALUnitRaiseRAT4() raises a ::LALUnit structure to a rational
+power given by the ::RAT4 structure \c power.
+XLALUnitRaiseINT2() raises a ::LALUnit structure to an integer
+power \c power.
+XLALUnitSquare() produces the square of a ::LALUnit structure.
+XLALUnitSqrt() produces the square-root of a ::LALUnit structure.
 
-\subsubsection*{Return Values}
+\heading{Return Values}
 
-\verb+XLALUnitAsString+ returns the pointer to the input \verb+string+, which
+XLALUnitAsString() returns the pointer to the input \c string, which
 is populated with the unit string if successful.  If there is a failure,
-\verb+XLALUnitAsString+ returns a \verb+NULL+ pointer and \verb+xlalErrno+
-is set to one of the following values:  \verb+XLAL_EFAULT+ if one of the
-input pointers is \verb+NULL+ or \verb+XLAL_EBADLEN+ if the length of the
+XLALUnitAsString() returns a \c NULL pointer and \c ::xlalErrno
+is set to one of the following values:  \c #XLAL_EFAULT if one of the
+input pointers is \c NULL or \c #XLAL_EBADLEN if the length of the
 string is insufficent for the unit string.
 
-\verb+XLALParseUnitString+ returns the pointer \verb+output+ upon return
-or a pointer to newly allocated memory if \verb+output+ was \verb+NULL+;
-on failure, \verb+XLALParseUnitString+ returns \verb+NULL+ and sets
-\verb+xlalErrno+ to one of the following values:  \verb+XLAL_ENOMEM+
+XLALParseUnitString() returns the pointer \c output upon return
+or a pointer to newly allocated memory if \c output was \c NULL;
+on failure, \c XLALParseUnitString returns \c NULL and sets
+\c ::xlalErrno to one of the following values:  \c #XLAL_ENOMEM
 if the routine was unable to allocate memory for the output or
-\verb+XLAL_EFAILED+ if the routine was unable to parse the unit string.
+\c #XLAL_EFAILED if the routine was unable to parse the unit string.
 
-\verb+XLALUnitNormalize+ returns 0 upon success or \verb+XLAL_FAILURE+
-if the input pointer is \verb+NULL+, in which case \verb+xlalErrno+
-is set to \verb+XLAL_EFAULT+
+XLALUnitNormalize() returns 0 upon success or \c #XLAL_FAILURE
+if the input pointer is \c NULL, in which case \c xlalErrno
+is set to \c #XLAL_EFAULT
 
-\verb+XLALUnitCompare+ returns 0 if the the normal form of the two unit
+XLALUnitCompare() returns 0 if the the normal form of the two unit
 structures are the same or > 0 if they are different.  It returns
-\verb+XLAL_FAILURE+ and \verb+xlalErrno+ is set to \verb+XLAL_EFAULT+ if
-one of the input pointers is \verb+NULL+.
+\c #XLAL_FAILURE and \c ::xlalErrno is set to \c #XLAL_EFAULT if
+one of the input pointers is \c NULL.
 
-\verb+XLALUnitMultiply+
-\verb+XLALUnitRaiseRAT4+
-\verb+XLALUnitRaiseINT2+
-\verb+XLALUnitSquare+ and
-\verb+XLALUnitSqrt+ all return a pointer to the output unit structure
-\verb+output+ upon success or \verb+NULL+ upon failure.  If there is
-a failure, \verb+xlalErrno+ is set to one of the following values:
-\verb+XLAL_EFAULT+ if one of the input pointers is \verb+NULL+,
-\verb+XLAL_ERANGE+ if one of the unit powers exceeds the allowed range,
-or \verb+XLAL_EINVAL+ (for the raise functions only) if the unit power
+XLALUnitMultiply(), XLALUnitRaiseRAT4(), XLALUnitRaiseINT2(), XLALUnitSquare() and
+XLALUnitSqrt() all return a pointer to the output unit structure
+\c output upon success or \c NULL upon failure.  If there is
+a failure, \c ::xlalErrno is set to one of the following values:
+\c #XLAL_EFAULT if one of the input pointers is \c NULL,
+\c #XLAL_ERANGE if one of the unit powers exceeds the allowed range,
+or \c #XLAL_EINVAL (for the raise functions only) if the unit power
 would not be an integer.
-
-\newpage\input{UnitsTestC}
-
-</lalLaTeX> */
+*/
 
 #ifndef _UNITS_H
 #define _UNITS_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
 
 #include <lal/LALStdlib.h>
 
@@ -191,17 +142,21 @@ extern "C" {
 
 NRCSID (UNITSH, "$Id$");
 
-/******************************** <lalErrTable file="UnitsHErrTable"> */
+/** \ingroup Units_h
+ * @{
+ */
+/**\name Error Codes */ /*@{*/
+#define UNITSH_ENULLPIN         1	/**< Null pointer to input */
+#define UNITSH_ENULLPOUT        2	/**< Null pointer to output */
+#define UNITSH_ENULLPD          3	/**< Null pointer to data member of vector */
+#define UNITSH_ENULLPPARAM      4	/**< Null pointer to parameters */
+#define UNITSH_ESTRINGSIZE      5	/**< Output string too short */
+#define UNITSH_EOVERFLOW        6	/**< Exponent outside of (U)INT2 bounds */
+#define UNITSH_ENONINT          7	/**< Non-integer power of ten */
+#define UNITSH_EPARSE           8	/**< Error parsing unit string */
+/*@}*/
 
-#define UNITSH_ENULLPIN         1
-#define UNITSH_ENULLPOUT        2
-#define UNITSH_ENULLPD          3
-#define UNITSH_ENULLPPARAM      4
-#define UNITSH_ESTRINGSIZE      5
-#define UNITSH_EOVERFLOW        6
-#define UNITSH_ENONINT          7
-#define UNITSH_EPARSE           8
-
+/** \cond DONT_DOXYGEN */
 #define UNITSH_MSGENULLPIN      "Null pointer to input"
 #define UNITSH_MSGENULLPOUT     "Null pointer to output"
 #define UNITSH_MSGENULLPD       "Null pointer to data member of vector"
@@ -210,21 +165,20 @@ NRCSID (UNITSH, "$Id$");
 #define UNITSH_MSGEOVERFLOW     "Exponent outside of (U)INT2 bounds"
 #define UNITSH_MSGENONINT       "Non-integer power of ten"
 #define UNITSH_MSGEPARSE        "Error parsing unit string"
+/** \endcond */
 
-/************************************ </lalErrTable> */
-
-
-/* The parameter structure for LALUnitRaise contains the numerator and
- * denominator-minus-one of the rational power.
+/** A four-byte rational number, used as a parameter structure for
+ * LALUnitRaise().
  */
-
 typedef struct
 tagRAT4
 {
-  INT2 numerator;
-  UINT2 denominatorMinusOne;
+  SWIGLAL_STRUCT_LALALLOC();
+  INT2 numerator;		/**< The numerator */
+  UINT2 denominatorMinusOne;	/**< One less than the denominator */
 } RAT4;
 
+/** @} */
 
 /*********************************************************
  *                                                       *
@@ -235,6 +189,9 @@ tagRAT4
 
 /* XLAL routines */
 
+/** \addtogroup UnitXLALFunctions
+ * @{
+ */
 char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input );
 LALUnit * XLALParseUnitString( LALUnit *output, const char *string );
 int XLALUnitNormalize( LALUnit *unit );
@@ -253,13 +210,12 @@ LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input );
 REAL8 XLALUnitPrefactor(const LALUnit *unit);
 int XLALUnitIsDimensionless(const LALUnit *unit);
 REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2);
+/** @} */
 
 
-
-/* LALUnitNormalize will reduce the rational powers in the basic unit
+/* LALUnitNormalize() will reduce the rational powers in the basic unit
  * exponents, e.g. converting 2/2 to 1/1 and 3/6 to 1/2.
  */
-
 void LALUnitNormalize (LALStatus *status, LALUnit *output,
 		       const LALUnit *input);
 
@@ -267,18 +223,21 @@ void LALUnitNormalize (LALStatus *status, LALUnit *output,
  * following structure.
  */
 
+/* Consists of a pair of unit structures; used as an input structure for
+ * the LALUnitCompare() and LALUnitMultiply() functions.
+ */
 typedef struct
 tagLALUnitPair
 {
-  const LALUnit   *unitOne;
-  const LALUnit   *unitTwo;
+  SWIGLAL_STRUCT_LALALLOC();
+  const LALUnit   *unitOne;	/**< The first unit */
+  const LALUnit   *unitTwo;	/**< The second unit */
 }
 LALUnitPair;
 
 /* LALUnitMultiply will multiply together two Unit variables and
  * output their product; it will call LALUnitNormalize.
  */
-
 void LALUnitMultiply (LALStatus *status, LALUnit *output,
 		      const LALUnitPair *input);
 
@@ -286,23 +245,19 @@ void LALUnitMultiply (LALStatus *status, LALUnit *output,
  * they are the equivalent (the same power of ten offset as well as
  * equivalent ratioanl powers of the base units).
  */
-
 void LALUnitCompare (LALStatus *status, BOOLEAN *output,
 		      const LALUnitPair *input);
 
-/* LALUnitRaise will raise a unit structure to a rational power; the
+/* LALUnitRaise() will raise a unit structure to a rational power; the
  * most common choices will presumably be -1, 2, and 1/2.  An error
  * occurs if input->powerOfTen is not evenly divisible by the
  * denominator of the specified power
  */
-
 void LALUnitRaise (LALStatus *status, LALUnit *output,
 		   const LALUnit *input, const RAT4 *power);
 
-/* LALUnitAsString will convert an LALUnit structure into a
- * human-readable text form.
+/** Converts a LALUnit structure into a human-readable text form.
  */
-
 void LALUnitAsString (LALStatus *status, CHARVector *output,
 		      const LALUnit *input);
 
@@ -311,6 +266,8 @@ LALParseUnitString ( LALStatus *status,
 		     LALUnit *output,
 		     const CHARVector *input );
 
+
+#ifndef SWIG /* exclude from SWIG interface */
 enum { LALUnitNameSize = sizeof("strain") };
 enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
 				"s^-32768/32767 A^-32768/32767 "
@@ -318,6 +275,7 @@ enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
 				"count^-32768/32767") };
 
 extern const CHAR lalUnitName[LALNumUnits][LALUnitNameSize];
+#endif /* SWIG */
 
 /*********************************************************
  *                                                       *

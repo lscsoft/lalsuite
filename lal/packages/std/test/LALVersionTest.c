@@ -71,7 +71,7 @@ extern int lalDebugLevel;
 int main( void )
 {
   static LALStatus status;
-  char msg[1024];
+  char msg[2048];
   int verbose = 1;
 
   lalDebugLevel = 0;

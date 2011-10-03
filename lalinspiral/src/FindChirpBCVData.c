@@ -23,26 +23,38 @@
  *
  * Author: Brown D. A. and Messaritaki E.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpBCVDataCV">
-Author: Brown, D. A. and Messaritaki E.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpBCVData.c}}
-\label{ss:FindChirpBCVData.c}
+\author Brown, D. A. and Messaritaki E.
+\file
+\ingroup FindChirpBCV_h
 
-\input{FindChirpBCVDataCDoc}
+\brief Provides functions to condition the input data from the interferometer
+to a form that can be used by the <tt>FindChirpBCVFilter()</tt> function.
 
-\vfill{\footnotesize\input{FindChirpBCVDataCV}}
-</lalLaTeX>
-#endif
+At the present time this also includes the template independent part of the
+BCV filter.
+
+\heading{Description}
+
+Placeholder.
+
+\heading{Algorithm}
+
+Blah.
+
+\heading{Uses}
+\code
+LALCalloc()
+LALFree()
+\endcode
+
+\heading{Notes}
+
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -60,7 +72,7 @@ $Id$
 
 NRCSID (FINDCHIRPBCVDATAC, "$Id$");
 
-/* <lalVerbatim file="FindChirpBCVDataCP"> */
+
 void
 LALFindChirpBCVData (
     LALStatus                  *status,
@@ -68,7 +80,7 @@ LALFindChirpBCVData (
     DataSegmentVector          *dataSegVec,
     FindChirpDataParams        *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 i, k;
   UINT4                 cut;

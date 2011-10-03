@@ -17,45 +17,33 @@
 *  MA  02111-1307  USA
 */
 
-/************************** <lalVerbatim file="GenerateRingCV">
-Author: Goggin, L. M., and Brown, D. A.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Goggin, L. M., and Brown, D. A.
+\file
+\ingroup GenerateRing_h
 
-/********************************************************** <lalLaTeX>
+\brief Computes the ringdown waveform with specified \f$h_{rss}\f$.
 
-\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
-
-\subsection{Module \texttt{GenerateRing.c}}
-\label{ss:GenerateRing.c}
-
-Computes the ringdown waveform with specified $h_{rss}$.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{GenerateRingCP}
-\idx{LALGenerateRing()}
-
-\subsubsection*{Description}
+\heading{Description}
 
 This function the following burst waveforms:
-\begin{description}
-\item[Sine-Gaussian]:  exponentially decaying sinusoid with specified frequency and decay constant.
-\end{description}
+<dl>
+<dt>Sine-Gaussian</dt><dd>:  exponentially decaying sinusoid with specified frequency and decay constant.</dd>
+</dl>
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALMalloc()                   LALFree()
 LALSCreateVectorSequence()    LALSDestroyVectorSequence()
 LALSCreateVector()            LALSDestroyVector()
 LALDCreateVector()            LALDDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{GenerateRingCV}}
 
-******************************************************* </lalLaTeX> */
+
+*/
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -80,7 +68,7 @@ LALDCreateVector()            LALDDestroyVector()
 
 NRCSID( GENERATERINGC, "$Id$" );
 
-/* <lalVerbatim file="GenerateRingCP"> */
+
 void
 LALGenerateRing(
     LALStatus          *stat,
@@ -90,7 +78,7 @@ LALGenerateRing(
     RingParamStruc     *params
     )
 
-{ /* </lalVerbatim> */
+{
   UINT4 i;      /* number of and index over samples */
   REAL8 t, dt;         /* time, interval */
   REAL8 gtime ;    /* central time, decay time */
@@ -256,7 +244,7 @@ LALGenerateRing(
 }
 
 
-/* <lalVerbatim file="GenerateRingCP"> */
+
 void
 LALRingInjectSignals(
     LALStatus               *stat,
@@ -265,7 +253,7 @@ LALRingInjectSignals(
     COMPLEX8FrequencySeries *resp,
     INT4                     calType
     )
-/* </lalVerbatim> */
+
 {
   UINT4              k;
   INT4               injStartTime;

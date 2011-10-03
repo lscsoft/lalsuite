@@ -69,6 +69,11 @@ The fields are:
 #ifndef  _DIRICHLET_H
 #define  _DIRICHLET_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
@@ -98,6 +103,7 @@ NRCSID (DIRICHLETH, "$Id$");
 /************************************ </lalErrTable> */
 
 typedef struct tagDirichletParameters{
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4	 n;       /* LALDirichlet parameter N */
   UINT4	 length;  /* specified length of output vector */
   REAL8	 deltaX;  /* spacing of x values */

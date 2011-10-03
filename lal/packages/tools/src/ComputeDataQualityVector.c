@@ -24,7 +24,7 @@
 NRCSID( COMPUTEDATAQUALITYVECTORC, "$Id$" );
 RCSID("$Id$");
 
-/*
+/**
  * Compute the Data Quality Vector as defined in
  * https://www.lsc-group.phys.uwm.edu/daswg/wiki/S6OnlineGroup/CalibratedData
  *
@@ -123,7 +123,7 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
         badgamma = 0;
 
         for (j = 0; j < r_gamma; j++) {
-            REAL8 re = gamma_data[j].re;
+            REAL8 re = gamma_data[i*r_gamma + j].re;
             if (re < 0.8 || re > 1.2)  /* || isnan(re) || isinf(re)  not C89 */
                 badgamma = 1;
         }

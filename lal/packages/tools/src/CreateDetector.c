@@ -17,239 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="CreateDetectorCV">
-Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$
-************************************* </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{CreateDetector.c}}
-\label{tools:ss:CreateDetector.c}
-
-Creates a \texttt{LALDetector} structure from a \texttt{LALFrDetector}
-structure and the type of detector.
-
-\subsubsection*{Prototypes}
-\input{CreateDetectorCP}
-\idx{XLALCreateDetector()}
-
-\subsubsection*{Description}
-
-This routine takes the site geometry described in the
-\texttt{LALFrDetector} structure, along with a
-\texttt{LALDetectorType} parameter, and constructs the Cartesian
-detector location and response tensor needed to fill the
-\texttt{LALDetector} output.
-
-The detector type is needed because different types of detectors have
-different response tensors.  In each case the response tensor is
-determined by the unit vectors $\hat{u}_X$ and $\hat{u}_Y$
-which are constant in an Earth-fixed rotating reference frame and
-point in the ``X arm'' and ``Y arm'' directions, respectively; the
-headings of these directions in a local frame at the detector are
-stored in the \texttt{LALFrDetector} structure.
-
-The detector types recognized are (all names are prefaced by
-\texttt{LALDETECTORTYPE\_}):
-\begin{itemize}
-\item[\texttt{IFODIFF}] An interferometer in differential mode.  The
-response tensor is given by $d^{ab}=\frac{1}{2} (u_X^au_X^b-u_Y^au_Y^b)$.
-Note that this is the preferred form even in the two arms of the
-detector are not perpendicular (e.g., at the GEO600 site).
-\item[\texttt{IFOXARM}] An interferometer in one-armed mode with the
-X arm active.  The response tensor is given by
-$d^{ab}=\frac{1}{2}u_X^au_X^b$.
-\item[\texttt{IFOYARM}] An interferometer in one-armed mode with the
-Y arm active.  The response tensor is given by
-$d^{ab}=\frac{1}{2}u_Y^au_Y^b$.
-\item[\texttt{IFOCOMM}] An interferometer in common mode.  The
-response tensor is given by $d^{ab}=\frac{1}{2} (u_X^au_X^b+u_Y^au_Y^b)$.
-\item[\texttt{CYLBAR}] A cylindrical bar detector.  In this case the
-``X arm'' is actually the symmetry axis of the bar, and the ``Y arm''
-is ignored.  The response tensor is
-$d^{ab}=u_X^au_X^b$.
-\end{itemize}
-
-In each of these cases, the basic transformation needed is to express a
-unit vector $\hat{u}$ in terms of its
-components in the Earth-fixed basis
-$\{\hat{e}_1,\hat{e}_2,\hat{e}_3\}$.  The altitude angle ${\mathcal{A}}$ and
-azimuth angle $\zeta$ allow us to express the unit vector  $\hat{u}$
-corresponding to a direction in terms of an orthonormal basis consisting
-of a vector $\hat{e}_{\scriptstyle{\rm E}}$ pointing due East within the
-local horizontal, a vector $\hat{e}_{\scriptstyle{\rm N}}$ pointing due
-North within the local horizontal, and an upward-pointing vector
-$\hat{e}_{\scriptstyle{\rm U}}$ normal to the local horizontal
-plane.\footnote{These form a right-handed basis, providing an answer to
-the age-old question ``What's Up?'': ``East cross North.''}  The relationship
-is
-\begin{equation}
-\hat{u} =   ( \hat{e}_{\scriptstyle{\rm E}}\sin\zeta
-                           + \hat{e}_{\scriptstyle{\rm N}}\cos\zeta )
-                            \cos{\mathcal{A}}
-          + \hat{e}_{\scriptstyle{\rm U}} \sin{\mathcal{A}}
-\ .
-\end{equation}
-Since the local horizontal is defined as the tangent plane to the
-reference ellipsoid at the point with the detector's latitude $\beta$
-and longitude $\lambda$, the local basis is related to the orthonormal
-basis
-$\{\hat{e}_\rho,\hat{e}_\lambda,\hat{e}_z\}$ of a cylindrical
-co\"{o}rdinate system (related to the Earth-fixed Cartesian
-co\"{o}rdinates by $x^1=\rho\cos\lambda$, $x^2=\rho\sin\lambda$, $x^3=z$,
-so that $\hat{e}_\rho$ points away from the Earth's axis,
-$\hat{e}_\lambda$ points in the direction of increasing longitude, and
-$\hat{e}_z$ points in the direction of increasing $x^3$)
-by
-\begin{eqnarray}
-\hat{e}_{\scriptstyle{\rm E}} &=& \hat{e}_\lambda \\
-\hat{e}_{\scriptstyle{\rm N}} &=& - \hat{e}_\rho \sin\beta
-                                  + \hat{e}_z \cos\beta \\
-\hat{e}_{\scriptstyle{\rm U}} &=&   \hat{e}_\rho \cos\beta
-                                  + \hat{e}_z \sin\beta
-\end{eqnarray}
-It is then straightforward to relate the cylindrical basis vectors to
-those in the Earth-fixed Cartesian system by
-\begin{eqnarray}
-\hat{e}_\rho    &=&  \hat{e}_1\cos\lambda  +  \hat{e}_2\sin\lambda  \\
-\hat{e}_\lambda &=& -\hat{e}_1\sin\lambda  +  \hat{e}_2\cos\lambda  \\
-\hat{e}_z       &=& \hat{e}_3
-\end{eqnarray}
-
-To express $\hat{u}$ in the Cartesian basis, we need
-$\hat{u}\cdot\hat{e}_1$, $\hat{u}\cdot\hat{e}_2$, and
-$\hat{u}\cdot\hat{e}_3$.  We first observe that
-\begin{eqnarray}
-\label{tools:e:eE}
-\hat{u}\cdot\hat{e}_{\scriptstyle{\rm E}} &=& \cos{\mathcal{A}}\,\sin\zeta \\
-\hat{u}\cdot\hat{e}_{\scriptstyle{\rm N}} &=& \cos{\mathcal{A}}\,\cos\zeta \\
-\hat{u}\cdot\hat{e}_{\scriptstyle{\rm U}} &=& \sin{\mathcal{A}}
-\end{eqnarray}
-then that
-\begin{eqnarray}
-\hat{u}\cdot\hat{e}_\rho &=& (\hat{u}\cdot\hat{e}_{\scriptstyle{\rm N}})
-                             (\hat{e}_{\scriptstyle{\rm N}}\cdot\hat{e}_\rho)
-                           + (\hat{u}\cdot\hat{e}_{\scriptstyle{\rm U}})
-                             (\hat{e}_{\scriptstyle{\rm U}}\cdot\hat{e}_\rho)
-= -(\hat{u}\cdot\hat{e}_{\scriptstyle{\rm N}}) \sin\beta
- +(\hat{u}\cdot\hat{e}_{\scriptstyle{\rm U}}) \cos\beta \\
-\hat{u}\cdot\hat{e}_\lambda &=& \hat{u}\cdot\hat{e}_{\scriptstyle{\rm E}}\\
-\hat{u}\cdot\hat{e}_z &=& (\hat{u}\cdot\hat{e}_{\scriptstyle{\rm N}})
-                             (\hat{e}_{\scriptstyle{\rm N}}\cdot\hat{e}_z)
-                           + (\hat{u}\cdot\hat{e}_{\scriptstyle{\rm U}})
-                             (\hat{e}_{\scriptstyle{\rm U}}\cdot\hat{e}_z)
-= (\hat{u}\cdot\hat{e}_{\scriptstyle{\rm N}}) \cos\beta
- +(\hat{u}\cdot\hat{e}_{\scriptstyle{\rm U}}) \sin\beta
-\end{eqnarray}
-and finally that
-\begin{eqnarray}
-\hat{u}\cdot\hat{e}_1 &=& (\hat{u}\cdot\hat{e}_\rho)
-                             (\hat{e}_\rho\cdot\hat{e}_1)
-                           + (\hat{u}\cdot\hat{e}_\lambda)
-                             (\hat{e}_\lambda\cdot\hat{e}_1)
-= (\hat{u}\cdot\hat{e}_\rho) \cos\lambda
- -(\hat{u}\cdot\hat{e}_\lambda) \sin\lambda \\
-\hat{u}\cdot\hat{e}_2 &=& (\hat{u}\cdot\hat{e}_\rho)
-                             (\hat{e}_\rho\cdot\hat{e}_2)
-                           + (\hat{u}\cdot\hat{e}_\lambda)
-                             (\hat{e}_\lambda\cdot\hat{e}_2)
-= (\hat{u}\cdot\hat{e}_\rho) \sin\lambda
- +(\hat{u}\cdot\hat{e}_\lambda) \cos\lambda \\
-\hat{u}\cdot\hat{e}_3 &=& \hat{u}\cdot\hat{e}_z
-\label{tools:e:e3ez}
-\end{eqnarray}
-
-\subsubsection*{Cached Detectors}
-\idx[Variable]{lalCachedDetectors[]}
-
-To avoid repeatedly calculating the Cartesian co\"{o}rdinates and
-response tensor of known detectors, the constant array
-\texttt{lalCachedDetectors[]} contains the site geometry and
-response tensors of the most commonly used detectors.  These are
-defined in this file and listed in Table~\ref{tools:tab:cached}.
-\input{CreateDetectorCT}
-
-\subsubsection*{Algorithm}
-\texttt{XLALCreateDetector()} first checks the
-\texttt{lalCachedDetectors[]} array to see if the specified type and
-the name in the input \texttt{LALFrDetector} match any of the
-predefined constant detectors.  If so, it returns a copy of the
-constant detector (not just a pointer to the constant).
-
-If not, it calculates the Cartesian co\"{o}rdinates $\{x^1,x^2,x^3\}$
-of the detector location defined by (\ref{tools:e:cart1}--\ref{tools:e:cart3});
- in
-particular, it calculates the denominator
-$\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}$ and the distance from the axis
-\begin{equation}
-\rho = \left(\frac{a^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}} + h \right)
-\cos\beta
-\end{equation}
-as intermediate steps.
-
-It then calculates the Cartesian components of the unit vectors
-$\hat{u}_X$ and $\hat{u}_Y$ in the arm directions from the altitude
-and azimuth angles by use of a \texttt{static} function which
-implements (\ref{tools:e:eE}--\ref{tools:e:e3ez}).  (Depending on the detector
-type specified, only the unit vector(s) which are actually needed are
-calculated.)  Using this components it constructs $d^{ab}$ according
-to the formula appropriate to the detector type.
-
-The calculation of $x^a$ is done to double precision, that of $d^{ab}$
-to single precision.
-
-\subsubsection*{Uses}
-
-\begin{verbatim}
-XLALCreateDetector()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\begin{itemize}
-\item The conventions in the \texttt{LALFrDetector} structure are based
-  on version 6 of the frame specification \cite{tools:LIGOVIRGO:2000}.
-\item If the location and response tensor information for a
-\texttt{LALDetector} are filled in by hand (e.g., for testing
-purposes), the \texttt{type} field should be set to
-\texttt{LALDETECTORTYPE\_ABSENT}.
-\item The range of \texttt{LALDetectorType}s could be expanded to
-include the  monopole and five quadrupole modes for a spherical
-resonant detector
-\cite{tools:Maggiore:2000b,tools:Zhou:1995,tools:Bianchi:1998,tools:Maggiore:2000a}.
-\end{itemize}
-
-\vfill{\footnotesize\input{CreateDetectorCV}}
-
-******************************************************* </lalLaTeX> */
-
-/**************************************** <lalLaTeX file="CreateDetectorCB">
-\bibitem{tools:Anderson:2000}
-  W.~G.~Anderson, J.~T.~Whelan, P.~R.~Brady, J.~D.~E.~Creighton,
-  D.~Chin, and K.~Riles, ``Beam Pattern Response Functions and Times
-  of Arrival for Earthbound Interferometers'', Maple worksheet,
-  pdf version at
-  \href{http://www.lsc-group.phys.uwm.edu/daswg/docs/technical/T010110.pdf}
-  {\texttt{http://www.lsc-group.phys.uwm.edu/daswg/docs/technical/T010110.pdf}}
-\bibitem{tools:Maggiore:2000b}
-  M.~Maggiore, ``Gravitational Wave Experiments and Early Universe Cosmology'',
-  Phys.\ Rept.\ \textbf{331}, 283-367 (2000);
-  \href{http://www.arXiv.org/abs/gr-qc/9909001}{gr-qc/9909001}
-\bibitem{tools:Zhou:1995} C.~Z.~Zhou and P.~F.~Michelson, ``Spherical
-  resonant-mass gravitational wave detectors'', Phys.\ Rev.\ D.\ {\bf
-  51}, 2517-2545 (1995).
-\bibitem{tools:Bianchi:1998} M.~Bianchi, M.~Brunetti, E.~Coccia, F.~Fucito,
- and J.~A.~Lobo,
-``Cross section of a resonant-mass detector for scalar gravitational waves''
-  Phys.\ Rev.\ D.\ {\bf 57}, 4525--4534 (1998);
-  \href{http://www.arXiv.org/abs/gr-qc/9709045}{gr-qc/9709045}.
-\bibitem{tools:Maggiore:2000a}
-  M.~Maggiore and A.~Nicholis, ``Detection strategies for scalar
-  gravitational waves with interferometers and resonant spheres'',
-  Phys.\ Rev.\ D \textbf{62}, 024004 (2000);
-  \href{http://www.arXiv.org/abs/gr-qc/9907055}{gr-qc/9907055}
-******************************************************* </lalLaTeX> */
-
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <math.h>
@@ -258,243 +25,396 @@ resonant detector
 
 NRCSID( CREATEDETECTORC, "$Id$" );
 
+/**
+\author J. T. Whelan <john.whelan@ligo.org>
+\defgroup CreateDetector_c Module CreateDetector.c
+\ingroup LALDetectors_h
 
-/**************************************** <lalLaTeX file="CreateDetectorCT">
+\brief Creates a \c LALDetector structure from a \c LALFrDetector
+structure and the type of detector.
 
-\begin{table}[htbp]
-  \begin{center}
-    \begin{tabular}{|c|c|c|}
-\hline
-      index & \texttt{LAL\_LHO\_4K\_DETECTOR}
-            & \texttt{LAL\_LLO\_4K\_DETECTOR}
-\\ \hline
-      prefix & \texttt{H1}
-            & \texttt{L1}
-\\ \hline
-      $x^a$
-      &
-      $
+This routine takes the site geometry described in the
+\c LALFrDetector structure, along with a
+\c LALDetectorType parameter, and constructs the Cartesian
+detector location and response tensor needed to fill the
+\c LALDetector output.
+
+The detector type is needed because different types of detectors have
+different response tensors.  In each case the response tensor is
+determined by the unit vectors \f$\hat{u}_X\f$ and \f$\hat{u}_Y\f$
+which are constant in an Earth-fixed rotating reference frame and
+point in the "X arm" and "Y arm" directions, respectively; the
+headings of these directions in a local frame at the detector are
+stored in the \c LALFrDetector structure.
+
+The detector types recognized are (all names are prefaced by \c LALDETECTORTYPE_):
+<ul>
+<li>[\c IFODIFF] An interferometer in differential mode.  The
+response tensor is given by \f$d^{ab}=\frac{1}{2} (u_X^au_X^b-u_Y^au_Y^b)\f$.
+Note that this is the preferred form even in the two arms of the
+detector are not perpendicular (e.g., at the GEO600 site).</li>
+<li>[\c IFOXARM] An interferometer in one-armed mode with the
+X arm active.  The response tensor is given by
+\f$d^{ab}=\frac{1}{2}u_X^au_X^b\f$.</li>
+<li>[\c IFOYARM] An interferometer in one-armed mode with the
+Y arm active.  The response tensor is given by
+\f$d^{ab}=\frac{1}{2}u_Y^au_Y^b\f$.</li>
+<li>[\c IFOCOMM] An interferometer in common mode.  The
+response tensor is given by \f$d^{ab}=\frac{1}{2} (u_X^au_X^b+u_Y^au_Y^b)\f$.</li>
+<li>[\c CYLBAR] A cylindrical bar detector.  In this case the
+"X arm" is actually the symmetry axis of the bar, and the "Y arm"
+is ignored.  The response tensor is
+\f$d^{ab}=u_X^au_X^b\f$.</li>
+</ul>
+
+In each of these cases, the basic transformation needed is to express a
+unit vector \f$\hat{u}\f$ in terms of its
+components in the Earth-fixed basis
+\f$\{\hat{e}_1,\hat{e}_2,\hat{e}_3\}\f$.  The altitude angle \f${\mathcal{A}}\f$ and
+azimuth angle \f$\zeta\f$ allow us to express the unit vector  \f$\hat{u}\f$
+corresponding to a direction in terms of an orthonormal basis consisting
+of a vector \f$\hat{e}_{\scriptstyle\textrm{E}}\f$ pointing due East within the
+local horizontal, a vector \f$\hat{e}_{\scriptstyle\textrm{N}}\f$ pointing due
+North within the local horizontal, and an upward-pointing vector
+\f$\hat{e}_{\scriptstyle\textrm{U}}\f$ normal to the local horizontal
+plane. [These form a right-handed basis, providing an answer to
+the age-old question "What's Up?": "East cross North."]
+The relationship is
+\f{equation}{
+\hat{u} =   ( \hat{e}_{\scriptstyle\textrm{E}}\sin\zeta
+                           + \hat{e}_{\scriptstyle\textrm{N}}\cos\zeta )
+                            \cos{\mathcal{A}}
+          + \hat{e}_{\scriptstyle\textrm{U}} \sin{\mathcal{A}}
+\ .
+\f}
+Since the local horizontal is defined as the tangent plane to the
+reference ellipsoid at the point with the detector's latitude \f$\beta\f$
+and longitude \f$\lambda\f$, the local basis is related to the orthonormal
+basis
+\f$\{\hat{e}_\rho,\hat{e}_\lambda,\hat{e}_z\}\f$ of a cylindrical
+coördinate system (related to the Earth-fixed Cartesian
+coördinates by \f$x^1=\rho\cos\lambda\f$, \f$x^2=\rho\sin\lambda\f$, \f$x^3=z\f$,
+so that \f$\hat{e}_\rho\f$ points away from the Earth's axis,
+\f$\hat{e}_\lambda\f$ points in the direction of increasing longitude, and
+n\f$\hat{e}_z\f$ points in the direction of increasing \f$x^3\f$)
+by
+\f{align}{
+\hat{e}_{\scriptstyle\textrm{E}} &= \hat{e}_\lambda \\
+\hat{e}_{\scriptstyle\textrm{N}} &= - \hat{e}_\rho \sin\beta
+                                  + \hat{e}_z \cos\beta \\
+\hat{e}_{\scriptstyle\textrm{U}} &=   \hat{e}_\rho \cos\beta
+                                  + \hat{e}_z \sin\beta
+\f}
+It is then straightforward to relate the cylindrical basis vectors to
+those in the Earth-fixed Cartesian system by
+\f{align}{
+\hat{e}_\rho    &=  \hat{e}_1\cos\lambda  +  \hat{e}_2\sin\lambda  \\
+\hat{e}_\lambda &= -\hat{e}_1\sin\lambda  +  \hat{e}_2\cos\lambda  \\
+\hat{e}_z       &= \hat{e}_3
+\f}
+
+To express \f$\hat{u}\f$ in the Cartesian basis, we need
+\f$\hat{u}\cdot\hat{e}_1\f$, \f$\hat{u}\cdot\hat{e}_2\f$, and
+\f$\hat{u}\cdot\hat{e}_3\f$.  We first observe that
+\anchor tools_e_eE \f{align}{
+\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{E}} &= \cos{\mathcal{A}}\,\sin\zeta \label{tools_e_eE}\\
+\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{N}} &= \cos{\mathcal{A}}\,\cos\zeta \\
+\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{U}} &= \sin{\mathcal{A}}
+\f}
+then that
+\f{align}{
+\hat{u}\cdot\hat{e}_\rho &= (\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{N}})
+                             (\hat{e}_{\scriptstyle\textrm{N}}\cdot\hat{e}_\rho)
+                           + (\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{U}})
+                             (\hat{e}_{\scriptstyle\textrm{U}}\cdot\hat{e}_\rho)
+= -(\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{N}}) \sin\beta
+ +(\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{U}}) \cos\beta \\
+\hat{u}\cdot\hat{e}_\lambda &=& \hat{u}\cdot\hat{e}_{\scriptstyle\textrm{E}}\\
+\hat{u}\cdot\hat{e}_z &= (\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{N}})
+                             (\hat{e}_{\scriptstyle\textrm{N}}\cdot\hat{e}_z)
+                           + (\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{U}})
+                             (\hat{e}_{\scriptstyle\textrm{U}}\cdot\hat{e}_z)
+= (\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{N}}) \cos\beta
+ +(\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{U}}) \sin\beta
+\f}
+and finally that
+\anchor tools_e_e3ez \f{align}{
+\hat{u}\cdot\hat{e}_1 &= (\hat{u}\cdot\hat{e}_\rho)
+                             (\hat{e}_\rho\cdot\hat{e}_1)
+                           + (\hat{u}\cdot\hat{e}_\lambda)
+                             (\hat{e}_\lambda\cdot\hat{e}_1)
+= (\hat{u}\cdot\hat{e}_\rho) \cos\lambda
+ -(\hat{u}\cdot\hat{e}_\lambda) \sin\lambda \\
+\hat{u}\cdot\hat{e}_2 &= (\hat{u}\cdot\hat{e}_\rho)
+                             (\hat{e}_\rho\cdot\hat{e}_2)
+                           + (\hat{u}\cdot\hat{e}_\lambda)
+                             (\hat{e}_\lambda\cdot\hat{e}_2)
+= (\hat{u}\cdot\hat{e}_\rho) \sin\lambda
+ +(\hat{u}\cdot\hat{e}_\lambda) \cos\lambda \\
+\hat{u}\cdot\hat{e}_3 &= \hat{u}\cdot\hat{e}_z
+\label{tools_e_e3ez}
+\f}
+
+\heading{Cached Detectors}
+
+To avoid repeatedly calculating the Cartesian coördinates and
+response tensor of known detectors, the constant array
+<tt>lalCachedDetectors[]</tt> contains the site geometry and
+response tensors of the most commonly used detectors.  These are
+defined in this file and listed in Table.\tableref{tools_tab_cached}.
+
+\heading{Algorithm}
+<tt>XLALCreateDetector()</tt> first checks the
+<tt>lalCachedDetectors[]</tt> array to see if the specified type and
+the name in the input \c LALFrDetector match any of the
+predefined constant detectors.  If so, it returns a copy of the
+constant detector (not just a pointer to the constant).
+
+If not, it calculates the Cartesian coördinates \f$\{x^1,x^2,x^3\}\f$
+of the detector location defined by\eqref{tools_e_cart1}-\eqref{tools_e_cart3};
+ in
+particular, it calculates the denominator
+\f$\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}\f$ and the distance from the axis
+\f{equation}{
+\rho = \left(\frac{a^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}} + h \right)
+\cos\beta
+\f}
+as intermediate steps.
+
+It then calculates the Cartesian components of the unit vectors
+\f$\hat{u}_X\f$ and \f$\hat{u}_Y\f$ in the arm directions from the altitude
+and azimuth angles by use of a \c static function which
+implements\eqref{tools_e_eE}-\eqref{tools_e_e3ez}.  (Depending on the detector
+type specified, only the unit vector(s) which are actually needed are
+calculated.)  Using this components it constructs \f$d^{ab}\f$ according
+to the formula appropriate to the detector type.
+
+The calculation of \f$x^a\f$ is done to double precision, that of \f$d^{ab}\f$
+to single precision.
+
+\heading{Uses}
+
+\code
+XLALCreateDetector()
+\endcode
+
+\heading{Notes}
+
+<ul>
+<li> The conventions in the \c LALFrDetector structure are based
+  on version 6 of the frame specification [\ref LIGOVIRGO_2000].</li>
+<li> If the location and response tensor information for a
+\c ::LALDetector are filled in by hand (e.g., for testing
+purposes), the \c type field should be set to
+\c #LALDETECTORTYPE_ABSENT.</li>
+<li> The range of \c ::LALDetectorTypes could be expanded to
+include the  monopole and five quadrupole modes for a spherical
+resonant detector
+[\ref Maggiore_2000b, \ref Zhou_1995, \ref Bianchi_1998, \ref Maggiore_2000a].</li>
+</ul>
+
+<b>Table tools_tab_cached:</b> Selected redefined gravitational wave detectors, contained in the ::lalCachedDetectors array.
+Not shown in the table are the LHO 2km detector (H2) and the bar detectors ALLEGRO, AURIGA, EXPLORER, NIOBE and NAUTILUS.
+The LIGO site data come directly from [\ref Althouse_1999], including the Cartesian position vectors \f$x^a\f$ and the response tensor
+\f$d^{ab}\f$, which was dermined from the quoted components of the detector frame basis vectors \f$\hat{x}_G\equiv\hat{u}_X\f$ and
+\f$\hat{y}_G\equiv\hat{u}_Y\f$.  The data on the other detectors comes from [\ref Anderson_2000].
+\anchor tools_tab_cached
+<table>
+<tr><th>index</th><th>\c LAL_LHO_4K_DETECTOR</th><th>\c LAL_LLO_4K_DETECTOR</th></tr>
+<tr><td>      prefix</td><td>\c H1                 </td><td>\c L1 </td></tr>
+<tr><td>   \f$x^a\f$</td><td>
+      \f$
       \left(
         \begin{array}{c}
-        -2.1614149\times 10^6 \\
-        -3.8346952\times 10^6 \\
-        4.6003502\times 10^6
+        -2.1614149 \times 10^6 \\
+        -3.8346952 \times 10^6 \\
+         4.6003502 \times 10^6 \\
         \end{array}
       \right)
-      $
-      &
-      $
+      \f$
+</td><td>
+      \f$
       \left(
         \begin{array}{c}
-        -74276.044 \\
-        -5.496283721\times 10^6 \\
-        3.224257018\times 10^6
+        -74276.044\\
+        -5.496283721\times 10^6\\
+        3.224257018\times 10^6\\
         \end{array}
       \right)
-      $
-\\ \hline
-      $d^{ab}$
-      &
-      $
+      \f$
+</td></tr>
+<tr><td>  \f$d^{ab}\f$
+</td><td>
+      \f$
       \left(
         \begin{array}{ccc}
-          -0.3926141& -0.0776130& -0.2473886 \\
-          -0.0776130&  0.3195244&  0.2279981 \\
-          -0.2473886&  0.2279981&  0.0730903
+v          -0.3926141  & -0.0776130  & -0.2473886 \\
+          -0.0776130  &  0.3195244  &  0.2279981 \\
+          -0.2473886  &  0.2279981  &  0.0730903 \\
         \end{array}
       \right)
-      $
-      &
-      $
+      \f$
+</td><td>
+      \f$
       \left(
         \begin{array}{ccc}
-          0.4112809&  0.1402097&  0.2472943 \\
-          0.1402097& -0.1090056& -0.1816157 \\
-          0.2472943& -0.1816157& -0.3022755
+          0.4112809  &  0.1402097  &  0.2472943 \\
+          0.1402097  & -0.1090056  & -0.1816157 \\
+          0.2472943  & -0.1816157  & -0.3022755 \\
         \end{array}
       \right)
-      $
-\\ \hline
-     type & \texttt{LALDETECTORTYPE\_IFODIFF} & \texttt{LALDETECTORTYPE\_IFODIFF}
-\\ \hline
-     name & LHO\_4k & LLO\_4k
-\\ \hline
-     $(\lambda,\beta,h)$
-     & $(-(119^\circ24'27''\!\!.5657),46^\circ27'18''\!\!.528,
-         142.544\,\textrm{m})$
-     & $(-(90^\circ46'27''\!\!.2654),30^\circ33'46\!\!.4196,
-           -6.574\,\textrm{m})$
-\\ \hline
-      $({\mathcal{A}}_X,\zeta_X)$
-      & $(         -6.195\times 10^{-4},      324^\circ\!\!.0006)$
-      & $(          -3.121\times 10^{-4},     252^\circ\!\!.2835)$
-\\ \hline
-      $({\mathcal{A}}_Y,\zeta_Y)$
-      & $(           1.25\times 10^{-5},      234^\circ\!\!.0006)$
-      & $(          -6.107\times 10^{-4},     162^\circ\!\!.2835)$
-\\ \hline
-     $(L_X/2,L_Y/2)$
-     & $(2000\,\textrm{m},2000\,\textrm{m})$
-     & $(2000\,\textrm{m},2000\,\textrm{m})$
-\\ \hline
-\hline
-      index & \texttt{LAL\_VIRGO\_DETECTOR}
-            & \texttt{LAL\_GEO\_600\_DETECTOR}
-\\ \hline
-      $x^a$
-      &
-      $
+      \f$
+</td></tr>
+<tr><td>     type</td><td>\c LALDETECTORTYPE_IFODIFF</td><td>\c LALDETECTORTYPE_IFODIFF</td></tr>
+<tr><td>     name</td><td>LHO_4k</td><td>LLO_4k</td></tr>
+<tr><td>     \f$(\lambda,\beta,h)\f$
+</td><td>\f$(-(119^\circ24'27"\!\!.5657),46^\circ27'18"\!\!.528, 142.544\,\textrm{m})\f$
+</td><td>\f$(-(90^\circ46'27"\!\!.2654),30^\circ33'46\!\!.4196,   -6.574\,\textrm{m})\f$
+</td></tr>
+<tr><td>      \f$({\mathcal{A}}_X,\zeta_X)\f$
+</td><td>\f$(         -6.195\times 10^{-4},      324^\circ\!\!.0006)\f$
+</td><td>\f$(          -3.121\times 10^{-4},     252^\circ\!\!.2835)\f$
+</td></tr>
+<tr><td>      \f$({\mathcal{A}}_Y,\zeta_Y)\f$
+</td><td>\f$(           1.25\times 10^{-5},      234^\circ\!\!.0006)\f$
+</td><td>\f$(          -6.107\times 10^{-4},     162^\circ\!\!.2835)\f$
+</td></tr>
+<tr><td>     \f$(L_X/2,L_Y/2)\f$ </td><td>\f$(2000\,\textrm{m},2000\,\textrm{m})\f$ </td><td>\f$(2000\,\textrm{m},2000\,\textrm{m})\f$ </td></tr>
+</table>
+
+<br>
+<table class="doxtable">
+<tr><th> index</th><th>\c LAL_VIRGO_DETECTOR </th><th>\c LAL_GEO_600_DETECTOR</th></tr>
+<tr><td>      \f$x^a\f$
+</td><td>
+      \f$
       \left(
         \begin{array}{c}
-         4.54637409863\times 10^6 \\
-         842989.697467\\
-         4.37857696275\times 10^6
+         4.54637409863 \times 10^6 \\
+         842989.697467  \\
+         4.37857696275\times 10^6 \\
         \end{array}
       \right)
-      $
-      &
-      $
+      \f$
+</td><td>
+      \f$
       \left(
         \begin{array}{c}
-        3.85630994953\times 10^6 \\
+        3.85630994953 \times 10^6 \\
         666598.956352 \\
-        5.01964141692\times 10^6
+        5.01964141692 \times 10^6 \\
         \end{array}
       \right)
-      $
-\\ \hline
-      $d^{ab}$
-      &
-      $
+      \f$
+</td></tr>
+<tr><td>      \f$d^{ab}\f$
+</td><td>
+      \f$
       \left(
         \begin{array}{ccc}
-        0.2438740 &  -0.0990838 & -0.2325762 \\
-        -0.0990838 &  -0.4478258 &   0.1878331 \\
-        -0.2325762 &   0.1878331 &   0.2039518
+        0.2438740  & -0.0990838  & -0.2325762 \\
+        -0.0990838 & -0.4478258  & 0.1878331  \\
+        -0.2325762 & 0.1878331   & 0.2039518  \\
         \end{array}
       \right)
-      $
-      &
-      $
+      \f$
+</td><td>
+      \f$
       \left(
         \begin{array}{ccc}
-        -0.0968250 &  -0.3657823 &    0.1221373 \\
-        -0.3657823 &   0.2229681 &    0.2497174 \\
-         0.1221373 &   0.2497174 &   -0.1261431
+        -0.0968250  & -0.3657823  &  0.1221373  \\
+        -0.3657823  &  0.2229681  &  0.2497174  \\
+         0.1221373  &  0.2497174  & -0.1261431	\\
         \end{array}
       \right)
-      $
-\\ \hline
-     type & \texttt{LALDETECTORTYPE\_IFODIFF} & \texttt{LALDETECTORTYPE\_IFODIFF}
-\\ \hline
-     name & VIRGO & GEO\_600
-\\ \hline
-     $(\lambda,\beta,h)$
-     & $(10^\circ30'16''\!\!.1878,43^\circ37'\!\!53''.0921,
-         51.884\,\textrm{m})$
-     & $(9^\circ48'25''\!\!.894,52^\circ14'42''\!\!.528,
-         114.425\,\textrm{m})$
-\\ \hline
-      $({\mathcal{A}}_X,\zeta_X)$
-        & $( 0,          19^\circ\!\!.4326)$
-        & $( 0,          68^\circ\!\!.3883)$
-\\ \hline
-      $({\mathcal{A}}_Y,\zeta_Y)$
-      & $( 0,           289^\circ\!\!.4326)$
-      & $( 0,           334^\circ\!\!.0569)$
-\\ \hline
-     $(L_X/2,L_Y/2)$
-     & $(1500\,\textrm{m},1500\,\textrm{m})$
-     & $(300\,\textrm{m},300\,\textrm{m})$
-\\ \hline
-\hline
-      index & \texttt{LAL\_TAMA\_300\_DETECTOR}
-            & \texttt{LAL\_CIT\_40\_DETECTOR}
-\\ \hline
-      $x^a$
-      &
-      $
+      \f$
+</td></tr>
+<tr><td>     type</td><td>\c LALDETECTORTYPE_IFODIFF</td><td>\c LALDETECTORTYPE_IFODIFF </td></tr>
+<tr><td>     name</td><td>VIRGO</td><td>GEO_600 </td></tr>
+<tr><td>     \f$(\lambda,\beta,h)\f$
+</td><td>\f$(10^\circ30'16"\!\!.1878,43^\circ37'\!\!53".0921, 51.884\,\textrm{m})\f$
+</td><td>\f$(9^\circ48'25"\!\!.894,52^\circ14'42"\!\!.528, 114.425\,\textrm{m})\f$
+</td></tr>
+<tr><td>      \f$({\mathcal{A}}_X,\zeta_X)\f$
+</td><td>\f$( 0,          19^\circ\!\!.4326)\f$
+</td><td>\f$( 0,          68^\circ\!\!.3883)\f$
+</td></tr>
+<tr><td>      \f$({\mathcal{A}}_Y,\zeta_Y)\f$
+</td><td>\f$( 0,           289^\circ\!\!.4326)\f$
+</td><td>\f$( 0,           334^\circ\!\!.0569)\f$
+</td></tr>
+<tr><td>     \f$(L_X/2,L_Y/2)\f$ </td><td>\f$(1500\,\textrm{m},1500\,\textrm{m})\f$ </td><td>\f$(300\,\textrm{m},300\,\textrm{m})\f$ </td></tr>
+</table>
+
+<br>
+<table class="doxtable">
+<tr><th>index</th><th>\c LAL_TAMA_300_DETECTOR </th><th>\c LAL_CIT_40_DETECTOR </th></tr>
+<tr><td>      \f$x^a\f$
+</td><td>
+      \f$
       \left(
         \begin{array}{c}
-        -3.94640898771\times 10^6 \\
-         3.36625903242\times 10^6\\
-         3.69915069189\times 10^6
+        -3.94640898771 \times 10^6 \\
+         3.36625903242 \times 10^6 \\
+         3.69915069189 \times 10^6 \\
         \end{array}
       \right)
-      $
-      &
-      $
+      \f$
+</td><td>
+      \f$
       \left(
         \begin{array}{c}
-        -2.49064958399\times 10^6 \\
-        -4.65869968229\times 10^6 \\
-         3.56206411337\times 10^6
+        -2.49064958399 \times 10^6 \\
+        -4.65869968229 \times 10^6 \\
+         3.56206411337 \times 10^6 \\
         \end{array}
       \right)
-      $
-\\ \hline
-      $d^{ab}$
-      &
-      $
+      \f$
+</td></tr>
+<tr><td>      \f$d^{ab}\f$
+</td><td>
+      \f$
       \left(
         \begin{array}{ccc}
-         0.1121397 & 0.3308421 & -0.1802193 \\
-         0.3308421 & 0.2177940 &  0.1537258 \\
-        -0.1802193 & 0.1537258 & -0.3299337
+         0.1121397  & 0.3308421  & -0.1802193 \\
+         0.3308421  & 0.2177940  &  0.1537258 \\
+        -0.1802193  & 0.1537258  & -0.3299337 \\
         \end{array}
       \right)
-      $
-      &
-      $
+      \f$
+</td><td>
+      \f$
       \left(
         \begin{array}{ccc}
-        -0.3537959 &  0.2734713 &  0.1095458 \\
-         0.2734713 &  0.0115214 &  0.2049027 \\
-         0.1095458 &  0.2049027 &  0.3422745
+        -0.3537959  & 0.2734713  & 0.1095458  \\
+        0.2734713   & 0.0115214  & 0.2049027  \\
+        0.1095458   & 0.2049027  & 0.3422745  \\
         \end{array}
       \right)
-      $
-\\ \hline
-     type & \texttt{LALDETECTORTYPE\_IFODIFF} & \texttt{LALDETECTORTYPE\_IFODIFF}
-\\ \hline
-     name & TAMA\_300 & CIT\_40
-\\ \hline
-     $(\lambda,\beta,h)$
-     & $(139^\circ32'9''\!\!.8,35^\circ40'35''\!\!.6,
-         90\,\textrm{m})$
-     & $(-118^\circ\!\!.13,34^\circ\!\!.17,
-         0\,\textrm{m})$
-\\ \hline
-      $({\mathcal{A}}_X,\zeta_X)$
-        & $( 0,          270^\circ)$
-        & $( 0,          180^\circ)$
-\\ \hline
-      $({\mathcal{A}}_Y,\zeta_Y)$
-      & $( 0,         180^\circ)$
-      & $(0,          90^\circ)$
-\\ \hline
-     $(L_X/2,L_Y/2)$
-     & $(150\,\textrm{m},150\,\textrm{m})$
-     & $(20\,\textrm{m},20\,\textrm{m})$
-\\ \hline
+      \f$
+</td></tr>
+<tr><td>     type</td><td>\c LALDETECTORTYPE_IFODIFF</td><td>\c LALDETECTORTYPE_IFODIFF </td></tr>
+<tr><td>     name</td><td>TAMA_300</td><td>CIT_40 </td></tr>
+<tr><td>     \f$(\lambda,\beta,h)\f$
+</td><td>\f$(139^\circ32'9"\!\!.8,35^\circ40'35"\!\!.6, 90\,\textrm{m})\f$
+</td><td>\f$(-118^\circ\!\!.13,34^\circ\!\!.17, 0\,\textrm{m})\f$
+</td></tr>
+<tr><td>      \f$({\mathcal{A}}_X,\zeta_X)\f$
+</td><td>\f$( 0,          270^\circ)\f$
+</td><td>\f$( 0,          180^\circ)\f$
+</td></tr>
+<tr><td>      \f$({\mathcal{A}}_Y,\zeta_Y)\f$
+</td><td>\f$( 0,         180^\circ)\f$
+</td><td>\f$(0,          90^\circ)\f$
+</td></tr>
+<tr><td>     \f$(L_X/2,L_Y/2)\f$
+</td><td>\f$(150\,\textrm{m},150\,\textrm{m})\f$
+</td><td>\f$(20\,\textrm{m},20\,\textrm{m})\f$
+</td></tr>
+</table>
+*/
 
-    \end{tabular}
-    \caption{Selected redefined gravitational wave detectors, contained in
-      the \texttt{lalCachedDetectors[]} array.
-      Not shown in the table are the LHO 2\,km detector (H2) and the bar
-      detectors ALLEGRO, AURIGA, EXPLORER, NIOBE and NAUTILUS.
-      The LIGO site data
-      come directly from \cite{tools:Althouse:1999}, including the
-      Cartesian position vectors $x^a$ and the response tensor
-      $d^{ab}$, which was dermined from the quoted components of the
-      detector frame basis vectors $\hat{x}_G\equiv\hat{u}_X$ and
-      $\hat{y}_G\equiv\hat{u}_Y$.  The data on the other detectors
-      comes from \cite{tools:Anderson:2000}.}
-    \label{tools:tab:cached}
-  \end{center}
-\end{table}
-
-******************************************************* </lalLaTeX> */
+/** @{ */
 
 /*  { name,
       vertexLatitiudeRadians,
@@ -514,10 +434,10 @@ NRCSID( CREATEDETECTORC, "$Id$" );
 #define LAL_CAT(x,y) x ## y
 #define LAL_XCAT(x,y) LAL_CAT(x,y)
 
-/* expands to constant c of detector d */
+/** expands to constant c of detector d */
 #define LAL_DETECTOR_CONSTANT(d,c) LAL_XCAT(LAL_XCAT(LAL_,d),LAL_XCAT(_,c))
 
-/* initializer for detector location vector */
+/** initializer for detector location vector */
 #define LAL_DETECTOR_LOCATION(d) \
 { \
   LAL_DETECTOR_CONSTANT(d,VERTEX_LOCATION_X_SI),\
@@ -525,16 +445,16 @@ NRCSID( CREATEDETECTORC, "$Id$" );
   LAL_DETECTOR_CONSTANT(d,VERTEX_LOCATION_Z_SI) \
 }
 
-/* expands to component c (X,Y,Z) of arm X of detector d */
+/** expands to component c (X,Y,Z) of arm X of detector d */
 #define LAL_ARM_X(d,c) LAL_DETECTOR_CONSTANT(d,LAL_XCAT(ARM_X_DIRECTION_,c))
 
-/* expands to component c (X,Y,Z) of arm Y of detector d */
+/** expands to component c (X,Y,Z) of arm Y of detector d */
 #define LAL_ARM_Y(d,c) LAL_DETECTOR_CONSTANT(d,LAL_XCAT(ARM_Y_DIRECTION_,c))
 
-/* expands to component c (X,Y,Z) of axis of detector d */
+/** expands to component c (X,Y,Z) of axis of detector d */
 #define LAL_AXIS(d,c) LAL_DETECTOR_CONSTANT(d,LAL_XCAT(AXIS_DIRECTION_,c))
 
-/* expands to a 3x3 matix initializer for the response for IFODIFF detector d */
+/** expands to a 3x3 matix initializer for the response for IFODIFF detector d */
 #define LAL_DETECTOR_RESPONSE_IFODIFF(d) \
 { \
   { \
@@ -554,7 +474,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
   } \
 }
 
-/* expands to a 3x3 matix initializer for the response for IFOCOMM detector d */
+/** expands to a 3x3 matix initializer for the response for IFOCOMM detector d */
 #define LAL_DETECTOR_RESPONSE_IFOCOMM(d) \
 { \
   { \
@@ -574,7 +494,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
   } \
 }
 
-/* expands to a 3x3 matix initializer for the response for IFOXARM detector d */
+/** expands to a 3x3 matix initializer for the response for IFOXARM detector d */
 #define LAL_DETECTOR_RESPONSE_IFOXARM(d) \
 { \
   { \
@@ -594,7 +514,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
   } \
 }
 
-/* expands to a 3x3 matix initializer for the response for IFOYARM detector d */
+/** expands to a 3x3 matix initializer for the response for IFOYARM detector d */
 #define LAL_DETECTOR_RESPONSE_IFOYARM(d) \
 { \
   { \
@@ -614,7 +534,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
   } \
 }
 
-/* expands to a 3x3 matix initializer for the response for CYLBAR detector d */
+/** expands to a 3x3 matix initializer for the response for CYLBAR detector d */
 #define LAL_DETECTOR_RESPONSE_CYLBAR(d) \
 { \
   { \
@@ -705,10 +625,10 @@ void getCartesianComponents( REAL4 u[3],
 }
 
 
-/* <lalVerbatim file="CreateDetectorCP"> */
+
 LALDetector * XLALCreateDetector( LALDetector *detector,
     const LALFrDetector *frDetector, LALDetectorType type )
-/* </lalVerbatim> */
+
 {
   static const char *func = "XLALCreateDetector";
   INT2                i, j;
@@ -913,3 +833,4 @@ void LALCreateDetector( LALStatus             *status,
 
   RETURN(status);
 }
+/** @} */

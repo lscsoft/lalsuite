@@ -17,47 +17,41 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALRungeKutta4CV">
-Author: Robinson, C. A.
-$Id$
-</lalVerbatim>  */
+/**
+\author Robinson, C. A.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief NONE
 
-\subsection{Module \texttt{LALRungeKutta4.c}}
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALRungeKutta4CP}
-\idx{LALRungeKutta4()}
+\heading{Prototypes}
 
-\begin{itemize}
-\item {\tt n:} The number of coupled equations being integrated.
-\item {\tt yout:} The output values for the system after the time-step.
-\item {\tt input:} The input for the system
-\item {\tt integrator} Required for the GSL integratior. Created using {\tt XLALRungeKutta4Init()}.
-\item {\tt params} Parameters to be passed to the derivative function
-\end{itemize}
+<tt>LALRungeKutta4()</tt>
+<ul>
+<li> \c n: The number of coupled equations being integrated.</li>
+<li> \c yout: The output values for the system after the time-step.</li>
+<li> \c input: The input for the system</li>
+<li> \c integrator Required for the GSL integratior. Created using XLALRungeKutta4Init().</li>
+<li> \c params Parameters to be passed to the derivative function</li>
+</ul>
 
-\subsubsection*{Description}
-The code \texttt{LALRungeKutta4.c} solves a system of $n$ coupled first--order differential equations.
+\heading{Description}
+The code \ref LALRungeKutta4.c solves a system of \f$n\f$ coupled first--order differential equations.
 Internally, it uses the gsl routines for performing adaptive step evolution of the system, but to the outside
 user, it returns results for a fixed step size.
 
-Prior to evolving a system using {\tt LALRungeKutta4()}, it is necessary to create the GSL integrator using
-{\tt XLALRungeKutta4Init()}. Once the evolution of the system has finished, this integrator should then
-be freed using {\tt XLALRungeKutta4Free()}.
-\subsubsection*{Algorithm}
+Prior to evolving a system using LALRungeKutta4(), it is necessary to create the GSL integrator using
+XLALRungeKutta4Init(). Once the evolution of the system has finished, this integrator should then
+be freed using XLALRungeKutta4Free().
 
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
 None.
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALRungeKutta4CV}}
-
-</lalLaTeX>  */
-
+*/
 
 #include <lal/LALInspiral.h>
 
@@ -83,23 +77,22 @@ static int derivativeGSLWrapper(
 NRCSID (LALRUNGEKUTTA4C, "$Id$");
 
 /* Function for allocating memory and setting up the GSL integrator */
-/* <lalVerbatim file="LALRungeKutta4CP"> */
+
 rk4GSLIntegrator * XLALRungeKutta4Init( INT4 n,
                                         rk4In *input
                                       )
-{ /* </lalVerbatim>  */
+{
 
-  static const char *func = "XLALRungeKutta4Init";
   rk4GSLIntegrator  *integrator = NULL;
 
   /* Check we have an input */
   if (!input)
-    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+    XLAL_ERROR_NULL(__func__, XLAL_EFAULT);
 
   /* Allocate memory for the integrator structure */
   if (!(integrator = (rk4GSLIntegrator *) LALCalloc(1, sizeof(rk4GSLIntegrator))))
   {
-    XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+    XLAL_ERROR_NULL(__func__, XLAL_ENOMEM);
   }
 
   integrator->input = input;
@@ -111,7 +104,7 @@ rk4GSLIntegrator * XLALRungeKutta4Init( INT4 n,
   if (!(integrator->y = (REAL8 *) LALMalloc(n * sizeof(REAL8))))
   {
     LALFree(integrator);
-    XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+    XLAL_ERROR_NULL(__func__, XLAL_ENOMEM);
   }
 
   /* Initialise GSL integrator */
@@ -123,14 +116,13 @@ rk4GSLIntegrator * XLALRungeKutta4Init( INT4 n,
   if (!(integrator->step) || !(integrator->control) || !(integrator->evolve))
   {
     XLALRungeKutta4Free( integrator );
-    XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+    XLAL_ERROR_NULL(__func__, XLAL_ENOMEM);
   }
 
   return integrator;
 }
 
 
-/*  <lalVerbatim file="LALRungeKutta4CP"> */
 void
 LALRungeKutta4(
    LALStatus        *status,
@@ -138,7 +130,29 @@ LALRungeKutta4(
    rk4GSLIntegrator *integrator,
    void             *params
    )
-{ /* </lalVerbatim>  */
+{
+
+   INITSTATUS(status, "LALRungeKutta4", LALRUNGEKUTTA4C);
+
+   // FIXME: uncomment when transitioned
+   //XLALPrintDeprecationWarning( "LALRungeKutta4", "XLALRungeKutta4" );
+
+   if ( XLALRungeKutta4( yout, integrator, params ) == XLAL_FAILURE )
+     ABORTXLAL( status );
+
+   RETURN( status );
+}
+
+
+int
+XLALRungeKutta4(
+   REAL8Vector      *yout,
+   rk4GSLIntegrator *integrator,
+   void             *params
+   )
+{
+
+   int gslStatus;
 
    INT4 i;
    REAL8 t = 0.0;
@@ -147,14 +161,22 @@ LALRungeKutta4(
    REAL8 h;
    gsl_odeiv_system sys;
 
-   INITSTATUS(status, "LALRungeKutta4", LALRUNGEKUTTA4C);
-   ATTATCHSTATUSPTR(status);
+#ifndef LAL_NDEBUG
+   if ( !yout )
+     XLAL_ERROR( __func__, XLAL_EFAULT );
 
-   ASSERT (yout, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (yout->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (integrator, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (integrator->input, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   if ( !yout->data )
+     XLAL_ERROR( __func__, XLAL_EFAULT );
+
+   if ( !integrator )
+     XLAL_ERROR( __func__, XLAL_EFAULT );
+
+   if ( !integrator->input )
+     XLAL_ERROR( __func__, XLAL_EFAULT );
+   
+   if ( !params )
+     XLAL_ERROR( __func__, XLAL_EFAULT );
+#endif
 
   /* Initialise GSL integrator */
 
@@ -176,15 +198,16 @@ LALRungeKutta4(
   while (t < input->h)
   {
     REAL8 tOld = t;
-    CALLGSL( gsl_odeiv_evolve_apply(integrator->evolve, integrator->control,
-                 integrator->step, &sys,
-				&t, input->h, &h, integrator->y), status );
+    XLAL_CALLGSL( gslStatus = gsl_odeiv_evolve_apply(integrator->evolve, 
+                    integrator->control, integrator->step, &sys,
+				&t, input->h, &h, integrator->y) );
+    
     /*printf("h = %e, t = %e\n", h, t);*/
-    BEGINFAIL(status)
+    if ( gslStatus != GSL_SUCCESS )
     {
-        ABORT(status, LALINSPIRALH_ESTOPPED, LALINSPIRALH_MSGESTOPPED);
+      XLALPrintError( "Failure in gsl_odeiv_evolve_apply\n" );
+      XLAL_ERROR( __func__, XLAL_EFUNC );
     }
-    ENDFAIL(status);
 
     /* In case integration becomes degenerate */
     if (t == tOld)
@@ -192,25 +215,24 @@ LALRungeKutta4(
          for (i=0; i<input->n; i++)
            yout->data[i] = 0.0;
 
-         ABORT(status, LALINSPIRALH_ESTOPPED, LALINSPIRALH_MSGESTOPPED);
+         XLALPrintError( "Time step grown too small!\n" );
+         XLAL_ERROR( __func__, XLAL_EFAILED );
     }
   }
 
   memcpy( yout->data, integrator->y, input->n * sizeof(REAL8));
 
-  DETATCHSTATUSPTR(status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 }
 
 
 /* Function for freeing up memory for the GSL integrator */
-/*  <lalVerbatim file="LALRungeKutta4CP"> */
+
 void XLALRungeKutta4Free( rk4GSLIntegrator *integrator )
-{ /* </lalVerbatim> */
+{
 
-  static const char *func = "XLALRungeKutta4Free";
 
-  if (!integrator) XLAL_ERROR_VOID(func, XLAL_EFAULT);
+  if (!integrator) XLAL_ERROR_VOID(__func__, XLAL_EFAULT);
 
   /* Free the GSL integrator controls etc */
   if (integrator->evolve)  XLAL_CALLGSL( gsl_odeiv_evolve_free(integrator->evolve) );

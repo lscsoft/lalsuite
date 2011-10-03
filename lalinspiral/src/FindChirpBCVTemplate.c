@@ -28,44 +28,37 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpBCVTemplateCV">
-Author: Brown, D. A., Messaritaki, E., and Woods, D.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpBCVTemplate.c}}
-\label{ss:FindChirpBCVTemplate.c}
+\author Brown, D. A., Messaritaki, E., and Woods, D.
+\file
+\ingroup FindChirpBCV_h
 
-Provides functions to create BCV detection templates in a form that can be
-used by the \texttt{FindChirpBCVFilter()} function.
+\brief Provides functions to create BCV detection templates in a form that can be
+used by the <tt>FindChirpBCVFilter()</tt> function.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpBCVTemplateCP}
-\idx{LALFindChirpBCVTemplate()}
+\heading{Prototypes}
 
-The function \texttt{LALFindChirpBCVTemplate()} creates the BCV
+The function <tt>LALFindChirpBCVTemplate()</tt> creates the BCV
 template as described by the algorithm below.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 Blah.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpBCVTemplateCV}}
-</lalLaTeX>
-#endif
+
+
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -77,7 +70,7 @@ LALDestroyVector()
 NRCSID (FINDCHIRPBCVTEMPLATEC, "$Id$");
 
 
-/* <lalVerbatim file="FindChirpBCVTemplateCP"> */
+
 void
 LALFindChirpBCVTemplate (
     LALStatus                  *status,
@@ -85,7 +78,7 @@ LALFindChirpBCVTemplate (
     InspiralTemplate           *tmplt,
     FindChirpTmpltParams       *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4        numPoints  = 0;
   REAL4        deltaF     = 0.0;

@@ -18,9 +18,5 @@ EXTRA_DIST = \
 	CheckStatus.h \
 	InjectTest.c
 
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
-
-dvi-local: .dvi-dep
-
-@DVIMKFILE@
+MOSTLYCLEANFILES =
+DISTCLEANFILES =

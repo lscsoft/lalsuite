@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  *
- * Copyright (C) 2009-2010 Adam Mercer
+ * Copyright (C) 2009-2011 Adam Mercer
  */
 
 #ifndef _LALINSPIRALVCSINFO_H
@@ -42,7 +42,7 @@ extern "C" {
 /* vcs information defines - identable*/
 #define LALINSPIRAL_VCS_IDENT_ID "$" "LALInspiralId: @ID@ " "$"
 #define LALINSPIRAL_VCS_IDENT_DATE "$" "LALInspiralDate: @DATE@ " "$"
-#define LALINSPIRAL_VCS_IDENT_BRANCH "$" "LALInspralBranch: @BRANCH@ " "$"
+#define LALINSPIRAL_VCS_IDENT_BRANCH "$" "LALInspiralBranch: @BRANCH@ " "$"
 #define LALINSPIRAL_VCS_IDENT_TAG "$" "LALInspiralTag: @TAG@ " "$"
 #define LALINSPIRAL_VCS_IDENT_AUTHOR "$" "LALInspiralAuthor: @AUTHOR@ " "$"
 #define LALINSPIRAL_VCS_IDENT_COMMITTER "$" "LALInspiralCommitter: @COMMITTER@ " "$"

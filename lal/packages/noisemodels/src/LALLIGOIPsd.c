@@ -32,7 +32,8 @@ NRCSID (LALLIGOIPSDC,"$Id$");
 
 
 /**
- * Calculate the Initial LIGO SRD noise spectral density at given a
+ * \ingroup LALNoiseModels_h
+ * \brief Calculate the Initial LIGO SRD noise spectral density at given a
  * frequency.  The input is frequency in Hz, and the return value is the
  * noise spectral density, \f$S_{h}(f)\f$, for that frequency.
  *
@@ -49,8 +50,6 @@ NRCSID (LALLIGOIPSDC,"$Id$");
  * the same units as used by the LAL average spectrum functions like
  * XLALWhitenCOMPLEX16FrequencySeries().
  */
-
-
 REAL8 XLALLIGOIPsd(REAL8 f)
 {
 	double f_over_f0 = f / 150;
@@ -60,12 +59,12 @@ REAL8 XLALLIGOIPsd(REAL8 f)
 
 
 /**
- * Legacy LAL wrapper of XLALLIGOIPsd().  Note that the return value is
+ * \ingroup LALNoiseModels_h
+ * \brief Legacy LAL wrapper of XLALLIGOIPsd().  Note that the return value is
  * scaled up by $s_0 = 10^{46}/9.$ In otherwords, the expected noise PSD is
  * \f$9 \times 10^{-46}\f$ times the return value.
+ * \deprecated Use XLALLIGOIPsd() instead.
  */
-
-
 void LALLIGOIPsd(LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
 {
 	/* Deprecation warning temporarily commented out to make life

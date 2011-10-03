@@ -17,29 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="DetectorSiteHV">
-Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$
-********************************** </lalVerbatim> */
-
-/********************************* <lalLaTeX>
-
-\section{Header \texttt{DetectorSite.h}}
-\label{tools:s:DetectorSite.h}
-
-This is a dummy header which includes \texttt{LALDetectors.h}, for
-backwards compatibility.
-
-******************************************************* </lalLaTeX> */
-
-/**
- * \author John T. Whelan
- * \date 2007
- * \file
- * \ingroup tools
- * \brief Dummy header file which includes LALDetectors.h for backwards compatibility
- *
- * $Id$
+/*
+ * author John T. Whelan
+ * date 2007
+ * Dummy header file which includes LALDetectors.h for backwards compatibility
  *
  */
 
@@ -55,7 +36,6 @@ extern "C" {
 
 NRCSID (DETECTORSITEH, "$Id$");
 
-/********************************** <lalVerbatim> */
 /** Legacy code: should now use data in LALDetectors.h */
 enum
 {
@@ -67,7 +47,6 @@ enum
   LALDetectorIndexCIT40DIFF = LAL_CIT_40_DETECTOR,
   LALNumCachedDetectors = LAL_NUM_DETECTORS
 };
-/********************************** </lalVerbatim> */
 
 #ifdef  __cplusplus
 }

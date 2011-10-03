@@ -13,12 +13,12 @@ endif
 bin_PROGRAMS = lalapps_makefakedata_v2 lalapps_Makefakedata_v4 lalapps_compareSFTs lalapps_compareTS \
 	lalapps_dumpSFT lalapps_makefakedatabinary lalapps_makefakedata_test
 
-EXTRA_PROGRAMS = psinject eah_Makefakedata_v4 $(frameprogs)
+EXTRA_PROGRAMS = eah_Makefakedata_v4 $(frameprogs)
 
 lalapps_Makefakedata_v4_SOURCES = makefakedata_v4.c sft_extra.c sft_extra.h
 
 # force linking in C++ mode for E@H
-eah_Makefakedata_v4_SOURCES = makefakedata_v4.c sft_extra.c sft_extra.h ../hough/src2/EinsteinAtHome/win_lib.cpp
+eah_Makefakedata_v4_SOURCES = $(lalapps_Makefakedata_v4_SOURCES) ../hough/src2/EinsteinAtHome/win_lib.cpp
 
 lalapps_makefakedata_v2_SOURCES =  makefakedata_v2.c sft_extra.c sft_extra.h
 
@@ -33,8 +33,6 @@ lalapps_makefakedatabinary_SOURCES = makefakedatabinary.c
 lalapps_makefakedata_test_SOURCES =  makefakedata_test.c sft_extra.c sft_extra.h
 
 ## ----- extra-programs
-psinject_SOURCES = psinject.c
-
 lalapps_sw_inj_frames_SOURCES = sw_inj_frames.c
 
 EXTRA_DIST = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh testT8_1800

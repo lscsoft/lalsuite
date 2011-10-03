@@ -4,14 +4,10 @@
  *
  * \brief Module for generating randomly distributed inspiral parameters
  *
-
- *
  */
 
 /** \file
  *  \ingroup InspiralInjectionParams
- * \date $Date$
- *
  *
  */
 
@@ -64,6 +60,9 @@ typedef enum
   gaussianMassDist,
   uniformTotalMassRatio,
   logMassUniformTotalMassRatio,
+  m1m2SquareGrid,
+  fixMasses,
+  uniformTotalMassFraction
 }
 MassDistribution;
 
@@ -77,6 +76,16 @@ typedef enum
   fixedInclDist
 }
 InclDistribution;
+
+/** enum for two distinct ways a spin-aligned injection is realized
+    depending on the waveform family */
+typedef enum
+{
+  alongzAxis,
+  inxzPlane,
+  notAligned
+}
+AlignmentType;
 
 /* includes */
 #include <stdlib.h>
@@ -124,6 +133,25 @@ SimInspiralTable* XLALRandomInspiralOrientation( SimInspiralTable *inj,
     InclDistribution iDist,
     REAL4   inclinationPeak  );
 
+SimInspiralTable* XLALm1m2SquareGridInspiralMasses( SimInspiralTable *inj,
+    REAL4  mass1Min,
+    REAL4  mass2Min,
+    REAL4  minTotalMass,
+    REAL4  maxTotalMass,
+    REAL4  mass1Delta,
+    REAL4  mass2Delta,
+    INT4   mass1Pnt,
+    INT4   mass2Pnt,
+    INT4   injNum,
+    INT4   *count
+    );
+
+SimInspiralTable* XLALFixedInspiralMasses(
+    SimInspiralTable *inj,
+    REAL4  mass1Fix,
+    REAL4  mass2Fix
+    );
+
 SimInspiralTable* XLALRandomInspiralMasses( SimInspiralTable *inj,
     RandomParams *randParams,
     MassDistribution mDistr,
@@ -153,6 +181,14 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio( SimInspiralTable *inj,
     REAL4  minMassRatio,
     REAL4  maxMassRatio);
 
+SimInspiralTable* XLALRandomInspiralTotalMassFraction( SimInspiralTable *inj,
+    RandomParams *randParams,
+    MassDistribution mDist,
+    REAL4  minTotalMass,
+    REAL4  maxTotalMass,
+    REAL4  minMassRatio,
+    REAL4  maxMassRatio);
+
 SimInspiralTable* XLALRandomInspiralSpins( SimInspiralTable *inj,
     RandomParams *randParams,
     REAL4  spin1Min,
@@ -163,7 +199,7 @@ SimInspiralTable* XLALRandomInspiralSpins( SimInspiralTable *inj,
     REAL4  kappa1Max,
     REAL4  abskappa1Min,
     REAL4  abskappa1Max,
-    int aligned);
+    AlignmentType alignInj);
 
 SimInspiralTable* XLALRandomNRInjectTotalMass(
     SimInspiralTable *inj,

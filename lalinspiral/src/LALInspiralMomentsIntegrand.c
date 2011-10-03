@@ -17,58 +17,52 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralMomentsIntegrandCV">
+/**
 Authors: Brown, D. A., and Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+\file
+\ingroup LALInspiralBank_h
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{LALInspiralMomentsIntegrand.c}}
+\brief NONE
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralMomentsIntegrandCP}
-\idx{LALInspiralMomentsIntegrand()}
-\begin{itemize}
-   \item \texttt{integrand,} Output, the value of the integrand
-   \item \texttt{x,} Input, the point where the integrand is required
-   \item \texttt{params,} Input, of type \texttt{InspiralMomentsIn} containing the details
-   required in moments calculation
-\end{itemize}
 
-\subsubsection*{Description}
+\heading{Prototypes}
+<tt>LALInspiralMomentsIntegrand()</tt>:
+<ul>
+   <li> <tt>integrand,</tt> Output, the value of the integrand
+   </li><li> <tt>x,</tt> Input, the point where the integrand is required
+   </li><li> <tt>params,</tt> Input, of type \c InspiralMomentsIn containing the details
+   required in moments calculation</li>
+</ul>
+
+\heading{Description}
 
 The moments of the noise curve are defined as
-\begin{equation}
+\f{equation}{
 I(q)  \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}}
 \frac{x^{-q/3}}{S_{h}(x)} \, dx \,.
-\end{equation}
-This function calculates the integrand of this integral, i.e.\ for a given $x$
+\f}
+This function calculates the integrand of this integral, i.e.\ for a given \f$x\f$
 it calculates
-\begin{equation}
+\f{equation}{
 \frac{x^{-q/3}}{S_{h}(x)} \,\,.
-\end{equation}
-by interpolating the frequency series containing $S_h(f)$.
+\f}
+by interpolating the frequency series containing \f$S_h(f)\f$.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
 LALDPolynomialInterpolation
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralMomentsIntegrandCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 #include <lal/Interpolate.h>
 #include <lal/LALInspiralBank.h>
 
 NRCSID(LALINSPIRALMOMENTSINTEGRANDC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralMomentsIntegrandCP"> */
+
 void
 LALInspiralMomentsIntegrand(
     LALStatus  *status,
@@ -76,7 +70,7 @@ LALInspiralMomentsIntegrand(
     REAL8       x,
     void       *params
     )
-/* </lalVerbatim> */
+
 {
    InspiralMomentsIn   *integrandParams;
 

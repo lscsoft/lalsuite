@@ -1,0 +1,5 @@
+#opt/lscsoft/lalinference/bin
+opt/lscsoft/lalinference/etc
+opt/lscsoft/lalinference/lib
+#opt/lscsoft/lalinference/sbin
+opt/lscsoft/lalinference/share

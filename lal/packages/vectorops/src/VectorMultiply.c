@@ -17,72 +17,48 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="VectorMultiplyCV">
- * Author: J. D. E. Creighton, T. D. Creighton, A. M. Sintes
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
+/**
+ * \author J. D. E. Creighton, T. D. Creighton, A. M. Sintes
+ * \addtogroup VectorMultiply_c
  *
- * \subsection{Module \texttt{VectorMultiply.c}}
+ * \brief Multiply two vectors.
  *
- * Multiply two vectors.
+ * Let \c u, \c v, and \c w be objects of type
+ * ::COMPLEX8Vector, and let \c a, \c b, and \c c be
+ * objects of type ::REAL4Vector.
  *
- * \subsubsection*{Prototypes}
- * \input{VectorMultiplyCP}
- * \idx{LALCCVectorMultiply()}
- * \idx{LALCCVectorMultiplyConjugate()}
- * \idx{LALCCVectorDivide()}
- * \idx{LALZZVectorMultiply()}
- * \idx{LALZZVectorMultiplyConjugate()}
- * \idx{LALZZVectorDivide()}
- * \idx{LALSCVectorMultiply()}
- * \idx{LALSSVectorMultiply()}
- * \idx{LALDZVectorMultiply()}
- * \idx{LALDDVectorMultiply()}
+ * The \ref LALCCVectorMultiply "LALCCVectorMultiply( &status, &w, &u, &v )" function computes:<br>
+ * <tt>w.data[i]= u.data[i] x v.data[i]</tt>
  *
- * \subsubsection*{Description}
+ * The \ref LALCCVectorMultiplyConjugate "LALCCVectorMultiplyConjugate( &status, &w, &u, &v )" function computes:<br>
+ * <tt>w.data[i]=u.data[i] x v.data[i]*</tt>.
  *
- * Let \texttt{u}, \texttt{v}, and \texttt{w} be objects of type
- * \texttt{COMPLEX8Vector}, and let \texttt{a}, \texttt{b}, and \texttt{c} be
- * objects of type \texttt{REAL4Vector}.
+ * The \ref LALCCVectorDivide "LALCCVectorDivide( &status, &w, &u, &v )" function computes:<br>
+ * <tt>w.data[i]= u.data[i] / v.data[i]</tt>
  *
- * The \verb:LALCCVectorMultiply( &status, &w, &u, &v ): function computes
- * $\mbox{\texttt{w.data[i]}}=\mbox{\texttt{u.data[i]}}\times\mbox{\texttt{v.data[i]}}$.
+ * The \ref LALSCVectorMultiply "LALSCVectorMultiply( &status, &w, &a, &v )" function computes:<br>
+ * <tt>w.data[i]=a.data[i] x v.data[i]</tt>
  *
- * The \verb:LALCCVectorMultiplyConjugate( &status, &w, &u, &v ): function
- * computes
- * $\mbox{\texttt{w.data[i]}}=\mbox{\texttt{u.data[i]}}\times\mbox{\texttt{v.data[i]}}^\ast$.
+ * The \ref LALSSVectorMultiply "LALSSVectorMultiply( &status, &c, &a, &b )" function computes:<br>
+ * <tt>c.data[i]=a.data[i] x b.data[i]</tt>
  *
- * The \verb:LALCCVectorDivide( &status, &w, &u, &v ): function computes
- * $\mbox{\texttt{w.data[i]}}=\mbox{\texttt{u.data[i]}}/\mbox{\texttt{v.data[i]}}$.
+ * The double-precison multiply routines (with \c D or \c Z names) work similarly.
  *
- * The \verb:LALSCVectorMultiply( &status, &w, &a, &v ): function computes
- * $\mbox{\texttt{w.data[i]}}=\mbox{\texttt{a.data[i]}}\times\mbox{\texttt{v.data[i]}}$.
- *
- * The \verb:LALSSVectorMultiply( &status, &c, &a, &b ): function computes
- * $\mbox{\texttt{c.data[i]}}=\mbox{\texttt{a.data[i]}}\times\mbox{\texttt{b.data[i]}}$.
- *
- * The double-precison multiply routines (with \verb:D: or \verb:Z: names)
- * work similarly.
- *
- * \subsubsection*{Algorithm}
- *
+ * \heading{Algorithm}
  *
  * The algorithm for complex division is described in
- * Sec.~5.4 of Ref.~\cite{ptvf:1992}.  The formula used is:
- * \[
+ * Sec. 5.4 of Ref. [\ref ptvf1992].  The formula used is:
+ * \f[
  * \frac{a + ib}{c + id} = \left\{
  * \begin{array}{ll}
  * \frac{[a + b(d/c)] + i[b - a(d/c)]}{c + d(d/c)} & |c| \ge |d| \\
  * \frac{[a(c/d) + b] + i[b(c/d) - a]}{c(c/d) + d} & |c| < |d|.
  * \end{array}
  * \right.
- * \]
+ * \f]
  *
- * \vfill{\footnotesize\input{VectorMultiplyCV}}
- *
- **** </lalLaTeX> */
+ * @{
+*/
 
 
 
@@ -91,8 +67,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/VectorOps.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID (VECTORMULTIPLYC, "$Id$");
-
+/** \endcond */
 
 COMPLEX8Vector * XLALCCVectorDivide(
     COMPLEX8Vector       *out,
@@ -533,7 +510,7 @@ REAL8Vector * XLALDDVectorMultiply(
 
 
 
-/* <lalVerbatim file="VectorMultiplyCP"> */
+/** UNDOCUMENTED */
 void
 LALCCVectorDivide (
     LALStatus            *status,
@@ -541,7 +518,7 @@ LALCCVectorDivide (
     const COMPLEX8Vector *in1,
     const COMPLEX8Vector *in2
     )
-{ /* </lalVerbatim> */
+{
   COMPLEX8 *a;
   COMPLEX8 *b;
   COMPLEX8 *c;
@@ -602,7 +579,7 @@ LALCCVectorDivide (
 }
 
 
-/* <lalVerbatim file="VectorMultiplyCP"> */
+
 void
 LALZZVectorDivide (
     LALStatus             *status,
@@ -610,7 +587,7 @@ LALZZVectorDivide (
     const COMPLEX16Vector *in1,
     const COMPLEX16Vector *in2
     )
-{ /* </lalVerbatim> */
+{
   COMPLEX16 *a;
   COMPLEX16 *b;
   COMPLEX16 *c;
@@ -672,7 +649,7 @@ LALZZVectorDivide (
 
 
 
-/* <lalVerbatim file="VectorMultiplyCP"> */
+/** UNDOCUMENTED */
 void
 LALCCVectorMultiply (
     LALStatus            *status,
@@ -680,7 +657,7 @@ LALCCVectorMultiply (
     const COMPLEX8Vector *in1,
     const COMPLEX8Vector *in2
     )
-{ /* </lalVerbatim> */
+{
   COMPLEX8 *a;
   COMPLEX8 *b;
   COMPLEX8 *c;
@@ -727,7 +704,7 @@ LALCCVectorMultiply (
 }
 
 
-/* <lalVerbatim file="VectorMultiplyCP"> */
+
 void
 LALZZVectorMultiply (
     LALStatus             *status,
@@ -735,7 +712,7 @@ LALZZVectorMultiply (
     const COMPLEX16Vector *in1,
     const COMPLEX16Vector *in2
     )
-{ /* </lalVerbatim> */
+{
   COMPLEX16 *a;
   COMPLEX16 *b;
   COMPLEX16 *c;
@@ -782,7 +759,7 @@ LALZZVectorMultiply (
 }
 
 
-/* <lalVerbatim file="VectorMultiplyCP"> */
+/** UNDOCUMENTED */
 void
 LALCCVectorMultiplyConjugate (
     LALStatus            *status,
@@ -790,7 +767,7 @@ LALCCVectorMultiplyConjugate (
     const COMPLEX8Vector *in1,
     const COMPLEX8Vector *in2
     )
-{ /* </lalVerbatim> */
+{
   COMPLEX8 *a;
   COMPLEX8 *b;
   COMPLEX8 *c;
@@ -837,7 +814,7 @@ LALCCVectorMultiplyConjugate (
 }
 
 
-/* <lalVerbatim file="VectorMultiplyCP"> */
+
 void
 LALZZVectorMultiplyConjugate (
     LALStatus             *status,
@@ -845,7 +822,7 @@ LALZZVectorMultiplyConjugate (
     const COMPLEX16Vector *in1,
     const COMPLEX16Vector *in2
     )
-{ /* </lalVerbatim> */
+{
   COMPLEX16 *a;
   COMPLEX16 *b;
   COMPLEX16 *c;
@@ -892,7 +869,7 @@ LALZZVectorMultiplyConjugate (
 }
 
 
-/* <lalVerbatim file="VectorMultiplyCP"> */
+/** UNDOCUMENTED */
 void
 LALSCVectorMultiply (
     LALStatus            *status,
@@ -900,7 +877,7 @@ LALSCVectorMultiply (
     const REAL4Vector    *in1,
     const COMPLEX8Vector *in2
     )
-{ /* </lalVerbatim> */
+{
   REAL4    *a;
   COMPLEX8 *b;
   COMPLEX8 *c;
@@ -946,7 +923,7 @@ LALSCVectorMultiply (
 }
 
 
-/* <lalVerbatim file="VectorMultiplyCP"> */
+
 void
 LALDZVectorMultiply (
     LALStatus             *status,
@@ -954,7 +931,7 @@ LALDZVectorMultiply (
     const REAL8Vector     *in1,
     const COMPLEX16Vector *in2
     )
-{ /* </lalVerbatim> */
+{
   REAL8     *a;
   COMPLEX16 *b;
   COMPLEX16 *c;
@@ -1000,7 +977,7 @@ LALDZVectorMultiply (
 }
 
 
-/* <lalVerbatim file="VectorMultiplyCP"> */
+/** UNDOCUMENTED */
 void
 LALSSVectorMultiply (
     LALStatus            *status,
@@ -1008,7 +985,7 @@ LALSSVectorMultiply (
     const REAL4Vector    *in1,
     const REAL4Vector    *in2
     )
-{ /* </lalVerbatim> */
+{
   REAL4 *a;
   REAL4 *b;
   REAL4 *c;
@@ -1045,7 +1022,7 @@ LALSSVectorMultiply (
 }
 
 
-/* <lalVerbatim file="VectorMultiplyCP"> */
+
 void
 LALDDVectorMultiply (
     LALStatus            *status,
@@ -1053,7 +1030,7 @@ LALDDVectorMultiply (
     const REAL8Vector    *in1,
     const REAL8Vector    *in2
     )
-{ /* </lalVerbatim> */
+{
   REAL8 *a;
   REAL8 *b;
   REAL8 *c;
@@ -1089,3 +1066,4 @@ LALDDVectorMultiply (
   RETURN (status);
 }
 
+/** @} */

@@ -1534,7 +1534,6 @@ void coh_PTF_statistic(
     powerBinsCross[k] = NULL;
   }
 
-
   // Now we calculate all the extrinsic parameters and signal based vetoes
   // Only calculated if this will be a trigger
 

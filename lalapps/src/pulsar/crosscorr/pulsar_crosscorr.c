@@ -37,7 +37,7 @@
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <gsl/gsl_permutation.h>
 
-RCSID( "$Id: pulsar_crosscorr.c,v 1.23 2009/03/13 00:43:04 cchung Exp $");
+RCSID( "$Id$");
 
 /* globals, constants and defaults */
 
@@ -45,6 +45,7 @@ extern int lalDebugLevel;
 
 /* user input variables */
 BOOLEAN  uvar_help;
+BOOLEAN  uvar_version;     /**< output version information */
 BOOLEAN  uvar_averagePsi;
 BOOLEAN  uvar_averageIota;
 BOOLEAN  uvar_autoCorrelate;
@@ -215,6 +216,8 @@ int main(int argc, char *argv[]){
   static SFTConstraints constraints;
   INT4 sftcounter = 0, slidingcounter = 1, listLength = 0;
 
+  CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
+
   /* to time the code*/
   time_t t1, t2;
 
@@ -232,6 +235,17 @@ int main(int argc, char *argv[]){
   /* exit if help was required */
   if (uvar_help)
     exit(0); 
+
+
+  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+
+  if ( uvar_version ) {
+    printf ("%s\n", VCSInfoString );
+    exit (0);
+  }
 
   /* very basic consistency checks on user input */
   if ( uvar_f0 < 0 ) {
@@ -1084,6 +1098,9 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
   XLALDestroyREAL8Vector(galphare);
   XLALDestroyREAL8Vector(galphaim);
 
+  if ( VCSInfoString )
+    XLALFree ( VCSInfoString );
+
   if (!uvar_averagePsi) {
     LALFree(psi);
   }
@@ -1486,7 +1503,7 @@ void AddSFTtoList(LALStatus *status,
     *sftHead = sftList; 
   }
   else {
-    (*sftTail)->nextSFT = (struct SFTListElement *)sftList;
+    (*sftTail)->nextSFT = (SFTListElement *)sftList;
   }
 	
   *sftTail = sftList;
@@ -1514,7 +1531,7 @@ void AddPSDtoList(LALStatus *status,
   if (!(*psdHead)) {
     *psdHead = psdList;
   } else {
-    (*psdTail)->nextPSD = (struct PSDListElement *)psdList;
+    (*psdTail)->nextPSD = (PSDListElement *)psdList;
   }
   *psdTail = psdList;
 
@@ -1541,7 +1558,7 @@ void AddREAL8toList(LALStatus *status,
   if (!(*head)) {
     *head = List;
   } else {
-    (*tail)->nextVal = (struct REAL8ListElement *)List;
+    (*tail)->nextVal = (REAL8ListElement *)List;
   }
   *tail = List;
 
@@ -1570,7 +1587,7 @@ void AddBeamFntoList(LALStatus *status,
   if (!(*beamHead)) {
     *beamHead = beamList;	
   } else {
-    (*beamTail)->nextBeamfn = (struct CrossCorrBeamFnListElement *)beamList;
+    (*beamTail)->nextBeamfn = (CrossCorrBeamFnListElement *)beamList;
   }
   *beamTail = beamList;
 
@@ -1733,6 +1750,7 @@ void initUserVars (LALStatus *status)
   uvar_maxlag = 0;
 
   uvar_help = FALSE;
+  uvar_version = FALSE;
   uvar_averagePsi = TRUE;
   uvar_averageIota = TRUE;
   uvar_autoCorrelate = FALSE;
@@ -1791,6 +1809,10 @@ void initUserVars (LALStatus *status)
 			  'h', UVAR_HELP,
 			  "Print this message",
 			  &uvar_help);
+  LALRegisterBOOLUserVar( status->statusPtr, "version",
+			  'V', UVAR_SPECIAL,
+			  "Output version information",
+			  &uvar_version);
   LALRegisterBOOLUserVar( status->statusPtr, "averagePsi",
 			  0, UVAR_OPTIONAL,
 			  "Use average over psi",

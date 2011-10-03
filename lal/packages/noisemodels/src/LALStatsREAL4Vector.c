@@ -17,36 +17,16 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALStatsREAL4VectorCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
-/* <lalLaTeX>
-\subsection{Module \texttt{LALStatsREAL4Vector.c}}
-Module to compute the mean, rms, minimum and maximum
-of a \texttt{REAL4Vector}.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALStatsREAL4VectorCP}
-\index{\verb&LALStatsREAL4Vector()&}
-
-\subsubsection*{Description}
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
-none
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALStatsREAL4VectorCV}}
-</lalLaTeX>  */
 #include <lal/LALNoiseModels.h>
 
 NRCSID (LALSTATSREAL4VECTORC, "$Id$");
 
-/*  <lalVerbatim file="LALStatsREAL4VectorCP"> */
+/**
+\author Sathyaprakash, B. S.
+\ingroup LALNoiseModels_h
+\brief Module to compute the mean, rms, minimum and maximum of a \c REAL4Vector.
+
+*/
 void
 LALStatsREAL4Vector
    (
@@ -55,7 +35,7 @@ LALStatsREAL4Vector
    REAL4Vector         *vector
    )
 
-{  /*  </lalVerbatim>  */
+{
 
    INT4 i, n;
    REAL8 x;

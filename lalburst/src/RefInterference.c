@@ -23,7 +23,6 @@
  *
  * Author: Sintes, A. M.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  *
@@ -48,59 +47,56 @@
  */
 
 
-/************************************ <lalVerbatim file="RefInterferenceCV">
-Author: Sintes, A. M.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Sintes, A. M.
+\file
+\ingroup clremoval
 
-
-/* <lalLaTeX>
-
-\subsection{Module \texttt{RefInterference.c}}
-\label{ss:RefInterference.c}
+\heading{Module \ref RefInterference.c}
+\latexonly\label{ss_RefInterference_c}\endlatexonly
 Generates a reference interference signal.
 
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{RefInterferenceD}
-\idx{LALRefInterference()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
-Given the complex vector  \verb@*in1@ of length $n/2+1$, containing
-the Fourier transform of the data $\tilde x(\nu)$,
-\begin{description}
-\item[\texttt{in1->length}] The number of elements in
-            \texttt{in1->data} $=n/2+1$.
-\item[\texttt{in1->data}]   The data $\tilde x(\nu)$,
-\end{description}
- and given another vector \verb@*par@ containing the  information related
+
+
+
+\heading{Description}
+Given the complex vector  <tt>*in1</tt> of length \f$n/2+1\f$, containing
+the Fourier transform of the data \f$\tilde x(\nu)\f$,
+<dl>
+<dt><tt>in1->length</tt></dt><dd> The number of elements in
+            <tt>in1->data</tt> \f$=n/2+1\f$.</dd>
+<dt><tt>in1->data</tt></dt><dd>   The data \f$\tilde x(\nu)\f$,</dd>
+</dl>
+ and given another vector <tt>*par</tt> containing the  information related
 to the harmonics from which we want to construct the reference signal
 (i.e., indices, and  initial and final frequency bin locations),
-\begin{description}
-\item[\texttt{par->length}] The number of elements in \texttt{par->data}.
+<dl>
+<dt><tt>par->length</tt></dt><dd> The number of elements in <tt>par->data</tt>.
        This is equal to three times the number of harmonics that will be
-        used to construct the reference signal $M(t)$.
-\item[\texttt{par->data}]    $\{ k,\nu_{ik}, \nu_{fk} \} $,
-      e.g.,  $\{$3, 9868, 9894, 5, 16449, 16487, 9, 29607, 29675$\ldots\}$,
-\end{description}
+        used to construct the reference signal \f$M(t)\f$.</dd>
+<dt><tt>par->data</tt></dt><dd>    \f$\{ k,\nu_{ik}, \nu_{fk} \} \f$,
+      e.g.,  \f$\{3, 9868, 9894, 5, 16449, 16487, 9, 29607, 29675\ldots\}\f$,</dd>
+</dl>
 it  generates the time domain
-$M(t)$ reference interference signal, \verb@*out@. This is a complex
-vector of length $n$.
-\begin{description}
-\item[\texttt{out->length}] The number of elements in
-            \texttt{out->data} $=n$.
-\item[\texttt{out->data}]   $M(t)$ complex data.
-\end{description}
-$M(t)$ corresponds to a nearly monochromatic function near the
-frequency  $f_0$, that is implicit in the information
-given in \verb@*par@.
+\f$M(t)\f$ reference interference signal, <tt>*out</tt>. This is a complex
+vector of length \f$n\f$.
+<dl>
+<dt><tt>out->length</tt></dt><dd> The number of elements in
+            <tt>out->data</tt> \f$=n\f$.</dd>
+<dt><tt>out->data</tt></dt><dd>   \f$M(t)\f$ complex data.</dd>
+</dl>
+\f$M(t)\f$ corresponds to a nearly monochromatic function near the
+frequency  \f$f_0\f$, that is implicit in the information
+given in <tt>*par</tt>.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 Described before.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALSCreateVector()
 LALCCreateVector()
 LALZCreateVector()
@@ -110,18 +106,18 @@ LALSDestroyVector()
 LALCDestroyVector()
 LALZDestroyVector()
 LALDestroyComplexFFTPlan()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
 The harmonics selected to construct the reference signal
 should not be (if possible) buried with other strong lines,
  such as violin modes. Choose the strongest harmonics, those
 that clearly stand over the noise level.
 
-\vfill{\footnotesize\input{RefInterferenceCV}}
 
-</lalLaTeX> */
+
+*/
 
 
 #include <lal/CLR.h>
@@ -129,12 +125,12 @@ that clearly stand over the noise level.
 
 NRCSID (REFINTERFERENCEC, "$Id$");
 
-/* <lalVerbatim file="RefInterferenceD"> */
+
 void LALRefInterference (LALStatus    *status,
 		   COMPLEX8Vector     *out,   /*  M(t), size n */
 		   COMPLEX8Vector     *in1,   /*  x(f), size n/2+1 */
 		   INT4Vector         *par)
-{ /* </lalVerbatim> */
+{
 
   INT4    i,j;
   INT4    n;

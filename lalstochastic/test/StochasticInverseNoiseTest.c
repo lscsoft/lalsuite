@@ -17,20 +17,16 @@
 *  MA  02111-1307  USA
 */
 
-/************************* <lalVerbatim file="StochasticInverseNoiseTestCV">
-Author: UTB Relativity Group; contact whelan\@phys.utb.edu
-$Id$
-********************************* </lalVerbatim> */
+/**
+\author UTB Relativity Group; contact whelan\@phys.utb.edu
+\file
+\ingroup StochasticInverseNoise_c
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{StochasticInverseNoiseTest.c}}
-\label{stochastic:ss:StochasticInverseNoiseTest.c}
+\brief Test suite for <tt>LALStochasticInverseNoise()</tt>.
 
-Test suite for \texttt{LALStochasticInverseNoise()}.
+\heading{Usage}
 
-\subsubsection*{Usage}
-
-\begin{verbatim}
+\code
 ./StochasticInverseNoiseTest [options]
 Options:
   -h             print usage message
@@ -42,67 +38,64 @@ Options:
   -f filename    read response function from file filename
   -u filename    print calibrated inverse noise PSD to file filename
   -m filename    print half-calibrated inverse noise PSD to file filename
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
-This program tests the function \texttt{LALStochasticInverseNoise()},
+This program tests the function <tt>LALStochasticInverseNoise()</tt>,
 which outputs an uncalibrated and "half-calibrated" inverse noise spectra
 from a uncalibrated data stream and a response function.
 
 First, it tests that the correct error codes
-(\textit{cf.}\ Sec.~\ref{stochastic:s:StochasticCrossCorrelation.h})
+(cf. \ref StochasticCrossCorrelation_h)
 are generated for the following error conditions (tests in
-\textit{italics} are not performed if \verb+LAL_NDEBUG+ is set, as
+\e italics are not performed if \c LAL_NDEBUG is set, as
 the corresponding checks in the code are made using the ASSERT macro):
-\begin{itemize}
-\item \textit{null pointer to output structure}
-\item \textit{null pointer to input structure}
-\item \textit{null pointer to uncalibrated noise}
-\item \textit{null pointer to response function}
-\item \textit{null pointer to calibrated inverse noise}
-\item \textit{null pointer to half-calibrated inverse noise}
-\item \textit{null pointer to data member of uncalibrated noise}
-\item \textit{null pointer to data member of response function}
-\item \textit{null pointer to data member of calibrated inverse noise}
-\item \textit{null pointer to data member of half-calibrated inverse noise}
-\item \textit{null pointer to data member of data member of uncalibrated noise}
-\item \textit{null pointer to data member of data member of response function}
-\item \textit{null pointer to data member of data member of calibrated inverse noise}
-\item \textit{null pointer to data member of data member of half-calibrated inverse noise}
-\item \textit{zero length}
-\item \textit{negative frequency spacing}
-\item \textit{zero frequency spacing}
-\item negative start frequency
-\item length mismatch between uncalibrated noise and response function
-\item length mismatch between uncalibrated noise and calibrated inverse noise
-\item length mismatch between uncalibrated noise and half-calibrated inverse noise
-\item frequency spacing mismatch between uncalibrated noise and response function
-\item start frequency mismatch between uncalibrated noise and response function
-\end{itemize}
+<ul>
+<li> <em>null pointer to output structure</em></li>
+<li> <em>null pointer to input structure</em></li>
+<li> <em>null pointer to uncalibrated noise</em></li>
+<li> <em>null pointer to response function</em></li>
+<li> <em>null pointer to calibrated inverse noise</em></li>
+<li> <em>null pointer to half-calibrated inverse noise</em></li>
+<li> <em>null pointer to data member of uncalibrated noise</em></li>
+<li> <em>null pointer to data member of response function</em></li>
+<li> <em>null pointer to data member of calibrated inverse noise</em></li>
+<li> <em>null pointer to data member of half-calibrated inverse noise</em></li>
+<li> <em>null pointer to data member of data member of uncalibrated noise</em></li>
+<li> <em>null pointer to data member of data member of response function</em></li>
+<li> <em>null pointer to data member of data member of calibrated inverse noise</em></li>
+<li> <em>null pointer to data member of data member of half-calibrated inverse noise</em></li>
+<li> <em>zero length</em></li>
+<li> <em>negative frequency spacing</em></li>
+<li> <em>zero frequency spacing</em></li>
+<li> negative start frequency</li>
+<li> length mismatch between uncalibrated noise and response function</li>
+<li> length mismatch between uncalibrated noise and calibrated inverse noise</li>
+<li> length mismatch between uncalibrated noise and half-calibrated inverse noise</li>
+<li> frequency spacing mismatch between uncalibrated noise and response function</li>
+<li> start frequency mismatch between uncalibrated noise and response function</li>
+</ul>
 
 It then verifies that the correct uncalibrated and half-calibrated inverse
 noise are generated for a simple test case:
-\begin{enumerate}
-\item $\tilde{R}(f)=(1+i)f^2$, $P(f)=f^3$.  The
-  expected results are $1/P^{\scriptstyle{\rm C}}(f)=2f$,
-  $1/P^{\scriptstyle{\rm HC}}(f)=(1-i)f^{-1}$.
-\end{enumerate}
+<ol>
+<li> \f$\tilde{R}(f)=(1+i)f^2\f$, \f$P(f)=f^3\f$.  The
+  expected results are \f$1/P^{\mathrm{C}}(f)=2f\f$,
+  \f$1/P^{\mathrm{HC}(f)=(1-i)f^{-1}\f$.</li>
+</ol>
 
 For each successful test (both of these valid data and the invalid ones
-described above), it prints ``\texttt{PASS}'' to standard output; if a
-test fails, it prints ``\texttt{FAIL}''.
+described above), it prints "\c PASS" to standard output; if a
+test fails, it prints "\c FAIL".
 
-If the four \texttt{filename} arguments are present, it also
+If the four \c filename arguments are present, it also
 calculates a spectrum based on user-specified data and it prints the
 noise spectra to the files specified by the user.
 
-\subsubsection*{Exit codes}
-\input{StochasticInverseNoiseTestCE}
+\heading{Uses}
 
-\subsubsection*{Uses}
-
-\begin{verbatim}
+\code
 getopt()
 LALStochasticInverseNoise()
 LALSCreateVector()
@@ -116,24 +109,38 @@ LALCPrintFrequencySeries()
 LALUnitAsString()
 LALUnitCompare()
 LALCheckMemoryLeaks()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
-\begin{itemize}
-\item No specific error checking is done on user-specified data.  If
-  the \texttt{length} argument missing, the resulting defaults
-  will cause a bad data error.
-\item The length of the user-provided series must be specified, even
+\heading{Notes}
+<ul>
+<li> No specific error checking is done on user-specified data.  If
+  the \c length argument missing, the resulting defaults
+  will cause a bad data error.</li>
+<li> The length of the user-provided series must be specified, even
   though it could in principle be deduced from the input file, because
   the data sequences must be allocated before the
-  \texttt{LALCReadFrequencySeries()} function is called.
-\item If one \texttt{filename} argument, but not both, is present,
-  the user-specified data will be silently ignored.
-\end{itemize}
+  <tt>LALCReadFrequencySeries()</tt> function is called.</li>
+<li> If one \c filename argument, but not both, is present,
+  the user-specified data will be silently ignored.</li>
+</ul>
 
-\vfill{\footnotesize\input{StochasticInverseNoiseTestCV}}
+*/
 
-******************************************************* </lalLaTeX> */
+/**\name Error Codes */ /*@{*/
+#define STOCHASTICINVERSENOISETESTC_ENOM 0	/**< Nominal exit */
+#define STOCHASTICINVERSENOISETESTC_EARG 1	/**< Error parsing command-line arguments */
+#define STOCHASTICINVERSENOISETESTC_ECHK 2	/**< Error checking failed to catch bad data */
+#define STOCHASTICINVERSENOISETESTC_EFLS 3	/**< Incorrect answer for valid data */
+#define STOCHASTICINVERSENOISETESTC_EUSE 4	/**< Bad user-entered data */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define STOCHASTICINVERSENOISETESTC_MSGENOM "Nominal exit"
+#define STOCHASTICINVERSENOISETESTC_MSGEARG "Error parsing command-line arguments"
+#define STOCHASTICINVERSENOISETESTC_MSGECHK "Error checking failed to catch bad data"
+#define STOCHASTICINVERSENOISETESTC_MSGEFLS "Incorrect answer for valid data"
+#define STOCHASTICINVERSENOISETESTC_MSGEUSE "Bad user-entered data"
+
 
 #include <lal/LALStdlib.h>
 
@@ -187,20 +194,6 @@ Usage (const char *program, int exitflag);
 
 static void
 ParseOptions (int argc, char *argv[]);
-
-/***************************** <lalErrTable file="StochasticInverseNoiseTestCE"> */
-#define STOCHASTICINVERSENOISETESTC_ENOM 0
-#define STOCHASTICINVERSENOISETESTC_EARG 1
-#define STOCHASTICINVERSENOISETESTC_ECHK 2
-#define STOCHASTICINVERSENOISETESTC_EFLS 3
-#define STOCHASTICINVERSENOISETESTC_EUSE 4
-
-#define STOCHASTICINVERSENOISETESTC_MSGENOM "Nominal exit"
-#define STOCHASTICINVERSENOISETESTC_MSGEARG "Error parsing command-line arguments"
-#define STOCHASTICINVERSENOISETESTC_MSGECHK "Error checking failed to catch bad data"
-#define STOCHASTICINVERSENOISETESTC_MSGEFLS "Incorrect answer for valid data"
-#define STOCHASTICINVERSENOISETESTC_MSGEUSE "Bad user-entered data"
-/***************************** </lalErrTable> */
 
 int main(int argc, char *argv[])
 {
@@ -1236,3 +1229,4 @@ ParseOptions (int argc, char *argv[])
   return;
 }
 
+/** \endcond */

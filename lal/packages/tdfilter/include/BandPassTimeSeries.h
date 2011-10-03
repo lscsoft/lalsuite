@@ -43,13 +43,19 @@ Further documentation is given in the individual routines' modules.
 #ifndef _BANDPASSTIMESERIES_H
 #define _BANDPASSTIMESERIES_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/IIRFilter.h>
 #include <lal/ZPGFilter.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID(BANDPASSTIMESERIESH,"$Id$");
@@ -91,6 +97,7 @@ transition band.  In the latter case, a nonzero filter order parameter
 ******************************************************* </lalLaTeX> */
 
 typedef struct tagPassBandParamStruc{
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR *name;
   INT4 nMax;
   REAL8 f1;
@@ -146,8 +153,9 @@ LALDButterworthREAL4TimeSeries( LALStatus          *status,
 \newpage\input{BandPassTestC}
 </lalLaTeX> */
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

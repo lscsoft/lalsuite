@@ -128,7 +128,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   ifo_name = the name of the IFO
   ifo_data = the master science segs 
   ifo_to_do = the science segments we need to analyze
-  tmplt_job = if not GeoBank: template bank job we should use 
+  tmplt_job = if not FixedBank: template bank job we should use
   insp_job = the condor job that we should use to analyze data
   df_job = the condor job to find the data
   prev_df = the previous LSCdataFind job that was executed
@@ -148,16 +148,15 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   if cp.has_section(ifo_name.lower() + '-tmpltbank'):
     tmplt_job.add_ini_opts(cp,ifo_name.lower() + '-tmpltbank')
 
-  GeoBank = None
+  # we may use a fixed bank specified in ini file
+  try: FixedBank = cp.get('input','fixed-bank')
+  except: FixedBank = None
+  if FixedBank is not None: print "For %s we use bank %s"%(ifo_name, FixedBank)
   if ifo_name == 'G1':
     data_opts = 'geo-data'
     try: type = cp.get('input','geo-type')
     except: type = None
     channel = cp.get('input','geo-channel')
-    # to analyze GEO data we may use a fixed bank specified in ini file
-    try: GeoBank = cp.get('input','geo-bank')
-    except: GeoBank = None
-    if GeoBank: print "For G1 we use bank ", GeoBank
   elif ifo_name == 'V1':
     data_opts = 'virgo-data'
     try: type = cp.get('input','virgo-type')
@@ -256,7 +255,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
           else: bank.set_cache(cp.get('datafind',ifo_name+"-cache"))
           if not calibrated: bank.calibration()
           if opts.datafind: bank.add_parent(df)
-          if (opts.template_bank and not GeoBank): dag.add_node(bank)
+          if (opts.template_bank and not FixedBank): dag.add_node(bank)
                   
           # make an inspiral job for the master chunk
           insp = inspiral.InspiralNode(insp_job)
@@ -276,15 +275,15 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
           if not opts.read_cache: insp.set_cache(df.get_output())
           else:  insp.set_cache(cp.get('datafind',ifo_name+"-cache"))
           if not calibrated: insp.calibration()
-          if GeoBank:
-            insp.set_bank(GeoBank)
+          if FixedBank:
+            insp.set_bank(FixedBank)
           else:
             insp.set_bank(bank.get_output())
           # XXX: ensure output is added to list of output files
           output = insp.get_output()
           if opts.datafind: insp.add_parent(df)
           if inspinjNode and opts.inspinj: insp.add_parent(inspinjNode) 
-          if (opts.template_bank and not GeoBank): insp.add_parent(bank)
+          if (opts.template_bank and not FixedBank): insp.add_parent(bank)
           if opts.inspiral: dag.add_node(insp)
 
           # store this chunk in the list of filtered data

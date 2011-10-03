@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (C) 2007  Kipp Cannon
  *
@@ -25,8 +24,14 @@
 
 #include <stddef.h>
 #include <lal/LALDatatypes.h>
-
 #include <lal/LALRCSID.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 NRCSID(SEQUENCEH, "$Id:");
 
 define(`DATATYPE',COMPLEX8)
@@ -69,5 +74,10 @@ define(`DATATYPE',UINT8)
 define(`SQUAREDATATYPE',UINT8)
 include(SequenceH.m4)
 
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
 
 #endif  /* _SEQUENCE_H */

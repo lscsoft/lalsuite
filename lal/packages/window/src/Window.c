@@ -102,7 +102,7 @@ static REAL4Window *XLALREAL4Window_from_REAL8Window(REAL8Window *orig)
  * Output:
  * length < 2 --> return 0.0
  * i == 0 --> return -1.0
- * i == length / 2 --> return 0.0
+ * i == (length - 1) / 2 --> return 0.0
  * i == length - 1 --> return +1.0
  *
  * e.g., length = 5 (odd), then i == 2 --> return 0.0

@@ -142,3 +142,43 @@ REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, 
 } /* CompDetectorDeltaVmax() */
 
 
+REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
+{
+   
+   const CHAR *fn = __func__;
+   
+   INT4 ii;
+   INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
+   LALStatus status;
+   status.statusPtr = NULL;
+   
+   REAL8 detvel[3];
+   REAL8 detvel0[3];
+   REAL4 Vmax = 0.0;
+   for (ii=0; ii<numffts; ii++) {
+      LIGOTimeGPS gpstime = {0,0};
+      gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tcoh-SFToverlap) + 0.5*Tcoh);
+      gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh - floor(t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh))*1e9);
+      
+      if (ii==0) {
+         LALDetectorVel(&status, detvel0, &gpstime, det, edat);
+         if (status.statusCode!=0) {
+            fprintf(stderr,"%s: LALDetectorVel() failed with error code %d.\n", fn, status.statusCode);
+            XLAL_ERROR_REAL4(fn, XLAL_EFUNC);
+         }
+      } else {
+         LALDetectorVel(&status, detvel, &gpstime, det, edat);
+         if (status.statusCode!=0) {
+            fprintf(stderr,"%s: LALDetectorVel() failed with error code %d.\n", fn, status.statusCode);
+            XLAL_ERROR_REAL4(fn, XLAL_EFUNC);
+         }
+         REAL4 V = (REAL4)sqrt(detvel[0]*detvel[0] + detvel[1]*detvel[1] + detvel[2]*detvel[2]);
+         if (V > Vmax) Vmax = V;
+      } /* if ii==0 else ... */
+   } /* for ii < numffts */
+   
+   return Vmax;
+   
+} /* CompDetectorVmax() */
+
+

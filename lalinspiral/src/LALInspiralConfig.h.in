@@ -24,4 +24,7 @@
 /* LALInspiral Configure Date */
 #undef LALINSPIRAL_CONFIGURE_DATE
 
+/* Define to 1 if you have the LALFrame library */
+#undef HAVE_LIBLALFRAME
+
 #endif /* _LALINSPIRALCONFIG_H */

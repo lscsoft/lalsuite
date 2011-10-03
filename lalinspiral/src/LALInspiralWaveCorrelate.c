@@ -17,57 +17,51 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralWaveCorrelateCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
 
-/* <lalLaTeX>
-\subsection{Module \texttt{LALInspiralWaveCorrelate.c}}
-Module to compute the correlation of two data sets.
-Suitable only when REAL4VectorFFT is used (i.e. rfftwi\_one of fftw).
+\brief Module to compute the correlation of two data sets.
 
-{\bf Notation:} The input struct has two vectors: \texttt{signal1}
-and \texttt{signal2.} This module computes the correlation by
-shifting \texttt{signal2} with respect to positive time-direction
-relative to \texttt{signal1}. Thus, if \texttt{signal1}
-denotes the detector output in which a signal, say \texttt{signal2,}
-is present at time $t_0,$ then the correlation peaks at $t_0.$
+Suitable only when REAL4VectorFFT is used (i.e. rfftwi_one of fftw).
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralWaveCorrelateCP}
-\index{\verb&LALInspiralWaveCorrelate()&}
+\c Notation: The input struct has two vectors: \c signal1
+and <tt>signal2.</tt> This module computes the correlation by
+shifting \c signal2 with respect to positive time-direction
+relative to \c signal1. Thus, if \c signal1
+denotes the detector output in which a signal, say <tt>signal2,</tt>
+is present at time \f$t_0,\f$ then the correlation peaks at \f$t_0.\f$
 
-\subsubsection*{Description}
-The module expects two inputs \texttt{signal1, signal2}
+\heading{Prototypes}
+
+<tt>LALInspiralWaveCorrelate()</tt>
+
+\heading{Description}
+The module expects two inputs <tt>signal1, signal2</tt>
 in the Fourier-domain, computes their correlation weighted by
-the noise \texttt{psd},  and returns the correlated output in
+the noise \c psd,  and returns the correlated output in
 the time-domain. More precisely, given the Discrete
 Fourier transform (in the notation of {\em fftw})
-$H_k$ and $Q_k$ of vectors $h_k$ and $q_k,$
-$k=0,\ldots n-1,$ this module computes the inverse Fourier
-transform of the weighted correlation $C_k$ defined as
-$$C_k = \frac{H_k Q_k + H_{n-k} Q_{n-k} }{S_k}, \ \
+\f$H_k\f$ and \f$Q_k\f$ of vectors \f$h_k\f$ and \f$q_k,\f$
+\f$k=0,\ldots n-1,\f$ this module computes the inverse Fourier
+transform of the weighted correlation \f$C_k\f$ defined as
+\f[C_k = \frac{H_k Q_k + H_{n-k} Q_{n-k} }{S_k}, \ \
 C_{n-k} = \frac{H_k Q_{n-k} + H_{n-k} Q_k }{S_k}, \ \
-           k=1,\ldots,\frac{n}{2}-1.$$
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
-LALREAL4VectorFFT
-\end{verbatim}
+           k=1,\ldots,\frac{n}{2}-1.\f]
 
-\subsubsection*{Notes}
+\heading{Uses}
+\code
+LALREAL4VectorFFT()
+\endcode
 
-\vfill{\footnotesize\input{LALInspiralWaveCorrelateCV}}
-</lalLaTeX>  */
+*/
 
 #include <lal/LALNoiseModelsInspiral.h>
 #include <lal/RealFFT.h>
 
 NRCSID (LALINSPIRALWAVECORRELATEC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralWaveCorrelateCP"> */
+
 void
 LALInspiralWaveCorrelate
    (
@@ -75,7 +69,7 @@ LALInspiralWaveCorrelate
    REAL4Vector              *output,
    InspiralWaveCorrelateIn   corrin
    )
-{  /*  </lalVerbatim>  */
+{
   INT4 n, nby2, i, k;
   REAL8 psd, r1, r2, i1, i2, f;
   REAL4Vector buff;

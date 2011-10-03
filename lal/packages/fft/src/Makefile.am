@@ -29,10 +29,8 @@ EXTRA_DIST = qthread.c IntelComplexFFT.c IntelRealFFT.c \
 if CUDA
 MAINTAINERCLEANFILES = CudaFFT.cu.c CudaFFT.cu.loT
 endif
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
-dvi-local: .dvi-dep
-@DVIMKFILE@
+MOSTLYCLEANFILES =
+DISTCLEANFILES =
 
 if CUDA
 SUFFIXES = .cu .cpp

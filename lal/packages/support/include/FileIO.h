@@ -42,6 +42,11 @@ the \texttt{lalsupport} library.
 #ifndef _FILEIO_H
 #define _FILEIO_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -59,13 +64,17 @@ NRCSID( FILEIOH, "$Id$" );
 FILE *
 LALOpenDataFile( const char * );
 
-typedef struct tagLALFILE { int compression; void *fp; } LALFILE;
+typedef struct tagLALFILE {
+  SWIGLAL_STRUCT_LALALLOC();
+  int compression;
+  void *fp;
+} LALFILE;
 LALFILE *lalstdin(void);
 LALFILE *lalstdout(void);
 LALFILE *lalstderr(void);
-#define lalstdin (lalstdin())
-#define lalstdout (lalstdout())
-#define lalstderr (lalstderr())
+#define LALSTDIN  (lalstdin())
+#define LALSTDOUT (lalstdout())
+#define LALSTDERR (lalstderr())
 
 int XLALFileIsCompressed( const char *path );
 LALFILE * XLALFileOpenRead( const char *path );
@@ -79,7 +88,9 @@ int XLALFileGetc( LALFILE *file );
 int XLALFilePutc( int c, LALFILE *file );
 char * XLALFileGets( char * s, int size, LALFILE *file );
 int XLALFilePuts( const char * s, LALFILE *file );
+#ifndef SWIG /* exclude from SWIG interface */
 int XLALFileVPrintf( LALFILE *file, const char *fmt, va_list ap );
+#endif /* SWIG */
 int XLALFilePrintf( LALFILE *file, const char *fmt, ... );
 int XLALFileFlush( LALFILE *file );
 int XLALFileSeek( LALFILE *file, long offset, int whence );

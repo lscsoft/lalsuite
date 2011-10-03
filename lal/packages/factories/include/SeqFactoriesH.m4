@@ -1,30 +1,74 @@
-/*-----------------------------------------------------------------------
+/**
+\defgroup SeqFactories_h SeqFactories_h
+\ingroup factories
 
-File Name: SeqFactories.h
-
-<lalVerbatim file="SeqFactoriesHV">
-Revision: $Id$
-</lalVerbatim>
-
--------------------------------------------------------------------------*/
-
-/* <lalLaTeX>
-
-\section{Header \texttt{SeqFactories.h}}
-\label{s:SeqFactories.h}
-
-Provides prototype and status code information for use of CreateVectorSequence
+\brief Provides prototype and status code information for use of CreateVectorSequence
 and DestroyVectorSequence.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/SeqFactories.h>
-\end{verbatim}
+\endcode
 
-</lalLaTeX> */
+\section sec_SF_XLALfcts XLAL Functions
+
+\code
+REAL4VectorSequence * XLALCreateVectorSequence(UINT4 length, UINT4 veclen);
+void XLALCreateVectorSequence(REAL4VectorSequence *vecseq);
+
+<vecseqtype> * XLALCreate<vecseqtype>(UINT4 length, UINT4 veclen);
+void XLALCreate<vecseqtype>(<vecseqtype> *vecseq);
+\endcode
+
+Here <tt>\<vecseqtype\></tt> is one of
+\c COMPLEX16VectorSequence,
+\c COMPLEX8VectorSequence,
+\c REAL8VectorSequence,
+\c REAL4VectorSequence,
+\c INT8VectorSequence,
+\c INT4VectorSequence,
+\c INT2VectorSequence,
+\c UINT8VectorSequence,
+\c UINT4VectorSequence,
+\c UINT2VectorSequence, or
+\c CHARVectorSequence.
+
+\subsection ss_SF_desc Description
+
+The <tt>XLALCreate\<type\>VectorSequence</tt> functions create vector sequences
+of type <tt>\<type\></tt>, length and vector length \c veclen.
+The function \c XLALCreateVectorSequence is the same as
+\c XLALCreateREAL4VectorSequence.
+
+The <tt>XLALDestroy\<type\>VectorSequence</tt> functions deallocate the memory
+allocation pointed to by \c vecseq including its contents.  The function
+\c XLALDestroyVectorSequence is the same as
+\c XLALDestroyREAL4VectorSequence.
+
+\subsection ss_SF_ret Return Values
+
+The create functions return a pointer to the created vector sequence if
+successful; upon failure they will return \c NULL and set \c xlalErrno
+to one of the following values: \c #XLAL_ENOMEM if memory allocation
+failed, or \c #XLAL_EBADLEN if the requested \c length or \c veclen
+is zero.
+
+The destroy functions do not have a return value.  They can fail if they are
+passed a \c NULL pointer, in which case \c xlalErrno is set to
+\c #XLAL_EFAULT, or if the vector sequency passed to the destroy routine
+has zero length, vector length, or \c NULL data pointer then
+\c xlalErrno is set to \c #XLAL_EINVAL.
+
+*/
+
 
 #ifndef _SEQFACTORIES_H
 #define _SEQFACTORIES_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
 
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
@@ -35,17 +79,8 @@ extern "C" {
 
 NRCSID (SEQFACTORIESH, "$Id$");
 
-/* <lalLaTeX>
-
-\subsection*{Error conditions}
-\input{SeqFactoriesHErrTab}
-
-</lalLaTeX> */
-
-/*
-<lalErrTable file="SeqFactoriesHErrTab">
-*/
-
+/**\name Error Codes *//*@{*/
+/** \ingroup SeqFactories_h */
 #define SEQFACTORIESH_ESLENGTH  1
 #define SEQFACTORIESH_EVLENGTH  2
 #define SEQFACTORIESH_EALENGTH  4
@@ -63,131 +98,38 @@ NRCSID (SEQFACTORIESH, "$Id$");
 #define SEQFACTORIESH_MSGEDPTR    "Null sequence data."
 #define SEQFACTORIESH_MSGEINPTR   "Null input pointer."
 #define SEQFACTORIESH_MSGEMALLOC  "Malloc failure."
-
-/*
-</lalErrTable>
-*/
+/*@}*/
 
 
-/* Structures. */
-/* <lalLaTeX>
 
-\subsection*{Structures}
-\begin{verbatim}
-CreateVectorSequenceIn
-\end{verbatim}
-\idx[Type]{CreateVectorSequenceIn}
 
-\noindent This structure stores the input required for creating a vector
-sequence.  This input includes the length of the sequence (i.e., the number of
-vectors) and the length of each vector.  The fields are:
-
-\begin{description}
-\item[\texttt{UINT4 length}] The sequence length.
-\item[\texttt{UINT4 vectorLength}] The length of each vector in the sequence.
-\end{description}
-
-</lalLaTeX> */
-
+/** \ingroup SeqFactories_h
+ * \brief This structure stores the input required for creating a vector
+ * sequence.  This input includes the length of the sequence (i.e., the number of
+ * vectors) and the length of each vector.
+ */
 typedef struct tagCreateVectorSequenceIn {
-  UINT4 length;
-  UINT4 vectorLength;
+  SWIGLAL_STRUCT_LALALLOC();
+  UINT4 length; 	/**< The sequence length */
+  UINT4 vectorLength;	/**< The length of each vector in the sequence */
 } CreateVectorSequenceIn;
 
 
-/* <lalLaTeX>
-
-\begin{verbatim}
-CreateArraySequenceIn
-\end{verbatim}
-\idx[Type]{CreateArraySequenceIn}
-
-\noindent This structure stores the input required for creating an array
-sequence.  This input includes the length of the sequence (i.e., the number of
-array) and the dimensions of each array index.  The fields are:
-
-\begin{description}
-\item[\texttt{UINT4 length}] The sequence length.
-\item[\texttt{UINT4Vector *dimLength}] The dimensions of each array
-index (the same for every array in the sequence).
-\end{description}
-
-</lalLaTeX> */
-
+/** \ingroup SeqFactories_h
+ * \brief This structure stores the input required for creating an array
+ * sequence.  This input includes the length of the sequence (i.e., the number of
+ * array) and the dimensions of each array index.
+ */
 typedef struct tagCreateArraySequenceIn {
-  UINT4 length;
-  UINT4Vector *dimLength;
+  SWIGLAL_STRUCT_LALALLOC();
+  UINT4 length;			/**< The sequence length */
+  UINT4Vector *dimLength;	/**< The dimensions of each array index (the same for every array in the sequence) */
 } CreateArraySequenceIn;
 
-
-/* Function prototypes. */
-/* <lalLaTeX>
-\newpage\input{VectorSequenceFactoriesC}
-
-\newpage
-\subsection{XLAL Functions}
-
-\subsubsection*{Synopsis}
-\begin{verbatim}
-REAL4VectorSequence * XLALCreateVectorSequence(UINT4 length, UINT4 veclen);
-void XLALCreateVectorSequence(REAL4VectorSequence *vecseq);
-
-<vecseqtype> * XLALCreate<vecseqtype>(UINT4 length, UINT4 veclen);
-void XLALCreate<vecseqtype>(<vecseqtype> *vecseq);
-\end{verbatim}
-\idx{XLALCreateREAL4VectorSequence}
-\idx{XLALDestroyREAL4VectorSequence}
-\idx{XLALCreate<type>VectorSequence}
-\idx{XLALDestroy<type>VectorSequence}
-
-Here \verb+<vecseqtype>+ is one of
-\verb+COMPLEX16VectorSequence+,
-\verb+COMPLEX8VectorSequence+,
-\verb+REAL8VectorSequence+,
-\verb+REAL4VectorSequence+,
-\verb+INT8VectorSequence+,
-\verb+INT4VectorSequence+,
-\verb+INT2VectorSequence+,
-\verb+UINT8VectorSequence+,
-\verb+UINT4VectorSequence+,
-\verb+UINT2VectorSequence+, or
-\verb+CHARVectorSequence+.
-
-\subsubsection*{Description}
-
-The \verb+XLALCreate<type>VectorSequence+ functions create vector sequences
-of type \verb+<type>, length \verb+length+, and vector length \verb+veclen+.
-The function \verb+XLALCreateVectorSequence+ is the same as
-\verb+XLALCreateREAL4VectorSequence+.
-
-The \verb+XLALDestroy<type>VectorSequence+ functions deallocate the memory
-allocation pointed to by \verb+vecseq+ including its contents.  The function
-\verb+XLALDestroyVectorSequence+ is the same as
-\verb+XLALDestroyREAL4VectorSequence+.
-
-\subsubsection*{Return Values}
-
-The create functions return a pointer to the created vector sequence if
-successful; upon failure they will return \verb+NULL+ and set \verb+xlalErrno+
-to one of the following values: \verb+XLAL_ENOMEM+ if memory allocation
-failed, or \verb+XLAL_EBADLEN+ if the requested \verb+length+ or \verb+veclen+
-is zero.
-
-The destroy functions do not have a return value.  They can fail if they are
-passed a \verb+NULL+ pointer, in which case \verb+xlalErrno+ is set to
-\verb+XLAL_EFAULT+, or if the vector sequency passed to the destroy routine
-has zero length, vector length, or \verb+NULL+ data pointer then
-\verb+xlalErrno+ is set to \verb+XLAL_EINVAL+.
-
-
-</lalLaTeX> */
 
 REAL4VectorSequence * XLALCreateVectorSequence ( UINT4 length, UINT4 veclen );
 void XLALDestroyVectorSequence ( REAL4VectorSequence * vecseq );
 
-
-void LALCreateSequence(LALStatus *, REAL4Sequence **, UINT4);
-void LALDestroySequence(LALStatus *, REAL4Sequence **);
 
 void LALCreateVectorSequence(LALStatus *, REAL4VectorSequence **,
                              CreateVectorSequenceIn *);
@@ -239,15 +181,6 @@ include(`ArraySeqFactoriesBaseH.m4')
 define(`TYPECODE',`Z')
 include(`SeqFactoriesBaseH.m4')
 include(`ArraySeqFactoriesBaseH.m4')
-
-
-/* <lalLaTeX>
-\newpage\input{VectorSequenceFactoriesTestC}
-</lalLaTeX> */
-
-/* <lalLaTeX>
-\newpage\input{ArraySequenceFactoriesTestC}
-</lalLaTeX> */
 
 #ifdef  __cplusplus
 }

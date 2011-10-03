@@ -41,6 +41,7 @@
 #include <regex.h>
 #include <time.h>
 #include <math.h>
+#include <fftw3.h>
 
 #include <lalapps.h>
 #include <series.h>
@@ -80,6 +81,8 @@
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
 #include <lal/LALFrameL.h>
+#include <lal/FFTWMutex.h>
+#include <lal/LALSimulation.h>
 
 #include <LALAppsVCSInfo.h>
 
@@ -509,6 +512,14 @@ int main( int argc, char *argv[] )
   /* wind to the end of the process params table */
   for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
       this_proc_param = this_proc_param->next );
+
+  /* Import system wide FFTW wisdom file, if it exists.  Only single precision used. */
+
+#ifdef LAL_FFTW3_ENABLED
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  fftwf_import_system_wisdom();
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+#endif
 
   /* can use LALMalloc() and LALCalloc() from here onwards */
 
@@ -1035,7 +1046,7 @@ int main( int argc, char *argv[] )
     ntilde->data[0].im = ntilde->data[length / 2].im = 0.0;
 
     /* Fourier transform back in the time domain */
-    LAL_CALL( LALCreateReverseRealFFTPlan( &status, &invPlan, length, 0 ),
+    LAL_CALL( LALCreateReverseRealFFTPlan( &status, &invPlan, length, 1 ),
         &status );
     LAL_CALL( LALReverseRealFFT( &status, chan.data, ntilde, invPlan ), &status);
     /* normalize the noise */
@@ -1419,6 +1430,49 @@ int main( int argc, char *argv[] )
             tempStrain = NULL;
 
           } /* loop over injectionsj */
+      }
+      else if (injApproximant == NumRelNinja2)
+      {
+        /* New REAL8, NINJA-2 code */
+        REAL8TimeSeries *tempStrain = NULL;
+        REAL8TimeSeries *tempChan   = NULL;
+
+        /* Make a REAL8 version of the channel data    */
+        /* so we can call Jolien's new inject function */
+        tempChan = XLALCreateREAL8TimeSeries(
+                                chan.name,
+                                &(chan.epoch),
+                                chan.f0,
+                                chan.deltaT,
+                                &(chan.sampleUnits),
+                                chan.data->length);
+
+        for ( j = 0 ; j < tempChan->data->length ; ++j )
+          {
+            tempChan->data->data[j] = (REAL8) ( chan.data->data[j] );
+          }
+       
+        /* loop over injections */
+        for ( thisInj = injections; thisInj; thisInj = thisInj->next )
+          {
+            tempStrain = XLALNRInjectionStrain(ifo, thisInj);
+            
+            for ( j = 0 ; j < tempStrain->data->length ; ++j )
+              {
+                tempStrain->data->data[j] *= dynRange;
+              }
+            
+            XLALSimAddInjectionREAL8TimeSeries( tempChan, tempStrain, NULL);
+            XLALDestroyREAL8TimeSeries(tempStrain);
+          } /* loop over injections */
+
+        /* Back to REAL4 */
+        for ( j = 0 ; j < tempChan->data->length ; ++j )
+          {
+            chan.data->data[j] = (REAL4) ( tempChan->data->data[j] );
+          }
+
+        XLALDestroyREAL8TimeSeries(tempChan);
       }
       else
       {
@@ -2304,7 +2358,7 @@ int main( int argc, char *argv[] )
               templateFFTDataVector->data[i].im = 0;
               }
             }
-          plan = XLALCreateReverseREAL4FFTPlan( num_points, 0);
+          plan = XLALCreateReverseREAL4FFTPlan( num_points, 1);
           if ( XLALREAL4ReverseFFT( templateTimeSeriesVector, templateFFTDataVector, plan) )  fprintf(stderr, "\n\nFFT FAILED\n\n");
           templateTimeSeries.data = templateTimeSeriesVector;
           }
@@ -3939,15 +3993,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gstartt );
             exit( 1 );
           }
-          if ( gstartt > 999999999 )
-          {
-            fprintf( stderr, "invalid argument to --%s:\n"
-                "GPS start time is after "
-                "Sep 14, 2011  01:46:26 UTC:\n"
-                "(%ld specified)\n",
-                long_options[option_index].name, gstartt );
-            exit( 1 );
-          }
           gpsStartTimeNS += (INT8) gstartt * 1000000000LL;
           ADD_PROCESS_PARAM( "int", "%ld", gstartt );
         }
@@ -3979,16 +4024,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'b':
         {
           long int gendt = atol( optarg );
-          if ( gendt > 999999999 )
-          {
-            fprintf( stderr, "invalid argument to --%s:\n"
-                "GPS end time is after "
-                "Sep 14, 2011  01:46:26 UTC:\n"
-                "(%ld specified)\n",
-                long_options[option_index].name, gendt );
-            exit( 1 );
-          }
-          else if ( gendt < 441417609 )
+          if ( gendt < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
                 "GPS end time is prior to "
@@ -4082,15 +4118,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                   long_options[option_index].name, gstartt );
               exit( 1 );
             }
-            if ( gstartt > 999999999 )
-            {
-              fprintf( stderr, "invalid argument to --%s:\n"
-                  "GPS start time is after "
-                  "Sep 14, 2011  01:46:26 UTC:\n"
-                  "(%ld specified)\n",
-                  long_options[option_index].name, gstartt );
-              exit( 1 );
-            }
             trigStartTimeNS = (INT8) gstartt * 1000000000LL;
           }
           ADD_PROCESS_PARAM( "int", "%ld", gstartt );
@@ -4103,16 +4130,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           /* ignore a value of zero */
           if ( gendt )
           {
-            if ( gendt > 999999999 )
-            {
-              fprintf( stderr, "invalid argument to --%s:\n"
-                  "GPS end time is after "
-                  "Sep 14, 2011  01:46:26 UTC:\n"
-                  "(%ld specified)\n",
-                  long_options[option_index].name, gendt );
-              exit( 1 );
-            }
-            else if ( gendt < 441417609 )
+            if ( gendt < 441417609 )
             {
               fprintf( stderr, "invalid argument to --%s:\n"
                   "GPS end time is prior to "

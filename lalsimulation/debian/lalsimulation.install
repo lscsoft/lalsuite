@@ -1,0 +1,5 @@
+#opt/lscsoft/lalsimulation/bin/lal-version
+opt/lscsoft/lalsimulation/etc/*
+#opt/lscsoft/lalsimulation/etc/*-user-env.*
+opt/lscsoft/lalsimulation/lib/*.so*
+#opt/lscsoft/lalsimulation/share/lal

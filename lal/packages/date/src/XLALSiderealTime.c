@@ -16,20 +16,23 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-
-/** \file
- * \ingroup std
- * \author Creighton, J., and Cannon, K.
- * \brief XLAL routines for computing the sidereal time.
- */
-
-
 #include <math.h>
 #include <lal/Date.h>
 
+/** \defgroup SideralTime SideralTime
+ * \ingroup date
+ * \author Creighton, J., and Cannon, K.
+ * \brief XLAL routines for computing the sidereal time.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/Date.h>
+ * \endcode
+ */
 
-/**
- * Returns the Greenwich Sidereal Time IN RADIANS corresponding to a
+/*@{*/
+
+/** Returns the Greenwich Sidereal Time IN RADIANS corresponding to a
  * specified GPS time.  Aparent sidereal time is computed by providing the
  * equation of equinoxes in units of seconds.  For mean sidereal time, set
  * this parameter to 0.
@@ -180,3 +183,5 @@ LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(
 {
 	return XLALGreenwichMeanSiderealTimeToGPS(gmst - equation_of_equinoxes, gps);
 }
+
+/*@}*/

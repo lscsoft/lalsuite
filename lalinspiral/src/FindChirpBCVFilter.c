@@ -23,23 +23,19 @@
  *
  * Author: Brown, D. A. and Messaritaki E.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpBCVFilterCV">
-Author: Brown D. A. and Messaritaki E.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\input{FindChirpBCVFilterCDoc}
+\author Brown D. A. and Messaritaki E.
+\file
+\ingroup FindChirpBCV_h
 
-\vfill{\footnotesize\input{FindChirpBCVFilterCV}}
-</lalLaTeX>
-#endif
+\brief This module provides the core of the matched filter for binary inspiral
+chirps for BCV templates.
+
+*/
 
 #include <math.h>
 #include <lal/LALErrno.h>
@@ -61,7 +57,7 @@ $Id$
 NRCSID (FINDCHIRPBCVFILTERC, "$Id$");
 
 
-/* <lalVerbatim file="FindChirpBCVFilterCP"> */
+
 void
 LALFindChirpBCVFilterSegment (
     LALStatus                  *status,
@@ -69,7 +65,7 @@ LALFindChirpBCVFilterSegment (
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 j, k, kFinal/*, kOpt*/;
   UINT4                 numPoints;

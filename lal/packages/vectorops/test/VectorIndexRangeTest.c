@@ -17,43 +17,31 @@
 *  MA  02111-1307  USA
 */
 
-/*************** <lalVerbatim file="VectorIndexRangeTestCV"> **************
-$Id$
-**************** </lalVerbatim> ***********************************/
+/**
+\file
+\ingroup VectorIndexRange_h
 
-/* <lalLaTeX>
+\brief Tests the routines in \ref VectorIndexRange.h, exercises some of the error conditions and makes sure that they work.
 
-\subsection{Program \texttt{VectorIndexRangeTest.c}}
-\label{ss:VectorIndexRangeTest.c}
-
-Tests the routines in \verb@VectorIndexRange.h@.  Exercises some of the error
-conditions and makes sure that they work.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 VectorIndexRangeTest [options]
 Options:
   -h         print help
   -q         quiet: run silently
   -v         verbose: print extra information
   -d level   set lalDebugLevel to level
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
-\subsubsection*{Exit codes}
-\begin{tabular}{|c|l|}
-\hline
- Code & Explanation                   \\
-\hline
-\tt 0 & Success, normal exit.         \\
-\tt 1 & Subroutine failed.            \\
-\hline
-\end{tabular}
+\heading{Exit codes}
+<table><tr><th>Code</th><th>Explanation</th></tr>
+<tr><td>0</td><td>Success, normal exit.</td></tr>
+<tr><td>1</td><td>Subroutine failed.</td></tr>
+</table>
 
-\vfill{\footnotesize\input{VectorIndexRangeTestCV}}
+*/
 
-</lalLaTeX> */
-
+/** \cond DONT_DOXYGEN */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -388,3 +376,5 @@ usage(char **argv)
   exit(0);
 }
 #endif
+
+/** \endcond */

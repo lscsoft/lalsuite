@@ -33,7 +33,9 @@
 NRCSID (CONVOLUTIONC,"$Id$");
 
 /**
- * \addtogroup fft
+ * \addtogroup Convolution
+ * \brief Convolutions of time-series
+ *
  * @{
  */
 
@@ -172,5 +174,3 @@ REAL4TimeSeries *XLALREAL4Convolution(
 }
 
 /** @} */
-
-

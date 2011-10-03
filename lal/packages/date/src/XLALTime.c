@@ -22,15 +22,8 @@
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
-
-#define XLAL_BILLION_INT8 LAL_INT8_C( 1000000000 )
-#define XLAL_BILLION_REAL8 1e9
-
-
-/*
- * mostly internal functions
- */
-
+/** \ingroup Date_h */
+/*@{*/
 
 /** Converts GPS time to nano seconds stored as an INT8. */
 INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch )
@@ -238,3 +231,5 @@ LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
 
   return gps;
 }
+
+/*@}*/

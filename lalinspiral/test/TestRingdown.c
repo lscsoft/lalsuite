@@ -17,38 +17,27 @@
 *  MA  02111-1307  USA
 */
 
-#if 0
-<lalVerbatim file="TestRingdownCV">
-Author: Yi Pan
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
+\author Yi Pan
+\file
 
-\subsection{Program \texttt{TestRingdown.c}}
-\label{ss:TestRingdown.c}
+\brief Generate a full waveform from inspiral to ring-down.
 
-Generate a full waveform from inspiral to ring-down.
+\heading{Usage}
 
-\subsubsection*{Usage}
+\heading{Description}
 
-\subsubsection*{Description}
+\heading{Algorithm}
 
-\subsubsection*{Exit codes}
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{TestRingdownCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <stdlib.h>

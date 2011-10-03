@@ -28,13 +28,6 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="EllipsoidOverlapToolsCV">
-Author: Anand S. Sengupta and Craig Robinson
-$Id$
-</lalVerbatim>
-#endif
-
 #include <lal/EllipsoidOverlapTools.h>
 
 NRCSID( ELLIPSOIDOVERLAPTOOLSC,

@@ -28,50 +28,42 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpTemplateCV">
-Author: Brown, D. A.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpTemplate.c}}
-\label{ss:FindChirpTemplat.c}
+\author Brown, D. A.
+\file
+\ingroup FindChirp_h
 
-Provides functions to initialize template creation routines.
+\brief Provides functions to initialize template creation routines.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpTemplateCP}
-\idx{LALFindChirpTemplateInit()}
-\idx{LALFindChirpTemplateFinalize()}
+\heading{Prototypes}
 
-The function \texttt{LALFindChirpTemplateInit()} takes as input the address
-of a structure of type \texttt{FindChirpInitParams} containing the correct
+The function <tt>LALFindChirpTemplateInit()</tt> takes as input the address
+of a structure of type \c FindChirpInitParams containing the correct
 values to intialize a search. It creates a structure of type
-\texttt{FindChirpTmpltParams} as described above and returns its address.
+\c FindChirpTmpltParams as described above and returns its address.
 
-The function \texttt{LALFindChirpTemplateFinalize()} takes as the address
-of a structure of type \texttt{FindChirpTmpltParams} destroys this
+The function <tt>LALFindChirpTemplateFinalize()</tt> takes as the address
+of a structure of type \c FindChirpTmpltParams destroys this
 structure and sets the address to NULL.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 Blah.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpTemplateCV}}
-</lalLaTeX>
-#endif
+
+
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -83,14 +75,14 @@ LALDestroyVector()
 
 NRCSID (FINDCHIRPTEMPLATEC, "$Id$");
 
-/* <lalVerbatim file="FindChirpTemplateCP"> */
+
 void
 LALFindChirpTemplateInit (
     LALStatus                  *status,
     FindChirpTmpltParams      **output,
     FindChirpInitParams        *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                         k;
   FindChirpTmpltParams         *outputPtr;
@@ -146,6 +138,7 @@ LALFindChirpTemplateInit (
     case PadeT1:
     case EOB:
     case EOBNR:
+    case EOBNRv2:
     case IMRPhenomB:
       /* time domain waveforms use xfac to store the time domain waveform */
       LALCreateVector( status->statusPtr, &(outputPtr->xfacVec),
@@ -162,7 +155,7 @@ LALFindChirpTemplateInit (
 
       /* create an fft plan for the time domain waveform */
       LALCreateForwardRealFFTPlan( status->statusPtr, &(outputPtr->fwdPlan),
-          params->numPoints, 0 );
+          params->numPoints, 1 );
       BEGINFAIL( status )
       {
         TRY( LALDestroyVector( status->statusPtr, &(outputPtr->xfacVec) ),
@@ -227,7 +220,7 @@ LALFindChirpTemplateInit (
 
       /* create a forward FFT plan */
       outputPtr->fwdPlan =
-        XLALCreateForwardREAL4FFTPlan( params->numPoints, 0 );
+        XLALCreateForwardREAL4FFTPlan( params->numPoints, 1 );
       if ( ! outputPtr->fwdPlan )
       {
         ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
@@ -246,7 +239,7 @@ LALFindChirpTemplateInit (
 
       /* create a forward FFT plan */
       outputPtr->fwdPlan =
-        XLALCreateForwardREAL4FFTPlan( params->numPoints, 0 );
+        XLALCreateForwardREAL4FFTPlan( params->numPoints, 1 );
       if ( ! outputPtr->fwdPlan )
       {
         ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
@@ -271,13 +264,13 @@ LALFindChirpTemplateInit (
 
 
 
-/* <lalVerbatim file="FindChirpTemplateCP"> */
+
 void
 LALFindChirpTemplateFinalize (
     LALStatus                  *status,
     FindChirpTmpltParams      **output
     )
-/* </lalVerbatim> */
+
 {
   FindChirpTmpltParams         *outputPtr;
 

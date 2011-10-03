@@ -1,4 +1,4 @@
-AC_INIT([lalsuite],[6.5.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalsuite],[6.5.0.5],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -6,25 +6,25 @@ AC_CONFIG_FILES([
   Makefile \
   gnuscripts/Makefile \
   doxygen/Makefile \
-  doxygen/doxygen-html.cfg \
-  doxygen/doxygen-pdf.cfg \
   doxygen/src/Makefile
 ])
 AM_INIT_AUTOMAKE([foreign])
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 
 # for building doxygen
-AC_SUBST([abs_lalsuite_srcdir],[`cd ${srcdir} && pwd`])
 AC_PROG_LN_S
 AC_CHECK_PROGS([GIT], [git], [])
 
+LALSUITE_ENABLE_ALL_LAL
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALXML
+LALSUITE_ENABLE_LALSIMULATION
 LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALSTOCHASTIC
 LALSUITE_ENABLE_LALPULSAR
+LALSUITE_ENABLE_LALINFERENCE
 
 lalsuite_top_builddir='$(top_builddir)/..'
 lalsuite_top_srcdir='$(top_srcdir)/..'
@@ -33,7 +33,7 @@ LALSUITE_TOP_SRCDIR="${lalsuite_top_srcdir}"
 LAL_LIBS="${lalsuite_top_builddir}/lal/lib/liblal.la"
 LAL_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
 export LALSUITE_BUILD LALSUITE_TOP_SRCDIR LAL_LIBS LAL_CFLAGS
-LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalsupport.la"
+LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalsupport.la ${lalsuite_top_builddir}/lal/lib/liblal.la"
 LALSUPPORT_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
 export LALSUPPORT_LIBS LALSUPPORT_CFLAGS
 
@@ -53,6 +53,12 @@ if test "$lalxml" = "true"; then
   LALXML_LIBS="${lalsuite_top_builddir}/lalxml/src/liblalxml.la"
   LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
   export LALXML_LIBS LALXML_CFLAGS
+fi
+
+if test "$lalsimulation" = "true"; then
+  LALSIMULATION_LIBS="${lalsuite_top_builddir}/lalsimulation/src/liblalsimulation.la"
+  LALSIMULATION_CFLAGS="-I${lalsuite_top_builddir}/lalsimulation/include"
+  export LALSIMULATION_LIBS LALSIMULATION_CFLAGS
 fi
 
 if test "$lalburst" = "true"; then
@@ -79,6 +85,12 @@ if test "$lalpulsar" = "true"; then
   export LALPULSAR_LIBS LALPULSAR_CFLAGS
 fi
 
+if test "$lalinference" = "true"; then
+  LALINFERENCE_LIBS="${lalsuite_top_builddir}/lalinference/src/liblalinference.la"
+  LALINFERENCE_CFLAGS="-I${lalsuite_top_builddir}/lalinference/include"
+  export LALINFERENCE_LIBS LALINFERENCE_CFLAGS
+fi
+
 AC_CONFIG_SUBDIRS([lal])
 
 if test "$lalframe" = "true"; then
@@ -91,6 +103,10 @@ fi
 
 if test "$lalxml" = "true"; then
   AC_CONFIG_SUBDIRS([lalxml])
+fi
+
+if test "$lalsimulation" = "true"; then
+  AC_CONFIG_SUBDIRS([lalsimulation])
 fi
 
 if test "$lalburst" = "true"; then
@@ -107,6 +123,10 @@ fi
 
 if test "$lalpulsar" = "true"; then
   AC_CONFIG_SUBDIRS([lalpulsar])
+fi
+
+if test "$lalinference" = "true"; then
+  AC_CONFIG_SUBDIRS([lalinference])
 fi
 
 AC_CONFIG_SUBDIRS([lalapps])

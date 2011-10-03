@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash
+*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -17,53 +17,46 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralPhasing2CV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralPhasing2.c}}
-
-The code \texttt{LALInspiralPhasing2.c} calculates the phase of an inspiral
+\brief The code \ref LALInspiralPhasing2.c calculates the phase of an inspiral
 waveform as a function of the
-instantaneous frequency of the wave, up to $2^{nd}$ post--Newtonian order.
+instantaneous frequency of the wave, up to \f$2^{nd}\f$ post--Newtonian order.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralPhasing2CP}
-\index{\verb&LALInspiralPhasing2()&}
-\begin{itemize}
-\item {\tt phase:} Output, the phase of the wave at the current epoch.
-\item {\tt v:} Input, the PN expansion parameter at the current epoch.
-\item {\tt ak:} Input containing PN expansion coefficients.
-\end{itemize}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>LALInspiralPhasing2()</tt>
+<ul>
+<li> \c phase: Output, the phase of the wave at the current epoch.</li>
+<li> \c v: Input, the PN expansion parameter at the current epoch.</li>
+<li> \c ak: Input containing PN expansion coefficients.</li>
+</ul>
 
-The phase of the inspiral wave corresponding to the {\tt Approximant} {\tt TaylorT2}
-as in Equation~{eq:InspiralPhasing2}.
+\heading{Description}
 
-\subsubsection*{Algorithm}
+The phase of the inspiral wave corresponding to the ::Approximant #TaylorT2
+as in Equation\eqref{eq_InspiralWavePhase2} (<tt>correct equation?</tt>)
+
+\heading{Algorithm}
 None.
 
-\subsubsection*{Uses}
+\heading{Uses}
 None.
 
-\subsubsection*{Notes}
+\heading{Notes}
 None.
 
-\vfill{\footnotesize\input{LALInspiralPhasing2CV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
 NRCSID (LALINSPIRALPHASING2C, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
 
 void
 LALInspiralPhasing2_0PN (
@@ -72,24 +65,45 @@ LALInspiralPhasing2_0PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
-
-  REAL8 v5;
+{
+  XLALPrintDeprecationWarning("LALInspiralPhasing2_0PN", "XLALInspiralPhasing2_0PN");
 
   INITSTATUS (status, "LALInspiralPhasing2_0PN", LALINSPIRALPHASING2C);
   ATTATCHSTATUSPTR(status);
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
-  v5 = pow(v,5.);
-  *phase = ak->phiC
-         + ak->pvaN / v5;
+  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *phase = XLALInspiralPhasing2_0PN(v, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
+    ABORTXLAL(status);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
 }
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
+
+REAL8
+XLALInspiralPhasing2_0PN (
+   REAL8       v,
+   expnCoeffs *ak
+   )
+{
+  REAL8 v5;
+  REAL8 phase;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+
+  v5 = pow(v,5.);
+  phase = ak->phiC
+         + ak->pvaN / v5;
+
+  return phase;
+}
+
+
 
 void
 LALInspiralPhasing2_2PN (
@@ -98,26 +112,47 @@ LALInspiralPhasing2_2PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
-
-  REAL8 v2,v5;
+{
+  XLALPrintDeprecationWarning("LALInspiralPhasing2_2PN", "XLALInspiralPhasing2_2PN");
 
   INITSTATUS (status, "LALInspiralPhasing2_2PN", LALINSPIRALPHASING2C);
   ATTATCHSTATUSPTR(status);
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
-  v2 = v*v;
-  v5 = v2*v2*v;
-  *phase = ak->phiC
-         + ak->pvaN / v5 * ( 1. +
-         + ak->pva2 * v2);
+  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *phase = XLALInspiralPhasing2_2PN(v, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
+    ABORTXLAL(status);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
 }
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
+
+REAL8
+XLALInspiralPhasing2_2PN (
+   REAL8       v,
+   expnCoeffs *ak
+   )
+{
+  REAL8 v2,v5;
+  REAL8 phase;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+
+  v2 = v*v;
+  v5 = v2*v2*v;
+  phase = ak->phiC
+         + ak->pvaN / v5 * ( 1. +
+         + ak->pva2 * v2);
+
+  return phase;
+}
+
+
 
 void
 LALInspiralPhasing2_3PN (
@@ -126,29 +161,49 @@ LALInspiralPhasing2_3PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
-
-  REAL8 v2,v3,v5;
+{
+  XLALPrintDeprecationWarning("LALInspiralPhasing2_3PN", "XLALInspiralPhasing2_3PN");
 
   INITSTATUS (status, "LALInspiralPhasing2_3PN", LALINSPIRALPHASING2C);
   ATTATCHSTATUSPTR(status);
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
-  v2 = v*v;
-  v3 = v2*v;
-  v5 = v3*v2;
+  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
-  *phase = ak->phiC
-         + ak->pvaN / v5 * ( 1. +
-         + ak->pva2 * v2
-         + ak->pva3 * v3);
+  *phase = XLALInspiralPhasing2_3PN(v, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
+    ABORTXLAL(status);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
 }
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
+
+REAL8
+XLALInspiralPhasing2_3PN (
+   REAL8       v,
+   expnCoeffs *ak
+   )
+{
+  REAL8 v2,v3,v5;
+  REAL8 phase;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+
+  v2 = v*v;
+  v3 = v2*v;
+  v5 = v3*v2;
+  phase = ak->phiC
+         + ak->pvaN / v5 * ( 1. +
+         + ak->pva2 * v2
+         + ak->pva3 * v3);
+
+  return phase;
+}
+
+
 
 void
 LALInspiralPhasing2_4PN (
@@ -157,28 +212,50 @@ LALInspiralPhasing2_4PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
-
-  REAL8 v2,v3,v4,v5;
+{
+  XLALPrintDeprecationWarning("LALInspiralPhasing2_4PN", "XLALInspiralPhasing2_4PN");
 
   INITSTATUS (status, "LALInspiralPhasing2_4PN", LALINSPIRALPHASING2C);
   ATTATCHSTATUSPTR(status);
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *phase = XLALInspiralPhasing2_4PN(v, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+REAL8
+XLALInspiralPhasing2_4PN (
+   REAL8       v,
+   expnCoeffs *ak
+   )
+{
+  REAL8 v2,v3,v4,v5;
+  REAL8 phase;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
 
   v2 = v*v;
   v3 = v2*v;
   v4 = v3*v;
   v5 = v4*v;
-  *phase = ak->phiC
+  phase = ak->phiC
          + ak->pvaN / v5 * ( 1. +
          + ak->pva2 * v2
          + ak->pva3 * v3
          + ak->pva4 * v4);
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+
+  return phase;
 }
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
 
 void
 LALInspiralPhasing2_5PN (
@@ -187,31 +264,51 @@ LALInspiralPhasing2_5PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
-
-  REAL8 v2,v3,v4,v5;
+{
+  XLALPrintDeprecationWarning("LALInspiralPhasing2_5PN", "XLALInspiralPhasing2_5PN");
 
   INITSTATUS (status, "LALInspiralPhasing2_5PN", LALINSPIRALPHASING2C);
   ATTATCHSTATUSPTR(status);
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *phase = XLALInspiralPhasing2_5PN(v, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+REAL8
+XLALInspiralPhasing2_5PN (
+   REAL8       v,
+   expnCoeffs *ak
+   )
+{
+  REAL8 v2,v3,v4,v5;
+  REAL8 phase;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
 
   v2 = v*v;
   v3 = v2*v;
   v4 = v3*v;
   v5 = v4*v;
-  *phase = ak->phiC
+  phase = ak->phiC
          + ak->pvaN / v5 * ( 1. +
          + ak->pva2 * v2
          + ak->pva3 * v3
          + ak->pva4 * v4
          + ak->pva5 * log(v/ak->vlso) * v5);
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-
+  return phase;
 }
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
 
 void
 LALInspiralPhasing2_6PN (
@@ -220,20 +317,42 @@ LALInspiralPhasing2_6PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
-
-  REAL8 v2,v3,v4,v5,v6;
+{
+  XLALPrintDeprecationWarning("LALInspiralPhasing2_6PN", "XLALInspiralPhasing2_6PN");
 
   INITSTATUS (status, "LALInspiralPhasing2_6PN", LALINSPIRALPHASING2C);
   ATTATCHSTATUSPTR(status);
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *phase = XLALInspiralPhasing2_6PN(v, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+REAL8
+XLALInspiralPhasing2_6PN (
+   REAL8       v,
+   expnCoeffs *ak
+   )
+{
+  REAL8 v2,v3,v4,v5,v6;
+  REAL8 phase;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
 
   v2 = v*v;
   v3 = v2*v;
   v4 = v3*v;
   v5 = v4*v;
   v6 = v5*v;
-  *phase = ak->phiC
+  phase = ak->phiC
          + ak->pvaN / v5 * ( 1. +
          + ak->pva2 * v2
          + ak->pva3 * v3
@@ -241,12 +360,10 @@ LALInspiralPhasing2_6PN (
          + ak->pva5 * log(v/ak->vlso) * v5
          + (ak->pva6 + ak->pvl6*log(4*v)) * v6);
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-
+  return phase;
 }
 
-/*  <lalVerbatim file="LALInspiralPhasing2CP"> */
+
 
 void
 LALInspiralPhasing2_7PN (
@@ -255,13 +372,35 @@ LALInspiralPhasing2_7PN (
    REAL8       v,
    expnCoeffs *ak
    )
-{ /* </lalVerbatim>  */
-
-  REAL8 v2,v3,v4,v5,v6,v7;
+{
+  XLALPrintDeprecationWarning("LALInspiralPhasing2_7PN", "XLALInspiralPhasing2_7PN");
 
   INITSTATUS (status, "LALInspiralPhasing2_7PN", LALINSPIRALPHASING2C);
   ATTATCHSTATUSPTR(status);
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *phase = XLALInspiralPhasing2_7PN(v, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+REAL8
+XLALInspiralPhasing2_7PN (
+   REAL8       v,
+   expnCoeffs *ak
+   )
+{
+  REAL8 v2,v3,v4,v5,v6,v7;
+  REAL8 phase;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
 
   v2 = v*v;
   v3 = v2*v;
@@ -269,7 +408,7 @@ LALInspiralPhasing2_7PN (
   v5 = v4*v;
   v6 = v5*v;
   v7 = v6*v;
-  *phase = ak->phiC
+  phase = ak->phiC
          + ak->pvaN / v5 * ( 1. +
          + ak->pva2 * v2
          + ak->pva3 * v3
@@ -278,6 +417,5 @@ LALInspiralPhasing2_7PN (
          + (ak->pva6 + ak->pvl6*log(4*v)) * v6
          + ak->pva7 * v7);
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return phase;
 }

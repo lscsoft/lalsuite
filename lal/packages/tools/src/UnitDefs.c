@@ -17,204 +17,107 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="UnitDefsCV">
-Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author J. T. Whelan <john.whelan@ligo.org>
+\addtogroup UnitDefs_c
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{UnitDefs.c}}
-\label{tools:ss:UnitDefs.c}
-
-Defines basic and derived SI units and a function to produce a text
+\brief Defines basic and derived SI units and a function to produce a text
 string corresponding to a unit structure.
 
-\subsubsection*{Prototypes}
-\input{UnitDefsCP}
-\idx{LALUnitAsString()}
-\idx{LALParseUnitString()}
-
-\subsubsection*{Description}
-
-\texttt{LALUnitAsString()} converts the unit structure
-\texttt{*input} into a text string which is stored in the character
-vector \texttt{*output}.  Note that the resulting text string is
+LALUnitAsString() converts the unit structure
+<tt>*input</tt> into a text string which is stored in the character
+vector <tt>*output</tt>.  Note that the resulting text string is
 expressed solely in terms of the basic units (m, kg, s, A,
 K, strain and counts), and is thus not necessarily the most
 convenient way to check the units of a quantity.  A better method is
 to construct a unit structure containing the expected units, then
-compare that to the actual units using \texttt{LALUnitCompare()}.
+compare that to the actual units using LALUnitCompare().
 
-\texttt{LALParseUnitString()} reconstructs the original
-\texttt{LALUnit} structure from the string output by
-\texttt{LALUnitAsString()}.  It is very sensitive to the exact format
+LALParseUnitString() reconstructs the original
+\c LALUnit structure from the string output by
+LALUnitAsString().  It is very sensitive to the exact format
 of the string and is not intended for use in parsing user-entered
 strings.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\texttt{LALUnitAsString()} moves through the unit structure, appending
+LALUnitAsString() moves through the unit structure, appending
 the appropriate text to the string as it goes along.
 
-\texttt{LALParseUnitString()} moves through the input string, one
-character at a time, building an \texttt{LALUnit} structure as a it
+LALParseUnitString() moves through the input string, one
+character at a time, building an ::LALUnit structure as a it
 goes along, so long as it encounters precisely the syntax expected.
 
-\subsubsection*{Uses}
-None.
+\heading{Notes}
 
-\subsubsection*{Notes}
-
-\subsubsection*{Predefined Units}
-\idx[Constant]{lalMeterUnit}
-\idx[Constant]{lalKiloGramUnit}
-\idx[Constant]{lalSecondUnit}
-\idx[Constant]{lalAmpereUnit}
-\idx[Constant]{lalKelvinUnit}
-\idx[Constant]{lalStrainUnit}
-\idx[Constant]{lalADCCountUnit}
-\idx[Constant]{lalHertzUnit}
-\idx[Constant]{lalNewtonUnit}
-\idx[Constant]{lalPascalUnit}
-\idx[Constant]{lalJouleUnit}
-\idx[Constant]{lalWattUnit}
-\idx[Constant]{lalCoulombUnit}
-\idx[Constant]{lalVoltUnit}
-\idx[Constant]{lalOhmUnit}
-\idx[Constant]{lalFaradUnit}
-\idx[Constant]{lalWeberUnit}
-\idx[Constant]{lalHenryUnit}
-\idx[Constant]{lalTeslaUnit}
-\idx[Constant]{lalYottaUnit}
-\idx[Constant]{lalZettaUnit}
-\idx[Constant]{lalExaUnit}
-\idx[Constant]{lalPetaUnit}
-\idx[Constant]{lalTeraUnit}
-\idx[Constant]{lalGigaUnit}
-\idx[Constant]{lalMegaUnit}
-\idx[Constant]{lalKiloUnit}
-\idx[Constant]{lalHectoUnit}
-\idx[Constant]{lalDekaUnit}
-\idx[Constant]{lalDeciUnit}
-\idx[Constant]{lalCentiUnit}
-\idx[Constant]{lalMilliUnit}
-\idx[Constant]{lalMicroUnit}
-\idx[Constant]{lalNanoUnit}
-\idx[Constant]{lalPicoUnit}
-\idx[Constant]{lalFemtoUnit}
-\idx[Constant]{lalAttoUnit}
-\idx[Constant]{lalZeptoUnit}
-\idx[Constant]{lalYoctoUnit}
-\idx[Constant]{lalGramUnit}
-\idx[Constant]{lalAttoStrainUnit}
-\idx[Constant]{lalPicoFaradUnit}
-
-This file also defines a number of \texttt{constant} unit structures
-(declared \texttt{extern} in \texttt{Units.h}).  Zeroth is
-\texttt{lalDimensionlessUnit}, which is simply a \texttt{LALUnit}
+This file also defines a number of \c constant unit structures
+(declared \c extern in \ref Units_h).  Zeroth is
+\c lalDimensionlessUnit, which is simply a ::LALUnit
 structure to be associated with a unitless quantity.
 First, the relevant fundamental SI units and two custom units of use in
 gravitational wave detection:
-\begin{center}
-\begin{tabular}{|llll|}
-\hline
-Constant & Name & Abbr.\ & Physical Quantity \\
-\hline
-\texttt{lalMeterUnit} & meter & m & length \\
-\texttt{lalKiloGramUnit} & kilogram & kg & mass \\
-\texttt{lalSecondUnit} & second & s & time \\
-\texttt{lalAmpereUnit} & ampere & A & electric current \\
-\texttt{lalKelvinUnit} & kelvin & K & thermodynamic temperature \\
-\texttt{lalStrainUnit} & strain & $\epsilon$ & gravitational strain \\
-\texttt{lalADCCountUnit} & ADC count & count & A-to-D converter counts \\
-\hline
-\end{tabular}
-\end{center}
-Next, the named derived units in the SI\cite{tools:Halliday:2001}:
-\begin{center}
-\begin{tabular}{|llllll|}
-\hline
-Constant & Name & Abbr.\ & Physical Quantity & Def.\ & Fundamental\\
-\hline
-\texttt{lalHertzUnit} & hertz & Hz & frequency &
-  s$^{-1}$ &  s$^{-1}$ \\
-\texttt{lalNewtonUnit} & newton & N & force &
-   kg$\cdot$ m/s$^2$ & m kg s$^{-2}$\\
-\texttt{lalPascalUnit} & pascal & Pa & pressure &
-   N/m$^2$ & m$^{-1}$ kg s$^{-2}$ \\
-\texttt{lalJouleUnit} & joule & J & energy &
-   N$\cdot$m & m$^2$ kg s$^{-2}$ \\
-\texttt{lalWattUnit} & watt & W & power &
-   J/s &  m$^2$ kg s$^{-3}$ \\
-\texttt{lalCoulombUnit} & coulomb & C & electric charge & A$\cdot$s & s A \\
-\texttt{lalVoltUnit} & volt & V & potential &
-    W/A & m$^2$ kg s$^{-3}$ A$^{-1}$\\
-\texttt{lalOhmUnit} & ohm & $\Omega$ & resistance &
-    V/A & m$^2$ kg s$^{-3}$ A$^{-2}$\\
-\texttt{lalFaradUnit} & farad & F & capacitance &
-    C/V & m$^{-2}$ kg$^{-1}$ s$^4$ A$^2$\\
-\texttt{lalWeberUnit} & weber & Wb & magnetic flux &
-    V$\cdot$s & m$^2$ kg s$^{-2}$ A$^{-1}$\\
-\texttt{lalHenryUnit} & henry & H & inductance &
-    V$\cdot$s/A & m$^2$ kg s$^{-2}$ A$^{-2}$\\
-\texttt{lalTeslaUnit} & tesla & T & magnetic flux density &
-    Wb/m$^2$ & kg s$^{-2}$ A$^{-1}$\\
-\hline
-\end{tabular}
-\end{center}
+
+<table><tr><th>Constant</th><th>Name</th><th>Abbr.</th><th>Physical Quantity</th></tr>
+<tr><td>\c #lalMeterUnit</td><td>meter</td><td>m</td><td>length</td></tr>
+<tr><td>\c #lalKiloGramUnit</td><td>kilogram</td><td>kg</td><td>mass</td></tr>
+<tr><td>\c #lalSecondUnit</td><td>second</td><td>s</td><td>time</td></tr>
+<tr><td>\c #lalAmpereUnit</td><td>ampere</td><td>A</td><td>electric current</td></tr>
+<tr><td>\c #lalKelvinUnit</td><td>kelvin</td><td>K</td><td>thermodynamic temperature</td></tr>
+<tr><td>\c #lalStrainUnit</td><td>strain</td><td>\f$\epsilon\f$</td><td>gravitational strain</td></tr>
+<tr><td>\c #lalADCCountUnit</td><td>ADC count</td><td>count</td><td>A-to-D converter counts</td></tr>
+</table>
+
+Next, the named derived units in the SI [\ref Halliday_2001]:
+
+<table><tr><th>Constant</th><th>Name</th><th>Abbr.</th><th>Physical Quantity</th><th>Def.</th><th>Fundamental</th></tr>
+<tr><td>\c #lalHertzUnit</td><td>hertz</td><td>Hz</td><td>frequency</td><td> s\f$^{-1}\f$</td><td>s\f$^{-1}\f$</td></tr>
+<tr><td>\c #lalNewtonUnit</td><td>newton</td><td>N</td><td>force</td><td> kg\f$\cdot\f$ m/s\f$^2\f$</td><td>m kg s\f$^{-2}\f$</td></tr>
+<tr><td>\c #lalPascalUnit</td><td>pascal</td><td>Pa</td><td>pressure</td><td> N/m\f$^2\f$</td><td>m\f$^{-1}\f$ kg s\f$^{-2}\f$</td></tr>
+<tr><td>\c #lalJouleUnit</td><td>joule</td><td>J</td><td>energy</td><td> N\f$\cdot\f$m</td><td>m\f$^2\f$ kg s\f$^{-2}\f$</td></tr>
+<tr><td>\c #lalWattUnit</td><td>watt</td><td>W</td><td>power</td><td> J/s</td><td>m\f$^2\f$ kg s\f$^{-3}\f$</td></tr>
+<tr><td>\c #lalCoulombUnit</td><td>coulomb</td><td>C</td><td>electric charge</td><td>A\f$\cdot\f$s</td><td>s A</td></tr>
+<tr><td>\c #lalVoltUnit</td><td>volt</td><td>V</td><td>potential</td><td> W/A</td><td>m\f$^2\f$ kg s\f$^{-3}\f$ A\f$^{-1}\f$</td></tr>
+<tr><td>\c #lalOhmUnit</td><td>ohm</td><td>\f$\Omega\f$</td><td>resistance</td><td> V/A</td><td>m\f$^2\f$ kg s\f$^{-3}\f$ A\f$^{-2}\f$</td></tr>
+<tr><td>\c #lalFaradUnit</td><td>farad</td><td>F</td><td>capacitance</td><td> C/V</td><td>m\f$^{-2}\f$ kg\f$^{-1}\f$ s\f$^4\f$ A\f$^2\f$</td></tr>
+<tr><td>\c #lalWeberUnit</td><td>weber</td><td>Wb</td><td>magnetic flux</td><td> V\f$\cdot\f$s</td><td>m\f$^2\f$ kg s\f$^{-2}\f$ A\f$^{-1}\f$</td></tr>
+<tr><td>\c #lalHenryUnit</td><td>henry</td><td>H</td><td>inductance</td><td> V\f$\cdot\f$s/A</td><td>m\f$^2\f$ kg s\f$^{-2}\f$ A\f$^{-2}\f$</td></tr>
+<tr><td>\c #lalTeslaUnit</td><td>tesla</td><td>T</td><td>magnetic flux density</td><td> Wb/m\f$^2\f$</td><td>kg s\f$^{-2}\f$ A\f$^{-1}\f$</td></tr>
+</table>
+
 The powers of ten (SI prefixes)
-\begin{center}
-\begin{tabular}{|llll|}
-\hline
-Constant & Prefix & Abbr.\ & Value\\
-\hline
-\texttt{lalYottaUnit} & yotta & Y & $10^{ 24}$ \\
-\texttt{lalZettaUnit} & zetta & Z & $10^{ 21}$ \\
-\texttt{lalExaUnit} & exa & E & $10^{ 18}$ \\
-\texttt{lalPetaUnit} & peta & P & $10^{ 15}$ \\
-\texttt{lalTeraUnit} & tera & T & $10^{ 12}$ \\
-\texttt{lalGigaUnit} & giga & G & $10^{  9}$ \\
-\texttt{lalMegaUnit} & mega & M & $10^{  6}$ \\
-\texttt{lalKiloUnit} & kilo & k & $10^{  3}$ \\
-\texttt{lalHectoUnit} & hecto & h & $10^{  2}$ \\
-\texttt{lalDekaUnit} & deka & da & $10^{  1}$ \\
-\texttt{lalDeciUnit} & deci & d & $10^{ -1}$ \\
-\texttt{lalCentiUnit} & centi & c & $10^{ -2}$ \\
-\texttt{lalMilliUnit} & milli & m & $10^{ -3}$ \\
-\texttt{lalMicroUnit} & micro & $\mu$ & $10^{ -6}$ \\
-\texttt{lalNanoUnit} & nano & n & $10^{ -9}$ \\
-\texttt{lalPicoUnit} & pico & p & $10^{-12}$ \\
-\texttt{lalFemtoUnit} & femto & f & $10^{-15}$ \\
-\texttt{lalAttoUnit} & atto & a & $10^{-18}$ \\
-\texttt{lalZeptoUnit} & zepto & z & $10^{-21}$ \\
-\texttt{lalYoctoUnit} & yocto & y & $10^{-24}$ \\
-\hline
-\end{tabular}
-\end{center}
+
+<table><tr><th>Constant</th><th>Prefix</th><th>Abbr.</th><th>Value</th></tr>
+<tr><td>\c #lalYottaUnit</td><td>yotta</td><td>Y</td><td>\f$10^{ 24}\f$</td></tr>
+<tr><td>\c #lalZettaUnit</td><td>zetta</td><td>Z</td><td>\f$10^{ 21}\f$</td></tr>
+<tr><td>\c #lalExaUnit</td><td>exa</td><td>E</td><td>\f$10^{ 18}\f$</td></tr>
+<tr><td>\c #lalPetaUnit</td><td>peta</td><td>P</td><td>\f$10^{ 15}\f$</td></tr>
+<tr><td>\c #lalTeraUnit</td><td>tera</td><td>T</td><td>\f$10^{ 12}\f$</td></tr>
+<tr><td>\c #lalGigaUnit</td><td>giga</td><td>G</td><td>\f$10^{  9}\f$</td></tr>
+<tr><td>\c #lalMegaUnit</td><td>mega</td><td>M</td><td>\f$10^{  6}\f$</td></tr>
+<tr><td>\c #lalKiloUnit</td><td>kilo</td><td>k</td><td>\f$10^{  3}\f$</td></tr>
+<tr><td>\c #lalHectoUnit</td><td>hecto</td><td>h</td><td>\f$10^{  2}\f$</td></tr>
+<tr><td>\c #lalDekaUnit</td><td>deka</td><td>da</td><td>\f$10^{  1}\f$</td></tr>
+<tr><td>\c #lalDeciUnit</td><td>deci</td><td>d</td><td>\f$10^{ -1}\f$</td></tr>
+<tr><td>\c #lalCentiUnit</td><td>centi</td><td>c</td><td>\f$10^{ -2}\f$</td></tr>
+<tr><td>\c #lalMilliUnit</td><td>milli</td><td>m</td><td>\f$10^{ -3}\f$</td></tr>
+<tr><td>\c #lalMicroUnit</td><td>micro</td><td>\f$\mu\f$</td><td>\f$10^{ -6}\f$</td></tr>
+<tr><td>\c #lalNanoUnit</td><td>nano</td><td>n</td><td>\f$10^{ -9}\f$</td></tr>
+<tr><td>\c #lalPicoUnit</td><td>pico</td><td>p</td><td>\f$10^{-12}\f$</td></tr>
+<tr><td>\c #lalFemtoUnit</td><td>femto</td><td>f</td><td>\f$10^{-15}\f$</td></tr>
+<tr><td>\c #lalAttoUnit</td><td>atto</td><td>a</td><td>\f$10^{-18}\f$</td></tr>
+<tr><td>\c #lalZeptoUnit</td><td>zepto</td><td>z</td><td>\f$10^{-21}\f$</td></tr>
+<tr><td>\c #lalYoctoUnit</td><td>yocto</td><td>y</td><td>\f$10^{-24}\f$</td></tr>
+</table>
+
 And finally a couple of convenient scaled units:
-\begin{center}
-\begin{tabular}{|lllll|}
-\hline
-Constant & Name & Abbr.\ & Def.\ & Fundamental\\
-\hline
-\texttt{lalGramUnit} & gram & g &
-  $10^{-3}$ kg & $10^{-3}$ kg \\
-\texttt{lalAttoStrainUnit} & attostrain & a$\epsilon$ &
-  $10^{-18} \epsilon$ & $10^{-18} \epsilon$ \\
-\texttt{lalPicoFaradUnit} & picofarad & pF &
-  $10^{-12}$ F & $10^{-12}$ m$^{-2}$ kg$^{-1}$ s$^4$ A$^2$\\
-\hline
-\end{tabular}
-\end{center}
 
-\vfill{\footnotesize\input{UnitDefsCV}}
+<table><tr><th>Constant</th><th>Name</th><th>Abbr.\</th><th>Def.</th><th>Fundamental</th></tr>
+<tr><td>\c #lalGramUnit</td><td>gram</td><td>g</td><td> \f$10^{-3}\f$ kg</td><td>\f$10^{-3}\f$ kg</td></tr>
+<tr><td>\c #lalAttoStrainUnit</td><td>attostrain</td><td>a\f$\epsilon\f$</td><td>\f$10^{-18} \epsilon\f$</td><td>\f$10^{-18} \epsilon\f$</td></tr>
+<tr><td>\c #lalPicoFaradUnit</td><td>picofarad</td><td>pF</td><td>\f$10^{-12}\f$ F</td><td>\f$10^{-12}\f$ m\f$^{-2}\f$ kg\f$^{-1}\f$ s\f$^4\f$ A\f$^2\f$</td></tr>
+</table>
 
-******************************************************* </lalLaTeX> */
-/**************************************** <lalLaTeX file="UnitDefsCB">
-\bibitem{tools:Halliday:2001}
-D.~Halliday, R.~Resnick, and J.~Walker, \textit{Fundamentals of
-  Physics}.  (Wiley \& Sons, New York, 2001)
-******************************************************* </lalLaTeX> */
+*/
 
 #include <lal/LALStdlib.h>
 #include <string.h>
@@ -225,10 +128,11 @@ NRCSID( UNITDEFSC, "$Id$" );
 
 #define UNITDEFSC_TEMPSIZE 20
 
-/* To convert a units structure to a string repesentation, we need to
+/**\addtogroup UnitDefs_c
+ * @{ */
+/** To convert a units structure to a string repesentation, we need to
  * define the names of the basic units.
  */
-
 const CHAR lalUnitName[LALNumUnits][LALUnitNameSize] =
 {
   "m", "kg", "s", "A", "K", "strain", "count"
@@ -250,59 +154,61 @@ const CHAR lalUnitName[LALNumUnits][LALUnitNameSize] =
  * to show that 1 Farad = 1 Coulomb Volt^-1
  */
 
-const LALUnit lalDimensionlessUnit = {  0, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalDimensionlessUnit = {  0, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< dimensionless units */
 
 /* Basic Units */
-const LALUnit lalMeterUnit         = {  0, { 1, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalKiloGramUnit      = {  0, { 0, 1, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalSecondUnit        = {  0, { 0, 0, 1, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalAmpereUnit        = {  0, { 0, 0, 0, 1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalKelvinUnit        = {  0, { 0, 0, 0, 0, 1, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalStrainUnit        = {  0, { 0, 0, 0, 0, 0, 1, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalADCCountUnit      = {  0, { 0, 0, 0, 0, 0, 0, 1}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalMeterUnit         = {  0, { 1, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< meter [m] */
+const LALUnit lalKiloGramUnit      = {  0, { 0, 1, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< kilogram [kg]*/
+const LALUnit lalSecondUnit        = {  0, { 0, 0, 1, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< second [s] */
+const LALUnit lalAmpereUnit        = {  0, { 0, 0, 0, 1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Ampere [A] */
+const LALUnit lalKelvinUnit        = {  0, { 0, 0, 0, 0, 1, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Kelvin [K] */
+const LALUnit lalStrainUnit        = {  0, { 0, 0, 0, 0, 0, 1, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Strain [1] */
+const LALUnit lalADCCountUnit      = {  0, { 0, 0, 0, 0, 0, 0, 1}, { 0, 0, 0, 0, 0, 0, 0} };	/**< ADC count [count] */
 
 /* Derived Mechanical Units */
-const LALUnit lalHertzUnit         = {  0, { 0, 0,-1, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalNewtonUnit        = {  0, { 1, 1,-2, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalPascalUnit        = {  0, {-1, 1,-2, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalJouleUnit         = {  0, { 2, 1,-2, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalWattUnit          = {  0, { 2, 1,-3, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalHertzUnit         = {  0, { 0, 0,-1, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Hertz [Hz] */
+const LALUnit lalNewtonUnit        = {  0, { 1, 1,-2, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Newton [N] */
+const LALUnit lalPascalUnit        = {  0, {-1, 1,-2, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Pascal [Pa] */
+const LALUnit lalJouleUnit         = {  0, { 2, 1,-2, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Joule [J] */
+const LALUnit lalWattUnit          = {  0, { 2, 1,-3, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Watt [W ] */
 
 /* Derived Electromagnetic Units */
-const LALUnit lalCoulombUnit       = {  0, { 0, 0, 1, 1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalVoltUnit          = {  0, { 2, 1,-3,-1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalOhmUnit           = {  0, { 2, 1,-3,-2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalFaradUnit         = {  0, {-2,-1, 4, 2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalWeberUnit         = {  0, { 2, 1,-2,-1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalHenryUnit         = {  0, { 2, 1,-2,-2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalTeslaUnit         = {  0, { 0, 1,-2,-1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalCoulombUnit       = {  0, { 0, 0, 1, 1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Coulomb [C] */
+const LALUnit lalVoltUnit          = {  0, { 2, 1,-3,-1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Volt [V] */
+const LALUnit lalOhmUnit           = {  0, { 2, 1,-3,-2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Ohm [\f$\Omega\f$] */
+const LALUnit lalFaradUnit         = {  0, {-2,-1, 4, 2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Farad [F] */
+const LALUnit lalWeberUnit         = {  0, { 2, 1,-2,-1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Weber [Wb] */
+const LALUnit lalHenryUnit         = {  0, { 2, 1,-2,-2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Henry [H] */
+const LALUnit lalTeslaUnit         = {  0, { 0, 1,-2,-1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Tesla [T] */
 
 /* Powers of Ten */
-const LALUnit lalYottaUnit         = { 24, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalZettaUnit         = { 21, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalExaUnit           = { 18, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalPetaUnit          = { 15, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalTeraUnit          = { 12, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalGigaUnit          = {  9, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalMegaUnit          = {  6, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalKiloUnit          = {  3, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalHectoUnit         = {  2, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalDekaUnit          = {  1, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalDeciUnit          = { -1, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalCentiUnit         = { -2, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalMilliUnit         = { -3, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalMicroUnit         = { -6, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalNanoUnit          = { -9, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalPicoUnit          = {-12, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalFemtoUnit         = {-15, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalAttoUnit          = {-18, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalZeptoUnit         = {-21, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalYoctoUnit         = {-24, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalYottaUnit         = { 24, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Yotta [1e24] */
+const LALUnit lalZettaUnit         = { 21, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Zetta [1e21] */
+const LALUnit lalExaUnit           = { 18, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Exa [1e18] */
+const LALUnit lalPetaUnit          = { 15, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Peta [1e15] */
+const LALUnit lalTeraUnit          = { 12, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Tera [1e12] */
+const LALUnit lalGigaUnit          = {  9, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Giga [1e9] */
+const LALUnit lalMegaUnit          = {  6, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Mega [1e6] */
+const LALUnit lalKiloUnit          = {  3, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Kilo [1e3] */
+const LALUnit lalHectoUnit         = {  2, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Hecto [1e2] */
+const LALUnit lalDekaUnit          = {  1, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Deka [1e1] */
+const LALUnit lalDeciUnit          = { -1, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Deci [1e-1] */
+const LALUnit lalCentiUnit         = { -2, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Centi [1e-2] */
+const LALUnit lalMilliUnit         = { -3, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Milli [1e-3] */
+const LALUnit lalMicroUnit         = { -6, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Micro [1e-6] */
+const LALUnit lalNanoUnit          = { -9, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Nano [1e-9] */
+const LALUnit lalPicoUnit          = {-12, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Pico [1e-12] */
+const LALUnit lalFemtoUnit         = {-15, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Femto [1e-15] */
+const LALUnit lalAttoUnit          = {-18, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Atto [1e-18] */
+const LALUnit lalZeptoUnit         = {-21, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Zepto [1e-21] */
+const LALUnit lalYoctoUnit         = {-24, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Yocto [1e-24] */
 
 /* Convenient Scaled Units */
-const LALUnit lalGramUnit          = { -3, { 0, 1, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalAttoStrainUnit    = {-18, { 0, 0, 0, 0, 0, 1, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-const LALUnit lalPicoFaradUnit     = {-12, {-2,-1, 2, 2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalGramUnit          = { -3, { 0, 1, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Gram [1e-3] */
+const LALUnit lalAttoStrainUnit    = {-18, { 0, 0, 0, 0, 0, 1, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< AttoStrain [1e-18] */
+const LALUnit lalPicoFaradUnit     = {-12, {-2,-1, 2, 2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< PicoFarad [1e-12 F] */
+
+/** @} */
 
 /* Static function to read a number into a character array */
 /* returns 0 on success, 1 on failure */
@@ -352,18 +258,24 @@ static int readString( char temp[UNITDEFSC_TEMPSIZE], const char **charPtrPtr )
   return 0;
 }
 
+/** Returns the pointer to the input \c string, which
+ * is populated with the unit string if successful.  If there is a failure,
+ * XLALUnitAsString() returns a \c NULL pointer and \c xlalErrno
+ * is set to one of the following values:  \c XLAL_EFAULT if one of the
+ * input pointers is \c NULL or \c XLAL_EBADLEN if the length of the
+ * string is insufficent for the unit string.
+ */
 char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
 {
-  static const char *func = "XLALUnitAsString";
   UINT2        i;
   CHAR         temp[UNITDEFSC_TEMPSIZE];
   INT2         numer;
   CHAR         *charPtr, *charStopPtr;
 
   if ( ! string || ! input )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( __func__, XLAL_EFAULT );
   if ( ! length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( __func__, XLAL_EBADLEN );
 
   charPtr = string;
   charStopPtr = string + length;
@@ -375,7 +287,7 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
   {
     sprintf(temp, "10^%d", input->powerOfTen);
     if ( charPtr + strlen(temp) >= charStopPtr)
-      XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+      XLAL_ERROR_NULL( __func__, XLAL_EBADLEN );
     strncpy(charPtr, temp, charStopPtr - charPtr);
     charPtr += strlen(temp);
   } /* if (input->powerOfTen != 0) */
@@ -406,7 +318,7 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
 		 input->unitDenominatorMinusOne[i] + 1);
       }
       if ( charPtr + strlen(temp) >= charStopPtr)
-        XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+        XLAL_ERROR_NULL( __func__, XLAL_EBADLEN );
       strncpy(charPtr, temp, charStopPtr - charPtr);
       charPtr += strlen(temp);
     } /* if (numer != 0) */
@@ -415,12 +327,14 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
   return string;
 }
 
-/* <lalVerbatim file="UnitDefsCP"> */
+/** \ingroup UnitDefs_c
+ * \deprecated Use XLALUnitAsString() instead.
+ */
 void
 LALUnitAsString( LALStatus *status,
 		 CHARVector *output,
 		 const LALUnit *input )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALUnitAsString", UNITDEFSC );
   /* ATTATCHSTATUSPTR (status); */
@@ -458,10 +372,15 @@ LALUnitAsString( LALStatus *status,
   RETURN(status);
 }
 
-
+/** Returns the pointer \c output upon return
+ * or a pointer to newly allocated memory if \c output was \c NULL;
+ * on failure, \c XLALParseUnitString() returns \c NULL and sets
+ * ::xlalErrno to one of the following values: \c #XLAL_ENOMEM
+ * if the routine was unable to allocate memory for the output or
+ * \c #XLAL_EFAILED if the routine was unable to parse the unit string.
+ */
 LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
 {
-  static const char *func = "XLALParseUnitString";
   UINT2        i;
   INT2         sign;
   CHAR         temp[20];
@@ -473,7 +392,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     output = LALMalloc( sizeof( *output ) );
     outputAllocated = 1;
     if ( ! output )
-      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+      XLAL_ERROR_NULL( __func__, XLAL_ENOMEM );
   }
 
   /* Start with dimensionless (all zeros) and fill in from there */
@@ -486,8 +405,11 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
   charPtr = string;
   charStopPtr = string + strlen(string);
 
-  /* Start with dimensionless (all zeros) and fill in from there */
-  *output = lalDimensionlessUnit;
+  /* Strip whitespace */
+  while(charPtr < charStopPtr && isspace(*charPtr))
+    charPtr++;
+  while(charPtr < charStopPtr && isspace(*(charStopPtr - 1)))
+    charStopPtr--;
 
   /* If the string is empty, it represents dimensionless */
   if (charPtr == charStopPtr)
@@ -516,7 +438,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     {
       if ( outputAllocated )
         LALFree( output );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
     }
     /* charPtr now points to one after end of power of ten */
 
@@ -530,7 +452,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     {
       if ( outputAllocated )
         LALFree( output );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
     }
 
     ++charPtr;
@@ -546,7 +468,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     {
       if ( outputAllocated )
         LALFree( output );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
     }
 
     /* charPtr now points to one after end of unit name */
@@ -558,7 +480,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
       {
         if ( outputAllocated )
           LALFree( output );
-        XLAL_ERROR_NULL( func, XLAL_EFAILED );
+        XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
       }
     }
 
@@ -567,7 +489,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     {
       if ( outputAllocated )
         LALFree( output );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
     }
 
     if ( *charPtr == ' ' || *charPtr == '\0' )
@@ -595,7 +517,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
       {
         if ( outputAllocated )
           LALFree( output );
-        XLAL_ERROR_NULL( func, XLAL_EFAILED );
+        XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
       }
       output->unitNumerator[i] = sign * atoi(temp);
 
@@ -610,7 +532,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
         {
           if ( outputAllocated )
             LALFree( output );
-          XLAL_ERROR_NULL( func, XLAL_EFAILED );
+          XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
         }
 	output->unitDenominatorMinusOne[i] = atoi(temp) - 1;
       } /* if ( *charPtr == '/' ) */
@@ -619,7 +541,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     {
       if ( outputAllocated )
         LALFree( output );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( __func__, XLAL_EFAILED );
     }
 
     if ( *charPtr == ' ') ++charPtr;
@@ -631,12 +553,14 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
 }
 
 
-/* <lalVerbatim file="UnitDefsCP"> */
+/** \ingroup UnitDefs_c
+ * \deprecated Use XLALParseUnitString() instead.
+ */
 void
 LALParseUnitString ( LALStatus *status,
 		     LALUnit *output,
 		     const CHARVector *input )
-/* </lalVerbatim> */
+
 {
   CHAR         *charPtr, *charStopPtr;
 

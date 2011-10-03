@@ -17,29 +17,24 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="GetOrientationEllipseCV">
-Author: Thomas Cokelaer
-$Id$
-</lalVerbatim> */
+/**
+\author Thomas Cokelaer
+\file
+\ingroup LALInspiralBank_h
 
-/* <lalLaTeX>
-\subsection{Program \texttt{GetOrientationEllipse.c}}
-\label{ss:GetOrientationEllipse.c}
+\brief Test code for the \c bank modules.
 
-Test code for the \texttt{bank} modules.
-
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 ./getOrientationEllipse
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This code illustrates the use of several functions such as
-\texttt{LALInspiralParameterCalc}, \texttt{LALGetInspiralMoments},
-and \texttt{LALInspiralComputeMetric}. It shows how to defined
-a suitable \texttt{InspiralCoarseBankIn} structure so as to extract
+\c LALInspiralParameterCalc(), \c LALGetInspiralMoments(),
+and \c LALInspiralComputeMetric(). It shows how to defined
+a suitable \c InspiralCoarseBankIn structure so as to extract
 the metric components for a set of binary parameters. In this
 example, we first declare all the relevant parameter needed
 (minimum  and maximum mass, fLower, design sensitivity curve
@@ -51,11 +46,11 @@ parameter, the metric is computed and the code prints on stdout
 the value of the coordinate used (tau0, tau3) and the orientation
 of the metric in degrees. We do not check whether a template is valid
 or not in this code but one could have use a function such as
-\texttt{LALInspiralValidtemplate} to do so.
+\c LALInspiralValidtemplate to do so.
 
-\subsubsection*{Notes}
-\vfill{\footnotesize\input{GetOrientationEllipseCV}}
-</lalLaTeX> */
+\heading{Notes}
+
+*/
 
 
 #include <stdio.h>

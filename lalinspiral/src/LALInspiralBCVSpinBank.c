@@ -17,22 +17,18 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralBCVSpinBankCV">
+/**
 Authors: Tagoshi, H, Takahashi, H, Van Den Broeck, C, Jones, G, Sathyaprakash, BS
-$Id$
-</lalVerbatim>  */
+\file
+\brief NONE
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
-\subsection{Module \texttt{LALInspiralBCVSpinBank.c}}
-\subsubsection*{Prototypes}
-\subsubsection*{Description}
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
-\end{verbatim}
-\subsubsection*{Notes}
-\clearpage
-</lalLaTeX>  */
+\heading{Prototypes}
+\heading{Description}
+\heading{Algorithm}
+\heading{Uses}
+\heading{Notes}
+*/
 
 
 #include <math.h>
@@ -56,7 +52,7 @@ $Id$
 
 NRCSID(LALINSPIRALBCVSPINBANKC, "$Id$");
 
-/* <lalVerbatim file="LALInspiralBCVSpinBankCP"> */
+
 void
 LALInspiralBCVSpinBank(
     LALStatus         	 *status,
@@ -64,7 +60,7 @@ LALInspiralBCVSpinBank(
     INT4      		 *ntiles,
     InspiralCoarseBankIn *coarseIn
     )
-/* </lalVerbatim> */
+
 
 {
   /* Nmax is the maximum number of beta values we are allowed to have */

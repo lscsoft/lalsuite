@@ -17,102 +17,82 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="FrameStreamCV">
- * Author: Jolien D. E. Creighton
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
+/**
+ * \author Jolien D. E. Creighton
+ * \file
  *
- * \subsection{Module \texttt{FrameStream.c}}
+ * \heading{Module \ref FrameStream.c}
  *
  * These are the low-level functions for manupulating a frame stream.
  *
- * \subsubsection*{Prototypes}
- * \input{FrameStreamCP}
- * \idx{LALFrOpen}
- * \idx{LALFrCacheOpen}
- * \idx{LALFrClose}
- * \idx{LALFrEnd}
- * \idx{LALFrNext}
- * \idx{LALFrRewind}
- * \idx{LALFrSeek}
- * \idx{LALFrTell}
- * \idx{LALFrGetPos}
- * \idx{LALFrSetPos}
- *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
  * Many of these routines perform functions that are similar to standard C
  * file stream manipulation routines.  The names have been chosen to also be
  * similar to the standard C routines.
  *
- * The routines \texttt{LALFrOpen()} and \texttt{LALFrClose()} are used to open
- * and close a frame stream.  The stream is created by \texttt{LALFrOpen()},
- * and must be a pointer to \texttt{NULL} before it is opened.  It must have
- * been created prior to calling \texttt{LALFrClose()}, and after this call,
- * the stream will be a pointer to \texttt{NULL}.  The routine
- * \texttt{LALFrOpen()} requires the user to specify the directory name of the
- * frame files and the head names.  If the directory is \texttt{NULL}, the
- * routine uses the current director (\texttt{.}).  The head names specifies
+ * The routines <tt>LALFrOpen()</tt> and <tt>LALFrClose()</tt> are used to open
+ * and close a frame stream.  The stream is created by <tt>LALFrOpen()</tt>,
+ * and must be a pointer to \c NULL before it is opened.  It must have
+ * been created prior to calling <tt>LALFrClose()</tt>, and after this call,
+ * the stream will be a pointer to \c NULL.  The routine
+ * <tt>LALFrOpen()</tt> requires the user to specify the directory name of the
+ * frame files and the head names.  If the directory is \c NULL, the
+ * routine uses the current director (<tt>.</tt>).  The head names specifies
  * which files are the wanted files in the specified directory.  Wildcards are
  * allowed.  For example, to get LLO frames only, the head names could be set
- * to \texttt{L-*.gwf}.  If the head name is \texttt{NULL}, the default value
- * \texttt{*.gwf} is used.  The routine \texttt{LALFrCacheOpen()} is like
- * \texttt{LALFrOpen()} except that the list of frame files is taken from a
- * frame file cache.  [In fact, \texttt{LALFrOpen()} simply uses
- * \texttt{LALFrCacheGenerate()} and \texttt{LALFrCacheOpen()} to create the
+ * to <tt>L-*.gwf</tt>.  If the head name is \c NULL, the default value
+ * <tt>*.gwf</tt> is used.  The routine <tt>LALFrCacheOpen()</tt> is like
+ * <tt>LALFrOpen()</tt> except that the list of frame files is taken from a
+ * frame file cache.  [In fact, <tt>LALFrOpen()</tt> simply uses
+ * <tt>LALFrCacheGenerate()</tt> and <tt>LALFrCacheOpen()</tt> to create the
  * stream.]
  *
- * The routine \texttt{LALFrSetMode()} is used to change the operating mode
+ * The routine <tt>LALFrSetMode()</tt> is used to change the operating mode
  * of a frame stream, which determines how the routines try to accomodate
  * gaps in data and requests for times when there is no data (e.g., before
  * the beginning of the data, after the end of the data, or in some missing
  * data).  The default mode, which is given the value
- * \verb+LAL_FR_DEFAULT_MODE+, prints warnings if a time requested
+ * \c LAL_FR_DEFAULT_MODE, prints warnings if a time requested
  * corresponds to a time when there is no data (but then skips to the first
  * avaliable data) and prints an info message when a gap in the data occurs
  * (but then skips beyond the gap).  This default mode is equal to the
  * combination
- * \verb+LAL_FR_VERBOSE_MODE | LAL_FR_IGNOREGAP_MODE | LAL_FR_IGNORETIME_MODE+
- * where \verb+LAL_FR_VERBOSE_MODE+ is equal to the combination
- * \verb+LAL_FR_TIMEWARN_MODE | LAL_FR_GAPINFO_MODE+.  Use
- * \verb+LAL_FR_VERBOSE_MODE+ to print out warnings when requesting times
+ * <tt>LAL_FR_VERBOSE_MODE | LAL_FR_IGNOREGAP_MODE | LAL_FR_IGNORETIME_MODE</tt>
+ * where \c LAL_FR_VERBOSE_MODE is equal to the combination
+ * <tt>LAL_FR_TIMEWARN_MODE | LAL_FR_GAPINFO_MODE</tt>.  Use
+ * \c LAL_FR_VERBOSE_MODE to print out warnings when requesting times
  * with no data and print out an info message when a gap in the data is
  * encountered.  Unless the mode is supplemented with
- * \verb+LAL_FR_IGNOREGAP_MODE+, gaps encountered in the data will cause
+ * \c LAL_FR_IGNOREGAP_MODE, gaps encountered in the data will cause
  * a routine to exit with a non-zero status code; similarly,
- * \verb+LAL_FR_IGNORETIME_MODE+ prevents routines from failing if a time
+ * \c LAL_FR_IGNORETIME_MODE prevents routines from failing if a time
  * when there is not data is requested.  Set the mode to
- * \verb+LAL_FR_SILENT_MODE+ to suppress the warning and info messages but
+ * \c LAL_FR_SILENT_MODE to suppress the warning and info messages but
  * still cause routines to fail when data is not available.
- * Note: the default value \verb+LAL_FR_DEFAULT_MODE+ is assumed initially,
+ * Note: the default value \c LAL_FR_DEFAULT_MODE is assumed initially,
  * but this is not necessarily the recommended mode --- it is adopted for
  * compatibility reasons.
  *
- * The routine \texttt{LALFrEnd()} determines if the end-of-frame-data flag for
+ * The routine <tt>LALFrEnd()</tt> determines if the end-of-frame-data flag for
  * the data stream has been set.
  *
- * The routine \texttt{LALFrNext()} advances the frame stream to the
+ * The routine <tt>LALFrNext()</tt> advances the frame stream to the
  * beginning of the next frame.
  *
- * The routine \texttt{LALFrRewind()} rewinds the frame stream to the first
+ * The routine <tt>LALFrRewind()</tt> rewinds the frame stream to the first
  * frame.
  *
- * The routine \texttt{LALFrSeek()} sets the frame stream to a specified time,
+ * The routine <tt>LALFrSeek()</tt> sets the frame stream to a specified time,
  * or the earliest time after the specified time if that time is not available
  * (e.g., if it is before the beginning of the frame stream or if it is in a
- * gap in the frame data).  The routine \texttt{LALFrTell()} returns the
+ * gap in the frame data).  The routine <tt>LALFrTell()</tt> returns the
  * current time within the frame stream.
  *
- * The routine \texttt{LALFrGetPos()} returns a structure containing the
+ * The routine <tt>LALFrGetPos()</tt> returns a structure containing the
  * current frame stream position.  The frame stream can later be restored to
- * this position using \texttt{LALFrSetPos()}.
- *
- *
- * \vfill{\footnotesize\input{FrameStreamCV}}
- *
- **** </lalLaTeX> */
+ * this position using <tt>LALFrSetPos()</tt>.
+ */
 
 #include <config.h>
 #include <unistd.h>
@@ -854,14 +834,14 @@ int XLALFrSetpos( FrStream *stream, FrPos *position )
 
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrCacheOpen(
     LALStatus  *status,
     FrStream  **output,
     FrCache    *cache
     )
-{ /* </lalVerbatim> */
+{ 
   FrStream *stream;
 
   INITSTATUS( status, "LALFrCacheOpen", FRAMESTREAMC );
@@ -889,7 +869,7 @@ LALFrCacheOpen(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrOpen(
     LALStatus    *status,
@@ -897,7 +877,7 @@ LALFrOpen(
     const CHAR   *dirname,
     const CHAR   *pattern
     )
-{ /* </lalVerbatim> */
+{ 
   FrCache *cache = NULL;
 
   INITSTATUS( status, "LALFrOpen", FRAMESTREAMC );
@@ -929,13 +909,13 @@ LALFrOpen(
 
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrClose(
     LALStatus  *status,
     FrStream  **stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrClose", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( *stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -944,14 +924,14 @@ LALFrClose(
   RETURN( status );
 }
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrSetMode(
     LALStatus *status,
     INT4       mode,
     FrStream  *stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrSetMode", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   stream->mode = mode;
@@ -959,14 +939,14 @@ LALFrSetMode(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrEnd(
     LALStatus *status,
     INT4      *end,
     FrStream  *stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrEnd", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( end, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -974,13 +954,13 @@ LALFrEnd(
   RETURN( status );
 }
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrRewind(
     LALStatus *status,
     FrStream  *stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrRewind", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( XLALFrRewind( stream ) )
@@ -999,13 +979,13 @@ LALFrRewind(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrNext(
     LALStatus   *status,
     FrStream    *stream
     )
-{ /* </lalVerbatim> */
+{ 
   CHAR frErrMsg[1024];
   int code;
   INITSTATUS( status, "LALFrNext", FRAMESTREAMC );
@@ -1051,14 +1031,14 @@ LALFrNext(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrSeek(
     LALStatus         *status,
     const LIGOTimeGPS *epoch,
     FrStream          *stream
     )
-{ /* </lalVerbatim> */
+{ 
   CHAR frErrMsg[1024];
   int code;
   INITSTATUS( status, "LALFrSeek", FRAMESTREAMC );
@@ -1100,14 +1080,14 @@ LALFrSeek(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrTell(
     LALStatus   *status,
     LIGOTimeGPS *epoch,
     FrStream    *stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrTell", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -1120,14 +1100,14 @@ LALFrTell(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrGetPos(
     LALStatus *status,
     FrPos     *position,
     FrStream  *stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrGetPos", FRAMESTREAMC );
   ASSERT( position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -1140,14 +1120,14 @@ LALFrGetPos(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrSetPos(
     LALStatus *status,
     FrPos     *position,
     FrStream  *stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrSetPos", FRAMESTREAMC );
   ASSERT( position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );

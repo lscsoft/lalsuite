@@ -18,6 +18,17 @@
 */
 
 
+/**
+ * \defgroup TimeDelay_h TimeDelay
+ * \ingroup date
+ * \brief Provides routines to compute time delay between two detectors
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/TimeDelay.h>
+ * \endcode
+ */
+
 #ifndef _TIMEDELAY_H
 #define _TIMEDELAY_H
 

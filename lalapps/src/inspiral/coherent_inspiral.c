@@ -1085,6 +1085,10 @@ int main( int argc, char *argv[] )
             thisEventTemp->event_id = (EventIDColumn *) 
               LALCalloc(1, sizeof(EventIDColumn) );
             thisEventTemp->event_id->id=eventID;
+            /* Also 0 the time slide id column */
+            thisEventTemp->time_slide_id = (EventIDColumn *)
+              LALCalloc(1, sizeof(EventIDColumn) );
+            thisEventTemp->time_slide_id->id=0;
             thisEventTemp = thisEventTemp->next;
           }
         
@@ -1140,6 +1144,8 @@ int main( int argc, char *argv[] )
                 MultiInspiralTable *tempEvent = thisEvent;
                 thisEvent = thisEvent->next;
                 LALFree( tempEvent->event_id );
+                if ( tempEvent->time_slide_id )
+                  LALFree( tempEvent->time_slide_id );
                 LALFree( tempEvent );
               }
           }
@@ -1434,6 +1440,8 @@ int main( int argc, char *argv[] )
               {
                 MultiInspiralTable *tempEvent2 = savedEvents.multiInspiralTable;
                 savedEvents.multiInspiralTable = savedEvents.multiInspiralTable->next;
+                if (tempEvent2->time_slide_id)
+                  LALFree( tempEvent2->time_slide_id);
                 LALFree( tempEvent2->event_id );
                 LALFree( tempEvent2 );
               }
@@ -1553,6 +1561,8 @@ int main( int argc, char *argv[] )
 	MultiInspiralTable *tempEvent2 = savedEvents.multiInspiralTable;
 	savedEvents.multiInspiralTable = savedEvents.multiInspiralTable->next;
 	LALFree( tempEvent2->event_id );
+        if (tempEvent2->time_slide_id)
+          LALFree( tempEvent2->time_slide_id);
 	LALFree( tempEvent2 );
       }
     
@@ -2014,15 +2024,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                    long_options[option_index].name, gstartt );
                exit( 1 );
                }
-             if ( gstartt > 999999999 )
-             {
-               fprintf( stderr, "invalid argument to --%s:\n"
-                   "GPS start time is after " 
-                   "Sep 14, 2011  01:46:26 UTC:\n"
-                   "(%ld specified)\n", 
-                   long_options[option_index].name, gstartt );
-               exit( 1 );
-             }
              gpsStartTimeNS += (INT8) gstartt * 1000000000LL;
              gpsStartTimeTemp=gstartt;
              ADD_PROCESS_PARAM( "int", "%ld", gstartt );
@@ -2032,16 +2033,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
          case 'b':
            {
              long int gendt = atol( optarg );
-             if ( gendt > 999999999 )
-             {
-               fprintf( stderr, "invalid argument to --%s:\n"
-                   "GPS end time is after " 
-                   "Sep 14, 2011  01:46:26 UTC:\n"
-                   "(%ld specified)\n", 
-                   long_options[option_index].name, gendt );
-               exit( 1 );
-             }
-             else if ( gendt < 441417609 )
+             if ( gendt < 441417609 )
              {
                fprintf( stderr, "invalid argument to --%s:\n"
                    "GPS end time is prior to " 

@@ -32,8 +32,6 @@
  *
  * \brief Module to generate simulated pulsar-signals.
  *
- * $Id$
- *
  */
 #include <math.h>
 
@@ -892,13 +890,12 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
  * \note The only fields used in params are: \a site, \a pulsar.position
  * and \a ephemerides.
  */
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
 void
 LALConvertGPS2SSB (LALStatus* status,		/**< pointer to LALStatus structure */
 		   LIGOTimeGPS *SSBout, 	/**< [out] arrival-time in SSB */
 		   LIGOTimeGPS GPSin, 		/**< [in]  GPS-arrival time at detector */
 		   const PulsarSignalParams *params) /**< define source-location and detector */
-{ /* </lalVerbatim> */
+{
   EarthState earth;
   EmissionTime emit;
   BarycenterInput baryinput;

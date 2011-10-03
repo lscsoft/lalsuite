@@ -80,7 +80,7 @@ int main(int argc, char *argv[]){
   INT4 count=0, frcount=0;
 
   CHAR outputfile[256]="";
-  CHAR channel[20]="";
+  CHAR channel[128]="";
 
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
@@ -89,6 +89,10 @@ int main(int argc, char *argv[]){
 
   CHAR *pos=NULL;
 
+  /* set error handler */
+  lalDebugLevel = 7;
+  XLALSetErrorHandler(XLALAbortErrorHandler);
+  
   #if TRACKMEMUSE
     fprintf(stderr, "Memory use at start of the code:\n"); printmemuse();
   #endif
@@ -282,8 +286,7 @@ heterodyne.\n");  }
   }
 
   remove(outputfile); /* if output file already exists remove it */
-  snprintf(channel, sizeof(channel), "%s:%s", inputParams.ifo,
-    inputParams.channel);
+  snprintf(channel, sizeof(channel), "%s", inputParams.channel);
 
   #if TRACKMEMUSE
     fprintf(stderr, "Memory use before entering main loop:\n"); printmemuse();
@@ -419,6 +422,8 @@ heterodyne.\n");  }
           rc = fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
           rc = fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
 
+          if( feof(fpin) ) break;
+          
           if(inputParams.scaleFac > 1.0){
             data->data->data[i].re *= inputParams.scaleFac;
             data->data->data[i].im *= inputParams.scaleFac;
@@ -494,7 +499,7 @@ heterodyne.\n");  }
     }
 
     XLALGPSSetREAL8(&data->epoch, hetParams.timestamp);
-
+    
     /* heterodyne data */
     heterodyne_data(data, times, hetParams, inputParams.freqfactor, filtresp);
     if( verbose ){ fprintf(stderr, "I've heterodyned the data.\n"); }
@@ -1105,7 +1110,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       t2 = times->data[i] + 1.; /* just add a second to get the gradient */
 
       baryinput2 = baryinput;
-        
+      
       XLALGPSSetREAL8(&baryinput.tgps, t);
       
       XLALGPSSetREAL8(&baryinput2.tgps, t2);
@@ -1301,7 +1306,8 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
   }
   else if(strstr(channel, "STRAIN") != NULL || strstr(channel, "DER_DATA") !=
     NULL || strstr(channel, "h_16384Hz") != NULL || strstr(channel, 
-    "h_20000Hz") != NULL){ /* data is calibrated h(t) */
+    "h_20000Hz") != NULL || strstr(channel, "LDAS_C02") != NULL){ 
+    /* data is calibrated h(t) */
     /* calibrated Virgo data has the channel h_16384/20000Hz and is single
        precision */
     if( strstr(channel, "h_16384Hz") == NULL && strstr(channel, "h_20000Hz")
@@ -1316,6 +1322,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
 
       for(i=0;i<(INT4)length;i++)
         dblseries->data->data[i] = scalefac*frvect->dataD[i];
+
     }
     else{ /* Virgo data */
       /* check that data doesn't contain NaNs */
@@ -1645,13 +1652,15 @@ INT4 heterodyneflag){
                 nothing */
 
     if(strstr(jnkstr, "#")){
-      rc = fscanf(fp, "%*[^\n]");   /* if == # then skip to the end of the line */
+       /* if == # then skip to the end of the line */
+      if ( fscanf(fp, "%*[^\n]") == EOF ) break;
       continue;
     }
     else{
       fseek(fp, offset, SEEK_SET); /* if line doesn't start with a # then it is
                                       data */
-      rc = fscanf(fp, "%d%d%d%d", &num, &starts->data[i], &stops->data[i], &dur);
+      if( fscanf(fp, "%d%d%d%d", &num, &starts->data[i], 
+                 &stops->data[i], &dur) == EOF ) break;
       /*format is segwizard type: num starts stops dur */
       
       /* if performing a fine heterodyne remove the first 60 secs at the start
@@ -1699,20 +1708,15 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
     if(tempstart >= cache.starttime[i] 
         && tempstart < cache.starttime[i]+cache.duration[i] 
         && cache.starttime[i] < tempstop){
-      #define MAXLEN 512
-      CHAR tempstr[MAXLEN];
-      INT4 errcheck=0;
-
-      errcheck = snprintf(tempstr, MAXLEN, "%s %d %d ", cache.framelist[i], cache.starttime[i], cache.duration[i]);
-      if ( errcheck < 0 || errcheck > 512 ){
-        fprintf(stderr, "Error... something wrong with snprintf() creating file list! errcheck=%d\n", errcheck);
-        exit(1);
-      }    
-
-      if ( XLALStringAppend(smalllist, tempstr) == NULL ){
-        fprintf(stderr, "Error... something wrong creating frmae list with XLALStringAppend!\n");
+      if ( (smalllist = XLALStringAppend(smalllist, cache.framelist[i])) 
+        == NULL ){
+        fprintf(stderr, "Error... something wrong creating frame list with \
+XLALStringAppend!\n");
         exit(1);
       }
+      
+      /* add a space between frame filenames */
+      smalllist = XLALStringAppend(smalllist, " ");
       
       tempstart += cache.duration[i];
       check++;
@@ -1759,7 +1763,7 @@ void calibrate(COMPLEX16TimeSeries *series, REAL8Vector *datatimes,
   
   if(calfiles.calibcoefficientfile == NULL){
     fprintf(stderr, "No calibration coefficient file.\n\
-Assume calibration coefficients are 1 and use the response funtcion.\n");
+Assume calibration coefficients are 1 and use the response function.\n");
     /* get response function values */
     get_calibration_values(&Rfunc, &Rphase, calfiles.responsefunctionfile,
       frequency);
@@ -1781,7 +1785,7 @@ Assume calibration coefficients are 1 and use the response funtcion.\n");
 
     if((fpcoeff = fopen(calfiles.calibcoefficientfile, "r"))==NULL){
       fprintf(stderr, "Error... can't open calibration coefficient file %s.\n\
-Assume calibration coefficients are 1 and use the response funtcion.\n",
+Assume calibration coefficients are 1 and use the response function.\n",
         calfiles.calibcoefficientfile);
       exit(1);
     }

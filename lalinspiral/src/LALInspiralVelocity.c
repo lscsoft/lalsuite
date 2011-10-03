@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, Duncan Brown, Jolien Creighton, B.S. Sathyaprakash
+*  Copyright (C) 2007 David Churches, Duncan Brown, Jolien Creighton, B.S. Sathyaprakash, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -17,46 +17,38 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralVelocityCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralVelocity.c}}
-
-The function \texttt{LALInspiralVelocity} calculates the velocity $v$ which corresponds to a time $t$ in
+\brief The function \c XLALInspiralVelocity() calculates the velocity \f$v\f$ which corresponds to a time \f$t\f$ in
 the inspiralling binary system.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralVelocityCP}
-\idx{LALInspiralVelocity()}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>XLALInspiralVelocity()</tt>
 
-The function \texttt{LALInspiralVelocity} calculates the velocity $v$ corresponding to a time $t$
+\heading{Description}
+
+The function \c XLALInspiralVelocity() calculates the velocity \f$v\f$ corresponding to a time \f$t\f$
 in the evolution of an inspiralling binary system.  It does this by iteratively solving
-\begin{equation}
+\anchor tofv \f{equation}{
 t(v) =  t_{0} - m \int_{v_{0}}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
 \label{tofv}
-\end{equation}
-\texttt{LALInspiralVelocity} calculates $v$, given $t(v)$,
-$t_{0}$, $m$, $v_{0}$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.
+\f}
+\c LALInspiralVelocity() calculates \f$v\f$, given \f$t(v)\f$,
+\f$t_{0}\f$, \f$m\f$, \f$v_{0}\f$, \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
+\heading{Uses}
 
-\subsubsection*{Uses}
+\c XLALDBisectionFindRoot()
 
-\texttt{LALDBisectionFindRoot}
+\heading{Notes}
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralVelocityCV}}
-
-</lalLaTeX>  */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -65,43 +57,57 @@ $t_{0}$, $m$, $v_{0}$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.
 
 NRCSID (LALINSPIRALVELOCITYC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralVelocityCP"> */
+
 void
 LALInspiralVelocity(
    LALStatus *status,
    REAL8     *v,
    TofVIn    *ak
    )
-{ /* </lalVerbatim>  */
-
-  DFindRootIn rootIn;
-  void *funcParams;
-
+{
+  XLALPrintDeprecationWarning("LALInspiralVelocity", "XLALInspiralVelocity");
 
   INITSTATUS (status, "LALInspiralVelocity", LALINSPIRALVELOCITYC);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (v, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT (ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
-  rootIn.function = LALInspiralTofV;
-  rootIn.xmax = ak->vlso;
-  rootIn.xmin = ak->v0/2.;
-  rootIn.xacc = 1.0e-8;
+  *v = XLALInspiralVelocity(ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*v))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+REAL8
+XLALInspiralVelocity(
+   TofVIn    *ak
+   )
+{
+  REAL8 v,xmin,xmax,xacc;
+  REAL8 (*rootfunction)(REAL8, void *);
+  void *funcParams;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+
+  rootfunction = XLALInspiralTofV;
+  xmax = ak->vlso;
+  xmin = ak->v0/2.;
+  xacc = 1.0e-8;
 
   funcParams = (void *) ak;
 
 
   if (ak->t==ak->t0)
   {
-     *v = ak->v0;
-     DETATCHSTATUSPTR(status);
-     RETURN(status);
+     return ak->v0;
   }
 
-  LALDBisectionFindRoot(status->statusPtr, v, &rootIn, funcParams);
-  CHECKSTATUSPTR(status);
+  v = XLALDBisectionFindRoot(rootfunction, xmin, xmax, xacc, funcParams);
+  if (XLAL_IS_REAL8_FAIL_NAN(v))
+    XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return v;
 }

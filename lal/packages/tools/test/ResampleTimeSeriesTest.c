@@ -17,18 +17,15 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="ResampleTimeSeriesTestCV">
- * Author: Brown, D. A.
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Program \texttt{ResampleTimeSeriesTest.c}}
+/**
+ * \author Brown, D. A.
+ * \file
+ * \ingroup ResampleTimeSeries_h
  *
- * Tests the routines in \verb|ResampleTimeSeries.h|
+ * \brief Tests the routines in \ref ResampleTimeSeries.h
  *
- * \subsubsection*{Usage}
- * \begin{verbatim}
+ * \heading{Usage}
+ * \code
  * Usage: ./ResampleTimeSeriesTest [options] defaults shown in brackets
  * Options:
  *   -h         print this message
@@ -40,63 +37,53 @@
  *   -f freq    frequency of sine wave to inject as input (1000.0)
  *   -r type    type of filter to use in resampling (ldas)
  *              [ldas|butterworth]
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
  * Tests the resampling functions by injecting a sine wave of a given
  * frequency into a time series and downsampling it. The raw and output
  * data are returned as frame files for plotting in matlab.
  *
- * \subsubsection*{Sample Results}
+ * \heading{Sample Results}
  *
- * Figures \ref{f:resamp1}--\ref{f:resamp3} show the results of various
+ * Figures.\figref{f_resamp1}-\figref{f_resamp3} show the results of various
  * tests using this program.
  *
- * \begin{figure}[htb]
- * \begin{center}
- * \includegraphics[width=0.4\linewidth,angle=0]{resamp_10x4} %
- * \quad %
- * \includegraphics[width=0.4\linewidth,angle=0]{resamp_100x4}
- * \end{center}
- * \caption{\label{f:resamp1}
- * The left figure shows a 10 Hz sine wave generated at 16384 Hz resampled to
+ * \floatfig{htb,f_resamp1}
+ * \image html  resamp_figs1.png "Fig. [f_resamp1]"
+ * \image latex resamp_figs1.pdf ""
+ *
+ * Fig. [f_resamp1]: The left figure shows a 10 Hz sine wave generated at 16384 Hz resampled to
  * 4096 Hz. The right figure shows a 100Hz sine wave generated at 16384 Hz
  * resampled to 4096 Hz. Note that there is no attenuation, time delay or
  * phase shift of the output. FIXME the legend in the right figure is wrong.
  * It should say 100 Hz, not 10 Hz the output.
- * }
- * \end{figure}
- * \begin{figure}[htb]
- * \begin{center}
- * \includegraphics[width=0.4\linewidth,angle=0]{resamp_100x2_start} %
- * \quad %
- * \includegraphics[width=0.4\linewidth,angle=0]{resamp_100x2_end}
- * \end{center}
- * \caption{\label{f:resamp2}
- * A 100Hz sine wave generated at 16384 Hz resampled to 8192 Hz. The left
+ *
+ *
+ * \floatfig{htb,f_resamp2}
+ * \image html  resamp_figs2.png "Fig. [f_resamp2]"
+ * \image latex resamp_figs2.pdf ""
+ *
+ * Fig. [f_resamp2]: A 100Hz sine wave generated at 16384 Hz resampled to 8192 Hz. The left
  * plot shows the start of the time series and the right plot the end. Note
  * the corruption of points due to the time domain filtering.
- * }
- * \end{figure}
- * \begin{figure}[htb]
- * \begin{center}
- * \includegraphics[width=0.4\linewidth,angle=0]{resamp_1000x4} %
- * \quad %
- * \includegraphics[width=0.4\linewidth,angle=0]{resamp_1000x8}
- * \end{center}
- * \caption{\label{f:resamp3}
- * The left figure shows a 1000 Hz sine wave generated at 16384 Hz resampled
+ *
+ * \floatfig{htb,f_resamp3}
+ * \image html  resamp_figs3.png "Fig. [f_resamp3]"
+ * \image latex resamp_figs3.pdf ""
+ *
+ * Fig. [f_resamp3]: The left figure shows a 1000 Hz sine wave generated at 16384 Hz resampled
  * to 4096 Hz. The right figure shows a 1000Hz sine wave generated at 16384 Hz
  * resampled to 2048 Hz. Note that there is no attenuation, time delay or
  * phase shift of the output at 4096 Hz, however there is attenuation and
  * phase shift of the output at 2048 Hz. This is due to the fact that the
  * signal is very close to the output Nyquist frequency. Care should be taken
  * to downsample to a suitable rate to avoid this type of attenuation.
- * }
- * \end{figure}
  *
- **** </lalLaTeX> */
+*/
+
+/** \cond DONT_DOXYGEN */
 
 #include <stdio.h>
 #include <string.h>
@@ -330,3 +317,4 @@ ParseOptions (int argc, char *argv[])
 
   return;
 }
+/** \endcond */

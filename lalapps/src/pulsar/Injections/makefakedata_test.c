@@ -55,24 +55,24 @@ for the input file is In.data, however a file with another name can
 also be used, as long as the name is specified with the -i command
 line argument. The input file must contain the following information:
 <table><tr><td>
-time-baseline of the SFT</td><td>(Tsft\_in\_sec)</td></tr>
+time-baseline of the SFT</td><td>(Tsft_in_sec)</td></tr>
 <tr><td>number of SFTs to be produced</td><td>(nTsft)</td></tr>
 </table>
 
-frequency of first bin of SFTs       (first\_SFT\_frequency\_in\_Hz)
-band of produced SFT data            (SFT\_freq\_band\_in\_Hz)
+frequency of first bin of SFTs       (first_SFT_frequency_in_Hz)
+band of produced SFT data            (SFT_freq_band_in_Hz)
 standard deviation of noise
-    (for real and imag) SFT          (std\_of\_noise.When=0\_only\_signal\_present)
+    (for real and imag) SFT          (std_of_noise.When=0_only_signal_present)
 amplitude of plus polarization       (Aplus)
 amplitude of cross polarization      (Across)
 polarization angle                   (psi)
 initial phase                        (phi0)
 intrinsic emission frequency
     at the beginning of observation   (f0)
-position of source (eq. coordinates)  (latitude\_in\_degrees)
-                      "               (longitude\_in\_degrees)
-maximum spin-down order               (max\_spin-down\_param\_order)
-name of time-stamps file              (name\_of\_time-stamps\_file)
+position of source (eq. coordinates)  (latitude_in_degrees)
+                      "               (longitude_in_degrees)
+maximum spin-down order               (max_spin-down_param_order)
+name of time-stamps file              (name_of_time-stamps_file)
 The information in parenthesis above shows what appears in the In.data
 input file as a comment to help you remember what the different
 entries are.
@@ -82,7 +82,7 @@ NAME.00001
 NAME.00002
 .....
 and so on.
-The default name for the SFT files is TEST\_SFT however a different
+The default name for the SFT files is TEST_SFT however a different
 name can be specified using the -n command line argument.
 
 How many SFTs will be created is specified in the input file mentioned

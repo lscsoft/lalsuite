@@ -17,66 +17,60 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralAmplitudeCorrectedWaveCV">
-Author: Cokelaer T, McKechan D
-$Id$
-</lalVerbatim>  */
+/**
+\author Cokelaer T, McKechan D
+\file
 
-/*  <lalLaTeX>
+\brief The code \c LALInspiralAmplitudeCorrectedWave generates an time-domain inspiral waveform corresponding to the
+\c approximant \c TaylorT1 and \c PadeT1 as outlined in the
+documentation for the function \c LALInspiralWave.
 
-\subsection{Module \texttt{LALInspiralAmplitudeCorrectedWave.c} and \texttt{LALInspiralAmplitudeCorrectedWaveTemplates.c}}
+\heading{Prototypes}
 
-The code \texttt{LALInspiralAmplitudeCorrectedWave} generates an time-domain inspiral waveform corresponding to the
-\texttt{approximant} \texttt{TaylorT1} and \texttt{PadeT1} as outlined in the
-documentation for the function \texttt{LALInspiralWave}.
+<tt>LALInspiralAmplitudeCorrectedWave()</tt>
+<ul>
+<li> \c signalvec: Output containing the inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralAmplitudeCorrectedWaveCP}
-\index{\verb&LALInspiralAmplitudeCorrectedWave()&}
-\begin{itemize}
-\item {\tt signalvec:} Output containing the inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
 
-\input{LALInspiralAmplitudeCorrectedWaveTemplatesCP}
-\index{\verb&LALInspiralAmplitudeCorrectedWaveTemplates()&}
-\begin{itemize}
-\item {\tt signalvec1:} Output containing the 0-phase inspiral waveform.
-\item {\tt signalvec2:} Output containing the $\pi/2$-phase inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+<tt>LALInspiralAmplitudeCorrectedWaveTemplates()</tt>
+<ul>
+<li> \c signalvec1: Output containing the 0-phase inspiral waveform.</li>
+<li> \c signalvec2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
 
-\subsubsection*{Description}
+\heading{Description}
 
-\texttt{LALInspiralAmplitudeCorrectedWave} is called if the user has specified the
-\texttt{enum} \texttt{approximant} to be
-either \texttt{TaylorT1} or \texttt{PadeT1}.
-{\tt LALInspiralAmplitudeCorrectedWaveTemplates} is exactly the same as \texttt{LALInspiralAmplitudeCorrectedWave,} except that
+\c LALInspiralAmplitudeCorrectedWave is called if the user has specified the
+\c enum \c approximant to be
+either \c TaylorT1 or \c PadeT1.
+\c LALInspiralAmplitudeCorrectedWaveTemplates is exactly the same as <tt>LALInspiralAmplitudeCorrectedWave,</tt> except that
 it generates two templates one for which the starting phase is
-\texttt{params.startPhase} and the other for which the phase is
-\texttt{params.startPhase + $\pi/2$}.
+<tt>params.startPhase</tt> and the other for which the phase is
+<tt>params.startPhase + \f$\pi/2\f$</tt>.
 
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs
-in Equation (\ref{eq:ode2}).
+in Equation\eqref{eq_ode2}.
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\texttt{LALInspiralSetup}\\
-\texttt{LALInspiralChooseModel}\\
-\texttt{LALInspiralVelocity}\\
-\texttt{LALInspiralPhasing1}\\
-\texttt{LALInspiralDerivatives}\\
-\texttt{LALRungeKutta4}.
+\c LALInspiralSetup\\
+\c LALInspiralChooseModel\\
+\c LALInspiralVelocity\\
+\c LALInspiralPhasing1\\
+\c LALInspiralDerivatives\\
+\c LALRungeKutta4.
 
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralAmplitudeCorrectedWaveCV}}
 
-</lalLaTeX>  */
+
+*/
 
 /*
    Interface routine needed to generate time-domain T- or a P-approximant
@@ -112,14 +106,14 @@ LALInspiralAmplitudeCorrectedWaveEngine(
 
 NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVEC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralAmplitudeCorrectedWaveCP"> */
+
 void
 LALInspiralAmplitudeCorrectedWave(
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
- { /* </lalVerbatim>  */
+ {
 
    INT4 count;
 
@@ -144,7 +138,7 @@ LALInspiralAmplitudeCorrectedWave(
 
 NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVETEMPLATESC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralAmplitudeCorrectedWaveTemplatesCP"> */
+
 void
 LALInspiralAmplitudeCorrectedWaveTemplates(
    LALStatus        *status,
@@ -152,7 +146,7 @@ LALInspiralAmplitudeCorrectedWaveTemplates(
    REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
- { /* </lalVerbatim>  */
+ {
 
    INT4 count;
 
@@ -183,7 +177,7 @@ LALInspiralAmplitudeCorrectedWaveTemplates(
 
 NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVEFORINJECTIONC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralAmplitudeCorrectedWaveForInjectionCP"> */
+
 void
 LALInspiralAmplitudeCorrectedWaveForInjection(
 			     LALStatus        *status,
@@ -191,7 +185,7 @@ LALInspiralAmplitudeCorrectedWaveForInjection(
 			     InspiralTemplate *params,
 			     PPNParamStruc  *ppnParams
 			     )
-{ /* </lalVerbatim>  */
+{
 
   INT4        count, i;
   REAL8       p, phiC;

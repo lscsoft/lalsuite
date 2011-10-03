@@ -17,41 +17,29 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALAddVectorsCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
-
-/* <lalLaTeX>
-\subsection{Module \texttt{LALAddVectors.c}}
-Module to add two vectors with weights.
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALAddVectorsCP}
-\idx{LALAddVectors()}
-
-\subsubsection*{Description}
-Given weights \texttt {A1} and \texttt {A2} as in \texttt{AddVectorsIn}
-and vectors \texttt {v1} and \texttt {v2} this code returns vector \texttt{v}
-given by
-
-\texttt{
-v[i] = A1 v1[i] + A2 v2[i];
-}
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
-none
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALAddVectorsCV}}
-</lalLaTeX>  */
 #include <lal/LALNoiseModels.h>
 NRCSID (LALADDVECTORSC, "$Id$");
 
-/*  <lalVerbatim file="LALAddVectorsCP"> */
+/**
+\author Sathyaprakash, B. S.
+\ingroup LALNoiseModels_h
+\brief Function to add two vectors with weights.
+
+\heading{Description}
+Given weights \c A1 and \c A2 as in \c AddVectorsIn
+and vectors \c v1 and \c v2 this code returns vector \c v
+given by
+
+<tt>
+v[i] = A1 v1[i] + A2 v2[i];
+</tt>
+\heading{Algorithm}
+\heading{Uses}
+\code
+none
+\endcode
+
+*/
 void
 LALAddVectors
    (
@@ -59,7 +47,7 @@ LALAddVectors
    REAL4Vector *vector,
    AddVectorsIn in
    )
-{  /*  </lalVerbatim>  */
+{
    INT4 n, i;
 
    INITSTATUS (status, "LALAddVectors", LALADDVECTORSC);

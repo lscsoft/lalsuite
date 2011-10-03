@@ -1,0 +1,4 @@
+opt/lscsoft/lalsimulation/include/lal*
+opt/lscsoft/lalsimulation/lib/*a
+opt/lscsoft/lalsimulation/lib/pkgconfig
+#opt/lscsoft/lalsimulation/share/lal

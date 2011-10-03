@@ -66,12 +66,18 @@ fully LAL-compliant and use only LAL types, so they are included in
 #ifndef _STRINGINPUT_H
 #define _STRINGINPUT_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( STRINGINPUTH, "$Id$");
@@ -173,6 +179,7 @@ separated by (and terminated with) \verb@'\0'@ characters.
 ******************************************************* </lalLaTeX> */
 
 typedef struct tagTokenList {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 nTokens;    /* number of tokens */
   CHAR **tokens;    /* list of pointers to tokens */
   CHARVector *list; /* flattened list of null-terminated tokens */
@@ -243,8 +250,9 @@ LALStringToZ( LALStatus *status, COMPLEX16 *value, const CHAR *string, CHAR **en
 void
 LALStringToGPS( LALStatus *status, LIGOTimeGPS *value, const CHAR *string, CHAR **endptr );
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

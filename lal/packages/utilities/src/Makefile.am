@@ -13,24 +13,20 @@ libutilities_la_SOURCES = \
 	HeapSort.c \
 	Integrate.c \
 	Interpolate.c \
+	LALAdaptiveRungeKutta4.c \
 	LALRunningMedian.c \
 	MatrixOps.c \
 	MersenneRandom.c \
 	ODE.c \
 	Random.c \
-	RngMedBias.c
+	RngMedBias.c \
+	SphericalHarmonics.c
 
-MAINTAINERCLEANFILES = MatrixOps.c
+noinst_HEADERS = MatrixOps_source.c
+
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 
-EXTRA_DIST = \
-	LALMatrixOps.m4 \
-	MatrixOps.m4
-
 dvi-local: .dvi-dep
-
-MatrixOps.c: MatrixOps.m4 LALMatrixOps.m4
-	cd $(srcdir) && @M4@ MatrixOps.m4 > MatrixOps.c
 
 @DVIMKFILE@

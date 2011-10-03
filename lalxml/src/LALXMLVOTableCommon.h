@@ -27,6 +27,11 @@
 #ifndef _LALXMLVOTABLECOMMON_H
 #define _LALXMLVOTABLECOMMON_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 /* C++ protection */
 #ifdef __cplusplus
 extern "C" {
@@ -133,6 +138,7 @@ typedef enum {
  *
  */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   xmlChar *name;		/**< name attribute [required] */
   VOTABLE_DATATYPE datatype;	/**< datatype attribute [required] */
   xmlChar *unit;		/**< unit attribute [optional] */
@@ -142,6 +148,7 @@ typedef struct {
 /** A standard vector of VOTFields
  */
 typedef struct {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;		/**< number of VOTFields */
   VOTField *data;	/**< array of VOTFields */
 } VOTFieldVector;
@@ -212,7 +219,12 @@ VOTABLE_DATATYPE XLALVOTString2Datatype ( const CHAR *datatypeString );
 const char* XLALVOTElement2String ( VOTABLE_ELEMENT element );
 const char* XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute );
 
-
+const char *
+XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of element to write */
+                         const char *fmt,		/**< [in] format string: if NULL we use default-fmt for datatype */
+                         void *arrayPtr,			/**< [in] pointer to array of data values */
+                         UINT4 arrayIndex		/**< [in] index of element to write: arrayPtr[index] */
+                         );
 
 
 /* C++ protection */

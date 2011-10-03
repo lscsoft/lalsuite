@@ -17,141 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="RealFFTCV">
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Module \texttt{RealFFT.c}}
- * \label{ss:RealFFT.c}
- *
- * Functions for performing real FFTs.
- *
- * \subsubsection*{Prototypes}
- * \vspace{0.1in}
- * \input{RealFFTCP}
- * \idx{LALCreateForwardRealFFTPlan()}
- * \idx{LALCreateReverseRealFFTPlan()}
- * \idx{LALDestroyRealFFTPlan()}
- * \idx{LALForwardRealFFT()}
- * \idx{LALReverseRealFFT()}
- * \idx{LALRealPowerSpectrum()}
- * \idx{LALCreateForwardREAL4FFTPlan()}
- * \idx{LALCreateReverseREAL4FFTPlan()}
- * \idx{LALDestroyREAL4FFTPlan()}
- * \idx{LALForwardREAL4FFT()}
- * \idx{LALReverseREAL4FFT()}
- * \idx{LALREAL4PowerSpectrum()}
- * \idx{LALREAL4VectorFFT()}
- *
- * \subsubsection*{Description}
- *
- * This package provides a LAL-style interface with the FFTW fast Fourier
- * transform package~\cite{fj:1998}.
- *
- * The routines \texttt{LALCreateForwardRealFFTPlan()} and
- * \texttt{LALCreateReverseRealFFTPlan()} create plans for computing the
- * forward (real-to-complex) and reverse (complex-to-real) FFTs of a specified
- * size.  The optimum plan is either estimated (reasonably fast) if the measure
- * flag is zero, or measured (can be time-consuming, but gives better
- * performance) if the measure flag is non-zero.  The routine
- * \texttt{LALDestroyRealFFTPlan()} destroys any of these flavours of plans.
- *
- * The routines \texttt{LALForwardRealFFT()} and \texttt{LALReverseRealFFT()}
- * perform the forward (real-to-complex) and reverse (complex-to-real) FFTs
- * using the plans.  The discrete Fourier transform $H_k$,
- * $k=0\ldots\lfloor{n/2}\rfloor$ ($n/2$ rounded down), of a vector $h_j$,
- * $j=0\ldots n-1$, of length $n$ is defined by
- * \[
- *   H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
- * \]
- * and, similarly, the \emph{inverse} Fourier transform is defined by
- * \[
- *   h_j = \frac{1}{n} \sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}
- * \]
- * where $H_k$ for $\lfloor{n/2}\rfloor<k<n$ can be obtained from the relation
- * $H_k=H_{n-k}^\ast$.  The present implementation of the \emph{reverse} FFT
- * omits the factor of $1/n$.
- *
- * The routines in this package require that the vector $h_j$, $j=0\ldots n-1$
- * be real; consequently, $H_k=H_{n-k}^\ast$ ($0\le k\le\lfloor n/2\rfloor$),
- * i.e., the negative frequency Fourier components are the complex conjugate of
- * the positive frequency Fourier components when the data is real.  Therefore,
- * one need compute and store only the first $\lfloor n/2\rfloor+1$ components
- * of $H_k$; only the values of $H_k$ for $k=0\ldots \lfloor n/2\rfloor$ are
- * returned (integer division is rounded down, e.g., $\lfloor 7/2\rfloor=3$).
- *
- * The routine \texttt{LALRealPowerSpectrum()} computes the power spectrum
- * $P_k=2|H_k|^2$, $k=1\ldots \lfloor (n-1)/2\rfloor$,
- * $P_0=|H_0|^2$, and $P_{n/2}=|H_{n/2}|^2$ if $n$ is even, of the data $h_j$,
- * $j=0\ldots n-1$.  The factor of two except at DC and Nyquist accounts for
- * the power in negative frequencies.
- *
- * The routine \texttt{LALREAL4VectorFFT()} is essentially a direct calls to
- * FFTW routines without any re-packing of the data.  This routine should not
- * be used unless the user understands the packing used in FFTW.
- *
- * \subsubsection*{Operating Instructions}
- *
- * \begin{verbatim}
- * const UINT4 n = 32;
- * static LALStatus status;
- * RealFFTPlan            *pfwd = NULL;
- * RealFFTPlan            *prev = NULL;
- * REAL4Vector            *hvec = NULL;
- * COMPLEX8Vector         *Hvec = NULL;
- * REAL4Vector            *Pvec = NULL;
- *
- * LALCreateForwardRealFFTPlan( &status, &pfwd, n );
- * LALCreateReverseRealFFTPlan( &status, &prev, n );
- * LALSCreateVector( &status, &hvec, n );
- * LALCCreateVector( &status, &Hvec, n/2 + 1 );
- * LALSCreateVector( &status, &Pvec, n/2 + 1 );
- *
- * <assign data>
- *
- * LALRealPowerSpectrum( &status, Pvec, hvec, pfwd );
- * LALForwardRealFFT( &status, Hvec, hvec, pfwd );
- * LALReverseRealFFT( &status, hvec, Hvec, pinv );
- *
- * LALDestroyRealFFTPlan( &status, &pfwd );
- * LALDestroyRealFFTPlan( &status, &pinv );
- * LALSDestroyVector( &status, &hvec );
- * LALCDestroyVector( &status, &Hvec );
- * LALSDestroyVector( &status, &Pvec );
- * \end{verbatim}
- *
- * \subsubsection*{Algorithm}
- *
- * The FFTW~\cite{fj:1998} is used.
- *
- * \subsubsection*{Uses}
- *
- * \subsubsection*{Notes}
- *
- * \begin{enumerate}
- * \item The sign convention used here is the opposite of
- * \textit{Numerical Recipes}~\cite{ptvf:1992}, but agrees with the one used
- * by FFTW~\cite{fj:1998} and the other LIGO software components.
- * \item The result of the reverse FFT must be multiplied by $1/n$ to recover
- * the original vector.  This is unlike the \textit{Numerical
- * Recipes}~\cite{ptvf:1992} convension where the factor is $2/n$ for real
- * FFTs.  This is different from the \texttt{datacondAPI} where the
- * normalization constant is applied by default.
- * \item The size $n$ of the transform can be any positive integer; the
- * performance is $O(n\log n)$.  However, better performance is obtained if $n$
- * is the product of powers of 2, 3, 5, 7, and zero or one power of either 11
- * or 13.  Transforms when $n$ is a power of 2 are especially fast.  See
- * Ref.~\cite{fj:1998}.
- * \item All of these routines leave the input array undamaged.  (Except for
- * \verb+LALREAL4VectorFFT+.)
- * \item LALMalloc() is used by all the fftw routines.
- * \end{enumerate}
- *
- * \vfill{\footnotesize\input{RealFFTCV}}
- *
- **** </lalLaTeX> */
-
 #include <string.h>
 
 #include <lal/LALDatatypes.h>
@@ -776,7 +641,7 @@ int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
 
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALCreateForwardREAL4FFTPlan(
     LALStatus    *status,
@@ -784,7 +649,7 @@ LALCreateForwardREAL4FFTPlan(
     UINT4         size,
     INT4          measure
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALCreateForwardREAL4FFTPlan", REALFFTC );
   XLALPrintDeprecationWarning("LALCreateForwardREAL4FFTPlan", "XLALCreateForwardREAL4FFTPlan");
 
@@ -814,7 +679,7 @@ LALCreateForwardREAL4FFTPlan(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALCreateReverseREAL4FFTPlan(
     LALStatus    *status,
@@ -822,7 +687,7 @@ LALCreateReverseREAL4FFTPlan(
     UINT4         size,
     INT4          measure
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALCreateReverseREAL4FFTPlan", REALFFTC );
   XLALPrintDeprecationWarning("LALCreateReverseREAL4FFTPlan", "XLALCreateReverseREAL4FFTPlan");
 
@@ -852,13 +717,13 @@ LALCreateReverseREAL4FFTPlan(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALDestroyREAL4FFTPlan(
     LALStatus    *status,
     REAL4FFTPlan **plan
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALDestroyREAL4FFTPlan", REALFFTC );
   XLALPrintDeprecationWarning("LALDestroyREAL4FFTPlan", "XLALDestroyREAL4FFTPlan");
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -881,7 +746,7 @@ LALDestroyREAL4FFTPlan(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALForwardREAL4FFT(
     LALStatus      *status,
@@ -889,7 +754,7 @@ LALForwardREAL4FFT(
     REAL4Vector    *input,
     REAL4FFTPlan    *plan
     )
-{ /* </lalVerbatim> */
+{
   int code;
   UINT4 n;
   INITSTATUS( status, "LALForwardREAL4FFT", REALFFTC );
@@ -944,7 +809,7 @@ LALForwardREAL4FFT(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALReverseREAL4FFT(
     LALStatus      *status,
@@ -952,7 +817,7 @@ LALReverseREAL4FFT(
     COMPLEX8Vector *input,
     REAL4FFTPlan    *plan
     )
-{ /* </lalVerbatim> */
+{
   int code;
   UINT4 n;
   INITSTATUS( status, "LALReverseREAL4FFT", REALFFTC );
@@ -1012,7 +877,7 @@ LALReverseREAL4FFT(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALREAL4PowerSpectrum (
     LALStatus   *status,
@@ -1020,7 +885,7 @@ LALREAL4PowerSpectrum (
     REAL4Vector *data,
     REAL4FFTPlan *plan
     )
-{ /* </lalVerbatim> */
+{
   int code;
   UINT4 n;
 
@@ -1069,7 +934,7 @@ LALREAL4PowerSpectrum (
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALREAL4VectorFFT(
     LALStatus   *status,
@@ -1077,7 +942,7 @@ LALREAL4VectorFFT(
     REAL4Vector *input,
     REAL4FFTPlan *plan
     )
-{ /* </lalVerbatim> */
+{
   int code;
   INITSTATUS( status, "LALREAL4VectorFFT", REALFFTC );
   XLALPrintDeprecationWarning("LALREAL4VectorFFT", "XLALREAL4VectorFFT");
@@ -1138,7 +1003,7 @@ LALREAL4VectorFFT(
  */
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALCreateForwardREAL8FFTPlan(
     LALStatus    *status,
@@ -1146,7 +1011,7 @@ LALCreateForwardREAL8FFTPlan(
     UINT4         size,
     INT4          measure
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALCreateForwardREAL8FFTPlan", REALFFTC );
   XLALPrintDeprecationWarning("LALCreateForwardREAL8FFTPlan", "XLALCreateForwardREAL8FFTPlan");
 
@@ -1175,7 +1040,7 @@ LALCreateForwardREAL8FFTPlan(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALCreateReverseREAL8FFTPlan(
     LALStatus    *status,
@@ -1183,7 +1048,7 @@ LALCreateReverseREAL8FFTPlan(
     UINT4         size,
     INT4          measure
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALCreateReverseREAL8FFTPlan", REALFFTC );
   XLALPrintDeprecationWarning("LALCreateReverseREAL8FFTPlan", "XLALCreateReverseREAL8FFTPlan");
 
@@ -1212,13 +1077,13 @@ LALCreateReverseREAL8FFTPlan(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALDestroyREAL8FFTPlan(
     LALStatus    *status,
     REAL8FFTPlan **plan
     )
-{ /* </lalVerbatim> */
+{
     INITSTATUS( status, "LALDestroyREAL8FFTPlan", REALFFTC );
   XLALPrintDeprecationWarning("LALDestroyREAL8FFTPlan", "XLALDestroyREAL8FFTPlan");
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1241,7 +1106,7 @@ LALDestroyREAL8FFTPlan(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALForwardREAL8FFT(
     LALStatus      *status,
@@ -1249,7 +1114,7 @@ LALForwardREAL8FFT(
     REAL8Vector    *input,
     REAL8FFTPlan    *plan
     )
-{ /* </lalVerbatim> */
+{
   int code;
   UINT4 n;
   INITSTATUS( status, "LALForwardREAL8FFT", REALFFTC );
@@ -1303,7 +1168,7 @@ LALForwardREAL8FFT(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALReverseREAL8FFT(
     LALStatus      *status,
@@ -1311,7 +1176,7 @@ LALReverseREAL8FFT(
     COMPLEX16Vector *input,
     REAL8FFTPlan    *plan
     )
-{ /* </lalVerbatim> */
+{
   int code;
   UINT4 n;
   INITSTATUS( status, "LALReverseREAL8FFT", REALFFTC );
@@ -1370,7 +1235,7 @@ LALReverseREAL8FFT(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALREAL8PowerSpectrum (
     LALStatus   *status,
@@ -1378,7 +1243,7 @@ LALREAL8PowerSpectrum (
     REAL8Vector *data,
     REAL8FFTPlan *plan
     )
-{ /* </lalVerbatim> */
+{
   int code;
   UINT4 n;
 
@@ -1426,7 +1291,7 @@ LALREAL8PowerSpectrum (
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */
+
 void
 LALREAL8VectorFFT(
     LALStatus   *status,
@@ -1434,7 +1299,7 @@ LALREAL8VectorFFT(
     REAL8Vector *input,
     REAL8FFTPlan *plan
     )
-{ /* </lalVerbatim> */
+{
   int code;
   INITSTATUS( status, "LALREAL8VectorFFT", REALFFTC );
   XLALPrintDeprecationWarning("LALREAL8VectorFFT", "XLALREAL8VectorFFT");

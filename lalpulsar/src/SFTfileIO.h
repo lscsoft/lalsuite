@@ -164,6 +164,11 @@ i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
 #ifndef _SFTFILEIO_H  	/* Double-include protection. */
 #define _SFTFILEIO_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 /* includes */
 #include <stdlib.h>
 #include <math.h>
@@ -234,6 +239,7 @@ NRCSID (SFTFILEIOH, "$Id$");
  */
 typedef struct
 {
+  SWIGLAL_STRUCT_LALALLOC();
   CHAR *detector;			/**< 2-char channel-prefix describing the detector (eg 'H1', 'H2', 'L1', 'G1' etc) */
   LIGOTimeGPS *startTime;		/**< only include SFTs starting >= startTime */
   LIGOTimeGPS *endTime;			/**< only include SFTs starting <= endTime */
@@ -246,6 +252,7 @@ typedef struct
  */
 typedef struct
 {
+  SWIGLAL_STRUCT_LALALLOC();
   struct tagSFTLocator *locator; 	/**< *internal* description of where to find this SFT [opaque!] */
   SFTtype header;			/**< SFT-header info */
   CHAR *comment;			/**< comment-entry in SFT-header (v2 only) */
@@ -258,6 +265,7 @@ typedef struct
 /** An "SFT-catalogue": a vector of SFTdescriptors, as returned by LALSFTdataFind() */
 typedef struct
 {
+  SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;			/**< number of SFTs in catalog */
   SFTDescriptor *data;		/**< array of data-entries describing matched SFTs */
 } SFTCatalog;
@@ -291,27 +299,32 @@ void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fnam
 void LALCheckSFTs ( LALStatus *, INT4 *check_result, const CHAR *file_pattern, SFTConstraints *constraints );
 void LALCheckSFTCatalog ( LALStatus *status, INT4 *check_result, SFTCatalog *catalog );
 
-void LALReadTimestampsFile (LALStatus* , LIGOTimeGPSVector **timestamps, const CHAR *fname);
+LIGOTimeGPSVector *XLALReadTimestampsFile ( const CHAR *fname );
 
 void LALDestroySFTCatalog ( LALStatus *status, SFTCatalog **catalog );
 void LALSFTtimestampsFromCatalog (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTCatalog *catalog );
 
 SFTVector* XLALLoadSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 MultiSFTVector* XLALLoadMultiSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
-SFTCatalog* XLALDestroySFTCatalog ( SFTCatalog **catalog );
-LIGOTimeGPSVector *XLALgetSFTtimestamps ( const SFTVector *sfts );
+void XLALDestroySFTCatalog ( SFTCatalog **catalog );
 INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog);
 const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
+
+/*================================================================================
+ * DEPRECATED LAL-API [use XLAL-API whenever available]
+ *================================================================================*/
+void LALReadTimestampsFile (LALStatus* , LIGOTimeGPSVector **timestamps, const CHAR *fname); /* use XLALReadTimestampsFile() instead! */
+
 
 /*================================================================================
  * OBSOLETE v1-only API [DEPRECATED!]
  *================================================================================*/
 
-
 /** [DEPRECATED] This structure contains the header-info contained in an SFT-file of specification
  * version v1.0.
  */
 typedef struct tagSFTHeader {
+  SWIGLAL_STRUCT_LALALLOC();
   REAL8  version;		/**< SFT version-number (currently only 1.0 allowed )*/
   INT4   gpsSeconds;		/**< gps start-time (seconds)*/
   INT4   gpsNanoSeconds;	/**< gps start-time (nanoseconds) */

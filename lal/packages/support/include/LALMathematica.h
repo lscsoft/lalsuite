@@ -148,11 +148,22 @@
 #ifndef _LALMATHEMATICA_H
 #define _LALMATHEMATICA_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
 
 
 /* <lalErrTable file="LALMathematicaHE"> */
@@ -189,6 +200,7 @@ NRCSID (LALMATHEMATICAH, "$Id$");
 
 /* <lalVerbatim file="LALMathematicaHT"> */
 typedef struct Math3DPointList{
+  SWIGLAL_STRUCT_LALALLOC();
   struct Math3DPointList *next;
   REAL4 x;
   REAL4 y;
@@ -197,6 +209,7 @@ typedef struct Math3DPointList{
   }Math3DPointList;
 
 typedef struct MathNDPointList{
+  SWIGLAL_STRUCT_LALALLOC();
   struct MathNDPointList *next;
   REAL4Vector *coordinates;
   INT4 dimension;
@@ -216,5 +229,11 @@ LALMathNDPlot( LALStatus *status,
                MathNDPointList *first,
                INT4 *ntiles,
                REAL4 *pointSize );
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
 
 #endif /* _LALMATHEMATICA_H */

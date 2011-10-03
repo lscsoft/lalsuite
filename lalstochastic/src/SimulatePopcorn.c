@@ -17,63 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-
-/*
-<lalVerbatim file="SimulatePopcornCV">
-Author: Tania Regimbau
-$Id$
-</lalVerbatim>
-<lalLaTeX>
-\subsection{Module \texttt{SimulatePopcorn.c}}
-\label{ss:SimulatePopcorn.c}
-
-Routine for simulating whitened time-domain signals in a pair
-of detectors that arises from low duty cycle astrophysical backgrounds
-
-\subsubsection*{Prototypes}
-\input{SimulatePopcornCP}
-\idx{LALSimPopcornTimeSeries()}
-
-\subsubsection*{Description}
-
-This routines  simulate stochastic backgrounds of astrophysical origin produced by the superposition of 'burst sources' since the beginning of the stellar activity. Depending on the ratio between the burst duration and the mean arrival time interval between events, such signals may be sequences of resolved bursts, 'popcorn noises' or continuous backgrounds.
-
-\subsubsection*{Algorithm}
-
-The two unwhitened time series are produced according to the procedure discribed in Coward,Burman & Blair, 2002, MNRAS, 329.
-1) the arrival time of the events is randomly selected assuming a Poisson statistic.
-2) for each event, the distance z to the source is randomly selected. The probability distribution is given by normalizing the differential cosmic star formation rate.
-3) for each event, the direction of arrival of the wave as well as the angle of polarization are randomly selected in order to compute the beam factors of the antenna.
-
-4) the resulting signal is the sum of the individual strain amplitudes expressed in our frame.
-
-The frequency domain strains $\widetilde{o}_{1}$ and $\widetilde{o}_{2} in the output of the two detectors are constructed as follow:
-\begin {equation}
-\widetilde{o}_{1}  = \widetilde{R}_{1}\widetilde{h}_{1}
-\end {equation}
-\begin {equation}
-\widetilde{o}_{2}  = \widetilde{R}_{2}(\widetilde{h}_{1}\gamma + \widetilde{h}_{1}\sqrt{1-\gamma^{2}})
-\end {equation}
-where  $widetilde{h}_{i}$ is the FFT and $\widetilde{R}_{i}$  the response function of the ith detector.
-In the second equation,  $\gamma$ is the overlap reduction function.
-
-Then the inverse FFTs give the whitened time series $o_{1}$ and $o_{2}$.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALForwardRealFFT()
-LALReverseRealFFT()
-LALOverlapReductionFunction()
-LALUniformDeviate()
-LALSRombergIntegrate()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-The cosmological model considered here corresponds to a flat Einstein de Sitter Universe with $\Omega_{matter}=0.3$, $\Omega_{vacuum}=0.7 and $h_{0}=0.7. The code can be easily adapted to any cosmological model. The same for the cosmic star formation rate (Madau \& Porciani, 2001, ApJ, 548, 522).
-
-</lalLaTeX> */
-
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -223,6 +166,59 @@ static void Fscalfunc (REAL4 *result, REAL4 Fp, REAL4 Fm)
    *result=sqrt(Fp*Fp+Fm*Fm);
  }
 
+/**
+\author Tania Regimbau
+\ingroup SimulatePopcorn_h
+
+\brief Routine for simulating whitened time-domain signals in a pair
+of detectors that arises from low duty cycle astrophysical backgrounds.
+
+\heading{Description}
+
+This routines  simulate stochastic backgrounds of astrophysical origin produced by the superposition
+of 'burst sources' since the beginning of the stellar activity. Depending on the ratio between the
+burst duration and the mean arrival time interval between events, such signals may be sequences of
+resolved bursts, 'popcorn noises' or continuous backgrounds.
+
+\heading{Algorithm}
+
+The two unwhitened time series are produced according to the procedure discribed in Coward,Burman & Blair, 2002, MNRAS, 329.
+<ol>
+<li> the arrival time of the events is randomly selected assuming a Poisson statistic.</li>
+<li> for each event, the distance z to the source is randomly selected. The probability distribution is given by normalizing the differential cosmic star formation rate.</li>
+<li> for each event, the direction of arrival of the wave as well as the angle of polarization are randomly selected in order to compute the beam factors of the antenna.</li>
+
+<li>the resulting signal is the sum of the individual strain amplitudes expressed in our frame.</li>
+</ol>
+
+The frequency domain strains \f$\widetilde{o}_{1}\f$ and \f$\widetilde{o}_{2}\f$ in the output of the two detectors are constructed as follow:
+\f{equation}{
+\widetilde{o}_{1}  = \widetilde{R}_{1}\widetilde{h}_{1}
+\f}
+\f{equation}{
+\widetilde{o}_{2}  = \widetilde{R}_{2}(\widetilde{h}_{1}\gamma + \widetilde{h}_{1}\sqrt{1-\gamma^{2}})
+\f}
+where  \f$\widetilde{h}_{i}\f$ is the %FFT and \f$\widetilde{R}_{i}\f$  the response function of the ith detector.
+In the second equation,  \f$\gamma\f$ is the overlap reduction function.
+
+Then the inverse %FFTs give the whitened time series \f$o_{1}\f$ and \f$o_{2}\f$.
+
+\heading{Uses}
+\code
+LALForwardRealFFT()
+LALReverseRealFFT()
+LALOverlapReductionFunction()
+LALUniformDeviate()
+LALSRombergIntegrate()
+\endcode
+
+\heading{Notes}
+
+The cosmological model considered here corresponds to a flat Einstein de Sitter Universe with \f$\Omega_{matter}=0.3\f$,
+\f$\Omega_{vacuum}=0.7\f$ and \f$h_{0}=0.7\f$. The code can be easily adapted to any cosmological model.
+The same for the cosmic star formation rate (Madau \& Porciani, 2001, ApJ, 548, 522).
+
+*/
 void
 LALSimPopcornTimeSeries (  LALStatus                *status,
                            SimPopcornOutputStruc    *output,
@@ -283,9 +279,9 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   ATTATCHSTATUSPTR (status);
 
 
-  /***** check params/input/output  *****/
+  /* params/input/output  */
 
-  /** output **/
+  /* output */
   ASSERT(output !=NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
@@ -315,7 +311,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
 
-  /** input **/
+  /* input */
   ASSERT(input != NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
@@ -355,7 +351,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
         SIMULATEPOPCORNH_MSGENULLP);
 
 
-  /** parameters **/
+  /* parameters */
   /* length of the time series is non-zero  */
   ASSERT(params->paramslength > 0, status,
         SIMULATEPOPCORNH_EBV,
@@ -366,7 +362,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
         SIMULATEPOPCORNH_EBV,
         SIMULATEPOPCORNH_MSGEBV);
 
-  /** read input parameters **/
+  /* read input parameters */
   duration=input->inputduration;
   lambda=input->inputlambda;
   site0 = input->inputsite0;
@@ -383,7 +379,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   deltat = 1./srate;
   deltaf = 1./length;
 
-  /** check for mismatches **/
+  /* check for mismatches **/
   if (input->wfilter0->data->length != Nfreq)
     {
       ABORT(status,
@@ -424,7 +420,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
            SIMULATEPOPCORNH_MSGEMMDELTA);
     }
 
-  /*********** everything is O.K here  ***********/
+  /* everything is O.K here  ***********/
   LALCreateForwardRealFFTPlan( status->statusPtr, &pfwd, N, 0 );
   LALCreateReverseRealFFTPlan( status->statusPtr, &prev, N, 0 );
   LALSCreateVector( status->statusPtr, &h, N );

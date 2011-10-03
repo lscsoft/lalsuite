@@ -112,6 +112,7 @@ int XLALFrFileCheckSum( FrFile *iFile )
 {
   static const char *func = "XLALFrFileCheckSum";
   FrameH *frame = NULL;
+  int retval = 0;
   FRBOOL chkSumFiFlag = iFile->chkSumFiFlag;
   FRBOOL chkSumFrFlag = iFile->chkSumFrFlag;
   iFile->chkSumFiFlag = FR_YES;
@@ -130,13 +131,14 @@ int XLALFrFileCheckSum( FrFile *iFile )
   }
   if ( iFile->chkTypeFiRead == 0 ) {
     XLALPrintWarning( "XLAL Warning - %s: missing checksum\n", func );
-    return 1;
-  }
-  if ( iFile->chkSumFiRead != iFile->chkSumFi ) {
+    retval = 1; /* missing checksum */
+  } else if ( iFile->chkSumFiRead != iFile->chkSumFi ) {
     XLALPrintError( "XLAL Error - %s: bad checksum\n", func );
-    return -1;
-  }
-  return 0;
+    retval = -1; /* bad checksum */
+  } else
+    retval = 0;
+  FrFileIRewind(iFile);
+  return retval;
 }
 
 
@@ -774,6 +776,37 @@ int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series )
     XLAL_ERROR( func, XLAL_EFUNC );
 
   sim = FrSimDataNew( frame, series->name, series->deltaT, series->data->length, -32 );
+  if ( ! sim ) {
+    FrVectFree( vect );
+    XLAL_ERROR( func, XLAL_EERR );
+  }
+  FrVectFree( sim->data );
+  sim->data = vect;
+
+  /* time offset: compute this from frame time */
+  frameEpoch.gpsSeconds     = frame->GTimeS;
+  frameEpoch.gpsNanoSeconds = frame->GTimeN;
+  sim->timeOffset = XLALGPSDiff( &series->epoch, &frameEpoch );
+
+  /* remaining metadata */
+  sim->fShift = 0;
+  sim->phase  = 0;
+
+  return 0;
+}
+
+int XLALFrameAddREAL8TimeSeriesSimData( FrameH *frame, REAL8TimeSeries *series )
+{
+  static const char * func = "XLALFrameAddREAL8TimeSeriesSimData";
+  LIGOTimeGPS frameEpoch;
+  FrSimData *sim;
+  FrVect *vect;
+
+  vect = XLALFrVectREAL8TimeSeries( series );
+  if ( ! vect )
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  sim = FrSimDataNew( frame, series->name, series->deltaT, series->data->length, -64 );
   if ( ! sim ) {
     FrVectFree( vect );
     XLAL_ERROR( func, XLAL_EERR );
