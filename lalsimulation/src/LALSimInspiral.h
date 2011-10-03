@@ -733,6 +733,48 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
 		int phaseO                 /**< twice PN phase order */
 		);
 
+/**
+ * Driver routine to compute a non-precessing post-Newtonian inspiral waveform
+ * in the frequency domain, described in http://arxiv.org/abs/1107.1267.
+ */
+int XLALSimInspiralTaylorF2ReducedSpin(
+		COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+		const LIGOTimeGPS *tStart,       /**< initial time (s) */
+		const REAL8 phiStart,            /**< initial GW phase (rad) */
+		const REAL8 deltaF,              /**< frequency resolution */
+		const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
+		const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
+		const REAL8 chi,                 /**< dimensionless aligned-spin param */
+		const REAL8 fStart,              /**< start GW frequency (Hz) */
+		const REAL8 r,                   /**< distance of source (m) */
+		const UINT4 O                    /**< twice PN phase order */
+		);
+
+/**
+ * Compute the chirp time of the "reduced-spin" templates, described in
+ * http://arxiv.org/abs/1107.1267.
+*/
+REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
+		const REAL8 fStart ,       /**< start GW frequency (Hz) */
+		const REAL8 m1_SI,   /**< mass of companion 1 (kg) */
+		const REAL8 m2_SI,   /**< mass of companion 2 (kg) */
+		const REAL8 s1z,     /**< initial value of S1z, the dimensionless aligned spin of companion 1 */
+		const REAL8 s2z,     /**< initial value of S2z, the dimensionless aligned spin of companion 2 */
+		const UINT4 O        /**< twice PN phase order */
+		);
+
+/**
+ * Compute the dimensionless, spin-aligned parameter chi as used in the
+ * TaylorF2RedSpin waveform. This is different from chi in IMRPhenomB!
+ * Reference: http://arxiv.org/abs/1107.1267, paragraph 3.
+ */
+REAL8 XLALSimInspiralTaylorF2ReducedSpinComputeChi(
+    const REAL8 m1,                          /**< mass of companion 1 */
+    const REAL8 m2,                          /**< mass of companion 2 */
+    const REAL8 s1z,                         /**< dimensionless spin of companion 1 */
+    const REAL8 s2z                          /**< dimensionless spin of companion 2 */
+);
+
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
