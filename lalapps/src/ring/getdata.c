@@ -85,6 +85,59 @@ REAL4TimeSeries * get_simulated_data(
 }
 
 /* create simulated data */
+REAL4TimeSeries * get_simulated_data_new(
+    const char  *channelName,
+    LIGOTimeGPS *epoch,
+    REAL8        duration,
+    int          dataType,
+    REAL8        sampleRate,
+    UINT4        simSeed,
+    REAL4        simScale,
+    REAL8FrequencySeries  *psd
+    )
+{
+  REAL8TimeSeries *series;
+  REAL4TimeSeries *output;
+  UINT4 npoints;
+  UINT4 j;
+
+  gsl_rng *rng;
+  gsl_rng_env_setup();
+  rng = gsl_rng_alloc(gsl_rng_default);
+  gsl_rng_set( rng, simSeed );
+
+  verbose( "creating simulated white gaussian noise with random seed %u\n",
+      simSeed );
+
+  series = LALCalloc( 1, sizeof( *series ) );
+  output = LALCalloc( 1, sizeof( *serires) );
+  
+  series->data = XLALCreateREAL8Vector( npoints );
+  output->data = XLALCreateREAL4Vector( npoints );
+
+  XLALSimNoise(series, 0 , psd, rng)
+
+  for ( j = 0; j < series->data->length; ++j )
+    output->data->data[j] = series->data->data[j] * simScale;
+
+  XLALDestroyREAL8Vector( series->data );
+  LALFree( series);
+
+  /* set metadata */
+  snprintf( output->name, sizeof( output->name ), "%s_SIM", channelName );
+  output->epoch  = *epoch;
+  output->deltaT = 1.0/sampleRate;
+  if ( dataType == LALRINGDOWN_DATATYPE_SIM )
+    output->sampleUnits = lalStrainUnit;
+  else
+    output->sampleUnits = lalADCCountUnit;
+
+  return output
+}
+
+
+
+/* create no noise data */
 REAL4TimeSeries * get_zero_data(
     const char  *channelName,
     LIGOTimeGPS *epoch,
