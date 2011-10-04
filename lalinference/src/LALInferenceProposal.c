@@ -278,7 +278,7 @@ void PTMCMCLALBlockProposal(LALInferenceRunState *runState, LALInferenceVariable
 	{ 
 		if(paraHead->vary==LALINFERENCE_PARAM_LINEAR || paraHead->vary==LALINFERENCE_PARAM_CIRCULAR){
 			
-			if (!strcmp(paraHead->name,"massratio") || !strcmp(paraHead->name,"time") || !strcmp(paraHead->name,"a_spin2") || !strcmp(paraHead->name,"a_spin1")){
+			if (!strcmp(paraHead->name,"massratio") || !strcmp(paraHead->name,"asym_massratio") || !strcmp(paraHead->name,"time") || !strcmp(paraHead->name,"a_spin2") || !strcmp(paraHead->name,"a_spin1")){
 				*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
 			}else if (!strcmp(paraHead->name,"polarisation") || !strcmp(paraHead->name,"phase") || !strcmp(paraHead->name,"inclination")){
 				*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
@@ -398,6 +398,8 @@ void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALInferenceVariabl
         if (LALInferenceGetProcParamVal(runState->commandLine, "--zeroLogLike")) {
           if (!strcmp(param->name, "massratio")) {
             sigma = 0.02;
+          } else if (!strcmp(param->name, "asym_massratio")) {
+            sigma = 0.08;
           } else if (!strcmp(param->name, "chirpmass")) {
             sigma = 1.0;
           } else if (!strcmp(param->name, "time")) {
@@ -432,7 +434,7 @@ void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALInferenceVariabl
           }
           *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*sigma;
         } else {
-          if (!strcmp(param->name,"massratio") || !strcmp(param->name,"time") || !strcmp(param->name,"a_spin2") || !strcmp(param->name,"a_spin1")){
+          if (!strcmp(param->name,"massratio") || !strcmp(param->name,"asym_massratio") || !strcmp(param->name,"time") || !strcmp(param->name,"a_spin2") || !strcmp(param->name,"a_spin1")){
             *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
           } else if (!strcmp(param->name,"polarisation") || !strcmp(param->name,"phase") || !strcmp(param->name,"inclination")){
             *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;

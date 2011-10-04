@@ -534,6 +534,8 @@ const char *LALInferenceTranslateInternalToExternalParamName(const char *inName)
     return "mc";
   } else if (!strcmp(inName, "massratio")) {
     return "eta";
+  } else if (!strcmp(inName, "asym_massratio")) {
+    return "q";
   } else if (!strcmp(inName, "rightascension")) {
     return "ra";
   } else if (!strcmp(inName, "declination")) {
@@ -983,6 +985,10 @@ char *colNameToParamName(const char *colName) {
 
   else if (!strcmp(colName, "eta")) {
     retstr=XLALStringDuplicate("massratio");
+  }
+
+  else if (!strcmp(colName, "q")) {
+    retstr=XLALStringDuplicate("asym_massratio");
   }
 
   else if (!strcmp(colName, "dec")) {
