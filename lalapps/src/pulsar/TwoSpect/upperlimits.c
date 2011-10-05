@@ -192,29 +192,26 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    struct ncx2cdf_solver_params pars;
    
    INT4 totaliterations = 0;
-   REAL8 dailyharmonic = params->Tobs/(24.0*3600);
+   REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
    REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
-   INT4 testlocationinmaximavector = 0;
    for (ii=minrows; ii<=ihsmaxima->rows; ii++) {
       REAL8 loudestoutlier = 0.0, loudestoutlierminusnoise = 0.0, loudestoutliernoise = 0.0;
       INT4 jjbinofloudestoutlier = 0, locationofloudestoutlier = 0;
       for (jj=0; jj<ffdata->numfbins-(ii-1); jj++) {
          
          INT4 locationinmaximavector = (ii-2)*ffdata->numfbins - ((ii-1)*(ii-1)-(ii-1))/2 + jj;
-         if (locationinmaximavector!=testlocationinmaximavector) {
-            fprintf(stderr, "%s: location in maximavector is skipping!\n", fn);
-            XLAL_ERROR_VOID(fn, XLAL_EFAILED);
-         }
+         
          INT4 location = ihsmaxima->locations->data[locationinmaximavector];
          
-         REAL8 noise = aveNoise->data[location] + aveNoise->data[location*2] + aveNoise->data[location*3] + aveNoise->data[location*4] + aveNoise->data[location*5];
-         for (kk=1; kk<=5; kk++) if (fabs(dailyharmonic-kk*location)<=1.0 || fabs(dailyharmonic2-kk*location)<=1.0 || fabs(dailyharmonic3-kk*location)<=1.0 || fabs(dailyharmonic4-kk*location)<=1.0) noise -= aveNoise->data[location*kk];
+         REAL8 noise = 0.0;
+         for (kk=1; kk<=params->ihsfactor; kk++) if (!(fabs(dailyharmonic-kk*location)<=1.0 || fabs(dailyharmonic2-kk*location)<=1.0 || fabs(dailyharmonic3-kk*location)<=1.0 || fabs(dailyharmonic4-kk*location)<=1.0)) noise += aveNoise->data[location*kk];
          REAL8 totalnoise = 0.0;
          for (kk=0; kk<ii; kk++) totalnoise += noise*fbinavgs->data[jj+kk];
          REAL8 ihsminusnoise = ihsmaxima->maxima->data[locationinmaximavector] - totalnoise;
          
          REAL8 fsig = params->fmin + (0.5*(ii-1.0) + jj)/params->Tcoh;
          
+         //if (ihsminusnoise>loudestoutlierminusnoise) {
          if (ihsminusnoise>loudestoutlierminusnoise && (fsig>=params->ULfmin && fsig<=params->ULfmin+params->ULfspan)) {
             loudestoutlier = ihsmaxima->maxima->data[locationinmaximavector];
             loudestoutliernoise = totalnoise;
@@ -222,9 +219,10 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
             locationofloudestoutlier = ihsmaxima->locations->data[locationinmaximavector];
             jjbinofloudestoutlier = jj;
          }
-         
-         testlocationinmaximavector++;
       } /* for jj < ffdata->numfbins-(ii-1) */
+      
+      //TODO: comment or remove this
+      fprintf(stderr, "%d %.6f %.6f %d %d\n", ii, loudestoutliernoise, loudestoutlierminusnoise, locationofloudestoutlier, jjbinofloudestoutlier);
       
       REAL8 initialguess = ncx2inv(0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
       if (XLAL_IS_REAL8_FAIL_NAN(initialguess)) {
@@ -272,7 +270,8 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
       
       totaliterations += jj;
       
-      REAL8 h0 = ihs2h0(root+pars.dof, params);
+      //REAL8 h0 = ihs2h0(root+pars.dof, params);
+      REAL8 h0 = ihs2h0(root, params);
       if (XLAL_IS_REAL8_FAIL_NAN(h0)) {
          fprintf(stderr, "%s: ihs2h0() failed.\n", fn);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);

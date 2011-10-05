@@ -27,6 +27,7 @@
 
 REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize);
 REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize);
+REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize);
 
 REAL8 calcMeanD(REAL8Vector *vector);
 REAL8 calcStddevD(REAL8Vector *vector);

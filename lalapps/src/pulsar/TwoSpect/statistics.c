@@ -725,6 +725,40 @@ REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numbero
    return output;
    
 }
+REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize)
+{
+   
+   const CHAR *fn = __func__;
+   
+   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   if (rng==NULL) {
+      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", fn);
+      XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
+   }
+   srand(time(NULL));
+   UINT8 randseed = rand();
+   gsl_rng_set(rng, randseed);
+   //gsl_rng_set(rng, 0);
+   
+   REAL4Vector *output = XLALCreateREAL4Vector(sampleSize);
+   if (output==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, sampleSize);
+      XLAL_ERROR_NULL(fn, XLAL_EFUNC);
+   }
+   
+   INT4 ii;
+   for (ii=0; ii<sampleSize; ii++) {
+      output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
+      while (output->data[ii]==0.0) {
+         output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
+      }
+   }
+   
+   gsl_rng_free(rng);
+   
+   return output;
+   
+}
 
 
 //////////////////////////////////////////////////////////////
