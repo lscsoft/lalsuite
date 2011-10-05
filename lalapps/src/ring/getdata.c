@@ -101,6 +101,8 @@ REAL4TimeSeries * get_simulated_data_new(
   UINT4 npoints;
   UINT4 j;
 
+  npoints = duration * sampleRate;
+
   gsl_rng *rng;
   gsl_rng_env_setup();
   rng = gsl_rng_alloc(gsl_rng_default);
@@ -110,12 +112,12 @@ REAL4TimeSeries * get_simulated_data_new(
       simSeed );
 
   series = LALCalloc( 1, sizeof( *series ) );
-  output = LALCalloc( 1, sizeof( *serires) );
+  output = LALCalloc( 1, sizeof( *series) );
   
   series->data = XLALCreateREAL8Vector( npoints );
   output->data = XLALCreateREAL4Vector( npoints );
 
-  XLALSimNoise(series, 0 , psd, rng)
+  XLALSimNoise(series, 0 , psd, rng);
 
   for ( j = 0; j < series->data->length; ++j )
     output->data->data[j] = series->data->data[j] * simScale;
@@ -132,7 +134,7 @@ REAL4TimeSeries * get_simulated_data_new(
   else
     output->sampleUnits = lalADCCountUnit;
 
-  return output
+  return output;
 }
 
 

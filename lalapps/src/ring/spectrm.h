@@ -29,6 +29,12 @@
  */
 
 #include <lal/LALDatatypes.h>
+#include <stdio.h>
+#include <gsl/gsl_rng.h>
+#include <lal/LALStdlib.h>
+#include <lal/FrequencySeries.h>
+#include <lal/TimeSeries.h>
+#include <lal/LALSimNoise.h>
 
 
 /* routine to compute an average spectrum from time series data */
@@ -46,6 +52,7 @@ REAL4FrequencySeries *compute_average_spectrum(
 REAL4FrequencySeries *generate_theoretical_psd(
     REAL4                    deltaT,
     REAL8                    segmentDuration,
+    REAL8                    strideDuration,
     UINT4                    spectrumNumber
     );
 
