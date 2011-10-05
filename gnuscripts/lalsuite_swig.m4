@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011
 #
-# serial 8
+# serial 9
 
 # basic version string comparison
 # can only handle numeric versions separated by periods
@@ -182,23 +182,24 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
     AC_SUBST(SWIG_USER_ENV)
 
     # path SWIG should look in for header files:
-    # keep any -I options in CPPFLAGS, without the -I prefix
+    #  - keep any -I options in CPPFLAGS, without the -I prefix
     SWIG_INCLPATH=[`for n in ${swig_CPPFLAGS}; do echo $n | ${SED} 's|^-I||p;d'; done`]
     SWIG_INCLPATH=[`echo ${SWIG_INCLPATH}`]   # get rid of newlines
     AC_SUBST(SWIG_INCLPATH)
 
-    # path SWIG should look in for libraries:
-    # keep any -L options in _LIB variables, without the -L prefix
-    # keep any "lib*.la" files, replace filename with $objdir;
-    swig_regex=['s|^-L||p;s|lib[^/][^/]*\.la|'"${objdir}"'|p;d']
-    SWIG_LIBPATH="${LAL_LIBS} ${LALSUPPORT_LIBS} ${swig_LIBS}"
-    SWIG_LIBPATH=[`for n in ${SWIG_LIBPATH}; do echo $n | ${SED} "${swig_regex}"; done`]
+    # path SWIG should look in for (pre-installed) libraries:
+    #  - keep any -L options in _LIB variables, without the -L prefix
+    #  - keep any "lib*.la" files, replace filename with $objdir (pre-install)
+    swig_all_libs="${LAL_LIBS} ${LALSUPPORT_LIBS} ${swig_LIBS}"
+    SWIG_LIBPATH=[`for n in ${swig_all_libs}; do echo $n | ${SED} 's|^-L||p;d'; done`]
     SWIG_LIBPATH=[`echo ${SWIG_LIBPATH}`]   # get rid of newlines
-    # add pre-install locations for lal, lalsupport, and lal* libraries
-    SWIG_LIBPATH="${SWIG_LIBPATH} \$(top_builddir)/lib/${objdir}"
-    SWIG_LIBPATH="${SWIG_LIBPATH} \$(top_builddir)/packages/support/src/${objdir}"
-    SWIG_LIBPATH="${SWIG_LIBPATH} \$(top_builddir)/src/${objdir}"
     AC_SUBST(SWIG_LIBPATH)
+    SWIG_PREINST_LIBPATH=[`for n in ${swig_all_libs}; do echo $n | ${SED} 's|lib[^/][^/]*\.la|'"${objdir}"'|p;d'; done`]
+    SWIG_PREINST_LIBPATH=[`echo ${SWIG_PREINST_LIBPATH}`]   # get rid of newlines
+    SWIG_PREINST_LIBPATH="${SWIG_PREINST_LIBPATH} \$(top_builddir)/lib/${objdir}"
+    SWIG_PREINST_LIBPATH="${SWIG_PREINST_LIBPATH} \$(top_builddir)/src/${objdir}"
+    SWIG_PREINST_LIBPATH="${SWIG_PREINST_LIBPATH} \$(top_builddir)/packages/support/src/${objdir}"
+    AC_SUBST(SWIG_PREINST_LIBPATH)
 
   ],[
 

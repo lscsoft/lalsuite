@@ -15,8 +15,8 @@ $(swig_wrapobj) :
 # test SWIG wrapping module
 check .PHONY : check-swig
 check-swig : $(swig_wrapobj)
-	test -f $(swig_wrapcheck).m && \
-	$(swig_ldlibpath) \
+	test -f $(swig_wrapcheck).m && env \
+	$(swig_ldlibpathname)="$(swig_ldlibpath):$${$(swig_ldlibpathname)}" \
 	OCTAVE_PATH="$${PWD}:$${OCTAVE_PATH}" \
 	$(OCTAVE) $(swig_wrapcheck).m
 

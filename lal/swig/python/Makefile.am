@@ -17,8 +17,8 @@ $(swig_wrapobj) :
 # test SWIG wrapping module
 check .PHONY : check-swig
 check-swig : $(swig_wrapobj)
-	test -f $(swig_wrapcheck).py && \
-	$(swig_ldlibpath) \
+	test -f $(swig_wrapcheck).py && env \
+	$(swig_ldlibpathname)="$(swig_ldlibpath):$${$(swig_ldlibpathname)}" \
 	PYTHONPATH="$${PWD}:$${PYTHONPATH}" \
 	$(PYTHON) $(swig_wrapcheck).py
 
