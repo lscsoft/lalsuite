@@ -99,6 +99,7 @@ swig_libdir = $(libdir)
 swig_libs = $(sort lal lalsupport $(swig_lib))
 
 # export variables to SWIG wrapping library build script
+export build_vendor
 export PACKAGE_NAME
 export PACKAGE_VERSION
 export swig_wrapname
