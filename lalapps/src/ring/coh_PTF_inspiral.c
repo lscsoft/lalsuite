@@ -184,10 +184,10 @@ int main(int argc, char **argv)
    * read the data, generate segments and the PSD                           *
    *------------------------------------------------------------------------*/
 
-  timeSlideVectors=LALCalloc(1, LAL_NUM_IFO*
+  timeSlideVectors=LALCalloc(1, (LAL_NUM_IFO+1)*
                                 params->numOverlapSegments*sizeof(REAL4));
   memset(timeSlideVectors, 0,
-         LAL_NUM_IFO * params->numOverlapSegments * sizeof(REAL4));
+         (LAL_NUM_IFO+1) * params->numOverlapSegments * sizeof(REAL4));
 
   /* loop over ifos */ 
   for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
@@ -365,14 +365,6 @@ int main(int argc, char **argv)
 
   numPoints = floor(params->segmentDuration * params->sampleRate + 0.5);
 
-  /* Initialize some of the structures */
-  ifoNumber           = LAL_NUM_IFO;
-  channel[ifoNumber]  = NULL;
-  invspec[ifoNumber]  = NULL;
-  segments[ifoNumber] = NULL;
-  PTFM[ifoNumber]     = NULL;
-  PTFN[ifoNumber]     = NULL;
-  PTFqVec[ifoNumber]  = NULL;
   struct bankDataOverlaps *chisqOverlaps = NULL;
   struct bankDataOverlaps *chisqSnglOverlaps = NULL;
   REAL4                   *frequencyRangesPlus[LAL_NUM_IFO+1];
@@ -383,6 +375,16 @@ int main(int argc, char **argv)
     frequencyRangesPlus[ifoNumber] = NULL;
     frequencyRangesCross[ifoNumber] = NULL;
   }
+
+  /* Initialize some of the structures */
+  ifoNumber           = LAL_NUM_IFO;
+  channel[ifoNumber]  = NULL;
+  invspec[ifoNumber]  = NULL;
+  segments[ifoNumber] = NULL; 
+  PTFM[ifoNumber]     = NULL;
+  PTFN[ifoNumber]     = NULL;
+  PTFqVec[ifoNumber]  = NULL;
+
 
   /*------------------------------------------------------------------------*
    * Construct the null stream, its segments and its PSD                    *
@@ -413,7 +415,8 @@ int main(int argc, char **argv)
     /* create the segments */
     segments[ifoNumber] = coh_PTF_get_segments(channel[ifoNumber],
                                                invspec[ifoNumber],fwdplan,
-                                               ifoNumber, NULL, params);
+                                               ifoNumber, timeSlideVectors,
+                                               params);
 
     numSegments = segments[ifoNumber]->numSgmnt;
 
