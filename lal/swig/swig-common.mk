@@ -115,7 +115,7 @@ swig_makepath = $(if $(word 2,$1),$(word 1,$1):$(call swig_makepath,$(wordlist 2
 
 # set library load path when running check scripts prior to installation
 ifeq "$(build_vendor)" "apple"
-swig_ldlibpathname = DYLD_LIBRARY_PATH
+swig_ldlibpathname = DYLD_FALLBACK_LIBRARY_PATH
 else
 swig_ldlibpathname = LD_LIBRARY_PATH
 endif
