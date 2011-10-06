@@ -52,41 +52,58 @@
   #define swiglal_gsl_matrix##NAME##_ptr(DATA, I, NI, J, NJ) \
     gsl_matrix##NAME##_ptr(arg1, I, J)
 
-  // Disable SWIG's default constructors/destructors, since we supply
-  // our own through wrappings of gsl_{vector,matrix}_{calloc,free}
+  // Wrapping class representing a GSL vector of type NAME.
+  // Con/destructors call GSL functions to create/destroy the vector.
+  // Data is exposes using the swiglal_dynamic_vector_... macros.
   %nodefaultctor gsl_vector##NAME;
-  %nodefaultctor gsl_matrix##NAME;
   %nocopyctor    gsl_vector##NAME;
-  %nocopyctor    gsl_matrix##NAME;
   %nodefaultdtor gsl_vector##NAME;
-  %nodefaultdtor gsl_matrix##NAME;
-
-  // Wrapping class representing a GSL vector_NAME. Its data
-  // is exposed using the swiglal_dynamic_vector_* macros.
   struct gsl_vector##NAME {
+    %extend {
+      gsl_vector##NAME(const size_t n) {
+        return gsl_vector##NAME##_calloc(n);
+      }
+      gsl_vector##NAME(gsl_vector##NAME *v0) {
+        gsl_vector##NAME *v = gsl_vector##NAME##_alloc(v0->size);
+        gsl_vector##NAME##_memcpy(v, v0);
+        return v;
+      }
+      ~gsl_vector##NAME() {
+        gsl_vector##NAME##_free($self);
+      }
+    }
     swiglal_dynamic_vector_begin(TYPE, data, size, swiglal_gsl_vector##NAME##_ptr, SL_AV_DEFAULT);
     size_t size;
     TYPE *data;
     swiglal_dynamic_vector_end(TYPE, data, size1);
   };
 
-  // Wrapping class representing a GSL matrix_NAME. Its data
-  // is exposed using the swiglal_dynamic_matrix_* macros.
+  // Wrapping class representing a GSL matrix of type NAME.
+  // Con/destructors call GSL functions to create/destroy the matrix.
+  // Data is exposes using the swiglal_dynamic_matrix_... macros.
+  %nodefaultctor gsl_matrix##NAME;
+  %nocopyctor    gsl_matrix##NAME;
+  %nodefaultdtor gsl_matrix##NAME;
   struct gsl_matrix##NAME {
+    %extend {
+      gsl_matrix##NAME(const size_t n1, const size_t n2) {
+        return gsl_matrix##NAME##_calloc(n1, n2);
+      }
+      gsl_matrix##NAME(gsl_matrix##NAME *m0) {
+        gsl_matrix##NAME *m = gsl_matrix##NAME##_alloc(m0->size1, m0->size2);
+        gsl_matrix##NAME##_memcpy(m, m0);
+        return m;
+      }
+      ~gsl_matrix##NAME() {
+        gsl_matrix##NAME##_free($self);
+      }
+    }
     swiglal_dynamic_matrix_begin(TYPE, data, size1, size2, swiglal_gsl_matrix##NAME##_ptr, SL_AV_DEFAULT);
     size_t size1;
     size_t size2;
     TYPE *data;
     swiglal_dynamic_matrix_end(TYPE, data, size1, size2);
   };
-
-  // GSL functions for creating and destroying a vector_NAME.
-  gsl_vector##NAME *gsl_vector##NAME##_calloc(const size_t n);
-  void gsl_vector##NAME##_free(gsl_vector##NAME *v);
-
-  // GSL functions for creating and destroying a matrix_NAME.
-  gsl_matrix##NAME *gsl_matrix##NAME##_calloc(const size_t n1, const size_t n2);
-  void gsl_matrix##NAME##_free(gsl_matrix##NAME *v);
 
 %enddef // swiglal_gsl_vecmat
 
