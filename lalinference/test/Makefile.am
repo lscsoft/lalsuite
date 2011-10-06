@@ -20,6 +20,7 @@ EXTRA_DIST =
 
 CLEANFILES = \
 	*.out \
-	*.dat
+	*.dat \
+    *.xml
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
