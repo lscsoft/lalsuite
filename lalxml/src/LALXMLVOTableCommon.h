@@ -137,7 +137,7 @@ typedef enum {
  * for a complete list of allowed FIELD attributes.
  *
  */
-typedef struct {
+typedef struct tagVOTField {
   SWIGLAL_STRUCT_LALALLOC();
   xmlChar *name;		/**< name attribute [required] */
   VOTABLE_DATATYPE datatype;	/**< datatype attribute [required] */
@@ -147,7 +147,7 @@ typedef struct {
 
 /** A standard vector of VOTFields
  */
-typedef struct {
+typedef struct tagVOTFieldVector {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;		/**< number of VOTFields */
   VOTField *data;	/**< array of VOTFields */

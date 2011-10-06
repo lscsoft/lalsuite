@@ -68,7 +68,7 @@ extern "C" {
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-typedef struct {
+typedef struct tagXML_NAMESPACE {
     SWIGLAL_STRUCT_LALALLOC();
     const xmlChar *prefix;
     const xmlChar *url;
@@ -84,7 +84,7 @@ typedef struct {
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-typedef struct {
+typedef struct tagXML_NAMESPACE_VECTOR {
     SWIGLAL_STRUCT_LALALLOC();
     const XML_NAMESPACE *items;
     const int count;
