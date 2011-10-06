@@ -73,7 +73,7 @@ NRCSID (COMPLEXAMH, "$Id: ComplexAM.h");
  * in the case of a complex detector tensor, and some relevant scalar
  * products. That is:
  */
-typedef struct CmplxAMCoeffsTag
+typedef struct tagCmplxAMCoeffs
 {
   SWIGLAL_STRUCT_LALALLOC();
   COMPLEX8Vector     *a;          /**< the a coefficient evaluated at the relevant times */
@@ -82,7 +82,7 @@ typedef struct CmplxAMCoeffsTag
 
 /** Convenience container for precomputed pi f L/c  and skyposition vector
 */
-typedef struct
+typedef struct tagFreqSkypos_t
 {
   SWIGLAL_STRUCT_LALALLOC();
   REAL4 Freq;		/**< signal frequency */
@@ -111,7 +111,7 @@ typedef struct
  * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation
  * to use that fact.
  */
-typedef struct {
+typedef struct tagCmplxAntennaPatternMatrix {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8 Ad; 		/**<  \f$A_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\f$ */
   REAL8 Bd; 		/**<  \f$B_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
@@ -123,7 +123,7 @@ typedef struct {
 
 
 /** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
-typedef struct {
+typedef struct tagMultiCmplxAMCoeffs {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;		/**< number of IFOs */
   CmplxAMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */

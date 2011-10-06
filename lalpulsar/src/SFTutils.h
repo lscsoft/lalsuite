@@ -87,7 +87,7 @@ NRCSID( SFTUTILSH, "$Id$" );
 /*---------- exported types ----------*/
 
 /** A vector of COMPLEX8FrequencySeries */
-typedef struct {
+typedef struct tagCOMPLEX8FrequencySeriesVector {
   SWIGLAL_STRUCT_LALALLOC();
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(COMPLEX8FrequencySeries, data, length);
   UINT4 			length;		/**< number of SFTs */
@@ -96,7 +96,7 @@ typedef struct {
 } COMPLEX8FrequencySeriesVector;
 
 /** A vector of REAL8FrequencySeries */
-typedef struct {
+typedef struct tagREAL8FrequencySeriesVector {
   SWIGLAL_STRUCT_LALALLOC();
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(REAL8FrequencySeries, data, length);
   UINT4                  length;
@@ -105,7 +105,7 @@ typedef struct {
 } REAL8FrequencySeriesVector;
 
 /** A vector of REAL4FrequencySeries */
-typedef struct {
+typedef struct tagREAL4FrequencySeriesVector {
   SWIGLAL_STRUCT_LALALLOC();
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(REAL4FrequencySeries, data, length);
   UINT4                  length;
@@ -135,7 +135,7 @@ typedef struct tagMultiSFTVector {
 
 
 /** A collection of PSD vectors -- one for each IFO in a multi-IFO search */
-typedef struct {
+typedef struct tagMultiPSDVector {
   SWIGLAL_STRUCT_LALALLOC();
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(PSDVector*, data, length);
   UINT4      length;  	/**< number of ifos */
@@ -144,7 +144,7 @@ typedef struct {
 } MultiPSDVector;
 
 /** One noise-weight (number) per SFT (therefore indexed over IFOs and SFTs */
-typedef struct {
+typedef struct tagMultiNoiseWeights {
   SWIGLAL_STRUCT_LALALLOC();
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(REAL8Vector*, data, length);
   UINT4 length;		/**< number of ifos */
@@ -154,7 +154,7 @@ typedef struct {
 } MultiNoiseWeights;
 
 /** A collection of (multi-IFO) time-series */
-typedef struct {
+typedef struct tagMultiREAL4TimeSeries {
   SWIGLAL_STRUCT_LALALLOC();
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(REAL4TimeSeries*, data, length);
   UINT4 length;			/**< number of ifos */
@@ -163,7 +163,7 @@ typedef struct {
 } MultiREAL4TimeSeries;
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
-typedef struct {
+typedef struct tagLIGOTimeGPSVector {
   SWIGLAL_STRUCT_LALALLOC();
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(LIGOTimeGPS, data, length);
   UINT4 	length;		/**< number of timestamps */
@@ -173,7 +173,7 @@ typedef struct {
 } LIGOTimeGPSVector;
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
-typedef struct {
+typedef struct tagMultiLIGOTimeGPSVector {
   SWIGLAL_STRUCT_LALALLOC();
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(LIGOTimeGPSVector*, data, length);
   UINT4 	        length;	   /**< number of timestamps vectors or ifos */

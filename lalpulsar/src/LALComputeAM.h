@@ -86,7 +86,7 @@ NRCSID (LALCOMPUTEAMH, "$Id: LALComputeAM.h");
 /** This structure contains the output of the routine: a(t), b(t),
  * and the scalar products therein.  That is:
  */
-typedef struct AMCoeffsTag
+typedef struct tagAMCoeffs
 {
   SWIGLAL_STRUCT_LALALLOC();
   REAL4Vector     *a;          /**< the function a(t)         */
@@ -99,7 +99,7 @@ typedef struct AMCoeffsTag
 
 /** This structure contains the parameters for the routine.  They include:
  */
-typedef struct AMCoeffsParamsTag
+typedef struct tagAMCoeffsParams
 {
   SWIGLAL_STRUCT_LALALLOC();
   BarycenterInput      *baryinput;  /**< data from Barycentring routine */
@@ -131,7 +131,7 @@ typedef struct AMCoeffsParamsTag
  * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation
  * to use that fact.
  */
-typedef struct {
+typedef struct tagAntennaPatternMatrix {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8 Ad; 		/**<  \f$A_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{a}^X_\alpha\f$ */
   REAL8 Bd; 		/**<  \f$B_d \equiv \sum_{X,\alpha} \widehat{b}^X_\alpha \widehat{b}^X_\alpha\f$ */
@@ -141,7 +141,7 @@ typedef struct {
 } AntennaPatternMatrix;
 
 /** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
-typedef struct {
+typedef struct tagMultiAMCoeffs {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;		/**< number of IFOs */
   AMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */

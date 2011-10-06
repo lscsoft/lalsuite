@@ -70,7 +70,7 @@ NRCSID( DETECTORSTATESH, "$Id$" );
 
 /** A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle.
  */
-typedef struct
+typedef struct tagSymmTensor3
 {
   SWIGLAL_STRUCT_LALALLOC();
   REAL4 d11;   REAL4 d12;   REAL4 d13;
@@ -81,7 +81,7 @@ typedef struct
 
 /** A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle, using REAL8 precision
  */
-typedef struct
+typedef struct tagSymmTensor3d
 {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8 d11;   REAL8 d12;   REAL8 d13;
@@ -95,7 +95,7 @@ typedef struct
  * and arm "basis-tensor" n x n. This is used to speed up the
  * computation of LISA detector tensors in the rigid-adiabatic approximation.
  */
-typedef struct
+typedef struct tagDetectorArm
 {
   SWIGLAL_STRUCT_LALALLOC();
   REAL4 n[3];			/**< unit vector pointing along this arm */
@@ -111,7 +111,7 @@ typedef const DetectorArm constDetector3Arms[4];
 
 /** simple multi-IFO array of detector-information, standard LAL-vector
  */
-typedef struct
+typedef struct tagMultiLALDetector
 {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;		/**< number of IFOs */
@@ -122,7 +122,7 @@ typedef struct
 /** State-info about position, velocity and LMST of a detector together
  * with corresponding EarthState.
  */
-typedef struct
+typedef struct tagDetectorState
 {
   SWIGLAL_STRUCT_LALALLOC();
   LIGOTimeGPS tGPS;		/**< GPS timestamps corresponding to this entry */
@@ -138,7 +138,7 @@ typedef struct
 /** Timeseries of DetectorState's, representing the detector-info at different timestamps.
  * In addition to the standard 'vector'-fields we also store the detector-info in here.
  */
-typedef struct
+typedef struct tagDetectorStateSeries
 {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;			/**< total number of entries */
@@ -149,7 +149,7 @@ typedef struct
 } DetectorStateSeries;
 
 /** Multi-IFO time-series of DetectorStates */
-typedef struct
+typedef struct tagMultiDetectorStateSeries
 {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;			/**< number of detectors */

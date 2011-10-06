@@ -68,7 +68,7 @@ extern "C" {
  * if it's not initialized yet.
  *
  */
-struct tag_pdf1D_t
+struct tagpdf1D_t
 {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8Vector *xTics;		/**< N+1-dim vector of ordered x 'tics', i.e. bin-boundaries {x[0], x[1], x[2], ... x[N]} */
@@ -84,7 +84,7 @@ struct tag_pdf1D_t
  * can operate on the internals of such objects. Everyone would only be able to pass them around.
  * This requires lots more methods though to be useful, so for now this move is postponed.
  */
-typedef struct tag_pdf1D_t pdf1D_t;
+typedef struct tagpdf1D_t pdf1D_t;
 
 
 /* empty struct initializers */

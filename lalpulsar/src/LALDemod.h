@@ -194,7 +194,7 @@ NRCSID (LALDEMODH, "$Id$");
 #define SMALL	0.000000001
 
 /* PARAMETERS */
-typedef struct DemodParTag{
+typedef struct tagDemodPar {
   SWIGLAL_STRUCT_LALALLOC();
   INT4		spinDwnOrder;	/* Maximum order of spdwn parameter */
   REAL8		*skyConst;	/* Constants computed in ComputeSky.c */
@@ -210,7 +210,7 @@ typedef struct DemodParTag{
 }DemodPar;
 
 
-typedef struct {
+typedef struct tagLALFstat {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8         *F;            /* Array of value of the F statistic */
   COMPLEX16     *Fa;           /* Results of match filter with a(t) */
@@ -220,7 +220,7 @@ typedef struct {
 
 
 /*This structure will hold a single FFT*/
-typedef struct FFTTag
+typedef struct tagFFT
 {
   SWIGLAL_STRUCT_LALALLOC();
   COMPLEX8FrequencySeries *fft;

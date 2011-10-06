@@ -45,7 +45,7 @@ NRCSID( DOPPLERFLATTICECOVERINGH, "$Id$" );
 /*---------- DEFINES ----------*/
 
 /*---------- external types ----------*/
-typedef struct {
+typedef struct tagDopplerLatticeInit {
   SWIGLAL_STRUCT_LALALLOC();
   DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */
   REAL8 metricMismatch;			/**< for GRID_METRIC and GRID_ISOTROPIC */

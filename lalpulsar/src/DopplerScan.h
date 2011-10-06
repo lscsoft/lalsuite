@@ -115,7 +115,7 @@ typedef enum
 } DopplerGridType;
 
 /** structure describing a polygon-region in the sky */
-typedef struct {
+typedef struct tagSkyRegion {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 numVertices;		/**< number of polygon-vertices */
   SkyPosition *vertices;	/**< array of vertices */
@@ -123,7 +123,7 @@ typedef struct {
   SkyPosition upperRight;	/**< upper-right point of bounding square */
 } SkyRegion;
 
-typedef struct {
+typedef struct tagDopplerRegion {
   SWIGLAL_STRUCT_LALALLOC();
   CHAR *skyRegionString;	/**< sky-region string '(a1,d1), (a2,d2), ..' */
   LIGOTimeGPS refTime;
@@ -163,7 +163,7 @@ typedef struct tagDopplerSkyScanInit {
 } DopplerSkyScanInit;
 
 /** this structure reflects the current state of a DopplerSkyScan */
-typedef struct {
+typedef struct tagDopplerSkyScanState {
   SWIGLAL_STRUCT_LALALLOC();
   scan_state_t state;  			/**< idle, ready or finished */
   SkyRegion skyRegion; 		/**< polygon (and bounding square) defining sky-region  */
@@ -174,7 +174,7 @@ typedef struct {
 } DopplerSkyScanState;
 
 /** a "sky-ellipse", described by the two major axes and it's angle wrt x-axis */
-typedef struct {
+typedef struct tagMetricEllipse {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8 smajor;
   REAL8 sminor;

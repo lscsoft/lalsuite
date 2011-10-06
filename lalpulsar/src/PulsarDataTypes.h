@@ -62,7 +62,7 @@ NRCSID( PULSARDATATYPESH, "$Id$");
 #define PULSAR_MAX_SPINS	7
 
 /** Type defining the orbital parameters of a binary pulsar */
-typedef struct {
+typedef struct tagBinaryOrbitParams {
   SWIGLAL_STRUCT_LALALLOC();
   LIGOTimeGPS tp;         /**< time of observed periapsis passage (in SSB) */
   REAL8 argp;            /**< argument of periapsis (radians) */
@@ -72,7 +72,7 @@ typedef struct {
 } BinaryOrbitParams;
 
 /** Type containing the JKS 'amplitude parameters' {h0, cosi, phi0, psi} */
-typedef struct {
+typedef struct tagPulsarAmplitudeParams {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8 h0;	/**< overall signal amplitude */
   REAL8 cosi;	/**< cos(iota) of inclination angle iota of spin-axis wrt line of sight */
@@ -98,7 +98,7 @@ typedef const REAL8 constPulsarSpins[PULSAR_MAX_SPINS];
  *  at a given (SSB) reference GPS-time \f$\tau\f$.
  * "Canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
  */
-typedef struct
+typedef struct tagPulsarSpinRange
 {
   SWIGLAL_STRUCT_LALALLOC();
   LIGOTimeGPS refTime;		/**< SSB reference GPS-time at which spin-range is defined */
@@ -107,7 +107,7 @@ typedef struct
 } PulsarSpinRange;
 
 /** Type containing the 'Doppler-parameters' affecting the time-evolution of the phase */
-typedef struct {
+typedef struct tagPulsarDopplerParams {
   SWIGLAL_STRUCT_LALALLOC();
   LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
   REAL8 Alpha;		/**< skyposition: RA (longitude) in equatorial coords and radians */
@@ -117,14 +117,14 @@ typedef struct {
 } PulsarDopplerParams;
 
 /** Type defining the parameters of a pulsar-source of Gravitational waves */
-typedef struct {
+typedef struct tagPulsarParams {
   SWIGLAL_STRUCT_LALALLOC();
   PulsarAmplitudeParams Amp;	/**< 'Amplitude-parameters': h0, cosi, phi0, psi */
   PulsarDopplerParams Doppler;	/**< 'Doppler-parameters': {skypos, fkdot, orbital params } */
 } PulsarParams;
 
 /** Type containing a "candidate": parameter-space point with estimated errors and Fstat-value/significance */
-typedef struct {
+typedef struct tagPulsarCandidate {
   SWIGLAL_STRUCT_LALALLOC();
   PulsarAmplitudeParams Amp, dAmp;	/**< amplitude-parameters and error-estimates */
   PulsarDopplerParams Doppler, dDoppler;/**< Doppler-parameters and error-bars */
@@ -139,7 +139,7 @@ typedef struct {
  * so we can't easily get rid of it and keep it for now....
  * \deprecated Use #PulsarParams instead.
  */
-typedef struct {
+typedef struct tagPulsarSourceParams {
    SWIGLAL_STRUCT_LALALLOC();
    LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
    SkyPosition position; /**< source location (in radians) */

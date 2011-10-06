@@ -67,7 +67,7 @@ typedef enum {
  * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for
  * Earth-based detectors and ECLIPTIC coords for LISA.
  */
-typedef struct
+typedef struct tagCmplxDetectorTensor
 {
   SWIGLAL_STRUCT_LALALLOC();
   SymmTensor3 re;	/**< tensor holding real-parts of all components */

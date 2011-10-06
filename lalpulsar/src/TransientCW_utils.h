@@ -81,7 +81,7 @@ typedef enum {
 /* ---------- exported API types ---------- */
 
 /** Struct defining one transient window instance */
-typedef struct
+typedef struct tagtransientWindow_t
 {
   SWIGLAL_STRUCT_LALALLOC();
   transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
@@ -90,7 +90,7 @@ typedef struct
 } transientWindow_t;
 
 /** Struct defining a range of transient windows */
-typedef struct
+typedef struct tagtransientWindowRange_t
 {
   SWIGLAL_STRUCT_LALALLOC();
   transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
@@ -107,7 +107,7 @@ typedef struct
  * in steps of dt0 in [t0, t0+t0Band], and dtau in [tau, tau+tauBand] as defined in transientWindowRange.
  *
  */
-typedef struct {
+typedef struct tagtransientFstatMap_t {
   SWIGLAL_STRUCT_LALALLOC();
   gsl_matrix *F_mn;			/**< "payload" F-map: F_mn for t0_m = t0 + m*dt0, and tau_n = tau + n*dtau */
   REAL8 maxF;				/**< maximal F-value obtained over transientWindowRange */
@@ -117,7 +117,7 @@ typedef struct {
 
 
 /** Struct holding a transient CW candidate */
-typedef struct {
+typedef struct tagtransientCandidate_t {
   SWIGLAL_STRUCT_LALALLOC();
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
   transientWindowRange_t windowRange;	/**< type and parameters specifying the transient window range in {t0, tau} covered */

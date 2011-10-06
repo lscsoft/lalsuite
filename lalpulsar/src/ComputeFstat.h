@@ -82,7 +82,7 @@ NRCSID( COMPUTEFSTATH, "$Id$" );
  * with one entry per SFT-timestamp. These are required input for XLALNewDemod().
  * We also store the SSB reference-time tau0.
  */
-typedef struct {
+typedef struct tagSSBtimes {
   SWIGLAL_STRUCT_LALALLOC();
   LIGOTimeGPS refTime;
   REAL8Vector *DeltaT;		/**< Time-difference of SFT-alpha - tau0 in SSB-frame */
@@ -90,14 +90,14 @@ typedef struct {
 } SSBtimes;
 
 /** Multi-IFO container for SSB timings */
-typedef struct {
+typedef struct tagMultiSSBtimes {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;		/**< number of IFOs */
   SSBtimes **data;	/**< array of SSBtimes (pointers) */
 } MultiSSBtimes;
 
 /** one F-statistic 'atom', ie the elementary per-SFT quantities required to compute F, for one detector X */
-typedef struct {
+typedef struct tagFstatAtom {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 timestamp;		/**< SFT GPS timestamp t_i in seconds */
   REAL8 a2_alpha;		/**< antenna-pattern factor a^2(X,t_i) */
@@ -108,7 +108,7 @@ typedef struct {
 } FstatAtom;
 
 /** vector of F-statistic 'atoms', ie all per-SFT quantities required to compute F, for one detector X */
-typedef struct {
+typedef struct tagFstatAtomVector {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;			/**< number of per-SFT 'atoms' */
   FstatAtom *data;		/** FstatAtoms array of given length */
@@ -116,7 +116,7 @@ typedef struct {
 } FstatAtomVector;
 
 /** multi-detector version of FstatAtoms type */
-typedef struct {
+typedef struct tagMultiFstatAtomVector {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;			/**< number of detectors */
   FstatAtomVector **data;	/**< array of FstatAtom (pointers), one for each detector X */
@@ -124,7 +124,7 @@ typedef struct {
 
 
 /** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
-typedef struct {
+typedef struct tagFcomponents {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8 F;				/**< F-statistic value */
   COMPLEX16 Fa;				/**< complex amplitude Fa */
@@ -143,7 +143,7 @@ typedef enum {
 typedef struct tag_ComputeFBuffer_RS ComputeFBuffer_RS;
 
 /** Extra parameters controlling the actual computation of F */
-typedef struct {
+typedef struct tagComputeFParams {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 Dterms;		/**< how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
   REAL8 upsampling;	/**< frequency-upsampling applied to SFTs ==> dFreq != 1/Tsft ... */
@@ -160,7 +160,7 @@ typedef struct {
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  * For the first call of ComputeFStat() the pointer-entries should all be NULL.
  */
-typedef struct {
+typedef struct tagComputeFBuffer {
   SWIGLAL_STRUCT_LALALLOC();
   const MultiDetectorStateSeries *multiDetStates;/**< buffer for each detStates (store pointer) and skypos */
   REAL8 Alpha, Delta;				/**< skyposition of candidate */

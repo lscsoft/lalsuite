@@ -237,7 +237,7 @@ NRCSID (SFTFILEIOH, "$Id$");
  * Any of the entries is optional, and they will be combined by logical AND.
  * Note however, that *ALL* timestamps within [startTime, endTime] MUST be found if specified.
  */
-typedef struct
+typedef struct tagSFTConstraints
 {
   SWIGLAL_STRUCT_LALALLOC();
   CHAR *detector;			/**< 2-char channel-prefix describing the detector (eg 'H1', 'H2', 'L1', 'G1' etc) */
@@ -250,7 +250,7 @@ typedef struct
 /** A 'descriptor' of an SFT: basically containing the header-info plus an opaque description
  * of where exactly to load this SFT from.
  */
-typedef struct
+typedef struct tagSFTDescriptor
 {
   SWIGLAL_STRUCT_LALALLOC();
   struct tagSFTLocator *locator; 	/**< *internal* description of where to find this SFT [opaque!] */
@@ -263,7 +263,7 @@ typedef struct
 
 
 /** An "SFT-catalogue": a vector of SFTdescriptors, as returned by LALSFTdataFind() */
-typedef struct
+typedef struct tagSFTCatalog
 {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;			/**< number of SFTs in catalog */

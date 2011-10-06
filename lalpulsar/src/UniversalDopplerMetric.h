@@ -71,14 +71,14 @@ typedef REAL8 vect3D_t[3];
 typedef REAL8 mat33_t[3][3];
 
 /** variable-length list of 2D-vectors */
-typedef struct {
+typedef struct tagvect2Dlist_t {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;			/**< number of elements */
   vect2D_t *data;		/**< array of 2D vectors */
 } vect2Dlist_t;
 
 /** variable-length list of 3D vectors */
-typedef struct {
+typedef struct tagvect3Dlist_t {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;			/**< number of elements */
   vect3D_t *data;		/**< array of 3D vectors */
@@ -86,7 +86,7 @@ typedef struct {
 
 
 /** Small Container to hold two 3D vectors: position and velocity */
-typedef struct {
+typedef struct tagPosVel3D_t {
   SWIGLAL_STRUCT_LALALLOC();
   vect3D_t pos;
   vect3D_t vel;
@@ -279,7 +279,7 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
 /** type describing a Doppler coordinate system:
  * lists the number of dimensions and the symbolic names of the coordinates.
  */
-typedef struct
+typedef struct tagDopplerCoordinateSystem
 {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 dim;						/**< number of dimensions covered */
@@ -291,7 +291,7 @@ typedef struct
 /** type describing a set of detectors and their relative noise-weights
  * This is only used for full multi-IFO Fstatistic-metrics
  */
-typedef struct
+typedef struct tagMultiDetectorInfo
 {
   SWIGLAL_STRUCT_LALALLOC();
   UINT4 length;						/**< number N of detectors */
@@ -303,7 +303,7 @@ typedef struct
 
 /**< meta-info specifying a Doppler-metric
  */
-typedef struct
+typedef struct tagDopplerMetricParams
 {
   SWIGLAL_STRUCT_LALALLOC();
   DopplerCoordinateSystem coordSys;		/**< number of dimensions and coordinate-IDs of Doppler-metric */
@@ -326,7 +326,7 @@ typedef struct
  * \f$\langle Q\rangle \equiv \frac{1}{T} \, \sum_X w^X\, \int_0^T Q\, dt \f$, where \f$w^X\f$ is the noise-weight for detector X,
  * and \f$T\f$ is the observation time, see \ref Prix07 for details.
  */
-typedef struct
+typedef struct tagFmetricAtoms_t
 {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8 a_a;		/**< \f$ \langle a^2 \rangle = A \f$ */
@@ -348,7 +348,7 @@ typedef struct
 /** struct to hold a DopplerMetric, including meta-info on the number of
  * dimensions, the coordinate-system and type of metric.
  */
-typedef struct
+typedef struct tagDopplerMetric
 {
   SWIGLAL_STRUCT_LALALLOC();
   DopplerMetricParams meta;		/**< "meta-info" describing/specifying the type of Doppler metric */

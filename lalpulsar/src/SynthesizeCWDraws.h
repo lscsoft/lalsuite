@@ -67,7 +67,7 @@ typedef enum {
 
 /** Signal (amplitude) parameter ranges
  */
-typedef struct {
+typedef struct tagAmplitudePrior_t {
   SWIGLAL_STRUCT_LALALLOC();
   pdf1D_t *pdf_h0Nat;	/**< pdf for h0/sqrt{Sn} */
   REAL8 fixedSNR;	/**< alternative 1: adjust h0 to fix the optimal SNR of the signal */
@@ -80,7 +80,7 @@ typedef struct {
 
 /** struct for buffering of AM-coeffs, if signal for same sky-position is injected
  */
-typedef struct {
+typedef struct tagmultiAMBuffer_t {
   SWIGLAL_STRUCT_LALALLOC();
   SkyPosition skypos;		/**< sky-position for which we have AM-coeffs computed already */
   MultiAMCoeffs *multiAM;;	/**< pre-computed AM-coeffs for skypos */
@@ -88,7 +88,7 @@ typedef struct {
 
 /** Hold all (generally) randomly drawn injection parameters: skypos, amplitude-params, M_mu_nu, transient-window, SNR
  */
-typedef struct
+typedef struct tagInjParams_t
 {
   SWIGLAL_STRUCT_LALALLOC();
   SkyPosition skypos;
