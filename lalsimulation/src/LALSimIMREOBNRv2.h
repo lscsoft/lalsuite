@@ -36,11 +36,6 @@
 #ifndef _LALSIMREOBNRv2_H
 #define _LALSIMREOBNRv2_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
-#endif
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
@@ -63,8 +58,6 @@ extern "C" {
 typedef struct
 tagEOBACoefficients
 {
-  SWIGLAL_STRUCT_LALALLOC();
-
   REAL8 n4;
   REAL8 n5;
   REAL8 d0;
@@ -84,8 +77,6 @@ EOBACoefficients;
 typedef struct
 tagFacWaveformCoeffs
 {
-  SWIGLAL_STRUCT_LALALLOC();
-
   REAL8 delta22vh3;
   REAL8 delta22vh6;
   REAL8 delta22vh8;
@@ -317,8 +308,6 @@ FacWaveformCoeffs;
 typedef
 struct tagNewtonMultipolePrefixes
 {
-  SWIGLAL_STRUCT_LALALLOC();
-
   COMPLEX16 values[LALEOB_MAX_MULTIPOLE+1][LALEOB_MAX_MULTIPOLE+1];
 }
 NewtonMultipolePrefixes;
@@ -331,8 +320,6 @@ NewtonMultipolePrefixes;
 typedef struct
 tagEOBNonQCCoeffs
 {
-  SWIGLAL_STRUCT_LALALLOC();
-
   REAL8 a1;
   REAL8 a2;
   REAL8 a3;
@@ -350,8 +337,6 @@ tagEOBNonQCCoeffs
 typedef
 struct tagEOBParams
 {
-  SWIGLAL_STRUCT_LALALLOC();
-
   REAL8 eta;
   REAL8 omega;
   REAL8 m1;
