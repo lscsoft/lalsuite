@@ -891,8 +891,9 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          //FILE *TWOROWSUM = fopen("./tworowsum.dat","w");
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             //Sum IHS values across SFT frequency bins
+            SSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
             for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) {
-               tworows->data[jj*ihsvectorsequence->vectorLength + kk] = ihsvectorsequence->data[jj*ihsvectorsequence->vectorLength + kk] + ihsvectorsequence->data[(jj+1)*ihsvectorsequence->vectorLength + kk];
+               //tworows->data[jj*ihsvectorsequence->vectorLength + kk] = ihsvectorsequence->data[jj*ihsvectorsequence->vectorLength + kk] + ihsvectorsequence->data[(jj+1)*ihsvectorsequence->vectorLength + kk];
                tworows2->data[jj*ihsvalsfromaveNoise->length + kk] = ihsvalsfromaveNoise->data[kk]*(randvals->data[jj] + randvals->data[jj+1])*FbinMean->data[jj];
                excessabovenoise->data[kk] = tworows->data[jj*ihsvectorsequence->vectorLength + kk] - tworows2->data[jj*ihsvalsfromaveNoise->length + kk];
                //fprintf(TWOROWSUM, "%.6f\n", tworows->data[jj*ihsvectorsequence->vectorLength + kk]);
@@ -1000,8 +1001,9 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          
          INT4 endloc = ((ii-1)*(ii-1)-(ii-1))/2;
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
+            SSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj);
             for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) {
-               tworows->data[jj*ihsvectorsequence->vectorLength + kk] += ihsvectorsequence->data[(ii-1+jj)*ihsvectorsequence->vectorLength + kk];
+               //tworows->data[jj*ihsvectorsequence->vectorLength + kk] += ihsvectorsequence->data[(ii-1+jj)*ihsvectorsequence->vectorLength + kk];
                tworows2->data[jj*ihsvalsfromaveNoise->length + kk] += ihsvalsfromaveNoise->data[kk]*randvals->data[ii-1+jj]*FbinMean->data[ii-1+jj];
                excessabovenoise->data[kk] = tworows->data[jj*ihsvectorsequence->vectorLength + kk] - tworows2->data[jj*ihsvalsfromaveNoise->length + kk];
             }
@@ -1098,6 +1100,25 @@ void SSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input
    INT4 ii;
    for (ii=0; ii<(INT4)input1->vectorLength; ii++) {
       output->data[outputvectorpos*output->vectorLength + ii] = input1->data[vectorpos1*input1->vectorLength + ii] + input2->data[vectorpos2*input2->vectorLength + ii];
+   }
+   
+}
+void fastSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos)
+{
+   
+   REAL4 *a, *b, *c;
+   INT4 n;
+   
+   a = &(input1->data[vectorpos1*input1->vectorLength]);
+   b = &(input2->data[vectorpos2*input2->vectorLength]);
+   c = &(output->data[outputvectorpos*output->vectorLength]);
+   n = output->vectorLength;
+   
+   while (n-- > 0) {
+      *c = (*a)+(*b);
+      a++;
+      b++;
+      c++;
    }
    
 }
