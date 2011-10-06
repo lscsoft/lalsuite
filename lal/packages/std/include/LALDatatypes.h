@@ -351,7 +351,7 @@ tagCHARVector
 CHARVector;
 
 /** Vector of type CHAR*, ie 'strings'  */
-typedef struct {
+typedef struct tagLALStringVector {
   SWIGLAL_STRUCT_LALALLOC();
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(CHAR*, data, length);
   UINT4 length;  /**< Number of elements in array. */

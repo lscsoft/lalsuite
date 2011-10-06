@@ -173,7 +173,7 @@ CalibrationUpdateParams;
 
 /** UNDOCUMENTED */
 typedef
-struct StrainOutTag {
+struct tagStrainOut {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8TimeSeries h;         	/**<  timeseries containing h(t) */
   REAL8TimeSeries hC;         	/**< timeseries containing the control signal */
@@ -186,7 +186,7 @@ struct StrainOutTag {
 
 /** UNDOCUMENTED */
 typedef
-struct StrainInTag {
+struct tagStrainIn {
   SWIGLAL_STRUCT_LALALLOC();
   REAL4TimeSeries AS_Q ;   /**< timeseries containing ASQ */
   REAL4TimeSeries DARM_ERR;/**< timeseries containing DARM_ERR */
@@ -229,7 +229,7 @@ struct StrainInTag {
 
 /** UNDOCUMENTED */
 typedef
-struct MyIIRFilter {
+struct tagMyIIRFilter {
   SWIGLAL_STRUCT_LALALLOC();
   INT4 yOrder;
   INT4 xOrder;

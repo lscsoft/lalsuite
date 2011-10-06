@@ -199,18 +199,18 @@ extern "C" {
 NRCSID (LALMATHEMATICAH, "$Id$");
 
 /* <lalVerbatim file="LALMathematicaHT"> */
-typedef struct Math3DPointList{
+typedef struct tagMath3DPointList{
   SWIGLAL_STRUCT_LALALLOC();
-  struct Math3DPointList *next;
+  struct tagMath3DPointList *next;
   REAL4 x;
   REAL4 y;
   REAL4 z;
   REAL4 grayLevel;
   }Math3DPointList;
 
-typedef struct MathNDPointList{
+typedef struct tagMathNDPointList{
   SWIGLAL_STRUCT_LALALLOC();
-  struct MathNDPointList *next;
+  struct tagMathNDPointList *next;
   REAL4Vector *coordinates;
   INT4 dimension;
   REAL4 grayLevel;

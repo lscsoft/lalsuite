@@ -63,7 +63,7 @@ double XLALSkymapInterpolate(double t, double* x);
 // Struct to store basic properties of the analysis: the sample rate, and
 // the detectors involved (described by their LAL ID numbers)
 
-typedef struct
+typedef struct tagXLALSkymapPlanType
 {
     SWIGLAL_STRUCT_LALALLOC();
     int sampleFrequency;
@@ -81,7 +81,7 @@ void XLALSkymapPlanConstruct(
 // Struct to store reuseable pre-computed quantities for a specific
 // direction, set of detectors, and sample rate
 
-typedef struct
+typedef struct tagXLALSkymapDirectionPropertiesType
 {
     SWIGLAL_STRUCT_LALALLOC();
     double f[XLALSKYMAP_N][2];
@@ -97,7 +97,7 @@ void XLALSkymapDirectionPropertiesConstruct(
 // Struct to store reuseable pre-computed kernel for a specific direction,
 // power spectra, and sample rate
 
-typedef struct
+typedef struct tagXLALSkymapKernelType
 {
     SWIGLAL_STRUCT_LALALLOC();
     double k[XLALSKYMAP_N][XLALSKYMAP_N];

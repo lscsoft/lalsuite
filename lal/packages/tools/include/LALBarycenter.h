@@ -89,7 +89,7 @@ NRCSID (LALBARYCENTERH,"$Id$");
  *
  * \deprecated Use XLALInitBarycenter() instead.
  */
-typedef struct
+typedef struct tagEphemerisFilenames
 {
   SWIGLAL_STRUCT_LALALLOC();
   CHAR *earthEphemeris;         /**< File containing Earth's position.  */
@@ -99,7 +99,7 @@ EphemerisFilenames;
 
 /** Structure holding a REAL8 time, and a position, velocity and
  * acceleration vector. */
-typedef struct
+typedef struct tagPosVelAcc
 {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8 gps;            /**< REAL8 timestamp */
@@ -113,7 +113,7 @@ PosVelAcc;
  * center-of-mass positions of the Earth and Sun, listed at regular
  * time intervals.
  */
-typedef struct
+typedef struct tagEphemerisData
 {
   SWIGLAL_STRUCT_LALALLOC();
   EphemerisFilenames ephiles; /**< Names of the two files containing positions of
@@ -130,7 +130,7 @@ EphemerisData;
 
 /** Basic output structure of LALBarycenterEarth.c.
  */
-typedef struct
+typedef struct tagEarthState
 {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8  einstein;      /**<  the einstein delay equiv TDB - TDT */
@@ -163,7 +163,7 @@ EarthState;
 
 /** Basic input structure to LALBarycenter.c.
  */
-typedef struct
+typedef struct tagBarycenterInput
 {
   SWIGLAL_STRUCT_LALALLOC();
   LIGOTimeGPS  tgps;    /**< input GPS arrival time. I use tgps (lower case)
@@ -189,7 +189,7 @@ BarycenterInput;
 
 /**  Basic output structure produced by LALBarycenter.c.
  */
-typedef struct
+typedef struct tagEmissionTime
 {
   SWIGLAL_STRUCT_LALALLOC();
   REAL8 deltaT;         /**< \f$t_e\f$(TDB) - \f$t_a\f$(GPS)

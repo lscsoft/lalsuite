@@ -81,7 +81,7 @@ typedef struct tagLALConfigVar {
  * by '\' at the end of lines).
  * This is used as the input structure in the config-variable reading routines.
  */
-typedef struct {
+typedef struct tagLALParsedDataFile {
   SWIGLAL_STRUCT_LALALLOC();
   TokenList *lines;	/**< list of pre-parsed data-file lines */
   BOOLEAN *wasRead;	/**< keep track of successfully read lines for strictness-checking */
