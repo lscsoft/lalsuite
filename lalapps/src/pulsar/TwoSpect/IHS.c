@@ -1092,6 +1092,15 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
    gsl_rng_free(rng);
    
 } /*ihsSums2_withFAR_withnoise() */
+void SSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos)
+{
+   
+   INT4 ii;
+   for (ii=0; ii<(INT4)input1->vectorLength; ii++) {
+      output->data[outputvectorpos*output->vectorLength + ii] = input1->data[vectorpos1*input1->vectorLength + ii] + input2->data[vectorpos2*input2->vectorLength + ii];
+   }
+   
+}
 
 
 REAL4VectorSequence * ihsVectorSums(REAL4VectorSequence *input, INT4 rows)
