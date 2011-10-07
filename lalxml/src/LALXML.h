@@ -36,8 +36,8 @@
 #define _LALXML_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 /* C++ protection */
@@ -69,7 +69,7 @@ extern "C" {
  * Albert-Einstein-Institute Hannover, Germany
  */
 typedef struct tagXML_NAMESPACE {
-    SWIGLAL_STRUCT_LALALLOC();
+    SWIGLAL_STRUCT(XML_NAMESPACE);
     const xmlChar *prefix;
     const xmlChar *url;
 } XML_NAMESPACE;
@@ -85,7 +85,7 @@ typedef struct tagXML_NAMESPACE {
  * Albert-Einstein-Institute Hannover, Germany
  */
 typedef struct tagXML_NAMESPACE_VECTOR {
-    SWIGLAL_STRUCT_LALALLOC();
+    SWIGLAL_STRUCT(XML_NAMESPACE_VECTOR);
     const XML_NAMESPACE *items;
     const int count;
 } XML_NAMESPACE_VECTOR;
