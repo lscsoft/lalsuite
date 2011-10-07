@@ -55,7 +55,7 @@
   #endif
 %}
 
-// Include basic C++ and LAL headers in wrapping code.
+// Include basic C++ headers in wrapping code.
 %header %{
   #include <cstdlib>
   #include <cstring>
@@ -63,8 +63,6 @@
   #include <iostream>
   #include <string>
   #include <sstream>
-  #include <lal/XLALError.h>
-  #include <lal/LALMalloc.h>
 %}
 
 // Allow SWIG wrapping code can raise exceptions.
@@ -104,26 +102,6 @@
 #define NRCSID(name,id)
 #define RCSID(id)
 
-// So that SWIG knows about basic LAL datatypes.
-%header %{
-  #include <lal/LALAtomicDatatypes.h>
-  #include <lal/LALComplex.h>
-%}
-
-// So that SWIG wrapping code knows about basic GSL types.
-%header %{
-  #include <gsl/gsl_complex_math.h>
-  #include <gsl/gsl_vector.h>
-  #include <gsl/gsl_matrix.h>
-  // GSL doesn't provide a constructor function for
-  // gsl_complex_float, so we provide one here.
-  SWIGINTERN gsl_complex_float gsl_complex_float_rect(float x, float y) {
-    gsl_complex_float z;
-    GSL_SET_COMPLEX(&z, x, y);
-    return z;
-  }
-%}
-
 // Function which tests whether the pointer passed to it is non-zero.
 // This function does the right thing if it is passed an actual pointer,
 // or the name of a statically-allocated array (which is implicitly
@@ -143,6 +121,28 @@
   msg << MESSAGE;
   SWIG_exception(CODE, msg.str().c_str());
 %enddef
+
+// Include basic LAL headers in wrapping code.
+%header %{
+  #include <lal/XLALError.h>
+  #include <lal/LALMalloc.h>
+  #include <lal/LALAtomicDatatypes.h>
+  #include <lal/LALComplex.h>
+%}
+
+// Include basic GSL headers in wrapping code.
+%header %{
+  #include <gsl/gsl_complex_math.h>
+  #include <gsl/gsl_vector.h>
+  #include <gsl/gsl_matrix.h>
+  // GSL doesn't provide a constructor function for
+  // gsl_complex_float, so we provide one here.
+  SWIGINTERN gsl_complex_float gsl_complex_float_rect(float x, float y) {
+    gsl_complex_float z;
+    GSL_SET_COMPLEX(&z, x, y);
+    return z;
+  }
+%}
 
 // Include SWIG interface code for specific scripting languages.
 #ifdef SWIGOCTAVE
