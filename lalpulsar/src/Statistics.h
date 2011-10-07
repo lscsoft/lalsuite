@@ -23,8 +23,8 @@
 #define _STATISTICS_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 /* *************
@@ -82,7 +82,7 @@ number counts.
 
 /** Structure for storing statistical information about a Hough map */
 typedef struct tagHoughStats {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(HoughStats);
   HoughTT    maxCount;    /**< maximum number count */
   UINT2      maxIndex[2]; /**< loctaion of maximum number count */
   HoughTT    minCount;    /**< minimum number count */

@@ -29,8 +29,8 @@
 #define _PROBABILITY_DENSITY_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 /* C++ protection. */
@@ -70,7 +70,7 @@ extern "C" {
  */
 struct tagpdf1D_t
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(pdf1D_t);
   REAL8Vector *xTics;		/**< N+1-dim vector of ordered x 'tics', i.e. bin-boundaries {x[0], x[1], x[2], ... x[N]} */
   REAL8Vector *probDens;	/**< N-dim vector of binned probability densities probDens[i] = prob( x in [ x[i],x[i+i] )/xBin[i]  */
   BOOLEAN isNormalized;		/**< true if the prob is normalized, ie 1 = int P(x) dx ~ sum_i probDens[i] xBin[i] */

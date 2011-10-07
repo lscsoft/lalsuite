@@ -30,8 +30,8 @@
 #define _COMPLEXAM_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <math.h>
@@ -75,7 +75,7 @@ NRCSID (COMPLEXAMH, "$Id: ComplexAM.h");
  */
 typedef struct tagCmplxAMCoeffs
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(CmplxAMCoeffs);
   COMPLEX8Vector     *a;          /**< the a coefficient evaluated at the relevant times */
   COMPLEX8Vector     *b;          /**< the b coefficient evaluated at the relevant times  */
 } CmplxAMCoeffs;
@@ -84,7 +84,7 @@ typedef struct tagCmplxAMCoeffs
 */
 typedef struct tagFreqSkypos_t
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(FreqSkypos_t);
   REAL4 Freq;		/**< signal frequency */
   REAL8 skyposV[3];	/**< unit vector pointing to skyposition of source */
   SymmTensor3 ePlus;	/**< ePlus polarization tensor (skypos-dependent) */
@@ -112,7 +112,7 @@ typedef struct tagFreqSkypos_t
  * to use that fact.
  */
 typedef struct tagCmplxAntennaPatternMatrix {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(CmplxAntennaPatternMatrix);
   REAL8 Ad; 		/**<  \f$A_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\f$ */
   REAL8 Bd; 		/**<  \f$B_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
   REAL8 Cd; 		/**<  \f$C_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
@@ -124,7 +124,7 @@ typedef struct tagCmplxAntennaPatternMatrix {
 
 /** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
 typedef struct tagMultiCmplxAMCoeffs {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(MultiCmplxAMCoeffs);
   UINT4 length;		/**< number of IFOs */
   CmplxAMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
   CmplxAntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */

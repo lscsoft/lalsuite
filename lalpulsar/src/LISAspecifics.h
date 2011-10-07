@@ -32,8 +32,8 @@
 #define _LISASPECIFICS_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 /* C++ protection. */
@@ -69,7 +69,7 @@ typedef enum {
  */
 typedef struct tagCmplxDetectorTensor
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(CmplxDetectorTensor);
   SymmTensor3 re;	/**< tensor holding real-parts of all components */
   SymmTensor3 im;	/**< tensor holding imaginary-parts of all components */
 } CmplxDetectorTensor;

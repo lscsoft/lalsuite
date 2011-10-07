@@ -294,8 +294,8 @@ waveform.</dd>
 #define _GENERATESPINORBITCW_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <lal/LALStdlib.h>
@@ -338,7 +338,7 @@ NRCSID( GENERATESPINORBITCWH, "$Id$" );
  * generator).
  */
 typedef struct tagSpinOrbitCWParamStruc {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(SpinOrbitCWParamStruc);
   /* Passed parameters. */
   SkyPosition position;   /**< location of source on sky */
   REAL4 psi;              /**< polarization angle (radians) */

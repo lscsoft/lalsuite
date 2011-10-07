@@ -37,8 +37,8 @@
 #define _LALCOMPUTEAM_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #ifdef __cplusplus
@@ -88,7 +88,7 @@ NRCSID (LALCOMPUTEAMH, "$Id: LALComputeAM.h");
  */
 typedef struct tagAMCoeffs
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(AMCoeffs);
   REAL4Vector     *a;          /**< the function a(t)         */
   REAL4Vector     *b;          /**< the function b(t)         */
   REAL4           A;           /**< the scalar product (a||a) */
@@ -101,7 +101,7 @@ typedef struct tagAMCoeffs
  */
 typedef struct tagAMCoeffsParams
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(AMCoeffsParams);
   BarycenterInput      *baryinput;  /**< data from Barycentring routine */
   EarthState           *earth;      /**< from LALBarycenter()           */
   EphemerisData        *edat;       /**< the ephemerides                */
@@ -132,7 +132,7 @@ typedef struct tagAMCoeffsParams
  * to use that fact.
  */
 typedef struct tagAntennaPatternMatrix {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(AntennaPatternMatrix);
   REAL8 Ad; 		/**<  \f$A_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{a}^X_\alpha\f$ */
   REAL8 Bd; 		/**<  \f$B_d \equiv \sum_{X,\alpha} \widehat{b}^X_\alpha \widehat{b}^X_\alpha\f$ */
   REAL8 Cd; 		/**<  \f$C_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{b}^X_\alpha\f$ */
@@ -142,7 +142,7 @@ typedef struct tagAntennaPatternMatrix {
 
 /** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
 typedef struct tagMultiAMCoeffs {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(MultiAMCoeffs);
   UINT4 length;		/**< number of IFOs */
   AMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
   AntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */

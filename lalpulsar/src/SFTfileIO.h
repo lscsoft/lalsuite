@@ -165,8 +165,8 @@ i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
 #define _SFTFILEIO_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 /* includes */
@@ -239,7 +239,7 @@ NRCSID (SFTFILEIOH, "$Id$");
  */
 typedef struct tagSFTConstraints
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(SFTConstraints);
   CHAR *detector;			/**< 2-char channel-prefix describing the detector (eg 'H1', 'H2', 'L1', 'G1' etc) */
   LIGOTimeGPS *startTime;		/**< only include SFTs starting >= startTime */
   LIGOTimeGPS *endTime;			/**< only include SFTs starting <= endTime */
@@ -252,7 +252,7 @@ typedef struct tagSFTConstraints
  */
 typedef struct tagSFTDescriptor
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(SFTDescriptor);
   struct tagSFTLocator *locator; 	/**< *internal* description of where to find this SFT [opaque!] */
   SFTtype header;			/**< SFT-header info */
   CHAR *comment;			/**< comment-entry in SFT-header (v2 only) */
@@ -265,7 +265,7 @@ typedef struct tagSFTDescriptor
 /** An "SFT-catalogue": a vector of SFTdescriptors, as returned by LALSFTdataFind() */
 typedef struct tagSFTCatalog
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(SFTCatalog);
   UINT4 length;			/**< number of SFTs in catalog */
   SFTDescriptor *data;		/**< array of data-entries describing matched SFTs */
 } SFTCatalog;
@@ -324,7 +324,7 @@ void LALReadTimestampsFile (LALStatus* , LIGOTimeGPSVector **timestamps, const C
  * version v1.0.
  */
 typedef struct tagSFTHeader {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(SFTHeader);
   REAL8  version;		/**< SFT version-number (currently only 1.0 allowed )*/
   INT4   gpsSeconds;		/**< gps start-time (seconds)*/
   INT4   gpsNanoSeconds;	/**< gps start-time (nanoseconds) */

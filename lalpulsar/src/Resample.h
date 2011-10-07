@@ -21,8 +21,8 @@
 #define _RESAMPLE_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <lal/LALStdlib.h>
@@ -139,7 +139,7 @@ standalone code or in these LAL routines.
  * constant intervals \f$d\Delta t\f$ in the canonical time coordinate \f$\tau\f$.
  */
 typedef struct tagResampleRules {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(ResampleRules);
   LIGOTimeGPS start; /**< The initial time for which the rules apply */
   LIGOTimeGPS stop;  /**< The final time for which the rules apply */
   INT4 length;       /**< The number of correction points, i.e.\ points where the resampling interval
@@ -157,7 +157,7 @@ typedef struct tagResampleRules {
  *  Eq.\eqref{eq_delta-tau} for notation.
  */
 typedef struct tagPolycoStruc {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(PolycoStruc);
   REAL4 ra;  			/**< Right ascension angle of the source, in \e radians in the range \f$[0,2\pi)\f$ */
   REAL4 dec; 			/**< Declination angle of the source, in \e radians in the range \f$[-\pi/2,\pi/2]\f$ */
   REAL4Vector *spindown; 	/**< A vector \f$\vec\lambda=(\lambda_0,\ldots,\lambda_{n-1})\f$ of parameters
@@ -184,7 +184,7 @@ typedef struct tagPolycoStruc {
 /** Extra parameters required to construct a ResampleRules object from a PolycoStruc object.
  */
 typedef struct tagResampleParamStruc{
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(ResampleParamStruc);
   LIGOTimeGPS start;    /**< The initial time for which the resample rules will apply */
   LIGOTimeGPS stop;     /**< The final time for which the resample rules will apply */
   REAL8       deltaT;   /**< The sampling interval before decimation, in seconds */
