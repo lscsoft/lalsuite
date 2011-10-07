@@ -149,8 +149,8 @@
 #define _LALMATHEMATICA_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 
@@ -200,7 +200,7 @@ NRCSID (LALMATHEMATICAH, "$Id$");
 
 /* <lalVerbatim file="LALMathematicaHT"> */
 typedef struct tagMath3DPointList{
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(Math3DPointList);
   struct tagMath3DPointList *next;
   REAL4 x;
   REAL4 y;
@@ -209,7 +209,7 @@ typedef struct tagMath3DPointList{
   }Math3DPointList;
 
 typedef struct tagMathNDPointList{
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(MathNDPointList);
   struct tagMathNDPointList *next;
   REAL4Vector *coordinates;
   INT4 dimension;

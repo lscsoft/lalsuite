@@ -21,8 +21,8 @@
 #define _CALIBRATION_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <lal/LALDatatypes.h>
@@ -82,7 +82,7 @@ CalibrationType;
 typedef struct
 tagCalFactors
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(CalFactors);
   COMPLEX16 alpha;
   COMPLEX16 alphabeta;
   COMPLEX16 beta;
@@ -97,7 +97,7 @@ CalFactors;
 typedef struct
 tagUpdateFactorsParams
 {
-   SWIGLAL_STRUCT_LALALLOC();
+   SWIGLAL_STRUCT(UpdateFactorsParams);
    REAL8 lineFrequency;
    COMPLEX16 openloop;
    COMPLEX16 digital;
@@ -113,7 +113,7 @@ UpdateFactorsParams;
 typedef struct
 tagCalibrationRecord
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(CalibrationRecord);
   CHAR                     name[LALNameLength];
   LIGOTimeGPS              epoch;
   REAL8                    duration;
@@ -138,7 +138,7 @@ CalibrationRecord;
 typedef struct
 tagCalibrationFunctions
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(CalibrationFunctions);
   COMPLEX8FrequencySeries *responseFunction;
   COMPLEX8FrequencySeries *sensingFunction;
 }
@@ -160,7 +160,7 @@ CalibrationFunctions;
 typedef struct
 tagCalibrationUpdateParams
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(CalibrationUpdateParams);
   LIGOTimeGPS epoch;
   LIGOTimeGPS duration;
   CHAR *ifo;
@@ -174,7 +174,7 @@ CalibrationUpdateParams;
 /** UNDOCUMENTED */
 typedef
 struct tagStrainOut {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(StrainOut);
   REAL8TimeSeries h;         	/**<  timeseries containing h(t) */
   REAL8TimeSeries hC;         	/**< timeseries containing the control signal */
   REAL8TimeSeries hR;         	/**< timeseries containing the residual signal */
@@ -187,7 +187,7 @@ struct tagStrainOut {
 /** UNDOCUMENTED */
 typedef
 struct tagStrainIn {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(StrainIn);
   REAL4TimeSeries AS_Q ;   /**< timeseries containing ASQ */
   REAL4TimeSeries DARM_ERR;/**< timeseries containing DARM_ERR */
   REAL4TimeSeries DARM ;   /**< timeseries containing DARM_CTRL */
@@ -230,7 +230,7 @@ struct tagStrainIn {
 /** UNDOCUMENTED */
 typedef
 struct tagMyIIRFilter {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(MyIIRFilter);
   INT4 yOrder;
   INT4 xOrder;
   REAL8 a[20];

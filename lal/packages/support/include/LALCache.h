@@ -29,8 +29,8 @@
 #define _LALCACHE_H_
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #ifdef __cplusplus
@@ -45,7 +45,7 @@ NRCSID( LALCACHEH, "$Id$" );
 
 /** An entry in a LAL cache */
 typedef struct tagLALCacheEntry {
-        SWIGLAL_STRUCT_LALALLOC();
+        SWIGLAL_STRUCT(LALCacheEntry);
         CHAR *src; /**< File source field */
         CHAR *dsc; /**< File description field */
         INT4 t0;   /**< GPS time (seconds) of beginning of data in file */
@@ -55,7 +55,7 @@ typedef struct tagLALCacheEntry {
 
 /** The LALCache structure is an array of entries */
 typedef struct tagLALCache {
-        SWIGLAL_STRUCT_LALALLOC();
+        SWIGLAL_STRUCT(LALCache);
         UINT4 length;
         LALCacheEntry *list;
 } LALCache;

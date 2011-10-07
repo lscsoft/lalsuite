@@ -14,8 +14,8 @@ extern "C" {
 #endif
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #define XLAL_BEGINGSL \
@@ -33,7 +33,7 @@ extern "C" {
 typedef struct
 tagark4GSLIntegrator
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(ark4GSLIntegrator);
   gsl_odeiv_step    *step;
   gsl_odeiv_control *control;
   gsl_odeiv_evolve  *evolve;

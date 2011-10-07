@@ -27,8 +27,8 @@
 #define _FLATLATTICETILING_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <gsl/gsl_vector.h>
@@ -80,7 +80,7 @@ typedef int (*FlatTilingLatticeGenerator)(
  * Flat lattice tiling state/input structure
  */
 typedef struct tagFlatLatticeTiling {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(FlatLatticeTiling);
 
   /* Dimension of the parameter space */
   INT4 dimensions;
