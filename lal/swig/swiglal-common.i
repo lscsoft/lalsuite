@@ -98,10 +98,6 @@
   %}
 %enddef
 
-// Remove LAL RCS ID macros from SWIG interface.
-#define NRCSID(name,id)
-#define RCSID(id)
-
 // Function which tests whether the pointer passed to it is non-zero.
 // This function does the right thing if it is passed an actual pointer,
 // or the name of a statically-allocated array (which is implicitly
@@ -123,6 +119,7 @@
 %enddef
 
 // Include basic LAL headers in wrapping code.
+%include <lal/LALRCSID.h>
 %header %{
   #include <lal/XLALError.h>
   #include <lal/LALMalloc.h>
