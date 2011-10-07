@@ -19,6 +19,7 @@
 
 #include <math.h>
 #include <time.h>
+#include <xmmintrin.h>
 
 #include <lal/LALMalloc.h>
 #include <lal/SeqFactories.h>
@@ -30,6 +31,8 @@
 #include "statistics.h"
 #include "candidates.h"
 #include "fastchisqinv.h"
+
+#define aligned_alloca(a) ((void *)(((unsigned long)(alloca(a+63))+63) & ~63))
 
 //////////////////////////////////////////////////////////////
 // Create vectors for IHS maxima struct
@@ -891,7 +894,7 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          //FILE *TWOROWSUM = fopen("./tworowsum.dat","w");
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             //Sum IHS values across SFT frequency bins
-            SSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
+            fastSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
             for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) {
                //tworows->data[jj*ihsvectorsequence->vectorLength + kk] = ihsvectorsequence->data[jj*ihsvectorsequence->vectorLength + kk] + ihsvectorsequence->data[(jj+1)*ihsvectorsequence->vectorLength + kk];
                tworows2->data[jj*ihsvalsfromaveNoise->length + kk] = ihsvalsfromaveNoise->data[kk]*(randvals->data[jj] + randvals->data[jj+1])*FbinMean->data[jj];
@@ -1001,7 +1004,7 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          
          INT4 endloc = ((ii-1)*(ii-1)-(ii-1))/2;
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
-            SSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj);
+            fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj);
             for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) {
                //tworows->data[jj*ihsvectorsequence->vectorLength + kk] += ihsvectorsequence->data[(ii-1+jj)*ihsvectorsequence->vectorLength + kk];
                tworows2->data[jj*ihsvalsfromaveNoise->length + kk] += ihsvalsfromaveNoise->data[kk]*randvals->data[ii-1+jj]*FbinMean->data[ii-1+jj];
@@ -1097,10 +1100,8 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
 void SSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos)
 {
    
-   INT4 ii;
-   for (ii=0; ii<(INT4)input1->vectorLength; ii++) {
-      output->data[outputvectorpos*output->vectorLength + ii] = input1->data[vectorpos1*input1->vectorLength + ii] + input2->data[vectorpos2*input2->vectorLength + ii];
-   }
+   INT4 ii, vec1 = vectorpos1*input1->vectorLength, vec2 = vectorpos2*input2->vectorLength, outvec = outputvectorpos*output->vectorLength;
+   for (ii=0; ii<(INT4)input1->vectorLength; ii++) output->data[outvec + ii] = input1->data[vec1 + ii] + input2->data[vec2 + ii];
    
 }
 void fastSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos)
@@ -1120,6 +1121,40 @@ void fastSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *i
       b++;
       c++;
    }
+   
+}
+void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos)
+{
+   
+   INT4 roundedvectorlength = (INT4)input1->vectorLength / 4;
+   
+   REAL4* alignedinput1 = (REAL4*)aligned_alloca(roundedvectorlength*sizeof(REAL4));
+   REAL4* alignedinput2 = (REAL4*)aligned_alloca(roundedvectorlength*sizeof(REAL4));
+   REAL4* alignedoutput = (REAL4*)aligned_alloca(roundedvectorlength*sizeof(REAL4));
+   
+   INT4 ii, vec1 = vectorpos1*input1->vectorLength, vec2 = vectorpos2*input2->vectorLength, outvec = outputvectorpos*output->vectorLength;
+   for (ii=0; ii<roundedvectorlength*4; ii++) {
+      alignedinput1[ii] = input1->data[vec1 + ii];
+      alignedinput2[ii] = input2->data[vec2 + ii];
+   }
+   
+   __m128* arr1 = (__m128*)alignedinput1;
+   __m128* arr2 = (__m128*)alignedinput2;
+   __m128* result = (__m128*)alignedoutput;
+   for (ii=0; ii<roundedvectorlength; ii++) {
+      *result = _mm_add_ps(*arr1, *arr2);
+      alignedinput1++;
+      alignedinput2++;
+      result++;
+   }
+   
+   for (ii=0; ii<roundedvectorlength*4; ii++) output->data[outvec + ii] = alignedoutput[ii];
+   
+   free(alignedinput1);
+   free(alignedinput2);
+   free(alignedoutput);
+   
+   for (ii=roundedvectorlength; ii<(INT4)input1->vectorLength; ii++) output->data[outvec + ii] = input1->data[vec1 + ii] + input2->data[vec2 + ii];
    
 }
 
