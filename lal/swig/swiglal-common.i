@@ -1170,11 +1170,11 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
     %argument_fail(res, "$type", $symname, $argnum); 
   }
   $1 = %reinterpret_cast(&argp, $ltype);
-  owner = (argp == NULL);
+  owner = (argp == NULL) ? SWIG_POINTER_OWN : 0;
 }
 %typemap(in, noblock=1, numinputs=0) SWIGTYPE ** OUTPUT (void *argp = NULL, int owner = 0) {
   $1 = %reinterpret_cast(&argp, $ltype);
-  owner = (argp == NULL);
+  owner = (argp == NULL) ? SWIG_POINTER_OWN : 0;
 }
 %typemap(argout, noblock=1) SWIGTYPE ** {
   %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, owner$argnum | %newpointer_flags));
