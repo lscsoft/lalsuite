@@ -892,15 +892,17 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          
          
          //FILE *TWOROWSUM = fopen("./tworowsum.dat","w");
+         sseSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, 0, 1, 0, (INT4)ihsvectorsequence->length-(ii-1));
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             //Sum IHS values across SFT frequency bins
-            fastSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
+            //fastSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
             for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) {
                //tworows->data[jj*ihsvectorsequence->vectorLength + kk] = ihsvectorsequence->data[jj*ihsvectorsequence->vectorLength + kk] + ihsvectorsequence->data[(jj+1)*ihsvectorsequence->vectorLength + kk];
                tworows2->data[jj*ihsvalsfromaveNoise->length + kk] = ihsvalsfromaveNoise->data[kk]*(randvals->data[jj] + randvals->data[jj+1])*FbinMean->data[jj];
-               excessabovenoise->data[kk] = tworows->data[jj*ihsvectorsequence->vectorLength + kk] - tworows2->data[jj*ihsvalsfromaveNoise->length + kk];
+               //excessabovenoise->data[kk] = tworows->data[jj*ihsvectorsequence->vectorLength + kk] - tworows2->data[jj*ihsvalsfromaveNoise->length + kk];
                //fprintf(TWOROWSUM, "%.6f\n", tworows->data[jj*ihsvectorsequence->vectorLength + kk]);
             }
+            fastSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
             
             //Compute the maximum IHS value in the second FFT frequency direction
             //output->locations->data[jj] = max_index_from_vector_in_REAL4VectorSequence(tworows, jj) + 5;
@@ -1003,8 +1005,8 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          }
          
          INT4 endloc = ((ii-1)*(ii-1)-(ii-1))/2;
+         sseSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, 0, ii-1, 0, (INT4)ihsvectorsequence->length-(ii-1));
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
-            fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj);
             for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) {
                //tworows->data[jj*ihsvectorsequence->vectorLength + kk] += ihsvectorsequence->data[(ii-1+jj)*ihsvectorsequence->vectorLength + kk];
                tworows2->data[jj*ihsvalsfromaveNoise->length + kk] += ihsvalsfromaveNoise->data[kk]*randvals->data[ii-1+jj]*FbinMean->data[ii-1+jj];
@@ -1123,38 +1125,63 @@ void fastSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *i
    }
    
 }
-void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos)
+void fastSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2)
+{
+   
+   REAL4 *a, *b, *c;
+   INT4 n;
+   
+   a = &(input1->data[vectorpos1*input1->vectorLength]);
+   b = &(input2->data[vectorpos2*input2->vectorLength]);
+   c = &(output->data[output->length]);
+   n = output->length;
+   
+   while (n-- > 0) {
+      *c = (*a)-(*b);
+      a++;
+      b++;
+      c++;
+   }
+   
+}
+void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors)
 {
    
    INT4 roundedvectorlength = (INT4)input1->vectorLength / 4;
    
-   REAL4* alignedinput1 = (REAL4*)aligned_alloca(roundedvectorlength*sizeof(REAL4));
-   REAL4* alignedinput2 = (REAL4*)aligned_alloca(roundedvectorlength*sizeof(REAL4));
-   REAL4* alignedoutput = (REAL4*)aligned_alloca(roundedvectorlength*sizeof(REAL4));
+   REAL4* allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+   REAL4* allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+   REAL4* allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+   REAL4* alignedinput1 = (void*)(((UINT8)allocinput1+15) & ~15);
+   REAL4* alignedinput2 = (void*)(((UINT8)allocinput2+15) & ~15);
+   REAL4* alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
    
-   INT4 ii, vec1 = vectorpos1*input1->vectorLength, vec2 = vectorpos2*input2->vectorLength, outvec = outputvectorpos*output->vectorLength;
-   for (ii=0; ii<roundedvectorlength*4; ii++) {
-      alignedinput1[ii] = input1->data[vec1 + ii];
-      alignedinput2[ii] = input2->data[vec2 + ii];
+   INT4 ii, jj;
+   for (ii=0; ii<numvectors; ii++) {
+      INT4 vec1 = (vectorpos1+ii)*input1->vectorLength, vec2 = (vectorpos2+ii)*input2->vectorLength, outvec = (outputvectorpos+ii)*output->vectorLength;
+      for (jj=0; jj<roundedvectorlength*4; jj++) {
+         alignedinput1[jj] = input1->data[vec1 + jj];
+         alignedinput2[jj] = input2->data[vec2 + jj];
+      }
+      
+      __m128* arr1 = (__m128*)alignedinput1;
+      __m128* arr2 = (__m128*)alignedinput2;
+      __m128* result = (__m128*)alignedoutput;
+      for (jj=0; jj<roundedvectorlength; jj++) {
+         *result = _mm_add_ps(*arr1, *arr2);
+         arr1++;
+         arr2++;
+         result++;
+      }
+      
+      for (jj=0; jj<roundedvectorlength*4; jj++) output->data[outvec + jj] = alignedoutput[jj];
+      
+      for (/* previous jj value */; jj<(INT4)input1->vectorLength; jj++) output->data[outvec + jj] = input1->data[vec1 + jj] + input2->data[vec2 + jj];
    }
-   
-   __m128* arr1 = (__m128*)alignedinput1;
-   __m128* arr2 = (__m128*)alignedinput2;
-   __m128* result = (__m128*)alignedoutput;
-   for (ii=0; ii<roundedvectorlength; ii++) {
-      *result = _mm_add_ps(*arr1, *arr2);
-      alignedinput1++;
-      alignedinput2++;
-      result++;
-   }
-   
-   for (ii=0; ii<roundedvectorlength*4; ii++) output->data[outvec + ii] = alignedoutput[ii];
-   
-   free(alignedinput1);
-   free(alignedinput2);
-   free(alignedoutput);
-   
-   for (ii=roundedvectorlength; ii<(INT4)input1->vectorLength; ii++) output->data[outvec + ii] = input1->data[vec1 + ii] + input2->data[vec2 + ii];
+      
+   XLALFree(allocinput1);
+   XLALFree(allocinput2);
+   XLALFree(allocoutput);
    
 }
 
