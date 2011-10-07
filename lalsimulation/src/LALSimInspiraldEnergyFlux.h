@@ -19,8 +19,8 @@
 
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #if defined(__cplusplus)
@@ -31,7 +31,7 @@ extern "C" {
 
 typedef struct
 tagexpnCoeffsdEnergyFlux {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(expnCoeffsdEnergyFlux);
 
    /* coefficients in the Pade expression of new energy function */
    REAL8 ePaN, ePa1, ePa2, ePa3;
@@ -75,7 +75,7 @@ typedef REAL8 FluxFunction(
 typedef struct
 tagTofVIntegrandIn
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(TofVIntegrandIn);
 
    EnergyFunction *dEnergy;
    FluxFunction *flux;
@@ -86,7 +86,7 @@ tagTofVIntegrandIn
 typedef struct
 tagTofVIn
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(TofVIn);
 
    REAL8 t;
    REAL8 v0;
