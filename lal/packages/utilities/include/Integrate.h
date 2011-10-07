@@ -102,7 +102,6 @@ IntegralType;
 typedef struct
 tagSIntegrateIn
 {
-  SWIGLAL_STRUCT_LALALLOC();
   void (*function)(LALStatus *s, REAL4 *y, REAL4 x, void *p);
   REAL4         xmax;
   REAL4         xmin;
@@ -113,7 +112,6 @@ SIntegrateIn;
 typedef struct
 tagDIntegrateIn
 {
-  SWIGLAL_STRUCT_LALALLOC();
   void (*function)(LALStatus *s, REAL8 *y, REAL8 x, void *p);
   REAL8         xmax;
   REAL8         xmin;
