@@ -2060,6 +2060,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->FFTplanFlag = args_info.FFTplanFlag_arg;
    params->printAllULvalues = args_info.allULvalsPerSkyLoc_given;
    params->fastchisqinv = args_info.fastchisqinv_given;
+   params->useSSE = args_info.useSSE_given;
    
    //Non-default arguments
    if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;

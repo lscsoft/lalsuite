@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.7"
+#define CMDLINE_PARSER_VERSION "1.1.8"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -159,6 +159,8 @@ struct gengetopt_args_info
   const char *allULvalsPerSkyLoc_help; /**< @brief Print all UL values in the band specified by ULminimumDeltaf and ULmaximumDeltaf (default is to print only the maximum UL value in the band) help description.  */
   int fastchisqinv_flag;	/**< @brief Use a faster central chi-sq inversion function (roughly float precision instead of double) (default=off).  */
   const char *fastchisqinv_help; /**< @brief Use a faster central chi-sq inversion function (roughly float precision instead of double) help description.  */
+  int useSSE_flag;	/**< @brief Use SSE functions (default=off).  */
+  const char *useSSE_help; /**< @brief Use SSE functions help description.  */
   int IHSonly_flag;	/**< @brief IHS stage only is run. Output statistic is the IHS statistic. (default=off).  */
   const char *IHSonly_help; /**< @brief IHS stage only is run. Output statistic is the IHS statistic. help description.  */
   int calcRthreshold_flag;	/**< @brief Calculate the threshold value for R given the template false alarm rate (default=off).  */
@@ -215,6 +217,7 @@ struct gengetopt_args_info
   unsigned int FFTplanFlag_given ;	/**< @brief Whether FFTplanFlag was given.  */
   unsigned int allULvalsPerSkyLoc_given ;	/**< @brief Whether allULvalsPerSkyLoc was given.  */
   unsigned int fastchisqinv_given ;	/**< @brief Whether fastchisqinv was given.  */
+  unsigned int useSSE_given ;	/**< @brief Whether useSSE was given.  */
   unsigned int IHSonly_given ;	/**< @brief Whether IHSonly was given.  */
   unsigned int calcRthreshold_given ;	/**< @brief Whether calcRthreshold was given.  */
   unsigned int BrentsMethod_given ;	/**< @brief Whether BrentsMethod was given.  */
