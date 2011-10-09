@@ -27,5 +27,4 @@ dvi-local: .dvi-dep
 @DVIMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)
-CLEANFILES += $(swig_clean)
-@SWIG_HEADER_MK@
+include $(top_srcdir)/swig/swig-header.am

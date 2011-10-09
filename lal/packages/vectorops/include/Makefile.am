@@ -14,5 +14,4 @@ VectorIndexRange.h: VectorIndexRangeBaseH.m4 VectorIndexRangeH.m4 VectorPairType
 @INCLUDEMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)
-CLEANFILES += $(swig_clean)
-@SWIG_HEADER_MK@
+include $(top_srcdir)/swig/swig-header.am
