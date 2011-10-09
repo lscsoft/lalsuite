@@ -485,7 +485,7 @@ swiglal_conv_ctype(COMPLEX16);
 //  * swiglal_object_free(v) frees any resources associated with a
 //    scripting language object, e.g. by decreasing its reference count
 //
-//  * swiglal_is_vector(v) and swiglal_is_matrix(v) return whether
+//  * swiglal_is_vector(v) and swiglal_is_matrix(m) return whether
 //    their argument can be interpreted as a vector or a matrix,
 //    respectively, in the target scripting language.
 //
@@ -493,9 +493,9 @@ swiglal_conv_ctype(COMPLEX16);
 //    get the (i)th element of the scripting language vector v, and
 //    assign the scripting language object vi to the (i)th element of v.
 //
-//  * swiglal_matrix_get(v, i, j) and swiglal_matrix_set(v, i, j, vij)
-//    get the (i,j)th element of the scripting language vector v, and
-//    assign the scripting language object vij to the (i,j)th element of v.
+//  * swiglal_matrix_get(m, i, j) and swiglal_matrix_set(m, i, j, mij)
+//    get the (i,j)th element of the scripting language matrix m, and
+//    assign the scripting language object mij to the (i,j)th element of m.
 //
 //  * swiglal_vector_new<TYPE>(n) and swiglal_matrix_new<TYPE>(ni, nj)
 //    return a scripting language object containing a new vector of
