@@ -98,6 +98,7 @@ AH_BOTTOM([
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
+LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
 # set library api info - liblal
 # 1. start with version information of "0:0:0" for each libtool library
