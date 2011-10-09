@@ -42,6 +42,9 @@ if (PyErr_Occurred()) SWIG_fail;"
   import_array();
 %}
 
+// Python self object for structs.
+#define swiglal_self()   $self
+
 // Returns whether a PyObject is a non-NULL pointer.
 #define swiglal_object_valid(OBJ)   ((OBJ) != NULL)
 
@@ -103,6 +106,13 @@ if (PyErr_Occurred()) SWIG_fail;"
     npy_intp dims[1];
     dims[0] = n;
     return PyArray_EMPTY(1, dims, NPY_OBJECT, 0);
+  }
+
+  // Vector views are only supported for some types (see below).
+  template<class TYPE> SWIGINTERN bool swiglal_vector_view(PyObject *self, PyObject **v, TYPE* data,
+                                                           const size_t n, const size_t s)
+  {
+    return false;
   }
 
 %}
@@ -217,6 +227,14 @@ if (PyErr_Occurred()) SWIG_fail;"
     dims[0] = ni;
     dims[1] = nj;
     return PyArray_EMPTY(2, dims, NPY_OBJECT, 0);
+  }
+
+  // Matrix views are only supported for some types (see below).
+  template<class TYPE> SWIGINTERN bool swiglal_matrix_view(PyObject *self, PyObject **m, TYPE* data,
+                                                           const size_t ni, const size_t si,
+                                                           const size_t nj, const size_t sj)
+  {
+    return false;
   }
 
 %}

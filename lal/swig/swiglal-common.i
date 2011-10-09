@@ -617,6 +617,14 @@ swiglal_conv_ctype(COMPLEX16);
 //    length n, and a new matrix with ni rows and nj columns respectively,
 //    and which can contain elements of C type TYPE.
 //
+//  * swiglal_vector_view<TYPE>(v, data, n, s) returns, if supported,
+//    a scripting language object v which is a "view" of the C vector data,
+//    of type TYPE, with length n and stride s.
+//
+//  * swiglal_matrix_view<TYPE>(m, data, ni, si, nj, sj) returns, if supported,
+//    a scripting language object m which is a "view" of the C matrix data,
+//    of type TYPE, with ni rows (stride si) and nj columns (stride sj).
+//
 // NOTE: swiglal_vector_get() and swiglal_matrix_get() must return *new*
 // scripting language objects (i.e. objects that are owned by the SWIG
 // wrapping code), as swiglal_object_free() will be called to destroy them
@@ -639,6 +647,8 @@ swiglal_conv_ctype(COMPLEX16);
 //    the stride of the matrix columns, in units of number of elements.
 //  FLAGS:
 //    bit-flags to pass to swiglal_as_val
+//  SELF:
+//    for structs, the SWIG_Object representing the struct
 
 // These macros return pointers to the (I)th element of the 1-D array DATA,
 // and the (I,J)th element of the 2-D array DATA respectively.
@@ -651,6 +661,12 @@ swiglal_conv_ctype(COMPLEX16);
 // type, stripped of any const qualifiers (using '$ltype').
 %typemap(swiglal_new_type)      SWIGTYPE "$ltype";
 %typemap(swiglal_new_type) enum SWIGTYPE "int";
+
+// When creating a scripting language view of a vector/matrix,
+// these typemaps determine what the representative C type should
+// be: for enumeration types use int, otherwise use the type
+%typemap(swiglal_view_type)      SWIGTYPE "$type";
+%typemap(swiglal_view_type) enum SWIGTYPE "int";
 
 // Convert a scripting language vector to a C vector
 %define swiglal_vector_convert_in(TYPE, NAME, DATA, NI, SI, FLAGS)
@@ -677,20 +693,23 @@ swiglal_conv_ctype(COMPLEX16);
 %enddef // swiglal_vector_convert_in
 
 // Convert a C vector to a scripting language vector
-%define swiglal_vector_convert_out(TYPE, NAME, DATA, NI, SI)
+%define swiglal_vector_convert_out(TYPE, NAME, DATA, NI, SI, SELF)
   // Check that the C vector has elements
   if ((NI) == 0) {
     swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NAME<<"'");
   }
-  // Create a new scripting language vector $result
-  $result = swiglal_new_vector<$typemap(swiglal_new_type, TYPE) >(NI);
-  if (!swiglal_object_valid($result)) {
-    swiglal_exception(SWIG_RuntimeError, "failed to create a new vector for '"<<#NAME<<"'");
-  }
-  // Copy the C vector DATA the scripting language vector $result
-  for (size_t i = 0; i < (NI); ++i) {
-    if (!swiglal_vector_set($result, i, swiglal_call_from(TYPE)(swiglal_vec_ptr(TYPE, DATA, i, SI), $1_descriptor))) {
-      %argument_fail(SWIG_RuntimeError, "$type", $symname, $argnum);
+  // Create a scripting language vector view of $result, is possible
+  if (!swiglal_vector_view<$typemap(swiglal_view_type, TYPE) >(SELF, &($result), %reinterpret_cast(DATA, $typemap(swiglal_view_type, TYPE)*), NI, SI)) {
+    // Create a new scripting language vector $result
+    $result = swiglal_new_vector<$typemap(swiglal_new_type, TYPE) >(NI);
+    if (!swiglal_object_valid($result)) {
+      swiglal_exception(SWIG_RuntimeError, "failed to create a new vector for '"<<#NAME<<"'");
+    }
+    // Copy the C vector DATA the scripting language vector $result
+    for (size_t i = 0; i < (NI); ++i) {
+      if (!swiglal_vector_set($result, i, swiglal_call_from(TYPE)(swiglal_vec_ptr(TYPE, DATA, i, SI), $1_descriptor))) {
+        %argument_fail(SWIG_RuntimeError, "$type", $symname, $argnum);
+      }
     }
   }
 %enddef // swiglal_vector_convert_out
@@ -725,21 +744,24 @@ swiglal_conv_ctype(COMPLEX16);
 %enddef // swiglal_matrix_convert_in
 
 // Convert a C matrix to a scripting language matrix
-%define swiglal_matrix_convert_out(TYPE, NAME, DATA, NI, SI, NJ, SJ)
+%define swiglal_matrix_convert_out(TYPE, NAME, DATA, NI, SI, NJ, SJ, SELF)
   // Check that the C matrix has elements
   if ((NI) == 0 || (NJ) == 0) {
     swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NAME<<"'");
   }
-  // Create a new scripting language matrix $result
-  $result = swiglal_new_matrix<$typemap(swiglal_new_type, TYPE) >(NI, NJ);
-  if (!swiglal_object_valid($result)) {
-    swiglal_exception(SWIG_RuntimeError, "failed to create a new matrix for '"<<#NAME<<"'");
-  }
-  // Copy the C matrix DATA the scripting language matrix $result
-  for (size_t i = 0; i < (NI); ++i) {
-    for (size_t j = 0; j < (NJ); ++j) {
-      if (!swiglal_matrix_set($result, i, j, swiglal_call_from(TYPE)(swiglal_mat_ptr(TYPE, DATA, i, SI, j, SJ), $1_descriptor))) {
-        %argument_fail(SWIG_RuntimeError, "$type", $symname, $argnum);
+  // Create a scripting language vector view of $result, is possible
+  if (!swiglal_matrix_view<$typemap(swiglal_view_type, TYPE) >(SELF, &($result), %reinterpret_cast(DATA, $typemap(swiglal_view_type, TYPE)*), NI, SI, NJ, SJ)) {
+    // Create a new scripting language matrix $result
+    $result = swiglal_new_matrix<$typemap(swiglal_new_type, TYPE) >(NI, NJ);
+    if (!swiglal_object_valid($result)) {
+      swiglal_exception(SWIG_RuntimeError, "failed to create a new matrix for '"<<#NAME<<"'");
+    }
+    // Copy the C matrix DATA the scripting language matrix $result
+    for (size_t i = 0; i < (NI); ++i) {
+      for (size_t j = 0; j < (NJ); ++j) {
+        if (!swiglal_matrix_set($result, i, j, swiglal_call_from(TYPE)(swiglal_mat_ptr(TYPE, DATA, i, SI, j, SJ), $1_descriptor))) {
+          %argument_fail(SWIG_RuntimeError, "$type", $symname, $argnum);
+        }
       }
     }
   }
@@ -1059,7 +1081,7 @@ swiglal_conv_ctype(COMPLEX16);
   swiglal_vector_convert_in($typemap(swiglal_temp_type, $1_basetype), $symname, $1, $1_dim0, 1, SL_AV_LALALLOC);
 }
 %typemap(out, noblock=1) SWIGTYPE[ANY] {
-  swiglal_vector_convert_out($1_basetype, $symname, $1, $1_dim0, 1);
+  swiglal_vector_convert_out($1_basetype, $symname, $1, $1_dim0, 1, VOID_Object);
 }
 
 // Map a C 1-D array global variable or constant
@@ -1068,7 +1090,7 @@ swiglal_conv_ctype(COMPLEX16);
   swiglal_vector_convert_in($1_basetype, $symname, $1, $1_dim0, 1, SL_AV_LALALLOC);
 }
 %typemap(varout, noblock=1) SWIGTYPE[ANY] {
-  swiglal_vector_convert_out($1_basetype, $symname, $1, $1_dim0, 1);
+  swiglal_vector_convert_out($1_basetype, $symname, $1, $1_dim0, 1, VOID_Object);
 fail: // SWIG doesn't add a fail label to a global variable '_get' function
 }
 
@@ -1080,7 +1102,7 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
   swiglal_matrix_convert_in($typemap(swiglal_temp_type, $1_basetype), $symname, $1, $1_dim0, $1_dim1, $1_dim1, 1, SL_AV_LALALLOC);
 }
 %typemap(out, noblock=1) SWIGTYPE[ANY][ANY] {
-  swiglal_matrix_convert_out($1_basetype, $symname, $1, $1_dim0, $1_dim1, $1_dim1, 1);
+  swiglal_matrix_convert_out($1_basetype, $symname, $1, $1_dim0, $1_dim1, $1_dim1, 1, VOID_Object);
 }
 
 // Map a C 2-D array global variable or constant
@@ -1089,7 +1111,7 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
   swiglal_matrix_convert_in($1_basetype, $symname, $1, $1_dim0, $1_dim1, $1_dim1, 1, SL_AV_LALALLOC);
 }
 %typemap(varout, noblock=1) SWIGTYPE[ANY][ANY] {
-  swiglal_matrix_convert_out($1_basetype, $symname, $1, $1_dim0, $1_dim1, $1_dim1, 1);
+  swiglal_matrix_convert_out($1_basetype, $symname, $1, $1_dim0, $1_dim1, $1_dim1, 1, VOID_Object);
 fail: // SWIG doesn't add a fail label to a global variable '_get' function
 }
 
@@ -1164,7 +1186,7 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
         swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#DATA<<"'");
       }
       // Convert DATA to the scripting language $result vector
-      swiglal_vector_convert_out(TYPE, DATA, arg1->DATA, arg1->NI, SI);
+      swiglal_vector_convert_out(TYPE, DATA, arg1->DATA, arg1->NI, SI, swiglal_self());
     }
   }
 
@@ -1221,7 +1243,7 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
         swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#DATA<<"'");
       }
       // Convert DATA to the scripting language $result matrix
-      swiglal_matrix_convert_out(TYPE, DATA, arg1->DATA, arg1->NI, SI, arg1->NJ, SJ);
+      swiglal_matrix_convert_out(TYPE, DATA, arg1->DATA, arg1->NI, SI, arg1->NJ, SJ, swiglal_self());
     }
   }
 
