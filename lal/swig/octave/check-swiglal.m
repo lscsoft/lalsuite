@@ -17,7 +17,7 @@ else
   LALCheckMemoryLeaks();
   mem1 = new_LALDetector();
   mem2 = new_LALStringVector();
-  mem3 = new_COMPLEX8Vector();
+  mem3 = XLALCreateCOMPLEX8Vector(5);
   mem4 = XLALCreateREAL8Vector(3);
   msg("*** below should be an error message from LALCheckMemoryLeaks() ***");
   try
@@ -25,8 +25,7 @@ else
     error("expected exception");
   end_try_catch
   msg("*** above should be an error message from LALCheckMemoryLeaks() ***");
-  clear mem1 mem2 mem3;
-  XLALDestroyREAL8Vector(mem4);
+  clear mem1 mem2 mem3 mem4;
   LALCheckMemoryLeaks();
   msg("passed memory allocation");
 endif
@@ -158,9 +157,7 @@ rv = XLALCreateREAL8Vector(5);
 cm = XLALCreateCOMPLEX8VectorSequence(4, 6);
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength);
-XLALDestroyINT4Vector(iv);
-XLALDestroyREAL8Vector(rv);
-XLALDestroyCOMPLEX8VectorSequence(cm);
+clear iv rv cm;
 LALCheckMemoryLeaks();
 msg("passed dynamic vector/matrix conversions (LAL)");
 ## check GSL vectors and matrices

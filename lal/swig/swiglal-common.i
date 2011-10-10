@@ -72,9 +72,6 @@
 // on which LAL integer types are based.
 %include <stdint.i>
 
-// Generate copy constructors for all structs.
-%copyctor;
-
 // Turn on auto-documentation of functions.
 %feature("autodoc", 1);
 
@@ -152,51 +149,169 @@
 /////////////// Memory allocation ///////////////
 
 // SWIG generates default constructor and destructors for wrapped structs.
-// These contructors/destructors always use 'malloc'/'free' (C mode) or
-// 'new'/'delete' (C++ mode); see e.g. Source/Swig/cwrap.c in SWIG 1.3.40.
+// These contructors/destructors always use 'malloc()'/'free()' (C mode) or
+// 'new()'/'delete()' (C++ mode); see e.g. Source/Swig/cwrap.c in SWIG 1.3.40.
 // It is not possible to specify alternative memory allocators through any
-// options to SWIG. However, we would like all LAL structs to be allocated
+// options to SWIG. However, we would like LAL structs to be allocated
 // with LAL memory allocation functions, so that the LAL memory debugging
 // system can be used inside a scripting language. For example, if a LAL
 // struct allocated by SWIG is passed to a LAL function which tries to
 // de-allocate it, the LAL memory debugging system will fail unless the
-// LAL struct was originally allocated by LAL.
+// LAL struct was originally allocated by LAL. Additionally, if there
+// exists LAL constructor and destructor functions for a particular struct,
+// i.e. 'XLALCreate...()' and 'XLALDestroy...()', we would like the functions
+// to be used to create/destroy the LAL struct, since these functions will
+// correctly initialise/free the struct, particularly if the struct itself
+// contains pointers to new memory which must be (de)allocated.
 //
-// The solution is to use a C++ feature: a class C can supply their own
-// 'new'/'delete' operators, which will then be called by 'new C()' to
-// allocate the class. We do the same for all LAL structs by adding the
-// symbol 'SWIGLAL_STRUCT_LALALLOC' to their definitions. This symbol
-// defines a 'new' operator, which allocates the struct using XLALCalloc
-// (so that the struct is zero-initialised), and a 'delete' operator
-// which calls XLALFree to de-allocate the struct.
-//
-// Note that, if a LAL struct does not contain 'SWIGLAL_STRUCT_LALALLOC',
-// it will continue to be use the default 'new'/'delete' operators. This
-// should break anything as long as LAL memory debugging is not used,
-// either by compiling with --disable-debug or by setting lalDebugLevel=0.
+// The solution we adopt depends on a C++ feature: a class C can supply
+// their own 'new()'/'delete()' operators, which will then be called by
+// 'new C()' to allocate the class. To make this work, every *public* LAL
+// struct (i.e. that is defined in a header file) must include the line
+//   SWIGLAL_STRUCT(STRUCT);
+// in their definition, where STRUCT is the name of the struct. The top
+// -level interface file (e.g. swig-lal.swg) must then include the line
+//   SWIGLAL_STRUCT_<MODE>(STRUCT);
+// where <MODE> is one of: CMEM, LALMEM, or LALCDTOR (see below). These
+// rules should be enforced by the 'swig-check-headers.pl' script.
 
-// Remove SWIGLAL_STRUCT_LALALLOC from SWIG interface
-#define SWIGLAL_STRUCT_LALALLOC()
+// Do not generate any (copy) contructors or destructors by default.
+%nodefaultctor;
+%nocopyctor;
+%nodefaultdtor;
 
-// Define SWIGLAL_STRUCT_LALALLOC in SWIG wrapping code
-%header %{
-  #define SWIGLAL_STRUCT_LALALLOC() \
-    void* operator new (size_t n) throw() { \
-      return XLALCalloc(1, n); \
+// Define the SWIGLAL_STRUCT() macro. It must be included in the
+// definition of every public LAL struct. It declares 'new()' and
+// 'delete()' operators, which in turn call the templated functions
+// 'swiglal_struct_operator_new()' and '_delete()' respectively.
+// Templates are used here so that, if a LAL struct is used by SWIG
+// outside the module in which it is defined (e.g. SWIG typemaps that
+// convert by-value parameters, which support implicit conversions)
+// a default behaviour for 'new()' and 'delete()' is available. (The
+// default behaviour is to raise an exception, since these functions
+// should never actually be called.) The templates and macro are
+// declared in the %runtime section so that they are guaranteed to
+// appear before any LAL headers included in the %header section.
+// 'extern "C++"' is used to ensure C++ linkage, as some language
+// modules enclose generated code in 'extern "C"' blocks (e.g. the
+// %wrapper section in Python).
+#define SWIGLAL_STRUCT(STRUCT)
+%runtime %{
+  extern "C++" {
+    template<class T> static inline void* swiglal_struct_operator_new(size_t n) {
+      throw "swiglal: unexpected error: should never have reached swiglal_struct_operator_new<T>";
+      return NULL;
+    }
+    template<class T> static inline void swiglal_struct_operator_delete(void* p) {
+      throw "swiglal: unexpected error: should never have reached swiglal_struct_operator_delete<T>";
+    }
+  }
+  #define SWIGLAL_STRUCT(STRUCT) \
+    void* operator new(size_t n) throw() { \
+      return swiglal_struct_operator_new<tag##STRUCT >(n); \
     } \
     void operator delete(void* p) { \
-      XLALFree(p); \
+      swiglal_struct_operator_delete<tag##STRUCT >(p); \
     }
 %}
 
-// swig-check-headers.pl checks that every LAL struct contains either
-// 'SWIGLAL_STRUCT_LALALLOC' or 'SWIGLAL_STRUCT_NO_LALALLOC'; the latter
-// can be used if memory allocation using the LAL memory debugging routines
-// is specifically not desired.
-#define SWIGLAL_STRUCT_NO_LALALLOC()
-%header %{
-  #define SWIGLAL_STRUCT_NO_LALALLOC()
-%}
+// Define the SWIGLAL_STRUCT_CMEM() macro. It tells SWIG to allocate the
+// struct using generic C(++) memory allocation routines, instead of LAL
+// routines. This should be used e.g. for LIGOTimeGPS, which will create
+// as temporary objects during arithmetic operations, and which we would
+// not want to keep track of. It generates default (copy) constructors
+// and destructors for the struct. The 'swiglal_struct_operator_new()'
+// and '_delete()' template specialisations are declared in the %runtime
+// section but defined in the %wrapper section, so that they appear after
+// any included LAL headers and thus can e.g. use LAL functions.
+%define SWIGLAL_STRUCT_CMEM(STRUCT)
+  %defaultctor tag##STRUCT;
+  %copyctor tag##STRUCT;
+  %defaultdtor tag##STRUCT;
+  %runtime %{
+    struct tag##STRUCT;
+    extern "C++" {
+      template<> inline void* swiglal_struct_operator_new<tag##STRUCT >(size_t);
+      template<> inline void swiglal_struct_operator_delete<tag##STRUCT >(void*);
+    }
+  %}
+  %wrapper %{
+    extern "C++" {
+      template<> inline void* swiglal_struct_operator_new<tag##STRUCT >(size_t n) {
+        return ::operator new(n);
+      }
+      template<> inline void swiglal_struct_operator_delete<tag##STRUCT >(void* p) {
+        ::operator delete(p);
+      }
+    }
+  %}
+%enddef
+
+// Define the SWIGLAL_STRUCT_LALMEM() macro. It tells SWIG to allocate the
+// struct using LAL memory allocation routines 'XLALCalloc()' and 'XLALFree()'.
+// This is suitable for simple LAL structs which do not themselves contain
+// pointers to memory which much be correctly allocated. It generates
+// default (copy) constructors and destructors for the struct. It removes
+// any LAL constructor/destructor functions from the SWIG interface; this is
+// to make it easier to spot whether a struct has been mis-classified and
+// should instead be using the SWIGLAL_STRUCT_LALCDTOR() macro.
+%define SWIGLAL_STRUCT_LALMEM(STRUCT)
+  %defaultctor tag##STRUCT;
+  %copyctor tag##STRUCT;
+  %defaultdtor tag##STRUCT;
+  %ignore XLALCreate##STRUCT;
+  %ignore XLALDestroy##STRUCT;
+  %runtime %{
+    struct tag##STRUCT;
+    extern "C++" {
+      template<> inline void* swiglal_struct_operator_new<tag##STRUCT >(size_t);
+      template<> inline void swiglal_struct_operator_delete<tag##STRUCT >(void*);
+    }
+  %}
+  %wrapper %{
+    extern "C++" {
+      template<> inline void* swiglal_struct_operator_new<tag##STRUCT >(size_t n) {
+        return XLALCalloc(1, n);
+      }
+      template<> inline void swiglal_struct_operator_delete<tag##STRUCT >(void* p) {
+        XLALFree(p);
+      }
+    }
+  %}
+%enddef
+
+// Define the SWIGLAL_STRUCT_LALCDTOR() macro. It tells SWIG to allocate the
+// struct using LAL constructor/destructor functions. This should be used for
+// more complicated LAL structs which must be initialised correctly, e.g.
+// because they themselves contain pointers to memory which must be allocated.
+// It disables the SWIG default (copy) constructors, since they will not
+// properly create/copy the struct; for the same reason, no specialisation
+// for 'swiglal_struct_operator_new()' is supplied, so that the default
+// behaviour (which is to raise an exception) will be used. The %newobject
+// feature is set for the 'XLALCreate...()' constructor function, so that SWIG
+// knows that it returns a new object. It enables the SWIG default destructor,
+// and removes the 'XLALDestroy...()' destructor function from the SWIG interface,
+// since it will already be called by the 'delete()' operator.
+%define SWIGLAL_STRUCT_LALCDTOR(STRUCT)
+  %nodefaultctor tag##STRUCT;
+  %nocopyctor tag##STRUCT;
+  %defaultdtor tag##STRUCT;
+  %newobject XLALCreate##STRUCT;
+  %ignore XLALDestroy##STRUCT;
+  %runtime %{
+    struct tag##STRUCT;
+    extern "C++" {
+      template<> inline void swiglal_struct_operator_delete<tag##STRUCT >(void*);
+    }
+  %}
+  %wrapper %{
+    extern "C++" {
+      template<> inline void swiglal_struct_operator_delete<tag##STRUCT >(void* p) {
+        XLALDestroy##STRUCT(reinterpret_cast<tag##STRUCT* >(p));
+      }
+    }
+  %}
+%enddef
 
 /////////////// Type conversion helpers ///////////////
 
@@ -1166,8 +1281,8 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
 //   argument. This typemap can be %apply-d on a case-by-case basis.
 %typemap(in, noblock=1) SWIGTYPE ** (void  *argp = NULL, int res = 0, int owner = 0) {
   res = SWIG_ConvertPtr($input, &argp, $*descriptor, $disown | %convertptr_flags);
-  if (!SWIG_IsOK(res)) { 
-    %argument_fail(res, "$type", $symname, $argnum); 
+  if (!SWIG_IsOK(res)) {
+    %argument_fail(res, "$type", $symname, $argnum);
   }
   $1 = %reinterpret_cast(&argp, $ltype);
   owner = (argp == NULL) ? SWIG_POINTER_OWN : 0;
