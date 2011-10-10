@@ -111,7 +111,7 @@ include $(swig_iface_deps)
 
 # create links to SWIG interface headers
 swig-header-links :
-	@for file in $(swiginclude_HEADERS); do \
+	@for file in $(nodist_swiginclude_HEADERS) $(swiginclude_HEADERS); do \
 		basename=`echo "/$$file" | $(SED) 's|^.*/\([^/]*\)$$|\1|'`; \
 		srcdir=`cd $(top_srcdir)/$(subdir) && pwd`; \
 		builddir=`cd $(top_builddir)/$(subdir) && pwd`; \
