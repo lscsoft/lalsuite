@@ -212,7 +212,7 @@ static int version_compare(
     XLALPrintError("%s: FATAL: version mismatch between compile-time (%s) and run-time (%s) %s library\n",
         function, compile_time->vcsId, run_time->vcsId, run_time->name);
     XLALPrintError("This indicates a potential compilation problem: ensure your setup is consistent and recompile.\n");
-    XLAL_ERROR(function, XLAL_EERR);
+    XLAL_ERROR(XLAL_EERR);
   }
   return 0;
 }
@@ -652,7 +652,7 @@ XLALGetVersionString( int level )
 #endif
   if ( (ret = XLALMalloc ( len )) == NULL ) {
     XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", __func__, len );
-    XLAL_ERROR_NULL ( __func__, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   strcpy ( ret, lal_info );
@@ -698,17 +698,17 @@ XLALOutputVersionString ( FILE *fp, int level )
 
   if (!fp ) {
     XLALPrintError ("%s: invalid NULL input 'fp'\n", __func__ );
-    XLAL_ERROR ( __func__, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( (VCSInfoString = XLALGetVersionString(level)) == NULL ) {
     XLALPrintError("%s: XLALGetVersionString() failed.\n", __func__);
-    XLAL_ERROR ( __func__, XLAL_EFUNC );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   if ( fprintf (fp, "%s", VCSInfoString ) < 0 ) {
     XLALPrintError("%s: fprintf failed for given file-pointer 'fp'\n", __func__);
     XLALFree ( VCSInfoString);
-    XLAL_ERROR ( __func__, XLAL_EIO );
+    XLAL_ERROR ( XLAL_EIO );
   }
 
   XLALFree ( VCSInfoString);

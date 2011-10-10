@@ -97,14 +97,13 @@ NRCSID (VECTORPOLARC, "$Id$");
 /** computes the magnitudes of a vector of complex numbers */
 int XLALCOMPLEX8VectorAbs( REAL4Vector *out, const COMPLEX8Vector *in )
 {
-	static const char *func = "XLALCOMPLEX8VectorAbs";
 	UINT4 i;
 	if ( ! out || ! in )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	if ( ! out->data || ! in->data )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 	if ( out->length != in->length )
-		XLAL_ERROR( func, XLAL_EBADLEN );
+		XLAL_ERROR( XLAL_EBADLEN );
 	for ( i = 0; i < in->length; ++i )
 		out->data[i] = cabsf( in->data[i] );
 	return 0;
@@ -113,14 +112,13 @@ int XLALCOMPLEX8VectorAbs( REAL4Vector *out, const COMPLEX8Vector *in )
 /** computes the magnitudes of a vector of complex numbers */
 int XLALCOMPLEX16VectorAbs( REAL8Vector *out, const COMPLEX16Vector *in )
 {
-	static const char *func = "XLALCOMPLEX16VectorAbs";
 	UINT4 i;
 	if ( ! out || ! in )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	if ( ! out->data || ! in->data )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 	if ( out->length != in->length )
-		XLAL_ERROR( func, XLAL_EBADLEN );
+		XLAL_ERROR( XLAL_EBADLEN );
 	for ( i = 0; i < in->length; ++i )
 		out->data[i] = cabs( in->data[i] );
 	return 0;
@@ -130,14 +128,13 @@ int XLALCOMPLEX16VectorAbs( REAL8Vector *out, const COMPLEX16Vector *in )
 /** computes the arguments of a vector of complex numbers */
 int XLALCOMPLEX8VectorArg( REAL4Vector *out, const COMPLEX8Vector *in )
 {
-	static const char *func = "XLALCOMPLEX8VectorArg";
 	UINT4 i;
 	if ( ! out || ! in )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	if ( ! out->data || ! in->data )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 	if ( out->length != in->length )
-		XLAL_ERROR( func, XLAL_EBADLEN );
+		XLAL_ERROR( XLAL_EBADLEN );
 	for ( i = 0; i < in->length; ++i )
 		out->data[i] = cargf( in->data[i] );
 	return 0;
@@ -146,14 +143,13 @@ int XLALCOMPLEX8VectorArg( REAL4Vector *out, const COMPLEX8Vector *in )
 /** computes the arguments of a vector of complex numbers */
 int XLALCOMPLEX16VectorArg( REAL8Vector *out, const COMPLEX16Vector *in )
 {
-	static const char *func = "XLALCOMPLEX16VectorArg";
 	UINT4 i;
 	if ( ! out || ! in )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	if ( ! out->data || ! in->data )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 	if ( out->length != in->length )
-		XLAL_ERROR( func, XLAL_EBADLEN );
+		XLAL_ERROR( XLAL_EBADLEN );
 	for ( i = 0; i < in->length; ++i )
 		out->data[i] = carg( in->data[i] );
 	return 0;
@@ -165,17 +161,16 @@ int XLALCOMPLEX16VectorArg( REAL8Vector *out, const COMPLEX16Vector *in )
  * pi radians */
 int XLALREAL4VectorUnwrapAngle( REAL4Vector *out, const REAL4Vector *in )
 {
-	static const char *func = "XLALREAL4VectorUnwrapAngle";
 	REAL4 prev;
 	REAL4 diff;
 	INT4  wrap;
 	UINT4 i;
 	if ( ! out || ! in )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	if ( ! out->data || ! in->data || in->length == 0 )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 	if ( out->length != in->length )
-		XLAL_ERROR( func, XLAL_EBADLEN );
+		XLAL_ERROR( XLAL_EBADLEN );
        	wrap = 0;
 	prev = out->data[0] = in->data[0];
 	for ( i = 1; i < in->length; ++i ) {
@@ -192,17 +187,16 @@ int XLALREAL4VectorUnwrapAngle( REAL4Vector *out, const REAL4Vector *in )
  * pi radians */
 int XLALREAL8VectorUnwrapAngle( REAL8Vector *out, const REAL8Vector *in )
 {
-	static const char *func = "XLALREAL8VectorUnwrapAngle";
 	REAL8 prev;
 	REAL8 diff;
 	INT4  wrap;
 	UINT4 i;
 	if ( ! out || ! in )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	if ( ! out->data || ! in->data || in->length == 0 )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 	if ( out->length != in->length )
-		XLAL_ERROR( func, XLAL_EBADLEN );
+		XLAL_ERROR( XLAL_EBADLEN );
        	wrap = 0;
 	prev = out->data[0] = in->data[0];
 	for ( i = 1; i < in->length; ++i ) {

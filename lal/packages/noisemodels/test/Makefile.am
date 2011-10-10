@@ -7,8 +7,6 @@ TESTS = NoisePSDTest
 TESTS_ENVIRONMENT=1>/dev/null 2>/dev/null
 EXTRA_DIST = NoisePSDTest.eps
 EXTRA_TEXSOURCES = NoisePSDTest.eps
-MOSTLYCLEANFILES = .dvi-dep
+MOSTLYCLEANFILES =
 CLEANFILES = *.out
-DISTCLEANFILES = *.tex
-dvi-local: .dvi-dep
-@DVIMKFILE@
+DISTCLEANFILES =

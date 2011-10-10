@@ -47,6 +47,22 @@ NRCSID(TFTRANSFORMH, "$Id$");
  */
 
 
+double XLALExcessPowerFilterInnerProduct(
+	const COMPLEX16FrequencySeries *filter1,
+	const COMPLEX16FrequencySeries *filter2,
+	const REAL8Sequence *correlation,
+	const REAL8FrequencySeries *psd
+);
+
+
+COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
+	REAL8 channel_flow,
+	REAL8 channel_width,
+	const REAL8FrequencySeries *psd,
+	const REAL8Sequence *correlation
+);
+
+
 typedef struct tagLALExcessPowerFilterBank {
 	int n_filters;
 	struct ExcessPowerFilter {

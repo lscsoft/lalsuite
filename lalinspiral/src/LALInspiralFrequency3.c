@@ -102,7 +102,7 @@ XLALInspiralFrequency3_0PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta3 = theta*theta*theta;
@@ -149,7 +149,7 @@ XLALInspiralFrequency3_2PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -198,7 +198,7 @@ XLALInspiralFrequency3_3PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -248,7 +248,7 @@ XLALInspiralFrequency3_4PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -300,7 +300,7 @@ XLALInspiralFrequency3_5PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -354,7 +354,7 @@ XLALInspiralFrequency3_6PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -410,7 +410,7 @@ XLALInspiralFrequency3_7PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;

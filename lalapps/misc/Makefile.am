@@ -18,60 +18,35 @@ EXTRA_DIST = \
 	missing \
 	mkinstalldirs \
 	py-compile \
+	generate_user_env.awk \
 	vcsID.common
 
-sysconf_DATA = lalapps-user-env.sh lalapps-user-env.csh
-BUILT_SOURCES = lalapps-user-env.sh lalapps-user-env.csh
-CLEANFILES = lalapps-user-env.sh lalapps-user-env.csh
+CLEANFILES = \
+	lalapps-user-env.shell \
+	lalapps-user-env.sh \
+	lalapps-user-env.csh
+
+sysconf_DATA = \
+	lalapps-user-env.sh \
+	lalapps-user-env.csh
+
+BUILT_SOURCES = \
+	lalapps-user-env.sh \
+	lalapps-user-env.csh
 
 if HAVE_PYTHON
-lalapps-user-env.sh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LALApps" >$@ ;\
-	echo "PATH=\"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "MANPATH=\"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	if test "$(pyexecdir)" != "$(pythondir)" ; then \
-		echo "PYTHONPATH=\"$(pyexecdir):$(pythondir):\$${PYTHONPATH}\"" >>$@ ;\
-	else \
-		echo "PYTHONPATH=\"$(pythondir):\$${PYTHONPATH}\"" >>$@ ;\
-	fi ;\
-	echo "export PATH MANPATH PYTHONPATH" >>$@
-lalapps-user-env.csh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LALApps" >$@ ;\
-	echo "setenv PATH \"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "if ( \$$?MANPATH ) then" >>$@ ;\
-	echo "  setenv MANPATH \"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "  setenv MANPATH \"$(mandir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?PYTHONPATH ) then" >>$@ ;\
-	if test "$(pyexecdir)" != "$(pythondir)" ; then \
-		echo "  setenv PYTHONPATH \"$(pyexecdir):$(pythondir):\$${PYTHONPATH}\"" >>$@ ;\
-	else \
-		echo "  setenv PYTHONPATH \"$(pythondir):\$${PYTHONPATH}\"" >>$@ ;\
-	fi ;\
-	echo "else" >>$@ ;\
-	if test "$(pyexecdir)" != "$(pythondir)" ; then \
-		echo "  setenv PYTHONPATH \"$(pyexecdir):$(pythondir)\"" >>$@ ;\
-	else \
-		echo "  setenv PYTHONPATH \"$(pythondir)\"" >>$@ ;\
-	fi ;\
-	echo "endif" >>$@
+lalapps_pythonpath = $(pyexecdir) $(pythondir)
 else
-lalapps-user-env.sh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LALApps" >$@ ;\
-	echo "PATH=\"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "MANPATH=\"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "export PATH MANPATH" >>$@
-lalapps-user-env.csh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LALApps" >$@ ;\
-	echo "setenv PATH \"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "if ( \$$?MANPATH ) then" >>$@ ;\
-	echo "  setenv MANPATH \"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "  setenv MANPATH \"$(mandir)\"" >>$@ ;\
-	echo "endif" >>$@
+lalapps_pythonpath =
 endif
+
+lalapps-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
+	@echo "# generic user environment script" >$@
+	@echo "prepend PATH $(bindir)" >>$@
+	@echo "prepend MANPATH $(mandir)" >>$@
+	@echo "prepend PYTHONPATH $(lalapps_pythonpath)" >>$@
+	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
+
+lalapps-user-env.csh lalapps-user-env.sh: lalapps-user-env.shell $(srcdir)/generate_user_env.awk
+	@echo "creating $@"
+	@$(AWK) -f $(srcdir)/generate_user_env.awk -v package=$(PACKAGE_NAME) -v output=$@ $<

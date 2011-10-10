@@ -18,22 +18,40 @@
  */
 
 
-/*************************************************/
-/*                                               */
-/*  Coherent follow-up MCMC code                 */
-/*                                               */
-/*  Christian Roever                             */
-/*                                               */
-/* * * * * * * * * * * * * * * * * * * * * * * * */
-/*                                               */
-/*  Things you may want to play around with      */
-/*  are in particular proposals (look out        */
-/*  for occurrences of the "setstdev()" and      */
-/*  "setcor()" functions, as well as the         */
-/*  "proposeInspiralNospin()" function           */
-/*  itself).                                     */
-/*                                               */
-/*************************************************/
+/*********************************************************/
+/*                                                       */
+/*  Coherent follow-up MCMC code                         */
+/*                                                       */
+/*  Christian Roever                                     */
+/*                                                       */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                       */
+/*  Most of what is implemented here is also             */
+/*  explained in:                                        */
+/*                                                       */
+/*    "Bayesian inference on astrophysical binary        */
+/*    inspirals based on gravitational-wave              */
+/*    measurements"                                      */
+/*    http://hdl.handle.net/2292/2356                    */
+/*                                                       */
+/*  or (especially the parallel tempering scheme) in:    */
+/*                                                       */
+/*    "Random template placement and prior information"  */
+/*    Journal of Physics: Conference Series,             */
+/*    228(1):012008, 2010                                */
+/*    http://dx.doi.org/10.1088/1742-6596/228/1/012008   */
+/*    http://arxiv.org/abs/0911.5051                     */
+/*                                                       */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                       */
+/*  Things you may want to play around with              */
+/*  are in particular proposals (look out                */
+/*  for occurrences of the "setstdev()" and              */
+/*  "setcor()" functions, as well as the                 */
+/*  "proposeInspiralNospin()" function                   */
+/*  itself).                                             */
+/*                                                       */
+/*********************************************************/
 
 
 #include <ctype.h>
@@ -69,13 +87,15 @@ const double earthFlattening    = 0.00335281066474748; /* (WGS84 value: 1.0/298.
 /*const double earthRadiusPole    = 6356752.314; */    /* (WGS84 value)                    */
 
 /*-- set flag forcing signal into flat part of Tukey window:     --*/
-const int forceFlatTukey = 1;
+/* const int forceFlatTukey = 1; */
 /*-- (otherwise Tukey window may nibble away part of the signal) --*/
+/* (replaced by "--stricttimes" argument) */
 
 /*-- signal "families" available (common parameter sets): --*/
 enum signal {
-  InspiralNoSpin,    /*  0) 9 parameters  */
-  BurstSineGaussian  /*  1) 8 parameters  */
+  InspiralNoSpin,      /*  0)  9 parameters  */
+  InspiralAlignedSpin, /*  1) 10 parameters  */
+  BurstSineGaussian    /*  2)  8 parameters  */
 };
 
 /*-- different templates available: --*/
@@ -85,18 +105,22 @@ enum template {
   i25SP,          /*  2) 2.5PN stationary phase inspiral        */
   i2025,          /*  3) 2.0PN amplitude, 2.5PN phase inspiral  */
   i2535,          /*  4) 2.5PN amplitude, 3.5PN phase inspiral  */
-  iLALTT2PN00,    /*  5) LAL Taylor T2 Newtonian                */
-  iLALTT2PN10,    /*  6) LAL Taylor T2 1.0 PN                   */
-  iLALTT2PN15,    /*  7) LAL Taylor T2 1.5 PN                   */
-  iLALTT2PN20,    /*  8) LAL Taylor T2 2.0 PN                   */
-  iLALTT3PN00,    /*  9) LAL Taylor T3 Newtonian                */
-  iLALTT3PN10,    /* 10) LAL Taylor T3 1.0 PN                   */
-  iLALTT3PN15,    /* 11) LAL Taylor T3 1.5 PN                   */
-  iLALTT3PN20,    /* 12) LAL Taylor T3 2.0 PN                   */
-  iLALIMRPhenomA, /* 13) LAL Phenomenological                   */
-  iLALEOBNR,      /* 14) LAL EOBNR                              */   /* (EOBNR doesn't work yet) */
-  iLALPPN20,      /* 15) LAL PPN 2.0PN                          */
-  bSineGaussian   /* 15) sine-gaussian burst                    */
+  iLALTF2PN20,    /*  5) LAL Taylor F2 2.0 PN                   */
+  iLALTF2PN35,    /*  6) LAL Taylor F2 3.5 PN                   */
+  iLALTT2PN00,    /*  7) LAL Taylor T2 Newtonian                */
+  iLALTT2PN10,    /*  8) LAL Taylor T2 1.0 PN                   */
+  iLALTT2PN15,    /*  9) LAL Taylor T2 1.5 PN                   */
+  iLALTT2PN20,    /* 10) LAL Taylor T2 2.0 PN                   */
+  iLALTT3PN00,    /* 11) LAL Taylor T3 Newtonian                */
+  iLALTT3PN10,    /* 12) LAL Taylor T3 1.0 PN                   */
+  iLALTT3PN15,    /* 13) LAL Taylor T3 1.5 PN                   */
+  iLALTT3PN20,    /* 14) LAL Taylor T3 2.0 PN                   */
+  iLALTT3PN35,    /* 15) LAL Taylor T3 2.0 PN                   */
+  iLALIMRPhenomA, /* 16) LAL Phenomenological                   */
+  iLALIMRPhenomB, /* 17) LAL Phenomenological, aligned spin     */
+  iLALEOBNR,      /* 18) LAL EOBNR                              */   /* (EOBNR doesn't work yet) */
+  iLALPPN20,      /* 19) LAL PPN 2.0PN                          */
+  bSineGaussian   /* 20) sine-gaussian burst                    */
 };
 
 
@@ -132,6 +156,7 @@ typedef struct {
   int          PsdEstimateN;    /* number of segments averaged over for spectrum estimation     */
   int          simulateData;    /* flag indicating whether to simulate data (or read from file) */
   int          simulatePsd;     /* flag indicating whether to copy PSD or simulate estimation   */
+  int          strictTimes;     /* flag indicating whether to round start & end times (etc.)    */
   /* elements referring to data:                                                                */
   int          downsample;      /* downsampling factor (1,2,4 or 8)                             */
   double       dataStart;       /* time point of first sample in the data (GPS seconds)         */
@@ -284,6 +309,9 @@ void RandMVNorm(McmcFramework *MF, double *result);
 
 double logprior(McmcFramework *MF, vector *parameter);
 double logpriorInspiralNospin(McmcFramework *MF, vector *parameter);
+double logpriorInspiralAlignedspin(McmcFramework *MF, vector *parameter);
+double logpriorInspiralNospin2(McmcFramework *MF, vector *parameter);
+double logpriorInspiralNospin3(McmcFramework *MF, vector *parameter);
 double logpriorSineGaussianBurst(McmcFramework *MF, vector *parameter);
 
 double logpstar(McmcFramework *MF, vector *parameter);
@@ -296,6 +324,7 @@ double logguessInspiralNospin(McmcFramework *MF, vector *parameter);
 
 void priordraw(McmcFramework *MF, vector *parameter);
 void priordrawInspiralNospin(McmcFramework *MF, vector *parameter);
+void priordrawInspiralAlignedspin(McmcFramework *MF, vector *parameter);
 void priordrawBurstSineGaussian(McmcFramework *MF, vector *parameter);
 
 void guess(McmcFramework *MF, vector *parameter);
@@ -305,6 +334,8 @@ void propose(McmcFramework *MF, DataFramework *DF, int coherentN,
              vector *parameter, double *logMHcoef, double temperature);
 void proposeInspiralNospin(McmcFramework *MF, DataFramework *DF, int coherentN, 
                            vector *parameter, double *logMHcoef, double temperature);
+void proposeInspiralAlignedspin(McmcFramework *MF, DataFramework *DF, int coherentN, 
+                                vector *parameter, double *logMHcoef, double temperature);
 void proposeBurstSineGaussian(McmcFramework *MF, DataFramework *DF, int coherentN, 
                               vector *parameter, double *logMHcoef, double temperature);
 
@@ -322,6 +353,7 @@ void printtime();
 void DateTimeString(char *charvec);
 void savePSD(DataFramework *DF, char *filename);
 void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN, int MPIsize, int MPIrank);
+void gridmap(McmcFramework *MF, DataFramework *DF, int coherentN, int MPIsize, int MPIrank);
 void printDF(DataFramework *DF);
 int numberIfoSites(DataFramework *DF, int coherentN);
 double GMST(double GPSsec);
@@ -410,6 +442,14 @@ void vectorSetup(vector *vec, int signal)
       vectorAdd(vec, "chirpmass", 0.0);
       vectorAdd(vec, "massratio", 0.0);
       vectorAdd(vec, "inclination", 0.0);
+    }
+    else if (signal == InspiralAlignedSpin){
+      vectorAdd(vec, "phase", 0.0);
+      vectorAdd(vec, "logdistance", 0.0);
+      vectorAdd(vec, "chirpmass", 0.0);
+      vectorAdd(vec, "massratio", 0.0);
+      vectorAdd(vec, "inclination", 0.0);
+      vectorAdd(vec, "effectivespin", 0.0);
     }
     else if (signal == BurstSineGaussian){
       vectorAdd(vec, "phase", 0.0);
@@ -558,6 +598,10 @@ int char2template(char *templatename)
     result = i2025;
   else if (strcmp(templatename, "2535")==0)  
     result = i2535;
+  else if (strcmp(templatename, "LALTaylorF2PN20")==0)  
+    result = iLALTF2PN20;
+  else if (strcmp(templatename, "LALTaylorF2PN35")==0)  
+    result = iLALTF2PN35;
   else if (strcmp(templatename, "LALTaylorT2PN00")==0)  
     result = iLALTT2PN00;
   else if (strcmp(templatename, "LALTaylorT2PN10")==0)  
@@ -574,8 +618,12 @@ int char2template(char *templatename)
     result = iLALTT3PN15;
   else if (strcmp(templatename, "LALTaylorT3PN20")==0)  
     result = iLALTT3PN20;
+  else if (strcmp(templatename, "LALTaylorT3PN35")==0)  
+    result = iLALTT3PN35;
   else if (strcmp(templatename, "LALIMRPhenomA")==0)
     result = iLALIMRPhenomA;
+  else if (strcmp(templatename, "LALIMRPhenomB")==0)
+    result = iLALIMRPhenomB;
   else if (strcmp(templatename, "LALEOBNR")==0) {
     result = iLALEOBNR;
     printf(" :\n : WARNING: EOBNR templates do not yet work !!\n :\n");
@@ -634,7 +682,7 @@ interferometer *ifoPointer(interferometer *ifolist, int ifoN, char locationStrin
 void parseParameterOptionString(char *input, char **parnames[], double **parvalues, int *n)
 /* parses a character string (passed as one of the options) and decomposes */
 /* it into parameter names and -values. Input is of the form               */
-/*   input    :  "[mc=3.1415,eta=0.24,tc=700009616.123]"                   */
+/*   input    :  "(mc=3.1415,eta=0.24,tc=700009616.123)"                   */
 /* and the resulting output is                                             */
 /*   parnames :  {"mc", "eta", "tc"}                                       */
 /*   parvalues:  {3.1415, 0.24, 700009616.123}                             */
@@ -647,12 +695,12 @@ void parseParameterOptionString(char *input, char **parnames[], double **parvalu
   i = j = 0;
   *n = 0;
   while (input[i] != '\0') {
-    if ((j==0) & (input[i] == '[')) j = 1;
+    if ((j==0) & (input[i] == '(')) j = 1;
     if ((j==1) & (input[i] == '=')) j=2;
     if ((j==1) & (input[i] == ',')) {j=1; ++(*n);}
-    if ((j==1) & (input[i] == ']')) {j=3; ++(*n);}
+    if ((j==1) & (input[i] == ')')) {j=3; ++(*n);}
     if ((j==2) & (input[i] == ',')) {j=1; ++(*n);}
-    if ((j==2) & (input[i] == ']')) {j=3; ++(*n);}
+    if ((j==2) & (input[i] == ')')) {j=3; ++(*n);}
     ++i;
   }
   if (j!=3) printf(" : ERROR: argument vector '%s' not well-formed!\n", input);
@@ -665,7 +713,7 @@ void parseParameterOptionString(char *input, char **parnames[], double **parvalu
   /* copy elements: */
   i = j = l = 0;
   while ((input[i] != '\0')) {
-    if ((j==0) & (input[i] == '[')) {j=1; k=i+1;}
+    if ((j==0) & (input[i] == '(')) {j=1; k=i+1;}
     if ((j==1) & (input[i] == '=')) { /* copy preceding variable name */
       j=2;
       /* copy elements  k to i-1 ... */
@@ -674,7 +722,7 @@ void parseParameterOptionString(char *input, char **parnames[], double **parvalu
       (*parnames)[l][m] = '\0';
       k=i+1;
     }
-    if ((j==1) & ((input[i] == ',') | (input[i] == ']'))) { /* no preceding variable name, copy value */
+    if ((j==1) & ((input[i] == ',') | (input[i] == ')'))) { /* no preceding variable name, copy value */
       j=1;
       (*parnames)[l][0] = '\0';
       for (m=0; m<(i-k); ++m)
@@ -684,7 +732,7 @@ void parseParameterOptionString(char *input, char **parnames[], double **parvalu
       k=i+1;
       ++l;
     }
-    if ((j==2) & ((input[i] == ',')|(input[i] == ']'))) { /* copy preceding value */
+    if ((j==2) & ((input[i] == ',')|(input[i] == ')'))) { /* copy preceding value */
       j=1; 
       /* copy elements  k to i-1 ... */
       for (m=0; m<(i-k); ++m)
@@ -702,7 +750,7 @@ void parseParameterOptionString(char *input, char **parnames[], double **parvalu
 void parseCharacterOptionString(char *input, char **strings[], int *n)
 /* parses a character string (passed as one of the options) and decomposes   */
 /* it into individual parameter character strings. Input is of the form      */
-/*   input   :  "[one,two,three]"                                            */
+/*   input   :  "(one,two,three)"                                            */
 /* and the resulting output is                                               */
 /*   strings :  {"one", "two", "three"}                                      */
 /* length of parameter names is by now limited to 512 characters.            */
@@ -714,9 +762,9 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
   i=0; j=0;
   *n = 0;
   while (input[i] != '\0') {
-    if ((j==0) & (input[i]=='[')) j=1;
+    if ((j==0) & (input[i]=='(')) j=1;
     if ((j==1) & (input[i]==',')) ++*n;
-    if ((j==1) & (input[i]==']')) {++*n; j=2;}
+    if ((j==1) & (input[i]==')')) {++*n; j=2;}
     ++i;
   }
   if (j!=2) printf(" : ERROR: argument vector '%s' not well-formed!\n", input);
@@ -730,12 +778,12 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
   l=0; /* character counter */
   while ((input[i] != '\0') & (j<3)) {
     /* state transitions: */
-    if ((j==0) & ((input[i]!='[') & (input[i]!=' '))) j=1;
+    if ((j==0) & ((input[i]!='(') & (input[i]!=' '))) j=1;
     if (((j==1)|(j==2)) & (input[i]==',')) {(*strings)[k][l]='\0'; j=2; ++k; l=0;}
     if ((j==1) & (input[i]==' ')) j=2;
-    if ((j==1) & (input[i]==']')) {(*strings)[k][l]='\0'; j=3;}
-    if ((j==2) & (input[i]==']')) {(*strings)[k][l]='\0'; j=3;}
-    if ((j==2) & ((input[i]!=']') & (input[i]!=',') & (input[i]!=' '))) j=1;
+    if ((j==1) & (input[i]==')')) {(*strings)[k][l]='\0'; j=3;}
+    if ((j==2) & (input[i]==')')) {(*strings)[k][l]='\0'; j=3;}
+    if ((j==2) & ((input[i]!=')') & (input[i]!=',') & (input[i]!=' '))) j=1;
     /* actual copying: */
     if (j==1) {
       if (l>=511) {
@@ -762,8 +810,8 @@ int noVectorStrg(char *input)
   int result;
   i=0; j=0;
   while (input[i] != '\0') {
-    if ((j==0) & (input[i]=='[')) j=1;
-    if ((j==1) & (input[i]==']')) j=2;
+    if ((j==0) & (input[i]=='(')) j=1;
+    if ((j==1) & (input[i]==')')) j=2;
     ++i;
   }
   if (j!=2) result = 1;
@@ -809,22 +857,22 @@ void printhelpmessage()
   printf(" | \n");
   printf(" | Example 1 -- Simulate data, inject a signal and recover it:\n");
   printf(" | \n");
-  printf(" | ./lalapps_followupMcmc --network [H,L,V] --randomseed [123,456] --tcenter 10\n");
-  printf(" | 0 --outfilename /home/user/data/example01 --template 25SP --specdens [initia\n");
-  printf(" | lLigo,initialLigo,Virgo] --freqlower [40,40,30] --tbefore [20.0,20.0,30.0] -\n");
-  printf(" | -inject [chirpmass=2.0,massratio=0.24,inclination=1.0,time=100.0,logdistance\n");
-  printf(" | =3.2,latitude=0.5,longitude=-1.0,polarisation=1.0,phase=3.0] --guess [chirpm\n");
-  printf(" | ass=2.0,massratio=0.24,time=100,distance=25.0] --importanceresample 10000   \n");
+  printf(" | ./lalapps_followupMcmc --network (H,L,V) --randomseed (123,456) --tcenter 10\n");
+  printf(" | 0 --outfilename /home/user/data/example01 --template 25SP --specdens (initia\n");
+  printf(" | lLigo,initialLigo,Virgo) --freqlower (40,40,30) --tbefore (20.0,20.0,30.0) -\n");
+  printf(" | -inject (chirpmass=2.0,massratio=0.24,inclination=1.0,time=100.0,logdistance\n");
+  printf(" | =3.2,latitude=0.5,longitude=-1.0,polarisation=1.0,phase=3.0) --guess (chirpm\n");
+  printf(" | ass=2.0,massratio=0.24,time=100,distance=25.0) --importanceresample 10000   \n");
   printf(" | \n");
   printf(" | Example 2 -- Run MCMC on data read from files:\n");
   printf(" | \n");
-  printf(" | ./lalapps_followupMcmc --cachefile [/home/user/data/H1.cache,/home/user/data\n");
-  printf(" | /H2.cache,/home/user/data/L1.cache] --template 25SP --tcenter 873739911.131 \n");
-  printf(" | --tbefore 20.0 --filechannel [H1:LSC-STRAIN,H2:LSC-STRAIN,L1:LSC-STRAIN] --p\n");
+  printf(" | ./lalapps_followupMcmc --cachefile (/home/user/data/H1.cache,/home/user/data\n");
+  printf(" | /H2.cache,/home/user/data/L1.cache) --template 25SP --tcenter 873739911.131 \n");
+  printf(" | --tbefore 20.0 --filechannel (H1:LSC-STRAIN,H2:LSC-STRAIN,L1:LSC-STRAIN) --p\n");
   printf(" | sdestimatestart 873737200 --psdestimateend 873739500 --importanceresample 10\n");
   printf(" | 0000 --randomseed 123 --outfilename /home/user/data/example02 --iterations 1\n");
-  printf(" | 0000000 --priorparameters [0.75,7,873739911.081,873739911.181,40,80] --guess\n");
-  printf(" |  [2.0,0.13,873739911.131,40]                                                \n");
+  printf(" | 0000000 --priorparameters (0.75,7,873739911.081,873739911.181,40,80) --guess\n");
+  printf(" |  (2.0,0.13,873739911.131,40)                                                \n");
   printf(" | \n");
   printf(" | - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
   printf(" | \n");
@@ -910,7 +958,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
        CLfrequencyLower[512], CLfrequencyUpper[512], CLtemperature[512],
        CLfixedpar[512], CLstartpar[512], CLguesspar[512], CLinjectpar[512], 
        CLinjecttemplate[512], CLimportancedraws[512], CLpriorpar[512],
-       CLdownsample[512], datetime[32], logstring[64];
+       CLdownsample[512], CLdumpPsd[512], CLstrictTimes[512], datetime[32], logstring[64];
   char **argNames;
   double *argValues=NULL;
   char chainIndicator[32];
@@ -927,7 +975,8 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   double startGPS, endGPS;
   long lhdf = 0;
   FILE *hostnamefile=NULL;
-  char hostname[32];
+  char hostname[256];
+  char *allhostnames=NULL;
   double *indivSNR;
   double netSNR;
   double nulllikeli, injlikeli;
@@ -960,6 +1009,8 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     {"injecttemplate",     required_argument, 0, 'I'},
     {"importanceresample", required_argument, 0, 'm'},
     {"priorparameters",    required_argument, 0, 'O'},
+    {"dumppsd",            no_argument,       0, 'p'},
+    {"stricttimes",        no_argument,       0, 'M'},
     {"help",               no_argument,       0, 'h'},
     {"quiet",              no_argument,       0, 'q'},
     {0,                    0,                 0,   0}
@@ -993,6 +1044,8 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   strcpy(CLiterations,      "1000000");
   strcpy(CLnoiseModel,      "initialLigo");
   strcpy(CLdownsample,      "4");
+  strcpy(CLdumpPsd,         "0");
+  strcpy(CLstrictTimes,     "0");
   injecttemplate = -1;
 
   /* read in ALL command line arguments before proceeding further   */
@@ -1002,7 +1055,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   /* loop over command line arguments: */
   while (1) {
     optparse = getopt_long(argc, argv,
-                           "t::l::i::r::c::b::a::T::S::C::R::e::n::s::w::d::D::f::F::x::v::g::V::I::m::O::h::q::",
+                           "t::l::i::r::c::b::a::T::S::C::R::e::n::s::w::d::D::f::F::E::x::v::g::V::I::m::O::p::M::h::q::",
                            long_options, &optionIndex);
     if (optparse == -1) break;
     switch (optparse) {
@@ -1033,12 +1086,13 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
       case 'I': {strcpy(CLinjecttemplate, optarg); break;}      /* --injecttemplate              */
       case 'm': {strcpy(CLimportancedraws, optarg); break;}     /* --importanceresample          */
       case 'O': {strcpy(CLpriorpar, optarg); break;}            /* --priorparameters             */
+      case 'p': {strcpy(CLdumpPsd, "1"); break;}                /* --dumppsd                     */
+      case 'M': {strcpy(CLstrictTimes, "1"); break;}            /* --stricttimes                 */
       case 'h': {if (MPIrank==0) printhelpmessage(); return 0; break;} /* --help                 */
       case 'q': {break;}                                        /* --quiet                       */
     }
   }
   /* command line arguments require further processing...: */
-
 
   /*--  first of all, start log file         --*/
   /*--  (requires setting up "MF" already):  --*/
@@ -1069,23 +1123,32 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
       logtoLOGfile(MF, "parallel chains", logstring);
     }
 
-    /* figure out host name for each chain and write to log file: */
+    /* figure out host name for each process: */
     if((hostnamefile=fopen("/etc/hostname","r"))==NULL) {
       printf(" : WARNING: failed to open file \"/etc/hostname\"!\n");
-      sprintf(hostname, "???");
+      sprintf(hostname, "???\0");
     }
     else {
       fscanf(hostnamefile,"%s",hostname);
       fclose(hostnamefile);
+      hostname[255] = '\0'; /* (just to make sure) */
     }
-    sprintf(logstring, "%d : %s", MPIrank+1, hostname);
-    /* synchronize all processes: */
-    MPI_Barrier(MPI_COMM_WORLD);
-    /* update log file in order: */
-    for (i=0; i<MPIsize; ++i) {
-      if (i==MPIrank)
+
+    /* gather host names at process #0: */
+    if (MPIrank == 0) {
+      allhostnames = (char*) malloc(sizeof(char) * 256 * MPIsize);
+    }
+    MPI_Gather(hostname, 256, MPI_CHAR,
+               allhostnames, 256, MPI_CHAR,
+               0, MPI_COMM_WORLD);
+    /* write host names to log file: */
+    if (MPIrank == 0) {
+      for (i=0; i<MPIsize; ++i) {
+        sprintf(logstring, "%d : %s", i+1, &allhostnames[i*256]);
         logtoLOGfile(MF, "processnumber : hostname", logstring);
-      MPI_Barrier(MPI_COMM_WORLD);
+      }
+      free(allhostnames);
+      allhostnames = NULL;
     }
     
     /* (MCMC CSV file is started later, in "metropolishastings()", */
@@ -1442,6 +1505,16 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
 
   /*--  read / generate data:  --*/
   gsl_rng_set(GSLrandom, seed1);  /* same random seed for ALL processes ! */ 
+
+  if (CLstrictTimes[0]=='1') {    /* "--stricttimes" argument */
+    for (i=0; i<(*coherentN); ++i) 
+      DF[i].strictTimes = 1;
+  }
+  else {
+    for (i=0; i<(*coherentN); ++i) 
+      DF[i].strictTimes = 0;
+  }
+
   if (CLsimulateData[0]=='1') { /* generate fake data w/ given noise PSD:             */
     for (i=0; i<(*coherentN); ++i) {
       if (verbose) printf(" | Ifo %ld: generating data using '%s' noise PSD.\n", i+1, DF[i].noiseModel);
@@ -1534,6 +1607,49 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     FTexec(&DF[i], DF[i].data, DF[i].dataFT);
   }
 
+  /*-- log dataStart, dataDeltaT, dataSize, minF, maxF to file: --*/
+  if (MPIrank == 0) {
+    sprintf(logstring, "%.6f", DF[0].dataStart);
+    i = 1;
+    while (i < *coherentN) {
+      sprintf(logstring, "%s, %.6f", logstring, DF[i].dataStart);
+      ++i;
+    }
+    logtoLOGfile(MF, "dataStart", logstring); 
+
+    sprintf(logstring, "%.10f", DF[0].dataDeltaT);
+    i = 1;
+    while (i < *coherentN) {
+      sprintf(logstring, "%s, %.10f", logstring, DF[i].dataDeltaT);
+      ++i;
+    }
+    logtoLOGfile(MF, "dataDeltaT", logstring); 
+
+    sprintf(logstring, "%d", DF[0].dataSize);
+    i = 1;
+    while (i < *coherentN) {
+      sprintf(logstring, "%s, %d", logstring, DF[i].dataSize);
+      ++i;
+    }
+    logtoLOGfile(MF, "dataSize", logstring); 
+
+    sprintf(logstring, "%.3f", DF[0].minF);
+    i = 1;
+    while (i < *coherentN) {
+      sprintf(logstring, "%s, %.3f", logstring, DF[i].minF);
+      ++i;
+    }
+    logtoLOGfile(MF, "minF", logstring); 
+
+    sprintf(logstring, "%.3f", DF[0].maxF);
+    i = 1;
+    while (i < *coherentN) {
+      sprintf(logstring, "%s, %.3f", logstring, DF[i].maxF);
+      ++i;
+    }
+    logtoLOGfile(MF, "maxF", logstring); 
+  }
+
   for (i=0; i<(*coherentN); ++i) {
     /* initialize noise power spectrum: */
     DF[i].powspec = (double*) malloc(sizeof(double) * DF[i].FTSize);
@@ -1546,6 +1662,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
           DateTimeString(datetime);
           logtoLOGfile(MF, logstring, datetime); 
 	}
+        /*gsl_rng_set(GSLrandom, 2*seed1+1000);*/  /* same random seed for ALL processes ! */
         simulatePsdEstimation(&DF[i]);
         if (MPIrank == 0) {
           DateTimeString(datetime);
@@ -1591,6 +1708,14 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
           sprintf(logstring, "estimatePSD(%s) finish", DF[i].ifo->name);
           logtoLOGfile(MF, logstring, datetime); 
 	}
+      }
+    }
+    /*--  dump noise PSD to CSV file                --*/
+    /*--  (if requested via "--dumppsd" argument):  --*/
+    if (CLdumpPsd[0]=='1') {
+      if (MPIrank == 0) {
+        sprintf(logstring, "%s-PSD-%s.csv", MF->csvfilename, DF[i].ifo->name);
+        savePSD(&DF[i], logstring);
       }
     }
   }
@@ -1676,6 +1801,8 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
       | (MF->template == i25SP)
       | (MF->template == i2025)
       | (MF->template == i2535)
+      | (MF->template == iLALTF2PN20)
+      | (MF->template == iLALTF2PN35)
       | (MF->template == iLALTT2PN00)
       | (MF->template == iLALTT2PN10)
       | (MF->template == iLALTT2PN15)
@@ -1684,6 +1811,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
       | (MF->template == iLALTT3PN10)
       | (MF->template == iLALTT3PN15)
       | (MF->template == iLALTT3PN20)
+      | (MF->template == iLALTT3PN35)
       | (MF->template == iLALIMRPhenomA)
       | (MF->template == iLALEOBNR)
       | (MF->template == iLALPPN20)     ) {
@@ -1763,6 +1891,75 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
              vectorGetValue(&MF->priorparameters,"dist10"));
     }    
   }
+
+
+  /*--- Inspiral, ALIGNED SPIN, 10 parameters: ---*/
+  else if (MF->template == iLALIMRPhenomB) {
+    MF->parameterset=InspiralAlignedSpin;
+    /* (already) set up starting value vector:                   */
+    /* (proper list of variable names (dimension!) required for  */
+    /* proposal covariance matrix, fixed values, &c. below)      */
+    vectorInit(&MF->startvalue);
+    vectorSetup(&MF->startvalue, MF->parameterset);
+    MF->pardim = MF->startvalue.dimension;
+    if (verbose) 
+      printf(" | setting up MCMC for template '#%d' / parameterset '#%d', %d parameters.\n",
+             MF->template, MF->parameterset, MF->pardim);
+    /* set up covariance matrix: */
+    MF->covariance = (double*) malloc(sizeof(double) * (MF->pardim*MF->pardim));
+    for (i=0; i<(MF->pardim*MF->pardim); ++i) MF->covariance[i] = 0.0;
+    /* set variances (via standard deviations): */
+
+    setstdev(MF, parindex(MF,"latitude"),      2.0 * pi/180.0); /* <-- relevant for sky location! */
+    setstdev(MF, parindex(MF,"longitude"),     1.0 * pi/180.0); /* <-- this value is ignored!     */
+    setstdev(MF, parindex(MF,"polarisation"),  5.0 * pi/180.0); /*     (see proposal function)    */
+    setstdev(MF, parindex(MF,"inclination"),   5.0 * pi/180.0);
+    setstdev(MF, parindex(MF,"phase"),         20.0 * pi/180.0);
+    setstdev(MF, parindex(MF,"time"),          0.001);
+    setstdev(MF, parindex(MF,"logdistance"),   0.1);
+    setstdev(MF, parindex(MF,"chirpmass"),     0.0001);
+    setstdev(MF, parindex(MF,"massratio"),     0.005);
+    setstdev(MF, parindex(MF,"effectivespin"), 0.025);
+
+    /* set covariances (via correlations): */
+    setcor(MF, parindex(MF,"chirpmass"),   parindex(MF,"massratio"),   0.80);
+    setcor(MF, parindex(MF,"massratio"),   parindex(MF,"time"),        0.70);
+    setcor(MF, parindex(MF,"logdistance"), parindex(MF,"inclination"), 0.60);
+    setcor(MF, parindex(MF,"chirpmass"),   parindex(MF,"time"),        0.50);
+    /* set (6) prior parameters: */
+    vectorInit(&MF->priorparameters);
+    /* default settings:         */
+    vectorAdd(&MF->priorparameters, "massLower", 1.0);
+    vectorAdd(&MF->priorparameters, "massUpper", 15.0);
+    vectorAdd(&MF->priorparameters, "timeLower", DF[0].timeCenter-0.050);
+    vectorAdd(&MF->priorparameters, "timeUpper", DF[0].timeCenter+0.050);
+    vectorAdd(&MF->priorparameters, "dist90", 40.0);
+    vectorAdd(&MF->priorparameters, "dist10", 80.0);
+    if (CLpriorpar[0] != '\0') {
+      parseParameterOptionString(CLpriorpar, &argNames, &argValues, &argN);
+      if (argN == 6)
+        for (i=0; i<6; ++i)
+          MF->priorparameters.value[i] = argValues[i];
+      else
+        printf(" : ERROR: incorrect number (%d) of prior parameters specified!", argN);
+      for (i=0; i<argN; ++i) free(argNames[i]);
+      free(argNames); free(argValues);
+    }
+    if (verbose){
+      printf(" | prior settings:\n");
+      printf(" |   mass range          : %.1f -- %.1f\n", 
+             vectorGetValue(&MF->priorparameters,"massLower"), 
+             vectorGetValue(&MF->priorparameters,"massUpper"));
+      printf(" |   time range          : %.3f -- %.3f\n", 
+             vectorGetValue(&MF->priorparameters,"timeLower"),
+             vectorGetValue(&MF->priorparameters,"timeUpper"));
+      printf(" |   2-2-Ms 90%% detection: %.1f Mpc\n", 
+             vectorGetValue(&MF->priorparameters,"dist90"));
+      printf(" |   2-2-Ms 10%% detection: %.1f Mpc\n", 
+             vectorGetValue(&MF->priorparameters,"dist10"));
+    }    
+  }
+
 
   /*--- sine-gaussian burst, 8 parameters: ---*/
   else if (MF->template == bSineGaussian) {
@@ -2011,16 +2208,15 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
         if (!verbose)
           printf(" : injection parameters:\n"); vectorPrint(&injectpar);        
       }
+    }
     
 
     /* do actual injection: */
     inject(DF, *coherentN, injecttemplate, &injectpar);
 
-
       /* dumptemplates(DF, &injectpar, 
                        "/home/christian/temp/templatesF.txt", 
                        "/home/christian/temp/templatesT.txt"); */
-    }
     vectorDispose(&injectpar);
   }
   /*-- END of injection. --*/
@@ -2073,20 +2269,24 @@ int readData(DataFramework *DF)
   struct FrFile *iFile=NULL;
   struct FrVect *dataVector=NULL;
   double *origData=NULL; 
-  int samplerate;
+  int samplerate=0;
   int i, N;
 
   /* first determine the time range aimed for AFTER downsampling: */
-  if (forceFlatTukey)
-    extramargin = (DF->timeBefore+DF->timeAfter) * 0.5 * (DF->tukeypar/(1.0-DF->tukeypar));
-  else
+  if (DF->strictTimes == 1) {
     extramargin = 0.0;
-  from  = floor(DF->timeCenter - DF->timeBefore - extramargin);
-  to    =  ceil(DF->timeCenter + DF->timeAfter  + extramargin);
-  /* this range is rounded to an integer number of seconds */
-  /* in order to make life easier for the DFT algorithm.   */
+    from = DF->timeCenter - DF->timeBefore;
+    to   = DF->timeCenter + DF->timeAfter;
+  }
+  else {
+    extramargin = (DF->timeBefore+DF->timeAfter) * 0.5 * (DF->tukeypar/(1.0-DF->tukeypar));
+    from = floor(DF->timeCenter - DF->timeBefore - extramargin);
+    to   =  ceil(DF->timeCenter + DF->timeAfter  + extramargin);
+    /* this range is rounded to an integer number of seconds */
+    /* in order to make life easier for the DFT algorithm.   */
+  }
   
-  if (DF->downsample > 1){
+  if ((DF->downsample > 1) | (DF->strictTimes == 1)){
     /* downsampling will shorten the above range, so another extra margin is added. */
     /* This again requires the sampling rate to be known,                           */
     /* so a few samples are read in order to check:                                 */
@@ -2106,7 +2306,14 @@ int readData(DataFramework *DF)
     FrFileIEnd(iFile);
     if (verbose) printf(" | data sampling rate: %d Hz\n", samplerate);
     /* finished determining sampling rate. */
+  }
 
+  if (DF->strictTimes == 1){ /* ensure start- & end-times coincide with data samples */
+    from = floor(from) + floor((from-floor(from)) * ((double) samplerate) + 0.5) / ((double) samplerate);
+    to   = floor(to)   + floor((to-floor(to)) * ((double) samplerate) + 0.5) / ((double) samplerate);
+  }
+
+  if (DF->downsample > 1){
     /* little sanity check: */
     if (DF->maxF > (0.11117*((double)samplerate)))
       printf(" :   !! WARNING !!\n :   'maxF' lies outside downsampling-filter passband !\n :   (%.1f > %.1f)\n", DF->maxF, (0.11117*((double)samplerate)));
@@ -2355,10 +2562,10 @@ void simulateData(DataFramework *DF)
   else printf(" : ERROR: referring to undefined noise model ('%s') in 'simulateData()'!\n",DF->noiseModel);
   DF->dataDeltaT *= DF->downsample;
 
-  if (forceFlatTukey)
-    extramargin = (DF->timeBefore+DF->timeAfter) * 0.5 * (DF->tukeypar/(1.0-DF->tukeypar));
-  else
+  if (DF->strictTimes == 1)
     extramargin = 0.0;
+  else
+    extramargin = (DF->timeBefore+DF->timeAfter) * 0.5 * (DF->tukeypar/(1.0-DF->tukeypar));
   from  = floor(DF->timeCenter - DF->timeBefore - extramargin);
   to    =  ceil(DF->timeCenter + DF->timeAfter  + extramargin);
   DF->dataStart = from;
@@ -2401,50 +2608,53 @@ int estimatePSD(DataFramework *DF)
          & (nsegment < DF->PsdEstimateN)) {
     /* (this loop stops when either "DF->PsdEstimateEnd" is reached,          */
     /* or "DF->PsdEstimateN" segments have been read, whichever occurs first) */
-
+ 
     /* check for overlap with actual data: */
     if (((DF->timeCenter-DF->timeBefore > from) 
          & (DF->timeCenter-DF->timeBefore < from+DF->rawDataRange))
         | ((DF->timeCenter+DF->timeAfter > from) 
            & (DF->timeCenter+DF->timeAfter < from+DF->rawDataRange))
         | ((DF->timeCenter-DF->timeBefore < from) 
-           & (DF->timeCenter+DF->timeAfter > from+DF->rawDataRange)))
-      printf(" : WARNING: spectrum estimation data overlaps with data to be analysed !!\n");
-
-    /*-- read data: --*/
-    dataVector = FrFileIGetVectF(iFile, DF->frameChannel, from, DF->rawDataRange);
-    if (dataVector == NULL) {
-      printf(" : ERROR reading noise file(s)!\n");
-      printf(" : (trying to read channel \"%s\", GPS %.3f--%.3f)\n", DF->frameChannel, from, from+DF->rawDataRange);
-      printf(" : File list: %s\n", DF->noisefilenames);
-      PsdOk = 0;
+           & (DF->timeCenter+DF->timeAfter > from+DF->rawDataRange))) {
+      /*printf(" : WARNING: spectrum estimation data overlaps with data to be analysed !!\n");*/
+      from = ceil(DF->timeCenter+DF->timeAfter); /* (skip beyond data to be analyzed) */
     }
-    N = dataVector->nData;  /* number of samples read from file(s) */
-    if (origData==NULL)
-      origData = (double*) malloc(sizeof(double) * N);
-    for (i=0; i<N; ++i)
-      origData[i] = dataVector->dataF[i];
-    FrVectFree(dataVector);
-    if (DF->downsample > 1){
-      /*-- downsample data: --*/
-      dsdata = downsample(origData, &N, DF->downsample);
+    if ((from + DF->rawDataRange) < DF->PsdEstimateEnd) {
+      /*-- read data: --*/
+      dataVector = FrFileIGetVectF(iFile, DF->frameChannel, from, DF->rawDataRange);
+      if (dataVector == NULL) {
+        printf(" : ERROR reading noise file(s)!\n");
+        printf(" : (trying to read channel \"%s\", GPS %.3f--%.3f)\n", DF->frameChannel, from, from+DF->rawDataRange);
+        printf(" : File list: %s\n", DF->noisefilenames);
+        PsdOk = 0;
+      }
+      N = dataVector->nData;  /* number of samples read from file(s) */
+      if (origData==NULL)
+        origData = (double*) malloc(sizeof(double) * N);
+      for (i=0; i<N; ++i)
+        origData[i] = dataVector->dataF[i];
+      FrVectFree(dataVector);
+      if (DF->downsample > 1){
+        /*-- downsample data: --*/
+        dsdata = downsample(origData, &N, DF->downsample);
+      }
+      else {
+        dsdata = (double*) malloc(sizeof(double) * N);
+        for (i=0; i<N; ++i) dsdata[i] = origData[i];
+      }
+      /*-- window and FT data: --*/
+      if (dataFT==NULL)
+        dataFT = (double complex*) malloc(sizeof(double complex) * (N/2 + 1));
+      FTexec(DF, dsdata, dataFT);
+      for (i=0; i<DF->FTSize; ++i) {
+        power = cabs(dataFT[i]);
+        power *= power;
+        DF->powspec[i] += power;
+      }
+      free(dsdata);
+      from += step;
+      nsegment += 1;
     }
-    else {
-      dsdata = (double*) malloc(sizeof(double) * N);
-      for (i=0; i<N; ++i) dsdata[i] = origData[i];
-    }
-    /*-- window and FT data: --*/
-    if (dataFT==NULL)
-      dataFT = (double complex*) malloc(sizeof(double complex) * (N/2 + 1));
-    FTexec(DF, dsdata, dataFT);
-    for (i=0; i<DF->FTSize; ++i) {
-      power = cabs(dataFT[i]);
-      power *= power;
-      DF->powspec[i] += power;
-    }
-    free(dsdata);
-    from += step;
-    nsegment += 1;
   }
   FrFileIEnd(iFile);
   free(origData);
@@ -2697,6 +2907,9 @@ void rotate(double x[3], double angle, double axis[3])
 /* rotates vector x clockwise around `axis'               */
 /* (looking along axis while it is pointing towards you). */
 /*   !!  `axis' must be a UNIT VECTOR  !!                 */
+/*                                                        */
+/* (see also Sec. A.6.4 of my thesis)                     */
+/*                                                        */
 {
   int i, j;
   double cosa = cos(-angle);
@@ -2829,12 +3042,16 @@ void ifoInitComputations(interferometer *ifolist, int ifoN)
 
 
 void ifoInit(interferometer *ifolist[], int *ifoN)
+/*                                                          */
 /* this function fills up the "database" of interferometers */
 /* (names, locations, orientations)                         */
 /* and also derives vectors etc.                            */
+/*                                                          */
 /* Data is taken from:                                      */
-/*   Gravitational wave detector sites                      */
+/*                                                          */
+/*   "Gravitational wave detector sites"                    */
 /*   http://arxiv.org/abs/gr-qc/9607075                     */
+/*                                                          */
 {
   int i;
   interferometer *ilist=NULL;
@@ -2980,6 +3197,9 @@ double logJacobianMcEta(double mc, double eta)
 /* posterior multiplier for transformed parameters */
 /* (jacobian of inverse tranformation)             */
 /* (mc & eta  instead of  m1 & m2)                 */
+/*                                                 */
+/* (see also Sec. A.3 of my thesis)                */
+/*                                                 */
 {
   double result;
   double m1, m2, msum, mprod;
@@ -2993,7 +3213,7 @@ double logJacobianMcEta(double mc, double eta)
   term1 = 0.6*pow(msum,-0.2);
   term2 = 0.2*pow(msum,-1.2)*pow(mprod,0.6);
   term3 = pow(msum,-2.0);
-  term4 = 2*mprod*pow(msum,-3.0);
+  term4 = 2.0*mprod*pow(msum,-3.0);
   a = pow(m1,-0.4)*pow(m2,0.6)*term1 - term2;
   b = m2*term3-term4;
   c = pow(m1,0.6)*pow(m2,-0.4)*term1 - term2;
@@ -3026,6 +3246,10 @@ void signaltemplate(DataFramework *DF, int waveform, vector *parameter, double c
   else if (waveform == i2535)          /* 2.5 PN amplitude, 3.5 PN phase */
     template2535(DF, parameter, Fplus, Fcross, output);
   /*-- LAL templates... --*/
+  else if (waveform == iLALTF2PN20)    /* LAL Taylor F2 2.0PN            */
+    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorF2, LAL_PNORDER_TWO);
+  else if (waveform == iLALTF2PN35)    /* LAL Taylor F2 3.5PN            */
+    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorF2, LAL_PNORDER_THREE_POINT_FIVE);
   else if (waveform == iLALTT2PN00)    /* LAL Taylor T2 Newtonian        */
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_NEWTONIAN);
   else if (waveform == iLALTT2PN10)    /* LAL Taylor T2 1.0PN            */
@@ -3042,8 +3266,12 @@ void signaltemplate(DataFramework *DF, int waveform, vector *parameter, double c
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_ONE_POINT_FIVE);
   else if (waveform == iLALTT3PN20)    /* LAL Taylor T3 2.0PN            */
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_TWO);
+  else if (waveform == iLALTT3PN35)    /* LAL Taylor T3 3.5PN            */
+    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_THREE_POINT_FIVE);
   else if (waveform == iLALIMRPhenomA) /* LAL Phenomenological           */
     templateLAL(DF, parameter, Fplus, Fcross, output, IMRPhenomA, LAL_PNORDER_PSEUDO_FOUR);
+  else if (waveform == iLALIMRPhenomB) /* LAL Phenomenological, aligned spin */
+    templateLAL(DF, parameter, Fplus, Fcross, output, IMRPhenomB, LAL_PNORDER_PSEUDO_FOUR);
   else if (waveform == iLALEOBNR)      /* LAL EOBNR                      */
     templateLAL(DF, parameter, Fplus, Fcross, output, EOBNR, LAL_PNORDER_PSEUDO_FOUR);
   else if (waveform == iLALPPN20)      /* LAL PPN 2.0 PN                 */
@@ -3554,6 +3782,7 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
   double timeshift = 0.0; /* time by which to shift template (in seconds) */
   double twopit;
   double complex *cosinechirp=NULL;  /*, *sinechirp=NULL; */
+  double delta, chi, S1, S2;
 
   /* some (fixed) settings: */
   params.OmegaS      = 0.0;     /* (?) */
@@ -3573,6 +3802,9 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
   /* actual inspiral parameters: */
   params.mass1       = mc2mass1(mc, eta);
   params.mass2       = mc2mass2(mc, eta);
+  params.chirpMass   = mc;                          /* (actually redundant) */
+  params.eta         = eta;                         /* (actually redundant) */
+  params.totalMass   = params.mass1 + params.mass2; /* (actually redundant) */
   params.startPhase  = vectorGetValue(parameter,"phase");
   /* set distance according to approximant's specific requirements (ARRR): */
   if ((params.approximant == EOB) 
@@ -3581,6 +3813,7 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
       || (params.approximant == BBHPhenFD)*/
       || (params.approximant == TaylorT3)
       || (params.approximant == IMRPhenomA)
+      || (params.approximant == IMRPhenomB)
       )
     params.distance  = exp(vectorGetValue(parameter,"logdistance")+log(Mpc)); /* distance in metres */
   else if ((params.approximant == TaylorT1)
@@ -3594,6 +3827,27 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
     params.distance  = exp(vectorGetValue(parameter,"logdistance"));          /* distance in Mpc */
   else                                                     
     params.distance  = exp(vectorGetValue(parameter,"logdistance")+log(Mpc)-log(c)); /* distance in seconds */
+
+  /*-- set IMRPhenomB "effective spin" parameter Chi: --*/
+  if (params.approximant == IMRPhenomB) {
+    delta = sqrt(1.0 - 4.0 * eta);
+    chi   = vectorGetValue(parameter,"effectivespin");
+    S2    = 1.0;
+    S1    = (2.0*chi - S2*(1.0-delta)) / (1.0+delta);
+    params.spin1[0] = 0.0;
+    params.spin1[1] = 0.0;
+    params.spin1[2] = S1;
+    params.spin2[0] = 0.0;
+    params.spin2[1] = 0.0;
+    params.spin2[2] = S2;
+    /*--  copy/paste from Ajith's code (necessary?):  --*/
+    params.orbitTheta0 = 0.0;
+    params.inclination = 0.0;
+    params.orbitPhi0   = 0.0;
+    params.sourceTheta = 0.0;
+    params.sourcePhi   = 0.0;
+  }
+  /*----------------------------------------------------*/
 
   cosineCoef = Fplus  * (-0.5*(1.0+pow(cos(vectorGetValue(parameter,"inclination")),2.0)));
   sineCoef   = Fcross * (-1.0*cos(vectorGetValue(parameter,"inclination")));
@@ -3620,27 +3874,53 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
   /* printf(":: LALInspiralWave(..., approximant=%d, order=%d)\n", params.approximant, params.order); */
 
   LALInspiralParameterCalc(&status, &params);
+  if (status.statusCode != 0) {
+    fprintf(stderr, " : ERROR in templateLAL(): \"LALInspiralParameterCalc()\" returned non-zero status code (%d).\n", status.statusCode);
+    fprintf(stderr, " : LAL Status:\n");
+    REPORTSTATUS(&status);
+    exit(1);
+  }
   chirptime = params.tC;
   if ((params.approximant != TaylorF2) && (params.approximant != BCV)) {
     params.startTime = (vectorGetValue(parameter,"time") - DF->dataStart) - chirptime;
     LALInspiralParameterCalc(&status, &params); /* (re-calculation necessary? probably not...) */
+    if (status.statusCode != 0) {
+      fprintf(stderr, " : ERROR in templateLAL(): \"LALInspiralParameterCalc()\" (II) returned non-zero status code (%d).\n", status.statusCode);
+      fprintf(stderr, " : LAL Status:\n");
+      REPORTSTATUS(&status);
+      exit(1);
+    }
   }
 
   /* compute "params.signalAmplitude" slot: */
   LALInspiralRestrictedAmplitude(&status, &params);
+  if (status.statusCode != 0) {
+    fprintf(stderr, " : ERROR in templateLAL(): \"LALInspiralRestrictedAmplitude()\" returned non-zero status code (%d).\n", status.statusCode);
+    fprintf(stderr, " : LAL Status:\n");
+    REPORTSTATUS(&status);
+    exit(1);
+  }
 
   /* figure out inspiral length & set `n': */
   /* LALInspiralWaveLength(&status, &n, params); */
   n = DF->dataSize;
+  if (n % 2 != 0)
+    printf(" : WARNING: LAL waveforms require an even number of samples (n=%d) !!\n",n);
   /* allocate waveform vector: */
   LALCreateVector(&status, &LALSignal, n);
-for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
+  if (status.statusCode != 0) {
+    fprintf(stderr, " : ERROR in templateLAL(): \"LALCreateVector()\" returned non-zero status code (%d).\n", status.statusCode);
+    fprintf(stderr, " : LAL Status:\n");
+    REPORTSTATUS(&status);
+    exit(1);
+  }
+  for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
   /* compute actual waveform: */
 
   /* REPORTSTATUS(&status); */
   LALInspiralWave(&status, LALSignal, &params);
   if (status.statusCode != 0) {
-    fprintf(stderr, " : ERROR in templateLAL(): encountered non-zero status code.\n");
+    fprintf(stderr, " : ERROR in templateLAL(): \"LALInspiralWave()\" returned non-zero status code (%d).\n", status.statusCode);
     fprintf(stderr, " : LAL Status:\n");
     REPORTSTATUS(&status);
     exit(1);
@@ -3656,8 +3936,8 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
              /*|| (params.approximant == BBHPhenFD)*/
              );
 
-  if (FDomain && (n % 2 != 0))
-    printf(" : WARNING: frequency-domain LAL waveforms require even number of samples `n' !!\n");
+  /*if (FDomain && (n % 2 != 0))
+    printf(" : WARNING: frequency-domain LAL waveforms require even number of samples `n' !!\n");*/
              
   cosinechirp = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
   if (!FDomain){ /* (approximant yields a time-domain waveform) */
@@ -3667,6 +3947,12 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
       /* timedomainwaveform[i] = (i<n) ? (LALSignal->data[i]) : 0.0; */
       timedomainwaveform[i] = LALSignal->data[i];
     LALDestroyVector(&status, &LALSignal);
+    if (status.statusCode != 0) {
+      fprintf(stderr, " : ERROR in templateLAL(): \"LALDestroyVector()\" (I) returned non-zero status code (%d).\n", status.statusCode);
+      fprintf(stderr, " : LAL Status:\n");
+      REPORTSTATUS(&status);
+      exit(1);
+    }
 
     /* numerically Fourier-transform waveform: */
     FTexec(DF, timedomainwaveform, cosinechirp);
@@ -3679,6 +3965,12 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
       cosinechirp[i] = (LALSignal->data[i] + I*LALSignal->data[DF->dataSize-i]);
     cosinechirp[DF->FTSize-1] = LALSignal->data[DF->FTSize-1];
     LALDestroyVector(&status, &LALSignal);
+    if (status.statusCode != 0) {
+      fprintf(stderr, " : ERROR in templateLAL(): \"LALDestroyVector()\" (II) returned non-zero status code (%d).\n", status.statusCode);
+      fprintf(stderr, " : LAL Status:\n");
+      REPORTSTATUS(&status);
+      exit(1);
+    }
     /* normalise: */
     for (i=0; i<DF->FTSize; ++i)
       cosinechirp[i] *= DF->dataSize;  /*   * DF->dataDeltaT;   */
@@ -3691,7 +3983,7 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
     timeshift = (vectorGetValue(parameter,"time") - DF->dataStart) - chirptime;
   else if (params.approximant == BCV)
     timeshift = (vectorGetValue(parameter,"time") - DF->dataStart) - (((double)DF->dataSize)*DF->dataDeltaT);
-  else if (params.approximant == IMRPhenomA) {
+  else if ((params.approximant == IMRPhenomA) | (params.approximant == IMRPhenomB)) {
     /* figure out coalescence instant numerically... */
     fftw_complex *InvFTinput=NULL;
     double *InvFToutput=NULL;
@@ -3766,6 +4058,7 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
 
 
 
+
 void templateLALPPN(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
                     double complex *output, int order)
 /*  uses LAL function "LALGeneratePPNInspiral()"     */
@@ -3802,13 +4095,28 @@ void templateLALPPN(DataFramework *DF, vector *parameter, double Fplus, double F
   PPNPar.deltaT   = DF->dataDeltaT;
   PPNPar.fStartIn = DF->minF * 0.90;
   PPNPar.fStopIn  = 0.0;
+  PPNPar.fStopIn  = DF->maxF * 1.10;
   PPNPar.lengthIn = 0;
   PPNPar.ppn      = NULL;  /* ("NULL" yields 2.0PN waveform) */
+
+  /***********************************************************/
+
+  INT4 PnOrder = 4; /* PN order */
+  LALSCreateVector( &status, &(PPNPar.ppn), PnOrder + 1 );
+  PPNPar.ppn->data[0] = 1.0;
+  if ( PnOrder > 0 )
+    PPNPar.ppn->data[1] = 0.0;
+  for (i = 2; i <= ((UINT4)PnOrder); i++)
+    PPNPar.ppn->data[i] = 1.0;
+  /* Output parameters. */
+  memset(&waveform, 0, sizeof(CoherentGW));
+
+  /***********************************************************/
 
   /* compute PPN waveform: */
   LALGeneratePPNInspiral(&status, &waveform, &PPNPar);
   if (status.statusCode != 0) {
-    printf(" : ERROR in templateLALPPN(): encountered non-zero status code.\n");
+    printf(" : ERROR in templateLALPPN(): encountered non-zero status code (%d).\n", status.statusCode);
     printf(" : LAL Status:\n");
     REPORTSTATUS(&status);
     exit(1);
@@ -3842,15 +4150,21 @@ void templateLALPPN(DataFramework *DF, vector *parameter, double Fplus, double F
   }
 
   /* free memory allocated in "LALGeneratePPNInspiral()": */
+
+  /***********************************************************/
+  LALSDestroyVector( &status, &(PPNPar.ppn) );
+  /***********************************************************/
   LALSDestroyVectorSequence(&status, &waveform.a->data);
   LALSDestroyVector(&status, &waveform.f->data);
-  LALSDestroyVector(&status, &waveform.f->data);
+  LALDDestroyVector(&status, &waveform.phi->data);
   LALFree(waveform.a);   
   LALFree(waveform.f);   
   LALFree(waveform.phi); 
   waveform.a   = NULL;
   waveform.f   = NULL;
   waveform.phi = NULL;
+
+  LALCheckMemoryLeaks();
 
   /* numerically Fourier-transform waveform: */
   cosinechirp = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
@@ -4160,8 +4474,15 @@ double loglikelihoodOLD(DataFramework *DF, int waveform, vector *parameter)
 }
 
 
+/*
 double loglikelihood(DataFramework *DF, int coherentN, int waveform, vector *parameter)
-/* Generic function to compute the likelihood.                 */
+{
+  return 0.0;
+}
+*/
+
+double loglikelihood(DataFramework *DF, int coherentN, int waveform, vector *parameter)
+/* Generic function to compute the Gaussian likelihood.        */
 /* Uses the general "signaltemplate()" function to compute the */
 /* frequency-domain waveform template corresponding to the     */
 /* waveform model specified by the "waveform" argument, and    */
@@ -4216,6 +4537,98 @@ double loglikelihood(DataFramework *DF, int coherentN, int waveform, vector *par
     for (j=DF[i].minInd; j<=DF[i].maxInd; ++j){
       absdiff    =  cabs(DF[i].dataFT[j] - FourierTemplate[j]);
       chisquared += exp(logfactor + 2.0*log(absdiff) - DF[i].powspec[j]);
+    }
+  }
+
+  free(FourierTemplate);
+  vectorDispose(&localparameter);
+
+  /* log-likelihood is negative sum-of-squares: */
+  return -1.0 * chisquared;
+}
+
+
+/*************************************************************************************************/
+/* Student-t likelihood:                                                                         */
+/*************************************************************************************************/
+
+
+double XXloglikelihood(DataFramework *DF, int coherentN, int waveform, vector *parameter)
+/***************************************************************/
+/*                                                             */
+/*  Function to compute the Student-t likelihood               */
+/*  following:                                                 */
+/*                                                             */
+/*    C. Roever, R. Meyer, N. Christensen:                     */
+/*    "Modelling coloured residual noise                       */
+/*    in gravitational-wavesignal processing"                  */
+/*    Classical and Quantum Gravity, 28(1):015010, 2011        */
+/*    http://dx.doi.org/10.1088/0264-9381/28/1/015010          */
+/*    http://arxiv.org/abs/0804.3853                           */
+/*                                                             */
+/* Uses the general "signaltemplate()" function to compute the */
+/* frequency-domain waveform template corresponding to the     */
+/* waveform model specified by the "waveform" argument, and    */
+/* then matches data & signal using the power spectrum         */
+/* and frequency range settings defined in the "DF" structure. */
+/*                                                             */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                             */
+/* Supplying "NULL" for the "parameter" will make the function */
+/* NOT compute a template but rather plug in zeroes and com-   */
+/* pute the "null"-likelihood instead.                         */
+/*                                                             */
+/***************************************************************/
+{
+  double complex *FourierTemplate=NULL;
+  long i, j, maxftsize;
+  double absdiff, chisquared=0.0;
+  double logfactor;
+  double locdeltat, locpolar, locazi, localti;
+  double StudentDF, SDF22;
+  vector localparameter;
+  maxftsize = 0;
+  for (i=0; i<coherentN; ++i)
+    if (DF[i].FTSize > maxftsize) maxftsize = DF[i].FTSize;
+  FourierTemplate = (double complex*) malloc(sizeof(double complex)*maxftsize);
+
+  vectorInit(&localparameter);
+  if (parameter != NULL) {
+    /* copy over everything except longitude & latitude, and add azimuth & altitude instead: */
+    for (j=0; j<parameter->dimension; ++j)
+      if ((strcmp(parameter->name[j],"longitude")!=0) 
+          && (strcmp(parameter->name[j],"latitude")!=0))
+        vectorAdd(&localparameter, parameter->name[j], parameter->value[j]);
+    vectorAdd(&localparameter, "azimuth", 0.0);
+    vectorAdd(&localparameter, "altitude", 0.0);
+  }
+  else { /* compute "NULL"-likelihood, assuming no signal present: */
+    for (j=0; j<maxftsize; ++j) {
+      FourierTemplate[j] = 0.0 + 0.0*I;
+    }
+  }
+  /* loop over individual data sets / interferometers: */
+  for (i=0; i<coherentN; ++i){
+    if (parameter != NULL) {
+      /* determine "local" parameters:    */
+      localParameters(parameter, DF[i].ifo, &locdeltat, &locpolar, &localti, &locazi);
+      vectorSetValue(&localparameter, "time",         vectorGetValue(parameter,"time")+locdeltat);
+      vectorSetValue(&localparameter, "polarisation", locpolar);
+      vectorSetValue(&localparameter, "azimuth",      locazi);
+      vectorSetValue(&localparameter, "altitude",     localti);
+      /* compute Fourier-domain template: */
+      signaltemplate(&DF[i], waveform, &localparameter, FourierTemplate);
+    }
+
+    /* compute sum-of-squares:          */
+    /*logfactor = log(DF[i].dataDeltaT) - log(DF[i].dataSize) + log(2.0);*/
+    StudentDF = 5.0;
+    SDF22 = (StudentDF+2.0)/2.0;
+    logfactor = log(4.0) + log(DF[i].dataDeltaT) - log(DF[i].dataSize) - log(StudentDF);
+    for (j=DF[i].minInd; j<=DF[i].maxInd; ++j){
+      absdiff    =  cabs(DF[i].dataFT[j] - FourierTemplate[j]);
+      /*chisquared += exp(logfactor + 2.0*log(absdiff) - DF[i].powspec[j]); */
+      chisquared += SDF22*log(1.0 + exp(logfactor + 2.0*log(absdiff) - DF[i].powspec[j]));
     }
   }
 
@@ -4417,6 +4830,9 @@ double logprior(McmcFramework *MF, vector *parameter)
   double result = -HUGE_VAL;
   if (MF->parameterset == InspiralNoSpin)
     result = logpriorInspiralNospin(MF, parameter);
+    /*result = logpriorInspiralNospin3(MF, parameter);*/    /* <--- changed prior !! */
+  else if (MF->parameterset == InspiralAlignedSpin) 
+    result = logpriorInspiralAlignedspin(MF, parameter);
   else if (MF->parameterset == BurstSineGaussian)
     result = logpriorSineGaussianBurst(MF, parameter);
   else
@@ -4474,6 +4890,122 @@ double logpriorInspiralNospin(McmcFramework *MF, vector *parameter)
   return prior;
 }
 
+double logpriorInspiralAlignedspin(McmcFramework *MF, vector *parameter)
+{
+  double result = -HUGE_VAL;
+  result = logpriorInspiralNospin(MF, parameter);
+  /*result = logpriorInspiralNospin3(MF, parameter);*/    /* <--- changed prior !! */
+  if (result > -HUGE_VAL) {
+    /*if (fabs(vectorGetValue(parameter,"effectivespin")) >= 1.0)*/
+    if (fabs(vectorGetValue(parameter,"effectivespin")) >= 0.98)
+      result = -HUGE_VAL;
+  }
+  return(result);
+}
+
+/****************************************************************************************************************/
+/****************************************************************************************************************/
+/****************************************************************************************************************/
+
+
+double logpriorInspiralNospin2(McmcFramework *MF, vector *parameter)
+/* log - prior density for inspiral signal w/ no spin (9 parameters).              */
+/* (not normalised!)                                                               */
+/***********************************************************************************/
+/* SIMPLIFIED PRIOR. UNIFORM IN MASSES, A SIMPLE UPPER BOUND ON DISTANCE,          */
+/* AND AN UPPER BOUND ON TOTAL MASS.                                               */
+/***********************************************************************************/
+{
+  double prior = 0.0;
+  double cosiota = cos(vectorGetValue(parameter,"inclination"));
+  double cosiota2 = cosiota*cosiota;
+
+  /* check whether parameter values fall within domain: */
+  if ((vectorGetValue(parameter,"massratio")>0.25) | (vectorGetValue(parameter,"massratio")<=0.0)
+      | (mc2mass1(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio")) < vectorGetValue(&MF->priorparameters,"massLower"))
+      | (mc2mass2(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio")) > vectorGetValue(&MF->priorparameters,"massUpper"))
+      /**/
+      | (mc2mt(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio")) > 35.0)
+      | (exp(vectorGetValue(parameter,"logdistance")) > 100.0)
+      /**/
+      | (vectorGetValue(parameter,"time") < vectorGetValue(&MF->priorparameters,"timeLower")) 
+      | (vectorGetValue(parameter,"time") > vectorGetValue(&MF->priorparameters,"timeUpper"))
+      | (vectorGetValue(parameter,"longitude") < -pi) | (vectorGetValue(parameter,"longitude") > pi)
+      | (fabs(vectorGetValue(parameter,"latitude")) > pi/2.0)
+      | (vectorGetValue(parameter,"polarisation") < 0.0) | (vectorGetValue(parameter,"polarisation") > pi)
+      | (vectorGetValue(parameter,"phase") < 0.0) | (vectorGetValue(parameter,"phase") > 2.0*pi)
+      | (vectorGetValue(parameter,"inclination") < 0.0) | (vectorGetValue(parameter,"inclination") > pi)){
+    prior = -HUGE_VAL;
+  }
+  else {
+    /* distance prior proportional to dl squared: */
+    prior += 2.0 * vectorGetValue(parameter,"logdistance");
+    prior += vectorIsElement(&MF->fixed,"latitude")    ? 0.0 : log(cos(vectorGetValue(parameter,"latitude")));
+    prior += vectorIsElement(&MF->fixed,"inclination") ? 0.0 : log(sin(vectorGetValue(parameter,"inclination")));
+    /* account for transformation of (mass1,mass2) --> (mc,eta): */
+    prior += logJacobianMcEta(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio"));
+    /* account for transformation  dL --> log(dL) : */
+    prior += vectorGetValue(parameter,"logdistance");
+  }
+  return prior;
+}
+
+/****************************************************************************************************************/
+
+double logpriorInspiralNospin3(McmcFramework *MF, vector *parameter)
+/* log - prior density for inspiral signal w/ no spin (9 parameters).              */
+/* (not normalised!)                                                               */
+/***********************************************************************************/
+/*                                                                                 */
+/* SIMPLIFIED PRIOR:                                                               */
+/*   UNIFORM IN LOG(DISTANCE),                                                     */
+/*   UNIFORM IN MASSES,                                                            */
+/*   AND AN UPPER BOUND ON TOTAL MASS.                                             */
+/*                                                                                 */
+/*   ("sky localisation" prior)                                                    */
+/*                                                                                 */
+/***********************************************************************************/
+{
+  double prior = 0.0;
+  double cosiota = cos(vectorGetValue(parameter,"inclination"));
+  double cosiota2 = cosiota*cosiota;
+
+  /* check whether parameter values fall within domain: */
+  if ((vectorGetValue(parameter,"massratio")>0.25) | (vectorGetValue(parameter,"massratio")<=0.0)
+      | (mc2mass1(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio")) < vectorGetValue(&MF->priorparameters,"massLower"))
+      | (mc2mass2(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio")) > vectorGetValue(&MF->priorparameters,"massUpper"))
+      /**/
+      | (mc2mt(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio")) > 20.0)
+      | (exp(vectorGetValue(parameter,"logdistance")) > 40.0)
+      | (exp(vectorGetValue(parameter,"logdistance")) < 10.0)
+      /**/
+      | (vectorGetValue(parameter,"time") < vectorGetValue(&MF->priorparameters,"timeLower")) 
+      | (vectorGetValue(parameter,"time") > vectorGetValue(&MF->priorparameters,"timeUpper"))
+      | (vectorGetValue(parameter,"longitude") < -pi) | (vectorGetValue(parameter,"longitude") > pi)
+      | (fabs(vectorGetValue(parameter,"latitude")) > pi/2.0)
+      | (vectorGetValue(parameter,"polarisation") < 0.0) | (vectorGetValue(parameter,"polarisation") > pi)
+      | (vectorGetValue(parameter,"phase") < 0.0) | (vectorGetValue(parameter,"phase") > 2.0*pi)
+      | (vectorGetValue(parameter,"inclination") < 0.0) | (vectorGetValue(parameter,"inclination") > pi)){
+    prior = -HUGE_VAL;
+  }
+  else {
+    /* distance prior proportional to dl squared: */
+    /*prior += 2.0 * vectorGetValue(parameter,"logdistance");*/
+    prior += vectorIsElement(&MF->fixed,"latitude")    ? 0.0 : log(cos(vectorGetValue(parameter,"latitude")));
+    prior += vectorIsElement(&MF->fixed,"inclination") ? 0.0 : log(sin(vectorGetValue(parameter,"inclination")));
+    /* account for transformation of (mass1,mass2) --> (mc,eta): */
+    prior += logJacobianMcEta(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio"));
+    /* account for transformation  dL --> log(dL) : */
+    /*prior += vectorGetValue(parameter,"logdistance");*/
+  }
+  return prior;
+}
+
+
+/****************************************************************************************************************/
+/****************************************************************************************************************/
+/****************************************************************************************************************/
+
 
 double logpriorSineGaussianBurst(McmcFramework *MF, vector *parameter)
 /* log - prior density for sine-Gaussian burst (8 parameters).      */
@@ -4513,12 +5045,26 @@ double logpriorSineGaussianBurst(McmcFramework *MF, vector *parameter)
 
 
 double logpstar(McmcFramework *MF, vector *parameter)
+/************************************************************/
 /* 'wrapper' function for "p-star" density.                 */
 /* Checks the "MF->parameterset" character string and calls */
 /* the corresponding log-prior-density function.            */
+/************************************************************/
+/*                                                          */
+/*  The "p-star" density is part of the parallel            */
+/*  tempering scheme, which is explained in the paper:      */
+/*                                                          */
+/*    C. Roever:                                            */
+/*    "Random template placement and prior information"     */
+/*    Journal of Physics: Conference Series,                */
+/*    228(1):012008, 2010                                   */
+/*    http://dx.doi.org/10.1088/1742-6596/228/1/012008      */
+/*                                                          */
+/************************************************************/
+
 {
   double result = -HUGE_VAL;
-  if (MF->parameterset == InspiralNoSpin)
+  if ((MF->parameterset == InspiralNoSpin) | (MF->parameterset == InspiralAlignedSpin))
     result = logpstarInspiralNospin(MF, parameter);
   else if (MF->parameterset == BurstSineGaussian)
     result = logpstarSineGaussianBurst(MF, parameter);
@@ -4529,8 +5075,16 @@ double logpstar(McmcFramework *MF, vector *parameter)
 
 
 double determinant(double m1, double m2)
-/*  determinant following eqn. (20) in Umstaetter/Tinto (2008)  */
-/*  for reparametrisation from (m1,m2) to (lambda1,lambda2).    */
+/****************************************************************/
+/*                                                              */
+/*  Determinant following eqn. (20) in Umstaetter/Tinto (2008)  */
+/*  for reparametrisation from (m1,m2) to (lambda1,lambda2)     */
+/*  (Ref. [32] in the above PT paper).                          */
+/*                                                              */
+/*  This essentially defines the "p-star" distribution          */
+/*  for parallel tempering.                                     */
+/*                                                              */
+/****************************************************************/
 {
   double MsunSec =  4.92549095e-6;
   double mt = (m1 + m2) * MsunSec; /* total mass. */
@@ -4553,7 +5107,6 @@ double determinant(double m1, double m2)
   return(fabs(d));
 }
 
-
 double logh(vector * parameter)
 {
   double result = HUGE_VAL;
@@ -4565,22 +5118,23 @@ double logh(vector * parameter)
 }
 
 double logpstarInspiralNospin(McmcFramework *MF, vector *parameter)
-/*  (logarithmic) density function "p-star"  */
+/*  (logarithmic) density function "p-star"      */
+/*  (see reference in "logpstar()" definition).  */
 {
   double result = -HUGE_VAL;
-  double pdens = logpriorInspiralNospin(MF, parameter);
+  double pdens = logprior(MF, parameter);
   double lh;
   if (pdens > -HUGE_VAL) {
     lh = -logh(parameter) + logJacobianMcEta(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio"));
-    result = lh;             /* "Minimax rule" */
-    /*result = 0.5*(pdens + lh);*/   /* "Bayes rule"   */
+    result = lh;                       /* "Minimax rule" */
+    /*result = 0.5*(pdens + lh);*/     /* "Bayes rule"   */
   }
   return(result);
 }
 
 
 double logpstarSineGaussianBurst(McmcFramework *MF, vector *parameter)
-/* ...for now set to be equal to prior... */
+/* ...for now set to be equal to the prior... */
 {
   double result = -HUGE_VAL;
   result = logpriorSineGaussianBurst(MF, parameter);
@@ -4599,6 +5153,9 @@ double logguessdensity(McmcFramework *MF, vector *parameter)
       result = logpriorInspiralNospin(MF, parameter);
     else 
       result = logguessInspiralNospin(MF, parameter);
+  }
+  else if (MF->parameterset == InspiralAlignedSpin) {
+    result = logpriorInspiralAlignedspin(MF, parameter);
   }
   else if (MF->parameterset == BurstSineGaussian)
     result = logpriorSineGaussianBurst(MF, parameter);
@@ -4652,6 +5209,8 @@ void priordraw(McmcFramework *MF, vector *parameter)
   int i;
   if (MF->parameterset == InspiralNoSpin)
     priordrawInspiralNospin(MF, parameter);
+  else if (MF->parameterset == InspiralAlignedSpin)
+    priordrawInspiralAlignedspin(MF, parameter);
   else if (MF->parameterset == BurstSineGaussian)
     priordrawBurstSineGaussian(MF, parameter);
   else
@@ -4708,6 +5267,14 @@ void priordrawInspiralNospin(McmcFramework *MF, vector *parameter)
 }
 
 
+void priordrawInspiralAlignedspin(McmcFramework *MF, vector *parameter)
+{
+  priordrawInspiralNospin(MF, parameter);
+  /*vectorSetValue(parameter, "effectivespin", gsl_ran_flat(GSLrandom, -1.0, 1.0)); */
+  vectorSetValue(parameter, "effectivespin", gsl_ran_flat(GSLrandom, -0.98, 0.98));  
+}
+
+
 void priordrawBurstSineGaussian(McmcFramework *MF, vector *parameter)
 /* generates a random draw from the prior distribution. */
 {
@@ -4735,6 +5302,9 @@ void guess(McmcFramework *MF, vector *parameter)
       priordrawInspiralNospin(MF, parameter);
     else
       guessInspiralNospin(MF, parameter);
+  }
+  else if (MF->parameterset == InspiralAlignedSpin){
+    priordrawInspiralAlignedspin(MF, parameter);
   }
   else if (MF->parameterset == BurstSineGaussian)
     priordrawBurstSineGaussian(MF, parameter);
@@ -4798,6 +5368,8 @@ void propose(McmcFramework *MF, DataFramework *DF, int coherentN,
   int i;
   if (MF->parameterset == InspiralNoSpin)
     proposeInspiralNospin(MF, DF, coherentN, parameter, logMHcoef, temperature);
+  else if (MF->parameterset == InspiralAlignedSpin)
+    proposeInspiralAlignedspin(MF, DF, coherentN, parameter, logMHcoef, temperature);
   else if (MF->parameterset == BurstSineGaussian)
     proposeBurstSineGaussian(MF, DF, coherentN, parameter, logMHcoef, temperature);
   else
@@ -5009,6 +5581,224 @@ void proposeInspiralNospin(McmcFramework *MF, DataFramework *DF, int coherentN,
     vectorSetValue(parameter,"massratio", 0.5-vectorGetValue(parameter,"massratio"));
   /*--- (end wrapping) ---*/
 }
+
+
+
+void proposeInspiralAlignedspin(McmcFramework *MF, DataFramework *DF, int coherentN, 
+                                vector *parameter, double *logMHcoef, double temperature)
+/* Generate proposal for the MF->parameterset == "InspiralNoSpin" case,  */
+/* i.e. when using the "20SP", "25SP", "2025" or "2535" waveform model.  */
+{
+  double *jump;
+  double scalar;
+  double dummy;
+  int i, d;
+  double skylocAngle, lati, longi;
+  double posvec[3], pivotvec[3];
+
+  /* at first, "MH-coefficient" (ratio of prop. densities) is one: */
+  *logMHcoef = 0.0;
+  /* (by now also remains at unity)                                */
+
+  /* figure out actual parameter space dimension:                       */
+  d = MF->startvalue.dimension - MF->fixed.dimension;
+  /* adjust proposal scale accordingly:                                 */
+  scalar = (d<=5) ? 1.0 : 2.4/sqrt(d);
+  /* (see Gelman & al.: Bayesian Data Analysis, p.334, or               */
+  /*  Gelman/Roberts/Gilks (1996): Efficient Metropolis jumping rules)  */
+  /*scalar /= 5.0;*/
+  scalar /= 10.0;
+  /* (this seems to work better here than Gelman & al's recommendation) */
+  /* Do wider jumps at higher temperatures:                             */
+  scalar *= sqrt(temperature);
+
+  /* generate the multivariate Gaussian / t-distributed proposal */
+  /* using the GSL function:                                     */
+  jump = (double*) malloc(sizeof(double) * MF->startvalue.dimension);
+  RandMVNorm(MF, jump);
+  if (MF->studentDF > 0.0)
+    /* create Student-t out of normal (dimension-wise)      */
+    /* by multiplying with another (Chi^2-) Random Variable */
+    for (i=0; i<MF->startvalue.dimension; ++i)
+      jump[i] *= scalar * sqrt(MF->studentDF/gsl_ran_gamma(GSLrandom, MF->studentDF/2.0, 2.0));
+    /* chisquared(nu) == gamma(nu/2,2)  (since GSL's chisq function seems buggy) */
+  else /* Normal (Gaussian) proposal:                       */
+    for (i=0; i<MF->startvalue.dimension; ++i)
+      jump[i] *= scalar;
+
+  /* invert every other inclination proposal: */
+  if (gsl_rng_uniform(GSLrandom) < 0.5)
+    jump[parindex(MF,"inclination")] *= -1.0;
+
+  /* inflate some of the proposals: */
+  /*if (gsl_rng_uniform(GSLrandom) < 0.06)
+    jump[parindex(MF,"chirpmass")] *= (gsl_rng_uniform(GSLrandom)<0.33) ? 4.0 : ((gsl_rng_uniform(GSLrandom)<0.5) ? 8.0 : 64.0);*/
+  if (gsl_rng_uniform(GSLrandom) < 0.33)
+    jump[parindex(MF,"chirpmass")] *= exp(gsl_rng_uniform(GSLrandom) * log(1000.0));
+  if (gsl_rng_uniform(GSLrandom) < 0.05)
+    jump[parindex(MF,"massratio")] *= 4.0;
+
+  /* Sky location proposals are treated specially (see below). */
+  /* Store latitude jump, ignore longitude jump and do nothing yet. */
+  skylocAngle = jump[parindex(MF,"latitude")];
+  jump[parindex(MF,"latitude")] = 0.0;
+  jump[parindex(MF,"longitude")] = 0.0;
+  if (gsl_rng_uniform(GSLrandom) < 0.20) { /* uniform sky location proposal: */
+    skylocAngle = gsl_ran_ugaussian(GSLrandom) * pi/2.0;
+    if (gsl_rng_uniform(GSLrandom) < 0.8) { /* (corresponding "uniform" time proposal) */
+      /*jump[parindex(MF,"time")] = 0.021275 + gsl_ran_ugaussian(GSLrandom) * 0.01;
+        if (gsl_rng_uniform(GSLrandom) < 0.5)
+          jump[parindex(MF,"time")] *= -1.0;*/
+      /*jump[parindex(MF,"time")] = gsl_ran_ugaussian(GSLrandom) * sqrt(2.0/3.0) * (earthRadiusEquator/c);*/
+      jump[parindex(MF,"time")] = (gsl_ran_flat(GSLrandom,-1,1)+gsl_ran_flat(GSLrandom,-1,1)) * (earthRadiusEquator/c);
+    }
+    else { /*  (actually completely uniform time proposal)  */
+      jump[parindex(MF,"time")] = 
+        gsl_ran_ugaussian(GSLrandom) * (vectorGetValue(&MF->priorparameters,"timeUpper")
+                                        - vectorGetValue(&MF->priorparameters,"timeLower"))
+        - (parameter->value[parindex(MF,"time")] - vectorGetValue(&MF->priorparameters,"timeLower"));
+      
+    }
+  }
+
+  /* add 'jump' to current parameter value:                     */
+  /* (i.e., proposal is -so far- centered around current value) */
+  for (i=0; i<parameter->dimension; ++i)
+    parameter->value[i] += jump[parindex(MF,parameter->name[i])];
+  free(jump);
+
+  /* manipulate sky location;                         */
+  /* determine line-of-sight vector:                  */
+  coord2vec(vectorGetValue(parameter,"latitude"), vectorGetValue(parameter,"longitude"), posvec);
+  /* determine an (arbitrary) orthogonal unit vector: */
+  pivotvec[0] = 0.0;
+  pivotvec[1] = 1.0;
+  pivotvec[2] =  - posvec[1] / posvec[2];
+  normalise(pivotvec);
+  /* rotate pivot into a random direction:  */
+  rotate(pivotvec, gsl_ran_flat(GSLrandom, 0.0, 2.0*pi), posvec);
+  /*  10% proposals in particular direction */
+  /*  (-- iff 2-detector-network)           */
+  if (gsl_rng_uniform(GSLrandom) < 0.10) { 
+    /* check how many (different) detectors: */
+    if (numberIfoSites(DF,coherentN)==2) {
+      /* ifo #0 is the "1st" interferometer, now find second: */
+      i = 1;
+      while ((DF[i].ifo->latitude == DF[0].ifo->latitude) 
+              && (DF[i].ifo->longitude == DF[0].ifo->longitude)) ++i;
+      if (i >= coherentN) printf(" : WARNING: index out of range in `proposeInspiralNoSpin()' !!\n");
+      /* set "pivotvec" to be the connecting line between the two interferometers: */
+      pivotvec[0] = DF[0].ifo->positionVector[0] - DF[i].ifo->positionVector[0];
+      pivotvec[1] = DF[0].ifo->positionVector[1] - DF[i].ifo->positionVector[1];
+      pivotvec[2] = DF[0].ifo->positionVector[2] - DF[i].ifo->positionVector[2];
+      normalise(pivotvec);
+    }
+  }
+  /* rotate position to get new position:  */
+  rotate(posvec, skylocAngle, pivotvec);
+  /* compute new (geographic) coordinates: */
+  vec2coord(posvec, &lati, &longi);
+  vectorSetValue(parameter, "latitude", lati);
+  vectorSetValue(parameter, "longitude", longi);
+
+  /* some uniform proposals: */
+  if (gsl_rng_uniform(GSLrandom) < 0.10)  /* uniform mc proposal:    */
+    vectorSetValue(parameter, "chirpmass",
+                   gsl_ran_flat(GSLrandom, pow(vectorGetValue(&MF->priorparameters,"massLower"),1.2)/pow(2.0*vectorGetValue(&MF->priorparameters,"massLower"),0.2),
+                          pow(vectorGetValue(&MF->priorparameters,"massUpper"),1.2)/pow(2.0*vectorGetValue(&MF->priorparameters,"massUpper"),0.2)));
+  if (gsl_rng_uniform(GSLrandom) < 0.05)  /* uniform eta proposal:   */
+    vectorSetValue(parameter, "massratio",
+                   gsl_ran_flat(GSLrandom, (vectorGetValue(&MF->priorparameters,"massLower")*vectorGetValue(&MF->priorparameters,"massUpper"))/pow(vectorGetValue(&MF->priorparameters,"massLower")+vectorGetValue(&MF->priorparameters,"massUpper"),2.0),0.25));
+  if (gsl_rng_uniform(GSLrandom) < 0.05)  /* uniform phase proposal: */
+    vectorSetValue(parameter,"phase", gsl_ran_flat(GSLrandom, 0.0, 2.0*pi));
+  if (gsl_rng_uniform(GSLrandom) < 0.05)  /* uniform t_c proposal:   */
+    vectorSetValue(parameter,"time",
+                   gsl_ran_flat(GSLrandom, vectorGetValue(&MF->priorparameters,"timeLower"), vectorGetValue(&MF->priorparameters,"timeUpper")));
+
+
+  /* some proposals to related parameter space regions: */
+  if (gsl_rng_uniform(GSLrandom)<0.05)   /* `pi-iota' - proposal: */
+    vectorSetValue(parameter, "inclination", pi - vectorGetValue(parameter,"inclination"));
+  if (gsl_rng_uniform(GSLrandom)<0.05)   /* `phi+pi' - proposal:  */
+    vectorSetValue(parameter, "phase", vectorGetValue(parameter,"phase") + pi);
+  if (gsl_rng_uniform(GSLrandom)<0.05)   /* `psi+pi' - proposal:  */
+    vectorSetValue(parameter, "polarisation", vectorGetValue(parameter,"polarisation") + pi/2.0);
+
+
+  /*--- finally "wrap around" out-of-domain proposals: ---*/
+  dummy = vectorGetValue(parameter, "phase");
+  if (dummy > 2.0*pi) {
+    while (dummy > 2.0*pi) dummy -= 2.0*pi;
+    vectorSetValue(parameter, "phase", dummy);
+  }
+  else if (dummy < 0.0) {
+    while (dummy < 0.0) dummy += 2.0*pi;
+    vectorSetValue(parameter, "phase", dummy);
+  }
+
+  dummy = vectorGetValue(parameter, "longitude");
+  if (dummy > pi) {
+    while (dummy > pi) dummy -= 2.0*pi;
+    vectorSetValue(parameter, "longitude", dummy);
+  }
+  else if (dummy < -pi) {
+    while (dummy < -pi) dummy += 2.0*pi;
+    vectorSetValue(parameter, "longitude", dummy);
+  }
+
+  dummy = vectorGetValue(parameter, "polarisation");
+  if (dummy > pi) {
+    while (dummy > pi) dummy -= pi;
+    vectorSetValue(parameter, "polarisation", dummy);
+  }
+  else if (dummy < 0.0) {
+    while (dummy < 0.0) dummy += pi;
+    vectorSetValue(parameter, "polarisation", dummy);
+  }
+
+  dummy = vectorGetValue(parameter, "latitude");
+  if (dummy > pi/2.0){
+    while (dummy > 1.5*pi) dummy -= 2.0*pi;
+    if (dummy > pi/2.0) dummy -= 2.0*(dummy-pi/2.0);
+    vectorSetValue(parameter, "latitude", dummy);
+  }
+  else if (dummy < -pi/2.0) {
+    while (dummy < -1.5*pi) dummy += 2.0*pi;
+    if (dummy < -pi/2.0) dummy += 2.0*(-pi/2.0-dummy);
+    vectorSetValue(parameter, "latitude", dummy);
+  }
+
+  dummy = vectorGetValue(parameter, "inclination");
+  if (dummy > pi){
+    while (dummy > 2.0*pi) dummy -= 2.0*pi;
+    if (dummy > pi) dummy -= 2.0*(dummy-pi);
+    vectorSetValue(parameter, "inclination", dummy);
+  }
+  else if (dummy < 0.0) {
+    while (dummy < -1.0*pi) dummy += 2.0*pi;
+    if (dummy < 0.0) dummy += -2.0*dummy;
+    vectorSetValue(parameter, "inclination", dummy);
+  }
+
+  double spinrange = 0.98;
+  dummy = vectorGetValue(parameter, "effectivespin");
+  if (dummy > spinrange){
+    while (dummy > 3.0*spinrange) dummy -= 2.0*spinrange;
+    if (dummy > spinrange) dummy -= 2.0*(dummy-spinrange);
+    vectorSetValue(parameter, "effectivespin", dummy);
+  }
+  else if (dummy < -spinrange) {
+    while (dummy < -3.0) dummy += 2.0*spinrange;
+    if (dummy < -spinrange) dummy += 2.0*(-spinrange-dummy);
+    vectorSetValue(parameter, "effectivespin", dummy);
+  }
+
+  if (vectorGetValue(parameter,"massratio") > 0.25) 
+    vectorSetValue(parameter,"massratio", 0.5-vectorGetValue(parameter,"massratio"));
+  /*--- (end wrapping) ---*/
+}
+
+
 
 
 void proposeBurstSineGaussian(McmcFramework *MF, DataFramework *DF, int coherentN,
@@ -5349,10 +6139,10 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
 }
 
 
-void logtoCSVfile(McmcFramework *MF, vector *parameter, 
-                  long iteration, long accepted, 
-                  double logprior, double loglikelihood, double logposterior,
-                  double logpstar, int chain)
+void logtoCSVfile_OLD(McmcFramework *MF, vector *parameter, 
+                      long iteration, long accepted, 
+                      double logprior, double loglikelihood, double logposterior,
+                      double logpstar, int chain)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* Add a line to the MCMC log file. The MCMC log file is a text file             */
 /* in CSV (comma-seperated-values) format.                                       */
@@ -5421,6 +6211,126 @@ void logtoCSVfile(McmcFramework *MF, vector *parameter,
 }
 
 
+
+void logtoCSVfile(McmcFramework *MF, vector *parameter, 
+                  long iteration, long accepted, 
+                  double logprior, double loglikelihood, double logposterior,
+                  double logpstar, int chain)
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Add a line to the MCMC log file. The MCMC log file is a text file             */
+/* in CSV (comma-seperated-values) format.                                       */
+/* Its path & name are given in the "MF->csvfilename" slot.                      */
+/* CSV format is specified e.g. here:  http://tools.ietf.org/html/rfc4180        */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* "iteration" indicates the iteration number.                                   */
+/* For  "iteration==LONG_MIN"  a new, empty file (header only) is created        */
+/* (or possibly overwritten), otherwise a line is appended to an existing file.  */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* NEW: function now uses MPI I/O methods                                        */
+/*      as otherwise output files may end up broken.                             */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+{
+  FILE *logfile;
+  int i;
+  char chainIndicator[32];
+  char filename[256];
+  char logstring[16384];
+  vector outvector;       /* parameter vector that is actually logged */
+  MPI_File fh;
+  MPI_Status status;
+
+  sprintf(chainIndicator, "chain%3d", chain);
+  /*for (i=0; i<32; ++i) if (chainIndicator[i]==' ') chainIndicator[i]='0';*/
+  i = 0;
+  while (chainIndicator[i] != '\0') {
+    if (chainIndicator[i] == ' ') chainIndicator[i]='0';
+    ++i;
+  }
+  sprintf(filename, "%s%s.csv", MF->csvfilename, chainIndicator);
+
+  /* determine what exactly is going to be logged:      */
+  vectorInit(&outvector);
+  if (MF->celestialCoords) {
+    /* copy everything EXCEPT latitude / longitude,     */
+    /* transform geographical to celestial coordinates: */
+    for (i=0; i<parameter->dimension; ++i)
+      if ((strcmp(parameter->name[i],"latitude")==0) && (!vectorIsElement(&MF->fixed, "latitude")))
+        vectorAdd(&outvector, "declination", vectorGetValue(parameter, "latitude"));
+      else if ((strcmp(parameter->name[i],"longitude")==0)  && (!vectorIsElement(&MF->fixed, "longitude")))
+        vectorAdd(&outvector, "rightascension", 
+                  rightAscension(vectorGetValue(parameter, "longitude"), MF->GMST));
+      else
+        vectorAdd(&outvector, parameter->name[i], parameter->value[i]);
+  }  
+  else vectorCopy(parameter, &outvector);
+
+  if (iteration==LONG_MIN) {  /* set up new file: */
+    if (verbose) printf(" | logging to file \"%s\"\n", filename);
+    /*logfile = fopen(filename, "w");
+    fprintf(logfile, "\"iteration\",\"accepted\",\"logprior\",\"loglikelihood\",\"logposterior\",\"logpstar\"");
+    for (i=0; i<outvector.dimension; ++i)
+      if ((!vectorIsElement(&MF->fixed, outvector.name[i]))
+          || ((strcmp(outvector.name[i],"declination")==0) && (!vectorIsElement(&MF->fixed, "latitude")))
+          || ((strcmp(outvector.name[i],"rightascension")==0) && (!vectorIsElement(&MF->fixed, "longitude"))))
+        fprintf(logfile, ",\"%s\"", outvector.name[i]);
+    fprintf(logfile, "\n");
+    fclose(logfile); */
+
+    /* assemble CSV file header line: */
+    sprintf(logstring, "\"iteration\",\"accepted\",\"logprior\",\"loglikelihood\",\"logposterior\",\"logpstar\"");
+    for (i=0; i<outvector.dimension; ++i)
+      if ((!vectorIsElement(&MF->fixed, outvector.name[i]))
+          || ((strcmp(outvector.name[i],"declination")==0) && (!vectorIsElement(&MF->fixed, "latitude")))
+          || ((strcmp(outvector.name[i],"rightascension")==0) && (!vectorIsElement(&MF->fixed, "longitude"))))
+        sprintf(logstring, "%s,\"%s\"", logstring, outvector.name[i]);
+    sprintf(logstring, "%s\n\0", logstring);
+
+    /* count length of character string: */
+    i=0;
+    while (logstring[i] != '\0') ++i;
+    /*  ("i" now indicates the first 'zero' character                */
+    /*   and with that also gives the _total_number_ of characters)  */
+    MPI_File_delete(filename, MPI_INFO_NULL); /* delete file (if present) */
+    MPI_File_open(MPI_COMM_SELF, filename, 
+		  MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+    MPI_File_write(fh, logstring, i, MPI_CHAR, &status);
+    MPI_File_close(&fh);
+  }
+  else { /* append to existing file: */
+    /*logfile = fopen(filename, "a");
+    fprintf(logfile, "%ld,%ld,%.6f,%.6f,%.6f,%.6f", iteration, accepted, 
+            logprior, loglikelihood, logposterior, logpstar);
+    for (i=0; i<outvector.dimension; ++i)
+      if (!vectorIsElement(&MF->fixed, outvector.name[i]))
+        fprintf(logfile, ",%.14e", outvector.value[i]);
+    fprintf(logfile, "\n");
+    fclose(logfile);*/
+    
+    /* assemble CSV file line: */
+    sprintf(logstring, "%ld,%ld,%.6f,%.6f,%.6f,%.6f", iteration, accepted, 
+            logprior, loglikelihood, logposterior, logpstar);
+    for (i=0; i<outvector.dimension; ++i)
+      if (!vectorIsElement(&MF->fixed, outvector.name[i]))
+        sprintf(logstring, "%s,%.14e", logstring, outvector.value[i]);
+    sprintf(logstring, "%s\n\0", logstring);
+
+    /* count length of character string: */
+    i=0;
+    while (logstring[i] != '\0') ++i;
+    /*  ("i" now indicates the first 'zero' character                */
+    /*   and with that also gives the _total_number_ of characters)  */
+
+    MPI_File_open(MPI_COMM_SELF, filename, 
+		  MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+    MPI_File_seek(fh, 0, MPI_SEEK_END);
+    MPI_File_write(fh, logstring, i, MPI_CHAR, &status);
+    MPI_File_close(&fh);
+  }
+  vectorDispose(&outvector);
+}
+
+
+
 void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* Add an entry (i.e. a line) to the (existing!) "general" log file.             */
@@ -5479,9 +6389,9 @@ void savePSD(DataFramework *DF, char *filename)
   printf(" : writing (logarithmic, one-sided) noise power spectral density to file\n : '%s'...\n",
          filename);
   specfile = fopen(filename, "w");
-  fprintf(specfile, "f logPSD\n");
+  fprintf(specfile, "f,logPSD\n");
   for (i=0; i<DF->FTSize; ++i)
-    fprintf(specfile, "%f %e\n", ((double)i)*DF->FTDeltaF, DF->powspec[i]);
+    fprintf(specfile, "%f,%e\n", ((double)i)*DF->FTDeltaF, DF->powspec[i]);
   fclose(specfile);
   printf(" : ...finished.\n");
 }
@@ -5513,11 +6423,13 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN, int
   double *pstarVec=NULL;
   int ownTempIndex;
   int j, swap1, swap2, swapattempt;
+  int unityTempProc=0;
   double swpdummy;
   long k;
   int logIter = 0;
   double snr, *snrvec;     /* vector keeping track of individual Ifo SNRs. */
   char snrfilename[256]; /* file keeping track of individual Ifo SNRs. */
+  MPI_Status MPIstatus;
 
   ownTempIndex = MPIrank;
   sprintf(snrfilename, "%sSNR.csv", MF->csvfilename);
@@ -5585,6 +6497,13 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN, int
     sprintf(logstring, "%.5f", llikeli);
     logtoLOGfile(MF, "null likelihood", logstring);
   }
+  if (verbose) printf(" | null likelihood :  %.3f\n", llikeli);
+  /*for (i=0; i<MPIsize; ++i){
+    if (MPIrank == i)
+      printf(" : null likelihood (%d) :  %.3f\n", MPIrank+1, llikeli);
+    MPI_Barrier(MPI_COMM_WORLD);
+  }*/
+
 
   /* now proceed at starting parameter values:                        */
   vectorCopy(&MF->startvalue, &state);
@@ -5596,9 +6515,16 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN, int
   llikeli = loglikelihood(DF, coherentN, MF->template, &state);
   snr = signaltonoiseratio(DF, coherentN, MF->template, &state, snrvec);
   if (verbose) printf(" | starting value likelihood :  %.3f\n", llikeli);
+  /*for (i=0; i<MPIsize; ++i){
+    if (MPIrank == i)
+      printf(" : starting value likelihood (%d) :  %.3f\n", MPIrank+1, llikeli);
+    MPI_Barrier(MPI_COMM_WORLD);
+  }*/
   lpstar = logpstar(MF, &state);
   logtoCSVfile(MF, &state, 0, 0, lprior, llikeli, lprior+llikeli, lpstar, MPIrank+1);
-  if (ownTempIndex==0){
+
+  /* add first row of SNR log file: */
+  if (MPIrank==0){
     sprintf(logstring, "0,%.4f", snr);
     for (i=0; i<coherentN; ++i)
       sprintf(logstring, "%s,%.4f", logstring, snrvec[i]);   
@@ -5625,6 +6551,17 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN, int
     logIter = (i % 100 == 0);   /* every 100th iteration is logged to file... */
     vectorCopy(&state, &proposal);
     propose(MF, DF, coherentN, &proposal, &logMHcoef, MF->temperature[ownTempIndex]);
+
+    /*-------------------------*/
+    /* (MPIrank==0)
+      printf(" : i =%4d\n", i);
+    for (j=0; j<MPIsize; ++j){
+      if (MPIrank==j)
+        vectorPrint(&state);
+      MPI_Barrier(MPI_COMM_WORLD);
+      }*/
+    /*-------------------------*/
+
     lpriorP  = logprior(MF, &proposal);
     if (lpriorP > -HUGE_VAL) { /* (only compute likelihood if prior wasn't already zero) */
       llikeliP = loglikelihood(DF, coherentN, MF->template, &proposal);
@@ -5663,7 +6600,7 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN, int
     MPI_Gather(&MHaccept, 1, MPI_LONG,
                MHacceptCount, 1, MPI_LONG,
                0, MPI_COMM_WORLD);
-    if (MPIrank == 0) {
+    if ((MPIrank == 0) && (MPIsize > 1)) {
       /* try many swaps each iteration: */
       for (swapattempt=0; swapattempt<50; ++swapattempt) {
         /* pick two chains so that  temp(swap1) < temp(swap2);  */
@@ -5686,20 +6623,10 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN, int
           j = tempIndVec[swap1];
           tempIndVec[swap1] = tempIndVec[swap2];
           tempIndVec[swap2] = j;
-          /* swap acceptance rate counts: */
+          /* swap acceptance rate counts:  */
           k = MHacceptCount[swap1];
           MHacceptCount[swap1] = MHacceptCount[swap2];
           MHacceptCount[swap2] = k;
-          /* swap priors, likelihoods etc: */
-          swpdummy = priorVec[swap1];
-          priorVec[swap1] = priorVec[swap2];
-          priorVec[swap2] = swpdummy;
-          swpdummy = likeliVec[swap1];
-          likeliVec[swap1] = likeliVec[swap2];
-          likeliVec[swap2] = swpdummy;
-          swpdummy = pstarVec[swap1];
-          pstarVec[swap1] = pstarVec[swap2];
-          pstarVec[swap2] = swpdummy;
         }
       }
     }
@@ -5716,17 +6643,33 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN, int
         time(&endtime);
         seconds = difftime(endtime, starttime);
         swapLogFile = fopen(MF->swpfilename, "a");
-        fprintf(swapLogFile, "%d,%.1f", i, seconds);
+        fprintf(swapLogFile, "%ld,%.1f", i, seconds);
         for (j=0; j<(MPIsize-1); ++j)
-          fprintf(swapLogFile, ",%d", swapProposalCount[j]);
+          fprintf(swapLogFile, ",%ld", swapProposalCount[j]);
         for (j=0; j<(MPIsize-1); ++j)
-          fprintf(swapLogFile, ",%d", swapAcceptCount[j]);
+          fprintf(swapLogFile, ",%ld", swapAcceptCount[j]);
         fprintf(swapLogFile, "\n");
         fclose(swapLogFile);
       }
-      if (ownTempIndex==0){ /* update the SNR log file: */
+      /* update the SNR log file: */
+      if (ownTempIndex==0){  /* compute SNR: */
         snr = signaltonoiseratio(DF, coherentN, MF->template, &state, snrvec);
-        sprintf(logstring, "%d,%.4f", i, snr);
+        if (MPIrank != 0) { /* communicate numbers to process #0: */
+          MPI_Send(&snr, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+          MPI_Send(snrvec, coherentN, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
+        }
+      }
+      if (MPIrank==0) {       /* log SNR to file: */
+        if (ownTempIndex != 0) {
+          /* figure out which process has temperature == 1.0: */
+          unityTempProc = 1;
+          while (tempIndVec[unityTempProc] != 0) ++unityTempProc;
+          /* receive numbers: */
+          MPI_Recv(&snr, 1, MPI_DOUBLE, unityTempProc, 1, MPI_COMM_WORLD, &MPIstatus);
+          MPI_Recv(snrvec, coherentN, MPI_DOUBLE, unityTempProc, 2, MPI_COMM_WORLD, &MPIstatus);
+        }
+        /* add line to SNR log file: */
+        sprintf(logstring, "%ld,%.4f", i, snr);
         for (j=0; j<coherentN; ++j)
           sprintf(logstring, "%s,%.4f", logstring, snrvec[j]);   
         swapLogFile = fopen(snrfilename, "a");
@@ -5758,6 +6701,208 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN, int
   if (MPIrank == 0)
     logtoLOGfile(MF, "metropolishastings() finish", logstring);
 }
+
+
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
+
+
+void gridmap(McmcFramework *MF, DataFramework *DF, int coherentN, int MPIsize, int MPIrank)
+/* compute likelihood/posterior map along a grid. */
+{
+  long i, MHaccept=0;
+  vector state;             /* current state of MC                         */
+  double lprior, llikeli;   /* corresponding prior & likelihood            */
+  vector proposal;          /* new, proposed state of MC                   */
+  double lpriorP, llikeliP; /* corresponding prior & likelihood            */
+  double lpstar, lpstarP;   /* "pstar" value                               */
+  double logMHcoef;         /* Metropolis-Hastings "asymmetry" coefficient */
+  double logalpha;          /* log of acceptance probability               */
+  int accept;
+  time_t starttime, endtime;
+  double seconds;
+  char logstring[512];
+  int *tempIndVec=NULL;         /* vector of temperature indices for each process   */
+  long *swapProposalCount=NULL; /* vector tracking numbers of swap proposals        */
+  long *swapAcceptCount=NULL;   /* vector tracking numbers of accepted swaps        */
+  long *MHacceptCount=NULL;     /* vector tracking numbers of accepted MH-proposals */
+  FILE *swapLogFile = NULL;
+
+  double *likeliVec=NULL;
+  double *priorVec=NULL;
+  double *pstarVec=NULL;
+  int ownTempIndex;
+  int j, swap1, swap2, swapattempt;
+  double swpdummy;
+  long k;
+  int logIter = 0;
+
+  ownTempIndex = MPIrank;
+  if (MPIrank==0) {
+    DateTimeString(logstring);
+    logtoLOGfile(MF, "gridmap() start", logstring);
+    /* at startup, the temp. index of each process is same as MPIrank (see above): */
+    tempIndVec = (int*) malloc(sizeof(int)*MPIsize);
+    for (i=0; i<MPIsize; ++i) tempIndVec[i] = i;
+    likeliVec         = (double*) malloc(sizeof(double)*MPIsize);
+    priorVec          = (double*) malloc(sizeof(double)*MPIsize);
+    pstarVec          = (double*) malloc(sizeof(double)*MPIsize);
+    swapProposalCount = (long*) malloc(sizeof(long)*(MPIsize-1));
+    swapAcceptCount   = (long*) malloc(sizeof(long)*(MPIsize-1));
+    MHacceptCount     = (long*) malloc(sizeof(long)*MPIsize);
+    for (i=0; i<(MPIsize-1); ++i) {
+      swapProposalCount[i] = 0;
+      swapAcceptCount[i] = 0;
+    }
+  }
+
+  vectorInit(&state);
+  vectorSetup(&state, MF->parameterset);
+
+  /* create log file (header line only):                                     */
+  if (MPIrank == 0)
+    logtoCSVfile(MF, &state, LONG_MIN, 0, 0.0, 0.0, 0.0, 0.0, MPIrank+1);
+
+  
+  /* first compute "null" likelihood, for no signal present:                 */
+  llikeli = loglikelihood(DF, coherentN, MF->template, NULL);
+  /* log as "negative 1st" iteration, with all zero parameter values:        */
+  /* if (verbose) printf(" | 'null' likelihood         :  %.3f\n", llikeli); */
+  if (MPIrank==0) {
+    logtoCSVfile(MF, &state, -1, 0, 0.0, llikeli, 0.0, 0.0, MPIrank+1);
+    sprintf(logstring, "%.5f", MF->GMST);
+    logtoLOGfile(MF, "GMST", logstring);
+    sprintf(logstring, "%.5f", llikeli);
+    logtoLOGfile(MF, "null likelihood", logstring);
+  }
+  if (verbose) printf(" || null likelihood :  %.3f\n", llikeli);
+
+
+  /* now proceed at starting parameter values:                        */
+  vectorCopy(&MF->startvalue, &state);
+  lprior  = logprior(MF, &state);
+  if (lprior == -HUGE_VAL) {
+    printf(" : WARNING: starting value has zero prior probability!\n");
+    vectorPrint(&state);
+  }
+  llikeli = loglikelihood(DF, coherentN, MF->template, &state);
+  if (verbose) printf(" || starting value likelihood :  %.3f\n", llikeli);
+  lpstar = logpstar(MF, &state);
+  if (MPIrank==0)
+    logtoCSVfile(MF, &state, 0, 0, lprior, llikeli, lprior+llikeli, lpstar, 1);
+
+  if (verbose){
+    printf(" || starting GRID MAP COMPUTATION; signal template used: '#%d'\n", 
+           MF->template);
+    printf(" || started  : ");
+    printtime();
+  }
+
+
+  /*-- start actual GRID COMPUTATION: --*/
+
+
+  /* define parameters to be looped over,   */
+  /* and define grid (size/extent):         */
+  char var1_name[100], var2_name[100];
+  /*sprintf(var1_name, "chirpmass");
+  sprintf(var2_name, "massratio");
+
+  int var1_N        = 300 ;
+  double var1_delta = 0.01 ;
+  double var1_min   = vectorGetValue(&MF->startvalue, var1_name) - 0.5*((double) (var1_N - 1)) * var1_delta;
+
+  int var2_N        = 100;
+  double var2_min   = 0.10;
+  double var2_delta = (0.25 - var2_min) / ((double) var2_N);*/
+
+  sprintf(var1_name, "time");
+  sprintf(var2_name, "chirpmass");
+
+  int var1_N        = 200;
+  double var1_delta = (2.0 * 0.001) / var1_N;
+  /*double var1_delta = (2.0 * 0.008) / var1_N;*/
+  /*double var1_delta = (2.0 * 0.064) / var1_N;*/
+  double var1_min   = vectorGetValue(&MF->startvalue, var1_name) - 0.5*((double) (var1_N - 1)) * var1_delta;
+
+  int var2_N        = 200 ;
+  double var2_delta = (2.0 * 0.03) / var2_N;
+  /*double var2_delta = (2.0 * 0.24) / var2_N;*/
+  /*double var2_delta = (2.0 * 1.92) / var2_N;*/
+  double var2_min   = vectorGetValue(&MF->startvalue, var2_name) - 0.5*((double) (var2_N - 1)) * var2_delta;
+
+
+
+  /* grid size etc.: */
+  /*double mc_inj    = vectorGetValue(&MF->startvalue, "chirpmass");
+  double eta_inj   = vectorGetValue(&MF->startvalue, "massratio");
+  int mc_N         = 100;
+  int eta_N        = 100;
+  double mc_delta  = (2.0 * 0.3) / ((double) mc_N);
+  double mc_min    = mc_inj - (((double) (mc_N-1)) / 2.0) * mc_delta;
+  double eta_min   = 0.1;
+  double eta_delta = (0.25-eta_min) / ((double) (eta_N-1));*/
+  if (verbose)
+    printf(" || computing along %d x %d grid.\n", var1_N, var2_N);
+  time(&starttime);
+  i=0;
+  while (i < (var1_N * var2_N)) {
+    /* every MPI process does its specific computation: */
+    vectorSetValue(&state, var1_name, var1_min + ((double)(((i+MPIrank) % var1_N))) * var1_delta);
+    vectorSetValue(&state, var2_name, var2_min + ((double)(((i+MPIrank) / var1_N))) * var2_delta);
+
+    lprior  = logprior(MF, &state);
+    if (lprior > -HUGE_VAL) { /* (only compute likelihood if prior wasn't already zero) */
+      llikeli = loglikelihood(DF, coherentN, MF->template, &state);
+      lpstar  = logpstar(MF, &state);
+    }
+    else {                     /* (don't bother computing likelihood)                   */
+      llikeli = -HUGE_VAL;
+      lpstar  = -HUGE_VAL;
+    }
+
+    /* Gather likelihood values etc in process #0: */
+    MPI_Gather(&llikeli, 1, MPI_DOUBLE,
+               likeliVec, 1, MPI_DOUBLE,
+               0, MPI_COMM_WORLD);
+    MPI_Gather(&lprior, 1, MPI_DOUBLE,
+               priorVec, 1, MPI_DOUBLE,
+               0, MPI_COMM_WORLD);
+    MPI_Gather(&lpstar, 1, MPI_DOUBLE,
+               pstarVec, 1, MPI_DOUBLE,
+               0, MPI_COMM_WORLD);
+
+    if (MPIrank == 0) { /* First process logs the gathered numbers from ALL chains: */
+      for (j=0; j<MPIsize; ++j) {
+        if ((i+j) < (var1_N*var2_N)) {
+          vectorSetValue(&state, var1_name, var1_min + ((double)(((i+j) % var1_N))) * var1_delta);
+          vectorSetValue(&state, var2_name, var2_min + ((double)(((i+j) / var1_N))) * var2_delta);
+          logtoCSVfile(MF, &state, i+j+1, 0, priorVec[j], likeliVec[j], priorVec[j]+likeliVec[j], pstarVec[j], 1);
+	}
+      }
+    }
+    i += MPIsize;
+  }
+  /*-- end of grid computations. --*/
+
+  time(&endtime);
+  seconds = difftime(endtime, starttime);
+  if (verbose) {
+    printf(" || finished : ");
+    printtime();
+    printf(" ||            (%.1f seconds for %d x %d = %d evaluations)\n", 
+           seconds, var1_N, var2_N, var1_N*var2_N);
+  }
+  vectorDispose(&state);
+
+  DateTimeString(logstring);
+  if (MPIrank == 0)
+    logtoLOGfile(MF, "gridmap() finish", logstring);
+}
+
+
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
 
 
 void printDF(DataFramework *DF)
@@ -5878,6 +7023,7 @@ int main(int argc, char *argv[])
   int coherentN; /* number of data sets (coherently) used.                         */
   int initOK;
   int i;
+  int j,k;
   int size, rank;
 
   MPI_Init(&argc, &argv);
@@ -5916,9 +7062,43 @@ int main(int argc, char *argv[])
      */
     /* printf(" : number of (different) ifo sites: %d\n", numberIfoSites(DatFW,coherentN)); */
 
+
+    /*FILE *dumpfile;
+    if (rank==1) {
+      dumpfile = fopen("/home/christian/temp.txt", "w");
+      fprintf(dumpfile, "\"f\",\"log(PSD(f))\"\n");
+      fclose(dumpfile);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    for (i=0; i<size; ++i) {
+      if (i==rank) {
+        dumpfile = fopen("/home/christian/temp.txt", "a");
+        for (j=0; j<coherentN; ++j)
+          for (k=DatFW[j].minInd; k<=DatFW[j].maxInd; ++k) {
+            fprintf(dumpfile, "%f,%e\n", ((double) k)*DatFW[j].FTDeltaF, DatFW[j].powspec[k]);
+	  }
+        fclose(dumpfile);
+      }
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
+    fclose(dumpfile);*/
+
+    /*MPI_Barrier(MPI_COMM_WORLD);
+    for (j=0; j<3; ++j) {
+      for (i=0; i<2; ++i) {
+        if (i==rank) {
+          printDF(&DatFW[j]);
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+      }
+      printf(" :========================\n");
+      }*/
+
+
     if (initOK) {
       /* for (i=0; i<coherentN; ++i) printDF(&DatFW[i]); */
       metropolishastings(McmcFW, DatFW, coherentN, size, rank);
+      /*gridmap(McmcFW, DatFW, coherentN, size, rank);*/
     }
     /* clearMF(McmcFW);          */
     /* clearDF(DatFW);           */
@@ -5933,3 +7113,8 @@ int main(int argc, char *argv[])
 
   return 0;
 }
+
+
+
+
+

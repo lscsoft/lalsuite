@@ -112,14 +112,14 @@ int XLALBBHPhenWaveAFreqDom (
   /* check inputs */
   if (!signalvec || !(signalvec->data) || !params) {
     XLALPrintError(LALINSPIRALH_MSGENULL);
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   }
   if ((signalvec->length < 2)
       || (params->mass1 <= 0) || (params->mass2 <= 0)
       || (params->spin1[0] != 0) || (params->spin1[1] != 0) || (params->spin1[2] != 0)
       || (params->spin2[0] != 0) || (params->spin2[1] != 0) || (params->spin2[2] != 0)) {
     XLALPrintError(LALINSPIRALH_MSGECHOICE);
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   }
 
   /* compute the phenomenological parameters */
@@ -140,14 +140,14 @@ int XLALBBHPhenWaveBFreqDom (
   /* check inputs */
   if (!signalvec || !(signalvec->data) || !params) {
     XLALPrintError(LALINSPIRALH_MSGENULL);
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   }
   if ((signalvec->length < 2)
       || (params->mass1 <= 0) || (params->mass2 <= 0)
       || (params->spin1[0] != 0) || (params->spin1[1] != 0)
       || (params->spin2[0] != 0) || (params->spin2[1] != 0)) {
     XLALPrintError(LALINSPIRALH_MSGECHOICE);
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   }
 
   /* compute the phenomenological parameters */
@@ -167,7 +167,7 @@ int XLALBBHPhenWaveAFreqDomTemplates(
   if (!signalvec1 || !signalvec2 ||
       !(signalvec1->data) || !(signalvec2->data)) {
     XLALPrintError(LALINSPIRALH_MSGENULL);
-    XLAL_ERROR(__func__, LALINSPIRALH_ENULL);
+    XLAL_ERROR(LALINSPIRALH_ENULL);
   }
 
   /* Initially the waveforms are empty */
@@ -176,12 +176,12 @@ int XLALBBHPhenWaveAFreqDomTemplates(
 
   /* generate one waveform with startPhase specified by the user */
   if (!XLALBBHPhenWaveAFreqDom(signalvec1, params))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   /* generate another waveform orthogonal to it */
   params->startPhase += LAL_PI_2;
   if (!XLALBBHPhenWaveAFreqDom(signalvec2, params))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   return 0;
 }
@@ -195,7 +195,7 @@ int XLALBBHPhenWaveBFreqDomTemplates(
       || !(signalvec1->data) || !(signalvec2->data)
       || !params) {
     XLALPrintError(LALINSPIRALH_MSGENULL);
-    XLAL_ERROR(__func__, LALINSPIRALH_ENULL);
+    XLAL_ERROR(LALINSPIRALH_ENULL);
   }
 
   /* Initially the waveforms are empty */
@@ -204,12 +204,12 @@ int XLALBBHPhenWaveBFreqDomTemplates(
 
   /* generate one waveform with startPhase specified by the user */
   if (!XLALBBHPhenWaveBFreqDom(signalvec1, params))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   /* generate another waveform orthogonal to it */
   params->startPhase += LAL_PI_2;
   if (!XLALBBHPhenWaveBFreqDom(signalvec2, params))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   return 0;
 }
@@ -222,17 +222,17 @@ int XLALBBHPhenWaveTimeDom(
   /* check inputs */
   if (!signalvec1 || !(signalvec1->data)) {
     XLALPrintError(LALINSPIRALH_MSGENULL);
-    XLAL_ERROR(__func__, LALINSPIRALH_ENULL);
+    XLAL_ERROR(LALINSPIRALH_ENULL);
   }
   if (signalvec1->length <= 2) {
     XLALPrintError(LALINSPIRALH_MSGECHOICE);
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   }
   /* Initially the waveforms are empty */
   memset(signalvec1->data, 0, signalvec1->length * sizeof(REAL4));
 
   if (XLALBBHPhenTimeDomEngine(signalvec1, NULL, NULL, NULL, NULL, NULL, &count, insp_template))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   return 0;
 }
@@ -248,11 +248,11 @@ int XLALBBHPhenWaveTimeDomTemplates(
       || !signalvec2 || !(signalvec2->data)
       || !insp_template) {
     XLALPrintError(LALINSPIRALH_MSGENULL);
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   }
   if ((signalvec1->length <= 2) || (signalvec2->length <= 2)) {
     XLALPrintError(LALINSPIRALH_MSGECHOICE);
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   }
 
   /* Initially the waveforms are empty */
@@ -272,7 +272,7 @@ int XLALBBHPhenTimeDomEngine(
     UINT4            *countback,  /**< output number of non-zero samples */
     InspiralTemplate *params) {
   REAL8 dt, cosI, fLower, peakAmp, fCut, fRes, f, totalMass, softWin, z1, z2;
-  REAL8 fLowerOrig, eta, tau0, winFLo, winFHi, sigLo, sigHi, tF0, expectedAmplRatio;
+  REAL8 fLowerOrig, eta, tau0, winFLo, sigLo, sigHi, tF0, expectedAmplRatio;
   REAL8 phaseShift, sig1, sig2, startPhaseOrig, phiC;
   REAL4 windowLength;
   UINT4 i, j, k, l, n, peakAmpIdx, sigLength, iLower;
@@ -284,7 +284,7 @@ int XLALBBHPhenTimeDomEngine(
   /* check inputs */
   if (!params) {
     XLALPrintError(LALINSPIRALH_MSGENULL);
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   }
   if ((params->nStartPad < 0) || (params->nEndPad < 0)
       || (params->fLower <= 0) || (params->tSampling <= 0)
@@ -292,7 +292,7 @@ int XLALBBHPhenTimeDomEngine(
       || (params->spin1[0] != 0) || (params->spin1[1] != 0)
       || (params->spin2[0] != 0) || (params->spin2[1] != 0)) {
     XLALPrintError(LALINSPIRALH_MSGECHOICE);
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   }
 
   dt = 1./params->tSampling;
@@ -304,7 +304,7 @@ int XLALBBHPhenTimeDomEngine(
     case IMRPhenomA:
       if ((params->spin1[2] != 0) || (params->spin2[2] != 0)) {
         XLALPrintError(LALINSPIRALH_MSGECHOICE);
-        XLAL_ERROR(__func__, XLAL_EDOM);
+        XLAL_ERROR(XLAL_EDOM);
       }
       XLALComputePhenomParams(&phenParams, params);
       break;
@@ -314,7 +314,7 @@ int XLALBBHPhenTimeDomEngine(
       break;
     default:
       XLALPrintError(LALINSPIRALH_MSGESWITCH);
-      XLAL_ERROR(__func__, XLAL_ENAME);
+      XLAL_ERROR(XLAL_ENAME);
   }
 
   totalMass = params->mass1 + params->mass2;
@@ -356,7 +356,7 @@ int XLALBBHPhenTimeDomEngine(
     if (signalFD2) XLALDestroyREAL4Vector(signalFD2);
     if (signalTD1) XLALDestroyREAL4Vector(signalTD1);
     if (signalTD2) XLALDestroyREAL4Vector(signalTD2);
-    XLAL_ERROR(__func__, XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   /* generate the phenomenological waveform in frequency domain */
@@ -379,14 +379,14 @@ int XLALBBHPhenTimeDomEngine(
       XLALDestroyREAL4Vector(signalTD1);
       XLALDestroyREAL4Vector(signalTD2);
       XLALPrintError(LALINSPIRALH_MSGESWITCH);
-      XLAL_ERROR(__func__, XLAL_ENAME);
+      XLAL_ERROR(XLAL_ENAME);
   }
 
   /* apply the softening window function */
   fRes = params->tSampling/n;
 
   winFLo = (fLowerOrig + fLower)/2.;
-  winFHi = (fCut + phenParams.fCut)/2.;
+  // UNUSED!!: REAL8 winFHi = (fCut + phenParams.fCut)/2.;
   sigLo = 4.;
   sigHi = 4.;
 
@@ -409,7 +409,7 @@ int XLALBBHPhenTimeDomEngine(
     XLALDestroyREAL4Vector(signalTD1);
     XLALDestroyREAL4Vector(signalTD2);
     XLALPrintError(LALINSPIRALH_MSGEMEM);
-    XLAL_ERROR(__func__, XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   XLALREAL4VectorFFT(signalTD1, signalFD1, revPlan);
   XLALREAL4VectorFFT(signalTD2, signalFD2, revPlan);
@@ -560,19 +560,19 @@ int XLALBBHPhenWaveTimeDomForInjection (
   /* check inputs */
   if (!params || !waveform) {
     XLALPrintError(LALINSPIRALH_MSGENULL);
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   }
   if ((params->nStartPad < 0) || (params->nEndPad < 0)
       || (params->fLower <= 0) || (params->tSampling <= 0)) {
     XLALPrintError(LALINSPIRALH_MSGECHOICE);
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   }
 
   /* Make sure waveform fields don't exist */
   if (waveform->a || waveform->h || waveform->f
       || waveform->phi || waveform->shift) {
     XLALPrintError(LALINSPIRALH_MSGENULL);
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   }
 
   if (params->ampOrder) {
@@ -583,7 +583,7 @@ int XLALBBHPhenWaveTimeDomForInjection (
 
   /* Compute some parameters */
   if (XLALInspiralInit(params, &paramsInit))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if ((paramsInit.nbins == 0)) return XLAL_SUCCESS;
 
   /* allocate temporary structures */

@@ -17,20 +17,12 @@
 *  MA  02111-1307  USA
 */
 
-/** \file
- *  \ingroup SkyCoordinates
- *  \author Creighton, T. D.
- *  \date 2002
- *  \brief This header covers routines to perform coordinate transformations
- *   among the various spherical coordinate systems used in astronomy.
- */
-
 #ifndef _SKYCOORDINATES_H
 #define _SKYCOORDINATES_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <lal/LALStdlib.h>
@@ -41,18 +33,28 @@ extern "C" {
 
 NRCSID( SKYCOORDINATESH, "$Id$" );
 
-/** \name Error codes */
-/*@{*/
-#define SKYCOORDINATESH_ENUL  1
-#define SKYCOORDINATESH_ESYS  2
-#define SKYCOORDINATESH_EZERO 3
-#define SKYCOORDINATESH_ESING 4
+/** \addtogroup SkyCoordinates_h
+ *
+ * @{
+ * \defgroup CelestialCoordinates_c 	Module CelestialCoordinates.c
+ * \defgroup TerrestrialCoordinates_c 	Module TerrestrialCoordinates.c
+ * \defgroup SkyCoordinates_c 		Module SkyCoordinates.c
+ *
+ */
+/** \name Error codes *//**@{*/
+#define SKYCOORDINATESH_ENUL  1	/**< Unexpected null pointer in arguments */
+#define SKYCOORDINATESH_ESYS  2	/**< Wrong coordinate system in input */
+#define SKYCOORDINATESH_EZERO 3	/**< Angular coordinates undefined at origin */
+#define SKYCOORDINATESH_ESING 4	/**< Point is inside singular ellipsoid */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define SKYCOORDINATESH_MSGENUL  "Unexpected null pointer in arguments"
 #define SKYCOORDINATESH_MSGESYS  "Wrong coordinate system in input"
 #define SKYCOORDINATESH_MSGEZERO "Angular coordinates undefined at origin"
 #define SKYCOORDINATESH_MSGESING "Point is inside singular ellipsoid"
-/*@}*/
+/** \endcond */
+
 
 /*---------- exported types ---------- */
 
@@ -72,7 +74,7 @@ typedef enum {
  * indicating which coordinate system it is expressed in.
  */
 typedef struct tagSkyPosition {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(SkyPosition);
   REAL8 longitude;		/**< The longitudinal coordinate (in radians), as defined above.*/
   REAL8 latitude;		/**< The latitudinal coordinate (in radians), as defined above. */
   CoordinateSystem system; 	/**< The coordinate system in which latitude/longitude are expressed. */
@@ -83,7 +85,7 @@ typedef struct tagSkyPosition {
  * in TerrestrialCoordinates.c .
  */
 typedef struct tagEarthPosition {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(EarthPosition);
   SkyPosition geodetic; 	/**< The geographic coordinates of the
 				 * upward vertical direction from the point; that is, the point's
 				 * <em>geodetic</em> latitude and longitude. */
@@ -105,7 +107,7 @@ typedef struct tagEarthPosition {
 /** This structure stores parameters for the function <tt>LALConvertSkyPosition()</tt>.
  */
 typedef struct tagConvertSkyParams {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(ConvertSkyParams);
   CoordinateSystem system;	/**<  The coordinate system to which one is transforming. */
 
   SkyPosition *zenith;		/**< The position of the zenith of the horizon coordinate system;
@@ -119,6 +121,7 @@ typedef struct tagConvertSkyParams {
 				 * equatorial system). */
 } ConvertSkyParams;
 
+/** @} */
 
 /* ---------- Function prototypes ---------- */
 

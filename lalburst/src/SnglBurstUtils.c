@@ -141,7 +141,7 @@ SnglBurst **XLALSortSnglBurst(
 	length = XLALSnglBurstTableLength(*head);
 	array = XLALCalloc(length, sizeof(*array));
 	if(!array)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	for(i = 0, event = *head; event; event = event->next)
 		array[i++] = event;
 
@@ -363,7 +363,7 @@ SnglBurst *XLALCreateSnglBurst(void)
 	SnglBurst *new = XLALMalloc(sizeof(*new));
 
 	if(!new)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	new->next = NULL;
 	new->process_id = new->event_id = -1;
@@ -395,7 +395,7 @@ SimBurst *XLALCreateSimBurst(void)
 	SimBurst *new = XLALMalloc(sizeof(*new));
 
 	if(!new)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	new->next = NULL;
 	new->process_id = new->time_slide_id = new->simulation_id = -1;
@@ -510,7 +510,7 @@ SimBurst **XLALSortSimBurst(
 	length = XLALSimBurstTableLength(*head);
 	array = XLALCalloc(length, sizeof(*array));
 	if(!array)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	for(i = 0, event = *head; event; event = event->next)
 		array[i++] = event;
 

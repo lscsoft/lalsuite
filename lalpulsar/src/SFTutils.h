@@ -37,8 +37,8 @@
 #define _SFTUTILS_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 #if !defined(SWIG) && !defined(SWIGLAL_DYNAMIC_1DARRAY_BEGIN)
 #define SWIGLAL_DYNAMIC_1DARRAY_BEGIN(...)
@@ -87,8 +87,8 @@ NRCSID( SFTUTILSH, "$Id$" );
 /*---------- exported types ----------*/
 
 /** A vector of COMPLEX8FrequencySeries */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagCOMPLEX8FrequencySeriesVector {
+  SWIGLAL_STRUCT(COMPLEX8FrequencySeriesVector);
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(COMPLEX8FrequencySeries, data, length);
   UINT4 			length;		/**< number of SFTs */
   COMPLEX8FrequencySeries 	*data;		/**< array of SFTs */
@@ -96,8 +96,8 @@ typedef struct {
 } COMPLEX8FrequencySeriesVector;
 
 /** A vector of REAL8FrequencySeries */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagREAL8FrequencySeriesVector {
+  SWIGLAL_STRUCT(REAL8FrequencySeriesVector);
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(REAL8FrequencySeries, data, length);
   UINT4                  length;
   REAL8FrequencySeries   *data;
@@ -105,8 +105,8 @@ typedef struct {
 } REAL8FrequencySeriesVector;
 
 /** A vector of REAL4FrequencySeries */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagREAL4FrequencySeriesVector {
+  SWIGLAL_STRUCT(REAL4FrequencySeriesVector);
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(REAL4FrequencySeries, data, length);
   UINT4                  length;
   REAL4FrequencySeries   *data;
@@ -126,7 +126,7 @@ typedef REAL8FrequencySeriesVector PSDVector;
 
 /** A collection of SFT vectors -- one for each IFO in a multi-IFO search */
 typedef struct tagMultiSFTVector {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(MultiSFTVector);
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(SFTVector*, data, length);
   UINT4      length;  	/**< number of ifos */
   SFTVector  **data; 	/**< sftvector for each ifo */
@@ -135,8 +135,8 @@ typedef struct tagMultiSFTVector {
 
 
 /** A collection of PSD vectors -- one for each IFO in a multi-IFO search */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagMultiPSDVector {
+  SWIGLAL_STRUCT(MultiPSDVector);
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(PSDVector*, data, length);
   UINT4      length;  	/**< number of ifos */
   PSDVector  **data; 	/**< sftvector for each ifo */
@@ -144,8 +144,8 @@ typedef struct {
 } MultiPSDVector;
 
 /** One noise-weight (number) per SFT (therefore indexed over IFOs and SFTs */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagMultiNoiseWeights {
+  SWIGLAL_STRUCT(MultiNoiseWeights);
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(REAL8Vector*, data, length);
   UINT4 length;		/**< number of ifos */
   REAL8Vector **data;	/**< weights-vector for each SFTs */
@@ -154,8 +154,8 @@ typedef struct {
 } MultiNoiseWeights;
 
 /** A collection of (multi-IFO) time-series */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagMultiREAL4TimeSeries {
+  SWIGLAL_STRUCT(MultiREAL4TimeSeries);
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(REAL4TimeSeries*, data, length);
   UINT4 length;			/**< number of ifos */
   REAL4TimeSeries **data;	/**< vector of REAL4 timeseries */
@@ -163,8 +163,8 @@ typedef struct {
 } MultiREAL4TimeSeries;
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagLIGOTimeGPSVector {
+  SWIGLAL_STRUCT(LIGOTimeGPSVector);
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(LIGOTimeGPS, data, length);
   UINT4 	length;		/**< number of timestamps */
   LIGOTimeGPS 	*data;		/**< array of timestamps */
@@ -173,8 +173,8 @@ typedef struct {
 } LIGOTimeGPSVector;
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagMultiLIGOTimeGPSVector {
+  SWIGLAL_STRUCT(MultiLIGOTimeGPSVector);
   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(LIGOTimeGPSVector*, data, length);
   UINT4 	        length;	   /**< number of timestamps vectors or ifos */
   LIGOTimeGPSVector 	**data;    /**< timestamps vector for each ifo */

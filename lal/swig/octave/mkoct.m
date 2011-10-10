@@ -28,11 +28,16 @@ inclflags = strcat("-I", strsplit(getdefenv("swig_inclpath"), " ", true));
 ## compile-time library directories
 libflags = strcat("-L", strsplit(getdefenv("swig_libpath"), " ", true));
 
-## run-time library directory
-rtlibdir = strcat("-Wl,-rpath=", getdefenv("swig_libdir"));
-
 ## libraries to link against
 libs = strcat("-l", strsplit(getdefenv("swig_libs"), " ", true));
+
+## run-time library directory
+ldflags = {"-Wl,-rpath", strcat("-Wl,", getdefenv("swig_libdir"))};
+
+## additional linker flags for Macs
+if strcmp(getdefenv("build_vendor"), "apple")
+  ldflags = {ldflags{:}, "-Wl,-undefined", "-Wl,dynamic_lookup"};
+endif
 
 ## source file
 srcfile = getdefenv("swig_wrapfile");
@@ -46,7 +51,7 @@ mkoctfilebin = fullfile(
 ## arguments to mkoctfile
 cmdargs = {"-v", "-Wall", \
            defflags{:}, inclflags{:}, \
-           libflags{:}, libs{:}, rtlibdir, \
+           libflags{:}, libs{:}, ldflags{:}, \
            srcfile};
 
 ## build command line

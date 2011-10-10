@@ -34,8 +34,8 @@ Gets IFO_DMRO data from frame files.
 #define _FRAMEDATA_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <lal/LALDatatypes.h>
@@ -103,7 +103,7 @@ file pointer to the frame data.  The "public" fields are:
 typedef struct
 tagFrameData
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(FrameData);
   /*
    *
    * public data:

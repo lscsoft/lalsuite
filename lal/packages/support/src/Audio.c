@@ -263,26 +263,25 @@ static int output_REAL8Vector( FILE *fp, REAL8Vector *data, int wavfmt )
 /** Records a time series as a .wav audio file */
 int XLALAudioWAVRecordREAL4TimeSeries( FILE *fp, REAL4TimeSeries *series )
 {
-	static const char * func = "XLALAudioWAVRecordREAL4TimeSeries";
 	INT4  samplerate;
 	UINT4 datasize;
 	FILE *fpout;
 
 	if ( ! series )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	if ( ! series->data )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 	if ( ! series->data->length )
-		XLAL_ERROR( func, XLAL_EBADLEN );
+		XLAL_ERROR( XLAL_EBADLEN );
 
 	datasize  = series->data->length * sizeof( UINT2 );
 	samplerate = (INT4)(1.0/series->deltaT);
 	if ( samplerate < 1 )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 
 	fpout = fopen_if_null( fp, series->name, "wav" );
 	if ( ! fpout )
-		XLAL_ERROR( func, XLAL_EIO );
+		XLAL_ERROR( XLAL_EIO );
 
 	/* write header */
 	output_wav_hdr( fpout, samplerate, datasize );
@@ -299,26 +298,25 @@ int XLALAudioWAVRecordREAL4TimeSeries( FILE *fp, REAL4TimeSeries *series )
 /** Records a time series as a .wav audio file */
 int XLALAudioWAVRecordREAL8TimeSeries( FILE *fp, REAL8TimeSeries *series )
 {
-	static const char * func = "XLALAudioWAVRecordREAL8TimeSeries";
 	INT4  samplerate;
 	UINT4 datasize;
 	FILE *fpout;
 
 	if ( ! series )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	if ( ! series->data )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 	if ( ! series->data->length )
-		XLAL_ERROR( func, XLAL_EBADLEN );
+		XLAL_ERROR( XLAL_EBADLEN );
 
 	datasize  = series->data->length * sizeof( UINT2 );
 	samplerate = (INT4)(1.0/series->deltaT);
 	if ( samplerate < 1 )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 
 	fpout = fopen_if_null( fp, series->name, "wav" );
 	if ( ! fpout )
-		XLAL_ERROR( func, XLAL_EIO );
+		XLAL_ERROR( XLAL_EIO );
 
 	/* write header */
 	output_wav_hdr( fpout, samplerate, datasize );
@@ -336,26 +334,25 @@ int XLALAudioWAVRecordREAL8TimeSeries( FILE *fp, REAL8TimeSeries *series )
 /** Records a time series as a .au audio file */
 int XLALAudioAURecordREAL4TimeSeries( FILE *fp, REAL4TimeSeries *series )
 {
-	static const char * func = "XLALAudioAURecordREAL4TimeSeries";
 	INT4  samplerate;
 	UINT4 datasize;
 	FILE *fpout;
 
 	if ( ! series )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	if ( ! series->data )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 	if ( ! series->data->length )
-		XLAL_ERROR( func, XLAL_EBADLEN );
+		XLAL_ERROR( XLAL_EBADLEN );
 
 	datasize  = series->data->length * sizeof( UINT2 );
 	samplerate = (INT4)(1.0/series->deltaT);
 	if ( samplerate < 1 )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 
 	fpout = fopen_if_null( fp, series->name, "au" );
 	if ( ! fpout )
-		XLAL_ERROR( func, XLAL_EIO );
+		XLAL_ERROR( XLAL_EIO );
 
 	/* write header */
 	output_au_hdr( fpout, samplerate, datasize );
@@ -372,26 +369,25 @@ int XLALAudioAURecordREAL4TimeSeries( FILE *fp, REAL4TimeSeries *series )
 /** Records a time series as a .au audio file */
 int XLALAudioAURecordREAL8TimeSeries( FILE *fp, REAL8TimeSeries *series )
 {
-	static const char * func = "XLALAudioAURecordREAL8TimeSeries";
 	INT4  samplerate;
 	UINT4 datasize;
 	FILE *fpout;
 
 	if ( ! series )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	if ( ! series->data )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 	if ( ! series->data->length )
-		XLAL_ERROR( func, XLAL_EBADLEN );
+		XLAL_ERROR( XLAL_EBADLEN );
 
 	datasize  = series->data->length * sizeof( UINT2 );
 	samplerate = (INT4)(1.0/series->deltaT);
 	if ( samplerate < 1 )
-		XLAL_ERROR( func, XLAL_EINVAL );
+		XLAL_ERROR( XLAL_EINVAL );
 
 	fpout = fopen_if_null( fp, series->name, "au" );
 	if ( ! fpout )
-		XLAL_ERROR( func, XLAL_EIO );
+		XLAL_ERROR( XLAL_EIO );
 
 	/* write header */
 	output_au_hdr( fpout, samplerate, datasize );

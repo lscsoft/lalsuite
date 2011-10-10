@@ -121,7 +121,6 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
 {
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
-  static const char* func = "XLALInspiralComputePTFIntrinsticMetric";
 
   /* number of points in a time-domain segment */
   UINT4 N = 2 * (psd->data->length - 1);
@@ -210,7 +209,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   errcode = XLALFindChirpPTFWaveform( PTFphi, PTFomega_2_3, PTFe1, PTFe2,
       params, deltaT);
 
-  if ( errcode != XLAL_SUCCESS ) XLAL_ERROR( func, errcode );
+  if ( errcode != XLAL_SUCCESS ) XLAL_ERROR( errcode );
 
   /* point the dummy variables Q and Qtilde to the actual output structures */
   for ( i = 0; i < 5; ++i )
@@ -568,7 +567,6 @@ INT4 XLALInspiralComputePTFWaveform (
 {
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
-  static const char* func = "XLALInspiralComputePTFWaveform";
 
   /* number of points in a time-domain segment */
   UINT4 N = ptfwave->length;
@@ -620,7 +618,7 @@ INT4 XLALInspiralComputePTFWaveform (
   errcode = XLALFindChirpPTFWaveform( PTFphi, PTFomega_2_3, PTFe1, PTFe2,
       params, deltaT);
 
-  if ( errcode != XLAL_SUCCESS ) XLAL_ERROR( func, errcode );
+  if ( errcode != XLAL_SUCCESS ) XLAL_ERROR( errcode );
 
   /* point the dummy variables Q and Qp to the actual output structures */
   for ( i = 0; i < 5; ++i )
@@ -719,7 +717,6 @@ INT4 XLALInspiralComputePTFWDeriv (
 {
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
-  /*static const char* func = "XLALInspiralComputePTFWDeriv";*/
 
   /* number of points in a time-domain segment */
   UINT4 N = (Wderiv->length - 1) * 2;

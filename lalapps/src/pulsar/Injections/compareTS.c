@@ -106,7 +106,6 @@ main(int argc, char *argv[])
   LALStatus status = empty_LALStatus;	/* initialize status */
   UserVar uvar = empty_UserVar;
   REAL4Vector *ts1 = NULL, *ts2 = NULL;
-  const CHAR *fn = argv[0];
   REAL4 maxd;
 
   lalDebugLevel = 0;
@@ -140,28 +139,28 @@ main(int argc, char *argv[])
 
   /* now read in the two timeseries */
   if ( (ts1 = XLALREAL4VectorFromFile ( uvar.infile1 )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: failed to load timeseries file '%s'.\n", fn, uvar.infile1 );
+    LogPrintf ( LOG_CRITICAL, "%s: failed to load timeseries file '%s'.\n", __func__, uvar.infile1 );
     return MAKEFAKEDATAC_EFILE;
   }
 
   if ( (ts2 = XLALREAL4VectorFromFile ( uvar.infile2 )) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "%s: failed to load timeseries file '%s'.\n", fn, uvar.infile2 );
+    LogPrintf (LOG_CRITICAL, "%s: failed to load timeseries file '%s'.\n", __func__, uvar.infile2 );
     return MAKEFAKEDATAC_EFILE;
   }
 
   maxd = XLALcompareREAL4Vectors ( ts1, ts2 );
   if ( XLAL_IS_REAL8_FAIL_NAN ( maxd ) ) {
-    LogPrintf (LOG_CRITICAL, "%s: XLALcompareTS() failed. xlalErrno = %d.\n", fn, xlalErrno );
+    LogPrintf (LOG_CRITICAL, "%s: XLALcompareTS() failed. xlalErrno = %d.\n", __func__, xlalErrno );
     return XLAL_EFUNC;
   }
 
   if ( maxd > uvar.relErrorMax )
     {
-      LogPrintf (LOG_CRITICAL, "%s: FAILED. Maximal relative error %e exceeds tolerance %e.\n", fn, maxd, uvar.relErrorMax );
+      LogPrintf (LOG_CRITICAL, "%s: FAILED. Maximal relative error %e exceeds tolerance %e.\n", __func__, maxd, uvar.relErrorMax );
       return XLAL_EFAILED;
     }
 
-  LogPrintf (LOG_DEBUG, "%s: OK. Maximal relative error %e is within tolerance of %e.\n", fn, maxd, uvar.relErrorMax );
+  LogPrintf (LOG_DEBUG, "%s: OK. Maximal relative error %e is within tolerance of %e.\n", __func__, maxd, uvar.relErrorMax );
 
   /* free memory */
   XLALDestroyREAL4Vector ( ts1 );
@@ -209,21 +208,19 @@ initUserVars (LALStatus *status, UserVar *uvar)
 REAL4
 XLALcompareREAL4Vectors ( REAL4Vector *ts1, REAL4Vector *ts2 )
 {
-  const char *fn = "XLALcompareREAL4Vectors()";
-
   UINT4 i, numSteps;
   REAL8 total_power, maxdiff, sumdiff, maxpower;
   REAL8 reldiff, reldiff_max, reldiff_avg;
 
   if ( !ts1 || !ts2 || !ts1->data || !ts2->data ) {
-    XLALPrintError ("%s: illegal NULL input.\n", fn );
-    XLAL_ERROR_REAL8 (fn, XLAL_EINVAL );
+    XLALPrintError ("%s: illegal NULL input.\n", __func__ );
+    XLAL_ERROR_REAL8 ( XLAL_EINVAL );
   }
 
   numSteps = ts1->length;
   if ( ts2->length != numSteps ) {
-    XLALPrintError ("%s: number of timesteps of ts1 (%d) differs from ts2 (%d).\n", fn, numSteps, ts2->length );
-    XLAL_ERROR_REAL8 (fn, XLAL_EBADLEN );
+    XLALPrintError ("%s: number of timesteps of ts1 (%d) differs from ts2 (%d).\n", __func__, numSteps, ts2->length );
+    XLAL_ERROR_REAL8 ( XLAL_EBADLEN );
   }
 
   sumdiff = 0;
@@ -252,8 +249,8 @@ XLALcompareREAL4Vectors ( REAL4Vector *ts1, REAL4Vector *ts2 )
   reldiff_max = maxdiff / maxpower;
   reldiff_avg = sumdiff / total_power;
 
-  LogPrintf (LOG_DEBUG, "%s: maximal difference = %g, maximal amplitude = %g ==> relative error %g\n", fn, maxdiff, maxpower, reldiff_max );
-  LogPrintf (LOG_DEBUG, "%s: total difference = %g, total summed amplitude = %g ==> relative avg error %g\n", fn, sumdiff, total_power, reldiff_avg );
+  LogPrintf (LOG_DEBUG, "%s: maximal difference = %g, maximal amplitude = %g ==> relative error %g\n", __func__, maxdiff, maxpower, reldiff_max );
+  LogPrintf (LOG_DEBUG, "%s: total difference = %g, total summed amplitude = %g ==> relative avg error %g\n", __func__, sumdiff, total_power, reldiff_avg );
 
   reldiff = MYMAX ( reldiff_max, reldiff_avg );
 
@@ -267,45 +264,44 @@ XLALcompareREAL4Vectors ( REAL4Vector *ts1, REAL4Vector *ts2 )
 REAL4Vector *
 XLALREAL4VectorFromFile ( const CHAR *fname )
 {
-  const char *fn = "XLALREAL4VectorFromFile()";
   REAL4Vector *vect;
   FILE *fp;
   REAL4 magic;
   UINT4 len;
 
   if ( !fname ) {
-    XLALPrintError ("%s: filename is NULL.\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: filename is NULL.\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   if ( (fp = fopen ( fname, "rb")) == NULL ) {
-    XLALPrintError ("%s: failed to open file '%s' for reading.\n", fn, fname );
-    XLAL_ERROR_NULL ( fn, XLAL_ESYS );
+    XLALPrintError ("%s: failed to open file '%s' for reading.\n", __func__, fname );
+    XLAL_ERROR_NULL ( XLAL_ESYS );
   }
 
   if ( (fread( &magic, sizeof(magic), 1, fp ) != 1) || (magic != 1234.5) ) {
-    XLALPrintError ("%s: file '%s' has wrong magic byte (%f) != 1234.5.\n", fn, fname, magic );
+    XLALPrintError ("%s: file '%s' has wrong magic byte (%f) != 1234.5.\n", __func__, fname, magic );
     fclose(fp);
-    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+    XLAL_ERROR_NULL ( XLAL_EDOM );
   }
 
   if ( fread ( &len, sizeof(len), 1, fp ) != 1 ) {
-    XLALPrintError ("%s: failed to read UINT4 length from file '%s'\n", fn, fname );
+    XLALPrintError ("%s: failed to read UINT4 length from file '%s'\n", __func__, fname );
     fclose(fp);
-    XLAL_ERROR_NULL ( fn, XLAL_ESYS );
+    XLAL_ERROR_NULL ( XLAL_ESYS );
   }
 
   if ( ( vect = XLALCreateREAL4Vector ( len )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, len );
+    XLALPrintError ("%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, len );
     fclose(fp);
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   if ( len != fread ( vect->data, sizeof(*vect->data), len, fp ) ) {
-    XLALPrintError ("%s: failed to read %d REAL4s from input file '%s'.\n", fn, len, fname );
+    XLALPrintError ("%s: failed to read %d REAL4s from input file '%s'.\n", __func__, len, fname );
     fclose (fp);
     XLALDestroyREAL4Vector ( vect );
-    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+    XLAL_ERROR_NULL ( XLAL_EDOM );
   }
 
   fclose (fp );

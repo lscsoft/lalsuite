@@ -182,7 +182,8 @@ void  LALReadHarmonicsInfo (LALStatus          *status,		/**< pointer to LALStat
   for (count = 0; count < nHarmonicSets; count++){
     r=fscanf(fp,"%lf%lf%d%lf%lf%s\n", startFreq+count, gapFreq+count, numHarmonics+count,
 	     leftWing+count, rightWing+count, dump);
-    ASSERT(r==6, status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL);
+    if ( !(r==6 ) )
+      ABORT ( status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL);
   }
 
   fclose(fp);
@@ -350,7 +351,8 @@ void  LALReadLineInfo (LALStatus     *status,
   /* read line information from file */
   for (count = 0; count < nLines; count++){
     r=fscanf(fp,"%lf%lf%lf%s\n", lineFreq+count, leftWing+count, rightWing+count, dump);
-    ASSERT(r==4, status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL);
+    if ( !(r==4) )
+      ABORT ( status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL);
   }
 
   fclose(fp);

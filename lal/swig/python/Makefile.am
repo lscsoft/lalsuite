@@ -1,57 +1,53 @@
-@SWIG_COMMON_MK@
+include $(top_srcdir)/swig/swig-common.am
 
+if SWIG_BUILD
 if SWIG_BUILD_PYTHON
 
+# set language
 swig_language = python
 swig_language_opts = -modern
-swig_wrapobj = _$(swig_wrapname).so
+
+# name of SWIG wrapping module object
+swig_wrap = _$(swig_wrapname).so
 
 # start from scratch if build script changes
-$(swig_wrapobj) : $(srcdir)/setup.py
+swig_wrap_depends += $(srcdir)/setup.py
 
-# build SWIG wrapping code
-$(swig_wrapobj) :
+# build SWIG wrapping module
+$(swig_wrap) : $(swig_wrap_depends)
 	$(PYTHON) $(srcdir)/setup.py build
-	rm -f $(swig_wrapobj) && $(LN_S) build/lib/$(swig_wrapobj) $(swig_wrapobj)
+	rm -f $(swig_wrap) && $(LN_S) build/lib/$(swig_wrap) $(swig_wrap)
 
 # test SWIG wrapping module
-check .PHONY : check-swig
-check-swig : $(swig_wrapobj)
-	test -f $(swig_wrapcheck).py && \
-	$(swig_ldlibpath) \
+swig-check : $(swig_wrap)
+	test -f $(swig_wrapcheck).py && env \
+	$(SWIG_LD_LIBPATH_NAME)="$(swig_ldlibpath):$${$(SWIG_LD_LIBPATH_NAME)}" \
 	PYTHONPATH="$${PWD}:$${PYTHONPATH}" \
 	$(PYTHON) $(swig_wrapcheck).py
 
 # install SWIG wrapping module
-install-exec-local :
-	$(PYTHON) $(srcdir)/setup.py install --prefix=$(prefix) --record .install.txt
+swig-install :
+	$(PYTHON) $(srcdir)/setup.py install --prefix=$(DESTDIR)$(prefix) --record .install.txt
 
 # uninstall SWIG wrapping module
-uninstall-local :
+swig-uninstall :
 	-test -f .install.txt && rm -f `cat .install.txt`
 
-# generic environment setup for SWIG wrapping module
-$(swig_envfile).shell ::
-	@echo '# python' > $@
-	@echo 'PYTHONPATH="$(pyexecdir):$${PYTHONPATH}"' >> $@
+# extra distribution files
+EXTRA_DIST += \
+	$(swig_wrapcheck).py \
+	$(srcdir)/setup.py
 
 # cleanup
 clean-local :
 	$(PYTHON) $(srcdir)/setup.py clean --all
 
-CLEANFILES = $(swig_cleanfiles) \
-             $(swig_wrapname).py \
-             $(swig_wrapname).pyc \
-             $(swig_wrapobj) \
-             $(swig_envfile).shell
+CLEANFILES += \
+	$(swig_wrapname).py \
+	$(swig_wrapname).pyc \
+	$(swig_wrap)
 
 DISTCLEANFILES = .install.txt
 
-EXTRA_DIST = setup.py
-
-else # !SWIG_BUILD
-
-# no generic environment setup for SWIG wrapping module
-$(swig_envfile).shell ::
-
 endif # SWIG_BUILD_PYTHON
+endif # SWIG_BUILD

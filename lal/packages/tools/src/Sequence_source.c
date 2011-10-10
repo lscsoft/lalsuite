@@ -43,7 +43,7 @@ SEQUENCETYPE *CFUNC (
 	if(!new || (length && !data)) {
 		XLALFree(new);
 		XLALFree(data);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	new->data = data;
@@ -61,7 +61,7 @@ SEQUENCETYPE *XFUNC (
 {
 	SEQUENCETYPE *new = CFUNC (length);
 	if(!new)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	memcpy(new->data, sequence->data + first, length * sizeof(*new->data));
 
 	return new;
@@ -115,7 +115,7 @@ SEQUENCETYPE *RFUNC (
 			sequence->length = length;
 			SFUNC (sequence, -first);
 		} else
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 	} else {
 		/* do not need to increase memory */
 		SFUNC (sequence, -first);
@@ -124,7 +124,7 @@ SEQUENCETYPE *RFUNC (
 			sequence->data = new_data;
 			sequence->length = length;
 		} else
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	return sequence;

@@ -686,3 +686,72 @@ void LALInferenceGetGaussianPrior(LALInferenceVariables *priorArgs, const char *
   return;
                 
 }
+
+void LALInferenceDrawFromPrior( LALInferenceVariables *output, 
+                                LALInferenceVariables *priorArgs, 
+                                gsl_rng *rdm) {  
+  LALInferenceVariableItem *item = output->head;
+  
+  for(;item;item=item->next){
+    if(item->vary==LALINFERENCE_PARAM_CIRCULAR || item->vary==LALINFERENCE_PARAM_LINEAR)
+      LALInferenceDrawNameFromPrior( output, priorArgs, item->name, item->type, rdm );
+  }
+}
+
+void LALInferenceDrawNameFromPrior( LALInferenceVariables *output, 
+                                    LALInferenceVariables *priorArgs, 
+                                    char *name, LALInferenceVariableType type, 
+                                    gsl_rng *rdm) {  
+  REAL8 tmp = 0.;
+      
+  /* test for a Gaussian prior */
+  if( LALInferenceCheckGaussianPrior( priorArgs, name ) ){
+    REAL8 mu = 0., sigma = 0.;
+    
+    LALInferenceGetGaussianPrior( priorArgs, name, (void *)&mu, (void *)&sigma );
+    tmp = mu + gsl_ran_gaussian(rdm, (double)sigma);
+  }
+  /* test for uniform prior */
+  else if( LALInferenceCheckMinMaxPrior( priorArgs, name ) ){
+    REAL8 min = 0., max = 0.;
+    
+    LALInferenceGetMinMaxPrior(priorArgs, name, (void *)&min, (void *)&max);
+    tmp = min + (max-min)*gsl_rng_uniform( rdm );
+  }
+  /* not a recognised prior type */
+  else{
+    return;
+  }
+  
+  switch ( type ){
+    case LALINFERENCE_REAL4_t:
+    { 
+      REAL4 val = (REAL4)tmp;
+      LALInferenceSetVariable(output, name, &val);
+      break;
+    }
+    case LALINFERENCE_REAL8_t:
+    {
+      REAL8 val = tmp;
+      LALInferenceSetVariable(output, name, &val);
+      break;
+    }
+    case LALINFERENCE_INT4_t:
+    {
+      INT4 val = (INT4)tmp;
+      LALInferenceSetVariable(output, name, &val);
+      break;
+    }
+    case LALINFERENCE_INT8_t:
+    {
+      INT8 val = (INT8)tmp;
+      LALInferenceSetVariable(output, name, &val);
+      break;
+    }
+    default:
+      XLALPrintError ("%s: Trying to randomise a non-numeric \
+parameter!\n", __func__ );
+      XLAL_ERROR_VOID ( XLAL_EFUNC );
+      break;
+  }
+}

@@ -28,6 +28,7 @@ src/lalsim-ligo-noise
 src/lalsim-sgwb
 src/lalsimulation-user-env.csh
 src/lalsimulation-user-env.sh
+src/lalsimulation-user-env.shell
 src/stamp-h2
 test/GenerateSimulation
 test/ST4-dynamics.dat

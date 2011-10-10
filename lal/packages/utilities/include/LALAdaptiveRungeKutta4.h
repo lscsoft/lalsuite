@@ -7,14 +7,15 @@
 #include <lal/LALGSL.h>
 #include <lal/SeqFactories.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #define XLAL_BEGINGSL \
@@ -32,7 +33,7 @@ extern "C" {
 typedef struct
 tagark4GSLIntegrator
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(ark4GSLIntegrator);
   gsl_odeiv_step    *step;
   gsl_odeiv_control *control;
   gsl_odeiv_evolve  *evolve;
@@ -67,8 +68,9 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
                          REAL8Array **yout
                          );
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

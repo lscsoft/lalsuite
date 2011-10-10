@@ -231,8 +231,8 @@ not in the <tt>2*Dterms</tt> band are initialized to zero.
 #define _GENERATEPULSARSIGNAL_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <lal/LALDatatypes.h>
@@ -295,8 +295,8 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 
 /** Input parameters to GeneratePulsarSignal(), defining the source and the time-series
  */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagPulsarSignalParams {
+  SWIGLAL_STRUCT(PulsarSignalParams);
   /* source-parameters */
   PulsarSourceParams pulsar;	/**< the actual pulsar-source */
   BinaryOrbitParams *orbit;	/**< and its binary orbit (NULL if isolated pulsar) */
@@ -315,8 +315,8 @@ typedef struct {
 
 /** Parameters defining the SFTs to be returned from LALSignalToSFTs().
  */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagSFTParams {
+  SWIGLAL_STRUCT(SFTParams);
   REAL8 Tsft;			 /**< length of each SFT in seconds */
   LIGOTimeGPSVector *timestamps; /**< timestamps to produce SFTs for (can be NULL) */
   SFTVector *noiseSFTs;		 /**< noise SFTs to be added (can be NULL) */
@@ -328,8 +328,8 @@ typedef struct {
  * used for trig functions if \code resTrig > 0 \endcode the user must then initialize \c trigArg, \c sinVal, and
  * \c cosVal on the domain \f$[-2\pi, 2\pi]\f$ inclusive.  See GeneratePulsarSignalTest.c for an example.
  */
-typedef struct {
-   SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagSFTandSignalParams {
+   SWIGLAL_STRUCT(SFTandSignalParams);
    PulsarSignalParams *pSigParams;
    SFTParams *pSFTParams;
    INT4  nSamples;  /**< nsample from noise SFT header; 2x this equals effective number of time samples  */
@@ -344,8 +344,8 @@ typedef struct {
 /** Sky Constants and beam pattern response functions used by LALFastGeneratePulsarSFTs().
  * These are output from LALComputeSkyAndZeroPsiAMResponse().
  */
-typedef struct {
-      SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagSkyConstAndZeroPsiAMResponse {
+      SWIGLAL_STRUCT(SkyConstAndZeroPsiAMResponse);
       REAL8  *skyConst;      /**< vector of A and B sky constants */
       REAL4  *fPlusZeroPsi;  /**< vector of Fplus values for psi = 0 at midpoint of each SFT */
       REAL4  *fCrossZeroPsi; /**< vector of Fcross values for psi = 0 at midpoint of each SFT */

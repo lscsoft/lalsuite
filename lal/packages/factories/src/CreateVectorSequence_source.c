@@ -19,11 +19,11 @@ STYPE * XFUNC ( UINT4 length, UINT4 veclen )
   STYPE *seq;
 
   if ( ! length || ! veclen )
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   seq = LALMalloc( sizeof( *seq ) );
   if ( ! seq )
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   seq->length = length;
   seq->vectorLength = veclen;
@@ -36,7 +36,7 @@ STYPE * XFUNC ( UINT4 length, UINT4 veclen )
     if ( ! seq )
     {
       LALFree( seq );
-      XLAL_ERROR_NULL( STRING(XFUNC), XLAL_ENOMEM );
+      XLAL_ERROR_NULL( XLAL_ENOMEM );
     }
   }
 

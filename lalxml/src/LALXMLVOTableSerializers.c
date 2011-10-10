@@ -69,7 +69,6 @@
 xmlNodePtr XLALLIGOTimeGPS2VOTNode(const LIGOTimeGPS *const ltg, const char *name)
 {
     /* set up local variables */
-    const char *fn = __func__;
     xmlNodePtr xmlParentNode = NULL;
     xmlNodePtr xmlChildNode = NULL;
     xmlNodePtr xmlChildNodeList = NULL;
@@ -80,15 +79,15 @@ xmlNodePtr XLALLIGOTimeGPS2VOTNode(const LIGOTimeGPS *const ltg, const char *nam
     /* check and prepare input parameters */
     if(!ltg || snprintf(gpsSecondsBuffer, INT4STR_MAXLEN, "%i", ltg->gpsSeconds) < 0) {
         XLALPrintError("Invalid input parameter: LIGOTimeGPS->gpsSeconds\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(!ltg || snprintf(gpsNanoSecondsBuffer, INT4STR_MAXLEN, "%i", ltg->gpsNanoSeconds) < 0) {
         XLALPrintError("Invalid input parameter: LIGOTimeGPS->gpsNanoSeconds\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(!name || strlen(name) <= 0) {
         XLALPrintError("Invalid input parameter: name\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
     /* set up RESOURCE node child (first PARAM) */
@@ -99,7 +98,7 @@ xmlNodePtr XLALLIGOTimeGPS2VOTNode(const LIGOTimeGPS *const ltg, const char *nam
                                           gpsSecondsBuffer);
     if(!xmlChildNode) {
         XLALPrintError("Couldn't create PARAM node: , %s.gpsSeconds\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* initialize child node list with first child */
@@ -115,7 +114,7 @@ xmlNodePtr XLALLIGOTimeGPS2VOTNode(const LIGOTimeGPS *const ltg, const char *nam
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
         XLALPrintError("Couldn't create PARAM node: %s.gpsNanoSeconds\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* add child as first sibling to child node list */
@@ -127,7 +126,7 @@ xmlNodePtr XLALLIGOTimeGPS2VOTNode(const LIGOTimeGPS *const ltg, const char *nam
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
         XLALPrintError("Couldn't create RESOURCE node: %s\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* return RESOURCE node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
@@ -158,32 +157,31 @@ INT4
 XLALVOTDoc2LIGOTimeGPSByName ( const xmlDocPtr xmlDocument, const CHAR *name, LIGOTimeGPS *ltg )
 {
     /* set up local variables */
-    const char *fn = __func__;
     CHAR *nodeContent = NULL;
 
     /* sanity checks */
     if(!xmlDocument) {
         XLALPrintError("Invalid input parameter: xmlDocument\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
     if(!name || strlen(name) <= 0) {
         XLALPrintError("Invalid input parameter: name\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
     if(!ltg) {
         XLALPrintError("Invalid input parameter: ltg\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* retrieve LIGOTimeGPS.gpsSeconds content */
     if ( (nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, name, "gpsSeconds", VOT_PARAM, VOT_VALUE )) == NULL ) {
-      XLAL_ERROR ( fn, XLAL_EFUNC );
+      XLAL_ERROR ( XLAL_EFUNC );
     }
     /* parse content */
     if( sscanf ( nodeContent, "%i", &ltg->gpsSeconds) == EOF ) {
       XLALFree(nodeContent);
       XLALPrintError("Invalid node content encountered: %s.gpsSeconds\n", name);
-      XLAL_ERROR ( fn, XLAL_EDATA );
+      XLAL_ERROR ( XLAL_EDATA );
     }
     XLALFree(nodeContent);
 
@@ -192,7 +190,7 @@ XLALVOTDoc2LIGOTimeGPSByName ( const xmlDocPtr xmlDocument, const CHAR *name, LI
     if( !nodeContent || sscanf( nodeContent, "%i", &ltg->gpsNanoSeconds) == EOF) {
       if ( nodeContent ) XLALFree (nodeContent);
       XLALPrintError("Invalid node content encountered: %s.gpsNanoSeconds\n", name);
-      XLAL_ERROR(fn, XLAL_EDATA);
+      XLAL_ERROR(XLAL_EDATA);
     }
 
     /* clean up*/
@@ -230,8 +228,6 @@ XLALgsl_vector2VOTNode(const gsl_vector *vect,	/**< [in] input gsl_vector to ser
                        const CHAR *unitName	/**< [in] optional unit-name (can be NULL) */
                        )
 {
-  const char *fn = __func__;
-
   xmlNodePtr xmlParamNode = NULL;
   CHAR arraySizeStr[INT4STR_MAXLEN] = {0}; 	/* buffer to hold argument to "arraysize" attribute */
   CHAR REAL8Str[REAL8STR_MAXLEN] = {0};		/* buffer to hold string representations of ONE REAL8 element */
@@ -241,12 +237,12 @@ XLALgsl_vector2VOTNode(const gsl_vector *vect,	/**< [in] input gsl_vector to ser
 
   /* sanity checks */
   if ( !vect || !vect->size ) {
-    XLALPrintError("%s: Invalid NULL or empty input: vect\n\n", fn);
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+    XLALPrintError("%s: Invalid NULL or empty input: vect\n\n", __func__);
+    XLAL_ERROR_NULL (XLAL_EINVAL);
   }
   if ( !name || strlen(name) <= 0) {
-    XLALPrintError("%s: Invalid NULL or empty input parameter: name\n\n", fn);
-    XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+    XLALPrintError("%s: Invalid NULL or empty input parameter: name\n\n", __func__);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
   }
 
   /* get input vector dimension */
@@ -254,15 +250,15 @@ XLALgsl_vector2VOTNode(const gsl_vector *vect,	/**< [in] input gsl_vector to ser
 
   /* prepare array size attribute */
   if ( snprintf ( arraySizeStr, sizeof(arraySizeStr), "%d", dim ) < 0 ) {
-    XLALPrintError("%s: snprintf() failed for arraySizeStr.\n\n", fn );
-    XLAL_ERROR_NULL (fn, XLAL_EFAILED);
+    XLALPrintError("%s: snprintf() failed for arraySizeStr.\n\n", __func__ );
+    XLAL_ERROR_NULL (XLAL_EFAILED);
   }
 
   /* prepare string to hold array of numbers */
   arrayStrLen = dim * REAL8STR_MAXLEN;
   if ( (arrayStr = XLALCalloc( 1, arrayStrLen )) == NULL ) {
-    XLALPrintError ("%s: Failed to XLALCalloc(1, %d).\n\n", fn, arrayStrLen );
-    XLAL_ERROR_NULL(fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: Failed to XLALCalloc(1, %d).\n\n", __func__, arrayStrLen );
+    XLAL_ERROR_NULL(XLAL_ENOMEM );
   }
 
   for ( i = 0; i < dim; i++ )
@@ -271,7 +267,7 @@ XLALgsl_vector2VOTNode(const gsl_vector *vect,	/**< [in] input gsl_vector to ser
       if( snprintf ( REAL8Str, sizeof(REAL8Str), "%.16g", gsl_vector_get ( vect, i ) ) < 0 ) {
 	XLALFree ( arrayStr );
 	XLALPrintError("%s: failed to convert vector element to string: vect[%d]\n", i);
-	XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+	XLAL_ERROR_NULL ( XLAL_EINVAL );
       }
       strcat ( arrayStr, REAL8Str );
 
@@ -284,8 +280,8 @@ XLALgsl_vector2VOTNode(const gsl_vector *vect,	/**< [in] input gsl_vector to ser
   /* set up PARAM node */
   if ( (xmlParamNode = XLALCreateVOTParamNode(name, unitName, VOT_REAL8, arraySizeStr, arrayStr )) == NULL ){
     XLALFree ( arrayStr );
-    XLALPrintError("%s: XLALCreateVOTParamNode() failed to create PARAM node: '%s'. xlalErrno = %d\n", fn, name, xlalErrno);
-    XLAL_ERROR_NULL (fn, XLAL_EFUNC);
+    XLALPrintError("%s: XLALCreateVOTParamNode() failed to create PARAM node: '%s'. xlalErrno = %d\n", __func__, name, xlalErrno);
+    XLAL_ERROR_NULL (XLAL_EFUNC);
   }
 
   XLALFree ( arrayStr );
@@ -315,7 +311,6 @@ XLALVOTDoc2gsl_vectorByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
                               const CHAR *unitName		/**< [in] Optional unit-name. If != NULL, it MUST agree with the units specified in XML */
                               )
 {
-  const char *fn = __func__;
   CHAR *nodeContent = NULL;
   CHAR *nodeContentWorker = NULL;
   int i, dim;
@@ -324,21 +319,21 @@ XLALVOTDoc2gsl_vectorByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
 
   /* input sanity check */
   if( !xmlDocument ) {
-    XLALPrintError ( "%s: Invalid input parameters: xmlDocument\n", fn);
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+    XLALPrintError ( "%s: Invalid input parameters: xmlDocument\n", __func__);
+    XLAL_ERROR_NULL (XLAL_EINVAL);
   }
 
   if( !paramName ) {
-    XLALPrintError("%s: Invalid input parameters: paramName\n", fn);
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+    XLALPrintError("%s: Invalid input parameters: paramName\n", __func__);
+    XLAL_ERROR_NULL (XLAL_EINVAL);
   }
 
   /* retrieve arraysize (number of vector elements) */
   nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, resourcePath, paramName, VOT_PARAM, VOT_ARRAYSIZE);
   if(!nodeContent || sscanf(nodeContent, "%d", &dim) == EOF || dim == 0) {
     if(nodeContent) XLALFree(nodeContent);
-    XLALPrintError("%s: Invalid node content encountered: %s.%s.arraysize\n", fn, resourcePath, paramName);
-    XLAL_ERROR_NULL (fn, XLAL_EDATA);
+    XLALPrintError("%s: Invalid node content encountered: %s.%s.arraysize\n", __func__, resourcePath, paramName);
+    XLAL_ERROR_NULL (XLAL_EDATA);
   }
   XLALFree(nodeContent);
 
@@ -346,15 +341,15 @@ XLALVOTDoc2gsl_vectorByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
   if ( unitName )
     {
       if ( (nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, resourcePath, paramName, VOT_PARAM, VOT_UNIT )) == NULL ) {
-	XLALPrintError("%s: failed to find %s.%s.unit, but caller requested '%s'.\n\n", fn, resourcePath, paramName, unitName );
-	XLAL_ERROR_NULL ( fn, XLAL_EDATA );
+	XLALPrintError("%s: failed to find %s.%s.unit, but caller requested '%s'.\n\n", __func__, resourcePath, paramName, unitName );
+	XLAL_ERROR_NULL ( XLAL_EDATA );
       }
       /* check that unit in XML agrees with caller's requirement */
       if ( strcmp ( unitName, nodeContent ) ) {
 	XLALPrintError("%s: %s.%s.unit = '%s', but caller requested '%s'. Sorry, I can't do unit conversions.\n",
-		       fn, resourcePath, paramName, nodeContent, unitName );
+		       __func__, resourcePath, paramName, nodeContent, unitName );
 	XLALFree (nodeContent);
-	XLAL_ERROR_NULL ( fn, XLAL_EDATA );
+	XLAL_ERROR_NULL ( XLAL_EDATA );
       }
 
       XLALFree (nodeContent);
@@ -362,22 +357,22 @@ XLALVOTDoc2gsl_vectorByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
 
   /* retrieve pulsar gsl_vector array (string) */
   if ( (nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, resourcePath, paramName, VOT_PARAM, VOT_VALUE )) == NULL ) {
-    XLALPrintError("%s: Invalid node content encountered: %s.%s\n", fn, resourcePath, paramName);
-    XLAL_ERROR_NULL (fn, XLAL_EDATA);
+    XLALPrintError("%s: Invalid node content encountered: %s.%s\n", __func__, resourcePath, paramName);
+    XLAL_ERROR_NULL (XLAL_EDATA);
   }
 
   /* allocate output gsl_vector */
   if ( (vect = gsl_vector_calloc ( dim )) == NULL ) {
-    XLALPrintError ("%s: failed to gsl_vector_calloc(%d).\n", fn, dim );
-    XLAL_ERROR_NULL (fn, XLAL_ENOMEM);
+    XLALPrintError ("%s: failed to gsl_vector_calloc(%d).\n", __func__, dim );
+    XLAL_ERROR_NULL (XLAL_ENOMEM);
   }
 
   /* finally, parse and store individual vector elements */
   if ( (nodeContentWorker = strtok(nodeContent, " ")) == NULL ) {
     gsl_vector_free ( vect );
     XLALFree(nodeContent);
-    XLALPrintError ("%s: failed to parse first array element in node: %s.%s.\n", fn, resourcePath, paramName );
-    XLAL_ERROR_NULL (fn, XLAL_EDATA);
+    XLALPrintError ("%s: failed to parse first array element in node: %s.%s.\n", __func__, resourcePath, paramName );
+    XLAL_ERROR_NULL (XLAL_EDATA);
   }
   for(i = 0; i < dim; i++)
     {
@@ -385,8 +380,8 @@ XLALVOTDoc2gsl_vectorByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
       if ( sscanf( nodeContentWorker, "%lf", &el) == EOF) {
 	XLALFree(nodeContent);
 	gsl_vector_free ( vect );
-	XLALPrintError("%s: Invalid node content encountered: %s.%s[%i] = '%s'\n", fn, resourcePath, paramName, i, nodeContentWorker );
-	XLAL_ERROR_NULL (fn, XLAL_EDATA);
+	XLALPrintError("%s: Invalid node content encountered: %s.%s[%i] = '%s'\n", __func__, resourcePath, paramName, i, nodeContentWorker );
+	XLAL_ERROR_NULL (XLAL_EDATA);
       }
 
       gsl_vector_set ( vect, i, el );
@@ -397,8 +392,8 @@ XLALVOTDoc2gsl_vectorByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
 	  if ( (nodeContentWorker = strtok(NULL, " ")) == NULL ) {
 	    gsl_vector_free ( vect );
 	    XLALFree(nodeContent);
-	    XLALPrintError ("%s: failed to parse %d-th array element in node: %s.%s'.\n", fn, i, resourcePath, paramName );
-	    XLAL_ERROR_NULL (fn, XLAL_EDATA);
+	    XLALPrintError ("%s: failed to parse %d-th array element in node: %s.%s'.\n", __func__, i, resourcePath, paramName );
+	    XLAL_ERROR_NULL (XLAL_EDATA);
 	  }
 	} /* if not last element yet: advance */
 
@@ -447,8 +442,6 @@ XLALgsl_matrix2VOTNode(const gsl_matrix *matrix,	/**< [in] input gsl_matrix to s
                        const CHAR *unitName		/**< [in] optional unit-name (can be NULL) */
                        )
 {
-  const char *fn = __func__;
-
   xmlNodePtr xmlParamNode = NULL;
   CHAR arraySizeStr[2*INT4STR_MAXLEN+1] = {0}; 	/* buffer to hold argument to "arraysize" attribute */
   CHAR REAL8Str[REAL8STR_MAXLEN] = {0};		/* buffer to hold string representations of ONE REAL8 element */
@@ -459,12 +452,12 @@ XLALgsl_matrix2VOTNode(const gsl_matrix *matrix,	/**< [in] input gsl_matrix to s
 
   /* sanity checks */
   if ( !matrix || !matrix->size1 || !matrix->size2 ) {
-    XLALPrintError("%s: Invalid NULL or empty/malformed input: matrix\n\n", fn);
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+    XLALPrintError("%s: Invalid NULL or empty/malformed input: matrix\n\n", __func__);
+    XLAL_ERROR_NULL (XLAL_EINVAL);
   }
   if ( !name || strlen(name) <= 0) {
-    XLALPrintError("%s: Invalid NULL or empty input parameter: name\n\n", fn);
-    XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+    XLALPrintError("%s: Invalid NULL or empty input parameter: name\n\n", __func__);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
   }
 
   /* get input matrix dimensions */
@@ -477,15 +470,15 @@ XLALgsl_matrix2VOTNode(const gsl_matrix *matrix,	/**< [in] input gsl_matrix to s
    * arraysize="cols x rows" !
    */
   if ( snprintf ( arraySizeStr, sizeof(arraySizeStr), "%dx%d", numCols, numRows ) < 0 ) {
-    XLALPrintError("%s: snprintf() failed for arraySizeStr (%dx%d).\n\n", fn, numCols, numRows );
-    XLAL_ERROR_NULL (fn, XLAL_EFAILED);
+    XLALPrintError("%s: snprintf() failed for arraySizeStr (%dx%d).\n\n", __func__, numCols, numRows );
+    XLAL_ERROR_NULL (XLAL_EFAILED);
   }
 
   /* prepare string to hold array of numbers */
   arrayStrLen = numRows * numCols * REAL8STR_MAXLEN;
   if ( (arrayStr = XLALCalloc( 1, arrayStrLen )) == NULL ) {
-    XLALPrintError ("%s: Failed to XLALCalloc(1, %d).\n\n", fn, arrayStrLen );
-    XLAL_ERROR_NULL(fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: Failed to XLALCalloc(1, %d).\n\n", __func__, arrayStrLen );
+    XLAL_ERROR_NULL(XLAL_ENOMEM );
   }
 
   /* convert all matrix elements to strings and append to arrayStr */
@@ -497,7 +490,7 @@ XLALgsl_matrix2VOTNode(const gsl_matrix *matrix,	/**< [in] input gsl_matrix to s
 	  if( snprintf ( REAL8Str, sizeof(REAL8Str), "%.16g", gsl_matrix_get ( matrix, row, col ) ) < 0 ) {
 	    XLALFree ( arrayStr );
 	    XLALPrintError("%s: failed to convert matrix element to string: vect[%d,%d]\n", row, col);
-	    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+	    XLAL_ERROR_NULL ( XLAL_EINVAL );
 	  }
 	  strcat ( arrayStr, REAL8Str );
 
@@ -518,8 +511,8 @@ XLALgsl_matrix2VOTNode(const gsl_matrix *matrix,	/**< [in] input gsl_matrix to s
   /* assemble PARAM node */
   if ( (xmlParamNode = XLALCreateVOTParamNode(name, unitName, VOT_REAL8, arraySizeStr, arrayStr )) == NULL ){
     XLALFree ( arrayStr );
-    XLALPrintError("%s: XLALCreateVOTParamNode() failed to create PARAM node: '%s'. xlalErrno = %d\n", fn, name, xlalErrno);
-    XLAL_ERROR_NULL (fn, XLAL_EFUNC);
+    XLALPrintError("%s: XLALCreateVOTParamNode() failed to create PARAM node: '%s'. xlalErrno = %d\n", __func__, name, xlalErrno);
+    XLAL_ERROR_NULL (XLAL_EFUNC);
   }
 
   XLALFree ( arrayStr );
@@ -549,8 +542,6 @@ XLALVOTDoc2gsl_matrixByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
                               const CHAR *unitName		/**< [in] Optional unit-name. If != NULL, it MUST agree with the units specified in XML */
                               )
 {
-  const char *fn = __func__;
-
   CHAR *nodeContent = NULL;
   CHAR *nodeContentWorker = NULL;
   int row, col, numRows, numCols;
@@ -559,20 +550,20 @@ XLALVOTDoc2gsl_matrixByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
 
   /* input sanity check */
   if( !xmlDocument ) {
-    XLALPrintError ( "%s: Invalid input parameters: xmlDocument\n", fn);
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+    XLALPrintError ( "%s: Invalid input parameters: xmlDocument\n", __func__);
+    XLAL_ERROR_NULL (XLAL_EINVAL);
   }
   if( !paramName ) {
-    XLALPrintError("%s: Invalid input parameters: paramName\n", fn);
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+    XLALPrintError("%s: Invalid input parameters: paramName\n", __func__);
+    XLAL_ERROR_NULL (XLAL_EINVAL);
   }
 
   /* retrieve arraysize (number of matrixor elements) */
   nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, resourcePath, paramName, VOT_PARAM, VOT_ARRAYSIZE );
   if(!nodeContent || sscanf( nodeContent, "%dx%d", &numCols, &numRows) == EOF || numRows == 0 || numCols == 0 ) {
     if(nodeContent) XLALFree(nodeContent);
-    XLALPrintError("%s: Invalid node content encountered: %s.%s.arraysize\n", fn, resourcePath, paramName);
-    XLAL_ERROR_NULL (fn, XLAL_EDATA);
+    XLALPrintError("%s: Invalid node content encountered: %s.%s.arraysize\n", __func__, resourcePath, paramName);
+    XLAL_ERROR_NULL (XLAL_EDATA);
   }
   XLALFree(nodeContent);
 
@@ -580,15 +571,15 @@ XLALVOTDoc2gsl_matrixByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
   if ( unitName )
     {
       if ( (nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, resourcePath, paramName, VOT_PARAM, VOT_UNIT )) == NULL ) {
-	XLALPrintError("%s: failed to find %s.%s.unit, but caller requested '%s'.\n\n", fn, resourcePath, paramName, unitName );
-	XLAL_ERROR_NULL ( fn, XLAL_EDATA );
+	XLALPrintError("%s: failed to find %s.%s.unit, but caller requested '%s'.\n\n", __func__, resourcePath, paramName, unitName );
+	XLAL_ERROR_NULL ( XLAL_EDATA );
       }
       /* check that unit in XML agrees with caller's requirement */
       if ( strcmp ( unitName, nodeContent ) ) {
 	XLALPrintError("%s: %s.%s.unit = '%s', but caller requested '%s'. Sorry, I can't do unit conversions.\n",
-		       fn, resourcePath, paramName, nodeContent, unitName );
+		       __func__, resourcePath, paramName, nodeContent, unitName );
 	XLALFree(nodeContent);
-	XLAL_ERROR_NULL ( fn, XLAL_EDATA );
+	XLAL_ERROR_NULL ( XLAL_EDATA );
       }
       XLALFree(nodeContent);
     } /* check unitName */
@@ -596,14 +587,14 @@ XLALVOTDoc2gsl_matrixByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
 
   /* retrieve pulsar gsl_matrix array (string) */
   if ( (nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, resourcePath, paramName, VOT_PARAM, VOT_VALUE )) == NULL ) {
-    XLALPrintError("%s: Invalid node content encountered: %s.%s\n", fn, resourcePath, paramName);
-    XLAL_ERROR_NULL (fn, XLAL_EDATA);
+    XLALPrintError("%s: Invalid node content encountered: %s.%s\n", __func__, resourcePath, paramName);
+    XLAL_ERROR_NULL (XLAL_EDATA);
   }
 
   /* allocate output gsl_matrix */
   if ( (matrix = gsl_matrix_calloc ( numRows, numCols )) == NULL ) {
-    XLALPrintError ("%s: failed to gsl_matrix_calloc(%d,%d).\n", fn, numRows, numCols );
-    XLAL_ERROR_NULL (fn, XLAL_ENOMEM);
+    XLALPrintError ("%s: failed to gsl_matrix_calloc(%d,%d).\n", __func__, numRows, numCols );
+    XLAL_ERROR_NULL (XLAL_ENOMEM);
   }
 
   /* finally, parse and store individual matrix elements */
@@ -611,8 +602,8 @@ XLALVOTDoc2gsl_matrixByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
     gsl_matrix_free ( matrix );
     XLALFree(nodeContent);
     XLALPrintError ("%s: failed to parse first array element in node: %s.%s.\n",
-		    fn, resourcePath, paramName );
-    XLAL_ERROR_NULL (fn, XLAL_EDATA);
+		    __func__, resourcePath, paramName );
+    XLAL_ERROR_NULL (XLAL_EDATA);
   }
   for (row = 0; row < numRows; row++)
     {
@@ -622,8 +613,8 @@ XLALVOTDoc2gsl_matrixByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
 	  if ( sscanf( nodeContentWorker, "%lf", &el) == EOF) {
 	    XLALFree(nodeContent);
 	    gsl_matrix_free ( matrix );
-	    XLALPrintError("%s: Invalid node content encountered: %s.%s[%d,%d] = '%s'\n", fn, resourcePath, paramName, row, col, nodeContentWorker );
-	    XLAL_ERROR_NULL (fn, XLAL_EDATA);
+	    XLALPrintError("%s: Invalid node content encountered: %s.%s[%d,%d] = '%s'\n", __func__, resourcePath, paramName, row, col, nodeContentWorker );
+	    XLAL_ERROR_NULL (XLAL_EDATA);
 	  }
 
 	  gsl_matrix_set ( matrix, row, col, el );
@@ -634,8 +625,8 @@ XLALVOTDoc2gsl_matrixByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
 	      if ( (nodeContentWorker = strtok(NULL, " ;")) == NULL ) {
 		gsl_matrix_free ( matrix );
 		XLALFree(nodeContent);
-		XLALPrintError ("%s: failed to parse array (%d,%d) element in node: %s.%s'.\n", fn, row, col, resourcePath, paramName );
-		XLAL_ERROR_NULL (fn, XLAL_EDATA);
+		XLALPrintError ("%s: failed to parse array (%d,%d) element in node: %s.%s'.\n", __func__, row, col, resourcePath, paramName );
+		XLAL_ERROR_NULL (XLAL_EDATA);
 	      }
 	    } /* not parsed last element yet: advance to next one */
 

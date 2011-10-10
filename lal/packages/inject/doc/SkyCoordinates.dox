@@ -1,7 +1,6 @@
 // -*- mode: latex -*-
 
-/** \defgroup SkyCoordinates Sky coordinate systems
- *  \ingroup inject
+/** \addtogroup SkyCoordinates_h
  *  \author Creighton, T. D.
  *  \date 2002
  *

@@ -172,7 +172,6 @@ int XLALWriteREAL8FrequencySeries_to_file ( const REAL8FrequencySeries *series, 
 int
 main(int argc, char *argv[])
 {
-  const char *fn = __func__;
   static LALStatus       status;  /* LALStatus pointer */
   UserVariables_t uvar = empty_UserVariables;
   ConfigVariables_t cfg = empty_ConfigVariables;
@@ -244,7 +243,7 @@ main(int argc, char *argv[])
   LAL_CALL( LALNormalizeMultiSFTVect (&status, &multiPSD, inputSFTs, uvar.blocksRngMed), &status);
   /* restrict this PSD to just the "physical" band if requested using {--Freq, --FreqBand} */
   if ( ( XLALCropMultiPSDVector ( multiPSD, cfg.firstBin, cfg.lastBin )) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALCropMultiPSDVector (inputPSD, %d, %d) failed with xlalErrno = %d\n", fn, cfg.firstBin, cfg.lastBin, xlalErrno );
+    XLALPrintError ("%s: XLALCropMultiPSDVector (inputPSD, %d, %d) failed with xlalErrno = %d\n", __func__, cfg.firstBin, cfg.lastBin, xlalErrno );
     return EXIT_FAILURE;
   }
 
@@ -357,7 +356,7 @@ main(int argc, char *argv[])
   /* ---------- if user requested it, output complete MultiPSDVector over IFOs X, timestamps and freq-bins into ASCI file(s) */
   if ( uvar.dumpMultiPSDVector ) {
     if ( XLALDumpMultiPSDVector ( uvar.outputPSD, multiPSD ) != XLAL_SUCCESS ) {
-      XLALPrintError ("%s: XLALDumpMultiPSDVector() failed, xlalErrnor = %d\n", fn, xlalErrno );
+      XLALPrintError ("%s: XLALDumpMultiPSDVector() failed, xlalErrnor = %d\n", __func__, xlalErrno );
       return EXIT_FAILURE;
     }
   } /* if uvar.dumpMultiPSDVector */
@@ -367,7 +366,7 @@ main(int argc, char *argv[])
     {
       REAL8FrequencySeries *Q;
       if ( (Q = XLALComputeSegmentDataQ ( multiPSD, cfg.dataSegment )) == NULL ) {
-        XLALPrintError ("%s: XLALComputeSegmentDataQ() failed with xlalErrno = %d\n", fn, xlalErrno );
+        XLALPrintError ("%s: XLALComputeSegmentDataQ() failed with xlalErrno = %d\n", __func__, xlalErrno );
         return EXIT_FAILURE;
       }
       if ( XLAL_SUCCESS != XLALWriteREAL8FrequencySeries_to_file ( Q, uvar.outputQ ) ) {
@@ -535,7 +534,7 @@ REAL8 math_op(REAL8* data, size_t length, INT4 type) {
   default:
 
     XLALPrintError("'%i' is not a valid math. operation", type);
-    XLAL_ERROR_REAL8(__func__, XLAL_EINVAL);
+    XLAL_ERROR_REAL8(XLAL_EINVAL);
 
   }
 
@@ -805,20 +804,18 @@ XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename 'outbname'
                          const MultiPSDVector *multiPSDVect	/**< multi-psd vector to output */
                   )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( outbname == NULL ) {
-    XLALPrintError ("%s: NULL input 'outbname'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: NULL input 'outbname'\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( multiPSDVect == NULL ) {
-    XLALPrintError ("%s: NULL input 'multiPSDVect'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: NULL input 'multiPSDVect'\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( multiPSDVect->length == 0 || multiPSDVect->data==0 ) {
-    XLALPrintError ("%s: invalid multiPSDVect input (length=0 or data=NULL)\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid multiPSDVect input (length=0 or data=NULL)\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   CHAR *fname;
@@ -826,8 +823,8 @@ XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename 'outbname'
 
   UINT4 len = strlen ( outbname ) + 4;
   if ( ( fname = XLALMalloc ( len * sizeof(CHAR) )) == NULL ) {
-    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, len );
-    XLAL_ERROR ( fn, XLAL_ENOMEM);
+    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", __func__, len );
+    XLAL_ERROR ( XLAL_ENOMEM);
   }
 
   UINT4 numIFOs = multiPSDVect->length;
@@ -840,9 +837,9 @@ XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename 'outbname'
       sprintf ( fname, "%s-%c%c", outbname, thisPSDVect->data[0].name[0], thisPSDVect->data[0].name[1] );
 
       if ( ( fp = fopen( fname, "wb" ))  == NULL ) {
-        XLALPrintError ("%s: Failed to open PSDperSFT file '%s' for writing!\n", fn, fname );
+        XLALPrintError ("%s: Failed to open PSDperSFT file '%s' for writing!\n", __func__, fname );
         XLALFree ( fname );
-        XLAL_ERROR ( fn, XLAL_ESYS );
+        XLAL_ERROR ( XLAL_ESYS );
       }
 
       REAL8 f0       = thisPSDVect->data[0].f0;
@@ -891,10 +888,10 @@ XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename 'outbname'
           /* some internal consistency/paranoia checks */
           if ( ( f0 != thisPSD->f0) || ( dFreq != thisPSD->deltaF ) || (numFreqs != thisPSD->data->length ) ) {
             XLALPrintError ("%s: %d-th timestamp %f: inconsistent PSDVector: f0 = %g : %g,  dFreq = %g : %g, numFreqs = %d : %d \n",
-                            fn, iTS, tGPS, f0, thisPSD->f0, dFreq, thisPSD->deltaF, numFreqs, thisPSD->data->length );
+                            __func__, iTS, tGPS, f0, thisPSD->f0, dFreq, thisPSD->deltaF, numFreqs, thisPSD->data->length );
             XLALFree ( fname );
             fclose ( fp );
-            XLAL_ERROR ( fn, XLAL_EDOM );
+            XLAL_ERROR ( XLAL_EDOM );
           }
 
           /* loop over all frequencies and dump PSD-value */
@@ -931,8 +928,6 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
                const UserVariables_t *uvar	/**< [in] complete user-input */
                )
 {
-  const char *fn = __func__;
-
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
   LIGOTimeGPS startTimeGPS = {0,0}, endTimeGPS = {0,0};
@@ -940,12 +935,12 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
 
   /* check input */
   if ( !uvar || !uvar->inputData ) {
-    XLALPrintError ("%s: invalid NULL input 'uvar' or 'uvar->inputData'\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'uvar' or 'uvar->inputData'\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
   if ( !cfg ) {
-    XLALPrintError ("%s: invalid NULL input 'cfg'", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'cfg'", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* set detector constraint */
@@ -966,7 +961,7 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
 
   if ( XLALUserVarWasSet( &uvar->timeStampsFile ) ) {
     if ( (inputTimeStampsVector = XLALReadTimestampsFile ( uvar->timeStampsFile )) == NULL )
-      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
 
     constraints.timestamps = inputTimeStampsVector;
   }
@@ -976,12 +971,12 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
   LALStatus status = blank_status;
   LALSFTdataFind ( &status, &catalog, uvar->inputData, &constraints);
   if ( status.statusCode != 0 ) {
-    XLALPrintError ("%s: LALSFTdataFind() failed with statusCode = %d\n", fn, status.statusCode );
-    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: LALSFTdataFind() failed with statusCode = %d\n", __func__, status.statusCode );
+    XLAL_ERROR_NULL ( XLAL_EFAILED );
   }
   if ( (catalog == NULL) || (catalog->length == 0) ) {
-    XLALPrintError ("%s: Unable to match any SFTs with pattern '%s'\n", fn, uvar->inputData );
-    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: Unable to match any SFTs with pattern '%s'\n", __func__, uvar->inputData );
+    XLAL_ERROR_NULL ( XLAL_EFAILED );
   }
   LogPrintfVerbatim ( LOG_DEBUG, "done (found %i SFTs).\n", catalog->length);
 
@@ -995,16 +990,16 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
   BOOLEAN have_fBand    = XLALUserVarWasSet ( &uvar->fBand );
   BOOLEAN have_FreqBand = XLALUserVarWasSet ( &uvar->FreqBand );
   if ( have_fStart && have_Freq ) {
-    XLALPrintError ("%s: use only one of --fStart OR --Freq (see --help)\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: use only one of --fStart OR --Freq (see --help)\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
   if ( have_fBand && have_FreqBand ) {
-    XLALPrintError ("%s: use only one of --fBand OR --FreqBand (see --help)\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: use only one of --fBand OR --FreqBand (see --help)\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
   if ( ( have_fStart && have_FreqBand ) || ( have_Freq && have_fBand ) ) {
-    XLALPrintError ("%s: don't mix {--fStart,--fBand} with {--Freq,--FreqBand} inputs (see --help)\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: don't mix {--fStart,--fBand} with {--Freq,--FreqBand} inputs (see --help)\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
   /* ---------- figure out the right frequency-band to read from the SFTs, depending on user-input ----- */
   REAL8 fMin, fMax;
@@ -1042,8 +1037,8 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
   LogPrintf (LOG_DEBUG, "Loading all SFTs ... ");
   MultiSFTVector *multi_sfts;
   if ( ( multi_sfts = XLALLoadMultiSFTs ( catalog, fMin, fMax ) ) == NULL ) {
-    XLALPrintError ("%s: XLALLoadMultiSFTs( %f, %f ) failed with xlalErrno = %d\n", fn, fMin, fMax, xlalErrno );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALLoadMultiSFTs( %f, %f ) failed with xlalErrno = %d\n", __func__, fMin, fMax, xlalErrno );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   XLALDestroySFTCatalog ( &catalog );
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
@@ -1069,7 +1064,7 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
   cfg->dataSegment.start = startTimeGPS;
   cfg->dataSegment.end   = endTimeGPS;
 
-  XLALPrintInfo ("%s: loaded SFTs have %d bins, effective PSD output band is [%d, %d]\n", fn, numBins, bin0, bin1 );
+  XLALPrintInfo ("%s: loaded SFTs have %d bins, effective PSD output band is [%d, %d]\n", __func__, numBins, bin0, bin1 );
 
   return multi_sfts;
 
@@ -1083,24 +1078,22 @@ XLALCropMultiPSDVector ( MultiPSDVector *multiPSDVect,
                          UINT4 lastBin
                          )
 {
-  const char *fn = __func__;
-
   /* check user input */
   if ( !multiPSDVect ) {
-    XLALPrintError ("%s: invalid NULL input 'multiPSDVect'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'multiPSDVect'\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( lastBin < firstBin ) {
-    XLALPrintError ("%s: empty bin interval requested [%d, %d]\n", fn, firstBin, lastBin );
-    XLAL_ERROR ( fn, XLAL_EDOM );
+    XLALPrintError ("%s: empty bin interval requested [%d, %d]\n", __func__, firstBin, lastBin );
+    XLAL_ERROR ( XLAL_EDOM );
   }
 
   UINT4 numIFOs = multiPSDVect->length;
   UINT4 numBins = multiPSDVect->data[0]->data[0].data->length;
 
   if ( (firstBin >= numBins) || (lastBin >= numBins ) ) {
-    XLALPrintError ("%s: requested bin-interval [%d, %d] outside of PSD bins [0, %d]\n", fn, firstBin, lastBin, 0, numBins - 1 );
-    XLAL_ERROR ( fn, XLAL_EDOM );
+    XLALPrintError ("%s: requested bin-interval [%d, %d] outside of PSD bins [0, %d]\n", __func__, firstBin, lastBin, 0, numBins - 1 );
+    XLAL_ERROR ( XLAL_EDOM );
   }
 
   /* ----- check if there's anything to do at all? ----- */
@@ -1124,8 +1117,8 @@ XLALCropMultiPSDVector ( MultiPSDVector *multiPSDVect,
 
           if ( numBins != thisPSD->data->length ) {
             XLALPrintError ("%s: inconsistent number of frequency-bins across multiPSDVector: X=%d, iTS=%d: numBins = %d != %d\n",
-                            fn, X, iTS, numBins, thisPSD->data->length );
-            XLAL_ERROR ( fn, XLAL_EDOM );
+                            __func__, X, iTS, numBins, thisPSD->data->length );
+            XLAL_ERROR ( XLAL_EDOM );
           }
 
           UINT4 numNewBins = lastBin - firstBin + 1;
@@ -1136,8 +1129,8 @@ XLALCropMultiPSDVector ( MultiPSDVector *multiPSDVect,
               void *src  = thisPSD->data->data + firstBin;	/* we're copying from firstBin on ... */
 
               if ( dest != memmove(dest, src, numNewBins * sizeof(*thisPSD->data->data)) ) { /* memmove() handles overlapping memory correctly */
-                XLALPrintError ("%s: something failed in moving PSD data with memmove()\n", fn );
-                XLAL_ERROR ( fn, XLAL_EFAILED );
+                XLALPrintError ("%s: something failed in moving PSD data with memmove()\n", __func__ );
+                XLAL_ERROR ( XLAL_EFAILED );
               }
             }
           /* truncate array to new size */
@@ -1167,22 +1160,20 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
                           LALSeg segment		  	/**< segment to compute Q for */
                           )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( multiPSDVect == NULL ) {
-    XLALPrintError ("%s: NULL input 'multiPSDVect'\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: NULL input 'multiPSDVect'\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
   if ( multiPSDVect->length == 0 || multiPSDVect->data==0 ) {
-    XLALPrintError ("%s: invalid multiPSDVect input (length=0 or data=NULL)\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid multiPSDVect input (length=0 or data=NULL)\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   REAL8 Tseg = XLALGPSDiff ( &segment.end, &segment.start );
   if ( Tseg <= 0 ) {
-    XLALPrintError ("%s: negative segment-duration '%g'\n", fn, Tseg );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: negative segment-duration '%g'\n", __func__, Tseg );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   REAL8 Tsft 	 = 1.0 / multiPSDVect->data[0]->data[0].deltaF;
@@ -1192,12 +1183,12 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
 
   REAL8FrequencySeries *Q, *SXinv;
   if ( (Q = XLALCreateREAL8FrequencySeries ( "Qfactor", &segment.start, f0, dFreq, &lalHertzUnit, numFreqs )) == NULL ) {
-    XLALPrintError ("%s: Q = XLALCreateREAL8FrequencySeries(numFreqs=%d) failed with xlalErrno = %d\n", fn, numFreqs, xlalErrno );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: Q = XLALCreateREAL8FrequencySeries(numFreqs=%d) failed with xlalErrno = %d\n", __func__, numFreqs, xlalErrno );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   if ( (SXinv = XLALCreateREAL8FrequencySeries ( "SXinv", &segment.start, f0, dFreq, &lalHertzUnit, numFreqs )) == NULL ) {
-    XLALPrintError ("%s: SXinv = XLALCreateREAL8FrequencySeries(numFreqs=%d) failed with xlalErrno = %d\n", fn, numFreqs, xlalErrno );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: SXinv = XLALCreateREAL8FrequencySeries(numFreqs=%d) failed with xlalErrno = %d\n", __func__, numFreqs, xlalErrno );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   /* initialize Q-array to zero, as we'll keep adding to it */
   memset ( Q->data->data, 0, Q->data->length * sizeof(Q->data->data[0]) );
@@ -1224,8 +1215,8 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
           /* some internal consistency/paranoia checks */
           if ( ( f0 != thisPSD->f0) || ( dFreq != thisPSD->deltaF ) || (numFreqs != thisPSD->data->length ) ) {
             XLALPrintError ("%s: %d-th timestamp %f: inconsistent PSDVector: f0 = %g : %g,  dFreq = %g : %g, numFreqs = %d : %d \n",
-                            fn, iTS, XLALGPSGetREAL8( &thisPSD->epoch ), f0, thisPSD->f0, dFreq, thisPSD->deltaF, numFreqs, thisPSD->data->length );
-            XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+                            __func__, iTS, XLALGPSGetREAL8( &thisPSD->epoch ), f0, thisPSD->f0, dFreq, thisPSD->deltaF, numFreqs, thisPSD->data->length );
+            XLAL_ERROR_NULL ( XLAL_EDOM );
           }
 
           LIGOTimeGPS gpsStart = thisPSD->epoch;
@@ -1256,8 +1247,8 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
       REAL8 duty_X = numSFTsInSeg * Tsft / Tseg;
       /* sanity check: eps in [0, 1]*/
       if ( (duty_X < 0) && (duty_X > 1 ) ) {
-        XLALPrintError ("%s: something is WRONG: duty-cyle = %g not within [0,1]!\n", fn, duty_X );
-        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+        XLALPrintError ("%s: something is WRONG: duty-cyle = %g not within [0,1]!\n", __func__, duty_X );
+        XLAL_ERROR_NULL ( XLAL_EFAILED );
       }
 
       /* add duty_X-weighted SXinv to Q */
@@ -1282,23 +1273,21 @@ XLALWriteREAL8FrequencySeries_to_file ( const REAL8FrequencySeries *series,	/**<
                                         const char *fname			/**< [in] filename to write into */
                                         )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !series || !fname ) {
-    XLALPrintError ("%s: invalid NULL input.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input.\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   FILE *fp;
   if ( ( fp = fopen ( fname, "wb" )) == NULL ) {
-    XLALPrintError ("%s: failed to open file '%s' for writing.\n", fn, fname );
-    XLAL_ERROR ( fn, XLAL_ESYS );
+    XLALPrintError ("%s: failed to open file '%s' for writing.\n", __func__, fname );
+    XLAL_ERROR ( XLAL_ESYS );
   }
 
   /* write header info in comments */
   if ( XLAL_SUCCESS != XLALOutputVersionString ( fp, 0 ) )
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLAL_ERROR ( XLAL_EFUNC );
 
   fprintf ( fp, "%%%% name = '%s'\n", series->name );
   fprintf ( fp, "%%%% epoch = {%d, %d}\n", series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds );
@@ -1307,8 +1296,8 @@ XLALWriteREAL8FrequencySeries_to_file ( const REAL8FrequencySeries *series,	/**<
 
 CHAR unitStr[1024];
  if ( XLALUnitAsString( &unitStr[0], sizeof(unitStr)-1, &series->sampleUnits ) == NULL ) {
-   XLALPrintError ("%s: XLALUnitAsString() failed with xlalErrno = %d.\n", fn, xlalErrno );
-   XLAL_ERROR ( fn, XLAL_EFUNC );
+   XLALPrintError ("%s: XLALUnitAsString() failed with xlalErrno = %d.\n", __func__, xlalErrno );
+   XLAL_ERROR ( XLAL_EFUNC );
  }
  fprintf ( fp, "%%%% Units = %s\n", unitStr );
 

@@ -144,7 +144,6 @@ LALSZeroPadAndFFT(
 
 {
   UINT4 length, fullLength;
-  REAL8 deltaT;
   REAL4TimeSeries  hBar;
   REAL4 *sPtr, *sStopPtr, *hBarPtr, *windowPtr;
 
@@ -246,10 +245,13 @@ LALSZeroPadAndFFT(
   }
 
   /* check that frequency spacing is positive */
+#ifndef LAL_NDEBUG
+  REAL8 deltaT;
   deltaT = input->deltaT;
   ASSERT(deltaT > 0, status, \
       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT, \
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT);
+#endif
 
   /* EVERYTHING OKAY HERE! -------------------------------------------- */
 
@@ -324,7 +326,6 @@ LALCZeroPadAndFFT(
 
 {
   UINT4 length, fullLength;
-  REAL8 deltaT;
   COMPLEX8TimeSeries  hBar;
   COMPLEX8 *cPtr, *cStopPtr, *hBarPtr;
   REAL4 *windowPtr;
@@ -419,8 +420,7 @@ LALCZeroPadAndFFT(
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that frequency spacing is positive */
-  deltaT = input->deltaT;
-  ASSERT(deltaT > 0, status, \
+  ASSERT(input->deltaT > 0, status, \
       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT, \
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT);
 

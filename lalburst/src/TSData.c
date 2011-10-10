@@ -645,7 +645,8 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
    * to the fSeries otherwise throw error.
    * I.E.  Run if fSeries.deltaF>=PSD.deltaF matching as needed!
    */
-  ASSERT(level > 0, status,TSDATA_EINVA,TSDATA_MSGEINVA);
+  if ( level == 0 )
+    ABORT ( status,TSDATA_EINVA,TSDATA_MSGEINVA );
 
   for (i=0;i<fSeries->data->length;i++)
     {
@@ -676,8 +677,6 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 		  &(fSeries->sampleUnits),
 		  &tmpUnitPair);
   CHECKSTATUSPTR (status);
-
-  level = 0;
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

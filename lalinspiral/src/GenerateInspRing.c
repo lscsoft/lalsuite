@@ -66,8 +66,6 @@ XLALGenerateInspRing(
     int                  injectSignalType /**< type of injection */
     )
 {
-  static const char *func = "XLALGenerateInspRing";
-
   REAL4 *a, *f; /* pointers to generated amplitude and frequency data */
   REAL4 *shift = NULL; /* pointers to generated shift (polarization) data */
   REAL8 *phi;   /* pointer to generated phase data */
@@ -123,21 +121,21 @@ XLALGenerateInspRing(
   if ( !waveform || !(waveform->a->data) || !(waveform->f->data) ||
       !(waveform->phi->data) )
   {
-    XLALPrintError("Invalid waveform passed as input to %s\n", func);
-    XLAL_ERROR_NULL(func,XLAL_EIO);
+    XLALPrintError("Invalid waveform passed as input to %s\n", __func__);
+    XLAL_ERROR_NULL(XLAL_EIO);
   }
 
   if ( (waveform->a->data->length < 2) )
   {
     XLALPrintError(
-        "Length of waveform input to %s must be at least 2 points\n", func);
-    XLAL_ERROR_NULL(func,XLAL_EIO);
+        "Length of waveform input to %s must be at least 2 points\n", __func__);
+    XLAL_ERROR_NULL(XLAL_EIO);
   }
 
   if ( !inspiralInj )
   {
-    XLALPrintError("No sim inspiral table passed as input to %s\n", func);
-    XLAL_ERROR_NULL(func,XLAL_EIO);
+    XLALPrintError("No sim inspiral table passed as input to %s\n", __func__);
+    XLAL_ERROR_NULL(XLAL_EIO);
   }
 
   /* read in the number of points already present */
@@ -275,12 +273,12 @@ XLALGenerateInspRing(
     XLALPrintError("Failed to add a decent merger and ringdown\n"
         "The merger had a length of %.2f radians in GW phase (only allow 400 pi)\n"
         "Returning null from %s\n",
-        mergerPhase, func);
+        mergerPhase, __func__);
     XLALFree( waveform->a );
     XLALFree( waveform->phi );
     XLALFree( waveform->f );
     XLALFree( waveform->shift );
-    XLAL_ERROR_NULL(func,XLAL_EFAILED);
+    XLAL_ERROR_NULL(XLAL_EFAILED);
   }
 
 
@@ -315,7 +313,7 @@ XLALGenerateInspRing(
   if ( !waveform->a->data->data )
   {
     XLALFree( waveform->a);
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   memset(waveform->a->data->data + 2 * inputLength, 0,
@@ -325,7 +323,7 @@ XLALGenerateInspRing(
   {
     XLALFree( waveform->a);
     XLALFree( waveform->phi);
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   XLALResizeREAL4TimeSeries( waveform->f, 0, outputLength);
@@ -334,7 +332,7 @@ XLALGenerateInspRing(
     XLALFree( waveform->a );
     XLALFree( waveform->phi );
     XLALFree( waveform->f );
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   if ( waveform->shift )
@@ -346,7 +344,7 @@ XLALGenerateInspRing(
       XLALFree( waveform->phi );
       XLALFree( waveform->f );
       XLALFree( waveform->shift );
-      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+      XLAL_ERROR_NULL( XLAL_ENOMEM );
     }
   }
 
@@ -514,7 +512,7 @@ XLALGenerateInspRing(
     XLALFree( waveform->phi );
     XLALFree( waveform->f );
     XLALFree( waveform->shift );
-    XLAL_ERROR_NULL(func,XLAL_EFAILED);
+    XLAL_ERROR_NULL(XLAL_EFAILED);
   }
   */
   /* ringdown inclination and amplitude */
@@ -545,7 +543,6 @@ XLALDeriveRingdownParameters(
     SimRingdownTable    *ringInj      /**< ringdown details to be populated */
     )
 {
-  /*static const char *func = "XLALDeriveRingdownParameters";*/
   REAL4 cosiota;
   double splus, scross, fplus, fcross;
   double tDelay, tStart;

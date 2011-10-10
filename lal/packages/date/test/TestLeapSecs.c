@@ -42,7 +42,7 @@ static int do_test(int gpssec, int tai_utc_before, int tai_utc_after)
 		printf("\tGPS = %9d;    TAI-UTC = %d\n", gpssec - 1, lal_tai_utc);
 
 	if(XLALGetBaseErrno() && lalDebugLevel > 0) {
-		XLAL_PERROR("do_test()");
+		XLAL_PERROR();
 		result = -1;
 	}
 	if(lal_tai_utc != tai_utc_before) {
@@ -58,7 +58,7 @@ static int do_test(int gpssec, int tai_utc_before, int tai_utc_after)
 		printf("\tGPS = %9d;    TAI-UTC = %d\n\n", gpssec, lal_tai_utc);
 
 	if(XLALGetBaseErrno() && lalDebugLevel > 0) {
-		XLAL_PERROR("do_test()");
+		XLAL_PERROR();
 		result = -1;
 	}
 	if(lal_tai_utc != tai_utc_after) {

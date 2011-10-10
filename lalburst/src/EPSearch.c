@@ -241,7 +241,7 @@ SnglBurst *XLALEPSearch(
 	XLALDestroyTFPlane(plane);
 	if(errorcode) {
 		XLALDestroySnglBurstTable(head);
-		XLAL_ERROR_NULL(__func__, errorcode);
+		XLAL_ERROR_NULL(errorcode);
 	}
 	return(head);
 }

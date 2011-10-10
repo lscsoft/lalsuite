@@ -329,32 +329,32 @@ int XLALTaylorNWaveform (
    InspiralInit paramsInit;
 
    if (output == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if (output->data == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if (params == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if (params->nStartPad < 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if (params->fLower <= 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if (params->tSampling <= 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
 
    if (XLALInspiralInit(params, &paramsInit))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
    if (params->totalMass <= 0.)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if (params->eta < 0.)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
 
    memset( output->data, 0, output->length * sizeof(REAL4) );
 
    /* Call the engine function */
    count = XLALTaylorNWaveformEngine(output, NULL, params, &paramsInit);
    if (count < 0)
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
    return XLAL_SUCCESS;
 }
@@ -391,7 +391,7 @@ XLALTaylorNWaveformEngine (
    dummy.length = nn * 6;
 
    if (!(dummy.data = (REAL8 * ) XLALMalloc(sizeof(REAL8) * nn * 6)))
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
 
    values.length    = nn;
    dvalues.length   = nn;
@@ -441,7 +441,7 @@ XLALTaylorNWaveformEngine (
 	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
 	   XLALPrintError( message );
 	   XLALFree(dummy.data);
-	   XLAL_ERROR(__func__, XLAL_EINVAL);
+	   XLAL_ERROR(XLAL_EINVAL);
 	   break;
    }
    in3.eta = ak.eta;
@@ -451,7 +451,7 @@ XLALTaylorNWaveformEngine (
 
    xi = XLALDBisectionFindRoot(rootfunction, xmin, xmax, xacc, funcParams);
    if (XLAL_IS_REAL8_FAIL_NAN(xi))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
    /* End of initial conditions */
 
@@ -480,7 +480,7 @@ XLALTaylorNWaveformEngine (
 	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
 	   XLALPrintError( message );
 	   XLALFree(dummy.data);
-	   XLAL_ERROR(__func__, XLAL_EINVAL);
+	   XLAL_ERROR(XLAL_EINVAL);
 	   break;
    }
    in4.y = &values;
@@ -494,7 +494,7 @@ XLALTaylorNWaveformEngine (
    if (!(integrator = XLALRungeKutta4Init(nn, &in4)))
    {
       XLALFree(dummy.data);
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
    }
 
    in2.totalmass = ak.totalmass;
@@ -522,7 +522,7 @@ XLALTaylorNWaveformEngine (
       {
          XLALRungeKutta4Free( integrator );
          XLALFree(dummy.data);
-         XLAL_ERROR(__func__, XLAL_EBADLEN);
+         XLAL_ERROR(XLAL_EBADLEN);
       }
 
       h = 4 * m * eta * xi * sin(2.*phi)/1.e14;
@@ -541,7 +541,7 @@ XLALTaylorNWaveformEngine (
       {
          XLALRungeKutta4Free( integrator );
          XLALFree(dummy.data);
-         XLAL_ERROR(__func__, XLAL_EFUNC);
+         XLAL_ERROR(XLAL_EFUNC);
       }
 
       /* Update the values of the dynamical variables */

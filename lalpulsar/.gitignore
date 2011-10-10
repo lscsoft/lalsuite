@@ -22,6 +22,7 @@ libtool
 src/LALPulsarConfig.h
 src/LALPulsarVCSInfo.h
 src/git_version
+src/lalpulsar-user-env.shell
 src/lalpulsar-user-env.csh
 src/lalpulsar-user-env.sh
 src/stamp-h2

@@ -65,7 +65,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	INT4 acceptanceCount = 0;
 	REAL8 nullLikelihood;
 	REAL8 logChainSwap = 0.0;
-	int tempIndex;
 	REAL8 *tempLadder = NULL;			//the temperature ladder
 	INT4 *acceptanceCountLadder = NULL;	//array of acceptance counts to compute the acceptance ratios.
 	double *TcurrentLikelihood = NULL; //the current likelihood for each chain
@@ -86,23 +85,47 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	REAL8 tempMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");   //max temperature in the temperature ladder
 	UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
 
-	UINT4 nIFO=0;
-	LALInferenceIFOData *ifodata1=runState->data;
 	ProcessParamsTable *ppt;
-  
-	while(ifodata1){
-		nIFO++;
-		ifodata1=ifodata1->next;
-	}
 	
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
 	nChain = MPIsize;		//number of parallel chain
-	tempIndex = MPIrank;		//set initial temp indices
-
+  
 	tempLadder = malloc(nChain * sizeof(REAL8));			//the temperature ladder
 	
+  /*Below we set up the temperature ladder*/
+  
+	if (nChain==1){ //If running with only one chain, the temperature is tempMax is specified, 1.0 otherwise
+    if(LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")){
+		  tempLadder[0]=tempMax;
+    }else{
+      tempLadder[0]=1.0;
+		  tempMax=1.0;
+    }
+	}
+	else { //Multiple temperature layouts
+		if(LALInferenceGetProcParamVal(runState->commandLine, "--inverseLadder")){ //temperature spacing uniform in 1/T
+			tempDelta = (1.0 - 1.0/tempMax)/(REAL8)(nChain-1);
+			for (t=0; t<nChain; ++t) {
+				tempLadder[t]=1.0/(REAL8)(1.0-t*tempDelta);
+			}
+		}
+    else if(LALInferenceGetProcParamVal(runState->commandLine, "--geomLadder")){ //Geometric spacing (most efficient so far. Should become default?
+      tempDelta=pow(tempMax,1.0/(REAL8)(nChain-1));
+      for (t=0;t<nChain; ++t) {
+        tempLadder[t]=pow(tempDelta,t);
+      }
+    }
+		else{ //epxonential spacing
+			tempDelta = log(tempMax)/(REAL8)(nChain-1);
+			for (t=0; t<nChain; ++t) {
+				tempLadder[t]=exp(t*tempDelta);
+				}
+			}
+		
+		}
+  
   if(MPIrank == 0){
     parametersVec = (REAL8 *)malloc(MPIsize*nPar*sizeof(REAL8)); 
     for (p=0;p<(nChain*nPar);++p){
@@ -126,47 +149,16 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   ppt=LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatio");
   if(ppt){
     acceptanceRatioOn = 1;
-
+    
   }
   ppt=LALInferenceGetProcParamVal(runState->commandLine, "--adapt");
   if (ppt) {
     adaptationOn = 1;
-
+    
   }
-
-	
-	
-	if (nChain==1){
-    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--tempMax");
-    if(ppt){
-		  tempLadder[0]=tempMax;
-    }else{
-      tempLadder[0]=1.0;
-		  tempMax=1.0;
-    }
-	}
-	else {
-		ppt = LALInferenceGetProcParamVal(runState->commandLine, "--inverseLadder");
-		if(ppt){
-			tempDelta = (1.0 - 1.0/tempMax)/(REAL8)(nChain-1);
-			for (t=0; t<nChain; ++t) {
-				tempLadder[t]=1.0/(REAL8)(1.0-t*tempDelta);
-			}
-		}
-    else if(LALInferenceGetProcParamVal(runState->commandLine, "--geomLadder")){
-      tempDelta=pow(tempMax,1.0/(REAL8)(nChain-1));
-      for (t=0;t<nChain; ++t) {
-        tempLadder[t]=pow(tempDelta,t);
-      }
-    }
-		else{
-			tempDelta = log(tempMax)/(REAL8)(nChain-1);
-			for (t=0; t<nChain; ++t) {
-				tempLadder[t]=exp(t*tempDelta);
-				}
-			}
-		
-		}
+  
+  
+  
   
   REAL8 s_gamma = 1.0;
 

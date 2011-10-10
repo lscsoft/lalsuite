@@ -19,12 +19,12 @@ static int XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,
 {
   // Check the relevant pointers
   if( !params || !mparams || !paramsInit )
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
 
   /* Check the PN order is sane */
   /* LAL_PNORDER_NUM_ORDER is 1 more than the maximum PN order implemented */
   if( params->order > LAL_PNORDER_NUM_ORDER )
-    XLAL_ERROR(__func__, XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
 
   REAL8 m1, m2;
   m1 = params->mass1;
@@ -179,7 +179,7 @@ static int XLALSTPNFramelessAdaptiveDerivatives(double t,
     const double values[], double dvalues[], void *mparams) 
 {
   /* coordinates and derivatives */
-  REAL8 s, omega, LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z, E1x, E1y, E1z;
+  REAL8 omega, LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z, E1x, E1y, E1z;
   REAL8 ds, domega, dLNhx, dLNhy, dLNhz, dS1x, dS1y, dS1z, dS2x, dS2y, dS2z; 
   REAL8 dE1x, dE1y, dE1z;
 
@@ -194,7 +194,8 @@ static int XLALSTPNFramelessAdaptiveDerivatives(double t,
   UNUSED(t);
 
   /* copy variables */
-  s    = values[0];  omega = values[1];
+  // UNUSED!!: s    = values[0];
+  omega = values[1];
   LNhx = values[2];  LNhy  = values[3];  LNhz = values[4] ;
   S1x  = values[5];  S1y   = values[6];  S1z  = values[7] ;
   S2x  = values[8];  S2y   = values[9];  S2z  = values[10];
@@ -323,26 +324,26 @@ int XLALSTPNFramelessWaveform(REAL4Vector *signalvec, InspiralTemplate *params)
 {
   // Check the relevant pointers
   if( !signalvec || !signalvec->data || !params )
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
 
   // Check the parameters are sane
   if( params->nStartPad < 0 || params->nEndPad < 0 || params->fLower <= 0
       || params->tSampling <= 0 || params->totalMass <= 0.)
-    XLAL_ERROR(__func__, XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
 
   UINT4 count;
   InspiralInit paramsInit;
 
   if( XLALInspiralSetup(&(paramsInit.ak), params) )
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if( XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), params) )
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));   
   /* Call the engine function */
   if( XLALSTPNFramelessAdaptiveWaveformEngine(signalvec, NULL, &count, params, 
       &paramsInit) )
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   return XLAL_SUCCESS;    
 }
@@ -371,26 +372,26 @@ int XLALSTPNFramelessWaveformTemplates(REAL4Vector *signalvec1,
   // Check the relevant pointers
   if( !signalvec1 || !signalvec1->data || !signalvec2 
       || !signalvec2->data || !params )
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
 
   // Check the parameters are sane
   if( params->nStartPad < 0 || params->nEndPad < 0 || params->fLower <= 0
       || params->tSampling <= 0 || params->totalMass <= 0.)
-    XLAL_ERROR(__func__, XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
 
 
   UINT4 count;
   InspiralInit paramsInit;
 
   if( XLALInspiralInit(params, &paramsInit) )
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));   
   memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));   
   /* Call the engine function */
   if( XLALSTPNFramelessAdaptiveWaveformEngine(signalvec1, signalvec2, 
       &count, params, &paramsInit) )
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 }
@@ -418,11 +419,11 @@ int XLALSTPNFramelessWaveformForInjection(CoherentGW *waveform,
 {
   // Check the relevant pointers exist
   if( !waveform || !params )
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
 
   // CoherentGW waveform->h shouldn't exist yet
   if( waveform->h )
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
 
   UINT4 count, i;
 
@@ -431,15 +432,13 @@ int XLALSTPNFramelessWaveformForInjection(CoherentGW *waveform,
 
   InspiralInit paramsInit;
 
-  CreateVectorSequenceIn in;
-
   /* Compute some parameters*/
 
   /* The start phase is passed via coa_phase in the SimInspiralTable, */
   /* then ppnParams->phi due to convention in GenerateInspiral.c */
   params->startPhase = ppnParams->phi; 
   if( XLALInspiralInit(params, &paramsInit) )
-    XLAL_ERROR(__func__,XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if (paramsInit.nbins==0)
     {
       XLALPrintWarning("Warning! Waveform of zero length requested in %s. Returning empty waveform.\n ", __func__);
@@ -458,7 +457,7 @@ int XLALSTPNFramelessWaveformForInjection(CoherentGW *waveform,
   /* Call the engine function */
   if( XLALSTPNFramelessAdaptiveWaveformEngine(hplus, hcross, &count, 
       params, &paramsInit) )
-    XLAL_ERROR(__func__,XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   /* Check an empty waveform hasn't been returned
      Is this something that we should actually check for?
@@ -480,13 +479,13 @@ int XLALSTPNFramelessWaveformForInjection(CoherentGW *waveform,
   if ( ( waveform->h = (REAL4TimeVectorSeries *) 
       XLALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) 
   {
-    XLAL_ERROR(__func__, XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
 
-
-  in.length = (UINT4)count;
-  in.vectorLength = 2;
+  // UNUSED!! CreateVectorSequenceIn in;
+  // in.length = (UINT4)count;
+  // in.vectorLength = 2;
   // '2' is the number of vectors - 1 for each of h+ and hx
   waveform->h->data = XLALCreateREAL4VectorSequence( (UINT4) count, 2);
 
@@ -564,7 +563,7 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
 
   /* other computed values */
   REAL8 unitHz, dt, m, lengths, norm;
-  REAL8 E2x, E2y, E2z;
+  REAL8 E2x, E2y;
   REAL8 hpluscos, hplussin, hcrosscos, hcrosssin;
 
   /* units */
@@ -611,7 +610,7 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
   if (!integrator) 
   {
     XLALPrintError("LALSTPNFramelessAdaptiveWaveformEngine: Cannot allocate integrator.\n");
-    XLAL_ERROR(__func__,XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* stop the integration only when the test is true */
@@ -627,7 +626,7 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
   if (!len) 
   {
     XLALPrintError("LALSTPNFramelessAdaptiveWaveformEngine: integration failed with errorcode %d.\n",intreturn);
-    XLAL_ERROR(__func__,XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* report on abnormal termination (TO DO: throw some kind of LAL error?) */
@@ -652,12 +651,12 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
   if (signalvec1 && len >= signalvec1->length) 
   {
     XLALPrintError("LALSTPNFramelessAdaptiveWaveformEngine: no space to write in signalvec1: %d vs. %d\n", len, signalvec1->length);
-    XLAL_ERROR(__func__,XLAL_EBADLEN);
+    XLAL_ERROR(XLAL_EBADLEN);
   }
   if (signalvec2 && len >= signalvec2->length) 
   {
     XLALPrintError("LALSTPNFramelessAdaptiveWaveformEngine: no space to write in signalvec2: %d vs. %d\n", len, signalvec2->length);
-    XLAL_ERROR(__func__,XLAL_EBADLEN);
+    XLAL_ERROR(XLAL_EBADLEN);
   }
 
   /* set up some aliases for the returned arrays; note vector 0 is time */
@@ -689,10 +688,10 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
 
     E2x = LNhy[i]*E1z[i] - LNhz[i]*E1y[i]; /* E2 = LNhat x E1 */
     E2y = LNhz[i]*E1x[i] - LNhx[i]*E1z[i];
-    E2z = LNhx[i]*E1y[i] - LNhy[i]*E1x[i];
 
     /*---- Uncomment the next line for debugging ----*/
-    /*fprintf(outFile,"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
+    /*    E2z = LNhx[i]*E1y[i] - LNhy[i]*E1x[i];
+          fprintf(outFile,"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
 		that[i] * m, vphi[i], omega[i], LNhx[i], LNhy[i], LNhz[i], 
 		S1x[i], S1y[i], S1z[i], S2x[i], S2y[i], S2z[i], 
 		E1x[i], E1y[i], E1z[i], E2x, E2y, E2z);*/

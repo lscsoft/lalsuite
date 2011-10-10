@@ -17,51 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALGEOPsdCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
-
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALGEOPsd.c}}
-
-Module to calculate the expected
-noise power spectral density for the GEO600 detector.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALGEOPsdCP}
-\idx{LALGEOPsd()}
-
-\subsubsection*{Description}
-
-The module takes as an input a frequency $f$ in Hz, and it
-calculates the noise spectral density (per Hz) $S_{h}(f)$
-for that frequency. The noise PSD is based on data provided by
-J. Hough and G. Cagnoli (see T. Damour, B.R. Iyer and B.S. Sathyaprakash,
-Phys. Rev. D 63, 044023 (2001)) and is approximated by
-the following:
-\begin{equation}
-   S_h(f) = 10^{-16} \left ( \frac{f}{f_0} \right)^{-30} +
-            34 \frac{f_0 }{ f } +
-   \frac{20 \left [1 - (f/f_0)^2 + 0.5 (f/f_0)^4 \right ] }{ 1 + 0.5 (f/f_0)^2}
-\end{equation}
-The returned value is scaled up by $s_0 = 10^{46}.$ In otherwords,
-the expected noise PSD is a factor $10^{46}$ lower.
-\subsubsection*{Algorithm}
-
-
-\subsubsection*{Uses}
-None.
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALGEOPsdCV}}
-
-</lalLaTeX>  */
-
-
 #include <lal/LALNoiseModels.h>
 
 NRCSID (LALGEOPSDC,"$Id$");
@@ -72,10 +27,32 @@ NRCSID (LALGEOPSDC,"$Id$");
 #define UNUSED
 #endif
 
-/* <lalVerbatim file="LALGEOPsdCP"> */
+/**
+\author Sathyaprakash, B. S.
+\ingroup LALNoiseModels_h
+\brief Module to calculate the expected noise power spectral density for the GEO600 detector.
+
+\heading{Description}
+
+The module takes as an input a frequency \f$f\f$ in Hz, and it
+calculates the noise spectral density (per Hz) \f$S_{h}(f)\f$
+for that frequency. The noise PSD is based on data provided by
+J. Hough and G. Cagnoli (see T. Damour, B.R. Iyer and B.S. Sathyaprakash,
+Phys. Rev. D 63, 044023 (2001)) and is approximated by
+the following:
+\f{equation}{
+   S_h(f) = 10^{-16} \left ( \frac{f}{f_0} \right)^{-30} +
+            34 \frac{f_0 }{ f } +
+   \frac{20 \left [1 - (f/f_0)^2 + 0.5 (f/f_0)^4 \right ] }{ 1 + 0.5 (f/f_0)^2}
+\f}
+The returned value is scaled up by \f$s_0 = 10^{46}.\f$ In otherwords,
+the expected noise PSD is a factor \f$10^{46}\f$ lower.
+
+*/
+
 void
 LALGEOPsd(LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
-{ /* </lalVerbatim> */
+{
 
    REAL8 x, seismic, thermal, shot;
 

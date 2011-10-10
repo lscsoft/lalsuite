@@ -93,14 +93,14 @@ XLALInspiralTiming2_0PN (
   REAL8 toff;
 
   if (params == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   if (f <= 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
   if (toffIn->t < 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM * f,oneby3);
@@ -146,14 +146,14 @@ XLALInspiralTiming2_2PN (
   REAL8 toff;
 
   if (params == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   if (f <= 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
   if (toffIn->t < 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM * f,oneby3);
@@ -201,14 +201,14 @@ XLALInspiralTiming2_3PN (
   REAL8 toff;
 
   if (params == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   if (f <= 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
   if (toffIn->t < 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM * f,oneby3);
@@ -258,14 +258,14 @@ XLALInspiralTiming2_4PN (
   REAL8 toff;
 
   if (params == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   if (f <= 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
   if (toffIn->t < 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM * f,oneby3);
@@ -317,14 +317,14 @@ XLALInspiralTiming2_5PN (
   REAL8 toff;
 
   if (params == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   if (f <= 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
   if (toffIn->t < 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM * f,oneby3);
@@ -379,14 +379,14 @@ XLALInspiralTiming2_6PN (
   REAL8 toff;
 
   if (params == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   if (f <= 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
   if (toffIn->t < 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM * f,oneby3);
@@ -442,14 +442,14 @@ XLALInspiralTiming2_7PN (
   REAL8 toff;
 
   if (params == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   if (f <= 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
   if (toffIn->t < 0)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM*f, oneby3);

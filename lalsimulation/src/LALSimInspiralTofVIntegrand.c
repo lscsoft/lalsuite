@@ -71,10 +71,10 @@ XLALSimInspiralTofVIntegrand(
 
 #ifndef LAL_NDEBUG
   if ( !params )
-    XLAL_ERROR_REAL8( __func__, XLAL_EFAULT );
+    XLAL_ERROR_REAL8( XLAL_EFAULT );
 
   if ( v <= 0.0 || v >= 1.0 )
-    XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+    XLAL_ERROR_REAL8( XLAL_EINVAL );
 #endif
 
   ak = (TofVIntegrandIn *) params;

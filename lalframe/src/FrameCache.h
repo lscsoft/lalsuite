@@ -41,8 +41,8 @@
 #define _FRAMECACHE_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #if defined(__cplusplus)
@@ -76,7 +76,7 @@ NRCSID( FRAMECACHEH, "$Id$" );
 typedef struct
 tagFrStat
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(FrStat);
   CHAR *source;
   CHAR *description;
   INT4  startTime;
@@ -106,7 +106,7 @@ FrStat;
 typedef struct
 tagFrCache
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(FrCache);
   UINT4   numFrameFiles;
   FrStat *frameFiles;
 }
@@ -130,7 +130,7 @@ FrCache;
 typedef struct
 tagFrCacheSieve
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(FrCacheSieve);
   const CHAR *srcRegEx;
   const CHAR *dscRegEx;
   const CHAR *urlRegEx;

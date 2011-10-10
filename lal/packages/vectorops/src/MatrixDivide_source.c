@@ -285,7 +285,6 @@ void F6 (
         /*  Variable Declarations  */
         UINT4Vector     *length;
         UINT4           ndims;
-        UINT4           ndims2;
         UINT4            iterator, myindex;
         UINT4            row, column;
 
@@ -317,9 +316,11 @@ void F6 (
 
         ASSERT ( A->dimLength, status, MATLABMATRIXH_ENULL, MATLABMATRIXH_MSGENULL);
 
+#ifndef LAL_NDEBUG
+        UINT4           ndims2;
         ndims2 = ((ATYPE2*)(A))->dimLength->length;
-
 	ASSERT ( ndims == ndims2, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
+#endif
 
 	for ( iterator = 0; iterator < ndims; iterator++)
 	{

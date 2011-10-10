@@ -213,8 +213,6 @@ int main( int argc, char *argv[] )
   OverlapReductionFunctionParameters   parameters;
   REAL4FrequencySeries     overlap;
 
-  REAL4FrequencySeries     dummyOutput;
-
   const REAL4 expectedOutputDataData[8] = {1.0, .2113956922,
 					   -.1372693019, .9606085997e-2,
 					   .6120349226e-1, -.5375432760e-1,
@@ -262,8 +260,11 @@ int main( int argc, char *argv[] )
   parameters.deltaF   = OVERLAPREDUCTIONFUNCTIONTESTC_DELTAF;
 
   overlap.data = NULL;
-
+#ifndef LAL_NDEBUG
+  REAL4FrequencySeries     dummyOutput;
   dummyOutput.data = NULL;
+#endif
+
 
   detectors.detectorOne = detectors.detectorTwo = plusAtOrigin;
 

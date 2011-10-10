@@ -17,65 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="InjectVectorCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{InjectVector.c}}
-\label{ss:InjectVector.c}
-
-Injects a vector of floating-point numbers into a vector of integers,
-with dithering.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{InjectVectorCP}
-\idx{LALSI2InjectVector()}
-\idx{LALSSInjectVector()}
-
-\subsubsection*{Description}
-
-The function \verb@LALSI2InjectVector()@ (i.e.\ ``Single-precision to
-\verb@INT2@'') dithers the contents of \verb@*output@, adds the
-contents of \verb@*signalvec@, and rounds to the nearest integer, storing
-the result back in \verb@*output@.  If desired, the random parameters
-for the dithering can be created outside this routine and passed in as
-\verb@*params@ (see \verb@Random.h@); if this pointer is \verb@NULL@,
-the parameters will be generated internally.
-
-The function \verb@LALSSInjectVector()@ (i.e.\ ``Single-precision to
-single-precision'') simply adds the contents of \verb@*signalvec@ to
-\verb@*output@ where they overlap, without performing any dithering.
-
-\subsubsection*{Algorithm}
-
-Dithering is done with a flat random distribution as described in
-\verb@Inject.h@.  Injected values outside the dynamic range of the
-output force the output to its ``rails'' of $-2^{8N-1}$ or
-$2^{8N-1}-1$, where $N$ is the number of bytes in the integer.  The
-two vectors need not be of equal length; the injection stops when
-either vector reaches its end.
-
-If \verb@params@ is \verb@NULL@, a \verb@RandomParams@ structure will
-be generated internally using a seed of zero (i.e.\ the current time
-will be used to initialize the pseudorandom sequence).
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALCreateRandomParams()
-LALDestroyRandomParams()
-LALUniformDeviate()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{InjectVectorCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -84,13 +25,54 @@ LALUniformDeviate()
 
 NRCSID( INJECTVECTORC, "$Id$" );
 
-/* <lalVerbatim file="InjectVectorCP"> */
+/**
+\author Creighton, T. D.
+\addtogroup InjectVector_c
+
+\brief Injects a vector of floating-point numbers into a vector of integers, with dithering.
+
+The function <tt>LALSI2InjectVector()</tt> (i.e.\ "Single-precision to INT2")
+dithers the contents of <tt>*output</tt>, adds the
+contents of <tt>*signalvec</tt>, and rounds to the nearest integer, storing
+the result back in <tt>*output</tt>.  If desired, the random parameters
+for the dithering can be created outside this routine and passed in as
+<tt>*params</tt> (see \ref Random_h); if this pointer is \c NULL,
+the parameters will be generated internally.
+
+The function <tt>LALSSInjectVector()</tt> (i.e.\ "Single-precision to
+single-precision") simply adds the contents of <tt>*signalvec</tt> to
+<tt>*output</tt> where they overlap, without performing any dithering.
+
+\heading{Algorithm}
+
+Dithering is done with a flat random distribution as described in
+\ref Inject.h.  Injected values outside the dynamic range of the
+output force the output to its "rails" of \f$-2^{8N-1}\f$ or
+\f$2^{8N-1}-1\f$, where \f$N\f$ is the number of bytes in the integer.  The
+two vectors need not be of equal length; the injection stops when
+either vector reaches its end.
+
+If \c params is \c NULL, a \c RandomParams structure will
+be generated internally using a seed of zero (i.e.\ the current time
+will be used to initialize the pseudorandom sequence).
+
+\heading{Uses}
+\code
+LALCreateRandomParams()
+LALDestroyRandomParams()
+LALUniformDeviate()
+\endcode
+
+@{
+*/
+
+/** See documentation in \ref InjectVector_c */
 void
 LALSI2InjectVector( LALStatus    *stat,
 		    INT2Vector   *output,
 		    REAL4Vector  *signalvec,
 		    RandomParams *params )
-{ /* </lalVerbatim> */
+{
   UINT4 n;  /* number of samples injected */
   UINT4 i;  /* an index */
   RandomParams *internal = NULL; /* internal random parameters */
@@ -152,12 +134,12 @@ LALSI2InjectVector( LALStatus    *stat,
 }
 
 
-/* <lalVerbatim file="InjectVectorCP"> */
+/** See documentation in \ref InjectVector_c */
 void
 LALSSInjectVector( LALStatus    *stat,
 		   REAL4Vector  *output,
 		   REAL4Vector  *signalvec )
-{ /* </lalVerbatim> */
+{
   UINT4 n;  /* number of samples injected */
   UINT4 i;  /* an index */
 
@@ -179,3 +161,4 @@ LALSSInjectVector( LALStatus    *stat,
     output->data[i] += signalvec->data[i];
   RETURN( stat );
 }
+/** @} */

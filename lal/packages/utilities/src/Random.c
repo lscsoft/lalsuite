@@ -124,12 +124,11 @@ INT4 XLALBasicRandom( INT4 i )
 
 RandomParams * XLALCreateRandomParams( INT4 seed )
 {
-  static const char *func = "XLALCreateRandomParams";
   RandomParams *params;
 
   params = XLALMalloc( sizeof( *params) );
   if ( ! params )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   while ( seed == 0 ) /* use system clock to get seed */
     seed = time( NULL );
@@ -145,7 +144,6 @@ RandomParams * XLALCreateRandomParams( INT4 seed )
 
 void XLALResetRandomParams( RandomParams *params, INT4 seed )
 {
-  /* static const char *func = "XLALResetRandomParams"; */
   UINT4 n;
 
   params->i = seed;
@@ -170,13 +168,12 @@ void XLALDestroyRandomParams( RandomParams *params )
 
 REAL4 XLALUniformDeviate( RandomParams *params )
 {
-  static const char *func = "XLALUniformDeviate";
   REAL4 ans;
   INT4 ndiv;
   INT4 n;
 
   if ( ! params )
-    XLAL_ERROR_REAL4( func, XLAL_EFAULT );
+    XLAL_ERROR_REAL4( XLAL_EFAULT );
 
   /* randomly choose which element of the vector of random numbers to use */
   ndiv = 1 + (m - 1)/(sizeof(params->v)/sizeof(*params->v));
@@ -196,14 +193,13 @@ REAL4 XLALUniformDeviate( RandomParams *params )
 
 int XLALNormalDeviates( REAL4Vector *deviates, RandomParams *params )
 {
-  static const char *func = "XLALNormalDeviates";
   REAL4 *data;
   INT4   half;
 
   if ( ! deviates || ! deviates->data || ! params )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( ! deviates->length )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   data = deviates->data;
   half = deviates->length/2;
@@ -260,17 +256,16 @@ int XLALNormalDeviates( REAL4Vector *deviates, RandomParams *params )
 
 REAL4 XLALNormalDeviate( RandomParams *params )
 {
-  static const char *func = "XLALNormalDeviate";
   REAL4Sequence *deviates;
   REAL4 deviate;
 
   if ( ! params )
-    XLAL_ERROR_REAL4( func, XLAL_EFAULT );
+    XLAL_ERROR_REAL4( XLAL_EFAULT );
 
   /* create a vector */
   deviates = XLALCreateREAL4Sequence(1);
   if(!deviates)
-    XLAL_ERROR_REAL4( func, XLAL_EFUNC );
+    XLAL_ERROR_REAL4( XLAL_EFUNC );
 
   /* call the actual function */
   XLALNormalDeviates( deviates, params );

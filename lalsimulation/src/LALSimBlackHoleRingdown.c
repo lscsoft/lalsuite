@@ -118,7 +118,7 @@ static complex XLALSimBlackHoleRingdownModeEigenvalueEvaluateContinuedFractionLe
 	}
 
 	/* only get here if MAXITER is exceeded */
-	XLAL_ERROR(__func__, XLAL_EMAXITER);
+	XLAL_ERROR(XLAL_EMAXITER);
 }
 
 
@@ -133,7 +133,7 @@ static int XLALSimBlackHoleRingdownModeSchwarzschildEigenvalueSolveResid(const g
 	omega = gsl_vector_get(x, 0) + I*gsl_vector_get(x, 1);
 	XLAL_TRY(cf = XLALSimBlackHoleRingdownModeEigenvalueEvaluateContinuedFractionLeaver(p->a, p->l, p->m, p->s, A, omega, XLALSimBlackHoleRingdownModeSphericalCoefficientsLeaver), errnum);
 	if (errnum)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	gsl_vector_set(f, 0, creal(cf));
 	gsl_vector_set(f, 1, cimag(cf));
@@ -154,10 +154,10 @@ static int XLALSimBlackHoleRingdownModeKerrEigenvalueSolveResid(const gsl_vector
 	omega = gsl_vector_get(x,2) + I*gsl_vector_get(x,3);
 	XLAL_TRY(cf1 = XLALSimBlackHoleRingdownModeEigenvalueEvaluateContinuedFractionLeaver(p->a, p->l, p->m, p->s, A, omega, XLALSimBlackHoleRingdownModeAngularCoefficientsLeaver), errnum);
 	if (errnum)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	XLAL_TRY(cf2 = XLALSimBlackHoleRingdownModeEigenvalueEvaluateContinuedFractionLeaver(p->a, p->l, p->m, p->s, A, omega, XLALSimBlackHoleRingdownModeRadialCoefficientsLeaver), errnum);
 	if (errnum)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	gsl_vector_set(f, 0, creal(cf1));
 	gsl_vector_set(f, 1, cimag(cf1));
 	gsl_vector_set(f, 2, creal(cf2));
@@ -183,7 +183,7 @@ static int XLALSimBlackHoleRingdownModeEigenvalueSolveSchwarzschild(complex *ome
 	gsl_vector *x = gsl_vector_alloc(ndim);
 
 	if (!x)
-		XLAL_ERROR(__func__, XLAL_ENOMEM);
+		XLAL_ERROR(XLAL_ENOMEM);
 
 	gsl_vector_set(x, 0, creal(*omega));
 	gsl_vector_set(x, 1, cimag(*omega));
@@ -196,7 +196,7 @@ static int XLALSimBlackHoleRingdownModeEigenvalueSolveSchwarzschild(complex *ome
 	solver = gsl_multiroot_fsolver_alloc(T, ndim);
 	if (!solver) {
 		gsl_vector_free(x);
-		XLAL_ERROR(__func__, XLAL_ENOMEM);
+		XLAL_ERROR(XLAL_ENOMEM);
 	}
 	gsl_multiroot_fsolver_set(solver, &f, x);
 
@@ -206,7 +206,7 @@ static int XLALSimBlackHoleRingdownModeEigenvalueSolveSchwarzschild(complex *ome
 		if (errnum) {
 			gsl_multiroot_fsolver_free(solver);
 			gsl_vector_free(x);
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		}
     		if (status)
       			break;
@@ -214,13 +214,13 @@ static int XLALSimBlackHoleRingdownModeEigenvalueSolveSchwarzschild(complex *ome
 		if (errnum) {
 			gsl_multiroot_fsolver_free(solver);
 			gsl_vector_free(x);
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		}
   	} while (status == GSL_CONTINUE && iter < MAXITER);
 	if (iter >= MAXITER) {
 		gsl_multiroot_fsolver_free(solver);
 		gsl_vector_free(x);
-		XLAL_ERROR(__func__, XLAL_EMAXITER);
+		XLAL_ERROR(XLAL_EMAXITER);
 	}
 
   	*omega = gsl_vector_get(solver->x, 0) + I*gsl_vector_get(solver->x, 1);
@@ -249,7 +249,7 @@ static int XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(complex *A, complex *
 	gsl_vector *x = gsl_vector_alloc(ndim);
 
 	if (!x)
-		XLAL_ERROR(__func__, XLAL_ENOMEM);
+		XLAL_ERROR(XLAL_ENOMEM);
 
 	gsl_vector_set(x, 0, creal(*A));
 	gsl_vector_set(x, 1, cimag(*A));
@@ -264,7 +264,7 @@ static int XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(complex *A, complex *
 	solver = gsl_multiroot_fsolver_alloc(T, ndim);
 	if (!solver) {
 		gsl_vector_free(x);
-		XLAL_ERROR(__func__, XLAL_ENOMEM);
+		XLAL_ERROR(XLAL_ENOMEM);
 	}
 	gsl_multiroot_fsolver_set(solver, &f, x);
 
@@ -274,7 +274,7 @@ static int XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(complex *A, complex *
 		if (errnum) {
 			gsl_multiroot_fsolver_free(solver);
 			gsl_vector_free(x);
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		}
     		if (status)
       			break;
@@ -282,13 +282,13 @@ static int XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(complex *A, complex *
 		if (errnum) {
 			gsl_multiroot_fsolver_free(solver);
 			gsl_vector_free(x);
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		}
   	} while (status == GSL_CONTINUE && iter < MAXITER);
 	if (iter >= MAXITER) {
 		gsl_multiroot_fsolver_free(solver);
 		gsl_vector_free(x);
-		XLAL_ERROR(__func__, XLAL_EMAXITER);
+		XLAL_ERROR(XLAL_EMAXITER);
 	}
 
   	*A = gsl_vector_get(solver->x, 0) + I*gsl_vector_get(solver->x, 1);
@@ -341,22 +341,22 @@ int XLALSimBlackHoleRingdownModeEigenvaluesLeaver(
 	}
 
 	if (a >= 0.5 || l < abs(s) || abs(m) > l || s > 0 || s < -2)
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 
 	/* start at Schwarzschild values */
   	*A = l*(l+1) - s*(s+1);
 	*omega = fac*(2*l+1-I); /* asymptotic value for large l */
 	if (XLALSimBlackHoleRingdownModeEigenvalueSolveSchwarzschild(omega, l, m, s) < 0)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/* step towards requested value of a */
   	for (atry = 0; atry < a; atry += 0.1 * (0.5 - atry))
 		if (XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(A, omega, atry, l, m, s) < 0)
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 
   	/* now use the current guess to get value at requested a */
   	if (XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(A, omega, a, l, m, s) < 0)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
   	/* if a was negative, apply the identity */
   	if (aneg) {
@@ -398,7 +398,7 @@ static complex XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(double mu, 
 		a_np1 = -(bet*a_n + gam*a_nm1)/alp; /* Eq. 19, second line */
 	}
   	if (n >= MAXITER)
-		XLAL_ERROR(__func__, XLAL_EMAXITER);
+		XLAL_ERROR(XLAL_EMAXITER);
   	sum *= pow(mup1, 0.5*abs(m-s));
   	sum *= pow(-mum1, 0.5*abs(m+s));
   	sum *= cexp(a*omega*mu);
@@ -417,7 +417,7 @@ static double XLALSimBlackHoleRingdownSpheriodalWaveFunctionNormIntegrand(double
 
 	XLAL_TRY(sphwf = XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(mu, p->a, p->l, p->m, p->s, p->A, p->omega), errnum);
 	if (errnum)
-		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 	r = cabs(sphwf);
 
 
@@ -450,17 +450,17 @@ static complex XLALSimBlackHoleRingdownSpheroidalWaveFunctionNormLeaver(double a
 	XLAL_TRY(status = gsl_integration_qags(&f, -1.0, 1.0, 0.0, 1e-6, WORKSPACESIZE, w, &integral, &error), errnum);
 	gsl_integration_workspace_free(w);
 	if (status || errnum) /* there was an error during integration */
-		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 
 	/* get complex part so that sphwf is real at mu=0 */
 	XLAL_TRY(sphwf = XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(0.0, a, l, m, s, A, omega), errnum);
 	if (errnum)
-		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 	norm = cabs(sphwf)/sphwf;
 
 	XLAL_TRY(sphwf = XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(-1.0 + EPS, a, l, m, s, A, omega), errnum);
 	if (errnum)
-		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 	sphwf *= norm;
 	signneg = signbit(creal(sphwf));
 	signneg = (l - (m>s?m:s))%2 ? !signneg : signneg;
@@ -507,14 +507,14 @@ complex XLALSimBlackHoleRingdownSpheroidalWaveFunctionLeaver(
  	int errnum;
 
 	if (fabs(mu) > 1.0 || fabs(a) >= 0.5 || l < abs(s) || abs(m) > l || s > 0 || s < -2)
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 
 	XLAL_TRY(norm = XLALSimBlackHoleRingdownSpheroidalWaveFunctionNormLeaver(a, l, m, s, A, omega), errnum);
 	if (errnum)
-		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 	XLAL_TRY(sphwf = XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(mu, a, l, m, s, A, omega), errnum);
 	if (errnum)
-		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 	sphwf *= norm;
 
 	return sphwf;
@@ -547,7 +547,7 @@ int XLALSimBlackHoleRingdownMode(
 	double a = 0.5*dimensionless_spin; /* convert to Leaver's convention 2M = 1 */
 	complex A, omega;
 	if (XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s) < 0)
-		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 	omega *= 0.5; /* convert from Leaver's convention 2M = 1 */
 	*frequency = fabs(creal(omega)) / (LAL_TWOPI * mass);
 	*quality   = fabs(creal(omega)) / (-2.0 * cimag(omega));
@@ -583,7 +583,7 @@ complex XLALSimBlackHoleRingdownSpheroidalWaveFunction(
 	complex sphwf;
 	
 	if (XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s) < 0)
-		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 	sphwf = XLALSimBlackHoleRingdownSpheroidalWaveFunctionLeaver(mu, a, l, m, s, A, omega);
 	return sphwf;
 }
@@ -624,17 +624,17 @@ int XLALSimBlackHoleRingdown(
 	int errnum;
 
 	if (XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s) < 0)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	XLAL_TRY(sphwf1 = XLALSimBlackHoleRingdownSpheroidalWaveFunctionLeaver(mu, a, l, m, s, A, omega), errnum);
 	XLAL_TRY(sphwf2 = XLALSimBlackHoleRingdownSpheroidalWaveFunctionLeaver(-mu, a, l, m, s, A, omega), errnum);
 	if (errnum)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	omega *= 0.5; /* convert from Leaver's convention 2M = 1 */
 	
 	/* compute length of waveform to compute */
 	length = ceil(log(LAL_REAL8_EPS) * LAL_G_SI * mass / (pow(LAL_C_SI, 3.0) * cimag(omega) * deltaT));
 	if (length < 1)
-		XLAL_ERROR(__func__, XLAL_EBADLEN);
+		XLAL_ERROR(XLAL_EBADLEN);
 
 	/* compute the amplitude factors for the +m and -m modes */
 	A1 = A2 = -4.0 * (LAL_G_SI*mass/(pow(LAL_C_SI, 2.0)*distance))
@@ -648,7 +648,7 @@ int XLALSimBlackHoleRingdown(
 	*hplus = XLALCreateREAL8TimeSeries("H_PLUS", t0, 0.0, deltaT, &lalStrainUnit, length);
 	*hcross = XLALCreateREAL8TimeSeries("H_CROSS", t0, 0.0, deltaT, &lalStrainUnit, length);
 	if (hplus == NULL || hcross == NULL)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/* compute the waveforms */
 	for (j = 0; j < length; ++j) {

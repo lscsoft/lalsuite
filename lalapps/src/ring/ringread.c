@@ -158,7 +158,6 @@ int main( int argc, char *argv[] )
   char **inFileNameList;
   char line[MAX_PATH];
   int  errnum;
-  static const char *func = "XLALSnglRingdownTableFromLIGOLw"; 
 
   UINT8 triggerInputTimeNS = 0;
 
@@ -1035,7 +1034,7 @@ int main( int argc, char *argv[] )
             break;
           default:
             XLALSetErrno( errnum );
-            XLAL_ERROR( func, XLAL_EFUNC );
+            XLAL_ERROR(XLAL_EFUNC );
         }
       
       /* only keep triggers from the data that we want to analyze */

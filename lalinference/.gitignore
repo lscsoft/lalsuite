@@ -22,6 +22,7 @@ libtool
 src/LALInferenceConfig.h
 src/LALInferenceVCSInfo.h
 src/git_version
+src/lalinference-user-env.shell
 src/lalinference-user-env.csh
 src/lalinference-user-env.sh
 src/stamp-h2

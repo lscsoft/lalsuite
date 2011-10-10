@@ -85,9 +85,6 @@ void PTMCMCLALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState,
 /* Jump around by 0.01 radians in angle on the sky */
 void PTMCMCLALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-void PTMCMCLALAdaptationSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-
 void PTMCMCLALInferenceRotateSky(LALInferenceRunState *state,LALInferenceVariables *parameter);
 INT4 PTMCMCLALInferenceReflectDetPlane(LALInferenceRunState *state,LALInferenceVariables *parameter);
 

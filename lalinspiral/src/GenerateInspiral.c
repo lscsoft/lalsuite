@@ -299,10 +299,10 @@ XLALGetOrderFromString(
 
 #ifndef LAL_NDEBUG
   if ( !thisEvent )
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if ( !order )
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 #endif
 
   if ( strstr(thisEvent, "newtonian") )
@@ -344,15 +344,13 @@ XLALGetOrderFromString(
   else
   {
     XLALPrintError( "Cannot parse order from string: %s\n", thisEvent );
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   return XLAL_SUCCESS;
 }
 
 int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent) {
-	static const char *func = "XLALGetSpinInteractionFromString";
-
 	if (strstr(thisEvent, "ALL")) {
 		*inter = LAL_AllInter;
 	} else if (strstr(thisEvent, "NO")) {
@@ -372,14 +370,13 @@ int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent)
 			*inter |= LAL_SSInter;
 		}
 		if (*inter == LAL_NOInter) {
-			XLAL_ERROR(func, XLAL_EDOM);
+			XLAL_ERROR(XLAL_EDOM);
 		}
 	}
 	return XLAL_SUCCESS;
 }
 
 int XLALGetAxisChoiceFromString(InputAxis *axisChoice, CHAR *thisEvent) {
-  //static const char *func = "XLALGetAxisChoiceFromString";
   if (strstr(thisEvent, "TotalJ")) {
     *axisChoice = TotalJ;
   } else if  (strstr(thisEvent, "OrbitalL")) {
@@ -391,7 +388,6 @@ int XLALGetAxisChoiceFromString(InputAxis *axisChoice, CHAR *thisEvent) {
 }
 
 int XLALGetAdaptiveIntFromString(UINT4 *fixedStep, CHAR *thisEvent) {
-  //static const char *func = "XLALGetAdaptiveIntFromString";
   if (strstr(thisEvent, "fixedStep")) {
     *fixedStep = 1;
   } else 
@@ -400,7 +396,6 @@ int XLALGetAdaptiveIntFromString(UINT4 *fixedStep, CHAR *thisEvent) {
 }
 
 int XLALGetInspiralOnlyFromString(UINT4 *inspiralOnly, CHAR *thisEvent) {
-  //static const char *func = "XLALGetinspiralOnlyFromString";
   if (strstr(thisEvent, "inspiralOnly")) {
     *inspiralOnly = 1;
   }
@@ -440,10 +435,10 @@ XLALGetApproximantFromString(
 
 #ifndef LAL_NDEBUG
   if ( !thisEvent )
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if ( !approximant )
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 #endif
 
   if ( strstr(thisEvent, "TaylorT1" ) )
@@ -529,7 +524,7 @@ XLALGetApproximantFromString(
   else
   {
     XLALPrintError( "Cannot parse approximant from string: %s \n", thisEvent );
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   return XLAL_SUCCESS;
@@ -566,7 +561,7 @@ XLALGenerateInspiralPopulatePPN(
 {
 #ifndef LAL_NDEBUG
   if ( !ppnParams || !thisEvent )
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 #endif
 
   /* input fields */
@@ -586,7 +581,7 @@ XLALGenerateInspiralPopulatePPN(
   {
     XLALPrintError( 
         "f_lower must be specified in the injection file generation.\n" );
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
   ppnParams->fStopIn  = -1.0 /
     ( sqrt(216.0) * LAL_PI * ppnParams->mTot * LAL_MTSUN_SI);
@@ -638,7 +633,7 @@ XLALGenerateInspiralPopulateInspiral(
 
 #ifndef LAL_NDEBUG
   if ( !inspiralParams || !thisEvent || !ppnParams )
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 #endif
 
   /* --- Let's fill the inspiral structure now --- */
@@ -673,7 +668,7 @@ XLALGenerateInspiralPopulateInspiral(
   if ( inspiralParams->approximant == SpinTaylor && thisEvent->inclination == 0 )
   {
     XLALPrintError( "Inclination cannot be exactly zero for SpinTaylor approximant.\n");
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
   inspiralParams->inclination =  thisEvent->inclination;
 

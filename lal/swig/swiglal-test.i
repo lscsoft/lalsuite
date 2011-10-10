@@ -3,6 +3,8 @@
 
 // Test variables/vectors/matrices for arrays of struct types.
 // Use to test that *_getel/*_setel accessors work correctly.
+%defaultctor swiglal_test_struct_type;
+%defaultdtor swiglal_test_struct_type;
 %inline %{
   struct swiglal_test_struct_type {
     int a;
@@ -20,6 +22,8 @@ SWIGLAL_GLOBAL_FIXED_2DARRAY_ELEM(swiglal_test_struct_type, swiglal_test_struct_
 // combinations appear to exist in LAL code, so the following definitions
 // exist to ensure all possible combinations are tested. They also test
 // the SWIGLAL*_ELEM macros, which provides *_getel and *_setel methods.
+%defaultctor swiglal_test_static_struct;
+%defaultdtor swiglal_test_static_struct;
 %inline %{
   enum swiglal_test_static_enum {
     swiglal_test_static_enum_a
