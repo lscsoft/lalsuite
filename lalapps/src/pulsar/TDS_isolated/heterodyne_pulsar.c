@@ -1320,11 +1320,9 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
         return NULL; /* couldn't read frame data */
       }
 
-      fprintf(stderr, "About to copy data\n");
       for(i=0;i<(INT4)length;i++)
         dblseries->data->data[i] = scalefac*frvect->dataD[i];
 
-      fprintf(stderr, "Copied data\n");
     }
     else{ /* Virgo data */
       /* check that data doesn't contain NaNs */
@@ -1654,13 +1652,15 @@ INT4 heterodyneflag){
                 nothing */
 
     if(strstr(jnkstr, "#")){
-      rc = fscanf(fp, "%*[^\n]");   /* if == # then skip to the end of the line */
+       /* if == # then skip to the end of the line */
+      if ( fscanf(fp, "%*[^\n]") == EOF ) break;
       continue;
     }
     else{
       fseek(fp, offset, SEEK_SET); /* if line doesn't start with a # then it is
                                       data */
-      rc = fscanf(fp, "%d%d%d%d", &num, &starts->data[i], &stops->data[i], &dur);
+      if( fscanf(fp, "%d%d%d%d", &num, &starts->data[i], 
+                 &stops->data[i], &dur) == EOF ) break;
       /*format is segwizard type: num starts stops dur */
       
       /* if performing a fine heterodyne remove the first 60 secs at the start

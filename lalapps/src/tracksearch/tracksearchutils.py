@@ -1377,7 +1377,7 @@ class candidateList:
         if (uniqF.__len__() < 10):
             print "Warning less than ten intervals used to determine bin frequency width!"
         self.freqWidth=float(avgF)
-        ans=str("%9.9f"%float(avgT)).split('.')
+        ans=str("%10.9f"%float(avgT)).split('.')
         self.gpsWidth=gpsInt(ans[0],ans[1])
         if self.verboseMode:
             outString='Found: FRes %2.3f TRes %s'%(self.freqWidth,self.gpsWidth.display())
@@ -2776,7 +2776,7 @@ class candidateList:
         pylab.scatter(brightSpotX,brightSpotY,brightSpotZ,color='black',marker='o')
         pylab.xlabel(str("Time %s"%(timeLabel)))
         pylab.ylabel("Freq (Hz)")
-        pylab.figtext(0.01,0.95,"GPS %9.2f"%(minX))
+        pylab.figtext(0.01,0.95,"GPS %10.2f"%(minX))
         textLocX=0.80
         if not useLogColors:
             pylab.figtext(textLocX,0.025,str(myColorMap).upper()+":Linear Coloring")

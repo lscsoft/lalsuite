@@ -237,7 +237,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
 	int ampO                  /**< twice PN order of the amplitude */
 	)
 {
-    REAL8 M, eta, eta2, dm, dist, ampfac, phi, phiShift, v, v2, v3, v4, v5;
+  REAL8 M, eta, eta2, dm, dist, ampfac, phi, phiShift, v, v2, v3;
     REAL8 hp0, hp05, hp1, hp15, hp2, hp25;
     REAL8 hc0, hc05, hc1, hc15, hc2, hc25;
     REAL8 ci, si, ci2, ci4, ci6, si2, si4, si5;
@@ -282,7 +282,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
     {
         /* Abbreviated names in lower case for time series at this sample */
         phi = Phi->data->data[idx]; 	v = V->data->data[idx];   
-        v2 = v * v; 	v3 = v * v2; 	v4 = v2*v2;	v5 = v * v4;
+        v2 = v * v; 	v3 = v * v2; 	// UNUSED!!: v4 = v2*v2;// UNUSED!!: v5 = v * v4;
 
         /** 
          * As explained in Arun et al, a phase shift can be applied 

@@ -123,7 +123,7 @@ void ComputeFStatFreqBand ( LALStatus *status,				/**< pointer to LALStatus stru
 			    )
 {
   const char *fn = "ComputeFStatFreqBand()";
-  UINT4 numDetectors, numBins, k;
+  UINT4 numBins, k;
   REAL8 deltaF, fStart;
   Fcomponents Fstat;
   PulsarDopplerParams thisPoint;
@@ -137,8 +137,7 @@ void ComputeFStatFreqBand ( LALStatus *status,				/**< pointer to LALStatus stru
   ASSERT ( multiDetStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( params, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
 
-  numDetectors = multiSFTs->length;
-  ASSERT ( multiDetStates->length == numDetectors, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+  ASSERT ( multiDetStates->length == multiSFTs->length, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   ASSERT ( fstatVector, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );

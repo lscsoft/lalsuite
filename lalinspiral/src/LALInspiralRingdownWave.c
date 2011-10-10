@@ -1063,8 +1063,7 @@ INT4 XLALInspiralHybridAttachRingdownWave (
       REAL4Vector		*ddinspwave;
       REAL4VectorSequence	*inspwaves1;
       REAL4VectorSequence	*inspwaves2;
-      REAL8 dt, c1;
-      REAL8 tmatch;
+      REAL8 dt;
       REAL8 mTot; /* In geometric units */
 
    /* Attaching position set by omega_match */
@@ -1072,9 +1071,9 @@ INT4 XLALInspiralHybridAttachRingdownWave (
    /* -0.01 because the current EOBNR 4PN setting can't reach omega_match */
 
       dt = 1./params->tSampling;
-      tmatch = matchrange->data[1];
+      // UNUSED!!: REAL8 tmatch = matchrange->data[1];
 
-      c1 = 1./(LAL_PI*LAL_MTSUN_SI*params->totalMass);
+      // UNUSED!!: REAL8 c1 = 1./(LAL_PI*LAL_MTSUN_SI*params->totalMass);
       mTot  = params->totalMass * LAL_MTSUN_SI;
 
       /* Create memory for the QNM frequencies */

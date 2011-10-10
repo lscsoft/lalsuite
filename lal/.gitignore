@@ -48,7 +48,9 @@ lib/git_info.sed
 lib/git_version
 lib/lal-version
 libtool
-misc/lal-user-env.*sh
+misc/lal-user-env.shell
+misc/lal-user-env.csh
+misc/lal-user-env.sh
 misc/uninstall-lal.sh
 packages/*/doc/main.pdf
 packages/*/include/*.tex

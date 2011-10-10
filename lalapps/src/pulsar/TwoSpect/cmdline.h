@@ -43,9 +43,9 @@ struct gengetopt_args_info
   char * config_arg;	/**< @brief Configuration file in gengetopt format for passing parameters.  */
   char * config_orig;	/**< @brief Configuration file in gengetopt format for passing parameters original value given at command line.  */
   const char *config_help; /**< @brief Configuration file in gengetopt format for passing parameters help description.  */
-  int verbosity_arg;	/**< @brief Verbosity level (default='0').  */
-  char * verbosity_orig;	/**< @brief Verbosity level original value given at command line.  */
-  const char *verbosity_help; /**< @brief Verbosity level help description.  */
+  int verbosity_arg;	/**< @brief LAL debug level (default='0').  */
+  char * verbosity_orig;	/**< @brief LAL debug level original value given at command line.  */
+  const char *verbosity_help; /**< @brief LAL debug level help description.  */
   double Tobs_arg;	/**< @brief Total observation time.  */
   char * Tobs_orig;	/**< @brief Total observation time original value given at command line.  */
   const char *Tobs_help; /**< @brief Total observation time help description.  */
@@ -132,9 +132,12 @@ struct gengetopt_args_info
   double dopplerMultiplier_arg;	/**< @brief Multiplier for the Doppler velocity (default='1.0').  */
   char * dopplerMultiplier_orig;	/**< @brief Multiplier for the Doppler velocity original value given at command line.  */
   const char *dopplerMultiplier_help; /**< @brief Multiplier for the Doppler velocity help description.  */
-  int templateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='50').  */
-  char * templateLength_orig;	/**< @brief Maximum number of pixels to use in the template original value given at command line.  */
-  const char *templateLength_help; /**< @brief Maximum number of pixels to use in the template help description.  */
+  int minTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='50').  */
+  char * minTemplateLength_orig;	/**< @brief Maximum number of pixels to use in the template original value given at command line.  */
+  const char *minTemplateLength_help; /**< @brief Maximum number of pixels to use in the template help description.  */
+  int maxTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='50').  */
+  char * maxTemplateLength_orig;	/**< @brief Maximum number of pixels to use in the template original value given at command line.  */
+  const char *maxTemplateLength_help; /**< @brief Maximum number of pixels to use in the template help description.  */
   char * skyRegion_arg;	/**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky.  */
   char * skyRegion_orig;	/**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky original value given at command line.  */
   const char *skyRegion_help; /**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky help description.  */
@@ -202,7 +205,8 @@ struct gengetopt_args_info
   unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */
   unsigned int ephemYear_given ;	/**< @brief Whether ephemYear was given.  */
   unsigned int dopplerMultiplier_given ;	/**< @brief Whether dopplerMultiplier was given.  */
-  unsigned int templateLength_given ;	/**< @brief Whether templateLength was given.  */
+  unsigned int minTemplateLength_given ;	/**< @brief Whether minTemplateLength was given.  */
+  unsigned int maxTemplateLength_given ;	/**< @brief Whether maxTemplateLength was given.  */
   unsigned int skyRegion_given ;	/**< @brief Whether skyRegion was given.  */
   unsigned int skyRegionFile_given ;	/**< @brief Whether skyRegionFile was given.  */
   unsigned int SFToverlap_given ;	/**< @brief Whether SFToverlap was given.  */

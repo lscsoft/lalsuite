@@ -17,14 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/** \file
- *  \ingroup SkyCoordinates
- *  \author Creighton, T. D.
- *  \date $Date$
- *  \brief Converts among Galactic, ecliptic, and equatorial coordinates.
- *
- * $Id$
- *
+#include <math.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/SkyCoordinates.h>
+
+#define LAL_ALPHAGAL (3.366032942)
+#define LAL_DELTAGAL (0.473477302)
+#define LAL_LGAL     (0.576)
+
+NRCSID( CELESTIALCOORDINATESC, "$Id$" );
+
+/**
+   \author T.D. Creighton
+   \addtogroup CelestialCoordinates_c
+   \brief Converts among Galactic, ecliptic, and equatorial coordinates.
+
 These functions perform the specified coordinate transformation on the
 contents of \a input and store the result in \a *output.  The
 two pointers may point to the same object, in which case the
@@ -39,7 +47,7 @@ ecliptic coordinates.  At the risk of additional computational
 overhead, it is simple to use the equatorial coordinate system as an
 intermediate step.
 
-\par Description
+\heading{Description}
 
 These functions perform the specified coordinate transformation on the
 contents of \a input and store the result in \a output.  The
@@ -55,7 +63,7 @@ ecliptic coordinates.  At the risk of additional computational
 overhead, it is simple to use the equatorial coordinate system as an
 intermediate step.
 
-\par Algorithm
+\heading{Algorithm}
 
 These routines follow the spherical angle relations on p. 13
 of \ref Lang_K1999.  Note that the actual formulae for Galactic
@@ -144,18 +152,9 @@ which varies over time; at epoch J200 it has a mean value of:
 \f]
 
 */
+/** @{ */
 
-#include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/SkyCoordinates.h>
-
-#define LAL_ALPHAGAL (3.366032942)
-#define LAL_DELTAGAL (0.473477302)
-#define LAL_LGAL     (0.576)
-
-NRCSID( CELESTIALCOORDINATESC, "$Id$" );
-
+/** See documentation in  \ref CelestialCoordinates_c */
 void
 LALGalacticToEquatorial( LALStatus   *stat,
 			 SkyPosition *output,
@@ -203,7 +202,7 @@ LALGalacticToEquatorial( LALStatus   *stat,
   RETURN( stat );
 }
 
-
+/** See documentation in  \ref CelestialCoordinates_c */
 void
 LALEquatorialToGalactic( LALStatus   *stat,
 			 SkyPosition *output,
@@ -251,7 +250,7 @@ LALEquatorialToGalactic( LALStatus   *stat,
   RETURN( stat );
 }
 
-
+/** See documentation in  \ref CelestialCoordinates_c */
 void
 LALEclipticToEquatorial( LALStatus   *stat,
 			 SkyPosition *output,
@@ -296,7 +295,7 @@ LALEclipticToEquatorial( LALStatus   *stat,
   RETURN( stat );
 }
 
-
+/** See documentation in  \ref CelestialCoordinates_c */
 void
 LALEquatorialToEcliptic( LALStatus   *stat,
 			 SkyPosition *output,
@@ -340,3 +339,4 @@ LALEquatorialToEcliptic( LALStatus   *stat,
 
   RETURN( stat );
 }
+/** @} */

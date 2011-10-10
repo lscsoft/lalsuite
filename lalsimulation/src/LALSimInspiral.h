@@ -20,8 +20,19 @@
 #ifndef _LALSIMINSPIRAL_H
 #define _LALSIMINSPIRAL_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
+#define SWIGLAL_STRUCT_LALALLOC(...)
+#endif
+
 #include <lal/LALDatatypes.h>
 #include <lal/LALSimIMR.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
 
 NRCSID(LALSIMINSPIRALH, "$Id$");
 
@@ -719,5 +730,11 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
 		LALSpinInteraction spinFlags, /**< flags to control spin effects */
 		int phaseO                 /**< twice PN phase order */
 		);
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
 
 #endif /* _LALSIMINSPIRAL_H */

@@ -203,8 +203,6 @@ int main(int argc, char *argv[])
   StochasticInverseNoiseInput        input;
   StochasticInverseNoiseOutput       output;
 
-  REAL4FrequencySeries     realBadData;
-  COMPLEX8FrequencySeries  complexBadData;
   LIGOTimeGPS              epoch = {1234,56789};
 
   REAL4FrequencySeries     wNoise;
@@ -233,16 +231,18 @@ int main(int argc, char *argv[])
   wNoise.epoch  = epoch;
   wNoise.data   = NULL;
   invNoise.data = NULL;
-
-  realBadData = wNoise;
+#ifndef LAL_NDEBUG
+  REAL4FrequencySeries     realBadData = wNoise;
+#endif
 
   wFilter.f0     = wNoise.f0;
   wFilter.deltaF  = wNoise.deltaF;
   wFilter.epoch   = wNoise.epoch;
   wFilter.data    = NULL;
   hwInvNoise.data = NULL;
-
-  complexBadData  = wFilter;
+#ifndef LAL_NDEBUG
+  COMPLEX8FrequencySeries  complexBadData  = wFilter;
+#endif
 
   /******** Set Testing  Units ********/
   /* response function */

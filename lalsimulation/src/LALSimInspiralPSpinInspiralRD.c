@@ -2086,7 +2086,6 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
   REAL8 initomega,initphi;
   REAL8 inc;
   REAL8 LNhmag,initJmag;
-  REAL8 LNhxy;
   REAL8 initS1[3],initS2[3],initLNh[3],initJ[3];
   REAL8 iS1[3],iS2[3];
   REAL8 phiJ,thetaJ;
@@ -2312,10 +2311,13 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
     break;
   }
 
+  /** UNUSED!!
+  REAL8 LNhxy;
   if (initS1[0]*initS1[0]+initS1[1]*initS1[1]+initS2[0]*initS2[0]+initS2[1]*initS2[1])
     LNhxy=sqrt(initLNh[0]*initLNh[0]+initLNh[1]*initLNh[1]);
   else
     LNhxy=1.;
+  UNUSED!! */
 
   /*All the PN formulas used in the differential equation integration 
     assume that the spin variables are the physical ones divided by

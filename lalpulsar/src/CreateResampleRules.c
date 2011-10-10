@@ -234,7 +234,6 @@ LALCreateResampleRules( LALStatus          *stat,
   REAL8 tRuleStart; /* Start time for the resampling rules */
   REAL8 tRuleStop;  /* Stop time for the resampling rules */
   REAL8 tPolyStart; /* Start time for the polynomial fits */
-  REAL8 tPolyStop;  /* Stop time for the polynomial fits */
   REAL8 startDiff;  /* Offset between tau and t at tRuleStart */
   REAL8 stopDiff=0; /* Offset between tau and t at tRuleStop */
   REAL8 dt;         /* Resampled time interval */
@@ -279,9 +278,12 @@ LALCreateResampleRules( LALStatus          *stat,
     +(1.0e-9)*params->stop.gpsNanoSeconds;
   tPolyStart=polyco->start.gpsSeconds
     +(1.0e-9)*polyco->start.gpsNanoSeconds;
+#ifndef LAL_NDEBUG
+  REAL8 tPolyStop;  /* Stop time for the polynomial fits */
   tPolyStop=tPolyStart+polyco->tBound->data[polyco->tBound->length-1];
   ASSERT(tRuleStop<tPolyStop,stat,RESAMPLEH_ETIME,
 	 RESAMPLEH_MSGETIME);
+#endif
   ASSERT(tRuleStart>tPolyStart,stat,RESAMPLEH_ETIME,
 	 RESAMPLEH_MSGETIME);
 

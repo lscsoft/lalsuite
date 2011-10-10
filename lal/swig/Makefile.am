@@ -28,37 +28,8 @@ iface-links :
 		fi; \
 	done
 
-# generic environment setup for SWIG wrapping module
-$(swig_envfile).shell ::
-	@echo '# source to access $(PACKAGE_NAME) SWIG wrapping modules for:' > $@; \
-	for subdir in $(SUBDIRS); do \
-		( cd $$subdir && $(MAKE) $@ ); \
-		test ! -f $$subdir/$@ || cat $$subdir/$@ >> $@; \
-	done
-
-# generate environmental setups for specific shells
-$(swig_envfile).sh : $(swig_envfile).shell
-	@${SED} 's|^\([A-Z_][A-Z_]*\)=|export \1=|' $< > $@
-$(swig_envfile).csh : $(swig_envfile).shell
-	@${SED} 's|^\([A-Z_][A-Z_]*\)=|[ $${?\1} ] \&\& setenv \1; setenv \1 |' $< > $@
-install-data-local : $(swig_envfile).sh $(swig_envfile).csh
-	$(MKDIR_P) $(sysconfdir)
-	$(INSTALL_DATA) $(swig_envfile).sh $(sysconfdir)
-	$(INSTALL_DATA) $(swig_envfile).csh $(sysconfdir)
-
-# cleanup
-CLEANFILES = $(swig_envfile).shell \
-             $(swig_envfile).sh \
-             $(swig_envfile).csh
-
 # extra files for distribution
 EXTRA_DIST = swig-common.mk \
              swig-header.mk
-
-else # !SWIG_BUILD
-
-# do not generate environmental setups for specific shells
-$(swig_envfile).sh :
-$(swig_envfile).csh :
 
 endif # SWIG_BUILD

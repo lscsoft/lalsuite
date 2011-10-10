@@ -96,7 +96,13 @@ required to have double-include protection.
 extern "C" {
 #endif
 
-#ifndef SWIG /* exclude from SWIG interface */
+#ifdef SWIG
+
+/* exclude from SWIG interface */
+#define RCSID(id)
+#define NRCSID(name,id)
+
+#else /* !SWIG */
 
 #if !defined(lint)
 #  ifndef __GNUC__

@@ -1412,7 +1412,8 @@ SkySquare2String (LALStatus *status,	/**< pointer to LALStatus structure */
   onePoint = (AlphaBand == 0) && (DeltaBand == 0);
   region2D = (AlphaBand != 0) && (DeltaBand != 0);
 
-  ASSERT ( onePoint || region2D, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  if ( ! ( onePoint || region2D ) )
+    ABORT ( status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
 
   Da = AlphaBand;
   Dd = DeltaBand;
@@ -1699,12 +1700,14 @@ getMetricEllipse(LALStatus *status,
 
   REAL8 gaa, gad, gdd;
   REAL8 smin, smaj, angle;
-  UINT4 dim;
+
   INITSTATUS( status, "getMetricEllipse", DOPPLERSCANC );
 
   ASSERT ( metric, status, DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
-  dim = dim0 + 2;
-  ASSERT ( metric->length >= dim*(dim+1)/2, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+
+  UINT4 dim = dim0 + 2;
+  if ( ! ( metric->length >= dim*(dim+1)/2 ) )
+    ABORT ( status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 
   gaa = metric->data[ PMETRIC_INDEX(dim0 + 0, dim0 + 0) ];
   gad = metric->data[ PMETRIC_INDEX(dim0 + 0, dim0 + 1) ];

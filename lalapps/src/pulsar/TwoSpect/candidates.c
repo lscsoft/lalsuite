@@ -266,9 +266,9 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
             if (loc2 > 1 && aveperiod >= params->Pmin && aveperiod <= params->Pmax) {
                INT4 numofmoddepths = (INT4)floorf(2*(maxdf-mindf)*params->Tcoh)+1;
                candidate cand;
-               templateStruct *template = new_templateStruct(params->templatelength);
+               templateStruct *template = new_templateStruct(params->maxtemplatelength);
                if (template==NULL) {
-                  fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, params->templatelength);
+                  fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, params->maxtemplatelength);
                   XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                }
                farStruct *farval = new_farStruct();
@@ -384,15 +384,21 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
    }
    
    //Allocate memory for template
-   templateStruct *template = new_templateStruct(inputParams->templatelength);
+   templateStruct *template = new_templateStruct(inputParams->maxtemplatelength);
    if (template==NULL) {
-      fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
+      fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->maxtemplatelength);
       XLAL_ERROR(fn, XLAL_EFUNC); 
    }
    
    for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
       //Assess the IHS candidate if the signal is away from the band edges, the modulation depth is greater or equal to minimum allowed and less than or equal to the maximum allowed, and if the period/modulation depth combo is within allowable limits for a template to be made. We will cut the period space in the next step.
-      if ( (ihsCandidates->data[ii].fsig-ihsCandidates->data[ii].moddepth-6.0/inputParams->Tcoh)>inputParams->fmin && (ihsCandidates->data[ii].fsig+ihsCandidates->data[ii].moddepth+6.0/inputParams->Tcoh)<(inputParams->fmin+inputParams->fspan) && ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period,inputParams->Tcoh) && ihsCandidates->data[ii].period>=(2.0*3600.0) && ihsCandidates->data[ii].period<=(0.2*inputParams->Tobs) ) {
+      if ( (ihsCandidates->data[ii].fsig-ihsCandidates->data[ii].moddepth-6.0/inputParams->Tcoh)>inputParams->fmin && 
+          (ihsCandidates->data[ii].fsig+ihsCandidates->data[ii].moddepth+6.0/inputParams->Tcoh)<(inputParams->fmin+inputParams->fspan) && 
+          ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period,inputParams->Tcoh) && 
+          ihsCandidates->data[ii].period>=(2.0*3600.0) && 
+          ihsCandidates->data[ii].period<=(0.2*inputParams->Tobs) ) {
+         
+         resetTemplateStruct(template);
          
          //Make a Gaussian train template
          makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
@@ -448,6 +454,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
          if (bestProb == 0.0) {
             //Shift period by harmonics
             for (jj=2; jj<6; jj++) {
+            //for (jj=2; jj<3; jj++) {
                if (ihsCandidates->data[ii].period/jj > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && ihsCandidates->data[ii].period/jj >= 2.0*3600.0) {
                   ihsCandidates->data[ii].period /= (REAL8)jj;
                   makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
@@ -481,7 +488,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      bestproberrcode = proberrcode;
                   }
                   ihsCandidates->data[ii].period *= (REAL8)jj;
-               } /* shorter period harmonics */
+               } // shorter period harmonics
                if (ihsCandidates->data[ii].period*jj <= 0.2*inputParams->Tobs) {
                   ihsCandidates->data[ii].period *= (REAL8)jj;
                   makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
@@ -515,11 +522,12 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      bestproberrcode = proberrcode;
                   }
                   ihsCandidates->data[ii].period /= (REAL8)jj;
-               } /* longer period harmonics */
-            } /* shift by harmonics for jj < 6 (harmonics) */
+               } // longer period harmonics
+            } // shift by harmonics for jj < 6 (harmonics)
             
             //Shift by fractions
-            for (jj=0; jj<3; jj++) {
+            for (jj=1; jj<5; jj++) {
+            //for (jj=1; jj<2; jj++) {
                REAL8 periodfact = (jj+1.0)/(jj+2.0);
                if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>=2.0*3600.0) {
                   
@@ -560,7 +568,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      bestproberrcode = proberrcode;
                   }
                   ihsCandidates->data[ii].period /= periodfact;
-               } /* shift shorter period */
+               } // shift shorter period
                periodfact = 1.0/periodfact;
                if ( periodfact*ihsCandidates->data[ii].period <= 0.2*inputParams->Tobs ) {
                   ihsCandidates->data[ii].period *= periodfact;
@@ -595,9 +603,9 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      bestproberrcode = proberrcode;
                   }
                   ihsCandidates->data[ii].period /= periodfact;
-               } /* shift longer period */
-            } /* for jj < 3 (fractions of period) */
-         } /* if a best probability was not found */
+               } // shift longer period
+            } // for jj < 3 (fractions of period)
+         } // if a best probability was not found
          
          //If a potentially interesting candidate has been found (exceeding the FAR threshold) then try some new periods
          if (bestProb != 0.0) {
@@ -629,7 +637,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      bestproberrcode = proberrcode;
                   }
                   ihsCandidates->data[ii].period *= (REAL8)jj;
-               } /* shorter period harmonics */
+               } // shorter period harmonics
                if (ihsCandidates->data[ii].period*jj <= 0.2*inputParams->Tobs) {
                   ihsCandidates->data[ii].period *= (REAL8)jj;
                   makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
@@ -656,11 +664,11 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      bestproberrcode = proberrcode;
                   }
                   ihsCandidates->data[ii].period /= (REAL8)jj;
-               } /* longer period harmonics */
-            } /* shift by harmonics */
+               } // longer period harmonics
+            } // shift by harmonics
             
             //Shift period by fractions
-            for (jj=0; jj<10; jj++) {
+            for (jj=1; jj<10; jj++) {
                REAL8 periodfact = (jj+1.0)/(jj+2.0);
                if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>=2.0*3600.0) {
                   ihsCandidates->data[ii].period *= periodfact;
@@ -688,7 +696,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      bestproberrcode = proberrcode;
                   }
                   ihsCandidates->data[ii].period /= periodfact;
-               } /* shift to shorter period */
+               } // shift to shorter period
                periodfact = 1.0/periodfact;
                if ( periodfact*ihsCandidates->data[ii].period<=0.2*inputParams->Tobs ) {
                   ihsCandidates->data[ii].period *= periodfact;
@@ -716,14 +724,11 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      bestproberrcode = proberrcode;
                   }
                   ihsCandidates->data[ii].period /= periodfact;
-               } /* shift to longer period */
-            } /* for jj < 10 (period fractions) */
-         } /* if bestR != 0.0 */
+               } // shift to longer period
+            } // for jj < 10 (period fractions)
+         } // if bestR != 0.0
          
          if (bestProb != 0.0) {
-            //If a better period was found, then make sure to save it
-            //if (bestPeriod != 0.0) ihsCandidates->data[ii].period = bestPeriod;
-            
             if (loggedacandidate==1 && bestProb < output->data[output->numofcandidates-1].prob) {
                output->data[output->numofcandidates-1].prob = bestProb;
                output->data[output->numofcandidates-1].period = bestPeriod;

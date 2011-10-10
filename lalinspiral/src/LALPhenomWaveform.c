@@ -272,7 +272,7 @@ int XLALBBHPhenTimeDomEngine(
     UINT4            *countback,  /**< output number of non-zero samples */
     InspiralTemplate *params) {
   REAL8 dt, cosI, fLower, peakAmp, fCut, fRes, f, totalMass, softWin, z1, z2;
-  REAL8 fLowerOrig, eta, tau0, winFLo, winFHi, sigLo, sigHi, tF0, expectedAmplRatio;
+  REAL8 fLowerOrig, eta, tau0, winFLo, sigLo, sigHi, tF0, expectedAmplRatio;
   REAL8 phaseShift, sig1, sig2, startPhaseOrig, phiC;
   REAL4 windowLength;
   UINT4 i, j, k, l, n, peakAmpIdx, sigLength, iLower;
@@ -386,7 +386,7 @@ int XLALBBHPhenTimeDomEngine(
   fRes = params->tSampling/n;
 
   winFLo = (fLowerOrig + fLower)/2.;
-  winFHi = (fCut + phenParams.fCut)/2.;
+  // UNUSED!!: REAL8 winFHi = (fCut + phenParams.fCut)/2.;
   sigLo = 4.;
   sigHi = 4.;
 

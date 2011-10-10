@@ -19,7 +19,9 @@ endif
 EXTRA_DIST =
 
 CLEANFILES = \
+	test_vot.xml \
 	*.out \
-	*.dat
+	*.dat \
+    *.xml
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null

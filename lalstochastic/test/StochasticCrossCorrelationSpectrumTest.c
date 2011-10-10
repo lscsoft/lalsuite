@@ -210,11 +210,6 @@ int main( int argc, char *argv[] )
   COMPLEX8FrequencySeries  goodFilter;
   COMPLEX8FrequencySeries  goodOutput;
 
-  COMPLEX8FrequencySeries  badData1;
-  COMPLEX8FrequencySeries  badData2;
-  COMPLEX8FrequencySeries  badFilter;
-  COMPLEX8FrequencySeries  badOutput;
-
   LIGOTimeGPS              epoch0 = {0,0};
   LIGOTimeGPS              epoch1 = {630720000,123456789};
   LIGOTimeGPS              epoch2 = {630720000,987654321};
@@ -240,9 +235,13 @@ int main( int argc, char *argv[] )
   goodOutput = goodFilter;
 
   goodData1.epoch = epoch1;
-  badFilter = goodFilter;
-  badData2 = badData1 = goodData2 = goodData1;
-  badOutput = goodOutput;
+  goodData2 = goodData1;
+#ifndef LAL_NDEBUG
+  COMPLEX8FrequencySeries  badData1 = goodData2;
+  COMPLEX8FrequencySeries  badData2 = badData1;
+  COMPLEX8FrequencySeries  badFilter = goodFilter;
+  COMPLEX8FrequencySeries  badOutput = goodOutput;
+#endif
 
   LALCCreateVector(&status, &(goodData1.data),
                           STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH);

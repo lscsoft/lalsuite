@@ -28,9 +28,6 @@ swig_wrapfile = $(swig_wrapname).cpp
 # name of the test script for the SWIG wrapping module
 swig_wrapcheck = $(srcdir)/check-$(swig_wrapname)
 
-# name of the SWIG environment setup files
-swig_envfile = $(swig_wrapname)-user-env
-
 # cleanup files
 swig_cleanfiles = $(swig_wrapfile) \
                   $(swig_iface) \
@@ -93,7 +90,7 @@ swig_defines = $(SWIG_CXX_DEFINES) \
                $(subst -D,,$(DEFS))
 
 # path where SWIG should look for LAL libraries while linking
-swig_libpath = $(wildcard $(sort $(SWIG_LIBPATH)))
+swig_libpath = $(wildcard $(sort $(SWIG_PREINST_LIBPATH) $(SWIG_LIBPATH)))
 
 # directory where LAL libraries will eventually be installed
 swig_libdir = $(libdir)
@@ -102,6 +99,7 @@ swig_libdir = $(libdir)
 swig_libs = $(sort lal lalsupport $(swig_lib))
 
 # export variables to SWIG wrapping library build script
+export build_vendor
 export PACKAGE_NAME
 export PACKAGE_VERSION
 export swig_wrapname
@@ -113,14 +111,14 @@ export swig_libs
 export swig_wrapfile
 
 # build colon-separated path by repeated concatenation
-swig_makepath = $(if $(firstword $1),$(firstword $1):$(call swig_makepath,$(wordlist 2,$(words $1),$1)))
+swig_makepath = $(if $(word 2,$1),$(word 1,$1):$(call swig_makepath,$(wordlist 2,$(words $1),$1)),$(word 1,$1))
 
 # set library load path when running check scripts prior to installation
 ifeq "$(build_vendor)" "apple"
-swig_ldlibpathname = DYLD_LIBRARY_PATH
+swig_ldlibpathname = DYLD_FALLBACK_LIBRARY_PATH
 else
 swig_ldlibpathname = LD_LIBRARY_PATH
 endif
-swig_ldlibpath = $(swig_ldlibpathname)="$(call swig_makepath,$(swig_libpath))$${$(swig_ldlibpathname)}"
+swig_ldlibpath = $(call swig_makepath,$(SWIG_PREINST_LIBPATH))
 
 endif # ifdef swig_language

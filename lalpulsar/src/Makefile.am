@@ -132,6 +132,7 @@ liblalpulsar_la_SOURCES = \
 liblalpulsar_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = \
+	lalpulsar-user-env.shell \
 	lalpulsar-user-env.sh \
 	lalpulsar-user-env.csh
 
@@ -145,47 +146,24 @@ BUILT_SOURCES = \
 	lalpulsar-user-env.sh \
 	lalpulsar-user-env.csh
 
-lalpulsar-user-env.sh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LAL Stochastic" >$@ ;\
-	echo "LALPULSAR_PREFIX=\"$(prefix)\"" >>$@ ;\
-	echo "export LALPULSAR_PREFIX" >>$@ ;\
-	echo "PATH=\"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "MANPATH=\"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "LD_LIBRARY_PATH=\"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "DYLD_LIBRARY_PATH=\"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "PKG_CONFIG_PATH=\"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
-	echo "export PATH MANPATH LD_LIBRARY_PATH DYLD_LIBRARY_PATH PKG_CONFIG_PATH" >>$@
+lalpulsar-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
+	@echo "# generic user environment script" >$@
+	@echo "set LALPULSAR_PREFIX $(prefix)" >>$@
+	@echo "prepend PATH $(bindir)" >>$@
+	@echo "prepend MANPATH $(mandir)" >>$@
+	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
+	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
+	@echo "$(SWIG_USER_ENV)" | $(SED) 's|~E~O~L~|\n|g' >>$@
 
-lalpulsar-user-env.csh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LAL Stochastic" >$@ ;\
-	echo "setenv LALPULSAR_PREFIX \"$(prefix)\"" >>$@ ;\
-	echo "setenv PATH \"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "if ( \$$?MANPATH ) then" >>$@ ;\
-	echo "	setenv MANPATH \"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv MANPATH \"$(mandir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?LD_LIBRARY_PATH ) then" >>$@ ;\
-	echo "	setenv LD_LIBRARY_PATH \"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv LD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?DYLD_LIBRARY_PATH ) then" >>$@ ;\
-	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?PKG_CONFIG_PATH ) then" >>$@ ;\
-	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
-	echo "endif" >>$@
+lalpulsar-user-env.csh lalpulsar-user-env.sh: lalpulsar-user-env.shell $(srcdir)/generate_user_env.awk
+	@echo "creating $@"
+	@$(AWK) -f $(srcdir)/generate_user_env.awk -v package=$(PACKAGE_NAME) -v output=$@ $<
 
 EXTRA_DIST = \
 	LALPulsarConfig.h.in \
 	LALPulsarVCSInfo.h.in \
+	generate_user_env.awk \
 	generate_vcs_info.py
 
 LALPulsarVCSInfo.h: ._vcsinfo

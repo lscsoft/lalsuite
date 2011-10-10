@@ -214,6 +214,7 @@ liblalinspiral_la_SOURCES = \
 liblalinspiral_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = \
+	lalinspiral-user-env.shell \
 	lalinspiral-user-env.sh \
 	lalinspiral-user-env.csh
 
@@ -227,47 +228,23 @@ BUILT_SOURCES = \
 	lalinspiral-user-env.sh \
 	lalinspiral-user-env.csh
 
-lalinspiral-user-env.sh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LAL Inspiral" >$@ ;\
-	echo "LALINSPIRAL_PREFIX=\"$(prefix)\"" >>$@ ;\
-	echo "export LALINSPIRAL_PREFIX" >>$@ ;\
-	echo "PATH=\"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "MANPATH=\"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "LD_LIBRARY_PATH=\"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "DYLD_LIBRARY_PATH=\"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "PKG_CONFIG_PATH=\"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
-	echo "export PATH MANPATH LD_LIBRARY_PATH DYLD_LIBRARY_PATH PKG_CONFIG_PATH" >>$@
+lalinspiral-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
+	@echo "# generic user environment script" >$@
+	@echo "set LALINSPIRAL_PREFIX $(prefix)" >>$@
+	@echo "prepend PATH $(bindir)" >>$@
+	@echo "prepend MANPATH $(mandir)" >>$@
+	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
+	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
-lalinspiral-user-env.csh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LAL Inspiral" >$@ ;\
-	echo "setenv LALINSPIRAL_PREFIX \"$(prefix)\"" >>$@ ;\
-	echo "setenv PATH \"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "if ( \$$?MANPATH ) then" >>$@ ;\
-	echo "	setenv MANPATH \"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv MANPATH \"$(mandir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?LD_LIBRARY_PATH ) then" >>$@ ;\
-	echo "	setenv LD_LIBRARY_PATH \"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv LD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?DYLD_LIBRARY_PATH ) then" >>$@ ;\
-	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?PKG_CONFIG_PATH ) then" >>$@ ;\
-	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
-	echo "endif" >>$@
+lalinspiral-user-env.csh lalinspiral-user-env.sh: lalinspiral-user-env.shell $(srcdir)/generate_user_env.awk
+	@echo "creating $@"
+	@$(AWK) -f $(srcdir)/generate_user_env.awk -v package=$(PACKAGE_NAME) -v output=$@ $<
 
 EXTRA_DIST = \
 	LALInspiralConfig.h.in \
 	LALInspiralVCSInfo.h.in \
+	generate_user_env.awk \
 	generate_vcs_info.py
 
 LALInspiralVCSInfo.h: ._vcsinfo

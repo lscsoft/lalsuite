@@ -171,14 +171,12 @@ XLALDestroyCOMPLEX8VectorSequence(cm)
 LALCheckMemoryLeaks()
 msg("passed dynamic vector/matrix conversions (LAL)")
 # check GSL vectors and matrices
-iv = gsl_vector_int_calloc(5)
-rv = gsl_vector_calloc(5)
-cm = gsl_matrix_complex_float_calloc(4, 6)
+iv = gsl_vector_int(5)
+rv = gsl_vector(5)
+cm = gsl_matrix_complex_float(4, 6)
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2)
-gsl_vector_int_free(iv)
-gsl_vector_free(rv)
-gsl_matrix_complex_float_free(cm)
+del iv, rv, cm
 msg("passed dynamic vector/matrix conversions (GSL)")
 
 # check 'tm' struct conversions

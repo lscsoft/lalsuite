@@ -56,6 +56,7 @@
 #include <lal/LALNoiseModels.h>
 #include <lal/Units.h>
 #include <lal/Date.h>
+#include <lal/StringVector.h>
 
 #include <lalapps.h>
 
@@ -164,8 +165,6 @@ void add_variable_scale_prior( LALInferenceVariables *var,
                                REAL8 value, REAL8 sigma );
 
 void initialiseProposal( LALInferenceRunState *runState );
-
-void setupLivePointsArray( LALInferenceRunState *runState );
 
 /* likelihood and prior */
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, 

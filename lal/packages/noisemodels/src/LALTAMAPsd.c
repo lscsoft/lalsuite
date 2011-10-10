@@ -17,49 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALTAMAPsdCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
-
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALTAMAPsd.c}}
-
-Module to calculate the noise power spectral density for the TAMA detector.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALTAMAPsdCP}
-\idx{LALTAMAPsd()}
-
-\subsubsection*{Description}
-
-The module takes as an input a frequency $f$ in Hz, and it
-calculates the noise spectral density (per Hz) $S_{h}(f)$
-for that frequency. The noise PSD is based on data provided by
-M.-K Fujimoto (see T. Damour, B.R. Iyer and B.S. Sathyaprakash,
-Phys. Rev. D 63, 044023 (2001)) and is approximated by
-the following:
-\begin{equation}
-   S_h(f) = \left ( \frac{f}{f_0} \right )^{-5} + 13 \frac{f_0}{f} +
-   9 \left [1 + \left( \frac{f}{f_0} \right)^2 \right ].
-\end{equation}
-The returned value is scaled up by $s_0 = 10^{46}/75.$ In otherwords,
-the expected noise PSD is $75 \times 10^{-46}$ times the returned value.
-\subsubsection*{Algorithm}
-
-
-\subsubsection*{Uses}
-None.
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALTAMAPsdCV}}
-
-</lalLaTeX>  */
-
-
 
 #include <lal/LALNoiseModels.h>
 
@@ -71,9 +28,28 @@ NRCSID (LALTAMAPSDC,"$Id$");
 #define UNUSED
 #endif
 
-/*  <lalVerbatim file="LALTAMAPsdCP"> */
+/**
+\author Sathyaprakash, B. S.
+\ingroup LALNoiseModels_h
+\brief Function to calculate the noise power spectral density for the TAMA detector.
+
+\heading{Description}
+
+The module takes as an input a frequency \f$f\f$ in Hz, and it
+calculates the noise spectral density (per Hz) \f$S_{h}(f)\f$
+for that frequency. The noise PSD is based on data provided by
+M.-K Fujimoto (see T. Damour, B.R. Iyer and B.S. Sathyaprakash,
+Phys. Rev. D 63, 044023 (2001)) and is approximated by
+the following:
+\f{equation}{
+   S_h(f) = \left ( \frac{f}{f_0} \right )^{-5} + 13 \frac{f_0}{f} +
+   9 \left [1 + \left( \frac{f}{f_0} \right)^2 \right ].
+\f}
+The returned value is scaled up by \f$s_0 = 10^{46}/75.\f$ In otherwords,
+the expected noise PSD is \f$75 \times 10^{-46}\f$ times the returned value.
+*/
 void  LALTAMAPsd(LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
-{ /* </lalVerbatim> */
+{
 
    REAL8 seismic, thermal, shot, x;
 

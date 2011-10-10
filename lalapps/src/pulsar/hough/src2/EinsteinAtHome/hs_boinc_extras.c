@@ -350,6 +350,13 @@ int BOINC_LAL_ErrHand (LALStatus  *status,
    http://www.linuxjournal.com/article/6391 */
 #define __USE_GNU
 #include <ucontext.h>
+/* see https://bugzilla.redhat.com/show_bug.cgi?id=234560 */
+#ifdef __x86_64__
+#define REG_EIP REG_RIP
+#define FP_SW swd
+#else  /*  __x86_64__ */
+#define FP_SW sw
+#endif /*  __x86_64__ */
 #endif /* __GLIBC__ */
 
 
@@ -391,7 +398,7 @@ static void sighandler(int sig)
 #ifdef __X86__
   /* in case of a floating-point exception write out the FPU status */
   if ( sig == SIGFPE ) {
-    fpuw_t fpstat = uc->uc_mcontext.fpregs->sw;
+    fpuw_t fpstat = uc->uc_mcontext.fpregs->FP_SW;
     fputs("FPU status word: ",stderr);
     fputs(myultoa(fpstat), stderr);
     fputs(", flags: ",stderr);
@@ -403,7 +410,7 @@ static void sighandler(int sig)
   nostackframes = backtrace (stackframes, 64);
   fputs(myltoa(nostackframes), stderr);
   fputs(" stack frames obtained for this thread:\n", stderr);
-#if defined(__X86__) && defined(EXT_STACKTRACE)
+#if defined(__i386__) && defined(EXT_STACKTRACE)
   /* overwrite sigaction with caller's address */
   stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
   backtracesymbols = backtrace_symbols(stackframes, nostackframes);

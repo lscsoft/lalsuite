@@ -437,6 +437,7 @@ int XLALSimNoisePSD(
  * next.  For example: the following routine will output a continuous stream of
  * detector noise with an Initial LIGO spectrum above 40 Hz:
  *
+ * \code
  * #include <stdio.h>
  * #include <gsl/gsl_rng.h>
  * #include <lal/LALStdlib.h>
@@ -468,6 +469,7 @@ int XLALSimNoisePSD(
  *		XLALSimNoise(seg, stride, psd, rng); // make more data
  * 	}
  * }
+ * \endcode
  *
  *
  * If only one single segment of data is required, set stride to be the length

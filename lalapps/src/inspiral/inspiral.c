@@ -82,6 +82,7 @@
 #include <lal/NRWaveInject.h>
 #include <lal/LALFrameL.h>
 #include <lal/FFTWMutex.h>
+#include <lal/LALSimulation.h>
 
 #include <LALAppsVCSInfo.h>
 

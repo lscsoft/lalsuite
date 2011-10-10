@@ -145,11 +145,15 @@ void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALInfe
 void LALInferenceDifferentialEvolutionSky(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
 /*draws a value from the prior, uniformly in individual parameters used for jumps.*/
-void LALInferenceDrawFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+void LALInferenceMCMCDrawFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 /*draws a value from the prior, using Von Neumann rejection sampling.*/
 void LALInferenceDrawUniformlyFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 // Von Neumann rejection sampler for the prior !!
 //void VNRPriorOneStep(LALInferenceRunState *runState);
+
+/* Nested sampling wrappers. */
+void NSFillMCMCVariables(LALInferenceVariables *proposedParams);
+void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 #endif
 

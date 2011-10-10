@@ -22,6 +22,7 @@ libtool
 src/LALXMLConfig.h
 src/LALXMLVCSInfo.h
 src/git_version
+src/lalxml-user-env.shell
 src/lalxml-user-env.csh
 src/lalxml-user-env.sh
 src/stamp-h2

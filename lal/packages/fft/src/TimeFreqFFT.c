@@ -1177,8 +1177,6 @@ LALTimeFreqComplexFFT(
     ComplexFFTPlan          *plan
     )
 {
-  UINT4 n;
-
   INITSTATUS( status, "LALTimeFreqComplexFFT", TIMEFREQFFTC );
   XLALPrintDeprecationWarning("LALTimeFreqComplexFFT", "XLALCOMPLEX8TimeFreqFFT");
 
@@ -1186,8 +1184,7 @@ LALTimeFreqComplexFFT(
   ASSERT( freq, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( time, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( time->data, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
-  n = time->data->length;
-  ASSERT( n, status, TIMEFREQFFTH_ESIZE, TIMEFREQFFTH_MSGESIZE );
+  ASSERT( time->data->length, status, TIMEFREQFFTH_ESIZE, TIMEFREQFFTH_MSGESIZE );
   ASSERT( time->deltaT > 0, status, TIMEFREQFFTH_ERATE, TIMEFREQFFTH_MSGERATE );
   ASSERT( plan->sign == -1, status, TIMEFREQFFTH_ESIGN, TIMEFREQFFTH_MSGESIGN );
 
@@ -1210,8 +1207,6 @@ LALFreqTimeComplexFFT(
     ComplexFFTPlan          *plan
     )
 {
-  UINT4 n;
-
   INITSTATUS( status, "LALFreqTimeComplexFFT", TIMEFREQFFTC );
   XLALPrintDeprecationWarning("LALFreqTimeComplexFFT", "XLALCOMPLEX8FreqTimeFFT");
 
@@ -1219,8 +1214,7 @@ LALFreqTimeComplexFFT(
   ASSERT( time, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( freq, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( freq->data, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
-  n = freq->data->length;
-  ASSERT( n, status, TIMEFREQFFTH_ESIZE, TIMEFREQFFTH_MSGESIZE );
+  ASSERT( freq->data->length, status, TIMEFREQFFTH_ESIZE, TIMEFREQFFTH_MSGESIZE );
   ASSERT( freq->deltaF > 0, status, TIMEFREQFFTH_ERATE, TIMEFREQFFTH_MSGERATE );
   ASSERT( plan->sign == 1, status, TIMEFREQFFTH_ESIGN, TIMEFREQFFTH_MSGESIGN );
 

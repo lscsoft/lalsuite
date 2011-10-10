@@ -233,8 +233,6 @@ int main(int argc, char *argv[])
   StochasticOptimalFilterNormalizationOutput normOut;
   StochasticOptimalFilterNormalizationParameters normParams;
 
-  REAL4FrequencySeries     realBadData;
-  COMPLEX8FrequencySeries  complexBadData;
   LIGOTimeGPS              epoch = {1,0};
 
   REAL4FrequencySeries     overlap;
@@ -271,8 +269,10 @@ int main(int argc, char *argv[])
   overlap.epoch  = epoch;
   overlap.data   = NULL;
   overlap.sampleUnits = lalDimensionlessUnit;
-
-  realBadData = omegaGW = invNoise1 = invNoise2 = overlap;
+  omegaGW = invNoise1 = invNoise2 = overlap;
+#ifndef LAL_NDEBUG
+  REAL4FrequencySeries     realBadData = omegaGW;
+#endif
 
   invNoise1.sampleUnits.unitNumerator[LALUnitIndexStrain] = -2;
   invNoise1.sampleUnits.unitNumerator[LALUnitIndexSecond] = -1;
@@ -291,8 +291,9 @@ int main(int argc, char *argv[])
   hcInvNoise1.epoch  = overlap.epoch;
   hcInvNoise1.data   = NULL;
   hcInvNoise1.sampleUnits = lalDimensionlessUnit;
-
-  complexBadData = optimal = hcInvNoise2 = hcInvNoise1;
+#ifndef LAL_NDEBUG
+  COMPLEX8FrequencySeries  complexBadData = optimal = hcInvNoise2 = hcInvNoise1;
+#endif
 
   hcInvNoise1.sampleUnits.unitNumerator[LALUnitIndexStrain] = -1;
   hcInvNoise1.sampleUnits.unitNumerator[LALUnitIndexADCCount] = -1;

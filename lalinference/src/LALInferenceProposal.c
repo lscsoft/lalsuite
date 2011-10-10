@@ -141,6 +141,34 @@ LALInferenceRandomizeProposalCycle(LALInferenceRunState *runState) {
   }
 }
 
+void NSFillMCMCVariables(LALInferenceVariables *proposedParams)
+{
+  REAL8 distance=0.0,mc=0.0;
+  if(LALInferenceCheckVariable(proposedParams,"logdistance"))
+  {
+    distance=exp(*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"));
+    LALInferenceAddVariable(proposedParams,"distance",&distance,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  }
+  if(LALInferenceCheckVariable(proposedParams,"logmc")){
+    mc=exp(*(REAL8 *)LALInferenceGetVariable(proposedParams,"logmc"));
+    LALInferenceAddVariable(proposedParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  }
+  return;
+}
+
+void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
+{ /* PTMCMCLALProposal needs a few params converted */
+ 
+  /* PTMCMC likes to read this directly so we have to plug our mangled values in*/
+  LALInferenceVariables *currentParamsBackup=runState->currentParams;
+  NSFillMCMCVariables(proposedParams);
+
+  runState->currentParams=proposedParams; 
+  LALInferenceDefaultProposal(runState,proposedParams);
+  /* Restore currentParams */
+  runState->currentParams=currentParamsBackup;
+}
+
 void 
 LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const char *fname = "LALInferenceCyclicProposal";
@@ -170,8 +198,6 @@ LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables
     XLALError(fname, __FILE__, __LINE__, XLAL_FAILURE);
     exit(1);
   }
-
-  fprintf(stderr, "Calling proposal %d of the cycle.\n", i);
 
   /* Call proposal. */
   (cycle[i])(runState, proposedParams);
@@ -239,9 +265,6 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   } 
 
   LALInferenceRandomizeProposalCycle(runState);
-
-  fprintf(stderr, "Default proposal initialized.\n");
-
 }
 
 void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
@@ -257,8 +280,6 @@ void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVar
     SetupDefaultProposal(runState, proposedParams);
   }
 
-  fprintf(stderr, "Calling default proposal.\n");
-  
   LALInferenceCyclicProposal(runState, proposedParams);
 }
 
@@ -613,7 +634,7 @@ void LALInferenceDifferentialEvolutionSky(LALInferenceRunState *runState, LALInf
 }
 
 /*draws a value from the prior, uniformly in individual parameters used for jumps.*/
-void LALInferenceDrawFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+void LALInferenceMCMCDrawFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
 
   REAL8 value=0, min=0, max=0;
   //printf("%s\n",runState->currentParams->head->name);

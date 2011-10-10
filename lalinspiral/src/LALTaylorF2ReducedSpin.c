@@ -25,7 +25,7 @@ Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267
 int XLALTaylorF2ReducedSpin(REAL4Vector *signalvec, 
 		InspiralTemplate *params) {
 
-    REAL8 df, shft, phi0, amp0, amp, f, m, eta, delta, chi_s, chi_a, chi, t0, Psi;
+    REAL8 df, shft, phi0, amp0, amp, f, m, eta, delta, chi_s, chi_a, chi, Psi;
     REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S;
     REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S; 
     REAL8 v, v2, v3, v4, v5, v6, v7, v0, mSevenBySix, piM, oneByThree; 
@@ -64,7 +64,7 @@ int XLALTaylorF2ReducedSpin(REAL4Vector *signalvec,
     amp0 = pow(m,5./6.)*sqrt(5.*eta/24.)/(pow(LAL_PI,2./3.)*params->distance/LAL_C_SI);
     shft = -2.*LAL_PI * ((REAL8)signalvec->length/params->tSampling + 
             params->nStartPad/params->tSampling + params->startTime);
-    t0 = params->startTime;
+    // UNUSED!!: REAL8 t0 = params->startTime;
     phi0 = params->startPhase;
 
     /* spin terms in the amplitude and phase (in terms of the reduced

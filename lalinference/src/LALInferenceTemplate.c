@@ -723,7 +723,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
     params.startTime = (tc - XLALGPSGetREAL8(&IFOdata->timeData->epoch)) - chirptime;
     LALInspiralParameterCalc(&status, &params); /* (re-calculation necessary? probably not...) */
   }
-	
+
   if (params.approximant == TaylorF2) {	
 	expnCoeffs ak;
 	expnFunc expnFunction;
@@ -978,11 +978,11 @@ void LALInferenceTemplate3525TD(LALInferenceIFOData *IFOdata)
 /* Numbers referring to Arun et al (2004) are explicitly marked. */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *****************************/
 /* Required (`IFOdata->modelParams') parameters are:                                         */
-/*   - "chirpmass"        (REAL8,units of solar masses)                                      */
-/*   - "massratio"        (symmetric mass ratio:  0 < eta <= 0.25, REAL8)                    */
-/*   - "phase"            (here: 'startPhase', not coalescence phase; REAL8, radians)        */
-/*   - "time"             (coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)  */
-/*   - "inclination"      (inclination angle, REAL8, radians)                                */
+/*   - "chirpmass"        (REAL8, chirp mass, in units of solar masses)                      */
+/*   - "massratio"        (REAL8, symmetric mass ratio:  0 < eta <= 0.25, dimensionless)     */
+/*   - "phase"            (REAL8, coalescence phase, radians)                                */
+/*   - "time"             (REAL8, coalescence time, GPS seconds)                             */
+/*   - "inclination"      (REAL8, inclination angle, radians)                                */
 /*********************************************************************************************/
 {
   double mc    = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");  /* chirp mass m_c, solar masses  */

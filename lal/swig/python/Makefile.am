@@ -17,8 +17,8 @@ $(swig_wrapobj) :
 # test SWIG wrapping module
 check .PHONY : check-swig
 check-swig : $(swig_wrapobj)
-	test -f $(swig_wrapcheck).py && \
-	$(swig_ldlibpath) \
+	test -f $(swig_wrapcheck).py && env \
+	$(swig_ldlibpathname)="$(swig_ldlibpath):$${$(swig_ldlibpathname)}" \
 	PYTHONPATH="$${PWD}:$${PYTHONPATH}" \
 	$(PYTHON) $(swig_wrapcheck).py
 
@@ -30,11 +30,6 @@ install-exec-local :
 uninstall-local :
 	-test -f .install.txt && rm -f `cat .install.txt`
 
-# generic environment setup for SWIG wrapping module
-$(swig_envfile).shell ::
-	@echo '# python' > $@
-	@echo 'PYTHONPATH="$(pyexecdir):$${PYTHONPATH}"' >> $@
-
 # cleanup
 clean-local :
 	$(PYTHON) $(srcdir)/setup.py clean --all
@@ -42,16 +37,10 @@ clean-local :
 CLEANFILES = $(swig_cleanfiles) \
              $(swig_wrapname).py \
              $(swig_wrapname).pyc \
-             $(swig_wrapobj) \
-             $(swig_envfile).shell
+             $(swig_wrapobj)
 
 DISTCLEANFILES = .install.txt
 
 EXTRA_DIST = setup.py
-
-else # !SWIG_BUILD
-
-# no generic environment setup for SWIG wrapping module
-$(swig_envfile).shell ::
 
 endif # SWIG_BUILD_PYTHON

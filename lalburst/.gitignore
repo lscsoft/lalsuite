@@ -22,6 +22,7 @@ libtool
 src/LALBurstConfig.h
 src/LALBurstVCSInfo.h
 src/git_version
+src/lalburst-user-env.shell
 src/lalburst-user-env.csh
 src/lalburst-user-env.sh
 src/stamp-h2

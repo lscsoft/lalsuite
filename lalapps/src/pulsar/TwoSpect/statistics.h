@@ -27,12 +27,14 @@
 
 REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize);
 REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize);
+REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize);
 
 REAL8 calcMeanD(REAL8Vector *vector);
 REAL8 calcStddevD(REAL8Vector *vector);
 REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator);
 REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta);
 REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta);
+REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf(REAL8 x, REAL8 dof, REAL8 delta);
 REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta);
 REAL8 binodeviance(REAL8 x, REAL8 np);
 REAL8 epsval(REAL8 val);
@@ -40,9 +42,12 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta);
 REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma);
 REAL8 ks_test_exp(REAL4Vector *vector);
 REAL8 twospect_cdf_chisq_P(REAL8 x, REAL8 nu);
+REAL8 matlab_cdf_chisq_P(REAL8 x, REAL8 nu);
 
 REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta);
 REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta);
+REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 delta);
+REAL4 epsval_float(REAL4 val);
 REAL4 calcMean(REAL4Vector *vector);
 REAL4 calcStddev(REAL4Vector *vector);
 REAL4 calcRms(REAL4Vector *vector);

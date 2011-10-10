@@ -1195,7 +1195,7 @@ void initVariables(LALInferenceRunState *state)
     LALInferenceVariables *temp; //
     temp=XLALCalloc(1,sizeof(LALInferenceVariables));
     memset(temp,0,sizeof(LALInferenceVariables));
-    LALInferenceDrawFromPrior(state, temp);
+    LALInferenceMCMCDrawFromPrior(state, temp);
     LALInferenceCopyVariables(temp, currentParams);
   }
         /* Make sure that our initial value is within the

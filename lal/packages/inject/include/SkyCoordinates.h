@@ -17,14 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/** \file
- *  \ingroup SkyCoordinates
- *  \author Creighton, T. D.
- *  \date 2002
- *  \brief This header covers routines to perform coordinate transformations
- *   among the various spherical coordinate systems used in astronomy.
- */
-
 #ifndef _SKYCOORDINATES_H
 #define _SKYCOORDINATES_H
 
@@ -41,18 +33,28 @@ extern "C" {
 
 NRCSID( SKYCOORDINATESH, "$Id$" );
 
-/** \name Error codes */
-/*@{*/
-#define SKYCOORDINATESH_ENUL  1
-#define SKYCOORDINATESH_ESYS  2
-#define SKYCOORDINATESH_EZERO 3
-#define SKYCOORDINATESH_ESING 4
+/** \addtogroup SkyCoordinates_h
+ *
+ * @{
+ * \defgroup CelestialCoordinates_c 	Module CelestialCoordinates.c
+ * \defgroup TerrestrialCoordinates_c 	Module TerrestrialCoordinates.c
+ * \defgroup SkyCoordinates_c 		Module SkyCoordinates.c
+ *
+ */
+/** \name Error codes *//**@{*/
+#define SKYCOORDINATESH_ENUL  1	/**< Unexpected null pointer in arguments */
+#define SKYCOORDINATESH_ESYS  2	/**< Wrong coordinate system in input */
+#define SKYCOORDINATESH_EZERO 3	/**< Angular coordinates undefined at origin */
+#define SKYCOORDINATESH_ESING 4	/**< Point is inside singular ellipsoid */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define SKYCOORDINATESH_MSGENUL  "Unexpected null pointer in arguments"
 #define SKYCOORDINATESH_MSGESYS  "Wrong coordinate system in input"
 #define SKYCOORDINATESH_MSGEZERO "Angular coordinates undefined at origin"
 #define SKYCOORDINATESH_MSGESING "Point is inside singular ellipsoid"
-/*@}*/
+/** \endcond */
+
 
 /*---------- exported types ---------- */
 
@@ -119,6 +121,7 @@ typedef struct tagConvertSkyParams {
 				 * equatorial system). */
 } ConvertSkyParams;
 
+/** @} */
 
 /* ---------- Function prototypes ---------- */
 

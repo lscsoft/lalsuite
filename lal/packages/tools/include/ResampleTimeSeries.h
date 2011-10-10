@@ -109,7 +109,6 @@ ResampleTSFilter;
 typedef union
 tagResampleTimeSeriesFilterPars
 {
-  SWIGLAL_STRUCT_LALALLOC();
   PassBandParamStruc    butterworth;	/**< A structure of type \c PassBandParamStruc used to store the parameters
                                          * of the butterworth filter used to perform low pass filtering
                                          */

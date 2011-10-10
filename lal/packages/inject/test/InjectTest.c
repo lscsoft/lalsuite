@@ -17,268 +17,244 @@
 *  MA  02111-1307  USA
 */
 
-/*********************************** <lalVerbatim file="InjectTestCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup Inject_h
 
-/********************************************************** <lalLaTeX>
+\brief Injects an inspiral signal into detector noise.
 
-\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
-
-\subsection{Program \texttt{InjectTest.c}}
-\label{ss:InjectTest.c}
-
-Injects an inspiral signal into detector noise.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 InjectTest [-s sourcefile] [-e earthfile sunfile] [-r randomseed]
            [-d debuglevel] [-h] indxfile
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This program generates Galactic inspiral waveform signals and injects
 them into ADC data.  The following option flags are accepted:
-\begin{itemize}
-\item[\texttt{-s}] Reads source data from the file \verb@sourcefile@,
+<ul>
+<li><tt>-s</tt> Reads source data from the file \c sourcefile,
 whose format is given below.  If not specified, no injections are
-performed.
-\item[\texttt{-e}] Specifies ephemeris files giving the location of
+performed.</li>
+<li><tt>-e</tt> Specifies ephemeris files giving the location of
 the Earth and Sun with respect to a barycentric reference point for
 arrival times, whose format is as required by
-\verb@LALInitBarycenter()@ in the \verb@support@ package.  If not
+<tt>LALInitBarycenter()</tt> in the \c support package.  If not
 specified, the Earth's centre is treated as the barycentric reference
-point (this is not consistent for long signal durations).
-\item[\texttt{-r}] Sets the random number seed to \verb@randomseed@.
-If not specified, the seed is gerenated from the current time.
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.  If not
-specified, level 0 is assumed.
-\item[\texttt{-h}] Prints out the usage message and exits.
-\end{itemize}
+point (this is not consistent for long signal durations).</li>
+<li><tt>-r</tt> Sets the random number seed to \c randomseed.
+If not specified, the seed is gerenated from the current time.</li>
+<li><tt>-d</tt> Sets the debug level to \c debuglevel.  If not
+specified, level 0 is assumed.</li>
+<li><tt>-h</tt> Prints out the usage message and exits.</li>
+</ul>
 After parsing these recognized options, there must be one remaining
-argument: the name of an index file \verb@indxfile@ specifying the
+argument: the name of an index file \c indxfile specifying the
 data input and output files, along with detector information
 associated with each file; the format is given below.
 
-\paragraph{Format for \texttt{sourcefile}:} The source file consists
+\heading{Format for \c sourcefile:} The source file consists
 of one or more lines, each representing a particular source to be
 injected.  Each line consists of the name of a routine for generating
 a waveform, followed by a set of numerical arguments required for
 setting the parameters for that generator.  The generators currently
 supported are as follows:
-\begin{verbatim}
+\code
 LALGeneratePPNInspiral tc m1 m2 d inc ra dec psi phic fi ff
 LALGenerateTaylorCW    t0 t1 t2 a1 a2 ra dec psi phi0 f0 [f1 [...]]
 LALGenerateSpinOrbitCW t0 t1 t2 a1 a2 ra dec psi phi0 f0 [f1 [...]] arg udot rp e
-\end{verbatim}
-where \verb@tc@ is the time of coalescence, \verb@t0@ is a reference
-time where system properties are specified, \verb@t1@ and \verb@t2@
-are start and stop times for the signal (all given as \verb@INT8@ GPS
-nanoseconds), \verb@m1@ and \verb@m2@ are the component masses of a
-binary system (\verb@REAL4@ solar masses), \verb@d@ is the distance to
-the system (\verb@REAL4@ Mpc), \verb@inc@ is the inclination of the
-system (\verb@REAL4@ degrees), \verb@a1@ and \verb@a2@ are intrinsic
-GW amplitudes of the + and $\times$ polarizations (\verb@REAL4@
-strain), \verb@ra@ and \verb@dec@ are the right ascension and
-declination of the system (\verb@REAL8@ degrees), \verb@psi@ is the
-polarization angle of the system (\verb@REAL4@ degrees), \verb@phic@
-is the wave phase at coalescence (\verb@REAL4@ degrees), \verb@phi0@
-is the wave phase at the reference time (\verb@REAL8@ degrees),
-\verb@fi@ and \verb@ff@ are the start and stop frequencies of the
-waveform (\verb@REAL4@ Hz), \verb@f0@ is the wave frequency at the
-reference time (\verb@REAL8@ Hz),
-\verb@f1@$,\ldots,$\verb@f@${}_k,\ldots$ are the (optional)
-frequency-normalized spindown coefficience (\verb@REAL8@ s${}^{-k}$),
-\verb@arg@ is the argument of the source's orbital periapsis
-(\verb@REAL4@ degrees), \verb@udot@ is the orbital angular speed of
-the source at periapsis (\verb@REAL4@ Hz), \verb@rp@ is the normalized
-projected orbital periapsis distance $(r_p/c)\sin i$ of the source
-(\verb@REAL4@ s), and \verb@e@ is the orbital eccentricity of the
-source (\verb@REAL4@),
+\endcode
+where \c tc is the time of coalescence, \c t0 is a reference
+time where system properties are specified, \c t1 and \c t2
+are start and stop times for the signal (all given as \c INT8 GPS
+nanoseconds), \c m1 and \c m2 are the component masses of a
+binary system (\c REAL4 solar masses), \c d is the distance to
+the system (\c REAL4 Mpc), \c inc is the inclination of the
+system (\c REAL4 degrees), \c a1 and \c a2 are intrinsic
+GW amplitudes of the + and \f$\times\f$ polarizations (\c REAL4
+strain), \c ra and \c dec are the right ascension and
+declination of the system (\c REAL8 degrees), \c psi is the
+polarization angle of the system (\c REAL4 degrees), \c phic
+is the wave phase at coalescence (\c REAL4 degrees), \c phi0
+is the wave phase at the reference time (\c REAL8 degrees),
+\c fi and \c ff are the start and stop frequencies of the
+waveform (\c REAL4 Hz), \c f0 is the wave frequency at the
+reference time (\c REAL8 Hz),
+\c f1\f$,\ldots,\f$\c f\f${}_k,\ldots\f$ are the (optional)
+frequency-normalized spindown coefficience (\c REAL8 s\f${}^{-k}\f$),
+\c arg is the argument of the source's orbital periapsis
+(\c REAL4 degrees), \c udot is the orbital angular speed of
+the source at periapsis (\c REAL4 Hz), \c rp is the normalized
+projected orbital periapsis distance \f$(r_p/c)\sin i\f$ of the source
+(\c REAL4 s), and \c e is the orbital eccentricity of the
+source (\c REAL4),
 
-\paragraph{Format for \texttt{indxfile}:} The index file consists
+\heading{Format for \c indxfile:} The index file consists
 of one or more lines, each representing a stretch of data to be
 injected.  Each line consists of four strings: The site name, the
 response function file name, the input file name, and the output file
 name (which may be the same as the input).  These are treated as
 follows:
 
-The detector name may be one of \verb@LHO@, \verb@LLO@, \verb@VIRGO@,
-\verb@GEO600@, \verb@TAMA300@, or \verb@CIT40@.  Additionally, a name
-of \verb@-@ represents a fictitious detector with a fixed location in
+The detector name may be one of \c LHO, \c LLO, \c VIRGO,
+\c GEO600, \c TAMA300, or \c CIT40.  Additionally, a name
+of <tt>-</tt> represents a fictitious detector with a fixed location in
 the barycentric frame, and responding purely to the signal's +
 polarization.
 
 The response function file name should give the location of a readable
 file relative to the current execution directory, which will be read
-using the routine \verb@LALCReadFSeries()@; see \verb@StreamInput.h@
+using the routine \ref LALCReadFSeries(); see \ref StreamInput_h
 for discussion of the file format.  It should have a
-\verb@sampleUnits@ field set to \verb@"strain count^-1"@, but
+\c sampleUnits field set to <tt>"strain count^-1"</tt>, but
 incorrect units will generate only a warning.  A response file name of
-\verb@-@ specifies a unit response (i.e.\ raw strain is injected into
+<tt>-</tt> specifies a unit response (i.e.\ raw strain is injected into
 the data); note that this means that actual response files named
-\verb@-@ are not permitted.
+<tt>-</tt> are not permitted.
 
 The input file name should give the location of a readable file
 relative to the current execution directory, which will be read using
-the routine \verb@LALSReadTimeSeries()@; see \verb@StreamInput.h@ for
-discussion of the file format.  It should have a \verb@sampleUnits@
-field set to \verb@"count"@, but incorrect units will generate only a
-warning.  The input file name may be replaced with a \verb@-@ followed
+the routine \ref LALSReadTimeSeries(); see \ref StreamInput_h for
+
+field set to <tt>"count"</tt>, but incorrect units will generate only a
+warning.  The input file name may be replaced with a <tt>-</tt> followed
 by 4 whitespace-delimited numerical tokens
-\verb@- epoch npt dt sigma@, indicating that a time series will be
-generated starting at (\verb@INT8@) \verb@epoch@ GPS nanoseconds,
-consisting of (\verb@UINT4@) \verb@npt@ points sampled at
-(\verb@REAL8@) \verb@dt@ second intervals having Gaussian random noise
-with rms value (\verb@REAL4@) \verb@sigma@ ADC counts.  Again, an
-actual input file named \verb@-@ is therefore not permitted.
+<tt>- epoch npt dt sigma</tt>, indicating that a time series will be
+generated starting at (\c INT8) \c epoch GPS nanoseconds,
+consisting of (\c UINT4) \c npt points sampled at
+(\c REAL8) \c dt second intervals having Gaussian random noise
+with rms value (\c REAL4) \c sigma ADC counts.  Again, an
+actual input file named <tt>-</tt> is therefore not permitted.
 
 The output file name should give the location relative to the current
 execution directory, where the injected data will be written using the
-routine \verb@LALSWriteTSeries()@; see \verb@StreamInput.h@ for
-discussion of the file format.  A name of \verb@-@ specifies writing
-to standard output (\emph{not} to a file named \verb@-@).  To suppress
-output, specify \verb@/dev/null@ as the output file.
+routine \ref LALSWriteTSeries(); see \ref StreamInput_h for
+discussion of the file format.  A name of <tt>-</tt> specifies writing
+to standard output (\e not to a file named <tt>-</tt>).  To suppress
+output, specify <tt>/dev/null</tt> as the output file.
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-#define INJECTTESTC_ENORM 0
-#define INJECTTESTC_ESUB  1
-#define INJECTTESTC_EARG  2
-#define INJECTTESTC_EVAL  3
-#define INJECTTESTC_EFILE 4
-#define INJECTTESTC_EMEM  5
+\heading{Algorithm}
 
-#define INJECTTESTC_MSGENORM "Normal exit"
-#define INJECTTESTC_MSGESUB  "Subroutine failed"
-#define INJECTTESTC_MSGEARG  "Error parsing arguments"
-#define INJECTTESTC_MSGEVAL  "Input argument out of valid range"
-#define INJECTTESTC_MSGEFILE "Could not open file"
-#define INJECTTESTC_MSGEMEM  "Out of memory"
-/******************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Algorithm}
-
-The program first reads \verb@sourcefile@ using
-\verb@LALCHARReadVector()@, parses its arguments with
-\verb@LALCreateTokenList()@, and generates a linked list of
-\verb@CoherentGW@ structures containing the waveforms to be injected:
+The program first reads \c sourcefile using
+<tt>LALCHARReadVector()</tt>, parses its arguments with
+<tt>LALCreateTokenList()</tt>, and generates a linked list of
+\c CoherentGW structures containing the waveforms to be injected:
 see below for a discussion of how the various generators' input lines
-are parsed.  Blank lines are ignored, as are comments (a \verb@#@ or
-\verb@%@ character causes the remainder of the line to be ignored).
+are parsed.  Blank lines are ignored, as are comments (a <tt>#</tt> or
+<tt>%</tt> character causes the remainder of the line to be ignored).
 The waveforms will be held in memory together for the rest of the
 injection procedure; if this taxes the available system memory, break
-up \verb@sourcefile@ and run the program on each separate file, using
+up \c sourcefile and run the program on each separate file, using
 the output from each run as the input for the next.
 
 Once all the waveforms have been generated, the program starts reading
-\verb@indxfile@: for each stretch of data specified, it reads in the
-input file and response function file using \verb@LALSReadTSeries()@
-and \verb@LALSReadFSeries()@, inverts the response function to get a
+\c indxfile: for each stretch of data specified, it reads in the
+input file and response function file using <tt>LALSReadTSeries()</tt>
+and <tt>LALSReadFSeries()</tt>, inverts the response function to get a
 transfer function, simulates and injects the waveforms using
-\verb@LALSimulateCoherentGW()@ and \verb@LALSSInjectTimeSeries()@, and
+<tt>LALSimulateCoherentGW()</tt> and <tt>LALSSInjectTimeSeries()</tt>, and
 writes the resulting time series to the output file using
-\verb@LALSWriteTSeries()@.  If a given stretch of data has the same
+<tt>LALSWriteTSeries()</tt>.  If a given stretch of data has the same
 response function file name as the previous one, then the previous
 transfer function is reused rather than re-reading and re-inverting
-the data; thus, one should naturally arrange \verb@indxfile@ so that
+the data; thus, one should naturally arrange \c indxfile so that
 data stretches using the same response function are listed
 consecutively.
 
-\paragraph{\texttt{LALGeneratePPNInspiral}:} Most arguments are parsed
+\heading{\ref LALGeneratePPNInspiral():} Most arguments are parsed
 from the corresponding tokens using the functions in
-\verb@StringConvert.c@.  However, two input parameters require some
+\ref StringConvert_c.  However, two input parameters require some
 nontrivial computation.  First, the generator requires a start time,
-while \verb@sourcefile@ specifies a coalescence time.  The solution is
+while \c sourcefile specifies a coalescence time.  The solution is
 to generate a waveform with an arbitrary start time (in this case zero
 GPS seconds), take the returned coalescence time, and adjust the start
-time accordingly.  Second, \verb@sourcefile@ does not specify a
+time accordingly.  Second, \c sourcefile does not specify a
 sampling interval to be used in the generated waveform.  Here the
 solution is to estimate an appropriate interval from the requested
 termination frequency or from the point of post-Newtonian breakdown
-for the specified masses.  If a nonzero termination frequency $f$ is
+for the specified masses.  If a nonzero termination frequency \f$f\f$ is
 specified (either positive or negative), then the maximum rate of
-change of frequency in the (post${}^0$-)Newtonian approximation is
-$\dot{f}_\mathrm{max}=1.8\pi^{8/3}\tau^{5/3}f^{11/3}$, where
-$\tau=Gm_\mathrm{tot}/c^3$ is the relativistic minimum timescale of
-the system.  As explained in \verb@GeneratePPNInspiral.c@, for linear
-interpolation of the waveform to be accurate to within $\pi/2$
-radians, we would like $\Delta f\Delta t\lessim2$ over any sampling
-interval.  This implies that $\Delta
-t\approx\sqrt{2/\dot{f}_\mathrm{max}}$, or:
-$$
+change of frequency in the (post\f${}^0\f$-)Newtonian approximation is
+\f$\dot{f}_\mathrm{max}=1.8\pi^{8/3}\tau^{5/3}f^{11/3}\f$, where
+\f$\tau=Gm_\mathrm{tot}/c^3\f$ is the relativistic minimum timescale of
+the system.  As explained in \ref GeneratePPNInspiral_c, for linear
+interpolation of the waveform to be accurate to within \f$\pi/2\f$
+radians, we would like \f$\Delta f\Delta t\lessim2\f$ over any sampling
+interval.  This implies that \f$\Delta
+t\approx\sqrt{2/\dot{f}_\mathrm{max}}\f$, or:
+\f[
 \Delta t \approx 0.1403\tau^{-5/6}f^{-11/6} \;.
-$$
+\f]
 If the maximum frequency is given as zero (i.e.\ unspecified) or
 positive, then an additional constraint is imposed by the guaranteed
-post-Newtonian breakdown at or before $r=2Gm_\mathrm{tot}/c^2$, giving
-$\dot{f}_\mathrm{max}=(2\sqrt{2}/40\pi)\tau^{-2}$.  This implies that:
-$$
+post-Newtonian breakdown at or before \f$r=2Gm_\mathrm{tot}/c^2\f$, giving
+\f$\dot{f}_\mathrm{max}=(2\sqrt{2}/40\pi)\tau^{-2}\f$.  This implies that:
+\f[
 \Delta t_\mathrm{min} \approx 7.697\tau \;,
-$$
-and we can write the previous expression as $\Delta t = \max\{\Delta
-t_\mathrm{min}, 0.7685(\Delta t_\mathrm{min})^{-5/6}f^{-11/6}\}$.
-When the waveform is actually generated, the maximum value of $\Delta
-f\Delta t$ is returned, and, if greater than 2, $\Delta t$ is reduced
+\f]
+and we can write the previous expression as \f$\Delta t = \max\{\Delta
+t_\mathrm{min}, 0.7685(\Delta t_\mathrm{min})^{-5/6}f^{-11/6}\}\f$.
+When the waveform is actually generated, the maximum value of \f$\Delta
+f\Delta t\f$ is returned, and, if greater than 2, \f$\Delta t\f$ is reduced
 accordingly and the waveform regenerated.
 
-\paragraph{\texttt{LALGenerateTaylorCW}:} Most arguments are parsed
+\heading{\ref LALGenerateTaylorCW():} Most arguments are parsed
 from the corresponding tokens using the routines in
-\verb@StringConvert.c@.  However, two input parameters require
-computation.  First, the base frequency $f_0$ and spindown terms
-$f_1,\ldots f_N$ need to be transformed from the reference time to the
+\ref StringConvert_c.  However, two input parameters require
+computation.  First, the base frequency \f$f_0\f$ and spindown terms
+\f$f_1,\ldots f_N\f$ need to be transformed from the reference time to the
 start time, by the following formula:
-\begin{eqnarray}
+\f{eqnarray}{
 f_{0\mathrm{(start)}} & = & f_0\left( 1+\sum_{k=1}^N f_k t^k \right)
 	\;,\nonumber\\
 f_{j\mathrm{(start)}} & = & \frac{\sum_{k=j}^N{j \choose k}f_k t^{k-j}}
 	{1+\sum_{k=1}^N f_k t^k} \;,\nonumber
-\end{eqnarray}
-where $t=t_\mathrm{start}-t_\mathrm{ref}$ is the time shift.  These
+\f}
+where \f$t=t_\mathrm{start}-t_\mathrm{ref}\f$ is the time shift.  These
 calculations are done to double precision; even so, one is advised to
 specify the frequency and spindown terms at a reference time that is
 not too far from the times being considered.  Roughly speaking, for
 phases to be accurate within a fraction of a cycle, this means that
-$1+\sum_k|f_k\tau^k|\ll10^{15}/|f_0\tau|$, where $\tau$ is the larger
-of $t_\mathrm{start}-t_\mathrm{ref}$ and
-$t_\mathrm{stop}-t_\mathrm{ref}$.
+\f$1+\sum_k|f_k\tau^k|\ll10^{15}/|f_0\tau|\f$, where \f$\tau\f$ is the larger
+of \f$t_\mathrm{start}-t_\mathrm{ref}\f$ and
+\f$t_\mathrm{stop}-t_\mathrm{ref}\f$.
 
 Second, the program must choose an appropriate sampling interval for
-the waveforms, such that the maximum $\Delta f\Delta t$ over any
+the waveforms, such that the maximum \f$\Delta f\Delta t\f$ over any
 interval is less than 2.  This is fairly straightforward; one simply
 takes:
-$$
+\f[
 \Delta t \approx \left( 0.5 f_0 \sum_{k=1}^N k|f_k T^{k-1}|
 	\right)^{-1/2} \;,
-$$
-where $T=t_\mathrm{stop}-t_\mathrm{start}$ is the total signal length.
-If this gives $\Delta t>T$ (as for instance when there are no nonzero
-spindown terms), then $\Delta t$ is set equal to $T$.
+\f]
+where \f$T=t_\mathrm{stop}-t_\mathrm{start}\f$ is the total signal length.
+If this gives \f$\Delta t>T\f$ (as for instance when there are no nonzero
+spindown terms), then \f$\Delta t\f$ is set equal to \f$T\f$.
 
-\paragraph{\texttt{LALGenerateSpinOrbitCW}:} Most arguments are parsed
+\heading{\ref LALGenerateSpinOrbitCW():} Most arguments are parsed
 from the corresponding tokens using the routines in
-\verb@StringConvert.c@.  The reference time is assumed to correspond
+\ref StringConvert_c.  The reference time is assumed to correspond
 to the orbital epoch of the system, and the conversion from reference
 time to start time discussed above is performed automatically within
-the \verb@LALGenerateSpinOrbitCW()@ function.  However, the program
+the LALGenerateSpinOrbitCW() function.  However, the program
 still needs to choose an appropriate sampling interval for the
-waveforms, such that the maximum $\Delta f\Delta t$ over any interval
-is less than 2.  We simply take the formula for $\Delta t$ above and
+waveforms, such that the maximum \f$\Delta f\Delta t\f$ over any interval
+is less than 2.  We simply take the formula for \f$\Delta t\f$ above and
 add to the spindown terms a Doppler modulation at least as large as
 the maximum possible orbital acceleration, to get:
-$$
+\f[
 \Delta t \approx \left( 0.5 f_0 \left[ \dot{\upsilon}_p^2 r_p\sin i/c +
 	\sum_{k=1}^N k|f_k T^{k-1}| \right] \right)^{-1/2} \;,
-$$
-where $\dot{\upsilon}_p$ is the angular speed at periapsis, $r_p\sin
-i/c$ is the projected, normalized periapsis distance, and
-$T=t_\mathrm{stop}-t_\mathrm{start}$ is the total signal length.  If
-this gives $\Delta t>T$ then $\Delta t$ is set equal to $T$.
+\f]
+where \f$\dot{\upsilon}_p\f$ is the angular speed at periapsis, \f$r_p\sin
+i/c\f$ is the projected, normalized periapsis distance, and
+\f$T=t_\mathrm{stop}-t_\mathrm{start}\f$ is the total signal length.  If
+this gives \f$\Delta t>T\f$ then \f$\Delta t\f$ is set equal to \f$T\f$.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
 LALMalloc()                     LALFree()
 LALCreateRandomParams()         LALDestroyRandomParams()
@@ -298,13 +274,25 @@ LALGenerateSpinOrbitCW()        LALSimulateCoherentGW()
 LALSSInjectTimeSeries()         LALInitBarycenter()
 snprintf()                   LALPrintError()
 LALCheckMemoryLeaks()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
 
-\vfill{\footnotesize\input{InjectTestCV}}
+\name Error Codes */ /*@{*/
+#define INJECTTESTC_ENORM 0	/**< Normal exit */
+#define INJECTTESTC_ESUB  1	/**< Subroutine failed */
+#define INJECTTESTC_EARG  2	/**< Error parsing arguments */
+#define INJECTTESTC_EVAL  3	/**< Input argument out of valid range */
+#define INJECTTESTC_EFILE 4	/**< Could not open file */
+#define INJECTTESTC_EMEM  5	/**< Out of memory */
+/** @} */
 
-******************************************************* </lalLaTeX> */
+/** \cond DONT_DOXYGEN */
+#define INJECTTESTC_MSGENORM "Normal exit"
+#define INJECTTESTC_MSGESUB  "Subroutine failed"
+#define INJECTTESTC_MSGEARG  "Error parsing arguments"
+#define INJECTTESTC_MSGEVAL  "Input argument out of valid range"
+#define INJECTTESTC_MSGEFILE "Could not open file"
+#define INJECTTESTC_MSGEMEM  "Out of memory"
 
 #include <math.h>
 #include <ctype.h>
@@ -1413,3 +1401,4 @@ choose( UINT4 a, UINT4 b )
   }
   return numer/denom;
 }
+/** \endcond */

@@ -36,6 +36,7 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
+#include <lal/LALInferenceProposal.h>
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
@@ -226,7 +227,12 @@ Nested sampling arguments:\n\
 (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
-(--verbose)\tProduce progress information\n\n";
+(--verbose)\tProduce progress information\n\
+(--mcmcprop)\tUse PTMCMC proposal engine\n\
+\t(--iotaDistance FRAC)\tPTMCMC: Use iota-distance jump FRAC of the time\n\
+\t(--covarianceMatrix)\tPTMCMC: Propose jumps from covariance matrix of current live points\n\
+\t(--differential-evolution)\tPTMCMC:Use differential evolution jumps\n";
+
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	/* Print command line arguments if help requested */
@@ -248,7 +254,18 @@ Nested sampling arguments:\n\
 	/* Set up the appropriate functions for the nested sampling algorithm */
 	runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
 	runState->evolve=&LALInferenceNestedSamplingOneStep;
-	runState->proposal=&LALInferenceProposalNS;
+	if(LALInferenceGetProcParamVal(commandLine,"--mcmcprop")){
+	  /* Use the PTMCMC proposal to sample prior */
+	  runState->proposal=&NSWrapMCMCLALProposal;
+	  REAL8 temp=1.0;
+	  UINT4 dummy=0;
+	  LALInferenceAddVariable(runState->proposalArgs, "adaptableStep", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	  LALInferenceAddVariable(runState->proposalArgs, "proposedVariableNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	  LALInferenceAddVariable(runState->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	  LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+	}
+	else
+	  runState->proposal=&LALInferenceProposalNS;
 
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 	runState->prior = &LALInferenceInspiralPrior;
@@ -519,7 +536,7 @@ Parameter arguments:\n\
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	LALInferenceAddMinMaxPrior(priorArgs, "rightascension",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 
-	LALInferenceAddVariable(currentParams, "declination",     &tmpVal,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+	LALInferenceAddVariable(currentParams, "declination",     &tmpVal,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	tmpMin=-LAL_PI/2.0; tmpMax=LAL_PI/2.0;
 	LALInferenceAddMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
     
@@ -527,7 +544,7 @@ Parameter arguments:\n\
 	tmpMin=0.0; tmpMax=LAL_PI;
 	LALInferenceAddMinMaxPrior(priorArgs, "polarisation",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
- 	LALInferenceAddVariable(currentParams, "inclination",     &tmpVal,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+ 	LALInferenceAddVariable(currentParams, "inclination",     &tmpVal,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
 	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
@@ -538,7 +555,7 @@ Parameter arguments:\n\
 	if(LALInferenceGetProcParamVal(commandLine,"--enable-spin")) enable_spin=1;
 	
 	/* If aligned spins use magnitude in (-1,1) */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--spin-aligned");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--aligned-spin");
 	if(ppt) {enable_spin=1; aligned_spin=1; a_spin1_min=-1; a_spin2_min=-1;}
 		
 	if(enable_spin){

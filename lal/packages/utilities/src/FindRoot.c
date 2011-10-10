@@ -113,7 +113,6 @@ LALSBracketRoot (
     )
 { /* </lalVerbatim> */
   const REAL4 fac  = LAL_SQRT2;
-  INT4 imax;
 
   INT4  i = 0;
   REAL4 y_1;
@@ -147,8 +146,10 @@ LALSBracketRoot (
     }
 
     /* increment iteration count */
-    imax = 64;
+#ifndef LAL_NDEBUG
+    INT4 imax = 64;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
+#endif
     ++i;
 
     if (fabs(y_1) < fabs(y_2))
@@ -234,7 +235,6 @@ LALDBracketRoot (
     )
 { /* </lalVerbatim> */
   const REAL8 fac  = LAL_SQRT2;
-  INT4 imax;
 
   INT4  i = 0;
   REAL8 y_1;
@@ -268,8 +268,10 @@ LALDBracketRoot (
     }
 
     /* increment iteration count */
-    imax = 64;
+#ifndef LAL_NDEBUG
+    INT4 imax = 64;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
+#endif
     ++i;
 
     if (fabs(y_1) < fabs(y_2))
@@ -303,7 +305,6 @@ LALSBisectionFindRoot (
     void        *params
     )
 { /* </lalVerbatim> */
-  INT4 imax;
 
   INT4  i = 0;
   REAL4 y_1;
@@ -350,8 +351,10 @@ LALSBisectionFindRoot (
     REAL4 ymid;
 
     /* increment iteration count */
-    imax = 40;
+#ifndef LAL_NDEBUG
+    INT4 imax = 40;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
+#endif
     ++i;
 
     /* locate midpoint of domain */
@@ -472,7 +475,6 @@ LALDBisectionFindRoot (
     void        *params
     )
 { /* </lalVerbatim> */
-  INT4 imax;
 
   INT4  i = 0;
   REAL8 y_1;
@@ -519,8 +521,10 @@ LALDBisectionFindRoot (
     REAL8 ymid;
 
     /* increment iteration count */
-    imax = 80;
+#ifndef LAL_NDEBUG
+    INT4 imax = 80;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
+#endif
     ++i;
 
     /* locate midpoint of domain */

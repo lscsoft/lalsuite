@@ -5,6 +5,7 @@
 #include <lal/LALInferenceNestedSampler.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceLikelihood.h>
+#include <lal/LALInferenceProposal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <float.h>
@@ -322,17 +323,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	}
 #endif	
 	fpout=fopen(outfile,"w");
- 	FILE *lout=NULL;
-        char param_list[FILENAME_MAX];
-        sprintf(param_list,"%s_params.txt",outfile);
-        lout=fopen(param_list,"w");
-	minpos=0;
-                   for(param_ptr=runState->livePoints[minpos]->head;param_ptr;param_ptr=param_ptr->next)
-   {
-        fprintf(lout,"%s\t",param_ptr->name);
-    }
-        fprintf(lout,"logL");
-        fclose(lout);	
+
 
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s!\n",outfile);
 	//fprintf(fpout,"chirpmass\tdistance\tLAL_APPROXIMANT\tLAL_PNORDER\tlogmc\tmassratio\ttime\tphase\tlogdistance\trightascension\tdeclination\tpolarisation\tinclination\ta_spin1\ta_spin2\ttheta_spin1\ttheta_spin2\tphi_spin1\tphi_spin2\t logL\n");	
@@ -362,10 +353,57 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	}
 	/* Add the covariance matrix for proposal distribution */
 	LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
+	runState->differentialPoints=runState->livePoints;
+	runState->differentialPointsLength=(size_t) Nlive;
+	/* Set up eigenvectors and eigenvalues. */
+	UINT4 N=(*cvm)->size1;
+	gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
+	gsl_matrix *eVectors = gsl_matrix_alloc(N,N);
+	gsl_vector *eValues = gsl_vector_alloc(N);
+	REAL8Vector *eigenValues = XLALCreateREAL8Vector(N);
+	gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(N);
+	int gsl_status;
+	gsl_matrix_memcpy(covCopy, *cvm);
+	
+	if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
+	  XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
+	  XLAL_ERROR_VOID(__func__,XLAL_EFAILED);
+	}
+	
+	for (i = 0; i < N; i++) {
+	  eigenValues->data[i] = gsl_vector_get(eValues,i);
+	}
+	
+	LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+	LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+	
+	
+	LALInferenceAddVariable(runState->proposalArgs,"covarianceMatrix",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
         
-	LALInferenceAddVariable(runState->proposalArgs,"LiveCVM",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
-        
-        fprintf(stdout,"Starting nested sampling loop!\n");
+	/* Sprinkle points */
+	LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
+	for(i=0;i<Nlive;i++) {
+	  runState->currentParams=runState->livePoints[i];
+	  runState->evolve(runState);
+	  logLikelihoods[i]=runState->currentLikelihood;
+	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
+	}
+	
+	/* Write out names of parameters */
+	FILE *lout=NULL;
+	char param_list[FILENAME_MAX];
+	sprintf(param_list,"%s_params.txt",outfile);
+	lout=fopen(param_list,"w");
+	minpos=0;
+	NSFillMCMCVariables(runState->livePoints[0]);
+	LALInferenceSortVariablesByName(runState->livePoints[0]);
+	for(param_ptr=runState->livePoints[0]->head;param_ptr;param_ptr=param_ptr->next)
+	{
+	  fprintf(lout,"%s\t",param_ptr->name);
+	}
+	fclose(lout);
+
+	fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
 	do {
                 /* Find minimum likelihood sample to replace */
@@ -391,10 +429,12 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
                 
 		/* Write out old sample */
+		NSFillMCMCVariables(runState->livePoints[minpos]);
+		LALInferenceSortVariablesByName(runState->livePoints[minpos]);
 		if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
 		LALInferencePrintSample(fpout,runState->livePoints[minpos]);
-		fprintf(fpout,"%lf\n",logLikelihoods[minpos]);
-
+		fprintf(fpout,"\n");
+		
 		UINT4 itercounter=0;
 		/* Generate a new live point */
 		do{ /* This loop is here in case it is necessary to find a different sample */
@@ -430,8 +470,21 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		/* Update the covariance matrix */
 		if(!(iter%(Nlive/4))) {                    
                   LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
-                  
-                  LALInferenceSetVariable(runState->proposalArgs,"LiveCVM",
+		  gsl_matrix_memcpy(covCopy, *cvm);
+		  
+		  if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
+		    XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
+		    XLAL_ERROR_VOID(__func__,XLAL_EFAILED);
+		  }
+		  
+		  for (i = 0; i < N; i++) {
+		    eigenValues->data[i] = gsl_vector_get(eValues,i);
+		  }
+		  
+		  LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+		  LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+		  
+		  LALInferenceSetVariable(runState->proposalArgs,"covarianceMatrix",
                                         (void *)cvm);
                 }
 	}
@@ -461,9 +514,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]);
 		}
+		NSFillMCMCVariables(runState->livePoints[i]);
+		LALInferenceSortVariablesByName(runState->livePoints[i]);
 		if(runState->logsample) runState->logsample(runState,runState->livePoints[i]);
 		LALInferencePrintSample(fpout,runState->livePoints[i]);
-		fprintf(fpout,"%lf\n",logLikelihoods[i]);
+		fprintf(fpout,"\n");
 	}
 
 	/* Write out the evidence */
@@ -515,34 +570,51 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 	UINT4 mcmc_iter=0,Naccepted=0;
 	UINT4 Nmcmc=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc");
 	REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
-	REAL8 logPriorOld,logPriorNew,logLnew;
+	REAL8 logPriorOld,logPriorNew,logLnew=DBL_MAX;
+	REAL8 logProposalRatio;
 	newParams=calloc(1,sizeof(LALInferenceVariables));
 
 	/* Evolve the sample until it is accepted */
         logPriorOld=runState->prior(runState,runState->currentParams);
- 
+	NSFillMCMCVariables(runState->currentParams);
 	do{
 		mcmc_iter++;
 		/* Make a copy of the parameters passed through currentParams */
                 LALInferenceCopyVariables(runState->currentParams,newParams);
                 runState->proposal(runState,newParams);
 		logPriorNew=runState->prior(runState,newParams);
-               
+		LALInferenceSetVariable(newParams,"logPrior",&logPriorNew);
+		if(LALInferenceCheckVariable(runState->proposalArgs,"logProposalRatio"))
+		  logProposalRatio=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,"logProposalRatio");
+		else logProposalRatio=0.0;
+		
 		/* If rejected, continue to next iteration */
-                if(log(gsl_rng_uniform(runState->GSLrandom)) > logPriorNew-logPriorOld)
+		if(logPriorNew==-DBL_MAX || isnan(logPriorNew)) continue;
+                if(log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
 			continue;
 		/* Otherwise, check that logL is OK */
-		logLnew=runState->likelihood(newParams,runState->data,runState->template);
-        LALInferenceAddVariable(newParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+		if(logLmin!=-DBL_MAX){
+		  logLnew=runState->likelihood(newParams,runState->data,runState->template);
+		}
                 if(logLnew > logLmin){
 			Naccepted++;
 			logPriorOld=logPriorNew;
 			LALInferenceCopyVariables(newParams,runState->currentParams);
-			runState->currentLikelihood=logLnew;
 		}
-		
+		if(isnan(logPriorNew)){
+		  XLALPrintError("Caught NaN prior slipping through sampler\n");
+		  XLAL_ERROR_VOID(__func__,XLAL_EINVAL);
+		}
+		if(logPriorNew==-DBL_MAX || logPriorNew==DBL_MAX){
+		  XLALPrintError("Caught log prior %lf slipping through sampler\n");
+		  XLAL_ERROR_VOID(__func__,XLAL_EINVAL);
+		}
 	} while(mcmc_iter<Nmcmc);
-        
+	/* Update information to pass back out */
+	if(logLnew==DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
+	LALInferenceAddVariable(runState->currentParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	runState->currentLikelihood=logLnew;
+	
 	LALInferenceDestroyVariables(newParams);
 	free(newParams);
 	REAL8 accept_rate=(REAL8)Naccepted/(REAL8)mcmc_iter;
@@ -757,7 +829,7 @@ XLALMultiStudentDeviates(
 
 void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALInferenceVariables *parameter)
 {
-	gsl_matrix *covMat=*(gsl_matrix **)LALInferenceGetVariable(runState->proposalArgs,"LiveCVM");
+	gsl_matrix *covMat=*(gsl_matrix **)LALInferenceGetVariable(runState->proposalArgs,"covarianceMatrix");
 	
 	LALInferenceVariableItem *paraHead=NULL;
 	REAL4Vector  *step=NULL;
@@ -1139,87 +1211,38 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	UINT4 Nlive=(UINT4)*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
 	UINT4 i;
 	REAL8Vector *logLs;
-	
-	LALInferenceVariableItem *current;
+	REAL8 logPrior=0.0;
 
 	/* Allocate the array */
 	/* runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *)); */
-	runState->livePoints=XLALCalloc(Nlive,sizeof(LALInferenceVariables *));
+	runState->livePoints=calloc(Nlive,sizeof(LALInferenceVariables *));
 	if(runState->livePoints==NULL)
 	{
 		fprintf(stderr,"Unable to allocate memory for %i live points\n",Nlive);
 		exit(1);
 	}
-
+	runState->differentialPoints=runState->livePoints;
+	runState->differentialPointsLength=(size_t) Nlive;
 	logLs=XLALCreateREAL8Vector(Nlive);
 
 	LALInferenceAddVariable(runState->algorithmParams,"logLikelihoods",&logLs,LALINFERENCE_REAL8Vector_t,LALINFERENCE_PARAM_FIXED);
 	fprintf(stdout,"Sprinkling %i live points, may take some time\n",Nlive);
 	for(i=0;i<Nlive;i++)
 	{
-		if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
-		runState->livePoints[i]=XLALCalloc(1,sizeof(LALInferenceVariables));
+		runState->livePoints[i]=calloc(1,sizeof(LALInferenceVariables));
 		
 		/* Copy the param structure */
 		LALInferenceCopyVariables(runState->currentParams,runState->livePoints[i]);
 		
 		/* Sprinkle the varying points among prior */
 		do{
-			for(current=runState->livePoints[i]->head ;current!=NULL;
-				current=current->next){
-				if(current->vary==LALINFERENCE_PARAM_CIRCULAR || current->vary==LALINFERENCE_PARAM_LINEAR)
-				{
-					switch (current->type){
-						case LALINFERENCE_REAL4_t:
-						{
-							REAL4 tmp;
-							REAL4 min,max;
-							LALInferenceGetMinMaxPrior(runState->priorArgs,current->name, 
-										   (void *)&min,(void *)&max);
-							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
-							break;
-						}
-							
-						case LALINFERENCE_REAL8_t:
-						{
-							REAL8 tmp;
-							REAL8 min,max;
-							LALInferenceGetMinMaxPrior(runState->priorArgs,current->name, 
-										   (void *)&min,(void *)&max);
-							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
-							break;
-						}
-						case LALINFERENCE_INT4_t:
-						{
-							INT4 tmp;
-							INT4 min,max;
-							LALInferenceGetMinMaxPrior(runState->priorArgs,current->name,
-										   (void *)&min,(void *)&max);
-							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
-							break;
-						}
-						case LALINFERENCE_INT8_t:
-						{
-							INT8 tmp;
-							INT8 min,max;
-							LALInferenceGetMinMaxPrior(runState->priorArgs,current->name,
-										   (void *)&min,(void *)&max);
-							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-							LALInferenceSetVariable(runState->livePoints[i],current->name,&tmp);
-							break;
-						}
-						default:
-							fprintf(stderr,"Trying to randomise a non-numeric parameter!");
-					}
-				}
-			}
-		}while(runState->prior(runState,runState->livePoints[i])==-DBL_MAX);
+			LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );
+			logPrior=runState->prior(runState,runState->livePoints[i]);
+		}while(logPrior==-DBL_MAX || isnan(logPrior));
 		/* Populate log likelihood */
 		logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
         LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(runState->livePoints[i],"logPrior",(void*)&logPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
 	
 }

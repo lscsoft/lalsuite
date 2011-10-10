@@ -285,7 +285,8 @@ static void h (LALStatus *s, REAL4 *z, REAL4 y, void *p)
   SIntegrateIn intinp;
   INITSTATUS (s, "h", MAIN);
   ATTATCHSTATUSPTR (s);
-  ASSERT (!p, s, 2, "Non-null pointer");
+  if ( p )
+    ABORT ( s, 2, "Non-null pointer");
   p = NULL;
   intinp.function = g;
   intinp.xmin     = 0;
@@ -302,7 +303,8 @@ static void hh (LALStatus *s, REAL8 *z, REAL8 y, void *p)
   DIntegrateIn intinp;
   INITSTATUS (s, "hh", MAIN);
   ATTATCHSTATUSPTR (s);
-  ASSERT (!p, s, 2, "Non-null pointer");
+  if ( p )
+    ABORT ( s, 2, "Non-null pointer");
   p = NULL;
   intinp.function = gg;
   intinp.xmin     = 0;

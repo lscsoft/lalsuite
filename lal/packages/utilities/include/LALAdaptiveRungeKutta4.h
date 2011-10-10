@@ -7,9 +7,10 @@
 #include <lal/LALGSL.h>
 #include <lal/SeqFactories.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 /* remove SWIG interface directives */
@@ -67,8 +68,9 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
                          REAL8Array **yout
                          );
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 
