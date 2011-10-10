@@ -92,10 +92,6 @@ LALInferenceAddProposalToCycle(LALInferenceRunState *runState, LALInferencePropo
 
     LALInferenceSetVariable(propArgs, cycleArrayLengthName, &length);
     LALInferenceSetVariable(propArgs, cycleArrayName, &cycle);
-  } if (LALInferenceCheckVariable(propArgs, cycleArrayName) && LALInferenceCheckVariable(propArgs, cycleArrayLengthName)) {
-    /* There is one or the other of array or length in propArgs, which is an error. */
-    XLALError(fname, __FILE__, __LINE__, XLAL_FAILURE);
-    exit(1);
   } else {
     /* There are no data in proposal args.  Set some. */
     UINT4 i;
@@ -175,6 +171,8 @@ LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables
     exit(1);
   }
 
+  fprintf(stderr, "Calling proposal %d of the cycle.\n", i);
+
   /* Call proposal. */
   (cycle[i])(runState, proposedParams);
 
@@ -241,6 +239,9 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   } 
 
   LALInferenceRandomizeProposalCycle(runState);
+
+  fprintf(stderr, "Default proposal initialized.\n");
+
 }
 
 void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
@@ -256,6 +257,8 @@ void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVar
     SetupDefaultProposal(runState, proposedParams);
   }
 
+  fprintf(stderr, "Calling default proposal.\n");
+  
   LALInferenceCyclicProposal(runState, proposedParams);
 }
 
