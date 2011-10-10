@@ -69,9 +69,8 @@ swigincludedir = $(includedir)/lal
 
 # installed SWIG interface headers
 EXTRA_HEADERS =
-swiginclude_HEADERS = \
-	$(swig_ifacefile) \
-	$(SWIG_HEADERS)
+nodist_swiginclude_HEADERS = $(swig_ifacefile)
+swiginclude_HEADERS = $(SWIG_HEADERS)
 
 # extra distribution files
 EXTRA_DIST = \
