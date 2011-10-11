@@ -121,22 +121,19 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
 /** Flip inclination about observing plane (iota -> Pi - iota) */
 void LALInferenceInclinationFlip(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/* Rotate one or both spins about L. */
-void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-
-/* Increment orbital phase by Pi */
+/** Increments the orbital phase by pi. */
 void LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/* Choose a random covariance matrix eigenvector to jump along. */
+/** Choose a random covariance matrix eigenvector to jump along. */
 void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/* Jump around by 0.01 radians in angle on the sky */
+/** Jump around by 0.01 radians in angle on the sky */
 void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 void LALInferenceAdaptationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 void LALInferenceAdaptationSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/* Differential evolution */
+/** Differential evolution */
 void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *state, LALInferenceVariables *proposedParams, const char *names[]);
 void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
@@ -144,12 +141,22 @@ void LALInferenceDifferentialEvolutionAmp(LALInferenceRunState *state, LALInfere
 void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 void LALInferenceDifferentialEvolutionSky(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
-/*draws a value from the prior, uniformly in individual parameters used for jumps.*/
+/** Draws a parameter state uniformly in each parameter from its min
+    to its max, rejecting any samples that do not have prior support.
+    NOTE: this is not a draw from the prior distribution!  For drawing
+    from the prior distribution, use
+    LALInferenceDrawUniformlyFromPrior().*/
 void LALInferenceMCMCDrawFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-/*draws a value from the prior, using Von Neumann rejection sampling.*/
+
+/** draws a value from the prior, using Von Neumann rejection sampling.*/
 void LALInferenceDrawUniformlyFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 // Von Neumann rejection sampler for the prior !!
 //void VNRPriorOneStep(LALInferenceRunState *runState);
+
+/** Reflects the sky location through the plane formed by three
+    detectors.  Should only be used when there are exactly three
+    different locations for detectors. */
+void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /* Nested sampling wrappers. */
 void NSFillMCMCVariables(LALInferenceVariables *proposedParams);

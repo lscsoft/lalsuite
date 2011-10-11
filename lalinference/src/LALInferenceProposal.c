@@ -31,6 +31,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/TimeDelay.h>
+#include <lal/SkyCoordinates.h>
 #include <lal/LALInference.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceLikelihood.h>
@@ -239,6 +240,8 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   LALInferenceAddProposalToCycle(runState, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
 
+  LALInferenceAddProposalToCycle(runState, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
+
   LALInferenceAddProposalToCycle(runState, &LALInferenceDrawUniformlyFromPrior, TINYWEIGHT);
 
   /* Now add various special proposals that are conditional on
@@ -258,10 +261,10 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   if (LALInferenceGetProcParamVal(runState->commandLine, "--differential-evolution")) {
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionFull, BIGWEIGHT);
-    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionMasses, TINYWEIGHT);
-    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionAmp, TINYWEIGHT);
-    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionSpins, TINYWEIGHT);
-    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionSky, TINYWEIGHT);
+    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionMasses, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionAmp, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionSpins, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionSky, SMALLWEIGHT);
   } 
 
   LALInferenceRandomizeProposalCycle(runState);
@@ -538,13 +541,13 @@ void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVa
   RA = *((REAL8 *)LALInferenceGetVariable(proposedParams, "rightascension"));
   DEC = *((REAL8 *)LALInferenceGetVariable(proposedParams, "declination"));
 
-  newRA = RA + jumpX/cos(DEC);
+  newRA = RA + jumpX;
   newDEC = DEC + jumpY;
 
   LALInferenceSetVariable(proposedParams, "rightascension", &newRA);
   LALInferenceSetVariable(proposedParams, "declination", &newDEC);
 
-  LALInferenceSetLogProposalRatio(runState, log(cos(DEC)/cos(newDEC)));
+  LALInferenceSetLogProposalRatio(runState, 0.0);
 }
 
 void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
@@ -633,7 +636,7 @@ void LALInferenceDifferentialEvolutionSky(LALInferenceRunState *runState, LALInf
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
 
-/*draws a value from the prior, uniformly in individual parameters used for jumps.*/
+/* draws a value from the prior, uniformly in individual parameters used for jumps.*/
 void LALInferenceMCMCDrawFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
 
   REAL8 value=0, min=0, max=0;
@@ -657,6 +660,11 @@ void LALInferenceMCMCDrawFromPrior(LALInferenceRunState *runState, LALInferenceV
     //LALInferencePrintVariables(proposedParams);
     //printf("%f\n",runState->prior(runState, proposedParams));
   } while(runState->prior(runState, proposedParams)<=-DBL_MAX);
+
+  /* This may be incorrect---if the prior support region introduces
+     correlations in the variables, then the jump distribution will
+     not be symmetric. */
+  LALInferenceSetLogProposalRatio(runState, 0.0);
 }
 
 /*draws a value from the prior, using Von Neumann rejection sampling.*/
@@ -690,4 +698,203 @@ void LALInferenceDrawUniformlyFromPrior(LALInferenceRunState *runState, LALInfer
 
   REAL8 logRatio = runState->prior(runState, runState->currentParams) - runState->prior(runState, proposedParams);
   LALInferenceSetLogProposalRatio(runState, logRatio);
+}
+
+static void
+cross_product(REAL8 x[3], const REAL8 y[3], const REAL8 z[3]) {
+  x[0] = y[1]*z[2]-y[2]*z[1];
+  x[1] = y[2]*z[0]-y[0]*z[2];
+  x[2] = y[0]*z[1]-y[1]*z[0];
+}
+
+static REAL8
+norm(const REAL8 x[3]) {
+  return sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+}
+
+static void 
+unit_vector(REAL8 v[3], const REAL8 w[3]) {
+  REAL8 n = norm(w);
+
+  if (n == 0.0) { 
+    XLALError("unit_vector", __FILE__, __LINE__, XLAL_FAILURE);
+    exit(1);
+  } else {
+    v[0] = w[0] / n;
+    v[1] = w[1] / n;
+    v[2] = w[2] / n;
+  }
+}
+
+static REAL8 
+dot(const REAL8 v[3], const REAL8 w[3]) {
+  return v[0]*w[0] + v[1]*w[1] + v[2]*w[2];
+}
+
+static void
+project_along(REAL8 vproj[3], const REAL8 v[3], const REAL8 w[3]) {
+  REAL8 what[3];
+  REAL8 vdotw;
+
+  unit_vector(what, w);
+  vdotw = dot(v, w);
+
+  vproj[0] = what[0]*vdotw;
+  vproj[1] = what[1]*vdotw;
+  vproj[2] = what[2]*vdotw;
+}
+
+static void
+vsub(REAL8 diff[3], const REAL8 w[3], const REAL8 v[3]) {
+  diff[0] = w[0] - v[0];
+  diff[1] = w[1] - v[1];
+  diff[2] = w[2] - v[2];
+}
+
+static void
+reflect_plane(REAL8 pref[3], const REAL8 p[3], 
+              const REAL8 x[3], const REAL8 y[3], const REAL8 z[3]) {
+  REAL8 n[3], nhat[3], xy[3], xz[3], pn[3], pnperp[3];
+
+  vsub(xy, y, x);
+  vsub(xz, z, x);
+
+  cross_product(n, xy, xz);
+  unit_vector(nhat, n);
+
+  project_along(pn, p, nhat);
+  vsub(pnperp, p, pn);
+
+  vsub(pref, pnperp, pn);
+}
+
+static void 
+sph_to_cart(REAL8 cart[3], const REAL8 lat, const REAL8 longi) {
+  cart[0] = cos(longi)*sin(lat);
+  cart[1] = sin(longi)*sin(lat);
+  cart[2] = cos(lat);
+}
+
+static void
+cart_to_sph(const REAL8 cart[3], REAL8 *lat, REAL8 *longi) {
+  *longi = atan2(cart[1], cart[0]);
+  *lat = acos(cart[2] / sqrt(cart[0]*cart[0] + cart[1]*cart[1] + cart[2]*cart[2]));
+}
+
+static void
+reflected_position_and_time(LALInferenceRunState *runState, const REAL8 ra, const REAL8 dec, const REAL8 oldTime,
+                            REAL8 *newRA, REAL8 *newDec, REAL8 *newTime) {
+  LALStatus status;
+  SkyPosition currentEqu, currentGeo, newEqu, newGeo;
+  currentEqu.latitude = dec;
+  currentEqu.longitude = ra;
+  currentEqu.system = COORDINATESYSTEM_EQUATORIAL;
+  currentGeo.system = COORDINATESYSTEM_GEOGRAPHIC;
+  LALEquatorialToGeographic(&status, &currentGeo, &currentEqu, &(runState->data->epoch));
+
+  /* This function should only be called when we know that we have
+     three detectors, or the following will crash. */
+  REAL8 x[3], y[3], z[3];
+  LALInferenceIFOData *currentData = runState->data;
+  memcpy(x, currentData->detector->location, 3*sizeof(REAL8));
+
+  currentData = currentData->next;
+  memcpy(y, currentData->detector->location, 3*sizeof(REAL8));
+
+  currentData = currentData->next;
+  memcpy(z, currentData->detector->location, 3*sizeof(REAL8));
+
+  REAL8 currentLoc[3];
+  sph_to_cart(currentLoc, currentGeo.latitude, currentGeo.longitude);
+
+  REAL8 newLoc[3];
+  reflect_plane(newLoc, currentLoc, x, y, z);
+
+  REAL8 newGeoLat, newGeoLongi;
+  cart_to_sph(newLoc, &newGeoLat, &newGeoLongi);
+
+  newGeo.latitude = newGeoLat;
+  newGeo.longitude = newGeoLongi;
+  newGeo.system = COORDINATESYSTEM_GEOGRAPHIC;
+  newEqu.system = COORDINATESYSTEM_EQUATORIAL;
+  LALGeographicToEquatorial(&status, &newEqu, &newGeo, &(runState->data->epoch));
+
+  REAL8 oldDt, newDt;
+  oldDt = XLALTimeDelayFromEarthCenter(runState->data->detector->location, currentEqu.longitude,
+                                       currentEqu.latitude, &(runState->data->epoch));
+  newDt = XLALTimeDelayFromEarthCenter(runState->data->detector->location, newEqu.longitude,
+                                       newEqu.latitude, &(runState->data->epoch));
+
+  *newRA = newEqu.longitude;
+  *newDec = newEqu.latitude;
+  *newTime = oldTime + oldDt - newDt;
+}
+
+void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+
+  /* Find the number of distinct-position detectors. */
+  UINT4 nIFO = 0;
+  LALInferenceIFOData *currentIFO = NULL;
+
+  for (currentIFO = runState->data; currentIFO; currentIFO = currentIFO->next) {
+    nIFO++;
+  }
+
+  /* Exit with same parameters (with a warning the first time) if
+     there are not three detectors. */
+  static UINT4 warningDelivered = 0;
+  if (nIFO != 3) {
+    if (warningDelivered) {
+      /* Do nothing. */
+    } else {
+      fprintf(stderr, "WARNING: trying to reflect through the decector plane with %d detectors.\n", nIFO);
+      fprintf(stderr, "WARNING: but this proposal should only be used with exactly 3 detectors.\n");
+      fprintf(stderr, "WARNING: %s, line %d\n", __FILE__, __LINE__);
+      warningDelivered = 1;
+    }
+
+    return; 
+  }
+
+  REAL8 ra = *(REAL8 *)LALInferenceGetVariable(proposedParams, "rightascension");
+  REAL8 dec = *(REAL8 *)LALInferenceGetVariable(proposedParams, "declination");
+  REAL8 baryTime = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
+
+  REAL8 newRA, newDec, newTime;
+  reflected_position_and_time(runState, ra, dec, baryTime, &newRA, &newDec, &newTime);
+
+  /* Unit normal deviates, used to "fuzz" the state. */
+  REAL8 nRA, nDec, nTime;
+  const REAL8 epsTime = 6e-6; /* 1e-1 / (16 kHz) */
+  const REAL8 epsAngle = 3e-4; /* epsTime*c/R_Earth */
+  
+  nRA = gsl_ran_ugaussian(runState->GSLrandom);
+  nDec = gsl_ran_ugaussian(runState->GSLrandom);
+  nTime = gsl_ran_ugaussian(runState->GSLrandom);
+
+  newRA += epsAngle*nRA;
+  newDec += epsAngle*nDec;
+  newTime += epsTime*nTime;
+
+  /* And the doubly-reflected position (near the original, but not
+     exactly due to the fuzzing). */
+  REAL8 refRA, refDec, refTime;
+  reflected_position_and_time(runState, newRA, newDec, newTime, &refRA, &refDec, &refTime);
+
+  /* The Gaussian increments required to shift us back to the original
+     position from the doubly-reflected position. */
+  REAL8 nRefRA, nRefDec, nRefTime;
+  nRefRA = ra - refRA;
+  nRefDec = dec - refDec;
+  nRefTime = baryTime - refTime;
+
+  REAL8 pForward, pReverse;
+  pForward = gsl_ran_ugaussian_pdf(nRA)*gsl_ran_ugaussian_pdf(nDec)*gsl_ran_ugaussian_pdf(nTime);
+  pReverse = gsl_ran_ugaussian_pdf(nRefRA)*gsl_ran_ugaussian_pdf(nRefDec)*gsl_ran_ugaussian_pdf(nRefTime);
+
+  LALInferenceSetVariable(proposedParams, "rightascension", &newRA);
+  LALInferenceSetVariable(proposedParams, "declination", &newDec);
+  LALInferenceSetVariable(proposedParams, "time", &newTime);
+  LALInferenceSetLogProposalRatio(runState, log(pReverse/pForward));
 }
