@@ -95,7 +95,7 @@ const LALDetector *XLALInstrumentNameToLALDetector(
 			return &lalCachedDetectors[i];
 
 	XLALPrintError("%s(): error: can't identify instrument from string \"%s\"\n", __func__, string);
-	XLAL_ERROR_NULL(__func__, XLAL_EDATA);
+	XLAL_ERROR_NULL(XLAL_EDATA);
 }
 
 
@@ -218,7 +218,7 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 
 	h = XLALCreateREAL8TimeSeries(name, &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, hplus->data->length);
 	if(!h)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* add the detector's geometric delay.  after this, epoch = the
 	 * time of the injection time series' first sample at the desired
@@ -288,7 +288,7 @@ int XLALSimAddInjectionREAL8TimeSeries(
 
 	if(h->deltaT != target->deltaT || h->f0 != target->f0) {
 		XLALPrintError("%s(): error: input sample rates or heterodyne frequencies do not match\n", __func__);
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 
 	/* extend the source time series by adding the "aperiodicity
@@ -299,11 +299,11 @@ int XLALSimAddInjectionREAL8TimeSeries(
 	if(i < h->data->length) {
 		/* integer overflow */
 		XLALPrintError("%s(): error: source time series too long\n", __func__);
-		XLAL_ERROR(__func__, XLAL_EBADLEN);
+		XLAL_ERROR(XLAL_EBADLEN);
 	}
 	i -= h->data->length;
 	if(!XLALResizeREAL8TimeSeries(h, -(int) (i / 2), h->data->length + i))
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/* compute the integer and fractional parts of the sample index in
 	 * the target time series on which the source time series begins.
@@ -332,13 +332,13 @@ int XLALSimAddInjectionREAL8TimeSeries(
 	if(!tilde_h || !plan) {
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
 		XLALDestroyREAL8FFTPlan(plan);
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	i = XLALREAL8TimeFreqFFT(tilde_h, h, plan);
 	XLALDestroyREAL8FFTPlan(plan);
 	if(i) {
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	/* apply sub-sample time correction and optional response function
@@ -409,13 +409,13 @@ int XLALSimAddInjectionREAL8TimeSeries(
 	plan = XLALCreateReverseREAL8FFTPlan(h->data->length, 0);
 	if(!plan) {
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	i = XLALREAL8FreqTimeFFT(h, tilde_h, plan);
 	XLALDestroyREAL8FFTPlan(plan);
 	XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
 	if(i)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/* the deltaT can get "corrupted" by floating point round-off
 	 * during its trip through the frequency domain.  since this
@@ -427,7 +427,7 @@ int XLALSimAddInjectionREAL8TimeSeries(
 
 	if(fabs(h->deltaT - target->deltaT) / target->deltaT > 1e-12) {
 		XLALPrintError("%s(): error: oops, internal sample rate mismatch\n", __func__);
-		XLAL_ERROR(__func__, XLAL_EERR);
+		XLAL_ERROR(XLAL_EERR);
 	}
 	h->deltaT = target->deltaT;
 
@@ -441,7 +441,7 @@ int XLALSimAddInjectionREAL8TimeSeries(
 	 * aperiodicity artifacts. */
 
 	if(!XLALResizeREAL8TimeSeries(h, aperiodicity_suppression_buffer / 2, h->data->length - aperiodicity_suppression_buffer))
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/* apply a Tukey window whose tapers lie within the remaining
 	 * aperiodicity padding. leaving one sample of the aperiodicty
@@ -450,7 +450,7 @@ int XLALSimAddInjectionREAL8TimeSeries(
 
 	window = XLALCreateTukeyREAL8Window(h->data->length, (double) (aperiodicity_suppression_buffer - 2) / h->data->length);
 	if(!window)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	for(i = 0; i < h->data->length; i++)
 		h->data->data[i] *= window->data->data[i];
 	XLALDestroyREAL8Window(window);
@@ -458,7 +458,7 @@ int XLALSimAddInjectionREAL8TimeSeries(
 	/* add source time series to target time series */
 
 	if(!XLALAddREAL8TimeSeries(target, h))
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/* done */
 

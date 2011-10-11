@@ -46,7 +46,7 @@ SERIESTYPE *CSERIES (
 	if(!new || !sequence) {
 		XLALFree(new);
 		DSEQUENCE (sequence);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	if(name)
@@ -77,7 +77,7 @@ SERIESTYPE *XSERIES (
 	if(!new || !sequence) {
 		XLALFree(new);
 		DSEQUENCE (sequence);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	*new = *series;
@@ -96,7 +96,7 @@ SERIESTYPE *RSERIES (
 {
 
 	if(!RSEQUENCE (series->data, first, length))
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	XLALGPSAdd(&series->epoch, first * series->deltaT);
 
 	return series;
@@ -111,7 +111,7 @@ SERIESTYPE *SSERIES (
 {
 
 	if(!RSERIES (series, first, length))
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	return series;
 }
@@ -133,15 +133,15 @@ SERIESTYPE *ASERIES (
 	/* make sure arguments are compatible */
 	if(XLALIsREAL8FailNaN(unit_ratio)) {
 		XLALPrintError("%s(): incompatible units\n", __func__);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 	if(arg1->f0 != arg2->f0) {
 		XLALPrintError("%s(): incompatible heterodyne frequencies\n", __func__);
-		XLAL_ERROR_NULL(__func__, XLAL_EDATA);
+		XLAL_ERROR_NULL(XLAL_EDATA);
 	}
 	if(arg1->deltaT != arg2->deltaT) {
 		XLALPrintError("%s(): incompatible sample periods\n", __func__);
-		XLAL_ERROR_NULL(__func__, XLAL_EDATA);
+		XLAL_ERROR_NULL(XLAL_EDATA);
 	}
 
 	/* set start indexes */

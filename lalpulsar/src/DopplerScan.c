@@ -1759,7 +1759,6 @@ fprintfDopplerParams ( FILE *fp, const PulsarDopplerParams *params )
 DopplerSkyGrid *
 XLALEquiPartitionSkygrid ( const DopplerSkyGrid *skygrid, UINT4 partitionIndex, UINT4 numPartitions )
 {
-  const CHAR *fn = "XLALEquiPartitionSkygrid";
   UINT4 Nsky, Nt, dp;
   UINT4 iMin, numPoints;
   UINT4 counter;
@@ -1767,7 +1766,7 @@ XLALEquiPartitionSkygrid ( const DopplerSkyGrid *skygrid, UINT4 partitionIndex, 
   DopplerSkyGrid *newNode, newGrid = empty_DopplerSkyGrid;
 
   if ( !skygrid || (numPartitions == 0) || (partitionIndex >= numPartitions) )
-    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
 
   /* ----- count total sky-grid */
@@ -1777,7 +1776,7 @@ XLALEquiPartitionSkygrid ( const DopplerSkyGrid *skygrid, UINT4 partitionIndex, 
     Nsky ++;
 
   if ( Nsky < numPartitions )
-    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   /* ----- determine integer equi-patitions (+/- 1) */
   Nt = Nsky / numPartitions;		/* integer division! */
@@ -1803,7 +1802,7 @@ XLALEquiPartitionSkygrid ( const DopplerSkyGrid *skygrid, UINT4 partitionIndex, 
       if ( (newNode->next = LALCalloc ( 1, sizeof(DopplerSkyGrid) )) == NULL )
 	{
 	  freeSkyGrid ( newGrid.next );
-	  XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+	  XLAL_ERROR_NULL( XLAL_ENOMEM );
 	}
       newNode = newNode->next;
 

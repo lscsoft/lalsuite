@@ -92,12 +92,11 @@ extern int lalDebugLevel;
  */
 int main(void)
 {
-  const CHAR *fn = "testFstat_v3";
   int res1;
 
   lalDebugLevel = 1;
 
-  LogPrintf (LOG_NORMAL, "%s: Now testing XLALSFTVectorToCOMPLEX8TimeSeries() ... ", fn);
+  LogPrintf (LOG_NORMAL, "%s: Now testing XLALSFTVectorToCOMPLEX8TimeSeries() ... ", __func__);
   if ( (res1 = test_XLALSFTVectorToCOMPLEX8TimeSeries()) != TEST_PASSED )
     {
       LogPrintfVerbatim (LOG_CRITICAL, "failed.\n\n");
@@ -123,8 +122,6 @@ int main(void)
 int
 test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
 {
-  const CHAR *fn = "test_XLALSFTVectorToCOMPLEX8TimeSeries()";
-
   SFTVector *sfts = NULL;
   SFTtype *lftTest = NULL;
 
@@ -136,13 +133,13 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
   UINT4 numSamples;
 
   if ( XLALgenerateRandomData ( &tsOrig, &sfts ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALgenerateRandomData() failed!\n", fn);
+    XLALPrintError ("%s: XLALgenerateRandomData() failed!\n", __func__);
     return TEST_ABORTED;
   }
 
 
   if ( ( tsTest = XLALSFTVectorToCOMPLEX8TimeSeries ( sfts, NULL, NULL ) ) == NULL ) {
-    XLALPrintError ("%s: call to XLALSFTVectorToCOMPLEX8TimeSeries() failed. xlalErrrno = %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: call to XLALSFTVectorToCOMPLEX8TimeSeries() failed. xlalErrrno = %d\n", __func__, xlalErrno );
     return TEST_ABORTED;
   }
 
@@ -152,7 +149,7 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
   status = empty_LALStatus;
   LALCreateSFTtype (&status, &lftTest, numSamples);
   if ( status.statusCode ) {
-    XLALPrintError("\n%s: LALCreateSFTtype() failed, with LAL error %d\n", fn, status.statusCode );
+    XLALPrintError("\n%s: LALCreateSFTtype() failed, with LAL error %d\n", __func__, status.statusCode );
     return TEST_ABORTED;
   }
 
@@ -164,19 +161,19 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
   /* ----- compute FFTW on computed C8 timeseries ---------- */
   if ( (LFTplanC8 = XLALCreateForwardCOMPLEX8FFTPlan( numSamples, 0 )) == NULL )
     {
-      XLALPrintError ( "%s: XLALCreateForwardCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", fn, numSamples, xlalErrno );
+      XLALPrintError ( "%s: XLALCreateForwardCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", __func__, numSamples, xlalErrno );
       return TEST_ABORTED;
     }
 
   if ( XLALCOMPLEX8VectorFFT( lftTest->data, tsTest->data, LFTplanC8 ) != XLAL_SUCCESS )
     {
-      XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", fn, xlalErrno );
+      XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", __func__, xlalErrno );
       return TEST_ABORTED;
     }
 
   if ( XLALReorderFFTWtoSFT (lftTest->data) != XLAL_SUCCESS )
     {
-      XLALPrintError ( "%s: XLALReorderFFTWtoSFT() failed! errno = %d!\n", fn, xlalErrno );
+      XLALPrintError ( "%s: XLALReorderFFTWtoSFT() failed! errno = %d!\n", __func__, xlalErrno );
       return TEST_ABORTED;
     }
 
@@ -188,7 +185,7 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
     FILE *fp;
 
     if ( (fp = fopen(fnameTS, "wb")) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "%s: failed to open '%s' for writing.\n", fn, fnameTS );
+      LogPrintf (LOG_CRITICAL, "%s: failed to open '%s' for writing.\n", __func__, fnameTS );
       return TEST_ABORTED;
     }
     write_timeSeriesR4 (fp, tsOrig );
@@ -197,7 +194,7 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
     /*
     LALWriteSFTVector2Dir (&status, sfts, "./", "test SFTs with random data", "testFstat_v3" );
     if ( status.statusCode ) {
-      XLALPrintError("\n%s: LALWriteSFTVector2Dir() failed, with LAL error %d\n", fn, status.statusCode );
+      XLALPrintError("\n%s: LALWriteSFTVector2Dir() failed, with LAL error %d\n", __func__, status.statusCode );
       return TEST_ABORTED;
     }
     */
@@ -205,7 +202,7 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
     status = empty_LALStatus;
     LALWriteSFT2file ( &status, lftTest, fnameLFT, "test data LFT from SFTs");
     if ( status.statusCode ) {
-      XLALPrintError("\n%s: LALWriteSFT2file() failed, with LAL error %d\n", fn, status.statusCode );
+      XLALPrintError("\n%s: LALWriteSFT2file() failed, with LAL error %d\n", __func__, status.statusCode );
       return TEST_ABORTED;
     }
 
@@ -232,8 +229,6 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
 int
 XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
 {
-  const CHAR *fn = "XLALgenerateRandomData()";
-
   LIGOTimeGPS epoch0 = { 714180733, 0 };
   UINT4 numSFTs = 19;
 
@@ -264,12 +259,12 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
 
   /* input sanity checks */
   if ( !ts || !sfts ) {
-    XLALPrintError ("%s: NULL input pointers\n", fn );
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    XLALPrintError ("%s: NULL input pointers\n", __func__);
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( (*ts != NULL) || (*sfts != NULL) ) {
-    XLALPrintError ("%s: output pointers not initialized to NULL.\n", fn);
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    XLALPrintError ("%s: output pointers not initialized to NULL.\n", __func__);
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* prepare sampling constants */
@@ -307,7 +302,7 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   if ( (outTS = XLALCreateREAL4TimeSeries ("H1:test timeseries", &epoch0, 0, deltaT, &empty_LALUnit, numSamplesTS )) == NULL )
     {
       XLALPrintError ("%s: XLALCreateREAL4TimeSeries() failed for numSamples = %d\n", numSamplesTS );
-      XLAL_ERROR ( fn, XLAL_EFUNC );
+      XLAL_ERROR ( XLAL_EFUNC );
     }
 
   TSdata = outTS->data->data;
@@ -316,15 +311,15 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
 
   /* also set up corresponding SFT timestamps vector */
   if ( (timestampsSFT = XLALCalloc (1, sizeof( *timestampsSFT )) ) == NULL ) {
-    XLALPrintError ("%s: Failed to XLALCalloc %d bytes\n", fn, sizeof( *timestampsSFT ));
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: Failed to XLALCalloc %d bytes\n", __func__, sizeof( *timestampsSFT ));
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
 
   timestampsSFT->length = numSFTs;
   if ( (timestampsSFT->data = XLALCalloc (numSFTs, sizeof (*timestampsSFT->data) )) == NULL) {
-    XLALPrintError ("%s: Failed to allocate %d x %d bytes\n", fn, numSFTs, sizeof (*timestampsSFT->data) );
+    XLALPrintError ("%s: Failed to allocate %d x %d bytes\n", __func__, numSFTs, sizeof (*timestampsSFT->data) );
     XLALFree ( timestampsSFT );
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
 
   /* ----- set up random-noise timeseries with gaps ---------- */
@@ -349,8 +344,8 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
     } /* for iSFT < numSFTs */
 
   if ( thisBin != numSamplesTS ) {
-    XLALPrintError ("\n%f: sanity check failed, thisBin = %d does not agree with numSamplesTS = %d\n", fn, thisBin, numSamplesTS );
-    XLAL_ERROR ( fn, XLAL_EBADLEN );
+    XLALPrintError ("\n%f: sanity check failed, thisBin = %d does not agree with numSamplesTS = %d\n", __func__, thisBin, numSamplesTS );
+    XLAL_ERROR ( XLAL_EBADLEN );
 
   }
 
@@ -368,8 +363,8 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
     outSFTs = NULL;
     LALSignalToSFTs(&status, &outSFTs, outTS, &sftParams);
     if ( status.statusCode ) {
-      XLALPrintError("\n%s: LALSignalToSFTs() failed, with LAL error %d\n", fn, status.statusCode );
-      XLAL_ERROR ( fn, XLAL_EFUNC );
+      XLALPrintError("\n%s: LALSignalToSFTs() failed, with LAL error %d\n", __func__, status.statusCode );
+      XLAL_ERROR ( XLAL_EFUNC );
     }
   } /* turn timeseries into SFTs */
 

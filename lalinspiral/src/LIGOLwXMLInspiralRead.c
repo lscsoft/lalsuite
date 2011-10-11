@@ -36,7 +36,6 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
     )
 
 {
-  static const char   *func = "XLALMultiInspiralTableFromLIGOLw";
   int                                   i, j, nrows;
   int                                   mioStatus=0;
   MultiInspiralTable                   *thisEvent = NULL;
@@ -49,7 +48,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
   mioStatus = MetaioOpenTable( env, fileName, "multi_inspiral" );
   if ( mioStatus )
   {
-    XLAL_ERROR_NULL( func, XLAL_EIO );
+    XLAL_ERROR_NULL( XLAL_EIO );
   }
 
   /* create table directory to find columns in file*/
@@ -77,7 +76,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       fprintf( stderr, "could not allocate multi inspiral event\n" );
       XLAL_CLOBBER_EVENTS;
       MetaioClose( env );
-      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+      XLAL_ERROR_NULL( XLAL_ENOMEM );
     }
 
 
@@ -334,7 +333,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
           {
             i8colData = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "multi_inspiral", "event_id");
             if ( i8colData < 0 )
-              XLAL_ERROR_NULL( func, XLAL_EFUNC );
+              XLAL_ERROR_NULL( XLAL_EFUNC );
           }
           if ( i8colData )
           {
@@ -427,7 +426,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       else
       {
         XLAL_CLOBBER_EVENTS;
-        XLAL_ERROR_NULL( func, XLAL_EIO);
+        XLAL_ERROR_NULL( XLAL_EIO);
       }
     }
     /* count the number of triggers parsed */
@@ -439,7 +438,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
     fprintf( stderr, "error parsing after row %d\n", i );
     XLAL_CLOBBER_EVENTS;
     MetaioClose( env );
-    XLAL_ERROR_NULL( func, XLAL_EIO);
+    XLAL_ERROR_NULL( XLAL_EIO);
   }
 
   /* Normal exit */
@@ -2234,7 +2233,6 @@ XLALReadSummValueFile (
 
 {
 #if 0
-  const char *func = "XLALReadSummValueFile";
   INT4 numFileTriggers = 0;
 #endif
   INT4 haveSummValue = 0;
@@ -2285,7 +2283,6 @@ XLALReadInspiralTriggerFile (
     )
 
 {
-  const char *func = "XLALReadInspiralTriggerFile";
   INT4 numFileTriggers = 0;
   /*INT4 haveSummValue = 0;*/
   SnglInspiralTable  *inputData = NULL;
@@ -2332,7 +2329,7 @@ XLALReadInspiralTriggerFile (
     XLALPrintError("No valid search_summary table in %s, exiting\n",
         fileName );
     LALFree(thisInputFile);
-    XLAL_ERROR(func, XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
   else
   {
@@ -2360,7 +2357,7 @@ XLALReadInspiralTriggerFile (
     XLALPrintError("No valid summ_value table in %s, exiting\n",
         fileName );
     LALFree(thisInputFile);
-    XLAL_ERROR(func, XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
   else
   {
@@ -2391,7 +2388,7 @@ XLALReadInspiralTriggerFile (
     XLALPrintError("Unable to read sngl_inspiral table from %s\n",
         fileName );
     LALFree(thisInputFile);
-    XLAL_ERROR(func, XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
   else if ( numFileTriggers > 0 )
   {
@@ -3151,7 +3148,6 @@ XLALReadMultiInspiralTriggerFile (
     )
 
 {
-  const char *func = "XLALReadMultiInspiralTriggerFile";
   INT4 numFileTriggers = 0;
   /*INT4 haveSummValue = 0;*/
   MultiInspiralTable   *inputData = NULL;
@@ -3198,7 +3194,7 @@ XLALReadMultiInspiralTriggerFile (
     XLALPrintError("No valid search_summary table in %s, exiting\n",
         fileName );
     LALFree(thisInputFile);
-    XLAL_ERROR(func, XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
   else
   {
@@ -3226,7 +3222,7 @@ XLALReadMultiInspiralTriggerFile (
     XLALPrintError("No valid summ_value table in %s, exiting\n",
         fileName );
     LALFree(thisInputFile);
-    XLAL_ERROR(func, XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
   else
   {
@@ -3257,7 +3253,7 @@ XLALReadMultiInspiralTriggerFile (
     XLALPrintError("Unable to read multi_inspiral table from %s\n",
         fileName );
     LALFree(thisInputFile);
-    XLAL_ERROR(func, XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
   else if ( numFileTriggers > 0 )
   {

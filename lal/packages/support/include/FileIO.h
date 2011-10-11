@@ -43,8 +43,8 @@ the \texttt{lalsupport} library.
 #define _FILEIO_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #ifdef __cplusplus
@@ -65,7 +65,7 @@ FILE *
 LALOpenDataFile( const char * );
 
 typedef struct tagLALFILE {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(LALFILE);
   int compression;
   void *fp;
 } LALFILE;

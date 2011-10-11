@@ -33,4 +33,9 @@
  */
 %apply SWIGTYPE **OUTPUT {COMPLEX16FrequencySeries **htilde};
 
+// allocate these structs with LAL memory
+SWIGLAL_STRUCT_LALMEM(expnCoeffsdEnergyFlux);
+SWIGLAL_STRUCT_LALMEM(TofVIntegrandIn);
+SWIGLAL_STRUCT_LALMEM(TofVIn);
+
 // LALSimulation header files which form the SWIG interface

@@ -72,12 +72,10 @@ void counter(qfvars *vars)
 void order(qfvars *vars)
 {
    
-   const CHAR *fn = __func__;
-   
    INT4 ascend = 1;     //To sort descending, set ascend to zero
    if ( XLALHeapIndex(vars->sorting->data, vars->weights->data, vars->weights->length, sizeof(REAL8), &ascend, compar) != 0) {
-      fprintf(stderr,"%s: XLALHeapIndex() failed.\n", fn);
-      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+      fprintf(stderr,"%s: XLALHeapIndex() failed.\n", __func__);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    
    vars->ndtsrt = 0; //Signify that we have done the sorting
@@ -465,8 +463,6 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
 REAL8 coeff(qfvars *vars, REAL8 x)
 {
    
-   const CHAR *fn = __func__;
-   
    REAL8 axl, axl1, axl2, sxl, sum1, lj;
    INT4 ii, jj, t;
    
@@ -475,7 +471,7 @@ REAL8 coeff(qfvars *vars, REAL8 x)
    if (vars->ndtsrt) {
       order(vars);
       if (vars->ndtsrt) {
-         fprintf(stderr,"%s: order() failed\n.", fn);
+         fprintf(stderr,"%s: order() failed\n.", __func__);
          vars->fail = 1;
          return 1.0;
       }

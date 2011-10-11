@@ -23,7 +23,7 @@
  *
  * File Name: inspinj.c
  *
- * Author: Brown, D. A., Creighton, J. D. E. and Dietz A.
+ * Author: Brown, D. A., Creighton, J. D. E. and Dietz A. IPN contributions from Predoi, V.
  *
  * Revision: $Id$
  *
@@ -90,6 +90,9 @@ void drawFromSource( REAL8 *rightAscension,
     REAL8 *declination,
     REAL8 *distance,
     CHAR  name[LIGOMETA_SOURCE_MAX] );
+void read_IPN_grid_from_file( char *fname );
+void drawFromIPNsim( REAL8 *rightAscension,
+    REAL8 *declination  );
 void drawLocationFromExttrig( SimInspiralTable* table );
 void drawMassFromSource( SimInspiralTable* table );
 void drawMassSpinFromNR( SimInspiralTable* table );
@@ -128,6 +131,7 @@ char *nrFileName = NULL;
 char *sourceFileName = NULL;
 char *outputFileName = NULL;
 char *exttrigFileName = NULL;
+char *IPNSkyPositionsFile = NULL;
 
 INT4 outCompress = 0;
 INT4 ninjaMass   = 0;
@@ -188,6 +192,7 @@ INT4 numExtTriggers = 0;
 ExtTriggerTable   *exttrigHead = NULL;
 
 int num_source;
+int numSkyPoints;
 int galaxynum;
 struct {
   char   name[LIGOMETA_SOURCE_MAX];
@@ -196,7 +201,7 @@ struct {
   REAL8 dist;
   REAL8 lum;
   REAL8 fudge;
-} *source_data, *old_source_data,*temparray;
+} *source_data, *old_source_data,*temparray, *skyPoints;
 
 char MW_name[LIGOMETA_SOURCE_MAX] = "MW";
 REAL8* fracVec  =NULL;
@@ -523,6 +528,7 @@ static void print_usage(char *program)
       "Time distribution information:\n"\
       "  --gps-start-time start   GPS start time for injections\n"\
       "  --gps-end-time end       GPS end time for injections\n"\
+      "  --ipn-gps-time IPNtime   GPS end time for IPN trigger\n"\
       "  --t-distr timeDist       set the time step distribution of injections\n"\
       "                           fixed: fixed time step\n"\
       "                           uniform: uniform distribution\n"\
@@ -539,6 +545,7 @@ static void print_usage(char *program)
       "                           exttrig: use external trigger file\n"\
       "                           random: uses random locations\n"\
       "                           fixed: set fixed location\n"\
+      "                           ipn: random locations from IPN skypoints\n"\
       " [--longitude] longitude   read longitude if fixed value (degrees)\n"
       " [--latitude] latitude     read latitide if fixed value (degrees)\n"
       "  --d-distr distDist       set the distance distribution of injections\n"\
@@ -560,6 +567,7 @@ static void print_usage(char *program)
       " [--max-inc]  max_inc      value for the maximum inclination angle (in degrees) if '--i-distr uniform' is chosen. \n"\
       " [--source-file] sources   read source parameters from sources\n"\
       "                           requires enable/disable milkyway\n"\
+      " [--ipn-file] ipnskypoints read IPN sky points from file\n"\
       " [--sourcecomplete] distance \n"
       "                           complete galaxy catalog out to distance (kPc)\n"\
       " [--make-catalog]          create a text file of the completed galaxy catalog\n"\
@@ -810,8 +818,8 @@ read_source_data( char* filename )
   /* close file */
   fclose( fp );
 
-
   /* generate ratio and fraction vectors */
+
   ratioVec = calloc( num_source, sizeof( REAL8 ) );
   fracVec  = calloc( num_source, sizeof( REAL8  ) );
   if ( !ratioVec || !fracVec )
@@ -829,6 +837,69 @@ read_source_data( char* filename )
   fracVec[0] = ratioVec[0] / norm;
   for ( k = 1; k < num_source; ++k )
     fracVec[k] = fracVec[k-1] + ratioVec[k] / norm;
+}
+
+/*
+ Function to read IPN sky simulations from text file given file - read(file,ra,dec)
+*/
+void read_IPN_grid_from_file( char *fname )
+
+{
+
+  UINT4              j;                      /* counters */
+  char               line[256];              /* string holders */
+  FILE               *data;                  /* file object */
+
+  /* read file */
+  data = fopen(fname, "r");
+
+  /* check file */
+  if ( ! data )
+  {
+    fprintf( stderr, "Could not find file %s\n", fname );
+    exit( 1 );
+  }
+
+
+  /* find number of lines */
+  numSkyPoints = 0;
+  while ( fgets( line, sizeof( line ), data ) )
+    ++numSkyPoints;
+
+
+  /* seek to start of file again */
+  fseek(data, 0, SEEK_SET);  
+
+  /* assign memory for sky points */
+  skyPoints = LALCalloc(numSkyPoints, sizeof(*skyPoints));
+  if ( ! skyPoints )
+  {
+    fprintf( stderr, "Allocation error for skyPoints\n" );
+    exit( 1 );
+  }
+
+  j = 0;
+  while ( fgets( line, sizeof( line ), data ) )
+    {
+      REAL8 ra, dec;
+      int c;
+
+      c = sscanf( line, "%le %le", &ra, &dec );
+      if ( c != 2 )
+      {
+        fprintf( stderr, "error parsing IPN sky points datafile %s\n", IPNSkyPositionsFile );
+        exit( 1 );
+      }
+
+      /* convert to radians */
+      skyPoints[j].ra  = ra * ( LAL_PI / 180.0 );  /* from degrees (IPN file) to radians */
+      skyPoints[j].dec = dec * ( LAL_PI / 180.0 );
+      ++j;
+    }
+
+
+  /* close file */
+  fclose( data );
 }
 
 /*
@@ -1047,6 +1118,7 @@ for (j=0; j<galaxynum; j++) {
         myFakeGalaxy = saved_next;
 }
 LALFree(old_source_data);
+LALFree( skyPoints );
 LALDestroyRandomParams( &status, &randPositions);
 
 XLALDestroyREAL8Vector(phibins);
@@ -1210,6 +1282,32 @@ void drawFromSource( REAL8 *rightAscension,
 
 /*
  *
+ * functions to draw IPN sky location from IPN simulation points
+ *
+ */
+void drawFromIPNsim( REAL8 *rightAscension,
+    REAL8 *declination )
+{
+  REAL4 u;
+  INT4 j;
+  
+  u=XLALUniformDeviate( randParams );
+  j=( int ) (u*numSkyPoints);  
+ 
+
+  /* draw from the IPN source table */
+    if ( j < numSkyPoints )
+    {
+      /* put the parameters */
+      *rightAscension = skyPoints[j].ra;
+      *declination    = skyPoints[j].dec;
+      return;
+    }
+}
+
+
+/*
+ *
  * functions to draw sky location from exttrig source file
  *
  */
@@ -1245,6 +1343,7 @@ int main( int argc, char *argv[] )
 {
   LIGOTimeGPS gpsStartTime = {-1,0};
   LIGOTimeGPS gpsEndTime = {-1,0};
+  LIGOTimeGPS IPNgpsTime = {-1,0};
   LIGOTimeGPS currentGpsTime;
   long gpsDuration;
 
@@ -1276,6 +1375,8 @@ int main( int argc, char *argv[] )
   REAL8 drawnRightAscension = 0.0;
   REAL8 drawnDeclination = 0.0;
   CHAR  drawnSourceName[LIGOMETA_SOURCE_MAX];
+  REAL8 IPNgmst1 = 0.0;
+  REAL8 IPNgmst2 = 0.0;
 
   REAL8 targetSNR;
 
@@ -1294,6 +1395,7 @@ int main( int argc, char *argv[] )
     {"f-lower",                 required_argument, 0,                'F'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
+    {"ipn-gps-time",            required_argument, 0,                '"'},
     {"t-distr",                 required_argument, 0,                '('},
     {"time-step",               required_argument, 0,                't'},
     {"time-interval",           required_argument, 0,                'i'},
@@ -1358,6 +1460,7 @@ int main( int argc, char *argv[] )
     {"taper-injection",         required_argument, 0,                '*'},
     {"band-pass-injection",     no_argument,       0,                '}'},
     {"write-sim-ring",          no_argument,       0,                '{'},
+    {"ipn-file",                required_argument, 0,                '^'},
     {0, 0, 0, 0}
   };
   int c;
@@ -1486,6 +1589,23 @@ int main( int argc, char *argv[] )
         }
         gpsEndTime.gpsSeconds = gpsinput;
         gpsEndTime.gpsNanoSeconds = 0;
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "int",
+              "%ld", gpsinput );
+        break;
+
+      case '"':
+        gpsinput = atol( optarg );
+        if ( gpsinput < 441417609 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is prior to "
+              "Jan 01, 1994  00:00:00 UTC:\n"
+              "(%ld specified)\n",
+              long_options[option_index].name, gpsinput );
+          exit( 1 );
+        }
+        IPNgpsTime.gpsSeconds = gpsinput;
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "int",
               "%ld", gpsinput );
@@ -1894,7 +2014,11 @@ int main( int argc, char *argv[] )
         {
           lDistr=fixedSkyLocation;
         }
-        else
+        else if(!strcmp(dummy, "ipn"))
+        {
+          lDistr=locationFromIPNFile;
+        }
+	else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown location distribution: "
@@ -2232,6 +2356,16 @@ int main( int argc, char *argv[] )
         exit( 1 );
         break;
 
+      case '^':
+        optarg_len = strlen( optarg ) + 1;
+        IPNSkyPositionsFile = calloc( 1, optarg_len * sizeof(char) );
+        memcpy( IPNSkyPositionsFile, optarg, optarg_len * sizeof(char) );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
+              "%s", optarg );
+        break;
+
+
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
         print_usage(argv[0]);
@@ -2317,7 +2451,19 @@ int main( int argc, char *argv[] )
     }
   }
 
+  /* if using IPN sky points file, check that file exists and read it */
+  if ( lDistr==locationFromIPNFile )
+  {
+    if ( ! IPNSkyPositionsFile )
+    {
+      fprintf( stderr,
+          "Must specify --ipn-file when using IPN sky points distribution \n" );
+      exit( 1 );
+    }
 
+    /* read the source distribution here */
+   read_IPN_grid_from_file( IPNSkyPositionsFile );
+  }
   /* If we're distributing over snr make sure we have everything */
   if ( minSNR > -1 || maxSNR > -1 || logSNR || ifos )
   {
@@ -2811,6 +2957,7 @@ int main( int argc, char *argv[] )
     /* draw location and distances */
     drawFromSource( &drawnRightAscension, &drawnDeclination, &drawnDistance,
         drawnSourceName );
+    drawFromIPNsim( &drawnRightAscension, &drawnDeclination );
 
     /* populate distances */
     if ( dDistr == distFromSourceFile )
@@ -2863,6 +3010,13 @@ int main( int argc, char *argv[] )
     else if (lDistr == uniformSkyLocation)
     {
       simTable=XLALRandomInspiralSkyLocation(simTable, randParams);
+    }
+    else if ( lDistr == locationFromIPNFile )
+    {
+      IPNgmst1 = XLALGreenwichMeanSiderealTime(&IPNgpsTime);
+      IPNgmst2 = XLALGreenwichMeanSiderealTime(&simTable->geocent_end_time);
+      simTable->longitude = drawnRightAscension - IPNgmst1 + IPNgmst2;
+      simTable->latitude  = drawnDeclination;
     }
     else
     {
@@ -3089,7 +3243,8 @@ int main( int argc, char *argv[] )
     LALFree(source_data);
   if (mass_data)
     LALFree(mass_data);
-
+  if (skyPoints)
+    LALFree(skyPoints);
 
   LALCheckMemoryLeaks();
   return 0;

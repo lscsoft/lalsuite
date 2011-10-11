@@ -94,7 +94,7 @@ XLALInspiralPhasing2_0PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   v5 = pow(v,5.);
   phase = ak->phiC
@@ -141,7 +141,7 @@ XLALInspiralPhasing2_2PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   v2 = v*v;
   v5 = v2*v2*v;
@@ -190,7 +190,7 @@ XLALInspiralPhasing2_3PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   v2 = v*v;
   v3 = v2*v;
@@ -240,7 +240,7 @@ XLALInspiralPhasing2_4PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   v2 = v*v;
   v3 = v2*v;
@@ -292,7 +292,7 @@ XLALInspiralPhasing2_5PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   v2 = v*v;
   v3 = v2*v;
@@ -345,7 +345,7 @@ XLALInspiralPhasing2_6PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   v2 = v*v;
   v3 = v2*v;
@@ -400,7 +400,7 @@ XLALInspiralPhasing2_7PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   v2 = v*v;
   v3 = v2*v;

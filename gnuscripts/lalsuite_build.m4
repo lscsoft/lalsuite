@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 25
+# serial 26
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -26,10 +26,10 @@ AC_DEFUN([LALSUITE_ARG_VAR],[
 AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
   DISTCHECK_CONFIGURE_FLAGS=
   for arg in ${ac_configure_args}; do
-    AS_CASE([${arg}],
-      [\'--enable-*\'|\'--disable-*\'|\'--with-*\'|\'--without-*\'],
-      [DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}"]
-    )
+    case ${arg} in
+      (\'--enable-*\'|\'--disable-*\'|\'--with-*\'|\'--without-*\')
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
+    esac
   done
   AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
 ])

@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011
 #
-# serial 9
+# serial 10
 
 # basic version string comparison
 # can only handle numeric versions separated by periods
@@ -105,14 +105,6 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
       AC_MSG_ERROR([could not find 'perl' in path])
     ])
 
-    # common SWIG language build makefile
-    SWIG_COMMON_MK="${srcdir}/../lal/swig/swig-common.mk"
-    AC_SUBST_FILE(SWIG_COMMON_MK)
-
-    # SWIG makefile for generating header lists
-    SWIG_HEADER_MK="${srcdir}/../lal/swig/swig-header.mk"
-    AC_SUBST_FILE(SWIG_HEADER_MK)
-
     # symbols to define when generating SWIG wrapping code
     SWIG_SWIG_DEFINES=
     AC_SUBST(SWIG_SWIG_DEFINES)
@@ -175,7 +167,9 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
 
     # common SWIG interface headers (with LAL only)
     AS_IF([test ${swig_is_lal} = true],[
-      SWIG_HEADERS="${SWIG_HEADERS} swiglal-common.i swiglal-gsl.i"
+      SWIG_HEADERS="${SWIG_HEADERS} \$(swig_srcdir)/swiglal-common.i"
+      SWIG_HEADERS="${SWIG_HEADERS} \$(swig_srcdir)/swiglal-gsl.i"
+      SWIG_HEADERS="${SWIG_HEADERS} \$(swig_srcdir)/swiglal-test.i"
     ])
 
     # string to add to user environment setup scripts
@@ -201,12 +195,18 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
     SWIG_PREINST_LIBPATH="${SWIG_PREINST_LIBPATH} \$(top_builddir)/packages/support/src/${objdir}"
     AC_SUBST(SWIG_PREINST_LIBPATH)
 
+    # deduce library load path to use when running check scripts prior to installation
+    AS_IF([test ${build_vendor} = apple],[
+      SWIG_LD_LIBPATH_NAME=DYLD_FALLBACK_LIBRARY_PATH
+    ],[
+      SWIG_LD_LIBPATH_NAME=LD_LIBRARY_PATH
+    ])
+    AC_SUBST(SWIG_LD_LIBPATH_NAME)
+
   ],[
 
     # if no SWIG languages were found
     SWIG_WRAPPINGS="NONE"
-    SWIG_COMMON_MK="/dev/null"
-    SWIG_HEADER_MK="/dev/null"
 
   ])
 
@@ -257,7 +257,7 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE],[
 
     # language-specific SWIG interface header (with LAL only)
     AS_IF([test ${swig_is_lal} = true],[
-      SWIG_HEADERS="${SWIG_HEADERS} ]lowercase[/swiglal-]lowercase[.i"
+      SWIG_HEADERS="${SWIG_HEADERS} \$(swig_srcdir)/]lowercase[/swiglal-]lowercase[.i"
     ])
 
     # configure $1

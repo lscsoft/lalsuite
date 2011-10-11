@@ -108,7 +108,7 @@ static INT4 XLALSimIMREOBHybridRingdownWave (
   if ( inspwave1->length != 3 || inspwave2->length != 3 ||
 		modefreqs->length != nmodes )
   {
-    XLAL_ERROR( __func__, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
   }
 
   /* Solving the linear system for QNMs amplitude coefficients using gsl routine */
@@ -126,7 +126,7 @@ static INT4 XLALSimIMREOBHybridRingdownWave (
     if (x)       gsl_vector_free(x);
     if (p)       gsl_permutation_free(p);
 
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   /* Define the linear system Ax=y */
@@ -212,7 +212,7 @@ static INT4 XLALSimIMREOBHybridRingdownWave (
     gsl_vector_free(hderivs);
     gsl_vector_free(x);
     gsl_permutation_free(p);
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Putting solution to an XLAL vector */
@@ -224,7 +224,7 @@ static INT4 XLALSimIMREOBHybridRingdownWave (
     gsl_vector_free(hderivs);
     gsl_vector_free(x);
     gsl_permutation_free(p);
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   for (i = 0; i < nmodes; ++i)
@@ -318,7 +318,7 @@ static INT4 XLALGenerateHybridWaveDerivatives (
 
   if ( !y )
   {
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   for (j = 0; j < vecLength; ++j)
@@ -334,7 +334,7 @@ static INT4 XLALGenerateHybridWaveDerivatives (
     if ( acc )    gsl_interp_accel_free(acc);
     if ( spline ) gsl_spline_free(spline);
     LALFree( y );
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   /* Gall gsl spline interpolation */
@@ -344,7 +344,7 @@ static INT4 XLALGenerateHybridWaveDerivatives (
     gsl_spline_free(spline);
     gsl_interp_accel_free(acc);
     LALFree( y );
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Getting first and second order time derivatives from gsl interpolations */
@@ -361,7 +361,7 @@ static INT4 XLALGenerateHybridWaveDerivatives (
       gsl_spline_free(spline);
       gsl_interp_accel_free(acc);
       LALFree( y );
-      XLAL_ERROR( __func__, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
     rwave->data[j]  = (REAL8)(ry);
     dwave->data[j]  = (REAL8)(dy/m);
@@ -591,7 +591,7 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
   if ( nmodes > 8 )
   {
     XLALPrintError( "Requesting more overtones than we have data to generate!\n");
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* Choose the appropriate data bases on the user requested l an m */
@@ -611,7 +611,7 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
       else
       {
         XLALPrintError( "Unsupported combination of l, m (%d, %d)\n", l, m );
-        XLAL_ERROR( __func__, XLAL_EINVAL );
+        XLAL_ERROR( XLAL_EINVAL );
       }
       break;
     case 3:
@@ -623,7 +623,7 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
       else
       {
         XLALPrintError( "Unsupported combination of l, m (%d, %d)\n", l, m );
-        XLAL_ERROR( __func__, XLAL_EINVAL ); 
+        XLAL_ERROR( XLAL_EINVAL ); 
       }
       break;
     case 4:
@@ -635,7 +635,7 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
       else
       {
         XLALPrintError( "Unsupported combination of l, m (%d, %d)\n", l, m );
-        XLAL_ERROR( __func__, XLAL_EINVAL );
+        XLAL_ERROR( XLAL_EINVAL );
       }
       break;
     case 5:
@@ -647,12 +647,12 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
       else
       {
         XLALPrintError( "Unsupported combination of l, m (%d, %d)\n", l, m );
-        XLAL_ERROR( __func__, XLAL_EINVAL );
+        XLAL_ERROR( XLAL_EINVAL );
       }
       break;
     default:
       XLALPrintError( "Unsupported combination of l, m (%d, %d)\n", l, m );
-      XLAL_ERROR( __func__, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
       break;
   }
 
@@ -664,7 +664,7 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
  /* Call XLALFinalMassSpin() to get mass and spin of the final black hole */
   if ( XLALFinalMassSpin(&finalMass, &finalSpin, mass1, mass2) == XLAL_FAILURE )
   {
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Now get the QNM frequencies from interpolating the above data */
@@ -772,13 +772,13 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       modefreqs = XLALCreateCOMPLEX16Vector( nmodes );
       if ( !modefreqs )
       {
-        XLAL_ERROR( __func__, XLAL_ENOMEM );
+        XLAL_ERROR( XLAL_ENOMEM );
       }
 
       if ( XLALSimIMREOBGenerateQNMFreqV2( modefreqs, mass1, mass2, l, m, nmodes ) == XLAL_FAILURE )
       {
         XLALDestroyCOMPLEX16Vector( modefreqs );
-        XLAL_ERROR( __func__, XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
       }
 
       /* Ringdown signal length: 10 times the decay time of the n=0 mode */
@@ -789,7 +789,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       {
         XLALPrintError( "More inspiral points needed for ringdown matching.\n" );
         XLALDestroyCOMPLEX16Vector( modefreqs );
-        XLAL_ERROR( __func__, XLAL_EFAILED );
+        XLAL_ERROR( XLAL_EFAILED );
       }
 
       /* Create memory for the ring-down and full waveforms, and derivatives of inspirals */
@@ -814,7 +814,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
         if (ddinspwave) XLALDestroyREAL8Vector( ddinspwave );
         if (inspwaves1) XLALDestroyREAL8VectorSequence( inspwaves1 );
         if (inspwaves2) XLALDestroyREAL8VectorSequence( inspwaves2 );
-        XLAL_ERROR( __func__, XLAL_ENOMEM );
+        XLAL_ERROR( XLAL_ENOMEM );
       }
 
       memset( rdwave1->data, 0, rdwave1->length * sizeof( REAL8 ) );
@@ -833,7 +833,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
         XLALDestroyREAL8Vector( ddinspwave );
         XLALDestroyREAL8VectorSequence( inspwaves1 );
         XLALDestroyREAL8VectorSequence( inspwaves2 );
-        XLAL_ERROR( __func__, XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
       }
       for (j = 0; j < 6; j++)
       {
@@ -854,7 +854,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
         XLALDestroyREAL8Vector( ddinspwave );
         XLALDestroyREAL8VectorSequence( inspwaves1 );
         XLALDestroyREAL8VectorSequence( inspwaves2 );
-        XLAL_ERROR( __func__, XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
       }
       for (j = 0; j < 6; j++)
       {
@@ -876,7 +876,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
         XLALDestroyREAL8Vector( ddinspwave );
         XLALDestroyREAL8VectorSequence( inspwaves1 );
         XLALDestroyREAL8VectorSequence( inspwaves2 );
-        XLAL_ERROR( __func__, XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
       }
 
       /* Generate full waveforms, by stitching inspiral and ring-down waveforms */

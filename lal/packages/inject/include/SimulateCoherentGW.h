@@ -21,8 +21,8 @@
 #define _SIMULATECOHERENTGW_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <lal/LALStdlib.h>
@@ -290,7 +290,7 @@ f/\dot{f}\f$ (provided \f$\tau\gg1/f\f$, as we have assumed).
  *
  */
 typedef struct tagCoherentGW {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(CoherentGW);
   SkyPosition position;     /**< The location of the source in the sky; this should be in equatorial celestial coordinates, but routines may be able to do the conversion */
   REAL4 psi;                /**< The polarization angle \f$\psi\f$, in radians, as defined in Appendix B of [\ref Anderson_W2000] */
   REAL4TimeVectorSeries *h; /**< A time-sampled two-dimensional vector storing the waveforms \f$h_+(t)\f$ and \f$h_\times(t)\f$, in dimensionless strain */
@@ -305,7 +305,7 @@ typedef struct tagCoherentGW {
  * of a detector to a gravitational waveform.
  */
 typedef struct tagDetectorResponse {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(DetectorResponse);
   COMPLEX8FrequencySeries *transfer; 	/**< The frequency-dependent transfer function of the interferometer, in ADC counts per unit strain amplitude at any given frequency;
                                          * if absent, the response will be given in raw strain rather than ADC output */
   LALDetector *site;           		/**< A structure storing site and polarization information, used to compute the polarization response and the propagation delay;

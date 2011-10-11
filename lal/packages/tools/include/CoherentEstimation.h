@@ -21,8 +21,8 @@
 #define _COHERENTESTIMATION_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <lal/LALStdlib.h>
@@ -56,7 +56,7 @@ NRCSID( COHERENTESTIMATION, "$Id$" );
 #define COHERENTESTIMATIONH_MSGEUIMP "Implemented only for 3 detectors"
 
 typedef struct tagDetectorsData {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(DetectorsData);
 
   UINT4 Ndetectors;      /* number of detectors */
   REAL4TimeSeries *data; /* data time series from all detectors */
@@ -65,7 +65,7 @@ typedef struct tagDetectorsData {
 
 
 typedef struct tagCoherentEstimation {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(CoherentEstimation);
 
   UINT4 Ndetectors;        /* number of detectors */
   LALDetector *detectors;  /* vector of detectors info */

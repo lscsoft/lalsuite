@@ -797,7 +797,7 @@ XLALFindMetricDim ( const REAL8Vector *metric )
   if ( !metric )
     {
       XLALPrintError ("\nNULL Input received!\n\n");
-      XLAL_ERROR ( "XLALFindMetricDim", XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
 
   length = metric->length;
@@ -815,7 +815,7 @@ XLALFindMetricDim ( const REAL8Vector *metric )
 
   /* no fitting dimension found ==> error */
   XLALPrintError ("\nInput vector is inconsisten with symmetric quadratic matrix!\n\n");
-  XLAL_ERROR ( "XLALFindMetricDim", XLAL_EINVAL);
+  XLAL_ERROR ( XLAL_EINVAL);
 
 }/* XLALFindMetricDim() */
 

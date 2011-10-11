@@ -62,18 +62,15 @@ int XLALInspiralGetApproximantString( CHAR        *output,
                                       LALPNOrder  order
                                     )
 {
-
-  static const char *func = "XLALInspiralGetApproximantString";
-
   CHAR approxString[LIGOMETA_SEARCH_MAX];
   CHAR orderString[LIGOMETA_SEARCH_MAX];
 
 #ifndef LAL_NDEBUG
   if (!output)
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if (length < 1)
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 #endif
 
   /* Set the approximant string */
@@ -205,7 +202,7 @@ int XLALInspiralGetApproximantString( CHAR        *output,
 
     default:
       XLALPrintError("Unknown or unsupported approximant.\n");
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
       break;
   }
 
@@ -260,7 +257,7 @@ int XLALInspiralGetApproximantString( CHAR        *output,
 
     default:
       XLALPrintError( "Unknown or unsupported order.\n" );
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
       break;
   }
 

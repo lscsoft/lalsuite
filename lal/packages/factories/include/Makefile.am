@@ -16,5 +16,4 @@ AVFactories.h: AVFactoriesH.m4 VFactoriesBaseH.m4 AFactoriesBaseH.m4
 @INCLUDEMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)
-CLEANFILES += $(swig_clean)
-@SWIG_HEADER_MK@
+include $(top_srcdir)/swig/swig-header.am

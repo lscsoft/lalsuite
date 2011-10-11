@@ -72,8 +72,6 @@ const char *cfgfile_content = \
 int
 main(int argc, char *argv[])
 {
-  const char *fn = __func__;
-
   int i, my_argc = 8;
   #define CFG_FNAME "ConfigFile.cfg"
   char **my_argv;
@@ -82,7 +80,7 @@ main(int argc, char *argv[])
 
   if ( argc > 1 ) {
     XLALPrintError ("%s: no input arguments allowed.\n");
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   my_argv = XLALCalloc ( my_argc, sizeof(char*) );
@@ -94,15 +92,15 @@ main(int argc, char *argv[])
 
   /* laldebug level always needs to be read first (before any lal-mallocs!) */
   if ( XLALGetDebugLevel (my_argc, my_argv, 'v') != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALGetDebugLevel() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALGetDebugLevel() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* ----- dump config-file content into config-file ----- */
   FILE *fid;
   if ( (fid = fopen ( CFG_FNAME, "wb" )) == NULL ) {
-    XLALPrintError ("%s: Failed to open configfile '%s' for writing.\n", fn, CFG_FNAME );
-    XLAL_ERROR ( fn, XLAL_ESYS );
+    XLALPrintError ("%s: Failed to open configfile '%s' for writing.\n", __func__, CFG_FNAME );
+    XLAL_ERROR ( XLAL_ESYS );
   }
   fprintf ( fid, "%s\n", cfgfile_content );
   fclose(fid);
@@ -110,82 +108,82 @@ main(int argc, char *argv[])
   /* ---------- Register all test user-variables ---------- */
   UserInput_t *uvar = &my_uvars;
   if ( XLALregREALUserStruct( argNum, 0, UVAR_REQUIRED, "Testing float argument") != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALregREALUserStruct() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALregREALUserStruct() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   if ( XLALregSTRINGUserStruct( argStr, 0, UVAR_REQUIRED, "Testing string argument") != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALregSTRINGUserStruct() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALregSTRINGUserStruct() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   if ( XLALregBOOLUserStruct( argBool, 0, UVAR_REQUIRED, "Testing bool argument") != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALregBOOLUserStruct() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALregBOOLUserStruct() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   if ( XLALregINTUserStruct( argInt, 'a', UVAR_REQUIRED, "Testing INT argument") != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALregINTUserStruct() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALregINTUserStruct() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   if ( XLALregINTUserStruct( dummy,  'c', UVAR_OPTIONAL, "Testing INT argument") != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALregINTUserStruct() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALregINTUserStruct() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   if ( XLALregBOOLUserStruct( argB2, 'b', UVAR_REQUIRED, "Testing short-option bool argument") != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALregBOOLUserStruct() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALregBOOLUserStruct() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   if ( XLALregSTRINGUserStruct( string2, 0, UVAR_REQUIRED, "Testing another string argument") != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALregSTRINGUserStruct() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALregSTRINGUserStruct() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* ---------- now read all input from commandline and config-file ---------- */
   if ( XLALUserVarReadAllInput ( my_argc, my_argv ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALUserVarReadAllInput() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALUserVarReadAllInput() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* ---------- test help-string generation */
   CHAR *helpstr;
   if ( (helpstr = XLALUserVarHelpString ( argv[0])) == NULL ) {
-    XLALPrintError ("%s: XLALUserVarHelpString() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALUserVarHelpString() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   XLALFree ( helpstr );
 
   /* ---------- test log-generation */
   CHAR *logstr;
   if ( ( logstr = XLALUserVarGetLog (   UVAR_LOGFMT_CFGFILE )) == NULL ) {
-    XLALPrintError ("%s: XLALUserVarGetLog() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALUserVarGetLog() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   XLALFree ( logstr );
 
 
   /* ---------- test values were read in correctly ---------- */
   if ( uvar->argNum != 1 ) {
-    XLALPrintError ("%s: Failed to read in argNum\n", fn);
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: Failed to read in argNum\n", __func__);
+    XLAL_ERROR ( XLAL_EFAILED );
   }
   if ( strcmp ( uvar->argStr, "xyz" ) ) {
-    XLALPrintError ("%s: Failed to read in argStr\n", fn);
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: Failed to read in argStr\n", __func__);
+    XLAL_ERROR ( XLAL_EFAILED );
   }
   if ( !uvar->argBool ) {
-    XLALPrintError ("%s: Failed to read in argBool\n", fn);
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: Failed to read in argBool\n", __func__);
+    XLAL_ERROR ( XLAL_EFAILED );
   }
   if ( uvar->argInt != 1 ) {
-    XLALPrintError ("%s: Failed to read in argInt\n", fn);
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: Failed to read in argInt\n", __func__);
+    XLAL_ERROR ( XLAL_EFAILED );
   }
   if ( !uvar->argB2 ) {
-    XLALPrintError ("%s: Failed to read in argB2\n", fn);
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: Failed to read in argB2\n", __func__);
+    XLAL_ERROR ( XLAL_EFAILED );
   }
   if ( strcmp ( uvar->string2, TESTSTRING ) ) {
-    XLALPrintError ("%s: Failed to read in string2\n", fn);
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: Failed to read in string2\n", __func__);
+    XLAL_ERROR ( XLAL_EFAILED );
   }
 
   /* ----- cleanup ---------- */

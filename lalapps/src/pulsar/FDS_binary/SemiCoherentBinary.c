@@ -327,7 +327,6 @@ ParameterSpace empty_ParameterSpace;
  */
 int main( int argc, char *argv[] )  {
 
-  static const char *fn = __func__;             /* store function name for log output */
   UserInput_t uvar = empty_UserInput;           /* user input variables */
   CHAR *clargs = NULL;                          /* store the command line args */
   SFTVector *sftvec = NULL;                     /* stores the input SFTs */
@@ -349,17 +348,17 @@ int main( int argc, char *argv[] )  {
 
   /* setup LAL debug level */
   if (XLALGetDebugLevel(argc, argv, 'v')) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALGetDebugLevel() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALGetDebugLevel() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */
   if (XLALReadUserVars(argc,argv,&uvar,&clargs)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALReadUserVars() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALReadUserVars() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : read in uservars\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : read in uservars\n",__func__);
 
   /* make crude but safe estimate of the bandwidth required for the source */
  /*  fmin_read = pspace.space->data[0].min - WINGS_FACTOR*pspace.space->data[0].min*pspace.space->data[1].max*pspace.space->data[3].max; */
@@ -369,7 +368,7 @@ int main( int argc, char *argv[] )  {
     fmin_read = uvar.freq - WINGS_FACTOR*uvar.freq*wings;
     fmax_read = uvar.freq + uvar.freqband + WINGS_FACTOR*(uvar.freq + uvar.freqband)*wings;
     fband_read = fmax_read - fmin_read;
-    LogPrintf(LOG_DEBUG,"%s : reading in SFT frequency band [%f -> %f]\n",fn,fmin_read,fmax_read); 
+    LogPrintf(LOG_DEBUG,"%s : reading in SFT frequency band [%f -> %f]\n",__func__,fmin_read,fmax_read); 
   }
  
   /**********************************************************************************/
@@ -378,18 +377,18 @@ int main( int argc, char *argv[] )  {
   
   /* load in the SFTs - also fill in the segment parameters structure */
   if (XLALReadSFTs(&sftvec,&segparams,uvar.sftbasename,fmin_read,fband_read,uvar.gpsstart,uvar.gpsend,uvar.obsid_pattern)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALReadSFTs() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALReadSFTs() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : read in SFTs\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : read in SFTs\n",__func__);
   
   /* define SFT length and the start and span of the observations plus the definitive segment time */
   pspace.tseg = 1.0/sftvec->data[0].deltaF;
   memcpy(&(pspace.epoch),&(sftvec->data[0].epoch),sizeof(LIGOTimeGPS));
   pspace.span = XLALGPSDiff(&(sftvec->data[sftvec->length-1].epoch),&(sftvec->data[0].epoch)) + pspace.tseg;
   sprintf(pspace.source,"%s",uvar.source);
-  LogPrintf(LOG_DEBUG,"%s : SFT length = %f seconds\n",fn,pspace.tseg);
-  LogPrintf(LOG_DEBUG,"%s : entire dataset starts at GPS time %d contains %d SFTS and spans %.0f seconds\n",fn,pspace.epoch.gpsSeconds,sftvec->length,pspace.span);
+  LogPrintf(LOG_DEBUG,"%s : SFT length = %f seconds\n",__func__,pspace.tseg);
+  LogPrintf(LOG_DEBUG,"%s : entire dataset starts at GPS time %d contains %d SFTS and spans %.0f seconds\n",__func__,pspace.epoch.gpsSeconds,sftvec->length,pspace.span);
   
   /**********************************************************************************/
   /* DEFINE THE BINARY PARAMETER SPACE */
@@ -397,10 +396,10 @@ int main( int argc, char *argv[] )  {
   
   /* register and read all user-variables */
   if (XLALDefineBinaryParameterSpace(&(pspace.space),pspace.epoch,pspace.span,&uvar)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALDefineBinaryParameterSpace() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALDefineBinaryParameterSpace() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : defined binary parameter prior space\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : defined binary parameter prior space\n",__func__);
 
   /**********************************************************************************/
   /* DEFINE THE AMPLITUDE PARAMETERS IF USING A FIXED AMPLITUDE SIGNAL MODEL */
@@ -408,7 +407,7 @@ int main( int argc, char *argv[] )  {
   
   if (uvar.fixedamp) {
     if (XLALComputeAmplitudeParams(&(pspace.ampspace),&(pspace.ampgrid),&(pspace.amppriors),uvar.sigalpha)) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALComputeAmplitudeParams() failed with error = %d\n",fn,xlalErrno);
+      LogPrintf(LOG_CRITICAL,"%s : XLALComputeAmplitudeParams() failed with error = %d\n",__func__,xlalErrno);
       return 1;
     }
   }
@@ -419,10 +418,10 @@ int main( int argc, char *argv[] )  {
   
   /* compute the fine grid on the binary parameters */
   if (XLALComputeBinaryGridParams(&(pspace.gridparams),pspace.space,pspace.span,pspace.tseg,uvar.mismatch)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryGridParams() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryGridParams() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : computed the binary parameter space grid\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : computed the binary parameter space grid\n",__func__);
  
   /**********************************************************************************/
   /* COMPUTE THE BINARY PARAMETER SPACE PRIORS */
@@ -430,10 +429,10 @@ int main( int argc, char *argv[] )  {
   
   /* compute the priors on the binary parameters */
   if (XLALComputeBinaryPriors(&(pspace.priors),pspace.space,pspace.gridparams)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryPriors() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryPriors() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : computed the binary parameter space priors\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : computed the binary parameter space priors\n",__func__);
   
   /**********************************************************************************/
   /* ADD A SIMULATED SIGNAL TO THE SFT DATA */
@@ -441,10 +440,10 @@ int main( int argc, char *argv[] )  {
 
   if (XLALUserVarWasSet(&(uvar.inject_amplitude))) {
     if (XLALAddBinarySignalToSFTVector(&sftvec,&pspace,uvar.inject_amplitude,uvar.seed)) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALAddBinarySignalToSFTVector() failed with error = %d\n",fn,xlalErrno);
+      LogPrintf(LOG_CRITICAL,"%s : XLALAddBinarySignalToSFTVector() failed with error = %d\n",__func__,xlalErrno);
       return 1;
     }
-    LogPrintf(LOG_DEBUG,"%s : added a simulated signal to the SFTs\n",fn);
+    LogPrintf(LOG_DEBUG,"%s : added a simulated signal to the SFTs\n",__func__);
   }
 
   /**********************************************************************************/
@@ -453,10 +452,10 @@ int main( int argc, char *argv[] )  {
   
   /* compute the background noise using the sfts */
   if (XLALEstimateBackgroundFlux(&background,segparams,sftvec)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALEstimateBackgroundFlux() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALEstimateBackgroundFlux() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : estimated the background noise from the SFTs\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : estimated the background noise from the SFTs\n",__func__);
  
   /**********************************************************************************/
   /* CONVERT ALL SFTS TO DOWNSAMPLED TIMESERIES */
@@ -464,10 +463,10 @@ int main( int argc, char *argv[] )  {
   
   /* convert sfts to downsample dtimeseries */
   if (XLALSFTVectorToCOMPLEX8TimeSeriesArray(&dstimevec,sftvec)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALSFTVectorToCOMPLEX8TimeSeriesArray() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALSFTVectorToCOMPLEX8TimeSeriesArray() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : converted SFTs to downsampled timeseries\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : converted SFTs to downsampled timeseries\n",__func__);
 
   /**********************************************************************************/
   /* COMPUTE THE COARSE GRID ON FREQUENCY DERIVITIVE */
@@ -475,13 +474,13 @@ int main( int argc, char *argv[] )  {
 
   /* compute the grid parameters for all SFTs */
   if (XLALComputeFreqGridParamsVector(&freqgridparams,pspace.space,sftvec,uvar.mismatch)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALComputeFreqGridParams() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALComputeFreqGridParams() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
 
   /* free un-needed original SFT vector */
   XLALDestroySFTVector(sftvec);
-  LogPrintf(LOG_DEBUG,"%s : Freed the SFT memory\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : Freed the SFT memory\n",__func__);
 
   /**********************************************************************************/
   /* COMPUTE THE STATISTICS ON THE COARSE GRID */
@@ -489,10 +488,10 @@ int main( int argc, char *argv[] )  {
 
   /* compute the statistic on the grid */
   if (XLALComputeDemodulatedPowerVector(&power,dstimevec,freqgridparams)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALComputeDemodulatedPower() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALComputeDemodulatedPower() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : computed the demodulated power\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : computed the demodulated power\n",__func__);
   
   /* fill in segment parameters */
   for (i=0;i<power->length;i++) {
@@ -508,7 +507,7 @@ int main( int argc, char *argv[] )  {
   }
   XLALFree(dstimevec->data);
   XLALFree(dstimevec);
-  LogPrintf(LOG_DEBUG,"%s : freed the downsampled timeseries memory\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : freed the downsampled timeseries memory\n",__func__);
 
   /* free frequency grid - the contents of each segment have been moved to the power structure and are freed later */
   XLALFree(freqgridparams->segment);
@@ -516,13 +515,13 @@ int main( int argc, char *argv[] )  {
 
   /* free the background estimate */
   XLALDestroyREAL8Vector(background);
-  LogPrintf(LOG_DEBUG,"%s : freed the background noise estimate\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : freed the background noise estimate\n",__func__);
 
   /* free the segment params */
   XLALDestroyREAL8Vector(segparams->dt);
   XLALDestroyINT4Vector(segparams->npcus);
   XLALFree(segparams);
-  LogPrintf(LOG_DEBUG,"%s : freed the segment parameters\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : freed the segment parameters\n",__func__);
 
   /**********************************************************************************/
   /* INTEGRATE OVER THE FINE GRID TO COMPUTE THE BAYES FACTOR */
@@ -530,20 +529,20 @@ int main( int argc, char *argv[] )  {
 
   /* compute the Bayes factor and the posterior distributions */
   if (XLALComputeBayesFactor(&Bayes,power,&pspace,uvar.sigalpha)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALComputeBayesFactor() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALComputeBayesFactor() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : computed the BayesFactor and posteriors\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : computed the BayesFactor and posteriors\n",__func__);
  
   /**********************************************************************************/
   /* OUTPUT RESULTS TO FILE */
   /**********************************************************************************/
 
   if (XLALOutputBayesResults(uvar.outputdir,Bayes,&pspace,clargs,uvar.obsid_pattern)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALOutputBayesResults() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALOutputBayesResults() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : output results to file.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : output results to file.\n",__func__);
  
   /**********************************************************************************/
   /* CLEAN UP */
@@ -551,24 +550,24 @@ int main( int argc, char *argv[] )  {
 
   /* clean up the parameter space */
   if (XLALFreeParameterSpace(&pspace)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALFreeParameterSpace() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALFreeParameterSpace() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : freed the parameter space\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : freed the parameter space\n",__func__);
  
   /* clean up the demodulated power */
   if (XLALFreeREAL4DemodulatedPowerVector(power)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALFreeREAL4DemodulatedPowerVector() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALFreeREAL4DemodulatedPowerVector() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }  
-  LogPrintf(LOG_DEBUG,"%s : freed the demodulated power\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : freed the demodulated power\n",__func__);
 
   /* clean up the demodulated power */
   if (XLALFreeBayesianProducts(Bayes)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALFreeBayesianProducts() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s : XLALFreeBayesianProducts() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }  
-  LogPrintf(LOG_DEBUG,"%s : freed the Bayesian results\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : freed the Bayesian results\n",__func__);
 
   /* Free config-Variables and userInput stuff */
   XLALDestroyUserVars();
@@ -576,9 +575,9 @@ int main( int argc, char *argv[] )  {
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
-  LogPrintf(LOG_DEBUG,"%s : successfully checked memory leaks.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : successfully checked memory leaks.\n",__func__);
 
-  LogPrintf(LOG_DEBUG,"%s : successfully completed.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : successfully completed.\n",__func__);
   return 0;
   
 } /* end of main */
@@ -592,8 +591,6 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 		     CHAR **clargs        /**< [out] the command line args string */
 		     )
 {
-
-  const CHAR *fn = __func__;   /* store function name for log output */
   CHAR *version_string;
   INT4 i;
 
@@ -646,8 +643,8 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
   /* do ALL cmdline and cfgfile handling */
   if (XLALUserVarReadAllInput(argc, argv)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   /* if help was requested, we're done here */
@@ -667,13 +664,13 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   /* set priors flag if the sigma width has been set */
   if (XLALUserVarWasSet(&(uvar->nsig))) {
     uvar->gaussianpriors = 1;
-    LogPrintf(LOG_DEBUG,"%s : using Gaussian priors on orbital parameters.\n",fn);
+    LogPrintf(LOG_DEBUG,"%s : using Gaussian priors on orbital parameters.\n",__func__);
   }
   else uvar->nsig = 1.0;
 
   if (uvar->nsig < 0.0) {
-    LogPrintf(LOG_CRITICAL,"%s : the user input nsig must > 0.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : the user input nsig must > 0.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   /* put clargs into string */
@@ -685,7 +682,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
     strcat(*clargs," ");
   }
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
   
 }
@@ -703,39 +700,37 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
 				   UserInput_t *uvar                   /**< [in] the user input variables */
 				   )
 {
-  
-  const CHAR *fn = __func__;   /* store function name for log output */
   REAL8 midpoint;              /* the midpoint of the observation */
   REAL8 newtasc;               /* shifted value of tasc */
   REAL8 newdeltatasc;          /* updated uncertainty on tasc after shifting */
 
   /* validate input variables */
   if ((*space) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input REAL8Space boundary structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input REAL8Space boundary structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   if (uvar == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input UserInput_t structure = NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input UserInput_t structure = NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (epoch.gpsSeconds < 0) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, observation epoch < 0.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, observation epoch < 0.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (span < 0) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, observation span < 0.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, observation span < 0.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   
   /* allocate memory for the parameter space */
   if ( ((*space) = XLALCalloc(1,sizeof(REAL8Space))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   (*space)->ndim = NBINMAX;
   if ( ((*space)->data = XLALCalloc((*space)->ndim,sizeof(REAL8Dimension))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   /* define observaton midpoint */
@@ -749,7 +744,7 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
     INT4 n = (INT4)floor(0.5 + (midpoint - uvar->tasc)/uvar->orbperiod);
     newtasc = uvar->tasc + n*uvar->orbperiod;
     newdeltatasc = sqrt(uvar->deltatasc*uvar->deltatasc + n*n*uvar->deltaorbperiod*uvar->deltaorbperiod);
-    LogPrintf(LOG_DEBUG,"%s : shifted tasc by %d orbits, uncertainty equals %f sec\n",fn,n,newdeltatasc);
+    LogPrintf(LOG_DEBUG,"%s : shifted tasc by %d orbits, uncertainty equals %f sec\n",__func__,n,newdeltatasc);
   }
   
   /* this represents a hyper-cubic parameter space */
@@ -788,21 +783,21 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
   (*space)->data[3].mid = LAL_TWOPI/uvar->orbperiod;
   (*space)->data[3].sig = (*space)->data[3].mid - (*space)->data[3].min;
   if ((*space)->data[3].max < 0.0) {
-    LogPrintf(LOG_CRITICAL,"%s: max boundary on omega is < 0.  Exiting.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: max boundary on omega is < 0.  Exiting.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   (*space)->data[3].gaussian = uvar->gaussianpriors;
   (*space)->data[3].span = (*space)->data[3].max - (*space)->data[3].min;
 
   /* output boundaries to screen */
-  if (uvar->gaussianpriors) LogPrintf(LOG_DEBUG,"%s : using Gaussian priors on the following %.2f sigma ranges (except nu)\n",fn,uvar->nsig);
-  else LogPrintf(LOG_DEBUG,"%s : using flat priors on the following ranges\n",fn);
-  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",fn,(*space)->data[0].name,(*space)->data[0].min,(*space)->data[0].max);
-  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",fn,(*space)->data[1].name,(*space)->data[1].min,(*space)->data[1].max);
-  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",fn,(*space)->data[2].name,(*space)->data[2].min,(*space)->data[2].max);
-  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",fn,(*space)->data[3].name,(*space)->data[3].min,(*space)->data[3].max);
+  if (uvar->gaussianpriors) LogPrintf(LOG_DEBUG,"%s : using Gaussian priors on the following %.2f sigma ranges (except nu)\n",__func__,uvar->nsig);
+  else LogPrintf(LOG_DEBUG,"%s : using flat priors on the following ranges\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[0].name,(*space)->data[0].min,(*space)->data[0].max);
+  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[1].name,(*space)->data[1].min,(*space)->data[1].max);
+  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[2].name,(*space)->data[2].min,(*space)->data[2].max);
+  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[3].name,(*space)->data[3].min,(*space)->data[3].max);
  
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
   
 }
@@ -817,31 +812,30 @@ int XLALComputeAmplitudeParams(REAL8Dimension **ampspace,        /**< [out] the 
 			       REAL8 ampsigma                    /**< [in] the amplitude prior standard deviation */
 			       )
 {
-  const CHAR *fn = __func__;   /* store function name for log output */
   UINT4 j;
 
   /* validate input */
   if ((*ampspace) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input REAL8Dimension structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input REAL8Dimension structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   if ((*ampgrid) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input Grid structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input Grid structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   if ((*amppriors) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input REAL8Priors structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input REAL8Priors structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   if (ampsigma <= 0.0) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input ampsigma <= 0.0.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input ampsigma <= 0.0.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
 
   /* allocate memory for the amplitude space */
   if ( ((*ampspace) = XLALCalloc(1,sizeof(REAL8Dimension))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   /* define amplitude space */
@@ -855,8 +849,8 @@ int XLALComputeAmplitudeParams(REAL8Dimension **ampspace,        /**< [out] the 
 
   /* allocate memory for the amplitude grid */
   if ( ((*ampgrid) = XLALCalloc(1,sizeof(Grid))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   /* define amplitude grid params */
@@ -868,12 +862,12 @@ int XLALComputeAmplitudeParams(REAL8Dimension **ampspace,        /**< [out] the 
   
   /* allocate memory for ampltude priors */
   if (((*amppriors) = (REAL8Priors *)XLALCalloc(1,sizeof(REAL8Priors))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if (((*amppriors)->logpriors = XLALCreateREAL8Vector((*ampgrid)->length)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   
   /* compute prior function on the grid */
@@ -881,7 +875,7 @@ int XLALComputeAmplitudeParams(REAL8Dimension **ampspace,        /**< [out] the 
     REAL8 x0 = (*ampspace)->mid;
     REAL8 sig = (*ampspace)->sig;
     REAL8 norm = (-0.5)*log(LAL_PI) + 0.5*LAL_LN2 - log(sig);
-    LogPrintf(LOG_DEBUG,"%s : computing Gaussian priors for parameter %s\n",fn,(*ampspace)->name);
+    LogPrintf(LOG_DEBUG,"%s : computing Gaussian priors for parameter %s\n",__func__,(*ampspace)->name);
     
     /* compute prior - with amplitude prior centered on zero we double the Gaussian profile */
     for (j=0;j<(*ampgrid)->length;j++) {
@@ -892,7 +886,7 @@ int XLALComputeAmplitudeParams(REAL8Dimension **ampspace,        /**< [out] the 
     (*amppriors)->gaussian = (*ampspace)->gaussian;
   }
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
@@ -907,36 +901,35 @@ int XLALComputeBinaryPriors(REAL8PriorsVector **priors,        /**< [out] the pr
 			    GridParameters *gridparams        /**< [in] the grid on this parameter space */
 			    )
 {
-  const CHAR *fn = __func__;   /* store function name for log output */
   UINT4 i,j;                   /* counters */
 
   /* validate input */
   if ((*priors) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input REAL8PriorsVector structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input REAL8PriorsVector structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   if (space == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input REAL8Space structure = NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input REAL8Space structure = NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   if (gridparams == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input GridParameters structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input GridParameters structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   
   /* allocate memory for the priors */
   if (((*priors) = (REAL8PriorsVector*)XLALCalloc(1,sizeof(REAL8PriorsVector))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if (((*priors)->data = (REAL8Priors *)XLALCalloc(gridparams->ndim,sizeof(REAL8Priors))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   for (i=0;i<gridparams->ndim;i++) {
     if (((*priors)->data[i].logpriors = XLALCreateREAL8Vector(gridparams->grid[i].length)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
   }
   
@@ -948,7 +941,7 @@ int XLALComputeBinaryPriors(REAL8PriorsVector **priors,        /**< [out] the pr
       
       REAL8 x0 = space->data[i].mid;
       REAL8 sig = space->data[i].sig;
-      LogPrintf(LOG_DEBUG,"%s : computing Gaussian priors for parameter %s\n",fn,space->data[i].name);
+      LogPrintf(LOG_DEBUG,"%s : computing Gaussian priors for parameter %s\n",__func__,space->data[i].name);
       
       /* account for single template situations, i.e known parameters */ 
       if (gridparams->grid[i].length>1) {
@@ -968,7 +961,7 @@ int XLALComputeBinaryPriors(REAL8PriorsVector **priors,        /**< [out] the pr
     /* otherwise we use flat priors */
     else {
       
-      LogPrintf(LOG_DEBUG,"%s : computing Flat priors for parameter %s\n",fn,space->data[i].name);
+      LogPrintf(LOG_DEBUG,"%s : computing Flat priors for parameter %s\n",__func__,space->data[i].name);
       
       /* set flat prior such that for a single template the prior has no effect once multiplied by deltax */
       /* account for single template situations, i.e known parameters */ 
@@ -991,7 +984,7 @@ int XLALComputeBinaryPriors(REAL8PriorsVector **priors,        /**< [out] the pr
 
   }
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
   
 }
@@ -1010,7 +1003,6 @@ int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,           /**< [in/out] t
 				   INT4 seed                     /**< [in] the random number seed */
 				   )
 {
-  const CHAR *fn = __func__;            /* store function name for log output */
   COMPLEX8FFTPlan *plan = NULL;         /* FFT plan */
   COMPLEX8Vector *xt = NULL;            /* the downsampled timeseries */
   COMPLEX8Vector *xf = NULL;            /* the fft'd timeseries */
@@ -1019,12 +1011,12 @@ int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,           /**< [in/out] t
 
   /* allocate memory for the injection parameters */
   if ((pspace->inj = XLALCalloc(1,sizeof(InjectionParameters))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if ((pspace->inj->temp.x = XLALCalloc(pspace->space->ndim,sizeof(REAL8))) == NULL)  {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   pspace->inj->temp.ndim = pspace->space->ndim;
 
@@ -1036,8 +1028,8 @@ int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,           /**< [in/out] t
 
     /* initialise the random number generator */
     if (XLALInitgslrand(&r,seed)) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALinitgslrand() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_EFAULT);
+      LogPrintf(LOG_CRITICAL,"%s: XLALinitgslrand() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_EFAULT);
     }
     
     if (priors->data[0].gaussian) nu = space->data[0].mid + gsl_ran_gaussian(r,space->data[0].sig);
@@ -1049,11 +1041,11 @@ int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,           /**< [in/out] t
     if (priors->data[0].gaussian) omega = space->data[3].mid + gsl_ran_gaussian(r,space->data[3].sig);
     else omega = gsl_ran_flat(r,space->data[3].min,space->data[3].max);
 
-    LogPrintf(LOG_DEBUG,"%s: the injected signal parameters are :\n",fn);
-    LogPrintf(LOG_DEBUG,"%s: injected nu = %6.12f\n",fn,nu);
-    LogPrintf(LOG_DEBUG,"%s: injected asini = %6.12f\n",fn,a);
-    LogPrintf(LOG_DEBUG,"%s: injected tasc = %6.12f\n",fn,tasc);
-    LogPrintf(LOG_DEBUG,"%s: injected omega = %6.12e\n",fn,omega);
+    LogPrintf(LOG_DEBUG,"%s: the injected signal parameters are :\n",__func__);
+    LogPrintf(LOG_DEBUG,"%s: injected nu = %6.12f\n",__func__,nu);
+    LogPrintf(LOG_DEBUG,"%s: injected asini = %6.12f\n",__func__,a);
+    LogPrintf(LOG_DEBUG,"%s: injected tasc = %6.12f\n",__func__,tasc);
+    LogPrintf(LOG_DEBUG,"%s: injected omega = %6.12e\n",__func__,omega);
      
     /* nuiseance parameters */
     phi0 = gsl_ran_flat(r,0,LAL_TWOPI);
@@ -1074,20 +1066,20 @@ int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,           /**< [in/out] t
 
     /* allocate memory for the timeseries and the frequency domain output */
     if ( (xt = XLALCreateCOMPLEX8Vector(numBins)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALCreateCOMPLEX8Vector() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s: XLALCreateCOMPLEX8Vector() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     if ( (xf = XLALCreateCOMPLEX8Vector(numBins)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALCreateCOMPLEX8Vector() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s: XLALCreateCOMPLEX8Vector() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     
     /* make the reverse plan */
     if ((plan = XLALCreateForwardCOMPLEX8FFTPlan(numBins,1)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALCreateCOMPLEX8FFTPlan() failed with error = %d\n",fn,xlalErrno);
+      LogPrintf(LOG_CRITICAL,"%s: XLALCreateCOMPLEX8FFTPlan() failed with error = %d\n",__func__,xlalErrno);
       return XLAL_EINVAL;
     }
-    LogPrintf(LOG_DEBUG,"%s : created the COMPLEX8 FFT plan for signal injection\n",fn);
+    LogPrintf(LOG_DEBUG,"%s : created the COMPLEX8 FFT plan for signal injection\n",__func__);
     
     /* we generate a down-sampled time series for each SFT */
     for (i=0;i<(*sftvec)->length;i++) {
@@ -1107,10 +1099,10 @@ int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,           /**< [in/out] t
       
       /* perform fft */
       if (XLALCOMPLEX8VectorFFT(xf,xt,plan)) {
-	LogPrintf(LOG_CRITICAL,"%s: XLALCOMPLEX8VectorFFT() failed with error = %d\n",fn,xlalErrno);
+	LogPrintf(LOG_CRITICAL,"%s: XLALCOMPLEX8VectorFFT() failed with error = %d\n",__func__,xlalErrno);
 	return XLAL_EINVAL;
       }
-      LogPrintf(LOG_DEBUG,"%s : performed %d/%d FFT for signal injection\n",fn,i+1,(*sftvec)->length);
+      LogPrintf(LOG_DEBUG,"%s : performed %d/%d FFT for signal injection\n",__func__,i+1,(*sftvec)->length);
     
       /* now add directly to the input sft - making sure to flip negative frequencies */
       for (j=0;j<(UINT4)floor((numBins+1)/2);j++) {
@@ -1155,7 +1147,7 @@ int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,           /**< [in/out] t
   XLALDestroyCOMPLEX8Vector(xt);
   XLALDestroyCOMPLEX8Vector(xf);
   
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
   
 }
@@ -1173,8 +1165,6 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
 		 CHAR *obsid_pattern        /**< [in] the OBS-ID pattern */
   		 )
 {
-
-  const CHAR *fn = __func__;   /* store function name for log output */
   static SFTConstraints constraints;
   SFTCatalog *catalog = NULL;
   SFTCatalog *newcat = NULL;
@@ -1190,25 +1180,25 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   
   /* validate input variables */
   if (*sftvec != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input SFTVector structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input SFTVector structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   if (*segparams != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input INT4Vector structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input INT4Vector structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   if (sftbasename == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input SFT basename string == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input SFT basename string == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   if (freqband < 0 ) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, frequency band must be > 0.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, frequency band must be > 0.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }  
   if ((start > 0) && (end > 0)) {
     if (start - end >= 0) {
-      LogPrintf(LOG_CRITICAL,"%s: Invalid input, the start time %d >= %d end time.\n",fn,start,end);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s: Invalid input, the start time %d >= %d end time.\n",__func__,start,end);
+      XLAL_ERROR(XLAL_EINVAL);
     }
   }
 
@@ -1225,7 +1215,7 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   constraints.startTime = dummy_gpsstart;
   constraints.endTime = dummy_gpsend;
   LAL_CALL( LALSFTdataFind( &status, &catalog, sftbasename, &constraints), &status);
-  LogPrintf(LOG_DEBUG,"%s : found %d SFTs\n",fn,catalog->length);
+  LogPrintf(LOG_DEBUG,"%s : found %d SFTs\n",__func__,catalog->length);
   
   /* define actual frequency range to read in */
   freqmin = freq;
@@ -1235,12 +1225,12 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   if (obsid_pattern != NULL) {
     snprintf(apid,APIDLENGTH,"%s",obsid_pattern); 
     if ( (newcat = XLALCalloc(1,sizeof(SFTCatalog))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     if ( (newcat->data = (SFTDescriptor *)XLALCalloc(catalog->length,sizeof(SFTDescriptor))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     newcat->length = 0;
    
@@ -1255,8 +1245,8 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
       REAL8 sft_fmax = sft_fmin + catalog->data[i].numBins*catalog->data[i].header.deltaF;
 
       if ((c = strstr(catalog->data[i].comment,"Additional comment")) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s: Error, couldn't find required header information in SFT files.\n",fn);
-	XLAL_ERROR(fn,XLAL_EINVAL);
+	LogPrintf(LOG_CRITICAL,"%s: Error, couldn't find required header information in SFT files.\n",__func__);
+	XLAL_ERROR(XLAL_EINVAL);
       }
       
       /* extract the OBS ID string from the comment field */
@@ -1273,7 +1263,7 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
       }
       
     }
-    LogPrintf(LOG_DEBUG,"%s : found %d SFTs matching %s pattern\n",fn,newcat->length,obsid_pattern);
+    LogPrintf(LOG_DEBUG,"%s : found %d SFTs matching %s pattern\n",__func__,newcat->length,obsid_pattern);
   }
   else newcat = catalog;
   
@@ -1283,27 +1273,27 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
     LogPrintf(LOG_CRITICAL,"%s : LALCheckSFTCatalogSFT() validity check failed with error = %d\n", sft_check_result);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : checked the SFTs\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : checked the SFTs\n",__func__);
 
   /* allocate memory for the output pcu vector (allocate full possible length) */
   if ( ((*segparams) = XLALCalloc(1,sizeof(SegmentParams))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   /* allocate memory for the output pcu and dt vectors (allocate full possible length) */
   if ( ((*segparams)->npcus = XLALCreateINT4Vector(catalog->length)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCreateINT4Vector() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCreateINT4Vector() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if ( ((*segparams)->dt = XLALCreateREAL8Vector(catalog->length)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCreateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCreateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   
   /* load the SFT-vectors */
   LAL_CALL( LALLoadSFTs ( &status, sftvec, newcat, freqmin, freqmax ), &status);
-  LogPrintf(LOG_DEBUG,"%s : loaded the sfts\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : loaded the sfts\n",__func__);
 
   /* associate each SFT with the corresponding number of PCUs, sampling time and OBS ID */
   for (i=0;i<(*sftvec)->length;i++) {
@@ -1321,8 +1311,8 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
 	CHAR dt_string[STRINGLENGTH];
 	
 	if ((c = strstr(newcat->data[j].comment,"Additional comment")) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s: Error, couldn't find required header information in SFT files.\n",fn);
-	  XLAL_ERROR(fn,XLAL_EINVAL);
+	  LogPrintf(LOG_CRITICAL,"%s: Error, couldn't find required header information in SFT files.\n",__func__);
+	  XLAL_ERROR(XLAL_EINVAL);
 	}
 	
 	/* extract the relavent strings from the comment field */
@@ -1346,12 +1336,12 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
  
   /* resize the segment params vectors */
   if ( ((*segparams)->npcus = XLALResizeINT4Vector((*segparams)->npcus,count)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALResizeINT4Vector() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALResizeINT4Vector() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if ( ((*segparams)->dt = XLALResizeREAL8Vector((*segparams)->dt,count)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALResizeREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALResizeREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
  
   /* we don't need the original catalog anymore -  also free the new catalog */
@@ -1360,15 +1350,15 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
     XLALFree(newcat->data);
     XLALFree(newcat);
   }
-  LogPrintf(LOG_DEBUG,"%s : destroyed the catalogue(s)\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : destroyed the catalogue(s)\n",__func__);
   
   /* check if we found any SFTs */
   if ((*sftvec)->length == 0) {
-    LogPrintf(LOG_CRITICAL,"%s : No SFTs found in specified frequency range.  Exiting.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s : No SFTs found in specified frequency range.  Exiting.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
@@ -1383,19 +1373,17 @@ int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, 
 					   SFTVector *sftvec                        /**< [in] the input SFT vector */
 					   )
 {
-
-  const CHAR *fn = __func__;             /* store function name for log output */
   INT4 i;                                /* counter */
   COMPLEX8FFTPlan *plan = NULL;         /* inverse FFT plan */
   UINT4 N;                               /* the length of the SFTs */
 
   /* validate input arguments */
   if ((*dstimevec) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output COMPLEX8TimeSeriesArray structure != NULL.\n",fn);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output COMPLEX8TimeSeriesArray structure != NULL.\n",__func__);
     return XLAL_EINVAL;
   }
   if (sftvec == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input SFTVector structure == NULL.\n",fn);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input SFTVector structure == NULL.\n",__func__);
     return XLAL_EINVAL;
   }
 
@@ -1403,30 +1391,30 @@ int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, 
   N = sftvec->data[0].data->length;
   for (i=0;i<(INT4)sftvec->length;i++) {
     if (sftvec->data[0].data->length != N) {
-      LogPrintf(LOG_CRITICAL,"%s: Invalid input, input SFTs have different lengths.\n",fn);
+      LogPrintf(LOG_CRITICAL,"%s: Invalid input, input SFTs have different lengths.\n",__func__);
       return XLAL_EINVAL;
     }
   }
-  LogPrintf(LOG_DEBUG,"%s : checked that all SFTs have length %d.\n",fn,N);
+  LogPrintf(LOG_DEBUG,"%s : checked that all SFTs have length %d.\n",__func__,N);
 
   /* make the reverse plan */
   if ((plan = XLALCreateReverseCOMPLEX8FFTPlan(N,1)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCreateReverseCOMPLEX8FFTPlan() failed with error = %d\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCreateReverseCOMPLEX8FFTPlan() failed with error = %d\n",__func__,xlalErrno);
     return XLAL_EINVAL;
   }
-  LogPrintf(LOG_DEBUG,"%s : created the inverse FFT plan\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : created the inverse FFT plan\n",__func__);
 
   /* allocate memory for output */
   if (((*dstimevec) = (COMPLEX8TimeSeriesArray*)XLALCalloc(1,sizeof(COMPLEX8TimeSeriesArray))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for a COMPLEX8TimeSeriesArray structure\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for a COMPLEX8TimeSeriesArray structure\n",__func__,xlalErrno);
     return XLAL_ENOMEM;
   }
   if (((*dstimevec)->data = (COMPLEX8TimeSeries**)XLALCalloc(sftvec->length,sizeof(COMPLEX8TimeSeries *))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for a vector of COMPLEX8TimeSeries pointers\n",fn,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for a vector of COMPLEX8TimeSeries pointers\n",__func__,xlalErrno);
     return XLAL_ENOMEM;
   }
   (*dstimevec)->length = sftvec->length;
-  LogPrintf(LOG_DEBUG,"%s : allocated memory for the output data structure\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : allocated memory for the output data structure\n",__func__);
 
   /* loop over each SFT */
   for (i=0;i<(INT4)sftvec->length;i++) {
@@ -1442,10 +1430,10 @@ int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, 
    
     /* allocate output memory - create a COMPLEX8TimeSeries */
     if (((*dstimevec)->data[i] = XLALCreateCOMPLEX8TimeSeries("DS",&(sftvec->data[i].epoch),sftvec->data[i].f0,deltaT,&lalDimensionlessUnit,N)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALCreateCOMPLEX8TimeSeries() failed to allocate memory for inverse FFT output.\n",fn);
+      LogPrintf(LOG_CRITICAL,"%s: XLALCreateCOMPLEX8TimeSeries() failed to allocate memory for inverse FFT output.\n",__func__);
       return XLAL_ENOMEM;
     }
-    LogPrintf(LOG_DEBUG,"%s : allocated memory for the %d/%d inverse FFT\n",fn,i+1,sftvec->length);
+    LogPrintf(LOG_DEBUG,"%s : allocated memory for the %d/%d inverse FFT\n",__func__,i+1,sftvec->length);
 
     /* point temp output to timeseries */
     temp_output.length = N;
@@ -1453,18 +1441,18 @@ int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, 
 
     /* perform inverse FFT */
     if (XLALCOMPLEX8VectorFFT(&temp_output, &temp_input, plan)) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALCOMPLEX16VectorFFT() failed with error = %d\n",fn,xlalErrno);
+      LogPrintf(LOG_CRITICAL,"%s: XLALCOMPLEX16VectorFFT() failed with error = %d\n",__func__,xlalErrno);
       return XLAL_EINVAL;
     }
-    LogPrintf(LOG_DEBUG,"%s : performed %d/%d inverse FFT\n",fn,i+1,sftvec->length);
+    LogPrintf(LOG_DEBUG,"%s : performed %d/%d inverse FFT\n",__func__,i+1,sftvec->length);
 
   }
-  LogPrintf(LOG_DEBUG,"%s : performed inverse FFT on all %d SFTs\n",fn,sftvec->length);
+  LogPrintf(LOG_DEBUG,"%s : performed inverse FFT on all %d SFTs\n",__func__,sftvec->length);
 
   /* free memeory */
   XLALDestroyCOMPLEX8FFTPlan(plan);
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
@@ -1480,36 +1468,34 @@ int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /*
 				    REAL8 mu                                  /**< [in] the required mismatch */ 
 				    )
 {
-  
-  const CHAR *fn = __func__;            /* store function name for log output */
   UINT4 i;                              /* counter */
 
   /* validate input arguments */
   if ((*freqgridparams) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output GridParamsVector structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output GridParamsVector structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (space == NULL) {
-     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input REAL8Space structure == NULL.\n",fn);
-     XLAL_ERROR(fn,XLAL_EINVAL);
+     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input REAL8Space structure == NULL.\n",__func__);
+     XLAL_ERROR(XLAL_EINVAL);
   }
   if (sftvec == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input SFTVector structure == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input SFTVector structure == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if ((mu < 0)||(mu>1)) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input mismatch parameter, not in range 0 -> 1.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input mismatch parameter, not in range 0 -> 1.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   
   /* allocate memory for each set of grid parameters */
   if (((*freqgridparams) = (GridParametersVector*)XLALCalloc(1,sizeof(GridParametersVector))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() falied with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() falied with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if (((*freqgridparams)->segment = (GridParameters**)XLALCalloc(sftvec->length,sizeof(GridParameters*))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for a COMPLEX8TimeSeriesArray structure\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for a COMPLEX8TimeSeriesArray structure\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   (*freqgridparams)->length = sftvec->length;
 
@@ -1521,14 +1507,14 @@ int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /*
     REAL8 tmid = t0 + 0.5*tsft;
 
     if (XLALComputeFreqGridParams(&((*freqgridparams)->segment[i]),space,tmid,tsft,mu)) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALComputeFreqGridParams() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s: XLALComputeFreqGridParams() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_EINVAL);
     }
-    LogPrintf(LOG_DEBUG,"%s : computed frequency grid for SFT %d/%d\n",fn,i+1,sftvec->length);
+    LogPrintf(LOG_DEBUG,"%s : computed frequency grid for SFT %d/%d\n",__func__,i+1,sftvec->length);
     
   }
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
@@ -1546,8 +1532,6 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
 			      REAL8 mu                                  /**< [in] the required mismatch */ 
 			      )
 {
-  
-  const CHAR *fn = __func__;            /* store function name for log output */
   UINT4 i,j,k,l;                         /* counters */
   INT4 n;                                /* counter */
  /*  REAL8 nu,asini,omega,tasc;    */          /* temporary orbital parameters */
@@ -1561,40 +1545,40 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
 
   /* validate input arguments */
   if ((*gridparams) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output GridParams structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output GridParams structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (space == NULL) {
-     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input ParameterSpace structure == NULL.\n",fn);
-     XLAL_ERROR(fn,XLAL_EINVAL);
+     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input ParameterSpace structure == NULL.\n",__func__);
+     XLAL_ERROR(XLAL_EINVAL);
    }
    if (tmid < 0) {
-     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input GPS time < 0.\n",fn);
-     XLAL_ERROR(fn,XLAL_EINVAL);
+     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input GPS time < 0.\n",__func__);
+     XLAL_ERROR(XLAL_EINVAL);
    }
    if (Tseg < 0) {
-     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input Tseg parameter < 0.\n",fn);
-     XLAL_ERROR(fn,XLAL_EINVAL);
+     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input Tseg parameter < 0.\n",__func__);
+     XLAL_ERROR(XLAL_EINVAL);
    }
    if ((mu < 0)||(mu>1)) {
-     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input mismatch parameter, not in range 0 -> 1.\n",fn);
-     XLAL_ERROR(fn,XLAL_EINVAL);
+     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input mismatch parameter, not in range 0 -> 1.\n",__func__);
+     XLAL_ERROR(XLAL_EINVAL);
    }
 
    /* allocte memory */
    if (((*gridparams) = (GridParameters*)XLALCalloc(1,sizeof(GridParameters))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
    /* allocate memory for the fdots */
    if ((fdots.x = XLALCalloc(NFREQMAX,sizeof(REAL8))) == NULL) {
-     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-     XLAL_ERROR(fn,XLAL_ENOMEM);
+     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+     XLAL_ERROR(XLAL_ENOMEM);
    }
    if ((bintemp.x = XLALCalloc(NBINMAX,sizeof(REAL8))) == NULL) {
-     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-     XLAL_ERROR(fn,XLAL_ENOMEM);
+     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+     XLAL_ERROR(XLAL_ENOMEM);
    }
    fdots.ndim = NFREQMAX;
    bintemp.ndim = NBINMAX;
@@ -1622,8 +1606,8 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
 	   bintemp.x[3] = space->data[3].min + l*(space->data[3].max-space->data[3].min)/(ngrid-1);
 	   
 	   if (XLALComputeBinaryFreqDerivitives(&fdots,&bintemp,tmid)) {
-	     LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryFreqDerivitives() failed with error = %d\n",fn,xlalErrno);
-	     XLAL_ERROR(fn,XLAL_EFAULT);
+	     LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryFreqDerivitives() failed with error = %d\n",__func__,xlalErrno);
+	     XLAL_ERROR(XLAL_EFAULT);
 	   }
 
 	 /*   /\* the instantanous frequency is therefore f0 = nu - a*nu*W*cos(W*(t-tasc) ) *\/ */
@@ -1648,9 +1632,9 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
 
    }
    for (n=0;n<NFREQMAX;n++) {
-     LogPrintf(LOG_DEBUG,"%s : determined f%d range as [%6.12e -> %6.12e].\n",fn,n,fnmin[n],fnmax[n]);
+     LogPrintf(LOG_DEBUG,"%s : determined f%d range as [%6.12e -> %6.12e].\n",__func__,n,fnmin[n],fnmax[n]);
    }
-   LogPrintf(LOG_DEBUG,"%s : midpoint epoch for this SFT is %6.12f\n",fn,tmid);
+   LogPrintf(LOG_DEBUG,"%s : midpoint epoch for this SFT is %6.12f\n",__func__,tmid);
 
    /* free templates */
    XLALFree(fdots.x);
@@ -1664,7 +1648,7 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
      REAL8 span = fnmax[n] - fnmin[n];
      dim[n] = 0;
      if (span > deltafn) dim[n] = 1;
-     LogPrintf(LOG_DEBUG,"%s : single template span for %d'th derivitive = %e.\n",fn,n,deltafn);
+     LogPrintf(LOG_DEBUG,"%s : single template span for %d'th derivitive = %e.\n",__func__,n,deltafn);
    }
    n = NFREQMAX-1;
    while ( (n>=0) && (ndim == -1) ) {
@@ -1672,18 +1656,18 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
      n--;
    }
    if (ndim < 0) {
-      LogPrintf(LOG_CRITICAL,"%s: dimensionality of frequency space < 0.  No templates required.\n",fn);
+      LogPrintf(LOG_CRITICAL,"%s: dimensionality of frequency space < 0.  No templates required.\n",__func__);
       return XLAL_EINVAL;
    }
-   LogPrintf(LOG_DEBUG,"%s : determined dimensionality of frequency space = %d.\n",fn,ndim);
+   LogPrintf(LOG_DEBUG,"%s : determined dimensionality of frequency space = %d.\n",__func__,ndim);
 
    /* allocate memory to the output */
    if ( ((*gridparams)->grid = XLALCalloc(ndim,sizeof(Grid))) == NULL) {
-     LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for gridparams->grid.\n",fn);
+     LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for gridparams->grid.\n",__func__);
      return XLAL_ENOMEM;
    }
    (*gridparams)->ndim = ndim;
-   LogPrintf(LOG_DEBUG,"%s : allocated memory for the output grid parameters.\n",fn);
+   LogPrintf(LOG_DEBUG,"%s : allocated memory for the output grid parameters.\n",__func__);
 
    /* Compute the grid spacing, grid start and span for each spin derivitive dimension */
    for (n=0;n<ndim;n++) {
@@ -1702,15 +1686,15 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
      (*gridparams)->grid[n].min = minfn;
      snprintf((*gridparams)->grid[n].name,LALNameLength,"f%d",n);
      
-     LogPrintf(LOG_DEBUG,"%s : %s -> [%e - %e] (%e) %d grid points.\n",fn,(*gridparams)->grid[n].name,(*gridparams)->grid[n].min,
+     LogPrintf(LOG_DEBUG,"%s : %s -> [%e - %e] (%e) %d grid points.\n",__func__,(*gridparams)->grid[n].name,(*gridparams)->grid[n].min,
 	       (*gridparams)->grid[n].min+((*gridparams)->grid[n].length-1)*(*gridparams)->grid[n].delta,
 	       (*gridparams)->grid[n].delta,(*gridparams)->grid[n].length);
    }
-   LogPrintf(LOG_DEBUG,"%s : computed output grid parameters.\n",fn);
+   LogPrintf(LOG_DEBUG,"%s : computed output grid parameters.\n",__func__);
 
    /* compute some internally required parameters for the grid */
    if ( ((*gridparams)->prod = XLALCalloc(ndim,sizeof(UINT4))) == NULL) {
-     LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",fn);
+     LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
      return XLAL_ENOMEM;
    }
    (*gridparams)->ndim = ndim;
@@ -1721,7 +1705,7 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
    (*gridparams)->prod[0] = 1;
    for (k=1;k<(*gridparams)->ndim;k++) (*gridparams)->prod[k] = (*gridparams)->prod[k-1]*(*gridparams)->grid[k-1].length;
    
-   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
    return XLAL_SUCCESS;
 
  } 
@@ -1736,36 +1720,34 @@ int XLALComputeDemodulatedPowerVector(REAL4DemodulatedPowerVector **power,     /
 				      GridParametersVector *gridparams         /**< [in/out] the spin derivitive gridding parameters */
 				      )
 {
-  
-  const CHAR *fn = __func__;             /* store function name for log output */
   UINT4 i;
 
   /* validate input */
   if ((*power) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output REAL4DemodulatedPowerVector structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output REAL4DemodulatedPowerVector structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (dsdata == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input COMPLEX8TimeSeriesArray structure == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input COMPLEX8TimeSeriesArray structure == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (gridparams == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input GridParametersVector structure == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input GridParametersVector structure == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (dsdata->length != gridparams->length) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, length of downsampled data vector and grid parameters vector not equal.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, length of downsampled data vector and grid parameters vector not equal.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   /* allocate memory */
   if ( ((*power) = (REAL4DemodulatedPowerVector*)XLALCalloc(1,sizeof(REAL4DemodulatedPowerVector))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for REAL4DemodulatedPowerVector structure.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for REAL4DemodulatedPowerVector structure.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if ( ((*power)->segment = (REAL4DemodulatedPower**)XLALCalloc(dsdata->length,sizeof(REAL4DemodulatedPower*))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for REAL4DemodulatedPower structure.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for REAL4DemodulatedPower structure.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   (*power)->length = dsdata->length;
 
@@ -1773,13 +1755,13 @@ int XLALComputeDemodulatedPowerVector(REAL4DemodulatedPowerVector **power,     /
   for (i=0;i<dsdata->length;i++) {
     
     if (XLALComputeDemodulatedPower(&((*power)->segment[i]),dsdata->data[i],gridparams->segment[i])) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALComputeDemodulatedPwer() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s: XLALComputeDemodulatedPwer() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_EINVAL);
     }
-    LogPrintf(LOG_DEBUG,"%s : computed demodulated power for SFT %d/%d\n",fn,i+1,dsdata->length);
+    LogPrintf(LOG_DEBUG,"%s : computed demodulated power for SFT %d/%d\n",__func__,i+1,dsdata->length);
 
   }
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
@@ -1796,8 +1778,6 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
 				GridParameters *gridparams             /**< [in/out] the spin derivitive gridding parameters */
 				)
 {
-  
-  const CHAR *fnc = __func__;             /* store function name for log output */
   COMPLEX8FFTPlan *plan = NULL;           /* plan for the inverse FFT */
   UINT4 i,j,k,n;                          /* counters */
   REAL8 freqoffset = 0.0;                 /* the offset between the desired starting freq and the closest bin */
@@ -1811,27 +1791,27 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
 
   /* validate input arguments */
   if ((*power) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output REAL4DemodulatedPower structure != NULL.\n",fnc);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output REAL4DemodulatedPower structure != NULL.\n",__func__);
     return XLAL_EINVAL;
   }
   if (dsdata == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input COMPLEX8TimeSeries structure == NULL.\n",fnc);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input COMPLEX8TimeSeries structure == NULL.\n",__func__);
     return XLAL_EINVAL;
   }
   if (gridparams == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input GridParameters structure == NULL.\n",fnc);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input GridParameters structure == NULL.\n",__func__);
     return XLAL_EINVAL;
   }
   
   /* allocate memory for the output structure */
   if ( (*power = XLALCalloc(1,sizeof(REAL4DemodulatedPower))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for REAL4DemodulatedPower structure.\n",fnc);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for REAL4DemodulatedPower structure.\n",__func__);
     return XLAL_ENOMEM;
   }
 
   /* allocate memory for sequentially stored power */
   if ( ((*power)->data = XLALCreateREAL4Vector(gridparams->max)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCreateREAL4Vector() failed with error = %d\n",fnc,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCreateREAL4Vector() failed with error = %d\n",__func__,xlalErrno);
     return XLAL_ENOMEM;
   }
    
@@ -1839,7 +1819,7 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
   for (n=1;n<gridparams->ndim;n++) {
     Nvec *= gridparams->grid[n].length;
   }
-  LogPrintf(LOG_DEBUG,"%s : computed number of spin derivitives as = %d.\n",fnc,Nvec);
+  LogPrintf(LOG_DEBUG,"%s : computed number of spin derivitives as = %d.\n",__func__,Nvec);
 
   /* compute timeseries parameters given the requested frequency resolution */
   {
@@ -1849,31 +1829,31 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
     gridparams->grid[0].delta = 1.0/Teff;
     gridparams->grid[0].oneoverdelta = Teff;
     norm = pow(1.0/(REAL8)dsdata->data->length,2.0);
-   /*  LogPrintf(LOG_DEBUG,"%s : length of FFT input = %d\n",fnc,N); */
-/*     LogPrintf(LOG_DEBUG,"%s : computed effective length for inverse FFT as %f sec.\n",fnc,Teff); */
-/*     LogPrintf(LOG_DEBUG,"%s : computed modified frequency resolution as %e Hz.\n",fnc,gridparams->grid[0].delta); */
+   /*  LogPrintf(LOG_DEBUG,"%s : length of FFT input = %d\n",__func__,N); */
+/*     LogPrintf(LOG_DEBUG,"%s : computed effective length for inverse FFT as %f sec.\n",__func__,Teff); */
+/*     LogPrintf(LOG_DEBUG,"%s : computed modified frequency resolution as %e Hz.\n",__func__,gridparams->grid[0].delta); */
 
     /* allocate memory for the temporary zero-padded input data */
     if ( (temp_input = XLALCreateCOMPLEX8Vector(N)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALCreateCOMPLEX8Vector() failed with error = %d.\n",fnc,xlalErrno);
+      LogPrintf(LOG_CRITICAL,"%s: XLALCreateCOMPLEX8Vector() failed with error = %d.\n",__func__,xlalErrno);
       return XLAL_ENOMEM;
     }
     
     /* allocate memory for the time domain zero-padded phase correction vector */
     if ( (temp_output = XLALCreateCOMPLEX8Vector(N)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALCreateCOMPLEX8Vector() failed with error = %d\n",fnc,xlalErrno);
+      LogPrintf(LOG_CRITICAL,"%s: XLALCreateCOMPLEX8Vector() failed with error = %d\n",__func__,xlalErrno);
       return XLAL_ENOMEM;
     }
     
     /* create a forward complex fft plan */
     if ((plan = XLALCreateForwardCOMPLEX8FFTPlan(N,0)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALCreateForwardCOMPLEX8FFTPlan() failed with error = %d\n",fnc,xlalErrno);
+      LogPrintf(LOG_CRITICAL,"%s: XLALCreateForwardCOMPLEX8FFTPlan() failed with error = %d\n",__func__,xlalErrno);
       return XLAL_ENOMEM;
     }
     
     /* create a vector to store the frequency derivitive values */
     if ((fn = XLALCreateREAL8Vector(gridparams->ndim)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALCreateREAL8Vector() failed with error = %d\n",fnc,xlalErrno);
+      LogPrintf(LOG_CRITICAL,"%s: XLALCreateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
       return XLAL_ENOMEM;
     }
 
@@ -1887,9 +1867,9 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
     closest = dsdata->f0 + newdf*binoffset;
     freqoffset = gridparams->grid[0].min - closest;
 
-    /* LogPrintf(LOG_DEBUG,"%s : requested start frequency = %e Hz -> closest frequency = %e Hz.\n",fnc,gridparams->grid[0].min,closest); */
-/*     LogPrintf(LOG_DEBUG,"%s : frequency offset from closets bin = %e Hz\n",fnc,freqoffset); */
-/*     LogPrintf(LOG_DEBUG,"%s : offset from first frequency = %d bins\n",fnc,binoffset); */
+    /* LogPrintf(LOG_DEBUG,"%s : requested start frequency = %e Hz -> closest frequency = %e Hz.\n",__func__,gridparams->grid[0].min,closest); */
+/*     LogPrintf(LOG_DEBUG,"%s : frequency offset from closets bin = %e Hz\n",__func__,freqoffset); */
+/*     LogPrintf(LOG_DEBUG,"%s : offset from first frequency = %d bins\n",__func__,binoffset); */
   }
 
   /* loop over each value of the spin derivitive grid (not including the frequency dimension itself) */
@@ -1903,7 +1883,7 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
       for (k=j;k>0;k--) prod *= gridparams->grid[k].length;
       idx = idx - (UINT4)floor(idx/prod)*prod; 
       fn->data[j] = gridparams->grid[j].min + idx*gridparams->grid[j].delta;
-      LogPrintf(LOG_DEBUG,"%s : for derivitive index %d -> f%d index = %d value = %e\n",fnc,i,j,idx,fn->data[j]);
+      LogPrintf(LOG_DEBUG,"%s : for derivitive index %d -> f%d index = %d value = %e\n",__func__,i,j,idx,fn->data[j]);
     }
   
     /* initialise the input data */
@@ -1937,14 +1917,14 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
 
     /* FFT and square to get power */
     if (XLALCOMPLEX8VectorFFT(temp_output,temp_input,plan)) {
-      LogPrintf(LOG_CRITICAL,"%s: XLALCOMPLEX8VectorFFT() failed with error = %d\n",fnc,xlalErrno);
+      LogPrintf(LOG_CRITICAL,"%s: XLALCOMPLEX8VectorFFT() failed with error = %d\n",__func__,xlalErrno);
       return XLAL_ENOMEM;
     }
-    /* LogPrintf(LOG_DEBUG,"%s : computed the FFT\n",fnc); */
+    /* LogPrintf(LOG_DEBUG,"%s : computed the FFT\n",__func__); */
 
     /* check that we will not overrun the output vector */
     if ( (binoffset < 0) || (binoffset + (INT4)gridparams->grid[0].length > (INT4)temp_output->length) ) {
-      LogPrintf(LOG_CRITICAL,"%s: strange, required bins from demodulated power out of range of result.\n",fnc,xlalErrno);
+      LogPrintf(LOG_CRITICAL,"%s: strange, required bins from demodulated power out of range of result.\n",__func__,xlalErrno);
       return XLAL_EFAULT;
     }
     
@@ -1967,7 +1947,7 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
   XLALDestroyREAL8Vector(fn);
   XLALDestroyCOMPLEX8FFTPlan(plan);
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fnc);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
@@ -1983,33 +1963,31 @@ int XLALEstimateBackgroundFlux(REAL8Vector **background,     /**< [out] the back
 			       SFTVector *sftvec             /**< [in] the SFTs */
  			       )
 {
-  
-  const CHAR *fn = __func__;             /* store function name for log output */
   LALStatus status = blank_status;        /* for use wih non-XLAL functions */
   UINT4 i,j;                               /* counters */
 
   /* validate input arguments */
   if ((*background) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output REAL8Vector structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output REAL8Vector structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (segparams == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input INT4Vector structure == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input INT4Vector structure == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (sftvec == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input SFTVector structure == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input SFTVector structure == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (segparams->npcus->length != sftvec->length) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, length of sftvector != length of npcus vector.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, length of sftvector != length of npcus vector.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   /* allocate memory for background estaimte results */
   if (((*background) = XLALCreateREAL8Vector(sftvec->length)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCreateREAL8Vector() failed with error = %d.\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: XLALCreateREAL8Vector() failed with error = %d.\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   /* loop over each SFT */
@@ -2023,8 +2001,8 @@ int XLALEstimateBackgroundFlux(REAL8Vector **background,     /**< [out] the back
 
     /* allocate temporary memory */
     if ((P = XLALCalloc(sft->length,sizeof(REAL8))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for gridparams->grid.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for gridparams->grid.\n",__func__);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
 
     /* loop over each element in the SFT and record the power */
@@ -2041,13 +2019,13 @@ int XLALEstimateBackgroundFlux(REAL8Vector **background,     /**< [out] the back
    
     /* record estimate */
     (*background)->data[i] = (segparams->npcus->data[i]*PCU_AREA/T)*median/medianbias;
-    LogPrintf(LOG_DEBUG,"%s : Estimated the background for SFT starting at %d as %f cnts/s/m^2.\n",fn,sftvec->data[i].epoch.gpsSeconds,(*background)->data[i]);
+    LogPrintf(LOG_DEBUG,"%s : Estimated the background for SFT starting at %d as %f cnts/s/m^2.\n",__func__,sftvec->data[i].epoch.gpsSeconds,(*background)->data[i]);
     /* free the power */
     XLALFree(P);
     
   }
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
@@ -2065,32 +2043,30 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
 				REAL8 mu                            /**< [in] the mismatch */
 				)
 {
-  
-  const CHAR *fn = __func__;             /* store function name for log output */
   REAL8 gnn[NBINMAX];                    /* stores the diagonal metric elements */ 
   INT4 ndim = 0;                         /* the number of actual search dimensions */      
   INT4 n,k;                              /* counters */
 
   /* validate input arguments */
   if ((*binarygridparams) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output GridParameters structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output GridParameters structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (space == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input ParameterSpace structure == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input ParameterSpace structure == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (T < 0) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input T parameter < 0.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input T parameter < 0.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if ((DT < 0) || (DT > T)) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input DT parameter < 0 or < T.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input DT parameter < 0 or < T.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if ( (mu < 0) || (mu>1) ) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input mismatch parameter, not in range 0 -> 1.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input mismatch parameter, not in range 0 -> 1.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
  
   /* compute the semi-coherent binary metric diagonal elements */
@@ -2110,19 +2086,19 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
 
    /* allocate memory to the output */
   if ( ((*binarygridparams) = (GridParameters*)XLALCalloc(1,sizeof(GridParameters))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for gridparams->grid.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for gridparams->grid.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if ( ((*binarygridparams)->grid = (Grid*)XLALCalloc(NBINMAX,sizeof(Grid))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for gridparams->grid.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for gridparams->grid.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if ( ((*binarygridparams)->prod = (UINT4*)XLALCalloc(NBINMAX,sizeof(UINT4))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   (*binarygridparams)->ndim = NBINMAX;
-  LogPrintf(LOG_DEBUG,"%s : allocated memory for the output grid parameters.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : allocated memory for the output grid parameters.\n",__func__);
   
   /* we need to determine the true number of searchable dimensions */
   /* we check the width of a 1-D template across each dimension span */ 
@@ -2130,7 +2106,7 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
     REAL8 deltax = 2.0*sqrt(mu/gnn[n]);
     if (space->data[n].span > deltax) ndim++;
   }
-  LogPrintf(LOG_DEBUG,"%s : determined true dimensionality of binary space = %d.\n",fn,ndim);
+  LogPrintf(LOG_DEBUG,"%s : determined true dimensionality of binary space = %d.\n",__func__,ndim);
 
   /* Compute the grid spacing, grid start and span for each spin derivitive dimension */
   for (n=0;n<NBINMAX;n++) {
@@ -2165,11 +2141,11 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
     (*binarygridparams)->grid[n].min = xmin;
     strncpy((*binarygridparams)->grid[n].name,space->data[n].name,LALNameLength*sizeof(CHAR));
 
-    LogPrintf(LOG_DEBUG,"%s : %s -> [%e - %e] (%e) %d grid points.\n",fn,(*binarygridparams)->grid[n].name,(*binarygridparams)->grid[n].min,
+    LogPrintf(LOG_DEBUG,"%s : %s -> [%e - %e] (%e) %d grid points.\n",__func__,(*binarygridparams)->grid[n].name,(*binarygridparams)->grid[n].min,
 	      (*binarygridparams)->grid[n].min+(*binarygridparams)->grid[n].length*(*binarygridparams)->grid[n].delta,
 	      (*binarygridparams)->grid[n].delta,(*binarygridparams)->grid[n].length);
   }
-  LogPrintf(LOG_DEBUG,"%s : computed output grid parameters.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : computed output grid parameters.\n",__func__);
 
   /* compute some internally required parameters for the grid */  
   (*binarygridparams)->mismatch = mu;
@@ -2179,7 +2155,7 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
   (*binarygridparams)->prod[0] = 1;
   for (k=1;k<(INT4)(*binarygridparams)->ndim;k++) (*binarygridparams)->prod[k] = (*binarygridparams)->prod[k-1]*(*binarygridparams)->grid[k-1].length;
   
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
@@ -2196,7 +2172,6 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
 			   REAL8 sigalpha                           /**< [in] the signal amplitude prior sigma */
 			   )
 {  
-  const CHAR *fn = __func__;                          /* store function name for log output */
   LikelihoodParamsVector *Lparamsvec = NULL;          /* stores parameters required for the likelihood calculation */
   Template *bintemp = NULL;                           /* the binary parameter space template */
   Template fdots;                                     /* the freq derivitive template for each segment */
@@ -2213,26 +2188,26 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
  
   /* validate input parameters */
   if ((*Bayes) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output BayesianProducts structure != NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output BayesianProducts structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (power == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input REAL4DemodulatedPowerVector structure = NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input REAL4DemodulatedPowerVector structure = NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (pspace == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input GridParameters structure = NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input GridParameters structure = NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (sigalpha < 0.0) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input sigalphs must be > 0.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input sigalphs must be > 0.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   
   /* setup parameters for the likelihood computation */
   if (XLALSetupLikelihood(&Lparamsvec,Bayes,power,pspace->gridparams,pspace->ampgrid,sigalpha)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALSetupLikelihood() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_EFAULT);
+    LogPrintf(LOG_CRITICAL,"%s : XLALSetupLikelihood() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_EFAULT);
   }
   bess_acc = Lparamsvec->logbesselI0_acc;
   bess_spline = Lparamsvec->logbesselI0_spline;
@@ -2241,8 +2216,8 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
 
   /* allocate memory for the fdots */
   if ((fdots.x = XLALCalloc(power->segment[0]->gridparams->ndim,sizeof(REAL8))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   fdots.ndim = power->segment[0]->gridparams->ndim;
 
@@ -2369,7 +2344,7 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
     /* output status to screen */
     if ((UINT4)floor(0.5 + 100*bintemp->currentidx/pspace->gridparams->max) > percent) {
       percent = (UINT4)floor(0.5 + 100*bintemp->currentidx/pspace->gridparams->max);
-      LogPrintf(LOG_DEBUG,"%s : completed %d%%\n",fn,percent);
+      LogPrintf(LOG_DEBUG,"%s : completed %d%%\n",__func__,percent);
     }
 
   } /* end loop over templates */
@@ -2383,8 +2358,8 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
   if (pspace->ampspace) {
     logBayesfactor_phase += thisdelta;
   }
-  LogPrintf(LOG_DEBUG,"%s : computed log(B) = %e\n",fn,logBayesfactor);
-  LogPrintf(LOG_DEBUG,"%s : computed log(B) (fixed amp) = %e\n",fn,logBayesfactor_phase);
+  LogPrintf(LOG_DEBUG,"%s : computed log(B) = %e\n",__func__,logBayesfactor);
+  LogPrintf(LOG_DEBUG,"%s : computed log(B) (fixed amp) = %e\n",__func__,logBayesfactor_phase);
 
   /* point the Bayesfactor results grid to the grid used and the result obtained */
   (*Bayes)->gridparams = pspace->gridparams;
@@ -2410,7 +2385,7 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
   XLALFree(Lparamsvec->data);
   XLALFree(Lparamsvec);
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
@@ -2429,7 +2404,6 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
 			REAL8 sigalpha                             /**< [in] the amplitude sigma prior */
 			)
 {
-  const CHAR *fn = __func__;            /* store function name for log output */
   UINT4 i,j;                            /* counters */
   REAL8 maxpower = 0.0;                 /* initialise the maximum power in the input grid */
   REAL8 maxmodpower = 0.0;              /* initialise the maximum mod power in the input grid */ 
@@ -2441,60 +2415,60 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
 
   /* allocate memory for the likelihood params */
   if (((*Lparamsvec) = XLALCalloc(1,sizeof(LikelihoodParamsVector))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if (((*Lparamsvec)->data = XLALCalloc(power->length,sizeof(LikelihoodParams))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }  
   if (ampgrid) {
     if (((*Lparamsvec)->power = XLALCreateREAL8Vector(power->length)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     if (((*Lparamsvec)->logLratio_phase = XLALCreateREAL8Vector(ampgrid->length)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
     }   
     if (((*Lparamsvec)->alphasqsumY = XLALCreateREAL8Vector(ampgrid->length)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
     }  
     for (i=0;i<power->length;i++) {
       if (((*Lparamsvec)->data[i].alphasqY = XLALCreateREAL8Vector(ampgrid->length)) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
+	LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
       if (((*Lparamsvec)->data[i].alphaX = XLALCreateREAL8Vector(ampgrid->length)) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
+	LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
     }
   }
 
   /* allocate memory for the Bayesian output products */
   if (((*Bayes) = XLALCalloc(1,sizeof(BayesianProducts))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if (((*Bayes)->logBayesFactor_phaseamp_vector = XLALCreateREAL8Vector(power->length)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if (((*Bayes)->epoch = XLALCalloc(power->length,sizeof(LIGOTimeGPS))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   if (((*Bayes)->logposteriors_phaseamp = XLALCalloc(binarygrid->ndim,sizeof(REAL8Vector *))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
   
   for (i=0;i<binarygrid->ndim;i++) { 
     if (((*Bayes)->logposteriors_phaseamp[i] = XLALCreateREAL8Vector(binarygrid->grid[i].length)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     /* initialise results */
     for (j=0;j<binarygrid->grid[i].length;j++) (*Bayes)->logposteriors_phaseamp[i]->data[j] = -1e200;
@@ -2503,21 +2477,21 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
   /* allocate memory for the fixed amplitude results */
   if (ampgrid) {
   /*   if (((*Bayes)->logBayesFactor_phase_vector = XLALCreateREAL8Vector(power->length)) == NULL) { */
-/*       LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno); */
-/*       XLAL_ERROR(fn,XLAL_ENOMEM); */
+/*       LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",__func__,xlalErrno); */
+/*       XLAL_ERROR(XLAL_ENOMEM); */
 /*     } */
     if (((*Bayes)->logposterior_amp = XLALCreateREAL8Vector(ampgrid->length)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     if (((*Bayes)->logposteriors_phase = XLALCalloc(binarygrid->ndim,sizeof(REAL8Vector *))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     for (i=0;i<binarygrid->ndim;i++) {
       if (((*Bayes)->logposteriors_phase[i] = XLALCreateREAL8Vector(binarygrid->grid[i].length)) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
+	LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",__func__,xlalErrno);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
       /* initialise results */
       for (j=0;j<binarygrid->grid[i].length;j++) (*Bayes)->logposteriors_phase[i]->data[j] = -1e200;
@@ -2570,18 +2544,18 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
 	REAL8 alpha = ampgrid->min + ampgrid->delta*(REAL8)j;
 	(*Lparamsvec)->data[i].alphaX->data[j] = alpha*X;
 	(*Lparamsvec)->data[i].alphasqY->data[j] = alpha*alpha*Y;
- 	/* LogPrintf(LOG_DEBUG,"%s : computed alphaX = %e alpha*alpha*Y = %e for SFT %d/%d\n",fn,(*Lparamsvec)->data[i].alphaX->data[j],(*Lparamsvec)->data[i].alphasqY->data[j],i+1,power->length); */
+ 	/* LogPrintf(LOG_DEBUG,"%s : computed alphaX = %e alpha*alpha*Y = %e for SFT %d/%d\n",__func__,(*Lparamsvec)->data[i].alphaX->data[j],(*Lparamsvec)->data[i].alphasqY->data[j],i+1,power->length); */
 	
 	if ((*Lparamsvec)->data[i].alphaX->data[j]*maxmodpower) maxarg = (*Lparamsvec)->data[i].alphaX->data[j]*maxmodpower;
       }
     }
-    LogPrintf(LOG_DEBUG,"%s : computed X = %e Y = %e P = %e PQ = %e for SFT %d/%d\n",fn,X,Y,P,(*Lparamsvec)->data[i].PQ,i+1,power->length);
+    LogPrintf(LOG_DEBUG,"%s : computed X = %e Y = %e P = %e PQ = %e for SFT %d/%d\n",__func__,X,Y,P,(*Lparamsvec)->data[i].PQ,i+1,power->length);
     
     /* record epoch */
     memcpy(&((*Bayes)->epoch[i]),&(power->segment[i]->epoch),sizeof(LIGOTimeGPS));
     
   }
-  LogPrintf(LOG_DEBUG,"%s : found maximum bessel function argument = %f\n",fn,maxarg);
+  LogPrintf(LOG_DEBUG,"%s : found maximum bessel function argument = %f\n",__func__,maxarg);
   
   /* add sumY to all params structures */
   for (i=0;i<ampgrid->length;i++) {
@@ -2619,7 +2593,7 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
     gsl_spline_init((*Lparamsvec)->logbesselI0_spline,x,y,NBESSELLUT);  
   }    
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
   
 }
@@ -2634,23 +2608,22 @@ int XLALGetNextBinaryTemplate(Template **temp,                        /**< [out]
 			      GridParameters *gridparams              /**< [in] the parameter space grid params */
 			      )
 {  
-  const CHAR *fn = __func__;             /* store function name for log output */
   UINT4 idx;                             /* the index variable */ 
   INT4 j;                                /* counters */
 
   /* if the input template is null then we allocate memory and assume we are on the first template */
   if ((*temp) == NULL) {
     if ( ((*temp) = XLALCalloc(1,sizeof(Template))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     if ( ((*temp)->x = XLALCalloc(gridparams->ndim,sizeof(REAL8))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     if ( ((*temp)->idx = XLALCalloc(gridparams->ndim,sizeof(UINT4))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
+      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     (*temp)->currentidx = 0;
     (*temp)->ndim = gridparams->ndim;
@@ -2662,7 +2635,7 @@ int XLALGetNextBinaryTemplate(Template **temp,                        /**< [out]
     XLALFree((*temp)->idx);
     XLALFree(*temp);
     
-    LogPrintf(LOG_DEBUG,"%s: at last template.\n",fn);
+    LogPrintf(LOG_DEBUG,"%s: at last template.\n",__func__);
     return 0;
   }
     
@@ -2854,7 +2827,6 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
 			   CHAR *obsid_pattern         /**< [in] the obsid string */
 			   )
 {
-  const CHAR *fn = __func__;            /* store function name for log output */
   CHAR outputfile[LONGSTRINGLENGTH];    /* the output filename */
   time_t curtime = time(NULL);          /* get the current time */
   CHAR *time_string = NULL;             /* stores the current time */
@@ -2864,16 +2836,16 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
 
   /* validate input */
   if (outputdir == NULL) { 
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output directory string == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output directory string == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (Bayes == NULL) { 
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, results BayesProducts structure == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, results BayesProducts structure == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if (pspace == NULL) { 
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, ParameterSpace structure == NULL.\n",fn);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, ParameterSpace structure == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   
   /* define the output filename */
@@ -2889,12 +2861,12 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
     else snprintf(outputfile,LONGSTRINGLENGTH,"%s/BayesianResults-%s-%s-%04d_%03d_%04d_%03d.txt",
 		  outputdir,pspace->source,obsid_pattern,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
   }
-  LogPrintf(LOG_DEBUG,"%s : output %s\n",fn,outputfile);
+  LogPrintf(LOG_DEBUG,"%s : output %s\n",__func__,outputfile);
 
   /* open the output file */
   if ((fp = fopen(outputfile,"w")) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Error, failed to open file %s for writing.  Exiting.\n",fn,outputfile);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_CRITICAL,"%s: Error, failed to open file %s for writing.  Exiting.\n",__func__,outputfile);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   
   /* Convert time to local time representation */
@@ -3067,7 +3039,7 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
   XLALFree(time_string);
   XLALFree(version_string);
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
@@ -3176,8 +3148,6 @@ REAL8 XLALLogSumExpLUT(REAL8 logx,                   /**< [in] the log of x */
 int XLALFreeParameterSpace(ParameterSpace *pspace            /**< [in] the parameter space to be freed */
 			   )
 {
-  
-  const CHAR *fn = __func__;   /* store function name for log output */
   UINT4 i;                     /* counter */
 
   /* free parameter space */
@@ -3190,13 +3160,13 @@ int XLALFreeParameterSpace(ParameterSpace *pspace            /**< [in] the param
   }
   XLALFree(pspace->priors->data);
   XLALFree(pspace->priors);
-  LogPrintf(LOG_DEBUG,"%s : freed the prior parameters\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : freed the prior parameters\n",__func__);
   
   /* free binary grid params */
   XLALFree(pspace->gridparams->grid);
   XLALFree(pspace->gridparams->prod);
   XLALFree(pspace->gridparams);
-  LogPrintf(LOG_DEBUG,"%s : freed the binary grid parameters\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : freed the binary grid parameters\n",__func__);
 
   /* free the injection parameters if used */
   if (pspace->inj) {
@@ -3212,7 +3182,7 @@ int XLALFreeParameterSpace(ParameterSpace *pspace            /**< [in] the param
     XLALFree(pspace->amppriors);
   }
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
@@ -3223,8 +3193,6 @@ int XLALFreeParameterSpace(ParameterSpace *pspace            /**< [in] the param
 int XLALFreeREAL4DemodulatedPowerVector(REAL4DemodulatedPowerVector *power            /**< [in] the data to be freed */
 					)
 {
-  
-  const CHAR *fn = __func__;   /* store function name for log output */
   UINT4 i;                     /* counter */
 
   /* free each segment */
@@ -3242,7 +3210,7 @@ int XLALFreeREAL4DemodulatedPowerVector(REAL4DemodulatedPowerVector *power      
   XLALFree(power->segment);
   XLALFree(power);
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
@@ -3253,7 +3221,6 @@ int XLALFreeREAL4DemodulatedPowerVector(REAL4DemodulatedPowerVector *power      
 int XLALFreeBayesianProducts(BayesianProducts *Bayes            /**< [in] the data to be freed */
 			     )
 {
-  const CHAR *fn = __func__;   /* store function name for log output */
   UINT4 i;                     /* counter */
 
   /* free results */
@@ -3275,9 +3242,9 @@ int XLALFreeBayesianProducts(BayesianProducts *Bayes            /**< [in] the da
   if (Bayes->logposterior_amp) XLALDestroyREAL8Vector(Bayes->logposterior_amp);
  
   XLALFree(Bayes);
-  LogPrintf(LOG_DEBUG,"%s : freed the Bayesian results\n",fn); 
+  LogPrintf(LOG_DEBUG,"%s : freed the Bayesian results\n",__func__); 
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
   
 }
@@ -3292,8 +3259,6 @@ int XLALInitgslrand(gsl_rng **gslrnd,     /**< [out] the gsl random number gener
 		    INT8 seed             /**< [in] the random number generator seed */
 		    )
 {  
-  
-  const CHAR *fn = __func__;   /* store function name for log output */
   FILE *devrandom = NULL;      /* pointer to the /dev/urandom file */
   
   /* if the seed is 0 then we draw a random seed from /dev/urandom */
@@ -3301,14 +3266,14 @@ int XLALInitgslrand(gsl_rng **gslrnd,     /**< [out] the gsl random number gener
     
     /* open /dev/urandom */
     if ((devrandom=fopen("/dev/urandom","r")) == NULL)  {
-      LogPrintf(LOG_CRITICAL,"%s: Error, unable to open device /dev/random\n",fn);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s: Error, unable to open device /dev/random\n",__func__);
+      XLAL_ERROR(XLAL_EINVAL);
     }
     
     /* read a random seed */
     if (fread((void*)&seed,sizeof(INT8),1,devrandom) != 1) {
-      LogPrintf(LOG_CRITICAL,"%s: Error, unable to read /dev/random\n",fn);
-      XLAL_ERROR(fn,XLAL_EINVAL);
+      LogPrintf(LOG_CRITICAL,"%s: Error, unable to read /dev/random\n",__func__);
+      XLAL_ERROR(XLAL_EINVAL);
     }
     fclose(devrandom);
     
@@ -3318,7 +3283,7 @@ int XLALInitgslrand(gsl_rng **gslrnd,     /**< [out] the gsl random number gener
   *gslrnd = gsl_rng_alloc(gsl_rng_taus2); 
   gsl_rng_set(*gslrnd,seed);
  
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
   
 }

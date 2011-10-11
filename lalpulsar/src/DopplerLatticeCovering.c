@@ -299,21 +299,19 @@ XLALFreeDopplerLatticeScan ( DopplerLatticeScan **scan )
 int
 XLALgetCurrentLatticeIndex ( gsl_vector_int **Index, const DopplerLatticeScan *scan  )
 {
-  const CHAR *fn = "XLALgetCurrentLatticeIndex()";
-
   if ( !Index || !scan || (scan->state != STATE_READY ) ) {
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   if ( *Index == NULL )	/* allocate output-vector */
     {
       if ( ((*Index) = gsl_vector_int_calloc ( scan->dimLattice )) == NULL ) {
-	XLAL_ERROR (fn, XLAL_ENOMEM );
+	XLAL_ERROR ( XLAL_ENOMEM );
       }
     }
   else if ( (*Index)->size != scan->dimLattice ) {
     XLALPrintError ("\n\nOutput vector has wrong dimension %d instead of %d!\n\n", (*Index)->size, scan->dimLattice);
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   gsl_vector_int_memcpy ( (*Index), scan->latticeIndex );
@@ -326,10 +324,8 @@ XLALgetCurrentLatticeIndex ( gsl_vector_int **Index, const DopplerLatticeScan *s
 int
 XLALsetCurrentLatticeIndex ( DopplerLatticeScan *scan, const gsl_vector_int *Index )
 {
-  const CHAR *fn = "XLALsetCurrentLatticeIndex()";
-
   if ( !Index || !scan || (scan->state != STATE_READY) || (Index->size != scan->dimLattice) ) {
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   gsl_vector_int_memcpy ( scan->latticeIndex, Index );
@@ -390,19 +386,18 @@ XLALCountLatticeTemplates ( const DopplerLatticeScan *scan )
 int
 XLALadvanceLatticeIndex ( DopplerLatticeScan *scan )
 {
-  const CHAR *fn = "XLALadvanceLatticeIndex()";
   UINT4 dim, aI;
   int ret;
   gsl_vector_int *next_Index;
 
   if ( !scan || scan->state != STATE_READY ) {
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   dim = scan->dimLattice;
 
   if ( (next_Index = gsl_vector_int_calloc ( dim )) == NULL ) {
-    XLAL_ERROR (fn, XLAL_ENOMEM );
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
 
   gsl_vector_int_memcpy ( next_Index, scan->latticeIndex );
@@ -479,21 +474,20 @@ XLALadvanceLatticeIndex ( DopplerLatticeScan *scan )
 int
 XLALgetCurrentDopplerPos ( PulsarDopplerParams *pos, const DopplerLatticeScan *scan, CoordinateSystem skyCoords )
 {
-  const CHAR *fn = "XLALgetCurrentDopplerPos()";
   dopplerParams_t doppler = empty_dopplerParams;
   SkyPosition skypos = empty_SkyPosition;
 
   if ( !pos || !scan || (scan->state != STATE_READY) ) {
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   if ( XLALIndexToDoppler ( &doppler, scan->latticeIndex, scan ) ) {
-    XLAL_ERROR (fn, XLAL_EFUNC );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   skypos.system = skyCoords;
   if ( vect2DToSkypos ( &skypos, &(doppler.vn), scan->boundary.hemisphere) ) {
-    XLAL_ERROR (fn, XLAL_EFUNC );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* convert into PulsarDopplerParams type */
@@ -610,20 +604,19 @@ XLALDuplicateDopplerLatticeScan ( const DopplerLatticeScan *scan )
 int
 XLALIndexToDoppler ( dopplerParams_t *doppler, const gsl_vector_int *Index, const DopplerLatticeScan *scan )
 {
-  const CHAR *fn = "XLALIndexToDoppler()";
   gsl_vector *canonical = NULL;
 
   if ( !doppler || !Index || !scan ) {
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   if ( IndexToCanonical ( &canonical, Index, scan ) ) {
-    XLAL_ERROR (fn, XLAL_EFUNC );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   if ( convertCanonical2Doppler ( doppler, canonical, scan->dopplerUnits ) ) {
     gsl_vector_free ( canonical );
-    XLAL_ERROR (fn, XLAL_EFUNC );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   gsl_vector_free ( canonical );
 
@@ -1082,7 +1075,7 @@ skyposToVect3D ( vect3D_t *eclVect, const SkyPosition *skypos )
       sineps = 0; coseps = 1;
       break;
     default:
-      XLAL_ERROR ( "skyposToVect3D", XLAL_EINVAL );
+      XLAL_ERROR ( XLAL_EINVAL );
       break;
     } /* switch(system) */
 
@@ -1123,7 +1116,7 @@ vect2DToSkypos ( SkyPosition *skypos, vect2D_t * const vect2D, hemisphere_t hemi
       sineps = 0; coseps = 1;
       break;
     default:
-      XLAL_ERROR ( "vect3DToSkypos", XLAL_EINVAL );
+      XLAL_ERROR ( XLAL_EINVAL );
       break;
     } /* switch(system) */
 

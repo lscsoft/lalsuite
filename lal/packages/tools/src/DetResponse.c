@@ -138,7 +138,6 @@ int XLALComputeDetAMResponseSeries(
 	const int n
 )
 {
-	static const char func[] = "XLALComputeDetAMResponseSeries";
 	LIGOTimeGPS t;
 	double gmst;
 	int i;
@@ -150,7 +149,7 @@ int XLALComputeDetAMResponseSeries(
 		XLALDestroyREAL4TimeSeries(*fplus);
 		XLALDestroyREAL4TimeSeries(*fcross);
 		*fplus = *fcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	for(i = 0; i < n; i++) {
@@ -160,7 +159,7 @@ int XLALComputeDetAMResponseSeries(
 			XLALDestroyREAL4TimeSeries(*fplus);
 			XLALDestroyREAL4TimeSeries(*fcross);
 			*fplus = *fcross = NULL;
-			XLAL_ERROR(func, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		}
 		XLALComputeDetAMResponse(&p, &c, D, ra, dec, psi, gmst);
 		(*fplus)->data->data[i] = p;

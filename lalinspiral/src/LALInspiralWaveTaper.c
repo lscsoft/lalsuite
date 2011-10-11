@@ -114,9 +114,6 @@ int XLALInspiralWaveTaper(
                    REAL4Vector         *signalvec,
                    InspiralApplyTaper  bookends)
 {
-
-  static const char *func = "XLALInspiralWaveTaper";
-
   UINT4 i, start=0, end=0, mid, n=0; /* indices */
   UINT4 flag, safe = 1;
   UINT4 length;
@@ -125,15 +122,15 @@ int XLALInspiralWaveTaper(
 
 #ifndef LAL_NDEBUG
   if ( !signalvec )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if ( !signalvec->data )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 #endif
 
   /* Check we have chosen a valid tapering method */
   if ( (UINT4) bookends >= (UINT4) INSPIRAL_TAPER_NUM_OPTS )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   length = signalvec->length;
 

@@ -75,6 +75,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --FFTplanFlag=INT         0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive  \n                                  (possible values=\"0\", \"1\", \"2\", \"3\" \n                                  default=`3')",
   "      --allULvalsPerSkyLoc      Print all UL values in the band specified by \n                                  ULminimumDeltaf and ULmaximumDeltaf (default \n                                  is to print only the maximum UL value in the \n                                  band)  (default=off)",
   "      --fastchisqinv            Use a faster central chi-sq inversion function \n                                  (roughly float precision instead of double)  \n                                  (default=off)",
+  "      --useSSE                  Use SSE functions  (default=off)",
   "      --IHSonly                 IHS stage only is run. Output statistic is the \n                                  IHS statistic.  (default=off)",
   "      --calcRthreshold          Calculate the threshold value for R given the \n                                  template false alarm rate  (default=off)",
   "      --BrentsMethod            Use Brent's method in the root finding \n                                  algorithm.  (default=off)",
@@ -130,11 +131,12 @@ init_help_array(void)
   gengetopt_args_info_help[40] = gengetopt_args_info_full_help[40];
   gengetopt_args_info_help[41] = gengetopt_args_info_full_help[41];
   gengetopt_args_info_help[42] = gengetopt_args_info_full_help[42];
-  gengetopt_args_info_help[43] = 0; 
+  gengetopt_args_info_help[43] = gengetopt_args_info_full_help[43];
+  gengetopt_args_info_help[44] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[44];
+const char *gengetopt_args_info_help[45];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -232,6 +234,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->FFTplanFlag_given = 0 ;
   args_info->allULvalsPerSkyLoc_given = 0 ;
   args_info->fastchisqinv_given = 0 ;
+  args_info->useSSE_given = 0 ;
   args_info->IHSonly_given = 0 ;
   args_info->calcRthreshold_given = 0 ;
   args_info->BrentsMethod_given = 0 ;
@@ -310,6 +313,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->FFTplanFlag_orig = NULL;
   args_info->allULvalsPerSkyLoc_flag = 0;
   args_info->fastchisqinv_flag = 0;
+  args_info->useSSE_flag = 0;
   args_info->IHSonly_flag = 0;
   args_info->calcRthreshold_flag = 0;
   args_info->BrentsMethod_flag = 0;
@@ -369,12 +373,13 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->FFTplanFlag_help = gengetopt_args_info_full_help[40] ;
   args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[41] ;
   args_info->fastchisqinv_help = gengetopt_args_info_full_help[42] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[43] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[44] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[45] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[46] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[47] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[48] ;
+  args_info->useSSE_help = gengetopt_args_info_full_help[43] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[44] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[45] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[46] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[47] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[48] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[49] ;
   
 }
 
@@ -721,6 +726,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "allULvalsPerSkyLoc", 0, 0 );
   if (args_info->fastchisqinv_given)
     write_into_file(outfile, "fastchisqinv", 0, 0 );
+  if (args_info->useSSE_given)
+    write_into_file(outfile, "useSSE", 0, 0 );
   if (args_info->IHSonly_given)
     write_into_file(outfile, "IHSonly", 0, 0 );
   if (args_info->calcRthreshold_given)
@@ -1348,6 +1355,7 @@ cmdline_parser_internal (
         { "FFTplanFlag",	1, NULL, 0 },
         { "allULvalsPerSkyLoc",	0, NULL, 0 },
         { "fastchisqinv",	0, NULL, 0 },
+        { "useSSE",	0, NULL, 0 },
         { "IHSonly",	0, NULL, 0 },
         { "calcRthreshold",	0, NULL, 0 },
         { "BrentsMethod",	0, NULL, 0 },
@@ -1926,6 +1934,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->fastchisqinv_flag), 0, &(args_info->fastchisqinv_given),
                 &(local_args_info.fastchisqinv_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "fastchisqinv", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Use SSE functions.  */
+          else if (strcmp (long_options[option_index].name, "useSSE") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->useSSE_flag), 0, &(args_info->useSSE_given),
+                &(local_args_info.useSSE_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "useSSE", '-',
                 additional_error))
               goto failure;
           

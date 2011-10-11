@@ -255,7 +255,7 @@ XLALREAL8Trapezoid (
       REAL8 y;
       y = f (x, params);
       if (xlalErrno)
-        XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+        XLAL_ERROR_REAL8(XLAL_EFUNC);
       sum += y;
       x   += dx;
     }
@@ -268,10 +268,10 @@ XLALREAL8Trapezoid (
     REAL8 y_1;
     y_0 = f (xmin, params);
     if (xlalErrno)
-      XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
     y_1 = f (xmax, params);
     if (xlalErrno)
-      XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
     integral = (xmax - xmin)*(y_1 + y_0)/2;
   }
 
@@ -597,7 +597,7 @@ XLALREAL8Midpoint (
 
     case InfiniteDomainPow:
       if (!((b > 0 && a > 0) || (b < 0 && a < 0)))
-        XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+        XLAL_ERROR_REAL8(XLAL_EDOM);
       ChangeOfVariables = DEqualsInvX;
       xmax = 1/a;
       xmin = 1/b;
@@ -610,7 +610,7 @@ XLALREAL8Midpoint (
       break;
 
     default: /* unrecognized type */
-      XLAL_ERROR_REAL8(__func__, XLAL_EINVAL);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
   }
 
   if (refinement)
@@ -628,13 +628,13 @@ XLALREAL8Midpoint (
 
       y = f (ChangeOfVariables (x, a, b, &jac), params);
       if (xlalErrno)
-        XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+        XLAL_ERROR_REAL8(XLAL_EFUNC);
       sum += y*jac;
       x   += dx2;
 
       y = f (ChangeOfVariables (x, a, b, &jac), params);
       if (xlalErrno)
-        XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+        XLAL_ERROR_REAL8(XLAL_EFUNC);
       sum += y*jac;
       x   += dx1;
     }
@@ -648,7 +648,7 @@ XLALREAL8Midpoint (
     REAL8 jac;
     y = f (ChangeOfVariables (x, a, b, &jac), params);
     if (xlalErrno)
-      XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
     integral = (xmax - xmin)*y*jac;
   }
 
@@ -851,9 +851,9 @@ XLALREAL8RombergIntegrate (
   int            refinement;
 
   if (f == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   if (xmax <= xmin)
-    XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   switch (type)
   {
@@ -872,7 +872,7 @@ XLALREAL8RombergIntegrate (
       break;
 
     default: /* unrecognized type */
-      XLAL_ERROR_REAL8(__func__, XLAL_EINVAL);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
   }
 
   stepSize[0] = 1;
@@ -880,7 +880,7 @@ XLALREAL8RombergIntegrate (
   {
     temp = Algorithm (temp, f, params, xmin, xmax, type, refinement);
     if (xlalErrno)
-      XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
 
     integral[refinement] = temp;
 
@@ -892,7 +892,7 @@ XLALREAL8RombergIntegrate (
       /* extrapolate to continuum limit (stepSize = 0) */
       dy = XLALREAL8PolynomialInterpolation (&y, 0, integral + refinement - Order, stepSize + refinement - Order, Order + 1);
       if (xlalErrno)
-        XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+        XLAL_ERROR_REAL8(XLAL_EFUNC);
 
       if (fabs(dy) < epsilon*fabs(y))
       {
@@ -904,5 +904,5 @@ XLALREAL8RombergIntegrate (
     stepSize[refinement + 1] = refineFactor*stepSize[refinement];
   }
 
-  XLAL_ERROR_REAL8(__func__, XLAL_EMAXITER);
+  XLAL_ERROR_REAL8(XLAL_EMAXITER);
 }

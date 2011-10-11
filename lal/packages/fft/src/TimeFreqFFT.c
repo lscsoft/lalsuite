@@ -173,21 +173,20 @@ int XLALREAL4TimeFreqFFT(
     const REAL4FFTPlan      *plan
     )
 {
-  static const char *func = "XLALREAL4TimeFreqFFT";
   UINT4 k;
 
   if ( ! freq || ! time || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( time->deltaT <= 0.0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* perform the transform */
   if ( XLALREAL4ForwardFFT( freq->data, time->data, plan ) == XLAL_FAILURE )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* adjust the units */
   if ( ! XLALUnitMultiply( &freq->sampleUnits, &time->sampleUnits, &lalSecondUnit ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* remaining fields */
   if ( time->f0 )  /* TODO: need to figure out what to do here */
@@ -213,21 +212,20 @@ int XLALREAL4FreqTimeFFT(
     const REAL4FFTPlan            *plan
     )
 {
-  static const char *func = "XLALREAL4FreqTimeFFT";
   UINT4 j;
 
   if ( ! freq || ! time || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( freq->deltaF <= 0.0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* perform the transform */
   if ( XLALREAL4ReverseFFT( time->data, freq->data, plan ) == XLAL_FAILURE )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* adjust the units */
   if ( ! XLALUnitMultiply( &time->sampleUnits, &freq->sampleUnits, &lalHertzUnit ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* remaining fields */
   if ( freq->f0 )  /* TODO: need to figure out what to do here */
@@ -257,21 +255,20 @@ int XLALREAL8TimeFreqFFT(
     const REAL8FFTPlan       *plan
     )
 {
-  static const char *func = "XLALREAL8TimeFreqFFT";
   UINT4 k;
 
   if ( ! freq || ! time || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( time->deltaT <= 0.0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* perform the transform */
   if ( XLALREAL8ForwardFFT( freq->data, time->data, plan ) == XLAL_FAILURE )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* adjust the units */
   if ( ! XLALUnitMultiply( &freq->sampleUnits, &time->sampleUnits, &lalSecondUnit ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* remaining fields */
   if ( time->f0 )  /* TODO: need to figure out what to do here */
@@ -297,21 +294,20 @@ int XLALREAL8FreqTimeFFT(
     const REAL8FFTPlan             *plan
     )
 {
-  static const char *func = "XLALREAL8FreqTimeFFT";
   UINT4 j;
 
   if ( ! freq || ! time || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( freq->deltaF <= 0.0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* perform the transform */
   if ( XLALREAL8ReverseFFT( time->data, freq->data, plan ) == XLAL_FAILURE )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* adjust the units */
   if ( ! XLALUnitMultiply( &time->sampleUnits, &freq->sampleUnits, &lalHertzUnit ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* remaining fields */
   if ( freq->f0 )  /* TODO: need to figure out what to do here */
@@ -351,21 +347,20 @@ int XLALCOMPLEX8TimeFreqFFT(
     const COMPLEX8FFTPlan    *plan
     )
 {
-  static const char *func = "XLALCOMPLEX8TimeFreqFFT";
   COMPLEX8Vector *tmp;
   UINT4 k;
 
   if ( ! freq || ! time || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( time->deltaT <= 0.0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( plan->sign != -1 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* create temporary workspace */
   tmp = XLALCreateCOMPLEX8Vector( time->data->length );
   if ( ! tmp )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* perform transform */
   if ( XLALCOMPLEX8VectorFFT( tmp, time->data, plan ) == XLAL_FAILURE )
@@ -374,7 +369,7 @@ int XLALCOMPLEX8TimeFreqFFT(
     xlalErrno = 0;
     XLALDestroyCOMPLEX8Vector( tmp );
     xlalErrno = saveErrno;
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* unpack the frequency series and multiply by deltaT */
@@ -394,11 +389,11 @@ int XLALCOMPLEX8TimeFreqFFT(
   /* destroy temporary workspace */
   XLALDestroyCOMPLEX8Vector( tmp );
   if ( xlalErrno )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* adjust the units */
   if ( ! XLALUnitMultiply( &freq->sampleUnits, &time->sampleUnits, &lalSecondUnit ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* remaining fields */
   freq->epoch  = time->epoch;
@@ -415,21 +410,20 @@ int XLALCOMPLEX8FreqTimeFFT(
     const COMPLEX8FFTPlan         *plan
     )
 {
-  static const char *func = "XLALCOMPLEX8FreqTimeFFT";
   COMPLEX8Vector *tmp;
   UINT4 k;
 
   if ( ! freq || ! time || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( freq->deltaF <= 0.0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( plan->sign != 1 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* create temporary workspace */
   tmp = XLALCreateCOMPLEX8Vector( freq->data->length );
   if ( ! tmp )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* pack the frequency series and multiply by deltaF */
   for ( k = 0; k < freq->data->length / 2; ++k )
@@ -452,17 +446,17 @@ int XLALCOMPLEX8FreqTimeFFT(
     xlalErrno = 0;
     XLALDestroyCOMPLEX8Vector( tmp );
     xlalErrno = saveErrno;
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* destroy temporary workspace */
   XLALDestroyCOMPLEX8Vector( tmp );
   if ( xlalErrno )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* adjust the units */
   if ( ! XLALUnitMultiply( &time->sampleUnits, &freq->sampleUnits, &lalHertzUnit ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* remaining fields */
   time->f0     = freq->f0 + freq->deltaF * floor( freq->data->length / 2 );
@@ -496,21 +490,20 @@ int XLALCOMPLEX16TimeFreqFFT(
     const COMPLEX16FFTPlan    *plan
     )
 {
-  static const char *func = "XLALCOMPLEX16TimeFreqFFT";
   COMPLEX16Vector *tmp;
   UINT4 k;
 
   if ( ! freq || ! time || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( time->deltaT <= 0.0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( plan->sign != -1 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* create temporary workspace */
   tmp = XLALCreateCOMPLEX16Vector( time->data->length );
   if ( ! tmp )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* perform transform */
   if ( XLALCOMPLEX16VectorFFT( tmp, time->data, plan ) == XLAL_FAILURE )
@@ -519,7 +512,7 @@ int XLALCOMPLEX16TimeFreqFFT(
     xlalErrno = 0;
     XLALDestroyCOMPLEX16Vector( tmp );
     xlalErrno = saveErrno;
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* unpack the frequency series and multiply by deltaT */
@@ -539,11 +532,11 @@ int XLALCOMPLEX16TimeFreqFFT(
   /* destroy temporary workspace */
   XLALDestroyCOMPLEX16Vector( tmp );
   if ( xlalErrno )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* adjust the units */
   if ( ! XLALUnitMultiply( &freq->sampleUnits, &time->sampleUnits, &lalSecondUnit ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* remaining fields */
   freq->epoch  = time->epoch;
@@ -560,21 +553,20 @@ int XLALCOMPLEX16FreqTimeFFT(
     const COMPLEX16FFTPlan         *plan
     )
 {
-  static const char *func = "XLALCOMPLEX16FreqTimeFFT";
   COMPLEX16Vector *tmp;
   UINT4 k;
 
   if ( ! freq || ! time || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( freq->deltaF <= 0.0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( plan->sign != 1 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* create temporary workspace */
   tmp = XLALCreateCOMPLEX16Vector( freq->data->length );
   if ( ! tmp )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* pack the frequency series and multiply by deltaF */
   for ( k = 0; k < freq->data->length / 2; ++k )
@@ -597,17 +589,17 @@ int XLALCOMPLEX16FreqTimeFFT(
     xlalErrno = 0;
     XLALDestroyCOMPLEX16Vector( tmp );
     xlalErrno = saveErrno;
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* destroy temporary workspace */
   XLALDestroyCOMPLEX16Vector( tmp );
   if ( xlalErrno )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* adjust the units */
   if ( ! XLALUnitMultiply( &time->sampleUnits, &freq->sampleUnits, &lalHertzUnit ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* remaining fields */
   time->f0     = freq->f0 + freq->deltaF * floor( freq->data->length / 2 );

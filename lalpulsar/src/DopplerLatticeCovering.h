@@ -30,8 +30,8 @@
 #define _DOPPLERLATTICECOVERING_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 /* C++ protection. */
@@ -45,8 +45,8 @@ NRCSID( DOPPLERFLATTICECOVERINGH, "$Id$" );
 /*---------- DEFINES ----------*/
 
 /*---------- external types ----------*/
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagDopplerLatticeInit {
+  SWIGLAL_STRUCT(DopplerLatticeInit);
   DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */
   REAL8 metricMismatch;			/**< for GRID_METRIC and GRID_ISOTROPIC */
   LIGOTimeGPS startTime;		/**< start-time of the observation */

@@ -1,39 +1,46 @@
-@SWIG_COMMON_MK@
+include $(top_srcdir)/swig/swig-common.am
 
+if SWIG_BUILD
 if SWIG_BUILD_OCTAVE
 
+# set language
 swig_language = octave
-swig_wrapobj = $(swig_wrapname).oct
+
+# name of SWIG wrapping module object
+swig_wrap = $(swig_wrapname).oct
 
 # start from scratch if build script changes
-$(swig_wrapobj) : $(srcdir)/mkoct.m
+swig_wrap_depends += $(srcdir)/mkoct.m
 
-# build SWIG wrapping code
-$(swig_wrapobj) :
+# build SWIG wrapping module
+$(swig_wrap) : $(swig_wrap_depends)
 	$(OCTAVE) $(srcdir)/mkoct.m
 
 # test SWIG wrapping module
-check .PHONY : check-swig
-check-swig : $(swig_wrapobj)
+swig-check : $(swig_wrap)
 	test -f $(swig_wrapcheck).m && env \
-	$(swig_ldlibpathname)="$(swig_ldlibpath):$${$(swig_ldlibpathname)}" \
+	$(SWIG_LD_LIBPATH_NAME)="$(swig_ldlibpath):$${$(SWIG_LD_LIBPATH_NAME)}" \
 	OCTAVE_PATH="$${PWD}:$${OCTAVE_PATH}" \
 	$(OCTAVE) $(swig_wrapcheck).m
 
 # install SWIG wrapping module
-install-exec-local :
-	$(MKDIR_P) $(octfiledir)
-	$(INSTALL) $(swig_wrapobj) $(octfiledir)
+swig-install : $(swig_wrap)
+	$(MKDIR_P) $(DESTDIR)$(octfiledir)
+	$(INSTALL) $(swig_wrap) $(DESTDIR)$(octfiledir)
 
 # uninstall SWIG wrapping module
-uninstall-local :
-	rm -f $(octfiledir)/$(swig_wrapobj)
+swig-uninstall :
+	rm -f $(DESTDIR)$(octfiledir)/$(swig_wrap)
+
+# extra distribution files
+EXTRA_DIST += \
+	$(swig_wrapcheck).m \
+	$(srcdir)/mkoct.m
 
 # cleanup
-CLEANFILES = $(swig_cleanfiles) \
-             $(swig_wrapname).o \
-             $(swig_wrapobj)
-
-EXTRA_DIST = mkoct.m
+CLEANFILES += \
+	$(swig_wrapname).o \
+	$(swig_wrap)
 
 endif # SWIG_BUILD_OCTAVE
+endif # SWIG_BUILD

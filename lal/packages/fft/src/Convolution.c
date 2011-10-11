@@ -60,7 +60,6 @@ REAL4TimeSeries *XLALRespFilt(
     COMPLEX8FrequencySeries     *transfer
     )
 {
-  static const char *func = "XLALRespFilt";
   REAL4Vector *tmpWave=NULL;
   COMPLEX8Vector *tmpFFTWave=NULL;
   COMPLEX8FrequencySeries *tmpTransfer=NULL;
@@ -72,30 +71,30 @@ REAL4TimeSeries *XLALRespFilt(
   const CHAR *chname = "Temporary Transfer";
 
   if ( ! strain || ! transfer )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! strain->data || ! transfer->data )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   if ( strain->deltaT <= 0.0 || transfer->deltaF <=0 )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   inTimeLength = strain->data->length;
   paddedTimeLength = 2 * inTimeLength;
 
   tmpWave = XLALCreateREAL4Vector( paddedTimeLength );
   if ( ! tmpWave )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
 
   tmpFFTWave = XLALCreateCOMPLEX8Vector( inTimeLength + 1 );
   if ( ! tmpFFTWave )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
 
   fwdPlan = XLALCreateForwardREAL4FFTPlan( paddedTimeLength, 0 );
   if ( ! fwdPlan )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
 
   invPlan = XLALCreateReverseREAL4FFTPlan( paddedTimeLength, 0 );
   if ( ! invPlan )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
 
   /* copy the signal into zero padded data */
   memset( tmpWave->data, 0, paddedTimeLength * sizeof(REAL4) );
@@ -154,7 +153,6 @@ REAL4TimeSeries *XLALREAL4Convolution(
     REAL4TimeSeries             *transfer
     )
 {
-  static const char *func = "XLALRespFilt";
   /*
   REAL4Vector *tmpWave;
   REAL4 normfac;
@@ -162,13 +160,13 @@ REAL4TimeSeries *XLALREAL4Convolution(
   */
 
   if ( ! strain || ! transfer )
-      XLAL_ERROR_NULL( func, XLAL_EFAULT );
+      XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! strain->data || ! transfer->data )
-      XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
   if ( strain->deltaT <= 0.0 )
-      XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
   if ( transfer->data->length != strain->data->length )
-      XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+      XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   return strain;
 }

@@ -453,7 +453,7 @@ XLALrOfOmegaP4PN(
 
 #ifndef LAL_NDEBUG
   if ( !params )
-    XLAL_ERROR_REAL8( "XLALrOfOmegaP4PN", XLAL_EFAULT );
+    XLAL_ERROR_REAL8( XLAL_EFAULT );
 #endif
 
   pr3in = (pr3In *) params;
@@ -723,7 +723,7 @@ GetRingdownAttachCombSize(
            return 8.;
            break;
          default:
-           XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+           XLAL_ERROR_REAL8( XLAL_EINVAL );
            break;
         }
         break;
@@ -734,7 +734,7 @@ GetRingdownAttachCombSize(
        }
        else
        {
-         XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+         XLAL_ERROR_REAL8( XLAL_EINVAL );
        }
        break;
      case 4:
@@ -744,7 +744,7 @@ GetRingdownAttachCombSize(
        }
        else
        {
-         XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+         XLAL_ERROR_REAL8( XLAL_EINVAL );
        }
        break;
      case 5:
@@ -754,18 +754,18 @@ GetRingdownAttachCombSize(
        }
        else
        {
-         XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+         XLAL_ERROR_REAL8( XLAL_EINVAL );
        }
        break;
      default:
-       XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+       XLAL_ERROR_REAL8( XLAL_EINVAL );
        break;
   }
 
   /* It should not be possible to get to this point */
   /* Put an return path here to avoid compiler warning */
   XLALPrintError( "We shouldn't ever reach this point!\n" );
-  XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+  XLAL_ERROR_REAL8( XLAL_EINVAL );
 
 }
 
@@ -1023,26 +1023,26 @@ XLALSimIMREOBNRv2Generator(
    /* Checks on input */
    if ( !hplus || !hcross )
    {
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
    }
 
    if ( *hplus || *hcross )
    {
      XLALPrintError( "(*hplus) and (*hcross) are expected to be NULL; got %p and %p\n",
          *hplus, *hcross );
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
    }
 
    if ( distance <= 0.0 )
    {
      XLALPrintError( "Distance must be > 0.\n" );
-     XLAL_ERROR( __func__, XLAL_EINVAL );
+     XLAL_ERROR( XLAL_EINVAL );
    }
 
    if ( m1SI <= 0. || m2SI <= 0. )
    {
      XLALPrintError( "Component masses must be > zero!\n" );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    /* Allocate some memory */
@@ -1053,7 +1053,7 @@ XLALSimIMREOBNRv2Generator(
    {
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    /* From this point on, we will want to use masses in solar masses */
@@ -1095,7 +1095,7 @@ XLALSimIMREOBNRv2Generator(
    {
      XLALPrintError( "Higher mode flag appears to be uninitialised " 
          "(expected 0 or 1, but got %d\n)", higherModeFlag );
-     XLAL_ERROR( __func__, XLAL_EINVAL );
+     XLAL_ERROR( XLAL_EINVAL );
    }
 
    /* Check that the 220 QNM freq. is less than the Nyquist freq. */
@@ -1107,7 +1107,7 @@ XLALSimIMREOBNRv2Generator(
      XLALDestroyCOMPLEX16Vector( modefreqs );
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    /* If Nyquist freq. <  220 QNM freq., exit */
@@ -1119,7 +1119,7 @@ XLALSimIMREOBNRv2Generator(
      XLALDestroyREAL8Vector( dvalues );
      XLALPrintError( "Ringdown freq greater than Nyquist freq. "
            "Increase sample rate or consider using EOB approximant.\n" );
-     XLAL_ERROR( __func__, XLAL_EINVAL );
+     XLAL_ERROR( XLAL_EINVAL );
    }
 
    /* Calculate the time we will need to step back for ringdown */
@@ -1144,7 +1144,7 @@ XLALSimIMREOBNRv2Generator(
      XLALDestroyCOMPLEX16Vector( modefreqs );
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    /* For the dynamics, we need to use preliminary calculated versions   */
@@ -1154,7 +1154,7 @@ XLALSimIMREOBNRv2Generator(
      XLALDestroyCOMPLEX16Vector( modefreqs );
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    /* Calculate the resample factor for attaching the ringdown */
@@ -1206,7 +1206,7 @@ XLALSimIMREOBNRv2Generator(
    {
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    /* We want the waveform to generate from a point which won't cause */
@@ -1231,7 +1231,7 @@ XLALSimIMREOBNRv2Generator(
    {
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
    /* We need to change P to be the tortoise co-ordinate */
    /* TODO: Change prInit to calculate this directly */
@@ -1274,7 +1274,7 @@ XLALSimIMREOBNRv2Generator(
      XLALDestroyREAL8Vector( p2 );
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
-     XLAL_ERROR( __func__, XLAL_ENOMEM );
+     XLAL_ERROR( XLAL_ENOMEM );
    }
 
    memset(sigReHi->data, 0, sigReHi->length * sizeof( REAL8 ));
@@ -1303,7 +1303,7 @@ XLALSimIMREOBNRv2Generator(
      XLALDestroyREAL8Vector( p2 );
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    integrator->stopontestonly = 1;
@@ -1367,7 +1367,7 @@ XLALSimIMREOBNRv2Generator(
      XLALDestroyREAL8Vector( p2 );
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* We can now prepare to output the waveform */
@@ -1401,7 +1401,7 @@ XLALSimIMREOBNRv2Generator(
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
     XLALPrintError( "We don't seem to have crossed the low frequency cut-off\n" );
-    XLAL_ERROR( __func__, XLAL_EFAILED );
+    XLAL_ERROR( XLAL_EFAILED );
   }
 
   startIdx = i;
@@ -1623,7 +1623,7 @@ XLALSimIMREOBNRv2Generator(
        XLALDestroyREAL8Vector( p2 );
        XLALDestroyREAL8Vector( values );
        XLALDestroyREAL8Vector( dvalues );
-       XLAL_ERROR( __func__, XLAL_ENOMEM );
+       XLAL_ERROR( XLAL_ENOMEM );
      }
 
      /* Check the first matching point is sensible */
@@ -1645,7 +1645,7 @@ XLALSimIMREOBNRv2Generator(
        XLALDestroyREAL8Vector( p2 );
        XLALDestroyREAL8Vector( values );
        XLALDestroyREAL8Vector( dvalues );
-       XLAL_ERROR( __func__, XLAL_EFAILED );
+       XLAL_ERROR( XLAL_EFAILED );
      }
 
      REAL8 combSize = GetRingdownAttachCombSize( modeL, modeM );
@@ -1679,7 +1679,7 @@ XLALSimIMREOBNRv2Generator(
        XLALDestroyREAL8Vector( p2 );
        XLALDestroyREAL8Vector( values );
        XLALDestroyREAL8Vector( dvalues );
-       XLAL_ERROR( __func__, XLAL_EFUNC );
+       XLAL_ERROR( XLAL_EFUNC );
      }
 
      XLALDestroyREAL8Vector( rdMatchPoint );
@@ -1738,7 +1738,7 @@ XLALSimIMREOBNRv2DominantMode(
   if ( XLALSimIMREOBNRv2Generator( hplus, hcross, tC, phiC, deltaT, m1SI, m2SI,
               fLower, distance, inclination, 0 ) == XLAL_FAILURE )
   {
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
@@ -1767,7 +1767,7 @@ XLALSimIMREOBNRv2AllModes(
   if ( XLALSimIMREOBNRv2Generator( hplus, hcross, tC, phiC, deltaT, m1SI, m2SI, 
               fLower, distance, inclination, 1 ) == XLAL_FAILURE )
   {
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;

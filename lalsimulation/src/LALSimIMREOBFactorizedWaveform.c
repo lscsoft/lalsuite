@@ -69,7 +69,7 @@ static int XLALSimIMREOBCalcFacWaveformCoefficients(
   if ( dM2 < 0 )
   {
     XLALPrintError( "eta seems to be < 0.25 - this isn't allowed!\n" );
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   dM  = sqrt( dM2 );
@@ -466,7 +466,7 @@ static int XLALSimIMREOBModifyFacWaveformCoefficients(
 
   if ( !coeffs )
   {
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* Tweak the relevant coefficients for the generation of the waveform */
@@ -542,7 +542,7 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
 
   if ( abs(m) > (INT4) l )
   {
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
 
@@ -552,7 +552,7 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
   if ( eta > 0.25 )
   {
     XLALPrintError("Eta seems to be > 0.25 - this isn't allowed!\n" );
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
   else if ( eta == 0.25 && m % 2 )
   {
@@ -585,7 +585,7 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
             values->data[1], (UINT4)l, m, params );
   if ( status == XLAL_FAILURE )
   {
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Calculate the source term */
@@ -605,13 +605,13 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
   if (status != GSL_SUCCESS)
   {
     XLALPrintError("Error in GSL function\n" );
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
   XLAL_CALLGSL( status = gsl_sf_fact_e( l, &z2 ) );
   if ( status != GSL_SUCCESS)
   {
     XLALPrintError("Error in GSL function\n" );
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
   Tlm = XLALCOMPLEX16Exp( XLALCOMPLEX16Rect( lnr1.val + LAL_PI * hathatk,
         arg1.val + 2.0 * hathatk * log(4.0*k/sqrt(LAL_E)) ) );
@@ -646,7 +646,7 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
             + (hCoeffs->rho21v10 + hCoeffs->rho21v10l * eulerlogxabs)*v2))))))));
           break;
         default:
-          XLAL_ERROR( __func__, XLAL_EINVAL );
+          XLAL_ERROR( XLAL_EINVAL );
           break;
       }
       break;
@@ -677,7 +677,7 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
             + v*(hCoeffs->rho31v7 + (hCoeffs->rho31v8 + hCoeffs->rho31v8l*eulerlogxabs)*v))))));
           break;
         default:
-          XLAL_ERROR( __func__, XLAL_EINVAL );
+          XLAL_ERROR( XLAL_EINVAL );
           break;
       }
       break;
@@ -715,7 +715,7 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
             + (hCoeffs->rho41v6 +  hCoeffs->rho41v6l*eulerlogxabs)*v))));
           break;
         default:
-          XLAL_ERROR( __func__, XLAL_EINVAL );
+          XLAL_ERROR( XLAL_EINVAL );
           break;
       }
       break;
@@ -749,7 +749,7 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
             + v*(hCoeffs->rho51v3 + v*(hCoeffs->rho51v4 + hCoeffs->rho51v5*v)));
           break;
         default:
-          XLAL_ERROR( __func__, XLAL_EINVAL );
+          XLAL_ERROR( XLAL_EINVAL );
           break;
       }
       break;
@@ -784,7 +784,7 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
           rholm  = 1. + v2*(hCoeffs->rho61v2 + hCoeffs->rho61v3*v);
           break;
         default:
-          XLAL_ERROR( __func__, XLAL_EINVAL );
+          XLAL_ERROR( XLAL_EINVAL );
           break;
       }
       break;
@@ -820,7 +820,7 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
           rholm   = 1. + v2*(hCoeffs->rho71v2 +hCoeffs->rho71v3 * v);
           break;
         default:
-          XLAL_ERROR( __func__, XLAL_EINVAL );
+          XLAL_ERROR( XLAL_EINVAL );
           break;
       }
       break;
@@ -860,12 +860,12 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
           rholm  = 1. + hCoeffs->rho81v2 * v2;
           break;
         default:
-          XLAL_ERROR( __func__, XLAL_EINVAL );
+          XLAL_ERROR( XLAL_EINVAL );
           break;
       }
       break;
     default:
-      XLAL_ERROR( __func__, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
       break;
   }
 

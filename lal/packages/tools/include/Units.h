@@ -130,8 +130,8 @@ would not be an integer.
 #define _UNITS_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <lal/LALStdlib.h>
@@ -173,7 +173,7 @@ NRCSID (UNITSH, "$Id$");
 typedef struct
 tagRAT4
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(RAT4);
   INT2 numerator;		/**< The numerator */
   UINT2 denominatorMinusOne;	/**< One less than the denominator */
 } RAT4;
@@ -229,7 +229,7 @@ void LALUnitNormalize (LALStatus *status, LALUnit *output,
 typedef struct
 tagLALUnitPair
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(LALUnitPair);
   const LALUnit   *unitOne;	/**< The first unit */
   const LALUnit   *unitTwo;	/**< The second unit */
 }

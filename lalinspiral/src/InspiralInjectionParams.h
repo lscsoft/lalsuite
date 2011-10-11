@@ -43,7 +43,8 @@ typedef enum
   locationFromSourceFile,
   locationFromExttrigFile,
   uniformSkyLocation,
-  fixedSkyLocation
+  fixedSkyLocation,
+  locationFromIPNFile
 }
 SkyLocationDistribution;
 

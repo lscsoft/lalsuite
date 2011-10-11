@@ -82,20 +82,18 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
                      const CHAR *sunEphemerisFile            /**< File containing Sun's position. */
                      )
 {
-  const char *fn = __func__;
-
   /* check user input consistency */
   if ( !earthEphemerisFile || !sunEphemerisFile ) {
-    XLALPrintError ("%s: invalid NULL input earthEphemerisFile=%p, sunEphemerisFile=%p\n", fn, earthEphemerisFile, sunEphemerisFile );
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input earthEphemerisFile=%p, sunEphemerisFile=%p\n", __func__, earthEphemerisFile, sunEphemerisFile );
+    XLAL_ERROR_NULL (XLAL_EINVAL );
   }
 
   EphemerisVector *ephemV;
 
   /* ----- read EARTH ephemeris file ---------- */
   if ( ( ephemV = XLALReadEphemerisFile ( earthEphemerisFile )) == NULL ) {
-    XLALPrintError ("%s: XLALReadEphemerisFile('%s') failed\n", fn, earthEphemerisFile );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALReadEphemerisFile('%s') failed\n", __func__, earthEphemerisFile );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   /* typical position, velocity and acceleration and allowed ranged */
@@ -103,16 +101,16 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   REAL8 rangeE[3] = {25.0, 1e-5, 3e-12 };
 
   if ( XLALCheckEphemerisRanges ( ephemV, avgE, rangeE ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: Earth-ephemeris range error!\n", fn );
+    XLALPrintError ("%s: Earth-ephemeris range error!\n", __func__ );
     XLALDestroyEphemerisVector ( ephemV );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   /* prepare output ephemeris struct for returning */
   EphemerisData *edat;
   if ( ( edat = XLALCalloc ( 1, sizeof(*edat) ) ) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc ( 1, %d ) failed.\n", fn, sizeof(*edat) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: XLALCalloc ( 1, %d ) failed.\n", __func__, sizeof(*edat) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   /* store in ephemeris-struct */
@@ -124,9 +122,9 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
 
   /* ----- read SUN ephemeris file ---------- */
   if ( ( ephemV = XLALReadEphemerisFile ( sunEphemerisFile )) == NULL ) {
-    XLALPrintError ("%s: XLALReadEphemerisFile('%s') failed\n", fn, sunEphemerisFile );
+    XLALPrintError ("%s: XLALReadEphemerisFile('%s') failed\n", __func__, sunEphemerisFile );
     XLALDestroyEphemerisData ( edat );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   /* typical position, velocity and acceleration and allowed ranged */
@@ -134,10 +132,10 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   REAL8 rangeS[3] = { 4.5, 4.5e-8, 49.5e-16 };
 
   if ( XLALCheckEphemerisRanges ( ephemV, avgS, rangeS ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: Sun-ephemeris range error!\n", fn );
+    XLALPrintError ("%s: Sun-ephemeris range error!\n", __func__ );
     XLALDestroyEphemerisVector ( ephemV );
     XLALDestroyEphemerisData ( edat );
-    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+    XLAL_ERROR_NULL ( XLAL_EDOM );
   }
 
   /* store in ephemeris-struct */
@@ -182,18 +180,16 @@ XLALDestroyEphemerisData ( EphemerisData *edat )
 EphemerisVector *
 XLALCreateEphemerisVector ( UINT4 length )
 {
-  const char *fn = __func__;
-
   EphemerisVector * ret;
   if ( ( ret = XLALCalloc ( 1, sizeof (*ret) )) == NULL ) {
     XLALPrintError ("%s: failed to XLALCalloc(1, %d)\n", sizeof (*ret) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( ( ret->data = XLALCalloc ( length, sizeof(*ret->data) ) ) == NULL ) {
     XLALFree ( ret );
-    XLALPrintError ("%s: failed to XLALCalloc (%d, %d)\n", fn, length, sizeof(*ret->data) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: failed to XLALCalloc (%d, %d)\n", __func__, length, sizeof(*ret->data) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   ret->length = length;
@@ -226,19 +222,17 @@ XLALDestroyEphemerisVector ( EphemerisVector *ephemV )
 EphemerisVector *
 XLALReadEphemerisFile ( const CHAR *fname )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !fname ) {
-    XLALPrintError ("%s: invalid NULL input\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* open ephemeris file */
   FILE *fp;
   if ( (fp = LALOpenDataFile ( fname )) == NULL ) {
-    XLALPrintError ("%s: LALOpenDataFile() failed to open '%s' for reading.\n", fn, fname );
-    XLAL_ERROR_NULL ( fn, XLAL_ESYS );
+    XLALPrintError ("%s: LALOpenDataFile() failed to open '%s' for reading.\n", __func__, fname );
+    XLAL_ERROR_NULL ( XLAL_ESYS );
   }
 
   INT4 gpsYr; /* gpsYr + leap is the time on the GPS clock
@@ -252,15 +246,15 @@ XLALReadEphemerisFile ( const CHAR *fname )
   /* read first line */
   if ( 3 != fscanf(fp,"%d %le %u\n", &gpsYr, &dt, &nEntries)) {
     fclose(fp);
-    XLALPrintError("%s: couldn't parse first line of %s: %d\n", fn, fname );
-    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+    XLALPrintError("%s: couldn't parse first line of %s: %d\n", __func__, fname );
+    XLAL_ERROR_NULL ( XLAL_EDOM );
   }
 
   /* prepare output ephemeris vector */
   EphemerisVector *ephemV;
   if ( (ephemV = XLALCreateEphemerisVector ( nEntries )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCreateEphemerisVector(%d)\n", fn, nEntries );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: failed to XLALCreateEphemerisVector(%d)\n", __func__, nEntries );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   ephemV->dt = dt;
 
@@ -285,26 +279,26 @@ XLALReadEphemerisFile ( const CHAR *fname )
 	fclose(fp);
 	XLALDestroyEphemerisVector ( ephemV );
 	XLALPrintError("%s: Couldn't parse line %d of %s: %d\n", j+2, fname, ret);
-	XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+	XLAL_ERROR_NULL ( XLAL_EDOM );
       }
 
       /* check timestamps */
       if(j == 0)
         {
           if (gpsYr - ephemV->data[j].gps > 3600 * 24 * 365 ) {
-            XLALPrintError("%s: Wrong timestamp in line %d of %s: %d/%le\n", fn, j+2, fname, gpsYr, ephemV->data[j].gps );
+            XLALPrintError("%s: Wrong timestamp in line %d of %s: %d/%le\n", __func__, j+2, fname, gpsYr, ephemV->data[j].gps );
             fclose(fp);
             XLALDestroyEphemerisVector ( ephemV );
-            XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+            XLAL_ERROR_NULL ( XLAL_EDOM );
           }
         }
       else
         {
           if (ephemV->data[j].gps != ephemV->data[j-1].gps + ephemV->dt ) {
-            XLALPrintError("%s: Wrong timestamp in line %d of %s: %le/%le\n", fn, j+2, fname, ephemV->data[j].gps, ephemV->data[j-1].gps + ephemV->dt );
+            XLALPrintError("%s: Wrong timestamp in line %d of %s: %le/%le\n", __func__, j+2, fname, ephemV->data[j].gps, ephemV->data[j-1].gps + ephemV->dt );
             fclose(fp);
             XLALDestroyEphemerisVector ( ephemV );
-            XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+            XLAL_ERROR_NULL ( XLAL_EDOM );
           }
         }
 
@@ -313,10 +307,10 @@ XLALReadEphemerisFile ( const CHAR *fname )
   /* check file-sanity: nothing beyond end of table */
   CHAR dummy;
   if ( fscanf (fp,"%c",&dummy) != EOF) {
-    XLALPrintError("%s: Garbage at end of ephemeris file %s\n", fn, fname );
+    XLALPrintError("%s: Garbage at end of ephemeris file %s\n", __func__, fname );
     fclose(fp);
     XLALDestroyEphemerisVector ( ephemV );
-    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+    XLAL_ERROR_NULL ( XLAL_EDOM );
   }
 
   /* done reading, close ephemeris-file file */
@@ -336,12 +330,10 @@ XLALReadEphemerisFile ( const CHAR *fname )
 int
 XLALCheckEphemerisRanges ( const EphemerisVector *ephemV, REAL8 avg[3], REAL8 range[3] )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !ephemV ) {
-    XLALPrintError ("%s: invalid NULL input \n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input \n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   UINT4 numEntries = ephemV->length;
@@ -355,28 +347,28 @@ XLALCheckEphemerisRanges ( const EphemerisVector *ephemV, REAL8 avg[3], REAL8 ra
       REAL8 length;
       length = LENGTH3D ( ephemV->data[j].pos );
       if ( fabs( avg[0] - length) >  range[0] ) {
-        XLALPrintError("%s: position out of range in entry %d: vr=(%le, %le, %le), sqrt{|vr|} = %le [%g +- %g]\n", fn,
+        XLALPrintError("%s: position out of range in entry %d: vr=(%le, %le, %le), sqrt{|vr|} = %le [%g +- %g]\n", __func__,
                        j, ephemV->data[j].pos[0], ephemV->data[j].pos[1], ephemV->data[j].pos[2], length, avg[0], range[0] );
-        XLAL_ERROR ( fn, XLAL_EDOM );
+        XLAL_ERROR ( XLAL_EDOM );
       }
       length = LENGTH3D ( ephemV->data[j].vel );
       if ( fabs(avg[1] - length) > range[1] ) /* 10% */ {
-        XLALPrintError("%s: velocity out of range in entry %d: vv=(%le, %le, %le), sqrt{|vv|} = %le, [%g +- %g]\n", fn,
+        XLALPrintError("%s: velocity out of range in entry %d: vv=(%le, %le, %le), sqrt{|vv|} = %le, [%g +- %g]\n", __func__,
                        j, ephemV->data[j].vel[0], ephemV->data[j].vel[1], ephemV->data[j].vel[2], length, avg[1], range[1] );
-        XLAL_ERROR ( fn, XLAL_EDOM );
+        XLAL_ERROR ( XLAL_EDOM );
       }
       length = LENGTH3D ( ephemV->data[j].acc );
       if ( fabs(avg[2] - length) > range[2] ) /* 15% */ {
-        XLALPrintError("%s: acceleration out of range in entry %d: va=(%le, %le, %le), sqrt{|va|} = %le, [%g +- %g]\n", fn,
+        XLALPrintError("%s: acceleration out of range in entry %d: va=(%le, %le, %le), sqrt{|va|} = %le, [%g +- %g]\n", __func__,
                        j, ephemV->data[j].acc[0], ephemV->data[j].acc[1], ephemV->data[j].acc[2], length, avg[2], range[2] );
-        XLAL_ERROR ( fn, XLAL_EDOM );
+        XLAL_ERROR ( XLAL_EDOM );
       }
 
       /* check timestep */
       if ( j > 0 ) {
         if ( ephemV->data[j].gps - tjm1 != dt ) {
-          XLALPrintError ("%s: invalid timestep in entry %d: t_i - t_{i-1} = %g != %g\n", fn, j, ephemV->data[j].gps - tjm1, dt );
-          XLAL_ERROR ( fn, XLAL_EDOM );
+          XLALPrintError ("%s: invalid timestep in entry %d: t_i - t_{i-1} = %g != %g\n", __func__, j, ephemV->data[j].gps - tjm1, dt );
+          XLAL_ERROR ( XLAL_EDOM );
         }
       }
       tjm1 = ephemV->data[j].gps;	/* keep track of previous timestamp */

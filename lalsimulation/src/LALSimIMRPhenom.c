@@ -103,15 +103,15 @@ int XLALSimIMRPhenomAGenerateFD(
   BBHPhenomParams *params;
 
   /* check inputs for sanity */
-  if (*htilde) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (!tRef) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (fRef <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (deltaF <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m1 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m2 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_min <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_max < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (distance <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (*htilde) XLAL_ERROR(XLAL_EFAULT);
+  if (!tRef) XLAL_ERROR(XLAL_EFAULT);
+  if (fRef <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (deltaF <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (m1 < 0) XLAL_ERROR(XLAL_EDOM);
+  if (m2 < 0) XLAL_ERROR(XLAL_EDOM);
+  if (f_min <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (f_max < 0) XLAL_ERROR(XLAL_EDOM);
+  if (distance <= 0) XLAL_ERROR(XLAL_EDOM);
 
   /* external: SI; internal: solar masses */
   m1 /= LAL_MSUN_SI;
@@ -119,7 +119,7 @@ int XLALSimIMRPhenomAGenerateFD(
 
   /* phenomenological parameters*/
   params = ComputeIMRPhenomAParams(m1, m2);
-  if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
+  if (!params) XLAL_ERROR(XLAL_EFUNC);
 
   /* default f_max to params->fCut */
   if (f_max == 0.) f_max = params->fCut;
@@ -156,16 +156,16 @@ int XLALSimIMRPhenomAGenerateTD(
   size_t cut_ind;
 
   /* check inputs for sanity */
-  if (*hplus) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (*hcross) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (!tRef) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (fRef <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (deltaT <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m1 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m2 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_min <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_max < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (distance <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (*hplus) XLAL_ERROR(XLAL_EFAULT);
+  if (*hcross) XLAL_ERROR(XLAL_EFAULT);
+  if (!tRef) XLAL_ERROR(XLAL_EFAULT);
+  if (fRef <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (deltaT <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (m1 < 0) XLAL_ERROR(XLAL_EDOM);
+  if (m2 < 0) XLAL_ERROR(XLAL_EDOM);
+  if (f_min <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (f_max < 0) XLAL_ERROR(XLAL_EDOM);
+  if (distance <= 0) XLAL_ERROR(XLAL_EDOM);
 
   /* external: SI; internal: solar masses */
   m1 /= LAL_MSUN_SI;
@@ -173,7 +173,7 @@ int XLALSimIMRPhenomAGenerateTD(
 
   /* phenomenological parameters*/
   params = ComputeIMRPhenomAParams(m1, m2);
-  if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
+  if (!params) XLAL_ERROR(XLAL_EFUNC);
 
   /* default f_max to params->fCut */
   if (f_max == 0.) f_max = params->fCut;
@@ -182,7 +182,7 @@ int XLALSimIMRPhenomAGenerateTD(
   IMRPhenomAGenerateTD(hplus, tRef, phiRef, fRef, deltaT, m1, m2, f_min, f_max, distance, params);
   if (!(*hplus)) {
       XLALFree(params);
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* generate hcross, which is hplus phase-shifted by pi/2 */
@@ -191,7 +191,7 @@ int XLALSimIMRPhenomAGenerateTD(
   if (!(*hcross)) {
       XLALDestroyREAL8TimeSeries(*hplus);
       *hplus = NULL;
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* clip the parts below f_min */
@@ -199,7 +199,7 @@ int XLALSimIMRPhenomAGenerateTD(
   *hplus = XLALResizeREAL8TimeSeries(*hplus, cut_ind, (*hplus)->data->length - cut_ind);
   *hcross = XLALResizeREAL8TimeSeries(*hcross, cut_ind, (*hcross)->data->length - cut_ind);
   if (!(*hplus) || !(*hcross))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   /* apply inclination */
   return apply_inclination(hplus, hcross, inclination);
@@ -234,17 +234,17 @@ int XLALSimIMRPhenomBGenerateTD(
   size_t cut_ind;
 
   /* check inputs for sanity */
-  if (*hplus) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (*hcross) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (!tRef) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (fRef <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (deltaT <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m1 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m2 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (fabs(chi) > 1) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_min <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_max < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (distance <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (*hplus) XLAL_ERROR(XLAL_EFAULT);
+  if (*hcross) XLAL_ERROR(XLAL_EFAULT);
+  if (!tRef) XLAL_ERROR(XLAL_EFAULT);
+  if (fRef <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (deltaT <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (m1 < 0) XLAL_ERROR(XLAL_EDOM);
+  if (m2 < 0) XLAL_ERROR(XLAL_EDOM);
+  if (fabs(chi) > 1) XLAL_ERROR(XLAL_EDOM);
+  if (f_min <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (f_max < 0) XLAL_ERROR(XLAL_EDOM);
+  if (distance <= 0) XLAL_ERROR(XLAL_EDOM);
 
   /* external: SI; internal: solar masses */
   m1 /= LAL_MSUN_SI;
@@ -252,7 +252,7 @@ int XLALSimIMRPhenomBGenerateTD(
 
   /* phenomenological parameters*/
   params = ComputeIMRPhenomBParams(m1, m2, chi);
-  if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
+  if (!params) XLAL_ERROR(XLAL_EFUNC);
 
   /* default f_max to params->fCut */
   if (f_max == 0.) f_max = params->fCut;
@@ -261,7 +261,7 @@ int XLALSimIMRPhenomBGenerateTD(
   IMRPhenomBGenerateTD(hplus, tRef, phiRef, fRef, deltaT, m1, m2, chi, f_min, f_max, distance, params);
   if (!(*hplus)) {
       XLALFree(params);
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* generate cross, phase-shifted by pi/2 */
@@ -270,7 +270,7 @@ int XLALSimIMRPhenomBGenerateTD(
   if (!(*hcross)) {
       XLALDestroyREAL8TimeSeries(*hplus);
       *hplus = NULL;
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* clip the parts below f_min */
@@ -278,7 +278,7 @@ int XLALSimIMRPhenomBGenerateTD(
   *hplus = XLALResizeREAL8TimeSeries(*hplus, cut_ind, (*hplus)->data->length - cut_ind);
   *hcross = XLALResizeREAL8TimeSeries(*hcross, cut_ind, (*hcross)->data->length - cut_ind);
   if (!(*hplus) || !(*hcross))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   /* apply inclination */
   return apply_inclination(hplus, hcross, inclination);
@@ -312,16 +312,16 @@ int XLALSimIMRPhenomBGenerateFD(
   int status;
 
   /* check inputs for sanity */
-  if (*htilde) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (!tRef) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if (fRef <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (deltaF <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m1 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (m2 < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (fabs(chi) > 1) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_min <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (f_max < 0) XLAL_ERROR(__func__, XLAL_EDOM);
-  if (distance <= 0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (*htilde) XLAL_ERROR(XLAL_EFAULT);
+  if (!tRef) XLAL_ERROR(XLAL_EFAULT);
+  if (fRef <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (deltaF <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (m1 < 0) XLAL_ERROR(XLAL_EDOM);
+  if (m2 < 0) XLAL_ERROR(XLAL_EDOM);
+  if (fabs(chi) > 1) XLAL_ERROR(XLAL_EDOM);
+  if (f_min <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (f_max < 0) XLAL_ERROR(XLAL_EDOM);
+  if (distance <= 0) XLAL_ERROR(XLAL_EDOM);
 
   /* external: SI; internal: solar masses */
   m1 /= LAL_MSUN_SI;
@@ -329,7 +329,7 @@ int XLALSimIMRPhenomBGenerateFD(
 
   /* phenomenological parameters*/
   params = ComputeIMRPhenomBParams(m1, m2, chi);
-  if (!params) XLAL_ERROR(__func__, XLAL_EFUNC);
+  if (!params) XLAL_ERROR(XLAL_EFUNC);
 
   /* default f_max to params->fCut */
   if (f_max == 0.) f_max = params->fCut;
@@ -354,7 +354,7 @@ static BBHPhenomParams *ComputeIMRPhenomAParams(REAL8 m1, REAL8 m2) {
   BBHPhenomParams *phenParams;
 
   phenParams = (BBHPhenomParams *) XLALMalloc(sizeof(BBHPhenomParams));
-  if (!phenParams) XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+  if (!phenParams) XLAL_ERROR_NULL(XLAL_EFUNC);
   memset(phenParams, 0, sizeof(BBHPhenomParams));
 
   /* calculate the total mass and symmetric mass ratio */
@@ -435,7 +435,7 @@ static BBHPhenomParams *ComputeIMRPhenomBParams(REAL8 m1, REAL8 m2, REAL8 chi) {
   BBHPhenomParams *phenParams;
 
   phenParams = (BBHPhenomParams *) XLALMalloc(sizeof(BBHPhenomParams));
-  if (!phenParams) XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+  if (!phenParams) XLAL_ERROR_NULL(XLAL_EFUNC);
   memset(phenParams, 0, sizeof(BBHPhenomParams));
 
   /* calculate the total mass and symmetric mass ratio */
@@ -606,7 +606,7 @@ static int IMRPhenomAGenerateFD(
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", tRef, 0.0, deltaF, &lalStrainUnit, n);
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
   XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
-  if (!(*htilde)) XLAL_ERROR(__func__, XLAL_EFUNC);
+  if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
 
   shft = LAL_TWOPI * (tRef->gpsSeconds + 1e-9 * tRef->gpsNanoSeconds);
 
@@ -627,7 +627,7 @@ static int IMRPhenomAGenerateFD(
     else {
       XLALDestroyCOMPLEX16FrequencySeries(*htilde);
       *htilde = NULL;
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
     }
 
     /* now compute the phase */
@@ -685,7 +685,7 @@ static int IMRPhenomBGenerateFD(
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", tRef, 0.0, deltaF, &lalStrainUnit, n);
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
   XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
-  if (!(*htilde)) XLAL_ERROR(__func__, XLAL_EFUNC);
+  if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
 
   shft = LAL_TWOPI * (tRef->gpsSeconds + 1e-9 * tRef->gpsNanoSeconds);
 
@@ -739,7 +739,7 @@ static int IMRPhenomBGenerateFD(
     else {
       XLALDestroyCOMPLEX16FrequencySeries(*htilde);
       *htilde = NULL;
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
     }
 
     /* now compute the phase */
@@ -774,12 +774,12 @@ static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 ph
   deltaF = 1. / (deltaT * NextPow2(EstimateIMRLength(m1, m2, f_min_wide, deltaT)));
 
   /* generate in frequency domain */
-  if (IMRPhenomAGenerateFD(&htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(__func__, XLAL_EFUNC);
+  if (IMRPhenomAGenerateFD(&htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(XLAL_EFUNC);
 
   /* convert to time domain */
   FDToTD(h, htilde, tRef, m1 + m2, deltaT, f_min, f_max, f_min_wide, f_max_wide);
   XLALDestroyCOMPLEX16FrequencySeries(htilde);
-  if (!*h) XLAL_ERROR(__func__, XLAL_EFUNC);
+  if (!*h) XLAL_ERROR(XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 }
@@ -801,12 +801,12 @@ static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 ph
   deltaF = 1. / (deltaT * NextPow2(EstimateIMRLength(m1, m2, f_min_wide, deltaT)));
 
   /* generate in frequency domain */
-  if (IMRPhenomBGenerateFD(&htilde, tRef, phiRef, fRef, deltaF, m1, m2, chi, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(__func__, XLAL_EFUNC);
+  if (IMRPhenomBGenerateFD(&htilde, tRef, phiRef, fRef, deltaF, m1, m2, chi, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(XLAL_EFUNC);
 
   /* convert to time domain */
   FDToTD(h, htilde, tRef, m1 + m2, deltaT, f_min, f_max, f_min_wide, f_max_wide);
   XLALDestroyCOMPLEX16FrequencySeries(htilde);
-  if (!*h) XLAL_ERROR(__func__, XLAL_EFUNC);
+  if (!*h) XLAL_ERROR(XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 }
@@ -822,7 +822,7 @@ static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD
   size_t nf, nt, k;
 
   /* check inputs */
-  if (f_min_wide >= f_min) XLAL_ERROR(__func__, XLAL_EDOM);
+  if (f_min_wide >= f_min) XLAL_ERROR(XLAL_EDOM);
 
   /* apply the softening window function */
   nf = signalFD->data->length;
@@ -849,16 +849,16 @@ static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD
   if (!revPlan) {
     XLALDestroyREAL8TimeSeries(*signalTD);
     *signalTD = NULL;
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
   XLALREAL8FreqTimeFFT(*signalTD, signalFD, revPlan);
   XLALDestroyREAL8FFTPlan(revPlan);
-  if (!(*signalTD)) XLAL_ERROR(__func__, XLAL_EFUNC);
+  if (!(*signalTD)) XLAL_ERROR(XLAL_EFUNC);
 
   /* apply a linearly decreasing window at the end
    * of the waveform in order to avoid edge effects. */
   windowLength = 20. * totalMass * LAL_MTSUN_SI / deltaT;
-  if (windowLength > (*signalTD)->data->length) XLAL_ERROR(__func__, XLAL_ERANGE);
+  if (windowLength > (*signalTD)->data->length) XLAL_ERROR(XLAL_ERANGE);
   for (k = 0; k < windowLength; k++)
     (*signalTD)->data->data[nt-k-1] *= k / windowLength;
 
@@ -880,7 +880,7 @@ static size_t find_instant_freq(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 
     f /= hp->data->data[k] * hp->data->data[k] + hc->data->data[k] * hc->data->data[k];
     if (f >= target) return k - 1;
   }
-  XLAL_ERROR(__func__, XLAL_EDOM);
+  XLAL_ERROR(XLAL_EDOM);
 }
 
 static int apply_inclination(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 inclination) {

@@ -86,7 +86,6 @@ INT4 XLALPTFWaveformDerivatives(
    * magnitude given by |S1| = chi1 * m1^2 with 0 \le chi1 \le 1
    */
 
-  /*static const char* func = "XLALPTFWaveformDerivatives";*/
   /* post newtonian coeffients which are independent of time */
   ptf_evolution_params_t* pn_params = (ptf_evolution_params_t*) params;
 
@@ -199,7 +198,6 @@ INT4 XLALPTFWaveformDerivatives(
 REAL4Vector*
 XLALPTFOmegaPNCoeffsOrbital( REAL4 m1, REAL4 m2 )
 {
-  static const char* func = "XLALPTFOmegaPNCoeffsOrbital";
   REAL4 m_total = m1 + m2;
   REAL4 eta = (m1 * m2) / (m_total * m_total);
   const UINT4 max_pn_order = 9;
@@ -207,7 +205,7 @@ XLALPTFOmegaPNCoeffsOrbital( REAL4 m1, REAL4 m2 )
   REAL4* c;
 
   if ( ! c_vec )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL(XLAL_ENOMEM);
   else
     c = c_vec->data;
 
@@ -256,7 +254,6 @@ XLALPTFOmegaPNCoeffsSpin( REAL4 m1, REAL4 m2,
     REAL4 chi1, REAL4 chi2,
     REAL4 Q1, REAL4 Q2 )
 {
-  static const char* func = "XLALPTFOmegaPNCoeffsSpin";
   const REAL4 m_total = m1 + m2;
   const REAL4 m1_5 = m1 * m1 * m1 * m1 * m1;
   const REAL4 m2_5 = m2 * m2 * m2 * m2 * m2;
@@ -265,7 +262,7 @@ XLALPTFOmegaPNCoeffsSpin( REAL4 m1, REAL4 m2,
   REAL4* c;
 
   if ( ! c_vec )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL(XLAL_ENOMEM);
   else
     c = c_vec->data;
 
@@ -306,7 +303,6 @@ XLALPTFOmegaPNCoeffsEnergy( REAL4 m1, REAL4 m2,
 {
   /* These coefficients are derived from Eqs. (11) and (12) and (13) of */
   /* Buonanno, Chen and Vallisneri, Phys. Rev. D 67, 104025 (BCV2)      */
-  static const char* func = "XLALPTFOmegaPNCoeffsEnergy";
   const REAL4 m_total = m1 + m2;
   const REAL4 mu = m1 * m2 / m_total;
   const REAL4 eta = mu / m_total;
@@ -317,7 +313,7 @@ XLALPTFOmegaPNCoeffsEnergy( REAL4 m1, REAL4 m2,
   REAL4* c;
 
   if ( ! c_vec )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL(XLAL_ENOMEM);
   else
     c = c_vec->data;
 
@@ -450,7 +446,6 @@ XLALFindChirpPTFWaveform(
     )
 
 {
-  static const char* func = "XLALFindChirpPTFWaveform";
   UINT4 i, len;
   UINT4 N = PTFphi->length;
   INT4  errcode = 0;
@@ -682,7 +677,7 @@ XLALFindChirpPTFWaveform(
   if ( errcode == GSL_SUCCESS )
     errcode = XLAL_SUCCESS;
   else
-    XLAL_ERROR( func, errcode );
+    XLAL_ERROR(errcode);
 
   return errcode;
 }

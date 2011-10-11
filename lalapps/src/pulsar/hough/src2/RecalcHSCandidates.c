@@ -301,8 +301,6 @@ const SemiCohCandidate empty_SemiCohCandidate;
 /* ==================== ==================== */
 
 int MAIN( int argc, char *argv[]) {
-  const char *fn = __func__;
-
   LALStatus status = blank_status;
 
   /* temp loop variables: generally k loops over stacks and j over SFTs in a stack*/
@@ -610,7 +608,7 @@ int MAIN( int argc, char *argv[]) {
   /* read in ephemeris data */
   EphemerisData * edat;
   if ( (edat = XLALInitBarycenter ( uvar_ephemE, uvar_ephemS )) == NULL ) {
-    XLALPrintError ("%s: XLALInitBarycenter() failed to load ephemeris files '%s' or '%s'\n", fn, uvar_ephemE, uvar_ephemS );
+    XLALPrintError ("%s: XLALInitBarycenter() failed to load ephemeris files '%s' or '%s'\n", __func__, uvar_ephemE, uvar_ephemS );
     return XLAL_EFUNC;
   }
 
@@ -1041,7 +1039,7 @@ int MAIN( int argc, char *argv[]) {
     xlalErrno = 0;
     XLALComputeExtraStatsForToplist ( semiCohToplist, "HoughFStat", &stackMultiSFT, multiNoiseWeightsPointer, &stackMultiDetStates, &CFparams, refTimeGPS, FALSE, uvar_outputSingleSegStats );
     if ( xlalErrno != 0 ) {
-      XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", fn, __LINE__, xlalErrno );
+      XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       return(HIERARCHICALSEARCH_EBAD);
     }
     LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
@@ -3406,20 +3404,18 @@ XLALLoadHoughCandidateList ( const char *fname,	/**< input candidate-list file '
                              REAL8 FreqShift	/**< apply this shift to input frequencies to correct HS offset-bug */
                              )
 {
-  const char *fn = __func__;
-
   if ( ! fname )
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
 
   LALParsedDataFile *data = NULL;
   if ( XLALParseDataFile (&data, fname) != XLAL_SUCCESS )
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
 
   UINT4 nCands = data->lines->nTokens;
 
   HoughCandidateList *out;
   if ( ( out = XLALCreateHoughCandidateList ( nCands )) == NULL )
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
 
   HoughCandidate candMax = { 0,   -1, -2, -1, 0 };	/* initialize with impossibly small values */
   HoughCandidate candMin = { 1e9, 10, 10,  1, 0 }; /* initialize with impossibly large values */
@@ -3431,10 +3427,10 @@ XLALLoadHoughCandidateList ( const char *fname,	/**< input candidate-list file '
       HoughCandidate *cand = &out->data[i];
       if ( 5 != sscanf( data->lines->tokens[i], "%lg %lg %lg %lg %lg", &cand->Freq, &cand->Alpha, &cand->Delta, &cand->f1dot, &cand->sig ))
 	{
-	  XLALPrintError ( "%s: could not parse 5 numbers from line %d in candidate-file '%s':\n", fn, i, fname);
+	  XLALPrintError ( "%s: could not parse 5 numbers from line %d in candidate-file '%s':\n", __func__, i, fname);
           XLALPrintError ("'%s'\n", data->lines->tokens[i] );
           XLALDestroyHoughCandidateList ( out );
-          XLAL_ERROR_NULL ( fn,   XLAL_EDATA );
+          XLAL_ERROR_NULL (   XLAL_EDATA );
 	}
       /* apply frequency correction */
       cand->Freq += FreqShift;
@@ -3475,14 +3471,12 @@ XLALLoadHoughCandidateList ( const char *fname,	/**< input candidate-list file '
 HoughCandidateList *
 XLALCreateHoughCandidateList ( UINT4 length )
 {
-  const char *fn = __func__;
-
   HoughCandidateList *out;
   if ( (out = XLALCalloc ( 1, sizeof(HoughCandidateList) )) == NULL )
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
 
   if ( (out->data = XLALCalloc ( length, sizeof(*out->data) )) == NULL )
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
 
   out->length = length;
 

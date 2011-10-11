@@ -1527,8 +1527,6 @@ XLALMultiStudentDeviates(
   RandomParams *randParam
   )
 {
-  static const char *func = "LALMultiStudentDeviates";
-
   static LALStatus status;
 
   REAL4Vector *dummy=NULL;
@@ -1537,13 +1535,13 @@ XLALMultiStudentDeviates(
 
   /* check input arguments */
   if (!vector || !matrix || !randParam)
-    XLAL_ERROR_VOID( func, XLAL_EFAULT );
+    XLAL_ERROR_VOID( XLAL_EFAULT );
 
   if (dim<1)
-    XLAL_ERROR_VOID( func, XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
 
   if (n<1)
-    XLAL_ERROR_VOID( func, XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
 
 
    /* first draw from MVN */
@@ -1591,14 +1589,12 @@ XLALMultiNormalDeviates(
   gsl_matrix *work=NULL;
   gsl_vector *result = NULL;
 
-  static const char *func = "LALMultiNormalDeviates";
-
   /* check input arguments */
   if (!vector || !matrix || !randParam)
-    XLAL_ERROR_VOID( func, XLAL_EFAULT );
+    XLAL_ERROR_VOID( XLAL_EFAULT );
 
   if (dim<1)
-    XLAL_ERROR_VOID( func, XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
 
   /* copy matrix into workspace */
   work =  gsl_matrix_alloc(dim,dim);

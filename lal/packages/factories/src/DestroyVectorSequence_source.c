@@ -19,9 +19,9 @@ void XFUNC ( STYPE *vseq )
   if ( ! vseq )
     return;
   if ( ( ! vseq->length || ! vseq->vectorLength ) && vseq->data )
-    XLAL_ERROR_VOID( STRING(XFUNC), XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
   if ( ! vseq->data && ( vseq->length || vseq->vectorLength ) )
-    XLAL_ERROR_VOID( STRING(XFUNC), XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
   if ( vseq->data )
     LALFree( vseq->data );
   vseq->data = NULL; /* leave lengths as they are to indicate freed vector */

@@ -60,16 +60,14 @@ XLALDrawFromPDF1D ( pdf1D_t *pdf,	/**< [in] probability density to sample from *
                     const gsl_rng *rng	/**< random-number generator */
                     )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !pdf || !rng ) {
-    XLALPrintError ("%s: NULL input 'pdf = %p' or 'rng = %p'\n", fn, pdf, rng );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: NULL input 'pdf = %p' or 'rng = %p'\n", __func__, pdf, rng );
+    XLAL_ERROR_REAL8 ( XLAL_EINVAL );
   }
   if ( XLALCheckValidPDF1D ( pdf ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: invalid pdf.\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: invalid pdf.\n", __func__ );
+    XLAL_ERROR_REAL8 ( XLAL_EFUNC );
   }
 
   /* ----- special case 1: single value with certainty */
@@ -91,8 +89,8 @@ XLALDrawFromPDF1D ( pdf1D_t *pdf,	/**< [in] probability density to sample from *
       UINT4 numBins = pdf->xTics->length - 1;
       REAL8 *prob;
       if ( (prob = XLALMalloc ( numBins * sizeof(*prob) )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALMalloc %d-array of REAL8s\n", fn, numBins );
-        XLAL_ERROR_REAL8 ( fn, XLAL_ENOMEM );
+        XLALPrintError ("%s: failed to XLALMalloc %d-array of REAL8s\n", __func__, numBins );
+        XLAL_ERROR_REAL8 ( XLAL_ENOMEM );
       }
       UINT4 i;
       for ( i = 0; i < numBins; i ++ )
@@ -102,8 +100,8 @@ XLALDrawFromPDF1D ( pdf1D_t *pdf,	/**< [in] probability density to sample from *
         }
 
       if ( (pdf->sampling = gsl_ran_discrete_preproc ( numBins, prob ) ) == NULL ) {
-        XLALPrintError ("%s: gsl_ran_discrete_preproc() failed\n", fn );
-        XLAL_ERROR ( fn, XLAL_EFAILED );
+        XLALPrintError ("%s: gsl_ran_discrete_preproc() failed\n", __func__ );
+        XLAL_ERROR ( XLAL_EFAILED );
       }
 
       XLALFree ( prob );
@@ -131,18 +129,16 @@ XLALDrawFromPDF1D ( pdf1D_t *pdf,	/**< [in] probability density to sample from *
 int
 XLALCheckValidPDF1D ( const pdf1D_t *pdf )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !pdf ) {
-    XLALPrintError ("%s: NULL input 'pdf'\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: NULL input 'pdf'\n", __func__ );
+    XLAL_ERROR_REAL8 ( XLAL_EINVAL );
   }
 
   /* check presence of required xTics array */
   if ( (pdf->xTics == NULL) || (pdf->xTics->length==0) || (pdf->xTics->data==NULL) ) {
-    XLALPrintError ("%s: invalid pdf->xTics = NULL, length 0 or NULL data field \n", fn );
-    XLAL_ERROR ( fn, XLAL_EDOM );
+    XLALPrintError ("%s: invalid pdf->xTics = NULL, length 0 or NULL data field \n", __func__ );
+    XLAL_ERROR ( XLAL_EDOM );
   }
 
   /* ----- allowed special case 1: single value with certainty */
@@ -159,15 +155,15 @@ XLALCheckValidPDF1D ( const pdf1D_t *pdf )
   /* check valid pdf array */
   if ( pdf->probDens == NULL ) {
     XLALPrintError ("%s: invalid NULL pdf->probDens for required numBins=%d\n", numBins );
-    XLAL_ERROR ( fn, XLAL_EDOM );
+    XLAL_ERROR ( XLAL_EDOM );
   }
   if ( pdf->probDens->length != numBins ) {
     XLALPrintError ("%s: invalid length pdf->probDens->length=%d but should be %d\n", pdf->probDens->length, numBins );
-    XLAL_ERROR ( fn, XLAL_EDOM );
+    XLAL_ERROR ( XLAL_EDOM );
   }
   if ( pdf->probDens->data == NULL ) {
-    XLALPrintError ("%s: invalid pdf->probDens->data = NULL\n", fn );
-    XLAL_ERROR ( fn, XLAL_EDOM );
+    XLALPrintError ("%s: invalid pdf->probDens->data = NULL\n", __func__ );
+    XLAL_ERROR ( XLAL_EDOM );
   }
 
   /* ----- if pdf claims to be normalized, check that ----- */
@@ -182,8 +178,8 @@ XLALCheckValidPDF1D ( const pdf1D_t *pdf )
         } /* for i < numBins */
       REAL8 relErr = 1e-12;	// generous, given double precision
       if ( gsl_fcmp (norm, 1.0, relErr) != 0 ) {
-        XLALPrintError ("%s: pdf claims to be normalized, but norm = %.16f differs from 1.0 by more than %g relative error\n", fn, norm, relErr );
-        XLAL_ERROR ( fn, XLAL_EDOM );
+        XLALPrintError ("%s: pdf claims to be normalized, but norm = %.16f differs from 1.0 by more than %g relative error\n", __func__, norm, relErr );
+        XLAL_ERROR ( XLAL_EDOM );
       }
     } // if pdf->isNormalized
 
@@ -224,20 +220,18 @@ pdf1D_t *
 XLALCreateSingularPDF1D ( REAL8 x0	/**< domain of pdf is a single point: x0 */
                           )
 {
-  const char *fn = __func__;
-
   /* allocate memory for output pdf */
   pdf1D_t *ret;
 
   if ( ( ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d)\n", fn, sizeof(*ret) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d)\n", __func__, sizeof(*ret) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( ( ret->xTics = XLALCreateREAL8Vector ( 1 )) == NULL ) {
-    XLALPrintError ("%s: surprisingly, XLALCreateREAL8Vector(1) failed!\n", fn );
+    XLALPrintError ("%s: surprisingly, XLALCreateREAL8Vector(1) failed!\n", __func__ );
     XLALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   ret->xTics->data[0] = x0;	/* only value required: P[x0]=1 */
@@ -256,26 +250,24 @@ XLALCreateUniformPDF1D ( REAL8 xMin,	/**< lower boundary of domain interval */
                          REAL8 xMax	/**< upper boundary of domain interval */
                          )
 {
-  const char *fn = __func__;
-
   /* check input */
   if ( xMax < xMin ) {
-    XLALPrintError ("%s: invalid input, xMax=%f must be > xMin = %f\n", fn, xMax, xMin );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid input, xMax=%f must be > xMin = %f\n", __func__, xMax, xMin );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* allocate memory for output pdf */
   pdf1D_t *ret;
 
   if ( ( ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d)\n", fn, sizeof(*ret) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d)\n", __func__, sizeof(*ret) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( ( ret->xTics = XLALCreateREAL8Vector ( 2 )) == NULL ) {
-    XLALPrintError ("%s: surprisingly, XLALCreateREAL8Vector(2) failed!\n", fn );
+    XLALPrintError ("%s: surprisingly, XLALCreateREAL8Vector(2) failed!\n", __func__ );
     XLALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   ret->xTics->data[0] = xMin;
@@ -298,36 +290,34 @@ XLALCreateDiscretePDF1D ( REAL8 xMin,	/**< lower boundary of domain interval */
                           UINT4 numBins /**< number of bins to discretize PDF into */
                          )
 {
-  const char *fn = __func__;
-
   /* check input */
   if ( xMax < xMin ) {
-    XLALPrintError ("%s: invalid input, xMax=%f must be > xMin = %f\n", fn, xMax, xMin );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid input, xMax=%f must be > xMin = %f\n", __func__, xMax, xMin );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
   if ( numBins == 0 ) {
-    XLALPrintError ("%s: invalid input, numBins must be positive!\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid input, numBins must be positive!\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* allocate memory for output pdf */
   pdf1D_t *ret;
 
   if ( ( ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d)\n", fn, sizeof(*ret) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d)\n", __func__, sizeof(*ret) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( ( ret->xTics = XLALCreateREAL8Vector ( numBins + 1 )) == NULL ) {
-    XLALPrintError ("%s: surprisingly, XLALCreateREAL8Vector(%d) failed!\n", fn, numBins + 1 );
+    XLALPrintError ("%s: surprisingly, XLALCreateREAL8Vector(%d) failed!\n", __func__, numBins + 1 );
     XLALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   if ( ( ret->probDens = XLALCreateREAL8Vector ( numBins )) == NULL ) {
-    XLALPrintError ("%s: surprisingly, XLALCreateREAL8Vector(%d) failed!\n", fn, numBins );
+    XLALPrintError ("%s: surprisingly, XLALCreateREAL8Vector(%d) failed!\n", __func__, numBins );
     XLALDestroyREAL8Vector ( ret->xTics );
     XLALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   /* initialize N bins uniformly spaced over [xMin, xMax], ie. N+1 'tics' */
@@ -353,16 +343,14 @@ XLALCreateDiscretePDF1D ( REAL8 xMin,	/**< lower boundary of domain interval */
 int
 XLALNormalizePDF1D ( pdf1D_t *pdf )
 {
-  const char *fn = __func__;
-
   /* sanity checks */
   if ( !pdf  ) {
-    XLALPrintError ("%s: invalid NULL input 'pdf'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'pdf'\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( XLALCheckValidPDF1D ( pdf ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: invalid pdf\n", fn );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: invalid pdf\n", __func__ );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* ----- special case 1: single value with certainty: nothing to be done */
@@ -410,16 +398,14 @@ XLALOutputPDF1D_to_fp ( FILE* fp,		/**< output file-pointer to write into [appen
                         const char *name	/**< octave variable-name to use in output (default = 'pdf' if NULL) */
                         )
 {
-  const char *fn = __func__;
-
   /* input sanity check */
   if ( !fp || !pdf ) {
-    XLALPrintError ("%s: invalid NULL input 'fp=%p' or 'pdf=%p'\n", fn, fp, pdf );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'fp=%p' or 'pdf=%p'\n", __func__, fp, pdf );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( XLALCheckValidPDF1D ( pdf ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: invalid probability-density 'pdf'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: invalid probability-density 'pdf'\n", __func__ );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 #define PDF_FMT "%.16g"
 
@@ -500,16 +486,14 @@ XLALOutputPDF1D_to_fp ( FILE* fp,		/**< output file-pointer to write into [appen
 REAL8
 XLALFindModeOfPDF1D ( const pdf1D_t *pdf )
 {
-  const char *fn = __func__;
-
   /* check input */
   if ( !pdf ) {
-    XLALPrintError ("%s: invalid NULL input 'pdf'\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'pdf'\n", __func__ );
+    XLAL_ERROR_REAL8 ( XLAL_EINVAL );
   }
   if ( XLALCheckValidPDF1D ( pdf ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: invalid input pdf\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: invalid input pdf\n", __func__ );
+    XLAL_ERROR_REAL8 ( XLAL_EFUNC );
   }
 
   /* special case 1) singular pdf */

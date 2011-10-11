@@ -33,8 +33,8 @@
 #define _UNIVERSALDOPPLERMETRIC_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 #if !defined(SWIG) && !defined(SWIGLAL_FIXED_1DARRAY_ELEM)
 #define SWIGLAL_FIXED_1DARRAY_ELEM(...)
@@ -71,23 +71,23 @@ typedef REAL8 vect3D_t[3];
 typedef REAL8 mat33_t[3][3];
 
 /** variable-length list of 2D-vectors */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagvect2Dlist_t {
+  SWIGLAL_STRUCT(vect2Dlist_t);
   UINT4 length;			/**< number of elements */
   vect2D_t *data;		/**< array of 2D vectors */
 } vect2Dlist_t;
 
 /** variable-length list of 3D vectors */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagvect3Dlist_t {
+  SWIGLAL_STRUCT(vect3Dlist_t);
   UINT4 length;			/**< number of elements */
   vect3D_t *data;		/**< array of 3D vectors */
 } vect3Dlist_t;
 
 
 /** Small Container to hold two 3D vectors: position and velocity */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagPosVel3D_t {
+  SWIGLAL_STRUCT(PosVel3D_t);
   vect3D_t pos;
   vect3D_t vel;
 } PosVel3D_t;
@@ -279,9 +279,9 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
 /** type describing a Doppler coordinate system:
  * lists the number of dimensions and the symbolic names of the coordinates.
  */
-typedef struct
+typedef struct tagDopplerCoordinateSystem
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(DopplerCoordinateSystem);
   UINT4 dim;						/**< number of dimensions covered */
   SWIGLAL_FIXED_1DARRAY_ELEM(DopplerCoordinateID, coordIDs);
   DopplerCoordinateID coordIDs[DOPPLERMETRIC_MAX_DIM];	/**< coordinate 'names' */
@@ -291,9 +291,9 @@ typedef struct
 /** type describing a set of detectors and their relative noise-weights
  * This is only used for full multi-IFO Fstatistic-metrics
  */
-typedef struct
+typedef struct tagMultiDetectorInfo
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(MultiDetectorInfo);
   UINT4 length;						/**< number N of detectors */
   SWIGLAL_FIXED_1DARRAY_ELEM(LALDetector, sites);
   LALDetector sites[DOPPLERMETRIC_MAX_DETECTORS]; 	/**< array of N detectors */
@@ -303,9 +303,9 @@ typedef struct
 
 /**< meta-info specifying a Doppler-metric
  */
-typedef struct
+typedef struct tagDopplerMetricParams
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(DopplerMetricParams);
   DopplerCoordinateSystem coordSys;		/**< number of dimensions and coordinate-IDs of Doppler-metric */
   DetectorMotionType detMotionType;		/**< the type of detector-motion assumed: full spin+orbit, pure orbital, Ptole, ... */
 
@@ -326,9 +326,9 @@ typedef struct
  * \f$\langle Q\rangle \equiv \frac{1}{T} \, \sum_X w^X\, \int_0^T Q\, dt \f$, where \f$w^X\f$ is the noise-weight for detector X,
  * and \f$T\f$ is the observation time, see \ref Prix07 for details.
  */
-typedef struct
+typedef struct tagFmetricAtoms_t
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(FmetricAtoms_t);
   REAL8 a_a;		/**< \f$ \langle a^2 \rangle = A \f$ */
   REAL8 a_b;		/**< \f$ \langle a b \rangle = C \f$ */
   REAL8 b_b;		/**< \f$ \langle b^2 \rangle = B \f$ */
@@ -348,9 +348,9 @@ typedef struct
 /** struct to hold a DopplerMetric, including meta-info on the number of
  * dimensions, the coordinate-system and type of metric.
  */
-typedef struct
+typedef struct tagDopplerMetric
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(DopplerMetric);
   DopplerMetricParams meta;		/**< "meta-info" describing/specifying the type of Doppler metric */
 
   gsl_matrix *g_ij;			/**< symmetric matrix holding the usual Phase-metric */

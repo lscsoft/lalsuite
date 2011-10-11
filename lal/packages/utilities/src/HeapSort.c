@@ -148,14 +148,13 @@ NRCSID(HEAPSORTC,"$Id$");
 int XLALHeapSort( void *base, UINT4 nobj, UINT4 size, void *params,
     int (*compar)(void *, const void *, const void *) )
 { /* </lalVerbatim> */
-  static const char *func = "XLALHeapSort";
   INT4 i, j, k, n = nobj;
   void *temp;
 
   if ( (INT4)size <= 0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! base || ! compar )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   /* 0 or 1 objects are already sorted. */
   if (n<2)
@@ -163,7 +162,7 @@ int XLALHeapSort( void *base, UINT4 nobj, UINT4 size, void *params,
 
   temp = LALMalloc( size );
   if ( ! temp )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
 
   /* Here is the heapsort algorithm. */
   j=n-1;
@@ -203,14 +202,13 @@ int XLALHeapSort( void *base, UINT4 nobj, UINT4 size, void *params,
 int XLALHeapIndex( INT4 *indx, void *base, UINT4 nobj, UINT4 size, void *params,
     int (*compar)(void *, const void *, const void *) )
 { /* </lalVerbatim> */
-  static const char *func = "XLALHeapIndex";
   INT4 i, j, k, n = nobj;
   INT4 itemp;
 
   if ( (INT4)size <= 0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! indx || ! base || ! compar )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   /* Initialize the indx vector */
   for (i=0;i<n;++i)
@@ -258,21 +256,20 @@ int XLALHeapIndex( INT4 *indx, void *base, UINT4 nobj, UINT4 size, void *params,
 int XLALHeapRank( INT4 *rank, void *base, UINT4 nobj, UINT4 size, void *params,
     int (*compar)(void *, const void *, const void *) )
 { /* </lalVerbatim> */
-  static const char *func = "XLALHeapRank";
   INT4 i, n = nobj;
   INT4 *indx;
 
   if ( (INT4)size <= 0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! rank || ! base || ! compar )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   indx = LALMalloc( nobj * sizeof( *rank ) );
   if ( ! indx )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
 
   if ( XLALHeapIndex( indx, base, nobj, size, params, compar ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   for(i=0;i<n;++i)
     rank[indx[i]]=i;

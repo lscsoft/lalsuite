@@ -31,8 +31,8 @@
 #define _DOPPLERFULLSCAN_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 /* C++ protection. */
@@ -68,7 +68,7 @@ NRCSID( DOPPLERFULLSCANH, "$Id$" );
 %warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagDopplerFullScanInit::gridFile;
 #endif /* SWIG */
 typedef struct tagDopplerFullScanInit {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(DopplerFullScanInit);
   DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */
   DopplerGridType gridType;		/**< which type of grid to generate */
   LALPulsarMetricType metricType; 	/**< which metric to use if GRID_METRIC */

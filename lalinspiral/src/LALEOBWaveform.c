@@ -1000,47 +1000,47 @@ XLALEOBWaveform(
 #ifndef LAL_NDEBUG
    if ( !signalvec )
    {
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
    }
    if ( !signalvec->data )
    {
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
    }
    if ( !params )
    {
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
    }
    if ( params->nStartPad < 0 || params->nEndPad < 0 )
    {
      XLALPrintError( "nStartPad and nEndPad must be >= 0.\n");
-     XLAL_ERROR( __func__, XLAL_EDOM );
+     XLAL_ERROR( XLAL_EDOM );
    }
    if ( params->fLower <= 0. )
    {
      XLALPrintError( "fLower must be > 0.\n");
-     XLAL_ERROR( __func__, XLAL_EDOM );
+     XLAL_ERROR( XLAL_EDOM );
    }
    if ( params->tSampling <= 0. )
    {
      XLALPrintError( "tSampling must be > 0.\n");
-     XLAL_ERROR( __func__, XLAL_EDOM );
+     XLAL_ERROR( XLAL_EDOM );
    }
    if ( params->totalMass <= 0. )
    {
      XLALPrintError( "totalMass must be > 0.\n");
-     XLAL_ERROR( __func__, XLAL_EDOM );
+     XLAL_ERROR( XLAL_EDOM );
    }
 #endif
 
    if ( XLALInspiralSetup (&(paramsInit.ak), params) == XLAL_FAILURE )
    {
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    if ( XLALInspiralChooseModel( &(paramsInit.func),
 		 &(paramsInit.ak), params) == XLAL_FAILURE )
    {
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
@@ -1049,7 +1049,7 @@ XLALEOBWaveform(
    if ( XLALEOBWaveformEngine(signalvec, NULL, NULL, NULL,
 		NULL, NULL, &count, params, &paramsInit) == XLAL_FAILURE )
    {
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    return XLAL_SUCCESS;
@@ -1096,54 +1096,54 @@ XLALEOBWaveformTemplates(
 #ifndef LAL_NDEBUG
    if ( !signalvec1 )
    {
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
    }
    if ( !signalvec2 )
    {
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
    }
    if ( !signalvec1->data )
    {
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
    }
    if ( !signalvec2->data )
    {
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
    }
    if ( !params )
    {
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
    }
    if ( params->nStartPad < 0 || params->nEndPad < 0 )
    {
      XLALPrintError( "nStartPad and nEndPad must be >= 0.\n");
-     XLAL_ERROR( __func__, XLAL_EDOM );
+     XLAL_ERROR( XLAL_EDOM );
    }
    if ( params->fLower <= 0. )
    {
      XLALPrintError( "fLower must be > 0.\n");
-     XLAL_ERROR( __func__, XLAL_EDOM );
+     XLAL_ERROR( XLAL_EDOM );
    }
    if ( params->tSampling <= 0. )
    {
      XLALPrintError( "tSampling must be > 0.\n");
-     XLAL_ERROR( __func__, XLAL_EDOM );
+     XLAL_ERROR( XLAL_EDOM );
    }
    if ( params->totalMass <= 0. )
    {
      XLALPrintError( "totalMass must be > 0.\n");
-     XLAL_ERROR( __func__, XLAL_EDOM );
+     XLAL_ERROR( XLAL_EDOM );
    }
 #endif
 
    if ( XLALInspiralSetup (&(paramsInit.ak), params) == XLAL_FAILURE )
    {
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
    if ( XLALInspiralChooseModel(&(paramsInit.func),
 		&(paramsInit.ak), params) == XLAL_FAILURE )
    {
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));
@@ -1153,7 +1153,7 @@ XLALEOBWaveformTemplates(
    if ( XLALEOBWaveformEngine(signalvec1, signalvec2, NULL, NULL,
 		  NULL, NULL, &count, params, &paramsInit) == XLAL_FAILURE )
    {
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    return XLAL_SUCCESS;
@@ -1210,36 +1210,36 @@ int XLALEOBWaveformForInjection(
 #ifndef LAL_NDEBUG
   /* Make sure parameter and waveform structures exist. */
   if ( !params )
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if ( !waveform )
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   /* Make sure waveform fields don't exist. */
   if ( waveform->a )
   {
     XLALPrintError( "Pointer for waveform->a exists. Was expecting NULL.\n" );
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   }
   if ( waveform->h )
   {
     XLALPrintError( "Pointer for waveform->h exists. Was expecting NULL.\n" );
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   }
   if ( waveform->f )
   {
     XLALPrintError( "Pointer for waveform->f exists. Was expecting NULL.\n" );
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   }
   if ( waveform->phi )
   {
     XLALPrintError( "Pointer for waveform->phi exists. Was expecting NULL.\n" );
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   }
   if ( waveform->shift )
   {
     XLALPrintError( "Pointer for waveform->shift exists. Was expecting NULL.\n" );
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 #endif
 
@@ -1249,7 +1249,7 @@ int XLALEOBWaveformForInjection(
   /* Compute some parameters*/
   if ( XLALInspiralInit( params, &paramsInit ) == XLAL_FAILURE )
   {
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   if (paramsInit.nbins==0)
@@ -1269,7 +1269,7 @@ int XLALEOBWaveformForInjection(
     if (ff)  XLALDestroyREAL4Vector( ff );
     if (a)   XLALDestroyREAL4Vector( a );
     if (phi) XLALDestroyREAL8Vector( phi );
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* By default the waveform is empty */
@@ -1285,7 +1285,7 @@ int XLALEOBWaveformForInjection(
       XLALDestroyREAL4Vector( ff );
       XLALDestroyREAL4Vector( a );
       XLALDestroyREAL8Vector( phi );
-      XLAL_ERROR( __func__, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
     memset(h->data, 0, 2 * paramsInit.nbins * sizeof(REAL4));
   }
@@ -1302,7 +1302,7 @@ int XLALEOBWaveformForInjection(
      {
        XLALDestroyREAL4Vector(h);
      }
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Check an empty waveform hasn't been returned */
@@ -1360,7 +1360,7 @@ int XLALEOBWaveformForInjection(
       {
         XLALDestroyREAL4Vector(h);
       }
-      XLAL_ERROR( __func__, XLAL_ENOMEM );
+      XLAL_ERROR( XLAL_ENOMEM );
     }
 
     memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
@@ -1375,7 +1375,7 @@ int XLALEOBWaveformForInjection(
       {
         XLALDestroyREAL4Vector(h);
       }
-      XLAL_ERROR( __func__, XLAL_ENOMEM );
+      XLAL_ERROR( XLAL_ENOMEM );
     }
 
     waveform->a->deltaT = deltaT;
@@ -1398,7 +1398,7 @@ int XLALEOBWaveformForInjection(
       {
         XLALDestroyREAL4Vector(h);
       }
-      XLAL_ERROR( __func__, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     waveform->phi = XLALCreateREAL8TimeSeries("EOB inspiral phase",
@@ -1417,7 +1417,7 @@ int XLALEOBWaveformForInjection(
       {
         XLALDestroyREAL4Vector(h);
       }
-      XLAL_ERROR( __func__, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
@@ -1454,7 +1454,7 @@ int XLALEOBWaveformForInjection(
         XLALDestroyREAL4Vector(a);
         XLALDestroyREAL8Vector(phi);
         XLALDestroyREAL4Vector(h);
-        XLAL_ERROR( __func__, XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
       }
       memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
         
@@ -1474,7 +1474,7 @@ int XLALEOBWaveformForInjection(
         XLALDestroyREAL4Vector(a);
         XLALDestroyREAL8Vector(phi);
         XLALDestroyREAL4Vector(h);
-        XLAL_ERROR( __func__, XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
       }
 
       memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
@@ -1586,12 +1586,12 @@ XLALEOBWaveformEngine (
    if ( params->approximant == EOBNR && params->order != LAL_PNORDER_PSEUDO_FOUR )
    {
      XLALPrintError( "Order must be LAL_PNORDER_PSEUDO_FOUR for approximant EOBNR.\n" );
-     XLAL_ERROR( __func__, XLAL_EINVAL );
+     XLAL_ERROR( XLAL_EINVAL );
    }
    else if ( params->approximant == EOB && params->order < LAL_PNORDER_TWO )
    {
      XLALPrintError( "Order must be LAL_PNORDER_TWO or greater for approximant EOB.\n" );
-     XLAL_ERROR( __func__, XLAL_EINVAL );
+     XLAL_ERROR( XLAL_EINVAL );
    }
 
 
@@ -1612,7 +1612,7 @@ XLALEOBWaveformEngine (
      XLALDestroyREAL8Vector( yt );
      XLALDestroyREAL8Vector( dym );
      XLALDestroyREAL8Vector( dyt );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    /* Set dt to sampling interval specified by user */
@@ -1653,7 +1653,7 @@ XLALEOBWaveformEngine (
        XLALDestroyREAL8Vector( yt );
        XLALDestroyREAL8Vector( dym );
        XLALDestroyREAL8Vector( dyt );
-       XLAL_ERROR( __func__, XLAL_EFUNC );
+       XLAL_ERROR( XLAL_EFUNC );
      }
 
      /* If 220 QNM freq. > Nyquist freq., print warning but continue */
@@ -1686,7 +1686,7 @@ XLALEOBWaveformEngine (
      XLALDestroyREAL8Vector( yt );
      XLALDestroyREAL8Vector( dym );
      XLALDestroyREAL8Vector( dyt );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    omega = v*v*v;
@@ -1707,7 +1707,7 @@ XLALEOBWaveformEngine (
      XLALDestroyREAL8Vector( yt );
      XLALDestroyREAL8Vector( dym );
      XLALDestroyREAL8Vector( dyt );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 /*
    LALInspiralPhasing1(v) gives the GW phase (= twice the orbital phase).
@@ -1764,7 +1764,7 @@ XLALEOBWaveformEngine (
        XLALDestroyREAL8Vector( yt );
        XLALDestroyREAL8Vector( dym );
        XLALDestroyREAL8Vector( dyt );
-       XLAL_ERROR( __func__, XLAL_EINVAL );
+       XLAL_ERROR( XLAL_EINVAL );
    }
    rn = XLALDBisectionFindRoot( lightRingRadiusFunc, lightRingMin,
           lightRingMax, xacc, funcParams1);
@@ -1776,7 +1776,7 @@ XLALEOBWaveformEngine (
      XLALDestroyREAL8Vector( yt );
      XLALDestroyREAL8Vector( dym );
      XLALDestroyREAL8Vector( dyt );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    r = XLALDBisectionFindRoot( rOfOmegaFunc, rInitMin, rInitMax, xacc, funcParams2);
@@ -1788,7 +1788,7 @@ XLALEOBWaveformEngine (
      XLALDestroyREAL8Vector( yt );
      XLALDestroyREAL8Vector( dym );
      XLALDestroyREAL8Vector( dyt );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    /* Is the initial condition sensible? */
@@ -1804,7 +1804,7 @@ XLALEOBWaveformEngine (
      XLALDestroyREAL8Vector( yt );
      XLALDestroyREAL8Vector( dym );
      XLALDestroyREAL8Vector( dyt );
-     XLAL_ERROR( __func__, XLAL_ERANGE );
+     XLAL_ERROR( XLAL_ERANGE );
    }
 
    /* We want the waveform to generate from a point which won't cause */
@@ -1849,7 +1849,7 @@ XLALEOBWaveformEngine (
          XLALDestroyREAL8Vector( yt );
          XLALDestroyREAL8Vector( dym );
          XLALDestroyREAL8Vector( dyt );
-         XLAL_ERROR( __func__, XLAL_EFUNC );
+         XLAL_ERROR( XLAL_EFUNC );
        }
        in4.function = LALHCapDerivatives3PN;
        break;
@@ -1872,7 +1872,7 @@ XLALEOBWaveformEngine (
          XLALDestroyREAL8Vector( yt );
          XLALDestroyREAL8Vector( dym );
          XLALDestroyREAL8Vector( dyt );
-         XLAL_ERROR( __func__, XLAL_EFUNC );
+         XLAL_ERROR( XLAL_EFUNC );
        }
        in4.function = LALHCapDerivativesP4PN;
        break;
@@ -1884,7 +1884,7 @@ XLALEOBWaveformEngine (
        XLALDestroyREAL8Vector( yt );
        XLALDestroyREAL8Vector( dym );
        XLALDestroyREAL8Vector( dyt );
-       XLAL_ERROR( __func__, XLAL_EFUNC );
+       XLAL_ERROR( XLAL_EFUNC );
    }
 
    values->data[0] = r;
@@ -1923,7 +1923,7 @@ XLALEOBWaveformEngine (
      XLALDestroyREAL8Vector( yt );
      XLALDestroyREAL8Vector( dym );
      XLALDestroyREAL8Vector( dyt );
-     XLAL_ERROR( __func__, XLAL_ENOMEM );
+     XLAL_ERROR( XLAL_ENOMEM );
    }
 
    memset(sig1->data, 0, sig1->length * sizeof( REAL4 ));
@@ -1946,7 +1946,7 @@ XLALEOBWaveformEngine (
      XLALDestroyREAL8Vector( yt );
      XLALDestroyREAL8Vector( dym );
      XLALDestroyREAL8Vector( dyt );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    count = 0;
@@ -1982,7 +1982,7 @@ XLALEOBWaveformEngine (
         XLALDestroyREAL8Vector( dym );
         XLALDestroyREAL8Vector( dyt );
 	XLALPrintError( "Waveform evolution has run off the end of the vector" );
-        XLAL_ERROR( __func__, XLAL_EBADLEN );
+        XLAL_ERROR( XLAL_EBADLEN );
       }
 
       rOld = r;
@@ -2039,7 +2039,7 @@ XLALEOBWaveformEngine (
         XLALDestroyREAL8Vector( yt );
         XLALDestroyREAL8Vector( dym );
         XLALDestroyREAL8Vector( dyt );
-        XLAL_ERROR( __func__, XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
       }
 
       /* We need to track the dynamical variables prior to the current step */
@@ -2171,7 +2171,7 @@ XLALEOBWaveformEngine (
        XLALDestroyREAL4Vector( ampl );
        XLALDestroyREAL4Vector( freq );
        XLALDestroyREAL8Vector( phse );
-       XLAL_ERROR( __func__, XLAL_EFAILED );
+       XLAL_ERROR( XLAL_EFAILED );
      }
 
      if ( XLALInspiralAttachRingdownWave( freq, sig1, sig2, params ) == XLAL_FAILURE )
@@ -2181,7 +2181,7 @@ XLALEOBWaveformEngine (
        XLALDestroyREAL4Vector( ampl );
        XLALDestroyREAL4Vector( freq );
        XLALDestroyREAL8Vector( phse );
-       XLAL_ERROR( __func__, XLAL_EFUNC );
+       XLAL_ERROR( XLAL_EFUNC );
      }
      params->tSampling = tmpSamplingRate;
      count = hiSRndx;
@@ -2228,7 +2228,7 @@ XLALEOBWaveformEngine (
      XLALDestroyREAL4Vector( ampl );
      XLALDestroyREAL4Vector( freq );
      XLALDestroyREAL8Vector( phse );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    modeM = -2;
@@ -2239,7 +2239,7 @@ XLALEOBWaveformEngine (
      XLALDestroyREAL4Vector( ampl );
      XLALDestroyREAL4Vector( freq );
      XLALDestroyREAL8Vector( phse );
-     XLAL_ERROR( __func__, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
    }
 
    y_1 =   MultSphHarmP.re + MultSphHarmM.re;

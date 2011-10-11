@@ -65,11 +65,11 @@ XLALSimInspiralTofV (
 
 
    if (params == NULL)
-      XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+      XLAL_ERROR_REAL8(XLAL_EFAULT);
    if (v <= 0.)
-      XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+      XLAL_ERROR_REAL8(XLAL_EDOM);
    if (v >= 1.)
-      XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+      XLAL_ERROR_REAL8(XLAL_EDOM);
 
    sign = 1.0;
 
@@ -102,7 +102,7 @@ XLALSimInspiralTofV (
 
    answer = XLALREAL8RombergIntegrate (funcToIntegrate, funcParams, xmin, xmax, type);
    if (XLAL_IS_REAL8_FAIL_NAN(answer))
-      XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
 
    return in1->t - in1->t0 + in1->totalmass*answer*sign;
 }
@@ -181,7 +181,7 @@ XLALSimInspiralTaylorLength(
             break;
         case 1:
             XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", __func__);
-            XLAL_ERROR(__func__, XLAL_EINVAL);
+            XLAL_ERROR(XLAL_EINVAL);
             break;
         case 2:
             vn = akEF.vlso = vlso = akEF.vlsoT2;
@@ -227,11 +227,11 @@ XLALSimInspiralTaylorLength(
             break;
         case 8:
            XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", __func__);
-           XLAL_ERROR(__func__, XLAL_EINVAL);
+           XLAL_ERROR(XLAL_EINVAL);
            break;
         default:
             XLALPrintError("XLAL Error - %s: Unknown PN order in switch\n", __func__);
-            XLAL_ERROR(__func__, XLAL_EINVAL);
+            XLAL_ERROR(XLAL_EINVAL);
     }
 
     vn = cbrt(LAL_PI * m / (2. * deltaT));
@@ -248,7 +248,7 @@ XLALSimInspiralTaylorLength(
 
     tofv = XLALSimInspiralTofV(vn, in2);
     if (XLAL_IS_REAL8_FAIL_NAN(tofv))
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
 
     return -tofv - deltaT;
 }

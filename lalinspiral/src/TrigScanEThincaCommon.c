@@ -55,9 +55,6 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
                                                REAL8             *tcMax )
 
 {
-
-  static const char *func = "XLALCreateTriggerErrorList";
-
   REAL8 timeError = 0.0;
 
   TriggerErrorList *errorListHead = NULL;
@@ -67,10 +64,10 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
 
 #ifndef LAL_NDEBUG
   if ( !tableHead )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
 
   if ( scaleFactor <= 0 )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 #endif
 
   /* Loop through triggers and assign each of them an error ellipsoid */
@@ -92,7 +89,7 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
     if ( !thisErrorList )
     {
       XLALDestroyTriggerErrorList( errorListHead );
-      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+      XLAL_ERROR_NULL( XLAL_ENOMEM );
     }
 
     thisErrorList->trigger    = currentTrigger;
@@ -101,14 +98,14 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
     if ( !thisErrorList->err_matrix )
     {
       XLALDestroyTriggerErrorList( errorListHead );
-      XLAL_ERROR_NULL( func, XLAL_EFUNC );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
     }
 
     thisErrorList->position   = XLALGetPositionFromSnglInspiral( currentTrigger );
     if ( !thisErrorList->position )
     {
       XLALDestroyTriggerErrorList( errorListHead );
-      XLAL_ERROR_NULL( func, XLAL_EFUNC );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
     }
     thisTimeError = XLALSnglInspiralTimeError(currentTrigger, scaleFactor );
     if (thisTimeError > timeError)
@@ -153,7 +150,6 @@ void XLALDestroyTriggerErrorList( TriggerErrorList *errorListHead )
 
 REAL8 XLALSnglInspiralTimeError(const SnglInspiralTable *table, REAL8 eMatch)
 {
-  static const char func[] = "XLALSnglInspiralTimeError";
   REAL8 a11 = table->Gamma[0] / eMatch;
   REAL8 a12 = table->Gamma[1] / eMatch;
   REAL8 a13 = table->Gamma[2] / eMatch;
@@ -168,9 +164,9 @@ REAL8 XLALSnglInspiralTimeError(const SnglInspiralTable *table, REAL8 eMatch)
               - (a23*a23 - a22*a33) * (a12*a12 - a22*a11);
 
   if (denom == 0)
-    XLAL_ERROR_REAL8(func, XLAL_EFPDIV0);
+    XLAL_ERROR_REAL8(XLAL_EFPDIV0);
   if ((x < 0) ^ (denom < 0))
-    XLAL_ERROR_REAL8(func, XLAL_EFPINVAL);
+    XLAL_ERROR_REAL8(XLAL_EFPINVAL);
 
   return sqrt( x / denom );
 }

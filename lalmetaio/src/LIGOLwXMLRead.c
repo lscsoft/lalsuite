@@ -136,7 +136,7 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 
 	if(MetaioOpenFile(&env, filename)) {
 		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR(__func__, XLAL_EIO);
+		XLAL_ERROR(XLAL_EIO);
 	}
 
 	/*
@@ -157,7 +157,7 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 
 	if(MetaioClose(&env)) {
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR(__func__, XLAL_EIO);
+		XLAL_ERROR(XLAL_EIO);
 	}
 
 	/*
@@ -191,12 +191,12 @@ int XLALLIGOLwFindColumn(
 		/* column was found, check type */
 		if(type != METAIO_TYPE_UNKNOWN && env->ligo_lw.table.col[pos].data_type != type) {
 			XLALPrintError("%s(): column \"%s\" has wrong type\n", __func__, name);
-			XLAL_ERROR(__func__, XLAL_EDATA);
+			XLAL_ERROR(XLAL_EDATA);
 		}
 	} else if(required) {
 		/* required column is missing */
 		XLALPrintError("%s(): missing required column \"%s\"\n", __func__, name);
-		XLAL_ERROR(__func__, XLAL_EDATA);
+		XLAL_ERROR(XLAL_EDATA);
 	}
 	return pos;
 }
@@ -229,14 +229,14 @@ long long XLALLIGOLwParseIlwdChar(
 
 	fmt = malloc(strlen(ilwd_char_table_name ? ilwd_char_table_name : "%*[^:]") + strlen(ilwd_char_column_name ? ilwd_char_column_name : "%*[^:]") + 8);
 	if(!fmt)
-		XLAL_ERROR(__func__, XLAL_ENOMEM);
+		XLAL_ERROR(XLAL_ENOMEM);
 
 	sprintf(fmt, "%s:%s:%%lld", ilwd_char_table_name ? ilwd_char_table_name : "%*[^:]", ilwd_char_column_name ? ilwd_char_column_name : "%*[^:]");
 
 	if(sscanf(ilwd_char, fmt, &id) < 1) {
 		free(fmt);
 		XLALPrintError("%s(): invalid %s \"%s\" for %s\n", __func__, ilwd_char_column_name ? ilwd_char_column_name : "ID", ilwd_char, ilwd_char_table_name ? ilwd_char_table_name : "table");
-		XLAL_ERROR(__func__, XLAL_EDATA);
+		XLAL_ERROR(XLAL_EDATA);
 	}
 
 	free(fmt);
@@ -280,12 +280,12 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 
 	if(MetaioOpenFile(&env, filename)) {
 		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* find columns */
@@ -312,7 +312,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/* loop over the rows in the file */
@@ -325,7 +325,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 		if(!row) {
 			XLALDestroyProcessTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 
 		/* append to linked list */
@@ -352,14 +352,14 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			XLALDestroyProcessTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 	}
 	if(miostatus < 0) {
 		XLALDestroyProcessTable(head);
 		MetaioAbort(&env);
 		XLALPrintError("%s(): I/O error parsing %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* close file */
@@ -367,7 +367,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 	if(MetaioClose(&env)) {
 		XLALDestroyProcessTable(head);
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* done */
@@ -401,12 +401,12 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 
 	if(MetaioOpenFile(&env, filename)) {
 		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* find columns */
@@ -423,7 +423,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/* loop over the rows in the file */
@@ -436,7 +436,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 		if(!row) {
 			XLALDestroyProcessParamsTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 
 		/* append to linked list */
@@ -450,7 +450,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			XLALDestroyProcessParamsTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		strncpy(row->param, env.ligo_lw.table.elt[column_pos.param].data.lstring.data, sizeof(row->param) - 1);
 		strncpy(row->type, env.ligo_lw.table.elt[column_pos.type].data.lstring.data, sizeof(row->type) - 1);
@@ -460,7 +460,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 		XLALDestroyProcessParamsTable(head);
 		MetaioAbort(&env);
 		XLALPrintError("%s(): I/O error parsing %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* close file */
@@ -468,7 +468,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 	if(MetaioClose(&env)) {
 		XLALDestroyProcessParamsTable(head);
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* done */
@@ -503,12 +503,12 @@ XLALTimeSlideTableFromLIGOLw (
 
 	if(MetaioOpenFile(&env, filename)) {
 		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* find columns */
@@ -524,7 +524,7 @@ XLALTimeSlideTableFromLIGOLw (
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/* loop over the rows in the file */
@@ -537,7 +537,7 @@ XLALTimeSlideTableFromLIGOLw (
 		if(!row) {
 			XLALDestroyTimeSlideTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 
 		/* append to linked list */
@@ -550,12 +550,12 @@ XLALTimeSlideTableFromLIGOLw (
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			XLALDestroyTimeSlideTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		if((row->time_slide_id = XLALLIGOLwParseIlwdChar(&env, column_pos.time_slide_id, "time_slide", "time_slide_id")) < 0) {
 			XLALDestroyTimeSlideTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		strncpy(row->instrument, env.ligo_lw.table.elt[column_pos.instrument].data.lstring.data, sizeof(row->instrument) - 1);
 		row->offset = env.ligo_lw.table.elt[column_pos.offset].data.real_8;
@@ -564,7 +564,7 @@ XLALTimeSlideTableFromLIGOLw (
 		XLALDestroyTimeSlideTable(head);
 		MetaioAbort(&env);
 		XLALPrintError("%s(): I/O error parsing %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* close file */
@@ -572,7 +572,7 @@ XLALTimeSlideTableFromLIGOLw (
 	if(MetaioClose(&env)) {
 		XLALDestroyTimeSlideTable(head);
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* done */
@@ -617,12 +617,12 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 
 	if(MetaioOpenFile(&env, filename)) {
 		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* find columns */
@@ -650,7 +650,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/* loop over the rows in the file */
@@ -663,7 +663,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		if(!row) {
 			XLALDestroySearchSummaryTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 
 		/* append to linked list */
@@ -676,7 +676,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			XLALDestroySearchSummaryTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		/* FIXME:  structure definition does not include elements
 		 * for these columns */
@@ -696,7 +696,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		XLALDestroySearchSummaryTable(head);
 		MetaioAbort(&env);
 		XLALPrintError("%s(): I/O error parsing %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* close file */
@@ -704,7 +704,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	if(MetaioClose(&env)) {
 		XLALDestroySearchSummaryTable(head);
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* done */

@@ -28,8 +28,8 @@
 #define __LALVECTORINDEXRANGE_H__
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT
 #endif
 
 #ifdef __cplusplus
