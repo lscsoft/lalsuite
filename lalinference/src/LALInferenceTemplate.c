@@ -52,6 +52,7 @@ RCSID("$Id$");
 
 extern int newswitch; //temporay global variable to use the new LALSTPN
 static void destroyCoherentGW( CoherentGW *waveform );
+static void q2eta(double q, double *eta);
 
 void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata){
 
@@ -72,7 +73,7 @@ void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata){
 
     if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
         REAL8 q = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"asym_massratio");
-        q2eta(q, params->eta);
+        q2eta(q, &params.eta);
     }
     else
         params.eta = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"massratio");
@@ -265,6 +266,15 @@ void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
   double phi  = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase");
   double iota = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "inclination");
   double tc   = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time");
+  
+  double eta; 
+  if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
+    double q = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"asym_massratio");
+    q2eta(q, &eta);
+  }
+  else
+    eta = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "massratio");
+ 
   double PNOrder = 2.5;  /* (default) */
   double fraction = (0.5+sqrt(0.25-eta)) / (0.5-sqrt(0.25-eta));
   double mt = mc * ((pow(1.0+fraction,0.2) / pow(fraction,0.6))
@@ -277,14 +287,6 @@ void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
   double f, f01, f02, f04, f06, f07, f10, Psi, twopitc;
   double plusRe, plusIm, crossRe, crossIm;
   UINT4 i, lower, upper;
-
-  double eta; 
-  if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
-    double q = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"asym_massratio");
-    q2eta(q, &eta);
-  }
-  else
-    eta = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "massratio");
 
   if (IFOdata->timeData==NULL){
     XLALPrintError(" ERROR in templateStatPhase(): encountered unallocated 'timeData'.\n");
@@ -400,7 +402,6 @@ void LALInferenceTemplateNullTimedomain(LALInferenceIFOData *IFOdata)
 
 
 static void mc2masses(double mc, double eta, double *m1, double *m2);
-static void q2eta(double q, double *eta);
 
 static void mc2masses(double mc, double eta, double *m1, double *m2)
 /*  Compute individual companion masses (m1, m2)   */

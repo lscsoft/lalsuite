@@ -369,6 +369,7 @@ void initVariables(LALInferenceRunState *state)
   
   char help[]="\
 (--injXML injections.xml)       Injection XML file to use\n\
+(--symMassRatio)                Run with symmetric mass ratio eta, instead of q=m2/m1\n\
 (--mc-min mchirp)               Minimum chirp mass\n\
 (--mc-max mchirp)               Maximum chirp mass\n\
 (--eta-min etaMin)              Minimum eta\n\
@@ -464,7 +465,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 etaMin=0.0312;
 	REAL8 etaMax=0.25;
     REAL8 qMin=mMin/mMax;
-    REAL8 qmax=1.0;
+    REAL8 qMax=1.0;
 	REAL8 dt=0.1;            /* Width of time prior */
 	REAL8 tmpMin,tmpMax;//,tmpVal;
 	gsl_rng * GSLrandom=state->GSLrandom;
@@ -836,30 +837,6 @@ void initVariables(LALInferenceRunState *state)
 		}
 	}
 
-    ppt=LALInferenceGetProcParamVal(commandLine,"--q-min");
-    if(ppt) 
-     {
-            qMin=atof(ppt->value);
-             if (qMin < 0.0 || qMax > 1.0) 
-            {
-         TODO: Implement proper qMin check
-                    fprintf(stderr,"ERROR: Minimum value of eta must be > 0");
-                    exit(1);
-            }
-    }
-
-    ppt=LALInferenceGetProcParamVal(commandLine,"--q-max");
-    if(ppt) 
-     {
-            qMax=atof(ppt->value);
-             if (qMax > 1.0 || qMax <= 0.0) 
-            {
-         TODO: Implement proper qMax check
-                    fprintf(stderr,"ERROR: Minimum value of eta must be > 0");
-                    exit(1);
-            }
-    }
-
 
 	/* Over-ride component masses */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--comp-min");
@@ -873,7 +850,30 @@ void initVariables(LALInferenceRunState *state)
 	ppt=LALInferenceGetProcParamVal(commandLine,"--MTotMax");
 	if(ppt)	MTotMax=atof(ppt->value);
 	LALInferenceAddVariable(priorArgs,"MTotMax",&MTotMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-	
+
+	ppt=LALInferenceGetProcParamVal(commandLine,"--q-min");
+    if(ppt) 
+     {
+            qMin=atof(ppt->value);
+            if (qMin <= 0.0 || qMin < mMin/mMax || qMin < mMin/(MTotMax-mMin) || qMin > 1.0) 
+            {
+                    fprintf(stderr,"ERROR: invalid qMin ( max{0,mMin/mMax,mMin/(MTotMax-mMin) < q < 1.0} )");
+                    exit(1);
+            }
+    }
+
+    ppt=LALInferenceGetProcParamVal(commandLine,"--q-max");
+    if(ppt) 
+     {
+            qMax=atof(ppt->value);
+            if (qMax > 1.0 || qMax <= 0.0 || qMax < mMin/mMax || qMax < mMin/(MTotMax-mMin)) 
+            {
+                    fprintf(stderr,"ERROR: invalid qMax ( max{0,mMin/mMax,mMin/(MTotMax-mMin) < q < 1.0} )");
+                    exit(1);
+            }
+    }
+
+
 	
 	printf("Read end time %f\n",endtime);
 
@@ -911,23 +911,28 @@ void initVariables(LALInferenceRunState *state)
 	//tmpVal=0.244;
 	//tmpVal=0.03+gsl_rng_uniform(GSLrandom)*(0.25-0.03);
 	//tmpVal=0.18957;
-	ppt=LALInferenceGetProcParamVal(commandLine,"--fixEta");
-	if(ppt){
-	    LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-		if(MPIrank==0) fprintf(stdout,"eta fixed and set to %f\n",start_eta);
-	}else{
-	    LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	}
-    LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
 
-	ppt=LALInferenceGetProcParamVal(commandLine,"--fixQ");
+    /* Check if running with symmetric (eta) or asymmetric (q) mass ratio.*/
+	ppt=LALInferenceGetProcParamVal(commandLine,"--symMassRatio");
 	if(ppt){
-	    LALInferenceAddVariable(currentParams, "massratio",       &start_q,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-		if(MPIrank==0) fprintf(stdout,"q fixed and set to %f\n",start_q);
-	}else{
-	    LALInferenceAddVariable(currentParams, "massratio",       &start_q,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	}
-    LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&qMin,	&qMax,	LALINFERENCE_REAL8_t);
+        ppt=LALInferenceGetProcParamVal(commandLine,"--fixEta");
+        if(ppt){
+            LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+            if(MPIrank==0) fprintf(stdout,"eta fixed and set to %f\n",start_eta);
+        }else{
+            LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        }
+        LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
+    }else{
+        ppt=LALInferenceGetProcParamVal(commandLine,"--fixQ");
+        if(ppt){
+            LALInferenceAddVariable(currentParams, "asym_massratio",       &start_q,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+            if(MPIrank==0) fprintf(stdout,"q fixed and set to %f\n",start_q);
+        }else{
+            LALInferenceAddVariable(currentParams, "asym_massratio",       &start_q,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        }
+        LALInferenceAddMinMaxPrior(priorArgs,	"asym_massratio",	&qMin,	&qMax,	LALINFERENCE_REAL8_t);
+    }
 
 	tmpMin=endtime-dt; tmpMax=endtime+dt;
 
@@ -1242,7 +1247,7 @@ void initVariables(LALInferenceRunState *state)
   /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES. 
   (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enought */
   if(state->prior(state, currentParams)<=-DBL_MAX){
-    fprintf(stderr, "Warning initial parameter randlomy drawn from prior. (in %s, line %d)\n",__FILE__, __LINE__);
+    fprintf(stderr, "Warning initial parameter randomly drawn from prior. (in %s, line %d)\n",__FILE__, __LINE__);
     LALInferenceVariables *temp; //
     temp=XLALCalloc(1,sizeof(LALInferenceVariables));
     memset(temp,0,sizeof(LALInferenceVariables));
