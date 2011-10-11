@@ -561,7 +561,7 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	IFOdata->freqModelhCross->data->data[idx].im*=IFOdata->timeData->deltaT;
 	}
 */		
-	double tc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time");
+	double tc       = IFOdata->epoch.gpsSeconds + 1.e-9*IFOdata->epoch.gpsNanoSeconds + template.tC;
 	LALInferenceSetVariable(IFOdata->modelParams, "time", &tc);
 
 	
