@@ -781,6 +781,17 @@ cart_to_sph(const REAL8 cart[3], REAL8 *lat, REAL8 *longi) {
   *lat = acos(cart[2] / sqrt(cart[0]*cart[0] + cart[1]*cart[1] + cart[2]*cart[2]));
 }
 
+static int
+same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
+  UINT4 i;
+
+  for (i = 0; i < 3; i++) {
+    if (d1->detector->location[i] != d2->detector->location[i]) return 0;
+  }
+
+  return 1;
+}
+
 static void
 reflected_position_and_time(LALInferenceRunState *runState, const REAL8 ra, const REAL8 dec, const REAL8 oldTime,
                             REAL8 *newRA, REAL8 *newDec, REAL8 *newTime) {
@@ -795,14 +806,20 @@ reflected_position_and_time(LALInferenceRunState *runState, const REAL8 ra, cons
   /* This function should only be called when we know that we have
      three detectors, or the following will crash. */
   REAL8 x[3], y[3], z[3];
-  LALInferenceIFOData *currentData = runState->data;
-  memcpy(x, currentData->detector->location, 3*sizeof(REAL8));
+  LALInferenceIFOData *xD = runState->data;
+  memcpy(x, xD->detector->location, 3*sizeof(REAL8));
 
-  currentData = currentData->next;
-  memcpy(y, currentData->detector->location, 3*sizeof(REAL8));
+  LALInferenceIFOData *yD = xD->next;
+  while (same_detector_location(yD, xD)) {
+    yD = yD->next;
+  }
+  memcpy(y, yD->detector->location, 3*sizeof(REAL8));
 
-  currentData = currentData->next;
-  memcpy(z, currentData->detector->location, 3*sizeof(REAL8));
+  LALInferenceIFOData *zD = yD->next;
+  while (same_detector_location(zD, yD) || same_detector_location(zD, xD)) {
+    zD = zD->next;
+  }
+  memcpy(z, zD->detector->location, 3*sizeof(REAL8));
 
   REAL8 currentLoc[3];
   sph_to_cart(currentLoc, currentGeo.latitude, currentGeo.longitude);
@@ -835,21 +852,30 @@ void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInference
 
   /* Find the number of distinct-position detectors. */
   UINT4 nIFO = 0;
+  UINT4 nCollision = 0;
   LALInferenceIFOData *currentIFO = NULL;
 
   for (currentIFO = runState->data; currentIFO; currentIFO = currentIFO->next) {
+    LALInferenceIFOData *subsequentIFO = NULL;
     nIFO++;
+    for (subsequentIFO = currentIFO->next; subsequentIFO; subsequentIFO = subsequentIFO->next) {
+      if (same_detector_location(subsequentIFO, currentIFO)) {
+        nCollision++;
+        break;
+      }
+    }
   }
 
   /* Exit with same parameters (with a warning the first time) if
      there are not three detectors. */
   static UINT4 warningDelivered = 0;
-  if (nIFO != 3) {
+  if (nIFO-nCollision != 3) {
     if (warningDelivered) {
       /* Do nothing. */
     } else {
-      fprintf(stderr, "WARNING: trying to reflect through the decector plane with %d detectors.\n", nIFO);
-      fprintf(stderr, "WARNING: but this proposal should only be used with exactly 3 detectors.\n");
+      fprintf(stderr, "WARNING: trying to reflect through the decector plane with %d detectors,\n", nIFO);
+      fprintf(stderr, "WARNING: of which %d are in geometrically independent locations.\n", nIFO-nCollision);
+      fprintf(stderr, "WARNING: but this proposal should only be used with exactly 3 independent detectors.\n");
       fprintf(stderr, "WARNING: %s, line %d\n", __FILE__, __LINE__);
       warningDelivered = 1;
     }
