@@ -33,9 +33,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   {
     { "verbose",            no_argument, &vrbflg, 1 },
     { "strain-data",        no_argument, &localparams.strainData, 1 },
-    { "simulated-data",     no_argument, &localparams.simData, 1 },
     { "zero-data",          no_argument, &localparams.zeroData, 1 },
-    { "white-spectrum",     no_argument, &localparams.whiteSpectrum, 1 },
+    { "theoretical-spectrum",     no_argument, &localparams.whiteSpectrum, 1 },
     { "write-raw-data",     no_argument, &localparams.writeRawData, 1 },
     { "write-data",         no_argument, &localparams.writeProcessedData, 1 },
     { "write-inv-spectrum", no_argument, &localparams.writeInvSpectrum, 1 },
@@ -56,6 +55,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     {"v1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_V1]),1},
     { "help",               no_argument, 0, 'h' },
     { "version",            no_argument, 0, 'V' },
+    { "simulated-data",          required_argument, 0, '6' },
     { "gps-start-time",          required_argument, 0, 'a' },
     { "gps-start-time-ns",       required_argument, 0, 'A' },
     { "gps-end-time",            required_argument, 0, 'b' },
@@ -117,7 +117,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "fft-level",               required_argument, 0, '|' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:<:>:!:&:(:):#:|";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:6:<:>:!:&:(:):#:|";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -249,6 +249,25 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
               "%s (must be either FindChirpSP, FindChirpPTF or TaylorT4)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
+        }
+        break;
+      case '6': /* Simulated data option */
+        localparams.simData = 1;
+        if ( ! strcmp( "WhiteNoise",optarg))
+        {
+          localparams.simDataType = WHITE_PSD;
+        }
+        else if ( ! strcmp( "ILIGONoise",optarg))
+        {
+          localparams.simDataType = ILIGO_PSD;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown data type specified:"
+              "%s valid options are WhiteNoise and ILIGONoise",
+              long_options[option_index].name, optarg );
+          exit(1);
         }
         break;
       case 'v': /* PN order of waveform */        
@@ -690,7 +709,7 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--gps-end-time=tstop       GPS stop time of data to analyze (sec)\n" );
   fprintf( stderr, "--gps-end-time-ns=tstopns  nanosecond residual of stop time\n" );
   fprintf( stderr, "\nsimulated data options:\n" );
-  fprintf( stderr, "--simulated-data           create simulated white Gaussian noise\n" );
+  fprintf( stderr, "--simulated-data=dataType  create simulated Gaussian noise. Can be WhiteNoise or ILIGONoise. \n" );
   fprintf( stderr, "--random-seed=seed         random number seed for simulated data\n" );
   fprintf( stderr, "--sample-rate=srate        sampling rate of simulated data (Hz)\n" );
   fprintf( stderr, "--zero-data                create a time series of zeros\n" );
@@ -714,7 +733,7 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--v1-slide-segment=amount    amount to be slid V1\n" );
 
   fprintf( stderr, "\npower spectrum options:\n" );
-  fprintf( stderr, "--white-spectrum           use uniform white power spectrum\n" );
+  fprintf( stderr, "--theoretical-spectrum      take the PSD as the PSD used to generate the simulated data\n" );
   fprintf( stderr, "--low-template-freq=fmin    low frequency cutoff for generation of templates (Hz)\n" );
   fprintf( stderr, "--low-filter-freq=f_low    low frequency cutoff for matched filtering (Hz)\n" );
   fprintf( stderr, "--high-filter-freq=f_max    high frequency cutoff for matched filtering (Hz)\n" );

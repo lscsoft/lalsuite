@@ -176,6 +176,7 @@ struct coh_PTF_params {
   char         ifoTag[256];
   UINT4        slideSegments[LAL_NUM_IFO+1];
   UINT4        fftLevel;
+  UINT4        simDataType;
   /* flags */
   int          strainData;
   int          doubleData;
