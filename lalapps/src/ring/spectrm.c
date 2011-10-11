@@ -106,25 +106,21 @@ REAL4FrequencySeries *compute_average_spectrum(
   return spectrum;
 }
 
-REAL4FrequencySeries *generate_theoretical_psd(
+REAL8FrequencySeries *generate_theoretical_psd(
     REAL4                    deltaT,
     REAL8                    segmentDuration,
-    REAL8                    strideDuration,
-    UINT4                    spectrumNumber
+    UINT4                    spectrumNumber,
+    REAL8                    simScale
 )
 {
-  REAL4FrequencySeries *spectrum;
+  REAL8FrequencySeries *spectrum;
   UINT4 segmentLength;
-  UINT4 segmentStride;
 
   segmentLength  = floor( segmentDuration/deltaT + 0.5 );
-  segmentStride  = floor( strideDuration/deltaT + 0.5 );
 
   spectrum       = LALCalloc( 1, sizeof( *spectrum ) );
-  spectrum->data = XLALCreateREAL4Vector( segmentLength/2 + 1 );
+  spectrum->data = XLALCreateREAL8Vector( segmentLength/2 + 1 );
 
-  /* FIXME! */
-  // spectrum->epoch  = series->epoch;
   spectrum->deltaF = 1.0/segmentDuration;
 
   if (spectrumNumber == WHITE_PSD) /* just return a constant spectrum */
@@ -132,18 +128,18 @@ REAL4FrequencySeries *generate_theoretical_psd(
     UINT4 k;
     REAL4 spec;
     spec = 2.0 * deltaT;
-    verbose( "creating white spectrum with constant value %g\n", spec );
+    verbose( "creating white PSD with constant value %g\n", spec * simScale * simScale );
     for ( k = 1; k < spectrum->data->length - 1; ++k )
-      spectrum->data->data[k] = spec;
-    /* DC and Nyquist */
-    spectrum->data->data[0] = 2.0 * spec;
-    spectrum->data->data[spectrum->data->length - 1] = 2.0 * spec;
+      spectrum->data->data[k] = spec * simScale * simScale;
+    /* DC and Nyquist are set to 0*/
+    spectrum->data->data[0] = 0.0;
+    spectrum->data->data[spectrum->data->length - 1] = 0.0;
     snprintf( spectrum->name, sizeof( spectrum->name ),
       "WHITE_NOISE_PSD" );
   }
   else if ( spectrumNumber == ILIGO_PSD )
   {
-    verbose( "Creating initial LIGO PSD" ); 
+    verbose( "Creating initial LIGO PSD \n" ); 
     /* FIXME!!! */
     REAL4 flow = 30;
     /* FIXME: SHOULD BE REAL8!! */

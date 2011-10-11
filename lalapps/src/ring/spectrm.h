@@ -49,11 +49,11 @@ REAL4FrequencySeries *compute_average_spectrum(
 
 
 /* Routine to generate a theoretical PSD */
-REAL4FrequencySeries *generate_theoretical_psd(
+REAL8FrequencySeries *generate_theoretical_psd(
     REAL4                    deltaT,
     REAL8                    segmentDuration,
-    REAL8                    strideDuration,
-    UINT4                    spectrumNumber
+    UINT4                    spectrumNumber,
+    REAL8                    simScale
     );
 
 

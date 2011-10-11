@@ -55,10 +55,8 @@ REAL4TimeSeries * get_simulated_data_new(
     const char  *channelName,
     LIGOTimeGPS *epoch,
     REAL8        duration,
-    int          dataType,
     REAL8        sampleRate,
     UINT4        simSeed,
-    REAL4        simScale,
     REAL8FrequencySeries  *psd
     );
 
