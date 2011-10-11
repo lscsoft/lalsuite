@@ -655,6 +655,10 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    output->f0 = input.fsig;
    output->period = input.period;
    output->moddepth = input.moddepth;
+   if (input.fsig==0.0 || input.period==0.0 || input.moddepth==0.0) {
+      fprintf(stderr, "%s: Invalid input (%f, %f, %f).\n", fn, input.fsig, input.period, input.moddepth);
+      XLAL_ERROR_VOID(fn, XLAL_EINVAL);
+   }
    
    INT4 ii, jj, numfbins, numffts, N;
    
@@ -673,18 +677,19 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numfbins);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   /* for (ii=0; ii<(INT4)phi_actual->length; ii++) {
+   for (ii=0; ii<(INT4)phi_actual->length; ii++) {
       if ( fabs(params->fmin + ii/params->Tcoh - input.fsig)/input.moddepth <= 1.0 ) {
          phi_actual->data[ii] = 0.5*input.period - asin(fabs(params->fmin + ii/params->Tcoh - input.fsig)/
             input.moddepth)*LAL_1_PI*input.period;
       } else {
          phi_actual->data[ii] = 0.0;
       }
-   } */ /* for ii < phi_actual->length */
-   memset(phi_actual->data, numfbins*sizeof(*phi_actual->data), 0);
+   } /* for ii < phi_actual->length */
+   //memset(phi_actual->data, numfbins*sizeof(*phi_actual->data), 0);
+   /* for (ii=0; ii<(INT4)phi_actual->length; ii++) phi_actual->data[ii] = 0.0;
    for (ii=(INT4)(params->Tcoh*(input.fsig-input.moddepth-params->fmin)); ii<=(INT4)(params->Tcoh*(input.fsig+input.moddepth-params->fmin)); ii++) {
       phi_actual->data[ii] = 0.5*input.period - asin(fabs(params->fmin + ii/params->Tcoh - input.fsig)/input.moddepth)*LAL_1_PI*input.period;
-   }
+   } */
    
    //Create second FFT frequencies and other useful values
    REAL8Vector *fpr = XLALCreateREAL8Vector((UINT4)floor(numffts*0.5)+1);
@@ -925,6 +930,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, numfbins);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
+   memset(psd1->data, 0, sizeof(REAL4)*psd1->length);
    
    REAL4 periodf = 1.0/input.period;
    REAL4 B = input.moddepth*params->Tcoh;
@@ -935,6 +941,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    //Determine the signal modulation in bins with time at center of coherence time and create
    //Hann windowed PSDs
    REAL8 sin2pix = 0.0, cos2pix = 0.0;
+   REAL8 PSDprefact = (2.0/3.0)*params->Tcoh;
    for (ii=0; ii<numffts; ii++) {
       REAL4 t = 0.5*params->Tcoh*ii;  //Assumed 50% overlapping SFTs
       //REAL4 n0 = B*sin(LAL_TWOPI*periodf*t) + input.fsig*params->Tcoh;
@@ -951,12 +958,12 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
                //psd1->data[ii*numfbins + jj] *= (2.0/3.0)*params->Tcoh;
             //}
             
-            if ( fabs(n0-freqbins->data[jj]) <= 5.0 ) psd1->data[ii*numfbins + jj] = sqsincxoverxsqminusone(n0-freqbins->data[jj])*(2.0/3.0)*params->Tcoh;
-            else psd1->data[ii*numfbins + jj] = 0.0;
+            if ( fabs(n0-freqbins->data[jj]) <= 5.0 ) psd1->data[ii*numfbins + jj] = sqsincxoverxsqminusone(n0-freqbins->data[jj])*PSDprefact;
+            //else psd1->data[ii*numfbins + jj] = 0.0;
          } /* for jj < numfbins */
-      } else {
+      } /* else {
          for (jj=0; jj<numfbins; jj++) psd1->data[ii*numfbins + jj] = 0.0;
-      }
+      } */
 
    } /* for ii < numffts */
    
@@ -974,7 +981,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (UINT4)floor(x->length*0.5)+1);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   REAL4 winFactor = 8.0/3.0;
+   REAL8 winFactor = 8.0/3.0;
+   REAL8 secPSDfactor = winFactor/x->length*0.5*params->Tcoh;
    REAL8 sum = 0.0;
    INT4 doSecondFFT;
    //First loop over frequencies
@@ -1013,7 +1021,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       if (doSecondFFT==1) {
          //for (jj=4; jj<(INT4)psd->length; jj++) {
          for (jj=0; jj<(INT4)psd->length; jj++) {
-            REAL4 correctedValue = psd->data[jj]*winFactor/x->length*0.5*params->Tcoh;
+            REAL4 correctedValue = (REAL4)(psd->data[jj]*secPSDfactor);
             
             //Sum the total weights
             //sum += correctedValue;

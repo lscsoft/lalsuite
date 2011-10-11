@@ -32,7 +32,6 @@
 #include "candidates.h"
 #include "fastchisqinv.h"
 
-#define aligned_alloca(a) ((void *)(((unsigned long)(alloca(a+63))+63) & ~63))
 
 //////////////////////////////////////////////////////////////
 // Create vectors for IHS maxima struct
@@ -898,7 +897,7 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
             for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) {
                //tworows->data[jj*ihsvectorsequence->vectorLength + kk] = ihsvectorsequence->data[jj*ihsvectorsequence->vectorLength + kk] + ihsvectorsequence->data[(jj+1)*ihsvectorsequence->vectorLength + kk];
-               tworows2->data[jj*ihsvalsfromaveNoise->length + kk] = ihsvalsfromaveNoise->data[kk]*(randvals->data[jj] + randvals->data[jj+1])*FbinMean->data[jj];
+               tworows2->data[jj*ihsvalsfromaveNoise->length + kk] = ihsvalsfromaveNoise->data[kk]*(randvals->data[jj]*FbinMean->data[jj] + randvals->data[jj+1]*FbinMean->data[jj+1]);
                //excessabovenoise->data[kk] = tworows->data[jj*ihsvectorsequence->vectorLength + kk] - tworows2->data[jj*ihsvalsfromaveNoise->length + kk];
                //fprintf(TWOROWSUM, "%.6f\n", tworows->data[jj*ihsvectorsequence->vectorLength + kk]);
             }
@@ -1162,13 +1161,8 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
    INT4 ii, jj;
    for (ii=0; ii<numvectors; ii++) {
       INT4 vec1 = (vectorpos1+ii)*input1->vectorLength, vec2 = (vectorpos2+ii)*input2->vectorLength, outvec = (outputvectorpos+ii)*output->vectorLength;
-      /* for (jj=0; jj<roundedvectorlength*4; jj++) {
-         alignedinput1[jj] = input1->data[vec1 + jj];
-         alignedinput2[jj] = input2->data[vec2 + jj];
-      } */
-      memcpy(alignedinput1, &(input1->data[vec1]), sizeof(REAL4)*4*roundedvectorlength);
+      /* memcpy(alignedinput1, &(input1->data[vec1]), sizeof(REAL4)*4*roundedvectorlength);
       memcpy(alignedinput2, &(input2->data[vec2]), sizeof(REAL4)*4*roundedvectorlength);
-      
       __m128* arr1 = (__m128*)alignedinput1;
       __m128* arr2 = (__m128*)alignedinput2;
       __m128* result = (__m128*)alignedoutput;
@@ -1178,10 +1172,7 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
          arr2++;
          result++;
       }
-      
-      //for (jj=0; jj<roundedvectorlength*4; jj++) output->data[outvec + jj] = alignedoutput[jj];
       memcpy(&(output->data[outvec]), alignedoutput, sizeof(REAL4)*4*roundedvectorlength);
-      
       //for (jj=4*roundedvectorlength; jj<(INT4)input1->vectorLength; jj++) output->data[outvec + jj] = input1->data[vec1 + jj] + input2->data[vec2 + jj];
       REAL4 *a = &(input1->data[vec1+4*roundedvectorlength]);
       REAL4 *b = &(input2->data[vec1+4*roundedvectorlength]);
@@ -1192,8 +1183,48 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
          a++;
          b++;
          c++;
+      } */
+      
+      INT4 input1vecaligned = 0, input2vecaligned = 0, outputvecaligned = 0;
+      __m128 *arr1, *arr2, *result;
+      if ( &(input1->data[vec1])==(void*)(((UINT8)&(input1->data[vec1])+15) & ~15) ) {
+         input1vecaligned = 1;
+         arr1 = (__m128*)&(input1->data[vec1]);
+      } else {
+         memcpy(alignedinput1, &(input1->data[vec1]), sizeof(REAL4)*4*roundedvectorlength);
+         arr1 = (__m128*)alignedinput1;
+      }
+      if ( &(input2->data[vec2])==(void*)(((UINT8)&(input2->data[vec2])+15) & ~15) ) {
+         input2vecaligned = 1;
+         arr2 = (__m128*)&(input2->data[vec2]);
+      } else {
+         memcpy(alignedinput2, &(input2->data[vec2]), sizeof(REAL4)*4*roundedvectorlength);
+         arr2 = (__m128*)alignedinput2;
+      }
+      if ( &(output->data[outvec])==(void*)(((UINT8)&(output->data[outvec])+15) & ~15) ) {
+         outputvecaligned = 1;
+         result = (__m128*)&(output->data[outvec]);
+      } else result = (__m128*)alignedoutput;
+      
+      for (jj=0; jj<roundedvectorlength; jj++) {
+         *result = _mm_add_ps(*arr1, *arr2);
+         arr1++;
+         arr2++;
+         result++;
       }
       
+      if (!outputvecaligned) memcpy(&(output->data[outvec]), alignedoutput, sizeof(REAL4)*4*roundedvectorlength);
+      
+      REAL4 *a = &(input1->data[vec1+4*roundedvectorlength]);
+      REAL4 *b = &(input2->data[vec1+4*roundedvectorlength]);
+      REAL4 *c = &(output->data[outvec+4*roundedvectorlength]);
+      INT4 n = output->vectorLength-4*roundedvectorlength;
+      while (n-- > 0) {
+         *c = (*a)+(*b);
+         a++;
+         b++;
+         c++;
+      }
    }
       
    XLALFree(allocinput1);
