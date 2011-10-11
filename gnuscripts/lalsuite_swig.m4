@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011
 #
-# serial 10
+# serial 11
 
 # basic version string comparison
 # can only handle numeric versions separated by periods
@@ -255,9 +255,10 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE],[
     # set message string to indicate language will be built
     SWIG_]uppercase[_ENABLE_VAL=ENABLED
 
-    # language-specific SWIG interface header (with LAL only)
+    # language-specific SWIG interface headers (with LAL only)
     AS_IF([test ${swig_is_lal} = true],[
-      SWIG_HEADERS="${SWIG_HEADERS} \$(swig_srcdir)/]lowercase[/swiglal-]lowercase[.i"
+      SWIG_]uppercase[_HEADERS="\$(swig_srcdir)/]lowercase[/swiglal-]lowercase[.i"
+      AC_SUBST(SWIG_]uppercase[_HEADERS)
     ])
 
     # configure $1
