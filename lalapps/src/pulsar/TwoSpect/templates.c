@@ -656,8 +656,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    output->period = input.period;
    output->moddepth = input.moddepth;
    if (input.fsig==0.0 || input.period==0.0 || input.moddepth==0.0) {
-      fprintf(stderr, "%s: Invalid input (%f, %f, %f).\n", fn, input.fsig, input.period, input.moddepth);
-      XLAL_ERROR_VOID(fn, XLAL_EINVAL);
+      fprintf(stderr, "%s: Invalid input (%f, %f, %f).\n", __func__, input.fsig, input.period, input.moddepth);
+      XLAL_ERROR_VOID(XLAL_EINVAL);
    }
    
    INT4 ii, jj, numfbins, numffts, N;
