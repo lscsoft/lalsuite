@@ -73,9 +73,6 @@ following section.
 #if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
 #define SWIGLAL_STRUCT(...)
 #endif
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_NO_LALALLOC)
-#define SWIGLAL_STRUCT_NO_LALALLOC(...)
-#endif
 #if !defined(SWIG) && !defined(SWIGLAL_DYNAMIC_1DARRAY_BEGIN)
 #define SWIGLAL_DYNAMIC_1DARRAY_BEGIN(...)
 #define SWIGLAL_DYNAMIC_1DARRAY_END(...)
