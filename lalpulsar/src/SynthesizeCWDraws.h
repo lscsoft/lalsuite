@@ -34,8 +34,8 @@
 #define _SYNTHESIZE_CW_DRAWS_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 /* C++ protection. */
@@ -67,8 +67,8 @@ typedef enum {
 
 /** Signal (amplitude) parameter ranges
  */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagAmplitudePrior_t {
+  SWIGLAL_STRUCT(AmplitudePrior_t);
   pdf1D_t *pdf_h0Nat;	/**< pdf for h0/sqrt{Sn} */
   REAL8 fixedSNR;	/**< alternative 1: adjust h0 to fix the optimal SNR of the signal */
   BOOLEAN fixRhohMax;	/**< alternative 2: draw h0 with fixed rhohMax = h0Max * (detM)^(1/8) <==> canonical Fstat prior */
@@ -80,17 +80,17 @@ typedef struct {
 
 /** struct for buffering of AM-coeffs, if signal for same sky-position is injected
  */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagmultiAMBuffer_t {
+  SWIGLAL_STRUCT(multiAMBuffer_t);
   SkyPosition skypos;		/**< sky-position for which we have AM-coeffs computed already */
   MultiAMCoeffs *multiAM;;	/**< pre-computed AM-coeffs for skypos */
 } multiAMBuffer_t;
 
 /** Hold all (generally) randomly drawn injection parameters: skypos, amplitude-params, M_mu_nu, transient-window, SNR
  */
-typedef struct
+typedef struct tagInjParams_t
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(InjParams_t);
   SkyPosition skypos;
   PulsarAmplitudeParams ampParams;
   PulsarAmplitudeVect ampVect;

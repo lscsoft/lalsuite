@@ -37,8 +37,8 @@ information.  The various time systems are discussed in [\ref esaa1992].
 #define _DATE_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 /* the following two preprocessor defines are to include the prototypes for
@@ -215,7 +215,7 @@ LALUnixDate;
 typedef struct
 tagLALPlaceAndGPS
 {
-    SWIGLAL_STRUCT_LALALLOC();
+    SWIGLAL_STRUCT(LALPlaceAndGPS);
     LALDetector *p_detector;   /**< pointer to a detector */
     LIGOTimeGPS *p_gps;        /**< Pointer to a GPS time structure */
 }

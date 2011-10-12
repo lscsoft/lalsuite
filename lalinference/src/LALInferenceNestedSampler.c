@@ -55,7 +55,7 @@ void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVaria
 	output_array=realloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables));
 	if(!output_array){
 	        XLALPrintError("Unable to allocate array for samples\n");
-		XLAL_ERROR_VOID( __func__, XLAL_EFAULT );
+		XLAL_ERROR_VOID( XLAL_EFAULT );
 	}
 	else
 	{
@@ -367,7 +367,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	
 	if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
 	  XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
-	  XLAL_ERROR_VOID(__func__,XLAL_EFAILED);
+	  XLAL_ERROR_VOID(XLAL_EFAILED);
 	}
 	
 	for (i = 0; i < N; i++) {
@@ -474,7 +474,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		  
 		  if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
 		    XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
-		    XLAL_ERROR_VOID(__func__,XLAL_EFAILED);
+		    XLAL_ERROR_VOID(XLAL_EFAILED);
 		  }
 		  
 		  for (i = 0; i < N; i++) {
@@ -603,11 +603,11 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 		}
 		if(isnan(logPriorNew)){
 		  XLALPrintError("Caught NaN prior slipping through sampler\n");
-		  XLAL_ERROR_VOID(__func__,XLAL_EINVAL);
+		  XLAL_ERROR_VOID(XLAL_EINVAL);
 		}
 		if(logPriorNew==-DBL_MAX || logPriorNew==DBL_MAX){
 		  XLALPrintError("Caught log prior %lf slipping through sampler\n");
-		  XLAL_ERROR_VOID(__func__,XLAL_EINVAL);
+		  XLAL_ERROR_VOID(XLAL_EINVAL);
 		}
 	} while(mcmc_iter<Nmcmc);
 	/* Update information to pass back out */
@@ -731,14 +731,12 @@ XLALMultiNormalDeviates(
 	gsl_matrix *work=NULL;
 	gsl_vector *result = NULL;
 	
-	static const char *func = "LALMultiNormalDeviates";
-	
 	/* check input arguments */
 	if (!vector || !matrix || !randParam)
-		XLAL_ERROR_VOID( func, XLAL_EFAULT );
+		XLAL_ERROR_VOID( XLAL_EFAULT );
 	
 	if (dim<1)
-		XLAL_ERROR_VOID( func, XLAL_EINVAL );
+		XLAL_ERROR_VOID( XLAL_EINVAL );
 	
 	/* copy matrix into workspace */
 	work =  gsl_matrix_alloc(dim,dim); 
@@ -782,21 +780,19 @@ XLALMultiStudentDeviates(
 						 RandomParams *randParam
 						 )
 { /* </lalVerbatim> */
-	static const char *func = "LALMultiStudentDeviates";
-	
 	REAL4Vector *dummy=NULL;
 	REAL4 chi=0.0, factor;
 	UINT4 i;
 	
 	/* check input arguments */
 	if (!vector || !matrix || !randParam)
-		XLAL_ERROR_VOID( func, XLAL_EFAULT );
+		XLAL_ERROR_VOID( XLAL_EFAULT );
 	
 	if (dim<1)
-		XLAL_ERROR_VOID( func, XLAL_EINVAL );
+		XLAL_ERROR_VOID( XLAL_EINVAL );
 	
 	if (n<1)
-		XLAL_ERROR_VOID( func, XLAL_EINVAL );
+		XLAL_ERROR_VOID( XLAL_EINVAL );
 	
 	
 	/* first draw from MVN */

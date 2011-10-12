@@ -114,33 +114,30 @@ static cheb_series gstar_b_cs = {
 
 REAL8 cdf_chisq_Pinv(REAL8 P, REAL8 nu)
 {
-   const CHAR *fn = __func__;
    REAL8 val = cdf_gamma_Pinv(P, 0.5*nu, 2.0);
    if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-      fprintf(stderr, "%s: cdf_gamma_Pinv(%.6f, %.6f, 2.0) failed.\n", fn, P, 0.5*nu);
-      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      fprintf(stderr, "%s: cdf_gamma_Pinv(%.6f, %.6f, 2.0) failed.\n", __func__, P, 0.5*nu);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    return val;
 }
 REAL8 cdf_chisq_Qinv(REAL8 Q, REAL8 nu)
 {
-   const CHAR *fn = __func__;
    REAL8 val = cdf_gamma_Qinv(Q, 0.5*nu, 2.0);
    if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-      fprintf(stderr, "%s: cdf_gamma_Pinv(%.6f, %.6f, 2.0) failed.\n", fn, Q, 0.5*nu);
-      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      fprintf(stderr, "%s: cdf_gamma_Pinv(%.6f, %.6f, 2.0) failed.\n", __func__, Q, 0.5*nu);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    return val;
    
 }
 REAL8 cdf_gamma_Pinv(REAL8 P, REAL8 a, REAL8 b)
 {
-   const CHAR *fn = __func__;
    REAL8 x;
    
    if (P == 1.0) {
-      fprintf(stderr, "%s: Input P of 1.0 returns infinity.\n", fn);
-      XLAL_ERROR_REAL8(fn, XLAL_EFPOVRFLW);
+      fprintf(stderr, "%s: Input P of 1.0 returns infinity.\n", __func__);
+      XLAL_ERROR_REAL8(XLAL_EFPOVRFLW);
    } else if (P == 0.0) return 0.0;
    
    /* Consider, small, large and intermediate cases separately.  The
@@ -158,8 +155,8 @@ REAL8 cdf_gamma_Pinv(REAL8 P, REAL8 a, REAL8 b)
    else {
       REAL8 xg = cdf_ugaussian_Pinv(P);
       if (XLAL_IS_REAL8_FAIL_NAN(xg)) {
-         fprintf(stderr, "%s: cdf_ugaussian_Pinv(%.6f) failed.\n", fn, P);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: cdf_ugaussian_Pinv(%.6f) failed.\n", __func__, P);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       x = (xg < -0.5*sqrt(a)) ? a : sqrt(a) * xg + a;
    }
@@ -177,16 +174,16 @@ REAL8 cdf_gamma_Pinv(REAL8 P, REAL8 a, REAL8 b)
    while (keepgoing == 1) {
       REAL8 val = cdf_gamma_P(x, a, 1.0);
       if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-         fprintf(stderr, "%s: cdf_gamma_P(%.6f, %.6f, 1.0) failed.\n", fn, x, a);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: cdf_gamma_P(%.6f, %.6f, 1.0) failed.\n", __func__, x, a);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       dP = P - val;
       phi = ran_gamma_pdf(x, a, 1.0);
       
       if (dP == 0.0 || n++ > 32) {
          if (fabs(dP) > sqrt(LAL_REAL4_EPS) * P) {
-            fprintf(stderr, "%s: inverse failed to converge\n", fn);
-            XLAL_ERROR_REAL8(fn, XLAL_EFPINEXCT);
+            fprintf(stderr, "%s: inverse failed to converge\n", __func__);
+            XLAL_ERROR_REAL8(XLAL_EFPINEXCT);
          }
          return b * x;
       }
@@ -208,21 +205,20 @@ REAL8 cdf_gamma_Pinv(REAL8 P, REAL8 a, REAL8 b)
    }
    
    if (fabs(dP) > sqrt(LAL_REAL4_EPS) * P) {
-      fprintf(stderr, "%s: inverse failed to converge\n", fn);
-      XLAL_ERROR_REAL8(fn, XLAL_EFPINEXCT);
+      fprintf(stderr, "%s: inverse failed to converge\n", __func__);
+      XLAL_ERROR_REAL8(XLAL_EFPINEXCT);
    }
    return b * x;
    
 }
 REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b)
 {
-   const CHAR *fn = __func__;
    REAL8 x;
    
    if (Q == 1.0) return 0.0;
    else if (Q == 0.0) {
-      fprintf(stderr, "%s: Input P of 0.0 returns infinity.\n", fn);
-      XLAL_ERROR_REAL8(fn, XLAL_EFPOVRFLW);
+      fprintf(stderr, "%s: Input P of 0.0 returns infinity.\n", __func__);
+      XLAL_ERROR_REAL8(XLAL_EFPOVRFLW);
    }
    
    /* Consider, small, large and intermediate cases separately.  The
@@ -234,8 +230,8 @@ REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b)
    else {
       REAL8 xg = cdf_ugaussian_Qinv(Q);
       if (XLAL_IS_REAL8_FAIL_NAN(xg)) {
-         fprintf(stderr, "%s: cdf_ugaussian_Qinv(%.6f) failed.\n", fn, Q);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: cdf_ugaussian_Qinv(%.6f) failed.\n", __func__, Q);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       x = (xg < -0.5*sqrt (a)) ? a : sqrt (a) * xg + a;
    }
@@ -253,8 +249,8 @@ REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b)
    while (keepgoing == 1) {
       REAL8 val = cdf_gamma_Q(x, a, 1.0);
       if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-         fprintf(stderr, "%s: cdf_gamma_Q(%.6f, %.6f, 1.0) failed.\n", fn, x, a);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: cdf_gamma_Q(%.6f, %.6f, 1.0) failed.\n", __func__, x, a);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       dQ = Q - val;
       phi = ran_gamma_pdf(x, a, 1.0);
@@ -280,17 +276,16 @@ REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b)
 }
 REAL8 cdf_ugaussian_Pinv(REAL8 P)
 {
-   const CHAR *fn = __func__;
    REAL8 r, x, pp;
    
    REAL8 dP = P - 0.5;
    
    if (P == 1.0) {
-      fprintf(stderr, "%s: cdf_ugaussian_Pinv(1.0) is infinite.\n", fn);
-      XLAL_ERROR_REAL8(fn, XLAL_EFPOVRFLW);
+      fprintf(stderr, "%s: cdf_ugaussian_Pinv(1.0) is infinite.\n", __func__);
+      XLAL_ERROR_REAL8(XLAL_EFPOVRFLW);
    } else if (P == 0.0) {
-      fprintf(stderr, "%s: cdf_ugaussian_Pinv(0.0) is infinite.\n", fn);
-      XLAL_ERROR_REAL8(fn, XLAL_EFPOVRFLW);
+      fprintf(stderr, "%s: cdf_ugaussian_Pinv(0.0) is infinite.\n", __func__);
+      XLAL_ERROR_REAL8(XLAL_EFPOVRFLW);
    }
    
    if (fabsf(dP) <= 0.425) {
@@ -311,18 +306,17 @@ REAL8 cdf_ugaussian_Pinv(REAL8 P)
 }
 REAL8 cdf_ugaussian_Qinv(REAL8 Q)
 {
-   const CHAR *fn = __func__;
    REAL8 r, x, pp;
    
    REAL8 dQ = Q - 0.5;
    
    if (Q == 1.0) {
-      fprintf(stderr, "%s: cdf_ugaussian_Qinv(1.0) is infinite.\n", fn);
-      XLAL_ERROR_REAL8(fn, XLAL_EFPOVRFLW);
+      fprintf(stderr, "%s: cdf_ugaussian_Qinv(1.0) is infinite.\n", __func__);
+      XLAL_ERROR_REAL8(XLAL_EFPOVRFLW);
    }
    else if (Q == 0.0) {
-      fprintf(stderr, "%s: cdf_ugaussian_Qinv(0.0) is infinite.\n", fn);
-      XLAL_ERROR_REAL8(fn, XLAL_EFPOVRFLW);
+      fprintf(stderr, "%s: cdf_ugaussian_Qinv(0.0) is infinite.\n", __func__);
+      XLAL_ERROR_REAL8(XLAL_EFPOVRFLW);
    }
    
    if (fabs(dQ) <= 0.425) {
@@ -415,7 +409,6 @@ REAL8 rat_eval(const REAL8 a[], const size_t na, const REAL8 b[], const size_t n
 }
 REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b)
 {
-   const CHAR *fn = __func__;
    REAL8 P;
    REAL8 y = x / b;
    
@@ -424,15 +417,15 @@ REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b)
    if (y > a) {
       REAL8 val = sf_gamma_inc_Q(a, y);
       if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-         fprintf(stderr, "%s: sf_gamma_inc_Q(%f, %f) failed.\n", fn, a, y);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: sf_gamma_inc_Q(%f, %f) failed.\n", __func__, a, y);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       P = 1.0 - val;
    } else {
       P = sf_gamma_inc_P(a, y);
       if (XLAL_IS_REAL8_FAIL_NAN(P)) {
-         fprintf(stderr, "%s: sf_gamma_inc_P(%f, %f) failed.\n", fn, a, y);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: sf_gamma_inc_P(%f, %f) failed.\n", __func__, a, y);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
    }
    
@@ -457,7 +450,6 @@ REAL8 cdf_gamma_P_usingmatlab(REAL8 x, REAL8 a, REAL8 b)
 }
 REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b)
 {
-   const CHAR *fn = __func__;
    REAL8 Q;
    REAL8 y = x / b;
    
@@ -466,15 +458,15 @@ REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b)
    if (y < a) {
       REAL8 val = sf_gamma_inc_P(a, y);
       if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-         fprintf(stderr, "%s: sf_gamma_inc_P(%f, %f) failed.\n", fn, a, y);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: sf_gamma_inc_P(%f, %f) failed.\n", __func__, a, y);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       Q = 1.0 - val;
    } else {
       Q = sf_gamma_inc_Q(a, y);
       if (XLAL_IS_REAL8_FAIL_NAN(Q)) {
-         fprintf(stderr, "%s: sf_gamma_inc_Q(%f, %f) failed.\n", fn, a, y);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: sf_gamma_inc_Q(%f, %f) failed.\n", __func__, a, y);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
    }
    
@@ -565,17 +557,15 @@ REAL8 matlab_gamma_inc(REAL8 x, REAL8 a, INT4 upper)
 REAL8 sf_gamma_inc_P(REAL8 a, REAL8 x)
 {
    
-   const CHAR *fn = __func__;
-   
    if (a <= 0.0 || x < 0.0) {
-      fprintf(stderr, "%s: Invalid input of zero (a = %f), or less than zero (x = %f)\n", fn, a, x);
-      XLAL_ERROR_REAL8(fn, XLAL_EINVAL);
+      fprintf(stderr, "%s: Invalid input of zero (a = %f), or less than zero (x = %f)\n", __func__, a, x);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
    } else if(x == 0.0) return 0.0;
    else if(x < 20.0 || x < 0.5*a) {
       REAL8 val = gamma_inc_P_series(a, x);
       if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-         fprintf(stderr, "%s: gamma_inc_P_series(%f, %f) failed.\n", fn, a, x);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: gamma_inc_P_series(%f, %f) failed.\n", __func__, a, x);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       return val;
    } else if(a > 1.0e+06 && (x-a)*(x-a) < a) {
@@ -585,8 +575,8 @@ REAL8 sf_gamma_inc_P(REAL8 a, REAL8 x)
        */
       REAL8 Q = gamma_inc_Q_asymp_unif(a, x);
       if (XLAL_IS_REAL8_FAIL_NAN(Q)) {
-         fprintf(stderr, "%s: gamma_inc_Q_asymp_unif(%f, %f) failed.\n", fn, a, x);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: gamma_inc_Q_asymp_unif(%f, %f) failed.\n", __func__, a, x);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       return 1.0 - Q;
    } else if(a <= x) {
@@ -597,14 +587,14 @@ REAL8 sf_gamma_inc_P(REAL8 a, REAL8 x)
       if(a > 0.2*x) {
          Q = gamma_inc_Q_CF(a, x);
          if (XLAL_IS_REAL8_FAIL_NAN(Q)) {
-            fprintf(stderr, "%s: gamma_inc_Q_CF(%f, %f) failed.\n", fn, a, x);
-            XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+            fprintf(stderr, "%s: gamma_inc_Q_CF(%f, %f) failed.\n", __func__, a, x);
+            XLAL_ERROR_REAL8(XLAL_EFUNC);
          }
       } else {
          Q = gamma_inc_Q_large_x(a, x);
          if (XLAL_IS_REAL8_FAIL_NAN(Q)) {
-            fprintf(stderr, "%s: gamma_inc_Q_large_x(%f, %f) failed.\n", fn, a, x);
-            XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+            fprintf(stderr, "%s: gamma_inc_Q_large_x(%f, %f) failed.\n", __func__, a, x);
+            XLAL_ERROR_REAL8(XLAL_EFUNC);
          }
       }
       return 1.0 - Q;
@@ -616,15 +606,15 @@ REAL8 sf_gamma_inc_P(REAL8 a, REAL8 x)
           */
          REAL8 Q = gamma_inc_Q_CF(a, x);
          if (XLAL_IS_REAL8_FAIL_NAN(Q)) {
-            fprintf(stderr, "%s: gamma_inc_Q_CF(%f, %f) failed.\n", fn, a, x);
-            XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+            fprintf(stderr, "%s: gamma_inc_Q_CF(%f, %f) failed.\n", __func__, a, x);
+            XLAL_ERROR_REAL8(XLAL_EFUNC);
          }
          return 1.0 - Q;
       } else {
          REAL8 val = gamma_inc_P_series(a, x);
          if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-            fprintf(stderr, "%s: gamma_inc_P_series(%f, %f) failed.\n", fn, a, x);
-            XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+            fprintf(stderr, "%s: gamma_inc_P_series(%f, %f) failed.\n", __func__, a, x);
+            XLAL_ERROR_REAL8(XLAL_EFUNC);
          }
          return val;
       }
@@ -632,10 +622,9 @@ REAL8 sf_gamma_inc_P(REAL8 a, REAL8 x)
 }
 REAL8 sf_gamma_inc_Q(REAL8 a, REAL8 x)
 {
-   const CHAR *fn = __func__;
    if (a < 0.0 || x < 0.0) {
-      fprintf(stderr, "%s: Invalid input of less than zero (a = %f), or less than zero (x = %f)\n", fn, a, x);
-      XLAL_ERROR_REAL8(fn, XLAL_EINVAL);
+      fprintf(stderr, "%s: Invalid input of less than zero (a = %f), or less than zero (x = %f)\n", __func__, a, x);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
    } else if (x == 0.0) return 1.0;
    else if (a == 0.0) return 0.0;
    else if(x <= 0.5*a) {
@@ -644,8 +633,8 @@ REAL8 sf_gamma_inc_Q(REAL8 a, REAL8 x)
        */
       REAL8 P = gamma_inc_P_series(a, x);
       if (XLAL_IS_REAL8_FAIL_NAN(P)) {
-         fprintf(stderr, "%s: gamma_inc_P_series(%f, %f) failed.\n", fn, a, x);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: gamma_inc_P_series(%f, %f) failed.\n", __func__, a, x);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       return 1.0 - P;
    } else if(a >= 1.0e+06 && (x-a)*(x-a) < a) {
@@ -654,8 +643,8 @@ REAL8 sf_gamma_inc_Q(REAL8 a, REAL8 x)
        */
       REAL8 val = gamma_inc_Q_asymp_unif(a, x);
       if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-         fprintf(stderr, "%s: gamma_inc_Q_asymp_unif(%f, %f) failed.\n", fn, a, x);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: gamma_inc_Q_asymp_unif(%f, %f) failed.\n", __func__, a, x);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       return val;
    } else if(a < 0.2 && x < 5.0) {
@@ -666,8 +655,8 @@ REAL8 sf_gamma_inc_Q(REAL8 a, REAL8 x)
        */
       REAL8 val = gamma_inc_Q_series(a, x);
       if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-         fprintf(stderr, "%s: gamma_inc_Q_series(%f, %f) failed.\n", fn, a, x);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: gamma_inc_Q_series(%f, %f) failed.\n", __func__, a, x);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       return val;
    } else if(a <= x) {
@@ -683,15 +672,15 @@ REAL8 sf_gamma_inc_Q(REAL8 a, REAL8 x)
           */
          REAL8 val = gamma_inc_Q_CF(a, x);
          if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-            fprintf(stderr, "%s: gamma_inc_Q_CF(%f, %f) failed.\n", fn, a, x);
-            XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+            fprintf(stderr, "%s: gamma_inc_Q_CF(%f, %f) failed.\n", __func__, a, x);
+            XLAL_ERROR_REAL8(XLAL_EFUNC);
          }
          return val;
       } else {
          REAL8 val = gamma_inc_Q_large_x(a, x);
          if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-            fprintf(stderr, "%s: gamma_inc_Q_large_x(%f, %f) failed.\n", fn, a, x);
-            XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+            fprintf(stderr, "%s: gamma_inc_Q_large_x(%f, %f) failed.\n", __func__, a, x);
+            XLAL_ERROR_REAL8(XLAL_EFUNC);
          }
          return val;
       }
@@ -705,15 +694,15 @@ REAL8 sf_gamma_inc_Q(REAL8 a, REAL8 x)
           */
          REAL8 val = gamma_inc_Q_CF(a, x);
          if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-            fprintf(stderr, "%s: gamma_inc_Q_CF(%f, %f) failed.\n", fn, a, x);
-            XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+            fprintf(stderr, "%s: gamma_inc_Q_CF(%f, %f) failed.\n", __func__, a, x);
+            XLAL_ERROR_REAL8(XLAL_EFUNC);
          }
          return val;
       } else {
          REAL8 P = gamma_inc_P_series(a, x);
          if (XLAL_IS_REAL8_FAIL_NAN(P)) {
-            fprintf(stderr, "%s: gamma_inc_P_series(%f, %f) failed.\n", fn, a, x);
-            XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+            fprintf(stderr, "%s: gamma_inc_P_series(%f, %f) failed.\n", __func__, a, x);
+            XLAL_ERROR_REAL8(XLAL_EFUNC);
          }
          return 1.0 - P;
       }
@@ -722,14 +711,12 @@ REAL8 sf_gamma_inc_Q(REAL8 a, REAL8 x)
 REAL8 gamma_inc_P_series(REAL8 a, REAL8 x)
 {
    
-   const CHAR *fn = __func__;
-   
    INT4 nmax = 10000;
    
    REAL8 D = gamma_inc_D(a, x);
    if (XLAL_IS_REAL8_FAIL_NAN(D)) {
-      fprintf(stderr, "%s: gamma_inc_D(%f, %f) failed.\n", fn, a, x);
-      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      fprintf(stderr, "%s: gamma_inc_D(%f, %f) failed.\n", __func__, a, x);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    
    /* Approximating the terms of the series using Stirling's
@@ -741,8 +728,8 @@ REAL8 gamma_inc_P_series(REAL8 a, REAL8 x)
    if (x > 0.995 * a && a > 1.0e5) { /* Difficult case: try continued fraction */
       REAL8 cf_res = sf_exprel_n_CF(a, x);
       if (XLAL_IS_REAL8_FAIL_NAN(cf_res)) {
-         fprintf(stderr, "%s: sf_exprel_n_CF(%f, %f) failed.\n", fn, a, x);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: sf_exprel_n_CF(%f, %f) failed.\n", __func__, a, x);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       return D * cf_res;
    }
@@ -750,8 +737,8 @@ REAL8 gamma_inc_P_series(REAL8 a, REAL8 x)
    /* Series would require excessive number of terms */
    
    if (x > (a + nmax)) {
-      fprintf(stderr, "%s: gamma_inc_P_series x>>a exceeds range", fn);
-      XLAL_ERROR_REAL4(fn, XLAL_EMAXITER);
+      fprintf(stderr, "%s: gamma_inc_P_series x>>a exceeds range", __func__);
+      XLAL_ERROR_REAL4(XLAL_EMAXITER);
    }
    
    /* Normal case: sum the series */
@@ -784,8 +771,8 @@ REAL8 gamma_inc_P_series(REAL8 a, REAL8 x)
    REAL8 val = D * sum;
    
    if (n == nmax && fabs(remainderval/sum) > sqrt(LAL_REAL4_EPS)) {
-      fprintf(stderr, "%s: gamma_inc_P_series_float failed to converge", fn);
-      XLAL_ERROR_REAL8(fn, XLAL_EMAXITER);
+      fprintf(stderr, "%s: gamma_inc_P_series_float failed to converge", __func__);
+      XLAL_ERROR_REAL8(XLAL_EMAXITER);
    }
    
    return val;
@@ -793,7 +780,6 @@ REAL8 gamma_inc_P_series(REAL8 a, REAL8 x)
 }
 REAL8 gamma_inc_Q_series(REAL8 a, REAL8 x)
 {
-   const CHAR *fn = __func__;
    REAL8 term1;  /* 1 - x^a/Gamma(a+1) */
    REAL8 sum;    /* 1 + (a+1)/(a+2)(-x)/2! + (a+1)/(a+3)(-x)^2/3! + ... */
    REAL8 term2;  /* a temporary variable used at the end */
@@ -882,8 +868,8 @@ REAL8 gamma_inc_Q_series(REAL8 a, REAL8 x)
       }
       
       if (n == nmax) {
-         fprintf(stderr, "%s: maximum iterations reached.\n", fn);
-         XLAL_ERROR_REAL8(fn, XLAL_EMAXITER);
+         fprintf(stderr, "%s: maximum iterations reached.\n", __func__);
+         XLAL_ERROR_REAL8(XLAL_EMAXITER);
       }
    }
    
@@ -917,8 +903,6 @@ REAL8 twospect_cheb_eval(const cheb_series * cs, REAL8 x)
 REAL8 gamma_inc_D(REAL8 a, REAL8 x)
 {
    
-   const CHAR *fn = __func__;
-   
    if (a < 10.0) {
       REAL8 lnr = a * log(x) - x - lgamma(a+1.0);
       return exp(lnr);
@@ -936,8 +920,8 @@ REAL8 gamma_inc_D(REAL8 a, REAL8 x)
       }
       gstar = twospect_sf_gammastar(a);
       if (XLAL_IS_REAL8_FAIL_NAN(gstar)) {
-         fprintf(stderr, "%s: sf_gammastar_float(%f) failed.\n", fn, a);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: sf_gammastar_float(%f) failed.\n", __func__, a);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       term1 = exp(a*ln_term)/sqrt(2.0*LAL_PI*a);
       return term1/gstar;
@@ -947,11 +931,9 @@ REAL8 gamma_inc_D(REAL8 a, REAL8 x)
 REAL8 twospect_sf_gammastar(REAL8 x)
 {
    
-   const CHAR *fn = __func__;
-   
    if(x <= 0.0) {
-      fprintf(stderr, "%s: Invalid input of zero or less: %f\n", fn, x);
-      XLAL_ERROR_REAL8(fn, XLAL_EINVAL);
+      fprintf(stderr, "%s: Invalid input of zero or less: %f\n", __func__, x);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
    } else if(x < 0.5) {
       REAL8 lg = lgamma(x);
       REAL8 lx = log(x);
@@ -962,23 +944,23 @@ REAL8 twospect_sf_gammastar(REAL8 x)
       REAL8 t = 4.0/3.0*(x-0.5) - 1.0;
       REAL8 val = twospect_cheb_eval(&gstar_a_cs, t);
       if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-         fprintf(stderr, "%s: twospect_cheb_eval(&gstar_a_cs,%f) failed.\n", fn, t);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: twospect_cheb_eval(&gstar_a_cs,%f) failed.\n", __func__, t);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       return val;
    } else if(x < 10.0) {
       REAL8 t = 0.25*(x-2.0) - 1.0;
       REAL8 c = twospect_cheb_eval(&gstar_b_cs, t);
       if (XLAL_IS_REAL8_FAIL_NAN(c)) {
-         fprintf(stderr, "%s: twospect_cheb_eval(&gstar_b_cs,%f) failed.\n", fn, t);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: twospect_cheb_eval(&gstar_b_cs,%f) failed.\n", __func__, t);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       return c/(x*x) + 1.0 + 1.0/(12.0*x);
    } else if(x < 1.0/1.2207031250000000e-04) {
       REAL8 val = gammastar_ser(x);
       if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-         fprintf(stderr, "%s: gammastar_ser(%f) failed.\n", fn, x);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         fprintf(stderr, "%s: gammastar_ser(%f) failed.\n", __func__, x);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       return val;
    } else if(x < 1.0/LAL_REAL8_EPS) {
@@ -1009,7 +991,6 @@ REAL8 gammastar_ser(REAL8 x)
 }
 REAL8 sf_exprel_n_CF(REAL8 N, REAL8 x)
 {
-   const CHAR *fcn = __func__;
    const REAL8 RECUR_BIG = sqrt(LAL_REAL8_MAX);
    INT4 maxiter = 5000;
    INT4 n = 1;
@@ -1069,8 +1050,8 @@ REAL8 sf_exprel_n_CF(REAL8 N, REAL8 x)
    }
    
    if (n==maxiter) {
-      fprintf(stderr, "%s: Reached maximum number of iterations (5000).\n", fcn);
-      XLAL_ERROR_REAL8(fcn, XLAL_EMAXITER);
+      fprintf(stderr, "%s: Reached maximum number of iterations (5000).\n", __func__);
+      XLAL_ERROR_REAL8(XLAL_EMAXITER);
    }
    
    return fn;
@@ -1107,16 +1088,15 @@ REAL8 gamma_inc_Q_asymp_unif(REAL8 a, REAL8 x)
 }
 REAL8 gamma_inc_Q_CF(REAL8 a, REAL8 x)
 {
-   const CHAR *fn = __func__;
    REAL8 D = gamma_inc_D(a, x);
    if (XLAL_IS_REAL8_FAIL_NAN(D)) {
-      fprintf(stderr, "%s: gamma_inc_D(%f, %f) failed.\n", fn, a, x);
-      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      fprintf(stderr, "%s: gamma_inc_D(%f, %f) failed.\n", __func__, a, x);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    REAL8 F = gamma_inc_F_CF(a, x);
    if (XLAL_IS_REAL8_FAIL_NAN(F)) {
-      fprintf(stderr, "%s: gamma_inc_F_CF(%f, %f) failed.\n", fn, a, x);
-      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      fprintf(stderr, "%s: gamma_inc_F_CF(%f, %f) failed.\n", __func__, a, x);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    
    return (D * (a/x) * F);
@@ -1124,7 +1104,6 @@ REAL8 gamma_inc_Q_CF(REAL8 a, REAL8 x)
 }
 REAL8 gamma_inc_F_CF(REAL8 a, REAL8 x)
 {
-   const CHAR *fn = __func__;
    INT4 nmax  =  5000;
    const REAL8 smallval =  LAL_REAL8_EPS*LAL_REAL8_EPS*LAL_REAL8_EPS;
    
@@ -1153,8 +1132,8 @@ REAL8 gamma_inc_F_CF(REAL8 a, REAL8 x)
    }
    
    if (n==nmax) {
-      fprintf(stderr, "%s: error in CF for F(a,x)", fn);
-      XLAL_ERROR_REAL8(fn, XLAL_EMAXITER);
+      fprintf(stderr, "%s: error in CF for F(a,x)", __func__);
+      XLAL_ERROR_REAL8(XLAL_EMAXITER);
    }
    
    return hn;
@@ -1162,7 +1141,6 @@ REAL8 gamma_inc_F_CF(REAL8 a, REAL8 x)
 }
 REAL8 gamma_inc_Q_large_x(REAL8 a, REAL8 x)
 {
-   const CHAR *fn = __func__;
    const INT4 nmax = 50000;
    
    REAL8 D = gamma_inc_D(a, x);
@@ -1180,8 +1158,8 @@ REAL8 gamma_inc_Q_large_x(REAL8 a, REAL8 x)
    }
    
    if (n==nmax) {
-      fprintf(stderr, "%s: error in large x asymptotic.\n", fn);
-      XLAL_ERROR_REAL8(fn, XLAL_EMAXITER);
+      fprintf(stderr, "%s: error in large x asymptotic.\n", __func__);
+      XLAL_ERROR_REAL8(XLAL_EMAXITER);
    }
    
    return (D * (a/x) * sum);

@@ -1654,19 +1654,18 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
 scanlineWindow_t *
 XLALCreateScanlineWindow ( UINT4 windowWings ) /**< number of neighbors on each side in scanlineWindow */
 {
-  const CHAR *fn = "XLALCreateScanlineWindow()";
   scanlineWindow_t *ret = NULL;
   UINT4 windowLen = 1 + 2 * windowWings;
 
   if ( ( ret = LALCalloc ( 1, sizeof(*ret)) ) == NULL ) {
-    XLAL_ERROR_NULL( fn, COMPUTEFSTATISTIC_EMEM );
+    XLAL_ERROR_NULL( COMPUTEFSTATISTIC_EMEM );
   }
 
   ret->length = windowLen;
 
   if ( (ret->window = LALCalloc ( windowLen, sizeof( ret->window[0] ) )) == NULL ) {
     LALFree ( ret );
-    XLAL_ERROR_NULL( fn, COMPUTEFSTATISTIC_EMEM );
+    XLAL_ERROR_NULL( COMPUTEFSTATISTIC_EMEM );
   }
 
   ret->center = &(ret->window[ windowWings ]);	/* points to central bin */
@@ -1695,11 +1694,10 @@ XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow )
 int
 XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow )
 {
-  const CHAR *fn = "XLALAdvanceScanlineWindow()";
   UINT4 i;
 
   if ( !nextCand || !scanWindow || !scanWindow->window ) {
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   for ( i=1; i < scanWindow->length; i ++ )

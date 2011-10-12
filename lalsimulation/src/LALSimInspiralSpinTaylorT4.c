@@ -241,7 +241,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
         default: 
             XLALPrintError("XLAL Error - %s: Invalid phase. PN order %s\n", 
                     __func__, phaseO );
-            XLAL_ERROR(__func__, XLAL_EINVAL);
+            XLAL_ERROR(XLAL_EINVAL);
             break;
     }
 
@@ -336,7 +336,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     {
         XLALPrintError("XLAL Error - %s: Cannot allocate integrator\n", 
                 __func__);
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
     }
 
     /* stop the integration only when the test is true */
@@ -352,7 +352,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     if (!len) 
     {
         XLALPrintError("XLAL Error - %s: integration failed with errorcode %d.\n", __func__, intreturn);
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
     }
 
     /* Print warning about abnormal termination */
@@ -393,7 +393,10 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
             deltaT, &lalDimensionlessUnit, len); 
     if ( !V || !Phi || !S1x || !S1y || !S1z || !S2x || !S2y || !S2z 
             || !LNhatx || !LNhaty || !LNhatz || !E1x || !E1y || !E1z )
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+    {
+        XLALDestroyREAL8Array(yout);
+        XLAL_ERROR(XLAL_EFUNC);
+    }
 
     /* Copy time series of dynamical variables */
     /* from yout array returned by integrator to output time series */
@@ -415,6 +418,8 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
         (*E1y)->data->data[i] 		= yout->data[13*len+i];
         (*E1z)->data->data[i] 		= yout->data[14*len+i];
     }
+
+    XLALDestroyREAL8Array(yout);
 
     return XLAL_SUCCESS;
 }
@@ -524,7 +529,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
 {
     /* coordinates and derivatives */
     REAL8 LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z, E1x, E1y, E1z;
-    REAL8 s, omega, ds, domega, dLNhx, dLNhy, dLNhz;
+    REAL8 omega, ds, domega, dLNhx, dLNhy, dLNhz;
     REAL8 dS1x, dS1y, dS1z, dS2x, dS2y, dS2z, dE1x, dE1y, dE1z;
 
     /* auxiliary variables */
@@ -539,7 +544,8 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     UNUSED(t);
 
     /* copy variables */
-    s    = values[0] ; omega   	= values[1] ;
+    // UNUSED!!: s    = values[0] ;
+    omega   	= values[1] ;
     LNhx = values[2] ; LNhy    	= values[3] ; LNhz 	= values[4] ;
     S1x  = values[5] ; S1y     	= values[6] ; S1z 	= values[7] ;
     S2x  = values[8] ; S2y     	= values[9] ; S2z 	= values[10];
@@ -731,7 +737,7 @@ int XLALSimInspiralSpinTaylorT4(
             m1, m2, tStart, phiStart, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, 
             lnhaty, lnhatz, e1x, e1y, e1z, deltaT, fStart, spinFlags, phaseO);
     if( n < 0 )
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
 
     /* Use the dynamical variables to build the polarizations */
     status = XLALSimInspiralPrecessingPolarizationWaveforms(hplus, hcross,
@@ -754,7 +760,7 @@ int XLALSimInspiralSpinTaylorT4(
     XLALDestroyREAL8TimeSeries(E1y);
     XLALDestroyREAL8TimeSeries(E1z);
     if( status < 0 )
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
 
     return n;
 }
@@ -803,7 +809,7 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
             m1, m2, tStart, phiStart, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, 
             lnhaty, lnhatz, e1x, e1y, e1z, deltaT, fStart, spinFlags, phaseO);
     if( n < 0 )
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
 
     /* Use the dynamical variables to build the polarizations */
     status = XLALSimInspiralPrecessingPolarizationWaveforms(hplus, hcross,
@@ -826,7 +832,7 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
     XLALDestroyREAL8TimeSeries(E1y);
     XLALDestroyREAL8TimeSeries(E1z);
     if( status < 0 )
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
 
     return n;
 }

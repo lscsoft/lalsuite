@@ -109,7 +109,6 @@ LALLatticeCovering (LALStatus *status,			/**< pointer to LALStatus structure */
 		    LatticeType latticeType 		/**< [in] type of lattice to construct */
                     )
 {
-  UINT4 dim;	/* dimension of parameter-space */
   gsl_matrix *generator = NULL;
 
   INITSTATUS( status, "LALLatticeCovering", LATTICECOVERINGC );
@@ -123,11 +122,8 @@ LALLatticeCovering (LALStatus *status,			/**< pointer to LALStatus structure */
   ASSERT ( startPoint, status, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
   ASSERT ( startPoint->data, status, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
 
-  /* determine dimension of parameter-space from metric */
-  dim = metric->size1;
-
   /* check that startPoint has dimensions consistent with metric */
-  ASSERT ( dim == startPoint->length, status, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
+  ASSERT ( metric->size1 == startPoint->length, status, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
 
   /* 1) ----- get the generating matrix for a properly scaled An* lattice */
   if (XLALFindCoveringGenerator (&generator, latticeType, coveringRadius, metric ) < 0)
@@ -346,18 +342,18 @@ XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, 	/**< [out] physica
        !physicalPoint->data || !latticePoint->data || !startPoint->data || !generator->data )
     {
       XLALPrintError ("\nNULL Input received!\n\n");
-      XLAL_ERROR ( "XLALlatticePoint2PhysicalPoint", XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
 
   dim = physicalPoint->length;
   if ( (latticePoint->length != dim) || (generator->size1 != dim) || (generator->size2 != dim) )
     {
       XLALPrintError ("\nInconsistent dimensions in input-vectors/matrices!\n\n");
-      XLAL_ERROR ( "XLALlatticePoint2PhysicalPoint", XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
 
   if ( (buffer = gsl_matrix_calloc (dim, dim)) == NULL ) {
-    XLAL_ERROR ( "XLALlatticePoint2PhysicalPoint", XLAL_ENOMEM);
+    XLAL_ERROR ( XLAL_ENOMEM);
   }
 
   /* create a local copy of the generating-matrix */
@@ -366,7 +362,7 @@ XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, 	/**< [out] physica
   /* create a gsl-vector for summing up the lat^l basis_l vectors (->final result) */
   if ( (res = gsl_vector_calloc (dim)) == NULL ) {
     gsl_matrix_free (buffer);
-    XLAL_ERROR ( "XLALlatticePoint2PhysicalPoint", XLAL_ENOMEM);
+    XLAL_ERROR ( XLAL_ENOMEM);
   }
 
   /* get a vector-view on the startPoint and copy it into res */
@@ -414,13 +410,13 @@ XLALMetricScalarProduct (const gsl_vector *v1,
   /* check that input is non-zero */
   if ( (!v1) || (!v2) || (!gij) ) {
     XLALPrintError ("\nNULL Input received.\n\n");
-    XLAL_ERROR_REAL8("XLALMetricScalarProduct", XLAL_EINVAL);
+    XLAL_ERROR_REAL8(XLAL_EINVAL);
   }
 
   /* check that gij is symmetric */
   if ( !isSymmetric(gij) ) {
     XLALPrintError ("\nInput 'metric' has to be symmetric!\n\n");
-    XLAL_ERROR_REAL8("XLALMetricScalarProduct", XLAL_EINVAL);
+    XLAL_ERROR_REAL8(XLAL_EINVAL);
   }
 
   dim = gij->size1;
@@ -428,7 +424,7 @@ XLALMetricScalarProduct (const gsl_vector *v1,
   /* check that vectors have correct sizes */
   if ( (v1->size != dim) || (v2->size != dim) ) {
     XLALPrintError ("\nVectors v1, v2 must have same dimension as metric gij\n\n");
-    XLAL_ERROR_REAL8("XLALMetricScalarProduct", XLAL_EINVAL);
+    XLAL_ERROR_REAL8(XLAL_EINVAL);
   }
 
   /* calculate scalar product */
@@ -468,19 +464,19 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< [out] orthonormal row vects */
   /* check NULL-vectors on input */
   if ( (!invects) || (!gij) || (!outvects) ) {
     XLALPrintError ("\nNULL Input received.\n\n");
-    XLAL_ERROR("XLALMetricGramSchmidt", XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   /* check that output 'outvects' points to a NULL-vector! */
   if ( *outvects != NULL ) {
     XLALPrintError ("\nOutput-vector not set to NULL\n\n");
-    XLAL_ERROR("XLALMetricGramSchmidt", XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   /* check that gij is symmetric */
   if ( !isSymmetric(gij) ) {
     XLALPrintError ("\nInput 'metric' has to be symmetric!\n\n");
-    XLAL_ERROR("XLALMetricGramSchmidt", XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   numvects = invects->size1;	/* number of rows! */
@@ -489,19 +485,19 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< [out] orthonormal row vects */
   /* can't have more vectors than dimensions */
   if ( numvects > vectdim ) {
     XLALPrintError ("\nInput vectors are not linearly independent\n\n");
-    XLAL_ERROR("XLALMetricGramSchmidt", XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   /* vector-dimension has to be consistent with metric */
   if ( vectdim != gij->size1 ) {
     XLALPrintError ("\nDimension of input vectors inconsistent with metric\n\n");
-    XLAL_ERROR("XLALMetricGramSchmidt", XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   /* prepare output-matrix for orthonormalized vectors in rows*/
   orth = gsl_matrix_calloc ( numvects, vectdim);
   if ( orth == NULL ) {
-    XLAL_ERROR("XLALMetricGramSchmidt", XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   /* prepare vector view-arraw on final orthonormal vectors */
@@ -513,7 +509,7 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< [out] orthonormal row vects */
   /* placeholder for temporary vector */
   para = gsl_vector_alloc(vectdim);
   if ( para == NULL ) {
-    XLAL_ERROR("XLALMetricGramSchmidt", XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   /*---------- main algorithm ---------- */
@@ -535,11 +531,11 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< [out] orthonormal row vects */
 
 	  proj = XLALMetricScalarProduct(&vi.vector, &(ui[j].vector), gij);
 	  if( gsl_vector_scale ( para, proj) ) {	/* para_j = <vi,uj> uj */
-	    XLAL_ERROR("XLALMetricGramSchmidt", XLAL_EFUNC);
+	    XLAL_ERROR(XLAL_EFUNC);
 	  }
 
 	  if ( gsl_vector_sub ( &(ui[i].vector), para) ) {	/* ui -= para_j */
-	    XLAL_ERROR("XLALMetricGramSchmidt", XLAL_EFUNC);
+	    XLAL_ERROR(XLAL_EFUNC);
 	  }
 
 	} /* for j < i-1 */
@@ -550,7 +546,7 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< [out] orthonormal row vects */
       norm = sqrt(norm);
 
       if ( gsl_vector_scale ( &(ui[i].vector), 1.0/norm ) ) {
-	XLAL_ERROR("XLALMetricGramSchmidt", XLAL_EFUNC);
+	XLAL_ERROR(XLAL_EFUNC);
       }
 
     } /* for i < numvects */
@@ -604,15 +600,15 @@ XLALFindCoveringGenerator (gsl_matrix **outmatrix, /**< [out] generating matrix 
   /* check validity of input */
   if ( !outmatrix || !gij ) {
       XLALPrintError ("\nERROR: NULL Input \n\n");
-      XLAL_ERROR("XLALFindCoveringGenerator", XLAL_EINVAL);
+      XLAL_ERROR(XLAL_EINVAL);
   }
   if ( *outmatrix != NULL ) {
     XLALPrintError ("\nERROR: Output matrix not set to NULL\n\n");
-    XLAL_ERROR("XLALFindCoveringGenerator", XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   if ( ! isSymmetric (gij) ) {
     XLALPrintError ("\nERROR: metric is not symmetric!!\n\n");
-    XLAL_ERROR("XLALFindCoveringGenerator", XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   dim = gij->size1;
@@ -634,7 +630,7 @@ XLALFindCoveringGenerator (gsl_matrix **outmatrix, /**< [out] generating matrix 
 
   /* ----- find orthonormal basis wrt given metric */
   if ( XLALMetricGramSchmidt (&basis, generator1, gij) ) {
-    XLAL_ERROR("XLALFindCoveringGenerator", XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* ----- express generating matrix in this new Euklidean basis:
@@ -643,7 +639,7 @@ XLALFindCoveringGenerator (gsl_matrix **outmatrix, /**< [out] generating matrix 
    * orthonormal basis in 'old' coordinates
    */
   if ( (generator2 = gsl_matrix_calloc (dim, dim)) == NULL ) {
-    XLAL_ERROR("XLALFindCoveringGenerator", XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   /* from the gsl-documentation:
@@ -657,7 +653,7 @@ XLALFindCoveringGenerator (gsl_matrix **outmatrix, /**< [out] generating matrix 
   if ( gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, generator1, basis, 0.0, generator2))
     {
       XLALPrintError ("\nERROR: Call to  gsl_blas_dgemm() failed\n\n");
-      XLAL_ERROR("XLALFindCoveringGenerator", XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
     }
 
   /* 4) ----- finally, scale the generator to the desired covering radius
@@ -700,14 +696,14 @@ XLALReduceGenerator2FullRank (gsl_matrix **outmatrix, 	/**< [out] full-rank squa
   if ( inmatrix == NULL )
     {
       XLALPrintError ("\nNULL Input received.\n\n");
-      XLAL_ERROR("XLALReduceGenerator2FullRank", XLAL_EINVAL);
+      XLAL_ERROR(XLAL_EINVAL);
     }
 
   /* check that output 'outmatrix' points to a NULL-vector! */
   if ( *outmatrix != NULL )
     {
       XLALPrintError ("\nOutput-vector not set to NULL\n\n");
-      XLAL_ERROR("XLALReduceGenerator2FullRank", XLAL_EINVAL);
+      XLAL_ERROR(XLAL_EINVAL);
     }
 
   rows = inmatrix->size1;
@@ -717,12 +713,12 @@ XLALReduceGenerator2FullRank (gsl_matrix **outmatrix, 	/**< [out] full-rank squa
   if ( rows > cols )
     {
       XLALPrintError ("\nERROR: input-matrix must have full row-rank!\n\n");
-      XLAL_ERROR("XLALReduceGenerator2FullRank", XLAL_EINVAL);
+      XLAL_ERROR(XLAL_EINVAL);
     }
 
   /* allocate output matrix */
   if ( (sq = gsl_matrix_calloc (rows, rows)) == NULL ) {
-    XLAL_ERROR("XLALReduceGenerator2FullRank", XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   /* if input-matrix is quadratic, we're done */
@@ -732,7 +728,7 @@ XLALReduceGenerator2FullRank (gsl_matrix **outmatrix, 	/**< [out] full-rank squa
     {
       gsl_matrix *gij = gsl_matrix_alloc( cols, cols );
       if ( !gij ){
-	XLAL_ERROR("XLALReduceGenerator2FullRank", XLAL_ENOMEM);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
       gsl_matrix_set_identity (gij);	/* use Euklidean metric for orthonormalization*/
 
@@ -744,7 +740,7 @@ XLALReduceGenerator2FullRank (gsl_matrix **outmatrix, 	/**< [out] full-rank squa
 
       /* ----- find orthonormal basis in the lattice's space*/
       if ( XLALMetricGramSchmidt (&basis, inmatrix, gij) ) {
-	XLAL_ERROR("XLALReduceGenerator2FullRank", XLAL_EFUNC);
+	XLAL_ERROR(XLAL_EFUNC);
       }
 
       /* ----- express generating matrix in this new Euklidean basis: inmatrix.basis^T */
@@ -760,7 +756,7 @@ XLALReduceGenerator2FullRank (gsl_matrix **outmatrix, 	/**< [out] full-rank squa
       if ( gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, inmatrix, basis, 0.0, sq))
 	{
 	  XLALPrintError ("\nERROR: Call to  gsl_blas_dgemm() failed\n\n");
-	  XLAL_ERROR("XLALReduceGenerator2FullRank", XLAL_EFUNC);
+	  XLAL_ERROR(XLAL_EFUNC);
 	}
 
       /* free memory */
@@ -805,7 +801,7 @@ XLALGetLatticeGenerator (gsl_matrix **outmatrix,	/**< [out] generating matrix */
   if ( *outmatrix != NULL )
     {
       XLALPrintError ("\nOutput-vector not set to NULL\n\n");
-      XLAL_ERROR("XLALGetLatticeGenerator", XLAL_EINVAL);
+      XLAL_ERROR(XLAL_EINVAL);
     }
 
   switch (type)
@@ -868,7 +864,7 @@ XLALGetLatticeGenerator (gsl_matrix **outmatrix,	/**< [out] generating matrix */
 
     default:
       XLALPrintError ("\nIllegal value for lattice-type (%d)\n\n", type);
-      XLAL_ERROR("XLALGetLatticeGenerator", XLAL_EINVAL);
+      XLAL_ERROR(XLAL_EINVAL);
       break;
 
     } /* switch(type) */
@@ -1155,12 +1151,12 @@ XLALgsl2LALmetric (const gsl_matrix *gmetric)
 
   if ( gmetric == NULL ) {
     XLALPrintError ("\nNULL Input received!\n\n");
-    XLAL_ERROR_NULL ( "XLALgsl2LALmetric", XLAL_EINVAL);
+    XLAL_ERROR_NULL ( XLAL_EINVAL);
   }
 
   if ( !isSymmetric(gmetric) ) {
     XLALPrintError ("\nInput matrix is not symmetric!\n\n");
-    XLAL_ERROR_NULL ( "XLALgsl2LALmetric", XLAL_EINVAL);
+    XLAL_ERROR_NULL ( XLAL_EINVAL);
   }
 
   dim = gmetric->size1;
@@ -1168,7 +1164,7 @@ XLALgsl2LALmetric (const gsl_matrix *gmetric)
 
   metric = XLALCreateREAL8Vector ( length );
   if ( ! metric ) {
-    XLAL_ERROR_NULL( "XLALgsl2LALmetric", XLAL_EFUNC);
+    XLAL_ERROR_NULL( XLAL_EFUNC);
   }
 
   for (i=0; i < dim; i++)
@@ -1189,13 +1185,13 @@ XLALmetric2gsl (const REAL8Vector *metric)
   INT4 i,j;
 
   if ( !metric )
-    XLAL_ERROR_NULL ("XLALmetric2gsl", XLAL_EINVAL);
+    XLAL_ERROR_NULL (XLAL_EINVAL);
 
   if ( (dim = XLALFindMetricDim ( metric )) <= 0 )
-    XLAL_ERROR_NULL ("XLALmetric2gsl", XLAL_EFUNC);
+    XLAL_ERROR_NULL (XLAL_EFUNC);
 
   if ( (gij = gsl_matrix_calloc( dim, dim )) == NULL )
-    XLAL_ERROR_NULL ("XLALmetric2gsl", XLAL_ENOMEM);
+    XLAL_ERROR_NULL (XLAL_ENOMEM);
 
   for (i=0; i < dim; i++ )
     for (j=0; j < dim; j++ )

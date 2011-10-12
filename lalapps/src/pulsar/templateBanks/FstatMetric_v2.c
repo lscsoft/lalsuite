@@ -192,8 +192,6 @@ void XLALDestroyResultHistory ( ResultHistory_t * history );
 int
 main(int argc, char *argv[])
 {
-  const CHAR *fn = argv[0];
-
   ConfigVariables config = empty_ConfigVariables;
   UserVariables_t uvar = empty_UserVariables;
   DopplerMetric *metric;
@@ -207,7 +205,7 @@ main(int argc, char *argv[])
 
   /* register user-variables */
   if ( XLALGetDebugLevel (argc, argv, 'v') != XLAL_SUCCESS ) {
-    XLALPrintError( "%s(): XLALGetDebugLevel() failed\n", fn );
+    XLALPrintError( "%s(): XLALGetDebugLevel() failed\n", __func__ );
     return EXIT_FAILURE;
   }
 
@@ -215,13 +213,13 @@ main(int argc, char *argv[])
   LogSetLevel ( lalDebugLevel );
 
   if ( initUserVars(&uvar) != XLAL_SUCCESS ) {
-    XLALPrintError( "%s(): initUserVars() failed\n", fn );
+    XLALPrintError( "%s(): initUserVars() failed\n", __func__ );
     return EXIT_FAILURE;
   }
 
   /* read cmdline & cfgfile  */
   if ( XLALUserVarReadAllInput(argc,argv) != XLAL_SUCCESS ) {
-    XLALPrintError( "%s(): XLALUserVarReadAllInput() failed\n", fn );
+    XLALPrintError( "%s(): XLALUserVarReadAllInput() failed\n", __func__ );
     return EXIT_FAILURE;
   }
 
@@ -255,7 +253,7 @@ main(int argc, char *argv[])
 
   /* basic setup and initializations */
   if ( XLALInitCode( &config, &uvar, argv[0] ) != XLAL_SUCCESS ) {
-    LogPrintf (LOG_CRITICAL, "%s: XInitCode() failed with xlalErrno = %d.\n\n", fn, xlalErrno );
+    LogPrintf (LOG_CRITICAL, "%s: XInitCode() failed with xlalErrno = %d.\n\n", __func__, xlalErrno );
     return FSTATMETRIC_EXLAL;
   }
   config.history->VCSInfoString = VCSInfoString;
@@ -282,13 +280,13 @@ main(int argc, char *argv[])
       FILE *fpMetric;
       if ( (fpMetric = fopen ( uvar.outputMetric, "wb" )) == NULL ) {
 	LogPrintf (LOG_CRITICAL, "%s: failed to open '%s' for writing. error = '%s'\n",
-		   fn, uvar.outputMetric, strerror(errno));
+		   __func__, uvar.outputMetric, strerror(errno));
 	return FSTATMETRIC_EFILE;
       }
 
       if ( XLALOutputDopplerMetric ( fpMetric, metric, config.history ) != XLAL_SUCCESS  ) {
 	LogPrintf (LOG_CRITICAL, "%s: failed to write Doppler metric into output-file '%s'. xlalErrno = %d\n\n",
-		   fn, uvar.outputMetric, xlalErrno );
+		   __func__, uvar.outputMetric, xlalErrno );
 	return FSTATMETRIC_EFILE;
       }
 
@@ -299,7 +297,7 @@ main(int argc, char *argv[])
   /* ----- done: free all memory */
   XLALDestroyDopplerMetric ( metric );
   if ( XLALDestroyConfig( &config ) != XLAL_SUCCESS ) {
-    LogPrintf (LOG_CRITICAL, "%s: XLADestroyConfig() failed, xlalErrno = %d.\n\n", fn, xlalErrno );
+    LogPrintf (LOG_CRITICAL, "%s: XLADestroyConfig() failed, xlalErrno = %d.\n\n", __func__, xlalErrno );
     return FSTATMETRIC_EXLAL;
   }
 
@@ -333,7 +331,7 @@ initUserVars (UserVariables_t *uvar)
   uvar->projection = 0;
   if ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Call to XLALCreateStringVector() failed with xlalErrno = %d\n", xlalErrno );
-    XLAL_ERROR ( __func__, XLAL_ENOMEM );
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
 
   uvar->IFOweights = NULL;
@@ -343,7 +341,7 @@ initUserVars (UserVariables_t *uvar)
 
   if ( (uvar->coords = XLALCreateStringVector ( "Freq_Nat", "Alpha", "Delta", "f1dot_Nat", NULL )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Call to XLALCreateStringVector() failed with xlalErrno = %d\n", xlalErrno );
-    XLAL_ERROR ( __func__, XLAL_ENOMEM );
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
 
   /* register all our user-variables */
@@ -387,19 +385,17 @@ initUserVars (UserVariables_t *uvar)
 int
 XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name)
 {
-  const CHAR *fn = __func__;
-
   if ( !cfg || !uvar || !app_name ) {
-    LogPrintf (LOG_CRITICAL, "%s: illegal NULL pointer input.\n\n", fn );
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    LogPrintf (LOG_CRITICAL, "%s: illegal NULL pointer input.\n\n", __func__ );
+    XLAL_ERROR (XLAL_EINVAL );
   }
 
   /* ----- determine start-time from user-input */
   XLALGPSSetREAL8( &(cfg->startTime), uvar->startTime );
 
   if ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear)) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "%s: InitEphemeris() Failed to initialize ephemeris data!\n\n", fn);
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    LogPrintf (LOG_CRITICAL, "%s: InitEphemeris() Failed to initialize ephemeris data!\n\n", __func__);
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* ----- figure out reference time */
@@ -437,20 +433,20 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     UINT4 numDet = uvar->IFOs->length;
 
     if ( numDet > DOPPLERMETRIC_MAX_DETECTORS ) {
-      LogPrintf (LOG_CRITICAL, "%s: More detectors (%d) specified than allowed (%d)\n", fn, numDet, DOPPLERMETRIC_MAX_DETECTORS );
-      XLAL_ERROR ( fn, XLAL_EINVAL );
+      LogPrintf (LOG_CRITICAL, "%s: More detectors (%d) specified than allowed (%d)\n", __func__, numDet, DOPPLERMETRIC_MAX_DETECTORS );
+      XLAL_ERROR ( XLAL_EINVAL );
     }
     if ( uvar->IFOweights && (uvar->IFOweights->length != numDet ) )
       {
 	LogPrintf (LOG_CRITICAL, "%s: number of IFOweights (%d) must agree with the number of IFOs (%d)!\n\n",
-		   fn, uvar->IFOweights->length, numDet );
-	XLAL_ERROR ( fn, XLAL_EINVAL );
+		   __func__, uvar->IFOweights->length, numDet );
+	XLAL_ERROR ( XLAL_EINVAL );
       }
 
     cfg->detInfo = empty_MultiDetectorInfo;
     if ( XLALParseMultiDetectorInfo ( &cfg->detInfo, uvar->IFOs, uvar->IFOweights ) != XLAL_SUCCESS ) {
-      LogPrintf (LOG_CRITICAL, "%s: XLALParseMultiDetectorInfo() failed to parse detector names and/or weights. errno = %d.\n\n", fn, xlalErrno);
-      XLAL_ERROR ( fn, XLAL_EFUNC );
+      LogPrintf (LOG_CRITICAL, "%s: XLALParseMultiDetectorInfo() failed to parse detector names and/or weights. errno = %d.\n\n", __func__, xlalErrno);
+      XLAL_ERROR ( XLAL_EFUNC );
     }
 
   } /* handle detector input */
@@ -458,8 +454,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 
   /* ---------- translate coordinate system into internal representation ---------- */
   if ( XLALDopplerCoordinateNames2System ( &cfg->coordSys, uvar->coords ) ) {
-    LogPrintf (LOG_CRITICAL, "%s: Call to XLALDopplerCoordinateNames2System() failed. errno = %d\n\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    LogPrintf (LOG_CRITICAL, "%s: Call to XLALDopplerCoordinateNames2System() failed. errno = %d\n\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* ---------- record full 'history' up to and including this application ---------- */
@@ -469,21 +465,21 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     size_t len = strlen ( app_name ) + 1;
 
     if ( (cfg->history = XLALCalloc ( 1, sizeof(*cfg->history))) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "%s: XLALCalloc(1,%d) failed.\n\n", fn, sizeof(*cfg->history));
-      XLAL_ERROR ( fn, XLAL_ENOMEM );
+      LogPrintf (LOG_CRITICAL, "%s: XLALCalloc(1,%d) failed.\n\n", __func__, sizeof(*cfg->history));
+      XLAL_ERROR ( XLAL_ENOMEM );
     }
 
     if ( (tmp = XLALMalloc ( len )) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "%s: XLALMalloc (%s) failed.\n\n", fn, len );
-      XLAL_ERROR ( fn, XLAL_ENOMEM );
+      LogPrintf (LOG_CRITICAL, "%s: XLALMalloc (%s) failed.\n\n", __func__, len );
+      XLAL_ERROR ( XLAL_ENOMEM );
     }
     strcpy ( tmp, app_name );
     cfg->history->app_name = tmp;
 
     /* get commandline describing search*/
     if ( (cmdline = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "%s: XLALUserVarGetLog() failed with xlalErrno = %d.\n\n", fn, xlalErrno );
-      XLAL_ERROR ( fn, XLAL_EFUNC );
+      LogPrintf (LOG_CRITICAL, "%s: XLALUserVarGetLog() failed with xlalErrno = %d.\n\n", __func__, xlalErrno );
+      XLAL_ERROR ( XLAL_EFUNC );
     }
     cfg->history->cmdline = cmdline;
   } /* record history */
@@ -498,11 +494,9 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 int
 XLALDestroyConfig ( ConfigVariables *cfg )
 {
-  const CHAR *fn = __func__;
-
   if ( !cfg ) {
-    LogPrintf (LOG_CRITICAL, "%s: invalid NULL input!\n\n", fn );
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    LogPrintf (LOG_CRITICAL, "%s: invalid NULL input!\n\n", __func__ );
+    XLAL_ERROR (XLAL_EINVAL );
   }
 
   XLALDestroyUserVars ();
@@ -524,13 +518,12 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
 	       )
 {
 #define FNAME_LENGTH 1024
-  const CHAR *fn = __func__;
   EphemerisData *edat;
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
 
   if ( !ephemYear ) {
-    XLALPrintError ("\n%s: NULL pointer passed as ephemeris year range!\n", fn);
+    XLALPrintError ("\n%s: NULL pointer passed as ephemeris year range!\n", __func__);
     return NULL;
   }
 
@@ -549,7 +542,7 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
   EphemSun[FNAME_LENGTH-1] = 0;
 
   if ( (edat = XLALInitBarycenter(EphemEarth, EphemSun)) == NULL ) {
-    XLALPrintError ( "%s: XLALInitBarycenter() failed with xlalErrno = %d.\n\n", fn, xlalErrno );
+    XLALPrintError ( "%s: XLALInitBarycenter() failed with xlalErrno = %d.\n\n", __func__, xlalErrno );
     return NULL;
   }
 
@@ -560,8 +553,6 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
 int
 XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHistory_t *history )
 {
-  const CHAR *fn = __func__;
-
   UINT4 i;
   REAL8 A, B, C, D;
   const DopplerMetricParams *meta;
@@ -569,8 +560,8 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
   const PulsarAmplitudeParams *Amp;
 
   if ( !fp || !metric ) {
-    LogPrintf (LOG_CRITICAL, "%s: illegal NULL input.\n\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    LogPrintf (LOG_CRITICAL, "%s: illegal NULL input.\n\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* useful shortcuts */

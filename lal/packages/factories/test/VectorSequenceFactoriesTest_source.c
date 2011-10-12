@@ -22,8 +22,10 @@
 static void FUNC ( void )
 {
   CreateVectorSequenceIn input   = { 2, 8 };
+#ifndef LAL_NDEBUG
   CreateVectorSequenceIn badslen = { 0, 8 };
   CreateVectorSequenceIn badvlen = { 2, 0 };
+#endif
   static LALStatus  status;
   static VTYPE  *sequence;
   static VTYPE   sstore;
@@ -84,8 +86,6 @@ static void FUNC ( void )
   }
 
 #else
-  badslen.length = 0;
-  badvlen.vectorLength = 0;
   sequence = &sstore;
 #endif
 

@@ -12,6 +12,9 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
+  swig/Makefile \
+  swig/octave/Makefile \
+  swig/python/Makefile \
   test/Makefile
 ])
 AM_INIT_AUTOMAKE([foreign])
@@ -19,6 +22,7 @@ AM_INIT_AUTOMAKE([foreign])
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
+LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -125,6 +129,9 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 LALSUITE_CHECK_LIB([LAL],[6.5.0],[LALVersion],[lal/LALStdio.h])
 LALSUITE_CHECK_LIB([LALSupport],[6.5.0],[LALOpenDataFile],[lal/FileIO.h])
 
+# check for SWIG wrapping
+LALSUITE_ENABLE_SWIG
+
 # add gcc specific flags
 if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags"
@@ -143,7 +150,11 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LALSimulation has now been successfully configured
+        LALSimulation has now been successfully configured:
+
+                SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
+                SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+
         and will be installed under the directory:
 
           ${prefix}

@@ -290,17 +290,17 @@ void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
 
   if (IFOdata->timeData==NULL){
     XLALPrintError(" ERROR in templateStatPhase(): encountered unallocated 'timeData'.\n");
-    XLAL_ERROR_VOID("LALInferenceTemplateStatPhase",XLAL_EFAULT);
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   }
   if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) {
     XLALPrintError(" ERROR in templateStatPhase(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
-    XLAL_ERROR_VOID("LALInferenceTemplateStatPhase",XLAL_EFAULT);
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   }
   if (LALInferenceCheckVariable(IFOdata->modelParams, "PNOrder"))
     PNOrder = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "PNOrder");
   if ((PNOrder!=2.5) && (PNOrder!=2.0)) {
     XLALPrintError(" ERROR in templateStatPhase(): only PN orders 2.0 or 2.5 allowed.");
-    XLAL_ERROR_VOID("LALInferenceTemplateStatPhase",XLAL_EFAULT);
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   }
   ampliConst  = 0.5*log(5.0) + (5.0/6.0)*log(LAL_G_SI) - log(2.0) - 0.5*log(6.0) - (2.0/3.0)*log(LAL_PI) - 1.5*log((double)LAL_C_SI);
   ampliConst  = exp(ampliConst + 0.5*log_eta + (5.0/6.0)*log(mt) - (log(LAL_PC_SI)+log(1.0e+6)));
@@ -363,7 +363,7 @@ void LALInferenceTemplateNullFreqdomain(LALInferenceIFOData *IFOdata)
   UINT4 i;
   if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) {
     XLALPrintError(" ERROR in templateNullFreqdomain(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
-    XLAL_ERROR_VOID("LALInferenceTemplateNullFreqdomain",XLAL_EFAULT);
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   }
   for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i){
     IFOdata->freqModelhPlus->data->data[i].re  = 0.0;
@@ -386,7 +386,7 @@ void LALInferenceTemplateNullTimedomain(LALInferenceIFOData *IFOdata)
   UINT4 i;
   if ((IFOdata->timeModelhPlus==NULL) || (IFOdata->timeModelhCross==NULL)) {
     XLALPrintError(" ERROR in templateNullTimedomain(): encountered unallocated 'timeModelhPlus/-Cross'.\n");
-    XLAL_ERROR_VOID("LALInferenceTemplateNullTimedomain",XLAL_EFAULT);
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   }
   for (i=0; i<IFOdata->timeModelhPlus->data->length; ++i){
     IFOdata->timeModelhPlus->data->data[i]  = 0.0;
@@ -554,7 +554,7 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 		template.approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
 		if(template.approximant!=PhenSpinTaylorRD) {
 			XLALPrintError("Error, LALInferenceTemplatePSTRD can only use PhenSpinTaylorRD approximant!");
-			XLAL_ERROR_VOID("LALInferenceTemplatePSTRD",XLAL_EDATA);
+			XLAL_ERROR_VOID(XLAL_EDATA);
 		}
 	}
 	
@@ -667,14 +667,14 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
     approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
   else {
     XLALPrintError(" ERROR in templateLAL(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
-    XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EDATA);
+    XLAL_ERROR_VOID(XLAL_EDATA);
   }
 
   if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_PNORDER"))
     order = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
   else {
     XLALPrintError(" ERROR in templateLAL(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
-    XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EDATA);
+    XLAL_ERROR_VOID(XLAL_EDATA);
   }
 
   /*fprintf(stdout, " templateLAL() - approximant = %d,  PN order = %d\n", approximant, order);*/
@@ -682,16 +682,16 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   /* little consistency check (otherwise no output without warning): */
   if (((approximant==EOBNR) || (approximant==EOB)) && (order!=LAL_PNORDER_PSEUDO_FOUR)) {
     XLALPrintError(" ERROR in templateLAL(): \"EOB\" and \"EOBNR\" templates require \"LAL_PNORDER_PSEUDO_FOUR\" PN order!\n");  
-    XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EDATA);
+    XLAL_ERROR_VOID(XLAL_EDATA);
   }
     
   if (IFOdata->timeData==NULL) {
     XLALPrintError(" ERROR in templateLAL(): encountered unallocated 'timeData'.\n");
-    XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EDATA);
+    XLAL_ERROR_VOID(XLAL_EDATA);
   }
   if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) {
     XLALPrintError(" ERROR in templateLAL(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
-    XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EDATA);
+    XLAL_ERROR_VOID(XLAL_EDATA);
   }
   deltaT = IFOdata->timeData->deltaT;
 
@@ -832,12 +832,12 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
     /* apply window & execute FT of plus component: */
     if (IFOdata->window==NULL) {
       XLALPrintError(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->window'.\n");
-      XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EFAULT);
+      XLAL_ERROR_VOID(XLAL_EFAULT);
     }
     XLALDDVectorMultiply(IFOdata->timeModelhPlus->data, IFOdata->timeModelhPlus->data, IFOdata->window->data);
     if (IFOdata->timeToFreqFFTPlan==NULL) {
       XLALPrintError(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->timeToFreqFFTPlan'.\n");
-      XLAL_ERROR_VOID("LALInferenceTemplateLAL",XLAL_EFAULT);
+      XLAL_ERROR_VOID(XLAL_EFAULT);
     }
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
   }  else {             /*  (LAL function returns FREQUENCY-DOMAIN template)  */
@@ -1441,14 +1441,14 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 		approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
 	else {
 	  XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
-	  XLAL_ERROR_VOID("LALInferenceTemplateLALGenerateInspiral",XLAL_EDATA);
+	  XLAL_ERROR_VOID(XLAL_EDATA);
 	}
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_PNORDER"))
 		order = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
 	else {
 	  XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
-	  XLAL_ERROR_VOID("LALInferenceTemplateLALGenerateInspiral",XLAL_EDATA);
+	  XLAL_ERROR_VOID(XLAL_EDATA);
 	}
 	
 	XLALInspiralGetApproximantString( approximant_order, LIGOMETA_WAVEFORM_MAX, (Approximant) approximant, (LALPNOrder)  order);
@@ -1508,7 +1508,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 	
 	if (IFOdata->timeData==NULL) {
 		XLALPrintError(" ERROR in templateLALGenerateInspiral(): encountered unallocated 'timeData'.\n");
-		XLAL_ERROR_VOID("LALInferenceTemplateLALGenerateInspiral",XLAL_EFAULT);
+		XLAL_ERROR_VOID(XLAL_EFAULT);
 	}
 	
 	ppnParams.deltaT = IFOdata->timeData->deltaT;

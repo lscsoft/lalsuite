@@ -71,6 +71,7 @@ typedef struct
    INT4 noiseWeightOff;
    INT4 printAllULvalues;
    INT4 fastchisqinv;
+   INT4 useSSE;
 } inputParamsStruct;
 
 typedef struct

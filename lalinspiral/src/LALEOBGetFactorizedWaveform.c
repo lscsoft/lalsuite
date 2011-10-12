@@ -60,7 +60,7 @@ int XLALCalcFacWaveformCoefficients(
   if ( dM2 < 0 )
   {
     XLALPrintError( "eta seems to be < 0.25 - this isn't allowed!\n" );
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   dM  = sqrt( dM2 );
@@ -447,7 +447,7 @@ int XLALModifyFacWaveformCoefficients( FacWaveformCoeffs * const coeffs,
 
   if ( !coeffs )
   {
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* Tweak the relevant coefficients for the generation of the waveform */

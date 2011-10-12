@@ -25,7 +25,7 @@ Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267
 int XLALTaylorF2ReducedSpin(REAL4Vector *signalvec, 
 		InspiralTemplate *params) {
 
-    REAL8 df, shft, phi0, amp0, amp, f, m, eta, delta, chi_s, chi_a, chi, t0, Psi;
+    REAL8 df, shft, phi0, amp0, amp, f, m, eta, delta, chi_s, chi_a, chi, Psi;
     REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S;
     REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S; 
     REAL8 v, v2, v3, v4, v5, v6, v7, v0, mSevenBySix, piM, oneByThree; 
@@ -34,14 +34,14 @@ int XLALTaylorF2ReducedSpin(REAL4Vector *signalvec,
     /* check inputs */
     if (!signalvec || !(signalvec->data) || !params) {
         XLALPrintError(LALINSPIRALH_MSGENULL);
-        XLAL_ERROR(__func__, XLAL_EFAULT);
+        XLAL_ERROR(XLAL_EFAULT);
     }
     if ((signalvec->length < 2) || (params->fCutoff <= params->fLower)  
             || (params->mass1 <= 0) || (params->mass2 <= 0)
             || (params->spin1[0] != 0) || (params->spin1[1] != 0) 
             || (params->spin2[0] != 0) || (params->spin2[1] != 0)) {
         XLALPrintError(LALINSPIRALH_MSGECHOICE);
-        XLAL_ERROR(__func__, XLAL_EDOM);
+        XLAL_ERROR(XLAL_EDOM);
     }
 
 	/* fill the waveform with zeros */
@@ -64,7 +64,7 @@ int XLALTaylorF2ReducedSpin(REAL4Vector *signalvec,
     amp0 = pow(m,5./6.)*sqrt(5.*eta/24.)/(pow(LAL_PI,2./3.)*params->distance/LAL_C_SI);
     shft = -2.*LAL_PI * ((REAL8)signalvec->length/params->tSampling + 
             params->nStartPad/params->tSampling + params->startTime);
-    t0 = params->startTime;
+    // UNUSED!!: REAL8 t0 = params->startTime;
     phi0 = params->startPhase;
 
     /* spin terms in the amplitude and phase (in terms of the reduced
@@ -235,17 +235,17 @@ int XLALTaylorF2ReducedSpinTemplates(REAL4Vector *signalvec1,
 	/* check inputs */
 	if (!signalvec1 || !signalvec2 || !(signalvec1->data) || !(signalvec2->data)) {
     	XLALPrintError(LALINSPIRALH_MSGENULL);
-    	XLAL_ERROR(__func__, LALINSPIRALH_ENULL);
+    	XLAL_ERROR(LALINSPIRALH_ENULL);
   	}
 
   	/* generate one waveform with startPhase specified by the user */
   	if (!XLALTaylorF2ReducedSpin(signalvec1, params))
-    	XLAL_ERROR(__func__, XLAL_EFUNC);
+    	XLAL_ERROR(XLAL_EFUNC);
 
   	/* generate another waveform orthogonal to it */
   	params->startPhase += LAL_PI_2;
   	if (!XLALTaylorF2ReducedSpin(signalvec2, params))
-    	XLAL_ERROR(__func__, XLAL_EFUNC);
+    	XLAL_ERROR(XLAL_EFUNC);
 
     return XLAL_SUCCESS;
 }

@@ -368,7 +368,7 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio(
   else
   {
     /* unsupported distribution type */
-    XLAL_ERROR_NULL("XLALRandomInspiralTotalMassRatio", XLAL_EINVAL);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
   }
   inj->mass1 = (ratio * mtotal) / (ratio + 1);
   inj->mass2 = mtotal / (ratio + 1);
@@ -405,7 +405,7 @@ SimInspiralTable* XLALRandomInspiralTotalMassFraction(
   else
   {
     /* unsupported distribution type */
-    XLAL_ERROR_NULL("XLALRandomInspiralTotalMassFraction", XLAL_EINVAL);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
   }
   inj->mass1 = fraction * mtotal;
   inj->mass2 = mtotal - inj->mass1;

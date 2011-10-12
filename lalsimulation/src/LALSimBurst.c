@@ -86,7 +86,7 @@ REAL8 XLALMeasureHPeak(const REAL8TimeSeries *series)
 
 	if(!series->data->length) {
 		XLALPrintError("%s(): length must be > 0\n", __func__);
-		XLAL_ERROR_REAL8(__func__, XLAL_EBADLEN);
+		XLAL_ERROR_REAL8(XLAL_EBADLEN);
 	}
 
 	hpeak = series->data->data[0];
@@ -236,7 +236,7 @@ REAL8 XLALMeasureEoverRsquared(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross)
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
 		XLALDestroyREAL8FFTPlan(plan);
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	i = XLALREAL8TimeFreqFFT(tilde_hplus, hplus, plan);
 	i |= XLALREAL8TimeFreqFFT(tilde_hcross, hcross, plan);
@@ -244,7 +244,7 @@ REAL8 XLALMeasureEoverRsquared(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross)
 	if(i) {
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	/* measure E / r^2 */
@@ -311,7 +311,7 @@ int XLALGenerateImpulseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	/* set to zero */
@@ -403,7 +403,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	if(duration < 0 || bandwidth < 0 || sigma_t_squared < 0 || int_hdot_squared < 0 || delta_t <= 0) {
 		XLALPrintError("%s(): invalid input parameters\n", __func__);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 
 	/* length of the injection time series is 30 * duration, rounded to
@@ -424,7 +424,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	/* fill with independent zero-mean unit variance Gaussian random
@@ -443,7 +443,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	for(i = 0; i < window->data->length; i++) {
 		(*hplus)->data->data[i] *= window->data->data[i];
@@ -463,7 +463,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	i = XLALREAL8TimeFreqFFT(tilde_hplus, *hplus, plan);
 	i |= XLALREAL8TimeFreqFFT(tilde_hcross, *hcross, plan);
@@ -474,7 +474,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	/* apply the frequency-domain Gaussian window.  the window
@@ -491,7 +491,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	XLALResizeREAL8Sequence(window->data, tilde_hplus->data->length - (unsigned) floor(frequency / tilde_hplus->deltaF + 0.5), tilde_hplus->data->length);
 	for(i = 0; i < window->data->length; i++) {
@@ -522,7 +522,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	i = XLALREAL8FreqTimeFFT(*hplus, tilde_hplus, plan);
 	i |= XLALREAL8FreqTimeFFT(*hcross, tilde_hcross, plan);
@@ -533,7 +533,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	/* force the sample rate incase round-off has shifted it a bit */
@@ -549,7 +549,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	for(i = 0; i < window->data->length; i++) {
 		(*hplus)->data->data[i] *= window->data->data[i];
@@ -651,7 +651,7 @@ int XLALSimBurstSineGaussian(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	/* populate */
@@ -673,7 +673,7 @@ int XLALSimBurstSineGaussian(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	for(i = 0; i < window->data->length; i++) {
 		(*hplus)->data->data[i] *= window->data->data[i];
@@ -732,7 +732,7 @@ int XLALGenerateStringCusp(
 	if(amplitude < 0 || f_high < f_low || delta_t <= 0) {
 		XLALPrintError("%s(): invalid input parameters\n", __func__);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 
 	/* length of the injection time series is 15 / f_low, rounded to
@@ -757,7 +757,7 @@ int XLALGenerateStringCusp(
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
 		XLALDestroyREAL8FFTPlan(plan);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	XLALUnitMultiply(&tilde_h->sampleUnits, &(*hplus)->sampleUnits, &lalSecondUnit);
 
@@ -797,7 +797,7 @@ int XLALGenerateStringCusp(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	/* force the sample rate incase round-off has shifted it a bit */

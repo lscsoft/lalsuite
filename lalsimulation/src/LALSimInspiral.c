@@ -122,7 +122,6 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 	       	int m                 /**< mode number m */
 		)
 {
-	static const char *func = "XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries";
 	COMPLEX16TimeSeries *h;
 	UINT4 j;
 	LAL_CHECK_VALID_SERIES(x, NULL);
@@ -130,7 +129,7 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 	LAL_CHECK_CONSISTENT_TIME_SERIES(x, phi, NULL);
 	h = XLALCreateCOMPLEX16TimeSeries( "H_MODE", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
 	if ( !h )
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	if ( l == 2 && abs(m) == 2 )
 		for ( j = 0; j < h->data->length; ++j )
 			h->data->data[j] = XLALSimInspiralPNMode22(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
@@ -148,8 +147,8 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 			h->data->data[j] = XLALSimInspiralPNMode31(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
 	else {
 		XLALDestroyCOMPLEX16TimeSeries(h);
-		XLALPrintError("XLAL Error - %s: Unsupported mode l=%d, m=%d\n", func, l, m );
-		XLAL_ERROR_NULL(func, XLAL_EINVAL);
+		XLALPrintError("XLAL Error - %s: Unsupported mode l=%d, m=%d\n", __func__, l, m );
+		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 	if ( m < 0 ) {
 		REAL8 sign = l % 2 ? -1.0 : 1.0;
@@ -186,7 +185,6 @@ int XLALSimInspiralPNPolarizationWaveformsFromModes(
 	       	int O                     /**< twice post-Newtonian order */
 		)
 {
-	static const char *func = "XLALSimInspiralPNPolarizationWaveforms";
 	int l, m;
 	LAL_CHECK_VALID_SERIES(x, XLAL_FAILURE);
 	LAL_CHECK_VALID_SERIES(phi, XLAL_FAILURE);
@@ -194,7 +192,7 @@ int XLALSimInspiralPNPolarizationWaveformsFromModes(
 	*hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
 	*hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
 	if ( ! hplus || ! hcross )
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	memset((*hplus)->data->data, 0, (*hplus)->data->length*sizeof(*(*hplus)->data->data));
 	memset((*hcross)->data->data, 0, (*hcross)->data->length*sizeof(*(*hcross)->data->data));
 	for ( l = 2; l <= LAL_PN_MODE_L_MAX; ++l ) {
@@ -202,9 +200,9 @@ int XLALSimInspiralPNPolarizationWaveformsFromModes(
 			COMPLEX16TimeSeries *hmode;
 			hmode = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(x, phi, x0, m1, m2, r, O, l, m);
 			if ( ! hmode )
-				XLAL_ERROR(func, XLAL_EFUNC);
+				XLAL_ERROR(XLAL_EFUNC);
 			if ( XLALSimAddMode(*hplus, *hcross, hmode, i, 0.0, l, m, 1) < 0 )
-				XLAL_ERROR(func, XLAL_EFUNC);
+				XLAL_ERROR(XLAL_EFUNC);
 			XLALDestroyCOMPLEX16TimeSeries(hmode);
 		}
 	}
@@ -237,7 +235,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
 	int ampO                  /**< twice PN order of the amplitude */
 	)
 {
-    REAL8 M, eta, eta2, dm, dist, ampfac, phi, phiShift, v, v2, v3, v4, v5;
+  REAL8 M, eta, eta2, dm, dist, ampfac, phi, phiShift, v, v2, v3;
     REAL8 hp0, hp05, hp1, hp15, hp2, hp25;
     REAL8 hc0, hc05, hc1, hc15, hc2, hc25;
     REAL8 ci, si, ci2, ci4, ci6, si2, si4, si5;
@@ -254,7 +252,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
     *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &V->epoch, 0.0, 
             V->deltaT, &lalStrainUnit, V->data->length );
     if ( ! hplus || ! hcross )
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
     memset((*hplus)->data->data, 0, (*hplus)->data->length 
             * sizeof(*(*hplus)->data->data));
     memset((*hcross)->data->data, 0, (*hcross)->data->length 
@@ -282,7 +280,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
     {
         /* Abbreviated names in lower case for time series at this sample */
         phi = Phi->data->data[idx]; 	v = V->data->data[idx];   
-        v2 = v * v; 	v3 = v * v2; 	v4 = v2*v2;	v5 = v * v4;
+        v2 = v * v; 	v3 = v * v2; 	// UNUSED!!: v4 = v2*v2;// UNUSED!!: v5 = v * v4;
 
         /** 
          * As explained in Arun et al, a phase shift can be applied 
@@ -315,7 +313,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
             case 6:
                 XLALPrintError("XLAL Error - %s: Amp. corrections not known "
                         "to PN order %s\n", __func__, ampO );
-                XLAL_ERROR(__func__, XLAL_EINVAL);
+                XLAL_ERROR(XLAL_EINVAL);
                 break;
             case -1: // Highest known PN order - move if higher terms added!
             /* case LAL_PNORDER_TWO_POINT_FIVE: */
@@ -427,7 +425,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
             default:
                 XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s\n",
                         __func__, ampO );
-                XLAL_ERROR(__func__, XLAL_EINVAL);
+                XLAL_ERROR(XLAL_EINVAL);
                 break;
         } /* End switch on ampO */
 
@@ -528,7 +526,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
     *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &V->epoch, 
             0.0, V->deltaT, &lalStrainUnit, V->data->length );
     if ( ! hplus || ! hcross )
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
     memset((*hplus)->data->data, 0, 
             (*hplus)->data->length*sizeof(*(*hplus)->data->data));
     memset((*hcross)->data->data, 0, 
@@ -597,7 +595,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
                 XLALPrintError("XLAL Error - %s: Amp. corrections not known "
                         "to PN order %d, highest is %d\n", __func__, ampO,
                         MAX_PRECESSING_AMP_PN_ORDER );
-                XLAL_ERROR(__func__, XLAL_EINVAL);
+                XLAL_ERROR(XLAL_EINVAL);
                 break;
             case -1: /* Use highest known PN order - move if new orders added*/ 
             /*case LAL_PNORDER_ONE_POINT_FIVE:*/
@@ -700,7 +698,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
             default: 
                 XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s\n", 
                         __func__, ampO );
-                XLAL_ERROR(__func__, XLAL_EINVAL);
+                XLAL_ERROR(XLAL_EINVAL);
                 break;
         } /* End switch on ampO */
 
@@ -812,11 +810,11 @@ int XLALSimInspiralChooseWaveform(
 
         default:
             XLALPrintError("approximant not implemented in lalsimulation\n");
-            XLAL_ERROR(__func__, XLAL_EINVAL);
+            XLAL_ERROR(XLAL_EINVAL);
     }
 
     if (ret == XLAL_FAILURE)
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
 
     return ret;
 }
@@ -917,11 +915,11 @@ int XLALSimInspiralChooseRestrictedWaveform(
 
         default:
             XLALPrintError("approximant not implemented in lalsimulation\n");
-            XLAL_ERROR(__func__, XLAL_EINVAL);
+            XLAL_ERROR(XLAL_EINVAL);
     }
 
     if (ret == XLAL_FAILURE)
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
 
     return ret;
 }

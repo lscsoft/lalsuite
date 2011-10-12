@@ -166,7 +166,6 @@ static int CompareCOMPLEX16Abs( void UNUSED *p, const void *a, const void *b )
 
 int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
 {
-  static const char *func = "XLALWToZCOMPLEX8ZPGFilter";
   INT4 i;        /* A counter. */
   INT4 j;        /* Another counter. */
   INT4 num;      /* The total number of zeros or poles. */
@@ -182,7 +181,7 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
 
   /* Make sure the filter pointer is non-null. */
   if ( ! filter )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   /* If the filter->zeros or filter->poles pointers is null, this
      means that there are no zeros or no poles.  For simplicity, we
@@ -198,16 +197,16 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
      that the vector data pointer is non-null. */
   numZeros=filter->zeros->length;
   if (numZeros<0)
-    XLAL_ERROR(func,XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
   if(numZeros>0)
     if (!filter->zeros->data)
-      XLAL_ERROR(func,XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
   numPoles=filter->poles->length;
   if (numPoles<0)
-    XLAL_ERROR(func,XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
   if(numPoles>0)
     if (!filter->poles->data)
-      XLAL_ERROR(func,XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
 
   /* Compute the total number of zeros and poles in the w-plane,
      including those at w=infinity. */
@@ -240,7 +239,7 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
   {
     XLALDestroyCOMPLEX8Vector(gain);
     XLALDestroyCOMPLEX8Vector(z);
-    XLAL_ERROR(func,XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
   g=gain->data;
   b=z->data;
@@ -304,7 +303,7 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
   if (!gain||!z)
   {
     XLALDestroyCOMPLEX8Vector(gain);
-    XLAL_ERROR(func,XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
   b=z->data;
   /* Transform existing poles from w to z, except for those at w=-i,
@@ -370,7 +369,7 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
   {
     XLALDestroyCOMPLEX8Vector(gain);
     XLALDestroyINT4Vector(idx);
-    XLAL_ERROR(func,XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* Now multiply the gain alternately by small and large correction
@@ -410,7 +409,6 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
 
 int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
 {
-  static const char *func = "XLALWToZCOMPLEX16ZPGFilter";
   INT4 i;        /* A counter. */
   INT4 j;        /* Another counter. */
   INT4 num;      /* The total number of zeros or poles. */
@@ -426,7 +424,7 @@ int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
 
   /* Make sure the filter pointer is non-null. */
   if ( ! filter )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   /* If the filter->zeros or filter->poles pointers is null, this
      means that there are no zeros or no poles.  For simplicity, we
@@ -442,16 +440,16 @@ int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
      that the vector data pointer is non-null. */
   numZeros=filter->zeros->length;
   if (numZeros<0)
-    XLAL_ERROR(func,XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
   if(numZeros>0)
     if (!filter->zeros->data)
-      XLAL_ERROR(func,XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
   numPoles=filter->poles->length;
   if (numPoles<0)
-    XLAL_ERROR(func,XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
   if(numPoles>0)
     if (!filter->poles->data)
-      XLAL_ERROR(func,XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
 
   /* Compute the total number of zeros and poles in the w-plane,
      including those at w=infinity. */
@@ -484,7 +482,7 @@ int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
   {
     XLALDestroyCOMPLEX16Vector(gain);
     XLALDestroyCOMPLEX16Vector(z);
-    XLAL_ERROR(func,XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
   g=gain->data;
   b=z->data;
@@ -548,7 +546,7 @@ int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
   if (!gain||!z)
   {
     XLALDestroyCOMPLEX16Vector(gain);
-    XLAL_ERROR(func,XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
   b=z->data;
   /* Transform existing poles from w to z, except for those at w=-i,
@@ -614,7 +612,7 @@ int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
   {
     XLALDestroyCOMPLEX16Vector(gain);
     XLALDestroyINT4Vector(idx);
-    XLAL_ERROR(func,XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* Now multiply the gain alternately by small and large correction

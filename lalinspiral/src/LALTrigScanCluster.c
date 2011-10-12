@@ -77,9 +77,6 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
                                  INT4              appendStragglers )
 
 {
-
-  static const char func[] = "XLALTrigScanClusterTriggers";
-
   SnglInspiralTable *tableHead     = NULL;
   SnglInspiralTable *thisTable     = NULL;
   TriggerErrorList  *errorList     = NULL;
@@ -92,12 +89,12 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
 #ifndef LAL_NDEBUG
   if ( !table )
   {
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   if ( (UINT4) method >= (UINT4) NUM_TRIGSCAN_TYPE )
   {
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 #endif
 
@@ -119,13 +116,13 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
   if ( method != T0T3Tc )
   {
     XLALPrintError( "TrigScan only currently implemented for tau0/tau3!\n" );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   if ( scaleFactor <= 0.0 )
   {
     XLALPrintError( "TrigScan metric scaling must be > 0: %e given.\n", scaleFactor );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* TrigScan requires triggers to be time-ordered. Make sure this is the case */
@@ -144,7 +141,7 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
   errorList = XLALCreateTriggerErrorList( tableHead, scaleFactor, &tcMax );
   if ( !errorList )
   {
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Now create the list of clusters. Keep going until errorlist is exhausted */
@@ -172,7 +169,7 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
       }
       if ( errorList ) XLALDestroyTriggerErrorList( errorList );
 
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
     /* Add the cluster to the list */
     if ( !clusterHead )
@@ -199,7 +196,7 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
          XLALTrigScanDestroyCluster( tmpCluster, TRIGSCAN_ERROR );
       }
 
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     if ( !clusterHead )
@@ -223,7 +220,7 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
          XLALTrigScanDestroyCluster( tmpCluster, TRIGSCAN_ERROR );
       }
 
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
   }
 
@@ -239,7 +236,7 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
        XLALTrigScanDestroyCluster( tmpCluster, TRIGSCAN_ERROR );
     }
 
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   *table = clusterHead->element->trigger;
@@ -266,8 +263,6 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
                                              REAL8            tcMax )
 
 {
-  static const char func[] = "XLALTrigScanCreateCluster";
-
   TrigScanCluster *cluster = NULL;
 
   /* Pointers to the main trigger error list */
@@ -287,17 +282,17 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
 #ifndef LAL_NDEBUG
   if ( !errorListHead )
   {
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   }
 
   if ( !(*errorListHead) )
   {
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   }
 
   if ( tcMax <= 0 )
   {
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 #endif
 
@@ -305,7 +300,7 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
   cluster = LALCalloc( 1, sizeof( TrigScanCluster ) );
   if ( !cluster )
   {
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   /* Create the workspace for checking ellipsoid overlap */
@@ -313,7 +308,7 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
   if ( !workSpace )
   {
     LALFree( cluster );
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
   /* Set the first trigger in the list to be part of the cluster */
@@ -383,7 +378,7 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
           LALFree( tmpClusterList );
         }
         XLALFreeFContactWorkSpace( workSpace );
-        XLAL_ERROR_NULL( func, XLAL_EFUNC );
+        XLAL_ERROR_NULL( XLAL_EFUNC );
       }
       /* Reset the time to its original value */
       XLALSetTimeInPositionVector( thisErrorList->position, originalTimeB );
@@ -444,7 +439,7 @@ int XLALTrigScanRemoveStragglers( TrigScanCluster **clusters )
 #ifndef LAL_NDEBUG
   if ( !clusters )
   {
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 #endif
 
@@ -489,13 +484,13 @@ int XLALTrigScanKeepLoudestTrigger( TrigScanCluster *cluster )
 #ifndef LAL_NDEBUG
   if ( !cluster )
   {
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   }
 
   if ( cluster->nelements < 1 )
   {
     XLALPrintError( "Invalid number of triggers in cluster: %d\n", cluster->nelements );
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 #endif
 
@@ -543,13 +538,10 @@ int XLALTrigScanKeepLoudestTrigger( TrigScanCluster *cluster )
 int XLALTrigScanReLinkLists( TrigScanCluster *clusterHead )
 
 {
-
-  static const char func[] = "XLALTrigScanReLinkLists";
-
   TrigScanCluster *thisCluster;
 
   if ( ! clusterHead )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   for ( thisCluster = clusterHead; thisCluster->next; thisCluster = thisCluster->next )
   {
@@ -571,10 +563,10 @@ void XLALTrigScanDestroyCluster( TrigScanCluster *cluster,
 
 #ifndef LAL_NDEBUG
   if ( !cluster )
-    XLAL_ERROR_VOID( __func__, XLAL_EFAULT );
+    XLAL_ERROR_VOID( XLAL_EFAULT );
 
   if ( (UINT4) status >= (UINT4) TRIGSCAN_NUM_STATUS )
-    XLAL_ERROR_VOID( __func__, XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
 #endif
 
   /* If something has failed, we need to free the SnglInspirals */

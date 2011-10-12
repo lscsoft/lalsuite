@@ -60,5 +60,4 @@ LALXMLVCSInfo.h: ._vcsinfo
 @LAL_HEADER_LINK@
 
 swig_headers = $(lalxmlinclude_HEADERS)
-CLEANFILES += $(swig_clean)
-@SWIG_HEADER_MK@
+include $(top_srcdir)/swig/swig-header.am

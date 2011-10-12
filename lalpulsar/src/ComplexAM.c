@@ -294,14 +294,14 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
   UINT4 alpha;
 
   if ( !multiAMcoef )
-    XLAL_ERROR( "XLALWeighMultiCmplxAMCoeffs", XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   numDetectors = multiAMcoef->length;
 
   if ( multiWeights && ( multiWeights->length != numDetectors ) )
     {
       XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
-      XLAL_ERROR( "XLALWeighMultiCmplxAMCoeffs", XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
     }
 
   /* noise-weight Antenna-patterns and compute A,B,C,E */
@@ -318,7 +318,7 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 	  if ( weightsX->length != numSteps )
 	    {
 	      XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
-	      XLAL_ERROR( "XLALWeighMultiCmplxAMCoeffs", XLAL_EINVAL );
+	      XLAL_ERROR( XLAL_EINVAL );
 	    }
 
 	  for(alpha = 0; alpha < numSteps; alpha++)

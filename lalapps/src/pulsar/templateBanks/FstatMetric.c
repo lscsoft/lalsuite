@@ -1575,7 +1575,7 @@ XLALDestroyMultiPhaseDerivs ( MultiPhaseDerivs *mdPhi )
   numDet = mdPhi->length;
 
   if ( numDet && !mdPhi->data )
-    XLAL_ERROR_VOID ( "XLALDestroyMultiPhaseDerivs", XLAL_EINVAL );
+    XLAL_ERROR_VOID ( XLAL_EINVAL );
 
   for ( X=0; X < numDet; X ++ )
     {

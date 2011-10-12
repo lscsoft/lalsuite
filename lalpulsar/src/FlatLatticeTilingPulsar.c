@@ -88,7 +88,8 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
 
   /* Check input */
   if (Tspan <= 0.0)
-    XLAL_ERROR("Tspan must be strictly positive", XLAL_EINVAL);
+    XLALPrintError("%s: Tspan must be strictly positive", __func__);
+    XLAL_ERROR(XLAL_EINVAL);
 
   /* Allocate memory */
   ALLOC_GSL_MATRIX(norm_metric, n, n, XLAL_FAILURE);
@@ -113,7 +114,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
 
   /* Set the metric of the flat lattice tiling */
   if (XLALSetFlatLatticeTilingMetric(tiling, norm_metric, max_mismatch, norm_to_real) != XLAL_SUCCESS)
-    XLAL_ERROR("XLALSetFlatLatticeTilingMetric failed", XLAL_EFAILED);
+    XLAL_ERROR(XLAL_EFAILED);
 
   /* Cleanup */
   FREE_GSL_MATRIX(norm_metric);
@@ -129,7 +130,6 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
  */
 static BOOLEAN AgeBrakingIndexBound(void *data, INT4 dimension, gsl_vector *point, REAL8 *lower, REAL8 *upper)
 {
-  const char *fn = "AgeBrakingIndexBound()";
   double x;
 
   /* Set constant based on dimension */
@@ -146,8 +146,8 @@ static BOOLEAN AgeBrakingIndexBound(void *data, INT4 dimension, gsl_vector *poin
     x /= gsl_vector_get(point, 0);
     break;
   default:
-    XLALPrintError ("%s: invalid dimension %d input, allowed are 0-2.\n", fn, dimension );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid dimension %d input, allowed are 0-2.\n", __func__, dimension );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* Set lower and upper bound */
@@ -181,7 +181,8 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
 
   /* Check tiling dimension */
   if (tiling->dimensions < (3 + gap))
-    XLAL_ERROR("'tiling->dimensions' is too small", XLAL_EINVAL);
+    XLALPrintError("%s: 'tiling->dimensions' is too small", __func__);
+    XLAL_ERROR(XLAL_EINVAL);
 
   /* Allocate memory */
   ALLOC_GSL_MATRIX(data, tiling->dimensions, 2, XLAL_FAILURE);
@@ -205,7 +206,7 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
   /* Set parameter space */
   if (XLAL_SUCCESS != XLALAddFlatLatticeTilingBound(tiling, bound, AgeBrakingIndexBound,
 						    (void*)data, AgeBrakingIndexFree))
-    XLAL_ERROR("XLALAddFlatLatticeTilingBound failed", XLAL_EFAILED);
+    XLAL_ERROR(XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 

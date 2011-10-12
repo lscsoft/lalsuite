@@ -17,12 +17,12 @@
 void XFUNC ( ATYPE *array )
 {
   if ( ! array )
-    XLAL_ERROR_VOID( STRING(XFUNC), XLAL_EFAULT );
+    XLAL_ERROR_VOID( XLAL_EFAULT );
   if ( ! array->dimLength
       || ! array->dimLength->length
       || ! array->dimLength->data
       || ! array->data )
-    XLAL_ERROR_VOID( STRING(XFUNC), XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
   XLALDestroyUINT4Vector( array->dimLength );
   LALFree( array->data );
   LALFree( array );

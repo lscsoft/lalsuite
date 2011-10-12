@@ -373,7 +373,6 @@ REAL8 XLALRingdownTimeError( const SnglRingdownTable *table,  REAL8 lal_ring_ds_
 int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
 
 {
-  static const char *func = "XLALComputeRingTemplate";
   const REAL8 efolds = 10;
   REAL8 amp = 1.0;
   REAL8 fac;
@@ -384,13 +383,13 @@ int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
   UINT4 n;
 
   if ( ! output || ! output->data || ! input )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if ( ! output->data->length )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   if ( output->deltaT <= 0 || input->quality <= 0 || input->frequency <= 0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* exponential decay variables */
   fac = exp( - LAL_PI * input->frequency * output->deltaT / input->quality );
@@ -429,14 +428,13 @@ int XLALComputeBlackHoleRing(
     )
 
 {
-  static const char *func = "XLALComputeBlackHoleRing";
   const REAL4 amp = dynRange *
     XLALBlackHoleRingAmplitude(
         input->frequency, input->quality, input->eff_dist, input->epsilon );
   UINT4 i;
 
   if ( XLALComputeRingTemplate( output, input ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   for ( i = 0; i < output->data->length; ++i )
     output->data->data[i] *= amp;
@@ -483,23 +481,22 @@ static int MakeBank( SnglRingdownTable *tmplt, RingTemplateBankInput *input )
 RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input )
 
 {
-  static const char *func = "XLALCreateRingTemplateBank";
   UINT4 i;
   RingTemplateBank *bank;
 
   if ( ! input )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
 
   bank = LALCalloc( 1, sizeof( *bank ) );
   if ( ! bank )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   bank->numTmplt = MakeBank( NULL, input );
   bank->tmplt = LALCalloc( bank->numTmplt, sizeof( *bank->tmplt ) );
   if ( ! bank->tmplt )
   {
     LALFree( bank );
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
   for ( i = 0; i < bank->numTmplt - 1; ++i )
     bank->tmplt[i].next = bank->tmplt + i + 1;

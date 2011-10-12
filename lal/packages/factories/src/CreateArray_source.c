@@ -27,9 +27,9 @@ ATYPE * XFUNCL ( UINT4 ndim, ... )
   UINT4 dim;
 
   if ( ! ndim )
-    XLAL_ERROR_NULL( STRING(XFUNCL), XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( ndim > maxdim )
-    XLAL_ERROR_NULL( STRING(XFUNCL), XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   va_start( ap, ndim );
   for ( dim = 0; dim < ndim; ++dim )
@@ -38,7 +38,7 @@ ATYPE * XFUNCL ( UINT4 ndim, ... )
 
   arr = XFUNCV ( ndim, dims );
   if ( ! arr )
-    XLAL_ERROR_NULL( STRING(XFUNCL), XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   return arr;
 }
 
@@ -48,16 +48,16 @@ ATYPE * XFUNCV ( UINT4 ndim, UINT4 *dims )
   UINT4Vector dimLength;
 
   if ( ! ndim )
-    XLAL_ERROR_NULL( STRING(XFUNCV), XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( ! dims )
-    XLAL_ERROR_NULL( STRING(XFUNCV), XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
 
   dimLength.length = ndim;
   dimLength.data   = dims;
 
   arr = XFUNC ( &dimLength );
   if ( ! arr )
-    XLAL_ERROR_NULL( STRING(XFUNCV), XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   return arr;
 }
 
@@ -70,30 +70,30 @@ ATYPE * XFUNC ( UINT4Vector *dimLength )
   UINT4 dim;
 
   if ( ! dimLength )
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! dimLength->length )
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( ! dimLength->data )
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   ndim = dimLength->length;
   for ( dim = 0; dim < ndim; ++dim )
     size *= dimLength->data[dim];
 
   if ( ! size )
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   /* create array */
   arr = LALMalloc( sizeof( *arr ) );
   if ( ! arr )
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   /* create array dimensions */
   arr->dimLength = XLALCreateUINT4Vector( ndim );
   if ( ! arr->dimLength )
   {
     LALFree( arr );
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
   /* copy dimension lengths */
@@ -106,7 +106,7 @@ ATYPE * XFUNC ( UINT4Vector *dimLength )
   {
     XLALDestroyUINT4Vector( arr->dimLength );
     LALFree( arr );
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   return arr;

@@ -540,7 +540,7 @@ LALTaylorT4WaveformEngine (
    void                  *funcParams;
    UINT4                 length=0, count, ndx;
    INT4                  nn=2;
-   REAL8                 h, omega, omegaMax, t, dt, m, eta, phi, v;
+   REAL8                 omega, omegaMax, t, dt, m, phi, v;
    REAL8Vector           dummy, values, dvalues, newvalues, yt, dym, dyt;
    rk4GSLIntegrator      *integrator = NULL;
    InspiralDerivativesIn in2;
@@ -625,7 +625,7 @@ LALTaylorT4WaveformEngine (
    {
      length = ff->length;
    }
-   eta = ak.eta;
+   // UNUSED!!: eta = ak.eta;
    m = ak.totalmass;
 
    /* Begin initial conditions */
@@ -704,7 +704,7 @@ LALTaylorT4WaveformEngine (
 	ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
       }
 
-      h = 4 * m * eta * v*v * cos(2.*phi);
+      // UNUSED!!: REAL8 h = 4 * m * eta * v*v * cos(2.*phi);
       if ( signalvec1 )
       {
         signalvec1->data[ndx] = apFac * v*v * cos(2.*phi);

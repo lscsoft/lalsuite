@@ -123,36 +123,36 @@ XLALInspiralWave1(
    InspiralInit paramsInit;
 
    if (output == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if (output->data == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if (params == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if (params->nStartPad < 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if (params->fLower <= 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if (params->tSampling <= 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
 
    if (XLALInspiralParameterCalc(params))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
    if (XLALInspiralSetup(&(paramsInit.ak), params))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
    if (XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), params))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
    if (params->totalMass <= 0.)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if (params->eta < 0.)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
 
    memset( output->data, 0, output->length * sizeof(REAL4) );
 
    /*Call the engine function*/
    count = XLALInspiralWave1Engine(output, NULL, NULL, NULL, NULL, NULL, params, &paramsInit);
    if (count < 0)
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
    return XLAL_SUCCESS;
 }
@@ -198,33 +198,33 @@ XLALInspiralWave1Templates(
    InspiralInit paramsInit;
 
    if (output1 == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if (output2 == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if (output1->data == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if (output2->data == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if (params == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if (params->nStartPad < 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if (params->fLower <= 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if (params->tSampling <= 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
 
    if (XLALInspiralParameterCalc(params))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
    if (XLALInspiralSetup(&(paramsInit.ak), params))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
    if (XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), params))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
    if (params->totalMass <= 0.)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if (params->eta < 0.)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
 
    /* Initialise the waveforms to zero */
    memset(output1->data, 0, output1->length * sizeof(REAL4));
@@ -233,7 +233,7 @@ XLALInspiralWave1Templates(
    /* Call the engine function */
    count = XLALInspiralWave1Engine(output1, output2, NULL, NULL, NULL, NULL, params, &paramsInit);
    if (count < 0)
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
    return XLAL_SUCCESS;
 }
@@ -287,26 +287,26 @@ XLALInspiralWave1ForInjection(
 
   /* Make sure parameter and waveform structures exist. */
   if (params == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (waveform == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (waveform->h != NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (waveform->a != NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (waveform->f != NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (waveform->phi != NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (waveform->shift != NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
 
   params->ampOrder = 0;
   sprintf(message, "WARNING: Amp Order has been reset to %d", params->ampOrder);
   XLALPrintInfo(message);
   /* Compute some parameters*/
   if (XLALInspiralInit(params, &paramsInit))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   if (paramsInit.nbins == 0)
   {
@@ -317,13 +317,13 @@ XLALInspiralWave1ForInjection(
   /* Now we can allocate memory and vector for coherentGW structure*/
   ff = XLALCreateREAL4Vector(paramsInit.nbins);
   if (ff == NULL)
-    XLAL_ERROR(__func__, XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   a = XLALCreateREAL4Vector(2*paramsInit.nbins);
   if (a == NULL)
-    XLAL_ERROR(__func__, XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   phi = XLALCreateREAL8Vector(paramsInit.nbins);
   if (phi == NULL)
-    XLAL_ERROR(__func__, XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
 
   /* By default the waveform is empty */
   memset(ff->data, 0, paramsInit.nbins * sizeof(REAL4));
@@ -334,7 +334,7 @@ XLALInspiralWave1ForInjection(
   {
     h = XLALCreateREAL4Vector(2*paramsInit.nbins);
     if (h == NULL)
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     memset(h->data,  0, h->length * sizeof(REAL4));
   }
 
@@ -350,7 +350,7 @@ XLALInspiralWave1ForInjection(
     {
       XLALDestroyREAL4Vector(h);
     }
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   p = phi->data[count-1];
@@ -375,7 +375,7 @@ XLALInspiralWave1ForInjection(
     /* Allocate the waveform structures. */
     waveform->a = (REAL4TimeVectorSeries *) XLALMalloc( sizeof(REAL4TimeVectorSeries) );
     if ( waveform->a == NULL )
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
 
     waveform->f = (REAL4TimeSeries *) LALMalloc( sizeof(REAL4TimeSeries) );
@@ -383,7 +383,7 @@ XLALInspiralWave1ForInjection(
     {
       XLALFree( waveform->a );
       waveform->a = NULL;
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
 
@@ -394,19 +394,19 @@ XLALInspiralWave1ForInjection(
       waveform->a = NULL;
       XLALFree( waveform->f );
       waveform->f = NULL;
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
 
     waveform->a->data = XLALCreateREAL4VectorSequence(count, 2);
     if (waveform->a->data == NULL)
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     waveform->f->data = XLALCreateREAL4Vector(count);
     if (waveform->f->data == NULL)
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     waveform->phi->data = XLALCreateREAL8Vector(count);
     if (waveform->phi->data == NULL)
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
 
     memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
     memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
@@ -438,12 +438,12 @@ XLALInspiralWave1ForInjection(
     {
       waveform->h = (REAL4TimeVectorSeries *) XLALMalloc( sizeof(REAL4TimeVectorSeries) );
       if ( waveform->h == NULL )
-        XLAL_ERROR(__func__, XLAL_ENOMEM);
+        XLAL_ERROR(XLAL_ENOMEM);
       memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
 
       waveform->h->data = XLALCreateREAL4VectorSequence(count, 2);
       if ( waveform->h->data == NULL )
-        XLAL_ERROR(__func__, XLAL_ENOMEM);
+        XLAL_ERROR(XLAL_ENOMEM);
       memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
       waveform->h->deltaT = 1./params->tSampling;
       waveform->h->sampleUnits = lalStrainUnit;
@@ -507,21 +507,21 @@ XLALInspiralWave1Engine(
    func = paramsInit->func;
 
    if (params == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if (params->nStartPad < 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if (params->nEndPad < 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if (params->fLower <= 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if (params->tSampling <= 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
 
    values.length = dvalues.length = valuesNew.length =
    yt.length = dym.length = dyt.length = n;
    dummy.length = n * 6;
    if (!(dummy.data = (REAL8 * ) LALMalloc(sizeof(REAL8) * n * 6))) {
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
    }
 
    values.data = &dummy.data[0];
@@ -552,7 +552,7 @@ XLALInspiralWave1Engine(
    }
 
    if (params->totalMass <= 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
 
    t = 0.0;
    in1.t = t;
@@ -578,7 +578,7 @@ XLALInspiralWave1Engine(
 
    v = XLALInspiralVelocity(&in1);
    if (XLAL_IS_REAL8_FAIL_NAN(v))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
    piM = LAL_PI * m;
    f = (v*v*v)/piM;
@@ -596,14 +596,14 @@ XLALInspiralWave1Engine(
 */
 
   if (fHigh >= 0.5/dt)
-     XLAL_ERROR(__func__, XLAL_EDOM);
+     XLAL_ERROR(XLAL_EDOM);
   if (fHigh <= params->fLower)
-     XLAL_ERROR(__func__, XLAL_EDOM);
+     XLAL_ERROR(XLAL_EDOM);
 
 
    p = XLALInspiralPhasing1(v, &in2);
    if (XLAL_IS_REAL8_FAIL_NAN(p))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
    *(values.data) = v;
    *(values.data+1) = p;
@@ -619,7 +619,7 @@ XLALInspiralWave1Engine(
 
    /* Initialize GSL integrator */
    if (!(integrator = XLALRungeKutta4Init(n, &in4)))
-     XLAL_ERROR(__func__, XLAL_EFUNC);
+     XLAL_ERROR(XLAL_EFUNC);
 
    count = 0;
    if (signalvec2) {
@@ -636,7 +636,7 @@ XLALInspiralWave1Engine(
       {
           XLALRungeKutta4Free( integrator );
           XLALFree(dummy.data);
-          XLAL_ERROR(__func__, XLAL_EBADLEN);
+          XLAL_ERROR(XLAL_EBADLEN);
       }
 
       /* Non-injection case */
@@ -679,7 +679,7 @@ XLALInspiralWave1Engine(
       in4.x=t;
 
       if(XLALRungeKutta4(&valuesNew, integrator, funcParams))
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
 
       *(values.data) = v = *(valuesNew.data);
       *(values.data+1) = p = *(valuesNew.data+1);

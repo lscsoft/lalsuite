@@ -44,7 +44,7 @@ SERIESTYPE *CSERIES (
 	if(!new || !sequence) {
 		XLALFree(new);
 		DSEQUENCE (sequence);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	if(name)
@@ -75,7 +75,7 @@ SERIESTYPE *XSERIES (
 	if(!new || !sequence) {
 		XLALFree(new);
 		DSEQUENCE (sequence);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	*new = *series;
@@ -94,7 +94,7 @@ SERIESTYPE *RSERIES (
 {
 
 	if(!RSEQUENCE (series->data, first, length))
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	series->f0 += first * series->deltaF;
 
 	return series;
@@ -109,7 +109,7 @@ SERIESTYPE *SSERIES (
 {
 
 	if(!RSERIES (series, first, length))
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	return series;
 }
@@ -131,15 +131,15 @@ SERIESTYPE *ASERIES (
 	/* make sure arguments are compatible */
 	if(XLALIsREAL8FailNaN(unit_ratio)) {
 		XLALPrintError("%s(): incompatible sample units\n", __func__);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 	if(XLALGPSCmp(&arg1->epoch, &arg2->epoch)) {
 		XLALPrintError("%s(): incompatible epochs\n", __func__);
-		XLAL_ERROR_NULL(__func__, XLAL_EDATA);
+		XLAL_ERROR_NULL(XLAL_EDATA);
 	}
 	if(arg1->deltaF != arg2->deltaF) {
 		XLALPrintError("%s(): incompatible frequency resolution\n", __func__);
-		XLAL_ERROR_NULL(__func__, XLAL_EDATA);
+		XLAL_ERROR_NULL(XLAL_EDATA);
 	}
 
 	/* set start indexes */
@@ -178,15 +178,15 @@ SERIESTYPE *MSERIES (
 
 	if(XLALIsREAL8FailNaN(unit_ratio)) {
 		XLALPrintError("%s(): incompatible sample units\n", __func__);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 	if(XLALGPSCmp(&arg1->epoch, &arg2->epoch)) {
 		XLALPrintError("%s(): incompatible epochs\n", __func__);
-		XLAL_ERROR_NULL(__func__, XLAL_EDATA);
+		XLAL_ERROR_NULL(XLAL_EDATA);
 	}
 	if(arg1->deltaF != arg2->deltaF) {
 		XLALPrintError("%s(): incompatible frequency resolution\n", __func__);
-		XLAL_ERROR_NULL(__func__, XLAL_EDATA);
+		XLAL_ERROR_NULL(XLAL_EDATA);
 	}
 
 	/* set start indexes */

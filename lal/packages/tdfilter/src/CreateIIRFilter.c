@@ -127,7 +127,6 @@ extern INT4 lalDebugLevel;
 
 REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
 {
-  static const char *func = "XLALCreateREAL4IIRFilter";
   REAL4IIRFilter *output;
   INT4 i;          /* Index counter for zeros and poles. */
   INT4 numZeros;   /* The number of zeros. */
@@ -143,10 +142,10 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
 
   /* Make sure all the input structures have been initialized. */
   if ( ! input )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! input->zeros || ! input->poles
       || ! input->zeros->data || ! input->poles->data )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   numZeros=input->zeros->length;
   numPoles=input->poles->length;
@@ -185,7 +184,7 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
 	  }
 	}
 	if(sep>LAL_REAL4_EPS){
-          XLALPrintWarning( "XLAL Warning - %s: ", func );
+          XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
           XLALPrintWarning("Complex zero has no conjugate pair\n");
 	  XLALPrintWarning("\tUnmatched zero z_%i = %.8e + i*%.8e\n",i,
               zeros[i].re,zeros[i].im);
@@ -197,7 +196,7 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
     }
 
   if ( num != numZeros )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   /* Check that poles are appropriately paired.  Also, keep track of
      the number of poles at z=0, since these will reduce the number of
@@ -231,7 +230,7 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
 	  }
 	}
 	if(sep>LAL_REAL4_EPS){
-          XLALPrintWarning( "XLAL Warning - %s: ", func );
+          XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
           XLALPrintWarning("Complex pole has no conjugate pair\n");
 	  XLALPrintWarning("\tUnmatched pole p_%i = %.8e + i*%.8e\n",i,
               poles[i].re,poles[i].im);
@@ -243,13 +242,13 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
     }
 
   if ( num != numPoles )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
 #ifndef NDEBUG
   if(lalDebugLevel&LALWARNING){
     /* Issue a warning if the gain is nonreal. */
     if(fabs(input->gain.im)>fabs(LAL_REAL4_EPS*input->gain.re)){
-      XLALPrintWarning( "XLAL Warning - %s: ", func );
+      XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
       XLALPrintWarning("Gain is non-real\n");
       XLALPrintWarning("\tg = %.8e + i*%.8e\n", input->gain.re, input->gain.im);
     }
@@ -258,7 +257,7 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
       INT4 j=0;
       for(;j<numZeros;j++)
 	if((poles[i].re==zeros[j].re)&&(poles[i].im==zeros[j].im)){
-          XLALPrintWarning( "XLAL Warning - %s: ", func );
+          XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
 	  XLALPrintWarning("Removeable pole\n");
 	  XLALPrintWarning("\tp_%i = z_%i = %.8e + i*%.8e\n",i,j,
               poles[i].re,poles[i].im);
@@ -266,7 +265,7 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
     }
     /* Issue a warning if extra factors of 1/z will be applied. */
     if(numPoles<numZeros){
-      XLALPrintWarning( "XLAL Warning - %s: ", func );
+      XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
       XLALPrintWarning("Filter has more zeros than poles\n");
       XLALPrintWarning("\t%i poles added at complex origin\n",
           numZeros-numPoles);
@@ -275,7 +274,7 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
     for(i=0;i<numPoles;i++){
       REAL4 zAbs=poles[i].re*poles[i].re+poles[i].im*poles[i].im;
       if(zAbs>1.0){
-        XLALPrintWarning( "XLAL Warning - %s: ", func );
+        XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
 	XLALPrintWarning("Filter has pole outside of unit circle\n");
 	XLALPrintWarning("\tp_%i = %.8e + i*%.8e, |p_%i| = %.8e\n",i,
 		      poles[i].re,poles[i].im,i,zAbs);
@@ -287,7 +286,7 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
   /* Everything seems okay, so initialize the filter. */
   output=LALCalloc(1,sizeof(*output));
   if ( ! output )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   num = (numPoles>=numZeros) ? numZeros : numPoles;
   numDirect+=num;
   numRecurs+=num;
@@ -298,7 +297,7 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
   if ( ! output->directCoef || ! output->recursCoef )
   {
     XLALDestroyREAL4IIRFilter( output );
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
   direct=output->directCoef->data;
   recurs=output->recursCoef->data;
@@ -348,7 +347,7 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
   if ( ! output->history )
   {
     XLALDestroyREAL4IIRFilter( output );
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
   history=output->history->data;
   for(i=0;i<num;i++)
@@ -360,7 +359,6 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
 
 REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
 {
-  static const char *func = "XLALCreateREAL8IIRFilter";
   REAL8IIRFilter *output;
   INT4 i;          /* Index counter for zeros and poles. */
   INT4 numZeros;   /* The number of zeros. */
@@ -376,10 +374,10 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
 
   /* Make sure all the input structures have been initialized. */
   if ( ! input )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! input->zeros || ! input->poles
       || ! input->zeros->data || ! input->poles->data )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   numZeros=input->zeros->length;
   numPoles=input->poles->length;
@@ -418,7 +416,7 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
 	  }
 	}
 	if(sep>LAL_REAL8_EPS){
-          XLALPrintWarning( "XLAL Warning - %s: ", func );
+          XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
           XLALPrintWarning("Complex zero has no conjugate pair\n");
 	  XLALPrintWarning("\tUnmatched zero z_%i = %.8e + i*%.8e\n",i,
               zeros[i].re,zeros[i].im);
@@ -430,7 +428,7 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
     }
 
   if ( num != numZeros )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   /* Check that poles are appropriately paired.  Also, keep track of
      the number of poles at z=0, since these will reduce the number of
@@ -464,7 +462,7 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
 	  }
 	}
 	if(sep>LAL_REAL8_EPS){
-          XLALPrintWarning( "XLAL Warning - %s: ", func );
+          XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
           XLALPrintWarning("Complex pole has no conjugate pair\n");
 	  XLALPrintWarning("\tUnmatched pole p_%i = %.8e + i*%.8e\n",i,
               poles[i].re,poles[i].im);
@@ -476,13 +474,13 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
     }
 
   if ( num != numPoles )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
 #ifndef NDEBUG
   if(lalDebugLevel&LALWARNING){
     /* Issue a warning if the gain is nonreal. */
     if(fabs(input->gain.im)>fabs(LAL_REAL8_EPS*input->gain.re)){
-      XLALPrintWarning( "XLAL Warning - %s: ", func );
+      XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
       XLALPrintWarning("Gain is non-real\n");
       XLALPrintWarning("\tg = %.8e + i*%.8e\n", input->gain.re, input->gain.im);
     }
@@ -491,7 +489,7 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
       INT4 j=0;
       for(;j<numZeros;j++)
 	if((poles[i].re==zeros[j].re)&&(poles[i].im==zeros[j].im)){
-          XLALPrintWarning( "XLAL Warning - %s: ", func );
+          XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
 	  XLALPrintWarning("Removeable pole\n");
 	  XLALPrintWarning("\tp_%i = z_%i = %.8e + i*%.8e\n",i,j,
               poles[i].re,poles[i].im);
@@ -499,7 +497,7 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
     }
     /* Issue a warning if extra factors of 1/z will be applied. */
     if(numPoles<numZeros){
-      XLALPrintWarning( "XLAL Warning - %s: ", func );
+      XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
       XLALPrintWarning("Filter has more zeros than poles\n");
       XLALPrintWarning("\t%i poles added at complex origin\n",
           numZeros-numPoles);
@@ -508,7 +506,7 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
     for(i=0;i<numPoles;i++){
       REAL8 zAbs=poles[i].re*poles[i].re+poles[i].im*poles[i].im;
       if(zAbs>1.0){
-        XLALPrintWarning( "XLAL Warning - %s: ", func );
+        XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
 	XLALPrintWarning("Filter has pole outside of unit circle\n");
 	XLALPrintWarning("\tp_%i = %.8e + i*%.8e, |p_%i| = %.8e\n",i,
 		      poles[i].re,poles[i].im,i,zAbs);
@@ -520,7 +518,7 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
   /* Everything seems okay, so initialize the filter. */
   output=LALCalloc(1,sizeof(*output));
   if ( ! output )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   num = (numPoles>=numZeros) ? numZeros : numPoles;
   numDirect+=num;
   numRecurs+=num;
@@ -531,7 +529,7 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
   if ( ! output->directCoef || ! output->recursCoef )
   {
     XLALDestroyREAL8IIRFilter( output );
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
   direct=output->directCoef->data;
   recurs=output->recursCoef->data;
@@ -581,7 +579,7 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
   if ( ! output->history )
   {
     XLALDestroyREAL8IIRFilter( output );
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
   history=output->history->data;
   for(i=0;i<num;i++)

@@ -145,7 +145,7 @@ int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 			params->coeff.domega[LAL_PNORDER_NEWTONIAN] = 1.;
 			break;
 		default:
-			XLAL_ERROR(__func__, XLAL_EINVAL);
+			XLAL_ERROR(XLAL_EINVAL);
 			break;
 	}
 
@@ -332,7 +332,7 @@ void LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform, LALSQTPNWavefo
 int XLALSQTPNGenerator(LALSQTPNWave *waveform, LALSQTPNWaveformParams *params) {
 
 	if( !params || !waveform )
-		XLAL_ERROR(__func__, XLAL_EFAULT);
+		XLAL_ERROR(XLAL_EFAULT);
 
 	// variable declaration and initialization
 	UINT4 i = 0; // index
@@ -347,7 +347,7 @@ int XLALSQTPNGenerator(LALSQTPNWave *waveform, LALSQTPNWaveformParams *params) {
 	xlalErrno = 0;
 	if( XLALSQTPNIntegratorInit(&integrator, LALSQTPN_NUM_OF_VAR, 
 			params, XLALSQTPNDerivator) )
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	// initializing the dynamic variables
 	values[LALSQTPN_PHASE] = params->phi;
@@ -364,9 +364,9 @@ int XLALSQTPNGenerator(LALSQTPNWave *waveform, LALSQTPNWaveformParams *params) {
 	// filling the LALSQTPNCoefficients
 	xlalErrno = 0;
 	if( XLALSQTPNFillCoefficients(params) )
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	if( XLALSQTPNDerivator(time, values, dvalues, params) )
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	dvalues[LALSQTPN_MECO] = -1.; // to be able to start the loop
 	i = 0;
 	do {
@@ -412,7 +412,7 @@ int XLALSQTPNGenerator(LALSQTPNWave *waveform, LALSQTPNWaveformParams *params) {
 		time = i++ * params->samplingTime;
 		xlalErrno = 0;
 		if(XLALSQTPNIntegratorFunc(values, &integrator, step)) {
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		}
 		// if one of the variables is nan, the PN approximation broke down
 		if (isnan(values[LALSQTPN_PHASE]) 
@@ -429,13 +429,13 @@ int XLALSQTPNGenerator(LALSQTPNWave *waveform, LALSQTPNWaveformParams *params) {
 			break;
 		}
 		if( XLALSQTPNDerivator(time, values, dvalues, params) )
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		if ((waveform->waveform && 
 				i == waveform->waveform->f->data->length) ||
 				(waveform->hp && i == waveform->hp->length) ||
 				(waveform->hc && i == waveform->hc->length)) {
 			XLALSQTPNIntegratorFree(&integrator);
-			XLAL_ERROR(__func__, XLAL_EBADLEN);
+			XLAL_ERROR(XLAL_EBADLEN);
 		}
 	} while (dvalues[LALSQTPN_MECO] < 0. && dvalues[LALSQTPN_OMEGA] > 0.0 
 			&& SQT_SQR(values[LALSQTPN_LNH_3]) < 1. - LNhztol 

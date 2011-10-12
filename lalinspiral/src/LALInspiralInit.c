@@ -92,26 +92,26 @@ XLALInspiralInit (InspiralTemplate *params,
 
 
   if (params == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
 
   if ( XLALInspiralParameterCalc(params) == XLAL_FAILURE )
   {
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   if ( XLALInspiralRestrictedAmplitude(params) == XLAL_FAILURE )
   {
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   if ( XLALInspiralSetup(&(paramsInit->ak), params) == XLAL_FAILURE )
   {
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
   if ( XLALInspiralChooseModel(&(paramsInit->func), &(paramsInit->ak), params) 
        == XLAL_FAILURE )
   {
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* The parameters have been initialized now. However, we can have some problems

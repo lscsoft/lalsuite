@@ -82,7 +82,6 @@ NRCSID(IIRFILTERVECTORC,"$Id$");
 
 int XLALIIRFilterREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter )
 {
-  static const char *func = "XLALIIRFilterREAL4Vector";
   INT4 j;            /* Index for filter coeficients. */
   INT4 length;       /* Length of vector. */
   REAL4 *data;       /* Vector data. */
@@ -96,13 +95,13 @@ int XLALIIRFilterREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter )
 
   /* Make sure all the structures have been initialized. */
   if ( ! vector || ! filter )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( ! vector->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! filter->directCoef || ! filter->recursCoef || ! filter->history
       || !  filter->directCoef->data || ! filter->recursCoef->data
       || !  filter->history->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   length=vector->length;
   data=vector->data;
@@ -113,7 +112,7 @@ int XLALIIRFilterREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter )
   numHist=filter->history->length+1;
   temp = LALMalloc( numHist*sizeof(*temp) );
   if ( ! temp )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   memcpy(temp,filter->history->data,(numHist-1)*sizeof(*temp));
 
   /* Run through the vector. */
@@ -144,7 +143,6 @@ int XLALIIRFilterREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter )
 
 int XLALIIRFilterREAL8Vector( REAL8Vector *vector, REAL8IIRFilter *filter )
 {
-  static const char *func = "XLALIIRFilterREAL8Vector";
   INT4 i;            /* Loop counter for data vector. */
   INT4 j;            /* Index for filter coeficients. */
   INT4 k;            /* Index for filter history. */
@@ -161,13 +159,13 @@ int XLALIIRFilterREAL8Vector( REAL8Vector *vector, REAL8IIRFilter *filter )
 
   /* Make sure all the structures have been initialized. */
   if ( ! vector || ! filter )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( ! vector->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! filter->directCoef || ! filter->recursCoef || ! filter->history
       || !  filter->directCoef->data || ! filter->recursCoef->data
       || !  filter->history->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   length=vector->length;
   data=vector->data;
@@ -179,7 +177,7 @@ int XLALIIRFilterREAL8Vector( REAL8Vector *vector, REAL8IIRFilter *filter )
   history=filter->history->data;
   temp = LALMalloc( numHist*sizeof(*temp) );
   if ( ! temp )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
 
   /* Compute the auxiliary data series. */
   for(i=0;(i<recursOrder)&&(i<length);i++,data++){

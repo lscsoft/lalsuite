@@ -77,18 +77,17 @@ COMPLEX8Vector * XLALCCVectorDivide(
     const COMPLEX8Vector *in2
     )
 {
-  static const char *func = "XLALCCVectorDivide";
   COMPLEX8 *a;
   COMPLEX8 *b;
   COMPLEX8 *c;
   INT4      n;
 
   if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( in1->length != out->length || in2->length != out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   a = in1->data;
   b = in2->data;
@@ -134,18 +133,17 @@ COMPLEX16Vector * XLALZZVectorDivide(
     const COMPLEX16Vector *in2
     )
 {
-  static const char *func = "XLALZZVectorDivide";
   COMPLEX16 *a;
   COMPLEX16 *b;
   COMPLEX16 *c;
   INT4       n;
 
   if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( in1->length != out->length || in2->length != out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   a = in1->data;
   b = in2->data;
@@ -191,18 +189,17 @@ COMPLEX8Vector * XLALCCVectorMultiply(
     const COMPLEX8Vector *in2
     )
 {
-  static const char *func = "XLALCCVectorMultiply";
   COMPLEX8 *a;
   COMPLEX8 *b;
   COMPLEX8 *c;
   INT4      n;
 
   if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( in1->length != out->length || in2->length != out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   a = in1->data;
   b = in2->data;
@@ -234,18 +231,17 @@ COMPLEX16Vector * XLALZZVectorMultiply(
     const COMPLEX16Vector *in2
     )
 {
-  static const char *func = "XLALZZVectorMultiply";
   COMPLEX16 *a;
   COMPLEX16 *b;
   COMPLEX16 *c;
   INT4       n;
 
   if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( in1->length != out->length || in2->length != out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   a = in1->data;
   b = in2->data;
@@ -277,18 +273,17 @@ COMPLEX8Vector * XLALCCVectorMultiplyConjugate(
     const COMPLEX8Vector *in2
     )
 {
-  static const char *func = "XLALCCVectorMultiplyConjugate";
   COMPLEX8 *a;
   COMPLEX8 *b;
   COMPLEX8 *c;
   INT4      n;
 
   if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( in1->length != out->length || in2->length != out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   a = in1->data;
   b = in2->data;
@@ -320,18 +315,17 @@ COMPLEX16Vector * XLALZZVectorMultiplyConjugate(
     const COMPLEX16Vector *in2
     )
 {
-  static const char *func = "XLALZZVectorMultiplyConjugate";
   COMPLEX16 *a;
   COMPLEX16 *b;
   COMPLEX16 *c;
   INT4       n;
 
   if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( in1->length != out->length || in2->length != out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   a = in1->data;
   b = in2->data;
@@ -363,18 +357,17 @@ COMPLEX8Vector * XLALSCVectorMultiply(
     const COMPLEX8Vector *in2
     )
 {
-  static const char *func = "XLALSCVectorMultiply";
   REAL4    *a;
   COMPLEX8 *b;
   COMPLEX8 *c;
   INT4      n;
 
   if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( in1->length != out->length || in2->length != out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   a = in1->data;
   b = in2->data;
@@ -404,18 +397,17 @@ COMPLEX16Vector * XLALDZVectorMultiply(
     const COMPLEX16Vector *in2
     )
 {
-  static const char *func = "XLALDZVectorMultiply";
   REAL8     *a;
   COMPLEX16 *b;
   COMPLEX16 *c;
   INT4       n;
 
   if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( in1->length != out->length || in2->length != out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   a = in1->data;
   b = in2->data;
@@ -446,18 +438,17 @@ REAL4Vector * XLALSSVectorMultiply(
     const REAL4Vector    *in2
     )
 {
-  static const char *func = "XLALSSVectorMultiply";
   REAL4 *a;
   REAL4 *b;
   REAL4 *c;
   INT4   n;
 
   if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( in1->length != out->length || in2->length != out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   a = in1->data;
   b = in2->data;
@@ -477,18 +468,17 @@ REAL8Vector * XLALDDVectorMultiply(
     const REAL8Vector    *in2
     )
 {
-  static const char *func = "XLALDDVectorMultiply";
   REAL8 *a;
   REAL8 *b;
   REAL8 *c;
   INT4   n;
 
   if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( in1->length != out->length || in2->length != out->length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   a = in1->data;
   b = in2->data;

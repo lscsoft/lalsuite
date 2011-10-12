@@ -131,9 +131,7 @@ LALInitializeFrameData (
     FrameData **frameData,
     CHAR       *framePath
     )
-{ 
-  const CHAR *headNames[]       = {"C1-*.F", "H-*.F", "H-*.T", "L-*.F",
-                                   "L-*.T", "C1-*[0-9]"};
+{
   const INT4  numHeadNames      = 6;
   const INT4  maxNumFiles       = 2048;
   const INT4  maxFileNameLength = 256;
@@ -146,7 +144,8 @@ LALInitializeFrameData (
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are reasonable */
-  ASSERT (framePath, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  if ( framePath == NULL ) ABORT(status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+
   ASSERT (frameData, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
   ASSERT (!(*frameData), status, FRAMEDATAH_ENNUL, FRAMEDATAH_MSGENNUL);
 
@@ -177,15 +176,18 @@ LALInitializeFrameData (
   for (nameType = 0; nameType < numHeadNames; ++nameType)
   {
     FILE *fp;
-    INT4  nbytes;
     INT4  numFiles;
 
     /* command to list frame files of current name type */
+#ifndef LAL_NDEBUG
+    INT4  nbytes;
+    const CHAR *headNames[]       = {"C1-*.F", "H-*.F", "H-*.T", "L-*.F", "L-*.T", "C1-*[0-9]"};
     nbytes = sprintf (command, "ls %s/%s 2>/dev/null",
                       framePath, headNames[nameType]);
     ASSERT (nbytes > 0, status, FRAMEDATAH_EREAD, FRAMEDATAH_MSGEREAD);
     ASSERT (nbytes < (INT4)sizeof(command), status,
             FRAMEDATAH_EREAD, FRAMEDATAH_MSGEREAD);
+#endif
 
     /* fp is a stream containing the filenames */
     fp = popen (command, "r");

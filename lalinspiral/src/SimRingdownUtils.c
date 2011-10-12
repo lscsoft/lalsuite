@@ -294,7 +294,6 @@ XLALReturnSimRingdownStartTime (
                 )
 
 {
-    static const char *func = "ReturnSimRingdownStartTime";
       if ( ! strcmp( "L1", ifo ) )
       {
         return( XLALGPSToINT8NS(&(event->l_start_time) ) );
@@ -310,7 +309,7 @@ XLALReturnSimRingdownStartTime (
       }
       else
       {
-        XLAL_ERROR(func,XLAL_EIO);
+        XLAL_ERROR(XLAL_EIO);
       }
 
 }

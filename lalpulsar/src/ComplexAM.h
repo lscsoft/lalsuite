@@ -30,8 +30,8 @@
 #define _COMPLEXAM_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <math.h>
@@ -73,18 +73,18 @@ NRCSID (COMPLEXAMH, "$Id: ComplexAM.h");
  * in the case of a complex detector tensor, and some relevant scalar
  * products. That is:
  */
-typedef struct CmplxAMCoeffsTag
+typedef struct tagCmplxAMCoeffs
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(CmplxAMCoeffs);
   COMPLEX8Vector     *a;          /**< the a coefficient evaluated at the relevant times */
   COMPLEX8Vector     *b;          /**< the b coefficient evaluated at the relevant times  */
 } CmplxAMCoeffs;
 
 /** Convenience container for precomputed pi f L/c  and skyposition vector
 */
-typedef struct
+typedef struct tagFreqSkypos_t
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(FreqSkypos_t);
   REAL4 Freq;		/**< signal frequency */
   REAL8 skyposV[3];	/**< unit vector pointing to skyposition of source */
   SymmTensor3 ePlus;	/**< ePlus polarization tensor (skypos-dependent) */
@@ -111,8 +111,8 @@ typedef struct
  * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation
  * to use that fact.
  */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagCmplxAntennaPatternMatrix {
+  SWIGLAL_STRUCT(CmplxAntennaPatternMatrix);
   REAL8 Ad; 		/**<  \f$A_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\f$ */
   REAL8 Bd; 		/**<  \f$B_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
   REAL8 Cd; 		/**<  \f$C_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
@@ -123,8 +123,8 @@ typedef struct {
 
 
 /** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
-typedef struct {
-  SWIGLAL_STRUCT_LALALLOC();
+typedef struct tagMultiCmplxAMCoeffs {
+  SWIGLAL_STRUCT(MultiCmplxAMCoeffs);
   UINT4 length;		/**< number of IFOs */
   CmplxAMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
   CmplxAntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */

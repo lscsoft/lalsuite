@@ -4274,21 +4274,21 @@ INT4 XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
   if((lalpath = getenv("LALPULSAR_PREFIX")) == NULL){
     XLALPrintError("LALPULSAR_PREFIX environment variable not set. Cannot \
 automatically generate ephemeris files!\n");
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
   
   /* get the utc times of the start and end GPS times */
   if( !XLALGPSToUTC( &utcstart, gpsstart ) )
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if( !XLALGPSToUTC( &utcend, gpsend ) )
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   
   /* get years */
   if( strftime(yearstart, buf, "%y", &utcstart) != 2 )
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   
   if( strftime(yearend, buf, "%y", &utcend) != 2 )
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   
   ys = atoi(yearstart);
   ye = atoi(yearend);
@@ -4297,7 +4297,7 @@ automatically generate ephemeris files!\n");
   
   if ( (lalpulsarpath = XLALStringAppend(lalpulsarpath, "/share/lalpulsar/")) ==
 NULL )
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   
   eftmp = XLALStringDuplicate(lalpulsarpath);
   sftmp = XLALStringDuplicate(lalpulsarpath);
@@ -4308,7 +4308,7 @@ NULL )
   /* find the ephemeris file that bounds the required range */
   if ( ( dp = opendir(lalpulsarpath) ) == NULL ){
     XLALPrintError("Error... cannot open directory path %s!\n", lalpulsarpath);
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
     
   while( (entry = readdir(dp) ) ){
@@ -4349,7 +4349,7 @@ NULL )
   if( i == 0 ){
     XLALPrintError("No ephemeris files in the time range %02d-%02d found!\n",
                    ys, ye);
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* add .dat extension */
@@ -4357,7 +4357,7 @@ NULL )
   sftmp = XLALStringAppend(sftmp, ".dat");
   
   if ( eftmp == NULL || sftmp == NULL )
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   XLALStringCopy( efile, eftmp, 1024 );
   XLALStringCopy( sfile, sftmp, 1024 );
@@ -4365,7 +4365,7 @@ NULL )
   /* double check that the files exist */
   if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
     XLALPrintError("Error... ephemeris files not, or incorrectly, defined!\n");
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
   
   return 0;

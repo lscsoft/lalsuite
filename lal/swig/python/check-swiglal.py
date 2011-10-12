@@ -25,7 +25,7 @@ else:
     LALCheckMemoryLeaks()
     mem1 = LALDetector()
     mem2 = LALStringVector()
-    mem3 = COMPLEX8Vector()
+    mem3 = XLALCreateCOMPLEX8Vector(5)
     mem4 = XLALCreateREAL8Vector(3)
     msg("*** below should be an error message from LALCheckMemoryLeaks() ***")
     try:
@@ -34,8 +34,7 @@ else:
     except:
         pass
     msg("*** above should be an error message from LALCheckMemoryLeaks() ***")
-    del mem1, mem2, mem3
-    XLALDestroyREAL8Vector(mem4)
+    del mem1, mem2, mem3, mem4
     LALCheckMemoryLeaks()
     msg("passed memory allocation")
 
@@ -165,20 +164,16 @@ rv = XLALCreateREAL8Vector(5)
 cm = XLALCreateCOMPLEX8VectorSequence(4, 6)
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength)
-XLALDestroyINT4Vector(iv)
-XLALDestroyREAL8Vector(rv)
-XLALDestroyCOMPLEX8VectorSequence(cm)
+del iv, rv, cm
 LALCheckMemoryLeaks()
 msg("passed dynamic vector/matrix conversions (LAL)")
 # check GSL vectors and matrices
-iv = gsl_vector_int_calloc(5)
-rv = gsl_vector_calloc(5)
-cm = gsl_matrix_complex_float_calloc(4, 6)
+iv = gsl_vector_int(5)
+rv = gsl_vector(5)
+cm = gsl_matrix_complex_float(4, 6)
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2)
-gsl_vector_int_free(iv)
-gsl_vector_free(rv)
-gsl_matrix_complex_float_free(cm)
+del iv, rv, cm
 msg("passed dynamic vector/matrix conversions (GSL)")
 
 # check 'tm' struct conversions

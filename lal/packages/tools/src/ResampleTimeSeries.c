@@ -134,7 +134,6 @@ memmove()
 /** UNDOCUMENTED */
 int XLALResampleREAL4TimeSeries( REAL4TimeSeries *series, REAL8 dt )
 {
-  static const char *func = "XLALResampleREAL4TimeSeries";
   const INT4 filterOrder = 20;
   const REAL8 newNyquistAmplitude = 0.1;
   REAL8 newNyquistFrequency;
@@ -148,12 +147,12 @@ int XLALResampleREAL4TimeSeries( REAL4TimeSeries *series, REAL8 dt )
   /* check that the resampling factor is valid */
   if ( resampleFactor < 1 ||
       fabs( dt - resampleFactor * series->deltaT ) > 1e-3 * series->deltaT )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* just return if no resampling is required */
   if ( resampleFactor == 1 )
   {
-    XLALPrintInfo( "XLAL Info - %s: No resampling required", func );
+    XLALPrintInfo( "XLAL Info - %s: No resampling required", __func__ );
     return 0;
   }
 
@@ -162,11 +161,11 @@ int XLALResampleREAL4TimeSeries( REAL4TimeSeries *series, REAL8 dt )
         resampleFactor == 0x4 || resampleFactor == 0x8 ||
         resampleFactor == 0x10 || resampleFactor == 0x20 ||
         resampleFactor == 0x40 || resampleFactor == 0x80 ) )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   if ( XLALLowPassREAL4TimeSeries( series, newNyquistFrequency,
         newNyquistAmplitude, filterOrder ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* decimate the time series */
   series->deltaT = dt;
@@ -186,7 +185,6 @@ int XLALResampleREAL4TimeSeries( REAL4TimeSeries *series, REAL8 dt )
 /** UNDOCUMENTED */
 int XLALResampleREAL8TimeSeries( REAL8TimeSeries *series, REAL8 dt )
 {
-  static const char *func = "XLALResampleREAL8TimeSeries";
   const INT4 filterOrder = 20;
   const REAL8 newNyquistAmplitude = 0.1;
   REAL8 newNyquistFrequency;
@@ -200,12 +198,12 @@ int XLALResampleREAL8TimeSeries( REAL8TimeSeries *series, REAL8 dt )
   /* check that the resampling factor is valid */
   if ( resampleFactor < 1 ||
       fabs( dt - resampleFactor * series->deltaT ) > 1e-3 * series->deltaT )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* just return if no resampling is required */
   if ( resampleFactor == 1 )
   {
-    XLALPrintInfo( "XLAL Info - %s: No resampling required", func );
+    XLALPrintInfo( "XLAL Info - %s: No resampling required", __func__ );
     return 0;
   }
 
@@ -214,11 +212,11 @@ int XLALResampleREAL8TimeSeries( REAL8TimeSeries *series, REAL8 dt )
         resampleFactor == 0x4 || resampleFactor == 0x8 ||
         resampleFactor == 0x10 || resampleFactor == 0x20 ||
         resampleFactor == 0x40 || resampleFactor == 0x80 ) )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   if ( XLALLowPassREAL8TimeSeries( series, newNyquistFrequency,
         newNyquistAmplitude, filterOrder ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* decimate the time series */
   series->deltaT = dt;

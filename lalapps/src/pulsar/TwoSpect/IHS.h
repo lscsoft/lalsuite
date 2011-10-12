@@ -24,7 +24,7 @@
 
 ihsMaximaStruct *new_ihsMaxima(INT4 fbins, INT4 rows);
 void free_ihsMaxima(ihsMaximaStruct *data);
-void runIHS(ihsMaximaStruct *output, ffdataStruct *input, inputParamsStruct *params, INT4 rows, REAL4Vector *FbinMean);
+void runIHS(ihsMaximaStruct *output, ffdataStruct *input, inputParamsStruct *params, INT4 rows, REAL4Vector *aveNoise, REAL4Vector *FbinMean);
 
 ihsVals * new_ihsVals(void);
 void free_ihsVals(ihsVals *ihsvals);
@@ -36,9 +36,14 @@ void free_ihsfarStruct(ihsfarStruct *ihsfarstruct);
 void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4Vector *aveNoise);
 
 void ihsSums(ihsMaximaStruct *output, REAL4Vector *ihss, INT4Vector *locs, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor);
-void ihsSums2(ihsMaximaStruct *output, REAL4VectorSequence *ihsvectorsequence, REAL4Vector *ihss, INT4Vector *locs, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor);
 void ihsSums2_withFAR(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *aveNoise, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor, inputParamsStruct *params, INT4 calcPInvVals);
+void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *aveNoise, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor, inputParamsStruct *params, INT4 calcPInvVals);
 REAL4VectorSequence * ihsVectorSums(REAL4VectorSequence *input, INT4 rows);
+void SSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos);
+void fastSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos);
+void fastSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2);
+void fastSSVectorSequenceScale(REAL4VectorSequence *output, REAL4Vector *input1, REAL4Vector *input2);
+void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors);
 
 void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs);
 

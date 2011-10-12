@@ -194,8 +194,6 @@ LogTimeToString ( double t )
 REAL8
 XLALGetTimeOfDay ( void )
 {
-  const char *fn = __func__;
-
 #ifdef _MSC_VER
   /* Windows version of dtime() from BOINC.
      Compile switch is MS compiler macro,
@@ -217,8 +215,8 @@ XLALGetTimeOfDay ( void )
 
   struct timeval tv;
   if ( gettimeofday ( &tv, NULL ) != 0 ) {
-    XLALPrintError ("%s: call to gettimeofday() failed with errno = %d\n", fn, errno );
-    XLAL_ERROR_REAL8 ( fn, XLAL_ESYS );
+    XLALPrintError ("%s: call to gettimeofday() failed with errno = %d\n", __func__, errno );
+    XLAL_ERROR_REAL8 ( XLAL_ESYS );
   }
 
   return tv.tv_sec + (tv.tv_usec/1.e6);

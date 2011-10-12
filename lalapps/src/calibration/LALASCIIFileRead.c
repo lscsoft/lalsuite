@@ -43,26 +43,25 @@ int isnan( double );
 
 int XLALDataFileNameParse( LALDataFileNameFields *fields, const char *fname )
 {
-  static const char *func = "XLALDataFileNameParse";
   const char *fmt = "%[^-]-%[^-]-%u-%u.%s";
   const char *basename;
   UINT4 t0;
   UINT4 dt;
   int c;
   if ( ! fields || ! fname )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   basename = strrchr( fname, '/' ); /* find the last slash */
   basename = basename ? basename + 1 : fname;
   if ( strlen( basename ) > FILENAME_MAX )
   {
-    XLALPrintError( "XLAL Error - %s: Filename %s too long\n", func, basename );
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLALPrintError( "XLAL Error - %s: Filename %s too long\n", __func__, basename );
+    XLAL_ERROR( XLAL_EBADLEN );
   }
   c = sscanf( basename, fmt, fields->site, fields->description, &t0, &dt, fields->extension );
   if ( c != 5 )
   {
-    XLALPrintError( "XLAL Error - %s: Could not parse basename %s\n\tinto <site>-<description>-<tstart>-<duration>.<extension> format\n", func, basename );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "XLAL Error - %s: Could not parse basename %s\n\tinto <site>-<description>-<tstart>-<duration>.<extension> format\n", __func__, basename );
+    XLAL_ERROR( XLAL_EINVAL );
   }
   fields->tstart   = t0;
   fields->duration = dt;
@@ -71,7 +70,6 @@ int XLALDataFileNameParse( LALDataFileNameFields *fields, const char *fname )
 
 int XLALCalRefFileNameDescriptionParse( LALCalRefFileNameDescriptionFields *fields, const char *description )
 {
-  static const char *func = "XLALCalRefFileNameDescriptionParse";
   char dsc[FILENAME_MAX];
   char *dsc_channel_start;
   char *dsc_version_start;
@@ -80,11 +78,11 @@ int XLALCalRefFileNameDescriptionParse( LALCalRefFileNameDescriptionFields *fiel
   int c;
 
   if ( ! fields || ! description )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( strlen( description ) > FILENAME_MAX )
   {
-    XLALPrintError( "XLAL Error - %s: Description string %s too long\n", func, description );
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLALPrintError( "XLAL Error - %s: Description string %s too long\n", __func__, description );
+    XLAL_ERROR( XLAL_EBADLEN );
   }
 
   XLALStringCopy( dsc, description, sizeof( dsc ) );
@@ -94,15 +92,15 @@ int XLALCalRefFileNameDescriptionParse( LALCalRefFileNameDescriptionFields *fiel
   dsc_channel_start = strchr( dsc, '_' );
   if ( ! dsc_channel_start )
   {
-    XLALPrintError( "XLAL Error - %s: Could not parse description field %s\n\tinto <ifo>_CAL_REF_<channelpostfix>_<run>_<version> format\n", func, description );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "XLAL Error - %s: Could not parse description field %s\n\tinto <ifo>_CAL_REF_<channelpostfix>_<run>_<version> format\n", __func__, description );
+    XLAL_ERROR( XLAL_EINVAL );
   }
   *dsc_channel_start++ = 0;
   /* now skip the CAL_REF_ */
   if ( dsc_channel_start != strstr( dsc_channel_start, "CAL_REF_" ) )
   {
-    XLALPrintError( "XLAL Error - %s: Could not parse description field %s\n\tinto <ifo>_CAL_REF_<channelpostfix>_<run>_<version> format\n", func, description );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "XLAL Error - %s: Could not parse description field %s\n\tinto <ifo>_CAL_REF_<channelpostfix>_<run>_<version> format\n", __func__, description );
+    XLAL_ERROR( XLAL_EINVAL );
   }
   dsc_channel_start += strlen( "CAL_REF" );
   *dsc_channel_start++ = 0;
@@ -111,8 +109,8 @@ int XLALCalRefFileNameDescriptionParse( LALCalRefFileNameDescriptionFields *fiel
   dsc_version_start = strrchr( dsc_channel_start, '_' );
   if ( ! dsc_version_start )
   {
-    XLALPrintError( "XLAL Error - %s: Could not parse description field %s\n\tinto <ifo>_CAL_REF_<channelpostfix>_<run>_<version> format\n", func, description );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "XLAL Error - %s: Could not parse description field %s\n\tinto <ifo>_CAL_REF_<channelpostfix>_<run>_<version> format\n", __func__, description );
+    XLAL_ERROR( XLAL_EINVAL );
   }
   *dsc_version_start++ = 0;
 
@@ -120,8 +118,8 @@ int XLALCalRefFileNameDescriptionParse( LALCalRefFileNameDescriptionFields *fiel
   dsc_run_start = strrchr( dsc_channel_start, '_' );
   if ( ! dsc_run_start )
   {
-    XLALPrintError( "XLAL Error - %s: Could not parse description field %s\n\tinto <ifo>_CAL_REF_<channelpostfix>_<run>_<version> format\n", func, description );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "XLAL Error - %s: Could not parse description field %s\n\tinto <ifo>_CAL_REF_<channelpostfix>_<run>_<version> format\n", __func__, description );
+    XLAL_ERROR( XLAL_EINVAL );
   }
   *dsc_run_start++ = 0;
 
@@ -135,8 +133,8 @@ int XLALCalRefFileNameDescriptionParse( LALCalRefFileNameDescriptionFields *fiel
       fields->version = -1; /* means unity */
     else
     {
-      XLALPrintError( "XLAL Error - %s: Could not parse description field %s\n\tinto <ifo>_CAL_REF_<channelpostfix>_<run>_<version> format\n", func, description );
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLALPrintError( "XLAL Error - %s: Could not parse description field %s\n\tinto <ifo>_CAL_REF_<channelpostfix>_<run>_<version> format\n", __func__, description );
+      XLAL_ERROR( XLAL_EINVAL );
     }
   }
   return 0;
@@ -144,16 +142,15 @@ int XLALCalRefFileNameDescriptionParse( LALCalRefFileNameDescriptionFields *fiel
 
 int XLALCalFacFileNameDescriptionParse( LALCalFacFileNameDescriptionFields *fields, const char *description )
 {
-  static const char *func = "XLALCalRefFileNameDescriptionParse";
   const char *fmt1 = "%[^_]_CAL_FAC_%[^_]_V%d_%d";
   const char *fmt2 = "%[^_]_CAL_FAC_%[^_]_VU_%d";
   int c;
   if ( ! fields || ! description )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( strlen( description ) > FILENAME_MAX )
   {
-    XLALPrintError( "XLAL Error - %s: Description string %s too long\n", func, description );
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLALPrintError( "XLAL Error - %s: Description string %s too long\n", __func__, description );
+    XLAL_ERROR( XLAL_EBADLEN );
   }
   c = sscanf( description, fmt1, fields->ifo, fields->run, &fields->version, &fields->deltaT );
   if ( c != 4 )
@@ -161,8 +158,8 @@ int XLALCalFacFileNameDescriptionParse( LALCalFacFileNameDescriptionFields *fiel
     c = sscanf( description, fmt2, fields->ifo, fields->run, fields->deltaT );
     if ( c != 3 )
     {
-      XLALPrintError( "XLAL Error - %s: Could not parse description field %s\n\tinto <ifo>_CAL_FAC_<run>_<version>_<deltat> format\n", func, description );
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLALPrintError( "XLAL Error - %s: Could not parse description field %s\n\tinto <ifo>_CAL_FAC_<run>_<version>_<deltat> format\n", __func__, description );
+      XLAL_ERROR( XLAL_EINVAL );
     }
     fields->version = -1; /* means unity */
   }
@@ -172,7 +169,6 @@ int XLALCalFacFileNameDescriptionParse( LALCalFacFileNameDescriptionFields *fiel
 
 int XLALASCIIFileCountRows( const char *fname )
 {
-  static const char *func = "XLALASCIIFileCountRows";
   char line[LINE_MAX];
   int nline;
   int nrow;
@@ -180,7 +176,7 @@ int XLALASCIIFileCountRows( const char *fname )
 
   fp = fopen( fname, "r" );
   if ( ! fp )
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR( XLAL_EIO );
 
   nline = 0;
   nrow = 0;
@@ -192,8 +188,8 @@ int XLALASCIIFileCountRows( const char *fname )
       if ( strlen( line ) >= sizeof( line ) - 1 )
       {
         fclose( fp );
-        XLALPrintError( "XLAL Error - %s: line %d too long\n\tfile: %s\n", func, nline, fname );
-        XLAL_ERROR( func, XLAL_EBADLEN );
+        XLALPrintError( "XLAL Error - %s: line %d too long\n\tfile: %s\n", __func__, nline, fname );
+        XLAL_ERROR( XLAL_EBADLEN );
       }
       /* check to see if this line is a comment line */
       if ( line[0] == '#' || line[0] == '%' )
@@ -205,7 +201,7 @@ int XLALASCIIFileCountRows( const char *fname )
     else /* must have been a file reading error */
     {
       fclose( fp );
-      XLAL_ERROR( func, XLAL_EIO );
+      XLAL_ERROR( XLAL_EIO );
     }
 
   fclose( fp );
@@ -215,7 +211,6 @@ int XLALASCIIFileCountRows( const char *fname )
 
 REAL8VectorSequence * XLALASCIIFileReadColumns( INT4 ncol, const char *fname )
 {
-  static const char *func = "XLALASCIIFileReadColumns";
   char line[LINE_MAX];
   REAL8VectorSequence *data;
   int nline;
@@ -225,25 +220,25 @@ REAL8VectorSequence * XLALASCIIFileReadColumns( INT4 ncol, const char *fname )
   FILE *fp;
 
   if ( ncol < 0 )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   /* count rows */
   nrow = XLALASCIIFileCountRows( fname );
   if ( nrow < 0 )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
 
   /* allocate memory for data */
   /* column 0 will contain line number of input file */
   data = XLALCreateREAL8VectorSequence( nrow, ncol + 1 );
   if ( ! data )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
 
   /* open file */
   fp = fopen( fname, "r" );
   if ( ! fp )
   {
     XLALDestroyREAL8VectorSequence( data );
-    XLAL_ERROR_NULL( func, XLAL_EIO );
+    XLAL_ERROR_NULL( XLAL_EIO );
   }
 
   nline = 0;
@@ -255,10 +250,10 @@ REAL8VectorSequence * XLALASCIIFileReadColumns( INT4 ncol, const char *fname )
       ++nline;
       if ( strlen( line ) >= sizeof( line ) - 1 )
       {
-        XLALPrintError( "XLAL Error - %s: line %d too long\n\tfile: %s\n", func, nline, fname );
+        XLALPrintError( "XLAL Error - %s: line %d too long\n\tfile: %s\n", __func__, nline, fname );
         XLALDestroyREAL8VectorSequence( data );
         fclose( fp );
-        XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+        XLAL_ERROR_NULL( XLAL_EBADLEN );
       }
       if ( line[0] == '#' || line[0] == '%' )
         continue;
@@ -270,19 +265,19 @@ REAL8VectorSequence * XLALASCIIFileReadColumns( INT4 ncol, const char *fname )
         val = strtod( p, &endp );
         if ( p == endp ) /* no conversion */
         {
-          XLALPrintError( "XLAL Error - %s: unable to parse line %d\n\tfile: %s\n", func, nline, fname );
+          XLALPrintError( "XLAL Error - %s: unable to parse line %d\n\tfile: %s\n", __func__, nline, fname );
           XLALDestroyREAL8VectorSequence( data );
           fclose( fp );
-          XLAL_ERROR_NULL( func, XLAL_EFAILED );
+          XLAL_ERROR_NULL( XLAL_EFAILED );
         }
         if ( isnan( val ) )
         {
-          XLALPrintWarning( "XLAL Warning - %s: invalid data (nan) in column %d of line %d\n\tfile: %s\n", func, col, nline, fname );
+          XLALPrintWarning( "XLAL Warning - %s: invalid data (nan) in column %d of line %d\n\tfile: %s\n", __func__, col, nline, fname );
           val = 0;
         }
         if ( isinf( val ) )
         {
-          XLALPrintWarning( "XLAL Warning - %s: invalid data (inf) in column %d of line %d\n\tfile: %s\n", func, col, nline, fname );
+          XLALPrintWarning( "XLAL Warning - %s: invalid data (inf) in column %d of line %d\n\tfile: %s\n", __func__, col, nline, fname );
           val = 0;
         }
         data->data[row*data->vectorLength + col] = val;
@@ -293,7 +288,7 @@ REAL8VectorSequence * XLALASCIIFileReadColumns( INT4 ncol, const char *fname )
     else
     {
       XLALDestroyREAL8VectorSequence( data );
-      XLAL_ERROR_NULL( func, XLAL_EIO );
+      XLAL_ERROR_NULL( XLAL_EIO );
     }
 
   fclose( fp );
@@ -303,7 +298,6 @@ REAL8VectorSequence * XLALASCIIFileReadColumns( INT4 ncol, const char *fname )
 
 REAL4 XLALASCIIFileReadCalFacHeader( const char *fname )
 {
-  static const char *func = "XLALASCIIFileReadCalFacHeader";
   static const char *fmt1 = "%% deltaT = %f\n"; /* format of line 1 */
   static const char *fmt2 = "%% ""$""Name: %[^$]""$""\n"; /* format of line 2 */
   char line[LINE_MAX];
@@ -314,25 +308,25 @@ REAL4 XLALASCIIFileReadCalFacHeader( const char *fname )
 
   fp = fopen( fname, "r" );
   if ( ! fp )
-    XLAL_ERROR_REAL4( func, XLAL_EIO );
+    XLAL_ERROR_REAL4( XLAL_EIO );
 
   fgets( line, sizeof( line ), fp );
   c = sscanf( line, fmt1, &deltaT );
   if ( c != 1 ) /* wrong number of conversions */
   {
-    XLALPrintError( "XLAL Error - %s: incorrect first header line\n\tfile: %s\n", func, fname );
-    XLAL_ERROR( func, XLAL_EFAILED );
+    XLALPrintError( "XLAL Error - %s: incorrect first header line\n\tfile: %s\n", __func__, fname );
+    XLAL_ERROR( XLAL_EFAILED );
   }
 
   fgets( line, sizeof( line ), fp );
   c = sscanf( line, fmt2, cvsname );
   if ( c != 1 ) /* wrong number of conversions */
   {
-    XLALPrintError( "XLAL Error - %s: incorrect second header line\n\tfile: %s\n", func, fname );
-    XLAL_ERROR( func, XLAL_EFAILED );
+    XLALPrintError( "XLAL Error - %s: incorrect second header line\n\tfile: %s\n", __func__, fname );
+    XLAL_ERROR( XLAL_EFAILED );
   }
 
-  XLALPrintInfo( "XLAL Info - %s: CVS tag used to produce factors data file: \"%s\"\n", func, cvsname );
+  XLALPrintInfo( "XLAL Info - %s: CVS tag used to produce factors data file: \"%s\"\n", __func__, cvsname );
 
   fclose( fp );
   return deltaT;
@@ -341,7 +335,6 @@ REAL4 XLALASCIIFileReadCalFacHeader( const char *fname )
 
 REAL4 XLALASCIIFileReadCalRefHeader( const char *fname )
 {
-  static const char *func = "XLALASCIIFileReadCalRefHeader";
   static const char *fmt1 = "%% deltaF = %f\n"; /* format of line 1 */
   static const char *fmt2 = "%% ""$""Name: %[^$]""$""\n"; /* format of line 2 */
   char line[LINE_MAX];
@@ -352,25 +345,25 @@ REAL4 XLALASCIIFileReadCalRefHeader( const char *fname )
 
   fp = fopen( fname, "r" );
   if ( ! fp )
-    XLAL_ERROR_REAL4( func, XLAL_EIO );
+    XLAL_ERROR_REAL4( XLAL_EIO );
 
   fgets( line, sizeof( line ), fp );
   c = sscanf( line, fmt1, &deltaF );
   if ( c != 1 ) /* wrong number of conversions */
   {
-    XLALPrintError( "XLAL Error - %s: incorrect first header line\n\tfile: %s\n", func, fname );
-    XLAL_ERROR( func, XLAL_EFAILED );
+    XLALPrintError( "XLAL Error - %s: incorrect first header line\n\tfile: %s\n", __func__, fname );
+    XLAL_ERROR( XLAL_EFAILED );
   }
 
   fgets( line, sizeof( line ), fp );
   c = sscanf( line, fmt2, cvsname );
   if ( c != 1 ) /* wrong number of conversions */
   {
-    XLALPrintError( "XLAL Error - %s: incorrect second header line\n\tfile: %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAILED );
+    XLALPrintError( "XLAL Error - %s: incorrect second header line\n\tfile: %s\n", __func__ );
+    XLAL_ERROR( XLAL_EFAILED );
   }
 
-  XLALPrintInfo( "XLAL Info - %s: CVS tag used to produce factors data file: \"%s\"\n", func, cvsname, fname );
+  XLALPrintInfo( "XLAL Info - %s: CVS tag used to produce factors data file: \"%s\"\n", __func__, cvsname, fname );
 
   fclose( fp );
   return deltaF;
@@ -380,7 +373,6 @@ REAL4 XLALASCIIFileReadCalRefHeader( const char *fname )
 
 int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **lal_gamma, const char *fname )
 {
-  static const char *func = "XLALASCIIFileReadCalFac";
   const REAL8 fuzzfactor = 1e-3; /* fraction of a sample of fuzziness */
   REAL8 fuzz; /* possible discrepancies in times */
   char alphaName[] = "Xn:CAL-CAV_FAC";
@@ -398,23 +390,23 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **lal_gamm
   int dat;
 
   if ( ! alpha || ! lal_gamma )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( *alpha || *lal_gamma )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   if ( XLALDataFileNameParse( &fileFields, fname ) < 0 )
   {
-    XLALPrintError( "XLAL Error - %s: invalid file name %s\n", func, fname );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "XLAL Error - %s: invalid file name %s\n", __func__, fname );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   if ( XLALCalFacFileNameDescriptionParse( &descFields, fileFields.description ) < 0 )
   {
-    XLALPrintError( "XLAL Error - %s: invalid description part of file name %s\n", func, fname );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "XLAL Error - %s: invalid description part of file name %s\n", __func__, fname );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
-  XLALPrintInfo( "XLAL Info - %s: Reading calibration factors from file %s\n", func, fname );
+  XLALPrintInfo( "XLAL Info - %s: Reading calibration factors from file %s\n", __func__, fname );
 
   /* setup channel names */
   memcpy( alphaName, descFields.ifo, 2 );
@@ -422,23 +414,23 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **lal_gamm
 
   deltaT = XLALASCIIFileReadCalFacHeader( fname );
   if ( XLAL_IS_REAL4_FAIL_NAN( deltaT ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   if ( deltaT <= 0 ) /* bad time step */
-    XLAL_ERROR( func, XLAL_EDATA );
+    XLAL_ERROR( XLAL_EDATA );
 
   /* check consistency of time steps */
   if ( fabs( descFields.deltaT - deltaT ) > 1 ) /* step in file name might only be accurate to one second */
-    XLAL_ERROR( func, XLAL_EDATA );
+    XLAL_ERROR( XLAL_EDATA );
 
   /* read three columns */
   data = XLALASCIIFileReadColumns( 3, fname );
   if ( ! data )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   if ( ! data->length )
   {
-    XLALPrintError( "XLAL Error - %s: no rows of data\n", func );
-    XLAL_ERROR( func, XLAL_EFAILED );
+    XLALPrintError( "XLAL Error - %s: no rows of data\n", __func__ );
+    XLAL_ERROR( XLAL_EFAILED );
   }
   nrow = data->length;
 
@@ -450,14 +442,14 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **lal_gamm
   if ( ( fileFields.tstart != (int)floor( tstart ) )
     || ( fileFields.tstart + fileFields.duration != (int)ceil( tend + deltaT ) ) )
   {
-    XLALPrintError( "XLAL Error - %s: filename start time and duration not consistent with contents\n", func );
+    XLALPrintError( "XLAL Error - %s: filename start time and duration not consistent with contents\n", __func__ );
     XLALDestroyREAL8VectorSequence( data );
-    XLAL_ERROR( func, XLAL_EDATA );
+    XLAL_ERROR( XLAL_EDATA );
   }
   if ( nrow > ndat ) /* this should be impossible */
   {
     XLALDestroyREAL8VectorSequence( data );
-    XLAL_ERROR( func, XLAL_EDATA );
+    XLAL_ERROR( XLAL_EDATA );
   }
 
   XLALGPSSetREAL8( &epoch, tstart );
@@ -469,7 +461,7 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **lal_gamm
     XLALDestroyREAL4TimeSeries( *lal_gamma );
     XLALDestroyREAL4TimeSeries( *alpha );
     XLALDestroyREAL8VectorSequence( data );
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* clear the data memory */
@@ -488,29 +480,29 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **lal_gamm
     int thisdat = (int)floor( (trow - tstart) / deltaT + 0.5 );
     if ( thisdat <= dat ) /* rows must be monotonically increasing in time */
     {
-      XLALPrintError( "XLAL Error - %s: error on line %d of file %s\n\trows must be monotonically increasing in time\n", func, line, fname );
+      XLALPrintError( "XLAL Error - %s: error on line %d of file %s\n\trows must be monotonically increasing in time\n", __func__, line, fname );
       XLALDestroyREAL4TimeSeries( *lal_gamma );
       XLALDestroyREAL4TimeSeries( *alpha );
       XLALDestroyREAL8VectorSequence( data );
-      XLAL_ERROR( func, XLAL_EDATA );
+      XLAL_ERROR( XLAL_EDATA );
     }
     dat = thisdat;
     if ( fabs( (tstart + dat * deltaT) - trow ) > fuzz ) /* time between rows must be an integral multiple of deltaT */
     {
-      XLALPrintError( "XLAL Error - %s: error on line %d of file %s\n\ttimes must be integral multiples of deltaT\n", func, line, fname );
+      XLALPrintError( "XLAL Error - %s: error on line %d of file %s\n\ttimes must be integral multiples of deltaT\n", __func__, line, fname );
       XLALDestroyREAL4TimeSeries( *lal_gamma );
       XLALDestroyREAL4TimeSeries( *alpha );
       XLALDestroyREAL8VectorSequence( data );
-      XLAL_ERROR( func, XLAL_EDATA );
+      XLAL_ERROR( XLAL_EDATA );
     }
     if ( dat >= ndat ) /* beyond length of array */
     {
       printf( "%d\t%d\n", dat, ndat );
-      XLALPrintError( "XLAL Error - %s: error on line %d of file %s\n\ttime beyond end time\n", func, line, fname );
+      XLALPrintError( "XLAL Error - %s: error on line %d of file %s\n\ttime beyond end time\n", __func__, line, fname );
       XLALDestroyREAL4TimeSeries( *lal_gamma );
       XLALDestroyREAL4TimeSeries( *alpha );
       XLALDestroyREAL8VectorSequence( data );
-      XLAL_ERROR( func, XLAL_EDATA );
+      XLAL_ERROR( XLAL_EDATA );
     }
     (*alpha)->data->data[dat] = alphaval;
     (*lal_gamma)->data->data[dat] = gammaval;
@@ -523,7 +515,6 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **lal_gamm
 
 int XLALASCIIFileReadCalRef( COMPLEX8FrequencySeries **series, REAL8 *duration, const char *fname )
 {
-  static const char *func = "XLALASCIIFileReadCalRef";
   const REAL8 fuzzfactor = 1e-3; /* fraction of a sample of fuzziness */
   REAL8 fuzz; /* possible discrepancies in times */
   LALDataFileNameFields              fileFields;
@@ -541,24 +532,24 @@ int XLALASCIIFileReadCalRef( COMPLEX8FrequencySeries **series, REAL8 *duration, 
   int row;
 
   if ( ! series )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( *series )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   if ( XLALDataFileNameParse( &fileFields, fname ) < 0 )
   {
-    XLALPrintError( "XLAL Error - %s: invalid file name %s\n", func, fname );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "XLAL Error - %s: invalid file name %s\n", __func__, fname );
+    XLAL_ERROR( XLAL_EINVAL );
   }
   *duration = fileFields.duration;
 
   if ( XLALCalRefFileNameDescriptionParse( &descFields, fileFields.description ) < 0 )
   {
-    XLALPrintError( "XLAL Error - %s: invalid description part of file name %s\n", func, fname );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "XLAL Error - %s: invalid description part of file name %s\n", __func__, fname );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
-  XLALPrintInfo( "XLAL Info - %s: Reading calibration factors from file %s\n", func, fname );
+  XLALPrintInfo( "XLAL Info - %s: Reading calibration factors from file %s\n", __func__, fname );
 
   /* setup units */
   if ( strstr( descFields.channelPostfix, "RESPONSE" ) )
@@ -573,8 +564,8 @@ int XLALASCIIFileReadCalRef( COMPLEX8FrequencySeries **series, REAL8 *duration, 
     unit = lalDimensionlessUnit;
   else
   {
-    XLALPrintError( "XLAL Error - %s: invalid channel %s\n", func, descFields.channelPostfix );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLALPrintError( "XLAL Error - %s: invalid channel %s\n", __func__, descFields.channelPostfix );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* setup channel names */
@@ -585,20 +576,20 @@ int XLALASCIIFileReadCalRef( COMPLEX8FrequencySeries **series, REAL8 *duration, 
   /* read header */
   deltaF = XLALASCIIFileReadCalRefHeader( fname );
   if ( XLAL_IS_REAL4_FAIL_NAN( deltaF ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   if ( deltaF <= 0 ) /* bad time step */
-    XLAL_ERROR( func, XLAL_EDATA );
+    XLAL_ERROR( XLAL_EDATA );
 
 
   /* read three columns */
   data = XLALASCIIFileReadColumns( 3, fname );
   if ( ! data )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   if ( ! data->length )
   {
-    XLALPrintError( "XLAL Error - %s: no rows of data\n", func );
-    XLAL_ERROR( func, XLAL_EFAILED );
+    XLALPrintError( "XLAL Error - %s: no rows of data\n", __func__ );
+    XLAL_ERROR( XLAL_EFAILED );
   }
   nrow = data->length;
 
@@ -611,7 +602,7 @@ int XLALASCIIFileReadCalRef( COMPLEX8FrequencySeries **series, REAL8 *duration, 
   if ( nrow != ndat ) /* this should be impossible */
   {
     XLALDestroyREAL8VectorSequence( data );
-    XLAL_ERROR( func, XLAL_EDATA );
+    XLAL_ERROR( XLAL_EDATA );
   }
 
   XLALGPSSetREAL8( &epoch, fileFields.tstart );
@@ -620,7 +611,7 @@ int XLALASCIIFileReadCalRef( COMPLEX8FrequencySeries **series, REAL8 *duration, 
   if ( ! *series )
   {
     XLALDestroyREAL8VectorSequence( data );
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   fuzz = fuzzfactor * deltaF;
@@ -633,10 +624,10 @@ int XLALASCIIFileReadCalRef( COMPLEX8FrequencySeries **series, REAL8 *duration, 
     REAL8 fexp = fstart + row * df;
     if ( fabs( freq - fexp ) / fexp > fuzz )
     {
-      XLALPrintError( "XLAL Error - %s: error on line %d of file %s\n\tunexpected frequency\n", func, line, fname );
+      XLALPrintError( "XLAL Error - %s: error on line %d of file %s\n\tunexpected frequency\n", __func__, line, fname );
       XLALDestroyCOMPLEX8FrequencySeries( *series );
       XLALDestroyREAL8VectorSequence( data );
-      XLAL_ERROR( func, XLAL_EDATA );
+      XLAL_ERROR( XLAL_EDATA );
     }
     (*series)->data->data[row].re = mod * cos( arg );
     (*series)->data->data[row].im = mod * sin( arg );

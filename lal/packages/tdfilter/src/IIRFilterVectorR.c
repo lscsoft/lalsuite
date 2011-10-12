@@ -77,7 +77,6 @@ NRCSID(IIRFILTERVECTORRC,"$Id$");
 
 int XLALIIRFilterReverseREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter )
 {
-  static const char *func = "XLALIIRFilterReverseREAL4Vector";
   INT4 j;            /* Index for filter coeficients. */
   INT4 length;       /* Length of vector. */
   REAL4 *data;       /* Vector data. */
@@ -91,13 +90,13 @@ int XLALIIRFilterReverseREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter
 
   /* Make sure all the structures have been initialized. */
   if ( ! vector || ! filter )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( ! vector->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! filter->directCoef || ! filter->recursCoef || ! filter->history
       || !  filter->directCoef->data || ! filter->recursCoef->data
       || !  filter->history->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   length=vector->length;
   data=vector->data+length-1;
@@ -108,7 +107,7 @@ int XLALIIRFilterReverseREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter
   numHist=filter->history->length+1;
   temp = LALMalloc( numHist*sizeof(*temp) );
   if ( ! temp )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   memset(temp,0,(numHist-1)*sizeof(*temp));
 
   /* Run through the vector. */
@@ -136,7 +135,6 @@ int XLALIIRFilterReverseREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter
 
 int XLALIIRFilterReverseREAL8Vector( REAL8Vector *vector, REAL8IIRFilter *filter )
 {
-  static const char *func = "XLALIIRFilterReverseREAL8Vector";
   INT4 i;            /* Loop counter for data vector. */
   INT4 j;            /* Index for filter coeficients. */
   INT4 length;       /* Length of vector. */
@@ -149,13 +147,13 @@ int XLALIIRFilterReverseREAL8Vector( REAL8Vector *vector, REAL8IIRFilter *filter
 
   /* Make sure all the structures have been initialized. */
   if ( ! vector || ! filter )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( ! vector->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! filter->directCoef || ! filter->recursCoef || ! filter->history
       || !  filter->directCoef->data || ! filter->recursCoef->data
       || !  filter->history->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   length=vector->length;
   data=vector->data+length-1;

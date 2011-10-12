@@ -199,26 +199,19 @@ int main( int argc, char *argv[] )
 	REAL8Vector	*testVector1;
 	REAL8Vector	*testVector2;
 	REAL8Vector	*testVector3;
-	REAL8Vector	*nullVector;
 	MTRandomParams	*params;
-	MTRandomParams	*nullParams;
-	REAL8		*nullOutput;
 	REAL8		output;
-	UINT8		tempLength;
 	INT8		iterator;
-	INT4		code;
 	INT4		count;
 
 	ParseOptions( argc, argv );
 
 	/*  Initialize Variables  */
-	nullOutput	= NULL;
-	nullVector	= NULL;
 	outputVector	= NULL;
 	testVector1	= NULL;
 	testVector2	= NULL;
 	testVector3	= NULL;
-	nullParams	= NULL;
+
 	params		= NULL;
 	count		= 0;
 
@@ -233,6 +226,11 @@ int main( int argc, char *argv[] )
 	printf("\n\nMESG: %s \n",MERSENNERANDOMTESTC);
 
 #ifndef LAL_NDEBUG
+	INT4		code;
+	REAL8		*nullOutput = NULL;
+	MTRandomParams	*nullParams	= NULL;
+	REAL8Vector	*nullVector	= NULL;
+
   if ( ! lalNoDebug )
   {
 	/*******************  Test LALMersenneRandom()  *********************/
@@ -304,7 +302,7 @@ int main( int argc, char *argv[] )
 	params->initialized = 1;
 
 	/* test behavior for outputVector length = 0  */
-	tempLength = outputVector->length;
+	UINT8		tempLength = outputVector->length;
 	outputVector->length = 0;
 	LALMersenneRandomVector(&status, outputVector, params);
 	if ( ( code = CheckStatus(&status, RANDOMH_EZERO, RANDOMH_MSGEZERO,
@@ -316,9 +314,6 @@ int main( int argc, char *argv[] )
 	printf("       \"%s\"\n", RANDOMH_MSGEZERO);
 	outputVector->length = tempLength;
   }
-#else
-  code = 0;
-  tempLength = 0;
 #endif
 
 	for (iterator = 0; iterator < 1000; iterator++)

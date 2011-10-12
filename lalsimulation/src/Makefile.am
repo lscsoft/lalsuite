@@ -86,6 +86,7 @@ lalsimulation-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
+	@echo "$(SWIG_USER_ENV)" | $(SED) 's|~E~O~L~|\n|g' >>$@
 
 lalsimulation-user-env.csh lalsimulation-user-env.sh: lalsimulation-user-env.shell $(srcdir)/generate_user_env.awk
 	@echo "creating $@"
@@ -104,3 +105,6 @@ LALSimulationVCSInfo.h: ._vcsinfo
 	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALSimulation $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@
+
+swig_headers = $(lalsimulationinclude_HEADERS)
+include $(top_srcdir)/swig/swig-header.am

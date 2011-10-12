@@ -82,7 +82,6 @@ static int XLALBlackHoleModeEigenSolveContinuedFraction(
     void *params
     )
 {
-  static const char *func = "XLALBlackHoleModeEigenSolveContinuedFraction";
   int n = 0;
   COMPLEX16 a, b, alp, gam;
   COMPLEX16 C, D, Delta;
@@ -115,7 +114,7 @@ static int XLALBlackHoleModeEigenSolveContinuedFraction(
     if (cabs(csub(*result,prev))<SMALL)
       return 0;
   }
-  XLAL_ERROR( func, XLAL_EMAXITER );
+  XLAL_ERROR( XLAL_EMAXITER );
   return -1;
 }
 
@@ -229,7 +228,6 @@ static int XLALBlackHoleModeEigenSolveKerrResid( const gsl_vector *x, void *para
 
 static int XLALBlackHoleModeEigenSolveSchwarzschild( COMPLEX16 *omega, int l, int m, int s )
 {
-  static const char *func = "XLALBlackHoleModeEigenSolveSchwarzschild";
   enum { ndim = 2 };
   struct tagBlackHoleMode p;
   const gsl_multiroot_fsolver_type *solverType;
@@ -264,7 +262,7 @@ static int XLALBlackHoleModeEigenSolveSchwarzschild( COMPLEX16 *omega, int l, in
   }
   while ( status == GSL_CONTINUE && iter < MAXITER );
   if ( iter >= MAXITER )
-    XLAL_ERROR( func, XLAL_EMAXITER );
+    XLAL_ERROR( XLAL_EMAXITER );
 
   omega->re = gsl_vector_get(solver->x, 0);
   omega->im = gsl_vector_get(solver->x, 1);
@@ -276,7 +274,6 @@ static int XLALBlackHoleModeEigenSolveSchwarzschild( COMPLEX16 *omega, int l, in
 
 static int XLALBlackHoleModeEigenSolveKerr( COMPLEX16 *A, COMPLEX16 *omega, REAL8 a, int l, int m, int s )
 {
-  static const char *func = "XLALBlackHoleModeEigenSolveKerr";
   enum { ndim = 4 };
   struct tagBlackHoleMode p;
   const gsl_multiroot_fsolver_type *solverType;
@@ -313,7 +310,7 @@ static int XLALBlackHoleModeEigenSolveKerr( COMPLEX16 *A, COMPLEX16 *omega, REAL
   }
   while ( status == GSL_CONTINUE && iter < MAXITER );
   if ( iter >= MAXITER )
-    XLAL_ERROR( func, XLAL_EMAXITER );
+    XLAL_ERROR( XLAL_EMAXITER );
 
   A->re = gsl_vector_get(solver->x, 0);
   A->im = gsl_vector_get(solver->x, 1);
@@ -329,7 +326,6 @@ static int XLALBlackHoleModeEigenSolveKerr( COMPLEX16 *A, COMPLEX16 *omega, REAL
  * On input, they are an initial guess for the solver */
 static int XLALBlackHoleModeEigenSolve( COMPLEX16 *A, COMPLEX16 *omega, REAL8 a, int l, int m, int s )
 {
-  static const char *func = "XLALBlackHoleModeEigenSolve";
   int aIsNegative;
   int status;
 
@@ -353,7 +349,7 @@ static int XLALBlackHoleModeEigenSolve( COMPLEX16 *A, COMPLEX16 *omega, REAL8 a,
     status = XLALBlackHoleModeEigenSolveKerr( A, omega, a, l, m, s );
 
   if ( status < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* if a was negative, apply the identity to restore this eigenvalue */
   if ( aIsNegative )
@@ -379,7 +375,6 @@ void XLALDestroyBlackHoleModeTable( BlackHoleModeTable *mode )
 
 static int XLALBlackHoleModeMakeEigenTable( BlackHoleModeTable *mode )
 {
-  static const char *func = "XLALBlackHoleModeMakeEigenTable";
   const REAL8 fact = 0.19245008972987525483; /* 1.0/sqrt(27.0) */
   size_t nobj = LAL_BLACK_HOLE_MODE_DATA_TABLE_SIZE;
   int l,m,s;
@@ -389,13 +384,13 @@ static int XLALBlackHoleModeMakeEigenTable( BlackHoleModeTable *mode )
   size_t i;
 
   if ( mode->positiveEigenTable || mode->negativeEigenTable )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   mode->eigenTableSize = nobj;
   mode->positiveEigenTable = LALCalloc(nobj, sizeof(*mode->positiveEigenTable));
   mode->negativeEigenTable = LALCalloc(nobj, sizeof(*mode->negativeEigenTable));
   if ( ! mode->positiveEigenTable || ! mode->negativeEigenTable )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
 
   l = mode->l;
   m = mode->m;
@@ -412,7 +407,7 @@ static int XLALBlackHoleModeMakeEigenTable( BlackHoleModeTable *mode )
     if ( XLALBlackHoleModeEigenSolve( &A, &omega, a, l, m, s ) < 0 )
     {
       XLALDestroyBlackHoleModeTable( mode );
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
     eigen->a = a;
     eigen->A = A;
@@ -431,7 +426,7 @@ static int XLALBlackHoleModeMakeEigenTable( BlackHoleModeTable *mode )
     if ( XLALBlackHoleModeEigenSolve( &A, &omega, -a, l, m, s ) < 0 )
     {
       XLALDestroyBlackHoleModeTable( mode );
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
     eigen->a = -a;
     eigen->A = A;
@@ -445,15 +440,14 @@ static int XLALBlackHoleModeMakeEigenTable( BlackHoleModeTable *mode )
 
 BlackHoleModeTable * XLALCreateBlackHoleModeTable( int l, int m, int s )
 {
-  static const char *func = "XLALCreateBlackHoleModeTable";
   BlackHoleModeTable *mode;
 
   if ( l < 0 || abs(m) > l || s > 0 || s < -2 )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   mode = LALCalloc( 1, sizeof( *mode ) );
   if ( ! mode )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   mode->l = l;
   mode->m = m;
@@ -462,7 +456,7 @@ BlackHoleModeTable * XLALCreateBlackHoleModeTable( int l, int m, int s )
   if ( XLALBlackHoleModeMakeEigenTable( mode ) < 0 )
   {
     XLALDestroyBlackHoleModeTable( mode );
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
   return mode;
@@ -471,13 +465,12 @@ BlackHoleModeTable * XLALCreateBlackHoleModeTable( int l, int m, int s )
 
 int XLALBlackHoleModeEigenvaluesLeaverT( COMPLEX16 *A, COMPLEX16 *omega, REAL8 a, BlackHoleModeTable *mode )
 {
-  static const char *func = "XLALBlackHoleModeEigenvaluesLeaverT";
   struct tagBlackHoleModeEigenvalues *eigen;
   int l, m, s;
   size_t i;
 
   if ( ! (fabs(a) < 0.5) )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   l = mode->l;
   m = mode->m;
@@ -495,7 +488,7 @@ int XLALBlackHoleModeEigenvaluesLeaverT( COMPLEX16 *A, COMPLEX16 *omega, REAL8 a
   *omega = eigen[i-1].omega;
 
   if ( XLALBlackHoleModeEigenSolve( A, omega, a, l, m, s ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   return 0;
 }
@@ -503,14 +496,13 @@ int XLALBlackHoleModeEigenvaluesLeaverT( COMPLEX16 *A, COMPLEX16 *omega, REAL8 a
 
 int XLALBlackHoleModeEigenvaluesLeaver( COMPLEX16 *A, COMPLEX16 *omega, REAL8 a, int l, int m, int s )
 {
-  static const char *func = "XLALBlackHoleModeEigenvaluesLeaver";
   const REAL8 fact = 0.19245008972987525483; /* 1.0/sqrt(27.0) */
   size_t nobj = LAL_BLACK_HOLE_MODE_DATA_TABLE_SIZE;
   size_t i;
   int sign;
 
   if ( ! (fabs(a) < 0.5) )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   sign = mysignbit(a) ? -1 : 1;
 
   /* step towards desired value of a */
@@ -522,13 +514,13 @@ int XLALBlackHoleModeEigenvaluesLeaver( COMPLEX16 *A, COMPLEX16 *omega, REAL8 a,
     if ( fabs(atry) > fabs(a) )
       break;
     if ( XLALBlackHoleModeEigenSolve( A, omega, atry, l, m, s ) < 0 )
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* we now have our guess */
 
   if ( XLALBlackHoleModeEigenSolve( A, omega, a, l, m, s ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   return 0;
 }
@@ -570,7 +562,6 @@ int XLALSpheroidalWaveFunction1( COMPLEX16 *result, REAL8 mu, struct tagBlackHol
   return 0;
 
 #else
-  static const char *func = "XLALSpheroidalWaveFunction1";
   struct tagBlackHoleMode params;
   int s=mode->s, m=mode->m;
   REAL8 k1=0.5*abs(m-s), k2=0.5*abs(m+s);
@@ -583,7 +574,7 @@ int XLALSpheroidalWaveFunction1( COMPLEX16 *result, REAL8 mu, struct tagBlackHol
   params = *mode;
   /* params.a = fabs(params.a); */
   if ( XLALBlackHoleModeKerrAngularCoefficients(&alp, &bet, &gam, n, &params) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   prod  = 1;
   sum   = cunit;
@@ -604,12 +595,12 @@ int XLALSpheroidalWaveFunction1( COMPLEX16 *result, REAL8 mu, struct tagBlackHol
     if ( cabs2(term) < 1e-4 )
       break;
     if ( XLALBlackHoleModeKerrAngularCoefficients(&alp, &bet, &gam, n, &params) < 0 )
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     /* Eq. 19, second line: */
     anext = cneg(cdiv(cadd(cmul(bet,a),cmul(gam,aprev)),alp));
   }
   if ( n >= MAXITER)
-    XLAL_ERROR( func, XLAL_EMAXITER );
+    XLAL_ERROR( XLAL_EMAXITER );
 
   *result = cmulr(sum,pow(1+mu,k1)*pow(1-mu,k2));
   *result = cmul(*result,cexp(cmulr(mode->omega,mu*mode->a)));
@@ -620,18 +611,16 @@ int XLALSpheroidalWaveFunction1( COMPLEX16 *result, REAL8 mu, struct tagBlackHol
 
 static REAL8 XLALSpheroidalWaveFunction1Abs2( REAL8 mu, void *params )
 {
-  static const char *func = "XLALSpheroidalWaveFunction1Abs2";
   COMPLEX16 swf;
   REAL8 result;
   if ( XLALSpheroidalWaveFunction1( &swf, mu, params ) )
-    XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+    XLAL_ERROR_REAL8( XLAL_EFUNC );
   result = cabs2(swf);
   return result;
 }
 
 int XLALSpheroidalWaveFunctionNorm( COMPLEX16 *norm, struct tagBlackHoleMode *params )
 {
-  static const char *func = "XLALSpheroidalWaveFunctionNorm";
   enum { WORKSPACESIZE = 1000 };
   gsl_integration_workspace *work;
   gsl_function function;
@@ -648,14 +637,14 @@ int XLALSpheroidalWaveFunctionNorm( COMPLEX16 *norm, struct tagBlackHoleMode *pa
 
   /* get complex part so that spheroidal wave function is real at mu=0 */
   if ( XLALSpheroidalWaveFunction1( &swf, 0.0, params ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   *norm = conj(cdivr(swf,cabs(swf)));
 
   /* sign convention: to agree with sw spherical harmonics */
   /* TODO: CHECKME */
 
   if ( XLALSpheroidalWaveFunction1( &swf, -1.0, params ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   swf = cmul(swf,*norm);
   signneg = ( params->l - ( params->m > params->s ? params->m : params->s ) ) % 2 ? 0 : 1;
   if ( (signneg && (creal(swf) > 0)) || ((! signneg) && (creal(swf) < 0)) )
@@ -668,12 +657,11 @@ int XLALSpheroidalWaveFunctionNorm( COMPLEX16 *norm, struct tagBlackHoleMode *pa
 
 int XLALSpheroidalWaveFunction( COMPLEX16 *result, REAL8 mu, struct tagBlackHoleMode *params )
 {
-  static const char *func = "XLALSpheroidalWaveFunction";
   COMPLEX16 norm;
   if ( XLALSpheroidalWaveFunctionNorm( &norm, params ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   if ( XLALSpheroidalWaveFunction1( result, mu, params ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   *result = cmul( *result, norm );
   return 0;
 }
@@ -682,9 +670,8 @@ int XLALSpheroidalWaveFunction( COMPLEX16 *result, REAL8 mu, struct tagBlackHole
 /* Here a is in standard conventions, not Leaver's */
 int XLALSetBlackHoleModeParams( struct tagBlackHoleMode *params, REAL8 a, int l, int m, int s )
 {
-  static const char *func = "XLALSetBlackHoleModeParams";
   if ( l < 0 || abs(m) > l || s > 0 || s < -2 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   params->a = 0.5 * a; /* to convert from standard conventions to Leaver conventions */
   params->l = l;
   params->m = m;
@@ -747,7 +734,6 @@ int XLALBlackHoleRingdownWaveform(
     int m
     )
 {
-  static const char *func = "XLALBlackHoleRingdownWaveform";
   const int s = -2;
   struct tagBlackHoleMode params;
   COMPLEX16 swf_1, swf_2, omega;
@@ -759,12 +745,12 @@ int XLALBlackHoleRingdownWaveform(
   INT4 i;
 
   if ( ! plus || ! cross )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( plus->deltaT != cross->deltaT )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! plus->data || ! cross->data
       || plus->data->length != cross->data->length )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   mu = cos( inclinationRad );
   dt = plus->deltaT;
@@ -779,7 +765,7 @@ int XLALBlackHoleRingdownWaveform(
   /* how many points in the waveform to compute */
   ndat = ceil( log( LAL_REAL4_EPS ) * massSolar * LAL_MTSUN_SI / ( cimag(omega) * dt ) );
   if ( ndat < 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
   if ( ndat > (INT4)plus->data->length )
   {
     /* warning: waveform will be truncated */

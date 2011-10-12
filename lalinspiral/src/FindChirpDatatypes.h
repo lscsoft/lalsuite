@@ -435,6 +435,7 @@ tagFindChirpTemplate
   InspiralTemplate              tmplt;
   COMPLEX8Vector               *data;
   COMPLEX8VectorSequence       *ACTDtilde;
+  REAL4VectorSequence          *PTFQ;
   COMPLEX8VectorSequence       *PTFQtilde;
   REAL4Array                   *PTFBinverse;
   REAL4Array                   *PTFB;

@@ -224,7 +224,6 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   /* This is mostly ripped off some code Jolien sent me a while back,
      and calibration frame writing code */
 
-  static const char func[] = "WriteFrame";
   FrFile *frfile;
   FrameH *frame;
   char fname[FILENAME_MAX];
@@ -262,39 +261,39 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   /*re-size h(t) and data time series*/
   if(!XLALResizeREAL8TimeSeries(&(OutputData.h), (int)(InputData.wings/OutputData.h.deltaT),
 			   OutputData.h.data->length-2*(UINT4)(InputData.wings/OutputData.h.deltaT)))
-    XLAL_ERROR(func, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   strncpy( OutputData.h.name,  CLA.strainchannel, sizeof( OutputData.h.name  ) );
 
   /* resize alpha and gamma time series */
   if(!XLALResizeCOMPLEX16TimeSeries(&(OutputData.alpha), (int)(InputData.wings/OutputData.alpha.deltaT),
 			   OutputData.alpha.data->length-2*(UINT4)(InputData.wings/OutputData.alpha.deltaT)))
-    XLAL_ERROR(func, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if(!XLALResizeCOMPLEX16TimeSeries(&(OutputData.alphabeta), (int)(InputData.wings/OutputData.alphabeta.deltaT),
 			   OutputData.alphabeta.data->length-2*(UINT4)(InputData.wings/OutputData.alphabeta.deltaT)))
-    XLAL_ERROR(func, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   /* Resize State Vector and Data Quality time series */
   if(!XLALResizeREAL4TimeSeries(&(InputData.StateVector), (int)(InputData.wings/InputData.StateVector.deltaT),
                InputData.StateVector.data->length-2*(UINT4)(InputData.wings/InputData.StateVector.deltaT)))
-    XLAL_ERROR(func, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if(!XLALResizeINT4TimeSeries(&(OutputDQ), (int)(InputData.wings/OutputDQ.deltaT),
 			   OutputDQ.data->length-2*(UINT4)(InputData.wings/OutputDQ.deltaT)))
-    XLAL_ERROR(func, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   strncpy(OutputDQ.name, dqName, sizeof(OutputDQ.name));   /* also set the name of the channel */
 
   /* Resize DARM_CTRL, DARM_ERR, EXC and AS_Q*/
   if(!XLALResizeREAL4TimeSeries(&(InputData.DARM), (int)(InputData.wings/InputData.DARM.deltaT),
 			   InputData.DARM.data->length-2*(UINT4)(InputData.wings/InputData.DARM.deltaT)))
-    XLAL_ERROR(func, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if(!XLALResizeREAL4TimeSeries(&(InputData.DARM_ERR), (int)(InputData.wings/InputData.DARM_ERR.deltaT),
 			   InputData.DARM_ERR.data->length-2*(UINT4)(InputData.wings/InputData.DARM_ERR.deltaT)))
-    XLAL_ERROR(func, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if(!XLALResizeREAL4TimeSeries(&(InputData.EXC), (int)(InputData.wings/InputData.EXC.deltaT),
 			   InputData.EXC.data->length-2*(UINT4)(InputData.wings/InputData.EXC.deltaT)))
-    XLAL_ERROR(func, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if(!XLALResizeREAL4TimeSeries(&(InputData.AS_Q), (int)(InputData.wings/InputData.AS_Q.deltaT),
 			   InputData.AS_Q.data->length-2*(UINT4)(InputData.wings/InputData.AS_Q.deltaT)))
-    XLAL_ERROR(func, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   /* based on IFO name, choose the correct detector */
   if ( 0 == strcmp(CLA.ifo, "H2") )

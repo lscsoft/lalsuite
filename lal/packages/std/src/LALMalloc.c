@@ -314,69 +314,61 @@ the array bounds were overwritten.
  *
  */
 
-#define XLAL_TEST_POINTER( ptr, size, func )                               \
-    if ( ! (ptr) && (size) )                                               \
-       XLAL_ERROR_NULL( func, XLAL_ENOMEM );                               \
+#define XLAL_TEST_POINTER( ptr, size )                                    \
+    if ( ! (ptr) && (size) )                                              \
+       XLAL_ERROR_NULL( XLAL_ENOMEM );                                    \
     else (void)(0)
-#define XLAL_TEST_POINTER_LONG( ptr, size, func, file, line )              \
-    if ( ! (ptr) && (size) )                                               \
-    {                                                                      \
-       char msg[64];                                                       \
-       snprintf( msg, sizeof( msg ), "%s in %s:%d", func, file, line ); \
-       XLAL_ERROR_NULL( msg, XLAL_ENOMEM );                                \
-    }                                                                      \
+#define XLAL_TEST_POINTER_LONG( ptr, size, file, line )                   \
+    if ( ! (ptr) && (size) )                                              \
+    {                                                                     \
+       XLALPrintError( "XLALError - %s in %s:%d", __func__, file, line ); \
+       XLAL_ERROR_NULL( XLAL_ENOMEM );                                    \
+    }                                                                     \
     else (void)(0)
-
 
 void * (XLALMalloc)( size_t n )
 {
-  static const char *func = "XLALMalloc";
   void *p;
   p = LALMallocShort( n );
-  XLAL_TEST_POINTER( p, n, func );
+  XLAL_TEST_POINTER( p, n );
   return p;
 }
 
 void * XLALMallocLong( size_t n, const char *file, int line )
 {
-  static const char *func = "XLALMallocLong";
   void *p;
   p = LALMallocLong( n, file, line );
-  XLAL_TEST_POINTER_LONG( p, n, func, file, line );
+  XLAL_TEST_POINTER_LONG( p, n, file, line );
   return p;
 }
 
 void * (XLALCalloc)( size_t m, size_t n )
 {
-  static const char *func = "XLALCalloc";
   void *p;
   p = LALCallocShort( m, n );
-  XLAL_TEST_POINTER( p, m * n, func );
+  XLAL_TEST_POINTER( p, m * n );
   return p;
 }
 
 void * XLALCallocLong( size_t m, size_t n, const char *file, int line )
 {
-  static const char *func = "XLALCallocLong";
   void *p;
   p = LALCallocLong( m, n, file, line );
-  XLAL_TEST_POINTER_LONG( p, m * n, func, file, line );
+  XLAL_TEST_POINTER_LONG( p, m * n, file, line );
   return p;
 }
 
 void * (XLALRealloc)( void *p, size_t n )
 {
-  static const char *func = "XLALRealloc";
   p = LALReallocShort( p, n );
-  XLAL_TEST_POINTER( p, n, func );
+  XLAL_TEST_POINTER( p, n );
   return p;
 }
 
 void * XLALReallocLong( void *p, size_t n, const char *file, int line )
 {
-  static const char *func = "XLALReallocLong";
   p = LALReallocLong( p, n, file, line );
-  XLAL_TEST_POINTER_LONG( p, n, func, file, line );
+  XLAL_TEST_POINTER_LONG( p, n, file, line );
   return p;
 }
 

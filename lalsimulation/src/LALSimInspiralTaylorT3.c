@@ -85,15 +85,13 @@ FreqInFromChirptime;
 
 static REAL8 XLALInspiralFrequency3Wrapper(REAL8 tC, void *pars)
 {
-  static const char *func = "XLALInspiralFrequency3Wrapper";
-
   FreqInFromChirptime *in;
   REAL8 freq, f;
 
   in = (FreqInFromChirptime *) pars;
   freq = in->func(tC, &(in->ak));
   if (XLAL_IS_REAL8_FAIL_NAN(freq))
-    XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+    XLAL_ERROR_REAL8(XLAL_EFUNC);
   f = freq - in->ak.f0;
 
   /*
@@ -113,7 +111,7 @@ XLALSimInspiralFrequency3_0PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta3 = theta*theta*theta;
@@ -134,7 +132,7 @@ XLALSimInspiralFrequency3_2PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -157,7 +155,7 @@ XLALSimInspiralFrequency3_3PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -181,7 +179,7 @@ XLALSimInspiralFrequency3_4PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -207,7 +205,7 @@ XLALSimInspiralFrequency3_5PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -235,7 +233,7 @@ XLALSimInspiralFrequency3_6PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -265,7 +263,7 @@ XLALSimInspiralFrequency3_7PN (
   REAL8 frequency;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -297,7 +295,7 @@ XLALSimInspiralPhasing3_0PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta5 = pow(td,-0.625);
   phase = (ak->ptaN/theta5);
@@ -316,7 +314,7 @@ XLALSimInspiralPhasing3_2PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -339,7 +337,7 @@ XLALSimInspiralPhasing3_3PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -364,7 +362,7 @@ XLALSimInspiralPhasing3_4PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -391,7 +389,7 @@ XLALSimInspiralPhasing3_5PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -419,7 +417,7 @@ XLALSimInspiralPhasing3_6PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -449,7 +447,7 @@ XLALSimInspiralPhasing3_7PN (
   REAL8 phase;
 
   if (ak == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -530,11 +528,11 @@ static REAL8 XLALSimInspiralChirpLength(
 			break;
 		case 8:
 			XLALPrintError("XLAL Error - %s: Not supported for requested PN order\n", __func__);
-			XLAL_ERROR_REAL8(__func__, XLAL_EINVAL);
+			XLAL_ERROR_REAL8(XLAL_EINVAL);
 			break;
 		default:
 			XLALPrintError("XLAL Error - %s: Unknown PN order in switch\n", __func__);
-			XLAL_ERROR_REAL8(__func__, XLAL_EINVAL);
+			XLAL_ERROR_REAL8(XLAL_EINVAL);
 	}
 
 	tC = -tN / v8 * (1.
@@ -605,7 +603,7 @@ static int XLALSimInspiralTaylorT3Setup(
            break;
      case 1:
            XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", __func__);
-           XLAL_ERROR(__func__, XLAL_EINVAL);
+           XLAL_ERROR(XLAL_EINVAL);
            break;
      case 2:
            f->phasing3 = &XLALSimInspiralPhasing3_2PN;
@@ -633,11 +631,11 @@ static int XLALSimInspiralTaylorT3Setup(
            break;
      case 8:
            XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", __func__);
-           XLAL_ERROR(__func__, XLAL_EINVAL);
+           XLAL_ERROR(XLAL_EINVAL);
            break;
      default:
         XLALPrintError("XLAL Error - %s: Unknown PN order in switch\n", __func__);
-        XLAL_ERROR(__func__, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
   }
 
   tn = XLALSimInspiralTaylorLength(deltaT, m1, m2, f_min, O);
@@ -683,12 +681,12 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 		blocklen);
 	*phi = XLALCreateREAL8TimeSeries("ORBITAL_PHASE", t_end, 0.0, deltaT, &lalDimensionlessUnit, blocklen);
 	if (!V || !phi)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 
 	/* initialize expnCoeffsTaylorT3 and expnFuncTaylorT3 structures */
 	if (XLALSimInspiralTaylorT3Setup(&ak, &expnfunc, deltaT, m1, m2, f_min, O))
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	tC = XLALSimInspiralChirpLength(m1, m2, f_min, O);
 	c1 = nu/(5.*m);
@@ -721,7 +719,7 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	for (tmptC = c1*tC/1000.; tmptC < xmax; tmptC+=c1*tC/1000.){
 		temp = XLALInspiralFrequency3Wrapper(tmptC , pars);
 		if (XLAL_IS_REAL8_FAIL_NAN(temp))
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		if (temp > tempMax) {
 			xmin = tmptC;
 			tempMax = temp;
@@ -736,11 +734,11 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	if (tempMax > 0  &&  tempMin < 0){
 		tC = XLALDBisectionFindRoot (freqfunction, xmin, xmax, xacc, pars);
 		if (XLAL_IS_REAL8_FAIL_NAN(tC))
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 	}
 	else{
 		XLALPrintError("Can't find good bracket for BisectionFindRoot");
-		XLAL_ERROR(__func__, XLAL_EMAXITER);
+		XLAL_ERROR(XLAL_EMAXITER);
 	}
 
 	tC /= c1;
@@ -751,10 +749,10 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	td = c1 * (tC - t);
 	phase = expnfunc.phasing3(td, &ak);
 	if (XLAL_IS_REAL8_FAIL_NAN(phase))
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	f = expnfunc.frequency3(td, &ak);
 	if (XLAL_IS_REAL8_FAIL_NAN(f))
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	v = cbrt(f * LAL_PI * m);
 	(*V)->data->data[0] = v;
@@ -771,10 +769,10 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 		td = c1 * (tC - t);
 		phase = expnfunc.phasing3(td, &ak);
 		if (XLAL_IS_REAL8_FAIL_NAN(phase))
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		f = expnfunc.frequency3(td, &ak);
 		if (XLAL_IS_REAL8_FAIL_NAN(f))
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		v = cbrt(f * LAL_PI * m);
 
 		/* check termination conditions */
@@ -796,9 +794,9 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 
 		if ( j >= (*V)->data->length ) {
 			if ( ! XLALResizeREAL8TimeSeries(*V, 0, (*V)->data->length + blocklen) )
-				XLAL_ERROR(__func__, XLAL_EFUNC);
+				XLAL_ERROR(XLAL_EFUNC);
 			if ( ! XLALResizeREAL8TimeSeries(*phi, 0, (*phi)->data->length + blocklen) )
-				XLAL_ERROR(__func__, XLAL_EFUNC);
+				XLAL_ERROR(XLAL_EFUNC);
 		}
 		(*V)->data->data[j] = v;
 		(*phi)->data->data[j] = phase;
@@ -807,9 +805,9 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	/* make the correct length */
 
 	if ( ! XLALResizeREAL8TimeSeries(*V, 0, j) )
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	if ( ! XLALResizeREAL8TimeSeries(*phi, 0, j) )
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/* adjust to correct tc and phic */
 
@@ -856,12 +854,12 @@ int XLALSimInspiralTaylorT3PNGenerator(
 	int n;
 	n = XLALSimInspiralTaylorT3PNEvolveOrbit(&V, &phi, t_end, phi_end, deltaT, m1, m2, f_min, phaseO);
 	if ( n < 0 )
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, V, phi, x0, m1, m2, r, i, amplitudeO);
 	XLALDestroyREAL8TimeSeries(phi);
 	XLALDestroyREAL8TimeSeries(V);
 	if ( status < 0 )
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	return n;
 }
 

@@ -113,7 +113,6 @@ LALSBracketRoot (
     )
 { /* </lalVerbatim> */
   const REAL4 fac  = LAL_SQRT2;
-  INT4 imax;
 
   INT4  i = 0;
   REAL4 y_1;
@@ -147,8 +146,10 @@ LALSBracketRoot (
     }
 
     /* increment iteration count */
-    imax = 64;
+#ifndef LAL_NDEBUG
+    INT4 imax = 64;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
+#endif
     ++i;
 
     if (fabs(y_1) < fabs(y_2))
@@ -182,7 +183,6 @@ XLALDBracketRoot(
     void *params
 )
 { /* </lalVerbatim> */
-  static const char *func = "XLALDBracketRoot";
   const INT4 imax = 64;
   INT4 i;
   REAL8 y_1;
@@ -204,9 +204,9 @@ XLALDBracketRoot(
   for(i = 0; y_1 * y_2 >= 0.0; i++)
   {
     if(XLALIsREAL8FailNaN(y_1) || XLALIsREAL8FailNaN(y_2))
-      XLAL_ERROR(func, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
     if(i >= imax)
-      XLAL_ERROR(func, XLAL_EMAXITER);
+      XLAL_ERROR(XLAL_EMAXITER);
     if(fabs(y_1) < fabs(y_2))
     {
       /* expand lower limit */
@@ -234,7 +234,6 @@ LALDBracketRoot (
     )
 { /* </lalVerbatim> */
   const REAL8 fac  = LAL_SQRT2;
-  INT4 imax;
 
   INT4  i = 0;
   REAL8 y_1;
@@ -268,8 +267,10 @@ LALDBracketRoot (
     }
 
     /* increment iteration count */
-    imax = 64;
+#ifndef LAL_NDEBUG
+    INT4 imax = 64;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
+#endif
     ++i;
 
     if (fabs(y_1) < fabs(y_2))
@@ -303,7 +304,6 @@ LALSBisectionFindRoot (
     void        *params
     )
 { /* </lalVerbatim> */
-  INT4 imax;
 
   INT4  i = 0;
   REAL4 y_1;
@@ -350,8 +350,10 @@ LALSBisectionFindRoot (
     REAL4 ymid;
 
     /* increment iteration count */
-    imax = 40;
+#ifndef LAL_NDEBUG
+    INT4 imax = 40;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
+#endif
     ++i;
 
     /* locate midpoint of domain */
@@ -398,7 +400,6 @@ XLALDBisectionFindRoot (
     void *params
 )
 { /* </lalVerbatim> */
-  static const char *func = "XLALDBisectionFindRoot";
   const INT4 imax = 80;
   INT4  i;
   REAL8 y_1;
@@ -408,7 +409,7 @@ XLALDBisectionFindRoot (
 
   /* check arguments */
   if(xacc < 0.0)
-    XLAL_ERROR_REAL8(func, XLAL_EDOM);
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   /* put xmin and xmax in the correct order, using y_1 as temporary storage */
   if(xmin > xmax) {
@@ -421,20 +422,20 @@ XLALDBisectionFindRoot (
   y_1 = y(xmin, params);
   y_2 = y(xmax, params);
   if(XLALIsREAL8FailNaN(y_1) || XLALIsREAL8FailNaN(y_2))
-    XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+    XLAL_ERROR_REAL8(XLAL_EFUNC);
 
   /* loop until root found within requested accuracy or iteration limit
    * exceeded */
   for(i = 0; (xmax - xmin) > xacc; i++)
   {
     if(i >= imax)
-      XLAL_ERROR_REAL8(func, XLAL_EMAXITER);
+      XLAL_ERROR_REAL8(XLAL_EMAXITER);
 
     /* evaluate function at midpoint */
     xmid = (xmin + xmax) / 2.0;
     ymid = y(xmid, params);
     if(XLALIsREAL8FailNaN(ymid))
-      XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
 
     /* did we get lucky? */
     if(ymid == 0.0)
@@ -455,7 +456,7 @@ XLALDBisectionFindRoot (
     else
     {
       /* something's gone wrong */
-      XLAL_ERROR_REAL8(func, XLAL_EFAILED);
+      XLAL_ERROR_REAL8(XLAL_EFAILED);
     }
   }
 
@@ -472,7 +473,6 @@ LALDBisectionFindRoot (
     void        *params
     )
 { /* </lalVerbatim> */
-  INT4 imax;
 
   INT4  i = 0;
   REAL8 y_1;
@@ -519,8 +519,10 @@ LALDBisectionFindRoot (
     REAL8 ymid;
 
     /* increment iteration count */
-    imax = 80;
+#ifndef LAL_NDEBUG
+    INT4 imax = 80;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
+#endif
     ++i;
 
     /* locate midpoint of domain */

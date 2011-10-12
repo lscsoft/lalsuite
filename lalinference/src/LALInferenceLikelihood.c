@@ -482,7 +482,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
     }
     if (!(degreesOfFreedom>0)) {
       XLALPrintError(" ERROR in StudentTLogLikelihood(): degrees-of-freedom parameter must be positive.\n");
-      XLAL_ERROR_REAL8("LALInferenceFreqDomainStudentTLogLikelihood",XLAL_EDOM);
+      XLAL_ERROR_REAL8(XLAL_EDOM);
     }
 
     /* determine frequency range & loop over frequency bins: */

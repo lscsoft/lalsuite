@@ -69,13 +69,12 @@ NRCSID(CREATEZPGFILTERC,"$Id$");
 
 COMPLEX8ZPGFilter *XLALCreateCOMPLEX8ZPGFilter( INT4 numZeros, INT4 numPoles )
 {
-  static const char *func = "XLALCreateCOMPLEX8ZPGFilter";
   COMPLEX8ZPGFilter *output;
   if ( numZeros < 0 || numPoles < 0 )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   output = LALCalloc( 1, sizeof(*output) );
   if ( ! output )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   /* Allocate the data fields.  If the number of poles or zeros is 0,
      the corresponding field(s) should remain null. */
@@ -83,13 +82,13 @@ COMPLEX8ZPGFilter *XLALCreateCOMPLEX8ZPGFilter( INT4 numZeros, INT4 numPoles )
     if ( ! ( output->zeros = XLALCreateCOMPLEX8Vector( numZeros ) ) )
     {
       XLALDestroyCOMPLEX8ZPGFilter( output );
-      XLAL_ERROR_NULL( func, XLAL_EFUNC );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
     }
   if ( numPoles > 0 )
     if ( ! ( output->poles = XLALCreateCOMPLEX8Vector( numPoles ) ) )
     {
       XLALDestroyCOMPLEX8ZPGFilter( output );
-      XLAL_ERROR_NULL( func, XLAL_EFUNC );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
     }
 
   return output;
@@ -97,13 +96,12 @@ COMPLEX8ZPGFilter *XLALCreateCOMPLEX8ZPGFilter( INT4 numZeros, INT4 numPoles )
 
 COMPLEX16ZPGFilter *XLALCreateCOMPLEX16ZPGFilter( INT4 numZeros, INT4 numPoles )
 {
-  static const char *func = "XLALCreateCOMPLEX16ZPGFilter";
   COMPLEX16ZPGFilter *output;
   if ( numZeros < 0 || numPoles < 0 )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   output = LALCalloc( 1, sizeof(*output) );
   if ( ! output )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   /* Allocate the data fields.  If the number of poles or zeros is 0,
      the corresponding field(s) should remain null. */
@@ -111,13 +109,13 @@ COMPLEX16ZPGFilter *XLALCreateCOMPLEX16ZPGFilter( INT4 numZeros, INT4 numPoles )
     if ( ! ( output->zeros = XLALCreateCOMPLEX16Vector( numZeros ) ) )
     {
       XLALDestroyCOMPLEX16ZPGFilter( output );
-      XLAL_ERROR_NULL( func, XLAL_EFUNC );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
     }
   if ( numPoles > 0 )
     if ( ! ( output->poles = XLALCreateCOMPLEX16Vector( numPoles ) ) )
     {
       XLALDestroyCOMPLEX16ZPGFilter( output );
-      XLAL_ERROR_NULL( func, XLAL_EFUNC );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
     }
 
   return output;
