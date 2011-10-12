@@ -473,7 +473,6 @@ void initVariables(LALInferenceRunState *state)
 			LALInferenceAddMinMaxPrior(priorArgs, "phi_spin2",     &phi_spin1_min, &phi_spin1_max,   LALINFERENCE_REAL8_t);
 		}
 	}
-	
 	return;
 }
 
@@ -482,9 +481,17 @@ int main(int argc, char *argv[]) {
   
 	char help[]="\
 	LALInferenceProposalTest:\n\
-	Test proposal distributions\n";
+	Test jump proposal distributions\n\
+	--Nprop N\t: Number of jumps to perform\n\
+	--outfile file.dat\t: Optional output file for samples\n\";
 	LALInferenceRunState *state=NULL;
 	ProcessParamsTable *procParams=NULL;
+	UINT4 Nmcmc=0,i=1;
+	REAL8 logLmin=-DBL_MAX;
+	ProcessParamsTable *ppt=NULL;
+	FILE *outfile=NULL;
+	char *filename=NULL;
+	
 	
 	/* Read command line and parse */
 	procParams=LALInferenceParseCommandLine(argc,argv);
@@ -492,12 +499,16 @@ int main(int argc, char *argv[]) {
 	/* This includes reading in the data */
 	/* And performing any injections specified */
 	/* And allocating memory */
-	ProcessParamsTable *ppt=LALInferenceGetProcParamVal(procParams,"--help");
+	ppt=LALInferenceGetProcParamVal(procParams,"--help");
 	if(ppt)
 	{
 		fprintf(stdout,"%s",help);
-		return(1);
 	}
+	if(ppt=LALInferenceGetProcParamVal(procParams,"--Nprop"))
+	  Nmcmc=atoi(ppt->value);
+	if(ppt=LALInferenceGetProcParamVal(procParams,"--outfile"))
+	  filename=ppt->value;
+	
 	
 	state = initialize(procParams);
 	
@@ -513,9 +524,17 @@ int main(int argc, char *argv[]) {
 	/* Set up a sample to evolve */
 	initVariables(state);
 	
+	/* Set up the proposal function requirements */
+	LALInferenceAddVariable(state->algorithmParams,"Nmcmc",&i,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+	LALInferenceAddVariable(state->algorithmParams,"logLmin",&logLmin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+
+	
 	/* Evolve with fixed likelihood */
-	
-	
+	for(i=0;i<Nmcmc;i++){
+	  LALInferenceNestedSamplingOneStep(state);
+	  /* output sample */
+	  
+	}
 	
 	return(0);
 }
