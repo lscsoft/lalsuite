@@ -999,9 +999,9 @@ void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInference
   /* The Gaussian increments required to shift us back to the original
      position from the doubly-reflected position. */
   REAL8 nRefRA, nRefDec, nRefTime;
-  nRefRA = ra - refRA;
-  nRefDec = dec - refDec;
-  nRefTime = baryTime - refTime;
+  nRefRA = (ra - refRA)/epsAngle;
+  nRefDec = (dec - refDec)/epsAngle;
+  nRefTime = (baryTime - refTime)/epsTime;
 
   REAL8 pForward, pReverse;
   pForward = gsl_ran_ugaussian_pdf(nRA)*gsl_ran_ugaussian_pdf(nDec)*gsl_ran_ugaussian_pdf(nTime);
