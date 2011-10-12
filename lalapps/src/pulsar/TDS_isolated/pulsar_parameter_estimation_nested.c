@@ -4242,7 +4242,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
  * time range (in GPS seconds) required. If no files exist errors will be
  * returned.
  * 
- * The function uses requires <code>dirent,h</code> and <code>time.h</code>. 
+ * The function requires <code>dirent.h</code> and <code>time.h</code>. 
  * 
  * NOTE: This may want to be moved into LAL at some point.
  * 
