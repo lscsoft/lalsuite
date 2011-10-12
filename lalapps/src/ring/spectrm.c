@@ -139,13 +139,26 @@ REAL8FrequencySeries *generate_theoretical_psd(
   }
   else if ( spectrumNumber == ILIGO_PSD )
   {
-    verbose( "Creating initial LIGO PSD \n" ); 
-    /* FIXME!!! */
+    verbose( "Creating initial LIGO PSD. PSD only generated from 30Hz \n" ); 
+    /* FIXME  */
     REAL4 flow = 30;
-    /* FIXME: SHOULD BE REAL8!! */
     XLALSimNoisePSD(spectrum, flow, XLALSimNoisePSDiLIGOSRD);   
     snprintf( spectrum->name, sizeof( spectrum->name ),
       "iLIGO_PSD" );
+  }
+  else if ( spectrumNumber == ALIGO_PSD )
+  {
+    verbose( "Creating advanced LIGO high-power broad-band signal recycling "
+             "PSD. PSD only generated from 10Hz \n ");
+    REAL4 flow = 10;
+    XLALSimNoisePSD(spectrum, flow, XLALSimNoisePSDaLIGOZeroDetHighPower);
+    snprintf( spectrum->name, sizeof( spectrum->name ),
+      "aLIGO_PSD" );
+  }
+  else
+  {
+    fprintf(stderr,"Spectrum number not valid. This message should not be seen."
+            " Have you broken the code?? \n");
   }
 
   return spectrum;

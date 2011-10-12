@@ -80,7 +80,8 @@ int calibrate_spectrum(
 typedef enum
 {
   WHITE_PSD,
-  ILIGO_PSD
+  ILIGO_PSD,
+  ALIGO_PSD
 }
 spectrumType;
 
