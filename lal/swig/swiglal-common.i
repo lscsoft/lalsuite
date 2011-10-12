@@ -633,7 +633,7 @@ swiglal_conv_ctype(COMPLEX16);
 // The macros take the following arguments:
 //  TYPE:
 //    the type of an element of the C array.
-//  NAME:
+//  NDATA:
 //    the name of the C array variable, e.g. 'data'.
 //  DATA:
 //    an expression accessing the C array variable, e.g. 'arg1->data'.
@@ -669,17 +669,17 @@ swiglal_conv_ctype(COMPLEX16);
 %typemap(swiglal_view_type) enum SWIGTYPE "int";
 
 // Convert a scripting language vector to a C vector
-%define swiglal_vector_convert_in(TYPE, NAME, DATA, NI, SI, FLAGS)
+%define swiglal_vector_convert_in(TYPE, NDATA, DATA, NI, SI, FLAGS)
   // Check that the C vector has elements
   if ((NI) == 0) {
-    swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NAME<<"'");
+    swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NDATA<<"'");
   }
   // Check that the scripting language $input is a vector with the same dimensions
   if (!swiglal_is_vector($input)) {
-    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NAME<<"' must be a vector");
+    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NDATA<<"' must be a vector");
   }
   if (swiglal_vector_length($input) != (NI)) {
-    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NAME<<"' must have length "<<(NI));
+    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NDATA<<"' must have length "<<(NI));
   }
   // Copy the scripting language vector $input to the C vector DATA
   for (size_t i = 0; i < (NI); ++i) {
@@ -693,17 +693,17 @@ swiglal_conv_ctype(COMPLEX16);
 %enddef // swiglal_vector_convert_in
 
 // Convert a C vector to a scripting language vector
-%define swiglal_vector_convert_out(TYPE, NAME, DATA, NI, SI, SELF)
+%define swiglal_vector_convert_out(TYPE, NDATA, DATA, NI, SI, SELF)
   // Check that the C vector has elements
   if ((NI) == 0) {
-    swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NAME<<"'");
+    swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NDATA<<"'");
   }
   // Create a scripting language vector view of $result, is possible
   if (!swiglal_vector_view<$typemap(swiglal_view_type, TYPE) >(SELF, &($result), %reinterpret_cast(DATA, $typemap(swiglal_view_type, TYPE)*), NI, SI)) {
     // Create a new scripting language vector $result
     $result = swiglal_new_vector<$typemap(swiglal_new_type, TYPE) >(NI);
     if (!swiglal_object_valid($result)) {
-      swiglal_exception(SWIG_RuntimeError, "failed to create a new vector for '"<<#NAME<<"'");
+      swiglal_exception(SWIG_RuntimeError, "failed to create a new vector for '"<<#NDATA<<"'");
     }
     // Copy the C vector DATA the scripting language vector $result
     for (size_t i = 0; i < (NI); ++i) {
@@ -715,20 +715,20 @@ swiglal_conv_ctype(COMPLEX16);
 %enddef // swiglal_vector_convert_out
 
 // Convert a scripting language matrix to a C matrix
-%define swiglal_matrix_convert_in(TYPE, NAME, DATA, NI, SI, NJ, SJ, FLAGS)
+%define swiglal_matrix_convert_in(TYPE, NDATA, DATA, NI, SI, NJ, SJ, FLAGS)
   // Check that the C matrix has elements
   if ((NI) == 0 || (NJ) == 0) {
-    swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NAME<<"'");
+    swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NDATA<<"'");
   }
   // Check that the scripting language $input is a matrix with the same dimensions
   if (!swiglal_is_matrix($input)) {
-    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NAME<<"' must be a matrix");
+    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NDATA<<"' must be a matrix");
   }
   if (swiglal_matrix_rows($input) != (NI)) {
-    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NAME<<"' must have "<<(NI)<<" rows");
+    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NDATA<<"' must have "<<(NI)<<" rows");
   }
   if (swiglal_matrix_cols($input) != (NJ)) {
-    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NAME<<"' must have "<<(NJ)<<" columns");
+    swiglal_exception(SWIG_ValueError, "value being assigned to '"<<#NDATA<<"' must have "<<(NJ)<<" columns");
   }
   // Copy the scripting language matrix $input to the C matrix DATA
   for (size_t i = 0; i < (NI); ++i) {
@@ -744,17 +744,17 @@ swiglal_conv_ctype(COMPLEX16);
 %enddef // swiglal_matrix_convert_in
 
 // Convert a C matrix to a scripting language matrix
-%define swiglal_matrix_convert_out(TYPE, NAME, DATA, NI, SI, NJ, SJ, SELF)
+%define swiglal_matrix_convert_out(TYPE, NDATA, DATA, NI, SI, NJ, SJ, SELF)
   // Check that the C matrix has elements
   if ((NI) == 0 || (NJ) == 0) {
-    swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NAME<<"'");
+    swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NDATA<<"'");
   }
   // Create a scripting language vector view of $result, is possible
   if (!swiglal_matrix_view<$typemap(swiglal_view_type, TYPE) >(SELF, &($result), %reinterpret_cast(DATA, $typemap(swiglal_view_type, TYPE)*), NI, SI, NJ, SJ)) {
     // Create a new scripting language matrix $result
     $result = swiglal_new_matrix<$typemap(swiglal_new_type, TYPE) >(NI, NJ);
     if (!swiglal_object_valid($result)) {
-      swiglal_exception(SWIG_RuntimeError, "failed to create a new matrix for '"<<#NAME<<"'");
+      swiglal_exception(SWIG_RuntimeError, "failed to create a new matrix for '"<<#NDATA<<"'");
     }
     // Copy the C matrix DATA the scripting language matrix $result
     for (size_t i = 0; i < (NI); ++i) {
@@ -790,7 +790,7 @@ swiglal_conv_ctype(COMPLEX16);
 // swiglal_{vector,matrix}_convert_{in,out} macros defined above.
 
 // Get the (I)th element of the vector DATA.
-%define swiglal_vector_get_elem(TYPE, NAME, DATA, I, NI, SI)
+%define swiglal_vector_get_elem(TYPE, NDATA, DATA, I, NI, SI)
 
   // The DATA_getel method is actually implemented inside an
   // 'out' typemap, so that it can throw SWIG exceptions if
@@ -800,49 +800,49 @@ swiglal_conv_ctype(COMPLEX16);
   // For this to work, we need to provide custom 'action'
   // features, which do nothing instead of trying to call
   // the (non-existent) method function.
-  %typemap(out, noblock=1) TYPE* NAME##_getel {
+  %typemap(out, noblock=1) TYPE* NDATA##_getel {
     // Check that the vector exists
     if (!swiglal_check_ptr(DATA)) {
-      swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NAME<<"'");
+      swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NDATA<<"'");
     }
     // Check that the vector has elements
     if ((NI) == 0) {
-      swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NAME<<"'");
+      swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NDATA<<"'");
     }
     // Check that index to vector is in range
     if ((I) >= (NI)) {
-      swiglal_exception(SWIG_IndexError, "index to vector '"<<#NAME<<"' must be less than "<<(NI));
+      swiglal_exception(SWIG_IndexError, "index to vector '"<<#NDATA<<"' must be less than "<<(NI));
     }
     // Return vector element
     $result = swiglal_call_from(TYPE)(swiglal_vec_ptr(TYPE, DATA, I, SI), $1_descriptor);
   }
 
   // Clear other typemaps
-  %typemap(argout, noblock=1) TYPE* NAME##_getel "";
-  %typemap(freearg, noblock=1) TYPE* NAME##_getel "";
+  %typemap(argout, noblock=1) TYPE* NDATA##_getel "";
+  %typemap(freearg, noblock=1) TYPE* NDATA##_getel "";
 
   // Disable keyword arguments for this method
-  %feature("kwargs", 0) NAME##_getel(const size_t i);
+  %feature("kwargs", 0) NDATA##_getel(const size_t i);
 
   // Set 'action' and 'except' features for this method to no-ops
-  %feature("action") NAME##_getel(const size_t i) "";
-  %feature("except") NAME##_getel(const size_t i) "";
+  %feature("action") NDATA##_getel(const size_t i) "";
+  %feature("except") NDATA##_getel(const size_t i) "";
 
   // Declare method, so SWIG will define and then wrap it
-  TYPE* NAME##_getel(const size_t i);
+  TYPE* NDATA##_getel(const size_t i);
 
   // Clear the custom features, so they can't be accidentally re-used
-  %feature("kwargs", "") NAME##_getel(const size_t i);
-  %feature("action", "") NAME##_getel(const size_t i);
-  %feature("except", "") NAME##_getel(const size_t i);
+  %feature("kwargs", "") NDATA##_getel(const size_t i);
+  %feature("action", "") NDATA##_getel(const size_t i);
+  %feature("except", "") NDATA##_getel(const size_t i);
 
   // Clear the typemaps, so they can't be accidentally re-used
-  %clear TYPE* NAME##_getel;
+  %clear TYPE* NDATA##_getel;
 
 %enddef // swiglal_vector_get_elem
 
 // Set the (I)th element of the vector DATA.
-%define swiglal_vector_set_elem(TYPE, NAME, DATA, I, NI, SI, FLAGS)
+%define swiglal_vector_set_elem(TYPE, NDATA, DATA, I, NI, SI, FLAGS)
 
   // Following DATA_getel, the DATA_setel method is implemented
   // inside an 'out' typemap, so that SWIG exceptions can be
@@ -852,18 +852,18 @@ swiglal_conv_ctype(COMPLEX16);
   // method and then wrap it. For this to work, we need to
   // provide custom 'action' features, which do nothing instead
   // of trying to call the (non-existent) method function.
-  %typemap(in, noblock=1) TYPE* NAME##_setel_elem (int ecode = 0) {
+  %typemap(in, noblock=1) TYPE* NDATA##_setel_elem (int ecode = 0) {
     // Check that the vector exists
     if (!swiglal_check_ptr(DATA)) {
-      swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NAME<<"'");
+      swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NDATA<<"'");
     }
     // Check that the vector has elements
     if ((NI) == 0) {
-      swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NAME<<"'");
+      swiglal_exception(SWIG_ValueError, "unexpected zero-length vector '"<<#NDATA<<"'");
     }
     // Check that index to vector is in range
     if ((I) >= (NI)) {
-      swiglal_exception(SWIG_IndexError, "index to vector '"<<#NAME<<"' must be less than "<<(NI));
+      swiglal_exception(SWIG_IndexError, "index to vector '"<<#NDATA<<"' must be less than "<<(NI));
     }
     // Assign vector element
     ecode = swiglal_call_as_val(TYPE)($input, swiglal_vec_ptr(TYPE, DATA, I, SI), $1_descriptor, FLAGS);
@@ -873,96 +873,96 @@ swiglal_conv_ctype(COMPLEX16);
   }
 
   // Clear other typemaps
-  %typemap(argout, noblock=1) TYPE* NAME##_setel_elem "";
-  %typemap(freearg, noblock=1) TYPE* NAME##_setel_elem "";
+  %typemap(argout, noblock=1) TYPE* NDATA##_setel_elem "";
+  %typemap(freearg, noblock=1) TYPE* NDATA##_setel_elem "";
 
   // Disable keyword arguments for this method
-  %feature("kwargs", 0) NAME##_setel(const size_t i, TYPE* NAME##_setel_elem);
+  %feature("kwargs", 0) NDATA##_setel(const size_t i, TYPE* NDATA##_setel_elem);
 
   // Set 'action' and 'except' features for this method to no-ops
-  %feature("action") NAME##_setel(const size_t i, TYPE* NAME##_setel_elem) "";
-  %feature("except") NAME##_setel(const size_t i, TYPE* NAME##_setel_elem) "";
+  %feature("action") NDATA##_setel(const size_t i, TYPE* NDATA##_setel_elem) "";
+  %feature("except") NDATA##_setel(const size_t i, TYPE* NDATA##_setel_elem) "";
 
   // Declare method, so SWIG will define and then wrap it
-  void NAME##_setel(const size_t i, TYPE* NAME##_setel_elem);
+  void NDATA##_setel(const size_t i, TYPE* NDATA##_setel_elem);
 
   // Clear the custom features, so they can't be accidentally re-used
-  %feature("kwargs", "") NAME##_setel(const size_t i, TYPE* NAME##_setel_elem);
-  %feature("action", "") NAME##_getel(const size_t i, TYPE* NAME##_setel_elem);
-  %feature("except", "") NAME##_getel(const size_t i, TYPE* NAME##_setel_elem);
+  %feature("kwargs", "") NDATA##_setel(const size_t i, TYPE* NDATA##_setel_elem);
+  %feature("action", "") NDATA##_getel(const size_t i, TYPE* NDATA##_setel_elem);
+  %feature("except", "") NDATA##_getel(const size_t i, TYPE* NDATA##_setel_elem);
 
   // Clear the typemaps, so they can't be accidentally re-used
-  %clear TYPE* NAME##_setel_elem;
+  %clear TYPE* NDATA##_setel_elem;
 
 %enddef // swiglal_vector_set_elem
 
 // Get the (I,J)th element of the matrix DATA.
-%define swiglal_matrix_get_elem(TYPE, NAME, DATA, I, NI, SI, J, NJ, SJ)
+%define swiglal_matrix_get_elem(TYPE, NDATA, DATA, I, NI, SI, J, NJ, SJ)
 
   // For an explanation of the typemap, see swiglal_vector_get_elem.
-  %typemap(out, noblock=1) TYPE* NAME##_getel {
+  %typemap(out, noblock=1) TYPE* NDATA##_getel {
     // Check that the matrix exists
     if (!swiglal_check_ptr(DATA)) {
-      swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NAME<<"'");
+      swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NDATA<<"'");
     }
     // Check that the matrix has elements
     if ((NI) == 0 || (NJ) == 0) {
-      swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NAME<<"'");
+      swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NDATA<<"'");
     }
     // Check that indices to matrix are in range
     if ((I) >= (NI)) {
-      swiglal_exception(SWIG_IndexError, "first index to matrix '"<<#NAME<<"' must be less than "<<(NI));
+      swiglal_exception(SWIG_IndexError, "first index to matrix '"<<#NDATA<<"' must be less than "<<(NI));
     }
     if ((J) >= (NJ)) {
-      swiglal_exception(SWIG_IndexError, "second index to matrix '"<<#NAME<<"' must be less than "<<(NJ));
+      swiglal_exception(SWIG_IndexError, "second index to matrix '"<<#NDATA<<"' must be less than "<<(NJ));
     }
     // Return matrix element
     $result = swiglal_call_from(TYPE)(swiglal_mat_ptr(TYPE, DATA, I, SI, J, SJ), $1_descriptor);
   }
 
   // Clear other typemaps
-  %typemap(argout, noblock=1) TYPE* NAME##_getel "";
-  %typemap(freearg, noblock=1) TYPE* NAME##_getel "";
+  %typemap(argout, noblock=1) TYPE* NDATA##_getel "";
+  %typemap(freearg, noblock=1) TYPE* NDATA##_getel "";
 
   // Disable keyword arguments for this method
-  %feature("kwargs", 0) NAME##_getel(const size_t i, const size_t j);
+  %feature("kwargs", 0) NDATA##_getel(const size_t i, const size_t j);
 
   // Set 'action' and 'except' features for this method to no-ops
-  %feature("action") NAME##_getel(const size_t i, const size_t j) "";
-  %feature("except") NAME##_getel(const size_t i, const size_t j) "";
+  %feature("action") NDATA##_getel(const size_t i, const size_t j) "";
+  %feature("except") NDATA##_getel(const size_t i, const size_t j) "";
 
   // Declare method, so SWIG will define and then wrap it
-  TYPE* NAME##_getel(const size_t i, const size_t j);
+  TYPE* NDATA##_getel(const size_t i, const size_t j);
 
   // Clear the custom features, so they can't be accidentally re-used
-  %feature("kwargs", "") NAME##_getel(const size_t i, const size_t j);
-  %feature("action", "") NAME##_getel(const size_t i, const size_t j);
-  %feature("except", "") NAME##_getel(const size_t i, const size_t j);
+  %feature("kwargs", "") NDATA##_getel(const size_t i, const size_t j);
+  %feature("action", "") NDATA##_getel(const size_t i, const size_t j);
+  %feature("except", "") NDATA##_getel(const size_t i, const size_t j);
 
   // Clear the typemaps, so they can't be accidentally re-used
-  %clear TYPE* NAME##_getel;
+  %clear TYPE* NDATA##_getel;
 
 %enddef // swiglal_matrix_get_elem
 
 // Set the (I,J)th element of the matrix DATA.
-%define swiglal_matrix_set_elem(TYPE, NAME, DATA, I, NI, SI, J, NJ, SJ, FLAGS)
+%define swiglal_matrix_set_elem(TYPE, NDATA, DATA, I, NI, SI, J, NJ, SJ, FLAGS)
 
   // For an explanation of the typemap, see swiglal_vector_set_elem.
-  %typemap(in, noblock=1) TYPE* NAME##_setel_elem (int ecode = 0) {
+  %typemap(in, noblock=1) TYPE* NDATA##_setel_elem (int ecode = 0) {
     // Check that the matrix exists
     if (!swiglal_check_ptr(DATA)) {
-      swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NAME<<"'");
+      swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#NDATA<<"'");
     }
     // Check that the matrix has elements
     if ((NI) == 0 || (NJ) == 0) {
-      swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NAME<<"'");
+      swiglal_exception(SWIG_ValueError, "unexpected zero-size matrix '"<<#NDATA<<"'");
     }
     // Check that indices to matrix are in range
     if ((I) >= (NI)) {
-      swiglal_exception(SWIG_IndexError, "first index to matrix '"<<#NAME<<"' must be less than "<<(NI));
+      swiglal_exception(SWIG_IndexError, "first index to matrix '"<<#NDATA<<"' must be less than "<<(NI));
     }
     if ((J) >= (NJ)) {
-      swiglal_exception(SWIG_IndexError, "second index to matrix '"<<#NAME<<"' must be less than "<<(NJ));
+      swiglal_exception(SWIG_IndexError, "second index to matrix '"<<#NDATA<<"' must be less than "<<(NJ));
     }
     // Assign matrix element
     ecode = swiglal_call_as_val(TYPE)($input, swiglal_mat_ptr(TYPE, DATA, I, SI, J, SJ), $1_descriptor, FLAGS);
@@ -972,26 +972,26 @@ swiglal_conv_ctype(COMPLEX16);
   }
 
   // Clear other typemaps
-  %typemap(argout, noblock=1) TYPE* NAME##_setel_elem "";
-  %typemap(freearg, noblock=1) TYPE* NAME##_setel_elem "";
+  %typemap(argout, noblock=1) TYPE* NDATA##_setel_elem "";
+  %typemap(freearg, noblock=1) TYPE* NDATA##_setel_elem "";
 
   // Disable keyword arguments for this method
-  %feature("kwargs", 0) NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
+  %feature("kwargs", 0) NDATA##_setel(const size_t i, const size_t j, TYPE* NDATA##_setel_elem);
 
   // Set 'action' and 'except' features for this method to no-ops
-  %feature("action") NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem) "";
-  %feature("except") NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem) "";
+  %feature("action") NDATA##_setel(const size_t i, const size_t j, TYPE* NDATA##_setel_elem) "";
+  %feature("except") NDATA##_setel(const size_t i, const size_t j, TYPE* NDATA##_setel_elem) "";
 
   // Declare method, so SWIG will define and then wrap it
-  void NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
+  void NDATA##_setel(const size_t i, const size_t j, TYPE* NDATA##_setel_elem);
 
   // Clear the custom features, so they can't be accidentally re-used
-  %feature("kwargs", "") NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
-  %feature("action", "") NAME##_getel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
-  %feature("except", "") NAME##_setel(const size_t i, const size_t j, TYPE* NAME##_setel_elem);
+  %feature("kwargs", "") NDATA##_setel(const size_t i, const size_t j, TYPE* NDATA##_setel_elem);
+  %feature("action", "") NDATA##_getel(const size_t i, const size_t j, TYPE* NDATA##_setel_elem);
+  %feature("except", "") NDATA##_setel(const size_t i, const size_t j, TYPE* NDATA##_setel_elem);
 
   // Clear the typemaps, so they can't be accidentally re-used
-  %clear TYPE* NAME##_setel_elem;
+  %clear TYPE* NDATA##_setel_elem;
 
 %enddef // swiglal_matrix_set_elem
 
