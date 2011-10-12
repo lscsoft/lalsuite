@@ -126,8 +126,8 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
   REAL8 min,max;
   /* REAL8 mu, sigma; */
   for (paraHead=parameter->head;paraHead;paraHead=paraHead->next) {
-    if( paraHead->vary==LALINFERENCE_PARAM_FIXED || 
-        paraHead->vary==LALINFERENCE_PARAM_OUTPUT || 
+    if( paraHead->vary==LALINFERENCE_PARAM_FIXED ||
+        paraHead->vary==LALINFERENCE_PARAM_OUTPUT ||
         !LALInferenceCheckMinMaxPrior(priorArgs, paraHead->name) ) continue;
     
     LALInferenceGetMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
@@ -136,11 +136,18 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
       /* For cyclic boundaries, mod out by range. */
 
       REAL8 val = *(REAL8 *)paraHead->value;
-      REAL8 offset = val - min;
-      REAL8 delta = max-min;
       
-      *(REAL8 *)paraHead->value = min + fmod(offset, delta);
-
+      if (val > max) {
+        REAL8 offset = val - min;
+        REAL8 delta = max-min;
+        
+        *(REAL8 *)paraHead->value = min + fmod(offset, delta);
+      } else { 
+        REAL8 offset = max - val;
+        REAL8 delta = max - min;
+        
+        *(REAL8 *)paraHead->value = max - fmod(offset, delta);
+      }
     } else if (paraHead->vary==LALINFERENCE_PARAM_LINEAR) {
       /* For linear boundaries, reflect about endpoints of range until
          withoun range. */

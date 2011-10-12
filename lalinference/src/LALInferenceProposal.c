@@ -242,7 +242,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   LALInferenceAddProposalToCycle(runState, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
 
-  LALInferenceAddProposalToCycle(runState, &LALInferenceDrawUniformlyFromPrior, TINYWEIGHT);
+  LALInferenceAddProposalToCycle(runState, &LALInferenceDrawApproxPrior, TINYWEIGHT);
 
   /* Now add various special proposals that are conditional on
      command-line arguments or variables in the params. */
@@ -636,68 +636,156 @@ void LALInferenceDifferentialEvolutionSky(LALInferenceRunState *runState, LALInf
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
 
-/* draws a value from the prior, uniformly in individual parameters used for jumps.*/
-void LALInferenceMCMCDrawFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+static REAL8 
+draw_distance(LALInferenceRunState *runState) {
+  REAL8 dmin, dmax;
 
-  REAL8 value=0, min=0, max=0;
-  //printf("%s\n",runState->currentParams->head->name);
-  LALInferenceCopyVariables(runState->currentParams, proposedParams);
-  LALInferenceVariableItem *item=proposedParams->head;
-  
-  do {
-    item=proposedParams->head;
-    for(;item;item=item->next){
-      if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
-        continue;
-      else
-        {
-          LALInferenceGetMinMaxPrior(runState->priorArgs, item->name, (void *)&min, (void *)&max);
-          value=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-          LALInferenceSetVariable(proposedParams, item->name, &(value));
-          //printf("%s\t%f\t%f\t%f\t%f\n",item->name, *(REAL8 *)item->value, value, min, max);
-        }
-    }
-    //LALInferencePrintVariables(proposedParams);
-    //printf("%f\n",runState->prior(runState, proposedParams));
-  } while(runState->prior(runState, proposedParams)<=-DBL_MAX);
+  LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", &dmin, &dmax);
 
-  /* This may be incorrect---if the prior support region introduces
-     correlations in the variables, then the jump distribution will
-     not be symmetric. */
-  LALInferenceSetLogProposalRatio(runState, 0.0);
+  REAL8 x = gsl_rng_uniform(runState->GSLrandom);
+
+  return pow(x*(dmax*dmax*dmax - dmin*dmin*dmin) + dmin*dmin*dmin, 1.0/3.0);
 }
 
-/*draws a value from the prior, using Von Neumann rejection sampling.*/
-void LALInferenceDrawUniformlyFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
-  
-  REAL8 value=0, min=0, max=0, b=0.01, alpha=0;
-  //printf("%s\n",runState->currentParams->head->name);
-  LALInferenceCopyVariables(runState->currentParams, proposedParams);
-  LALInferenceVariableItem *item=proposedParams->head;
-  if(LALInferenceCheckVariable(runState->priorArgs, "densityVNR")){
-    b = *((REAL8 *)LALInferenceGetVariable(runState->priorArgs, "densityVNR"));
-  }
-  
-  do {
-    item=proposedParams->head;
-    for(;item;item=item->next){
-      if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
-        continue;
-      else
-        {
-          LALInferenceGetMinMaxPrior(runState->priorArgs, item->name, (void *)&min, (void *)&max);
-          value=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-          LALInferenceSetVariable(proposedParams, item->name, &(value));
-          //printf("%s\t%f\t%f\t%f\t%f\n",item->name, *(REAL8 *)item->value, value, min, max);
-        }
-    }
-    alpha=gsl_rng_uniform(runState->GSLrandom);
-    //LALInferencePrintVariables(proposedParams);
-  } while(exp(runState->prior(runState, proposedParams))<=alpha*b);
-  //printf("%f\t%f\t%f\n",exp(runState->prior(runState, proposedParams)),alpha*b,b);
+static REAL8 
+draw_colatitude(LALInferenceRunState *runState, const char *name) {
+  REAL8 min, max;
 
-  REAL8 logRatio = runState->prior(runState, runState->currentParams) - runState->prior(runState, proposedParams);
-  LALInferenceSetLogProposalRatio(runState, logRatio);
+  LALInferenceGetMinMaxPrior(runState->priorArgs, name, &min, &max);
+
+  REAL8 x = gsl_rng_uniform(runState->GSLrandom);
+
+  return acos(cos(min) - x*(cos(min) - cos(max)));
+}
+
+static REAL8 
+draw_dec(LALInferenceRunState *runState) {
+  REAL8 min, max;
+  
+  LALInferenceGetMinMaxPrior(runState->priorArgs, "declination", &min, &max);
+
+  REAL8 x = gsl_rng_uniform(runState->GSLrandom);
+  
+  return asin(x*(sin(max) - sin(min)) + sin(min));
+}
+
+static REAL8 
+draw_flat(LALInferenceRunState *runState, const char *name) {
+  REAL8 min, max;
+
+  LALInferenceGetMinMaxPrior(runState->priorArgs, name, &min, &max);
+
+  REAL8 x = gsl_rng_uniform(runState->GSLrandom);
+
+  return min + x*(max - min);
+}
+
+static REAL8 
+draw_chirp(LALInferenceRunState *runState) {
+  REAL8 min, max;
+
+  LALInferenceGetMinMaxPrior(runState->priorArgs, "chirpmass", &min, &max);
+
+  REAL8 x = gsl_rng_uniform(runState->GSLrandom);
+
+  return pow(pow(min, -5.0/6.0) - x*(pow(min, -5.0/6.0) - pow(max, -5.0/6.0)), -6.0/5.0);
+}
+
+static REAL8
+approxLogPrior(LALInferenceVariables *params) {
+  REAL8 logP = 0.0;
+
+  REAL8 Mc = *(REAL8 *)LALInferenceGetVariable(params, "chirpmass");
+  logP += -11.0/6.0*log(Mc);
+
+  /* Flat in eta. */
+
+  REAL8 iota = *(REAL8 *)LALInferenceGetVariable(params, "inclination");
+  logP += log(sin(iota));
+
+  /* Flat in time, ra, psi, phi. */
+
+  REAL8 dist = *(REAL8 *)LALInferenceGetVariable(params, "distance");
+  logP += 2.0*log(dist);
+
+  REAL8 dec = *(REAL8 *)LALInferenceGetVariable(params, "declination");
+  logP += log(cos(dec));
+
+  if (LALInferenceCheckVariable(params, "theta_spin1")) {
+    REAL8 theta1 = *(REAL8 *)LALInferenceGetVariable(params, "theta_spin1");
+    logP += log(sin(theta1));
+  }
+
+  if (LALInferenceCheckVariable(params, "theta_spin2")) {
+    REAL8 theta2 = *(REAL8 *)LALInferenceGetVariable(params, "theta_spin2");
+    logP += log(sin(theta2));
+  }
+
+  return logP;
+}
+
+void 
+LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+
+  REAL8 Mc = draw_chirp(runState);
+  LALInferenceSetVariable(proposedParams, "chirpmass", &Mc);
+
+  REAL8 eta = draw_flat(runState, "massratio");
+  LALInferenceSetVariable(proposedParams, "massratio", &eta);
+
+  REAL8 theTime = draw_flat(runState, "time");
+  LALInferenceSetVariable(proposedParams, "time", &theTime);
+
+  REAL8 phase = draw_flat(runState, "phase");
+  LALInferenceSetVariable(proposedParams, "phase", &phase);
+
+  REAL8 inc = draw_colatitude(runState, "inclination");
+  LALInferenceSetVariable(proposedParams, "inclination", &inc);
+
+  REAL8 pol = draw_flat(runState, "polarisation");
+  LALInferenceSetVariable(proposedParams, "polarisation", &pol);
+
+  REAL8 dist = draw_distance(runState);
+  LALInferenceSetVariable(proposedParams, "distance", &dist);
+
+  REAL8 ra = draw_flat(runState, "rightascension");
+  LALInferenceSetVariable(proposedParams, "rightascension", &ra);
+
+  REAL8 dec = draw_dec(runState);
+  LALInferenceSetVariable(proposedParams, "declination", &dec);
+
+  if (LALInferenceCheckVariable(proposedParams, "a_spin1")) {
+    REAL8 a1 = draw_flat(runState, "a_spin1");
+    LALInferenceSetVariable(proposedParams, "a_spin1", &a1);
+  }
+
+  if (LALInferenceCheckVariable(proposedParams, "a_spin2")) {
+    REAL8 a2 = draw_flat(runState, "a_spin2");
+    LALInferenceSetVariable(proposedParams, "a_spin2", &a2);
+  }
+
+  if (LALInferenceCheckVariable(proposedParams, "phi_spin1")) {
+    REAL8 phi1 = draw_flat(runState, "phi_spin1");
+    LALInferenceSetVariable(proposedParams, "phi_spin1", &phi1);
+  }
+
+  if (LALInferenceCheckVariable(proposedParams, "phi_spin2")) {
+    REAL8 phi2 = draw_flat(runState, "phi_spin2");
+    LALInferenceSetVariable(proposedParams, "phi_spin2", &phi2);
+  }
+
+  if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
+    REAL8 theta1 = draw_colatitude(runState, "theta_spin1");
+    LALInferenceSetVariable(proposedParams, "theta_spin1", &theta1);
+  }
+
+  if (LALInferenceCheckVariable(proposedParams, "theta_spin2")) {
+    REAL8 theta2 = draw_colatitude(runState, "theta_spin2");
+    LALInferenceSetVariable(proposedParams, "theta_spin2", &theta2);
+  }
+
+  LALInferenceSetLogProposalRatio(runState, approxLogPrior(runState->currentParams) - approxLogPrior(proposedParams));
 }
 
 static void

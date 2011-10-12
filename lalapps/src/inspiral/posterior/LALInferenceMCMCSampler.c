@@ -558,19 +558,6 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	LALInferenceDestroyVariables(&proposedParams);	
 }
 
-void VNRPriorOneStep(LALInferenceRunState *runState)
-// Von Neumann rejection sampler for the prior !!
-{  
-  LALInferenceVariables proposedParams;
-	proposedParams.head = NULL;
-	proposedParams.dimension = 0;
-  
-  LALInferenceDrawUniformlyFromPrior(runState, &proposedParams);
-  runState->currentPrior = runState->prior(runState, &proposedParams);
-  LALInferenceCopyVariables(&proposedParams, runState->currentParams);
-  LALInferenceDestroyVariables(&proposedParams);
-}
-
 //-----------------------------------------
 // file output routines:
 //-----------------------------------------

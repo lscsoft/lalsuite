@@ -947,7 +947,7 @@ void initVariables(LALInferenceRunState *state)
 		LALInferenceAddVariable(currentParams, "declination",     &start_dec,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 		if(MPIrank==0) fprintf(stdout,"declination fixed and set to %f\n",start_dec);
 	}else{
-	    LALInferenceAddVariable(currentParams, "declination",     &start_dec,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+	    LALInferenceAddVariable(currentParams, "declination",     &start_dec,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	}
 	LALInferenceAddMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
     
@@ -979,7 +979,7 @@ void initVariables(LALInferenceRunState *state)
 		LALInferenceAddVariable(currentParams, "inclination",     &start_iota,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 		if(MPIrank==0) fprintf(stdout,"iota fixed and set to %f\n",start_iota);
 	}else{
- 	    LALInferenceAddVariable(currentParams, "inclination",     &start_iota,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+ 	    LALInferenceAddVariable(currentParams, "inclination",     &start_iota,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	}
 	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
@@ -1009,7 +1009,7 @@ void initVariables(LALInferenceRunState *state)
 				    LALInferenceAddVariable(currentParams, "theta_spin1",     &start_theta_spin1,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 					if(MPIrank==0) fprintf(stdout,"theta 1 fixed and set to %f\n",start_theta_spin1);
 				}else{
-				    LALInferenceAddVariable(currentParams, "theta_spin1",     &start_theta_spin1,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+				    LALInferenceAddVariable(currentParams, "theta_spin1",     &start_theta_spin1,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 				}
 				LALInferenceAddMinMaxPrior(priorArgs, "theta_spin1",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 		
@@ -1048,7 +1048,7 @@ void initVariables(LALInferenceRunState *state)
 				LALInferenceAddVariable(currentParams, "theta_spin2",     &start_theta_spin2,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 				if(MPIrank==0) fprintf(stdout,"theta spin 2 fixed and set to %f\n",start_theta_spin2);
 			}else{
-				LALInferenceAddVariable(currentParams, "theta_spin2",     &start_theta_spin2,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+				LALInferenceAddVariable(currentParams, "theta_spin2",     &start_theta_spin2,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 			}
 			LALInferenceAddMinMaxPrior(priorArgs, "theta_spin2",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 		
@@ -1190,12 +1190,12 @@ void initVariables(LALInferenceRunState *state)
 
   /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES. 
   (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enought */
-  if(state->prior(state, currentParams)<=-DBL_MAX){
+  while(state->prior(state, currentParams)<=-DBL_MAX){
     fprintf(stderr, "Warning initial parameter randlomy drawn from prior. (in %s, line %d)\n",__FILE__, __LINE__);
     LALInferenceVariables *temp; //
     temp=XLALCalloc(1,sizeof(LALInferenceVariables));
     memset(temp,0,sizeof(LALInferenceVariables));
-    LALInferenceMCMCDrawFromPrior(state, temp);
+    LALInferenceDrawApproxPrior(state, temp);
     LALInferenceCopyVariables(temp, currentParams);
   }
         /* Make sure that our initial value is within the

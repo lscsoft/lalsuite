@@ -141,17 +141,10 @@ void LALInferenceDifferentialEvolutionAmp(LALInferenceRunState *state, LALInfere
 void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 void LALInferenceDifferentialEvolutionSky(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
-/** Draws a parameter state uniformly in each parameter from its min
-    to its max, rejecting any samples that do not have prior support.
-    NOTE: this is not a draw from the prior distribution!  For drawing
-    from the prior distribution, use
-    LALInferenceDrawUniformlyFromPrior().*/
-void LALInferenceMCMCDrawFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-
-/** draws a value from the prior, using Von Neumann rejection sampling.*/
-void LALInferenceDrawUniformlyFromPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-// Von Neumann rejection sampler for the prior !!
-//void VNRPriorOneStep(LALInferenceRunState *runState);
+/** Draws from an approximation to the true prior.  Flat in all
+    variables except for: Mc^(-11/6), flat in cos(co-latitudes), flat
+    in sin(dec), dist^2*/
+void LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Reflects the sky location through the plane formed by three
     detectors.  Should only be used when there are exactly three
