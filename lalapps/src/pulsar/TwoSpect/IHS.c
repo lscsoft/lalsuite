@@ -894,7 +894,13 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          
          
          //FILE *TWOROWSUM = fopen("./tworowsum.dat","w");
-         if (params->useSSE) sseSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, 0, 1, 0, (INT4)ihsvectorsequence->length-(ii-1));
+         if (params->useSSE) {
+            sseSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, 0, 1, 0, (INT4)ihsvectorsequence->length-(ii-1));
+            if (xlalErrno!=0) {
+               fprintf(stderr, "%s: sseSSVectorSequenceSum() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+         }
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             //Sum IHS values across SFT frequency bins
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
@@ -1007,7 +1013,13 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          }
          
          INT4 endloc = ((ii-1)*(ii-1)-(ii-1))/2;
-         if (params->useSSE) sseSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, 0, ii-1, 0, (INT4)ihsvectorsequence->length-(ii-1));
+         if (params->useSSE) {
+            sseSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, 0, ii-1, 0, (INT4)ihsvectorsequence->length-(ii-1));
+            if (xlalErrno!=0) {
+               fprintf(stderr, "%s: sseSSVectorSequenceSum() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+         }
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj);
             for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) {
@@ -1152,8 +1164,6 @@ void fastSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *inpu
 void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors)
 {
    
-   const CHAR *fn = __func__;
-   
 #ifdef __SSE__
    INT4 roundedvectorlength = (INT4)input1->vectorLength / 4;
    
@@ -1161,13 +1171,13 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
    REAL4* allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
    REAL4* allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
    if (allocinput1==NULL) {
-      fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", fn, 4*roundedvectorlength*sizeof(REAL4) + 15);
+      fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
       XLAL_ERROR_VOID(XLAL_ENOMEM);
    } else if (allocinput2==NULL) {
-      fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", fn, 4*roundedvectorlength*sizeof(REAL4) + 15);
+      fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
       XLAL_ERROR_VOID(XLAL_ENOMEM);
    } else if (allocoutput==NULL) {
-      fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", fn, 4*roundedvectorlength*sizeof(REAL4) + 15);
+      fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
       XLAL_ERROR_VOID(XLAL_ENOMEM);
    }
    REAL4* alignedinput1 = (void*)(((UINT8)allocinput1+15) & ~15);
@@ -1247,7 +1257,7 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
    XLALFree(allocinput2);
    XLALFree(allocoutput);
 #else
-   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", fn);
+   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
    
