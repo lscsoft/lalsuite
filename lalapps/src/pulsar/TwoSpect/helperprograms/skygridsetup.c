@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
    CHAR *IFO = XLALCalloc(strlen(args_info.IFO_arg)+1, sizeof(*IFO));
    if (IFO==NULL) {
       fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", fn, sizeof(*IFO));
-      XLAL_ERROR(fn, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
    }
    sprintf(IFO, "%s", args_info.IFO_arg);
    if (strcmp("L1", IFO)==0) {
