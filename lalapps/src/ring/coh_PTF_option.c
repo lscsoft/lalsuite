@@ -260,11 +260,15 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         {
           localparams.simDataType = ILIGO_PSD;
         }
+        else if ( ! strcmp( "ALIGONoise",optarg))
+        {
+          localparams.simDataType = ALIGO_PSD;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown data type specified:"
-              "%s valid options are WhiteNoise and ILIGONoise",
+              "%s valid options are WhiteNoise, ILIGONoise or ALIGONoise",
               long_options[option_index].name, optarg );
           exit(1);
         }
@@ -708,7 +712,7 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--gps-end-time=tstop       GPS stop time of data to analyze (sec)\n" );
   fprintf( stderr, "--gps-end-time-ns=tstopns  nanosecond residual of stop time\n" );
   fprintf( stderr, "\nsimulated data options:\n" );
-  fprintf( stderr, "--simulated-data=dataType  create simulated Gaussian noise. Can be WhiteNoise or ILIGONoise. \n" );
+  fprintf( stderr, "--simulated-data=dataType  create simulated Gaussian noise. Can be WhiteNoise,ILIGONoise or ALIGONoise. \n" );
   fprintf( stderr, "--random-seed=seed         random number seed for simulated data\n" );
   fprintf( stderr, "--sample-rate=srate        sampling rate of simulated data (Hz)\n" );
   fprintf( stderr, "--zero-data                create a time series of zeros\n" );
