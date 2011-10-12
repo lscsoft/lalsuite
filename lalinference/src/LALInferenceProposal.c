@@ -190,10 +190,12 @@ void NSFillMCMCVariables(LALInferenceVariables *proposedParams)
 }
 
 void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
-{ /* PTMCMCLALProposal needs a few params converted */
- 
-  /* PTMCMC likes to read this directly so we have to plug our mangled values in*/
+{
+  /* PTMCMC likes to read currentParams directly, whereas NS expects proposedParams
+   to be modified by the proposal. Back up currentParams and then restore it after
+   calling the MCMC proposal function. */
   LALInferenceVariables *currentParamsBackup=runState->currentParams;
+  /* PTMCMC expects some variables that NS doesn't use by default, so create them */
   NSFillMCMCVariables(proposedParams);
 
   runState->currentParams=proposedParams; 
