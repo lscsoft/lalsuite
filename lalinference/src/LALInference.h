@@ -319,7 +319,12 @@ tagLALInferenceRunState
     *algorithmParams;                                /** Parameters which control the running of the algorithm*/
   LALInferenceVariables				**livePoints; /** Array of live points for Nested Sampling */
   LALInferenceVariables **differentialPoints;        /** Array of points for differential evolution */
-  size_t differentialPointsLength;                   /** This should be removed can be given as an algorithmParams entry */
+  size_t differentialPointsLength;                   /** Length of the current differential points stored in 
+                                                         differentialPoints.  This should be removed can be given 
+                                                         as an algorithmParams entry */
+  size_t differentialPointsSize;                     /** Size of the differentialPoints memory block 
+                                                         (must be >= length of differential points).  
+                                                         Can also be removed. */
   REAL8			currentLikelihood;  /** This should be removed, can be given as an algorithmParams or proposalParams entry */
   REAL8                 currentPrior;       /** This should be removed, can be given as an algorithmParams entry */
   gsl_rng               *GSLrandom;         /** A pointer to a GSL random number generator */

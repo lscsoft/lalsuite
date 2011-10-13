@@ -53,6 +53,19 @@ RCSID("$Id$");
 FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState);
 void LALInferenceDataDump(LALInferenceRunState *runState);
 
+static void
+accumulateDifferentialEvolutionSample(LALInferenceRunState *runState) {
+  if (runState->differentialPointsSize == runState->differentialPointsLength) {
+    size_t newSize = runState->differentialPointsSize*2;
+    runState->differentialPoints = XLALRealloc(runState->differentialPoints, newSize*sizeof(LALInferenceVariables *));
+    runState->differentialPointsSize = newSize;
+  }
+
+  runState->differentialPoints[runState->differentialPointsLength] = XLALCalloc(1, sizeof(LALInferenceVariables));
+  LALInferenceCopyVariables(runState->currentParams, runState->differentialPoints[runState->differentialPointsLength]);
+  runState->differentialPointsLength += 1;
+}
+
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
 	int i,t,p,lowerRank,upperRank,x; //indexes for for() loops
@@ -284,6 +297,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
 
 		if ((i % Nskip) == 0) {
+                  accumulateDifferentialEvolutionSample(runState);
+
                   fseek(chainoutput, 0L, SEEK_END);
                   fprintf(chainoutput, "%d\t%f\t%f\t", i,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior,runState->currentPrior);
                   LALInferencePrintSampleNonFixed(chainoutput,runState->currentParams);

@@ -574,13 +574,11 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
   LALInferenceVariables **dePts = runState->differentialPoints;
   size_t nPts = runState->differentialPointsLength;
 
-  if (dePts == NULL || nPts <= 1) {
-    fprintf(stderr, "Trying to differentially evolve without enough points (in %s, %d)\n",
-            __FILE__, __LINE__);
-    exit(1);
-  }
-
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
+
+  if (dePts == NULL || nPts <= 1) {
+    return; /* Quit now, since we don't have any points to use. */
+  }
 
   size_t i,j;
 
@@ -622,7 +620,7 @@ void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *runState, LAL
 }
 
 void LALInferenceDifferentialEvolutionAmp(LALInferenceRunState *runState, LALInferenceVariables *pp) {
-  const char *names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", NULL};
+  const char *names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "time", NULL};
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
 
@@ -632,7 +630,7 @@ void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *runState, LALI
 }
 
 void LALInferenceDifferentialEvolutionSky(LALInferenceRunState *runState, LALInferenceVariables *pp) {
-  const char *names[] = {"rightascension", "declination", NULL};
+  const char *names[] = {"rightascension", "declination", "time", NULL};
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
 

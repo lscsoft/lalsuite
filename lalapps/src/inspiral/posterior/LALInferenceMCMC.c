@@ -1260,49 +1260,15 @@ void initVariables(LALInferenceRunState *state)
         /* Differential Evolution? */
         ppt=LALInferenceGetProcParamVal(commandLine, "--differential-evolution");
         if (ppt) {
-          FILE *dePtsFile = fopen(ppt->value, "r");
-          
-          if (!dePtsFile) {
-            fprintf(stderr, "Could not open differential evolution file (%s, line %d).\n",
-                    __FILE__, __LINE__);
-            exit(1);
-          } else {
-            printf("Using differential evolution jumps from file %s\n", ppt->value);
-          }
-          
-          char **headers = LALInferenceGetHeaderLine(dePtsFile);
-          size_t maxDePtsLen = 1;
-          size_t dePtsLen = 1;
-          LALInferenceVariables **dePts = malloc(sizeof(LALInferenceVariables *));
-          
-          while (!feof(dePtsFile)) {
-            dePts[dePtsLen-1] = malloc(sizeof(LALInferenceVariables));
-            dePts[dePtsLen-1]->head = NULL;
-            dePts[dePtsLen-1]->dimension = 0;
-            
-            LALInferenceProcessParamLine(dePtsFile, headers, dePts[dePtsLen-1]);
-            
-            dePtsLen++;
-            if (dePtsLen > maxDePtsLen) {
-              /* Extend. */
-              maxDePtsLen *= 2;
-              dePts = realloc(dePts, maxDePtsLen*sizeof(LALInferenceVariables *));
-            }
-          }
-          
-          dePts = realloc(dePts, dePtsLen*sizeof(LALInferenceVariables *));
-          
-          state->differentialPoints = dePts;
-          state->differentialPointsLength = dePtsLen;
-          
-          fclose(dePtsFile);
-          free(headers); /* Reclaim some (but not all) the memory from
-                            header.  (The individual names must stick
-                            around to be keys in the LALInferenceVariables
-                            structure.) */
+          fprintf(stderr, "Using differential evolution.\nEvery Nskip parameters will be stored for use in the d.e. jump proposal.\n");
+
+          state->differentialPoints = XLALCalloc(1, sizeof(LALInferenceVariables *));
+          state->differentialPointsLength = 0;
+          state->differentialPointsSize = 1;
         } else {
           state->differentialPoints = NULL;
           state->differentialPointsLength = 0;
+          state->differentialPointsSize = 0;
         }
 
         UINT4 N = LALInferenceGetVariableDimensionNonFixed(currentParams);
