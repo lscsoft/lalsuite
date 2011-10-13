@@ -155,5 +155,8 @@ void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInference
 void NSFillMCMCVariables(LALInferenceVariables *proposedParams);
 void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+/** Rotate each spin by random angles about L. */
+void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
 #endif
 

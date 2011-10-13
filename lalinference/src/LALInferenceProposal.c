@@ -50,6 +50,38 @@ const char *LALInferenceSigmaJumpName = "sigmaJump";
 /* Mode hopping fraction for the differential evoultion proposals. */
 static const REAL8 modeHoppingFrac = 0.1;
 
+static int
+same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
+  UINT4 i;
+
+  for (i = 0; i < 3; i++) {
+    if (d1->detector->location[i] != d2->detector->location[i]) return 0;
+  }
+
+  return 1;
+}
+
+static UINT4 
+numDetectorsUniquePositions(LALInferenceRunState *runState) {
+  UINT4 nIFO = 0;
+  UINT4 nCollision = 0;
+  LALInferenceIFOData *currentIFO = NULL;
+
+  for (currentIFO = runState->data; currentIFO; currentIFO = currentIFO->next) {
+    LALInferenceIFOData *subsequentIFO = NULL;
+    nIFO++;
+    for (subsequentIFO = currentIFO->next; subsequentIFO; subsequentIFO = subsequentIFO->next) {
+      if (same_detector_location(subsequentIFO, currentIFO)) {
+        nCollision++;
+        break;
+      }
+    }
+  }
+
+  return nIFO - nCollision;
+}
+
+
 static void
 LALInferenceSetLogProposalRatio(LALInferenceRunState *runState, REAL8 logP) {
   if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio")) {
@@ -235,12 +267,17 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   ProcessParamsTable *ppt;
         
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+
   /* The default, single-parameter updates. */
   LALInferenceAddProposalToCycle(runState, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
 
   LALInferenceAddProposalToCycle(runState, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
 
-  LALInferenceAddProposalToCycle(runState, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
+  UINT4 nDet = numDetectorsUniquePositions(runState);
+  if (nDet == 3) {
+    LALInferenceAddProposalToCycle(runState, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
+  }
 
   LALInferenceAddProposalToCycle(runState, &LALInferenceDrawApproxPrior, TINYWEIGHT);
 
@@ -252,6 +289,10 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   if(LALInferenceCheckVariable(proposedParams,"phase")) {
     LALInferenceAddProposalToCycle(runState, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
+  }
+
+  if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
+    LALInferenceAddProposalToCycle(runState, &LALInferenceRotateSpins, SMALLWEIGHT);
   }
 
   ppt=LALInferenceGetProcParamVal(runState->commandLine, "--covarianceMatrix");
@@ -838,6 +879,13 @@ vsub(REAL8 diff[3], const REAL8 w[3], const REAL8 v[3]) {
 }
 
 static void
+vadd(REAL8 sum[3], const REAL8 w[3], const REAL8 v[3]) {
+  sum[0] = w[0] + v[0];
+  sum[1] = w[1] + v[1];
+  sum[2] = w[2] + v[2];
+}
+
+static void
 reflect_plane(REAL8 pref[3], const REAL8 p[3], 
               const REAL8 x[3], const REAL8 y[3], const REAL8 z[3]) {
   REAL8 n[3], nhat[3], xy[3], xz[3], pn[3], pnperp[3];
@@ -865,17 +913,6 @@ static void
 cart_to_sph(const REAL8 cart[3], REAL8 *lat, REAL8 *longi) {
   *longi = atan2(cart[1], cart[0]);
   *lat = acos(cart[2] / sqrt(cart[0]*cart[0] + cart[1]*cart[1] + cart[2]*cart[2]));
-}
-
-static int
-same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
-  UINT4 i;
-
-  for (i = 0; i < 3; i++) {
-    if (d1->detector->location[i] != d2->detector->location[i]) return 0;
-  }
-
-  return 1;
 }
 
 static void
@@ -937,30 +974,15 @@ void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInference
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   /* Find the number of distinct-position detectors. */
-  UINT4 nIFO = 0;
-  UINT4 nCollision = 0;
-  LALInferenceIFOData *currentIFO = NULL;
-
-  for (currentIFO = runState->data; currentIFO; currentIFO = currentIFO->next) {
-    LALInferenceIFOData *subsequentIFO = NULL;
-    nIFO++;
-    for (subsequentIFO = currentIFO->next; subsequentIFO; subsequentIFO = subsequentIFO->next) {
-      if (same_detector_location(subsequentIFO, currentIFO)) {
-        nCollision++;
-        break;
-      }
-    }
-  }
-
   /* Exit with same parameters (with a warning the first time) if
      there are not three detectors. */
   static UINT4 warningDelivered = 0;
-  if (nIFO-nCollision != 3) {
+  if (numDetectorsUniquePositions(runState) != 3) {
     if (warningDelivered) {
       /* Do nothing. */
     } else {
-      fprintf(stderr, "WARNING: trying to reflect through the decector plane with %d detectors,\n", nIFO);
-      fprintf(stderr, "WARNING: of which %d are in geometrically independent locations.\n", nIFO-nCollision);
+      fprintf(stderr, "WARNING: trying to reflect through the decector plane with %d\n", numDetectorsUniquePositions(runState));
+      fprintf(stderr, "WARNING: geometrically independent locations,\n");
       fprintf(stderr, "WARNING: but this proposal should only be used with exactly 3 independent detectors.\n");
       fprintf(stderr, "WARNING: %s, line %d\n", __FILE__, __LINE__);
       warningDelivered = 1;
@@ -1009,4 +1031,131 @@ void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInference
   LALInferenceSetVariable(proposedParams, "declination", &newDec);
   LALInferenceSetVariable(proposedParams, "time", &newTime);
   LALInferenceSetLogProposalRatio(runState, log(pReverse/pForward));
+}
+
+static void
+rotateVectorAboutAxis(REAL8 vrot[3], REAL8 dvRot[3], 
+                      const REAL8 v[3],
+                      const REAL8 axis[3],
+                      const REAL8 theta) {
+  REAL8 vperp[3], vpar[3], vperprot[3];
+  REAL8 xhat[3], yhat[3], zhat[3];
+  REAL8 vp;
+  UINT4 i;
+
+  project_along(vpar, v, axis);
+  vsub(vperp, v, vpar);
+
+  vp = norm(vperp);
+
+  unit_vector(zhat, axis);
+  unit_vector(xhat, vperp);
+  cross_product(yhat, zhat, xhat);
+
+  for (i = 0; i < 3; i++) {
+    vperprot[i] = vp*(cos(theta)*xhat[i] + sin(theta)*yhat[i]);
+    dvRot[i] = vp*(cos(theta)*yhat[i] - sin(theta)*xhat[i]);
+  }
+
+  vadd(vrot, vpar, vperprot);
+}
+
+static void
+vectorToColatLong(const REAL8 v[3], const REAL8 dv[3], 
+                  REAL8 *colat, REAL8 *longi,
+                  REAL8 *dcolat, REAL8 *dlongi) {
+  REAL8 r2 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+  REAL8 rho2 = v[0]*v[0] + v[1]*v[1];
+  REAL8 r = sqrt(r2);
+  REAL8 rho = sqrt(rho2);
+
+  *longi = atan2(v[1], v[0]);
+  if (*longi < 0.0) {
+    *longi += 2.0*M_PI;
+  }
+
+  *colat = acos(v[2] / r);
+
+  *dlongi = (v[0]*dv[1] - v[1]*dv[0]) / rho2;
+  *dcolat = (v[2]*(v[0]*dv[0] + v[1]*dv[1]) - dv[2]*rho2) / (rho*r2);
+}
+
+void 
+LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+
+  REAL8 theta1 = 2.0*M_PI*gsl_rng_uniform(runState->GSLrandom);
+  REAL8 theta2 = 2.0*M_PI*gsl_rng_uniform(runState->GSLrandom);
+
+  REAL8 logPr = 0.0;
+
+  if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
+    REAL8 theta, phi, iota;
+    REAL8 s1[3], L[3], newS[3], dS[3];
+    
+    theta = *(REAL8 *)LALInferenceGetVariable(proposedParams, "theta_spin1");
+    phi = *(REAL8 *)LALInferenceGetVariable(proposedParams, "phi_spin1");
+
+    iota = *(REAL8 *)LALInferenceGetVariable(proposedParams, "inclination");
+
+    s1[0] = cos(phi)*sin(theta);
+    s1[1] = sin(phi)*sin(theta);
+    s1[2] = cos(theta);
+
+    L[0] = sin(iota);
+    L[1] = 0.0;
+    L[2] = cos(iota);
+
+    rotateVectorAboutAxis(newS, dS, s1, L, theta1);
+
+    REAL8 newPhi, newTheta, dPhi, dTheta;
+
+    vectorToColatLong(newS, dS, &newTheta, &newPhi, &dTheta, &dPhi);
+
+    REAL8 LxS[3], dOldTheta, dOldPhi;
+
+    cross_product(LxS, L, s1);
+    vectorToColatLong(s1, LxS, &theta, &phi, &dOldTheta, &dOldPhi);
+
+    logPr += 0.5*log((dTheta*dTheta + dPhi*dPhi)/(dOldTheta*dOldTheta + dOldPhi*dOldPhi));
+
+    LALInferenceSetVariable(proposedParams, "phi_spin1", &newPhi);
+    LALInferenceSetVariable(proposedParams, "theta_spin1", &newTheta);
+  }
+
+  if (LALInferenceCheckVariable(proposedParams, "theta_spin2")) {
+    REAL8 theta, phi, iota;
+    REAL8 s2[3], L[3], newS[3], dS[3];
+    
+    theta = *(REAL8 *)LALInferenceGetVariable(proposedParams, "theta_spin2");
+    phi = *(REAL8 *)LALInferenceGetVariable(proposedParams, "phi_spin2");
+
+    iota = *(REAL8 *)LALInferenceGetVariable(proposedParams, "inclination");
+
+    s2[0] = cos(phi)*sin(theta);
+    s2[1] = sin(phi)*sin(theta);
+    s2[2] = cos(theta);
+
+    L[0] = sin(iota);
+    L[1] = 0.0;
+    L[2] = cos(iota);
+
+    rotateVectorAboutAxis(newS, dS, s2, L, theta2);
+
+    REAL8 newPhi, newTheta, dPhi, dTheta;
+
+    vectorToColatLong(newS, dS, &newTheta, &newPhi, &dTheta, &dPhi);
+
+    REAL8 LxS[3], dOldTheta, dOldPhi;
+
+    cross_product(LxS, L, s2);
+    vectorToColatLong(s2, LxS, &theta, &phi, &dOldTheta, &dOldPhi);
+
+    logPr += 0.5*log((dTheta*dTheta + dPhi*dPhi)/(dOldTheta*dOldTheta + dOldPhi*dOldPhi));
+
+    LALInferenceSetVariable(proposedParams, "phi_spin2", &newPhi);
+    LALInferenceSetVariable(proposedParams, "theta_spin2", &newTheta);
+  }
+
+  LALInferenceSetLogProposalRatio(runState, logPr);
 }
