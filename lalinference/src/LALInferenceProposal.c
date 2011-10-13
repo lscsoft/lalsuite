@@ -1034,7 +1034,7 @@ void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInference
 }
 
 static void
-rotateVectorAboutAxis(REAL8 vrot[3], REAL8 dvRot[3], 
+rotateVectorAboutAxis(REAL8 vrot[3],
                       const REAL8 v[3],
                       const REAL8 axis[3],
                       const REAL8 theta) {
@@ -1054,30 +1054,20 @@ rotateVectorAboutAxis(REAL8 vrot[3], REAL8 dvRot[3],
 
   for (i = 0; i < 3; i++) {
     vperprot[i] = vp*(cos(theta)*xhat[i] + sin(theta)*yhat[i]);
-    dvRot[i] = vp*(cos(theta)*yhat[i] - sin(theta)*xhat[i]);
   }
 
   vadd(vrot, vpar, vperprot);
 }
 
 static void
-vectorToColatLong(const REAL8 v[3], const REAL8 dv[3], 
-                  REAL8 *colat, REAL8 *longi,
-                  REAL8 *dcolat, REAL8 *dlongi) {
-  REAL8 r2 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-  REAL8 rho2 = v[0]*v[0] + v[1]*v[1];
-  REAL8 r = sqrt(r2);
-  REAL8 rho = sqrt(rho2);
-
+vectorToColatLong(const REAL8 v[3],
+                  REAL8 *colat, REAL8 *longi) { 
   *longi = atan2(v[1], v[0]);
   if (*longi < 0.0) {
     *longi += 2.0*M_PI;
   }
 
-  *colat = acos(v[2] / r);
-
-  *dlongi = (v[0]*dv[1] - v[1]*dv[0]) / rho2;
-  *dcolat = (v[2]*(v[0]*dv[0] + v[1]*dv[1]) - dv[2]*rho2) / (rho*r2);
+  *colat = acos(v[2] / sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]));
 }
 
 void 
@@ -1091,7 +1081,7 @@ LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *p
 
   if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
     REAL8 theta, phi, iota;
-    REAL8 s1[3], L[3], newS[3], dS[3];
+    REAL8 s1[3], L[3], newS[3];
     
     theta = *(REAL8 *)LALInferenceGetVariable(proposedParams, "theta_spin1");
     phi = *(REAL8 *)LALInferenceGetVariable(proposedParams, "phi_spin1");
@@ -1106,18 +1096,16 @@ LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *p
     L[1] = 0.0;
     L[2] = cos(iota);
 
-    rotateVectorAboutAxis(newS, dS, s1, L, theta1);
+    rotateVectorAboutAxis(newS, s1, L, theta1);
 
-    REAL8 newPhi, newTheta, dPhi, dTheta;
+    REAL8 newPhi, newTheta;
 
-    vectorToColatLong(newS, dS, &newTheta, &newPhi, &dTheta, &dPhi);
+    vectorToColatLong(newS, &newTheta, &newPhi);
 
-    REAL8 LxS[3], dOldTheta, dOldPhi;
-
-    cross_product(LxS, L, s1);
-    vectorToColatLong(s1, LxS, &theta, &phi, &dOldTheta, &dOldPhi);
-
-    logPr += 0.5*log((dTheta*dTheta + dPhi*dPhi)/(dOldTheta*dOldTheta + dOldPhi*dOldPhi));
+    /* Since the proposal is inherently uniform on the surface of the
+       sphere, we only need to account for the volume factors between
+       cos(theta) and theta. */
+    logPr += log(sin(theta)/sin(newTheta));
 
     LALInferenceSetVariable(proposedParams, "phi_spin1", &newPhi);
     LALInferenceSetVariable(proposedParams, "theta_spin1", &newTheta);
@@ -1125,7 +1113,7 @@ LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *p
 
   if (LALInferenceCheckVariable(proposedParams, "theta_spin2")) {
     REAL8 theta, phi, iota;
-    REAL8 s2[3], L[3], newS[3], dS[3];
+    REAL8 s2[3], L[3], newS[3];
     
     theta = *(REAL8 *)LALInferenceGetVariable(proposedParams, "theta_spin2");
     phi = *(REAL8 *)LALInferenceGetVariable(proposedParams, "phi_spin2");
@@ -1140,18 +1128,16 @@ LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *p
     L[1] = 0.0;
     L[2] = cos(iota);
 
-    rotateVectorAboutAxis(newS, dS, s2, L, theta2);
+    rotateVectorAboutAxis(newS, s2, L, theta2);
 
-    REAL8 newPhi, newTheta, dPhi, dTheta;
+    REAL8 newPhi, newTheta;
 
-    vectorToColatLong(newS, dS, &newTheta, &newPhi, &dTheta, &dPhi);
+    vectorToColatLong(newS, &newTheta, &newPhi);
 
-    REAL8 LxS[3], dOldTheta, dOldPhi;
-
-    cross_product(LxS, L, s2);
-    vectorToColatLong(s2, LxS, &theta, &phi, &dOldTheta, &dOldPhi);
-
-    logPr += 0.5*log((dTheta*dTheta + dPhi*dPhi)/(dOldTheta*dOldTheta + dOldPhi*dOldPhi));
+    /* Since the proposal is inherently uniform on the surface of the
+       sphere, we only need to account for the volume factors between
+       cos(theta) and theta. */
+    logPr += log(sin(theta)/sin(newTheta));
 
     LALInferenceSetVariable(proposedParams, "phi_spin2", &newPhi);
     LALInferenceSetVariable(proposedParams, "theta_spin2", &newTheta);
