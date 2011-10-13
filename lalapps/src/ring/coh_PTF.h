@@ -193,6 +193,7 @@ struct coh_PTF_params {
   int          doBankVeto;
   int          doAutoVeto;
   int          doChiSquare;
+  int          doSnglChiSquared;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;
@@ -273,9 +274,9 @@ void coh_PTF_statistic(
     REAL4TimeSeries         *snrComps[LAL_NUM_IFO],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
-    REAL4TimeSeries         *bankVeto,
-    REAL4TimeSeries         *autoVeto,
-    REAL4TimeSeries         *chiSquare,
+    REAL4TimeSeries         *bankVeto[LAL_NUM_IFO+1],
+    REAL4TimeSeries         *autoVeto[LAL_NUM_IFO+1],
+    REAL4TimeSeries         *chiSquare[LAL_NUM_IFO+1],
     UINT4                   subBankSize,
     struct bankComplexTemplateOverlaps *bankOverlaps,
     struct bankTemplateOverlaps *bankNormOverlaps,
@@ -286,8 +287,9 @@ void coh_PTF_statistic(
     RingDataSegments        *segment[LAL_NUM_IFO+1],
     COMPLEX8FFTPlan         *invPlan,
     struct bankDataOverlaps **chisqOverlapsP,
-    REAL4 **frequencyRangesPlusP,
-    REAL4 **frequencyRangesCrossP,
+    struct bankDataOverlaps **chisqSnglOverlapsP,
+    REAL4 *frequencyRangesPlus[LAL_NUM_IFO+1],
+    REAL4 *frequencyRangesCross[LAL_NUM_IFO+1],
     struct timeval          startTime
 );
 
@@ -304,9 +306,9 @@ UINT8 coh_PTF_add_triggers(
     REAL4TimeSeries         *snrComps[LAL_NUM_IFO],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
-    REAL4TimeSeries         *bankVeto,
-    REAL4TimeSeries         *autoVeto,
-    REAL4TimeSeries         *chiSquare,
+    REAL4TimeSeries         *bankVeto[LAL_NUM_IFO+1],
+    REAL4TimeSeries         *autoVeto[LAL_NUM_IFO+1],
+    REAL4TimeSeries         *chiSquare[LAL_NUM_IFO+1],
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL4                   rightAscension,
     REAL4                   declination,
@@ -538,11 +540,15 @@ REAL4 coh_PTF_calculate_bank_veto(
     REAL4           b[LAL_NUM_IFO],
     struct coh_PTF_params      *params,
     struct bankCohTemplateOverlaps *cohBankOverlaps,
+    struct bankComplexTemplateOverlaps *bankOverlaps,
     struct bankDataOverlaps *dataOverlaps,
+    struct bankTemplateOverlaps *bankNormOverlaps,
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+    REAL8Array      *PTFM[LAL_NUM_IFO+1],
     INT4            timeOffsetPoints[LAL_NUM_IFO],
     gsl_matrix *Bankeigenvecs[50],
-    gsl_vector *Bankeigenvals[50]
+    gsl_vector *Bankeigenvals[50],
+    UINT4       detectorNum
 );
 
 REAL4 coh_PTF_calculate_auto_veto(
@@ -552,10 +558,13 @@ REAL4 coh_PTF_calculate_auto_veto(
     REAL4           b[LAL_NUM_IFO],
     struct coh_PTF_params      *params,
     struct bankCohTemplateOverlaps *cohAutoOverlaps,
+    struct bankComplexTemplateOverlaps *autoTempOverlaps,
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+    REAL8Array      *PTFM[LAL_NUM_IFO+1],
     INT4            timeOffsetPoints[LAL_NUM_IFO],
     gsl_matrix *Autoeigenvecs,
-    gsl_vector *Autoeigenvals
+    gsl_vector *Autoeigenvals,
+    UINT4       detectorNum
 );
 
 void coh_PTF_free_bank_veto_memory(
@@ -588,7 +597,8 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
     REAL4 b[LAL_NUM_IFO],
     REAL4 *frequencyRangesPlus,
     REAL4 *frequencyRangesCross,
-    gsl_matrix *eigenvecs
+    gsl_matrix *eigenvecs,
+    UINT4 detectorNum
 );
 
 void coh_PTF_calculate_standard_chisq_power_bins(
@@ -602,7 +612,8 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     REAL4 *frequencyRangesCross,
     REAL4 *powerBinsPlus,
     REAL4 *powerBinsCross,
-    gsl_matrix *eigenvecs
+    gsl_matrix *eigenvecs,
+    UINT4 detectorNum
 );
 
 REAL4 coh_PTF_calculate_chi_square(
@@ -611,13 +622,15 @@ REAL4 coh_PTF_calculate_chi_square(
     UINT4           position,
     struct bankDataOverlaps *chisqOverlaps,
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+    REAL8Array      *PTFM[LAL_NUM_IFO+1],
     REAL4           a[LAL_NUM_IFO],
     REAL4           b[LAL_NUM_IFO],
     INT4            timeOffsetPoints[LAL_NUM_IFO],
     gsl_matrix *eigenvecs,
     gsl_vector *eigenvals,
     REAL4 *powerBinsPlus,
-    REAL4 *powerBinsCross
+    REAL4 *powerBinsCross,
+    UINT4 detectorNum
 );
 
 /* routines in coh_PTF_option */

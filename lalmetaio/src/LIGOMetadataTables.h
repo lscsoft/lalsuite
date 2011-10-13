@@ -472,6 +472,21 @@ tagMultiInspiralTable
   REAL4         chisq_g;
   REAL4         chisq_t;
   REAL4         chisq_v;
+  INT4          sngl_chisq_dof;
+  REAL4         bank_chisq_h1;
+  REAL4         bank_chisq_h2;
+  REAL4         bank_chisq_l;
+  REAL4         bank_chisq_g;
+  REAL4         bank_chisq_t;
+  REAL4         bank_chisq_v;
+  INT4          sngl_bank_chisq_dof;
+  REAL4         cont_chisq_h1;
+  REAL4         cont_chisq_h2;
+  REAL4         cont_chisq_l;
+  REAL4         cont_chisq_g;
+  REAL4         cont_chisq_t;
+  REAL4         cont_chisq_v;
+  INT4          sngl_cont_chisq_dof;
   REAL4         ra;
   REAL4         dec;
   REAL4         ligo_angle;
@@ -895,7 +910,6 @@ tagTimeSlide
   REAL8          offset;
 }
 TimeSlide;
-
 
 typedef union
 tagMetadataTable
