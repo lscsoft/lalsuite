@@ -547,19 +547,19 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   # injcombiner
   # ===========
 
+  tag = 'injcombiner'
+  # get necessary configuration variables
+  injpatterns = cp.get('%s-meta' % tag, 'injection-patterns').split(',')
+  inclinations = map(int, cp.get('%s-meta' % tag,\
+                                 'injection-inclinations').split(','))
+
   if run_injcombiner:
 
-    tag = 'injcombiner'
     exe = cp.get('condor', tag)
 
     # generate job
     dag = init_subDAG(tag, outdir, logdir, cp)
     job = init_job(exe, universe, tag, outdir, logdir, cp, minmemory)
-
-    # get necessary configuration variables
-    injpatterns = cp.get('%s-meta' % tag, 'injection-patterns').split(',')
-    inclinations = map(int, cp.get('%s-meta' % tag,\
-                                   'injection-inclinations').split(','))
 
     # generate cache of FOUND/MISSED files
     fmcachefile = '%s/%s-GRB%s_FOUNDMISSED-%s-%s.cache'\
