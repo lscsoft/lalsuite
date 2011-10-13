@@ -2567,37 +2567,52 @@ LALMultiInspiralTableFromLIGOLw (
           {"chisq_g",                 -1, 63},
           {"chisq_t",                 -1, 64},
           {"chisq_v",                 -1, 65},
-          {"ra",                      -1, 66},
-          {"dec",                     -1, 67},
-          {"ligo_angle",              -1, 68},
-          {"ligo_angle_sig",          -1, 69},
-          {"inclination",             -1, 70},
-          {"polarization",            -1, 71},
-          {"null_statistic",          -1, 72},
-	  {"null_stat_h1h2",          -1, 73},
-	  {"null_stat_degen",         -1, 74},
-          {"event_id",                -1, 75},
-          {"h1quad_re",               -1, 76},
-          {"h1quad_im",               -1, 77},
-          {"h2quad_re",               -1, 78},
-          {"h2quad_im",               -1, 79},
-          {"l1quad_re",               -1, 80},
-          {"l1quad_im",               -1, 81},
-          {"g1quad_re",               -1, 82},
-          {"g1quad_im",               -1, 83},
-          {"t1quad_re",               -1, 84},
-          {"t1quad_im",               -1, 85},
-          {"v1quad_re",               -1, 86},
-          {"v1quad_im",               -1, 87},
-          {"coh_snr_h1h2",            -1, 88},
-          {"cohSnrSqLocal",           -1, 89},
-          {"autoCorrCohSq",           -1, 90},
-          {"crossCorrCohSq",          -1, 91},
-          {"autoCorrNullSq",          -1, 92},
-          {"crossCorrNullSq",         -1, 93},
-          {"ampMetricEigenVal1",      -1, 94},
-          {"ampMetricEigenVal2",      -1, 95},
-          {"time_slide_id",           -1, 96},
+          {"sngl_chisq_dof",          -1, 66},
+          {"bank_chisq_h1",           -1, 67},
+          {"bank_chisq_h2",           -1, 68},
+          {"bank_chisq_l",            -1, 69},
+          {"bank_chisq_g",            -1, 70},
+          {"bank_chisq_t",            -1, 71},
+          {"bank_chisq_v",            -1, 72},
+          {"sngl_bank_chisq_dof",     -1, 73},
+          {"cont_chisq_h1",           -1, 74},
+          {"cont_chisq_h2",           -1, 75},
+          {"cont_chisq_l",            -1, 76},
+          {"cont_chisq_g",            -1, 77},
+          {"cont_chisq_t",            -1, 78},
+          {"cont_chisq_v",            -1, 79},
+          {"sngl_cont_chisq_dof",     -1, 80},
+          {"ra",                      -1, 81},
+          {"dec",                     -1, 82},
+          {"ligo_angle",              -1, 83},
+          {"ligo_angle_sig",          -1, 84},
+          {"inclination",             -1, 85},
+          {"polarization",            -1, 86},
+          {"null_statistic",          -1, 87},
+	  {"null_stat_h1h2",          -1, 88},
+	  {"null_stat_degen",         -1, 89},
+          {"event_id",                -1, 90},
+          {"h1quad_re",               -1, 91},
+          {"h1quad_im",               -1, 92},
+          {"h2quad_re",               -1, 93},
+          {"h2quad_im",               -1, 94},
+          {"l1quad_re",               -1, 95},
+          {"l1quad_im",               -1, 96},
+          {"g1quad_re",               -1, 97},
+          {"g1quad_im",               -1, 98},
+          {"t1quad_re",               -1, 99},
+          {"t1quad_im",               -1, 100},
+          {"v1quad_re",               -1, 101},
+          {"v1quad_im",               -1, 102},
+          {"coh_snr_h1h2",            -1, 103},
+          {"cohSnrSqLocal",           -1, 104},
+          {"autoCorrCohSq",           -1, 105},
+          {"crossCorrCohSq",          -1, 106},
+          {"autoCorrNullSq",          -1, 107},
+          {"crossCorrNullSq",         -1, 108},
+          {"ampMetricEigenVal1",      -1, 109},
+          {"ampMetricEigenVal2",      -1, 110},
+          {"time_slide_id",           -1, 111},
           {NULL,                       0, 0}
     };
 
@@ -2953,41 +2968,101 @@ LALMultiInspiralTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 66 )
       {
-        thisEvent->ra = r4colData;
+        thisEvent->sngl_chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 67 )
       {
-        thisEvent->dec = r4colData;
+        thisEvent->bank_chisq_h1 = r4colData;
       }
       else if ( tableDir[j].idx == 68 )
       {
-        thisEvent->ligo_angle = r4colData;
+        thisEvent->bank_chisq_h2 = r4colData;
       }
       else if ( tableDir[j].idx == 69 )
       {
-        thisEvent->ligo_angle_sig = r4colData;
+        thisEvent->bank_chisq_l = r4colData;
       }
       else if ( tableDir[j].idx == 70 )
       {
-        thisEvent->inclination = r4colData;
+        thisEvent->bank_chisq_g = r4colData;
       }
       else if ( tableDir[j].idx == 71 )
       {
-        thisEvent->polarization = r4colData;
+        thisEvent->bank_chisq_t = r4colData;
       }
       else if ( tableDir[j].idx == 72 )
       {
-        thisEvent->null_statistic = r4colData;
+        thisEvent->bank_chisq_v = r4colData;
       }
       else if ( tableDir[j].idx == 73 )
       {
-        thisEvent->null_stat_h1h2 = r4colData;
+        thisEvent->sngl_bank_chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 74 )
       {
+        thisEvent->cont_chisq_h1 = r4colData;
+      } 
+      else if ( tableDir[j].idx == 75 )
+      {
+        thisEvent->cont_chisq_h2 = r4colData;
+      } 
+      else if ( tableDir[j].idx == 76 )
+      {
+        thisEvent->cont_chisq_l = r4colData;
+      } 
+      else if ( tableDir[j].idx == 77 )
+      {
+        thisEvent->cont_chisq_g = r4colData;
+      }
+      else if ( tableDir[j].idx == 78 )
+      {
+        thisEvent->cont_chisq_t = r4colData;
+      }
+      else if ( tableDir[j].idx == 79 )
+      {
+        thisEvent->cont_chisq_v = r4colData;
+      }
+      else if ( tableDir[j].idx == 80 )
+      {
+        thisEvent->sngl_cont_chisq_dof = i4colData;
+      }
+      else if ( tableDir[j].idx == 81 )
+      {
+        thisEvent->ra = r4colData;
+      }
+      else if ( tableDir[j].idx == 82 )
+      {
+        thisEvent->dec = r4colData;
+      }
+      else if ( tableDir[j].idx == 83 )
+      {
+        thisEvent->ligo_angle = r4colData;
+      }
+      else if ( tableDir[j].idx == 84 )
+      {
+        thisEvent->ligo_angle_sig = r4colData;
+      }
+      else if ( tableDir[j].idx == 85 )
+      {
+        thisEvent->inclination = r4colData;
+      }
+      else if ( tableDir[j].idx == 86 )
+      {
+        thisEvent->polarization = r4colData;
+      }
+      else if ( tableDir[j].idx == 87 )
+      {
+        thisEvent->null_statistic = r4colData;
+      }
+      else if ( tableDir[j].idx == 88 )
+      {
+        thisEvent->null_stat_h1h2 = r4colData;
+      }
+      else if ( tableDir[j].idx == 89 )
+      {
         thisEvent->null_stat_degen = r4colData;
       }
-      else if ( tableDir[j].idx == 75 )
+      else if ( tableDir[j].idx == 90 )
       {
         if ( tableDir[j].pos > 0 )
         {
@@ -3008,87 +3083,87 @@ LALMultiInspiralTableFromLIGOLw (
           }
         }
       }
-      else if ( tableDir[j].idx == 76 )
+      else if ( tableDir[j].idx == 91 )
       {
         thisEvent->h1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 77 )
+      else if ( tableDir[j].idx == 92 )
       {
         thisEvent->h1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 78 )
+      else if ( tableDir[j].idx == 93 )
       {
         thisEvent->h2quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 79 )
+      else if ( tableDir[j].idx == 94 )
       {
         thisEvent->h2quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 80 )
+      else if ( tableDir[j].idx == 95 )
       {
         thisEvent->l1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 81 )
+      else if ( tableDir[j].idx == 96 )
       {
         thisEvent->l1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 82 )
+      else if ( tableDir[j].idx == 97 )
       {
         thisEvent->g1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 83 )
+      else if ( tableDir[j].idx == 98 )
       {
         thisEvent->g1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 84 )
+      else if ( tableDir[j].idx == 99 )
       {
         thisEvent->t1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 85 )
+      else if ( tableDir[j].idx == 100 )
       {
         thisEvent->t1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 86 )
+      else if ( tableDir[j].idx == 101 )
       {
         thisEvent->v1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 87 )
+      else if ( tableDir[j].idx == 102 )
       {
         thisEvent->v1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 88 )
+      else if ( tableDir[j].idx == 103 )
       {
         thisEvent->coh_snr_h1h2 = r4colData;
       }
-      else if ( tableDir[j].idx == 89 )
+      else if ( tableDir[j].idx == 104 )
       {
         thisEvent->cohSnrSqLocal = r4colData;
       }
-      else if ( tableDir[j].idx == 90 )
+      else if ( tableDir[j].idx == 105 )
       {
         thisEvent->autoCorrCohSq = r4colData;
       }
-      else if ( tableDir[j].idx == 91 )
+      else if ( tableDir[j].idx == 106 )
       {
         thisEvent->crossCorrCohSq = r4colData;
       }
-      else if ( tableDir[j].idx == 92 )
+      else if ( tableDir[j].idx == 107 )
       {
         thisEvent->autoCorrNullSq = r4colData;
       }
-      else if ( tableDir[j].idx == 93 )
+      else if ( tableDir[j].idx == 108 )
       {
         thisEvent->crossCorrNullSq = r4colData;
       }
-      else if ( tableDir[j].idx == 94 )
+      else if ( tableDir[j].idx == 109 )
       {
         thisEvent->ampMetricEigenVal1 = r8colData;
       }
-      else if ( tableDir[j].idx == 95 )
+      else if ( tableDir[j].idx == 110 )
       {
         thisEvent->ampMetricEigenVal2 = r8colData;
       }
-      else if ( tableDir[j].idx == 96 )
+      else if ( tableDir[j].idx == 111 )
       {
         if ( tableDir[j].pos > 0 )
         {
@@ -3101,7 +3176,7 @@ LALMultiInspiralTableFromLIGOLw (
             if ( i8colData < 0 )
               return -1;
           }
-          if ( i8colData >= 0)
+          if ( i8colData )
           {
             thisEvent->time_slide_id = LALCalloc( 1,\
                                         sizeof(*thisEvent->time_slide_id) );

@@ -46,6 +46,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "do-bank-veto",       no_argument, &localparams.doBankVeto, 1 },
     { "do-auto-veto",       no_argument, &localparams.doAutoVeto, 1 },
     { "do-chi-square",      no_argument, &localparams.doChiSquare, 1 },
+    { "do-sngl-chi-tests",  no_argument, &localparams.doSnglChiSquared, 1},
 /*    {"g1-data",             no_argument, &(haveTrig[LAL_IFO_G1]), 1 },*/
     {"h1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_H1]),1},
     {"h2-data",             no_argument, &(localparams.haveTrig[LAL_IFO_H2]),1},
