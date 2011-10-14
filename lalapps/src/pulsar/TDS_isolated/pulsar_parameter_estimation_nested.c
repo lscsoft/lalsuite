@@ -1065,8 +1065,6 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
       }
     }
 
-    fprintf(stderr, "%s %s\n", efile, sfile);
-
     /* check ephemeris files exist and if not output an error message */
     if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
       fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
