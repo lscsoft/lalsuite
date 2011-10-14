@@ -215,7 +215,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
       } /* for jj < ffdata->numfbins-(ii-1) */
       
       //TODO: comment or remove this
-      fprintf(stderr, "%d %.6f %.6f %d %d\n", ii, loudestoutliernoise, loudestoutlierminusnoise, locationofloudestoutlier, jjbinofloudestoutlier);
+      //fprintf(stderr, "%d %.6f %.6f %d %d\n", ii, loudestoutliernoise, loudestoutlierminusnoise, locationofloudestoutlier, jjbinofloudestoutlier);
       
       REAL8 initialguess = ncx2inv(0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
       if (XLAL_IS_REAL8_FAIL_NAN(initialguess)) {
