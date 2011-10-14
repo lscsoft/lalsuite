@@ -711,7 +711,7 @@ REAL8 latitude = XLALMCMCGetParameter(parameter,"dec");
 /*REAL8 distance = XLALMCMCGetParameter(parameter,"distMpc");*/
 vec[0]=cos(longitude)*cos(latitude);
 vec[1]=sin(longitude)*cos(latitude);
-vec[1]=sin(latitude);
+vec[2]=sin(latitude);
 return;
 }
 
@@ -848,7 +848,6 @@ REAL8 normal[3];
 REAL8 w1[3]; /* work vectors */
 REAL8 w2[3];
 INT4 IFO1,IFO2,IFO3;
-REAL8 detvec[3];
 
 if(inputMCMC->numberDataStreams<3) return(-1) ; /* not enough IFOs to construct a plane */
 for(i=0;i<inputMCMC->numberDataStreams;i++)
@@ -895,18 +894,15 @@ XLALMCMCGetCartesianPos(pos,parameter); /* Get sky position in cartesian coords 
 for(i=0;i<3;i++){ /* Two vectors in the plane */
 	w1[i]=inputMCMC->detector[IFO2]->location[i] - inputMCMC->detector[IFO1]->location[i];
 	w2[i]=inputMCMC->detector[IFO3]->location[i] - inputMCMC->detector[IFO1]->location[i];
-	detvec[i]=inputMCMC->detector[IFO1]->location[i];
 	}
 crossProduct(normal,w1,w2);
 normalise(normal);
-normalise(detvec);
 
-/* Calculate the distance between the point and the plane n.(point-IFO1) */
-for(dist=0.0,i=0;i<3;i++) dist+=pow(normal[i]*(pos[i]-detvec[i]),2.0);
-dist=sqrt(dist);
+/* Calculate the signed distance between the point and the plane n.(point-IFO1) */
+for(dist=0.0,i=0;i<3;i++) dist+=normal[i]*pos[i];
+
 /* Reflect the point pos across the plane */
 for(i=0;i<3;i++) pos[i]=pos[i]-2.0*dist*normal[i];
-
 
 CartesianToSkyPos(pos,parameter);
 XLALMCMCSetParameter(parameter,"ra",XLALMCMCGetParameter(parameter,"ra")-deltalong);
