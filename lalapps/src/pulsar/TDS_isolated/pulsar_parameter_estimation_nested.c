@@ -3923,31 +3923,31 @@ void rescaleOutput( LALInferenceRunState *runState ){
   
   /* open output file */
   if( (fp = fopen(outfile, "r")) == NULL ){
-    fprintf(stderr, "Error... cannot open output file %s.\n", outfile);
-    exit(3);
+    XLALPrintError("Error... cannot open output file %s.\n", outfile);
+    XLAL_ERROR_VOID(XLAL_EIO);
   }
   
   /* open temporary output file for reading */
   if( (fptemp = fopen(outfiletmp, "w")) == NULL ){
-    fprintf(stderr, "Error... cannot open temporary output file %s.\n",
-            outfile);
-    exit(3);
+    XLALPrintError("Error... cannot open temporary output file %s.\n",
+                   outfile);
+    XLAL_ERROR_VOID(XLAL_EIO);
   }
  
   /* open file for printing out list of parameter names - this should already 
      exist */
   sprintf(outfilepars, "%s_params.txt", outfile);
   if( (fppars = fopen(outfilepars, "r")) == NULL ){
-    fprintf(stderr, "Error... cannot open parameter name output file %s.\n",
-            outfilepars);
-    exit(3);
+    XLALPrintError("Error... cannot open parameter name output file %s.\n",
+                   outfilepars);
+    XLAL_ERROR_VOID(XLAL_EIO);
   }
   /* read in the parameter names and remove the "model" value */
   sprintf(outfileparstmp, "%s_params.txt_tmp", outfile);
   if( (fpparstmp = fopen(outfileparstmp, "w")) == NULL ){
-    fprintf(stderr, "Error... cannot open parameter name output file %s.\n",
-            outfileparstmp);
-    exit(3);
+    XLALPrintError("Error... cannot open parameter name output file %s.\n",
+                   outfileparstmp);
+    XLAL_ERROR_VOID(XLAL_EIO);
   }
   
   CHAR v[128] = "";
@@ -3955,8 +3955,8 @@ void rescaleOutput( LALInferenceRunState *runState ){
       paramsStr = XLALAppendString2Vector( paramsStr, v );
     
     /* re-output everything but the "model" value to a temporary file */
-    if( strcmp(v, "model") != 0 || strcmp(v, "logL")!=0 
-      || strcmp(v, "logPrior") )
+    if( strcmp(v, "model") != 0 && strcmp(v, "logL")!=0 
+      && strcmp(v, "logPrior") != 0 )
       fprintf(fpparstmp, "%s\t", v);
   }
   
