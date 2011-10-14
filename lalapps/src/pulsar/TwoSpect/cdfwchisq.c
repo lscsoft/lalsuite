@@ -402,7 +402,7 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
    
    for (ii=nterm; ii>=0; ii--) {
       u = (ii + 0.5)*interv;     //First part of eq 3 in Davies 1980, eq 9 in Davies 1973
-      sum1 = - 2.0*u*vars->c;    //Third sum
+      sum1 = -2.0*u*vars->c;     //Third sum
       sum2 = fabs(sum1);
       sum3 = -0.5*vars->sigsq * u*u;   //Product
       
@@ -433,15 +433,17 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
    INT4 ii, jj;
    
    inpi = interv*LAL_1_PI;
+   REAL8 neg2timesc = -2.0*vars->c, neghalftimessigsq = -0.5*vars->sigsq, neghalftimestausq = -0.5*tausq;
    
    for (ii=nterm; ii>=0; ii--) {
       u = (ii + 0.5)*interv;
-      sum1 = - 2.0*u*vars->c;
+      sum1 = neg2timesc*u;
       sum2 = fabs(sum1);
-      sum3 = -0.5*vars->sigsq * u*u;
+      sum3 = neghalftimessigsq * u*u;
       
+      REAL8 twotimesu = 2.0*u;
       for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
-         x = 2.0 * vars->weights->data[jj] * u;
+         x = twotimesu * vars->weights->data[jj];
          sum3 -= 0.5 * log1p((x*x));
          z = 2.0 * atan(x);
          sum1 += z;
@@ -449,14 +451,15 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
       } /* for jj=vars->weights->length-1 --> 0 */
       
       x = inpi * exp1(sum3) / u;
-      if ( !mainx ) x *= (1.0 - exp1(-0.5 * tausq * u*u));
-      sum1 = sin(0.5 * sum1) * x;
+      if ( !mainx ) x *= (1.0 - exp1(neghalftimestausq * u*u));
+      sum1 = sin(0.5*sum1) * x;
       sum2 *= 0.5*x;
       vars->intl += sum1;
       vars->ersm += sum2;
    } /* for ii=nterm --> 0 */
    
 } /* integrate_twospect() */
+
 
 //Coefficient of tausq in error when convergence factor of exp1(-0.5*tausq*u^2) is used when df is evaluated at x
 //Eq. 10 of Davies 1980

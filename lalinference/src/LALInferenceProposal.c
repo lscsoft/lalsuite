@@ -728,7 +728,7 @@ void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude)
 {
 	vec[0]=cos(longitude)*cos(latitude);
 	vec[1]=sin(longitude)*cos(latitude);
-	vec[1]=sin(latitude);
+	vec[2]=sin(latitude);
 	return;
 }
 
@@ -888,7 +888,6 @@ INT4 PTMCMCLALInferenceReflectDetPlane(
 	REAL8 w1[3]; /* work vectors */
 	REAL8 w2[3];
 	INT4 IFO1,IFO2,IFO3;
-	REAL8 detvec[3];
 	
 	LALInferenceCopyVariables(state->currentParams, parameter);
 	
@@ -956,15 +955,12 @@ INT4 PTMCMCLALInferenceReflectDetPlane(
 	for(i=0;i<3;i++){ /* Two vectors in the plane */
 		w1[i]=IFOs[IFO2]->detector->location[i] - IFOs[IFO1]->detector->location[i];
 		w2[i]=IFOs[IFO3]->detector->location[i] - IFOs[IFO1]->detector->location[i];
-		detvec[i]=IFOs[IFO1]->detector->location[i];
 	}
 	crossProduct(normal,w1,w2);
 	normalise(normal);
-	normalise(detvec);
 	
 	/* Calculate the distance between the point and the plane n.(point-IFO1) */
-	for(dist=0.0,i=0;i<3;i++) dist+=pow(normal[i]*(pos[i]-detvec[i]),2.0);
-	dist=sqrt(dist);
+	for(dist=0.0,i=0;i<3;i++) dist+=normal[i]*pos[i];
 	/* Reflect the point pos across the plane */
 	for(i=0;i<3;i++) pos[i]=pos[i]-2.0*dist*normal[i];
 	
