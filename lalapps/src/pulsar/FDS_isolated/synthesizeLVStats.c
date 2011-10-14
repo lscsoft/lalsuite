@@ -274,8 +274,8 @@ int main(int argc,char *argv[])
         lineX = X;
     }
     if ( lineX == -1 ) {
-      XLALPrintError ("\nError in function %s, line %d : Could not match detector ID \"%s\" for line injection to any detector.\n\n", fn, __LINE__, uvar.lineIFO);
-      XLAL_ERROR ( fn, XLAL_EFAILED );
+      XLALPrintError ("\nError in function %s, line %d : Could not match detector ID \"%s\" for line injection to any detector.\n\n", __func__, __LINE__, uvar.lineIFO);
+      XLAL_ERROR ( XLAL_EFAILED );
     }
   }
 
@@ -301,14 +301,14 @@ int main(int argc,char *argv[])
 
         /* prepare multiAtoms structure (will be filled by hand from single-IFO results of individual calls to XLALSynthesizeTransientAtoms ) */
         if ( ( multiAtoms = XLALCalloc ( 1, sizeof(*multiAtoms) )) == NULL ) {
-          XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n", fn, sizeof(*multiAtoms) );
-          XLAL_ERROR ( fn, XLAL_ENOMEM );
+          XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n", __func__, sizeof(*multiAtoms) );
+          XLAL_ERROR ( XLAL_ENOMEM );
         }
         multiAtoms->length = numDetectors;
         if ( ( multiAtoms->data = XLALCalloc ( numDetectors, sizeof(*multiAtoms->data) ) ) == NULL ) {
-          XLALPrintError ("%s: XLALCalloc ( %d, %d) failed.\n", fn, numDetectors, sizeof(*multiAtoms->data) );
+          XLALPrintError ("%s: XLALCalloc ( %d, %d) failed.\n", __func__, numDetectors, sizeof(*multiAtoms->data) );
           XLALFree ( multiAtoms );
-          XLAL_ERROR ( fn, XLAL_ENOMEM );
+          XLAL_ERROR ( XLAL_ENOMEM );
         }
 
         /* prepare array of injection parameters per detector, so that they can be combined for output afterwards */
@@ -319,8 +319,8 @@ int main(int argc,char *argv[])
           /* finish preparing multiAtoms structure for insertion of atoms for detector X */
           UINT4 numAtoms = cfg.multiDetStates->data[X]->length;
           if ( ( multiAtoms->data[X] = XLALCreateFstatAtomVector ( numAtoms ) ) == NULL ) {
-            XLALPrintError ("%s: XLALCreateFstatAtomVector(%d) failed.\n", fn, numAtoms );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: XLALCreateFstatAtomVector(%d) failed.\n", __func__, numAtoms );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 
           MultiFstatAtomVector *multiAtomsX; /* temporary multiAtoms structure with only 1 detector entry */
@@ -332,8 +332,8 @@ int main(int argc,char *argv[])
           /* temporary DetectorStateSeries structure so that XLALSynthesizeTransientAtoms will only synth for detector X */
           MultiDetectorStateSeries multiDetStatesX;
           if ( ( multiDetStatesX.data = LALCalloc ( 1, sizeof( *(multiDetStatesX.data) ) )) == NULL ) {
-            XLALPrintError ("%s: LALCalloc ( %d, sizeof(%d)) failed\n", fn, 1, sizeof(*(multiDetStatesX.data)) );
-            XLAL_ERROR ( fn, XLAL_ENOMEM );
+            XLALPrintError ("%s: LALCalloc ( %d, sizeof(%d)) failed\n", __func__, 1, sizeof(*(multiDetStatesX.data)) );
+            XLAL_ERROR ( XLAL_ENOMEM );
           }
           multiDetStatesX.length = 1;
           multiDetStatesX.startTime = cfg.multiDetStates->startTime;
@@ -343,8 +343,8 @@ int main(int argc,char *argv[])
           /* finally, the synth call for this detector X with temporary DetStates and AmpPrior */
           multiAtomsX = XLALSynthesizeTransientAtoms ( &injParamsDrawnX->data[X], cfg.skypos, AmpPriorX, cfg.transientInjectRange, &multiDetStatesX, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
           if ( multiAtomsX == NULL ) {
-            LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", fn, xlalErrno );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", __func__, xlalErrno );
+            XLAL_ERROR ( XLAL_EFUNC );
           }
 
           /* copy single-IFO atoms into multiAtoms struct (manually to avoid LALFree errors - should be done better! */
@@ -964,19 +964,18 @@ write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDop
 MultiInjParams *
 XLALCreateMultiInjParams ( UINT4 numDetectors )
 {
-  const char *fn = __func__;
   MultiInjParams *ret;
 
   if ( (ret = XLALMalloc ( sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, sizeof(*ret) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", __func__, sizeof(*ret) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   ret->length = numDetectors;
   if ( (ret->data = XLALCalloc ( numDetectors, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc(%d, %d) failed.\n", fn, numDetectors, sizeof(*ret->data) );
+    XLALPrintError ("%s: XLALCalloc(%d, %d) failed.\n", __func__, numDetectors, sizeof(*ret->data) );
     XLALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   return ret;
@@ -1008,19 +1007,18 @@ XLALCombineInjParamsForLine( const MultiInjParams *injParamsX,  /**< array of th
                       const UINT4 lineX                      /**< detector number where line was injected */
                       )
 {
-  const char *fn = __func__;
 
   /* check input parameters and report errors */
   if ( !injParamsX ) {
-    XLALPrintError ("\nError in function %s, line %d : received empty injParamsX pointer!\n\n", fn, __LINE__);
-    XLAL_ERROR_NULL ( fn, XLAL_EFAULT);
+    XLALPrintError ("\nError in function %s, line %d : received empty injParamsX pointer!\n\n", __func__, __LINE__);
+    XLAL_ERROR_NULL ( XLAL_EFAULT);
   }
 
   UINT4 numDetectors = injParamsX->length;
 //   for ( UINT4 X=0; X < numDetectors; X ++ ) {
 //     if ( !injParamsX->data[X] ) {
-//       XLALPrintError ("\nError in function %s, line %d : injParams[%d] is empty!\n\n", fn, __LINE__, X);
-//       XLAL_ERROR_NULL ( fn, XLAL_EFAULT);
+//       XLALPrintError ("\nError in function %s, line %d : injParams[%d] is empty!\n\n", __func__, __LINE__, X);
+//       XLAL_ERROR_NULL ( XLAL_EFAULT);
 //     }
 //   }
 
