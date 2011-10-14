@@ -55,6 +55,7 @@ typedef struct
    REAL8 ULfspan;
    REAL8 ULmindf;
    REAL8 ULmaxdf;
+   REAL8 simpleSigmaExclusion;
    INT4 ihsfactor;
    INT4 blksize;
    INT4 maxbinshift;
