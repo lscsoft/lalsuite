@@ -1534,7 +1534,7 @@ XLALEOBPPWaveformEngine (
    INT4       nModes;         /* number of modes required */
    REAL4      inclination;    /* binary inclination       */
    REAL4      coa_phase;      /* binary coalescence phase */
-   REAL8      y_1, y_2, z1, z2; /* (2,2) and (2,-2) spherical harmonics needed in (h+,hx) */
+   REAL8      y_1, y_2, z_1, z_2; /* (2,2) and (2,-2) spherical harmonics needed in (h+,hx) */
 
 
    /* Used for EOBNR */
@@ -2093,7 +2093,7 @@ XLALEOBPPWaveformEngine (
        count++;
        i++;
     }
-
+    
     /* Now apply the NQC correction to the high sample part */
     for ( i = 0; i <= finalIdx; i++ )
     {
@@ -2209,10 +2209,15 @@ XLALEOBPPWaveformEngine (
        XLAL_ERROR( XLAL_EFUNC );
      }
 
+     if ( modeL % 2 ) /* odd modeL gives a minus sign to negative m modes */ 
+     {
+       MultSphHarmM.re = - MultSphHarmM.re;
+       MultSphHarmM.im = - MultSphHarmM.im;
+     }
      y_1 =   MultSphHarmP.re + MultSphHarmM.re;
      y_2 =   MultSphHarmM.im - MultSphHarmP.im;
-     z1 = - MultSphHarmM.im - MultSphHarmP.im;
-     z2 =   MultSphHarmM.re - MultSphHarmP.re;
+     z_1 = - MultSphHarmM.im - MultSphHarmP.im;
+     z_2 =   MultSphHarmM.re - MultSphHarmP.re;
 
      /* Next, compute h+ and hx from hLM, hLM*, YLM, YL-M */
      for ( i = 0; i < sig1->length; i++)
@@ -2221,7 +2226,7 @@ XLALEOBPPWaveformEngine (
        x1 = sig1->data[i];
        x2 = sig2->data[i];
        sig1->data[i] = (x1 * y_1) + (x2 * y_2);
-       sig2->data[i] = (x1 * z1) + (x2 * z2);
+       sig2->data[i] = (x1 * z_1) + (x2 * z_2);
      }
 
      /*------------------------------------------------------
