@@ -6,11 +6,19 @@ import urlparse
 from optparse import *
 from subprocess import Popen,PIPE
 
+# Note that some of these utilities are not available unless glue is installed.
 
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import utils
+import warnings
+
+try:
+    from glue.ligolw import ligolw
+    from glue.ligolw import table
+    from glue.ligolw.table import Table
+    from glue.ligolw import lsctables
+    from glue.ligolw import utils
+except ImportError:
+    Table = object
+    warnings.warn("Glue is not installed.  Some lvalert.utils functions require glue")
 
 ##############################################################################
 #
@@ -18,7 +26,7 @@ from glue.ligolw import utils
 #
 ##############################################################################
 
-class LVAlertTable(table.Table):
+class LVAlertTable(Table):
   """
   for reference, file is written as
   file: //host/path_to_file/file
