@@ -584,7 +584,7 @@ int XLALBBHPhenWaveTimeDomForInjection (
   /* Compute some parameters */
   if (XLALInspiralInit(params, &paramsInit))
     XLAL_ERROR(XLAL_EFUNC);
-  if ((paramsInit.nbins == 0)) return XLAL_SUCCESS;
+  if (paramsInit.nbins == 0) return XLAL_SUCCESS;
 
   /* allocate temporary structures */
   h = XLALCreateREAL4Vector(2 * paramsInit.nbins);
