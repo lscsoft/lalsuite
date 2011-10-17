@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#include <complex.h>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
@@ -65,7 +64,7 @@ int output_mode_table(void)
 	/* do positive spins first, then do negative spins */
 	for (asign = 1; abs(asign) == 1; asign -= 2) {
 		for (i = 0; i < numa; ++i) {
-			complex A, omega;
+			dcomplex A, omega;
     			a = avec[i];
     			XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, asign*a, l, m, s);
     			if (!leaver) { /* convert to standard conventions */
@@ -90,7 +89,7 @@ int output_mode_table(void)
 
 int output_mode(void)
 {
-	complex A, omega;
+	dcomplex A, omega;
 
 	if (!leaver) /* spin was not specified in Leaver conventions */
 		a *= 0.5; /* change to Leaver conventions */

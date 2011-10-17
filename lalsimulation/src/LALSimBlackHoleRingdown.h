@@ -26,9 +26,10 @@
  */
 #if defined(__cplusplus)
 #include <complex>
-typedef std::complex<double> complex;
+typedef std::complex<double> dcomplex;
 #else
 #include <complex.h>
+typedef double complex dcomplex;
 #endif
 
 #include <lal/LALDatatypes.h>
@@ -64,8 +65,8 @@ NRCSID(LALSIMBLACKHOLERINGDOWNH, "$Id$");
  * \todo Extend so that overtones can be computed too.
  */
 int XLALSimBlackHoleRingdownModeEigenvaluesLeaver(
-	complex *A,		/**< angular separation constant [returned] */
-	complex *omega,		/**< eigenfrequency [returned] */
+	dcomplex *A,		/**< angular separation constant [returned] */
+	dcomplex *omega,		/**< eigenfrequency [returned] */
 	double a,		/**< spin parameter (note: |a| < 0.5) */
 	int l,			/**< mode value l */
 	int m,			/**< mode value m */
@@ -92,14 +93,14 @@ int XLALSimBlackHoleRingdownModeEigenvaluesLeaver(
  *
  * \todo Extend so that overtones can be computed too.
  */
-complex XLALSimBlackHoleRingdownSpheroidalWaveFunctionLeaver(
+dcomplex XLALSimBlackHoleRingdownSpheroidalWaveFunctionLeaver(
 	double mu,		/**< cosine of polar angle */
 	double a,		/**< spin parameter (note: |a| < 0.5) */
 	int l,			/**< mode value l */
 	int m,			/**< mode value m */
 	int s,			/**< spin weight (s = -2 for gravitational perturbations) */
-	complex A,		/**< angular separation constant */
-	complex omega		/**< eigenfrequency */
+	dcomplex A,		/**< angular separation constant */
+	dcomplex omega		/**< eigenfrequency */
 );
 
 
@@ -144,7 +145,7 @@ int XLALSimBlackHoleRingdownMode(
  *
  * \todo Extend so that overtones can be computed too.
  */
-complex XLALSimBlackHoleRingdownSpheroidalWaveFunction(
+dcomplex XLALSimBlackHoleRingdownSpheroidalWaveFunction(
 	double theta,			/**< polar angle (radians) */
 	double dimensionless_spin,	/**< black hole dimensionless spin parameter */
 	int l,				/**< polar mode number */

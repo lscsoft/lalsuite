@@ -53,11 +53,11 @@ int main( int argc, char *argv[] )
 	if (theta == theta_invalid) { /* make a table */
 		fprintf(stdout, "# theta(deg)\t    Re(S)   \t    Im(S)\n");
 		for (theta = 0.0; theta <= 180.0; theta += 10.0) {
-			complex sphwf = XLALSimBlackHoleRingdownSpheroidalWaveFunction(LAL_PI_180 * theta, a, l, m, s);
+			dcomplex sphwf = XLALSimBlackHoleRingdownSpheroidalWaveFunction(LAL_PI_180 * theta, a, l, m, s);
 			fprintf(stdout, "%8g\t%e\t%e\n", theta, creal(sphwf), cimag(sphwf));
 		}
 	} else { /* evaluate at specified value */
-		complex sphwf = XLALSimBlackHoleRingdownSpheroidalWaveFunction(LAL_PI_180 * theta, a, l, m, s);
+		dcomplex sphwf = XLALSimBlackHoleRingdownSpheroidalWaveFunction(LAL_PI_180 * theta, a, l, m, s);
 		fprintf(stdout, "Spheroidal wave function (s)S(l,m)(cos(theta),a):\n");
 		fprintf(stdout, "(%d)S(%d,%d)(cos(%g deg),%g) = %g + %g i\n", s, l, m, theta, a, creal(sphwf), cimag(sphwf));
 	}

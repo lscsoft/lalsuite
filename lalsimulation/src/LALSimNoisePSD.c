@@ -17,7 +17,18 @@
 *  MA  02111-1307  USA
 */
 
+/* C++ cannot handle 'complex' because it confuses it with the template
+ * std::complex, which is brought into the global namespace if we
+ * include <complex.h> under g++.  Swig cannot handle 'double complex' either.
+ */
+#if defined(__cplusplus)
+#include <complex>
+typedef std::complex<double> dcomplex;
+#else
 #include <complex.h>
+typedef double complex dcomplex;
+#endif
+
 #include <math.h>
 
 #include <lal/LALConstants.h>
@@ -176,7 +187,7 @@ double XLALSimNoisePSDShot(
 	double tau_s   = L*finesse/(LAL_PI*LAL_C_SI); // cavity storage time
 	double f_pole  = 1.0 / (4.0*LAL_PI*tau_s);
 	double S_DC    = ((LAL_PI*LAL_HBAR_SI*lambda*f_pole*f_pole)/(LAL_C_SI*eta*P_BS)); // DC limit of shot noise
-	complex C_FAC; // normalized sensing function
+	dcomplex C_FAC; // normalized sensing function
 	C_FAC  = cexp(2.0*LAL_PI*I*f*L/LAL_C_SI) * sinh(2.0*LAL_PI*f_pole*L/LAL_C_SI) / csinh((2.0*LAL_PI*f_pole*L/LAL_C_SI)*(1.0 + I*(f/f_pole)));
 	return S_DC / pow(cabs(C_FAC), 2);
 }
@@ -232,28 +243,28 @@ double XLALSimNoisePSDQuantum(
 	double h_SQL   = sqrt(8.0*LAL_HBAR_SI/(M*pow(Omega*L,2.0)));	// [BnC, 2.12] SQL Strain
 
 	// Coefficients [BC, Equations 5.8 to 5.12]
-	complex C11_L  = sqrt(1.0-lambda_PD) * ( (1.0+rho*rho) * ( cos(2.0*phi) + Kappa/2.0 * sin(2.0*phi) ) - 2.0*rho*cos(2.0*beta) - 1.0/4.0*epsilon * ( -2.0 * (1.0+cexp(2.0*I*beta))*(1.0+cexp(2.0*I*beta)) * rho + 4.0 * (1.0+rho*rho) * pow(cos(beta),2.0)*cos(2.0*phi) + ( 3.0+cexp(I*2.0*beta) ) * Kappa * (1.0+rho*rho) * sin(2.0*phi) ) + lambda_SR * ( cexp(2.0*I*beta)*rho-1.0/2.0 * (1.0+rho*rho) * ( cos(2.0*phi)+Kappa/2.0 * sin(2.0*phi) ) ) );
-	complex C22_L  = C11_L;
-	complex C12_L  = sqrt(1.0-lambda_PD) * tau*tau * ( - ( sin(2.0*phi) + Kappa*pow(sin(phi),2.0) )+ 1.0/2.0*epsilon*sin(phi) * ( (3.0+cexp(2.0*I*beta)) * Kappa * sin(phi) + 4.0*pow(cos(beta),2.0) * cos(phi)) + 1.0/2.0*lambda_SR * ( sin(2.0*phi)+Kappa*pow(sin(phi),2.0)) );
-	complex C21_L  = sqrt(1.0-lambda_PD) * tau*tau * ( (sin(2.0*phi)-Kappa*pow(cos(phi),2.0) ) + 1.0/2.0*epsilon*cos(phi) * ( (3.0+cexp(2.0*I*beta) )*Kappa*sin(phi) - 4.0*pow(cos(beta),2.0)*sin(phi) ) + 1.0/2.0*lambda_SR * ( -sin(2.0*phi) + Kappa*pow(cos(phi),2.0)) );
+	dcomplex C11_L  = sqrt(1.0-lambda_PD) * ( (1.0+rho*rho) * ( cos(2.0*phi) + Kappa/2.0 * sin(2.0*phi) ) - 2.0*rho*cos(2.0*beta) - 1.0/4.0*epsilon * ( -2.0 * (1.0+cexp(2.0*I*beta))*(1.0+cexp(2.0*I*beta)) * rho + 4.0 * (1.0+rho*rho) * pow(cos(beta),2.0)*cos(2.0*phi) + ( 3.0+cexp(I*2.0*beta) ) * Kappa * (1.0+rho*rho) * sin(2.0*phi) ) + lambda_SR * ( cexp(2.0*I*beta)*rho-1.0/2.0 * (1.0+rho*rho) * ( cos(2.0*phi)+Kappa/2.0 * sin(2.0*phi) ) ) );
+	dcomplex C22_L  = C11_L;
+	dcomplex C12_L  = sqrt(1.0-lambda_PD) * tau*tau * ( - ( sin(2.0*phi) + Kappa*pow(sin(phi),2.0) )+ 1.0/2.0*epsilon*sin(phi) * ( (3.0+cexp(2.0*I*beta)) * Kappa * sin(phi) + 4.0*pow(cos(beta),2.0) * cos(phi)) + 1.0/2.0*lambda_SR * ( sin(2.0*phi)+Kappa*pow(sin(phi),2.0)) );
+	dcomplex C21_L  = sqrt(1.0-lambda_PD) * tau*tau * ( (sin(2.0*phi)-Kappa*pow(cos(phi),2.0) ) + 1.0/2.0*epsilon*cos(phi) * ( (3.0+cexp(2.0*I*beta) )*Kappa*sin(phi) - 4.0*pow(cos(beta),2.0)*sin(phi) ) + 1.0/2.0*lambda_SR * ( -sin(2.0*phi) + Kappa*pow(cos(phi),2.0)) );
 
-	complex D1_L   = sqrt(1.0-lambda_PD) * ( - (1.0+rho*cexp(2.0*I*beta) ) * sin(phi) + 1.0/4.0*epsilon * ( 3.0+rho+2.0*rho*cexp(4.0*I*beta) + cexp(2.0*I*beta)*(1.0+5.0*rho) ) * sin(phi)+ 1.0/2.0*lambda_SR * cexp(2.0*I*beta) * rho * sin(phi) );
-	complex D2_L   = sqrt(1.0-lambda_PD) * ( - (-1.0+rho*cexp(2.0*I*beta) ) * cos(phi) + 1.0/4.0*epsilon * ( -3.0+rho+2.0*rho*cexp(4.0*I*beta) + cexp(2.0*I*beta) * (-1.0+5.0*rho) ) * cos(phi)+ 1.0/2.0*lambda_SR * cexp(2.0*I*beta) * rho * cos(phi) );
+	dcomplex D1_L   = sqrt(1.0-lambda_PD) * ( - (1.0+rho*cexp(2.0*I*beta) ) * sin(phi) + 1.0/4.0*epsilon * ( 3.0+rho+2.0*rho*cexp(4.0*I*beta) + cexp(2.0*I*beta)*(1.0+5.0*rho) ) * sin(phi)+ 1.0/2.0*lambda_SR * cexp(2.0*I*beta) * rho * sin(phi) );
+	dcomplex D2_L   = sqrt(1.0-lambda_PD) * ( - (-1.0+rho*cexp(2.0*I*beta) ) * cos(phi) + 1.0/4.0*epsilon * ( -3.0+rho+2.0*rho*cexp(4.0*I*beta) + cexp(2.0*I*beta) * (-1.0+5.0*rho) ) * cos(phi)+ 1.0/2.0*lambda_SR * cexp(2.0*I*beta) * rho * cos(phi) );
 
-	complex P11    = 1.0/2.0*sqrt(1-lambda_PD) * sqrt(lambda_SR) * tau * ( -2.0*rho*cexp(2.0*I*beta)+2.0*cos(2.0*phi)+Kappa*sin(2.0*phi) );
-	complex P22    = P11;
-	complex P12    = -sqrt(1.0-lambda_PD) * sqrt(lambda_SR)*tau*sin(phi)*(2.0*cos(phi)+Kappa*sin(phi) );
-	complex P21    =  sqrt(1.0-lambda_PD) * sqrt(lambda_SR)*tau*cos(phi)*(2.0*sin(phi)-Kappa*cos(phi) );
+	dcomplex P11    = 1.0/2.0*sqrt(1-lambda_PD) * sqrt(lambda_SR) * tau * ( -2.0*rho*cexp(2.0*I*beta)+2.0*cos(2.0*phi)+Kappa*sin(2.0*phi) );
+	dcomplex P22    = P11;
+	dcomplex P12    = -sqrt(1.0-lambda_PD) * sqrt(lambda_SR)*tau*sin(phi)*(2.0*cos(phi)+Kappa*sin(phi) );
+	dcomplex P21    =  sqrt(1.0-lambda_PD) * sqrt(lambda_SR)*tau*cos(phi)*(2.0*sin(phi)-Kappa*cos(phi) );
 
-	complex Q11    = sqrt(lambda_PD) * ( cexp(-2.0*I*beta)+rho*rho*cexp(2.0*I*beta)-rho*(2.0*cos(2.0*phi)+Kappa*sin(2.0*phi)) + 1.0/2.0*epsilon*rho * (cexp(-2.0*I*beta)*cos(2.0*phi)+cexp(2.0*I*beta)* ( -2.0*rho-2.0*rho*cos(2.0*beta)+cos(2.0*phi)+Kappa*sin(2.0*phi) ) + 2.0*cos(2.0*phi)+3.0*Kappa*sin(2.0*phi))-1.0/2.0*lambda_SR*rho * ( 2.0*rho*cexp(2.0*I*beta)-2.0*cos(2.0*phi)-Kappa*sin(2.0*phi) ) );
-	complex Q22    = Q11;
-	complex Q12    = 0.0;
-	complex Q21    = 0.0;
+	dcomplex Q11    = sqrt(lambda_PD) * ( cexp(-2.0*I*beta)+rho*rho*cexp(2.0*I*beta)-rho*(2.0*cos(2.0*phi)+Kappa*sin(2.0*phi)) + 1.0/2.0*epsilon*rho * (cexp(-2.0*I*beta)*cos(2.0*phi)+cexp(2.0*I*beta)* ( -2.0*rho-2.0*rho*cos(2.0*beta)+cos(2.0*phi)+Kappa*sin(2.0*phi) ) + 2.0*cos(2.0*phi)+3.0*Kappa*sin(2.0*phi))-1.0/2.0*lambda_SR*rho * ( 2.0*rho*cexp(2.0*I*beta)-2.0*cos(2.0*phi)-Kappa*sin(2.0*phi) ) );
+	dcomplex Q22    = Q11;
+	dcomplex Q12    = 0.0;
+	dcomplex Q21    = 0.0;
 
-	complex N11    = sqrt(1.0-lambda_PD) * sqrt(epsilon/2.0)*tau *(Kappa*(1.0+rho*cexp(2.0*I*beta))*sin(phi)+2.0*cos(beta)*(cexp(-I*beta)*cos(phi)-rho*cexp(I*beta)*(cos(phi)+Kappa*sin(phi))));
-	complex N22    = -sqrt(1.0-lambda_PD)*sqrt(2.0*epsilon)*tau*(-cexp(-I*beta)+rho*cexp(I*beta))*cos(beta)*cos(phi);
-	complex N12    = -sqrt(1.0-lambda_PD)*sqrt(2.0*epsilon)*tau*(cexp(-I*beta)+rho*cexp(I*beta))*cos(beta)*sin(phi);
-	complex N21    = sqrt(1.0-lambda_PD)*sqrt(2.0*epsilon)*tau*(-Kappa*(1.0+rho)*cos(phi)+2.0*cos(beta)*(cexp(-I*beta)+rho*cexp(I*beta))*cos(beta)*sin(phi));
+	dcomplex N11    = sqrt(1.0-lambda_PD) * sqrt(epsilon/2.0)*tau *(Kappa*(1.0+rho*cexp(2.0*I*beta))*sin(phi)+2.0*cos(beta)*(cexp(-I*beta)*cos(phi)-rho*cexp(I*beta)*(cos(phi)+Kappa*sin(phi))));
+	dcomplex N22    = -sqrt(1.0-lambda_PD)*sqrt(2.0*epsilon)*tau*(-cexp(-I*beta)+rho*cexp(I*beta))*cos(beta)*cos(phi);
+	dcomplex N12    = -sqrt(1.0-lambda_PD)*sqrt(2.0*epsilon)*tau*(cexp(-I*beta)+rho*cexp(I*beta))*cos(beta)*sin(phi);
+	dcomplex N21    = sqrt(1.0-lambda_PD)*sqrt(2.0*epsilon)*tau*(-Kappa*(1.0+rho)*cos(phi)+2.0*cos(beta)*(cexp(-I*beta)+rho*cexp(I*beta))*cos(beta)*sin(phi));
 
 
 	//>>>>>>>>    QUANTUM NOISE POWER SPECTRAL DENSITY [BC, 5.13]   <<<<<<<<<<<<<<<<<

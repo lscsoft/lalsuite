@@ -1,4 +1,3 @@
-#include <complex.h>
 #include <stdlib.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multiroots.h>
@@ -22,14 +21,14 @@
 #endif
 
 
-struct LALSimBlackHoleRingdownModeLeaver { double a; int l; int m; int s; complex A; complex omega; };
+struct LALSimBlackHoleRingdownModeLeaver { double a; int l; int m; int s; dcomplex A; dcomplex omega; };
 
 
 /* Expansion coefficients for Schwarzschild modes. */
 /* Equation 8 of Leaver (1985). */
-static int XLALSimBlackHoleRingdownModeSphericalCoefficientsLeaver(complex *alp, complex *bet, complex *gam, double UNUSED a, int l, int UNUSED m, int n, int s, complex UNUSED A, complex omega)
+static int XLALSimBlackHoleRingdownModeSphericalCoefficientsLeaver(dcomplex *alp, dcomplex *bet, dcomplex *gam, double UNUSED a, int l, int UNUSED m, int n, int s, dcomplex UNUSED A, dcomplex omega)
 {
-	complex rho = -I*omega;
+	dcomplex rho = -I*omega;
 	int epsilon = s*s - 1;
 	*alp = n*n + (2.0*rho + 2.0)*n + 2.0*rho + 1.0;
 	*bet = -(2.0*n*n + (8.0*rho + 2.0)*n + 8.0*rho*rho + 4.0*rho + l*(l + 1.0) - epsilon);
@@ -40,7 +39,7 @@ static int XLALSimBlackHoleRingdownModeSphericalCoefficientsLeaver(complex *alp,
 
 /* Angular expansion coefficients for Kerr modes. */
 /* Equation 20 of Leaver (1985). */
-static int XLALSimBlackHoleRingdownModeAngularCoefficientsLeaver(complex *alp, complex *bet, complex *gam, double a, int UNUSED l, int m, int n, int s, complex A, complex omega)
+static int XLALSimBlackHoleRingdownModeAngularCoefficientsLeaver(dcomplex *alp, dcomplex *bet, dcomplex *gam, double a, int UNUSED l, int m, int n, int s, dcomplex A, dcomplex omega)
 {
 	double k1 = 0.5*abs(m - s);
 	double k2 = 0.5*abs(m + s);
@@ -55,9 +54,9 @@ static int XLALSimBlackHoleRingdownModeAngularCoefficientsLeaver(complex *alp, c
 
 /* Radial expansion coefficients for Kerr modes. */
 /* Equations 25 and 26 of Leaver (1985). */
-static int XLALSimBlackHoleRingdownModeRadialCoefficientsLeaver(complex *alp, complex *bet, complex *gam, double a, int UNUSED l, int m, int n, int s, complex A, complex omega)
+static int XLALSimBlackHoleRingdownModeRadialCoefficientsLeaver(dcomplex *alp, dcomplex *bet, dcomplex *gam, double a, int UNUSED l, int m, int n, int s, dcomplex A, dcomplex omega)
 {
-	complex c0, c1, c2, c3, c4;
+	dcomplex c0, c1, c2, c3, c4;
 	double b = sqrt(1.0 - 4.0*a*a);
 	c0 = 1.0 - s - I*omega - 2.0*I*(0.5*omega - a*m)/b;
 	c1 = -4.0 + 2.0*I*omega*(2.0 + b) + 4.0*I*(0.5*omega - a*m)/b;
@@ -80,12 +79,12 @@ static int XLALSimBlackHoleRingdownModeRadialCoefficientsLeaver(complex *alp, co
 /* such as Equation (14) of Leaver (1985)....      */
 /* Uses the modified Lentz's method (see Numerical */
 /* Recipes).                                       */
-static complex XLALSimBlackHoleRingdownModeEigenvalueEvaluateContinuedFractionLeaver(double a, int l, int m, int s, complex A, complex omega, int (*coef)(complex *, complex *, complex *, double, int, int, int, int, complex, complex))
+static dcomplex XLALSimBlackHoleRingdownModeEigenvalueEvaluateContinuedFractionLeaver(double a, int l, int m, int s, dcomplex A, dcomplex omega, int (*coef)(dcomplex *, dcomplex *, dcomplex *, double, int, int, int, int, dcomplex, dcomplex))
 {
 	int n = 0;
-	complex alp, alpsv, bet, gam;
-	complex afac, bfac;
-	complex f, fsv, C, D, Delta;
+	dcomplex alp, alpsv, bet, gam;
+	dcomplex afac, bfac;
+	dcomplex f, fsv, C, D, Delta;
 
 	alpsv = 0;
 	coef(&alp, &bet, &gam, a, l, m, n, s, A, omega);
@@ -127,8 +126,8 @@ static complex XLALSimBlackHoleRingdownModeEigenvalueEvaluateContinuedFractionLe
 static int XLALSimBlackHoleRingdownModeSchwarzschildEigenvalueSolveResid(const gsl_vector *x, void *params, gsl_vector *f)
 {
 	struct LALSimBlackHoleRingdownModeLeaver *p = params;
-	complex A = 0.0, omega;
-  	complex cf;
+	dcomplex A = 0.0, omega;
+	dcomplex cf;
 	int errnum;
 	omega = gsl_vector_get(x, 0) + I*gsl_vector_get(x, 1);
 	XLAL_TRY(cf = XLALSimBlackHoleRingdownModeEigenvalueEvaluateContinuedFractionLeaver(p->a, p->l, p->m, p->s, A, omega, XLALSimBlackHoleRingdownModeSphericalCoefficientsLeaver), errnum);
@@ -147,8 +146,8 @@ static int XLALSimBlackHoleRingdownModeSchwarzschildEigenvalueSolveResid(const g
 static int XLALSimBlackHoleRingdownModeKerrEigenvalueSolveResid(const gsl_vector *x, void *params, gsl_vector *f)
 {
 	struct LALSimBlackHoleRingdownModeLeaver *p = params;
-	complex A, omega;
-	complex cf1, cf2;
+	dcomplex A, omega;
+	dcomplex cf1, cf2;
 	int errnum;
 	A = gsl_vector_get(x,0) + I*gsl_vector_get(x,1);
 	omega = gsl_vector_get(x,2) + I*gsl_vector_get(x,3);
@@ -170,7 +169,7 @@ static int XLALSimBlackHoleRingdownModeKerrEigenvalueSolveResid(const gsl_vector
 /* Equation (13) of Leaver (1985), */
 /* for the eigenfrequency omega of the */
 /* quasinormal mode for Schwarzschild. */
-static int XLALSimBlackHoleRingdownModeEigenvalueSolveSchwarzschild(complex *omega, int l, int m, int s)
+static int XLALSimBlackHoleRingdownModeEigenvalueSolveSchwarzschild(dcomplex *omega, int l, int m, int s)
 {
 	enum { ndim = 2 };
 	const gsl_multiroot_fsolver_type *T;
@@ -236,7 +235,7 @@ static int XLALSimBlackHoleRingdownModeEigenvalueSolveSchwarzschild(complex *ome
 /* for the eigenfrequency omega and angular */
 /* separation constant A of the */
 /* quasinormal mode for Kerr. */
-static int XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(complex *A, complex *omega, double a, int l, int m, int s)
+static int XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(dcomplex *A, dcomplex *omega, double a, int l, int m, int s)
 {
 	enum { ndim = 4 };
 	const gsl_multiroot_fsolver_type *T;
@@ -321,8 +320,8 @@ static int XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(complex *A, complex *
  * \todo Extend so that overtones can be computed too.
  */
 int XLALSimBlackHoleRingdownModeEigenvaluesLeaver(
-	complex *A,		/**< angular separation constant [returned] */
-	complex *omega,		/**< eigenfrequency [returned] */
+	dcomplex *A,		/**< angular separation constant [returned] */
+	dcomplex *omega,		/**< eigenfrequency [returned] */
 	double a,		/**< spin parameter (note: |a| < 0.5) */
 	int l,			/**< mode value l */
 	int m,			/**< mode value m */
@@ -369,17 +368,17 @@ int XLALSimBlackHoleRingdownModeEigenvaluesLeaver(
 
 
 /* Equations 18 and 19 of Leaver (1985) */
-static complex XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(double mu, double a, int l, int m, int s, complex A, complex omega)
+static dcomplex XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(double mu, double a, int l, int m, int s, dcomplex A, dcomplex omega)
 {
-	complex alp, bet, gam;
+	dcomplex alp, bet, gam;
 	double mup1 = mu + 1;
 	double mum1 = mu - 1;
-	complex prod = 1;
-	complex sum;
-	complex delta;
-	complex a_n;
-	complex a_nm1;
-	complex a_np1;
+	dcomplex prod = 1;
+	dcomplex sum;
+	dcomplex delta;
+	dcomplex a_n;
+	dcomplex a_nm1;
+	dcomplex a_np1;
 	int n = 0;
 
 	XLALSimBlackHoleRingdownModeAngularCoefficientsLeaver(&alp, &bet, &gam, a, l, m, n, s, A, omega);
@@ -411,7 +410,7 @@ static complex XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(double mu, 
 static double XLALSimBlackHoleRingdownSpheriodalWaveFunctionNormIntegrand(double mu, void *params)
 {
 	struct LALSimBlackHoleRingdownModeLeaver *p = params;
-	complex sphwf;
+	dcomplex sphwf;
 	double r;
  	int errnum; 
 
@@ -426,14 +425,14 @@ static double XLALSimBlackHoleRingdownSpheriodalWaveFunctionNormIntegrand(double
 
 
 /* Computes the normalization factor for spheroidal wave functions. */
-static complex XLALSimBlackHoleRingdownSpheroidalWaveFunctionNormLeaver(double a, int l, int m, int s, complex A, complex omega)
+static dcomplex XLALSimBlackHoleRingdownSpheroidalWaveFunctionNormLeaver(double a, int l, int m, int s, dcomplex A, dcomplex omega)
 {
 	struct LALSimBlackHoleRingdownModeLeaver p;
 	enum { WORKSPACESIZE = 1000 };
 	gsl_integration_workspace *w = gsl_integration_workspace_alloc(WORKSPACESIZE);
 	double integral, error;
-	complex sphwf;
-	complex norm;
+	dcomplex sphwf;
+	dcomplex norm;
 	int signneg;
 	gsl_function f;
  	int errnum;
@@ -492,19 +491,19 @@ static complex XLALSimBlackHoleRingdownSpheroidalWaveFunctionNormLeaver(double a
  *
  * \todo Extend so that overtones can be computed too.
  */
-complex XLALSimBlackHoleRingdownSpheroidalWaveFunctionLeaver(
+dcomplex XLALSimBlackHoleRingdownSpheroidalWaveFunctionLeaver(
 	double mu,	/**< cosine of polar angle */
 	double a,	/**< spin parameter (note: |a| < 0.5) */
 	int l,		/**< mode value l */
 	int m,		/**< mode value m */
 	int s,		/**< spin weight (s = -2 for gravitational perturbations) */
-	complex A,	/**< angular separation constant */
-	complex omega	/**< eigenfrequency */
+	dcomplex A,	/**< angular separation constant */
+	dcomplex omega	/**< eigenfrequency */
 )
 {
-	complex norm;
-	complex sphwf;
- 	int errnum;
+	dcomplex norm;
+	dcomplex sphwf;
+	int errnum;
 
 	if (fabs(mu) > 1.0 || fabs(a) >= 0.5 || l < abs(s) || abs(m) > l || s > 0 || s < -2)
 		XLAL_ERROR(XLAL_EINVAL);
@@ -545,7 +544,7 @@ int XLALSimBlackHoleRingdownMode(
 )
 {
 	double a = 0.5*dimensionless_spin; /* convert to Leaver's convention 2M = 1 */
-	complex A, omega;
+	dcomplex A, omega;
 	if (XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s) < 0)
 		XLAL_ERROR_REAL8(XLAL_EFUNC);
 	omega *= 0.5; /* convert from Leaver's convention 2M = 1 */
@@ -569,7 +568,7 @@ int XLALSimBlackHoleRingdownMode(
  *
  * \todo Extend so that overtones can be computed too.
  */
-complex XLALSimBlackHoleRingdownSpheroidalWaveFunction(
+dcomplex XLALSimBlackHoleRingdownSpheroidalWaveFunction(
 	double theta,			/**< polar angle (radians) */
 	double dimensionless_spin,	/**< black hole dimensionless spin parameter */
 	int l,				/**< polar mode number */
@@ -579,8 +578,8 @@ complex XLALSimBlackHoleRingdownSpheroidalWaveFunction(
 {
 	double a = 0.5*dimensionless_spin; /* convert to Leaver conventions 2M = 1 */
 	double mu = cos(theta);
-	complex A, omega;
-	complex sphwf;
+	dcomplex A, omega;
+	dcomplex sphwf;
 	
 	if (XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s) < 0)
 		XLAL_ERROR_REAL8(XLAL_EFUNC);
@@ -615,10 +614,10 @@ int XLALSimBlackHoleRingdown(
 	const int s = -2; /* spin weight for gravitational radiation */
 	double mu = cos(inclination);
 	double a = 0.5*dimensionless_spin; /* convert to Leaver conventions 2M = 1 */
-	complex A, omega;
-	complex sphwf1, sphwf2;
-	complex A1, A2;
-	complex omega_dt;
+	dcomplex A, omega;
+	dcomplex sphwf1, sphwf2;
+	dcomplex A1, A2;
+	dcomplex omega_dt;
 	size_t length;
 	size_t j;
 	int errnum;
@@ -652,7 +651,7 @@ int XLALSimBlackHoleRingdown(
 
 	/* compute the waveforms */
 	for (j = 0; j < length; ++j) {
-		complex h;
+		dcomplex h;
 		h = A1*cexp(-I*omega_dt*j) + A2*cexp(I*conj(omega_dt)*j);
 		(*hplus)->data->data[j] = creal(h);
 		(*hcross)->data->data[j] = -cimag(h);
@@ -704,9 +703,9 @@ int grasp_spherical_table(void)
 	const int s = -2;
 	const char *fname = "grasp_spherical_table.txt";
 	FILE *fp;
-	complex A, omega;
-	complex norm;
-	complex sphwf;
+	dcomplex A, omega;
+	dcomplex norm;
+	dcomplex sphwf;
 	double fac = 1.0/sqrt(2.0*M_PI);
 	double exactfac = sqrt(5.0/(64.0*M_PI));
 	double muvec[] = {-0.99,-0.95,-0.75,-0.55,-0.35,-0.15,0.15,0.35,0.55,0.75,0.95,0.99};
@@ -734,9 +733,9 @@ int grasp_spheroid_figure(void)
 	const int s = -2;
 	const char *fname = "grasp_spheroid_figure.dat";
 	FILE *fp;
-	complex A, omega;
-	complex norm;
-	complex sphwf;
+	dcomplex A, omega;
+	dcomplex norm;
+	dcomplex sphwf;
 	double mu;
 
 	fp = fopen(fname, "w");
@@ -759,7 +758,7 @@ int leaver_table_2(void)
 	const int s = -2;
 	const char *fname = "leaver_table_2.txt";
 	FILE *fp;
-	complex A, omega;
+	dcomplex A, omega;
 	double avec[] = {0.0,0.1,0.2,0.3,0.4,0.45,0.49,0.4999};
 	size_t i;
 
@@ -792,7 +791,7 @@ int leaver_table_3(void)
 	const int s = -2;
 	const char *fname = "leaver_table_3.txt";
 	FILE *fp;
-	complex A, omega;
+	dcomplex A, omega;
 	double avec[] = {0.0,0.1,0.2,0.3,0.4,0.45,0.49,0.4999};
 	size_t i;
 
