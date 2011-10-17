@@ -244,7 +244,7 @@ ParseErrLine( char *Ptr          , /* Ptr to string after #define)      */
             ni=0;
             while( position[i-ni] != '"' ){
                 /* if there is a line break in an error explanation */
-                if( (position[i-ni] =='\n')  ){
+                if( position[i-ni] =='\n' ){
                      LalDocGetLine(line,MAXSTR, Env->InFilePtr );
                      position = line;
                      errStr[i] = ' ';
