@@ -483,7 +483,8 @@ int main(int argc, char *argv[]) {
 	LALInferenceProposalTest:\n\
 	Test jump proposal distributions\n\
 	--Nprop N\t: Number of jumps to perform\n\
-	--outfile file.dat\t: Optional output file for samples\n\";
+	--outfile file.dat\t: Optional output file for samples\n\
+	";
 	LALInferenceRunState *state=NULL;
 	ProcessParamsTable *procParams=NULL;
 	UINT4 Nmcmc=0,i=1;
@@ -491,6 +492,7 @@ int main(int argc, char *argv[]) {
 	ProcessParamsTable *ppt=NULL;
 	FILE *outfile=NULL;
 	char *filename=NULL;
+	extern LALInferenceVariables *output_array;
 	
 	
 	/* Read command line and parse */
@@ -527,13 +529,13 @@ int main(int argc, char *argv[]) {
 	/* Set up the proposal function requirements */
 	LALInferenceAddVariable(state->algorithmParams,"Nmcmc",&i,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 	LALInferenceAddVariable(state->algorithmParams,"logLmin",&logLmin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-
+	
 	
 	/* Evolve with fixed likelihood */
 	for(i=0;i<Nmcmc;i++){
 	  LALInferenceNestedSamplingOneStep(state);
 	  /* output sample */
-	  
+	  if(state->logsample) state->logsample(state,state->currentParams);
 	}
 	
 	return(0);

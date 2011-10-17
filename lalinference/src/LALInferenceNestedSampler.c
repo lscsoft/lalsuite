@@ -575,7 +575,7 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 	newParams=calloc(1,sizeof(LALInferenceVariables));
 
 	/* Evolve the sample until it is accepted */
-        logPriorOld=runState->prior(runState,runState->currentParams);
+	logPriorOld=runState->prior(runState,runState->currentParams);
 	NSFillMCMCVariables(runState->currentParams);
 	do{
 		mcmc_iter++;
