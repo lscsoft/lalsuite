@@ -75,7 +75,7 @@ echo $AlphaSearch" "$DeltaSearch > $skygridfile
 
 ## frequency bands for makefakedata, HSGCT
 mfd_FreqBand="2.0"
-mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
+mfd_fmin=$(echo $Freq $mfd_FreqBand | LC_ALL=C awk '{printf "%g", $1 - $2 / 2.0}');
 
 gct_FreqBand="0.01"
 gct_F1dotBand="2.0e-10"
@@ -99,7 +99,7 @@ refTime="962999869"
 Tsegment="90000"
 Nsegments="14"
 ## insert gaps between segments
-seggap=$(echo $Tsegment | awk '{printf "%f", $1 * 1.12345}');
+seggap=$(echo $Tsegment | LC_ALL=C awk '{printf "%f", $1 * 1.12345}');
 # midTime="853731034.5"
 tsfileH1="./timestampsH1.dat"  # for makefakedata
 tsfileL1="./timestampsL1.dat"  # for makefakedata
@@ -110,14 +110,14 @@ ic1="1"
 while [ "$ic1" -le "$Nsegments" ];
 do
     t0=$tmpTime
-    t1=`echo $t0 $Tsegment | awk '{print $1 + $2}'`
-    TspanHours=`echo $Tsegment | awk '{printf "%.7f", $1 / 3600.0 }'`
-    NSFT=`echo $Tsegment $Tsft | awk '{print int(2.0 * $1 / $2 + 0.5) }'`
-    if [ `echo $ic1 | awk '{if($1==1) {print "1"}}'` ];then
-       NSFT=`echo $Tsegment $Tsft | awk '{print int(1.0 * $1 / $2 + 0.5) }'`
+    t1=`echo $t0 $Tsegment | LC_ALL=C awk '{print $1 + $2}'`
+    TspanHours=`echo $Tsegment | LC_ALL=C awk '{printf "%.7f", $1 / 3600.0 }'`
+    NSFT=`echo $Tsegment $Tsft | LC_ALL=C awk '{print int(2.0 * $1 / $2 + 0.5) }'`
+    if [ `echo $ic1 | LC_ALL=C awk '{if($1==1) {print "1"}}'` ];then
+       NSFT=`echo $Tsegment $Tsft | LC_ALL=C awk '{print int(1.0 * $1 / $2 + 0.5) }'`
     fi
-    if [ `echo $ic1" "$Nsegments | awk '{if($1==$2) {print "1"}}'` ];then
-       NSFT=`echo $Tsegment $Tsft | awk '{print int(1.0 * $1 / $2 + 0.5) }'`
+    if [ `echo $ic1" "$Nsegments | LC_ALL=C awk '{if($1==$2) {print "1"}}'` ];then
+       NSFT=`echo $Tsegment $Tsft | LC_ALL=C awk '{print int(1.0 * $1 / $2 + 0.5) }'`
     fi
     echo "$t0 $t1 $TspanHours $NSFT" >> $segfile
     segs[${ic1}]=$tmpTime # save seg's beginning for later use
@@ -126,18 +126,18 @@ do
     ic2=$Tsft
     while [ "$ic2" -le "$Tsegment" ];
     do
-        if [ `echo $ic1 | awk '{if($1>1) {print "1"}}'` ];then
+        if [ `echo $ic1 | LC_ALL=C awk '{if($1>1) {print "1"}}'` ];then
             echo ${tmpTime}" 0" >> $tsfileH1
         fi
-        if [ `echo $ic1" "$Nsegments | awk '{if($1<$2) {print "1"}}'` ];then
+        if [ `echo $ic1" "$Nsegments | LC_ALL=C awk '{if($1<$2) {print "1"}}'` ];then
             echo ${tmpTime}" 0" >> $tsfileL1
         fi
-        tmpTime=$(echo $tmpTime $Tsft | awk '{printf "%.0f", $1 + $2}');
-        ic2=$(echo $ic2 $Tsft | awk '{printf "%.0f", $1 + $2}');
+        tmpTime=$(echo $tmpTime $Tsft | LC_ALL=C awk '{printf "%.0f", $1 + $2}');
+        ic2=$(echo $ic2 $Tsft | LC_ALL=C awk '{printf "%.0f", $1 + $2}');
     done
 
-    tmpTime=$(echo $tmpTime $seggap | awk '{printf "%.0f", $1 + $2}');
-    ic1=$(echo $ic1 | awk '{printf "%.0f", $1 + 1}');
+    tmpTime=$(echo $tmpTime $seggap | LC_ALL=C awk '{printf "%.0f", $1 + $2}');
+    ic1=$(echo $ic1 | LC_ALL=C awk '{printf "%.0f", $1 + 1}');
 done
 
 
@@ -195,8 +195,8 @@ if ! eval $cmdline; then
 fi
 
 ## get recovered signal frequency from GCT
-freqGCT=$(sed -e '/%/d;' $outfile_gct | sort -nr -k6,6 | head -1 | awk '{printf "%.13f",$1}')
-f1dotGCT=$(sed -e '/%/d;' $outfile_gct | sort -nr -k6,6 | head -1 | awk '{printf "%.10e",$4}')
+freqGCT=$(sed -e '/%/d;' $outfile_gct | sort -nr -k6,6 | head -1 | LC_ALL=C awk '{printf "%.13f",$1}')
+f1dotGCT=$(sed -e '/%/d;' $outfile_gct | sort -nr -k6,6 | head -1 | LC_ALL=C awk '{printf "%.10e",$4}')
 
 echo
 echo "----------------------------------------------------------------------"
@@ -215,7 +215,7 @@ for ((x=1; x <= $Nsegments; x++))
 
     ## find GPS times of segment
     startGPS=${segs[${x}]}
-    endGPS=$(echo $startGPS $Tsegment | awk '{printf "%.0f", $1 + $2}');
+    endGPS=$(echo $startGPS $Tsegment | LC_ALL=C awk '{printf "%.0f", $1 + $2}');
     echo "Segment: "$x"  "$startGPS" "$endGPS
 
     ## construct ComputeFStatistic command lines
@@ -228,39 +228,39 @@ for ((x=1; x <= $Nsegments; x++))
       echo "Error.. something failed when running '$cfs_code' ..."
       exit 1
     fi
-    twoFcfs_seg=$(sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
-    twoFcfs=$(echo $twoFcfs $twoFcfs_seg | awk '{printf "%.6f", $1 + $2}');
+    twoFcfs_seg=$(sed 's/\;//' $outfile_cfs | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
+    twoFcfs=$(echo $twoFcfs $twoFcfs_seg | LC_ALL=C awk '{printf "%.6f", $1 + $2}');
 
     ## detector H1
-    if [ `echo $x | awk '{if($1>1) {print "1"}}'` ];then
+    if [ `echo $x | LC_ALL=C awk '{if($1>1) {print "1"}}'` ];then
       cmdline="$cfs_code -v0 $cfs_CL --IFO='H1'"
       echo $cmdline
       if ! eval $cmdline; then
         echo "Error.. something failed when running '$cfs_code' ..."
         exit 1
       fi
-      twoFcfs_seg=$(sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
-      twoFcfsH1=$(echo $twoFcfsH1 $twoFcfs_seg | awk '{printf "%.6f", $1 + $2}');
+      twoFcfs_seg=$(sed 's/\;//' $outfile_cfs | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
+      twoFcfsH1=$(echo $twoFcfsH1 $twoFcfs_seg | LC_ALL=C awk '{printf "%.6f", $1 + $2}');
    fi
 
     ## detector L1
-    if [ `echo $x" "$Nsegments | awk '{if($1<$2) {print "1"}}'` ];then
+    if [ `echo $x" "$Nsegments | LC_ALL=C awk '{if($1<$2) {print "1"}}'` ];then
       cmdline="$cfs_code -v0 $cfs_CL --IFO='L1'"
       echo $cmdline
       if ! eval $cmdline; then
         echo "Error.. something failed when running '$cfs_code' ..."
         exit 1
       fi
-      twoFcfs_seg=$(sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
-      twoFcfsL1=$(echo $twoFcfsL1 $twoFcfs_seg | awk '{printf "%.6f", $1 + $2}');
+      twoFcfs_seg=$(sed 's/\;//' $outfile_cfs | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
+      twoFcfsL1=$(echo $twoFcfsL1 $twoFcfs_seg | LC_ALL=C awk '{printf "%.6f", $1 + $2}');
     fi
 
 done
 
 ## get averages
-twoFcfs=$(echo $twoFcfs $Nsegments             | awk '{printf "%.6f", $1/$2}');
-twoFcfsH1=$(echo $twoFcfsH1 $Nsegments         | awk '{printf "%.6f", $1/($2-1)}');
-twoFcfsL1=$(echo $twoFcfsL1 $Nsegments         | awk '{printf "%.6f", $1/($2-1)}');
+twoFcfs=$(echo $twoFcfs $Nsegments             | LC_ALL=C awk '{printf "%.6f", $1/$2}');
+twoFcfsH1=$(echo $twoFcfsH1 $Nsegments         | LC_ALL=C awk '{printf "%.6f", $1/($2-1)}');
+twoFcfsL1=$(echo $twoFcfsL1 $Nsegments         | LC_ALL=C awk '{printf "%.6f", $1/($2-1)}');
 
 echo
 echo "----------------------------------------------------------------------"
@@ -272,11 +272,11 @@ Tolerance=1e-3
 
 
 ## check relative error in frequency (injection vs. GCT)
-reldev_freq=$(echo $Freq $freqGCT                 | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/$2} else {printf "%.12f", (-1)*($1-$2)/$2}}');
-reldev_freq_bins=$(echo $Freq $freqGCT $gct_dFreq | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/$3} else {printf "%.12f", (-1)*($1-$2)/$3}}');
+reldev_freq=$(echo $Freq $freqGCT                 | LC_ALL=C awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/$2} else {printf "%.12f", (-1)*($1-$2)/$2}}');
+reldev_freq_bins=$(echo $Freq $freqGCT $gct_dFreq | LC_ALL=C awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/$3} else {printf "%.12f", (-1)*($1-$2)/$3}}');
 
 echo "==>  Signal frequency: "$Freq"  Found at: "$freqGCT
-if [ `echo $reldev_freq" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+if [ `echo $reldev_freq" "$Tolerance | LC_ALL=C awk '{if($1>$2) {print "1"}}'` ];then
     echo "==>  GCT: Rel. dev. in frequency: "$reldev_freq
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
@@ -288,36 +288,36 @@ echo
 
 
 ## get Fstats values from GCT output file
-twoFGCT=$(sed -e '/%/d;'  $outfile_gct | sort -nr -k6,6 | head -1 | awk '{print $6}')
-twoFGCTLV=$(sed -e '/%/d;'  $outfile_gct | sort -nr -k6,6 | head -1 | awk '{print $7}')
-twoFGCTLVH1=$(sed -e '/%/d;'  $outfile_gct | sort -nr -k6,6 | head -1 | awk '{print $9}')
-twoFGCTLVL1=$(sed -e '/%/d;'  $outfile_gct | sort -nr -k6,6 | head -1 | awk '{print $8}')
+twoFGCT=$(sed -e '/%/d;'  $outfile_gct | sort -nr -k6,6 | head -1 | LC_ALL=C awk '{print $6}')
+twoFGCTLV=$(sed -e '/%/d;'  $outfile_gct | sort -nr -k6,6 | head -1 | LC_ALL=C awk '{print $7}')
+twoFGCTLVH1=$(sed -e '/%/d;'  $outfile_gct | sort -nr -k6,6 | head -1 | LC_ALL=C awk '{print $9}')
+twoFGCTLVL1=$(sed -e '/%/d;'  $outfile_gct | sort -nr -k6,6 | head -1 | LC_ALL=C awk '{print $8}')
 ## compute relative errors of Fstats from CFS, GTC plain and GTCLV
-reldev_cfs_gct=$(echo $twoFcfs $twoFGCT        | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
-reldev_gct_LV=$(echo $twoFGCT $twoFGCTLV       | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
-reldev_cfs_LV=$(echo $twoFcfs $twoFGCTLV       | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
-reldev_cfs_LVH1=$(echo $twoFcfsH1 $twoFGCTLVH1 | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
-reldev_cfs_LVL1=$(echo $twoFcfsL1 $twoFGCTLVL1 | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
+reldev_cfs_gct=$(echo $twoFcfs $twoFGCT        | LC_ALL=C awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
+reldev_gct_LV=$(echo $twoFGCT $twoFGCTLV       | LC_ALL=C awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
+reldev_cfs_LV=$(echo $twoFcfs $twoFGCTLV       | LC_ALL=C awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
+reldev_cfs_LVH1=$(echo $twoFcfsH1 $twoFGCTLVH1 | LC_ALL=C awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
+reldev_cfs_LVL1=$(echo $twoFcfsL1 $twoFGCTLVL1 | LC_ALL=C awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
 ## get maximum deviations (over all candidates) of freq, Fstat between plain GCT and LV
-maxdev_gct_LV=$(sed '/^%.*/d' $outfile_gct | awk 'BEGIN { maxDiff = 0; } { relDiff=($6-$7)/($6+$7); if( relDiff^2 > maxDiff^2 ) {maxDiff=relDiff}; } END {printf "%.12f", maxDiff}' )
-maxdevfreq_gct_LV=$(sed '/^%.*/d' $outfile_gct | awk 'BEGIN { maxDiff = 0; maxFreq = 0;} { relDiff=($6-$7)/($6+$7); if( relDiff^2 > maxDiff^2 ) {maxDiff=relDiff; maxFreq=$1}; } END {printf "%.12f", maxFreq}' )
+maxdev_gct_LV=$(sed '/^%.*/d' $outfile_gct | LC_ALL=C awk 'BEGIN { maxDiff = 0; } { relDiff=($6-$7)/($6+$7); if( relDiff^2 > maxDiff^2 ) {maxDiff=relDiff}; } END {printf "%.12f", maxDiff}' )
+maxdevfreq_gct_LV=$(sed '/^%.*/d' $outfile_gct | LC_ALL=C awk 'BEGIN { maxDiff = 0; maxFreq = 0;} { relDiff=($6-$7)/($6+$7); if( relDiff^2 > maxDiff^2 ) {maxDiff=relDiff; maxFreq=$1}; } END {printf "%.12f", maxFreq}' )
 
 ## get Fstats and relative errors from single-segment files
 topcandlinenumber=$(sed -e '/%/d;'  $outfile_gct | grep -n $twoFGCTLV | cut -f1 -d:)
-topcandlinenumber=$(echo $topcandlinenumber | awk '{ printf "%d", $1-1 }');
+topcandlinenumber=$(echo $topcandlinenumber | LC_ALL=C awk '{ printf "%d", $1-1 }');
 fstatsegfile=$fstatsegfile_base"_cand_"$topcandlinenumber".dat"
-twoFGCTLVseg=$(sed -e '/%/d;' $fstatsegfile | awk '{ sum += $1; Nseg += 1 } END { printf "%.6f", sum/Nseg }')
-reldev_seg_LV=$(echo $twoFGCTLV $twoFGCTLVseg | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
-twoFGCTLVsegH1=$(sed -e '/%/d;' $fstatsegfile | awk '{ sum += $3; if($3 != 0.0) {Nseg += 1} } END { printf "%.6f", sum/Nseg }')
-reldev_seg_LVH1=$(echo $twoFGCTLVH1 $twoFGCTLVsegH1 | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
-twoFGCTLVsegL1=$(sed -e '/%/d;' $fstatsegfile | awk '{ sum += $2; if($2 != 0.0) {Nseg += 1} } END { printf "%.6f", sum/Nseg }')
-reldev_seg_LVL1=$(echo $twoFGCTLVL1 $twoFGCTLVsegL1 | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
+twoFGCTLVseg=$(sed -e '/%/d;' $fstatsegfile | LC_ALL=C awk '{ sum += $1; Nseg += 1 } END { printf "%.6f", sum/Nseg }')
+reldev_seg_LV=$(echo $twoFGCTLV $twoFGCTLVseg | LC_ALL=C awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
+twoFGCTLVsegH1=$(sed -e '/%/d;' $fstatsegfile | LC_ALL=C awk '{ sum += $3; if($3 != 0.0) {Nseg += 1} } END { printf "%.6f", sum/Nseg }')
+reldev_seg_LVH1=$(echo $twoFGCTLVH1 $twoFGCTLVsegH1 | LC_ALL=C awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
+twoFGCTLVsegL1=$(sed -e '/%/d;' $fstatsegfile | LC_ALL=C awk '{ sum += $2; if($2 != 0.0) {Nseg += 1} } END { printf "%.6f", sum/Nseg }')
+reldev_seg_LVL1=$(echo $twoFGCTLVL1 $twoFGCTLVsegL1 | LC_ALL=C awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
 
 
 echo "==>  CFS at f="$freqGCT" : F="$twoFcfs" FH1="$twoFcfsH1" FL1="$twoFcfsL1
 
 ## check plain GCT search code output 2F against externally computed 2F
-if [ `echo $reldev_cfs_gct" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+if [ `echo $reldev_cfs_gct" "$Tolerance | LC_ALL=C awk '{if($1>$2) {print "1"}}'` ];then
     echo "==>  GCT plain  : F  ="$twoFGCT"  (diff vs cfs:   "$reldev_cfs_gct")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
@@ -326,7 +326,7 @@ else
 fi
 
 ## check LV-recomputed 2F against plain GCT value
-if [ `echo $reldev_gct_LV" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+if [ `echo $reldev_gct_LV" "$Tolerance | LC_ALL=C awk '{if($1>$2) {print "1"}}'` ];then
     echo "==>  GCT LV     : F  ="$twoFGCTLV"  (diff vs plain: "$reldev_gct_LV")"
     echo "                                  (maximum diff:  "$maxdev_gct_LV" at freq="$maxdevfreq_gct_LV")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
@@ -337,7 +337,7 @@ else
 fi
 
 ## check recomputed 2F against external CFS
-if [ `echo $reldev_cfs_LV" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+if [ `echo $reldev_cfs_LV" "$Tolerance | LC_ALL=C awk '{if($1>$2) {print "1"}}'` ];then
 echo "                                   (diff vs cfs:   "$reldev_cfs_LV")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
@@ -346,7 +346,7 @@ echo "                                   (diff vs cfs:   "$reldev_cfs_LV")     O
 fi
 
 ## check single-detector F1 against external CFS (at GCT freq)
-if [ `echo $reldev_cfs_LVH1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+if [ `echo $reldev_cfs_LVH1" "$Tolerance | LC_ALL=C awk '{if($1>$2) {print "1"}}'` ];then
     echo "==>  GCT LV     : FH1="$twoFGCTLVH1"  (diff vs cfs:   "$reldev_cfs_LVH1")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
@@ -355,7 +355,7 @@ else
 fi
 
 ## check single-detector F2 against external CFS (at GCT freq)
-if [ `echo $reldev_cfs_LVL1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+if [ `echo $reldev_cfs_LVL1" "$Tolerance | LC_ALL=C awk '{if($1>$2) {print "1"}}'` ];then
     echo "==>  GCT LV     : FL1="$twoFGCTLVL1"  (diff vs cfs:   "$reldev_cfs_LVL1")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
@@ -364,7 +364,7 @@ else
 fi
 
 ## check single-seg 2F against full value
-if [ `echo $reldev_seg_LV" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+if [ `echo $reldev_seg_LV" "$Tolerance | LC_ALL=C awk '{if($1>$2) {print "1"}}'` ];then
     echo "==>  GCT LVseg  : F  ="$twoFGCTLVseg"  (diff vs main:  "$reldev_seg_LV")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
 #     exit 2
@@ -373,7 +373,7 @@ else
 fi
 
 ## check single-seg 2F1 against full value
-if [ `echo $reldev_seg_LVH1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+if [ `echo $reldev_seg_LVH1" "$Tolerance | LC_ALL=C awk '{if($1>$2) {print "1"}}'` ];then
     echo "==>  GCT LVseg  : FH1="$twoFGCTLVsegH1"  (diff vs main:  "$reldev_seg_LVH1")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
@@ -383,7 +383,7 @@ fi
 
 
 ## check single-seg 2F2 against full value
-if [ `echo $reldev_seg_LVL1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+if [ `echo $reldev_seg_LVL1" "$Tolerance | LC_ALL=C awk '{if($1>$2) {print "1"}}'` ];then
     echo "==>  GCT LVseg  : FL1="$twoFGCTLVsegL1"  (diff vs main:  "$reldev_seg_LVL1")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
