@@ -29,6 +29,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifdef __SSE__
+#include <xmmintrin.h>
+#endif
+
 #include <lal/Window.h>
 #include <lal/LALMalloc.h>
 #include <lal/SFTutils.h>
@@ -1559,14 +1563,23 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    
-   for (ii=0; ii<(INT4)rngMeanssq->length; ii++) rngMeanssq->data[ii] = 0.0;
+   memset(output->data, 0, sizeof(REAL4)*output->length);
+   memset(rngMeanssq->data, 0, sizeof(REAL4)*rngMeanssq->length);
    
-   //for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
-   antweightssq = XLALSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
-   //antweightssq = fastSSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
-   if (xlalErrno!=0) {
-      fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
+   if (!input->useSSE) {
+      //for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
+      antweightssq = XLALSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
+      //antweightssq = fastSSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
+      if (xlalErrno!=0) {
+         fprintf(stderr,"%s: XLALSSVectorMultiply() failed.\n", __func__);
+         XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
+   } else {
+      antweightssq = sseSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
+      if (xlalErrno!=0) {
+         fprintf(stderr,"%s: sseSSVectorMultiply() failed.\n", __func__);
+         XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
    }
    
    for (ii=0; ii<numfbins; ii++) {
@@ -1581,14 +1594,14 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
       if (input->noiseWeightOff!=0) for (jj=0; jj<(INT4)rngMeanssq->length; jj++) if (rngMeanssq->data[jj]!=0.0) rngMeanssq->data[jj] = 1.0;
       
       //Get sum of antenna pattern weight/variances for each frequency bin as a function of time (only for existant SFTs)
-      REAL8 sumofweights = 0.0;
-      for (jj=0; jj<numffts; jj++) if (rngMeanssq->data[jj] != 0.0) sumofweights += antweightssq->data[jj]/rngMeanssq->data[jj];
+      //REAL8 sumofweights = 0.0;
+      //for (jj=0; jj<numffts; jj++) if (rngMeanssq->data[jj] != 0.0) sumofweights += antweightssq->data[jj]/rngMeanssq->data[jj];
+      REAL8 sumofweights = determineSumOfWeights(antweightssq, rngMeanssq);
       REAL8 invsumofweights = 1.0/sumofweights;
       
       //Now do noise weighting, antenna pattern weighting
       for (jj=0; jj<numffts; jj++) {
          if (rngMeanssq->data[jj] != 0.0) output->data[jj*numfbins+ii] = (REAL4)(invsumofweights*antPatternWeights->data[jj]*tfdata->data[jj*numfbins+ii]/rngMeanssq->data[jj]);
-         else output->data[jj*numfbins+ii] = 0.0;
       } /* for jj < numffts */
    } /* for ii < numfbins */
    
@@ -1671,6 +1684,18 @@ void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector 
    //fprintf(stderr,"TF after weighting, mean subtraction = %g\n",calcMean(output));
 
 } /* tfWeightMeanSubtract() */
+
+
+REAL8 determineSumOfWeights(REAL4Vector *antweightssq, REAL4Vector *rngMeanssq)
+{
+   
+   INT4 ii;
+   REAL8 sumofweights = 0.0;
+   for (ii=0; ii<(INT4)antweightssq->length; ii++) if (rngMeanssq->data[ii] != 0.0) sumofweights += antweightssq->data[ii]/rngMeanssq->data[ii];
+   
+   return sumofweights;
+   
+} /* determineSumOfWeights */
 
 
 //////////////////////////////////////////////////////////////
@@ -2305,5 +2330,84 @@ REAL4Vector * fastSSVectorMultiply_with_stride_and_offset(REAL4Vector *output, R
    
 } /* SSVectorMultiply_with_stride_and_offset() */
 
-
+REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2)
+{
+   
+#ifdef __SSE__
+   INT4 roundedvectorlength = (INT4)input1->length / 4;
+   INT4 vec1aligned = 0, vec2aligned = 0, outputaligned = 0, ii = 0;
+   
+   REAL4 *allocinput1 = NULL, *allocinput2 = NULL, *allocoutput = NULL, *alignedinput1 = NULL, *alignedinput2 = NULL, *alignedoutput = NULL;
+   __m128 *arr1, *arr2, *result;
+   
+   //Allocate memory for aligning input vector 1 if necessary
+   if ( input1->data==(void*)(((UINT8)input1->data+15) & ~15) ) {
+      vec1aligned = 1;
+      arr1 = (__m128*)input1->data;
+   } else {
+      allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocinput1==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      alignedinput1 = (void*)(((UINT8)allocinput1+15) & ~15);
+      memcpy(alignedinput1, input1->data, sizeof(REAL4)*4*roundedvectorlength);
+      arr1 = (__m128*)alignedinput1;
+   }
+   
+   //Allocate memory for aligning input vector 2 if necessary
+   if ( input2->data==(void*)(((UINT8)input2->data+15) & ~15) ) {
+      vec2aligned = 1;
+      arr2 = (__m128*)input2->data;
+   } else {
+      allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocinput2==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      alignedinput2 = (void*)(((UINT8)allocinput2+15) & ~15);
+      memcpy(alignedinput2, input2->data, sizeof(REAL4)*4*roundedvectorlength);
+      arr2 = (__m128*)alignedinput2;
+   }
+   
+   //Allocate memory for aligning output vector if necessary
+   if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
+      outputaligned = 1;
+      result = (__m128*)output->data;
+   } else {
+      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocoutput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
+      result = (__m128*)alignedoutput;
+   }
+   
+   //multiply the two vectors into the output
+   for (ii=0; ii<roundedvectorlength; ii++) {
+      *result = _mm_mul_ps(*arr1, *arr2);
+      arr1++;
+      arr2++;
+      result++;
+   }
+   
+   //Copy output aligned memory to non-aligned memory if necessary
+   if (!outputaligned) memcpy(output->data, alignedoutput, 4*roundedvectorlength*sizeof(REAL4));
+   
+   //Finish up the remaining part
+   for (ii=4*roundedvectorlength; ii<(INT4)input1->length; ii++) output->data[ii] = input1->data[ii] * input2->data[ii];
+   
+   //Free memory if necessary
+   if (!vec1aligned) XLALFree(allocinput1);
+   if (!vec2aligned) XLALFree(allocinput2);
+   if (!outputaligned) XLALFree(allocoutput);
+   
+   return output;
+#else
+   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
+   XLAL_ERROR_NULL(XLAL_EFAILED);
+#endif
+   
+}
 
