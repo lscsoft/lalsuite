@@ -59,7 +59,7 @@ COMPLEX16 XLALSimInspiralPNMode22(
 	switch (O) {
 		default: /* unsupported pN order */
 			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+			XLAL_ERROR_VAL(czero, XLAL_EINVAL);
 		case -1: /* use highest available pN order */
 		case 6:
 			re += ((27027409.0/646800.0) - (856.0/105.0)*LAL_GAMMA 
@@ -122,7 +122,7 @@ COMPLEX16 XLALSimInspiralPNMode21(
 	switch (O) {
 		default: /* unsupported pN order */
 			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+			XLAL_ERROR_VAL(czero, XLAL_EINVAL);
 		case -1: /* use highest available pN order */
 		case 5:
 			re -= ((43.0/126.0) + (509.0/126.0)*nu 
@@ -175,7 +175,7 @@ COMPLEX16 XLALSimInspiralPNMode33(
 	switch (O) {
 		default: /* unsupported pN order */
 			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+			XLAL_ERROR_VAL(czero, XLAL_EINVAL);
 		case -1: /* use highest available pN order */
 		case 5:
 			re += ((123.0/110.0) - (1838.0/165.0)*nu 
@@ -229,7 +229,7 @@ COMPLEX16 XLALSimInspiralPNMode32(
 	switch (O) {
 		default: /* unsupported pN order */
 			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+			XLAL_ERROR_VAL(czero, XLAL_EINVAL);
 		case -1: /* use highest available pN order */
 		case 5:
 			re += 2.0*LAL_PI*(1.0 - 3.0*nu)*v2*v;
@@ -282,7 +282,7 @@ COMPLEX16 XLALSimInspiralPNMode31(
 	switch (O) {
 		default: /* unsupported pN order */
 			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+			XLAL_ERROR_VAL(czero, XLAL_EINVAL);
 		case -1: /* use highest available pN order */
 		case 5:
 			re += ((607.0/198.0) - (136.0/99.0)*nu 
