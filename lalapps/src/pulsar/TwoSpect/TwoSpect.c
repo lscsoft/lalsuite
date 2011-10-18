@@ -1563,7 +1563,7 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
    
    //for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
    antweightssq = XLALSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
-   //antweightssq = SSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
+   //antweightssq = fastSSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
    if (xlalErrno!=0) {
       fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", __func__);
       XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -1571,7 +1571,7 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
    
    for (ii=0; ii<numfbins; ii++) {
       
-      rngMeanssq = SSVectorMultiply_with_stride_and_offset(rngMeanssq, rngMeans, rngMeans, numfbins, numfbins, ii, ii);
+      rngMeanssq = fastSSVectorMultiply_with_stride_and_offset(rngMeanssq, rngMeans, rngMeans, numfbins, numfbins, ii, ii);
       if (xlalErrno!=0) {
          fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -1626,7 +1626,7 @@ void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector 
    
    //for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
    //antweightssq = XLALSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
-   antweightssq = SSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
+   antweightssq = fastSSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
    if (xlalErrno!=0) {
       fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", __func__);
       XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -1634,7 +1634,7 @@ void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector 
    
    for (ii=0; ii<numfbins; ii++) {
       
-      rngMeanssq = SSVectorMultiply_with_stride_and_offset(rngMeanssq, rngMeans, rngMeans, numfbins, numfbins, ii, ii);
+      rngMeanssq = fastSSVectorMultiply_with_stride_and_offset(rngMeanssq, rngMeans, rngMeans, numfbins, numfbins, ii, ii);
       if (xlalErrno!=0) {
          fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -1701,7 +1701,7 @@ void makeSecondFFT(ffdataStruct *output, REAL4Vector *tfdata, REAL4FFTPlan *plan
       
       //Next, loop over times and pick the right frequency bin for each FFT and window
       //for (jj=0; jj<(INT4)x->length; jj++) x->data[jj] = (tfdata->data[ii + jj*numfbins]*win->data->data[jj]);
-      x = SSVectorMultiply_with_stride_and_offset(x, tfdata, win->data, output->numfbins, 1, ii, 0);
+      x = fastSSVectorMultiply_with_stride_and_offset(x, tfdata, win->data, output->numfbins, 1, ii, 0);
       if (xlalErrno!=0) {
          fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -2283,7 +2283,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
 
 
 
-REAL4Vector * SSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
+REAL4Vector * fastSSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
 {
    
    REAL4 *a, *b, *c;
@@ -2305,51 +2305,5 @@ REAL4Vector * SSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4
    
 } /* SSVectorMultiply_with_stride_and_offset() */
 
-REAL8Vector * DDVectorMultiply_with_stride_and_offset(REAL8Vector *output, REAL8Vector *input1, REAL8Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
-{
-   
-   REAL8 *a;
-   REAL8 *b;
-   REAL8 *c;
-   INT4   n;
-   
-   a = input1->data + offset1;
-   b = input2->data + offset2;
-   c = output->data;
-   n = output->length;
-   
-   while (n-- > 0) {
-      *c = (*a)*(*b);
-      a = a + stride1;
-      b = b + stride2;
-      c++;
-   }
-   
-   return output;
-   
-} /* DDVectorMultiply_with_stride_and_offset() */
 
-REAL8Vector * SDVectorMultiply_with_stride_and_offset(REAL8Vector *output, REAL4Vector *input1, REAL8Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
-{
-   
-   REAL4 *a;
-   REAL8 *b;
-   REAL8 *c;
-   INT4   n;
-   
-   a = input1->data + offset1;
-   b = input2->data + offset2;
-   c = output->data;
-   n = output->length;
-   
-   while (n-- > 0) {
-      *c = (*a)*(*b);
-      a = a + stride1;
-      b = b + stride2;
-      c++;
-   }
-   
-   return output;
-   
-} /* SDVectorMultiply_with_stride_and_offset() */
 

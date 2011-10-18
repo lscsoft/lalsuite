@@ -32,7 +32,7 @@ ffdataStruct * new_ffdata(inputParamsStruct *input);
 void free_ffdata(ffdataStruct *data);
 
 REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization);
-REAL4Vector * SSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2);
+REAL4Vector * fastSSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2);
 REAL4Vector * simpleTFdata(REAL8 fsig, REAL8 period, REAL8 moddepth, REAL8 Tcoh, REAL8 Tobs, REAL8 SFToverlap, REAL8 fminimum, REAL8 fmaximum, REAL8 sqrtSh);
 
 REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normalization);
@@ -42,9 +42,6 @@ void multiTFRngMeans(REAL4VectorSequence *output, REAL4VectorSequence *multiTFda
 INT4VectorSequence * existingMultiSFTs(REAL4VectorSequence *tfdata, inputParamsStruct *params, INT4 numfbins, INT4 numffts);
 INT4Vector * combineExistingMultiSFTs(INT4VectorSequence *input);
 REAL4Vector * combineMultiTFrngMeans(REAL4VectorSequence *input, INT4 numffts, INT4 numfbins);
-
-REAL8Vector * DDVectorMultiply_with_stride_and_offset(REAL8Vector *output, REAL8Vector *input1, REAL8Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2);
-REAL8Vector * SDVectorMultiply_with_stride_and_offset(REAL8Vector *output, REAL4Vector *input1, REAL8Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2);
 
 INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params);
 INT4Vector * existingSFTs(REAL4Vector *tfdata, inputParamsStruct *params, INT4 numfbins, INT4 numffts);
