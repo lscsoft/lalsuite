@@ -104,7 +104,7 @@ typedef struct
    REAL8Vector *period;
    REAL8Vector *moddepth;
    REAL8Vector *ULval;
-   INT4Vector *iterations2reachUL;
+   REAL8Vector *effSNRval;
    REAL8 normalization;
 } UpperLimit;
 
