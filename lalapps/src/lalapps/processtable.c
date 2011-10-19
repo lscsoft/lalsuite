@@ -146,7 +146,6 @@ int XLALPopulateProcessTable(
 	long process_id
 )
 {
-	static const char func[] = "XLALPopulateProcessTable";
 	char *cvs_keyword_value;
 	uid_t uid;
 	struct passwd *pw;
@@ -164,8 +163,8 @@ int XLALPopulateProcessTable(
 
 	cvs_keyword_value = cvs_get_keyword_value(cvs_revision);
 	if(!cvs_keyword_value) {
-		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_revision);
-		XLAL_ERROR(func, XLAL_EINVAL);
+		XLALPrintError("%s(): cannot parse \"%s\"\n", __func__, cvs_revision);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	snprintf(ptable->version, LIGOMETA_VERSION_MAX, "%s", cvs_keyword_value);
 	free(cvs_keyword_value);
@@ -176,8 +175,8 @@ int XLALPopulateProcessTable(
 
 	cvs_keyword_value = cvs_get_keyword_value(cvs_source);
 	if(!cvs_keyword_value) {
-		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_source);
-		XLAL_ERROR(func, XLAL_EINVAL);
+		XLALPrintError("%s(): cannot parse \"%s\"\n", __func__, cvs_source);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	snprintf(ptable->cvs_repository, LIGOMETA_CVS_REPOSITORY_MAX, "%s", cvs_keyword_value);
 	free(cvs_keyword_value);
@@ -188,23 +187,23 @@ int XLALPopulateProcessTable(
 
 	cvs_keyword_value = cvs_get_keyword_value(cvs_date);
 	if(!cvs_keyword_value) {
-		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_date);
-		XLAL_ERROR(func, XLAL_EINVAL);
+		XLALPrintError("%s(): cannot parse \"%s\"\n", __func__, cvs_date);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(!strptime(cvs_keyword_value, "%Y/%m/%d %T", &utc))
 	  {
 	    if(!strptime(cvs_keyword_value, "%Y-%m-%d %T", &utc))
 	      {
-		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_keyword_value);
+		XLALPrintError("%s(): cannot parse \"%s\"\n", __func__, cvs_keyword_value);
 		free(cvs_keyword_value);
-		XLAL_ERROR(func, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	      }
 	  }
 	free(cvs_keyword_value);
 	XLALClearErrno();
 	XLALGPSSet(&ptable->cvs_entry_time, XLALUTCToGPS(&utc), 0);
 	if(XLALGetBaseErrno())
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/*
 	 * comment
@@ -228,7 +227,7 @@ int XLALPopulateProcessTable(
 		ptable->unix_procid = getppid();
 	if(gethostname(ptable->node, LIGOMETA_NODE_MAX) < 0) {
 		perror("could not determine host name");
-		XLAL_ERROR(func, XLAL_ESYS);
+		XLAL_ERROR(XLAL_ESYS);
 	}
 	uid = geteuid();
 	if(!(pw = getpwuid(uid)))

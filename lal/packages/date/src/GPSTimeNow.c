@@ -51,7 +51,7 @@ XLALGPSTimeNow (
    */
 
   if(gpstime->gpsSeconds < 0)
-    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+    XLAL_ERROR_NULL(XLAL_EFUNC);
 
   return gpstime;
 }

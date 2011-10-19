@@ -221,7 +221,6 @@ XLALClusterMultiInspiralTable (
     )
 
 {
-  static const char *func = "XLALClusterMultiInspiralTable";
   MultiInspiralTable     *thisEvent=NULL;
   MultiInspiralTable     *prevEvent=NULL;
   MultiInspiralTable     *nextEvent=NULL;
@@ -229,7 +228,7 @@ XLALClusterMultiInspiralTable (
 
   if ( !inspiralList )
   {
-    XLAL_ERROR(func,XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
 
   if ( ! *inspiralList )

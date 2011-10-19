@@ -68,8 +68,6 @@ SFTtype *
 XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 		     REAL8 upsampling )		/**< upsampling factor >= 1 */
 {
-  static const CHAR *fn = "XLALSFTVectorToLFT()";
-
   COMPLEX8FFTPlan *SFTplan, *LFTplan;
 
   COMPLEX8TimeSeries *lTS = NULL;		/* long time-series corresponding to full set of SFTs */
@@ -97,13 +95,13 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 
   if ( !sfts || (sfts->length == 0) )
     {
-      XLALPrintError ("%s: empty SFT input!\n", fn );
-      XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+      XLALPrintError ("%s: empty SFT input!\n", __func__ );
+      XLAL_ERROR_NULL (XLAL_EINVAL);
     }
   if ( upsampling < 1 )
     {
-      XLALPrintError ("%s: upsampling factor (%f) must be >= 1 \n", fn, upsampling );
-      XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+      XLALPrintError ("%s: upsampling factor (%f) must be >= 1 \n", __func__, upsampling );
+      XLAL_ERROR_NULL (XLAL_EINVAL);
     }
 
   /* some useful shorthands */
@@ -146,30 +144,30 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
   /* ----- Prepare invFFT: compute plan for FFTW */
   if ( (SFTplan = XLALCreateReverseCOMPLEX8FFTPlan( numBinsSFT, 0 )) == NULL )
     {
-      XLALPrintError ( "%s: XLALCreateReverseCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", fn, numBinsSFT, xlalErrno );
-      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      XLALPrintError ( "%s: XLALCreateReverseCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", __func__, numBinsSFT, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
     }
 
   /* ----- prepare long TimeSeries container ---------- */
   if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstSFT->name, &firstSFT->epoch, 0, deltaT, &empty_LALUnit, numTimeSamples )) == NULL )
     {
-      XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", fn, numTimeSamples, xlalErrno );
-      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numTimeSamples, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
     }
   memset ( lTS->data->data, 0, numTimeSamples * sizeof(*lTS->data->data)); /* set all time-samples to zero */
 
   /* ----- Prepare short time-series holding ONE invFFT of a single SFT */
   if ( (sTS = XLALCreateCOMPLEX8TimeSeries ( "short timeseries", &epoch, 0, deltaT, &empty_LALUnit, numBinsSFT )) == NULL )
     {
-      XLALPrintError ( "%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", fn, numBinsSFT, xlalErrno );
-      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      XLALPrintError ( "%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numBinsSFT, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
     }
 
   /* ----- prepare output LFT ---------- */
   if ( (outputLFT = LALCalloc ( 1, sizeof(*outputLFT) )) == NULL )
     {
-      XLALPrintError ( "%s: LALCalloc ( 1, %d ) failed!\n", fn, sizeof(*outputLFT) );
-      XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+      XLALPrintError ( "%s: LALCalloc ( 1, %d ) failed!\n", __func__, sizeof(*outputLFT) );
+      XLAL_ERROR_NULL ( XLAL_ENOMEM );
     }
 
   /* prepare LFT header */
@@ -182,8 +180,8 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 
   if ( (outputLFT->data = XLALCreateCOMPLEX8Vector ( numTimeSamples )) == NULL )
     {
-      XLALPrintError ( "%s: XLALCreateCOMPLEX8Vector(%d) failed! xlalErrno = %d\n", fn, numTimeSamples, xlalErrno );
-      XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+      XLALPrintError ( "%s: XLALCreateCOMPLEX8Vector(%d) failed! xlalErrno = %d\n", __func__, numTimeSamples, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_ENOMEM );
     }
 
   /* ---------- loop over all SFTs and inverse-FFT them ---------- */
@@ -215,8 +213,8 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 
       if ( (nudge_n != 0) && (XLALTimeShiftSFT ( thisSFT, nudge_n ) != XLAL_SUCCESS) )
 	{
-	  XLALPrintError ( "%s: XLALTimeShiftSFT(sft-%d, %g) failed! errno = %d!\n", fn, n, nudge_n, xlalErrno );
-	  XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+	  XLALPrintError ( "%s: XLALTimeShiftSFT(sft-%d, %g) failed! errno = %d!\n", __func__, n, nudge_n, xlalErrno );
+	  XLAL_ERROR_NULL ( XLAL_EFUNC );
 	}
 
 
@@ -249,14 +247,14 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 
       if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
 	{
-	  XLALPrintError ( "%s: XLALReorderSFTtoFFTW() failed! errno = %d!\n", fn, xlalErrno );
-	  XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+	  XLALPrintError ( "%s: XLALReorderSFTtoFFTW() failed! errno = %d!\n", __func__, xlalErrno );
+	  XLAL_ERROR_NULL ( XLAL_EFUNC );
 	}
 
       if ( XLALCOMPLEX8VectorFFT( sTS->data, thisSFT->data, SFTplan ) != XLAL_SUCCESS )
 	{
-	  XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", fn, xlalErrno );
-	  XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+	  XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", __func__, xlalErrno );
+	  XLAL_ERROR_NULL ( XLAL_EFUNC );
 	}
 
       /* copy short (shifted) timeseries into correct location within long timeseries */
@@ -271,20 +269,20 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
   /* ----- compute plan for FFTW */
   if ( (LFTplan = XLALCreateForwardCOMPLEX8FFTPlan( numTimeSamples, 0 )) == NULL )
     {
-      XLALPrintError ( "%s: XLALCreateForwardCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", fn, numTimeSamples, xlalErrno );
-      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      XLALPrintError ( "%s: XLALCreateForwardCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", __func__, numTimeSamples, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
     }
 
   if ( XLALCOMPLEX8VectorFFT( outputLFT->data, lTS->data, LFTplan ) != XLAL_SUCCESS )
     {
-      XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", fn, xlalErrno );
-      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", __func__, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
     }
 
   if ( XLALReorderFFTWtoSFT (outputLFT->data) != XLAL_SUCCESS )
     {
-      XLALPrintError ( "%s: XLALReorderFFTWtoSFT() failed! errno = %d!\n", fn, xlalErrno );
-      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      XLALPrintError ( "%s: XLALReorderFFTWtoSFT() failed! errno = %d!\n", __func__, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
     }
 
   /* cleanup memory */
@@ -312,8 +310,6 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
 				    const LIGOTimeGPS *end_in       /**< [in] input end time */
 				    )
 {
- static const CHAR *fn = "XLALSFTVectorToCOMPLEX8TimeSeries()";
-
   COMPLEX8FFTPlan *SFTplan;
 
   COMPLEX8TimeSeries *lTS = NULL;		/* long time-series corresponding to full set of SFTs */
@@ -341,8 +337,8 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
   /* check sanity of input */
   if ( !sfts || (sfts->length == 0) )
     {
-      XLALPrintError ("%s: empty SFT input!\n", fn );
-      XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+      XLALPrintError ("%s: empty SFT input!\n", __func__ );
+      XLAL_ERROR_NULL (XLAL_EINVAL);
     }
 
   /* define some useful shorthands */
@@ -367,13 +363,13 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
       /* do sanity checks */
       if ( (XLALGPSDiff ( &end, &firstSFT->epoch ) ) < 0 ) 
 	{
-	  XLALPrintError ("%s: end time before first SFT!\n", fn );
-	  XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+	  XLALPrintError ("%s: end time before first SFT!\n", __func__ );
+	  XLAL_ERROR_NULL (XLAL_EINVAL);
 	}
       if ( (XLALGPSDiff ( &start, &sfts->data[numSFTs-1].epoch) ) > Tsft ) 
 	{
-	  XLALPrintError ("%s: start time after end of data!\n", fn );
-	  XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+	  XLALPrintError ("%s: start time after end of data!\n", __func__ );
+	  XLAL_ERROR_NULL (XLAL_EINVAL);
 	}
     }
   else {   /* otherwise we use the start and end of the sft vector */
@@ -383,8 +379,8 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
     end.gpsNanoSeconds = lastSFT->epoch.gpsNanoSeconds;
     if ( XLALGPSAdd(&end,Tsft) == NULL )
     {
-      XLALPrintError ("%s: NULL pointer returned from XLALGPSAdd()!\n", fn );
-      XLAL_ERROR_NULL (fn, XLAL_EFAULT);
+      XLALPrintError ("%s: NULL pointer returned from XLALGPSAdd()!\n", __func__ );
+      XLAL_ERROR_NULL (XLAL_EFAULT);
     }
     
   }
@@ -392,8 +388,8 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
   /* determine output time span */
   if ( (Tspan = XLALGPSDiff ( &end, &start ) ) < 0 ) 
     {
-      XLALPrintError ("%s: start time after end time!\n", fn );
-      XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+      XLALPrintError ("%s: start time after end time!\n", __func__ );
+      XLAL_ERROR_NULL (XLAL_EINVAL);
     }
   
   numTimeSamples = (UINT4)floor(Tspan / deltaT + 0.5);	/* round */
@@ -406,21 +402,21 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
   /* ----- Prepare invFFT of SFTs: compute plan for FFTW */
   if ( (SFTplan = XLALCreateReverseCOMPLEX8FFTPlan( numBinsSFT, 0 )) == NULL )
     {
-      XLALPrintError ( "%s: XLALCreateReverseCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", fn, numBinsSFT, xlalErrno );
+      XLALPrintError ( "%s: XLALCreateReverseCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", __func__, numBinsSFT, xlalErrno );
       goto failed;
     }
 
   /* ----- Prepare short time-series holding ONE invFFT of a single SFT */
   if ( (sTS = XLALCreateCOMPLEX8TimeSeries ( "short timeseries", &epoch, 0, deltaT, &empty_LALUnit, numBinsSFT )) == NULL )
     {
-      XLALPrintError ( "%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", fn, numBinsSFT, xlalErrno );
+      XLALPrintError ( "%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numBinsSFT, xlalErrno );
       goto failed;
     }
 
   /* ----- prepare long TimeSeries container ---------- */
   if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstSFT->name, &start, fHet, deltaT, &empty_LALUnit, numTimeSamples )) == NULL )
     {
-      XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", fn, numTimeSamples, xlalErrno );
+      XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numTimeSamples, xlalErrno );
       goto failed;
     }
   memset ( lTS->data->data, 0, numTimeSamples * sizeof(*lTS->data->data)); 	/* set all time-samples to zero (in case there are gaps) */
@@ -454,7 +450,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
 	{
 	  if  ( XLALTimeShiftSFT ( thisSFT, nudge_n ) != XLAL_SUCCESS )
 	    {
-	      XLALPrintError ( "%s: XLALTimeShiftSFT(sft-%d, %g) failed! errno = %d!\n", fn, n, nudge_n, xlalErrno );
+	      XLALPrintError ( "%s: XLALTimeShiftSFT(sft-%d, %g) failed! errno = %d!\n", __func__, n, nudge_n, xlalErrno );
 	      goto failed;
 	    }
 	}
@@ -484,7 +480,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
       /* FIXME: check how time-critical this step is, using proper profiling! */
       if ( XLALMultiplySFTbyCOMPLEX8 ( thisSFT, hetCorrection ) != XLAL_SUCCESS )
 	{
-	  XLALPrintError ( "%s: XLALMultiplySFTbyCOMPLEX8(sft-%d) failed! errno = %d!\n", fn, n, xlalErrno );
+	  XLALPrintError ( "%s: XLALMultiplySFTbyCOMPLEX8(sft-%d) failed! errno = %d!\n", __func__, n, xlalErrno );
 	  goto failed;
 	}
 
@@ -494,13 +490,13 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
       /* FIXME: check if required */
       if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
 	{
-	  XLALPrintError ( "%s: XLALReorderSFTtoFFTW() failed! errno = %d!\n", fn, xlalErrno );
+	  XLALPrintError ( "%s: XLALReorderSFTtoFFTW() failed! errno = %d!\n", __func__, xlalErrno );
 	  goto failed;
 	}
 
       if ( XLALCOMPLEX8VectorFFT( sTS->data, thisSFT->data, SFTplan ) != XLAL_SUCCESS )
 	{
-	  XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", fn, xlalErrno );
+	  XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", __func__, xlalErrno );
 	  goto failed;
 	}
 
@@ -519,7 +515,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
   XLALDestroyCOMPLEX8FFTPlan ( SFTplan );
   XLALDestroyCOMPLEX8TimeSeries ( lTS );
 
-  XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  XLAL_ERROR_NULL ( XLAL_EFUNC );
 
  success:
   /* cleanup memory */
@@ -538,7 +534,6 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
 int
 XLALReorderFFTWtoSFT (COMPLEX8Vector *X)
 {
-  static const CHAR *fn = "XLALReorderFFTWtoSFT()";
   UINT4 N, Npos_and_DC, Nneg;
 
   /* temporary storage for data */
@@ -547,8 +542,8 @@ XLALReorderFFTWtoSFT (COMPLEX8Vector *X)
 
   if ( !X || (X->length==0) )
     {
-      XLALPrintError ("%s: empty input vector 'X'!\n", fn );
-      XLAL_ERROR (fn, XLAL_EINVAL);
+      XLALPrintError ("%s: empty input vector 'X'!\n", __func__ );
+      XLAL_ERROR (XLAL_EINVAL);
     }
 
   N = X -> length;
@@ -558,8 +553,8 @@ XLALReorderFFTWtoSFT (COMPLEX8Vector *X)
   /* allocate temporary storage for swap */
   if ( (tmp = XLALMalloc ( N * sizeof(*tmp) )) == NULL )
     {
-      XLALPrintError ("%s: Failed to allocate XLALMalloc(%d)\n", fn, N * sizeof(*tmp));
-      XLAL_ERROR (fn, XLAL_ENOMEM);
+      XLALPrintError ("%s: Failed to allocate XLALMalloc(%d)\n", __func__, N * sizeof(*tmp));
+      XLAL_ERROR (XLAL_ENOMEM);
     }
 
   memcpy ( tmp, X->data, N * sizeof(*tmp) );
@@ -583,7 +578,6 @@ XLALReorderFFTWtoSFT (COMPLEX8Vector *X)
 int
 XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
 {
-  static const CHAR *fn = "XLALReorderSFTtoFFTW()";
   UINT4 N, Npos_and_DC, Nneg;
 
   /* temporary storage for data */
@@ -592,8 +586,8 @@ XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
 
   if ( !X || (X->length==0) )
     {
-      XLALPrintError ("%s: empty input vector 'X'!\n", fn );
-      XLAL_ERROR (fn, XLAL_EINVAL);
+      XLALPrintError ("%s: empty input vector 'X'!\n", __func__ );
+      XLAL_ERROR (XLAL_EINVAL);
     }
 
   N = X->length;
@@ -603,8 +597,8 @@ XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
   /* allocate temporary storage for swap */
   if ( (tmp = XLALMalloc ( N * sizeof(*tmp) )) == NULL )
     {
-      XLALPrintError ("%s: Failed to allocate XLALMalloc(%d)\n", fn, N * sizeof(*tmp));
-      XLAL_ERROR (fn, XLAL_ENOMEM);
+      XLALPrintError ("%s: Failed to allocate XLALMalloc(%d)\n", __func__, N * sizeof(*tmp));
+      XLAL_ERROR (XLAL_ENOMEM);
     }
 
   memcpy ( tmp, X->data, N * sizeof(*tmp) );
@@ -630,13 +624,12 @@ int
 XLALMultiplySFTbyCOMPLEX8 ( SFTtype *sft,	/**< [in/out] SFT */
 			    COMPLEX8 factor )	/**< [in] complex8 factor to multiply SFT by */
 {
-  const CHAR *fn = "XLALMultiplySFTbyCOMPLEX8()";
   UINT4 k;
 
   if ( !sft || !sft->data )
     {
-      XLALPrintError ("%s: empty input SFT!\n", fn );
-      XLAL_ERROR (fn, XLAL_EINVAL);
+      XLALPrintError ("%s: empty input SFT!\n", __func__ );
+      XLAL_ERROR (XLAL_EINVAL);
     }
 
   for ( k=0; k < sft->data->length; k++)
@@ -666,13 +659,12 @@ int
 XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
 		   REAL8 shift )	/**< time-shift in seconds */
 {
-  const CHAR *fn = "XLALTimeShiftSFT()";
   UINT4 k;
 
   if ( !sft || !sft->data )
     {
-      XLALPrintError ("%s: empty input SFT!\n", fn );
-      XLAL_ERROR (fn, XLAL_EINVAL);
+      XLALPrintError ("%s: empty input SFT!\n", __func__ );
+      XLAL_ERROR (XLAL_EINVAL);
     }
   
   for ( k=0; k < sft->data->length; k++)

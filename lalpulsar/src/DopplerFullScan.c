@@ -410,15 +410,14 @@ int
 XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 {
   int ret;
-  const CHAR *fn = "XLALNextDopplerPos()";
 
   /* This traps coding errors in the calling routine. */
   if ( pos == NULL || scan == NULL ) {
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( scan->state == STATE_IDLE ) {
     XLALPrintError ("\nCalled XLALNextDopplerPos() on un-initialized DopplerFullScanState !\n\n");
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* is this search finished? then return '1' */
@@ -457,12 +456,12 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
     case GRID_METRIC_LATTICE:
       if ( XLALgetCurrentDopplerPos ( pos, scan->latticeScan, COORDINATESYSTEM_EQUATORIAL ) ) {
-	XLAL_ERROR ( fn, XLAL_EFUNC );
+	XLAL_ERROR ( XLAL_EFUNC );
       }
       /* advance to next point */
       ret = XLALadvanceLatticeIndex ( scan->latticeScan );
       if ( ret < 0 ) {
-	XLAL_ERROR ( fn, XLAL_EFUNC );
+	XLAL_ERROR ( XLAL_EFUNC );
       }
       else if ( ret == 1 )
 	{

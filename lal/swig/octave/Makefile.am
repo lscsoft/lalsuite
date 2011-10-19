@@ -32,6 +32,9 @@ swig-install : $(swig_wrap)
 swig-uninstall :
 	rm -f $(DESTDIR)$(octfiledir)/$(swig_wrap)
 
+# language-specific headers (with LAL only)
+swiginclude_HEADERS += $(SWIG_OCTAVE_HEADERS)
+
 # extra distribution files
 EXTRA_DIST += \
 	$(swig_wrapcheck).m \

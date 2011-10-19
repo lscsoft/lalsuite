@@ -150,11 +150,11 @@ XLALInspiralParameterCalc (
    EtaTau04In Tau4In;
 
    if (params == NULL)
-      XLAL_ERROR(__func__, XLAL_EFAULT);
+      XLAL_ERROR(XLAL_EFAULT);
    if ((INT4)params->massChoice < 0)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
    if ((INT4)params->massChoice > 15)
-      XLAL_ERROR(__func__, XLAL_EDOM);
+      XLAL_ERROR(XLAL_EDOM);
 
    totalMass 	= 0.0;
    ieta 	= params->ieta;
@@ -173,9 +173,9 @@ XLALInspiralParameterCalc (
       case fixedMasses:
 
          if (params->mass1 <= 0)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
          if (params->mass2 <= 0)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
 
          m1 = params->mass1;
          m2 = params->mass2;
@@ -197,15 +197,15 @@ XLALInspiralParameterCalc (
       case totalMassUAndEta:
 
          if (params->totalMass <= 0)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
          if (params->eta <= 0)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
 
          if (params->eta > oneby4) {
 		params->eta -= tiny;
          }
          if (params->eta > oneby4)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
 
          totalMass = params->totalMass;
          eta = params->eta;
@@ -221,11 +221,11 @@ XLALInspiralParameterCalc (
       case totalMassAndMu:
 
          if (params->totalMass <= 0)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
          if (params->mu <= 0)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
          if (params->mu >= params->totalMass)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
 
          totalMass = params->totalMass;
          mu = params->mu;
@@ -246,9 +246,9 @@ XLALInspiralParameterCalc (
       case t02:
 
          if (params->t0 <= 0)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
          if (params->t2 <= 0)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
 
          A0 = 5./ pow(piFl, eightby3)/256.;
          A2 = 3715.0/(64512.0*pow(piFl,2.0));
@@ -264,10 +264,10 @@ XLALInspiralParameterCalc (
          xacc = 1.e-8;
          x1 = XLALEtaTau02(xmax, pars);
          if (XLAL_IS_REAL8_FAIL_NAN(x1))
-            XLAL_ERROR(__func__, XLAL_EFUNC);
+            XLAL_ERROR(XLAL_EFUNC);
          x2 = XLALEtaTau02(xmin, pars);
          if (XLAL_IS_REAL8_FAIL_NAN(x2))
-            XLAL_ERROR(__func__, XLAL_EFUNC);
+            XLAL_ERROR(XLAL_EFUNC);
 
          if (x1*x2 > 0) {
             params->eta = 0.;
@@ -275,7 +275,7 @@ XLALInspiralParameterCalc (
          } else {
             eta = XLALDBisectionFindRoot(rootfunction, xmin, xmax, xacc, pars);
             if (XLAL_IS_REAL8_FAIL_NAN(eta))
-               XLAL_ERROR(__func__, XLAL_EFUNC);
+               XLAL_ERROR(XLAL_EFUNC);
          }
          if (eta > oneby4) {
 		 eta-=tiny;
@@ -295,9 +295,9 @@ XLALInspiralParameterCalc (
       case t03:
 
          if (params->t0 <= 0)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
          if (params->t3 <= 0)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
 
          A0 = 5./ pow(piFl, eightby3)/256.;
          A3 = LAL_PI / pow(piFl, fiveby3)/8.;
@@ -321,9 +321,9 @@ XLALInspiralParameterCalc (
       case t04:
 
          if (params->t0 <= 0)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
          if (params->t4 <= 0)
-            XLAL_ERROR(__func__, XLAL_EDOM);
+            XLAL_ERROR(XLAL_EDOM);
 
 	 A0 = 5./(256. * pow(piFl, eightby3));
          A4 = 5./(128.0 * pow(piFl,fourby3)) * 3058673./1016064.;
@@ -341,10 +341,10 @@ XLALInspiralParameterCalc (
          xacc = 1.e-8;
          x1 = XLALEtaTau04(xmax, pars);
          if (XLAL_IS_REAL8_FAIL_NAN(x1))
-            XLAL_ERROR(__func__, XLAL_EFUNC);
+            XLAL_ERROR(XLAL_EFUNC);
          x2 = XLALEtaTau04(xmin, pars);
          if (XLAL_IS_REAL8_FAIL_NAN(x2))
-            XLAL_ERROR(__func__, XLAL_EFUNC);
+            XLAL_ERROR(XLAL_EFUNC);
 
 	 if (x1*x2 > 0) {
             params->eta = 0.;
@@ -352,7 +352,7 @@ XLALInspiralParameterCalc (
          } else {
             eta = XLALDBisectionFindRoot(rootfunction, xmin, xmax, xacc, pars);
             if (XLAL_IS_REAL8_FAIL_NAN(eta))
-               XLAL_ERROR(__func__, XLAL_EFUNC);
+               XLAL_ERROR(XLAL_EFUNC);
          }
          if (eta > oneby4) {
 		 eta-=tiny;
@@ -394,7 +394,7 @@ XLALInspiralParameterCalc (
 
      default:
       XLALPrintError("XLAL Error - %s: Improper choice for massChoice\n", __func__);
-      XLAL_ERROR(__func__, XLAL_EINVAL);
+      XLAL_ERROR(XLAL_EINVAL);
       break;
    }
 

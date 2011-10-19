@@ -97,30 +97,28 @@ fContactWorkSpace * XLALInitFContactWorkSpace(
                        REAL8                          conv
                                              )
 {
-
-  static const char *func = "XLALInitFContactWorkSpace";
   fContactWorkSpace *workSpace = NULL;
 
   /* Check the parameters passed in are sensible */
   if ( n <= 0 )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   if ( conv <= 0.0 )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   if ( !T )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
 
   /* The matrices a and b should be both supplied or both null */
   if ((!( a && b )) && ( a || b ))
-        XLAL_ERROR_NULL( func, XLAL_EINVAL );
+        XLAL_ERROR_NULL( XLAL_EINVAL );
 
   /* Check the matrices conform to the expected sizes */
   if ( a )
   {
     if ( a->size1 != n || a->size2 != n || b->size1 != n || b->size2 != n )
     {
-      XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+      XLAL_ERROR_NULL( XLAL_EBADLEN );
     }
   }
 
@@ -128,7 +126,7 @@ fContactWorkSpace * XLALInitFContactWorkSpace(
   /* Allocate the workspace */
   workSpace = (fContactWorkSpace *) LALCalloc( 1, sizeof(fContactWorkSpace) );
   if ( !workSpace )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   if ( a )
   {
@@ -150,7 +148,7 @@ fContactWorkSpace * XLALInitFContactWorkSpace(
       || !workSpace->s )
   {
     XLALFreeFContactWorkSpace( workSpace );
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   /* Now set the rest of the parameters to the correct values */
@@ -173,8 +171,6 @@ REAL8 XLALCheckOverlapOfEllipsoids (
         const gsl_vector   *rb,
         fContactWorkSpace  *workSpace )
 {
-    static const char *func = "XLALCheckOverlapOfEllipsoids";
-
     gsl_function        F;
     INT4                min_status;
     INT4                iter = 0, max_iter = 100;
@@ -184,10 +180,10 @@ REAL8 XLALCheckOverlapOfEllipsoids (
 
     /* Sanity check on input arguments */
     if ( !ra || !rb || !workSpace )
-      XLAL_ERROR_REAL8( func, XLAL_EFAULT );
+      XLAL_ERROR_REAL8( XLAL_EFAULT );
 
     if ( ra->size != rb->size || ra->size != workSpace->n )
-      XLAL_ERROR_REAL8( func, XLAL_EBADLEN);
+      XLAL_ERROR_REAL8( XLAL_EBADLEN);
 
 
     /* Set r_AB to be rb - ra */
@@ -205,7 +201,7 @@ REAL8 XLALCheckOverlapOfEllipsoids (
 
     XLAL_CALLGSL( min_status = gsl_min_fminimizer_set (s, &F, m, a, b) );
     if ( min_status != GSL_SUCCESS )
-      XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+      XLAL_ERROR_REAL8( XLAL_EFUNC );
 
     do
     {
@@ -214,11 +210,11 @@ REAL8 XLALCheckOverlapOfEllipsoids (
         if (min_status != GSL_SUCCESS )
         {
           if (min_status == GSL_EBADFUNC)
-            XLAL_ERROR_REAL8( func, XLAL_EFUNC | XLAL_EFPINVAL );
+            XLAL_ERROR_REAL8( XLAL_EFUNC | XLAL_EFPINVAL );
           else if (min_status == GSL_EZERODIV)
-            XLAL_ERROR_REAL8( func, XLAL_EFUNC | XLAL_EFPDIV0 );
+            XLAL_ERROR_REAL8( XLAL_EFUNC | XLAL_EFPDIV0 );
           else
-            XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+            XLAL_ERROR_REAL8( XLAL_EFUNC );
         }
 
         m = gsl_min_fminimizer_x_minimum (s);
@@ -227,7 +223,7 @@ REAL8 XLALCheckOverlapOfEllipsoids (
 
         XLAL_CALLGSL( min_status = gsl_min_test_interval (a, b, workSpace->convParam, 0.0) );
         if (min_status != GSL_CONTINUE && min_status != GSL_SUCCESS )
-          XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+          XLAL_ERROR_REAL8( XLAL_EFUNC );
     }
     while (min_status == GSL_CONTINUE && iter < max_iter );
     /* End of minimization routine */
@@ -235,7 +231,7 @@ REAL8 XLALCheckOverlapOfEllipsoids (
     /* Throw an error if max iterations would have been exceeded */
     if ( iter == max_iter && min_status == GSL_CONTINUE )
     {
-      XLAL_ERROR_REAL8( func, XLAL_EMAXITER );
+      XLAL_ERROR_REAL8( XLAL_EMAXITER );
     }
 
     return ( -(s->f_minimum) );
@@ -248,11 +244,8 @@ REAL8 XLALCheckOverlapOfEllipsoids (
  * ------------------------------------------------------------------------*/
 void XLALFreeFContactWorkSpace( fContactWorkSpace *workSpace )
 {
-
-  static const char *func = "XLALFreeFContactWorkSpace";
-
   if ( !workSpace )
-    XLAL_ERROR_VOID( func, XLAL_EFAULT );
+    XLAL_ERROR_VOID( XLAL_EFAULT );
 
   /* Free all the allocated memory */
   if (workSpace->tmpA) XLAL_CALLGSL( gsl_matrix_free( workSpace->tmpA ));

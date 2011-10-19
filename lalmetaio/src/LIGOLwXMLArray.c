@@ -333,7 +333,7 @@ int XLALWriteLIGOLwXMLArrayREAL4TimeSeries(
 )
 {
 	if(WriteLIGOLwXMLArray(xml->fp, comment, series->name, &series->epoch, &series->sampleUnits, series->f0, series->deltaT, 1, 0, 1, series->data->length, series->data->data) < 0)
-		XLAL_ERROR(__func__, XLAL_EIO);
+		XLAL_ERROR(XLAL_EIO);
 	return 0;
 }
 
@@ -351,7 +351,7 @@ int XLALWriteLIGOLwXMLArrayREAL8TimeSeries(
 )
 {
 	if(WriteLIGOLwXMLArray(xml->fp, comment, series->name, &series->epoch, &series->sampleUnits, series->f0, series->deltaT, 1, 0, 0, series->data->length, series->data->data) < 0)
-		XLAL_ERROR(__func__, XLAL_EIO);
+		XLAL_ERROR(XLAL_EIO);
 	return 0;
 }
 
@@ -369,7 +369,7 @@ int XLALWriteLIGOLwXMLArrayREAL4FrequencySeries(
 )
 {
 	if(WriteLIGOLwXMLArray(xml->fp, comment, series->name, &series->epoch, &series->sampleUnits, series->f0, series->deltaF, 0, 0, 1, series->data->length, series->data->data) < 0)
-		XLAL_ERROR(__func__, XLAL_EIO);
+		XLAL_ERROR(XLAL_EIO);
 	return 0;
 }
 
@@ -387,7 +387,7 @@ int XLALWriteLIGOLwXMLArrayREAL8FrequencySeries(
 )
 {
 	if(WriteLIGOLwXMLArray(xml->fp, comment, series->name, &series->epoch, &series->sampleUnits, series->f0, series->deltaF, 0, 0, 0, series->data->length, series->data->data) < 0)
-		XLAL_ERROR(__func__, XLAL_EIO);
+		XLAL_ERROR(XLAL_EIO);
 	return 0;
 }
 
@@ -405,7 +405,7 @@ int XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(
 )
 {
 	if(WriteLIGOLwXMLArray(xml->fp, comment, series->name, &series->epoch, &series->sampleUnits, series->f0, series->deltaF, 0, 1, 1, series->data->length, series->data->data) < 0)
-		XLAL_ERROR(__func__, XLAL_EIO);
+		XLAL_ERROR(XLAL_EIO);
 	return 0;
 }
 
@@ -423,7 +423,7 @@ int XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries(
 )
 {
 	if(WriteLIGOLwXMLArray(xml->fp, comment, series->name, &series->epoch, &series->sampleUnits, series->f0, series->deltaF, 0, 1, 0, series->data->length, series->data->data) < 0)
-		XLAL_ERROR(__func__, XLAL_EIO);
+		XLAL_ERROR(XLAL_EIO);
 	return 0;
 }
 

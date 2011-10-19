@@ -84,7 +84,6 @@ const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
 SFTVector *
 XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
 {
-  const CHAR *fn = "XLALExtractBandfromSFTs";
   REAL8 dFreq;
   UINT4 iMin, iMax, i0, numSFTs, numBinsIn, numBinsOut, iSFT;
   SFTVector *out;
@@ -92,7 +91,7 @@ XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
   COMPLEX8Vector *sav;
 
   if ( !sfts || !sfts->data || (sfts->length==0) || !sfts->data[0].data ) {
-    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   dFreq = sfts->data[0].deltaF;
@@ -112,7 +111,7 @@ XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
 
   if ( iMax < iMin ) {
     XLALPrintError ("Resulting SFT has no bins iMax (%d) < iMin (%d)!\n", iMax, iMin );
-    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   numSFTs = sfts->length;
@@ -120,7 +119,7 @@ XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
   numBinsOut = iMax - iMin + 1;
 
   if ( (out = XLALCreateSFTVector ( numSFTs, numBinsOut )) == NULL ) {
-    XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   /* now copy heads and all requested bins */
@@ -153,20 +152,19 @@ XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
 SFTtype *
 XLALCreateSFT ( UINT4 numBins )
 {
-  const char *fn = "XLALCreateSFT()";
   SFTtype *sft;
 
   if ( (sft = XLALCalloc (1, sizeof(*sft) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc (1, %d) failed.\n", fn, sizeof(*sft) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: XLALCalloc (1, %d) failed.\n", __func__, sizeof(*sft) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( numBins )
     {
       if ( (sft->data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL ) {
-	XLALPrintError ("%s: XLALCreateCOMPLEX8Vector ( %s ) failed. xlalErrno = %d\n", fn, numBins, xlalErrno );
+	XLALPrintError ("%s: XLALCreateCOMPLEX8Vector ( %s ) failed. xlalErrno = %d\n", __func__, numBins, xlalErrno );
 	XLALFree ( sft );
-	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+	XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
     }
   else
@@ -267,18 +265,17 @@ XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
 		     UINT4 numBins	/**< number of frequency-bins per SFT */
 		     )
 {
-  const CHAR *fn = "XLALCreateSFTVector()";
   UINT4 iSFT;
   SFTVector *vect;
 
   if ( (vect = LALCalloc ( 1, sizeof(*vect) )) == NULL ) {
-    XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   vect->length = numSFTs;
   if ( (vect->data = LALCalloc (1, numSFTs * sizeof ( *vect->data ) )) == NULL ) {
     LALFree (vect);
-    XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   for ( iSFT = 0; iSFT < numSFTs; iSFT ++)
@@ -295,7 +292,7 @@ XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
 		XLALDestroyCOMPLEX8Vector ( vect->data[j].data );
 	      LALFree (vect->data);
 	      LALFree (vect);
-	      XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+	      XLAL_ERROR_NULL( XLAL_ENOMEM );
 	    }
 	}
 
@@ -841,13 +838,13 @@ XLALCreateTimestampVector (UINT4 length)
 
   out = LALCalloc (1, sizeof(LIGOTimeGPSVector));
   if (out == NULL)
-    XLAL_ERROR_NULL ( "XLALCreateTimestampVector", XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
 
   out->length = length;
   out->data = LALCalloc (1, length * sizeof(LIGOTimeGPS));
   if (out->data == NULL) {
     LALFree (out);
-    XLAL_ERROR_NULL ( "XLALCreateTimestampVector", XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   return out;
@@ -981,11 +978,9 @@ LALGetSFTtimestamps (LALStatus *status,			/**< pointer to LALStatus structure */
 		     LIGOTimeGPSVector **timestamps,	/**< [out] extracted timestamps */
 		     const SFTVector *sfts )		/**< input SFT-vector  */
 {
-  const char *fn = __func__;
-
   LIGOTimeGPSVector *ret = NULL;
 
-  INITSTATUS (status, fn, SFTUTILSC );
+  INITSTATUS (status, __func__, SFTUTILSC );
 
   ASSERT ( timestamps, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   ASSERT ( sfts, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
@@ -993,7 +988,7 @@ LALGetSFTtimestamps (LALStatus *status,			/**< pointer to LALStatus structure */
   ASSERT ( *timestamps == NULL, status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL );
 
   if ( ( ret = XLALExtractTimestampsFromSFTs ( sfts )) == NULL ) {
-    XLALPrintError ("%s: call to XLALExtractTimestampsFromSFTs() failed with code %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: call to XLALExtractTimestampsFromSFTs() failed with code %d\n", __func__, xlalErrno );
     ABORT (status, SFTUTILS_EFUNC, SFTUTILS_MSGEFUNC);
   }
 
@@ -1011,20 +1006,18 @@ LALGetSFTtimestamps (LALStatus *status,			/**< pointer to LALStatus structure */
 LIGOTimeGPSVector *
 XLALExtractTimestampsFromSFTs ( const SFTVector *sfts )		/**< [in] input SFT-vector  */
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !sfts ) {
-    XLALPrintError ("%s: invalid NULL input 'sfts'\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'sfts'\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   UINT4 numSFTs = sfts->length;
   /* create output vector */
   LIGOTimeGPSVector *ret = NULL;
   if ( ( ret = XLALCreateTimestampVector ( numSFTs )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", fn, numSFTs );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", __func__, numSFTs );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   REAL8 Tsft = 1.0 / sfts->data[0].deltaF;
   ret->deltaT = Tsft;
@@ -1045,26 +1038,24 @@ XLALExtractTimestampsFromSFTs ( const SFTVector *sfts )		/**< [in] input SFT-vec
 MultiLIGOTimeGPSVector *
 XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
 {
-  static const char *fn = __func__;
-
   /* check input consistency */
   if ( !multiSFTs || multiSFTs->length == 0 ) {
-    XLALPrintError ("%s: illegal NULL or empty input 'multiSFTs'.\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: illegal NULL or empty input 'multiSFTs'.\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
   UINT4 numIFOs = multiSFTs->length;
 
   /* create output vector */
   MultiLIGOTimeGPSVector *ret = NULL;
   if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d ).\n", fn, sizeof(*ret));
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d ).\n", __func__, sizeof(*ret));
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( (ret->data = XLALCalloc ( numIFOs, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( %d, %d ).\n", fn, numIFOs, sizeof(ret->data[0]) );
+    XLALPrintError ("%s: failed to XLALCalloc ( %d, %d ).\n", __func__, numIFOs, sizeof(ret->data[0]) );
     XLALFree (ret);
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   ret->length = numIFOs;
 
@@ -1073,9 +1064,9 @@ XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
   for ( X=0; X < numIFOs; X ++ )
     {
       if ( (ret->data[X] = XLALExtractTimestampsFromSFTs ( multiSFTs->data[X] )) == NULL ) {
-        XLALPrintError ("%s: XLALExtractTimestampsFromSFTs() failed for X=%d\n", fn, X );
+        XLALPrintError ("%s: XLALExtractTimestampsFromSFTs() failed for X=%d\n", __func__, X );
         XLALDestroyMultiTimestamps ( ret );
-        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
 
     } /* for X < numIFOs */
@@ -1126,11 +1117,11 @@ XLALGetChannelPrefix ( const CHAR *name )
   CHAR *channel = LALCalloc( 3, sizeof(CHAR) );  /* 2 chars + \0 */
 
   if ( !channel ) {
-    XLAL_ERROR_NULL ( "XLALGetChannelPrefix", XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   if ( !name ) {
     LALFree ( channel );
-    XLAL_ERROR_NULL ( "XLALGetChannelPrefix", XLAL_EINVAL );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* first handle (currently) unambiguous ones */
@@ -1190,7 +1181,7 @@ XLALGetChannelPrefix ( const CHAR *name )
   if ( channel[0] == 0 )
     {
       if ( lalDebugLevel ) XLALPrintError ( "\nERROR: unknown detector-name '%s'\n\n", name );
-      XLAL_ERROR_NULL ( "XLALGetChannelPrefix", XLAL_EINVAL );
+      XLAL_ERROR_NULL ( XLAL_EINVAL );
     }
   else
     return channel;
@@ -1209,11 +1200,11 @@ XLALGetSiteInfo ( const CHAR *name )
 
   /* first turn the free-form 'detector-name' into a well-defined channel-prefix */
   if ( ( channel = XLALGetChannelPrefix ( name ) ) == NULL ) {
-    XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EFUNC );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   if ( ( site = LALCalloc ( 1, sizeof( *site) )) == NULL ) {
-    XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   switch ( channel[0] )
@@ -1249,7 +1240,7 @@ XLALGetSiteInfo ( const CHAR *name )
 	  XLALPrintError("\nFailed to created LISA detector '%d'\n\n", channel[1]);
 	  LALFree ( site );
 	  LALFree ( channel );
-	  XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EFUNC );
+	  XLAL_ERROR_NULL ( XLAL_EFUNC );
 	}
       break;
 
@@ -1257,7 +1248,7 @@ XLALGetSiteInfo ( const CHAR *name )
       XLALPrintError ( "\nSorry, I don't have the site-info for '%c%c'\n\n", channel[0], channel[1]);
       LALFree(site);
       LALFree(channel);
-      XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EINVAL );
+      XLAL_ERROR_NULL ( XLAL_EINVAL );
       break;
     } /* switch channel[0] */
 

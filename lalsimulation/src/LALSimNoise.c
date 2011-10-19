@@ -47,12 +47,12 @@ static int XLALSimNoiseSegment(REAL8TimeSeries *s, REAL8FrequencySeries *psd, gs
 
 	plan = XLALCreateReverseREAL8FFTPlan(s->data->length, 0);
 	if (! plan)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	stilde = XLALCreateCOMPLEX16FrequencySeries("STILDE", &s->epoch, 0.0, 1.0/(s->data->length * s->deltaT), &lalSecondUnit, s->data->length/2 + 1);
 	if (! stilde) {
 		XLALDestroyREAL8FFTPlan(plan);
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	XLALUnitMultiply(&stilde->sampleUnits, &stilde->sampleUnits, &s->sampleUnits);
@@ -149,11 +149,11 @@ int XLALSimNoise(
 	 * commensurate with the requested time series */
 	if (s->data->length/2 + 1 != psd->data->length
 			|| (size_t)floor(0.5 + 1.0/(s->deltaT * psd->deltaF)) != s->data->length)
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 
 	/* stride cannot be longer than data length */
 	if (stride > s->data->length)
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 
 	if (stride == 0) { /* generate segment with no feathering */
 		XLALSimNoiseSegment(s, psd, rng);

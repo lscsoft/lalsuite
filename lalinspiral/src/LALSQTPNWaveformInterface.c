@@ -33,11 +33,11 @@ int XLALSQTPNWaveformTemplates (REAL4Vector *signalvec1,
 	// Check the relevant pointers
 	if( !signalvec1 || !signalvec1->data || !signalvec2 
 			|| !signalvec2->data || !params )
-		XLAL_ERROR(__func__, XLAL_EFAULT);
+		XLAL_ERROR(XLAL_EFAULT);
 	
 	// Check the parameters are sane
 	if( params->nStartPad < 0 || params->nEndPad < 0 || params->fLower <= 0 			|| params->tSampling <= 0 || params->totalMass <= 0.)
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 
 	InspiralInit paramsInit;
 	LALSQTPNWaveformParams wave_Params;
@@ -45,7 +45,7 @@ int XLALSQTPNWaveformTemplates (REAL4Vector *signalvec1,
 
 	XLALInspiralInit(params, &paramsInit);
 	if (xlalErrno)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	memset(signalvec1->data, 0, signalvec1->length * sizeof(REAL4));
 	memset(signalvec2->data, 0, signalvec2->length * sizeof(REAL4));
@@ -58,7 +58,7 @@ int XLALSQTPNWaveformTemplates (REAL4Vector *signalvec1,
 
 	/* Call the engine function */
 	if(XLALSQTPNGenerator(&wave, &wave_Params))
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	return XLAL_SUCCESS;
 }
@@ -80,11 +80,11 @@ int XLALSQTPNWaveform (REAL4Vector *signalvec, InspiralTemplate *params){
 
 	// Check the relevant pointers
 	if( !signalvec || !signalvec->data || !params )
-		XLAL_ERROR(__func__, XLAL_EFAULT);
+		XLAL_ERROR(XLAL_EFAULT);
 	
 	// Check the parameters are sane
 	if( params->nStartPad < 0 || params->nEndPad < 0 || params->fLower <= 0 			|| params->tSampling <= 0 || params->totalMass <= 0.)
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 
 	InspiralInit paramsInit;
 	LALSQTPNWaveformParams wave_Params;
@@ -97,9 +97,9 @@ int XLALSQTPNWaveform (REAL4Vector *signalvec, InspiralTemplate *params){
 
 	XLALInspiralSetup (&(paramsInit.ak), params);
 	if (xlalErrno)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	if(XLALInspiralChooseModel(&(paramsInit.func),&(paramsInit.ak), params))
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	XLALSQTPNFillParams(&wave_Params, params);
 	wave_Params.distance *= LAL_PC_SI * 1.e6;
@@ -107,7 +107,7 @@ int XLALSQTPNWaveform (REAL4Vector *signalvec, InspiralTemplate *params){
 
 	/* Call the engine function */
 	if(XLALSQTPNGenerator(&wave, &wave_Params))
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	params->tC = wave_Params.coalescenceTime;
 
 	return XLAL_SUCCESS;
@@ -137,7 +137,7 @@ int XLALSQTPNWaveformForInjection(CoherentGW *waveform,
 	// Check the relevant pointers
 	if( !waveform || !params || waveform->a || waveform->f
 			|| waveform->phi || waveform->shift )
-		XLAL_ERROR(__func__, XLAL_EFAULT);
+		XLAL_ERROR(XLAL_EFAULT);
 
 	// variable declaration and initialization
 	UINT4 i;
@@ -146,7 +146,7 @@ int XLALSQTPNWaveformForInjection(CoherentGW *waveform,
 	// Compute some parameters
 	XLALInspiralInit(params, &paramsInit);
 	if (xlalErrno)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	if (paramsInit.nbins == 0) {
 		XLALPrintWarning("Warning! Waveform of zero length requested in %s. Returning empty waveform.\n ", __func__);
 		return XLAL_SUCCESS;
@@ -165,12 +165,12 @@ int XLALSQTPNWaveformForInjection(CoherentGW *waveform,
 	// filling the parameters
 	XLALSQTPNFillParams(&wave_Params, params);
 	if (xlalErrno)
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	// calling the engine function
 	if(XLALSQTPNGenerator(&wave, &wave_Params)) {
 		XLALSQTPNDestroyCoherentGW(waveform);
-		XLAL_ERROR(__func__, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 	params->fFinal = wave_Params.finalFreq;
 	for (i = 0; i < wave.length; i++) {
@@ -179,7 +179,7 @@ int XLALSQTPNWaveformForInjection(CoherentGW *waveform,
 		}
 		if (i == wave.length - 1) {
 			XLALSQTPNDestroyCoherentGW(waveform);
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		}
 	}
 
@@ -236,13 +236,13 @@ int XLALSQTPNWaveformForInjection(CoherentGW *waveform,
 int XLALSQTPNAllocateCoherentGW(CoherentGW *wave, UINT4 length) {
 
 	if (!wave) {
-		XLAL_ERROR(__func__, XLAL_EFAULT);
+		XLAL_ERROR(XLAL_EFAULT);
 	}
 	if (length <= 0) {
-		XLAL_ERROR(__func__, XLAL_EBADLEN);
+		XLAL_ERROR(XLAL_EBADLEN);
 	}
 	if (wave->a || wave->f || wave->phi || wave->shift) {
-		XLAL_ERROR(__func__, XLAL_EFAULT);
+		XLAL_ERROR(XLAL_EFAULT);
 	}
 	wave->a = (REAL4TimeVectorSeries *)LALMalloc(sizeof(REAL4TimeVectorSeries));
 	wave->f = (REAL4TimeSeries *)LALMalloc(sizeof(REAL4TimeSeries));
@@ -250,7 +250,7 @@ int XLALSQTPNAllocateCoherentGW(CoherentGW *wave, UINT4 length) {
 	wave->shift = (REAL4TimeSeries *)LALMalloc(sizeof(REAL4TimeSeries));
 	if (!(wave->a && wave->f && wave->phi && wave->shift)) {
 		XLALSQTPNDestroyCoherentGW(wave);
-		XLAL_ERROR(__func__, XLAL_ENOMEM);
+		XLAL_ERROR(XLAL_ENOMEM);
 	}
 	xlalErrno = 0;
 	wave->a->data = XLALCreateREAL4VectorSequence(length, 2);
@@ -259,7 +259,7 @@ int XLALSQTPNAllocateCoherentGW(CoherentGW *wave, UINT4 length) {
 	wave->shift->data = XLALCreateREAL4Vector(length);
 	if (!(wave->a->data && wave->f->data && wave->phi->data && wave->shift->data)) {
 		XLALSQTPNDestroyCoherentGW(wave);
-		XLAL_ERROR(__func__, XLAL_ENOMEM);
+		XLAL_ERROR(XLAL_ENOMEM);
 	}
 	return XLAL_SUCCESS;
 }

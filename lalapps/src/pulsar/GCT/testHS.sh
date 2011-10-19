@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NORESAMP="1"
+#NORESAMP="1"
 #NOCLEANUP="1"
 #SEPIFOVETO="1"
 

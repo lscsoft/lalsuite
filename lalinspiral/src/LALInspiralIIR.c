@@ -28,16 +28,16 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 
 	/* FIXME: Add error checking for lengths of amp and phase */
 	if (amp->length != phase->length) 
-	         XLAL_ERROR(__func__, XLAL_EINVAL);
+	         XLAL_ERROR(XLAL_EINVAL);
 
 	*a1 = XLALCreateCOMPLEX16Vector(0);
 	*b0 = XLALCreateCOMPLEX16Vector(0);
 	*delay = XLALCreateINT4Vector(0);
 
-	while (j >= 0 ) {
+	while (j >= 2 ) {
 		//int prej = j;
 		/* Reset j so that the delay will be an integar number of decimated rate */
-		j = amp->length-1 - (int) floor((amp->length-1-j)/(double) decimationFactor + 0.5)*decimationFactor;
+		//j = amp->length-1 - (int) floor((amp->length-1-j)/(double) decimationFactor + 0.5)*decimationFactor;
 
 		/* Get error term */
 		phase_ddot = (phase->data[j-2] - 2.0 * phase->data[j-1] + phase->data[j]) / (2.0 * LAL_PI);
@@ -89,7 +89,7 @@ int XLALInspiralIIRSetResponse(COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vec
 	int *delayf = delay->data;
 
 	if(a1->length != b0->length || a1->length != delay->length)
-		XLAL_ERROR(__func__, XLAL_EBADLEN);
+		XLAL_ERROR(XLAL_EBADLEN);
 
 	memset(response->data, 0, sizeof(complex double) * response->length);
 

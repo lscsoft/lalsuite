@@ -115,29 +115,29 @@ XLALInspiralWave2(
   InspiralInit paramsInit;
 
   if (output == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (output->data == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (params == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (params->nStartPad < 0)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   if (params->fLower <= 0)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   if (params->tSampling <= 0)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
 
   if (XLALInspiralParameterCalc(params))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if (XLALInspiralSetup(&(paramsInit.ak), params))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if (XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), params))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   if (params->totalMass <= 0.)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   if (params->eta < 0.)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
 
   memset( output->data, 0, output->length * sizeof(REAL4) );
 
@@ -145,7 +145,7 @@ XLALInspiralWave2(
   count = XLALInspiralWave2Engine(output, NULL, NULL, NULL,
 			NULL, NULL, params, &paramsInit);
   if (count < 0)
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 }
@@ -184,33 +184,33 @@ XLALInspiralWave2Templates(
   InspiralInit paramsInit;
 
   if (output1 == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (output2 == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (output1->data == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (output2->data == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (params == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (params->nStartPad < 0)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   if (params->fLower <= 0)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   if (params->tSampling <= 0)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
 
   if (XLALInspiralParameterCalc(params))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if (XLALInspiralSetup(&(paramsInit.ak), params))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if (XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), params))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   if (params->totalMass <= 0.)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   if (params->eta < 0.)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
 
   /* Initialise the waveforms to zero */
   memset(output1->data, 0, output1->length * sizeof(REAL4));
@@ -221,7 +221,7 @@ XLALInspiralWave2Templates(
 			   NULL, NULL, params, &paramsInit);
 
   if (count < 0)
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 }
@@ -273,19 +273,19 @@ XLALInspiralWave2ForInjection(
 
   /* Make sure parameter and waveform structures exist. */
   if (params == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (waveform == NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (waveform->h != NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (waveform->a != NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (waveform->f != NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (waveform->phi != NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
   if (waveform->shift != NULL)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
 
 
   params->ampOrder = 0;
@@ -293,7 +293,7 @@ XLALInspiralWave2ForInjection(
   XLALPrintInfo(message);
   /* Compute some parameters*/
   if (XLALInspiralInit(params, &paramsInit))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   if (paramsInit.nbins == 0)
   {
@@ -304,13 +304,13 @@ XLALInspiralWave2ForInjection(
   /* Now we can allocate memory and vector for coherentGW structure*/
   ff = XLALCreateREAL4Vector(paramsInit.nbins);
   if (ff == NULL)
-    XLAL_ERROR(__func__, XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   a = XLALCreateREAL4Vector(2*paramsInit.nbins);
   if (a == NULL)
-    XLAL_ERROR(__func__, XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   phi = XLALCreateREAL8Vector(paramsInit.nbins);
   if (phi == NULL)
-    XLAL_ERROR(__func__, XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
 
   /* By default the waveform is empty */
   memset(ff->data, 0, paramsInit.nbins * sizeof(REAL4));
@@ -321,7 +321,7 @@ XLALInspiralWave2ForInjection(
   {
     h = XLALCreateREAL4Vector(2*paramsInit.nbins);
     if (h == NULL)
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     memset(h->data,  0, h->length * sizeof(REAL4));
   }
 
@@ -337,7 +337,7 @@ XLALInspiralWave2ForInjection(
     {
       XLALDestroyREAL4Vector(h);
     }
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   if ( fabs(phi->data[count-1]/2.)/LAL_PI < 2. ){
@@ -356,7 +356,7 @@ XLALInspiralWave2ForInjection(
     /* Allocate the waveform structures. */
     waveform->a = (REAL4TimeVectorSeries *) XLALMalloc( sizeof(REAL4TimeVectorSeries) );
     if ( waveform->a == NULL )
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
 
     waveform->f = (REAL4TimeSeries *) LALMalloc( sizeof(REAL4TimeSeries) );
@@ -364,7 +364,7 @@ XLALInspiralWave2ForInjection(
     {
       XLALFree( waveform->a );
       waveform->a = NULL;
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
 
@@ -375,19 +375,19 @@ XLALInspiralWave2ForInjection(
       waveform->a = NULL;
       XLALFree( waveform->f );
       waveform->f = NULL;
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
 
     waveform->a->data = XLALCreateREAL4VectorSequence(count, 2);
     if (waveform->a->data == NULL)
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     waveform->f->data = XLALCreateREAL4Vector(count);
     if (waveform->f->data == NULL)
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     waveform->phi->data = XLALCreateREAL8Vector(count);
     if (waveform->phi->data == NULL)
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
 
     memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
     memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
@@ -420,12 +420,12 @@ XLALInspiralWave2ForInjection(
     {
       waveform->h = (REAL4TimeVectorSeries *) XLALMalloc( sizeof(REAL4TimeVectorSeries) );
       if ( waveform->h == NULL )
-        XLAL_ERROR(__func__, XLAL_ENOMEM);
+        XLAL_ERROR(XLAL_ENOMEM);
       memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
 
       waveform->h->data = XLALCreateREAL4VectorSequence(count, 2);
       if ( waveform->h->data == NULL )
-        XLAL_ERROR(__func__, XLAL_ENOMEM);
+        XLAL_ERROR(XLAL_ENOMEM);
       memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
       waveform->h->deltaT = 1./params->tSampling;
       waveform->h->sampleUnits = lalStrainUnit;
@@ -519,9 +519,9 @@ XLALInspiralWave2Engine(
   }
 
   if (params->totalMass <= 0)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   if (params->eta < 0 || params->eta > 0.25)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
 
   totalMass = params->totalMass*LAL_MTSUN_SI; /* convert from solar masses to seconds */
 
@@ -543,7 +543,7 @@ XLALInspiralWave2Engine(
   funcParams = (void *) &toffIn;
   tC = func.timing2(fs, funcParams);
   if (XLAL_IS_REAL8_FAIL_NAN(tC))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   /* Reset chirp time in toffIn structure */
   toffIn.tc = -tC;
 
@@ -552,7 +552,7 @@ XLALInspiralWave2Engine(
   ak.phiC = 0.0;
   phase = func.phasing2(v, &ak);
   if (XLAL_IS_REAL8_FAIL_NAN(phase))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   ak.phiC = -phase;
 
   /*
@@ -568,9 +568,9 @@ XLALInspiralWave2Engine(
   /* Is the sampling rate large enough? */
 
   if (fHigh >= 0.5/dt)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   if (fHigh <= params->fLower)
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
 
   xmax = 1.2*fu;
   xacc = 1.0e-8;
@@ -593,14 +593,14 @@ XLALInspiralWave2Engine(
     */
     if ((output1 && ((UINT4)i >= output1->length)) || (ff && ((UINT4)count >= ff->length)))
     {
-      XLAL_ERROR(__func__, XLAL_EBADLEN);
+      XLAL_ERROR(XLAL_EBADLEN);
     }
 
     fOld = freq;
     v = pow(freq*toffIn.piM, oneby3);
     phase = func.phasing2(v, &ak); /* phase at given v */
     if (XLAL_IS_REAL8_FAIL_NAN(phase))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
     amp = params->signalAmplitude*v*v;
 
@@ -638,7 +638,7 @@ XLALInspiralWave2Engine(
     xmin = 0.8*freq;
     freq = XLALDBisectionFindRoot(timing2, xmin, xmax, xacc, funcParams);
     if (XLAL_IS_REAL8_FAIL_NAN(freq))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
     } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
   params->fFinal = fOld;
   if (output1 && !(output2))   params->tC = toffIn.t;

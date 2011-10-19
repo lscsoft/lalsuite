@@ -69,9 +69,8 @@ swigincludedir = $(includedir)/lal
 
 # installed SWIG interface headers
 EXTRA_HEADERS =
-swiginclude_HEADERS = \
-	$(swig_ifacefile) \
-	$(SWIG_HEADERS)
+nodist_swiginclude_HEADERS = $(swig_ifacefile)
+swiginclude_HEADERS = $(SWIG_HEADERS)
 
 # extra distribution files
 EXTRA_DIST = \
@@ -111,8 +110,9 @@ $(swig_iface_deps) : $(swig_ifacefile)
 include $(swig_iface_deps)
 
 # create links to SWIG interface headers
+.PHONY : swig-header-links
 swig-header-links :
-	@for file in $(swiginclude_HEADERS); do \
+	@for file in $(nodist_swiginclude_HEADERS) $(swiginclude_HEADERS); do \
 		basename=`echo "/$$file" | $(SED) 's|^.*/\([^/]*\)$$|\1|'`; \
 		srcdir=`cd $(top_srcdir)/$(subdir) && pwd`; \
 		builddir=`cd $(top_builddir)/$(subdir) && pwd`; \
@@ -139,12 +139,12 @@ $(swig_wrapfile) : $(swig_iface_deps) $(swig_check_headers)
 	-o $(swig_wrapfile) $(swig_ifacefile)
 
 # test SWIG wrapping module
-check : swig-check
+.PHONY check : swig-check
 
 # install SWIG wrapping module
-install-exec-local : swig-install
+.PHONY install-exec-local : swig-install
 
 # uninstall SWIG wrapping module
-uninstall-local : swig-uninstall
+.PHONY uninstall-local : swig-uninstall
 
 endif # SWIG_BUILD

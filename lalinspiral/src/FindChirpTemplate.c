@@ -188,13 +188,6 @@ LALFindChirpTemplateInit (
       break;
 
     case FindChirpPTF:
-      /* create workspace memory for the time-domain Q vectors */
-      outputPtr->PTFQ = XLALCreateVectorSequence( 5, params->numPoints );
-      if ( ! outputPtr->PTFQ )
-      {
-        ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-      }
-
       /* create workspace for the dynamical variables needed to */
       /* compute the PTF Q(t) vectors                           */
       outputPtr->PTFphi = XLALCreateVector( params->numPoints );
@@ -315,10 +308,6 @@ LALFindChirpTemplateFinalize (
   }
 
   /* destroy the vectors used for the PTF template if they exist */
-  if ( outputPtr->PTFQ )
-  {
-    XLALDestroyVectorSequence( outputPtr->PTFQ );
-  }
   if ( outputPtr->PTFphi )
   {
     XLALDestroyVector( outputPtr->PTFphi );

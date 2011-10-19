@@ -632,7 +632,6 @@ XLALResponseConvert(
     COMPLEX8FrequencySeries *input
     )
 {
-  static const char *func = "XLALResponseConvert";
   COMPLEX8 tmpb, tmpc;
   REAL4 tmpx, tmpy;
   LALUnit unitOne;
@@ -713,7 +712,7 @@ XLALResponseConvert(
   }
   if ( bad ) /* units were bad: abort */
   {
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* determine if there is a scale factor that needs to be applied */

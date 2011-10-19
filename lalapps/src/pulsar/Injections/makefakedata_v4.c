@@ -1327,21 +1327,27 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   /* ----- handle transient-signal window if given ----- */
   if ( !LALUserVarWasSet ( &uvar_transientWindowType ) || !strcmp ( uvar_transientWindowType, "none") )
-    cfg->transientWindow.type = TRANSIENT_NONE;		/* default: no transient signal window */
+    cfg->transientWindow.type = TRANSIENT_NONE;                /* default: no transient signal window */
   else
     {
       if ( !strcmp ( uvar_transientWindowType, "rect" ) )
-	{
-	  cfg->transientWindow.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
-	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar_transientWindowType);
-	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	}
+       {
+         cfg->transientWindow.type = TRANSIENT_RECTANGULAR;              /* rectangular window [t0, t0+tau] */
+       }
+      else if ( !strcmp ( uvar_transientWindowType, "exp" ) )
+        {
+          cfg->transientWindow.type = TRANSIENT_EXPONENTIAL;            /* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
+        }
+      else
+        {
+          XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar_transientWindowType);
+          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+        }
 
       cfg->transientWindow.t0   = uvar_transientStartTime;
       cfg->transientWindow.tau  = uvar_transientTauDays * LAL_DAYSID_SI;
 
     } /* if transient window != none */
-
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

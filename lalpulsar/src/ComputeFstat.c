@@ -122,7 +122,6 @@ void ComputeFStatFreqBand ( LALStatus *status,				/**< pointer to LALStatus stru
 			    const ComputeFParams *params		/**< addition computational params */
 			    )
 {
-  const char *fn = "ComputeFStatFreqBand()";
   UINT4 numBins, k;
   REAL8 deltaF, fStart;
   Fcomponents Fstat;
@@ -145,7 +144,7 @@ void ComputeFStatFreqBand ( LALStatus *status,				/**< pointer to LALStatus stru
 
   if ( params->returnAtoms )
     {
-      XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", fn );
+      XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", __func__ );
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
     }
 
@@ -486,31 +485,31 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
     XLALPrintError ("\nOutput-pointer is NULL !\n\n");
-    XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   if ( !sfts || !sfts->data ) {
     XLALPrintError ("\nInput SFTs are NULL!\n\n");
-    XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
       XLALPrintError ("\nIllegal NULL in input !\n\n");
-      XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
 
   if ( PULSAR_MAX_SPINS > NUM_FACT )
     {
       XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
 		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
-      XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
 #endif
 
   if ( params->upsampling > 1 ) {
     fprintf (stderr, "\n===== WARNING: XLALComputeFaFb() should not be used with upsampled-SFTs!\n");
-    XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   /* ----- prepare convenience variables */
@@ -526,17 +525,17 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
   if ( params->returnAtoms )
     {
       if ( (FaFb->multiFstatAtoms = LALMalloc ( sizeof(*FaFb->multiFstatAtoms) )) == NULL ){
-	XLAL_ERROR ( "XLALComputeFaFb", XLAL_ENOMEM );
+	XLAL_ERROR ( XLAL_ENOMEM );
       }
       FaFb->multiFstatAtoms->length = 1;	/* in this function: single-detector only */
       if ( (FaFb->multiFstatAtoms->data = LALMalloc ( 1 * sizeof( *FaFb->multiFstatAtoms->data) )) == NULL ){
 	LALFree (FaFb->multiFstatAtoms);
-	XLAL_ERROR ( "XLALComputeFaFb", XLAL_ENOMEM );
+	XLAL_ERROR ( XLAL_ENOMEM );
       }
       if ( (FaFb->multiFstatAtoms->data[0] = XLALCreateFstatAtomVector ( numSFTs )) == NULL ) {
 	LALFree ( FaFb->multiFstatAtoms->data );
 	LALFree ( FaFb->multiFstatAtoms );
-	XLAL_ERROR( "XLALComputeFaFb", XLAL_ENOMEM );
+	XLAL_ERROR( XLAL_ENOMEM );
       }
 
       FaFb->multiFstatAtoms->data[0]->TAtom = Tsft;	/* time-baseline of returned atoms is Tsft */
@@ -604,7 +603,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
 	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
-	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
+	  XLAL_ERROR ( XLAL_EFUNC);
 	}
 
 	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha) for positive Dphi */
@@ -618,7 +617,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 	  {
 	    XLALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
 			   k0, k1, freqIndex0, freqIndex1 );
-	    XLAL_ERROR("XLALComputeFaFb", XLAL_EDOM);
+	    XLAL_ERROR(XLAL_EDOM);
 	  }
 
       } /* compute kappa_star, lambda_alpha */
@@ -677,7 +676,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 
 #ifndef LAL_NDEBUG
 	  if ( !finite(U_alpha) || !finite(V_alpha) || !finite(pn) || !finite(qn) || !finite(Sn) || !finite(Tn) ) {
-	    XLAL_ERROR ("XLALComputeFaFb()", COMPUTEFSTATC_EIEEE);
+	    XLAL_ERROR (COMPUTEFSTATC_EIEEE);
 	  }
 #endif
 
@@ -776,35 +775,35 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
     XLALPrintError ("\nOutput-pointer is NULL !\n\n");
-    XLAL_ERROR ( __func__, XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   if ( !sfts || !sfts->data ) {
     XLALPrintError ("\nInput SFTs are NULL!\n\n");
-    XLAL_ERROR ( __func__, XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
       XLALPrintError ("\nIllegal NULL in input !\n\n");
-      XLAL_ERROR ( __func__, XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
 
   if ( PULSAR_MAX_SPINS > NUM_FACT )
     {
       XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
 		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
-      XLAL_ERROR ( __func__, XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
   if ( params->upsampling > 1 ) {
     fprintf (stderr, "\n===== WARNING: XLALComputeFaFbCmplx() should not be used with upsampled-SFTs!\n");
-    XLAL_ERROR ( __func__, XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   if ( params->returnAtoms )
     {
       XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", __func__ );
-      XLAL_ERROR ( __func__, XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
 #endif
 
@@ -877,7 +876,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
 	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
-	  XLAL_ERROR ( "XLALComputeFaFbCmplx", XLAL_EFUNC);
+	  XLAL_ERROR ( XLAL_EFUNC);
 	}
 
 	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha) for positive Dphi */
@@ -891,7 +890,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 	  {
 	    XLALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
 			   k0, k1, freqIndex0, freqIndex1 );
-	    XLAL_ERROR("XLALComputeFaFbCmplx", XLAL_EDOM);
+	    XLAL_ERROR(XLAL_EDOM);
 	  }
 
       } /* compute kappa_star, lambda_alpha */
@@ -950,7 +949,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 
 #ifndef LAL_NDEBUG
 	  if ( !finite(U_alpha) || !finite(V_alpha) || !finite(pn) || !finite(qn) || !finite(Sn) || !finite(Tn) ) {
-	    XLAL_ERROR ("XLALComputeFaFbCmplx()", COMPUTEFSTATC_EIEEE);
+	    XLAL_ERROR (COMPUTEFSTATC_EIEEE);
 	  }
 #endif
 
@@ -1033,30 +1032,30 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
     XLALPrintError ("\nOutput-pointer is NULL !\n\n");
-    XLAL_ERROR ( __func__, XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   if ( !sfts || !sfts->data ) {
     XLALPrintError ("\nInput SFTs are NULL!\n\n");
-    XLAL_ERROR ( __func__, XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
       XLALPrintError ("\nIllegal NULL in input !\n\n");
-      XLAL_ERROR ( __func__, XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
 
   if ( PULSAR_MAX_SPINS > NUM_FACT )
     {
       XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
 		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
-      XLAL_ERROR ( __func__, XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
   if ( params->returnAtoms )
     {
       XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", __func__ );
-      XLAL_ERROR ( __func__, XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
 #endif
 
@@ -1129,7 +1128,7 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
 	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
-	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
+	  XLAL_ERROR (XLAL_EFUNC);
 	}
 
 	kstar = (INT4) (Dphi_alpha * Upsampling + 0.5f - freqIndex0);	/* k* = round(Dphi_alpha*chi) for positive Dphi */
@@ -1139,7 +1138,7 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 	  {
 	    XLALPrintError ("Required frequency-bin [%d] not covered by SFT-interval [%d, %d]\n\n",
 			   freqIndex0 + kstar, freqIndex0, freqIndex1 );
-	    XLAL_ERROR("XLALComputeFaFb", XLAL_EDOM);
+	    XLAL_ERROR(XLAL_EDOM);
 	  }
 
       } /* compute kstar, lambda_alpha */
@@ -1977,7 +1976,6 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatu
 FstatAtomVector *
 XLALCreateFstatAtomVector ( UINT4 num )
 {
-  const CHAR *fn = __func__;
   FstatAtomVector *ret;
 
   if ( (ret = LALCalloc ( 1, sizeof(*ret))) == NULL )
@@ -1995,7 +1993,7 @@ XLALCreateFstatAtomVector ( UINT4 num )
 
  failed:
   XLALDestroyFstatAtomVector ( ret );
-  XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  XLAL_ERROR_NULL ( XLAL_ENOMEM );
 
 } /* XLALCreateFstatAtomVector() */
 
@@ -2071,8 +2069,6 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,	  /**< [out] output physi
                            const PulsarAmplitudeVect A_Mu /**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
                            )
 {
-  const char *fn = __func__;
-
   REAL8 h0Ret, cosiRet, psiRet, phi0Ret;
 
   REAL8 A1, A2, A3, A4, Asq, Da, disc;
@@ -2080,12 +2076,12 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,	  /**< [out] output physi
   REAL8 beta, b1, b2, b3;
 
   if ( !A_Mu ) {
-    XLALPrintError ( "%s: Invalid NULL input vector A_Mu\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ( "%s: Invalid NULL input vector A_Mu\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   if ( !Amp ) {
-    XLALPrintError ("%s: invalid NULL input Amp.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input Amp.\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   A1 = A_Mu[0];

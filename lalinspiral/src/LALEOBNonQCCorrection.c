@@ -56,7 +56,7 @@ REAL8 XLALGetNRPeakDeltaT( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 3:
@@ -66,7 +66,7 @@ REAL8 XLALGetNRPeakDeltaT( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 4:
@@ -76,7 +76,7 @@ REAL8 XLALGetNRPeakDeltaT( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 5:
@@ -86,11 +86,11 @@ REAL8 XLALGetNRPeakDeltaT( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     default:
-      XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      XLAL_ERROR_REAL8( XLAL_EINVAL );
       break;
   }
 }
@@ -111,7 +111,7 @@ REAL8 GetNRPeakAmplitude( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 3:
@@ -121,7 +121,7 @@ REAL8 GetNRPeakAmplitude( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 4:
@@ -131,7 +131,7 @@ REAL8 GetNRPeakAmplitude( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 5:
@@ -141,11 +141,11 @@ REAL8 GetNRPeakAmplitude( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     default:
-      XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      XLAL_ERROR_REAL8( XLAL_EINVAL );
       break;
   }
 }
@@ -166,7 +166,7 @@ REAL8 GetNRPeakADDot( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 3:
@@ -176,7 +176,7 @@ REAL8 GetNRPeakADDot( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 4:
@@ -186,7 +186,7 @@ REAL8 GetNRPeakADDot( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 5:
@@ -196,11 +196,11 @@ REAL8 GetNRPeakADDot( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     default:
-      XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      XLAL_ERROR_REAL8( XLAL_EINVAL );
       break;
   }
 }
@@ -221,7 +221,7 @@ REAL8 GetNRPeakOmega( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 3:
@@ -231,7 +231,7 @@ REAL8 GetNRPeakOmega( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 4:
@@ -241,7 +241,7 @@ REAL8 GetNRPeakOmega( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 5:
@@ -251,11 +251,11 @@ REAL8 GetNRPeakOmega( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     default:
-      XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      XLAL_ERROR_REAL8( XLAL_EINVAL );
       break;
   }
 }
@@ -276,7 +276,7 @@ REAL8 GetNRPeakOmegaDot( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 3:
@@ -286,7 +286,7 @@ REAL8 GetNRPeakOmegaDot( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 4:
@@ -296,7 +296,7 @@ REAL8 GetNRPeakOmegaDot( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     case 5:
@@ -306,11 +306,11 @@ REAL8 GetNRPeakOmegaDot( INT4 l, INT4 m, REAL8 eta )
       }
       else
       {
-        XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+        XLAL_ERROR_REAL8( XLAL_EINVAL );
       }
       break;
     default:
-      XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      XLAL_ERROR_REAL8( XLAL_EINVAL );
       break;
   }
 }
@@ -332,14 +332,14 @@ int XLALGetCalibratedNQCCoeffs( EOBNonQCCoeffs *coeffs,
 #ifndef LAL_NDEBUG
   if ( !coeffs )
   {
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 #endif
 
   if ( l != 2 || m != 2 )
   {
     XLALPrintError( "Mode %d,%d is not supported by this function.\n", l, m );
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   memset( coeffs, 0, sizeof( *coeffs ) );
@@ -472,7 +472,7 @@ int XLALCalculateNQCCoefficients(
   if ( !qMatrix || !aCoeff || !amps || !pMatrix || !bCoeff || !omegaVec )
   {
     /* TODO : Free memory */
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   /* The time we want to take as the peak time depends on l and m */
@@ -480,7 +480,7 @@ int XLALCalculateNQCCoefficients(
   nrDeltaT = XLALGetNRPeakDeltaT( l, m, eta );
   if ( XLAL_IS_REAL8_FAIL_NAN( nrDeltaT ) )
   {
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   nrTimePeak = timePeak + nrDeltaT;
@@ -522,7 +522,7 @@ int XLALCalculateNQCCoefficients(
 
   if ( XLAL_IS_REAL8_FAIL_NAN( nra ) || XLAL_IS_REAL8_FAIL_NAN( nraDDot ) )
   {
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   gsl_vector_set( amps, 0, nra - a );
@@ -571,7 +571,7 @@ int XLALCalculateNQCCoefficients(
 
   if ( XLAL_IS_REAL8_FAIL_NAN( nromega ) || XLAL_IS_REAL8_FAIL_NAN( nromegaDot ) )
   {
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   gsl_vector_set( omegaVec, 0, nromega - omega );

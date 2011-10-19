@@ -87,12 +87,12 @@ rk4GSLIntegrator * XLALRungeKutta4Init( INT4 n,
 
   /* Check we have an input */
   if (!input)
-    XLAL_ERROR_NULL(__func__, XLAL_EFAULT);
+    XLAL_ERROR_NULL(XLAL_EFAULT);
 
   /* Allocate memory for the integrator structure */
   if (!(integrator = (rk4GSLIntegrator *) LALCalloc(1, sizeof(rk4GSLIntegrator))))
   {
-    XLAL_ERROR_NULL(__func__, XLAL_ENOMEM);
+    XLAL_ERROR_NULL(XLAL_ENOMEM);
   }
 
   integrator->input = input;
@@ -104,7 +104,7 @@ rk4GSLIntegrator * XLALRungeKutta4Init( INT4 n,
   if (!(integrator->y = (REAL8 *) LALMalloc(n * sizeof(REAL8))))
   {
     LALFree(integrator);
-    XLAL_ERROR_NULL(__func__, XLAL_ENOMEM);
+    XLAL_ERROR_NULL(XLAL_ENOMEM);
   }
 
   /* Initialise GSL integrator */
@@ -116,7 +116,7 @@ rk4GSLIntegrator * XLALRungeKutta4Init( INT4 n,
   if (!(integrator->step) || !(integrator->control) || !(integrator->evolve))
   {
     XLALRungeKutta4Free( integrator );
-    XLAL_ERROR_NULL(__func__, XLAL_ENOMEM);
+    XLAL_ERROR_NULL(XLAL_ENOMEM);
   }
 
   return integrator;
@@ -163,19 +163,19 @@ XLALRungeKutta4(
 
 #ifndef LAL_NDEBUG
    if ( !yout )
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
 
    if ( !yout->data )
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
 
    if ( !integrator )
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
 
    if ( !integrator->input )
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
    
    if ( !params )
-     XLAL_ERROR( __func__, XLAL_EFAULT );
+     XLAL_ERROR( XLAL_EFAULT );
 #endif
 
   /* Initialise GSL integrator */
@@ -206,7 +206,7 @@ XLALRungeKutta4(
     if ( gslStatus != GSL_SUCCESS )
     {
       XLALPrintError( "Failure in gsl_odeiv_evolve_apply\n" );
-      XLAL_ERROR( __func__, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* In case integration becomes degenerate */
@@ -216,7 +216,7 @@ XLALRungeKutta4(
            yout->data[i] = 0.0;
 
          XLALPrintError( "Time step grown too small!\n" );
-         XLAL_ERROR( __func__, XLAL_EFAILED );
+         XLAL_ERROR( XLAL_EFAILED );
     }
   }
 
@@ -232,7 +232,7 @@ void XLALRungeKutta4Free( rk4GSLIntegrator *integrator )
 {
 
 
-  if (!integrator) XLAL_ERROR_VOID(__func__, XLAL_EFAULT);
+  if (!integrator) XLAL_ERROR_VOID(XLAL_EFAULT);
 
   /* Free the GSL integrator controls etc */
   if (integrator->evolve)  XLAL_CALLGSL( gsl_odeiv_evolve_free(integrator->evolve) );

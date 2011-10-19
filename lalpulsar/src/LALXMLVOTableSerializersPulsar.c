@@ -73,7 +73,6 @@ xmlNodePtr
 XLALBinaryOrbitParams2VOTNode ( const BinaryOrbitParams *const bop, const char *name)
 {
     /* set up local variables */
-    const char *fn = __func__;
     xmlNodePtr xmlParentNode = NULL;
     xmlNodePtr xmlChildNode = NULL;
     xmlNodePtr xmlChildNodeList = NULL;
@@ -86,23 +85,23 @@ XLALBinaryOrbitParams2VOTNode ( const BinaryOrbitParams *const bop, const char *
     /* check and prepare input parameters */
     if(!bop || snprintf(argp, REAL8STR_MAXLEN, "%g", bop->argp) < 0) {
         XLALPrintError("Invalid input parameter: BinaryOrbitParams->argp\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(!bop || snprintf(asini, REAL8STR_MAXLEN, "%g", bop->asini) < 0) {
         XLALPrintError("Invalid input parameter: BinaryOrbitParams->asini\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(!bop || snprintf(ecc, REAL8STR_MAXLEN, "%g", bop->ecc) < 0) {
         XLALPrintError("Invalid input parameter: BinaryOrbitParams->ecc\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(!bop || snprintf(period, REAL8STR_MAXLEN, "%g", bop->period) < 0) {
         XLALPrintError("Invalid input parameter: BinaryOrbitParams->period\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(!name || strlen(name) <= 0) {
         XLALPrintError("Invalid input parameter: name\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
     /* set up PARAM node (argp) */
@@ -113,7 +112,7 @@ XLALBinaryOrbitParams2VOTNode ( const BinaryOrbitParams *const bop, const char *
                                           argp);
     if(!xmlChildNode) {
         XLALPrintError("Couldn't create PARAM node: %s.argp\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* initialize child node list with first node */
@@ -129,7 +128,7 @@ XLALBinaryOrbitParams2VOTNode ( const BinaryOrbitParams *const bop, const char *
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
         XLALPrintError("Couldn't create PARAM node: %s.asini\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* add child as first sibling to child node list */
@@ -145,7 +144,7 @@ XLALBinaryOrbitParams2VOTNode ( const BinaryOrbitParams *const bop, const char *
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
         XLALPrintError("Couldn't create PARAM node: %s.ecc\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* add child as second sibling to child node list */
@@ -161,7 +160,7 @@ XLALBinaryOrbitParams2VOTNode ( const BinaryOrbitParams *const bop, const char *
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
         XLALPrintError("Couldn't create PARAM node: %s.period\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* add child as third sibling to child node list */
@@ -173,7 +172,7 @@ XLALBinaryOrbitParams2VOTNode ( const BinaryOrbitParams *const bop, const char *
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
         XLALPrintError("Couldn't create RESOURCE node: tp\n");
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* add child as fourth sibling to child node list */
@@ -185,7 +184,7 @@ XLALBinaryOrbitParams2VOTNode ( const BinaryOrbitParams *const bop, const char *
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
         XLALPrintError("Couldn't create RESOURCE node: %s\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* return RESOURCE node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
@@ -217,34 +216,33 @@ INT4
 XLALVOTDoc2BinaryOrbitParamsByName ( const xmlDocPtr xmlDocument, const char *name, BinaryOrbitParams *bop)
 {
     /* set up local variables */
-    const char *fn = __func__;
     CHAR childName[NAMESTR_MAXLEN];
     CHAR *nodeContent = NULL;
 
     /* sanity checks */
     if(!xmlDocument) {
         XLALPrintError("Invalid input parameter: xmlDocument\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
     if(!name || strlen(name) <= 0) {
         XLALPrintError("Invalid input parameter: name\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
     if(!bop) {
         XLALPrintError("Invalid input parameter: bop\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* compile child name attribute (tp) */
     if ( snprintf ( childName, NAMESTR_MAXLEN, "%s.%s", name, "tp") >= NAMESTR_MAXLEN ) {
       XLALPrintError("Child attribute preparation failed: BinaryOrbitParams.tp\n");
-      XLAL_ERROR(fn, XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
 
     /* retrieve BinaryOrbitParams.tp */
     if ( XLALVOTDoc2LIGOTimeGPSByName(xmlDocument, childName, &bop->tp)) {
       XLALPrintError("Error parsing XML document content: %s.tp\n", childName);
-      XLAL_ERROR(fn, XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
 
     /* retrieve BinaryOrbitParams.argp content */
@@ -252,7 +250,7 @@ XLALVOTDoc2BinaryOrbitParamsByName ( const xmlDocPtr xmlDocument, const char *na
     if( !nodeContent || sscanf( nodeContent, "%lf", &bop->argp) == EOF) {
       if ( nodeContent ) XLALFree (nodeContent);
       XLALPrintError("Invalid node content encountered: %s.argp\n", name);
-      XLAL_ERROR(fn, XLAL_EDATA);
+      XLAL_ERROR(XLAL_EDATA);
     }
     XLALFree (nodeContent);
 
@@ -261,7 +259,7 @@ XLALVOTDoc2BinaryOrbitParamsByName ( const xmlDocPtr xmlDocument, const char *na
     if( !nodeContent || sscanf( nodeContent, "%lf", &bop->asini) == EOF) {
       if ( nodeContent ) XLALFree (nodeContent);
       XLALPrintError("Invalid node content encountered: %s.asini\n", name);
-      XLAL_ERROR(fn, XLAL_EDATA);
+      XLAL_ERROR(XLAL_EDATA);
     }
     XLALFree (nodeContent);
 
@@ -270,7 +268,7 @@ XLALVOTDoc2BinaryOrbitParamsByName ( const xmlDocPtr xmlDocument, const char *na
     if( !nodeContent || sscanf( nodeContent, "%lf", &bop->ecc) == EOF) {
       if ( nodeContent ) XLALFree (nodeContent);
       XLALPrintError("Invalid node content encountered: %s.ecc\n", name);
-      XLAL_ERROR(fn, XLAL_EDATA);
+      XLAL_ERROR(XLAL_EDATA);
     }
     XLALFree (nodeContent);
 
@@ -279,7 +277,7 @@ XLALVOTDoc2BinaryOrbitParamsByName ( const xmlDocPtr xmlDocument, const char *na
     if(!nodeContent || sscanf( nodeContent, "%lf", &bop->period) == EOF ) {
       if(nodeContent) XLALFree (nodeContent);
       XLALPrintError("Invalid node content encountered: %s.period\n", name);
-      XLAL_ERROR(fn, XLAL_EDATA);
+      XLAL_ERROR(XLAL_EDATA);
     }
     XLALFree(nodeContent);
 
@@ -312,7 +310,6 @@ XLALVOTDoc2BinaryOrbitParamsByName ( const xmlDocPtr xmlDocument, const char *na
 xmlNodePtr XLALPulsarSpins2VOTNode(const PulsarSpins *const spins, const char *name)
 {
     /* set up local variables */
-    const char *fn = __func__;
     xmlNodePtr xmlParamNode = NULL;
     int i;
 
@@ -323,38 +320,38 @@ xmlNodePtr XLALPulsarSpins2VOTNode(const PulsarSpins *const spins, const char *n
     /* sanity checks */
     if(!spins || !(*spins)) {
         XLALPrintError("Invalid input parameter: spins\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(sizeof(*spins)/sizeof(REAL8) != PULSAR_MAX_SPINS) {
         XLALPrintError("Invalid input parameter: spins (actual size %i differs from defined size %i)\n", sizeof(*spins)/sizeof(REAL8), PULSAR_MAX_SPINS);
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(!name || strlen(name) <= 0) {
         XLALPrintError("Invalid input parameter: name\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
     /* parse input array */
     for(i = 0; i < PULSAR_MAX_SPINS; ++i) {
         if(snprintf(spinArrayStringItem, REAL8STR_MAXLEN, "%g", (*spins)[i]) < 0) {
             XLALPrintError("Invalid input parameter: spins[%i]\n", i);
-            XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+            XLAL_ERROR_NULL(XLAL_EINVAL);
         }
         if(!strncat(spinArrayString, spinArrayStringItem, REAL8STR_MAXLEN)) {
             XLALPrintError("Couldn't serialize parameter: spins[%i]\n", i);
-            XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+            XLAL_ERROR_NULL(XLAL_EFAILED);
         }
         /* add delimiter (SPACE)*/
         if(i<PULSAR_MAX_SPINS-1 && !strncat(spinArrayString, " ", 1)) {
             XLALPrintError("Couldn't add delimiter to parameter: spins[%i]\n", i);
-            XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+            XLAL_ERROR_NULL(XLAL_EFAILED);
         }
     }
 
     /* set array size attribute */
     if(snprintf(spinArraySize, PULSARSPINSTR_MAXLEN, "%i", PULSAR_MAX_SPINS) < 0) {
         XLALPrintError("Couldn't prepare attribute: arraysize\n");
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* set up PARAM node */
@@ -365,7 +362,7 @@ xmlNodePtr XLALPulsarSpins2VOTNode(const PulsarSpins *const spins, const char *n
                                           spinArrayString);
     if(!xmlParamNode) {
         XLALPrintError("Couldn't create PARAM node: %s\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* return PARAM node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
@@ -396,7 +393,6 @@ XLALVOTDoc2PulsarSpinsByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to
                                )
 {
     /* set up local variables */
-    const char *fn = __func__;
     CHAR *nodeContent = NULL;
     CHAR *nodeContentWorker = NULL;
     int arraySize = 0;
@@ -405,15 +401,15 @@ XLALVOTDoc2PulsarSpinsByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to
     /* sanity check */
     if(!xmlDocument) {
         XLALPrintError("Invalid input parameters: xmlDocument\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
     if(!paramName) {
         XLALPrintError("Invalid input parameters: paramName\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
     if(!spins) {
         XLALPrintError("Invalid input parameters: spins\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* retrieve arraysize (number of pulsar spins) */
@@ -421,7 +417,7 @@ XLALVOTDoc2PulsarSpinsByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to
     if(!nodeContent || sscanf( nodeContent, "%i", &arraySize) == EOF || arraySize == 0) {
       if(nodeContent) XLALFree(nodeContent);
       XLALPrintError("Invalid node content encountered: %s.%s.arraysize\n", resourcePath, paramName);
-      XLAL_ERROR(fn, XLAL_EDATA);
+      XLAL_ERROR(XLAL_EDATA);
     }
     XLALFree(nodeContent);
 
@@ -429,7 +425,7 @@ XLALVOTDoc2PulsarSpinsByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to
     nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, resourcePath, paramName, VOT_PARAM, VOT_VALUE );
     if(!nodeContent) {
       XLALPrintError("Invalid node content encountered: %s.%s\n", resourcePath, paramName);
-      XLAL_ERROR(fn, XLAL_EDATA);
+      XLAL_ERROR(XLAL_EDATA);
     }
 
     /* finally, parse and store individual spin values */
@@ -440,7 +436,7 @@ XLALVOTDoc2PulsarSpinsByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to
         if(sscanf((char*)nodeContentWorker, "%lf", &spins[i]) == EOF) {
           XLALFree(nodeContent);
           XLALPrintError("Invalid node content encountered: %s.%s[%i]\n", resourcePath, paramName, i);
-          XLAL_ERROR(fn, XLAL_EDATA);
+          XLAL_ERROR(XLAL_EDATA);
         }
 
         /* advance to next item */
@@ -451,7 +447,7 @@ XLALVOTDoc2PulsarSpinsByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to
     if(i != arraySize) {
       XLALFree(nodeContent);
       XLALPrintError("Invalid node content encountered: %s.%s (found %i of %i items)\n", resourcePath, paramName, i, arraySize);
-      XLAL_ERROR(fn, XLAL_EDATA);
+      XLAL_ERROR(XLAL_EDATA);
     }
 
     /* clean up*/
@@ -489,7 +485,6 @@ XLALVOTDoc2PulsarSpinsByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to
 xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp, const char *name)
 {
     /* set up local variables */
-    const char *fn = __func__;
     xmlNodePtr xmlParentNode = NULL;
     xmlNodePtr xmlChildNode = NULL;
     xmlNodePtr xmlChildNodeList = NULL;
@@ -500,15 +495,15 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
     /* check and convert input parameters */
     if(!pdp || snprintf(Alpha, REAL8STR_MAXLEN, "%g", pdp->Alpha) < 0) {
         XLALPrintError("Invalid input parameter: PulsarDopplerParams->Alpha\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(!pdp || snprintf(Delta, REAL8STR_MAXLEN, "%g", pdp->Delta) < 0) {
         XLALPrintError("Invalid input parameter: PulsarDopplerParams->Delta\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(!name || strlen(name) <= 0) {
         XLALPrintError("Invalid input parameter: name\n");
-        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
     /* set up PARAM node (Alpha) */
@@ -519,7 +514,7 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
                                           Alpha);
     if(!xmlChildNode) {
         XLALPrintError("Couldn't create PARAM node: %s.Alpha\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* initialize child node list with first child */
@@ -535,7 +530,7 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
         XLALPrintError("Couldn't create PARAM node: %s.Delta\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* add child as first sibling to child node list */
@@ -547,7 +542,7 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
         XLALPrintError("Couldn't create PARAM node: %s.fkdot\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* add child as second sibling to child node list */
@@ -559,7 +554,7 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
         XLALPrintError("Couldn't create RESOURCE node: %s.refTime\n", name );
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* add child as third sibling to child node list */
@@ -572,7 +567,7 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
         XLALPrintError("Couldn't create RESOURCE node: %s.orbit\n", name );
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* add child as fourth sibling to child node list */
@@ -584,7 +579,7 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
         XLALPrintError("Couldn't create RESOURCE node: %s\n", name);
-        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
     /* return RESOURCE node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
@@ -618,7 +613,6 @@ XLALVOTDoc2PulsarDopplerParamsByName ( const xmlDocPtr xmlDocument,
                                        )
 {
     /* set up local variables */
-    const char *fn = __func__;
     CHAR childNameRefTime[NAMESTR_MAXLEN] = {0};
     CHAR childNameOrbit[NAMESTR_MAXLEN] = {0};
     CHAR *nodeContent = NULL;
@@ -626,27 +620,27 @@ XLALVOTDoc2PulsarDopplerParamsByName ( const xmlDocPtr xmlDocument,
     /* sanity checks */
     if(!xmlDocument) {
         XLALPrintError("Invalid input parameter: xmlDocument\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
     if(!name || strlen(name) <= 0) {
         XLALPrintError("Invalid input parameter: name\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
     if(!pdp) {
         XLALPrintError("Invalid input parameter: pdp\n");
-        XLAL_ERROR(fn, XLAL_EINVAL);
+        XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* compile child name attribute (refTime) */
     if(!strncpy(childNameRefTime, name, NAMESTR_MAXLEN) || !strncat(childNameRefTime, ".refTime", NAMESTR_MAXLEN)) {
         XLALPrintError("Child attribute preparation failed: PulsarDopplerParams.refTime\n");
-        XLAL_ERROR(fn, XLAL_EFAILED);
+        XLAL_ERROR(XLAL_EFAILED);
     }
 
     /* retrieve PulsarDopplerParams.refTime */
     if(XLALVOTDoc2LIGOTimeGPSByName(xmlDocument, childNameRefTime, &pdp->refTime)) {
         XLALPrintError("Error parsing XML document content: %s.refTime\n", childNameRefTime);
-        XLAL_ERROR(fn, XLAL_EFAILED);
+        XLAL_ERROR(XLAL_EFAILED);
     }
 
     /* retrieve PulsarDopplerParams.Alpha */
@@ -654,7 +648,7 @@ XLALVOTDoc2PulsarDopplerParamsByName ( const xmlDocPtr xmlDocument,
     if(!nodeContent || sscanf( nodeContent, "%lf", &pdp->Alpha) == EOF) {
       if(nodeContent) XLALFree(nodeContent);
       XLALPrintError("Invalid node content encountered: %s.Alpha\n", name);
-      XLAL_ERROR(fn, XLAL_EDATA);
+      XLAL_ERROR(XLAL_EDATA);
     }
     XLALFree ( nodeContent );
 
@@ -663,27 +657,27 @@ XLALVOTDoc2PulsarDopplerParamsByName ( const xmlDocPtr xmlDocument,
     if(!nodeContent || sscanf( nodeContent, "%lf", &pdp->Delta) == EOF) {
         if(nodeContent) XLALFree(nodeContent);
         XLALPrintError("Invalid node content encountered: %s.Delta\n", name);
-        XLAL_ERROR(fn, XLAL_EDATA);
+        XLAL_ERROR(XLAL_EDATA);
     }
     XLALFree ( nodeContent );
 
     /* retrieve PulsarDopplerParams.fkdot */
     if ( XLALVOTDoc2PulsarSpinsByName(xmlDocument, name, "fkdot", pdp->fkdot)) {
       XLALPrintError("Error parsing XML document content: %s.fkdot\n", name);
-      XLAL_ERROR(fn, XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
 
     /* compile child name attribute (orbit) */
     if(!strncpy(childNameOrbit, name, NAMESTR_MAXLEN) || !strncat(childNameOrbit, ".orbit", NAMESTR_MAXLEN)) {
       XLALPrintError("Child attribute preparation failed: PulsarDopplerParams.orbit\n");
-      XLAL_ERROR(fn, XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
     /* retrieve PulsarDopplerParams.orbit */
     if(XLALVOTDoc2BinaryOrbitParamsByName(xmlDocument, childNameOrbit, pdp->orbit)) {
         /* clean up */
         XLALFree(nodeContent);
         XLALPrintError("Error parsing XML document content: %s.orbit\n", childNameOrbit);
-        XLAL_ERROR(fn, XLAL_EFAILED);
+        XLAL_ERROR(XLAL_EFAILED);
     }
 
     return XLAL_SUCCESS;

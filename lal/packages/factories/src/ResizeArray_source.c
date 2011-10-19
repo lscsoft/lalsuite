@@ -35,7 +35,7 @@ ATYPE * XFUNCL ( ATYPE *array, UINT4 ndim, ... )
     return NULL;
   }
   if ( ndim > maxdim )
-    XLAL_ERROR_NULL( STRING(XFUNCL), XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   va_start( ap, ndim );
   for ( dim = 0; dim < ndim; ++dim )
@@ -55,7 +55,7 @@ ATYPE * XFUNCV ( ATYPE *array, UINT4 ndim, UINT4 *dims )
     return NULL;
   }
   if ( ! dims )
-    XLAL_ERROR_NULL( STRING(XFUNCV), XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   dimLength.length = ndim;
   dimLength.data   = dims;
@@ -77,23 +77,23 @@ ATYPE * XFUNC ( ATYPE *array, UINT4Vector *dimLength )
     return NULL;
   }
   if ( ! dimLength->length )
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
   if ( ! dimLength->data )
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 
   ndim = dimLength->length;
   for ( dim = 0; dim < ndim; ++dim )
     size *= dimLength->data[dim];
 
   if ( ! size )
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   /* resize array->dimLength vector if needed */
   if ( array->dimLength->length != ndim )
   {
     array->dimLength = XLALResizeUINT4Vector( array->dimLength, ndim );
     if ( ! array->dimLength )
-      XLAL_ERROR_NULL( STRING(XFUNC), XLAL_EFUNC );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
   /* copy dimension lengths */
@@ -103,7 +103,7 @@ ATYPE * XFUNC ( ATYPE *array, UINT4Vector *dimLength )
   /* reallocate data storage */
   array->data = LALRealloc( array->data, size * sizeof( *array->data ) );
   if ( ! array->data )
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   return array;
 }

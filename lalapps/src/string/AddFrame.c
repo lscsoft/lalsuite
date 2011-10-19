@@ -36,7 +36,6 @@ int main(int argc,char *argv[])
   int i, p, gps_start_i, gps_end_i, start, end;
   LIGOTimeGPS gps_start, gps_end;
 
-  static const char func[] = "AddFrame";
   cache_name_1[0]='\0';
   cache_name_2[0]='\0';
   filename[0]='\0';
@@ -45,7 +44,7 @@ int main(int argc,char *argv[])
   
   /* read arguments */
   if(argc!=4){
-    printf("%s(): usage: lalapps_StringAddFrame [gps_start] [gps_end] [outdir]\n",func);
+    printf("%s(): usage: lalapps_StringAddFrame [gps_start] [gps_end] [outdir]\n",__func__);
     printf("    There should be the H1 and H2 cache files ready in [outdir] named H1.cache and H2.cache\n");
     return 1;
   }
@@ -57,26 +56,26 @@ int main(int argc,char *argv[])
   /* create Frame cache, open frame stream and delete frame cache */
   cache_1 = XLALFrImportCache(cache_name_1);
   if(!cache_1){
-    printf("%s(): no cache named %s\n",func,cache_name_1);
+    printf("%s(): no cache named %s\n",__func__,cache_name_1);
     return 2;
   }
   stream_1 = XLALFrCacheOpen(cache_1);
   XLALFrDestroyCache(cache_1);
   if(!stream_1){
-    printf("%s(): no stream for H1\n",func);
+    printf("%s(): no stream for H1\n",__func__);
     return 2;
   }
-  if(!stream_1) XLAL_ERROR(func, XLAL_EFUNC);
+  if(!stream_1) XLAL_ERROR(XLAL_EFUNC);
  
   cache_2 = XLALFrImportCache(cache_name_2);
   if(!cache_2){
-    printf("%s(): no cache named %s\n",func,cache_name_2);
+    printf("%s(): no cache named %s\n",__func__,cache_name_2);
     return 3;
   }
   stream_2 = XLALFrCacheOpen(cache_2);
   XLALFrDestroyCache(cache_2);
   if(!stream_2){
-    printf("%s(): no stream for H2\n",func);
+    printf("%s(): no stream for H2\n",__func__);
     return 3;
   }
  
@@ -101,12 +100,12 @@ int main(int argc,char *argv[])
     ht_1 = XLALFrReadREAL8TimeSeries(stream_1, "H1:LSC-STRAIN", &gps_start, XLALGPSDiff(&gps_end, &gps_start), 0);
     if(!ht_1) {
       XLALFrClose(stream_1);
-      printf("%s(): cannot read data for H1:LSC-STRAIN\n",func);
+      printf("%s(): cannot read data for H1:LSC-STRAIN\n",__func__);
     }
     ht_2 = XLALFrReadREAL8TimeSeries(stream_2, "H2:LSC-STRAIN", &gps_start, XLALGPSDiff(&gps_end, &gps_start), 0);
     if(!ht_2) {
       XLALFrClose(stream_2);
-      printf("%s(): cannot read data for H2:LSC-STRAIN\n",func);
+      printf("%s(): cannot read data for H2:LSC-STRAIN\n",__func__);
     }
 
     /* units */

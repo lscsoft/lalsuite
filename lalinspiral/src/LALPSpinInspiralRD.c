@@ -677,19 +677,19 @@ int XLALPSpinInspiralRD(REAL4Vector * signalvec, InspiralTemplate * params)
   INT4 count=0;
   InspiralInit paramsInit;
 
-  if(!signalvec) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if(!signalvec->data) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if(!params) XLAL_ERROR(__func__, XLAL_EFAULT);
-  if(params->nStartPad<0) XLAL_ERROR(__func__, XLAL_EBADLEN);
-  if(params->nEndPad<0) XLAL_ERROR(__func__, XLAL_EBADLEN);
-  if(params->fLower <=0) XLAL_ERROR(__func__, XLAL_EFREQ);
-  if(params->tSampling<=0) XLAL_ERROR(__func__, XLAL_ETIME);
-  if(params->totalMass<=0) XLAL_ERROR(__func__, XLAL_EDOM);
+  if(!signalvec) XLAL_ERROR(XLAL_EFAULT);
+  if(!signalvec->data) XLAL_ERROR(XLAL_EFAULT);
+  if(!params) XLAL_ERROR(XLAL_EFAULT);
+  if(params->nStartPad<0) XLAL_ERROR(XLAL_EBADLEN);
+  if(params->nEndPad<0) XLAL_ERROR(XLAL_EBADLEN);
+  if(params->fLower <=0) XLAL_ERROR(XLAL_EFREQ);
+  if(params->tSampling<=0) XLAL_ERROR(XLAL_ETIME);
+  if(params->totalMass<=0) XLAL_ERROR(XLAL_EDOM);
 
   if (XLALInspiralSetup(&(paramsInit.ak), params))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   if (XLALInspiralChooseModel(&(paramsInit.func),&(paramsInit.ak), params))
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   REAL8Vector *s=XLALCreateREAL8Vector(signalvec->length);
   memset(s->data, 0, s->length * sizeof(REAL8));
@@ -697,7 +697,7 @@ int XLALPSpinInspiralRD(REAL4Vector * signalvec, InspiralTemplate * params)
   /* Call the engine function */
   count = XLALPSpinInspiralRDEngine(s, NULL, NULL, NULL, NULL, params, &paramsInit);
   if (count == XLAL_FAILURE)
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
 
   UINT4 i;
   for (i=0;i<s->length;i++) {
@@ -738,21 +738,21 @@ int XLALPSpinInspiralRDTemplates(
     INT4 count=0;
     InspiralInit paramsInit;
 
-    if(!signalvec1) XLAL_ERROR(__func__, XLAL_EFAULT);
-    if(!signalvec1->data) XLAL_ERROR(__func__, XLAL_EFAULT);
-    if(!signalvec2) XLAL_ERROR(__func__, XLAL_EFAULT);
-    if(!signalvec2->data) XLAL_ERROR(__func__, XLAL_EFAULT);
-    if(!params) XLAL_ERROR(__func__, XLAL_EFAULT);
-    if(params->nStartPad<0) XLAL_ERROR(__func__, XLAL_EBADLEN);
-    if(params->nEndPad<0) XLAL_ERROR(__func__, XLAL_EBADLEN);
-    if(params->fLower <=0) XLAL_ERROR(__func__, XLAL_EFREQ);
-    if(params->tSampling<=0) XLAL_ERROR(__func__, XLAL_ETIME);
-    if(params->totalMass<=0) XLAL_ERROR(__func__, XLAL_EDOM);
+    if(!signalvec1) XLAL_ERROR(XLAL_EFAULT);
+    if(!signalvec1->data) XLAL_ERROR(XLAL_EFAULT);
+    if(!signalvec2) XLAL_ERROR(XLAL_EFAULT);
+    if(!signalvec2->data) XLAL_ERROR(XLAL_EFAULT);
+    if(!params) XLAL_ERROR(XLAL_EFAULT);
+    if(params->nStartPad<0) XLAL_ERROR(XLAL_EBADLEN);
+    if(params->nEndPad<0) XLAL_ERROR(XLAL_EBADLEN);
+    if(params->fLower <=0) XLAL_ERROR(XLAL_EFREQ);
+    if(params->tSampling<=0) XLAL_ERROR(XLAL_ETIME);
+    if(params->totalMass<=0) XLAL_ERROR(XLAL_EDOM);
 
     if (XLALInspiralSetup(&(paramsInit.ak), params))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
     if (XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), params))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
     REAL8Vector* s1=XLALCreateREAL8Vector(signalvec1->length);
     REAL8Vector* s2=XLALCreateREAL8Vector(signalvec2->length);
@@ -763,7 +763,7 @@ int XLALPSpinInspiralRDTemplates(
     /* Call the engine function*/
     count = XLALPSpinInspiralRDEngine(s1, s2, NULL, NULL, NULL, params, &paramsInit);
     if (count == XLAL_FAILURE)
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
     UINT4 i;
     for (i=0;i<s1->length;i++) {
@@ -816,13 +816,13 @@ int XLALPSpinInspiralRDForInjection(
     UINT4 i;
 
     /* Make sure parameter and waveform structures exist. */
-    if(!params) XLAL_ERROR(__func__, XLAL_EFAULT);
-    if(!waveform) XLAL_ERROR(__func__, XLAL_EFAULT);
+    if(!params) XLAL_ERROR(XLAL_EFAULT);
+    if(!waveform) XLAL_ERROR(XLAL_EFAULT);
     /* Make sure waveform fields don't exist. */
-    if(waveform->a) XLAL_ERROR(__func__, XLAL_EFAULT);
-    if(waveform->f) XLAL_ERROR(__func__, XLAL_EFAULT);
-    if(waveform->phi) XLAL_ERROR(__func__, XLAL_EFAULT);
-    if(waveform->h) XLAL_ERROR(__func__, XLAL_EFAULT);
+    if(waveform->a) XLAL_ERROR(XLAL_EFAULT);
+    if(waveform->f) XLAL_ERROR(XLAL_EFAULT);
+    if(waveform->phi) XLAL_ERROR(XLAL_EFAULT);
+    if(waveform->h) XLAL_ERROR(XLAL_EFAULT);
 
     /* Compute some parameters */
     XLALInspiralInit(params, &paramsInit);
@@ -845,7 +845,7 @@ int XLALPSpinInspiralRDForInjection(
     /* Call the engine function */
     count = XLALPSpinInspiralRDEngine(NULL, NULL, h, f, phi, params, &paramsInit);
     if (count == XLAL_FAILURE)
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
     /* Check an empty waveform hasn't been returned */
     for (i = 0; i < phi->length; i++) {
@@ -861,7 +861,7 @@ int XLALPSpinInspiralRDForInjection(
     /* Allocate the waveform structures. */
     if ((waveform->h = (REAL4TimeVectorSeries *)
          LALMalloc(sizeof(REAL4TimeVectorSeries))) == NULL) {
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     memset(waveform->h, 0, sizeof(REAL4TimeVectorSeries));
 
@@ -869,7 +869,7 @@ int XLALPSpinInspiralRDForInjection(
          LALMalloc(sizeof(REAL4TimeSeries))) == NULL) {
       LALFree(waveform->h);
       waveform->a = NULL;
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     memset(waveform->f, 0, sizeof(REAL4TimeSeries));
 
@@ -879,7 +879,7 @@ int XLALPSpinInspiralRDForInjection(
       waveform->h = NULL;
       LALFree(waveform->f);
       waveform->f = NULL;
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     memset(waveform->phi, 0, sizeof(REAL8TimeSeries));
 
@@ -954,14 +954,14 @@ int XLALPSpinInspiralRDFreqDom(
     UINT4 nbins,idx;
     UINT4 length = signalvec->length;
 
-    if(!signalvec) XLAL_ERROR(__func__, XLAL_EFAULT);
-    if(!signalvec->data) XLAL_ERROR(__func__, XLAL_EFAULT);
-    if(!params) XLAL_ERROR(__func__, XLAL_EFAULT);
-    if(params->nStartPad<0) XLAL_ERROR(__func__, XLAL_EBADLEN);
-    if(params->nEndPad<0) XLAL_ERROR(__func__, XLAL_EBADLEN);
-    if(params->fLower <=0) XLAL_ERROR(__func__, XLAL_EFREQ);
-    if(params->tSampling<=0) XLAL_ERROR(__func__, XLAL_ETIME);
-    if(params->totalMass<=0) XLAL_ERROR(__func__, XLAL_EDOM);
+    if(!signalvec) XLAL_ERROR(XLAL_EFAULT);
+    if(!signalvec->data) XLAL_ERROR(XLAL_EFAULT);
+    if(!params) XLAL_ERROR(XLAL_EFAULT);
+    if(params->nStartPad<0) XLAL_ERROR(XLAL_EBADLEN);
+    if(params->nEndPad<0) XLAL_ERROR(XLAL_EBADLEN);
+    if(params->fLower <=0) XLAL_ERROR(XLAL_EFREQ);
+    if(params->tSampling<=0) XLAL_ERROR(XLAL_ETIME);
+    if(params->totalMass<=0) XLAL_ERROR(XLAL_EDOM);
 
     XLALInspiralInit(params, &paramsInit);
 
@@ -980,7 +980,7 @@ int XLALPSpinInspiralRDFreqDom(
     /* Call the engine function */
     count = XLALPSpinInspiralRDEngine(tsignalvec, NULL, NULL, NULL, NULL, params, &paramsInit);
     if (count == XLAL_FAILURE)
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
     REAL4Vector *tsigR4=XLALCreateREAL4Vector(nbins);
     for (idx=0;idx<nbins;idx++) tsigR4->data[idx]=(REAL4) tsignalvec->data[idx];
@@ -992,7 +992,7 @@ int XLALPSpinInspiralRDFreqDom(
       XLALDestroyREAL4Vector(fsignalvec);
       XLALDestroyREAL8Vector(tsignalvec);
       XLALDestroyREAL4Vector(tsigR4);
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
     XLALREAL4VectorFFT(fsignalvec, tsigR4, forwPlan);
     XLALDestroyREAL4Vector(tsigR4);
@@ -1471,7 +1471,7 @@ static int XLALSpinInspiralEngine(
   values.length = dvalues.length = newvalues.length = yt.length = dym.length = dyt.length = neqs;
   
   if (!(dummy.data = (REAL8 *) LALMalloc(sizeof(REAL8) * neqs * 6))) {
-    XLAL_ERROR(__func__, XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   dt=mparams->dt;
@@ -1524,9 +1524,9 @@ static int XLALSpinInspiralEngine(
     XLALFree(dummy.data);
     INT4 errNum = XLALClearErrno();
     if (errNum == XLAL_ENOMEM)
-      XLAL_ERROR(__func__, XLAL_ENOMEM);
+      XLAL_ERROR(XLAL_ENOMEM);
     else
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   }
 
   count = write= 0;
@@ -1557,7 +1557,7 @@ static int XLALSpinInspiralEngine(
       if (write >= mparams->length) {
 	XLALRungeKutta4Free(integrator);
 	XLALFree(dummy.data);
-	XLAL_ERROR(__func__, XLAL_EDOM);
+	XLAL_ERROR(XLAL_EDOM);
       }
 
       amp22 = amp22ini * v2;
@@ -1613,7 +1613,7 @@ static int XLALSpinInspiralEngine(
     in4.x = tm / mparams->m;
 
     if (XLALRungeKutta4(&newvalues, integrator,(void *) mparams) == XLAL_FAILURE)
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
     /* updating values of dynamical variables */
 
     Phi = values.data[0] = newvalues.data[0];
@@ -1698,7 +1698,7 @@ static int XLALSpinInspiralEngine(
 
   if (count<Npoints) {
     XLALPrintError("*** LALPSpinInspiralRD WARNING: inspiral integration vey short: %12.f sec\n",tm);
-    XLAL_ERROR(__func__, XLAL_EFAILED);
+    XLAL_ERROR(XLAL_EFAILED);
   }
 
   errcode = XLALGenerateWaveDerivative(ddomega,domega,dt);
@@ -1707,7 +1707,7 @@ static int XLALSpinInspiralEngine(
 
   if (errcode != 0) {
     XLALPrintError("**** LALPSpinInspiralRD ERROR ****: error generating derivatives\n");
-    XLAL_ERROR(__func__, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   phenPars->endtime   = timewrite-mparams->dt;
@@ -1811,9 +1811,9 @@ static int XLALSpinInspiralAdaptiveEngine(
   if (!integrator) {
     XLALPrintError("**** LALPSpinInspiralRD ERROR ****: Cannot allocate adaptive integrator.\n");
     if (XLALClearErrno() == XLAL_ENOMEM)
-      XLAL_ERROR( __func__, XLAL_ENOMEM );
+      XLAL_ERROR( XLAL_ENOMEM );
     else
-      XLAL_ERROR( __func__, XLAL_EDOM );
+      XLAL_ERROR( XLAL_EDOM );
   }
 
   /* stop the integration only when the test is true */
@@ -1836,22 +1836,22 @@ static int XLALSpinInspiralAdaptiveEngine(
   /* Start of the integration checks*/
   if (!intlen) {
     if (XLALClearErrno() == XLAL_ENOMEM) {
-      XLAL_ERROR( __func__,  XLAL_ENOMEM);
+      XLAL_ERROR(  XLAL_ENOMEM);
     } else {
       XLALPrintError("**** LALPSpinInspiralRD ERROR ****: integration failed with errorcode %d, integration length %d\n",intreturn,intlen);
-      XLAL_ERROR( __func__, XLAL_EFAILED);
+      XLAL_ERROR( XLAL_EFAILED);
     }
   }
 
   /* if we have enough space, compute the waveform components; otherwise abort */
   if ( intlen >= mparams->length ) {
     XLALPrintError("**** LALPSpinInspiralRD ERROR ****: no space to write in waveforms: %d vs. %d\n",intlen,mparams->length);
-    XLAL_ERROR(__func__, XLAL_ESIZE);
+    XLAL_ERROR(XLAL_ESIZE);
   }
 
   if ( intlen < minIntLen ) {
     XLALPrintError("**** LALPSpinInspiralRD ERROR ****: incorrect integration with length %d\n",intlen);
-    XLAL_ERROR(__func__, XLAL_ESIZE);
+    XLAL_ERROR(XLAL_ESIZE);
   }
   /* End of integration checks*/
 
@@ -1895,7 +1895,7 @@ static int XLALSpinInspiralAdaptiveEngine(
 
     if (omegaMatch<omega[jend]) {
       XLALPrintError("*** LALPSpinInspiralRD ERROR ***: Impossible to attach phenom. part\n");
-      XLAL_ERROR(__func__, XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
 
     kend=Npoints-1;
@@ -1940,7 +1940,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     errcode += XLALGenerateWaveDerivative(dLNhz,LNhz_s,dt);
     if (errcode != XLAL_SUCCESS) {
       XLALPrintError("**** LALPSpinInspiralRD ERROR ****: error generating first derivatives: #points %d\n",Npoints);
-      XLAL_ERROR(__func__, XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
 
     for (k=0;k<Npoints;k++) {
@@ -1959,7 +1959,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     errcode += XLALGenerateWaveDerivative(ddomega,domega,dt);
     if (errcode != XLAL_SUCCESS) {
       XLALPrintError("**** LALPSpinInspiralRD ERROR ****: error generating second derivatives\n");
-      XLAL_ERROR(__func__, XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
 
     if (ddomega->data[kend]<0.) {
@@ -2097,7 +2097,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     errcode += XLALSpinInspiralFillH4Modes(h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,j,amp44,v,mparams->eta,mparams->dm,Psi,alpha,trigAngle);
 
     if (errcode != XLAL_SUCCESS)
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
   }
 
   XLALFree(yin);
@@ -2210,11 +2210,11 @@ static int XLALPSpinInspiralRDEngine(
 
 
   if(!params)
-    XLAL_ERROR(__func__, XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
 
   if ((params->fCutoff<=0.)&&(params->inspiralOnly==1)) {
     XLALPrintError("*** LALPSIRD ERROR ***: fCutoff %12.6e, with inspiral flag on it is mandatory to specify a positive cutoff frequency\n",params->fCutoff);
-    XLAL_ERROR(__func__, XLAL_EDOM);
+    XLAL_ERROR(XLAL_EDOM);
   }
 
   mass = params->totalMass * LAL_MTSUN_SI;
@@ -2251,7 +2251,7 @@ static int XLALPSpinInspiralRDEngine(
       }*/
     /*else {*/
     XLALPrintError("**** LALPSpinInspiralRD ERROR ****: Initial frequency too high: %11.5e for omM ~ %11.5e and m:(%8.3f, %8.3f)\n",params->fLower,omegaMatch/unitHz,params->mass1,params->mass2);
-    XLAL_ERROR(__func__, XLAL_EFAILED);
+    XLAL_ERROR(XLAL_EFAILED);
     /*}*/
   }
 
@@ -2459,7 +2459,7 @@ static int XLALPSpinInspiralRDEngine(
       XLALDestroyREAL8Vector(hap);
     if (phap)
       XLALDestroyREAL8Vector(phap);
-    XLAL_ERROR(__func__, XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   memset(h2P2->data, 0, h2P2->length * sizeof(REAL8));
@@ -2538,11 +2538,11 @@ static int XLALPSpinInspiralRDEngine(
   if (params->fixedStep == 1) {
     //printf("Fixed step integration\n");
     if (XLALSpinInspiralEngine(neqs,yinit,amp22ini,&mparams,h2P2,h2M2,h2P1,h2M1,h20,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,fap,phap,&phenPars) == XLAL_FAILURE)
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
   }  else {
     //printf("Adaptive integration\n");
     if (XLALSpinInspiralAdaptiveEngine(neqs,yinit,amp22ini,&mparams,h2P2,h2M2,h2P1,h2M1,h20,h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,fap,phap,&phenPars) == XLAL_FAILURE)
-      XLAL_ERROR(__func__, XLAL_EFUNC);      
+      XLAL_ERROR(XLAL_EFUNC);      
   }
   intreturn=phenPars.intreturn;
 
@@ -2607,7 +2607,7 @@ static int XLALPSpinInspiralRDEngine(
       XLALDestroyREAL8Vector(phap);
       XLALDestroyREAL8Vector(sigp);
       XLALDestroyREAL8Vector(sigc);
-      XLAL_ERROR(__func__, XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
     else {
       trigAngle.ci = phenPars.ci;
@@ -2674,7 +2674,7 @@ static int XLALPSpinInspiralRDEngine(
 	XLALDestroyREAL8Vector(sigp);
 	XLALDestroyREAL8Vector(sigc);
 	XLALDestroyCOMPLEX8Vector(modefreqs);
-	XLAL_ERROR(__func__, XLAL_EFAILED);
+	XLAL_ERROR(XLAL_EFAILED);
       }
 
       omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
@@ -2719,7 +2719,7 @@ static int XLALPSpinInspiralRDEngine(
           XLALDestroyREAL8Vector(sigp);
           XLALDestroyREAL8Vector(sigc);
           XLALDestroyCOMPLEX8Vector(modefreqs);
-          XLAL_ERROR(__func__, XLAL_ENOMEM);
+          XLAL_ERROR(XLAL_ENOMEM);
 	}
 
 	tim += dt;
@@ -2745,7 +2745,7 @@ static int XLALPSpinInspiralRDEngine(
 	errcode += XLALSpinInspiralFillH4Modes(h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,count,amp44,v,mparams.eta,mparams.dm,Psi,alpha,trigAngle);
 
         if (errcode != XLAL_SUCCESS)
-          XLAL_ERROR(__func__, XLAL_EFUNC);
+          XLAL_ERROR(XLAL_EFUNC);
 
 	fap->data[count] = om;
 	phap->data[count] = Psi;
@@ -2892,7 +2892,7 @@ static int XLALPSpinInspiralRDEngine(
 	XLALDestroyREAL8Vector(hap);
 	XLALDestroyREAL8Vector(fap);
 	XLALDestroyREAL8Vector(phap);
-	XLAL_ERROR(__func__, XLAL_EFAILED);
+	XLAL_ERROR(XLAL_EFAILED);
       }
     }
 
@@ -2939,7 +2939,7 @@ static int XLALPSpinInspiralRDEngine(
     XLALDestroyREAL8Vector(fap);
     XLALDestroyREAL8Vector(phap);
     XLALPrintError("**** LALPSpinInspiralRD ERROR ****: impossible to create Y22 or Y2-2\n");
-    XLAL_ERROR(__func__, XLAL_EFAILED);
+    XLAL_ERROR(XLAL_EFAILED);
   }
   for (i = 0; i < length; i++) {
     x0 = h2P2->data[2 * i];

@@ -76,7 +76,7 @@ REAL8 XLALGreenwichSiderealTime(
 	 */
 
 	if(!XLALGPSToUTC(&utc, gpstime->gpsSeconds))
-		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 
 	/*
 	 * And now to Julian day number.  Again, only accurate to integer
@@ -85,7 +85,7 @@ REAL8 XLALGreenwichSiderealTime(
 
 	julian_day = XLALJulianDay(&utc);
 	if(XLAL_IS_REAL8_FAIL_NAN(julian_day))
-		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 
 	/*
 	 * Convert Julian day number to the number of centuries since the
@@ -165,7 +165,7 @@ LIGOTimeGPS *XLALGreenwichMeanSiderealTimeToGPS(
 			return gps;
 		XLALGPSAdd(gps, error * gps_seconds_per_sidereal_radian);
 	} while(--iterations);
-	XLAL_ERROR_NULL(__func__, XLAL_EMAXITER);
+	XLAL_ERROR_NULL(XLAL_EMAXITER);
 }
 
 

@@ -31,7 +31,7 @@ VTYPE * XFUNC ( VTYPE * vector, UINT4 length )
   if ( ! vector->data )
   {
     vector->length = 0;
-    XLAL_ERROR_NULL( STRING(XFUNC), XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
   vector->length = length;
   return vector;

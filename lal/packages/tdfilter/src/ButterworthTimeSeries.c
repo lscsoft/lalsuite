@@ -234,7 +234,6 @@ XLALParsePassBandParamStruc( PassBandParamStruc *params,
 
 int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc *params )
 {
-  static const char *func = "XLALButterworthREAL4TimeSeries";
   INT4 n;    /* The filter order. */
   INT4 type; /* The pass-band type: high, low, or undeterminable. */
   INT4 i;    /* An index. */
@@ -243,14 +242,14 @@ int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc 
 
   /* Make sure the input pointers are non-null. */
   if ( ! params || ! series || ! series->data || ! series->data->data )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   /* Parse the pass-band parameter structure.  I separate this into a
      local static subroutine because it's an icky mess of conditionals
      that would clutter the logic of the main routine. */
   type=XLALParsePassBandParamStruc(params,&n,&wc,series->deltaT);
   if(type<0)
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* An order n Butterworth filter has n poles spaced evenly along a
      semicircle in the upper complex w-plane.  By pairing up poles
@@ -269,7 +268,7 @@ int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc 
     if(type==2){
       zpgFilter = XLALCreateCOMPLEX16ZPGFilter(2,2);
       if ( ! zpgFilter )
-        XLAL_ERROR( func, XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
       zpgFilter->zeros->data[0].re=0.0;
       zpgFilter->zeros->data[0].im=0.0;
       zpgFilter->zeros->data[1].re=0.0;
@@ -279,7 +278,7 @@ int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc 
     }else{
       zpgFilter = XLALCreateCOMPLEX16ZPGFilter(0,2);
       if ( ! zpgFilter )
-        XLAL_ERROR( func, XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
       zpgFilter->gain.re=-wc*wc;
       zpgFilter->gain.im=0.0;
     }
@@ -292,13 +291,13 @@ int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc 
     if (XLALWToZCOMPLEX16ZPGFilter(zpgFilter)<0)
     {
       XLALDestroyCOMPLEX16ZPGFilter(zpgFilter);
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
     iirFilter = XLALCreateREAL8IIRFilter(zpgFilter);
     if (!iirFilter)
     {
       XLALDestroyCOMPLEX16ZPGFilter(zpgFilter);
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* Filter the data, once each way. */
@@ -307,7 +306,7 @@ int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc 
     {
       XLALDestroyCOMPLEX16ZPGFilter(zpgFilter);
       XLALDestroyREAL8IIRFilter(iirFilter);
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* Free the filters. */
@@ -325,7 +324,7 @@ int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc 
     if(type==2){
       zpgFilter=XLALCreateCOMPLEX16ZPGFilter(1,1);
       if(!zpgFilter)
-        XLAL_ERROR(func,XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
       zpgFilter->zeros->data->re=0.0;
       zpgFilter->zeros->data->im=0.0;
       zpgFilter->gain.re=1.0;
@@ -333,7 +332,7 @@ int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc 
     }else{
       zpgFilter=XLALCreateCOMPLEX16ZPGFilter(0,1);
       if(!zpgFilter)
-        XLAL_ERROR(func,XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
       zpgFilter->gain.re=0.0;
       zpgFilter->gain.im=-wc;
     }
@@ -344,13 +343,13 @@ int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc 
     if (XLALWToZCOMPLEX16ZPGFilter(zpgFilter)<0)
     {
       XLALDestroyCOMPLEX16ZPGFilter(zpgFilter);
-      XLAL_ERROR(func,XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
     }
     iirFilter=XLALCreateREAL8IIRFilter(zpgFilter);
     if (!iirFilter)
     {
       XLALDestroyCOMPLEX16ZPGFilter(zpgFilter);
-      XLAL_ERROR(func,XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
     }
 
     /* Filter the data, once each way. */
@@ -359,7 +358,7 @@ int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc 
     {
       XLALDestroyCOMPLEX16ZPGFilter(zpgFilter);
       XLALDestroyREAL8IIRFilter(iirFilter);
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* Free the filters. */
@@ -373,7 +372,6 @@ int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc 
 
 int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc *params )
 {
-  static const char *func = "XLALButterworthREAL8TimeSeries";
   INT4 n;    /* The filter order. */
   INT4 type; /* The pass-band type: high, low, or undeterminable. */
   INT4 i;    /* An index. */
@@ -382,14 +380,14 @@ int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc 
 
   /* Make sure the input pointers are non-null. */
   if ( ! params || ! series || ! series->data || ! series->data->data )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   /* Parse the pass-band parameter structure.  I separate this into a
      local static subroutine because it's an icky mess of conditionals
      that would clutter the logic of the main routine. */
   type=XLALParsePassBandParamStruc(params,&n,&wc,series->deltaT);
   if(type<0)
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* An order n Butterworth filter has n poles spaced evenly along a
      semicircle in the upper complex w-plane.  By pairing up poles
@@ -408,7 +406,7 @@ int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc 
     if(type==2){
       zpgFilter = XLALCreateCOMPLEX16ZPGFilter(2,2);
       if ( ! zpgFilter )
-        XLAL_ERROR( func, XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
       zpgFilter->zeros->data[0].re=0.0;
       zpgFilter->zeros->data[0].im=0.0;
       zpgFilter->zeros->data[1].re=0.0;
@@ -418,7 +416,7 @@ int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc 
     }else{
       zpgFilter = XLALCreateCOMPLEX16ZPGFilter(0,2);
       if ( ! zpgFilter )
-        XLAL_ERROR( func, XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
       zpgFilter->gain.re=-wc*wc;
       zpgFilter->gain.im=0.0;
     }
@@ -431,13 +429,13 @@ int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc 
     if (XLALWToZCOMPLEX16ZPGFilter(zpgFilter)<0)
     {
       XLALDestroyCOMPLEX16ZPGFilter(zpgFilter);
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
     iirFilter = XLALCreateREAL8IIRFilter(zpgFilter);
     if (!iirFilter)
     {
       XLALDestroyCOMPLEX16ZPGFilter(zpgFilter);
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* Filter the data, once each way. */
@@ -446,7 +444,7 @@ int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc 
     {
       XLALDestroyCOMPLEX16ZPGFilter(zpgFilter);
       XLALDestroyREAL8IIRFilter(iirFilter);
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* Free the filters. */
@@ -464,7 +462,7 @@ int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc 
     if(type==2){
       zpgFilter=XLALCreateCOMPLEX16ZPGFilter(1,1);
       if(!zpgFilter)
-        XLAL_ERROR(func,XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
       zpgFilter->zeros->data->re=0.0;
       zpgFilter->zeros->data->im=0.0;
       zpgFilter->gain.re=1.0;
@@ -472,7 +470,7 @@ int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc 
     }else{
       zpgFilter=XLALCreateCOMPLEX16ZPGFilter(0,1);
       if(!zpgFilter)
-        XLAL_ERROR(func,XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
       zpgFilter->gain.re=0.0;
       zpgFilter->gain.im=-wc;
     }
@@ -483,13 +481,13 @@ int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc 
     if (XLALWToZCOMPLEX16ZPGFilter(zpgFilter)<0)
     {
       XLALDestroyCOMPLEX16ZPGFilter(zpgFilter);
-      XLAL_ERROR(func,XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
     }
     iirFilter=XLALCreateREAL8IIRFilter(zpgFilter);
     if (!iirFilter)
     {
       XLALDestroyCOMPLEX16ZPGFilter(zpgFilter);
-      XLAL_ERROR(func,XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
     }
 
     /* Filter the data, once each way. */
@@ -498,7 +496,7 @@ int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc 
     {
       XLALDestroyCOMPLEX16ZPGFilter(zpgFilter);
       XLALDestroyREAL8IIRFilter(iirFilter);
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* Free the filters. */
@@ -513,7 +511,6 @@ int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc 
 int XLALLowPassREAL4TimeSeries( REAL4TimeSeries *series,
     REAL8 frequency, REAL8 amplitude, INT4 filtorder )
 {
-  static const char *func = "XLALLowPassREAL4TimeSeries";
   PassBandParamStruc params;
   params.nMax = filtorder;
   params.f1   = frequency;
@@ -521,14 +518,13 @@ int XLALLowPassREAL4TimeSeries( REAL4TimeSeries *series,
   params.f2   = -1;
   params.a2   = -1;
   if ( XLALButterworthREAL4TimeSeries( series, &params ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   return 0;
 }
 
 int XLALLowPassREAL8TimeSeries( REAL8TimeSeries *series,
     REAL8 frequency, REAL8 amplitude, INT4 filtorder )
 {
-  static const char *func = "XLALLowPassREAL8TimeSeries";
   PassBandParamStruc params;
   params.nMax = filtorder;
   params.f1   = frequency;
@@ -536,14 +532,13 @@ int XLALLowPassREAL8TimeSeries( REAL8TimeSeries *series,
   params.f2   = -1;
   params.a2   = -1;
   if ( XLALButterworthREAL8TimeSeries( series, &params ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   return 0;
 }
 
 int XLALHighPassREAL4TimeSeries( REAL4TimeSeries *series,
     REAL8 frequency, REAL8 amplitude, INT4 filtorder )
 {
-  static const char *func = "XLALHighPassREAL4TimeSeries";
   PassBandParamStruc params;
   params.nMax = filtorder;
   params.f2   = frequency;
@@ -551,14 +546,13 @@ int XLALHighPassREAL4TimeSeries( REAL4TimeSeries *series,
   params.f1   = -1;
   params.a1   = -1;
   if ( XLALButterworthREAL4TimeSeries( series, &params ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   return 0;
 }
 
 int XLALHighPassREAL8TimeSeries( REAL8TimeSeries *series,
     REAL8 frequency, REAL8 amplitude, INT4 filtorder )
 {
-  static const char *func = "XLALHighPassREAL8TimeSeries";
   PassBandParamStruc params;
   params.nMax = filtorder;
   params.f2   = frequency;
@@ -566,7 +560,7 @@ int XLALHighPassREAL8TimeSeries( REAL8TimeSeries *series,
   params.f1   = -1;
   params.a1   = -1;
   if ( XLALButterworthREAL8TimeSeries( series, &params ) < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   return 0;
 }
 
@@ -802,7 +796,6 @@ XLALParsePassBandParamStruc( PassBandParamStruc *params,
         a high-pass filter, 1 for a low-pass filter, and -1 if the
         parameters were poorly specified. */
 {
-  static const char *func = "XLALParsePassBandParamStruc";
   /* Okay, first define all the temporary variables, and figure out
      just which parameter combinations have been given. */
   REAL8 w1=deltaT*params->f1;    /* Dimensionless frequencies; */
@@ -826,16 +819,16 @@ XLALParsePassBandParamStruc( PassBandParamStruc *params,
     /* First make sure that two different frequencies and attenuations
        have been specified. */
     if(w1==w2){
-      XLALPrintInfo("XLAL Info - %s: ", func );
+      XLALPrintInfo("XLAL Info - %s: ", __func__ );
       XLALPrintInfo("The two frequencies defining the transition band"
 	      " are the same.\n");
-      XLAL_ERROR(func,XLAL_EINVAL);
+      XLAL_ERROR(XLAL_EINVAL);
     }
     if(a1==a2){
-      XLALPrintInfo("XLAL Info - %s: ", func );
+      XLALPrintInfo("XLAL Info - %s: ", __func__ );
       XLALPrintInfo("The two attenuations across the transition band"
 	      " are the same.\n");
-      XLAL_ERROR(func,XLAL_EINVAL);
+      XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* Now compute the filter order. */
@@ -849,7 +842,7 @@ XLALParsePassBandParamStruc( PassBandParamStruc *params,
     /* If a positive params->nMax less than *n has been specified,
        reduce to that order, with appropriate warnings. */
     if((params->nMax>0)&&(params->nMax<*n)){
-      XLALPrintWarning("XLAL Warning - %s: ", func );
+      XLALPrintWarning("XLAL Warning - %s: ", __func__ );
       XLALPrintWarning("Filter order required to achieve requested"
 		 " performance exceeds\n"
 		 "\tspecified limit.\n");
@@ -874,12 +867,12 @@ XLALParsePassBandParamStruc( PassBandParamStruc *params,
      all future cases. */
   else{
     if(params->nMax<=0){
-      XLALPrintInfo("XLAL Info - %s: ", func );
+      XLALPrintInfo("XLAL Info - %s: ", __func__ );
       XLALPrintInfo("The filter order must be given if one or more"
 	      " frequencies or\n"
 	      "\tattenuations of the transition band have not been"
 	      " (validly) specified.");
-      XLAL_ERROR(func,XLAL_EINVAL);
+      XLAL_ERROR(XLAL_EINVAL);
     }
     if(both1Given){
       REAL8 wLow=tan(LAL_PI*w1);
@@ -899,10 +892,10 @@ XLALParsePassBandParamStruc( PassBandParamStruc *params,
        frequency given, otherwise we don't know whether to make a low-
        or a high-pass filter. */
     else if(w1Given && w2Given){
-      XLALPrintInfo("XLAL Info - %s: ", func );
+      XLALPrintInfo("XLAL Info - %s: ", __func__ );
       XLALPrintInfo("Neither attenuation has been specified, so only"
 	      " one frequency should be.");
-      XLAL_ERROR(func,XLAL_EINVAL);
+      XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* Treat the given frequency as the characteristic frequency and
@@ -916,10 +909,10 @@ XLALParsePassBandParamStruc( PassBandParamStruc *params,
 	*wc=tan(LAL_PI*w1);
 	return 1;
       }else{
-        XLALPrintInfo("XLAL Info - %s: ", func );
+        XLALPrintInfo("XLAL Info - %s: ", __func__ );
 	XLALPrintInfo("No frequencies within the Nyquist band have"
 		" been specified!");
-	XLAL_ERROR(func,XLAL_EINVAL);
+	XLAL_ERROR(XLAL_EINVAL);
       }
     }
   }

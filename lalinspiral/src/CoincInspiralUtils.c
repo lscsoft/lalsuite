@@ -640,7 +640,6 @@ XLALAddSnglInspiralToCoinc(
     )
 
 {
-  static const char *func = "XLALAddSnglInspiralToCoinc";
   EventIDColumn     *eventId = NULL;
 
   /* allocate memory for new coinc if it doesn't exist */
@@ -651,7 +650,7 @@ XLALAddSnglInspiralToCoinc(
     if ( !coincInspiral )
     {
       LALFree( coincInspiral );
-      XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+      XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
   }
 
@@ -674,7 +673,7 @@ XLALAddSnglInspiralToCoinc(
       {
         /* Invalid Hanford Detector */
         XLALPrintError( "Invalid ifo in input snglInspiral" );
-        XLAL_ERROR_NULL(func,XLAL_EIO);
+        XLAL_ERROR_NULL(XLAL_EIO);
       }
       break;
 
@@ -693,7 +692,7 @@ XLALAddSnglInspiralToCoinc(
     default:
       /* Invalid Detector Site */
       XLALPrintError( "Invalid ifo in input snglInspiral" );
-      XLAL_ERROR_NULL(func,XLAL_EIO);
+      XLAL_ERROR_NULL(XLAL_EIO);
   }
 
   ++(coincInspiral->numIfos);
@@ -705,7 +704,7 @@ XLALAddSnglInspiralToCoinc(
     if ( !eventId )
     {
       LALFree(eventId);
-      XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+      XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
     snglInspiral->event_id = eventId;
   }
@@ -718,7 +717,7 @@ XLALAddSnglInspiralToCoinc(
     if ( !eventId )
     {
       LALFree(eventId);
-      XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+      XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
   }
   eventId->snglInspiralTable = snglInspiral;
@@ -827,7 +826,6 @@ XLALExtractSnglInspiralFromCoinc(
     )
 
 {
-  static const char *func = "ExtractSnglInspiralFromCoinc";
   SnglInspiralTable  *snglHead = NULL;
   SnglInspiralTable  *thisSngl = NULL;
   SnglInspiralTable  *thisCoincEntry = NULL;
@@ -894,7 +892,7 @@ XLALExtractSnglInspiralFromCoinc(
             snglHead = snglHead->next;
             XLALFreeSnglInspiral( &thisSngl );
           }
-          XLAL_ERROR_NULL(func,XLAL_EIO);
+          XLAL_ERROR_NULL(XLAL_EIO);
         }
 
         if ( slideNum < 0 )
@@ -924,7 +922,6 @@ XLALCreateCoincSlideTable(
     )
 
 {
-  static const char *func = "XLALCreateCoincSlideTable";
   CoincInspiralSlideTable  *thisSlideTable = NULL;
   INT4                      idx = 0;
   INT4                      slideNum = 0;
@@ -962,7 +959,7 @@ XLALCreateCoincSlideTable(
         LALFree( thisSlideTable );
       }
 
-      XLAL_ERROR( func,XLAL_ENOMEM );
+      XLAL_ERROR(XLAL_ENOMEM );
     }
 
     thisSlideTable->coincInspiral = NULL;
@@ -987,7 +984,6 @@ XLALSetupCoincSlideTable(
     )
 
 {
-  static const char *func = "XLALCreateCoincSlideTable";
   CoincInspiralSlideTable  *thisSlideTable = NULL;
   INT4                      idx = 0;
   INT4                      slideNum = 0;
@@ -1005,7 +1001,7 @@ XLALSetupCoincSlideTable(
     /* should never get here */
     XLALPrintError( "Error reading time analyzed file %s",
         timeAnalyzedFileName );
-    XLAL_ERROR( func,XLAL_EIO );
+    XLAL_ERROR(XLAL_EIO );
   }
 
   if ( thisSlideNum )
@@ -1014,7 +1010,7 @@ XLALSetupCoincSlideTable(
     fclose( timeAnalyzedFp );
 
     XLALPrintError( "Have no analyzed time associated with zero lag" );
-    XLAL_ERROR( func,XLAL_EIO );
+    XLAL_ERROR(XLAL_EIO );
   }
 
   thisSlideTable = slideTableHead;
@@ -1039,7 +1035,7 @@ XLALSetupCoincSlideTable(
 
       XLALPrintError( "Error reading time analyzed file %s",
           timeAnalyzedFileName );
-      XLAL_ERROR( func,XLAL_EIO );
+      XLAL_ERROR(XLAL_EIO );
     }
 
     if ( thisSlideNum != slideNum )
@@ -1049,7 +1045,7 @@ XLALSetupCoincSlideTable(
 
       XLALPrintError( "Have no analyzed time associated with time slide %d",
           thisSlideNum );
-      XLAL_ERROR( func,XLAL_EIO );
+      XLAL_ERROR(XLAL_EIO );
     }
 
     thisSlideTable->coincInspiral = XLALCoincInspiralSlideCut(
@@ -1067,7 +1063,7 @@ XLALSetupCoincSlideTable(
 
     XLALPrintError(
         "Have triggers not associated with a specified time slide" );
-    XLAL_ERROR( func,XLAL_EBADLEN );
+    XLAL_ERROR(XLAL_EBADLEN );
   }
 
   readVal = fscanf( timeAnalyzedFp, "%i %f\n", &thisSlideNum,
@@ -1079,7 +1075,7 @@ XLALSetupCoincSlideTable(
 
     XLALPrintError( "Too many lines in time analyzed file %s",
         timeAnalyzedFileName );
-    XLAL_ERROR( func,XLAL_EIO );
+    XLAL_ERROR(XLAL_EIO );
   }
 
   fclose( timeAnalyzedFp );
@@ -1096,7 +1092,6 @@ XLALRecreateCoincFromSngls(
     )
 
 {
-  static const char *func = "RecreateCoincFromSngls";
   SnglInspiralTable    *thisSngl  = NULL;
   CoincInspiralTable   *thisCoinc = NULL;
   CoincInspiralTable   *prevCoinc = NULL;
@@ -1138,7 +1133,7 @@ XLALRecreateCoincFromSngls(
 	  coincHead = coincHead->next;
 	  LALFree(thisCoinc);
         }
-	XLAL_ERROR(func, XLAL_EDATA);
+	XLAL_ERROR(XLAL_EDATA);
       }
       else
       {
@@ -1171,7 +1166,7 @@ XLALRecreateCoincFromSngls(
 	  coincHead = coincHead->next;
 	  LALFree( thisCoinc );
 	}
-	XLAL_ERROR(func,XLAL_ENOMEM);
+	XLAL_ERROR(XLAL_ENOMEM);
       }
 
       thisCoinc->snglInspiral[ifoNumber] = thisSngl;
@@ -1229,7 +1224,6 @@ XLALGenerateCoherentBank(
     )
 
 {
-  static const char *func = "CreateCoherentBank";
   InterferometerNumber  ifoInCoinc = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoNumber  = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoMax  = LAL_UNKNOWN_IFO;
@@ -1316,7 +1310,7 @@ XLALGenerateCoherentBank(
     bankHead = bankHead->next;
     XLALFreeSnglInspiral( &currentTrigger );
   }
-  XLAL_ERROR(func,XLAL_ENOMEM);
+  XLAL_ERROR(XLAL_ENOMEM);
 
 }
 
@@ -1890,7 +1884,6 @@ XLALCoincInspiralTimeNS (
     const CoincInspiralTable         *coincInspiral
     )
 {
-  static const char *func = "XLALCoincInspiralTimeNS";
   InterferometerNumber  ifoNumber;
   INT8 endTime = 0;
 
@@ -1903,7 +1896,7 @@ XLALCoincInspiralTimeNS (
       return(endTime);
     }
   }
-  XLAL_ERROR(func,XLAL_EIO);
+  XLAL_ERROR(XLAL_EIO);
 }
 
 REAL4
@@ -2015,7 +2008,6 @@ XLALClusterCoincInspiralTable (
     )
 
 {
-  static const char *func = "XLALClusterCoincInspiralTable";
   CoincInspiralTable     *thisCoinc = NULL;
   CoincInspiralTable     *prevCoinc = NULL;
   CoincInspiralTable     *nextCoinc = NULL;
@@ -2023,7 +2015,7 @@ XLALClusterCoincInspiralTable (
 
   if ( !coincList )
   {
-    XLAL_ERROR(func,XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
 
   if ( ! *coincList )
@@ -2430,13 +2422,12 @@ XLALCoincInspiralIdNumber (
     )
 
 {
-  static const char *func = "CoincInspiralIdNumber";
   SnglInspiralTable    *thisSngl = NULL;
   InterferometerNumber  ifoNumber  = LAL_UNKNOWN_IFO;
 
   if ( !coincInspiral )
   {
-    XLAL_ERROR(func,XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
 
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
@@ -2461,7 +2452,7 @@ XLALCoincInspiralIdNumber (
   }
   /* should never get here */
   XLALPrintError( "Unable to find id associated to this event" );
-  XLAL_ERROR(func,XLAL_EIO);
+  XLAL_ERROR(XLAL_EIO);
 }
 
 
@@ -2653,8 +2644,6 @@ XLALCalcExpFitNLoudestBackground (
     )
 
 {
-  static const char *func = "XLALCalcExpFitAboveNLoudestBackground";
-
   CoincInspiralTable    *thisSlideEvent = coincSlideHead;
   int idx = 0;
   REAL4 Delta = 0;
@@ -2673,7 +2662,7 @@ XLALCalcExpFitNLoudestBackground (
       /* should never get here */
       XLALPrintError( "Not enough Background Triggers: have %d, need %d",
           idx - 1, fitNum );
-      XLAL_ERROR(func,XLAL_ERANGE);
+      XLAL_ERROR(XLAL_ERANGE);
     }
 
     thisStat = XLALCoincInspiralStat(thisSlideEvent, coincStat, bittenLParams);
@@ -2796,8 +2785,6 @@ XLALRateErrorCalcCoincInspiral (
     )
 
 {
-  static const char *func = "XLALRateErrorCalcCoincInspiral";
-
   CoincInspiralSlideTable    *thisSlideHead = NULL;
   CoincInspiralSlideTable    *thisHeadSlideHead = NULL;
   CoincInspiralSlideTable    *tmpSlideHead = NULL;
@@ -2923,7 +2910,7 @@ XLALRateErrorCalcCoincInspiral (
   {
     /* should never get here */
     XLALPrintError( "Have events where FAR not calculated" );
-    XLAL_ERROR(func,XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
 
   /* free the CoincInspiralSlideTable thisSlideHead */
@@ -3028,7 +3015,6 @@ XLALCompleteCoincInspiral (
     )
 
 {
-  static const char     *func = "XLALCompleteCoincInspiral";
   CoincInspiralTable    *thisCoinc = NULL;
   SnglInspiralTable     *snglHead  = NULL;
   SnglInspiralTable     *thisSngl   = NULL;
@@ -3062,7 +3048,7 @@ XLALCompleteCoincInspiral (
             snglHead = snglHead->next;
             LALFree(thisSngl);
           }
-          XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+          XLAL_ERROR_NULL(XLAL_ENOMEM);
         }
 
         /* populate the ifo field */
@@ -3278,9 +3264,6 @@ XLALPopulateAccuracyParams(
 )
 
 {
-
-  const CHAR *func = "XLALPopulateAccuracyParams";
-
   INT4 ifoNumber, ifoTwo;
   LALDetector aDet, bDet;
 
@@ -3288,7 +3271,7 @@ XLALPopulateAccuracyParams(
   /* check that the accuracyParams structure is allocated */
   if ( accuracyParams == NULL )
   {
-    XLAL_ERROR_VOID( func, XLAL_EFAULT );
+    XLAL_ERROR_VOID( XLAL_EFAULT );
   }
 
   /* Populate the lightTravel matrix */
@@ -3322,9 +3305,6 @@ XLALPopulateAccuracyParamsExt(
 )
 
 {
-
-  const CHAR *func = "XLALPopulateAccuracyParamsExt";
-
   INT4 ifoNumber, ifoTwo;
   REAL8 timeDelay;
   REAL8 ra_radians, dec_radians;
@@ -3333,19 +3313,19 @@ XLALPopulateAccuracyParamsExt(
   /* check that the accuracyParams structure is allocated */
   if ( accuracyParams == NULL )
   {
-    XLAL_ERROR_VOID( func, XLAL_EFAULT );
+    XLAL_ERROR_VOID( XLAL_EFAULT );
   }
 
   /* check the values given */
   if (ra_deg<0 || ra_deg > 360)
   {
     XLALPrintError("Right ascension value outside [0; 360]. Value given: %f\n", ra_deg);
-    XLAL_ERROR_VOID( func, XLAL_EDATA );
+    XLAL_ERROR_VOID( XLAL_EDATA );
   }
   if (dec_deg<-90 || dec_deg>90)
   {
     XLALPrintError("Declination value outside [-90; 90]. Value given: %f\n", dec_deg);
-    XLAL_ERROR_VOID( func, XLAL_EDATA );
+    XLAL_ERROR_VOID( XLAL_EDATA );
   }
 
   /* convert position */

@@ -124,7 +124,7 @@ int XLALLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
   {
     XLALPrintError( "XLAL Error - Don't know leap seconds before GPS time %d\n",
         leaps[0].gpssec );
-    XLAL_ERROR( __func__, XLAL_EDOM );
+    XLAL_ERROR( XLAL_EDOM );
   }
 
   /* scan leap second table and locate the appropriate interval */
@@ -144,7 +144,7 @@ int XLALGPSLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
 
   leapTAI = XLALLeapSeconds ( gpssec );
   if ( leapTAI < 0 )
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   leapGPS = leapTAI - 19;	/* subtract 19 seconds to get leap-seconds wrt to GPS epoch */
 
@@ -160,12 +160,12 @@ int XLALLeapSecondsUTC( const struct tm *utc /**< [In] UTC as a broken down time
 
   jd = XLALJulianDay( utc );
   if ( XLAL_IS_REAL8_FAIL_NAN( jd ) )
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   if ( jd < leaps[0].jd )
   {
     XLALPrintError( "XLAL Error - Don't know leap seconds before Julian Day %9.1f\n", leaps[0].jd );
-    XLAL_ERROR( __func__, XLAL_EDOM );
+    XLAL_ERROR( XLAL_EDOM );
   }
 
   /* scan leap second table and locate the appropriate interval */
@@ -188,7 +188,7 @@ INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time
   /* compute leap seconds */
   leapsec = XLALLeapSecondsUTC( utc );
   if ( leapsec < 0 )
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   /* compute unix epoch time: seconds since 1970 JAN 1 0h UTC */
   /* POSIX:2001 definition of seconds since the (UNIX) Epoch */
   unixsec = utc->tm_sec + utc->tm_min*60 + utc->tm_hour*3600
@@ -217,7 +217,7 @@ struct tm * XLALGPSToUTC(
   int delta;
   leapsec = XLALLeapSeconds( gpssec );
   if ( leapsec < 0 )
-    XLAL_ERROR_NULL( __func__, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   unixsec  = gpssec - leapsec + XLAL_EPOCH_GPS_TAI_UTC; /* get rid of leap seconds */
   unixsec += XLAL_EPOCH_UNIX_GPS; /* change to unix epoch */
   memset( utc, 0, sizeof( *utc ) ); /* blank out utc structure */
@@ -286,7 +286,7 @@ REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down ti
   if ( utc->tm_year <= 0 )
   {
     XLALPrintError( "XLAL Error - Year must be after 1900\n" );
-    XLAL_ERROR_REAL8( __func__, XLAL_EDOM );
+    XLAL_ERROR_REAL8( XLAL_EDOM );
   }
 
   year  = utc->tm_year + 1900;
@@ -319,7 +319,7 @@ INT4 XLALModifiedJulianDay( const struct tm *utc /**< [In] UTC time in a broken 
   INT4 mjd;
   jd = XLALJulianDay( utc );
   if ( XLAL_IS_REAL8_FAIL_NAN( jd ) )
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   mjd = floor( jd - XLAL_MJD_REF );
   return mjd;
 }

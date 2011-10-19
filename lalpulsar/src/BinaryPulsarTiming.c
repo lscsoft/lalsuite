@@ -140,8 +140,6 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
                         BinaryPulsarInput    *input,
                         BinaryPulsarParams   *params )
 {
-  const CHAR *fn = "XLALBinaryPulsarDeltaT()";
-
   REAL8 dt=0.; /* binary pulsar deltaT */
   REAL8 x, xdot;	/* x = asini/c */
   REAL8 w=0;  /* longitude of periastron */
@@ -166,15 +164,15 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
   /* Check input arguments */
   if( input == (BinaryPulsarInput *)NULL ){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLINPUT );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLINPUT );
   }
 
   if( output == (BinaryPulsarOutput *)NULL ){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLOUTPUT );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLOUTPUT );
   }
 
   if( params == (BinaryPulsarParams *)NULL ){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLPARAMS );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLPARAMS );
   }
 
   if((!strcmp(params->model, "BT")) &&
@@ -184,7 +182,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
      (!strcmp(params->model, "ELL1")) &&
      (!strcmp(params->model, "DD")) &&
      (!strcmp(params->model, "MSS"))){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLBINARYMODEL );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLBINARYMODEL );
   }
 
   /* convert certain params to SI units */
@@ -569,7 +567,7 @@ this isn't defined for either of the two pulsars currently using this model */
 
   /* check that the returned value is not a NaN */
   if( isnan(output->deltaT) ){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENAN );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENAN );
   }
 }
 
@@ -595,8 +593,6 @@ void
 XLALReadTEMPOParFile( BinaryPulsarParams *output,
                       CHAR      *pulsarAndPath )
 {
-  const CHAR *fn = "XLALReadTEMPOParFile()";
-
   FILE *fp=NULL;
   CHAR val[500][40]; /* string array to hold all the read in values
                         500 strings of max 40 characters is enough */
@@ -604,7 +600,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   int UNUSED c;
 
   if( output == (BinaryPulsarParams *)NULL ){
-    XLAL_ERROR_VOID( fn, XLAL_EFAULT );
+    XLAL_ERROR_VOID( XLAL_EFAULT );
   }
 
   output->model = NULL; /* set binary model to null - incase not a binary */
@@ -767,7 +763,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->thetaErr=0.;
 
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
-    XLAL_ERROR_VOID( fn, XLAL_EIO );
+    XLAL_ERROR_VOID( XLAL_EIO );
   }
 
   /* read all the pulsar data into the string array */

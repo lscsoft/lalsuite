@@ -35,16 +35,16 @@
  * (ii) set the error code to the specified value, and (iii) return with the
  * correct return value.  The error macros that should be used are:
  *
- * <tt>XLAL_ERROR(func,errnum)</tt> for XLAL routines returning an integer type.
+ * <tt>XLAL_ERROR(errnum)</tt> for XLAL routines returning an integer type.
  *
- * <tt>XLAL_ERROR_VOID(func,errnum)</tt> for XLAL routines with no return value.
+ * <tt>XLAL_ERROR_VOID(errnum)</tt> for XLAL routines with no return value.
  *
- * <tt>XLAL_ERROR_NULL(func,errnum)</tt> for XLAL routines returning a pointer.
+ * <tt>XLAL_ERROR_NULL(errnum)</tt> for XLAL routines returning a pointer.
  *
- * <tt>XLAL_ERROR_REAL4(func,errnum)</tt> for XLAL routines returning a <tt>REAL4</tt>
+ * <tt>XLAL_ERROR_REAL4(errnum)</tt> for XLAL routines returning a <tt>REAL4</tt>
  * floating-point value.
  *
- * <tt>XLAL_ERROR_REAL8(func,errnum)</tt> for XLAL routines returning a <tt>REAL8</tt>
+ * <tt>XLAL_ERROR_REAL8(errnum)</tt> for XLAL routines returning a <tt>REAL8</tt>
  * floating-point value.
  *
  * Additional error, warning, and informational messages can be generated using the
@@ -72,7 +72,7 @@
  *         return y;
  *       default:
  *         XLALSetErrno( errnum );
- *         XLAL_ERROR_REAL8( "XLALLogFactorial", XLAL_EFUNC );
+ *         XLAL_ERROR_REAL8( XLAL_EFUNC );
  *     }
  *   return log( y );
  * }
@@ -315,7 +315,7 @@ const char * XLALErrorString( int errnum );
 void XLALPerror( const char *func, const char *file, int line, int errnum );
 
 /** Prints an error message for the current value of <tt>xlalErrno</tt>. */
-#define XLAL_PERROR( func ) XLALPerror( func, __FILE__, __LINE__, xlalErrno )
+#define XLAL_PERROR( ) XLALPerror( __func__, __FILE__, __LINE__, xlalErrno )
 
 
 /*
@@ -441,31 +441,31 @@ void XLALError(
 
 /** Macro to invoke the <tt>XLALError()</tt> function and return with code val (it should not
  * really be used itself, but forms the basis for other macros). */
-#define XLAL_ERROR_VAL( func, errnum, val ) \
+#define XLAL_ERROR_VAL( errnum, val ) \
         do { \
-          XLALError( func, __FILE__, __LINE__, errnum ); \
+          XLALError( __func__, __FILE__, __LINE__, errnum ); \
           return val; \
         } while (0)
 
 /** Macro to invoke a failure from a XLAL routine returning an integer. */
-#define XLAL_ERROR( func, errnum ) \
-    XLAL_ERROR_VAL( func, errnum, XLAL_FAILURE )
+#define XLAL_ERROR( errnum ) \
+    XLAL_ERROR_VAL( errnum, XLAL_FAILURE )
 
 /** Macro to invoke a failure from a XLAL routine returning a pointer. */
-#define XLAL_ERROR_NULL( func, errnum ) \
-    XLAL_ERROR_VAL( func, errnum, NULL )
+#define XLAL_ERROR_NULL( errnum ) \
+    XLAL_ERROR_VAL( errnum, NULL )
 
 /** Macro to invoke a failure from a XLAL routine returning void. */
-#define XLAL_ERROR_VOID( func, errnum ) \
-    XLAL_ERROR_VAL( func, errnum, /* void */ )
+#define XLAL_ERROR_VOID( errnum ) \
+    XLAL_ERROR_VAL( errnum, /* void */ )
 
 /** Macro to invoke a failure from a XLAL routine returning a <tt>REAL4</tt> */
-#define XLAL_ERROR_REAL4( func, errnum ) \
-    XLAL_ERROR_VAL( func, errnum, XLAL_REAL4_FAIL_NAN )
+#define XLAL_ERROR_REAL4( errnum ) \
+    XLAL_ERROR_VAL( errnum, XLAL_REAL4_FAIL_NAN )
 
 /** Macro to invoke a failure from a XLAL routine returning a <tt>REAL8</tt> */
-#define XLAL_ERROR_REAL8( func, errnum ) \
-    XLAL_ERROR_VAL( func, errnum, XLAL_REAL8_FAIL_NAN )
+#define XLAL_ERROR_REAL8( errnum ) \
+    XLAL_ERROR_VAL( errnum, XLAL_REAL8_FAIL_NAN )
 
 #if 0
 { /* so that editors will match succeeding brace */

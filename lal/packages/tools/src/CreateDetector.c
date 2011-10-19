@@ -630,7 +630,6 @@ LALDetector * XLALCreateDetector( LALDetector *detector,
     const LALFrDetector *frDetector, LALDetectorType type )
 
 {
-  static const char *func = "XLALCreateDetector";
   INT2                i, j;
   REAL8               latRad, lonRad;
   REAL8               cosLat, sinLat, cosLon, sinLon;
@@ -643,7 +642,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector,
     detector = LALCalloc( 1, sizeof( *detector ) );
 
   if ( ! detector )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   /* if frDetector is NULL, just return a blank detector structure,
    * but set the type */
@@ -798,7 +797,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector,
       }
       break;
     default:
-      XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
   } /* switch (type) */
 
   detector->frDetector = *frDetector;

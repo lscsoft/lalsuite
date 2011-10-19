@@ -76,12 +76,11 @@ gcd(INT2 numer, UINT2 denom)
  */
 int XLALUnitNormalize( LALUnit *unit )
 {
-  static const char func[] = "XLALUnitNormalize";
   UINT2 commonFactor;
   UINT2 i;
 
   if ( ! unit )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   for (i=0; i<LALNumUnits; ++i)
   {

@@ -39,6 +39,13 @@ void ihsSums(ihsMaximaStruct *output, REAL4Vector *ihss, INT4Vector *locs, INT4 
 void ihsSums2_withFAR(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *aveNoise, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor, inputParamsStruct *params, INT4 calcPInvVals);
 void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *aveNoise, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor, inputParamsStruct *params, INT4 calcPInvVals);
 REAL4VectorSequence * ihsVectorSums(REAL4VectorSequence *input, INT4 rows);
+void SSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos);
+void fastSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos);
+void fastSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2);
+void fastSSVectorSequenceScale(REAL4VectorSequence *output, REAL4Vector *input1, REAL4Vector *input2);
+void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors);
+void scaleVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector *input, REAL4 scale, INT4 outputvectorpos);
+void addScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector *input, REAL4 scale, INT4 outputvectorpos);
 
 void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs);
 

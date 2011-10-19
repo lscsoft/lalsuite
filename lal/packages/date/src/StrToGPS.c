@@ -258,7 +258,7 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 
 	/* check for failures and restore errno if there weren't any */
 	if(errno == ERANGE)
-		XLAL_ERROR(__func__, XLAL_ERANGE);
+		XLAL_ERROR(XLAL_ERANGE);
 	errno = olderrno;
 
 	/* success */
@@ -289,7 +289,7 @@ char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 		 * decimal point plus an optional sign + a null */
 		s = XLALMalloc(21 * sizeof(*s));
 		if(!s)
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/* normalize the fractional part */

@@ -389,7 +389,7 @@ XLALSimInspiralTaylorT4Setup(
         case 2:
         case 3:
             XLALPrintError("XLAL Error - %s: PN approximant not supported for PN order %d\n", __func__,O);
-            XLAL_ERROR(__func__, XLAL_EINVAL);
+            XLAL_ERROR(XLAL_EINVAL);
             break;
         case 4:
             f->energy4 = &XLALSimInspiralEnergy4_4PN;
@@ -410,11 +410,11 @@ XLALSimInspiralTaylorT4Setup(
             break;
         case 8:
             XLALPrintError("XLAL Error - %s: PN approximant not supported for PN order %d\n", __func__,O);
-            XLAL_ERROR(__func__, XLAL_EINVAL);
+            XLAL_ERROR(XLAL_EINVAL);
             break;
         default:
             XLALPrintError("XLAL Error - %s: Unknown PN order in switch\n", __func__);
-            XLAL_ERROR(__func__, XLAL_EINVAL);
+            XLAL_ERROR(XLAL_EINVAL);
     }
   
   return 0;
@@ -443,7 +443,6 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 		int O                  /**< twice post-Newtonian order */
 		)
 {
-	static const char *func = "XLALSimInspiralTaylorT4PNEvolveOrbit";
 	const UINT4 blocklen = 1024;
 	const REAL8 xisco = 1./6.;
 	XLALSimInspiralTaylorT4PNEvolveOrbitParams params;
@@ -451,7 +450,7 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
     expnCoeffsTaylorT4 ak;
     
     if(XLALSimInspiralTaylorT4Setup(&ak,&expnfunc,m1,m2,O))
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
     
     params.func=expnfunc.angacc4;
     params.ak=ak;
@@ -474,13 +473,13 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 	*x = XLALCreateREAL8TimeSeries( "ORBITAL_FREQUENCY_PARAMETER", tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
 	*phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
 	if ( !x || !phi )
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	y[0] = (*x)->data->data[0] = pow(LAL_PI*LAL_G_SI*ak.m*f_min/pow(LAL_C_SI,3.), 2./3.);
 	y[1] = (*phi)->data->data[0] = 0.;
 	E = expnfunc.energy4(y[0],&ak);
 	if (XLALIsREAL8FailNaN(E))
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	j = 0;
 
 	s = gsl_odeiv_step_alloc(T, 2);
@@ -492,21 +491,21 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 		dE = -E;
 		dE += E = expnfunc.energy4(y[0],&ak);
 		if (XLALIsREAL8FailNaN(E))
-			XLAL_ERROR(func, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 		if ( dE > 0.0 ) {
-			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at MECO\n", func);
+			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at MECO\n", __func__);
 			break;
 		}
 		/* ISCO termination condition for quadrupole, 1pN, 2.5pN */
 		if ( (O == 0 || O == 1 || O == 2 || O == 5 || O == 7) && y[0] > xisco ) {
-			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", func);
+			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", __func__);
 			break;
 		}
 		if ( j >= (*x)->data->length ) {
 			if ( ! XLALResizeREAL8TimeSeries(*x, 0, (*x)->data->length + blocklen) )
-				XLAL_ERROR(func, XLAL_EFUNC);
+				XLAL_ERROR(XLAL_EFUNC);
 			if ( ! XLALResizeREAL8TimeSeries(*phi, 0, (*phi)->data->length + blocklen) )
-				XLAL_ERROR(func, XLAL_EFUNC);
+				XLAL_ERROR(XLAL_EFUNC);
 		}
 		(*x)->data->data[j] = y[0];
 		(*phi)->data->data[j] = y[1];
@@ -515,9 +514,9 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 
 	/* make the correct length */
 	if ( ! XLALResizeREAL8TimeSeries(*x, 0, j) )
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	if ( ! XLALResizeREAL8TimeSeries(*phi, 0, j) )
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/* adjust to correct tc and phic */
 	XLALGPSAdd(&(*phi)->epoch, -1.0*j*deltaT);
@@ -553,19 +552,18 @@ int XLALSimInspiralTaylorT4PNGenerator(
 	       	int phaseO                /**< twice post-Newtonian phase order */
 		)
 {
-	static const char *func = "XLALSimInspiralPNGenerator";
 	REAL8TimeSeries *x;
 	REAL8TimeSeries *phi;
 	int status;
 	int n;
 	n = XLALSimInspiralTaylorT4PNEvolveOrbit(&x, &phi, tc, phic, deltaT, m1, m2, f_min, phaseO);
 	if ( n < 0 )
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, x, phi, x0, m1, m2, r, i, amplitudeO);
 	XLALDestroyREAL8TimeSeries(phi);
 	XLALDestroyREAL8TimeSeries(x);
 	if ( status < 0 )
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	return n;
 }
 

@@ -85,11 +85,11 @@ INT4 XLALOverlappedSegmentsCommensurate(
 
 	if(segment_length < 1) {
 		XLALPrintError("segment_length < 1");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(segment_shift < 1) {
 		XLALPrintError("segment_shift < 1");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 
 	/*
@@ -183,23 +183,23 @@ INT4 XLALEPGetTimingParameters(
 
 	if(window_length % 4 != 0) {
 		XLALPrintError("window_length is not a multiple of 4");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(max_tile_length < 1) {
 		XLALPrintError("max_tile_length < 1");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(fractional_tile_shift <= 0) {
 		XLALPrintError("fractional_tile_shift <= 0");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(fmod(fractional_tile_shift * max_tile_length, 1) != 0) {
 		XLALPrintError("fractional_tile_shift * max_tile_length not an integer");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(max_tile_shift < 1) {
 		XLALPrintError("fractional_tile_shift * max_tile_length < 1");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 
 	/*
@@ -230,7 +230,7 @@ INT4 XLALEPGetTimingParameters(
 	tlength = XLALOverlappedSegmentsCommensurate(tlength, max_tile_length, max_tile_shift);
 	if(tlength < 1) {
 		XLALPrintError("tiling_length < 1");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(tiling_length)
 		*tiling_length = tlength;
@@ -242,7 +242,7 @@ INT4 XLALEPGetTimingParameters(
 	wpad = (window_length - tlength) / 2;
 	if(tlength + 2 * wpad != window_length) {
 		XLALPrintError("cannot find window parameters consistent with tiling parameters");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(window_pad)
 		*window_pad = wpad;
@@ -255,7 +255,7 @@ INT4 XLALEPGetTimingParameters(
 	wshift = tlength - (max_tile_length - max_tile_shift);
 	if(wshift < 1) {
 		XLALPrintError("window_shift < 1");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(window_shift)
 		*window_shift = wshift;
@@ -267,20 +267,20 @@ INT4 XLALEPGetTimingParameters(
 	if(psd_length) {
 		*psd_length = XLALOverlappedSegmentsCommensurate(*psd_length, window_length, wshift);
 		if(*psd_length < 0)
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 
 		if(psd_shift) {
 			*psd_shift = *psd_length - (window_length - wshift);
 			if(*psd_shift < 1) {
 				XLALPrintError("psd_shift < 1");
-				XLAL_ERROR(__func__, XLAL_EINVAL);
+				XLAL_ERROR(XLAL_EINVAL);
 			}
 		}
 	} else if(psd_shift) {
 		/* for safety */
 		*psd_shift = -1;
 		/* can't compute psd_shift without psd_length input */
-		XLAL_ERROR(__func__, XLAL_EFAULT);
+		XLAL_ERROR(XLAL_EFAULT);
 	}
 
 	return 0;
@@ -336,7 +336,7 @@ REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	unsigned i;
 
 	if(window->sumofsquares <= 0)
-		XLAL_ERROR_NULL(__func__, XLAL_EDOM);
+		XLAL_ERROR_NULL(XLAL_EDOM);
 
 	/*
 	 * Create a sequence to hold the normalized square of the window
@@ -348,7 +348,7 @@ REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	if(!wsquared || !tilde_wsquared) {
 		XLALDestroyREAL8Sequence(wsquared);
 		XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/*
@@ -365,7 +365,7 @@ REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	if(XLALREAL8ForwardFFT(tilde_wsquared, wsquared, plan)) {
 		XLALDestroyREAL8Sequence(wsquared);
 		XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 	XLALDestroyREAL8Sequence(wsquared);
 
@@ -376,7 +376,7 @@ REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	correlation = XLALCreateREAL8Sequence(tilde_wsquared->length);
 	if(!correlation) {
 		XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/*
@@ -482,7 +482,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	 */
 
 	if(XLALEPGetTimingParameters(tseries_length, max_tile_duration / tseries_deltaT, tiling_fractional_stride, NULL, NULL, &window_shift, &tiling_start, &tiling_length) < 0)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/*
 	 * Make sure that input parameters are reasonable, and that a
@@ -513,7 +513,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	   (tiling_length % max_length != 0) ||
 	   (channels % max_channels != 0)) {
 		XLALPrintError("unable to construct time-frequency tiling from input parameters\n");
-		XLAL_ERROR_NULL(__func__, XLAL_EINVAL);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 
 	/*
@@ -538,7 +538,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 		XLALDestroyREAL8Sequence(unwhitened_channel_buffer);
 		XLALDestroyREAL8Window(tukey);
 		XLALDestroyREAL8Sequence(correlation);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/*
@@ -646,7 +646,7 @@ double XLALExcessPowerFilterInnerProduct(
 	if(filter1->deltaF != filter2->deltaF || (psd &&
 		(psd->deltaF != filter1->deltaF || psd->f0 > min(filter1->f0, filter2->f0) || max(filter1->f0 + filter1->data->length * filter1->deltaF, filter2->f0 + filter2->data->length * filter2->deltaF) > psd->f0 + psd->data->length * psd->deltaF)
 	)) {
-		XLAL_ERROR_REAL8(__func__, XLAL_EINVAL);
+		XLAL_ERROR_REAL8(XLAL_EINVAL);
 	}
 
 	/*
@@ -722,7 +722,7 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	if(!filter || !hann) {
 		XLALDestroyCOMPLEX16FrequencySeries(filter);
 		XLALDestroyREAL8Window(hann);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 	for(i = 0; i < filter->data->length; i++) {
 		filter->data->data[i].re = hann->data->data[i];
@@ -790,7 +790,7 @@ LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 		free(basis_filters);
 		XLALDestroyREAL8Sequence(twice_channel_overlap);
 		XLALDestroyREAL8Sequence(unwhitened_cross);
-		XLAL_ERROR_NULL(__func__, XLAL_ENOMEM);
+		XLAL_ERROR_NULL(XLAL_ENOMEM);
 	}
 
 	new->n_filters = n_channels;
@@ -806,7 +806,7 @@ LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 			free(new);
 			XLALDestroyREAL8Sequence(twice_channel_overlap);
 			XLALDestroyREAL8Sequence(unwhitened_cross);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 
 		/* compute the unwhitened root mean square for this channel */

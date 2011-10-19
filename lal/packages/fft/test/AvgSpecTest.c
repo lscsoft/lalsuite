@@ -127,7 +127,7 @@ int main( void )
       specpar.window, specpar.plan );
   if ( xlalErrno )
   {
-    XLAL_PERROR( "main" );
+    XLAL_PERROR();
     exit( 1 );
   }
 
@@ -149,7 +149,7 @@ int main( void )
       specpar.window, specpar.plan );
   if ( xlalErrno )
   {
-    XLAL_PERROR( "main" );
+    XLAL_PERROR();
     exit( 1 );
   }
 
@@ -171,7 +171,7 @@ int main( void )
       specpar.window, specpar.plan );
   if ( xlalErrno )
   {
-    XLAL_PERROR( "main" );
+    XLAL_PERROR();
     exit( 1 );
   }
 

@@ -15,7 +15,6 @@
 
 int XWFUNC ( STYPE *series, int frnum )
 {
-  static const char func[] = STRING(XWFUNC);
   char fname[FILENAME_MAX];
   char tmpfname[FILENAME_MAX];
   char comment[] = STRING(XWFUNC);
@@ -38,9 +37,9 @@ int XWFUNC ( STYPE *series, int frnum )
   int c;
 
   if ( ! series )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( ! series->data || ! series->data->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   /* if channel name is of the form Xn:... then Xn is the ifo name */
   if ( isupper( series->name[0] ) )
@@ -79,24 +78,24 @@ int XWFUNC ( STYPE *series, int frnum )
   t0 = series->epoch.gpsSeconds;
   dt = (INT4)ceil( XLALGPSGetREAL8( &series->epoch ) + duration ) - t0;
   if ( t0 < 0 || dt < 1 )
-    XLAL_ERROR( func, XLAL_ETIME );
+    XLAL_ERROR( XLAL_ETIME );
 
   /* construct file name */
   c = snprintf( fname, sizeof( fname ), "%c-%s-%d-%d.gwf", site, description, t0, dt );
   if ( c < 0 || c > (int)sizeof(fname) - 2 )
-    XLAL_ERROR( func, XLAL_ENAME );
+    XLAL_ERROR( XLAL_ENAME );
   c = snprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
   if ( c < 0 || c > (int)sizeof(tmpfname) - 2 )
-    XLAL_ERROR( func, XLAL_ENAME );
+    XLAL_ERROR( XLAL_ENAME );
 
   /* get sample unit string */
   if (NULL == XLALUnitAsString( units, sizeof( units ), &series->sampleUnits ))
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* construct vector and copy data */
   vect = FrVectNew1D( series->name, FRTYPE, series->data->length, series->deltaT, seconds, units );
   if ( ! vect )
-    XLAL_ERROR( func, XLAL_EERR );
+    XLAL_ERROR( XLAL_EERR );
   vect->startX[0] = 0.0;
   memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
 
@@ -104,7 +103,7 @@ int XWFUNC ( STYPE *series, int frnum )
   if ( ! frame )
   {
     FrVectFree( vect );
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   proc = FrProcDataNewV( frame, vect );
@@ -112,7 +111,7 @@ int XWFUNC ( STYPE *series, int frnum )
   {
     FrameFree( frame );
     FrVectFree( vect );
-    XLAL_ERROR( func, XLAL_EERR );
+    XLAL_ERROR( XLAL_EERR );
   }
   FrStrCpy( &proc->comment, comment );
   proc->timeOffset = 0;
@@ -128,13 +127,13 @@ int XWFUNC ( STYPE *series, int frnum )
   if ( ! frfile )
   {
     FrameFree( frame ); /* this frees proc and vect */
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR( XLAL_EIO );
   }
   if ( FR_OK != FrameWrite( frame, frfile ) )
   {
     FrameFree( frame ); /* this frees proc and vect */
     FrFileFree( frfile );
-    XLAL_ERROR( func, XLAL_EERR );
+    XLAL_ERROR( XLAL_EERR );
   }
 
   FrFileOEnd( frfile );
@@ -142,7 +141,7 @@ int XWFUNC ( STYPE *series, int frnum )
 
   /* now rename tmpfile */
   if ( rename( tmpfname, fname ) < 0 )
-    XLAL_ERROR( func, XLAL_ESYS );
+    XLAL_ERROR( XLAL_ESYS );
 
   return 0;
 }

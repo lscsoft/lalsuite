@@ -524,7 +524,6 @@ XLALFreeCoincRingdown(
     CoincRingdownTable        **coincPtr
     )
 {
-  /*static const char *func = "FreeCoincRingdown";*/
   InterferometerNumber          ifoNumber  = LAL_UNKNOWN_IFO;
   EventIDColumn                *prevID     = NULL;
   EventIDColumn                *thisID     = NULL;
@@ -603,7 +602,6 @@ XLALAddSnglRingdownToCoinc(
     )
 
 {
-  static const char *func = "XLALAddSnglRingdownToCoinc";
   EventIDColumn     *eventId = NULL;
 
   /* allocate memory for new coinc if it doesn't exist */
@@ -614,7 +612,7 @@ XLALAddSnglRingdownToCoinc(
     if ( !coincRingdown )
     {
       LALFree( coincRingdown );
-      XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+      XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
   }
 
@@ -633,7 +631,7 @@ XLALAddSnglRingdownToCoinc(
       {
         /* Invalid Hanford Detector */
         XLALPrintError( "Invalid ifo in input snglInspiral" );
-        XLAL_ERROR_NULL(func,XLAL_EIO);
+        XLAL_ERROR_NULL(XLAL_EIO);
       }
       break;
 
@@ -648,7 +646,7 @@ XLALAddSnglRingdownToCoinc(
     default:
       /* Invalid Detector Site */
       XLALPrintError( "Invalid ifo in input snglInspiral" );
-      XLAL_ERROR_NULL(func,XLAL_EIO);
+      XLAL_ERROR_NULL(XLAL_EIO);
   }
 
   ++(coincRingdown->numIfos);
@@ -660,7 +658,7 @@ XLALAddSnglRingdownToCoinc(
     if ( !eventId )
     {
       LALFree(eventId);
-      XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+      XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
     snglRingdown->event_id = eventId;
   }
@@ -673,7 +671,7 @@ XLALAddSnglRingdownToCoinc(
     if ( !eventId )
     {
       LALFree(eventId);
-      XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+      XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
   }
   eventId->snglRingdownTable = snglRingdown;
@@ -767,7 +765,6 @@ XLALExtractSnglRingdownFromCoinc(
     )
 
 {
-  static const char *func = "ExtractSnglRingdownFromCoinc";
   SnglRingdownTable  *snglHead = NULL;
   SnglRingdownTable  *thisSngl = NULL;
   SnglRingdownTable  *thisCoincEntry = NULL;
@@ -833,7 +830,7 @@ XLALExtractSnglRingdownFromCoinc(
             snglHead = snglHead->next;
             XLALFreeSnglRingdown( &thisSngl );
           }
-          XLAL_ERROR_NULL(func,XLAL_EIO);
+          XLAL_ERROR_NULL(XLAL_EIO);
         }
 
         if ( slideNum < 0 )
@@ -939,13 +936,12 @@ XLALCoincRingdownIdNumber (
     )
 
 {
-  static const char *func = "CoincRingdownIdNumber";
   SnglRingdownTable    *thisSngl = NULL;
   InterferometerNumber  ifoNumber  = LAL_UNKNOWN_IFO;
 
   if ( !coincRingdown )
   {
-    XLAL_ERROR(func,XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
 
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
@@ -970,7 +966,7 @@ XLALCoincRingdownIdNumber (
   }
   /* should never get here */
   XLALPrintError( "Unable to find id associated to this event" );
-  XLAL_ERROR(func,XLAL_EIO);
+  XLAL_ERROR(XLAL_EIO);
 }
 
 
@@ -1114,7 +1110,6 @@ XLALCompleteCoincRingdown (
     )
 
 {
-  static const char     *func = "XLALCompleteCoincRingdown";
   CoincRingdownTable    *thisCoinc = NULL;
   SnglRingdownTable     *snglHead  = NULL;
   SnglRingdownTable     *thisSngl   = NULL;
@@ -1148,7 +1143,7 @@ XLALCompleteCoincRingdown (
             snglHead = snglHead->next;
             LALFree(thisSngl);
           }
-          XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+          XLAL_ERROR_NULL(XLAL_ENOMEM);
         }
 
         /* populate the ifo field */
@@ -1256,7 +1251,6 @@ XLALRecreateRingdownCoincFromSngls(
     )
 
 {
-  static const char *func = "RecreateCoincFromSngls";
   SnglRingdownTable    *thisSngl  = NULL;
   CoincRingdownTable   *thisCoinc = NULL;
   CoincRingdownTable   *prevCoinc = NULL;
@@ -1307,7 +1301,7 @@ XLALRecreateRingdownCoincFromSngls(
             coincHead = coincHead->next;
             LALFree(thisCoinc);
           }
-          XLAL_ERROR(func, XLAL_EDATA);
+          XLAL_ERROR( XLAL_EDATA);
         }
         else
         {
@@ -1344,7 +1338,7 @@ XLALRecreateRingdownCoincFromSngls(
           coincHead = coincHead->next;
           LALFree( thisCoinc );
         }
-        XLAL_ERROR(func,XLAL_ENOMEM);
+        XLAL_ERROR(XLAL_ENOMEM);
       }
 
       thisCoinc->snglRingdown[ifoNumber] = thisSngl;
@@ -1370,7 +1364,6 @@ XLALGenerateCoherentBank(
     )
 
 {
-  static const char *func = "CreateCoherentBank";
   InterferometerNumber  ifoInCoinc = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoNumber  = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoMax  = LAL_UNKNOWN_IFO;
@@ -1459,7 +1452,7 @@ XLALGenerateCoherentBank(
     bankHead = bankHead->next;
     XLALFreeSnglRingdown( &currentTrigger );
   }
-  XLAL_ERROR(func,XLAL_ENOMEM);
+  XLAL_ERROR(XLAL_ENOMEM);
 
 }
 #endif
@@ -1473,7 +1466,6 @@ XLALRingdownDistanceCut(
     )
 
 {
-  /*static const char *func = "RingdownDistanceCut";*/
   InterferometerNumber  ifoA = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoB = LAL_UNKNOWN_IFO;
   CoincRingdownTable   *thisCoinc = NULL;
@@ -1632,7 +1624,6 @@ XLALCoincRingdownTimeNS (
     const CoincRingdownTable         *coincRingdown
     )
 {
-  static const char *func = "XLALCoincRingdownTimeNS";
   InterferometerNumber  ifoNumber;
   INT8 startTime = 0;
 
@@ -1645,7 +1636,7 @@ XLALCoincRingdownTimeNS (
       return(startTime);
     }
   }
-  XLAL_ERROR(func,XLAL_EIO);
+  XLAL_ERROR(XLAL_EIO);
 }
 
 
@@ -1734,7 +1725,6 @@ XLALClusterCoincRingdownTable (
     )
 
 {
-  static const char *func = "XLALClusterCoincRingdownTable";
   CoincRingdownTable     *thisCoinc = NULL;
   CoincRingdownTable     *prevCoinc = NULL;
   CoincRingdownTable     *nextCoinc = NULL;
@@ -1748,7 +1738,7 @@ XLALClusterCoincRingdownTable (
 
   if ( !coincList )
   {
-    XLAL_ERROR(func,XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
 
   if ( ! *coincList )

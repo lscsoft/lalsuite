@@ -33,6 +33,9 @@ swig-install :
 swig-uninstall :
 	-test -f .install.txt && rm -f `cat .install.txt`
 
+# language-specific headers (with LAL only)
+swiginclude_HEADERS += $(SWIG_PYTHON_HEADERS)
+
 # extra distribution files
 EXTRA_DIST += \
 	$(swig_wrapcheck).py \

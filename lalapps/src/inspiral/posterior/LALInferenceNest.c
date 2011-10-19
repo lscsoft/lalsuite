@@ -205,7 +205,7 @@ void initializeTemplate(LALInferenceRunState *runState)
 		else {
 			XLALPrintError("Error: unknown template %s\n",ppt->value);
 			XLALPrintError(help);
-			XLAL_ERROR_VOID(__func__,XLAL_EINVAL);
+			XLAL_ERROR_VOID(XLAL_EINVAL);
 		}
 
 	}

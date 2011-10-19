@@ -22,19 +22,18 @@
 
 int XFSFUNC ( FSTYPE *series, FrStream *stream )
 { 
-  static const char func[] = STRING(XFSFUNC);
   struct FrVect	*vect;
 
   if ( stream->state & LAL_FR_ERR )
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR( XLAL_EIO );
   if ( stream->state & LAL_FR_END )
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR( XLAL_EIO );
 
   vect = loadFrVect( stream, series->name );
   if ( ! vect || ! vect->data )
-    XLAL_ERROR( func, XLAL_ENAME ); /* couldn't find channel */
+    XLAL_ERROR( XLAL_ENAME ); /* couldn't find channel */
   if ( vect->type != FRTYPE )
-    XLAL_ERROR( func, XLAL_ETYPE ); /* data has wrong type */
+    XLAL_ERROR( XLAL_ETYPE ); /* data has wrong type */
 
 #if defined FR_VERS && FR_VERS >= 5000
   series->epoch.gpsSeconds     = floor( vect->GTime );
@@ -50,14 +49,14 @@ int XFSFUNC ( FSTYPE *series, FrStream *stream )
   if ( ! series->data )
   {
     FrVectFree(vect);
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
   series->data->length = vect->nData;
   series->data->data = LALMalloc( series->data->length * sizeof( *series->data->data ) );
   if ( ! series->data->data )
   {
     FrVectFree(vect);
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
   memcpy( series->data->data, vect->FRDATA, series->data->length * sizeof( *series->data->data ) );
 
@@ -136,7 +135,6 @@ FSFUNC (
 
 int XFUNCM ( STYPE *series, FrStream *stream )
 {
-  static const char func[] = STRING(XFUNCM);
   const REAL8    fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
   struct FrVect	*vect;
   UINT4		 noff;
@@ -145,15 +143,15 @@ int XFUNCM ( STYPE *series, FrStream *stream )
   REAL8          rate;
 
   if ( stream->state & LAL_FR_ERR )
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR( XLAL_EIO );
   if ( stream->state & LAL_FR_END )
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR( XLAL_EIO );
 
   vect = loadFrVect( stream, series->name );
   if ( ! vect || ! vect->data )
-    XLAL_ERROR( func, XLAL_ENAME ); /* couldn't find channel */
+    XLAL_ERROR( XLAL_ENAME ); /* couldn't find channel */
   if ( vect->type != FRTYPE )
-    XLAL_ERROR( func, XLAL_ETYPE ); /* data has wrong type */
+    XLAL_ERROR( XLAL_ETYPE ); /* data has wrong type */
 
   tnow = EPOCH_TO_I8TIME( stream->epoch );
 #if defined FR_VERS && FR_VERS >= 5000
@@ -164,7 +162,7 @@ int XFUNCM ( STYPE *series, FrStream *stream )
   if ( tnow + 1000 < tbeg )  /* added 1000 ns to account for double precision */
   {
     FrVectFree(vect);
-    XLAL_ERROR( func, XLAL_ETIME ); /* invalid time offset */
+    XLAL_ERROR( XLAL_ETIME ); /* invalid time offset */
   }
 
   /* compute number of points offset very carefully:
@@ -188,7 +186,6 @@ int XFUNCM ( STYPE *series, FrStream *stream )
 
 int XFUNC ( STYPE *series, FrStream *stream )
 {
-  static const char func[] = STRING(XFUNC);
   const REAL8    fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
   struct FrVect	*vect;
   UINT4		 need;
@@ -203,15 +200,15 @@ int XFUNC ( STYPE *series, FrStream *stream )
   INT4           gap = 0;
 
   if ( stream->state & LAL_FR_ERR )
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR( XLAL_EIO );
   if ( stream->state & LAL_FR_END )
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR( XLAL_EIO );
 
   vect = loadFrVect( stream, series->name );
   if ( ! vect || ! vect->data )
-    XLAL_ERROR( func, XLAL_ENAME ); /* couldn't find channel */
+    XLAL_ERROR( XLAL_ENAME ); /* couldn't find channel */
   if ( vect->type != FRTYPE )
-    XLAL_ERROR( func, XLAL_ETYPE ); /* data has wrong type */
+    XLAL_ERROR( XLAL_ETYPE ); /* data has wrong type */
 
   tnow = EPOCH_TO_I8TIME( stream->epoch );
 #if defined FR_VERS && FR_VERS >= 5000
@@ -222,7 +219,7 @@ int XFUNC ( STYPE *series, FrStream *stream )
   if ( tnow + 1000 < tbeg )  /* added 1000 ns to account for double precision */
   {
     FrVectFree(vect);
-    XLAL_ERROR( func, XLAL_ETIME ); /* invalid time offset */
+    XLAL_ERROR( XLAL_ETIME ); /* invalid time offset */
   }
 
   /* compute number of points offset very carefully:
@@ -247,9 +244,9 @@ int XFUNC ( STYPE *series, FrStream *stream )
 
   /* check to see if data vector is ok */
   if ( ! series->data->data )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( ! series->data->length )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* mult is two if output series is complex */
   mult = sizeof( *series->data->data ) / sizeof( *vect->FRDATA );
@@ -258,7 +255,7 @@ int XFUNC ( STYPE *series, FrStream *stream )
   if ( noff > vect->nData )
   {
     FrVectFree(vect);
-    XLAL_ERROR( func, XLAL_ETIME ); /* invalid time offset */
+    XLAL_ERROR( XLAL_ETIME ); /* invalid time offset */
   }
 
   /* number of points to copy */
@@ -278,13 +275,13 @@ int XFUNC ( STYPE *series, FrStream *stream )
     {
       if(vect) FrVectFree(vect);
       memset( dest, 0, need * sizeof( *series->data->data ) );
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
     if ( stream->state & LAL_FR_END )
     {
       if(vect) FrVectFree(vect);
       memset( dest, 0, need * sizeof( *series->data->data ) );
-      XLAL_ERROR( func, XLAL_EIO );
+      XLAL_ERROR( XLAL_EIO );
     }
 
     /* load more data */
@@ -292,13 +289,13 @@ int XFUNC ( STYPE *series, FrStream *stream )
     if ( ! vect || ! vect->data )
     {
       memset( dest, 0, need * sizeof( *series->data->data ) );
-      XLAL_ERROR( func, XLAL_ENAME ); /* now channel is missing ... */
+      XLAL_ERROR( XLAL_ENAME ); /* now channel is missing ... */
     }
     if ( vect->type != FRTYPE )
     {
       FrVectFree(vect);
       memset( dest, 0, need * sizeof( *series->data->data ) );
-      XLAL_ERROR( func, XLAL_ETYPE ); /* now type is wrong ... */
+      XLAL_ERROR( XLAL_ETYPE ); /* now type is wrong ... */
     }
 
     if ( stream->state & LAL_FR_GAP ) /* gap in data */
@@ -348,7 +345,7 @@ int XFUNC ( STYPE *series, FrStream *stream )
     stream->mode |= LAL_FR_IGNOREGAP_MODE;
     if ( XLALFrNext( stream ) < 0 ) {
       stream->mode = keepmode;
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
     if ( ! (stream->state & LAL_FR_GAP) )
       stream->epoch = keep;
@@ -360,7 +357,7 @@ int XFUNC ( STYPE *series, FrStream *stream )
   /* FIXME: does this need to cause a failure if mode is set to fail on gaps? */
 
   if ( stream->state & LAL_FR_ERR )
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR( XLAL_EIO );
 
   return 0;
 }
@@ -621,19 +618,18 @@ STYPE *XRFUNC (
 	size_t lengthlimit
 )
 {
-	static const char func[] = STRING(XRFUNC);
 	STYPE *series;
 	size_t length;
 
 	/* create and initialize a zero-length time series vector */
 	series = XCFUNC(chname, start, 0.0, 0.0, &lalADCCountUnit, 0);
 	if(!series)
-		XLAL_ERROR_NULL (func, XLAL_EFUNC);
+		XLAL_ERROR_NULL (XLAL_EFUNC);
 
 	/* get the time series meta-data */
 	if(XFUNCM(series, stream)) {
 		XDFUNC(series);
-		XLAL_ERROR_NULL (func, XLAL_EFUNC);
+		XLAL_ERROR_NULL (XLAL_EFUNC);
 	}
 
 	/* resize the time series to the correct number of samples */
@@ -642,13 +638,13 @@ STYPE *XRFUNC (
 		length = lengthlimit;
 	if(!XREFUNC(series, 0, length)) {
 		XDFUNC(series);
-		XLAL_ERROR_NULL (func, XLAL_EFUNC);
+		XLAL_ERROR_NULL (XLAL_EFUNC);
 	}
 
 	/* read the data */
 	if(XLALFrSeek (stream, start) || XFUNC(series, stream)) {
 		XDFUNC(series);
-		XLAL_ERROR_NULL (func, XLAL_EFUNC);
+		XLAL_ERROR_NULL (XLAL_EFUNC);
 	}
 
 	return(series);
