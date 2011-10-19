@@ -274,6 +274,8 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   LALInferenceAddProposalToCycle(runState, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
 
+  LALInferenceAddProposalToCycle(runState, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
+
   UINT4 nDet = numDetectorsUniquePositions(runState);
   if (nDet == 3) {
     LALInferenceAddProposalToCycle(runState, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
@@ -284,7 +286,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   /* Now add various special proposals that are conditional on
      command-line arguments or variables in the params. */
   if(LALInferenceCheckVariable(proposedParams,"inclination")) {
-    LALInferenceAddProposalToCycle(runState, &LALInferenceInclinationFlip, TINYWEIGHT);
+    LALInferenceAddProposalToCycle(runState, &LALInferenceInclinationDistance, TINYWEIGHT);
   }
 
   if(LALInferenceCheckVariable(proposedParams,"phase")) {
@@ -509,22 +511,77 @@ void LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVa
   LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
 }
 
-void LALInferenceInclinationFlip(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
-  REAL8 iota;
+/* The idea for this jump proposal is to explore the cos(I)-d
+   degeneracy that we see in our MCMC's.  If we had exactly one
+   detector in the network, this would be a perfect degeneracy for
+   non-spinning signals, since the inclination and distance both enter
+   only in the amplitude of the signal.  With multiple detectors, the
+   degeneracy is broken because each detector responds differently to
+   the + and x polarizations (i.e. has different f+, fx), and
+   therefore differently to changes in the inclination of the system.  
 
+   This jump proposal selects one of the detectors at random, and then
+   jumps to a random location on the cos(I)-d curve that keeps that
+   detector's received GW amplitude constant.  We choose to keep the
+   amplitude constant in only one of the detectors instead of, for
+   example, keeping the SNR-weighted amplitude constant, or the
+   uniformly-weighted amplitude, or the sensitivity-weighted
+   amplitude, or ... because it makes for the simplest jump proposal.
+   */
+void LALInferenceInclinationDistance(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
-  iota = *((REAL8 *) LALInferenceGetVariable(proposedParams, "inclination"));
+  UINT4 nIFO = 0;
+  LALInferenceIFOData *data = runState->data;
+  while (data != NULL) {
+    nIFO++;
+    data = data->next;
+  }
+
+  /* Grab one of the detectors. */
+  UINT4 iIFO = gsl_rng_uniform_int(runState->GSLrandom, nIFO);
+  data = runState->data;
+  while (iIFO > 0) {
+    iIFO--;
+    data = data->next;
+  }
+
+  REAL8 ra, dec, psi, t, gmst;
+  LIGOTimeGPS tGPS;
+  ra = *(REAL8 *)LALInferenceGetVariable(proposedParams, "rightascension");
+  dec = *(REAL8 *)LALInferenceGetVariable(proposedParams, "declination");
+  psi = *(REAL8 *)LALInferenceGetVariable(proposedParams, "polarisation");
+  t = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
   
-  iota = M_PI - iota;
+  XLALGPSSetREAL8(&tGPS, t);
+  gmst = XLALGreenwichMeanSiderealTime(&tGPS);
 
-  LALInferenceSetVariable(proposedParams, "inclination", &iota);
+  REAL8 fPlus, fCross;
+  XLALComputeDetAMResponse(&fPlus, &fCross, data->detector->response, ra, dec, psi, gmst);
 
-  /* Symmetric proposal, because Cos(I) = Cos(Pi - I). */
-  LALInferenceSetLogProposalRatio(runState, 0.0);
+  /* Choose new inclination uniformly in cos(i). */
+  REAL8 inc = *(REAL8 *)LALInferenceGetVariable(proposedParams, "inclination");
+  REAL8 cosI = cos(inc);
+  REAL8 cosINew = 2.0*gsl_rng_uniform(runState->GSLrandom) - 1.0;
 
-  /* Not really needed (probably), but let's be safe. */
-  LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs); 
+  REAL8 d = *(REAL8 *)LALInferenceGetVariable(proposedParams, "distance");
+
+  /* This is the constant that describes the curve. */
+  REAL8 C = (fPlus*(1 + cosI*cosI) + 2.0*fCross*cosI)/d;
+
+  REAL8 dNew = (fPlus*(1 + cosINew*cosINew) + 2.0*fCross*cosI) / C;
+
+  REAL8 incNew = acos(cosINew);
+
+  /* This is the determinant of the Jacobian d(cos(i),C)/d(i, d),
+     which is the probability density in (i,d) space of a proposal
+     that is uniform in cos(i), C.*/
+  REAL8 dcosiCdid = C*C*sqrt(1-cosINew*cosINew) / (fPlus + 2.0*fCross*cosINew + fPlus*cosINew*cosINew);
+
+  LALInferenceSetVariable(proposedParams, "inclination", &incNew);
+  LALInferenceSetVariable(proposedParams, "distance", &dNew);
+
+  LALInferenceSetLogProposalRatio(runState, log(dcosiCdid));
 }
 
 void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
@@ -1144,4 +1201,23 @@ LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *p
   }
 
   LALInferenceSetLogProposalRatio(runState, logPr);
+}
+
+void
+LALInferencePolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+
+  REAL8 psi = *(REAL8 *)LALInferenceGetVariable(proposedParams, "polarisation");
+  REAL8 phi = *(REAL8 *)LALInferenceGetVariable(proposedParams, "phase");
+
+  phi += M_PI;
+  psi += M_PI/2;
+
+  phi = fmod(phi, 2.0*M_PI);
+  psi = fmod(psi, M_PI);
+
+  LALInferenceSetVariable(proposedParams, "polarisation", &psi);
+  LALInferenceSetVariable(proposedParams, "phase", &phi);
+
+  LALInferenceSetLogProposalRatio(runState, 0.0);
 }

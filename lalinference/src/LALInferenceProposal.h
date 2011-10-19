@@ -118,11 +118,16 @@ void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVari
     --adapt command-line flag given. */
 void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Flip inclination about observing plane (iota -> Pi - iota) */
-void LALInferenceInclinationFlip(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+/** Chooses a detector at random, and keeps the amplitude coefficient
+    in that detector, A = (fPlus*iPlus + fCross*iCross)/d, constant
+    while choosing a different inclination and distance. */
+void LALInferenceInclinationDistance(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Increments the orbital phase by pi. */
 void LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+/** Polarization-phase exact degeneracy. */
+void LALInferencePolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Choose a random covariance matrix eigenvector to jump along. */
 void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
