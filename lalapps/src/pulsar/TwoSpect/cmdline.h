@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.8"
+#define CMDLINE_PARSER_VERSION "1.1.9"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -152,6 +152,9 @@ struct gengetopt_args_info
   const char *sftType_help; /**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization help description.  */
   int markBadSFTs_flag;	/**< @brief Mark bad SFTs (default=off).  */
   const char *markBadSFTs_help; /**< @brief Mark bad SFTs help description.  */
+  double simpleBandRejection_arg;	/**< @brief Produce upper limits for each band, but if second FFT plane std. dev. exceeds threshold given here, don't follow up any IHS candidates.  */
+  char * simpleBandRejection_orig;	/**< @brief Produce upper limits for each band, but if second FFT plane std. dev. exceeds threshold given here, don't follow up any IHS candidates original value given at command line.  */
+  const char *simpleBandRejection_help; /**< @brief Produce upper limits for each band, but if second FFT plane std. dev. exceeds threshold given here, don't follow up any IHS candidates help description.  */
   int FFTplanFlag_arg;	/**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive (default='3').  */
   char * FFTplanFlag_orig;	/**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive original value given at command line.  */
   const char *FFTplanFlag_help; /**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive help description.  */
@@ -214,6 +217,7 @@ struct gengetopt_args_info
   unsigned int SFToverlap_given ;	/**< @brief Whether SFToverlap was given.  */
   unsigned int sftType_given ;	/**< @brief Whether sftType was given.  */
   unsigned int markBadSFTs_given ;	/**< @brief Whether markBadSFTs was given.  */
+  unsigned int simpleBandRejection_given ;	/**< @brief Whether simpleBandRejection was given.  */
   unsigned int FFTplanFlag_given ;	/**< @brief Whether FFTplanFlag was given.  */
   unsigned int allULvalsPerSkyLoc_given ;	/**< @brief Whether allULvalsPerSkyLoc was given.  */
   unsigned int fastchisqinv_given ;	/**< @brief Whether fastchisqinv was given.  */

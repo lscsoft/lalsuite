@@ -72,6 +72,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --SFToverlap=DOUBLE       SFT overlap in seconds, usually Tcoh/2  \n                                  (default=`900')",
   "      --sftType=STRING          SFT from either 'MFD' (Makefakedata_v4) or \n                                  'vladimir' (Vladimir's SFT windowed version) \n                                  which uses a factor of 2 rather than \n                                  sqrt(8/3) for the window normalization  \n                                  (possible values=\"MFD\", \"vladimir\" \n                                  default=`vladimir')",
   "      --markBadSFTs             Mark bad SFTs  (default=off)",
+  "      --simpleBandRejection=DOUBLE\n                                Produce upper limits for each band, but if \n                                  second FFT plane std. dev. exceeds threshold \n                                  given here, don't follow up any IHS \n                                  candidates",
   "      --FFTplanFlag=INT         0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive  \n                                  (possible values=\"0\", \"1\", \"2\", \"3\" \n                                  default=`3')",
   "      --allULvalsPerSkyLoc      Print all UL values in the band specified by \n                                  ULminimumDeltaf and ULmaximumDeltaf (default \n                                  is to print only the maximum UL value in the \n                                  band)  (default=off)",
   "      --fastchisqinv            Use a faster central chi-sq inversion function \n                                  (roughly float precision instead of double)  \n                                  (default=off)",
@@ -132,11 +133,12 @@ init_help_array(void)
   gengetopt_args_info_help[41] = gengetopt_args_info_full_help[41];
   gengetopt_args_info_help[42] = gengetopt_args_info_full_help[42];
   gengetopt_args_info_help[43] = gengetopt_args_info_full_help[43];
-  gengetopt_args_info_help[44] = 0; 
+  gengetopt_args_info_help[44] = gengetopt_args_info_full_help[44];
+  gengetopt_args_info_help[45] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[45];
+const char *gengetopt_args_info_help[46];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -231,6 +233,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->SFToverlap_given = 0 ;
   args_info->sftType_given = 0 ;
   args_info->markBadSFTs_given = 0 ;
+  args_info->simpleBandRejection_given = 0 ;
   args_info->FFTplanFlag_given = 0 ;
   args_info->allULvalsPerSkyLoc_given = 0 ;
   args_info->fastchisqinv_given = 0 ;
@@ -309,6 +312,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->sftType_arg = gengetopt_strdup ("vladimir");
   args_info->sftType_orig = NULL;
   args_info->markBadSFTs_flag = 0;
+  args_info->simpleBandRejection_orig = NULL;
   args_info->FFTplanFlag_arg = 3;
   args_info->FFTplanFlag_orig = NULL;
   args_info->allULvalsPerSkyLoc_flag = 0;
@@ -370,16 +374,17 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->SFToverlap_help = gengetopt_args_info_full_help[37] ;
   args_info->sftType_help = gengetopt_args_info_full_help[38] ;
   args_info->markBadSFTs_help = gengetopt_args_info_full_help[39] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[40] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[41] ;
-  args_info->fastchisqinv_help = gengetopt_args_info_full_help[42] ;
-  args_info->useSSE_help = gengetopt_args_info_full_help[43] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[44] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[45] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[46] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[47] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[48] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[49] ;
+  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[40] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[41] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[42] ;
+  args_info->fastchisqinv_help = gengetopt_args_info_full_help[43] ;
+  args_info->useSSE_help = gengetopt_args_info_full_help[44] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[45] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[46] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[47] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[48] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[49] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[50] ;
   
 }
 
@@ -561,6 +566,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->SFToverlap_orig));
   free_string_field (&(args_info->sftType_arg));
   free_string_field (&(args_info->sftType_orig));
+  free_string_field (&(args_info->simpleBandRejection_orig));
   free_string_field (&(args_info->FFTplanFlag_orig));
   
   
@@ -720,6 +726,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "sftType", args_info->sftType_orig, cmdline_parser_sftType_values);
   if (args_info->markBadSFTs_given)
     write_into_file(outfile, "markBadSFTs", 0, 0 );
+  if (args_info->simpleBandRejection_given)
+    write_into_file(outfile, "simpleBandRejection", args_info->simpleBandRejection_orig, 0);
   if (args_info->FFTplanFlag_given)
     write_into_file(outfile, "FFTplanFlag", args_info->FFTplanFlag_orig, cmdline_parser_FFTplanFlag_values);
   if (args_info->allULvalsPerSkyLoc_given)
@@ -1352,6 +1360,7 @@ cmdline_parser_internal (
         { "SFToverlap",	1, NULL, 0 },
         { "sftType",	1, NULL, 0 },
         { "markBadSFTs",	0, NULL, 0 },
+        { "simpleBandRejection",	1, NULL, 0 },
         { "FFTplanFlag",	1, NULL, 0 },
         { "allULvalsPerSkyLoc",	0, NULL, 0 },
         { "fastchisqinv",	0, NULL, 0 },
@@ -1896,6 +1905,20 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->markBadSFTs_flag), 0, &(args_info->markBadSFTs_given),
                 &(local_args_info.markBadSFTs_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "markBadSFTs", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Produce upper limits for each band, but if second FFT plane std. dev. exceeds threshold given here, don't follow up any IHS candidates.  */
+          else if (strcmp (long_options[option_index].name, "simpleBandRejection") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->simpleBandRejection_arg), 
+                 &(args_info->simpleBandRejection_orig), &(args_info->simpleBandRejection_given),
+                &(local_args_info.simpleBandRejection_given), optarg, 0, 0, ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "simpleBandRejection", '-',
                 additional_error))
               goto failure;
           

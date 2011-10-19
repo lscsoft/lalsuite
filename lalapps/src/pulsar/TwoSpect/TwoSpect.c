@@ -29,6 +29,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifdef __SSE__
+#include <xmmintrin.h>
+#endif
+
 #include <lal/Window.h>
 #include <lal/LALMalloc.h>
 #include <lal/SFTutils.h>
@@ -311,15 +315,28 @@ int main(int argc, char *argv[])
    
    
    //Existing SFTs listed in this vector
-   INT4Vector *sftexist = existingSFTs(tfdata, inputParams, ffdata->numfbins, ffdata->numffts);;
+   INT4Vector *sftexist = existingSFTs(tfdata, inputParams, ffdata->numfbins, ffdata->numffts);
    if (sftexist==NULL) {
       fprintf(stderr, "\n%s: existingSFTs() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
    }
-   REAL4 totalincludedsftnumber = 0.0;
-   for (ii=0; ii<(INT4)sftexist->length; ii++) if (sftexist->data[ii]==1) totalincludedsftnumber += 1.0;
-   REAL4 frac_tobs_complete = totalincludedsftnumber/sftexist->length;
+   INT4 totalincludedsftnumber = 0.0;
+   for (ii=0; ii<(INT4)sftexist->length; ii++) if (sftexist->data[ii]==1) totalincludedsftnumber++;
+   REAL4 frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexist->length;
    
+   //Index values of existing SFTs
+   INT4Vector *indexValuesOfExistingSFTs = XLALCreateINT4Vector(totalincludedsftnumber);
+   if (indexValuesOfExistingSFTs==NULL) {
+      fprintf(stderr, "\n%s: XLALCreateINT4Vector(%d) failed.\n", __func__, totalincludedsftnumber);
+      XLAL_ERROR(XLAL_EFUNC);
+   }
+   jj = 0;
+   for (ii=0; ii<(INT4)sftexist->length; ii++) {
+      if (sftexist->data[ii] == 1) {
+         indexValuesOfExistingSFTs->data[jj] = ii;
+         jj++;
+      }
+   }
    
    //I wrote this to compensate for a bad input of the expected noise floor
    REAL8 backgroundmeannormfactor = 0.0;
@@ -506,7 +523,7 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (UINT4)(ffdata->numffts*ffdata->numfbins));
          XLAL_ERROR(XLAL_EFUNC);
       }
-      tfWeight(TFdata_weighted, TFdata_slided, background_slided, antweights, inputParams);
+      tfWeight(TFdata_weighted, TFdata_slided, background_slided, antweights, indexValuesOfExistingSFTs, inputParams);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: tfWeight() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
@@ -545,9 +562,10 @@ int main(int argc, char *argv[])
       }
       
       REAL4 secFFTmean = calcMean(ffdata->ffdata);
+      REAL4 secFFTsigma = calcStddev(ffdata->ffdata);
       
       XLALDestroyREAL4Vector(TFdata_weighted);
-      fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, calcStddev(ffdata->ffdata), calcMean(aveNoise)*calcMean(aveTFnoisePerFbinRatio));
+      fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, calcMean(aveNoise)*calcMean(aveTFnoisePerFbinRatio));
       /* FILE *FFDATA = fopen("./output/ffdata.dat","w");
       for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
       fclose(FFDATA); */
@@ -591,7 +609,7 @@ int main(int argc, char *argv[])
 ////////End of the IHS step
       
 ////////Start of the Gaussian template search!
-      if (!args_info.IHSonly_given) {
+      if (!args_info.IHSonly_given && ( !args_info.simpleBandRejection_given || ( args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion ) )) {
          
          //Test the IHS candidates against Gaussian templates in this function
          if ( testIHScandidates(gaussCandidates1, ihsCandidates, ffdata, aveNoise, aveTFnoisePerFbinRatio, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
@@ -626,7 +644,7 @@ int main(int argc, char *argv[])
       ihsCandidates->numofcandidates = 0;
       
       //Search the IHS templates further if user has not specified IHSonly flag
-      if (!args_info.IHSonly_given) {
+      if (!args_info.IHSonly_given && ( !args_info.simpleBandRejection_given || ( args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion ) )) {
 ////////Start clustering! Note that the clustering algorithm takes care of the period range of parameter space
          clusterCandidates(gaussCandidates2, gaussCandidates1, ffdata, inputParams, aveNoise, aveTFnoisePerFbinRatio, sftexist, 0);
          if (xlalErrno!=0) {
@@ -771,14 +789,16 @@ int main(int argc, char *argv[])
             
             if (!args_info.gaussTemplatesOnly_given) {
                //bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 5, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
-               bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 3, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
+               //bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 3, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
+               bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-0.5/inputParams->Tcoh, exactCandidates1->data[ii].fsig+0.5/inputParams->Tcoh, 3, 3, exactCandidates1->data[ii].moddepth-0.5/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+0.5/inputParams->Tcoh, 3, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
                if (xlalErrno!=0) {
                   fprintf(stderr, "%s: bruteForceTemplateSearch() failed.\n", __func__);
                   XLAL_ERROR(XLAL_EFUNC);
                }
             } else {
                //bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 5, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
-               bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 3, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
+               //bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 3, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
+               bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-0.5/inputParams->Tcoh, exactCandidates1->data[ii].fsig+0.5/inputParams->Tcoh, 3, 3, exactCandidates1->data[ii].moddepth-0.5/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+0.5/inputParams->Tcoh, 3, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
                if (xlalErrno!=0) {
                   fprintf(stderr, "%s: bruteForceTemplateSearch() failed.\n", __func__);
                   XLAL_ERROR(XLAL_EFUNC);
@@ -853,6 +873,7 @@ int main(int argc, char *argv[])
    XLALDestroyREAL4Vector(aveNoise);
    XLALDestroyINT4Vector(binshifts);
    XLALDestroyINT4Vector(sftexist);
+   XLALDestroyINT4Vector(indexValuesOfExistingSFTs);
    free_ffdata(ffdata);
    free_ihsfarStruct(ihsfarstruct);
    free_inputParams(inputParams);
@@ -1538,7 +1559,7 @@ void tfMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, INT4 numffts, IN
 } /* tfMeanSubtract() */
 
 
-void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *input)
+void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, INT4Vector *indexValuesOfExistingSFTs, inputParamsStruct *input)
 {
    
    INT4 ii, jj;
@@ -1556,19 +1577,28 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    
-   for (ii=0; ii<(INT4)rngMeanssq->length; ii++) rngMeanssq->data[ii] = 0.0;
+   memset(output->data, 0, sizeof(REAL4)*output->length);
+   memset(rngMeanssq->data, 0, sizeof(REAL4)*rngMeanssq->length);
    
-   //for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
-   antweightssq = XLALSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
-   //antweightssq = SSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
-   if (xlalErrno!=0) {
-      fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
+   if (!input->useSSE) {
+      //for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
+      antweightssq = XLALSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
+      //antweightssq = fastSSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
+      if (xlalErrno!=0) {
+         fprintf(stderr,"%s: XLALSSVectorMultiply() failed.\n", __func__);
+         XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
+   } else {
+      antweightssq = sseSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
+      if (xlalErrno!=0) {
+         fprintf(stderr,"%s: sseSSVectorMultiply() failed.\n", __func__);
+         XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
    }
    
    for (ii=0; ii<numfbins; ii++) {
       
-      rngMeanssq = SSVectorMultiply_with_stride_and_offset(rngMeanssq, rngMeans, rngMeans, numfbins, numfbins, ii, ii);
+      rngMeanssq = fastSSVectorMultiply_with_stride_and_offset(rngMeanssq, rngMeans, rngMeans, numfbins, numfbins, ii, ii);
       if (xlalErrno!=0) {
          fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -1578,15 +1608,18 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
       if (input->noiseWeightOff!=0) for (jj=0; jj<(INT4)rngMeanssq->length; jj++) if (rngMeanssq->data[jj]!=0.0) rngMeanssq->data[jj] = 1.0;
       
       //Get sum of antenna pattern weight/variances for each frequency bin as a function of time (only for existant SFTs)
-      REAL8 sumofweights = 0.0;
-      for (jj=0; jj<numffts; jj++) if (rngMeanssq->data[jj] != 0.0) sumofweights += antweightssq->data[jj]/rngMeanssq->data[jj];
+      //REAL8 sumofweights = 0.0;
+      //for (jj=0; jj<numffts; jj++) if (rngMeanssq->data[jj] != 0.0) sumofweights += antweightssq->data[jj]/rngMeanssq->data[jj];
+      REAL8 sumofweights = determineSumOfWeights(antweightssq, rngMeanssq);
       REAL8 invsumofweights = 1.0/sumofweights;
       
       //Now do noise weighting, antenna pattern weighting
-      for (jj=0; jj<numffts; jj++) {
+      /* for (jj=0; jj<numffts; jj++) {
          if (rngMeanssq->data[jj] != 0.0) output->data[jj*numfbins+ii] = (REAL4)(invsumofweights*antPatternWeights->data[jj]*tfdata->data[jj*numfbins+ii]/rngMeanssq->data[jj]);
-         else output->data[jj*numfbins+ii] = 0.0;
-      } /* for jj < numffts */
+      } */ /* for jj < numffts */
+      for (jj=0; jj<(INT4)indexValuesOfExistingSFTs->length; jj++) {
+         output->data[indexValuesOfExistingSFTs->data[jj]*numfbins+ii] = (REAL4)(invsumofweights*antPatternWeights->data[indexValuesOfExistingSFTs->data[jj]]*tfdata->data[indexValuesOfExistingSFTs->data[jj]*numfbins+ii]/rngMeanssq->data[indexValuesOfExistingSFTs->data[jj]]);
+      }
    } /* for ii < numfbins */
    
    
@@ -1623,7 +1656,7 @@ void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector 
    
    //for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
    //antweightssq = XLALSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
-   antweightssq = SSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
+   antweightssq = fastSSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
    if (xlalErrno!=0) {
       fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", __func__);
       XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -1631,7 +1664,7 @@ void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector 
    
    for (ii=0; ii<numfbins; ii++) {
       
-      rngMeanssq = SSVectorMultiply_with_stride_and_offset(rngMeanssq, rngMeans, rngMeans, numfbins, numfbins, ii, ii);
+      rngMeanssq = fastSSVectorMultiply_with_stride_and_offset(rngMeanssq, rngMeans, rngMeans, numfbins, numfbins, ii, ii);
       if (xlalErrno!=0) {
          fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -1670,6 +1703,18 @@ void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector 
 } /* tfWeightMeanSubtract() */
 
 
+REAL8 determineSumOfWeights(REAL4Vector *antweightssq, REAL4Vector *rngMeanssq)
+{
+   
+   INT4 ii;
+   REAL8 sumofweights = 0.0;
+   for (ii=0; ii<(INT4)antweightssq->length; ii++) if (rngMeanssq->data[ii] != 0.0) sumofweights += antweightssq->data[ii]/rngMeanssq->data[ii];
+   
+   return sumofweights;
+   
+} /* determineSumOfWeights */
+
+
 //////////////////////////////////////////////////////////////
 // Make the second FFT powers
 void makeSecondFFT(ffdataStruct *output, REAL4Vector *tfdata, REAL4FFTPlan *plan)
@@ -1698,7 +1743,7 @@ void makeSecondFFT(ffdataStruct *output, REAL4Vector *tfdata, REAL4FFTPlan *plan
       
       //Next, loop over times and pick the right frequency bin for each FFT and window
       //for (jj=0; jj<(INT4)x->length; jj++) x->data[jj] = (tfdata->data[ii + jj*numfbins]*win->data->data[jj]);
-      x = SSVectorMultiply_with_stride_and_offset(x, tfdata, win->data, output->numfbins, 1, ii, 0);
+      x = fastSSVectorMultiply_with_stride_and_offset(x, tfdata, win->data, output->numfbins, 1, ii, 0);
       if (xlalErrno!=0) {
          fprintf(stderr,"%s: SSVectorMutiply_with_stride_and_offset() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -2081,6 +2126,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    else params->ULfmin = params->fmin;
    if (args_info.ULfspan_given) params->ULfspan = args_info.ULfspan_arg;
    else params->ULfspan = params->fspan;
+   if (args_info.simpleBandRejection_given) params->simpleSigmaExclusion = args_info.simpleBandRejection_arg;
    
    //Settings for IHS FOM
    if (args_info.ihsfomfar_given) params->ihsfomfar = args_info.ihsfomfar_arg;
@@ -2279,7 +2325,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
 
 
 
-REAL4Vector * SSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
+REAL4Vector * fastSSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
 {
    
    REAL4 *a, *b, *c;
@@ -2301,51 +2347,84 @@ REAL4Vector * SSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4
    
 } /* SSVectorMultiply_with_stride_and_offset() */
 
-REAL8Vector * DDVectorMultiply_with_stride_and_offset(REAL8Vector *output, REAL8Vector *input1, REAL8Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
+REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2)
 {
    
-   REAL8 *a;
-   REAL8 *b;
-   REAL8 *c;
-   INT4   n;
+#ifdef __SSE__
+   INT4 roundedvectorlength = (INT4)input1->length / 4;
+   INT4 vec1aligned = 0, vec2aligned = 0, outputaligned = 0, ii = 0;
    
-   a = input1->data + offset1;
-   b = input2->data + offset2;
-   c = output->data;
-   n = output->length;
+   REAL4 *allocinput1 = NULL, *allocinput2 = NULL, *allocoutput = NULL, *alignedinput1 = NULL, *alignedinput2 = NULL, *alignedoutput = NULL;
+   __m128 *arr1, *arr2, *result;
    
-   while (n-- > 0) {
-      *c = (*a)*(*b);
-      a = a + stride1;
-      b = b + stride2;
-      c++;
+   //Allocate memory for aligning input vector 1 if necessary
+   if ( input1->data==(void*)(((UINT8)input1->data+15) & ~15) ) {
+      vec1aligned = 1;
+      arr1 = (__m128*)input1->data;
+   } else {
+      allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocinput1==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      alignedinput1 = (void*)(((UINT8)allocinput1+15) & ~15);
+      memcpy(alignedinput1, input1->data, sizeof(REAL4)*4*roundedvectorlength);
+      arr1 = (__m128*)alignedinput1;
    }
    
-   return output;
-   
-} /* DDVectorMultiply_with_stride_and_offset() */
-
-REAL8Vector * SDVectorMultiply_with_stride_and_offset(REAL8Vector *output, REAL4Vector *input1, REAL8Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
-{
-   
-   REAL4 *a;
-   REAL8 *b;
-   REAL8 *c;
-   INT4   n;
-   
-   a = input1->data + offset1;
-   b = input2->data + offset2;
-   c = output->data;
-   n = output->length;
-   
-   while (n-- > 0) {
-      *c = (*a)*(*b);
-      a = a + stride1;
-      b = b + stride2;
-      c++;
+   //Allocate memory for aligning input vector 2 if necessary
+   if ( input2->data==(void*)(((UINT8)input2->data+15) & ~15) ) {
+      vec2aligned = 1;
+      arr2 = (__m128*)input2->data;
+   } else {
+      allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocinput2==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      alignedinput2 = (void*)(((UINT8)allocinput2+15) & ~15);
+      memcpy(alignedinput2, input2->data, sizeof(REAL4)*4*roundedvectorlength);
+      arr2 = (__m128*)alignedinput2;
    }
    
-   return output;
+   //Allocate memory for aligning output vector if necessary
+   if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
+      outputaligned = 1;
+      result = (__m128*)output->data;
+   } else {
+      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocoutput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
+      result = (__m128*)alignedoutput;
+   }
    
-} /* SDVectorMultiply_with_stride_and_offset() */
+   //multiply the two vectors into the output
+   for (ii=0; ii<roundedvectorlength; ii++) {
+      *result = _mm_mul_ps(*arr1, *arr2);
+      arr1++;
+      arr2++;
+      result++;
+   }
+   
+   //Copy output aligned memory to non-aligned memory if necessary
+   if (!outputaligned) memcpy(output->data, alignedoutput, 4*roundedvectorlength*sizeof(REAL4));
+   
+   //Finish up the remaining part
+   for (ii=4*roundedvectorlength; ii<(INT4)input1->length; ii++) output->data[ii] = input1->data[ii] * input2->data[ii];
+   
+   //Free memory if necessary
+   if (!vec1aligned) XLALFree(allocinput1);
+   if (!vec2aligned) XLALFree(allocinput2);
+   if (!outputaligned) XLALFree(allocoutput);
+   
+   return output;
+#else
+   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
+   XLAL_ERROR_NULL(XLAL_EFAILED);
+#endif
+   
+}
 

@@ -18,9 +18,18 @@ REAL4TimeSeries *coh_PTF_get_data(
   if ( params->getData )
   {
     if ( params->simData )
-      channel = get_simulated_data( ifoChannel, &params->startTime,
-          params->duration, LALRINGDOWN_DATATYPE_SIM, params->sampleRate,
-          params->randomSeed+ 100*ifoNumber, 1E-20 );
+    {
+      // First set the simulated PSD
+      REAL8FrequencySeries *spectrum = NULL;
+      /* Value of 1E-20 is used for white spectrum. It sets the PSD scale
+         to give SNRs that are kind of comparable to iLIGO PSD */
+      spectrum = generate_theoretical_psd(1./params->sampleRate,
+          params->duration,params->simDataType, 1E-20);
+      channel = get_simulated_data_new( ifoChannel, &params->startTime,
+          params->duration, params->sampleRate,
+          params->randomSeed+ 100*ifoNumber, spectrum );
+      XLALDestroyREAL8FrequencySeries(spectrum);
+    }
     else if ( params->zeroData )
     {
       channel = get_zero_data( ifoChannel, &params->startTime,
@@ -165,11 +174,35 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
   REAL4FrequencySeries *invspec = NULL;
   if ( params->getSpectrum )
   {
-    /* compute raw average spectrum; store spectrum in invspec for now */
-    invspec = compute_average_spectrum( channel,
-        LALRINGDOWN_SPECTRUM_MEDIAN_MEAN, params->segmentDuration,
-        params->strideDuration, fwdplan, params->whiteSpectrum );
-
+    if ( ! params->whiteSpectrum)
+    {
+      /* compute raw average spectrum; store spectrum in invspec for now */
+      invspec = compute_average_spectrum( channel,
+          LALRINGDOWN_SPECTRUM_MEDIAN_MEAN, params->segmentDuration,
+          params->strideDuration, fwdplan, 0 );
+    }
+    else
+    {
+      UINT4 k;
+      REAL8FrequencySeries *spectrum;
+      spectrum = generate_theoretical_psd(1./params->sampleRate,
+          params->segmentDuration,params->simDataType, 1E-20);
+  
+      /* Need to convert to a REAL4 FrequencySeries */
+      UINT4 segmentLength = floor( params->segmentDuration/channel->deltaT\
+                                    + 0.5 );
+      invspec = XLALCreateREAL4FrequencySeries("TEMP",&(channel->epoch),0,
+          1.0/params->segmentDuration,&lalDimensionlessUnit,
+          segmentLength/2 + 1);
+      snprintf( invspec->name, sizeof( invspec->name),
+          "%s_SPEC", channel->name);
+      for ( k = 0; k < spectrum->data->length; ++k )
+      {
+        invspec->data->data[k] = (REAL4)(spectrum->data->data[k]*1E40);
+      }
+      XLALDestroyREAL8FrequencySeries(spectrum);
+    }
+    
     if ( params->writeInvSpectrum ) /* Write spectrum before inversion */
       write_REAL4FrequencySeries( invspec );
 
@@ -609,7 +642,7 @@ REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params )
   {
     UINT4 segmentLength;
     segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
-    plan = XLALCreateForwardREAL4FFTPlan( segmentLength, 1 );
+    plan = XLALCreateForwardREAL4FFTPlan( segmentLength, params->fftLevel );
   }
   return plan;
 }
@@ -623,7 +656,7 @@ REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params )
   {
     UINT4 segmentLength;
     segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
-    plan = XLALCreateReverseREAL4FFTPlan( segmentLength, 1 );
+    plan = XLALCreateReverseREAL4FFTPlan( segmentLength, params->fftLevel );
   }
   return plan;
 }

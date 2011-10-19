@@ -573,7 +573,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
 templateStruct * new_templateStruct(INT4 length)
 {
    
-   INT4 ii;
+   //INT4 ii;
    
    templateStruct *templatestruct = XLALMalloc(sizeof(*templatestruct));
    if (templatestruct==NULL) {
@@ -599,12 +599,16 @@ templateStruct * new_templateStruct(INT4 length)
       XLAL_ERROR_NULL(XLAL_EFUNC);
    } 
    
-   for (ii=0; ii<length; ii++) {
+   /* for (ii=0; ii<length; ii++) {
       templatestruct->templatedata->data[ii] = 0.0;
       templatestruct->pixellocations->data[ii] = 0;
       templatestruct->firstfftfrequenciesofpixels->data[ii] = 0;
       templatestruct->secondfftfrequencies->data[ii] = 0;
-   }
+   } */
+   memset(templatestruct->templatedata->data, 0, sizeof(REAL4)*length);
+   memset(templatestruct->pixellocations->data, 0, sizeof(INT4)*length);
+   memset(templatestruct->firstfftfrequenciesofpixels->data, 0, sizeof(INT4)*length);
+   memset(templatestruct->secondfftfrequencies->data, 0, sizeof(INT4)*length);
    
    templatestruct->f0 = 0.0;
    templatestruct->period = 0.0;
@@ -618,13 +622,17 @@ void resetTemplateStruct(templateStruct *templatestruct)
 {
    
    INT4 length = (INT4)templatestruct->templatedata->length;
-   INT4 ii;
+   /* INT4 ii;
    for (ii=0; ii<length; ii++) {
       templatestruct->templatedata->data[ii] = 0.0;
       templatestruct->pixellocations->data[ii] = 0;
       templatestruct->firstfftfrequenciesofpixels->data[ii] = 0;
       templatestruct->secondfftfrequencies->data[ii] = 0;
-   }
+   } */
+   memset(templatestruct->templatedata->data, 0, sizeof(REAL4)*length);
+   memset(templatestruct->pixellocations->data, 0, sizeof(INT4)*length);
+   memset(templatestruct->firstfftfrequenciesofpixels->data, 0, sizeof(INT4)*length);
+   memset(templatestruct->secondfftfrequencies->data, 0, sizeof(INT4)*length);
    
    templatestruct->f0 = 0.0;
    templatestruct->period = 0.0;
@@ -647,7 +655,6 @@ void free_templateStruct(templateStruct *nameoftemplate)
 
 //////////////////////////////////////////////////////////////
 // Make an estimated template based on FFT of train of Gaussians
-//void makeTemplateGaussians(ffdataStruct *out, candidate *in)
 void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsStruct *params)
 {
    
@@ -663,7 +670,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    INT4 ii, jj, numfbins, numffts, N;
    
    //Reset the data values to zero, just in case
-   for (ii=0; ii<(INT4)output->templatedata->length; ii++) output->templatedata->data[ii] = 0.0;
+   //for (ii=0; ii<(INT4)output->templatedata->length; ii++) output->templatedata->data[ii] = 0.0;
+   memset(output->templatedata->data, 0, sizeof(REAL4)*output->templatedata->length);
    
    numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);   //Number of frequency bins
    numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);   //Number of FFTs
@@ -916,7 +924,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    INT4 ii, jj, numfbins, numffts;
    
    //Reset to zero, just in case
-   for (ii=0; ii<(INT4)output->templatedata->length; ii++) output->templatedata->data[ii] = 0.0;
+   //for (ii=0; ii<(INT4)output->templatedata->length; ii++) output->templatedata->data[ii] = 0.0;
+   memset(output->templatedata->data, 0, sizeof(REAL4)*output->templatedata->length);
    
    numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);   //Number of frequency bins
    numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);   //Number of FFTs
@@ -944,21 +953,12 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    REAL8 PSDprefact = (2.0/3.0)*params->Tcoh;
    for (ii=0; ii<numffts; ii++) {
       REAL4 t = 0.5*params->Tcoh*ii;  //Assumed 50% overlapping SFTs
-      //REAL4 n0 = B*sin(LAL_TWOPI*periodf*t) + input.fsig*params->Tcoh;
       twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, periodf*t);
       REAL4 n0 = B*sin2pix + input.fsig*params->Tcoh;
       if (sftexist->data[ii]==1) {
          for (jj=0; jj<numfbins; jj++) {
             //Create windowed PSD values
-            //if ( fabs(n0-freqbins->data[jj]) <= 5.0 ) psd1->data[ii*numfbins + jj] = 2.0/3.0*params->Tcoh*sincxoverxsqminusone(n0-freqbins->data[jj])*sincxoverxsqminusone(n0-freqbins->data[jj]);
-            
-            //if ( fabs(n0-freqbins->data[jj]) <= 5.0 ) {
-               //psd1->data[ii*numfbins + jj] = sincxoverxsqminusone(n0-freqbins->data[jj]);
-               //psd1->data[ii*numfbins + jj] *= psd1->data[ii*numfbins + jj];
-               //psd1->data[ii*numfbins + jj] *= (2.0/3.0)*params->Tcoh;
-            //}
-            
-            if ( fabs(n0-freqbins->data[jj]) <= 5.0 ) psd1->data[ii*numfbins + jj] = sqsincxoverxsqminusone(n0-freqbins->data[jj])*PSDprefact;
+            if ( fabs(n0-freqbins->data[jj]) <= 3.0 ) psd1->data[ii*numfbins + jj] = sqsincxoverxsqminusone(n0-freqbins->data[jj])*PSDprefact;
             //else psd1->data[ii*numfbins + jj] = 0.0;
          } /* for jj < numfbins */
       } /* else {
@@ -990,21 +990,20 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       //Set doSecondFFT check flag to 0. Value becomes 1 if at least one element in frequency row is non-zero
       doSecondFFT = 0;
    
-      //Next, loop over times
-      for (jj=0; jj<(INT4)x->length; jj++) {
-         //Check, do we need to do the second FFT...?
-         if (doSecondFFT==0 && psd1->data[ii+jj*numfbins]>0.0) {
-            doSecondFFT = 1;
-            jj = (INT4)x->length;  //End the search for bins with power
-         }
+      //Next, loop over times and check to see if we need to do second FFT
+      //We want to have at least 5 SFTs with power
+      jj = 0;
+      while (doSecondFFT<5 && jj<(INT4)x->length) {
+         if (psd1->data[ii+jj*numfbins]>0.0) doSecondFFT++;
+         jj++;
       }
       
-      //If there was power in the frequency bin of the template, then do the FFT
-      if (doSecondFFT==1) {
+      //If there was power in the frequency bin of the template, then do the FFT if 5 or more SFTs have power
+      if (doSecondFFT>=5) {
          //Obtain and window the time series
-         x = SSVectorMultiply_with_stride_and_offset(x, psd1, win->data, numfbins, 1, ii, 0);
+         x = fastSSVectorMultiply_with_stride_and_offset(x, psd1, win->data, numfbins, 1, ii, 0);
          if (xlalErrno!=0) {
-            fprintf(stderr,"%s, SSVectorMultiply_with_stride_and_offset() failed.\n", __func__);
+            fprintf(stderr,"%s, fastSSVectorMultiply_with_stride_and_offset() failed.\n", __func__);
             XLAL_ERROR_VOID(XLAL_EFUNC);
          }
          
@@ -1013,12 +1012,10 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
             fprintf(stderr,"%s: XLALREAL4PowerSpectrum() failed.\n", __func__);
             XLAL_ERROR_VOID(XLAL_EFUNC);
          }
-      } /* if doSecondFFT */
-      
-      //Scale the data points by 1/N and window factor and (1/fs)
-      //Order of vector is by second frequency then first frequency
-      //Ignore the DC to 3rd frequency bins
-      if (doSecondFFT==1) {
+         
+         //Scale the data points by 1/N and window factor and (1/fs)
+         //Order of vector is by second frequency then first frequency
+         //Ignore the DC to 3rd frequency bins in sum
          //for (jj=4; jj<(INT4)psd->length; jj++) {
          for (jj=0; jj<(INT4)psd->length; jj++) {
             REAL4 correctedValue = (REAL4)(psd->data[jj]*secPSDfactor);
@@ -1028,12 +1025,9 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
             if (jj>3) sum += (REAL8)correctedValue;
             
             //Sort the weights, insertion sort technique
-            if (correctedValue > output->templatedata->data[output->templatedata->length-1]) {
-               insertionSort_template(output, correctedValue, ii*psd->length+jj, ii, jj);
-            }
+            if (correctedValue > output->templatedata->data[output->templatedata->length-1]) insertionSort_template(output, correctedValue, ii*psd->length+jj, ii, jj);
          } /* for jj < psd->length */
-      } /* if(doSecondFFT) */
-      
+      } /* if doSecondFFT */
    } /* if ii < numfbins */
    
    //Normalize

@@ -85,6 +85,48 @@ REAL4TimeSeries * get_simulated_data(
 }
 
 /* create simulated data */
+REAL4TimeSeries * get_simulated_data_new(
+    const char  *channelName,
+    LIGOTimeGPS *epoch,
+    REAL8        duration,
+    REAL8        sampleRate,
+    UINT4        simSeed,
+    REAL8FrequencySeries  *psd
+    )
+{
+  REAL8TimeSeries *series;
+  REAL4TimeSeries *output;
+  UINT4 npoints;
+  UINT4 j;
+
+  npoints = duration * sampleRate;
+
+  gsl_rng *rng;
+  gsl_rng_env_setup();
+  rng = gsl_rng_alloc(gsl_rng_default);
+  gsl_rng_set( rng, simSeed );
+
+  verbose( "creating simulated gaussian noise with random seed %u\n",
+      simSeed );
+
+  series = XLALCreateREAL8TimeSeries("TEMP",epoch,0.,1.0/sampleRate,&lalStrainUnit,npoints);
+  output = XLALCreateREAL4TimeSeries("TEMP",epoch,0.,1.0/sampleRate,&lalStrainUnit,npoints);
+  snprintf( output->name, sizeof( output->name ), "%s_SIM", channelName );
+  
+  XLALSimNoise(series, 0 , psd, rng);
+
+  for ( j = 0; j < series->data->length; ++j )
+    output->data->data[j] = series->data->data[j];
+
+  XLALDestroyREAL8Vector( series->data );
+  LALFree( series);
+
+  return output;
+}
+
+
+
+/* create no noise data */
 REAL4TimeSeries * get_zero_data(
     const char  *channelName,
     LIGOTimeGPS *epoch,
