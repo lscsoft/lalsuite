@@ -841,6 +841,8 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihss->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
+   memset(tworows->data, 0, sizeof(REAL4)*tworows->length*tworows->vectorLength);
+   memset(tworows2->data, 0, sizeof(REAL4)*tworows2->length*tworows2->vectorLength);
    
    //Build vector from aveNoise vector without the daily harmonics
    REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);

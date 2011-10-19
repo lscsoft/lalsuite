@@ -315,15 +315,28 @@ int main(int argc, char *argv[])
    
    
    //Existing SFTs listed in this vector
-   INT4Vector *sftexist = existingSFTs(tfdata, inputParams, ffdata->numfbins, ffdata->numffts);;
+   INT4Vector *sftexist = existingSFTs(tfdata, inputParams, ffdata->numfbins, ffdata->numffts);
    if (sftexist==NULL) {
       fprintf(stderr, "\n%s: existingSFTs() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
    }
-   REAL4 totalincludedsftnumber = 0.0;
-   for (ii=0; ii<(INT4)sftexist->length; ii++) if (sftexist->data[ii]==1) totalincludedsftnumber += 1.0;
-   REAL4 frac_tobs_complete = totalincludedsftnumber/sftexist->length;
+   INT4 totalincludedsftnumber = 0.0;
+   for (ii=0; ii<(INT4)sftexist->length; ii++) if (sftexist->data[ii]==1) totalincludedsftnumber++;
+   REAL4 frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexist->length;
    
+   //Index values of existing SFTs
+   INT4Vector *indexValuesOfExistingSFTs = XLALCreateINT4Vector(totalincludedsftnumber);
+   if (indexValuesOfExistingSFTs==NULL) {
+      fprintf(stderr, "\n%s: XLALCreateINT4Vector(%d) failed.\n", __func__, totalincludedsftnumber);
+      XLAL_ERROR(XLAL_EFUNC);
+   }
+   jj = 0;
+   for (ii=0; ii<(INT4)sftexist->length; ii++) {
+      if (sftexist->data[ii] == 1) {
+         indexValuesOfExistingSFTs->data[jj] = ii;
+         jj++;
+      }
+   }
    
    //I wrote this to compensate for a bad input of the expected noise floor
    REAL8 backgroundmeannormfactor = 0.0;
@@ -510,7 +523,7 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (UINT4)(ffdata->numffts*ffdata->numfbins));
          XLAL_ERROR(XLAL_EFUNC);
       }
-      tfWeight(TFdata_weighted, TFdata_slided, background_slided, antweights, inputParams);
+      tfWeight(TFdata_weighted, TFdata_slided, background_slided, antweights, indexValuesOfExistingSFTs, inputParams);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: tfWeight() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
@@ -860,6 +873,7 @@ int main(int argc, char *argv[])
    XLALDestroyREAL4Vector(aveNoise);
    XLALDestroyINT4Vector(binshifts);
    XLALDestroyINT4Vector(sftexist);
+   XLALDestroyINT4Vector(indexValuesOfExistingSFTs);
    free_ffdata(ffdata);
    free_ihsfarStruct(ihsfarstruct);
    free_inputParams(inputParams);
@@ -1545,7 +1559,7 @@ void tfMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, INT4 numffts, IN
 } /* tfMeanSubtract() */
 
 
-void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *input)
+void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, INT4Vector *indexValuesOfExistingSFTs, inputParamsStruct *input)
 {
    
    INT4 ii, jj;
@@ -1600,9 +1614,12 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
       REAL8 invsumofweights = 1.0/sumofweights;
       
       //Now do noise weighting, antenna pattern weighting
-      for (jj=0; jj<numffts; jj++) {
+      /* for (jj=0; jj<numffts; jj++) {
          if (rngMeanssq->data[jj] != 0.0) output->data[jj*numfbins+ii] = (REAL4)(invsumofweights*antPatternWeights->data[jj]*tfdata->data[jj*numfbins+ii]/rngMeanssq->data[jj]);
-      } /* for jj < numffts */
+      } */ /* for jj < numffts */
+      for (jj=0; jj<(INT4)indexValuesOfExistingSFTs->length; jj++) {
+         output->data[indexValuesOfExistingSFTs->data[jj]*numfbins+ii] = (REAL4)(invsumofweights*antPatternWeights->data[indexValuesOfExistingSFTs->data[jj]]*tfdata->data[indexValuesOfExistingSFTs->data[jj]*numfbins+ii]/rngMeanssq->data[indexValuesOfExistingSFTs->data[jj]]);
+      }
    } /* for ii < numfbins */
    
    
