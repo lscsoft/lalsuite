@@ -513,6 +513,13 @@ REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma)
 
 
 
+REAL8 unitGaussianSNR(REAL8 value, REAL8 dof)
+{
+   
+   REAL8 snr = (value - dof) / sqrt(2.0*dof);
+   return snr;
+   
+}
 
 
 

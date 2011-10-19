@@ -841,6 +841,8 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihss->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
+   memset(tworows->data, 0, sizeof(REAL4)*tworows->length*tworows->vectorLength);
+   memset(tworows2->data, 0, sizeof(REAL4)*tworows2->length*tworows2->vectorLength);
    
    //Build vector from aveNoise vector without the daily harmonics
    REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
@@ -911,7 +913,14 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
                //fprintf(TWOROWSUM, "%.6f\n", tworows->data[jj*ihsvectorsequence->vectorLength + kk]);
             } */
             scaleVectorIntoVectorSequence(tworows2, ihsvalsfromaveNoise, (randvals->data[jj]*FbinMean->data[jj] + randvals->data[jj+1]*FbinMean->data[jj+1]), jj);
-            fastSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
+            if (!params->useSSE) fastSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
+            else {
+               sseSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
+               if (xlalErrno!=0) {
+                  fprintf(stderr, "%s: sseSSVectorSequenceSubtract() failed.\n", __func__);
+                  XLAL_ERROR_VOID(XLAL_EFUNC);
+               }
+            }
             
             //Compute the maximum IHS value in the second FFT frequency direction
             output->locations->data[jj] = max_index(excessabovenoise) + 5;
@@ -1030,8 +1039,22 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
                tworows2->data[jj*ihsvalsfromaveNoise->length + kk] += ihsvalsfromaveNoise->data[kk]*randvals->data[ii-1+jj]*FbinMean->data[ii-1+jj];
                //excessabovenoise->data[kk] = tworows->data[jj*ihsvectorsequence->vectorLength + kk] - tworows2->data[jj*ihsvalsfromaveNoise->length + kk];
             } */
-            addScaledVectorIntoVectorSequence(tworows2, ihsvalsfromaveNoise, randvals->data[ii-1+jj]*FbinMean->data[ii-1+jj], jj);
-            fastSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
+            if (!params->useSSE) addScaledVectorIntoVectorSequence(tworows2, ihsvalsfromaveNoise, randvals->data[ii-1+jj]*FbinMean->data[ii-1+jj], jj);
+            else {
+               sseAddScaledVectorIntoVectorSequence(tworows2, ihsvalsfromaveNoise, randvals->data[ii-1+jj]*FbinMean->data[ii-1+jj], jj);
+               if (xlalErrno!=0) {
+                  fprintf(stderr, "%s: sseAddScaledVectorIntoVectorSequence() failed.\n", __func__);
+                  XLAL_ERROR_VOID(XLAL_EFUNC);
+               }
+            }
+            if (!params->useSSE) fastSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
+            else {
+               sseSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
+               if (xlalErrno!=0) {
+                  fprintf(stderr, "%s: sseSSVectorSequenceSubtract() failed.\n", __func__);
+                  XLAL_ERROR_VOID(XLAL_EFUNC);
+               }
+            }
             
             output->locations->data[(ii-2)*ihss->length-endloc+jj] = max_index(excessabovenoise) + 5;
             output->maxima->data[(ii-2)*ihss->length-endloc+jj] = tworows->data[jj*ihsvectorsequence->vectorLength+(output->locations->data[(ii-2)*ihss->length-endloc+jj]-5)];
@@ -1150,25 +1173,6 @@ void fastSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *i
    }
    
 }
-void fastSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2)
-{
-   
-   REAL4 *a, *b, *c;
-   INT4 n;
-   
-   a = &(input1->data[vectorpos1*input1->vectorLength]);
-   b = &(input2->data[vectorpos2*input2->vectorLength]);
-   c = output->data;
-   n = output->length;
-   
-   while (n-- > 0) {
-      *c = (*a)-(*b);
-      a++;
-      b++;
-      c++;
-   }
-   
-}
 void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors)
 {
    
@@ -1196,28 +1200,28 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
    for (ii=0; ii<numvectors; ii++) {
       INT4 vec1 = (vectorpos1+ii)*input1->vectorLength, vec2 = (vectorpos2+ii)*input2->vectorLength, outvec = (outputvectorpos+ii)*output->vectorLength;
       /* memcpy(alignedinput1, &(input1->data[vec1]), sizeof(REAL4)*4*roundedvectorlength);
-      memcpy(alignedinput2, &(input2->data[vec2]), sizeof(REAL4)*4*roundedvectorlength);
-      __m128* arr1 = (__m128*)alignedinput1;
-      __m128* arr2 = (__m128*)alignedinput2;
-      __m128* result = (__m128*)alignedoutput;
-      for (jj=0; jj<roundedvectorlength; jj++) {
-         *result = _mm_add_ps(*arr1, *arr2);
-         arr1++;
-         arr2++;
-         result++;
-      }
-      memcpy(&(output->data[outvec]), alignedoutput, sizeof(REAL4)*4*roundedvectorlength);
-      //for (jj=4*roundedvectorlength; jj<(INT4)input1->vectorLength; jj++) output->data[outvec + jj] = input1->data[vec1 + jj] + input2->data[vec2 + jj];
-      REAL4 *a = &(input1->data[vec1+4*roundedvectorlength]);
-      REAL4 *b = &(input2->data[vec1+4*roundedvectorlength]);
-      REAL4 *c = &(output->data[outvec+4*roundedvectorlength]);
-      INT4 n = output->vectorLength-4*roundedvectorlength;
-      while (n-- > 0) {
-         *c = (*a)+(*b);
-         a++;
-         b++;
-         c++;
-      } */
+       memcpy(alignedinput2, &(input2->data[vec2]), sizeof(REAL4)*4*roundedvectorlength);
+       __m128* arr1 = (__m128*)alignedinput1;
+       __m128* arr2 = (__m128*)alignedinput2;
+       __m128* result = (__m128*)alignedoutput;
+       for (jj=0; jj<roundedvectorlength; jj++) {
+       *result = _mm_add_ps(*arr1, *arr2);
+       arr1++;
+       arr2++;
+       result++;
+       }
+       memcpy(&(output->data[outvec]), alignedoutput, sizeof(REAL4)*4*roundedvectorlength);
+       //for (jj=4*roundedvectorlength; jj<(INT4)input1->vectorLength; jj++) output->data[outvec + jj] = input1->data[vec1 + jj] + input2->data[vec2 + jj];
+       REAL4 *a = &(input1->data[vec1+4*roundedvectorlength]);
+       REAL4 *b = &(input2->data[vec1+4*roundedvectorlength]);
+       REAL4 *c = &(output->data[outvec+4*roundedvectorlength]);
+       INT4 n = output->vectorLength-4*roundedvectorlength;
+       while (n-- > 0) {
+       *c = (*a)+(*b);
+       a++;
+       b++;
+       c++;
+       } */
       
       INT4 input1vecaligned = 0, input2vecaligned = 0, outputvecaligned = 0;
       __m128 *arr1, *arr2, *result;
@@ -1250,7 +1254,7 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
       if (!outputvecaligned) memcpy(&(output->data[outvec]), alignedoutput, sizeof(REAL4)*4*roundedvectorlength);
       
       REAL4 *a = &(input1->data[vec1+4*roundedvectorlength]);
-      REAL4 *b = &(input2->data[vec1+4*roundedvectorlength]);
+      REAL4 *b = &(input2->data[vec2+4*roundedvectorlength]);
       REAL4 *c = &(output->data[outvec+4*roundedvectorlength]);
       INT4 n = output->vectorLength-4*roundedvectorlength;
       while (n-- > 0) {
@@ -1260,10 +1264,112 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
          c++;
       }
    }
-      
+   
    XLALFree(allocinput1);
    XLALFree(allocinput2);
    XLALFree(allocoutput);
+#else
+   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
+   XLAL_ERROR_VOID(XLAL_EFAILED);
+#endif
+   
+}
+void fastSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2)
+{
+   
+   REAL4 *a, *b, *c;
+   INT4 n;
+   
+   a = &(input1->data[vectorpos1*input1->vectorLength]);
+   b = &(input2->data[vectorpos2*input2->vectorLength]);
+   c = output->data;
+   n = output->length;
+   
+   while (n-- > 0) {
+      *c = (*a)-(*b);
+      a++;
+      b++;
+      c++;
+   }
+   
+}
+void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2)
+{
+   
+#ifdef __SSE__
+   INT4 roundedvectorlength = (INT4)input1->vectorLength / 4;
+   INT4 vec1 = vectorpos1*input1->vectorLength, vec2 = vectorpos2*input2->vectorLength, ii = 0;
+   INT4 vec1aligned = 0, vec2aligned = 0, outputaligned = 0;
+   REAL4 *allocinput1 = NULL, *allocinput2 = NULL, *allocoutput = NULL, *alignedinput1 = NULL, *alignedinput2 = NULL, *alignedoutput = NULL;
+   __m128 *arr1, *arr2, *result;
+   
+   //Allocate memory for aligning input vector 1 if necessary
+   if ( &(input1->data[vec1])==(void*)(((UINT8)&(input1->data[vec1])+15) & ~15) ) {
+      vec1aligned = 1;
+      arr1 = (__m128*)&(input1->data[vec1]);
+   } else {
+      allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocinput1==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_VOID(XLAL_ENOMEM);
+      }
+      alignedinput1 = (void*)(((UINT8)allocinput1+15) & ~15);
+      memcpy(alignedinput1, &(input1->data[vec1]), sizeof(REAL4)*4*roundedvectorlength);
+      arr1 = (__m128*)alignedinput1;
+   }
+   
+   //Allocate memory for aligning input vector 2 if necessary
+   if ( &(input2->data[vec2])==(void*)(((UINT8)&(input2->data[vec2])+15) & ~15) ) {
+      vec2aligned = 1;
+      arr2 = (__m128*)&(input2->data[vec2]);
+   } else {
+      allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocinput2==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_VOID(XLAL_ENOMEM);
+      }
+      alignedinput2 = (void*)(((UINT8)allocinput2+15) & ~15);
+      memcpy(alignedinput2, &(input2->data[vec2]), sizeof(REAL4)*4*roundedvectorlength);
+      arr2 = (__m128*)alignedinput2;
+   }
+   
+   //Allocate memory for aligning output vector if necessary
+   if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
+      outputaligned = 1;
+      result = (__m128*)output->data;
+   } else {
+      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocoutput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_VOID(XLAL_ENOMEM);
+      }
+      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
+      result = (__m128*)alignedoutput;
+   }
+   
+   for (ii=0; ii<roundedvectorlength; ii++) {
+      *result = _mm_sub_ps(*arr1, *arr2);
+      arr1++;
+      arr2++;
+      result++;
+   }
+   
+   if (!outputaligned) memcpy(output->data, alignedoutput, sizeof(REAL4)*4*roundedvectorlength);
+   
+   REAL4 *a = &(input1->data[vec1+4*roundedvectorlength]);
+   REAL4 *b = &(input2->data[vec2+4*roundedvectorlength]);
+   REAL4 *c = &(output->data[4*roundedvectorlength]);
+   INT4 n = output->length-4*roundedvectorlength;
+   while (n-- > 0) {
+      *c = (*a)-(*b);
+      a++;
+      b++;
+      c++;
+   }
+   
+   if (!vec1aligned) XLALFree(allocinput1);
+   if (!vec2aligned) XLALFree(allocinput2);
+   if (!outputaligned) XLALFree(allocoutput);
 #else
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_VOID(XLAL_EFAILED);
@@ -1282,6 +1388,72 @@ void addScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector 
    
    INT4 ii;
    for (ii=0; ii<(INT4)input->length; ii++) output->data[outputvectorpos*output->vectorLength + ii] += scale*input->data[ii];
+   
+}
+void sseAddScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector *input, REAL4 scale, INT4 outputvectorpos)
+{
+   
+#ifdef __SSE__
+   INT4 roundedvectorlength = (INT4)input->length / 4;
+   INT4 vectoraligned = 0, outputaligned = 0, ii = 0, outvec = outputvectorpos*output->vectorLength;
+   
+   REAL4 *allocinput = NULL, *allocoutput = NULL, *alignedinput = NULL, *alignedoutput = NULL;
+   __m128 *arr1, scaledarr1, *result;
+   
+   __m128 scalefactor = _mm_set1_ps(scale);
+   
+   //Allocate memory for aligning input vector if necessary
+   if ( input->data==(void*)(((UINT8)input->data+15) & ~15) ) {
+      vectoraligned = 1;
+      arr1 = (__m128*)input->data;
+   } else {
+      allocinput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocinput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_VOID(XLAL_ENOMEM);
+      }
+      alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
+      memcpy(alignedinput, input->data, sizeof(REAL4)*4*roundedvectorlength);
+      arr1 = (__m128*)alignedinput;
+   }
+   
+   //Allocate memory for aligning output vector if necessary
+   if ( &(output->data[outvec])==(void*)(((UINT8)&(output->data[outvec])+15) & ~15) ) {
+      outputaligned = 1;
+      result = (__m128*)&(output->data[outvec]);
+   } else {
+      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocoutput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_VOID(XLAL_ENOMEM);
+      }
+      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
+      memcpy(alignedoutput, output->data, sizeof(REAL4)*4*roundedvectorlength);
+      result = (__m128*)alignedoutput;
+   }
+   
+   //Scale the input array, and add the scaled array into the output
+   for (ii=0; ii<roundedvectorlength; ii++) {
+      scaledarr1 = _mm_mul_ps(*arr1, scalefactor);
+      *result = _mm_add_ps(*result, scaledarr1);
+      arr1++;
+      result++;
+   }
+   
+   //Copy output aligned memory to non-aligned memory if necessary
+   if (!outputaligned) memcpy(&(output->data[outvec]), alignedoutput, 4*roundedvectorlength*sizeof(REAL4));
+   
+   //Finish up the remaining part
+   for (ii=4*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[outvec + ii] += scale*input->data[ii];
+   
+   //Free memory if necessary
+   if (!vectoraligned) XLALFree(allocinput);
+   if (!outputaligned) XLALFree(allocoutput);
+   
+#else
+   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
+   XLAL_ERROR_VOID(XLAL_EFAILED);
+#endif
    
 }
 

@@ -261,7 +261,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
     M = m1 + m2;
     eta = m1 * m2 / M / M; // symmetric mass ratio - '\nu' in the paper
     eta2 = eta*eta;
-    dm = abs(m1 - m2) / M; // frac. mass difference - \delta m/m in the paper
+    dm = (m1 - m2) / M; // frac. mass difference - \delta m/m in the paper
     dist = r / LAL_C_SI;   // r (m) / c (m/s) --> dist in units of seconds
     /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
     ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
@@ -534,7 +534,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
 
     M = m1 + m2;
     eta = m1 * m2 / M / M; // symmetric mass ratio - '\nu' in the paper
-    dm = abs(m1 - m2) / M; // frac. mass difference - \delta m/m in the paper
+    dm = (m1 - m2) / M;    // frac. mass difference - \delta m/m in the paper
     dist = r / LAL_C_SI;   // r (m) / c (m/s) --> dist in units of seconds
     /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
     ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
