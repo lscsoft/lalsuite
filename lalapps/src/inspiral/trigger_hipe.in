@@ -842,12 +842,14 @@ for grb in ext_trigs:
 
       # create the master injection file and get its content
       if opts.verbose: print "  Creating injections..."
+      if opts.ipn:
+        ipnstart = ext_trigs[0].start_time
+      else:
+        ipnstart = None
       sims, injInterval, numberInjections, injFile =\
           createInjectionFile(hipe_dir, cp, cpinj, injrun,\
                               offSourceSegment.contract(opts.padding_time),\
-                              source_file,\
-                              ext_trigs[0].start_time if opts.ipn else None,\
-                              usertag, opts.verbose)
+                              source_file, ipnstart, usertag, opts.verbose)
 
       new_injfiles = [injFile]
 
