@@ -747,7 +747,7 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	 * divide by square root of PSD to whiten
 	 */
 
-	if(filter->f0 < psd->f0 || filter->f0 + filter->data->length * filter->deltaF > psd->f0 + psd->data->length + psd->deltaF) {
+	if(filter->f0 < psd->f0 || filter->f0 + filter->data->length * filter->deltaF > psd->f0 + psd->data->length * psd->deltaF) {
 		XLALPrintError("%s(): psd does not span filter's frequency range", __func__);
 		XLALDestroyCOMPLEX16FrequencySeries(filter);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
