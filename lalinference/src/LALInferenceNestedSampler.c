@@ -378,7 +378,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 	
 	
-	LALInferenceAddVariable(runState->proposalArgs,COVMATRIXNAME,cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(runState->proposalArgs,"covarianceMatrix",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
         
 	/* Sprinkle points */
 	LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
@@ -484,7 +484,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		  LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
 		  LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 		  
-		  LALInferenceSetVariable(runState->proposalArgs,COVMATRIXNAME,
+		  LALInferenceSetVariable(runState->proposalArgs,"covarianceMatrix",
                                         (void *)cvm);
                 }
 	}
@@ -575,7 +575,7 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 	newParams=calloc(1,sizeof(LALInferenceVariables));
 
 	/* Evolve the sample until it is accepted */
-        logPriorOld=runState->prior(runState,runState->currentParams);
+	logPriorOld=runState->prior(runState,runState->currentParams);
 	NSFillMCMCVariables(runState->currentParams);
 	do{
 		mcmc_iter++;
@@ -825,7 +825,7 @@ XLALMultiStudentDeviates(
 
 void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALInferenceVariables *parameter)
 {
-	gsl_matrix *covMat=*(gsl_matrix **)LALInferenceGetVariable(runState->proposalArgs,COVMATRIXNAME);
+	gsl_matrix *covMat=*(gsl_matrix **)LALInferenceGetVariable(runState->proposalArgs,"covarianceMatrix");
 	
 	LALInferenceVariableItem *paraHead=NULL;
 	REAL4Vector  *step=NULL;

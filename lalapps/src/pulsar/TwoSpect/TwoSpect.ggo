@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.8"
+version "1.1.10"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
@@ -41,6 +41,8 @@ option "skyRegionFile"  - "File with the grid points" string typestr="filename" 
 option "SFToverlap"    - "SFT overlap in seconds, usually Tcoh/2" double default="900" optional
 option "sftType"  - "SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization" string values="MFD","vladimir" default="vladimir" optional
 option "markBadSFTs"   - "Mark bad SFTs" flag off
+option "simpleBandRejection" - "Produce upper limits for each band, but if second FFT plane std. dev. exceeds threshold given here, don't follow up any IHS candidates" double optional
+option "lineDetection" - "Detect stationary lines above threshold, and, if any present, set upper limit only, no template follow-up" double optional
 option "FFTplanFlag"   - "0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive" int values="0","1","2","3" default="3" optional
 option "allULvalsPerSkyLoc"  - "Print all UL values in the band specified by ULminimumDeltaf and ULmaximumDeltaf (default is to print only the maximum UL value in the band)" flag off
 option "fastchisqinv"  - "Use a faster central chi-sq inversion function (roughly float precision instead of double)" flag off
@@ -52,4 +54,5 @@ option "BrentsMethod"  - "Use Brent's method in the root finding algorithm." fla
 option "antennaOff"  - "Antenna pattern weights are /NOT/ used if this flag is used" flag off hidden
 option "noiseWeightOff"     - "Turn off noise weighting if this flag is used" flag off hidden
 option "gaussTemplatesOnly" - "Gaussian templates only throughout the pipeline if this flag is used" flag off hidden
+option "validateSSE"   - "Validate the use of SSE functions" flag off hidden
 

@@ -77,16 +77,16 @@ def weightsamp(d,Nlive):
         total_weight += segment_weight
     return total_weight
 
-def nest2pos(samps,weights):
+def nest2pos(samps,weights,logLcolumn=-1):
     randoms=rand(size(samps,0))
-    wt=weights+samps[:,-1]
+    wt=weights+samps[:,logLcolumn]
     maxwt=max(wt)
     #posidx=find(wt>maxwt+log(randoms))
     posidx=[i for i in range(0,size(weights)) if wt[i]>maxwt+log(randoms[i]) ]
     pos=samps[posidx,:]
     return pos
 
-def combine_evidence(data,xflag,Nlive):
+def combine_evidence(data,xflag,Nlive,logLcolumn=-1):
 
     nfiles=len(data)
 
@@ -113,7 +113,7 @@ def combine_evidence(data,xflag,Nlive):
     # Add logZnoise for other files to likelihoods for each sample
     if not None in Bfiles:
         for (outfile,noise) in zip(d,totalnoise):
-            outfile[:,-1]+=noise
+            outfile[:,logLcolumn]+=noise
 
     #Remapping Parameters#
     #for outfile in d:
@@ -127,7 +127,7 @@ def combine_evidence(data,xflag,Nlive):
     d_all = reduce(lambda x,y: vstack([x,y]), d)
     pos=nest2pos(d_all,weights)
 
-    d_idx=argsort(d_all[:,-1])
+    d_idx=argsort(d_all[:,logLcolumn])
     d_all=d_all[d_idx,:]
 
     return pos,d_all,totalBayes,ZnoiseTotal

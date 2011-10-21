@@ -2,14 +2,6 @@ SUBDIRS = SPINspiral mpi
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-
-# #Tests for the time-domian code
-# td_test_progs = TDW_test conv_test time_domain_overlap_test
-# TDW_test_SOURCES = TDW_test.c
-# conv_test_SOURCES = conv_test.c
-# time_domain_overlap_test_SOURCES = time_domain_overlap_test.c
-
-
 if LALINSPIRAL
 if LALFRAME
 
@@ -31,7 +23,6 @@ if LALINFERENCE
 pulsar_progs = lalinference_nest ChiSquare_test #lalinference_mcmcmpi
 ChiSquare_test_SOURCES = ChiSquare_test.c
 lalinference_nest_SOURCES = LALInferenceNest.c
-#lalinference_mcmcmpi_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceMCMCMPI.c LALInferenceMCMCMPISampler.c LALInferencePrior.c
 
 endif
 

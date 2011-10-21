@@ -44,14 +44,6 @@
 // only the SELF pointer.
 %define swiglal_gsl_vecmat(TYPE, NAME)
 
-  // These macros return pointers to the (I)th element of the GSL vector,
-  // and the (I,J)th element of the GSL matrix respectively. They are for
-  // use with the swiglal_{vector,matrix}_convert_{in,out} macros.
-  #define swiglal_gsl_vector##NAME##_ptr(DATA, I, NI) \
-    gsl_vector##NAME##_ptr(arg1, I)
-  #define swiglal_gsl_matrix##NAME##_ptr(DATA, I, NI, J, NJ) \
-    gsl_matrix##NAME##_ptr(arg1, I, J)
-
   // Wrapping class representing a GSL vector of type NAME.
   // Con/destructors call GSL functions to create/destroy the vector.
   // Data is exposes using the swiglal_dynamic_vector_... macros.
@@ -72,10 +64,10 @@
         gsl_vector##NAME##_free($self);
       }
     }
-    swiglal_dynamic_vector_begin(TYPE, data, size, swiglal_gsl_vector##NAME##_ptr, SL_AV_DEFAULT);
+    swiglal_dynamic_vector_begin(TYPE, data, size, arg1->stride, SL_AV_DEFAULT);
     size_t size;
     TYPE *data;
-    swiglal_dynamic_vector_end(TYPE, data, size1);
+    swiglal_dynamic_vector_end(TYPE, data, size);
   };
 
   // Wrapping class representing a GSL matrix of type NAME.
@@ -98,7 +90,7 @@
         gsl_matrix##NAME##_free($self);
       }
     }
-    swiglal_dynamic_matrix_begin(TYPE, data, size1, size2, swiglal_gsl_matrix##NAME##_ptr, SL_AV_DEFAULT);
+    swiglal_dynamic_matrix_begin(TYPE, data, size1, arg1->tda, size2, 1, SL_AV_DEFAULT);
     size_t size1;
     size_t size2;
     TYPE *data;

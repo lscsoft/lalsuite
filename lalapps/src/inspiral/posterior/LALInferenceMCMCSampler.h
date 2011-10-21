@@ -46,5 +46,3 @@
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState);
 /** Implements one MCMC step forward, updating the sigma values for the jump proposals if required.*/
 void PTMCMCOneStep(LALInferenceRunState *runState);
-/** Monte-Carlo sampler, using PTMCMCLALInferenceDrawUniformlyFromPrior() to draw a values from the prior, using Von Neumann rejection sampling. */
-void VNRPriorOneStep(LALInferenceRunState *runState);

@@ -57,6 +57,7 @@ XLALAppendString2Vector(sv, strs[3])
 assert(sv.length == 4)
 for i in range(0,4):
     assert(sv.data_getel(i) == strs[i])
+    assert(sv.data[i] == strs[i])
 XLALDestroyStringVector(sv)
 msg("passed string conversions")
 
@@ -95,6 +96,7 @@ else:
     for i in range(0,3):
         sts.enum_vector_setel(i, 2*i + 3)
         assert(sts.enum_vector_getel(i) == (2*i + 3))
+        assert(sts.enum_vector[i] == (2*i + 3))
     del sts
     assert(not cvar.swiglal_test_static_vector.any())
     assert(not cvar.swiglal_test_static_matrix.any())
@@ -124,11 +126,17 @@ def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
     assert((iv.data == [1, 3, 2, 4, 3]).all())
     iv.data_setel(3, 7)
     assert(iv.data_getel(3) == 7)
+    iv.data_setel(3, 0)
+    iv.data[3] = 7
+    assert(iv.data[3] == 7)
     assert(rvl == 5)
     rv.data = [1.2, 3.4, 2.6, 4.8, 3.5]
     assert((rv.data == [1.2, 3.4, 2.6, 4.8, 3.5]).all())
     rv.data_setel(rvl - 1, 7.5)
     assert(rv.data_getel(rvl - 1) == 7.5)
+    rv.data_setel(rvl - 1, 0)
+    rv.data[rvl - 1] = 7.5
+    assert(rv.data[rvl - 1] == 7.5)
     try:
         rv.data_setel(rvl, 99.9)
         raise error("expected exception")
@@ -148,13 +156,28 @@ def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
             cm.data_setel(i, j, complex(i / 4.0, j / 2.0))
     assert(cm.data_getel(2, 3) == complex(0.5, 1.5))
     assert(cm.data_getel(3, 2) == complex(0.75, 1.0))
+    for i in range(0,cms1):
+        for j in range(0,cms2):
+            cm.data[i, j] = complex(i / 4.0, j / 2.0)
+    assert(cm.data[2, 3] == complex(0.5, 1.5))
+    assert(cm.data[3, 2] == complex(0.75, 1.0))
     try:
         iv.data_setel(0, cm.data_getel(2, 3))
         raise error("expected exception")
     except:
         pass
     try:
+        iv.data[0] = cm.data[2, 3]
+        raise error("expected exception")
+    except:
+        pass
+    try:
         rv.data_setel(0, cm.data_getel(3, 2))
+        raise error("expected exception")
+    except:
+        pass
+    try:
+        rv.data[0] = cm.data[3, 2]
         raise error("expected exception")
     except:
         pass

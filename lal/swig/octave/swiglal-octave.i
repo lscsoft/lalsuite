@@ -161,6 +161,9 @@
 %swig_cplxflt_convn(COMPLEX8, XLALCOMPLEX8Rect, LAL_REAL, LAL_IMAG);
 %swig_cplxdbl_convn(COMPLEX16, XLALCOMPLEX16Rect, LAL_REAL, LAL_IMAG);
 
+// Octave self object for structs.
+#define swiglal_self()   args(0)
+
 // Return true, since an octave_value is always a valid object.
 #define swiglal_object_valid(OBJ)   true
 
@@ -207,6 +210,13 @@
     return octave_value(Cell(dim_vector(1, n)));
   }
 
+  // Vector views are not supported.
+  template<class TYPE> SWIGINTERN bool swiglal_vector_view(const octave_value self, octave_value *v, TYPE* data,
+                                                           const size_t n, const size_t s)
+  {
+    return false;
+  }
+
 %}
 
 // Functions for manipulating matrices in Octave.
@@ -251,6 +261,14 @@
   // contain arbitrary data such as swig_type-wrapped pointers.
   template<class TYPE > SWIGINTERN octave_value swiglal_new_matrix(const size_t ni, const size_t nj) {
     return octave_value(Cell(dim_vector(ni, nj)));
+  }
+
+  // Matrix views are not supported.
+  template<class TYPE> SWIGINTERN bool swiglal_matrix_view(const octave_value self, octave_value *m, TYPE* data,
+                                                           const size_t ni, const size_t si,
+                                                           const size_t nj, const size_t sj)
+  {
+    return false;
   }
 
 %}

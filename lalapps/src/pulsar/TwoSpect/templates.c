@@ -1001,9 +1001,9 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       //If there was power in the frequency bin of the template, then do the FFT if 5 or more SFTs have power
       if (doSecondFFT>=5) {
          //Obtain and window the time series
-         x = SSVectorMultiply_with_stride_and_offset(x, psd1, win->data, numfbins, 1, ii, 0);
+         x = fastSSVectorMultiply_with_stride_and_offset(x, psd1, win->data, numfbins, 1, ii, 0);
          if (xlalErrno!=0) {
-            fprintf(stderr,"%s, SSVectorMultiply_with_stride_and_offset() failed.\n", __func__);
+            fprintf(stderr,"%s, fastSSVectorMultiply_with_stride_and_offset() failed.\n", __func__);
             XLAL_ERROR_VOID(XLAL_EFUNC);
          }
          
