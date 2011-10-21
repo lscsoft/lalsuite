@@ -2386,17 +2386,17 @@ LALWriteSFTfile (LALStatus  *status,			/**< pointer to LALStatus structure */
     ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
   }
   ptr = rawheader;
-  *(REAL8*) ptr = header.version;
+  memcpy( ptr, &header.version, sizeof(REAL8) );
   ptr += sizeof (REAL8);
-  *(INT4*) ptr = header.gpsSeconds;
+  memcpy( ptr, &header.gpsSeconds, sizeof(INT4) );
   ptr += sizeof (INT4);
-  *(INT4*) ptr = header.gpsNanoSeconds;
+  memcpy( ptr, &header.gpsNanoSeconds, sizeof(INT4) );
   ptr += sizeof (INT4);
-  *(REAL8*) ptr = header.timeBase;
+  memcpy( ptr, &header.timeBase, sizeof(REAL8) );
   ptr += sizeof (REAL8);
-  *(INT4*) ptr = header.fminBinIndex;
+  memcpy( ptr, &header.fminBinIndex, sizeof(INT4) );
   ptr += sizeof (INT4);
-  *(INT4*) ptr = header.length;
+  memcpy( ptr, &header.length, sizeof(INT4) );
 
   /* write data into a contiguous REAL4-array */
   datalen = 2 * header.length * sizeof(REAL4);	/* amount of bytes for SFT-data */
@@ -3112,22 +3112,22 @@ LALReadSFTheader (LALStatus  *status,			/**< pointer to LALStatus structure */
    */
   ptr = rawheader;
   if (swapEndian) endian_swap((CHAR*)ptr,sizeof(REAL8),1);
-  header1.version	= *(REAL8*) ptr;
+  memcpy( &header1.version, ptr, sizeof(REAL8) );
   ptr += sizeof(REAL8);
   if (swapEndian) endian_swap((CHAR*)ptr,sizeof(INT4),1);
-  header1.gpsSeconds 	= *(INT4*) ptr;
+  memcpy( &header1.gpsSeconds, ptr, sizeof(INT4) );
   ptr += sizeof(INT4);
   if (swapEndian) endian_swap((CHAR*)ptr,sizeof(INT4),1);
-  header1.gpsNanoSeconds= *(INT4*) ptr;
+  memcpy( &header1.gpsNanoSeconds, ptr, sizeof(INT4) );
   ptr += sizeof(INT4);
   if (swapEndian) endian_swap((CHAR*)ptr,sizeof(REAL8),1);
-  header1.timeBase      = *(REAL8*) ptr;
+  memcpy( &header1.timeBase, ptr, sizeof(REAL8) );
   ptr += sizeof(REAL8);
   if (swapEndian) endian_swap((CHAR*)ptr,sizeof(INT4),1);
-  header1.fminBinIndex  = *(INT4*) ptr;
+  memcpy( &header1.fminBinIndex, ptr, sizeof(INT4) );
   ptr += sizeof(INT4);
   if (swapEndian) endian_swap((CHAR*)ptr,sizeof(INT4),1);
-  header1.length     	= *(INT4*) ptr;
+  memcpy( &header1.length, ptr, sizeof(INT4) );
 
   LALFree (rawheader);
 
