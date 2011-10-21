@@ -442,22 +442,22 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	 * total number of channels
 	 */
 
-	const int channels = floor(bandwidth / deltaF + 0.5);
+	const int channels = round(bandwidth / deltaF);
 
 	/*
 	 * stride
 	 */
 
-	const unsigned inv_fractional_stride = floor(1.0 / tiling_fractional_stride + 0.5);
+	const unsigned inv_fractional_stride = round(1.0 / tiling_fractional_stride);
 
 	/*
 	 * tile size limits
 	 */
 
-	const unsigned min_length = floor((1 / max_tile_bandwidth) / tseries_deltaT + 0.5);
-	const unsigned max_length = floor(max_tile_duration / tseries_deltaT + 0.5);
+	const unsigned min_length = round((1 / max_tile_bandwidth) / tseries_deltaT);
+	const unsigned max_length = round(max_tile_duration / tseries_deltaT);
 	const unsigned min_channels = inv_fractional_stride;
-	const unsigned max_channels = floor(max_tile_bandwidth / deltaF + 0.5);
+	const unsigned max_channels = round(max_tile_bandwidth / deltaF);
 
 	/*
 	 * sample on which tiling starts
@@ -690,7 +690,7 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	char filter_name[100];
 	REAL8Window *hann;
 	COMPLEX16FrequencySeries *filter;
-	REAL8 *pdata;
+	const REAL8 *pdata;
 	unsigned i;
 	REAL8 norm;
 
@@ -716,10 +716,15 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	 */
 
 	filter = XLALCreateCOMPLEX16FrequencySeries(filter_name, &psd->epoch, channel_flow - channel_width / 2, psd->deltaF, &lalDimensionlessUnit, 2 * channel_width / psd->deltaF + 1);
-	/* FIXME:  decide what to do about this */
+	if(!filter)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	if(filter->f0 < 0.0) {
+		XLALPrintError("%s(): channel_flow - channel_width / 2 >= 0.0 failed", __func__);
+		XLALDestroyCOMPLEX16FrequencySeries(filter);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
 	hann = XLALCreateHannREAL8Window(filter->data->length);
-	/*hann = XLALCreateTukeyREAL8Window(filter->data->length, 2 / ((channel_width / 2.0) + 1));*/
-	if(!filter || !hann) {
+	if(!hann) {
 		XLALDestroyCOMPLEX16FrequencySeries(filter);
 		XLALDestroyREAL8Window(hann);
 		XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -734,7 +739,12 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	 * divide by square root of PSD to "overwhiten".
 	 */
 
-	pdata = psd->data->data + (int) floor((filter->f0 - psd->f0) / psd->deltaF + 0.5);
+	if(filter->f0 < psd->f0 || filter->f0 + filter->data->length * filter->deltaF > psd->f0 + psd->data->length + psd->deltaF) {
+		XLALPrintError("%s(): psd does not span filter's frequency range");
+		XLALDestroyCOMPLEX16FrequencySeries(filter);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+	pdata = psd->data->data + (int) round((filter->f0 - psd->f0) / psd->deltaF);
 	for(i = 0; i < filter->data->length; i++) {
 		filter->data->data[i].re /= sqrt(pdata[i]);
 		filter->data->data[i].im /= sqrt(pdata[i]);
