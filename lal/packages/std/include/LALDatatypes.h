@@ -73,11 +73,13 @@ following section.
 #if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
 #define SWIGLAL_STRUCT(...)
 #endif
-#if !defined(SWIG) && !defined(SWIGLAL_DYNAMIC_1DARRAY)
-#define SWIGLAL_DYNAMIC_1DARRAY(...)
+#if !defined(SWIG) && !defined(SWIGLAL_DYNAMIC_1DARRAY_BEGIN)
+#define SWIGLAL_DYNAMIC_1DARRAY_BEGIN(...)
+#define SWIGLAL_DYNAMIC_1DARRAY_END(...)
 #endif
-#if !defined(SWIG) && !defined(SWIGLAL_DYNAMIC_2DARRAY)
-#define SWIGLAL_DYNAMIC_2DARRAY(...)
+#if !defined(SWIG) && !defined(SWIGLAL_DYNAMIC_2DARRAY_BEGIN)
+#define SWIGLAL_DYNAMIC_2DARRAY_BEGIN(...)
+#define SWIGLAL_DYNAMIC_2DARRAY_END(...)
 #endif
 
 /* <lalLaTeX>
@@ -338,18 +340,20 @@ typedef struct
 tagCHARVector
 {
   SWIGLAL_STRUCT(CHARVector);
-  SWIGLAL_DYNAMIC_1DARRAY(CHARVector, CHAR, data, UINT4, length);
+  SWIGLAL_DYNAMIC_1DARRAY_BEGIN(CHAR, data, length);
   UINT4  length; /**< Number of elements in array. */
   CHAR  *data;   /**< Pointer to the data array. */
+  SWIGLAL_DYNAMIC_1DARRAY_END(CHAR, data, length);
 }
 CHARVector;
 
 /** Vector of type CHAR*, ie 'strings'  */
 typedef struct tagLALStringVector {
   SWIGLAL_STRUCT(LALStringVector);
-  SWIGLAL_DYNAMIC_1DARRAY(LALStringVector, CHAR*, data, UINT4, length);
+  SWIGLAL_DYNAMIC_1DARRAY_BEGIN(CHAR*, data, length);
   UINT4 length;  /**< Number of elements in array. */
   CHAR **data;	 /**< Pointer to the data array. */
+  SWIGLAL_DYNAMIC_1DARRAY_END(CHAR*, data, length);
 } LALStringVector;
 
 /** Vector of type INT2. */
@@ -357,9 +361,10 @@ typedef struct
 tagINT2Vector
 {
   SWIGLAL_STRUCT(INT2Vector);
-  SWIGLAL_DYNAMIC_1DARRAY(INT2Vector, INT2, data, UINT4, length);
+  SWIGLAL_DYNAMIC_1DARRAY_BEGIN(INT2, data, length);
   UINT4  length; /**< Number of elements in array. */
   INT2  *data; /**< Pointer to the data array. */
+  SWIGLAL_DYNAMIC_1DARRAY_END(INT2, data, length);
 }
 INT2Vector;
 
@@ -368,9 +373,10 @@ typedef struct
 tagUINT2Vector
 {
   SWIGLAL_STRUCT(UINT2Vector);
-  SWIGLAL_DYNAMIC_1DARRAY(UINT2Vector, UINT2, data, UINT4, length);
+  SWIGLAL_DYNAMIC_1DARRAY_BEGIN(UINT2, data, length);
   UINT4  length; /**< Number of elements in array. */
   UINT2 *data; /**< Pointer to the data array. */
+  SWIGLAL_DYNAMIC_1DARRAY_END(UINT2, data, length);
 }
 UINT2Vector;
 
@@ -379,9 +385,10 @@ typedef struct
 tagINT4Vector
 {
   SWIGLAL_STRUCT(INT4Vector);
-  SWIGLAL_DYNAMIC_1DARRAY(INT4Vector, INT4, data, UINT4, length);
+  SWIGLAL_DYNAMIC_1DARRAY_BEGIN(INT4, data, length);
   UINT4  length; /**< Number of elements in array. */
   INT4  *data; /**< Pointer to the data array. */
+  SWIGLAL_DYNAMIC_1DARRAY_END(INT4, data, length);
 }
 INT4Vector;
 
@@ -390,9 +397,10 @@ typedef struct
 tagUINT4Vector
 {
   SWIGLAL_STRUCT(UINT4Vector);
-  SWIGLAL_DYNAMIC_1DARRAY(UINT4Vector, UINT4, data, UINT4, length);
+  SWIGLAL_DYNAMIC_1DARRAY_BEGIN(UINT4, data, length);
   UINT4  length; /**< Number of elements in array. */
   UINT4  *data; /**< Pointer to the data array. */
+  SWIGLAL_DYNAMIC_1DARRAY_END(UINT4, data, length);
 }
 UINT4Vector;
 
@@ -401,9 +409,10 @@ typedef struct
 tagINT8Vector
 {
   SWIGLAL_STRUCT(INT8Vector);
-  SWIGLAL_DYNAMIC_1DARRAY(INT8Vector, INT8, data, UINT4, length);
+  SWIGLAL_DYNAMIC_1DARRAY_BEGIN(INT8, data, length);
   UINT4  length; /**< Number of elements in array. */
   INT8  *data; /**< Pointer to the data array. */
+  SWIGLAL_DYNAMIC_1DARRAY_END(INT8, data, length);
 }
 INT8Vector;
 
@@ -412,9 +421,10 @@ typedef struct
 tagUINT8Vector
 {
   SWIGLAL_STRUCT(UINT8Vector);
-  SWIGLAL_DYNAMIC_1DARRAY(UINT8Vector, UINT8, data, UINT4, length);
+  SWIGLAL_DYNAMIC_1DARRAY_BEGIN(UINT8, data, length);
   UINT4  length; /**< Number of elements in array. */
   UINT8 *data; /**< Pointer to the data array. */
+  SWIGLAL_DYNAMIC_1DARRAY_END(UINT8, data, length);
 }
 UINT8Vector;
 
@@ -423,9 +433,10 @@ typedef struct
 tagREAL4Vector
 {
   SWIGLAL_STRUCT(REAL4Vector);
-  SWIGLAL_DYNAMIC_1DARRAY(REAL4Vector, REAL4, data, UINT4, length);
+  SWIGLAL_DYNAMIC_1DARRAY_BEGIN(REAL4, data, length);
   UINT4  length; /**< Number of elements in array. */
   REAL4 *data; /**< Pointer to the data array. */
+  SWIGLAL_DYNAMIC_1DARRAY_END(REAL4, data, length);
 }
 REAL4Vector;
 
@@ -433,9 +444,10 @@ REAL4Vector;
 typedef struct tagREAL8Vector
 {
   SWIGLAL_STRUCT(REAL8Vector);
-  SWIGLAL_DYNAMIC_1DARRAY(REAL8Vector, REAL8, data, UINT4, length);
+  SWIGLAL_DYNAMIC_1DARRAY_BEGIN(REAL8, data, length);
   UINT4  length; /**< Number of elements in array. */
   REAL8 *data; /**< Pointer to the data array. */
+  SWIGLAL_DYNAMIC_1DARRAY_END(REAL8, data, length);
 }
 REAL8Vector;
 
@@ -443,9 +455,10 @@ REAL8Vector;
 typedef struct tagCOMPLEX8Vector
 {
   SWIGLAL_STRUCT(COMPLEX8Vector);
-  SWIGLAL_DYNAMIC_1DARRAY(COMPLEX8Vector, COMPLEX8, data, UINT4, length);
+  SWIGLAL_DYNAMIC_1DARRAY_BEGIN(COMPLEX8, data, length);
   UINT4     length; /**< Number of elements in array. */
   COMPLEX8 *data; /**< Pointer to the data array. */
+  SWIGLAL_DYNAMIC_1DARRAY_END(COMPLEX8, data, length);
 }
 COMPLEX8Vector;
 
@@ -453,9 +466,10 @@ COMPLEX8Vector;
 typedef struct tagCOMPLEX16Vector
 {
   SWIGLAL_STRUCT(COMPLEX16Vector);
-  SWIGLAL_DYNAMIC_1DARRAY(COMPLEX16Vector, COMPLEX16, data, UINT4, length);
+  SWIGLAL_DYNAMIC_1DARRAY_BEGIN(COMPLEX16, data, length);
   UINT4      length; /**< Number of elements in array. */
   COMPLEX16 *data; /**< Pointer to the data array. */
+  SWIGLAL_DYNAMIC_1DARRAY_END(COMPLEX16, data, length);
 }
 COMPLEX16Vector;
 
@@ -649,10 +663,11 @@ typedef struct
 tagCHARVectorSequence
 {
   SWIGLAL_STRUCT(CHARVectorSequence);
-  SWIGLAL_DYNAMIC_2DARRAY(CHARVectorSequence, CHAR, data, UINT4, length, vectorLength);
+  SWIGLAL_DYNAMIC_2DARRAY_BEGIN(CHAR, data, length, vectorLength);
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
   CHAR  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
+  SWIGLAL_DYNAMIC_2DARRAY_END(CHAR, data, length, vectorLength);
 }
 CHARVectorSequence;
 
@@ -661,10 +676,11 @@ typedef struct
 tagINT2VectorSequence
 {
   SWIGLAL_STRUCT(INT2VectorSequence);
-  SWIGLAL_DYNAMIC_2DARRAY(INT2VectorSequence, INT2, data, UINT4, length, vectorLength);
+  SWIGLAL_DYNAMIC_2DARRAY_BEGIN(INT2, data, length, vectorLength);
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
   INT2  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
+  SWIGLAL_DYNAMIC_2DARRAY_END(INT2, data, length, vectorLength);
 }
 INT2VectorSequence;
 
@@ -673,10 +689,11 @@ typedef struct
 tagUINT2VectorSequence
 {
   SWIGLAL_STRUCT(UINT2VectorSequence);
-  SWIGLAL_DYNAMIC_2DARRAY(UINT2VectorSequence, UINT2, data, UINT4, length, vectorLength);
+  SWIGLAL_DYNAMIC_2DARRAY_BEGIN(UINT2, data, length, vectorLength);
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
   UINT2 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
+  SWIGLAL_DYNAMIC_2DARRAY_END(UINT2, data, length, vectorLength);
 }
 UINT2VectorSequence;
 
@@ -685,10 +702,11 @@ typedef struct
 tagINT4VectorSequence
 {
   SWIGLAL_STRUCT(INT4VectorSequence);
-  SWIGLAL_DYNAMIC_2DARRAY(INT4VectorSequence, INT4, data, UINT4, length, vectorLength);
+  SWIGLAL_DYNAMIC_2DARRAY_BEGIN(INT4, data, length, vectorLength);
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
   INT4  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
+  SWIGLAL_DYNAMIC_2DARRAY_END(INT4, data, length, vectorLength);
 }
 INT4VectorSequence;
 
@@ -697,10 +715,11 @@ typedef struct
 tagUINT4VectorSequence
 {
   SWIGLAL_STRUCT(UINT4VectorSequence);
-  SWIGLAL_DYNAMIC_2DARRAY(UINT4VectorSequence, UINT4, data, UINT4, length, vectorLength);
+  SWIGLAL_DYNAMIC_2DARRAY_BEGIN(UINT4, data, length, vectorLength);
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
   UINT4 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
+  SWIGLAL_DYNAMIC_2DARRAY_END(UINT4, data, length, vectorLength);
 }
 UINT4VectorSequence;
 
@@ -709,10 +728,11 @@ typedef struct
 tagINT8VectorSequence
 {
   SWIGLAL_STRUCT(INT8VectorSequence);
-  SWIGLAL_DYNAMIC_2DARRAY(INT8VectorSequence, INT8, data, UINT4, length, vectorLength);
+  SWIGLAL_DYNAMIC_2DARRAY_BEGIN(INT8, data, length, vectorLength);
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
   INT8  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
+  SWIGLAL_DYNAMIC_2DARRAY_END(INT8, data, length, vectorLength);
 }
 INT8VectorSequence;
 
@@ -721,10 +741,11 @@ typedef struct
 tagUINT8VectorSequence
 {
   SWIGLAL_STRUCT(UINT8VectorSequence);
-  SWIGLAL_DYNAMIC_2DARRAY(UINT8VectorSequence, UINT8, data, UINT4, length, vectorLength);
+  SWIGLAL_DYNAMIC_2DARRAY_BEGIN(UINT8, data, length, vectorLength);
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
   UINT8 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
+  SWIGLAL_DYNAMIC_2DARRAY_END(UINT8, data, length, vectorLength);
 }
 UINT8VectorSequence;
 
@@ -733,10 +754,11 @@ typedef struct
 tagREAL4VectorSequence
 {
   SWIGLAL_STRUCT(REAL4VectorSequence);
-  SWIGLAL_DYNAMIC_2DARRAY(REAL4VectorSequence, REAL4, data, UINT4, length, vectorLength);
+  SWIGLAL_DYNAMIC_2DARRAY_BEGIN(REAL4, data, length, vectorLength);
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
   REAL4 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
+  SWIGLAL_DYNAMIC_2DARRAY_END(REAL4, data, length, vectorLength);
 }
 REAL4VectorSequence;
 
@@ -745,10 +767,11 @@ typedef struct
 tagREAL8VectorSequence
 {
   SWIGLAL_STRUCT(REAL8VectorSequence);
-  SWIGLAL_DYNAMIC_2DARRAY(REAL8VectorSequence, REAL8, data, UINT4, length, vectorLength);
+  SWIGLAL_DYNAMIC_2DARRAY_BEGIN(REAL8, data, length, vectorLength);
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
   REAL8 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
+  SWIGLAL_DYNAMIC_2DARRAY_END(REAL8, data, length, vectorLength);
 }
 REAL8VectorSequence;
 
@@ -757,10 +780,11 @@ typedef struct
 tagCOMPLEX8VectorSequence
 {
   SWIGLAL_STRUCT(COMPLEX8VectorSequence);
-  SWIGLAL_DYNAMIC_2DARRAY(COMPLEX8VectorSequence, COMPLEX8, data, UINT4, length, vectorLength);
+  SWIGLAL_DYNAMIC_2DARRAY_BEGIN(COMPLEX8, data, length, vectorLength);
   UINT4     length; /**< The number \a l of vectors. */
   UINT4     vectorLength; /**< The length \a n of each vector. */
   COMPLEX8 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
+  SWIGLAL_DYNAMIC_2DARRAY_END(COMPLEX8, data, length, vectorLength);
 }
 COMPLEX8VectorSequence;
 
@@ -769,10 +793,11 @@ typedef struct
 tagCOMPLEX16VectorSequence
 {
   SWIGLAL_STRUCT(COMPLEX16VectorSequence);
-  SWIGLAL_DYNAMIC_2DARRAY(COMPLEX16VectorSequence, COMPLEX16, data, UINT4, length, vectorLength);
+  SWIGLAL_DYNAMIC_2DARRAY_BEGIN(COMPLEX16, data, length, vectorLength);
   UINT4      length; /**< The number \a l of vectors. */
   UINT4      vectorLength; /**< The length \a n of each vector. */
   COMPLEX16 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
+  SWIGLAL_DYNAMIC_2DARRAY_END(COMPLEX16, data, length, vectorLength);
 }
 COMPLEX16VectorSequence;
 
