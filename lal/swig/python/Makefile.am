@@ -26,7 +26,7 @@ swig-check : $(swig_wrap)
 	$(PYTHON) $(swig_wrapcheck).py
 
 # install SWIG wrapping module
-swig-install :
+swig-install : $(swig_wrap)
 	$(PYTHON) $(srcdir)/setup.py install --prefix=$(DESTDIR)$(prefix) --record .install.txt
 
 # uninstall SWIG wrapping module
