@@ -906,12 +906,6 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             //Sum IHS values across SFT frequency bins
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
-            /* for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) {
-               //tworows->data[jj*ihsvectorsequence->vectorLength + kk] = ihsvectorsequence->data[jj*ihsvectorsequence->vectorLength + kk] + ihsvectorsequence->data[(jj+1)*ihsvectorsequence->vectorLength + kk];
-               tworows2->data[jj*ihsvalsfromaveNoise->length + kk] = ihsvalsfromaveNoise->data[kk]*(randvals->data[jj]*FbinMean->data[jj] + randvals->data[jj+1]*FbinMean->data[jj+1]);
-               //excessabovenoise->data[kk] = tworows->data[jj*ihsvectorsequence->vectorLength + kk] - tworows2->data[jj*ihsvalsfromaveNoise->length + kk];
-               //fprintf(TWOROWSUM, "%.6f\n", tworows->data[jj*ihsvectorsequence->vectorLength + kk]);
-            } */
             scaleVectorIntoVectorSequence(tworows2, ihsvalsfromaveNoise, (randvals->data[jj]*FbinMean->data[jj] + randvals->data[jj+1]*FbinMean->data[jj+1]), jj);
             if (!params->useSSE) fastSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
             else {
@@ -920,6 +914,21 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
                   fprintf(stderr, "%s: sseSSVectorSequenceSubtract() failed.\n", __func__);
                   XLAL_ERROR_VOID(XLAL_EFUNC);
                }
+            }
+            
+            //Validate use of SSE function sseSSVectorSequenceSubtract()
+            if (params->validateSSE && calcPInvVals!=0) {
+               INT4 kk;
+               REAL4Vector *excessabovenoise_validate = XLALCreateREAL4Vector(excessabovenoise->length);
+               if (params->useSSE) fastSSVectorSequenceSubtract(excessabovenoise_validate, tworows, tworows2, jj, jj);
+               else sseSSVectorSequenceSubtract(excessabovenoise_validate, tworows, tworows2, jj, jj);
+               for (kk=0; kk<(INT4)excessabovenoise_validate->length; kk++) {
+                  if (excessabovenoise_validate->data[kk] != excessabovenoise->data[kk]) {
+                     fprintf(stderr, "SSE validation failed (sseSSVectorSequenceSubtract)!\n");
+                     XLAL_ERROR_VOID(XLAL_EFUNC);
+                  }
+               }
+               XLALDestroyREAL4Vector(excessabovenoise_validate);
             }
             
             //Compute the maximum IHS value in the second FFT frequency direction
@@ -933,6 +942,27 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
             output->foms->data[jj] = ihsFOM(rowsequencemaxima, rowsequencelocs, fbinmeanvals, locationnormfactor);
          } /* for jj < ihsvectorsequence->length-(ii-1) */
          //fclose(TWOROWSUM);
+         
+         //Validate the use of SSE function sseSSVectorSequenceSum()
+         if (params->validateSSE && calcPInvVals!=0) {
+            REAL4VectorSequence *tworows_validate = XLALCreateREAL4VectorSequence(ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
+            if (tworows_validate==NULL) {
+               fprintf(stderr,"%s: XLALCreateREAL4VectorSequence(%d,%d) failed.\n", __func__, ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+            if (params->useSSE) {
+               for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) fastSSVectorSequenceSum(tworows_validate, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
+            } else {
+               sseSSVectorSequenceSum(tworows_validate, ihsvectorsequence, ihsvectorsequence, 0, 1, 0, (INT4)ihsvectorsequence->length-(ii-1));
+            }
+            for (jj=0; jj<(INT4)(tworows->length*tworows->vectorLength); jj++) {
+               if (tworows->data[jj] != tworows_validate->data[jj]) {
+                  fprintf(stderr, "SSE validation failed (sseSSVectorSequenceSum)!\n");
+                  XLAL_ERROR_VOID(XLAL_EFUNC);
+               }
+            }
+            XLALDestroyREAL4VectorSequence(tworows_validate);
+         }
          
          if (calcPInvVals!=0) {
             //sample the IHS values to compute mean and standard deviation values
@@ -1033,12 +1063,8 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
             }
          }
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
-            if (!params->useSSE) fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj);
-            /* for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) {
-               //tworows->data[jj*ihsvectorsequence->vectorLength + kk] += ihsvectorsequence->data[(ii-1+jj)*ihsvectorsequence->vectorLength + kk];
-               tworows2->data[jj*ihsvalsfromaveNoise->length + kk] += ihsvalsfromaveNoise->data[kk]*randvals->data[ii-1+jj]*FbinMean->data[ii-1+jj];
-               //excessabovenoise->data[kk] = tworows->data[jj*ihsvectorsequence->vectorLength + kk] - tworows2->data[jj*ihsvalsfromaveNoise->length + kk];
-            } */
+            if (!params->useSSE) fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj); //If we didn't use SSE to sum the vector sequence (see lines above)
+            
             if (!params->useSSE) addScaledVectorIntoVectorSequence(tworows2, ihsvalsfromaveNoise, randvals->data[ii-1+jj]*FbinMean->data[ii-1+jj], jj);
             else {
                sseAddScaledVectorIntoVectorSequence(tworows2, ihsvalsfromaveNoise, randvals->data[ii-1+jj]*FbinMean->data[ii-1+jj], jj);
@@ -1047,6 +1073,30 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
                   XLAL_ERROR_VOID(XLAL_EFUNC);
                }
             }
+            
+            //Validate use of SSE function sseAddScaledVectorIntoVectorSequence()
+            if (params->validateSSE && calcPInvVals!=0 && ii==3 && jj==0) {
+               INT4 kk;
+               REAL4VectorSequence *vectortovalidate = XLALCreateREAL4VectorSequence(1, tworows2->vectorLength);
+               memset(vectortovalidate->data, 0, sizeof(REAL4)*vectortovalidate->vectorLength);
+               if (params->useSSE) {
+                  addScaledVectorIntoVectorSequence(vectortovalidate, ihsvalsfromaveNoise, randvals->data[0]*FbinMean->data[0], 0);
+                  addScaledVectorIntoVectorSequence(vectortovalidate, ihsvalsfromaveNoise, randvals->data[1]*FbinMean->data[1], 0);
+                  addScaledVectorIntoVectorSequence(vectortovalidate, ihsvalsfromaveNoise, randvals->data[2]*FbinMean->data[2], 0);
+               } else {
+                  sseAddScaledVectorIntoVectorSequence(vectortovalidate, ihsvalsfromaveNoise, randvals->data[0]*FbinMean->data[0], 0);
+                  sseAddScaledVectorIntoVectorSequence(vectortovalidate, ihsvalsfromaveNoise, randvals->data[1]*FbinMean->data[1], 0);
+                  sseAddScaledVectorIntoVectorSequence(vectortovalidate, ihsvalsfromaveNoise, randvals->data[2]*FbinMean->data[2], 0);
+               }
+               for (kk=0; kk<(INT4)vectortovalidate->length; kk++) {
+                  if (vectortovalidate->data[kk] != tworows2->data[jj*tworows2->vectorLength + kk]) {
+                     fprintf(stderr, "SSE validation failed (sseAddScaledVectorIntoVectorSequence)!\n");
+                     XLAL_ERROR_VOID(XLAL_EFUNC);
+                  }
+               }
+               XLALDestroyREAL4VectorSequence(vectortovalidate);
+            }
+            
             if (!params->useSSE) fastSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
             else {
                sseSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
@@ -1387,7 +1437,7 @@ void addScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector 
 {
    
    INT4 ii;
-   for (ii=0; ii<(INT4)input->length; ii++) output->data[outputvectorpos*output->vectorLength + ii] += scale*input->data[ii];
+   for (ii=0; ii<(INT4)input->length; ii++) output->data[outputvectorpos*output->vectorLength + ii] += (REAL4)(scale*input->data[ii]);
    
 }
 void sseAddScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector *input, REAL4 scale, INT4 outputvectorpos)

@@ -352,6 +352,18 @@ int main(int argc, char *argv[])
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");
    
+   
+   //Line detection
+   INT4Vector *lines = NULL;
+   if (args_info.lineDetection_given) {
+      lines = detectLines_simple(tfdata, ffdata, inputParams);
+      if (lines!=NULL) {
+         fprintf(LOG, "WARNING: %d line(s) found.\n", lines->length);
+         fprintf(stderr, "WARNING: %d line(s) found.\n", lines->length);
+      }
+   }
+   
+   
    //Need to reduce the original TF data to remove the excess bins used for running median calculation. Normalize the TF as the same as the background was normalized
    REAL4Vector *usableTFdata = XLALCreateREAL4Vector(background->length);
    if (usableTFdata==NULL) {
@@ -412,6 +424,7 @@ int main(int argc, char *argv[])
    fprintf(stderr, "Starting TwoSpect analysis...\n");
    
    
+   //Antenna normalization
    REAL4Vector *antweightsforihs2h0 = XLALCreateREAL4Vector(ffdata->numffts);
    if (args_info.antennaOff_given) for (ii=0; ii<(INT4)antweightsforihs2h0->length; ii++) antweightsforihs2h0->data[ii] = 1.0;
    else {
@@ -501,7 +514,7 @@ int main(int argc, char *argv[])
          antweightsrms = currentAntWeightsRMS;
       }
       
-      //TODO: Test normalization
+      //Antenna normalization for different sky locations
       REAL8 skypointffnormalization = 1.0;
       ffPlaneNoise(aveNoise, inputParams, background_slided, antweightsforihs2h0, secondFFTplan, &(skypointffnormalization));
       if (xlalErrno!=0) {
@@ -549,8 +562,12 @@ int main(int argc, char *argv[])
          for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
          aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
       }
-      REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
-      for (ii=0; ii<ffdata->numfbins; ii++) aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
+      //REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
+      REAL4 aveTFaveinv = 1.0/calcMedian(aveTFnoisePerFbinRatio);  //Better in case of strong lines (approaches mean value)
+      for (ii=0; ii<ffdata->numfbins; ii++) {
+         aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
+         //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
+      }
       XLALDestroyREAL4Vector(TSofPowers);
       
       
@@ -565,7 +582,8 @@ int main(int argc, char *argv[])
       REAL4 secFFTsigma = calcStddev(ffdata->ffdata);
       
       XLALDestroyREAL4Vector(TFdata_weighted);
-      fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, calcMean(aveNoise)*calcMean(aveTFnoisePerFbinRatio));
+      //fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, calcMean(aveNoise)*calcMean(aveTFnoisePerFbinRatio));
+      fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, calcMean(aveNoise));
       /* FILE *FFDATA = fopen("./output/ffdata.dat","w");
       for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
       fclose(FFDATA); */
@@ -605,24 +623,11 @@ int main(int argc, char *argv[])
       }
       fprintf(LOG, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
       fprintf(stderr, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
-      for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) fprintf(stderr, "%d %g %g %g %g\n", ii, ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].h0);
+      //for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) fprintf(stderr, "%d %g %g %g %g\n", ii, ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].h0);
 ////////End of the IHS step
       
 ////////Start of the Gaussian template search!
-      if (!args_info.IHSonly_given && ( !args_info.simpleBandRejection_given || ( args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion ) )) {
-         
-         //Test the IHS candidates against Gaussian templates in this function
-         if ( testIHScandidates(gaussCandidates1, ihsCandidates, ffdata, aveNoise, aveTFnoisePerFbinRatio, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
-            fprintf(stderr, "%s: testIHScandidates() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         
-         fprintf(LOG,"Initial stage done with candidates = %d\n",gaussCandidates1->numofcandidates);
-         fprintf(stderr,"Initial stage done with candidates = %d\n",gaussCandidates1->numofcandidates);
-         
-         for (ii=0; ii<(INT4)gaussCandidates1->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates1->data[ii].fsig, gaussCandidates1->data[ii].period, gaussCandidates1->data[ii].moddepth);
-      } /* if IHSonly is not given */
-      else {
+      if (args_info.IHSonly_given) {
          if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates->numofcandidates) {
             exactCandidates2 = resize_candidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates->numofcandidates);
             if (exactCandidates2->data==NULL) {
@@ -636,7 +641,19 @@ int main(int argc, char *argv[])
             exactCandidates2->data[ii+numofcandidatesalready].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //Scaling here
             (exactCandidates2->numofcandidates)++;
          }
-      } /* if IHSonly is given */
+      } else if ((!args_info.simpleBandRejection_given || (args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion)) && (!args_info.lineDetection_given || (args_info.lineDetection_given && lines==NULL))) {
+         
+         //Test the IHS candidates against Gaussian templates in this function
+         if ( testIHScandidates(gaussCandidates1, ihsCandidates, ffdata, aveNoise, aveTFnoisePerFbinRatio, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
+            fprintf(stderr, "%s: testIHScandidates() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         
+         fprintf(LOG,"Initial stage done with candidates = %d\n",gaussCandidates1->numofcandidates);
+         fprintf(stderr,"Initial stage done with candidates = %d\n",gaussCandidates1->numofcandidates);
+         
+         for (ii=0; ii<(INT4)gaussCandidates1->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates1->data[ii].fsig, gaussCandidates1->data[ii].period, gaussCandidates1->data[ii].moddepth);
+      } /* if IHSonly is not given */
 
 ////////End of the Gaussian template search
 
@@ -644,7 +661,7 @@ int main(int argc, char *argv[])
       ihsCandidates->numofcandidates = 0;
       
       //Search the IHS templates further if user has not specified IHSonly flag
-      if (!args_info.IHSonly_given && ( !args_info.simpleBandRejection_given || ( args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion ) )) {
+      if (!args_info.IHSonly_given && ( !args_info.simpleBandRejection_given || ( args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion ) ) && ( !args_info.lineDetection_given || (args_info.lineDetection_given && lines==NULL) )) {
 ////////Start clustering! Note that the clustering algorithm takes care of the period range of parameter space
          clusterCandidates(gaussCandidates2, gaussCandidates1, ffdata, inputParams, aveNoise, aveTFnoisePerFbinRatio, sftexist, 0);
          if (xlalErrno!=0) {
@@ -823,13 +840,12 @@ int main(int argc, char *argv[])
       upperlimits->data[upperlimits->length-1].alpha = (REAL4)dopplerpos.Alpha;
       upperlimits->data[upperlimits->length-1].delta = (REAL4)dopplerpos.Delta;
       upperlimits->data[upperlimits->length-1].normalization = ffdata->tfnormalization;
-      //skypoint95UL(&(upperlimits->data[upperlimits->length-1]), ihsfarstruct, inputParams, ffdata, ihsmaxima, aveNoise, aveTFnoisePerFbinRatio);
       skypoint95UL(&(upperlimits->data[upperlimits->length-1]), inputParams, ffdata, ihsmaxima, aveNoise, aveTFnoisePerFbinRatio);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: skypoint95UL() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
-      for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);   //TODO: verify the sft-loss parameter correction and sky position normalization difference
+      for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);  //Compensation for different duty cycle and antenna pattern weights
       upperlimits = resize_UpperLimitVector(upperlimits, upperlimits->length+1);
       if (upperlimits->data==NULL) {
          fprintf(stderr,"%s: resize_UpperLimitVector(%d) failed.\n", __func__, upperlimits->length+1);
@@ -895,6 +911,8 @@ int main(int argc, char *argv[])
    free_candidateVector(exactCandidates1);
    free_candidateVector(exactCandidates2);
    FreeDopplerSkyScan(&status, &scan);
+   
+   if (lines!=NULL) XLALDestroyINT4Vector(lines);
    
    //print end time
    time(&programendtime);
@@ -1482,6 +1500,67 @@ void removeBadMultiSFTs(REAL4VectorSequence *multiTFdata, INT4VectorSequence *ba
 }
 
 
+//Running median based line detection
+// 1. Calculate RMS for each fbin as function of time
+// 2. Calculate running median of RMS values
+// 3. Divide RMS values by running median. Lines stick out by being >>1
+// 4. Add up number of lines above threshold and report
+INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, inputParamsStruct *params)
+{
+   
+   LALStatus status;
+   status.statusPtr = NULL;
+   
+   INT4 blksize = 11, ii, jj;
+   
+   INT4 numlines = 0;
+   INT4Vector *lines = NULL;
+   
+   //Blocksize of running median
+   LALRunningMedianPar block = {blksize};
+   
+   REAL4Vector *testaveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins+(params->blksize-1)+2*params->maxbinshift);
+   REAL4Vector *testRngMedian = XLALCreateREAL4Vector(testaveTFnoisePerFbinRatio->length-(blksize-1));
+   REAL4Vector *testTSofPowers = XLALCreateREAL4Vector((UINT4)ffdata->numffts);
+   if (testaveTFnoisePerFbinRatio==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins+(params->blksize-1)+2*params->maxbinshift);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   } else if (testRngMedian==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, testaveTFnoisePerFbinRatio->length-(blksize-1));
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   } else if (testTSofPowers==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
+   for (ii=0; ii<(INT4)testaveTFnoisePerFbinRatio->length; ii++) {
+      for (jj=0; jj<ffdata->numffts; jj++) testTSofPowers->data[jj] = TFdata->data[jj*testaveTFnoisePerFbinRatio->length + ii];
+      testaveTFnoisePerFbinRatio->data[ii] = calcRms(testTSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
+   }
+   
+   LALSRunningMedian2(&status, testRngMedian, testaveTFnoisePerFbinRatio, block);
+   if (status.statusCode != 0) {
+      fprintf(stderr,"%s: LALSRunningMedian2() failed.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
+   
+   for (ii=0; ii<(INT4)testRngMedian->length; ii++) {
+      if ( (ii+(blksize-1)/2) > ((params->blksize-1)/2) && testaveTFnoisePerFbinRatio->data[ii+(blksize-1)/2]/testRngMedian->data[ii] > params->lineDetection) {
+         lines = XLALResizeINT4Vector(lines, numlines+1);
+         lines->data[numlines] = ii+(blksize-1)/2;
+         numlines++;
+      }
+      //fprintf(stderr, "%f\n",testaveTFnoisePerFbinRatio->data[ii+(blksize-1)/2]/testRngMedian->data[ii]);   //TODO: remove this
+   }
+   
+   XLALDestroyREAL4Vector(testTSofPowers);
+   XLALDestroyREAL4Vector(testRngMedian);
+   XLALDestroyREAL4Vector(testaveTFnoisePerFbinRatio);
+   
+   return lines;
+   
+}
+
+
 INT4Vector * existingSFTs(REAL4Vector *tfdata, inputParamsStruct *params, INT4 numfbins, INT4 numffts)
 {
    
@@ -1875,10 +1954,10 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
       fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   /* srand(time(NULL));
+   srand(time(NULL));
    UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed); */
-   gsl_rng_set(rng, 0);
+   gsl_rng_set(rng, randseed);
+   //gsl_rng_set(rng, 0);
    
    //Set up for making the PSD
    for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] = 0.0;
@@ -2018,7 +2097,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
       //fprintf(BACKGRND,"%.6f\n",aveNoise->data[ii]);
    }
    
-   //TODO: remove this extra factor
+   //Extra factor for normalization to 1.0 (empirically determined)
    // *(normalization) /= 1.0245545525190294;
    *normalization /= 1.040916688722758;
    
@@ -2106,6 +2185,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->printAllULvalues = args_info.allULvalsPerSkyLoc_given;
    params->fastchisqinv = args_info.fastchisqinv_given;
    params->useSSE = args_info.useSSE_given;
+   params->validateSSE = args_info.validateSSE_given;
    
    //Non-default arguments
    if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;
@@ -2127,6 +2207,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    if (args_info.ULfspan_given) params->ULfspan = args_info.ULfspan_arg;
    else params->ULfspan = params->fspan;
    if (args_info.simpleBandRejection_given) params->simpleSigmaExclusion = args_info.simpleBandRejection_arg;
+   if (args_info.lineDetection_given) params->lineDetection = args_info.lineDetection_arg;
    
    //Settings for IHS FOM
    if (args_info.ihsfomfar_given) params->ihsfomfar = args_info.ihsfomfar_arg;

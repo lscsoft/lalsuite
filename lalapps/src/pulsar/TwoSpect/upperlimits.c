@@ -189,17 +189,18 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    for (ii=minrows; ii<=ihsmaxima->rows; ii++) {
       REAL8 loudestoutlier = 0.0, loudestoutlierminusnoise = 0.0, loudestoutliernoise = 0.0;
       INT4 jjbinofloudestoutlier = 0, locationofloudestoutlier = 0;
+      REAL8 noise = 0.0, totalnoise = 0.0, ihsminusnoise = 0.0;
       for (jj=0; jj<ffdata->numfbins-(ii-1); jj++) {
          
          INT4 locationinmaximavector = (ii-2)*ffdata->numfbins - ((ii-1)*(ii-1)-(ii-1))/2 + jj;
          
          INT4 location = ihsmaxima->locations->data[locationinmaximavector];
          
-         REAL8 noise = 0.0;
+         noise = 0.0;
          for (kk=1; kk<=params->ihsfactor; kk++) if (!(fabs(dailyharmonic-kk*location)<=1.0 || fabs(dailyharmonic2-kk*location)<=1.0 || fabs(dailyharmonic3-kk*location)<=1.0 || fabs(dailyharmonic4-kk*location)<=1.0)) noise += aveNoise->data[location*kk];
-         REAL8 totalnoise = 0.0;
+         totalnoise = 0.0;
          for (kk=0; kk<ii; kk++) totalnoise += noise*fbinavgs->data[jj+kk];
-         REAL8 ihsminusnoise = ihsmaxima->maxima->data[locationinmaximavector] - totalnoise;
+         ihsminusnoise = ihsmaxima->maxima->data[locationinmaximavector] - totalnoise;
          
          REAL8 fsig = params->fmin + (0.5*(ii-1.0) + jj)/params->Tcoh;
          

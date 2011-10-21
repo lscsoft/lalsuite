@@ -73,6 +73,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --sftType=STRING          SFT from either 'MFD' (Makefakedata_v4) or \n                                  'vladimir' (Vladimir's SFT windowed version) \n                                  which uses a factor of 2 rather than \n                                  sqrt(8/3) for the window normalization  \n                                  (possible values=\"MFD\", \"vladimir\" \n                                  default=`vladimir')",
   "      --markBadSFTs             Mark bad SFTs  (default=off)",
   "      --simpleBandRejection=DOUBLE\n                                Produce upper limits for each band, but if \n                                  second FFT plane std. dev. exceeds threshold \n                                  given here, don't follow up any IHS \n                                  candidates",
+  "      --lineDetection=DOUBLE    Detect stationary lines above threshold, and, \n                                  if any present, set upper limit only, no \n                                  template follow-up",
   "      --FFTplanFlag=INT         0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive  \n                                  (possible values=\"0\", \"1\", \"2\", \"3\" \n                                  default=`3')",
   "      --allULvalsPerSkyLoc      Print all UL values in the band specified by \n                                  ULminimumDeltaf and ULmaximumDeltaf (default \n                                  is to print only the maximum UL value in the \n                                  band)  (default=off)",
   "      --fastchisqinv            Use a faster central chi-sq inversion function \n                                  (roughly float precision instead of double)  \n                                  (default=off)",
@@ -83,6 +84,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --antennaOff              Antenna pattern weights are /NOT/ used if this \n                                  flag is used  (default=off)",
   "      --noiseWeightOff          Turn off noise weighting if this flag is used  \n                                  (default=off)",
   "      --gaussTemplatesOnly      Gaussian templates only throughout the pipeline \n                                  if this flag is used  (default=off)",
+  "      --validateSSE             Validate the use of SSE functions  \n                                  (default=off)",
     0
 };
 
@@ -134,11 +136,12 @@ init_help_array(void)
   gengetopt_args_info_help[42] = gengetopt_args_info_full_help[42];
   gengetopt_args_info_help[43] = gengetopt_args_info_full_help[43];
   gengetopt_args_info_help[44] = gengetopt_args_info_full_help[44];
-  gengetopt_args_info_help[45] = 0; 
+  gengetopt_args_info_help[45] = gengetopt_args_info_full_help[45];
+  gengetopt_args_info_help[46] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[46];
+const char *gengetopt_args_info_help[47];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -234,6 +237,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->sftType_given = 0 ;
   args_info->markBadSFTs_given = 0 ;
   args_info->simpleBandRejection_given = 0 ;
+  args_info->lineDetection_given = 0 ;
   args_info->FFTplanFlag_given = 0 ;
   args_info->allULvalsPerSkyLoc_given = 0 ;
   args_info->fastchisqinv_given = 0 ;
@@ -244,6 +248,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->antennaOff_given = 0 ;
   args_info->noiseWeightOff_given = 0 ;
   args_info->gaussTemplatesOnly_given = 0 ;
+  args_info->validateSSE_given = 0 ;
 }
 
 static
@@ -313,6 +318,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->sftType_orig = NULL;
   args_info->markBadSFTs_flag = 0;
   args_info->simpleBandRejection_orig = NULL;
+  args_info->lineDetection_orig = NULL;
   args_info->FFTplanFlag_arg = 3;
   args_info->FFTplanFlag_orig = NULL;
   args_info->allULvalsPerSkyLoc_flag = 0;
@@ -324,6 +330,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->antennaOff_flag = 0;
   args_info->noiseWeightOff_flag = 0;
   args_info->gaussTemplatesOnly_flag = 0;
+  args_info->validateSSE_flag = 0;
   
 }
 
@@ -375,16 +382,18 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->sftType_help = gengetopt_args_info_full_help[38] ;
   args_info->markBadSFTs_help = gengetopt_args_info_full_help[39] ;
   args_info->simpleBandRejection_help = gengetopt_args_info_full_help[40] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[41] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[42] ;
-  args_info->fastchisqinv_help = gengetopt_args_info_full_help[43] ;
-  args_info->useSSE_help = gengetopt_args_info_full_help[44] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[45] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[46] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[47] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[48] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[49] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[50] ;
+  args_info->lineDetection_help = gengetopt_args_info_full_help[41] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[42] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[43] ;
+  args_info->fastchisqinv_help = gengetopt_args_info_full_help[44] ;
+  args_info->useSSE_help = gengetopt_args_info_full_help[45] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[46] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[47] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[48] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[49] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[50] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[51] ;
+  args_info->validateSSE_help = gengetopt_args_info_full_help[52] ;
   
 }
 
@@ -567,6 +576,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->sftType_arg));
   free_string_field (&(args_info->sftType_orig));
   free_string_field (&(args_info->simpleBandRejection_orig));
+  free_string_field (&(args_info->lineDetection_orig));
   free_string_field (&(args_info->FFTplanFlag_orig));
   
   
@@ -728,6 +738,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "markBadSFTs", 0, 0 );
   if (args_info->simpleBandRejection_given)
     write_into_file(outfile, "simpleBandRejection", args_info->simpleBandRejection_orig, 0);
+  if (args_info->lineDetection_given)
+    write_into_file(outfile, "lineDetection", args_info->lineDetection_orig, 0);
   if (args_info->FFTplanFlag_given)
     write_into_file(outfile, "FFTplanFlag", args_info->FFTplanFlag_orig, cmdline_parser_FFTplanFlag_values);
   if (args_info->allULvalsPerSkyLoc_given)
@@ -748,6 +760,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "noiseWeightOff", 0, 0 );
   if (args_info->gaussTemplatesOnly_given)
     write_into_file(outfile, "gaussTemplatesOnly", 0, 0 );
+  if (args_info->validateSSE_given)
+    write_into_file(outfile, "validateSSE", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -1361,6 +1375,7 @@ cmdline_parser_internal (
         { "sftType",	1, NULL, 0 },
         { "markBadSFTs",	0, NULL, 0 },
         { "simpleBandRejection",	1, NULL, 0 },
+        { "lineDetection",	1, NULL, 0 },
         { "FFTplanFlag",	1, NULL, 0 },
         { "allULvalsPerSkyLoc",	0, NULL, 0 },
         { "fastchisqinv",	0, NULL, 0 },
@@ -1371,6 +1386,7 @@ cmdline_parser_internal (
         { "antennaOff",	0, NULL, 0 },
         { "noiseWeightOff",	0, NULL, 0 },
         { "gaussTemplatesOnly",	0, NULL, 0 },
+        { "validateSSE",	0, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -1923,6 +1939,20 @@ cmdline_parser_internal (
               goto failure;
           
           }
+          /* Detect stationary lines above threshold, and, if any present, set upper limit only, no template follow-up.  */
+          else if (strcmp (long_options[option_index].name, "lineDetection") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->lineDetection_arg), 
+                 &(args_info->lineDetection_orig), &(args_info->lineDetection_given),
+                &(local_args_info.lineDetection_given), optarg, 0, 0, ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "lineDetection", '-',
+                additional_error))
+              goto failure;
+          
+          }
           /* 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive.  */
           else if (strcmp (long_options[option_index].name, "FFTplanFlag") == 0)
           {
@@ -2041,6 +2071,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->gaussTemplatesOnly_flag), 0, &(args_info->gaussTemplatesOnly_given),
                 &(local_args_info.gaussTemplatesOnly_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "gaussTemplatesOnly", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Validate the use of SSE functions.  */
+          else if (strcmp (long_options[option_index].name, "validateSSE") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->validateSSE_flag), 0, &(args_info->validateSSE_given),
+                &(local_args_info.validateSSE_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "validateSSE", '-',
                 additional_error))
               goto failure;
           

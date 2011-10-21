@@ -56,6 +56,7 @@ typedef struct
    REAL8 ULmindf;
    REAL8 ULmaxdf;
    REAL8 simpleSigmaExclusion;
+   REAL8 lineDetection;
    INT4 ihsfactor;
    INT4 blksize;
    INT4 maxbinshift;
@@ -73,6 +74,7 @@ typedef struct
    INT4 printAllULvalues;
    INT4 fastchisqinv;
    INT4 useSSE;
+   INT4 validateSSE;
 } inputParamsStruct;
 
 typedef struct
