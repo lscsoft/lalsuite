@@ -274,20 +274,22 @@ int XLALSimInspiralPNPolarizationWaveformsFromModes(
  * construct the waveform polarizations h+ and hx directly.
  * NB: Valid only for non-precessing binaries!
  *
- * Implements Equations (5.7) - (5.10) of:
- * K. G. Arun, Bala R Iyer, Moh'd S S Qusailah, "The 2.5PN gravitational wave 
- * polarisations from inspiralling compact binaries in circular orbits"
- * Class. Quant. Grav. 21 (2004) 3771-3802; Erratum-ibid. 22 (2005) 3115
- * arXiv: gr-qc/0404085
+ * Implements Equations (8.8) - (8.10) of:
+ * Luc Blanchet, Guillaume Faye, Bala R. Iyer and Siddhartha Sinha, 
+ * "The third post-Newtonian gravitational wave polarisations 
+ * and associated spherical harmonic modes for inspiralling compact binaries 
+ * in quasi-circular orbits", Class. Quant. Grav. 25 165003 (2008);
+ * arXiv:0802.1249
  * 
  * Note however, that we do not include the constant "memory" terms
  */
+
 int XLALSimInspiralPNPolarizationWaveforms(
         REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
         REAL8TimeSeries **hcross, /**< x-polarization waveform [returned] */
         REAL8TimeSeries *V,       /**< post-Newtonian (PN) parameter */
         REAL8TimeSeries *Phi,     /**< orbital phase */
-        REAL8 x0,                 /**< tail-term gauge choice (default = 0) */
+        REAL8 x0,                 /**< tail-term gauge choice (default = 1) */
         REAL8 m1,                 /**< mass of companion 1 (kg) */
         REAL8 m2,                 /**< mass of companion 2 (kg) */
         REAL8 r,                  /**< distance of source (m) */
