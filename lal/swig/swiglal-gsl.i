@@ -46,7 +46,7 @@
 
   // Wrapping class representing a GSL vector of type NAME.
   // Con/destructors call GSL functions to create/destroy the vector.
-  // Data is exposes using the swiglal_dynamic_vector_... macros.
+  // Data is exposes using the swiglal_dynamic_vector() macro.
   %nodefaultctor gsl_vector##NAME;
   %nocopyctor    gsl_vector##NAME;
   %nodefaultdtor gsl_vector##NAME;
@@ -64,15 +64,14 @@
         gsl_vector##NAME##_free($self);
       }
     }
-    swiglal_dynamic_vector_begin(TYPE, data, size, arg1->stride, SL_AV_DEFAULT);
-    size_t size;
-    TYPE *data;
-    swiglal_dynamic_vector_end(TYPE, data, size);
+    swiglal_dynamic_vector(TYPE, size_t, data, size,
+                           arg1->data, arg1->size, arg1->stride,
+                           arg1->data == NULL, SL_AV_DEFAULT);
   };
 
   // Wrapping class representing a GSL matrix of type NAME.
   // Con/destructors call GSL functions to create/destroy the matrix.
-  // Data is exposes using the swiglal_dynamic_matrix_... macros.
+  // Data is exposes using the swiglal_dynamic_matrix() macro.
   %nodefaultctor gsl_matrix##NAME;
   %nocopyctor    gsl_matrix##NAME;
   %nodefaultdtor gsl_matrix##NAME;
@@ -90,11 +89,9 @@
         gsl_matrix##NAME##_free($self);
       }
     }
-    swiglal_dynamic_matrix_begin(TYPE, data, size1, arg1->tda, size2, 1, SL_AV_DEFAULT);
-    size_t size1;
-    size_t size2;
-    TYPE *data;
-    swiglal_dynamic_matrix_end(TYPE, data, size1, size2);
+    swiglal_dynamic_matrix(TYPE, size_t, data, size1, size2,
+                           arg1->data, arg1->size1, arg1->tda, arg1->size2, 1,
+                           arg1->data == NULL, SL_AV_DEFAULT);
   };
 
 %enddef // swiglal_gsl_vecmat
