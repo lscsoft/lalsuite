@@ -32,7 +32,7 @@
 #include <lal/SphericalHarmonics.h>
 #include <math.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
-#include "LALSimInspiral.h"
+#include <lal/LALSimInspiral.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

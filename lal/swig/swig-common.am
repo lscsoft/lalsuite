@@ -139,12 +139,25 @@ $(swig_wrapfile) : $(swig_iface_deps) $(swig_check_headers)
 	-o $(swig_wrapfile) $(swig_ifacefile)
 
 # test SWIG wrapping module
-.PHONY check : swig-check
+.PHONY : swig-check
+check : swig-check
 
 # install SWIG wrapping module
-.PHONY install-exec-local : swig-install
+.PHONY : swig-install
+install-exec-local : swig-install
 
 # uninstall SWIG wrapping module
-.PHONY uninstall-local : swig-uninstall
+.PHONY : swig-uninstall
+uninstall-local : swig-uninstall
+
+else # !SWIG_BUILD
+
+# dummy targets
+.PHONY : swig-check
+swig-check :
+.PHONY : swig-install
+swig-install :
+.PHONY : swig-uninstall
+swig-uninstall :
 
 endif # SWIG_BUILD

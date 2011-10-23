@@ -442,22 +442,22 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	 * total number of channels
 	 */
 
-	const int channels = floor(bandwidth / deltaF + 0.5);
+	const int channels = round(bandwidth / deltaF);
 
 	/*
 	 * stride
 	 */
 
-	const unsigned inv_fractional_stride = floor(1.0 / tiling_fractional_stride + 0.5);
+	const unsigned inv_fractional_stride = round(1.0 / tiling_fractional_stride);
 
 	/*
 	 * tile size limits
 	 */
 
-	const unsigned min_length = floor((1 / max_tile_bandwidth) / tseries_deltaT + 0.5);
-	const unsigned max_length = floor(max_tile_duration / tseries_deltaT + 0.5);
+	const unsigned min_length = round((1 / max_tile_bandwidth) / tseries_deltaT);
+	const unsigned max_length = round(max_tile_duration / tseries_deltaT);
 	const unsigned min_channels = inv_fractional_stride;
-	const unsigned max_channels = floor(max_tile_bandwidth / deltaF + 0.5);
+	const unsigned max_channels = round(max_tile_bandwidth / deltaF);
 
 	/*
 	 * sample on which tiling starts
@@ -646,6 +646,7 @@ double XLALExcessPowerFilterInnerProduct(
 	if(filter1->deltaF != filter2->deltaF || (psd &&
 		(psd->deltaF != filter1->deltaF || psd->f0 > min(filter1->f0, filter2->f0) || max(filter1->f0 + filter1->data->length * filter1->deltaF, filter2->f0 + filter2->data->length * filter2->deltaF) > psd->f0 + psd->data->length * psd->deltaF)
 	)) {
+		XLALPrintError("%s(): filters are incompatible or PSD does not span filters' frequencies", __func__);
 		XLAL_ERROR_REAL8(XLAL_EINVAL);
 	}
 
@@ -670,13 +671,31 @@ double XLALExcessPowerFilterInnerProduct(
 
 
 /**
- * Generate the frequency domain channel filter function.  The filter is
- * nominally a Hann window twice the channel's width, centred on the
- * channel's centre frequency.  The filter is normalized so that its
- * "magnitude" as defined by the inner product function above is N.  Then
- * the filter is divided by the square root of the PSD frequency series
- * prior to normalilization.  This has the effect of de-emphasizing
- * frequency bins with high noise content, and is called "over whitening".
+ * Generate the frequency domain channel filter function.  The filter
+ * corresponds to a frequency band [channel_flow, channel_flow +
+ * channel_width].  The filter is nominally a Hann window twice the
+ * channel's width, centred on the channel's centre frequency.  This makes
+ * a sum across channels equivalent to constructing a Tukey window spanning
+ * the same frequency band.  This trick is one of the ingredients that
+ * allows us to accomplish a multi-resolution tiling using a single
+ * frequency channel projection (*).
+ *
+ * The filter is normalized so that its "magnitude" as defined by the inner
+ * product function XLALExcessPowerFilterInnerProduct() is N.  Then the
+ * filter is divided by the square root of the PSD frequency series prior
+ * to normalilization.  This has the effect of de-emphasizing frequency
+ * bins with high noise content, and is called "over whitening".
+ *
+ * Note:  the number of samples in the window is odd, being one more than
+ * the number of frequency bins in twice the channel width.  This gets the
+ * Hann windows to super-impose to form a Tukey window.  (you'll have to
+ * draw yourself a picture).
+ *
+ * (*) Really, there's no need for the "effective window" resulting from
+ * summing across channels to be something that has a name, any channel
+ * filter at all would do, but this way the code's behaviour is more easily
+ * understood --- it's easy to say "the channel filter is a Tukey window of
+ * variable central width".
  */
 
 
@@ -690,36 +709,30 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	char filter_name[100];
 	REAL8Window *hann;
 	COMPLEX16FrequencySeries *filter;
-	REAL8 *pdata;
+	const REAL8 *pdata;
 	unsigned i;
 	REAL8 norm;
 
-	sprintf(filter_name, "channel %g +/- %g Hz", channel_flow + channel_width / 2, channel_width / 2);
-
 	/*
-	 * Channel filter is a Hann window twice the channel's width,
-	 * centred on the channel's centre frequency.  This makes a sum
-	 * across channels equivalent to constructing a Tukey window
-	 * spanning the same frequency band.  This trick is one of the
-	 * ingredients that allows us to accomplish a multi-resolution
-	 * tiling using a single frequency channel projection.  Really,
-	 * there's no need for the "effective window" resulting from
-	 * summing across channels to be something that has a name, any
-	 * channel filter at all would do, but this way the code's
-	 * behaviour is more easily understood --- it's easy to say "the
-	 * channel filter is a Tukey window of variable central width".
-	 *
-	 * Note:  the number of samples in the window is odd, being one
-	 * more than the number of frequency bins in twice the channel
-	 * width.  This gets the Hann windows to super-impose to form a
-	 * Tukey window.  (you'll have to draw yourself a picture).
+	 * create frequency series for filter
 	 */
 
+	sprintf(filter_name, "channel %g +/- %g Hz", channel_flow + channel_width / 2, channel_width / 2);
 	filter = XLALCreateCOMPLEX16FrequencySeries(filter_name, &psd->epoch, channel_flow - channel_width / 2, psd->deltaF, &lalDimensionlessUnit, 2 * channel_width / psd->deltaF + 1);
-	/* FIXME:  decide what to do about this */
+	if(!filter)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	if(filter->f0 < 0.0) {
+		XLALPrintError("%s(): channel_flow - channel_width / 2 >= 0.0 failed", __func__);
+		XLALDestroyCOMPLEX16FrequencySeries(filter);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+
+	/*
+	 * build real-valued Hann window and copy into filter
+	 */
+
 	hann = XLALCreateHannREAL8Window(filter->data->length);
-	/*hann = XLALCreateTukeyREAL8Window(filter->data->length, 2 / ((channel_width / 2.0) + 1));*/
-	if(!filter || !hann) {
+	if(!hann) {
 		XLALDestroyCOMPLEX16FrequencySeries(filter);
 		XLALDestroyREAL8Window(hann);
 		XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -731,10 +744,15 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	XLALDestroyREAL8Window(hann);
 
 	/*
-	 * divide by square root of PSD to "overwhiten".
+	 * divide by square root of PSD to whiten
 	 */
 
-	pdata = psd->data->data + (int) floor((filter->f0 - psd->f0) / psd->deltaF + 0.5);
+	if(filter->f0 < psd->f0 || filter->f0 + filter->data->length * filter->deltaF > psd->f0 + psd->data->length * psd->deltaF) {
+		XLALPrintError("%s(): psd does not span filter's frequency range", __func__);
+		XLALDestroyCOMPLEX16FrequencySeries(filter);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+	pdata = psd->data->data + (int) round((filter->f0 - psd->f0) / psd->deltaF);
 	for(i = 0; i < filter->data->length; i++) {
 		filter->data->data[i].re /= sqrt(pdata[i]);
 		filter->data->data[i].im /= sqrt(pdata[i]);
@@ -746,7 +764,12 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	 * of the filter in bins.
 	 */
 
-	norm = sqrt((channel_width / filter->deltaF) / XLALExcessPowerFilterInnerProduct(filter, filter, correlation, NULL));
+	norm = XLALExcessPowerFilterInnerProduct(filter, filter, correlation, NULL);
+	if(XLAL_IS_REAL8_FAIL_NAN(norm)) {
+		XLALDestroyCOMPLEX16FrequencySeries(filter);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	}
+	norm = sqrt(channel_width / filter->deltaF / norm);
 	for(i = 0; i < filter->data->length; i++) {
 		filter->data->data[i].re *= norm;
 		filter->data->data[i].im *= norm;

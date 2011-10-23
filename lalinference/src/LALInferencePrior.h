@@ -40,8 +40,11 @@
  */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *variables);
 
-/** Apply cyclic and reflective boundaries to \c parameter 
- *  to bring it back within the allowed prior ranges that are specified in \c priorArgs.
+/** Apply cyclic and reflective boundaries to \c parameter to bring it
+ *  back within the allowed prior ranges that are specified in \c
+ *  priorArgs.  LALInferenceCyclicReflectiveBound() should not be
+ *  called after any multi-parameter update step in a jump proposal,
+ *  as this violates detailed balance.
  */
 void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter, LALInferenceVariables *priorArgs);
 
