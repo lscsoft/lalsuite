@@ -456,6 +456,11 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
       
+      //TODO: test!
+      REAL4VectorSequence *trackedlines = NULL;
+      if (lines!=NULL) trackedlines = trackLines(lines, binshifts, inputParams);
+      
+      
       //Compute antenna pattern weights. If antennaOff input flag is given, then set all values equal to 1.0
       REAL4Vector *antweights = XLALCreateREAL4Vector((UINT4)ffdata->numffts);
       if (antweights==NULL) {
@@ -641,10 +646,10 @@ int main(int argc, char *argv[])
             exactCandidates2->data[ii+numofcandidatesalready].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //Scaling here
             (exactCandidates2->numofcandidates)++;
          }
-      } else if ((!args_info.simpleBandRejection_given || (args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion)) && (!args_info.lineDetection_given || (args_info.lineDetection_given && lines==NULL))) {
+      } else if ((!args_info.simpleBandRejection_given || (args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion))) {
          
          //Test the IHS candidates against Gaussian templates in this function
-         if ( testIHScandidates(gaussCandidates1, ihsCandidates, ffdata, aveNoise, aveTFnoisePerFbinRatio, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
+         if ( testIHScandidates(gaussCandidates1, ihsCandidates, ffdata, aveNoise, aveTFnoisePerFbinRatio, trackedlines, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
             fprintf(stderr, "%s: testIHScandidates() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
@@ -661,7 +666,8 @@ int main(int argc, char *argv[])
       ihsCandidates->numofcandidates = 0;
       
       //Search the IHS templates further if user has not specified IHSonly flag
-      if (!args_info.IHSonly_given && ( !args_info.simpleBandRejection_given || ( args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion ) ) && ( !args_info.lineDetection_given || (args_info.lineDetection_given && lines==NULL) )) {
+      //if (!args_info.IHSonly_given && ( !args_info.simpleBandRejection_given || ( args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion ) ) && ( !args_info.lineDetection_given || (args_info.lineDetection_given && lines==NULL) )) {
+      if (gaussCandidates1->numofcandidates>0) {
 ////////Start clustering! Note that the clustering algorithm takes care of the period range of parameter space
          clusterCandidates(gaussCandidates2, gaussCandidates1, ffdata, inputParams, aveNoise, aveTFnoisePerFbinRatio, sftexist, 0);
          if (xlalErrno!=0) {
@@ -854,6 +860,7 @@ int main(int argc, char *argv[])
       
       //Destroy stuff
       XLALDestroyREAL4Vector(aveTFnoisePerFbinRatio);
+      XLALDestroyREAL4VectorSequence(trackedlines);
       
       //Iterate to next sky location
       if ((XLALNextDopplerSkyPos(&dopplerpos, &scan))!=0) {
@@ -1557,6 +1564,25 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
    XLALDestroyREAL4Vector(testaveTFnoisePerFbinRatio);
    
    return lines;
+   
+}
+REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, inputParamsStruct *params)
+{
+   
+   REAL4VectorSequence *output = XLALCreateREAL4VectorSequence(lines->length, binshifts->length);
+   
+   REAL4 df = 1.0/params->Tcoh;
+   REAL4 minfbin = (REAL4)(round(params->fmin*params->Tcoh - 0.5*(params->blksize-1) - (REAL8)(params->maxbinshift))/params->Tcoh);
+   
+   INT4 ii, jj;
+   for (ii=0; ii<(INT4)lines->length; ii++) {
+      for (jj=0; jj<(INT4)binshifts->length; jj++) {
+         output->data[ii*binshifts->length + jj] = (lines->data[ii] + binshifts->data[jj])*df + minfbin;
+      }
+   }
+   
+   
+   return output;
    
 }
 
@@ -2499,6 +2525,72 @@ REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL
    //Free memory if necessary
    if (!vec1aligned) XLALFree(allocinput1);
    if (!vec2aligned) XLALFree(allocinput2);
+   if (!outputaligned) XLALFree(allocoutput);
+   
+   return output;
+#else
+   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
+   XLAL_ERROR_NULL(XLAL_EFAILED);
+#endif
+   
+}
+
+REAL4Vector * sseScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scale)
+{
+   
+#ifdef __SSE__
+   INT4 roundedvectorlength = (INT4)input->length / 4;
+   INT4 vecaligned = 0, outputaligned = 0, ii = 0;
+   
+   REAL4 *allocinput = NULL, *allocoutput = NULL, *alignedinput = NULL, *alignedoutput = NULL;
+   __m128 *arr1, *result;
+   
+   __m128 scalefactor = _mm_set1_ps(scale);
+   
+   //Allocate memory for aligning input vector 1 if necessary
+   if ( input->data==(void*)(((UINT8)input->data+15) & ~15) ) {
+      vecaligned = 1;
+      arr1 = (__m128*)input->data;
+   } else {
+      allocinput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocinput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
+      memcpy(alignedinput, input->data, sizeof(REAL4)*4*roundedvectorlength);
+      arr1 = (__m128*)alignedinput;
+   }
+   
+   //Allocate memory for aligning output vector if necessary
+   if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
+      outputaligned = 1;
+      result = (__m128*)output->data;
+   } else {
+      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
+      if (allocoutput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
+      result = (__m128*)alignedoutput;
+   }
+   
+   //multiply the vector into the output
+   for (ii=0; ii<roundedvectorlength; ii++) {
+      *result = _mm_mul_ps(*arr1, scalefactor);
+      arr1++;
+      result++;
+   }
+   
+   //Copy output aligned memory to non-aligned memory if necessary
+   if (!outputaligned) memcpy(output->data, alignedoutput, 4*roundedvectorlength*sizeof(REAL4));
+   
+   //Finish up the remaining part
+   for (ii=4*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[ii] = input->data[ii] * scale;
+   
+   //Free memory if necessary
+   if (!vecaligned) XLALFree(allocinput);
    if (!outputaligned) XLALFree(allocoutput);
    
    return output;

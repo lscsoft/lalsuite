@@ -28,6 +28,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALMalloc.h>
 #include <lal/Window.h>
+#include <lal/VectorOps.h>
 
 #include "templates.h"
 #include "cdfwchisq.h"
@@ -930,8 +931,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);   //Number of frequency bins
    numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);   //Number of FFTs
    
-   REAL4Vector *psd1 = XLALCreateREAL4Vector((UINT4)(numfbins*numffts));
-   INT4Vector *freqbins = XLALCreateINT4Vector((UINT4)numfbins);
+   REAL4Vector *psd1 = XLALCreateREAL4Vector(numfbins*numffts);
+   INT4Vector *freqbins = XLALCreateINT4Vector(numfbins);
    if (psd1==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfbins*numffts);
       XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -950,27 +951,28 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    //Determine the signal modulation in bins with time at center of coherence time and create
    //Hann windowed PSDs
    REAL8 sin2pix = 0.0, cos2pix = 0.0;
-   REAL8 PSDprefact = (2.0/3.0)*params->Tcoh;
+   //REAL8 PSDprefact = (2.0/3.0)*params->Tcoh;
+   REAL8 PSDprefact = 2.0/3.0;
    for (ii=0; ii<numffts; ii++) {
-      REAL4 t = 0.5*params->Tcoh*ii;  //Assumed 50% overlapping SFTs
-      twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, periodf*t);
-      REAL4 n0 = B*sin2pix + input.fsig*params->Tcoh;
       if (sftexist->data[ii]==1) {
+         REAL4 t = 0.5*params->Tcoh*ii;  //Assumed 50% overlapping SFTs
+         twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, periodf*t);
+         REAL4 n0 = B*sin2pix + input.fsig*params->Tcoh;
          for (jj=0; jj<numfbins; jj++) {
-            //Create windowed PSD values
-            if ( fabs(n0-freqbins->data[jj]) <= 3.0 ) psd1->data[ii*numfbins + jj] = sqsincxoverxsqminusone(n0-freqbins->data[jj])*PSDprefact;
-            //else psd1->data[ii*numfbins + jj] = 0.0;
+            //Create windowed PSD values organized by sft0 => psd1->data[0...numfbins-1], sft1 => psd1->data[numfbins...2*numfbins-1]
+            //if ( fabs(n0-freqbins->data[jj]) <= 3.0 ) psd1->data[ii*numfbins + jj] = sqsincxoverxsqminusone(n0-freqbins->data[jj])*PSDprefact;
+            //Create windowed PSD values organized by f0 => psd1->data[0...numffts-1], sft1 => psd1->data[numffts...2*numffts-1]
+            if ( fabs(n0-freqbins->data[jj]) <= 3.0 ) {
+               psd1->data[ii + jj*numffts] = sqsincxoverxsqminusone(n0-freqbins->data[jj])*PSDprefact;
+            }
          } /* for jj < numfbins */
-      } /* else {
-         for (jj=0; jj<numfbins; jj++) psd1->data[ii*numfbins + jj] = 0.0;
-      } */
-
+      } /* if sft exists */
    } /* for ii < numffts */
    
    //Do the second FFT
-   REAL4Vector *x = XLALCreateREAL4Vector((UINT4)numffts);
+   REAL4Vector *x = XLALCreateREAL4Vector(numffts);
    REAL4Window *win = XLALCreateHannREAL4Window(x->length);
-   REAL4Vector *psd = XLALCreateREAL4Vector((UINT4)floor(x->length*0.5)+1);
+   REAL4Vector *psd = XLALCreateREAL4Vector((INT4)floor(x->length*0.5)+1);
    if (x==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numffts);
       XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -978,7 +980,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       fprintf(stderr,"%s: XLALCreateHannREAL4Window(%d) failed.\n", __func__, x->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (psd==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (UINT4)floor(x->length*0.5)+1);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)floor(x->length*0.5)+1);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    REAL8 winFactor = 8.0/3.0;
@@ -994,21 +996,32 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       //We want to have at least 5 SFTs with power
       jj = 0;
       while (doSecondFFT<5 && jj<(INT4)x->length) {
-         if (psd1->data[ii+jj*numfbins]>0.0) doSecondFFT++;
+         //if (psd1->data[ii+jj*numfbins]>0.0) doSecondFFT++;
+         if (psd1->data[ii*numffts+jj]>0.0) doSecondFFT++;
          jj++;
       }
       
       //If there was power in the frequency bin of the template, then do the FFT if 5 or more SFTs have power
       if (doSecondFFT>=5) {
          //Obtain and window the time series
-         x = fastSSVectorMultiply_with_stride_and_offset(x, psd1, win->data, numfbins, 1, ii, 0);
-         if (xlalErrno!=0) {
-            fprintf(stderr,"%s, fastSSVectorMultiply_with_stride_and_offset() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
+         memcpy(x->data, &(psd1->data[ii*numffts]), sizeof(REAL4)*x->length);
+         if (!params->useSSE) {
+            //x = fastSSVectorMultiply_with_stride_and_offset(x, x, win->data, 1, 1, 0, 0);
+            x = XLALSSVectorMultiply(x, x, win->data);
+            if (xlalErrno!=0) {
+               fprintf(stderr,"%s, XLALSSVectorMultiply() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+         } else {
+            x = sseSSVectorMultiply(x, x, win->data);
+            if (xlalErrno!=0) {
+               fprintf(stderr,"%s, sseSSVectorMultiply() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
          }
          
          //Do the FFT
-         if (XLALREAL4PowerSpectrum(psd,x,plan) != 0) {
+         if ( XLALREAL4PowerSpectrum(psd, x, plan) != 0 ) {
             fprintf(stderr,"%s: XLALREAL4PowerSpectrum() failed.\n", __func__);
             XLAL_ERROR_VOID(XLAL_EFUNC);
          }
@@ -1017,21 +1030,35 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
          //Order of vector is by second frequency then first frequency
          //Ignore the DC to 3rd frequency bins in sum
          //for (jj=4; jj<(INT4)psd->length; jj++) {
+         if (params->useSSE) {
+            psd = sseScaleREAL4Vector(psd, psd, secPSDfactor);
+            if (xlalErrno!=0) {
+               fprintf(stderr,"%s, sseScaleREAL4Vector() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+         } else {
+            for (jj=0; jj<(INT4)psd->length; jj++) psd->data[jj] *= secPSDfactor;
+         }
+         for (jj=4; jj<(INT4)psd->length; jj++) sum += (REAL8)psd->data[jj];
          for (jj=0; jj<(INT4)psd->length; jj++) {
-            REAL4 correctedValue = (REAL4)(psd->data[jj]*secPSDfactor);
-            
-            //Sum the total weights
-            //sum += correctedValue;
-            if (jj>3) sum += (REAL8)correctedValue;
-            
             //Sort the weights, insertion sort technique
-            if (correctedValue > output->templatedata->data[output->templatedata->length-1]) insertionSort_template(output, correctedValue, ii*psd->length+jj, ii, jj);
+            //if (correctedValue > output->templatedata->data[output->templatedata->length-1]) insertionSort_template(output, correctedValue, ii*psd->length+jj, ii, jj);
+            if (psd->data[jj] > output->templatedata->data[output->templatedata->length-1]) insertionSort_template(output, psd->data[jj], ii*psd->length+jj, ii, jj);
          } /* for jj < psd->length */
       } /* if doSecondFFT */
    } /* if ii < numfbins */
    
    //Normalize
-   for (ii=0; ii<(INT4)output->templatedata->length; ii++) if (output->templatedata->data[ii]!=0.0) output->templatedata->data[ii] /= (REAL4)sum;
+   REAL4 invsum = (REAL4)(1.0/sum);
+   if (!params->useSSE) {
+      for (ii=0; ii<(INT4)output->templatedata->length; ii++) if (output->templatedata->data[ii]!=0.0) output->templatedata->data[ii] *= invsum;
+   } else {
+      output->templatedata = sseScaleREAL4Vector(output->templatedata, output->templatedata, invsum);
+      if (xlalErrno!=0) {
+         fprintf(stderr,"%s, sseScaleREAL4Vector() failed.\n", __func__);
+         XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
+   }
    
    //Truncate weights
    sum = 0.0;
