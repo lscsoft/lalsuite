@@ -2212,6 +2212,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->printAllULvalues = args_info.allULvalsPerSkyLoc_given;
    params->fastchisqinv = args_info.fastchisqinv_given;
    params->useSSE = args_info.useSSE_given;
+   params->followUpOutsideULrange = args_info.followUpOutsideULrange_given;
    params->validateSSE = args_info.validateSSE_given;
    
    //Non-default arguments

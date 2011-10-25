@@ -406,10 +406,11 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
           ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period,inputParams->Tcoh) && 
           ihsCandidates->data[ii].period>=(2.0*3600.0) && 
           ihsCandidates->data[ii].period<=(0.2*inputParams->Tobs)) {
-         if ( ihsCandidates->data[ii].fsig>=inputParams->ULfmin && 
+         if ( inputParams->followUpOutsideULrange || 
+             (ihsCandidates->data[ii].fsig>=inputParams->ULfmin && 
              ihsCandidates->data[ii].fsig<=(inputParams->ULfmin + inputParams->ULfspan) &&
              ihsCandidates->data[ii].moddepth>=inputParams->ULmindf && 
-             ihsCandidates->data[ii].moddepth<=inputParams->ULmaxdf ) {
+             ihsCandidates->data[ii].moddepth<=inputParams->ULmaxdf) ) {
             
             resetTemplateStruct(template);
             
