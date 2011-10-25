@@ -60,10 +60,10 @@ CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir = NULL;
 int main(int argc, char *argv[])
 {
    
-   INT4 ii, jj;//, kk, ll;       //counter variables
+   INT4 ii, jj;               //counter variables
    LALStatus status;          //LALStatus structure
    status.statusPtr = NULL;   //Set statuspointer to NULL
-   char s[20000], t[20000];     //Path and file name to LOG and ULFILE
+   char s[20000], t[20000];   //Path and file name to LOG and ULFILE
    time_t programstarttime, programendtime;
    struct tm *ptm;
    
@@ -908,6 +908,7 @@ int main(int argc, char *argv[])
    XLALFree((CHAR*)sky);
    XLALDestroyEphemerisData(edat);
    cmdline_parser_free(&args_info);
+   free(configparams);
    XLALFree(configparams);
    free_UpperLimitVector(upperlimits);
    free_candidateVector(ihsCandidates);
