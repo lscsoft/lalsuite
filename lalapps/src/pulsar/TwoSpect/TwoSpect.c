@@ -908,7 +908,6 @@ int main(int argc, char *argv[])
    XLALFree((CHAR*)sky);
    XLALDestroyEphemerisData(edat);
    cmdline_parser_free(&args_info);
-   free(configparams);
    XLALFree(configparams);
    free_UpperLimitVector(upperlimits);
    free_candidateVector(ihsCandidates);
