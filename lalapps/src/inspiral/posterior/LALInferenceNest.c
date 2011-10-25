@@ -200,6 +200,8 @@ void initializeTemplate(LALInferenceRunState *runState)
 			runState->template=&LALInferenceTemplatePSTRD;
 		else if(!strcmp("LALGenerateInspiral",ppt->value))
 			runState->template=&LALInferenceTemplateLALGenerateInspiral;
+		else if(!strcmp("SpinQuadTaylor",ppt->value))
+			runState->template=&LALInferenceTemplateLALGenerateInspiral;
 		else if(!strcmp("LAL",ppt->value))
 			runState->template=&LALInferenceTemplateLAL;
 		else {

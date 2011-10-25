@@ -54,7 +54,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 	REAL8 min, max;
 	REAL8 logmc=0.0;
 	REAL8 m1=0.0,m2=0.0,eta=0.0;
-	REAL8 tmp=0.;
+	//REAL8 tmp=0.;
 	/* Check boundaries */
 	for(;item;item=item->next)
 	{
