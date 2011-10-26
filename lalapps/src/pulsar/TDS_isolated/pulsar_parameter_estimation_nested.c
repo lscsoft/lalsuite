@@ -1733,8 +1733,8 @@ set.\n", propfile, tempPar);
                              varyType );
     
     /* Add the prior variables */
-    LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, (void *)&low, 
-                                (void *)&high, type );
+    LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, &low, 
+                                &high, type );
     
     /* if there is a phase parameter defined in the proposal then set varyphase
        to 1 */
@@ -2023,7 +2023,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
       /* Otherwise use a flat prior */
       else{
 	LALInferenceGetMinMaxPrior( runState->priorArgs, item->name, 
-                                    (void *)&min, (void *)&max );
+                                    &min, &max );
       
         if( (*(REAL8 *) item->value) < min || (*(REAL8 *)item->value) > max ){
           return -DBL_MAX;
