@@ -424,11 +424,11 @@ int main(int argc, char *argv[])
    fprintf(stderr, "Starting TwoSpect analysis...\n");
    
    
-   //Antenna normalization
+   //Antenna normalization (determined from injections on H1 at ra=0, dec=0)
    REAL4Vector *antweightsforihs2h0 = XLALCreateREAL4Vector(ffdata->numffts);
    if (args_info.antennaOff_given) for (ii=0; ii<(INT4)antweightsforihs2h0->length; ii++) antweightsforihs2h0->data[ii] = 1.0;
    else {
-      CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, inputParams->det[0]);
+      CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, lalCachedDetectors[LAL_LHO_4K_DETECTOR]);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
@@ -1074,11 +1074,15 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
    
+   //FILE *timestamps = fopen("./output/timestamps_L1.dat","w");
+   
    REAL8 sqrtnorm = sqrt(*(normalization));
    for (ii=0; ii<numffts; ii++) {
       
       SFTDescriptor *sftdescription = &(catalog->data[ii - nonexistantsft]);
       if (sftdescription->header.epoch.gpsSeconds == (INT4)round(ii*(input->Tcoh-input->SFToverlap)+input->searchstarttime)) {
+         //fprintf(timestamps, "%d %d\n", sftdescription->header.epoch.gpsSeconds, 0);
+         
          SFTtype *sft = &(sfts->data[ii - nonexistantsft]);
          for (jj=0; jj<sftlength; jj++) {
             COMPLEX8 sftcoeff = sft->data->data[jj];
@@ -1091,6 +1095,8 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
       }
       
    } /* for ii < numffts */
+   
+   //fclose(timestamps);
    
    //Vladimir's code uses a different SFT normalization factor than MFD
    if (strcmp(input->sftType, "vladimir") == 0) {
@@ -1597,15 +1603,13 @@ INT4Vector * existingSFTs(REAL4Vector *tfdata, inputParamsStruct *params, INT4 n
       fprintf(stderr, "\n%s: XLALCreateINT4Vector(%d) failed.\n", __func__, numffts);
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
-   //FILE *timestamps = fopen("./output/timestamps.dat","w");
+   
    for (ii=0; ii<numffts; ii++) {
       if (tfdata->data[ii*(numfbins+2*params->maxbinshift+params->blksize-1)] == 0.0) sftexist->data[ii] = 0;
       else {
          sftexist->data[ii] = 1;
-         //fprintf(timestamps, "%d %d\n", (INT4)round(inputParams->searchstarttime+ii*(inputParams->Tcoh-inputParams->SFToverlap)), 0);
       }
    }
-   //fclose(timestamps);
    
    return sftexist;
    
