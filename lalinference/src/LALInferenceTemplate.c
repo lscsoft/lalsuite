@@ -55,6 +55,7 @@ RCSID("$Id$");
 extern int newswitch; //temporay global variable to use the new LALSTPN
 static void destroyCoherentGW( CoherentGW *waveform );
 static void q2eta(double q, double *eta);
+static void q2masses(double mc, double q, double *m1, double *m2);
 
 void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata){
 
@@ -423,6 +424,17 @@ static void q2eta(double q, double *eta)
 /* (note: q = m2/m1, where m1 >= m2)               */
 {
   *eta = q/pow(1+q,2.0);
+  return;
+}
+
+static void q2masses(double mc, double q, double *m1, double *m2)
+/*  Compute individual companion masses (m1, m2)   */
+/*  for given chirp mass (m_c) & asymmetric mass   */
+/*  ratio (q).  note: q = m2/m1, where m1 >= m2    */
+{
+  double factor = pow( pow(mc,5.0)/(1+q), 1.0/7.0 );
+  *m1 = factor * pow(q, -3.0/7.0);
+  *m2 = factor * pow(q, +4.0/7.0);
   return;
 }
 
@@ -1741,7 +1753,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   REAL8TimeSeries *hplus=NULL;  /**< +-polarization waveform [returned] */
   REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform [returned] */
   
-	REAL8 mc,eta;
+	REAL8 mc;
   REAL8 phi0, deltaT, m1, m2, S1[3], S2[3], f_min, distance, inclination;
   LIGOTimeGPS t0;
 	
@@ -1766,10 +1778,14 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	
 
 	mc  = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
-	eta = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "massratio");
+    if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
+        REAL8 q = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"asym_massratio");
+        q2masses(mc, q, &m1, &m2);
+    } else {
+        REAL8 eta = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "massratio");
+        mc2masses(mc, eta, &m1, &m2);
+    }
 	
-	mc2masses(mc, eta, &m1, &m2);
-
   
 	inclination	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "inclination");	    /* inclination in radian */
 	phi0		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase"); /* START phase as per lalsimulation convention*/
