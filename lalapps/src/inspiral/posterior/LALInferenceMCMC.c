@@ -183,12 +183,8 @@ void initializeMCMC(LALInferenceRunState *runState)
 	/* Set up the appropriate functions for the MCMC algorithm */
 	runState->algorithm=&PTMCMCAlgorithm;
 	runState->evolve=PTMCMCOneStep;
-  //runState->evolve=&VNRPriorOneStep;
-	//runState->evolve=&PTMCMCAdaptationOneStep;
-	runState->proposal=&PTMCMCLALProposal;
-	//runState->proposal=&PTMCMCLALSingleProposal;
-	//runState->proposal=&PTMCMCLALAdaptationProposal;
-	//runState->proposal=PTMCMCGaussianProposal;
+
+	runState->proposal=&LALInferenceDefaultProposal;
 	
 	/* This is the LAL template generator for inspiral signals */
 	
@@ -216,6 +212,7 @@ void initializeMCMC(LALInferenceRunState *runState)
     //}
 		else {
 			runState->template=&LALInferenceTemplateLALGenerateInspiral;
+      //runState->template=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
 			fprintf(stdout,"Template function called is \"templateLALGenerateInspiral\"\n");
 		}
 		
@@ -1003,7 +1000,7 @@ void initVariables(LALInferenceRunState *state)
 		LALInferenceAddVariable(currentParams, "declination",     &start_dec,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 		if(MPIrank==0) fprintf(stdout,"declination fixed and set to %f\n",start_dec);
 	}else{
-	    LALInferenceAddVariable(currentParams, "declination",     &start_dec,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+	    LALInferenceAddVariable(currentParams, "declination",     &start_dec,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	}
 	LALInferenceAddMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
     
@@ -1035,7 +1032,7 @@ void initVariables(LALInferenceRunState *state)
 		LALInferenceAddVariable(currentParams, "inclination",     &start_iota,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 		if(MPIrank==0) fprintf(stdout,"iota fixed and set to %f\n",start_iota);
 	}else{
- 	    LALInferenceAddVariable(currentParams, "inclination",     &start_iota,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+ 	    LALInferenceAddVariable(currentParams, "inclination",     &start_iota,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	}
 	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
@@ -1065,7 +1062,7 @@ void initVariables(LALInferenceRunState *state)
 				    LALInferenceAddVariable(currentParams, "theta_spin1",     &start_theta_spin1,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 					if(MPIrank==0) fprintf(stdout,"theta 1 fixed and set to %f\n",start_theta_spin1);
 				}else{
-				    LALInferenceAddVariable(currentParams, "theta_spin1",     &start_theta_spin1,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+				    LALInferenceAddVariable(currentParams, "theta_spin1",     &start_theta_spin1,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 				}
 				LALInferenceAddMinMaxPrior(priorArgs, "theta_spin1",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 		
@@ -1104,7 +1101,7 @@ void initVariables(LALInferenceRunState *state)
 				LALInferenceAddVariable(currentParams, "theta_spin2",     &start_theta_spin2,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 				if(MPIrank==0) fprintf(stdout,"theta spin 2 fixed and set to %f\n",start_theta_spin2);
 			}else{
-				LALInferenceAddVariable(currentParams, "theta_spin2",     &start_theta_spin2,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+				LALInferenceAddVariable(currentParams, "theta_spin2",     &start_theta_spin2,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 			}
 			LALInferenceAddMinMaxPrior(priorArgs, "theta_spin2",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 		
@@ -1246,12 +1243,12 @@ void initVariables(LALInferenceRunState *state)
 
   /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES. 
   (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enought */
-  if(state->prior(state, currentParams)<=-DBL_MAX){
-    fprintf(stderr, "Warning initial parameter randomly drawn from prior. (in %s, line %d)\n",__FILE__, __LINE__);
+  while(state->prior(state, currentParams)<=-DBL_MAX){
+    fprintf(stderr, "Warning initial parameter randlomy drawn from prior. (in %s, line %d)\n",__FILE__, __LINE__);
     LALInferenceVariables *temp; //
     temp=XLALCalloc(1,sizeof(LALInferenceVariables));
     memset(temp,0,sizeof(LALInferenceVariables));
-    PTMCMCLALInferenceDrawFromPrior(state, temp);
+    LALInferenceDrawApproxPrior(state, temp);
     LALInferenceCopyVariables(temp, currentParams);
   }
         /* Make sure that our initial value is within the
@@ -1282,7 +1279,7 @@ void initVariables(LALInferenceRunState *state)
             sigmaVec->data[i] = sqrt(gsl_matrix_get(covM, i, i)); /* Single-parameter sigma. */
           }
 
-          LALInferenceAddVariable(state->proposalArgs, SIGMAVECTORNAME, &sigmaVec, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+          LALInferenceAddVariable(state->proposalArgs, LALInferenceSigmaJumpName, &sigmaVec, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 
           /* Set up eigenvectors and eigenvalues. */
           gsl_matrix *eVectors = gsl_matrix_alloc(N,N);
@@ -1316,49 +1313,15 @@ void initVariables(LALInferenceRunState *state)
         /* Differential Evolution? */
         ppt=LALInferenceGetProcParamVal(commandLine, "--differential-evolution");
         if (ppt) {
-          FILE *dePtsFile = fopen(ppt->value, "r");
-          
-          if (!dePtsFile) {
-            fprintf(stderr, "Could not open differential evolution file (%s, line %d).\n",
-                    __FILE__, __LINE__);
-            exit(1);
-          } else {
-            printf("Using differential evolution jumps from file %s\n", ppt->value);
-          }
-          
-          char **headers = LALInferenceGetHeaderLine(dePtsFile);
-          size_t maxDePtsLen = 1;
-          size_t dePtsLen = 1;
-          LALInferenceVariables **dePts = malloc(sizeof(LALInferenceVariables *));
-          
-          while (!feof(dePtsFile)) {
-            dePts[dePtsLen-1] = malloc(sizeof(LALInferenceVariables));
-            dePts[dePtsLen-1]->head = NULL;
-            dePts[dePtsLen-1]->dimension = 0;
-            
-            LALInferenceProcessParamLine(dePtsFile, headers, dePts[dePtsLen-1]);
-            
-            dePtsLen++;
-            if (dePtsLen > maxDePtsLen) {
-              /* Extend. */
-              maxDePtsLen *= 2;
-              dePts = realloc(dePts, maxDePtsLen*sizeof(LALInferenceVariables *));
-            }
-          }
-          
-          dePts = realloc(dePts, dePtsLen*sizeof(LALInferenceVariables *));
-          
-          state->differentialPoints = dePts;
-          state->differentialPointsLength = dePtsLen;
-          
-          fclose(dePtsFile);
-          free(headers); /* Reclaim some (but not all) the memory from
-                            header.  (The individual names must stick
-                            around to be keys in the LALInferenceVariables
-                            structure.) */
+          fprintf(stderr, "Using differential evolution.\nEvery Nskip parameters will be stored for use in the d.e. jump proposal.\n");
+
+          state->differentialPoints = XLALCalloc(1, sizeof(LALInferenceVariables *));
+          state->differentialPointsLength = 0;
+          state->differentialPointsSize = 1;
         } else {
           state->differentialPoints = NULL;
           state->differentialPointsLength = 0;
+          state->differentialPointsSize = 0;
         }
 
         UINT4 N = LALInferenceGetVariableDimensionNonFixed(currentParams);

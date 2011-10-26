@@ -103,6 +103,18 @@ int XLALSimIMRPhenomAGenerateTD(
 );
 
 /**
+ * Compute the dimensionless, spin-aligned parameter chi as used in the
+ * IMRPhenomB waveform. This is different from chi in SpinTaylorRedSpin!
+ * Reference: http://arxiv.org/pdf/0909.2867, paragraph 3.
+ */
+double XLALSimIMRPhenomBComputeChi(
+    const REAL8 m1,                          /**< mass of companion 1 */
+    const REAL8 m2,                          /**< mass of companion 2 */
+    const REAL8 s1z,                         /**< spin of companion 1 */
+    const REAL8 s2z                          /**< spin of companion 2 */
+);
+
+/**
  * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
  * phenomenological waveform IMRPhenomB in the frequency domain.
  *

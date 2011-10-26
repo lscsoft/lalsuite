@@ -42,11 +42,35 @@ if (PyErr_Occurred()) SWIG_fail;"
   import_array();
 %}
 
+// Python self object for structs.
+#define swiglal_self()   $self
+
 // Returns whether a PyObject is a non-NULL pointer.
 #define swiglal_object_valid(OBJ)   ((OBJ) != NULL)
 
 // Decrease the reference count of a PyObject.
 #define swiglal_object_free(OBJ)   Py_XDECREF(OBJ)
+
+// Helper functions for working with numpy.
+%header %{
+
+  // Return a read-only version of a numpy array.
+  SWIGINTERNINLINE PyObject* swiglal_numpy_readonly(PyObject *p) {
+    if (p != NULL) {
+      PyArrayObject *a = reinterpret_cast<PyArrayObject*>(p);
+      a->flags &= ~(NPY_WRITEABLE);
+    }
+    return p;
+  }
+
+  // Set the base of a numpy array to another object 'self'.
+  // Used so indicate that 'self' owns the numy array's memory.
+  SWIGINTERNINLINE void swiglal_numpy_setbase(PyObject *self, PyObject *p) {
+    Py_INCREF(self);
+    PyArray_BASE(p) = self;
+  }
+
+%}
 
 // Functions for manipulating vectors in Python.
 %header %{
@@ -99,10 +123,18 @@ if (PyErr_Occurred()) SWIG_fail;"
   }
 
   // Create a new numpy vector which can store any PyObject.
+  // Numpy vector is created *read-only* since it will store
+  // only a copy of the C data, so assignments to it will be lost.
   template<class TYPE > SWIGINTERN PyObject* swiglal_new_vector(const size_t n) {
-    npy_intp dims[1];
-    dims[0] = n;
-    return PyArray_EMPTY(1, dims, NPY_OBJECT, 0);
+    npy_intp dims[] = { n };
+    return swiglal_numpy_readonly(PyArray_EMPTY(1, dims, NPY_OBJECT, 0));
+  }
+
+  // Vector views are only supported for some types (see below).
+  template<class TYPE> SWIGINTERN bool swiglal_vector_view(PyObject *self, PyObject **v, TYPE* data,
+                                                           const size_t n, const size_t s)
+  {
+    return false;
   }
 
 %}
@@ -212,49 +244,85 @@ if (PyErr_Occurred()) SWIG_fail;"
   }
 
   // Create a new numpy matrix which can store any PyObject.
+  // Numpy matrix is created *read-only* since it will store
+  // only a copy of the C data, so assignments to it will be lost.
   template<class TYPE > SWIGINTERN PyObject* swiglal_new_matrix(const size_t ni, const size_t nj) {
-    npy_intp dims[2];
-    dims[0] = ni;
-    dims[1] = nj;
-    return PyArray_EMPTY(2, dims, NPY_OBJECT, 0);
+    npy_intp dims[] = { ni, nj };
+    return swiglal_numpy_readonly(PyArray_EMPTY(2, dims, NPY_OBJECT, 0));
+  }
+
+  // Matrix views are only supported for some types (see below).
+  template<class TYPE> SWIGINTERN bool swiglal_matrix_view(PyObject *self, PyObject **m, TYPE* data,
+                                                           const size_t ni, const size_t si,
+                                                           const size_t nj, const size_t sj)
+  {
+    return false;
   }
 
 %}
 
-// Create new numpy vectors and matrices which can store a NPYTYPE.
-%define swiglal_new_numpy_vecmat(TYPE, NPYTYPE)
+// Create new numpy vectors and matrices which can store a NPYTYPE,
+// and numpy views of vectors and matrices of TYPE data.
+%define swiglal_numpy_vecmat(TYPE, NPYTYPE)
+
+  // New numpy vectors and matrices
   %header %{
     template<> PyObject* swiglal_new_vector<TYPE >(const size_t n) {
-      npy_intp dims[1];
-      dims[0] = n;
-      return PyArray_EMPTY(1, dims, NPYTYPE, 0);
+      npy_intp dims[] = { n };
+      return swiglal_numpy_readonly(PyArray_EMPTY(1, dims, NPYTYPE, 0));
     }
     template<> PyObject* swiglal_new_matrix<TYPE >(const size_t ni, const size_t nj) {
-      npy_intp dims[2];
-      dims[0] = ni;
-      dims[1] = nj;
-      return PyArray_EMPTY(2, dims, NPYTYPE, 0);
+      npy_intp dims[] = { ni, nj };
+      return swiglal_numpy_readonly(PyArray_EMPTY(2, dims, NPYTYPE, 0));
     }
   %}
+
+  // Numpy vector and matrix views
+  %header %{
+    template<> bool swiglal_vector_view<TYPE >(PyObject *self, PyObject **v, TYPE* data,
+                                               const size_t n, const size_t s)
+    {
+      if (self == Py_None)
+        return false;
+      npy_intp dims[] = { n };
+      npy_intp strides[] = { s*sizeof(TYPE) };
+      *v = PyArray_New(&PyArray_Type, 1, dims, NPYTYPE, strides, reinterpret_cast<void*>(data), 0, NPY_WRITEABLE, NULL);
+      swiglal_numpy_setbase(self, *v);
+      return true;
+    }
+    template<> bool swiglal_matrix_view<TYPE >(PyObject *self, PyObject **m, TYPE* data,
+                                               const size_t ni, const size_t si,
+                                               const size_t nj, const size_t sj)
+    {
+      if (self == Py_None)
+        return false;
+      npy_intp dims[] = { ni, nj };
+      npy_intp strides[] = { si*sizeof(TYPE), sj*sizeof(TYPE) };
+      *m = PyArray_New(&PyArray_Type, 2, dims, NPYTYPE, strides, reinterpret_cast<void*>(data), 0, NPY_WRITEABLE, NULL);
+      swiglal_numpy_setbase(self, *m);
+      return true;
+    }
+  %}
+
 %enddef
 
-// Create new numpy vectors and matrices for integer types
-swiglal_new_numpy_vecmat(short, NPY_SHORT);
-swiglal_new_numpy_vecmat(unsigned short, NPY_USHORT);
-swiglal_new_numpy_vecmat(int, NPY_INT);
-swiglal_new_numpy_vecmat(unsigned int, NPY_UINT);
-swiglal_new_numpy_vecmat(long, NPY_LONG);
-swiglal_new_numpy_vecmat(unsigned long, NPY_ULONG);
-swiglal_new_numpy_vecmat(long long, NPY_LONGLONG);
-swiglal_new_numpy_vecmat(unsigned long long, NPY_ULONGLONG);
+// Numpy vectors and matrices for integer types
+swiglal_numpy_vecmat(short, NPY_SHORT);
+swiglal_numpy_vecmat(unsigned short, NPY_USHORT);
+swiglal_numpy_vecmat(int, NPY_INT);
+swiglal_numpy_vecmat(unsigned int, NPY_UINT);
+swiglal_numpy_vecmat(long, NPY_LONG);
+swiglal_numpy_vecmat(unsigned long, NPY_ULONG);
+swiglal_numpy_vecmat(long long, NPY_LONGLONG);
+swiglal_numpy_vecmat(unsigned long long, NPY_ULONGLONG);
 
-// Create new numpy vectors and matrices for real and complex types
-swiglal_new_numpy_vecmat(float, NPY_FLOAT);
-swiglal_new_numpy_vecmat(double, NPY_DOUBLE);
-swiglal_new_numpy_vecmat(gsl_complex_float, NPY_CFLOAT);
-swiglal_new_numpy_vecmat(gsl_complex, NPY_CDOUBLE);
-swiglal_new_numpy_vecmat(COMPLEX8, NPY_CFLOAT);
-swiglal_new_numpy_vecmat(COMPLEX16, NPY_CDOUBLE);
+// Numpy vectors and matrices for real and complex types
+swiglal_numpy_vecmat(float, NPY_FLOAT);
+swiglal_numpy_vecmat(double, NPY_DOUBLE);
+swiglal_numpy_vecmat(gsl_complex_float, NPY_CFLOAT);
+swiglal_numpy_vecmat(gsl_complex, NPY_CDOUBLE);
+swiglal_numpy_vecmat(COMPLEX8, NPY_CFLOAT);
+swiglal_numpy_vecmat(COMPLEX16, NPY_CDOUBLE);
 
 ///// Convert a 'tm' struct to/from a representation in Python /////
 

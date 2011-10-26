@@ -135,44 +135,55 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 }
 
 void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
-LALInferenceVariables *priorArgs){
-/* Apply cyclic and reflective boundaries to parameter to bring it back
-   within the prior */
+                                       LALInferenceVariables *priorArgs){
+  /* Apply cyclic and reflective boundaries to parameter to bring it back
+     within the prior */
   LALInferenceVariableItem *paraHead=NULL;
-  REAL8 delta;
   REAL8 min,max;
   /* REAL8 mu, sigma; */
-  for (paraHead=parameter->head;paraHead;paraHead=paraHead->next)
-  {
-    if( paraHead->vary==LALINFERENCE_PARAM_FIXED || 
-        paraHead->vary==LALINFERENCE_PARAM_OUTPUT || 
+  for (paraHead=parameter->head;paraHead;paraHead=paraHead->next) {
+    if( paraHead->vary==LALINFERENCE_PARAM_FIXED ||
+        paraHead->vary==LALINFERENCE_PARAM_OUTPUT ||
         !LALInferenceCheckMinMaxPrior(priorArgs, paraHead->name) ) continue;
-
-    LALInferenceGetMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
-   
-    if(paraHead->vary==LALINFERENCE_PARAM_CIRCULAR) /* For cyclic boundaries */
-    {
-       delta = max-min;
-       while ( *(REAL8 *)paraHead->value > max) 
-         *(REAL8 *)paraHead->value -= delta;
     
-       while ( *(REAL8 *)paraHead->value < min) 
-         *(REAL8 *)paraHead->value += delta;
-     }
-     /* Disable reflective boundary which violates detailled balance */
-/*
-     else if(paraHead->vary==LALINFERENCE_PARAM_LINEAR)
-     {
-       while(max<*(REAL8 *)paraHead->value || min>*(REAL8 *)paraHead->value){
-         if(max < *(REAL8 *)paraHead->value)
-           *(REAL8 *)paraHead->value -= 2.0*(*(REAL8 *)paraHead->value - max);
-         if(min > *(REAL8 *)paraHead->value) 
-           *(REAL8 *)paraHead->value+=2.0*(min - *(REAL8 *)paraHead->value);
-       }
-     }
-*/
-   }
-   return;
+    LALInferenceGetMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
+    
+    if(paraHead->vary==LALINFERENCE_PARAM_CIRCULAR) {
+      /* For cyclic boundaries, mod out by range. */
+
+      REAL8 val = *(REAL8 *)paraHead->value;
+      
+      if (val > max) {
+        REAL8 offset = val - min;
+        REAL8 delta = max-min;
+        
+        *(REAL8 *)paraHead->value = min + fmod(offset, delta);
+      } else { 
+        REAL8 offset = max - val;
+        REAL8 delta = max - min;
+        
+        *(REAL8 *)paraHead->value = max - fmod(offset, delta);
+      }
+    } else if (paraHead->vary==LALINFERENCE_PARAM_LINEAR) {
+      /* For linear boundaries, reflect about endpoints of range until
+         withoun range. */
+      while(1) {
+        /* Loop until broken. */
+        REAL8 val = *(REAL8 *)paraHead->value;
+        if (val > max) {
+          /* val <-- max - (val - max) */
+          *(REAL8 *)paraHead->value = 2.0*max - val;
+        } else if (val < min) {
+          /* val <-- min + (min - val) */
+          *(REAL8 *)paraHead->value = 2.0*min - val;
+        } else {
+          /* In range, so break. */
+          break;
+        }
+      }
+    }
+  }
+  return;
 }
 
 

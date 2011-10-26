@@ -55,6 +55,8 @@ typedef struct
    REAL8 ULfspan;
    REAL8 ULmindf;
    REAL8 ULmaxdf;
+   REAL8 simpleSigmaExclusion;
+   REAL8 lineDetection;
    INT4 ihsfactor;
    INT4 blksize;
    INT4 maxbinshift;
@@ -72,6 +74,8 @@ typedef struct
    INT4 printAllULvalues;
    INT4 fastchisqinv;
    INT4 useSSE;
+   INT4 followUpOutsideULrange;
+   INT4 validateSSE;
 } inputParamsStruct;
 
 typedef struct
@@ -103,7 +107,7 @@ typedef struct
    REAL8Vector *period;
    REAL8Vector *moddepth;
    REAL8Vector *ULval;
-   INT4Vector *iterations2reachUL;
+   REAL8Vector *effSNRval;
    REAL8 normalization;
 } UpperLimit;
 

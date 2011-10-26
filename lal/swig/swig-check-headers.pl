@@ -139,51 +139,6 @@ foreach my $headerfile (@headers) {
         # process SWIGLAL_STRUCT_... macro
         delete $structmacros{$structname};
 
-        # print error if struct contains mismatched SWIGLAL_DYNAMIC_[12]ARRAY macros
-        foreach my $n (qw(1 2)) {
-
-            # name and arguments of last macro
-            my ($lastmacro, $lastargs);
-
-            while ($structcode =~ /SWIGLAL_DYNAMIC_${n}DARRAY_(BEGIN|END)\(([^\)]+?)\);/sg) {
-
-                # name and arguments of current macro
-                my $thismacro = $1;
-                my $thisargs = $2;
-
-                # arguments are equivalent up to whitespace
-                $thisargs =~ s/\s//g;
-
-                my $mismatched = 0;
-                if ($thismacro eq 'BEGIN') {
-
-                    # BEGIN macro is mismatched is the last macro was also a BEGIN
-                    $mismatched = 1 if $lastmacro eq 'BEGIN';
-
-                    # store as last macro
-                    $lastmacro = $thismacro;
-                    $lastargs = $thisargs;
-
-                }
-                else {
-
-                    # END macro is mismatched if last macro is not a BEGIN or arguments do not match
-                    $mismatched = 1 if $lastmacro ne 'BEGIN' || $lastargs ne $thisargs;
-
-                    # erase last macro
-                    $lastmacro = $lastargs = undef;
-
-                }
-
-                if ($mismatched) {
-                    print "$file: struct $structtagname: mismatched SWIGLAL_DYNAMIC_${n}DARRAY macros\n";
-                    $status = 1;
-                    last;
-                }
-
-            }
-        }
-
     }
 
 }

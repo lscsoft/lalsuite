@@ -54,6 +54,10 @@ REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator)
 REAL8 twospect_cdf_chisq_P(REAL8 x, REAL8 nu)
 {
    
+   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(nu)) {
+      fprintf(stderr,"%s: Invalid arguments x=%f, nu = %f.\n", __func__, x, nu);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   }
    REAL8 val = cdf_gamma_P(x, 0.5*nu, 2.0);
    if (XLAL_IS_REAL8_FAIL_NAN(val)) {
       fprintf(stderr,"%s: cdf_gamma_P(%f, %f, 2.0) failed.\n", __func__, x, 0.5*nu);
@@ -64,7 +68,15 @@ REAL8 twospect_cdf_chisq_P(REAL8 x, REAL8 nu)
 REAL8 matlab_cdf_chisq_P(REAL8 x, REAL8 nu)
 {
    
+   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(nu)) {
+      fprintf(stderr,"%s: Invalid arguments x=%f, nu = %f.\n", __func__, x, nu);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   }
    REAL8 val = cdf_gamma_P_usingmatlab(x, 0.5*nu, 2.0);
+   if (XLAL_IS_REAL8_FAIL_NAN(val)) {
+      fprintf(stderr,"%s: cdf_gamma_P_usingmatlab(%f, %f, 2.0) failed.\n", __func__, x, 0.5*nu);
+      XLAL_ERROR_REAL8(XLAL_EFAULT);
+   }
    return val;
    
 }
@@ -73,6 +85,11 @@ REAL8 matlab_cdf_chisq_P(REAL8 x, REAL8 nu)
 //Matlab's version
 REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 {
+   
+   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+      fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   }
    
    REAL8 prob = 0.0;
    REAL8 err = LAL_REAL8_EPS;
@@ -169,6 +186,11 @@ void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REA
 REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
 {
    
+   if (XLAL_IS_REAL4_FAIL_NAN(x) || XLAL_IS_REAL4_FAIL_NAN(dof) || XLAL_IS_REAL4_FAIL_NAN(delta)) {
+      fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
+      XLAL_ERROR_REAL4(XLAL_EINVAL);
+   }
+   
    REAL8 prob = 0.0;
    REAL8 err = (REAL8)LAL_REAL4_EPS;
    REAL8 halfdelta = 0.5*delta;
@@ -220,6 +242,11 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
 REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta)
 {
    
+   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+      fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   }
+   
    REAL8 prob = 0.0;
    REAL8 err = LAL_REAL8_EPS;
    REAL8 halfdelta = 0.5*delta;
@@ -251,6 +278,11 @@ REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta)
 }
 REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta)
 {
+   
+   if (XLAL_IS_REAL4_FAIL_NAN(x) || XLAL_IS_REAL4_FAIL_NAN(dof) || XLAL_IS_REAL4_FAIL_NAN(delta)) {
+      fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
+      XLAL_ERROR_REAL4(XLAL_EINVAL);
+   }
    
    REAL8 prob = 0.0;
    REAL8 err = (REAL8)LAL_REAL4_EPS;
@@ -284,6 +316,11 @@ REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta)
 REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 {
    
+   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+      fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   }
+   
    REAL8 prob = 0.0;
    REAL8 err = LAL_REAL8_EPS;
    REAL8 halfdelta = 0.5*delta;
@@ -315,6 +352,11 @@ REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 }
 REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 delta)
 {
+   
+   if (XLAL_IS_REAL4_FAIL_NAN(x) || XLAL_IS_REAL4_FAIL_NAN(dof) || XLAL_IS_REAL4_FAIL_NAN(delta)) {
+      fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
+      XLAL_ERROR_REAL4(XLAL_EINVAL);
+   }
    
    REAL8 prob = 0.0;
    REAL8 err = (REAL8)LAL_REAL4_EPS;
@@ -351,6 +393,11 @@ REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 
 REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
 {
    
+   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+      fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   }
+   
    REAL8 dofint = 0.5*dof-1.0;
    REAL8 x1 = sqrt(x);
    REAL8 delta1 = sqrt(delta);
@@ -382,7 +429,7 @@ REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
    //Okay, now recursion
    REAL8 lnsr2pi = log(sqrt(LAL_TWOPI));
    REAL8 dx = delta*x*0.25;
-   INT4 K = GSL_MAX_INT(0, (INT4)floor(0.5*(sqrt(dofint*dofint+4.0*dx) - dofint)));
+   INT8 K = GSL_MAX_INT(0, (INT8)floor(0.5*(sqrt(dofint*dofint+4.0*dx) - dofint)));
    REAL8 lntK = 0.0;
    if (K==0) {
       lntK = -lnsr2pi - 0.5*(delta+log(dofint)) - (lgamma(dofint+1)-0.5*log(LAL_TWOPI*dofint)+dofint*log(dofint)-dofint) - binodeviance(dofint, 0.5*x);
@@ -415,6 +462,11 @@ REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
 REAL8 binodeviance(REAL8 x, REAL8 np)
 {
    
+   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(np)) {
+      fprintf(stderr,"%s: Invalid arguments x=%f, np=%f.\n", __func__, x, np);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   }
+   
    //From matlab's "hidden" function binodeviance
    if (fabs(x-np)<0.1*(x+np)) {
       REAL8 s = (x-np)*(x-np)/(x+np);
@@ -442,6 +494,10 @@ REAL8 binodeviance(REAL8 x, REAL8 np)
 REAL8 epsval(REAL8 val)
 {
    
+   if (XLAL_IS_REAL8_FAIL_NAN(val)) {
+      fprintf(stderr,"%s: Invalid arguments val=%f\n", __func__, val);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   }
    //Same as matlab
    REAL8 absval = fabs(val);
    int exponentval = 0;
@@ -453,6 +509,10 @@ REAL8 epsval(REAL8 val)
 REAL4 epsval_float(REAL4 val)
 {
    
+   if (XLAL_IS_REAL4_FAIL_NAN(val)) {
+      fprintf(stderr,"%s: Invalid arguments val=%f\n", __func__, val);
+      XLAL_ERROR_REAL4(XLAL_EINVAL);
+   }
    //Same as matlab
    REAL4 absval = fabsf(val);
    int exponentval = 0;
@@ -465,6 +525,11 @@ REAL4 epsval_float(REAL4 val)
 //Matlab's ncx2inv() function
 REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
 {
+   
+   if (XLAL_IS_REAL8_FAIL_NAN(p) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+      fprintf(stderr,"%s: Invalid arguments p=%f, dof=%f, delta=%f.\n", __func__, p, dof, delta);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   }
    
    REAL8 x = 0.0;
    REAL8 pk = p;
@@ -507,12 +572,23 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
 REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma)
 {
    
+   if (XLAL_IS_REAL8_FAIL_NAN(p) || XLAL_IS_REAL8_FAIL_NAN(mu) || XLAL_IS_REAL8_FAIL_NAN(sigma)) {
+      fprintf(stderr,"%s: Invalid arguments p=%f, mu=%f, delta=%f.\n", __func__, p, mu, sigma);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   }
    return mu - sigma*gsl_cdf_ugaussian_Qinv(p);
    
 }
 
 
 
+REAL8 unitGaussianSNR(REAL8 value, REAL8 dof)
+{
+   
+   REAL8 snr = (value - dof) / sqrt(2.0*dof);
+   return snr;
+   
+}
 
 
 

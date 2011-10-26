@@ -37,16 +37,18 @@
 #endif
 
 size_t LALInferenceTypeSize[] = {sizeof(INT4), 
-                     sizeof(INT8),
-                     sizeof(UINT4),
-                     sizeof(REAL4), 
-                     sizeof(REAL8), 
-                     sizeof(COMPLEX8), 
-                     sizeof(COMPLEX16), 
-                     sizeof(gsl_matrix *),
-                     sizeof(REAL8Vector *),
-                     sizeof(UINT4Vector *),
-                     sizeof(CHAR *)};
+                                 sizeof(INT8),
+                                 sizeof(UINT4),
+                                 sizeof(REAL4), 
+                                 sizeof(REAL8), 
+                                 sizeof(COMPLEX8), 
+                                 sizeof(COMPLEX16), 
+                                 sizeof(gsl_matrix *),
+                                 sizeof(REAL8Vector *),
+                                 sizeof(UINT4Vector *),
+                                 sizeof(CHAR *),
+                                 sizeof(LALInferenceProposalFunction **)
+};
 
 
 /* ============ Accessor functions for the Variable structure: ========== */

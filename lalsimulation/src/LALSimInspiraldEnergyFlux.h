@@ -62,12 +62,12 @@ tagexpnCoeffsdEnergyFlux {
 }  expnCoeffsdEnergyFlux;
 
 
-typedef REAL8 EnergyFunction(
+typedef REAL8 (*EnergyFunction)(
    REAL8 v,
    expnCoeffsdEnergyFlux *ak);
 
 
-typedef REAL8 FluxFunction(
+typedef REAL8 (*FluxFunction)(
    REAL8 v,
    expnCoeffsdEnergyFlux *ak);
 
@@ -77,8 +77,8 @@ tagTofVIntegrandIn
 {
   SWIGLAL_STRUCT(TofVIntegrandIn);
 
-   EnergyFunction *dEnergy;
-   FluxFunction *flux;
+   EnergyFunction dEnergy;
+   FluxFunction flux;
    expnCoeffsdEnergyFlux *coeffs;
 } TofVIntegrandIn;
 
@@ -93,8 +93,8 @@ tagTofVIn
    REAL8 t0;
    REAL8 vlso;
    REAL8 totalmass;
-   EnergyFunction *dEnergy;
-   FluxFunction *flux;
+   EnergyFunction dEnergy;
+   FluxFunction flux;
    expnCoeffsdEnergyFlux *coeffs;
 } TofVIn;
 

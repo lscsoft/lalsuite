@@ -1621,7 +1621,6 @@ INT4 heterodyneflag){
   INT4 num, dur; /* variable to contain the segment number and duration */
   INT4 linecount=0; /* number of lines in the segment file */
   INT4 ch=0;
-  int rc;
 
   if((fp=fopen(seglistfile, "r"))==NULL){
     fprintf(stderr, "Error... can't open science segment list file.\n");

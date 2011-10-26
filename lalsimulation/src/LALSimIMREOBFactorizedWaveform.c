@@ -581,7 +581,7 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
   vPhi *= Omega;
 
   /* Calculate the newtonian multipole */
-  status = XLALSimIMREOBCalculateNewtonianMultipole( &hNewton, vPhi * vPhi, r,
+  status = XLALSimIMREOBCalculateNewtonianMultipole( &hNewton, vPhi * vPhi, vPhi/Omega,
             values->data[1], (UINT4)l, m, params );
   if ( status == XLAL_FAILURE )
   {

@@ -26,12 +26,15 @@ swig-check : $(swig_wrap)
 	$(PYTHON) $(swig_wrapcheck).py
 
 # install SWIG wrapping module
-swig-install :
+swig-install : $(swig_wrap)
 	$(PYTHON) $(srcdir)/setup.py install --prefix=$(DESTDIR)$(prefix) --record .install.txt
 
 # uninstall SWIG wrapping module
 swig-uninstall :
 	-test -f .install.txt && rm -f `cat .install.txt`
+
+# language-specific headers (with LAL only)
+swiginclude_HEADERS += $(SWIG_PYTHON_HEADERS)
 
 # extra distribution files
 EXTRA_DIST += \

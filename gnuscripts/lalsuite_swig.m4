@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011
 #
-# serial 10
+# serial 12
 
 # basic version string comparison
 # can only handle numeric versions separated by periods
@@ -55,6 +55,23 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
     ]
   )
 
+  # command line option to use specific SWIG binary
+  AC_ARG_WITH(
+    [swig],
+    AC_HELP_STRING(
+      [--with-swig],
+      [specify SWIG binary (default: search \$PATH)]
+    ),[
+      AS_IF([test -f "${withval}"],[
+        SWIG="${withval}"
+      ],[
+        AC_MSG_ERROR([file '${withval}' not found])
+      ])
+    ],[
+      SWIG=
+    ]
+  )
+
   # are we are binding LAL itself, or one of the other LAL libraries?
   AS_IF([test x${PACKAGE_NAME} = xlal],[
     swig_is_lal=true
@@ -80,10 +97,14 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   AS_IF([test ${swig_build} = true],[
 
     # check for swig binary
-    AC_PATH_PROGS(SWIG,[swig],[])
+    AC_MSG_CHECKING([for swig])
     AS_IF([test "x${SWIG}" = x],[
-      AC_MSG_ERROR([could not find 'swig' in path])
+      AC_PATH_PROGS(SWIG,[swig],[])
+      AS_IF([test "x${SWIG}" = x],[
+        AC_MSG_ERROR([could not find 'swig' in path])
+      ])
     ])
+    AC_MSG_RESULT([${SWIG}])
 
     # check for swig version
     AC_MSG_CHECKING([for swig version])
@@ -255,9 +276,10 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE],[
     # set message string to indicate language will be built
     SWIG_]uppercase[_ENABLE_VAL=ENABLED
 
-    # language-specific SWIG interface header (with LAL only)
+    # language-specific SWIG interface headers (with LAL only)
     AS_IF([test ${swig_is_lal} = true],[
-      SWIG_HEADERS="${SWIG_HEADERS} \$(swig_srcdir)/]lowercase[/swiglal-]lowercase[.i"
+      SWIG_]uppercase[_HEADERS="\$(swig_srcdir)/]lowercase[/swiglal-]lowercase[.i"
+      AC_SUBST(SWIG_]uppercase[_HEADERS)
     ])
 
     # configure $1

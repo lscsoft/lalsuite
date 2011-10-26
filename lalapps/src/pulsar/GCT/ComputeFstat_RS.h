@@ -81,7 +81,7 @@ typedef struct {
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  * For the first call of ComputeFStatFreqBand_RS() the pointer-entries should all be NULL.
  */
-struct tag_ComputeFBuffer_RS {
+struct tagComputeFBuffer_RS {
   MultiDetectorStateSeries *multiDetStates;             /**< buffer for each detStates (store pointer) and skypos */
   REAL8 Alpha, Delta;				              /**< skyposition of candidate */
   LIGOTimeGPS segstart;                                       /**< the start time of the first SFT of the first detector (used to check if the segment has changed) */
