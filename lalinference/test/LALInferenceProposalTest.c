@@ -539,7 +539,7 @@ int main(int argc, char *argv[]) {
 	  LALInferenceNestedSamplingOneStep(state);
 	  /* output sample */
 	  if(state->logsample) state->logsample(state,state->currentParams);
-	  LALInferencePrintSample(fpout,runState->livePoints[i]);
+	  LALInferencePrintSample(fpout,state->currentParams);
 	  
 	}
 	fclose(fpout);
