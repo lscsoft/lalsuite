@@ -9,7 +9,7 @@ XMLPRG = LALInferenceXMLTest
 endif
 
 check_PROGRAMS = \
-	InferenceTest $(XMLPRG)
+	InferenceTest LALInferenceProposalTest $(XMLPRG)
 
 
 TESTS = $(check_PROGRAMS) $(XML_PROGRAMS)

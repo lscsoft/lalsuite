@@ -30,6 +30,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/LALInferencePrior.h>
+#include <lal/LALInferenceNestedSampler.h>
 
 #include<math.h>
 
@@ -476,6 +477,7 @@ void initVariables(LALInferenceRunState *state)
 	return;
 }
 
+extern LALInferenceVariables *output_array;
 
 int main(int argc, char *argv[]) {
   
@@ -492,7 +494,6 @@ int main(int argc, char *argv[]) {
 	ProcessParamsTable *ppt=NULL;
 	FILE *outfile=NULL;
 	char *filename=NULL;
-	extern LALInferenceVariables *output_array;
 	
 	
 	/* Read command line and parse */
@@ -506,9 +507,9 @@ int main(int argc, char *argv[]) {
 	{
 		fprintf(stdout,"%s",help);
 	}
-	if(ppt=LALInferenceGetProcParamVal(procParams,"--Nprop"))
+	if((ppt=LALInferenceGetProcParamVal(procParams,"--Nprop")))
 	  Nmcmc=atoi(ppt->value);
-	if(ppt=LALInferenceGetProcParamVal(procParams,"--outfile"))
+	if((ppt=LALInferenceGetProcParamVal(procParams,"--outfile")))
 	  filename=ppt->value;
 	
 	
@@ -519,6 +520,8 @@ int main(int argc, char *argv[]) {
 	state->evolve=NULL; /* Use MCMC for this? */
 	state->template=NULL;
 	state->logsample=NULL;
+	state->priorArgs=calloc(1,sizeof(LALInferenceVariables));
+	
 	state->prior=LALInferenceInspiralPriorNormalised;
 	state->likelihood=&LALInferenceZeroLogLikelihood;
 	
@@ -539,9 +542,9 @@ int main(int argc, char *argv[]) {
 	  LALInferenceNestedSamplingOneStep(state);
 	  /* output sample */
 	  if(state->logsample) state->logsample(state,state->currentParams);
-	  LALInferencePrintSample(fpout,state->currentParams);
+	  LALInferencePrintSample(outfile,state->currentParams);
 	  
 	}
-	fclose(fpout);
+	fclose(outfile);
 	return(0);
 }
