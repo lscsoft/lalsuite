@@ -963,15 +963,15 @@ reflect_plane(REAL8 pref[3], const REAL8 p[3],
 
 static void 
 sph_to_cart(REAL8 cart[3], const REAL8 lat, const REAL8 longi) {
-  cart[0] = cos(longi)*sin(lat);
-  cart[1] = sin(longi)*sin(lat);
-  cart[2] = cos(lat);
+  cart[0] = cos(longi)*cos(lat);
+  cart[1] = sin(longi)*cos(lat);
+  cart[2] = sin(lat);
 }
 
 static void
 cart_to_sph(const REAL8 cart[3], REAL8 *lat, REAL8 *longi) {
   *longi = atan2(cart[1], cart[0]);
-  *lat = acos(cart[2] / sqrt(cart[0]*cart[0] + cart[1]*cart[1] + cart[2]*cart[2]));
+  *lat = asin(cart[2] / sqrt(cart[0]*cart[0] + cart[1]*cart[1] + cart[2]*cart[2]));
 }
 
 static void
