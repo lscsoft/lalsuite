@@ -212,6 +212,7 @@ void initializeMCMC(LALInferenceRunState *runState)
     //}
 		else {
 			runState->template=&LALInferenceTemplateLALGenerateInspiral;
+      //runState->template=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
 			fprintf(stdout,"Template function called is \"templateLALGenerateInspiral\"\n");
 		}
 		
