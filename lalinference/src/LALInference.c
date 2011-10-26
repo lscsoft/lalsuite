@@ -142,10 +142,10 @@ LALInferenceVariableType LALInferenceGetVariableTypeByIndex(LALInferenceVariable
 /* where  1 <= idx <= dimension. */
 {
   LALInferenceVariableItem *item;
-  if ((idx < 1) | (idx > vars->dimension)){
-    fprintf(stderr, " ERROR in getVariableTypeByIndex(...,idx=%d): idx needs to be 1 <= idx <= dimension = %d.\n", 
+  if ((idx < 1) || (idx > vars->dimension)){
+    XLALPrintError(" ERROR in LALInferenceGetVariableTypeByIndex(...,idx=%d): idx needs to be 1 <= idx <= dimension = %d.\n", 
             idx, vars->dimension);
-    exit(1);
+    XLAL_ERROR(XLAL_EINVAL);
   }
   item = LALInferenceGetItemNr(vars, idx);
   return(item->type);
@@ -158,9 +158,9 @@ char *LALInferenceGetVariableName(LALInferenceVariables *vars, int idx)
 {
   LALInferenceVariableItem *item;
   if ((idx < 1) | (idx > vars->dimension)){
-    fprintf(stderr, " ERROR in getVariableName(...,idx=%d): idx needs to be 1 <= idx <= dimension = %d.\n", 
+    XLALPrintError(" ERROR in LALInferenceGetVariableName(...,idx=%d): idx needs to be 1 <= idx <= dimension = %d.\n", 
             idx, vars->dimension);
-    exit(1);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
   }
   item = LALInferenceGetItemNr(vars, idx);
   return(item->name);
@@ -173,8 +173,8 @@ void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, vo
   LALInferenceVariableItem *item;
   item=LALInferenceGetItem(vars,name);
   if(!item) {
-    fprintf(stderr, " ERROR in setVariable(): entry \"%s\" not found.\n", name);
-    exit(1);
+    XLALPrintError(" ERROR in LALInferenceSetVariable(): entry \"%s\" not found.\n", name);
+    XLAL_ERROR_VOID(XLAL_EINVAL);
   }
   if (item->vary==LALINFERENCE_PARAM_FIXED) return;
   memcpy(item->value,value,LALInferenceTypeSize[item->type]);
@@ -192,12 +192,18 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, vo
   if(LALInferenceCheckVariable(vars,name)) {
 	  old=LALInferenceGetItem(vars,name);
 	  if(old->type != type)
-	  {fprintf(stderr," ERROR in addVariable(): Cannot re-add \"%s\" as previous definition has wrong type.\n",name); exit(1);}
+	  {
+	    XLALPrintError(" ERROR in LALInferenceAddVariable(): Cannot re-add \"%s\" as previous definition has wrong type.\n",name);
+	    XLAL_ERROR_VOID(XLAL_EFAILED);
+	  }
 	  LALInferenceSetVariable(vars,name,value);
 	  return;
   }
 	
-  if(!value) {fprintf(stderr,"Unable to access value through null pointer in addVariable, trying to add %s\n",name); exit(1);}
+  if(!value) {
+    XLALPrintError("Unable to access value through null pointer in LALInferenceAddVariable, trying to add %s\n",name);
+    XLAL_ERROR_VOID(XLAL_EFAULT);
+  }
 
   LALInferenceVariableItem *new=XLALMalloc(sizeof(LALInferenceVariableItem));
 
@@ -206,7 +212,7 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, vo
 		new->value = (void *)XLALMalloc(LALInferenceTypeSize[type]);
 	}
   if(new==NULL||new->value==NULL) {
-    XLALPrintError(" ERROR in addVariable(): unable to allocate memory for list item.\n");
+    XLALPrintError(" ERROR in LALInferenceAddVariable(): unable to allocate memory for list item.\n");
     XLAL_ERROR_VOID(XLAL_ENOMEM);
   }
   memcpy(new->name,name,VARNAME_MAX);
@@ -232,7 +238,7 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
     if(!strcmp(this->name,name)) break;
     else {parent=this; this=this->next;}
   }
-  if(!this) {fprintf(stderr," WARNING in removeVariable(): entry \"%s\" not found.\n",name); return;}
+  if(!this) {fprintf(stderr," WARNING in LALInferenceRemoveVariable(): entry \"%s\" not found.\n",name); return;}
   if(!parent) vars->head=this->next;
   else parent->next=this->next;
   XLALFree(this->value);
@@ -279,8 +285,8 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
   LALInferenceVariableItem *ptr;
   if(!origin)
   {
-	  fprintf(stderr,"Unable to access origin pointer in copyVariables\n");
-	  exit(1);
+	  XLALPrintError("Unable to access origin pointer in copyVariables\n");
+	  XLAL_ERROR_VOID(XLAL_EFAULT);
   }
 
   /* Make sure the structure is initialised */
@@ -297,8 +303,8 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
   }
   while (ptr != NULL) {
 	  if(!ptr->value || !ptr->name){
-		  fprintf(stderr,"Badly formed LALInferenceVariableItem structure found in copyVariables!\n");
-		  exit(1);
+		  XLALPrintError("Badly formed LALInferenceVariableItem structure found in copyVariables!\n");
+		  XLAL_ERROR_VOID(XLAL_EFAULT);
 	  }
     LALInferenceAddVariable(target, ptr->name, ptr->value, ptr->type, ptr->vary);
     ptr = ptr->next;
@@ -612,9 +618,9 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
             result = 1;
             break;
           default:
-            fprintf(stderr, " ERROR: encountered unknown LALInferenceVariables type in compareVariables()\n");
-            fprintf(stderr, "        (entry: \"%s\").\n", ptr1->name);
-            exit(1);
+            XLALPrintError( " ERROR: encountered unknown LALInferenceVariables type in compareVariables()\n");
+            XLALPrintError( "        (entry: \"%s\").\n", ptr1->name);
+            XLAL_ERROR(XLAL_EFAILED);
         }
       }
       else result = 1;  // same name but differing type
@@ -840,9 +846,9 @@ void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata)
     XLALREAL8FreqTimeFFT(IFOdata->timeModelhPlus, IFOdata->freqModelhPlus, IFOdata->freqToTimeFFTPlan);
 
     if (*XLALGetErrnoPtr()) {
-      fprintf(stderr, "XLAL Error: %s (in %s, line %d)\n",
+      XLALPrintError( "XLAL Error: %s (in %s, line %d)\n",
               XLALErrorString(xlalErrno), __FILE__, __LINE__);
-      exit(1);
+      XLAL_ERROR_VOID(XLAL_EFAILED);
     }
     
     /*  hx :  */
@@ -858,9 +864,9 @@ void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata)
     XLALREAL8FreqTimeFFT(IFOdata->timeModelhCross, IFOdata->freqModelhCross, IFOdata->freqToTimeFFTPlan);
 
     if (xlalErrno) {
-      fprintf(stderr, "XLAL Error: %s (in %s, line %d)\n",
+      XLALPrintError( "XLAL Error: %s (in %s, line %d)\n",
               XLALErrorString(xlalErrno), __FILE__, __LINE__);
-      exit(1);
+      XLAL_ERROR_VOID(XLAL_EFAILED);
     }
     
     IFOdata=IFOdata->next;
@@ -877,9 +883,9 @@ int LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariable
     nread = fscanf(inp, " %lg ", &param);
 
     if (nread != 1) {
-      fprintf(stderr, "Could not read parameter value, the %zu parameter in the row (in %s, line %d)\n",
+      XLALPrintError( "Could not read parameter value, the %zu parameter in the row (in %s, line %d)\n",
               i, __FILE__, __LINE__);
-      exit(1);
+      XLAL_ERROR(XLAL_EFAILED);
     }
 
     LALInferenceAddVariable(vars, headers[i], &param, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
@@ -903,14 +909,14 @@ char **LALInferenceGetHeaderLine(FILE *inp) {
 
   if (!fgets(header, MAXSIZE, inp)) {
     /* Some error.... */
-    fprintf(stderr, "Error reading header line from file (in %s, line %d)\n",
+    XLALPrintError("Error reading header line from file (in %s, line %d)\n",
             __FILE__, __LINE__);
-    exit(1);
+    XLAL_ERROR_NULL(XLAL_EFAILED);
   } else if (strlen(header) >= MAXSIZE-1) {
     /* Probably ran out of space before reading the entire line. */
-    fprintf(stderr, "Header line too long (more than %zu chars) in %s, line %d.\n",
+    XLALPrintError("Header line too long (more than %zu chars) in %s, line %d.\n",
             MAXSIZE-1, __FILE__, __LINE__);
-    exit(1);
+    XLAL_ERROR_NULL(XLAL_EFAILED);
   }
 
   /* Sure hope we read the whole line. */
@@ -918,9 +924,9 @@ char **LALInferenceGetHeaderLine(FILE *inp) {
   colNames=(char **)malloc(2*sizeof(char *));
 
   if (!colNames) {
-    fprintf(stderr, "Failed to allocate colNames (in %s, line %d).\n",
+    XLALPrintError("Failed to allocate colNames (in %s, line %d).\n",
             __FILE__, __LINE__);
-    exit(1);
+    XLAL_ERROR_NULL(XLAL_ENOMEM);
   }
 
   colName=strtok(header, delimiters);
@@ -938,9 +944,9 @@ char **LALInferenceGetHeaderLine(FILE *inp) {
       colNamesMaxLen *= 2;
       colNames=realloc(colNames, colNamesMaxLen*sizeof(char *));
       if (!colNames) {
-        fprintf(stderr, "Failed to realloc colNames (in %s, line %d).\n",
+        XLALPrintError("Failed to realloc colNames (in %s, line %d).\n",
                 __FILE__, __LINE__);
-        exit(1);
+	XLAL_ERROR_NULL(XLAL_ENOMEM);
       }
     }
 
@@ -1026,6 +1032,10 @@ void LALInferenceSortVariablesByName(LALInferenceVariables *vars)
   tmp.dimension=0;
   LALInferenceVariableItem *thisitem,*ptr;
   LALInferenceVariables *new=calloc(1,sizeof(*new));
+  if(!vars){
+    XLALPrintError("Received null input pointer");
+    XLAL_ERROR_VOID(XLAL_EFAULT);
+  }
   while(vars->head)
   {
     thisitem=vars->head;
