@@ -521,10 +521,11 @@ int main(int argc, char *argv[]) {
 	state->template=NULL;
 	state->logsample=NULL;
 	state->priorArgs=calloc(1,sizeof(LALInferenceVariables));
-	
+	state->proposalArgs=calloc(1,sizeof(LALInferenceVariables));
+	state->algorithmParams=calloc(1,sizeof(LALInferenceVariables));
 	state->prior=LALInferenceInspiralPriorNormalised;
 	state->likelihood=&LALInferenceZeroLogLikelihood;
-	
+	state->proposal=&LALInferenceDefaultProposal;
 	
 	/* Set up a sample to evolve */
 	initVariables(state);
