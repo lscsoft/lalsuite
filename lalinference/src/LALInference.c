@@ -238,7 +238,7 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
     if(!strcmp(this->name,name)) break;
     else {parent=this; this=this->next;}
   }
-  if(!this) {fprintf(stderr," WARNING in LALInferenceRemoveVariable(): entry \"%s\" not found.\n",name); return;}
+  if(!this) {XLALPrintWarning(" WARNING in LALInferenceRemoveVariable(): entry \"%s\" not found.\n",name); return;}
   if(!parent) vars->head=this->next;
   else parent->next=this->next;
   XLALFree(this->value);
