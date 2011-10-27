@@ -1,6 +1,2 @@
-#opt/lscsoft/lalsimulation/bin
-opt/lscsoft/lalsimulation/include
-opt/lscsoft/lalsimulation/lib/pkgconfig
-#opt/lscsoft/lalsimulation/share/lal
-#opt/lscsoft/lalsimulation/share/man/man1
-#opt/lscsoft/lalsimulation/share/man/man3
+usr/include
+usr/lib/pkgconfig
