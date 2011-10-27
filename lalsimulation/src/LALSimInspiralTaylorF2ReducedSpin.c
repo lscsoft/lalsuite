@@ -212,21 +212,17 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
     const REAL8 fStart , /**< start GW frequency (Hz) */
     const REAL8 m1_SI,   /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,   /**< mass of companion 2 (kg) */
-    const REAL8 s1z,     /**< initial value of S1z, the dimensionless aligned spin of companion 1 */
-    const REAL8 s2z,     /**< initial value of S2z, the dimensionless aligned spin of companion 2 */
+    const REAL8 chi,     /**< dimensionless aligned-spin param */
     const UINT4 O        /**< twice PN phase order */
     ) {
     const REAL8 m1 = m1_SI / LAL_MSUN_SI;
     const REAL8 m2 = m2_SI / LAL_MSUN_SI;
     const REAL8 m = m1+m2;
     const REAL8 eta = m1*m2/(m*m);
-    const REAL8 delta = (m1-m2)/m;
-    const REAL8 chis = (s1z+s2z)/2.;
-    const REAL8 chia = (s1z-s2z)/2.;
     const REAL8 eta2 = eta*eta;
-    const REAL8 eta3 = eta2*eta;
-    const REAL8 chis2 = chis*chis;
-    const REAL8 chia2 = chia*chia;
+    const REAL8 chi2 = chi*chi;
+    const REAL8 sigma0 = (-12769*(-81. + 4.*eta))/(16.*(-113. + 76.*eta)*(-113. + 76.*eta));
+    const REAL8 gamma0 = (565*(-146597. + 135856.*eta + 17136.*eta2))/(2268.*(-113. + 76.*eta));
 
     REAL8 v = cbrt(LAL_PI * m * LAL_MTSUN_SI * fStart);
     REAL8 vk = v;  /* v^k */
@@ -237,23 +233,18 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
     if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
-    if (fabs(s1z) > 1) XLAL_ERROR(XLAL_EDOM);
-    if (fabs(s2z) > 1) XLAL_ERROR(XLAL_EDOM);
+    if (fabs(chi) > 1) XLAL_ERROR(XLAL_EDOM);
     if (O > 7) XLAL_ERROR(XLAL_EDOM); /* only implemented to pN 3.5 */
 
     /* chirp time coefficients up to 3.5PN  */
     tk[0] = (5.*m*LAL_MTSUN_SI)/(256.*pow(v,8)*eta);
     tk[1] = 0.;
     tk[2] = 2.9484126984126986 + (11*eta)/3.;
-    tk[3] = (-32*LAL_PI)/5. + (226*chia*delta)/15. + chis*(15.066666666666666 - (152*eta)/15.);
-    tk[4] = 6.020630590199042 + ((233*chis*chia)/24. - (719*chia*chis)/24.)*delta +
-       chia2*(4.854166666666667 - 20*eta) + chis2*(-14.979166666666666 - eta/12.) +
-       chis2*(4.854166666666667 + (7*eta)/12.) + (5429*eta)/504. + (617*eta2)/72. +
-       chia2*(-14.979166666666666 + 60*eta);
-    tk[5] = (-7729*LAL_PI)/252. + (13*LAL_PI*eta)/3. + delta*((146597*chia)/756. + (28*chia*eta)/3.) +
-       chis*(193.91137566137567 - (4852*eta)/27. - (68*eta2)/3.);
+    tk[3] = (-32*LAL_PI)/5. + (226.*chi)/15.;
+    tk[4] = 6.020630590199042 - 2*sigma0*chi2 + (5429*eta)/504. + (617*eta2)/72.;
+    tk[5] = (3*gamma0*chi)/5. - (7729*LAL_PI)/252. + (13*LAL_PI*eta)/3.;
     tk[6] = -428.291776175525 + (128*LAL_PI*LAL_PI)/3. + (6848*LAL_GAMMA)/105. + (3147553127*eta)/3.048192e6 -
-       (451*LAL_PI*LAL_PI*eta)/12. - (15211*eta2)/1728. + (25565*eta3)/1296. + (6848*log(4*v))/105.;
+       (451*LAL_PI*LAL_PI*eta)/12. - (15211*eta2)/1728. + (25565*eta2*eta)/1296. + (6848*log(4*v))/105.;
     tk[7] = (-15419335*LAL_PI)/127008. - (75703*LAL_PI*eta)/756. + (14809*LAL_PI*eta2)/378.;
 
     /* compute chirp time */

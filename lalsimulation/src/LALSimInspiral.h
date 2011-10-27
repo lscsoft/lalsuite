@@ -758,8 +758,7 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
 		const REAL8 fStart ,       /**< start GW frequency (Hz) */
 		const REAL8 m1_SI,   /**< mass of companion 1 (kg) */
 		const REAL8 m2_SI,   /**< mass of companion 2 (kg) */
-		const REAL8 s1z,     /**< initial value of S1z, the dimensionless aligned spin of companion 1 */
-		const REAL8 s2z,     /**< initial value of S2z, the dimensionless aligned spin of companion 2 */
+		const REAL8 chi,                 /**< dimensionless aligned-spin param */
 		const UINT4 O        /**< twice PN phase order */
 		);
 
