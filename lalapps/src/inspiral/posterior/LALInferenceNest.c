@@ -420,11 +420,11 @@ Parameter arguments:\n\
 	if(ppt){
 		event = atoi(ppt->value);
 		while(i<event) {i++; injTable = injTable->next;}
-		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));}
+		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
 		AmpOrder=injTable->amp_order;
 		LALGetOrderFromString(&status,injTable->waveform,&PhaseOrder);
 		LALGetApproximantFromString(&status,injTable->waveform,&approx);
-	
+	}
 
 	/* Over-ride approximant if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
