@@ -534,6 +534,15 @@ int main(int argc, char *argv[]) {
 	LALInferenceAddVariable(state->algorithmParams,"Nmcmc",&i,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 	LALInferenceAddVariable(state->algorithmParams,"logLmin",&logLmin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
+	/* Use the PTMCMC proposal to sample prior */
+	state->proposal=&NSWrapMCMCLALProposal;
+	REAL8 temp=1.0;
+	UINT4 dummy=0;
+	LALInferenceAddVariable(state->proposalArgs, "adaptableStep", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(state->proposalArgs, "proposedVariableNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(state->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(state->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+	
 	/* Open the output file */
 	if(filename) outfile=fopen(filename,"w");
 	if(!outfile) fprintf(stdout,"No output file specified, internal testing only\n");
@@ -544,6 +553,7 @@ int main(int argc, char *argv[]) {
 	  /* output sample */
 	  if(state->logsample) state->logsample(state,state->currentParams);
 	  LALInferencePrintSample(outfile,state->currentParams);
+	  fprintf(outfile,"\n");
 	  
 	}
 	fclose(outfile);
