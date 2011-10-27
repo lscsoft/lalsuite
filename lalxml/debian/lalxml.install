@@ -1,5 +1,3 @@
-#opt/lscsoft/lalxml/bin/lal-version
-opt/lscsoft/lalxml/etc/*
-#opt/lscsoft/lalxml/etc/*-user-env.*
-opt/lscsoft/lalxml/lib/*.so*
-#opt/lscsoft/lalxml/share/lal
+usr/lib/*.so*
+etc/*
+usr/share/lal*
