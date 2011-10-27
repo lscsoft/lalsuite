@@ -11,7 +11,6 @@ AC_CONFIG_FILES([\
   man/Makefile \
   misc/Makefile \
   src/Makefile \
-  src/lalapps/defaults.py \
   src/lalapps/Makefile \
   src/calibration/Makefile \
   src/frametools/Makefile \
