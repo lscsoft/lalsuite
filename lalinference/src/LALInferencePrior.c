@@ -633,12 +633,17 @@ void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *na
 {
 		char minName[VARNAME_MAX];
 		char maxName[VARNAME_MAX];
-		
+		void *ptr=NULL;
 		sprintf(minName,"%s_min",name);
 		sprintf(maxName,"%s_max",name);
-    
-		*min=*(REAL8 *)LALInferenceGetVariable(priorArgs,minName);
-		*max=*(REAL8 *)LALInferenceGetVariable(priorArgs,maxName);
+		
+		
+		ptr=LALInferenceGetVariable(priorArgs,minName);
+		if(ptr) *min=*(REAL8*)ptr;
+		else XLAL_ERROR_VOID(XLAL_EFAILED);
+		ptr=LALInferenceGetVariable(priorArgs,maxName);
+		if(ptr) *max=*(REAL8*)ptr;
+		else XLAL_ERROR_VOID(XLAL_EFAILED);
 		return;
 		
 }

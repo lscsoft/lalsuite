@@ -395,7 +395,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	sprintf(param_list,"%s_params.txt",outfile);
 	lout=fopen(param_list,"w");
 	minpos=0;
-	NSFillMCMCVariables(runState->livePoints[0]);
+	NSFillMCMCVariables(runState->livePoints[0],runState->priorArgs);
 	LALInferenceSortVariablesByName(runState->livePoints[0]);
 	for(param_ptr=runState->livePoints[0]->head;param_ptr;param_ptr=param_ptr->next)
 	{
@@ -429,7 +429,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
                 
 		/* Write out old sample */
-		NSFillMCMCVariables(runState->livePoints[minpos]);
+		NSFillMCMCVariables(runState->livePoints[minpos],runState->priorArgs);
 		LALInferenceSortVariablesByName(runState->livePoints[minpos]);
 		if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
 		LALInferencePrintSample(fpout,runState->livePoints[minpos]);
@@ -514,7 +514,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]);
 		}
-		NSFillMCMCVariables(runState->livePoints[i]);
+		NSFillMCMCVariables(runState->livePoints[i],runState->priorArgs);
 		LALInferenceSortVariablesByName(runState->livePoints[i]);
 		if(runState->logsample) runState->logsample(runState,runState->livePoints[i]);
 		LALInferencePrintSample(fpout,runState->livePoints[i]);
@@ -576,7 +576,7 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 
 	/* Evolve the sample until it is accepted */
 	logPriorOld=runState->prior(runState,runState->currentParams);
-	NSFillMCMCVariables(runState->currentParams);
+	NSFillMCMCVariables(runState->currentParams,runState->priorArgs);
 	do{
 		mcmc_iter++;
 		/* Make a copy of the parameters passed through currentParams */

@@ -174,17 +174,30 @@ LALInferenceRandomizeProposalCycle(LALInferenceRunState *runState) {
   }
 }
 
-void NSFillMCMCVariables(LALInferenceVariables *proposedParams)
+/* Convert NS to MCMC variables (call before calling MCMC proposal from NS) */
+void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVariables *priorArgs)
 {
-  REAL8 distance=0.0,mc=0.0;
+  REAL8 distance=0.0,mc=0.0,dmin,dmax,mmin,mmax;
   if(LALInferenceCheckVariable(proposedParams,"logdistance"))
   {
     distance=exp(*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"));
     LALInferenceAddVariable(proposedParams,"distance",&distance,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   }
+  if(!LALInferenceCheckMinMaxPrior(priorArgs,"distance"))
+  {
+    LALInferenceGetMinMaxPrior(priorArgs,"logdistance",&dmin,&dmax);
+    dmin=exp(dmin); dmax=exp(dmax);
+    LALInferenceAddMinMaxPrior(priorArgs,"distance",&dmin,&dmax,LALINFERENCE_REAL8_t);
+  }
   if(LALInferenceCheckVariable(proposedParams,"logmc")){
     mc=exp(*(REAL8 *)LALInferenceGetVariable(proposedParams,"logmc"));
     LALInferenceAddVariable(proposedParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  }
+  if(!LALInferenceCheckMinMaxPrior(priorArgs,"chirpmass"))
+  {
+    LALInferenceGetMinMaxPrior(priorArgs,"logmc",&mmin,&mmax);
+    mmin=exp(mmin); mmax=exp(mmax);
+    LALInferenceAddMinMaxPrior(priorArgs,"chirpmass",&mmin,&mmax,LALINFERENCE_REAL8_t);
   }
   return;
 }
@@ -194,14 +207,40 @@ void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables
   /* PTMCMC likes to read currentParams directly, whereas NS expects proposedParams
    to be modified by the proposal. Back up currentParams and then restore it after
    calling the MCMC proposal function. */
+  REAL8 oldlogdist=-1.0,oldlogmc=-1.0;
+  REAL8 newdist,newmc;
   LALInferenceVariables *currentParamsBackup=runState->currentParams;
+  
   /* PTMCMC expects some variables that NS doesn't use by default, so create them */
-  NSFillMCMCVariables(proposedParams);
+  
+  if(LALInferenceCheckVariable(proposedParams,"logdistance"))
+    oldlogdist=*(REAL8 *)LALInferenceGetVariable(proposedParams,"logdistance");
+  if(LALInferenceCheckVariable(proposedParams,"logmc"))
+    oldlogmc=*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc");
+  
+  NSFillMCMCVariables(proposedParams,runState->priorArgs);
 
   runState->currentParams=proposedParams; 
   LALInferenceDefaultProposal(runState,proposedParams);
   /* Restore currentParams */
   runState->currentParams=currentParamsBackup;
+  
+  /* If the remapped variables are not updated do it here */
+  if(oldlogdist!=-1.0)
+    if(oldlogdist==*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"))
+      {
+	newdist=*(REAL8*)LALInferenceGetVariable(proposedParams,"distance");
+	newdist=log(newdist);
+	LALInferenceSetVariable(proposedParams,"logdistance",&newdist);
+      }
+  if(oldlogmc!=-1.0)
+    if(oldlogmc==*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc"))
+    {
+      newmc=*(REAL8*)LALInferenceGetVariable(proposedParams,"chirpmass");
+      newmc=log(newmc);
+      LALInferenceSetVariable(proposedParams,"logmc",&newmc);
+    }
+  
 }
 
 void 
