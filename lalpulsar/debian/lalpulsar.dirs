@@ -1,5 +1,3 @@
-#opt/lscsoft/lalpulsar/bin
-opt/lscsoft/lalpulsar/etc
-opt/lscsoft/lalpulsar/lib
-#opt/lscsoft/lalpulsar/sbin
-opt/lscsoft/lalpulsar/share
+usr/lib
+etc
+usr/share
