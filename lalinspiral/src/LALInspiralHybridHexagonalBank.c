@@ -138,7 +138,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
   InspiralBankParams    bankPars;
   InspiralTemplate      *tempPars;
   InspiralMomentsEtc    moments;
-  InspiralCell          *cells;
+  InspiralCell          *cells = 0;
   HexaGridParam         gridParam;
   CellEvolution         cellEvolution;
   CellList 		*cellList = NULL;
