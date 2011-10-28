@@ -193,10 +193,28 @@ LALCreateTwoIFORingdownCoincList(
           thisCoinc->ds2_H1L1 = ds2;
         }
 
+        else if ( (strcmp(currentTrigger[0]->ifo,"H1")==0 && strcmp(currentTrigger[1]->ifo,"V1")==0)
+             ||(strcmp(currentTrigger[0]->ifo,"V1")==0 && strcmp(currentTrigger[1]->ifo,"H1")==0) )
+        {
+          thisCoinc->ds2_H1V1 = ds2;
+        }
+
         else if ( (strcmp(currentTrigger[0]->ifo,"H2")==0 && strcmp(currentTrigger[1]->ifo,"L1")==0)
              ||(strcmp(currentTrigger[0]->ifo,"L1")==0 && strcmp(currentTrigger[1]->ifo,"H2")==0) )
         {
           thisCoinc->ds2_H2L1 = ds2;
+        }
+
+        else if ( (strcmp(currentTrigger[0]->ifo,"H2")==0 && strcmp(currentTrigger[1]->ifo,"V1")==0)
+             ||(strcmp(currentTrigger[0]->ifo,"V1")==0 && strcmp(currentTrigger[1]->ifo,"H2")==0) )
+        {
+          thisCoinc->ds2_H2V1 = ds2;
+        }
+
+        else if ( (strcmp(currentTrigger[0]->ifo,"L1")==0 && strcmp(currentTrigger[1]->ifo,"V1")==0)
+             ||(strcmp(currentTrigger[0]->ifo,"V1")==0 && strcmp(currentTrigger[1]->ifo,"L1")==0) )
+        {
+          thisCoinc->ds2_L1V1 = ds2;
         }
 
         else
@@ -337,10 +355,28 @@ LALCreateNIFORingdownCoincList(
                 thisNIfoCoinc->ds2_H1L1 = ds2;
               }
 
+              else if ( (strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"H1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"V1")==0)
+                ||(strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"V1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"H1")==0) )
+              {
+                thisNIfoCoinc->ds2_H1V1 = ds2;
+              }
+
               else if ( (strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"H2")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"L1")==0)
                 ||(strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"L1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"H2")==0) )
               {
                 thisNIfoCoinc->ds2_H2L1 = ds2;
+              }
+
+              else if ( (strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"H2")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"V1")==0)
+                ||(strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"V1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"H2")==0) )
+              {
+                thisNIfoCoinc->ds2_H2V1 = ds2;
+              }
+
+              else if ( (strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"L1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"V1")==0)
+                ||(strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"V1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"L1")==0) )
+              {
+                thisNIfoCoinc->ds2_L1V1 = ds2;
               }
 
               else
@@ -860,7 +896,10 @@ XLALExtractSnglRingdownFromCoinc(
         /* copy the ds2 values from the coinc_table */
         thisSngl->ds2_H1H2 = thisCoinc->ds2_H1H2;
         thisSngl->ds2_H1L1 = thisCoinc->ds2_H1L1;
+        thisSngl->ds2_H1V1 = thisCoinc->ds2_H1V1;
         thisSngl->ds2_H2L1 = thisCoinc->ds2_H2L1;
+        thisSngl->ds2_H2V1 = thisCoinc->ds2_H2V1;
+        thisSngl->ds2_L1V1 = thisCoinc->ds2_L1V1;
       }
     }
   }
