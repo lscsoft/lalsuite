@@ -193,14 +193,14 @@ void initializeTemplate(LALInferenceRunState *runState)
 	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
 	if(ppt) {
 		if(!strcmp("LALSTPN",ppt->value)){
-			fprintf(stderr,"ERROR: --template LALSTPN is deprecated. Try LALGenerateInspiral instead\n");
+			fprintf(stderr,"ERROR: --template LALSTPN is deprecated. Try LALGenerateInspiral instead...\n");
 			exit(1);
 		}
 		else if(!strcmp("PhenSpin",ppt->value))
 			runState->template=&LALInferenceTemplatePSTRD;
 		else if(!strcmp("LALGenerateInspiral",ppt->value))
 			runState->template=&LALInferenceTemplateLALGenerateInspiral;
-		else if(!strcmp("SpinQuadTaylor",ppt->value))
+		else if(!strcmp("SpinTaylor",ppt->value))
 			runState->template=&LALInferenceTemplateLALGenerateInspiral;
 		else if(!strcmp("LAL",ppt->value))
 			runState->template=&LALInferenceTemplateLAL;
