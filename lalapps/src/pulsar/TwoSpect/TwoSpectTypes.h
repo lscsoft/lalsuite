@@ -141,6 +141,7 @@ typedef struct
    REAL4Vector *fomfarthresh;
    REAL4Vector *ihsfomdistMean;
    REAL4Vector *ihsfomdistSigma;
+   REAL4Vector *expectedIHSVector;
 } ihsfarStruct;
 
 typedef struct
