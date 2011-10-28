@@ -388,10 +388,13 @@ tagSnglRingdownTable
   REAL4         mass;
   REAL4         spin;
   REAL4         epsilon;
-  INT4		num_clust_trigs;
-  REAL4 	ds2_H1H2;
+  INT4          num_clust_trigs;
+  REAL4         ds2_H1H2;
   REAL4         ds2_H1L1;
+  REAL4         ds2_H1V1;
   REAL4         ds2_H2L1;
+  REAL4         ds2_H2V1;
+  REAL4         ds2_L1V1;
   REAL4         amplitude;
   REAL4         snr;
   REAL4         eff_dist;
@@ -740,7 +743,10 @@ tagCoincRingdownTable
   SimRingdownTable   *simRingdown;
   REAL4              ds2_H1H2;
   REAL4              ds2_H1L1;
+  REAL4              ds2_H1V1;
   REAL4              ds2_H2L1;
+  REAL4              ds2_H2V1;
+  REAL4              ds2_L1V1;
 }
 CoincRingdownTable;
 
