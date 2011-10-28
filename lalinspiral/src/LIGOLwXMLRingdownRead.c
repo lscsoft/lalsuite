@@ -212,25 +212,37 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 14 )
       {
-        thisEvent->ds2_H2L1 = r4colData;
+        thisEvent->ds2_H1V1 = r4colData;
       }
       else if ( tableDir[j].idx == 15 )
       {
-        thisEvent->amplitude = r4colData;
+        thisEvent->ds2_H2L1 = r4colData;
       }
       else if ( tableDir[j].idx == 16 )
       {
-        thisEvent->snr = r4colData;
+        thisEvent->ds2_H2V1 = r4colData;
       }
       else if ( tableDir[j].idx == 17 )
       {
-        thisEvent->eff_dist = r4colData;
+        thisEvent->ds2_L1V1 = r4colData;
       }
       else if ( tableDir[j].idx == 18 )
       {
-        thisEvent->sigma_sq = r8colData;
+        thisEvent->amplitude = r4colData;
       }
       else if ( tableDir[j].idx == 19 )
+      {
+        thisEvent->snr = r4colData;
+      }
+      else if ( tableDir[j].idx == 20 )
+      {
+        thisEvent->eff_dist = r4colData;
+      }
+      else if ( tableDir[j].idx == 21 )
+      {
+        thisEvent->sigma_sq = r8colData;
+      }
+      else if ( tableDir[j].idx == 22 )
       {
         thisEvent->event_id = (EventIDColumn *)
           LALCalloc( 1, sizeof(EventIDColumn) );
