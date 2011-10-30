@@ -847,8 +847,7 @@ int main(int argc, char *argv[])
       upperlimits->data[upperlimits->length-1].alpha = (REAL4)dopplerpos.Alpha;
       upperlimits->data[upperlimits->length-1].delta = (REAL4)dopplerpos.Delta;
       upperlimits->data[upperlimits->length-1].normalization = ffdata->tfnormalization;
-      //skypoint95UL(&(upperlimits->data[upperlimits->length-1]), inputParams, ffdata, ihsmaxima, aveNoise, aveTFnoisePerFbinRatio);
-      skypoint95UL(&(upperlimits->data[upperlimits->length-1]), inputParams, ffdata, ihsmaxima, ihsfarstruct, aveNoise, aveTFnoisePerFbinRatio);
+      skypoint95UL(&(upperlimits->data[upperlimits->length-1]), inputParams, ffdata, ihsmaxima, ihsfarstruct, aveTFnoisePerFbinRatio);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: skypoint95UL() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
