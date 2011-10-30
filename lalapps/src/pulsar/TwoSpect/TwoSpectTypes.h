@@ -51,6 +51,7 @@ typedef struct
    REAL4 ihsfom;
    REAL4 ihsfomfar;
    REAL8 templatefar;
+   REAL8 log10templatefar;
    REAL8 ULfmin;
    REAL8 ULfspan;
    REAL8 ULmindf;

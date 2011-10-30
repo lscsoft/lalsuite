@@ -847,7 +847,8 @@ int main(int argc, char *argv[])
       upperlimits->data[upperlimits->length-1].alpha = (REAL4)dopplerpos.Alpha;
       upperlimits->data[upperlimits->length-1].delta = (REAL4)dopplerpos.Delta;
       upperlimits->data[upperlimits->length-1].normalization = ffdata->tfnormalization;
-      skypoint95UL(&(upperlimits->data[upperlimits->length-1]), inputParams, ffdata, ihsmaxima, aveNoise, aveTFnoisePerFbinRatio);
+      //skypoint95UL(&(upperlimits->data[upperlimits->length-1]), inputParams, ffdata, ihsmaxima, aveNoise, aveTFnoisePerFbinRatio);
+      skypoint95UL(&(upperlimits->data[upperlimits->length-1]), inputParams, ffdata, ihsmaxima, ihsfarstruct, aveNoise, aveTFnoisePerFbinRatio);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: skypoint95UL() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
@@ -2204,6 +2205,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->maxtemplatelength = args_info.maxTemplateLength_arg;
    params->ihsfar = args_info.ihsfar_arg;
    params->templatefar = args_info.tmplfar_arg;
+   params->log10templatefar = log10(params->templatefar);
    params->ULmindf = args_info.ULminimumDeltaf_arg;
    params->ULmaxdf = args_info.ULmaximumDeltaf_arg;
    params->ihsfactor = args_info.ihsfactor_arg;

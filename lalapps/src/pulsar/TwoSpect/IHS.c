@@ -336,9 +336,9 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    INT4 ii, jj;
    REAL8 Tobs = params->Tobs;
    
-   INT4 trials = (INT4)round(1.0e-11/params->ihsfar);    //Number of trials to determine FAR value
-   if (params->ihsfomfar!=0.0 && trials<(INT4)round(1.0e-11/params->ihsfomfar)) {
-      trials = (INT4)round(1.0e-11/params->ihsfomfar);
+   INT4 trials = (INT4)round(1.0e-12/params->ihsfar);    //Number of trials to determine FAR value
+   if (params->ihsfomfar!=0.0 && trials<(INT4)round(1.0e-12/params->ihsfomfar)) {
+      trials = (INT4)round(1.0e-12/params->ihsfomfar);
    }
    trials += rows;
    

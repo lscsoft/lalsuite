@@ -379,6 +379,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
    }
    
    INT4 candidatesoutsideofmainULrange = 0;
+   REAL8 log10templatefar = inputParams->log10templatefar;
    
    for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
       //Assess the IHS candidate if the signal is away from the band edges, the modulation depth is greater or equal to minimum allowed and less than or equal to the maximum allowed, and if the period/modulation depth combo is within allowable limits for a template to be made. We will cut the period space in the next step.
@@ -428,7 +429,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
              periods */
             REAL8 bestPeriod = 0.0, besth0 = 0.0, bestR = 0.0, bestProb = 0.0;
             INT4 bestproberrcode = 0, loggedacandidate = 0;
-            if ((!inputParams->calcRthreshold && prob<log10(inputParams->templatefar)) || (inputParams->calcRthreshold && R>farval->far)) {
+            if ((!inputParams->calcRthreshold && prob<log10templatefar) || (inputParams->calcRthreshold && R>farval->far)) {
                bestR = R;
                besth0 = h0;
                bestProb = prob;
@@ -443,7 +444,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                loadCandidateData(&(output->data[output->numofcandidates]), ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, alpha, delta, R, besth0, bestProb, proberrcode, ihsCandidates->data[ii].normalization);
                output->numofcandidates++;
                loggedacandidate = 1;
-            } /* if prob<log10(inputParams->templatefar) || R > farval->far */
+            } /* if prob<log10templatefar || R > farval->far */
             
             //Try shifting period by harmonics and fractions, if no candidate was initially found
             if (bestProb == 0.0) {
@@ -474,7 +475,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                            XLAL_ERROR(XLAL_EFUNC);
                         }
                      }
-                     if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10(inputParams->templatefar)) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
+                     if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                         bestPeriod = ihsCandidates->data[ii].period;
                         besth0 = h0;
                         bestR = R;
@@ -508,7 +509,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                            XLAL_ERROR(XLAL_EFUNC);
                         }
                      }
-                     if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10(inputParams->templatefar)) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
+                     if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                         bestPeriod = ihsCandidates->data[ii].period;
                         besth0 = h0;
                         bestR = R;
@@ -519,8 +520,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   } // longer period harmonics
                } // shift by harmonics for jj < 6 (harmonics)
                
-               if (bestProb!=0.0) ihsCandidates->data[ii].period = bestPeriod;
-               else {
+               if (bestProb==0.0) {
                   //Shift by fractions
                   for (jj=1; jj<5; jj++) {
                      //for (jj=1; jj<3; jj++) {
@@ -556,7 +556,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                            }
                         }
                         //Log candidate if more significant or exceeding the FAR for the first time
-                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10(inputParams->templatefar)) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
+                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
                            bestR = R;
@@ -591,7 +591,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                               XLAL_ERROR(XLAL_EFUNC);
                            }
                         }
-                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10(inputParams->templatefar)) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
+                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
                            bestR = R;
@@ -606,6 +606,8 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             
             //If a potentially interesting candidate has been found (exceeding the FAR threshold) then try some new periods
             if (bestProb != 0.0) {
+               ihsCandidates->data[ii].period = bestPeriod;
+               
                //Shift period by harmonics
                //for (jj=2; jj<8; jj++) {
                for (jj=2; jj<4; jj++) {

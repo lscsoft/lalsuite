@@ -883,7 +883,16 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    } /* for ii < sigmas->length */
    
    //Normalize
-   for (ii=0; ii<(INT4)output->templatedata->length; ii++) if (output->templatedata->data[ii]!=0.0) output->templatedata->data[ii] /= (REAL4)sum;
+   REAL4 invsum = (REAL4)(1.0/sum);
+   if (!params->useSSE) {
+      for (ii=0; ii<(INT4)output->templatedata->length; ii++) if (output->templatedata->data[ii]!=0.0) output->templatedata->data[ii] *= invsum;
+   } else {
+      output->templatedata = sseScaleREAL4Vector(output->templatedata, output->templatedata, invsum);
+      if (xlalErrno!=0) {
+         fprintf(stderr,"%s, sseScaleREAL4Vector() failed.\n", __func__);
+         XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
+   }
    
    //Truncate weights
    sum = 0.0;
@@ -1087,6 +1096,7 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
    REAL8Vector *trialf, *trialb, *trialp;
    REAL8 fstepsize, dfstepsize;
    REAL4 tcohfactor = 1.49e-3*params->Tcoh + 1.76;
+   REAL8 log10templatefar = params->log10templatefar;
    
    //Set up parameters of modulation depth search
    if (dfmin<(0.5/params->Tcoh-1.0e-9)) dfmin = 0.5/params->Tcoh;
@@ -1201,7 +1211,7 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
                
                REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
                
-               if ( (bestProb!=0.0 && prob < bestProb) || (bestProb==0.0 && !params->calcRthreshold && prob<log10(params->templatefar)) || (bestProb==0.0 && params->calcRthreshold && R > farval->far) ) {
+               if ( (bestProb!=0.0 && prob < bestProb) || (bestProb==0.0 && !params->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && params->calcRthreshold && R > farval->far) ) {
                   bestf = trialf->data[ii];
                   bestp = trialp->data[kk];
                   bestdf = trialb->data[jj];
