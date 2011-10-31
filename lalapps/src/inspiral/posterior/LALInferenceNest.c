@@ -414,17 +414,18 @@ Parameter arguments:\n\
 			fprintf(stderr,"Unable to open injection file %s\n",ppt->value);
 			exit(1);
 		}
-	}
-	//Select event
-	ppt=LALInferenceGetProcParamVal(commandLine,"--event");
-	if(ppt){
-		event = atoi(ppt->value);
-		while(i<event) {i++; injTable = injTable->next;}
-		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));}
+		//Select event
+		ppt=LALInferenceGetProcParamVal(commandLine,"--event");
+		if(ppt){
+		  event = atoi(ppt->value);
+		  while(i<event) {i++; injTable = injTable->next;}
+		  endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
+		}
+
 		AmpOrder=injTable->amp_order;
 		LALGetOrderFromString(&status,injTable->waveform,&PhaseOrder);
 		LALGetApproximantFromString(&status,injTable->waveform,&approx);
-	
+	}
 
 	/* Over-ride approximant if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");

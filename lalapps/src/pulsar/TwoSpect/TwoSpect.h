@@ -34,6 +34,7 @@ void free_ffdata(ffdataStruct *data);
 REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization);
 REAL4Vector * fastSSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2);
 REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2);
+REAL4Vector * sseScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scale);
 REAL4Vector * simpleTFdata(REAL8 fsig, REAL8 period, REAL8 moddepth, REAL8 Tcoh, REAL8 Tobs, REAL8 SFToverlap, REAL8 fminimum, REAL8 fmaximum, REAL8 sqrtSh);
 
 REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normalization);
@@ -49,6 +50,7 @@ INT4Vector * existingSFTs(REAL4Vector *tfdata, inputParamsStruct *params, INT4 n
 void removeBadSFTs(REAL4Vector *tfdata, INT4Vector *badsfts);
 
 INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, inputParamsStruct *params);
+REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, inputParamsStruct *params);
 
 void slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts);
 void tfMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, INT4 numffts, INT4 numfbins);

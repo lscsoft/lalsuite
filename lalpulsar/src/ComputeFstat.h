@@ -140,7 +140,7 @@ typedef enum {
 } SSBprecision;
 
 /** [opaque] type holding a ComputeFBuffer for use in the resampling F-stat codes */
-typedef struct tag_ComputeFBuffer_RS ComputeFBuffer_RS;
+typedef struct tagComputeFBuffer_RS ComputeFBuffer_RS;
 
 /** Extra parameters controlling the actual computation of F */
 typedef struct tagComputeFParams {

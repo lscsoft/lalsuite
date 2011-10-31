@@ -30,6 +30,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/LALInferencePrior.h>
+#include <lal/LALInferenceNestedSampler.h>
 
 #include<math.h>
 
@@ -476,6 +477,7 @@ void initVariables(LALInferenceRunState *state)
 	return;
 }
 
+extern LALInferenceVariables *output_array;
 
 int main(int argc, char *argv[]) {
   
@@ -492,7 +494,6 @@ int main(int argc, char *argv[]) {
 	ProcessParamsTable *ppt=NULL;
 	FILE *outfile=NULL;
 	char *filename=NULL;
-	extern LALInferenceVariables *output_array;
 	
 	
 	/* Read command line and parse */
@@ -506,9 +507,9 @@ int main(int argc, char *argv[]) {
 	{
 		fprintf(stdout,"%s",help);
 	}
-	if(ppt=LALInferenceGetProcParamVal(procParams,"--Nprop"))
+	if((ppt=LALInferenceGetProcParamVal(procParams,"--Nprop")))
 	  Nmcmc=atoi(ppt->value);
-	if(ppt=LALInferenceGetProcParamVal(procParams,"--outfile"))
+	if((ppt=LALInferenceGetProcParamVal(procParams,"--outfile")))
 	  filename=ppt->value;
 	
 	
@@ -519,9 +520,12 @@ int main(int argc, char *argv[]) {
 	state->evolve=NULL; /* Use MCMC for this? */
 	state->template=NULL;
 	state->logsample=NULL;
+	state->priorArgs=calloc(1,sizeof(LALInferenceVariables));
+	state->proposalArgs=calloc(1,sizeof(LALInferenceVariables));
+	state->algorithmParams=calloc(1,sizeof(LALInferenceVariables));
 	state->prior=LALInferenceInspiralPriorNormalised;
 	state->likelihood=&LALInferenceZeroLogLikelihood;
-	
+	state->proposal=&LALInferenceDefaultProposal;
 	
 	/* Set up a sample to evolve */
 	initVariables(state);
@@ -530,13 +534,28 @@ int main(int argc, char *argv[]) {
 	LALInferenceAddVariable(state->algorithmParams,"Nmcmc",&i,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 	LALInferenceAddVariable(state->algorithmParams,"logLmin",&logLmin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
+	/* Use the PTMCMC proposal to sample prior */
+	state->proposal=&NSWrapMCMCLALProposal;
+	REAL8 temp=1.0;
+	UINT4 dummy=0;
+	LALInferenceAddVariable(state->proposalArgs, "adaptableStep", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(state->proposalArgs, "proposedVariableNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(state->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(state->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+	
+	/* Open the output file */
+	if(filename) outfile=fopen(filename,"w");
+	if(!outfile) fprintf(stdout,"No output file specified, internal testing only\n");
 	
 	/* Evolve with fixed likelihood */
 	for(i=0;i<Nmcmc;i++){
 	  LALInferenceNestedSamplingOneStep(state);
 	  /* output sample */
 	  if(state->logsample) state->logsample(state,state->currentParams);
+	  LALInferencePrintSample(outfile,state->currentParams);
+	  fprintf(outfile,"\n");
+	  
 	}
-	
+	fclose(outfile);
 	return(0);
 }

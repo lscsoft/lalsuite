@@ -34,6 +34,7 @@
 #include "statistics.h"
 #include "candidates.h"
 #include "fastchisqinv.h"
+#include "TwoSpect.h"
 
 
 //////////////////////////////////////////////////////////////
@@ -96,7 +97,7 @@ void free_ihsMaxima(ihsMaximaStruct *data)
 
 //////////////////////////////////////////////////////////////
 // Run the IHS algorithm
-void runIHS(ihsMaximaStruct *output, ffdataStruct *input, inputParamsStruct *params, INT4 rows, REAL4Vector *aveNoise, REAL4Vector *FbinMean)
+void runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarinput, inputParamsStruct *params, INT4 rows, REAL4Vector *FbinMean)
 {
    
    INT4 ii, jj;
@@ -147,21 +148,15 @@ void runIHS(ihsMaximaStruct *output, ffdataStruct *input, inputParamsStruct *par
          fprintf(stderr, "%s: incHarmSumVector() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
-      locs->data[ii] = max_index(ihsvector) + 5;
-      ihss->data[ii] = ihsvector->data[locs->data[ii]-5];
+      //locs->data[ii] = max_index(ihsvector) + 5;
+      //ihss->data[ii] = ihsvector->data[locs->data[ii]-5];
       memcpy(&(ihsvectorsequence->data[ii*ihsvector->length]), ihsvector->data, sizeof(REAL4)*ihsvector->length);
       
    } /* for ii < ihss->length */
    
-   //REAL4VectorSequence *ihssummedvals = ihsVectorSums(ihsvectorsequence, 360);
-   //FILE *IHSSUMVALS = fopen("./output/ihssumvals_mfd.dat","w");
-   //for (ii=0; ii<(INT4)ihssummedvals->length; ii++) for (jj=0; jj<(INT4)ihssummedvals->vectorLength; jj++) fprintf(IHSSUMVALS,"%.6f\n", ihssummedvals->data[ii*ihssummedvals->vectorLength + jj]);
-   //for (ii=0; ii<(INT4)ihsvectorsequence->length; ii++) for (jj=0; jj<(INT4)ihsvectorsequence->vectorLength; jj++) fprintf(IHSSUMVALS,"%.6f\n", ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + jj]);
-   //fclose(IHSSUMVALS);
-   //XLALDestroyREAL4VectorSequence(ihssummedvals);
-   
    //ihsSums2_withFAR(output, NULL, ihsvectorsequence, ihss, locs, aveNoise, rows, FbinMean, input->numfprbins, params, 0);
-   ihsSums2_withFAR_withnoise(output, NULL, ihsvectorsequence, ihss, locs, aveNoise, rows, FbinMean, input->numfprbins, params, 0);
+   //ihsSums2_withFAR_withnoise(output, NULL, ihsvectorsequence, ihss, locs, aveNoise, rows, FbinMean, input->numfprbins, params, 0);
+   sumIHSSequence(output, ihsfarinput, ihsvectorsequence, rows, FbinMean, input->numfprbins, params);
    XLALDestroyREAL4VectorSequence(ihsvectorsequence);
    
    
@@ -271,7 +266,7 @@ void incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor)
 
 //////////////////////////////////////////////////////////////
 // Allocate memory for ihsfarStruct struct
-ihsfarStruct * new_ihsfarStruct(INT4 rows)
+ihsfarStruct * new_ihsfarStruct(INT4 rows, inputParamsStruct *params)
 {
    
    ihsfarStruct *ihsfarstruct = XLALMalloc(sizeof(*ihsfarstruct));
@@ -286,6 +281,7 @@ ihsfarStruct * new_ihsfarStruct(INT4 rows)
    ihsfarstruct->fomfarthresh = XLALCreateREAL4Vector(rows-1);
    ihsfarstruct->ihsfomdistMean = XLALCreateREAL4Vector(rows-1);
    ihsfarstruct->ihsfomdistSigma = XLALCreateREAL4Vector(rows-1);
+   ihsfarstruct->expectedIHSVector = XLALCreateREAL4Vector((INT4)floor((1.0/(REAL8)params->ihsfactor)*((INT4)floor(floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1)*0.5)+1))-5);
    if (ihsfarstruct->ihsfar==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, rows-1);
       XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -304,7 +300,11 @@ ihsfarStruct * new_ihsfarStruct(INT4 rows)
    } else if( ihsfarstruct->ihsfomdistSigma==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, rows-1);
       XLAL_ERROR_NULL(XLAL_EFUNC);
+   } else if (ihsfarstruct->expectedIHSVector==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)floor((1.0/(REAL8)params->ihsfactor)*((INT4)floor(floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1)*0.5)+1))-5);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
    }
+   memset(ihsfarstruct->expectedIHSVector->data, 0, sizeof(REAL4)*ihsfarstruct->expectedIHSVector->length);
    
    return ihsfarstruct;
 
@@ -322,6 +322,7 @@ void free_ihsfarStruct(ihsfarStruct *ihsfarstruct)
    XLALDestroyREAL4Vector(ihsfarstruct->fomfarthresh);
    XLALDestroyREAL4Vector(ihsfarstruct->ihsfomdistMean);
    XLALDestroyREAL4Vector(ihsfarstruct->ihsfomdistSigma);
+   XLALDestroyREAL4Vector(ihsfarstruct->expectedIHSVector);
    XLALFree((ihsfarStruct*)ihsfarstruct);
 
 } /* free_ihsfarStruct() */
@@ -335,11 +336,20 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    INT4 ii, jj;
    REAL8 Tobs = params->Tobs;
    
-   INT4 trials = (INT4)round(1.0e-10/params->ihsfar);    //Number of trials to determine FAR value
-   if (params->ihsfomfar!=0.0 && trials<(INT4)round(1.0e-10/params->ihsfomfar)) {
-      trials = (INT4)round(1.0e-10/params->ihsfomfar);
+   INT4 trials = 3*rows;
+   if (trials<1000) {
+      trials = 1000;
    }
-   trials += rows;
+   if (trials>5000) {
+      fprintf(stderr, "Warning: number of trials may be insufficient given the number of rows to sum\n");
+      trials = 5000;
+   }
+   
+   /* INT4 trials = (INT4)round(1.0e-11/params->ihsfar);    //Number of trials to determine FAR value
+   if (params->ihsfomfar!=0.0 && trials<(INT4)round(1.0e-11/params->ihsfomfar)) {
+      trials = (INT4)round(1.0e-11/params->ihsfomfar);
+   }
+   trials += rows; */
    
    //Initialize random number generator
    gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
@@ -382,9 +392,9 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
       fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, aveNoise->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
+   memset(markedharmonics->data, 0, sizeof(INT4)*markedharmonics->length);
    for (ii=0; ii<(INT4)markedharmonics->length; ii++) {
       if (fabs(dailyharmonic-(REAL8)ii)<=1.0 || fabs(dailyharmonic2-(REAL8)ii)<=1.0 || fabs(dailyharmonic3-(REAL8)ii)<=1.0 || fabs(dailyharmonic4-(REAL8)ii)<=1.0) markedharmonics->data[ii] = 1;
-      else markedharmonics->data[ii] = 0;
    }
    for (ii=0; ii<trials; ii++) {
       REAL8 randval = 1.0 + 2.0*gsl_ran_gaussian(rng, singleIHSsigma);
@@ -401,8 +411,9 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
          fprintf(stderr, "%s: incHarmSumVector() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
-      locs->data[ii] = max_index(ihsvector) + 5;
-      ihss->data[ii] = (REAL4)ihsvector->data[locs->data[ii]-5];
+      
+      //locs->data[ii] = max_index(ihsvector) + 5;
+      //ihss->data[ii] = (REAL4)ihsvector->data[locs->data[ii]-5];
       memcpy(&(ihsvectorsequence->data[ii*ihsvector->length]), ihsvector->data, sizeof(REAL4)*ihsvector->length);
    } /* for ii < trials */
    XLALDestroyREAL4Vector(noise);
@@ -426,7 +437,8 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    for (ii=0; ii<trials; ii++) FbinMean->data[ii] = 1.0;
    
    //ihsSums2_withFAR(ihsmaxima, output, ihsvectorsequence, ihss, locs, aveNoise, rows, FbinMean, (INT4)aveNoise->length, params, 1);
-   ihsSums2_withFAR_withnoise(ihsmaxima, output, ihsvectorsequence, ihss, locs, aveNoise, rows, FbinMean, (INT4)aveNoise->length, params, 1);
+   //ihsSums2_withFAR_withnoise(ihsmaxima, output, ihsvectorsequence, ihss, locs, aveNoise, rows, FbinMean, (INT4)aveNoise->length, params, 1);
+   sumIHSSequenceFAR(output, ihsvectorsequence, rows, FbinMean, (INT4)aveNoise->length, params);
    XLALDestroyREAL4VectorSequence(ihsvectorsequence);
    
    //Destroy variables
@@ -442,447 +454,50 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
 
 //////////////////////////////////////////////////////////////
 // Compute the IHS sums for a number of rows
-void ihsSums(ihsMaximaStruct *output, REAL4Vector *ihss, INT4Vector *locs, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor)
-{
-   
-   INT4 ii, jj, locInMaximaVector;
-   INT4 startPosition = 0;
-   
-   //Start with the vector of single row IHS values
-   memcpy(output->maximaForEachFbin->data, ihss->data, sizeof(REAL4)*ihss->length);
-   memcpy(output->locations->data, locs->data, sizeof(INT4)*locs->length);
-   
-   output->rows = rows;
-   
-   //Efficiently sum the IHS values
-   //Sum the pairs
-   for (ii=0; ii<(INT4)ihss->length-1; ii++) output->maxima->data[ii] = ihss->data[ii] + ihss->data[ii+1];
-   locInMaximaVector = ii; //save the position in the maxima vector
-   //Now continue summing only needing to add the next row IHS value to the recent summed value
-   for (ii=3; ii<=rows; ii++) {
-      for (jj=ii-1; jj<(INT4)ihss->length; jj++) {
-         output->maxima->data[locInMaximaVector] = output->maxima->data[startPosition+jj-(ii-1)] + ihss->data[jj];
-         locInMaximaVector++; //Increment position in maxima vector
-      }
-      startPosition = locInMaximaVector - (ihss->length-(ii-1)); //Position to start is the location in the maxima vector minus slots moved
-   } /* for ii <= rows */
-   
-   INT4Vector *templocs = NULL;
-   REAL4Vector *tempihss = NULL, *tempfbinmean = NULL;
-   locInMaximaVector = 0;
-   for (ii=2; ii<=rows; ii++) {
-      templocs = XLALCreateINT4Vector(ii);
-      tempihss = XLALCreateREAL4Vector(ii);
-      tempfbinmean = XLALCreateREAL4Vector(ii);
-      if (templocs==NULL) {
-         fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ii);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      } else if (tempihss==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      } else if (tempfbinmean==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
-      for (jj=0; jj<(INT4)locs->length-(ii-1); jj++) {
-         memcpy(templocs->data, &(locs->data[jj]), sizeof(INT4)*templocs->length);
-         memcpy(tempihss->data, &(ihss->data[jj]), sizeof(REAL4)*tempihss->length);
-         memcpy(tempfbinmean->data, &(FbinMean->data[jj]), sizeof(REAL4)*tempfbinmean->length);
-         output->foms->data[locInMaximaVector] = ihsFOM(tempihss, templocs, tempfbinmean, locationnormfactor);
-         locInMaximaVector++;
-      }
-      XLALDestroyINT4Vector(templocs);
-      XLALDestroyREAL4Vector(tempihss);
-      XLALDestroyREAL4Vector(tempfbinmean);
-      templocs = NULL;
-      tempihss = NULL;
-      tempfbinmean = NULL;
-   }
-   
-} /* ihsSums() */
-void ihsSums2_withFAR(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *aveNoise, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor, inputParamsStruct *params, INT4 calcPInvVals)
-{
-   
-   INT4 ii, jj, kk;
-   
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-   if (rng==NULL) {
-      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_ENOMEM);
-   }
-   gsl_rng_set(rng, 0);
-   
-   REAL4VectorSequence *tworows = XLALCreateREAL4VectorSequence(ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
-   if (tworows==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4VectorSequence(%d,%d) failed.\n", __func__, ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
-   
-   REAL4VectorSequence *tworows2 = NULL;
-   REAL4Vector *ihsvalsfromaveNoise = NULL, *randvals = NULL;
-   REAL8 adjustmentforzeroedelements = 0.0;
-   
-   if (calcPInvVals!=0) {
-      tworows2 = XLALCreateREAL4VectorSequence(ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
-      ihsvalsfromaveNoise = XLALCreateREAL4Vector(ihsvectorsequence->vectorLength);
-      REAL4Vector *tempaveNoise = XLALCreateREAL4Vector(aveNoise->length);
-      if (tworows2==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL4VectorSequence(%d,%d) failed.\n", __func__, ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      } else if (ihsvalsfromaveNoise==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->vectorLength);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      } else if (tempaveNoise==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, aveNoise->length);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
-      
-      //Build vector from aveNoise vector without the daily harmonics
-      REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
-      REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
-      memcpy(tempaveNoise->data, aveNoise->data, sizeof(REAL4)*aveNoise->length);
-      INT4 numberzeroed = 0;
-      for (ii=0; ii<(INT4)aveNoise->length; ii++) {
-         if (fabs(dailyharmonic-(REAL8)ii)<=1.0 || fabs(dailyharmonic2-(REAL8)ii)<=1.0 || fabs(dailyharmonic3-(REAL8)ii)<=1.0 || fabs(dailyharmonic4-(REAL8)ii)<=1.0) {
-            tempaveNoise->data[ii] = 0.0;
-            numberzeroed++;
-         }
-      }
-      adjustmentforzeroedelements = 1.0-(REAL8)numberzeroed/(REAL8)aveNoise->length;
-      
-      //Compute IHS vector from the copied aveNoise vector
-      incHarmSumVector(ihsvalsfromaveNoise, tempaveNoise, params->ihsfactor);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: incHarmSumVector() failed.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
-      
-      //Create a vector which has random (positive) values normally distributed about 1.0 with 2 sigma variation
-      randvals = XLALCreateREAL4Vector(ihss->length);
-      if (randvals==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihss->length);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
-      REAL8 sigma = sqrt(5.0*0.05*0.05);
-      for (ii=0; ii<(INT4)ihss->length; ii++) {
-         randvals->data[ii] = (REAL4)(1.0 + 2.0*gsl_ran_gaussian(rng, sigma));
-         while (randvals->data[ii]<0.0) randvals->data[ii] = (REAL4)(1.0 + 2.0*gsl_ran_gaussian(rng, sigma));
-      }
-      
-      XLALDestroyREAL4Vector(tempaveNoise);
-   } /* if calcPInvVals != 0 */
-   
-   REAL4Vector *rowsequencemaxima = NULL;
-   REAL4Vector *fbinmeanvals = NULL;
-   INT4Vector *rowsequencelocs = NULL;
-   for (ii=1; ii<=rows; ii++) {
-      if (ii==1) {
-         memcpy(output->maximaForEachFbin->data, ihss->data, sizeof(REAL4)*ihss->length);
-         memcpy(output->locationsForEachFbin->data, locs->data, sizeof(INT4)*locs->length);
-         //fprintf(stderr, "Finished row %d\n", ii);
-      } else if (ii==2) {
-         rowsequencemaxima = XLALCreateREAL4Vector(ii);
-         fbinmeanvals = XLALCreateREAL4Vector(ii);
-         rowsequencelocs = XLALCreateINT4Vector(ii);
-         if (rowsequencemaxima==NULL) {
-            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } else if (fbinmeanvals==NULL) {
-            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } else if (rowsequencelocs==NULL) {
-            fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
-         
-         
-         //FILE *TWOROWSUM = fopen("./tworowsum.dat","w");
-         for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
-            //Sum IHS values across SFT frequency bins
-            for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) {
-               tworows->data[jj*ihsvectorsequence->vectorLength + kk] = ihsvectorsequence->data[jj*ihsvectorsequence->vectorLength + kk] + ihsvectorsequence->data[(jj+1)*ihsvectorsequence->vectorLength + kk];
-               //fprintf(TWOROWSUM, "%.6f\n", tworows->data[jj*ihsvectorsequence->vectorLength + kk]);
-            }
-            
-            //Compute the maximum IHS value in the second FFT frequency direction
-            output->locations->data[jj] = max_index_from_vector_in_REAL4VectorSequence(tworows, jj) + 5;
-            output->maxima->data[jj] = tworows->data[jj*ihsvectorsequence->vectorLength+(output->locations->data[jj]-5)];
-            
-            if (calcPInvVals!=0) for (kk=0; kk<(INT4)ihsvalsfromaveNoise->length; kk++) tworows2->data[jj*ihsvalsfromaveNoise->length + kk] = ihsvalsfromaveNoise->data[kk]*(randvals->data[jj] + randvals->data[jj+1]);
-            
-            //Compute IHS FOM value
-            memcpy(rowsequencemaxima->data, &(ihss->data[jj]), sizeof(REAL4)*ii);
-            memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
-            memcpy(rowsequencelocs->data, &(locs->data[jj]), sizeof(INT4)*ii);
-            output->foms->data[jj] = ihsFOM(rowsequencemaxima, rowsequencelocs, fbinmeanvals, locationnormfactor);
-         } /* for jj < ihsvectorsequence->length-(ii-1) */
-         //fclose(TWOROWSUM);
-         
-         if (calcPInvVals!=0) {
-            //sample the IHS values to compute mean and standard deviation values
-            REAL4Vector *sampledtempihsvals = NULL;
-            if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
-               //sampledtempihsvals = sampleREAL4VectorSequence(tworows, ihsvectorsequence->length-(ii-1), 10000);
-               sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000);
-               outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals)*adjustmentforzeroedelements;
-            } else {
-               sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
-               memcpy(sampledtempihsvals->data, tworows->data, sizeof(REAL4)*sampledtempihsvals->length);
-               outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
-            }
-            outputfar->ihsdistSigma->data[ii-2] = calcStddev(sampledtempihsvals);
-            XLALDestroyREAL4Vector(sampledtempihsvals);
-            
-            //Sample the aveNoise background sum vector
-            REAL8 averageval = 0.0, farave = 0.0;
-            if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
-               //sampledtempihsvals = sampleREAL4VectorSequence(tworows2, ihsvectorsequence->length-(ii-1), 10000);
-               sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows2, ihsvectorsequence->length-(ii-1), 10000);
-            } else {
-               sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
-               memcpy(sampledtempihsvals->data, tworows2->data, sizeof(REAL4)*sampledtempihsvals->length);
-            }
-            
-            //compute the average FAR threhold
-            for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
-               if (sampledtempihsvals->data[jj]!=0.0) {
-                  averageval += 1.0;
-                  if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
-                  if (params->ihsfar != 1.0 && params->fastchisqinv) farave += 0.5*cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
-               } /* if sampledtempihsvals->data[jj] != 0.0 */
-            } /* for jj < sampledtempihsvals->length */
-            outputfar->ihsfar->data[ii-2] = farave/averageval;
-            XLALDestroyREAL4Vector(sampledtempihsvals);
-            
-            //FOM part
-            REAL4Vector *tempfomvals = XLALCreateREAL4Vector(ihss->length-ii+1);
-            if (tempfomvals==NULL) {
-               fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihss->length-ii+1);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
-            memcpy(tempfomvals->data, &(output->foms->data[0]), sizeof(REAL4)*tempfomvals->length);
-            outputfar->ihsfomdistMean->data[ii-2] = calcMean(tempfomvals);
-            outputfar->ihsfomdistSigma->data[ii-2] = calcStddev(tempfomvals);
-            if (params->ihsfomfar!=1.0 && params->ihsfom==0.0) {
-               REAL4Vector *smallestfomvals = XLALCreateREAL4Vector((UINT4)roundf((ihss->length-ii+1)*params->ihsfomfar)+1);
-               if (smallestfomvals==NULL) {
-                  fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)roundf((ihss->length-ii)*params->ihsfomfar)+1);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-               sort_float_smallest(smallestfomvals, tempfomvals);
-               if (xlalErrno!=0) {
-                  fprintf(stderr, "%s: sort_float_smallest() failed.\n", __func__);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-               outputfar->fomfarthresh->data[ii-2] = smallestfomvals->data[smallestfomvals->length-1];
-               XLALDestroyREAL4Vector(smallestfomvals);
-            } else if (params->ihsfom!=0.0) {
-               outputfar->fomfarthresh->data[ii-2] = params->ihsfom;
-            } else {
-               outputfar->fomfarthresh->data[ii-2] = -1.0;
-            }
-            XLALDestroyREAL4Vector(tempfomvals);
-         } /* if calcPInvVals != 0 */
-         
-         XLALDestroyREAL4Vector(rowsequencemaxima);
-         rowsequencemaxima = NULL;
-         XLALDestroyREAL4Vector(fbinmeanvals);
-         fbinmeanvals = NULL;
-         XLALDestroyINT4Vector(rowsequencelocs);
-         rowsequencelocs = NULL;
-         
-         //fprintf(stderr, "Finished row %d\n", ii);
-      } else {
-         rowsequencemaxima = XLALCreateREAL4Vector(ii);
-         fbinmeanvals = XLALCreateREAL4Vector(ii);
-         rowsequencelocs = XLALCreateINT4Vector(ii);
-         if (rowsequencemaxima==NULL) {
-            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } else if (fbinmeanvals==NULL) {
-            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } else if (rowsequencelocs==NULL) {
-            fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
-         
-         INT4 endloc = ((ii-1)*(ii-1)-(ii-1))/2;
-         for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
-            for (kk=0; kk<(INT4)ihsvectorsequence->vectorLength; kk++) tworows->data[jj*ihsvectorsequence->vectorLength + kk] += ihsvectorsequence->data[(ii-1+jj)*ihsvectorsequence->vectorLength + kk];
-            output->locations->data[(ii-2)*ihss->length-endloc+jj] = max_index_from_vector_in_REAL4VectorSequence(tworows, jj) + 5;
-            output->maxima->data[(ii-2)*ihss->length-endloc+jj] = tworows->data[jj*ihsvectorsequence->vectorLength+(output->locations->data[(ii-2)*ihss->length-endloc+jj]-5)];
-            
-            if (calcPInvVals!=0) for (kk=0; kk<(INT4)ihsvalsfromaveNoise->length; kk++) tworows2->data[jj*ihsvalsfromaveNoise->length + kk] += ihsvalsfromaveNoise->data[kk]*randvals->data[ii-1+jj];
-            
-            memcpy(rowsequencemaxima->data, &(ihss->data[jj]), sizeof(REAL4)*ii);
-            memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
-            memcpy(rowsequencelocs->data, &(locs->data[jj]), sizeof(INT4)*ii);
-            output->foms->data[(ii-2)*ihss->length-endloc+jj] = ihsFOM(rowsequencemaxima, rowsequencelocs, fbinmeanvals, locationnormfactor);
-         } /* for jj< ihsvectorsequence->length - (ii-1) */
-         
-         if (calcPInvVals!=0) {
-            REAL4Vector *sampledtempihsvals = NULL;
-            if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
-               //sampledtempihsvals = sampleREAL4VectorSequence(tworows, ihsvectorsequence->length-(ii-1), 10000);
-               sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000);
-               outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals)*adjustmentforzeroedelements;
-            } else {
-               sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
-               memcpy(sampledtempihsvals->data, tworows->data, sizeof(REAL4)*sampledtempihsvals->length);
-               outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
-            }
-            outputfar->ihsdistSigma->data[ii-2] = calcStddev(sampledtempihsvals);
-            XLALDestroyREAL4Vector(sampledtempihsvals);
-            
-            REAL8 averageval = 0.0, farave = 0.0;
-            if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) sampledtempihsvals = sampleREAL4VectorSequence(tworows2, ihsvectorsequence->length-(ii-1), 10000);
-            else {
-               sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
-               memcpy(sampledtempihsvals->data, tworows2->data, sizeof(REAL4)*sampledtempihsvals->length);
-            }
-            for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
-               if (sampledtempihsvals->data[jj]!=0.0) {
-                  averageval += 1.0;
-                  if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
-                  if (params->ihsfar != 1.0 && params->fastchisqinv) farave += 0.5*cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
-               }
-            }
-            outputfar->ihsfar->data[ii-2] = farave/averageval;
-            XLALDestroyREAL4Vector(sampledtempihsvals);
-            
-            REAL4Vector *tempfomvals = XLALCreateREAL4Vector(ihss->length-ii+1);
-            if (tempfomvals==NULL) {
-               fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihss->length-ii+1);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
-            memcpy(tempfomvals->data, &(output->foms->data[(ii-2)*ihss->length-endloc]), sizeof(REAL4)*tempfomvals->length);
-            outputfar->ihsfomdistMean->data[ii-2] = calcMean(tempfomvals);
-            outputfar->ihsfomdistSigma->data[ii-2] = calcStddev(tempfomvals);
-            if (params->ihsfomfar!=1.0 && params->ihsfom==0.0) {
-               REAL4Vector *smallestfomvals = XLALCreateREAL4Vector((UINT4)roundf((ihss->length-ii+1)*params->ihsfomfar)+1);
-               if (smallestfomvals==NULL) {
-                  fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)roundf((ihss->length-ii)*params->ihsfomfar)+1);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-               sort_float_smallest(smallestfomvals, tempfomvals);
-               if (xlalErrno!=0) {
-                  fprintf(stderr, "%s: sort_float_smallest() failed.\n", __func__);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-               outputfar->fomfarthresh->data[ii-2] = smallestfomvals->data[smallestfomvals->length-1];
-               XLALDestroyREAL4Vector(smallestfomvals);
-            } else if (params->ihsfom!=0.0) {
-               outputfar->fomfarthresh->data[ii-2] = params->ihsfom;
-            } else {
-               outputfar->fomfarthresh->data[ii-2] = -1.0;
-            }
-            XLALDestroyREAL4Vector(tempfomvals);
-         } /* if calcPInvVals != 0 */
-         
-         XLALDestroyREAL4Vector(rowsequencemaxima);
-         rowsequencemaxima = NULL;
-         XLALDestroyREAL4Vector(fbinmeanvals);
-         fbinmeanvals = NULL;
-         XLALDestroyINT4Vector(rowsequencelocs);
-         rowsequencelocs = NULL;
-         
-         //fprintf(stderr, "Finished row %d\n", ii);
-      }
-      
-   } /* for ii <= rows */
-   XLALDestroyREAL4VectorSequence(tworows);
-   gsl_rng_free(rng);
-   
-   if (calcPInvVals!=0) {
-      XLALDestroyREAL4VectorSequence(tworows2);
-      XLALDestroyREAL4Vector(ihsvalsfromaveNoise);
-      XLALDestroyREAL4Vector(randvals);
-   }
-   
-} /*ihsSums2_withFAR() */
-void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *aveNoise, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor, inputParamsStruct *params, INT4 calcPInvVals)
+void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor, inputParamsStruct *params)
 {
    
    INT4 ii, jj;
    
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-   if (rng==NULL) {
-      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_ENOMEM);
-   }
-   gsl_rng_set(rng, 0);
-   
    REAL4VectorSequence *tworows = XLALCreateREAL4VectorSequence(ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
    if (tworows==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4VectorSequence(%d,%d) failed.\n", __func__, ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   
-   REAL4VectorSequence *tworows2 = XLALCreateREAL4VectorSequence(ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
-   REAL4Vector *ihsvalsfromaveNoise = XLALCreateREAL4Vector(ihsvectorsequence->vectorLength);
-   REAL4Vector *tempaveNoise = XLALCreateREAL4Vector(aveNoise->length);
-   REAL4Vector *excessabovenoise = XLALCreateREAL4Vector(ihsvectorsequence->vectorLength);
-   REAL4Vector *randvals = randvals = XLALCreateREAL4Vector(ihss->length);
-   REAL8 adjustmentforzeroedelements = 0.0;
-   if (tworows2==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4VectorSequence(%d,%d) failed.\n", __func__, ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (ihsvalsfromaveNoise==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->vectorLength);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (tempaveNoise==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, aveNoise->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }  else if (excessabovenoise==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->vectorLength);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (randvals==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihss->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
    memset(tworows->data, 0, sizeof(REAL4)*tworows->length*tworows->vectorLength);
-   memset(tworows2->data, 0, sizeof(REAL4)*tworows2->length*tworows2->vectorLength);
    
-   //Build vector from aveNoise vector without the daily harmonics
-   REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
-   REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
-   memcpy(tempaveNoise->data, aveNoise->data, sizeof(REAL4)*aveNoise->length);
-   INT4 numberzeroed = 0;
-   for (ii=0; ii<(INT4)aveNoise->length; ii++) {
-      if (fabs(dailyharmonic-(REAL8)ii)<=1.0 || fabs(dailyharmonic2-(REAL8)ii)<=1.0 || fabs(dailyharmonic3-(REAL8)ii)<=1.0 || fabs(dailyharmonic4-(REAL8)ii)<=1.0) {
-         tempaveNoise->data[ii] = 0.0;
-         numberzeroed++;
-      }
-   }
-   adjustmentforzeroedelements = 1.0-(REAL8)numberzeroed/(REAL8)aveNoise->length;
-   
-   //Compute IHS vector from the copied aveNoise vector
-   incHarmSumVector(ihsvalsfromaveNoise, tempaveNoise, params->ihsfactor);
-   if (xlalErrno!=0) {
-      fprintf(stderr, "%s: incHarmSumVector() failed.\n", __func__);
+   REAL4Vector *ihsvalues = XLALCreateREAL4Vector(ihsvectorsequence->length);
+   INT4Vector *ihslocations = XLALCreateINT4Vector(ihsvalues->length);
+   if (ihsvalues==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->length);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   } else if (ihslocations==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvalues->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   
-   //Create a vector which has random (positive) values normally distributed about 1.0 with 2 sigma variation
-   REAL8 sigma = sqrt(5.0*0.05*0.05);
-   for (ii=0; ii<(INT4)ihss->length; ii++) {
-      randvals->data[ii] = (REAL4)(1.0 + 2.0*gsl_ran_gaussian(rng, sigma));
-      while (randvals->data[ii]<0.0) randvals->data[ii] = (REAL4)(1.0 + 2.0*gsl_ran_gaussian(rng, sigma));
+   for (ii=0; ii<(INT4)ihsvalues->length; ii++) {
+      ihslocations->data[ii] = max_index_from_vector_in_REAL4VectorSequence(ihsvectorsequence, ii) + 5;
+      ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];
    }
    
+   //get average
+   for (ii=0; ii<(INT4)ihsvectorsequence->vectorLength; ii++) {
+      for (jj=0; jj<(INT4)ihsvectorsequence->length; jj++) {
+         outputfar->expectedIHSVector->data[ii] += ihsvectorsequence->data[jj*tworows->vectorLength + ii];
+      }
+      outputfar->expectedIHSVector->data[ii] /= (REAL4)jj;
+   }   
    
    REAL4Vector *rowsequencemaxima = NULL;
    REAL4Vector *fbinmeanvals = NULL;
    INT4Vector *rowsequencelocs = NULL;
-   for (ii=1; ii<=rows; ii++) {
-      if (ii==1) {
-         memcpy(output->maximaForEachFbin->data, ihss->data, sizeof(REAL4)*ihss->length);
-         memcpy(output->locationsForEachFbin->data, locs->data, sizeof(INT4)*locs->length);
-      } else if (ii==2) {
+   REAL4Vector *foms = NULL;
+   for (ii=2; ii<=rows; ii++) {
+      if (ii==2) {
          rowsequencemaxima = XLALCreateREAL4Vector(ii);
          fbinmeanvals = XLALCreateREAL4Vector(ii);
          rowsequencelocs = XLALCreateINT4Vector(ii);
+         foms = XLALCreateREAL4Vector(ihsvectorsequence->length-(ii-1));
          if (rowsequencemaxima==NULL) {
             fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
             XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -892,10 +507,11 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          } else if (rowsequencelocs==NULL) {
             fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ii);
             XLAL_ERROR_VOID(XLAL_EFUNC);
+         } else if (foms==NULL) {
+            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->length-(ii-1));
+            XLAL_ERROR_VOID(XLAL_EFUNC);
          }
          
-         
-         //FILE *TWOROWSUM = fopen("./tworowsum.dat","w");
          if (params->useSSE) {
             sseSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, 0, 1, 0, (INT4)ihsvectorsequence->length-(ii-1));
             if (xlalErrno!=0) {
@@ -906,132 +522,302 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             //Sum IHS values across SFT frequency bins
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
-            scaleVectorIntoVectorSequence(tworows2, ihsvalsfromaveNoise, (randvals->data[jj]*FbinMean->data[jj] + randvals->data[jj+1]*FbinMean->data[jj+1]), jj);
-            if (!params->useSSE) fastSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
-            else {
-               sseSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
+            
+            //Compute IHS FOM value
+            memcpy(rowsequencemaxima->data, &(ihsvalues->data[jj]), sizeof(REAL4)*ii);
+            memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
+            memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
+            foms->data[jj] = ihsFOM(rowsequencemaxima, rowsequencelocs, fbinmeanvals, locationnormfactor);
+         } /* for jj < ihsvectorsequence->length-(ii-1) */
+         
+         //get average
+         /* for (jj=0; jj<(INT4)tworows->vectorLength; jj++) {
+            INT4 kk;
+            for (kk=0; kk<(INT4)tworows->length-(ii-2); kk++) {
+               outputfar->expectedIHSVectorSequence->data[(ii-2)*outputfar->expectedIHSVectorSequence->vectorLength + jj] += tworows->data[kk*tworows->vectorLength + jj];
+            }
+            outputfar->expectedIHSVectorSequence->data[(ii-2)*outputfar->expectedIHSVectorSequence->vectorLength + jj] /= (REAL4)kk;
+         } */
+         
+         //sample the IHS values to compute mean, standard deviation, and FAR threshold values
+         REAL4Vector *sampledtempihsvals = NULL;
+         REAL8 averageval = 0.0, farave = 0.0;
+         if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
+            sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000);
+            outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
+            for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
+               averageval += 1.0;
+               if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
+               if (params->ihsfar != 1.0 && params->fastchisqinv) farave += 0.5*cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
+               if (xlalErrno!=0) {
+                  fprintf(stderr, "%s: XXX_chisq_inv() failed.\n", __func__);
+                  XLAL_ERROR_VOID(XLAL_EFUNC);
+               }
+            }
+         } else {
+            sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
+            memcpy(sampledtempihsvals->data, tworows->data, sizeof(REAL4)*sampledtempihsvals->length);
+            outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
+            for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
+               if (sampledtempihsvals->data[jj]!=0.0) {
+                  averageval += 1.0;
+                  if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
+                  if (params->ihsfar != 1.0 && params->fastchisqinv) farave += 0.5*cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
+                  if (xlalErrno!=0) {
+                     fprintf(stderr, "%s: XXX_chisq_inv() failed.\n", __func__);
+                     XLAL_ERROR_VOID(XLAL_EFUNC);
+                  }
+               } /* if sampledtempihsvals->data[jj] != 0.0 */
+            } /* for jj < sampledtempihsvals->length */
+         }
+         outputfar->ihsdistSigma->data[ii-2] = calcStddev(sampledtempihsvals);
+         outputfar->ihsfar->data[ii-2] = farave/averageval;
+         XLALDestroyREAL4Vector(sampledtempihsvals);
+         
+         //FOM part
+         outputfar->ihsfomdistMean->data[ii-2] = calcMean(foms);
+         outputfar->ihsfomdistSigma->data[ii-2] = calcStddev(foms);
+         if (params->ihsfomfar!=1.0 && params->ihsfom==0.0) {
+            REAL4Vector *smallestfomvals = XLALCreateREAL4Vector((UINT4)roundf((ihsvalues->length-ii+1)*params->ihsfomfar)+1);
+            if (smallestfomvals==NULL) {
+               fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)roundf((ihsvalues->length-ii)*params->ihsfomfar)+1);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+            sort_float_smallest(smallestfomvals, foms);
+            if (xlalErrno!=0) {
+               fprintf(stderr, "%s: sort_float_smallest() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+            outputfar->fomfarthresh->data[ii-2] = smallestfomvals->data[smallestfomvals->length-1];
+            XLALDestroyREAL4Vector(smallestfomvals);
+         } else if (params->ihsfom!=0.0) {
+            outputfar->fomfarthresh->data[ii-2] = params->ihsfom;
+         } else {
+            outputfar->fomfarthresh->data[ii-2] = -1.0;
+         }
+         
+         XLALDestroyREAL4Vector(rowsequencemaxima);
+         rowsequencemaxima = NULL;
+         XLALDestroyREAL4Vector(fbinmeanvals);
+         fbinmeanvals = NULL;
+         XLALDestroyINT4Vector(rowsequencelocs);
+         rowsequencelocs = NULL;
+         XLALDestroyREAL4Vector(foms);
+         foms = NULL;
+      } else {
+         rowsequencemaxima = XLALCreateREAL4Vector(ii);
+         fbinmeanvals = XLALCreateREAL4Vector(ii);
+         rowsequencelocs = XLALCreateINT4Vector(ii);
+         foms = XLALCreateREAL4Vector(ihsvectorsequence->length-(ii-1));
+         if (rowsequencemaxima==NULL) {
+            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         } else if (fbinmeanvals==NULL) {
+            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         } else if (rowsequencelocs==NULL) {
+            fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ii);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         } else if (foms==NULL) {
+            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->length-(ii-1));
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+         
+         if (params->useSSE) {
+            sseSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, 0, ii-1, 0, (INT4)ihsvectorsequence->length-(ii-1));
+            if (xlalErrno!=0) {
+               fprintf(stderr, "%s: sseSSVectorSequenceSum() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+         }
+         for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
+            if (!params->useSSE) fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj); //If we didn't use SSE to sum the vector sequence (see lines above)
+            
+            memcpy(rowsequencemaxima->data, &(ihsvalues->data[jj]), sizeof(REAL4)*ii);
+            memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
+            memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
+            foms->data[jj] = ihsFOM(rowsequencemaxima, rowsequencelocs, fbinmeanvals, locationnormfactor);
+         } /* for jj< ihsvectorsequence->length - (ii-1) */
+         
+         //get average
+         /* for (jj=0; jj<(INT4)tworows->vectorLength; jj++) {
+            INT4 kk;
+            for (kk=0; kk<(INT4)tworows->length-(ii-2); kk++) {
+               outputfar->expectedIHSVectorSequence->data[(ii-2)*outputfar->expectedIHSVectorSequence->vectorLength + jj] += tworows->data[kk*tworows->vectorLength + jj];
+            }
+            outputfar->expectedIHSVectorSequence->data[(ii-2)*outputfar->expectedIHSVectorSequence->vectorLength + jj] /= (REAL4)kk;
+         } */
+         
+         REAL4Vector *sampledtempihsvals = NULL;
+         REAL8 averageval = 0.0, farave = 0.0;
+         if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
+            sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000);
+            outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
+            for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
+               averageval += 1.0;
+               if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
+               if (params->ihsfar != 1.0 && params->fastchisqinv) farave += 0.5*cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
+               if (xlalErrno!=0) {
+                  fprintf(stderr, "%s: XXX_chisq_inv() failed.\n", __func__);
+                  XLAL_ERROR_VOID(XLAL_EFUNC);
+               }
+            }
+         } else {
+            sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
+            memcpy(sampledtempihsvals->data, tworows->data, sizeof(REAL4)*sampledtempihsvals->length);
+            outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
+            for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
+               if (sampledtempihsvals->data[jj]!=0.0) {
+                  averageval += 1.0;
+                  if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
+                  if (params->ihsfar != 1.0 && params->fastchisqinv) farave += 0.5*cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
+                  if (xlalErrno!=0) {
+                     fprintf(stderr, "%s: XXX_chisq_inv() failed.\n", __func__);
+                     XLAL_ERROR_VOID(XLAL_EFUNC);
+                  }
+               }
+            }
+         }
+         outputfar->ihsdistSigma->data[ii-2] = calcStddev(sampledtempihsvals);
+         outputfar->ihsfar->data[ii-2] = farave/averageval;
+         XLALDestroyREAL4Vector(sampledtempihsvals);
+         
+         //FOM part
+         outputfar->ihsfomdistMean->data[ii-2] = calcMean(foms);
+         outputfar->ihsfomdistSigma->data[ii-2] = calcStddev(foms);
+         if (params->ihsfomfar!=1.0 && params->ihsfom==0.0) {
+            REAL4Vector *smallestfomvals = XLALCreateREAL4Vector((UINT4)roundf((ihsvalues->length-ii+1)*params->ihsfomfar)+1);
+            if (smallestfomvals==NULL) {
+               fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)roundf((ihsvalues->length-ii)*params->ihsfomfar)+1);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+            sort_float_smallest(smallestfomvals, foms);
+            if (xlalErrno!=0) {
+               fprintf(stderr, "%s: sort_float_smallest() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+            outputfar->fomfarthresh->data[ii-2] = smallestfomvals->data[smallestfomvals->length-1];
+            XLALDestroyREAL4Vector(smallestfomvals);
+         } else if (params->ihsfom!=0.0) {
+            outputfar->fomfarthresh->data[ii-2] = params->ihsfom;
+         } else {
+            outputfar->fomfarthresh->data[ii-2] = -1.0;
+         }
+         
+         XLALDestroyREAL4Vector(rowsequencemaxima);
+         rowsequencemaxima = NULL;
+         XLALDestroyREAL4Vector(fbinmeanvals);
+         fbinmeanvals = NULL;
+         XLALDestroyINT4Vector(rowsequencelocs);
+         rowsequencelocs = NULL;
+         XLALDestroyREAL4Vector(foms);
+         foms = NULL;
+      }
+      
+   } /* for ii <= rows */
+   
+   XLALDestroyREAL4VectorSequence(tworows);
+   XLALDestroyREAL4Vector(ihsvalues);
+   XLALDestroyINT4Vector(ihslocations);
+   
+} /*sumIHSSequenceFAR() */
+void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4VectorSequence *ihsvectorsequence, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor, inputParamsStruct *params)
+{
+   
+   INT4 ii, jj;
+   
+   REAL4VectorSequence *tworows = XLALCreateREAL4VectorSequence(ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
+   if (tworows==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4VectorSequence(%d,%d) failed.\n", __func__, ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   }
+   memset(tworows->data, 0, sizeof(REAL4)*tworows->length*tworows->vectorLength);
+   
+   REAL4Vector *ihsvalues = XLALCreateREAL4Vector(ihsvectorsequence->length);
+   INT4Vector *ihslocations = XLALCreateINT4Vector(ihsvalues->length);
+   if (ihsvalues==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->length);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   } else if (ihslocations==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvalues->length);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   }
+   for (ii=0; ii<(INT4)ihsvalues->length; ii++) {
+      ihslocations->data[ii] = max_index_from_vector_in_REAL4VectorSequence(ihsvectorsequence, ii) + 5;
+      ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];
+   }
+   
+   REAL4Vector *excessabovenoise = XLALCreateREAL4Vector(ihsvectorsequence->vectorLength);
+   REAL4Vector *scaledExpectedIHSVectorValues = XLALCreateREAL4Vector(ihsvectorsequence->vectorLength);
+   if (excessabovenoise==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->vectorLength);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   } else if (scaledExpectedIHSVectorValues==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->vectorLength);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   }
+   
+   REAL4Vector *rowsequencemaxima = NULL;
+   REAL4Vector *fbinmeanvals = NULL;
+   INT4Vector *rowsequencelocs = NULL;
+   for (ii=1; ii<=rows; ii++) {
+      if (ii==1) {
+         memcpy(output->maximaForEachFbin->data, ihsvalues->data, sizeof(REAL4)*ihsvalues->length);
+         memcpy(output->locationsForEachFbin->data, ihslocations->data, sizeof(INT4)*ihslocations->length);
+      } else if (ii==2) {
+         rowsequencemaxima = XLALCreateREAL4Vector(ii);
+         fbinmeanvals = XLALCreateREAL4Vector(ii);
+         rowsequencelocs = XLALCreateINT4Vector(ii);
+         if (rowsequencemaxima==NULL) {
+            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         } else if (fbinmeanvals==NULL) {
+            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         } else if (rowsequencelocs==NULL) {
+            fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ii);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+         
+         if (params->useSSE) {
+            sseSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, 0, 1, 0, (INT4)ihsvectorsequence->length-(ii-1));
+            if (xlalErrno!=0) {
+               fprintf(stderr, "%s: sseSSVectorSequenceSum() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+         }
+         for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
+            //Sum IHS values across SFT frequency bins
+            if (!params->useSSE) fastSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
+            
+            memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
+            if (params->useSSE) {
+               sseScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, calcMean(fbinmeanvals)*ii);
+               if (xlalErrno!=0) {
+                  fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
+                  XLAL_ERROR_VOID(XLAL_EFUNC);
+               }
+               sseSSVectorSequenceSubtract(excessabovenoise, tworows, scaledExpectedIHSVectorValues, jj);
                if (xlalErrno!=0) {
                   fprintf(stderr, "%s: sseSSVectorSequenceSubtract() failed.\n", __func__);
                   XLAL_ERROR_VOID(XLAL_EFUNC);
                }
-            }
-            
-            //Validate use of SSE function sseSSVectorSequenceSubtract()
-            if (params->validateSSE && calcPInvVals!=0) {
+            } else {
                INT4 kk;
-               REAL4Vector *excessabovenoise_validate = XLALCreateREAL4Vector(excessabovenoise->length);
-               if (params->useSSE) fastSSVectorSequenceSubtract(excessabovenoise_validate, tworows, tworows2, jj, jj);
-               else sseSSVectorSequenceSubtract(excessabovenoise_validate, tworows, tworows2, jj, jj);
-               for (kk=0; kk<(INT4)excessabovenoise_validate->length; kk++) {
-                  if (excessabovenoise_validate->data[kk] != excessabovenoise->data[kk]) {
-                     fprintf(stderr, "SSE validation failed (sseSSVectorSequenceSubtract)!\n");
-                     XLAL_ERROR_VOID(XLAL_EFUNC);
-                  }
-               }
-               XLALDestroyREAL4Vector(excessabovenoise_validate);
+               REAL4 scaleval = calcMean(fbinmeanvals)*ii;
+               for (kk=0; kk<(INT4)inputfar->expectedIHSVector->length; kk++) scaledExpectedIHSVectorValues->data[kk] = scaleval*inputfar->expectedIHSVector->data[kk];
+               fastSSVectorSequenceSubtract(excessabovenoise, tworows, scaledExpectedIHSVectorValues, jj);
             }
             
             //Compute the maximum IHS value in the second FFT frequency direction
             output->locations->data[jj] = max_index(excessabovenoise) + 5;
-            output->maxima->data[jj] = tworows->data[jj*ihsvectorsequence->vectorLength+(output->locations->data[jj]-5)];
+            output->maxima->data[jj] = tworows->data[jj*tworows->vectorLength + (output->locations->data[jj]-5)];
             
             //Compute IHS FOM value
-            memcpy(rowsequencemaxima->data, &(ihss->data[jj]), sizeof(REAL4)*ii);
-            memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
-            memcpy(rowsequencelocs->data, &(locs->data[jj]), sizeof(INT4)*ii);
+            memcpy(rowsequencemaxima->data, &(ihsvalues->data[jj]), sizeof(REAL4)*ii);
+            memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             output->foms->data[jj] = ihsFOM(rowsequencemaxima, rowsequencelocs, fbinmeanvals, locationnormfactor);
          } /* for jj < ihsvectorsequence->length-(ii-1) */
-         //fclose(TWOROWSUM);
-         
-         //Validate the use of SSE function sseSSVectorSequenceSum()
-         if (params->validateSSE && calcPInvVals!=0) {
-            REAL4VectorSequence *tworows_validate = XLALCreateREAL4VectorSequence(ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
-            if (tworows_validate==NULL) {
-               fprintf(stderr,"%s: XLALCreateREAL4VectorSequence(%d,%d) failed.\n", __func__, ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
-            if (params->useSSE) {
-               for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) fastSSVectorSequenceSum(tworows_validate, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
-            } else {
-               sseSSVectorSequenceSum(tworows_validate, ihsvectorsequence, ihsvectorsequence, 0, 1, 0, (INT4)ihsvectorsequence->length-(ii-1));
-            }
-            for (jj=0; jj<(INT4)(tworows->length*tworows->vectorLength); jj++) {
-               if (tworows->data[jj] != tworows_validate->data[jj]) {
-                  fprintf(stderr, "SSE validation failed (sseSSVectorSequenceSum)!\n");
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-            }
-            XLALDestroyREAL4VectorSequence(tworows_validate);
-         }
-         
-         if (calcPInvVals!=0) {
-            //sample the IHS values to compute mean and standard deviation values
-            REAL4Vector *sampledtempihsvals = NULL;
-            if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
-               sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000);
-               outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals)*adjustmentforzeroedelements;
-            } else {
-               sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
-               memcpy(sampledtempihsvals->data, tworows->data, sizeof(REAL4)*sampledtempihsvals->length);
-               outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
-            }
-            outputfar->ihsdistSigma->data[ii-2] = calcStddev(sampledtempihsvals);
-            XLALDestroyREAL4Vector(sampledtempihsvals);
-            
-            //Sample the aveNoise background sum vector
-            REAL8 averageval = 0.0, farave = 0.0;
-            if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
-               sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows2, ihsvectorsequence->length-(ii-1), 10000);
-               //compute the average FAR threhold
-               for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
-                  averageval += 1.0;
-                  if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
-                  if (params->ihsfar != 1.0 && params->fastchisqinv) farave += 0.5*cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
-               }
-            } else {
-               sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
-               memcpy(sampledtempihsvals->data, tworows2->data, sizeof(REAL4)*sampledtempihsvals->length);
-               //compute the average FAR threhold
-               for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
-                  if (sampledtempihsvals->data[jj]!=0.0) {
-                     averageval += 1.0;
-                     if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
-                     if (params->ihsfar != 1.0 && params->fastchisqinv) farave += 0.5*cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
-                  } /* if sampledtempihsvals->data[jj] != 0.0 */
-               } /* for jj < sampledtempihsvals->length */
-            }
-            outputfar->ihsfar->data[ii-2] = farave/averageval;
-            XLALDestroyREAL4Vector(sampledtempihsvals);
-            
-            //FOM part
-            REAL4Vector *tempfomvals = XLALCreateREAL4Vector(ihss->length-ii+1);
-            if (tempfomvals==NULL) {
-               fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihss->length-ii+1);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
-            memcpy(tempfomvals->data, &(output->foms->data[0]), sizeof(REAL4)*tempfomvals->length);
-            outputfar->ihsfomdistMean->data[ii-2] = calcMean(tempfomvals);
-            outputfar->ihsfomdistSigma->data[ii-2] = calcStddev(tempfomvals);
-            if (params->ihsfomfar!=1.0 && params->ihsfom==0.0) {
-               REAL4Vector *smallestfomvals = XLALCreateREAL4Vector((UINT4)roundf((ihss->length-ii+1)*params->ihsfomfar)+1);
-               if (smallestfomvals==NULL) {
-                  fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)roundf((ihss->length-ii)*params->ihsfomfar)+1);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-               sort_float_smallest(smallestfomvals, tempfomvals);
-               if (xlalErrno!=0) {
-                  fprintf(stderr, "%s: sort_float_smallest() failed.\n", __func__);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-               outputfar->fomfarthresh->data[ii-2] = smallestfomvals->data[smallestfomvals->length-1];
-               XLALDestroyREAL4Vector(smallestfomvals);
-            } else if (params->ihsfom!=0.0) {
-               outputfar->fomfarthresh->data[ii-2] = params->ihsfom;
-            } else {
-               outputfar->fomfarthresh->data[ii-2] = -1.0;
-            }
-            XLALDestroyREAL4Vector(tempfomvals);
-         } /* if calcPInvVals != 0 */
          
          XLALDestroyREAL4Vector(rowsequencemaxima);
          rowsequencemaxima = NULL;
@@ -1055,6 +841,7 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          }
          
          INT4 endloc = ((ii-1)*(ii-1)-(ii-1))/2;
+         
          if (params->useSSE) {
             sseSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, 0, ii-1, 0, (INT4)ihsvectorsequence->length-(ii-1));
             if (xlalErrno!=0) {
@@ -1065,119 +852,32 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj); //If we didn't use SSE to sum the vector sequence (see lines above)
             
-            if (!params->useSSE) addScaledVectorIntoVectorSequence(tworows2, ihsvalsfromaveNoise, randvals->data[ii-1+jj]*FbinMean->data[ii-1+jj], jj);
-            else {
-               sseAddScaledVectorIntoVectorSequence(tworows2, ihsvalsfromaveNoise, randvals->data[ii-1+jj]*FbinMean->data[ii-1+jj], jj);
+            memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
+            if (params->useSSE) {
+               sseScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, calcMean(fbinmeanvals)*ii);
                if (xlalErrno!=0) {
-                  fprintf(stderr, "%s: sseAddScaledVectorIntoVectorSequence() failed.\n", __func__);
+                  fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
                   XLAL_ERROR_VOID(XLAL_EFUNC);
                }
-            }
-            
-            //Validate use of SSE function sseAddScaledVectorIntoVectorSequence()
-            if (params->validateSSE && calcPInvVals!=0 && ii==3 && jj==0) {
-               INT4 kk;
-               REAL4VectorSequence *vectortovalidate = XLALCreateREAL4VectorSequence(1, tworows2->vectorLength);
-               memset(vectortovalidate->data, 0, sizeof(REAL4)*vectortovalidate->vectorLength);
-               if (params->useSSE) {
-                  addScaledVectorIntoVectorSequence(vectortovalidate, ihsvalsfromaveNoise, randvals->data[0]*FbinMean->data[0], 0);
-                  addScaledVectorIntoVectorSequence(vectortovalidate, ihsvalsfromaveNoise, randvals->data[1]*FbinMean->data[1], 0);
-                  addScaledVectorIntoVectorSequence(vectortovalidate, ihsvalsfromaveNoise, randvals->data[2]*FbinMean->data[2], 0);
-               } else {
-                  sseAddScaledVectorIntoVectorSequence(vectortovalidate, ihsvalsfromaveNoise, randvals->data[0]*FbinMean->data[0], 0);
-                  sseAddScaledVectorIntoVectorSequence(vectortovalidate, ihsvalsfromaveNoise, randvals->data[1]*FbinMean->data[1], 0);
-                  sseAddScaledVectorIntoVectorSequence(vectortovalidate, ihsvalsfromaveNoise, randvals->data[2]*FbinMean->data[2], 0);
-               }
-               for (kk=0; kk<(INT4)vectortovalidate->length; kk++) {
-                  if (vectortovalidate->data[kk] != tworows2->data[jj*tworows2->vectorLength + kk]) {
-                     fprintf(stderr, "SSE validation failed (sseAddScaledVectorIntoVectorSequence)!\n");
-                     XLAL_ERROR_VOID(XLAL_EFUNC);
-                  }
-               }
-               XLALDestroyREAL4VectorSequence(vectortovalidate);
-            }
-            
-            if (!params->useSSE) fastSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
-            else {
-               sseSSVectorSequenceSubtract(excessabovenoise, tworows, tworows2, jj, jj);
+               sseSSVectorSequenceSubtract(excessabovenoise, tworows, scaledExpectedIHSVectorValues, jj);
                if (xlalErrno!=0) {
                   fprintf(stderr, "%s: sseSSVectorSequenceSubtract() failed.\n", __func__);
                   XLAL_ERROR_VOID(XLAL_EFUNC);
                }
+            } else {
+               INT4 kk;
+               REAL4 scaleval = calcMean(fbinmeanvals)*ii;
+               for (kk=0; kk<(INT4)inputfar->expectedIHSVector->length; kk++) scaledExpectedIHSVectorValues->data[kk] = scaleval*inputfar->expectedIHSVector->data[kk];
+               fastSSVectorSequenceSubtract(excessabovenoise, tworows, scaledExpectedIHSVectorValues, jj);
             }
             
-            output->locations->data[(ii-2)*ihss->length-endloc+jj] = max_index(excessabovenoise) + 5;
-            output->maxima->data[(ii-2)*ihss->length-endloc+jj] = tworows->data[jj*ihsvectorsequence->vectorLength+(output->locations->data[(ii-2)*ihss->length-endloc+jj]-5)];
+            output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index(excessabovenoise) + 5;
+            output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj] = tworows->data[jj*tworows->vectorLength + (output->locations->data[jj]-5)];
             
-            memcpy(rowsequencemaxima->data, &(ihss->data[jj]), sizeof(REAL4)*ii);
-            memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
-            memcpy(rowsequencelocs->data, &(locs->data[jj]), sizeof(INT4)*ii);
-            output->foms->data[(ii-2)*ihss->length-endloc+jj] = ihsFOM(rowsequencemaxima, rowsequencelocs, fbinmeanvals, locationnormfactor);
+            memcpy(rowsequencemaxima->data, &(ihsvalues->data[jj]), sizeof(REAL4)*ii);
+            memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
+            output->foms->data[(ii-2)*ihsvalues->length-endloc+jj] = ihsFOM(rowsequencemaxima, rowsequencelocs, fbinmeanvals, locationnormfactor);
          } /* for jj< ihsvectorsequence->length - (ii-1) */
-         
-         if (calcPInvVals!=0) {
-            REAL4Vector *sampledtempihsvals = NULL;
-            if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
-               sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000);
-               outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals)*adjustmentforzeroedelements;
-            } else {
-               sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
-               memcpy(sampledtempihsvals->data, tworows->data, sizeof(REAL4)*sampledtempihsvals->length);
-               outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
-            }
-            outputfar->ihsdistSigma->data[ii-2] = calcStddev(sampledtempihsvals);
-            XLALDestroyREAL4Vector(sampledtempihsvals);
-            
-            REAL8 averageval = 0.0, farave = 0.0;
-            if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
-               sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows2, ihsvectorsequence->length-(ii-1), 10000);
-               for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
-                  averageval += 1.0;
-                  if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
-                  if (params->ihsfar != 1.0 && params->fastchisqinv) farave += 0.5*cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
-               }
-            } else {
-               sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
-               memcpy(sampledtempihsvals->data, tworows2->data, sizeof(REAL4)*sampledtempihsvals->length);
-               for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
-                  if (sampledtempihsvals->data[jj]!=0.0) {
-                     averageval += 1.0;
-                     if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
-                     if (params->ihsfar != 1.0 && params->fastchisqinv) farave += 0.5*cdf_chisq_Qinv(params->ihsfar, 2.0*sampledtempihsvals->data[jj]);
-                  }
-               }
-            }
-            outputfar->ihsfar->data[ii-2] = farave/averageval;
-            XLALDestroyREAL4Vector(sampledtempihsvals);
-            
-            REAL4Vector *tempfomvals = XLALCreateREAL4Vector(ihss->length-ii+1);
-            if (tempfomvals==NULL) {
-               fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihss->length-ii+1);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
-            memcpy(tempfomvals->data, &(output->foms->data[(ii-2)*ihss->length-endloc]), sizeof(REAL4)*tempfomvals->length);
-            outputfar->ihsfomdistMean->data[ii-2] = calcMean(tempfomvals);
-            outputfar->ihsfomdistSigma->data[ii-2] = calcStddev(tempfomvals);
-            if (params->ihsfomfar!=1.0 && params->ihsfom==0.0) {
-               REAL4Vector *smallestfomvals = XLALCreateREAL4Vector((UINT4)roundf((ihss->length-ii+1)*params->ihsfomfar)+1);
-               if (smallestfomvals==NULL) {
-                  fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)roundf((ihss->length-ii)*params->ihsfomfar)+1);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-               sort_float_smallest(smallestfomvals, tempfomvals);
-               if (xlalErrno!=0) {
-                  fprintf(stderr, "%s: sort_float_smallest() failed.\n", __func__);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-               outputfar->fomfarthresh->data[ii-2] = smallestfomvals->data[smallestfomvals->length-1];
-               XLALDestroyREAL4Vector(smallestfomvals);
-            } else if (params->ihsfom!=0.0) {
-               outputfar->fomfarthresh->data[ii-2] = params->ihsfom;
-            } else {
-               outputfar->fomfarthresh->data[ii-2] = -1.0;
-            }
-            XLALDestroyREAL4Vector(tempfomvals);
-         } /* if calcPInvVals != 0 */
          
          XLALDestroyREAL4Vector(rowsequencemaxima);
          rowsequencemaxima = NULL;
@@ -1188,15 +888,15 @@ void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar
       }
       
    } /* for ii <= rows */
-   XLALDestroyREAL4VectorSequence(tworows);
-   XLALDestroyREAL4VectorSequence(tworows2);
-   XLALDestroyREAL4Vector(ihsvalsfromaveNoise);
-   XLALDestroyREAL4Vector(tempaveNoise);
-   XLALDestroyREAL4Vector(excessabovenoise);
-   XLALDestroyREAL4Vector(randvals);
-   gsl_rng_free(rng);
    
-} /*ihsSums2_withFAR_withnoise() */
+   XLALDestroyREAL4VectorSequence(tworows);
+   XLALDestroyREAL4Vector(scaledExpectedIHSVectorValues);
+   XLALDestroyREAL4Vector(excessabovenoise);
+   XLALDestroyREAL4Vector(ihsvalues);
+   XLALDestroyINT4Vector(ihslocations);
+   
+} /*sumIHSSequence() */
+
 void SSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos)
 {
    
@@ -1324,14 +1024,14 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
 #endif
    
 }
-void fastSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2)
+void fastSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4Vector *input2, INT4 vectorpos1)
 {
    
    REAL4 *a, *b, *c;
    INT4 n;
    
    a = &(input1->data[vectorpos1*input1->vectorLength]);
-   b = &(input2->data[vectorpos2*input2->vectorLength]);
+   b = input2->data;
    c = output->data;
    n = output->length;
    
@@ -1343,12 +1043,12 @@ void fastSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *inpu
    }
    
 }
-void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2)
+void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4Vector *input2, INT4 vectorpos1)
 {
    
 #ifdef __SSE__
    INT4 roundedvectorlength = (INT4)input1->vectorLength / 4;
-   INT4 vec1 = vectorpos1*input1->vectorLength, vec2 = vectorpos2*input2->vectorLength, ii = 0;
+   INT4 vec1 = vectorpos1*input1->vectorLength, ii = 0;
    INT4 vec1aligned = 0, vec2aligned = 0, outputaligned = 0;
    REAL4 *allocinput1 = NULL, *allocinput2 = NULL, *allocoutput = NULL, *alignedinput1 = NULL, *alignedinput2 = NULL, *alignedoutput = NULL;
    __m128 *arr1, *arr2, *result;
@@ -1369,9 +1069,9 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
    }
    
    //Allocate memory for aligning input vector 2 if necessary
-   if ( &(input2->data[vec2])==(void*)(((UINT8)&(input2->data[vec2])+15) & ~15) ) {
+   if ( input2->data==(void*)(((UINT8)input2->data+15) & ~15) ) {
       vec2aligned = 1;
-      arr2 = (__m128*)&(input2->data[vec2]);
+      arr2 = (__m128*)input2->data;
    } else {
       allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
       if (allocinput2==NULL) {
@@ -1379,7 +1079,7 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
          XLAL_ERROR_VOID(XLAL_ENOMEM);
       }
       alignedinput2 = (void*)(((UINT8)allocinput2+15) & ~15);
-      memcpy(alignedinput2, &(input2->data[vec2]), sizeof(REAL4)*4*roundedvectorlength);
+      memcpy(alignedinput2, input2->data, sizeof(REAL4)*4*roundedvectorlength);
       arr2 = (__m128*)alignedinput2;
    }
    
@@ -1407,7 +1107,7 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
    if (!outputaligned) memcpy(output->data, alignedoutput, sizeof(REAL4)*4*roundedvectorlength);
    
    REAL4 *a = &(input1->data[vec1+4*roundedvectorlength]);
-   REAL4 *b = &(input2->data[vec2+4*roundedvectorlength]);
+   REAL4 *b = &(input2->data[4*roundedvectorlength]);
    REAL4 *c = &(output->data[4*roundedvectorlength]);
    INT4 n = output->length-4*roundedvectorlength;
    while (n-- > 0) {
@@ -1426,14 +1126,7 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
 #endif
    
 }
-void scaleVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector *input, REAL4 scale, INT4 outputvectorpos)
-{
-   
-   INT4 ii;
-   for (ii=0; ii<(INT4)input->length; ii++) output->data[outputvectorpos*output->vectorLength + ii] = scale*input->data[ii];
-   
-}
-void addScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector *input, REAL4 scale, INT4 outputvectorpos)
+/* void addScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector *input, REAL4 scale, INT4 outputvectorpos)
 {
    
    INT4 ii;
@@ -1494,7 +1187,7 @@ void sseAddScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vect
    if (!outputaligned) memcpy(&(output->data[outvec]), alignedoutput, 4*roundedvectorlength*sizeof(REAL4));
    
    //Finish up the remaining part
-   for (ii=4*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[outvec + ii] += scale*input->data[ii];
+   for (ii=4*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[outvec + ii] += (REAL4)(scale*input->data[ii]);
    
    //Free memory if necessary
    if (!vectoraligned) XLALFree(allocinput);
@@ -1505,7 +1198,7 @@ void sseAddScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vect
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
    
-}
+} */
 
 
 REAL4VectorSequence * ihsVectorSums(REAL4VectorSequence *input, INT4 rows)
@@ -1612,7 +1305,7 @@ REAL4 ihsLoc(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma)
 
 
 
-void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs)
+void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs, REAL4VectorSequence *trackedlines)
 {
    
    INT4 ii, jj, kk;
@@ -1679,39 +1372,53 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                //fprintf(IHSVALSOUTPUT, "%.6f %.6f\n", 0.5*(ii-1)/params->Tcoh, ihsmaxima->maxima->data[locationinmaximastruct]);
                
                INT4 loc = ihsmaxima->locations->data[locationinmaximastruct];
+               per0 = params->Tobs/loc;                                          //Candidate period
+               fsig = params->fmin + (0.5*(ii-1) + jj)/params->Tcoh;             //Candidate frequency
+               B = 0.5*(ii-1)/params->Tcoh;                                      //Candidate modulation depth
                
-               //Test this here
-               REAL8 noise = 0.0;
-               for (kk=1; kk<=params->ihsfactor; kk++) if (!(fabs(dailyharmonic-(REAL8)(kk*loc))<=1.0 || fabs(dailyharmonic2-(REAL8)(kk*loc))<=1.0 || fabs(dailyharmonic3-(REAL8)(kk*loc))<=1.0 || fabs(dailyharmonic4-(REAL8)(kk*loc))<=1.0)) noise += aveNoise->data[kk*loc];
-               REAL8 totalnoise = 0.0;
-               for (kk=0; kk<ii; kk++) totalnoise += noise*fbinavgs->data[jj+kk];
+               //Test to see if any tracked lines are overlapping the candidate signal
+               INT4 nolinesinterfering = 1;
+               if (trackedlines!=NULL) {
+                  kk = 0;
+                  while (kk<(INT4)trackedlines->length && nolinesinterfering==1) {
+                     INT4 ll = 0;
+                     while (ll<(INT4)trackedlines->vectorLength && nolinesinterfering==1) {
+                        if (trackedlines->data[kk*trackedlines->vectorLength + ll]<=fsig+B && trackedlines->data[kk*trackedlines->vectorLength + ll]>=fsig-B) {
+                           nolinesinterfering = 0;
+                        }
+                        ll++;
+                     } /* while trackedlines->vectorLength && nolinesinterfering==1 */
+                     kk++;
+                  } /* while kk < trackedlines->length && nolinesinterfering==1 */
+               } /* if trackedlines != NULL */
                
-               //if (ihsmaxima->maxima->data[locationinmaximastruct] > highestval) {
-               if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval) {
-                  //highestval = ihsmaxima->maxima->data[locationinmaximastruct];
-                  highestval = ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise;
-                  highestvalloc = locationinmaximastruct;
-                  jjloc = jj;
-               }
-               /* //Candidate frequency
-               fsig = params->fmin + (0.5*(ii-1) + jj)/params->Tcoh;
-               //Candidate modulation depth
-               B = 0.5*(ii-1)/params->Tcoh;
-               //Candidate period
-               per0 = params->Tobs/loc;
-               //Candidate h0
-               //REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[locationinmaximastruct], loc, jj, ii, params, aveNoise, fbinavgs);
-               REAL8 h0 = ihs2h0(2.0*(ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise), params);
-               if (candlist->numofcandidates == candlist->length-1) {
-                  candlist = resize_candidateVector(candlist, 2*(candlist->length));
-                  if (candlist->data==NULL) {
-                     fprintf(stderr,"%s: resize_candidateVector() failed.\n", __func__);
-                     XLAL_ERROR_VOID(XLAL_EFUNC);
+               if (nolinesinterfering) {
+                  //Test this here
+                  REAL8 noise = 0.0;
+                  for (kk=1; kk<=params->ihsfactor; kk++) if (!(fabs(dailyharmonic-(REAL8)(kk*loc))<=1.0 || fabs(dailyharmonic2-(REAL8)(kk*loc))<=1.0 || fabs(dailyharmonic3-(REAL8)(kk*loc))<=1.0 || fabs(dailyharmonic4-(REAL8)(kk*loc))<=1.0)) noise += aveNoise->data[kk*loc];
+                  REAL8 totalnoise = 0.0;
+                  for (kk=0; kk<ii; kk++) totalnoise += noise*fbinavgs->data[jj+kk];
+                  
+                  //if (ihsmaxima->maxima->data[locationinmaximastruct] > highestval) {
+                  if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval) {
+                     //highestval = ihsmaxima->maxima->data[locationinmaximastruct];
+                     highestval = ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise;
+                     highestvalloc = locationinmaximastruct;
+                     jjloc = jj;
                   }
-               }
-               loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, ffdata->tfnormalization);
-               (candlist->numofcandidates)++; */
-               
+                  /* //Candidate h0
+                  //REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[locationinmaximastruct], loc, jj, ii, params, aveNoise, fbinavgs);
+                  REAL8 h0 = ihs2h0(2.0*(ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise), params);
+                  if (candlist->numofcandidates == candlist->length-1) {
+                     candlist = resize_candidateVector(candlist, 2*(candlist->length));
+                     if (candlist->data==NULL) {
+                        fprintf(stderr,"%s: resize_candidateVector() failed.\n", __func__);
+                        XLAL_ERROR_VOID(XLAL_EFUNC);
+                     }
+                  }
+                  loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, ffdata->tfnormalization);
+                  (candlist->numofcandidates)++; */
+               } /* if no lines are interfering */
             } /* if fom is below or equal to threshold fom */
          } /* if val exceeds threshold */
       } /* for jj < numfbins-(ii-1) */

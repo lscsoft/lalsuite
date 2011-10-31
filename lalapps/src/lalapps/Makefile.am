@@ -58,8 +58,7 @@ INCLUDES = -I$(top_srcdir)/src
 
 if HAVE_PYTHON
 pkgpython_DATA = \
-	__init__.py \
-	defaults.py
+	__init__.py
 endif
 
 EXTRA_DIST = \
@@ -67,7 +66,6 @@ EXTRA_DIST = \
 	series.h \
 	getdate.y \
 	__init__.py \
-	defaults.py \
 	fftw_wisdom.c \
 	fftwf_wisdom.c \
 	lalappsfrutils.c \

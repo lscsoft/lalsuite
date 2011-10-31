@@ -115,6 +115,83 @@ void LALReadNRWave_raw(LALStatus *status,	/**< pointer to LALStatus structure */
 } /* LALReadNRWave() */
 
 
+
+void LALReadNRWave_raw_real8(LALStatus *status,	/**< pointer to LALStatus structure */
+		       REAL8TimeVectorSeries **out, /**< [out] output time series for h+ and hx */
+		       const CHAR  *filename        /**< [in] File containing numrel waveform */)
+{
+
+  UINT4 length, k, r;
+  REAL8TimeVectorSeries *ret=NULL;
+  REAL8VectorSequence *data=NULL;
+  REAL8Vector *timeVec=NULL;
+  LALParsedDataFile *cfgdata=NULL;
+  REAL8 tmp1, tmp2, tmp3;
+
+  INITSTATUS (status, "LALReadNRWave_raw_real8", NRWAVEIOC);
+  ATTATCHSTATUSPTR (status);
+
+  /* some consistency checks */
+  ASSERT (filename != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
+  ASSERT ( out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
+  ASSERT ( *out == NULL, status, NRWAVEIO_ENONULL, NRWAVEIO_MSGENONULL );
+
+  TRY( LALParseDataFile ( status->statusPtr, &cfgdata, filename), status);
+  length = cfgdata->lines->nTokens; /*number of data points */
+
+
+  /* allocate memory */
+  ret = LALCalloc(1, sizeof(*ret));
+  if (!ret) {
+    ABORT( status, NRWAVEIO_ENOMEM, NRWAVEIO_MSGENOMEM );
+  }
+  strcpy(ret->name,filename);
+  ret->f0 = 0;
+
+  data =  XLALCreateREAL8VectorSequence (2, length);
+  if (!data) {
+    ABORT( status, NRWAVEIO_ENOMEM, NRWAVEIO_MSGENOMEM );
+  }
+
+  timeVec = XLALCreateREAL8Vector (length);
+  if (!timeVec) {
+    ABORT( status, NRWAVEIO_ENOMEM, NRWAVEIO_MSGENOMEM );
+  }
+
+  /* now get the data */
+  for (k = 0; k < length; k++) {
+    r = sscanf(cfgdata->lines->tokens[k], "%lf%lf%lf", &tmp1, &tmp2, &tmp3);
+
+    /* Check the data file format */
+    if ( r != 3) {
+      /* there must be exactly 3 data entries -- time, h+, hx */
+      ABORT( status, NRWAVEIO_EFORMAT, NRWAVEIO_MSGEFORMAT );
+    }
+
+    timeVec->data[k] = tmp1;
+    data->data[k] = tmp2;
+    data->data[data->vectorLength + k] = tmp3;
+
+  }
+
+  /*  scale time */
+  ret->deltaT = timeVec->data[1] - timeVec->data[0];
+
+  /* might also want to go through timeVec to make sure it is evenly spaced */
+
+
+  ret->data = data;
+  (*out) = ret;
+
+  XLALDestroyREAL8Vector (timeVec);
+  TRY( LALDestroyParsedDataFile (status->statusPtr, &cfgdata), status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+} /* LALReadNRWave() */
+
+
 /** Reads a numerical relativity waveform given a filename and a value of the
     total mass for setting the timescale.  The output waveform is scaled corresponding
     to a distance of 1Mpc.

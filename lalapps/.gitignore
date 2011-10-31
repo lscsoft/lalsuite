@@ -128,7 +128,6 @@ src/inspiral/posterior/lalapps_nest_pipe
 src/inspiral/posterior/lalapps_vo_nest2pos
 src/inspiral/posterior/python_config.sed
 src/lalapps/LALAppsVCSInfo.h
-src/lalapps/defaults.py
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_fftw*_wisdom
 src/lalapps/lalapps_tconvert
