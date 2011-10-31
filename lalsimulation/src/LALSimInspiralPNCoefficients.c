@@ -8,6 +8,44 @@
 #endif
 
 /**
+ * Computes the PN Coefficients for using in the PN energy equation.
+ *
+ * Terms given in equation 3.1 of: Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_0PNCoeff(
+	REAL8 eta)
+{
+	return -eta / 2.0;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_2PNCoeff(
+	REAL8 eta)
+{
+	return -(3.0/4.0 + 1.0/12.0 * eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_4PNCoeff(
+	REAL8 eta)
+{
+	return -(27.0/8.0 - 19.0/8.0 * eta + 1./24.0 * eta*eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_6PNCoeff(
+	REAL8 eta)
+{
+	return -(67.5/6.4 - (344.45/5.76 - 20.5/9.6 * LAL_PI*LAL_PI) * eta + 15.5/9.6 * eta*eta + 3.5/518.4 * eta*eta*eta);
+}
+
+
+/**
  * Computes the PN Coefficients for using in the TaylorT2 phasing equation.
  *
  * Terms given in equation 3.8a of: Alessandra Buonanno, Bala R Iyer, Evan
@@ -280,5 +318,75 @@ XLALSimInspiralTaylorT3Frequency_7PNCoeff(
 	REAL8 eta)
 {
 	return (-1.88516689/4.33520640 - 9.7765/25.8048 * eta + 1.41769/12.90240 * eta*eta) * LAL_PI;
+}
+
+
+/**
+ * Computes the PN Coefficients for using in the TaylorT4 angular acceleration
+ * equation.
+ *
+ * Terms given in equation 3.6 of: Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4AngularAccel_0PNCoeff(
+	REAL8 totalmass,
+	REAL8 eta)
+{
+	return 32.0 * eta / (5.0 * totalmass);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4AngularAccel_2PNCoeff(
+	REAL8 eta)
+{
+	return -(7.43/3.36 + 11.0/4.0 * eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4AngularAccel_3PNCoeff(
+	REAL8 UNUSED eta)
+{
+	return 4.0 * LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4AngularAccel_4PNCoeff(
+	REAL8 eta)
+{
+	return (3.4103/1.8144 + 13.661/2.016 * eta + 5.9/1.8 * eta*eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4AngularAccel_5PNCoeff(
+	REAL8 eta)
+{
+	return -(41.59/6.72 + 189.0/8.0 * eta) * LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4AngularAccel_6PNCoeff(
+	REAL8 eta)
+{
+	return (164.47322263/1.39708800 + 16.0/3.0 * LAL_PI - 17.12/1.05 * LAL_GAMMA
+		+ (45.1/4.8 * LAL_PI*LAL_PI - 561.98689/2.17728) * eta
+		+ 5.41/8.96 * eta*eta - 5.605/2.592 * eta*eta*eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4AngularAccel_6PNLogCoeff(
+	REAL8 UNUSED eta)
+{
+	return -8.56/1.05;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4AngularAccel_7PNCoeff(
+	REAL8 eta)
+{
+	return -(4.415/4.032 - 358.675/6.048 * eta - 91.495/1.512 * eta*eta) * LAL_PI;
 }
 

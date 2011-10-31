@@ -61,7 +61,8 @@ Spinning waveforms are only defined at the highest PN order.</li>
 REAL8 XLALSimInspiralEt0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 dEnergy;
-   dEnergy = ak->ETaN * v;
+   REAL8 x = v*v;
+   dEnergy = ak->ETaN * x;
    return (dEnergy);
 }
 
