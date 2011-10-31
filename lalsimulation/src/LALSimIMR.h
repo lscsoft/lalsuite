@@ -65,9 +65,7 @@ typedef enum {
  */
 int XLALSimIMRPhenomAGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    LIGOTimeGPS *tRef,                 /**< time at fRef */
-    REAL8 phiRef,                      /**< phase at fRef */
-    REAL8 fRef,                        /**< reference frequency */
+    REAL8 phi0,                        /**< initial phase */
     REAL8 deltaF,                      /**< sampling interval */
     REAL8 m1,                          /**< mass of companion 1 */
     REAL8 m2,                          /**< mass of companion 2 */
@@ -90,9 +88,8 @@ int XLALSimIMRPhenomAGenerateFD(
 int XLALSimIMRPhenomAGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    LIGOTimeGPS *tRef,        /**< time at fRef */
-    REAL8 phiRef,             /**< phase at fRef */
-    REAL8 fRef,               /**< reference frequency */
+    LIGOTimeGPS *tPeak,       /**< time at peak amplitude */
+    REAL8 phiPeak,            /**< phase at peak */
     REAL8 deltaT,             /**< sampling interval */
     REAL8 m1,                 /**< mass of companion 1 */
     REAL8 m2,                 /**< mass of companion 2 */
@@ -126,9 +123,7 @@ double XLALSimIMRPhenomBComputeChi(
  */
 int XLALSimIMRPhenomBGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    LIGOTimeGPS *tRef,                 /**< time at fRef */
-    REAL8 phiRef,                      /**< phase at fRef */
-    REAL8 fRef,                        /**< reference frequency */
+    REAL8 phi0,                        /**< initial phase */
     REAL8 deltaF,                      /**< sampling interval */
     REAL8 m1,                          /**< mass of companion 1 */
     REAL8 m2,                          /**< mass of companion 2 */
@@ -151,9 +146,8 @@ int XLALSimIMRPhenomBGenerateFD(
 int XLALSimIMRPhenomBGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    LIGOTimeGPS *tRef,        /**< time at fRef */
-    REAL8 phiRef,             /**< phase at fRef */
-    REAL8 fRef,               /**< reference frequency */
+    LIGOTimeGPS *tPeak,       /**< time at peak amplitude */
+    REAL8 phiPeak,            /**< phase at peak */
     REAL8 deltaT,             /**< sampling interval */
     REAL8 m1,                 /**< mass of companion 1 */
     REAL8 m2,                 /**< mass of companion 2 */

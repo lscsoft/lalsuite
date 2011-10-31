@@ -23,6 +23,7 @@
 #include <lal/LALSimIMR.h>
 #include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
+#include <lal/Date.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/TimeFreqFFT.h>
@@ -62,12 +63,14 @@ static size_t NextPow2(size_t n);
 
 static REAL8 LorentzianFn(REAL8 freq, REAL8 fRing, REAL8 sigma);
 
-static int IMRPhenomAGenerateFD(COMPLEX16FrequencySeries **htilde, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaF, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
-static int IMRPhenomBGenerateFD(COMPLEX16FrequencySeries **htilde, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaF, REAL8 m1, REAL8 m2, REAL8 chi, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
-static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
-static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 chi, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
-static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD, LIGOTimeGPS *tRef, REAL8 totalMass, REAL8 deltaT, REAL8 f_min, REAL8 f_max, REAL8 f_min_wide, REAL8 f_max_wide);
+static int IMRPhenomAGenerateFD(COMPLEX16FrequencySeries **htilde, REAL8 phi0, REAL8 deltaF, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
+static int IMRPhenomBGenerateFD(COMPLEX16FrequencySeries **htilde, REAL8 phi0, REAL8 deltaF, REAL8 m1, REAL8 m2, REAL8 chi, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
+static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, REAL8 phiPeak, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
+static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, REAL8 phiPeak, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 chi, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params);
+static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD, REAL8 totalMass, REAL8 deltaT, REAL8 f_min, REAL8 f_max, REAL8 f_min_wide, REAL8 f_max_wide);
 static size_t find_instant_freq(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 target, size_t start);
+static size_t find_peak_amp(REAL8TimeSeries *hp, REAL8TimeSeries *hc);
+static int apply_phase_shift(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 shift);
 static int apply_inclination(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 inclination);
 
 
@@ -90,9 +93,7 @@ static int apply_inclination(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, 
  */
 int XLALSimIMRPhenomAGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    LIGOTimeGPS *tRef,                 /**< time at fRef */
-    REAL8 phiRef,                      /**< phase at fRef */
-    REAL8 fRef,                        /**< reference frequency */
+    REAL8 phi0,                        /**< phase at peak */
     REAL8 deltaF,                      /**< frequency resolution */
     REAL8 m1,                          /**< mass of companion 1 */
     REAL8 m2,                          /**< mass of companion 2 */
@@ -104,8 +105,6 @@ int XLALSimIMRPhenomAGenerateFD(
 
   /* check inputs for sanity */
   if (*htilde) XLAL_ERROR(XLAL_EFAULT);
-  if (!tRef) XLAL_ERROR(XLAL_EFAULT);
-  if (fRef <= 0) XLAL_ERROR(XLAL_EDOM);
   if (deltaF <= 0) XLAL_ERROR(XLAL_EDOM);
   if (m1 < 0) XLAL_ERROR(XLAL_EDOM);
   if (m2 < 0) XLAL_ERROR(XLAL_EDOM);
@@ -124,7 +123,7 @@ int XLALSimIMRPhenomAGenerateFD(
   /* default f_max to params->fCut */
   if (f_max == 0.) f_max = params->fCut;
 
-  return IMRPhenomAGenerateFD(htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min, f_max, distance, params);
+  return IMRPhenomAGenerateFD(htilde, phi0, deltaF, m1, m2, f_min, f_max, distance, params);
 }
 
 /**
@@ -141,9 +140,8 @@ int XLALSimIMRPhenomAGenerateFD(
 int XLALSimIMRPhenomAGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    LIGOTimeGPS *tRef,        /**< time at fRef */
-    REAL8 phiRef,             /**< phase at fRef */
-    REAL8 fRef,               /**< reference frequency */
+    LIGOTimeGPS *tPeak,       /**< time at peak amplitude */
+    REAL8 phiPeak,            /**< phase at peak */
     REAL8 deltaT,             /**< sampling interval */
     REAL8 m1,                 /**< mass of companion 1 */
     REAL8 m2,                 /**< mass of companion 2 */
@@ -153,13 +151,13 @@ int XLALSimIMRPhenomAGenerateTD(
     REAL8 inclination         /**< inclination of source */
 ) {
   BBHPhenomParams *params;
-  size_t cut_ind;
+  size_t cut_ind, peak_ind;
+  REAL8 peak_phase;  /* measured, not intended */
 
   /* check inputs for sanity */
   if (*hplus) XLAL_ERROR(XLAL_EFAULT);
   if (*hcross) XLAL_ERROR(XLAL_EFAULT);
-  if (!tRef) XLAL_ERROR(XLAL_EFAULT);
-  if (fRef <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (!tPeak) XLAL_ERROR(XLAL_EFAULT);
   if (deltaT <= 0) XLAL_ERROR(XLAL_EDOM);
   if (m1 < 0) XLAL_ERROR(XLAL_EDOM);
   if (m2 < 0) XLAL_ERROR(XLAL_EDOM);
@@ -179,14 +177,14 @@ int XLALSimIMRPhenomAGenerateTD(
   if (f_max == 0.) f_max = params->fCut;
 
   /* generate hplus */
-  IMRPhenomAGenerateTD(hplus, tRef, phiRef, fRef, deltaT, m1, m2, f_min, f_max, distance, params);
+  IMRPhenomAGenerateTD(hplus, 0, deltaT, m1, m2, f_min, f_max, distance, params);
   if (!(*hplus)) {
       XLALFree(params);
       XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* generate hcross, which is hplus phase-shifted by pi/2 */
-  IMRPhenomAGenerateTD(hcross, tRef, phiRef + LAL_PI / 2, fRef, deltaT, m1, m2, f_min, f_max, distance, params);
+  IMRPhenomAGenerateTD(hcross, LAL_PI_2, deltaT, m1, m2, f_min, f_max, distance, params);
   XLALFree(params);
   if (!(*hcross)) {
       XLALDestroyREAL8TimeSeries(*hplus);
@@ -200,6 +198,13 @@ int XLALSimIMRPhenomAGenerateTD(
   *hcross = XLALResizeREAL8TimeSeries(*hcross, cut_ind, (*hcross)->data->length - cut_ind);
   if (!(*hplus) || !(*hcross))
     XLAL_ERROR(XLAL_EFUNC);
+
+  /* set phase and time at peak */
+  peak_ind = find_peak_amp(*hplus, *hcross);
+  peak_phase = atan2((*hcross)->data->data[peak_ind], (*hplus)->data->data[peak_ind]);
+  apply_phase_shift(*hplus, *hcross, phiPeak - peak_phase);
+  XLALGPSAdd(&((*hplus)->epoch), -(peak_ind * deltaT) - XLALGPSDiff(&((*hplus)->epoch), tPeak));
+  XLALGPSAdd(&((*hcross)->epoch), -(peak_ind * deltaT) - XLALGPSDiff(&((*hcross)->epoch), tPeak));
 
   /* apply inclination */
   return apply_inclination(hplus, hcross, inclination);
@@ -232,9 +237,8 @@ double XLALSimIMRPhenomBComputeChi(
 int XLALSimIMRPhenomBGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    LIGOTimeGPS *tRef,        /**< time at fRef */
-    REAL8 phiRef,             /**< phase at fRef */
-    REAL8 fRef,               /**< reference frequency */
+    LIGOTimeGPS *tPeak,                /**< time at peak amplitude */
+    REAL8 phiPeak,                     /**< phase at peak */
     REAL8 deltaT,             /**< sampling interval */
     REAL8 m1,                 /**< mass of companion 1 */
     REAL8 m2,                 /**< mass of companion 2 */
@@ -245,13 +249,13 @@ int XLALSimIMRPhenomBGenerateTD(
     REAL8 inclination         /**< inclination of source */
 ) {
   BBHPhenomParams *params;
-  size_t cut_ind;
+  size_t cut_ind, peak_ind;
+  REAL8 peak_phase;  /* measured, not intended */
 
   /* check inputs for sanity */
   if (*hplus) XLAL_ERROR(XLAL_EFAULT);
   if (*hcross) XLAL_ERROR(XLAL_EFAULT);
-  if (!tRef) XLAL_ERROR(XLAL_EFAULT);
-  if (fRef <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (!tPeak) XLAL_ERROR(XLAL_EFAULT);
   if (deltaT <= 0) XLAL_ERROR(XLAL_EDOM);
   if (m1 < 0) XLAL_ERROR(XLAL_EDOM);
   if (m2 < 0) XLAL_ERROR(XLAL_EDOM);
@@ -272,14 +276,14 @@ int XLALSimIMRPhenomBGenerateTD(
   if (f_max == 0.) f_max = params->fCut;
 
   /* generate plus */
-  IMRPhenomBGenerateTD(hplus, tRef, phiRef, fRef, deltaT, m1, m2, chi, f_min, f_max, distance, params);
+  IMRPhenomBGenerateTD(hplus, 0., deltaT, m1, m2, chi, f_min, f_max, distance, params);
   if (!(*hplus)) {
       XLALFree(params);
       XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* generate cross, phase-shifted by pi/2 */
-  IMRPhenomBGenerateTD(hcross, tRef, phiRef + LAL_PI / 2, fRef, deltaT, m1, m2, chi, f_min, f_max, distance, params);
+  IMRPhenomBGenerateTD(hcross, LAL_PI_2, deltaT, m1, m2, chi, f_min, f_max, distance, params);
   XLALFree(params);
   if (!(*hcross)) {
       XLALDestroyREAL8TimeSeries(*hplus);
@@ -293,6 +297,13 @@ int XLALSimIMRPhenomBGenerateTD(
   *hcross = XLALResizeREAL8TimeSeries(*hcross, cut_ind, (*hcross)->data->length - cut_ind);
   if (!(*hplus) || !(*hcross))
     XLAL_ERROR(XLAL_EFUNC);
+
+  /* set phase and time at peak */
+  peak_ind = find_peak_amp(*hplus, *hcross);
+  peak_phase = atan2((*hcross)->data->data[peak_ind], (*hplus)->data->data[peak_ind]);
+  apply_phase_shift(*hplus, *hcross, phiPeak - peak_phase);
+  XLALGPSAdd(&((*hplus)->epoch), -(peak_ind * deltaT) - XLALGPSDiff(&((*hplus)->epoch), tPeak));
+  XLALGPSAdd(&((*hcross)->epoch), -(peak_ind * deltaT) - XLALGPSDiff(&((*hcross)->epoch), tPeak));
 
   /* apply inclination */
   return apply_inclination(hplus, hcross, inclination);
@@ -311,9 +322,7 @@ int XLALSimIMRPhenomBGenerateTD(
  */
 int XLALSimIMRPhenomBGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    LIGOTimeGPS *tRef,                 /**< time at fRef */
-    REAL8 phiRef,                      /**< phase at fRef */
-    REAL8 fRef,                        /**< reference frequency */
+    REAL8 phi0,                        /**< initial phase */
     REAL8 deltaF,                      /**< sampling interval */
     REAL8 m1,                          /**< mass of companion 1 */
     REAL8 m2,                          /**< mass of companion 2 */
@@ -327,8 +336,6 @@ int XLALSimIMRPhenomBGenerateFD(
 
   /* check inputs for sanity */
   if (*htilde) XLAL_ERROR(XLAL_EFAULT);
-  if (!tRef) XLAL_ERROR(XLAL_EFAULT);
-  if (fRef <= 0) XLAL_ERROR(XLAL_EDOM);
   if (deltaF <= 0) XLAL_ERROR(XLAL_EDOM);
   if (m1 < 0) XLAL_ERROR(XLAL_EDOM);
   if (m2 < 0) XLAL_ERROR(XLAL_EDOM);
@@ -348,7 +355,7 @@ int XLALSimIMRPhenomBGenerateFD(
   /* default f_max to params->fCut */
   if (f_max == 0.) f_max = params->fCut;
 
-  status = IMRPhenomBGenerateFD(htilde, tRef, phiRef, fRef, deltaF, m1, m2, chi, f_min, f_max, distance, params);
+  status = IMRPhenomBGenerateFD(htilde, phi0, deltaF, m1, m2, chi, f_min, f_max, distance, params);
   LALFree(params);
   return status;
 }
@@ -591,9 +598,7 @@ static REAL8 LorentzianFn (
  */
 static int IMRPhenomAGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    LIGOTimeGPS *tRef,                 /**< time at fRef */
-    REAL8 phiRef,                      /**< phase at fRef */
-    REAL8 fRef,                        /**< reference frequency */
+    REAL8 phi0,                        /**< initial phase */
     REAL8 deltaF,                      /**< frequency resolution */
     REAL8 m1,                          /**< mass of companion 1 [solar masses] */
     REAL8 m2,                          /**< mass of companion 2 [solar masses] */
@@ -602,7 +607,8 @@ static int IMRPhenomAGenerateFD(
     REAL8 distance,                    /**< distance of source */
     BBHPhenomParams *params            /**< from ComputeIMRPhenomAParams */
 ) {
-  REAL8 shft, amp0, fMerg, fRing, sigma, totalMass, eta;
+  const LIGOTimeGPS ligotimegps_zero = {0, 0};
+  REAL8 amp0, fMerg, fRing, sigma, totalMass, eta;
   size_t i, n;
 
   fMerg = params->fMerger;
@@ -617,12 +623,10 @@ static int IMRPhenomAGenerateFD(
 
   /* allocate htilde */
   n = NextPow2(f_max / deltaF) + 1;
-  *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", tRef, 0.0, deltaF, &lalStrainUnit, n);
+  *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
   XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
   if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
-
-  shft = LAL_TWOPI * (tRef->gpsSeconds + 1e-9 * tRef->gpsNanoSeconds);
 
   /* now generate the waveform at all frequency bins except DC and Nyquist */
   for (i=1; i < n - 1; i++) {
@@ -645,7 +649,7 @@ static int IMRPhenomAGenerateFD(
     }
 
     /* now compute the phase */
-    psiEff = shft * (f - fRef) + phiRef  /* use reference freq. and phase */
+    psiEff = phi0
       + params->psi0 * pow(f, -5./3.)
       + params->psi1 * pow(f, -4./3.)
       + params->psi2 * pow(f, -3./3.)
@@ -668,9 +672,7 @@ static int IMRPhenomAGenerateFD(
  */
 static int IMRPhenomBGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    LIGOTimeGPS *tRef,                 /**< time at fRef */
-    REAL8 phiRef,                      /**< phase at fRef */
-    REAL8 fRef,                        /**< reference frequency */
+    REAL8 phi0,                        /**< phase at peak */
     REAL8 deltaF,                      /**< frequency resolution */
     REAL8 m1,                          /**< mass of companion 1 [solar masses] */
     REAL8 m2,                          /**< mass of companion 2 [solar masses] */
@@ -680,7 +682,8 @@ static int IMRPhenomBGenerateFD(
     REAL8 distance,                    /**< distance of source */
     BBHPhenomParams *params            /**< from ComputeIMRPhenomBParams */
 ) {
-  REAL8 shft, amp0, fMerg, fRing, sigma, totalMass, eta;
+  const LIGOTimeGPS ligotimegps_zero = {0, 0};
+  REAL8 amp0, fMerg, fRing, sigma, totalMass, eta;
   REAL8 alpha2, alpha3, mergPower, epsilon_1, epsilon_2, vMerg, vRing, w1, w2;
   size_t i, n;
 
@@ -696,12 +699,10 @@ static int IMRPhenomBGenerateFD(
 
   /* allocate htilde */
   n = NextPow2(f_max / deltaF) + 1;
-  *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", tRef, 0.0, deltaF, &lalStrainUnit, n);
+  *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
   XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
   if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
-
-  shft = LAL_TWOPI * (tRef->gpsSeconds + 1e-9 * tRef->gpsNanoSeconds);
 
   /***********************************************************************/
   /* these are the parameters required for the "new" phenomenological IMR
@@ -757,7 +758,7 @@ static int IMRPhenomBGenerateFD(
     }
 
     /* now compute the phase */
-    psiEff = shft * (f - fRef) - phiRef  /* use reference freq. and phase; phi is flipped relative to IMRPhenomA */
+    psiEff = -phi0  /* phi is flipped relative to IMRPhenomA */
       + 3./(128.*eta*v5)*(1 + params->psi2*v2
       + params->psi3*v3 + params->psi4*v4
       + params->psi5*v5 + params->psi6*v6
@@ -774,7 +775,7 @@ static int IMRPhenomBGenerateFD(
 /**
  * Private function to generate time-domain waveforms given coefficients
  */
-static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params) {
+static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, REAL8 phi0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params) {
   REAL8 f_min_wide, f_max_wide, deltaF;
   COMPLEX16FrequencySeries *htilde;
   /* We will generate the waveform from a frequency which is lower than the
@@ -788,10 +789,10 @@ static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 ph
   deltaF = 1. / (deltaT * NextPow2(EstimateIMRLength(m1, m2, f_min_wide, deltaT)));
 
   /* generate in frequency domain */
-  if (IMRPhenomAGenerateFD(&htilde, tRef, phiRef, fRef, deltaF, m1, m2, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(XLAL_EFUNC);
+  if (IMRPhenomAGenerateFD(&htilde, phi0, deltaF, m1, m2, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(XLAL_EFUNC);
 
   /* convert to time domain */
-  FDToTD(h, htilde, tRef, m1 + m2, deltaT, f_min, f_max, f_min_wide, f_max_wide);
+  FDToTD(h, htilde, m1 + m2, deltaT, f_min, f_max, f_min_wide, f_max_wide);
   XLALDestroyCOMPLEX16FrequencySeries(htilde);
   if (!*h) XLAL_ERROR(XLAL_EFUNC);
 
@@ -801,7 +802,7 @@ static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 ph
 /**
  * Private function to generate time-domain waveforms given coefficients
  */
-static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 phiRef, REAL8 fRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 chi, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params) {
+static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, REAL8 phi0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 chi, REAL8 f_min, REAL8 f_max, REAL8 distance, BBHPhenomParams *params) {
   REAL8 f_min_wide, f_max_wide, deltaF;
   COMPLEX16FrequencySeries *htilde;
   /* We will generate the waveform from a frequency which is lower than the
@@ -815,10 +816,10 @@ static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 ph
   deltaF = 1. / (deltaT * NextPow2(EstimateIMRLength(m1, m2, f_min_wide, deltaT)));
 
   /* generate in frequency domain */
-  if (IMRPhenomBGenerateFD(&htilde, tRef, phiRef, fRef, deltaF, m1, m2, chi, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(XLAL_EFUNC);
+  if (IMRPhenomBGenerateFD(&htilde, phi0, deltaF, m1, m2, chi, f_min_wide, f_max_wide, distance, params)) XLAL_ERROR(XLAL_EFUNC);
 
   /* convert to time domain */
-  FDToTD(h, htilde, tRef, m1 + m2, deltaT, f_min, f_max, f_min_wide, f_max_wide);
+  FDToTD(h, htilde, m1 + m2, deltaT, f_min, f_max, f_min_wide, f_max_wide);
   XLALDestroyCOMPLEX16FrequencySeries(htilde);
   if (!*h) XLAL_ERROR(XLAL_EFUNC);
 
@@ -830,7 +831,8 @@ static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, LIGOTimeGPS *tRef, REAL8 ph
  * Requires that the FD waveform be generated outside of f_min and f_max.
  * FD waveform is modified.
  */
-static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD, LIGOTimeGPS *tRef, REAL8 totalMass, REAL8 deltaT, REAL8 f_min, REAL8 f_max, REAL8 f_min_wide, REAL8 f_max_wide) {
+static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD, REAL8 totalMass, REAL8 deltaT, REAL8 f_min, REAL8 f_max, REAL8 f_min_wide, REAL8 f_max_wide) {
+  const LIGOTimeGPS gpstime_zero = {0, 0};
   REAL8 f, deltaF, winFLo, winFHi, softWin, windowLength;
   REAL8FFTPlan *revPlan;
   size_t nf, nt, k;
@@ -856,7 +858,7 @@ static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD
   }
 
   /* allocate output */
-  *signalTD = XLALCreateREAL8TimeSeries("h", tRef, 0.0, deltaT, &lalStrainUnit, nt);
+  *signalTD = XLALCreateREAL8TimeSeries("h", &gpstime_zero, 0.0, deltaT, &lalStrainUnit, nt);
 
   /* Inverse Fourier transform */
   revPlan = XLALCreateReverseREAL8FFTPlan(nt, 1);
@@ -895,6 +897,36 @@ static size_t find_instant_freq(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 
     if (f >= target) return k - 1;
   }
   XLAL_ERROR(XLAL_EDOM);
+}
+
+static size_t find_peak_amp(REAL8TimeSeries *hp, REAL8TimeSeries *hc) {
+  const REAL8 *hpdata = hp->data->data;
+  const REAL8 *hcdata = hc->data->data;
+  size_t k = hp->data->length;
+  size_t peak_ind = -1;
+  REAL8 peak_amp_sq = 0.;
+
+  for (;k--;) {
+    const REAL8 amp_sq = hpdata[k] * hpdata[k] + hcdata[k] * hcdata[k];
+    if (amp_sq > peak_amp_sq) {
+        peak_ind = k;
+        peak_amp_sq = amp_sq;
+    }
+  }
+  return peak_ind;
+}
+
+static int apply_phase_shift(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 shift) {
+    REAL8 *hpdata = hp->data->data;
+    REAL8 *hcdata = hc->data->data;
+    size_t k = hp->data->length;
+
+    for (;k--;) {
+        const REAL8 temp_hpdata = hpdata[k] * cos(shift) - hcdata[k] * sin(shift);
+        hcdata[k] = hpdata[k] * sin(shift) + hcdata[k] * cos(shift);
+        hpdata[k] = temp_hpdata;
+    }
+    return 0;
 }
 
 static int apply_inclination(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 inclination) {

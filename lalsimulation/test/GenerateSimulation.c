@@ -330,7 +330,7 @@ static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
         return 1;
     }
 
-    fprintf(f, "# f hplus hcross\n");
+    fprintf(f, "# t hplus hcross\n");
     for (i=0; i < hplus->data->length; i++)
       fprintf(f, "%e %e %e\n", i * hplus->deltaT, hplus->data->data[i], hcross->data->data[i]);
     return 0;
@@ -364,10 +364,10 @@ int main (int argc , char **argv) {
         case GSDomain_FD:
             switch (params->approximant) {
                 case GSApproximant_IMRPhenomA:
-                    XLALSimIMRPhenomAGenerateFD(&htilde, &tRef, params->phiRef, params->fRef, params->deltaF, params->m1, params->m2, params->f_min, params->f_max, params->distance);
+                    XLALSimIMRPhenomAGenerateFD(&htilde, params->phiRef, params->deltaF, params->m1, params->m2, params->f_min, params->f_max, params->distance);
                     break;
                 case GSApproximant_IMRPhenomB:
-                    XLALSimIMRPhenomBGenerateFD(&htilde, &tRef, params->phiRef, params->fRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance);
+                    XLALSimIMRPhenomBGenerateFD(&htilde, params->phiRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance);
                     break;
                 case GSApproximant_TaylorF2RedSpin:
                     XLALSimInspiralTaylorF2ReducedSpin(&htilde, &tRef, params->phiRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->distance, params->phaseO);
@@ -382,10 +382,10 @@ int main (int argc , char **argv) {
         case GSDomain_TD:
             switch (params->approximant) {
                 case GSApproximant_IMRPhenomA:
-                    XLALSimIMRPhenomAGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->fRef, params->deltaT, params->m1, params->m2, params->f_min, params->f_max, params->distance, params->inclination);
+                    XLALSimIMRPhenomAGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->deltaT, params->m1, params->m2, params->f_min, params->f_max, params->distance, params->inclination);
                     break;
                 case GSApproximant_IMRPhenomB:
-                    XLALSimIMRPhenomBGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->fRef, params->deltaT, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance, params->inclination);
+                    XLALSimIMRPhenomBGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->deltaT, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance, params->inclination);
                     break;
                 case GSApproximant_TaylorF2RedSpin:
                     XLALPrintError("Error: TaylorF2RedSpin is not a TD waveform!\n");
