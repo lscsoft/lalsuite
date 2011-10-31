@@ -854,7 +854,13 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
             //dataval = scale->data[ii+fnumstart] * prefact1 * exp(-s*s*omegapr_squared->data[jj]) * (cos2pix+1.0);
             
             twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
-            dataval = exp( log(scale->data[ii+fnumstart]) + prefact1 + (-s*s*omegapr_squared->data[jj]) + log(cos2pix+1.0) );
+            dataval = ( log(scale->data[ii+fnumstart]) + prefact1 + (-s*s*omegapr_squared->data[jj]) + log(cos2pix+1.0) );
+            if (dataval<-700.0) {
+               dataval = 0.0;
+            } else {
+               dataval = exp( dataval );
+            }
+
          } else {
             //twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, N*input.period*fpr->data[jj]);
             //dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * omegapr->data[jj] * omegapr->data[jj]) * (cos2pix - 1.0);
@@ -867,7 +873,12 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
             //dataval = scale->data[ii+fnumstart] * prefact2 * exp(-s*s*omegapr_squared->data[jj]) * (cos_N_times_omegapr_times_period->data[jj] - 1.0) * (cos2pix + 1.0)/(cos_omegapr_times_period->data[jj] - 1.0);
             
             twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
-            dataval = exp( log(scale->data[ii+fnumstart]) + prefact2 + (-s*s*omegapr_squared->data[jj]) + log((cos2pix + 1.0) * (cos_N_times_omegapr_times_period->data[jj] - 1.0) * one_over_cos_omegapr_times_period_minus_one->data[jj]) );
+            dataval = ( log(scale->data[ii+fnumstart]) + prefact2 + (-s*s*omegapr_squared->data[jj]) + log((cos2pix + 1.0) * (cos_N_times_omegapr_times_period->data[jj] - 1.0) * one_over_cos_omegapr_times_period_minus_one->data[jj]) );
+            if (dataval<-700.0) {
+               dataval = 0.0;
+            } else {
+               dataval = exp( dataval );
+            }
          }
          
          //Sum up the weights in total

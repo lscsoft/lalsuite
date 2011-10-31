@@ -336,11 +336,20 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    INT4 ii, jj;
    REAL8 Tobs = params->Tobs;
    
-   INT4 trials = (INT4)round(1.0e-12/params->ihsfar);    //Number of trials to determine FAR value
-   if (params->ihsfomfar!=0.0 && trials<(INT4)round(1.0e-12/params->ihsfomfar)) {
-      trials = (INT4)round(1.0e-12/params->ihsfomfar);
+   INT4 trials = 3*rows;
+   if (trials<1000) {
+      trials = 1000;
    }
-   trials += rows;
+   if (trials>5000) {
+      fprintf(stderr, "Warning: number of trials may be insufficient given the number of rows to sum\n");
+      trials = 5000;
+   }
+   
+   /* INT4 trials = (INT4)round(1.0e-11/params->ihsfar);    //Number of trials to determine FAR value
+   if (params->ihsfomfar!=0.0 && trials<(INT4)round(1.0e-11/params->ihsfomfar)) {
+      trials = (INT4)round(1.0e-11/params->ihsfomfar);
+   }
+   trials += rows; */
    
    //Initialize random number generator
    gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
@@ -1117,14 +1126,7 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
 #endif
    
 }
-void scaleVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector *input, REAL4 scale, INT4 outputvectorpos)
-{
-   
-   INT4 ii;
-   for (ii=0; ii<(INT4)input->length; ii++) output->data[outputvectorpos*output->vectorLength + ii] = scale*input->data[ii];
-   
-}
-void addScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector *input, REAL4 scale, INT4 outputvectorpos)
+/* void addScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector *input, REAL4 scale, INT4 outputvectorpos)
 {
    
    INT4 ii;
@@ -1196,7 +1198,7 @@ void sseAddScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vect
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
    
-}
+} */
 
 
 REAL4VectorSequence * ihsVectorSums(REAL4VectorSequence *input, INT4 rows)

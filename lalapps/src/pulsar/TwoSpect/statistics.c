@@ -27,6 +27,7 @@
 #include <gsl/gsl_statistics_double.h>
 
 #include <lal/LALConstants.h>
+#include <lal/VectorOps.h>
 
 #include "statistics.h"
 #include "fastchisqinv.h"
@@ -860,7 +861,7 @@ REAL4 calcStddev(REAL4Vector *vector)
 REAL4 calcRms(REAL4Vector *vector)
 {
    
-   INT4 ii;
+   /* INT4 ii;
    REAL8Vector *sqvector = XLALCreateREAL8Vector(vector->length);
    if (sqvector==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, vector->length);
@@ -869,12 +870,21 @@ REAL4 calcRms(REAL4Vector *vector)
    for (ii=0; ii<(INT4)vector->length; ii++) sqvector->data[ii] = (REAL8)(vector->data[ii]*vector->data[ii]);
    REAL4 rms = (REAL4)sqrt(calcMeanD(sqvector));
    
-   /* double *gslarray = (double*)XLALMalloc(sizeof(double)*vector->length);
-    for (ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = (double)vector->data[ii];
-    REAL4 rms = (REAL4)sqrt(gsl_stats_tss_m(gslarray, 1, vector->length, 0.0)/vector->length); */
+   XLALDestroyREAL8Vector(sqvector); */
    
-   XLALDestroyREAL8Vector(sqvector);
-   //XLALFree((double*)gslarray);
+   REAL4Vector *sqvector = XLALCreateREAL4Vector(vector->length);
+   if (sqvector==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, vector->length);
+      XLAL_ERROR_REAL4(XLAL_EFUNC);
+   }
+   sqvector = XLALSSVectorMultiply(sqvector, vector, vector);
+   if (xlalErrno!=0) {
+      fprintf(stderr,"%s: XLALSSVectorMultiply() failed.\n", __func__);
+      XLAL_ERROR_REAL4(XLAL_EFUNC);
+   }
+   REAL4 rms = sqrtf(calcMean(sqvector));
+   
+   XLALDestroyREAL4Vector(sqvector);
    
    return rms;
    
