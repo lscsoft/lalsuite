@@ -47,7 +47,7 @@ tagexpnCoeffsdEnergyFlux {
    REAL8 fPaN, fPa1, fPa2, fPa3, fPa4, fPa5, fPa6, fPa7, fPa8;
 
    /* symmetric mass ratio, total mass, component masses */
-   REAL8 eta;
+   REAL8 eta, totalmass;
 
    /* initial and final values of frequency, time, velocity; lso
     values of velocity and frequency; final phase. */
@@ -113,112 +113,112 @@ XLALSimInspiralTofVIntegrand(
    );
 
 
-REAL8 Et0(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralEt0(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Et2(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralEt2(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Et4(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralEt4(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Et6(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralEt6(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 dEt0(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiraldEt0(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 dEt2(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiraldEt2(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 dEt4(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiraldEt4(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 dEt6(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiraldEt6(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Ft0(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFt0(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Ft2(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFt2(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Ft3(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFt3(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Ft4(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFt4(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Ft5(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFt5(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Ft6(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFt6(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Ft7(REAL8 v, expnCoeffsdEnergyFlux *ak);
-
-
-/*
-REAL8 ep0(REAL8 v, expnCoeffsdEnergyFlux *ak);
-*/
-
-
-REAL8 ep2(REAL8 v, expnCoeffsdEnergyFlux *ak);
-
-
-REAL8 ep4(REAL8 v, expnCoeffsdEnergyFlux *ak);
-
-
-REAL8 ep6(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFt7(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
 /*
-REAL8 dEp0(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralep0(REAL8 v, expnCoeffsdEnergyFlux *ak);
 */
 
 
-REAL8 dEp2(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralep2(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 dEp4(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralep4(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 dEp6(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralep6(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
 /*
-REAL8 Fp0(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiraldEp0(REAL8 v, expnCoeffsdEnergyFlux *ak);
+*/
+
+
+REAL8 XLALSimInspiraldEp2(REAL8 v, expnCoeffsdEnergyFlux *ak);
+
+
+REAL8 XLALSimInspiraldEp4(REAL8 v, expnCoeffsdEnergyFlux *ak);
+
+
+REAL8 XLALSimInspiraldEp6(REAL8 v, expnCoeffsdEnergyFlux *ak);
+
+
+/*
+REAL8 XLALSimInspiralFp0(REAL8 v, expnCoeffsdEnergyFlux *ak);
 */
 
 /*
-REAL8 Fp1(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFp1(REAL8 v, expnCoeffsdEnergyFlux *ak);
 */
 
 /*
-REAL8 Fp2(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFp2(REAL8 v, expnCoeffsdEnergyFlux *ak);
 */
 
 
-REAL8 Fp3(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFp3(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Fp4(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFp4(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Fp5(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFp5(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Fp6(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFp6(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
-REAL8 Fp7(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFp7(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 
 /* Flux for the EOBNRv2 model */
-REAL8 Fp8PP(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFp8PP(REAL8 v, expnCoeffsdEnergyFlux *ak);
 
 /*
-REAL8 Fp8(REAL8 v, expnCoeffsdEnergyFlux *ak);
+REAL8 XLALSimInspiralFp8(REAL8 v, expnCoeffsdEnergyFlux *ak);
 */
 
 #if 0

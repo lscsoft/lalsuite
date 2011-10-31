@@ -58,14 +58,14 @@ Spinning waveforms are only defined at the highest PN order.</li>
 
 
 
-REAL8 Et0(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralEt0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 dEnergy;
    dEnergy = ak->ETaN * v;
    return (dEnergy);
 }
 
-REAL8 Et2(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralEt2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 Energy;
    REAL8 x = v*v;
@@ -73,7 +73,7 @@ REAL8 Et2(REAL8 v, expnCoeffsdEnergyFlux *ak)
    return Energy;
 }
 
-REAL8 Et4(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralEt4(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 Energy;
    REAL8 x = v*v;
@@ -82,7 +82,7 @@ REAL8 Et4(REAL8 v, expnCoeffsdEnergyFlux *ak)
    return Energy;
 }
 
-REAL8 Et6(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralEt6(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 Energy;
    REAL8 x = v*v;
@@ -92,7 +92,7 @@ REAL8 Et6(REAL8 v, expnCoeffsdEnergyFlux *ak)
    return Energy;
 }
 
-REAL8 dEt0(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiraldEt0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 dEnergy;
    dEnergy = ak->dETaN * v;
@@ -100,34 +100,37 @@ REAL8 dEt0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 dEt2(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiraldEt2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
-   REAL8 dEnergy, x;
-   x = v*v;
+   REAL8 dEnergy;
+   REAL8 x = v*v;
    dEnergy = ak->dETaN * v * (1. + ak->dETa1*x);
    return (dEnergy);
 }
 
 
-REAL8 dEt4(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiraldEt4(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
-   REAL8 dEnergy, x;
-   x = v*v;
-   dEnergy = ak->dETaN * v * (1. + ak->dETa1*x + ak->dETa2*x*x);
+   REAL8 dEnergy;
+   REAL8 x = v*v;
+   REAL8 x2 = x*x;
+   dEnergy = ak->dETaN * v * (1. + ak->dETa1*x + ak->dETa2*x2);
    return (dEnergy);
 }
 
 
-REAL8 dEt6(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiraldEt6(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
-   REAL8 dEnergy, x;
-   x = v*v;
-   dEnergy = ak->dETaN * v * (1. + ak->dETa1*x + ak->dETa2*x*x + ak->dETa3*x*x*x);
+   REAL8 dEnergy;
+   REAL8 x = v*v;
+   REAL8 x2 = x*x;
+   REAL8 x3 = x*x2;
+   dEnergy = ak->dETaN * v * (1. + ak->dETa1*x + ak->dETa2*x2 + ak->dETa3*x3);
    return (dEnergy);
 }
 
 
-REAL8 Ft0(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFt0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -139,7 +142,7 @@ REAL8 Ft0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 Ft2(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFt2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -151,7 +154,7 @@ REAL8 Ft2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 Ft3(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFt3(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -163,7 +166,7 @@ REAL8 Ft3(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 Ft4(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFt4(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -175,7 +178,7 @@ REAL8 Ft4(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 Ft5(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFt5(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -188,7 +191,7 @@ REAL8 Ft5(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 Ft6(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFt6(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v6,v8,v10;
    v2 = v*v;
@@ -197,12 +200,12 @@ REAL8 Ft6(REAL8 v, expnCoeffsdEnergyFlux *ak)
    v8 = v4*v4;
    v10 = v8*v2;
    flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4
-        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(v))*v6);
+        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(16.0*v2))*v6);
    return (flux);
 }
 
 
-REAL8 Ft7(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFt7(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v6,v8,v10;
    v2 = v*v;
@@ -211,13 +214,13 @@ REAL8 Ft7(REAL8 v, expnCoeffsdEnergyFlux *ak)
    v8 = v4*v4;
    v10 = v8*v2;
    flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4
-        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(v))*v6 + ak->FTa7*v6*v);
+        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(16.0*v2))*v6 + ak->FTa7*v6*v);
    return (flux);
 }
 
 
 /*
-REAL8 ep0(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralep0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 x, energy;
    ak = NULL;
@@ -228,7 +231,7 @@ REAL8 ep0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 */
 
 
-REAL8 ep2(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralep2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 x, energy;
    x = v*v;
@@ -237,7 +240,7 @@ REAL8 ep2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 ep4(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralep4(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 x, energy;
    x = v*v;
@@ -246,7 +249,7 @@ REAL8 ep4(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 ep6(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralep6(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 x, energy;
    x = v*v;
@@ -256,7 +259,7 @@ REAL8 ep6(REAL8 v, expnCoeffsdEnergyFlux *ak)
 
 
 /*
-REAL8 dEp0(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiraldEp0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 energy, denergy, Energy, dEnergy, y;
    energy = ep0(v, ak);
@@ -269,11 +272,11 @@ REAL8 dEp0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 */
 
 
-REAL8 dEp2(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiraldEp2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 energy, denergy, Energy, dEnergy, x, y;
    x = v*v;
-   energy = ep2(v, ak);
+   energy = XLALSimInspiralep2(v, ak);
    y = sqrt(1.+energy);
    Energy = sqrt(1. + 2.* ak->eta * (y - 1.)) - 1.;
    denergy = -1. / ((1. + ak->ePa1*x)*(1. + ak->ePa1*x));
@@ -282,11 +285,11 @@ REAL8 dEp2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 dEp4(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiraldEp4(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 energy, denergy, Energy, dEnergy, denom, x, y;
    x = v*v;
-   energy = ep4(v, ak);
+   energy = XLALSimInspiralep4(v, ak);
    y = sqrt(1.+energy);
    Energy = sqrt(1. + 2.* ak->eta * (y - 1.)) - 1.;
 
@@ -298,11 +301,11 @@ REAL8 dEp4(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 dEp6(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiraldEp6(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 energy, denergy, Energy, dEnergy, denom, x, y;
    x = v*v;
-   energy = ep6(v, ak);
+   energy = XLALSimInspiralep6(v, ak);
    y = sqrt(1.+energy);
    Energy = sqrt(1. + 2.* ak->eta * (y - 1.)) - 1.;
    
@@ -319,7 +322,7 @@ REAL8 dEp6(REAL8 v, expnCoeffsdEnergyFlux *ak)
 
 
 /*
-REAL8 Fp0(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFp0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -333,7 +336,7 @@ REAL8 Fp0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 
 
 /*
-REAL8 Fp1(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFp1(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -347,7 +350,7 @@ REAL8 Fp1(REAL8 v, expnCoeffsdEnergyFlux *ak)
 
 
 /*
-REAL8 Fp2(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFp2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -360,7 +363,7 @@ REAL8 Fp2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 */
 
 
-REAL8 Fp3(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFp3(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -373,7 +376,7 @@ REAL8 Fp3(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 Fp4(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFp4(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -386,7 +389,7 @@ REAL8 Fp4(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 Fp5(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFp5(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -399,7 +402,7 @@ REAL8 Fp5(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 Fp6(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFp6(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v6,v8,v10;
    v2 = v*v;
@@ -416,7 +419,7 @@ REAL8 Fp6(REAL8 v, expnCoeffsdEnergyFlux *ak)
 }
 
 
-REAL8 Fp7(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFp7(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v6,v8,v10;
    v2 = v*v;
@@ -433,7 +436,7 @@ REAL8 Fp7(REAL8 v, expnCoeffsdEnergyFlux *ak)
 
 
 /* Flux for the EOBNRv2 model */
-REAL8 Fp8PP(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFp8PP(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v6,v8,v10, l6, l8;
    v2 = v*v;
@@ -453,7 +456,7 @@ REAL8 Fp8PP(REAL8 v, expnCoeffsdEnergyFlux *ak)
 
 
 /*
-REAL8 Fp8(REAL8 v, expnCoeffsdEnergyFlux *ak)
+REAL8 XLALSimInspiralFp8(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 flux,v2,v4,v6,v8,v10, l6, l8;
    v2 = v*v;

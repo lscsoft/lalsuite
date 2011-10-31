@@ -45,6 +45,8 @@ XLALDRombergIntegrate()
 #include <lal/LALSimInspiraldEnergyFlux.h>
 #include <lal/Integrate.h>
 
+#include "LALSimInspiralPNCoefficients.c"
+
 NRCSID (LALINSPIRALTOFVC, "$Id$");
 
 
@@ -123,39 +125,25 @@ XLALSimInspiralTaylorLength(
     REAL8 v0 = cbrt(LAL_PI * m * f_min);
 
     REAL8 oneby6 = 1./6.;
-    REAL8 EulerC = LAL_GAMMA;
-    REAL8 lambda = -1987./3080.;
     REAL8 lso, vlso, vn, tofv;
     TofVIn in1;
     void *in2;
 
-/* Taylor coefficients of E(x) */
-    akEF.ETaN = -eta/2.;
-    akEF.ETa1 = -(9. + eta)/12.;
-    akEF.ETa2 = -(27. - 19*eta + eta*eta/3.)/8.;
-    akEF.ETa3 = -675./64. + (209323./4032. - 205.*LAL_PI*LAL_PI/96.
-        - 110./9. * lambda)*eta
-        - 155./96. * eta*eta - 35./5184. * eta*eta*eta;
-
 /* Taylor coefficients of dE(v)/dv. (NOTE v and NOT x) */
-    akEF.dETaN = -eta;
-    akEF.dETa1 = 2.*akEF.ETa1;
-    akEF.dETa2 = 3.*akEF.ETa2;
-    akEF.dETa3 = 4.*akEF.ETa3;
+    akEF.dETaN = 2.0 * XLALSimInspiralPNEnergy_0PNCoeff(eta);
+    akEF.dETa1 = 2.0 * XLALSimInspiralPNEnergy_2PNCoeff(eta);
+    akEF.dETa2 = 3.0 * XLALSimInspiralPNEnergy_4PNCoeff(eta);
+    akEF.dETa3 = 4.0 * XLALSimInspiralPNEnergy_6PNCoeff(eta);
 
 /* Taylor coefficients of flux. */
-    akEF.FTaN = 32.*eta*eta/5.;
-    akEF.FTa1 = 0.;
-    akEF.FTa2 = -1247./336.-35.*eta/12.;
-    akEF.FTa3 = 4.*LAL_PI;
-    akEF.FTa4 = -44711./9072.+9271.*eta/504.+65.*eta*eta/18.;
-    akEF.FTa5 = -(8191./672.+583./24.*eta)*LAL_PI;
-    akEF.FTl6 = -1712./105.;
-    akEF.FTa6 = 6643739519./69854400. + 16.*LAL_PI*LAL_PI/3. + akEF.FTl6 * log (4.L)
-        - 1712./105.*EulerC+ (-134543./7776. + 41.*LAL_PI*LAL_PI/48.) * eta
-        - 94403./3024. * eta*eta - 775./324. * eta*eta*eta;
-    akEF.FTa7 = LAL_PI * (-16285./504. + 214745./1728. * eta
-        + 193385./3024.* eta*eta);
+    akEF.FTaN = XLALSimInspiralTaylorT1Flux_0PNCoeff(eta);
+    akEF.FTa2 = XLALSimInspiralTaylorT1Flux_2PNCoeff(eta);
+    akEF.FTa3 = XLALSimInspiralTaylorT1Flux_3PNCoeff(eta);
+    akEF.FTa4 = XLALSimInspiralTaylorT1Flux_4PNCoeff(eta);
+    akEF.FTa5 = XLALSimInspiralTaylorT1Flux_5PNCoeff(eta);
+    akEF.FTa6 = XLALSimInspiralTaylorT1Flux_6PNCoeff(eta);
+    akEF.FTl6 = XLALSimInspiralTaylorT1Flux_6PNLogCoeff(eta);
+    akEF.FTa7 = XLALSimInspiralTaylorT1Flux_7PNCoeff(eta);
     akEF.FTa8 = - 117.5043907226773;
     akEF.FTl8 =   52.74308390022676;
 
@@ -176,8 +164,8 @@ XLALSimInspiralTaylorLength(
     {
         case 0:
             vn = akEF.vlso = vlso = akEF.vlsoT0;
-            in1.dEnergy = dEt0;
-            in1.flux = Ft0;
+            in1.dEnergy = XLALSimInspiraldEt0;
+            in1.flux = XLALSimInspiralFt0;
             break;
         case 1:
             XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", __func__);
@@ -185,13 +173,13 @@ XLALSimInspiralTaylorLength(
             break;
         case 2:
             vn = akEF.vlso = vlso = akEF.vlsoT2;
-            in1.dEnergy = dEt2;
-            in1.flux = Ft2;
+            in1.dEnergy = XLALSimInspiraldEt2;
+            in1.flux = XLALSimInspiralFt2;
             break;
         case 3:
             vn = akEF.vlso = vlso = akEF.vlsoT2;
-            in1.dEnergy = dEt2;
-            in1.flux = Ft3;
+            in1.dEnergy = XLALSimInspiraldEt2;
+            in1.flux = XLALSimInspiralFt3;
             break;
         case 4:
 /*
@@ -199,8 +187,8 @@ XLALSimInspiralTaylorLength(
    so we use vlsoT2.
 */
             vn = akEF.vlso = vlso = akEF.vlsoT2;
-            in1.dEnergy = dEt4;
-            in1.flux = Ft4;
+            in1.dEnergy = XLALSimInspiraldEt4;
+            in1.flux = XLALSimInspiralFt4;
             break;
         case 5:
 /*
@@ -208,8 +196,8 @@ XLALSimInspiralTaylorLength(
    Taylor approximant; so we use vlsoT2.
 */
             vn = akEF.vlso = vlso = akEF.vlsoT2;
-            in1.dEnergy = dEt4;
-            in1.flux = Ft5;
+            in1.dEnergy = XLALSimInspiraldEt4;
+            in1.flux = XLALSimInspiralFt5;
             break;
             case 6:
 /*
@@ -217,13 +205,13 @@ XLALSimInspiralTaylorLength(
    certain cases (TaylorT2 crashes for (1.4,10)); using vlsoT2;
 */
             vn = akEF.vlso = vlso = akEF.vlsoT2;
-            in1.dEnergy = dEt6;
-            in1.flux = Ft6;
+            in1.dEnergy = XLALSimInspiraldEt6;
+            in1.flux = XLALSimInspiralFt6;
             break;
         case 7:
             vn = akEF.vlso = vlso = akEF.vlsoT2;
-            in1.dEnergy = dEt6;
-            in1.flux = Ft7;
+            in1.dEnergy = XLALSimInspiraldEt6;
+            in1.flux = XLALSimInspiralFt7;
             break;
         case 8:
            XLALPrintError("XLAL Error - %s: PN approximant not supported for requested PN order\n", __func__);

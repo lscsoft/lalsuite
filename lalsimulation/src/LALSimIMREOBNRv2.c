@@ -690,7 +690,7 @@ REAL8 XLALvrP4PN( const REAL8 r,    /**<< Orbital separation (in units of total 
 
   XLALSimIMREOBNRv2SetupFlux( &ak, eta);
 
-  FDIS = - Fp8PP(v, &ak)/(eta*omega);
+  FDIS = - XLALSimInspiralFp8PP(v, &ak)/(eta*omega);
 
   twoUAPlusu2dA = 2.* u * A + u2 * dA;
   x1 = -r2 * sqrt (-dA * twoUAPlusu2dA * twoUAPlusu2dA * twoUAPlusu2dA )
