@@ -46,6 +46,74 @@ XLALSimInspiralPNEnergy_6PNCoeff(
 
 
 /**
+ * Computes the PN Coefficients for using in the TaylorT1 flux equation.
+ *
+ * Terms given in equation 3.2 of: Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT1Flux_0PNCoeff(
+	REAL8 eta)
+{
+	return 32.0 * eta*eta / 5.0;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT1Flux_2PNCoeff(
+	REAL8 eta)
+{
+	return -(12.47/3.36 + 3.5/1.2 * eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT1Flux_3PNCoeff(
+	REAL8 UNUSED eta)
+{
+	return 4.0 * LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT1Flux_4PNCoeff(
+	REAL8 eta)
+{
+	return -(44.711/9.072 - 92.71/5.04 * eta - 6.5/1.8 * eta*eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT1Flux_5PNCoeff(
+	REAL8 eta)
+{
+	return -(81.91/6.72 + 58.3/2.4 * eta) * LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT1Flux_6PNCoeff(
+	REAL8 eta)
+{
+	return (664.3739519/6.9854400 + 16.0/3.0 * LAL_PI - 17.12/1.05 * LAL_GAMMA
+		+ (4.1/4.8 * LAL_PI*LAL_PI - 134.543/7.776) * eta
+		- 94.403/3.024 * eta*eta - 7.75/3.24 * eta*eta*eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT1Flux_6PNLogCoeff(
+	REAL8 UNUSED eta)
+{
+	return -8.56/1.05;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT1Flux_7PNCoeff(
+	REAL8 eta)
+{
+	return -(162.85/5.04 - 214.745/1.728 * eta - 193.385/3.024 * eta*eta) * LAL_PI;
+}
+
+
+/**
  * Computes the PN Coefficients for using in the TaylorT2 phasing equation.
  *
  * Terms given in equation 3.8a of: Alessandra Buonanno, Bala R Iyer, Evan
