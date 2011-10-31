@@ -54,7 +54,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 	REAL8 min, max;
 	REAL8 logmc=0.0;
 	REAL8 m1=0.0,m2=0.0,eta=0.0;
-	REAL8 tmp=0.;
+	//REAL8 tmp=0.;
 	/* Check boundaries */
 	for(;item;item=item->next)
 	{
@@ -80,14 +80,14 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 		logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin1"))));
 	if(LALInferenceCheckVariable(params,"theta_spin2"))
 		logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))));
-	if(LALInferenceCheckVariable(params,"a_spin1") && LALInferenceCheckVariable(params,"a_spin2")){
+	/*if(LALInferenceCheckVariable(params,"a_spin1") && LALInferenceCheckVariable(params,"a_spin2")){
 		
 		if(*(REAL8 *)LALInferenceGetVariable(params,"a_spin2") > *(REAL8 *)LALInferenceGetVariable(params,"a_spin1")){
 		 	tmp = *(REAL8 *)LALInferenceGetVariable(params,"a_spin1") ;
 			*(REAL8 *)LALInferenceGetVariable(params,"a_spin1") = *(REAL8 *)LALInferenceGetVariable(params,"a_spin2");
 			*(REAL8 *)LALInferenceGetVariable(params,"a_spin2") = tmp;
 		}
-	}
+	}*/
 	if(LALInferenceCheckVariable(params,"logmc")) {
           logmc=*(REAL8 *)LALInferenceGetVariable(params,"logmc");
           /* Assume jumping in log(Mc), so use prior that works out to p(Mc) ~ Mc^-11/6 */
