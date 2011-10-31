@@ -488,11 +488,8 @@ echo "
                 Condor support is $CONDOR_ENABLE_VAL
                 BOINC support is $BOINC_ENABLE_VAL
                 MPI support is $MPI_ENABLE_VAL
-<<<<<<< HEAD
                 GDS support is $GDS_ENABLE_VAL
-=======
                 CUDA support is $CUDA_ENABLE_VAL
->>>>>>> enable CUDA support for LALApps
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps
