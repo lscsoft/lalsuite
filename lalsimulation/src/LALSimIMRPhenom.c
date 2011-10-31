@@ -71,7 +71,7 @@ static int FDToTD(REAL8TimeSeries **signalTD, COMPLEX16FrequencySeries *signalFD
 static size_t find_instant_freq(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 target, size_t start);
 static size_t find_peak_amp(REAL8TimeSeries *hp, REAL8TimeSeries *hc);
 static int apply_phase_shift(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 shift);
-static int apply_inclination(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 inclination);
+static int apply_inclination(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 inclination);
 
 
 /**
@@ -207,7 +207,7 @@ int XLALSimIMRPhenomAGenerateTD(
   XLALGPSAdd(&((*hcross)->epoch), -(peak_ind * deltaT) - XLALGPSDiff(&((*hcross)->epoch), tPeak));
 
   /* apply inclination */
-  return apply_inclination(hplus, hcross, inclination);
+  return apply_inclination(*hplus, *hcross, inclination);
 }
 
 /**
@@ -306,7 +306,7 @@ int XLALSimIMRPhenomBGenerateTD(
   XLALGPSAdd(&((*hcross)->epoch), -(peak_ind * deltaT) - XLALGPSDiff(&((*hcross)->epoch), tPeak));
 
   /* apply inclination */
-  return apply_inclination(hplus, hcross, inclination);
+  return apply_inclination(*hplus, *hcross, inclination);
 }
 
 
@@ -929,17 +929,17 @@ static int apply_phase_shift(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 shi
     return 0;
 }
 
-static int apply_inclination(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 inclination) {
-  REAL8 inclFacPlus, inclFacCross, cosI;
-  size_t k;
+static int apply_inclination(REAL8TimeSeries *hp, REAL8TimeSeries *hc, REAL8 inclination) {
+  REAL8 inclFacPlus, inclFacCross;
+  REAL8 *hpdata = hp->data->data;
+  REAL8 *hcdata = hc->data->data;
+  size_t k = hp->data->length;
 
-  cosI = cos(inclination);
-
-  inclFacPlus = -0.5 * (1. + cosI * cosI);
-  inclFacCross = -cosI;
-  for (k = 0; k < (*hplus)->data->length; k++) {
-      (*hplus)->data->data[k] *= inclFacPlus;
-      (*hcross)->data->data[k] *= inclFacCross;
+  inclFacCross = -cos(inclination);
+  inclFacPlus = -0.5 * (1. + inclFacCross * inclFacCross);
+  for (;k--;) {
+      hpdata[k] *= inclFacPlus;
+      hcdata[k] *= inclFacCross;
   }
 
   return XLAL_SUCCESS;
