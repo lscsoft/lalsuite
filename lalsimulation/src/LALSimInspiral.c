@@ -834,6 +834,9 @@ int XLALSimInspiralChooseWaveform(
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
+        case TaylorT1:
+            ret = XLALSimInspiralTaylorT1PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            break;
         case TaylorT2:
             ret = XLALSimInspiralTaylorT2PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
@@ -941,6 +944,9 @@ int XLALSimInspiralChooseRestrictedWaveform(
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
+        case TaylorT1:
+            ret = XLALSimInspiralTaylorT1PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            break;
         case TaylorT2:
             ret = XLALSimInspiralTaylorT2PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
