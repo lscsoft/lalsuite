@@ -1938,9 +1938,9 @@ static int XLALSpinInspiralAdaptiveEngine(
     errcode += XLALGenerateWaveDerivative(dLNhx,LNhx_s,dt);
     errcode += XLALGenerateWaveDerivative(dLNhy,LNhy_s,dt);
     errcode += XLALGenerateWaveDerivative(dLNhz,LNhz_s,dt);
-    if (errcode != 0) {
+    if (errcode != XLAL_SUCCESS) {
       fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: error generating first derivatives: #points %d\n",Npoints);
-      XLAL_ERROR(func,XLAL_EFAILED);
+      XLAL_ERROR(XLAL_EFAILED);
     }
 
     for (k=0;k<Npoints;k++) {
@@ -1954,7 +1954,6 @@ static int XLALSpinInspiralAdaptiveEngine(
       }
     }
 
->>>>>>> correct time shift added to phen spin template:lalinspiral/src/LALPSpinInspiralRD.c
     errcode  = XLALGenerateWaveDerivative(ddiota,diota,dt);
     errcode += XLALGenerateWaveDerivative(ddalpha,dalpha,dt);
     errcode += XLALGenerateWaveDerivative(ddomega,domega,dt);
