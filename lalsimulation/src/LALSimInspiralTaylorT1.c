@@ -42,7 +42,7 @@
 #define UNUSED
 #endif
 
-NRCSID(LALSIMINSPIRALTAYLORT4C, "$Id$");
+NRCSID(LALSIMINSPIRALTAYLORT1C, "$Id$");
 
 /**
  * This structure contains the intrinsic parameters and post-newtonian 
@@ -436,7 +436,7 @@ int main(void)
 	REAL8TimeSeries *hplus;
 	REAL8TimeSeries *hcross;
 	lalDebugLevel = 7;
-	XLALSimInspiralTaylorT4PN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, f_min, r, i, O);
+	XLALSimInspiralTaylorT1PN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, f_min, r, i, O);
 	LALDPrintTimeSeries(hplus, "hp.dat");
 	LALDPrintTimeSeries(hcross, "hc.dat");
 	XLALDestroyREAL8TimeSeries(hplus);
