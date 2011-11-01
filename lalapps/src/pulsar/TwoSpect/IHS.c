@@ -779,6 +779,8 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             XLAL_ERROR_VOID(XLAL_EFUNC);
          }
          
+         REAL4 sumofnoise = 0.0;    //To scale the expected IHS background
+         
          if (params->useSSE) {
             sseSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, 0, 1, 0, (INT4)ihsvectorsequence->length-(ii-1));
             if (xlalErrno!=0) {
@@ -791,8 +793,19 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
             
             memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
+            
+            //To scale the background efficiently
+            if (jj==0) {
+               INT4 kk;
+               for (kk=0; kk<ii; kk++) sumofnoise += fbinmeanvals->data[kk];
+            } else {
+               sumofnoise -= FbinMean->data[jj-1];
+               sumofnoise += FbinMean->data[jj+(ii-1)];
+            }
+            
             if (params->useSSE) {
-               sseScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, calcMean(fbinmeanvals)*ii);
+               //sseScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, calcMean(fbinmeanvals)*ii);
+               sseScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, sumofnoise);
                if (xlalErrno!=0) {
                   fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
                   XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -804,7 +817,8 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
                }
             } else {
                INT4 kk;
-               REAL4 scaleval = calcMean(fbinmeanvals)*ii;
+               //REAL4 scaleval = calcMean(fbinmeanvals)*ii;
+               REAL4 scaleval = sumofnoise;
                for (kk=0; kk<(INT4)inputfar->expectedIHSVector->length; kk++) scaledExpectedIHSVectorValues->data[kk] = scaleval*inputfar->expectedIHSVector->data[kk];
                fastSSVectorSequenceSubtract(excessabovenoise, tworows, scaledExpectedIHSVectorValues, jj);
             }
@@ -840,6 +854,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             XLAL_ERROR_VOID(XLAL_EFUNC);
          }
          
+         REAL4 sumofnoise = 0.0;    //To scale the expected IHS background
          INT4 endloc = ((ii-1)*(ii-1)-(ii-1))/2;
          
          if (params->useSSE) {
@@ -853,8 +868,19 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj); //If we didn't use SSE to sum the vector sequence (see lines above)
             
             memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
+            
+            //To scale the background efficiently
+            if (jj==0) {
+               INT4 kk;
+               for (kk=0; kk<ii; kk++) sumofnoise += fbinmeanvals->data[kk];
+            } else {
+               sumofnoise -= FbinMean->data[jj-1];
+               sumofnoise += FbinMean->data[jj+(ii-1)];
+            }
+            
             if (params->useSSE) {
-               sseScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, calcMean(fbinmeanvals)*ii);
+               //sseScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, calcMean(fbinmeanvals)*ii);
+               sseScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, sumofnoise);
                if (xlalErrno!=0) {
                   fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
                   XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -866,7 +892,8 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
                }
             } else {
                INT4 kk;
-               REAL4 scaleval = calcMean(fbinmeanvals)*ii;
+               //REAL4 scaleval = calcMean(fbinmeanvals)*ii;
+               REAL4 scaleval = sumofnoise;
                for (kk=0; kk<(INT4)inputfar->expectedIHSVector->length; kk++) scaledExpectedIHSVectorValues->data[kk] = scaleval*inputfar->expectedIHSVector->data[kk];
                fastSSVectorSequenceSubtract(excessabovenoise, tworows, scaledExpectedIHSVectorValues, jj);
             }

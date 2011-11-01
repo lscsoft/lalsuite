@@ -32,6 +32,9 @@
 #ifdef __SSE__
 #include <xmmintrin.h>
 #endif
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 
 #include <lal/Window.h>
 #include <lal/LALMalloc.h>
@@ -587,8 +590,7 @@ int main(int argc, char *argv[])
       REAL4 secFFTsigma = calcStddev(ffdata->ffdata);
       
       XLALDestroyREAL4Vector(TFdata_weighted);
-      //fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, calcMean(aveNoise)*calcMean(aveTFnoisePerFbinRatio));
-      fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, calcMean(aveNoise));
+      fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, 1.0);
       //comment this out
       /* FILE *FFDATA = fopen("./output/ffdata.dat","w");
       for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
@@ -757,7 +759,7 @@ int main(int argc, char *argv[])
             }
             
             if (inputParams->calcRthreshold) {
-               numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+               numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
                if (xlalErrno!=0) {
                   fprintf(stderr,"%s: numericFAR() failed.\n", __func__);
                   XLAL_ERROR(XLAL_EFUNC);
@@ -769,7 +771,7 @@ int main(int argc, char *argv[])
                fprintf(stderr,"%s: calculateR() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
             }
-            REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
+            REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
             if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
                fprintf(stderr,"%s: probR() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
@@ -2603,6 +2605,71 @@ REAL4Vector * sseScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4
    return output;
 #else
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
+   XLAL_ERROR_NULL(XLAL_EFAILED);
+#endif
+   
+}
+REAL8Vector * sseScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scale)
+{
+   
+#ifdef __SSE2__
+   INT4 roundedvectorlength = (INT4)input->length / 2;
+   INT4 vecaligned = 0, outputaligned = 0, ii = 0;
+   
+   REAL8 *allocinput = NULL, *allocoutput = NULL, *alignedinput = NULL, *alignedoutput = NULL;
+   __m128d *arr1, *result;
+   
+   __m128d scalefactor = _mm_set1_pd(scale);
+   
+   //Allocate memory for aligning input vector 1 if necessary
+   if ( input->data==(void*)(((UINT8)input->data+15) & ~15) ) {
+      vecaligned = 1;
+      arr1 = (__m128d*)input->data;
+   } else {
+      allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
+      if (allocinput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
+      memcpy(alignedinput, input->data, sizeof(REAL8)*2*roundedvectorlength);
+      arr1 = (__m128d*)alignedinput;
+   }
+   
+   //Allocate memory for aligning output vector if necessary
+   if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
+      outputaligned = 1;
+      result = (__m128d*)output->data;
+   } else {
+      allocoutput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
+      if (allocoutput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
+      result = (__m128d*)alignedoutput;
+   }
+   
+   //multiply the vector into the output
+   for (ii=0; ii<roundedvectorlength; ii++) {
+      *result = _mm_mul_pd(*arr1, scalefactor);
+      arr1++;
+      result++;
+   }
+   
+   //Copy output aligned memory to non-aligned memory if necessary
+   if (!outputaligned) memcpy(output->data, alignedoutput, 2*roundedvectorlength*sizeof(REAL8));
+   
+   //Finish up the remaining part
+   for (ii=2*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[ii] = input->data[ii] * scale;
+   
+   //Free memory if necessary
+   if (!vecaligned) XLALFree(allocinput);
+   if (!outputaligned) XLALFree(allocoutput);
+   
+   return output;
+#else
+   fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
    
