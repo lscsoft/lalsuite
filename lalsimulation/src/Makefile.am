@@ -14,7 +14,6 @@ lalsimulationinclude_HEADERS = \
 	LALSimBurst.h \
 	LALSimIMR.h \
 	LALSimInspiral.h \
-	LALSimInspiraldEnergyFlux.h \
 	LALSimulation.h \
 	LALSimInspiralSpinTaylorT4.h \
 	LALSimNoise.h \
