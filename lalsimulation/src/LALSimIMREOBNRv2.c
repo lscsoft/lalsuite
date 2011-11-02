@@ -36,7 +36,6 @@ Pan et al, arXiv:1106.1021v1 [gr-qc].
 #include <lal/LALComplex.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
-#include <lal/LALSimInspiraldEnergyFlux.h>
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
 #include <gsl/gsl_sf_gamma.h>
@@ -48,6 +47,7 @@ Pan et al, arXiv:1106.1021v1 [gr-qc].
 #include "LALSimIMREOBNQCCorrection.c"
 #include "LALSimIMREOBNewtonianMultipole.c"
 #include "LALSimIMREOBHybridRingdown.c"
+#include "LALSimInspiraldEnergyFlux.c"
 
 
 /** 

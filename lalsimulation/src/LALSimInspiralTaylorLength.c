@@ -20,7 +20,7 @@
 /**
 \author Sathyaprakash, B. S.
 \file
-\ingroup LALSimInspiraldEnergyFlux_h
+\ingroup LALSimInspiraldEnergyFlux_c
 
 \brief NONE
 
@@ -42,15 +42,36 @@ XLALDRombergIntegrate()
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALSimInspiral.h>
-#include <lal/LALSimInspiraldEnergyFlux.h>
 #include <lal/Integrate.h>
 
+#include "LALSimInspiraldEnergyFlux.c"
 #include "LALSimInspiralPNCoefficients.c"
 
 NRCSID (LALINSPIRALTOFVC, "$Id$");
 
+static REAL8
+XLALSimInspiralTofVIntegrand(
+   REAL8      v,
+   void      *params
+   )
+{
 
-REAL8
+  TofVIntegrandIn *ak = NULL;
+
+#ifndef LAL_NDEBUG
+  if ( !params )
+    XLAL_ERROR_REAL8( XLAL_EFAULT );
+
+  if ( v <= 0.0 || v >= 1.0 )
+    XLAL_ERROR_REAL8( XLAL_EINVAL );
+#endif
+
+  ak = (TofVIntegrandIn *) params;
+
+  return ak->dEnergy( v, ak->coeffs ) / ak->flux( v, ak->coeffs );
+}
+
+static REAL8
 XLALSimInspiralTofV (
    REAL8 v,
    void *params

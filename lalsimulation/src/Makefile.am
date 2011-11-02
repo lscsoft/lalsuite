@@ -45,9 +45,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTaylorT2.c \
 	LALSimInspiralTaylorT3.c \
 	LALSimInspiralTaylorT4.c \
-	LALSimInspiralTofV.c \
-	LALSimInspiralTofVIntegrand.c \
-	LALSimInspiraldEnergyFlux.c \
+	LALSimInspiralTaylorLength.c \
 	LALSimulation.c \
 	LALSimInspiralSpinTaylorT4.c \
 	LALSimulationVCSInfo.c \

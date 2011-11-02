@@ -32,7 +32,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 
-#include <lal/LALSimInspiraldEnergyFlux.h>
+#include "LALSimInspiraldEnergyFlux.c"
 #include "LALSimInspiralPNCoefficients.c"
 #include "check_series_macros.h"
 

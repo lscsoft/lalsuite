@@ -20,7 +20,7 @@
 /**
 \author Sathyaprakash, B. S.
 \file
-\ingroup LALSimInspiraldEnergyFlux_h
+\ingroup LALSimInspiraldEnergyFlux_c
 
 \brief The function \c XLALSimInspiralTofVIntegrand() calculates the quantity \f$E^{\prime}(v)/\mathcal{F}(v)\f$.
 
@@ -55,29 +55,9 @@ of these functions is set by a call to the function the appropriate LALSimInspir
 
 #include <math.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALSimInspiraldEnergyFlux.h>
+#include "LALSimInspiraldEnergyFlux.c"
 
 NRCSID (LALSIMINSPIRALTOFVINTEGRANDC, "$Id$");
 
 
-REAL8
-XLALSimInspiralTofVIntegrand(
-   REAL8      v,
-   void      *params
-   )
-{
 
-  TofVIntegrandIn *ak = NULL;
-
-#ifndef LAL_NDEBUG
-  if ( !params )
-    XLAL_ERROR_REAL8( XLAL_EFAULT );
-
-  if ( v <= 0.0 || v >= 1.0 )
-    XLAL_ERROR_REAL8( XLAL_EINVAL );
-#endif
-
-  ak = (TofVIntegrandIn *) params;
-
-  return ak->dEnergy( v, ak->coeffs ) / ak->flux( v, ak->coeffs );
-}
