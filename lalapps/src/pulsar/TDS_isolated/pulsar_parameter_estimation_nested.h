@@ -66,6 +66,9 @@
 
 #include <gsl/gsl_sort_double.h>
 #include <gsl/gsl_statistics_double.h>
+#include <gsl/gsl_blas.h>
+/* #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector.h> */
 
 #ifdef __cplusplus
 extern "C" {
@@ -165,6 +168,10 @@ void add_variable_scale_prior( LALInferenceVariables *var,
                                REAL8 value, REAL8 sigma );
 
 void initialiseProposal( LALInferenceRunState *runState );
+
+void add_correlation_matrix( LALInferenceVariables *ini, 
+                             LALInferenceVariables *priors, REAL8Array *corMat,
+                             LALStringVector *parMat );
 
 /* likelihood and prior */
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, 

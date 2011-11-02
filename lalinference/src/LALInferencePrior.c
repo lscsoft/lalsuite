@@ -703,6 +703,64 @@ void LALInferenceGetGaussianPrior(LALInferenceVariables *priorArgs, const char *
                 
 }
 
+/* Function to add a correlation matrix to the prior onto the priorArgs */
+void LALInferenceAddCorrelatedPrior(LALInferenceVariables *priorArgs, 
+                                  const char *name, gsl_matrix *cor, INT4 idx){
+  char corName[VARNAME_MAX];
+  char idxName[VARNAME_MAX];
+  
+  sprintf(corName,"%s_correlation_matrix",name);
+  sprintf(idxName,"%s_index",name);
+  
+  LALInferenceAddVariable(priorArgs, corName, (void *)&cor,
+                          LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(priorArgs, idxName, (void *)&idx, LALINFERENCE_INT4_t,
+                          LALINFERENCE_PARAM_FIXED) ;    
+  return;
+}
+
+/* Get the correlation matrix and parameter index */
+void LALInferenceGetCorrelatedPrior(LALInferenceVariables *priorArgs, 
+                                    const char *name, gsl_matrix *cor,
+                                    INT4 *idx){
+  char corName[VARNAME_MAX];
+  char idxName[VARNAME_MAX];
+                
+  sprintf(corName,"%s_correlation_matrix",name);
+  sprintf(idxName,"%s_index",name);
+    
+  *(gsl_matrix *)cor=*(gsl_matrix *)LALInferenceGetVariable(priorArgs, corName);
+  *(INT4 *)idx=*(INT4 *)LALInferenceGetVariable(priorArgs,idxName);
+  return;       
+}
+
+/* Remove the correlated prior */
+void LALInferenceRemoveCorrelatedPrior(LALInferenceVariables *priorArgs, 
+                                       const char *name){
+  char corName[VARNAME_MAX];
+  char idxName[VARNAME_MAX];
+                
+  sprintf(corName,"%s_correlation_matrix",name);
+  sprintf(idxName,"%s_index",name);
+  
+  LALInferenceRemoveVariable(priorArgs, corName);
+  LALInferenceRemoveVariable(priorArgs, idxName);
+  return;
+}
+
+/* Check for a correlated prior of the standard form */
+int LALInferenceCheckCorrelatedPrior(LALInferenceVariables *priorArgs, 
+                                     const char *name){
+  char corName[VARNAME_MAX];
+  char idxName[VARNAME_MAX];
+                
+  sprintf(corName,"%s_correlation_matrix",name);
+  sprintf(idxName,"%s_index",name);
+  
+  return (LALInferenceCheckVariable(priorArgs,corName) &&
+          LALInferenceCheckVariable(priorArgs,idxName));
+}
+
 void LALInferenceDrawFromPrior( LALInferenceVariables *output, 
                                 LALInferenceVariables *priorArgs, 
                                 gsl_rng *rdm) {  
@@ -717,7 +775,7 @@ void LALInferenceDrawFromPrior( LALInferenceVariables *output,
 void LALInferenceDrawNameFromPrior( LALInferenceVariables *output, 
                                     LALInferenceVariables *priorArgs, 
                                     char *name, LALInferenceVariableType type, 
-                                    gsl_rng *rdm) {  
+                                    gsl_rng *rdm) {
   REAL8 tmp = 0.;
       
   /* test for a Gaussian prior */
@@ -734,6 +792,35 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
     LALInferenceGetMinMaxPrior(priorArgs, name, &min, &max);
     tmp = min + (max-min)*gsl_rng_uniform( rdm );
   }
+  /* test for a prior drawn from correlated values */
+  else if( LALInferenceCheckCorrelatedPrior( priorArgs, name ) ){
+    /* NOTE: this will be slow if many parameters have correlated priors as it
+       will be called for each one, when it could ideally be called just once -
+       there may be quicker ways of doing this */
+    gsl_matrix *cor = NULL;
+    INT4 idx = 0, dims = 0;
+    REAL4Vector *tmps = NULL;
+    RandomParams *randParam;
+    UINT4 randomseed = gsl_rng_get(rdm);
+    
+    LALInferenceGetCorrelatedPrior( priorArgs, name, cor, &idx );
+    dims = cor->size1;
+    
+    /* check matrix for positive definiteness */
+    if( !LALInferenceCheckPositiveDefinite( cor, dims ) ){
+      XLALPrintError("Error... matrix is not positive definite!\n");
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+    }
+    
+    /* draw values from the multivariate Gaussian described by the correlation
+       matrix */
+    tmps = XLALCreateREAL4Vector( dims );
+    randParam = XLALCreateRandomParams( randomseed );
+    XLALMultiNormalDeviates( tmps, cor, dims, randParam );
+    
+    /* set random number for given parameter index */
+    tmp = tmps->data[idx];
+  }  
   /* not a recognised prior type */
   else{
     return;
@@ -764,6 +851,12 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
       LALInferenceSetVariable(output, name, &val);
       break;
     }
+    case LALINFERENCE_gslMatrix_t:
+    {  
+      REAL8 val = tmp;
+      LALInferenceSetVariable(output, name, &val);
+      break;
+    }  
     default:
       XLALPrintError ("%s: Trying to randomise a non-numeric \
 parameter!\n", __func__ );

@@ -192,7 +192,8 @@ UINT4 varybinary = 0;
 " --detectors         all IFOs with data to be analysed e.g. H1,H2\n\
                      (delimited by commas) (if generating fake data these\n\
                      should not be set)\n"\
-" --par-file          pulsar parameter (.par) file (full path) \n"\
+" --par-file          pulsar parameter (.par) file (full path)\n"\
+" --cor-file          pulsar TEMPO-fit parameter correlation matrix\n"\
 " --input-files       full paths and file names for the data for each\n\
                      detector in the list (must be in the same order)\n\
                      delimited by commas. If not set you can generate fake\n\
@@ -277,7 +278,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   REAL8Vector *logLikelihoods = NULL;
   
   /* set error handler to abort in main function */
-  /* lalDebugLevel = 7; */
+  lalDebugLevel = 7;
   XLALSetErrorHandler(XLALAbortErrorHandler);
   
   /* Get ProcParamsTable from input arguments */
@@ -1143,6 +1144,7 @@ defined!\n");
  * \sa setupLookupTables
  * \sa add_initial_variables
  * \sa get_phase_model
+ * \sa add_correlation_matrix
  */
 void setupFromParFile( LALInferenceRunState *runState )
 /* Read the PAR file of pulsar parameters and setup the code using them */
@@ -1157,8 +1159,8 @@ void setupFromParFile( LALInferenceRunState *runState )
   
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
   if( ppt == NULL ) { fprintf(stderr,"Must specify --par-file!\n"); exit(1); }
-  char *parFile = ppt->value;
-        
+  CHAR *parFile = ppt->value;
+  
   /* get the pulsar parameters */
   XLALReadTEMPOParFile( &pulsar, parFile );
   psr.equatorialCoords.longitude = pulsar.ra;
@@ -1180,7 +1182,7 @@ void setupFromParFile( LALInferenceRunState *runState )
      factors, and any Gaussian priors defined from the par file */
   add_initial_variables( runState->currentParams, scaletemp,
                          runState->priorArgs, pulsar );
-                                     
+  
   /* Setup initial phase, and barycentring delays */
   while( data ){
     REAL8Vector *freqFactors = NULL;
@@ -1626,6 +1628,17 @@ void add_variable_scale_prior( LALInferenceVariables *var,
  * is applied differently, so as to give a Gaussian with zero mean and unit
  * variance.
  * 
+ * If a parameter correlation matrix is given by the \c cor-file command then
+ * this is used to construct a multi-variate Gaussian prior for the given
+ * parameters (it is assumed that this file is created using TEMPO and the
+ * parameters it contains are the same as those for which a standard deviation
+ * is defined in the par file). This overrules the Gaussian priors that will
+ * have been set for these parameters. Due to the scalings applied to the
+ * parameters this correlation coefficient matrix does not have to be converted
+ * into the true covariance matrix for use when calculating the prior. Note
+ * that these multi-variate Gaussian priors will not overrule values given in
+ * the proposal file.
+ * 
  * \param runState [in] A pointer to the LALInferenceRunState
  */
 void initialiseProposal( LALInferenceRunState *runState )
@@ -1639,6 +1652,10 @@ void initialiseProposal( LALInferenceRunState *runState )
   REAL8 low, high;
   
   LALInferenceIFOData *data = runState->data;
+  
+  /* parameters in correlation matrix */
+  LALStringVector *corParams = NULL;
+  REAL8Array *corMat = NULL;
   
   ppt = LALInferenceGetProcParamVal( commandLine, "--prop-file" );
   if( ppt ){
@@ -1691,7 +1708,7 @@ set.\n", propfile, tempPar);
     
     /* if a Gaussian prior has already been defined (i.e. from the par file)
        remove this and overwrite with values from the propfile */
-    if ( LALInferenceCheckVariable(runState->priorArgs, tempParPrior) )
+    if ( LALInferenceCheckGaussianPrior(runState->priorArgs, tempPar) )
       LALInferenceRemoveGaussianPrior( runState->priorArgs, tempPar );
     
     scale = high - low;
@@ -1707,7 +1724,7 @@ set.\n", propfile, tempPar);
       }
     }
     
-    /* if psi is covering the range -pi/4 to pi/4 scale it, so that it cover
+    /* if psi is covering the range -pi/4 to pi/4 scale it, so that it covers
        the 0 to 2pi range of a circular parameter */
     if( !strcmp(tempPar, "psi") ){
       if ( scale/LAL_PI_2 > 0.99 && scale/LAL_PI_2 < 1.01 ){ 
@@ -1788,11 +1805,9 @@ set.\n", propfile, tempPar);
     REAL8 mu, sigma;
     
     LALInferenceIFOData *datatemp = data;
-    CHAR tempParPrior[VARNAME_MAX] = "";
 
-    sprintf(tempParPrior,"%s_gaussian_mean",checkPrior->name);
-
-    if ( LALInferenceCheckVariable(runState->priorArgs, tempParPrior) ){
+    if ( LALInferenceCheckGaussianPrior(runState->priorArgs, 
+                                        checkPrior->name) ){
       tempVar = *(REAL8 *)checkPrior->value;
       
       /* get the mean and standard deviation of the Gaussian prior */
@@ -1840,8 +1855,121 @@ set.\n", propfile, tempPar);
       }
     }
   }
+  
+  /* now check for a parameter correlation coefficient matrix file */
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--cor-file" );
+  if( ppt ){
+    CHAR *corFile = ppt->value;
+    UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
+    dims->data[0] = 1;
+    dims->data[1] = 1;
     
+    corMat = XLALCreateREAL8Array( dims );
+    
+    XLALReadTEMPOCorFile( corMat, corParams, corFile );
+  
+    /* if the correlation matrix is given then add it as the prior for values
+       with Gaussian errors specified in the par file */
+    add_correlation_matrix( runState->currentParams, runState->priorArgs,
+                            corMat, corParams );
+    XLALDestroyUINT4Vector( dims );
+  }
+  
   return;
+}
+
+
+/** \brief Adds a correlation matrix for a multi-variate Gaussian prior
+ * 
+ * If a TEMPO-style parameter correlation coefficient file has been given, then
+ * this function will use it to set the prior distribution for the given
+ * parameters. It is assumed that the equivalent par file contained standard
+ * deviations for all parameters given in the correlation matrix file, but if
+ * the correlation matrix contains more parameters they will be ignored.
+ */
+void add_correlation_matrix( LALInferenceVariables *ini, 
+                             LALInferenceVariables *priors, REAL8Array *corMat,
+                             LALStringVector *parMat ){
+  UINT4 i = 0, j = 0, k = 0;
+  LALStringVector *newPars = NULL;
+  gsl_matrix *corMatg = NULL;
+  UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
+  
+  /* loop through parameters and find ones that have Gaussian priors set -
+     these should match with parameters in the correlation coefficient matrix */
+  for ( i = 0; i < parMat->length; i++ ){
+    UINT4 incor = 0;
+    UINT4 corsize = corMat->dimLength->data[0];
+    LALInferenceVariableItem *checkPrior = ini->head;
+  
+    for( ; checkPrior ; checkPrior = checkPrior->next ){
+      if( LALInferenceCheckGaussianPrior(priors, checkPrior->name) ){
+
+        /* ignore parameter name case */
+        if( !strcasecmp(parMat->data[i], checkPrior->name) ){
+          incor = 1;
+          break;
+        }
+      }
+    }
+    
+    /* if parameter in the corMat did not match one in with a Gaussian defined
+       prior, then remove it from the matrix */
+    if ( incor == 0 ){
+      /* remove the ith row and column from corMat, and the ith name from
+         parMat */
+      /* shift rows up */
+      for ( j = i+1; j < corsize; j++ )
+        for ( k = 0; k < corsize; k++ )
+          corMat->data[(j-1)*corsize + k] = corMat->data[j*corsize + k];
+      
+      /* shift columns left */
+      for ( j = i+1; j < corsize; j++ )
+        for ( k = 0; k < corsize; k++ )
+          corMat->data[k*corsize + j-1] = corMat->data[k*corsize + j];
+      
+      /* resize array */
+      dims->data[0] = corsize-1;
+      dims->data[1] = dims->data[0];
+      corMat = XLALResizeREAL8Array( corMat, dims );
+      
+      /* add parameter to new parameter string vector */
+      newPars = XLALAppendString2Vector( newPars, parMat->data[i] );
+    }
+  }
+  
+  XLALDestroyUINT4Vector( dims );
+  
+  /* return new parameter string vector as old one */
+  XLALDestroyStringVector( parMat );
+  parMat = newPars;
+  
+  /* copy the corMat into a gsl_matrix */
+  corMatg = gsl_matrix_alloc( parMat->length, parMat->length );
+  for ( i = 0; i < parMat->length; i++ )
+    for ( j = 0; j < parMat->length; j++ )
+      gsl_matrix_set( corMatg, i, j, corMat->data[i*parMat->length + j] );
+  
+  /* re-loop over parameters removing Gaussian priors on those in the parMat
+     and replacing with a correlation matrix */
+  for ( i = 0; i < parMat->length; i++ ){
+    LALInferenceVariableItem *checkPrior = ini->head;
+    
+    for( ; checkPrior ; checkPrior = checkPrior->next ){
+      if( LALInferenceCheckGaussianPrior(priors, checkPrior->name) ){
+        if( !strcasecmp(parMat->data[i], checkPrior->name) ){
+          /* remove the Gaussian prior */
+          LALInferenceRemoveGaussianPrior( priors, checkPrior->name );
+          
+          /* replace it with the correlation matrix as a gsl_matrix */
+          LALInferenceAddCorrelatedPrior( priors, checkPrior->name,
+                                          corMatg, i );
+          
+          break;
+        }
+      }
+    }
+  }
 }
 
 
@@ -2004,12 +2132,15 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
   (void)runState;
   LALInferenceVariableItem *item = params->head;
   REAL8 min, max, mu, sigma, prior = 0, value = 0.;
+ 
+  LALStringVector *corPars = NULL;
+  REAL8Vector *corVals = NULL;
+  INT4 cori = 0;
   
   for(; item; item = item->next ){
     /* get scale factor */
     CHAR scalePar[VARNAME_MAX] = "";
     CHAR scaleMinPar[VARNAME_MAX] = "";
-    CHAR priorPar[VARNAME_MAX] = "";
     REAL8 scale = 0., scaleMin = 0.;
     
     if( item->vary == LALINFERENCE_PARAM_FIXED || 
@@ -2022,10 +2153,10 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     scaleMin = *(REAL8 *)LALInferenceGetVariable( data->dataParams, 
                                                   scaleMinPar );
     
-    if( item->vary == LALINFERENCE_PARAM_LINEAR || item->vary == LALINFERENCE_PARAM_CIRCULAR ){
-      sprintf(priorPar, "%s_gaussian_mean", item->name);
+    if( item->vary == LALINFERENCE_PARAM_LINEAR || 
+      item->vary == LALINFERENCE_PARAM_CIRCULAR ){
       /* Check for a gaussian */
-      if ( LALInferenceCheckVariable(runState->priorArgs, priorPar) ){
+      if ( LALInferenceCheckGaussianPrior(runState->priorArgs, item->name) ){
         LALInferenceGetGaussianPrior( runState->priorArgs, item->name, 
                                       (void *)&mu, (void *)&sigma );
       
@@ -2035,9 +2166,9 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
        prior -= log(sqrt(2.*LAL_PI)*sigma);
        prior -= (value - mu)*(value - mu) / (2.*sigma*sigma);
       }
-      /* Otherwise use a flat prior */
-      else{
-	LALInferenceGetMinMaxPrior( runState->priorArgs, item->name, 
+      /* check for a flat prior */
+      else if( LALInferenceCheckMinMaxPrior(runState->priorArgs, item->name) ){
+        LALInferenceGetMinMaxPrior( runState->priorArgs, item->name, 
                                     &min, &max );
       
         if( (*(REAL8 *) item->value) < min || (*(REAL8 *)item->value) > max ){
@@ -2045,8 +2176,64 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         }
         else prior -= log( (max - min) * scale );
       }
+      else if( LALInferenceCheckCorrelatedPrior(runState->priorArgs,
+        item->name) ){
+        cori++;
+        corPars = XLALAppendString2Vector( corPars, item->name );
+        corVals = XLALResizeREAL8Vector( corVals, cori );
+        corVals->data[cori-1] = *(REAL8 *)item->value;
+      }
+      else{
+        XLALPrintError("Error... no prior specified!\n");
+        XLAL_ERROR_REAL8(XLAL_EFUNC);
+      }
     }
   }
+  
+  /* if there are values for which the priors are defined by a correlation
+     coefficient matrix then get add the prior from that */
+  if ( corPars ){
+    gsl_matrix *cor = NULL, *cortmp = NULL, *inv = NULL;
+    gsl_permutation *perm = NULL;
+    gsl_vector_view vals;
+    gsl_vector *vm = NULL;
+    INT4 idx = 0, sn = 0, i = 0;
+    REAL8 ptmp = 0;
+    
+    LALInferenceGetCorrelatedPrior( runState->priorArgs, corPars->data[0], cor,
+                                   &idx );
+    gsl_matrix_memcpy(cortmp, cor);
+    perm = gsl_permutation_alloc( cortmp->size1 );
+    
+    /* check for positive definiteness */
+    if( !LALInferenceCheckPositiveDefinite( cortmp, cortmp->size1 ) ){
+      XLALPrintError("Error... matrix is not positive definite!\n");
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+    }
+    
+    /* get LU decomposition */
+    gsl_linalg_LU_decomp(cortmp, perm, &sn);
+    
+    /* get the matrix inverse */
+    gsl_linalg_LU_invert(cortmp, perm, inv);
+    
+    /* get the log prior (this only works properly if the parameter values have 
+       been prescaled so as to be from a Gaussian of zero mean and unit
+       variance, which should be the case in this code) */
+    vals = gsl_vector_view_array( corVals->data, corVals->length );
+    
+    gsl_blas_dgemv(CblasNoTrans, 1., inv, &vals.vector, 0., vm);
+    
+    gsl_blas_ddot(&vals.vector, vm, &ptmp); 
+    
+    XLALDestroyStringVector( corPars );
+    XLALDestroyREAL8Vector( corVals );
+    gsl_matrix_free( cortmp );
+    gsl_permutation_free( perm );
+    
+    prior -= ptmp;
+  }
+  
   return prior; 
 }
 
