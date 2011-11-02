@@ -442,8 +442,8 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    if (prob<=1.0e-9) {
       estimatedTheProb = 1;
       
-      INT4 errcode1 = 0, errcode2 = 0;
-      REAL8 probslope=0.0, tempprob, tempprob2, c1, c2, c = 0.0, logprobave = 0.0;
+      INT4 errcode1 = 0;//, errcode2 = 0;
+      REAL8 probslope=0.0, tempprob, c1;//, tempprob2, c2, c = 0.0, logprobave = 0.0;
       
       gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
       if (rng==NULL) {
@@ -455,7 +455,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       //UINT8 randseed = rand();
       //gsl_rng_set(rng, randseed);
       
-      REAL8Vector *slopes = XLALCreateREAL8Vector(50);
+      /* REAL8Vector *slopes = XLALCreateREAL8Vector(50);
       if (slopes==NULL) {
          fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, 50);
          XLAL_ERROR_REAL8(XLAL_EFUNC);
@@ -505,7 +505,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
             XLAL_ERROR_REAL8(XLAL_EDIVERGE);
          }
       }
-      REAL8 cave = .5*c/(REAL8)slopes->length;
+      REAL8 cave = 0.5*c/(REAL8)slopes->length;
       logprobave /= 2.0*slopes->length;
       probslope = calcMeanD(slopes);
       logprobest = probslope*(Rpr-cave) + logprobave;
@@ -513,10 +513,10 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          fprintf(stderr, "%s: Failure calculating accurate interpolated value.\n", __func__);
          XLAL_ERROR_REAL8(XLAL_ERANGE);
       }
-      XLALDestroyREAL8Vector(slopes);
+      XLALDestroyREAL8Vector(slopes); */
       
-      lowerend = 0.0;
-      upperend = Rpr;
+      REAL8 lowerend = 0.0;
+      REAL8 upperend = Rpr;
       REAL8Vector *probvals = XLALCreateREAL8Vector(10);
       REAL8Vector *cvals = XLALCreateREAL8Vector(probvals->length);
       if (probvals==NULL) {
@@ -546,6 +546,11 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       logprobest = probslope*Rpr + yintercept;
+      if (logprobest>-0.5) {
+         fprintf(stderr, "%s: Failure calculating accurate interpolated value.\n", __func__);
+         XLAL_ERROR_REAL8(XLAL_ERANGE);
+      }
+      
       XLALDestroyREAL8Vector(probvals);
       XLALDestroyREAL8Vector(cvals);
       
@@ -826,6 +831,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       //REAL8 prefact2 = scale1 * 2.0 * LAL_TWOPI * s * s;
       REAL8 prefact1 = log(scale1 * 2.0 * LAL_TWOPI * s * s * N * N);
       REAL8 prefact2 = log(scale1 * 2.0 * LAL_TWOPI * s * s);
+      REAL8 logscale = log(scale->data[ii+fnumstart]);
       for (jj=0; jj<(INT4)fpr->length; jj++) {
          
          //REAL8 omega = LAL_TWOPI*fpr->data[jj];
@@ -847,6 +853,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
             twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, input.period*fpr->data[jj]);
             dataval /= (cos2pix - 1.0);
          } */
+         
          if (fabs_cos_omegapr_times_period_minus_one->data[jj]<1.0e-5) {
             //twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
             //dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * omegapr->data[jj] * omegapr->data[jj]) * (cos2pix + 1.0) * N * N;
@@ -855,7 +862,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
             //dataval = scale->data[ii+fnumstart] * prefact1 * exp(-s*s*omegapr_squared->data[jj]) * (cos2pix+1.0);
             
             twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
-            dataval = ( log(scale->data[ii+fnumstart]) + prefact1 + (-s*s*omegapr_squared->data[jj]) + log(cos2pix+1.0) );
+            dataval = ( logscale + prefact1 + (-s*s*omegapr_squared->data[jj]) + log(cos2pix+1.0) );
             if (dataval<-700.0) {
                dataval = 0.0;
             } else {
@@ -874,7 +881,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
             //dataval = scale->data[ii+fnumstart] * prefact2 * exp(-s*s*omegapr_squared->data[jj]) * (cos_N_times_omegapr_times_period->data[jj] - 1.0) * (cos2pix + 1.0)/(cos_omegapr_times_period->data[jj] - 1.0);
             
             twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
-            dataval = ( log(scale->data[ii+fnumstart]) + prefact2 + (-s*s*omegapr_squared->data[jj]) + log((cos2pix + 1.0) * (cos_N_times_omegapr_times_period->data[jj] - 1.0) * one_over_cos_omegapr_times_period_minus_one->data[jj]) );
+            dataval = ( logscale + prefact2 + (-s*s*omegapr_squared->data[jj]) + log((cos2pix + 1.0) * (cos_N_times_omegapr_times_period->data[jj] - 1.0) * one_over_cos_omegapr_times_period_minus_one->data[jj]) );
             if (dataval<-700.0) {
                dataval = 0.0;
             } else {

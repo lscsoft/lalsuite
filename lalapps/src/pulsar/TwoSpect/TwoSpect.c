@@ -624,7 +624,7 @@ int main(int argc, char *argv[])
       }
       
       //Find any IHS candidates
-      findIHScandidates(ihsCandidates, ihsfarstruct, inputParams, ffdata, ihsmaxima, aveNoise, aveTFnoisePerFbinRatio, trackedlines);
+      findIHScandidates(ihsCandidates, ihsfarstruct, inputParams, ffdata, ihsmaxima, aveTFnoisePerFbinRatio, trackedlines);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: findIHScandidates() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
@@ -1561,8 +1561,13 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
    }
    
    for (ii=0; ii<(INT4)testRngMedian->length; ii++) {
+      //fprintf(stderr, "%f\n", testaveTFnoisePerFbinRatio->data[ii+(blksize-1)/2]/testRngMedian->data[ii]);
       if ( (ii+(blksize-1)/2) > ((params->blksize-1)/2) && testaveTFnoisePerFbinRatio->data[ii+(blksize-1)/2]/testRngMedian->data[ii] > params->lineDetection) {
          lines = XLALResizeINT4Vector(lines, numlines+1);
+         if (lines==NULL) {
+            fprintf(stderr,"%s: XLALResizeINT4Vector(lines,%d) failed.\n", __func__, numlines+1);
+            XLAL_ERROR_NULL(XLAL_EFUNC);
+         }
          lines->data[numlines] = ii+(blksize-1)/2;
          numlines++;
       }

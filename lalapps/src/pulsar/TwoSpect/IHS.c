@@ -1332,13 +1332,13 @@ REAL4 ihsLoc(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma)
 
 
 
-void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs, REAL4VectorSequence *trackedlines)
+void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *fbinavgs, REAL4VectorSequence *trackedlines)
 {
    
    INT4 ii, jj, kk;
    REAL8 fsig, per0, B;
    
-   INT4 numberofIHSvalsChecked = 0, numberofIHSvalsExceededThresh = 0, numberPassingBoth = 0;
+   INT4 numberofIHSvalsChecked = 0, numberofIHSvalsExceededThresh = 0, numberPassingBoth = 0, linesinterferewithnum = 0;
    
    INT4 numfbins = ffdata->numfbins;
    
@@ -1346,9 +1346,6 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
    
    REAL4Vector *ihss, *avgsinrange;
    INT4Vector *locs;
-   
-   REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
-   REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
    
    //Check the IHS values against the FAR, checking between IHS width values
    //FILE *IHSVALSOUTPUT = fopen("./output/allihsvalspassthresh.dat","w");
@@ -1367,8 +1364,8 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
       
-      REAL8 highestval = 0.0;
-      INT4 highestvalloc = -1, jjloc = 0;
+      //REAL8 highestval = 0.0;
+      //INT4 highestvalloc = -1, jjloc = 0;
       for (jj=0; jj<(INT4)numfbins-(ii-1); jj++) {
       
          //Noise in the range of the rows, mean and rms values for IHS
@@ -1378,11 +1375,6 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
             fprintf(stderr,"%s: calcMean() failed.\n", __func__);
             XLAL_ERROR_VOID(XLAL_EFUNC);
          }
-         /* REAL4 rmsNoise = calcRms(avgsinrange);
-         if (XLAL_IS_REAL4_FAIL_NAN(rmsNoise)) {
-            fprintf(stderr,"%s: calcRms() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } */
          
          numberofIHSvalsChecked++;
          
@@ -1419,21 +1411,22 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   } /* while kk < trackedlines->length && nolinesinterfering==1 */
                } /* if trackedlines != NULL */
                
-               if (nolinesinterfering) {
+               if (!nolinesinterfering) {
+                  linesinterferewithnum++;
+               } else {
                   //Test this here
-                  REAL8 noise = 0.0;
-                  for (kk=1; kk<=params->ihsfactor; kk++) if (!(fabs(dailyharmonic-(REAL8)(kk*loc))<=1.0 || fabs(dailyharmonic2-(REAL8)(kk*loc))<=1.0 || fabs(dailyharmonic3-(REAL8)(kk*loc))<=1.0 || fabs(dailyharmonic4-(REAL8)(kk*loc))<=1.0)) noise += aveNoise->data[kk*loc];
+                  REAL8 noise = ihsfarstruct->expectedIHSVector->data[loc-5];
                   REAL8 totalnoise = 0.0;
                   for (kk=0; kk<ii; kk++) totalnoise += noise*fbinavgs->data[jj+kk];
                   
-                  //if (ihsmaxima->maxima->data[locationinmaximastruct] > highestval) {
-                  if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval) {
+                  /* if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval) {
                      //highestval = ihsmaxima->maxima->data[locationinmaximastruct];
                      highestval = ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise;
                      highestvalloc = locationinmaximastruct;
                      jjloc = jj;
-                  }
-                  /* //Candidate h0
+                  } */
+
+                  //Candidate h0
                   //REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[locationinmaximastruct], loc, jj, ii, params, aveNoise, fbinavgs);
                   REAL8 h0 = ihs2h0(2.0*(ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise), params);
                   if (candlist->numofcandidates == candlist->length-1) {
@@ -1444,13 +1437,13 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                      }
                   }
                   loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, ffdata->tfnormalization);
-                  (candlist->numofcandidates)++; */
+                  (candlist->numofcandidates)++;
                } /* if no lines are interfering */
             } /* if fom is below or equal to threshold fom */
          } /* if val exceeds threshold */
       } /* for jj < numfbins-(ii-1) */
       
-      if (highestvalloc != -1) {
+      /* if (highestvalloc != -1) {
          INT4 loc = ihsmaxima->locations->data[highestvalloc];
          //Candidate frequency
          fsig = params->fmin + (0.5*(ii-1) + jjloc)/params->Tcoh;
@@ -1461,7 +1454,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
          //Candidate h0
          //REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[highestvalloc], loc, jjloc, ii, params, aveNoise, fbinavgs);
          REAL8 h0 = ihs2h0(2.0*highestval, params);  //Need factor of 2 for the degrees of freedom counting
-         REAL8 significance = 0.0;
+         //REAL8 significance = 0.0;
          //significance = log10(significance_of_IHSval(ihsmaxima->maxima->data[highestvalloc], loc, jjloc, ii, params, aveNoise, fbinavgs));
          
          if (candlist->numofcandidates == candlist->length-1) {
@@ -1472,9 +1465,9 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
             }
          }
          //loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
-         loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, significance, 0, ffdata->tfnormalization);
+         loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, 0.0, 0, ffdata->tfnormalization);
          (candlist->numofcandidates)++;
-      }
+      } */
       
       //Destroy
       XLALDestroyREAL4Vector(ihss);
@@ -1488,7 +1481,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
    
    //fclose(IHSVALSOUTPUT);
    
-   fprintf(stderr,"Number of IHS vals checked = %d, number exceeding IHS threshold = %d, number passing both = %d\n", numberofIHSvalsChecked, numberofIHSvalsExceededThresh, numberPassingBoth);
+   fprintf(stderr,"Number of IHS vals checked = %d, number exceeding IHS threshold = %d, number passing both = %d, but lines interfere with %d\n", numberofIHSvalsChecked, numberofIHSvalsExceededThresh, numberPassingBoth, linesinterferewithnum);
    
 } /* findIHScandidates() */
 
