@@ -29,6 +29,8 @@
  * 
  */
 
+#include <math.h>
+
 #include <lal/LALComplex.h>
 
 #include <gsl/gsl_vector.h>
