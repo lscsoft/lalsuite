@@ -103,7 +103,7 @@ typedef enum {
   LALINFERENCE_REAL8Vector_t,
   LALINFERENCE_UINT4Vector_t,
   LALINFERENCE_string_t,
-  LALINFERENCE_PROPOSAL_ARRAY_t
+  LALINFERENCE_void_ptr_t
 } LALInferenceVariableType;
 
 /** An enumerated type for denoting time or frequency domain

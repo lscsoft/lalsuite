@@ -47,7 +47,7 @@ size_t LALInferenceTypeSize[] = {sizeof(INT4),
                                  sizeof(REAL8Vector *),
                                  sizeof(UINT4Vector *),
                                  sizeof(CHAR *),
-                                 sizeof(LALInferenceProposalFunction **)
+                                 sizeof(void *)
 };
 
 

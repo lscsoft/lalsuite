@@ -124,7 +124,7 @@ LALInferenceAddProposalToCycle(LALInferenceRunState *runState, LALInferencePropo
     length += weight;
 
     LALInferenceSetVariable(propArgs, cycleArrayLengthName, &length);
-    LALInferenceSetVariable(propArgs, cycleArrayName, &cycle);
+    LALInferenceSetVariable(propArgs, cycleArrayName, (void *)&cycle);
   } else {
     /* There are no data in proposal args.  Set some. */
     UINT4 i;
@@ -141,7 +141,7 @@ LALInferenceAddProposalToCycle(LALInferenceRunState *runState, LALInferencePropo
     }
 
     LALInferenceAddVariable(propArgs, cycleArrayLengthName, &length, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(propArgs, cycleArrayName, &cycle, LALINFERENCE_PROPOSAL_ARRAY_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(propArgs, cycleArrayName, (void *)&cycle, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
   }
 }
 
