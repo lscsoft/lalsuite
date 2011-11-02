@@ -458,3 +458,144 @@ XLALSimInspiralTaylorT4AngularAccel_7PNCoeff(
 	return -(4.415/4.032 - 358.675/6.048 * eta - 91.495/1.512 * eta*eta) * LAL_PI;
 }
 
+
+/**
+ * Computes the PN Coefficients for using in the TaylorEt v(zeta) equation,
+ * which is the square root of the x(zeta) equation.
+ *
+ * Terms given in equation 3.11 of: Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtVOfZeta_2PNCoeff(
+	REAL8 eta)
+{
+	return (3.0/4.0 + 1.0/12.0 * eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtVOfZeta_4PNCoeff(
+	REAL8 eta)
+{
+	return (9.0/2.0 - 17.0/8.0 * eta + 1.0/18.0 * eta*eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtVOfZeta_6PNCoeff(
+	REAL8 eta)
+{
+	return (40.5/1.6 + (20.5/9.6 * LAL_PI*LAL_PI - 479.5/7.2) * eta
+		+ 5.5/6.4 * eta*eta + 3.5/129.6 * eta*eta*eta);
+}
+
+
+/**
+ * Computes the PN Coefficients for using in the TaylorEt dPhase/dt equation.
+ *
+ * Terms given in equation 3.13a of: Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtPhasing_0PNCoeff(
+	REAL8 m)
+{
+	return 1.0/m;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtPhasing_2PNCoeff(
+	REAL8 eta)
+{
+	return (9.0/8.0 + 1.0/8.0 * eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtPhasing_4PNCoeff(
+	REAL8 eta)
+{
+	return (8.91/1.28 - 20.1/6.4 * eta + 1.1/12.8 * eta*eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtPhasing_6PNCoeff(
+	REAL8 eta)
+{
+	return (41.445/1.024 - (309.715/3.072 - 20.5/6.4 * LAL_PI*LAL_PI) * eta
+		+ 1.215/1.024 * eta*eta + 4.5/102.4 * eta*eta*eta);
+}
+
+
+/**
+ * Computes the PN Coefficients for using in the TaylorEt dZeta/dt equation.
+ *
+ * Terms given in equation 3.13b of: Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtZeta_0PNCoeff(
+	REAL8 m,
+	REAL8 eta)
+{
+	return 64.0 * eta / (5.0 * m);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtZeta_2PNCoeff(
+	REAL8 eta)
+{
+	return (1.3/33.6 - 5.0/2.0 * eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtZeta_3PNCoeff(
+	REAL8 UNUSED eta)
+{
+	return 4.0 * LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtZeta_4PNCoeff(
+	REAL8 eta)
+{
+	return (11.7857/1.8144 - 12.017/2.016 * eta + 5.0/2.0 * eta*eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtZeta_5PNCoeff(
+	REAL8 eta)
+{
+	return (49.13/6.72 - 177.0/8.0 * eta) * LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtZeta_6PNCoeff(
+	REAL8 eta)
+{
+	return (379.99588601/2.79417600 + 16.0/3.0 * LAL_PI*LAL_PI - 17.12/1.05 * LAL_GAMMA
+		+ (36.9/3.2 * LAL_PI*LAL_PI - 2486.1497/7.2576) * eta
+		+ 48.8849/1.6128 * eta*eta - 8.5/6.4 * eta*eta*eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtZeta_6PNLogCoeff(
+	REAL8 UNUSED eta)
+{
+	return -8.56/1.05;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorEtZeta_7PNCoeff(
+	REAL8 eta)
+{
+	return (129.817/2.304 - 320.7739/4.8384 * eta + 61.3373/1.2096 * eta*eta) * LAL_PI;
+}
+

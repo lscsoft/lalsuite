@@ -134,7 +134,9 @@ int main(int argc , char **argv)
 			exit(1);
 	}
 
-	if (strcmp(otherIn.waveformString, "TaylorT1") == 0)
+	if (strcmp(otherIn.waveformString, "TaylorEt") == 0)
+		params.approximant = TaylorEt;
+	else if (strcmp(otherIn.waveformString, "TaylorT1") == 0)
 		params.approximant = TaylorT1;
 	else if (strcmp(otherIn.waveformString, "TaylorT2") == 0)
 		params.approximant = TaylorT2;
