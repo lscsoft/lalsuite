@@ -3125,11 +3125,12 @@ parameter file %s is wrong.\n", injectfile);
   
   ppt = LALInferenceGetProcParamVal( commandLine, "--scale-snr" );
   if ( ppt ){
-    /* if there are more than one data streams the SNRs for the individual
-       (multi-detector) streams can be set, rather than having a combined SNR.
-       The SNR vales are set as comma separated values to --snr-scale. If only
-       one value is given, but the data has multiple streams then the combined
-       multi-stream SNR will still be used. */
+    /* if there are more than one data streams (i.e. a stream at twice the 
+       pulsar frequency and one at the pulsar frequency) the SNRs for the 
+       individual (multi-detector) streams can be set, rather than having a 
+       combined SNR. The SNR vales are set as comma separated values to 
+       --scale-snr. If only one value is given, but the data has multiple 
+       streams then the combined multi-stream SNR will still be used. */
     CHAR *snrscales = NULL, *tmpsnrs = NULL, *tmpsnr = NULL, snrval[256];
     
     snrscales = XLALStringDuplicate( ppt->value );
