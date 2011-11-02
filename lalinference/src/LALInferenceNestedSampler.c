@@ -49,20 +49,6 @@ static REAL8 mean(REAL8 *array,int N){
 	return sum/((REAL8) N);
 }
 
-void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
-{
-  NSFillMCMCVariables(vars,state->priorArgs);
-  LALInferenceLogSampleToArray(state, vars);
-  return;
-}
-
-void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
-{
-  NSFillMCMCVariables(vars,state->priorArgs);
-  LALInferenceLogSampleToFile(state, vars);
-  return;
-}
-
 /* Calculate shortest angular distance between a1 and a2 */
 REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2){
 	double raw = (a2>a1 ? a2-a1 : a1-a2);
@@ -258,12 +244,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	LALInferenceVariableItem *param_ptr;
 	LALInferenceVariables *output_array=NULL;
 	UINT4 N_output_array=0;
-        
+	
+	/* Default sample logging functions with and without XML */
 #ifdef HAVE_LIBLALXML
   	char *outVOTable=NULL;
-	runState->logsample=LogNSSampleAsMCMCSampleToArray;
+	if(!runState->logsample) runState->logsample=LALInferenceLogSampleToArray;
 #else
-	runState->logsample=LogNSSampleAsMCMCSampleToFile;
+	if(!runState->logsample) runState->logsample=LALInferenceLogSampleToFile;
 #endif
 	
         if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
