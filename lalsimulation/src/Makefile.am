@@ -28,7 +28,8 @@ noinst_HEADERS = \
 	LALSimIMREOBNQCCorrection.c \
 	LALSimIMREOBNRv2.h \
 	LALSimIMREOBNewtonianMultipole.c \
-	LALSimInspiralPNCoefficients.c
+	LALSimInspiralPNCoefficients.c \
+	LALSimInspiraldEnergyFlux.c
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
