@@ -183,7 +183,8 @@ void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVari
     distance=exp(*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"));
     LALInferenceAddVariable(proposedParams,"distance",&distance,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   }
-  if(!LALInferenceCheckMinMaxPrior(priorArgs,"distance"))
+  if(!LALInferenceCheckMinMaxPrior(priorArgs,"distance") &&
+     LALInferenceCheckMinMaxPrior(priorArgs,"logdistance"))
   {
     LALInferenceGetMinMaxPrior(priorArgs,"logdistance",&dmin,&dmax);
     dmin=exp(dmin); dmax=exp(dmax);
@@ -193,7 +194,8 @@ void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVari
     mc=exp(*(REAL8 *)LALInferenceGetVariable(proposedParams,"logmc"));
     LALInferenceAddVariable(proposedParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   }
-  if(!LALInferenceCheckMinMaxPrior(priorArgs,"chirpmass"))
+  if(!LALInferenceCheckMinMaxPrior(priorArgs,"chirpmass") && 
+     LALInferenceCheckMinMaxPrior(priorArgs,"logmc"))
   {
     LALInferenceGetMinMaxPrior(priorArgs,"logmc",&mmin,&mmax);
     mmin=exp(mmin); mmax=exp(mmax);
