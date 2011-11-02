@@ -27,7 +27,6 @@
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALSimInspiral.h>
-#include <lal/LALSimInspiralSpinTaylorT4.h>
 #include <lal/XLALError.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
 

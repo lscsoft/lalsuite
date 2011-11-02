@@ -15,7 +15,6 @@ lalsimulationinclude_HEADERS = \
 	LALSimIMR.h \
 	LALSimInspiral.h \
 	LALSimulation.h \
-	LALSimInspiralSpinTaylorT4.h \
 	LALSimNoise.h \
 	LALSimSGWB.h \
 	LALSimulationConfig.h \
