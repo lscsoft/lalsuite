@@ -30,7 +30,261 @@
  */
 
 #include <math.h>
+#include <lal/LALComplex.h>
+#include <lal/LALSimInspiraldEnergyFlux.h>
 #include "LALSimIMREOBNRv2.h"
+
+/* Include static functions */
+#include "LALSimIMREOBNewtonianMultipole.c" 
+#include "LALSimIMREOBNQCCorrection.c"
+
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
+static int
+XLALSimIMREOBNRv2SetupFlux(
+             expnCoeffsdEnergyFlux *ak, /**<<PN expansion coefficients (only relevant fields will be populated)*/
+             REAL8                 eta  /**<< Symmetric mass ratio */
+             );
+
+static inline REAL8
+XLALCalculateA5( REAL8 eta );
+
+static inline REAL8
+XLALCalculateA6( REAL8 eta );
+
+static REAL8
+omegaofrP4PN (
+             const REAL8 r,
+             const REAL8 eta,
+             void *params);
+
+static
+int LALHCapDerivativesP4PN(   double t,
+                               const double values[],
+                               double dvalues[],
+                               void   *funcParams);
+
+static
+REAL8 XLALCalculateOmega (   REAL8 eta,
+                             REAL8 r,
+                             REAL8 pr,
+                             REAL8 pPhi,
+                             EOBACoefficients *aCoeffs );
+
+static
+int XLALFirstStoppingCondition(double t,
+                               const double values[],
+                               double dvalues[],
+                               void   *funcParams);
+
+static
+int XLALHighSRStoppingCondition(double t,
+                                const double values[],
+                                double dvalues[],
+                                void   *funcParams);
+
+static
+REAL8 XLALCalculateEOBD( REAL8    r,
+                         REAL8	eta);
+
+static
+REAL8 XLALprInitP4PN(REAL8 p, void  *params);
+
+static
+REAL8 XLALpphiInitP4PN( const REAL8 r,
+                       EOBACoefficients * restrict coeffs );
+
+static
+REAL8 XLALrOfOmegaP4PN (REAL8 r, void *params);
+
+static
+REAL8 XLALvrP4PN(const REAL8 r, const REAL8 omega, pr3In *params);
+
+/**
+ * Calculates the a5 parameter in the A potential function in EOBNRv2
+ */
+static inline
+REAL8 XLALCalculateA5( const REAL8 eta /**<< Symmetric mass ratio */
+                     )
+{
+  return - 5.82827 - 143.486 * eta + 447.045 * eta * eta;
+}
+
+/**
+ * Calculates the a6 parameter in the A potential function in EOBNRv2
+ */
+static inline
+REAL8 XLALCalculateA6( const REAL8 UNUSED eta /**<< Symmetric mass ratio */
+                     )
+{
+  return 184.0;
+}
+
+
+/**
+ * Function to pre-compute the coefficients in the EOB A potential function
+ */
+static
+int XLALCalculateEOBACoefficients(
+          EOBACoefficients * const coeffs, /**<< A coefficients (populated in function) */
+          const REAL8              eta     /**<< Symmetric mass ratio */
+          )
+{
+  REAL8 eta2, eta3;
+  REAL8 a4, a5, a6;
+
+  eta2 = eta*eta;
+  eta3 = eta2 * eta;
+
+  /* Note that the definitions of a5 and a6 DO NOT correspond to those in the paper */
+  /* Therefore we have to multiply the results of our a5 and a6 finctions by eta. */
+
+  a4 = ninty4by3etc * eta;
+  a5 = XLALCalculateA5( eta ) * eta;
+  a6 = XLALCalculateA6( eta ) * eta;
+
+  coeffs->n4 =  -64. + 12.*a4 + 4.*a5 + a6 + 64.*eta - 4.*eta2;
+  coeffs->n5 = 32. -4.*a4 - a5 - 24.*eta;
+  coeffs->d0 = 4.*a4*a4 + 4.*a4*a5 + a5*a5 - a4*a6 + 16.*a6
+             + (32.*a4 + 16.*a5 - 8.*a6) * eta + 4.*a4*eta2 + 32.*eta3;
+  coeffs->d1 = 4.*a4*a4 + a4*a5 + 16.*a5 + 8.*a6 + (32.*a4 - 2.*a6)*eta + 32.*eta2 + 8.*eta3;
+  coeffs->d2 = 16.*a4 + 8.*a5 + 4.*a6 + (8.*a4 + 2.*a5)*eta + 32.*eta2;
+  coeffs->d3 = 8.*a4 + 4.*a5 + 2.*a6 + 32.*eta - 8.*eta2;
+  coeffs->d4 = 4.*a4 + 2.*a5 + a6 + 16.*eta - 4.*eta2;
+  coeffs->d5 = 32. - 4.*a4 - a5 - 24. * eta;
+
+  return XLAL_SUCCESS;
+}
+
+/**
+ * This function calculates the EOB A function which using the pre-computed
+ * coefficients which should already have been calculated.
+ */
+static
+REAL8 XLALCalculateEOBA( const REAL8 r,                     /**<< Orbital separation (in units of total mass M) */
+                         EOBACoefficients * restrict coeffs /**<< Pre-computed coefficients for the A function */
+                       )
+{
+
+  REAL8 r2, r3, r4, r5;
+  REAL8 NA, DA;
+
+  /* Note that this function uses pre-computed coefficients,
+   * and assumes they have been calculated. Since this is a static function,
+   * so only used here, I assume it is okay to neglect error checking
+   */
+
+  r2 = r*r;
+  r3 = r2 * r;
+  r4 = r2*r2;
+  r5 = r4*r;
+
+
+  NA = r4 * coeffs->n4
+     + r5 * coeffs->n5;
+
+  DA = coeffs->d0
+     + r  * coeffs->d1
+     + r2 * coeffs->d2
+     + r3 * coeffs->d3
+     + r4 * coeffs->d4
+     + r5 * coeffs->d5;
+
+  return NA/DA;
+}
+
+/**
+ * Calculated the derivative of the EOB A function with respect to 
+ * r, using the pre-computed A coefficients
+ */
+static
+REAL8 XLALCalculateEOBdAdr( const REAL8 r,                     /**<< Orbital separation (in units of total mass M) */
+                            EOBACoefficients * restrict coeffs /**<< Pre-computed coefficients for the A function */
+                          )
+{
+  REAL8 r2, r3, r4, r5;
+
+  REAL8 NA, DA, dNA, dDA, dA;
+
+  r2 = r*r;
+  r3 = r2 * r;
+  r4 = r2*r2;
+  r5 = r4*r;
+
+  NA = r4 * coeffs->n4
+     + r5 * coeffs->n5;
+
+  DA = coeffs->d0
+     + r  * coeffs->d1
+     + r2 * coeffs->d2
+     + r3 * coeffs->d3
+     + r4 * coeffs->d4
+     + r5 * coeffs->d5;
+
+  dNA = 4. * coeffs->n4 * r3
+      + 5. * coeffs->n5 * r4;
+
+  dDA = coeffs->d1
+      + 2. * coeffs->d2 * r
+      + 3. * coeffs->d3 * r2
+      + 4. * coeffs->d4 * r3
+      + 5. * coeffs->d5 * r4;
+
+  dA = dNA * DA - dDA * NA;
+
+  return dA / (DA*DA);
+}
+
+/**
+ * Calculate the EOB D function.
+ */
+static
+REAL8 XLALCalculateEOBD( REAL8   r, /**<< Orbital separation (in units of total mass M) */
+                         REAL8 eta  /**<< Symmetric mass ratio */
+                       )
+{
+	REAL8  u, u2, u3;
+
+	u = 1./r;
+	u2 = u*u;
+	u3 = u2*u;
+
+	return 1./(1.+6.*eta*u2+2.*eta*(26.-3.*eta)*u3);
+}
+
+
+/**
+ * Function to calculate the EOB effective Hamiltonian for the
+ * given values of the dynamical variables. The coefficients in the
+ * A potential function should already have been computed.
+ * Note that the pr used here is the tortoise co-ordinate.
+ */
+static
+REAL8 XLALEffectiveHamiltonian( const REAL8 eta,          /**<< Symmetric mass ratio */
+                                const REAL8 r,            /**<< Orbital separation */
+                                const REAL8 pr,           /**<< Tortoise co-ordinate */
+                                const REAL8 pp,           /**<< Momentum pphi */
+                                EOBACoefficients *aCoeffs /**<< Pre-computed coefficients in A function */
+                              )
+{
+
+        /* The pr used in here is the tortoise co-ordinate */
+        REAL8 r2, pr2, pp2, z3, eoba;
+
+        r2   = r * r;
+        pr2  = pr * pr;
+        pp2  = pp * pp;
+
+        eoba = XLALCalculateEOBA( r, aCoeffs );
+        z3   = 2. * ( 4. - 3. * eta ) * eta;
+        return sqrt( pr2 + eoba * ( 1.  + pp2/r2 + z3*pr2*pr2/r2 ) );
+}
+
 
 /**
  * Function which calculates the various coefficients used in the generation
@@ -887,3 +1141,110 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
 
   return XLAL_SUCCESS;
 } 
+
+/**
+ * FORMERLY IN FactorizedFlux.c
+ * \author Craig Robinson
+ *
+ * \brief Function to compute the factorized flux as uses in the new EOBNR_PP
+ * model. Flux function given by Phys.Rev.D79:064004,2009.
+ */
+
+/**
+ * This function calculates the factorized flux in the EOB dynamics for
+ * the EOBNR (and potentially subsequent) models. The flux function
+ * is found in Phys.Rev.D79:064004,2009.
+ */
+static REAL8 XLALSimIMREOBFactorizedFlux(
+                      REAL8Vector  *values, /**<< Dynamics r, phi, pr, pphi */
+                      const REAL8  omega,   /**<< Angular frequency omega */
+                      EOBParams    *ak,     /**<< Structure containing pre-computed parameters */
+                      const INT4   lMax     /**<< Maximum l to include when calculating flux (between 2 and 8) */
+                     )
+
+{
+
+  REAL8 flux = 0.0;
+  REAL8 v;
+  REAL8 omegaSq;
+  COMPLEX16 hLM;
+  INT4 l, m;
+
+  EOBNonQCCoeffs *nqcCoeffs;
+  COMPLEX16       hNQC;
+
+#ifndef LAL_NDEBUG
+  if ( !values || !ak )
+  {
+    XLAL_ERROR_REAL8( XLAL_EFAULT );
+  }
+#endif
+
+  if ( lMax < 2 )
+  {
+    XLAL_ERROR_REAL8( XLAL_EINVAL );
+  }
+
+  nqcCoeffs = ak->nqcCoeffs;
+
+  /* Omegs is the derivative of phi */
+  omegaSq = omega*omega;
+
+  v = cbrt( omega );
+
+  /* We need to apply the NQC for the (2,2) mode */
+  /* To avoid having an if statement in the loop we will */
+  /* deal with (2,2) and (2,1) separately */
+  /* (2,2) */
+  l = 2;
+  m = 2;
+
+  if ( XLALSimIMREOBNonQCCorrection( &hNQC, values, omega, nqcCoeffs ) == XLAL_FAILURE )
+  {
+    XLAL_ERROR_REAL8( XLAL_EFUNC );
+  }
+
+  if ( XLALSimIMREOBGetFactorizedWaveform( &hLM, values, v, l, m, ak )
+           == XLAL_FAILURE )
+  {
+    XLAL_ERROR_REAL8( XLAL_EFUNC );
+  }
+  /* For the 2,2 mode, we apply NQC correction to the flux */
+  hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+
+  flux = (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+
+  /* (2,1) */
+  l = 2;
+  m = 1;
+
+  if ( XLALSimIMREOBGetFactorizedWaveform( &hLM, values, v, l, m, ak )
+           == XLAL_FAILURE )
+  {
+    XLAL_ERROR_REAL8( XLAL_EFUNC );
+  }
+
+  flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+
+  /* All other modes */
+  for ( l = 3; l <= lMax; l++ )
+  {
+    /*INT4 minM = l-3;
+    if ( minM < 1 )
+      minM = 1;*/
+
+    for ( m = 1; m <= l; m++ )
+    {
+
+      if ( XLALSimIMREOBGetFactorizedWaveform( &hLM, values, v, l, m, ak )
+             == XLAL_FAILURE )
+      {
+        XLAL_ERROR_REAL8( XLAL_EFUNC );
+      }
+
+      flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+    }
+  }
+
+  return flux * LAL_1_PI / 8.0;
+}
