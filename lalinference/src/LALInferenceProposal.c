@@ -734,8 +734,9 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
      where we jump exactly along the difference vector. */
   if (gsl_rng_uniform(runState->GSLrandom) < modeHoppingFrac) {
     scale = 1.0;
-  } else {      
-    scale = 1.66511*gsl_ran_ugaussian(runState->GSLrandom); 
+  } else {  
+    UINT4 N = LALInferenceGetVariableDimensionNonFixed(proposedParams);
+    scale = 2.38 / sqrt(2.0*N);
   }
 
   for (i = 0; names[i] != NULL; i++) {
