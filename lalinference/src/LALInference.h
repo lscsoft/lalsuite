@@ -417,7 +417,23 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
    columns.  Returns 0 on success. */
 int LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariables *vars);
 
+/** Sorts the variable structure by name */
 void LALInferenceSortVariablesByName(LALInferenceVariables *vars);
+
+/** Append the sample to a file. file pointer is stored in state->algorithmParams as a
+ * LALInferenceVariable called "outfile", as a void ptr.
+ * Caller is responsible for opening and closing file.
+ * Variables are alphabetically sorted before being written
+ */
+void LALInferenceLogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);
+
+/** Append the sample to an array which can be later processed by the user.
+ * Array is stored as a C array in a LALInferenceVariable in state->algorithmParams
+ * called "outputarray". Number of items in the array is stored as "N_outputarray".
+ * Will create the array and store it in this way if it does not exist.
+ * DOES NOT FREE ARRAY, user must clean up after use.
+ * Also outputs sample to disk if possible using LALInferenceLogSampleToFile()*/
+void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);
 
 
 #endif
