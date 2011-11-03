@@ -371,7 +371,7 @@ VOTABLE_DATATYPE LALInferenceVariableType2VOT(const LALInferenceVariableType lit
   switch(litype){
     case LALINFERENCE_INT4_t: 		return VOT_INT4;
     case LALINFERENCE_INT8_t: 		return VOT_INT8;
-    case LALINFERENCE_UINT4_t: 		return VOT_INT8; /* Need a signed INT8 to store an unsigned UINT4 */
+    case LALINFERENCE_UINT4_t: 		return VOT_INT4; /* Need a signed INT8 to store an unsigned UINT4 */
     case LALINFERENCE_REAL4_t:		return VOT_REAL4;
     case LALINFERENCE_REAL8_t:		return VOT_REAL8;
     case LALINFERENCE_COMPLEX8_t: 	return VOT_COMPLEX8;
