@@ -1321,14 +1321,21 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
 /////////////// Additional typemaps / interface code ///////////////
 
 // Typemaps for double pointers:
-// * By default, treat arguments of type TYPE** as input/output arguments,
-//   which take a swig-wrapped TYPE* as input, pass a pointer to it to the
-//   C function, and return the result as output. If the input supplied TYPE*
-//   is NULL, SWIG assumes a new object is created and owns it.
-// * Also supply an OUTPUT typemap, which assumes that the argument is
-//   output-only, and therefore does not require a scripting-language input
-//   argument. This typemap can be %apply-d on a case-by-case basis.
-%typemap(in, noblock=1) SWIGTYPE ** (void  *argp = NULL, int res = 0, int owner = 0) {
+// * By default, treat arguments of type TYPE** as output-only arguments,
+//   which do not require a scripting-language input argument, and return
+//   their results in the output argument list.
+// * Also supply an INOUT typemap for input-output arguments, which allows
+//   a scripting-language input argument to be supplied. If the input
+//   argument evaluates to NULL, SWIG assumes a new object will be created
+//   and owns it. This typemap can be %apply-d on a case-by-case basis.
+//
+// input typemap for output-only arguments
+%typemap(in, noblock=1, numinputs=0) SWIGTYPE ** (void *argp = NULL, int owner = 0) {
+  $1 = %reinterpret_cast(&argp, $ltype);
+  owner = (argp == NULL) ? SWIG_POINTER_OWN : 0;
+}
+// input typemap for input-output arguments
+%typemap(in, noblock=1) SWIGTYPE ** INOUT (void  *argp = NULL, int res = 0, int owner = 0) {
   res = SWIG_ConvertPtr($input, &argp, $*descriptor, $disown | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     %argument_fail(res, "$type", $symname, $argnum);
@@ -1336,10 +1343,7 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
   $1 = %reinterpret_cast(&argp, $ltype);
   owner = (argp == NULL) ? SWIG_POINTER_OWN : 0;
 }
-%typemap(in, noblock=1, numinputs=0) SWIGTYPE ** OUTPUT (void *argp = NULL, int owner = 0) {
-  $1 = %reinterpret_cast(&argp, $ltype);
-  owner = (argp == NULL) ? SWIG_POINTER_OWN : 0;
-}
+// output typemaps for both output-only and input-output arguments
 %typemap(argout, noblock=1) SWIGTYPE ** {
   %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, owner$argnum | %newpointer_flags));
 }

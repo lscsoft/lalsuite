@@ -14,9 +14,7 @@ lalsimulationinclude_HEADERS = \
 	LALSimBurst.h \
 	LALSimIMR.h \
 	LALSimInspiral.h \
-	LALSimInspiraldEnergyFlux.h \
 	LALSimulation.h \
-	LALSimInspiralSpinTaylorT4.h \
 	LALSimNoise.h \
 	LALSimSGWB.h \
 	LALSimulationConfig.h \
@@ -29,7 +27,8 @@ noinst_HEADERS = \
 	LALSimIMREOBNQCCorrection.c \
 	LALSimIMREOBNRv2.h \
 	LALSimIMREOBNewtonianMultipole.c \
-	LALSimInspiralPNCoefficients.c
+	LALSimInspiralPNCoefficients.c \
+	LALSimInspiraldEnergyFlux.c
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
@@ -39,12 +38,13 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPhenom.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
+	LALSimInspiralTaylorEt.c \
+	LALSimInspiralTaylorF2ReducedSpin.c \
+	LALSimInspiralTaylorT1.c \
 	LALSimInspiralTaylorT2.c \
 	LALSimInspiralTaylorT3.c \
 	LALSimInspiralTaylorT4.c \
-	LALSimInspiralTofV.c \
-	LALSimInspiralTofVIntegrand.c \
-	LALSimInspiraldEnergyFlux.c \
+	LALSimInspiralTaylorLength.c \
 	LALSimulation.c \
 	LALSimInspiralSpinTaylorT4.c \
 	LALSimulationVCSInfo.c \

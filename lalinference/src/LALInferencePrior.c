@@ -54,7 +54,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 	REAL8 min, max;
 	REAL8 logmc=0.0;
 	REAL8 m1=0.0,m2=0.0,eta=0.0;
-	REAL8 tmp=0.;
+	//REAL8 tmp=0.;
 	/* Check boundaries */
 	for(;item;item=item->next)
 	{
@@ -63,7 +63,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
                         continue;
 		else
 		{
-			LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+			LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
 			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
 		}
 	}
@@ -80,14 +80,14 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 		logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin1"))));
 	if(LALInferenceCheckVariable(params,"theta_spin2"))
 		logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))));
-	if(LALInferenceCheckVariable(params,"a_spin1") && LALInferenceCheckVariable(params,"a_spin2")){
+	/*if(LALInferenceCheckVariable(params,"a_spin1") && LALInferenceCheckVariable(params,"a_spin2")){
 		
 		if(*(REAL8 *)LALInferenceGetVariable(params,"a_spin2") > *(REAL8 *)LALInferenceGetVariable(params,"a_spin1")){
 		 	tmp = *(REAL8 *)LALInferenceGetVariable(params,"a_spin1") ;
 			*(REAL8 *)LALInferenceGetVariable(params,"a_spin1") = *(REAL8 *)LALInferenceGetVariable(params,"a_spin2");
 			*(REAL8 *)LALInferenceGetVariable(params,"a_spin2") = tmp;
 		}
-	}
+	}*/
 	if(LALInferenceCheckVariable(params,"logmc")) {
           logmc=*(REAL8 *)LALInferenceGetVariable(params,"logmc");
           /* Assume jumping in log(Mc), so use prior that works out to p(Mc) ~ Mc^-11/6 */
@@ -130,7 +130,7 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
         paraHead->vary==LALINFERENCE_PARAM_OUTPUT ||
         !LALInferenceCheckMinMaxPrior(priorArgs, paraHead->name) ) continue;
     
-    LALInferenceGetMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
+    LALInferenceGetMinMaxPrior(priorArgs,paraHead->name, &min, &max);
     
     if(paraHead->vary==LALINFERENCE_PARAM_CIRCULAR) {
       /* For cyclic boundaries, mod out by range. */
@@ -239,7 +239,7 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
       continue;
 		else
 		{
-			LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+			LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
 			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
 		}
 	}
@@ -312,7 +312,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 	
 	if(LALInferenceCheckVariable(params,"massratio")){
 		//eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio"); - set but not used
-		LALInferenceGetMinMaxPrior(priorParams, "massratio", (void *)&etaMin, (void *)&etaMax);
+		LALInferenceGetMinMaxPrior(priorParams, "massratio", &etaMin, &etaMax);
 	}
 	
 	/* Check boundaries */
@@ -322,7 +322,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 		if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT) continue;
 		else
 		{
-			LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+			LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
 			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
 			else
 			{
@@ -339,7 +339,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 							else 
 								MTotMax=2.0*(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max"));
 
-							LALInferenceGetMinMaxPrior(priorParams, "massratio", (void *)&etaMin, (void *)&etaMax);
+							LALInferenceGetMinMaxPrior(priorParams, "massratio", &etaMin, &etaMax);
 							norm = -log(computePriorMassNorm(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min"),
 														*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max"),
 														MTotMax, min, max, etaMin, etaMax));
@@ -592,7 +592,7 @@ static double computePriorMassNorm(const double MMin, const double MMax, const d
 
 
 /* Function to add the min and max values for the prior onto the priorArgs */
-void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max, LALInferenceVariableType type){
+void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max, LALInferenceVariableType type){
   char minName[VARNAME_MAX];
   char maxName[VARNAME_MAX];
   
@@ -629,16 +629,21 @@ int LALInferenceCheckMinMaxPrior(LALInferenceVariables *priorArgs, const char *n
 }
 
 /* Get the min and max values of the prior from the priorArgs list, given a name */
-void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max)
+void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max)
 {
 		char minName[VARNAME_MAX];
 		char maxName[VARNAME_MAX];
-		
+		void *ptr=NULL;
 		sprintf(minName,"%s_min",name);
 		sprintf(maxName,"%s_max",name);
-    
-		*(REAL8 *)min=*(REAL8 *)LALInferenceGetVariable(priorArgs,minName);
-		*(REAL8 *)max=*(REAL8 *)LALInferenceGetVariable(priorArgs,maxName);
+		
+		
+		ptr=LALInferenceGetVariable(priorArgs,minName);
+		if(ptr) *min=*(REAL8*)ptr;
+		else XLAL_ERROR_VOID(XLAL_EFAILED);
+		ptr=LALInferenceGetVariable(priorArgs,maxName);
+		if(ptr) *max=*(REAL8*)ptr;
+		else XLAL_ERROR_VOID(XLAL_EFAILED);
 		return;
 		
 }
@@ -726,7 +731,7 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
   else if( LALInferenceCheckMinMaxPrior( priorArgs, name ) ){
     REAL8 min = 0., max = 0.;
     
-    LALInferenceGetMinMaxPrior(priorArgs, name, (void *)&min, (void *)&max);
+    LALInferenceGetMinMaxPrior(priorArgs, name, &min, &max);
     tmp = min + (max-min)*gsl_rng_uniform( rdm );
   }
   /* not a recognised prior type */

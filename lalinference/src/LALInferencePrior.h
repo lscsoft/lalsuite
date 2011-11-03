@@ -78,11 +78,11 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 
 /** Function to add the minimum and maximum values for the uniform prior onto the \c priorArgs. 
  */
-void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max, LALInferenceVariableType type);
+void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max, LALInferenceVariableType type);
 
 /** Get the minimum and maximum values of the uniform prior from the \c priorArgs list, given a name. 
  */
-void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max);
+void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max);
 
 /** Function to remove the mininum and maximum values for the uniform prior onto the \c priorArgs. 
  */

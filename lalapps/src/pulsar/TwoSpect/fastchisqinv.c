@@ -916,7 +916,8 @@ REAL8 gamma_inc_D(REAL8 a, REAL8 x)
          ln_term = ln_u - u + 1.0;
       } else {
          REAL8 mu = (x-a)/a;
-         ln_term = gsl_sf_log_1plusx_mx(mu);  /* log(1+mu) - mu */
+         //ln_term = gsl_sf_log_1plusx_mx(mu);  /* log(1+mu) - mu */
+         ln_term = log1p(mu) - mu;  /* log(1+mu) - mu */
       }
       gstar = twospect_sf_gammastar(a);
       if (XLAL_IS_REAL8_FAIL_NAN(gstar)) {

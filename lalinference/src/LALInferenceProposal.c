@@ -124,7 +124,7 @@ LALInferenceAddProposalToCycle(LALInferenceRunState *runState, LALInferencePropo
     length += weight;
 
     LALInferenceSetVariable(propArgs, cycleArrayLengthName, &length);
-    LALInferenceSetVariable(propArgs, cycleArrayName, &cycle);
+    LALInferenceSetVariable(propArgs, cycleArrayName, (void *)&cycle);
   } else {
     /* There are no data in proposal args.  Set some. */
     UINT4 i;
@@ -141,7 +141,7 @@ LALInferenceAddProposalToCycle(LALInferenceRunState *runState, LALInferencePropo
     }
 
     LALInferenceAddVariable(propArgs, cycleArrayLengthName, &length, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(propArgs, cycleArrayName, &cycle, LALINFERENCE_PROPOSAL_ARRAY_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(propArgs, cycleArrayName, (void *)&cycle, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
   }
 }
 
@@ -174,17 +174,30 @@ LALInferenceRandomizeProposalCycle(LALInferenceRunState *runState) {
   }
 }
 
-void NSFillMCMCVariables(LALInferenceVariables *proposedParams)
+/* Convert NS to MCMC variables (call before calling MCMC proposal from NS) */
+void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVariables *priorArgs)
 {
-  REAL8 distance=0.0,mc=0.0;
+  REAL8 distance=0.0,mc=0.0,dmin,dmax,mmin,mmax;
   if(LALInferenceCheckVariable(proposedParams,"logdistance"))
   {
     distance=exp(*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"));
     LALInferenceAddVariable(proposedParams,"distance",&distance,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   }
+  if(!LALInferenceCheckMinMaxPrior(priorArgs,"distance"))
+  {
+    LALInferenceGetMinMaxPrior(priorArgs,"logdistance",&dmin,&dmax);
+    dmin=exp(dmin); dmax=exp(dmax);
+    LALInferenceAddMinMaxPrior(priorArgs,"distance",&dmin,&dmax,LALINFERENCE_REAL8_t);
+  }
   if(LALInferenceCheckVariable(proposedParams,"logmc")){
     mc=exp(*(REAL8 *)LALInferenceGetVariable(proposedParams,"logmc"));
     LALInferenceAddVariable(proposedParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  }
+  if(!LALInferenceCheckMinMaxPrior(priorArgs,"chirpmass"))
+  {
+    LALInferenceGetMinMaxPrior(priorArgs,"logmc",&mmin,&mmax);
+    mmin=exp(mmin); mmax=exp(mmax);
+    LALInferenceAddMinMaxPrior(priorArgs,"chirpmass",&mmin,&mmax,LALINFERENCE_REAL8_t);
   }
   return;
 }
@@ -194,14 +207,40 @@ void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables
   /* PTMCMC likes to read currentParams directly, whereas NS expects proposedParams
    to be modified by the proposal. Back up currentParams and then restore it after
    calling the MCMC proposal function. */
+  REAL8 oldlogdist=-1.0,oldlogmc=-1.0;
+  REAL8 newdist,newmc;
   LALInferenceVariables *currentParamsBackup=runState->currentParams;
+  
   /* PTMCMC expects some variables that NS doesn't use by default, so create them */
-  NSFillMCMCVariables(proposedParams);
+  
+  if(LALInferenceCheckVariable(proposedParams,"logdistance"))
+    oldlogdist=*(REAL8 *)LALInferenceGetVariable(proposedParams,"logdistance");
+  if(LALInferenceCheckVariable(proposedParams,"logmc"))
+    oldlogmc=*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc");
+  
+  NSFillMCMCVariables(proposedParams,runState->priorArgs);
 
   runState->currentParams=proposedParams; 
   LALInferenceDefaultProposal(runState,proposedParams);
   /* Restore currentParams */
   runState->currentParams=currentParamsBackup;
+  
+  /* If the remapped variables are not updated do it here */
+  if(oldlogdist!=-1.0)
+    if(oldlogdist==*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"))
+      {
+	newdist=*(REAL8*)LALInferenceGetVariable(proposedParams,"distance");
+	newdist=log(newdist);
+	LALInferenceSetVariable(proposedParams,"logdistance",&newdist);
+      }
+  if(oldlogmc!=-1.0)
+    if(oldlogmc==*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc"))
+    {
+      newmc=*(REAL8*)LALInferenceGetVariable(proposedParams,"chirpmass");
+      newmc=log(newmc);
+      LALInferenceSetVariable(proposedParams,"logmc",&newmc);
+    }
+  
 }
 
 void 
@@ -695,8 +734,9 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
      where we jump exactly along the difference vector. */
   if (gsl_rng_uniform(runState->GSLrandom) < modeHoppingFrac) {
     scale = 1.0;
-  } else {      
-    scale = 1.66511*gsl_ran_ugaussian(runState->GSLrandom); 
+  } else {  
+    UINT4 N = LALInferenceGetVariableDimensionNonFixed(proposedParams);
+    scale = 2.38 / sqrt(2.0*N);
   }
 
   for (i = 0; names[i] != NULL; i++) {
@@ -963,15 +1003,15 @@ reflect_plane(REAL8 pref[3], const REAL8 p[3],
 
 static void 
 sph_to_cart(REAL8 cart[3], const REAL8 lat, const REAL8 longi) {
-  cart[0] = cos(longi)*sin(lat);
-  cart[1] = sin(longi)*sin(lat);
-  cart[2] = cos(lat);
+  cart[0] = cos(longi)*cos(lat);
+  cart[1] = sin(longi)*cos(lat);
+  cart[2] = sin(lat);
 }
 
 static void
 cart_to_sph(const REAL8 cart[3], REAL8 *lat, REAL8 *longi) {
   *longi = atan2(cart[1], cart[0]);
-  *lat = acos(cart[2] / sqrt(cart[0]*cart[0] + cart[1]*cart[1] + cart[2]*cart[2]));
+  *lat = asin(cart[2] / sqrt(cart[0]*cart[0] + cart[1]*cart[1] + cart[2]*cart[2]));
 }
 
 static void

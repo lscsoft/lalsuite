@@ -1407,7 +1407,7 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
 
     XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow +manual_end_time,manual_end_time-0.5*timewindow,manual_end_time+0.5*timewindow,0);
     XLALMCMCAddParam(parameter,"phi", LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
-    XLALMCMCAddParam(parameter,"distance", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax,0);
+    XLALMCMCAddParam(parameter,"distMpc", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax,0);
    
     if ((long_min<=0.)&&(long_max>=2.*LAL_PI))
     XLALMCMCAddParam(parameter,"ra",gsl_rng_uniform(RNG)*2.*LAL_PI,0.,2.*LAL_PI,1);

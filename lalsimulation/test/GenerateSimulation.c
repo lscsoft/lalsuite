@@ -35,6 +35,7 @@ typedef enum tagGSApproximant {
     GSApproximant_IMRPhenomA,
     GSApproximant_IMRPhenomB,
     GSApproximant_SpinTaylorT4,
+    GSApproximant_TaylorF2RedSpin,
     GSApproximant_NUM
 } GSApproximant;
 
@@ -79,6 +80,7 @@ const char * usage =
 "                             IMRPhenomA\n"
 "                             IMRPhenomB\n"
 "                             SpinTaylorT4\n"
+"                             TaylorF2RedSpin\n"
 "--phase-order ORD          Twice PN order of phase (e.g. ORD=7 <==> 3.5PN)\n"
 "--amp-order ORD            Twice PN order of amplitude\n"
 "--domain DOM               'TD' for time domain or 'FD' for frequency\n"
@@ -144,6 +146,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
                 params->approximant = GSApproximant_IMRPhenomB;
             else if (strcmp(argv[i], "SpinTaylorT4") == 0)
                 params->approximant = GSApproximant_SpinTaylorT4;
+            else if (strcmp(argv[i], "TaylorF2RedSpin") == 0)
+                params->approximant = GSApproximant_TaylorF2RedSpin;
             else {
                 XLALPrintError("Error: Unknown approximant\n");
                 goto fail;
@@ -250,7 +254,29 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
      * tRef, masses, f_min, and distance have already been checked. */
     switch (params->approximant) {
         case GSApproximant_IMRPhenomA:
+            if (params->s1x || params->s1y || params->s1z ||
+                params->s2x || params->s2y || params->s2z ||
+                params->chi) {
+                XLALPrintError("Error: IMRPhenomA is a non-spinning approximant\n");
+                goto fail;
+            }
+            break;
         case GSApproximant_IMRPhenomB:
+            if (params->s1x || params->s1y ||
+                params->s2x || params->s2y ||
+                ((params->s1z != 0.) ^ (params->s2z != 0.)) ||
+                !((params->s1z != 0) ^ (params->chi != 0.))) {
+                XLALPrintError("Error: IMRPhenomB requires aligned spins (s1z and s2z or chi)\n");
+                goto fail;
+            }
+            break;
+        case GSApproximant_TaylorF2RedSpin:
+            if (params->s1x || params->s1y ||
+                params->s2x || params->s2y || params->chi) {
+                XLALPrintError("Error: TaylorF2RedSpin requires aligned component spins s1z and s2z only\n");
+                goto fail;
+            }
+            break;
         case GSApproximant_SpinTaylorT4:
             /* no additional checks required */
             break;
@@ -266,6 +292,14 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     if (params->fRef == 0) params->fRef = params->f_min;
     if (*params->outname == '\0')
         strncpy(params->outname, "simulation.dat", 256);
+    if ((params->s1z || params->s2z) && !params->chi) {
+        if (params->approximant == GSApproximant_IMRPhenomB)
+            params->chi = XLALSimIMRPhenomBComputeChi(
+                params->m1, params->m2, params->s1z, params->s2z);
+        else if (params->approximant == GSApproximant_TaylorF2RedSpin)
+            params->chi = XLALSimInspiralTaylorF2ReducedSpinComputeChi(
+                params->m1, params->m2, params->s1z, params->s2z);
+    }
 
     return params;
 
@@ -296,7 +330,7 @@ static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
         return 1;
     }
 
-    fprintf(f, "# f hplus hcross\n");
+    fprintf(f, "# t hplus hcross\n");
     for (i=0; i < hplus->data->length; i++)
       fprintf(f, "%e %e %e\n", i * hplus->deltaT, hplus->data->data[i], hcross->data->data[i]);
     return 0;
@@ -330,13 +364,17 @@ int main (int argc , char **argv) {
         case GSDomain_FD:
             switch (params->approximant) {
                 case GSApproximant_IMRPhenomA:
-                    XLALSimIMRPhenomAGenerateFD(&htilde, &tRef, params->phiRef, params->fRef, params->deltaF, params->m1, params->m2, params->f_min, params->f_max, params->distance);
+                    XLALSimIMRPhenomAGenerateFD(&htilde, params->phiRef, params->deltaF, params->m1, params->m2, params->f_min, params->f_max, params->distance);
                     break;
                 case GSApproximant_IMRPhenomB:
-                    XLALSimIMRPhenomBGenerateFD(&htilde, &tRef, params->phiRef, params->fRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance);
+                    XLALSimIMRPhenomBGenerateFD(&htilde, params->phiRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance);
+                    break;
+                case GSApproximant_TaylorF2RedSpin:
+                    XLALSimInspiralTaylorF2ReducedSpin(&htilde, &tRef, params->phiRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->distance, params->phaseO);
                     break;
                 case GSApproximant_SpinTaylorT4:
                     XLALPrintError("Error: SpinTaylorT4 is not an FD waveform!\n");
+                    break;
                 default:
                     XLALPrintError("Error: some lazy programmer forgot to add their FD waveform generation function\n");
             }
@@ -344,10 +382,13 @@ int main (int argc , char **argv) {
         case GSDomain_TD:
             switch (params->approximant) {
                 case GSApproximant_IMRPhenomA:
-                    XLALSimIMRPhenomAGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->fRef, params->deltaT, params->m1, params->m2, params->f_min, params->f_max, params->distance, params->inclination);
+                    XLALSimIMRPhenomAGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->deltaT, params->m1, params->m2, params->f_min, params->f_max, params->distance, params->inclination);
                     break;
                 case GSApproximant_IMRPhenomB:
-                    XLALSimIMRPhenomBGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->fRef, params->deltaT, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance, params->inclination);
+                    XLALSimIMRPhenomBGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->deltaT, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance, params->inclination);
+                    break;
+                case GSApproximant_TaylorF2RedSpin:
+                    XLALPrintError("Error: TaylorF2RedSpin is not a TD waveform!\n");
                     break;
                 case GSApproximant_SpinTaylorT4:
                     LNhatx = sin(params->inclination);

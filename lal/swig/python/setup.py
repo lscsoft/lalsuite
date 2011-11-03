@@ -40,6 +40,10 @@ modkeywords = {
 # macro definitions
 defines = map(lambda s : (s, None), os.environ['swig_defines'].split())
 
+# clear CFLAGS
+if 'CFLAGS' in os.environ:
+    del os.environ['CFLAGS']
+
 # turn off optimisation unless SWIGLAL_NDEBUG is defined
 extra_flags = []
 if not 'SWIGLAL_NDEBUG' in defines:

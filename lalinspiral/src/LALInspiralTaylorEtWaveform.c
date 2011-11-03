@@ -85,7 +85,8 @@ void LALTaylorEtWaveformEngine (
 );
 
 int XLALTaylorEtWaveformEngine (
-  REAL4Vector      *signalvec,
+  REAL4Vector      *signalvec1,
+  REAL4Vector      *signalvec2,
   InspiralTemplate *params,
   InspiralInit     *paramsInit
 );
@@ -394,7 +395,41 @@ int XLALTaylorEtWaveform (
    memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   if( XLALTaylorEtWaveformEngine(signalvec, params, &paramsInit) )
+   if( XLALTaylorEtWaveformEngine(signalvec, NULL, params, &paramsInit) )
+      XLAL_ERROR(XLAL_EFUNC);
+
+   return XLAL_SUCCESS;
+}
+
+int XLALTaylorEtWaveformTemplates (
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
+   InspiralTemplate *params
+   )
+{
+
+   InspiralInit paramsInit;
+
+   /* Check the relevant pointers */
+   if( !signalvec1 || !(signalvec1->data) || !signalvec2 || !(signalvec2->data) || !params )
+      XLAL_ERROR(XLAL_EFAULT);
+
+   /* Check the parameters are sane */
+   if( params->nStartPad < 0 || params->nEndPad < 0 || params->fLower <= 0 
+         || params->tSampling <= 0 || params->totalMass <= 0. )
+      XLAL_ERROR(XLAL_EINVAL);
+
+   if( XLALInspiralSetup(&(paramsInit.ak), params) )
+      XLAL_ERROR(XLAL_EFUNC);
+
+   if( XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), params) )
+      XLAL_ERROR(XLAL_EFUNC);
+
+   memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));
+   memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));
+
+   /* Call the engine function */
+   if( XLALTaylorEtWaveformEngine(signalvec1, signalvec2, params, &paramsInit) )
       XLAL_ERROR(XLAL_EFUNC);
 
    return XLAL_SUCCESS;
@@ -414,7 +449,7 @@ void LALTaylorEtWaveformEngine (
    INITSTATUS(status, "LALTaylorEtWaveform", LALTAYLORETWAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
-   if( XLALTaylorEtWaveformEngine(signalvec, params, paramsInit) )
+   if( XLALTaylorEtWaveformEngine(signalvec, NULL, params, paramsInit) )
       ABORTXLAL(status);
 
    DETATCHSTATUSPTR(status);
@@ -423,7 +458,8 @@ void LALTaylorEtWaveformEngine (
 
 /* Actual engine */
 int XLALTaylorEtWaveformEngine (
-                REAL4Vector      *signalvec,
+                REAL4Vector      *signalvec1,
+                REAL4Vector      *signalvec2,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 )
@@ -471,7 +507,7 @@ int XLALTaylorEtWaveformEngine (
    dt = 1./params->tSampling;
    ak   = paramsInit->ak;
    func = paramsInit->func;
-   length = signalvec->length;
+   length = signalvec1->length;
    eta = ak.eta;
    m = ak.totalmass;
 
@@ -581,7 +617,9 @@ case LAL_PNORDER_THREE_POINT_FIVE:
       }
 
       h = 4 * m * eta * zeta * sin(2.*phi)/1.e14;
-      signalvec->data[ndx] = h;
+      signalvec1->data[ndx] = h;
+      if (signalvec2)
+         signalvec2->data[ndx] = 4 * m * eta * zeta * cos(2.*phi)/1.e14;
       /* fprintf(stdout, "%e %e %e\n", t, h, omega/(m*LAL_PI)); */
 
       /* Integrate one step forward */

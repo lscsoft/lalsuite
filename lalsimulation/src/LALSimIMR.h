@@ -65,15 +65,13 @@ typedef enum {
  */
 int XLALSimIMRPhenomAGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    LIGOTimeGPS *tRef,                 /**< time at fRef */
-    REAL8 phiRef,                      /**< phase at fRef */
-    REAL8 fRef,                        /**< reference frequency */
-    REAL8 deltaF,                      /**< sampling interval */
-    REAL8 m1,                          /**< mass of companion 1 */
-    REAL8 m2,                          /**< mass of companion 2 */
-    REAL8 f_min,                       /**< start frequency */
-    REAL8 f_max,                       /**< end frequency */
-    REAL8 distance                     /**< distance of source */
+    const REAL8 phi0,                        /**< initial phase */
+    const REAL8 deltaF,                      /**< sampling interval */
+    const REAL8 m1_SI,                       /**< mass of companion 1 (kg) */
+    const REAL8 m2_SI,                       /**< mass of companion 2 (kg) */
+    const REAL8 f_min,                       /**< start frequency */
+    const REAL8 f_max,                       /**< end frequency */
+    const REAL8 distance                     /**< distance of source (m) */
 );
 
 /**
@@ -90,16 +88,27 @@ int XLALSimIMRPhenomAGenerateFD(
 int XLALSimIMRPhenomAGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    LIGOTimeGPS *tRef,        /**< time at fRef */
-    REAL8 phiRef,             /**< phase at fRef */
-    REAL8 fRef,               /**< reference frequency */
-    REAL8 deltaT,             /**< sampling interval */
-    REAL8 m1,                 /**< mass of companion 1 */
-    REAL8 m2,                 /**< mass of companion 2 */
-    REAL8 f_min,              /**< start frequency */
-    REAL8 f_max,              /**< end frequency */
-    REAL8 distance,           /**< distance of source */
-    REAL8 inclination         /**< inclination of source */
+    const LIGOTimeGPS *tPeak,       /**< time at peak amplitude */
+    const REAL8 phiPeak,            /**< phase at peak */
+    const REAL8 deltaT,             /**< sampling interval */
+    const REAL8 m1_SI,              /**< mass of companion 1 (kg) */
+    const REAL8 m2_SI,              /**< mass of companion 2 (kg) */
+    const REAL8 f_min,              /**< start frequency */
+    const REAL8 f_max,              /**< end frequency */
+    const REAL8 distance,           /**< distance of source (m) */
+    const REAL8 inclination         /**< inclination of source */
+);
+
+/**
+ * Compute the dimensionless, spin-aligned parameter chi as used in the
+ * IMRPhenomB waveform. This is different from chi in SpinTaylorRedSpin!
+ * Reference: http://arxiv.org/pdf/0909.2867, paragraph 3.
+ */
+double XLALSimIMRPhenomBComputeChi(
+    const REAL8 m1,                          /**< mass of companion 1 */
+    const REAL8 m2,                          /**< mass of companion 2 */
+    const REAL8 s1z,                         /**< spin of companion 1 */
+    const REAL8 s2z                          /**< spin of companion 2 */
 );
 
 /**
@@ -114,16 +123,14 @@ int XLALSimIMRPhenomAGenerateTD(
  */
 int XLALSimIMRPhenomBGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    LIGOTimeGPS *tRef,                 /**< time at fRef */
-    REAL8 phiRef,                      /**< phase at fRef */
-    REAL8 fRef,                        /**< reference frequency */
-    REAL8 deltaF,                      /**< sampling interval */
-    REAL8 m1,                          /**< mass of companion 1 */
-    REAL8 m2,                          /**< mass of companion 2 */
-    REAL8 chi,                         /**< mass-weighted aligned-spin parameter */
-    REAL8 f_min,                       /**< start frequency */
-    REAL8 f_max,                       /**< end frequency */
-    REAL8 distance                     /**< distance of source */
+    const REAL8 phi0,                        /**< initial phase */
+    const REAL8 deltaF,                      /**< sampling interval */
+    const REAL8 m1_SI,                       /**< mass of companion 1 (kg) */
+    const REAL8 m2_SI,                       /**< mass of companion 2 (kg) */
+    const REAL8 chi,                         /**< mass-weighted aligned-spin parameter */
+    const REAL8 f_min,                       /**< start frequency */
+    const REAL8 f_max,                       /**< end frequency */
+    const REAL8 distance                     /**< distance of source (m) */
 );
 
 /**
@@ -139,17 +146,16 @@ int XLALSimIMRPhenomBGenerateFD(
 int XLALSimIMRPhenomBGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    LIGOTimeGPS *tRef,        /**< time at fRef */
-    REAL8 phiRef,             /**< phase at fRef */
-    REAL8 fRef,               /**< reference frequency */
-    REAL8 deltaT,             /**< sampling interval */
-    REAL8 m1,                 /**< mass of companion 1 */
-    REAL8 m2,                 /**< mass of companion 2 */
-    REAL8 chi,                /**< mass-weighted aligned-spin parameter */
-    REAL8 f_min,              /**< start frequency */
-    REAL8 f_max,              /**< end frequency */
-    REAL8 distance,           /**< distance of source */
-    REAL8 inclination         /**< inclination of source */
+    const LIGOTimeGPS *tPeak,       /**< time at peak amplitude */
+    const REAL8 phiPeak,            /**< phase at peak */
+    const REAL8 deltaT,             /**< sampling interval */
+    const REAL8 m1_SI,              /**< mass of companion 1 (kg) */
+    const REAL8 m2_SI,              /**< mass of companion 2 (kg) */
+    const REAL8 chi,                /**< mass-weighted aligned-spin parameter */
+    const REAL8 f_min,              /**< start frequency */
+    const REAL8 f_max,              /**< end frequency */
+    const REAL8 distance,           /**< distance of source (m) */
+    const REAL8 inclination         /**< inclination of source */
 );
 
 /**

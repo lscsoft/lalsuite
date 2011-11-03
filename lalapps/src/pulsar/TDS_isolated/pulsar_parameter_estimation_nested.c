@@ -277,7 +277,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   REAL8Vector *logLikelihoods = NULL;
   
   /* set error handler to abort in main function */
-  lalDebugLevel = 7;
+  /* lalDebugLevel = 7; */
   XLALSetErrorHandler(XLALAbortErrorHandler);
   
   /* Get ProcParamsTable from input arguments */
@@ -1065,8 +1065,6 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
       }
     }
 
-    fprintf(stderr, "%s %s\n", efile, sfile);
-
     /* check ephemeris files exist and if not output an error message */
     if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
       fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
@@ -1245,7 +1243,8 @@ void setupFromParFile( LALInferenceRunState *runState )
  * \f$-\pi/4\f$ to \f$\pi/4\f$. The number of bins for the grid over these two
  * parameters can be specified on the command line via \c time-bins and \c 
  * psi-bins respectively, but if these are not given then default values are
- * used. 
+ * used. The data times as a fraction of a sidereal day from the start time
+ * will also be calculated.
  * 
  * The function will also calls \c chop_n_merge() for each data set, which will 
  * split the data into chunks during which it can be considered Gaussian and
@@ -1298,6 +1297,8 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     
   while(data){
     UINT4Vector *chunkLength = NULL;
+    REAL8Vector *sidDayFrac = NULL;
+    UINT4 i = 0;
     
     LALInferenceAddVariable( data->dataParams, "psiSteps", &psiBins, 
                              LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
@@ -1305,6 +1306,20 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
                              LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
     
     t0 = XLALGPSGetREAL8( &data->dataTimes->data[0] );
+    
+    sidDayFrac = XLALCreateREAL8Vector( data->dataTimes->length );
+    
+    /* set the time in sidereal days since the first data point (mod 1 sidereal
+       day) */
+    for( i = 0; i < data->dataTimes->length; i++ ){
+      sidDayFrac->data[i] = fmod( XLALGPSGetREAL8(&data->dataTimes->data[i]) -
+                                  t0, LAL_DAYSID_SI );
+    }
+    
+    LALInferenceAddVariable( data->dataParams, "siderealDay", &sidDayFrac,
+                             LALINFERENCE_REAL8Vector_t,
+                             LALINFERENCE_PARAM_FIXED );
+    
     detAndSource.pDetector = data->detector;
     detAndSource.pSource = source;
                 
@@ -1733,8 +1748,8 @@ set.\n", propfile, tempPar);
                              varyType );
     
     /* Add the prior variables */
-    LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, (void *)&low, 
-                                (void *)&high, type );
+    LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, &low, 
+                                &high, type );
     
     /* if there is a phase parameter defined in the proposal then set varyphase
        to 1 */
@@ -2023,7 +2038,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
       /* Otherwise use a flat prior */
       else{
 	LALInferenceGetMinMaxPrior( runState->priorArgs, item->name, 
-                                    (void *)&min, (void *)&max );
+                                    &min, &max );
       
         if( (*(REAL8 *) item->value) < min || (*(REAL8 *)item->value) > max ){
           return -DBL_MAX;
@@ -2559,7 +2574,6 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   
   REAL8 psteps, tsteps, psv, tsv;
   INT4 psibinMin, psibinMax, timebinMin, timebinMax;
-  REAL8 tstart;
   REAL8 plus, cross;
   REAL8 plus00, plus01, plus10, plus11, cross00, cross01, cross10, cross11;
   REAL8 psiScaled, timeScaled;
@@ -2570,6 +2584,7 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   REAL4 sinphi, cosphi;
   
   gsl_matrix *LU_Fplus, *LU_Fcross;
+  REAL8Vector *sidDayFrac = NULL;
   
   length = data->dataTimes->length;
   
@@ -2581,6 +2596,9 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
                                                      "LU_Fplus");
   LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, 
                                                       "LU_Fcross");
+  /* get the sidereal time since the initial data point % sidereal day */
+  sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams,
+                                                        "siderealDay" );
   
   sin_cos_LUT( &sinphi, &cosphi, pars.phi0 );
   
@@ -2600,8 +2618,6 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   Xcsinphi = Xcross*sinphi;
   Xpcosphi = Xplus*cosphi;
   Xccosphi = Xcross*cosphi;
- 
-  tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] ); /*time of first B_k*/
   
   /* set the psi bin for the lookup table */
   psv = LAL_PI_2 / ( psteps - 1. );
@@ -2618,8 +2634,7 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   for( i=0; i<length; i++ ){
     /* set the time bin for the lookup table */
     /* sidereal day in secs*/
-    T = fmod( XLALGPSGetREAL8(&data->dataTimes->data[i]) - tstart,
-              LAL_DAYSID_SI );
+    T = sidDayFrac->data[i];
     timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
     timeMin = timebinMin*tsv;
     timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
@@ -2661,7 +2676,6 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   REAL8 plus00, plus01, plus10, plus11, cross00, cross01, cross10, cross11;
   REAL8 psiScaled, timeScaled;
   REAL8 psiMin, psiMax, timeMin, timeMax;
-  REAL8 tstart;
   REAL8 plus, cross;
   REAL8 T;
   REAL8 Xplusf, Xcrossf, Xplus2f, Xcross2f;
@@ -2669,7 +2683,7 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   REAL4 sinphi, cosphi, sin2phi, cos2phi;
   
   gsl_matrix *LU_Fplus, *LU_Fcross;
-  
+  REAL8Vector *sidDayFrac = NULL;
   
   /* set lookup table parameters */
   psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
@@ -2677,6 +2691,9 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   
   LU_Fplus = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fplus");
   LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fcross");
+  /* get the sidereal time since the initial data point % sidereal day */
+  sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams,
+                                                        "siderealDay" );
   
   sin_cos_LUT( &sinphi, &cosphi, 0.5*pars.phi0 );
   sin_cos_LUT( &sin2phi, &cos2phi, pars.phi0 );
@@ -2697,8 +2714,6 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   B1=( (cos(pars.lambda)*cos(pars.lambda))*(cos(pars.theta)*cos(pars.theta)) ) - (sin(pars.lambda)*sin(pars.lambda)) 
     + ( pars.h1*(sin(pars.theta)*sin(pars.theta)) );
   B2=sin(2*pars.lambda)*cos(pars.theta);
-
-  tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] );
   
   /* set the psi bin for the lookup table */
   psv = LAL_PI_2 / ( psteps - 1. );
@@ -2714,13 +2729,11 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   
   /* set model for 1f component */
   length = data->dataTimes->length;
-  tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] ); /*time of first B_k*/
   
   for( i=0; i<length; i++ ){
     /* set the time bin for the lookup table */
     /* sidereal day in secs*/    
-    T = fmod( XLALGPSGetREAL8(&data->dataTimes->data[i]) - tstart,
-              LAL_DAYSID_SI );
+    T = sidDayFrac->data[i];
     timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
     timeMin = timebinMin*tsv;
     timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
@@ -2759,13 +2772,14 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   
   /* set model for 2f component */
   length = data->next->dataTimes->length;
-  tstart = XLALGPSGetREAL8( &data->next->dataTimes->data[0] );
+  
+  sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->next->dataParams,
+                                                        "siderealDay" );
   
   for( i=0; i<length; i++ ){
     /* set the time bin for the lookup table */
     /* sidereal day in secs*/    
-    T = fmod( XLALGPSGetREAL8(&data->next->dataTimes->data[i]) - tstart,
-              LAL_DAYSID_SI );
+    T = sidDayFrac->data[i];
     timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
     timeMin = timebinMin*tsv;
     timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
@@ -3907,31 +3921,31 @@ void rescaleOutput( LALInferenceRunState *runState ){
   
   /* open output file */
   if( (fp = fopen(outfile, "r")) == NULL ){
-    fprintf(stderr, "Error... cannot open output file %s.\n", outfile);
-    exit(3);
+    XLALPrintError("Error... cannot open output file %s.\n", outfile);
+    XLAL_ERROR_VOID(XLAL_EIO);
   }
   
   /* open temporary output file for reading */
   if( (fptemp = fopen(outfiletmp, "w")) == NULL ){
-    fprintf(stderr, "Error... cannot open temporary output file %s.\n",
-            outfile);
-    exit(3);
+    XLALPrintError("Error... cannot open temporary output file %s.\n",
+                   outfile);
+    XLAL_ERROR_VOID(XLAL_EIO);
   }
  
   /* open file for printing out list of parameter names - this should already 
      exist */
   sprintf(outfilepars, "%s_params.txt", outfile);
   if( (fppars = fopen(outfilepars, "r")) == NULL ){
-    fprintf(stderr, "Error... cannot open parameter name output file %s.\n",
-            outfilepars);
-    exit(3);
+    XLALPrintError("Error... cannot open parameter name output file %s.\n",
+                   outfilepars);
+    XLAL_ERROR_VOID(XLAL_EIO);
   }
   /* read in the parameter names and remove the "model" value */
   sprintf(outfileparstmp, "%s_params.txt_tmp", outfile);
   if( (fpparstmp = fopen(outfileparstmp, "w")) == NULL ){
-    fprintf(stderr, "Error... cannot open parameter name output file %s.\n",
-            outfileparstmp);
-    exit(3);
+    XLALPrintError("Error... cannot open parameter name output file %s.\n",
+                   outfileparstmp);
+    XLAL_ERROR_VOID(XLAL_EIO);
   }
   
   CHAR v[128] = "";
@@ -3939,8 +3953,8 @@ void rescaleOutput( LALInferenceRunState *runState ){
       paramsStr = XLALAppendString2Vector( paramsStr, v );
     
     /* re-output everything but the "model" value to a temporary file */
-    if( strcmp(v, "model") != 0 || strcmp(v, "logL")!=0 
-      || strcmp(v, "logPrior") )
+    if( strcmp(v, "model") != 0 && strcmp(v, "logL")!=0 
+      && strcmp(v, "logPrior") != 0 )
       fprintf(fpparstmp, "%s\t", v);
   }
   
@@ -4242,7 +4256,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
  * time range (in GPS seconds) required. If no files exist errors will be
  * returned.
  * 
- * The function uses requires <code>dirent,h</code> and <code>time.h</code>. 
+ * The function requires <code>dirent.h</code> and <code>time.h</code>. 
  * 
  * NOTE: This may want to be moved into LAL at some point.
  * 
