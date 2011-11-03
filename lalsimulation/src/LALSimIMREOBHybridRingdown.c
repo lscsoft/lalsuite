@@ -39,6 +39,9 @@ the inspiral part of the compat binary coalescing waveform.
 
 #include "LALSimIMREOBNRv2.h"
 
+#ifndef _LALSIMIMREOBHYBRIDRINGDOWN_C
+#define _LALSIMIMREOBHYBRIDRINGDOWN_C
+
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -826,3 +829,5 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
 
       return XLAL_SUCCESS;
 }
+
+#endif /*_LALSIMIMREOBHYBRIDRINGDOWN_C*/

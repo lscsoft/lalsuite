@@ -40,6 +40,9 @@
 
 #include "LALSimIMREOBNRv2.h"
 
+#ifndef _LALSIMIMRNQCCORRECTION_C 
+#define _LALSIMIMRNQCCORRECTION_C 
+
 /**
  * Compute the time offset which should be used in computing the
  * non-quasicircular correction and performing the ringdown attachment.
@@ -692,3 +695,5 @@ static int XLALSimIMREOBCalculateNQCCoefficients(
 
   return XLAL_SUCCESS;
 }
+
+#endif /*_LALSIMIMRNQCCORRECTION_C*/

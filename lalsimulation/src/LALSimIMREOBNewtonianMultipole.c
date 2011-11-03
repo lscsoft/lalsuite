@@ -35,6 +35,9 @@
 
 #include "LALSimIMREOBNRv2.h"
 
+#ifndef _LALSIMIMRNEWTONIANMULTIPOLE_C
+#define _LALSIMIMRNEWTONIANMULTIPOLE_C
+
 static REAL8
 XLALAssociatedLegendreXIsZero( const int l,
                                const int m
@@ -459,3 +462,5 @@ CalculateThisMultipolePrefix(
 
   return XLAL_SUCCESS;
 }
+
+#endif /*_LALSIMIMRNEWTONIANMULTIPOLE_C*/
