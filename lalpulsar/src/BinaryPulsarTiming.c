@@ -1803,7 +1803,6 @@ params.gammaErr);*/
 void XLALReadTEMPOCorFile( REAL8Array *cormat, LALStringVector *params, 
                            CHAR *corfile ){
   FILE *fp = NULL;
-  size_t dummy = 0;
   CHAR *firstline = NULL;
   INT4 i = 0, numPars = 0, c = 1, sl = 0;
   LALStringVector *tmpparams = NULL; /* temporary parameter names */
@@ -1821,8 +1820,9 @@ void XLALReadTEMPOCorFile( REAL8Array *cormat, LALStringVector *params,
     XLAL_ERROR_VOID(XLAL_EIO);
   }
   
-  /* read in parameter names from first line of file */
-  if( getline(&firstline, &dummy, fp) == -1 ){
+  /* read in parameter names from first line of file (assumes first line is
+     shorter than 1024 characters) */
+  if( fgets(firstline, 1024, fp) == NULL ){
     XLALPrintError("Error... could not read in first line of correlation \
 matrix file!\n");
     XLAL_ERROR_VOID(XLAL_EIO);
