@@ -242,8 +242,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 verbose=0;
 	UINT4 displayprogress=0;
 	LALInferenceVariableItem *param_ptr;
-	LALInferenceVariables *output_array=NULL;
-	UINT4 N_output_array=0;
 	
 	/* Default sample logging functions with and without XML */
 #ifdef HAVE_LIBLALXML
@@ -501,7 +499,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 #ifdef HAVE_LIBLALXML	
 	/* Write out the XML if requested */
-
+    LALInferenceVariables *output_array=NULL;
+    UINT4 N_output_array=0;
 	if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
 	  &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
 	{
@@ -529,9 +528,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		
 		
 	}
-#endif
 	if(output_array) free(output_array);
 
+#endif
 	/* Write out names of parameters */
 	FILE *lout=NULL;
 	char param_list[FILENAME_MAX];
