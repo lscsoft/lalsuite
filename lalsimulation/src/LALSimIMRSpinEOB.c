@@ -42,6 +42,7 @@
 
 /* Include static functions */
 #include "LALSimIMREOBFactorizedWaveform.c" 
+#include "LALSimIMREOBNewtonianMultipole.c"
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

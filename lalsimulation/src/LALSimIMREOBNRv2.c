@@ -39,13 +39,13 @@ Pan et al, PRD84, 124052(2011).
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
 #include <gsl/gsl_sf_gamma.h>
+#include "LALSimIMREOBNRv2.h"
 
 /* Include all the static function files we need */
-#include "LALSimIMREOBNRv2.h"
 #include "LALSimIMREOBFactorizedWaveform.c"
-/*#include "LALSimIMREOBFactorizedFlux.c"*/
-/*#include "LALSimIMREOBNQCCorrection.c"*/
-/*#include "LALSimIMREOBNewtonianMultipole.c"*/
+#include "LALSimIMREOBFactorizedFlux.c"
+#include "LALSimIMREOBNQCCorrection.c"
+#include "LALSimIMREOBNewtonianMultipole.c"
 #include "LALSimIMREOBHybridRingdown.c"
 #include "LALSimInspiraldEnergyFlux.c"
 
