@@ -399,10 +399,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		H=mean(Harray,Nruns);
 		logZ=logZnew;
 		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
-                
-
+               
 		if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
-
 		
 		UINT4 itercounter=0;
 		/* Generate a new live point */
@@ -412,7 +410,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
 			LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
                         runState->evolve(runState);
-			itercounter++;			
+                        itercounter++;			
 		}while( runState->currentLikelihood<=logLmin ||  *(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
 
                 LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);

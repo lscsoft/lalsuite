@@ -305,6 +305,9 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* set signal model/template */
   runState.template = get_pulsar_model;
  
+  /* set output style (change this when the code if fixed for using XML) */
+  runState.logsample = LALInferenceLogSampleToFile;
+  
   /* Generate the lookup tables and read parameters from par file */
   setupFromParFile( &runState );
   
