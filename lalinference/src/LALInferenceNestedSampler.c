@@ -930,7 +930,7 @@ static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude)
 {
 	vec[0]=cos(longitude)*cos(latitude);
 	vec[1]=sin(longitude)*cos(latitude);
-	vec[1]=sin(latitude);
+	vec[2]=sin(latitude);
 	return;
 }
 
