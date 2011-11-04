@@ -10,11 +10,11 @@ frame_progs = \
 
 TESTS = test_heterodyne_pulsar.sh
 
-if LALINFERENCE
-inference_progs = \
-	lalapps_pulsar_parameter_estimation_nested
+#if LALINFERENCE
+#inference_progs = \
+#	lalapps_pulsar_parameter_estimation_nested
 
-endif
+#endif
 endif
 bin_PROGRAMS = $(frame_progs) $(inference_progs)
 
@@ -26,15 +26,15 @@ lalapps_pulsar_parameter_estimation_SOURCES = \
 	pulsar_parameter_estimation.c \
 	pulsar_parameter_estimation.h
 
-lalapps_pulsar_parameter_estimation_nested_SOURCES = \
-	pulsar_parameter_estimation_nested.c \
-	pulsar_parameter_estimation_nested.h \
-	ppe_models.c \
-	ppe_models.h \
-	ppe_likelihood.c \
-	ppe_likelihood.h \
-	ppe_testing.c \
-	ppe_testing.h
+#lalapps_pulsar_parameter_estimation_nested_SOURCES = \
+#	pulsar_parameter_estimation_nested.c \
+#	pulsar_parameter_estimation_nested.h \
+#	ppe_models.c \
+#	ppe_models.h \
+#	ppe_likelihood.c \
+#	ppe_likelihood.h \
+#	ppe_testing.c \
+#	ppe_testing.h
 
 EXTRA_DIST = \
 	test_heterodyne_pulsar.sh \
