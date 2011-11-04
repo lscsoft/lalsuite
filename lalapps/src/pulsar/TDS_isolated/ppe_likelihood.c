@@ -170,7 +170,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
   LALStringVector *corPars = NULL;
   REAL8Vector *corVals = NULL;
   INT4 cori = 0;
-  
+
   for(; item; item = item->next ){
     /* get scale factor */
     CHAR scalePar[VARNAME_MAX] = "";
@@ -191,8 +191,8 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
       item->vary == LALINFERENCE_PARAM_CIRCULAR ){
       /* Check for a gaussian */
       if ( LALInferenceCheckGaussianPrior(runState->priorArgs, item->name) ){
-        LALInferenceGetGaussianPrior( runState->priorArgs, item->name, 
-                                      (void *)&mu, (void *)&sigma );
+        LALInferenceGetGaussianPrior( runState->priorArgs, item->name, &mu,
+                                      &sigma );
       
        value = (*(REAL8 *)item->value) * scale + scaleMin;
        mu += scaleMin;
@@ -230,7 +230,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
     gsl_matrix *cor = NULL;
     gsl_vector_view vals;
     gsl_vector *vm = gsl_vector_alloc( corVals->length );
-    INT4 idx = 0;
+    UINT4 idx = 0;
     REAL8 ptmp = 0;
     
     if ( LALInferenceCheckVariable( runState->priorArgs, "matrix_inverse" ) ){
@@ -239,7 +239,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
     }
     else{
       LALInferenceGetCorrelatedPrior( runState->priorArgs, corPars->data[0],
-                                    (void *)&cor, (void *)&idx );
+                                      &cor, &idx );
     
       /* check for positive definiteness */
       if( !LALInferenceCheckPositiveDefinite( cor, cor->size1 ) ){
@@ -255,7 +255,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
                                &cor, LALINFERENCE_gslMatrix_t,
                                LALINFERENCE_PARAM_FIXED );
     }
-    
+
     /* get the log prior (this only works properly if the parameter values have 
        been prescaled so as to be from a Gaussian of zero mean and unit
        variance, which should be the case in this code) */

@@ -1510,7 +1510,7 @@ void add_variable_scale_prior( LALInferenceVariables *var,
     INT4 isthere = 0;
     
     /* set the prior to a Gaussian prior with mean value and sigma */
-    LALInferenceAddGaussianPrior( prior, name, (void *)&value, (void *)&sigma, 
+    LALInferenceAddGaussianPrior( prior, name, &value, &sigma, 
                                   LALINFERENCE_REAL8_t );
     
     /* if the parameter is not one of the amplitude parameters then set
@@ -1771,7 +1771,7 @@ set.\n", propfile, tempPar);
       
       /* get the mean and standard deviation of the Gaussian prior */
       LALInferenceGetGaussianPrior( runState->priorArgs, checkPrior->name, 
-                                    (void *)&mu, (void *)&sigma );
+                                    &mu, (void *)&sigma );
       
       /* set the scale factor to be the sigma value */
       scale = sigma;
@@ -1787,8 +1787,8 @@ set.\n", propfile, tempPar);
       
       /* remove the Gaussian prior values and reset as scaled values */
       LALInferenceRemoveGaussianPrior( runState->priorArgs, checkPrior->name );
-      LALInferenceAddGaussianPrior( runState->priorArgs, checkPrior->name, 
-                        (void *)&mu, (void *)&sigma, checkPrior->type );
+      LALInferenceAddGaussianPrior( runState->priorArgs, checkPrior->name, &mu,
+                                    &sigma, LALINFERENCE_REAL8_t );
         
       /* set scale factor in data structure */
       while( datatemp ){
@@ -1930,7 +1930,7 @@ void add_correlation_matrix( LALInferenceVariables *ini,
           
           /* replace it with the correlation matrix as a gsl_matrix */
           LALInferenceAddCorrelatedPrior( priors, checkPrior->name,
-                                          (void *)&corMatg, (void *)&i );
+                                          &corMatg, &i );
           
           break;
         }
