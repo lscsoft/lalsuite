@@ -324,9 +324,7 @@ F0   -0.007 0.124  1.000
  * \param corfile [in] A string containing the path and filename of the
  * TEMPO-style correlation matrix file
  */ 
-void XLALReadTEMPOCorFile( REAL8Array *cormat, 
-                           LALStringVector *params, 
-                           CHAR *corfile );
+LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile );
 
 /** A function to convert RA and Dec in format dd:mm:ss.ss or ddmmss.ss into the
  * number of degrees as a float degs is the string containing the

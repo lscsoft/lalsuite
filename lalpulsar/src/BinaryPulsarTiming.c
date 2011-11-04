@@ -1799,35 +1799,33 @@ params.gammaErr);*/
   }
 }
 
-
-void XLALReadTEMPOCorFile( REAL8Array *cormat, LALStringVector *params, 
-                           CHAR *corfile ){
+LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile )
+/*void XLALReadTEMPOCorFile( REAL8Array *cormat, LALStringVector *params, 
+                           CHAR *corfile )*/{
   FILE *fp = NULL;
-  CHAR *firstline = NULL;
+  CHAR *firstline = XLALStringDuplicate( "" );
+  CHAR onechar[2];
   INT4 i = 0, numPars = 0, c = 1, sl = 0;
   LALStringVector *tmpparams = NULL; /* temporary parameter names */
+  LALStringVector *params = NULL;
   UINT4Vector *dims = NULL;
   
   /* check the file exists */
   if( access(corfile, F_OK) != 0 ){
     XLALPrintError("Error... correlation matrix file does not exist!\n");
-    XLAL_ERROR_VOID(XLAL_EFUNC);
+    XLAL_ERROR_NULL(XLAL_EFUNC);
   }
   
   /* open file */
   if( (fp = fopen(corfile, "r")) == NULL ){
     XLALPrintError("Error... cannot open correlation matrix file!\n");
-    XLAL_ERROR_VOID(XLAL_EIO);
+    XLAL_ERROR_NULL(XLAL_EIO);
   }
   
-  /* read in parameter names from first line of file (assumes first line is
-     shorter than 1024 characters) */
-  if( fgets(firstline, 1024, fp) == NULL ){
-    XLALPrintError("Error... could not read in first line of correlation \
-matrix file!\n");
-    XLAL_ERROR_VOID(XLAL_EIO);
-  }
-  
+  /* read in first line of the file */
+  while( !strchr( fgets(onechar, 2, fp), '\n' ) )
+    firstline = XLALStringAppend( firstline, onechar );
+
   sl = strlen(firstline);
   
   /* count the number of parameters */
@@ -1841,15 +1839,16 @@ matrix file!\n");
     }else
       c = 1;
   }
-   
+  
   /* parse the line and put into the params vector */
   rewind(fp); /* rewind to start of the file */
   for ( i = 0; i < numPars; i++ ){
-    CHAR *tmpStr = NULL;
+    CHAR tmpStr[128];
     
-    if( !fscanf(fp, "%s", tmpStr) ){
-      XLALPrintError("Error... Problem first line of correlation matrix!\n");
-      XLAL_ERROR_VOID(XLAL_EIO);
+    if( fscanf(fp, "%s", tmpStr) == EOF ){
+      XLALPrintError("Error... Problem reading first line of correlation\
+ matrix!\n");
+      XLAL_ERROR_NULL(XLAL_EIO);
     }
     
     tmpparams = XLALAppendString2Vector( tmpparams, tmpStr );
@@ -1867,31 +1866,31 @@ matrix file!\n");
   dims->data[0] = numPars;
   dims->data[1] = numPars;
   
+  /* set the correlation matrix to the correct size */
+  cormat = XLALResizeREAL8Array( cormat, dims );
+  
   /* read through covariance values */
   for ( i = 0; i < numPars; i++ ){
-    CHAR *tmpStr = NULL;
+    CHAR tmpStr[128];
     INT4 j = 0;
     
     if( fscanf(fp, "%s", tmpStr) == EOF ){
       XLALPrintError("Error... problem reading in correlation matrix!\n");
-      XLAL_ERROR_VOID(XLAL_EIO);
+      XLAL_ERROR_NULL(XLAL_EIO);
     }
     
-    if ( !strcmp(tmpStr, tmpparams->data[i]) ){
+    if ( strcmp(tmpStr, tmpparams->data[i]) ){
       XLALPrintError("Error... problem reading in correlation matrix. \
 Parameters not in consistent order!\n");
-      XLAL_ERROR_VOID(XLAL_EIO);
+      XLAL_ERROR_NULL(XLAL_EIO);
     }
-    
-    /* set the correlation matrix to the correct size */
-    cormat = XLALResizeREAL8Array( cormat, dims );
     
     for( j = 0; j < i+1; j++ ){
       REAL8 tmpval = 0.;
       
       if( fscanf(fp, "%lf", &tmpval) == EOF ){
         XLALPrintError("Error... problem reading in correlation matrix!\n");
-        XLAL_ERROR_VOID(XLAL_EIO);
+        XLAL_ERROR_NULL(XLAL_EIO);
       }
       
       /* if off diagonal values are +/-1 set to +/- 0.99999 */
@@ -1905,6 +1904,8 @@ Parameters not in consistent order!\n");
         cormat->data[j*numPars + i] = tmpval;
     }
   }
+  
+  return params;
 }
 
 

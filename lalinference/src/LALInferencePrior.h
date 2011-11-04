@@ -114,15 +114,15 @@ int LALInferenceCheckGaussianPrior(LALInferenceVariables *priorArgs, const char 
  * index for the given parameter in the matrix must be supplied. 
  */
 void LALInferenceAddCorrelatedPrior( LALInferenceVariables *priorArgs, 
-                                     const char *name, gsl_matrix *cor, 
-                                     INT4 idx);
+                                     const char *name, void *cor, 
+                                     void *idx);
 
 /** Get the correlation coefficient matrix and index for a parameter from the
  * \c priorArgs list.
  */ 
 void LALInferenceGetCorrelatedPrior( LALInferenceVariables *priorArgs, 
-                                     const char *name, gsl_matrix *cor, 
-                                     INT4 *idx);
+                                     const char *name, void *cor, 
+                                     void *idx);
 
 /** Remove the correlation coefficient matrix and index for a parameter from the
  * \c priorArgs list.

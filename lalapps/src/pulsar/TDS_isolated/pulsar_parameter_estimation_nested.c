@@ -150,28 +150,6 @@ set, will be output.
 #include "ppe_likelihood.h"
 #include "ppe_testing.h"
 
-/** A list of the amplitude parameters. The names given here are those that are
- * recognised within the code. */
-CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi", "cosiota", "h1",
-"lambda", "theta" };
-
-/** A list of the frequency parameters. The names given here are those that are
- * recognised within the code. */
-CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "f0", "f1", "f2", "f3", "f4", "f5",
-"pepoch" };
-
-/** A list of the sky position parameters. The names given here are those that
- * are recognised within the code. */
-CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "ra", "pmra", "dec", "pmdec",
-"posepoch" };
-    
-/** A list of the binary system parameters. The names given here are those that
- * are recognised within the code. */
-CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1", "eps2", "T0",
-"Tasc", "x", "w0", "Pb2", "e2",            "T02", "x2", "w02", "Pb3", "e3",
-"T03", "x3", "w03", "xpbdot",            "eps1dot", "eps2dot", "wdot", "gamma",
-"Pbdot", "xdot", "edot", "s",            "dr", "dth", "a0", "b0", "M", "m2" };
-
 /** The maximum number of different detectors allowable. */
 #define MAXDETS 6
 
@@ -260,8 +238,6 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   LALInferenceRunState runState;
   REAL8 logZnoise = 0.;
   
-  REAL8Vector *logLikelihoods = NULL;
-  
   /* set error handler to abort in main function */
   /* lalDebugLevel = 7; */
   XLALSetErrorHandler(XLALAbortErrorHandler);
@@ -317,9 +293,6 @@ INT4 main( INT4 argc, CHAR *argv[] ){
                
   /* Create live points array and fill initial parameters */
   LALInferenceSetupLivePointsArray( &runState );
-  
-  logLikelihoods = *(REAL8Vector **)
-    LALInferenceGetVariable( runState.algorithmParams, "logLikelihoods" );
   
   /* Call the nested sampling algorithm */
   runState.algorithm( &runState );
@@ -519,7 +492,6 @@ void readPulsarData( LALInferenceRunState *runState ){
   ProcessParamsTable *commandLine = runState->commandLine;
   
   CHAR *detectors = NULL;
-  CHAR *outfile = NULL;
   CHAR *inputfile = NULL;
   
   CHAR *filestr = NULL;
@@ -583,9 +555,6 @@ void readPulsarData( LALInferenceRunState *runState ){
     fprintf(stderr, "Error... model type %s is unknown!\n", modeltype);
     exit(0);
   }
-  
-  /* allocate memory for data sample intervals (in seconds) */
-  
   
   /* get the detectors - must */
   ppt = LALInferenceGetProcParamVal( commandLine, "--detectors" );
@@ -849,8 +818,7 @@ void readPulsarData( LALInferenceRunState *runState ){
   
   /* get the output directory */
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-  if( ppt ) outfile = XLALStringDuplicate( ppt->value );
-  else{
+  if( !ppt ){
     fprintf(stderr, "Error... --outfile needs to be set.\n");
     fprintf(stderr, USAGE, commandLine->program);
     exit(0);
@@ -1857,12 +1825,13 @@ set.\n", propfile, tempPar);
     
     corMat = XLALCreateREAL8Array( dims );
     
-    XLALReadTEMPOCorFile( corMat, corParams, corFile );
+    corParams = XLALReadTEMPOCorFile( corMat, corFile );
   
     /* if the correlation matrix is given then add it as the prior for values
        with Gaussian errors specified in the par file */
     add_correlation_matrix( runState->currentParams, runState->priorArgs,
                             corMat, corParams );
+
     XLALDestroyUINT4Vector( dims );
   }
   
@@ -1885,26 +1854,29 @@ void add_correlation_matrix( LALInferenceVariables *ini,
   LALStringVector *newPars = NULL;
   gsl_matrix *corMatg = NULL;
   UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
+  UINT4 corsize = corMat->dimLength->data[0];
+  UINT4 corshrink = corsize;
   
   /* loop through parameters and find ones that have Gaussian priors set -
      these should match with parameters in the correlation coefficient matrix */
   for ( i = 0; i < parMat->length; i++ ){
-    UINT4 incor = 0;
-    UINT4 corsize = corMat->dimLength->data[0];
+    UINT4 incor = 0; 
     LALInferenceVariableItem *checkPrior = ini->head;
   
     for( ; checkPrior ; checkPrior = checkPrior->next ){
       if( LALInferenceCheckGaussianPrior(priors, checkPrior->name) ){
-
         /* ignore parameter name case */
         if( !strcasecmp(parMat->data[i], checkPrior->name) ){
           incor = 1;
+                   
+          /* add parameter to new parameter string vector */
+          newPars = XLALAppendString2Vector( newPars, parMat->data[i] );
           break;
         }
       }
     }
     
-    /* if parameter in the corMat did not match one in with a Gaussian defined
+    /* if parameter in the corMat did not match one with a Gaussian defined
        prior, then remove it from the matrix */
     if ( incor == 0 ){
       /* remove the ith row and column from corMat, and the ith name from
@@ -1915,17 +1887,12 @@ void add_correlation_matrix( LALInferenceVariables *ini,
           corMat->data[(j-1)*corsize + k] = corMat->data[j*corsize + k];
       
       /* shift columns left */
-      for ( j = i+1; j < corsize; j++ )
-        for ( k = 0; k < corsize; k++ )
-          corMat->data[k*corsize + j-1] = corMat->data[k*corsize + j];
+      for ( k = i+1; k < corsize; k++ )
+        for ( j = 0; j < corsize; j++ )
+          corMat->data[j*corsize + k-1] = corMat->data[j*corsize + k];
       
       /* resize array */
-      dims->data[0] = corsize-1;
-      dims->data[1] = dims->data[0];
-      corMat = XLALResizeREAL8Array( corMat, dims );
-      
-      /* add parameter to new parameter string vector */
-      newPars = XLALAppendString2Vector( newPars, parMat->data[i] );
+      corshrink--;
     }
   }
   
@@ -1937,10 +1904,19 @@ void add_correlation_matrix( LALInferenceVariables *ini,
   
   /* copy the corMat into a gsl_matrix */
   corMatg = gsl_matrix_alloc( parMat->length, parMat->length );
-  for ( i = 0; i < parMat->length; i++ )
-    for ( j = 0; j < parMat->length; j++ )
-      gsl_matrix_set( corMatg, i, j, corMat->data[i*parMat->length + j] );
-  
+  for ( i = 0; i < parMat->length; i++ ){
+    for ( j = 0; j < parMat->length; j++ ){
+      gsl_matrix_set( corMatg, i, j, corMat->data[i*corsize + j] );
+
+      if ( verbose_output ){
+        REAL8 matval = gsl_matrix_get( corMatg, i, j );
+        fprintf(stderr, "%lf\t", matval);
+      }
+    }
+
+    if ( verbose_output ) fprintf(stderr, "\n");
+  }
+    
   /* re-loop over parameters removing Gaussian priors on those in the parMat
      and replacing with a correlation matrix */
   for ( i = 0; i < parMat->length; i++ ){
@@ -1954,7 +1930,7 @@ void add_correlation_matrix( LALInferenceVariables *ini,
           
           /* replace it with the correlation matrix as a gsl_matrix */
           LALInferenceAddCorrelatedPrior( priors, checkPrior->name,
-                                          corMatg, i );
+                                          (void *)&corMatg, (void *)&i );
           
           break;
         }
@@ -3242,14 +3218,16 @@ void rescaleOutput( LALInferenceRunState *runState ){
  */
 INT4 count_csv( CHAR *csvline ){
   CHAR *inputstr = NULL;
-  CHAR *tempstr = NULL;
   INT4 count = 0;
     
   inputstr = XLALStringDuplicate( csvline );
 
   /* count number of commas */
   while(1){
-    tempstr = strsep(&inputstr, ",");
+    if( strsep(&inputstr, ",") == NULL ){
+      XLALPrintError("Error... problem counting number of commas!\n");
+      XLAL_ERROR( XLAL_EFUNC );
+    }
       
     if ( inputstr == NULL ) break;
       
@@ -3384,7 +3362,6 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
  * \sa calculate_time_domain_snr
  */
 void get_loudest_snr( LALInferenceRunState *runState ){
-  REAL8 lMax = 0.;
   INT4 ndets = 0;
   INT4 Nlive = *(INT4 *)LALInferenceGetVariable( runState->algorithmParams,
                                                  "Nlive" );
@@ -3403,9 +3380,6 @@ void get_loudest_snr( LALInferenceRunState *runState ){
  
   /* max likelihood point should have been sorted to be the final value */
   LALInferenceCopyVariables( runState->livePoints[Nlive-1], loudestParams );
-  
-  lMax = runState->likelihood( loudestParams, runState->data,
-                               runState->template );
  
   LALInferenceDestroyVariables( loudestParams );
   

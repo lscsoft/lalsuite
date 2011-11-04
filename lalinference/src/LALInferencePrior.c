@@ -705,32 +705,32 @@ void LALInferenceGetGaussianPrior(LALInferenceVariables *priorArgs, const char *
 
 /* Function to add a correlation matrix to the prior onto the priorArgs */
 void LALInferenceAddCorrelatedPrior(LALInferenceVariables *priorArgs, 
-                                  const char *name, gsl_matrix *cor, INT4 idx){
+                                  const char *name, void *cor, void *idx){
   char corName[VARNAME_MAX];
   char idxName[VARNAME_MAX];
   
   sprintf(corName,"%s_correlation_matrix",name);
   sprintf(idxName,"%s_index",name);
   
-  LALInferenceAddVariable(priorArgs, corName, (void *)&cor,
+  LALInferenceAddVariable(priorArgs, corName, cor,
                           LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(priorArgs, idxName, (void *)&idx, LALINFERENCE_INT4_t,
+  LALInferenceAddVariable(priorArgs, idxName, idx, LALINFERENCE_INT4_t,
                           LALINFERENCE_PARAM_FIXED) ;    
   return;
 }
 
 /* Get the correlation matrix and parameter index */
 void LALInferenceGetCorrelatedPrior(LALInferenceVariables *priorArgs, 
-                                    const char *name, gsl_matrix *cor,
-                                    INT4 *idx){
+                                    const char *name, void *cor,
+                                    void *idx){
   char corName[VARNAME_MAX];
   char idxName[VARNAME_MAX];
                 
   sprintf(corName,"%s_correlation_matrix",name);
   sprintf(idxName,"%s_index",name);
     
-  *(gsl_matrix *)cor=*(gsl_matrix *)LALInferenceGetVariable(priorArgs, corName);
-  *(INT4 *)idx=*(INT4 *)LALInferenceGetVariable(priorArgs,idxName);
+  *(gsl_matrix **)cor = *(gsl_matrix **)LALInferenceGetVariable(priorArgs, corName);
+  *(INT4 *)idx = *(INT4 *)LALInferenceGetVariable(priorArgs,idxName);
   return;       
 }
 
@@ -770,6 +770,10 @@ void LALInferenceDrawFromPrior( LALInferenceVariables *output,
     if(item->vary==LALINFERENCE_PARAM_CIRCULAR || item->vary==LALINFERENCE_PARAM_LINEAR)
       LALInferenceDrawNameFromPrior( output, priorArgs, item->name, item->type, rdm );
   }
+
+  /* remove multivariate deviates value if set */
+  if ( LALInferenceCheckVariable( priorArgs, "multivariate_deviates" ) )
+    LALInferenceRemoveVariable( priorArgs, "multivariate_deviates" );
 }
 
 void LALInferenceDrawNameFromPrior( LALInferenceVariables *output, 
@@ -794,33 +798,45 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
   }
   /* test for a prior drawn from correlated values */
   else if( LALInferenceCheckCorrelatedPrior( priorArgs, name ) ){
-    /* NOTE: this will be slow if many parameters have correlated priors as it
-       will be called for each one, when it could ideally be called just once -
-       there may be quicker ways of doing this */
     gsl_matrix *cor = NULL;
     INT4 idx = 0, dims = 0;
     REAL4Vector *tmps = NULL;
-    RandomParams *randParam;
-    UINT4 randomseed = gsl_rng_get(rdm);
     
-    LALInferenceGetCorrelatedPrior( priorArgs, name, cor, &idx );
+    LALInferenceGetCorrelatedPrior( priorArgs, name, (void *)&cor, 
+                                    (void *)&idx );
     dims = cor->size1;
     
-    /* check matrix for positive definiteness */
-    if( !LALInferenceCheckPositiveDefinite( cor, dims ) ){
-      XLALPrintError("Error... matrix is not positive definite!\n");
-      XLAL_ERROR_VOID(XLAL_EFUNC);
+    /* to avoid unnecessary repetition the multivariate deviates are be
+       added as a new variable that can be extracted during multiple calls.
+       This will be later removed by the LALInferenceDrawFromPrior function. */
+    if ( LALInferenceCheckVariable( priorArgs, "multivariate_deviates" ) ){
+      tmps = *(REAL4Vector **)LALInferenceGetVariable(priorArgs,
+                                                     "multivariate_deviates");
     }
+    else{
+      RandomParams *randParam;
+      UINT4 randomseed = gsl_rng_get(rdm);
+   
+      /* check matrix for positive definiteness */
+      if( !LALInferenceCheckPositiveDefinite( cor, dims ) ){
+        XLALPrintError("Error... matrix is not positive definite!\n");
+        XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
     
-    /* draw values from the multivariate Gaussian described by the correlation
-       matrix */
-    tmps = XLALCreateREAL4Vector( dims );
-    randParam = XLALCreateRandomParams( randomseed );
-    XLALMultiNormalDeviates( tmps, cor, dims, randParam );
-    
+      /* draw values from the multivariate Gaussian described by the correlation
+         matrix */
+      tmps = XLALCreateREAL4Vector( dims );
+      randParam = XLALCreateRandomParams( randomseed );
+      XLALMultiNormalDeviates( tmps, cor, dims, randParam );
+      
+      LALInferenceAddVariable( priorArgs, "multivariate_deviates", &tmps,
+                               LALINFERENCE_REAL8Vector_t,
+                               LALINFERENCE_PARAM_FIXED );
+    }
+  
     /* set random number for given parameter index */
     tmp = tmps->data[idx];
-  }  
+  } 
   /* not a recognised prior type */
   else{
     return;
