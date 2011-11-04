@@ -264,6 +264,9 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
     XLAL_CALLGSL( gsl_blas_dgemv(CblasNoTrans, 1., cor, &vals.vector, 0., vm) );
     XLAL_CALLGSL( gsl_blas_ddot(&vals.vector, vm, &ptmp) );
     
+    /* divide by the 2 in the denominator of the Gaussian */
+    ptmp /= 2.;
+    
     XLALDestroyStringVector( corPars );
     XLALDestroyREAL8Vector( corVals );
     gsl_vector_free( vm );
