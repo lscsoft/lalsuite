@@ -3187,14 +3187,14 @@ void rescaleOutput( LALInferenceRunState *runState ){
       fclose(fp);          
     }
   }
+  
+  if( output_array ) XLALFree( output_array );
 #else
   if ( !ppt1 ){
     XLALPrintError("Error... --outfile not defined!\n");
     XLAL_ERROR_VOID( XLAL_EIO );
   }
 #endif
-  
-  if( output_array ) XLALFree( output_array );
   
   return;
 }
