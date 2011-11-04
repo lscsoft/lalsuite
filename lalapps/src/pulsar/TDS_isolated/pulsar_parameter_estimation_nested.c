@@ -1904,18 +1904,9 @@ void add_correlation_matrix( LALInferenceVariables *ini,
   
   /* copy the corMat into a gsl_matrix */
   corMatg = gsl_matrix_alloc( parMat->length, parMat->length );
-  for ( i = 0; i < parMat->length; i++ ){
-    for ( j = 0; j < parMat->length; j++ ){
+  for ( i = 0; i < parMat->length; i++ )
+    for ( j = 0; j < parMat->length; j++ )
       gsl_matrix_set( corMatg, i, j, corMat->data[i*corsize + j] );
-
-      if ( verbose_output ){
-        REAL8 matval = gsl_matrix_get( corMatg, i, j );
-        fprintf(stderr, "%lf\t", matval);
-      }
-    }
-
-    if ( verbose_output ) fprintf(stderr, "\n");
-  }
     
   /* re-loop over parameters removing Gaussian priors on those in the parMat
      and replacing with a correlation matrix */
@@ -2090,7 +2081,7 @@ parameter file %s is wrong.\n", injectfile);
       REAL8 snrval = calculate_time_domain_snr( data );
    
       snrmulti[k] += SQUARE(snrval);
-    
+      
       if ( snrscale[k] == 0 ) fprintf(fpsnr, "%le\t", snrval);
                              
       data = data->next;
@@ -2131,6 +2122,8 @@ parameter file %s is wrong.\n", injectfile);
       /* reset varyphase to its original value */
       varyphase = varyphasetmp;
       
+      data = data->next;
+      
       for ( k = 1; k < (INT4)freqFactors->length; k++ ) data = data->next;
     }
     
@@ -2166,7 +2159,7 @@ parameter file %s is wrong.\n", injectfile);
   }
   
   fclose( fpsnr );
-   
+  
   /* reset data to head */
   data = runState->data;
   

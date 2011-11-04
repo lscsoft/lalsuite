@@ -72,8 +72,6 @@
 #include <gsl/gsl_sort_double.h>
 #include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_blas.h>
-/* #include <gsl/gsl_matrix.h>
-#include <gsl/gsl_vector.h> */
 
 #ifdef __cplusplus
 extern "C" {
