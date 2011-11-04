@@ -1156,12 +1156,12 @@ INT4 LALInferenceReflectDetPlane(
 	normalise(normal);
 	normalise(detvec);
 	
-	/* Calculate the distance between the point and the plane n.(point-IFO1) */
-	for(dist=0.0,i=0;i<3;i++) dist+=pow(normal[i]*(pos[i]-detvec[i]),2.0);
-	dist=sqrt(dist);
-	/* Reflect the point pos across the plane */
-	for(i=0;i<3;i++) pos[i]=pos[i]-2.0*dist*normal[i];
-	
+    /* Calculate the signed distance between the point and the plane n.(point-IFO1) */
+    for(dist=0.0,i=0;i<3;i++) dist+=normal[i]*pos[i];
+
+    /* Reflect the point pos across the plane */
+    for(i=0;i<3;i++) pos[i]=pos[i]-2.0*dist*normal[i];
+    
 	REAL8 newLongGeo,newLat;
 	CartesianToSkyPos(pos,&newLongGeo,&newLat);
 	REAL8 newLongSky=newLongGeo-deltalong;
