@@ -874,11 +874,14 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
   REAL8 Mc = draw_chirp(runState);
   LALInferenceSetVariable(proposedParams, "chirpmass", &Mc);
 
-  REAL8 eta = draw_flat(runState, "massratio");
-  LALInferenceSetVariable(proposedParams, "massratio", &eta);
-  
-  REAL8 q = draw_flat(runState, "asym_massratio");
-  LALInferenceSetVariable(proposedParams, "asym_massratio", &q);
+  if (LALInferenceCheckVariable(runState->currentParams, "asym_massratio")) {
+    REAL8 q = draw_flat(runState, "asym_massratio");
+    LALInferenceSetVariable(proposedParams, "asym_massratio", &q);
+  }
+  else if (LALInferenceCheckVariable(runState->currentParams, "massratio")) {
+    REAL8 eta = draw_flat(runState, "massratio");
+    LALInferenceSetVariable(proposedParams, "massratio", &eta);
+  }
 
   REAL8 theTime = draw_flat(runState, "time");
   LALInferenceSetVariable(proposedParams, "time", &theTime);
