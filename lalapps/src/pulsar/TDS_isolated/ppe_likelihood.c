@@ -80,7 +80,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
   
   while ( data ){
     UINT4 j = 0, count = 0, cl = 0;
-    UINT4 length = 0, chunkMin, chunkMax;
+    UINT4 length = 0, chunkMin;
     REAL8 chunkLength = 0.;
     REAL8 logliketmp = 0.;
 
@@ -98,7 +98,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams,
                                                              "chunkLength" );
     chunkMin = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMin" );
-    chunkMax = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMax" );
   
     length = data->compTimeData->data->length;
   
@@ -171,7 +170,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
   LALStringVector *corPars = NULL;
   REAL8Vector *corVals = NULL;
   INT4 cori = 0;
-  
+
   for(; item; item = item->next ){
     /* get scale factor */
     CHAR scalePar[VARNAME_MAX] = "";
@@ -192,8 +191,8 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
       item->vary == LALINFERENCE_PARAM_CIRCULAR ){
       /* Check for a gaussian */
       if ( LALInferenceCheckGaussianPrior(runState->priorArgs, item->name) ){
-        LALInferenceGetGaussianPrior( runState->priorArgs, item->name, 
-                                      (void *)&mu, (void *)&sigma );
+        LALInferenceGetGaussianPrior( runState->priorArgs, item->name, &mu,
+                                      &sigma );
       
        value = (*(REAL8 *)item->value) * scale + scaleMin;
        mu += scaleMin;
@@ -228,43 +227,49 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
   /* if there are values for which the priors are defined by a correlation
      coefficient matrix then get add the prior from that */
   if ( corPars ){
-    gsl_matrix *cor = NULL, *cortmp = NULL, *inv = NULL;
-    gsl_permutation *perm = NULL;
+    gsl_matrix *cor = NULL;
     gsl_vector_view vals;
-    gsl_vector *vm = NULL;
-    INT4 idx = 0, sn = 0, i = 0;
+    gsl_vector *vm = gsl_vector_alloc( corVals->length );
+    UINT4 idx = 0;
     REAL8 ptmp = 0;
     
-    LALInferenceGetCorrelatedPrior( runState->priorArgs, corPars->data[0], cor,
-                                   &idx );
-    gsl_matrix_memcpy(cortmp, cor);
-    perm = gsl_permutation_alloc( cortmp->size1 );
-    
-    /* check for positive definiteness */
-    if( !LALInferenceCheckPositiveDefinite( cortmp, cortmp->size1 ) ){
-      XLALPrintError("Error... matrix is not positive definite!\n");
-      XLAL_ERROR_VOID(XLAL_EFUNC);
+    if ( LALInferenceCheckVariable( runState->priorArgs, "matrix_inverse" ) ){
+      cor = *(gsl_matrix **)LALInferenceGetVariable( runState->priorArgs,
+                                                     "matrix_inverse" );
     }
+    else{
+      LALInferenceGetCorrelatedPrior( runState->priorArgs, corPars->data[0],
+                                      &cor, &idx );
     
-    /* get LU decomposition */
-    gsl_linalg_LU_decomp(cortmp, perm, &sn);
+      /* check for positive definiteness */
+      if( !LALInferenceCheckPositiveDefinite( cor, cor->size1 ) ){
+        XLALPrintError("Error... matrix is not positive definite!\n");
+        XLAL_ERROR_REAL8(XLAL_EFUNC);
+      }
     
-    /* get the matrix inverse */
-    gsl_linalg_LU_invert(cortmp, perm, inv);
-    
+      /* get the matrix inverse using Cholesky decomposition */
+      XLAL_CALLGSL( gsl_linalg_cholesky_decomp( cor ) );
+      XLAL_CALLGSL( gsl_linalg_cholesky_invert( cor ) );
+      
+      LALInferenceAddVariable( runState->priorArgs, "matrix_inverse",
+                               &cor, LALINFERENCE_gslMatrix_t,
+                               LALINFERENCE_PARAM_FIXED );
+    }
+
     /* get the log prior (this only works properly if the parameter values have 
        been prescaled so as to be from a Gaussian of zero mean and unit
        variance, which should be the case in this code) */
     vals = gsl_vector_view_array( corVals->data, corVals->length );
+   
+    XLAL_CALLGSL( gsl_blas_dgemv(CblasNoTrans, 1., cor, &vals.vector, 0., vm) );
+    XLAL_CALLGSL( gsl_blas_ddot(&vals.vector, vm, &ptmp) );
     
-    gsl_blas_dgemv(CblasNoTrans, 1., inv, &vals.vector, 0., vm);
-    
-    gsl_blas_ddot(&vals.vector, vm, &ptmp); 
+    /* divide by the 2 in the denominator of the Gaussian */
+    ptmp /= 2.;
     
     XLALDestroyStringVector( corPars );
     XLALDestroyREAL8Vector( corVals );
-    gsl_matrix_free( cortmp );
-    gsl_permutation_free( perm );
+    gsl_vector_free( vm );
     
     prior -= ptmp;
   }

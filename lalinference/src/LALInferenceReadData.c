@@ -124,11 +124,54 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	LIGOTimeGPS GPSstart,GPStrig,segStart;
 	REAL8 PSDdatalength=0;
 	REAL8 trigtime=0;
+  REAL8 AIGOang=0.0; //orientation angle for the proposed Australian detector.
+  if(LALInferenceGetProcParamVal(commandLine,"--AIGOang")) {
+    procparam=LALInferenceGetProcParamVal(commandLine,"--AIGOang");
+    AIGOang=atof(procparam->value)*LAL_PI/180.0;
+  }
 	if(!LALInferenceGetProcParamVal(commandLine,"--cache")||!LALInferenceGetProcParamVal(commandLine,"--IFO")||
 	   !LALInferenceGetProcParamVal(commandLine,"--PSDstart")||//!LALInferenceGetProcParamVal(commandLine,"--trigtime") ||
 	   !LALInferenceGetProcParamVal(commandLine,"--PSDlength")||!LALInferenceGetProcParamVal(commandLine,"--seglen"))
 	{fprintf(stderr,USAGE); return(NULL);}
 	
+  /* ET detectors */
+	LALDetector dE1,dE2,dE3;
+  /* response of the detectors */
+  dE1.type = dE2.type = dE3.type = LALDETECTORTYPE_IFODIFF;
+  dE1.location[0] = dE2.location[0] = dE3.location[0] = 4.5464e6;
+  dE1.location[1] = dE2.location[1] = dE3.location[1] = 8.4299e5;
+  dE1.location[2] = dE2.location[2] = dE3.location[2] = 4.3786e6;
+  LALFrDetector dE1Fr;
+  sprintf(dE1Fr.name,"ET-1");
+  sprintf(dE1Fr.prefix,"E1");
+  dE1.frDetector=dE1Fr;
+  dE1.response[0][0] = 0.1666;
+  dE1.response[1][1] = -0.2484;
+  dE1.response[2][2] = 0.0818;
+  dE1.response[0][1] = dE1.response[1][0] = -0.2188;
+  dE1.response[0][2] = dE1.response[2][0] = -0.1300;
+  dE1.response[1][2] = dE1.response[2][1] = 0.2732;
+  LALFrDetector dE2Fr;
+  sprintf(dE2Fr.name,"ET-2");
+  sprintf(dE2Fr.prefix,"E2");
+  dE2.frDetector=dE2Fr;
+  dE2.response[0][0] = -0.1992;
+  dE2.response[1][1] = 0.4234;
+  dE2.response[2][2] = 0.0818;
+  dE2.response[0][1] = dE2.response[1][0] = -0.0702;
+  dE2.response[0][2] = dE2.response[2][0] = 0.2189;
+  dE2.response[1][2] = dE2.response[2][1] = -0.0085;
+  LALFrDetector dE3Fr;
+  sprintf(dE3Fr.name,"ET-3");
+  sprintf(dE3Fr.prefix,"E3");
+  dE3.frDetector=dE3Fr;
+  dE3.response[0][0] = 0.0326;
+  dE3.response[1][1] = -0.1750;
+  dE3.response[2][2] = 0.1423;
+  dE3.response[0][1] = dE3.response[1][0] = 0.2891;
+  dE3.response[0][2] = dE3.response[2][0] = -0.0889;
+  dE3.response[1][2] = dE3.response[2][1] = -0.2647;  
+  
   //TEMPORARY. JUST FOR CHECKING USING SPINSPIRAL PSD
   char **spinspiralPSD=NULL;
   UINT4 NspinspiralPSD = 0;
@@ -218,9 +261,191 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 			if(!Nchannel) sprintf((channels[i]),"V1:h_16384Hz"); continue;}
 		if(!strcmp(IFOnames[i],"GEO")||!strcmp(IFOnames[i],"G1")) {
 			memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexGEO600DIFF],sizeof(LALDetector));
-			if(!Nchannel) sprintf((channels[i]),"G1:DER_DATA_H"); continue;}
-		/*		if(!strcmp(IFOnames[i],"TAMA")||!strcmp(IFOnames[i],"T1")) {inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexTAMA300DIFF]; continue;}*/
-		fprintf(stderr,"Unknown interferometer %s. Valid codes: H1 H2 L1 V1 GEO\n",IFOnames[i]); exit(-1);
+    if(!Nchannel) sprintf((channels[i]),"G1:DER_DATA_H"); continue;}
+		/*		if(!strcmp(IFOnames[i],"TAMA")||!strcmp(IFOnames[i],"T1")) {memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexTAMA300DIFF]); continue;}*/
+    
+    if(!strcmp(IFOnames[i],"E1")){
+			memcpy(IFOdata[i].detector,&dE1,sizeof(LALDetector));
+      if(!Nchannel) sprintf((channels[i]),"E1:STRAIN"); continue;}
+		if(!strcmp(IFOnames[i],"E2")){
+      memcpy(IFOdata[i].detector,&dE2,sizeof(LALDetector));
+      if(!Nchannel) sprintf((channels[i]),"E2:STRAIN"); continue;}
+    if(!strcmp(IFOnames[i],"E3")){
+      memcpy(IFOdata[i].detector,&dE3,sizeof(LALDetector));
+      if(!Nchannel) sprintf((channels[i]),"E3:STRAIN"); continue;}
+		if(!strcmp(IFOnames[i],"HM1")){
+			/* Note, this is a sqrt(2)*7.5-km 3rd gen detector */
+			LALFrDetector ETHomestakeFr;
+			sprintf(ETHomestakeFr.name,"ET-HomeStake1");
+			sprintf(ETHomestakeFr.prefix,"M1");
+			/* Location of Homestake Mine vertex is */
+			/* 44d21'23.11" N, 103d45'54.71" W */
+			ETHomestakeFr.vertexLatitudeRadians = (44.+ 21./60  + 23.11/3600)*LAL_PI/180.0;
+			ETHomestakeFr.vertexLongitudeRadians = - (103. +45./60 + 54.71/3600)*LAL_PI/180.0;
+			ETHomestakeFr.vertexElevation=0.0;
+			ETHomestakeFr.xArmAltitudeRadians=0.0;
+			ETHomestakeFr.xArmAzimuthRadians=LAL_PI/2.0;
+			ETHomestakeFr.yArmAltitudeRadians=0.0;
+			ETHomestakeFr.yArmAzimuthRadians=0.0;
+			ETHomestakeFr.xArmMidpoint = ETHomestakeFr.yArmMidpoint = sqrt(2.0)*7.5/2.0;
+			IFOdata[i].detector=calloc(1,sizeof(LALDetector));
+			XLALCreateDetector(IFOdata[i].detector,&ETHomestakeFr,LALDETECTORTYPE_IFODIFF);
+			printf("Created Homestake Mine ET detector, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
+			printf("detector tensor:\n");
+			for(int jdx=0;jdx<3;jdx++){
+        for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
+        printf("\n");
+      }
+			continue;
+		}
+    if(!strcmp(IFOnames[i],"HM2")){
+      /* Note, this is a sqrt(2)*7.5-km 3rd gen detector */
+      LALFrDetector ETHomestakeFr;
+      sprintf(ETHomestakeFr.name,"ET-HomeStake2");
+      sprintf(ETHomestakeFr.prefix,"M2");
+      /* Location of Homestake Mine vertex is */
+      /* 44d21'23.11" N, 103d45'54.71" W */
+      ETHomestakeFr.vertexLatitudeRadians = (44.+ 21./60  + 23.11/3600)*LAL_PI/180.0;
+      ETHomestakeFr.vertexLongitudeRadians = - (103. +45./60 + 54.71/3600)*LAL_PI/180.0;
+      ETHomestakeFr.vertexElevation=0.0;
+      ETHomestakeFr.xArmAltitudeRadians=0.0;
+      ETHomestakeFr.xArmAzimuthRadians=3.0*LAL_PI/4.0;
+      ETHomestakeFr.yArmAltitudeRadians=0.0;
+      ETHomestakeFr.yArmAzimuthRadians=LAL_PI/4.0;
+      ETHomestakeFr.xArmMidpoint = ETHomestakeFr.yArmMidpoint = sqrt(2.0)*7500./2.0;
+      IFOdata[i].detector=calloc(1,sizeof(LALDetector));
+      XLALCreateDetector(IFOdata[i].detector,&ETHomestakeFr,LALDETECTORTYPE_IFODIFF);
+      printf("Created Homestake Mine ET detector, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
+      printf("detector tensor:\n");
+      for(int jdx=0;jdx<3;jdx++){
+        for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
+        printf("\n");
+      }
+      continue;
+    }
+		if(!strcmp(IFOnames[i],"EM1")){
+			LALFrDetector ETmic1;
+			sprintf(ETmic1.name,"ET Michelson 1");
+			sprintf(ETmic1.prefix,"F1");
+			ETmic1.vertexLatitudeRadians = (43. + 37./60. + 53.0921/3600)*LAL_PI/180.0;
+			ETmic1.vertexLongitudeRadians = (10. + 30./60. + 16.1878/3600.)*LAL_PI/180.0;
+			ETmic1.vertexElevation = 0.0;
+			ETmic1.xArmAltitudeRadians = ETmic1.yArmAltitudeRadians = 0.0;
+			ETmic1.xArmAzimuthRadians = LAL_PI/2.0;
+			ETmic1.yArmAzimuthRadians = 0.0;
+			ETmic1.xArmMidpoint = ETmic1.yArmMidpoint = sqrt(2.0)*7500./2.;
+			IFOdata[i].detector=calloc(1,sizeof(LALDetector));
+			XLALCreateDetector(IFOdata[i].detector,&ETmic1,LALDETECTORTYPE_IFODIFF);
+			printf("Created ET L-detector 1 (N/E) arms, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
+      printf("detector tensor:\n");
+      for(int jdx=0;jdx<3;jdx++){
+        for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
+        printf("\n");
+      }
+			continue;
+		}
+    if(!strcmp(IFOnames[i],"EM2")){
+      LALFrDetector ETmic2;
+      sprintf(ETmic2.name,"ET Michelson 2");
+      sprintf(ETmic2.prefix,"F2");
+      ETmic2.vertexLatitudeRadians = (43. + 37./60. + 53.0921/3600)*LAL_PI/180.0;
+      ETmic2.vertexLongitudeRadians = (10. + 30./60. + 16.1878/3600.)*LAL_PI/180.0;
+      ETmic2.vertexElevation = 0.0;
+      ETmic2.xArmAltitudeRadians = ETmic2.yArmAltitudeRadians = 0.0;
+      ETmic2.xArmAzimuthRadians = 3.0*LAL_PI/4.0;
+      ETmic2.yArmAzimuthRadians = LAL_PI/4.0;
+      ETmic2.xArmMidpoint = ETmic2.yArmMidpoint = sqrt(2.0)*7500./2.;
+      IFOdata[i].detector=calloc(1,sizeof(LALDetector));
+      XLALCreateDetector(IFOdata[i].detector,&ETmic2,LALDETECTORTYPE_IFODIFF);
+      printf("Created ET L-detector 2 (NE/SE) arms, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
+      printf("detector tensor:\n");
+      for(int jdx=0;jdx<3;jdx++){
+        for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
+        printf("\n");
+      }
+      continue;
+		}
+    if(!strcmp(IFOnames[i],"I1")||!strcmp(IFOnames[i],"LIGOIndia")){
+      /* Detector in India with 4k arms */
+      LALFrDetector LIGOIndiaFr;
+      sprintf(LIGOIndiaFr.name,"LIGO India");
+      sprintf(LIGOIndiaFr.prefix,"I1");
+      /* Location of India site is */
+      /* 14d14' N 76d26' E */
+      LIGOIndiaFr.vertexLatitudeRadians = (14. + 14./60.)*LAL_PI/180.0;
+      LIGOIndiaFr.vertexLongitudeRadians = (76. + 26./60.)*LAL_PI/180.0;
+      LIGOIndiaFr.vertexElevation = 0.0;
+      LIGOIndiaFr.xArmAltitudeRadians = 0.0;
+      LIGOIndiaFr.yArmAltitudeRadians = 0.0;
+      LIGOIndiaFr.yArmMidpoint = 2000.;
+      LIGOIndiaFr.xArmMidpoint = 2000.;
+      LIGOIndiaFr.xArmAzimuthRadians = LAL_PI/2.;
+      LIGOIndiaFr.yArmAzimuthRadians = 0.;
+      IFOdata[i].detector=malloc(sizeof(LALDetector));
+      memset(IFOdata[i].detector,0,sizeof(LALDetector));
+      XLALCreateDetector(IFOdata[i].detector,&LIGOIndiaFr,LALDETECTORTYPE_IFODIFF);
+      printf("Created LIGO India Detector, location %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
+      printf("Detector tensor:\n");
+      for(int jdx=0;jdx<3;jdx++){
+        for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
+        printf("\n");
+      }
+      continue;
+    }
+		if(!strcmp(IFOnames[i],"A1")||!strcmp(IFOnames[i],"LIGOSouth")){
+      /* Construct a detector at AIGO with 4k arms */
+      LALFrDetector LIGOSouthFr;
+      sprintf(LIGOSouthFr.name,"LIGO-South");
+      sprintf(LIGOSouthFr.prefix,"A1");
+      /* Location of the AIGO detector vertex is */
+      /* 31d21'27.56" S, 115d42'50.34"E */
+      LIGOSouthFr.vertexLatitudeRadians = - (31. + 21./60. + 27.56/3600.)*LAL_PI/180.0;
+      LIGOSouthFr.vertexLongitudeRadians = (115. + 42./60. + 50.34/3600.)*LAL_PI/180.0;
+      LIGOSouthFr.vertexElevation=0.0;
+      LIGOSouthFr.xArmAltitudeRadians=0.0;
+      LIGOSouthFr.xArmAzimuthRadians=AIGOang+LAL_PI/2.;
+      LIGOSouthFr.yArmAltitudeRadians=0.0;
+      LIGOSouthFr.yArmAzimuthRadians=AIGOang;
+      LIGOSouthFr.xArmMidpoint=2000.;
+      LIGOSouthFr.yArmMidpoint=2000.;
+      IFOdata[i].detector=malloc(sizeof(LALDetector));
+      memset(IFOdata[i].detector,0,sizeof(LALDetector));
+      XLALCreateDetector(IFOdata[i].detector,&LIGOSouthFr,LALDETECTORTYPE_IFODIFF);
+      printf("Created LIGO South detector, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
+      printf("Detector tensor:\n");
+      for(int jdx=0;jdx<3;jdx++){
+        for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
+        printf("\n");
+      }
+      continue;
+    }
+		if(!strcmp(IFOnames[i],"J1")||!strcmp(IFOnames[i],"LCGT")){
+			/* Construct the LCGT telescope */
+			REAL8 LCGTangle=19.0*(LAL_PI/180.0);
+			LALFrDetector LCGTFr;
+			sprintf(LCGTFr.name,"LCGT");
+			sprintf(LCGTFr.prefix,"J1");
+			LCGTFr.vertexLatitudeRadians  = 36.25 * LAL_PI/180.0;
+			LCGTFr.vertexLongitudeRadians = (137.18 * LAL_PI/180.0);
+			LCGTFr.vertexElevation=0.0;
+			LCGTFr.xArmAltitudeRadians=0.0;
+			LCGTFr.xArmAzimuthRadians=LCGTangle+LAL_PI/2.;
+			LCGTFr.yArmAltitudeRadians=0.0;
+			LCGTFr.yArmAzimuthRadians=LCGTangle;
+			LCGTFr.xArmMidpoint=1500.;
+			LCGTFr.yArmMidpoint=1500.;
+			IFOdata[i].detector=malloc(sizeof(LALDetector));
+			memset(IFOdata[i].detector,0,sizeof(LALDetector));
+			XLALCreateDetector(IFOdata[i].detector,&LCGTFr,LALDETECTORTYPE_IFODIFF);
+			printf("Created LCGT telescope, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
+      printf("Detector tensor:\n");
+      for(int jdx=0;jdx<3;jdx++){
+        for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
+        printf("\n");
+      }
+      continue;
+		}
+		fprintf(stderr,"Unknown interferometer %s. Valid codes: H1 H2 L1 V1 GEO A1 J1 I1 E1 E2 E3 HM1 HM2 EM1 EM2\n",IFOnames[i]); exit(-1);
 	}
 	
 	/* Set up FFT structures and window */

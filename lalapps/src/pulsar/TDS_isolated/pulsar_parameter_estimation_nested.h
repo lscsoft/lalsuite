@@ -57,6 +57,7 @@
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/StringVector.h>
+#include <lal/XLALGSL.h>
 
 #include <lalapps.h>
 
@@ -71,8 +72,6 @@
 #include <gsl/gsl_sort_double.h>
 #include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_blas.h>
-/* #include <gsl/gsl_matrix.h>
-#include <gsl/gsl_vector.h> */
 
 #ifdef __cplusplus
 extern "C" {
@@ -136,20 +135,42 @@ extern "C" {
  * periastron and angle of periastron. */
 #define NUMBINPARS 33
 
+/** A list of the amplitude parameters. The names given here are those that are
+ * recognised within the code. */
+static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi",
+"cosiota", "h1", "lambda", "theta" };
+
+/** A list of the frequency parameters. The names given here are those that are
+ * recognised within the code. */
+static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "f0", "f1", "f2", "f3",
+"f4", "f5", "pepoch" };
+
+/** A list of the sky position parameters. The names given here are those that
+ * are recognised within the code. */
+static const CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "ra", "pmra", "dec",
+"pmdec", "posepoch" };
+    
+/** A list of the binary system parameters. The names given here are those that
+ * are recognised within the code. */
+static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1",
+"eps2", "T0", "Tasc", "x", "w0", "Pb2", "e2", "T02", "x2", "w02", "Pb3", "e3",
+"T03", "x3", "w03", "xpbdot", "eps1dot", "eps2dot", "wdot", "gamma", "Pbdot",
+"xdot", "edot", "s", "dr", "dth", "a0", "b0", "M", "m2" };
+
 /** A flag to specify if phase parameters are being searched over and
  * therefore the pulsar model requires phase evolution to be re-calculated (0 =
  * no, 1 = yes). */ 
-UINT4 varyphase = 0; 
+static UINT4 varyphase = 0; 
 
 /** A flag to specify if the sky position will be searched over, and therefore
  * whether the solar system barycentring needs recalculating (0 = no, 1 = yes).
 */
-UINT4 varyskypos = 0; 
+static UINT4 varyskypos = 0; 
 
 /** A flag to specify if the binary system parameters will be searched over,
  * and therefore whether the binary system barycentring needs recalculating (0 =
  * no, 1 = yes) */
-UINT4 varybinary = 0; 
+static UINT4 varybinary = 0; 
 
 /* initialisation functions */
 void initialiseAlgorithm( LALInferenceRunState *runState );
