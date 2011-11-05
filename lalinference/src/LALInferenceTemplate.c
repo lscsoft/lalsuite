@@ -75,8 +75,10 @@ void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata){
 	//params.psi=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"polarisation");
 
     if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
+        REAL8 tempEta;
         REAL8 q = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"asym_massratio");
-        q2eta(q, &params.eta);
+        q2eta(q, &tempEta);
+        params.eta = (REAL4)tempEta;
     }
     else
         params.eta = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"massratio");
