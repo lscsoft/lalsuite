@@ -21,7 +21,6 @@
 #include <lal/Units.h>
 #include <lal/LALConstants.h>
 #include <lal/LALSimInspiral.h>
-#include <lal/LALSimInspiralSpinTaylorT4.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/TimeSeries.h>
 #include "check_series_macros.h"
@@ -124,10 +123,12 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8TimeSeries **E1x,	      /**< orb. plane basis vector x[returned]*/
 	REAL8TimeSeries **E1y,	      /**< "    "    "  y component [returned]*/
 	REAL8TimeSeries **E1z,	      /**< "    "    "  z component [returned]*/
-	REAL8 m1,              	      /**< mass of companion 1 (kg) */
-	REAL8 m2,              	      /**< mass of companion 2 (kg) */
 	LIGOTimeGPS *tStart,          /**< start time of output vectors */
 	REAL8 phiStart,               /**< orbital phase at initial time */
+	REAL8 deltaT,          	      /**< sampling interval (s) */
+	REAL8 m1,              	      /**< mass of companion 1 (kg) */
+	REAL8 m2,              	      /**< mass of companion 2 (kg) */
+	REAL8 fStart,                 /**< start frequency */
 	REAL8 s1x,                    /**< initial value of S1x */
 	REAL8 s1y,                    /**< initial value of S1y */
 	REAL8 s1z,                    /**< initial value of S1z */
@@ -140,8 +141,6 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8 e1x,                    /**< initial value of E1x */
 	REAL8 e1y,                    /**< initial value of E1y */
 	REAL8 e1z,                    /**< initial value of E1z */
-	REAL8 deltaT,          	      /**< sampling interval (s) */
-	REAL8 fStart,                 /**< start frequency */
 	LALSpinInteraction spinFlags, /**< flags to control spin effects */
 	INT4 phaseO                   /**< twice post-Newtonian order */
 	)
@@ -734,8 +733,8 @@ int XLALSimInspiralSpinTaylorT4(
     /* Evolve the dynamical variables */
     n = XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, &S1z, 
             &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
-            m1, m2, tStart, phiStart, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, 
-            lnhaty, lnhatz, e1x, e1y, e1z, deltaT, fStart, spinFlags, phaseO);
+            tStart, phiStart, deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
+            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, spinFlags, phaseO);
     if( n < 0 )
         XLAL_ERROR(XLAL_EFUNC);
 
@@ -806,8 +805,8 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
     /* Evolve the dynamical variables */
     n = XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, &S1z, 
             &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
-            m1, m2, tStart, phiStart, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, 
-            lnhaty, lnhatz, e1x, e1y, e1z, deltaT, fStart, spinFlags, phaseO);
+            tStart, phiStart, deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
+            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, spinFlags, phaseO);
     if( n < 0 )
         XLAL_ERROR(XLAL_EFUNC);
 

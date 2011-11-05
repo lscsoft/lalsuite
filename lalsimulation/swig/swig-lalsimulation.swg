@@ -15,27 +15,4 @@
  */
 %typemap(out) int ""
 
-/*
- * Every occurrence of the arguments
- *   REAL8TimeSeries **hplus
- * and
- *   REAL8TimeSeries **hcross
- * represents an output argument.  Apply the double-pointer typemap from
- * swiglal-common.i.
- */
-%apply SWIGTYPE **OUTPUT {REAL8TimeSeries **hplus, REAL8TimeSeries **hcross};
-
-/*
- * Every occurrence of the arguments
- *   COMPLEX16FrequencySeries **htilde
- * represents an output argument.  Apply the double-pointer typemap from
- * swiglal-common.i.
- */
-%apply SWIGTYPE **OUTPUT {COMPLEX16FrequencySeries **htilde};
-
-// allocate these structs with LAL memory
-SWIGLAL_STRUCT_LALMEM(expnCoeffsdEnergyFlux);
-SWIGLAL_STRUCT_LALMEM(TofVIntegrandIn);
-SWIGLAL_STRUCT_LALMEM(TofVIn);
-
 // LALSimulation header files which form the SWIG interface

@@ -42,323 +42,161 @@
 #define UNUSED
 #endif
 
-NRCSID(LALSIMINSPIRALTAYLORT4C, "$Id$");
+NRCSID(LALSIMINSPIRALTAYLORT1C, "$Id$");
 
 /**
  * This structure contains the intrinsic parameters and post-newtonian 
- * co-efficients for the energy and angular acceleration expansions. 
- * These are computed by XLALSimInspiralTaylorT4Setup routine.
+ * co-efficients for the denergy/dv and flux expansions. 
+ * These are computed by XLALSimInspiralTaylorT1Setup routine.
  */
 
 typedef struct
-tagexpnCoeffsTaylorT4 {
-   
-   /*Angular velocity coefficient*/
-   REAL8 av;
+{
+	/* Angular velocity coefficient */
+	REAL8 av;
 
-   /* Taylor expansion coefficents in domega/dt*/
-   REAL8 aatN,aat2,aat3,aat4,aat5,aat6,aat6l,aat7;
+	/* Taylor expansion coefficents in domega/dt */
+	expnCoeffsdEnergyFlux akdEF;
 
-   /* symmetric mass ratio, total mass, component masses*/
-   REAL8 nu,m,m1,m2,mu;
-}expnCoeffsTaylorT4;
+	/* symmetric mass ratio and total mass */
+	REAL8 nu,m;
+} expnCoeffsTaylorT1;
 
-typedef REAL8 (SimInspiralEnergy4)(
-   REAL8 v, /**< post-Newtonian parameter */
-   expnCoeffsdEnergyFlux *ak
+typedef REAL8 (SimInspiralTaylorT1Energy)(
+	REAL8 v, /**< post-Newtonian parameter */
+	expnCoeffsdEnergyFlux *ak
 );
 
-typedef REAL8 (SimInspiralAngularAcceleration4)(
-   REAL8 v, /**< post-Newtonian parameter */
-   expnCoeffsTaylorT4 *ak
+typedef REAL8 (SimInspiralTaylorT1dEnergy)(
+	REAL8 v, /**< post-Newtonian parameter */
+	expnCoeffsdEnergyFlux *ak
+);
+
+typedef REAL8 (SimInspiralTaylorT1Flux)(
+	REAL8 v, /**< post-Newtonian parameter */
+	expnCoeffsdEnergyFlux *ak
 );
 
 /**
  * This strucuture contains pointers to the functions for calculating
  * the post-newtonian terms at the desired order. They can be set by
- * XLALSimInspiralTaylorT4Setup by passing an appropriate PN order. 
+ * XLALSimInspiralTaylorT1Setup by passing an appropriate PN order. 
  */
 
 typedef struct
-tagexpnFuncTaylorT4
+tagexpnFuncTaylorT1
 {
-   SimInspiralEnergy4 *energy4;
-   SimInspiralAngularAcceleration4 *angacc4;
-} expnFuncTaylorT4;
-
-
-/**
- * Computes the rate of increase of the orbital frequency for a post-Newtonian
- * inspiral.
- *
- * Implements Equation 3.6 of: Alessandra Buonanno, Bala R Iyer, Evan
- * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
- * templates for compact binary inspiral signals in gravitational-wave
- * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
- */
-
-static REAL8 
-XLALSimInspiralAngularAcceleration4_0PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
-	)
-{
-	REAL8 ans;
-	REAL8 v9;
-    
-	v9 = pow(v, 9.0);
-
-	ans = ak->aatN * v9;
-
-	return ans;
-}
-
-static REAL8 
-XLALSimInspiralAngularAcceleration4_2PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
-	)
-{
-	REAL8 ans;
-	REAL8 v2,v9;
-    
-	v2 = v*v;
-	v9 = pow(v, 9.0);
-
-	ans = ak->aatN * (1.
-		+ ak->aat2*v2);
-
-	ans *= v9;
-
-	return ans;
-}
-
-static REAL8 
-XLALSimInspiralAngularAcceleration4_3PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
-	)
-{
-	REAL8 ans;
-	REAL8 v2,v3,v9;
-    
-	v2 = v*v;
-	v3 = v2*v;
-	v9 = v3*v3*v3;
-
-	ans = ak->aatN * (1.
-		+ ak->aat2*v2
-		+ ak->aat3*v3);
-
-	ans *= v9;
-
-	return ans;
-}
-
-static REAL8 
-XLALSimInspiralAngularAcceleration4_4PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
-	)
-{
-	REAL8 ans;
-	REAL8 v2,v3,v4,v9;
-    
-	v2 = v*v;
-	v3 = v2*v;
-	v4 = v3*v;
-	v9 = v4*v4*v;
-
-	ans = ak->aatN * (1.
-		+ ak->aat2*v2
-		+ ak->aat3*v3
-		+ ak->aat4*v4);
-
-	ans *= v9;
-
-	return ans;
-}
-
-static REAL8 
-XLALSimInspiralAngularAcceleration4_5PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
-	)
-{
-	REAL8 ans;
-	REAL8 v2,v3,v4,v5,v9;
-    
-	v2 = v*v;
-	v3 = v2*v;
-	v4 = v3*v;
-	v5 = v4*v;
-	v9 = v5*v4;
-
-	ans = ak->aatN * (1.
-		+ ak->aat2*v2
-		+ ak->aat3*v3
-		+ ak->aat4*v4
-		+ ak->aat5*v5);
-
-	ans *= v9;
-
-	return ans;
-}
-
-static REAL8 
-XLALSimInspiralAngularAcceleration4_6PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
-	)
-{
-	REAL8 ans;
-	REAL8 v2,v3,v4,v5,v6,v9;
-    
-	v2 = v*v;
-	v3 = v2*v;
-	v4 = v3*v;
-	v5 = v4*v;
-	v6 = v5*v;
-	v9 = v6*v3;
-
-	ans = ak->aatN * (1.
-		+ ak->aat2*v2
-		+ ak->aat3*v3
-		+ ak->aat4*v4
-		+ ak->aat5*v5
-		+ (ak->aat6 + ak->aat6l*log(16.0*v2))*v6);
-
-	ans *= v9;
-
-	return ans;
-}
-
-static REAL8 
-XLALSimInspiralAngularAcceleration4_7PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
-	)
-{
-	REAL8 ans;
-	REAL8 v2,v3,v4,v5,v6,v7,v9;
-    
-	v2 = v*v;
-	v3 = v2*v;
-	v4 = v3*v;
-	v5 = v4*v;
-	v6 = v5*v;
-	v7 = v6*v;
-	v9 = v7*v2;
-
-	ans = ak->aatN * (1.
-		+ ak->aat2*v2
-		+ ak->aat3*v3
-		+ ak->aat4*v4
-		+ ak->aat5*v5
-		+ (ak->aat6 + ak->aat6l*log(16.0*v2))*v6
-		+ ak->aat7*v7);
-
-	ans *= v9;
-
-	return ans;
-}
+	SimInspiralTaylorT1Energy *energy;
+	SimInspiralTaylorT1dEnergy *dEnergy;
+	SimInspiralTaylorT1Flux *flux;
+} expnFuncTaylorT1;
 
 typedef struct
 {
-    REAL8 (*func)(REAL8 v, expnCoeffsTaylorT4 *ak);
-    expnCoeffsTaylorT4 ak;
-}XLALSimInspiralTaylorT4PNEvolveOrbitParams;
+	REAL8 (*dEdv)(REAL8 v, expnCoeffsdEnergyFlux *ak);
+	REAL8 (*flux)(REAL8 v, expnCoeffsdEnergyFlux *ak);
+	expnCoeffsTaylorT1 ak;
+}XLALSimInspiralTaylorT1PNEvolveOrbitParams;
 
 /** 
  * This function is used in the call to the GSL integrator.
  */
 static int 
-XLALSimInspiralTaylorT4PNEvolveOrbitIntegrand(double UNUSED t, const double y[], double ydot[], void *params)
+XLALSimInspiralTaylorT1PNEvolveOrbitIntegrand(double UNUSED t, const double y[], double ydot[], void *params)
 {
-	XLALSimInspiralTaylorT4PNEvolveOrbitParams* p = (XLALSimInspiralTaylorT4PNEvolveOrbitParams*)params;
-	ydot[0] = p->func(y[0],&p->ak);
+	XLALSimInspiralTaylorT1PNEvolveOrbitParams* p = (XLALSimInspiralTaylorT1PNEvolveOrbitParams*)params;
+	ydot[0] = -p->ak.av*p->flux(y[0],&p->ak.akdEF)/p->dEdv(y[0],&p->ak.akdEF);
 	ydot[1] = y[0]*y[0]*y[0]*p->ak.av;
-	t = 0.0;
 	return GSL_SUCCESS;
 }
 
 
 /**
- * Set up the expnCoeffsTaylorT4 and expnFuncTaylorT4 structures for
- * generating a TaylorT4 waveform and select the post-newtonian
+ * Set up the expnCoeffsTaylorT1 and expnFuncTaylorT1 structures for
+ * generating a TaylorT1 waveform and select the post-newtonian
  * functions corresponding to the desired order. 
  *
  * Inputs given in SI units.
  */
 static int 
-XLALSimInspiralTaylorT4Setup(
-    expnCoeffsTaylorT4 *ak,		/**< coefficients for TaylorT4 evolution [modified] */
-    expnFuncTaylorT4 *f,		/**< functions for TaylorT4 evolution [modified] */
-    expnCoeffsdEnergyFlux *akdEF,	/**< coefficients for Energy calculation [modified] */
+XLALSimInspiralTaylorT1Setup(
+    expnCoeffsTaylorT1 *ak,		/**< coefficients for TaylorT1 evolution [modified] */
+    expnFuncTaylorT1 *f,		/**< functions for TaylorT1 evolution [modified] */
     REAL8 m1,				/**< mass of companion 1 */
     REAL8 m2,				/**< mass of companion 2 */
     int O				/**< twice post-Newtonian order */
 )
 {
-    ak->m1 = m1;
-    ak->m2 = m2;
-    ak->m = ak->m1 + ak->m2;
-    ak->mu = m1 * m2 / ak->m;
-    ak->nu = ak->mu/ak->m;
+    ak->m = m1 + m2;
+    REAL8 mu = m1 * m2 / ak->m;
+    ak->nu = mu/ak->m;
 
     /* Angular velocity co-efficient */
     ak->av = pow(LAL_C_SI, 3.0)/(LAL_G_SI*ak->m);
 
-    /* PN co-efficients for energy */
-    akdEF->ETaN = XLALSimInspiralPNEnergy_0PNCoeff(ak->nu);
-    akdEF->ETa1 = XLALSimInspiralPNEnergy_2PNCoeff(ak->nu);
-    akdEF->ETa2 = XLALSimInspiralPNEnergy_4PNCoeff(ak->nu);
-    akdEF->ETa3 = XLALSimInspiralPNEnergy_6PNCoeff(ak->nu);
+    /* Taylor co-efficients for E(v). */
+    ak->akdEF.ETaN = XLALSimInspiralPNEnergy_0PNCoeff(ak->nu);
+    ak->akdEF.ETa1 = XLALSimInspiralPNEnergy_2PNCoeff(ak->nu);
+    ak->akdEF.ETa2 = XLALSimInspiralPNEnergy_4PNCoeff(ak->nu);
+    ak->akdEF.ETa3 = XLALSimInspiralPNEnergy_6PNCoeff(ak->nu);
+
+    /* Taylor co-efficients for dE(v)/dv. */
+    ak->akdEF.dETaN = 2.0 * ak->akdEF.ETaN;
+    ak->akdEF.dETa1 = 2.0 * ak->akdEF.ETa1;
+    ak->akdEF.dETa2 = 3.0 * ak->akdEF.ETa2;
+    ak->akdEF.dETa3 = 4.0 * ak->akdEF.ETa3;
     
-    /* PN co-efficients for angular acceleration */
-    ak->aatN = XLALSimInspiralTaylorT4AngularAccel_0PNCoeff(LAL_G_SI*ak->m/pow(LAL_C_SI, 3.0), ak->nu);
-    ak->aat2 = XLALSimInspiralTaylorT4AngularAccel_2PNCoeff(ak->nu);
-    ak->aat3 = XLALSimInspiralTaylorT4AngularAccel_3PNCoeff(ak->nu);
-    ak->aat4 = XLALSimInspiralTaylorT4AngularAccel_4PNCoeff(ak->nu);
-    ak->aat5 = XLALSimInspiralTaylorT4AngularAccel_5PNCoeff(ak->nu);
-    ak->aat6 = XLALSimInspiralTaylorT4AngularAccel_6PNCoeff(ak->nu);
-    ak->aat7 = XLALSimInspiralTaylorT4AngularAccel_7PNCoeff(ak->nu);
-    ak->aat6l = XLALSimInspiralTaylorT4AngularAccel_6PNLogCoeff(ak->nu);
+    /* Taylor co-efficients for flux. */
+    ak->akdEF.FTaN = XLALSimInspiralTaylorT1Flux_0PNCoeff(ak->nu);
+    ak->akdEF.FTa2 = XLALSimInspiralTaylorT1Flux_2PNCoeff(ak->nu);
+    ak->akdEF.FTa3 = XLALSimInspiralTaylorT1Flux_3PNCoeff(ak->nu);
+    ak->akdEF.FTa4 = XLALSimInspiralTaylorT1Flux_4PNCoeff(ak->nu);
+    ak->akdEF.FTa5 = XLALSimInspiralTaylorT1Flux_5PNCoeff(ak->nu);
+    ak->akdEF.FTa6 = XLALSimInspiralTaylorT1Flux_6PNCoeff(ak->nu);
+    ak->akdEF.FTl6 = XLALSimInspiralTaylorT1Flux_6PNLogCoeff(ak->nu);
+    ak->akdEF.FTa7 = XLALSimInspiralTaylorT1Flux_7PNCoeff(ak->nu);
 
     switch (O)
     {
         case 0:
-            f->energy4 = &XLALSimInspiralEt0;
-            f->angacc4 = &XLALSimInspiralAngularAcceleration4_0PN;
+            f->energy = &XLALSimInspiralEt0;
+            f->dEnergy = &XLALSimInspiraldEt0;
+            f->flux = &XLALSimInspiralFt0;
             break;
         case 1:
             XLALPrintError("XLAL Error - %s: PN approximant not supported for PN order %d\n", __func__,O);
             XLAL_ERROR(XLAL_EINVAL);
             break;
         case 2:
-            f->energy4 = &XLALSimInspiralEt2;
-            f->angacc4 = &XLALSimInspiralAngularAcceleration4_2PN;
+            f->energy = &XLALSimInspiralEt2;
+            f->dEnergy = &XLALSimInspiraldEt2;
+            f->flux = &XLALSimInspiralFt2;
             break;
         case 3:
-            f->energy4 = &XLALSimInspiralEt2;
-            f->angacc4 = &XLALSimInspiralAngularAcceleration4_3PN;
+            f->energy = &XLALSimInspiralEt2;
+            f->dEnergy = &XLALSimInspiraldEt2;
+            f->flux = &XLALSimInspiralFt3;
             break;
         case 4:
-            f->energy4 = &XLALSimInspiralEt4;
-            f->angacc4 = &XLALSimInspiralAngularAcceleration4_4PN;
+            f->energy = &XLALSimInspiralEt4;
+            f->dEnergy = &XLALSimInspiraldEt4;
+            f->flux = &XLALSimInspiralFt4;
             break;
         case 5:
-            f->energy4 = &XLALSimInspiralEt4;
-            f->angacc4 = &XLALSimInspiralAngularAcceleration4_5PN;
+            f->energy = &XLALSimInspiralEt4;
+            f->dEnergy = &XLALSimInspiraldEt4;
+            f->flux = &XLALSimInspiralFt5;
             break;
         case 6:
-            f->energy4 = &XLALSimInspiralEt6;
-            f->angacc4 = &XLALSimInspiralAngularAcceleration4_6PN;
+            f->energy = &XLALSimInspiralEt6;
+            f->dEnergy = &XLALSimInspiraldEt6;
+            f->flux = &XLALSimInspiralFt6;
             break;
         case 7:
         case -1:
-            f->energy4 = &XLALSimInspiralEt6;
-            f->angacc4 = &XLALSimInspiralAngularAcceleration4_7PN;
+            f->energy = &XLALSimInspiralEt6;
+            f->dEnergy = &XLALSimInspiraldEt6;
+            f->flux = &XLALSimInspiralFt7;
             break;
         case 8:
             XLALPrintError("XLAL Error - %s: PN approximant not supported for PN order %d\n", __func__,O);
@@ -374,16 +212,14 @@ XLALSimInspiralTaylorT4Setup(
 
 
 /**
- * Evolves a post-Newtonian orbit using the Taylor T4 method.
+ * Evolves a post-Newtonian orbit using the Taylor T1 method.
  *
- * See:
- * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue,
- * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
- * "High-accuracy comparison of numerical relativity simulations with
- * post-Newtonian expansions"
- * <a href="http://arxiv.org/abs/0710.0158v2">arXiv:0710.0158v2</a>.
+ * See Section IIIA: Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
  */
-int XLALSimInspiralTaylorT4PNEvolveOrbit(
+int XLALSimInspiralTaylorT1PNEvolveOrbit(
 		REAL8TimeSeries **v,   /**< post-Newtonian parameter [returned] */
 		REAL8TimeSeries **phi, /**< orbital phase [returned] */
 		LIGOTimeGPS *tc,       /**< coalescence time */
@@ -397,15 +233,15 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 {
 	const UINT4 blocklen = 1024;
 	const REAL8 visco = 1./sqrt(6.);
-	XLALSimInspiralTaylorT4PNEvolveOrbitParams params;
-	expnFuncTaylorT4 expnfunc;
-	expnCoeffsTaylorT4 ak;
-	expnCoeffsdEnergyFlux akdEF;
+	XLALSimInspiralTaylorT1PNEvolveOrbitParams params;
+	expnFuncTaylorT1 expnfunc;
+	expnCoeffsTaylorT1 ak;
 
-	if(XLALSimInspiralTaylorT4Setup(&ak,&expnfunc,&akdEF,m1,m2,O))
+	if(XLALSimInspiralTaylorT1Setup(&ak,&expnfunc,m1,m2,O))
 		XLAL_ERROR(XLAL_EFUNC);
 
-	params.func=expnfunc.angacc4;
+	params.flux=expnfunc.flux;
+	params.dEdv=expnfunc.dEnergy;
 	params.ak=ak;
 
 	REAL8 E;
@@ -417,7 +253,7 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 	gsl_odeiv_system sys;
 
 	/* setup ode system */
-	sys.function = XLALSimInspiralTaylorT4PNEvolveOrbitIntegrand;
+	sys.function = XLALSimInspiralTaylorT1PNEvolveOrbitIntegrand;
 	sys.jacobian = NULL;
 	sys.dimension = 2;
 	sys.params = &params;
@@ -430,7 +266,7 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 
 	y[0] = (*v)->data->data[0] = cbrt(LAL_PI*LAL_G_SI*ak.m*f_min)/LAL_C_SI;
 	y[1] = (*phi)->data->data[0] = 0.;
-	E = expnfunc.energy4(y[0],&akdEF);
+	E = expnfunc.energy(y[0],&(ak.akdEF));
 	if (XLALIsREAL8FailNaN(E))
 		XLAL_ERROR(XLAL_EFUNC);
 	j = 0;
@@ -442,7 +278,7 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 		gsl_odeiv_step_apply(s, j*deltaT, deltaT, y, yerr, NULL, NULL, &sys);
 		/* MECO termination condition */
 		dE = -E;
-		dE += E = expnfunc.energy4(y[0],&akdEF);
+		dE += E = expnfunc.energy(y[0],&(ak.akdEF));
 		if (XLALIsREAL8FailNaN(E))
 			XLAL_ERROR(XLAL_EFUNC);
 		if ( dE > 0.0 ) {
@@ -494,7 +330,7 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
  * This routine allows the user to specify different pN orders
  * for phasing calcuation vs. amplitude calculations.
  */
-int XLALSimInspiralTaylorT4PNGenerator(
+int XLALSimInspiralTaylorT1PNGenerator(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
 	       	LIGOTimeGPS *tc,          /**< coalescence time */
@@ -514,7 +350,7 @@ int XLALSimInspiralTaylorT4PNGenerator(
 	REAL8TimeSeries *phi;
 	int status;
 	int n;
-	n = XLALSimInspiralTaylorT4PNEvolveOrbit(&v, &phi, tc, phic, deltaT, m1, m2, f_min, phaseO);
+	n = XLALSimInspiralTaylorT1PNEvolveOrbit(&v, &phi, tc, phic, deltaT, m1, m2, f_min, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR(XLAL_EFUNC);
 	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, v, phi, x0, m1, m2, r, i, amplitudeO);
@@ -535,7 +371,7 @@ int XLALSimInspiralTaylorT4PNGenerator(
  *
  * Log terms in amplitudes are ignored.  This is a gauge choice.
  */
-int XLALSimInspiralTaylorT4PN(
+int XLALSimInspiralTaylorT1PN(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
 	       	LIGOTimeGPS *tc,          /**< coalescence time */
@@ -550,7 +386,7 @@ int XLALSimInspiralTaylorT4PN(
 		)
 {
 	/* set x0=0 to ignore log terms */
-	return XLALSimInspiralTaylorT4PNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, f_min, r, i, O, O);
+	return XLALSimInspiralTaylorT1PNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, f_min, r, i, O, O);
 }
 
 
@@ -562,7 +398,7 @@ int XLALSimInspiralTaylorT4PN(
  *
  * Log terms in amplitudes are ignored.  This is a gauge choice.
  */
-int XLALSimInspiralTaylorT4PNRestricted(
+int XLALSimInspiralTaylorT1PNRestricted(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
 	       	LIGOTimeGPS *tc,          /**< coalescence time */
@@ -578,7 +414,7 @@ int XLALSimInspiralTaylorT4PNRestricted(
 {
 	/* use Newtonian order for amplitude */
 	/* set x0=0 to ignore log terms */
-	return XLALSimInspiralTaylorT4PNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, f_min, r, i, 0, O);
+	return XLALSimInspiralTaylorT1PNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, f_min, r, i, 0, O);
 }
 
 
@@ -600,7 +436,7 @@ int main(void)
 	REAL8TimeSeries *hplus;
 	REAL8TimeSeries *hcross;
 	lalDebugLevel = 7;
-	XLALSimInspiralTaylorT4PN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, f_min, r, i, O);
+	XLALSimInspiralTaylorT1PN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, f_min, r, i, O);
 	LALDPrintTimeSeries(hplus, "hp.dat");
 	LALDPrintTimeSeries(hcross, "hc.dat");
 	XLALDestroyREAL8TimeSeries(hplus);

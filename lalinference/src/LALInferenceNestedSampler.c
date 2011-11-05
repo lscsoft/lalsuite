@@ -32,8 +32,9 @@ static void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
 static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
 static double logadd(double a,double b);
 static REAL8 mean(REAL8 *array,int N);
-static LALInferenceVariables *output_array=NULL;
-static UINT4 N_output_array=0;
+void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);
+void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);
+
 
 static double logadd(double a,double b){
 	if(a>b) return(a+log(1.0+exp(b-a)));
@@ -46,24 +47,6 @@ static REAL8 mean(REAL8 *array,int N){
 	int i;
 	for(i=0;i<N;i++) sum+=array[i];
 	return sum/((REAL8) N);
-}
-
-/** Append the sample to an array which is maintained elsewhere */
-void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
-{
-	(void)state;
-	output_array=realloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables));
-	if(!output_array){
-	        XLALPrintError("Unable to allocate array for samples\n");
-		XLAL_ERROR_VOID( XLAL_EFAULT );
-	}
-	else
-	{
-		memset(&(output_array[N_output_array]),0,sizeof(LALInferenceVariables));
-		LALInferenceCopyVariables(vars,&output_array[N_output_array]);
-		N_output_array++;
-	}
-	return;
 }
 
 /* Calculate shortest angular distance between a1 and a2 */
@@ -257,18 +240,19 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	REAL8 zero=0.0;
 	REAL8 *logLikelihoods=NULL;
 	UINT4 verbose=0;
-    UINT4 displayprogress=0;
-    LALInferenceVariableItem *param_ptr;
-        
+	UINT4 displayprogress=0;
+	LALInferenceVariableItem *param_ptr;
+	LALInferenceVariables *output_array=NULL;
+	UINT4 N_output_array=0;
+	
+	/* Default sample logging functions with and without XML */
 #ifdef HAVE_LIBLALXML
   	char *outVOTable=NULL;
-	runState->logsample=LALInferenceLogSampleToArray;
-	printf("Using XML output\n");
+	if(!runState->logsample) runState->logsample=LALInferenceLogSampleToArray;
 #else
-	runState->logsample=NULL;
-	printf("Not using XML output\n");
+	if(!runState->logsample) runState->logsample=LALInferenceLogSampleToFile;
 #endif
-
+	
         if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
           /*if (runState->data->modelDomain == LALINFERENCE_DOMAIN_FREQUENCY )*/
             logZnoise=LALInferenceNullLogLikelihood(runState->data);
@@ -324,8 +308,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 #endif	
 	fpout=fopen(outfile,"w");
 
-
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s!\n",outfile);
+	else
+	  LALInferenceAddVariable(runState->algorithmParams,"outfile",&fpout,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_FIXED);
+	
 	//fprintf(fpout,"chirpmass\tdistance\tLAL_APPROXIMANT\tLAL_PNORDER\tlogmc\tmassratio\ttime\tphase\tlogdistance\trightascension\tdeclination\tpolarisation\tinclination\ta_spin1\ta_spin2\ttheta_spin1\ttheta_spin2\tphi_spin1\tphi_spin2\t logL\n");	
 	/* Set up arrays for parallel runs */
 	minpos=0;
@@ -389,20 +375,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
 	
-	/* Write out names of parameters */
-	FILE *lout=NULL;
-	char param_list[FILENAME_MAX];
-	sprintf(param_list,"%s_params.txt",outfile);
-	lout=fopen(param_list,"w");
-	minpos=0;
-	NSFillMCMCVariables(runState->livePoints[0]);
-	LALInferenceSortVariablesByName(runState->livePoints[0]);
-	for(param_ptr=runState->livePoints[0]->head;param_ptr;param_ptr=param_ptr->next)
-	{
-	  fprintf(lout,"%s\t",param_ptr->name);
-	}
-	fclose(lout);
-
 	fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
 	do {
@@ -427,13 +399,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		H=mean(Harray,Nruns);
 		logZ=logZnew;
 		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
-                
-		/* Write out old sample */
-		NSFillMCMCVariables(runState->livePoints[minpos]);
-		LALInferenceSortVariablesByName(runState->livePoints[minpos]);
+               
 		if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
-		LALInferencePrintSample(fpout,runState->livePoints[minpos]);
-		fprintf(fpout,"\n");
 		
 		UINT4 itercounter=0;
 		/* Generate a new live point */
@@ -443,7 +410,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
 			LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
                         runState->evolve(runState);
-			itercounter++;			
+                        itercounter++;			
 		}while( runState->currentLikelihood<=logLmin ||  *(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
 
                 LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);
@@ -514,11 +481,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]);
 		}
-		NSFillMCMCVariables(runState->livePoints[i]);
-		LALInferenceSortVariablesByName(runState->livePoints[i]);
+
 		if(runState->logsample) runState->logsample(runState,runState->livePoints[i]);
-		LALInferencePrintSample(fpout,runState->livePoints[i]);
-		fprintf(fpout,"\n");
+
 	}
 
 	/* Write out the evidence */
@@ -536,8 +501,17 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 #ifdef HAVE_LIBLALXML	
 	/* Write out the XML if requested */
+
+	if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
+	  &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
+	{
+	  output_array=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+	  N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
+	}
 	if(output_array && outVOTable && N_output_array>0){
 		xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array, "Nested Samples");
+		xmlNewProp(votable, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:results:nestedsamples"));
+		
 		xmlNodePtr stateResource=XLALInferenceStateVariables2VOTResource(runState, "Run State Configuration");
 		
 		xmlNodePtr nestResource=XLALCreateVOTResourceNode("lalinference:results","Nested sampling run",votable);
@@ -558,6 +532,19 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 #endif
 	if(output_array) free(output_array);
 
+	/* Write out names of parameters */
+	FILE *lout=NULL;
+	char param_list[FILENAME_MAX];
+	sprintf(param_list,"%s_params.txt",outfile);
+	lout=fopen(param_list,"w");
+	minpos=0;
+	LALInferenceSortVariablesByName(runState->livePoints[0]);
+	for(param_ptr=runState->livePoints[0]->head;param_ptr;param_ptr=param_ptr->next)
+	{
+	  fprintf(lout,"%s\t",param_ptr->name);
+	}
+	fclose(lout);
+	
 }
 
 /* Evolve nested sampling algorithm by one step, i.e.
@@ -576,7 +563,6 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 
 	/* Evolve the sample until it is accepted */
 	logPriorOld=runState->prior(runState,runState->currentParams);
-	NSFillMCMCVariables(runState->currentParams);
 	do{
 		mcmc_iter++;
 		/* Make a copy of the parameters passed through currentParams */

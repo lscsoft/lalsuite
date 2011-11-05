@@ -157,7 +157,7 @@ void LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVar
 void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /* Nested sampling wrappers. */
-void NSFillMCMCVariables(LALInferenceVariables *proposedParams);
+void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVariables *priorArgs);
 void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Rotate each spin by random angles about L. */

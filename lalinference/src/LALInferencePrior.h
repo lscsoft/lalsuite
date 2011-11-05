@@ -36,6 +36,7 @@
 
 
 #include <lal/LALInference.h>
+#include <lal/LALInferenceNestedSampler.h>
 /** Return the logarithmic prior density of the variables specified, for the non-spinning/spinning inspiral signal case.
  */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *variables);
@@ -78,11 +79,11 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 
 /** Function to add the minimum and maximum values for the uniform prior onto the \c priorArgs. 
  */
-void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max, LALInferenceVariableType type);
+void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max, LALInferenceVariableType type);
 
 /** Get the minimum and maximum values of the uniform prior from the \c priorArgs list, given a name. 
  */
-void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max);
+void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max);
 
 /** Function to remove the mininum and maximum values for the uniform prior onto the \c priorArgs. 
  */
@@ -106,6 +107,34 @@ void LALInferenceRemoveGaussianPrior(LALInferenceVariables *priorArgs, const cha
 int LALInferenceCheckMinMaxPrior(LALInferenceVariables *priorArgs, const char *name);
 /** Check for a Gaussian prior (with a mean and variance) */
 int LALInferenceCheckGaussianPrior(LALInferenceVariables *priorArgs, const char *name);
+
+/** Function to add a correlation matrix and parameter index for a prior
+ * defined as part of a multivariate Gaussian distribution onto the \c
+ * priorArgs. The correlation coefficient matrix must be a gsl_matrix and the
+ * index for the given parameter in the matrix must be supplied. 
+ */
+void LALInferenceAddCorrelatedPrior( LALInferenceVariables *priorArgs, 
+                                     const char *name, gsl_matrix *cor, 
+                                     INT4 idx);
+
+/** Get the correlation coefficient matrix and index for a parameter from the
+ * \c priorArgs list.
+ */ 
+void LALInferenceGetCorrelatedPrior( LALInferenceVariables *priorArgs, 
+                                     const char *name, gsl_matrix *cor, 
+                                     INT4 *idx);
+
+/** Remove the correlation coefficient matrix and index for a parameter from the
+ * \c priorArgs list.
+ */ 
+void LALInferenceRemoveCorrelatedPrior( LALInferenceVariables *priorArgs, 
+                                        const char *name );
+
+/** Check for the existance of a correlation coefficient matrix and index for
+ * a parameter from the \c priorArgs list.
+ */ 
+int LALInferenceCheckCorrelatedPrior( LALInferenceVariables *priorArgs, 
+                                      const char *name );
 
 /** Draw variables from the prior ranges */
 void LALInferenceDrawFromPrior( LALInferenceVariables *output, 

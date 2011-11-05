@@ -333,9 +333,9 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
 	REAL8TimeSeries *E1x,	  /**< orbital plane basis vector x comp. */
 	REAL8TimeSeries *E1y,	  /**< orbital plane basis vector y comp. */
 	REAL8TimeSeries *E1z,	  /**< orbital plane basis vector z comp. */
-	REAL8 m1,                 /**< mass of companion 1 (Msun) */
-	REAL8 m2,                 /**< mass of companion 2 (Msun) */
-	REAL8 r,                  /**< distance of source (Mpc) */
+	REAL8 m1,                 /**< mass of companion 1 (kg) */
+	REAL8 m2,                 /**< mass of companion 2 (kg) */
+	REAL8 r,                  /**< distance of source (m) */
 	REAL8 v0,                 /**< tail-term gauge choice (default = 0) */
 	INT4 ampO	 	  /**< twice amp. post-Newtonian order */
 	);
@@ -657,10 +657,242 @@ int XLALSimInspiralTaylorT2PNRestricted(
 	       	int O                     /**< twice post-Newtonian phase order */
 		);
 
+/* TaylorT1 functions */
+
+/**
+ * Evolves a post-Newtonian orbit using the Taylor T1 method.
+ */
+int XLALSimInspiralTaylorT1PNEvolveOrbit(
+		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
+	       	LIGOTimeGPS *tc,       /**< coalescence time */
+	       	REAL8 phic,            /**< coalescence phase */
+	       	REAL8 deltaT,          /**< sampling interval */
+		REAL8 m1,              /**< mass of companion 1 */
+		REAL8 m2,              /**< mass of companion 2 */
+		REAL8 f_min,           /**< start frequency */
+		int O                  /**< twice post-Newtonian order */
+		);
+
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ *
+ * This routine allows the user to specify different pN orders
+ * for phasing calcuation vs. amplitude calculations.
+ */
+int XLALSimInspiralTaylorT1PNGenerator(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 f_min,              /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int amplitudeO,           /**< twice post-Newtonian amplitude order */
+	       	int phaseO                /**< twice post-Newtonian phase order */
+		);
+
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ *
+ * This routine uses the same pN order for phasing and amplitude
+ * (unless the order is -1 in which case the highest available
+ * order is used for both of these -- which might not be the same).
+ *
+ * Log terms in amplitudes are ignored.  This is a gauge choice.
+ */
+int XLALSimInspiralTaylorT1PN(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 f_min,              /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int O                     /**< twice post-Newtonian order */
+		);
+
+/**
+ * Driver routine to compute the restricted post-Newtonian inspiral waveform.
+ *
+ * This routine computes the phasing to the specified order, but
+ * only computes the amplitudes to the Newtonian (quadrupole) order.
+ *
+ * Log terms in amplitudes are ignored.  This is a gauge choice.
+ */
+int XLALSimInspiralTaylorT1PNRestricted(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 f_min,              /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int O                     /**< twice post-Newtonian phase order */
+		);
+
+
+/* TaylorEt functions */
+
+/**
+ * Evolves a post-Newtonian orbit using the Taylor T1 method.
+ */
+int XLALSimInspiralTaylorEtPNEvolveOrbit(
+		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
+	       	LIGOTimeGPS *tc,       /**< coalescence time */
+	       	REAL8 phic,            /**< coalescence phase */
+	       	REAL8 deltaT,          /**< sampling interval */
+		REAL8 m1,              /**< mass of companion 1 */
+		REAL8 m2,              /**< mass of companion 2 */
+		REAL8 f_min,           /**< start frequency */
+		int O                  /**< twice post-Newtonian order */
+		);
+
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ *
+ * This routine allows the user to specify different pN orders
+ * for phasing calcuation vs. amplitude calculations.
+ */
+int XLALSimInspiralTaylorEtPNGenerator(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 f_min,              /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int amplitudeO,           /**< twice post-Newtonian amplitude order */
+	       	int phaseO                /**< twice post-Newtonian phase order */
+		);
+
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ *
+ * This routine uses the same pN order for phasing and amplitude
+ * (unless the order is -1 in which case the highest available
+ * order is used for both of these -- which might not be the same).
+ *
+ * Log terms in amplitudes are ignored.  This is a gauge choice.
+ */
+int XLALSimInspiralTaylorEtPN(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 f_min,              /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int O                     /**< twice post-Newtonian order */
+		);
+
+/**
+ * Driver routine to compute the restricted post-Newtonian inspiral waveform.
+ *
+ * This routine computes the phasing to the specified order, but
+ * only computes the amplitudes to the Newtonian (quadrupole) order.
+ *
+ * Log terms in amplitudes are ignored.  This is a gauge choice.
+ */
+int XLALSimInspiralTaylorEtPNRestricted(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 f_min,              /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int O                     /**< twice post-Newtonian phase order */
+		);
+
+
 /**
  * Functions for generic spinning waveforms. 
  * Reproduce and extend old SpinTaylor(Frameless) and SQTPN waveforms 
  */
+
+/**
+ * This function evolves the orbital equations for a precessing binary using 
+ * the "TaylorT4" approximant for solving the orbital dynamics 
+ * (see arXiv:0907.0700 for a review of the various PN approximants).
+ *
+ * It returns time series of the "orbital velocity", orbital phase, 
+ * and components for both individual spin vectors, the "Newtonian"
+ * orbital angular momentum (which defines the instantaneous plane)
+ * and "E1", a basis vector in the instantaneous orbital plane.
+ * Note that LNhat and E1 completely specify the instantaneous orbital plane.
+ * It also returns the time and phase of the final time step
+ *
+ * FIXME: Do we want tc, phic or tStart, phiStart or both or something else?
+ *
+ * For input, the function takes the two masses, the initial orbital phase, 
+ * Values of S1, S2, LNhat, E1 vectors at starting time,
+ * the desired time step size, the starting GW frequency, 
+ * and PN order at which to evolve the phase,
+ * 
+ * NOTE: All vectors are given in the so-called "radiation frame", 
+ * where the direction of propagation is the z-axis, the principal "+" 
+ * polarization axis is the x-axis, and the y-axis is given by the RH rule.
+ * You must give the initial values in this frame, and the time series of the
+ * vector components will also be returned in this frame
+ */
+int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
+	REAL8TimeSeries **V,      /**< post-Newtonian parameter [returned]*/
+	REAL8TimeSeries **Phi,    /**< orbital phase            [returned]*/
+	REAL8TimeSeries **S1x,    /**< Spin1 vector x component [returned]*/
+	REAL8TimeSeries **S1y,    /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **S1z,    /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **S2x,    /**< Spin2 vector x component [returned]*/
+	REAL8TimeSeries **S2y,    /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **S2z,    /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **LNhatx, /**< unit orbital ang. mom. x [returned]*/
+	REAL8TimeSeries **LNhaty, /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **LNhatz, /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **E1x,    /**< orb. plane basis vector x[returned]*/
+	REAL8TimeSeries **E1y,    /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **E1z,    /**< "    "    "  z component [returned]*/
+	LIGOTimeGPS *tStart,      /**< start time of output vectors */
+	REAL8 phiStart,           /**< orbital phase at initial time */
+	REAL8 deltaT,          	  /**< sampling interval (s) */
+	REAL8 m1,              	  /**< mass of companion 1 (kg) */
+	REAL8 m2,              	  /**< mass of companion 2 (kg) */
+	REAL8 fStart,             /**< start frequency */
+	REAL8 s1x,                /**< initial value of S1x */
+	REAL8 s1y,                /**< initial value of S1y */
+	REAL8 s1z,                /**< initial value of S1z */
+	REAL8 s2x,                /**< initial value of S2x */
+	REAL8 s2y,                /**< initial value of S2y */
+	REAL8 s2z,                /**< initial value of S2z */
+	REAL8 lnhatx,             /**< initial value of LNhatx */
+	REAL8 lnhaty,             /**< initial value of LNhaty */
+	REAL8 lnhatz,             /**< initial value of LNhatz */
+	REAL8 e1x,                /**< initial value of E1x */
+	REAL8 e1y,                /**< initial value of E1y */
+	REAL8 e1z,                /**< initial value of E1z */
+	LALSpinInteraction spinFlags,  /**< flags to control spin effects */
+	INT4 phaseO               /**< twice post-Newtonian order */
+	);
 
 /**
  * Driver routine to compute a precessing post-Newtonian inspiral waveform
@@ -732,6 +964,47 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
 		LALSpinInteraction spinFlags, /**< flags to control spin effects */
 		int phaseO                 /**< twice PN phase order */
 		);
+
+/**
+ * Driver routine to compute a non-precessing post-Newtonian inspiral waveform
+ * in the frequency domain, described in http://arxiv.org/abs/1107.1267.
+ */
+int XLALSimInspiralTaylorF2ReducedSpin(
+		COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+		const LIGOTimeGPS *tStart,       /**< initial time (s) */
+		const REAL8 phiStart,            /**< initial GW phase (rad) */
+		const REAL8 deltaF,              /**< frequency resolution */
+		const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
+		const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
+		const REAL8 chi,                 /**< dimensionless aligned-spin param */
+		const REAL8 fStart,              /**< start GW frequency (Hz) */
+		const REAL8 r,                   /**< distance of source (m) */
+		const UINT4 O                    /**< twice PN phase order */
+		);
+
+/**
+ * Compute the chirp time of the "reduced-spin" templates, described in
+ * http://arxiv.org/abs/1107.1267.
+*/
+REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
+		const REAL8 fStart ,       /**< start GW frequency (Hz) */
+		const REAL8 m1_SI,   /**< mass of companion 1 (kg) */
+		const REAL8 m2_SI,   /**< mass of companion 2 (kg) */
+		const REAL8 chi,                 /**< dimensionless aligned-spin param */
+		const UINT4 O        /**< twice PN phase order */
+		);
+
+/**
+ * Compute the dimensionless, spin-aligned parameter chi as used in the
+ * TaylorF2RedSpin waveform. This is different from chi in IMRPhenomB!
+ * Reference: http://arxiv.org/abs/1107.1267, paragraph 3.
+ */
+REAL8 XLALSimInspiralTaylorF2ReducedSpinComputeChi(
+    const REAL8 m1,                          /**< mass of companion 1 */
+    const REAL8 m2,                          /**< mass of companion 2 */
+    const REAL8 s1z,                         /**< dimensionless spin of companion 1 */
+    const REAL8 s2z                          /**< dimensionless spin of companion 2 */
+);
 
 #if 0
 { /* so that editors will match succeeding brace */

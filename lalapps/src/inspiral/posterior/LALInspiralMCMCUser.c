@@ -958,8 +958,8 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	template.eta = eta;
 	template.massChoice = totalMassAndEta;
 	template.fLower = inputMCMC->fLow;
-	if (XLALMCMCCheckParameter(parameter,"distance"))
-	  template.distance = XLALMCMCGetParameter(parameter,"distance")*LAL_PC_SI*1.e6; /* This must be metres */
+	if (XLALMCMCCheckParameter(parameter,"distMpc"))
+	  template.distance = XLALMCMCGetParameter(parameter,"distMpc")*LAL_PC_SI*1.e6; /* This must be metres */
 	else 
 	  if(XLALMCMCCheckParameter(parameter,"logdist")) {
 	    template.distance=exp(XLALMCMCGetParameter(parameter,"logdist"))*LAL_PC_SI*1.e6;

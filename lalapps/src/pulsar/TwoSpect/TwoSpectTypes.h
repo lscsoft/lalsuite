@@ -51,6 +51,7 @@ typedef struct
    REAL4 ihsfom;
    REAL4 ihsfomfar;
    REAL8 templatefar;
+   REAL8 log10templatefar;
    REAL8 ULfmin;
    REAL8 ULfspan;
    REAL8 ULmindf;
@@ -141,6 +142,7 @@ typedef struct
    REAL4Vector *fomfarthresh;
    REAL4Vector *ihsfomdistMean;
    REAL4Vector *ihsfomdistSigma;
+   REAL4Vector *expectedIHSVector;
 } ihsfarStruct;
 
 typedef struct

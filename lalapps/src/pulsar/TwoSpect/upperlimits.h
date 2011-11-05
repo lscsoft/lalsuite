@@ -35,8 +35,8 @@ void reset_UpperLimitStruct(UpperLimit *ul);
 void free_UpperLimitVector(UpperLimitVector *vector);
 void free_UpperLimitStruct(UpperLimit *ul);
 
-//void skypoint95UL(UpperLimit *ul, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs);
-void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *aveNoise, REAL4Vector *fbinavgs);
+
+void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, ihsfarStruct *ihsfar, REAL4Vector *fbinavgs);
 REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p);
 REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p);
 REAL8 gsl_ncx2cdf_withouttinyprob_solver(REAL8 x, void *p);

@@ -58,6 +58,20 @@ static void mc2masses(double mc, double eta, double *m1, double *m2)
 }
 
 
+void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
+{
+  NSFillMCMCVariables(vars,state->priorArgs);
+  LALInferenceLogSampleToArray(state, vars);
+  return;
+}
+
+void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
+{
+  NSFillMCMCVariables(vars,state->priorArgs);
+  LALInferenceLogSampleToFile(state, vars);
+  return;
+}
+
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 /* calls the "ReadData()" function to gather data & PSD from files, */
 /* and initializes other variables accordingly.                     */
@@ -193,12 +207,14 @@ void initializeTemplate(LALInferenceRunState *runState)
 	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
 	if(ppt) {
 		if(!strcmp("LALSTPN",ppt->value)){
-			fprintf(stderr,"ERROR: --template LALSTPN is deprecated. Try LALGenerateInspiral instead\n");
+			fprintf(stderr,"ERROR: --template LALSTPN is deprecated. Try LALGenerateInspiral instead...\n");
 			exit(1);
 		}
 		else if(!strcmp("PhenSpin",ppt->value))
 			runState->template=&LALInferenceTemplatePSTRD;
 		else if(!strcmp("LALGenerateInspiral",ppt->value))
+			runState->template=&LALInferenceTemplateLALGenerateInspiral;
+		else if(!strcmp("SpinTaylor",ppt->value))
 			runState->template=&LALInferenceTemplateLALGenerateInspiral;
 		else if(!strcmp("LAL",ppt->value))
 			runState->template=&LALInferenceTemplateLAL;
@@ -245,7 +261,6 @@ Nested sampling arguments:\n\
 
 	INT4 verbose=0,tmpi=0,randomseed=0;
 	REAL8 tmp=0;
-	
 	/* Initialise parameters structure */
 	runState->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
 	runState->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
@@ -266,9 +281,15 @@ Nested sampling arguments:\n\
 	}
 	else
 	  runState->proposal=&LALInferenceProposalNS;
-
+	
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 	runState->prior = &LALInferenceInspiralPrior;
+	
+	#ifdef HAVE_LIBLALXML
+	runState->logsample=LogNSSampleAsMCMCSampleToArray;
+	#else
+	runState->logsample=LogNSSampleAsMCMCSampleToFile;
+	#endif
 	
 	ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
 	if(ppt) {
@@ -414,17 +435,18 @@ Parameter arguments:\n\
 			fprintf(stderr,"Unable to open injection file %s\n",ppt->value);
 			exit(1);
 		}
-	}
-	//Select event
-	ppt=LALInferenceGetProcParamVal(commandLine,"--event");
-	if(ppt){
-		event = atoi(ppt->value);
-		while(i<event) {i++; injTable = injTable->next;}
-		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));}
+		//Select event
+		ppt=LALInferenceGetProcParamVal(commandLine,"--event");
+		if(ppt){
+		  event = atoi(ppt->value);
+		  while(i<event) {i++; injTable = injTable->next;}
+		  endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
+		}
+
 		AmpOrder=injTable->amp_order;
 		LALGetOrderFromString(&status,injTable->waveform,&PhaseOrder);
 		LALGetApproximantFromString(&status,injTable->waveform,&approx);
-	
+	}
 
 	/* Over-ride approximant if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");

@@ -522,8 +522,8 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 		phi_spin2= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_spin2");
 	}
 	
-        double distance = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams,"logdistance");
-        template.distance = exp(distance)*LAL_PC_SI*1.e6;  
+        //double distance = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams,"logdistance");
+        //template.distance = exp(distance)*LAL_PC_SI*1.e6;  
 
 	/* spin variables still need to be initialised */
 	
@@ -544,6 +544,7 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
     REAL8 mtot=mc/pow(eta,3./5.);	
 	
 	/* fill the template structure */
+	//double distance = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams,"logdistance");
 	template.spin1[0]=a_spin1*sin(theta_spin1)*cos(phi_spin1);
 	template.spin1[1]=a_spin1*sin(theta_spin1)*sin(phi_spin1);
 	template.spin1[2]=a_spin1*cos(theta_spin1); 
@@ -562,6 +563,8 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	template.startTime = 0.0;
 	template.ieta = 1;
 	template.inclination=iota;
+	//template.distance = exp(distance)*LAL_PC_SI*1.e6;
+	template.distance = LAL_PC_SI*1.e6;
 	int order = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
 	template.order=order; //check order is set correctly
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT")){
@@ -593,10 +596,10 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 
 	//executeFT(LALIFOData *IFOdata); //for phenspin we need to transform each of the states separately so i think you can do it with this function, but can you check just incase
 
-	XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
-	XLALREAL8TimeFreqFFT(IFOdata->freqModelhCross, IFOdata->timeModelhCross, IFOdata->timeToFreqFFTPlan);
+	//XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
+	//XLALREAL8TimeFreqFFT(IFOdata->freqModelhCross, IFOdata->timeModelhCross, IFOdata->timeToFreqFFTPlan);
 	//for(idx=0;idx<hPlus->length;idx++) fprintf(stderr,"%12.6e\t %12.6ei\n",IFOdata->freqModelhCross->data->data[idx].re, IFOdata->freqModelhCross->data->data[idx].im);	
-	IFOdata->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+	//IFOdata->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
 
 /*	for(idx=0;idx<IFOdata->timeModelhPlus->data->data[idx];idx++){
 	IFOdata->freqModelhPlus->data->data[idx].re*=IFOdata->timeData->deltaT;
@@ -605,7 +608,7 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	IFOdata->freqModelhCross->data->data[idx].im*=IFOdata->timeData->deltaT;
 	}
 */		
-	double tc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time");
+	double tc       = IFOdata->epoch.gpsSeconds + 1.e-9*IFOdata->epoch.gpsNanoSeconds + template.tC;
 	LALInferenceSetVariable(IFOdata->modelParams, "time", &tc);
 
 	

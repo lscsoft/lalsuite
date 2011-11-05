@@ -36,7 +36,6 @@ Pan et al, arXiv:1106.1021v1 [gr-qc].
 #include <lal/LALComplex.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
-#include <lal/LALSimInspiraldEnergyFlux.h>
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
 #include <gsl/gsl_sf_gamma.h>
@@ -48,6 +47,7 @@ Pan et al, arXiv:1106.1021v1 [gr-qc].
 #include "LALSimIMREOBNQCCorrection.c"
 #include "LALSimIMREOBNewtonianMultipole.c"
 #include "LALSimIMREOBHybridRingdown.c"
+#include "LALSimInspiraldEnergyFlux.c"
 
 
 /** 
@@ -690,7 +690,7 @@ REAL8 XLALvrP4PN( const REAL8 r,    /**<< Orbital separation (in units of total 
 
   XLALSimIMREOBNRv2SetupFlux( &ak, eta);
 
-  FDIS = - Fp8PP(v, &ak)/(eta*omega);
+  FDIS = - XLALSimInspiralFp8PP(v, &ak)/(eta*omega);
 
   twoUAPlusu2dA = 2.* u * A + u2 * dA;
   x1 = -r2 * sqrt (-dA * twoUAPlusu2dA * twoUAPlusu2dA * twoUAPlusu2dA )

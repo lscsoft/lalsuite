@@ -67,7 +67,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 	REAL8 min, max;
 	REAL8 logmc=0.0;
 	REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
-	REAL8 tmp=0.;
+	//REAL8 tmp=0.;
 	/* Check boundaries */
 	for(;item;item=item->next)
 	{
@@ -76,7 +76,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
                         continue;
 		else
 		{
-			LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+			LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
 			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
 		}
 	}
@@ -93,14 +93,14 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 		logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin1"))));
 	if(LALInferenceCheckVariable(params,"theta_spin2"))
 		logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))));
-	if(LALInferenceCheckVariable(params,"a_spin1") && LALInferenceCheckVariable(params,"a_spin2")){
+	/*if(LALInferenceCheckVariable(params,"a_spin1") && LALInferenceCheckVariable(params,"a_spin2")){
 		
 		if(*(REAL8 *)LALInferenceGetVariable(params,"a_spin2") > *(REAL8 *)LALInferenceGetVariable(params,"a_spin1")){
 		 	tmp = *(REAL8 *)LALInferenceGetVariable(params,"a_spin1") ;
 			*(REAL8 *)LALInferenceGetVariable(params,"a_spin1") = *(REAL8 *)LALInferenceGetVariable(params,"a_spin2");
 			*(REAL8 *)LALInferenceGetVariable(params,"a_spin2") = tmp;
 		}
-	}
+	}*/
 	if(LALInferenceCheckVariable(params,"logmc")) {
           logmc=*(REAL8 *)LALInferenceGetVariable(params,"logmc");
           /* Assume jumping in log(Mc), so use prior that works out to p(Mc) ~ Mc^-11/6 */
@@ -146,7 +146,7 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
         paraHead->vary==LALINFERENCE_PARAM_OUTPUT ||
         !LALInferenceCheckMinMaxPrior(priorArgs, paraHead->name) ) continue;
     
-    LALInferenceGetMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
+    LALInferenceGetMinMaxPrior(priorArgs,paraHead->name, &min, &max);
     
     if(paraHead->vary==LALINFERENCE_PARAM_CIRCULAR) {
       /* For cyclic boundaries, mod out by range. */
@@ -255,7 +255,7 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
       continue;
 		else
 		{
-			LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+			LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
 			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
 		}
 	}
@@ -354,7 +354,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 		if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT) continue;
 		else
 		{
-			LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+			LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
 			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
 			else
 			{
@@ -371,7 +371,6 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 							else 
 								MTotMax=2.0*(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max"));
 
-							//LALInferenceGetMinMaxPrior(priorParams, "massratio", (void *)&etaMin, (void *)&etaMax); - already done before for loop
 							norm = -log(computePriorMassNorm(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min"),
 														*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max"),
 														MTotMax, min, max, massRatioMin, massRatioMax, massRatioName));
@@ -643,7 +642,7 @@ static double computePriorMassNorm(const double MMin, const double MMax, const d
 
 
 /* Function to add the min and max values for the prior onto the priorArgs */
-void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max, LALInferenceVariableType type){
+void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max, LALInferenceVariableType type){
   char minName[VARNAME_MAX];
   char maxName[VARNAME_MAX];
   
@@ -680,16 +679,21 @@ int LALInferenceCheckMinMaxPrior(LALInferenceVariables *priorArgs, const char *n
 }
 
 /* Get the min and max values of the prior from the priorArgs list, given a name */
-void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, void *min, void *max)
+void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max)
 {
 		char minName[VARNAME_MAX];
 		char maxName[VARNAME_MAX];
-		
+		void *ptr=NULL;
 		sprintf(minName,"%s_min",name);
 		sprintf(maxName,"%s_max",name);
-    
-		*(REAL8 *)min=*(REAL8 *)LALInferenceGetVariable(priorArgs,minName);
-		*(REAL8 *)max=*(REAL8 *)LALInferenceGetVariable(priorArgs,maxName);
+		
+		
+		ptr=LALInferenceGetVariable(priorArgs,minName);
+		if(ptr) *min=*(REAL8*)ptr;
+		else XLAL_ERROR_VOID(XLAL_EFAILED);
+		ptr=LALInferenceGetVariable(priorArgs,maxName);
+		if(ptr) *max=*(REAL8*)ptr;
+		else XLAL_ERROR_VOID(XLAL_EFAILED);
 		return;
 		
 }
@@ -749,6 +753,64 @@ void LALInferenceGetGaussianPrior(LALInferenceVariables *priorArgs, const char *
                 
 }
 
+/* Function to add a correlation matrix to the prior onto the priorArgs */
+void LALInferenceAddCorrelatedPrior(LALInferenceVariables *priorArgs, 
+                                  const char *name, gsl_matrix *cor, INT4 idx){
+  char corName[VARNAME_MAX];
+  char idxName[VARNAME_MAX];
+  
+  sprintf(corName,"%s_correlation_matrix",name);
+  sprintf(idxName,"%s_index",name);
+  
+  LALInferenceAddVariable(priorArgs, corName, (void *)&cor,
+                          LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(priorArgs, idxName, (void *)&idx, LALINFERENCE_INT4_t,
+                          LALINFERENCE_PARAM_FIXED) ;    
+  return;
+}
+
+/* Get the correlation matrix and parameter index */
+void LALInferenceGetCorrelatedPrior(LALInferenceVariables *priorArgs, 
+                                    const char *name, gsl_matrix *cor,
+                                    INT4 *idx){
+  char corName[VARNAME_MAX];
+  char idxName[VARNAME_MAX];
+                
+  sprintf(corName,"%s_correlation_matrix",name);
+  sprintf(idxName,"%s_index",name);
+    
+  *(gsl_matrix *)cor=*(gsl_matrix *)LALInferenceGetVariable(priorArgs, corName);
+  *(INT4 *)idx=*(INT4 *)LALInferenceGetVariable(priorArgs,idxName);
+  return;       
+}
+
+/* Remove the correlated prior */
+void LALInferenceRemoveCorrelatedPrior(LALInferenceVariables *priorArgs, 
+                                       const char *name){
+  char corName[VARNAME_MAX];
+  char idxName[VARNAME_MAX];
+                
+  sprintf(corName,"%s_correlation_matrix",name);
+  sprintf(idxName,"%s_index",name);
+  
+  LALInferenceRemoveVariable(priorArgs, corName);
+  LALInferenceRemoveVariable(priorArgs, idxName);
+  return;
+}
+
+/* Check for a correlated prior of the standard form */
+int LALInferenceCheckCorrelatedPrior(LALInferenceVariables *priorArgs, 
+                                     const char *name){
+  char corName[VARNAME_MAX];
+  char idxName[VARNAME_MAX];
+                
+  sprintf(corName,"%s_correlation_matrix",name);
+  sprintf(idxName,"%s_index",name);
+  
+  return (LALInferenceCheckVariable(priorArgs,corName) &&
+          LALInferenceCheckVariable(priorArgs,idxName));
+}
+
 void LALInferenceDrawFromPrior( LALInferenceVariables *output, 
                                 LALInferenceVariables *priorArgs, 
                                 gsl_rng *rdm) {  
@@ -763,7 +825,7 @@ void LALInferenceDrawFromPrior( LALInferenceVariables *output,
 void LALInferenceDrawNameFromPrior( LALInferenceVariables *output, 
                                     LALInferenceVariables *priorArgs, 
                                     char *name, LALInferenceVariableType type, 
-                                    gsl_rng *rdm) {  
+                                    gsl_rng *rdm) {
   REAL8 tmp = 0.;
       
   /* test for a Gaussian prior */
@@ -777,9 +839,38 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
   else if( LALInferenceCheckMinMaxPrior( priorArgs, name ) ){
     REAL8 min = 0., max = 0.;
     
-    LALInferenceGetMinMaxPrior(priorArgs, name, (void *)&min, (void *)&max);
+    LALInferenceGetMinMaxPrior(priorArgs, name, &min, &max);
     tmp = min + (max-min)*gsl_rng_uniform( rdm );
   }
+  /* test for a prior drawn from correlated values */
+  else if( LALInferenceCheckCorrelatedPrior( priorArgs, name ) ){
+    /* NOTE: this will be slow if many parameters have correlated priors as it
+       will be called for each one, when it could ideally be called just once -
+       there may be quicker ways of doing this */
+    gsl_matrix *cor = NULL;
+    INT4 idx = 0, dims = 0;
+    REAL4Vector *tmps = NULL;
+    RandomParams *randParam;
+    UINT4 randomseed = gsl_rng_get(rdm);
+    
+    LALInferenceGetCorrelatedPrior( priorArgs, name, cor, &idx );
+    dims = cor->size1;
+    
+    /* check matrix for positive definiteness */
+    if( !LALInferenceCheckPositiveDefinite( cor, dims ) ){
+      XLALPrintError("Error... matrix is not positive definite!\n");
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+    }
+    
+    /* draw values from the multivariate Gaussian described by the correlation
+       matrix */
+    tmps = XLALCreateREAL4Vector( dims );
+    randParam = XLALCreateRandomParams( randomseed );
+    XLALMultiNormalDeviates( tmps, cor, dims, randParam );
+    
+    /* set random number for given parameter index */
+    tmp = tmps->data[idx];
+  }  
   /* not a recognised prior type */
   else{
     return;
@@ -810,6 +901,12 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
       LALInferenceSetVariable(output, name, &val);
       break;
     }
+    case LALINFERENCE_gslMatrix_t:
+    {  
+      REAL8 val = tmp;
+      LALInferenceSetVariable(output, name, &val);
+      break;
+    }  
     default:
       XLALPrintError ("%s: Trying to randomise a non-numeric \
 parameter!\n", __func__ );

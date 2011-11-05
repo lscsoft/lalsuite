@@ -230,13 +230,16 @@ xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *s
 	xmlNodePtr propNode=NULL;
 	xmlNodePtr resNode=NULL;
 	/* Serialise various params to VOT Table nodes */
-	resNode=XLALCreateVOTResourceNode("LALInferenceRunState Settings",name,NULL);
+	resNode=XLALCreateVOTResourceNode("lalinference:state",name,NULL);
 	
 	algNode=XLALCreateVOTTableNode("Algorithm Params",XLALInferenceVariables2VOTParamNode(state->algorithmParams),NULL);
+	xmlNewProp(algNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:algorithmparams"));
 	if(algNode) xmlAddChild(resNode,algNode);
 	priorNode=XLALCreateVOTTableNode("Prior Arguments",XLALInferenceVariables2VOTParamNode(state->priorArgs),NULL);
+	xmlNewProp(priorNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:priorparams"));
 	if(priorNode) xmlAddChild(resNode,priorNode);
 	propNode=XLALCreateVOTTableNode("Proposal Arguments",XLALInferenceVariables2VOTParamNode(state->proposalArgs),NULL);
+	xmlNewProp(propNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:proposalparams"));
 	if(propNode) xmlAddChild(resNode,propNode);
 	return(resNode);
 
@@ -328,7 +331,10 @@ xmlNodePtr LALInferenceVariableItem2VOTFieldNode(LALInferenceVariableItem *varit
 	
   /* Check the type of the item */
   vo_type=LALInferenceVariableType2VOT(varitem->type);
-	
+  if(vo_type>=VOT_DATATYPE_LAST){
+    XLALPrintError("%s: Unsupported LALInferenceType %i\n",__func__,(int)varitem->type);
+    return NULL;
+  }
   return(XLALCreateVOTFieldNode(varitem->name,unitName,vo_type,NULL));
 }
 
@@ -348,7 +354,10 @@ xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varit
 	
   /* Check the type of the item */
   vo_type=LALInferenceVariableType2VOT(varitem->type);
-  
+  if(vo_type>=VOT_DATATYPE_LAST){
+    XLALPrintError("%s: Unsupported LALInferenceVariableType %i\n",__func__,(int)varitem->type);
+    return NULL;
+  }
   LALInferencePrintVariableItem(valString, varitem);
   
   return(XLALCreateVOTParamNode(varitem->name,unitName,vo_type,NULL,valString));
@@ -362,14 +371,15 @@ VOTABLE_DATATYPE LALInferenceVariableType2VOT(const LALInferenceVariableType lit
   switch(litype){
     case LALINFERENCE_INT4_t: 		return VOT_INT4;
     case LALINFERENCE_INT8_t: 		return VOT_INT8;
-    case LALINFERENCE_UINT4_t: 		return VOT_INT8; /* Need a signed INT8 to store an unsigned UINT4 */
+    case LALINFERENCE_UINT4_t: 		return VOT_INT4; /* Need a signed INT8 to store an unsigned UINT4 */
     case LALINFERENCE_REAL4_t:		return VOT_REAL4;
     case LALINFERENCE_REAL8_t:		return VOT_REAL8;
     case LALINFERENCE_COMPLEX8_t: 	return VOT_COMPLEX8;
     case LALINFERENCE_COMPLEX16_t:	return VOT_COMPLEX16;
     case LALINFERENCE_string_t:		return VOT_CHAR;
-    default: {XLALPrintError("Unsupported LALInferenceVarableType"); return VOT_DATATYPE_LAST;}
+    case LALINFERENCE_void_ptr_t:	return sizeof(void *)==4?VOT_INT4:VOT_INT8;
+    default: {XLALPrintError("%s: Unsupported LALInferenceVarableType %i\n",__func__,(int)litype); return VOT_DATATYPE_LAST;}
   }
 }
 
-  
+

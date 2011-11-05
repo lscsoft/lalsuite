@@ -553,9 +553,9 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
 	REAL8TimeSeries *E1x,	  /**< orbital plane basis vector x comp. */
 	REAL8TimeSeries *E1y,	  /**< orbital plane basis vector y comp. */
 	REAL8TimeSeries *E1z,	  /**< orbital plane basis vector z comp. */
-	REAL8 m1,                 /**< mass of companion 1 (Msun) */
-	REAL8 m2,                 /**< mass of companion 2 (Msun) */
-	REAL8 r,                  /**< distance of source (Mpc) */
+	REAL8 m1,                 /**< mass of companion 1 (kg) */
+	REAL8 m2,                 /**< mass of companion 2 (kg) */
+	REAL8 r,                  /**< distance of source (m) */
 	REAL8 v0,                 /**< tail-term gauge choice (default = 0) */
 	INT4 ampO	 	  /**< twice amp. post-Newtonian order */
 	)
@@ -834,6 +834,12 @@ int XLALSimInspiralChooseWaveform(
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
+        case TaylorEt:
+            ret = XLALSimInspiralTaylorEtPN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            break;
+        case TaylorT1:
+            ret = XLALSimInspiralTaylorT1PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            break;
         case TaylorT2:
             ret = XLALSimInspiralTaylorT2PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
@@ -847,7 +853,7 @@ int XLALSimInspiralChooseWaveform(
         /* non-spinning inspiral-merger-ringdown models */
         case IMRPhenomA:
             // FIXME: decide proper f_max to pass here
-            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, t0, phi0, f_min, deltaT, m1, m2, f_min, .5/deltaT, r, i);
+            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, .5/deltaT, r, i);
             break;
         case EOBNRv2HM:
             ret = XLALSimIMREOBNRv2AllModes(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i);
@@ -879,7 +885,7 @@ int XLALSimInspiralChooseWaveform(
                 REAL8 eta = m1*m2/(m1+m2)/(m1+m2);
                 REAL8 delta = sqrt(1.-4.*eta);
                 REAL8 chi = .5 * (S1[3]*(1. + delta) + S1[3]*(1. - delta));
-                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, t0, phi0, f_min, deltaT, m1, m2, chi, f_min, .5/deltaT, r, i);
+                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, t0, phi0, deltaT, m1, m2, chi, f_min, .5/deltaT, r, i);
             }
             break;
         case PhenSpinTaylorRD:
@@ -941,6 +947,12 @@ int XLALSimInspiralChooseRestrictedWaveform(
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
+        case TaylorEt:
+            ret = XLALSimInspiralTaylorEtPNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            break;
+        case TaylorT1:
+            ret = XLALSimInspiralTaylorT1PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            break;
         case TaylorT2:
             ret = XLALSimInspiralTaylorT2PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
@@ -954,7 +966,7 @@ int XLALSimInspiralChooseRestrictedWaveform(
         /* non-spinning inspiral-merger-ringdown models */
         case IMRPhenomA:
             // FIXME: decide proper f_max to pass here
-            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, t0, phi0, f_min, deltaT, m1, m2, f_min, .5/deltaT, r, i);
+            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, .5/deltaT, r, i);
             break;
         case EOBNRv2:
             ret = XLALSimIMREOBNRv2DominantMode(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i);
@@ -984,7 +996,7 @@ int XLALSimInspiralChooseRestrictedWaveform(
                 REAL8 eta = m1*m2/(m1+m2)/(m1+m2);
                 REAL8 delta = sqrt(1.-4.*eta);
                 REAL8 chi = .5 * (S1[3]*(1. + delta) + S1[3]*(1. - delta));
-                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, t0, phi0, f_min, deltaT, m1, m2, chi, f_min, .5/deltaT, r, i);
+                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, t0, phi0, deltaT, m1, m2, chi, f_min, .5/deltaT, r, i);
             }
             break;
         case PhenSpinTaylorRD:

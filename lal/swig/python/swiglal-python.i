@@ -346,14 +346,14 @@ swiglal_numpy_vecmat(COMPLEX16, NPY_CDOUBLE);
       %argument_fail(SWIG_ValueError, "$type (must have 6 or 9 elements)", $symname, $argnum);
     }
     PyObject *seq = PySequence_Fast($input, "$type (not a sequence)");
-    temptm.tm_year  = PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 0));
-    temptm.tm_mon   = PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 1));
-    temptm.tm_mday  = PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 2));
-    temptm.tm_hour  = PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 3));
-    temptm.tm_min   = PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 4));
-    temptm.tm_sec   = PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 5));
+    temptm.tm_year  = static_cast<int>(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 0)));
+    temptm.tm_mon   = static_cast<int>(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 1)));
+    temptm.tm_mday  = static_cast<int>(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 2)));
+    temptm.tm_hour  = static_cast<int>(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 3)));
+    temptm.tm_min   = static_cast<int>(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 4)));
+    temptm.tm_sec   = static_cast<int>(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 5)));
     temptm.tm_isdst = PySequence_Size($input) > 8 ?
-      PyLong_AsLong(PySequence_Fast_GET_ITEM($input, 8)) : -1;
+      static_cast<int>(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 8))) : -1;
     Py_XDECREF(seq);
     if (PyErr_Occurred())   // Catch any errors while converting items to integers
       SWIG_fail;
@@ -412,7 +412,7 @@ swiglal_numpy_vecmat(COMPLEX16, NPY_CDOUBLE);
     if (gps) {
       PyObject *seconds = PyObject_GetAttrString(obj, "seconds");
       PyObject *nanoseconds = PyObject_GetAttrString(obj, "nanoseconds");
-      XLALGPSSet(gps, PyInt_AsLong(seconds), PyInt_AsLong(nanoseconds));
+      XLALGPSSet(gps, static_cast<int>(PyInt_AsLong(seconds)), static_cast<int>(PyInt_AsLong(nanoseconds)));
       Py_XDECREF(seconds);
       Py_XDECREF(nanoseconds);
       return !PyErr_Occurred();

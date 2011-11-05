@@ -297,7 +297,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
 
 		if ((i % Nskip) == 0) {
-                  accumulateDifferentialEvolutionSample(runState);
+                  if (LALInferenceGetProcParamVal(runState->commandLine, "--differential-evolution")) {
+                    accumulateDifferentialEvolutionSample(runState);
+                  }
 
                   fseek(chainoutput, 0L, SEEK_END);
                   fprintf(chainoutput, "%d\t%f\t%f\t", i,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior,runState->currentPrior);
