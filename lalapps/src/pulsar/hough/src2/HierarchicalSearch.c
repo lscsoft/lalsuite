@@ -1156,7 +1156,7 @@ int MAIN( int argc, char *argv[]) {
 
 	  /* the hough option */
 	  /* select peaks */
-	  if ( (uvar_method == 0) ) {
+	  if (uvar_method == 0) {
 
 	    LogPrintf(LOG_DETAIL, "Starting Hough calculation...\n");
 	    sumWeightSquare = 0.0;
