@@ -204,7 +204,7 @@ main (INT4 argc, CHAR **argv )
   overlapin.ifCorrelationOutput = 1; /* output of WaveOverlap is sqrt(x^2+y^2)*/
 
   /* --- Create Matrix for BCV Maximization once for all ------------------ */
-  if ((userParam.template == BCV) )
+  if (userParam.template == BCV)
   {
     LAL_CALL( BankEfficiencyCreatePowerVector(&status,
        &(bankefficiencyBCV.powerVector), randIn, signalvec.length),  &status);
