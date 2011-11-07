@@ -2598,7 +2598,7 @@ int main( int argc, char *argv[] )
                       fcFilterInput->fcTmplt->norm;
 
                     /* If sigmasq is still zero */
-                    if ( (sigmasq == 0.0) )
+                    if (sigmasq == 0.0)
                       {
                         REAL4 totalMass = bankCurrent->mass1 + bankCurrent->mass2;
                         REAL4 mu = bankCurrent->mass1 * bankCurrent->mass2 / totalMass;
