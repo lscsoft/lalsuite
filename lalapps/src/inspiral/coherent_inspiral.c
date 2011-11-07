@@ -552,7 +552,7 @@ int main( int argc, char *argv[] )
         if( vrbflg ) fprintf(stdout,"caseID = %d %d %d %d %d %d (G1,H1,H2,L1,T1,V1)\n", caseID[0], caseID[1], caseID[2], caseID[3], caseID[4], caseID[5]);
         
      	/* Is this a 3-site network */
-	if ( (numDetectors == 3) ) {
+	if (numDetectors == 3) {
 	  if (caseID[1] && caseID[2]) {
 	    threeSiteCase = 0;
 	  }
@@ -560,7 +560,7 @@ int main( int argc, char *argv[] )
 	    threeSiteCase = 1;
 	  }
 	}
-	if ( (numDetectors == 4) ) threeSiteCase = 1;
+	if (numDetectors == 4) threeSiteCase = 1;
         /* For the exttrig mode of the follow-ups we require time-series SNR output
            without the exttrig option, the frame outputs are over numBeamPoints */
         if ( followup && exttrig ) threeSiteCase = 0;
