@@ -2327,7 +2327,7 @@ int main( int argc, char *argv[] )
         COMPLEX8Vector *templateFFTDataVector = NULL;
         REAL4FFTPlan *plan = NULL;
         REAL8 deltaF;
-        INT4 kmax, num_points;
+        UINT4 kmax, num_points;
         UINT4 nb2;
         snprintf( snrsqStr, LALNameLength, "TEMPLATE");
         memcpy(&templateTimeSeries, &chan, sizeof(REAL4TimeSeries));
@@ -2336,7 +2336,7 @@ int main( int argc, char *argv[] )
         if ( approximant==FindChirpSP )
           {
           nb2 = fcTmpltParams->xfacVec->length;
-          num_points = (INT4) floor( (nb2-1) * 2.0);
+          num_points = (UINT4) floor( (nb2-1) * 2.0);
           templateTimeSeriesVector = XLALCreateREAL4Vector(num_points);
           templateFFTDataVector = XLALCreateCOMPLEX8Vector(nb2);
           num_points = templateTimeSeriesVector->length;
