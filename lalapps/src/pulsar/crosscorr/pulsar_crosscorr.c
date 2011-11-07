@@ -869,7 +869,7 @@ int main(int argc, char *argv[]){
       	   if (detChoice == ALL) { sameDet = detChoice; }
 	  	  
 	   /* decide whether to add this pair or not */
-     	   if ((sameDet == (INT4)detChoice)) {
+     	   if (sameDet == (INT4)detChoice) {
 
 	     /* increment the size of  Y, u, sigmasq vectors by 1  */
  	     yalpha = XLALResizeCOMPLEX16Vector(yalpha, 1 + ualphacounter);
