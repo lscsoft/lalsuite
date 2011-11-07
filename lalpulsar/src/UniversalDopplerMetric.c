@@ -1337,10 +1337,10 @@ XLALDestroyDopplerMetric ( DopplerMetric *metric )
 
 /** Parse a detector-motion type string into the corresponding enum-number,
  */
-DetectorMotionType
+int
 XLALParseDetectorMotionString ( const CHAR *detMotionString )
 {
-  UINT4 i;
+  int i;
 
   if ( ! detMotionString ) {
     XLAL_ERROR ( XLAL_EINVAL );
@@ -1378,10 +1378,10 @@ XLALDetectorMotionName ( DetectorMotionType detType )
 
 /** Parse a DopplerCoordinate-name into the corresponding DopplerCoordinateID
  */
-DopplerCoordinateID
+int
 XLALParseDopplerCoordinateString ( const CHAR *coordName )
 {
-  UINT4 i;
+  int i;
 
   if ( !coordName )
     XLAL_ERROR ( XLAL_EINVAL );
@@ -1414,7 +1414,7 @@ XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *coordSys,	/**< [out
   coordSys->dim = coordNames->length;
   for ( i=0; i < coordNames->length; i++ )
     {
-      coordSys->coordIDs[i] = XLALParseDopplerCoordinateString ( coordNames->data[i] );
+      coordSys->coordIDs[i] = (DopplerCoordinateID)XLALParseDopplerCoordinateString ( coordNames->data[i] );
       if ( xlalErrno )
 	XLAL_ERROR ( XLAL_EFUNC );
     }

@@ -409,8 +409,8 @@ void XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms );
 
 void XLALDestroyDopplerMetric ( DopplerMetric *metric );
 
-DetectorMotionType XLALParseDetectorMotionString ( const CHAR *detMotionString );
-DopplerCoordinateID XLALParseDopplerCoordinateString ( const CHAR *coordName );
+int XLALParseDetectorMotionString ( const CHAR *detMotionString );
+int XLALParseDopplerCoordinateString ( const CHAR *coordName );
 int XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *coordSys, const LALStringVector *coordNames );
 
 const CHAR *XLALDetectorMotionName ( DetectorMotionType detType );
