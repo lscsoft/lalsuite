@@ -609,7 +609,7 @@ int main( int argc, char *argv[] )
 	  else
 	  {
 	    fprintf(stdout,"IFOs in input summary table is %s\n",inputSummary->ifos);
-	    if ( (ifoNumber == XLALIFONumber(inputSummary->ifos) ) ) {
+	    if (ifoNumber == XLALIFONumber(inputSummary->ifos)) {
 	      fprintf(stdout,"Reading triggers from IFO %s\n",inputSummary->ifos);
 	      numFileTriggers = XLALReadInspiralTriggerFile( &inspiralEventList,
 			&currentTrigger, &searchSummList, &inputFiles, argv[i] );
