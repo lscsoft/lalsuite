@@ -230,7 +230,7 @@ UINT4       vecLengthTwo
                 rotImOverlaps,uk,uj-vecLengthTwo);
             normFac += pow(gsl_matrix_get(rotImOverlaps,uk,uj-vecLengthTwo),2);
           }
-	  if (uj >= vecLengthTwo && uk > vecLengthTwo )
+	  if (uj >= vecLengthTwo && uk >= vecLengthTwo )
           {
             BankVetoTemp[uj]-= SNRu2[uk-vecLengthTwo] * gsl_matrix_get(
                 rotReOverlaps,uk-vecLengthTwo,uj-vecLengthTwo);
@@ -510,7 +510,7 @@ void coh_PTF_calculate_coherent_bank_overlaps(
           fone = b[ul];
         for (uk = 0 ; uk < vecLengthTwo; uk++)
         {
-          if (uj < vecLength)
+          if (uk < vecLength)
             ftwo = a[ul];
           else
             ftwo = b[ul];
@@ -956,7 +956,7 @@ UINT4 vecLengthTwo
 
       SNRtemp= pow((v1Plus[0] - v1full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];
       SNRtemp+= pow((v2Plus[0] - v2full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];
-      if (vecLength == 2)
+      if (vecLengthTwo == 2)
       {
         SNRtemp+= pow((v1Cross[1]-v1full[1]*powerBinsCross[i]),2)/powerBinsCross[i];
         SNRtemp+= pow((v2Cross[1]-v2full[1]*powerBinsCross[i]),2)/powerBinsCross[i];
