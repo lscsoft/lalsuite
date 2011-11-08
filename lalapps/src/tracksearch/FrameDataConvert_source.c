@@ -1,20 +1,15 @@
-define(`SCALE',`0')
-define(`SKIP',`0')
-ifelse(TYPECODE,`D', `define(`SCALE',`20')')
-ifelse(TYPECODE,`D', `define(`SKIP',`1')')
-ifelse(TYPECODE,`D', `define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S', `define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE,`',  `define(`TYPE',`REAL4')')
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
 
-define(`XFUNC',`format(`XLALFrGet%sFrameConvertToREAL4TimeSeries',TYPE)')
-define(`CREATESERIES',`format(`XLALCreate%sTimeSeries',TYPE)')
-define(`GETMETA',`format(`XLALFrGet%sTimeSeriesMetadata',TYPE)')
-define(`GETDATA',`format(`XLALFrGet%sTimeSeries',TYPE)')
-define(`DESTROYSERIES',`format(`XLALDestroy%sTimeSeries',TYPE)')
-define(`VARTYPE',`format(`%sTimeSeries',TYPE)')
+#define XFUNC CONCAT3(XLALFrGet,TYPE,FrameConvertToREAL4TimeSeries)
+#define CREATESERIES CONCAT3(XLALCreate,TYPE,TimeSeries)
+#define GETMETA CONCAT3(XLALFrGet,TYPE,TimeSeriesMetadata)
+#define GETDATA CONCAT3(XLALFrGet,TYPE,TimeSeries)
+#define DESTROYSERIES CONCAT3(XLALDestroy,TYPE,TimeSeries)
+#define VARTYPE CONCAT2(TYPE,TimeSeries)
 
 int XFUNC (REAL4TimeSeries *inputSeries, FrStream *stream)
 {

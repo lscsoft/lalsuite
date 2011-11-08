@@ -11,6 +11,9 @@ bin_PROGRAMS = \
 endif
 endif
 
+noinst_HEADERS = \
+	FrameDataConvert_source.c
+
 lalapps_tracksearch_SOURCES = \
 	tracksearch.c \
 	tracksearchToolbox.c \
@@ -83,9 +86,6 @@ lalapps_tracksearch_mapcachebuilder: $(srcdir)/tsMapCacheBuilder.pyin python_con
 	sed -f python_config.sed $(srcdir)/tsMapCacheBuilder.pyin > lalapps_tracksearch_mapcachebuilder
 	chmod +x lalapps_tracksearch_mapcachebuilder
 
-FrameDataConvert.c: $(srcdir)/CreateConverter.m4 $(srcdir)/FrameDataConvertREAL4C.m4
-	cd $(srcdir) && m4 FrameDataConvertREAL4C.m4 > FrameDataConvert.c
-
 FrameDataConvert.h: $(srcdir)/CreateConverterTypeDef.m4 $(srcdir)/FrameDataConvertREAL4H.m4
 	cd $(srcdir) && m4 FrameDataConvertREAL4H.m4 > FrameDataConvert.h
 
@@ -101,8 +101,6 @@ EXTRA_DIST = \
 	tsHousekeeper.pyin \
 	tsTunePipe.pyin \
 	tsMapCacheBuilder.pyin \
-	CreateConverter.m4 \
-	FrameDataConvertREAL4C.m4 \
 	CreateConverterTypeDef.m4 \
 	FrameDataConvertREAL4H.m4 \
 	$(DATA)
