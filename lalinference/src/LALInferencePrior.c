@@ -50,9 +50,9 @@ static void q2masses(double mc, double q, double *m1, double *m2)
 /*  for given chirp mass (m_c) & asymmetric mass   */
 /*  ratio (q).  note: q = m2/m1, where m1 >= m2    */
 {
-  double factor = pow( pow(mc,5.0)/(1+q), 1.0/7.0 );
-  *m1 = factor * pow(q, -3.0/7.0);
-  *m2 = factor * pow(q, +4.0/7.0);
+  double factor = mc * pow(1 + q, 1.0/5.0);
+  *m1 = factor * pow(q, -3.0/5.0); 
+  *m2 = factor * pow(q, +2.0/5.0);
   return;
 }
 
