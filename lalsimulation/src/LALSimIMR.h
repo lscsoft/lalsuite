@@ -188,6 +188,21 @@ int XLALSimIMREOBNRv2AllModes(
     const REAL8       inclination /**<< Inclination of the source (in radians) */
 );
 
+int XLALSimIMRSpinAlignedEOBWaveform(
+        REAL8TimeSeries **hplus,
+        REAL8TimeSeries **hcross,
+        LIGOTimeGPS     *tc,
+        const REAL8     phiC,
+        REAL8           deltaT,
+        const REAL8     m1,
+        const REAL8     m2,
+        const REAL8     fMin,
+        const REAL8     r,
+        const REAL8     inc,
+        const REAL8     spin1[],
+        const REAL8     spin2[]
+     );
+
 /**
  * Routine to compute the mass and spin of the final black hole given 
  * the masses, spins, binding energy, and orbital angular momentum vector.

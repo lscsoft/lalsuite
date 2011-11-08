@@ -1052,6 +1052,9 @@ int XLALSimInspiralChooseWaveform(
             // FIXME: need to create a function to take in different modes or produce an error if all modes not given
             ret = XLALSimIMRPSpinInspiralRDGenerator(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, S1x, S1y, S1z, S2x, S2y, S2z, phaseO, TotalJ);
             break;
+        case SpinAlignedEOB:
+            ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, S1, S2);
+            break;
 
         default:
             XLALPrintError("approximant not implemented in lalsimulation\n");
