@@ -37,6 +37,18 @@
 #include "LALSimIMREOBNRv2.h"
 #include "LALSimIMRSpinEOB.h"
 
+/* Include all the static function files we need */
+#include "LALSimIMREOBHybridRingdown.c"
+#include "LALSimIMREOBFactorizedWaveform.c"
+#include "LALSimIMREOBNewtonianMultipole.c"
+#include "LALSimIMREOBNQCCorrection.c"
+#include "LALSimIMRSpinEOBInitialConditions.c"
+#include "LALSimIMRSpinEOBAuxFuncs.c"
+#include "LALSimIMRSpinAlignedEOBHcapDerivative.c"
+#include "LALSimIMRSpinEOBHamiltonian.c"
+#include "LALSimIMRSpinEOBFactorizedWaveform.c"
+#include "LALSimIMRSpinEOBFactorizedFlux.c"
+
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -136,8 +148,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   REAL8Vector    *ampNQC = NULL, *phaseNQC = NULL;
 
   /* Ringdown freq used to check the sample rate */
-  COMPLEX8Vector modefreqVec;
-  COMPLEX8       modeFreq;
+  COMPLEX16Vector modefreqVec;
+  COMPLEX16      modeFreq;
 
   /* Spin-weighted spherical harmonics */
   COMPLEX16  MultSphHarmP;
@@ -155,7 +167,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   /* Dynamics and details of the high sample rate part used to attach the ringdown */
   UINT4 hiSRndx;
   REAL8Vector timeHi, rHi, phiHi, prHi, pPhiHi;
-  REAL4Vector *sigReHi = NULL, *sigImHi = NULL;
+  REAL8Vector *sigReHi = NULL, *sigImHi = NULL;
   REAL8Vector *omegaHi = NULL;
 
   /* Indices of peak frequency and final point */
@@ -182,11 +194,6 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   EOBParams               eobParams;
   FacWaveformCoeffs       hCoeffs;
   NewtonMultipolePrefixes prefixes;
-
-  /* The ringdown code requires the inspiral template structure */
-  /* so we need one within this function.                       */
-  /* TODO: Remove this dependency from the ringdown code.       */
-  InspiralTemplate tmplt;
 
   /* Initialize parameters */
   mTotal = m1 + m2;
@@ -233,22 +240,12 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   memset( &eobParams, 0, sizeof(eobParams) );
   memset( &hCoeffs, 0, sizeof( hCoeffs ) );
   memset( &prefixes, 0, sizeof( prefixes ) );
-  memset( &tmplt, 0, sizeof( tmplt ) );
 
-  tmplt.totalMass   = mTotal;
-  tmplt.mass1       = m1;
-  tmplt.mass2       = m2;
-  tmplt.eta         = eta;
-  tmplt.approximant = SAEOBNRv1;
-  tmplt.tSampling   = 1.0 / deltaT;
-  memcpy( tmplt.spin1, spin1, sizeof( tmplt.spin1 ) );
-  memcpy( tmplt.spin2, spin2, sizeof( tmplt.spin2 ) );
-  
   /* Before calculating everything else, check sample freq is high enough */
   modefreqVec.length = 1;
   modefreqVec.data   = &modeFreq;
 
-  if ( XLALGenerateQNMFreqV2( &modefreqVec, &tmplt, 2, 2, 1 ) == XLAL_FAILURE )
+  if ( XLALSimIMREOBGenerateQNMFreqV2( &modefreqVec, m1, m2, 2, 2, 1 ) == XLAL_FAILURE )
   {
     XLALDestroyREAL8Vector( values );
     XLAL_ERROR( XLAL_EFUNC );
@@ -342,7 +339,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   a = sqrt( a );*/
   seobParams.a = a = sigmaKerr->data[2];
 
-  if ( XLALCalcSpinFacWaveformCoefficients( &hCoeffs, eta, /*a*/0.0, chiS, chiA ) == XLAL_FAILURE )
+  if ( XLALSimIMREOBCalcSpinFacWaveformCoefficients( &hCoeffs, eta, /*a*/0.0, chiS, chiA ) == XLAL_FAILURE )
   {
     XLALDestroyREAL8Vector( sigmaKerr );
     XLALDestroyREAL8Vector( sigmaStar );
@@ -350,7 +347,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  if ( XLALComputeNewtonMultipolePrefixes( &prefixes, eobParams.m1, eobParams.m2 )
+  if ( XLALSimIMREOBComputeNewtonMultipolePrefixes( &prefixes, eobParams.m1, eobParams.m2 )
          == XLAL_FAILURE )
   {
     XLALDestroyREAL8Vector( sigmaKerr );
@@ -485,8 +482,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   fclose( out );
 
   /* Allocate the high sample rate vectors */
-  sigReHi  = XLALCreateREAL4Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaT )) );
-  sigImHi  = XLALCreateREAL4Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaT )) );
+  sigReHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaT )) );
+  sigImHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaT )) );
   omegaHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaT )) );
   ampNQC   = XLALCreateREAL8Vector( retLen );
   phaseNQC = XLALCreateREAL8Vector( retLen );
@@ -599,13 +596,13 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   XLALPrintInfo( "Estimation of the peak is now at time %.16e\n", timePeak );
 
 
-  if ( XLALGetEOBCalibratedSpinNQC( &nqcCoeffs, 2, 2, eta, a ) == XLAL_FAILURE )
+  if ( XLALSimIMRGetEOBCalibratedSpinNQC( &nqcCoeffs, 2, 2, eta, a ) == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Calculate non-quasicircular coefficients and apply to hi-sampled waveform */
-  if ( XLALSpinCalculateNQCCoefficients( ampNQC, phaseNQC, &rHi, &prHi, omegaHi,
+  if ( XLALSimIMRSpinEOBCalculateNQCCoefficients( ampNQC, phaseNQC, &rHi, &prHi, omegaHi,
           2, 2, timePeak, deltaT/mTScaled, eta, a, &nqcCoeffs ) == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
@@ -619,7 +616,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     values->data[2] = prHi.data[i];
     values->data[3] = pPhiHi.data[i];
 
-    if ( XLALEOBNonQCCorrection( &hNQC, values, omegaHi->data[i], &nqcCoeffs ) == XLAL_FAILURE )
+    if ( XLALSimIMREOBNonQCCorrection( &hNQC, values, omegaHi->data[i], &nqcCoeffs ) == XLAL_FAILURE )
     {
       XLAL_ERROR( XLAL_EFUNC );
     }
@@ -643,9 +640,6 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     XLAL_ERROR( XLAL_ENOMEM );
   }
 
-  /* dt has changed, so we need to change it in the template structure */
-  tmplt.tSampling = 1./deltaT;
-
   if ( combSize > timePeak - 2.5 )
   {
     XLALPrintError( "The comb size looks to be too big!!!\n" );
@@ -656,8 +650,9 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   rdMatchPoint->data[1] = timePeak - 2.5;
   rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
 
-  if ( XLALInspiralHybridAttachRingdownWave( sigReHi, sigImHi, 2, 2, &timeHi, rdMatchPoint, &tmplt )
-        == XLAL_FAILURE )
+  if ( XLALSimIMREOBHybridAttachRingdown( sigReHi, sigImHi, 2, 2,
+              deltaT, m1, m2, &timeHi, rdMatchPoint)
+          == XLAL_FAILURE ) 
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -699,7 +694,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
       XLAL_ERROR( XLAL_EFUNC );
     }
 
-    if ( XLALEOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs ) == XLAL_FAILURE )
+    if ( XLALSimIMREOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs ) == XLAL_FAILURE )
     {
       XLAL_ERROR( XLAL_EFUNC );
     }
