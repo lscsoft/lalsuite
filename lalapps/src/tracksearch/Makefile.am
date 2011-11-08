@@ -1,35 +1,57 @@
-## Process this file with automake to produce Makefile.in
-# $Id$
-#
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+
 if LALFRAME
 if LALBURST
-bin_PROGRAMS = lalapps_tracksearch \
+bin_PROGRAMS = \
+	lalapps_tracksearch \
 	lalapps_tracksearch_datagen \
 	lalapps_tracksearch_averager \
 	lalapps_tracksearch_dat2pgm
 endif
 endif
 
-TSUTILSRCS = tfdat2pgm.c tracksearchToolbox.c tracksearch.h \
-	tracksearchAverager.h tracksearchToolbox.h
-TRACKSEARCHSRCS = tracksearch.c	tracksearchToolbox.c \
-	tracksearch.h tracksearchToolbox.h tracksearchAverager.h \
-	FrameDataConvert.c FrameDataConvert.h 
-TSDATAGENSRCS = TSDatagen.c TSDatagen.h tracksearch.h \
-	tracksearchToolbox.h tracksearchAverager.h
-TRACKSEARCHAVGSRC = tracksearchAverager.c tracksearchToolbox.c \
-	tracksearch.h tracksearchAverager.h tracksearchToolbox.h
-lalapps_tracksearch_SOURCES = $(TRACKSEARCHSRCS)
-lalapps_tracksearch_datagen_SOURCES = $(TSDATAGENSRCS)
-lalapps_tracksearch_averager_SOURCES = $(TRACKSEARCHAVGSRC)
-lalapps_tracksearch_dat2pgm_SOURCES = $(TSUTILSRCS)
+lalapps_tracksearch_SOURCES = \
+	tracksearch.c \
+	tracksearchToolbox.c \
+	tracksearch.h \
+	tracksearchToolbox.h \
+	tracksearchAverager.h \
+	FrameDataConvert.c \
+	FrameDataConvert.h
+
+lalapps_tracksearch_datagen_SOURCES = \
+	TSDatagen.c \
+	TSDatagen.h \
+	tracksearch.h \
+	tracksearchToolbox.h \
+	tracksearchAverager.h
+
+lalapps_tracksearch_averager_SOURCES = \
+	tracksearchAverager.c \
+	tracksearchToolbox.c \
+	tracksearch.h \
+	tracksearchAverager.h \
+	tracksearchToolbox.h
+
+lalapps_tracksearch_dat2pgm_SOURCES = \
+	tfdat2pgm.c \
+	tracksearchToolbox.c \
+	tracksearch.h \
+	tracksearchAverager.h \
+	tracksearchToolbox.h
 
 if HAVE_PYTHON
-bin_SCRIPTS = lalapps_tracksearch_handler \
-	lalapps_tracksearch_pipe lalapps_tracksearch_housekeeper \
-	lalapps_tracksearch_tune_pipe lalapps_tracksearch_cutpipe \
+bin_SCRIPTS = \
+	lalapps_tracksearch_handler \
+	lalapps_tracksearch_pipe \
+	lalapps_tracksearch_housekeeper \
+	lalapps_tracksearch_tune_pipe \
+	lalapps_tracksearch_cutpipe \
 	lalapps_tracksearch_mapcachebuilder
-pkgpython_DATA = tracksearchutils.py tracksearch.py
+pkgpython_DATA = \
+	tracksearchutils.py \
+	tracksearch.py
 endif
 
 python_config.sed:
@@ -67,20 +89,26 @@ FrameDataConvert.c: $(srcdir)/CreateConverter.m4 $(srcdir)/FrameDataConvertREAL4
 FrameDataConvert.h: $(srcdir)/CreateConverterTypeDef.m4 $(srcdir)/FrameDataConvertREAL4H.m4
 	cd $(srcdir) && m4 FrameDataConvertREAL4H.m4 > FrameDataConvert.h
 
-pkgdata_DATA = tracksearch_pipeline_configuration.ini \
+pkgdata_DATA = \
+	tracksearch_pipeline_configuration.ini \
 	tracksearch_tuning_configuration.tun \
 	tracksearch_cutpipe_configuration.cut
 
-EXTRA_DIST = tsHandler.pyin tsPipe.pyin tsCutPipe.pyin \
-	tsHousekeeper.pyin tsTunePipe.pyin tsMapCacheBuilder.pyin \
-	CreateConverter.m4 FrameDataConvertREAL4C.m4 \
-	CreateConverterTypeDef.m4 FrameDataConvertREAL4H.m4 \
+EXTRA_DIST = \
+	tsHandler.pyin \
+	tsPipe.pyin \
+	tsCutPipe.pyin \
+	tsHousekeeper.pyin \
+	tsTunePipe.pyin \
+	tsMapCacheBuilder.pyin \
+	CreateConverter.m4 \
+	FrameDataConvertREAL4C.m4 \
+	CreateConverterTypeDef.m4 \
+	FrameDataConvertREAL4H.m4 \
 	$(DATA)
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
-CLEANFILES = lalapps_tracksearch_handler \
+CLEANFILES = \
+	lalapps_tracksearch_handler \
 	lalapps_tracksearch_pipe \
 	lalapps_tracksearch_housekeeper \
 	lalapps_tracksearch_tune_pipe \
@@ -92,8 +120,17 @@ CLEANFILES = lalapps_tracksearch_handler \
 	lalapps_tracksearch_averager \
 	lalapps_tracksearch_dat2pgmy
 
-MOSTLYCLEANFILES = *.candidates *.dat *.pgm *.aux *.raw *.diag \
-	*.pyc tsaMap* Candidate* Pre-*
+MOSTLYCLEANFILES = \
+	*.candidates \
+	*.dat \
+	*.pgm \
+	*.aux \
+	*.raw \
+	*.diag \
+	*.pyc \
+	tsaMap* \
+	Candidate* \
+	Pre-*
 
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common
