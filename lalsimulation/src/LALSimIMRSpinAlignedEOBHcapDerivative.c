@@ -27,6 +27,10 @@
  * function provides the means to do just that.
  * 
  */
+
+#ifndef LALSIMIMRSPINALIGNEDEOBHCAPDERIVATIVE_C
+#define LALSIMIMRSPINALIGNEDEOBHCAPDERIVATIVE_C
+
 #include <unistd.h>
 
 #include <lal/LALSimInspiral.h>
@@ -34,11 +38,29 @@
 
 #include "LALSimIMRSpinEOB.h"
 #include "LALSimIMRSpinEOBHamiltonian.c"
+#include "LALSimIMRSpinEOBFactorizedFlux.c"
 
 #include <gsl/gsl_deriv.h>
 
+/*------------------------------------------------------------------------------------------
+ *
+ *          Prototypes of functions defined in this code.
+ *
+ *------------------------------------------------------------------------------------------
+ */
 
-static double GSLSpinAlignedHamiltonianWrapper( double x, void *params );
+static int XLALSpinAlignedHcapDerivative(
+                          double                t,
+                          const REAL8           values[],
+                          REAL8                 dvalues[],
+                          void                  *funcParams
+                               );
+/*------------------------------------------------------------------------------------------
+ *
+ *          Defintions of functions.
+ *
+ *------------------------------------------------------------------------------------------
+ */
 
 static int XLALSpinAlignedHcapDerivative(
                           double     UNUSED     t,
@@ -200,117 +222,4 @@ static int XLALSpinAlignedHcapDerivative(
   return XLAL_SUCCESS;
 }
 
-
-/**
- * Function to calculate the value of omega for the spin-aligned EOB waveform
- */
-REAL8
-XLALSimIMRSpinAlignedEOBCalcOmega(
-                      const REAL8           values[],
-                      SpinEOBParams         *funcParams
-                      )
-{
-  static const REAL8 STEP_SIZE = 1.0e-4;
-
-  HcapDerivParams params;
-
-  /* Cartesian values for calculating the Hamiltonian */
-  REAL8 cartValues[6];
-
-  gsl_function F;
-  INT4         gslStatus;
-
-  REAL8 omega;
-  REAL8 r;
-
-  /* The error in a derivative as measured by GSL */
-  REAL8 absErr;
-
-  /* Set up pointers for GSL */
-  params.values  = cartValues;
-  params.params  = funcParams;
-
-  F.function = &GSLSpinAlignedHamiltonianWrapper;
-  F.params   = &params;
-
-  /* Populate the Cartesian values vector */
-  /* We can assume phi is zero wlog */
-  memset( cartValues, 0, sizeof( cartValues ) );
-  cartValues[0] = r = values[0];
-  cartValues[3] = values[2];
-  cartValues[4] = values[3] / values[0];
-
-  /* Now calculate omega. In the chosen co-ordinate system, */
-  /* we need dH/dpy to calculate this, i.e. varyParam = 4   */
-  params.varyParam = 4;
-  XLAL_CALLGSL( gslStatus = gsl_deriv_central( &F, cartValues[4],
-                  STEP_SIZE, &omega, &absErr ) );
-
-  if ( gslStatus != GSL_SUCCESS )
-  {
-    XLALPrintError( "XLAL Error - %s: Failure in GSL function\n", __func__ );
-    XLAL_ERROR_REAL8( XLAL_EFUNC );
-  }
-  
-  omega = omega / r;
-
-  return omega;
-}
-
-REAL8
-XLALSimIMRSpinAlignedEOBNonKeplerCoeff(
-                      const REAL8           values[],
-                      SpinEOBParams         *funcParams
-                      )
-{
-
-  REAL8 omegaCirc;
-
-  REAL8 tmpValues[4];
-
-  REAL8 r3;
-
-  /* We need to find the values of omega assuming pr = 0 */
-  memcpy( tmpValues, values, sizeof(tmpValues) );
-  tmpValues[2] = 0.0;
-
-  omegaCirc = XLALSimIMRSpinAlignedEOBCalcOmega( tmpValues, funcParams );
-  if ( XLAL_IS_REAL8_FAIL_NAN( omegaCirc ) )
-  {
-    XLAL_ERROR_REAL8( XLAL_EFUNC );
-  }
-
-  r3 = values[0]*values[0]*values[0];
-
-  return 1.0/(omegaCirc*omegaCirc*r3);
-}
-  
-/* Wrapper for GSL to call the Hamiltonian function */
-static double GSLSpinAlignedHamiltonianWrapper( double x, void *params )
-{
-  HcapDerivParams *dParams = (HcapDerivParams *)params;
-
-  EOBParams *eobParams = dParams->params->eobParams;
-
-  REAL8 tmpVec[6];
-
-  /* These are the vectors which will be used in the call to the Hamiltonian */
-  REAL8Vector r, p;
-  REAL8Vector *sigmaKerr = dParams->params->sigmaKerr;
-  REAL8Vector *sigmaStar = dParams->params->sigmaStar;
-
-  /* Use a temporary vector to avoid corrupting the main function */
-  memcpy( tmpVec, dParams->values, 
-               sizeof(tmpVec) );
-
-  /* Set the relevant entry in the vector to the correct value */
-  tmpVec[dParams->varyParam] = x;
-
-  /* Set the LAL-style vectors to point to the appropriate things */
-  r.length = p.length = 3;
-  r.data     = tmpVec;
-  p.data     = tmpVec+3;
-
-  return XLALSimIMRSpinEOBHamiltonian( eobParams->eta, &r, &p, sigmaKerr, sigmaStar, dParams->params->tortoise, dParams->params->seobCoeffs ) / eobParams->eta;
-}
-
+#endif /* LALSIMIMRSPINALIGNEDEOBHCAPDERIVATIVE_C */

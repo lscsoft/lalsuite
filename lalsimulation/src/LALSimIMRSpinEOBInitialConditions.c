@@ -10,6 +10,11 @@
 
 #include "LALSimIMRSpinEOB.h"
 #include "LALSimIMRSpinEOBHamiltonian.c"
+#include "LALSimIMRSpinEOBHcapNumericalDerivative.c"
+#include "LALSimIMREOBFactorizedWaveform.c"
+
+#ifndef _LALSIMIMRSPINEOBINITIALCONDITIONS_C
+#define _LALSIMIMRSPINEOBINITIALCONDITIONS_C
 
 typedef
 struct tagSEOBRootParams
@@ -286,7 +291,7 @@ XLALFindSphericalOrbit( const gsl_vector *x,
   dHdx = XLALSpinHcapNumDerivWRTParam( 0, rootParams->values, rootParams->params );
   if ( XLAL_IS_REAL8_FAIL_NAN( dHdx ) )
   {
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
   printf( "dHdx = %.16e\n", dHdx );
 
@@ -295,7 +300,7 @@ XLALFindSphericalOrbit( const gsl_vector *x,
   dHdpy = XLALSpinHcapNumDerivWRTParam( 4, rootParams->values, rootParams->params );
   if ( XLAL_IS_REAL8_FAIL_NAN( dHdpy ) )
   {
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* dHdPtheta (I think we can use dHdPz in this coord system) */
@@ -303,7 +308,7 @@ XLALFindSphericalOrbit( const gsl_vector *x,
   dHdpz = XLALSpinHcapNumDerivWRTParam( 5, rootParams->values, rootParams->params );
   if ( XLAL_IS_REAL8_FAIL_NAN( dHdpz ) )
   {
-    XLAL_ERROR( __func__, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Now convert to spherical polars */
@@ -372,7 +377,7 @@ static double GSLSpinHamiltonianDerivWrapper( double x, void *params )
       break;
     default:
       XLALPrintError( "This option is not supported in the second derivative function!\n" );
-      XLAL_ERROR_REAL8( __func__, XLAL_EFUNC );
+      XLAL_ERROR_REAL8( XLAL_EFUNC );
       break;
   }
 }
@@ -426,8 +431,8 @@ static REAL8 XLALCalculateSphHamiltonianDeriv2(
 
   if ( gslStatus != GSL_SUCCESS )
   {
-    XLALPrintError( "Failure in GSL function\n" );
-    XLAL_ERROR_REAL8( __func__, XLAL_EFUNC );
+    XLALPrintError( "XLAL Error %s - Failure in GSL function\n", __func__ );
+    XLAL_ERROR_REAL8( XLAL_EFUNC );
   }
 
   printf( "Second deriv abs err = %.16e\n", absErr );
@@ -443,7 +448,7 @@ static REAL8 XLALCalculateSphHamiltonianDeriv2(
  * Main function for calculating the spinning EOB initial conditions
  */
 
-int XLALSimIMRSpinEOBInitialConditions(
+static int XLALSimIMRSpinEOBInitialConditions(
                       REAL8Vector   *initConds,
                       const REAL8    mass1,
                       const REAL8    mass2,
@@ -458,7 +463,7 @@ int XLALSimIMRSpinEOBInitialConditions(
 #ifndef LAL_NDEBUG
   if ( !initConds )
   {
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 #endif
 
@@ -579,14 +584,14 @@ int XLALSimIMRSpinEOBInitialConditions(
   {
     if ( rotMatrix ) gsl_matrix_free( rotMatrix );
     if ( invMatrix ) gsl_matrix_free( invMatrix );
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   if ( CalculateRotationMatrix( rotMatrix, invMatrix, rHat, vHat, LnHat ) == XLAL_FAILURE )
   {
     gsl_matrix_free( rotMatrix );
     gsl_matrix_free( invMatrix );
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   /* Rotate the orbital vectors and spins */
@@ -632,7 +637,7 @@ int XLALSimIMRSpinEOBInitialConditions(
   {
     gsl_matrix_free( rotMatrix );
     gsl_matrix_free( invMatrix );
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   XLAL_CALLGSL( initValues = gsl_vector_calloc( 3 ) );
@@ -641,7 +646,7 @@ int XLALSimIMRSpinEOBInitialConditions(
     gsl_multiroot_fsolver_free( rootSolver );
     gsl_matrix_free( rotMatrix );
     gsl_matrix_free( invMatrix );
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   gsl_vector_set( initValues, 0, rootParams.values[0] );
@@ -666,7 +671,7 @@ int XLALSimIMRSpinEOBInitialConditions(
       gsl_vector_free( initValues );
       gsl_matrix_free( rotMatrix );
       gsl_matrix_free( invMatrix );
-      XLAL_ERROR( __func__, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     XLAL_CALLGSL( gslStatus = gsl_multiroot_test_residual( rootSolver->f, 1.0e-10 ) );
@@ -680,7 +685,7 @@ int XLALSimIMRSpinEOBInitialConditions(
     gsl_vector_free( initValues );
     gsl_matrix_free( rotMatrix );
     gsl_matrix_free( invMatrix );
-    XLAL_ERROR( __func__, XLAL_EMAXITER );
+    XLAL_ERROR( XLAL_EMAXITER );
   }
 
   finalValues = gsl_multiroot_fsolver_root( rootSolver );
@@ -720,7 +725,7 @@ int XLALSimIMRSpinEOBInitialConditions(
   {
     gsl_matrix_free( rotMatrix );
     gsl_matrix_free( invMatrix );
-    XLAL_ERROR( __func__, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   ApplyRotationMatrix( rotMatrix2, rHat );
@@ -783,7 +788,7 @@ int XLALSimIMRSpinEOBInitialConditions(
 
     /* The a in the flux has been set to zero, but not in the Hamiltonian */
     a = sqrt(sKerr.data[0]*sKerr.data[0] + sKerr.data[1]*sKerr.data[1] + sKerr.data[2]*sKerr.data[2]);
-    XLALCalcSpinFacWaveformCoefficients( params->eobParams->hCoeffs, eta, /*a*/0.0, chiS, chiA );
+    XLALSimIMREOBCalcSpinFacWaveformCoefficients( params->eobParams->hCoeffs, eta, /*a*/0.0, chiS, chiA );
     XLALSimIMRCalculateSpinEOBHCoeffs( params->seobCoeffs, eta, a );
 
     ham = XLALSimIMRSpinEOBHamiltonian( eta, &qCartVec, &pCartVec, &sKerr, &sStar, params->tortoise, params->seobCoeffs );
@@ -852,7 +857,7 @@ int XLALSimIMRSpinEOBInitialConditions(
   {
     REAL8 r = sqrt(qCart[0]*qCart[0] + qCart[1]*qCart[1] + qCart[2]*qCart[2] );
     REAL8 deltaR = XLALSimIMRSpinEOBHamiltonianDeltaR( params->seobCoeffs, r, eta, a );
-    REAL8 deltaT = XLALSpinHamiltonianDeltaT( params->seobCoeffs, r, eta, a );
+    REAL8 deltaT = XLALSimIMRSpinEOBHamiltonianDeltaT( params->seobCoeffs, r, eta, a );
     REAL8 csi    = sqrt( deltaT * deltaR )/(r*r + a*a);
 
     REAL8 pr = (qCart[0]*pCart[0] + qCart[1]*pCart[1] + qCart[2]*pCart[2])/r;
@@ -881,3 +886,4 @@ int XLALSimIMRSpinEOBInitialConditions(
   return XLAL_SUCCESS;
 }
 
+#endif /*_LALSIMIMRSPINEOBINITIALCONDITIONS_C*/

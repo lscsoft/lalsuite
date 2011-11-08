@@ -26,9 +26,72 @@
  * by Enrico Barausse.
  */
 
-#include<stdio.h>
+#ifndef _LALSIMIMRSPINEOBHAMILTONIAN_C
+#define _LALSIMIMRSPINEOBHAMILTONIAN_C
+
+#include <stdio.h>
+#include <math.h>
+
+#include <lal/LALSimInspiral.h>
+#include <lal/LALSimIMR.h>
 
 #include "LALSimIMRSpinEOB.h"
+
+/*------------------------------------------------------------------------------------------
+ *
+ *          Prototypes of functions defined in this code.
+ *
+ *------------------------------------------------------------------------------------------
+ */
+
+static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaR(
+        SpinEOBHCoeffs *coeffs, /**<< Pre-computed coefficients which appear in the function */
+        const REAL8    r,       /**<< Current orbital radius (in units of total mass) */
+        const REAL8    eta,     /**<< Symmetric mass ratio */
+        const REAL8    a        /**<< Normalized deformed Kerr spin */
+        );
+
+static REAL8 XLALSimIMRSpinEOBHamiltonian(
+               const REAL8    eta,
+               REAL8Vector    * restrict x,
+               REAL8Vector    * restrict p,
+               REAL8Vector    * restrict sigmaKerr,
+               REAL8Vector    * restrict sigmaStar,
+               int                       tortoise,
+               SpinEOBHCoeffs *coeffs);
+
+static int XLALSimIMRCalculateSpinEOBHCoeffs(
+        SpinEOBHCoeffs *coeffs,
+        const REAL8    eta,
+        const REAL8    a
+        );
+
+static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaT( 
+        SpinEOBHCoeffs *coeffs,
+        const REAL8    r,
+        const REAL8    eta,
+        const REAL8    a
+        );
+
+static REAL8 XLALSimIMRSpinAlignedEOBCalcOmega(
+                      const REAL8          values[],
+                      SpinEOBParams        *funcParams
+                      );
+
+static REAL8 XLALSimIMRSpinAlignedEOBNonKeplerCoeff(
+                      const REAL8           values[],
+                      SpinEOBParams         *funcParams
+                      );
+
+static double GSLSpinAlignedHamiltonianWrapper( double x, void *params );
+
+
+/*------------------------------------------------------------------------------------------
+ *
+ *          Defintions of functions.
+ *
+ *------------------------------------------------------------------------------------------
+ */
 
 /**
  *
@@ -46,7 +109,7 @@
  * The function returns a REAL8, which will be the value of the Hamiltonian if all goes well;
  * otherwise, it will return the XLAL REAL8 failure NaN.
  */
-REAL8 XLALSimIMRSpinEOBHamiltonian( 
+static REAL8 XLALSimIMRSpinEOBHamiltonian( 
                const REAL8    eta,
                REAL8Vector    * restrict x,         /*<< Position vector */
                REAL8Vector    * restrict p,	    /*<< Momentum vector */
@@ -348,8 +411,7 @@ REAL8 XLALSimIMRSpinEOBHamiltonian(
  *
  * If all goes well, the function will return XLAL_SUCCESS. Otherwise, XLAL_FAILURE is returned.
  */
-int
-XLALSimIMRCalculateSpinEOBHCoeffs(
+static int XLALSimIMRCalculateSpinEOBHCoeffs(
         SpinEOBHCoeffs *coeffs,
         const REAL8    eta,
         const REAL8    a
@@ -366,7 +428,7 @@ XLALSimIMRCalculateSpinEOBHCoeffs(
 
   if ( !coeffs )
   {
-    XLAL_ERROR( __func__, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
 
@@ -395,7 +457,7 @@ XLALSimIMRCalculateSpinEOBHCoeffs(
  * This function calculates the function \f$\Delta_t(r)\f$ which appears in the spinning EOB
  * potential function.
  */
-static REAL8 XLALSpinHamiltonianDeltaT( 
+static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaT( 
         SpinEOBHCoeffs *coeffs, /**<< Pre-computed coefficients which appear in the function */
         const REAL8    r,       /**<< Current orbital radius (in units of total mass) */
         const REAL8    eta,     /**<< Symmetric mass ratio */
@@ -438,7 +500,7 @@ static REAL8 XLALSpinHamiltonianDeltaT(
  * This function calculates the function \f$\Delta_r(r)\f$ which appears in the spinning EOB
  * potential function.
  */
-REAL8 XLALSimIMRSpinEOBHamiltonianDeltaR(
+static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaR(
         SpinEOBHCoeffs *coeffs, /**<< Pre-computed coefficients which appear in the function */
         const REAL8    r,       /**<< Current orbital radius (in units of total mass) */
         const REAL8    eta,     /**<< Symmetric mass ratio */
@@ -457,8 +519,123 @@ REAL8 XLALSimIMRSpinEOBHamiltonianDeltaR(
 
   D = 1. + log(1. + 6.*eta*u2 + 2.*(26. - 3.*eta)*eta*u3);
 
-  deltaT = XLALSpinHamiltonianDeltaT( coeffs, r, eta, a );
+  deltaT = XLALSimIMRSpinEOBHamiltonianDeltaT( coeffs, r, eta, a );
 
   deltaR = deltaT*D;
   return deltaR;
 }
+
+/**
+ * Function to calculate the value of omega for the spin-aligned EOB waveform
+ */
+static REAL8
+XLALSimIMRSpinAlignedEOBCalcOmega(
+                      const REAL8           values[],
+                      SpinEOBParams         *funcParams
+                      )
+{
+  static const REAL8 STEP_SIZE = 1.0e-4;
+
+  HcapDerivParams params;
+
+  /* Cartesian values for calculating the Hamiltonian */
+  REAL8 cartValues[6];
+
+  gsl_function F;
+  INT4         gslStatus;
+
+  REAL8 omega;
+  REAL8 r;
+
+  /* The error in a derivative as measured by GSL */
+  REAL8 absErr;
+
+  /* Set up pointers for GSL */
+  params.values  = cartValues;
+  params.params  = funcParams;
+
+  F.function = &GSLSpinAlignedHamiltonianWrapper;
+  F.params   = &params;
+
+  /* Populate the Cartesian values vector */
+  /* We can assume phi is zero wlog */
+  memset( cartValues, 0, sizeof( cartValues ) );
+  cartValues[0] = r = values[0];
+  cartValues[3] = values[2];
+  cartValues[4] = values[3] / values[0];
+
+  /* Now calculate omega. In the chosen co-ordinate system, */
+  /* we need dH/dpy to calculate this, i.e. varyParam = 4   */
+  params.varyParam = 4;
+  XLAL_CALLGSL( gslStatus = gsl_deriv_central( &F, cartValues[4],
+                  STEP_SIZE, &omega, &absErr ) );
+
+  if ( gslStatus != GSL_SUCCESS )
+  {
+    XLALPrintError( "XLAL Error - %s: Failure in GSL function\n", __func__ );
+    XLAL_ERROR_REAL8( XLAL_EFUNC );
+  }
+  
+  omega = omega / r;
+
+  return omega;
+}
+
+static REAL8
+XLALSimIMRSpinAlignedEOBNonKeplerCoeff(
+                      const REAL8           values[],
+                      SpinEOBParams         *funcParams
+                      )
+{
+
+  REAL8 omegaCirc;
+
+  REAL8 tmpValues[4];
+
+  REAL8 r3;
+
+  /* We need to find the values of omega assuming pr = 0 */
+  memcpy( tmpValues, values, sizeof(tmpValues) );
+  tmpValues[2] = 0.0;
+
+  omegaCirc = XLALSimIMRSpinAlignedEOBCalcOmega( tmpValues, funcParams );
+  if ( XLAL_IS_REAL8_FAIL_NAN( omegaCirc ) )
+  {
+    XLAL_ERROR_REAL8( XLAL_EFUNC );
+  }
+
+  r3 = values[0]*values[0]*values[0];
+
+  return 1.0/(omegaCirc*omegaCirc*r3);
+}
+  
+/* Wrapper for GSL to call the Hamiltonian function */
+static double GSLSpinAlignedHamiltonianWrapper( double x, void *params )
+{
+  HcapDerivParams *dParams = (HcapDerivParams *)params;
+
+  EOBParams *eobParams = dParams->params->eobParams;
+
+  REAL8 tmpVec[6];
+
+  /* These are the vectors which will be used in the call to the Hamiltonian */
+  REAL8Vector r, p;
+  REAL8Vector *sigmaKerr = dParams->params->sigmaKerr;
+  REAL8Vector *sigmaStar = dParams->params->sigmaStar;
+
+  /* Use a temporary vector to avoid corrupting the main function */
+  memcpy( tmpVec, dParams->values, 
+               sizeof(tmpVec) );
+
+  /* Set the relevant entry in the vector to the correct value */
+  tmpVec[dParams->varyParam] = x;
+
+  /* Set the LAL-style vectors to point to the appropriate things */
+  r.length = p.length = 3;
+  r.data     = tmpVec;
+  p.data     = tmpVec+3;
+
+  return XLALSimIMRSpinEOBHamiltonian( eobParams->eta, &r, &p, sigmaKerr, sigmaStar, dParams->params->tortoise, dParams->params->seobCoeffs ) / eobParams->eta;
+}
+
+#endif /*_LALSIMIMRSPINEOBHAMILTONIAN_C*/
