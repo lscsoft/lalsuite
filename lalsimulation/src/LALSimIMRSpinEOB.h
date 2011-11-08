@@ -74,81 +74,6 @@ struct tagHcapSphDeriv2Params
 }
 HcapSphDeriv2Params;
 
-/**
- * This function calculates the function \f$\Delta_r(r)\f$ which appears in the spinning EOB
- * potential function.
- */
-REAL8 XLALSimIMRSpinEOBHamiltonianDeltaR(
-        SpinEOBHCoeffs *coeffs, /**<< Pre-computed coefficients which appear in the function */
-        const REAL8    r,       /**<< Current orbital radius (in units of total mass) */
-        const REAL8    eta,     /**<< Symmetric mass ratio */
-        const REAL8    a        /**<< Normalized deformed Kerr spin */
-        );
-
-REAL8 XLALSimIMRSpinEOBHamiltonian(
-               const REAL8    eta,
-               REAL8Vector    * restrict x,
-               REAL8Vector    * restrict p,
-               REAL8Vector    * restrict sigmaKerr,
-               REAL8Vector    * restrict sigmaStar,
-               int                       tortoise,
-               SpinEOBHCoeffs *coeffs);
-
-int XLALCalculateSpinEOBCoeffs(
-        SpinEOBHCoeffs *params,
-        const REAL8    eta,
-        const REAL8    a
-        );
-
-int XLALSpinAlignedHcapDerivative(
-                          double                t,
-                          const REAL8           values[],
-                          REAL8                 dvalues[],
-                          void                  *funcParams
-                               );
-
-REAL8 XLALSimIMRSpinAlignedEOBCalcOmega(
-                      const REAL8          values[],
-                      SpinEOBParams        *funcParams
-                      );
-
-REAL8 XLALSimIMRSpinAlignedEOBNonKeplerCoeff(
-                      const REAL8           values[],
-                      SpinEOBParams         *funcParams
-                      );
-
-int XLALSpinHcapNumericalDerivative(
-                          double                t,
-                          const REAL8           values[],
-                          REAL8                 dvalues[],
-                          void                  *funcParams
-                               );
-
-
-REAL8 XLALSpinHcapNumDerivWRTParam(
-                       const INT4 paramIdx,
-                       const REAL8 values[],
-                       SpinEOBParams *params
-                       );
-
-int XLALSimIMRSpinEOBCalculateSigmaKerr( REAL8Vector *sigmaKerr,
-                                   REAL8        mass1,
-                                   REAL8        mass2,
-                                   REAL8Vector *s1,
-                                   REAL8Vector *s2 );
-
-int XLALSimIMRSpinEOBCalculateSigmaStar( REAL8Vector *sigmaStar,
-                                   REAL8        mass1,
-                                   REAL8        mass2,
-                                   REAL8Vector *s1,
-                                   REAL8Vector *s2 );
-
-int XLALSimIMRCalculateSpinEOBHCoeffs(
-        SpinEOBHCoeffs *coeffs,
-        const REAL8    eta,
-        const REAL8    a
-        );
-
 int XLALSimIMRSpinEOBWaveform(
         REAL8TimeSeries **hplus,
         REAL8TimeSeries **hcross,
@@ -178,33 +103,5 @@ int XLALSimIMRSpinAlignedEOBWaveform(
         const REAL8     spin1[],
         const REAL8     spin2[]
      );
-
-REAL8 XLALInspiralSpinFactorizedFlux(
-                      REAL8Vector           *values,
-                      const REAL8           omega,
-                      SpinEOBParams         *ak,
-                      const REAL8            H,
-                      const INT4             lMax
-                     );
-
-INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16             * restrict hlm,
-                                REAL8Vector           * restrict values,
-                                const REAL8           v,
-                                const REAL8           Hreal,
-                                const INT4            l,
-                                const INT4            m,
-                                SpinEOBParams         * restrict params
-                                );
-
-int XLALSimIMRSpinEOBInitialConditions(
-                      REAL8Vector *initConds,
-                      const REAL8  mass1,
-                      const REAL8  mass2,
-                      const REAL8  fMin,
-                      const REAL8  inc,
-                      const REAL8  spin1[],
-                      const REAL8  spin2[],
-                      SpinEOBParams *params
-                      );
 
 #endif /* _LALSIMIMRSPINEOB_H */
