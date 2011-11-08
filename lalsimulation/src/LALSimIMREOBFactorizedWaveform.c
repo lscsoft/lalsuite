@@ -31,10 +31,10 @@
 
 #include <math.h>
 #include <lal/LALComplex.h>
-#include <lal/LALSimInspiraldEnergyFlux.h>
 #include "LALSimIMREOBNRv2.h"
 
 /* Include static functions */
+#include "LALSimInspiraldEnergyFlux.c"
 #include "LALSimIMREOBNewtonianMultipole.c" 
 #include "LALSimIMREOBNQCCorrection.c"
 
