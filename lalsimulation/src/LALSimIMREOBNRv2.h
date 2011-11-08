@@ -323,9 +323,13 @@ tagEOBNonQCCoeffs
   REAL8 a1;
   REAL8 a2;
   REAL8 a3;
+  REAL8 a3S;
   REAL8 a4;
+  REAL8 a5;
   REAL8 b1;
   REAL8 b2;
+  REAL8 b3;
+  REAL8 b4;
 } EOBNonQCCoeffs;
 
 /**

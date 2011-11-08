@@ -54,6 +54,63 @@ Pan et al, PRD84, 124052(2011).
  */
 static const int EOBNRV2_NUM_MODES_MAX = 5;
 
+/**
+ *  The following declarations are so that the compiler quits. It appears that they are here because
+ *  some of these functions are called before their definitions in the following code. 
+ *  Perhaps this can be made cleaner by just moving the definitions, but for now I'm keeping with what
+ *  the original code did.
+**/
+
+static int
+XLALSimIMREOBNRv2SetupFlux(
+             expnCoeffsdEnergyFlux *ak, /**<<PN expansion coefficients (only relevant fields will be populated)*/
+             REAL8                 eta  /**<< Symmetric mass ratio */
+             );
+
+static REAL8
+omegaofrP4PN (
+             const REAL8 r,
+             const REAL8 eta,
+             void *params);
+
+static
+int LALHCapDerivativesP4PN(   double t,
+                               const double values[],
+                               double dvalues[],
+                               void   *funcParams);
+
+static
+REAL8 XLALCalculateOmega (   REAL8 eta,
+                             REAL8 r,
+                             REAL8 pr,
+                             REAL8 pPhi,
+                             EOBACoefficients *aCoeffs );
+
+static
+int XLALFirstStoppingCondition(double t,
+                               const double values[],
+                               double dvalues[],
+                               void   *funcParams);
+
+static
+int XLALHighSRStoppingCondition(double t,
+                                const double values[],
+                                double dvalues[],
+                                void   *funcParams);
+
+static
+REAL8 XLALprInitP4PN(REAL8 p, void  *params);
+
+static
+REAL8 XLALpphiInitP4PN( const REAL8 r,
+                       EOBACoefficients * restrict coeffs );
+
+static
+REAL8 XLALrOfOmegaP4PN( REAL8 r, void *params);
+
+static
+REAL8 XLALvrP4PN(const REAL8 r, const REAL8 omega, pr3In *params);
+
 
 /*-------------------------------------------------------------------*/
 /*                      pseudo-4PN functions                         */
