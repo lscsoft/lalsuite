@@ -104,6 +104,14 @@ typedef enum {
 	LAL_AllInter = LAL_SOInter | LAL_SSInter | LAL_SSselfInter | LAL_QMInter | LAL_SO25Inter /**< all interactions */
 } LALSpinInteraction;
 
+/** Enumeration to specify PN order of tidal terms.
+ **/
+typedef enum {
+	LAL_NOTIDAL, /**< No tidal interactions */
+	LAL_TIDAL5PN, /**< Leading order (5PN) tidal interactions */
+	LAL_TIDAL6PN /**< Next to leading order (6PN) tidal interactions */
+} LALTidalInteraction;
+
 /**
  * Computes h(2,2) mode of spherical harmonic decomposition of
  * the post-Newtonian inspiral waveform.
@@ -878,7 +886,10 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8 e1x,                /**< initial value of E1x */
 	REAL8 e1y,                /**< initial value of E1y */
 	REAL8 e1z,                /**< initial value of E1z */
-	LALSpinInteraction spinFlags,  /**< flags to control spin effects */
+	REAL8 lambda1,                /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+	REAL8 lambda2,                /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	LALSpinInteraction spinFlags, /**< flags to control spin effects */
+	LALTidalInteraction tidalFlags, /**< flags to control tidal effects */
 	INT4 phaseO               /**< twice post-Newtonian order */
 	);
 
@@ -911,10 +922,13 @@ int XLALSimInspiralSpinTaylorT4(
 		REAL8 e1x,                /**< initial value of E1x */
 		REAL8 e1y,                /**< initial value of E1y */
 		REAL8 e1z,                /**< initial value of E1z */
+		REAL8 lambda1,                /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+		REAL8 lambda2,                /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
 		LALSpinInteraction spinFlags, /**< flags to control spin effects */
+		LALTidalInteraction tidalFlags, /**< flags to control tidal effects */
 		int phaseO,               /**< twice PN phase order */
 		int amplitudeO            /**< twice PN amplitude order */
-                );
+		);
 
 
 
@@ -947,7 +961,10 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
 		REAL8 e1x,                 /**< initial value of E1x */
 		REAL8 e1y,                 /**< initial value of E1y */
 		REAL8 e1z,                 /**< initial value of E1z */
+		REAL8 lambda1,                /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+		REAL8 lambda2,                /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
 		LALSpinInteraction spinFlags, /**< flags to control spin effects */
+		LALTidalInteraction tidalFlags, /**< flags to control tidal effects */
 		int phaseO                 /**< twice PN phase order */
 		);
 
