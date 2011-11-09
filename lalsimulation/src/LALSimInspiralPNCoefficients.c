@@ -458,7 +458,8 @@ static REAL8 UNUSED
 XLALSimInspiralTaylorT4AngularAccel_6PNCoeff(
 	REAL8 eta)
 {
-	return (164.47322263/1.39708800 + 16.0/3.0 * LAL_PI - 17.12/1.05 * LAL_GAMMA
+	return (164.47322263/1.39708800 + 16.0/3.0 * LAL_PI * LAL_PI 
+		- 17.12/1.05 * LAL_GAMMA
 		+ (45.1/4.8 * LAL_PI*LAL_PI - 561.98689/2.17728) * eta
 		+ 5.41/8.96 * eta*eta - 5.605/2.592 * eta*eta*eta);
 }

@@ -356,6 +356,34 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   LALInferenceRandomizeProposalCycle(runState);
 }
 
+static void
+SetupRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+  LALInferenceAddProposalToCycle(runState, &LALInferenceSingleProposal, 10);
+  LALInferenceAddProposalToCycle(runState, &LALInferenceSkyLocWanderJump, 0);
+  LALInferenceAddProposalToCycle(runState, &LALInferenceInclinationDistance, 0);
+
+  UINT4 nDet = numDetectorsUniquePositions(runState);
+  if (nDet == 3) {
+    LALInferenceAddProposalToCycle(runState, &LALInferenceSkyReflectDetPlane, 1);
+  }
+
+  LALInferenceRandomizeProposalCycle(runState);
+}
+
+void LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  LALInferenceVariables *propArgs = runState->proposalArgs;
+
+  if (!LALInferenceCheckVariable(propArgs, cycleArrayName) || !LALInferenceCheckVariable(propArgs, cycleArrayLengthName)) {
+    /* In case there is a partial cycle set up already, delete it. */
+    LALInferenceDeleteProposalCycle(runState);
+    SetupRapidSkyLocProposal(runState, proposedParams);
+  }
+
+  LALInferenceCyclicProposal(runState, proposedParams);
+}
+
+
 void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
 {
   LALInferenceVariables *propArgs = runState->proposalArgs;

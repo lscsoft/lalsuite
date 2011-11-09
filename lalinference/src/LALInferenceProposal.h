@@ -110,6 +110,10 @@ LALInferenceDeleteProposalCycle(LALInferenceRunState *runState);
     command-line flag active. */
 void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+/** Proposal for rapid sky localization.  Used when --rapidSkyLoc
+    is specified. */
+void LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
 /** Non-adaptive, sigle-variable update proposal with reasonable
     widths in each dimension. */
 void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
