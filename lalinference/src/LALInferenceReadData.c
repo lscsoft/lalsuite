@@ -71,6 +71,82 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceLikelihood.h>
 
+struct fvec {
+	REAL8 f;
+	REAL8 x;
+};
+
+struct fvec *interpFromFile(char *filename);
+
+struct fvec *interpFromFile(char *filename){
+	UINT4 fileLength=0;
+	UINT4 i=0;
+	UINT4 minLength=100; /* size of initial file buffer, and also size of increment */
+	FILE *interpfile=NULL;
+	struct fvec *interp=NULL;
+	interp=calloc(minLength,sizeof(struct fvec)); /* Initialise array */
+	if(!interp) {printf("Unable to allocate memory buffer for reading interpolation file\n");}
+	fileLength=minLength;
+	REAL8 f=0.0,x=0.0;
+	interpfile = fopen(filename,"r");
+	if (interpfile==NULL){
+		printf("Unable to open file %s\n",filename);
+		exit(1);
+	}
+	while(2==fscanf(interpfile," %lf %lf ", &f, &x )){
+		interp[i].f=f; interp[i].x=x*x;
+		i++;
+		if(i>fileLength-1){ /* Grow the array */
+			interp=realloc(interp,(fileLength+minLength)*sizeof(struct fvec));
+			fileLength+=minLength;
+		}
+	}
+	interp[i].f=0; interp[i].x=0;
+	fileLength=i+1;
+	interp=realloc(interp,fileLength*sizeof(struct fvec)); /* Resize array */
+	fclose(interpfile);
+	printf("Read %i records from %s\n",fileLength-1,filename);
+	return interp;
+}
+
+REAL8 interpolate(struct fvec *fvec, REAL8 f);
+REAL8 interpolate(struct fvec *fvec, REAL8 f){
+	int i=0;
+	REAL8 a=0.0; /* fractional distance between bins */
+	REAL8 delta=0.0;
+	if(f<fvec[0].f) return(0.0);
+	while(fvec[i].f<f && (fvec[i].x!=0.0 && fvec[i].f!=0.0)){i++;};
+	if (fvec[i].f==0.0 && fvec[i].x==0.0) /* Frequency above moximum */
+	{
+		return (fvec[i-1].x);
+	}
+	a=(fvec[i].f-f)/(fvec[i].f-fvec[i-1].f);
+	delta=fvec[i].x-fvec[i-1].x;
+	return (fvec[i-1].x + delta*a);
+}
+
+typedef void (NoiseFunc)(LALStatus *statusPtr,REAL8 *psd,REAL8 f);
+void MetaNoiseFunc(LALStatus *status, REAL8 *psd, REAL8 f, struct fvec *interp, NoiseFunc *noisefunc);
+
+void MetaNoiseFunc(LALStatus *status, REAL8 *psd, REAL8 f, struct fvec *interp, NoiseFunc *noisefunc){
+	if(interp==NULL&&noisefunc==NULL){
+		printf("ERROR: Trying to calculate PSD with NULL inputs\n");
+		exit(1);
+	}
+	if(interp!=NULL && noisefunc!=NULL){
+		printf("ERROR: You have specified both an interpolation vector and a function to calculate the PSD\n");
+		exit(1);
+	}
+	if(noisefunc!=NULL){
+		noisefunc(status,psd,f);
+		return;
+	}
+	if(interp!=NULL){ /* Use linear interpolation of the interp vector */
+		*psd=interpolate(interp,f);
+		return;
+	}
+}
+
 void
 LALInferenceLALFindChirpInjectSignals (
                                        LALStatus                  *status,
@@ -144,7 +220,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	//int FakeFlag=0; - set but not used
 	char strainname[]="LSC-STRAIN";
 	UINT4 q=0;	
-	typedef void (NoiseFunc)(LALStatus *statusPtr,REAL8 *psd,REAL8 f);
+	//typedef void (NoiseFunc)(LALStatus *statusPtr,REAL8 *psd,REAL8 f);
 	NoiseFunc *PSD=NULL;
 	REAL8 scalefactor=1;
 	SimInspiralTable *injTable=NULL;
@@ -163,6 +239,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     procparam=LALInferenceGetProcParamVal(commandLine,"--AIGOang");
     AIGOang=atof(procparam->value)*LAL_PI/180.0;
   }
+  struct fvec *interp;
+  int interpFlag=0;
 	if(!LALInferenceGetProcParamVal(commandLine,"--cache")||!LALInferenceGetProcParamVal(commandLine,"--IFO")||
 	   !LALInferenceGetProcParamVal(commandLine,"--PSDstart")||//!LALInferenceGetProcParamVal(commandLine,"--trigtime") ||
 	   !LALInferenceGetProcParamVal(commandLine,"--PSDlength")||!LALInferenceGetProcParamVal(commandLine,"--seglen"))
@@ -496,9 +574,19 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	/* Read the PSD data */
 	for(i=0;i<Nifo;i++) {
 		memcpy(&(IFOdata[i].epoch),&segStart,sizeof(LIGOTimeGPS));
+    /* Check to see if an interpolation file is specified */
+		interpFlag=0;
+		interp=NULL;
+		if(strstr(caches[i],"interp:")==caches[i]){
+			/* Extract the file name */
+			char *interpfilename=&(caches[i][7]);
+			printf("Looking for interpolation file %s\n",interpfilename);
+			interpFlag=1;
+			interp=interpFromFile(interpfilename);
+		}    
 		/* Check if fake data is requested */
-		if(!(strcmp(caches[i],"LALLIGO") && strcmp(caches[i],"LALVirgo") && strcmp(caches[i],"LALGEO") && strcmp(caches[i],"LALEGO")
-			 && strcmp(caches[i],"LALAdLIGO")))
+		if(interpFlag || (!(strcmp(caches[i],"LALLIGO") && strcmp(caches[i],"LALVirgo") && strcmp(caches[i],"LALGEO") && strcmp(caches[i],"LALEGO")
+			 && strcmp(caches[i],"LALAdLIGO"))))
 		{
 			//FakeFlag=1; - set but not used
 			datarandparam=XLALCreateRandomParams(dataseed?dataseed+(int)i:dataseed);
@@ -509,15 +597,19 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 			if(!strcmp(caches[i],"LALGEO")) {PSD = &LALGEOPsd; scalefactor=1E-46;}
 			if(!strcmp(caches[i],"LALEGO")) {PSD = &LALEGOPsd; scalefactor=1.0;}
 			if(!strcmp(caches[i],"LALAdLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 10E-49;}
+      if(interpFlag) {PSD=NULL; scalefactor=1.0;}
 			//if(!strcmp(caches[i],"LAL2kLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 36E-46;}
-			if(PSD==NULL) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",caches[i]); exit(-1);}
+			if(PSD==NULL && !interpFlag) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",caches[i]); exit(-1);}
+      
+      
 			IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)
 						XLALCreateREAL8FrequencySeries("spectrum",&GPSstart,0.0,
 																					 (REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
 			if(!IFOdata[i].oneSidedNoisePowerSpectrum) XLAL_ERROR_NULL(XLAL_EFUNC);
 			for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
 			{
-				PSD(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF);
+				MetaNoiseFunc(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,interp,PSD);
+        //PSD(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF);
 				IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*=scalefactor;
 			}
 			IFOdata[i].freqData = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&segStart,0.0,IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,&lalDimensionlessUnit,seglen/2 +1);
