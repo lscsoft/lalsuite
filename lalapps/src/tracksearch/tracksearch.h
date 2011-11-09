@@ -25,9 +25,20 @@
 #ifndef TRACKSEARCH_H
 #define TRACKSEARCH_H
 
-#include <config.h>
+#include "config.h"
+
+#include <math.h>
+#include <regex.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <getopt.h>
+
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/FrameCalibration.h>
@@ -50,23 +61,16 @@
 #include <lal/Units.h>
 #include <lal/Window.h>
 #include <lal/CLR.h>
-#include <lalapps.h>
-#include <math.h>
-#include <processtable.h>
-#include <regex.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <time.h>
-#include <unistd.h>
-#include <tracksearchToolbox.h>
-#include <FrameDataConvert.h>
-#include <tracksearchAverager.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/LALRunningMedian.h>
 #include <lal/RngMedBias.h>
+
+#include <lalapps.h>
+#include <processtable.h>
+
+#include "tracksearchToolbox.h"
+#include "FrameDataConvert.h"
+#include "tracksearchAverager.h"
 
 #define maxFilenameLength 2048
 
