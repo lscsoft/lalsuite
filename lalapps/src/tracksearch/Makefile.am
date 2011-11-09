@@ -86,9 +86,6 @@ lalapps_tracksearch_mapcachebuilder: $(srcdir)/tsMapCacheBuilder.pyin python_con
 	sed -f python_config.sed $(srcdir)/tsMapCacheBuilder.pyin > lalapps_tracksearch_mapcachebuilder
 	chmod +x lalapps_tracksearch_mapcachebuilder
 
-FrameDataConvert.h: $(srcdir)/CreateConverterTypeDef.m4 $(srcdir)/FrameDataConvertREAL4H.m4
-	cd $(srcdir) && m4 FrameDataConvertREAL4H.m4 > FrameDataConvert.h
-
 pkgdata_DATA = \
 	tracksearch_pipeline_configuration.ini \
 	tracksearch_tuning_configuration.tun \
@@ -101,8 +98,6 @@ EXTRA_DIST = \
 	tsHousekeeper.pyin \
 	tsTunePipe.pyin \
 	tsMapCacheBuilder.pyin \
-	CreateConverterTypeDef.m4 \
-	FrameDataConvertREAL4H.m4 \
 	$(DATA)
 
 CLEANFILES = \
