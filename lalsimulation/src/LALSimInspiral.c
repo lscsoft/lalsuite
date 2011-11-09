@@ -315,6 +315,8 @@ int XLALSimInspiralPNPolarizationWaveforms(
             case -1: // Highest known PN order - move if higher terms added!
             /* case LAL_PNORDER_THREE: */
             case 6:
+		/* FIXME: These 3PN terms are known to be incorrect and the
+		 * authors are producing an errata to fix them. */
                 hp3 = LAL_PI*dm*si*cos(phi)*(19./64. + ci2*5./16. - ci4/192.
                         + eta*(-19./96. + ci2*3./16. + ci4/96.)) + cos(2.*phi)
                         * (-465497./11025. + (LAL_GAMMA*856./105. 
@@ -405,7 +407,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         + eta2*(29127./5120. - ci2*27267./5120. 
                         - ci4*1647./5120. + ci6*2187./5120.)) + cos(4.*phi)
                         * (-16.*LAL_PI/3.*(1. + ci2)*si2*(1. - 3.*eta))
-                        + cos(5.*phi)*si*dm*(108125./9216. + ci2*40625./9216. 
+                        + cos(5.*phi)*si*dm*(-108125./9216. + ci2*40625./9216. 
                         + ci4*83125./9216. - ci6*15625./9216. 
                         + eta*(8125./256. - ci2*40625./2304. - ci4*48125./2304.
                         + ci6*15625./2304.) + eta2*(-119375./9216. 
@@ -413,17 +415,18 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         - ci6*15625./3072.)) + cos(7.*phi)*dm
                         * (117649./46080.*si5*(1. + ci2)*(1. - 4.*eta 
                         + 3.*eta2)) + sin(2.*phi)*(-9./5. + ci2*14./5. 
-                        + ci4*7./5. + eta*(96./5. - ci2*8./5. - ci4*28./5.)) 
+                        + ci4*7./5. + eta*(32. + ci2*56./5. - ci4*28./5.)) 
                         + sin(4.*phi)*si2*(1. + ci2)*(56./5. - 32.*log(2.)/3. 
-                        - eta*(1193./30. - 32.*log(2.)));
-                hc25 = cos(2.*phi)*ci*(2. - ci2*22./5. + eta*(-154./5. 
+                        + eta*(-1193./30. + 32.*log(2.)));
+                /* below would have a constant memory term of si2*ci*eta*6./5. */
+                hc25 = cos(2.*phi)*ci*(2. - ci2*22./5. + eta*(-282./5. 
                         + ci2*94./5.)) + cos(4.*phi)*ci*si2*(-112./5. 
                         + 64.*log(2.)/3. + eta*(1193./15. - 64.*log(2.)))
                         + sin(phi)*si*ci*dm*(-913./7680. + ci2*1891./11520. 
                         - ci4*7./4608. + eta*(1165./384. - ci2*235./576. 
                         + ci4*7./1152.) + eta2*(-1301./4608. + ci2*301./2304.
                         - ci4*7./1536.)) + sin(2.*phi)*LAL_PI*ci*(34./3. 
-                        - ci2*8./3. - eta*(20./3. - 8.*ci2)) 
+                        - ci2*8./3. + eta*(-20./3. + 8.*ci2)) 
                         + sin(3.*phi)*si*ci*dm*(12501./2560. - ci2*12069./1280.
                         + ci4*1701./2560. + eta*(-19581./640. + ci2*7821./320.
                         - ci4*1701./640.) + eta2*(18903./2560. 
@@ -437,15 +440,15 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         * (117649./23040.*(1. - 4.*eta + 3.*eta2));
             /* case LAL_PNORDER_TWO: */
             case 4:
-                hp2 = cos(phi)*LAL_PI*si*dm*(-5./8. - ci2*5./8.) 
+                hp2 = cos(phi)*LAL_PI*si*dm*(-5./8. - ci2/8.) 
                         + cos(2.*phi)*(11./60. + ci2*33./10. + ci4*29./24. 
-                        + ci6/24. + eta*(353./36. - 3.*ci2 - ci4*251./72. 
+                        - ci6/24. + eta*(353./36. - 3.*ci2 - ci4*251./72. 
                         + ci6*5./24.) + eta2*(-49./12. + ci2*9./2. 
                         - ci4*7./24. - ci6*5./24.)) + cos(3.*phi)*LAL_PI*si*dm
-                        * (27./8.*(1 + ci2)) + cos(4.*phi)*(118./15. 
-                        - ci2*16./5. - ci4*86./15. + ci6*16./15. 
-                        + eta*(-262./9. + 16.*ci2 + ci4*166./9. - ci6*16./3.)
-                        + eta2*(14. - 16.*ci2 - ci4*10./3. + ci6*16./3.))
+                        * (27./8.*(1 + ci2)) + cos(4.*phi)*si2*2./15.*(59. 
+                        + ci2*35. - ci4*8. 
+                        - eta*5./3.*(131. + 59.*ci2 + 24.*ci4)
+                        + eta2*5.*(21. - 3.*ci2 - 8.*ci4))
                         + cos(6.*phi)*(-81./40.*si4*(1. + ci2)
                         * (1. - 5.*eta + 5.*eta2)) + sin(phi)*si*dm
                         * (11./40. + 5.*log(2)/4. + ci2*(7./40. + log(2)/4.))
@@ -458,9 +461,9 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         + eta*(143./9. - ci2*245./18. + ci4*5./4.)
                         + eta2*(-14./3. + ci2*35./6. - ci4*5./4.))
                         + sin(3.*phi)*si*ci*dm*27.*LAL_PI/4.
-                        + sin(4.*phi)*ci*(44./3. - ci2*268./15. + ci4*16./5. 
-                        + eta*(-476./9. + ci2*620./9. - 16.*ci4)
-                        + eta2*(68./3. - ci2*116./3. + 16.*ci4))
+                        + sin(4.*phi)*ci*si2*4./15.*(55. - 12.*ci2 
+                        - eta*5./3.*(119. - 36.*ci2)
+                        + eta2*5.*(17. - 12.*ci2))
                         + sin(6.*phi)*ci*(-81./20.*si4
                         * (1. - 5.*eta + 5.*eta2));
             /* case LAL_PNORDER_ONE_POINT_FIVE: */
@@ -474,7 +477,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         * (1. + ci2)*(1. - 2.*eta));
                 hc15 = sin(phi)*si*ci*dm*(21./32. - ci2*5./96. 
                         + eta*(-23./48. + ci2*5./48.)) 
-                        - 4.*LAL_PI*ci*sin(2.*phi) + sin(3.*phi) * si * ci * dm
+                        - 4.*LAL_PI*ci*sin(2.*phi) + sin(3.*phi)*si*ci*dm
                         * (-603./64. + ci2*135./64. 
                         + eta*(171./32. - ci2*135./32.)) 
                         + sin(5.*phi)*si*ci*dm*(625./192.*si2*(1. - 2.*eta));
@@ -485,13 +488,14 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         - cos(4.*phi) * (4./3.*si2*(1. + ci2)*(1. - 3.*eta));
                 hc1 = sin(2.*phi)*ci*(17./3. - ci2*4./3. 
                         + eta*(-13./3. + 4.*ci2)) 
-                        + sin(4.*phi) * ci * si2*(-8./3.*(1. - 3.*eta));
+                        + sin(4.*phi)*ci*si2*(-8./3.*(1. - 3.*eta));
             /*case LAL_PNORDER_HALF:*/
             case 1:
                 hp05 = - si*dm*(cos(phi)*(5./8. + ci2/8.) 
                         - cos(3.*phi)*(9./8. + 9.*ci2/8.));
                 hc05 = si*ci*dm*(-sin(phi)*3./4. + sin(3.*phi)*9./4.);
             case 0:
+                /* below would have a constant memory term of -si2/96.*(17. + ci2) */
                 hp0 = -(1. + ci2)*cos(2.*phi);
                 hc0 = -2.*ci*sin(2.*phi);
                 break;
