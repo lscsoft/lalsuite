@@ -489,6 +489,7 @@ void initVariables(LALInferenceRunState *state)
     MTotMax=20.0;
     mMin=1.0;
     mMax=15.0;
+    qMin=mMin/mMax;
     Dmin=10.0;
     Dmax=40.0;
     REAL8 densityVNR=1000.0;
