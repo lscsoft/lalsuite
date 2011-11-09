@@ -1041,22 +1041,22 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
       __m128 *arr1, *arr2, *result;
       if ( &(input1->data[vec1])==(void*)(((UINT8)&(input1->data[vec1])+15) & ~15) ) {
          input1vecaligned = 1;
-         arr1 = (__m128*)&(input1->data[vec1]);
+         arr1 = (__m128*)(void*)&(input1->data[vec1]);
       } else {
          memcpy(alignedinput1, &(input1->data[vec1]), sizeof(REAL4)*4*roundedvectorlength);
-         arr1 = (__m128*)alignedinput1;
+         arr1 = (__m128*)(void*)alignedinput1;
       }
       if ( &(input2->data[vec2])==(void*)(((UINT8)&(input2->data[vec2])+15) & ~15) ) {
          input2vecaligned = 1;
-         arr2 = (__m128*)&(input2->data[vec2]);
+         arr2 = (__m128*)(void*)&(input2->data[vec2]);
       } else {
          memcpy(alignedinput2, &(input2->data[vec2]), sizeof(REAL4)*4*roundedvectorlength);
-         arr2 = (__m128*)alignedinput2;
+         arr2 = (__m128*)(void*)alignedinput2;
       }
       if ( &(output->data[outvec])==(void*)(((UINT8)&(output->data[outvec])+15) & ~15) ) {
          outputvecaligned = 1;
-         result = (__m128*)&(output->data[outvec]);
-      } else result = (__m128*)alignedoutput;
+         result = (__m128*)(void*)&(output->data[outvec]);
+      } else result = (__m128*)(void*)alignedoutput;
       
       for (jj=0; jj<roundedvectorlength; jj++) {
          *result = _mm_add_ps(*arr1, *arr2);
@@ -1120,7 +1120,7 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
    //Allocate memory for aligning input vector 1 if necessary
    if ( &(input1->data[vec1])==(void*)(((UINT8)&(input1->data[vec1])+15) & ~15) ) {
       vec1aligned = 1;
-      arr1 = (__m128*)&(input1->data[vec1]);
+      arr1 = (__m128*)(void*)&(input1->data[vec1]);
    } else {
       allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
       if (allocinput1==NULL) {
@@ -1129,13 +1129,13 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
       }
       alignedinput1 = (void*)(((UINT8)allocinput1+15) & ~15);
       memcpy(alignedinput1, &(input1->data[vec1]), sizeof(REAL4)*4*roundedvectorlength);
-      arr1 = (__m128*)alignedinput1;
+      arr1 = (__m128*)(void*)alignedinput1;
    }
    
    //Allocate memory for aligning input vector 2 if necessary
    if ( input2->data==(void*)(((UINT8)input2->data+15) & ~15) ) {
       vec2aligned = 1;
-      arr2 = (__m128*)input2->data;
+      arr2 = (__m128*)(void*)input2->data;
    } else {
       allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
       if (allocinput2==NULL) {
@@ -1144,13 +1144,13 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
       }
       alignedinput2 = (void*)(((UINT8)allocinput2+15) & ~15);
       memcpy(alignedinput2, input2->data, sizeof(REAL4)*4*roundedvectorlength);
-      arr2 = (__m128*)alignedinput2;
+      arr2 = (__m128*)(void*)alignedinput2;
    }
    
    //Allocate memory for aligning output vector if necessary
    if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
       outputaligned = 1;
-      result = (__m128*)output->data;
+      result = (__m128*)(void*)output->data;
    } else {
       allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
       if (allocoutput==NULL) {
@@ -1158,7 +1158,7 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
          XLAL_ERROR_VOID(XLAL_ENOMEM);
       }
       alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
-      result = (__m128*)alignedoutput;
+      result = (__m128*)(void*)alignedoutput;
    }
    
    for (ii=0; ii<roundedvectorlength; ii++) {
