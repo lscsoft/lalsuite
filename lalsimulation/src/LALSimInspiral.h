@@ -1006,6 +1006,97 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinComputeChi(
     const REAL8 s2z                          /**< dimensionless spin of companion 2 */
 );
 
+/** 
+ * Compute the template-space metric of "reduced-spin" PN templates in 
+ * Mchirp-eta-chi parameter space. 
+ */
+//int XLALSimInspiralTaylorF2RedSpinMetricMChirpEtaChi(
+//        const REAL8 mc,     /**< chirp mass (in solar mass) */
+//        const REAL8 eta,    /**< symmetric mass ratio */
+//        const REAL8 chi,    /**< reduced-spin parameter */
+//        const REAL8 fLow,   /**< low-frequency cutoff (Hz) */
+//        gsl_matrix * gamma  /**< template metric in mChirp-eta-chi space */
+//);
+  
+/**
+ * Frequency domain amplitude of the TaylorF2 Reduced Spin waveforms 
+ */
+REAL8 XLALSimInspiralTaylorF2RedSpinAofF(
+        REAL8 mc,   /**< chirp mass (M_sun) */
+        REAL8 eta,  /**< symmetric mass ratio  */
+        REAL8 chi,  /**< reduced-spin parameter */
+        REAL8 fLow, /**< low-frequency cutoff (Hz) */
+        REAL8 f     /**< Fourier frequency (Hz) */
+);
+
+
+/**
+ * Derivative of the amplitude with respect to \chi (reduced-spin parameter)  
+ */
+REAL8 XLALSimInspiralTaylorF2RedSpinDerivAChi(
+        REAL8 mc,   /**< chirp mass (M_sun) */
+        REAL8 eta,  /**< symmetric mass ratio  */
+        REAL8 chi,  /**< reduced-spin parameter */
+        REAL8 fLow, /**< low-frequency cutoff (Hz) */
+        REAL8 f     /**< Fourier frequency (Hz) */
+);
+
+/**
+ * Derivative of the amplitude with respect to \eta (symm. mass ratio) 
+ */
+REAL8 XLALSimInspiralTaylorF2RedSpinDerivAEta(
+        REAL8 mc,   /**< chirp mass (M_sun) */
+        REAL8 eta,  /**< symmetric mass ratio  */
+        REAL8 chi,  /**< reduced-spin parameter */
+        REAL8 fLow, /**< low-frequency cutoff (Hz) */
+        REAL8 f     /**< Fourier frequency (Hz) */
+);
+
+/**
+ * Derivative of the amplitude with respect to the chirp mass 
+ */
+REAL8 XLALSimInspiralTaylorF2RedSpinDerivAMChirp(
+        REAL8 mc,   /**< chirp mass (M_sun) */
+        REAL8 eta,  /**< symmetric mass ratio  */
+        REAL8 chi,  /**< reduced-spin parameter */
+        REAL8 fLow, /**< low-frequency cutoff (Hz) */
+        REAL8 f     /**< Fourier frequency (Hz) */
+);
+
+/**
+ * Derivative of the phasae with respect to \chi (reduced spin parameter) 
+ */
+REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiChi(
+        REAL8 mc,   /**< chirp mass (M_sun) */
+        REAL8 eta,  /**< symmetric mass ratio  */
+        REAL8 chi,  /**< reduced-spin parameter */
+        REAL8 fLow, /**< low-frequency cutoff (Hz) */
+        REAL8 f     /**< Fourier frequency (Hz) */
+);
+
+/**
+ * Derivative of the phasae with respect to \eta (symmetric mass ratio) 
+ */
+REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiEta(
+        REAL8 mc,   /**< chirp mass (M_sun) */
+        REAL8 eta,  /**< symmetric mass ratio  */
+        REAL8 chi,  /**< reduced-spin parameter */
+        REAL8 fLow, /**< low-frequency cutoff (Hz) */
+        REAL8 f     /**< Fourier frequency (Hz) */
+);
+
+
+/**
+ * Derivative of the phasae with respect to the chirp mass 
+ */
+REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiMChirp(
+        REAL8 mc,   /**< chirp mass (M_sun) */
+        REAL8 eta,  /**< symmetric mass ratio  */
+        REAL8 chi,  /**< reduced-spin parameter */
+        REAL8 fLow, /**< low-frequency cutoff (Hz) */
+        REAL8 f     /**< Fourier frequency (Hz) */
+);
+
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
