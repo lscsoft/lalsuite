@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, D. Keppel
+ * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, D. Keppel, Evan Ochsner
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -111,9 +111,9 @@ int XLALSimAddMode(
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
-		REAL8TimeSeries *x,   /**< post-Newtonian parameter */
+		REAL8TimeSeries *v,   /**< post-Newtonian parameter */
 	       	REAL8TimeSeries *phi, /**< orbital phase */
-	       	REAL8 x0,             /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 v0,             /**< tail-term gauge choice (if you don't know, just set it to one) */
 	       	REAL8 m1,             /**< mass of companion 1 */
 	       	REAL8 m2,             /**< mass of companion 2 */
 	       	REAL8 r,              /**< distance of source */
@@ -124,27 +124,27 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 {
 	COMPLEX16TimeSeries *h;
 	UINT4 j;
-	LAL_CHECK_VALID_SERIES(x, NULL);
+	LAL_CHECK_VALID_SERIES(v, NULL);
 	LAL_CHECK_VALID_SERIES(phi, NULL);
-	LAL_CHECK_CONSISTENT_TIME_SERIES(x, phi, NULL);
-	h = XLALCreateCOMPLEX16TimeSeries( "H_MODE", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
+	LAL_CHECK_CONSISTENT_TIME_SERIES(v, phi, NULL);
+	h = XLALCreateCOMPLEX16TimeSeries( "H_MODE", &v->epoch, 0.0, v->deltaT, &lalStrainUnit, v->data->length );
 	if ( !h )
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	if ( l == 2 && abs(m) == 2 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode22(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode22(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
 	else if ( l == 2 && abs(m) == 1 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode21(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode21(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
 	else if ( l == 3 && abs(m) == 3 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode33(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode33(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
 	else if ( l == 3 && abs(m) == 2 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode32(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode32(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
 	else if ( l == 3 && abs(m) == 1 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode31(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode31(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
 	else {
 		XLALDestroyCOMPLEX16TimeSeries(h);
 		XLALPrintError("XLAL Error - %s: Unsupported mode l=%d, m=%d\n", __func__, l, m );
@@ -169,15 +169,13 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
  * Lawrence E. Kidder, "Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
- *
- * FIXME: change the PN variable from x to v = \sqrt{x}
  */
 int XLALSimInspiralPNPolarizationWaveformsFromModes(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform [returned] */
-	       	REAL8TimeSeries *x,       /**< post-Newtonian parameter */
+	       	REAL8TimeSeries *v,       /**< post-Newtonian parameter */
 	       	REAL8TimeSeries *phi,     /**< orbital phase */
-	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 v0,                 /**< tail-term gauge choice (if you don't know, just set it to one) */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */
 	       	REAL8 r,                  /**< distance of source */
@@ -186,11 +184,11 @@ int XLALSimInspiralPNPolarizationWaveformsFromModes(
 		)
 {
 	int l, m;
-	LAL_CHECK_VALID_SERIES(x, XLAL_FAILURE);
+	LAL_CHECK_VALID_SERIES(v, XLAL_FAILURE);
 	LAL_CHECK_VALID_SERIES(phi, XLAL_FAILURE);
-	LAL_CHECK_CONSISTENT_TIME_SERIES(x, phi, XLAL_FAILURE);
-	*hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
-	*hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
+	LAL_CHECK_CONSISTENT_TIME_SERIES(v, phi, XLAL_FAILURE);
+	*hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &v->epoch, 0.0, v->deltaT, &lalStrainUnit, v->data->length );
+	*hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &v->epoch, 0.0, v->deltaT, &lalStrainUnit, v->data->length );
 	if ( ! hplus || ! hcross )
 		XLAL_ERROR(XLAL_EFUNC);
 	memset((*hplus)->data->data, 0, (*hplus)->data->length*sizeof(*(*hplus)->data->data));
@@ -198,7 +196,7 @@ int XLALSimInspiralPNPolarizationWaveformsFromModes(
 	for ( l = 2; l <= LAL_PN_MODE_L_MAX; ++l ) {
 		for ( m = 1; m <= l; ++m ) {
 			COMPLEX16TimeSeries *hmode;
-			hmode = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(x, phi, x0, m1, m2, r, O, l, m);
+			hmode = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(v, phi, v0, m1, m2, r, O, l, m);
 			if ( ! hmode )
 				XLAL_ERROR(XLAL_EFUNC);
 			if ( XLALSimAddMode(*hplus, *hcross, hmode, i, 0.0, l, m, 1) < 0 )

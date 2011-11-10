@@ -114,9 +114,9 @@ typedef enum {
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16 XLALSimInspiralPNMode22(
-		REAL8 x,      /**< post-Newtonian parameter */
+		REAL8 v,      /**< post-Newtonian parameter */
 	       	REAL8 phi,    /**< orbital phase */
-	       	REAL8 logx,   /**< log(x/x0) tail gauge parameter */
+	       	REAL8 v0,     /**< tail gauge parameter */
 	       	REAL8 m1,     /**< mass of companion 1 */
 	       	REAL8 m2,     /**< mass of companion 2 */
 		REAL8 r,      /**< distance of source */
@@ -133,9 +133,9 @@ COMPLEX16 XLALSimInspiralPNMode22(
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16 XLALSimInspiralPNMode21(
-		REAL8 x,      /**< post-Newtonian parameter */
+		REAL8 v,      /**< post-Newtonian parameter */
 	       	REAL8 phi,    /**< orbital phase */
-	       	REAL8 logx,   /**< log(x/x0) tail gauge parameter */
+	       	REAL8 v0,     /**< tail gauge parameter */
 	       	REAL8 m1,     /**< mass of companion 1 */
 	       	REAL8 m2,     /**< mass of companion 2 */
 		REAL8 r,      /**< distance of source */
@@ -152,9 +152,9 @@ COMPLEX16 XLALSimInspiralPNMode21(
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16 XLALSimInspiralPNMode33(
-		REAL8 x,      /**< post-Newtonian parameter */
+		REAL8 v,      /**< post-Newtonian parameter */
 	       	REAL8 phi,    /**< orbital phase */
-	       	REAL8 logx,   /**< log(x/x0) tail gauge parameter */
+	       	REAL8 v0,     /**< tail gauge parameter */
 	       	REAL8 m1,     /**< mass of companion 1 */
 	       	REAL8 m2,     /**< mass of companion 2 */
 		REAL8 r,      /**< distance of source */
@@ -171,9 +171,9 @@ COMPLEX16 XLALSimInspiralPNMode33(
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16 XLALSimInspiralPNMode32(
-		REAL8 x,      /**< post-Newtonian parameter */
+		REAL8 v,      /**< post-Newtonian parameter */
 	       	REAL8 phi,    /**< orbital phase */
-	       	REAL8 logx,   /**< log(x/x0) tail gauge parameter */
+	       	REAL8 v0,     /**< tail gauge parameter */
 	       	REAL8 m1,     /**< mass of companion 1 */
 	       	REAL8 m2,     /**< mass of companion 2 */
 		REAL8 r,      /**< distance of source */
@@ -190,9 +190,9 @@ COMPLEX16 XLALSimInspiralPNMode32(
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16 XLALSimInspiralPNMode31(
-		REAL8 x,      /**< post-Newtonian parameter */
+		REAL8 v,      /**< post-Newtonian parameter */
 	       	REAL8 phi,    /**< orbital phase */
-	       	REAL8 logx,   /**< log(x/x0) tail gauge parameter */
+	       	REAL8 v0,     /**< tail gauge parameter */
 	       	REAL8 m1,     /**< mass of companion 1 */
 	       	REAL8 m2,     /**< mass of companion 2 */
 		REAL8 r,      /**< distance of source */
@@ -233,9 +233,9 @@ int XLALSimAddMode(
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
-		REAL8TimeSeries *x,   /**< post-Newtonian parameter */
+		REAL8TimeSeries *v,   /**< post-Newtonian parameter */
 	       	REAL8TimeSeries *phi, /**< orbital phase */
-	       	REAL8 x0,             /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 v0,             /**< tail-term gauge choice (if you don't know, just set it to one) */
 	       	REAL8 m1,             /**< mass of companion 1 */
 	       	REAL8 m2,             /**< mass of companion 2 */
 	       	REAL8 r,              /**< distance of source */
@@ -260,9 +260,9 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 int XLALSimInspiralPNPolarizationWaveformsFromModes(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform [returned] */
-	       	REAL8TimeSeries *x,       /**< post-Newtonian parameter */
+	       	REAL8TimeSeries *v,       /**< post-Newtonian parameter */
 	       	REAL8TimeSeries *phi,     /**< orbital phase */
-	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 v0,                 /**< tail-term gauge choice (if you don't know, just set it to one) */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */
 	       	REAL8 r,                  /**< distance of source */
