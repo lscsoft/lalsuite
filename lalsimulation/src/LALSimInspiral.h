@@ -57,6 +57,7 @@ typedef enum {
                          * Outputs a frequency-domain wave. */
    TaylorF2,		/**< The standard stationary phase approximation; Outputs a frequency-domain wave. */
    TaylorF2RedSpin,		/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [\ref Ajith:2011ec]*/
+   TaylorF2RedSpinTidal,		/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [\ref Ajith:2011ec] plus tidal terms (http://arxiv.org/abs/1101.1673) */
    PadeT1,		/**< Time-domain P-approximant; Outputs a time-domain wave. */
    PadeF1,		/**< Frequency-domain P-approximant (not yet implemented). */
    EOB,			/**< Effective one-body waveform; Outputs a time-domain wave. */
@@ -968,6 +969,7 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
 /**
  * Driver routine to compute a non-precessing post-Newtonian inspiral waveform
  * in the frequency domain, described in http://arxiv.org/abs/1107.1267.
+ * The chi parameter should be determined from XLALSimInspiralTaylorF2ReducedSpinComputeChi.
  */
 int XLALSimInspiralTaylorF2ReducedSpin(
 		COMPLEX16FrequencySeries **htilde, /**< FD waveform */
@@ -982,6 +984,25 @@ int XLALSimInspiralTaylorF2ReducedSpin(
 		const UINT4 O                    /**< twice PN phase order */
 		);
 
+/**
+ * Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267
+ * Add the tidal phase terms from http://arxiv.org/abs/1101.1673 (Eqs. 3.9, 3.10)
+ * The chi parameter should be determined from XLALSimInspiralTaylorF2ReducedSpinComputeChi.
+*/
+int XLALSimInspiralTaylorF2ReducedSpinTidal(
+		COMPLEX16FrequencySeries **htilde,   /**< FD waveform */
+		const LIGOTimeGPS *tStart,       /**< initial time (s) */
+		const REAL8 phiStart,            /**< initial GW phase (rad) */
+		const REAL8 deltaF,              /**< frequency resolution */
+		const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
+		const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
+		const REAL8 chi,                 /**< dimensionless aligned-spin param */
+		const REAL8 lam1,                /**< dimensionless deformability of 1 */
+		const REAL8 lam2,                /**< dimensionless deformability of 2 */
+		const REAL8 fStart,              /**< start GW frequency (Hz) */
+		const REAL8 r,                   /**< distance of source (m) */
+		const UINT4 O                    /**< twice PN phase order */
+		);
 /**
  * Compute the chirp time of the "reduced-spin" templates, described in
  * http://arxiv.org/abs/1107.1267.
