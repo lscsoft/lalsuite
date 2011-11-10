@@ -534,8 +534,8 @@ static int XLALSimInspiralSpinTaylorT4StoppingTest(
             + v * ( 7. * (params->Ecoeff[5] + Espin25)
             + v * ( 8. *  params->Ecoeff[6]
             + v * ( 9. *  params->Ecoeff[7]
-			+ v * v * v * ( params->Etidal5pn
-			+ v * v * ( params->Etidal6pn ) ) ) ) ) ) ) );
+			+ v * v * v * ( 12. * params->Etidal5pn
+			+ v * v * ( 14. * params->Etidal6pn ) ) ) ) ) ) ) );
 
     if (test < 0.0) /* energy test fails! */
         return LALSIMINSPIRAL_ST4_TEST_ENERGY;
