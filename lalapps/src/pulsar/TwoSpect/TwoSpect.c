@@ -539,9 +539,9 @@ int main(int argc, char *argv[])
       }
       
       //Compute the weighted TF data
-      REAL4Vector *TFdata_weighted = XLALCreateREAL4Vector((UINT4)(ffdata->numffts*ffdata->numfbins));
+      REAL4Vector *TFdata_weighted = XLALCreateREAL4Vector(ffdata->numffts*ffdata->numfbins);
       if (TFdata_weighted==NULL) {
-         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (UINT4)(ffdata->numffts*ffdata->numfbins));
+         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts*ffdata->numfbins);
          XLAL_ERROR(XLAL_EFUNC);
       }
       tfWeight(TFdata_weighted, TFdata_slided, background_slided, antweights, indexValuesOfExistingSFTs, inputParams);
@@ -558,7 +558,7 @@ int main(int argc, char *argv[])
       
       //Calculation of average TF noise per frequency bin ratio to total mean
       REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
-      REAL4Vector *TSofPowers = XLALCreateREAL4Vector((UINT4)ffdata->numffts);
+      REAL4Vector *TSofPowers = XLALCreateREAL4Vector(ffdata->numffts);
       if (aveTFnoisePerFbinRatio==NULL) {
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins);
          XLAL_ERROR(XLAL_EFUNC);
@@ -568,6 +568,7 @@ int main(int argc, char *argv[])
       }
       for (ii=0; ii<ffdata->numfbins; ii++) {
          for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
+         //for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_slided->data[jj*ffdata->numfbins + ii];
          aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
       }
       //REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
@@ -576,6 +577,7 @@ int main(int argc, char *argv[])
          aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
          //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
       }
+      //XLALDestroyREAL4Vector(TFdata_slided);
       XLALDestroyREAL4Vector(TSofPowers);
       
       
@@ -888,7 +890,7 @@ int main(int argc, char *argv[])
       fprintf(stderr, "%s: UL file could not be opened.\n", __func__);
       XLAL_ERROR(XLAL_EINVAL);
    }
-   for (ii=0; ii<(INT4)upperlimits->length-1; ii++) outputUpperLimitToFile(ULFILE, upperlimits->data[ii], inputParams->ULmindf, inputParams->ULmaxdf, inputParams->printAllULvalues);
+   for (ii=0; ii<(INT4)upperlimits->length-1; ii++) outputUpperLimitToFile(ULFILE, upperlimits->data[ii], inputParams->printAllULvalues);
    fclose(ULFILE);
    
    //Destroy varaibles
@@ -1681,8 +1683,10 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
    
    INT4 ii, jj;
    
-   INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);    //Number of FFTs
-   INT4 numfbins = (INT4)(round(input->fspan*input->Tcoh)+1);     //Number of frequency bins
+   //INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);    //Number of FFTs
+   //INT4 numfbins = (INT4)(round(input->fspan*input->Tcoh)+1);     //Number of frequency bins
+   INT4 numffts = (INT4)antPatternWeights->length;
+   INT4 numfbins = (INT4)(tfdata->length)/numffts;
    
    REAL4Vector *antweightssq = XLALCreateREAL4Vector(numffts);
    REAL4Vector *rngMeanssq = XLALCreateREAL4Vector(numffts);
@@ -1994,7 +1998,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    srand(time(NULL));
    UINT8 randseed = rand();
    gsl_rng_set(rng, randseed);
-   //gsl_rng_set(rng, 0);
+   gsl_rng_set(rng, 0); //TODO: comment this out
    
    //Set up for making the PSD
    //for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] = 0.0;
