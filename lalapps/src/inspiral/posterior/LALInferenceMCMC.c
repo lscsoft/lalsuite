@@ -148,7 +148,8 @@ void initializeMCMC(LALInferenceRunState *runState)
 (--Nskip n)                     Number of iterations between disk save(100)\n\
 (--tempMax T)                   Highest temperature for parallel tempering(40.0)\n\
 (--randomseed seed)             Random seed of sampling distribution(random)\n\
-(--tdlike)                      Compute likelihood in the time domain\n";
+(--tdlike)                      Compute likelihood in the time domain\n\
+(--rapidSkyLoc)                 Use rapid sky localization jump proposals\n";
 	
   /* Print command line arguments if runState was not allocated */
 	if(runState==NULL)
@@ -184,7 +185,11 @@ void initializeMCMC(LALInferenceRunState *runState)
 	runState->algorithm=&PTMCMCAlgorithm;
 	runState->evolve=PTMCMCOneStep;
 
-	runState->proposal=&LALInferenceDefaultProposal;
+    ppt=LALInferenceGetProcParamVal(commandLine,"--rapidSkyLoc");
+    if(ppt)
+        runState->proposal=&LALInferenceRapidSkyLocProposal;
+    else
+        runState->proposal=&LALInferenceDefaultProposal;
 	
 	/* This is the LAL template generator for inspiral signals */
 	
