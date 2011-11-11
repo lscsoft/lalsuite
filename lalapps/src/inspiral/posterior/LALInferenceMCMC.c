@@ -366,16 +366,21 @@ void initVariables(LALInferenceRunState *state)
   
   char help[]="\
 (--injXML injections.xml)       Injection XML file to use\n\
+(--symMassRatio)                Run with symmetric mass ratio eta, instead of q=m2/m1\n\
 (--mc-min mchirp)               Minimum chirp mass\n\
 (--mc-max mchirp)               Maximum chirp mass\n\
 (--eta-min etaMin)              Minimum eta\n\
 (--eta-max etaMax)              Maximum eta\n\
+(--q-min qMin)                  Minimum q\n\
+(--q-max qMax)                  Maximum q\n\
 (--dt time)                     Width of time prior, centred around trigger (0.1s)\n\
 (--trigtime time)               Trigger time to use\n\
 (--mc mchirp)                   Trigger chirpmass to use\n\
 (--fixMc)                       Do not allow chirpmass to vary\n\
 (--eta eta)                     Trigger eta to use\n\
+(--q q)                         Trigger q to use\n\
 (--fixEta)                      Do not allow mass ratio to vary\n\
+(--fixQ)                        Do not allow mass ratio to vary\n\
 (--phi phase)                   Trigger phase to use\n\
 (--fixPhi)                      Do not allow phase to vary\n\
 (--iota inclination)            Trigger inclination to use\n\
@@ -456,12 +461,15 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 MTotMax=35.0;
 	REAL8 etaMin=0.0312;
 	REAL8 etaMax=0.25;
+    REAL8 qMin=mMin/mMax;
+    REAL8 qMax=1.0;
 	REAL8 dt=0.1;            /* Width of time prior */
 	REAL8 tmpMin,tmpMax;//,tmpVal;
 	gsl_rng * GSLrandom=state->GSLrandom;
 	REAL8 endtime=0.0, timeParam=0.0;
 	REAL8 start_mc			=4.82+gsl_ran_gaussian(GSLrandom,0.025);
 	REAL8 start_eta			=etaMin+gsl_rng_uniform(GSLrandom)*(etaMax-etaMin);
+	REAL8 start_q           =qMin+gsl_rng_uniform(GSLrandom)*(qMin-qMax);
 	REAL8 start_phase		=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
 	REAL8 start_dist		=8.07955+gsl_ran_gaussian(GSLrandom,1.1);
 	REAL8 start_ra			=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
@@ -481,6 +489,7 @@ void initVariables(LALInferenceRunState *state)
     MTotMax=20.0;
     mMin=1.0;
     mMax=15.0;
+    qMin=mMin/mMax;
     Dmin=10.0;
     Dmax=40.0;
     REAL8 densityVNR=1000.0;
@@ -691,6 +700,12 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt){
 		start_eta=atof(ppt->value);
 	}
+
+    /* Over-ride q if specified */
+    ppt=LALInferenceGetProcParamVal(commandLine,"--q");
+    if(ppt){
+            start_q=atof(ppt->value);
+    }
 	
 	/* Over-ride phase if specified */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--phi");
@@ -819,7 +834,8 @@ void initVariables(LALInferenceRunState *state)
 			exit(1);
 		}
 	}
-	
+
+
 	/* Over-ride component masses */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--comp-min");
 	if(ppt)	mMin=atof(ppt->value);
@@ -832,7 +848,30 @@ void initVariables(LALInferenceRunState *state)
 	ppt=LALInferenceGetProcParamVal(commandLine,"--MTotMax");
 	if(ppt)	MTotMax=atof(ppt->value);
 	LALInferenceAddVariable(priorArgs,"MTotMax",&MTotMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-	
+
+	ppt=LALInferenceGetProcParamVal(commandLine,"--q-min");
+    if(ppt) 
+     {
+            qMin=atof(ppt->value);
+            if (qMin <= 0.0 || qMin < mMin/mMax || qMin < mMin/(MTotMax-mMin) || qMin > 1.0) 
+            {
+                    fprintf(stderr,"ERROR: invalid qMin ( max{0,mMin/mMax,mMin/(MTotMax-mMin) < q < 1.0} )");
+                    exit(1);
+            }
+    }
+
+    ppt=LALInferenceGetProcParamVal(commandLine,"--q-max");
+    if(ppt) 
+     {
+            qMax=atof(ppt->value);
+            if (qMax > 1.0 || qMax <= 0.0 || qMax < mMin/mMax || qMax < mMin/(MTotMax-mMin)) 
+            {
+                    fprintf(stderr,"ERROR: invalid qMax ( max{0,mMin/mMax,mMin/(MTotMax-mMin) < q < 1.0} )");
+                    exit(1);
+            }
+    }
+
+
 	
 	printf("Read end time %f\n",endtime);
 
@@ -870,14 +909,28 @@ void initVariables(LALInferenceRunState *state)
 	//tmpVal=0.244;
 	//tmpVal=0.03+gsl_rng_uniform(GSLrandom)*(0.25-0.03);
 	//tmpVal=0.18957;
-	ppt=LALInferenceGetProcParamVal(commandLine,"--fixEta");
+
+    /* Check if running with symmetric (eta) or asymmetric (q) mass ratio.*/
+	ppt=LALInferenceGetProcParamVal(commandLine,"--symMassRatio");
 	if(ppt){
-	    LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-		if(MPIrank==0) fprintf(stdout,"eta fixed and set to %f\n",start_eta);
-	}else{
-	    LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	}
-    LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
+        ppt=LALInferenceGetProcParamVal(commandLine,"--fixEta");
+        if(ppt){
+            LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+            if(MPIrank==0) fprintf(stdout,"eta fixed and set to %f\n",start_eta);
+        }else{
+            LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        }
+        LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
+    }else{
+        ppt=LALInferenceGetProcParamVal(commandLine,"--fixQ");
+        if(ppt){
+            LALInferenceAddVariable(currentParams, "asym_massratio",       &start_q,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+            if(MPIrank==0) fprintf(stdout,"q fixed and set to %f\n",start_q);
+        }else{
+            LALInferenceAddVariable(currentParams, "asym_massratio",       &start_q,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        }
+        LALInferenceAddMinMaxPrior(priorArgs,	"asym_massratio",	&qMin,	&qMax,	LALINFERENCE_REAL8_t);
+    }
 
 	tmpMin=endtime-dt; tmpMax=endtime+dt;
 

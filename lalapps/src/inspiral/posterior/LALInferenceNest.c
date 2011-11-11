@@ -58,6 +58,20 @@ static void mc2masses(double mc, double eta, double *m1, double *m2)
 }
 
 
+void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
+{
+  NSFillMCMCVariables(vars,state->priorArgs);
+  LALInferenceLogSampleToArray(state, vars);
+  return;
+}
+
+void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
+{
+  NSFillMCMCVariables(vars,state->priorArgs);
+  LALInferenceLogSampleToFile(state, vars);
+  return;
+}
+
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 /* calls the "ReadData()" function to gather data & PSD from files, */
 /* and initializes other variables accordingly.                     */
@@ -270,6 +284,12 @@ Nested sampling arguments:\n\
 	
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 	runState->prior = &LALInferenceInspiralPrior;
+	
+	#ifdef HAVE_LIBLALXML
+	runState->logsample=LogNSSampleAsMCMCSampleToArray;
+	#else
+	runState->logsample=LogNSSampleAsMCMCSampleToFile;
+	#endif
 	
 	ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
 	if(ppt) {

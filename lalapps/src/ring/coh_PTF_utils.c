@@ -885,7 +885,15 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
   }
 
   /* calculate angular resolution */
-  angularResolution = 2. * params->timingAccuracy / alpha;
+  if (! params->singlePolFlag)
+  {
+    angularResolution = 2. * params->timingAccuracy / alpha;
+  }
+  else
+  {
+    angularResolution = 1;
+    params->skyError = 0;
+  }
 
   /* generate sky grid using sinusoidal map */
   skyPoints = coh_PTF_circular_grid(angularResolution, params->skyError);

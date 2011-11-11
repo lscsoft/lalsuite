@@ -3351,7 +3351,7 @@ matrix!\n");
 
 
 /* this function takes a matrix that isn't positive definite and converts it
-into a postive definite matrix using the method (number 2) of Rebonato and
+into a positive definite matrix using the method (number 2) of Rebonato and
 Jackel (see their paper at
 http://www.riccardorebonato.co.uk/papers/ValCorMat.pdf) */
 REAL8Array *convert_to_positive_definite( REAL8Array *nonposdef ){

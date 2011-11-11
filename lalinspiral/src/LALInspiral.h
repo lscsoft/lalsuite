@@ -1078,6 +1078,11 @@ void LALTaylorEtWaveform(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
+int XLALTaylorEtWaveformTemplates(
+     REAL4Vector *signalvec1,
+     REAL4Vector *signalvec2,
+     InspiralTemplate *params);
+
 void LALTaylorT4Waveform(
      LALStatus *status,
      REAL4Vector *signalvec,

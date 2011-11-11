@@ -28,13 +28,14 @@ struct gsl_probR_pars {
    REAL4Vector *ffplanenoise;
    REAL4Vector *fbinaveratios;
    REAL4 threshold;
+   inputParamsStruct *inputParams;
    INT4 errcode;
 };
 
 farStruct * new_farStruct(void);
 void free_farStruct(farStruct *farstruct);
 void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios);
-void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, INT4 method);
+void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, inputParamsStruct *inpuParams, INT4 method);
 REAL8 gsl_probR(REAL8 R, void *pars);
 REAL8 gsl_dprobRdR(REAL8 R, void *pars);
 void gsl_probRandDprobRdR(REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR);
@@ -48,7 +49,7 @@ void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc,
 void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fmin, REAL8 fmax, INT4 numfsteps, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates);
 void efficientTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, REAL8 minfstep, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, REAL8 minDfstep, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates);
 
-REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, REAL8 R, INT4 *errcode);
+REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, REAL8 R, inputParamsStruct *params, INT4 *errcode);
 REAL8 sincxoverxsqminusone(REAL8 overage);
 REAL8 sqsincxoverxsqminusone(REAL8 x);
 

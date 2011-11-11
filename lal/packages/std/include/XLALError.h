@@ -343,7 +343,8 @@ void XLALExitErrorHandler( const char *func, const char *file, int line, int err
 /** The XLAL error handler that prints a function call backtrace then raises SIGABRT. */
 void XLALBacktraceErrorHandler( const char *func, const char *file, int line, int errnum );
 
-
+/** Function to return pointer to the XLAL error handler function pointer. */
+XLALErrorHandlerType ** XLALGetErrorHandlerPtr( void );
 
 /** Sets the error handler to a new handler and returns the old handler. */
 XLALErrorHandlerType * XLALSetErrorHandler( XLALErrorHandlerType *newHandler );
@@ -385,12 +386,6 @@ int XLALClearErrno( void );
 /** Function to return pointer to the XLAL error number. */
 int * XLALGetErrnoPtr( void );
 
-#ifndef SWIG /* exclude from SWIG interface */
-
-/** Function to return pointer to the XLAL error handler function pointer. */
-XLALErrorHandlerType ** XLALGetErrorHandlerPtr( void );
-
-#endif /* SWIG */
 
 /* these are the modifiable lvalues for xlalErrno and XLALErrorHandler */
 #define xlalErrno ( * XLALGetErrnoPtr() ) /**< Modifiable lvalue containing the XLAL error number */

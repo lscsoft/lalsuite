@@ -47,7 +47,7 @@ size_t LALInferenceTypeSize[] = {sizeof(INT4),
                                  sizeof(REAL8Vector *),
                                  sizeof(UINT4Vector *),
                                  sizeof(CHAR *),
-                                 sizeof(LALInferenceProposalFunction **)
+                                 sizeof(void *)
 };
 
 
@@ -542,6 +542,8 @@ const char *LALInferenceTranslateInternalToExternalParamName(const char *inName)
     return "mc";
   } else if (!strcmp(inName, "massratio")) {
     return "eta";
+  } else if (!strcmp(inName, "asym_massratio")) {
+    return "q";
   } else if (!strcmp(inName, "rightascension")) {
     return "ra";
   } else if (!strcmp(inName, "declination")) {
@@ -993,6 +995,10 @@ char *colNameToParamName(const char *colName) {
     retstr=XLALStringDuplicate("massratio");
   }
 
+  else if (!strcmp(colName, "q")) {
+    retstr=XLALStringDuplicate("asym_massratio");
+  }
+
   else if (!strcmp(colName, "dec")) {
     retstr=XLALStringDuplicate("declination");
   }
@@ -1048,5 +1054,65 @@ void LALInferenceSortVariablesByName(LALInferenceVariables *vars)
   }
   vars->head=tmp.head;
   vars->dimension=tmp.dimension;
+  return;
+}
+
+
+/** Append the sample to a file. file pointer is stored in state->algorithmParams as a
+ * LALInferenceVariable called "outfile", as a void ptr.
+ * Caller is responsible for opening and closing file.
+ * Variables are alphabetically sorted before being written
+ */
+void LALInferenceLogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
+{
+  FILE *outfile=NULL;
+  if(LALInferenceCheckVariable(state->algorithmParams,"outfile"))
+    outfile=*(FILE **)LALInferenceGetVariable(state->algorithmParams,"outfile");
+  /* Write out old sample */
+  if(outfile==NULL) return;
+  LALInferenceSortVariablesByName(vars);
+  LALInferencePrintSample(outfile,vars);
+  fprintf(outfile,"\n");
+}
+
+/** Append the sample to an array which can be later processed by the user.
+ * Array is stored as a C array in a LALInferenceVariable in state->algorithmParams
+ * called "outputarray". Number of items in the array is stored as "N_outputarray".
+ * Will create the array and store it in this way if it does not exist.
+ * DOES NOT FREE ARRAY, user must clean up after use.
+ * Also outputs sample to disk if possible */
+void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
+{
+  LALInferenceVariables *output_array=NULL;
+  UINT4 N_output_array=0;
+  LALInferenceLogSampleToFile(state,vars);
+  
+  /* Set up the array if it is not already allocated */
+  if(LALInferenceCheckVariable(state->algorithmParams,"outputarray"))
+    output_array=*(LALInferenceVariables **)LALInferenceGetVariable(state->algorithmParams,"outputarray");
+  else
+    LALInferenceAddVariable(state->algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
+
+  if(LALInferenceCheckVariable(state->algorithmParams,"N_outputarray"))
+    N_output_array=*(INT4 *)LALInferenceGetVariable(state->algorithmParams,"N_outputarray");
+  else
+    LALInferenceAddVariable(state->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+  
+  /* Expand the array for new sample */
+  output_array=realloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables));
+  if(!output_array){
+    XLALPrintError("Unable to allocate array for samples\n");
+    XLAL_ERROR_VOID( XLAL_EFAULT );
+  }
+  else
+  {
+    /* Save sample and update */
+    memset(&(output_array[N_output_array]),0,sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(vars,&output_array[N_output_array]);
+    N_output_array++;
+    
+    LALInferenceSetVariable(state->algorithmParams,"outputarray",&output_array);
+    LALInferenceSetVariable(state->algorithmParams,"N_outputarray",&N_output_array);
+  }
   return;
 }

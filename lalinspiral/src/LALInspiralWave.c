@@ -295,6 +295,9 @@ LALInspiralWaveTemplates(
       case TaylorT3:
            if (XLALInspiralWave3Templates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
       	   break;
+      case TaylorEt:
+           if (XLALTaylorEtWaveformTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
+      	   break;
       case EOB:
       case EOBNR:
            if (XLALEOBWaveformTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
