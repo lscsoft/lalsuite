@@ -382,9 +382,8 @@ int XLALSimInspiralTaylorF2RedSpinMetricMChirpEtaChi(
     /* create a view of the PSD between fLow and fCut */
     size_t nBins = (fCut - fLow) / df;
     size_t k = nBins;
-    REAL8Vector Shdata;
-    memcpy(&Shdata, &(Sh->data), sizeof(REAL8Vector));  /* copy the Vector, including its pointer to the actual data */
-    Shdata.data += (size_t) (fLow / df);  /* drop low-frequency samples */
+    REAL8Vector Shdata = {nBins, Sh->data->data + (size_t) (fLow / df)}; /* copy the Vector, including its pointer to the actual data */
+    /* drop low-frequency samples */
     Shdata.length = nBins;  /* drop high-frequency samples */
 
     /* allocate memory for various vectors */
