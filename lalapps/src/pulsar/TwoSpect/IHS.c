@@ -543,14 +543,12 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
             for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
                averageval += 1.0;
-               REAL8 val = 0.0;
-               if (params->ihsfar != 1.0 && !params->fastchisqinv) val = gsl_cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
-               if (params->ihsfar != 1.0 && params->fastchisqinv) val = cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
+               if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += gsl_cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
+               if (params->ihsfar != 1.0 && params->fastchisqinv) farave += cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
                if (xlalErrno!=0) {
                   fprintf(stderr, "%s: XXX_chisq_inv() failed.\n", __func__);
                   XLAL_ERROR_VOID(XLAL_EFUNC);
                }
-               farave += val;
                //fprintf(tworowvals, "%f\n", sampledtempihsvals->data[jj]);
             }
             //fclose(tworowvals);
@@ -561,14 +559,12 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
                if (sampledtempihsvals->data[jj]!=0.0) {
                   averageval += 1.0;
-                  REAL8 val = 0.0;
-                  if (params->ihsfar != 1.0 && !params->fastchisqinv) val = gsl_cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
-                  if (params->ihsfar != 1.0 && params->fastchisqinv) val = cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
-                  if (xlalErrno!=0 || val==0.0) {
+                  if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += gsl_cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
+                  if (params->ihsfar != 1.0 && params->fastchisqinv) farave += cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
+                  if (xlalErrno!=0) {
                      fprintf(stderr, "%s: XXX_chisq_inv() failed.\n", __func__);
                      XLAL_ERROR_VOID(XLAL_EFUNC);
                   }
-                  farave += val;
                } /* if sampledtempihsvals->data[jj] != 0.0 */
             } /* for jj < sampledtempihsvals->length */
          }
@@ -652,14 +648,12 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
             for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
                averageval += 1.0;
-               REAL8 val = 0.0;
-               if (params->ihsfar != 1.0 && !params->fastchisqinv) val = gsl_cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
-               if (params->ihsfar != 1.0 && params->fastchisqinv) val = cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
-               if (xlalErrno!=0 || val==0.0) {
+               if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += gsl_cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
+               if (params->ihsfar != 1.0 && params->fastchisqinv) farave += cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
+               if (xlalErrno!=0) {
                   fprintf(stderr, "%s: XXX_chisq_inv() failed.\n", __func__);
                   XLAL_ERROR_VOID(XLAL_EFUNC);
                }
-               farave += val;
                //if (ii==360) fprintf(row360expect, "%f\n", sampledtempihsvals->data[jj]);
             }
             //if (ii==360) fclose(row360expect);
@@ -670,14 +664,12 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
                if (sampledtempihsvals->data[jj]!=0.0) {
                   averageval += 1.0;
-                  REAL8 val = 0.0;
-                  if (params->ihsfar != 1.0 && !params->fastchisqinv) val = gsl_cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
-                  if (params->ihsfar != 1.0 && params->fastchisqinv) val = cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
-                  if (xlalErrno!=0 || val==0.0) {
+                  if (params->ihsfar != 1.0 && !params->fastchisqinv) farave += gsl_cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
+                  if (params->ihsfar != 1.0 && params->fastchisqinv) farave += cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
+                  if (xlalErrno!=0) {
                      fprintf(stderr, "%s: XXX_chisq_inv() failed.\n", __func__);
                      XLAL_ERROR_VOID(XLAL_EFUNC);
                   }
-                  farave += val;
                }
             }
          }
