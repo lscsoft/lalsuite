@@ -288,6 +288,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     INT4 Tskip=100;
     if (LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip"))
         Tskip = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip")->value);
+    INT4 Tkill=Niter;
+    if (LALInferenceGetProcParamVal(runState->commandLine,"--tempKill"))
+        Tkill = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempKill")->value);
 
 	// iterate:
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -392,7 +395,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
     }
 
-    
+    if (i <= Tkill) {
     dprior = priorMax - priorMin;
     
 
@@ -442,7 +445,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }  
     
     MPI_Barrier(MPI_COMM_WORLD);
-    }
+    }// if (i <= Tkill)
+    }// if ((i % Tskip) == 0)
 	}// for (i=1; i<=Niter; i++)
   
 	MPI_Barrier(MPI_COMM_WORLD);

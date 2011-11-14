@@ -1579,7 +1579,7 @@ int main(int argc, char *argv[]){
 	MPI_Barrier(MPI_COMM_WORLD);
 	/* Call MCMC algorithm */
 	runState->algorithm(runState);
-	
+
   if (MPIrank == 0) printf(" ========== main(): finished. ==========\n");
   MPI_Finalize();
   return 0;
