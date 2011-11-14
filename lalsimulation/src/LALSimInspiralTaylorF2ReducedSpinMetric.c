@@ -361,7 +361,12 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiMChirp(
  * Mchirp-eta-chi parameter space.
  */
 int XLALSimInspiralTaylorF2RedSpinMetricMChirpEtaChi(
-    REAL8 metric[3][3],  /**< template metric in mChirp-eta-chi space */
+    REAL8 *gamma00,  /**< template metric coeff. 00 in mChirp-eta-chi */
+    REAL8 *gamma01,  /**< template metric coeff. 01/10 in mChirp-eta-chi */
+    REAL8 *gamma02,  /**< template metric coeff. 02/20 in mChirp-eta-chi */
+    REAL8 *gamma11,  /**< template metric coeff. 11 in mChirp-eta-chi */
+    REAL8 *gamma12,  /**< template metric coeff. 12/21 in mChirp-eta-chi */
+    REAL8 *gamma22,  /**< template metric coeff. 22 in mChirp-eta-chi */
     const REAL8 mc,     /**< chirp mass (in solar mass) */
     const REAL8 eta,    /**< symmetric mass ratio */
     const REAL8 chi,    /**< reduced-spin parameter */
@@ -511,15 +516,12 @@ int XLALSimInspiralTaylorF2RedSpinMetricMChirpEtaChi(
     gsl_matrix_sub (g1, g2g3invg4);
     gsl_matrix_free (g2g3invg4);
 
-    metric[0][0] = gsl_matrix_get(g1, 0, 0);
-    metric[0][1] = gsl_matrix_get(g1, 0, 1);
-    metric[0][2] = gsl_matrix_get(g1, 0, 2);
-    metric[1][0] = gsl_matrix_get(g1, 1, 0);
-    metric[1][1] = gsl_matrix_get(g1, 1, 1);
-    metric[1][2] = gsl_matrix_get(g1, 1, 2);
-    metric[2][0] = gsl_matrix_get(g1, 2, 0);
-    metric[2][1] = gsl_matrix_get(g1, 2, 1);
-    metric[2][2] = gsl_matrix_get(g1, 2, 2);
+    *gamma00 = gsl_matrix_get(g1, 0, 0);
+    *gamma01 = gsl_matrix_get(g1, 0, 1);
+    *gamma02 = gsl_matrix_get(g1, 0, 2);
+    *gamma11 = gsl_matrix_get(g1, 1, 1);
+    *gamma12 = gsl_matrix_get(g1, 1, 2);
+    *gamma22 = gsl_matrix_get(g1, 2, 2);
     gsl_matrix_free (g1);
     }
 

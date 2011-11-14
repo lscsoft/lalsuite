@@ -1032,12 +1032,17 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinComputeChi(
  * Mchirp-eta-chi parameter space.
  */
 int XLALSimInspiralTaylorF2RedSpinMetricMChirpEtaChi(
-        REAL8 metric[3][3],  /**< template metric in mChirp-eta-chi space */
-        const REAL8 mc,     /**< chirp mass (in solar mass) */
-        const REAL8 eta,    /**< symmetric mass ratio */
-        const REAL8 chi,    /**< reduced-spin parameter */
-        const REAL8 fLow,   /**< low-frequency cutoff (Hz) */
-        const REAL8FrequencySeries *Sh
+    REAL8 *gamma00,  /**< template metric coeff. 00 in mChirp-eta-chi */
+    REAL8 *gamma01,  /**< template metric coeff. 01/10 in mChirp-eta-chi */
+    REAL8 *gamma02,  /**< template metric coeff. 02/20 in mChirp-eta-chi */
+    REAL8 *gamma11,  /**< template metric coeff. 11 in mChirp-eta-chi */
+    REAL8 *gamma12,  /**< template metric coeff. 12/21 in mChirp-eta-chi */
+    REAL8 *gamma22,  /**< template metric coeff. 22 in mChirp-eta-chi */
+    const REAL8 mc,     /**< chirp mass (in solar mass) */
+    const REAL8 eta,    /**< symmetric mass ratio */
+    const REAL8 chi,    /**< reduced-spin parameter */
+    const REAL8 fLow,   /**< low-frequency cutoff (Hz) */
+    const REAL8FrequencySeries *Sh
 );
 
 #if 0

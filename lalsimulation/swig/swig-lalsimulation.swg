@@ -16,3 +16,4 @@
 %typemap(out) int ""
 
 // LALSimulation header files which form the SWIG interface
+%apply REAL8 *OUTPUT { REAL8 *gamma00, REAL8 *gamma01, REAL8 *gamma02, REAL8 *gamma11, REAL8 *gamma12, REAL8 *gamma22 };
