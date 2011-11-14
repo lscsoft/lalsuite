@@ -433,28 +433,28 @@ int XLALSimInspiralTaylorF2RedSpinMetricMChirpEtaChi(
     gsl_matrix_set (g, 0,3, MetricCoeffs(A, dPsiMc, dPsiT0, dAMc, dAT0, &Shdata, hSqr, df));
     gsl_matrix_set (g, 0,4, MetricCoeffs(A, dPsiMc, dPsiPhi0, dAMc, dAPhi0, &Shdata, hSqr, df));
 
-    gsl_matrix_set (g, 1,0, MetricCoeffs(A, dPsiEta, dPsiMc, dAEta, dAMc, &Shdata, hSqr, df));
+    gsl_matrix_set (g, 1,0, gsl_matrix_get(g, 0,1));
     gsl_matrix_set (g, 1,1, MetricCoeffs(A, dPsiEta, dPsiEta, dAEta, dAEta, &Shdata, hSqr, df));
     gsl_matrix_set (g, 1,2, MetricCoeffs(A, dPsiEta, dPsiChi, dAEta, dAChi, &Shdata, hSqr, df));
     gsl_matrix_set (g, 1,3, MetricCoeffs(A, dPsiEta, dPsiT0, dAEta, dAT0, &Shdata, hSqr, df));
     gsl_matrix_set (g, 1,4, MetricCoeffs(A, dPsiEta, dPsiPhi0, dAEta, dAPhi0, &Shdata, hSqr, df));
 
-    gsl_matrix_set (g, 2,0, MetricCoeffs(A, dPsiChi, dPsiMc, dAChi, dAMc, &Shdata, hSqr, df));
-    gsl_matrix_set (g, 2,1, MetricCoeffs(A, dPsiChi, dPsiEta, dAChi, dAEta, &Shdata, hSqr, df));
+    gsl_matrix_set (g, 2,0, gsl_matrix_get(g, 0,2));
+    gsl_matrix_set (g, 2,1, gsl_matrix_get(g, 1,2));
     gsl_matrix_set (g, 2,2, MetricCoeffs(A, dPsiChi, dPsiChi, dAChi, dAChi, &Shdata, hSqr, df));
     gsl_matrix_set (g, 2,3, MetricCoeffs(A, dPsiChi, dPsiT0, dAChi, dAT0, &Shdata, hSqr, df));
     gsl_matrix_set (g, 2,4, MetricCoeffs(A, dPsiChi, dPsiPhi0, dAChi, dAPhi0, &Shdata, hSqr, df));
 
-    gsl_matrix_set (g, 3,0, MetricCoeffs(A, dPsiT0, dPsiMc, dAT0, dAMc, &Shdata, hSqr, df));
-    gsl_matrix_set (g, 3,1, MetricCoeffs(A, dPsiT0, dPsiEta, dAT0, dAEta, &Shdata, hSqr, df));
-    gsl_matrix_set (g, 3,2, MetricCoeffs(A, dPsiT0, dPsiChi, dAT0, dAChi, &Shdata, hSqr, df));
+    gsl_matrix_set (g, 3,0, gsl_matrix_get(g, 0,3));
+    gsl_matrix_set (g, 3,1, gsl_matrix_get(g, 1,3));
+    gsl_matrix_set (g, 3,2, gsl_matrix_get(g, 2,3));
     gsl_matrix_set (g, 3,3, MetricCoeffs(A, dPsiT0, dPsiT0, dAT0, dAT0, &Shdata, hSqr, df));
     gsl_matrix_set (g, 3,4, MetricCoeffs(A, dPsiT0, dPsiPhi0, dAT0, dAPhi0, &Shdata, hSqr, df));
 
-    gsl_matrix_set (g, 4,0, MetricCoeffs(A, dPsiPhi0, dPsiMc, dAPhi0, dAMc, &Shdata, hSqr, df));
-    gsl_matrix_set (g, 4,1, MetricCoeffs(A, dPsiPhi0, dPsiEta, dAPhi0, dAEta, &Shdata, hSqr, df));
-    gsl_matrix_set (g, 4,2, MetricCoeffs(A, dPsiPhi0, dPsiChi, dAPhi0, dAChi, &Shdata, hSqr, df));
-    gsl_matrix_set (g, 4,3, MetricCoeffs(A, dPsiPhi0, dPsiT0, dAPhi0, dAT0, &Shdata, hSqr, df));
+    gsl_matrix_set (g, 4,0, gsl_matrix_get(g, 0,4));
+    gsl_matrix_set (g, 4,1, gsl_matrix_get(g, 1,4));
+    gsl_matrix_set (g, 4,2, gsl_matrix_get(g, 2,4));
+    gsl_matrix_set (g, 4,3, gsl_matrix_get(g, 3,4));
     gsl_matrix_set (g, 4,4, MetricCoeffs(A, dPsiPhi0, dPsiPhi0, dAPhi0, dAPhi0, &Shdata, hSqr, df));
 
     /* free the memory */
