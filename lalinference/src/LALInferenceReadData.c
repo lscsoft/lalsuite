@@ -331,7 +331,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	}
 	else{
 		if(injTable) GPStrig = injTable->geocent_end_time;
-		else XLALPrintError("Error: No trigger time specifed\n");
+		else {
+            XLALPrintError("Error: No trigger time specifed and no injection given \n");
+            XLAL_ERROR_NULL(XLAL_EINVAL);
+        }
 	}
 	if(status.statusCode) REPORTSTATUS(&status);
 
