@@ -763,7 +763,6 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->thetaErr=0.;
 
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
-    XLALPrintError("Error... Cannot open .par file %s\n", pulsarAndPath);
     XLAL_ERROR_VOID( XLAL_EIO );
   }
 
