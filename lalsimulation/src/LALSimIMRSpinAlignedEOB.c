@@ -87,7 +87,7 @@ XLALSpinAlignedHiSRStopCondition(double UNUSED t,
                           )
 {
 
-  if ( /* values[0] <= 3.5 ||*/ isnan( dvalues[3] ) || isnan (dvalues[2]) )
+  if ( values[0] <= 1.8 || isnan( dvalues[3] ) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) )
   {
     return 1;
   }
@@ -102,7 +102,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
         REAL8           deltaT,
         const REAL8     m1,
         const REAL8     m2,
-        const REAL8   UNUSED  fMin,
+        const REAL8     fMin,
         const REAL8     r,
         const REAL8     inc,
         const REAL8     spin1[3],
@@ -205,7 +205,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   /* TODO: Insert potentially necessary checks on the arguments */
 
   /* Calculate the time we will need to step back for ringdown */
-  tStepBack = 25. * mTScaled;
+  tStepBack = 50. * mTScaled;
   nStepBack = ceil( tStepBack / deltaT );
 
   /* Calculate the resample factor for attaching the ringdown */
@@ -385,11 +385,12 @@ int XLALSimIMRSpinAlignedEOBWaveform(
       tmpValues->data[9], tmpValues->data[10], tmpValues->data[11] );
 
   /* Taken from Andrea's code */
-  /*memset( tmpValues->data, 0, tmpValues->length*sizeof(tmpValues->data[0]));
-  tmpValues->data[0] = 22.76355666243392;
-  tmpValues->data[3] = -0.0003070424127146484;
-  tmpValues->data[4] = 0.227529013009993;
-  */
+/*  memset( tmpValues->data, 0, tmpValues->length*sizeof(tmpValues->data[0]));*/
+/*
+  tmpValues->data[0] = 12.983599142327673;
+  tmpValues->data[3] = -0.002383249720459786;
+  tmpValues->data[4] = 4.3204065947459735/tmpValues->data[0];
+*/
   /* Now convert to Spherical */
   values->data[0] = tmpValues->data[0];
   values->data[1] = 0.;
@@ -448,8 +449,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   deltaT /= (REAL8)resampFac;
 
   fprintf( stderr, "Stepping back %d points - we expect %d points at high SR\n", nStepBack, nStepBack*resampFac );
-  fprintf( stderr, "Commencing high SR integration... from %.16e %.16e %.16e %.16e\n",
-     rVec.data[hiSRndx], phiVec.data[hiSRndx], prVec.data[hiSRndx], pPhiVec.data[hiSRndx] );
+  fprintf( stderr, "Commencing high SR integration... from %.16e %.16e %.16e %.16e %.16e\n",
+     (dynamics->data)[hiSRndx],rVec.data[hiSRndx], phiVec.data[hiSRndx], prVec.data[hiSRndx], pPhiVec.data[hiSRndx] );
 
   values->data[0] = rVec.data[hiSRndx];
   values->data[1] = phiVec.data[hiSRndx];
@@ -549,7 +550,9 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   gsl_interp_accel *acc = NULL;
   REAL8 omegaDeriv1, omegaDeriv2;
   REAL8 time1, time2;
-  REAL8 timePeak, omegaDerivMid;
+  REAL8 timePeak, timewavePeak = 0., omegaDerivMid;
+  REAL8 sigAmpSqHi = 0., oldsigAmpSqHi = 0.;
+  INT4  peakCount = 0;
 
   spline = gsl_spline_alloc( gsl_interp_cspline, retLen );
   acc    = gsl_interp_accel_alloc();
@@ -627,27 +630,46 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     hLM = XLALCOMPLEX16Mul( hNQC, hLM );
     sigReHi->data[i] = (REAL4) hLM.re;
     sigImHi->data[i] = (REAL4) hLM.im;
+    sigAmpSqHi = hLM.re*hLM.re+hLM.im*hLM.im;
+    if (sigAmpSqHi < oldsigAmpSqHi && peakCount == 0) 
+    {
+      timewavePeak = (i-1)*deltaT/mTScaled;
+      peakCount += 1;
+    }
+    oldsigAmpSqHi = sigAmpSqHi;
+  }
+  if (timewavePeak < 1.0e-16)
+  {
+    printf("YP::warning: could not locate mode peak.\n");
   }
 
   /* Attach the ringdown */
   /* XXX For now just hard-code the comb size, etc. We can drop it in properly XXX */
   /* XXX once we get the information from Andrea's calibration.                XXX */
   REAL8 combSize = 9.;
-
+  REAL8 timeshiftPeak = 2.5;
+  if (a > 0.)
+  {
+    timeshiftPeak += (4.27 - 2.5)/(0.43655/2.)*a;
+  }
+  timeshiftPeak = timePeak - timewavePeak;
+ 
+  printf("YP::timePeak and timeshiftPeak: %.16e and %.16e\n",timePeak,timeshiftPeak);
+ 
   REAL8Vector *rdMatchPoint = XLALCreateREAL8Vector( 3 );
   if ( !rdMatchPoint )
   {
     XLAL_ERROR( XLAL_ENOMEM );
   }
 
-  if ( combSize > timePeak - 2.5 )
+  if ( combSize > timePeak - timeshiftPeak )
   {
     XLALPrintError( "The comb size looks to be too big!!!\n" );
   }
 
   /* This 6.85 comes from calibration of Andrea */
-  rdMatchPoint->data[0] = combSize < timePeak - 2.5 ? timePeak - 2.5 - combSize : 0;
-  rdMatchPoint->data[1] = timePeak - 2.5;
+  rdMatchPoint->data[0] = combSize < timePeak - timeshiftPeak ? timePeak - timeshiftPeak - combSize : 0;
+  rdMatchPoint->data[1] = timePeak - timeshiftPeak;
   rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
 
   if ( XLALSimIMREOBHybridAttachRingdown( sigReHi, sigImHi, 2, 2,
@@ -664,10 +686,10 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   memset( sigReVec->data, 0, sigReVec->length * sizeof( REAL8 ) );
   memset( sigImVec->data, 0, sigImVec->length * sizeof( REAL8 ) );
 
-  for ( i = 0; i < 20; i++ )
+/*  for ( i = 0; i < 20; i++ )
   {
     printf( "\n\n\n\n\n******************************************************************************\n" );
-  }
+  }*/
  
   /* TODO - Check vectors were allocated */
   for ( i = 0; i < (INT4)rVec.length; i++ )
