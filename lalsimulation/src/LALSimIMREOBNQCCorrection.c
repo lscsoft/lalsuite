@@ -1150,9 +1150,9 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
   gsl_linalg_LU_solve( pMatrix, perm2, omegaVec, bCoeff );
 
   /* We can now populate the coefficients structure */
-  coeffs->a3S = gsl_vector_get( aCoeff, 0 );
+/*  coeffs->a3S = gsl_vector_get( aCoeff, 0 );
   coeffs->a4  = gsl_vector_get( aCoeff, 1 );
-  coeffs->a5  = gsl_vector_get( aCoeff, 2 );
+  coeffs->a5  = gsl_vector_get( aCoeff, 2 );*/
   coeffs->b3  = gsl_vector_get( bCoeff, 0 );
   coeffs->b4  = gsl_vector_get( bCoeff, 1 );
 
