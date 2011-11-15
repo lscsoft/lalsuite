@@ -282,10 +282,8 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
   REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
   
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
-  
-  
-
-  /* if edat is NULL then return a NULL poniter */
+ 
+  /* if edat is NULL then return a NULL pointer */
   if( data->ephem == NULL )
     return NULL;
 
@@ -293,7 +291,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
   
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( length );
-
+  
   /* get time delays */ 
   if( (dts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
       "ssb_delays" )) == NULL || varyskypos == 1 ){

@@ -160,6 +160,9 @@ RCSID("$Id$");
 REAL8 *logfactorial = NULL;
 
 UINT4 verbose_output = 0;
+UINT4 varyphase = 0;
+UINT4 varyskypos = 0;
+UINT4 varybinary = 0;
 
 /** The usage format for the code.  */
 #define USAGE \
