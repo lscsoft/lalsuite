@@ -301,6 +301,27 @@ if test "${metaio}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([METAIO],[metaio])
 
+# check for libxml2
+if test "$lalxml" = "true"; then
+  PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
+  lal_pre_libxml2_LIBS="$LIBS"
+  LIBS="$LIBS $LIBXML2_LIBS"
+  AC_SEARCH_LIBS([xmlInitParser],[xml2],,
+                 [AC_MSG_WARN([cannot find the xml2 library])]
+                 [lalxml="false"]
+                 [LIBS="$lal_pre_libxml2_LIBS"])
+fi
+
+# check for libxml2 headers
+if test "$lalxml" = "true"; then
+  lal_pre_libxml2_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
+  AC_CHECK_HEADERS([libxml/tree.h],,
+                   [AC_MSG_WARN([could not the libxml/tree.h header])]
+                   [lalxml="false"]
+                   [CPPFLAGS="$lal_pre_libxml2_CPPFLAGS"])
+fi
+
 # check for libcfitsio
 if test "${cfitsio}" = "true"; then
   PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
