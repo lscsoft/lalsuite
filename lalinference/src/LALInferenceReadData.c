@@ -233,7 +233,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	char **fLows=NULL,**fHighs=NULL;
 	LIGOTimeGPS GPSstart,GPStrig,segStart;
 	REAL8 PSDdatalength=0;
-	REAL8 trigtime=0;
   REAL8 AIGOang=0.0; //orientation angle for the proposed Australian detector.
   if(LALInferenceGetProcParamVal(commandLine,"--AIGOang")) {
     procparam=LALInferenceGetProcParamVal(commandLine,"--AIGOang");
@@ -310,15 +309,16 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	procparam=LALInferenceGetProcParamVal(commandLine,"--injXML");
 	if(procparam){
 		SimInspiralTableFromLIGOLw(&injTable,procparam->value,0,0);
-    if(!injTable){
+		if(!injTable){
 			XLALPrintError("Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
 			XLAL_ERROR_NULL(XLAL_EFUNC);
-    }
+		}
 	}
-	if(LALInferenceGetProcParamVal(commandLine,"--sw_inj")){
+	if(LALInferenceGetProcParamVal(commandLine,"--injXML")){
+	  if(LALInferenceGetProcParamVal(commandLine,"--event")){
 		event=atoi(LALInferenceGetProcParamVal(commandLine,"--event")->value);
-    while(q<event) {q++; injTable = injTable->next;}
-    trigtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
+		while(q<event) {q++; injTable = injTable->next;}
+	  }
 	}
 	
 	procparam=LALInferenceGetProcParamVal(commandLine,"--PSDstart");
@@ -330,9 +330,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 		LALStringToGPS(&status,&GPStrig,procparam->value,&chartmp);
 	}
 	else{
-		char tt[]="";
-		sprintf(tt,"%f",trigtime);
-		LALStringToGPS(&status,&GPStrig,tt,&chartmp);
+		if(injTable) GPStrig = injTable->geocent_end_time;
+		else XLALPrintError("Error: No trigger time specifed\n");
 	}
 	if(status.statusCode) REPORTSTATUS(&status);
 
