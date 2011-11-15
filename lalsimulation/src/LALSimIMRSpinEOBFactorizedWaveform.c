@@ -137,6 +137,7 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
         }
         else
         {
+          vPhi = v;
           vPhi2 = v2;
         }
 
@@ -187,14 +188,14 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
 	    {
 	      case 2:
 	        deltalm = vh3*(hCoeffs->delta22vh3 + vh3*(hCoeffs->delta22vh6 
-			+ vh*vh*(hCoeffs->delta22vh8 + hCoeffs->delta22vh9*vh))) 
-			+ hCoeffs->delta22v5 *v*v2*v2;
-		rholm	= 1. + v2*(hCoeffs->rho22v2 + v*(hCoeffs->rho22v3
-			+ v*(hCoeffs->rho22v4
-			+ v*(hCoeffs->rho22v5 + v*(hCoeffs->rho22v6 
-			+ hCoeffs->rho22v6l*eulerlogxabs + v*(hCoeffs->rho22v7 
-			+ v*(hCoeffs->rho22v8 + hCoeffs->rho22v8l*eulerlogxabs 
-			+ (hCoeffs->rho22v10 + hCoeffs->rho22v10l * eulerlogxabs)*v2)))))));
+                + vh*vh*(0.*hCoeffs->delta22vh8 + 0.*hCoeffs->delta22vh9*vh))) 
+                + hCoeffs->delta22v5 *v*v2*v2 + hCoeffs->delta22vh8 *v2*v2*v2*v2 + hCoeffs->delta22vh9 *v2*v2*v2*v2*v;
+            rholm	= 1. + v2*(hCoeffs->rho22v2 + v*(hCoeffs->rho22v3
+                + v*(hCoeffs->rho22v4
+                + v*(hCoeffs->rho22v5 + v*(hCoeffs->rho22v6 
+                + hCoeffs->rho22v6l*eulerlogxabs + v*(hCoeffs->rho22v7 
+                + v*(hCoeffs->rho22v8 + hCoeffs->rho22v8l*eulerlogxabs 
+                + (hCoeffs->rho22v10 + hCoeffs->rho22v10l * eulerlogxabs)*v2)))))));
 	        break;
 	      case 1:
                 {
@@ -442,12 +443,18 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
           rholmPwrl *= rholm;
         }
 
-        //printf( "rholm^l = %.16e, Tlm = %.16e + i %.16e, \nSlm = %.16e, hNewton = %.16e + i %.16e, delta = %.16e\n", rholmPwrl, Tlm.re, Tlm.im, Slm, hNewton.re, hNewton.im, deltalm );
+        /*if (r > 8.5)
+	{
+	  printf("YP::dynamics variables in waveform: %i, %i, %e, %e, %e\n",l,m,r,pr,pp); 
+	  printf( "rholm^l = %.16e, Tlm = %.16e + i %.16e, \nSlm = %.16e, hNewton = %.16e + i %.16e, delta = %.16e\n", rholmPwrl, Tlm.re, Tlm.im, Slm, hNewton.re, hNewton.im, deltalm );}*/
 
 	*hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ), 
 				     Slm*rholmPwrl );
         *hlm = XLALCOMPLEX16Mul( *hlm, hNewton );
-
+	/*if (r > 8.5)
+	{
+	  printf("YP::FullWave: %.16e,%.16e, %.16e\n",hlm->re,hlm->im,sqrt(hlm->re*hlm->re+hlm->im*hlm->im));
+	}*/
 	return XLAL_SUCCESS;
 }
 
