@@ -244,7 +244,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   REAL8 logZnoise = 0.;
   
   /* set error handler to abort in main function */
-  lalDebugLevel = 7;
+  /* lalDebugLevel = 7; */
   XLALSetErrorHandler(XLALAbortErrorHandler);
   
   /* Get ProcParamsTable from input arguments */

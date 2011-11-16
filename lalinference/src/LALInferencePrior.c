@@ -900,6 +900,10 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
   
     /* set random number for given parameter index */
     tmp = tmps->data[idx];
+    
+    /* free tmps */
+    if ( !LALInferenceCheckVariable( priorArgs, "multivariate_deviates" ) )
+      XLALDestroyREAL4Vector( tmps );
   } 
   /* not a recognised prior type */
   else{

@@ -226,7 +226,7 @@ REAL8 priorFunction( LALInferenceRunState *runState,
       }
       else{
         XLALPrintError("Error... no prior specified!\n");
-        XLAL_ERROR_REAL8(XLAL_EFUNC);
+        XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
     }
   }
@@ -253,39 +253,9 @@ REAL8 priorFunction( LALInferenceRunState *runState,
         XLALPrintError("Error... matrix is not positive definite!\n");
         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
-    
-      /* for (int i=0; i < corVals->length; i++){
-        for (int j=0; j < corVals->length; j++)
-          fprintf(stderr, "%lf\t", gsl_matrix_get(cor, i, j));
-        
-        fprintf(stderr, "\n");
-      }
-    
-      fprintf(stderr, "\n"); */
-     
-      /* get the matrix inverse using Cholesky decomposition */
+   
       XLAL_CALLGSL( gsl_linalg_cholesky_decomp( cor ) );
-      
-      /* for (int i=0; i < corVals->length; i++){
-        for (int j=0; j < corVals->length; j++)
-          fprintf(stderr, "%lf\t", gsl_matrix_get(cor, i, j));
-        
-        fprintf(stderr, "\n");
-      }
-    
-      fprintf(stderr, "\n"); */
-      
       XLAL_CALLGSL( gsl_linalg_cholesky_invert( cor ) );
-      
-      /* for (int i=0; i < corVals->length; i++){
-        for (int j=0; j < corVals->length; j++)
-          fprintf(stderr, "%lf\t", gsl_matrix_get(cor, i, j));
-        
-        fprintf(stderr, "\n");
-      }
-    
-      fprintf(stderr, "\n");
-      exit(0); */
       
       LALInferenceAddVariable( runState->priorArgs, "matrix_inverse",
                                &cor, LALINFERENCE_gslMatrix_t,
@@ -295,19 +265,13 @@ REAL8 priorFunction( LALInferenceRunState *runState,
     /* get the log prior (this only works properly if the parameter values have 
        been prescaled so as to be from a Gaussian of zero mean and unit
        variance, which should be the case in this code) */
-    /* for (int i=0; i < corVals->length; i++) 
-      fprintf(stderr, "%lf\n", corVals->data[i]); */
     vals = gsl_vector_view_array( corVals->data, corVals->length );
 
-    
     XLAL_CALLGSL( gsl_blas_dgemv(CblasNoTrans, 1., cor, &vals.vector, 0., vm) );
     XLAL_CALLGSL( gsl_blas_ddot(&vals.vector, vm, &ptmp) );
-    /*exit(0); */
+
     /* divide by the 2 in the denominator of the Gaussian */
     ptmp /= 2.;
-    
-    XLALDestroyREAL8Vector( corVals );
-    gsl_vector_free( vm );
     
     prior -= ptmp;
   }

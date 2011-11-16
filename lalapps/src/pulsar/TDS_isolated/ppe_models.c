@@ -327,6 +327,14 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
       inv_fact[5]*params.f4*deltat2*deltat2 +
       inv_fact[6]*params.f5*deltat2*deltat2*deltat);
   }
+  
+  /* free memory */
+  if ( !LALInferenceCheckVariable( data->dataParams, "ssb_delays") || 
+    varyskypos == 1 ) XLALDestroyREAL8Vector( dts );
+  
+  if ( !LALInferenceCheckVariable( data->dataParams, "bsb_delays") || 
+    varybinary == 1 ) XLALDestroyREAL8Vector( bdts );
+  
   return phis;
 }
 
