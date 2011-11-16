@@ -957,7 +957,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 																	 &bufferStart, 0.0, thisData->timeData->deltaT,
 																	 &lalADCCountUnit, bufferN);
 		/* This marks the sample in which the real segment starts, within the buffer */
-		INT4 realStartSample=(INT4)((thisData->timeData->epoch.gpsSeconds - injectionBuffer->epoch.gpsSeconds)/thisData->timeData->deltaT);
+		for(i=0;i<injectionBuffer->data->length;i++) injectionBuffer->data->data[i]=0.0;
+        INT4 realStartSample=(INT4)((thisData->timeData->epoch.gpsSeconds - injectionBuffer->epoch.gpsSeconds)/thisData->timeData->deltaT);
 		realStartSample+=(INT4)((thisData->timeData->epoch.gpsNanoSeconds - injectionBuffer->epoch.gpsNanoSeconds)*1e-9/thisData->timeData->deltaT);
 
 		/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
@@ -1009,19 +1010,22 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 																			thisData->freqData->deltaF,
 																			&lalDimensionlessUnit,
 																			thisData->freqData->data->length);
-		if(!injF) XLAL_ERROR_VOID(XLAL_EFUNC);
+		if(!injF) {
+            XLALPrintError("Unable to allocate memory for injection buffer\n");
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+        }
 		/* Window the data */
 		REAL4 WinNorm = sqrt(thisData->window->sumofsquares/thisData->window->data->length);
 		for(j=0;j<inj8Wave->data->length;j++) inj8Wave->data->data[j]*=thisData->window->data->data[j]/WinNorm;
-		XLALREAL8TimeFreqFFT(injF,inj8Wave,thisData->timeToFreqFFTPlan);
-/*		for(j=0;j<injF->data->length;j++) printf("%lf\n",injF->data->data[j].re);*/
+        XLALREAL8TimeFreqFFT(injF,inj8Wave,thisData->timeToFreqFFTPlan);
+		/*for(j=0;j<injF->data->length;j++) printf("%lf\n",injF->data->data[j].re);*/
 		if(thisData->oneSidedNoisePowerSpectrum){
 			for(SNR=0.0,j=thisData->fLow/injF->deltaF;j<injF->data->length;j++){
 				SNR+=2.0*pow(injF->data->data[j].re,2.0)/(4.0*thisData->oneSidedNoisePowerSpectrum->data->data[j]);
 				SNR+=2.0*pow(injF->data->data[j].im,2.0)/(4.0*thisData->oneSidedNoisePowerSpectrum->data->data[j]);
 			}
 		}
-    thisData->SNR=sqrt(SNR);
+        thisData->SNR=sqrt(SNR);
 		NetworkSNR+=SNR;
 		
 		/* Actually inject the waveform */
