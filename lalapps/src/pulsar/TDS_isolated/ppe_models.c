@@ -588,7 +588,7 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   psiScaled = (pars.psi - psiMin)/(psiMax - psiMin);
   
   tsv = LAL_DAYSID_SI / tsteps;
-  
+   
   for( i=0; i<length; i++ ){
     /* set the time bin for the lookup table */
     /* sidereal day in secs*/

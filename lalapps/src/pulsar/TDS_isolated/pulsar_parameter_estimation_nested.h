@@ -172,6 +172,8 @@ extern UINT4 varyskypos;
  * no, 1 = yes) */
 extern UINT4 varybinary; 
 
+extern LALStringVector *corlist;
+
 /* initialisation functions */
 void initialiseAlgorithm( LALInferenceRunState *runState );
 
