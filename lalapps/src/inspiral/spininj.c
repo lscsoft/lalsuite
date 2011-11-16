@@ -554,9 +554,9 @@ void LALSetSiteParameters(LALStatus *status,
   /* temporarily, populate the fields for the */
   /* GEO, TAMA and VIRGO times                */
   
-  memset( &(this_inj->g_end_time), 0,sizeof(&(this_inj->l_end_time)) ); 
-  memset( &(this_inj->t_end_time), 0,sizeof(&(this_inj->l_end_time)) );
-  memset( &(this_inj->v_end_time), 0,sizeof(&(this_inj->l_end_time)) );
+  memset( &(this_inj->g_end_time), 0,sizeof((this_inj->l_end_time)) );
+  memset( &(this_inj->t_end_time), 0,sizeof((this_inj->l_end_time)) );
+  memset( &(this_inj->v_end_time), 0,sizeof((this_inj->l_end_time)) );
   
   /*
    * compute the effective distance of the inspiral
@@ -597,9 +597,9 @@ void LALSetSiteParameters(LALStatus *status,
   /* GEO, TAMA and VIRGO effective distances  */
 
   
-  memset( &(this_inj->eff_dist_g), 0, sizeof(&(this_inj->eff_dist_g)) );
-  memset( &(this_inj->eff_dist_t), 0, sizeof(&(this_inj->eff_dist_g)) );
-  memset( &(this_inj->eff_dist_v), 0, sizeof(&(this_inj->eff_dist_g)) );
+  memset( &(this_inj->eff_dist_g), 0, sizeof((this_inj->eff_dist_g)) );
+  memset( &(this_inj->eff_dist_t), 0, sizeof((this_inj->eff_dist_g)) );
+  memset( &(this_inj->eff_dist_v), 0, sizeof((this_inj->eff_dist_g)) );
   
   
 
