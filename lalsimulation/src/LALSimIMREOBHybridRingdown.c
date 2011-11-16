@@ -53,12 +53,14 @@ the inspiral part of the compat binary coalescing waveform.
  * merger. They are given by a fitting found in Pan et al, arXiv:1106.1021v1 [gr-qc]
  */
 static INT4 XLALFinalMassSpin(
-        REAL8            *finalMass, /**<< The final mass returned by the function (scaled by original total mass) */
-        REAL8            *finalSpin, /**<< The final spin returned by the function (scaled by final mass) */
-        const REAL8      mass1,      /**<< The mass of the first component of the system */
-        const REAL8      mass2       /**<< The mass of the second component of the system */
-        );
-
+	REAL8		    *finalMass, /**<< The final mass returned by the function (scaled by original total mass) */
+	REAL8		    *finalSpin, /**<< The final spin returned by the function (scaled by final mass) */
+	const REAL8     mass1,      /**<< The mass of the first component of the system */
+    const REAL8     mass2,       /**<< The mass of the second component of the system */
+    const REAL8     spin1[3],   /**<<The spin of the first object; only needed for spin waveforms */
+    const REAL8     spin2[3],   /**<<The spin of the second object; only needed for spin waveforms */
+    Approximant     approximant  /**<<The waveform approximant being used */
+	);
 
 /**
  * Generates the ringdown wave associated with the given real
@@ -66,7 +68,7 @@ static INT4 XLALFinalMassSpin(
  * the ringdown, such as amplitude and phase offsets, are determined
  * by solving the linear equations found in the DCC document T1100433.
  */ 
-static INT4 XLALSimIMREOBHybridRingdownWave (
+static INT4 XLALSimIMREOBHybridRingdownWave(
 	REAL8Vector			*rdwave1,   /**<< Real part of ringdown */
 	REAL8Vector			*rdwave2,   /**<< Imaginary part of ringdown */
         const REAL8                     dt,         /**<< Sampling interval */
@@ -393,9 +395,12 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
         COMPLEX16Vector          *modefreqs, /**<<The complex frequencies of the overtones (scaled by total mass) */
         const REAL8              mass1,      /**<<The mass of the first component of the system (in Solar masses) */
         const REAL8              mass2,      /**<<The mass of the second component of the system (in Solar masses) */
+        const REAL8              spin1[3],   /**<<The spin of the first object; only needed for spin waveforms */
+        const REAL8              spin2[3],   /**<<The spin of the second object; only needed for spin waveforms */
         UINT4                    l,          /**<<The l value of the mode in question */
         UINT4                    m,          /**<<The m value of the mode in question */
-        UINT4                   nmodes       /**<<The number of overtones that should be included (max 8) */
+        UINT4                   nmodes,      /**<<The number of overtones that should be included (max 8) */
+        Approximant             approximant  /**<<The waveform approximant being used */
         )
 {
 
@@ -589,7 +594,7 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
   totalMass = mass1 + mass2;
 
  /* Call XLALFinalMassSpin() to get mass and spin of the final black hole */
-  if ( XLALFinalMassSpin(&finalMass, &finalSpin, mass1, mass2) == XLAL_FAILURE )
+  if ( XLALFinalMassSpin(&finalMass, &finalSpin, mass1, mass2, spin1, spin2, approximant) == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -625,18 +630,32 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
  * merger. They are given by a fitting found in Pan et al, arXiv:1106.1021v1 [gr-qc]
  */
 static INT4 XLALFinalMassSpin(
-	REAL8		 *finalMass, /**<< The final mass returned by the function (scaled by original total mass) */
-	REAL8		 *finalSpin, /**<< The final spin returned by the function (scaled by final mass) */
-	const REAL8      mass1,      /**<< The mass of the first component of the system */
-        const REAL8      mass2       /**<< The mass of the second component of the system */
+	REAL8		    *finalMass, /**<< The final mass returned by the function (scaled by original total mass) */
+	REAL8		    *finalSpin, /**<< The final spin returned by the function (scaled by final mass) */
+	const REAL8     mass1,      /**<< The mass of the first component of the system */
+    const REAL8     mass2,       /**<< The mass of the second component of the system */
+    const REAL8     spin1[3],   /**<<The spin of the first object; only needed for spin waveforms */
+    const REAL8     spin2[3],   /**<<The spin of the second object; only needed for spin waveforms */
+    Approximant     approximant  /**<<The waveform approximant being used */
 	)
-
 {
   static const REAL8 root9ovr8minus1 = -0.057190958417936644;
   static const REAL8 root12          = 3.4641016151377544;
 
+  /* Constants used for the spinning EOB model */
+  static const REAL8 p0 = 0.04826;
+  static const REAL8 p1 = 0.01559;
+  static const REAL8 p2 = 0.00485;
+  static const REAL8 t0 = -2.8904;
+  static const REAL8 t2 = -3.5171;
+  static const REAL8 t3 = 2.5763;
+  static const REAL8 s4 = -0.1229;
+  static const REAL8 s5 = 0.4537;
+
   REAL8 totalMass;
   REAL8 eta, eta2, eta3;
+  REAL8 a1, a2, chiS, q;
+  REAL8 tmpVar;
 
   /* get a local copy of the intrinsic parameters */
   totalMass = mass1 + mass2;
@@ -644,13 +663,43 @@ static INT4 XLALFinalMassSpin(
   eta2 = eta * eta;
   eta3 = eta2 * eta;
 
-  /* Final mass and spin given by a fitting in Pan et al, arXiv:1106.1021v1 [gr-qc] */
-  *finalMass = 1. + root9ovr8minus1 * eta - 0.4333 * eta2 - 0.4392 * eta3;
-  *finalSpin = root12 * eta - 3.871 * eta2 + 4.028 * eta3;
+  switch ( approximant )
+  {
+    case EOBNRv2:
+    case EOBNRv2HM:
+      eta3 = eta2 * eta;
+      /* Final mass and spin given by a fitting in Pan et al, arXiv:1106.1021v1 [gr-qc] */
+      *finalMass = 1. + root9ovr8minus1 * eta - 0.4333 * eta2 - 0.4392 * eta3;
+      *finalSpin = root12 * eta - 3.871 * eta2 + 4.028 * eta3;
+      break;
+    case EOBNR:
+      /* Final mass and spin given by a fitting in PRD76, 104049 */
+      *finalMass = 1 - 0.057191 * eta - 0.498 * eta2;
+      *finalSpin = 3.464102 * eta - 2.9 * eta2;
+      break;
+    case SpinAlignedEOB:
+      /* Final mass/spin comes from a fit in Andrea Tarrachini's C++ code */
+
+      a1 = spin1[2];
+      a2 = spin2[2];
+
+      chiS = 0.5 * ( a1 + a2 );
+      q    = mass1 / mass2;
+
+      *finalMass = 1. - p0 + 2.*p1 * chiS  + 4.*p2*chiS*chiS;
+      *finalMass = 1. + (0.9515 - 1.0)*4.*eta - 0.013*16.*eta2*(a1+a2);
+      tmpVar     = ( a1 + a2 * q*q) / ( 1. + q*q);
+      *finalSpin = tmpVar + tmpVar * eta * (s4 * tmpVar + s5 * eta + t0 ) + eta * (2. * sqrt(3.) + t2*eta + t3*eta*eta );
+      break;
+    default:
+      XLALPrintError( "XLAL Error %s - Unsupported approximant.\n", __func__ );
+      XLAL_ERROR( XLAL_EINVAL );
+  }
+
+  printf( "Final mass = %e, Final spin = %e\n", *finalMass, *finalSpin );
 
   return XLAL_SUCCESS;
 }
-
 
 
 /**
@@ -670,8 +719,11 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       const REAL8       dt,           /**<< Sample time step (in seconds) */
       const REAL8       mass1,        /**<< First component mass (in Solar masses) */
       const REAL8       mass2,        /**<< Second component mass (in Solar masses) */
+      const REAL8       spin1[3],     /**<<The spin of the first object; only needed for spin waveforms */
+      const REAL8       spin2[3],     /**<<The spin of the second object; only needed for spin waveforms */
       REAL8Vector       *timeVec,     /**<< Vector containing the time values */
-      REAL8Vector	*matchrange   /**<< Time values chosen as points for performing comb matching */
+      REAL8Vector       *matchrange,  /**<< Time values chosen as points for performing comb matching */
+      Approximant       approximant   /**<<The waveform approximant being used */
       )
 {
 
@@ -702,7 +754,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
         XLAL_ERROR( XLAL_ENOMEM );
       }
 
-      if ( XLALSimIMREOBGenerateQNMFreqV2( modefreqs, mass1, mass2, l, m, nmodes ) == XLAL_FAILURE )
+      if ( XLALSimIMREOBGenerateQNMFreqV2( modefreqs, mass1, mass2, spin1, spin2, l, m, nmodes, approximant ) == XLAL_FAILURE )
       {
         XLALDestroyCOMPLEX16Vector( modefreqs );
         XLAL_ERROR( XLAL_EFUNC );

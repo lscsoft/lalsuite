@@ -245,7 +245,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   modefreqVec.length = 1;
   modefreqVec.data   = &modeFreq;
 
-  if ( XLALSimIMREOBGenerateQNMFreqV2( &modefreqVec, m1, m2, 2, 2, 1 ) == XLAL_FAILURE )
+  if ( XLALSimIMREOBGenerateQNMFreqV2( &modefreqVec, m1, m2, spin1, spin2, 2, 2, 1, SpinAlignedEOB ) == XLAL_FAILURE )
   {
     XLALDestroyREAL8Vector( values );
     XLAL_ERROR( XLAL_EFUNC );
@@ -673,7 +673,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
 
   if ( XLALSimIMREOBHybridAttachRingdown( sigReHi, sigImHi, 2, 2,
-              deltaT, m1, m2, &timeHi, rdMatchPoint)
+              deltaT, m1, m2, spin1, spin2, &timeHi, rdMatchPoint, SpinAlignedEOB)
           == XLAL_FAILURE ) 
   {
     XLAL_ERROR( XLAL_EFUNC );

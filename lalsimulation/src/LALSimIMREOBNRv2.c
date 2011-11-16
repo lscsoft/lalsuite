@@ -886,7 +886,7 @@ XLALSimIMREOBNRv2Generator(
    /* Check that the 220 QNM freq. is less than the Nyquist freq. */
    /* Get QNM frequencies */
    modefreqs = XLALCreateCOMPLEX16Vector( 3 );
-   xlalStatus = XLALSimIMREOBGenerateQNMFreqV2( modefreqs, mass1, mass2, 2, 2, 3 );
+   xlalStatus = XLALSimIMREOBGenerateQNMFreqV2( modefreqs, mass1, mass2, NULL, NULL, 2, 2, 3, EOBNRv2);
    if ( xlalStatus != XLAL_SUCCESS )
    {
      XLALDestroyCOMPLEX16Vector( modefreqs );
@@ -1446,7 +1446,7 @@ XLALSimIMREOBNRv2Generator(
      rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
 
      xlalStatus = XLALSimIMREOBHybridAttachRingdown(sigReHi, sigImHi,
-                   modeL, modeM, dt, mass1, mass2, &tVecHi, rdMatchPoint );
+                   modeL, modeM, dt, mass1, mass2, NULL, NULL, &tVecHi, rdMatchPoint, EOBNRv2 );
      if (xlalStatus != XLAL_SUCCESS )
      {
        XLALDestroyREAL8Vector( rdMatchPoint );
