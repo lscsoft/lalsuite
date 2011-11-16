@@ -352,7 +352,7 @@ int write_fstat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    if(checksum)
        *checksum = 0;
    for(i=0;i<tl->elems;i++)
-     if ((r = write_fstat_toplist_item_to_fp(*((FstatOutputEntry*)(tl->heap[i])), fp, checksum)) < 0) {
+     if ((r = write_fstat_toplist_item_to_fp(*((FstatOutputEntry*)(void*)(tl->heap[i])), fp, checksum)) < 0) {
        LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s\n",
 		  errno,strerror(errno));
 #ifdef _MSC_VER
