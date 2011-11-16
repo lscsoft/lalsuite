@@ -83,18 +83,21 @@ NRCSID (LALCOMPUTEAMH, "$Id: LALComputeAM.h");
 
 /* ---------- exported data types -------------------- */
 
-/** This structure contains the output of the routine: a(t), b(t),
- * and the scalar products therein.  That is:
+/** This structure contains the per-SFT (weighted) antenna-pattern functions
+ * \f$\widehat{a}_\alpha, \widehat{b}_\alpha\f$,
+ * with \f$\alpha\f$ the SFT-index, and the single-IFO summed antenna-pattern coefficients
+ * \f$A_d,B_d,C_d\f$ and their determinant \f$D_d=A_d B_d - C_d^2\f$,
+ * see Sec.4.1 in CFSv2 notes (https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=1665)
  */
 typedef struct tagAMCoeffs
 {
   SWIGLAL_STRUCT(AMCoeffs);
-  REAL4Vector     *a;          /**< the function a(t)         */
-  REAL4Vector     *b;          /**< the function b(t)         */
-  REAL4           A;           /**< the scalar product (a||a) */
-  REAL4           B;           /**< the scalar product (b||b) */
-  REAL4           C;           /**< the scalar product (a||b) */
-  REAL4           D;           /**< the quantity AB-C^2       */
+  REAL4Vector     *a;          /**< (weighted) per-SFT antenna-pattern function \f$\widehat{a}_\alpha\f$ */
+  REAL4Vector     *b;          /**< (weighted) per-SFT antenna-pattern function \f$\widehat{b}_\alpha\f$ */
+  REAL4           A;           /**< summed single-IFO antenna-pattern \f$A_d = \sum_{\alpha} \widehat{a}^2_\alpha\f$ */
+  REAL4           B;           /**< summed single-IFO antenna-pattern \f$B_d = \sum_{\alpha} \widehat{b}^2_\alpha\f$ */
+  REAL4           C;           /**< summed single-IFO antenna-pattern \f$C_d = \sum_{\alpha} \widehat{a}_\alpha\,\widehat{b}_\alpha\f$ */
+  REAL4           D;           /**< determinant \f$D_d = A_d B_d - C_d^2\f$  */
 } AMCoeffs;
 
 /** This structure contains the parameters for the routine.  They include:
@@ -140,7 +143,7 @@ typedef struct tagAntennaPatternMatrix {
   REAL8 Sinv_Tsft;	/**< normalization-factor \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (wrt single-sided PSD!) */
 } AntennaPatternMatrix;
 
-/** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
+/** Multi-IFO container for antenna-pattern coefficients \f$a_{X\alpha}, b_{X\alpha}\f$ and atenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
 typedef struct tagMultiAMCoeffs {
   SWIGLAL_STRUCT(MultiAMCoeffs);
   UINT4 length;		/**< number of IFOs */

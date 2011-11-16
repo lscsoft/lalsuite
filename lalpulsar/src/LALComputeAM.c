@@ -615,89 +615,98 @@ void LALComputeAM (LALStatus          *status,
 
 /** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
  * compute the resulting \f$A_d, B_d, C_d\f$ by simply *SUMMING* them, i.e.
- * \f$A_d \equiv \sum_{X,\alpha} \sqrt{w_{X\alpha} a_{X\alpha}^2\f$ etc.
+ * \f$A_d^X \equiv \sum_{\alpha} \sqrt{w_{X\alpha} a_{X\alpha}^2\f$, etc for the single-IFO values
+ * for detector $X$, and
+ * \f$A_d \equiv \sum_{X} A_d^X$ etc, for the multi-IFO values,
+ * see Sec.4.1 in CFSv2 (https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=1665)
  *
- * NOTE: this function modifies the AMCoeffs *in place* !
+ * NOTE: this function modifies the input AMCoeffs *in place* !
  * NOTE2: if the weights = NULL, we assume unit-weights.
  */
 int
 XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
 {
-  UINT4 numDetectors, X;
-  REAL8 Ad, Bd, Cd;
-  UINT4 alpha;
 
-  if ( !multiAMcoef )
+  /* ----- input sanity checks ----- */
+  if ( !multiAMcoef ) {
+    XLALPrintError ("%s: illegal NULL input received in 'multiAMcoefs'.\n", __func__ );
     XLAL_ERROR( XLAL_EINVAL );
-
-  numDetectors = multiAMcoef->length;
-
-  if ( multiWeights && ( multiWeights->length != numDetectors ) )
+  }
+  UINT4 numDetectors = multiAMcoef->length;
+  /* make sure identical number of detectors in amCoefs and weights */
+  if ( multiWeights && (multiWeights->length != numDetectors) ) {
+    XLALPrintError("%s: multiWeights must be NULL or have the same number of detectors (numDet=%d) as mulitAMcoef (numDet=%d)!\n", __func__, multiWeights->length, numDetectors );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+  /* make sure identical number of timesteps in a_X, b_X and (if given) weights w_X, respectively */
+  UINT4 X;
+  for ( X = 0; X < numDetectors; X ++ )
     {
-      XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
-      XLAL_ERROR( XLAL_EINVAL );
-    }
+      UINT4 numStepsX = multiAMcoef->data[X]->a->length;
+      if ( numStepsX != multiAMcoef->data[X]->b->length ) {
+        XLALPrintError ("%s: per-SFT antenna-pattern series have different length: a_alpha (len=%d), b_alpha (len=%d)\n", __func__, numStepsX, multiAMcoef->data[X]->b->length );
+        XLAL_ERROR ( XLAL_EINVAL );
+      }
+      if ( multiWeights && (multiWeights->data[X]->length != numStepsX )) {
+        XLALPrintError("%s: multiWeights[X=%d] must be NULL or have the same length (len=%d) as mulitAMcoef[X] (len=%d)!\n", __func__, X, multiWeights->data[X]->length, numStepsX );
+        XLAL_ERROR( XLAL_EINVAL );
+      }
+    } // for X < numDetectors
 
-  /* noise-weight Antenna-patterns and compute A,B,C */
-  Ad = Bd = Cd = 0;
-
-  if ( multiWeights  )
+  REAL8 Ad = 0, Bd = 0, Cd = 0;	// multi-IFO values
+  /* ---------- main loop over detectors X ---------- */
+  for ( X=0; X < numDetectors; X ++)
     {
-      for ( X=0; X < numDetectors; X ++)
-	{
-	  AMCoeffs *amcoeX = multiAMcoef->data[X];
-	  UINT4 numSteps = amcoeX->a->length;
+      AMCoeffs *amcoeX = multiAMcoef->data[X];
+      UINT4 numStepsX = amcoeX->a->length;
 
-	  REAL8Vector *weightsX = multiWeights->data[X];;
-	  if ( weightsX->length != numSteps )
-	    {
-	      XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
-	      XLAL_ERROR( XLAL_EINVAL );
-	    }
+      /* ----- if given, apply noise-weights to all Antenna-pattern coefficients from detector X ----- */
+      if ( multiWeights )
+        {
+          REAL8Vector *weightsX = multiWeights->data[X];
+          UINT4 alpha;	// SFT-index
+          for(alpha = 0; alpha < numStepsX; alpha++)
+            {
+              REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
+              /* apply noise-weights, *replace* original a, b by noise-weighed version! */
+	      amcoeX->a->data[alpha] *= Sqwi;
+	      amcoeX->b->data[alpha] *= Sqwi;
+            } // for alpha < numSteps
+        } // if weights
 
-	  for(alpha = 0; alpha < numSteps; alpha++)
-	    {
-	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
-	      REAL8 ahat = Sqwi * amcoeX->a->data[alpha] ;
-	      REAL8 bhat = Sqwi * amcoeX->b->data[alpha] ;
+      UINT4 alpha;	// SFT-index
+      REAL8 AdX = 0, BdX = 0, CdX = 0;	// single-IFO values
+      /* compute single-IFO antenna-pattern coefficients AX,BX,CX, by summing over time-steps 'alpha' */
+      for(alpha = 0; alpha < numStepsX; alpha++)
+        {
+          REAL8 ahat = amcoeX->a->data[alpha];
+          REAL8 bhat = amcoeX->b->data[alpha];
 
-	      /* *replace* original a(t), b(t) by noise-weighed version! */
-	      amcoeX->a->data[alpha] = ahat;
-	      amcoeX->b->data[alpha] = bhat;
+          AdX += ahat * ahat;
+          BdX += bhat * bhat;
+          CdX += ahat * bhat;
+        } /* for alpha < numStepsX */
 
-	      /* sum A, B, C on the fly */
-	      Ad += ahat * ahat;
-	      Bd += bhat * bhat;
-	      Cd += ahat * bhat;
-	    } /* for alpha < numSFTsX */
-	} /* for X < numDetectors */
-      multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
-    }
-  else /* if no noise-weights: simply add to get A,B,C */
-    {
-      for ( X=0; X < numDetectors; X ++)
-	{
-	  AMCoeffs *amcoeX = multiAMcoef->data[X];
-	  UINT4 numSteps = amcoeX->a->length;
+      /* store those */
+      amcoeX->A = AdX;
+      amcoeX->B = BdX;
+      amcoeX->C = CdX;
+      amcoeX->D = AdX * BdX - CdX * CdX;
 
-	  for(alpha = 0; alpha < numSteps; alpha++)
-	    {
-	      REAL8 ahat = amcoeX->a->data[alpha] ;
-	      REAL8 bhat = amcoeX->b->data[alpha] ;
+      /* compute multi-IFO antenna-pattern coefficients A,B,C by summing over IFOs X */
+      Ad += AdX;
+      Bd += BdX;
+      Cd += CdX;
 
-	    /* sum A, B, C on the fly */
-	    Ad += ahat * ahat;
-	    Bd += bhat * bhat;
-	    Cd += ahat * bhat;
-	    } /* for alpha < numSFTsX */
-	} /* for X < numDetectors */
-
-    } /* if multiWeights == NULL */
+    } /* for X < numDetectors */
 
   multiAMcoef->Mmunu.Ad = Ad;
   multiAMcoef->Mmunu.Bd = Bd;
   multiAMcoef->Mmunu.Cd = Cd;
   multiAMcoef->Mmunu.Dd = Ad * Bd - Cd * Cd;
+
+  if ( multiWeights )
+    multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
 
   return XLAL_SUCCESS;
 
