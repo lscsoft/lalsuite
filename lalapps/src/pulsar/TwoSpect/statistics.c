@@ -968,6 +968,28 @@ INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorseq
 }
 
 
+void min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4 *max_index_out)
+{
+   
+   INT4 ii = 0;
+   *min_index_out = 0, *max_index_out = 0;
+   INT4 minval = inputvector->data[0];
+   INT4 maxval = inputvector->data[0];
+   
+   for (ii=1; ii<(INT4)inputvector->length; ii++) {
+      if (inputvector->data[ii]<minval) {
+         minval = inputvector->data[ii];
+         *min_index_out = ii;
+      }
+      if (inputvector->data[ii]>maxval) {
+         maxval = inputvector->data[ii];
+         *max_index_out = ii;
+      }
+   }
+   
+}
+
+
 REAL4 calcMedian(REAL4Vector *vector)
 {
    

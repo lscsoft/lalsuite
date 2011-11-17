@@ -217,7 +217,7 @@ int main(int argc, char **argv)
 
   /* get filename of next frame following requested time */
   CHAR *filename;
-  filename = LALFrameLLDNextFrameName(data_path, observatory, frame_type, requested_time);
+  filename = LALFrameLLDNextFrameName(data_path, observatory, frame_type, &requested_time);
   if (filename == NULL)
   {
     fprintf(stderr, "Unable to get frame name\n");

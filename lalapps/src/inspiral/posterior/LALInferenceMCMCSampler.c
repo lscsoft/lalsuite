@@ -92,6 +92,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   
 	INT4 adaptationOn = 0;
   INT4 acceptanceRatioOn = 0;
+    INT4 adaptTau = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau"));
+    INT4 adaptationLength = pow(10,adaptTau);
 	INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
 	INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
 	INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
@@ -237,11 +239,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   FILE * chainoutput = NULL;
   
   FILE *stat = NULL;
-	char statfilename[256];
+  FILE *tempfile = NULL;
+  char statfilename[256];
+  char tempfilename[256];
   if(MPIrank == 0){
     if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose") || LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")) {
       sprintf(statfilename,"PTMCMC.statistics.%u",randomseed);
       stat = fopen(statfilename, "a");
+    }
+
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
+      sprintf(tempfilename,"PTMCMC.tempswaps.%u",randomseed);
+      tempfile = fopen(tempfilename, "a");
     }
   }
 
@@ -275,21 +284,29 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
                 }
 
 	}
-	MPI_Barrier(MPI_COMM_WORLD);
+
+    INT4 Tskip=100;
+    if (LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip"))
+        Tskip = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip")->value);
+    INT4 Tkill=Niter;
+    if (LALInferenceGetProcParamVal(runState->commandLine,"--tempKill"))
+        Tkill = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempKill")->value);
+
 	// iterate:
+	MPI_Barrier(MPI_COMM_WORLD);
 	for (i=1; i<=Niter; i++) {
     
 
 	//	LALInferenceSetVariable(runState->proposalArgs, "temperature", &(tempLadder[MPIrank]));  //update temperature of the chain
 		LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
 
-    if (adaptationOn == 1 && i == 1000001) {
+    if (adaptationOn == 1 && i > adaptationLength) {
       adaptationOn = 0;  //turn adaptation off after 10^6 iterations
       LALInferenceRemoveVariable(runState->proposalArgs,"s_gamma");
       //LALInferenceRemoveVariable(runState->proposalArgs, SIGMAVECTORNAME);
     }
     if (adaptationOn == 1) {
-      s_gamma=10.0*exp(-(1.0/6.0)*log((double)i))-1;
+      s_gamma=10.0*exp(-(1.0/adaptTau)*log((double)i))-1;
       LALInferenceSetVariable(runState->proposalArgs, "s_gamma", &(s_gamma));
     }    
     
@@ -365,7 +382,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
       ptr=ptr->next;
     }    
-  
+    }
+
+    if ((i % Tskip) == 0) {
     if(temperature_test==1){
       for (p=0;p<nPar;++p){
         pdf_count=0;
@@ -376,7 +395,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
     }
 
-    
+    if (i <= Tkill) {
     dprior = priorMax - priorMin;
     
 
@@ -393,7 +412,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 					
 					if ((logChainSwap > 0)
 						|| (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap... 
-
+            if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
+                fprintf(tempfile,"%d\t%f\t%f\t%f\n",i,logChainSwap,tempLadder[lowerRank],tempLadder[upperRank]);
+                fflush(tempfile);
+            }
             for (p=0; p<(nPar); ++p){
               dummyR8=parametersVec[p+nPar*upperRank];
               parametersVec[p+nPar*upperRank]=parametersVec[p+nPar*lowerRank];
@@ -423,7 +445,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }  
     
     MPI_Barrier(MPI_COMM_WORLD);
-    }
+    }// if (i <= Tkill)
+    }// if ((i % Tskip) == 0)
 	}// for (i=1; i<=Niter; i++)
   
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -433,6 +456,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if(MPIrank == 0){
     if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose") || LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")) {
       fclose(stat);
+    }
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
+      fclose(tempfile);
     }
   }
 	

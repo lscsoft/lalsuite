@@ -160,6 +160,11 @@ RCSID("$Id$");
 REAL8 *logfactorial = NULL;
 
 UINT4 verbose_output = 0;
+UINT4 varyphase = 0;
+UINT4 varyskypos = 0;
+UINT4 varybinary = 0;
+
+LALStringVector *corlist = NULL;
 
 /** The usage format for the code.  */
 #define USAGE \
@@ -1912,6 +1917,10 @@ void add_correlation_matrix( LALInferenceVariables *ini,
      and replacing with a correlation matrix */
   for ( i = 0; i < parMat->length; i++ ){
     LALInferenceVariableItem *checkPrior = ini->head;
+    
+    /* allocate global variable giving the list of the correlation matrix
+       parameters */
+    corlist = XLALAppendString2Vector( corlist, parMat->data[i] );
     
     for( ; checkPrior ; checkPrior = checkPrior->next ){
       if( LALInferenceCheckGaussianPrior(priors, checkPrior->name) ){

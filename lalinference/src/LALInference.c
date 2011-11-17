@@ -279,6 +279,8 @@ void LALInferenceDestroyVariables(LALInferenceVariables *vars)
 void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariables *target)
 /*  copy contents of "origin" over to "target"  */
 {
+  int dims = 0, i = 0;
+  
   /* Check that the source and origin differ */
   if(origin==target) return;
 
@@ -293,22 +295,40 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
   if(!target) fprintf(stderr,"ERROR: Unable to copy to uninitialised LALInferenceVariables structure\n");
   /* first dispose contents of "target" (if any): */
   LALInferenceDestroyVariables(target);
+   
+  /* get the number of elements in origin */
+  dims = LALInferenceGetVariableDimension( origin );
   
-  /* then copy over elements of "origin": */
-  ptr = origin->head;
-  if(!ptr)
-  {
-	  XLALPrintError("Bad LALInferenceVariable structure found while trying to copy\n");
-	  XLAL_ERROR_VOID(XLAL_EFAULT);
+  if ( !dims ){
+    XLALPrintError("Origin variables has zero dimensions!");
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   }
-  while (ptr != NULL) {
-	  if(!ptr->value || !ptr->name){
-		  XLALPrintError("Badly formed LALInferenceVariableItem structure found in copyVariables!\n");
-		  XLAL_ERROR_VOID(XLAL_EFAULT);
-	  }
-    LALInferenceAddVariable(target, ptr->name, ptr->value, ptr->type, ptr->vary);
-    ptr = ptr->next;
+  
+  /* then copy over elements of "origin" - due to how elements are added by
+     LALInferenceAddVariable this has to be done in reverse order to preserve
+     the ordering of "origin"  */
+  for ( i = dims; i > 0; i-- ){
+    ptr = LALInferenceGetItemNr(origin, i);
+    
+    if(!ptr)
+    {
+      XLALPrintError("Bad LALInferenceVariable structure found while trying\
+ to copy\n");
+      XLAL_ERROR_VOID(XLAL_EFAULT);
+    }
+    else
+    {
+      if(!ptr->value || !ptr->name){
+        XLALPrintError("Badly formed LALInferenceVariableItem structure found\
+ in copyVariables!\n");
+        XLAL_ERROR_VOID(XLAL_EFAULT);
+      }
+    
+      LALInferenceAddVariable(target, ptr->name, ptr->value, ptr->type,
+                              ptr->vary);
+    }
   }
+  
   return;
 }
 

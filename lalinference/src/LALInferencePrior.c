@@ -214,7 +214,7 @@ void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter){
       /* if psi is outside the -pi/4 -> pi/4 boundary the set to rotate phi0
          by pi (psi will have been rescaled to be between 0 to 2pi as a 
         circular parameter).*/
-     if (*(REAL8 *)paraHead->value > LAL_TWOPI || 
+      if (*(REAL8 *)paraHead->value > LAL_TWOPI || 
         *(REAL8 *)paraHead->value < 0. ) rotphi0 = LAL_PI;
     
       idx1++;
@@ -900,6 +900,10 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
   
     /* set random number for given parameter index */
     tmp = tmps->data[idx];
+    
+    /* free tmps */
+    if ( !LALInferenceCheckVariable( priorArgs, "multivariate_deviates" ) )
+      XLALDestroyREAL4Vector( tmps );
   } 
   /* not a recognised prior type */
   else{

@@ -1057,6 +1057,7 @@ static void
 reflected_position_and_time(LALInferenceRunState *runState, const REAL8 ra, const REAL8 dec, const REAL8 oldTime,
                             REAL8 *newRA, REAL8 *newDec, REAL8 *newTime) {
   LALStatus status;
+  memset(&status,0,sizeof(status));
   SkyPosition currentEqu, currentGeo, newEqu, newGeo;
   currentEqu.latitude = dec;
   currentEqu.longitude = ra;

@@ -233,7 +233,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	char **fLows=NULL,**fHighs=NULL;
 	LIGOTimeGPS GPSstart,GPStrig,segStart;
 	REAL8 PSDdatalength=0;
-	REAL8 trigtime=0;
   REAL8 AIGOang=0.0; //orientation angle for the proposed Australian detector.
   if(LALInferenceGetProcParamVal(commandLine,"--AIGOang")) {
     procparam=LALInferenceGetProcParamVal(commandLine,"--AIGOang");
@@ -310,15 +309,16 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	procparam=LALInferenceGetProcParamVal(commandLine,"--injXML");
 	if(procparam){
 		SimInspiralTableFromLIGOLw(&injTable,procparam->value,0,0);
-    if(!injTable){
+		if(!injTable){
 			XLALPrintError("Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
 			XLAL_ERROR_NULL(XLAL_EFUNC);
-    }
+		}
 	}
-	if(LALInferenceGetProcParamVal(commandLine,"--sw_inj")){
+	if(LALInferenceGetProcParamVal(commandLine,"--injXML")){
+	  if(LALInferenceGetProcParamVal(commandLine,"--event")){
 		event=atoi(LALInferenceGetProcParamVal(commandLine,"--event")->value);
-    while(q<event) {q++; injTable = injTable->next;}
-    trigtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
+		while(q<event) {q++; injTable = injTable->next;}
+	  }
 	}
 	
 	procparam=LALInferenceGetProcParamVal(commandLine,"--PSDstart");
@@ -330,9 +330,11 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 		LALStringToGPS(&status,&GPStrig,procparam->value,&chartmp);
 	}
 	else{
-		char tt[]="";
-		sprintf(tt,"%f",trigtime);
-		LALStringToGPS(&status,&GPStrig,tt,&chartmp);
+		if(injTable) GPStrig = injTable->geocent_end_time;
+		else {
+            XLALPrintError("Error: No trigger time specifed and no injection given \n");
+            XLAL_ERROR_NULL(XLAL_EINVAL);
+        }
 	}
 	if(status.statusCode) REPORTSTATUS(&status);
 
@@ -596,7 +598,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 			if(!strcmp(caches[i],"LALVirgo")) {PSD = &LALVIRGOPsd; scalefactor=1.0;}
 			if(!strcmp(caches[i],"LALGEO")) {PSD = &LALGEOPsd; scalefactor=1E-46;}
 			if(!strcmp(caches[i],"LALEGO")) {PSD = &LALEGOPsd; scalefactor=1.0;}
-			if(!strcmp(caches[i],"LALAdLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 10E-49;}
+			if(!strcmp(caches[i],"LALAdLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 1E-49;}
       if(interpFlag) {PSD=NULL; scalefactor=1.0;}
 			//if(!strcmp(caches[i],"LAL2kLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 36E-46;}
 			if(PSD==NULL && !interpFlag) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",caches[i]); exit(-1);}
@@ -955,7 +957,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 																	 &bufferStart, 0.0, thisData->timeData->deltaT,
 																	 &lalADCCountUnit, bufferN);
 		/* This marks the sample in which the real segment starts, within the buffer */
-		INT4 realStartSample=(INT4)((thisData->timeData->epoch.gpsSeconds - injectionBuffer->epoch.gpsSeconds)/thisData->timeData->deltaT);
+		for(i=0;i<injectionBuffer->data->length;i++) injectionBuffer->data->data[i]=0.0;
+        INT4 realStartSample=(INT4)((thisData->timeData->epoch.gpsSeconds - injectionBuffer->epoch.gpsSeconds)/thisData->timeData->deltaT);
 		realStartSample+=(INT4)((thisData->timeData->epoch.gpsNanoSeconds - injectionBuffer->epoch.gpsNanoSeconds)*1e-9/thisData->timeData->deltaT);
 
 		/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
@@ -1007,19 +1010,22 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 																			thisData->freqData->deltaF,
 																			&lalDimensionlessUnit,
 																			thisData->freqData->data->length);
-		if(!injF) XLAL_ERROR_VOID(XLAL_EFUNC);
+		if(!injF) {
+            XLALPrintError("Unable to allocate memory for injection buffer\n");
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+        }
 		/* Window the data */
 		REAL4 WinNorm = sqrt(thisData->window->sumofsquares/thisData->window->data->length);
 		for(j=0;j<inj8Wave->data->length;j++) inj8Wave->data->data[j]*=thisData->window->data->data[j]/WinNorm;
-		XLALREAL8TimeFreqFFT(injF,inj8Wave,thisData->timeToFreqFFTPlan);
-/*		for(j=0;j<injF->data->length;j++) printf("%lf\n",injF->data->data[j].re);*/
+        XLALREAL8TimeFreqFFT(injF,inj8Wave,thisData->timeToFreqFFTPlan);
+		/*for(j=0;j<injF->data->length;j++) printf("%lf\n",injF->data->data[j].re);*/
 		if(thisData->oneSidedNoisePowerSpectrum){
 			for(SNR=0.0,j=thisData->fLow/injF->deltaF;j<injF->data->length;j++){
 				SNR+=2.0*pow(injF->data->data[j].re,2.0)/(4.0*thisData->oneSidedNoisePowerSpectrum->data->data[j]);
 				SNR+=2.0*pow(injF->data->data[j].im,2.0)/(4.0*thisData->oneSidedNoisePowerSpectrum->data->data[j]);
 			}
 		}
-    thisData->SNR=sqrt(SNR);
+        thisData->SNR=sqrt(SNR);
 		NetworkSNR+=SNR;
 		
 		/* Actually inject the waveform */

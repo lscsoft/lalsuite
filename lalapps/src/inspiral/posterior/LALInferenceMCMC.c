@@ -148,7 +148,8 @@ void initializeMCMC(LALInferenceRunState *runState)
 (--Nskip n)                     Number of iterations between disk save(100)\n\
 (--tempMax T)                   Highest temperature for parallel tempering(40.0)\n\
 (--randomseed seed)             Random seed of sampling distribution(random)\n\
-(--tdlike)                      Compute likelihood in the time domain\n";
+(--tdlike)                      Compute likelihood in the time domain\n\
+(--rapidSkyLoc)                 Use rapid sky localization jump proposals\n";
 	
   /* Print command line arguments if runState was not allocated */
 	if(runState==NULL)
@@ -184,7 +185,11 @@ void initializeMCMC(LALInferenceRunState *runState)
 	runState->algorithm=&PTMCMCAlgorithm;
 	runState->evolve=PTMCMCOneStep;
 
-	runState->proposal=&LALInferenceDefaultProposal;
+    ppt=LALInferenceGetProcParamVal(commandLine,"--rapidSkyLoc");
+    if(ppt)
+        runState->proposal=&LALInferenceRapidSkyLocProposal;
+    else
+        runState->proposal=&LALInferenceDefaultProposal;
 	
 	/* This is the LAL template generator for inspiral signals */
 	
@@ -366,6 +371,7 @@ void initVariables(LALInferenceRunState *state)
   
   char help[]="\
 (--injXML injections.xml)       Injection XML file to use\n\
+(--tempSkip )                   Number of iterations between proposed temperature swaps (100)\n\
 (--symMassRatio)                Run with symmetric mass ratio eta, instead of q=m2/m1\n\
 (--mc-min mchirp)               Minimum chirp mass\n\
 (--mc-max mchirp)               Maximum chirp mass\n\
@@ -1333,7 +1339,6 @@ void initVariables(LALInferenceRunState *state)
           if (!LALInferenceCheckVariable(state->proposalArgs, SIGMAVECTORNAME)) {
             /* We need a sigma vector for adaptable jumps. */
             REAL8Vector *sigmas = XLALCreateREAL8Vector(N);
-            
             for (i = 0; i < N; i++) {
               sigmas->data[i] = 1e-4;
             }
@@ -1367,13 +1372,13 @@ void initVariables(LALInferenceRunState *state)
         INT4 sigmasNumber = 0;
         LALInferenceAddVariable(state->proposalArgs, "proposedArrayNumber", &sigmasNumber, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-        REAL8 tau = 1e3;
-        LALInferenceAddVariable(state->proposalArgs, "adaptTau", &tau, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+        INT4 tau = 6;
+        LALInferenceAddVariable(state->proposalArgs, "adaptTau", &tau, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
         ppt = LALInferenceGetProcParamVal(commandLine, "--adaptTau");
         if (ppt) {
           tau = atof(ppt->value);
-          fprintf(stdout, "Setting adapt tau = %g.\n", tau);
+          fprintf(stdout, "Setting adapt tau = %i.\n", tau);
           LALInferenceSetVariable(state->proposalArgs, "adaptTau", &tau);
         }
 	
@@ -1574,7 +1579,7 @@ int main(int argc, char *argv[]){
 	MPI_Barrier(MPI_COMM_WORLD);
 	/* Call MCMC algorithm */
 	runState->algorithm(runState);
-	
+
   if (MPIrank == 0) printf(" ========== main(): finished. ==========\n");
   MPI_Finalize();
   return 0;

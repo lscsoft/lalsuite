@@ -143,6 +143,7 @@ M.re, M.im);*/
     loglike += logliketmp;
     data = data->next;
   }
+  
   return loglike;
 }
 
@@ -160,17 +161,19 @@ M.re, M.im);*/
  * 
  * \return The natural logarithm of the prior value for a set of parameters 
  */
-REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
-*params ){
+REAL8 priorFunction( LALInferenceRunState *runState, 
+                     LALInferenceVariables *params ){
   LALInferenceIFOData *data = runState->data;
   (void)runState;
   LALInferenceVariableItem *item = params->head;
   REAL8 min, max, mu, sigma, prior = 0, value = 0.;
- 
-  LALStringVector *corPars = NULL;
-  REAL8Vector *corVals = NULL;
-  INT4 cori = 0;
 
+  REAL8Vector *corVals = NULL;
+  UINT4 cori = 0;
+  
+  /* if some correlated priors exist allocate corVals */
+  if ( corlist ) corVals = XLALCreateREAL8Vector( corlist->length );
+  
   for(; item; item = item->next ){
     /* get scale factor */
     CHAR scalePar[VARNAME_MAX] = "";
@@ -211,22 +214,26 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
         else prior -= log( (max - min) * scale );
       }
       else if( LALInferenceCheckCorrelatedPrior(runState->priorArgs,
-        item->name) ){
-        cori++;
-        corPars = XLALAppendString2Vector( corPars, item->name );
-        corVals = XLALResizeREAL8Vector( corVals, cori );
-        corVals->data[cori-1] = *(REAL8 *)item->value;
+        item->name) && corlist ){      
+        /* set item in correct position given the order of the correlation
+           matrix given by corlist */
+        for( cori = 0; cori < corlist->length; cori++ ){
+          if( !strcmp(item->name, corlist->data[cori]) ){
+            corVals->data[cori] = *(REAL8 *)item->value;
+            break;
+          }
+        }
       }
       else{
         XLALPrintError("Error... no prior specified!\n");
-        XLAL_ERROR_REAL8(XLAL_EFUNC);
+        XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
     }
   }
   
   /* if there are values for which the priors are defined by a correlation
      coefficient matrix then get add the prior from that */
-  if ( corPars ){
+  if ( corlist ){
     gsl_matrix *cor = NULL;
     gsl_vector_view vals;
     gsl_vector *vm = gsl_vector_alloc( corVals->length );
@@ -238,7 +245,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
                                                      "matrix_inverse" );
     }
     else{
-      LALInferenceGetCorrelatedPrior( runState->priorArgs, corPars->data[0],
+      LALInferenceGetCorrelatedPrior( runState->priorArgs, corlist->data[0],
                                       &cor, &idx );
     
       /* check for positive definiteness */
@@ -246,30 +253,39 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables
         XLALPrintError("Error... matrix is not positive definite!\n");
         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
-    
-      /* get the matrix inverse using Cholesky decomposition */
-      XLAL_CALLGSL( gsl_linalg_cholesky_decomp( cor ) );
+   
+      /* gsl_linalg_cholesky_invert is not supported in GSL versions < 1.9, so
+         until this requirement is changed just use the LU decomposition method
+         of calculating the matrix inverse. */
+      /* XLAL_CALLGSL( gsl_linalg_cholesky_decomp( cor ) );
       XLAL_CALLGSL( gsl_linalg_cholesky_invert( cor ) );
+      */
+      gsl_permutation *p = gsl_permutation_alloc ( cor->size1 );
+      gsl_matrix *invcor = gsl_matrix_alloc( cor->size1, cor->size2 );
+      INT4 s;
+      
+      XLAL_CALLGSL( gsl_linalg_LU_decomp( cor, p, &s ) );
+      XLAL_CALLGSL( gsl_linalg_LU_invert( cor, p, invcor ) );
+      XLAL_CALLGSL( gsl_matrix_memcpy( cor, invcor ) );
+      gsl_matrix_free( invcor );
+      gsl_permutation_free( p );
       
       LALInferenceAddVariable( runState->priorArgs, "matrix_inverse",
                                &cor, LALINFERENCE_gslMatrix_t,
                                LALINFERENCE_PARAM_FIXED );
+      
     }
 
     /* get the log prior (this only works properly if the parameter values have 
        been prescaled so as to be from a Gaussian of zero mean and unit
        variance, which should be the case in this code) */
     vals = gsl_vector_view_array( corVals->data, corVals->length );
-   
+
     XLAL_CALLGSL( gsl_blas_dgemv(CblasNoTrans, 1., cor, &vals.vector, 0., vm) );
     XLAL_CALLGSL( gsl_blas_ddot(&vals.vector, vm, &ptmp) );
-    
+
     /* divide by the 2 in the denominator of the Gaussian */
     ptmp /= 2.;
-    
-    XLALDestroyStringVector( corPars );
-    XLALDestroyREAL8Vector( corVals );
-    gsl_vector_free( vm );
     
     prior -= ptmp;
   }

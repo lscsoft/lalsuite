@@ -29,7 +29,7 @@ extern "C" {
 
 /* return file name of the next frame following requested time */
 CHAR *LALFrameLLDNextFrameName(CHAR *data_path, CHAR *observatory,
-    CHAR *frame_type, LIGOTimeGPS requested_time);
+    CHAR *frame_type, LIGOTimeGPS *requested_time);
 
 #ifdef __cplusplus
 }

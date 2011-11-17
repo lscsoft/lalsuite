@@ -60,6 +60,7 @@ void sort_double_descend(REAL8Vector *vector);
 void sort_double_ascend(REAL8Vector *vector);
 void sort_float_ascend(REAL4Vector *vector);
 void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown);
+void min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4 *max_index_out);
 
 INT4 max_index(REAL4Vector *vector);
 INT4 max_index_double(REAL8Vector *vector);

@@ -214,7 +214,7 @@ CHAR *LALFrameLLDNextFrameName(
     CHAR *data_path,
     CHAR *observatory,
     CHAR *frame_type,
-    LIGOTimeGPS requested_time)
+    LIGOTimeGPS *requested_time)
 {
   /* variables */
   CHAR glob_pattern[FILENAME_MAX];
@@ -255,7 +255,7 @@ CHAR *LALFrameLLDNextFrameName(
   }
 
   /* is requested time in range */
-  if (lld_time_in_range(data_path, observatory, frame_type, requested_time.gpsSeconds, files) != 0)
+  if (lld_time_in_range(data_path, observatory, frame_type, requested_time->gpsSeconds, files) != 0)
   {
     /* free memory */
     globfree(files);
@@ -264,7 +264,7 @@ CHAR *LALFrameLLDNextFrameName(
   }
 
   /* determine start time of frame */
-  span = requested_time.gpsSeconds - start_time;
+  span = requested_time->gpsSeconds - start_time;
   n_frames = (INT4)ceil(span / duration);
   frame_start = start_time + (n_frames * duration);
 

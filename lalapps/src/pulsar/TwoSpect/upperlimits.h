@@ -42,6 +42,6 @@ REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p);
 REAL8 gsl_ncx2cdf_withouttinyprob_solver(REAL8 x, void *p);
 REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(REAL8 x, void *p);
 
-void outputUpperLimitToFile(FILE *outputfile, UpperLimit ul, REAL8 dfmin, REAL8 dfmax, INT4 printAllULvalues);
+void outputUpperLimitToFile(FILE *outputfile, UpperLimit ul, INT4 printAllULvalues);
 
 #endif
