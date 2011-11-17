@@ -220,7 +220,7 @@ XLALSimInspiralTaylorT1Setup(
  * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
  */
 int XLALSimInspiralTaylorT1PNEvolveOrbit(
-		REAL8TimeSeries **v,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 		REAL8TimeSeries **phi, /**< orbital phase [returned] */
 		LIGOTimeGPS *tc,       /**< coalescence time */
 		REAL8 phic,            /**< coalescence phase */
@@ -259,12 +259,12 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	sys.params = &params;
 
 	/* allocate memory */
-	*v = XLALCreateREAL8TimeSeries( "ORBITAL_VELOCITY_PARAMETER", tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
+	*V = XLALCreateREAL8TimeSeries( "ORBITAL_VELOCITY_PARAMETER", tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
 	*phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
-	if ( !v || !phi )
+	if ( !V || !phi )
 		XLAL_ERROR(XLAL_EFUNC);
 
-	y[0] = (*v)->data->data[0] = cbrt(LAL_PI*LAL_G_SI*ak.m*f_min)/LAL_C_SI;
+	y[0] = (*V)->data->data[0] = cbrt(LAL_PI*LAL_G_SI*ak.m*f_min)/LAL_C_SI;
 	y[1] = (*phi)->data->data[0] = 0.;
 	E = expnfunc.energy(y[0],&(ak.akdEF));
 	if (XLALIsREAL8FailNaN(E))
@@ -290,25 +290,25 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", __func__);
 			break;
 		}
-		if ( j >= (*v)->data->length ) {
-			if ( ! XLALResizeREAL8TimeSeries(*v, 0, (*v)->data->length + blocklen) )
+		if ( j >= (*V)->data->length ) {
+			if ( ! XLALResizeREAL8TimeSeries(*V, 0, (*V)->data->length + blocklen) )
 				XLAL_ERROR(XLAL_EFUNC);
 			if ( ! XLALResizeREAL8TimeSeries(*phi, 0, (*phi)->data->length + blocklen) )
 				XLAL_ERROR(XLAL_EFUNC);
 		}
-		(*v)->data->data[j] = y[0];
+		(*V)->data->data[j] = y[0];
 		(*phi)->data->data[j] = y[1];
 	}
 	gsl_odeiv_step_free(s);
 
 	/* make the correct length */
-	if ( ! XLALResizeREAL8TimeSeries(*v, 0, j) )
+	if ( ! XLALResizeREAL8TimeSeries(*V, 0, j) )
 		XLAL_ERROR(XLAL_EFUNC);
 	if ( ! XLALResizeREAL8TimeSeries(*phi, 0, j) )
 		XLAL_ERROR(XLAL_EFUNC);
 
 	/* adjust to correct tc and phic */
-	XLALGPSAdd(&(*v)->epoch, -1.0*j*deltaT);
+	XLALGPSAdd(&(*V)->epoch, -1.0*j*deltaT);
 	XLALGPSAdd(&(*phi)->epoch, -1.0*j*deltaT);
 
 	/* phi here is the orbital phase = 1/2 * GW phase.
@@ -320,7 +320,7 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	for (j = 0; j < (*phi)->data->length; ++j)
 		(*phi)->data->data[j] += phic;
 
-	return (int)(*v)->data->length;
+	return (int)(*V)->data->length;
 }
 
 
@@ -346,16 +346,16 @@ int XLALSimInspiralTaylorT1PNGenerator(
 	       	int phaseO                /**< twice post-Newtonian phase order */
 		)
 {
-	REAL8TimeSeries *v;
+	REAL8TimeSeries *V;
 	REAL8TimeSeries *phi;
 	int status;
 	int n;
-	n = XLALSimInspiralTaylorT1PNEvolveOrbit(&v, &phi, tc, phic, deltaT, m1, m2, f_min, phaseO);
+	n = XLALSimInspiralTaylorT1PNEvolveOrbit(&V, &phi, tc, phic, deltaT, m1, m2, f_min, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR(XLAL_EFUNC);
-	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, v, phi, x0, m1, m2, r, i, amplitudeO);
+	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, V, phi, x0, m1, m2, r, i, amplitudeO);
 	XLALDestroyREAL8TimeSeries(phi);
-	XLALDestroyREAL8TimeSeries(v);
+	XLALDestroyREAL8TimeSeries(V);
 	if ( status < 0 )
 		XLAL_ERROR(XLAL_EFUNC);
 	return n;

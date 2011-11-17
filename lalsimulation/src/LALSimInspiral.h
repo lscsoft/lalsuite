@@ -410,7 +410,7 @@ int XLALSimInspiralChooseRestrictedWaveform(
  * <a href="http://arxiv.org/abs/0710.0158v2">arXiv:0710.0158v2</a>.
  */
 int XLALSimInspiralTaylorT4PNEvolveOrbit(
-		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
 	       	LIGOTimeGPS *tc,       /**< coalescence time */
 	       	REAL8 phic,            /**< coalescence phase */
@@ -495,7 +495,7 @@ int XLALSimInspiralTaylorT4PNRestricted(
  * Evolves a post-Newtonian orbit using the Taylor T3 method.
  */
 int XLALSimInspiralTaylorT3PNEvolveOrbit(
-		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
 	       	LIGOTimeGPS *tc,       /**< coalescence time */
 	       	REAL8 phic,            /**< coalescence phase */
@@ -580,7 +580,7 @@ int XLALSimInspiralTaylorT3PNRestricted(
  * Evolves a post-Newtonian orbit using the Taylor T2 method.
  */
 int XLALSimInspiralTaylorT2PNEvolveOrbit(
-		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
 	       	LIGOTimeGPS *tc,       /**< coalescence time */
 	       	REAL8 phic,            /**< coalescence phase */
@@ -664,7 +664,7 @@ int XLALSimInspiralTaylorT2PNRestricted(
  * Evolves a post-Newtonian orbit using the Taylor T1 method.
  */
 int XLALSimInspiralTaylorT1PNEvolveOrbit(
-		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
 	       	LIGOTimeGPS *tc,       /**< coalescence time */
 	       	REAL8 phic,            /**< coalescence phase */
@@ -749,7 +749,7 @@ int XLALSimInspiralTaylorT1PNRestricted(
  * Evolves a post-Newtonian orbit using the Taylor T1 method.
  */
 int XLALSimInspiralTaylorEtPNEvolveOrbit(
-		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
 	       	LIGOTimeGPS *tc,       /**< coalescence time */
 	       	REAL8 phic,            /**< coalescence phase */
