@@ -606,7 +606,6 @@ void readMCMCinputfile(struct runPar *run)
   fclose(fin);
 	}
   
-  istatus = istatus; // Suppress "variable was set but never used" warnings from icc
   if(!cstatus || !istatus) {                                                                                                           
      printf("Error reading string\n");                                                                                   
      exit(1);                                                                                                             
@@ -1554,11 +1553,6 @@ void readParameterInputfile(struct runPar *run)
     printf("\n");
   }
   
-   if(!cstatus||!istatus) {
-       printf("Error reading string\n");
-       exit(1);
-   } 
-   
    if(!cstatus||!istatus) {
        printf("Error reading string\n");
        exit(1);
