@@ -162,22 +162,23 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 #endif
   typedef struct tagFineGrid {
     REAL8 freqmin_fg;       /**< fine-grid start in frequency */
-    REAL8 f1dotmin_fg;      /**< fine-grid start in 1st spindown */
-    REAL8 f2dotmin_fg;      /**< fine-grid start in 2nd spindown */
     REAL8 dfreq_fg;         /**< fine-grid spacing in frequency */
-    REAL8 df1dot_fg;        /**< fine-grid spacing in 1st spindown */
-    REAL8 df2dot_fg;        /**< fine-grid spacing in 2nd spindown */
     REAL8 alpha;            /**< right ascension */
     REAL8 delta;            /**< declination */
     LIGOTimeGPS refTime;    /**< reference time for candidates */
     UINT4 length;           /**< maximum allowed length of vectors */
     UINT4 freqlength;       /**< number of fine-grid points in frequency */
-    UINT4 f1dotlength;      /**< number of fine-grid points in 1st spindown */
-    UINT4 f2dotlength;      /**< number of fine-grid points in 2nd spindown */
     REAL4 * sumTwoF;        /**< sum of 2F-values */
     FINEGRID_NC_T * nc;     /**< number count */
   } FineGrid;
 
+  /* macro to index arrays in the FineGrid structure
+   * frequency/GCT U1 index MUST always be the innermost index
+   */
+#define FG_INDEX(fg, iFreq)                     \
+  ( (iFreq) )
+
+  /* ------------------------------------------------------------------------- */
 
   /** one coarse-grid point */
   typedef struct tagCoarseGridPoint {
@@ -189,9 +190,17 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
   /** structure for storing coarse-grid points */
   typedef struct tagCoarseGrid {
     UINT4 length;             /**< maximum allowed length of vectors */
+    UINT4 nStacks;       /**< number of stacks */
+    UINT4 freqlength;    /**< number of fine-grid points in frequency */
     UINT4 * Uindex;      /**< U index */
     REAL4 * TwoF;       /**< 2F-value */
   } CoarseGrid;
+
+  /* macro to index arrays in the CoarseGrid structure
+   * frequency/GCT U1 index MUST always be the innermost index
+   */
+#define CG_INDEX(cg, iStack, iFreq)             \
+  ( ( (iStack) * (cg).freqlength ) + (iFreq) )
 
  /* ------------------------------------------------------------------------- */
 
