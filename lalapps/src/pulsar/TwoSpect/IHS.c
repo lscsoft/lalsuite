@@ -1437,13 +1437,18 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                if (trackedlines!=NULL) {
                   kk = 0;
                   while (kk<(INT4)trackedlines->length && nolinesinterfering==1) {
-                     INT4 ll = 0;
-                     while (ll<(INT4)trackedlines->vectorLength && nolinesinterfering==1) {
-                        if (trackedlines->data[kk*trackedlines->vectorLength + ll]<=fsig+B && trackedlines->data[kk*trackedlines->vectorLength + ll]>=fsig-B) {
+                     if (2.0*B>=(trackedlines->data[kk*3+2]-trackedlines->data[kk*3+1])) {
+                        if ((trackedlines->data[kk*3+2]>=fsig-B && trackedlines->data[kk*3+2]<=fsig+B) || 
+                            (trackedlines->data[kk*3+1]>=fsig-B && trackedlines->data[kk*3+1]<=fsig+B)) {
                            nolinesinterfering = 0;
                         }
-                        ll++;
-                     } /* while trackedlines->vectorLength && nolinesinterfering==1 */
+                     } /* if the band spanned by the line is smaller than the band spanned by the signal */
+                     else {
+                        if ((fsig+B>=trackedlines->data[kk*3+1] && fsig+B<=trackedlines->data[kk*3+2]) || 
+                            (fsig-B>=trackedlines->data[kk*3+1] && fsig-B<=trackedlines->data[kk*3+2])) {
+                           nolinesinterfering = 0;
+                        }
+                     } /* instead if the band spanned by the line is larger than the band spanned by the signal */
                      kk++;
                   } /* while kk < trackedlines->length && nolinesinterfering==1 */
                } /* if trackedlines != NULL */

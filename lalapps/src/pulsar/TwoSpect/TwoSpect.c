@@ -358,14 +358,24 @@ int main(int argc, char *argv[])
    
    //Line detection
    INT4Vector *lines = NULL;
+   INT4 heavilyContaminatedBand = 0;
    if (args_info.lineDetection_given) {
       lines = detectLines_simple(tfdata, ffdata, inputParams);
       if (lines!=NULL) {
          fprintf(LOG, "WARNING: %d line(s) found.\n", lines->length);
          fprintf(stderr, "WARNING: %d line(s) found.\n", lines->length);
+         if ((REAL4)lines->length/(ffdata->numfbins + 2*inputParams->maxbinshift) >= 0.1) {
+            heavilyContaminatedBand = 1;
+            fprintf(LOG, "WARNING: Band is heavily contaminated by artifacts.\n");
+            fprintf(stderr, "WARNING: Band is heavily contaminated by artifacts.\n");
+         }
       }
    }
    
+   //If the band is heavily contaminated by lines, don't do any follow up.
+   if (heavilyContaminatedBand) {
+      args_info.IHSonly_given = 1;
+   }
    
    //Need to reduce the original TF data to remove the excess bins used for running median calculation. Normalize the TF as the same as the background was normalized
    REAL4Vector *usableTFdata = XLALCreateREAL4Vector(background->length);
@@ -1530,7 +1540,7 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
    LALStatus status;
    status.statusPtr = NULL;
    
-   INT4 blksize = 11, ii, jj;
+   INT4 blksize = 51, ii, jj;
    
    INT4 numlines = 0;
    INT4Vector *lines = NULL;
@@ -1585,18 +1595,25 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
 REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, inputParamsStruct *params)
 {
    
-   REAL4VectorSequence *output = XLALCreateREAL4VectorSequence(lines->length, binshifts->length);
+   //REAL4VectorSequence *output = XLALCreateREAL4VectorSequence(lines->length, binshifts->length);
+   REAL4VectorSequence *output = XLALCreateREAL4VectorSequence(lines->length, 3);
    
    REAL4 df = 1.0/params->Tcoh;
    REAL4 minfbin = (REAL4)(round(params->fmin*params->Tcoh - 0.5*(params->blksize-1) - (REAL8)(params->maxbinshift))/params->Tcoh);
    
-   INT4 ii, jj;
-   for (ii=0; ii<(INT4)lines->length; ii++) {
-      for (jj=0; jj<(INT4)binshifts->length; jj++) {
-         output->data[ii*binshifts->length + jj] = (lines->data[ii] + binshifts->data[jj])*df + minfbin;
-      }
-   }
+   INT4 maxshiftindex = 0, minshiftindex = 0;
+   min_max_index_INT4Vector(binshifts, &minshiftindex, &maxshiftindex);
+   INT4 maxshift = binshifts->data[maxshiftindex], minshift = binshifts->data[minshiftindex];
    
+   INT4 ii;
+   for (ii=0; ii<(INT4)lines->length; ii++) {
+      output->data[ii*3] = lines->data[ii]*df + minfbin;
+      output->data[ii*3 + 1] = (lines->data[ii] + minshift)*df + minfbin;
+      output->data[ii*3 + 2] = (lines->data[ii] + maxshift)*df + minfbin;
+      //for (jj=0; jj<(INT4)binshifts->length; jj++) {
+      //   output->data[ii*binshifts->length + jj] = (lines->data[ii] + binshifts->data[jj])*df + minfbin;
+      //}
+   }
    
    return output;
    
@@ -1998,7 +2015,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    srand(time(NULL));
    UINT8 randseed = rand();
    gsl_rng_set(rng, randseed);
-   gsl_rng_set(rng, 0); //TODO: comment this out
+   //gsl_rng_set(rng, 0); //comment this out
    
    //Set up for making the PSD
    //for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] = 0.0;
