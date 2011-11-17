@@ -410,9 +410,8 @@ int XLALSimInspiralChooseRestrictedWaveform(
  * <a href="http://arxiv.org/abs/0710.0158v2">arXiv:0710.0158v2</a>.
  */
 int XLALSimInspiralTaylorT4PNEvolveOrbit(
-		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
-	       	LIGOTimeGPS *tc,       /**< coalescence time */
 	       	REAL8 phic,            /**< coalescence phase */
 	       	REAL8 deltaT,          /**< sampling interval */
 		REAL8 m1,              /**< mass of companion 1 */
@@ -430,7 +429,6 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 int XLALSimInspiralTaylorT4PNGenerator(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
 	       	REAL8 deltaT,             /**< sampling interval */
@@ -455,7 +453,6 @@ int XLALSimInspiralTaylorT4PNGenerator(
 int XLALSimInspiralTaylorT4PN(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -477,7 +474,6 @@ int XLALSimInspiralTaylorT4PN(
 int XLALSimInspiralTaylorT4PNRestricted(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -495,9 +491,8 @@ int XLALSimInspiralTaylorT4PNRestricted(
  * Evolves a post-Newtonian orbit using the Taylor T3 method.
  */
 int XLALSimInspiralTaylorT3PNEvolveOrbit(
-		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
-	       	LIGOTimeGPS *tc,       /**< coalescence time */
 	       	REAL8 phic,            /**< coalescence phase */
 	       	REAL8 deltaT,          /**< sampling interval */
 		REAL8 m1,              /**< mass of companion 1 */
@@ -515,7 +510,6 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 int XLALSimInspiralTaylorT3PNGenerator(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
 	       	REAL8 deltaT,             /**< sampling interval */
@@ -540,7 +534,6 @@ int XLALSimInspiralTaylorT3PNGenerator(
 int XLALSimInspiralTaylorT3PN(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -562,7 +555,6 @@ int XLALSimInspiralTaylorT3PN(
 int XLALSimInspiralTaylorT3PNRestricted(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -580,9 +572,8 @@ int XLALSimInspiralTaylorT3PNRestricted(
  * Evolves a post-Newtonian orbit using the Taylor T2 method.
  */
 int XLALSimInspiralTaylorT2PNEvolveOrbit(
-		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
-	       	LIGOTimeGPS *tc,       /**< coalescence time */
 	       	REAL8 phic,            /**< coalescence phase */
 	       	REAL8 deltaT,          /**< sampling interval */
 		REAL8 m1,              /**< mass of companion 1 */
@@ -600,7 +591,6 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 int XLALSimInspiralTaylorT2PNGenerator(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
 	       	REAL8 deltaT,             /**< sampling interval */
@@ -625,7 +615,6 @@ int XLALSimInspiralTaylorT2PNGenerator(
 int XLALSimInspiralTaylorT2PN(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -647,7 +636,6 @@ int XLALSimInspiralTaylorT2PN(
 int XLALSimInspiralTaylorT2PNRestricted(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -664,9 +652,8 @@ int XLALSimInspiralTaylorT2PNRestricted(
  * Evolves a post-Newtonian orbit using the Taylor T1 method.
  */
 int XLALSimInspiralTaylorT1PNEvolveOrbit(
-		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
-	       	LIGOTimeGPS *tc,       /**< coalescence time */
 	       	REAL8 phic,            /**< coalescence phase */
 	       	REAL8 deltaT,          /**< sampling interval */
 		REAL8 m1,              /**< mass of companion 1 */
@@ -684,7 +671,6 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 int XLALSimInspiralTaylorT1PNGenerator(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
 	       	REAL8 deltaT,             /**< sampling interval */
@@ -709,7 +695,6 @@ int XLALSimInspiralTaylorT1PNGenerator(
 int XLALSimInspiralTaylorT1PN(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -731,7 +716,6 @@ int XLALSimInspiralTaylorT1PN(
 int XLALSimInspiralTaylorT1PNRestricted(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -749,9 +733,8 @@ int XLALSimInspiralTaylorT1PNRestricted(
  * Evolves a post-Newtonian orbit using the Taylor T1 method.
  */
 int XLALSimInspiralTaylorEtPNEvolveOrbit(
-		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
-	       	LIGOTimeGPS *tc,       /**< coalescence time */
 	       	REAL8 phic,            /**< coalescence phase */
 	       	REAL8 deltaT,          /**< sampling interval */
 		REAL8 m1,              /**< mass of companion 1 */
@@ -769,7 +752,6 @@ int XLALSimInspiralTaylorEtPNEvolveOrbit(
 int XLALSimInspiralTaylorEtPNGenerator(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
 	       	REAL8 deltaT,             /**< sampling interval */
@@ -794,7 +776,6 @@ int XLALSimInspiralTaylorEtPNGenerator(
 int XLALSimInspiralTaylorEtPN(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -816,7 +797,6 @@ int XLALSimInspiralTaylorEtPN(
 int XLALSimInspiralTaylorEtPNRestricted(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */

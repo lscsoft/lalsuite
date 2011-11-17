@@ -254,12 +254,26 @@ REAL8 priorFunction( LALInferenceRunState *runState,
         XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
    
-      XLAL_CALLGSL( gsl_linalg_cholesky_decomp( cor ) );
+      /* gsl_linalg_cholesky_invert is not supported in GSL versions < 1.9, so
+         until this requirement is changed just use the LU decomposition method
+         of calculating the matrix inverse. */
+      /* XLAL_CALLGSL( gsl_linalg_cholesky_decomp( cor ) );
       XLAL_CALLGSL( gsl_linalg_cholesky_invert( cor ) );
+      */
+      gsl_permutation *p = gsl_permutation_alloc ( cor->size1 );
+      gsl_matrix *invcor = gsl_matrix_alloc( cor->size1, cor->size2 );
+      INT4 s;
+      
+      XLAL_CALLGSL( gsl_linalg_LU_decomp( cor, p, &s ) );
+      XLAL_CALLGSL( gsl_linalg_LU_invert( cor, p, invcor ) );
+      XLAL_CALLGSL( gsl_matrix_memcpy( cor, invcor ) );
+      gsl_matrix_free( invcor );
+      gsl_permutation_free( p );
       
       LALInferenceAddVariable( runState->priorArgs, "matrix_inverse",
                                &cor, LALINFERENCE_gslMatrix_t,
                                LALINFERENCE_PARAM_FIXED );
+      
     }
 
     /* get the log prior (this only works properly if the parameter values have 

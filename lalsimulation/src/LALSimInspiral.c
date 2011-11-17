@@ -1007,19 +1007,19 @@ int XLALSimInspiralChooseWaveform(
     {
         /* non-spinning inspiral-only models */
         case TaylorEt:
-            ret = XLALSimInspiralTaylorEtPN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorEtPN(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT1:
-            ret = XLALSimInspiralTaylorT1PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT1PN(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT2:
-            ret = XLALSimInspiralTaylorT2PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT2PN(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT3:
-            ret = XLALSimInspiralTaylorT3PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT3PN(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT4:
-            ret = XLALSimInspiralTaylorT4PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT4PN(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
 
         /* non-spinning inspiral-merger-ringdown models */
@@ -1120,19 +1120,19 @@ int XLALSimInspiralChooseRestrictedWaveform(
     {
         /* non-spinning inspiral-only models */
         case TaylorEt:
-            ret = XLALSimInspiralTaylorEtPNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorEtPNRestricted(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT1:
-            ret = XLALSimInspiralTaylorT1PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT1PNRestricted(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT2:
-            ret = XLALSimInspiralTaylorT2PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT2PNRestricted(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT3:
-            ret = XLALSimInspiralTaylorT3PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT3PNRestricted(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT4:
-            ret = XLALSimInspiralTaylorT4PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT4PNRestricted(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
 
         /* non-spinning inspiral-merger-ringdown models */
