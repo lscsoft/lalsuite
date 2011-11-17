@@ -173,6 +173,13 @@ typedef struct tagComputeFBuffer {
   MultiCmplxAMCoeffs *multiCmplxAMcoef;
 } ComputeFBuffer;
 
+/** Struct containing vectors of multi- and single-IFO F-stats over a frequency range and full search parameter info in dopplerParams */
+typedef struct tagMultiFstatFrequencySeries {
+  SWIGLAL_STRUCT(MultiFstatFrequencySeries);
+  PulsarDopplerParams doppler;	/**< full info about sky position, fkdot, refTime etc. searched to obtain these F values */
+  REAL4Vector *F;		/**< multi-IFO F-stat values over frequency band */
+  REAL4VectorSequence *FX;	/**< vector of all single-IFO F-stat values over frequency band, ordered as (det1bin1,det1bin2,..,det1binN,det2bin1,...detMbinN) */
+} MultiFstatFrequencySeries;
 
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */
@@ -253,6 +260,13 @@ void ComputeFStatFreqBand ( LALStatus *status,
 			    const MultiNoiseWeights *multiWeights,
 			    const MultiDetectorStateSeries *multiDetStates,
 			    const ComputeFParams *params);
+
+int XLALComputeFStatFreqBand (  MultiFstatFrequencySeries **fstatSeries,
+				const PulsarDopplerParams *doppler,
+				const MultiSFTVector *multiSFTs,
+				const MultiNoiseWeights *multiWeights,
+				const MultiDetectorStateSeries *multiDetStates,
+				const ComputeFParams *params);
 
 void
 LALEstimatePulsarAmplitudeParams (LALStatus * status,
