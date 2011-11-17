@@ -862,7 +862,7 @@ tsaTest(
       /*
        * Create blanked test map structure
        */
-      createParams.type=Unknown;
+      createParams.type=Undefined;
       /*
        * Number of F rows from -f -> f
        */
