@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, D. Keppel
+ * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, D. Keppel, Evan Ochsner
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,21 @@ NRCSID(LALSIMINSPIRALC, "$Id$");
 
 #define MAX_NONPRECESSING_AMP_PN_ORDER 5
 #define MAX_PRECESSING_AMP_PN_ORDER 3
+
+/**
+ * Macro functions to rotate the components of a vector about an axis
+ */
+#define ROTATEZ(angle, vx, vy, vz)\
+	tmp1 = vx*cos(angle) - vy*sin(angle);\
+	tmp2 = vx*sin(angle) + vy*cos(angle);\
+	vx = tmp1;\
+	vy = tmp2;
+
+#define ROTATEY(angle, vx, vy, vz)\
+	tmp1 = vx*cos(angle) - vz*sin(angle);\
+	tmp2 = vx*sin(angle) + vz*cos(angle);\
+	vx = tmp1;\
+	vz = tmp2;
 
 
 /**
@@ -111,9 +126,9 @@ int XLALSimAddMode(
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
-		REAL8TimeSeries *x,   /**< post-Newtonian parameter */
+		REAL8TimeSeries *v,   /**< post-Newtonian parameter */
 	       	REAL8TimeSeries *phi, /**< orbital phase */
-	       	REAL8 x0,             /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 v0,             /**< tail-term gauge choice (if you don't know, just set it to one) */
 	       	REAL8 m1,             /**< mass of companion 1 */
 	       	REAL8 m2,             /**< mass of companion 2 */
 	       	REAL8 r,              /**< distance of source */
@@ -124,27 +139,27 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 {
 	COMPLEX16TimeSeries *h;
 	UINT4 j;
-	LAL_CHECK_VALID_SERIES(x, NULL);
+	LAL_CHECK_VALID_SERIES(v, NULL);
 	LAL_CHECK_VALID_SERIES(phi, NULL);
-	LAL_CHECK_CONSISTENT_TIME_SERIES(x, phi, NULL);
-	h = XLALCreateCOMPLEX16TimeSeries( "H_MODE", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
+	LAL_CHECK_CONSISTENT_TIME_SERIES(v, phi, NULL);
+	h = XLALCreateCOMPLEX16TimeSeries( "H_MODE", &v->epoch, 0.0, v->deltaT, &lalStrainUnit, v->data->length );
 	if ( !h )
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	if ( l == 2 && abs(m) == 2 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode22(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode22(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
 	else if ( l == 2 && abs(m) == 1 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode21(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode21(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
 	else if ( l == 3 && abs(m) == 3 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode33(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode33(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
 	else if ( l == 3 && abs(m) == 2 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode32(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode32(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
 	else if ( l == 3 && abs(m) == 1 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode31(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode31(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
 	else {
 		XLALDestroyCOMPLEX16TimeSeries(h);
 		XLALPrintError("XLAL Error - %s: Unsupported mode l=%d, m=%d\n", __func__, l, m );
@@ -169,15 +184,13 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
  * Lawrence E. Kidder, "Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
- *
- * FIXME: change the PN variable from x to v = \sqrt{x}
  */
 int XLALSimInspiralPNPolarizationWaveformsFromModes(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform [returned] */
-	       	REAL8TimeSeries *x,       /**< post-Newtonian parameter */
+	       	REAL8TimeSeries *v,       /**< post-Newtonian parameter */
 	       	REAL8TimeSeries *phi,     /**< orbital phase */
-	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 v0,                 /**< tail-term gauge choice (if you don't know, just set it to one) */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */
 	       	REAL8 r,                  /**< distance of source */
@@ -186,11 +199,11 @@ int XLALSimInspiralPNPolarizationWaveformsFromModes(
 		)
 {
 	int l, m;
-	LAL_CHECK_VALID_SERIES(x, XLAL_FAILURE);
+	LAL_CHECK_VALID_SERIES(v, XLAL_FAILURE);
 	LAL_CHECK_VALID_SERIES(phi, XLAL_FAILURE);
-	LAL_CHECK_CONSISTENT_TIME_SERIES(x, phi, XLAL_FAILURE);
-	*hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
-	*hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
+	LAL_CHECK_CONSISTENT_TIME_SERIES(v, phi, XLAL_FAILURE);
+	*hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &v->epoch, 0.0, v->deltaT, &lalStrainUnit, v->data->length );
+	*hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &v->epoch, 0.0, v->deltaT, &lalStrainUnit, v->data->length );
 	if ( ! hplus || ! hcross )
 		XLAL_ERROR(XLAL_EFUNC);
 	memset((*hplus)->data->data, 0, (*hplus)->data->length*sizeof(*(*hplus)->data->data));
@@ -198,7 +211,7 @@ int XLALSimInspiralPNPolarizationWaveformsFromModes(
 	for ( l = 2; l <= LAL_PN_MODE_L_MAX; ++l ) {
 		for ( m = 1; m <= l; ++m ) {
 			COMPLEX16TimeSeries *hmode;
-			hmode = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(x, phi, x0, m1, m2, r, O, l, m);
+			hmode = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(v, phi, v0, m1, m2, r, O, l, m);
 			if ( ! hmode )
 				XLAL_ERROR(XLAL_EFUNC);
 			if ( XLALSimAddMode(*hplus, *hcross, hmode, i, 0.0, l, m, 1) < 0 )
@@ -317,6 +330,8 @@ int XLALSimInspiralPNPolarizationWaveforms(
             case -1: // Highest known PN order - move if higher terms added!
             /* case LAL_PNORDER_THREE: */
             case 6:
+		/* FIXME: These 3PN terms are known to be incorrect and the
+		 * authors are producing an errata to fix them. */
                 hp3 = LAL_PI*dm*si*cos(phi)*(19./64. + ci2*5./16. - ci4/192.
                         + eta*(-19./96. + ci2*3./16. + ci4/96.)) + cos(2.*phi)
                         * (-465497./11025. + (LAL_GAMMA*856./105. 
@@ -407,7 +422,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         + eta2*(29127./5120. - ci2*27267./5120. 
                         - ci4*1647./5120. + ci6*2187./5120.)) + cos(4.*phi)
                         * (-16.*LAL_PI/3.*(1. + ci2)*si2*(1. - 3.*eta))
-                        + cos(5.*phi)*si*dm*(108125./9216. + ci2*40625./9216. 
+                        + cos(5.*phi)*si*dm*(-108125./9216. + ci2*40625./9216. 
                         + ci4*83125./9216. - ci6*15625./9216. 
                         + eta*(8125./256. - ci2*40625./2304. - ci4*48125./2304.
                         + ci6*15625./2304.) + eta2*(-119375./9216. 
@@ -415,17 +430,18 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         - ci6*15625./3072.)) + cos(7.*phi)*dm
                         * (117649./46080.*si5*(1. + ci2)*(1. - 4.*eta 
                         + 3.*eta2)) + sin(2.*phi)*(-9./5. + ci2*14./5. 
-                        + ci4*7./5. + eta*(96./5. - ci2*8./5. - ci4*28./5.)) 
+                        + ci4*7./5. + eta*(32. + ci2*56./5. - ci4*28./5.)) 
                         + sin(4.*phi)*si2*(1. + ci2)*(56./5. - 32.*log(2.)/3. 
-                        - eta*(1193./30. - 32.*log(2.)));
-                hc25 = cos(2.*phi)*ci*(2. - ci2*22./5. + eta*(-154./5. 
+                        + eta*(-1193./30. + 32.*log(2.)));
+                /* below would have a constant memory term of si2*ci*eta*6./5. */
+                hc25 = cos(2.*phi)*ci*(2. - ci2*22./5. + eta*(-282./5. 
                         + ci2*94./5.)) + cos(4.*phi)*ci*si2*(-112./5. 
                         + 64.*log(2.)/3. + eta*(1193./15. - 64.*log(2.)))
                         + sin(phi)*si*ci*dm*(-913./7680. + ci2*1891./11520. 
                         - ci4*7./4608. + eta*(1165./384. - ci2*235./576. 
                         + ci4*7./1152.) + eta2*(-1301./4608. + ci2*301./2304.
                         - ci4*7./1536.)) + sin(2.*phi)*LAL_PI*ci*(34./3. 
-                        - ci2*8./3. - eta*(20./3. - 8.*ci2)) 
+                        - ci2*8./3. + eta*(-20./3. + 8.*ci2)) 
                         + sin(3.*phi)*si*ci*dm*(12501./2560. - ci2*12069./1280.
                         + ci4*1701./2560. + eta*(-19581./640. + ci2*7821./320.
                         - ci4*1701./640.) + eta2*(18903./2560. 
@@ -439,15 +455,15 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         * (117649./23040.*(1. - 4.*eta + 3.*eta2));
             /* case LAL_PNORDER_TWO: */
             case 4:
-                hp2 = cos(phi)*LAL_PI*si*dm*(-5./8. - ci2*5./8.) 
+                hp2 = cos(phi)*LAL_PI*si*dm*(-5./8. - ci2/8.) 
                         + cos(2.*phi)*(11./60. + ci2*33./10. + ci4*29./24. 
-                        + ci6/24. + eta*(353./36. - 3.*ci2 - ci4*251./72. 
+                        - ci6/24. + eta*(353./36. - 3.*ci2 - ci4*251./72. 
                         + ci6*5./24.) + eta2*(-49./12. + ci2*9./2. 
                         - ci4*7./24. - ci6*5./24.)) + cos(3.*phi)*LAL_PI*si*dm
-                        * (27./8.*(1 + ci2)) + cos(4.*phi)*(118./15. 
-                        - ci2*16./5. - ci4*86./15. + ci6*16./15. 
-                        + eta*(-262./9. + 16.*ci2 + ci4*166./9. - ci6*16./3.)
-                        + eta2*(14. - 16.*ci2 - ci4*10./3. + ci6*16./3.))
+                        * (27./8.*(1 + ci2)) + cos(4.*phi)*si2*2./15.*(59. 
+                        + ci2*35. - ci4*8. 
+                        - eta*5./3.*(131. + 59.*ci2 + 24.*ci4)
+                        + eta2*5.*(21. - 3.*ci2 - 8.*ci4))
                         + cos(6.*phi)*(-81./40.*si4*(1. + ci2)
                         * (1. - 5.*eta + 5.*eta2)) + sin(phi)*si*dm
                         * (11./40. + 5.*log(2)/4. + ci2*(7./40. + log(2)/4.))
@@ -460,9 +476,9 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         + eta*(143./9. - ci2*245./18. + ci4*5./4.)
                         + eta2*(-14./3. + ci2*35./6. - ci4*5./4.))
                         + sin(3.*phi)*si*ci*dm*27.*LAL_PI/4.
-                        + sin(4.*phi)*ci*(44./3. - ci2*268./15. + ci4*16./5. 
-                        + eta*(-476./9. + ci2*620./9. - 16.*ci4)
-                        + eta2*(68./3. - ci2*116./3. + 16.*ci4))
+                        + sin(4.*phi)*ci*si2*4./15.*(55. - 12.*ci2 
+                        - eta*5./3.*(119. - 36.*ci2)
+                        + eta2*5.*(17. - 12.*ci2))
                         + sin(6.*phi)*ci*(-81./20.*si4
                         * (1. - 5.*eta + 5.*eta2));
             /* case LAL_PNORDER_ONE_POINT_FIVE: */
@@ -476,7 +492,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         * (1. + ci2)*(1. - 2.*eta));
                 hc15 = sin(phi)*si*ci*dm*(21./32. - ci2*5./96. 
                         + eta*(-23./48. + ci2*5./48.)) 
-                        - 4.*LAL_PI*ci*sin(2.*phi) + sin(3.*phi) * si * ci * dm
+                        - 4.*LAL_PI*ci*sin(2.*phi) + sin(3.*phi)*si*ci*dm
                         * (-603./64. + ci2*135./64. 
                         + eta*(171./32. - ci2*135./32.)) 
                         + sin(5.*phi)*si*ci*dm*(625./192.*si2*(1. - 2.*eta));
@@ -487,13 +503,14 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         - cos(4.*phi) * (4./3.*si2*(1. + ci2)*(1. - 3.*eta));
                 hc1 = sin(2.*phi)*ci*(17./3. - ci2*4./3. 
                         + eta*(-13./3. + 4.*ci2)) 
-                        + sin(4.*phi) * ci * si2*(-8./3.*(1. - 3.*eta));
+                        + sin(4.*phi)*ci*si2*(-8./3.*(1. - 3.*eta));
             /*case LAL_PNORDER_HALF:*/
             case 1:
                 hp05 = - si*dm*(cos(phi)*(5./8. + ci2/8.) 
                         - cos(3.*phi)*(9./8. + 9.*ci2/8.));
                 hc05 = si*ci*dm*(-sin(phi)*3./4. + sin(3.*phi)*9./4.);
             case 0:
+                /* below would have a constant memory term of -si2/96.*(17. + ci2) */
                 hp0 = -(1. + ci2)*cos(2.*phi);
                 hc0 = -2.*ci*sin(2.*phi);
                 break;
@@ -792,6 +809,161 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
 }
 
 /**
+ * Function to specify the desired orientation of a precessing binary in terms
+ * of several angles and then compute the vector components in the so-called
+ * "radiation frame" (with the z-axis along the direction of propagation) as
+ * needed for initial conditions for the SpinTaylorT4 waveform routines.
+ * 
+ * Input: 
+ *     thetaJN, phiJN are angles describing the desired orientation of the 
+ * total angular momentum (J) relative to direction of propagation (N)
+ *     theta1, phi1, theta2, phi2 are angles describing the desired orientation
+ * of spin 1 and 2 relative to the Newtonian orbital angular momentum (L_N)
+ *     m1, m2, f0 are the component masses and initial GW frequency, 
+ * they are needed to compute the magnitude of L_N, and thus J
+ *     chi1, chi2 are the dimensionless spin magnitudes ( 0 <= chi1,2 <= 1),
+ * they are needed to compute the magnitude of S1 and S2, and thus J
+ * 
+ * Output: 
+ *     x, y, z components of LNhat (unit vector along orbital angular momentum),
+ *     x, y, z components of E1 (unit vector in the initial orbital plane)
+ *     x, y, z components S1 and S2 (unit spin vectors times their 
+ * dimensionless spin magnitudes - i.e. they have unit magnitude for 
+ * extremal BHs and smaller magnitude for slower spins)
+ *
+ * NOTE: Here the "total" angular momentum is computed as
+ * J = L_N + S1 + S2
+ * where L_N is the Newtonian orbital angular momentum. In fact, there are 
+ * PN corrections to L which contribute to J that are NOT ACCOUNTED FOR 
+ * in this function. This is done so the function does not need to know about 
+ * the PN order of the system and to avoid subtleties with spin-orbit 
+ * contributions to L. Also, it is believed that the difference in Jhat 
+ * with or without these PN corrections to L is quite small.
+ */
+int XLALSimInspiralTransformPrecessingInitialConditions(
+		REAL8 *LNhatx,	/**< LNhat x component (returned) */
+		REAL8 *LNhaty,	/**< LNhat y component (returned) */
+		REAL8 *LNhatz,	/**< LNhat z component (returned) */
+		REAL8 *E1x,	/**< E1 x component (returned) */
+		REAL8 *E1y,	/**< E1 y component (returned) */
+		REAL8 *E1z,	/**< E1 z component (returned) */
+		REAL8 *S1x,	/**< S1 x component (returned) */
+		REAL8 *S1y,	/**< S1 y component (returned) */
+		REAL8 *S1z,	/**< S1 z component (returned) */
+		REAL8 *S2x,	/**< S2 x component (returned) */
+		REAL8 *S2y,	/**< S2 y component (returned) */
+		REAL8 *S2z,	/**< S2 z component (returned) */
+		REAL8 thetaJN, 	/**< zenith angle between J and N */
+		REAL8 phiJN,  	/**< azimuth angle between J and N */
+		REAL8 theta1,  	/**< zenith angle between S1 and LNhat */
+		REAL8 phi1,  	/**< azimuth angle between S1 and LNhat */
+		REAL8 theta2,  	/**< zenith angle between S2 and LNhat */
+		REAL8 phi2,  	/**< azimuth angle between S2 and LNhat */
+		REAL8 m1,	/**< mass of body 1 (kg) */
+		REAL8 m2,	/**< mass of body 2 (kg) */
+		REAL8 f0,	/**< initial GW frequency (Hz) */
+		REAL8 chi1,	/**< dimensionless spin of body 1 */
+		REAL8 chi2	/**< dimensionless spin of body 2 */
+		)
+{
+	REAL8 omega0, M, eta, theta0, phi0, thetaLN, phiLN, Jnorm, tmp1, tmp2;
+	REAL8 Jhatx, Jhaty, Jhatz, LNhx, LNhy, LNhz, Jx, Jy, Jz, LNx, LNy, LNz;
+	REAL8 s1hatx, s1haty, s1hatz, s2hatx, s2haty, s2hatz;
+	REAL8 e1x, e1y, e1z, s1x, s1y, s1z, s2x, s2y, s2z;
+
+	/* Starting frame: LNhat is along the z-axis and the unit 
+	   spin vectors are defined from the angles relative to LNhat */
+	LNhx = 0.;
+	LNhy = 0.;
+	LNhz = 1.;
+	s1hatx = sin(theta1) * cos(phi1);
+	s1haty = sin(theta1) * sin(phi1);
+	s1hatz = cos(theta1);
+	s2hatx = sin(theta2) * cos(phi2);
+	s2haty = sin(theta2) * sin(phi2);
+	s2hatz = cos(theta2);
+
+	/* Define several internal variables needed for magnitudes */
+	omega0 = LAL_PI * f0; // initial orbital angular frequency
+	m1 *= LAL_G_SI / LAL_C_SI / LAL_C_SI / LAL_C_SI;
+	m2 *= LAL_G_SI / LAL_C_SI / LAL_C_SI / LAL_C_SI;
+	M = m1 + m2;
+	eta = m1 * m2 / M / M;
+	
+	/* Define LN, S1, S2, J with proper magnitudes */
+	LNx = LNy = 0.;
+	LNz = pow(M, 5./3.) * eta * pow(omega0, -1./3.) * LNhz;
+	s1x = m1 * m1 * chi1 * s1hatx;
+	s1y = m1 * m1 * chi1 * s1haty;
+	s1z = m1 * m1 * chi1 * s1hatz;
+	s2x = m2 * m2 * chi2 * s2hatx;
+	s2y = m2 * m2 * chi2 * s2haty;
+	s2z = m2 * m2 * chi2 * s2hatz;
+	Jx = LNx + s1x + s2x;
+	Jy = LNy + s1y + s2y;
+	Jz = LNz + s1z + s2z;
+
+	/* Normalize J to Jhat, find it's angles in starting frame */
+	Jnorm = sqrt( Jx*Jx + Jy*Jy + Jz*Jz);
+	Jhatx = Jx / Jnorm;
+	Jhaty = Jy / Jnorm;
+	Jhatz = Jz / Jnorm;
+	theta0 = acos(Jhatz);
+	phi0 = atan2(Jhaty, Jhatx);
+
+	/* Rotate about z-axis by -phi0 to put Jhat in x-z plane */
+	ROTATEZ(-phi0, LNhx, LNhy, LNhz);
+	ROTATEZ(-phi0, s1hatx, s1haty, s1hatz);
+	ROTATEZ(-phi0, s2hatx, s2haty, s2hatz);
+	ROTATEZ(-phi0, Jhatx, Jhaty, Jhatz);
+
+	/* Rotate about new y-axis by theta0 - thetaJN to put Jhat at
+	   desired inclination relative to direction of propagation */
+	ROTATEY(theta0 - thetaJN, LNhx, LNhy, LNhz);
+	ROTATEY(theta0 - thetaJN, s1hatx, s1haty, s1hatz);
+	ROTATEY(theta0 - thetaJN, s2hatx, s2haty, s2hatz);
+	ROTATEY(theta0 - thetaJN, Jhatx, Jhaty, Jhatz);
+
+	/* Rotate about new z-axis by phiJN to put J at desired azimuth */
+	ROTATEZ(phiJN, LNhx, LNhy, LNhz);
+	ROTATEZ(phiJN, s1hatx, s1haty, s1hatz);
+	ROTATEZ(phiJN, s2hatx, s2haty, s2hatz);
+	ROTATEZ(phiJN, Jhatx, Jhaty, Jhatz);
+
+	/* E1 is at same azimuth as LNhat, but its zenith is an extra pi/2.
+	   Same as sin(theta) -> cos(theta), cos(theta) -> -sin(theta) */
+	thetaLN = acos(LNhz);
+	phiLN = atan2(LNhy, LNhx);
+	e1x = cos(thetaLN)*cos(phiLN);
+	e1y = cos(thetaLN)*sin(phiLN);
+	e1z = -sin(thetaLN);
+
+	/* Multiply spin unit vectors by chi magnitude (but NOT m_i^2) */
+	s1hatx *= chi1;
+	s1haty *= chi1;
+	s1hatz *= chi1;
+	s2hatx *= chi2;
+	s2haty *= chi2;
+	s2hatz *= chi2;
+
+	/* Set pointers to rotated vector components */
+	*LNhatx = LNhx;
+	*LNhaty = LNhy;
+	*LNhatz = LNhz;
+	*E1x = e1x;
+	*E1y = e1y;
+	*E1z = e1z;
+	*S1x = s1hatx;
+	*S1y = s1haty;
+	*S1z = s1hatz;
+	*S2x = s2hatx;
+	*S2y = s2haty;
+	*S2z = s2hatz;
+
+	return XLAL_SUCCESS;
+}
+
+/**
  * Chooses between different approximants when requesting a waveform to be generated
  * For spinning waveforms, all known spin effects up to given PN order are included
  */
@@ -835,19 +1007,19 @@ int XLALSimInspiralChooseWaveform(
     {
         /* non-spinning inspiral-only models */
         case TaylorEt:
-            ret = XLALSimInspiralTaylorEtPN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorEtPN(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT1:
-            ret = XLALSimInspiralTaylorT1PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT1PN(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT2:
-            ret = XLALSimInspiralTaylorT2PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT2PN(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT3:
-            ret = XLALSimInspiralTaylorT3PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT3PN(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT4:
-            ret = XLALSimInspiralTaylorT4PN(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT4PN(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
 
         /* non-spinning inspiral-merger-ringdown models */
@@ -948,19 +1120,19 @@ int XLALSimInspiralChooseRestrictedWaveform(
     {
         /* non-spinning inspiral-only models */
         case TaylorEt:
-            ret = XLALSimInspiralTaylorEtPNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorEtPNRestricted(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT1:
-            ret = XLALSimInspiralTaylorT1PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT1PNRestricted(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT2:
-            ret = XLALSimInspiralTaylorT2PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT2PNRestricted(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT3:
-            ret = XLALSimInspiralTaylorT3PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT3PNRestricted(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
         case TaylorT4:
-            ret = XLALSimInspiralTaylorT4PNRestricted(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, O);
+            ret = XLALSimInspiralTaylorT4PNRestricted(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, O);
             break;
 
         /* non-spinning inspiral-merger-ringdown models */

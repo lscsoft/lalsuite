@@ -382,9 +382,9 @@ double logLikelihood_nine(struct parSet *par, int waveformVersion, int injection
   double x[20];
   double xmax=0.0;
   double deltax=0.01;
-  
-  waveformVersion = waveformVersion;  // Suppress 'never referenced' warnings from icc
-  injectionWF = injectionWF;          // Suppress 'never referenced' warnings from icc
+ 
+  (void)waveformVersion;  // Suppress 'never referenced' warnings
+  (void)injectionWF;      // Suppress 'never referenced' warnings
   
   for(i=0;i<run.nMCMCpar;i++){
     x[i]= par->par[run.parRevID[185+i]];

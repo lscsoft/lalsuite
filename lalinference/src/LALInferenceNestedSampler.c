@@ -32,8 +32,6 @@ static void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
 static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
 static double logadd(double a,double b);
 static REAL8 mean(REAL8 *array,int N);
-void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);
-void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);
 
 
 static double logadd(double a,double b){
@@ -242,8 +240,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 verbose=0;
 	UINT4 displayprogress=0;
 	LALInferenceVariableItem *param_ptr;
-	LALInferenceVariables *output_array=NULL;
-	UINT4 N_output_array=0;
 	
 	/* Default sample logging functions with and without XML */
 #ifdef HAVE_LIBLALXML
@@ -399,10 +395,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		H=mean(Harray,Nruns);
 		logZ=logZnew;
 		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
-                
-
+               
 		if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
-
 		
 		UINT4 itercounter=0;
 		/* Generate a new live point */
@@ -412,7 +406,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
 			LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
                         runState->evolve(runState);
-			itercounter++;			
+                        itercounter++;			
 		}while( runState->currentLikelihood<=logLmin ||  *(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
 
                 LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);
@@ -503,7 +497,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 #ifdef HAVE_LIBLALXML	
 	/* Write out the XML if requested */
-
+    LALInferenceVariables *output_array=NULL;
+    UINT4 N_output_array=0;
 	if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
 	  &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
 	{
@@ -531,9 +526,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		
 		
 	}
-#endif
 	if(output_array) free(output_array);
 
+#endif
 	/* Write out names of parameters */
 	FILE *lout=NULL;
 	char param_list[FILENAME_MAX];
@@ -933,7 +928,7 @@ static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude)
 {
 	vec[0]=cos(longitude)*cos(latitude);
 	vec[1]=sin(longitude)*cos(latitude);
-	vec[1]=sin(latitude);
+	vec[2]=sin(latitude);
 	return;
 }
 
@@ -1159,12 +1154,12 @@ INT4 LALInferenceReflectDetPlane(
 	normalise(normal);
 	normalise(detvec);
 	
-	/* Calculate the distance between the point and the plane n.(point-IFO1) */
-	for(dist=0.0,i=0;i<3;i++) dist+=pow(normal[i]*(pos[i]-detvec[i]),2.0);
-	dist=sqrt(dist);
-	/* Reflect the point pos across the plane */
-	for(i=0;i<3;i++) pos[i]=pos[i]-2.0*dist*normal[i];
-	
+    /* Calculate the signed distance between the point and the plane n.(point-IFO1) */
+    for(dist=0.0,i=0;i<3;i++) dist+=normal[i]*pos[i];
+
+    /* Reflect the point pos across the plane */
+    for(i=0;i<3;i++) pos[i]=pos[i]-2.0*dist*normal[i];
+    
 	REAL8 newLongGeo,newLat;
 	CartesianToSkyPos(pos,&newLongGeo,&newLat);
 	REAL8 newLongSky=newLongGeo-deltalong;

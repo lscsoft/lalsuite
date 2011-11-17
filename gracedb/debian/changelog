@@ -1,0 +1,11 @@
+ligo-gracedb (1.0-2) lucid; urgency=low
+
+  * Updated service URL.  Point to gracedb.ligo.org and not archie.phys.uwm.edu.
+
+ -- Brian Moe <bmoe@oz.phys.uwm.edu>  Thu, 17 Nov 2011 14:29:20 -0600
+
+ligo-gracedb (1.0-1) unstable; urgency=low
+
+  * Initial release
+
+ -- Brian Moe <brian.moe@ligo.org>  Tue, 01 Nov 2011 15:59:47 -0500

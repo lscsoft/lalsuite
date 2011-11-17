@@ -21,7 +21,7 @@
  */
 
 #include "tracksearch.h"
-#include "lal/FrameStream.h"
+#include <lal/FrameStream.h>
 
 #define PROGRAM_NAME "tracksearch"
 

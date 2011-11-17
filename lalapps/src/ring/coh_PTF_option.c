@@ -443,6 +443,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   localparams.numIFO = 0;
 
   for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  {
     if ( localparams.haveTrig[ifoNumber] )
     {
       XLALReturnIFO(ifo,ifoNumber);
@@ -450,6 +451,17 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
                 "%s", ifo );
       localparams.numIFO++;
     }
+  }
+  
+  /* check for H1H2 */
+  if (localparams.numIFO == 2)
+  {
+    char ifos[4];
+    snprintf(ifos, LIGOMETA_IFOS_MAX, "%s%s",
+             localparams.ifoName[0], localparams.ifoName[1]);
+    if (! strcmp(ifos,"H1H2"))
+      localparams.singlePolFlag = 1;
+  }
 
   *params = localparams;
 

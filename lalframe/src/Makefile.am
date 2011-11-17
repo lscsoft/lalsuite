@@ -1,4 +1,10 @@
 INCLUDES = -I$(top_builddir)/include
+LDADD = liblalframe.la
+
+bin_PROGRAMS = \
+	lalframe_lld
+
+lalframe_lld_SOURCES = lld.c
 
 lalframeincludedir = $(includedir)/lal
 lalframeinclude_HEADERS = \
@@ -10,7 +16,8 @@ lalframeinclude_HEADERS = \
 	LALFrameConfig.h \
 	LALFrameIO.h \
 	LALFrameL.h \
-	LALFrameVCSInfo.h
+	LALFrameVCSInfo.h \
+	LowLatencyData.h
 
 lib_LTLIBRARIES = liblalframe.la
 liblalframe_la_SOURCES = \
@@ -21,7 +28,8 @@ liblalframe_la_SOURCES = \
 	FrameSeries.c \
 	FrameStream.c \
 	LALFrameIO.c \
-	LALFrameVCSInfo.c
+	LALFrameVCSInfo.c \
+	LowLatencyData.c
 
 noinst_HEADERS = \
 	FrameSeriesRead_source.c \

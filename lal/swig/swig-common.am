@@ -133,7 +133,7 @@ $(swig_wrapfile) : $(swig_iface_deps) $(swig_check_headers)
 	CPP='$(CPP)' $(PERL) $(swig_check_headers) \
 	--include $(top_builddir)/include --interface $(swig_ifacefile)
 	$(SWIG) $(addprefix -D,$(SWIG_SWIG_DEFINES)) \
-        -module $(swig_wrapname) -$(swig_language) -c++ $(swig_language_opts) \
+	-module $(swig_wrapname) -$(swig_language) -c++ $(swig_language_opts) \
 	-MD -MF $(swig_iface_deps) -MT $(swig_wrapfile) \
 	$(addprefix -I,$(swig_inclpath)) \
 	-o $(swig_wrapfile) $(swig_ifacefile)

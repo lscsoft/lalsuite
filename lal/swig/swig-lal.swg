@@ -204,4 +204,3 @@ SWIGLAL_STRUCT_LALCDTOR(UINT8Vector);
 SWIGLAL_STRUCT_LALCDTOR(UINT8VectorSequence);
 
 // LAL header files which form the SWIG interface
-swiglal_include(lal/LALVCSInfo.h)

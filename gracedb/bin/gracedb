@@ -4,7 +4,9 @@ import httplib, mimetypes, urllib
 import socket
 import os, sys
 
-DEFAULT_SERVICE_URL = "https://archie.phys.uwm.edu/gracedb/cli"
+DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/cli"
+
+GIT_TAG = 'gracedb-1.0-2'
 
 #-----------------------------------------------------------------
 # Util routines

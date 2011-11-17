@@ -1,0 +1,16 @@
+Source: ligo-lvalert
+Section: python
+Priority: extra
+Maintainer: Brian Moe <brian.moe@ligo.org>
+Build-Depends: debhelper (>= 7), python-support, python (>=2.4)
+Standards-Version: 3.8.4
+Homepage: http://www.lsc-group.phys.uwm.edu/daswg/projects/lvalert.html
+
+Package: python-ligo-lvalert
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}, python-pyxmpp, python-libxml2, python-m2crypto, python-dnspython
+Description: LIGO-Virgo Alert Network
+  The LIGO-Virgo Alert Network (LVAlert) is a prototype notification service built XMPP
+  to provide a basic notification tool which allows multiple producers and consumers
+  of notifications.
+

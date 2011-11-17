@@ -125,7 +125,7 @@ REAL8 cdf_chisq_Qinv(REAL8 Q, REAL8 nu)
 {
    REAL8 val = cdf_gamma_Qinv(Q, 0.5*nu, 2.0);
    if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-      fprintf(stderr, "%s: cdf_gamma_Pinv(%.6f, %.6f, 2.0) failed.\n", __func__, Q, 0.5*nu);
+      fprintf(stderr, "%s: cdf_gamma_Qinv(%.6f, %.6f, 2.0) failed.\n", __func__, Q, 0.5*nu);
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    return val;

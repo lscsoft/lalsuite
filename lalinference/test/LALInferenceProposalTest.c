@@ -557,5 +557,8 @@ int main(int argc, char *argv[]) {
 	  
 	}
 	fclose(outfile);
-	return(0);
+	outfile=fopen("headers.txt","w");
+    LALInferenceFprintParameterNonFixedHeaders(outfile,state->currentParams);
+    fclose(outfile);
+    return(0);
 }
