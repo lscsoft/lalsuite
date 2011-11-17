@@ -467,7 +467,6 @@ XLALSimInspiralTaylorEtSetup(
 int XLALSimInspiralTaylorEtPNEvolveOrbit(
 		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 		REAL8TimeSeries **phi, /**< orbital phase [returned] */
-		LIGOTimeGPS *tc,       /**< coalescence time */
 		REAL8 phic,            /**< coalescence phase */
 		REAL8 deltaT,          /**< sampling interval */
 		REAL8 m1,              /**< mass of companion 1 */
@@ -490,6 +489,7 @@ int XLALSimInspiralTaylorEtPNEvolveOrbit(
 	params.ak = ak;
 
 	UINT4 j;
+	LIGOTimeGPS tc = LIGOTIMEGPSZERO;
 	double y[2];
 	double yerr[2];
 	const gsl_odeiv_step_type *T = gsl_odeiv_step_rk4;
@@ -503,8 +503,8 @@ int XLALSimInspiralTaylorEtPNEvolveOrbit(
 	sys.params = &params;
 
 	/* allocate memory */
-	*V = XLALCreateREAL8TimeSeries( "ORBITAL_VELOCITY_PARAMETER", tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
-	*phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
+	*V = XLALCreateREAL8TimeSeries( "ORBITAL_VELOCITY_PARAMETER", &tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
+	*phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", &tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
 	if ( !V || !phi )
 		XLAL_ERROR(XLAL_EFUNC);
 
@@ -548,7 +548,7 @@ int XLALSimInspiralTaylorEtPNEvolveOrbit(
 	if ( ! XLALResizeREAL8TimeSeries(*phi, 0, j) )
 		XLAL_ERROR(XLAL_EFUNC);
 
-	/* adjust to correct tc and phic */
+	/* adjust to correct time */
 	XLALGPSAdd(&(*V)->epoch, -1.0*j*deltaT);
 	XLALGPSAdd(&(*phi)->epoch, -1.0*j*deltaT);
 
@@ -574,7 +574,6 @@ int XLALSimInspiralTaylorEtPNEvolveOrbit(
 int XLALSimInspiralTaylorEtPNGenerator(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
 	       	REAL8 deltaT,             /**< sampling interval */
@@ -591,7 +590,7 @@ int XLALSimInspiralTaylorEtPNGenerator(
 	REAL8TimeSeries *phi;
 	int status;
 	int n;
-	n = XLALSimInspiralTaylorEtPNEvolveOrbit(&V, &phi, tc, phic, deltaT, m1, m2, f_min, phaseO);
+	n = XLALSimInspiralTaylorEtPNEvolveOrbit(&V, &phi, phic, deltaT, m1, m2, f_min, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR(XLAL_EFUNC);
 	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, V, phi, x0, m1, m2, r, i, amplitudeO);
@@ -615,7 +614,6 @@ int XLALSimInspiralTaylorEtPNGenerator(
 int XLALSimInspiralTaylorEtPN(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -627,7 +625,7 @@ int XLALSimInspiralTaylorEtPN(
 		)
 {
 	/* set x0=0 to ignore log terms */
-	return XLALSimInspiralTaylorEtPNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, f_min, r, i, O, O);
+	return XLALSimInspiralTaylorEtPNGenerator(hplus, hcross, phic, 0.0, deltaT, m1, m2, f_min, r, i, O, O);
 }
 
 
@@ -642,7 +640,6 @@ int XLALSimInspiralTaylorEtPN(
 int XLALSimInspiralTaylorEtPNRestricted(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -655,7 +652,7 @@ int XLALSimInspiralTaylorEtPNRestricted(
 {
 	/* use Newtonian order for amplitude */
 	/* set x0=0 to ignore log terms */
-	return XLALSimInspiralTaylorEtPNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, f_min, r, i, 0, O);
+	return XLALSimInspiralTaylorEtPNGenerator(hplus, hcross, phic, 0.0, deltaT, m1, m2, f_min, r, i, 0, O);
 }
 
 
