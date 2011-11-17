@@ -32,8 +32,6 @@ static void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
 static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
 static double logadd(double a,double b);
 static REAL8 mean(REAL8 *array,int N);
-void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);
-void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);
 
 
 static double logadd(double a,double b){
