@@ -647,7 +647,6 @@ static int XLALSimInspiralTaylorT2Setup(
 int XLALSimInspiralTaylorT2PNEvolveOrbit(
 		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
-	       	LIGOTimeGPS *tc,       /**< coalescence time */
 	       	REAL8 phi0,            /**< initial phase */
 	       	REAL8 deltaT,          /**< sampling interval */
 		REAL8 m1,              /**< mass of companion 1 */
@@ -662,6 +661,7 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 	REAL8 tC, xmin, xmax, xacc, v, phase, fOld;
 	REAL8 (*timing2)(REAL8, void *);
 	UINT4 j;
+	LIGOTimeGPS tc = LIGOTIMEGPSZERO;
 	REAL8 f, fLso;
 	SimInspiralToffInput toffIn;
 	void *funcParams;
@@ -671,13 +671,13 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 
 	/* allocate memory */
 
-	*V = XLALCreateREAL8TimeSeries("ORBITAL_FREQUENCY_PARAMETER", tc, 0.0, deltaT, &lalDimensionlessUnit,
+	*V = XLALCreateREAL8TimeSeries("ORBITAL_FREQUENCY_PARAMETER", &tc, 0.0, deltaT, &lalDimensionlessUnit,
 		blocklen);
-	*phi = XLALCreateREAL8TimeSeries("ORBITAL_PHASE", tc, 0.0, deltaT, &lalDimensionlessUnit, blocklen);
+	*phi = XLALCreateREAL8TimeSeries("ORBITAL_PHASE", &tc, 0.0, deltaT, &lalDimensionlessUnit, blocklen);
 	if (!V || !phi)
 		XLAL_ERROR(XLAL_EFUNC);
 
-	/* initialize expnCoeffsTaylorT3 and expnFuncTaylorT3 structures */
+	/* initialize expnCoeffsTaylorT2 and expnFuncTaylorT2 structures */
 	if (XLALSimInspiralTaylorT2Setup(&ak, &expnfunc, deltaT, m1, m2, f_min, O))
 		XLAL_ERROR(XLAL_EFUNC);
 
@@ -766,18 +766,12 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 		{
 			XLAL_ERROR(XLAL_EFUNC);
 		}
-	} while (f < fLso && f > fOld && toffIn.t < -tC);
+	} while (f < fLso);
 
 	/* check termination conditions */
 
-	if (toffIn.t >= -tC) {
-		XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at coalesence time\n", __func__);
-	}
 	if (f >= fLso) {
 		XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", __func__);
-	}
-	if (f <= fOld) {
-		XLALPrintInfo("XLAL Info - %s: PN inspiral terminated when frequency stalled\n", __func__);
 	}
 
 	/* make the correct length */
@@ -787,7 +781,7 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 	if ( ! XLALResizeREAL8TimeSeries(*phi, 0, j) )
 		XLAL_ERROR(XLAL_EFUNC);
 
-	/* adjust to correct tc and phic */
+	/* adjust to correct time */
 
 	XLALGPSAdd(&(*phi)->epoch, -1.0*j*deltaT);
 	XLALGPSAdd(&(*V)->epoch, -1.0*j*deltaT);
@@ -811,7 +805,6 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 int XLALSimInspiralTaylorT2PNGenerator(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
 	       	REAL8 deltaT,             /**< sampling interval */
@@ -828,7 +821,7 @@ int XLALSimInspiralTaylorT2PNGenerator(
 	REAL8TimeSeries *phi;
 	int status;
 	int n;
-	n = XLALSimInspiralTaylorT2PNEvolveOrbit(&V, &phi, tc, phic, deltaT, m1, m2, f_min, phaseO);
+	n = XLALSimInspiralTaylorT2PNEvolveOrbit(&V, &phi, phic, deltaT, m1, m2, f_min, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR(XLAL_EFUNC);
 	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, V, phi, x0, m1, m2, r, i, amplitudeO);
@@ -852,7 +845,6 @@ int XLALSimInspiralTaylorT2PNGenerator(
 int XLALSimInspiralTaylorT2PN(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -864,7 +856,7 @@ int XLALSimInspiralTaylorT2PN(
 		)
 {
 	/* set x0=0 to ignore log terms */
-	return XLALSimInspiralTaylorT2PNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, f_min, r, i, O, O);
+	return XLALSimInspiralTaylorT2PNGenerator(hplus, hcross, phic, 0.0, deltaT, m1, m2, f_min, r, i, O, O);
 }
 
 
@@ -879,7 +871,6 @@ int XLALSimInspiralTaylorT2PN(
 int XLALSimInspiralTaylorT2PNRestricted(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	LIGOTimeGPS *tc,          /**< coalescence time */
 	       	REAL8 phic,               /**< coalescence phase */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -892,5 +883,5 @@ int XLALSimInspiralTaylorT2PNRestricted(
 {
 	/* use Newtonian order for amplitude */
 	/* set x0=0 to ignore log terms */
-	return XLALSimInspiralTaylorT2PNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, f_min, r, i, 0, O);
+	return XLALSimInspiralTaylorT2PNGenerator(hplus, hcross, phic, 0.0, deltaT, m1, m2, f_min, r, i, 0, O);
 }

@@ -160,17 +160,19 @@ static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1",
 /** A flag to specify if phase parameters are being searched over and
  * therefore the pulsar model requires phase evolution to be re-calculated (0 =
  * no, 1 = yes). */ 
-static UINT4 varyphase = 0; 
+extern UINT4 varyphase; 
 
 /** A flag to specify if the sky position will be searched over, and therefore
  * whether the solar system barycentring needs recalculating (0 = no, 1 = yes).
 */
-static UINT4 varyskypos = 0; 
+extern UINT4 varyskypos; 
 
 /** A flag to specify if the binary system parameters will be searched over,
  * and therefore whether the binary system barycentring needs recalculating (0 =
  * no, 1 = yes) */
-static UINT4 varybinary = 0; 
+extern UINT4 varybinary; 
+
+extern LALStringVector *corlist;
 
 /* initialisation functions */
 void initialiseAlgorithm( LALInferenceRunState *runState );

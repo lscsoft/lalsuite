@@ -152,7 +152,7 @@ LALappsTSAInitialize(
    */
   params->cacheFilename=NULL;
   params->multiCacheFilename=NULL;
-  params->operation=Undefined;
+  params->operation=Unknown;
   params->colParams.averageTBins=-1;
   params->colParams.averageFBins=-1;
   params->colParams.newTDim=-1;
@@ -862,7 +862,7 @@ tsaTest(
       /*
        * Create blanked test map structure
        */
-      createParams.type=Undefined;
+      createParams.type=Unknown;
       /*
        * Number of F rows from -f -> f
        */

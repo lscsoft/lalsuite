@@ -335,8 +335,7 @@ fi
 
 if test -n "$build_binutils" -a -n "$rebuild_binutils"; then
     log_and_show "retrieving $binutils"
-#    download http://www.aei.mpg.de/~repr/EaH_packages $binutils.tar.gz
-    download ftp://ftp.fu-berlin.de/unix/gnu/binutils $binutils.tar.gz
+    download http://www.aei.mpg.de/~bema $binutils.tar.gz
     log_and_do rm -rf "$binutils"
     log_and_do tar xzf "$binutils.tar.gz"
 #    log_and_do sh -c "grep -v '^ *SUBDIRS *=' $binutils/bfd/Makefile.am > $binutils/bfd/Makefile.tmp"

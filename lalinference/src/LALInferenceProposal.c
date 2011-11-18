@@ -356,6 +356,34 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   LALInferenceRandomizeProposalCycle(runState);
 }
 
+static void
+SetupRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+  LALInferenceAddProposalToCycle(runState, &LALInferenceSingleProposal, 10);
+  LALInferenceAddProposalToCycle(runState, &LALInferenceSkyLocWanderJump, 0);
+  LALInferenceAddProposalToCycle(runState, &LALInferenceInclinationDistance, 0);
+
+  UINT4 nDet = numDetectorsUniquePositions(runState);
+  if (nDet == 3) {
+    LALInferenceAddProposalToCycle(runState, &LALInferenceSkyReflectDetPlane, 1);
+  }
+
+  LALInferenceRandomizeProposalCycle(runState);
+}
+
+void LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  LALInferenceVariables *propArgs = runState->proposalArgs;
+
+  if (!LALInferenceCheckVariable(propArgs, cycleArrayName) || !LALInferenceCheckVariable(propArgs, cycleArrayLengthName)) {
+    /* In case there is a partial cycle set up already, delete it. */
+    LALInferenceDeleteProposalCycle(runState);
+    SetupRapidSkyLocProposal(runState, proposedParams);
+  }
+
+  LALInferenceCyclicProposal(runState, proposedParams);
+}
+
+
 void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
 {
   LALInferenceVariables *propArgs = runState->proposalArgs;
@@ -481,6 +509,8 @@ void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVari
   if (LALInferenceGetProcParamVal(runState->commandLine, "--zeroLogLike")) {
     if (!strcmp(param->name, "massratio")) {
       sigma = 0.02;
+    } else if (!strcmp(param->name, "asym_massratio")) {
+      sigma = 0.08;
     } else if (!strcmp(param->name, "chirpmass")) {
       sigma = 1.0;
     } else if (!strcmp(param->name, "time")) {
@@ -515,7 +545,7 @@ void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVari
     }
     *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*sigma;
   } else {
-    if (!strcmp(param->name,"massratio") || !strcmp(param->name,"time") || !strcmp(param->name,"a_spin2") || !strcmp(param->name,"a_spin1")){
+    if (!strcmp(param->name,"massratio") || !strcmp(param->name,"asym_massratio") || !strcmp(param->name,"time") || !strcmp(param->name,"a_spin2") || !strcmp(param->name,"a_spin1")){
       *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
     } else if (!strcmp(param->name,"polarisation") || !strcmp(param->name,"phase") || !strcmp(param->name,"inclination")){
       *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
@@ -756,6 +786,7 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
   LALInferenceSetLogProposalRatio(runState, 0.0); /* Symmetric proposal. */
 }
 
+/* TODO: Include asym_massratio */
 void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *runState, LALInferenceVariables *pp) {
   const char *names[] = {"chirpmass", "massratio", NULL};
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
@@ -871,8 +902,14 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
   REAL8 Mc = draw_chirp(runState);
   LALInferenceSetVariable(proposedParams, "chirpmass", &Mc);
 
-  REAL8 eta = draw_flat(runState, "massratio");
-  LALInferenceSetVariable(proposedParams, "massratio", &eta);
+  if (LALInferenceCheckVariable(runState->currentParams, "asym_massratio")) {
+    REAL8 q = draw_flat(runState, "asym_massratio");
+    LALInferenceSetVariable(proposedParams, "asym_massratio", &q);
+  }
+  else if (LALInferenceCheckVariable(runState->currentParams, "massratio")) {
+    REAL8 eta = draw_flat(runState, "massratio");
+    LALInferenceSetVariable(proposedParams, "massratio", &eta);
+  }
 
   REAL8 theTime = draw_flat(runState, "time");
   LALInferenceSetVariable(proposedParams, "time", &theTime);
@@ -1020,6 +1057,7 @@ static void
 reflected_position_and_time(LALInferenceRunState *runState, const REAL8 ra, const REAL8 dec, const REAL8 oldTime,
                             REAL8 *newRA, REAL8 *newDec, REAL8 *newTime) {
   LALStatus status;
+  memset(&status,0,sizeof(status));
   SkyPosition currentEqu, currentGeo, newEqu, newGeo;
   currentEqu.latitude = dec;
   currentEqu.longitude = ra;

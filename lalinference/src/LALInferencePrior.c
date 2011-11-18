@@ -25,11 +25,13 @@
 #include <gsl/gsl_integration.h>
 
 /* Private helper function prototypes */
-static double innerIntegrand(double M2, void *viData);
+static double qInnerIntegrand(double M2, void *viData);
+static double etaInnerIntegrand(double M2, void *viData);
 static double outerIntegrand(double M1, void *voData);
-static double computePriorMassNorm(const double MMin, const double MMax, const double MTotMax, const double McMin, const double McMax, const double etaMin, const double etaMax);
+static double computePriorMassNorm(const double MMin, const double MMax, const double MTotMax, const double McMin, const double McMax, const double massRatioMin, const double massRatioMax, const char *massRatioName);
 
 static void mc2masses(double mc, double eta, double *m1, double *m2);
+static void q2masses(double mc, double q, double *m1, double *m2);
 
 static void mc2masses(double mc, double eta, double *m1, double *m2)
 /*  Compute individual companion masses (m1, m2)   */
@@ -43,6 +45,17 @@ static void mc2masses(double mc, double eta, double *m1, double *m2)
   return;
 }
 
+static void q2masses(double mc, double q, double *m1, double *m2)
+/*  Compute individual companion masses (m1, m2)   */
+/*  for given chirp mass (m_c) & asymmetric mass   */
+/*  ratio (q).  note: q = m2/m1, where m1 >= m2    */
+{
+  double factor = mc * pow(1 + q, 1.0/5.0);
+  *m1 = factor * pow(q, -3.0/5.0); 
+  *m2 = factor * pow(q, +2.0/5.0);
+  return;
+}
+
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
 {
@@ -53,7 +66,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 	LALInferenceVariables *priorParams=runState->priorArgs;
 	REAL8 min, max;
 	REAL8 logmc=0.0;
-	REAL8 m1=0.0,m2=0.0,eta=0.0;
+	REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
 	//REAL8 tmp=0.;
 	/* Check boundaries */
 	for(;item;item=item->next)
@@ -98,8 +111,11 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
           logPrior+=-(11./6.)*logmc;
         }
 		
-	if(LALInferenceCheckVariable(params,"massratio"))
-	{
+	if(LALInferenceCheckVariable(params,"asym_massratio")) {
+        q=*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio");
+        q2masses(exp(logmc),q,&m1,&m2);
+    }
+	else if(LALInferenceCheckVariable(params,"massratio")) {
 		eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
 		mc2masses(exp(logmc),eta,&m1,&m2);
 	}
@@ -198,7 +214,7 @@ void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter){
       /* if psi is outside the -pi/4 -> pi/4 boundary the set to rotate phi0
          by pi (psi will have been rescaled to be between 0 to 2pi as a 
         circular parameter).*/
-     if (*(REAL8 *)paraHead->value > LAL_TWOPI || 
+      if (*(REAL8 *)paraHead->value > LAL_TWOPI || 
         *(REAL8 *)paraHead->value < 0. ) rotphi0 = LAL_PI;
     
       idx1++;
@@ -229,8 +245,8 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
 	LALInferenceVariableItem *item=params->head;
 	LALInferenceVariables *priorParams=runState->priorArgs;
 	REAL8 min, max;
-	REAL8 logmc=0.0;
-	REAL8 m1=0.0,m2=0.0,mc=0.0,eta=0.0;
+	REAL8 logmc=0.0,mc=0.0;
+	REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
 	/* Check boundaries */
 	for(;item;item=item->next)
 	{
@@ -259,21 +275,32 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
 		logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))));
 
 	/*priors uniform in the individual masses. Not taking into account if mtot_max < m1_max+m2_max */
-  if(LALInferenceCheckVariable(params,"massratio"))
-	{
-    eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
+  if(LALInferenceCheckVariable(params,"massratio")||LALInferenceCheckVariable(params,"asym_massratio")) {
     if(LALInferenceCheckVariable(params,"logmc")) {
       logmc=*(REAL8 *)LALInferenceGetVariable(params,"logmc");
-      mc2masses(exp(logmc),eta,&m1,&m2);
+      if(LALInferenceCheckVariable(params,"asym_massratio")) {
+        q=*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio");
+        q2masses(exp(logmc),q,&m1,&m2);
+        logPrior+=log(m1*m1);
+      } else {
+        eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
+        mc2masses(exp(logmc),eta,&m1,&m2);
+        logPrior+=log(((m1+m2)*(m1+m2)*(m1+m2))/(m1-m2));
+      }
       /*careful using mc2masses, it returns m1>=m2*/
-      logPrior+=log(((m1+m2)*(m1+m2)*(m1+m2))/(m1-m2));
     } else if(LALInferenceCheckVariable(params,"chirpmass")) {
       mc=*(REAL8 *)LALInferenceGetVariable(params,"chirpmass");
-      mc2masses(mc,eta,&m1,&m2);
-      logPrior+=log(((m1+m2)*(m1+m2))/((m1-m2)*pow(eta,3.0/5.0)));
+      if(LALInferenceCheckVariable(params,"asym_massratio")) {
+        q=*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio");
+        q2masses(mc,q,&m1,&m2);
+        logPrior+=log(m1*m1/mc);
+      } else {
+        eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
+        mc2masses(mc,eta,&m1,&m2);
+        logPrior+=log(((m1+m2)*(m1+m2))/((m1-m2)*pow(eta,3.0/5.0)));
+      }
     }
-
-	}
+  }
 	
 	/* Check for component masses in range, if specified */
 	if(LALInferenceCheckVariable(priorParams,"component_min"))
@@ -304,17 +331,22 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 	LALInferenceVariables *priorParams=runState->priorArgs;
 	REAL8 min, max;
 	REAL8 logmc=0.0;
-	REAL8 m1,m2;//eta=0.0; - set but not used
-	REAL8 etaMin=0.0, etaMax=0.0;
+	REAL8 m1,m2; 
+	REAL8 massRatioMin=0.0, massRatioMax=0.0; // min,max for q or eta
 	REAL8 MTotMax=0.0;
 	char normName[VARNAME_MAX];
+	char massRatioName[VARNAME_MAX];
 	REAL8 norm=0.0;
-	
-	if(LALInferenceCheckVariable(params,"massratio")){
-		//eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio"); - set but not used
-		LALInferenceGetMinMaxPrior(priorParams, "massratio", &etaMin, &etaMax);
-	}
-	
+
+    if(LALInferenceCheckVariable(params,"asym_massratio")){
+        LALInferenceGetMinMaxPrior(priorParams, "asym_massratio", (void *)&massRatioMin, (void *)&massRatioMax);
+        strcpy(massRatioName,"asym_massratio");
+    }
+	else
+    {
+		LALInferenceGetMinMaxPrior(priorParams, "massratio", (void *)&massRatioMin, (void *)&massRatioMax);
+        strcpy(massRatioName,"massratio");
+    }
 	/* Check boundaries */
 	for(;item;item=item->next)
 	{
@@ -332,17 +364,16 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 					}
 					else
 					{
-						if(LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min") 
-						   && LALInferenceCheckVariable(params,"massratio")){
+						if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min") 
+						   && (LALInferenceCheckVariable(params,"asym_massratio") || LALInferenceCheckVariable(params,"massratio")) ){
 							if(LALInferenceCheckVariable(priorParams,"MTotMax")) 
 								MTotMax=*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax");
 							else 
 								MTotMax=2.0*(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max"));
 
-							LALInferenceGetMinMaxPrior(priorParams, "massratio", &etaMin, &etaMax);
 							norm = -log(computePriorMassNorm(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min"),
 														*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max"),
-														MTotMax, min, max, etaMin, etaMax));
+														MTotMax, min, max, massRatioMin, massRatioMax, massRatioName));
 							//printf("norm@%s=%f\n",item->name,norm);
 						}
 						else {
@@ -357,28 +388,31 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 						logmc=(*(REAL8 *)LALInferenceGetVariable(params,"logmc"));
 					}
 					
-					if(LALInferenceCheckVariable(params,"massratio")){
-						mc2masses(exp(logmc),*(REAL8 *)LALInferenceGetVariable(params,"massratio"),&m1,&m2);
-					
-						if(LALInferenceCheckVariable(priorParams,"component_min"))
-							if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m1
-							   || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m2)
-								return -DBL_MAX;
-					
-						if(LALInferenceCheckVariable(priorParams,"component_max"))
-							if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m1
-							   || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
-								return -DBL_MAX;
+                    if(LALInferenceCheckVariable(params,"asym_massratio") || LALInferenceCheckVariable(params,"massratio")){
+                        if(LALInferenceCheckVariable(params,"asym_massratio"))
+                            q2masses(exp(logmc),*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio"),&m1,&m2);
+                        else if(LALInferenceCheckVariable(params,"massratio"))
+                            mc2masses(exp(logmc),*(REAL8 *)LALInferenceGetVariable(params,"massratio"),&m1,&m2);
+                        
+                        if(LALInferenceCheckVariable(priorParams,"component_min"))
+                            if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m1
+                               || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m2)
+                                return -DBL_MAX;
+                    
+                        if(LALInferenceCheckVariable(priorParams,"component_max"))
+                            if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m1
+                               || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
+                                return -DBL_MAX;
 
-						if(LALInferenceCheckVariable(priorParams,"MTotMax"))
-							if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
-								return -DBL_MAX;
+                        if(LALInferenceCheckVariable(priorParams,"MTotMax"))
+                            if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
+                                return -DBL_MAX;
 					}
 					
 					logPrior += -(11./6.)*logmc+norm;
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
 				}
-				else if(!strcmp(item->name, "massratio")) continue;
+				else if(!strcmp(item->name, "massratio") || !strcmp(item->name, "asym_massratio")) continue;
 
 				else if(!strcmp(item->name, "distance")){
 					if(LALInferenceCheckVariable(priorParams,"distance_norm")) {
@@ -497,17 +531,28 @@ typedef struct {
 	double M1;
 	double McMin;
 	double McMax;
-	double etaMin;
-	double etaMax;
+	double massRatioMin;
+	double massRatioMax;
 } innerData;
+
+static double qInnerIntegrand(double M2, void *viData) {
+	innerData *iData = (innerData *)viData;
+	double Mc = pow(M2*iData->M1, 3.0/5.0)/pow(M2+iData->M1, 1.0/5.0);
+	double q = M2/iData->M1;
+	if (Mc < iData->McMin || Mc > iData->McMax || q < iData->massRatioMin || q > iData->massRatioMax) {
+		return 0.0;
+	} else {
+		return pow(Mc, -11.0/6.0);
+	}
+}
 
 #define SQR(x) ((x)*(x))
 
-static double innerIntegrand(double M2, void *viData) {
+static double etaInnerIntegrand(double M2, void *viData) {
 	innerData *iData = (innerData *)viData;
 	double Mc = pow(M2*iData->M1, 3.0/5.0)/pow(M2+iData->M1, 1.0/5.0);
 	double eta = M2*iData->M1/SQR(M2+iData->M1);
-	if (Mc < iData->McMin || Mc > iData->McMax || eta < iData->etaMin || eta > iData->etaMax) {
+	if (Mc < iData->McMin || Mc > iData->McMax || eta < iData->massRatioMin || eta > iData->massRatioMax) {
 		return 0.0;
 	} else {
 		return pow(Mc, -11.0/6.0);
@@ -521,8 +566,9 @@ typedef struct {
 	size_t wsInnerSize;
 	double McMin;
 	double McMax;
-	double etaMin;
-	double etaMax;
+	double massRatioMin;
+	double massRatioMax;
+    char   massRatioName[VARNAME_MAX];
 	double MTotMax;
 	double MMin;
 	double epsabs;
@@ -540,10 +586,13 @@ static double outerIntegrand(double M1, void *voData) {
 	iData.M1 = M1;
 	iData.McMin = oData->McMin;
 	iData.McMax = oData->McMax;
-	iData.etaMin = oData->etaMin;
-	iData.etaMax = oData->etaMax;
-	
-	f.function = &innerIntegrand;
+	iData.massRatioMin = oData->massRatioMin;
+	iData.massRatioMax = oData->massRatioMax;
+
+    if(!strcmp(oData->massRatioName,"asym_massratio"))
+        f.function = &qInnerIntegrand;
+    else if(!strcmp(oData->massRatioName,"massratio"))
+        f.function = &etaInnerIntegrand;
 	f.params = &iData;
 	
 	gsl_integration_qag(&f, oData->MMin, MIN(M1, oData->MTotMax-M1), oData->epsabs, oData->epsrel, 
@@ -556,7 +605,7 @@ static double outerIntegrand(double M1, void *voData) {
 
 static double computePriorMassNorm(const double MMin, const double MMax, const double MTotMax, 
                     const double McMin, const double McMax,
-                    const double etaMin, const double etaMax) {
+                    const double massRatioMin, const double massRatioMax, const char *massRatioName) {
 	const double epsabs = 1e-8;
 	const double epsrel = 1e-8;
 	const size_t wsSize = 10000;
@@ -571,13 +620,14 @@ static double computePriorMassNorm(const double MMin, const double MMax, const d
 	oData.wsInner = wsInner;
 	oData.McMin = McMin;
 	oData.McMax = McMax;
-	oData.etaMin = etaMin;
-	oData.etaMax = etaMax;
+	oData.massRatioMin  = massRatioMin;
+	oData.massRatioMax  = massRatioMax;
 	oData.MTotMax = MTotMax;
 	oData.epsabs = epsabs;
 	oData.epsrel = epsrel;
 	oData.MMin = MMin;
-	
+    strcpy(oData.massRatioName,massRatioName);	
+
 	f.function = &outerIntegrand;
 	f.params = &oData;
 	
@@ -850,6 +900,10 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
   
     /* set random number for given parameter index */
     tmp = tmps->data[idx];
+    
+    /* free tmps */
+    if ( !LALInferenceCheckVariable( priorArgs, "multivariate_deviates" ) )
+      XLALDestroyREAL4Vector( tmps );
   } 
   /* not a recognised prior type */
   else{

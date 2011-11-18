@@ -35,9 +35,6 @@ ihsfarStruct * new_ihsfarStruct(INT4 rows, inputParamsStruct *params);
 void free_ihsfarStruct(ihsfarStruct *ihsfarstruct);
 void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4Vector *aveNoise);
 
-void ihsSums(ihsMaximaStruct *output, REAL4Vector *ihss, INT4Vector *locs, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor);
-void ihsSums2_withFAR(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *aveNoise, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor, inputParamsStruct *params, INT4 calcPInvVals);
-void ihsSums2_withFAR_withnoise(ihsMaximaStruct *output, ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *aveNoise, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor, inputParamsStruct *params, INT4 calcPInvVals);
 void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor, inputParamsStruct *params);
 void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4VectorSequence *ihsvectorsequence, INT4 rows, REAL4Vector *FbinMean, INT4 locationnormfactor, inputParamsStruct *params);
 

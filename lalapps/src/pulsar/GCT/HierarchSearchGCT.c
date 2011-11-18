@@ -308,7 +308,6 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_semiCohToplist = TRUE; /* if overall first stage candidates are to be output */
   BOOLEAN uvar_useResamp = FALSE;      /* use resampling to compute F-statistic instead of SFT method */
   BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
-  BOOLEAN uvar_SepDetVeto = FALSE;     /* Do separate detector analysis for the top candidate */
   BOOLEAN uvar_outputFX = FALSE;       /* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
   CHAR *uvar_outputSingleSegStats = NULL; /* Additionally output single-segment Fstats for each final toplist candidate */
 
@@ -447,7 +446,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 1=numbercount",  &uvar_SortToplist), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "SepDetVeto",   0, UVAR_OPTIONAL,  "Separate detector veto with top candidate", &uvar_SepDetVeto), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "outputFX",     0, UVAR_OPTIONAL,  "Additional analysis for toplist candidates, output 2F, 2FX", &uvar_outputFX), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_DEVELOPER, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
 
@@ -1473,177 +1471,6 @@ int MAIN( int argc, char *argv[]) {
   LogPrintf ( LOG_DEBUG, "Writing output ... ");
   write_hfs_oputput(uvar_fnameout, semiCohToplist);
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
-
-  /* --- Further analysis with the top candidate if desired ---
-         This veto computes the average F-statistic for each detector
-         data stream and compares it to the multi-IFO F-statistic */
-  if ( uvar_SepDetVeto ) {
-
-    UINT8 icand, icandMax;
-    UINT4 numDetectors, X, topNC;
-    REAL4 topTwoF=0.0, maxTopTwoF=0.0;
-    Fcomponents FstatSeg;
-    ComputeFBuffer cfBuffer2 = empty_ComputeFBuffer;
-    PulsarSpins fkdotTMP;
-    MultiSFTVector *SFTsSingleDet=NULL;
-    MultiNoiseWeights *NoiseSingleDet=NULL;
-    MultiDetectorStateSeries *DetStatesSingleDet=NULL;
-
-    INIT_MEM( fkdotTMP );
-    numDetectors = stackMultiSFT.data[0]->length;
-
-    REAL4 aveTwoFstat[numDetectors+1];
-
-    if ( (SFTsSingleDet = (MultiSFTVector *)LALCalloc(1, sizeof(MultiSFTVector))) == NULL ){
-      fprintf(stderr,"SFTsSingleDet Calloc failed\n");
-      return(HIERARCHICALSEARCH_EMEM);
-    }
-    if ( (NoiseSingleDet = (MultiNoiseWeights *)LALCalloc(1, sizeof(MultiNoiseWeights))) == NULL ){
-      fprintf(stderr,"NoiseSingleDet Calloc failed\n");
-      return(HIERARCHICALSEARCH_EMEM);
-    }
-    if ( (DetStatesSingleDet = (MultiDetectorStateSeries *)LALCalloc(1, sizeof(MultiDetectorStateSeries))) == NULL ){
-      fprintf(stderr,"DetStatesSingleDet Calloc failed\n");
-      return(HIERARCHICALSEARCH_EMEM);
-    }
-
-    fprintf(stderr, "%% --- Starting separate detector analysis of the top candidate, No. of IFOs: %d\n",numDetectors);
-
-    /* Sort the toplist by average 2F to get the strongest candidates */
-    sort_gctFStat_toplist_strongest(semiCohToplist);
-
-    icand=0; /* At the moment, just the top candidate is analyzed */
-    icandMax = icand;
-
-    /* find loudest candidate */
-    while ( !((*(GCTtopOutputEntry*)semiCohToplist->heap[0]).sumTwoF
-                > (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).sumTwoF) ) {
-
-      /* Initialize */
-      for (X=0; X < (numDetectors+1); X++)
-        aveTwoFstat[X] = 0.0;
-
-      thisPoint.Alpha = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Alpha;
-      thisPoint.Delta = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Delta;
-      fkdotTMP[0] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Freq;
-      fkdotTMP[1] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).F1dot;
-      topNC = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).nc;
-      topTwoF = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).sumTwoF;
-      /*
-      fprintf(stderr, "  At GPS time %.4f, %.14g %.13g %.13g %.14g %d %.6f  %d\n",
-              XLALGPSGetREAL8( &usefulParams.spinRange_refTime.refTime ),
-              fkdotTMP[0], thisPoint.Alpha, thisPoint.Delta, fkdotTMP[1], topNC, topTwoF, icand );
-      */
-      LAL_CALL ( LALExtrapolatePulsarSpins (&status,
-                                            thisPoint.fkdot, thisPoint.refTime,
-                                            fkdotTMP, refTimeGPS), &status );
-      /*
-      fprintf(stderr, "  At GPS time %.4f, %.14g %.13g %.13g %.14g %d %.6f\n",
-              XLALGPSGetREAL8( &thisPoint.refTime ),
-              thisPoint.fkdot[0], thisPoint.Alpha, thisPoint.Delta, thisPoint.fkdot[1],
-              topNC, topTwoF );
-      */
-      for (k = 0; k < nStacks; k++) {
-
-        /* --- Compute multi-IFO F-statistic --- */
-        LAL_CALL( ComputeFStat ( &status, &FstatSeg, &thisPoint, stackMultiSFT.data[k],
-                                stackMultiNoiseWeights.data[k], stackMultiDetStates.data[k],
-                                &CFparams, &cfBuffer2 ), &status);
-
-        if ( uvar_SignalOnly ) {
-          FstatSeg.F *= 2.0 / Tsft;
-          FstatSeg.F += 2;
-        }
-        aveTwoFstat[0] += 2.0 * FstatSeg.F / nStacks;
-
-      }
-      if (aveTwoFstat[0] > maxTopTwoF) {
-        maxTopTwoF = aveTwoFstat[0];
-        icandMax = icand;
-      }
-      fprintf(stderr,"  icand: %" LAL_UINT8_FORMAT "  aveTwoFstat: %f \n",icand,aveTwoFstat[0]);
-      icand++;
-
-    } /* end while ( !((*(GCTtopOutputEntry*)semiCohToplist->heap[0]).sumTwoF ... */
-
-
-    thisPoint.Alpha = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).Alpha;
-    thisPoint.Delta = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).Delta;
-    fkdotTMP[0] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).Freq;
-    fkdotTMP[1] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).F1dot;
-    topNC = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).nc;
-    topTwoF = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).sumTwoF;
-    aveTwoFstat[0] = topTwoF;
-
-    fprintf(stderr, "  At GPS time %.4f, %.14g %.13g %.13g %.14g %d %.6f  %" LAL_UINT8_FORMAT " (%" LAL_UINT8_FORMAT ")\n",
-            XLALGPSGetREAL8( &usefulParams.spinRange_refTime.refTime ),
-            fkdotTMP[0], thisPoint.Alpha, thisPoint.Delta, fkdotTMP[1], topNC, topTwoF, icandMax, icand );
-
-    LAL_CALL ( LALExtrapolatePulsarSpins (&status,
-                                     thisPoint.fkdot, thisPoint.refTime,
-                                     fkdotTMP, refTimeGPS), &status );
-
-    fprintf(stderr, "  At GPS time %.4f, %.14g %.13g %.13g %.14g %d %.6f\n",
-            XLALGPSGetREAL8( &thisPoint.refTime ),
-            thisPoint.fkdot[0], thisPoint.Alpha, thisPoint.Delta, thisPoint.fkdot[1],
-            topNC, topTwoF );
-
-    /* --- Compute separate-IFO F-statistic for each data segment --- */
-    for (k = 0; k < nStacks; k++) {
-
-        for (X=0; X < numDetectors; X++) {
-
-        cfBuffer2 = empty_ComputeFBuffer;
-        SFTsSingleDet->length = 1;
-        SFTsSingleDet->data = &(stackMultiSFT.data[k]->data[X]);
-
-        if ( uvar_SignalOnly ) {
-          NoiseSingleDet = NULL;
-        }
-        else {
-          NoiseSingleDet->length = 1;
-          NoiseSingleDet->data = &(stackMultiNoiseWeights.data[k]->data[X]);
-          NoiseSingleDet->Sinv_Tsft = stackMultiNoiseWeights.data[k]->Sinv_Tsft;
-        }
-
-        DetStatesSingleDet->length = 1;
-        DetStatesSingleDet->data = &(stackMultiDetStates.data[k]->data[X]);
-        DetStatesSingleDet->startTime = stackMultiDetStates.data[k]->startTime;
-        DetStatesSingleDet->Tspan = stackMultiDetStates.data[k]->Tspan;
-
-        LAL_CALL( ComputeFStat ( &status, &FstatSeg, &thisPoint, SFTsSingleDet,
-                              NoiseSingleDet, DetStatesSingleDet,
-                              &CFparams, &cfBuffer2 ), &status);
-
-        if ( uvar_SignalOnly ) {
-          FstatSeg.F *= 2.0 / Tsft;
-          FstatSeg.F += 2;
-        }
-        aveTwoFstat[X+1] += 2.0 * FstatSeg.F / nStacks;
-
-      }
-    }
-
-
-    for (X=0; X < (numDetectors+1); X++) {
-      if (X>0) {
-        fprintf(stderr, "%% --- average2F[%o]= %.6f\t (%s)\t Z= %.4f \n",
-                X, aveTwoFstat[X],
-		(CHAR*) &(stackMultiDetStates.data[0]->data[X-1]->detector.frDetector.name),
-		aveTwoFstat[0]/aveTwoFstat[X] );
-      }
-      else {
-        fprintf(stderr, "%% --- average2F[%o]= %.6f\n", X, aveTwoFstat[X]);
-      }
-    }
-
-    XLALEmptyComputeFBuffer ( &cfBuffer2 );
-    LALFree(SFTsSingleDet);
-    LALFree(NoiseSingleDet);
-    LALFree(DetStatesSingleDet);
-
-  }
-
 
   /*------------ free all remaining memory -----------*/
 

@@ -44,6 +44,10 @@ void initVariables(LALInferenceRunState *state);
 void initStudentt(LALInferenceRunState *state);
 void initializeTemplate(LALInferenceRunState *runState);
 static void mc2masses(double mc, double eta, double *m1, double *m2);
+void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);                             
+void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);                              
+ 
+
 
 static void mc2masses(double mc, double eta, double *m1, double *m2)
 /*  Compute individual companion masses (m1, m2)   */
