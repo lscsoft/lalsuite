@@ -273,20 +273,12 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 
 	s = gsl_odeiv_step_alloc(T, 2);
 	while (1) {
-		REAL8 dE;
 		++j;
 		gsl_odeiv_step_apply(s, j*deltaT, deltaT, y, yerr, NULL, NULL, &sys);
-		/* MECO termination condition */
-		dE = -E;
-		dE += E = expnfunc.energy(y[0],&(ak.akdEF));
 		if (XLALIsREAL8FailNaN(E))
 			XLAL_ERROR(XLAL_EFUNC);
-		if ( dE > 0.0 ) {
-			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at MECO\n", __func__);
-			break;
-		}
-		/* ISCO termination condition for quadrupole, 1pN, 2.5pN */
-		if ( (O == 0 || O == 1 || O == 2 || O == 5 || O == 7) && y[0] > visco ) {
+		/* ISCO termination condition */
+		if ( y[0] > visco ) {
 			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", __func__);
 			break;
 		}
