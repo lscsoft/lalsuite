@@ -778,10 +778,6 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 
 		/* check termination conditions */
 
-		if (t >= tC) {
-			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at coalesence time\n", __func__);
-			break;
-		}
 		if (v >= visco) {
 			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", __func__);
 			break;

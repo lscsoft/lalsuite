@@ -677,7 +677,7 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 	if (!V || !phi)
 		XLAL_ERROR(XLAL_EFUNC);
 
-	/* initialize expnCoeffsTaylorT3 and expnFuncTaylorT3 structures */
+	/* initialize expnCoeffsTaylorT2 and expnFuncTaylorT2 structures */
 	if (XLALSimInspiralTaylorT2Setup(&ak, &expnfunc, deltaT, m1, m2, f_min, O))
 		XLAL_ERROR(XLAL_EFUNC);
 
@@ -766,18 +766,12 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 		{
 			XLAL_ERROR(XLAL_EFUNC);
 		}
-	} while (f < fLso && f > fOld && toffIn.t < -tC);
+	} while (f < fLso);
 
 	/* check termination conditions */
 
-	if (toffIn.t >= -tC) {
-		XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at coalesence time\n", __func__);
-	}
 	if (f >= fLso) {
 		XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", __func__);
-	}
-	if (f <= fOld) {
-		XLALPrintInfo("XLAL Info - %s: PN inspiral terminated when frequency stalled\n", __func__);
 	}
 
 	/* make the correct length */
