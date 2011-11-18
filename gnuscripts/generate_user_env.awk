@@ -139,10 +139,10 @@ END {
         for (i in pathvar) {
             if (substr(pathvar[i], 1, 1) != "$") {
                 if (csh) {
-                    printf "   setenv %s `echo \":${%s}:\" | sed 's|:%s:||;s|^:||;s|:$||'`\n", name, name, pathvar[i] >>output
+                    printf "   setenv %s `echo \":${%s}:\" | sed 's|:%s:|:|;s|^:||;s|:$||'`\n", name, name, pathvar[i] >>output
                 }
                 else {
-                    printf "   %s=`echo \":${%s}:\" | sed 's|:%s:||;s|^:||;s|:$||'`\n", name, name, pathvar[i] >>output
+                    printf "   %s=`echo \":${%s}:\" | sed 's|:%s:|:|;s|^:||;s|:$||'`\n", name, name, pathvar[i] >>output
                 }
             }
         }
