@@ -401,8 +401,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         MPI_Barrier(MPI_COMM_WORLD);
 
         if (MPIrank == 0) {
-          for(lowerRank=0;lowerRank<nChain-1;lowerRank++) { //swap parameters and likelihood between chains
-            for(upperRank=lowerRank+1;upperRank<nChain;upperRank++) {
+          if(LALInferenceGetProcParamVal(runState->commandLine, "--stdPT")) {
+            for(upperRank=nChain;upperRank>0;upperRank--) { //swap parameters and likelihood between chains
+              lowerRank=upperRank-1;
 
               logChainSwap = (1.0/tempLadder[lowerRank]-1.0/tempLadder[upperRank]) * (TcurrentLikelihood[upperRank]-TcurrentLikelihood[lowerRank]);
 
@@ -420,10 +421,32 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
                 dummyR8 = TcurrentLikelihood[upperRank];
                 TcurrentLikelihood[upperRank] = TcurrentLikelihood[lowerRank];
                 TcurrentLikelihood[lowerRank] = dummyR8;
-
               }
-            } //for(upperRank=lowerRank+1;upperRank<nChain;upperRank++)
-          } //for(lowerRank=0;lowerRank<nChain-1;lowerRank++)
+            } //for(upperRank=nChain;upperRank>0;upperRank--)
+          } else {
+            for(lowerRank=0;lowerRank<nChain-1;lowerRank++) { //swap parameters and likelihood between chains
+              for(upperRank=lowerRank+1;upperRank<nChain;upperRank++) {
+
+                logChainSwap = (1.0/tempLadder[lowerRank]-1.0/tempLadder[upperRank]) * (TcurrentLikelihood[upperRank]-TcurrentLikelihood[lowerRank]);
+
+                if ((logChainSwap > 0)
+                    || (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap...
+                  if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
+                    fprintf(tempfile,"%d\t%f\t%f\t%f\n",i,logChainSwap,tempLadder[lowerRank],tempLadder[upperRank]);
+                    fflush(tempfile);
+                  }
+                  for (p=0; p<(nPar); ++p){
+                    dummyR8=parametersVec[p+nPar*upperRank];
+                    parametersVec[p+nPar*upperRank]=parametersVec[p+nPar*lowerRank];
+                    parametersVec[p+nPar*lowerRank]=dummyR8;
+                  }
+                  dummyR8 = TcurrentLikelihood[upperRank];
+                  TcurrentLikelihood[upperRank] = TcurrentLikelihood[lowerRank];
+                  TcurrentLikelihood[lowerRank] = dummyR8;
+                }
+              } //for(upperRank=lowerRank+1;upperRank<nChain;upperRank++)
+            } //for(lowerRank=0;lowerRank<nChain-1;lowerRank++)
+          } //else
         } //if (MPIrank == 0)
 
         MPI_Scatter(parametersVec,nPar,MPI_DOUBLE,parameters->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
