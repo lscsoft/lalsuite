@@ -38,8 +38,6 @@
 extern "C" {
 #endif
 
-#include "config.h"
-
 /* ---------- System includes ---------- */
 #include <math.h>
 
