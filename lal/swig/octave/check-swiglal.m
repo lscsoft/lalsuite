@@ -158,7 +158,9 @@ cm = XLALCreateCOMPLEX8VectorSequence(4, 6);
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength);
 clear iv rv cm;
-LALCheckMemoryLeaks();
+if cvar.swiglal_debug
+  LALCheckMemoryLeaks();
+endif
 msg("passed dynamic vector/matrix conversions (LAL)");
 ## check GSL vectors and matrices
 iv = new_gsl_vector_int(5);
