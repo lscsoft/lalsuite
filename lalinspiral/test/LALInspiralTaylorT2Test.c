@@ -62,7 +62,7 @@ int main(void) {
 
 	FILE *outputfile;
 	INT4 i,length,O;
-	REAL8 dt, m, m1, m2, nu;
+	REAL8 dt, m, m1, m2, mu, nu;
 	LIGOTimeGPS tc = LIGOTIMEGPSZERO;
 
 	memset( &mystatus, 0, sizeof(LALStatus) );
@@ -71,7 +71,8 @@ int main(void) {
 	m1 = 5.;
 	m2 = 5.;
 	m = m1 + m2;
-	nu = m1 * m2 / m / m;
+	mu = m1 * m2 / m;
+	nu = mu / m;
 
 	O = 7;
 	switch (O)
@@ -106,11 +107,13 @@ int main(void) {
 	params.mass1 = m1;
 	params.mass2 = m2;
 	params.totalMass = m;
+	params.mu = mu;
 	params.eta = nu;
 	params.tSampling = 4096;
 	params.fCutoff = 2047.;
 	params.fLower = 40.;
 	params.distance = 1e6 * LAL_PC_SI;
+	params.signalAmplitude = 4.0 * params.mu * LAL_MRSUN_SI/params.distance;
 	params.ieta = 1;
 
 	

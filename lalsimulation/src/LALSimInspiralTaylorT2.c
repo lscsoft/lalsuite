@@ -763,13 +763,14 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 		xmin = 0.8*f;
 		f = XLALDBisectionFindRoot(timing2, xmin, xmax, xacc, funcParams);
 		if (XLAL_IS_REAL8_FAIL_NAN(f))
-		{
 			XLAL_ERROR(XLAL_EFUNC);
-		}
-	} while (f < fLso);
+	} while (f < fLso && toffIn.t < -tC);
 
 	/* check termination conditions */
 
+	if (toffIn.t >= -tC) {
+		XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at coalesence time\n", __func__);
+	}
 	if (f >= fLso) {
 		XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", __func__);
 	}
