@@ -551,6 +551,7 @@ static void print_usage(char *program)
       "  --d-distr distDist       set the distance distribution of injections\n"\
       "                           source: take distance from galaxy source file\n"\
       "                           uniform: uniform distribution in distance\n"\
+      "                           distancesquared: uniform distribution in distance^2\n"\
       "                           log10: uniform distribution in log10(d) \n"\
       "                           volume: uniform distribution in volume\n"\
       "                           sfr: distribution derived from the SFR\n"\
@@ -1963,6 +1964,10 @@ int main( int argc, char *argv[] )
         {
           dDistr=uniformDistance;
         }
+        else if (!strcmp(dummy, "distancesquared"))
+        {
+          dDistr=uniformDistanceSquared;
+        }
         else if (!strcmp(dummy, "log10"))
         {
           dDistr=uniformLogDistance;
@@ -1979,7 +1984,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown source distribution: "
-              "%s, must be one of (uniform, log10, volume, source)\n",
+              "%s, must be one of (uniform, distancesquared, log10, volume, source, sfr)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
