@@ -402,7 +402,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
         if (MPIrank == 0) {
           if(LALInferenceGetProcParamVal(runState->commandLine, "--stdPT")) {
-            for(upperRank=nChain;upperRank>0;upperRank--) { //swap parameters and likelihood between chains
+            for(upperRank=nChain-1;upperRank>0;upperRank--) { //swap parameters and likelihood between chains
               lowerRank=upperRank-1;
 
               logChainSwap = (1.0/tempLadder[lowerRank]-1.0/tempLadder[upperRank]) * (TcurrentLikelihood[upperRank]-TcurrentLikelihood[lowerRank]);
