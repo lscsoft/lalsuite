@@ -83,6 +83,9 @@ LALSUITE_ENABLE_BOINC
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
 
+# workaround broken libtool multilib support on sl6
+LALSUITE_MULTILIB_LIBTOOL_HACK
+
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
