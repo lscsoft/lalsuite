@@ -27,6 +27,7 @@ LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALSTOCHASTIC
 LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
+LALSUITE_ENABLE_LALAPPS
 
 lalsuite_top_builddir='$(top_builddir)/..'
 lalsuite_top_srcdir='$(top_srcdir)/..'
@@ -131,6 +132,8 @@ if test "$lalinference" = "true"; then
   AC_CONFIG_SUBDIRS([lalinference])
 fi
 
-AC_CONFIG_SUBDIRS([lalapps])
+if test "$lalapps" = "true"; then
+  AC_CONFIG_SUBDIRS([lalapps])
+fi
 
 AC_OUTPUT
