@@ -367,6 +367,10 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
       ABORT ( status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
     }
 
+  /* if requested, prepare for returning single-IFO F-stat vector */
+  if ( params->returnSingleF )
+    retF.numDetectors = numDetectors;
+
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( X=0; X < numDetectors; X ++)
     {
@@ -411,6 +415,21 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 	ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
       }
 #endif
+
+      /* compute single-IFO F-stats, if requested */
+      if ( params->returnSingleF )
+        {
+         REAL8 AdX = multiAMcoef->data[X]->A;
+         REAL8 BdX = multiAMcoef->data[X]->B;
+         REAL8 CdX = multiAMcoef->data[X]->C;
+         REAL8 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
+
+	 /* compute final single-IFO F-stat */
+	 retF.FX[X] = DdX_inv * (  BdX * (SQ(FcX.Fa.re) + SQ(FcX.Fa.im) )
+	                           + AdX * ( SQ(FcX.Fb.re) + SQ(FcX.Fb.im) )
+		                   - 2.0 * CdX *( FcX.Fa.re * FcX.Fb.re + FcX.Fa.im * FcX.Fb.im )
+		                   );
+        } /* if returnSingleF */
 
       /* Fa = sum_X Fa_X */
       retF.Fa.re += FcX.Fa.re;

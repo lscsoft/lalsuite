@@ -122,11 +122,13 @@ typedef struct tagMultiFstatAtomVector {
   FstatAtomVector **data;	/**< array of FstatAtom (pointers), one for each detector X */
 } MultiFstatAtomVector;
 
-
+#define CFS_MAX_IFOS 10
 /** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
 typedef struct tagFcomponents {
   SWIGLAL_STRUCT(Fcomponents);
   REAL8 F;				/**< F-statistic value */
+  REAL8 FX[CFS_MAX_IFOS];		/**< vector of single-detector F-statistic values (array of fixed size) */
+  UINT4 numDetectors;			/**< number of detectors = effective vector length. numDetectors=0 should make all code ignore the FX field. */
   COMPLEX16 Fa;				/**< complex amplitude Fa */
   COMPLEX16 Fb;				/**< complex amplitude Fb */
   MultiFstatAtomVector *multiFstatAtoms;/**< per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat */
@@ -153,6 +155,7 @@ typedef struct tagComputeFParams {
   ComputeFBuffer_RS *buffer; /**< buffer for storing pre-resampled timeseries (used for resampling implementation) */
   EphemerisData *edat;   /**< ephemeris data for re-computing multidetector states */
   BOOLEAN returnAtoms;	/**< whether or not to return the 'FstatAtoms' used to compute the F-statistic */
+  BOOLEAN returnSingleF; /**< in multi-detector case, whether or not to also return the single-detector Fstats computed from the atoms */
 } ComputeFParams;
 
 
