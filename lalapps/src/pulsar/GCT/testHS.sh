@@ -23,17 +23,8 @@ if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
     dirsep='\'
 fi
 
-##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata_v4"
-pfs_code="${fdsdir}lalapps_PredictFStat"
-if test $# -eq 0 ; then
-    gct_code="${builddir}lalapps_HierarchSearchGCT"
-else
-    gct_code="$@"
-fi
-
-SFTdir="TestSFTs"
-SFTfiles="$SFTdir${dirsep}*.sft"
+edat="earth05-09.dat"
+sdat="sun05-09.dat"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then
@@ -49,6 +40,24 @@ if [ -z "$LAL_DATA_PATH" ]; then
     fi
 fi
 
+##---------- names of codes and input/output files
+mfd_code="${injectdir}lalapps_Makefakedata_v4"
+pfs_code="${fdsdir}lalapps_PredictFStat"
+if test $# -eq 0 ; then
+    gct_code="${builddir}lalapps_HierarchSearchGCT"
+else
+    gct_code="$@"
+fi
+
+testDir="./testHS_dir";
+if [ ! -d "$testDir" ]; then
+    mkdir -p "$testDir"
+fi
+
+SFTdir=$testDir
+SFTfiles="$SFTdir${dirsep}*.sft"
+SFTfiles_H1="$SFTdir${dirsep}H1-*.sft"
+SFTfiles_L1="$SFTdir${dirsep}L1-*.sft"
 
 ## Tolerance of comparison
 Tolerance=5e-2	## 5%
@@ -63,12 +72,13 @@ phi0=1.5
 Freq=100.123456789
 f1dot=-1e-9
 
+## perfectly targeted search in sky
 AlphaSearch=$Alpha
 DeltaSearch=$Delta
 
 ## Produce skygrid file for the search
-skygridfile="tmpskygridfile.dat"
-echo $AlphaSearch" "$DeltaSearch > $skygridfile
+skygridfile="${testDir}${dirsep}tmpskygridfile.dat"
+echo "$AlphaSearch $DeltaSearch" > $skygridfile
 
 mfd_FreqBand=0.20;
 mfd_fmin=100;
@@ -84,7 +94,7 @@ sqrtSh=0
 
 ## --------- Generate fake data set time stamps -------------
 echo "----------------------------------------------------------------------"
-echo " STEP 0: Generating fake data time-stamps file "
+echo " STEP 0: Generating time-stamps and segments files "
 echo "----------------------------------------------------------------------"
 echo
 
@@ -93,29 +103,33 @@ startTime=852443819
 refTime=862999869
 Tsegment=90000
 Nsegments=14
+
 seggap=$(echo ${Tsegment} | awk '{printf "%.0f", $1 * 1.12345}')
 
-tsFile="timestampsTEST.txt"
-if [ -r $tsFile ]; then
-    have_tsFile=true;
-    echo "Timestamps file '$tsFile' already exists ... reusing it."
+tsFile_H1="${testDir}${dirsep}timestampsH1.dat"  # for makefakedata
+tsFile_L1="${testDir}${dirsep}timestampsL1.dat"  # for makefakedata
+segFile="${testDir}${dirsep}segments.dat"
+
+if [ -r "$tsFile_H1" -a -r "$tsFile_L1" -a -r "$segFile" ]; then
+    reuseSegFiles=true
+    echo "Reusing '$tsFile_H1', '$tsFile_L1' and '$segFile'"
+    echo
 fi
-segFile="segments.txt"
-if [ -r $segFile ]; then
-    have_segFile=true;
-    echo "Segments file '$segFile' already exists ... reusing it."
-fi
-echo
 
 tmpTime=$startTime
 iSeg=1
 while [ $iSeg -le $Nsegments ]; do
     t0=$tmpTime
-    ## only write segment-file if it is not found already
-    if [ "$have_segFile" != "true" ]; then
+    ## only write segment-file if we can re-use from previous runs
+    if [ "$reuseSegFiles" != "true" ]; then
         t1=$(($t0 + $Tsegment))
         TspanHours=`echo $Tsegment | awk '{printf "%.7f", $1 / 3600.0 }'`
-        NSFT=`echo $Tsegment $Tsft |  awk '{print int(2.0 * $1 / $2 + 0.5) }'`
+        ## first and last segment will be single-IFO only
+        if [ $iSeg -eq 1 -o $iSeg -eq $Nsegments ]; then
+            NSFT=`echo $Tsegment $Tsft |  awk '{print int(1.0 * $1 / $2 + 0.5) }'`
+        else	## while all other segments are 2-IFO
+            NSFT=`echo $Tsegment $Tsft |  awk '{print int(2.0 * $1 / $2 + 0.5) }'`
+        fi
         echo "$t0 $t1 $TspanHours $NSFT" >> $segFile
     fi
     segs[$iSeg]=$tmpTime # save seg's beginning for later use
@@ -124,8 +138,13 @@ while [ $iSeg -le $Nsegments ]; do
     Tseg=$Tsft
     while [ $Tseg -le $Tsegment ]; do
         ## only write timestamps-file if it is not found already
-        if [ "$have_tsFile" != "true" ]; then
-	    echo ${tmpTime}" 0" >> $tsFile
+        if [ "$reuseSegFiles" != "true" ]; then	            ## we skip segment 1 for H1
+            if [ $iSeg -ne 1 ]; then
+	        echo "${tmpTime} 0" >> $tsFile_H1
+            fi
+            if [ $iSeg -ne $Nsegments ]; then	            ## we skip segment N for L1
+	        echo "${tmpTime} 0" >> $tsFile_L1
+            fi
         fi
 	tmpTime=$(($tmpTime + $Tsft))
 	Tseg=$(($Tseg + $Tsft))
@@ -135,7 +154,6 @@ while [ $iSeg -le $Nsegments ]; do
     iSeg=$(($iSeg + 1))
 done
 
-## ------------------------------------------------------------
 echo
 echo "----------------------------------------------------------------------"
 echo " STEP 1: Generate Fake Signal"
@@ -149,7 +167,7 @@ FreqStep=`echo $mfd_FreqBand $numFreqBands |  awk '{print $1 / $2}'`
 mfd_fBand=`echo $FreqStep $Tsft |  awk '{print ($1 - 1.5 / $2)}'`	## reduce by 1/2 a bin to avoid including last freq-bins
 
 # construct common MFD cmd
-mfd_CL_common="--Band=${mfd_fBand} --Freq=$Freq --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsFile --refTime=$refTime --Tsft=$Tsft --randSeed=1000 --outSingleSFT"
+mfd_CL_common="--Band=${mfd_fBand} --Freq=$Freq --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --refTime=$refTime --Tsft=$Tsft --randSeed=1000 --outSingleSFT"
 
 if [ "$sqrtSh" != "0" ]; then
     mfd_CL_common="$mfd_CL_common --noiseSqrtSh=$sqrtSh";
@@ -162,9 +180,9 @@ while [ $iFreq -le $numFreqBands ]; do
     # for H1:
     SFTname="${SFTdir}${dirsep}H1-${mfd_fi}_${FreqStep}.sft"
     if [ ! -r $SFTname ]; then
-        cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=H1 --outSFTbname=$SFTname"
+        cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=H1 --outSFTbname=$SFTname --timestampsFile=$tsFile_H1"
         echo "$cmdline";
-        if ! eval "$cmdline >& /dev/null"; then
+        if ! eval "$cmdline &> /dev/null"; then
             echo "Error.. something failed when running '$mfd_code' ..."
             exit 1
         fi
@@ -175,9 +193,9 @@ while [ $iFreq -le $numFreqBands ]; do
     # for L1:
     SFTname="${SFTdir}${dirsep}L1-${mfd_fi}_${FreqStep}.sft"
     if [ ! -r $SFTname ]; then
-        cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=L1 --outSFTbname=$SFTname";
+        cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=L1 --outSFTbname=$SFTname --timestampsFile=$tsFile_L1";
         echo "$cmdline";
-        if ! eval "$cmdline >& /dev/null"; then
+        if ! eval "$cmdline &> /dev/null"; then
             echo "Error.. something failed when running '$mfd_code' ..."
             exit 1
         fi
@@ -192,55 +210,81 @@ done
 
 echo
 echo "----------------------------------------------------------------------"
-echo "STEP 2: run PredictFstat (perfect match) "
+echo "STEP 2: run PredictFstat over segments"
 echo "----------------------------------------------------------------------"
 echo
-outfile_pfs="avgPFS.dat";
+outfile_pfs="${testDir}${dirsep}PFS.dat";
 
-if [ -r "$outfile_pfs" ]; then
-    echo "PFS result file '$outfile_pfs' exists already ... reusing it"
-    TwoFAvg=$(cat $outfile_pfs)
-else
-    tmpfile_pfs="__tmp_PFS.dat";
-    pfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='$SFTfiles' --outputFstat=$tmpfile_pfs --ephemYear=05-09"
+if [ ! -r "$outfile_pfs" ]; then
+    tmpfile_pfs="${testDir}${dirsep}__tmp_PFS.dat";
+    pfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --outputFstat=$tmpfile_pfs --ephemYear=05-09"
     if [ "$sqrtSh" = "0" ]; then
         pfs_CL_common="$pfs_CL_common --SignalOnly";
     fi
 
     TwoFsum=0
-    for ((x=1; x <= $Nsegments; x++)); do
-        startGPS=${segs[${x}]}
+    TwoFsum_H1=0
+    TwoFsum_L1=0
+
+    for ((iSeg=1; iSeg <= $Nsegments; iSeg++)); do
+        startGPS=${segs[$iSeg]}
         endGPS=$(($startGPS + $Tsegment))
-        # construct pfs cmdline
         pfs_CL="$pfs_code $pfs_CL_common --minStartTime=$startGPS --maxEndTime=$endGPS"
-        echo "$pfs_CL"
-        if ! tmp=`eval $pfs_CL`; then
+
+        # ----- multi-IFO F
+        cmdline="$pfs_CL --DataFiles='$SFTfiles'"
+        echo "$cmdline"
+        if ! eval "$cmdline &> /dev/null"; then
 	    echo "Error.. something failed when running '$pfs_code' ..."
 	    exit 1
         fi
         resPFS=$(cat ${tmpfile_pfs} | grep 'twoF_expected' | awk '{printf "%g\n", $3}')
-        TwoFsum=$(echo $TwoFsum $resPFS | awk '{printf "%.6g", $1 + $2}')
+        TwoFsum=$(echo $TwoFsum $resPFS | awk '{printf "%.11g", $1 + $2}')
+
+        # ----- single-IFO 'H1' (for all but non-existing segment 1 )
+        if [ $iSeg -ne 1 ]; then
+            cmdline="$pfs_CL --DataFiles='$SFTfiles_H1'"
+            echo "$cmdline"
+            if ! eval "$cmdline &> /dev/null"; then
+	        echo "Error.. something failed when running '$pfs_code' ..."
+	        exit 1
+            fi
+            resPFS=$(cat ${tmpfile_pfs} | grep 'twoF_expected' | awk '{printf "%g\n", $3}')
+            TwoFsum_H1=$(echo $TwoFsum_H1 $resPFS | awk '{printf "%.11g", $1 + $2}')
+        fi
+
+        # ----- single-IFO 'L1' (for all but nonexisting segment N)
+        if [ $iSeg -ne $Nsegments ]; then
+            cmdline="$pfs_CL --DataFiles='$SFTfiles_L1'"
+            echo "$cmdline"
+            if ! eval "$cmdline &> /dev/null"; then
+	        echo "Error.. something failed when running '$pfs_code' ..."
+	        exit 1
+            fi
+            resPFS=$(cat ${tmpfile_pfs} | grep 'twoF_expected' | awk '{printf "%g\n", $3}')
+            TwoFsum_L1=$(echo $TwoFsum_L1 $resPFS | awk '{printf "%.11g", $1 + $2}')
+        fi
     done
 
-    TwoFAvg=$(echo $TwoFsum $Nsegments | awk '{printf "%.11g", $1 / $2}')
-    echo $TwoFAvg > $outfile_pfs
+    TwoFAvg=$(echo    $TwoFsum    $Nsegments | awk '{printf "%.11g", $1 / ($2)}')
+    TwoFAvg_H1=$(echo $TwoFsum_H1 $Nsegments | awk '{printf "%.11g", $1 / ($2-1)}')
+    TwoFAvg_L1=$(echo $TwoFsum_L1 $Nsegments | awk '{printf "%.11g", $1 / ($2-1)}')
+    echo "$TwoFAvg	$TwoFAvg_H1	$TwoFAvg_L1" > $outfile_pfs
+else
+    echo "PFS result file '$outfile_pfs' exists already ... reusing it"
+    pfs_res=$(cat $outfile_pfs)
+    TwoFAvg=$(echo $pfs_res | awk '{print $1}')
+    TwoFAvg_H1=$(echo $pfs_res | awk '{print $2}')
+    TwoFAvg_L1=$(echo $pfs_res | awk '{print $3}')
 fi
 
-echo
-echo "==>   Average 2F: $TwoFAvg"
+echo "==>   Average <2F_multi>=$TwoFAvg, <2F_H1>=$TwoFAvg_H1, <2F_L1>=$TwoFAvg_L1"
 
-
-
-edat="earth05-09.dat"
-sdat="sun05-09.dat"
-
-
-gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --ephemE=$edat --ephemS=$sdat"
+gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --ephemE=$edat --ephemS=$sdat --outputFX"
 if [ "$sqrtSh" = "0" ]; then
     gct_CL_common="$gct_CL_common --SignalOnly";
 fi
 
-echo
 echo
 echo "----------------------------------------------------------------------------------------------------"
 echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match) and segment-list file"
@@ -248,18 +292,20 @@ echo "--------------------------------------------------------------------------
 echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_gct1="__tmp_GCT1.dat"
+outfile_GCT_RS="${testDir}${dirsep}GCT_RS.dat"
 
 if [ -z "$NORESAMP" ]; then
-    cmdline="$gct_code $gct_CL_common --fnameout=$outfile_gct1 --useResamp"
-    echo $cmdline
-    if ! tmp=`eval $cmdline >& /dev/null`; then
+    cmdline="$gct_code $gct_CL_common --fnameout=$outfile_GCT_RS --useResamp"
+    echo "$cmdline"
+    if ! eval "$cmdline &> /dev/null"; then
 	echo "Error.. something failed when running '$gct_code' ..."
 	exit 1
     fi
-    topline=$(sort -nr -k6,6 $outfile_gct1 | head -1)
-    resGCT1=$(echo $topline | awk '{print $6}')
-    freqGCT1=$(echo $topline | awk '{print $1}')
+    topline=$(sort -nr -k6,6 $outfile_GCT_RS | head -1)
+    resGCT_RS=$(echo $topline | awk '{print $6}')
+    resGCT_RS_H1=$(echo $topline | awk '{print $8}')
+    resGCT_RS_L1=$(echo $topline | awk '{print $9}')
+    freqGCT_RS=$(echo $topline | awk '{print $1}')
 else
     echo
     echo "Not run with resampling."
@@ -268,71 +314,82 @@ fi
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 4: run HierarchSearchGCT without Resampling (perfect match) and --tStack and --nStacksMax"
+echo " STEP 4: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
 
-outfile_gct2="__tmp_GCT2.dat"
-cmdline="$gct_code $gct_CL_common --fnameout=$outfile_gct2"
+outfile_GCT_DM="${testDir}${dirsep}GCT_DM.dat"
+cmdline="$gct_code $gct_CL_common --fnameout=$outfile_GCT_DM"
 echo $cmdline
-if ! eval "$cmdline >& /dev/null"; then
+if ! eval "$cmdline &> /dev/null"; then
     echo "Error.. something failed when running '$gct_code' ..."
     exit 1
 fi
 
-topline=$(sort -nr -k6,6 $outfile_gct2 | head -1)
-resGCT2=$(echo $topline  | awk '{print $6}')
-freqGCT2=$(echo $topline | awk '{print $1}')
+topline=$(sort -nr -k6,6 $outfile_GCT_DM | head -1)
+resGCT_DM=$(echo $topline  | awk '{print $6}')
+resGCT_DM_H1=$(echo $topline  | awk '{print $8}')
+resGCT_DM_L1=$(echo $topline  | awk '{print $9}')
+freqGCT_DM=$(echo $topline | awk '{print $1}')
 
 ## ---------- compute relative differences and check against tolerance --------------------
 awk_reldev='{printf "%.2e", sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
-echo "awk_reldev = $awk_reldev"
 
 if [ -z "$NORESAMP" ]; then
-    reldev1=$(echo $TwoFAvg $resGCT1 | awk "$awk_reldev")
-    freqreldev1=$(echo $Freq $freqGCT1 | awk "$awk_reldev")
+    reldev_RS=$(echo $TwoFAvg $resGCT_RS | awk "$awk_reldev")
+    reldev_RS_H1=$(echo $TwoFAvg_H1 $resGCT_RS_H1 | awk "$awk_reldev")
+    reldev_RS_L1=$(echo $TwoFAvg_L1 $resGCT_RS_L1 | awk "$awk_reldev")
+    freqreldev_RS=$(echo $Freq $freqGCT_RS | awk "$awk_reldev")
 fi
 
-reldev2=$(echo $TwoFAvg $resGCT2 | awk "$awk_reldev")
-freqreldev2=$(echo $Freq $freqGCT2 | awk "$awk_reldev")
+reldev_DM=$(echo $TwoFAvg $resGCT_DM | awk "$awk_reldev")
+reldev_DM_H1=$(echo $TwoFAvg_H1 $resGCT_DM_H1 | awk "$awk_reldev")
+reldev_DM_L1=$(echo $TwoFAvg_L1 $resGCT_DM_L1 | awk "$awk_reldev")
+freqreldev_DM=$(echo $Freq $freqGCT_DM | awk "$awk_reldev")
 
 # ---------- Check relative deviations against tolerance, report results ----------
 retstatus=0
 awk_isgtr='{if($1>$2) {print "1"}}'
 
 echo
-echo "----------------------------------------------------------------------"
-echo "==>  Predicted:		$TwoFAvg	@ $Freq Hz	(Tolerance = $Tolerance)"
+echo "--------------------------------------------------------------------------------------------------------------"
+echo "                     	<2F_multi>	<2F_H1>  	<2F_L1>  	@ Freq [Hz]     	(reldev, reldev_H1, reldev_L1, reldev_Freq)"
+echo    "==>  Predicted:    	$TwoFAvg 	$TwoFAvg_H1   	$TwoFAvg_L1   	@ $Freq 	[Tolerance = ${Tolerance}]"
+
+echo -n "==>  GCT-LALDemod: 	$resGCT_DM 	$resGCT_DM_H1 	$resGCT_DM_L1  	@ $freqGCT_DM 	($reldev_DM, $reldev_DM_H1, $reldev_DM_L1, $freqreldev_DM)"
+fail1=$(echo $freqreldev_DM $Tolerance | awk "$awk_isgtr")
+fail2=$(echo $reldev_DM $Tolerance     | awk "$awk_isgtr")
+fail3=$(echo $reldev_DM_H1 $Tolerance  | awk "$awk_isgtr")
+fail4=$(echo $reldev_DM_L1 $Tolerance  | awk "$awk_isgtr")
+if [ "$fail1" -o "$fail2" -o "$fail3" -o "$fail4" ]; then
+    echo " ==> FAILED"
+    retstatus=1
+else
+    echo " ==> OK"
+fi
 
 if [ -z "$NORESAMP" ]; then
-    echo -n "==>  GCT-Resamp:	$resGCT1	@ $freqGCT1 Hz	($reldev1, $freqreldev1"
-    fail1=$(echo $reldev1 $Tolerance | awk "$awk_isgtr")
-    fail2=$(echo $freqreldev1 $Tolerance | awk "$awk_isgtr")
-    if [ "$fail1" -o "$fail2" ]; then
-        echo " ... FAILED)"
+    echo -n "==>  GCT-Resamp: 	$resGCT_RS 	$resGCT_RS_H1 	$resGCT_RS_L1  	@ $freqGCT_RS 	($reldev_RS, $reldev_RS_H1, $reldev_RS_L1, $freqreldev_RS)"
+    fail1=$(echo $freqreldev_RS $Tolerance | awk "$awk_isgtr")
+    fail2=$(echo $reldev_RS $Tolerance | awk "$awk_isgtr")
+    fail3=$(echo $reldev_RS_H1 $Tolerance | awk "$awk_isgtr")
+    fail4=$(echo $reldev_RS_L1 $Tolerance | awk "$awk_isgtr")
+    if [ "$fail1" -o "$fail2" -o "$fail3" -o "$fail4" ]; then
+        echo " ==> FAILED"
         retstatus=1
     else
-        echo " ... OK)"
+        echo " ==> OK"
     fi
 fi
 
-echo -n "==>  GCT-NO-Resamp:	$resGCT2	@ $freqGCT2 Hz 	($reldev2, $freqreldev2"
-fail1=$(echo $reldev2 $Tolerance | awk "$awk_isgtr")
-fail2=$(echo $freqreldev2 $Tolerance | awk "$awk_isgtr")
-if [ "$fail1" -o "$fail2" ]; then
-    echo " ... FAILED)"
-    retstatus=1
-else
-    echo " ... OK)"
-fi
 
 echo "----------------------------------------------------------------------"
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $skygridfile $outfile_pfs $tmpfile_pfs $outfile_gct1 $outfile_gct2 checkpoint.cpt stderr.log stdout.log $segFile $tsFile
+    rm -rf $testDir
     echo "Cleaned up."
 fi
 
