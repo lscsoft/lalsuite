@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 26
+# serial 28
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -313,6 +313,23 @@ fi
 if test "$lalpulsar" = "false"; then
   lalinference=false
 fi
+])
+
+AC_DEFUN([LALSUITE_ENABLE_LALAPPS],[
+  AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+  AC_ARG_ENABLE(
+    [lalapps],
+    AC_HELP_STRING([--enable-lalapps],[compile lalapps [default=yes]]),
+    [
+      case "${enableval}" in
+        yes) lalapps=true ;;
+        no) lalapps=false ;;
+        *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalapps) ;;
+      esac
+    ],[
+      lalapps=${all_lal:-true}
+    ]
+  )
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_BOINC],

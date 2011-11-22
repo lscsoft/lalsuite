@@ -39,8 +39,6 @@
 extern "C" {
 #endif
 
-#include "config.h"
-
 #include <lal/ProbabilityDensity.h>
 
 /* ---------- System includes ---------- */

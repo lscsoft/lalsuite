@@ -149,7 +149,8 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--tempMax T)                   Highest temperature for parallel tempering(40.0)\n\
                (--randomseed seed)             Random seed of sampling distribution(random)\n\
                (--tdlike)                      Compute likelihood in the time domain\n\
-               (--rapidSkyLoc)                 Use rapid sky localization jump proposals\n";
+               (--rapidSkyLoc)                 Use rapid sky localization jump proposals\n\
+               (--LALSimulation)               Interface with the LALSimulation package for template generation\n";
 
   /* Print command line arguments if runState was not allocated */
   if(runState==NULL)
@@ -189,26 +190,26 @@ void initializeMCMC(LALInferenceRunState *runState)
   else
     runState->proposal=&LALInferenceDefaultProposal;
 
-  /* This is the LAL template generator for inspiral signals */
-
-  ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
-  if(ppt){
-    if(strstr(ppt->value,"TaylorF2")) {
-      runState->template=&LALInferenceTemplateLAL;
-      fprintf(stdout,"Template function called is \"templateLAL\"\n");
+  /* Choose the template generator for inspiral signals */
+  runState->template=&LALInferenceTemplateLAL;
+  if(LALInferenceGetProcParamVal(commandLine,"--LALSimulation")){
+    runState->template=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
+    fprintf(stdout,"Template function called is \"LALInferenceTemplateXLALSimInspiralChooseWaveform\"\n");
+  }else{
+    ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
+    if(ppt){
+      if(strstr(ppt->value,"TaylorF2")) {
+        runState->template=&LALInferenceTemplateLAL;
+        fprintf(stdout,"Template function called is \"LALInferenceTemplateLAL\"\n");
+      }else if(strstr(ppt->value,"35phase_25amp")) {
+        runState->template=&LALInferenceTemplate3525TD;
+        fprintf(stdout,"Template function called is \"LALInferenceTemplate3525TD\"\n");
+      }else{
+        runState->template=&LALInferenceTemplateLALGenerateInspiral;
+        fprintf(stdout,"Template function called is \"LALInferenceTemplateLALGenerateInspiral\"\n");
+      }
     }
-    else if(strstr(ppt->value,"35phase_25amp")) {
-      runState->template=&LALInferenceTemplate3525TD;
-      fprintf(stdout,"Template function called is \"template3525TD\"\n");
-    }
-    else {
-      runState->template=&LALInferenceTemplateLALGenerateInspiral;
-      //runState->template=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
-      fprintf(stdout,"Template function called is \"templateLALGenerateInspiral\"\n");
-    }
-
   }
-  else {runState->template=&LALInferenceTemplateLAL;}
 
   if (LALInferenceGetProcParamVal(commandLine,"--tdlike")) {
     fprintf(stderr, "Computing likelihood in the time domain.\n");
@@ -217,7 +218,7 @@ void initializeMCMC(LALInferenceRunState *runState)
     /* Use zero log(L) */
     runState->likelihood=&LALInferenceZeroLogLikelihood;
   } else if (LALInferenceGetProcParamVal(commandLine, "--analyticLogLike")) {
-    /* Use zero log(L) */
+    /* Use analytic log(L) */
     runState->likelihood=&LALInferenceAnalyticLogLikelihood;
   } else {
     runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
@@ -392,7 +393,8 @@ void initVariables(LALInferenceRunState *state)
                (--comp-max max)                Maximum component mass (30.0)\n\
                (--MTotMax max)                 Maximum total mass (35.0)\n\
                (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n\
-               (--appendOutput fname)          Basename of the file to append outputs to\n";
+               (--appendOutput fname)          Basename of the file to append outputs to\n\
+               (--LALSimulationRestricted)     If using the LALSimulation package, use XLALSimInspiralChooseRestrictedWaveform instead of XLALSimInspiralChooseWaveform\n";
 
 
   /* Print command line arguments if state was not allocated */
@@ -634,7 +636,11 @@ void initVariables(LALInferenceRunState *state)
     }
     fprintf(stdout,"Templates will be generated at %.1f PN order\n",((float)(PhaseOrder))/2.0);
   }
-
+  
+  UINT4 LALSimulationRestrictedWaveform=1;
+  if(LALInferenceGetProcParamVal(commandLine,"--LALSimulationRestricted")){
+    LALInferenceAddVariable(currentParams, "LALSimulationRestrictedWaveform", &LALSimulationRestrictedWaveform, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  }
   /* This flag was added to account for the broken Big Dog
      injection, which had the opposite sign in H and L compared
      to Virgo. */

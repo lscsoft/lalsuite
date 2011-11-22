@@ -57,6 +57,9 @@ static void destroyCoherentGW( CoherentGW *waveform );
 static void q2eta(double q, double *eta);
 static void q2masses(double mc, double q, double *m1, double *m2);
 
+//////////////////////////////////////////////////////////////////
+//DEPRECATED. Use LALInferenceTemplateLALGenerateInspiral() or LALInferenceTemplateXLALSimInspiralChooseWaveform() instead
+//////////////////////////////////////////////////////////////////
 void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata){
 
 	static LALStatus status;								/* status structure */	
@@ -74,6 +77,8 @@ void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata){
 	
 	//params.psi=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"polarisation");
 
+  fprintf(stdout,"WARNING this routine LALInferenceLALTemplateGeneratePPN() is deprecated and will be removed. Use LALInferenceTemplateLALGenerateInspiral() or LALInferenceTemplateXLALSimInspiralChooseWaveform() instead");
+  
     if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
         REAL8 tempEta;
         REAL8 q = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"asym_massratio");
@@ -1839,7 +1844,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   
 	INT4 errnum=0;
   
-	XLAL_TRY(ret=XLALSimInspiralChooseWaveform(&hplus, &hcross, &t0, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1, S2, f_min, distance, inclination, order, approximant), errnum);
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "LALSimulationRestrictedWaveform")){
+    XLAL_TRY(ret=XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, &t0, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1, S2, f_min, distance, inclination, order, approximant), errnum);
+  }else{
+    XLAL_TRY(ret=XLALSimInspiralChooseWaveform(&hplus, &hcross, &t0, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1, S2, f_min, distance, inclination, order, approximant), errnum);
+  }
+  
   
   if (ret == XLAL_FAILURE)
   {
