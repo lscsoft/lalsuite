@@ -140,6 +140,7 @@ typedef struct
 {
   UINT4 NSFTs;			/**< total number of SFTs */
   REAL8 tauFstat;		/**< time to compute one Fstatistic over full data-duration (NSFT atoms) [in seconds]*/
+  REAL8 tauTemplate;		/**< total loop time per template, includes candidate-handling (toplist etc) */
 
   /* transient-specific timings */
   UINT4 tauMin;			/**< shortest transient timescale [s] */
@@ -507,7 +508,7 @@ int main(int argc,char *argv[])
   tickCounter = 0;
   clock0 = time(NULL);
 
-  REAL8 tic, toc;	// high-precision timing counters
+  REAL8 tic0, tic, toc;	// high-precision timing counters
   timingInfo_t timing = empty_timingInfo;	// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
 
   /* skip search if user supplied --countTemplates */
@@ -515,7 +516,7 @@ int main(int argc,char *argv[])
     {
       dopplerpos.orbit = orbitalParams;		/* temporary solution until binary-gridding exists */
 
-      tic = GETTIME();
+      tic0 = tic = GETTIME();
       /* main function call: compute F-statistic for this template */
       if ( ! uvar.GPUready )
         {
@@ -537,7 +538,7 @@ int main(int argc,char *argv[])
 
         } /* if GPUready==true */
       toc = GETTIME();
-      timing.tauFstat = toc - tic;	// Fstat-calculation time
+      timing.tauFstat = toc - tic;	// pure Fstat-calculation time
       timing.NSFTs = GV.NSFTs;
 
       /* Progress meter */
@@ -802,6 +803,10 @@ int main(int argc,char *argv[])
       /* free Fstat-atoms if we have any */
       if ( Fstat.multiFstatAtoms ) XLALDestroyMultiFstatAtomVector ( Fstat.multiFstatAtoms );
       Fstat.multiFstatAtoms = NULL;
+
+      /* now measure total loop time per template */
+      toc = GETTIME();
+      timing.tauTemplate = toc - tic0;
 
       /* if requested: output timings into timing-file */
       if ( fpTiming ) {
@@ -2235,13 +2240,13 @@ write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti )
   /* if timingInfo == NULL ==> write header comment line */
   if ( ti == NULL )
     {
-      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NStart    NTau    costTransFstatMap[s]  costTransMarg[s]\n");
+      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NStart    NTau    costTransFstatMap[s]  costTransMarg[s] costTemplate[s]\n");
       return XLAL_SUCCESS;
     } /* if ti == NULL */
 
 
-  fprintf ( fp, "% 5d    %10.6e      %6d     %6d    %5d   %5d           %10.6e       %10.6e\n",
-            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NStart, ti->NTau, ti->tauTransFstatMap, ti->tauTransMarg );
+  fprintf ( fp, "% 5d    %10.6e      %6d     %6d    %5d   %5d           %10.6e       %10.6e	%10.6e\n",
+            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NStart, ti->NTau, ti->tauTransFstatMap, ti->tauTransMarg, ti->tauTemplate );
 
   return XLAL_SUCCESS;
 
