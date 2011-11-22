@@ -1,15 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
 ## take user-arguments for CFS-v2:
 extra_args="$@"
 
 ## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-    injectdir="../Injections/"
-else
-    srcdir=.
-fi
+builddir="./";
+injectdir="../Injections/"
 
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
@@ -94,9 +90,9 @@ if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
 
-cmdline="$mfd_code $mfd_CL";
+cmdline="$mfd_code $mfd_CL"
 echo $cmdline;
-if ! eval $cmdline; then
+if ! eval "$cmdline &> /dev/null"; then
     echo "Error.. something failed when running '$mfd_code' ..."
     exit 1
 fi
@@ -105,7 +101,7 @@ echo
 echo -n "Running '$saf_code' ... "
 cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"
 echo $cmdline
-if ! resF=`eval $cmdline 2> /dev/null`; then
+if ! resF=`eval "$cmdline  &> /dev/null"`; then
     echo "Error ... something failed running '$saf_code' ..."
     exit 1;
 fi
@@ -125,10 +121,10 @@ if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
 
-cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_v1 --expLALDemod=0 --Fthreshold=0";
+cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_v1 --expLALDemod=0 --Fthreshold=0"
 echo $cmdline;
 
-if ! eval $cmdline; then
+if ! eval "$cmdline &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1
 fi
@@ -139,17 +135,17 @@ echo " STEP 3: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
 outfile_v2NWon="Fstat_v2NWon.dat";
-cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --UseNoiseWeights=true $extra_args";
+cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --UseNoiseWeights=true $extra_args"
 echo $cmdlineNoiseWeightsOn;
-if ! eval $cmdlineNoiseWeightsOn; then
+if ! eval "$cmdlineNoiseWeightsOn &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
 
 outfile_v2NWoff="Fstat_v2NWoff.dat";
-cmdlineNoiseWeightsOff="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWoff --TwoFthreshold=0 --UseNoiseWeights=false $extra_args";
+cmdlineNoiseWeightsOff="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWoff --TwoFthreshold=0 --UseNoiseWeights=false $extra_args"
 echo $cmdlineNoiseWeightsOff;
-if ! eval $cmdlineNoiseWeightsOff; then
+if ! eval "$cmdlineNoiseWeightsOff &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
