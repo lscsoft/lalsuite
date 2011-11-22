@@ -277,6 +277,7 @@ typedef struct {
   BOOLEAN version;		/**< output version information */
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
+  BOOLEAN outputSingleFstats;   /**< in multi-detector case, also output single-detector F-stats */
   CHAR *outputTransientStats;	/**< output file for transient B-stat values */
   CHAR *transient_WindowType;	/**< name of transient window ('none', 'rect', 'exp',...) */
   REAL8 transient_t0Days;	/**< earliest GPS start-time for transient window search, as offset in days from dataStartGPS */
@@ -611,12 +612,17 @@ int main(int argc,char *argv[])
 	  Fstat.Fb.re *= norm;  Fstat.Fb.im *= norm;
 	  Fstat.F *= norm * norm;
 	  Fstat.F += 2;		/* compute E[2F]:= 4 + SNR^2 */
+	  UINT4 X, numDet = Fstat.numDetectors;
+	  for ( X = 0; X < numDet ; X ++ ) {
+	    Fstat.FX[X] *= norm * norm;
+	    Fstat.FX[X] += 2;
+	  }
 	  thisFCand.Mmunu.Sinv_Tsft = GV.Tsft;
 
 	  /* if outputting FstatAtoms, we need to renormalize them too ! */
 	  if ( Fstat.multiFstatAtoms )
 	    {
-	      UINT4 X, alpha;
+	      UINT4 alpha;
 	      for ( X=0; X < Fstat.multiFstatAtoms->length; X++ )
 		{
 		  FstatAtomVector *thisAtomList = Fstat.multiFstatAtoms->data[X];
@@ -1108,6 +1114,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
+  LALregBOOLUserStruct(status,outputSingleFstats,0, UVAR_OPTIONAL,  "In multi-detector case, also output single-detector F-stats?");
 
   LALregSTRINGUserStruct(status,outputTransientStats,0,  UVAR_OPTIONAL, "Output filename for outputting transient-CW statistics.");
   LALregSTRINGUserStruct(status, transient_WindowType,0,UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
@@ -1601,6 +1608,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* get atoms back from Fstat-computing, either if atoms-output or transient-Bstat output was requested */
   cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL ) || ( uvar->outputTransientStats != NULL );
+  if ( uvar->outputSingleFstats )
+    cfg->CFparams.returnSingleF = TRUE;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -2065,6 +2074,10 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   fprintf (fp, "Fa       = % .6g  %+.6gi;\n", Fcand->Fstat.Fa.re, Fcand->Fstat.Fa.im );
   fprintf (fp, "Fb       = % .6g  %+.6gi;\n", Fcand->Fstat.Fb.re, Fcand->Fstat.Fb.im );
   fprintf (fp, "twoF     = % .6g;\n", 2.0 * Fcand->Fstat.F );
+  /* single-IFO Fstat-values, if present */
+  UINT4 X, numDet = Fcand->Fstat.numDetectors;
+  for ( X = 0; X < numDet ; X ++ )
+    fprintf (fp, "twoF%d    = % .6g;\n", X, 2.0 * Fcand->Fstat.FX[X] );
 
   fprintf (fp, "\nAmpFisher = \\\n" );
   XLALfprintfGSLmatrix ( fp, "%.9g",pulsarParams->AmpFisherMatrix );
@@ -2098,10 +2111,31 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
   if ( !fp || !thisFCand )
     return -1;
 
-  fprintf (fp, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
+  /* add extra output-field containing per-detector FX if non-NULL */
+  char singleFstr[256] = "";     /* defaults to empty */
+  char buf0[256];
+  if ( thisFCand->Fstat.numDetectors > 0 )
+    {
+      snprintf ( singleFstr, sizeof(singleFstr), " %.9g", 2.0*thisFCand->Fstat.FX[0] );
+      UINT4 numDet = thisFCand->Fstat.numDetectors;
+      UINT4 X;
+      for ( X = 1; X < numDet ; X ++ )
+        {
+          snprintf ( buf0, sizeof(buf0), " %.9g", 2.0*thisFCand->Fstat.FX[X] );
+          UINT4 len1 = strlen ( singleFstr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( singleFstr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", __func__, len1, sizeof(singleFstr ));
+            break;      /* we can't really terminate with error in this function, but at least we avoid crashing */
+          }
+          strcat ( singleFstr, buf0 );
+        } /* for X < numDet */
+
+    } /* if FX */
+
+  fprintf (fp, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g%s\n",
 	   thisFCand->doppler.fkdot[0], thisFCand->doppler.Alpha, thisFCand->doppler.Delta,
 	   thisFCand->doppler.fkdot[1], thisFCand->doppler.fkdot[2], thisFCand->doppler.fkdot[3],
-	   2.0 * thisFCand->Fstat.F );
+	   2.0 * thisFCand->Fstat.F, singleFstr );
 
   return 0;
 
