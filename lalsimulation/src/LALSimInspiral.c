@@ -1054,10 +1054,7 @@ int XLALSimInspiralChooseWaveform(
         /* spinning inspiral-merger-ringdown models */
         case IMRPhenomB:
             {
-                REAL8 eta = m1*m2/(m1+m2)/(m1+m2);
-                REAL8 delta = sqrt(1.-4.*eta);
-                REAL8 chi = .5 * (S1[3]*(1. + delta) + S1[3]*(1. - delta));
-                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, chi, f_min, .5/deltaT, r, i);
+                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1[2], S2[2]), f_min, .5/deltaT, r, i);
             }
             break;
         case PhenSpinTaylorRD:
@@ -1165,10 +1162,7 @@ int XLALSimInspiralChooseRestrictedWaveform(
         /* spinning inspiral-merger-ringdown models */
         case IMRPhenomB:
             {
-                REAL8 eta = m1*m2/(m1+m2)/(m1+m2);
-                REAL8 delta = sqrt(1.-4.*eta);
-                REAL8 chi = .5 * (S1[3]*(1. + delta) + S1[3]*(1. - delta));
-                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, chi, f_min, .5/deltaT, r, i);
+                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1[2], S2[2]), f_min, .5/deltaT, r, i);
             }
             break;
         case PhenSpinTaylorRD:
