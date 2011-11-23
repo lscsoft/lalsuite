@@ -383,10 +383,10 @@ int main (int argc , char **argv) {
                     XLALSimIMRPhenomBGenerateFD(&htilde, params->phiRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance);
                     break;
                 case GSApproximant_TaylorF2RedSpin:
-                    XLALSimInspiralTaylorF2ReducedSpin(&htilde, params->phiRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->distance, params->phaseO);
+                    XLALSimInspiralTaylorF2ReducedSpin(&htilde, params->phiRef, params->deltaF, params->m1, params->m2, params->chi, params->f_min, params->distance, params->phaseO, params->ampO);
                     break;
                 case GSApproximant_TaylorF2RedSpinTidal:
-                    XLALSimInspiralTaylorF2ReducedSpinTidal(&htilde, params->phiRef, params->deltaF, params->m1, params->m2, params->chi, params->lambda1, params->lambda2, params->f_min, params->distance, params->phaseO);
+                    XLALSimInspiralTaylorF2ReducedSpinTidal(&htilde, params->phiRef, params->deltaF, params->m1, params->m2, params->chi, params->lambda1, params->lambda2, params->f_min, params->distance, params->phaseO, params->ampO);
                     break;
                 case GSApproximant_SpinTaylorT4:
                     XLALPrintError("Error: SpinTaylorT4 is not an FD waveform!\n");

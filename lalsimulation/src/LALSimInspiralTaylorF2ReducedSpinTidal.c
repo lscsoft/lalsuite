@@ -47,7 +47,8 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     const REAL8 lam2,                /**< dimensionless deformability of 2 */
     const REAL8 fStart,              /**< start GW frequency (Hz) */
     const REAL8 r,                   /**< distance of source (m) */
-    const UINT4 O                    /**< twice PN phase order */
+    const UINT4 phaseO,              /**< twice PN phase order */
+    const UINT4 ampO                 /**< twice PN amplitude order */
     ) {
     /* external: SI; internal: solar masses */
     const REAL8 m1 = m1_SI / LAL_MSUN_SI;
@@ -77,7 +78,8 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     if (fabs(chi) > 1) XLAL_ERROR(XLAL_EDOM);
     if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
     if (r <= 0) XLAL_ERROR(XLAL_EDOM);
-    if (O > 7) XLAL_ERROR(XLAL_EDOM); /* only implemented to pN 3.5 */
+    if (ampO > 7) XLAL_ERROR(XLAL_EDOM); /* only implemented to pN 3.5 */
+    if (phaseO > 7) XLAL_ERROR(XLAL_EDOM); /* only implemented to pN 3.5 */
 
     /* allocate htilde */
     f_max = NextPow2(fISCO);
@@ -137,27 +139,38 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
                 (1349*eta*eta*LAL_PI)/24192.;
 
     /* select the terms according to the PN order chosen */
-    switch (O) {
+    switch (ampO) {
         case 1:
-            psi2 = 0.;
             alpha2 = 0.;
         case 2:
-            psi3 = 0.;
             alpha3 = 0.;
         case 3:
-            psi4 = 0.;
             alpha4 = 0.;
         case 4:
-            psi5 = 0.;
             alpha5 = 0.;
         case 5:
-            psi6 = 0.;
-            psi6L = 0.;
             alpha6 = 0.;
             alpha6L = 0.;
         case 6:
-            psi7 = 0.;
             alpha7 = 0.;
+        default:
+            break;
+    }
+
+    switch (phaseO) {
+        case 1:
+            psi2 = 0.;
+        case 2:
+            psi3 = 0.;
+        case 3:
+            psi4 = 0.;
+        case 4:
+            psi5 = 0.;
+        case 5:
+            psi6 = 0.;
+            psi6L = 0.;
+        case 6:
+            psi7 = 0.;
         default:
             break;
     }

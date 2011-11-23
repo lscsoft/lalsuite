@@ -1018,7 +1018,8 @@ int XLALSimInspiralTaylorF2ReducedSpin(
 		const REAL8 chi,                 /**< dimensionless aligned-spin param */
 		const REAL8 fStart,              /**< start GW frequency (Hz) */
 		const REAL8 r,                   /**< distance of source (m) */
-		const UINT4 O                    /**< twice PN phase order */
+		const UINT4 phaseO,              /**< twice PN phase order */
+		const UINT4 ampO                 /**< twice PN amplitude order */
 		);
 
 /**
@@ -1037,17 +1038,18 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
 		const REAL8 lam2,                /**< dimensionless deformability of 2 */
 		const REAL8 fStart,              /**< start GW frequency (Hz) */
 		const REAL8 r,                   /**< distance of source (m) */
-		const UINT4 O                    /**< twice PN phase order */
+		const UINT4 phaseO,              /**< twice PN phase order */
+		const UINT4 ampO                 /**< twice PN amplitude order */
 		);
 /**
  * Compute the chirp time of the "reduced-spin" templates, described in
  * http://arxiv.org/abs/1107.1267.
 */
 REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
-		const REAL8 fStart ,       /**< start GW frequency (Hz) */
+		const REAL8 fStart,  /**< start GW frequency (Hz) */
 		const REAL8 m1_SI,   /**< mass of companion 1 (kg) */
 		const REAL8 m2_SI,   /**< mass of companion 2 (kg) */
-		const REAL8 chi,                 /**< dimensionless aligned-spin param */
+		const REAL8 chi,     /**< dimensionless aligned-spin param */
 		const UINT4 O        /**< twice PN phase order */
 		);
 
