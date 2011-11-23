@@ -174,7 +174,7 @@ int main(int argc , char **argv)
 	switch (params.approximant)
 	{
 		case EOBNRv2HM:
-			length = XLALSimInspiralChooseWaveform(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1, params.spin2, params.fLower, params.distance, params.inclination, otherIn.order, params.approximant);
+			length = XLALSimInspiralChooseWaveform(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1, params.spin2, params.fLower, params.distance, params.inclination, otherIn.order, otherIn.order, params.approximant);
 			break;
 		default:
 			length = XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1, params.spin2, params.fLower, params.distance, params.inclination, otherIn.order, params.approximant);
