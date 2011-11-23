@@ -7,4 +7,5 @@ EXTRA_DIST = \
 	docs \
 	rules \
 	lalapps-user-env.sh \
-	lalapps-user-env.csh
+	lalapps-user-env.csh \
+	pyversions
