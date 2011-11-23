@@ -328,12 +328,13 @@ static int dump_FD(FILE *f, COMPLEX16FrequencySeries *htilde) {
     fprintf(f, "# f htilde.re htilde.im\n");
     dataPtr = htilde->data->data;
     for (i=0; i < htilde->data->length; i++)
-      fprintf(f, "%e %e %e\n", i * htilde->deltaF, dataPtr[i].re, dataPtr[i].im);
+      fprintf(f, "%e %e %e\n", htilde->f0 + i * htilde->deltaF, dataPtr[i].re, dataPtr[i].im);
     return 0;
 }
 
 static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
     size_t i;
+    REAL8 t0 = XLALGPSGetREAL8(&(hplus->epoch));
     if (hplus->data->length != hcross->data->length) {
         XLALPrintError("Error: hplus and hcross are not the same length\n");
         return 1;
@@ -344,7 +345,7 @@ static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
 
     fprintf(f, "# t hplus hcross\n");
     for (i=0; i < hplus->data->length; i++)
-      fprintf(f, "%e %e %e\n", i * hplus->deltaT, hplus->data->data[i], hcross->data->data[i]);
+      fprintf(f, "%e %e %e\n", t0 + i * hplus->deltaT, hplus->data->data[i], hcross->data->data[i]);
     return 0;
 }
 /*
