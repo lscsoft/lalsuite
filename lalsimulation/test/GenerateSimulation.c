@@ -397,10 +397,10 @@ int main (int argc , char **argv) {
         case GSDomain_TD:
             switch (params->approximant) {
                 case GSApproximant_IMRPhenomA:
-                    XLALSimIMRPhenomAGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->deltaT, params->m1, params->m2, params->f_min, params->f_max, params->distance, params->inclination);
+                    XLALSimIMRPhenomAGenerateTD(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->f_min, params->f_max, params->distance, params->inclination);
                     break;
                 case GSApproximant_IMRPhenomB:
-                    XLALSimIMRPhenomBGenerateTD(&hplus, &hcross, &tRef, params->phiRef, params->deltaT, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance, params->inclination);
+                    XLALSimIMRPhenomBGenerateTD(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->chi, params->f_min, params->f_max, params->distance, params->inclination);
                     break;
                 case GSApproximant_TaylorF2RedSpin:
                 case GSApproximant_TaylorF2RedSpinTidal:

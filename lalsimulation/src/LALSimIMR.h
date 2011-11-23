@@ -88,7 +88,6 @@ int XLALSimIMRPhenomAGenerateFD(
 int XLALSimIMRPhenomAGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    const LIGOTimeGPS *tPeak,       /**< time at peak amplitude */
     const REAL8 phiPeak,            /**< phase at peak */
     const REAL8 deltaT,             /**< sampling interval */
     const REAL8 m1_SI,              /**< mass of companion 1 (kg) */
@@ -146,7 +145,6 @@ int XLALSimIMRPhenomBGenerateFD(
 int XLALSimIMRPhenomBGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    const LIGOTimeGPS *tPeak,       /**< time at peak amplitude */
     const REAL8 phiPeak,            /**< phase at peak */
     const REAL8 deltaT,             /**< sampling interval */
     const REAL8 m1_SI,              /**< mass of companion 1 (kg) */

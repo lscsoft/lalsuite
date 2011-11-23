@@ -1025,7 +1025,7 @@ int XLALSimInspiralChooseWaveform(
         /* non-spinning inspiral-merger-ringdown models */
         case IMRPhenomA:
             // FIXME: decide proper f_max to pass here
-            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, .5/deltaT, r, i);
+            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, f_min, .5/deltaT, r, i);
             break;
         case EOBNRv2HM:
             ret = XLALSimIMREOBNRv2AllModes(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i);
@@ -1057,7 +1057,7 @@ int XLALSimInspiralChooseWaveform(
                 REAL8 eta = m1*m2/(m1+m2)/(m1+m2);
                 REAL8 delta = sqrt(1.-4.*eta);
                 REAL8 chi = .5 * (S1[3]*(1. + delta) + S1[3]*(1. - delta));
-                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, t0, phi0, deltaT, m1, m2, chi, f_min, .5/deltaT, r, i);
+                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, chi, f_min, .5/deltaT, r, i);
             }
             break;
         case PhenSpinTaylorRD:
@@ -1138,7 +1138,7 @@ int XLALSimInspiralChooseRestrictedWaveform(
         /* non-spinning inspiral-merger-ringdown models */
         case IMRPhenomA:
             // FIXME: decide proper f_max to pass here
-            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, .5/deltaT, r, i);
+            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, f_min, .5/deltaT, r, i);
             break;
         case EOBNRv2:
             ret = XLALSimIMREOBNRv2DominantMode(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i);
@@ -1168,7 +1168,7 @@ int XLALSimInspiralChooseRestrictedWaveform(
                 REAL8 eta = m1*m2/(m1+m2)/(m1+m2);
                 REAL8 delta = sqrt(1.-4.*eta);
                 REAL8 chi = .5 * (S1[3]*(1. + delta) + S1[3]*(1. - delta));
-                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, t0, phi0, deltaT, m1, m2, chi, f_min, .5/deltaT, r, i);
+                ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, chi, f_min, .5/deltaT, r, i);
             }
             break;
         case PhenSpinTaylorRD:
