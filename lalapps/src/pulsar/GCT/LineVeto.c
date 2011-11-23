@@ -334,7 +334,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 
       if ( SignalOnly ) {      /* normalization factor correction */
         Fstat.F *= 2.0 / Tsft;
-        Fstat.F += 2;
+        Fstat.F += 2;          /* E[F] = SNR^2/2 + 2 */
       }
 
       lineVeto->TwoF  += 2.0 * Fstat.F; /* sum up multi-detector Fstat for this segment*/
@@ -366,9 +366,9 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
             XLAL_ERROR ( XLAL_EFUNC );
           }
 
-          if ( SignalOnly ) {                      /* normalization factor correction (TwoF=2.0*F has been done before, this time!) */
-            twoFXseg->data[detid] *= 4.0 / Tsft;
-            twoFXseg->data[detid] += 4;
+          if ( SignalOnly ) {                      /* normalization factor correction */
+            twoFXseg->data[detid] *= 2.0 / Tsft;
+            twoFXseg->data[detid] += 4;            /* TwoF=2.0*F has been done before, so we have to add 2*2: E[2F] = SNR^2 + 4 */
           }
 
           lineVeto->TwoFX->data[detid]  += twoFXseg->data[detid]; /* sum up single-detector Fstat for this segment*/
