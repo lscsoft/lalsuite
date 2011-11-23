@@ -1028,7 +1028,6 @@ int XLALSimInspiralTaylorF2ReducedSpin(
 */
 int XLALSimInspiralTaylorF2ReducedSpinTidal(
 		COMPLEX16FrequencySeries **htilde,   /**< FD waveform */
-		const LIGOTimeGPS *tStart,       /**< initial time (s) */
 		const REAL8 phiStart,            /**< initial GW phase (rad) */
 		const REAL8 deltaF,              /**< frequency resolution */
 		const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
