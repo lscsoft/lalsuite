@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <lal/Date.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
@@ -61,7 +62,6 @@ Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267
 */
 int XLALSimInspiralTaylorF2ReducedSpin(
     COMPLEX16FrequencySeries **htilde,   /**< FD waveform */
-    const LIGOTimeGPS *tStart,       /**< initial time (s) */
     const REAL8 phiStart,            /**< initial GW phase (rad) */
     const REAL8 deltaF,              /**< frequency resolution */
     const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
@@ -87,10 +87,10 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S;
     size_t i, n, iStart, iISCO;
     COMPLEX16 *data = NULL;
+    LIGOTimeGPS tStart = {0, 0};
 
     /* check inputs for sanity */
     if (*htilde) XLAL_ERROR(XLAL_EFAULT);
-    if (!tStart) XLAL_ERROR(XLAL_EFAULT);
     if (phiStart < 0) XLAL_ERROR(XLAL_EDOM);
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
@@ -102,7 +102,8 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     /* allocate htilde */
     f_max = NextPow2(fISCO);
     n = f_max / deltaF + 1;
-    *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", tStart, 0.0, deltaF, &lalStrainUnit, n);
+    XLALGPSAdd(&tStart, -1 / deltaF);  /* coalesce at t=0 */
+    *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tStart, 0.0, deltaF, &lalStrainUnit, n);
     if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
     memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
     XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
@@ -110,7 +111,7 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     /* extrinsic parameters */
     phi0 = phiStart;
     amp0 = pow(m_sec, 5./6.) * sqrt(5. * eta / 24.) / (cbrt(LAL_PI * LAL_PI) * r / LAL_C_SI);
-    shft = -LAL_TWOPI * (tStart->gpsSeconds + 1e-9 * tStart->gpsNanoSeconds);
+    shft = -LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
 
     /* spin terms in the amplitude and phase (in terms of the reduced
      * spin parameter */
