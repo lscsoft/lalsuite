@@ -38,10 +38,10 @@ static REAL8 MetricCoeffs(REAL8Vector *A, REAL8Vector *dPsii, REAL8Vector *dPsij
     size_t k = A->length;
     REAL8 gij = 0.;
     for (;k--;) {
-        gij += 4.*df*(A->data[k]*A->data[k]*dPsii->data[k]*dPsij->data[k]
+        gij += (A->data[k]*A->data[k]*dPsii->data[k]*dPsij->data[k]
                 + dAi->data[k]*dAj->data[k])/Sh->data[k];
     }
-    return gij/(2.*hSqr);
+    return 4.*df*gij/(2.*hSqr);
 }
 
 /**
