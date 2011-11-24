@@ -208,8 +208,7 @@ liblalinspiral_la_SOURCES = \
 	SimulateInspiral.c \
 	SnglInspiralUtils.c \
 	SnglRingdownUtils.c \
-	TrigScanEThincaCommon.c \
-	check_series_macros.h
+	TrigScanEThincaCommon.c
 
 liblalinspiral_la_LDFLAGS = -version-info $(LIBVERSION)
 

@@ -42,8 +42,7 @@ liblalburst_la_SOURCES = \
 	TfrWv.c \
 	Thresholds.c \
 	TrackSearch.c \
-	cs_lambda_cosmo.c \
-	check_series_macros.h
+	cs_lambda_cosmo.c
 
 liblalburst_la_LDFLAGS = -version-info $(LIBVERSION)
 
