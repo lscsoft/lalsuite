@@ -148,17 +148,28 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
       } /* if outputSingleSegStats */
 
       REAL4Vector *sumTwoFX;
-      if ( (sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
-        XLAL_ERROR ( XLAL_EFUNC );
-      }
 
       void *elemV;
       if ( listEntryType == 1 ) {
         GCTtopOutputEntry *elem = toplist_elem ( list, j );
         elemV = elem;
 
-        elem->sumTwoFX = sumTwoFX;
+        if ( elem->sumTwoFX ) { /* if the GCT toplist already includes FX vectors (from in-loop LV feature), reuse them */
+          sumTwoFX = elem->sumTwoFX;
+          if ( sumTwoFX->length != numDetectors ) { /* if wrong length, have to realloc */
+            sumTwoFX->length = numDetectors;
+            sumTwoFX->data = (REAL4 *)LALRealloc( sumTwoFX->data, numDetectors * sizeof(REAL4));
+          }
+          for ( X = 0; X < numDetectors; X ++ )
+            sumTwoFX->data[X] = 0.0;
+        }
+        else { /* else, have to newly create FX vector and assign it */
+          if ( (sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+            XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
+            XLAL_ERROR ( XLAL_EFUNC );
+          }
+          elem->sumTwoFX = sumTwoFX;
+        }
         /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
         candidateDopplerParams.Alpha = elem->Alpha;
         candidateDopplerParams.Delta = elem->Delta;
@@ -168,6 +179,11 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         HoughFStatOutputEntry *elem = toplist_elem ( list, j );
         elemV = elem;
 
+        /* create FX vector and assign it */
+        if ( (sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+          XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
+          XLAL_ERROR ( XLAL_EFUNC );
+        }
         elem->sumTwoFX = sumTwoFX;
         /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
         candidateDopplerParams.Alpha = elem->AlphaBest;
