@@ -31,7 +31,6 @@
 
 /*---------- INCLUDES ----------*/
 #define __USE_ISOC99 1
-#include <lal/StringVector.h>
 #include "LineVeto.h"
 #include <lal/TransientCW_utils.h> /* for XLALFastNegExp */
 

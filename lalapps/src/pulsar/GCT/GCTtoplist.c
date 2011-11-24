@@ -166,6 +166,27 @@ static int gctNC_smaller(const void*a, const void*b) {
 }
 
 
+/* ordering function defining the toplist: SORT BY LVstat */
+static int gctLV_smaller(const void*a, const void*b) {
+#ifdef DEBUG_SORTING
+  if(debugfp)
+    fprintf(debugfp,"%20lf  %20lf\n%20lf  %20lf\n\n",
+	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
+	    ((const GCTtopOutputEntry*)a)->LV, ((const GCTtopOutputEntry*)b)->LV);
+#endif
+  if      (((const GCTtopOutputEntry*)a)->LV < ((const GCTtopOutputEntry*)b)->LV)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->LV > ((const GCTtopOutputEntry*)b)->LV)
+    return -1;
+  else if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
+    return -1;
+  else
+    return(gctFStat_result_order(a,b));
+}
+
+
 /* functions for qsort based on the above ordering functions */
 static int gctFStat_restore_heap_qsort(const void*a, const void*b) {
   void const* const* pa = (void const* const*)a;
@@ -196,6 +217,9 @@ int create_gctFStat_toplist(toplist_t**tl, UINT8 length, UINT4 whatToSortBy) {
 
   if (whatToSortBy==1) {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctNC_smaller) );
+  }
+  else if (whatToSortBy==2) {
+    return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctLV_smaller) );
   }
   else {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctFStat_smaller) );
@@ -255,7 +279,7 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
   char buf0[256];
   if ( fline.sumTwoFX )
     {
-      snprintf ( extraFStr, sizeof(extraFStr), " %.6f", fline.sumTwoFnew );
+      snprintf ( extraFStr, sizeof(extraFStr), " %.6f %.6f", fline.LV, fline.sumTwoFnew );
       UINT4 numDet = fline.sumTwoFX->length;
       UINT4 X;
       for ( X = 0; X < numDet ; X ++ )

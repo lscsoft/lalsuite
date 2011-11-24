@@ -44,6 +44,7 @@ extern "C" {
 /* lal includes */
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/ComputeFstat.h>
+#include <lal/StringVector.h>
 
 /* lalapps includes */
 #include <lalapps.h>

@@ -168,7 +168,10 @@ extern "C" {
     LIGOTimeGPS refTime;    /**< reference time for candidates */
     UINT4 length;           /**< maximum allowed length of vectors */
     UINT4 freqlength;       /**< number of fine-grid points in frequency */
+    UINT4 numDetectors;     /**< number of detectors for sumTwoFX array */
     REAL4 * sumTwoF;        /**< sum of 2F-values */
+    REAL4 * sumTwoFX;       /**< sum of per-IFO 2F-values, array length = length*numDetectors */
+    UINT4 * NsegmentsX;     /**< number of segments where the IFO X actually has data*/
     FINEGRID_NC_T * nc;     /**< number count */
   } FineGrid;
 
@@ -177,6 +180,12 @@ extern "C" {
    */
 #define FG_INDEX(fg, iFreq)                     \
   ( (iFreq) )
+
+  /* macro to index FX array in the FineGrid structure
+   * frequency/GCT U1 index MUST always be the innermost index
+   */
+#define FG_FX_INDEX(fg, iDet, iFreq)       \
+  ( ( (iDet) * (fg).length ) + (iFreq) )
 
   /* ------------------------------------------------------------------------- */
 
@@ -193,7 +202,9 @@ extern "C" {
     UINT4 nStacks;       /**< number of stacks */
     UINT4 freqlength;    /**< number of fine-grid points in frequency */
     UINT4 * Uindex;      /**< U index */
-    REAL4 * TwoF;       /**< 2F-value */
+    REAL4 * TwoF;        /**< 2F-value */
+    UINT4 numDetectors;  /**< number of detectors for TwoFX array */
+    REAL4 *TwoFX;        /**< per-IFO 2F-values, array length = length*numDetectors */
   } CoarseGrid;
 
   /* macro to index arrays in the CoarseGrid structure
@@ -201,6 +212,12 @@ extern "C" {
    */
 #define CG_INDEX(cg, iStack, iFreq)             \
   ( ( (iStack) * (cg).freqlength ) + (iFreq) )
+
+  /* macro to index FX array in the CoarseGrid structure
+   * frequency/GCT U1 index MUST always be the innermost index
+   */
+#define CG_FX_INDEX(cg, iDet, iStack, iFreq)       \
+  ( ( (iDet) * (cg).length ) + ( (iStack) * (cg).freqlength ) + (iFreq) )
 
   /* ------------------------------------------------------------------------- */
 

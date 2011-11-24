@@ -290,14 +290,14 @@ echo "==>   Average <2F_multi>=$TwoFAvg, <2F_H1>=$TwoFAvg_H1, <2F_L1>=$TwoFAvg_L
 
 ## ---------- run GCT code on this data ----------------------------------------
 
-gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --ephemE=$edat --ephemS=$sdat --outputFX --Dterms=$Dterms --blocksRngMed=$RngMedWindow"
+gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --ephemE=$edat --ephemS=$sdat --Dterms=$Dterms --blocksRngMed=$RngMedWindow"
 if [ "$sqrtSh" = "0" ]; then
     gct_CL_common="$gct_CL_common --SignalOnly";
 fi
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match) and segment-list file"
+echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match) and segment-list file and --outputFX"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -306,7 +306,7 @@ outfile_GCT_RS="${testDir}${dirsep}GCT_RS.dat"
 timingsfile_RS="${testDir}${dirsep}timing_RS.dat"
 
 if [ -z "$NORESAMP" ]; then
-    cmdline="$gct_code $gct_CL_common --useResamp=true --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS'"
+    cmdline="$gct_code $gct_CL_common --useResamp=true --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' --outputFX"
     if [ -n "$DEBUG" ]; then
         cmdline="$cmdline -d1"
     else
@@ -319,8 +319,8 @@ if [ -z "$NORESAMP" ]; then
     fi
     topline=$(sort -nr -k7,7 $outfile_GCT_RS | head -1)
     resGCT_RS=$(echo $topline | awk '{print $7}')
-    resGCT_RS_H1=$(echo $topline | awk '{print $9}')
-    resGCT_RS_L1=$(echo $topline | awk '{print $10}')
+    resGCT_RS_H1=$(echo $topline | awk '{print $10}')
+    resGCT_RS_L1=$(echo $topline | awk '{print $11}')
     freqGCT_RS=$(echo $topline | awk '{print $1}')
 else
     echo
@@ -330,7 +330,7 @@ fi
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 4: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax"
+echo " STEP 4: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --outputFX"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -338,12 +338,13 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM="${testDir}${dirsep}GCT_DM.dat"
 timingsfile_DM="${testDir}${dirsep}timing_DM.dat"
 
-cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM'"
+cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' --outputFX"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline -d1"
 else
     cmdline="$cmdline -d0 &> /dev/null"
 fi
+
 echo $cmdline
 if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$gct_code' ..."
@@ -352,9 +353,35 @@ fi
 
 topline=$(sort -nr -k7,7 $outfile_GCT_DM | head -1)
 resGCT_DM=$(echo $topline  | awk '{print $7}')
-resGCT_DM_H1=$(echo $topline  | awk '{print $9}')
-resGCT_DM_L1=$(echo $topline  | awk '{print $10}')
+resGCT_DM_H1=$(echo $topline  | awk '{print $10}')
+resGCT_DM_L1=$(echo $topline  | awk '{print $11}')
 freqGCT_DM=$(echo $topline | awk '{print $1}')
+
+
+echo
+echo "----------------------------------------------------------------------------------------------------"
+echo " STEP 5: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --useLV"
+echo "----------------------------------------------------------------------------------------------------"
+echo
+
+rm -f checkpoint.cpt # delete checkpoint to start correctly
+outfile_GCT_DM_LV="${testDir}${dirsep}GCT_DM_LV.dat"
+timingsfile_DM_LV="${testDir}${dirsep}timing_DM_LV.dat"
+
+cmdline="$gct_code $gct_CL_common --useResamp=false --useLV --SortToplist=2 --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
+
+echo $cmdline
+if ! eval "$cmdline &> /dev/null"; then
+    echo "Error.. something failed when running '$gct_code' ..."
+    exit 1
+fi
+
+topline=$(sort -nr -k7,7 $outfile_GCT_DM_LV | head -1)
+resGCT_DM_LV=$(echo $topline  | awk '{print $7}')
+resGCT_DM_H1_LV=$(echo $topline  | awk '{print $10}')
+resGCT_DM_L1_LV=$(echo $topline  | awk '{print $11}')
+freqGCT_DM_LV=$(echo $topline | awk '{print $1}')
+
 
 ## ---------- compute relative differences and check against tolerance --------------------
 awk_reldev='{printf "%.2e", sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
@@ -370,6 +397,10 @@ reldev_DM=$(echo $TwoFAvg $resGCT_DM | awk "$awk_reldev")
 reldev_DM_H1=$(echo $TwoFAvg_H1 $resGCT_DM_H1 | awk "$awk_reldev")
 reldev_DM_L1=$(echo $TwoFAvg_L1 $resGCT_DM_L1 | awk "$awk_reldev")
 freqreldev_DM=$(echo $Freq $freqGCT_DM | awk "$awk_reldev")
+reldev_DM_LV=$(echo $TwoFAvg $resGCT_DM_LV | awk "$awk_reldev")
+reldev_DM_H1_LV=$(echo $TwoFAvg_H1 $resGCT_DM_H1_LV | awk "$awk_reldev")
+reldev_DM_L1_LV=$(echo $TwoFAvg_L1 $resGCT_DM_L1_LV | awk "$awk_reldev")
+freqreldev_DM_LV=$(echo $Freq $freqGCT_DM_LV | awk "$awk_reldev")
 
 # ---------- Check relative deviations against tolerance, report results ----------
 retstatus=0
@@ -381,16 +412,18 @@ awk_timing='BEGIN { sumTau = 0; sumTauCoh = 0; sumTauSC = 0; counter=0; } \
            { sumTau = sumTau + $8; sumTauCoh = sumTauCoh + $9; sumTauSC = sumTauSC + $10; counter=counter+1; } \
            END {printf "tau = %5.3g s, tauCoh = %5.3g s, tauSC = %5.3g s", sumTau/counter, sumTauCoh/counter, sumTauSC/counter}'
 timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
+timing_DM_LV=$(sed '/^%.*/d' $timingsfile_DM_LV | awk "$awk_timing")
 timing_RS=$(sed '/^%.*/d' $timingsfile_RS | awk "$awk_timing")
-echo " GCT-LALDemod:  $timing_DM"
-echo " GCT-Resamp:    $timing_RS"
+echo " GCT-LALDemod:     $timing_DM"
+echo " GCT-LALDemod-LV:  $timing_DM_LV"
+echo " GCT-Resamp:       $timing_RS"
 
 echo
 echo "--------- Compare results ----------------------------------------------------------------------------------------"
-echo "                     	<2F_multi>	<2F_H1>  	<2F_L1>  	@ Freq [Hz]     	(reldev, reldev_H1, reldev_L1, reldev_Freq)"
-echo    "==>  CFSv2:         	$TwoFAvg 	$TwoFAvg_H1   	$TwoFAvg_L1   	@ $Freq 	[Tolerance = ${Tolerance}]"
+echo "                     	<2F_multi>	<2F_H1>  	<2F_L1>  	 @ Freq [Hz]     	(reldev, reldev_H1, reldev_L1, reldev_Freq)"
+echo    "==>  CFSv2:         	$TwoFAvg 	$TwoFAvg_H1   	$TwoFAvg_L1   	 @ $Freq 	[Tolerance = ${Tolerance}]"
 
-echo -n "==>  GCT-LALDemod: 	$resGCT_DM 	$resGCT_DM_H1 	$resGCT_DM_L1  	@ $freqGCT_DM 	($reldev_DM, $reldev_DM_H1, $reldev_DM_L1, $freqreldev_DM)"
+echo -n "==>  GCT-LALDemod: 	$resGCT_DM 	$resGCT_DM_H1 	$resGCT_DM_L1  	 @ $freqGCT_DM 	($reldev_DM, $reldev_DM_H1, $reldev_DM_L1, $freqreldev_DM)"
 fail1=$(echo $freqreldev_DM $Tolerance | awk "$awk_isgtr")
 fail2=$(echo $reldev_DM $Tolerance     | awk "$awk_isgtr")
 fail3=$(echo $reldev_DM_H1 $Tolerance  | awk "$awk_isgtr")
@@ -402,8 +435,20 @@ else
     echo " ==> OK"
 fi
 
+echo -n "==>  GCT-LALDemod LV:	$resGCT_DM_LV 	$resGCT_DM_H1_LV	$resGCT_DM_L1_LV	@ $freqGCT_DM_LV 	($reldev_DM_LV, $reldev_DM_H1_LV, $reldev_DM_L1_LV, $freqreldev_DM_LV)"
+fail1=$(echo $freqreldev_DM_LV $Tolerance | awk "$awk_isgtr")
+fail2=$(echo $reldev_DM_LV $Tolerance     | awk "$awk_isgtr")
+fail3=$(echo $reldev_DM_H1_LV $Tolerance  | awk "$awk_isgtr")
+fail4=$(echo $reldev_DM_L1_LV $Tolerance  | awk "$awk_isgtr")
+if [ "$fail1" -o "$fail2" -o "$fail3" -o "$fail4" ]; then
+    echo " ==> FAILED"
+    retstatus=1
+else
+    echo " ==> OK"
+fi
+
 if [ -z "$NORESAMP" ]; then
-    echo -n "==>  GCT-Resamp: 	$resGCT_RS 	$resGCT_RS_H1 	$resGCT_RS_L1  	@ $freqGCT_RS 	($reldev_RS, NA, NA, $freqreldev_RS)"
+    echo -n "==>  GCT-Resamp: 	$resGCT_RS 	$resGCT_RS_H1 	$resGCT_RS_L1  	 @ $freqGCT_RS 	($reldev_RS, NA, NA, $freqreldev_RS)"
     fail1=$(echo $freqreldev_RS $Tolerance | awk "$awk_isgtr")
     fail2=$(echo $reldev_RS $Tolerance | awk "$awk_isgtr")
     ## these are currently defunct => not testing them
