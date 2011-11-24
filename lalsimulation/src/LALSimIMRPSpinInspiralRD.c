@@ -282,7 +282,7 @@ static int XLALPSpinInspiralRDparamsSetup(
     REAL8 fCutoff,                      /** CHECKME: Cutoff frequency? */
     REAL8 m1,                           /** Mass 1 */
     REAL8 m2,                           /** Mass 2 */
-    LALSpinInteraction spinInteraction, /** Spin interaction */
+    LALSimInspiralInteraction spinInteraction, /** Spin interaction */
     UINT4 order                         /** twice PN Order in Phase */
     )
 {
@@ -385,7 +385,7 @@ static int XLALPSpinInspiralRDparamsSetup(
 
   switch (spinInteraction) {
 
-  case LAL_NOInter:
+  case LAL_SIM_INSPIRAL_INTERACTION_NONE:
     mparams->wdotspin30S1LNh   = 0.;
     mparams->wdotspin30S2LNh   = 0.;
     mparams->epnspin25S1dotLNh = 0.;
@@ -401,12 +401,12 @@ static int XLALPSpinInspiralRDparamsSetup(
     mparams->S1dot15           = 0.;
     mparams->S2dot15           = 0.;
 
-  case LAL_SOInter:
+  case LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN:  /* LAL_SOInter: is this just leading order or 2.5pn as well? */
     mparams->wdotspin20S1S2      = 0.;
     mparams->epnspin20S1S2       = 0.;
     mparams->epnspin20S1S2dotLNh = 0.;
 
-  case LAL_SSInter:
+  case LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN:  /* LAL_SSInter: */
     mparams->wdotspin20S1S1 = 0.;
     mparams->epnspin20S1S1 = 0.;
     mparams->epnspin20S2S2 = 0.;
@@ -417,11 +417,11 @@ static int XLALPSpinInspiralRDparamsSetup(
     mparams->epnspin20S2S2dotLNh = 0.;
     break;
 
-  case LAL_SSselfInter:
+  case LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN: /* LAL_SSselfInter: */
     break;
-  case LAL_QMInter:
+  case LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN: /* LAL_QMInter: */
     break;
-  case LAL_AllInter:
+  case LAL_SIM_INSPIRAL_INTERACTION_All_SPIN: /* LAL_AllInter: */
     break;
   default:
     break;
@@ -2191,7 +2191,7 @@ int XLALSimIMRPSpinInspiralRDGenerator(
 			     fCutoff,		/** CHECKME: Cutoff frequency? */
 			     mass1,			/** Mass 1 */
 			     mass2,			/** Mass 2 */
-			     LAL_AllInter,	/** Spin interaction */
+			     LAL_SIM_INSPIRAL_INTERACTION_All_SPIN,	/** Spin interaction */
 			     phaseO		/** PN Order in Phase */ ))
     XLAL_ERROR(XLAL_EFUNC);
 
