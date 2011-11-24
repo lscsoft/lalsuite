@@ -889,7 +889,6 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	memset(&injstart,0,sizeof(LIGOTimeGPS));
 	//memset(&InjParams,0,sizeof(PPNParamStruc));
 	COMPLEX16FrequencySeries *injF=NULL;
-  REAL8TimeSeries       *signalvecREAL8=NULL;
 	FILE *rawWaveform=NULL;
 	ProcessParamsTable *ppt=NULL;
 	REAL8 bufferLength = 512.0; /* Default length of buffer for injections (seconds) */
@@ -961,11 +960,13 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
                                                                            &thisData->timeData->epoch,
                                                                            0.0,
                                                                            thisData->timeData->deltaT,
-                                                                           &lalDimensionlessUnit,
+                                                                           //&lalDimensionlessUnit,
+                                                                           &lalStrainUnit,
                                                                            thisData->timeData->data->length);
 		if(!inj8Wave) XLAL_ERROR_VOID(XLAL_EFUNC);
 		/* This marks the sample in which the real segment starts, within the buffer */
 		for(i=0;i<injectionBuffer->data->length;i++) injectionBuffer->data->data[i]=0.0;
+    for(i=0;i<inj8Wave->data->length;i++) inj8Wave->data->data[i]=0.0;
         INT4 realStartSample=(INT4)((thisData->timeData->epoch.gpsSeconds - injectionBuffer->epoch.gpsSeconds)/thisData->timeData->deltaT);
 		realStartSample+=(INT4)((thisData->timeData->epoch.gpsNanoSeconds - injectionBuffer->epoch.gpsNanoSeconds)*1e-9/thisData->timeData->deltaT);
 
@@ -973,8 +974,9 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     //LALFindChirpInjectSignals(&status,injectionBuffer,injEvent,resp);
     if(LALInferenceGetProcParamVal(commandLine,"--LALSimulationInjection") || LALInferenceGetProcParamVal(commandLine,"--LALSimulationRestrictedInjection")){
       
-      REAL8TimeSeries *hplus=NULL;  /**< +-polarization waveform [returned] */
-      REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform [returned] */
+      REAL8TimeSeries *hplus=NULL;  /**< +-polarization waveform */
+      REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform */
+      REAL8TimeSeries       *signalvecREAL8=NULL;
       REAL8 S1[3], S2[3];
       LALPNOrder        order;              /* Order of the model             */
       Approximant       approximant;        /* And its approximant value      */
@@ -1001,7 +1003,15 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
                                                 injEvent->distance*LAL_PC_SI * 1.0e6, injEvent->inclination, order, approximant);
       }
       
+      XLALGPSAdd(&(hplus->epoch), -(REAL8)hplus->data->length*hplus->deltaT);
+      XLALGPSAdd(&(hcross->epoch), -(REAL8)hcross->data->length*hplus->deltaT);
+      
       signalvecREAL8=XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, injEvent->longitude, injEvent->latitude, injEvent->polarization, det.site);      
+      if (!signalvecREAL8) XLAL_ERROR_VOID(XLAL_EFUNC);      
+      
+      for(i=0;i<signalvecREAL8->data->length;i++){
+        if(isnan(signalvecREAL8->data->data[i])) signalvecREAL8->data->data[i]=0.0;
+      }
       
       if(signalvecREAL8->data->length > thisData->timeData->data->length-(UINT4)ceil((2.0*padding+2.0)/thisData->timeData->deltaT)){
         fprintf(stderr, "WARNING: waveform length = %u is longer than thisData->timeData->data->length = %d minus the window width = %d and the 2.0 seconds after tc (total of %d points available).\n", signalvecREAL8->data->length, thisData->timeData->data->length, (INT4)ceil((2.0*padding)/thisData->timeData->deltaT) , thisData->timeData->data->length-(INT4)ceil((2.0*padding+2.0)/thisData->timeData->deltaT));
