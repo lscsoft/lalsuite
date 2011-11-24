@@ -318,7 +318,7 @@ int XLALComputeFStatFreqBand (  MultiFstatFrequencySeries **fstatSeries,	/**< [o
     if ( params->returnSingleF ) {
       UINT4 X;
       for ( X=0; X < numDetectors; X ++) {
-       retFstatSeries->FX->data[X*numBins+k] = Fstat.FX[X]; /* fstatSeries->FX->data is ordered as (det1bin1,det1bin2,..,det1binN,det2bin1,...detMbinN) */
+       retFstatSeries->FX->data[FX_INDEX(retFstatSeries->FX, X, k) ] = Fstat.FX[X]; /* fstatSeries->FX->data is ordered as (det1bin1,det1bin2,..,det1binN,det2bin1,...detMbinN) */
       }
     }
 

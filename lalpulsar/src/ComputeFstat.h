@@ -181,6 +181,10 @@ typedef struct tagMultiFstatFrequencySeries {
   REAL4VectorSequence *FX;	/**< vector of all single-IFO F-stat values over frequency band, ordered as (det1bin1,det1bin2,..,det1binN,det2bin1,...detMbinN) */
 } MultiFstatFrequencySeries;
 
+/* macro to index arrays in the MultiFstatFrequencySeries->FX structure */
+#define FX_INDEX(FX, iDet, iFreq)          \
+  ( ( (iDet) * (FX)->vectorLength ) + (iFreq) )
+
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */
 extern const SSBtimes empty_SSBtimes;
