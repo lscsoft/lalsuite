@@ -8,14 +8,11 @@ LC_ALL_old=$LC_ALL
 export LC_ALL=C
 
 ## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-    injectdir="../Injections/"
-    fdsdir="../FDS_isolated/"
-else
-    srcdir=.
-fi
+builddir="./";
+injectdir="../Injections/"
+fdsdir="../FDS_isolated/"
 dirsep=/
+
 if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
     builddir="./";
     injectdir="$1 ./"
@@ -303,8 +300,8 @@ if [ -z "$NORESAMP" ]; then
     fi
     topline=$(sort -nr -k6,6 $outfile_GCT_RS | head -1)
     resGCT_RS=$(echo $topline | awk '{print $6}')
-    resGCT_RS_H1=$(echo $topline | awk '{print $8}')
-    resGCT_RS_L1=$(echo $topline | awk '{print $9}')
+    resGCT_RS_L1=$(echo $topline | awk '{print $8}')
+    resGCT_RS_H1=$(echo $topline | awk '{print $9}')
     freqGCT_RS=$(echo $topline | awk '{print $1}')
 else
     echo
@@ -330,8 +327,8 @@ fi
 
 topline=$(sort -nr -k6,6 $outfile_GCT_DM | head -1)
 resGCT_DM=$(echo $topline  | awk '{print $6}')
-resGCT_DM_H1=$(echo $topline  | awk '{print $8}')
-resGCT_DM_L1=$(echo $topline  | awk '{print $9}')
+resGCT_DM_L1=$(echo $topline  | awk '{print $8}')
+resGCT_DM_H1=$(echo $topline  | awk '{print $9}')
 freqGCT_DM=$(echo $topline | awk '{print $1}')
 
 ## ---------- compute relative differences and check against tolerance --------------------
