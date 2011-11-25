@@ -157,6 +157,8 @@ int XLALPrintWarning(const char *fmt, ...);
 /** Prints an info message if info printing is enabled by lalDebugLevel. */
 int XLALPrintInfo(const char *fmt, ...);
 
+#ifndef SWIG /* exclude from SWIG interface */
+
 /** Prints an error message if error printing is enabled by lalDebugLevel. */
 int XLALVPrintError(const char *fmt, va_list ap);
 
@@ -165,6 +167,8 @@ int XLALVPrintWarning(const char *fmt, va_list ap);
 
 /** Prints an info message if info printing is enabled by lalDebugLevel. */
 int XLALVPrintInfo(const char *fmt, va_list ap);
+
+#endif /* SWIG */
 
 
 /*
@@ -185,6 +189,8 @@ void XLALPrintWarningMessage(const char *func, const char *file, int line, const
  * are enabled by lalDebugLevel).  */
 void XLALPrintInfoMessage(const char *func, const char *file, int line, const char *fmt, ...);
 
+#ifndef SWIG /* exclude from SWIG interface */
+
 /** Print an error message with standard XLAL formatting (if error messages
  * are enabled by lalDebugLevel).  */
 void XLALVPrintErrorMessage(const char *func, const char *file, int line, const char *fmt, va_list ap);
@@ -196,6 +202,8 @@ void XLALVPrintWarningMessage(const char *func, const char *file, int line, cons
 /** Print an error message with standard XLAL formatting (if error messages
  * are enabled by lalDebugLevel).  */
 void XLALVPrintInfoMessage(const char *func, const char *file, int line, const char *fmt, va_list ap);
+
+#endif /* SWIG */
 
 /** Prints a progress bar at the "info" verbosity level. */
 int XLALPrintProgressBar(double);
