@@ -40,6 +40,7 @@ fi
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
 pfs_code="${fdsdir}lalapps_PredictFStat"
+cfs_code="${fdsdir}lalapps_ComputeFStatistic_v2"
 if test $# -eq 0 ; then
     gct_code="${builddir}lalapps_HierarchSearchGCT"
 else
@@ -81,13 +82,16 @@ mfd_FreqBand=0.20;
 mfd_fmin=100;
 numFreqBands=4;	## produce 'frequency-split' SFTs used in E@H
 
+Dterms=16
+RngMedWindow=50
+
 gct_FreqBand=0.01
 gct_F1dotBand=2.0e-10
 gct_dFreq=0.000002 #"2.0e-6"
 gct_dF1dot=1.0e-10
 gct_nCands=1000
 
-sqrtSh=0
+sqrtSh=1
 
 ## --------- Generate fake data set time stamps -------------
 echo "----------------------------------------------------------------------"
@@ -207,16 +211,16 @@ done
 
 echo
 echo "----------------------------------------------------------------------"
-echo "STEP 2: run PredictFstat over segments"
+echo "STEP 2: run CFSv2 over segments"
 echo "----------------------------------------------------------------------"
 echo
-outfile_pfs="${testDir}${dirsep}PFS.dat";
+outfile_cfs="${testDir}${dirsep}CFS.dat";
 
-if [ ! -r "$outfile_pfs" ]; then
-    tmpfile_pfs="${testDir}${dirsep}__tmp_PFS.dat";
-    pfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --outputFstat=$tmpfile_pfs --ephemYear=05-09"
+if [ ! -r "$outfile_cfs" ]; then
+    tmpfile_cfs="${testDir}${dirsep}__tmp_CFS.dat";
+    cfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --f1dot=$f1dot --outputLoudest=$tmpfile_cfs --ephemYear=05-09 --refTime=$refTime --Dterms=$Dterms --RngMedWindow=$RngMedWindow"
     if [ "$sqrtSh" = "0" ]; then
-        pfs_CL_common="$pfs_CL_common --SignalOnly";
+        cfs_CL_common="$cfs_CL_common --SignalOnly";
     fi
 
     TwoFsum=0
@@ -226,58 +230,60 @@ if [ ! -r "$outfile_pfs" ]; then
     for ((iSeg=1; iSeg <= $Nsegments; iSeg++)); do
         startGPS=${segs[$iSeg]}
         endGPS=$(($startGPS + $Tsegment))
-        pfs_CL="$pfs_code $pfs_CL_common --minStartTime=$startGPS --maxEndTime=$endGPS"
+        cfs_CL="$cfs_code $cfs_CL_common --minStartTime=$startGPS --maxEndTime=$endGPS"
 
         # ----- multi-IFO F
-        cmdline="$pfs_CL --DataFiles='$SFTfiles'"
+        cmdline="$cfs_CL --DataFiles='$SFTfiles'"
         echo "$cmdline"
         if ! eval "$cmdline &> /dev/null"; then
-	    echo "Error.. something failed when running '$pfs_code' ..."
+	    echo "Error.. something failed when running '$cfs_code' ..."
 	    exit 1
         fi
-        resPFS=$(cat ${tmpfile_pfs} | grep 'twoF_expected' | awk '{printf "%g\n", $3}')
-        TwoFsum=$(echo $TwoFsum $resPFS | awk '{printf "%.11g", $1 + $2}')
+        resCFS=$(cat ${tmpfile_cfs} | grep 'twoF' | awk '{printf "%g\n", $3}')
+        TwoFsum=$(echo $TwoFsum $resCFS | awk '{printf "%.11g", $1 + $2}')
 
         # ----- single-IFO 'H1' (for all but non-existing segment 1 )
         if [ $iSeg -ne 1 ]; then
-            cmdline="$pfs_CL --DataFiles='$SFTfiles_H1'"
+            cmdline="$cfs_CL --DataFiles='$SFTfiles_H1'"
             echo "$cmdline"
             if ! eval "$cmdline &> /dev/null"; then
-	        echo "Error.. something failed when running '$pfs_code' ..."
+	        echo "Error.. something failed when running '$cfs_code' ..."
 	        exit 1
             fi
-            resPFS=$(cat ${tmpfile_pfs} | grep 'twoF_expected' | awk '{printf "%g\n", $3}')
-            TwoFsum_H1=$(echo $TwoFsum_H1 $resPFS | awk '{printf "%.11g", $1 + $2}')
+            resCFS=$(cat ${tmpfile_cfs} | grep 'twoF' | awk '{printf "%g\n", $3}')
+            TwoFsum_H1=$(echo $TwoFsum_H1 $resCFS | awk '{printf "%.11g", $1 + $2}')
         fi
 
         # ----- single-IFO 'L1' (for all but nonexisting segment N)
         if [ $iSeg -ne $Nsegments ]; then
-            cmdline="$pfs_CL --DataFiles='$SFTfiles_L1'"
+            cmdline="$cfs_CL --DataFiles='$SFTfiles_L1'"
             echo "$cmdline"
             if ! eval "$cmdline &> /dev/null"; then
-	        echo "Error.. something failed when running '$pfs_code' ..."
+	        echo "Error.. something failed when running '$cfs_code' ..."
 	        exit 1
             fi
-            resPFS=$(cat ${tmpfile_pfs} | grep 'twoF_expected' | awk '{printf "%g\n", $3}')
-            TwoFsum_L1=$(echo $TwoFsum_L1 $resPFS | awk '{printf "%.11g", $1 + $2}')
+            resCFS=$(cat ${tmpfile_cfs} | grep 'twoF' | awk '{printf "%g\n", $3}')
+            TwoFsum_L1=$(echo $TwoFsum_L1 $resCFS | awk '{printf "%.11g", $1 + $2}')
         fi
     done
 
     TwoFAvg=$(echo    $TwoFsum    $Nsegments | awk '{printf "%.11g", $1 / ($2)}')
     TwoFAvg_H1=$(echo $TwoFsum_H1 $Nsegments | awk '{printf "%.11g", $1 / ($2-1)}')
     TwoFAvg_L1=$(echo $TwoFsum_L1 $Nsegments | awk '{printf "%.11g", $1 / ($2-1)}')
-    echo "$TwoFAvg	$TwoFAvg_H1	$TwoFAvg_L1" > $outfile_pfs
+    echo "$TwoFAvg	$TwoFAvg_H1	$TwoFAvg_L1" > $outfile_cfs
 else
-    echo "PFS result file '$outfile_pfs' exists already ... reusing it"
-    pfs_res=$(cat $outfile_pfs)
-    TwoFAvg=$(echo $pfs_res | awk '{print $1}')
-    TwoFAvg_H1=$(echo $pfs_res | awk '{print $2}')
-    TwoFAvg_L1=$(echo $pfs_res | awk '{print $3}')
+    echo "CFS result file '$outfile_cfs' exists already ... reusing it"
+    cfs_res=$(cat $outfile_cfs)
+    TwoFAvg=$(echo $cfs_res | awk '{print $1}')
+    TwoFAvg_H1=$(echo $cfs_res | awk '{print $2}')
+    TwoFAvg_L1=$(echo $cfs_res | awk '{print $3}')
 fi
 
 echo "==>   Average <2F_multi>=$TwoFAvg, <2F_H1>=$TwoFAvg_H1, <2F_L1>=$TwoFAvg_L1"
 
-gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --ephemE=$edat --ephemS=$sdat --outputFX"
+## ---------- run GCT code on this data ----------------------------------------
+
+gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --ephemE=$edat --ephemS=$sdat --outputFX --Dterms=$Dterms --blocksRngMed=$RngMedWindow"
 if [ "$sqrtSh" = "0" ]; then
     gct_CL_common="$gct_CL_common --SignalOnly";
 fi
