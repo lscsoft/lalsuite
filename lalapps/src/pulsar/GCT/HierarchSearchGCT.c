@@ -552,25 +552,18 @@ int MAIN( int argc, char *argv[]) {
 
     } /* end of logging */
 
-  /* prepare timing-file: write header-line with columns headings if file doesn't exist yet */
+  /* prepare timing-file: write header-line with columns headings */
   if ( uvar_outputTiming )
     {
       FILE *timing_fp;
-      if ( (timing_fp = fopen ( uvar_outputTiming, "r" )) == NULL )
-        {
-          if ( (timing_fp = fopen ( uvar_outputTiming, "wb" )) == NULL ) {
-            XLALPrintError ("Failed to open new timing file '%s' for writing.\n", uvar_outputTiming );
-            return HIERARCHICALSEARCH_EFILE;
-          }
-          /* write column headings */
-          fprintf ( timing_fp, "%6s %6s %6s %6s %6s %6s %6s    %9s %9s %9s %9s\n",
-                    "Nsky", "Nf1", "Nf_F", "Nf_SB", "Nsft", "Nseg", "refine", "tau [s]", "tcoh [s]", "tsc [s]", "tLV [s]" );
-          fclose ( timing_fp );
-        } /* if timing file doesn't exist yet */
-      else
-        {
-          fclose ( timing_fp );
-        } /* if timing-file exist already */
+      if ( (timing_fp = fopen ( uvar_outputTiming, "ab" )) == NULL ) {
+        XLALPrintError ("Failed to open timing file '%s' for writing/appending.\n", uvar_outputTiming );
+        return HIERARCHICALSEARCH_EFILE;
+      }
+      /* write column headings */
+      fprintf ( timing_fp, "%6s %6s %6s %6s %6s %6s %6s    %9s %9s %9s %9s\n",
+                "%% Nsky", "Nf1", "Nf_F", "Nf_SB", "Nsft", "Nseg", "refine", "tau [s]", "tcoh [s]", "tsc [s]", "tLV [s]" );
+      fclose ( timing_fp );
     } /* if outputTiming */
 
   /* initializations of coarse and fine grids */
