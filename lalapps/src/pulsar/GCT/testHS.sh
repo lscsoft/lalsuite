@@ -39,7 +39,6 @@ fi
 
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
-pfs_code="${fdsdir}lalapps_PredictFStat"
 cfs_code="${fdsdir}lalapps_ComputeFStatistic_v2"
 if test $# -eq 0 ; then
     gct_code="${builddir}lalapps_HierarchSearchGCT"
@@ -288,9 +287,10 @@ echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_RS="${testDir}${dirsep}GCT_RS.dat"
+timingsfile_RS="${testDir}${dirsep}timing_RS.dat"
 
 if [ -z "$NORESAMP" ]; then
-    cmdline="$gct_code $gct_CL_common --fnameout=$outfile_GCT_RS --useResamp"
+    cmdline="$gct_code $gct_CL_common --useResamp=true --fnameout=$outfile_GCT_RS --outputTiming=$timingsfile_RS"
     echo "$cmdline"
     if ! eval "$cmdline &> /dev/null"; then
 	echo "Error.. something failed when running '$gct_code' ..."
@@ -314,9 +314,10 @@ echo "--------------------------------------------------------------------------
 echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-
 outfile_GCT_DM="${testDir}${dirsep}GCT_DM.dat"
-cmdline="$gct_code $gct_CL_common --fnameout=$outfile_GCT_DM"
+timingsfile_DM="${testDir}${dirsep}timing_DM.dat"
+
+cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout=$outfile_GCT_DM --outputTiming=$timingsfile_DM"
 echo $cmdline
 if ! eval "$cmdline &> /dev/null"; then
     echo "Error.. something failed when running '$gct_code' ..."
@@ -349,9 +350,17 @@ retstatus=0
 awk_isgtr='{if($1>$2) {print "1"}}'
 
 echo
-echo "--------------------------------------------------------------------------------------------------------------"
+echo "--------- Timings ------------------------------------------------------------------------------------------------"
+awk_timing='BEGIN { timingsum = 0; counter=0; } { timingsum=timingsum+$8; counter=counter+1; } END {printf "%.3g", timingsum/counter}'
+timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
+timing_RS=$(sed '/^%.*/d' $timingsfile_RS | awk "$awk_timing")
+echo " GCT-LALDemod:  tauCoh = $timing_DM s"
+echo " GCT-Resamp:    tauCoh = $timing_RS s"
+
+echo
+echo "--------- Compare results ----------------------------------------------------------------------------------------"
 echo "                     	<2F_multi>	<2F_H1>  	<2F_L1>  	@ Freq [Hz]     	(reldev, reldev_H1, reldev_L1, reldev_Freq)"
-echo    "==>  Predicted:    	$TwoFAvg 	$TwoFAvg_H1   	$TwoFAvg_L1   	@ $Freq 	[Tolerance = ${Tolerance}]"
+echo    "==>  CFSv2:         	$TwoFAvg 	$TwoFAvg_H1   	$TwoFAvg_L1   	@ $Freq 	[Tolerance = ${Tolerance}]"
 
 echo -n "==>  GCT-LALDemod: 	$resGCT_DM 	$resGCT_DM_H1 	$resGCT_DM_L1  	@ $freqGCT_DM 	($reldev_DM, $reldev_DM_H1, $reldev_DM_L1, $freqreldev_DM)"
 fail1=$(echo $freqreldev_DM $Tolerance | awk "$awk_isgtr")
