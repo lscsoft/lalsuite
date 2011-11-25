@@ -369,7 +369,13 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 
   /* if requested, prepare for returning single-IFO F-stat vector */
   if ( params->returnSingleF )
-    retF.numDetectors = numDetectors;
+    {
+      retF.numDetectors = numDetectors;
+      if ( numDetectors > CFS_MAX_IFOS ) {
+        XLALPrintError ("%s: numDetectors = %d exceeds currently allowed upper limit of detectors (%d) for returnSingleF=TRUE\n", __func__, numDetectors, CFS_MAX_IFOS );
+        ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+      }
+    }
 
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( X=0; X < numDetectors; X ++)
