@@ -351,7 +351,7 @@ awk_isgtr='{if($1>$2) {print "1"}}'
 
 echo
 echo "--------- Timings ------------------------------------------------------------------------------------------------"
-awk_timing='BEGIN { timingsum = 0; counter=0; } { timingsum=timingsum+$8; counter=counter+1; } END {printf "%.3g", timingsum/counter}'
+awk_timing='BEGIN { timingsum = 0; counter=0; } { timingsum=timingsum+$9; counter=counter+1; } END {printf "%.3g", timingsum/counter}'
 timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
 timing_RS=$(sed '/^%.*/d' $timingsfile_RS | awk "$awk_timing")
 echo " GCT-LALDemod:  tauCoh = $timing_DM s"
