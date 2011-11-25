@@ -109,6 +109,8 @@ if ! eval $cmdline; then
 fi
 
 
+timing_awk='BEGIN { timingsum = 0; counter=0; } { timingsum=timingsum+$9; counter=counter+1; } END {printf "%.3g", timingsum/counter}'
+
 echo
 echo "----------------------------------------------------------------------"
 echo " STEP 2a: run standard ComputeFStatistic_v2"
@@ -151,7 +153,7 @@ timingsfile="cfs_timing.dat"
     fi
     twoFcfs_L1=$(sed 's/\;//' $outfile_cfs_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
     twoFcfs_L1_all=$(sed -e '/%/d;'  $outfile_cfs_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
-    timing_plain=$(sed '/^%.*/d' $timingsfile | LC_ALL=C awk 'BEGIN { timingsum = 0; } { timingsum=timingsum+$2 } END {printf "%.6f", timingsum}' )
+    timing_plain=$(sed '/^%.*/d' $timingsfile | LC_ALL=C awk "$timing_awk")
 
 
 echo
@@ -172,7 +174,7 @@ timingsfile_toplist="cfs_timing_toplist.dat"
      fi
      twoFcfs_toplist_multi=$(sed 's/\;//' $outfile_cfs_toplist_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
      twoFcfs_toplist_multi_all=$(sed -e '/%/d;'  $outfile_cfs_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
-     timing_toplist=$(sed '/^%.*/d' $timingsfile_toplist | LC_ALL=C awk 'BEGIN { timingsum = 0; } { timingsum=timingsum+$2 } END {printf "%.6f", timingsum}' )
+     timing_toplist=$(sed '/^%.*/d' $timingsfile_toplist | LC_ALL=C awk "$timing_awk" )
 
 echo
 echo "----------------------------------------------------------------------"
@@ -196,7 +198,7 @@ timingsfile_singleF="cfs_timing_singleF.dat"
      twoFcfs_singleF_multi_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
      twoFcfs_singleF_H1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$8}')
      twoFcfs_singleF_L1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$9}')
-     timing_singleF=$(sed '/^%.*/d' $timingsfile_singleF | LC_ALL=C awk 'BEGIN { timingsum = 0; } { timingsum=timingsum+$2 } END {printf "%.6f", timingsum}' )
+     timing_singleF=$(sed '/^%.*/d' $timingsfile_singleF | LC_ALL=C awk "$timing_awk" )
 
 echo
 echo "----------------------------------------------------------------------"
@@ -220,7 +222,7 @@ timingsfile_singleF_toplist="cfs_timing_singleF_toplist.dat"
      twoFcfs_singleF_toplist_multi_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
      twoFcfs_singleF_toplist_H1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$8}')
      twoFcfs_singleF_toplist_L1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$9}')
-     timing_singleF_toplist=$(sed '/^%.*/d' $timingsfile_singleF_toplist | LC_ALL=C awk 'BEGIN { timingsum = 0; } { timingsum=timingsum+$2 } END {printf "%.6f", timingsum}' )
+     timing_singleF_toplist=$(sed '/^%.*/d' $timingsfile_singleF_toplist | LC_ALL=C awk "$timing_awk" )
 
 
 echo
