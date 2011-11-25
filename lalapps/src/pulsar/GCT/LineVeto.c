@@ -600,6 +600,13 @@ XLALGetDetectorIDs ( const MultiSFTVectorSequence *multiSFTsV /**< data files (S
 
   } /* for k < numSegments */
 
+  /* sort final list by detector-name */
+  XLALSortStringVector ( IFOList );
+  if ( xlalErrno != 0 ) {
+    XLALPrintError ("\nError in function %s, line %d : Failed call to XLALSortStringVector().\n\n", __func__, __LINE__);
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  }
+
   return IFOList;
 
 } /* XLALGetDetectorIDs() */
