@@ -190,7 +190,7 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
 /** \brief Rotate initial phase if polarisation angle is cyclic around ranges
  * 
  * If the polarisation angle parameter \f$\psi\f$ is cyclic about its upper and
- * lower ranges of \f$-\pi/4\f$ to \f$\psi/4\f$ then the transformation for
+ * lower ranges of \f$-\pi/4\f$ to \f$\pi/4\f$ then the transformation for
  * crossing a boundary requires the initial phase parameter \f$\phi_0\f$ to be
  * rotated through \f$\pi\f$ radians. The function assumes the value of
  * \f$\psi\f$ has been rescaled to be between 0 and \f$2\pi\f$ - this is a
@@ -200,7 +200,6 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
  * This is particularly relevant for pulsar analyses.
  * 
  * \param parameter [in] Pointer to an array of parameters
- * \param priorArgs [in] Pointer to an array of prior ranges
  */
 void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter){
   LALInferenceVariableItem *paraHead = NULL;
