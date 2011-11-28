@@ -93,8 +93,6 @@ LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
 LALSUITE_ENABLE_LALSTOCHASTIC
 
-AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
-
 # put version/configure info in config header
 lalapps_version_major=`echo "$VERSION" | cut -d. -f1`
 lalapps_version_minor=`echo "$VERSION" | cut -d. -f2`
