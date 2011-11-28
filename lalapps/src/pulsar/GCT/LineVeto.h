@@ -95,12 +95,11 @@ REAL8
 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,
 			    const INT4 X );
 
-REAL8
-XLALComputeLineVeto ( const REAL8 TwoF,
-		      const REAL8Vector *TwoFX,
-		      const REAL8 rhomaxline,
-		      const REAL8 rhomaxsig,
-		      const REAL8Vector *priorX );
+REAL4
+XLALComputeLineVeto ( const REAL4 TwoF,
+		      const REAL4Vector *TwoFX,
+		      const REAL4 rhomaxline,
+		      const REAL4Vector *priorX );
 
 LALStringVector *
 XLALGetDetectorIDs ( const MultiSFTVectorSequence *multiSFTsV );

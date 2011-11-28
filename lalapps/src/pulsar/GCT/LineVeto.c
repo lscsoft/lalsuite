@@ -480,58 +480,63 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
 
 
 /** XLAL function to compute Line Veto statistics from multi- and single-detector Fstats:
- *  LV = log( e^2F / sum(e^2FX) )
+ *  LV = F - log ( rhomaxline^4/70 + sum(e^FX) )
  *  implemented by log sum exp formula:
- *  LV = 2F - max(2FX) - log( sum(e^(2FX-max(2FX))) )
+ *  LV = F - max(denom_terms) - log( sum(e^(denom_term-max)) )
+ *  from the analytical derivation, there should be a term LV += O_SN^0 + 4.0*log(rhomaxline/rhomaxsig)
+ *  but this is irrelevant for toplist sorting, only a normalization which can be replaced arbitrarily
 */
-REAL8 XLALComputeLineVeto ( const REAL8 TwoF,          /**< multi-detector  Fstat */
-                            const REAL8Vector *TwoFX,  /**< vector of single-detector Fstats */
-                            const REAL8 rhomaxline, /**< amplitude prior normalization for lines */
-                            const REAL8 rhomaxsig,  /**< amplitude prior normalization for signals (either both >0 for full formula, or both =0 for "simple veto" */
-                            const REAL8Vector *priorX  /**< vector of single-detector prior line odds ratio, set all to 1/numDetectors for neutral analysis */
-		          )
+REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fstat */
+                            const REAL4Vector *TwoFX,  /**< vector of single-detector Fstats */
+                            const REAL4 rhomaxline,    /**< amplitude prior normalization for lines */
+                            const REAL4Vector *priorX  /**< vector of single-detector prior line odds ratio, set all to 1/2 for neutral analysis */
+                          )
 {
   /* check input parameters and report errors */
-  if ( !TwoF || !TwoFX || !TwoFX->data || !priorX || !priorX->data ) {
-    XLALPrintError ("\nError in function %s, line %d : Empty pointer as input parameter!\n\n", __func__, __LINE__);
-    XLAL_ERROR_REAL8 ( XLAL_EFAULT);
+  if ( !TwoF || !TwoFX || !TwoFX->data ) {
+    XLALPrintError ("\nError in function %s, line %d : Empty TwoF or TwoFX pointer as input parameter!\n\n", __func__, __LINE__);
+    XLAL_ERROR_REAL4 ( XLAL_EFAULT);
   }
 
   if ( TwoFX->length == 0 ) {
     XLALPrintError ("\nError in function %s, line %d :Input TwoFX vector has zero length!\n\n", __func__, __LINE__);
-    XLAL_ERROR_REAL8 ( XLAL_EBADLEN);
+    XLAL_ERROR_REAL4 ( XLAL_EBADLEN);
   }
 
-  if ( priorX->length == 0 ) {
-    XLALPrintError ("\nError in function %s, line %d :Input priorX vector has zero length!\n\n", __func__, __LINE__);
-    XLAL_ERROR_REAL8 ( XLAL_EBADLEN);
-  }
-
-  if ( ( rhomaxline < 0.0 ) || ( rhomaxsig < 0.0 ) ) {
-    XLALPrintError ("\nError in function %s, line %d : negative input rhomax!\n\n", __func__, __LINE__);
-    XLAL_ERROR_REAL8 ( XLAL_EFPINVAL);
+  if ( priorX && ( priorX->length != TwoFX->length ) ) {
+    XLALPrintError ("\nError in function %s, line %d :Input priorX and TwoFX vectors have different length!\n\n", __func__, __LINE__);
+    XLAL_ERROR_REAL4 ( XLAL_EBADLEN);
   }
 
   /* set up temporary variables and structs */
+  UINT4 numDetectors = TwoFX->length; /* number of detectors */
   UINT4 X;                            /* loop summation variable */
-  UINT4 numDetectors = TwoFX->length; /* loop summation upper limit for detectors */
-  REAL8 maxSum = -9999.0;             /* maximum of terms in denominator, for logsumexp formula */
-  REAL8 LV = 0.0;                     /* output variable for Line Veto statistics */
-  REAL8 logFXprior[numDetectors];     /* used to store log(e^(FX)*priorX) = FX + log(priorX) instead of recalculating it 3 times */
+  REAL4 maxSum = -9999.0;             /* maximum of terms in denominator, for logsumexp formula */
+  REAL4 LV = 0.0;                     /* output variable for Line Veto statistics */
+  REAL4 logFXprior[numDetectors];     /* used to store log(e^(FX)*priorX) = FX + log(priorX) instead of recalculating it 3 times */
 
-  for (X = 0; X < numDetectors; X++) {
-    if ( priorX->data[X] > 0.0 ) {
-      logFXprior[X] = TwoFX->data[X]/2.0 + log(priorX->data[X]);
-      if ( logFXprior[X] > maxSum ) {
-        maxSum = logFXprior[X];
+  if (priorX) { /* if specific priors passed, store them together with FX */
+    for (X = 0; X < numDetectors; X++) {
+      if ( priorX->data[X] > 0.0 ) {
+        logFXprior[X] = TwoFX->data[X]/2.0 + log(priorX->data[X]);
+        if ( logFXprior[X] > maxSum )
+          maxSum = logFXprior[X];
       }
-    }
-    else {
-     logFXprior[X] = -9999.0; /* if prior is 0 (or negative, which should not be), ignore term in summation later on */
+      else
+       logFXprior[X] = -9999.0; /* if prior is 0 (or negative, which should not be), ignore term in summation later on */
     }
   }
-  if ( rhomaxline > 0.0 ) {
-    REAL8 logrho = 4.0*log(rhomaxline)-log(70.0);
+  else { /* if NULL pointer passed for priorX, just use 0.5 for all X */
+    REAL4 log05 = log(0.5);
+    for (X = 0; X < numDetectors; X++) {
+      logFXprior[X] = TwoFX->data[X]/2.0 + log05;
+      if ( logFXprior[X] > maxSum )
+        maxSum = logFXprior[X];
+    }
+  }
+
+  if ( rhomaxline > 0.0 ) { /* if == 0.0, can just ignore it in summation. if < 0.0, treat as if == 0.0 */
+    REAL4 logrho = 4.0*log(rhomaxline)-log(70.0);
     if ( logrho > maxSum )
       maxSum = logrho;
     LV =  exp( logrho - maxSum );
@@ -539,20 +544,16 @@ REAL8 XLALComputeLineVeto ( const REAL8 TwoF,          /**< multi-detector  Fsta
 
   /* logsumexp formula */
   for (X = 0; X < numDetectors; X++) {
-    if ( logFXprior[X] > -99999 ) {
+    if ( logFXprior[X] > -9999 ) {
       LV += exp( logFXprior[X] - maxSum );
     }
   }
-  if ( LV <= 0 ) { /* return error code for log (0) */
+  if ( LV <= 0.0 ) { /* return error code for log (0) */
     XLALPrintError ("\nError in function %s, line %d : log(nonpositive) in LV denominator. \n\n", __func__, __LINE__);
-    XLAL_ERROR_REAL8 ( XLAL_EFPINVAL );
+    XLAL_ERROR_REAL4 ( XLAL_EFPINVAL );
   }
   else {
     LV = TwoF/2.0 - maxSum - log( LV );
-    if ( rhomaxline > 0.0 )
-      LV += 4.0*log(rhomaxline);
-    if ( rhomaxsig > 0.0 )
-      LV -= 4.0*log(rhomaxsig);
     return(LV);
   }
 

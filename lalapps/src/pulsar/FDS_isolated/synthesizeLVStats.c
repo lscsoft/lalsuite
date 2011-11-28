@@ -274,15 +274,15 @@ int main(int argc,char *argv[])
 
       /* initialise LVcomponents structure and allocate memory */
       UINT4 numDetectors = multiAtoms->length;
-      REAL8 rhomax = 4.0;
+      REAL4 rhomax = 4.0;
       LVcomponents   lvstats;      /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
       if ( (lvstats.TwoFX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
         XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, numDetectors );
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
-      REAL8Vector *linepriorX;
-      if ( (linepriorX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+      REAL4Vector *linepriorX;
+      if ( (linepriorX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
         XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, numDetectors );
         XLAL_ERROR ( XLAL_EFUNC );
       }
@@ -305,7 +305,7 @@ int main(int argc,char *argv[])
       }
 
       if ( uvar.computeLV ) {
-        lvstats.LV = XLALComputeLineVeto ( lvstats.TwoF, lvstats.TwoFX, rhomax, rhomax, linepriorX );
+        lvstats.LV = XLALComputeLineVeto ( (REAL4)lvstats.TwoF, (REAL4Vector*)lvstats.TwoFX, rhomax, linepriorX );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVeto().\n\n", __func__, __LINE__);
           XLAL_ERROR ( XLAL_EFUNC );
@@ -352,7 +352,7 @@ int main(int argc,char *argv[])
 
       /* ----- free Memory */
       XLALDestroyREAL8Vector ( lvstats.TwoFX );
-      XLALDestroyREAL8Vector ( linepriorX );
+      XLALDestroyREAL4Vector ( linepriorX );
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
       XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
 
