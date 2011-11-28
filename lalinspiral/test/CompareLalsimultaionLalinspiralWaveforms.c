@@ -174,10 +174,10 @@ int main(int argc , char **argv)
 	switch (params.approximant)
 	{
 		case EOBNRv2HM:
-			length = XLALSimInspiralChooseWaveform(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1, params.spin2, params.fLower, params.distance, params.inclination, otherIn.order, otherIn.order, params.approximant);
+			length = XLALSimInspiralChooseWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, params.distance, params.inclination, otherIn.order, otherIn.order, params.approximant);
 			break;
 		default:
-			length = XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, &tc, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1, params.spin2, params.fLower, params.distance, params.inclination, otherIn.order, params.approximant);
+			length = XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, params.distance, params.inclination, otherIn.order, params.approximant);
 	}
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;
