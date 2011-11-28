@@ -192,7 +192,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 
   /* Choose the template generator for inspiral signals */
   runState->template=&LALInferenceTemplateLAL;
-  if(LALInferenceGetProcParamVal(commandLine,"--LALSimulation")){
+  if(LALInferenceGetProcParamVal(commandLine,"--LALSimulation") || LALInferenceGetProcParamVal(commandLine,"--LALSimulationRestricted")){
     runState->template=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
     fprintf(stdout,"Template function called is \"LALInferenceTemplateXLALSimInspiralChooseWaveform\"\n");
   }else{
@@ -394,7 +394,7 @@ void initVariables(LALInferenceRunState *state)
                (--MTotMax max)                 Maximum total mass (35.0)\n\
                (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n\
                (--appendOutput fname)          Basename of the file to append outputs to\n\
-               (--LALSimulationRestricted)     If using the LALSimulation package, use XLALSimInspiralChooseRestrictedWaveform instead of XLALSimInspiralChooseWaveform\n";
+               (--LALSimulationRestricted)     Uses the LALSimulation package, with XLALSimInspiralChooseRestrictedWaveform instead of XLALSimInspiralChooseWaveform\n";
 
 
   /* Print command line arguments if state was not allocated */
