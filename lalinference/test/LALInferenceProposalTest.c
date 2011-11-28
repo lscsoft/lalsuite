@@ -477,7 +477,16 @@ void initVariables(LALInferenceRunState *state)
 	return;
 }
 
-extern LALInferenceVariables *output_array;
+static int cmpREAL8(const void *p1, const void *p2);
+static int cmpREAL8(const void *p1, const void *p2)
+{
+    REAL8 r1,r2;
+    r1=*(REAL8 *)p1;
+    r2=*(REAL8 *)p2;
+    if(r1<r2) return(-1);
+    if(r1==r2) return(0);
+    else return(1);
+}
 
 int main(int argc, char *argv[]) {
   
@@ -489,13 +498,15 @@ int main(int argc, char *argv[]) {
 	";
 	LALInferenceRunState *state=NULL;
 	ProcessParamsTable *procParams=NULL;
-	UINT4 Nmcmc=0,i=1;
+	UINT4 Nmcmc=0,i=1,NvarArray=0;
 	REAL8 logLmin=-DBL_MAX;
 	ProcessParamsTable *ppt=NULL;
 	FILE *outfile=NULL;
 	char *filename=NULL;
-	
-	
+	LALInferenceParam *param=NULL;
+	LALInferenceVariables *varArray=NULL;
+
+
 	/* Read command line and parse */
 	procParams=LALInferenceParseCommandLine(argc,argv);
 	/* initialise runstate based on command line */
@@ -519,7 +530,8 @@ int main(int argc, char *argv[]) {
 	state->algorithm=NULL;
 	state->evolve=NULL; /* Use MCMC for this? */
 	state->template=NULL;
-	state->logsample=NULL;
+    /* Log the samples to an array for later use */
+	state->logsample=&LALInferenceLogSampleToArray;
 	state->priorArgs=calloc(1,sizeof(LALInferenceVariables));
 	state->proposalArgs=calloc(1,sizeof(LALInferenceVariables));
 	state->algorithmParams=calloc(1,sizeof(LALInferenceVariables));
@@ -560,5 +572,29 @@ int main(int argc, char *argv[]) {
 	outfile=fopen("headers.txt","w");
     LALInferenceFprintParameterNonFixedHeaders(outfile,state->currentParams);
     fclose(outfile);
+    
+    /* Perform K-S test for parameters with analytic distributions */
+    varArray = *(LALInferenceVariables **)LALInferenceGetVariable(state->algorithmParams,"outputarray");
+    NvarArray = *(INT4 *)LALInferenceGetVariable(state->algorithmParams,"N_outputarray");
+    
+    if(NvarArray!=Nmcmc) printf("ERROR: Not all iterations were saved\n");
+
+    /* For each parameter */
+    for(param=state->currentParams->head; param; param=param->next)
+    {
+        if(param->type!=LALINFERENCE_REAL8_t) continue;
+        /* Create sorted parameter vector */
+        REAL8 *sampvec=calloc(Nmcmc,sizeof(REAL8));
+        for(i=0;i<NvarArray;i++)
+            sampvec[i]=*(REAL8 *)LALInferenceGetVariable(varArray[i],param->name);
+
+        
+
+        /* Create cumulative distribution */
+
+        free(sampvec);
+    }
+    
     return(0);
 }
+
