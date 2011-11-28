@@ -1764,7 +1764,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   
 	REAL8 mc;
   REAL8 phi0, deltaT, m1, m2, S1[3], S2[3], f_min, distance, inclination;
-  LIGOTimeGPS t0;
 	
   REAL8 padding=0.4; // hard coded value found in LALInferenceReadData(). Padding (in seconds) for the tuckey window.
   UINT8 windowshift=(UINT8) ceil(padding/IFOdata->timeData->deltaT);
@@ -1839,13 +1838,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 		exit(1);
 	}
 	
-  XLALGPSSetREAL8( &t0, start_time);
-  
 	INT4 errnum=0;
   if(LALInferenceCheckVariable(IFOdata->modelParams, "LALSimulationRestrictedWaveform")){
-    XLAL_TRY(ret=XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, &t0, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1, S2, f_min, distance, inclination, order, approximant), errnum);
+    XLAL_TRY(ret=XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1[0], S1[1], S1[2], S2[0], S2[1], S2[2], f_min, distance, inclination, order, approximant), errnum);
   }else{
-    XLAL_TRY(ret=XLALSimInspiralChooseWaveform(&hplus, &hcross, &t0, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1, S2, f_min, distance, inclination, order, approximant), errnum);
+    XLAL_TRY(ret=XLALSimInspiralChooseWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1[0], S1[1], S1[2], S2[0], S2[1], S2[2], f_min, distance, inclination, order, order, approximant), errnum);
   }
   
   
@@ -1858,7 +1855,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 		}
 		return;
   }
-	
+
+	// FIXME: these waveform shifts need to be checked
+	XLALGPSAdd(&(hplus->epoch), start_time);
+	XLALGPSAdd(&(hcross->epoch), start_time);
+
 	instant= (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)+hplus->data->length*deltaT;
 	
     /* write template (time axis) location in "->modelParams" so that     */
