@@ -12,7 +12,7 @@ URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Jolien Creighton <jolien@uwm.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: python
-Requires: gsl fftw3 libmetaio
+Requires: gsl fftw3
 Prefix: %{_prefix}
 
 %description
