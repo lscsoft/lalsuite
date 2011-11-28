@@ -1,4 +1,4 @@
-%define _prefix /opt/lscsoft/lalburst
+%define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
 Name: @PACKAGE@
@@ -34,7 +34,6 @@ library.
 %setup -q
 
 %build
-source /opt/lscsoft/lscsoft-user-env.sh
 %configure --disable-gcc-flags
 %{__make} V=1
 
