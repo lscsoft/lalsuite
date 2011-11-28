@@ -34,8 +34,7 @@ as well as the documentation for the library.
 %setup -q
 
 %build
-nightly_version=@NIGHTLY_VERSION@
-%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --disable-debug
+%configure --disable-gcc-flags --disable-debug
 %{__make} V=1
 
 %install
