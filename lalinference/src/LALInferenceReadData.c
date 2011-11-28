@@ -977,19 +977,9 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       REAL8TimeSeries *hplus=NULL;  /**< +-polarization waveform */
       REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform */
       REAL8TimeSeries       *signalvecREAL8=NULL;
-      REAL8 S1[3], S2[3];
       LALPNOrder        order;              /* Order of the model             */
       Approximant       approximant;        /* And its approximant value      */
 
-      
-      S1[0] = injEvent->spin1x;
-      S1[1] = injEvent->spin1y;
-      S1[2] = injEvent->spin1z;
-      
-      S2[0] = injEvent->spin2x;
-      S2[1] = injEvent->spin2y;
-      S2[2] = injEvent->spin2z;      
-      
       LALGetApproximantFromString(&status, injEvent->waveform, &approximant);
       LALGetOrderFromString(&status, injEvent->waveform, &order);
 
