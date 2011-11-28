@@ -39,9 +39,6 @@ AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
-# default install path
-AC_PREFIX_DEFAULT([/opt/lscsoft/lalmetaio])
-
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
