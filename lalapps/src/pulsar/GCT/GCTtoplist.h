@@ -36,6 +36,7 @@ extern int global_argc;
 typedef struct {
   REAL8 Freq;  /**< frequency */
   REAL8 F1dot;/**< spindown value f1dot = df/dt */
+  REAL8 F2dot;/**< spindown value f2dot = d2f/dt2 */
   REAL8 Alpha; /**< skyposition: longitude in equatorial coords, radians */
   REAL8 Delta;/**< skyposition: latitude */
   REAL4 sumTwoF;  /**< sum of 2F-values */

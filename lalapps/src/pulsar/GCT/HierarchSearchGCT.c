@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2011      Karl Wette.
  *  Copyright (C) 2009-2010 Holger Pletsch.
  *
  *  Based on HierarchicalSearch.c by
@@ -22,7 +23,7 @@
  */
 
 /*********************************************************************************/
-/** \author Holger Pletsch
+/** \author Holger Pletsch, Karl Wette
  * \file
  * \ingroup pulsarApps
  * \brief Hierarchical semicoherent CW search code based on F-Statistic,
@@ -91,6 +92,8 @@ int global_argc;
 #define FBAND           0.01  /**< Default search band */
 #define FDOT            0.0	  /**< Default value of first spindown */
 #define DFDOT           0.0	  /**< Default range of first spindown parameter */
+#define F2DOT           0.0       /**< Default value of second spindown */
+#define DF2DOT          0.0       /**< Default range of second spindown parameter */
 #define SKYREGION       "allsky" /**< default sky region to search over -- just a single point*/
 #define DTERMS          16    /**< Default number of dirichlet kernel terms for calculating Fstat */
 
@@ -241,20 +244,26 @@ int MAIN( int argc, char *argv[]) {
   REAL8 df1dot;  /* coarse grid resolution in spindown */
   UINT4 nf1dot;  /* number of coarse-grid spindown values */
   UINT4 ifdot;  /* counter for coarse-grid spindown values */
+  REAL8 df2dot;  /* coarse grid resolution in 2nd spindown */
+  UINT4 nf2dot;  /* number of coarse-grid 2nd spindown values */
+  UINT4 if2dot;  /* counter for coarse-grid 2nd spindown values */
 
   /* fine grid */
   FineGrid finegrid;
   UINT4 nfreqs_fg, nf1dots_fg=1; /* number of frequency and spindown values */
   REAL8 gammaRefine, sigmasq;  /* refinement factor and variance */
+  UINT4 nf2dots_fg=1;          /* number of second spindown values */
+  REAL8 gamma2Refine, sigma4;  /* 2nd spindown refinement factor and 4th moment */
 
   /* GCT helper variables */
-  UINT4 ic, ic2, ic3, ifine, ifreq_fg, if1dot_fg;
+  UINT4 ic, ic2, ic3, ic4, ifine, ifreq_fg, if1dot_fg, if2dot_fg;
   UINT4 fveclength, ifreq;
   INT4  U1idx;
   REAL8 myf0, freq_event, f1dot_event, deltaF, f1dot_eventB1;
   REAL8 dfreq_fg, df1dot_fg, freqmin_fg, f1dotmin_fg, freqband_fg;
+  REAL8 df2dot_fg, f2dotmin_fg;
   REAL8 u1start, u1win, u1winInv;
-  REAL8 freq_tmp, f1dot_tmp;
+  REAL8 freq_tmp, f1dot_tmp, f2dot_tmp;
   REAL4 Fstat, TwoFthreshold, sumTwoFmax; /* REAL4 precision of Fstat values */
   UINT4 nc_max;
   REAL8 A1, B1, A2, B2; /* GCT helper variables for faster calculation of u1 or u2 */
@@ -314,12 +323,15 @@ int MAIN( int argc, char *argv[]) {
   REAL8 uvar_dAlpha = DALPHA; 	/* resolution for flat or isotropic grids -- coarse grid*/
   REAL8 uvar_dDelta = DDELTA;
   REAL8 uvar_f1dot = FDOT; 	/* first spindown value */
-  REAL8 uvar_f1dotBand = 0.0; /* range of first spindown parameter */
+  REAL8 uvar_f1dotBand = DFDOT; /* range of first spindown parameter */
+  REAL8 uvar_f2dot = F2DOT;     /* second spindown value */
+  REAL8 uvar_f2dotBand = DF2DOT; /* range of second spindown parameter */
   REAL8 uvar_Freq = FSTART;
   REAL8 uvar_FreqBand = FBAND;
 
   REAL8 uvar_dFreq = 0;
   REAL8 uvar_df1dot = 0; /* coarse grid frequency and spindown resolution */
+  REAL8 uvar_df2dot = 0; /* coarse grid second spindown resolution */
 
   REAL8 uvar_ThrF = FSTATTHRESHOLD; /* threshold of Fstat to select peaks */
   REAL8 uvar_mismatch1 = MISMATCH; /* metric mismatch for first stage coarse grid */
@@ -340,6 +352,7 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_Dterms = DTERMS;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_gammaRefine = 1;
+  INT4 uvar_gamma2Refine = 1;
   INT4 uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
   INT4 uvar_gridType1 = GRID_METRIC;
   INT4 uvar_sftUpsampling = 1;
@@ -417,11 +430,15 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dot",        0,  UVAR_OPTIONAL, "Spindown parameter", &uvar_f1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot",       0,  UVAR_OPTIONAL, "Spindown resolution (default=1/Tstack^2)", &uvar_df1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Spindown Range", &uvar_f1dotBand), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f2dot",        0,  UVAR_OPTIONAL, "2nd spindown parameter", &uvar_f2dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "df2dot",       0,  UVAR_OPTIONAL, "2nd spindown resolution (default=1/Tstack^2)", &uvar_df2dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f2dotBand",    0,  UVAR_OPTIONAL, "2nd spindown Range", &uvar_f2dotBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_ThrF), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",   'm', UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gridType1",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType1),  &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "metricType1",  0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType1), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gammaRefine", 'g', UVAR_OPTIONAL, "Refinement of fine grid (default: use segment times)", &uvar_gammaRefine), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "gamma2Refine",'G', UVAR_OPTIONAL, "Refinement of f2dot fine grid (default: use segment times, -1=use gammaRefine)", &uvar_gamma2Refine), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output filename", &uvar_fnameout), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",      'n', UVAR_OPTIONAL, "No. of candidates to output", &uvar_nCand1), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);
@@ -653,8 +670,10 @@ int MAIN( int argc, char *argv[]) {
   /* the reference time value in spinRange_refTime will be set in SetUpSFTs() */
   usefulParams.spinRange_refTime.fkdot[0] = uvar_Freq; /* frequency */
   usefulParams.spinRange_refTime.fkdot[1] = uvar_f1dot;  /* 1st spindown */
+  usefulParams.spinRange_refTime.fkdot[2] = uvar_f2dot;  /* 2nd spindown */
   usefulParams.spinRange_refTime.fkdotBand[0] = uvar_FreqBand; /* frequency range */
   usefulParams.spinRange_refTime.fkdotBand[1] = uvar_f1dotBand; /* spindown range */
+  usefulParams.spinRange_refTime.fkdotBand[2] = uvar_f2dotBand; /* spindown range */
 
   usefulParams.edat = edat;
   usefulParams.minStartTimeGPS = minStartTimeGPS;
@@ -771,41 +790,83 @@ int MAIN( int argc, char *argv[]) {
     gammaRefine = sqrt(1.0 + 60 * sigmasq);   /* Eq. from PRL, page 3 */
   }
 
+  /* set Fstat 2nd spindown resolution (coarse grid) */
+  if ( LALUserVarWasSet(&uvar_df2dot) ) {
+    df2dot = uvar_df2dot;
+  }
+  else {
+    df2dot = 1.0/(tStack*tStack*tStack);
+  }
 
+  /* number of coarse grid 2nd spindown values */
+  nf2dot = (UINT4) ceil( usefulParams.spinRange_midTime.fkdotBand[2] / df2dot) + 1;
+
+  /* set number of fine-grid 2nd spindowns */
+  if ( LALUserVarWasSet(&uvar_gamma2Refine) ) {
+    /* use 1st spindown refinement if user value < 0 */
+    if ( uvar_gamma2Refine < 0 ) {
+      gamma2Refine = gammaRefine;
+    }
+    else {
+      gamma2Refine = uvar_gamma2Refine;
+    }
+  }
+  else {
+    sigmasq = sigma4 = 0.0; /* second and 4th moment of segments' midpoints */
+    for (k = 0; k < nStacks; k++) {
+      midTstackGPS = midTstack->data[k];
+      timeDiffSeg = XLALGPSDiff( &midTstackGPS, &tMidGPS );
+      sigmasq = sigmasq + (timeDiffSeg * timeDiffSeg);
+      sigma4  = sigma4  + (timeDiffSeg * timeDiffSeg * timeDiffSeg * timeDiffSeg);
+    }
+    sigmasq = sigmasq / (nStacks * tStack * tStack);
+    sigma4  = sigma4  / (nStacks * tStack * tStack * tStack * tStack);
+    /* 2nd spindown refinement factor gamma2/gamma1 (approximate)
+       see Pletsch, PRD 82 042002, 2010 */
+    gamma2Refine = sqrt( 2100.0 * (sigma4 - sigmasq*sigmasq) );
+  }
 
   /**** debugging information ******/
   /* print some debug info about spinrange */
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at refTime (%d): [%f-%f], [%e-%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at refTime (%d): [%f-%f], [%e-%e], [%e-%e]\n",
 	    usefulParams.spinRange_refTime.refTime.gpsSeconds,
 	    usefulParams.spinRange_refTime.fkdot[0],
 	    usefulParams.spinRange_refTime.fkdot[0] + usefulParams.spinRange_refTime.fkdotBand[0],
 	    usefulParams.spinRange_refTime.fkdot[1],
-	    usefulParams.spinRange_refTime.fkdot[1] + usefulParams.spinRange_refTime.fkdotBand[1]);
+            usefulParams.spinRange_refTime.fkdot[1] + usefulParams.spinRange_refTime.fkdotBand[1],
+            usefulParams.spinRange_refTime.fkdot[2],
+            usefulParams.spinRange_refTime.fkdot[2] + usefulParams.spinRange_refTime.fkdotBand[2]);
 
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at startTime (%d): [%f-%f], [%e-%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at startTime (%d): [%f-%f], [%e-%e], [%e-%e]\n",
 	    usefulParams.spinRange_startTime.refTime.gpsSeconds,
 	    usefulParams.spinRange_startTime.fkdot[0],
 	    usefulParams.spinRange_startTime.fkdot[0] + usefulParams.spinRange_startTime.fkdotBand[0],
 	    usefulParams.spinRange_startTime.fkdot[1],
-	    usefulParams.spinRange_startTime.fkdot[1] + usefulParams.spinRange_startTime.fkdotBand[1]);
+            usefulParams.spinRange_startTime.fkdot[1] + usefulParams.spinRange_startTime.fkdotBand[1],
+            usefulParams.spinRange_startTime.fkdot[2],
+            usefulParams.spinRange_startTime.fkdot[2] + usefulParams.spinRange_startTime.fkdotBand[2]);
 
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at midTime (%d): [%f-%f], [%e-%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at midTime (%d): [%f-%f], [%e-%e], [%e-%e]\n",
 	    usefulParams.spinRange_midTime.refTime.gpsSeconds,
 	    usefulParams.spinRange_midTime.fkdot[0],
 	    usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0],
 	    usefulParams.spinRange_midTime.fkdot[1],
-	    usefulParams.spinRange_midTime.fkdot[1] + usefulParams.spinRange_midTime.fkdotBand[1]);
+            usefulParams.spinRange_midTime.fkdot[1] + usefulParams.spinRange_midTime.fkdotBand[1],
+            usefulParams.spinRange_midTime.fkdot[2],
+            usefulParams.spinRange_midTime.fkdot[2] + usefulParams.spinRange_midTime.fkdotBand[2]);
 
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at endTime (%d): [%f-%f], [%e-%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at endTime (%d): [%f-%f], [%e-%e], [%e-%e]\n",
 	    usefulParams.spinRange_endTime.refTime.gpsSeconds,
 	    usefulParams.spinRange_endTime.fkdot[0],
 	    usefulParams.spinRange_endTime.fkdot[0] + usefulParams.spinRange_endTime.fkdotBand[0],
 	    usefulParams.spinRange_endTime.fkdot[1],
-	    usefulParams.spinRange_endTime.fkdot[1] + usefulParams.spinRange_endTime.fkdotBand[1]);
+            usefulParams.spinRange_endTime.fkdot[1] + usefulParams.spinRange_endTime.fkdotBand[1],
+            usefulParams.spinRange_endTime.fkdot[2],
+            usefulParams.spinRange_endTime.fkdot[2] + usefulParams.spinRange_endTime.fkdotBand[2]);
 
   /* print debug info about stacks */
-  fprintf(stderr, "%% --- Setup, N = %d, T = %.0fs, Tobs = %.0fs, gammaRefine = %f\n",
-          nStacks, tStack, tObs, gammaRefine);
+  fprintf(stderr, "%% --- Setup, N = %d, T = %.0fs, Tobs = %.0fs, gammaRefine = %f, gamma2Refine = %f\n",
+          nStacks, tStack, tObs, gammaRefine, gamma2Refine);
 
   for (k = 0; k < nStacks; k++) {
 
@@ -1040,11 +1101,16 @@ int MAIN( int argc, char *argv[]) {
           f1dotGridCounter = 0;
         }
 
+        /* ################## loop over coarse-grid F2DOT values ################## */
+        if2dot = 0;
+
+        while ( if2dot < nf2dot ) {
+
         /* show progress */
 #ifdef EAH_BOINC
-        LogPrintf( LOG_NORMAL, "%d/%d\n", skyGridCounter+1, ifdot+1 );
+          LogPrintf( LOG_NORMAL, "%d/%d/%d\n", skyGridCounter+1, ifdot+1, if2dot+1 );
 #else
-        LogPrintf( LOG_NORMAL, "sky:%d f1dot:%d\n", skyGridCounter+1, ifdot+1 );
+          LogPrintf( LOG_NORMAL, "sky:%d f1dot:%d f2dot:%d\n", skyGridCounter+1, ifdot+1, if2dot+1 );
 #endif
 
         /* ------------- Set up coarse grid --------------------------------------*/
@@ -1093,8 +1159,28 @@ int MAIN( int argc, char *argv[]) {
         finegrid.df1dot_fg = df1dot_fg;
         finegrid.f1dotlength = nf1dots_fg;
 
+          /* fine-grid f2dot resolution */
+          if (nf2dot == 1) {
+            nf2dots_fg = 1;
+          }
+          else {
+            nf2dots_fg = ceil(gamma2Refine);        /* number of 2nd spindown fine-grid points */
+            if ( (nf2dots_fg % 2) == 0 ) {    /* if even, add one (to refine symmetrically) */
+              nf2dots_fg++;
+            }
+          }
+          df2dot_fg = df2dot / nf2dots_fg;  /* 2nd spindown fine-grid  stepsize */
+
+          /* adjust f2dotmin_fg, so that f2dot finegrid is centered around coarse-grid f2dot point */
+          f2dotmin_fg = (usefulParams.spinRange_midTime.fkdot[2] + if2dot * df2dot) - df2dot_fg * floor(nf2dots_fg / 2.0);
+
+          /* copy 2nd spindown setup parameters to fine-grid struct */
+          finegrid.f2dotmin_fg = f2dotmin_fg;
+          finegrid.df2dot_fg = df2dot_fg;
+          finegrid.f2dotlength = nf2dots_fg;
+
         /* total number of fine-grid points */
-        finegrid.length = nf1dots_fg * nfreqs_fg;
+          finegrid.length = nf1dots_fg * nf2dots_fg * nfreqs_fg;
 
         if(!oldcg) {
           oldcg = coarsegrid.length;
@@ -1102,7 +1188,8 @@ int MAIN( int argc, char *argv[]) {
         }
         if(!oldfg) {
           oldfg = finegrid.length;
-          LogPrintfVerbatim(LOG_NORMAL, "FG:%ld  f1dotmin_fg:%.13g df1dot_fg:%.13g\n",finegrid.length,f1dotmin_fg,df1dot_fg);
+            LogPrintfVerbatim(LOG_NORMAL, "FG:%ld  f1dotmin_fg:%.13g df1dot_fg:%.13g f2dotmin_fg:%.13g df2dot_fg:%.13g\n",
+                              finegrid.length,f1dotmin_fg,df1dot_fg,f2dotmin_fg,df2dot_fg);
         }
         if((coarsegrid.length != oldcg) || (finegrid.length != oldfg)) {
           LogPrintfVerbatim(LOG_CRITICAL, "ERROR: Grid-sizes disagree!\nPrevious CG:%d FG:%ld, currently CG:%d FG:%ld\n",
@@ -1138,7 +1225,9 @@ int MAIN( int argc, char *argv[]) {
         /* initialize the entire finegrid ( 2F-sum and number count set to 0 ) */
         ic = 0;
         for( ic3 = 0; ic3 < nf1dots_fg; ic3++ ) {
+            for( ic4 = 0; ic4 < nf2dots_fg; ic4++ ) {
           /*f1dot_tmp = f1dotmin_fg + ic3 * df1dot_fg;*/
+              /*f2dot_tmp = f2dotmin_fg + ic4 * df2dot_fg;*/
           for( ic2 = 0; ic2 < nfreqs_fg; ic2++ ) {
             /*freq_tmp = freqmin_fg + ic2 * dfreq_fg;*/
             finegrid.nc[ic] = 0;
@@ -1146,6 +1235,7 @@ int MAIN( int argc, char *argv[]) {
             ic++;
           }
         }
+          }
 
         /* Keeping track of maximum number count in DIAGNOSE mode */
         nc_max = 0;    /* initialize */
@@ -1222,9 +1312,13 @@ int MAIN( int argc, char *argv[]) {
           /* Set spindown value for Fstat calculation */
           thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
 
+            /* Set spindown value for Fstat calculation */
+            thisPoint.fkdot[2] = usefulParams.spinRange_midTime.fkdot[2] + if2dot * df2dot;
+
           /* Frequency at the segment's midpoint for later use */
           f1dot_event = thisPoint.fkdot[1];
-          myf0 = thisPoint.fkdot[0] + thisPoint.fkdot[1] * timeDiffSeg;
+            myf0 = thisPoint.fkdot[0] + thisPoint.fkdot[1] * timeDiffSeg +
+              + 0.5 * thisPoint.fkdot[2] * timeDiffSeg * timeDiffSeg;
 
           if (uvar_useResamp) {
 
@@ -1332,16 +1426,21 @@ int MAIN( int argc, char *argv[]) {
           ifine = 0;
 
           for( if1dot_fg = 0; if1dot_fg < finegrid.f1dotlength; if1dot_fg++ ) {
+              for( if2dot_fg = 0; if2dot_fg < finegrid.f2dotlength; if2dot_fg++ ) {
 
             /* get the 1st spindown of this fine-grid point */
             f1dot_tmp = finegrid.f1dotmin_fg + if1dot_fg * finegrid.df1dot_fg;
+
+                /* get the 2nd spindown of this fine-grid point */
+                f2dot_tmp = finegrid.f2dotmin_fg + if2dot_fg * finegrid.df2dot_fg;
 
             /* pre-compute prouduct */
             f1dot_eventB1 = f1dot_tmp * B1;
 
             /* get the frequency of this fine-grid point at mid point of segment */
             /* OLD: ifreq_fg = 0; freq_tmp = finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg + f1dot_tmp * timeDiffSeg; */
-            freq_tmp = finegrid.freqmin_fg + f1dot_tmp * timeDiffSeg; /* first fine-grid frequency */
+                freq_tmp = finegrid.freqmin_fg + f1dot_tmp * timeDiffSeg +
+                  0.5 * f2dot_tmp * timeDiffSeg * timeDiffSeg; /* first fine-grid frequency */
 
             /* compute the global-correlation coordinate indices */
             U1idx = ComputeU1idx ( freq_tmp, f1dot_eventB1, A1, u1start, u1winInv );
@@ -1378,6 +1477,7 @@ int MAIN( int argc, char *argv[]) {
             ifine+=finegrid.freqlength; /* increment fine-grid index */
 
           } /* for( if1dot_fg = 0; if1dot_fg < finegrid.f1dotlength; if1dot_fg++ ) { */
+            } /* for( if2dot_fg = 0; if2dot_fg < finegrid.f1dotlength; if2dot_fg++ ) { */
 
 #ifndef GC_SSE2_OPT
 	  /* FIXME the following diagnostic output was broken by the SSE2 code */
@@ -1402,7 +1502,9 @@ int MAIN( int argc, char *argv[]) {
           LogPrintf(LOG_DETAIL, "Updating toplist with semicoherent candidates\n");
           LAL_CALL( UpdateSemiCohToplist(&status, semiCohToplist, &finegrid, &usefulParams), &status);
         }
+          if2dot++;  /* Increment if2dot counter */
 
+        } /* ########## End of loop over coarse-grid f2dot values (if2dot) ########## */
         ifdot++;  /* Increment ifdot counter BEFORE SET_CHECKPOINT */
 
         SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
@@ -2092,8 +2194,8 @@ void UpdateSemiCohToplist(LALStatus *status,
 
   BOOLEAN translateSpins = FALSE;
   PulsarSpins fkdot;
-  REAL8 freq_tmp, f1dot_tmp;
-  UINT4 ifine, if1dot_fg, ifreq_fg, Nsegments;
+  REAL8 freq_tmp, f1dot_tmp, f2dot_tmp;
+  UINT4 ifine, if1dot_fg, if2dot_fg, ifreq_fg, Nsegments;
   INT4 debug;
   GCTtopOutputEntry line;
 
@@ -2120,6 +2222,10 @@ void UpdateSemiCohToplist(LALStatus *status,
 
     f1dot_tmp = in->f1dotmin_fg + if1dot_fg * in->df1dot_fg;
 
+    for( if2dot_fg = 0; if2dot_fg < in->f2dotlength; if2dot_fg++ ) {
+
+      f2dot_tmp = in->f2dotmin_fg + if2dot_fg * in->df2dot_fg;
+
     for( ifreq_fg = 0; ifreq_fg < in->freqlength; ifreq_fg++ ) {
 
       freq_tmp = in->freqmin_fg + ifreq_fg * in->dfreq_fg;
@@ -2127,6 +2233,7 @@ void UpdateSemiCohToplist(LALStatus *status,
       if ( translateSpins ) { /* propagate fkdot to reference-time  */
         fkdot[0] = freq_tmp;
         fkdot[1] = f1dot_tmp;
+          fkdot[2] = f2dot_tmp;
 
         TRY ( LALExtrapolatePulsarSpins (status->statusPtr,
               fkdot, usefulparams->spinRange_refTime.refTime, fkdot, in->refTime), status );
@@ -2138,6 +2245,7 @@ void UpdateSemiCohToplist(LALStatus *status,
       line.Alpha = in->alpha;
       line.Delta = in->delta;
       line.F1dot = f1dot_tmp;
+        line.F2dot = f2dot_tmp;
       line.nc = in->nc[ifine];
       line.sumTwoF = (in->sumTwoF[ifine]) / Nsegments; /* save the average 2F value */
 
@@ -2151,6 +2259,7 @@ void UpdateSemiCohToplist(LALStatus *status,
 
       ifine++;
     }
+  }
   }
 
   DETATCHSTATUSPTR (status);
@@ -2197,8 +2306,8 @@ void PrintFstatVec (LALStatus *status,
     /* propagate fkdot back to reference-time  */
     TRY ( LALExtrapolatePulsarSpins (status->statusPtr, fkdot, refTime, fkdot, thisPoint->refTime ), status );
 
-    fprintf(fp, "%d %.13g %.12g %.12g %.13g %.6g\n",
-            stackIndex, fkdot[0], alpha, delta, fkdot[1], 2*in->data->data[k]);
+      fprintf(fp, "%d %.13g %.12g %.12g %.13g %.13g %.6g\n",
+              stackIndex, fkdot[0], alpha, delta, fkdot[1], fkdot[2], 2*in->data->data[k]);
   }
 
   fprintf(fp, "\n");
@@ -2558,4 +2667,3 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
   return stacks;
 
 } /* XLALSetUpStacksFromSegmentList() */
-

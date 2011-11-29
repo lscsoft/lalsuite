@@ -275,14 +275,15 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 #ifdef EAH_BOINC /* for S5GC1HF Apps use exactly the precision used in the workunit generator
 		    (12g for Freq and F1dot) and skygrid file (7f for Alpha & Delta)
 		    as discussed with Holger & Reinhard 5.11.2010 */
-                     "%.16f %.7f %.7f %.12g %d %.6f%s\n",
+                     "%.16f %.7f %.7f %.12g %.12g %d %.6f%s\n",
 #else
-                     "%.16g %.13g %.13g %.13g %d %.6f%s\n",
+                     "%.16g %.13g %.13g %.13g %.13g %d %.6f%s\n",
 #endif
                      fline.Freq,
                      fline.Alpha,
                      fline.Delta,
                      fline.F1dot,
+                     fline.F2dot,
                      fline.nc,
                      fline.sumTwoF,
                      extraFStr
