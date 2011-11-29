@@ -77,6 +77,8 @@
 #define SQUARE(x) ( (x) * (x) )
 #define CUBE(x) ((x)*(x)*(x))
 #define QUAD(x) ((x)*(x)*(x)*(x))
+#define TRUE (1==1)
+#define FALSE (1==0)
 
 /*----- Macros ----- */
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
@@ -305,7 +307,8 @@ int main(int argc,char *argv[])
       }
 
       if ( uvar.computeLV ) {
-        lvstats.LV = XLALComputeLineVeto ( (REAL4)lvstats.TwoF, (REAL4Vector*)lvstats.TwoFX, rhomax, linepriorX );
+        BOOLEAN useAllTerms = TRUE;
+        lvstats.LV = XLALComputeLineVeto ( (REAL4)lvstats.TwoF, (REAL4Vector*)lvstats.TwoFX, rhomax, linepriorX, useAllTerms );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVeto().\n\n", __func__, __LINE__);
           XLAL_ERROR ( XLAL_EFUNC );

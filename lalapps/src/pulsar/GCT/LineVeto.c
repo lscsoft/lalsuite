@@ -33,6 +33,7 @@
 #define __USE_ISOC99 1
 #include <lal/StringVector.h>
 #include "LineVeto.h"
+#include <lal/TransientCW_utils.h> /* for XLALFastNegExp */
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
@@ -489,7 +490,8 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
 REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fstat */
                             const REAL4Vector *TwoFX,  /**< vector of single-detector Fstats */
                             const REAL4 rhomaxline,    /**< amplitude prior normalization for lines */
-                            const REAL4Vector *priorX  /**< vector of single-detector prior line odds ratio, set all to 1/2 for neutral analysis */
+                            const REAL4Vector *priorX, /**< vector of single-detector prior line odds ratio, set all to 1/2 for neutral analysis */
+                            const BOOLEAN useAllTerms  /**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
                           )
 {
   /* check input parameters and report errors */
@@ -535,27 +537,31 @@ REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fsta
     }
   }
 
+  REAL4 logrho = 0.0;
   if ( rhomaxline > 0.0 ) { /* if == 0.0, can just ignore it in summation. if < 0.0, treat as if == 0.0 */
-    REAL4 logrho = 4.0*log(rhomaxline)-log(70.0);
+    logrho = 4.0*log(rhomaxline)-log(70.0);
     if ( logrho > maxSum )
       maxSum = logrho;
-    LV =  exp( logrho - maxSum );
   }
 
-  /* logsumexp formula */
-  for (X = 0; X < numDetectors; X++) {
-    if ( logFXprior[X] > -9999 ) {
-      LV += exp( logFXprior[X] - maxSum );
+  if ( useAllTerms ) { /* full logsumexp formula */
+    if ( rhomaxline > 0.0 )
+      LV += XLALFastNegExp( maxSum - logrho ); /* faster version of LV += exp( logrho - maxSum ) (note the sign change) */
+    for (X = 0; X < numDetectors; X++) {
+      if ( logFXprior[X] > -9999 )
+        LV += XLALFastNegExp( maxSum - logFXprior[X] ); /* faster version of LV += exp( logFXprior[X] - maxSum ) (note the sign change) */
     }
+    if ( LV <= 0.0 ) { /* return error code for log (0) */
+      XLALPrintError ("\nError in function %s, line %d : log(nonpositive) in LV denominator. \n\n", __func__, __LINE__);
+      XLAL_ERROR_REAL4 ( XLAL_EFPINVAL );
+    }
+    else
+      LV = TwoF/2.0 - maxSum - log( LV );
   }
-  if ( LV <= 0.0 ) { /* return error code for log (0) */
-    XLALPrintError ("\nError in function %s, line %d : log(nonpositive) in LV denominator. \n\n", __func__, __LINE__);
-    XLAL_ERROR_REAL4 ( XLAL_EFPINVAL );
-  }
-  else {
-    LV = TwoF/2.0 - maxSum - log( LV );
-    return(LV);
-  }
+  else /* only use leading term */
+    LV = TwoF/2.0 - maxSum;
+
+  return(LV);
 
 } /* XLALComputeLineVeto() */
 
