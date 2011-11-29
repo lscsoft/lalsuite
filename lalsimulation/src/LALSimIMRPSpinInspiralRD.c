@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Riccardo Sturani, John Veitch
+ * Copyright (C) 2011 Riccardo Sturani, John Veitch, Drew Keppel
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1444,15 +1444,21 @@ fprintf(stderr, "%i\n", mparams->length);
 	
 } /* End of the inspiral part created via the adaptive integration method */
 
-static int XLALPSpinFinalMassSpin(
+int XLALSimIMRPSpinFinalMassSpin(
     REAL8 *finalMass,
     REAL8 *finalSpin,
-    REAL8 spin1[3],
-    REAL8 spin2[3],
     REAL8 m1,
     REAL8 m2,
+    REAL8 s1x,
+    REAL8 s1y,
+    REAL8 s1z,
+    REAL8 s2x,
+    REAL8 s2y,
+    REAL8 s2z,
     REAL8 energy,
-    REAL8 *LNhvec
+    REAL8 LNhvecx,
+    REAL8 LNhvecy,
+    REAL8 LNhvecz
     )
 {
   /* XLAL error handling */
@@ -1472,18 +1478,18 @@ static int XLALPSpinFinalMassSpin(
   REAL8 t2=16.*(0.6865-t3/64.-sqrt(3.)/2.);
 	
   /* get a local copy of the intrinstic parameters */
-  qq=m2/m1;
+  qq = m2/m1;
   eta = m1*m2/((m1+m2)*(m1+m2));
   /* done */
-  ma1=sqrt( spin1[0]*spin1[0] + spin1[1]*spin1[1] + spin1[2]*spin1[2] );
-  ma2=sqrt( spin2[0]*spin2[0] + spin2[1]*spin2[1] + spin2[2]*spin2[2] );
+  ma1 = sqrt( s1x*s1x + s1y*s1y + s1z*s1z );
+  ma2 = sqrt( s2x*s2x + s2y*s2y + s2z*s2z );
 	
-  if (ma1>0.) cosa1 = (spin1[0]*LNhvec[0]+spin1[1]*LNhvec[1]+spin1[2]*LNhvec[2])/ma1;
+  if (ma1>0.) cosa1 = (s1x*LNhvecx + s1y*LNhvecy + s1z*LNhvecz)/ma1;
   else cosa1=0.;
-  if (ma2>0.) cosa2 = (spin2[0]*LNhvec[0]+spin2[1]*LNhvec[1]+spin2[2]*LNhvec[2])/ma2;
+  if (ma2>0.) cosa2 = (s2x*LNhvecx + s2y*LNhvecy + s2z*LNhvecz)/ma2;
   else cosa2=0.;
   if ((ma1>0.)&&(ma2>0.)) {
-    cosa12  = (spin1[0]*spin2[0] + spin1[1]*spin2[1] + spin1[2]*spin2[2])/ma1/ma2;
+    cosa12  = (s1x*s2x + s1y*s2y + s1z*s2z)/ma1/ma2;
   }
   else cosa12=0.;
 	
@@ -1509,12 +1515,12 @@ static int XLALPSpinFinalMassSpin(
   if ((*finalSpin > 1.)||(*finalSpin < 0.)) {
     if ((*finalSpin>=1.)&&(*finalSpin<1.01)) {
 			fprintf(stderr,"*** LALPSpinInspiralRingdownWave WARNING: Estimated final Spin slightly >1 : %11.3e\n ",*finalSpin);
-			fprintf(stderr,"      (m1=%8.3f  m2=%8.3f s1=(%8.3f,%8.3f,%8.3f) s2=(%8.3f,%8.3f,%8.3f) ) final spin set to 1 and code goes on\n",m1,m2,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2]);
+			fprintf(stderr,"      (m1=%8.3f  m2=%8.3f s1=(%8.3f,%8.3f,%8.3f) s2=(%8.3f,%8.3f,%8.3f) ) final spin set to 1 and code goes on\n",m1,m2,s1x,s1y,s1z,s2x,s2y,s2z);
 			*finalSpin = .99999;
 		}
     else {
       fprintf(stderr,"*** LALPSpinInspiralRingdownWave ERROR: Unphysical estimation of final Spin : %11.3e\n ",*finalSpin);
-			fprintf(stderr,"      (m1=%8.3f  m2=%8.3f s1=(%8.3f,%8.3f,%8.3f) s2=(%8.3f,%8.3f,%8.3f) )\n",m1,m2,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2]); 
+			fprintf(stderr,"      (m1=%8.3f  m2=%8.3f s1=(%8.3f,%8.3f,%8.3f) s2=(%8.3f,%8.3f,%8.3f) )\n",m1,m2,s1x,s1y,s1z,s2x,s2y,s2z); 
 			fprintf(stderr,"***                                    Code aborts\n");
       *finalSpin = 0.;
       XLAL_ERROR( XLAL_ERANGE);
@@ -2038,10 +2044,9 @@ static int XLALPSpinInspiralAttachRingdownWave (
  *
  * All units are SI units.
  */
-int XLALSimInspiralPSpinInspiralRDGenerator(
+int XLALSimIMRPSpinInspiralRDGenerator(
     REAL8TimeSeries **hplus,	/**< +-polarization waveform */
     REAL8TimeSeries **hcross,	/**< x-polarization waveform */
-    LIGOTimeGPS *t_start,       /**< start time */
     REAL8 phi_start,            /**< start phase */
     REAL8 deltaT,               /**< sampling interval */
     REAL8 m1,                   /**< mass of companion 1 */
@@ -2049,12 +2054,17 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
     REAL8 f_min,                /**< start frequency */
     REAL8 r,                    /**< distance of source */
     REAL8 iota,                 /**< inclination of source (rad) */
-    REAL8 spin1[3],             /**< unitless spin vector on object 1 */
-    REAL8 spin2[3],             /**< unitless spin vector on object 2 */
+    REAL8 s1x,                  /**< x-component of dimensionless spin for object 1 */
+    REAL8 s1y,                  /**< y-component of dimensionless spin for object 1 */
+    REAL8 s1z,                  /**< z-component of dimensionless spin for object 1 */
+    REAL8 s2x,                  /**< x-component of dimensionless spin for object 2 */
+    REAL8 s2y,                  /**< y-component of dimensionless spin for object 2 */
+    REAL8 s2z,                  /**< z-component of dimensionless spin for object 2 */
     int phaseO,                 /**< twice post-Newtonian phase order */
     InputAxis axisChoice        /**< Choice of axis for input spin params */
     )
 {
+  LIGOTimeGPS t_start = LIGOTIMEGPSZERO;
   UINT4 length;                // signal vector length
   REAL8 tn = XLALSimInspiralTaylorLength(deltaT, m1, m2, f_min, phaseO);
   REAL8 x = 1.1 * (tn + 1 ) / deltaT;
@@ -2062,10 +2072,10 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
   length = pow(2, length);
 
   if (*hplus == NULL)
-    *hplus = XLALCreateREAL8TimeSeries("H+", t_start, 0.0, deltaT, &lalDimensionlessUnit, length);
+    *hplus = XLALCreateREAL8TimeSeries("H+", &t_start, 0.0, deltaT, &lalDimensionlessUnit, length);
 
   if (*hcross == NULL)
-    *hcross = XLALCreateREAL8TimeSeries("Hx", t_start, 0.0, deltaT, &lalDimensionlessUnit, length);
+    *hcross = XLALCreateREAL8TimeSeries("Hx", &t_start, 0.0, deltaT, &lalDimensionlessUnit, length);
 
   if(*hplus == NULL || *hcross == NULL)
     XLAL_ERROR(XLAL_ENOMEM);
@@ -2191,11 +2201,12 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
 
   /* Check that initial frequency is smaller than omegamatch ~ xxyy for m=100 Msun */
 
-  LNhS1=spin1[2];
-  LNhS2=spin2[2];
-  S1S1=spin1[0]*spin1[0]+spin1[1]*spin1[1]+spin1[2]*spin1[2];
-  S1S2=spin1[0]*spin2[0]+spin1[1]*spin2[1]+spin1[2]*spin2[2];
-  S2S2=spin2[0]*spin2[0]+spin2[1]*spin2[1]+spin2[2]*spin2[2];
+  LNhS1 = s1z;
+  LNhS2 = s2z;
+  S1S1 = s1x*s1x + s1y*s1y + s1z*s1z;
+  S1S2 = s1x*s2x + s1y*s2y + s1z*s2z;
+  S2S2 = s2x*s2x + s2y*s2y + s2z*s2z;
+
 
   omegaMatch = OmMatch(LNhS1,LNhS2,S1S1,S1S2,S2S2);
 
@@ -2240,10 +2251,12 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
   LNhmag = eta * totalMass * totalMass / cbrt(initomega);
 
   // Physical values of the spins
-  for (i = 0; i < 3; i++) {
-    initS1[i] = spin1[i] * mass1 * mass1;
-    initS2[i] = spin2[i] * mass2 * mass2;
-  }
+  initS1[0] = s1x * mass1 * mass1;
+  initS1[1] = s1y * mass1 * mass1;
+  initS1[2] = s1z * mass1 * mass1;
+  initS2[0] = s2x * mass2 * mass2;
+  initS2[1] = s2y * mass2 * mass2;
+  initS2[2] = s2z * mass2 * mass2;
 
   switch (axisChoice) {
 
@@ -2498,8 +2511,8 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
       fprintf(stderr,"** LALPSpinInspiralRD WARNING **: integration terminated with code %d.\n",intreturn);
       fprintf(stderr,"  1025: Energy increases\n  1026: Omegadot -ve\n  1028: Omega NAN\n  1029: Omega > Omegamatch\n  1031: Omega -ve\n  1032: Omega > OmegaCut %12.6e\n",mparams.OmCutoff);
       fprintf(stderr,"  Waveform parameters were m1 = %14.6e, m2 = %14.6e, inc = %10.6f,\n", mass1, mass2, iota);
-      fprintf(stderr,"                           S1 = (%10.6f,%10.6f,%10.6f)\n", spin1[0], spin1[1], spin1[2]);
-      fprintf(stderr,"                           S2 = (%10.6f,%10.6f,%10.6f)\n", spin2[0], spin2[1], spin2[2]);
+      fprintf(stderr,"                           S1 = (%10.6f,%10.6f,%10.6f)\n", s1x, s1y, s1z);
+      fprintf(stderr,"                           S2 = (%10.6f,%10.6f,%10.6f)\n", s2x, s2y, s2z);
     }
 
   if (intreturn==LALPSIRDPN_TEST_OMEGAMATCH) {
@@ -2522,8 +2535,8 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
       XLALPrintError("**** LALPSpinInspiralRD ERROR ****: Could not attach phen part for:\n");
       XLALPrintError(" tAs %12.6e  t0 %12.6e  om1 %12.6e\n",tAs,t0,om1);
       XLALPrintError("   m1 = %14.6e, m2 = %14.6e, inc = %10.6f,\n", mass1, mass2, iota);
-      XLALPrintError("   S1 = (%10.6f,%10.6f,%10.6f)\n", spin1[0], spin1[1], spin1[2]);
-      XLALPrintError("   S2 = (%10.6f,%10.6f,%10.6f)\n", spin2[0], spin2[1], spin2[2]);
+      XLALPrintError("   S1 = (%10.6f,%10.6f,%10.6f)\n", s1x, s1y, s1z);
+      XLALPrintError("   S2 = (%10.6f,%10.6f,%10.6f)\n", s2x, s2y, s2z);
       XLALDestroyREAL8Vector(h2P2);
       XLALDestroyREAL8Vector(h2M2);
       XLALDestroyREAL8Vector(h2P1);
@@ -2562,7 +2575,7 @@ int XLALSimInspiralPSpinInspiralRDGenerator(
       count = phenPars.countback;
 
       /* Get QNM frequencies */
-      errcode = XLALPSpinFinalMassSpin(&finalMass,&finalSpin,spin1,spin2,mass1,mass2,energy,initLNh);
+      errcode = XLALSimIMRPSpinFinalMassSpin(&finalMass,&finalSpin,m1,m2,s1x,s1y,s1z,s2x,s2y,s2z,energy,initLNh[0],initLNh[1],initLNh[2]);
       modefreqs=XLALCreateCOMPLEX8Vector(nmodes);
       errcode+=XLALPSpinGenerateQNMFreq(modefreqs, 2, 2, nmodes, finalMass, finalSpin, totalMass);
       if (errcode != XLAL_SUCCESS) {

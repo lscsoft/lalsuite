@@ -23,7 +23,6 @@ int main (int argc, char *argv[])
   REAL8TimeSeries *hplus  = NULL;
   REAL8TimeSeries *hcross = NULL;
 
-  LIGOTimeGPS end_time;
   REAL8 phiC = 0.;
   REAL8 deltaT = 1./16384.;
   REAL8 m1     = 75. * LAL_MSUN_SI;
@@ -43,7 +42,7 @@ int main (int argc, char *argv[])
   UNUSED(argc);
   UNUSED(argv);
   
-  if ( XLALSimIMREOBNRv2DominantMode( &hplus, &hcross, &end_time, phiC, deltaT, m1, m2, fMin, r, i) == XLAL_FAILURE )
+  if ( XLALSimIMREOBNRv2DominantMode( &hplus, &hcross, phiC, deltaT, m1, m2, fMin, r, i) == XLAL_FAILURE )
   {
     fprintf( stderr, "The waveform generation function has failed!!\n" );
     exit(1);

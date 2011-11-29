@@ -156,8 +156,6 @@ LAL_ENABLE_MACROS
 LAL_ENABLE_PTHREAD_LOCK
 LALSUITE_ENABLE_NIGHTLY
 
-AC_PREFIX_DEFAULT([/opt/lscsoft/lal])
-
 # get version
 lal_version_major=`echo "$VERSION" | cut -d. -f1`
 lal_version_minor=`echo "$VERSION" | cut -d. -f2`

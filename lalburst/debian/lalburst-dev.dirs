@@ -1,6 +1,2 @@
-#opt/lscsoft/lalburst/bin
-opt/lscsoft/lalburst/include
-opt/lscsoft/lalburst/lib/pkgconfig
-#opt/lscsoft/lalburst/share/lal
-#opt/lscsoft/lalburst/share/man/man1
-#opt/lscsoft/lalburst/share/man/man3
+usr/include
+usr/lib/pkgconfig

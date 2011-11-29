@@ -43,9 +43,6 @@ AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[2])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
-# default install path
-AC_PREFIX_DEFAULT([/opt/lscsoft/lalframe])
-
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 

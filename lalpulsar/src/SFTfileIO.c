@@ -1853,7 +1853,7 @@ XLALReadTimestampsFile ( const CHAR *fname )
     {
       INT4 secs, ns;
       if ( sscanf ( flines->lines->tokens[iTS], "%d %d\n", &secs, &ns ) != 2 ) {
-        XLALPrintError ("%s: failed to parse data-line %d in timestamps-file %s\n", __func__, iTS + 1, fname );
+        XLALPrintError ("%s: failed to parse data-line %d: '%s' in timestamps-file '%s' (needs to be in format 'sec ns')\n", __func__, iTS + 1, flines->lines->tokens[iTS], fname );
         XLALDestroyTimestampVector ( timestamps );
         XLALDestroyParsedDataFile ( &flines );
         XLAL_ERROR_NULL ( XLAL_ESYS );

@@ -12,9 +12,7 @@ export DH_OPTIONS
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
-PREFIX = /opt/lscsoft/lal
-FRAMEPREFIX = /opt/lscsoft/libframe
-METAIOPREFIX = /opt/lscsoft/libmetaio
+PREFIX = /usr
 
 CFLAGS = -Wall -g
 
@@ -32,14 +30,14 @@ endif
 config.status : configure
 	dh_testdir
 #	LDFLAGS="-Wl,-z,defs"
-	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig \
 	CFLAGS="$(CFLAGS)" \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=$(PREFIX) \
+		--sysconfdir=/etc \
 		--mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 		--enable-nightly=no \
-		--disable-debug \
-		--disable-gcc-flags
+		--disable-gcc-flags \
+		--disable-debug
 
 
 build : build-stamp

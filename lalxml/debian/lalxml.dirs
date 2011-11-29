@@ -1,5 +1,3 @@
-#opt/lscsoft/lalxml/bin
-opt/lscsoft/lalxml/etc
-opt/lscsoft/lalxml/lib
-#opt/lscsoft/lalxml/sbin
-opt/lscsoft/lalxml/share
+usr/lib
+etc
+usr/share

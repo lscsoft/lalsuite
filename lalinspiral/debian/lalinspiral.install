@@ -1,5 +1,2 @@
-#opt/lscsoft/lalinspiral/bin/lal-version
-opt/lscsoft/lalinspiral/etc/*
-#opt/lscsoft/lalinspiral/etc/*-user-env.*
-opt/lscsoft/lalinspiral/lib/*.so*
-#opt/lscsoft/lalinspiral/share/lal
+usr/lib/*.so*
+etc/*

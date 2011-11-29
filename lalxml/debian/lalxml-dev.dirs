@@ -1,6 +1,2 @@
-#opt/lscsoft/lalxml/bin
-opt/lscsoft/lalxml/include
-opt/lscsoft/lalxml/lib/pkgconfig
-#opt/lscsoft/lalxml/share/lal
-#opt/lscsoft/lalxml/share/man/man1
-#opt/lscsoft/lalxml/share/man/man3
+usr/lib/pkgconfig
+usr/include

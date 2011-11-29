@@ -164,7 +164,6 @@ int XLALSimIMRPhenomBGenerateTD(
 int XLALSimIMREOBNRv2DominantMode(
     REAL8TimeSeries **hplus,      /**<< The +-polarization waveform (returned) */
     REAL8TimeSeries **hcross,     /**<< The x-polarization waveform (returned) */
-    LIGOTimeGPS      *tC,         /**<< The coalescence time (defined as above) */
     const REAL8       phiC,       /**<< The phase at the coalescence time */
     const REAL8       deltaT,     /**<< Sampling interval (in seconds) */
     const REAL8       m1SI,       /**<< First component mass (in kg) */
@@ -182,8 +181,7 @@ int XLALSimIMREOBNRv2DominantMode(
 int XLALSimIMREOBNRv2AllModes(
     REAL8TimeSeries **hplus,      /**<< The +-polarization waveform (returned) */
     REAL8TimeSeries **hcross,     /**<< The x-polarization waveform (returned) */
-    LIGOTimeGPS      *tC,         /**<< The coalescence time (defined as above) */
-    const REAL8       phiC,       /**<< The phase at the coalescence time */
+    const REAL8       phiC,       /**<< The phase at the time of peak amplitude */
     const REAL8       deltaT,     /**<< Sampling interval (in seconds) */
     const REAL8       m1SI,       /**<< First component mass (in kg) */
     const REAL8       m2SI,       /**<< Second component mass (in kg) */
@@ -193,21 +191,45 @@ int XLALSimIMREOBNRv2AllModes(
 );
 
 /**
+ * Routine to compute the mass and spin of the final black hole given 
+ * the masses, spins, binding energy, and orbital angular momentum vector.
+ */
+int XLALSimIMRPSpinFinalMassSpin(
+    REAL8 *finalMass,
+    REAL8 *finalSpin,
+    REAL8 m1,
+    REAL8 m2,
+    REAL8 s1x,
+    REAL8 s1y,
+    REAL8 s1z,
+    REAL8 s2x,
+    REAL8 s2y,
+    REAL8 s2z,
+    REAL8 energy,
+    REAL8 LNhvecx,
+    REAL8 LNhvecy,
+    REAL8 LNhvecz
+    );
+
+/**
  * Driver routine to compute a precessing post-Newtonian inspiral-merger-ringdown waveform
  */
-int XLALSimInspiralPSpinInspiralRDGenerator(
+int XLALSimIMRPSpinInspiralRDGenerator(
     REAL8TimeSeries **hplus,    /**< +-polarization waveform */
     REAL8TimeSeries **hcross,   /**< x-polarization waveform */
-    LIGOTimeGPS *t0,            /**< start time */
-    REAL8 phi0,                 /**< start phase */
+    REAL8 phi0,                 /**< phase at time of peak amplitude*/
     REAL8 deltaT,               /**< sampling interval */
     REAL8 m1,                   /**< mass of companion 1 */
     REAL8 m2,                   /**< mass of companion 2 */
     REAL8 f_min,                /**< start frequency */
     REAL8 r,                    /**< distance of source */
     REAL8 iota,                 /**< inclination of source (rad) */
-    REAL8 spin1[3],             /**< Spin vector on mass1 */
-    REAL8 spin2[3],             /**< Spin vector on mass2 */
+    REAL8 s1x,                  /**< x-component of dimensionless spin for object 1 */
+    REAL8 s1y,                  /**< y-component of dimensionless spin for object 1 */
+    REAL8 s1z,                  /**< z-component of dimensionless spin for object 1 */
+    REAL8 s2x,                  /**< x-component of dimensionless spin for object 2 */
+    REAL8 s2y,                  /**< y-component of dimensionless spin for object 2 */
+    REAL8 s2z,                  /**< z-component of dimensionless spin for object 2 */
     int phaseO,                 /**< twice post-Newtonian phase order */
     InputAxis axisChoice       	/**< Choice of axis for input spin params */
     );

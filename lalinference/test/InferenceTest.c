@@ -194,7 +194,8 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 			randomseed = tv.tv_sec + tv.tv_usec;
 		} 
 		else {
-			fread(&randomseed, sizeof(randomseed), 1, devrandom);
+			if(!fread(&randomseed, sizeof(randomseed), 1, devrandom))
+                exit(1);
 			fclose(devrandom);
 		}
 	}

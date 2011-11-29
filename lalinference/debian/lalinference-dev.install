@@ -1,4 +1,3 @@
-opt/lscsoft/lalinference/include/lal*
-opt/lscsoft/lalinference/lib/*a
-opt/lscsoft/lalinference/lib/pkgconfig
-#opt/lscsoft/lalinference/share/lal
+usr/include/lal*
+usr/lib/*a
+usr/lib/pkgconfig

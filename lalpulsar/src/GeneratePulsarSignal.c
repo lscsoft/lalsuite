@@ -469,7 +469,7 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
 	{
 	  COMPLEX8 *data, *noise;
 	  thisNoiseSFT = &(params->noiseSFTs->data[iSFT]);
-	  index0n = (UINT4) ((thisSFT->f0 - thisNoiseSFT->f0) / thisSFT->deltaF);
+	  index0n = (UINT4) round ((thisSFT->f0 - thisNoiseSFT->f0) / thisSFT->deltaF);
 
 	  data = &(thisSFT->data->data[0]);
 	  noise = &(thisNoiseSFT->data->data[index0n]);

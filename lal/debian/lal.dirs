@@ -1,5 +1,4 @@
-opt/lscsoft/lal/bin
-opt/lscsoft/lal/etc
-opt/lscsoft/lal/lib
-opt/lscsoft/lal/sbin
-opt/lscsoft/lal/share
+usr/bin
+etc
+usr/lib
+usr/share

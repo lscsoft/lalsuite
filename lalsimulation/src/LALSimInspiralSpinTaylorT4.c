@@ -123,7 +123,6 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8TimeSeries **E1x,	      /**< orb. plane basis vector x[returned]*/
 	REAL8TimeSeries **E1y,	      /**< "    "    "  y component [returned]*/
 	REAL8TimeSeries **E1z,	      /**< "    "    "  z component [returned]*/
-	LIGOTimeGPS *tStart,          /**< start time of output vectors */
 	REAL8 phiStart,               /**< orbital phase at initial time */
 	REAL8 deltaT,          	      /**< sampling interval (s) */
 	REAL8 m1,              	      /**< mass of companion 1 (kg) */
@@ -153,6 +152,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     /* intermediate variables */
     UINT4 i, lengths, len;
     REAL8 m1m2, m2m1, M, eta, Mchirp, norm;
+    LIGOTimeGPS tStart = LIGOTIMEGPSZERO;
 
     /* Zero the coefficients */
     memset(&params, 0, sizeof(XLALSimInspiralSpinTaylorT4Coeffs));
@@ -362,33 +362,33 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     }
 
     /* allocate memory for output vectors */
-    *V = XLALCreateREAL8TimeSeries( "PN_EXPANSION_PARAMETER", tStart, 0., 
+    *V = XLALCreateREAL8TimeSeries( "PN_EXPANSION_PARAMETER", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *Phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", tStart, 0., 
+    *Phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *S1x = XLALCreateREAL8TimeSeries( "SPIN1_X_COMPONENT", tStart, 0., 
+    *S1x = XLALCreateREAL8TimeSeries( "SPIN1_X_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *S1y = XLALCreateREAL8TimeSeries( "SPIN1_Y_COMPONENT", tStart, 0., 
+    *S1y = XLALCreateREAL8TimeSeries( "SPIN1_Y_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *S1z = XLALCreateREAL8TimeSeries( "SPIN1_Z_COMPONENT", tStart, 0., 
+    *S1z = XLALCreateREAL8TimeSeries( "SPIN1_Z_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *S2x = XLALCreateREAL8TimeSeries( "SPIN2_X_COMPONENT", tStart, 0., 
+    *S2x = XLALCreateREAL8TimeSeries( "SPIN2_X_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *S2y = XLALCreateREAL8TimeSeries( "SPIN2_Y_COMPONENT", tStart, 0., 
+    *S2y = XLALCreateREAL8TimeSeries( "SPIN2_Y_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *S2z = XLALCreateREAL8TimeSeries( "SPIN2_Z_COMPONENT", tStart, 0., 
+    *S2z = XLALCreateREAL8TimeSeries( "SPIN2_Z_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *LNhatx = XLALCreateREAL8TimeSeries( "LNHAT_X_COMPONENT", tStart, 0., 
+    *LNhatx = XLALCreateREAL8TimeSeries( "LNHAT_X_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *LNhaty = XLALCreateREAL8TimeSeries( "LNHAT_Y_COMPONENT", tStart, 0., 
+    *LNhaty = XLALCreateREAL8TimeSeries( "LNHAT_Y_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *LNhatz = XLALCreateREAL8TimeSeries( "LNHAT_Z_COMPONENT", tStart, 0., 
+    *LNhatz = XLALCreateREAL8TimeSeries( "LNHAT_Z_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *E1x = XLALCreateREAL8TimeSeries( "E1_BASIS_X_COMPONENT", tStart, 0., 
+    *E1x = XLALCreateREAL8TimeSeries( "E1_BASIS_X_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *E1y = XLALCreateREAL8TimeSeries( "E1_BASIS_Y_COMPONENT", tStart, 0., 
+    *E1y = XLALCreateREAL8TimeSeries( "E1_BASIS_Y_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
-    *E1z = XLALCreateREAL8TimeSeries( "E1_BASIS_Z_COMPONENT", tStart, 0., 
+    *E1z = XLALCreateREAL8TimeSeries( "E1_BASIS_Z_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, len); 
     if ( !V || !Phi || !S1x || !S1y || !S1z || !S2x || !S2y || !S2z 
             || !LNhatx || !LNhaty || !LNhatz || !E1x || !E1y || !E1z )
@@ -701,7 +701,6 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
 int XLALSimInspiralSpinTaylorT4(
 	REAL8TimeSeries **hplus,        /**< +-polarization waveform */
 	REAL8TimeSeries **hcross,       /**< x-polarization waveform */
-	LIGOTimeGPS *tStart,            /**< initial time (s) */
 	REAL8 phiStart,                 /**< initial GW phase (rad) */
 	REAL8 v0,                       /**< tail gauge term (default = 0) */
 	REAL8 deltaT,                   /**< sampling interval (s) */
@@ -733,7 +732,7 @@ int XLALSimInspiralSpinTaylorT4(
     /* Evolve the dynamical variables */
     n = XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, &S1z, 
             &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
-            tStart, phiStart, deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
+            phiStart, deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
             s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, spinFlags, phaseO);
     if( n < 0 )
         XLAL_ERROR(XLAL_EFUNC);
@@ -774,7 +773,6 @@ int XLALSimInspiralSpinTaylorT4(
 int XLALSimInspiralRestrictedSpinTaylorT4(
 	REAL8TimeSeries **hplus,        /**< +-polarization waveform */
 	REAL8TimeSeries **hcross,       /**< x-polarization waveform */
-	LIGOTimeGPS *tStart,            /**< initial time (s) */
 	REAL8 phiStart,                 /**< initial GW phase (rad) */
 	REAL8 v0,                       /**< tail gauge term (default = 0) */
 	REAL8 deltaT,                   /**< sampling interval (s) */
@@ -805,7 +803,7 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
     /* Evolve the dynamical variables */
     n = XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, &S1z, 
             &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
-            tStart, phiStart, deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
+            phiStart, deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
             s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, spinFlags, phaseO);
     if( n < 0 )
         XLAL_ERROR(XLAL_EFUNC);

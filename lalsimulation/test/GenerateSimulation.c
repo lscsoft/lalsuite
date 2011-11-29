@@ -355,7 +355,6 @@ int main (int argc , char **argv) {
     FILE *f;
     int status;
     int start_time;
-    LIGOTimeGPS tRef;
     REAL8 LNhatx = 0., LNhaty = 0., LNhatz = 0., E1x = 0., E1y = 0., E1z = 0.;
     COMPLEX16FrequencySeries *htilde = NULL;
     REAL8TimeSeries *hplus = NULL;
@@ -414,7 +413,7 @@ int main (int argc , char **argv) {
                     E1x = cos(params->inclination);
                     E1y = 0.;
                     E1z = - sin(params->inclination);
-                    XLALSimInspiralSpinTaylorT4(&hplus, &hcross, &tRef, 
+                    XLALSimInspiralSpinTaylorT4(&hplus, &hcross,
                             params->phiRef, 0., params->deltaT, params->m1, 
                             params->m2, params->fRef, params->distance, 
                             params->s1x, params->s1y, params->s1z, params->s2x,

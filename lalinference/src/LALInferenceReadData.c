@@ -977,32 +977,29 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       REAL8TimeSeries *hplus=NULL;  /**< +-polarization waveform */
       REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform */
       REAL8TimeSeries       *signalvecREAL8=NULL;
-      REAL8 S1[3], S2[3];
       LALPNOrder        order;              /* Order of the model             */
       Approximant       approximant;        /* And its approximant value      */
 
-      
-      S1[0] = injEvent->spin1x;
-      S1[1] = injEvent->spin1y;
-      S1[2] = injEvent->spin1z;
-      
-      S2[0] = injEvent->spin2x;
-      S2[1] = injEvent->spin2y;
-      S2[2] = injEvent->spin2z;      
-      
       LALGetApproximantFromString(&status, injEvent->waveform, &approximant);
       LALGetOrderFromString(&status, injEvent->waveform, &order);
-      
+
       if(LALInferenceGetProcParamVal(commandLine,"--LALSimulationRestrictedInjection")){
-        XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, &(injEvent->geocent_end_time), injEvent->coa_phase, thisData->timeData->deltaT, 
-                                              injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI, S1, S2, injEvent->f_lower, 
-                                              injEvent->distance*LAL_PC_SI * 1.0e6, injEvent->inclination, order, approximant);
+        XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, injEvent->coa_phase, thisData->timeData->deltaT,
+                                              injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI, injEvent->spin1x,
+                                              injEvent->spin1y, injEvent->spin1z, injEvent->spin2x, injEvent->spin2y,
+                                              injEvent->spin2z, injEvent->f_lower, injEvent->distance*LAL_PC_SI * 1.0e6,
+                                              injEvent->inclination, order, approximant);
       }else{
-        XLALSimInspiralChooseWaveform(&hplus, &hcross, &(injEvent->geocent_end_time), injEvent->coa_phase, thisData->timeData->deltaT, 
-                                                injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI, S1, S2, injEvent->f_lower, 
-                                                injEvent->distance*LAL_PC_SI * 1.0e6, injEvent->inclination, order, approximant);
+        XLALSimInspiralChooseWaveform(&hplus, &hcross, injEvent->coa_phase, thisData->timeData->deltaT,
+                                                injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI, injEvent->spin1x,
+                                                injEvent->spin1y, injEvent->spin1z, injEvent->spin2x, injEvent->spin2y,
+                                                injEvent->spin2z, injEvent->f_lower, injEvent->distance*LAL_PC_SI * 1.0e6,
+                                                injEvent->inclination, order, order, approximant);
       }
       
+      // FIXME: these waveform shifts need to be checked
+      XLALGPSAddGPS(&(hplus->epoch), &(injEvent->geocent_end_time));
+      XLALGPSAddGPS(&(hcross->epoch), &(injEvent->geocent_end_time));
       XLALGPSAdd(&(hplus->epoch), -(REAL8)hplus->data->length*hplus->deltaT);
       XLALGPSAdd(&(hcross->epoch), -(REAL8)hcross->data->length*hplus->deltaT);
       
@@ -1076,9 +1073,10 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 		/*for(j=0;j<injF->data->length;j++) printf("%lf\n",injF->data->data[j].re);*/
 		if(thisData->oneSidedNoisePowerSpectrum){
 			for(SNR=0.0,j=thisData->fLow/injF->deltaF;j<injF->data->length;j++){
-				SNR+=2.0*pow(injF->data->data[j].re,2.0)/(4.0*thisData->oneSidedNoisePowerSpectrum->data->data[j]);
-				SNR+=2.0*pow(injF->data->data[j].im,2.0)/(4.0*thisData->oneSidedNoisePowerSpectrum->data->data[j]);
+				SNR+=pow(injF->data->data[j].re,2.0)/thisData->oneSidedNoisePowerSpectrum->data->data[j];
+				SNR+=pow(injF->data->data[j].im,2.0)/thisData->oneSidedNoisePowerSpectrum->data->data[j];
 			}
+            SNR*=4.0*injF->deltaF;
 		}
         thisData->SNR=sqrt(SNR);
 		NetworkSNR+=SNR;

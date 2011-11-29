@@ -1,5 +1,3 @@
-#opt/lscsoft/lalpulsar/bin/lal-version
-opt/lscsoft/lalpulsar/etc/*
-#opt/lscsoft/lalpulsar/etc/*-user-env.*
-opt/lscsoft/lalpulsar/lib/*.so*
-#opt/lscsoft/lalpulsar/share/lal
+usr/lib/*.so*
+etc/*
+usr/share/lal*
