@@ -1,4 +1,4 @@
-/*  
+/*
  *  Copyright (C) 2009-2010 Holger Pletsch.
  *
  *  Based on HierarchicalSearch.h by
@@ -15,10 +15,10 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
- * 
+ *
  */
 
 #ifndef _HIERARCHSEARCHGCTH  /* Double-include protection. */
@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include <errno.h> 
+#include <errno.h>
 
 /* lal includes */
 #include <lal/UserInput.h>
@@ -49,11 +49,11 @@
 #include <lal/LALDemod.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/Date.h>
-#include <lal/LALHough.h> 
+#include <lal/LALHough.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
 #include <lal/Statistics.h>
-#include <lal/GeneratePulsarSignal.h> 
+#include <lal/GeneratePulsarSignal.h>
 #include <lal/LogPrintf.h>
 #include <lal/DopplerScan.h>
 #include <lal/UniversalDopplerMetric.h>
@@ -75,16 +75,16 @@ extern "C" {
 #endif
 
 
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
+  /******************************************************
+   *  Assignment of Id string using NRCSID()
+   */
 
-NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14:37 hpletsch Exp $" );
+  NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14:37 hpletsch Exp $" );
 
-/******************************************************
- *  Error codes and messages.
- */
- 
+  /******************************************************
+   *  Error codes and messages.
+   */
+
 #define HIERARCHICALSEARCH_ENORM 0
 #define HIERARCHICALSEARCH_ESUB  1
 #define HIERARCHICALSEARCH_EARG  2
@@ -115,9 +115,9 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 #define HIERARCHICALSEARCH_MSGEXLAL    "XLAL function call failed"
 
 
-/* ******************************************************************
- *  Structure, enum, union, etc., typdefs.
- */
+  /* ******************************************************************
+   *  Structure, enum, union, etc., typdefs.
+   */
 
   /** type describing one coherent segment of data: ( start-time + duration ) */
   typedef struct {
@@ -144,7 +144,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     LIGOTimeGPS refTime;       /**< reference time for f, fdot definition */
     REAL8VectorSequence *pos;  /**< Earth orbital position for each segment */
     REAL8VectorSequence *vel;  /**< Earth orbital velocity for each segment */
-    REAL8VectorSequence *acc;  /**< Earth orbital acceleration for each segment (new) */ 
+    REAL8VectorSequence *acc;  /**< Earth orbital acceleration for each segment (new) */
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
     REAL8  threshold;          /**< Threshold for candidate selection */
     UINT4 extraBinsFstat;      /**< Extra bins required for Fstat calculation */
@@ -184,7 +184,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
   typedef struct tagCoarseGridPoint {
     UINT4 Uindex;      /**< U index */
     REAL4 TwoF;       /**< 2F-value */
-  } CoarseGridPoint;  
+  } CoarseGridPoint;
 
 
   /** structure for storing coarse-grid points */
@@ -202,19 +202,19 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 #define CG_INDEX(cg, iStack, iFreq)             \
   ( ( (iStack) * (cg).freqlength ) + (iFreq) )
 
- /* ------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------- */
 
- /* function prototypes */
+  /* function prototypes */
 
-  void SetUpStacks(LALStatus *status, 
-		 SFTCatalogSequence  *out,  
-		 REAL8 tStack,
-		 SFTCatalog  *in,
-		 UINT4 nStacks);
+  void SetUpStacks(LALStatus *status,
+                   SFTCatalogSequence  *out,
+                   REAL8 tStack,
+                   SFTCatalog  *in,
+                   UINT4 nStacks);
 
   void GetChkPointIndex( LALStatus *status,
-			 INT4 *loopindex, 
-			 const CHAR *fnameChkPoint);
+                         INT4 *loopindex,
+                         const CHAR *fnameChkPoint);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
