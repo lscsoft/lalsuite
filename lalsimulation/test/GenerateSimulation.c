@@ -59,8 +59,6 @@ typedef struct tagGSParams {
     REAL8 m1;                 /**< mass of companion 1 */
     REAL8 m2;                 /**< mass of companion 2 */
     REAL8 chi;                /**< dimensionless aligned-spin parameter */
-    REAL8 lambda1;            /**< dimensionless tidal deformability of companion 1 */
-    REAL8 lambda2;            /**< dimensionless tidal deformability of companion 2 */
     REAL8 f_min;              /**< start frequency */
     REAL8 f_max;              /**< end frequency */
     REAL8 distance;           /**< distance of source */
