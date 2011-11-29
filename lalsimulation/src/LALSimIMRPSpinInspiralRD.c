@@ -282,7 +282,7 @@ static int XLALPSpinInspiralRDparamsSetup(
     REAL8 fCutoff,                      /** CHECKME: Cutoff frequency? */
     REAL8 m1,                           /** Mass 1 */
     REAL8 m2,                           /** Mass 2 */
-    LALSimInspiralInteraction spinInteraction, /** Spin interaction */
+    LALSimInspiralInteraction interaction, /** Spin interaction */
     UINT4 order                         /** twice PN Order in Phase */
     )
 {
@@ -383,7 +383,7 @@ static int XLALPSpinInspiralRDparamsSetup(
       break;
   }
 
-  switch (spinInteraction) {
+  switch (interaction) {
 
   case LAL_SIM_INSPIRAL_INTERACTION_NONE:
     mparams->wdotspin30S1LNh   = 0.;
@@ -421,7 +421,7 @@ static int XLALPSpinInspiralRDparamsSetup(
     break;
   case LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN: /* LAL_QMInter: */
     break;
-  case LAL_SIM_INSPIRAL_INTERACTION_All_SPIN: /* LAL_AllInter: */
+  case LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN: /* LAL_AllInter: */
     break;
   default:
     break;
@@ -2191,7 +2191,7 @@ int XLALSimIMRPSpinInspiralRDGenerator(
 			     fCutoff,		/** CHECKME: Cutoff frequency? */
 			     mass1,			/** Mass 1 */
 			     mass2,			/** Mass 2 */
-			     LAL_SIM_INSPIRAL_INTERACTION_All_SPIN,	/** Spin interaction */
+			     LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN,	/** Spin interaction */
 			     phaseO		/** PN Order in Phase */ ))
     XLAL_ERROR(XLAL_EFUNC);
 

@@ -127,7 +127,7 @@ LALGetApproximantFromString(
  *	@param[in]	thisEvent	: string containing the spin interaction
  *	@return error code
  */
-int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent);
+int XLALGetInteractionFromString(LALSimInspiralInteraction *inter, CHAR *thisEvent);
 
 int XLALGetAxisChoiceFromString(InputAxis *axisChoice, CHAR *thisEvent);
 

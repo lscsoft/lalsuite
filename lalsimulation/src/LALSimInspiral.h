@@ -91,27 +91,6 @@ typedef enum {
    NumApproximants	/**< UNDOCUMENTED */
  } Approximant;
 
-/** Enumeration to specify which component will be used in the waveform
- * generation. Their combination also can be used by the bitwise or.
- **/
-//typedef enum {
-//	LAL_NOInter = 0,                        /**< No spin interactions */
-//	LAL_SOInter = 1,                        /**< Spin-orbit interaction */
-//	LAL_SSInter = LAL_SOInter << 1,         /**< Spin-spin interaction */
-//	LAL_SSselfInter = LAL_SSInter << 1,     /**<  Spin-spin-self interaction */
-//	LAL_QMInter = LAL_SSselfInter << 1,     /**< quadrupole-monopole interaction */
-//	LAL_SO25Inter = LAL_QMInter << 1,     /**<  next-to-leading order (2.5PN) Spin-orbit interaction */
-//	LAL_AllInter = LAL_SOInter | LAL_SSInter | LAL_SSselfInter | LAL_QMInter | LAL_SO25Inter /**< all interactions */
-//} LALSpinInteraction;
-
-/** Enumeration to specify PN order of tidal terms.
- **/
-//typedef enum {
-//	LAL_NOTIDAL, /**< No tidal interactions */
-//	LAL_TIDAL5PN, /**< Leading order (5PN) tidal interactions */
-//	LAL_TIDAL6PN /**< Next to leading order (6PN) tidal interactions */
-//} LALTidalInteraction;
-
 
 /** Enumeration to specify which interaction will be used in the waveform
  * generation. Their combination also can be used by the bitwise or.
@@ -126,8 +105,8 @@ typedef enum {
 	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN = 1 << 5, /**< Leading-order tidal interaction */
 	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN = 1 << 6, /**< Next-to-leading-order tidal interaction */
 
-	LAL_SIM_INSPIRAL_INTERACTION_All_SPIN = 1 << 5 - 1, /**< all spin interactions, no tidal interactions */
-	LAL_SIM_INSPIRAL_INTERACTION_ALL = 1 << 7 - 1 /**< all spin and tidal interactions */
+	LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN = (1 << 5) - 1, /**< all spin interactions, no tidal interactions */
+	LAL_SIM_INSPIRAL_INTERACTION_ALL = (1 << 7) - 1 /**< all spin and tidal interactions */
 } LALSimInspiralInteraction;
 
 /**

@@ -345,9 +345,9 @@ static void XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspi
       break;
   }
 
-  switch (params->spinInteraction) {
+  switch (params->interaction) {
 
-  case LAL_NOInter:
+  case LAL_SIM_INSPIRAL_INTERACTION_NONE:
     mparams->wdotspin30S1LNh   = 0.;
     mparams->wdotspin30S2LNh   = 0.;
     mparams->epnspin25S1dotLNh = 0.;
@@ -363,12 +363,12 @@ static void XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspi
     mparams->S1dot15           = 0.;
     mparams->S2dot15           = 0.;
 
-  case LAL_SOInter:
+  case LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN:
     mparams->wdotspin20S1S2      = 0.;
     mparams->epnspin20S1S2       = 0.;
     mparams->epnspin20S1S2dotLNh = 0.;
 
-  case LAL_SSInter:
+  case LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN:
     mparams->wdotspin20S1S1 = 0.;
     mparams->epnspin20S1S1 = 0.;
     mparams->epnspin20S2S2 = 0.;
@@ -379,11 +379,11 @@ static void XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspi
     mparams->epnspin20S2S2dotLNh = 0.;
     break;
 
-  case LAL_SSselfInter:
+  case LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN:
     break;
-  case LAL_QMInter:
+  case LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN:
     break;
-  case LAL_AllInter:
+  case LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN:
     break;
   default:
     break;
