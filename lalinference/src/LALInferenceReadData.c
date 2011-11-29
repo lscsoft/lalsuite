@@ -972,32 +972,26 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 
 		/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
     //LALFindChirpInjectSignals(&status,injectionBuffer,injEvent,resp);
-    if(LALInferenceGetProcParamVal(commandLine,"--LALSimulationInjection") || LALInferenceGetProcParamVal(commandLine,"--LALSimulationRestrictedInjection")){
+    if(LALInferenceGetProcParamVal(commandLine,"--LALSimulationInjection")){
       
       REAL8TimeSeries *hplus=NULL;  /**< +-polarization waveform */
       REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform */
       REAL8TimeSeries       *signalvecREAL8=NULL;
       LALPNOrder        order;              /* Order of the model             */
       Approximant       approximant;        /* And its approximant value      */
+      INT4              amporder=0;         /* Amplitude order of the model   */
 
       LALGetApproximantFromString(&status, injEvent->waveform, &approximant);
       LALGetOrderFromString(&status, injEvent->waveform, &order);
-
-      if(LALInferenceGetProcParamVal(commandLine,"--LALSimulationRestrictedInjection")){
-        XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, injEvent->coa_phase, thisData->timeData->deltaT,
-                                              injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI, injEvent->spin1x,
-                                              injEvent->spin1y, injEvent->spin1z, injEvent->spin2x, injEvent->spin2y,
-                                              injEvent->spin2z, injEvent->f_lower, injEvent->distance*LAL_PC_SI * 1.0e6,
-                                              injEvent->inclination, order, approximant);
-      }else{
+      amporder = injEvent->amp_order;
+      //if(amporder<0) amporder=0;
+        
         XLALSimInspiralChooseWaveform(&hplus, &hcross, injEvent->coa_phase, thisData->timeData->deltaT,
                                                 injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI, injEvent->spin1x,
                                                 injEvent->spin1y, injEvent->spin1z, injEvent->spin2x, injEvent->spin2y,
                                                 injEvent->spin2z, injEvent->f_lower, injEvent->distance*LAL_PC_SI * 1.0e6,
-                                                injEvent->inclination, order, order, approximant);
-      }
+                                                injEvent->inclination, amporder, order, approximant);
       
-      // FIXME: these waveform shifts need to be checked
       XLALGPSAddGPS(&(hplus->epoch), &(injEvent->geocent_end_time));
       XLALGPSAddGPS(&(hcross->epoch), &(injEvent->geocent_end_time));
       XLALGPSAdd(&(hplus->epoch), -(REAL8)hplus->data->length*hplus->deltaT);
