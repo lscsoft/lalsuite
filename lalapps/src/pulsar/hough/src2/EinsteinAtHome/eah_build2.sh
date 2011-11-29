@@ -195,6 +195,7 @@ if [ ."$build_win32" = ."true" ] ; then
     CPPFLAGS="-DMINGW_WIN32 -DWIN32 -D_WIN32 -D_WIN32_WINDOWS=0x0410 $CPPFLAGS"
     # -include $INSTALL/include/win32_hacks.h
     cross_copt=--host=i586-pc-mingw32
+    shared_copt="--disable-shared"
     fftw_copts_single="$fftw_copts_single --with-our-malloc16"
     fftw_copts_double="$fftw_copts_double --with-our-malloc16"
     ext=".exe"
