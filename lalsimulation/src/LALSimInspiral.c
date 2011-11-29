@@ -1038,7 +1038,7 @@ int XLALSimInspiralChooseWaveform(
             E1z = - sin(i);
             /* Maximum PN amplitude order for precessing waveforms is MAX_PRECESSING_AMP_PN_ORDER */
             ampO = ampO <= MAX_PRECESSING_AMP_PN_ORDER ? ampO : MAX_PRECESSING_AMP_PN_ORDER;
-            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, phi0, 0., deltaT, m1, m2, f_min, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, 0.0, 0.0, LAL_AllInter, LAL_NOTIDAL, O, ampO);
+            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, phi0, 0., deltaT, m1, m2, f_min, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, 0.0, 0.0, LAL_SIM_INSPIRAL_INTERACTION_All_SPIN, O, ampO);
             break;
 
         /* spinning inspiral-merger-ringdown models */
@@ -1129,7 +1129,7 @@ int XLALSimInspiralChooseRestrictedWaveform(
             E1x = cos(i);
             E1y = 0.;
             E1z = - sin(i);
-            ret = XLALSimInspiralRestrictedSpinTaylorT4(hplus, hcross, phi0, 0., deltaT, m1, m2, f_min, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, 0.0, 0.0, LAL_AllInter, LAL_NOTIDAL, O);
+            ret = XLALSimInspiralRestrictedSpinTaylorT4(hplus, hcross, phi0, 0., deltaT, m1, m2, f_min, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, 0.0, 0.0, LAL_SIM_INSPIRAL_INTERACTION_All_SPIN, O);
             break;
 
         default:

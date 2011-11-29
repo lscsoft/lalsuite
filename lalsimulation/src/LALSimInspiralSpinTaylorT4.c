@@ -46,8 +46,12 @@
 /* Number of variables used for precessing waveforms */
 #define LAL_NUM_ST4_VARIABLES 14
 /* absolute and relative tolerance for adaptive Runge-Kutta ODE integrator */
-#define LAL_ST4_ABSOLUTE_TOLERANCE 1.e-06
-#define LAL_ST4_RELATIVE_TOLERANCE 1.e-06
+/* 1.e-06 is too large for end of 1.4--1.4 M_sun BNS inspiral */
+/* (phase difference at end will be ~10% of GW cycle). */
+/* 1.e-12 is used so last data point isn't nan for 6PN tidal, */
+/* since larger values probably cause larger step sizes. */
+#define LAL_ST4_ABSOLUTE_TOLERANCE 1.e-12
+#define LAL_ST4_RELATIVE_TOLERANCE 1.e-12
 
 NRCSID(LALSIMINSPIRALSPINTAYLORT4C, "$Id$");
 
@@ -146,8 +150,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8 e1z,                    /**< initial value of E1z */
 	REAL8 lambda1,                /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
 	REAL8 lambda2,                /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-	LALSpinInteraction spinFlags, /**< flags to control spin effects */
-	LALTidalInteraction tidalFlags, /**< flags to control tidal effects */
+	LALSimInspiralInteraction interactionFlags,	  /**< flag to control spin and tidal effects */
 	INT4 phaseO                   /**< twice post-Newtonian order */
 	)
 {
@@ -276,7 +279,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     params.wdotSO25s2 	= 0.;
     params.ESO25s1 	= 0.;
     params.ESO25s2 	= 0.;
-    if( (spinFlags & LAL_SOInter) == LAL_SOInter )
+    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN )
     {
         params.LNhatSO15s1 	= 2. + 3./2. * m2m1;
         params.LNhatSO15s2	= 2. + 3./2. * m1m2;
@@ -285,23 +288,23 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
         params.ESO15s1 		= 8./3. + 2. * m2m1;
         params.ESO15s2 		= 8./3. + 2. * m1m2;
     }
-    if( (spinFlags & LAL_SSInter) == LAL_SSInter )
+    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN )
     {
         params.LNhatSS2 	= -1.5 / eta;
         params.wdotSS2 		= - 1. / 48. / eta;
         params.ESS2 		= 1. / eta;
     }
-    if( (spinFlags & LAL_SSselfInter) == LAL_SSselfInter ) /* ADD ME!! */
+    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN ) /* ADD ME!! */
     {
         params.wdotSelfSS2 	= 0.;
         params.ESelfSS2 	= 0.;
     }
-    if( (spinFlags & LAL_QMInter) == LAL_QMInter ) /* ADD ME!! */
+    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN) == LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN ) /* ADD ME!! */
     {
         params.wdotQM2 		= 0.;
         params.EQM2 		= 0.;
     }
-    if( (spinFlags & LAL_SO25Inter) == LAL_SO25Inter ) /* ADD ME!! */
+    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN ) /* ADD ME!! */
     {
         params.wdotSO25s1 	= 0.;
         params.wdotSO25s2 	= 0.;	
@@ -320,14 +323,13 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	params.wdottidal6pn = 0.;
 	params.Etidal5pn = 0.;
 	params.Etidal6pn = 0.;
-	/* if( tidalFlags == LAL_NOTIDAL ) */
-	if( tidalFlags >= LAL_TIDAL5PN )
+	if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN)
 	{
 		params.wdottidal5pn = lambda1 * 6. * (1. + 11. * m2M) / m1M
 				+ lambda2 * 6. * (1. + 11. * m1M) / m2M;
 		params.Etidal5pn = - 9. * m2m1 * lambda1 - 9. * m1m2 * lambda2;
 	}
-	if( tidalFlags == LAL_TIDAL6PN )
+	if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN )
 	{
 		params.wdottidal6pn 
 				= lambda1 * (4421./28. - 12263./28. * m1M + 1893./2. * m1M * m1M - 661 * m1M * m1M * m1M) / (2 * m1M)
@@ -536,7 +538,7 @@ static int XLALSimInspiralSpinTaylorT4StoppingTest(
             + v * ( 9. *  params->Ecoeff[7]
 			+ v * v * v * ( 12. * params->Etidal5pn
 			+ v * v * ( 14. * params->Etidal6pn ) ) ) ) ) ) ) );
-
+	
     if (test < 0.0) /* energy test fails! */
         return LALSIMINSPIRAL_ST4_TEST_ENERGY;
     else if (dvalues[1] < 0.0) /* omegadot < 0! */
@@ -764,8 +766,7 @@ int XLALSimInspiralSpinTaylorT4(
 	REAL8 e1z,                      /**< initial value of E1z */
 	REAL8 lambda1,					/**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
 	REAL8 lambda2,					/**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-	LALSpinInteraction spinFlags,	/**< flags to control spin effects */
-	LALTidalInteraction tidalFlags, /**< flags to control tidal effects */
+	LALSimInspiralInteraction interactionFlags,    /**< flag to control spin and tidal effects */
 	int phaseO,                     /**< twice PN phase order */
 	int amplitudeO                  /**< twice PN amplitude order */
 	)
@@ -778,7 +779,7 @@ int XLALSimInspiralSpinTaylorT4(
     n = XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, &S1z, 
             &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
             phiStart, deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
-            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, spinFlags, tidalFlags, phaseO);
+            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, interactionFlags, phaseO);
     if( n < 0 )
         XLAL_ERROR(XLAL_EFUNC);
 
@@ -839,8 +840,7 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
 	REAL8 e1z,                      /**< initial value of E1z */
 	REAL8 lambda1,					/**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
 	REAL8 lambda2,					/**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-	LALSpinInteraction spinFlags,	/**< flags to control spin effects */
-	LALTidalInteraction tidalFlags, /**< flags to control tidal effects */										  
+	LALSimInspiralInteraction interactionFlags,    /**< flag to control spin and tidal effects */					  
 	int phaseO                      /**< twice PN phase order */
 	)
 {
@@ -852,7 +852,7 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
     n = XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, &S1z, 
             &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
             phiStart, deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
-            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, spinFlags, tidalFlags, phaseO);
+            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, interactionFlags, phaseO);
     if( n < 0 )
         XLAL_ERROR(XLAL_EFUNC);
 
