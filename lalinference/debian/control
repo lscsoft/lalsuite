@@ -2,12 +2,12 @@ Source: lalinference
 Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 5), zlib1g-dev, libgsl0-dev (>= 1.9), lal-dev (>= 6.6), lalmetaio-dev (>= 1.0.2), libmetaio-dev (>= 8.2), pkg-config, python (>= 2.4)
+Build-Depends: debhelper (>= 5), zlib1g-dev, libgsl0-dev (>= 1.9), lal-dev (>= 6.6), lalmetaio-dev (>= 1.0.2), lalframe-dev (>= 1.0.3), lalsimulation-dev (>= 0.1), lalinspiral-dev (>= 1.2), lalpulsar-dev (>= 1.2), libmetaio-dev (>= 8.2), pkg-config, python (>= 2.4)
 Standards-Version: 3.7.2
 
 Package: lalinference
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), lal (>= 6.6), lalmetaio (>= 1.0.2), libmetaio1 (>= 8.2)
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), lal (>= 6.6), lalmetaio (>= 1.0.2), lalframe (>= 1.0.3), lalsimulation (>= 0.1), lalinspiral (>= 1.2), lalpulsar (>= 1.2), libmetaio1 (>= 8.2)
 Description: LSC Algorithm Library Inference
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -15,7 +15,7 @@ Description: LSC Algorithm Library Inference
 
 Package: lalinference-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, lalinspiral (= ${binary:Version}), zlib1g, libgsl0-dev (>= 1.9), lal-dev (>= 6.6), lalmetaio-dev (>= 1.0.2), libmetaio-dev (>= 8.2)
+Depends: ${shlibs:Depends}, ${misc:Depends}, lalinspiral (= ${binary:Version}), zlib1g, libgsl0-dev (>= 1.9), lal-dev (>= 6.6), lalmetaio-dev (>= 1.0.2), lalframe-dev (>= 1.0.3), lalsimulation-dev (>= 0.1), lalinspiral-dev (>= 1.2), lalpulsar-dev (>= 1.2), libmetaio-dev (>= 8.2)
 Description: LSC Algorithm Library Inference Developers
  The LSC Algorithm Inference Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
