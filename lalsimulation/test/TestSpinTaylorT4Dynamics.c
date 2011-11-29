@@ -60,6 +60,9 @@ int main (int argc , char **argv)
     REAL8 s2y = 0.8;
     REAL8 s2z = 0.1;
     REAL8 inclination = 1.;
+	REAL8 lambda1 = 500.;
+	REAL8 lambda2 = 500.;
+	LALTidalInteraction tidalFlags = LAL_TIDAL6PN;
     REAL8 deltaT = 1. / 16384.;
     REAL8 fStart = 40.;
     REAL8 phiStart = 0.;
@@ -79,7 +82,7 @@ int main (int argc , char **argv)
     XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, 
             &S1z, &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
             phiStart, deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
-            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, spinFlags, phaseO);
+            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, spinFlags, tidalFlags, phaseO);
 
     len = V->data->length;
 
