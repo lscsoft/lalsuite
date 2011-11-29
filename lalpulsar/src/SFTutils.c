@@ -1119,6 +1119,8 @@ XLALGetChannelPrefix ( const CHAR *name )
 {
   CHAR *channel = XLALCalloc( 3, sizeof(CHAR) );  /* 2 chars + \0 */
 
+#define CHECK_UNIQUE do { if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name ); } while(0)
+
   if ( !channel ) {
     XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to calloc(3)!\n" );
   }
@@ -1129,56 +1131,62 @@ XLALGetChannelPrefix ( const CHAR *name )
 
   /* first handle (currently) unambiguous ones */
   if ( strstr( name, "ALLEGRO") || strstr ( name, "A1") ) {
-    if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
+    CHECK_UNIQUE;
     strcpy ( channel, "A1");
   }
   if ( strstr(name, "NIOBE") || strstr( name, "B1") ) {
-    if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
+    CHECK_UNIQUE;
     strcpy ( channel, "B1");
   }
   if ( strstr(name, "EXPLORER") || strstr( name, "E1") ) {
-    if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
+    CHECK_UNIQUE;
     strcpy ( channel, "E1");
   }
   if ( strstr(name, "GEO") || strstr(name, "G1") ) {
-    if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
+    CHECK_UNIQUE;
     strcpy ( channel, "G1" );
   }
   if ( strstr(name, "ACIGA") || strstr (name, "K1") ) {
-    if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
+    CHECK_UNIQUE;
     strcpy ( channel, "K1" );
   }
   if ( strstr(name, "LLO") || strstr(name, "Livingston") || strstr(name, "L1") ) {
-    if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
+    CHECK_UNIQUE;
     strcpy ( channel, "L1" );
   }
   if ( strstr(name, "Nautilus") || strstr(name, "N1") ) {
-    if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
+    CHECK_UNIQUE;
     strcpy ( channel, "N1" );
   }
   if ( strstr(name, "AURIGA") || strstr(name,"O1") ) {
-    if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
+    CHECK_UNIQUE;
     strcpy ( channel, "O1" );
   }
   if ( strstr(name, "CIT_40") || strstr(name, "Caltech-40") || strstr(name, "P1") ) {
-    if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
+    CHECK_UNIQUE;
     strcpy ( channel, "P1" );
   }
   if ( strstr(name, "TAMA") || strstr(name, "T1") ) {
-    if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
+    CHECK_UNIQUE;
     strcpy (channel, "T1" );
   }
   /* currently the only real ambiguity arises with H1 vs H2 */
   if ( strstr(name, "LHO") || strstr(name, "Hanford") || strstr(name, "H1") || strstr(name, "H2") ) {
-    if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
     if ( strstr(name, "LHO_2k") ||  strstr(name, "H2") )
-      strcpy ( channel, "H2" );
-    else if ( strstr(name, "LHO_4k") ||  strstr(name, "H1") )
-      strcpy ( channel, "H1" );
-    else /* otherwise: guess */
       {
-        XLALPrintWarning("Detector-name '%s' not unique, guessing '%s'\n", name, channel );
+        CHECK_UNIQUE;
+        strcpy ( channel, "H2" );
+      }
+    if ( strstr(name, "LHO_4k") ||  strstr(name, "H1") )
+      {
+        CHECK_UNIQUE;
         strcpy ( channel, "H1" );
+      }
+    /* otherwise: guess */
+    if ( channel[0] == 0 )
+      {
+        strcpy ( channel, "H1" );
+        XLALPrintWarning("Detector-name '%s' ambiguous, guessing '%s'\n", name, channel );
       }
   } /* if LHO */
   /* LISA channel names are simply left unchanged */
@@ -1186,19 +1194,23 @@ XLALGetChannelPrefix ( const CHAR *name )
        || strstr(name, "Z4") || strstr(name, "Z5") || strstr(name, "Z6")
        || strstr(name, "Z7") || strstr(name, "Z8") || strstr(name, "Z9") )
     {
-      if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
+      CHECK_UNIQUE;
       strncpy ( channel, name, 2);
       channel[2] = 0;
     }
   if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V1") || strstr(name, "V2") )
     {
-      if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name );
       if ( strstr(name, "Virgo_CITF") || strstr(name, "V2") )
-	strcpy ( channel, "V2" );
-      else if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V1") )
-	strcpy ( channel, "V1" );
+        {
+          CHECK_UNIQUE;
+          strcpy ( channel, "V2" );
+        }
+      if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V1") )
+        {
+          CHECK_UNIQUE;
+          strcpy ( channel, "V1" );
+        }
     } /* if Virgo */
-
 
   /* Did we fail to find any matches? */
   if ( channel[0] == 0 )
