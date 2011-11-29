@@ -296,10 +296,10 @@ if [ -z "$NORESAMP" ]; then
 	echo "Error.. something failed when running '$gct_code' ..."
 	exit 1
     fi
-    topline=$(sort -nr -k6,6 $outfile_GCT_RS | head -1)
-    resGCT_RS=$(echo $topline | awk '{print $6}')
-    resGCT_RS_L1=$(echo $topline | awk '{print $8}')
-    resGCT_RS_H1=$(echo $topline | awk '{print $9}')
+    topline=$(sort -nr -k7,7 $outfile_GCT_RS | head -1)
+    resGCT_RS=$(echo $topline | awk '{print $7}')
+    resGCT_RS_L1=$(echo $topline | awk '{print $9}')
+    resGCT_RS_H1=$(echo $topline | awk '{print $10}')
     freqGCT_RS=$(echo $topline | awk '{print $1}')
 else
     echo
@@ -324,10 +324,10 @@ if ! eval "$cmdline &> /dev/null"; then
     exit 1
 fi
 
-topline=$(sort -nr -k6,6 $outfile_GCT_DM | head -1)
-resGCT_DM=$(echo $topline  | awk '{print $6}')
-resGCT_DM_L1=$(echo $topline  | awk '{print $8}')
-resGCT_DM_H1=$(echo $topline  | awk '{print $9}')
+topline=$(sort -nr -k7,7 $outfile_GCT_DM | head -1)
+resGCT_DM=$(echo $topline  | awk '{print $7}')
+resGCT_DM_L1=$(echo $topline  | awk '{print $9}')
+resGCT_DM_H1=$(echo $topline  | awk '{print $10}')
 freqGCT_DM=$(echo $topline | awk '{print $1}')
 
 ## ---------- compute relative differences and check against tolerance --------------------
