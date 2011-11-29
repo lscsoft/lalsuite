@@ -351,11 +351,13 @@ awk_isgtr='{if($1>$2) {print "1"}}'
 
 echo
 echo "--------- Timings ------------------------------------------------------------------------------------------------"
-awk_timing='BEGIN { timingsum = 0; counter=0; } { timingsum=timingsum+$9; counter=counter+1; } END {printf "%.3g", timingsum/counter}'
+awk_timing='BEGIN { sumTau = 0; sumTauCoh = 0; sumTauSC = 0; counter=0; } \
+           { sumTau = sumTau + $8; sumTauCoh = sumTauCoh + $9; sumTauSC = sumTauSC + $10; counter=counter+1; } \
+           END {printf "tau = %5.3g s, tauCoh = %5.3g s, tauSC = %5.3g s", sumTau/counter, sumTauCoh/counter, sumTauSC/counter}'
 timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
 timing_RS=$(sed '/^%.*/d' $timingsfile_RS | awk "$awk_timing")
-echo " GCT-LALDemod:  tauCoh = $timing_DM s"
-echo " GCT-Resamp:    tauCoh = $timing_RS s"
+echo " GCT-LALDemod:  $timing_DM"
+echo " GCT-Resamp:    $timing_RS"
 
 echo
 echo "--------- Compare results ----------------------------------------------------------------------------------------"
