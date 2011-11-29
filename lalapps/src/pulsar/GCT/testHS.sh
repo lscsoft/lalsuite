@@ -180,7 +180,7 @@ while [ $iFreq -le $numFreqBands ]; do
     # for H1:
     SFTname="${SFTdir}${dirsep}H1-${mfd_fi}_${FreqStep}.sft"
     if [ ! -r $SFTname ]; then
-        cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=H1 --outSFTbname=$SFTname --timestampsFile=$tsFile_H1"
+        cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=H1 --outSFTbname='$SFTname' --timestampsFile='$tsFile_H1'"
         echo "$cmdline";
         if ! eval "$cmdline &> /dev/null"; then
             echo "Error.. something failed when running '$mfd_code' ..."
@@ -193,7 +193,7 @@ while [ $iFreq -le $numFreqBands ]; do
     # for L1:
     SFTname="${SFTdir}${dirsep}L1-${mfd_fi}_${FreqStep}.sft"
     if [ ! -r $SFTname ]; then
-        cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=L1 --outSFTbname=$SFTname --timestampsFile=$tsFile_L1";
+        cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=L1 --outSFTbname='$SFTname' --timestampsFile='$tsFile_L1'";
         echo "$cmdline";
         if ! eval "$cmdline &> /dev/null"; then
             echo "Error.. something failed when running '$mfd_code' ..."
@@ -274,7 +274,7 @@ echo "==>   Average <2F_multi>=$TwoFAvg, <2F_H1>=$TwoFAvg_H1, <2F_L1>=$TwoFAvg_L
 
 ## ---------- run GCT code on this data ----------------------------------------
 
-gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --ephemE=$edat --ephemS=$sdat --outputFX --Dterms=$Dterms --blocksRngMed=$RngMedWindow"
+gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --ephemE=$edat --ephemS=$sdat --outputFX --Dterms=$Dterms --blocksRngMed=$RngMedWindow"
 if [ "$sqrtSh" = "0" ]; then
     gct_CL_common="$gct_CL_common --SignalOnly";
 fi
@@ -290,7 +290,7 @@ outfile_GCT_RS="${testDir}${dirsep}GCT_RS.dat"
 timingsfile_RS="${testDir}${dirsep}timing_RS.dat"
 
 if [ -z "$NORESAMP" ]; then
-    cmdline="$gct_code $gct_CL_common --useResamp=true --fnameout=$outfile_GCT_RS --outputTiming=$timingsfile_RS"
+    cmdline="$gct_code $gct_CL_common --useResamp=true --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS'"
     echo "$cmdline"
     if ! eval "$cmdline &> /dev/null"; then
 	echo "Error.. something failed when running '$gct_code' ..."
@@ -317,7 +317,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM="${testDir}${dirsep}GCT_DM.dat"
 timingsfile_DM="${testDir}${dirsep}timing_DM.dat"
 
-cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout=$outfile_GCT_DM --outputTiming=$timingsfile_DM"
+cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM'"
 echo $cmdline
 if ! eval "$cmdline &> /dev/null"; then
     echo "Error.. something failed when running '$gct_code' ..."
