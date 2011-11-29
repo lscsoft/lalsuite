@@ -286,6 +286,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   INT4 Tskip=100;
+  INT4 swapAttempt=0;
+  INT4 nSwaps=(nChain-1)*nChain/2;
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip"))
     Tskip = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip")->value);
   INT4 Tkill=Niter;
@@ -423,6 +425,30 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
                 TcurrentLikelihood[lowerRank] = dummyR8;
               }
             } //for(upperRank=nChain;upperRank>0;upperRank--)
+
+          } else if (LALInferenceGetProcParamVal(runState->commandLine, "--randomPT")) {
+            for (swapAttempt=0; swapAttempt<nSwaps; ++swapAttempt) {
+              lowerRank = gsl_rng_uniform_int(runState->GSLrandom, nChain-1);
+              upperRank = lowerRank+1;
+
+              logChainSwap = (1.0/tempLadder[lowerRank]-1.0/tempLadder[upperRank]) * (TcurrentLikelihood[upperRank]-TcurrentLikelihood[lowerRank]);
+
+              if ((logChainSwap > 0)
+                  || (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap...
+                if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
+                  fprintf(tempfile,"%d\t%f\t%f\t%f\n",i,logChainSwap,tempLadder[lowerRank],tempLadder[upperRank]);
+                  fflush(tempfile);
+                }
+                for (p=0; p<(nPar); ++p){
+                  dummyR8=parametersVec[p+nPar*upperRank];
+                  parametersVec[p+nPar*upperRank]=parametersVec[p+nPar*lowerRank];
+                  parametersVec[p+nPar*lowerRank]=dummyR8;
+                }
+                dummyR8 = TcurrentLikelihood[upperRank];
+                TcurrentLikelihood[upperRank] = TcurrentLikelihood[lowerRank];
+                TcurrentLikelihood[lowerRank] = dummyR8;
+                }
+              } //for(swapAttempt=0; swapAttempt<50; ++swapAttempt)
           } else {
             for(lowerRank=0;lowerRank<nChain-1;lowerRank++) { //swap parameters and likelihood between chains
               for(upperRank=lowerRank+1;upperRank<nChain;upperRank++) {
