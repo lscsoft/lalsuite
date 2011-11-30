@@ -394,6 +394,7 @@ void initVariables(LALInferenceRunState *state)
                (--comp-max max)                Maximum component mass (30.0)\n\
                (--MTotMax max)                 Maximum total mass (35.0)\n\
                (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n\
+               (--noDifferentialEvolution)     Do not use differential evolution to propose jumps (it is used by default)\n\
                (--appendOutput fname)          Basename of the file to append outputs to\n";
 
 
@@ -1307,14 +1308,15 @@ void initVariables(LALInferenceRunState *state)
   }
 
   /* Differential Evolution? */
-  ppt=LALInferenceGetProcParamVal(commandLine, "--differential-evolution");
-  if (ppt) {
+  ppt=LALInferenceGetProcParamVal(commandLine, "--noDifferentialEvolution");
+  if (!ppt) {
     fprintf(stderr, "Using differential evolution.\nEvery Nskip parameters will be stored for use in the d.e. jump proposal.\n");
 
     state->differentialPoints = XLALCalloc(1, sizeof(LALInferenceVariables *));
     state->differentialPointsLength = 0;
     state->differentialPointsSize = 1;
   } else {
+    fprintf(stderr, "Differential evolution disabled (--noDifferentialEvolution).\n");
     state->differentialPoints = NULL;
     state->differentialPointsLength = 0;
     state->differentialPointsSize = 0;
