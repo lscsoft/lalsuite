@@ -1001,15 +1001,15 @@ XLALCreateExpLUT ( void )
 {
   /* create empty output LUT */
   gsl_vector *ret;
-  if ( ( ret = gsl_vector_alloc ( EXPLUT_LENGTH )) == NULL ) {
-    XLALPrintError ("%s: failed to gsl_vector_alloc (%s)\n", __func__, EXPLUT_LENGTH );
+  if ( ( ret = gsl_vector_alloc ( EXPLUT_LENGTH + 1)) == NULL ) {
+    XLALPrintError ("%s: failed to gsl_vector_alloc (%s)\n", __func__, EXPLUT_LENGTH +1 );
     XLAL_ERROR ( XLAL_ENOMEM );
   }
 
   /* fill output LUT */
   REAL8 dx = EXPLUT_XMAX / EXPLUT_LENGTH;
   UINT4 i;
-  for ( i=0; i < EXPLUT_LENGTH; i ++ )
+  for ( i=0; i <= EXPLUT_LENGTH; i ++ )
     {
       REAL8 xi = i * dx;
 

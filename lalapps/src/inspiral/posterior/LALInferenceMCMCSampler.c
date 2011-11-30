@@ -313,7 +313,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
 
     if ((i % Nskip) == 0) {
-      if (LALInferenceGetProcParamVal(runState->commandLine, "--differential-evolution")) {
+      if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")) {
         accumulateDifferentialEvolutionSample(runState);
       }
 
