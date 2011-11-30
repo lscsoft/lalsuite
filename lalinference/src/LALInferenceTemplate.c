@@ -1747,12 +1747,14 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 /*   - "spin2z"			(z component of the spin of object 2; REAL8) (if SpinTaylor approx)	*/
 /*	 - "shift0"			(shift offset; REAL8, radians)			                            */
 /*   - "time"			(coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)	*/
-/*	 - "PNorder"		(Phase PN order; REAL8)												*/
+/*	 - "PNorder"		(Phase PN order)												*/
+/*   - "Amporder"   (Amplitude PN order)                                                    */
 /********************************************************************************************/
 {
 	
 	Approximant			approximant=0;
 	int			order=0;
+  int amporder=0;
 
 	unsigned long				i;
 	static int sizeWarning = 0;
@@ -1763,7 +1765,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform [returned] */
   
 	REAL8 mc;
-  REAL8 phi0, deltaT, m1, m2, S1[3], S2[3], f_min, distance, inclination;
+  REAL8 phi0, deltaT, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, inclination;
 	
   REAL8 padding=0.4; // hard coded value found in LALInferenceReadData(). Padding (in seconds) for the tuckey window.
   UINT8 windowshift=(UINT8) ceil(padding/IFOdata->timeData->deltaT);
@@ -1783,7 +1785,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	  XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
 	  XLAL_ERROR_VOID(XLAL_EDATA);
 	}
-	
+  if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_AMPORDER"))
+		amporder = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_AMPORDER");
+
 
 	mc  = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
     if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
@@ -1812,13 +1816,13 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	REAL8 phi_spin2		= 0.0;
 	if(LALInferenceCheckVariable(IFOdata->modelParams, "phi_spin2"))	phi_spin2	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_spin2");
 	
-	S1[0] = (a_spin1 * sin(theta_spin1) * cos(phi_spin1));
-	S1[1] = (a_spin1 * sin(theta_spin1) * sin(phi_spin1));
-	S1[2] = (a_spin1 * cos(theta_spin1));
+	spin1x = (a_spin1 * sin(theta_spin1) * cos(phi_spin1));
+	spin1y = (a_spin1 * sin(theta_spin1) * sin(phi_spin1));
+	spin1z = (a_spin1 * cos(theta_spin1));
 	
-	S2[0] = (a_spin2 * sin(theta_spin2) * cos(phi_spin2));
-	S2[1] = (a_spin2 * sin(theta_spin2) * sin(phi_spin2));
-	S2[2] = (a_spin2 * cos(theta_spin2));
+	spin2x = (a_spin2 * sin(theta_spin2) * cos(phi_spin2));
+	spin2y = (a_spin2 * sin(theta_spin2) * sin(phi_spin2));
+	spin2z = (a_spin2 * cos(theta_spin2));
 	
 	distance	= LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
 	
@@ -1839,12 +1843,10 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	}
 	
 	INT4 errnum=0;
-  if(LALInferenceCheckVariable(IFOdata->modelParams, "LALSimulationRestrictedWaveform")){
-    XLAL_TRY(ret=XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1[0], S1[1], S1[2], S2[0], S2[1], S2[2], f_min, distance, inclination, order, approximant), errnum);
-  }else{
-    XLAL_TRY(ret=XLALSimInspiralChooseWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1[0], S1[1], S1[2], S2[0], S2[1], S2[2], f_min, distance, inclination, order, order, approximant), errnum);
-  }
-  
+
+  XLAL_TRY(ret=XLALSimInspiralChooseWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, 
+                                             spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, 
+                                             inclination, amporder, order, approximant), errnum);
   
   if (ret == XLAL_FAILURE)
   {

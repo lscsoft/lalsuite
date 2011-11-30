@@ -192,7 +192,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 
   /* Choose the template generator for inspiral signals */
   runState->template=&LALInferenceTemplateLAL;
-  if(LALInferenceGetProcParamVal(commandLine,"--LALSimulation") || LALInferenceGetProcParamVal(commandLine,"--LALSimulationRestricted")){
+  if(LALInferenceGetProcParamVal(commandLine,"--LALSimulation")){
     runState->template=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
     fprintf(stdout,"Template function called is \"LALInferenceTemplateXLALSimInspiralChooseWaveform\"\n");
   }else{
@@ -388,13 +388,13 @@ void initVariables(LALInferenceRunState *state)
                (--Dmin dist)                   Minimum distance in Mpc (1)\n\
                (--Dmax dist)                   Maximum distance in Mpc (100)\n\
                (--approximant Approximant)     Specify a template approximant to use, (default TaylorF2)\n\
-               (--order PNorder)               Specify a PN order to use, (default threePointFivePN)\n\
+               (--order PNorder)               Specify a PN order in phase to use, (default threePointFivePN)\n\
+               (--ampOrder PNorder)            Specify a PN order in amplitude to use, (default newtonian)\n\
                (--comp-min min)                Minimum component mass (1.0)\n\
                (--comp-max max)                Maximum component mass (30.0)\n\
                (--MTotMax max)                 Maximum total mass (35.0)\n\
                (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n\
-               (--appendOutput fname)          Basename of the file to append outputs to\n\
-               (--LALSimulationRestricted)     Uses the LALSimulation package, with XLALSimInspiralChooseRestrictedWaveform instead of XLALSimInspiralChooseWaveform\n";
+               (--appendOutput fname)          Basename of the file to append outputs to\n";
 
 
   /* Print command line arguments if state was not allocated */
@@ -420,8 +420,9 @@ void initVariables(LALInferenceRunState *state)
   LALInferenceVariables *currentParams=state->currentParams;
   ProcessParamsTable *commandLine=state->commandLine;
   ProcessParamsTable *ppt=NULL;
-  INT4 AmpOrder=0;
+  //INT4 AmpOrder=0;
   LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
+  LALPNOrder AmpOrder=LAL_PNORDER_NEWTONIAN;
   Approximant approx=TaylorF2;
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
   UINT4 event=0;
@@ -634,13 +635,60 @@ void initVariables(LALInferenceRunState *state)
           "threePointFivePN\n");
       exit( 1 );
     }
-    fprintf(stdout,"Templates will be generated at %.1f PN order\n",((float)(PhaseOrder))/2.0);
+    fprintf(stdout,"Templates will be generated at %.1f PN order in phase\n",((float)(PhaseOrder))/2.0);
   }
   
-  UINT4 LALSimulationRestrictedWaveform=1;
-  if(LALInferenceGetProcParamVal(commandLine,"--LALSimulationRestricted")){
-    LALInferenceAddVariable(currentParams, "LALSimulationRestrictedWaveform", &LALSimulationRestrictedWaveform, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  /* Over-ride amplitude PN order if user specifies */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--ampOrder");
+  if(ppt){
+    if ( ! strcmp( "newtonian", ppt->value ) )
+    {
+      AmpOrder = LAL_PNORDER_NEWTONIAN;
+    }
+    else if ( ! strcmp( "oneHalfPN", ppt->value ) )
+    {
+      AmpOrder = LAL_PNORDER_HALF;
+    }
+    else if ( ! strcmp( "onePN", ppt->value ) )
+    {
+      AmpOrder = LAL_PNORDER_ONE;
+    }
+    else if ( ! strcmp( "onePointFivePN", ppt->value ) )
+    {
+      AmpOrder = LAL_PNORDER_ONE_POINT_FIVE;
+    }
+    else if ( ! strcmp( "twoPN", ppt->value ) )
+    {
+      AmpOrder = LAL_PNORDER_TWO;
+    }
+    else if ( ! strcmp( "twoPointFive", ppt->value ) )
+    {
+      AmpOrder = LAL_PNORDER_TWO_POINT_FIVE;
+    }
+    else if ( ! strcmp( "threePN", ppt->value ) )
+    {
+      AmpOrder = LAL_PNORDER_THREE;
+    }
+    else if ( ! strcmp( "threePointFivePN", ppt->value ) )
+    {
+      AmpOrder = LAL_PNORDER_THREE_POINT_FIVE;
+    }
+    else if ( ! strcmp( "pseudoFourPN", ppt->value ) )
+    {
+      AmpOrder = LAL_PNORDER_PSEUDO_FOUR;
+    }
+    else
+    {
+      fprintf( stderr, "invalid argument to --ampOrder:\n"
+              "unknown order specified: "
+              "PN order must be one of: newtonian, oneHalfPN, onePN,\n"
+              "onePointFivePN, twoPN, twoPointFivePN, threePN or\n"
+              "threePointFivePN\n");
+      exit( 1 );
+    }
+    fprintf(stdout,"Templates will be generated at %.1f PN order in amplitude\n",((float)(PhaseOrder))/2.0);
   }
+  
   /* This flag was added to account for the broken Big Dog
      injection, which had the opposite sign in H and L compared
      to Virgo. */
@@ -853,6 +901,8 @@ void initVariables(LALInferenceRunState *state)
 
   LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  if(LALInferenceGetProcParamVal(commandLine,"--ampOrder")) 
+    LALInferenceAddVariable(currentParams, "LAL_AMPORDER",     &AmpOrder,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--taper");
   if(ppt){
