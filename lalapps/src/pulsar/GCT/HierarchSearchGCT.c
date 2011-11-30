@@ -1140,6 +1140,9 @@ int MAIN( int argc, char *argv[]) {
           /* fine-grid frequency resolution */
           dfreq_fg = dFreqStack;
           nfreqs_fg = ceil(freqband_fg / dfreq_fg);  /* number of points in frequency */
+          if (nfreqs_fg == 0) {
+            nfreqs_fg++;
+          }
 
           /* copy frequency setup parameters to fine-grid struct */
           finegrid.freqmin_fg = freqmin_fg;
@@ -1147,9 +1150,14 @@ int MAIN( int argc, char *argv[]) {
           finegrid.freqlength = nfreqs_fg ;
 
           /* fine-grid f1dot resolution */
-          nf1dots_fg = ceil(gammaRefine);        /* number of spindown fine-grid points */
-          if ( (nf1dots_fg % 2) == 0 ) {    /* if even, add one (to refine symmetrically) */
-            nf1dots_fg++;
+          if (nf1dot == 1) {
+            nf1dots_fg = 1;
+          }
+          else {
+            nf1dots_fg = ceil(gammaRefine);        /* number of spindown fine-grid points */
+            if ( (nf1dots_fg % 2) == 0 ) {    /* if even, add one (to refine symmetrically) */
+              nf1dots_fg++;
+            }
           }
           df1dot_fg = df1dot / nf1dots_fg;  /* spindown fine-grid  stepsize */
 
