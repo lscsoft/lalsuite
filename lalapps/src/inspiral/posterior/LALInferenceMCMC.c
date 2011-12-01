@@ -1,7 +1,8 @@
 /*
- *  InferenceTest.c:  Bayesian Followup function testing site
+ *  LALInferenceMCMC.c:  Bayesian Followup function testing site
  *
- *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *  Copyright (C) 2011 Ilya Mandel, Vivien Raymond, Christian Roever,
+ *  Marc van der Sluys, John Veitch and Will M. Farr
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -50,8 +51,8 @@ void initVariables(LALInferenceRunState *state);
 
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
-  /* calls the "ReadData()" function to gather data & PSD from files, */
-  /* and initializes other variables accordingly.                     */
+/* calls the "ReadData()" function to gather data & PSD from files, */
+/* and initializes other variables accordingly.                     */
 {
   LALInferenceRunState *irs=NULL;
   LALInferenceIFOData *ifoPtr, *ifoListStart;
@@ -96,29 +97,29 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
       }
       if(!foundIFOwithSameSampleRate){
         ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
-            &(ifoPtr->timeData->epoch),
-            0.0,
-            ifoPtr->timeData->deltaT,
-            &lalDimensionlessUnit,
-            ifoPtr->timeData->data->length);
+                                                            &(ifoPtr->timeData->epoch),
+                                                            0.0,
+                                                            ifoPtr->timeData->deltaT,
+                                                            &lalDimensionlessUnit,
+                                                            ifoPtr->timeData->data->length);
         ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
-            &(ifoPtr->timeData->epoch),
-            0.0,
-            ifoPtr->timeData->deltaT,
-            &lalDimensionlessUnit,
-            ifoPtr->timeData->data->length);
+                                                            &(ifoPtr->timeData->epoch),
+                                                            0.0,
+                                                            ifoPtr->timeData->deltaT,
+                                                            &lalDimensionlessUnit,
+                                                            ifoPtr->timeData->data->length);
         ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
-            &(ifoPtr->freqData->epoch),
-            0.0,
-            ifoPtr->freqData->deltaF,
-            &lalDimensionlessUnit,
-            ifoPtr->freqData->data->length);
+                                                                    &(ifoPtr->freqData->epoch),
+                                                                    0.0,
+                                                                    ifoPtr->freqData->deltaF,
+                                                                    &lalDimensionlessUnit,
+                                                                    ifoPtr->freqData->data->length);
         ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
-            &(ifoPtr->freqData->epoch),
-            0.0,
-            ifoPtr->freqData->deltaF,
-            &lalDimensionlessUnit,
-            ifoPtr->freqData->data->length);
+                                                                     &(ifoPtr->freqData->epoch),
+                                                                     0.0,
+                                                                     ifoPtr->freqData->deltaF,
+                                                                     &lalDimensionlessUnit,
+                                                                     ifoPtr->freqData->data->length);
         ifoPtr->modelParams = calloc(1, sizeof(LALInferenceVariables));
       }
       ifoPtr = ifoPtr->next;
@@ -150,14 +151,15 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--randomseed seed)             Random seed of sampling distribution(random)\n\
                (--tdlike)                      Compute likelihood in the time domain\n\
                (--rapidSkyLoc)                 Use rapid sky localization jump proposals\n\
-               (--LALSimulation)               Interface with the LALSimulation package for template generation\n";
+               (--LALSimulation)               Interface with the LALSimulation package for template generation\n\
+               (--correlatedGaussianLikelihood)Use analytic, correlated Gaussian for Likelihood.\n";
 
   /* Print command line arguments if runState was not allocated */
   if(runState==NULL)
-  {
-    fprintf(stdout,"%s",help);
-    return;
-  }
+    {
+      fprintf(stdout,"%s",help);
+      return;
+    }
 
   INT4 verbose=0,tmpi=0;
   unsigned int randomseed=0;
@@ -169,11 +171,11 @@ void initializeMCMC(LALInferenceRunState *runState)
 
   /* Print command line arguments if help requested */
   if(LALInferenceGetProcParamVal(runState->commandLine,"--help"))
-  {
-    fprintf(stdout,"%s",help);
-    runState->algorithm=&PTMCMCAlgorithm;
-    return;
-  }
+    {
+      fprintf(stdout,"%s",help);
+      runState->algorithm=&PTMCMCAlgorithm;
+      return;
+    }
 
   /* Initialise parameters structure */
   runState->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
@@ -217,17 +219,17 @@ void initializeMCMC(LALInferenceRunState *runState)
   } else if (LALInferenceGetProcParamVal(commandLine, "--zeroLogLike")) {
     /* Use zero log(L) */
     runState->likelihood=&LALInferenceZeroLogLikelihood;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--analyticLogLike")) {
-    /* Use analytic log(L) */
-    runState->likelihood=&LALInferenceAnalyticLogLikelihood;
+  } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {
+    runState->likelihood=&LALInferenceCorrelatedAnalyticLogLikelihood;
   } else {
     runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
   }
 
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
     runState->prior=&LALInferenceInspiralSkyLocPrior;
-
-  }else{
+  } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {
+    runState->prior=&LALInferenceNullPrior;
+  } else {
     runState->prior=&LALInferenceInspiralPriorNormalised;
   }
   //runState->prior=PTUniformGaussianPrior;
@@ -236,7 +238,7 @@ void initializeMCMC(LALInferenceRunState *runState)
   if(ppt) {
     verbose=1;
     LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose , LALINFERENCE_UINT4_t,
-        LALINFERENCE_PARAM_FIXED);
+                            LALINFERENCE_PARAM_FIXED);
   }
 
   printf("set iteration number.\n");
@@ -323,7 +325,7 @@ static INT4 readSquareMatrix(gsl_matrix *m, UINT4 N, FILE *inp) {
 
       if (nread != 1) {
         fprintf(stderr, "Cannot read from matrix file (in %s, line %d)\n",
-            __FILE__, __LINE__);
+                __FILE__, __LINE__);
         exit(1);
       }
 
@@ -388,28 +390,29 @@ void initVariables(LALInferenceRunState *state)
                (--Dmin dist)                   Minimum distance in Mpc (1)\n\
                (--Dmax dist)                   Maximum distance in Mpc (100)\n\
                (--approximant Approximant)     Specify a template approximant to use, (default TaylorF2)\n\
-               (--order PNorder)               Specify a PN order to use, (default threePointFivePN)\n\
+               (--order PNorder)               Specify a PN order in phase to use, (default threePointFivePN)\n\
+               (--ampOrder PNorder)            Specify a PN order in amplitude to use, (default newtonian)\n\
                (--comp-min min)                Minimum component mass (1.0)\n\
                (--comp-max max)                Maximum component mass (30.0)\n\
                (--MTotMax max)                 Maximum total mass (35.0)\n\
                (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n\
-               (--appendOutput fname)          Basename of the file to append outputs to\n\
-               (--LALSimulationRestricted)     If using the LALSimulation package, use XLALSimInspiralChooseRestrictedWaveform instead of XLALSimInspiralChooseWaveform\n";
+               (--noDifferentialEvolution)     Do not use differential evolution to propose jumps (it is used by default)\n\
+               (--appendOutput fname)          Basename of the file to append outputs to\n";
 
 
   /* Print command line arguments if state was not allocated */
   if(state==NULL)
-  {
-    fprintf(stdout,"%s",help);
-    return;
-  }
+    {
+      fprintf(stdout,"%s",help);
+      return;
+    }
 
   /* Print command line arguments if help requested */
   if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
-  {
-    fprintf(stdout,"%s",help);
-    return;
-  }
+    {
+      fprintf(stdout,"%s",help);
+      return;
+    }
 
 
   LALStatus status;
@@ -420,8 +423,9 @@ void initVariables(LALInferenceRunState *state)
   LALInferenceVariables *currentParams=state->currentParams;
   ProcessParamsTable *commandLine=state->commandLine;
   ProcessParamsTable *ppt=NULL;
-  INT4 AmpOrder=0;
+  //INT4 AmpOrder=0;
   LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
+  LALPNOrder AmpOrder=LAL_PNORDER_NEWTONIAN;
   Approximant approx=TaylorF2;
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
   UINT4 event=0;
@@ -498,91 +502,91 @@ void initVariables(LALInferenceRunState *state)
   ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
   if(ppt){
     if ( ! strcmp( "GeneratePPN", ppt->value ) )
-    {
-      approx = GeneratePPN;
-    }
+      {
+        approx = GeneratePPN;
+      }
     else if ( ! strcmp( "TaylorT1", ppt->value ) )
-    {
-      approx = TaylorT1;
-    }
+      {
+        approx = TaylorT1;
+      }
     else if ( ! strcmp( "TaylorT2", ppt->value ) )
-    {
-      approx = TaylorT2;
-    }
+      {
+        approx = TaylorT2;
+      }
     else if ( ! strcmp( "TaylorT3", ppt->value ) )
-    {
-      approx = TaylorT3;
-    }
+      {
+        approx = TaylorT3;
+      }
     else if ( ! strcmp( "TaylorT4", ppt->value ) )
-    {
-      approx = TaylorT4;
-    }
+      {
+        approx = TaylorT4;
+      }
     else if ( ! strcmp( "TaylorF1", ppt->value ) )
-    {
-      approx = TaylorF1;
-    }
+      {
+        approx = TaylorF1;
+      }
     else if ( ! strcmp( "TaylorF2", ppt->value ) )
-    {
-      approx = TaylorF2;
-    }
+      {
+        approx = TaylorF2;
+      }
     else if ( ! strcmp( "EOB", ppt->value ) )
-    {
-      approx = EOB;
-    }
+      {
+        approx = EOB;
+      }
     else if ( ! strcmp( "EOBNR", ppt->value ) )
-    {
-      approx = EOBNR;
-    }
+      {
+        approx = EOBNR;
+      }
     else if ( ! strcmp( "EOBNRv2", ppt->value ) )
-    {
-      approx = EOBNRv2;
-    }
+      {
+        approx = EOBNRv2;
+      }
     else if ( ! strcmp( "EOBNRv2HM", ppt->value ) )
-    {
-      approx = EOBNRv2HM;
-    }
+      {
+        approx = EOBNRv2HM;
+      }
     else if ( ! strcmp( "SpinTaylor", ppt->value ) )
-    {
-      approx = SpinTaylor;
-    }
+      {
+        approx = SpinTaylor;
+      }
     else if ( ! strcmp( "SpinTaylorT3", ppt->value ) )
-    {
-      approx = SpinTaylorT3;
-    }
+      {
+        approx = SpinTaylorT3;
+      }
     else if ( ! strcmp( "SpinQuadTaylor", ppt->value ) )
-    {
-      approx = SpinQuadTaylor;
-    }
+      {
+        approx = SpinQuadTaylor;
+      }
     else if ( ! strcmp( "SpinTaylorFrameless", ppt->value ) )
-    {
-      approx = SpinTaylorFrameless;
-    }
+      {
+        approx = SpinTaylorFrameless;
+      }
     else if ( ! strcmp( "PhenSpinTaylorRD", ppt->value ) )
-    {
-      approx = PhenSpinTaylorRD;
-    }
+      {
+        approx = PhenSpinTaylorRD;
+      }
     else if ( ! strcmp( "NumRel", ppt->value ) )
-    {
-      approx = NumRel;
-    }
+      {
+        approx = NumRel;
+      }
     else if ( ! strcmp( "IMRPhenomA", ppt->value ) )
-    {
-      approx = IMRPhenomA;
-    }
+      {
+        approx = IMRPhenomA;
+      }
     else if ( ! strcmp( "IMRPhenomB", ppt->value ) )
-    {
-      approx = IMRPhenomB;
-    }
+      {
+        approx = IMRPhenomB;
+      }
     else
-    {
-      fprintf( stderr, "invalid argument to --approximant\n"
-          "unknown approximant %s specified: "
-          "Approximant must be one of: GeneratePPN, TaylorT1, TaylorT2,\n"
-          "TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
-          "EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor, SpinTaylorFrameless,\n"
-          "PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
-      exit( 1 );
-    }
+      {
+        fprintf( stderr, "invalid argument to --approximant\n"
+                 "unknown approximant %s specified: "
+                 "Approximant must be one of: GeneratePPN, TaylorT1, TaylorT2,\n"
+                 "TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
+                 "EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor, SpinTaylorFrameless,\n"
+                 "PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
+        exit( 1 );
+      }
     fprintf(stdout,"Templates will run using Approximant %s (%u)\n",ppt->value,approx);
   }
 
@@ -590,57 +594,104 @@ void initVariables(LALInferenceRunState *state)
   ppt=LALInferenceGetProcParamVal(commandLine,"--order");
   if(ppt){
     if ( ! strcmp( "newtonian", ppt->value ) )
-    {
-      PhaseOrder = LAL_PNORDER_NEWTONIAN;
-    }
+      {
+        PhaseOrder = LAL_PNORDER_NEWTONIAN;
+      }
     else if ( ! strcmp( "oneHalfPN", ppt->value ) )
-    {
-      PhaseOrder = LAL_PNORDER_HALF;
-    }
+      {
+        PhaseOrder = LAL_PNORDER_HALF;
+      }
     else if ( ! strcmp( "onePN", ppt->value ) )
-    {
-      PhaseOrder = LAL_PNORDER_ONE;
-    }
+      {
+        PhaseOrder = LAL_PNORDER_ONE;
+      }
     else if ( ! strcmp( "onePointFivePN", ppt->value ) )
-    {
-      PhaseOrder = LAL_PNORDER_ONE_POINT_FIVE;
-    }
+      {
+        PhaseOrder = LAL_PNORDER_ONE_POINT_FIVE;
+      }
     else if ( ! strcmp( "twoPN", ppt->value ) )
-    {
-      PhaseOrder = LAL_PNORDER_TWO;
-    }
+      {
+        PhaseOrder = LAL_PNORDER_TWO;
+      }
     else if ( ! strcmp( "twoPointFive", ppt->value ) )
-    {
-      PhaseOrder = LAL_PNORDER_TWO_POINT_FIVE;
-    }
+      {
+        PhaseOrder = LAL_PNORDER_TWO_POINT_FIVE;
+      }
     else if ( ! strcmp( "threePN", ppt->value ) )
-    {
-      PhaseOrder = LAL_PNORDER_THREE;
-    }
+      {
+        PhaseOrder = LAL_PNORDER_THREE;
+      }
     else if ( ! strcmp( "threePointFivePN", ppt->value ) )
-    {
-      PhaseOrder = LAL_PNORDER_THREE_POINT_FIVE;
-    }
+      {
+        PhaseOrder = LAL_PNORDER_THREE_POINT_FIVE;
+      }
     else if ( ! strcmp( "pseudoFourPN", ppt->value ) )
-    {
-      PhaseOrder = LAL_PNORDER_PSEUDO_FOUR;
-    }
+      {
+        PhaseOrder = LAL_PNORDER_PSEUDO_FOUR;
+      }
     else
-    {
-      fprintf( stderr, "invalid argument to --order:\n"
-          "unknown order specified: "
-          "PN order must be one of: newtonian, oneHalfPN, onePN,\n"
-          "onePointFivePN, twoPN, twoPointFivePN, threePN or\n"
-          "threePointFivePN\n");
-      exit( 1 );
-    }
-    fprintf(stdout,"Templates will be generated at %.1f PN order\n",((float)(PhaseOrder))/2.0);
+      {
+        fprintf( stderr, "invalid argument to --order:\n"
+                 "unknown order specified: "
+                 "PN order must be one of: newtonian, oneHalfPN, onePN,\n"
+                 "onePointFivePN, twoPN, twoPointFivePN, threePN or\n"
+                 "threePointFivePN\n");
+        exit( 1 );
+      }
+    fprintf(stdout,"Templates will be generated at %.1f PN order in phase\n",((float)(PhaseOrder))/2.0);
   }
   
-  UINT4 LALSimulationRestrictedWaveform=1;
-  if(LALInferenceGetProcParamVal(commandLine,"--LALSimulationRestricted")){
-    LALInferenceAddVariable(currentParams, "LALSimulationRestrictedWaveform", &LALSimulationRestrictedWaveform, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  /* Over-ride amplitude PN order if user specifies */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--ampOrder");
+  if(ppt){
+    if ( ! strcmp( "newtonian", ppt->value ) )
+      {
+        AmpOrder = LAL_PNORDER_NEWTONIAN;
+      }
+    else if ( ! strcmp( "oneHalfPN", ppt->value ) )
+      {
+        AmpOrder = LAL_PNORDER_HALF;
+      }
+    else if ( ! strcmp( "onePN", ppt->value ) )
+      {
+        AmpOrder = LAL_PNORDER_ONE;
+      }
+    else if ( ! strcmp( "onePointFivePN", ppt->value ) )
+      {
+        AmpOrder = LAL_PNORDER_ONE_POINT_FIVE;
+      }
+    else if ( ! strcmp( "twoPN", ppt->value ) )
+      {
+        AmpOrder = LAL_PNORDER_TWO;
+      }
+    else if ( ! strcmp( "twoPointFive", ppt->value ) )
+      {
+        AmpOrder = LAL_PNORDER_TWO_POINT_FIVE;
+      }
+    else if ( ! strcmp( "threePN", ppt->value ) )
+      {
+        AmpOrder = LAL_PNORDER_THREE;
+      }
+    else if ( ! strcmp( "threePointFivePN", ppt->value ) )
+      {
+        AmpOrder = LAL_PNORDER_THREE_POINT_FIVE;
+      }
+    else if ( ! strcmp( "pseudoFourPN", ppt->value ) )
+      {
+        AmpOrder = LAL_PNORDER_PSEUDO_FOUR;
+      }
+    else
+      {
+        fprintf( stderr, "invalid argument to --ampOrder:\n"
+                 "unknown order specified: "
+                 "PN order must be one of: newtonian, oneHalfPN, onePN,\n"
+                 "onePointFivePN, twoPN, twoPointFivePN, threePN or\n"
+                 "threePointFivePN\n");
+        exit( 1 );
+      }
+    fprintf(stdout,"Templates will be generated at %.1f PN order in amplitude\n",((float)(PhaseOrder))/2.0);
   }
+  
   /* This flag was added to account for the broken Big Dog
      injection, which had the opposite sign in H and L compared
      to Virgo. */
@@ -772,47 +823,47 @@ void initVariables(LALInferenceRunState *state)
   /* Over-ride Mass priors if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--mc-min");
   if(ppt)
-  {
-    mcMin=atof(ppt->value);
-    if (mcMin < 0)
     {
-      fprintf(stderr,"ERROR: Minimum value of mchirp must be > 0");
-      exit(1);
+      mcMin=atof(ppt->value);
+      if (mcMin < 0)
+        {
+          fprintf(stderr,"ERROR: Minimum value of mchirp must be > 0");
+          exit(1);
+        }
     }
-  }
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--mc-max");
   if(ppt)
-  {
-    mcMax=atof(ppt->value);
-    if (mcMax <= 0)
     {
-      fprintf(stderr,"ERROR: Maximum value of mchirp must be > 0");
-      exit(1);
+      mcMax=atof(ppt->value);
+      if (mcMax <= 0)
+        {
+          fprintf(stderr,"ERROR: Maximum value of mchirp must be > 0");
+          exit(1);
+        }
     }
-  }
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--eta-min");
   if(ppt)
-  {
-    etaMin=atof(ppt->value);
-    if (etaMin < 0.0)
     {
-      fprintf(stderr,"ERROR: Minimum value of eta must be > 0");
-      exit(1);
+      etaMin=atof(ppt->value);
+      if (etaMin < 0.0)
+        {
+          fprintf(stderr,"ERROR: Minimum value of eta must be > 0");
+          exit(1);
+        }
     }
-  }
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--eta-max");
   if(ppt)
-  {
-    etaMax=atof(ppt->value);
-    if (etaMax > 0.25 || etaMax <= 0.0)
     {
-      fprintf(stderr,"ERROR: Maximum value of eta must be between 0 and 0.25\n");
-      exit(1);
+      etaMax=atof(ppt->value);
+      if (etaMax > 0.25 || etaMax <= 0.0)
+        {
+          fprintf(stderr,"ERROR: Maximum value of eta must be between 0 and 0.25\n");
+          exit(1);
+        }
     }
-  }
 
   /* Over-ride component masses */
   ppt=LALInferenceGetProcParamVal(commandLine,"--comp-min");
@@ -829,30 +880,32 @@ void initVariables(LALInferenceRunState *state)
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--q-min");
   if(ppt)
-  {
-    qMin=atof(ppt->value);
-    if (qMin <= 0.0 || qMin < mMin/mMax || qMin < mMin/(MTotMax-mMin) || qMin > 1.0)
     {
-      fprintf(stderr,"ERROR: invalid qMin ( max{0,mMin/mMax,mMin/(MTotMax-mMin) < q < 1.0} )");
-      exit(1);
+      qMin=atof(ppt->value);
+      if (qMin <= 0.0 || qMin < mMin/mMax || qMin < mMin/(MTotMax-mMin) || qMin > 1.0)
+        {
+          fprintf(stderr,"ERROR: invalid qMin ( max{0,mMin/mMax,mMin/(MTotMax-mMin) < q < 1.0} )");
+          exit(1);
+        }
     }
-  }
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--q-max");
   if(ppt)
-  {
-    qMax=atof(ppt->value);
-    if (qMax > 1.0 || qMax <= 0.0 || qMax < mMin/mMax || qMax < mMin/(MTotMax-mMin))
     {
-      fprintf(stderr,"ERROR: invalid qMax ( max{0,mMin/mMax,mMin/(MTotMax-mMin) < q < 1.0} )");
-      exit(1);
+      qMax=atof(ppt->value);
+      if (qMax > 1.0 || qMax <= 0.0 || qMax < mMin/mMax || qMax < mMin/(MTotMax-mMin))
+        {
+          fprintf(stderr,"ERROR: invalid qMax ( max{0,mMin/mMax,mMin/(MTotMax-mMin) < q < 1.0} )");
+          exit(1);
+        }
     }
-  }
 
   printf("Read end time %f\n",endtime);
 
   LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  if(LALInferenceGetProcParamVal(commandLine,"--ampOrder")) 
+    LALInferenceAddVariable(currentParams, "LAL_AMPORDER",     &AmpOrder,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--taper");
   if(ppt){
@@ -1215,7 +1268,7 @@ void initVariables(LALInferenceRunState *state)
 
     if (readSquareMatrix(covM, N, inp)) {
       fprintf(stderr, "Error reading covariance matrix (in %s, line %d)\n",
-          __FILE__, __LINE__);
+              __FILE__, __LINE__);
       exit(1);
     }
 
@@ -1236,7 +1289,7 @@ void initVariables(LALInferenceRunState *state)
 
     if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
       fprintf(stderr, "Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n",
-          __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
+              __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
       exit(1);
     }
 
@@ -1248,7 +1301,7 @@ void initVariables(LALInferenceRunState *state)
     LALInferenceAddVariable(state->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 
     fprintf(stdout, "Jumping with correlated jumps in %d dimensions from file %s.\n",
-        N, ppt->value);
+            N, ppt->value);
 
     fclose(inp);
     gsl_eigen_symmv_free(ws);
@@ -1257,14 +1310,15 @@ void initVariables(LALInferenceRunState *state)
   }
 
   /* Differential Evolution? */
-  ppt=LALInferenceGetProcParamVal(commandLine, "--differential-evolution");
-  if (ppt) {
+  ppt=LALInferenceGetProcParamVal(commandLine, "--noDifferentialEvolution");
+  if (!ppt) {
     fprintf(stderr, "Using differential evolution.\nEvery Nskip parameters will be stored for use in the d.e. jump proposal.\n");
 
     state->differentialPoints = XLALCalloc(1, sizeof(LALInferenceVariables *));
     state->differentialPointsLength = 0;
     state->differentialPointsSize = 1;
   } else {
+    fprintf(stderr, "Differential evolution disabled (--noDifferentialEvolution).\n");
     state->differentialPoints = NULL;
     state->differentialPointsLength = 0;
     state->differentialPointsSize = 0;
@@ -1350,136 +1404,52 @@ int main(int argc, char *argv[]){
   /* Read command line and parse */
   procParams=LALInferenceParseCommandLine(argc,argv);
 
-  if (LALInferenceGetProcParamVal(procParams, "--analyticLogLike")) {
-
-    runState = calloc(1, sizeof(LALInferenceRunState));
-    runState->commandLine=procParams;
-    runState->data = NULL;
-    initializeMCMC(runState);
-    runState->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-
-    REAL8 Min=-1.0, Max=1.0;
-
-    ppt=LALInferenceGetProcParamVal(procParams,"--xmin");
-    if(ppt) Min=atof(ppt->value);
-    ppt=LALInferenceGetProcParamVal(procParams,"--xmax");
-    if(ppt)	Max=atof(ppt->value);
-
-    REAL8 start_x1 = Min + gsl_rng_uniform(runState->GSLrandom)*(Max - (Min));
-    ppt=LALInferenceGetProcParamVal(procParams,"--x1");
-    if(ppt){start_x1=atof(ppt->value);}
-    ppt=LALInferenceGetProcParamVal(procParams,"--fixX1");
-    if(ppt){
-      LALInferenceAddVariable(runState->currentParams, "x1",    &start_x1,    LALINFERENCE_REAL8_t,	LALINFERENCE_PARAM_FIXED);
-      if(MPIrank==0) fprintf(stdout,"x1 fixed and set to %f\n",start_x1);
-    }else{
-      LALInferenceAddVariable(runState->currentParams, "x1",    &start_x1,    LALINFERENCE_REAL8_t,	LALINFERENCE_PARAM_LINEAR);
-    }
-    LALInferenceAddMinMaxPrior(runState->priorArgs,	"x1",	&Min,	&Max,		LALINFERENCE_REAL8_t);
-
-    REAL8 start_x2 = Min + gsl_rng_uniform(runState->GSLrandom)*(Max - (Min));
-    ppt=LALInferenceGetProcParamVal(procParams,"--x2");
-    if(ppt){start_x2=atof(ppt->value);}
-    ppt=LALInferenceGetProcParamVal(procParams,"--fixX2");
-    if(ppt){
-      LALInferenceAddVariable(runState->currentParams, "x2",    &start_x2,    LALINFERENCE_REAL8_t,	LALINFERENCE_PARAM_FIXED);
-      if(MPIrank==0) fprintf(stdout,"x2 fixed and set to %f\n",start_x2);
-    }else{
-      LALInferenceAddVariable(runState->currentParams, "x2",    &start_x2,    LALINFERENCE_REAL8_t,	LALINFERENCE_PARAM_LINEAR);
-    }
-    LALInferenceAddMinMaxPrior(runState->priorArgs,	"x2",	&Min,	&Max,		LALINFERENCE_REAL8_t);
-
-    UINT4 N = 2;
-
-    ppt=LALInferenceGetProcParamVal(procParams, "--adapt");
-    if (ppt) {
-      fprintf(stdout, "Adapting single-param step sizes.\n");
-      if (!LALInferenceCheckVariable(runState->proposalArgs, SIGMAVECTORNAME)) {
-        /* We need a sigma vector for adaptable jumps. */
-        REAL8Vector *sigmas = XLALCreateREAL8Vector(N);
-        UINT4 i = 0;
-
-        for (i = 0; i < N; i++) {
-          sigmas->data[i] = 1e-4;
-        }
-
-        LALInferenceAddVariable(runState->proposalArgs, SIGMAVECTORNAME, &sigmas, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
-
-      }
-    }
-    ppt=LALInferenceGetProcParamVal(procParams, "--acceptanceRatio");
-    if (ppt) {
-
-      REAL8Vector *PacceptCount = XLALCreateREAL8Vector(N);
-      REAL8Vector *PproposeCount = XLALCreateREAL8Vector(N);
-      UINT4 i;
-
-      for (i = 0; i < N; i++) {
-        PacceptCount->data[i] = 0.0;
-        PproposeCount->data[i] = 0.0;
-      }
-
-      LALInferenceAddVariable(runState->proposalArgs, "PacceptCount", &PacceptCount, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(runState->proposalArgs, "PproposeCount", &PproposeCount, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
-    }
-
-    INT4 adaptableStep = 0;
-    LALInferenceAddVariable(runState->proposalArgs, "adaptableStep", &adaptableStep, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    INT4 varNumber = 0;
-    LALInferenceAddVariable(runState->proposalArgs, "proposedVariableNumber", &varNumber, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    INT4 sigmasNumber = 0;
-    LALInferenceAddVariable(runState->proposalArgs, "proposedArrayNumber", &sigmasNumber, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-  }else{
-
-    ppt=LALInferenceGetProcParamVal(procParams,"--continue-run");
-    if (ppt) {
-      infileName = ppt->value;
-      infile = fopen(infileName,"r");
-      if (infile==NULL) {fprintf(stderr,"Cannot read %s/n",infileName); exit (1);}
-      n=sprintf(buffer,"lalinference_mcmcmpi_from_file_%s",infileName);
-      fileargv[0] = (char*)calloc((n+1),sizeof(char*));
-      fileargv[0] = buffer;
-      fgets(str, 999, infile);
-      fgets(str, 999, infile);
-      fclose(infile);
-      pch = strtok (str," ");
-      while (pch != NULL)
+  ppt=LALInferenceGetProcParamVal(procParams,"--continue-run");
+  if (ppt) {
+    infileName = ppt->value;
+    infile = fopen(infileName,"r");
+    if (infile==NULL) {fprintf(stderr,"Cannot read %s/n",infileName); exit (1);}
+    n=sprintf(buffer,"lalinference_mcmcmpi_from_file_%s",infileName);
+    fileargv[0] = (char*)calloc((n+1),sizeof(char*));
+    fileargv[0] = buffer;
+    fgets(str, 999, infile);
+    fgets(str, 999, infile);
+    fclose(infile);
+    pch = strtok (str," ");
+    while (pch != NULL)
       {
         if(strcmp(pch,"Command")!=0 && strcmp(pch,"line:")!=0)
-        {
-          n = strlen(pch);
-          fileargv[fileargc] = (char*)calloc((n+1),sizeof(char*));
-          fileargv[fileargc] = pch;
-          fileargc++;
-          if(fileargc>=99) {fprintf(stderr,"Too many arguments in file %s\n",infileName); exit (1);}
-        }
+          {
+            n = strlen(pch);
+            fileargv[fileargc] = (char*)calloc((n+1),sizeof(char*));
+            fileargv[fileargc] = pch;
+            fileargc++;
+            if(fileargc>=99) {fprintf(stderr,"Too many arguments in file %s\n",infileName); exit (1);}
+          }
         pch = strtok (NULL, " ");
 
       }
-      fileargv[fileargc-1][strlen(fileargv[fileargc-1])-1]='\0'; //in order to get rid of the '\n' than fgets returns when reading the command line.
+    fileargv[fileargc-1][strlen(fileargv[fileargc-1])-1]='\0'; //in order to get rid of the '\n' than fgets returns when reading the command line.
 
-      procParams=LALInferenceParseCommandLine(fileargc,fileargv);
-    }
+    procParams=LALInferenceParseCommandLine(fileargc,fileargv);
+  }
 
 
-    /* initialise runstate based on command line */
-    /* This includes reading in the data */
-    /* And performing any injections specified */
-    /* And allocating memory */
-    runState = initialize(procParams);
+  /* initialise runstate based on command line */
+  /* This includes reading in the data */
+  /* And performing any injections specified */
+  /* And allocating memory */
+  runState = initialize(procParams);
 
-    /* Set up structures for MCMC */
-    initializeMCMC(runState);
+  /* Set up structures for MCMC */
+  initializeMCMC(runState);
 
-    /* Set up currentParams with variables to be used */
-    initVariables(runState);
-  }//NOT analyticLogLike
+  /* Set up currentParams with variables to be used */
+  initVariables(runState);
+  
   if(runState==NULL) {
     fprintf(stderr, "runState not allocated (%s, line %d).\n",
-        __FILE__, __LINE__);
+            __FILE__, __LINE__);
     exit(1);
   }
   printf(" ==== This is thread %d of %d ====\n", MPIrank, MPIsize);

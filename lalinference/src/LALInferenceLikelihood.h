@@ -259,16 +259,17 @@ REAL8 LALInferenceTimeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeS
  ***************************************************************/
 REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data,
                                       LALInferenceTemplateFunction *template);
-/**
- * Artificial analytic likelihood surface.
- * Bimodal gaussian profile in either 1 or 2 dimentions depending
- * on the contents of `currentParams`.
- *
- * Required (`currentParams') parameters are:                  
- *   - "x1"  (REAL8, dimentionless, -1 <= x1 <= 1)       
- * Optional (`currentParams') parameters are:                  
- *   - "x2"  (REAL8, dimentionless, -1 <= x2 <= 1)       
- */
-REAL8 LALInferenceAnalyticLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction *template);
+
+/** An analytic likeilhood that is a correlated Gaussian in 15
+    dimensions.  */
+REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams, 
+                                                  LALInferenceIFOData *data, 
+                                                  LALInferenceTemplateFunction *template);
+
+/** 15-D Rosenbrock log(L) function (see Eq (3) of
+    http://en.wikipedia.org/wiki/Rosenbrock_function . */
+REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
+                                          LALInferenceIFOData *data,
+                                          LALInferenceTemplateFunction *template);
 
 #endif

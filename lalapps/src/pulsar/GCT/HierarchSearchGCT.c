@@ -552,6 +552,20 @@ int MAIN( int argc, char *argv[]) {
 
     } /* end of logging */
 
+  /* prepare timing-file: write header-line with columns headings */
+  if ( uvar_outputTiming )
+    {
+      FILE *timing_fp;
+      if ( (timing_fp = fopen ( uvar_outputTiming, "ab" )) == NULL ) {
+        XLALPrintError ("Failed to open timing file '%s' for writing/appending.\n", uvar_outputTiming );
+        return HIERARCHICALSEARCH_EFILE;
+      }
+      /* write column headings */
+      fprintf ( timing_fp, "%6s %6s %6s %6s %6s %6s %6s    %9s %9s %9s %9s\n",
+                "%% Nsky", "Nf1", "Nf_F", "Nf_SB", "Nsft", "Nseg", "refine", "tau [s]", "tcoh [s]", "tsc [s]", "tLV [s]" );
+      fclose ( timing_fp );
+    } /* if outputTiming */
+
   /* initializations of coarse and fine grids */
   coarsegrid.TwoF=NULL;
   coarsegrid.Uindex=NULL;
@@ -1456,13 +1470,13 @@ int MAIN( int argc, char *argv[]) {
 
   if ( uvar_outputTiming )
     {
-      FILE *timing_fp = fopen ( uvar_outputTiming, "ab" );
-      if ( timing_fp == NULL ) {
+      FILE *timing_fp;
+      if ( ( timing_fp = fopen ( uvar_outputTiming, "ab" )) == NULL ) {
         XLALPrintError ("%s: failed to open timing-file '%s' for appending.\n", __func__, uvar_outputTiming );
         return HIERARCHICALSEARCH_EFILE;
       }
       REAL8 tau = timeEnd - timeStart;
-      fprintf ( timing_fp, "%d 	%d 	%d 	%d 	%d 	%d 	%d 	%f	%f	%f	%f\n",
+      fprintf ( timing_fp, "%6d %6d %6d %6d %6d %6d %6d    %9.3g %9.3g %9.3g %9.3g\n",
                 thisScan.numSkyGridPoints, nf1dot, binsFstatSearch, 2 * semiCohPar.extraBinsFstat, nSFTs,
 		nStacks, Nrefine, tau, coherentTime, incoherentTime, vetoTime );
       fclose ( timing_fp );

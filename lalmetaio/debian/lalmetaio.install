@@ -1,5 +1,2 @@
-#opt/lscsoft/lalmetaio/bin/lal-version
-opt/lscsoft/lalmetaio/etc/*
-#opt/lscsoft/lalmetaio/etc/*-user-env.*
-opt/lscsoft/lalmetaio/lib/*.so*
-#opt/lscsoft/lalmetaio/share/lal
+usr/lib/*.so*
+etc/*

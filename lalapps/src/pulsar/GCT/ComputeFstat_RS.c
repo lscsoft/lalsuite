@@ -987,6 +987,7 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
   deltaT_DET = Faoft->deltaT;                          /* set the sampling time at the detector */
   start_SSB = GPS2REAL8((*Faoft_RS)->epoch);           /* set the start time of the resampled output SSB timeseries */
   deltaT_SSB = (*Faoft_RS)->deltaT;                    /* set the sampling time of the resampled output SSB timeseries */
+  REAL8 end_DET = start_DET + (numTimeSamples_DET-1) * deltaT_DET;	/* time of last sample in detector timeseries */
 
   /* allocate memory for the uniformly sampled detector time samples (Fa and Fb real and imaginary) */
   for (i=0;i<FAFB_LENGTH;i++) {
@@ -1052,7 +1053,25 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
       REAL8 t_SSB = start_SSB + (k+idx_start_SSB)*deltaT_SSB;                                  /* the SSB time of the current resampled time sample */
       detectortimes->data[k] = SFTmid_DET + (t_SSB - SFTmid_SSB)/Tdot;                         /* the approximated DET time of the current resampled time sample */
 
-    }
+      /*
+       * NOTE: we need to be careful that none of the times falls outside
+       * of the range of detector timesamples, in order to avoid problems in the interpolation
+       * therefore we truncate the detector-times to fully fall within the detector timeseries span
+       */
+      if ( detectortimes->data[k] > end_DET )
+        {
+          detectortimes->data[k] = end_DET;
+          XLALPrintWarning ("%s: time-sample jSFT=%d, kSample=%d at t=%f to interpolate is *after* detector-timeseries, nudged back to end (end=%f)\n",
+                            __func__, j, k, detectortimes->data[k], end_DET );
+        }
+      if ( detectortimes->data[k] < start_DET )
+        {
+          detectortimes->data[k] = start_DET;
+          XLALPrintWarning ("%s: time-sample jSFT=%d, kSample=%d at t=%f to interpolate is *before* detector-timeseries, nudged to beginning (start=%f)\n",
+                            __func__, j, k, detectortimes->data[k], start_DET );
+        }
+
+    } /* for k < numSamples_SSB */
 
     /* interpolate on the non-uniformly sampled detector time vector for this SFT for re and im parts of Fa and Fb */
     /* this function allocates memory for the output vectors */

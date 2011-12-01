@@ -1,5 +1,5 @@
-opt/lscsoft/lal/bin
-opt/lscsoft/lal/include
-opt/lscsoft/lal/lib/pkgconfig
-opt/lscsoft/lal/share/man/man1
-opt/lscsoft/lal/share/man/man3
+usr/bin
+usr/include
+usr/lib/pkgconfig
+usr/share
+usr/share/man/man3

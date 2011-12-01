@@ -1,6 +1,6 @@
 # Source this file to access LALApps
-LALAPPS_PREFIX=/opt/lscsoft/lalapps
-#LALAPPS_PREFIX=/usr
+#LALAPPS_PREFIX=/opt/lscsoft/lalapps
+LALAPPS_PREFIX=/usr
 export LALAPPS_PREFIX
 PATH="${LALAPPS_PREFIX}/bin:${PATH}"
 MANPATH="${LALAPPS_PREFIX}/share/man:${MANPATH}"

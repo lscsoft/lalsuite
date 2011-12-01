@@ -91,18 +91,23 @@ typedef enum {
    NumApproximants	/**< UNDOCUMENTED */
  } Approximant;
 
-/** Enumeration to specify which component will be used in the waveform
+
+/** Enumeration to specify which interaction will be used in the waveform
  * generation. Their combination also can be used by the bitwise or.
  **/
 typedef enum {
-	LAL_NOInter = 0,                        /**< No spin interactions */
-	LAL_SOInter = 1,                        /**< Spin-orbit interaction */
-	LAL_SSInter = LAL_SOInter << 1,         /**< Spin-spin interaction */
-	LAL_SSselfInter = LAL_SSInter << 1,     /**<  Spin-spin-self interaction */
-	LAL_QMInter = LAL_SSselfInter << 1,     /**< quadrupole-monopole interaction */
-	LAL_SO25Inter = LAL_QMInter << 1,     /**<  next-to-leading order (2.5PN) Spin-orbit interaction */
-	LAL_AllInter = LAL_SOInter | LAL_SSInter | LAL_SSselfInter | LAL_QMInter | LAL_SO25Inter /**< all interactions */
-} LALSpinInteraction;
+	LAL_SIM_INSPIRAL_INTERACTION_NONE = 0, /**< No spin, tidal or other interactions */
+	LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN = 1, /**< Leading order spin-orbit interaction */
+	LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN = 1 << 1,  /**< Spin-spin interaction */
+	LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN = 1 << 2,     /**<  Spin-spin-self interaction */
+	LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN = 1 << 3,     /**< Quadrupole-monopole interaction */
+	LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN = 1 << 4,     /**<  Next-to-leading-order spin-orbit interaction */
+	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN = 1 << 5, /**< Leading-order tidal interaction */
+	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN = 1 << 6, /**< Next-to-leading-order tidal interaction */
+
+	LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN = (1 << 5) - 1, /**< all spin interactions, no tidal interactions */
+	LAL_SIM_INSPIRAL_INTERACTION_ALL = (1 << 7) - 1 /**< all spin and tidal interactions */
+} LALSimInspiralInteraction;
 
 /**
  * Computes h(2,2) mode of spherical harmonic decomposition of
@@ -356,22 +361,29 @@ XLALSimInspiralTaylorLength(
 /* Waveform switching functions */
 
 /**
- * Chooses between different approximants when requesting a waveform to be generated
+ * Chooses between different approximants when requesting a waveform to be generated.
+ *
+ * The parameters passed must be in SI units.
+ * The phi0 is the phase at a reference time. FIXME: this should be made consistent across waveforms.
  */
 int XLALSimInspiralChooseWaveform(
     REAL8TimeSeries **hplus,    /**< +-polarization waveform */
     REAL8TimeSeries **hcross,   /**< x-polarization waveform */
-    LIGOTimeGPS *t0,            /**< start time */
-    REAL8 phi0,                 /**< start phase */
+    REAL8 phi0,                 /**< reference phase */
     REAL8 deltaT,               /**< sampling interval */
     REAL8 m1,                   /**< mass of companion 1 */
     REAL8 m2,                   /**< mass of companion 2 */
-    REAL8 *S1,                  /**< dimensionless spin of companion 1 */
-    REAL8 *S2,                  /**< dimensionless spin of companion 2 */
+    REAL8 s1x,                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 s1y,                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 s1z,                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 s2x,                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 s2y,                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 s2z,                  /**< z-component of the dimensionless spin of object 2 */
     REAL8 f_min,                /**< start frequency */
     REAL8 r,                    /**< distance of source */
     REAL8 i,                    /**< inclination of source (rad) */
-    int O,                      /**< twice post-Newtonian order */
+    int amplitudeO,             /**< twice post-Newtonian amplitude order */
+    int phaseO,                 /**< twice post-Newtonian phase order */
     Approximant approximant     /**< post-Newtonian approximant to use for waveform production */
     );
 
@@ -383,13 +395,16 @@ int XLALSimInspiralChooseWaveform(
 int XLALSimInspiralChooseRestrictedWaveform(
     REAL8TimeSeries **hplus,    /**< +-polarization waveform */
     REAL8TimeSeries **hcross,   /**< x-polarization waveform */
-    LIGOTimeGPS *tc,            /**< coalescence time */
-    REAL8 phic,                 /**< coalescence phase */
+    REAL8 phi0,                 /**< reference phase */
     REAL8 deltaT,               /**< sampling interval */
     REAL8 m1,                   /**< mass of companion 1 */
     REAL8 m2,                   /**< mass of companion 2 */
-    REAL8 *S1,                  /**< dimensionless spin of companion 1 */
-    REAL8 *S2,                  /**< dimensionless spin of companion 2 */
+    REAL8 s1x,                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 s1y,                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 s1z,                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 s2x,                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 s2y,                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 s2z,                  /**< z-component of the dimensionless spin of object 2 */
     REAL8 f_min,                /**< start frequency */
     REAL8 r,                    /**< distance of source */
     REAL8 i,                    /**< inclination of source (rad) */
@@ -825,10 +840,8 @@ int XLALSimInspiralTaylorEtPNRestricted(
  * Note that LNhat and E1 completely specify the instantaneous orbital plane.
  * It also returns the time and phase of the final time step
  *
- * FIXME: Do we want tc, phic or tStart, phiStart or both or something else?
- *
  * For input, the function takes the two masses, the initial orbital phase, 
- * Values of S1, S2, LNhat, E1 vectors at starting time,
+ * Components for S1, S2, LNhat, E1 vectors at starting time,
  * the desired time step size, the starting GW frequency, 
  * and PN order at which to evolve the phase,
  * 
@@ -853,8 +866,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8TimeSeries **E1x,    /**< orb. plane basis vector x[returned]*/
 	REAL8TimeSeries **E1y,    /**< "    "    "  y component [returned]*/
 	REAL8TimeSeries **E1z,    /**< "    "    "  z component [returned]*/
-	LIGOTimeGPS *tStart,      /**< start time of output vectors */
-	REAL8 phiStart,           /**< orbital phase at initial time */
+	REAL8 phi0,               /**< orbital phase at initial time */
 	REAL8 deltaT,          	  /**< sampling interval (s) */
 	REAL8 m1,              	  /**< mass of companion 1 (kg) */
 	REAL8 m2,              	  /**< mass of companion 2 (kg) */
@@ -871,7 +883,9 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8 e1x,                /**< initial value of E1x */
 	REAL8 e1y,                /**< initial value of E1y */
 	REAL8 e1z,                /**< initial value of E1z */
-	LALSpinInteraction spinFlags,  /**< flags to control spin effects */
+	REAL8 lambda1,                /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+	REAL8 lambda2,                /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	LALSimInspiralInteraction interactionFlags,    /**< flag to control spin and tidal effects */
 	INT4 phaseO               /**< twice post-Newtonian order */
 	);
 
@@ -885,8 +899,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 int XLALSimInspiralSpinTaylorT4(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 		REAL8TimeSeries **hcross, /**< x-polarization waveform */
-		LIGOTimeGPS *tStart,      /**< initial time (s) */
-		REAL8 phiStart,           /**< initial GW phase (rad) */
+		REAL8 phi0,               /**< initial GW phase (rad) */
 		REAL8 v0,                 /**< tail gauge term (default = 0) */
 		REAL8 deltaT,             /**< sampling interval (s) */
 		REAL8 m1,                 /**< mass of companion 1 (kg) */
@@ -905,10 +918,12 @@ int XLALSimInspiralSpinTaylorT4(
 		REAL8 e1x,                /**< initial value of E1x */
 		REAL8 e1y,                /**< initial value of E1y */
 		REAL8 e1z,                /**< initial value of E1z */
-		LALSpinInteraction spinFlags, /**< flags to control spin effects */
+		REAL8 lambda1,                /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+		REAL8 lambda2,                /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+		LALSimInspiralInteraction interactionFlags,    /**< flag to control spin and tidal effects */
 		int phaseO,               /**< twice PN phase order */
 		int amplitudeO            /**< twice PN amplitude order */
-                );
+		);
 
 
 
@@ -922,8 +937,7 @@ int XLALSimInspiralSpinTaylorT4(
 int XLALSimInspiralRestrictedSpinTaylorT4(
 		REAL8TimeSeries **hplus,   /**< +-polarization waveform */
 		REAL8TimeSeries **hcross,  /**< x-polarization waveform */
-		LIGOTimeGPS *tStart,       /**< initial time (s) */
-		REAL8 phiStart,            /**< initial GW phase (rad) */
+		REAL8 phi0,                /**< initial GW phase (rad) */
 		REAL8 v0,                  /**< tail gauge term (default = 0) */
 		REAL8 deltaT,              /**< sampling interval (s) */
 		REAL8 m1,                  /**< mass of companion 1 (kg) */
@@ -942,7 +956,9 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
 		REAL8 e1x,                 /**< initial value of E1x */
 		REAL8 e1y,                 /**< initial value of E1y */
 		REAL8 e1z,                 /**< initial value of E1z */
-		LALSpinInteraction spinFlags, /**< flags to control spin effects */
+		REAL8 lambda1,                /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+		REAL8 lambda2,                /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	    LALSimInspiralInteraction interactionFlags,    /**< flag to control spin and tidal effects */
 		int phaseO                 /**< twice PN phase order */
 		);
 
@@ -1011,7 +1027,6 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
  */
 int XLALSimInspiralTaylorF2ReducedSpin(
 		COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-		const LIGOTimeGPS *tStart,       /**< initial time (s) */
 		const REAL8 phiStart,            /**< initial GW phase (rad) */
 		const REAL8 deltaF,              /**< frequency resolution */
 		const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
@@ -1019,7 +1034,8 @@ int XLALSimInspiralTaylorF2ReducedSpin(
 		const REAL8 chi,                 /**< dimensionless aligned-spin param */
 		const REAL8 fStart,              /**< start GW frequency (Hz) */
 		const REAL8 r,                   /**< distance of source (m) */
-		const UINT4 O                    /**< twice PN phase order */
+		const UINT4 phaseO,              /**< twice PN phase order */
+		const UINT4 ampO                 /**< twice PN amplitude order */
 		);
 
 /**
@@ -1029,7 +1045,6 @@ int XLALSimInspiralTaylorF2ReducedSpin(
 */
 int XLALSimInspiralTaylorF2ReducedSpinTidal(
 		COMPLEX16FrequencySeries **htilde,   /**< FD waveform */
-		const LIGOTimeGPS *tStart,       /**< initial time (s) */
 		const REAL8 phiStart,            /**< initial GW phase (rad) */
 		const REAL8 deltaF,              /**< frequency resolution */
 		const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
@@ -1039,17 +1054,18 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
 		const REAL8 lam2,                /**< dimensionless deformability of 2 */
 		const REAL8 fStart,              /**< start GW frequency (Hz) */
 		const REAL8 r,                   /**< distance of source (m) */
-		const UINT4 O                    /**< twice PN phase order */
+		const UINT4 phaseO,              /**< twice PN phase order */
+		const UINT4 ampO                 /**< twice PN amplitude order */
 		);
 /**
  * Compute the chirp time of the "reduced-spin" templates, described in
  * http://arxiv.org/abs/1107.1267.
 */
 REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
-		const REAL8 fStart ,       /**< start GW frequency (Hz) */
+		const REAL8 fStart,  /**< start GW frequency (Hz) */
 		const REAL8 m1_SI,   /**< mass of companion 1 (kg) */
 		const REAL8 m2_SI,   /**< mass of companion 2 (kg) */
-		const REAL8 chi,                 /**< dimensionless aligned-spin param */
+		const REAL8 chi,     /**< dimensionless aligned-spin param */
 		const UINT4 O        /**< twice PN phase order */
 		);
 

@@ -1,6 +1,6 @@
 # Source this file to access LALApps
-setenv LALAPPS_PREFIX /opt/lscsoft/lalapps
-#setenv LALAPPS_PREFIX /usr
+#setenv LALAPPS_PREFIX /opt/lscsoft/lalapps
+setenv LALAPPS_PREFIX /usr
 setenv PATH "${LALAPPS_PREFIX}/bin:${PATH}"
 setenv PYSITE_PATH python`python -V |& cut -d' ' -f2 | cut -d. -f-2`
 if ( $?MANPATH ) then

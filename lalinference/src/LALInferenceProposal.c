@@ -345,7 +345,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, &LALInferenceCovarianceEigenvectorJump, BIGWEIGHT);
   }
 
-  if (LALInferenceGetProcParamVal(runState->commandLine, "--differential-evolution")) {
+  if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")) {
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionFull, BIGWEIGHT);
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionMasses, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionAmp, SMALLWEIGHT);

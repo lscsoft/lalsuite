@@ -68,12 +68,12 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
   if ( l < abs(s) ) 
   {
     XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |s| <= l\n", __func__, s, l, m );
-    XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+    XLAL_ERROR_VAL(czero, XLAL_EINVAL);
   }
   if ( l < abs(m) ) 
   {
     XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-    XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+    XLAL_ERROR_VAL(czero, XLAL_EINVAL);
   }
 
   if ( s == -2 ) 
@@ -102,7 +102,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
           break;
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
           break;
       } /*  switch (m) */
     }  /* l==2*/
@@ -136,7 +136,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
 
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
           break;
       }
     }   /* l==3 */
@@ -174,7 +174,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
           break;
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
           break;
       }
     }    /* l==4 */
@@ -217,7 +217,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
           break;
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
           break;
       }
     }  /* l==5 */
@@ -274,7 +274,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
           break;
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
           break;
       }
     } /* l==6 */
@@ -340,7 +340,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
           break;
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
           break;
       }
     } /* l==7 */
@@ -414,20 +414,20 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
           break;
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
           break;
       }
     } /* l==8 */
     else 
     {
       XLALPrintError("XLAL Error - %s: Unsupported mode l=%d (only l in [2,8] implemented)\n", __func__, l);
-      XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+      XLAL_ERROR_VAL(czero, XLAL_EINVAL);
     }
   }
   else 
   {
     XLALPrintError("XLAL Error - %s: Unsupported mode s=%d (only s=-2 implemented)\n", __func__, s);
-    XLAL_ERROR_VAL(XLAL_EINVAL, czero);
+    XLAL_ERROR_VAL(czero, XLAL_EINVAL);
   }
   if (m)
     ans = cmulr(cpolar(1.0, m*phi), fac);

@@ -1,5 +1,3 @@
-#opt/lscsoft/lalmetaio/bin
-opt/lscsoft/lalmetaio/etc
-opt/lscsoft/lalmetaio/lib
-#opt/lscsoft/lalmetaio/sbin
-opt/lscsoft/lalmetaio/share
+usr/lib
+etc
+usr/share

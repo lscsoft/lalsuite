@@ -439,9 +439,8 @@ static void q2masses(double mc, double q, double *m1, double *m2)
 /*  for given chirp mass (m_c) & asymmetric mass   */
 /*  ratio (q).  note: q = m2/m1, where m1 >= m2    */
 {
-  double factor = pow( pow(mc,5.0)/(1+q), 1.0/7.0 );
-  *m1 = factor * pow(q, -3.0/7.0);
-  *m2 = factor * pow(q, +4.0/7.0);
+  *m1 = mc * pow(q, -3.0/5.0) * pow(q+1, 1.0/5.0);
+  *m2 = (*m1) * q;
   return;
 }
 
@@ -1658,7 +1657,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
         }else if(waveform.h){
           if(waveform.h->data->length+2*windowshift<=IFOdata->timeData->data->length){ //check whether the IFOdata->timeData->data vector is long enough to store the waveform produced
             for (i=0; i<IFOdata->timeData->data->length; i++){
-              if(i>=((unsigned long int)(waveform.h->data->length) + windowshift -1 )  || i<windowshift){
+              if(i>=((unsigned long int)(waveform.h->data->length) + windowshift -1 )  || i<windowshift || isnan(waveform.h->data->data[2*(i-(INT8)windowshift)]) || isnan(waveform.h->data->data[2*(i-(INT8)windowshift)+1]) ){
                 IFOdata->timeModelhPlus->data->data[i] = 0;
                 IFOdata->timeModelhCross->data->data[i] = 0;		
               }else{
@@ -1673,7 +1672,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
               fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.h->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
             }
             for (i=0; i<IFOdata->timeData->data->length; i++){
-              if((INT8)i>=(INT8)IFOdata->timeData->data->length-(INT8)windowshift || (INT8)i+(INT8)waveform.h->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift < 0){
+              if((INT8)i>=(INT8)IFOdata->timeData->data->length-(INT8)windowshift || (INT8)i+(INT8)waveform.h->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift < 0 || isnan(waveform.h->data->data[2*((INT8)i+(INT8)waveform.h->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift)]) || isnan(waveform.h->data->data[2*((INT8)i+(INT8)waveform.h->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift)]+1) ){
                 IFOdata->timeModelhPlus->data->data[i] = 0.0;
                 IFOdata->timeModelhCross->data->data[i] = 0.0;
               }else{                
@@ -1748,12 +1747,14 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 /*   - "spin2z"			(z component of the spin of object 2; REAL8) (if SpinTaylor approx)	*/
 /*	 - "shift0"			(shift offset; REAL8, radians)			                            */
 /*   - "time"			(coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)	*/
-/*	 - "PNorder"		(Phase PN order; REAL8)												*/
+/*	 - "PNorder"		(Phase PN order)												*/
+/*   - "Amporder"   (Amplitude PN order)                                                    */
 /********************************************************************************************/
 {
 	
 	Approximant			approximant=0;
 	int			order=0;
+  int amporder=0;
 
 	unsigned long				i;
 	static int sizeWarning = 0;
@@ -1764,8 +1765,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform [returned] */
   
 	REAL8 mc;
-  REAL8 phi0, deltaT, m1, m2, S1[3], S2[3], f_min, distance, inclination;
-  LIGOTimeGPS t0;
+  REAL8 phi0, deltaT, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, inclination;
 	
   REAL8 padding=0.4; // hard coded value found in LALInferenceReadData(). Padding (in seconds) for the tuckey window.
   UINT8 windowshift=(UINT8) ceil(padding/IFOdata->timeData->deltaT);
@@ -1785,7 +1785,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	  XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
 	  XLAL_ERROR_VOID(XLAL_EDATA);
 	}
-	
+  if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_AMPORDER"))
+		amporder = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_AMPORDER");
+
 
 	mc  = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
     if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
@@ -1814,13 +1816,13 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	REAL8 phi_spin2		= 0.0;
 	if(LALInferenceCheckVariable(IFOdata->modelParams, "phi_spin2"))	phi_spin2	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_spin2");
 	
-	S1[0] = (a_spin1 * sin(theta_spin1) * cos(phi_spin1));
-	S1[1] = (a_spin1 * sin(theta_spin1) * sin(phi_spin1));
-	S1[2] = (a_spin1 * cos(theta_spin1));
+	spin1x = (a_spin1 * sin(theta_spin1) * cos(phi_spin1));
+	spin1y = (a_spin1 * sin(theta_spin1) * sin(phi_spin1));
+	spin1z = (a_spin1 * cos(theta_spin1));
 	
-	S2[0] = (a_spin2 * sin(theta_spin2) * cos(phi_spin2));
-	S2[1] = (a_spin2 * sin(theta_spin2) * sin(phi_spin2));
-	S2[2] = (a_spin2 * cos(theta_spin2));
+	spin2x = (a_spin2 * sin(theta_spin2) * cos(phi_spin2));
+	spin2y = (a_spin2 * sin(theta_spin2) * sin(phi_spin2));
+	spin2z = (a_spin2 * cos(theta_spin2));
 	
 	distance	= LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
 	
@@ -1840,16 +1842,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 		exit(1);
 	}
 	
-  XLALGPSSetREAL8( &t0, start_time);
-  
 	INT4 errnum=0;
-  
-  if(LALInferenceCheckVariable(IFOdata->modelParams, "LALSimulationRestrictedWaveform")){
-    XLAL_TRY(ret=XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, &t0, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1, S2, f_min, distance, inclination, order, approximant), errnum);
-  }else{
-    XLAL_TRY(ret=XLALSimInspiralChooseWaveform(&hplus, &hcross, &t0, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1, S2, f_min, distance, inclination, order, approximant), errnum);
-  }
-  
+
+  XLAL_TRY(ret=XLALSimInspiralChooseWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, 
+                                             spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, 
+                                             inclination, amporder, order, approximant), errnum);
   
   if (ret == XLAL_FAILURE)
   {
@@ -1860,7 +1857,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 		}
 		return;
   }
-	
+
+	// FIXME: these waveform shifts need to be checked
+	XLALGPSAdd(&(hplus->epoch), start_time);
+	XLALGPSAdd(&(hcross->epoch), start_time);
+
 	instant= (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)+hplus->data->length*deltaT;
 	
     /* write template (time axis) location in "->modelParams" so that     */
@@ -1874,7 +1875,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     if(hplus->data && hcross->data){
       if(hplus->data->length+2*windowshift<=IFOdata->timeData->data->length){ //check whether the IFOdata->timeData->data vector is long enough to store the waveform produced
         for (i=0; i<IFOdata->timeData->data->length; i++){
-          if(i>=((unsigned long int)(hplus->data->length) + windowshift)  || i<windowshift){
+          if(i>=((unsigned long int)(hplus->data->length) + windowshift)  || i<windowshift || isnan(hplus->data->data[i-(INT8)windowshift]) || isnan(hcross->data->data[i-(INT8)windowshift])){
             IFOdata->timeModelhPlus->data->data[i] = 0;
             IFOdata->timeModelhCross->data->data[i] = 0;		
           }else{
@@ -1889,7 +1890,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
           fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",hplus->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
         }
         for (i=0; i<IFOdata->timeData->data->length; i++){
-          if((INT8)i>=(INT8)IFOdata->timeData->data->length-(INT8)windowshift || (INT8)i+(INT8)hplus->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift < 0){
+          if((INT8)i>=(INT8)IFOdata->timeData->data->length-(INT8)windowshift || (INT8)i+(INT8)hplus->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift < 0 || isnan(hplus->data->data[(INT8)i+(INT8)hplus->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift]) || isnan(hcross->data->data[(INT8)i+(INT8)hcross->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift]) ){
             IFOdata->timeModelhPlus->data->data[i] = 0.0;
             IFOdata->timeModelhCross->data->data[i] = 0.0;
           }else{                

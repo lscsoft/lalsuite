@@ -166,7 +166,7 @@ LALGenerateInspiral(
     inspiralParams.order       = order;
     if ((approximant == SpinQuadTaylor)||(approximant == PhenSpinTaylorRD)) {
 		xlalErrno = 0;
-		if (XLALGetSpinInteractionFromString(&inspiralParams.spinInteraction, thisEvent->waveform) == XLAL_FAILURE) {
+		if (XLALGetInteractionFromString(&inspiralParams.interaction, thisEvent->waveform) == XLAL_FAILURE) {
 			ABORTXLAL(status);
 		}
 	}
@@ -350,29 +350,28 @@ XLALGetOrderFromString(
   return XLAL_SUCCESS;
 }
 
-int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent) {
+int XLALGetInteractionFromString(LALSimInspiralInteraction *inter, CHAR *thisEvent) {
 	if (strstr(thisEvent, "ALL")) {
-		*inter = LAL_AllInter;
+		*inter = LAL_SIM_INSPIRAL_INTERACTION_ALL;
+	} else if (strstr(thisEvent, "ALL_SPIN")) {
+		*inter = LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN;
 	} else if (strstr(thisEvent, "NO")) {
-		*inter = LAL_NOInter;
+		*inter = LAL_SIM_INSPIRAL_INTERACTION_NONE;
+	} else if (strstr(thisEvent, "SO")) {
+		*inter = LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN | LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN;
+	} else if (strstr(thisEvent, "QM")) {
+		*inter = LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN;
+	} else if (strstr(thisEvent, "SELF")) {
+		*inter = LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN;
+	} else if (strstr(thisEvent, "SS")) {
+		*inter = LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN;
+	} else if (strstr(thisEvent, "TIDAL")) {
+		*inter = LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN | LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN;
 	} else {
-		*inter = LAL_SOInter;
-		if (strstr(thisEvent, "SO")) {
-			*inter |= LAL_SOInter;
-		}
-		if (strstr(thisEvent, "QM")) {
-			*inter |= LAL_QMInter;
-		}
-		if (strstr(thisEvent, "SELF")) {
-			*inter |= LAL_SSselfInter;
-		}
-		if (strstr(thisEvent, "SS")) {
-			*inter |= LAL_SSInter;
-		}
-		if (*inter == LAL_NOInter) {
-			XLAL_ERROR(XLAL_EDOM);
-		}
+		XLALPrintError( "Cannot parse LALSimInspiralInteraction from string: %s\n", thisEvent );
+		XLAL_ERROR( XLAL_EINVAL );
 	}
+	
 	return XLAL_SUCCESS;
 }
 

@@ -1421,7 +1421,7 @@ InitUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   help,		'h', UVAR_HELP    , "Print this help/usage message");
 
   /* output options */
-  LALregSTRINGUserVar(status, outSFTbname,	'n', UVAR_OPTIONAL, "Output directory for output SFTs (include file-basename *ONLY* for v1-SFTs!) ");
+  LALregSTRINGUserVar(status, outSFTbname,	'n', UVAR_OPTIONAL, "Output directory for output SFTs (include file-basename ONLY for --outSingleSFT or writing v1-SFTs!) ");
   LALregBOOLUserVar(status,   outSingleSFT, 	's', UVAR_OPTIONAL, "Write a single concatenated SFT (name given by --outSFTbname)" );
 
   LALregSTRINGUserVar(status, TDDfile,		't', UVAR_OPTIONAL, "Filename for output of time-series");

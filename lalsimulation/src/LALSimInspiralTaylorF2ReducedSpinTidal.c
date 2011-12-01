@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <lal/Date.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
@@ -37,7 +38,6 @@ The chi parameter should be determined from XLALSimInspiralTaylorF2ReducedSpinCo
 */
 int XLALSimInspiralTaylorF2ReducedSpinTidal(
     COMPLEX16FrequencySeries **htilde,   /**< FD waveform */
-    const LIGOTimeGPS *tStart,       /**< initial time (s) */
     const REAL8 phiStart,            /**< initial GW phase (rad) */
     const REAL8 deltaF,              /**< frequency resolution */
     const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
@@ -47,7 +47,8 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     const REAL8 lam2,                /**< dimensionless deformability of 2 */
     const REAL8 fStart,              /**< start GW frequency (Hz) */
     const REAL8 r,                   /**< distance of source (m) */
-    const UINT4 O                    /**< twice PN phase order */
+    const UINT4 phaseO,              /**< twice PN phase order */
+    const UINT4 ampO                 /**< twice PN amplitude order */
     ) {
     /* external: SI; internal: solar masses */
     const REAL8 m1 = m1_SI / LAL_MSUN_SI;
@@ -67,22 +68,24 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S;
     size_t i, n, iStart, iISCO;
     COMPLEX16 *data = NULL;
+    LIGOTimeGPS tStart = {0, 0};
 
     /* check inputs for sanity */
     if (*htilde) XLAL_ERROR(XLAL_EFAULT);
-    if (!tStart) XLAL_ERROR(XLAL_EFAULT);
     if (phiStart < 0) XLAL_ERROR(XLAL_EDOM);
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (fabs(chi) > 1) XLAL_ERROR(XLAL_EDOM);
     if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
     if (r <= 0) XLAL_ERROR(XLAL_EDOM);
-    if (O > 7) XLAL_ERROR(XLAL_EDOM); /* only implemented to pN 3.5 */
+    if (ampO > 7) XLAL_ERROR(XLAL_EDOM); /* only implemented to pN 3.5 */
+    if (phaseO > 7) XLAL_ERROR(XLAL_EDOM); /* only implemented to pN 3.5 */
 
     /* allocate htilde */
     f_max = NextPow2(fISCO);
     n = f_max / deltaF + 1;
-    *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", tStart, 0.0, deltaF, &lalStrainUnit, n);
+    XLALGPSAdd(&tStart, -1 / deltaF);  /* coalesce at t=0 */
+    *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tStart, 0.0, deltaF, &lalStrainUnit, n);
     if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
     memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
     XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
@@ -90,7 +93,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     /* extrinsic parameters */
     phi0 = phiStart;
     amp0 = pow(m_sec, 5./6.) * sqrt(5. * eta / 24.) / (cbrt(LAL_PI * LAL_PI) * r / LAL_C_SI);
-    shft = -LAL_TWOPI * (tStart->gpsSeconds + 1e-9 * tStart->gpsNanoSeconds);
+    shft = -LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
 
     /* spin terms in the amplitude and phase (in terms of the reduced
      * spin parameter */
@@ -136,27 +139,38 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
                 (1349*eta*eta*LAL_PI)/24192.;
 
     /* select the terms according to the PN order chosen */
-    switch (O) {
+    switch (ampO) {
         case 1:
-            psi2 = 0.;
             alpha2 = 0.;
         case 2:
-            psi3 = 0.;
             alpha3 = 0.;
         case 3:
-            psi4 = 0.;
             alpha4 = 0.;
         case 4:
-            psi5 = 0.;
             alpha5 = 0.;
         case 5:
-            psi6 = 0.;
-            psi6L = 0.;
             alpha6 = 0.;
             alpha6L = 0.;
         case 6:
-            psi7 = 0.;
             alpha7 = 0.;
+        default:
+            break;
+    }
+
+    switch (phaseO) {
+        case 1:
+            psi2 = 0.;
+        case 2:
+            psi3 = 0.;
+        case 3:
+            psi4 = 0.;
+        case 4:
+            psi5 = 0.;
+        case 5:
+            psi6 = 0.;
+            psi6L = 0.;
+        case 6:
+            psi7 = 0.;
         default:
             break;
     }

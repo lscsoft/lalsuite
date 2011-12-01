@@ -15,9 +15,7 @@
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
-PREFIX = /opt/lscsoft/lalxml
-LALPREFIX = /opt/lscsoft/lal
-LALPULSARPREFIX = /opt/lscsoft/lalpulsar
+PREFIX = /usr
 
 CFLAGS = -Wall -g
 
@@ -32,9 +30,9 @@ config.status: configure
 
 #	LDFLAGS="-Wl,-z,defs"
 	CFLAGS="$(CFLAGS)" \
-				 PKG_CONFIG_PATH=$(LALPREFIX)/lib/pkgconfig:$(LALPULSARPREFIX)/lib/pkgconfig \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	    --prefix=$(PREFIX) \
+	    --sysconfdir=/etc \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 	    --disable-gcc-flags
 
@@ -67,6 +65,7 @@ install: build
 	$(MAKE) clean
 # only if necessary overwrite user-env scripts
 #	cp -p debian/lalxml-user-env.* $(CURDIR)/debian/lalxml/$(PREFIX)/etc/
+#	cp -p debian/lalxml-user-env.* $(CURDIR)/debian/lalxml/etc/
 
 binary-common: build install
 	dh_testdir

@@ -1,6 +1,2 @@
-#opt/lscsoft/lalstochastic/bin
-opt/lscsoft/lalstochastic/include
-opt/lscsoft/lalstochastic/lib/pkgconfig
-#opt/lscsoft/lalstochastic/share/lal
-#opt/lscsoft/lalstochastic/share/man/man1
-#opt/lscsoft/lalstochastic/share/man/man3
+usr/lib/pkgconfig
+usr/include

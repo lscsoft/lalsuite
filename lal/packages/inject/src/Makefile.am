@@ -5,8 +5,7 @@ libinject_la_SOURCES = \
 	InjectVector.c \
 	SimulateCoherentGW.c \
 	SkyCoordinates.c \
-	TerrestrialCoordinates.c \
-	check_series_macros.h
+	TerrestrialCoordinates.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 

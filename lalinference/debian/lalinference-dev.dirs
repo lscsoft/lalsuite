@@ -1,6 +1,2 @@
-#opt/lscsoft/lalinference/bin
-opt/lscsoft/lalinference/include
-opt/lscsoft/lalinference/lib/pkgconfig
-#opt/lscsoft/lalinference/share/lal
-#opt/lscsoft/lalinference/share/man/man1
-#opt/lscsoft/lalinference/share/man/man3
+usr/include
+usr/lib/pkgconfig

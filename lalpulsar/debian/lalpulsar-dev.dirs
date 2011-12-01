@@ -1,6 +1,2 @@
-#opt/lscsoft/lalpulsar/bin
-opt/lscsoft/lalpulsar/include
-opt/lscsoft/lalpulsar/lib/pkgconfig
-#opt/lscsoft/lalpulsar/share/lal
-#opt/lscsoft/lalpulsar/share/man/man1
-#opt/lscsoft/lalpulsar/share/man/man3
+usr/lib/pkgconfig
+usr/include

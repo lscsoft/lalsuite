@@ -1,4 +1,4 @@
-opt/lscsoft/lal/bin/lal-version
-opt/lscsoft/lal/etc/*-user-env.*
-opt/lscsoft/lal/lib/*.so*
-#opt/lscsoft/lal/share/lal
+usr/bin/lal-version
+etc/lal-user-env.*
+usr/lib/*.so*
+#usr/share/lal

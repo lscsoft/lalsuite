@@ -141,7 +141,6 @@ int XLALSimIMRPhenomAGenerateFD(
 int XLALSimIMRPhenomAGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    const LIGOTimeGPS *tPeak,       /**< time at peak amplitude */
     const REAL8 phiPeak,            /**< phase at peak */
     const REAL8 deltaT,             /**< sampling interval */
     const REAL8 m1_SI,              /**< mass of companion 1 (kg) */
@@ -163,7 +162,6 @@ int XLALSimIMRPhenomAGenerateTD(
   /* check inputs for sanity */
   if (*hplus) XLAL_ERROR(XLAL_EFAULT);
   if (*hcross) XLAL_ERROR(XLAL_EFAULT);
-  if (!tPeak) XLAL_ERROR(XLAL_EFAULT);
   if (deltaT <= 0) XLAL_ERROR(XLAL_EDOM);
   if (m1 < 0) XLAL_ERROR(XLAL_EDOM);
   if (m2 < 0) XLAL_ERROR(XLAL_EDOM);
@@ -205,8 +203,8 @@ int XLALSimIMRPhenomAGenerateTD(
   peak_ind = find_peak_amp(*hplus, *hcross);
   peak_phase = atan2((*hcross)->data->data[peak_ind], (*hplus)->data->data[peak_ind]);
   apply_phase_shift(*hplus, *hcross, phiPeak - peak_phase);
-  XLALGPSAdd(&((*hplus)->epoch), -(peak_ind * deltaT) - XLALGPSDiff(&((*hplus)->epoch), tPeak));
-  XLALGPSAdd(&((*hcross)->epoch), -(peak_ind * deltaT) - XLALGPSDiff(&((*hcross)->epoch), tPeak));
+  XLALGPSSetREAL8(&((*hplus)->epoch), -(peak_ind * deltaT));
+  XLALGPSSetREAL8(&((*hcross)->epoch), -(peak_ind * deltaT));
 
   /* apply inclination */
   return apply_inclination(*hplus, *hcross, inclination);
@@ -239,7 +237,6 @@ double XLALSimIMRPhenomBComputeChi(
 int XLALSimIMRPhenomBGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    const LIGOTimeGPS *tPeak, /**< time at peak amplitude */
     const REAL8 phiPeak,      /**< phase at peak */
     const REAL8 deltaT,       /**< sampling interval */
     const REAL8 m1_SI,        /**< mass of companion 1 (kg) */
@@ -262,7 +259,6 @@ int XLALSimIMRPhenomBGenerateTD(
   /* check inputs for sanity */
   if (*hplus) XLAL_ERROR(XLAL_EFAULT);
   if (*hcross) XLAL_ERROR(XLAL_EFAULT);
-  if (!tPeak) XLAL_ERROR(XLAL_EFAULT);
   if (deltaT <= 0) XLAL_ERROR(XLAL_EDOM);
   if (m1 < 0) XLAL_ERROR(XLAL_EDOM);
   if (m2 < 0) XLAL_ERROR(XLAL_EDOM);
@@ -305,8 +301,8 @@ int XLALSimIMRPhenomBGenerateTD(
   peak_ind = find_peak_amp(*hplus, *hcross);
   peak_phase = atan2((*hcross)->data->data[peak_ind], (*hplus)->data->data[peak_ind]);
   apply_phase_shift(*hplus, *hcross, phiPeak - peak_phase);
-  XLALGPSAdd(&((*hplus)->epoch), -(peak_ind * deltaT) - XLALGPSDiff(&((*hplus)->epoch), tPeak));
-  XLALGPSAdd(&((*hcross)->epoch), -(peak_ind * deltaT) - XLALGPSDiff(&((*hcross)->epoch), tPeak));
+  XLALGPSSetREAL8(&((*hplus)->epoch), -(peak_ind * deltaT));
+  XLALGPSSetREAL8(&((*hcross)->epoch), -(peak_ind * deltaT));
 
   /* apply inclination */
   return apply_inclination(*hplus, *hcross, inclination);
@@ -884,6 +880,7 @@ static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries
   XLAL_ERROR(XLAL_EDOM);
 }
 
+/* Return the index of the sample at with the peak amplitude */
 static size_t find_peak_amp(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc) {
   const REAL8 *hpdata = hp->data->data;
   const REAL8 *hcdata = hc->data->data;

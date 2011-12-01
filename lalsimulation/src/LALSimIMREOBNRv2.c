@@ -905,7 +905,6 @@ static int
 XLALSimIMREOBNRv2Generator(
               REAL8TimeSeries **hplus,
               REAL8TimeSeries **hcross,
-              LIGOTimeGPS      *tC,
               const REAL8       phiC,
               const REAL8       deltaT,
               const REAL8       m1SI,
@@ -914,10 +913,8 @@ XLALSimIMREOBNRv2Generator(
               const REAL8       distance,
               const REAL8       inclination,
               const int         higherModeFlag
-                )
+              )
 {
-
-
    UINT4                   count, nn=4, hiSRndx=0;
 
    /* Vector containing the current signal mode */
@@ -934,7 +931,7 @@ XLALSimIMREOBNRv2Generator(
    REAL8Vector             *values, *dvalues;
 
    /* Time to use as the epoch of the returned time series */
-   LIGOTimeGPS             epoch;
+   LIGOTimeGPS             epoch = LIGOTIMEGPSZERO;
 
    /* Variables for the integrator */
    ark4GSLIntegrator       *integrator = NULL;
@@ -1409,7 +1406,6 @@ XLALSimIMREOBNRv2Generator(
   /* Set the coalescence time */
   t = m * (dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx] - dynamics->data[startIdx]);
 
-  epoch = *tC;
   XLALGPSAdd( &epoch, -t);
 
   /* Allocate vectors for current modes and final output */
@@ -1724,7 +1720,6 @@ int
 XLALSimIMREOBNRv2DominantMode(
               REAL8TimeSeries **hplus,      /**<< The +-polarization waveform (returned) */
               REAL8TimeSeries **hcross,     /**<< The x-polarization waveform (returned) */
-              LIGOTimeGPS      *tC,         /**<< The coalescence time (defined as above) */
               const REAL8       phiC,       /**<< The phase at the coalescence time */
               const REAL8       deltaT,     /**<< Sampling interval (in seconds) */
               const REAL8       m1SI,       /**<< First component mass (in kg) */
@@ -1735,7 +1730,7 @@ XLALSimIMREOBNRv2DominantMode(
               )
 {
 
-  if ( XLALSimIMREOBNRv2Generator( hplus, hcross, tC, phiC, deltaT, m1SI, m2SI,
+  if ( XLALSimIMREOBNRv2Generator( hplus, hcross, phiC, deltaT, m1SI, m2SI,
               fLower, distance, inclination, 0 ) == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
@@ -1753,7 +1748,6 @@ int
 XLALSimIMREOBNRv2AllModes(
               REAL8TimeSeries **hplus,      /**<< The +-polarization waveform (returned) */
               REAL8TimeSeries **hcross,     /**<< The x-polarization waveform (returned) */
-              LIGOTimeGPS      *tC,         /**<< The coalescence time (defined as above) */
               const REAL8       phiC,       /**<< The phase at the coalescence time */
               const REAL8       deltaT,     /**<< Sampling interval (in seconds) */
               const REAL8       m1SI,       /**<< First component mass (in kg) */
@@ -1764,7 +1758,7 @@ XLALSimIMREOBNRv2AllModes(
               )
 {
 
-  if ( XLALSimIMREOBNRv2Generator( hplus, hcross, tC, phiC, deltaT, m1SI, m2SI, 
+  if ( XLALSimIMREOBNRv2Generator( hplus, hcross, phiC, deltaT, m1SI, m2SI, 
               fLower, distance, inclination, 1 ) == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
