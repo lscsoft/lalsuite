@@ -266,4 +266,10 @@ REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *current
                                                   LALInferenceIFOData *data, 
                                                   LALInferenceTemplateFunction *template);
 
+/** 15-D Rosenbrock log(L) function (see Eq (3) of
+    http://en.wikipedia.org/wiki/Rosenbrock_function . */
+REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
+                                          LALInferenceIFOData *data,
+                                          LALInferenceTemplateFunction *template);
+
 #endif
