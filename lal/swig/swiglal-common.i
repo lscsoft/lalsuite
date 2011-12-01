@@ -1219,7 +1219,7 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
   %feature("action", "") NDATA;
   %feature("except", "") NDATA;
 
-  // Clear all typemaps created for DATA.   
+  // Clear all typemaps created for DATA.
   %clear TYPE* NDATA;
 
   // Ignore any further struct members named NDATA or NNI;
@@ -1292,7 +1292,7 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
     TYPE *NDATA;
   }
 
-  // Clear all typemaps created for DATA.   
+  // Clear all typemaps created for DATA.
   %clear TYPE* NDATA;
 
   // Ignore any further struct members named NDATA or NNI;
