@@ -1543,7 +1543,7 @@ REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
   const INT4 DIM = 15;
   REAL8 x[DIM];
 
-  REAL8 sum;
+  REAL8 sum = 0;
   INT4 i;
 
   extractDimensionlessVariableVector(currentParams, x);
