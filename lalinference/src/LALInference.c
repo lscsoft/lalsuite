@@ -1136,3 +1136,28 @@ void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVaria
   }
   return;
 }
+
+void LALInferenceMcEta2Masses(double mc, double eta, double *m1, double *m2)
+/*  Compute individual companion masses (m1, m2)   */
+/*  for given chirp mass (m_c) & mass ratio (eta)  */
+/*  (note: m1 >= m2).                              */
+{
+  double root = sqrt(0.25-eta);
+  double fraction = (0.5+root) / (0.5-root);
+  *m2 = mc * (pow(1+fraction,0.2) / pow(fraction,0.6));
+  *m1 = mc * (pow(1+1.0/fraction,0.2) / pow(1.0/fraction,0.6));
+  return;
+}
+
+void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2)
+/*  Compute individual companion masses (m1, m2)   */
+/*  for given chirp mass (m_c) & asymmetric mass   */
+/*  ratio (q).  note: q = m2/m1, where m1 >= m2    */
+{
+  double factor = mc * pow(1 + q, 1.0/5.0);
+  *m1 = factor * pow(q, -3.0/5.0); 
+  *m2 = factor * pow(q, +2.0/5.0);
+  return;
+}
+
+

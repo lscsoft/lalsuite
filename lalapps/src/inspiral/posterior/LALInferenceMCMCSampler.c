@@ -213,7 +213,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
   } else if (runState->likelihood==&LALInferenceZeroLogLikelihood) {
     nullLikelihood = 0.0;
-  } else if (runState->likelihood==&LALInferenceAnalyticLogLikelihood) {
+  } else if (runState->likelihood==&LALInferenceCorrelatedAnalyticLogLikelihood) {
     nullLikelihood = 0.0;
   } else {
     fprintf(stderr, "Unrecognized log(L) function (in %s, line %d)\n",
