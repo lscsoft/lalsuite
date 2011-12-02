@@ -2,6 +2,7 @@
 
 #NORESAMP="1"
 #NOCLEANUP="1"
+#DEBUG=1
 
 ## make sure we work in 'C' locale here to avoid awk sillyness
 LC_ALL_old=$LC_ALL
@@ -181,8 +182,13 @@ while [ $iFreq -le $numFreqBands ]; do
     SFTname="${SFTdir}${dirsep}H1-${mfd_fi}_${FreqStep}.sft"
     if [ ! -r $SFTname ]; then
         cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=H1 --outSFTbname='$SFTname' --timestampsFile='$tsFile_H1'"
+        if [ -n "$DEBUG" ]; then
+            cmdline="$cmdline -v1"
+        else
+            cmdline="$cmdline -v0 &> /dev/null"
+        fi
         echo "$cmdline";
-        if ! eval "$cmdline &> /dev/null"; then
+        if ! eval "$cmdline"; then
             echo "Error.. something failed when running '$mfd_code' ..."
             exit 1
         fi
@@ -194,8 +200,13 @@ while [ $iFreq -le $numFreqBands ]; do
     SFTname="${SFTdir}${dirsep}L1-${mfd_fi}_${FreqStep}.sft"
     if [ ! -r $SFTname ]; then
         cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=L1 --outSFTbname='$SFTname' --timestampsFile='$tsFile_L1'";
+        if [ -n "$DEBUG" ]; then
+            cmdline="$cmdline -v1"
+        else
+            cmdline="$cmdline -v0 &> /dev/null"
+        fi
         echo "$cmdline";
-        if ! eval "$cmdline &> /dev/null"; then
+        if ! eval "$cmdline"; then
             echo "Error.. something failed when running '$mfd_code' ..."
             exit 1
         fi
@@ -233,8 +244,13 @@ if [ ! -r "$outfile_cfs" ]; then
 
         # ----- get multi-IFO + single-IFO F-stat values
         cmdline="$cfs_CL --DataFiles='$SFTfiles'"
+        if [ -n "$DEBUG" ]; then
+            cmdline="$cmdline -v1"
+        else
+            cmdline="$cmdline -v0 &> /dev/null"
+        fi
         echo "$cmdline"
-        if ! eval "$cmdline &> /dev/null"; then
+        if ! eval "$cmdline"; then
 	    echo "Error.. something failed when running '$cfs_code' ..."
 	    exit 1
         fi
@@ -291,8 +307,13 @@ timingsfile_RS="${testDir}${dirsep}timing_RS.dat"
 
 if [ -z "$NORESAMP" ]; then
     cmdline="$gct_code $gct_CL_common --useResamp=true --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS'"
+    if [ -n "$DEBUG" ]; then
+        cmdline="$cmdline -d1"
+    else
+        cmdline="$cmdline -d0 &> /dev/null"
+    fi
     echo "$cmdline"
-    if ! eval "$cmdline &> /dev/null"; then
+    if ! eval "$cmdline"; then
 	echo "Error.. something failed when running '$gct_code' ..."
 	exit 1
     fi
@@ -318,8 +339,13 @@ outfile_GCT_DM="${testDir}${dirsep}GCT_DM.dat"
 timingsfile_DM="${testDir}${dirsep}timing_DM.dat"
 
 cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM'"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline -d1"
+else
+    cmdline="$cmdline -d0 &> /dev/null"
+fi
 echo $cmdline
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$gct_code' ..."
     exit 1
 fi
