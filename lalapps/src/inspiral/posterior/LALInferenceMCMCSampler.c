@@ -211,6 +211,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   } else if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood ||
       runState->likelihood==&LALInferenceFreqDomainLogLikelihood) {
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
+  } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood) {
+    REAL8 d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance");
+    REAL8 bigD = 1.0 / 0.0;
+
+    LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
+    nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
+    LALInferenceSetVariable(runState->currentParams, "distance", &d);
   } else if (runState->likelihood==&LALInferenceZeroLogLikelihood) {
     nullLikelihood = 0.0;
   } else if (runState->likelihood==&LALInferenceCorrelatedAnalyticLogLikelihood) {

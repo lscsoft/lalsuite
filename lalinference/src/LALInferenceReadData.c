@@ -347,6 +347,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
           IFOdata[i].fLow=fLows?atof(fLows[i]):defaultFLow; 
           IFOdata[i].fHigh=fHighs?atof(fHighs[i]):defaultFHigh;
           strncpy(IFOdata[i].name, IFOnames[i], DETNAMELEN);
+          IFOdata[i].STDOF = 4.0 / M_PI * nSegs;
+          fprintf(stderr, "Detector %s will run with %g DOF if Student's T likelihood used.\n",
+                  IFOdata[i].name, IFOdata[i].STDOF);
         }
 
 	/* Only allocate this array if there weren't channels read in from the command line */

@@ -152,7 +152,8 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--tdlike)                      Compute likelihood in the time domain\n\
                (--rapidSkyLoc)                 Use rapid sky localization jump proposals\n\
                (--LALSimulation)               Interface with the LALSimulation package for template generation\n\
-               (--correlatedGaussianLikelihood)Use analytic, correlated Gaussian for Likelihood.\n";
+               (--correlatedGaussianLikelihood)Use analytic, correlated Gaussian for Likelihood.\n\
+               (--studentTLikelihood)          Use the Student-T Likelihood that marginalizes over noise.\n";
 
   /* Print command line arguments if runState was not allocated */
   if(runState==NULL)
@@ -221,6 +222,9 @@ void initializeMCMC(LALInferenceRunState *runState)
     runState->likelihood=&LALInferenceZeroLogLikelihood;
   } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {
     runState->likelihood=&LALInferenceCorrelatedAnalyticLogLikelihood;
+  } else if (LALInferenceGetProcParamVal(commandLine, "--studentTLikelihood")) {
+    fprintf(stderr, "Using Student's T Likelihood.\n");
+    runState->likelihood=&LALInferenceFreqDomainStudentTLogLikelihood;
   } else {
     runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
   }
@@ -1139,6 +1143,10 @@ void initVariables(LALInferenceRunState *state)
     }
     LALInferenceAddMinMaxPrior(priorArgs, "spin2",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 
+  }
+
+  if (LALInferenceGetProcParamVal(commandLine, "--studentTLikelihood")) {
+    
   }
 
   ppt=LALInferenceGetProcParamVal(commandLine, "--TaylorF2ppE");

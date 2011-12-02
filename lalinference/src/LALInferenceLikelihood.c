@@ -478,8 +478,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
       degreesOfFreedom = *(REAL8*) LALInferenceGetVariable(currentParams,df_variable_name);
     }
     else {
-      fprintf(stderr,"ERROR: Unable to find degrees of freedom parameter %s!\n",df_variable_name);
-      degreesOfFreedom = -1;
+      degreesOfFreedom = dataPtr->STDOF;
     }
     if (!(degreesOfFreedom>0)) {
       XLALPrintError(" ERROR in StudentTLogLikelihood(): degrees-of-freedom parameter must be positive.\n");

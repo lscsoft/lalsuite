@@ -370,6 +370,7 @@ tagLALInferenceIFOData
   EphemerisData             *ephem;             /** Ephemeris data */
   LIGOTimeGPS		    epoch;              /** The epoch of this observation (the time of the first sample) */
   REAL8                     SNR;                /** IF INJECTION ONLY, E(SNR) of the injection in the detector.*/
+  REAL8                     STDOF;              /** Degrees of freedom for IFO to be used in Student-T Likelihood. */
 
   struct tagLALInferenceIFOData      *next;     /** A pointer to the next set of data for linked list */
 } LALInferenceIFOData;
