@@ -15,7 +15,7 @@ Description: LSC Algorithm Library Inference
 
 Package: lalinference-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, lalinspiral (= ${binary:Version}), zlib1g, libgsl0-dev (>= 1.9), lal-dev (>= 6.6), lalmetaio-dev (>= 1.0.2), lalframe-dev (>= 1.0.3), lalsimulation-dev (>= 0.1), lalinspiral-dev (>= 1.2), lalpulsar-dev (>= 1.2), libmetaio-dev (>= 8.2)
+Depends: ${shlibs:Depends}, ${misc:Depends}, lalinference (= ${binary:Version}), zlib1g, libgsl0-dev (>= 1.9), lal-dev (>= 6.6), lalmetaio-dev (>= 1.0.2), lalframe-dev (>= 1.0.3), lalsimulation-dev (>= 0.1), lalinspiral-dev (>= 1.2), lalpulsar-dev (>= 1.2), libmetaio-dev (>= 8.2)
 Description: LSC Algorithm Library Inference Developers
  The LSC Algorithm Inference Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
