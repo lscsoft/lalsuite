@@ -21,6 +21,29 @@ sys.path.append('@PYTHONLIBDIR@')
 ifos=['H1','L1','V1']
 fakeTypes=["LALVirgo","LALLIGO"]
 
+def open_pipedown_database(database_filename,tmp_space):
+    """
+    Open the connection to the pipedown database
+    """
+    from glue.ligolw import dbtables
+    try:
+        import sqlite3
+    except ImportError:
+        # Pre-2.5
+        from pysqlite2 import dbapi2 as sqlite3
+    working_filename=dbtables.get_connection_filename(database_filename,tmp_path=tmp_space)
+    connection = sqlite3.connect(working_filename)
+    if tmp_space:
+    	dbtables.set_temp_store_directory(connection,tmp_space)
+    dbtables.DBTable_set_connection(connection)
+    return (connection,working_filename)
+
+def get_timeslides_pipedown(connection):
+    """
+    Return a (trig_time, {H1: Hslide, L1:Lslide, V1:vslide}) structure
+    """
+    get_coincs
+
 # Read command line options
 usage=""" %prog [options]
 Setup a Condor DAG file to run the nested sampling pipeline
@@ -50,6 +73,7 @@ parser.add_option("-I","--inj",action="store",type="string",default=None,help="L
 parser.add_option("-F","--disable-inject",action="store_true",default=False,help="Don't actually inject the signals - useful for hardware injection lists")
 parser.add_option("-t","--single-triggers",action="store",type="string",default=None,help="SnglInspiralTable trigger list",metavar="SNGL_FILE.xml")
 parser.add_option("-T","--coinc-triggers",action="store",type="string",default=None,help="CoincInspiralTable trigger list",metavar="COINC_FILE.xml")
+parser.add_option("-p","--pipedown-db",action="store",type="string",default=None,help="pipedown sqlite file",metavar="DATABASE.sqlite)
 parser.add_option("-g","--gps-time-file",action="store",type="string",default=None,help="Text file containing list of GPS times to analyse",metavar="TIMES.txt")
 parser.add_option("-C","--coherence-test",action="store_true",help="Perform the coherence test",default=False)
 parser.add_option("--disable-pages",action="store_true",default=False,help="Disable the outpage page and postprocessing")
@@ -58,6 +82,7 @@ parser.add_option("--condor-submit",action="store_true",default=False,help="Auto
 parser.add_option("--ignore-science-mode",action="store_true",default=False,help="Skip the segment database step and try and find data for all specified times.")
 parser.add_option("--notify",action="store",default=None,help="Optional e-mail address to notify upon completion",metavar="you@yourdomain.edu")
 parser.add_option("-X","--program",action="store",default="inspnest",help="Over-ride program to run, e.g. -X lalinferencenest",metavar="lalinferencenest")
+parser.add_option("--timeslides",action="store_true",default=False,help="Analyse timeslides (requires --pipedown-db)")
 
 (opts,args)=parser.parse_args()
 
@@ -126,8 +151,8 @@ def istoint(a):
     else:
         return 0
 
-if(sum(map(istoint, [getattr(opts,a) for a in ['single_triggers','coinc_triggers','inj','gps_time_file']]))>1):
-    parser.error('You can only specify one of --inj, --single-triggers, --coinc-triggers, or --gps-time-file\n')
+if(sum(map(istoint, [getattr(opts,a) for a in ['single_triggers','coinc_triggers','inj','gps_time_file','pipedown_db']]))>1):
+    parser.error('You can only specify one of --inj, --single-triggers, --coinc-triggers, --pipedown-db or --gps-time-file\n')
 
 types_list=eval(cp.get('data','types'))
 channels_list=eval(cp.get('data','channels'))
@@ -234,6 +259,11 @@ if opts.coinc_triggers:
     times=[trig.get_end() for trig in CoincInspiralTriggers]
     starttime=min(times)
     endtime=max(times)
+
+# Read pipedown database
+    if opts.pipedown_db:
+	(db_connection,db_working_filename)=open_pipedown_database(opts.pipedown_db,None)
+	
 
 if opts.gps_start_time is not None:
     mystarttime=float(opts.gps_start_time)
