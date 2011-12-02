@@ -171,7 +171,6 @@ extern "C" {
     UINT4 numDetectors;     /**< number of detectors for sumTwoFX array */
     REAL4 * sumTwoF;        /**< sum of 2F-values */
     REAL4 * sumTwoFX;       /**< sum of per-IFO 2F-values, array length = length*numDetectors */
-    UINT4 * NsegmentsX;     /**< number of segments where the IFO X actually has data*/
     FINEGRID_NC_T * nc;     /**< number count */
   } FineGrid;
 

@@ -597,7 +597,6 @@ int MAIN( int argc, char *argv[]) {
   finegrid.nc= NULL;
   finegrid.sumTwoF=NULL;
   finegrid.sumTwoFX=NULL;
-  finegrid.NsegmentsX=NULL;
   Fstat = 0;
 
   /* initialize ephemeris info */
@@ -952,6 +951,20 @@ int MAIN( int argc, char *argv[]) {
       XLAL_ERROR ( XLAL_EFUNC );
     numDetectors = detectorIDs->length;
   }
+  UINT4 * NsegmentsX = NULL;
+  if ( uvar_useLV ) { /* allocate detector matching info */
+    NsegmentsX = (UINT4 *)ALRealloc( NsegmentsX, numDetectors * sizeof(UINT4));
+    UINT4 Y;
+    for (X = 0; X < numDetectors; X++) {
+      NsegmentsX[X] = 0;
+      for (k = 0; k < nStacks; k++) { /* for each detector, check if present in each segment, and save the number of segments where it is */
+        for (Y = 0; Y < stackMultiSFT.data[k]->length; Y++) {
+          if ( strcmp( stackMultiSFT.data[k]->data[Y]->data[0].name, detectorIDs->data[X] ) == 0 )
+            NsegmentsX[X] += 1; /* have to keep this for correct averaging */
+        }
+      }
+    }
+  }
 
   /*-----------Create template grid for first stage ---------------*/
   /* prepare initialization of DopplerSkyScanner to step through paramter space */
@@ -1231,19 +1244,6 @@ int MAIN( int argc, char *argv[]) {
           finegrid.nc = (FINEGRID_NC_T *)ALRealloc( finegrid.nc, finegrid.length * sizeof(FINEGRID_NC_T));
           finegrid.sumTwoF = (REAL4 *)ALRealloc( finegrid.sumTwoF, finegrid.length * sizeof(REAL4));
           finegrid.sumTwoFX = (REAL4 *)ALRealloc( finegrid.sumTwoFX, finegrid.numDetectors * finegrid.length * sizeof(REAL4));
-          if ( uvar_useLV ) { /* allocate detector matching info, has to be passed on with finegrid struct at the moment */
-            finegrid.NsegmentsX = (UINT4 *)ALRealloc( finegrid.NsegmentsX, finegrid.numDetectors * sizeof(UINT4));
-            UINT4 Y;
-            for (X = 0; X < numDetectors; X++) {
-              finegrid.NsegmentsX[X] = 0;
-              for (k = 0; k < nStacks; k++) { /* for each detector, check if present in each segment, and save the number of segments where it is */
-                for (Y = 0; Y < stackMultiSFT.data[k]->length; Y++) {
-                  if ( strcmp( stackMultiSFT.data[k]->data[Y]->data[0].name, detectorIDs->data[X] ) == 0 )
-                    finegrid.NsegmentsX[X] += 1; /* have to keep this for correct averaging */
-                }
-              }
-            }
-          }
 
           if ( finegrid.nc == NULL || finegrid.sumTwoF == NULL) {
             fprintf(stderr, "ERROR: Memory allocation [HierarchSearchGCT.c %d]\n" , __LINE__);
@@ -1533,8 +1533,14 @@ int MAIN( int argc, char *argv[]) {
                 FINEGRID_NC_T * fgridnc = finegrid.nc + FG_INDEX(finegrid, 0);
 
 #ifdef GC_SSE2_OPT
-                /* FIXME: optimized hotloop does not yet support FX from uvar_useLV ! */
                 gc_hotloop( fgrid2F, cgrid2F, fgridnc, TwoFthreshold, finegrid.freqlength );
+                if ( uvar_useLV ) {
+                  for (X = 0; X < finegrid.numDetectors; X++) {
+                    REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
+                    REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
+                    gc_hotloop( fgrid2FX, cgrid2FX, fgridnc, TwoFthreshold, finegrid.freqlength );
+                  }
+                }
 #else // GC_SSE2_OPT
                 for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
                   fgrid2F[0] += cgrid2F[0];
@@ -1574,6 +1580,22 @@ int MAIN( int argc, char *argv[]) {
               } /* end: ------------- MAIN LOOP over Segments --------------------*/
 
               /* ############################################################### */
+
+              /* take F-stat averages over segments */
+              REAL4 * fgrid2F = finegrid.sumTwoF + FG_INDEX(finegrid, 0);
+              for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
+                fgrid2F[0] /= nStacks; /* average multi-2F by full number of segments */
+                fgrid2F++;
+              }
+              if ( uvar_useLV ) {
+                for (X = 0; X < finegrid.numDetectors; X++) {
+                  REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
+                  for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
+                    fgrid2FX[0] /= NsegmentsX[X]; /* average single-2F by per-IFO number of segments */
+                    fgrid2FX++;
+                  }
+                }
+              }
 
               if( uvar_semiCohToplist ) {
                 /* this is necessary here, because UpdateSemiCohToplist() might set
@@ -1733,6 +1755,8 @@ int MAIN( int argc, char *argv[]) {
     LALFree ( scanInit.skyRegionString );
 
   XLALDestroyStringVector ( detectorIDs );
+  if (NsegmentsX)
+    ALFree(NsegmentsX);
 
   /* free fine grid and coarse grid */
   if (finegrid.nc) {
@@ -1743,9 +1767,6 @@ int MAIN( int argc, char *argv[]) {
   }
   if (finegrid.sumTwoFX) {
     ALFree(finegrid.sumTwoFX);
-  }
-  if (finegrid.NsegmentsX) {
-    ALFree(finegrid.NsegmentsX);
   }
 
   if (coarsegrid.TwoF) {
@@ -2346,7 +2367,7 @@ void UpdateSemiCohToplist(LALStatus *status,
     line.F1dot = f1dot_fg;
     line.F2dot = f2dot_fg;
     line.nc = in->nc[ifreq_fg];
-    line.sumTwoF = (in->sumTwoF[ifreq_fg]) / Nsegments; /* save the average 2F value */
+    line.sumTwoF = in->sumTwoF[ifreq_fg]; /* here it's already the average 2F value */
 
     /* initialize LV postprocessing entries to zero.
      * This will be filled later, if user requested it.
@@ -2358,7 +2379,7 @@ void UpdateSemiCohToplist(LALStatus *status,
       line.sumTwoFX = XLALCreateREAL4Vector ( in->numDetectors );
       UINT4 X;
       for (X = 0; X < in->numDetectors; X++)
-        line.sumTwoFX->data[X] = (in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)]) / in->NsegmentsX[X];
+        line.sumTwoFX->data[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
     }
 
     /* compute LV-stat, needed for toplist insertion in uvar_useLV case */
