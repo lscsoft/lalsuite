@@ -35,8 +35,20 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   /* set model parameters (including rescaling) */
   pars.h0 = rescale_parameter( data, "h0" );
   pars.cosiota = rescale_parameter( data, "cosiota" );
-  pars.psi = rescale_parameter( data, "psi" );
-  pars.phi0 = rescale_parameter( data, "phi0" );
+  
+  /* check whether new psi-phi0 coordinates are used */
+  if ( LALInferenceCheckVariable( data->modelParams, "psiprime" ) &&
+       LALInferenceCheckVariable( data->modelParams, "phi0prime" ) ){
+    REAL8 phi0prime = rescale_parameter( data, "phi0prime" );
+    REAL8 psiprime = rescale_parameter( data, "psiprime" );
+  
+    /* convert phi0' and psi' into phi0 and psi */
+    inverse_phi0_psi_transform( phi0prime, psiprime, &pars.phi0, &pars.psi );
+  }
+  else{
+    pars.psi = rescale_parameter( data, "psi" );
+    pars.phi0 = rescale_parameter( data, "phi0" );
+  }
   
   /*pinned superfluid parameters*/
   pars.h1 = rescale_parameter( data, "h1" );

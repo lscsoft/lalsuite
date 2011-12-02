@@ -1621,6 +1621,8 @@ void initialiseProposal( LALInferenceRunState *runState )
   LALStringVector *corParams = NULL;
   REAL8Array *corMat = NULL;
   
+  INT4 phidef = 0, psidef = 0; /* check if phi0 and psi are in propfile */
+  
   ppt = LALInferenceGetProcParamVal( commandLine, "--prop-file" );
   if( ppt ){
   propfile =
@@ -1685,6 +1687,8 @@ set.\n", propfile, tempPar);
       if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ){ 
         scale = 1.;
         scaleMin = 0.;
+        high = 2.*LAL_PI; /* make sure range spans exactly 2pi */
+        phidef = 1;
       }
     }
     
@@ -1694,6 +1698,8 @@ set.\n", propfile, tempPar);
       if ( scale/LAL_PI_2 > 0.99 && scale/LAL_PI_2 < 1.01 ){ 
         scale = 0.25;
         scaleMin = -LAL_PI/4.;
+        high = LAL_PI/4.; /* make sure range spans exactly pi/2 */
+        psidef = 1;
       }
     }
     
@@ -1758,6 +1764,85 @@ set.\n", propfile, tempPar);
       }
     }
  
+  }
+  
+  /* if phi0 and psi have been given in the prop-file and defined at the limits
+     of their range the remove them and add the phi0' and psi' coordinates */
+  if( phidef && psidef ){
+    LALInferenceIFOData *datatemp = data;
+    
+    REAL8 phi0 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, 
+                                                   "phi0" );
+    REAL8 phi0scale = *(REAL8*)LALInferenceGetVariable( data->dataParams, 
+                                                        "phi0_scale" );
+    REAL8 phi0min = *(REAL8*)LALInferenceGetVariable( data->dataParams, 
+                                                      "phi0_scale_min" );
+    REAL8 psi = *(REAL8*)LALInferenceGetVariable( runState->currentParams, 
+                                                  "psi" );
+    REAL8 psiscale = *(REAL8*)LALInferenceGetVariable( data->dataParams, 
+                                                       "psi_scale" );
+    REAL8 psimin = *(REAL8*)LALInferenceGetVariable( data->dataParams, 
+                                                     "psi_scale_min" );
+    REAL8 theta = atan2(1,2);
+    REAL8 primescale = 0.5*cos(theta), primemin = -LAL_PI_2*cos(theta);
+    REAL8 phi0prime = 0., psiprime = 0.;
+    
+    phi0 = phi0*phi0scale + phi0min;
+    psi = psi*psiscale + psimin;
+    
+    /* convert to phi0' and psi' */
+    phi0_psi_transform( phi0, psi, &phi0prime, &psi );
+    
+    /* scale phi0' and psi' */
+    phi0prime = (phi0prime - primemin)/primescale;
+    psiprime = (psiprime - primemin)/primescale;
+    
+    /* remove phi0 and psi */
+    LALInferenceRemoveVariable( runState->currentParams, "phi0" );
+    LALInferenceRemoveVariable( runState->currentParams, "psi" );
+    
+    /* add new variables */
+    LALInferenceAddVariable( runState->currentParams, "phi0prime", &phi0prime,
+                             LALINFERENCE_REAL8_t, 
+                             LALINFERENCE_PARAM_CIRCULAR );
+    LALInferenceAddVariable( runState->currentParams, "psiprime", &psiprime,
+                             LALINFERENCE_REAL8_t, 
+                             LALINFERENCE_PARAM_CIRCULAR );
+    
+    /* remove old scale factors and add new ones */
+    while( datatemp ){
+      LALInferenceRemoveVariable( datatemp->dataParams, "phi0_scale" );
+      LALInferenceRemoveVariable( datatemp->dataParams, "phi0_scale_min" );
+      
+      LALInferenceRemoveVariable( datatemp->dataParams, "psi_scale" );
+      LALInferenceRemoveVariable( datatemp->dataParams, "psi_scale_min" );
+      
+      LALInferenceAddVariable( datatemp->dataParams, "phi0prime_scale",
+                               &primescale, LALINFERENCE_REAL8_t, 
+                               LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( datatemp->dataParams, "phi0prime_scale_min",
+                               &primemin, LALINFERENCE_REAL8_t, 
+                               LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( datatemp->dataParams, "psiprime_scale",
+                               &primescale, LALINFERENCE_REAL8_t, 
+                               LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( datatemp->dataParams, "psiprime_scale_min",
+                               &primemin, LALINFERENCE_REAL8_t, 
+                               LALINFERENCE_PARAM_FIXED );
+      
+      datatemp = datatemp->next;
+    }
+    
+    /* change prior */
+    low = 0.;
+    high = LAL_TWOPI;
+    LALInferenceRemoveMinMaxPrior( runState->priorArgs, "phi0" );
+    LALInferenceAddMinMaxPrior( runState->priorArgs, "phi0prime", &low, 
+                                &high, LALINFERENCE_PARAM_CIRCULAR );
+    
+    LALInferenceRemoveMinMaxPrior( runState->priorArgs, "psi" );
+    LALInferenceAddMinMaxPrior( runState->priorArgs, "psiprime", &low, 
+                                &high, LALINFERENCE_PARAM_CIRCULAR);
   }
   
   /* check for any parameters with Gaussian priors and rescale to mean value */
@@ -2968,7 +3053,7 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource,
 }
 
 
-/** \brief Rescale the value output by the Nested Sampling algorithm
+/** \brief Rescale the values output by the Nested Sampling algorithm
  * 
  * This function reads in the file of samples output from the Nested Sampling
  * algorithm (in the file specified by \c outfile) and scales them back to 
@@ -3571,6 +3656,119 @@ NULL )
   return 0;
 }
 
+/** \brief Convert \f$\phi_0\f$ and \f$\psi\f$ to a new coordinate system
+ * 
+ * This function will convert the initial phase \f$\phi_0\f$ and polarisation
+ * angle \f$\psi\f$ into a new coordinate system. As they are currently
+ * defined when \f$\psi\f$ wraps around at the limits of its range (\f$ \pm
+ * \pi/4 \f$ radians) it is equivalent to a \f$ \pi \f$ radians shift in
+ * \f$\phi_0\f$. This leads to a bimodal distribution in \f$\phi_0\f$. A new
+ * coordinate system that is uni-modal and wraps around at the edges without
+ * introduction any phase shift is given by:
+ * \f[ 
+ \left( \begin{array}{c} {\phi'}_0 \\ {\psi}' \end{array} \right) =
+ \left( \begin{array}{cc} \sin{\theta} & \cos{\theta} \\ -\sin{\theta} &
+\cos{\theta} \end{array} \right)
+ \left( \begin{array}{c} \phi_0 \\ \psi \end{array} \right),
+ \f]
+ * where \f$\theta = \arctan{(1/2)}\f$.
+ * 
+ * NOTE: This may want to be moved into LALInference at some point.
+ * 
+ * \param phi0 [in] the initial phase parameter
+ * \param psi [in] the polarisation angle parameter 
+ * \param phi0prime [in] the new coordinate axis
+ * \param psiprime [in] the new coordinate axis
+ */
+void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime, 
+                         REAL8 *psiprime ){
+  REAL8 theta = atan2(1., 2.);
+  REAL8 st = sin(theta);
+  REAL8 ct = cos(theta);
+
+  /* check psi is in range: -pi/4 < psi < pi/4 */
+  if( fabs(psi) > LAL_PI/4 ){
+    XLALPrintError("Error... psi is not in range.\n");
+    XLAL_ERROR_VOID(XLAL_EFUNC);
+  }
+
+  /* put phi0 in range -pi < phi0 < pi */
+  if ( phi0 > 2.*LAL_PI ) phi0 = fmod(phi0, LAL_TWOPI);
+  else phi0 = LAL_TWOPI - fmod(LAL_TWOPI-phi0, LAL_TWOPI);
+  phi0 -= LAL_PI;
+
+  *phi0prime = (st*phi0 + ct*psi);
+  *psiprime = (-st*phi0 + ct*psi);
+}
+
+
+/** \brief Convert new \f${\phi'}_0\f$ and \f$\psi'\f$ coordinate system back
+ * to \f$\phi_0\f$ and \f$\psi\f$
+ * 
+ * This function will convert the new parameters \f${\phi'}_0\f$ and
+ * \f$\psi'\f$, defined in \c phi0_psi_transform() into the original
+ * \f$\phi_0\f$ and \f$\psi\f$ coordinates. This is done through the inverse
+ * transform:
+ \f{eqnarray*}{
+ \left( \begin{array}{c} {\phi}_0 \\ {\psi} \end{array} \right) & = &
+ \left( \begin{array}{cc} \sin{\theta} & \cos{\theta} \\ -\sin(\theta} &
+\cos{\theta} \end{array} \right)^{-1}
+ \left( \begin{array}{c} {\phi'}_0 \\ {\psi'} \end{array} \right), \\
+ & = & \left( \begin{array}{cc} \frac{1}{2\sin{\theta}} &
+-\frac{1}{2\sin{\theta}} \\ \frac{1}{2\cos{\theta}} &
+\frac{1}{2\cos{\theta}} \end{array} \right)
+ \left( \begin{array}{c} {\phi'}_0 \\ {\psi'} \end{array} \right),
+ \f}
+ * where \f$\theta = \arctan{(1/2)}\f$.
+ * 
+ * The \f${\phi'}_0\f$ and \f$\psi'\f$ should both be in the range \f$ \pm
+ * (\pi/2)\cos{\theta}\f$, which will return \f$\psi\f$ in the range \f$ \pm
+ * \pi/2 \f$, and \f$\phi_0\f$ in the range \f$ \pm \pi \f$. These will then
+ * be converted back into their original ranges.
+ * 
+ * NOTE: This may want to be moved into LALInference at some point.
+ * 
+ * \param phi0prime [in] the new coordinate axis
+ * \param psiprime [in] the new coordinate axis
+ * \param phi0 [in] the initial phase parameter
+ * \param psi [in] the polarisation angle parameter
+ */
+void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime, 
+                                 REAL8 *phi0, REAL8 *psi ){
+  REAL8 theta = atan2(1., 2.);
+  REAL8 o2st = 1./(2*sin(theta));
+  REAL8 o2ct = 1./(2*cos(theta));
+  REAL8 ct = cos(theta);
+  REAL8 phitmp = 0., psitmp = 0.;
+  
+  /* check psiprime and phi0prime is in range +/- (pi/2)cos(theta) */
+  if ( fabs(phi0prime) > LAL_PI_2*ct || fabs(psiprime) > LAL_PI_2*ct ){
+    XLALPrintError("Error... phi0prime or psiprime are not in range\n");
+    XLAL_ERROR_VOID(XLAL_EFUNC);
+  }
+
+  phitmp = o2st*phi0prime - o2st*psiprime;
+  psitmp = o2ct*phi0prime + o2ct*psiprime;
+  
+  /* get psi into +/- pi/4 range */
+  if ( fabs(psitmp) > LAL_PI/4. ){
+    phitmp += LAL_PI; /* rotate phase by pi */
+    
+    /* wrap around psi */
+    if ( psitmp > LAL_PI/4. ) 
+      psitmp = -(LAL_PI/4.) + fmod(psitmp+(LAL_PI/4.), LAL_PI_2);
+    else
+      psitmp = (LAL_PI/4.) - fmod((LAL_PI/4.)-psitmp, LAL_PI_2);
+  }
+  
+  *psi = psitmp;
+  
+  /* get phi0 into 0 -> 2pi range */
+  if ( phitmp > LAL_TWOPI ) phitmp = fmod(phitmp, LAL_TWOPI);
+  else phitmp = LAL_TWOPI - fmod(LAL_TWOPI-phitmp, LAL_TWOPI);
+  
+  *phi0 = phitmp;
+}
 
 /*----------------------- END OF HELPER FUNCTIONS ----------------------------*/
 

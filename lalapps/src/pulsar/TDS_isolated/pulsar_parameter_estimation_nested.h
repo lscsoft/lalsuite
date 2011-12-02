@@ -237,6 +237,12 @@ void get_loudest_snr( LALInferenceRunState *runState );
 INT4 XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, INT4 gpsstart, 
                                 INT4 gpsend );
 
+void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime,
+                         REAL8 *psiprime );
+
+void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime,
+                                 REAL8 *phi0, REAL8 *psi );
+
 #ifdef __cplusplus
 }
 #endif
