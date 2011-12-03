@@ -1858,9 +1858,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 		return;
   }
 
-	// FIXME: these waveform shifts need to be checked
-	XLALGPSAdd(&(hplus->epoch), start_time);
-	XLALGPSAdd(&(hcross->epoch), start_time);
+	// FIXME: these waveform shifts need to be checked -> not needed, neither hplus->epoch nor hcross->epoch are used from then onward. 
+	//XLALGPSAdd(&(hplus->epoch), start_time);
+	//XLALGPSAdd(&(hcross->epoch), start_time);
 
 	instant= (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)+hplus->data->length*deltaT;
 	
