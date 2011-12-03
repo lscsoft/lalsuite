@@ -510,58 +510,70 @@ REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fsta
     XLAL_ERROR_REAL4 ( XLAL_EBADLEN);
   }
 
+  if ( rhomaxline < 0 )
+    XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative prior range 'rhomaxline' = %g! Must be >= 0!\n", rhomaxline );
+
   /* set up temporary variables and structs */
+  REAL4 log05 = log(0.5);
+  REAL4 log0  = - LAL_REAL4_MAX;	/* approximates -inf */
+
   UINT4 numDetectors = TwoFX->length; /* number of detectors */
-  UINT4 X;                            /* loop summation variable */
-  REAL4 maxSum = -9999.0;             /* maximum of terms in denominator, for logsumexp formula */
-  REAL4 LV = 0.0;                     /* output variable for Line Veto statistics */
-  REAL4 logFXprior[numDetectors];     /* used to store log(e^(FX)*priorX) = FX + log(priorX) instead of recalculating it 3 times */
+  REAL4 maxInSum = log0;             /* keep track of largest summand in denominator, for logsumexp formula below */
+  REAL4 FXprior[numDetectors];     /* FXprior equiv log(priorX * e^(FX)) = FX + log(priorX) */
 
-  if (priorX) { /* if specific priors passed, store them together with FX */
-    for (X = 0; X < numDetectors; X++) {
-      if ( priorX->data[X] > 0.0 ) {
-        logFXprior[X] = TwoFX->data[X]/2.0 + log(priorX->data[X]);
-        if ( logFXprior[X] > maxSum )
-          maxSum = logFXprior[X];
-      }
+  for (UINT4 X = 0; X < numDetectors; X++)
+    {
+      FXprior[X] = 0.5 * TwoFX->data[X];
+      if (priorX)
+        {
+          if ( priorX->data[X] > 0.0 )  /* if nonzero priorX: add logarithm log(priorX) to FX */
+            FXprior[X] += log ( priorX->data[X] );
+          else if ( priorX->data[X] == 0 ) /* if zero prior, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
+            FXprior[X] += log0;
+          else	/* negative prior is a mistake! */
+            XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative input prior for detector X=%d: p[X]=%g\n", X, priorX->data[X] );
+        } /* if priorX != NULL */
       else
-       logFXprior[X] = -9999.0; /* if prior is 0 (or negative, which should not be), ignore term in summation later on */
-    }
-  }
-  else { /* if NULL pointer passed for priorX, just use 0.5 for all X */
-    REAL4 log05 = log(0.5);
-    for (X = 0; X < numDetectors; X++) {
-      logFXprior[X] = TwoFX->data[X]/2.0 + log05;
-      if ( logFXprior[X] > maxSum )
-        maxSum = logFXprior[X];
-    }
-  }
+        { /* if no priors given, just use p[X]=0.5 for all X */
+          FXprior[X] += log05;
+        }
 
-  REAL4 logrho = 0.0;
-  if ( rhomaxline > 0.0 ) { /* if == 0.0, can just ignore it in summation. if < 0.0, treat as if == 0.0 */
-    logrho = 4.0*log(rhomaxline)-log(70.0);
-    if ( logrho > maxSum )
-      maxSum = logrho;
-  }
+      /* keep track of maximum value in denominator sum  */
+      if ( FXprior[X] > maxInSum )
+        maxInSum = FXprior[X];
 
-  if ( useAllTerms ) { /* full logsumexp formula */
-    if ( rhomaxline > 0.0 )
-      LV += XLALFastNegExp( maxSum - logrho ); /* faster version of LV += exp( logrho - maxSum ) (note the sign change) */
-    for (X = 0; X < numDetectors; X++) {
-      if ( logFXprior[X] > -9999 )
-        LV += XLALFastNegExp( maxSum - logFXprior[X] ); /* faster version of LV += exp( logFXprior[X] - maxSum ) (note the sign change) */
-    }
-    if ( LV <= 0.0 ) { /* return error code for log (0) */
-      XLALPrintError ("\nError in function %s, line %d : log(nonpositive) in LV denominator. \n\n", __func__, __LINE__);
-      XLAL_ERROR_REAL4 ( XLAL_EFPINVAL );
-    }
-    else
-      LV = TwoF/2.0 - maxSum - log( LV );
-  }
-  else /* only use leading term */
-    LV = TwoF/2.0 - maxSum;
+    } /* for X < numDetectors */
 
-  return(LV);
+  /* special treatment for additional denominator term 'rho^4/70' */
+  REAL4 logRhoTerm = 0.0;
+  if ( rhomaxline > 0.0 )	/* if == 0.0, can just ignore it in summation */
+    {
+      logRhoTerm = 4.0 * log(rhomaxline) - log(70.0);
+      if ( logRhoTerm > maxInSum )
+        maxInSum = logRhoTerm;
+    }
+
+  REAL4 LV = 0.0;	/* output variable for Line Veto statistics */
+
+  LV = 0.5 * TwoF - maxInSum;	/* dominant term to LV-statistic */
+
+  if ( useAllTerms )	/* optionally add logsumexp term (possibly negligible in many cases) */
+    {
+      REAL4 extraSum=0;	/* will be:  e^[-(maxInSum - logRhoTerm)] + sum_X e^[ -(maxInSum - FXprior) ] >= 1 */
+
+      /* need to treat (rho^4/70) term separately */
+      if ( rhomaxline > 0.0 )
+        extraSum += XLALFastNegExp ( maxInSum - logRhoTerm ); /* faster version of exp[ -(maxInSum - logRhoTerm) ] */
+
+      /* now add all FX-contributions */
+      for (UINT4 X = 0; X < numDetectors; X++)
+        extraSum += XLALFastNegExp( maxInSum - FXprior[X] ); /* faster version of exp[ -(maxInSum - FXprior)] */
+
+      LV -= log( extraSum );
+
+    } /* if useAllTerms */
+
+  return LV;
 
 } /* XLALComputeLineVeto() */
 
