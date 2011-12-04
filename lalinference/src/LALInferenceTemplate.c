@@ -1634,7 +1634,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
             if (!sizeWarning) {
               sizeWarning = 1;
               fprintf(stderr, "WARNING: waveform.phi->data->length = %d is longer than IFOdata->timeData->data->length = %d minus windowshift = %d.\n", waveform.phi->data->length, IFOdata->timeData->data->length,(int) windowshift);
-              if(waveform.phi->data->length + (int) windowshift < IFOdata->timeData->data->length)
+              if(waveform.phi->data->length + (int) windowshift > IFOdata->timeData->data->length)
                 fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.phi->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
               else
                 fprintf(stderr, "The waveform template used will have its first %d points tapered. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.phi->data->length - IFOdata->timeData->data->length + 2*(int)windowshift , __FILE__, __LINE__);
@@ -1672,7 +1672,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
             if (!sizeWarning) {
               sizeWarning = 1;
               fprintf(stderr, "WARNING: waveform.h->data->length = %d is longer than IFOdata->timeData->data->length = %d minus windowshift = %d.\n", waveform.h->data->length, IFOdata->timeData->data->length, (int) windowshift);
-              if(waveform.h->data->length + (int) windowshift < IFOdata->timeData->data->length)
+              if(waveform.h->data->length + (int) windowshift > IFOdata->timeData->data->length)
                 fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.h->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
               else
                 fprintf(stderr, "The waveform template used will have its first %d points tapered. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.h->data->length - IFOdata->timeData->data->length + 2*(int)windowshift , __FILE__, __LINE__);
@@ -1893,7 +1893,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
         if (!sizeWarning) {
           sizeWarning = 1;
           fprintf(stderr, "WARNING: hplus->data->length = %d is longer than IFOdata->timeData->data->length = %d minus windowshift = %d.\n", hplus->data->length, IFOdata->timeData->data->length, (int) windowshift);
-          if(hplus->data->length + (int) windowshift < IFOdata->timeData->data->length)
+          if(hplus->data->length + (int) windowshift > IFOdata->timeData->data->length)
             fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",hplus->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
           else
             fprintf(stderr, "The waveform template used will have its first %d points tapered. Consider increasing the segment length (--seglen). (in %s, line %d)\n",hplus->data->length - IFOdata->timeData->data->length + 2*(int)windowshift , __FILE__, __LINE__);
