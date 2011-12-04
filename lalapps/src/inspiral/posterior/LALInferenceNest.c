@@ -265,6 +265,7 @@ Nested sampling arguments:\n\
 
 	INT4 verbose=0,tmpi=0,randomseed=0;
 	REAL8 tmp=0;
+	
 	/* Initialise parameters structure */
 	runState->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
 	runState->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
@@ -285,7 +286,7 @@ Nested sampling arguments:\n\
 	}
 	else
 	  runState->proposal=&LALInferenceProposalNS;
-	
+
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 	runState->prior = &LALInferenceInspiralPrior;
 	
