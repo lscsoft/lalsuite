@@ -490,53 +490,44 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
 REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fstat */
                             const REAL4Vector *TwoFX,  /**< vector of single-detector Fstats */
                             const REAL4 rhomaxline,    /**< amplitude prior normalization for lines */
-                            const REAL4Vector *priorX, /**< vector of single-detector prior line odds ratio, set all to 1/2 for neutral analysis */
+                            const REAL4Vector *lX, /**< vector of single-detector prior line odds ratio, default to lX=1 for all X if NULL */
                             const BOOLEAN useAllTerms  /**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
                           )
 {
   /* check input parameters and report errors */
-  if ( !TwoF || !TwoFX || !TwoFX->data ) {
-    XLALPrintError ("\nError in function %s, line %d : Empty TwoF or TwoFX pointer as input parameter!\n\n", __func__, __LINE__);
-    XLAL_ERROR_REAL4 ( XLAL_EFAULT);
-  }
+  if ( !TwoF || !TwoFX || !TwoFX->data )
+    XLAL_ERROR_REAL4 ( XLAL_EFAULT, "Empty TwoF or TwoFX pointer as input parameter!\n\n");
 
-  if ( TwoFX->length == 0 ) {
-    XLALPrintError ("\nError in function %s, line %d :Input TwoFX vector has zero length!\n\n", __func__, __LINE__);
-    XLAL_ERROR_REAL4 ( XLAL_EBADLEN);
-  }
+  if ( TwoFX->length < 2 )
+    XLAL_ERROR_REAL4 ( XLAL_EBADLEN, "\nInput TwoFX vector needs at least 2 detectors (got %d)!\n\n", TwoFX->length );
 
-  if ( priorX && ( priorX->length != TwoFX->length ) ) {
-    XLALPrintError ("\nError in function %s, line %d :Input priorX and TwoFX vectors have different length!\n\n", __func__, __LINE__);
-    XLAL_ERROR_REAL4 ( XLAL_EBADLEN);
-  }
+  if ( lX && ( lX->length != TwoFX->length ) )
+    XLAL_ERROR_REAL4 ( XLAL_EBADLEN, "Input lX and TwoFX vectors have different length!\n\n" );
 
   if ( rhomaxline < 0 )
     XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative prior range 'rhomaxline' = %g! Must be >= 0!\n", rhomaxline );
 
   /* set up temporary variables and structs */
-  REAL4 log05 = log(0.5);
   REAL4 log0  = - LAL_REAL4_MAX;	/* approximates -inf */
 
   UINT4 numDetectors = TwoFX->length; /* number of detectors */
   REAL4 maxInSum = log0;             /* keep track of largest summand in denominator, for logsumexp formula below */
-  REAL4 FXprior[numDetectors];     /* FXprior equiv log(priorX * e^(FX)) = FX + log(priorX) */
+  REAL4 FXprior[numDetectors];     /* FXprior equiv log(lX * e^(FX)) = FX + log(lX) */
 
   for (UINT4 X = 0; X < numDetectors; X++)
     {
       FXprior[X] = 0.5 * TwoFX->data[X];
-      if (priorX)
+      if (lX)
         {
-          if ( priorX->data[X] > 0.0 )  /* if nonzero priorX: add logarithm log(priorX) to FX */
-            FXprior[X] += log ( priorX->data[X] );
-          else if ( priorX->data[X] == 0 ) /* if zero prior, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-            FXprior[X] += log0;
+          if ( lX->data[X] > 0.0 )  /* if nonzero lX: add logarithm log(lX) to FX */
+            FXprior[X] += log ( lX->data[X] );
+          else if ( lX->data[X] == 0 ) /* if zero prior, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
+            FXprior[X] = log0;
           else	/* negative prior is a mistake! */
-            XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative input prior for detector X=%d: p[X]=%g\n", X, priorX->data[X] );
-        } /* if priorX != NULL */
-      else
-        { /* if no priors given, just use p[X]=0.5 for all X */
-          FXprior[X] += log05;
-        }
+            XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative input prior-ratio for detector X=%d: l[X]=%g\n", X, lX->data[X] );
+        } /* if lX != NULL */
+
+      /* if no priors given, just use lX=1 => log(lX)=0 for all X */
 
       /* keep track of maximum value in denominator sum  */
       if ( FXprior[X] > maxInSum )

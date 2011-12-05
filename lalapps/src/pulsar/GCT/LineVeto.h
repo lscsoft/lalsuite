@@ -99,7 +99,7 @@ REAL4
 XLALComputeLineVeto ( const REAL4 TwoF,
 		      const REAL4Vector *TwoFX,
 		      const REAL4 rhomaxline,
-		      const REAL4Vector *priorX,
+		      const REAL4Vector *lX,
 		      const BOOLEAN useAllTerms );
 
 LALStringVector *
