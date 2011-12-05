@@ -29,6 +29,9 @@
 #include <lal/LowLatencyData.h>
 #include <lal/LALFrameL.h>
 
+#include <lal/LALVCSInfo.h>
+#include <lal/LALFrameVCSInfo.h>
+
 /* default options */
 #define LLD_DATA_PATH "/dev/shm"
 #define LLD_OBSERVATORY "X"
@@ -47,6 +50,7 @@ CHAR *data_path = NULL;
 /* prototypes */
 void parse_options(int argc, char **argv);
 void display_help_message(void);
+void display_version_message(void);
 
 /* parse command line options */
 void parse_options(
@@ -63,6 +67,7 @@ void parse_options(
       {"verbose", no_argument, &vrbflg, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'a'},
+      {"version", no_argument, 0, 'b'},
       {"observatory", required_argument, 0, 'c'},
       {"type", required_argument, 0, 'd'},
       {"path", required_argument, 0, 'e'},
@@ -75,7 +80,7 @@ void parse_options(
 
     /* parse options */
     c = getopt_long_only(argc, argv, \
-        "ac:d:e:", \
+        "ab:c:d:e:", \
         long_options, &option_index);
 
     if (c == -1)
@@ -100,6 +105,12 @@ void parse_options(
       case 'a':
         /* help! */
         display_help_message();
+        exit(0);
+        break;
+
+      case 'b':
+        /* version */
+        display_version_message();
         exit(0);
         break;
 
@@ -178,10 +189,25 @@ void display_help_message(void)
 {
   fprintf(stdout, "Usage: lalframe_lld [options]\n");
   fprintf(stdout, " --help          print this message\n");
+  fprintf(stdout, " --version       print version information\n");
   fprintf(stdout, " --verbose       run in verbose mode\n");
   fprintf(stdout, " --observatory   observatory [default = X]\n");
   fprintf(stdout, " --type          frame type [default = R]\n");
   fprintf(stdout, " --path          location of data [default = /dev/shm]\n");
+  return;
+}
+
+/* display version */
+void display_version_message(void)
+{
+  const char delim[] = ":";
+  char *tree_status;
+  tree_status = strdup(lalVCSInfo.vcsStatus);
+  fprintf(stdout, "%%%% LAL: %s (%s %s)\n", lalVCSInfo.version, \
+      strsep(&tree_status, delim), lalVCSInfo.vcsId);
+  tree_status = strdup(lalFrameVCSInfo.vcsStatus);
+  fprintf(stdout, "%%%% LALFrame: %s (%s %s)\n", lalFrameVCSInfo.version, \
+      strsep(&tree_status, delim), lalFrameVCSInfo.vcsId);
   return;
 }
 
