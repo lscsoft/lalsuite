@@ -133,6 +133,12 @@ tmp_space = cp.get('pipeline', 'node-tmp-dir')
 experiment_start = options.gps_start_time
 experiment_duration = str(int(options.gps_end_time) - int(options.gps_start_time))
 
+try:
+  do_cats = cp.get('pipeline', 'pipedown-cats')
+  do_cats = do_cats.split(',')
+except:
+  do_cats = ['2','3','4']
+
 # if logs directory not present, create it
 try:
   os.mkdir('logs/')
@@ -328,6 +334,10 @@ veto_files = {}
 cluster_nodes = {}
 inspinjfind_parents = {}
 sim_tags = []
+# only do the cats requested
+if do_cats:
+  user_tags = set([tag for tag in user_tags if str(get_veto_cat_from_tag(tag)) in do_cats])
+
 for tag in user_tags:
 
   print "Creating jobs for %s..." % tag
