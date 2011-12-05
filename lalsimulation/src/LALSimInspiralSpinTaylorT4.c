@@ -396,7 +396,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     }
 
     /* Adjust tStart so last sample is at time=0 */
-    XLALGPSAdd(&tStart, -1.0*len*deltaT);
+    XLALGPSAdd(&tStart, -1.0*(len-1)*deltaT);
 
     /* allocate memory for output vectors */
     *V = XLALCreateREAL8TimeSeries( "PN_EXPANSION_PARAMETER", &tStart, 0., 
@@ -435,7 +435,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     }
 
     /* Compute phase shift to get desired value phi_end in last sample */
-    phiShift = phi_end - yout->data[len-1];
+    phiShift = phi_end - yout->data[2*len-1];
 
     /* Copy time series of dynamical variables */
     /* from yout array returned by integrator to output time series */
@@ -443,7 +443,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     for( i = 0; i < len; i++ )
     {	
         (*Phi)->data->data[i] 		= yout->data[len+i] + phiShift;
-        (*V)->data->data[i] 		= pow(yout->data[2*len+i],1./3.);
+        (*V)->data->data[i] 		= cbrt(yout->data[2*len+i]);
         (*LNhatx)->data->data[i] 	= yout->data[3*len+i];
         (*LNhaty)->data->data[i] 	= yout->data[4*len+i];
         (*LNhatz)->data->data[i] 	= yout->data[5*len+i];
