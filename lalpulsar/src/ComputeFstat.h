@@ -173,12 +173,12 @@ typedef struct tagComputeFBuffer {
   MultiCmplxAMCoeffs *multiCmplxAMcoef;
 } ComputeFBuffer;
 
-/** Struct containing vectors of multi- and single-IFO F-stats over a frequency range and full search parameter info in dopplerParams */
+  /** Struct containing vectors of multi- and single-IFO F-stats over a frequency range and full search parameter info in dopplerParams */
 typedef struct tagMultiFstatFrequencySeries {
   SWIGLAL_STRUCT(MultiFstatFrequencySeries);
-  PulsarDopplerParams doppler;	/**< full info about sky position, fkdot, refTime etc. searched to obtain these F values */
-  REAL4Vector *F;		/**< multi-IFO F-stat values over frequency band */
-  REAL4VectorSequence *FX;	/**< vector of all single-IFO F-stat values over frequency band, ordered as (det1bin1,det1bin2,..,det1binN,det2bin1,...detMbinN) */
+  PulsarDopplerParams doppler;	/**< full info about {sky position, fkdot, refTime, .. and *frequency band*} for which these F values are computed */
+  REAL4Vector *F;		/**< 1D array of multi-IFO  F-stat values over {frequencies} */
+  REAL4VectorSequence *FX;	/**< 2D array of single-IFO F-stat values over {detectors, frequencies}, ordered as (det1bin1,det1bin2,..,det1binN,det2bin1,...detMbinN) */
 } MultiFstatFrequencySeries;
 
 /* macro to index arrays in the MultiFstatFrequencySeries->FX structure */

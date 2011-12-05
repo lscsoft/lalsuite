@@ -190,145 +190,118 @@ void ComputeFStatFreqBand ( LALStatus *status,				/**< pointer to LALStatus stru
 
 
 
-/** XLAL function to compute vectors of single- and multi-IFO Fstatistic values for a
-    number of frequency bins. This function is, right now, simply a wrapper for ComputeFstat()
-    which is called repeatedly for every frequency value. Future implementations will also
-    include resampling. Contrary to ComputeFStatFreqBand(), the output, i.e. fstatSeries,
-    can be either pre-allocated before this function is called, or passed as a null pointer,
-    in which case it will be allocated. Either way, the values of the start frequency, the step
-    size in the frequency and the number of frequency values for which the Fstatistic is to be
-    calculated are read from the input doppler (and will overwrite preset values in fstatSeries).
+/** XLAL function to (multi-IFO) F-statistic over a vector of number of frequency bins,
+    returned in (*fstatSeries)->F.
+
+    if params->returnSingleF==true: also returns per-IFO F-stat values over frequency bins in (*fstatSeries)->FX.
+
+    Note: Contrary to ComputeFStatFreqBand(), the output (*fstatSeries) can be allocated
+    before this function is called, or passed as a NULL pointer, in which case it will be allocated.
+
+    This allows one to re-use the output structure vectors without unneccessary alloc/free's,
+    and simplifies usage of this function for the called.
+
+    Note2: the start frequency, step size in frequency and the number of frequency bins to be
+    computed are *always* read from input 'doppler'.
+
+    Note3: This function is currently simply a wrapper for ComputeFstat(), while future implementations
+    will also include resampling.
 */
-int XLALComputeFStatFreqBand (  MultiFstatFrequencySeries **fstatSeries,	/**< [out] Combined vectors of multi- and single-IFO Fstat values */
-				 const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for (and freq band info) */
-				 const MultiSFTVector *multiSFTs, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
-				 const MultiNoiseWeights *multiWeights,		/**< noise-weights of all SFTs */
-				 const MultiDetectorStateSeries *multiDetStates,/**< 'trajectories' of the different IFOs */
-				 const ComputeFParams *params			/**< addition computational params */
-			    )
+int XLALComputeFStatFreqBand ( MultiFstatFrequencySeries **fstatSeries,	/**< [out] Combined vectors of multi- and single-IFO Fstat values */
+                               const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for (and freq band info) */
+                               const MultiSFTVector *multiSFTs, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+                               const MultiNoiseWeights *multiWeights,		/**< noise-weights of all SFTs */
+                               const MultiDetectorStateSeries *multiDetStates,/**< 'trajectories' of the different IFOs */
+                               const ComputeFParams *params			/**< addition computational params */
+                               )
 {
 
-  Fcomponents Fstat;
-  ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
-  MultiFstatFrequencySeries *oldFstatSeries = *fstatSeries; /* useful if a preallocated fstatSeries was passed */
-  MultiFstatFrequencySeries *retFstatSeries = NULL;         /* build up new return structure either from scratch or by reallocating */
-
   /* check input parameters */
-  if ( !doppler ) {
-    XLALPrintError ("\nInput dopplerParams pointer is NULL !\n\n");
-    XLAL_ERROR ( XLAL_EFAULT);
-  }
-  if ( !multiSFTs ) {
-    XLALPrintError ("\nInput multiSFTs pointer is NULL !\n\n");
-    XLAL_ERROR ( XLAL_EFAULT);
-  }
-  if ( !multiDetStates ) {
-    XLALPrintError ("\nInput multiDetStates pointer is NULL !\n\n");
-    XLAL_ERROR ( XLAL_EFAULT);
-  }
-  if ( multiDetStates->length != multiSFTs->length ) {
-    XLALPrintError ("\nInput vector lengths do not match (multiDetStates and multiSFTs) !\n\n");
-    XLAL_ERROR ( XLAL_EBADLEN);
-  }
-  if ( !params ) {
-    XLALPrintError ("\nInput CFParams pointer is NULL !\n\n");
-    XLAL_ERROR ( XLAL_EFAULT);
-  }
-  if ( params->returnAtoms ) {
-      XLALPrintError ("\nUsing the option 'returnAtoms' is not supported in this function!\n\n");
-      XLAL_ERROR ( XLAL_EINVAL);
-  }
+  if ( !fstatSeries )
+    XLAL_ERROR ( XLAL_EFAULT, "\nNULL input pointer 'fstatSeries'\n" );
+  if ( !doppler )
+    XLAL_ERROR ( XLAL_EFAULT, "\nInput dopplerParams pointer is NULL !\n\n");
+  if ( doppler->orbit )
+    XLAL_ERROR ( XLAL_EDOM, "\ndoppler->orbit != NULL, but binary parameters currently not supported by this function!\n\n");
+  if ( !multiSFTs )
+    XLAL_ERROR ( XLAL_EFAULT, "\nInput multiSFTs pointer is NULL !\n\n");
+  if ( !multiDetStates )
+    XLAL_ERROR ( XLAL_EFAULT, "\nInput multiDetStates pointer is NULL !\n\n");
+  if ( multiDetStates->length != multiSFTs->length )
+    XLAL_ERROR ( XLAL_EBADLEN, "\nInput vector lengths do not match (len(multiDetStates)=%d and len(multiSFTs)=%d) !\n\n", multiDetStates->length, multiSFTs->length);
+  if ( !params )
+    XLAL_ERROR ( XLAL_EFAULT, "\nInput CFParams pointer is NULL !\n\n");
+  if ( params->returnAtoms )
+    XLAL_ERROR ( XLAL_EINVAL, "\nUsing the option 'returnAtoms' is not supported in this function!\n\n");
 
-  /* check output structure and (re)alloc if necessary */
-  if ( !oldFstatSeries ) { /* if null pointer was passed for output structure, allocate a new one here */
-    if ( ( retFstatSeries = (MultiFstatFrequencySeries *)XLALCalloc( 1, sizeof(*retFstatSeries) ) ) == NULL ) {
-      XLALPrintError ("\nFailed to allocate memory for MultiFstatFrequencySeries !\n\n");
-      XLAL_ERROR ( XLAL_ENOMEM );
-    }
-  }
-  else { /* if a preallocated struct was passed, point to it and go on reallocating for correct lengths */
-    retFstatSeries = oldFstatSeries;
-  }
+  /* some useful shortcuts */
+  UINT4 numBins      = doppler->numFreqBins;
+  UINT4 numDetectors = multiSFTs->length;
+  MultiFstatFrequencySeries * retFstatSeries = (*fstatSeries);       /* build up new return structure either from scratch or by reallocating input */
+
+  /* ---------- check if output structure retFstatSeries exists and (re-)alloc if necessary ---------- */
+  if ( retFstatSeries == NULL  && (retFstatSeries = XLALCalloc( 1, sizeof(*retFstatSeries))) == NULL )
+    XLAL_ERROR ( XLAL_ENOMEM, "\nFailed to allocate memory for MultiFstatFrequencySeries !\n\n" );
 
   /* (re)set output structure meta info (search parameters and frequency band) from input values */
-  retFstatSeries->doppler = *doppler;
-  UINT4 numBins = doppler->numFreqBins;
-  UINT4 numDetectors = multiSFTs->length;
+  retFstatSeries->doppler = (*doppler);		// struct-copy  FIXME: this would break for binary-NS searches
 
   /* check and (re)alloc F vector */
-  if ( oldFstatSeries && oldFstatSeries->F ) { /* if a preallocated F vector is passed, check for length */
-    if ( oldFstatSeries->F->length == numBins ) /* if right length, keep */
-      retFstatSeries->F = oldFstatSeries->F;
-    else { /* if wrong length, realloc */
-      retFstatSeries->F->length = numBins;
-      retFstatSeries->F->data = (REAL4 *)LALRealloc( oldFstatSeries->F->data, numBins * sizeof(REAL4));
-    }
-  }
-  else { /* if no F vector is passed, alloc it now */
-    if ( (retFstatSeries->F = XLALCreateREAL4Vector ( numBins )) == NULL ) {
-      XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numBins );
-      XLAL_ERROR ( XLAL_EFUNC );
-     }
-  }
+  if ( retFstatSeries->F == NULL && (retFstatSeries->F = XLALCalloc ( 1, sizeof(*retFstatSeries->F))) == NULL )
+    XLAL_ERROR ( XLAL_ENOMEM, "\nFailed to allocate memory for MultiFstatFrequencySeries->F !\n\n" );
+  retFstatSeries->F->length = numBins;
+  if ( (retFstatSeries->F->data = XLALRealloc(retFstatSeries->F->data, numBins * sizeof(*retFstatSeries->F->data))) == NULL )
+    XLAL_ERROR ( XLAL_ENOMEM, "\nFailed to re-allocate %d elements for MultiFstatFrequencySeries->F->data !\n\n", numBins );
 
-  /* check and (re)alloc FX vector sequence */
-  if ( params->returnSingleF ) { /* if single-F return is requested, need to have a FX field */
-    if ( oldFstatSeries && oldFstatSeries->FX ) { /* if a preallocated FX vector is passed, check for length */
-      if ( ( oldFstatSeries->FX->length == numDetectors ) && ( oldFstatSeries->FX->vectorLength == numBins ) ) /* if right length, keep */
-        retFstatSeries->FX = oldFstatSeries->FX;
-      else { /* if wrong length, realloc */
-        retFstatSeries->FX->length = numDetectors;
-        retFstatSeries->FX->vectorLength = numBins;
-        retFstatSeries->FX->data = (REAL4 *)LALRealloc( oldFstatSeries->FX->data, numDetectors * numBins * sizeof(REAL4));
-      }
+  /* if FX requested, check and (re)alloc FX vector sequence */
+  if ( params->returnSingleF )
+    {
+      if ( retFstatSeries->FX == NULL && (retFstatSeries->FX = XLALCalloc ( 1, sizeof(*retFstatSeries->FX))) == NULL )
+        XLAL_ERROR ( XLAL_ENOMEM, "\nFailed to allocate memory for MultiFstatFrequencySeries->FX !\n\n" );
+      retFstatSeries->FX->length = numDetectors;
+      retFstatSeries->FX->vectorLength = numBins;
+      if ( (retFstatSeries->FX->data = XLALRealloc( retFstatSeries->FX->data, numDetectors * numBins * sizeof(*retFstatSeries->FX->data))) == NULL )
+        XLAL_ERROR ( XLAL_ENOMEM, "\nFailed to re-allocate %d elements for MultiFstatFrequencySeries->FX->data !\n\n", numBins * numDetectors );
     }
-    else { /* if no FX vector is passed, alloc it now */
-      if ( (retFstatSeries->FX = XLALCreateREAL4VectorSequence ( numDetectors, numBins ) ) == NULL ) {
-        XLALPrintError ("%s: failed to XLALCreateREAL4VectorSequence( %d, %d )\n", __func__, numDetectors, numBins );
-        XLAL_ERROR ( XLAL_EFUNC );
-       }
+  else
+    { /* if no FX return requested, destroy FX field if it exists */
+      if ( retFstatSeries->FX != NULL )
+        XLALDestroyREAL4VectorSequence ( retFstatSeries->FX );
     }
-  }
-  else { /* if no single-F return is requested and there still is a FX field, destroy it */
-    if ( oldFstatSeries && oldFstatSeries->FX )
-      XLALDestroyREAL4VectorSequence(oldFstatSeries->FX);
-  }
-
-  /* fake LAL status structure, needed as long as ComputeFStat is LAL function and not XLAL */
-  LALStatus fakeStatus = blank_status;
+  /* ---------- END: memory-handling of output structure retFstatSeries ----------*/
 
   /* copy values from 'doppler' to local variable 'thisPoint' */
-  PulsarDopplerParams thisPoint = *doppler;
+  PulsarDopplerParams thisPoint = (*doppler);	// struct copy
   REAL8 dFreq   = thisPoint.dFreq;
   REAL8 fStart  = thisPoint.fkdot[0];
 
+  ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
+  LALStatus fakeStatus = blank_status;	    /* fake LAL status structure, needed as long as ComputeFStat is LAL function and not XLAL */
+
   /* loop over frequency values and fill up values in fstatSeries */
-  UINT4 k;
-  for ( k = 0; k < numBins; k++) {
+  for ( UINT4 k = 0; k < numBins; k++) {
+    Fcomponents Fstat;
 
     thisPoint.fkdot[0] = fStart + k*dFreq;
 
     ComputeFStat ( &fakeStatus, &Fstat, &thisPoint, multiSFTs, multiWeights, multiDetStates, params, &cfBuffer );
-    if ( fakeStatus.statusCode ) {
-      XLALPrintError ("\nFailed call to LAL function ComputeFStat(). statusCode=%d\n\n", fakeStatus.statusCode);
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
+    if ( fakeStatus.statusCode )
+      XLAL_ERROR (XLAL_EFUNC, "\nFailure in LAL function ComputeFStat(). statusCode=%d\n\n", fakeStatus.statusCode);
 
     retFstatSeries->F->data[k] = Fstat.F;
-    if ( params->returnSingleF ) {
-      UINT4 X;
-      for ( X=0; X < numDetectors; X ++) {
-       retFstatSeries->FX->data[FX_INDEX(retFstatSeries->FX, X, k) ] = Fstat.FX[X]; /* fstatSeries->FX->data is ordered as (det1bin1,det1bin2,..,det1binN,det2bin1,...detMbinN) */
-      }
-    }
 
-  }
+    if ( params->returnSingleF )
+      for ( UINT4 X=0; X < numDetectors; X ++)
+        retFstatSeries->FX->data[FX_INDEX(retFstatSeries->FX, X, k) ] = Fstat.FX[X]; /* fstatSeries->FX->data is ordered as (det1bin1,det1bin2,..,det1binN,det2bin1,...detMbinN) */
+
+  } /* for k < numBins */
 
   XLALEmptyComputeFBuffer ( &cfBuffer );
 
+  /* return result */
   (*fstatSeries) = retFstatSeries;
 
-  return (XLAL_SUCCESS);
+  return XLAL_SUCCESS;
 
 } /* XLALComputeFStatFreqBand() */
 
