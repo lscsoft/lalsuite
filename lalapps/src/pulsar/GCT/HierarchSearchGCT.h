@@ -166,12 +166,12 @@ extern "C" {
     REAL8 alpha;            /**< right ascension */
     REAL8 delta;            /**< declination */
     LIGOTimeGPS refTime;    /**< reference time for candidates */
-    UINT4 length;           /**< maximum allowed length of vectors */
+    UINT4 length;           /**< length of multi-IFO stats vectors 'sumTwoF', 'nc' (currently 'length'= 'freqlength') */
     UINT4 freqlength;       /**< number of fine-grid points in frequency */
     UINT4 numDetectors;     /**< number of detectors for sumTwoFX array */
-    REAL4 * sumTwoF;        /**< sum of 2F-values */
-    REAL4 * sumTwoFX;       /**< sum of per-IFO 2F-values, array length = length*numDetectors */
-    FINEGRID_NC_T * nc;     /**< number count */
+    REAL4 * sumTwoF;        /**< sum of 2F-values, 1D array over fine-grid frequencies (of length 'length') */
+    REAL4 * sumTwoFX;       /**< sum of per-IFO 2F-values, 2D array over frequencies and detectors (of length 'length*numDetectors') */
+    FINEGRID_NC_T * nc;     /**< number count (1D array over frequencies, of length 'length') */
   } FineGrid;
 
   /* macro to index arrays in the FineGrid structure
@@ -188,31 +188,24 @@ extern "C" {
 
   /* ------------------------------------------------------------------------- */
 
-  /** one coarse-grid point */
-  typedef struct tagCoarseGridPoint {
-    UINT4 Uindex;      /**< U index */
-    REAL4 TwoF;       /**< 2F-value */
-  } CoarseGridPoint;
-
-
   /** structure for storing coarse-grid points */
   typedef struct tagCoarseGrid {
-    UINT4 length;             /**< maximum allowed length of vectors */
+    UINT4 length;        /**< length of multi-IFO array 'sumTwoF', 'Uindex' (currently 'length'= 'nStacks * freqlength') */
     UINT4 nStacks;       /**< number of stacks */
     UINT4 freqlength;    /**< number of fine-grid points in frequency */
-    UINT4 * Uindex;      /**< U index */
-    REAL4 * TwoF;        /**< 2F-value */
-    UINT4 numDetectors;  /**< number of detectors for TwoFX array */
-    REAL4 *TwoFX;        /**< per-IFO 2F-values, array length = length*numDetectors */
+    UINT4 * Uindex;      /**< U index, 2D array over stacks and frequencies (of length 'length') */
+    REAL4 * TwoF;        /**< 2F-value, 2D array over stacks and frequencies (of length 'length') */
+    UINT4 numDetectors;  /**< number of detectors */
+    REAL4 *TwoFX;        /**< per-IFO 2F-values, 3D array over {frequencies, stacks, detectors} (of length = 'numDetector * length' */
   } CoarseGrid;
 
-  /* macro to index arrays in the CoarseGrid structure
+  /* macro to index 2D arrays in the CoarseGrid structure
    * frequency/GCT U1 index MUST always be the innermost index
    */
 #define CG_INDEX(cg, iStack, iFreq)             \
   ( ( (iStack) * (cg).freqlength ) + (iFreq) )
 
-  /* macro to index FX array in the CoarseGrid structure
+  /* macro to index 3D FX array in the CoarseGrid structure
    * frequency/GCT U1 index MUST always be the innermost index
    */
 #define CG_FX_INDEX(cg, iDet, iStack, iFreq)       \

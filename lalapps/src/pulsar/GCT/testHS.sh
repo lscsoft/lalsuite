@@ -440,7 +440,7 @@ else
     echo " ==> OK"
 fi
 
-echo -n "==>  GCT-LALDemod LV:	$resGCT_DM_LV 	$resGCT_DM_H1_LV	$resGCT_DM_L1_LV	@ $freqGCT_DM_LV 	($reldev_DM_LV, $reldev_DM_H1_LV, $reldev_DM_L1_LV, $freqreldev_DM_LV)"
+echo -n "==>  GCT-LALDemodLV:	$resGCT_DM_LV 	$resGCT_DM_H1_LV	$resGCT_DM_L1_LV	 @ $freqGCT_DM_LV 	($reldev_DM_LV, $reldev_DM_H1_LV, $reldev_DM_L1_LV, $freqreldev_DM_LV)"
 fail1=$(echo $freqreldev_DM_LV $Tolerance | awk "$awk_isgtr")
 fail2=$(echo $reldev_DM_LV $Tolerance     | awk "$awk_isgtr")
 fail3=$(echo $reldev_DM_H1_LV $Tolerance  | awk "$awk_isgtr")

@@ -2596,26 +2596,6 @@ void ComputeU2idx( REAL8 freq_event,
 
 } /* ComputeU2idx */
 
-
-
-
-
-
-/** Comparison function for sorting the coarse grid in u1 and u2 */
-int compareCoarseGridUindex(const void *a,const void *b) {
-  CoarseGridPoint a1, b1;
-  a1 = *((const CoarseGridPoint *)a);
-  b1 = *((const CoarseGridPoint *)b);
-
-  if( a1.Uindex < b1.Uindex )
-    return(-1);
-  else if( a1.Uindex > b1.Uindex)
-    return(1);
-  else
-    return(0);
-}
-
-
 /** Function to read a segment list from given filename, returns a *sorted* SegmentList
  *
  * The segment-list format parse here is consistent with Xavie's segment lists used previously
