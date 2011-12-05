@@ -290,7 +290,7 @@ echo "==>   Average <2F_multi>=$TwoFAvg, <2F_H1>=$TwoFAvg_H1, <2F_L1>=$TwoFAvg_L
 
 ## ---------- run GCT code on this data ----------------------------------------
 
-gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --ephemE=$edat --ephemS=$sdat --Dterms=$Dterms --blocksRngMed=$RngMedWindow"
+gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --ephemE=$edat --ephemS=$sdat --Dterms=$Dterms --blocksRngMed=$RngMedWindow"
 if [ "$sqrtSh" = "0" ]; then
     gct_CL_common="$gct_CL_common --SignalOnly";
 fi
@@ -369,9 +369,14 @@ outfile_GCT_DM_LV="${testDir}${dirsep}GCT_DM_LV.dat"
 timingsfile_DM_LV="${testDir}${dirsep}timing_DM_LV.dat"
 
 cmdline="$gct_code $gct_CL_common --useResamp=false --useLV --SortToplist=2 --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline -d1"
+else
+    cmdline="$cmdline -d0 &> /dev/null"
+fi
 
 echo $cmdline
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$gct_code' ..."
     exit 1
 fi
