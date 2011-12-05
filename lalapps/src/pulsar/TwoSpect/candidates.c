@@ -294,10 +294,10 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR_VOID(XLAL_EFUNC);
                      }
-                     REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
+                     //REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
                      
                      if (prob < bestProb) {
-                        besth0 = h0;
+                        //besth0 = h0;
                         bestmoddepth = mindf + kk*0.5/params->Tcoh;
                         bestR = R;
                         bestProb = prob;
@@ -313,6 +313,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
             } /* if loc2 > 1 ... */
             
             if (bestR != 0.0) {
+               besth0 = 2.7426*pow(bestR/(params->Tcoh*params->Tobs),0.25);
                if (output->numofcandidates == output->length-1) {
                   output = resize_candidateVector(output, 2*output->length);
                   if (output->data==NULL) {
@@ -423,7 +424,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                fprintf(stderr,"%s: probR() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
             }
-            REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+            //REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
             
             /* Log the candidate if R exceeds the FAR or check other possibilities of different 
              periods */
@@ -431,7 +432,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             INT4 bestproberrcode = 0, loggedacandidate = 0;
             if ((!inputParams->calcRthreshold && prob<log10templatefar) || (inputParams->calcRthreshold && R>farval->far)) {
                bestR = R;
-               besth0 = h0;
+               //besth0 = h0;  //Calculate h0 at the end
                bestProb = prob;
                bestPeriod = ihsCandidates->data[ii].period;
                if (output->numofcandidates == output->length-1) {
@@ -467,7 +468,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                     h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                     //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                      if (inputParams->calcRthreshold && bestProb==0.0) {
                         numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
                         if (xlalErrno!=0) {
@@ -477,7 +478,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      }
                      if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                         bestPeriod = ihsCandidates->data[ii].period;
-                        besth0 = h0;
+                        //besth0 = h0;  //Calculate h0 at the end
                         bestR = R;
                         bestProb = prob;
                         bestproberrcode = proberrcode;
@@ -501,7 +502,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                     h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                     //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                      if (inputParams->calcRthreshold && bestProb==0.0) {
                         numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
                         if (xlalErrno!=0) {
@@ -511,7 +512,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      }
                      if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                         bestPeriod = ihsCandidates->data[ii].period;
-                        besth0 = h0;
+                        //besth0 = h0;  //Calculate h0 at the end
                         bestR = R;
                         bestProb = prob;
                         bestproberrcode = proberrcode;
@@ -546,7 +547,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                            fprintf(stderr,"%s: probR() failed.\n", __func__);
                            XLAL_ERROR(XLAL_EFUNC);
                         }
-                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                         //Calculate FAR if bestProb=0
                         if (inputParams->calcRthreshold && bestProb==0.0) {
                            numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
@@ -558,7 +559,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         //Log candidate if more significant or exceeding the FAR for the first time
                         if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                            bestPeriod = ihsCandidates->data[ii].period;
-                           besth0 = h0;
+                           //besth0 = h0;  //Calculate h0 at the end
                            bestR = R;
                            bestProb = prob;
                            bestproberrcode = proberrcode;
@@ -583,7 +584,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                            fprintf(stderr,"%s: probR() failed.\n", __func__);
                            XLAL_ERROR(XLAL_EFUNC);
                         }
-                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                         if (inputParams->calcRthreshold && bestProb==0.0) {
                            numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
                            if (xlalErrno!=0) {
@@ -593,7 +594,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         }
                         if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                            bestPeriod = ihsCandidates->data[ii].period;
-                           besth0 = h0;
+                           //besth0 = h0;  //Calculate h0 at the end
                            bestR = R;
                            bestProb = prob;
                            bestproberrcode = proberrcode;
@@ -610,7 +611,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                
                //Shift period by harmonics
                //for (jj=2; jj<8; jj++) {
-               for (jj=2; jj<4; jj++) {
+               for (jj=2; jj<3; jj++) {
                   if (ihsCandidates->data[ii].period/jj > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && ihsCandidates->data[ii].period/jj >= 2.0*3600.0) {
                      ihsCandidates->data[ii].period /= (REAL8)jj;
                      makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
@@ -628,10 +629,10 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                     h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                     //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                      if (prob < bestProb) {
                         bestPeriod = ihsCandidates->data[ii].period;
-                        besth0 = h0;
+                        //besth0 = h0;  //Calculate h0 at the end
                         bestR = R;
                         bestProb = prob;
                         bestproberrcode = proberrcode;
@@ -655,10 +656,10 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                     h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                     //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                      if (prob < bestProb) {
                         bestPeriod = ihsCandidates->data[ii].period;
-                        besth0 = h0;
+                        //besth0 = h0;  //Calculate h0 at the end
                         bestR = R;
                         bestProb = prob;
                         bestproberrcode = proberrcode;
@@ -688,10 +689,10 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                     h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                     //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                      if (prob < bestProb) {
                         bestPeriod = ihsCandidates->data[ii].period;
-                        besth0 = h0;
+                        //besth0 = h0;  //Calculate h0 at the end
                         bestR = R;
                         bestProb = prob;
                         bestproberrcode = proberrcode;
@@ -716,10 +717,10 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                     h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                     //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                      if (prob < bestProb) {
                         bestPeriod = ihsCandidates->data[ii].period;
-                        besth0 = h0;
+                        //besth0 = h0;  //Calculate h0 at the end
                         bestR = R;
                         bestProb = prob;
                         bestproberrcode = proberrcode;
@@ -730,6 +731,9 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             } // if bestR != 0.0
             
             if (bestProb != 0.0) {
+               //besth0 = 2.7426*pow(bestR/(inputParams->Tcoh*inputParams->Tobs),0.25);
+               besth0 = 2.7426*sqrt(sqrt(bestR/(inputParams->Tcoh*inputParams->Tobs)));
+               
                if (loggedacandidate==1 && bestProb < output->data[output->numofcandidates-1].prob) {
                   output->data[output->numofcandidates-1].prob = bestProb;
                   output->data[output->numofcandidates-1].period = bestPeriod;

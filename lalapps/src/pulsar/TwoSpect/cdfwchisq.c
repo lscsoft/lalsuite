@@ -34,7 +34,8 @@
 
 
 #include "cdfwchisq.h"
-#include "TwoSpect.h"
+#include "vectormath.h"
+//#include "TwoSpect.h"
 
 
 //Exp function to avoid underflows
