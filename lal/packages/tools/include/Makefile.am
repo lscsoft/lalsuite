@@ -19,17 +19,9 @@ pkginclude_HEADERS = \
 
 CLEANFILES =
 
-MAINTAINERCLEANFILES = \
-	TimeSeries.h
-
-EXTRA_DIST = \
-	TimeSeries.m4 \
-	TimeSeriesH.m4
+MAINTAINERCLEANFILES =
 
 all-local: include-link
-
-TimeSeries.h : TimeSeries.m4 TimeSeriesH.m4
-	cd $(srcdir) && @M4@ TimeSeries.m4 > TimeSeries.h
 
 @INCLUDEMKFILE@
 

@@ -92,10 +92,6 @@ printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 # run m4 to generate sources
 echo "00boot: creating sources"
 
-cd packages/tools/include || fail "creating sources in packages/tools/include"
-${M4} TimeSeries.m4 > TimeSeries.h || fail "creating sources in packages/tools/include"
-cd ../../.. || fail "creating sources in packages/tools/include"
-
 # don't build the build system if --only-build-sources option is specified
 if test "$only_build_sources" = "false"; then
 
