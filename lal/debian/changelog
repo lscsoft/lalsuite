@@ -1,3 +1,9 @@
+lal (6.6.0~rc1-1) unstable; urgency=low
+
+  * LAL 6.6.0 Release Candidate 1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 14:30:51 -0600
+
 lal (6.5.0-1lscsoft1) unstable; urgency=low
 
   * LAL 6.5.0

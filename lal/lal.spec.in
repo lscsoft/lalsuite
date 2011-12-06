@@ -3,11 +3,11 @@
 %define _sysconfdir %{_prefix}/etc
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 1
+Release: 0.1.rc1
 Summary: LSC Algorithm Library
 License: GPL
 Group: LAL
-Source: %{name}-%{version}.tar.gz
+Source: %{name}-%{version}rc1.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Jolien Creighton <jolien@uwm.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
