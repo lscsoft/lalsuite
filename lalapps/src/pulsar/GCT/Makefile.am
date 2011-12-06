@@ -10,6 +10,7 @@ INCLUDES = -I$(top_srcdir)/src/lalapps -I$(CFSsrc) -I$(EAHsrc)
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
+check_PROGRAMS =  testLineVeto
 EXTRA_PROGRAMS = eah_HierarchSearchGCT lalapps_HierarchSearchGCT_cuda lalapps_HierarchSearchGCT_VFStat
 
 EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc)/win_lib.cpp $(OPTsrc)/LocalComputeFstat.c
@@ -21,6 +22,10 @@ HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
 			  LineVeto.c LineVeto.h
 
 lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
+
+testLineVeto_SOURCES = testLineVeto.c \
+                   $(CFSsrc)/HeapToplist.c $(CFSsrc)/HeapToplist.h \
+                   LineVeto.c LineVeto.h
 
 lalapps_HierarchSearchGCT_cuda_SOURCES = $(HSGCTSources) $(OPTsrc)/ComputeFstatREAL4.c $(OPTsrc)/ComputeFstatREAL4CUDA.c $(OPTsrc)/FStatCUDA.cu
 lalapps_HierarchSearchGCT_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
@@ -76,7 +81,7 @@ eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
 
 EXTRA_DIST = testHS.sh
 
-TESTS = testHS.sh
+TESTS = testHS.sh testLineVeto
 
 TESTS_ENVIRONMENT = \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
