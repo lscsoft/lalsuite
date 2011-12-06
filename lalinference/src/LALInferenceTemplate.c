@@ -681,7 +681,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   int FDomain;    /* (denotes domain of the _LAL_ template!) */
   double m1, m2, chirptime, deltaT;
   double plusCoef  = -0.5 * (1.0 + pow(cos(iota),2.0));
-  double crossCoef = -1.0 * cos(iota);
+  double crossCoef = cos(iota);//was   crossCoef = (-1.0*cos(iota));, change iota to -iota+Pi to match HW injection definitions.
   double instant;
   int forceTimeLocation;
   double twopit, f, deltaF, re, im, templateReal, templateImag;
