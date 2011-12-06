@@ -48,9 +48,8 @@ typedef struct {
   REAL8 Delta;/**< skyposition: latitude */
   REAL4 sumTwoF;  /**< sum of 2F-values */
   UINT4 nc;       /**< number count */
-  REAL4 sumTwoFnew;      /**< sum of 2F-values as recomputed in LV postprocessing */
-  REAL4Vector *sumTwoFX; /**< sum of 2F-values per detector, computed in LV postprocessing */
   LVcomponents *LVstats;  /**< struct containing multi- and single-detector F statistics and Line Veto statistic */
+  LVcomponents *LVstatsRecalc;  /**< analoguous struct, but as recalculated in toplist postprocessing at finegrid */
 } GCTtopOutputEntry;
 
 /* This has by now been reduced to an interface to the HeapToplist functions */

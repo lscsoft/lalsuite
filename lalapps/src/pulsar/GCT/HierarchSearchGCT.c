@@ -2368,31 +2368,28 @@ void UpdateSemiCohToplist(LALStatus *status,
     line.F2dot = f2dot_fg;
     line.nc = in->nc[ifreq_fg];
     line.sumTwoF = in->sumTwoF[ifreq_fg]; /* here it's already the average 2F value */
+    line.LVstats = NULL; /* for optional LV-stat and per-IFO F-stats */
+    line.LVstatsRecalc = NULL;  /* for optional LV postprocessing */
 
-    /* initialize LV postprocessing entries to zero.
-     * This will be filled later, if user requested it.
-     */
-    line.sumTwoFnew = 0.0; /* sum of 2F-values as recomputed in LV postprocessing */
-    line.sumTwoFX = NULL;  /* sum of 2F-values per detector, computed in LV postprocessing */
-    line.LVstats = NULL;
     if ( in->numDetectors > 0 ) { /* if we already have FX values from the main loop, use the same sumTwoFX field  */
-      line.sumTwoFX = XLALCreateREAL4Vector ( in->numDetectors );
-      UINT4 X;
-      for (X = 0; X < in->numDetectors; X++)
-        line.sumTwoFX->data[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
       line.LVstats = (LVcomponents *)LALCalloc(1, sizeof(*line.LVstats));
       if ( line.LVstats == NULL) {
         fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
         DETATCHSTATUSPTR (status);
         RETURN(status);
       }
-    }
-
-    /* compute LV-stat, needed for toplist insertion in uvar_useLV case */
-    if ( line.sumTwoFX ) {
+      line.LVstats->TwoF = line.sumTwoF;
+      line.LVstats->TwoFX = NULL;
+      if ( ( line.LVstats->TwoFX = XLALCreateREAL4Vector ( in->numDetectors ) ) == NULL ) {
+        XLALPrintError ("%s line %d : failed to XLALCreateREAL4Vector(%d).\n\n", __func__, __LINE__, in->numDetectors );
+        DETATCHSTATUSPTR (status);
+        RETURN(status);
+      }
+      for (UINT4 X = 0; X < in->numDetectors; X++)
+        line.LVstats->TwoFX->data[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
       xlalErrno = 0;
       BOOLEAN useAllTerms = FALSE; /* use only the leading term of the LV denominator sum */
-      line.LVstats->LV = XLALComputeLineVeto ( line.sumTwoF, line.sumTwoFX, rhomax, priorX, useAllTerms );
+      line.LVstats->LV = XLALComputeLineVeto ( line.LVstats->TwoF, line.LVstats->TwoFX, rhomax, priorX, useAllTerms );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeLineVeto() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         DETATCHSTATUSPTR (status);
@@ -2402,27 +2399,21 @@ void UpdateSemiCohToplist(LALStatus *status,
 
     /* mark the currently lowest candidate in the toplist, needed for FX destruction when it gets dropped */
     GCTtopOutputEntry *lowest_elem = NULL;
-    REAL4Vector *lowest_elem_sumTwoFX = NULL;
     LVcomponents *lowest_elem_LVstats = NULL;
     if ( list->elems == list->length ) { /* only have to do this if the list is already full */
       lowest_elem = toplist_elem ( list, 0 );
-      lowest_elem_sumTwoFX = lowest_elem->sumTwoFX;
       lowest_elem_LVstats = lowest_elem->LVstats;
     }
 
     debug = insert_into_gctFStat_toplist( list, line);
 
-    if ( debug == 1 ) { /* if the candidate was inserted, destroy the allocated structs of the dropped, lowest element */
-      XLALDestroyREAL4Vector ( lowest_elem_sumTwoFX );
-      lowest_elem_sumTwoFX = NULL;
-      if ( lowest_elem_LVstats )
-        LALFree(lowest_elem_LVstats);
+    if ( ( debug == 1 ) && ( lowest_elem_LVstats ) ) { /* if the candidate was inserted, destroy the allocated structs of the dropped, lowest element */
+      XLALDestroyREAL4Vector ( lowest_elem_LVstats->TwoFX );
+      LALFree(lowest_elem_LVstats);
     }
-    if ( debug == 0 ) { /* if the candidate was not inserted, destroy its allocated structs right now */
-      XLALDestroyREAL4Vector ( line.sumTwoFX );
-      line.sumTwoFX = NULL;
-      if ( line.LVstats )
-        LALFree(line.LVstats);
+    if ( ( debug == 0 ) && ( line.LVstats ) ) { /* if the candidate was not inserted, destroy its allocated structs right now */
+      XLALDestroyREAL4Vector ( line.LVstats->TwoFX );
+      LALFree(line.LVstats);
     }
 
   }

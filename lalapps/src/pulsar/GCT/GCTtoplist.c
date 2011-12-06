@@ -237,9 +237,14 @@ void free_gctFStat_toplist(toplist_t**l) {
   for (i = 0; i < (*l)->elems; i++ )
     {
       GCTtopOutputEntry *elem = toplist_elem ( (*l), i );
-      XLALDestroyREAL4Vector ( elem->sumTwoFX );
-      if ( elem->LVstats)
+      if ( elem->LVstats) {
+        XLALDestroyREAL4Vector ( elem->LVstats->TwoFX );
         LALFree( elem->LVstats );
+      }
+      if ( elem->LVstatsRecalc) {
+        XLALDestroyREAL4Vector ( elem->LVstatsRecalc->TwoFX );
+        LALFree( elem->LVstatsRecalc );
+      }
     } /* for cand < numCands */
 
   /* free the rest of the toplist and the 'container' */
@@ -276,26 +281,40 @@ void sort_gctFStat_toplist_strongest(toplist_t*l) {
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen) {
   const char *fn = __func__;
 
-  /* add extra output-field containing sumTwoFnew and per-detector sumTwoFX if non-NULL */
-  char extraFStr[256] = "";	/* defaults to empty */
-  char buf0[256];
-  if ( fline.sumTwoFX )
+  /* add extra output-field containing fields of LVstats struct, if non-NULL */
+  char LVStr[256] = "";	/* defaults to empty */
+  if ( fline.LVstats )
     {
-      if ( fline.LVstats )
-        snprintf ( extraFStr, sizeof(extraFStr), " %.6f %.6f", fline.LVstats->LV, fline.sumTwoFnew );
-      else
-        snprintf ( extraFStr, sizeof(extraFStr), " %.6f %.6f", 0.0, fline.sumTwoFnew );
-      UINT4 numDet = fline.sumTwoFX->length;
-      UINT4 X;
-      for ( X = 0; X < numDet ; X ++ )
+      char buf0[256];
+      UINT4 numDet = fline.LVstats->TwoFX->length;
+      snprintf ( LVStr, sizeof(LVStr), " %.6f %d", fline.LVstats->LV, numDet );
+      for ( UINT4 X = 0; X < numDet ; X ++ )
         {
-          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFX->data[X] );
-          UINT4 len1 = strlen ( extraFStr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( extraFStr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(extraFStr ));
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.LVstats->TwoFX->data[X] );
+          UINT4 len1 = strlen ( LVStr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( LVStr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(LVStr ));
             break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
           }
-          strcat ( extraFStr, buf0 );
+          strcat ( LVStr, buf0 );
+        } /* for X < numDet */
+
+    } /* if fline.LVstats */
+  char LVRecalcStr[256] = "";	/* defaults to empty */
+  if ( fline.LVstatsRecalc )
+    {
+      char buf0[256];
+      UINT4 numDet = fline.LVstatsRecalc->TwoFX->length;
+      snprintf ( LVRecalcStr, sizeof(LVRecalcStr), " %.6f %d", fline.LVstatsRecalc->TwoF, numDet );
+      for ( UINT4 X = 0; X < numDet ; X ++ )
+        {
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.LVstatsRecalc->TwoFX->data[X] );
+          UINT4 len1 = strlen ( LVRecalcStr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( LVRecalcStr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(LVRecalcStr ));
+            break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
+          }
+          strcat ( LVRecalcStr, buf0 );
         } /* for X < numDet */
 
     } /* if sumTwoFX */
@@ -304,9 +323,9 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 #ifdef EAH_BOINC /* for S5GC1HF Apps use exactly the precision used in the workunit generator
 		    (12g for Freq and F1dot) and skygrid file (7f for Alpha & Delta)
 		    as discussed with Holger & Reinhard 5.11.2010 */
-                     "%.16f %.7f %.7f %.12g %.12g %d %.6f%s\n",
+                     "%.16f %.7f %.7f %.12g %.12g %d %.6f%s%s\n",
 #else
-                     "%.16g %.13g %.13g %.13g %.13g %d %.6f%s\n",
+                     "%.16g %.13g %.13g %.13g %.13g %d %.6f%s%s\n",
 #endif
                      fline.Freq,
                      fline.Alpha,
@@ -315,7 +334,8 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
                      fline.F2dot,
                      fline.nc,
                      fline.sumTwoF,
-                     extraFStr
+                     LVStr,
+                     LVRecalcStr
                  );
 
   return len;
