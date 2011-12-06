@@ -317,7 +317,7 @@ void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
   /* leaving out the following term makes freqDomain template scaling match that of "XLALREAL8TimeFreqFFT()" output: */
   /* ampliConst /= IFOdata->timeData->deltaT; */
   plusCoef  = (-0.5*(1.0+pow(cos(iota),2.0)));
-  crossCoef = (-1.0*cos(iota));
+  crossCoef = cos(iota);//was   crossCoef = (-1.0*cos(iota));, change iota to -iota+Pi to match HW injection definitions.
   dataStart = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
   twopitc = LAL_TWOPI * (tc - dataStart);
   a[0] =  exp(log(3.0/128.0) - (5.0/3.0)*log_q - log_eta);
