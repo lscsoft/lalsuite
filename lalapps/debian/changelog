@@ -1,3 +1,9 @@
+lalapps (6.6.0~rc1-1) unstable; urgency=low
+
+  * LALApps 6.6.0 Release Candidate 1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 15:13:24 -0600
+
 lalapps (6.5.0-1lscsoft3) unstable; urgency=low
 
   * LALApps 6.5.0, rewritten rules to use pyversions
