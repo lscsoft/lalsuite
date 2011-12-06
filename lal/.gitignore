@@ -142,7 +142,6 @@ packages/support/test/UserInputTest
 packages/tdfilter/test/BandPassTest
 packages/tdfilter/test/IIRFilterTest
 packages/tdfilter/test/LPCTest
-packages/tools/include/Sequence.h
 packages/tools/include/TimeSeries.h
 packages/tools/test/CoherentEstimationTest
 packages/tools/test/ComputeTransferTest
