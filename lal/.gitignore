@@ -177,7 +177,6 @@ packages/utilities/test/SCoarseGrainFrequencySeriesTest
 packages/utilities/test/SFTCleanTest
 packages/utilities/test/SortTest
 packages/utilities/test/ZCoarseGrainFrequencySeriesTest
-packages/vectorops/include/VectorIndexRange.h
 packages/vectorops/test/VectorIndexRangeTest
 packages/vectorops/test/VectorOpsTest
 packages/window/test/WindowTest

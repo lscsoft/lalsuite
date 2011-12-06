@@ -6,18 +6,9 @@ pkginclude_HEADERS = \
 CLEANFILES =
 MOSTLYCLEANFILES =
 DISTCLEANFILES =
-MAINTAINERCLEANFILES = \
-	VectorIndexRange.h
+MAINTAINERCLEANFILES =
 
 all-local: include-link
-
-EXTRA_DIST = \
-	VectorIndexRangeBaseH.m4 \
-	VectorIndexRangeH.m4 \
-	VectorPairTypedefsBase.m4
-
-VectorIndexRange.h: VectorIndexRangeBaseH.m4 VectorIndexRangeH.m4 VectorPairTypedefsBase.m4
-	cd $(srcdir) && @M4@ VectorIndexRangeH.m4 > VectorIndexRange.h
 
 @INCLUDEMKFILE@
 
