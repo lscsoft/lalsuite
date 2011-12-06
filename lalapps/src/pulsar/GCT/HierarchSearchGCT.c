@@ -318,8 +318,8 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_semiCohToplist = TRUE; /* if overall first stage candidates are to be output */
   BOOLEAN uvar_useResamp = FALSE;      /* use resampling to compute F-statistic instead of SFT method */
   BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
-  BOOLEAN uvar_outputFX = FALSE;       /* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
-  BOOLEAN uvar_useLV = FALSE;          /* In Fstat loop, get single-IFO F-stats [and, in future, compute Line Veto stat] */
+  BOOLEAN uvar_recalcToplistStats = FALSE; /* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
+  BOOLEAN uvar_computeLV = FALSE;          /* In Fstat loop, get single-IFO F-stats [and, in future, compute Line Veto stat] */
   CHAR *uvar_outputSingleSegStats = NULL; /* Additionally output single-segment Fstats for each final toplist candidate */
 
   REAL8 uvar_dAlpha = DALPHA;   /* resolution for flat or isotropic grids -- coarse grid*/
@@ -465,8 +465,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 1=numbercount, 2=LV-stat",  &uvar_SortToplist), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "outputFX",     0, UVAR_OPTIONAL,  "Additional analysis for toplist candidates, output 2F, 2FX", &uvar_outputFX), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "useLV",        0, UVAR_OPTIONAL,  "Replace multi-IFO F-stat by LineVeto-stat as main toplist statistic", &uvar_useLV), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "recalcToplistStats", 0, UVAR_OPTIONAL, "Additional analysis for toplist candidates, recalculate 2F, 2FX at finegrid", &uvar_recalcToplistStats), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeLV",    0, UVAR_OPTIONAL,  "Compute LineVeto stat for all candidates from single- and multi-IFO F-stats, can be used as main toplist statistic", &uvar_computeLV), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_DEVELOPER, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTiming", 0, UVAR_DEVELOPER, "Append timing information into this file", &uvar_outputTiming), &status);
@@ -536,8 +536,8 @@ int MAIN( int argc, char *argv[]) {
     fprintf(stderr, "Invalid value specified for toplist sorting\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
-  if ( (uvar_SortToplist == 2) && !uvar_useLV ) {
-    fprintf(stderr, "Toplist sorting by LV-stat only possible if --useLV given.\n");
+  if ( (uvar_SortToplist == 2) && !uvar_computeLV ) {
+    fprintf(stderr, "Toplist sorting by LV-stat only possible if --computeLV given.\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
 
@@ -946,13 +946,13 @@ int MAIN( int argc, char *argv[]) {
   /* initialise detector name vector for later identification */
   UINT4 numDetectors = 0;
   LALStringVector *detectorIDs = NULL;
-  if ( uvar_useLV ) {
+  if ( uvar_computeLV ) {
     if ( ( detectorIDs = XLALGetDetectorIDs ( &stackMultiSFT )) == NULL ) /* fill detector name vector with all detectors present in any data sements */
       XLAL_ERROR ( XLAL_EFUNC );
     numDetectors = detectorIDs->length;
   }
   UINT4 * NsegmentsX = NULL;
-  if ( uvar_useLV ) { /* allocate detector matching info */
+  if ( uvar_computeLV ) { /* allocate detector matching info */
     NsegmentsX = (UINT4 *)ALRealloc( NsegmentsX, numDetectors * sizeof(UINT4));
     UINT4 Y;
     for (X = 0; X < numDetectors; X++) {
@@ -1373,7 +1373,7 @@ int MAIN( int argc, char *argv[]) {
                 /************************ Compute F-Statistic ************************/
                 if (doComputeFstats) { /* if first time through fine grid fdots loop */
 
-                  /* prepare different Fstat structure for uvar_useLV case */
+                  /* prepare different Fstat structure for uvar_computeLV case */
                   MultiFstatFrequencySeries *multiFstatVector = NULL;
 
                   if (uvar_useResamp) {
@@ -1390,7 +1390,7 @@ int MAIN( int argc, char *argv[]) {
                     resampbuffers.data[k] = CFparams.buffer;
 
                   }
-                  else if (uvar_useLV) {
+                  else if (uvar_computeLV) {
                     thisPoint.dFreq = dFreqStack;
                     thisPoint.numFreqBins = binsFstat1;
                     CFparams.returnSingleF = TRUE;
@@ -1413,7 +1413,7 @@ int MAIN( int argc, char *argv[]) {
                   for (ifreq = 0; ifreq < fveclength; ifreq++) {
 
                     /* Get the F-statistic value ( Recall here it's *F*, not yet 2F ) */
-                    if (uvar_useLV) {
+                    if (uvar_computeLV) {
                       Fstat = multiFstatVector->F->data[ifreq];
                       fstatVector.data[k].data->data[ifreq] = Fstat;
                     }
@@ -1430,7 +1430,7 @@ int MAIN( int argc, char *argv[]) {
                         Fstat *= 2.0 / Tsft;
                         Fstat += 2;		/* HERE it's *F*, but recall E[2F]:= 4 + SNR^2, so just add 2 here. */
                         fstatVector.data[k].data->data[ifreq] = Fstat; /* Reinhard: check if used later */
-                        if (uvar_useLV) {
+                        if (uvar_computeLV) {
                           for (X = 0; X < multiFstatVector->FX->length; X++) {
                             multiFstatVector->FX->data[FX_INDEX(multiFstatVector->FX, X, ifreq)] *= 2.0 / Tsft;
                             multiFstatVector->FX->data[FX_INDEX(multiFstatVector->FX, X, ifreq)] += 2;
@@ -1462,7 +1462,7 @@ int MAIN( int argc, char *argv[]) {
 
                     /* ============ Copy the *2F* value ============ */
                     coarsegrid.TwoF[CG_INDEX(coarsegrid, k, ifreq)] = 2.0 * Fstat;
-                    for (X = 0; X < coarsegrid.numDetectors; X++) { /* numDetectors was initialised to 0, so this will only evaluate for uvar_useLV=TRUE */
+                    for (X = 0; X < coarsegrid.numDetectors; X++) { /* numDetectors was initialised to 0, so this will only evaluate for uvar_computeLV=TRUE */
                       UINT4 Y;
                       INT4 detid = -1;
                       for (Y = 0; Y < multiFstatVector->FX->length; Y++) { /* look for matching detector ID in this segment */
@@ -1477,7 +1477,7 @@ int MAIN( int argc, char *argv[]) {
 
                   } /* END: Loop over coarse-grid frequency bins (ifreq) */
 
-                  if ( uvar_useLV ) { /* free struct from XLALComputeFStatFreqBand() */
+                  if ( multiFstatVector ) { /* free struct from XLALComputeFStatFreqBand() */
                     XLALDestroyREAL4Vector( multiFstatVector->F );
                     XLALDestroyREAL4VectorSequence( multiFstatVector->FX );
                     LALFree(multiFstatVector);
@@ -1534,7 +1534,7 @@ int MAIN( int argc, char *argv[]) {
 
 #ifdef GC_SSE2_OPT
                 gc_hotloop( fgrid2F, cgrid2F, fgridnc, TwoFthreshold, finegrid.freqlength );
-                if ( uvar_useLV ) {
+                if ( uvar_computeLV ) {
                   for (X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
@@ -1551,7 +1551,7 @@ int MAIN( int argc, char *argv[]) {
                   fgrid2F++;
                   cgrid2F++;
                 }
-                if ( uvar_useLV ) {
+                if ( uvar_computeLV ) {
                   for (X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
@@ -1587,7 +1587,7 @@ int MAIN( int argc, char *argv[]) {
                 fgrid2F[0] /= nStacks; /* average multi-2F by full number of segments */
                 fgrid2F++;
               }
-              if ( uvar_useLV ) {
+              if ( uvar_computeLV ) {
                 for (X = 0; X < finegrid.numDetectors; X++) {
                   REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
                   for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
@@ -1653,7 +1653,7 @@ int MAIN( int argc, char *argv[]) {
   LogPrintf( LOG_NORMAL, "Finished analysis.\n");
 
   /* Also compute F, FX (for line veto statistics) for all candidates in final toplist */
-  if ( uvar_outputFX ) {
+  if ( uvar_recalcToplistStats ) {
     /* timing */
     if ( uvar_outputTiming )
       timeStamp1 = XLALGetTimeOfDay();
@@ -1781,7 +1781,7 @@ int MAIN( int argc, char *argv[]) {
 
   free_gctFStat_toplist(&semiCohToplist);
 
-  XLALDestroyExpLUT(); /* lookup table for fast exponential function, used in useLV case */
+  XLALDestroyExpLUT(); /* lookup table for fast exponential function, used in computeLV case */
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #NORESAMP="1"
-#NOCLEANUP="1"
-#DEBUG=1
+NOCLEANUP="1"
+DEBUG=1
 
 ## make sure we work in 'C' locale here to avoid awk sillyness
 LC_ALL_old=$LC_ALL
@@ -297,7 +297,7 @@ fi
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match) and segment-list file and --outputFX"
+echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match) and segment-list file and --recalcToplistStats"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -306,7 +306,7 @@ outfile_GCT_RS="${testDir}${dirsep}GCT_RS.dat"
 timingsfile_RS="${testDir}${dirsep}timing_RS.dat"
 
 if [ -z "$NORESAMP" ]; then
-    cmdline="$gct_code $gct_CL_common --useResamp=true --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' --outputFX"
+    cmdline="$gct_code $gct_CL_common --useResamp=true --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' --recalcToplistStats"
     if [ -n "$DEBUG" ]; then
         cmdline="$cmdline -d1"
     else
@@ -330,7 +330,7 @@ fi
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 4: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --outputFX"
+echo " STEP 4: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --recalcToplistStats"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -338,7 +338,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM="${testDir}${dirsep}GCT_DM.dat"
 timingsfile_DM="${testDir}${dirsep}timing_DM.dat"
 
-cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' --outputFX"
+cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' --recalcToplistStats"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline -d1"
 else
@@ -360,7 +360,7 @@ freqGCT_DM=$(echo $topline | awk '{print $1}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 5: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --useLV"
+echo " STEP 5: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --computeLV"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -368,7 +368,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM_LV="${testDir}${dirsep}GCT_DM_LV.dat"
 timingsfile_DM_LV="${testDir}${dirsep}timing_DM_LV.dat"
 
-cmdline="$gct_code $gct_CL_common --useResamp=false --useLV --SortToplist=2 --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
+cmdline="$gct_code $gct_CL_common --useResamp=false --computeLV --SortToplist=2 --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline -d1"
 else
