@@ -181,10 +181,9 @@ extern int lalDebugLevel;
 int MAIN( int argc, char *argv[]) {
   LALStatus status = blank_status;
 
-  /* temp loop variables: generally k loops over segments, j over SFTs in a stack and X over detectors */
+  /* temp loop variables: generally k loops over segments and j over SFTs in a stack */
   UINT4 j;
   UINT4 k;
-  UINT4 X;
   UINT4 skyGridCounter; /* coarse sky position counter */
   UINT4 f1dotGridCounter; /* coarse f1dot position counter */
 
@@ -725,7 +724,7 @@ int MAIN( int argc, char *argv[]) {
   for ( iTS = 0; iTS < nStacks; iTS ++ )
     {
       UINT4 nSFTsInSeg = 0;
-      for ( X=0; X < stackMultiSFT.data[iTS]->length; X ++ )
+      for ( UINT4 X=0; X < stackMultiSFT.data[iTS]->length; X ++ )
         nSFTsInSeg += stackMultiSFT.data[iTS]->data[X]->length;
       nSFTs += nSFTsInSeg;
       /* if we have a segment-list: double-check number of SFTs */
@@ -944,26 +943,27 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* initialise detector name vector for later identification */
-  UINT4 numDetectors = 0;
+  UINT4 numDetectors = 0; /* regardless of how many detectors there are, this variable (and its derivatives in coarsegrid, finegrid) will be kept to 0 and used as a check for the computeLV case */
   LALStringVector *detectorIDs = NULL;
-  if ( uvar_computeLV ) {
-    if ( ( detectorIDs = XLALGetDetectorIDs ( &stackMultiSFT )) == NULL ) /* fill detector name vector with all detectors present in any data sements */
-      XLAL_ERROR ( XLAL_EFUNC );
-    numDetectors = detectorIDs->length;
-  }
   UINT4 * NsegmentsX = NULL;
   if ( uvar_computeLV ) { /* allocate detector matching info */
+
+    /* fill detector name vector with all detectors present in any data sements */
+    if ( ( detectorIDs = XLALGetDetectorIDs ( &stackMultiSFT )) == NULL )
+      XLAL_ERROR ( XLAL_EFUNC );
+    numDetectors = detectorIDs->length;
+    /* keep track of effective number of segments per detector (needed for correct averaging) */
     NsegmentsX = (UINT4 *)ALRealloc( NsegmentsX, numDetectors * sizeof(UINT4));
-    UINT4 Y;
-    for (X = 0; X < numDetectors; X++) {
+    for (UINT4 X = 0; X < numDetectors; X++) {
       NsegmentsX[X] = 0;
       for (k = 0; k < nStacks; k++) { /* for each detector, check if present in each segment, and save the number of segments where it is */
-        for (Y = 0; Y < stackMultiSFT.data[k]->length; Y++) {
+        for (UINT4 Y = 0; Y < stackMultiSFT.data[k]->length; Y++) {
           if ( strcmp( stackMultiSFT.data[k]->data[Y]->data[0].name, detectorIDs->data[X] ) == 0 )
-            NsegmentsX[X] += 1; /* have to keep this for correct averaging */
+            NsegmentsX[X] += 1;
         }
       }
     }
+
   }
 
   /*-----------Create template grid for first stage ---------------*/
@@ -1431,7 +1431,7 @@ int MAIN( int argc, char *argv[]) {
                         Fstat += 2;		/* HERE it's *F*, but recall E[2F]:= 4 + SNR^2, so just add 2 here. */
                         fstatVector.data[k].data->data[ifreq] = Fstat; /* Reinhard: check if used later */
                         if (uvar_computeLV) {
-                          for (X = 0; X < multiFstatVector->FX->length; X++) {
+                          for (UINT4 X = 0; X < multiFstatVector->FX->length; X++) {
                             multiFstatVector->FX->data[FX_INDEX(multiFstatVector->FX, X, ifreq)] *= 2.0 / Tsft;
                             multiFstatVector->FX->data[FX_INDEX(multiFstatVector->FX, X, ifreq)] += 2;
                           }
@@ -1462,10 +1462,9 @@ int MAIN( int argc, char *argv[]) {
 
                     /* ============ Copy the *2F* value ============ */
                     coarsegrid.TwoF[CG_INDEX(coarsegrid, k, ifreq)] = 2.0 * Fstat;
-                    for (X = 0; X < coarsegrid.numDetectors; X++) { /* numDetectors was initialised to 0, so this will only evaluate for uvar_computeLV=TRUE */
-                      UINT4 Y;
+                    for (UINT4 X = 0; X < coarsegrid.numDetectors; X++) { /* numDetectors was initialised to 0, so this will only evaluate for uvar_computeLV=TRUE */
                       INT4 detid = -1;
-                      for (Y = 0; Y < multiFstatVector->FX->length; Y++) { /* look for matching detector ID in this segment */
+                      for (UINT4 Y = 0; Y < multiFstatVector->FX->length; Y++) { /* look for matching detector ID in this segment */
                         if ( strcmp( stackMultiSFT.data[k]->data[Y]->data[0].name, detectorIDs->data[X] ) == 0 )
                           detid = Y;
                       }
@@ -1552,7 +1551,7 @@ int MAIN( int argc, char *argv[]) {
                   cgrid2F++;
                 }
                 if ( uvar_computeLV ) {
-                  for (X = 0; X < finegrid.numDetectors; X++) {
+                  for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
                     for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
@@ -1588,7 +1587,7 @@ int MAIN( int argc, char *argv[]) {
                 fgrid2F++;
               }
               if ( uvar_computeLV ) {
-                for (X = 0; X < finegrid.numDetectors; X++) {
+                for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                   REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
                   for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
                     fgrid2FX[0] /= NsegmentsX[X]; /* average single-2F by per-IFO number of segments */
