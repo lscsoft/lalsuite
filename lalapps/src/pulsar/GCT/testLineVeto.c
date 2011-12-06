@@ -51,12 +51,13 @@ int main( int argc, char *argv[]) {
 
   lalDebugLevel = 1;
 
-  /* sanity checks */
+  /* sanity check for input arguments */
   if ( argc != 1 )
     XLAL_ERROR ( XLAL_EINVAL, "The executable '%s' doesn't support any input arguments right now.\n", argv[0] );
 
   LogPrintf( LOG_NORMAL, "Starting test...\n");
 
+  /* set up single- and multi-IFO F-stat input */
   REAL4 TwoF = 7.0;
   UINT4 numDetectors = 2;
   REAL4Vector *TwoFX = NULL;
@@ -66,32 +67,39 @@ int main( int argc, char *argv[]) {
   }
   TwoFX->data[0] = 4.0;
   TwoFX->data[1] = 12.0;
-  REAL4 rhomaxline = 0.0;
-  REAL4Vector *lX = NULL;
+  REAL4 rhomaxline = 0.0; /* prior from LV-stat derivation, 0 means pure line veto, +inf means pure multi-Fstat */
+  REAL4Vector *lX = NULL; /* per-IFO prior odds ratio for line vs. Gaussian noise, NULL is interpreted as l[X]=1 for all X */
 
+  /* maximum allowed difference between recalculated and XLAL result */
   REAL4 tolerance_allterms = 1e-04;
   REAL4 tolerance_leadterm = 2e-02;
 
+  /* compute and compare the results for one set of rhomaxline, lX values */
   LogPrintf( LOG_NORMAL, "Computing LV-stat for TwoF_multi=%f, TwoFX[0]=%f, TwoFX[1]=%f, rhomaxline=%f, priors lX=NULL...\n", TwoF, TwoFX->data[0], TwoFX->data[1], rhomaxline );
   if ( XLALCompareLVComputations( TwoF, TwoFX, rhomaxline, lX, tolerance_allterms, tolerance_leadterm ) != XLAL_SUCCESS ) {
     XLAL_ERROR ( XLAL_EFUNC, "Test failed.\n" );
     return XLAL_EFAILED;
   }
 
+  /* change the priors to catch more possible problems */
   rhomaxline = 5.0;
   if ( (lX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
     XLAL_ERROR ( XLAL_EFUNC, "failed to XLALCreateREAL4Vector( %d )\n", numDetectors );
     return XLAL_EFAILED;
   }
-
   lX->data[0] = 0.5;
   lX->data[1] = 0.8;
 
+  /* compute and compare the results for second set of rhomaxline, lX values */
   LogPrintf( LOG_NORMAL, "Computing LV-stat for TwoF_multi=%f, TwoFX[0]=%f, TwoFX[1]=%f, rhomaxline=%f, priors lX=(%f,%f)...\n", TwoF, TwoFX->data[0], TwoFX->data[1], rhomaxline, lX->data[0], lX->data[1] );
   if ( XLALCompareLVComputations( TwoF, TwoFX, rhomaxline, lX, tolerance_allterms, tolerance_leadterm ) != XLAL_SUCCESS ) {
     XLAL_ERROR ( XLAL_EFUNC, "Test failed.\n" );
     return XLAL_EFAILED;
   }
+
+  /* free memory */
+  XLALDestroyREAL4Vector(TwoFX);
+  XLALDestroyREAL4Vector(lX);
 
   LALCheckMemoryLeaks();
 
@@ -99,7 +107,8 @@ int main( int argc, char *argv[]) {
 } /* main */
 
 
-/** Test various StringVector functions
+/** Test function to compute LV-stat values both from scratch and by XLALComputeLineVeto,
+    compare the results and exit if tolerance is violated.
  */
 int
 XLALCompareLVComputations ( const REAL4 TwoF,          /**< multi-detector  Fstat */
@@ -111,13 +120,15 @@ XLALCompareLVComputations ( const REAL4 TwoF,          /**< multi-detector  Fsta
                           )
 {
 
+  /* compute LV-stat "the pedestrian way", explicit formula for numDet=2 */
   REAL4 LV_extcomp = 0.5*TwoF;
   if ( lX )
     LV_extcomp -= log( pow(rhomaxline,4)/70.0 + lX->data[0]*exp(0.5*TwoFX->data[0]) + lX->data[1]*exp(0.5*TwoFX->data[1]) );
-  else
+  else /* lX=NULL is interpreted as l[X]=1 for all X */
     LV_extcomp -= log( pow(rhomaxline,4)/70.0 + exp(0.5*TwoFX->data[0]) + exp(0.5*TwoFX->data[1]) );
 
-  BOOLEAN useAllTerms = FALSE; /* use only the leading term of the LV denominator sum */
+  /* faster version: use only the leading term of the LV denominator sum */
+  BOOLEAN useAllTerms = FALSE;
   xlalErrno = 0;
   REAL4 LV_XLAL_leadterm = XLALComputeLineVeto ( TwoF, TwoFX, rhomaxline, lX, useAllTerms );
   if ( xlalErrno != 0 ) {
@@ -125,7 +136,8 @@ XLALCompareLVComputations ( const REAL4 TwoF,          /**< multi-detector  Fsta
     return XLAL_FAILURE;
   }
 
-  useAllTerms = TRUE; /* use all terms of the LV denominator sum */
+  /* more precise version: use all terms of the LV denominator sum */
+  useAllTerms = TRUE;
   xlalErrno = 0;
   REAL4 LV_XLAL_allterms = XLALComputeLineVeto ( TwoF, TwoFX, rhomaxline, lX, useAllTerms );
   if ( xlalErrno != 0 ) {
@@ -133,9 +145,11 @@ XLALCompareLVComputations ( const REAL4 TwoF,          /**< multi-detector  Fsta
     return XLAL_FAILURE;
   }
 
+  /* compute relative deviations */
   REAL4 diff_allterms = fabs( LV_XLAL_allterms - LV_extcomp ) / ( 0.5 * ( LV_XLAL_allterms + LV_extcomp ));
   REAL4 diff_leadterm = fabs( LV_XLAL_leadterm - LV_extcomp ) / ( 0.5 * ( LV_XLAL_leadterm + LV_extcomp ));
 
+  /* output results and deviations and return with error when tolerances are violated */
   LogPrintf( LOG_NORMAL, "Externally recomputed             : LV=%f\n", LV_extcomp);
   LogPrintf( LOG_NORMAL, "XLALComputeLineVeto with allterms : LV=%f (rel. dev.: %f)", LV_XLAL_allterms, diff_allterms);
   if ( fabs(diff_allterms) <= tolerance_allterms )
