@@ -20,22 +20,16 @@ pkginclude_HEADERS = \
 CLEANFILES =
 
 MAINTAINERCLEANFILES = \
-	FrequencySeries.h \
 	Sequence.h \
 	TimeSeries.h
 
 EXTRA_DIST = \
-	FrequencySeries.m4 \
-	FrequencySeriesH.m4 \
 	Sequence.m4 \
 	SequenceH.m4 \
 	TimeSeries.m4 \
 	TimeSeriesH.m4
 
 all-local: include-link
-
-FrequencySeries.h : FrequencySeries.m4 FrequencySeriesH.m4
-	cd $(srcdir) && @M4@ FrequencySeries.m4 > FrequencySeries.h
 
 Sequence.h : Sequence.m4 SequenceH.m4
 	cd $(srcdir) && @M4@ Sequence.m4 > Sequence.h

@@ -93,7 +93,6 @@ printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 echo "00boot: creating sources"
 
 cd packages/tools/include || fail "creating sources in packages/tools/include"
-${M4} FrequencySeries.m4 > FrequencySeries.h || fail "creating sources in packages/tools/include"
 ${M4} Sequence.m4 > Sequence.h || fail "creating sources in packages/tools/include"
 ${M4} TimeSeries.m4 > TimeSeries.h || fail "creating sources in packages/tools/include"
 cd ../../.. || fail "creating sources in packages/tools/include"
