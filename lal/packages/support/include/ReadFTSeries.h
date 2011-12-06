@@ -52,13 +52,16 @@ extern "C" {
 #endif
 
 #ifndef SWIG /* exclude from SWIG interface */
-enum { LALSupportUnitTextSize = sizeof("10^-32768 m^-32768/32767 "
-				       "kg^-32768/32767 "
-				       "s^-32768/32767 A^-32768/32767 "
-				       "K^-32768/32767 strain^-32768/32767 "
-				       "count^-32768/32767") };
-
-enum { MaxLineLength = LALSupportUnitTextSize + sizeof("Units are ()\n") };
+enum enumLALSupportUnitTextSize {
+  LALSupportUnitTextSize = sizeof("10^-32768 m^-32768/32767 "
+                                  "kg^-32768/32767 "
+                                  "s^-32768/32767 A^-32768/32767 "
+                                  "K^-32768/32767 strain^-32768/32767 "
+                                  "count^-32768/32767")
+};
+enum enumMaxLineLength {
+  MaxLineLength = LALSupportUnitTextSize + sizeof("Units are ()\n")
+};
 #endif /* SWIG */
 
 NRCSID( READFTSERIESH, "$Id$" );
