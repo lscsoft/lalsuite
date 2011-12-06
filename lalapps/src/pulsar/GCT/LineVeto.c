@@ -116,8 +116,8 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
   /* initialise LVcomponents structure and allocate memory */
   LVcomponents   lineVeto;      /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
-  if ( (lineVeto.TwoFX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, numDetectors );
+  if ( (lineVeto.TwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
@@ -229,7 +229,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
     } /* for j < numElements */
 
   /* free temporary structures */
-  XLALDestroyREAL8Vector ( lineVeto.TwoFX );
+  XLALDestroyREAL4Vector ( lineVeto.TwoFX );
   XLALDestroyStringVector ( detectorIDs );
 
   return (XLAL_SUCCESS);
@@ -297,9 +297,9 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
     numSegmentsX[X] = 0;
 
 
-  REAL8Vector *twoFXseg = NULL;
-  if ( (twoFXseg = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, numDetectors );
+  REAL4Vector *twoFXseg = NULL;
+  if ( (twoFXseg = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
@@ -408,7 +408,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
     lineVeto->TwoFX->data[X] /= numSegmentsX[X];
   }
 
-  XLALDestroyREAL8Vector(twoFXseg);
+  XLALDestroyREAL4Vector(twoFXseg);
 
   return(XLAL_SUCCESS);
 

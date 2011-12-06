@@ -58,13 +58,6 @@ extern "C" {
 
 /*---------- exported types ----------*/
 
-  /** Type containing multi- and single-detector F statistics and Line Veto statistic */
-  typedef struct tagLVcomponents {
-    REAL8 TwoF;                           /**< multi-detector F-statistic value */
-    REAL8 LV;                             /**< multi-detector Line Veto statistic value */
-    REAL8Vector *TwoFX;                   /**< vector of single-detector F-statistic values */
-  } LVcomponents;
-
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */
 extern const LVcomponents empty_LVcomponents;

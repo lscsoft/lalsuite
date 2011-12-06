@@ -32,6 +32,13 @@ extern int global_argc;
 }
 #endif
 
+/** Type containing multi- and single-detector F statistics and Line Veto statistic */
+typedef struct tagLVcomponents {
+   REAL4 TwoF;                           /**< multi-detector F-statistic value */
+   REAL4 LV;                             /**< multi-detector Line Veto statistic value */
+   REAL4Vector *TwoFX;                   /**< vector of single-detector F-statistic values */
+} LVcomponents;
+
 /** Type to hold the fields that will be kept in a "toplist"  */
 typedef struct {
   REAL8 Freq;  /**< frequency */
@@ -43,7 +50,7 @@ typedef struct {
   UINT4 nc;       /**< number count */
   REAL4 sumTwoFnew;      /**< sum of 2F-values as recomputed in LV postprocessing */
   REAL4Vector *sumTwoFX; /**< sum of 2F-values per detector, computed in LV postprocessing */
-  REAL4 LV;              /**< line-veto stat LV ~ F - log ( rhomax^4/70 + sum(e^FX) ) */
+  LVcomponents *LVstats;  /**< struct containing multi- and single-detector F statistics and Line Veto statistic */
 } GCTtopOutputEntry;
 
 /* This has by now been reduced to an interface to the HeapToplist functions */

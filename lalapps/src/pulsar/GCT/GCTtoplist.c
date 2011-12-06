@@ -172,11 +172,11 @@ static int gctLV_smaller(const void*a, const void*b) {
   if(debugfp)
     fprintf(debugfp,"%20lf  %20lf\n%20lf  %20lf\n\n",
 	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
-	    ((const GCTtopOutputEntry*)a)->LV, ((const GCTtopOutputEntry*)b)->LV);
+	    ((const GCTtopOutputEntry*)a)->LVstats->LV, ((const GCTtopOutputEntry*)b)->LVstats->LV);
 #endif
-  if      (((const GCTtopOutputEntry*)a)->LV < ((const GCTtopOutputEntry*)b)->LV)
+  if      (((const GCTtopOutputEntry*)a)->LVstats->LV < ((const GCTtopOutputEntry*)b)->LVstats->LV)
     return 1;
-  else if (((const GCTtopOutputEntry*)a)->LV > ((const GCTtopOutputEntry*)b)->LV)
+  else if (((const GCTtopOutputEntry*)a)->LVstats->LV > ((const GCTtopOutputEntry*)b)->LVstats->LV)
     return -1;
   else if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
     return 1;
@@ -238,6 +238,8 @@ void free_gctFStat_toplist(toplist_t**l) {
     {
       GCTtopOutputEntry *elem = toplist_elem ( (*l), i );
       XLALDestroyREAL4Vector ( elem->sumTwoFX );
+      if ( elem->LVstats)
+        LALFree( elem->LVstats );
     } /* for cand < numCands */
 
   /* free the rest of the toplist and the 'container' */
@@ -279,7 +281,10 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
   char buf0[256];
   if ( fline.sumTwoFX )
     {
-      snprintf ( extraFStr, sizeof(extraFStr), " %.6f %.6f", fline.LV, fline.sumTwoFnew );
+      if ( fline.LVstats )
+        snprintf ( extraFStr, sizeof(extraFStr), " %.6f %.6f", fline.LVstats->LV, fline.sumTwoFnew );
+      else
+        snprintf ( extraFStr, sizeof(extraFStr), " %.6f %.6f", 0.0, fline.sumTwoFnew );
       UINT4 numDet = fline.sumTwoFX->length;
       UINT4 X;
       for ( X = 0; X < numDet ; X ++ )
