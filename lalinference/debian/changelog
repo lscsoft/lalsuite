@@ -1,5 +1,5 @@
-lalinference (0.0.1-1lscsoft1) unstable; urgency=low
+lalinference (0.1.0~rc1-1) unstable; urgency=low
 
-  * LALInference 0.0.1
+  * LALInference 0.1.0 Release Candidate 1
 
- -- Adam Mercer <adam.mercer@ligo.org>  Thu, 11 Aug 2011 11:50:02 -0500
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 15:11:57 -0600
