@@ -943,7 +943,7 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* initialise detector name vector for later identification */
-  UINT4 numDetectors = 0; /* regardless of how many detectors there are, this variable (and its derivatives in coarsegrid, finegrid) will be kept to 0 and used as a check for the computeLV case */
+  UINT4 numDetectors = 0; /* even though there always are >= detectors, this will be set as non-zero only in computeLV case */
   LALStringVector *detectorIDs = NULL;
   UINT4 * NsegmentsX = NULL;
   if ( uvar_computeLV ) { /* allocate detector matching info */
@@ -1148,7 +1148,7 @@ int MAIN( int argc, char *argv[]) {
           coarsegrid.freqlength = (UINT4) (binsFstat1);
           coarsegrid.nStacks = nStacks;
           coarsegrid.length = coarsegrid.freqlength * coarsegrid.nStacks;
-          coarsegrid.numDetectors = numDetectors;
+          coarsegrid.numDetectors = numDetectors; /* non-zero only in computeLV case */
 
           /* allocate memory for coarsegrid */
           coarsegrid.TwoF = (REAL4 *)LALRealloc( coarsegrid.TwoF, coarsegrid.length * sizeof(REAL4));
@@ -1230,7 +1230,7 @@ int MAIN( int argc, char *argv[]) {
           finegrid.refTime = tMidGPS;
 
           /* number of detectors, needed for sumTwoFX array */
-          finegrid.numDetectors = coarsegrid.numDetectors;
+          finegrid.numDetectors = coarsegrid.numDetectors;  /* non-zero only in computeLV case */
 
           /* allocate memory for finegrid points */
           /* FIXME: The SSE2 optimized code relies on an identical alignment modulo 16 of the
@@ -2374,15 +2374,13 @@ void UpdateSemiCohToplist(LALStatus *status,
       line.LVstats = (LVcomponents *)LALCalloc(1, sizeof(*line.LVstats));
       if ( line.LVstats == NULL) {
         fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
-        DETATCHSTATUSPTR (status);
-        RETURN(status);
+        ABORT ( status, HIERARCHICALSEARCH_EMEM, HIERARCHICALSEARCH_MSGEMEM );
       }
       line.LVstats->TwoF = line.sumTwoF;
       line.LVstats->TwoFX = NULL;
       if ( ( line.LVstats->TwoFX = XLALCreateREAL4Vector ( in->numDetectors ) ) == NULL ) {
         XLALPrintError ("%s line %d : failed to XLALCreateREAL4Vector(%d).\n\n", __func__, __LINE__, in->numDetectors );
-        DETATCHSTATUSPTR (status);
-        RETURN(status);
+        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
       }
       for (UINT4 X = 0; X < in->numDetectors; X++)
         line.LVstats->TwoFX->data[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
@@ -2391,8 +2389,7 @@ void UpdateSemiCohToplist(LALStatus *status,
       line.LVstats->LV = XLALComputeLineVeto ( line.LVstats->TwoF, line.LVstats->TwoFX, rhomax, priorX, useAllTerms );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeLineVeto() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
-        DETATCHSTATUSPTR (status);
-        RETURN(status);
+        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
       }
     }
 
