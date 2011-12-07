@@ -92,7 +92,7 @@ LowLatencyData *XLALLowLatencyDataOpen(
     return NULL;
   }
 
-  data->wd = inotify_add_watch(data->fd, data_path, IN_MOVED_TO | IN_CREATE);
+  data->wd = inotify_add_watch(data->fd, data_path, IN_MOVED_TO);
   if (data->wd == -1)
   {
     close(data->fd);
