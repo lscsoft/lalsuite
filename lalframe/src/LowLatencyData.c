@@ -50,8 +50,6 @@ struct tagLowLatencyData
   struct inotify_event *next;
 #else
   DIR *dir;
-  time_t dir_last_mtime;
-  time_t dir_last_ctime;
 #endif
 
   /* Path to directory */
@@ -118,11 +116,6 @@ LowLatencyData *XLALLowLatencyDataOpen(
     free(data);
     return NULL;
   }
-
-  /* technically, doesn't have to be set because calloc zeros the struct,
-   * but best to make this explicit */
-  data->dir_last_mtime = 0;
-  data->dir_last_ctime = 0;
 #endif
 
   data->frame_ptr = MAP_FAILED;
@@ -203,27 +196,7 @@ static char *XLALLowLatencyDataNextFilename(LowLatencyData *data)
   char filename[FILENAME_MAX + 1];
 
   do /* Loop until candidate filename is a non-empty string. */ {
-    struct stat st;
     struct dirent *entry;
-
-    /* Get directory status */
-    if (fstat(data->fd, &st) == -1)
-      return NULL;
-
-    /* Spin until the directory has been modified */
-    while (st.st_mtime == data->dir_last_mtime && st.st_ctime == data->dir_last_ctime)
-    {
-      /* Go to sleep for 1 second */
-      sleep(1);
-
-      /* Get directory status again */
-      if (fstat(data->fd, &st) == -1)
-        return NULL;
-    }
-
-    /* Record last ctime and mtime */
-    data->dir_last_mtime = st.st_mtime;
-    data->dir_last_ctime = st.st_ctime;
 
     for (filename[0] = '\0', rewinddir(data->dir); errno = 0, entry = readdir(data->dir); )
     {
@@ -269,6 +242,10 @@ static char *XLALLowLatencyDataNextFilename(LowLatencyData *data)
     /* If an error occurred when calling readdir, fail. */
     if (errno)
       return NULL;
+
+    /* If no new filename was found, then sleep 1 second before returning. */
+    if (!filename[0])
+      sleep(1);
 
   } while (!filename[0]);
 
