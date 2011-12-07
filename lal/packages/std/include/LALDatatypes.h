@@ -1114,7 +1114,7 @@ quantity being sampled.
 </lalLaTeX> */
 
 /** Length of name fields of LAL structured data types. */
-enum { LALNameLength = 64 };
+enum enumLALNameLength { LALNameLength = 64 };
 
 /** Time series of INT2 data. */
 typedef struct
