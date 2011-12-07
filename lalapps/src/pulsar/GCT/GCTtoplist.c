@@ -287,7 +287,7 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
     {
       char buf0[256];
       UINT4 numDet = fline.LVstats->TwoFX->length;
-      snprintf ( LVStr, sizeof(LVStr), " %.6f %d", fline.LVstats->LV, numDet );
+      snprintf ( LVStr, sizeof(LVStr), " %.6f", fline.LVstats->LV );
       for ( UINT4 X = 0; X < numDet ; X ++ )
         {
           snprintf ( buf0, sizeof(buf0), " %.6f", fline.LVstats->TwoFX->data[X] );
@@ -305,7 +305,7 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
     {
       char buf0[256];
       UINT4 numDet = fline.LVstatsRecalc->TwoFX->length;
-      snprintf ( LVRecalcStr, sizeof(LVRecalcStr), " %.6f %d", fline.LVstatsRecalc->TwoF, numDet );
+      snprintf ( LVRecalcStr, sizeof(LVRecalcStr), " %.6f", fline.LVstatsRecalc->TwoF );
       for ( UINT4 X = 0; X < numDet ; X ++ )
         {
           snprintf ( buf0, sizeof(buf0), " %.6f", fline.LVstatsRecalc->TwoFX->data[X] );

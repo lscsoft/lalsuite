@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #NORESAMP="1"
-NOCLEANUP="1"
-DEBUG=1
+#NOCLEANUP="1"
+#DEBUG=1
 
 ## make sure we work in 'C' locale here to avoid awk sillyness
 LC_ALL_old=$LC_ALL
@@ -319,8 +319,8 @@ if [ -z "$NORESAMP" ]; then
     fi
     topline=$(sort -nr -k7,7 $outfile_GCT_RS | head -1)
     resGCT_RS=$(echo $topline | awk '{print $7}')
-    resGCT_RS_H1=$(echo $topline | awk '{print $10}')
-    resGCT_RS_L1=$(echo $topline | awk '{print $11}')
+    resGCT_RS_H1=$(echo $topline | awk '{print $9}')
+    resGCT_RS_L1=$(echo $topline | awk '{print $10}')
     freqGCT_RS=$(echo $topline | awk '{print $1}')
 else
     echo
@@ -353,8 +353,8 @@ fi
 
 topline=$(sort -nr -k7,7 $outfile_GCT_DM | head -1)
 resGCT_DM=$(echo $topline  | awk '{print $7}')
-resGCT_DM_H1=$(echo $topline  | awk '{print $10}')
-resGCT_DM_L1=$(echo $topline  | awk '{print $11}')
+resGCT_DM_H1=$(echo $topline  | awk '{print $9}')
+resGCT_DM_L1=$(echo $topline  | awk '{print $10}')
 freqGCT_DM=$(echo $topline | awk '{print $1}')
 
 
@@ -383,8 +383,8 @@ fi
 
 topline=$(sort -nr -k7,7 $outfile_GCT_DM_LV | head -1)
 resGCT_DM_LV=$(echo $topline  | awk '{print $7}')
-resGCT_DM_H1_LV=$(echo $topline  | awk '{print $10}')
-resGCT_DM_L1_LV=$(echo $topline  | awk '{print $11}')
+resGCT_DM_H1_LV=$(echo $topline  | awk '{print $9}')
+resGCT_DM_L1_LV=$(echo $topline  | awk '{print $10}')
 freqGCT_DM_LV=$(echo $topline | awk '{print $1}')
 
 
