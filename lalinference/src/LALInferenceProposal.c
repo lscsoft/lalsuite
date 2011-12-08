@@ -353,6 +353,8 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionSky, SMALLWEIGHT);
   } 
 
+  LALInferenceAddProposalToCycle(runState, &LALInferenceDistanceQuasiGibbsProposal, SMALLWEIGHT);
+
   LALInferenceRandomizeProposalCycle(runState);
 }
 
@@ -1307,81 +1309,106 @@ LALInferencePolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVa
 void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
-  REAL8 d0, dMin, dMax;
+  REAL8 d0;
   if (LALInferenceCheckVariable(proposedParams, "distance")) {
     d0 = *(REAL8 *)LALInferenceGetVariable(proposedParams, "distance");
-    LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", &dMin, &dMax);
   } else if (LALInferenceCheckVariable(proposedParams, "logdistance")) {
     d0 = exp(*(REAL8 *)LALInferenceGetVariable(proposedParams, "logdistance"));
-    LALInferenceGetMinMaxPrior(runState->priorArgs, "logdistance", &dMin, &dMax);
-    dMin = exp(dMin);
-    dMax = exp(dMax);
   } else {
     XLAL_ERROR_VOID(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
   }
 
-  REAL8 LCurrent = runState->likelihood(runState->currentParams, runState->data, runState->template);
+  REAL8 u0 = 1.0 / d0;
+  REAL8 L0 = runState->likelihood(runState->currentParams, runState->data, runState->template);
 
-  /* We know that log(L) ~ C + A / d + B / d^2, so can fit the
-     coefficients using three likelihood measurements. */
-  REAL8 dInf = 1.0 / 0.0;
-  if (LALInferenceCheckVariable(proposedParams, "distance")) {
-    LALInferenceSetVariable(proposedParams, "distance", &dInf);
-  } else { 
-    /* Due to test above, we know that we have logdistance. */
-    LALInferenceSetVariable(proposedParams, "logdistance", &dInf);
-  }
-  REAL8 LInf = runState->likelihood(proposedParams, runState->data, runState->template);
-
-  REAL8 d1 = 1.0;
-  if (LALInferenceCheckVariable(proposedParams, "distance")) {
-    LALInferenceSetVariable(proposedParams, "distance", &d1);
-  } else {
-    REAL8 logD1 = log(d1);
-    LALInferenceSetVariable(proposedParams, "logdistance", &logD1);
-  }
-  REAL8 L1 = runState->likelihood(proposedParams, runState->data, runState->template);
-  
-  REAL8 d2 = 2.0;
+  /* We know that the likelihood surface looks like L(u) = A + B*u +
+     C*u^2, where u = 1/d is the inverse distance.  We can find these
+     coefficients by fitting the value of the likelihood at three
+     different points: u0, u0/2, and 2*u0. */
+  REAL8 u12 = u0/2.0;
+  REAL8 d2 = 1.0/u12;
   if (LALInferenceCheckVariable(proposedParams, "distance")) {
     LALInferenceSetVariable(proposedParams, "distance", &d2);
   } else {
+    /* We know that logdistance must appear in proposedParams, or we
+       would have triggered the error above. */
     REAL8 logD2 = log(d2);
     LALInferenceSetVariable(proposedParams, "logdistance", &logD2);
   }
+  REAL8 L12 = runState->likelihood(proposedParams, runState->data, runState->template);
+
+  REAL8 u2 = u0*2.0;
+  REAL8 d12 = 1.0/u2;
+  if (LALInferenceCheckVariable(proposedParams, "distance")) {
+    LALInferenceSetVariable(proposedParams, "distance", &d12);
+  } else {
+    /* We know that logdistance must appear in proposedParams, or we
+       would have triggered the error above. */
+    REAL8 logD12 = log(d12);
+    LALInferenceSetVariable(proposedParams, "logdistance", &logD12);
+  }
   REAL8 L2 = runState->likelihood(proposedParams, runState->data, runState->template);
+  
+  /* Coefficients of quadratic L(u) = A + B*u + C*u^2 */
+  REAL8 B = -(L2 + 4.0*L12 - 5.0*L0)/u0;
+  REAL8 C = (2.0*L2 + 4.0*L12 - 6.0*L0)/(3.0*u0*u0);
 
-  /* log(L) must achieve its maximum when its derivative is zero, or
-     at the boundaries of the interval. */
-  REAL8 LStationary = L2 - (LInf-L1)*(LInf-L1)/(8.0*(LInf+L1-2.0*L2));
-  REAL8 LDMin = LInf + (4.0*L2 - L1 - 3.0*LInf)/dMin + 2.0*(LInf+L1-2.0*L2)/dMin/dMin;
-  REAL8 LDMax = LInf + (4.0*L2 - L1 - 3.0*LInf)/dMax + 2.0*(LInf+L1-2.0*L2)/dMax/dMax;
+  /* Convert quadratic log(L) in u to Gaussian parameters. */
+  REAL8 mu = -B / (2.0*C);
+  REAL8 sigma2 = 1.0 / (2.0*C);
 
-  /* Max likelihood achievable (but may happen outside the range of
-     allowed distances. */
-  REAL8 LMax = (LStationary > LDMin ? LStationary : LDMin);
-  LMax = (LMax > LDMax ? LMax : LDMax);
+  if (sigma2 < 0.0) {
+    XLAL_ERROR_VOID(XLAL_FAILURE, "found negative sigma^2 in likelihood fit: %g", sigma2);
+  } else if (C==0.0) {
+    /* Flat or linear likelihood---choose uniformly in prior range. */
+    if (LALInferenceCheckVariable(proposedParams, "distance")) {
+      REAL8 dMax, dMin;
+      LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", &dMin, &dMax);
+      REAL8 dNew = dMin + (dMax-dMin)*gsl_rng_uniform(runState->GSLrandom);
+      
+      LALInferenceSetVariable(proposedParams, "distance", &dNew);
+      LALInferenceSetLogProposalRatio(runState, 0.0);
+      return;
+    } else {
+      REAL8 logDMin, logDMax;
+      LALInferenceGetMinMaxPrior(runState->priorArgs, "logdistance", &logDMin, &logDMax);
+      REAL8 logDNew = logDMin + (logDMax - logDMin)*gsl_rng_uniform(runState->GSLrandom);
 
-  /* Throw darts in the x,y plane, x in [dMin, dMax], y in [0,
-     exp(LMax)] until you land under exp(L(x)).  That sample is drawn from
-     the exp(L) distribution. */
-  REAL8 x, logy, LX;
-  do {
-    x = dMin + (dMax-dMin)*gsl_rng_uniform(runState->GSLrandom);
-    logy = LMax + log(gsl_rng_uniform(runState->GSLrandom)); /* y uniformly from 0 to exp(LMax) */
-    LX = LInf + (4.0*L2 - L1 - 3.0*LInf)/x + 2.0*(LInf+L1-2.0*L2)/x/x;
-  } while (LX < logy);
+      LALInferenceSetVariable(proposedParams, "logdistance", &logDNew);
+      LALInferenceSetLogProposalRatio(runState, 0.0);
+      return;
+    }
+  }
+
+  REAL8 sigma = sqrt(sigma2);
+
+  /* Draw new u from Gaussian, convert to d. */
+  REAL8 uNew = mu + sigma*gsl_ran_ugaussian(runState->GSLrandom);
+  REAL8 dNew = 1.0/uNew;
+  
+  if (LALInferenceCheckVariable(proposedParams, "distance")) {
+    LALInferenceSetVariable(proposedParams, "distance", &dNew);
+  } else {
+    REAL8 logDNew = log(dNew);
+    LALInferenceSetVariable(proposedParams, "logdistance", &logDNew);
+  }
+
+  REAL8 LNew = runState->likelihood(proposedParams, runState->data, runState->template);
 
   /* Store our new sample and set jump probability. */
   if (LALInferenceCheckVariable(proposedParams, "distance")) {
-    LALInferenceSetVariable(proposedParams, "distance", &x);
-    LALInferenceSetLogProposalRatio(runState, LCurrent - LX);
+    /* Since we jumped using the likelihood gaussian in u = 1/d, p(d)
+       = exp(L(u))/d^2. */
+    LALInferenceSetVariable(proposedParams, "distance", &dNew);
+    LALInferenceSetLogProposalRatio(runState, L0 - 2.0*log(d0) - LNew + 2.0*log(dNew));
   } else {
-    REAL8 logX = log(x);
-    LALInferenceSetVariable(proposedParams, "logdistance", &logX);
-    /* Jump probability density is different if we jump in logs. */
-    LALInferenceSetLogProposalRatio(runState, LCurrent - LX + log(d0) - log(x));
+    /* Jump probability density is different if we jump in logs.  If
+       we jumped in log(d) = -log(u), then we have p(log(d)) = u
+       exp(L(u)) = exp(L(u))/d */
+    REAL8 logDNew = log(dNew);
+    LALInferenceSetVariable(proposedParams, "logdistance", &logDNew);
+    LALInferenceSetLogProposalRatio(runState, L0 - log(d0) - LNew + log(dNew));
   }
 
-  
+  return;
 }
