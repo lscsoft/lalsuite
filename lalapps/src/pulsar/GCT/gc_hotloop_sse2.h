@@ -8,10 +8,13 @@ static inline void gc_hotloop (REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc
 
 #elif defined (__MINGW32__)
 
+extern void *__mingw_aligned_realloc(void *ptr, size_t size, size_t align);
 #define ALRealloc(p,s) __mingw_aligned_realloc(p,s,16)
 #define ALFree __mingw_aligned_free
 
 #else // neither APPLE nor MinGW
+
+#include <stdlib.h>
 
 #define ALFree free
 
