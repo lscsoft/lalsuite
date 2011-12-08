@@ -1534,7 +1534,7 @@ int MAIN( int argc, char *argv[]) {
 #ifdef GC_SSE2_OPT
                 gc_hotloop( fgrid2F, cgrid2F, fgridnc, TwoFthreshold, finegrid.freqlength );
                 if ( uvar_computeLV ) {
-                  for (X = 0; X < finegrid.numDetectors; X++) {
+                  for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
                     gc_hotloop( fgrid2FX, cgrid2FX, fgridnc, TwoFthreshold, finegrid.freqlength );
