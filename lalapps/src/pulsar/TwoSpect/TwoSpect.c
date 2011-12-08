@@ -860,21 +860,23 @@ int main(int argc, char *argv[])
          
       } /* if IHSonly is not given */
       
-      //Determine upper limits
-      upperlimits->data[upperlimits->length-1].alpha = (REAL4)dopplerpos.Alpha;
-      upperlimits->data[upperlimits->length-1].delta = (REAL4)dopplerpos.Delta;
-      upperlimits->data[upperlimits->length-1].normalization = ffdata->tfnormalization;
-      skypoint95UL(&(upperlimits->data[upperlimits->length-1]), inputParams, ffdata, ihsmaxima, ihsfarstruct, aveTFnoisePerFbinRatio);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: skypoint95UL() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-      for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);  //Compensation for different duty cycle and antenna pattern weights
-      upperlimits = resize_UpperLimitVector(upperlimits, upperlimits->length+1);
-      if (upperlimits->data==NULL) {
-         fprintf(stderr,"%s: resize_UpperLimitVector(%d) failed.\n", __func__, upperlimits->length+1);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
+      //Determine upper limits, if the ULoff has not been set
+      if (!args_info.ULoff_given) {
+         upperlimits->data[upperlimits->length-1].alpha = (REAL4)dopplerpos.Alpha;
+         upperlimits->data[upperlimits->length-1].delta = (REAL4)dopplerpos.Delta;
+         upperlimits->data[upperlimits->length-1].normalization = ffdata->tfnormalization;
+         skypoint95UL(&(upperlimits->data[upperlimits->length-1]), inputParams, ffdata, ihsmaxima, ihsfarstruct, aveTFnoisePerFbinRatio);
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: skypoint95UL() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);  //Compensation for different duty cycle and antenna pattern weights
+         upperlimits = resize_UpperLimitVector(upperlimits, upperlimits->length+1);
+         if (upperlimits->data==NULL) {
+            fprintf(stderr,"%s: resize_UpperLimitVector(%d) failed.\n", __func__, upperlimits->length+1);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+      } /* if producing UL */
       
       //Destroy stuff
       XLALDestroyREAL4Vector(aveTFnoisePerFbinRatio);
@@ -898,13 +900,16 @@ int main(int argc, char *argv[])
       } /* for ii < exactCandidates2->numofcandidates */
    } /* if exactCandidates2->numofcandidates != 0 */
    
-   ULFILE = fopen(t,"w");
-   if (ULFILE==NULL) {
-      fprintf(stderr, "%s: UL file could not be opened.\n", __func__);
-      XLAL_ERROR(XLAL_EINVAL);
+   //Output upper limits to a file, if ULoff is not given
+   if (!args_info.ULoff_given) {
+      ULFILE = fopen(t,"w");
+      if (ULFILE==NULL) {
+         fprintf(stderr, "%s: UL file could not be opened.\n", __func__);
+         XLAL_ERROR(XLAL_EINVAL);
+      }
+      for (ii=0; ii<(INT4)upperlimits->length-1; ii++) outputUpperLimitToFile(ULFILE, upperlimits->data[ii], inputParams->printAllULvalues);
+      fclose(ULFILE);
    }
-   for (ii=0; ii<(INT4)upperlimits->length-1; ii++) outputUpperLimitToFile(ULFILE, upperlimits->data[ii], inputParams->printAllULvalues);
-   fclose(ULFILE);
    
    //Destroy varaibles
    XLALDestroyREAL4Vector(antweightsforihs2h0);
@@ -947,8 +952,10 @@ int main(int argc, char *argv[])
    
    fclose(LOG);
    
+   //Check for leaks
    LALCheckMemoryLeaks();
    
+   //The end!
    return 0;
 
 } /* main() */

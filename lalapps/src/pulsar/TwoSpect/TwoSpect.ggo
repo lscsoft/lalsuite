@@ -72,4 +72,5 @@ option "antennaOff"  - "Antenna pattern weights are /NOT/ used if this flag is u
 option "noiseWeightOff"     - "Turn off noise weighting if this flag is used" flag off hidden
 option "gaussTemplatesOnly" - "Gaussian templates only throughout the pipeline if this flag is used" flag off hidden
 option "validateSSE"   - "Validate the use of SSE functions" flag off hidden
+option "ULoff"    - "Turn off upper limits computation" flag off hidden
 

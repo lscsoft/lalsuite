@@ -186,6 +186,8 @@ struct gengetopt_args_info
   const char *gaussTemplatesOnly_help; /**< @brief Gaussian templates only throughout the pipeline if this flag is used help description.  */
   int validateSSE_flag;	/**< @brief Validate the use of SSE functions (default=off).  */
   const char *validateSSE_help; /**< @brief Validate the use of SSE functions help description.  */
+  int ULoff_flag;	/**< @brief Turn off upper limits computation (default=off).  */
+  const char *ULoff_help; /**< @brief Turn off upper limits computation help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int full_help_given ;	/**< @brief Whether full-help was given.  */
@@ -242,6 +244,7 @@ struct gengetopt_args_info
   unsigned int noiseWeightOff_given ;	/**< @brief Whether noiseWeightOff was given.  */
   unsigned int gaussTemplatesOnly_given ;	/**< @brief Whether gaussTemplatesOnly was given.  */
   unsigned int validateSSE_given ;	/**< @brief Whether validateSSE was given.  */
+  unsigned int ULoff_given ;	/**< @brief Whether ULoff was given.  */
 
 } ;
 

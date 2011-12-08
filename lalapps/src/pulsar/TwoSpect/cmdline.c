@@ -95,6 +95,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --noiseWeightOff          Turn off noise weighting if this flag is used  \n                                  (default=off)",
   "      --gaussTemplatesOnly      Gaussian templates only throughout the pipeline \n                                  if this flag is used  (default=off)",
   "      --validateSSE             Validate the use of SSE functions  \n                                  (default=off)",
+  "      --ULoff                   Turn off upper limits computation  \n                                  (default=off)",
     0
 };
 
@@ -269,6 +270,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->noiseWeightOff_given = 0 ;
   args_info->gaussTemplatesOnly_given = 0 ;
   args_info->validateSSE_given = 0 ;
+  args_info->ULoff_given = 0 ;
 }
 
 static
@@ -354,6 +356,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->noiseWeightOff_flag = 0;
   args_info->gaussTemplatesOnly_flag = 0;
   args_info->validateSSE_flag = 0;
+  args_info->ULoff_flag = 0;
   
 }
 
@@ -419,6 +422,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->noiseWeightOff_help = gengetopt_args_info_full_help[60] ;
   args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[61] ;
   args_info->validateSSE_help = gengetopt_args_info_full_help[62] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[63] ;
   
 }
 
@@ -793,6 +797,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "gaussTemplatesOnly", 0, 0 );
   if (args_info->validateSSE_given)
     write_into_file(outfile, "validateSSE", 0, 0 );
+  if (args_info->ULoff_given)
+    write_into_file(outfile, "ULoff", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -1420,6 +1426,7 @@ cmdline_parser_internal (
         { "noiseWeightOff",	0, NULL, 0 },
         { "gaussTemplatesOnly",	0, NULL, 0 },
         { "validateSSE",	0, NULL, 0 },
+        { "ULoff",	0, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -2142,6 +2149,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->validateSSE_flag), 0, &(args_info->validateSSE_given),
                 &(local_args_info.validateSSE_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "validateSSE", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Turn off upper limits computation.  */
+          else if (strcmp (long_options[option_index].name, "ULoff") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->ULoff_flag), 0, &(args_info->ULoff_given),
+                &(local_args_info.ULoff_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "ULoff", '-',
                 additional_error))
               goto failure;
           
