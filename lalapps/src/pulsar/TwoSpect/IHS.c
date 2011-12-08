@@ -1260,7 +1260,11 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   REAL8 totalnoise = 0.0;
                   for (kk=0; kk<ii; kk++) totalnoise += noise*fbinavgs->data[jj+kk];
                   
-                  if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval) {
+                  //if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval) {
+                  if ( ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval && (params->followUpOutsideULrange || 
+                      (!params->followUpOutsideULrange && 
+                      fsig>=params->ULfmin && fsig<=(params->ULfmin+params->ULfspan) && 
+                      B>=params->ULmindf && B<=params->ULmaxdf)) ) {
                      //highestval = ihsmaxima->maxima->data[locationinmaximastruct];
                      highestval = ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise;
                      highestvalloc = locationinmaximastruct;
@@ -1384,16 +1388,16 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                             (trackedlines->data[kk*3+1]>=fsig-B && trackedlines->data[kk*3+1]<=fsig+B)) {
                            nolinesinterfering = 0;
                         }
-                     } /* if the band spanned by the line is smaller than the band spanned by the signal */
+                     } // if the band spanned by the line is smaller than the band spanned by the signal
                      else {
                         if ((fsig+B>=trackedlines->data[kk*3+1] && fsig+B<=trackedlines->data[kk*3+2]) || 
                             (fsig-B>=trackedlines->data[kk*3+1] && fsig-B<=trackedlines->data[kk*3+2])) {
                            nolinesinterfering = 0;
                         }
-                     } /* instead if the band spanned by the line is larger than the band spanned by the signal */
+                     } // instead if the band spanned by the line is larger than the band spanned by the signal
                      kk++;
-                  } /* while kk < trackedlines->length && nolinesinterfering==1 */
-               } /* if trackedlines != NULL */
+                  } // while kk < trackedlines->length && nolinesinterfering==1
+               } // if trackedlines != NULL
                
                if (!nolinesinterfering) {
                   linesinterferewithnum++;
@@ -1403,7 +1407,10 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   REAL8 totalnoise = 0.0;
                   for (kk=0; kk<jj; kk++) totalnoise += noise*fbinavgs->data[ii+kk];
                   
-                  if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval) {
+                  //if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval) {
+                  if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval && 
+                      fsig>=params->ULfmin && fsig<=(params->ULfmin+params->ULfspan) && 
+                      B>=params->ULmindf && B<=params->ULmaxdf) {
                      highestval = ihsmaxima->maxima->data[locationinmaximastruct];
                      highestval = ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise;
                      highestvalloc = locationinmaximastruct;
@@ -1412,20 +1419,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   } else {
                      skipped++;
                   }
-                  
-                  /* //Candidate h0
-                  //REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[locationinmaximastruct], loc, jj, ii, params, aveNoise, fbinavgs);
-                  REAL8 h0 = ihs2h0(2.0*(ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise), params);
-                  if (candlist->numofcandidates == candlist->length-1) {
-                     candlist = resize_candidateVector(candlist, 2*(candlist->length));
-                     if (candlist->data==NULL) {
-                        fprintf(stderr,"%s: resize_candidateVector() failed.\n", __func__);
-                        XLAL_ERROR_VOID(XLAL_EFUNC);
-                     }
-                  }
-                  loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, ffdata->tfnormalization);
-                  (candlist->numofcandidates)++; */
-               } /* if no lines are interfering */
+               } // if no lines are interfering
             } //If exceeding the FOM threshold
          } //If exceeding the IHS FAR threshold
          

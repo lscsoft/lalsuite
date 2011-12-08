@@ -49,7 +49,7 @@
 
 
 //Global variables
-FILE *LOG = NULL, *ULFILE = NULL;
+FILE *LOG = NULL, *ULFILE = NULL, *NORMRMSOUT = NULL;
 CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir = NULL;
 
 
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
    INT4 ii, jj;               //counter variables
    LALStatus status;          //LALStatus structure
    status.statusPtr = NULL;   //Set statuspointer to NULL
-   char s[20000], t[20000];   //Path and file name to LOG and ULFILE
+   char s[1000], t[1000], u[1000];   //Path and file name to LOG, ULFILE, and NORMRMSOUT
    time_t programstarttime, programendtime;
    struct tm *ptm;
    
@@ -92,8 +92,8 @@ int main(int argc, char *argv[])
    
    //Create directory
    mkdir(args_info.outdirectory_arg, 0777);
-   snprintf(s, 20000, "%s/%s", args_info.outdirectory_arg, args_info.outfilename_arg);
-   snprintf(t, 20000, "%s/%s", args_info.outdirectory_arg, args_info.ULfilename_arg);
+   snprintf(s, 1000, "%s/%s", args_info.outdirectory_arg, args_info.outfilename_arg);
+   snprintf(t, 1000, "%s/%s", args_info.outdirectory_arg, args_info.ULfilename_arg);
    
    //Open log file
    LOG = fopen(s,"w");
@@ -310,7 +310,6 @@ int main(int argc, char *argv[])
       XLAL_ERROR(XLAL_EFUNC);
    }
    
-   
    //Existing SFTs listed in this vector
    INT4Vector *sftexist = existingSFTs(tfdata, inputParams, ffdata->numfbins, ffdata->numffts);
    if (sftexist==NULL) {
@@ -349,6 +348,15 @@ int main(int argc, char *argv[])
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");
    
+   //If necessary, open the NORMRMSOUT file
+   if (args_info.normRMSoutput_given) {
+      snprintf(u, 1000, "%s/%s", args_info.outdirectory_arg, args_info.normRMSoutput_arg);
+      NORMRMSOUT = fopen(u,"w");
+      if (NORMRMSOUT==NULL) {
+         fprintf(stderr, "%s: normalized RMS data file could not be opened for writing.\n", __func__);
+         XLAL_ERROR(XLAL_EINVAL);
+      }
+   }
    
    //Line detection
    INT4Vector *lines = NULL;
@@ -366,10 +374,11 @@ int main(int argc, char *argv[])
       }
    }
    
+   //Close the NORMRMSOUT file, if necessary
+   if (args_info.normRMSoutput_given) fclose(NORMRMSOUT);
+   
    //If the band is heavily contaminated by lines, don't do any follow up.
-   if (heavilyContaminatedBand) {
-      args_info.IHSonly_given = 1;
-   }
+   if (heavilyContaminatedBand) args_info.IHSonly_given = 1;
    
    //Need to reduce the original TF data to remove the excess bins used for running median calculation. Normalize the TF as the same as the background was normalized
    REAL4Vector *usableTFdata = XLALCreateREAL4Vector(background->length);
@@ -751,7 +760,7 @@ int main(int argc, char *argv[])
                   XLAL_ERROR(XLAL_EFUNC);
                }
             } else {
-               makeTemplateGaussians(template, gaussCandidates4->data[ii], inputParams);
+               makeTemplateGaussians(template, gaussCandidates4->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                if (xlalErrno!=0) {
                   fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                   XLAL_ERROR(XLAL_EFUNC);
@@ -1566,9 +1575,11 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
    
+   REAL4 f0 = (REAL4)(round(params->fmin*params->Tcoh - 0.5*(params->blksize-1) - (REAL8)(params->maxbinshift) + 0.5*(blksize-1))/params->Tcoh);
+   REAL4 df = 1.0/params->Tcoh;
    for (ii=0; ii<(INT4)testRngMedian->length; ii++) {
-      //fprintf(stderr, "%f\n", testaveTFnoisePerFbinRatio->data[ii+(blksize-1)/2]/testRngMedian->data[ii]);
-      if ( (ii+(blksize-1)/2) > ((params->blksize-1)/2) && testaveTFnoisePerFbinRatio->data[ii+(blksize-1)/2]/testRngMedian->data[ii] > params->lineDetection) {
+      REAL4 normrmsval = testaveTFnoisePerFbinRatio->data[ii+(blksize-1)/2]/testRngMedian->data[ii];
+      if ( (ii+(blksize-1)/2) > ((params->blksize-1)/2) && normrmsval > params->lineDetection) {
          lines = XLALResizeINT4Vector(lines, numlines+1);
          if (lines==NULL) {
             fprintf(stderr,"%s: XLALResizeINT4Vector(lines,%d) failed.\n", __func__, numlines+1);
@@ -1577,6 +1588,8 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
          lines->data[numlines] = ii+(blksize-1)/2;
          numlines++;
       }
+      
+      if (NORMRMSOUT!=NULL) fprintf(NORMRMSOUT, "%f %f\n", f0+ii*df, normrmsval);
    }
    
    XLALDestroyREAL4Vector(testTSofPowers);
@@ -1589,8 +1602,11 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
 REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, inputParamsStruct *params)
 {
    
-   //REAL4VectorSequence *output = XLALCreateREAL4VectorSequence(lines->length, binshifts->length);
    REAL4VectorSequence *output = XLALCreateREAL4VectorSequence(lines->length, 3);
+   if (output==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4VectorSequence(%d,3) failed.\n", __func__, lines->length);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
    
    REAL4 df = 1.0/params->Tcoh;
    REAL4 minfbin = (REAL4)(round(params->fmin*params->Tcoh - 0.5*(params->blksize-1) - (REAL8)(params->maxbinshift))/params->Tcoh);
@@ -1604,9 +1620,6 @@ REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, input
       output->data[ii*3] = lines->data[ii]*df + minfbin;
       output->data[ii*3 + 1] = (lines->data[ii] + minshift)*df + minfbin;
       output->data[ii*3 + 2] = (lines->data[ii] + maxshift)*df + minfbin;
-      //for (jj=0; jj<(INT4)binshifts->length; jj++) {
-      //   output->data[ii*binshifts->length + jj] = (lines->data[ii] + binshifts->data[jj])*df + minfbin;
-      //}
    }
    
    return output;

@@ -144,9 +144,9 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
    //Make FFT plan if option 1 is given
    REAL4FFTPlan *plan = NULL;
    if (option==1) {
-      plan = XLALCreateForwardREAL4FFTPlan((UINT4)floor(2*(params->Tobs/params->Tcoh)-1), 0);
+      plan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, 1);
       if (plan==NULL) {
-         fprintf(stderr,"%s: XLALCreateForwardREAL4FFTPlan(%d, 0) failed.\n", __func__, (INT4)floor(2*(params->Tobs/params->Tcoh)-1));
+         fprintf(stderr,"%s: XLALCreateForwardREAL4FFTPlan(%d, 1) failed.\n", __func__, ffdata->numffts);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
    }
@@ -278,7 +278,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                            XLAL_ERROR_VOID(XLAL_EFUNC);
                         }
                      } else {
-                        makeTemplateGaussians(template, cand, params);
+                        makeTemplateGaussians(template, cand, params, ffdata->numfbins, ffdata->numfprbins);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                            XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -398,7 +398,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             resetTemplateStruct(template);
             
             //Make a Gaussian train template
-            makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+            makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
             if (xlalErrno!=0) {
                fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
@@ -453,7 +453,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                for (jj=2; jj<6; jj++) {
                   if (ihsCandidates->data[ii].period/jj > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && ihsCandidates->data[ii].period/jj >= 2.0*3600.0) {
                      ihsCandidates->data[ii].period /= (REAL8)jj;
-                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
@@ -487,7 +487,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   } // shorter period harmonics
                   if (ihsCandidates->data[ii].period*jj <= 0.2*inputParams->Tobs) {
                      ihsCandidates->data[ii].period *= (REAL8)jj;
-                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
@@ -531,7 +531,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         ihsCandidates->data[ii].period *= periodfact;   //Shift period
                         
                         //Make a template
-                        makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                        makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                            XLAL_ERROR(XLAL_EFUNC);
@@ -569,7 +569,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      periodfact = 1.0/periodfact;
                      if ( periodfact*ihsCandidates->data[ii].period <= 0.2*inputParams->Tobs ) {
                         ihsCandidates->data[ii].period *= periodfact;
-                        makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                        makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                            XLAL_ERROR(XLAL_EFUNC);
@@ -614,7 +614,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                for (jj=2; jj<3; jj++) {
                   if (ihsCandidates->data[ii].period/jj > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && ihsCandidates->data[ii].period/jj >= 2.0*3600.0) {
                      ihsCandidates->data[ii].period /= (REAL8)jj;
-                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
@@ -641,7 +641,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   } // shorter period harmonics
                   if (ihsCandidates->data[ii].period*jj <= 0.2*inputParams->Tobs) {
                      ihsCandidates->data[ii].period *= (REAL8)jj;
-                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
@@ -674,7 +674,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   REAL8 periodfact = (jj+1.0)/(jj+2.0);
                   if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>=2.0*3600.0) {
                      ihsCandidates->data[ii].period *= periodfact;
-                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
@@ -702,7 +702,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   periodfact = 1.0/periodfact;
                   if ( periodfact*ihsCandidates->data[ii].period<=0.2*inputParams->Tobs ) {
                      ihsCandidates->data[ii].period *= periodfact;
-                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
