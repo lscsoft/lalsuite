@@ -167,5 +167,10 @@ void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables
 /** Rotate each spin by random angles about L. */
 void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+/** Sample from the analytic distance likelihood distribution with all
+    other variables fixed.  This is effectively a Gibbs sampler for
+    the distance variable. */
+void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
 #endif
 
