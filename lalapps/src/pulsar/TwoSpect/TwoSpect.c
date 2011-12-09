@@ -103,8 +103,8 @@ int main(int argc, char *argv[])
    }
    
    //print start time
-   fprintf(stderr, "Program executed on %s\n", asctime(ptm));
-   fprintf(LOG, "Program executed on %s\n", asctime(ptm));
+   fprintf(stderr, "Program %s %s executed on %s\n", CMDLINE_PARSER_PACKAGE_NAME, CMDLINE_PARSER_VERSION, asctime(ptm));
+   fprintf(LOG, "Program %s %s executed on %s\n", CMDLINE_PARSER_PACKAGE_NAME, CMDLINE_PARSER_VERSION, asctime(ptm));
    
    //Print out the inputs and outputs
    fprintf(stderr, "Input parameters file: %s\n", args_info.config_arg);
