@@ -1306,20 +1306,33 @@ LALInferencePolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVa
   LALInferenceSetLogProposalRatio(runState, 0.0);
 }
 
+typedef enum {
+  USES_DISTANCE_VARIABLE,
+  USES_LOG_DISTANCE_VARIABLE
+} DistanceParam;
+
 void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
-  REAL8 d0;
+  DistanceParam distParam;
+
   if (LALInferenceCheckVariable(proposedParams, "distance")) {
-    d0 = *(REAL8 *)LALInferenceGetVariable(proposedParams, "distance");
+    distParam = USES_DISTANCE_VARIABLE;
   } else if (LALInferenceCheckVariable(proposedParams, "logdistance")) {
-    d0 = exp(*(REAL8 *)LALInferenceGetVariable(proposedParams, "logdistance"));
+    distParam = USES_LOG_DISTANCE_VARIABLE;
   } else {
     XLAL_ERROR_VOID(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
   }
 
+  REAL8 d0;
+  if (distParam == USES_DISTANCE_VARIABLE) {
+    d0 = *(REAL8 *)LALInferenceGetVariable(proposedParams, "distance");
+  } else {
+    d0 = exp(*(REAL8 *)LALInferenceGetVariable(proposedParams, "logdistance"));
+  }
+
   REAL8 u0 = 1.0 / d0;
-  REAL8 L0 = runState->likelihood(runState->currentParams, runState->data, runState->template);
+  REAL8 L0 = runState->currentLikelihood;
 
   /* We know that the likelihood surface looks like L(u) = A + B*u +
      C*u^2, where u = 1/d is the inverse distance.  We can find these
@@ -1327,11 +1340,9 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
      different points: u0, u0/2, and 2*u0. */
   REAL8 u12 = u0/2.0;
   REAL8 d2 = 1.0/u12;
-  if (LALInferenceCheckVariable(proposedParams, "distance")) {
+  if (distParam == USES_DISTANCE_VARIABLE) {
     LALInferenceSetVariable(proposedParams, "distance", &d2);
   } else {
-    /* We know that logdistance must appear in proposedParams, or we
-       would have triggered the error above. */
     REAL8 logD2 = log(d2);
     LALInferenceSetVariable(proposedParams, "logdistance", &logD2);
   }
@@ -1339,11 +1350,9 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
 
   REAL8 u2 = u0*2.0;
   REAL8 d12 = 1.0/u2;
-  if (LALInferenceCheckVariable(proposedParams, "distance")) {
+  if (distParam == USES_DISTANCE_VARIABLE) {
     LALInferenceSetVariable(proposedParams, "distance", &d12);
   } else {
-    /* We know that logdistance must appear in proposedParams, or we
-       would have triggered the error above. */
     REAL8 logD12 = log(d12);
     LALInferenceSetVariable(proposedParams, "logdistance", &logD12);
   }
@@ -1361,7 +1370,7 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
     XLAL_ERROR_VOID(XLAL_FAILURE, "found negative sigma^2 in likelihood fit: %g", sigma2);
   } else if (C==0.0) {
     /* Flat or linear likelihood---choose uniformly in prior range. */
-    if (LALInferenceCheckVariable(proposedParams, "distance")) {
+    if (distParam == USES_DISTANCE_VARIABLE) {
       REAL8 dMax, dMin;
       LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", &dMin, &dMax);
       REAL8 dNew = dMin + (dMax-dMin)*gsl_rng_uniform(runState->GSLrandom);
@@ -1386,7 +1395,7 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
   REAL8 uNew = mu + sigma*gsl_ran_ugaussian(runState->GSLrandom);
   REAL8 dNew = 1.0/uNew;
   
-  if (LALInferenceCheckVariable(proposedParams, "distance")) {
+  if (distParam == USES_DISTANCE_VARIABLE) {
     LALInferenceSetVariable(proposedParams, "distance", &dNew);
   } else {
     REAL8 logDNew = log(dNew);
@@ -1396,7 +1405,7 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
   REAL8 LNew = runState->likelihood(proposedParams, runState->data, runState->template);
 
   /* Store our new sample and set jump probability. */
-  if (LALInferenceCheckVariable(proposedParams, "distance")) {
+  if (distParam == USES_DISTANCE_VARIABLE) {
     /* Since we jumped using the likelihood gaussian in u = 1/d, p(d)
        = exp(L(u))/d^2. */
     LALInferenceSetVariable(proposedParams, "distance", &dNew);
