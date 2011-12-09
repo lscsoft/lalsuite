@@ -9,10 +9,14 @@ LC_ALL_old=$LC_ALL
 export LC_ALL=C
 
 ## allow 'make test' to work from builddir != srcdir
-builddir="./";
-injectdir="../Injections/"
-fdsdir="../FDS_isolated/"
-dirsep=/
+if [ -n "${srcdir}" ]; then
+    builddir="./";
+    injectdir="../Injections/"
+    fdsdir="../FDS_isolated/"
+else
+    srcdir=.
+fi
+dirsep="/"
 
 if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
     builddir="./";
@@ -47,12 +51,12 @@ else
     gct_code="$@"
 fi
 
-testDir="./testHS_dir";
+testDir="testHS_dir";
 if [ ! -d "$testDir" ]; then
     mkdir -p "$testDir"
 fi
 
-SFTdir=$testDir
+SFTdir="$testDir"
 SFTfiles="$SFTdir${dirsep}*.sft"
 SFTfiles_H1="$SFTdir${dirsep}H1-*.sft"
 SFTfiles_L1="$SFTdir${dirsep}L1-*.sft"
@@ -75,7 +79,7 @@ AlphaSearch=$Alpha
 DeltaSearch=$Delta
 
 ## Produce skygrid file for the search
-skygridfile="${testDir}${dirsep}tmpskygridfile.dat"
+skygridfile="${testDir}/tmpskygridfile.dat"
 echo "$AlphaSearch $DeltaSearch" > $skygridfile
 
 mfd_FreqBand=0.20;
@@ -107,9 +111,9 @@ Nsegments=14
 
 seggap=$(echo ${Tsegment} | awk '{printf "%.0f", $1 * 1.12345}')
 
-tsFile_H1="${testDir}${dirsep}timestampsH1.dat"  # for makefakedata
-tsFile_L1="${testDir}${dirsep}timestampsL1.dat"  # for makefakedata
-segFile="${testDir}${dirsep}segments.dat"
+tsFile_H1="${testDir}/timestampsH1.dat"  # for makefakedata
+tsFile_L1="${testDir}/timestampsL1.dat"  # for makefakedata
+segFile="${testDir}/segments.dat"
 
 if [ -r "$tsFile_H1" -a -r "$tsFile_L1" -a -r "$segFile" ]; then
     reuseSegFiles=true
@@ -179,7 +183,7 @@ while [ $iFreq -le $numFreqBands ]; do
     mfd_fi=`echo $mfd_fmin $iFreq $FreqStep | awk '{print $1 + ($2 - 1) * $3}'`
 
     # for H1:
-    SFTname="${SFTdir}${dirsep}H1-${mfd_fi}_${FreqStep}.sft"
+    SFTname="${SFTdir}/H1-${mfd_fi}_${FreqStep}.sft"
     if [ ! -r $SFTname ]; then
         cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=H1 --outSFTbname='$SFTname' --timestampsFile='$tsFile_H1'"
         if [ -n "$DEBUG" ]; then
@@ -197,7 +201,7 @@ while [ $iFreq -le $numFreqBands ]; do
     fi
 
     # for L1:
-    SFTname="${SFTdir}${dirsep}L1-${mfd_fi}_${FreqStep}.sft"
+    SFTname="${SFTdir}/L1-${mfd_fi}_${FreqStep}.sft"
     if [ ! -r $SFTname ]; then
         cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=L1 --outSFTbname='$SFTname' --timestampsFile='$tsFile_L1'";
         if [ -n "$DEBUG" ]; then
@@ -224,10 +228,10 @@ echo "----------------------------------------------------------------------"
 echo "STEP 2: run CFSv2 over segments"
 echo "----------------------------------------------------------------------"
 echo
-outfile_cfs="${testDir}${dirsep}CFS.dat";
+outfile_cfs="${testDir}/CFS.dat";
 
 if [ ! -r "$outfile_cfs" ]; then
-    tmpfile_cfs="${testDir}${dirsep}__tmp_CFS.dat";
+    tmpfile_cfs="${testDir}/__tmp_CFS.dat";
     cfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --f1dot=$f1dot --outputLoudest=$tmpfile_cfs --ephemYear=05-09 --refTime=$refTime --Dterms=$Dterms --RngMedWindow=$RngMedWindow --outputSingleFstats "
     if [ "$sqrtSh" = "0" ]; then
         cfs_CL_common="$cfs_CL_common --SignalOnly";
@@ -302,8 +306,8 @@ echo "--------------------------------------------------------------------------
 echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_GCT_RS="${testDir}${dirsep}GCT_RS.dat"
-timingsfile_RS="${testDir}${dirsep}timing_RS.dat"
+outfile_GCT_RS="${testDir}/GCT_RS.dat"
+timingsfile_RS="${testDir}/timing_RS.dat"
 
 if [ -z "$NORESAMP" ]; then
     cmdline="$gct_code $gct_CL_common --useResamp=true --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' --recalcToplistStats"
@@ -335,8 +339,8 @@ echo "--------------------------------------------------------------------------
 echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_GCT_DM="${testDir}${dirsep}GCT_DM.dat"
-timingsfile_DM="${testDir}${dirsep}timing_DM.dat"
+outfile_GCT_DM="${testDir}/GCT_DM.dat"
+timingsfile_DM="${testDir}/timing_DM.dat"
 
 cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' --recalcToplistStats"
 if [ -n "$DEBUG" ]; then
@@ -365,8 +369,8 @@ echo "--------------------------------------------------------------------------
 echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_GCT_DM_LV="${testDir}${dirsep}GCT_DM_LV.dat"
-timingsfile_DM_LV="${testDir}${dirsep}timing_DM_LV.dat"
+outfile_GCT_DM_LV="${testDir}/GCT_DM_LV.dat"
+timingsfile_DM_LV="${testDir}/timing_DM_LV.dat"
 
 cmdline="$gct_code $gct_CL_common --useResamp=false --computeLV --SortToplist=2 --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
 if [ -n "$DEBUG" ]; then
