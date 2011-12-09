@@ -4,7 +4,7 @@ import httplib, mimetypes, urllib
 import socket
 import os, sys
 
-DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/cli"
+DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
 GIT_TAG = 'gracedb-1.0-2'
 
@@ -216,14 +216,15 @@ def findUserCredentials(warnOnOldProxy=1):
 # Web Service Client
 
 class Client:
-    def __init__(self, url, proxy_host=None, proxy_port=3128):
-        cred = findUserCredentials(warnOnOldProxy=0)
-        if not cred:
-            raise Exception("No credentials found")
-        cert, key = cred
+    def __init__(self, url=DEFAULT_SERVICE_URL, proxy_host=None, proxy_port=3128, credentials=None):
+        if credentials is None:
+            credentials = findUserCredentials(warnOnOldProxy=0)
+            if not credentials:
+                raise Exception("No credentials found")
+        cert, key = credentials
         if proxy_host:
-            self.conn = ProxyHTTPSConnection(proxy_host, proxy_port,
-                                             key_file=key, cert_file=cert)
+            self.connector = lambda: ProxyHTTPSConnection(proxy_host, proxy_port,
+                                                          key_file=key, cert_file=cert)
         else:
             proto, rest = urllib.splittype(url)
             if proto is None:
@@ -233,19 +234,23 @@ class Client:
             #try to get port
             host, port = urllib.splitport(host)
             port = port or 443
-            self.conn = httplib.HTTPSConnection(host, port,
-                                                key_file=key, cert_file=cert)
+            self.connector = lambda: httplib.HTTPSConnection(host, port,
+                                                             key_file=key, cert_file=cert)
         self.url = url
 
-    def send(self, method, httpmethod="POST", **kw):
+    def _connect(self):
+        self._conn = self.connector()
+
+    def _send(self, method, httpmethod="POST", **kw):
         try:
             kw['cli'] = 'true'
             kw['cli_version'] = "1"
             kw = urllib.urlencode(kw)
             headers = {'connection' : 'keep-alive'}
             url = "%s/%s" % (self.url, method)
-            self.conn.request(httpmethod, url, kw, headers)
-            response = self.conn.getresponse()
+            self._connect()
+            self._conn.request(httpmethod, url, kw, headers)
+            response = self._conn.getresponse()
             rv = response.read()
         except Exception, e:
             return { 'error':  "client send exception: " + str(e) }
@@ -257,10 +262,10 @@ class Client:
                 return { 'error': 'Credentials not accepted' }
             return {'error': "while parsing:%s\nclient send exception: %s" % (rv, str(e))}
 
-    def upload(self, method, fields, files, alert=False):
+    def _upload(self, method, fields, files, alert=False):
         # Do an tiny GET request to get SSL primed.
         # Large initial SSL/POST requests will choke the server.
-        r = self.send('ping', 'POST', ack='priming')
+        r = self._send('ping', 'POST', ack='priming')
         if 'error' in r and r['error']:
             return r
         try:
@@ -274,8 +279,9 @@ class Client:
                 'connection': 'keep-alive',
             }
             url = "%s/%s" % (self.url, method)
-            self.conn.request("POST", url, body, headers)
-            response = self.conn.getresponse()
+            self._connect()
+            self._conn.request("POST", url, body, headers)
+            response = self._conn.getresponse()
             rv = response.read()
         except Exception, e:
             return { "error" : "client upload exception: " + str(e) }
@@ -284,6 +290,50 @@ class Client:
             return eval(rv)
         except Exception, e:
             return {'error': "while parsing:%s\nclient upload exception: %s" % (rv, str(e))}
+
+    def ping(self, msg=""):
+        return self._send('ping', ack=msg)
+
+    def search(self, query):
+        return self._send('search', query=query)
+
+    def log(self, graceid, message, alert=False):
+        return self._send('log', graceid=graceid, message=message, alert=alert)
+
+    def tag(self, graceid, tag):
+        return self._send('tag', graceid=graceid, tag=tag)
+
+    def label(self, graceid, label, alert=False):
+        return self._send('label', graceid=graceid, label=label, alert=alert)
+
+    def create(self, group, analysis_type, filename, filecontents=None):
+        if analysis_type in typeCodeMap:
+            analysis_type = typeCodeMap[analysis_type]
+        if filecontents is None:
+            if filename == '-':
+                filename = 'initial.data'
+                filecontents = sys.stdin.read()
+            else:
+                filecontents = open(filename, 'r').read()
+        fields = [
+                  ('group', group),
+                  ('type', analysis_type),
+                 ]
+        files = [('eventFile', filename, filecontents)]
+        return self._upload('create', fields, files)
+
+    def upload(self, graceid, filename, filecontents=None, comment="", alert=False):
+        if filecontents is None:
+            if filename == '-':
+                filecontents = sys.stdin.read()
+            filecontents = open(filename, 'r').read()
+        fields = [
+            ('graceid', graceid),
+            ('comment', comment),
+            ('filename', filename)
+        ]
+        files = [ ('upload', filename, filecontents) ]
+        return self._upload('upload', fields, files, alert)
 
 #-----------------------------------------------------------------
 # Main 
@@ -376,43 +426,34 @@ Longer strings will be truncated.""" % {
         op.error("not enough arguments")
     elif args[0] == 'ping':
         msg = " ".join(args[1:]) or "PING"
-        response = client.send('ping', ack=msg)
+        response = client.ping(msg)
     elif args[0] == 'upload':
         if len(args) < 3:
             op.error("not enough arguments for upload")
         graceid = args[1]
         filename = args[2]
-        if len(args) >= 4:
-            comment = " ".join(args[3:])
-        else:
-            comment = ""
-        fields = [ ('graceid', graceid), ('comment', comment) ]
-        if filename == '-':
-            filename = options.filename or 'uploaded.data'
-            files = [ ('upload', filename, sys.stdin.read()) ]
-        else:
-            files = [ ('upload', filename, open(filename,'r').read()) ]
-        response = client.upload('upload', fields, files, alert=options.alert)
+        comment = " ".join(args[3:])
+        response = client.upload(graceid, filename, comment=comment, alert=options.alert)
     elif args[0] == 'log':
         if len(args) < 3:
             op.error("not enough arguments for log")
         graceid = args[1]
         message = " ".join(args[2:])
-        response = client.send('log', graceid=graceid, message=message, alert=options.alert)
+        response = client.log(graceid, message, alert=options.alert)
     elif args[0] == 'tag':
         if len(args) != 3:
             op.error("wrong number of arguments for tag")
         graceid = args[1]
         tag = args[2]
-        response = client.send('tag', graceid=graceid, tag=tag)
+        response = client.tag(graceid, tag)
     elif args[0] == 'label':
         if len(args) != 3:
             op.error("wrong number of arguments for label")
         graceid = args[1]
         label = args[2]
-        response = client.send('label', graceid=graceid, label=label, alert=options.alert)
+        response = client.label(graceid, label, alert=options.alert)
     elif args[0] == 'search':
-        response = client.send('search', query=" ".join(args[1:]))
+        response = client.query(" ".join(args[1:]))
     elif len(args) == 3:
         group = args[0]
         type = args[1]
@@ -423,19 +464,7 @@ Longer strings will be truncated.""" % {
         else:
             error("Type must be one of: ", ", ".join(typeCodeMap.keys()))
             sys.exit(1)
-
-        fields = [
-                  ('group', group),
-                  ('type', type),
-                 ]
-        if filename == '-':
-            filename = options.filename or 'initial.data'
-            files = [('eventFile', filename, sys.stdin.read())]
-        else:
-            files = [('eventFile', filename, open(filename, 'r').read())]
-
-        response = client.upload("create", fields, files)
-
+        response = client.create(group, type, filename)
         if not response:
             error("There was a problem.  Did you do grid-proxy-init -rfc?")
             sys.exit(1)
