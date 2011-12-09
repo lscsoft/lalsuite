@@ -353,8 +353,8 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionSky, SMALLWEIGHT);
   } 
 
-  /* LALInferenceAddProposalToCycle(runState, &LALInferenceDistanceQuasiGibbsProposal, SMALLWEIGHT);
-     LALInferenceAddProposalToCycle(runState, &LALInferenceOrbitalPhaseQuasiGibbsProposal, SMALLWEIGHT); */
+  LALInferenceAddProposalToCycle(runState, &LALInferenceDistanceQuasiGibbsProposal, SMALLWEIGHT);
+  LALInferenceAddProposalToCycle(runState, &LALInferenceOrbitalPhaseQuasiGibbsProposal, SMALLWEIGHT);
 
   LALInferenceRandomizeProposalCycle(runState);
 }
@@ -1367,10 +1367,9 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
   REAL8 mu = -B / (2.0*C);
   REAL8 sigma2 = 1.0 / (2.0*C);
 
-  if (sigma2 < 0.0) {
-    XLAL_ERROR_VOID(XLAL_FAILURE, "found negative sigma^2 in likelihood fit: %g", sigma2);
-  } else if (C==0.0) {
-    /* Flat or linear likelihood---choose uniformly in prior range. */
+  if (C<=0.0) {
+    /* Flat or linear likelihood, or negative curvature in the
+       gaussian---choose uniformly in prior range. */
     if (distParam == USES_DISTANCE_VARIABLE) {
       REAL8 dMax, dMin;
       LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", &dMin, &dMax);
