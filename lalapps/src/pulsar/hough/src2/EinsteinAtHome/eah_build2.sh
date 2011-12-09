@@ -565,8 +565,8 @@ if [ ! .$MACOSX_DEPLOYMENT_TARGET = .10.3 ] ; then
     log_and_do make eah_Makefakedata_v4$ext
     log_and_do cp eah_Makefakedata_v4$ext "$EAH"
     log_and_do cd "$BUILD/lalapps/src/pulsar/FDS_isolated"
-    log_and_do make eah_PredictFStat$ext
-    log_and_do cp eah_PredictFStat$ext "$EAH"
+    log_and_do make eah_PredictFStat$ext eah_ComputeFStatistic_v2$ext
+    log_and_do cp eah_PredictFStat$ext eah_ComputeFStatistic_v2$ext "$EAH"
 fi
 
 log_and_show "==========================================="
@@ -585,8 +585,9 @@ if [ .$check = .true ]; then
     log_and_do rm -rf test
     log_and_do mkdir test
     log_and_do cd test
-    log_and_do cp ../eah_Makefakedata_v4$ext lalapps_Makefakedata_v4$ext
-    log_and_do cp ../eah_PredictFStat$ext lalapps_PredictFStat$ext
+    log_and_do cp ../eah_Makefakedata_v4$ext lalapps_Makefakedata_v4
+    log_and_do cp ../eah_PredictFStat$ext lalapps_PredictFStat
+    log_and_do cp ../eah_ComputeFStatistic_v2$ext lalapps_ComputeFStatistic_v2
     log_and_do cp "$INSTALL"/share/lalpulsar/*05-09.dat .
     NOCLEANUP=1 PATH=".:$PATH" LAL_DATA_PATH="$PWD" \
 	log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testHS.sh $wine "$check_app" --Dterms=8
