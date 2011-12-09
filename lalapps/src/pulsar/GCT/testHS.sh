@@ -82,7 +82,7 @@ mfd_FreqBand=0.20;
 mfd_fmin=100;
 numFreqBands=4;	## produce 'frequency-split' SFTs used in E@H
 
-Dterms=16
+Dterms=8
 RngMedWindow=50
 
 gct_FreqBand=0.01
