@@ -173,5 +173,12 @@ void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariabl
     *posterior* in d, not the likelihood in u = 1/d). */
 void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+/** Samples from the analytic likelihood distribution in orbital phase
+    (log(L) ~ <d|d> + 2*Re(<d|h>)*cos(delta-phi) -
+    2*Im(<d|h>)*sin(delta-phi) + <h|h>, where delta-phi is the orbital
+    phase shift relative to the reference used for h.  This is
+    effectively a Gibbs sampler for the phase coordinate. */
+void LALInferenceOrbitalPhaseQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
 #endif
 

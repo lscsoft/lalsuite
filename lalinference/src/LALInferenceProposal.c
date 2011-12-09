@@ -354,6 +354,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   } 
 
   LALInferenceAddProposalToCycle(runState, &LALInferenceDistanceQuasiGibbsProposal, SMALLWEIGHT);
+  LALInferenceAddProposalToCycle(runState, &LALInferenceOrbitalPhaseQuasiGibbsProposal, SMALLWEIGHT);
 
   LALInferenceRandomizeProposalCycle(runState);
 }
@@ -1420,4 +1421,67 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
   }
 
   return;
+}
+
+/* We know that the likelihood with all variables but phase fixed can
+   be written as 
+
+   log(L) = <d|d> + 2*Re(<d|h>)cos(dPhi) +/- 2*Im(<d|h>)sin(dPhi) + <h|h>
+
+   This proposal computes the coefficients of the likelihood and draws
+   phase from the analytic distribution that results. */
+void LALInferenceOrbitalPhaseQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+
+  REAL8 L0, L1, L2;
+  REAL8 dPhi0, dPhi1, dPhi2;
+  REAL8 phi0, phi1, phi2;
+
+  phi0 = *(REAL8 *)LALInferenceGetVariable(proposedParams, "phase");
+  dPhi0 = 0.0;
+  L0 = runState->currentLikelihood;
+
+  dPhi1 = 2.0*M_PI/3.0;
+  phi1 = fmod(phi0 + dPhi1, 2.0*M_PI);
+  LALInferenceSetVariable(proposedParams, "phase", &phi1);
+  L1 = runState->likelihood(proposedParams, runState->data, runState->template);
+
+  dPhi2 = 4.0*M_PI/3.0;
+  phi2 = fmod(phi0 + dPhi2, 2.0*M_PI);
+  LALInferenceSetVariable(proposedParams, "phase", &phi2);
+  L2 = runState->likelihood(proposedParams, runState->data, runState->template);
+
+  /* log(L) = A + C*cos(dPhi) + S*sin(dPhi) */
+  REAL8 c0 = cos(dPhi0), c1 = cos(dPhi1), c2 = cos(dPhi2);
+  REAL8 s0 = sin(dPhi0), s1 = sin(dPhi1), s2 = sin(dPhi2);
+  REAL8 A = (L0 + L1 + L2) / 3.0;
+  REAL8 C = (L0 + L1*cos(dPhi1) + L2*cos(dPhi2))/(c0*c0 + c1*c1 + c2*c2);
+  REAL8 S = (L1*sin(dPhi1) + L2*sin(dPhi2))/(s0*s0 + s1*s1 + s2*s2);
+
+  /* One extremum of L: */
+  REAL8 dphiMax = atan(S/C);
+  REAL8 LMax = A + C*cos(dphiMax) + S*sin(dphiMax);
+
+  /* Is the other extremum a maxmim? */
+  if (A - C*cos(dphiMax) - S*sin(dphiMax) > LMax) {
+    LMax = A - C*cos(dphiMax) - S*sin(dphiMax);
+    dphiMax = fmod(dphiMax + M_PI, 2.0*M_PI);
+  }
+
+  /* Now von Neumann rejection sample in the dPhi, L plane until we
+     get a dPhi that matches.  The only tricky part is that we choose
+     the vertical coordinate in log-space---that is, we choose log(y)
+     uniformly in *y* between 0 and exp(LMax). */
+  REAL8 dPhi;
+  REAL8 logY;
+  do { 
+    dPhi = 2.0*M_PI*gsl_rng_uniform(runState->GSLrandom);
+    logY = LMax + log(gsl_rng_uniform(runState->GSLrandom));
+  } while (logY > A + C*cos(dPhi) + S*sin(dPhi));
+  
+  REAL8 LDPhi = A + C*cos(dPhi) + S*sin(dPhi);
+
+  REAL8 phiNew = fmod(phi0 + dPhi, 2.0*M_PI);
+  LALInferenceSetVariable(proposedParams, "phase", &phiNew);
+  LALInferenceSetLogProposalRatio(runState, L0 - LDPhi);
 }
