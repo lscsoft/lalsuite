@@ -2,12 +2,14 @@ Source: lal
 Section: lscsoft
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
-Build-Depends: debhelper (>= 5), m4, libgsl0-dev (>= 1.9), fftw3-dev, zlib1g-dev, pkg-config, python (>= 2.4)
+Build-Depends: debhelper (>= 5), pkg-config, python (>= 2.4), zlib1g-dev,
+  libgsl0-dev (>= 1.9), fftw3-dev
 Standards-Version: 3.7.2
 
 Package: lal
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw3, zlib1g
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g
+  libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw3
 Description: LSC Algorithm Library
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains the shared-object libraries needed to run applications
@@ -15,7 +17,8 @@ Description: LSC Algorithm Library
 
 Package: lal-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, lal (= ${binary:Version}), libgsl0-dev (>= 1.9), fftw3-dev, zlib1g-dev
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g-dev,
+  libgsl0-dev (>= 1.9), fftw3-dev, lal (= ${binary:Version})
 Description: Files and documentation needed for compiling programs that use LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains files needed to build applications that use the LAL library

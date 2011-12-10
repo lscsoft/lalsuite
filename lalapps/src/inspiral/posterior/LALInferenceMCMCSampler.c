@@ -50,6 +50,8 @@ RCSID("$Id$");
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
+void LALInferencePTswap(LALInferenceRunState *runState, double *TcurrentLikelihood, REAL8 *parametersVec,
+                        REAL8 *tempLadder, int lowerRank, int upperRank, int i, FILE *tempfile);
 FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState);
 void LALInferenceDataDump(LALInferenceRunState *runState);
 
@@ -74,10 +76,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   int MPIrank, MPIsize;
   LALStatus status;
   memset(&status,0,sizeof(status));
-  REAL8 dummyR8 = 0.0;
   INT4 acceptanceCount = 0;
   REAL8 nullLikelihood;
-  REAL8 logChainSwap = 0.0;
   REAL8 *tempLadder = NULL;			//the temperature ladder
   INT4 *acceptanceCountLadder = NULL;	//array of acceptance counts to compute the acceptance ratios.
   double *TcurrentLikelihood = NULL; //the current likelihood for each chain
@@ -409,76 +409,19 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         MPI_Gather(parameters->data,nPar,MPI_DOUBLE,parametersVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
         MPI_Barrier(MPI_COMM_WORLD);
 
-        if (MPIrank == 0) {
-          if(LALInferenceGetProcParamVal(runState->commandLine, "--stdPT")) {
-            for(upperRank=nChain-1;upperRank>0;upperRank--) { //swap parameters and likelihood between chains
-              lowerRank=upperRank-1;
-
-              logChainSwap = (1.0/tempLadder[lowerRank]-1.0/tempLadder[upperRank]) * (TcurrentLikelihood[upperRank]-TcurrentLikelihood[lowerRank]);
-
-              if ((logChainSwap > 0)
-                  || (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap...
-                if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
-                  fprintf(tempfile,"%d\t%f\t%f\t%f\n",i,logChainSwap,tempLadder[lowerRank],tempLadder[upperRank]);
-                  fflush(tempfile);
-                }
-                for (p=0; p<(nPar); ++p){
-                  dummyR8=parametersVec[p+nPar*upperRank];
-                  parametersVec[p+nPar*upperRank]=parametersVec[p+nPar*lowerRank];
-                  parametersVec[p+nPar*lowerRank]=dummyR8;
-                }
-                dummyR8 = TcurrentLikelihood[upperRank];
-                TcurrentLikelihood[upperRank] = TcurrentLikelihood[lowerRank];
-                TcurrentLikelihood[lowerRank] = dummyR8;
-              }
-            } //for(upperRank=nChain;upperRank>0;upperRank--)
-
-          } else if (LALInferenceGetProcParamVal(runState->commandLine, "--randomPT")) {
-            for (swapAttempt=0; swapAttempt<nSwaps; ++swapAttempt) {
-              lowerRank = gsl_rng_uniform_int(runState->GSLrandom, nChain-1);
-              upperRank = lowerRank+1;
-
-              logChainSwap = (1.0/tempLadder[lowerRank]-1.0/tempLadder[upperRank]) * (TcurrentLikelihood[upperRank]-TcurrentLikelihood[lowerRank]);
-
-              if ((logChainSwap > 0)
-                  || (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap...
-                if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
-                  fprintf(tempfile,"%d\t%f\t%f\t%f\n",i,logChainSwap,tempLadder[lowerRank],tempLadder[upperRank]);
-                  fflush(tempfile);
-                }
-                for (p=0; p<(nPar); ++p){
-                  dummyR8=parametersVec[p+nPar*upperRank];
-                  parametersVec[p+nPar*upperRank]=parametersVec[p+nPar*lowerRank];
-                  parametersVec[p+nPar*lowerRank]=dummyR8;
-                }
-                dummyR8 = TcurrentLikelihood[upperRank];
-                TcurrentLikelihood[upperRank] = TcurrentLikelihood[lowerRank];
-                TcurrentLikelihood[lowerRank] = dummyR8;
-                }
-              } //for(swapAttempt=0; swapAttempt<50; ++swapAttempt)
-          } else {
+        if (MPIrank == 0) { //swap parameters and likelihood between chains
+          if(LALInferenceGetProcParamVal(runState->commandLine, "--oldPT")) {
             for(lowerRank=0;lowerRank<nChain-1;lowerRank++) { //swap parameters and likelihood between chains
               for(upperRank=lowerRank+1;upperRank<nChain;upperRank++) {
-
-                logChainSwap = (1.0/tempLadder[lowerRank]-1.0/tempLadder[upperRank]) * (TcurrentLikelihood[upperRank]-TcurrentLikelihood[lowerRank]);
-
-                if ((logChainSwap > 0)
-                    || (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap...
-                  if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
-                    fprintf(tempfile,"%d\t%f\t%f\t%f\n",i,logChainSwap,tempLadder[lowerRank],tempLadder[upperRank]);
-                    fflush(tempfile);
-                  }
-                  for (p=0; p<(nPar); ++p){
-                    dummyR8=parametersVec[p+nPar*upperRank];
-                    parametersVec[p+nPar*upperRank]=parametersVec[p+nPar*lowerRank];
-                    parametersVec[p+nPar*lowerRank]=dummyR8;
-                  }
-                  dummyR8 = TcurrentLikelihood[upperRank];
-                  TcurrentLikelihood[upperRank] = TcurrentLikelihood[lowerRank];
-                  TcurrentLikelihood[lowerRank] = dummyR8;
-                }
+                LALInferencePTswap(runState, TcurrentLikelihood, parametersVec, tempLadder, lowerRank, upperRank, i, tempfile);
               } //for(upperRank=lowerRank+1;upperRank<nChain;upperRank++)
             } //for(lowerRank=0;lowerRank<nChain-1;lowerRank++)
+          } else {
+            for(swapAttempt=0; swapAttempt<nSwaps; ++swapAttempt) {
+              lowerRank = gsl_rng_uniform_int(runState->GSLrandom, nChain-1);
+              upperRank = lowerRank+1;
+              LALInferencePTswap(runState, TcurrentLikelihood, parametersVec, tempLadder, lowerRank, upperRank, i, tempfile);
+            } //for(swapAttempt=0; swapAttempt<50; ++swapAttempt)
           } //else
         } //if (MPIrank == 0)
 
@@ -644,6 +587,44 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   LALInferenceSetVariable(runState->proposalArgs, "adaptableStep", &adaptableStep);
   LALInferenceDestroyVariables(&proposedParams);
 }
+
+
+//-----------------------------------------
+// temperature swap routine:
+//-----------------------------------------
+void LALInferencePTswap(LALInferenceRunState *runState,
+                        double *TcurrentLikelihood,
+                        REAL8 *parametersVec,
+                        REAL8 *tempLadder,
+                        int lowerRank,
+                        int upperRank,
+                        int i,
+                        FILE *tempfile)
+{
+  REAL8 logChainSwap;
+  REAL8 dummyR8;
+  INT4 p;
+  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+
+  logChainSwap = (1.0/tempLadder[lowerRank]-1.0/tempLadder[upperRank]) * (TcurrentLikelihood[upperRank]-TcurrentLikelihood[lowerRank]);
+
+  if ((logChainSwap > 0) || (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap...
+    // Check if --tempVerbose was specified
+    if (tempfile != NULL) {
+      fprintf(tempfile,"%d\t%f\t%f\t%f\n",i,logChainSwap,tempLadder[lowerRank],tempLadder[upperRank]);
+      fflush(tempfile);
+    }
+    for (p=0; p<(nPar); ++p){
+      dummyR8=parametersVec[p+nPar*upperRank];
+      parametersVec[p+nPar*upperRank]=parametersVec[p+nPar*lowerRank];
+      parametersVec[p+nPar*lowerRank]=dummyR8;
+    }
+  dummyR8 = TcurrentLikelihood[upperRank];
+  TcurrentLikelihood[upperRank] = TcurrentLikelihood[lowerRank];
+  TcurrentLikelihood[lowerRank] = dummyR8;
+  }
+}
+
 
 //-----------------------------------------
 // file output routines:

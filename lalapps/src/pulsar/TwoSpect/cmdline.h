@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.13"
+#define CMDLINE_PARSER_VERSION "1.1.15"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -87,6 +87,9 @@ struct gengetopt_args_info
   char * ULfilename_arg;	/**< @brief Upper limit file name (default='uls.dat').  */
   char * ULfilename_orig;	/**< @brief Upper limit file name original value given at command line.  */
   const char *ULfilename_help; /**< @brief Upper limit file name help description.  */
+  char * normRMSoutput_arg;	/**< @brief File for the output of the normalized RMS from the non-slided data.  */
+  char * normRMSoutput_orig;	/**< @brief File for the output of the normalized RMS from the non-slided data original value given at command line.  */
+  const char *normRMSoutput_help; /**< @brief File for the output of the normalized RMS from the non-slided data help description.  */
   char * sftDir_arg;	/**< @brief Directory containing SFTs (default='./').  */
   char * sftDir_orig;	/**< @brief Directory containing SFTs original value given at command line.  */
   const char *sftDir_help; /**< @brief Directory containing SFTs help description.  */
@@ -183,6 +186,8 @@ struct gengetopt_args_info
   const char *gaussTemplatesOnly_help; /**< @brief Gaussian templates only throughout the pipeline if this flag is used help description.  */
   int validateSSE_flag;	/**< @brief Validate the use of SSE functions (default=off).  */
   const char *validateSSE_help; /**< @brief Validate the use of SSE functions help description.  */
+  int ULoff_flag;	/**< @brief Turn off upper limits computation (default=off).  */
+  const char *ULoff_help; /**< @brief Turn off upper limits computation help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int full_help_given ;	/**< @brief Whether full-help was given.  */
@@ -202,6 +207,7 @@ struct gengetopt_args_info
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
   unsigned int outfilename_given ;	/**< @brief Whether outfilename was given.  */
   unsigned int ULfilename_given ;	/**< @brief Whether ULfilename was given.  */
+  unsigned int normRMSoutput_given ;	/**< @brief Whether normRMSoutput was given.  */
   unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
   unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */
   unsigned int ephemYear_given ;	/**< @brief Whether ephemYear was given.  */
@@ -238,6 +244,7 @@ struct gengetopt_args_info
   unsigned int noiseWeightOff_given ;	/**< @brief Whether noiseWeightOff was given.  */
   unsigned int gaussTemplatesOnly_given ;	/**< @brief Whether gaussTemplatesOnly was given.  */
   unsigned int validateSSE_given ;	/**< @brief Whether validateSSE was given.  */
+  unsigned int ULoff_given ;	/**< @brief Whether ULoff was given.  */
 
 } ;
 

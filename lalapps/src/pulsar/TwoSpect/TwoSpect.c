@@ -29,13 +29,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#ifdef __SSE__
-#include <xmmintrin.h>
-#endif
-#ifdef __SSE2__
-#include <emmintrin.h>
-#endif
-
 #include <lal/Window.h>
 #include <lal/LALMalloc.h>
 #include <lal/SFTutils.h>
@@ -52,10 +45,11 @@
 #include "TwoSpect.h"
 #include "statistics.h"
 #include "upperlimits.h"
+#include "vectormath.h"
 
 
 //Global variables
-FILE *LOG = NULL, *ULFILE = NULL;
+FILE *LOG = NULL, *ULFILE = NULL, *NORMRMSOUT = NULL;
 CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir = NULL;
 
 
@@ -66,7 +60,7 @@ int main(int argc, char *argv[])
    INT4 ii, jj;               //counter variables
    LALStatus status;          //LALStatus structure
    status.statusPtr = NULL;   //Set statuspointer to NULL
-   char s[20000], t[20000];   //Path and file name to LOG and ULFILE
+   char s[1000], t[1000], u[1000];   //Path and file name to LOG, ULFILE, and NORMRMSOUT
    time_t programstarttime, programendtime;
    struct tm *ptm;
    
@@ -98,8 +92,8 @@ int main(int argc, char *argv[])
    
    //Create directory
    mkdir(args_info.outdirectory_arg, 0777);
-   snprintf(s, 20000, "%s/%s", args_info.outdirectory_arg, args_info.outfilename_arg);
-   snprintf(t, 20000, "%s/%s", args_info.outdirectory_arg, args_info.ULfilename_arg);
+   snprintf(s, 1000, "%s/%s", args_info.outdirectory_arg, args_info.outfilename_arg);
+   snprintf(t, 1000, "%s/%s", args_info.outdirectory_arg, args_info.ULfilename_arg);
    
    //Open log file
    LOG = fopen(s,"w");
@@ -316,7 +310,6 @@ int main(int argc, char *argv[])
       XLAL_ERROR(XLAL_EFUNC);
    }
    
-   
    //Existing SFTs listed in this vector
    INT4Vector *sftexist = existingSFTs(tfdata, inputParams, ffdata->numfbins, ffdata->numffts);
    if (sftexist==NULL) {
@@ -355,6 +348,15 @@ int main(int argc, char *argv[])
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");
    
+   //If necessary, open the NORMRMSOUT file
+   if (args_info.normRMSoutput_given) {
+      snprintf(u, 1000, "%s/%s", args_info.outdirectory_arg, args_info.normRMSoutput_arg);
+      NORMRMSOUT = fopen(u,"w");
+      if (NORMRMSOUT==NULL) {
+         fprintf(stderr, "%s: normalized RMS data file could not be opened for writing.\n", __func__);
+         XLAL_ERROR(XLAL_EINVAL);
+      }
+   }
    
    //Line detection
    INT4Vector *lines = NULL;
@@ -372,10 +374,11 @@ int main(int argc, char *argv[])
       }
    }
    
+   //Close the NORMRMSOUT file, if necessary
+   if (args_info.normRMSoutput_given) fclose(NORMRMSOUT);
+   
    //If the band is heavily contaminated by lines, don't do any follow up.
-   if (heavilyContaminatedBand) {
-      args_info.IHSonly_given = 1;
-   }
+   if (heavilyContaminatedBand) args_info.IHSonly_given = 1;
    
    //Need to reduce the original TF data to remove the excess bins used for running median calculation. Normalize the TF as the same as the background was normalized
    REAL4Vector *usableTFdata = XLALCreateREAL4Vector(background->length);
@@ -757,7 +760,7 @@ int main(int argc, char *argv[])
                   XLAL_ERROR(XLAL_EFUNC);
                }
             } else {
-               makeTemplateGaussians(template, gaussCandidates4->data[ii], inputParams);
+               makeTemplateGaussians(template, gaussCandidates4->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                if (xlalErrno!=0) {
                   fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                   XLAL_ERROR(XLAL_EFUNC);
@@ -857,21 +860,23 @@ int main(int argc, char *argv[])
          
       } /* if IHSonly is not given */
       
-      //Determine upper limits
-      upperlimits->data[upperlimits->length-1].alpha = (REAL4)dopplerpos.Alpha;
-      upperlimits->data[upperlimits->length-1].delta = (REAL4)dopplerpos.Delta;
-      upperlimits->data[upperlimits->length-1].normalization = ffdata->tfnormalization;
-      skypoint95UL(&(upperlimits->data[upperlimits->length-1]), inputParams, ffdata, ihsmaxima, ihsfarstruct, aveTFnoisePerFbinRatio);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: skypoint95UL() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-      for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);  //Compensation for different duty cycle and antenna pattern weights
-      upperlimits = resize_UpperLimitVector(upperlimits, upperlimits->length+1);
-      if (upperlimits->data==NULL) {
-         fprintf(stderr,"%s: resize_UpperLimitVector(%d) failed.\n", __func__, upperlimits->length+1);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
+      //Determine upper limits, if the ULoff has not been set
+      if (!args_info.ULoff_given) {
+         upperlimits->data[upperlimits->length-1].alpha = (REAL4)dopplerpos.Alpha;
+         upperlimits->data[upperlimits->length-1].delta = (REAL4)dopplerpos.Delta;
+         upperlimits->data[upperlimits->length-1].normalization = ffdata->tfnormalization;
+         skypoint95UL(&(upperlimits->data[upperlimits->length-1]), inputParams, ffdata, ihsmaxima, ihsfarstruct, aveTFnoisePerFbinRatio);
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: skypoint95UL() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);  //Compensation for different duty cycle and antenna pattern weights
+         upperlimits = resize_UpperLimitVector(upperlimits, upperlimits->length+1);
+         if (upperlimits->data==NULL) {
+            fprintf(stderr,"%s: resize_UpperLimitVector(%d) failed.\n", __func__, upperlimits->length+1);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+      } /* if producing UL */
       
       //Destroy stuff
       XLALDestroyREAL4Vector(aveTFnoisePerFbinRatio);
@@ -895,13 +900,16 @@ int main(int argc, char *argv[])
       } /* for ii < exactCandidates2->numofcandidates */
    } /* if exactCandidates2->numofcandidates != 0 */
    
-   ULFILE = fopen(t,"w");
-   if (ULFILE==NULL) {
-      fprintf(stderr, "%s: UL file could not be opened.\n", __func__);
-      XLAL_ERROR(XLAL_EINVAL);
+   //Output upper limits to a file, if ULoff is not given
+   if (!args_info.ULoff_given) {
+      ULFILE = fopen(t,"w");
+      if (ULFILE==NULL) {
+         fprintf(stderr, "%s: UL file could not be opened.\n", __func__);
+         XLAL_ERROR(XLAL_EINVAL);
+      }
+      for (ii=0; ii<(INT4)upperlimits->length-1; ii++) outputUpperLimitToFile(ULFILE, upperlimits->data[ii], inputParams->printAllULvalues);
+      fclose(ULFILE);
    }
-   for (ii=0; ii<(INT4)upperlimits->length-1; ii++) outputUpperLimitToFile(ULFILE, upperlimits->data[ii], inputParams->printAllULvalues);
-   fclose(ULFILE);
    
    //Destroy varaibles
    XLALDestroyREAL4Vector(antweightsforihs2h0);
@@ -944,8 +952,10 @@ int main(int argc, char *argv[])
    
    fclose(LOG);
    
+   //Check for leaks
    LALCheckMemoryLeaks();
    
+   //The end!
    return 0;
 
 } /* main() */
@@ -1572,9 +1582,11 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
    
+   REAL4 f0 = (REAL4)(round(params->fmin*params->Tcoh - 0.5*(params->blksize-1) - (REAL8)(params->maxbinshift) + 0.5*(blksize-1))/params->Tcoh);
+   REAL4 df = 1.0/params->Tcoh;
    for (ii=0; ii<(INT4)testRngMedian->length; ii++) {
-      //fprintf(stderr, "%f\n", testaveTFnoisePerFbinRatio->data[ii+(blksize-1)/2]/testRngMedian->data[ii]);
-      if ( (ii+(blksize-1)/2) > ((params->blksize-1)/2) && testaveTFnoisePerFbinRatio->data[ii+(blksize-1)/2]/testRngMedian->data[ii] > params->lineDetection) {
+      REAL4 normrmsval = testaveTFnoisePerFbinRatio->data[ii+(blksize-1)/2]/testRngMedian->data[ii];
+      if ( (ii+(blksize-1)/2) > ((params->blksize-1)/2) && normrmsval > params->lineDetection) {
          lines = XLALResizeINT4Vector(lines, numlines+1);
          if (lines==NULL) {
             fprintf(stderr,"%s: XLALResizeINT4Vector(lines,%d) failed.\n", __func__, numlines+1);
@@ -1583,6 +1595,8 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
          lines->data[numlines] = ii+(blksize-1)/2;
          numlines++;
       }
+      
+      if (NORMRMSOUT!=NULL) fprintf(NORMRMSOUT, "%f %f\n", f0+ii*df, normrmsval);
    }
    
    XLALDestroyREAL4Vector(testTSofPowers);
@@ -1595,8 +1609,11 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
 REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, inputParamsStruct *params)
 {
    
-   //REAL4VectorSequence *output = XLALCreateREAL4VectorSequence(lines->length, binshifts->length);
    REAL4VectorSequence *output = XLALCreateREAL4VectorSequence(lines->length, 3);
+   if (output==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4VectorSequence(%d,3) failed.\n", __func__, lines->length);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
    
    REAL4 df = 1.0/params->Tcoh;
    REAL4 minfbin = (REAL4)(round(params->fmin*params->Tcoh - 0.5*(params->blksize-1) - (REAL8)(params->maxbinshift))/params->Tcoh);
@@ -1610,9 +1627,6 @@ REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, input
       output->data[ii*3] = lines->data[ii]*df + minfbin;
       output->data[ii*3 + 1] = (lines->data[ii] + minshift)*df + minfbin;
       output->data[ii*3 + 2] = (lines->data[ii] + maxshift)*df + minfbin;
-      //for (jj=0; jj<(INT4)binshifts->length; jj++) {
-      //   output->data[ii*binshifts->length + jj] = (lines->data[ii] + binshifts->data[jj])*df + minfbin;
-      //}
    }
    
    return output;
@@ -2466,238 +2480,4 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
 } /* readTwoSepctInputParams() */
 
 
-
-REAL4Vector * fastSSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
-{
-   
-   REAL4 *a, *b, *c;
-   INT4   n;
-   
-   a = input1->data + offset1;
-   b = input2->data + offset2;
-   c = output->data;
-   n = output->length;
-   
-   while (n-- > 0) {
-      *c = (*a)*(*b);
-      a = a + stride1;
-      b = b + stride2;
-      c++;
-   }
-   
-   return output;
-   
-} /* SSVectorMultiply_with_stride_and_offset() */
-
-REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2)
-{
-   
-#ifdef __SSE__
-   INT4 roundedvectorlength = (INT4)input1->length / 4;
-   INT4 vec1aligned = 0, vec2aligned = 0, outputaligned = 0, ii = 0;
-   
-   REAL4 *allocinput1 = NULL, *allocinput2 = NULL, *allocoutput = NULL, *alignedinput1 = NULL, *alignedinput2 = NULL, *alignedoutput = NULL;
-   __m128 *arr1, *arr2, *result;
-   
-   //Allocate memory for aligning input vector 1 if necessary
-   if ( input1->data==(void*)(((UINT8)input1->data+15) & ~15) ) {
-      vec1aligned = 1;
-      arr1 = (__m128*)(void*)input1->data;
-   } else {
-      allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput1==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
-      alignedinput1 = (void*)(((UINT8)allocinput1+15) & ~15);
-      memcpy(alignedinput1, input1->data, sizeof(REAL4)*4*roundedvectorlength);
-      arr1 = (__m128*)(void*)alignedinput1;
-   }
-   
-   //Allocate memory for aligning input vector 2 if necessary
-   if ( input2->data==(void*)(((UINT8)input2->data+15) & ~15) ) {
-      vec2aligned = 1;
-      arr2 = (__m128*)(void*)input2->data;
-   } else {
-      allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput2==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
-      alignedinput2 = (void*)(((UINT8)allocinput2+15) & ~15);
-      memcpy(alignedinput2, input2->data, sizeof(REAL4)*4*roundedvectorlength);
-      arr2 = (__m128*)(void*)alignedinput2;
-   }
-   
-   //Allocate memory for aligning output vector if necessary
-   if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
-      outputaligned = 1;
-      result = (__m128*)(void*)output->data;
-   } else {
-      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
-      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
-      result = (__m128*)(void*)alignedoutput;
-   }
-   
-   //multiply the two vectors into the output
-   for (ii=0; ii<roundedvectorlength; ii++) {
-      *result = _mm_mul_ps(*arr1, *arr2);
-      arr1++;
-      arr2++;
-      result++;
-   }
-   
-   //Copy output aligned memory to non-aligned memory if necessary
-   if (!outputaligned) memcpy(output->data, alignedoutput, 4*roundedvectorlength*sizeof(REAL4));
-   
-   //Finish up the remaining part
-   for (ii=4*roundedvectorlength; ii<(INT4)input1->length; ii++) output->data[ii] = input1->data[ii] * input2->data[ii];
-   
-   //Free memory if necessary
-   if (!vec1aligned) XLALFree(allocinput1);
-   if (!vec2aligned) XLALFree(allocinput2);
-   if (!outputaligned) XLALFree(allocoutput);
-   
-   return output;
-#else
-   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR_NULL(XLAL_EFAILED);
-#endif
-   
-}
-
-REAL4Vector * sseScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scale)
-{
-   
-#ifdef __SSE__
-   INT4 roundedvectorlength = (INT4)input->length / 4;
-   INT4 vecaligned = 0, outputaligned = 0, ii = 0;
-   
-   REAL4 *allocinput = NULL, *allocoutput = NULL, *alignedinput = NULL, *alignedoutput = NULL;
-   __m128 *arr1, *result;
-   
-   __m128 scalefactor = _mm_set1_ps(scale);
-   
-   //Allocate memory for aligning input vector 1 if necessary
-   if ( input->data==(void*)(((UINT8)input->data+15) & ~15) ) {
-      vecaligned = 1;
-      arr1 = (__m128*)(void*)input->data;
-   } else {
-      allocinput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
-      alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
-      memcpy(alignedinput, input->data, sizeof(REAL4)*4*roundedvectorlength);
-      arr1 = (__m128*)(void*)alignedinput;
-   }
-   
-   //Allocate memory for aligning output vector if necessary
-   if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
-      outputaligned = 1;
-      result = (__m128*)(void*)output->data;
-   } else {
-      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
-      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
-      result = (__m128*)(void*)alignedoutput;
-   }
-   
-   //multiply the vector into the output
-   for (ii=0; ii<roundedvectorlength; ii++) {
-      *result = _mm_mul_ps(*arr1, scalefactor);
-      arr1++;
-      result++;
-   }
-   
-   //Copy output aligned memory to non-aligned memory if necessary
-   if (!outputaligned) memcpy(output->data, alignedoutput, 4*roundedvectorlength*sizeof(REAL4));
-   
-   //Finish up the remaining part
-   for (ii=4*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[ii] = input->data[ii] * scale;
-   
-   //Free memory if necessary
-   if (!vecaligned) XLALFree(allocinput);
-   if (!outputaligned) XLALFree(allocoutput);
-   
-   return output;
-#else
-   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR_NULL(XLAL_EFAILED);
-#endif
-   
-}
-REAL8Vector * sseScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scale)
-{
-   
-#ifdef __SSE2__
-   INT4 roundedvectorlength = (INT4)input->length / 2;
-   INT4 vecaligned = 0, outputaligned = 0, ii = 0;
-   
-   REAL8 *allocinput = NULL, *allocoutput = NULL, *alignedinput = NULL, *alignedoutput = NULL;
-   __m128d *arr1, *result;
-   
-   __m128d scalefactor = _mm_set1_pd(scale);
-   
-   //Allocate memory for aligning input vector 1 if necessary
-   if ( input->data==(void*)(((UINT8)input->data+15) & ~15) ) {
-      vecaligned = 1;
-      arr1 = (__m128d*)(void*)input->data;
-   } else {
-      allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocinput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
-      alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
-      memcpy(alignedinput, input->data, sizeof(REAL8)*2*roundedvectorlength);
-      arr1 = (__m128d*)(void*)alignedinput;
-   }
-   
-   //Allocate memory for aligning output vector if necessary
-   if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
-      outputaligned = 1;
-      result = (__m128d*)(void*)output->data;
-   } else {
-      allocoutput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
-      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
-      result = (__m128d*)(void*)alignedoutput;
-   }
-   
-   //multiply the vector into the output
-   for (ii=0; ii<roundedvectorlength; ii++) {
-      *result = _mm_mul_pd(*arr1, scalefactor);
-      arr1++;
-      result++;
-   }
-   
-   //Copy output aligned memory to non-aligned memory if necessary
-   if (!outputaligned) memcpy(output->data, alignedoutput, 2*roundedvectorlength*sizeof(REAL8));
-   
-   //Finish up the remaining part
-   for (ii=2*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[ii] = input->data[ii] * scale;
-   
-   //Free memory if necessary
-   if (!vecaligned) XLALFree(allocinput);
-   if (!outputaligned) XLALFree(allocoutput);
-   
-   return output;
-#else
-   fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR_NULL(XLAL_EFAILED);
-#endif
-   
-}
 

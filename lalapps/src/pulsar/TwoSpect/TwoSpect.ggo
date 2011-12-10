@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.13"
+version "1.1.15"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
@@ -23,6 +23,7 @@ section "Input/ouput parameters"
 option "outdirectory"   - "Output directory" string typestr="directory" default="output" optional
 option "outfilename"    - "Output file name" string typestr="filename" default="logfile.txt" optional
 option "ULfilename"     - "Upper limit file name" string typestr="filename" default="uls.dat" optional
+option "normRMSoutput"  - "File for the output of the normalized RMS from the non-slided data" string typestr="filename" optional
 option "sftDir"         - "Directory containing SFTs" string typestr="directory" default="./" optional
 option "ephemDir"       - "Path to ephemeris files" string typestr="directory" default="/opt/lscsoft/lalpulsar/share/lalpulsar" optional
 option "ephemYear"      - "Year or year range (e.g. 08-11) of ephemeris files" string default="08-11" optional
@@ -71,4 +72,5 @@ option "antennaOff"  - "Antenna pattern weights are /NOT/ used if this flag is u
 option "noiseWeightOff"     - "Turn off noise weighting if this flag is used" flag off hidden
 option "gaussTemplatesOnly" - "Gaussian templates only throughout the pipeline if this flag is used" flag off hidden
 option "validateSSE"   - "Validate the use of SSE functions" flag off hidden
+option "ULoff"    - "Turn off upper limits computation" flag off hidden
 
