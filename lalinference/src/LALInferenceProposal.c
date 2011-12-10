@@ -789,9 +789,11 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
   LALInferenceSetLogProposalRatio(runState, 0.0); /* Symmetric proposal. */
 }
 
-/* TODO: Include asym_massratio */
 void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *runState, LALInferenceVariables *pp) {
-  const char *names[] = {"chirpmass", "massratio", NULL};
+  const char *names[] = {"chirpmass", "asym_massratio", NULL};
+  if (LALInferenceCheckVariable(pp, "massratio")) {
+    names[1] = "massratio";
+  }
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
 
