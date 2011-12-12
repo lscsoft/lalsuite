@@ -499,7 +499,11 @@ int XLALBBHPhenTimeDomEngine(
 
   sigLength = 0;
   if (signalvec1) sigLength = signalvec1->length;
-  if (signalvec2) sigLength = signalvec2->length;
+  else if (signalvec2) sigLength = signalvec2->length;
+  else if (freqVec) sigLength = freqVec->length;
+  else if (phiVec) sigLength = phiVec->length;
+  else if (aVec) sigLength = aVec->length / 2;
+  else if (h) sigLength = h->length / 2;
 
   /* inclination-weights on two polarizations */
   z1 = -0.5*(1. + cosI*cosI);
