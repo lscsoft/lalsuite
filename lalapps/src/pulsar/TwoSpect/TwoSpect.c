@@ -1554,29 +1554,55 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
    
    INT4 numlines = 0;
    INT4Vector *lines = NULL;
+   INT4 totalnumfbins = ffdata->numfbins+(params->blksize-1)+2*params->maxbinshift;
    
    //Blocksize of running median
    LALRunningMedianPar block = {blksize};
    
-   REAL4Vector *testaveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins+(params->blksize-1)+2*params->maxbinshift);
-   REAL4Vector *testRngMedian = XLALCreateREAL4Vector(testaveTFnoisePerFbinRatio->length-(blksize-1));
-   REAL4Vector *testTSofPowers = XLALCreateREAL4Vector((UINT4)ffdata->numffts);
-   if (testaveTFnoisePerFbinRatio==NULL) {
-      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins+(params->blksize-1)+2*params->maxbinshift);
+   //Compute weights
+   REAL4Vector *sftdata = XLALCreateREAL4Vector(totalnumfbins);
+   REAL4Vector *weights = XLALCreateREAL4Vector(ffdata->numffts);
+   if (sftdata==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, totalnumfbins);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   } else if (weights==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
+   memset(weights->data, 0, ffdata->numffts*sizeof(REAL4));
+   REAL4 sumweights = 0.0;
+   for (ii=0; ii<ffdata->numffts; ii++) {
+      if (TFdata->data[ii*totalnumfbins]!=0.0) {
+         memcpy(sftdata->data, &(TFdata->data[ii*totalnumfbins]), totalnumfbins*sizeof(REAL4));
+         REAL4 stddev = calcStddev(sftdata);
+         weights->data[ii] = 1.0/(stddev*stddev);
+         sumweights += weights->data[ii];
+      }
+   }
+   REAL4 invsumweights = 1.0/sumweights;
+   XLALDestroyREAL4Vector(sftdata);
+   
+   //Compute RMS for each frequency bin as a function of time
+   REAL4Vector *testRMSvals = XLALCreateREAL4Vector(totalnumfbins);
+   REAL4Vector *testRngMedian = XLALCreateREAL4Vector(totalnumfbins-(blksize-1));
+   REAL4Vector *testTSofPowers = XLALCreateREAL4Vector(ffdata->numffts);
+   if (testRMSvals==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, totalnumfbins);
       XLAL_ERROR_NULL(XLAL_EFUNC);
    } else if (testRngMedian==NULL) {
-      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, testaveTFnoisePerFbinRatio->length-(blksize-1));
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, totalnumfbins-(blksize-1));
       XLAL_ERROR_NULL(XLAL_EFUNC);
    } else if (testTSofPowers==NULL) {
       fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
-   for (ii=0; ii<(INT4)testaveTFnoisePerFbinRatio->length; ii++) {
-      for (jj=0; jj<ffdata->numffts; jj++) testTSofPowers->data[jj] = TFdata->data[jj*testaveTFnoisePerFbinRatio->length + ii];
-      testaveTFnoisePerFbinRatio->data[ii] = calcRms(testTSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
+   for (ii=0; ii<(INT4)testRMSvals->length; ii++) {
+      for (jj=0; jj<ffdata->numffts; jj++) if (weights->data[jj]!=0.0) testTSofPowers->data[jj] = TFdata->data[jj*testRMSvals->length + ii]*weights->data[ii]*invsumweights;
+      testRMSvals->data[ii] = calcRms(testTSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
    }
    
-   LALSRunningMedian2(&status, testRngMedian, testaveTFnoisePerFbinRatio, block);
+   //Running median of RMS values
+   LALSRunningMedian2(&status, testRngMedian, testRMSvals, block);
    if (status.statusCode != 0) {
       fprintf(stderr,"%s: LALSRunningMedian2() failed.\n", __func__);
       XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -1585,7 +1611,7 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
    REAL4 f0 = (REAL4)(round(params->fmin*params->Tcoh - 0.5*(params->blksize-1) - (REAL8)(params->maxbinshift) + 0.5*(blksize-1))/params->Tcoh);
    REAL4 df = 1.0/params->Tcoh;
    for (ii=0; ii<(INT4)testRngMedian->length; ii++) {
-      REAL4 normrmsval = testaveTFnoisePerFbinRatio->data[ii+(blksize-1)/2]/testRngMedian->data[ii];
+      REAL4 normrmsval = testRMSvals->data[ii+(blksize-1)/2]/testRngMedian->data[ii];
       if ( (ii+(blksize-1)/2) > ((params->blksize-1)/2) && normrmsval > params->lineDetection) {
          lines = XLALResizeINT4Vector(lines, numlines+1);
          if (lines==NULL) {
@@ -1601,7 +1627,8 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
    
    XLALDestroyREAL4Vector(testTSofPowers);
    XLALDestroyREAL4Vector(testRngMedian);
-   XLALDestroyREAL4Vector(testaveTFnoisePerFbinRatio);
+   XLALDestroyREAL4Vector(testRMSvals);
+   XLALDestroyREAL4Vector(weights);
    
    return lines;
    
