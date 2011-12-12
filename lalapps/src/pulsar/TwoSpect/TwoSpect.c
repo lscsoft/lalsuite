@@ -103,8 +103,8 @@ int main(int argc, char *argv[])
    }
    
    //print start time
-   fprintf(stderr, "Program %s %s executed on %s\n", CMDLINE_PARSER_PACKAGE_NAME, CMDLINE_PARSER_VERSION, asctime(ptm));
-   fprintf(LOG, "Program %s %s executed on %s\n", CMDLINE_PARSER_PACKAGE_NAME, CMDLINE_PARSER_VERSION, asctime(ptm));
+   fprintf(stderr, "Program %s %s executed on %s", CMDLINE_PARSER_PACKAGE_NAME, CMDLINE_PARSER_VERSION, asctime(ptm));
+   fprintf(LOG, "Program %s %s executed on %s", CMDLINE_PARSER_PACKAGE_NAME, CMDLINE_PARSER_VERSION, asctime(ptm));
    
    //Print out the inputs and outputs
    fprintf(stderr, "Input parameters file: %s\n", args_info.config_arg);
@@ -947,8 +947,8 @@ int main(int argc, char *argv[])
    //print end time
    time(&programendtime);
    ptm = localtime(&programendtime);
-   fprintf(stderr, "Program finished on %s\n", asctime(ptm));
-   fprintf(LOG, "Program finished on %s\n", asctime(ptm));
+   fprintf(stderr, "Program finished on %s", asctime(ptm));
+   fprintf(LOG, "Program finished on %s", asctime(ptm));
    
    fclose(LOG);
    

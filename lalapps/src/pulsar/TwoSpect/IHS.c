@@ -1262,8 +1262,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   
                   //if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval) {
                   if ( ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval && (params->followUpOutsideULrange || 
-                      (!params->followUpOutsideULrange && 
-                      fsig>=params->ULfmin && fsig<=(params->ULfmin+params->ULfspan) && 
+                      (!params->followUpOutsideULrange && fsig>=params->ULfmin && fsig<=(params->ULfmin+params->ULfspan) && 
                       B>=params->ULmindf && B<=params->ULmaxdf)) ) {
                      //highestval = ihsmaxima->maxima->data[locationinmaximastruct];
                      highestval = ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise;
@@ -1408,9 +1407,10 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   for (kk=0; kk<jj; kk++) totalnoise += noise*fbinavgs->data[ii+kk];
                   
                   //if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval) {
-                  if (ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval && 
-                      fsig>=params->ULfmin && fsig<=(params->ULfmin+params->ULfspan) && 
-                      B>=params->ULmindf && B<=params->ULmaxdf) {
+                  if ( ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise > highestval && 
+                      (params->followUpOutsideULrange || (!params->followUpOutsideULrange && 
+                        fsig>=params->ULfmin && fsig<=(params->ULfmin+params->ULfspan) && 
+                        B>=params->ULmindf && B<=params->ULmaxdf)) ) {
                      highestval = ihsmaxima->maxima->data[locationinmaximastruct];
                      highestval = ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise;
                      highestvalloc = locationinmaximastruct;
