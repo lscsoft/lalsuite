@@ -263,8 +263,8 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
     deltaT = dataPtr->timeData->deltaT;
     deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
     // printf("deltaF %g, Nt %d, deltaT %g\n", deltaF, dataPtr->timeData->data->length, dataPtr->timeData->deltaT);
-    lower = ceil(dataPtr->fLow / deltaF);
-    upper = floor(dataPtr->fHigh / deltaF);
+    lower = (UINT4)ceil(dataPtr->fLow / deltaF);
+    upper = (UINT4)floor(dataPtr->fHigh / deltaF);
     TwoDeltaToverN = 2.0 * deltaT / ((double) dataPtr->timeData->data->length);
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
@@ -488,8 +488,8 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
     /* determine frequency range & loop over frequency bins: */
     deltaT = dataPtr->timeData->deltaT;
     deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
-    lower = ceil(dataPtr->fLow / deltaF);
-    upper = floor(dataPtr->fHigh / deltaF);
+    lower = (UINT4)ceil(dataPtr->fLow / deltaF);
+    upper = (UINT4)floor(dataPtr->fHigh / deltaF);
     FourDeltaToverN = 4.0 * deltaT / ((double) dataPtr->timeData->data->length);
     for (i=lower; i<=upper; ++i){
       /* degrees-of-freedom parameter (nu_j) for this particular frequency bin: */
