@@ -3,11 +3,11 @@
 %define _sysconfdir %{_prefix}/etc
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 0.2.rc2
+Release: 1
 Summary: LSC Algorithm MetaIO Library
 License: GPL
 Group: LAL
-Source: %{name}-%{version}rc2.tar.gz
+Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
