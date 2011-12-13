@@ -1,3 +1,9 @@
+lalframe (1.0.3-1) unstable; urgency=low
+
+  * LALFrame 1.0.3
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 12:42:43 -0600
+
 lalframe (1.0.3~rc2-1) unstable; urgency=low
 
   * LALFrame 1.0.3 Release Candidate 2
