@@ -1,0 +1,28 @@
+
+==================================================================
+python setup.py install --install-layout=deb
+
+    Will put things into dist-packages.  Jeeze.
+
+==================================================================
+Following instructions at: http://wiki.debian.org/Python/Packaging
+
+Make a tarball with "setup.py sdist"
+py2dsc -m 'Brian Moe <brian.moe@ligo.org>' ligo-gracedb-1.0.tar.gz 
+mv stuff in deb_dist/.../debian to debian/
+    careful preserving existing changelog
+    copy over copyright file
+    check Standards-version in control file. should be (at least) 3.8.4
+    check Depends in control file.  misc:Depends and python-m2crypto might be missing
+        Depends: ${misc:Depends}, ${python:Depends}, python-m2crypto
+modify changelog
+bump GIT_TAG
+check-in
+tag
+build pkgs
+push (and remember to push tags)
+
+    debuild -i -us -uc -b
+
+    Change the "-b" to "-S" to build only a source package.
+
