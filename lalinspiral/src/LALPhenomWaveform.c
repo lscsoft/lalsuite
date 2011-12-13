@@ -558,6 +558,7 @@ int XLALBBHPhenWaveTimeDomForInjection (
   UINT4 count, i;
   REAL8 s, phiC;            /* phase at coalescence */
   CHAR message[256];
+  LIGOTimeGPS zero_time = {0, 0};
   InspiralInit paramsInit;
   int returnval = XLAL_SUCCESS;
 
@@ -654,8 +655,8 @@ int XLALBBHPhenWaveTimeDomForInjection (
   memset(waveform->a, 0, sizeof(REAL4TimeVectorSeries));
   waveform->h->data = XLALCreateREAL4VectorSequence(2, count);
   waveform->a->data = XLALCreateREAL4VectorSequence(2, count);
-  waveform->f = XLALCreateREAL4TimeSeries("Phenom inspiral frequency", NULL, 0, 1. / params->tSampling, &lalHertzUnit, count);
-  waveform->phi = XLALCreateREAL8TimeSeries("Phenom inspiral phase", NULL, 0, 1 / params->tSampling, &lalDimensionlessUnit, count);
+  waveform->f = XLALCreateREAL4TimeSeries("Phenom inspiral frequency", &zero_time, 0, 1. / params->tSampling, &lalHertzUnit, count);
+  waveform->phi = XLALCreateREAL8TimeSeries("Phenom inspiral phase", &zero_time, 0, 1 / params->tSampling, &lalDimensionlessUnit, count);
   if (!(waveform->h->data) || !(waveform->a->data) || !(waveform->f) || !(waveform->phi)) {
     XLALError(__func__, __FILE__, __LINE__, XLAL_ENOMEM);
     returnval = XLAL_FAILURE;
