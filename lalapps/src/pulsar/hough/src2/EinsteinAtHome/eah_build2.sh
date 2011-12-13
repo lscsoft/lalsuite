@@ -80,8 +80,10 @@ for i; do
 	    rebuild_boinc=""
 	    rebuild_lal=""
 	    rebuild="" ;;
+	--gc-opt)
+	    CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS" ;;
 	--64)
-	    CPPFLAGS="-DGC_SSE2_OPT -m64 $CPPFLAGS"
+	    CPPFLAGS="-m64 $CPPFLAGS"
 	    CXXFLAGS="-m64 $CXXFLAGS"
 	    CFLAGS="-m64 $CFLAGS"
 	    LDFLAGS="-m64 $LDFLAGS" ;;
@@ -97,7 +99,7 @@ for i; do
 	    planclass=__SSE
 	    acc="_sse";;
 	--sse2)
-	    CPPFLAGS="-DGC_SSE2_OPT -DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
+	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
             fftw_copts_single=--enable-sse
             fftw_copts_double=--enable-sse2
@@ -163,6 +165,7 @@ for i; do
 	    echo "  --sse             build an App that uses SSE"
 	    echo "  --sse2            build an App that uses SSE2"
 	    echo "  --altivec         build an App that uses AltiVec"
+	    echo "  --gc-opt          build an App that uses SSE2 GC optimization (doesn't work with current LineVeto code)"
 	    echo "  --boinc-rev=<rev> specify a BOINC SVN trunk revision to use"
 	    echo "  --with-ssl=<path> gets paased to BOINC configure"
 	    echo "  --check           test the newly built HierarchSearchGC App"
@@ -226,7 +229,6 @@ else
                 platform=powerpc-apple-darwin
 	    else
 		platform=i686-apple-darwin
-		CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS"
 	    fi
 	    LDFLAGS="-framework Carbon -framework AppKit -framework IOKit -framework CoreFoundation $LDFLAGS" ;;
 	Linux)
