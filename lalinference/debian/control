@@ -24,7 +24,7 @@ Description: LSC Algorithm Library Inference
 Package: lalinference-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
-  libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2), lal-dev (>= 6.6),
+  libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2), lal-dev (>= 6.6.0),
   lalframe-dev (>= 1.0.3), lalmetaio-dev (>= 1.0.2),
   lalsimulation-dev (>= 0.1.0), lalinspiral-dev (>= 1.2.0),
   lalpulsar-dev (>= 1.2.0), lalinference (= ${binary:Version})
