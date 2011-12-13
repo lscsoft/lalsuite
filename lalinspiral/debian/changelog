@@ -1,3 +1,9 @@
+lalinspiral (1.2.0-1) unstable; urgency=low
+
+  * LALInspiral 1.2.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 13:03:44 -0600
+
 lalinspiral (1.2.0~rc2-1) unstable; urgency=low
 
   * LALInspiral 1.2.0 Release Candidate 2
