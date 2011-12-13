@@ -1,3 +1,9 @@
+lalxml (1.1.1-1) unstable; urgency=low
+
+  * LALXML 1.1.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 13:00:01 -0600
+
 lalxml (1.1.1~rc2-1) unstable; urgency=low
 
   * LALXML 1.1.1 Release Candidate 2
