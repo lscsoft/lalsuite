@@ -73,7 +73,7 @@ class LALInferenceNode(pipeline.CondorDAGNode):
                 cache=data_typles[ifo][1].get_df_node().get_output_files()([0])
             ifostring=ifostring+ifo+','
             cachestring=cachestring+cache+','
-            channelstring=channelstring+self.job().get_cp().get('data',ifo.lower()+'-channel'))
+            channelstring=channelstring+self.job().get_cp().get('data',ifo.lower()+'-channel')
         ifostring=ifostring+']'
         cachestring=cachestring+']'
         channelstring=channelstring+']'
@@ -100,7 +100,7 @@ class LALInferenceNode(pipeline.CondorDAGNode):
             length=maxLength
 
         self.add_var_opt('PSDlength',str(int(length)))
-        self.add_var_opt('seglen'self.job().get_cp().get('analysis','psd-chunk-length'))
+        self.add_var_opt('seglen',self.job().get_cp().get('analysis','psd-chunk-length'))
 
 
     def get_ifos(self):
