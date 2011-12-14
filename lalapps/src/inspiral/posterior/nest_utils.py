@@ -25,6 +25,112 @@ class InspNestJob(pipeline.CondorDAGJob):
         self.set_stderr_file(os.path.join(logdir,'inspnest-$(cluster)-$(process).err'))
     get_cp = lambda self: self.__cp
 
+class LALInferenceNode(pipeline.CondorDAGJob):
+    """
+    Class defining the Condor Job for inspnest to be run as part of a pipeline
+    Input arguments:
+        cp          - A ConfigParser object containing the inspnest section
+        submitFile     - Path to store the submit file
+        logdir         - A directory to hold the stderr, stdout files of inspnest
+    """
+    def __init__(self,cp,submitFile,logdir):
+        exe=cp.get('condor','lalinference')
+        pipeline.CondorDAGJob.__init__(self,"standard",exe)
+        # Set the options which are always used
+        self.set_sub_file(submitFile)
+        self.add_ini_opts(cp,'lalinference')
+        self.__cp=cp
+        self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process).out'))
+        self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process).err'))
+    get_cp = lambda self: self.__cp
+
+class LALInferenceNode(pipeline.CondorDAGNode):
+    """
+    Class defining a condor DAG node for lalinferencenest jobs
+    """
+    def __init__(self,li_job):
+        pipeline.CondorDAGNode.__init__(self,li_job)
+    def add_ifo_data(self,data_tuples,ifos=None):
+        """
+        Add list of IFOs and data to analyse.
+        data_tuples is a dictionary of available (cache,channel) tuples
+        ifos is an optional list of IFOs to include. If not specified analyse all available
+        """
+        cp = self.job().get_cp()
+        allifos=data_tuples.keys()
+        if ifos is None:
+            self.__ifos=allifos
+        else:
+            self.__ifos=ifos
+
+        ifostring='['
+        cachestring='['
+        channelstring='['
+        for ifo in self.__ifos:
+            if data_tuples[ifo][1] is None:
+                cache=self.job().get_cp().get('data',ifo.lower()+'-channel')
+            else:
+                cache=data_typles[ifo][1].get_df_node().get_output_files()([0])
+            ifostring=ifostring+ifo+','
+            cachestring=cachestring+cache+','
+            channelstring=channelstring+self.job().get_cp().get('data',ifo.lower()+'-channel'))
+        ifostring=ifostring+']'
+        cachestring=cachestring+']'
+        channelstring=channelstring+']'
+        self.add_var_arg('--IFO '+ifostring)
+        self.add_var_arg('--channel '+channelstring)
+        self.add_var_arg('--cache '+cachestring)
+        # Start at earliest common time
+        # NOTE: We perform this arithmetic for all ifos to ensure that a common data set is
+        # Used when we are running the coherence test.
+        # Otherwise the noise evidence will differ.
+        starttime=max([int(data_tuples[ifo][0][0]) for ifo in allifos])
+        endtime=min([int(data_tuples[ifo][0][1]) for ifo in allifos])
+
+        # Now we need to adjust the start time and length to make sure the maximum data length
+        # is not exceeded.
+        trig_time=self.get_trig_time()
+        maxLength=float(cp.get('analysis','analysis-chunk-length'))
+        if(length > maxLength):
+            while(self.__GPSstart+maxLength<trig_time and self.__GPSstart+maxLength<self.__GPSend):
+                    self.__GPSstart+=maxLength/2.0
+        self.add_var_opt('PSDstart',str(self.__GPSstart))
+        length=self.__GPSend-self.__GPSstart
+        if(length>maxLength):
+            length=maxLength
+
+        self.add_var_opt('PSDlength',str(int(length)))
+        self.add_var_opt('seglen'self.job().get_cp().get('analysis','psd-chunk-length'))
+
+
+    def get_ifos(self):
+        return ''.join(map(str,self.__ifos))
+
+    def set_output(self,outfile):
+        """
+        Set output file command line argument and add outfile
+        to the list of nodes output files
+        """
+        self.add_file_opt('outfile',outfile,file_is_output_file=True)
+
+    def set_trig_time(self,time):
+        """
+        Set the end time of the signal for the centre of the prior in time
+        """
+        self.__trigtime=float(time)
+        self.add_var_opt('--trigtime',str(time))
+
+    def set_event_number(self,event):
+
+        """
+        Set the event number in the injection XML.
+        """
+        if event is not None:
+            self.__event=int(event)
+            self.add_var_opt('event',str(event))
+
+    get_trig_time = lambda self: self.__trigtime
+
 class InspNestNode(pipeline.CondorDAGNode):
     """
     Class defining a Condor DAG node for inspnest jobs.
