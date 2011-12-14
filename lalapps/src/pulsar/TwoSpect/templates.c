@@ -555,7 +555,7 @@ templateStruct * new_templateStruct(INT4 length)
    } else if (templatestruct->secondfftfrequencies==NULL) {
       fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, length);
       XLAL_ERROR_NULL(XLAL_EFUNC);
-   } 
+   }
    
    /* for (ii=0; ii<length; ii++) {
       templatestruct->templatedata->data[ii] = 0.0;
@@ -810,14 +810,15 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    } */
    REAL4Vector *sigmas = XLALCreateREAL4Vector((UINT4)(fnumend-fnumstart+1));
    REAL4Vector *wvals = XLALCreateREAL4Vector((UINT4)floor(2.0*input.period/params->Tcoh));
-   REAL4Vector *allsigmas = XLALCreateREAL4Vector(wvals->length * sigmas->length);
    if (sigmas==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (UINT4)(fnumend-fnumstart+1));
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (wvals==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (UINT4)floor(2.0*input.period/params->Tcoh));
       XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (allsigmas==NULL) {
+   }
+   REAL4Vector *allsigmas = XLALCreateREAL4Vector(wvals->length * sigmas->length);
+   if (allsigmas==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, wvals->length * sigmas->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
@@ -1178,12 +1179,13 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    
    //Do the second FFT
    REAL4Vector *x = XLALCreateREAL4Vector(numffts);
-   REAL4Window *win = XLALCreateHannREAL4Window(x->length);
-   REAL4Vector *psd = XLALCreateREAL4Vector((INT4)floor(x->length*0.5)+1);
    if (x==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numffts);
       XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (win==NULL) {
+   }
+   REAL4Window *win = XLALCreateHannREAL4Window(x->length);
+   REAL4Vector *psd = XLALCreateREAL4Vector((INT4)floor(x->length*0.5)+1);
+   if (win==NULL) {
       fprintf(stderr,"%s: XLALCreateHannREAL4Window(%d) failed.\n", __func__, x->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (psd==NULL) {

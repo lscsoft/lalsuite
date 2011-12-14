@@ -362,16 +362,17 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    //Allocations for IHS values for the number of trials
    REAL4Vector *noise = XLALCreateREAL4Vector(aveNoise->length);
    REAL4Vector *ihsvector = XLALCreateREAL4Vector((INT4)floor((1.0/(REAL8)params->ihsfactor)*aveNoise->length)-5);
-   REAL4VectorSequence *ihsvectorsequence = XLALCreateREAL4VectorSequence(trials, ihsvector->length);
-   REAL4Vector *ihss = XLALCreateREAL4Vector(trials);
-   INT4Vector *locs = XLALCreateINT4Vector(trials);
    if (noise==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, aveNoise->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (ihsvector==NULL) {
       fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)floor((1.0/(REAL8)params->ihsfactor)*aveNoise->length)-5);
       XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (ihsvectorsequence==NULL) {
+   }
+   REAL4VectorSequence *ihsvectorsequence = XLALCreateREAL4VectorSequence(trials, ihsvector->length);
+   REAL4Vector *ihss = XLALCreateREAL4Vector(trials);
+   INT4Vector *locs = XLALCreateINT4Vector(trials);
+   if (ihsvectorsequence==NULL) {
       fprintf(stderr, "%s: XLALCreateREAL4VectorSequence(%d,%d) failed.\n", __func__, trials, ihsvector->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (ihss==NULL) {
@@ -467,12 +468,12 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
    memset(tworows->data, 0, sizeof(REAL4)*tworows->length*tworows->vectorLength);
    
    REAL4Vector *ihsvalues = XLALCreateREAL4Vector(ihsvectorsequence->length);
-   INT4Vector *ihslocations = XLALCreateINT4Vector(ihsvalues->length);
+   INT4Vector *ihslocations = XLALCreateINT4Vector(ihsvectorsequence->length);
    if (ihsvalues==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (ihslocations==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvalues->length);
+      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ihsvectorsequence->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    for (ii=0; ii<(INT4)ihsvalues->length; ii++) {
@@ -551,6 +552,10 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             //fclose(tworowvals);
          } else {
             sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
+            if (sampledtempihsvals==NULL) {
+               fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
             memcpy(sampledtempihsvals->data, tworows->data, sizeof(REAL4)*sampledtempihsvals->length);
             outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
             for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
@@ -656,6 +661,10 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             //if (ii==360) fclose(row360expect);
          } else {
             sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
+            if (sampledtempihsvals==NULL) {
+               fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
             memcpy(sampledtempihsvals->data, tworows->data, sizeof(REAL4)*sampledtempihsvals->length);
             outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
             for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) {
@@ -726,12 +735,12 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
    memset(tworows->data, 0, sizeof(REAL4)*tworows->length*tworows->vectorLength);
    
    REAL4Vector *ihsvalues = XLALCreateREAL4Vector(ihsvectorsequence->length);
-   INT4Vector *ihslocations = XLALCreateINT4Vector(ihsvalues->length);
+   INT4Vector *ihslocations = XLALCreateINT4Vector(ihsvectorsequence->length);
    if (ihsvalues==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (ihslocations==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvalues->length);
+      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ihsvectorsequence->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    for (ii=0; ii<(INT4)ihsvalues->length; ii++) {

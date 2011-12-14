@@ -478,7 +478,7 @@ int main(int argc, char *argv[])
       
       
       //Compute antenna pattern weights. If antennaOff input flag is given, then set all values equal to 1.0
-      REAL4Vector *antweights = XLALCreateREAL4Vector((UINT4)ffdata->numffts);
+      REAL4Vector *antweights = XLALCreateREAL4Vector(ffdata->numffts);
       if (antweights==NULL) {
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
          XLAL_ERROR(XLAL_EFUNC);
@@ -502,11 +502,12 @@ int main(int argc, char *argv[])
       
       //Slide SFTs here -- need to slide the data and the estimated background
       REAL4Vector *TFdata_slided = XLALCreateREAL4Vector((UINT4)(ffdata->numffts*ffdata->numfbins));
-      REAL4Vector *background_slided = XLALCreateREAL4Vector(TFdata_slided->length);
       if (TFdata_slided==NULL) {
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (UINT4)(ffdata->numffts*ffdata->numfbins));
          XLAL_ERROR(XLAL_EFUNC);
-      } else if (background_slided==NULL) {
+      }
+      REAL4Vector *background_slided = XLALCreateREAL4Vector(TFdata_slided->length);
+      if (background_slided==NULL) {
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, TFdata_slided->length);
          XLAL_ERROR(XLAL_EFUNC);
       }
@@ -1904,12 +1905,13 @@ void makeSecondFFT(ffdataStruct *output, REAL4Vector *tfdata, REAL4FFTPlan *plan
    
    //Do the second FFT
    REAL4Vector *x = XLALCreateREAL4Vector(output->numffts);
-   REAL4Window *win = XLALCreateHannREAL4Window(x->length);
-   REAL4Vector *psd = XLALCreateREAL4Vector((UINT4)floor(x->length*0.5)+1);
    if (x==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, output->numffts);
       XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (win==NULL) {
+   }
+   REAL4Window *win = XLALCreateHannREAL4Window(x->length);
+   REAL4Vector *psd = XLALCreateREAL4Vector((UINT4)floor(x->length*0.5)+1);
+   if (win==NULL) {
       fprintf(stderr,"%s: XLALCreateHannREAL4Window(%d) failed.\n", __func__, x->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (psd==NULL) {
@@ -2102,7 +2104,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    
    //Load time series of powers, normalize, mean subtract and Hann window
    REAL4Vector *x = XLALCreateREAL4Vector(aveNoiseInTime->length);
-   REAL8Vector *multiplicativeFactor = XLALCreateREAL8Vector(x->length);
+   REAL8Vector *multiplicativeFactor = XLALCreateREAL8Vector(aveNoiseInTime->length);
    if (x==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, aveNoiseInTime->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
