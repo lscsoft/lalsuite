@@ -25,7 +25,7 @@ class InspNestJob(pipeline.CondorDAGJob):
         self.set_stderr_file(os.path.join(logdir,'inspnest-$(cluster)-$(process).err'))
     get_cp = lambda self: self.__cp
 
-class LALInferenceNode(pipeline.CondorDAGJob):
+class LALInferenceJob(pipeline.CondorDAGJob):
     """
     Class defining the Condor Job for inspnest to be run as part of a pipeline
     Input arguments:
@@ -314,7 +314,7 @@ class ResultsPageNode(pipeline.CondorDAGNode):
             self.add_var_arg('--eventnum '+str(event))
 # Function definitions for setting up groups of nodes
 
-def setup_single_nest(cp,nest_job,end_time,data,path,ifos=None,event=None):
+def setup_single_nest(cp,nest_job,end_time,data,path,ifos=None,event=None,nodeclass=InspNestNode):
     """
     Setup nodes for analysing a single time
     cp - configparser object
@@ -322,8 +322,9 @@ def setup_single_nest(cp,nest_job,end_time,data,path,ifos=None,event=None):
     time - gps time of the centre of the prior
     data - dictionary of (seg,science_segment) tuple for ifos
     ifos - optional list of IFOs to analyse. If not specified analyse all available.
+    nodeclass - custom class to use, must implement the InspNestNode above
     """
-    nest_node=InspNestNode(nest_job)
+    nest_node=nodeclass(nest_job)
     nest_node.set_trig_time(end_time)
     nest_node.set_event_number(event)
     nest_node.add_ifo_data(data,ifos)
@@ -332,7 +333,7 @@ def setup_single_nest(cp,nest_job,end_time,data,path,ifos=None,event=None):
     return nest_node
 
 
-def setup_parallel_nest(cp,nest_job,merge_job,end_time,data,path,ifos=None,event=None):
+def setup_parallel_nest(cp,nest_job,merge_job,end_time,data,path,ifos=None,event=None,nodeclass=InspNestNode):
     """
     Setup nodes for analysing a single time using
     parallel runs
@@ -342,13 +343,14 @@ def setup_parallel_nest(cp,nest_job,merge_job,end_time,data,path,ifos=None,event
     end_time - time to centre prior on
     data - dictionary of (seg,science_segment) tuple for ifos
     ifos - optional list of IFOs to analyse. If not specified analyse all available.
+    nodeclass - custom class to use, must implement the InspNestNode above
     """
     nparallel=int(cp.get('analysis','nparallel'))
     merge_node=MergeNode(merge_job)
     merge_node.add_var_opt('Nlive',cp.get('analysis','nlive'))
     nest_nodes=[]
     for i in range(nparallel):
-        nest_node=InspNestNode(nest_job)
+        nest_node=nodeclass(nest_job)
         nest_node.set_trig_time(end_time)
         nest_nodes.append(nest_node)
         nest_node.add_ifo_data(data,ifos)
