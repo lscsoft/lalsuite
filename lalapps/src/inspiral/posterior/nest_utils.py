@@ -66,14 +66,20 @@ class LALInferenceNode(pipeline.CondorDAGNode):
         ifostring='['
         cachestring='['
         channelstring='['
+        first=True
         for ifo in self.__ifos:
+            if first:
+                delim=''
+                first=False
+            else: delim=','
             if data_tuples[ifo][1] is None:
                 cache=self.job().get_cp().get('data',ifo.lower()+'-channel')
             else:
                 cache=data_tuples[ifo][1].get_df_node().get_output_files()[0]
-            ifostring=ifostring+ifo+','
-            cachestring=cachestring+cache+','
-            channelstring=channelstring+self.job().get_cp().get('data',ifo.lower()+'-channel')
+                self.add_parent(data_tuples[ifo][1].get_df_node())
+            ifostring=ifostring+delim+ifo
+            cachestring=cachestring+delim+cache
+            channelstring=channelstring+delim+self.job().get_cp().get('data',ifo.lower()+'-channel')
         ifostring=ifostring+']'
         cachestring=cachestring+']'
         channelstring=channelstring+']'
