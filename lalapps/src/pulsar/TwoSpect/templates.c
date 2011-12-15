@@ -1083,8 +1083,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    for (ii=0; ii<params->mintemplatelength; ii++) sum += (REAL8)output->templatedata->data[ii];
    ii = params->mintemplatelength;
    while (ii<(INT4)output->templatedata->length && output->templatedata->data[ii]>=epsval_float((REAL4)sum)) {
-      ii++;
       sum += (REAL8)output->templatedata->data[ii];
+      ii++;
    }
    for (/* last ii val */; ii<(INT4)output->templatedata->length; ii++) output->templatedata->data[ii] = 0.0;
    
@@ -1274,8 +1274,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    for (ii=0; ii<params->mintemplatelength; ii++) sum += (REAL8)output->templatedata->data[ii];
    ii = params->mintemplatelength;
    while (ii<(INT4)output->templatedata->length && output->templatedata->data[ii]>=epsval_float((REAL4)sum)) {
-      ii++;
       sum += (REAL8)output->templatedata->data[ii];
+      ii++;
    }
    for (/* last ii val */; ii<(INT4)output->templatedata->length; ii++) output->templatedata->data[ii] = 0.0;
    
