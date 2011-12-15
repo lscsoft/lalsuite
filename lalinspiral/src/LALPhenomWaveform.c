@@ -671,8 +671,8 @@ int XLALBBHPhenWaveTimeDomForInjection (
    */
   memcpy(waveform->h->data->data, h->data, 2*count*(sizeof(REAL4)));
   memcpy(waveform->a->data->data, a->data, 2*count*(sizeof(REAL4)));
-  memcpy(waveform->f->data, ff->data, count*(sizeof(REAL4)));
-  memcpy(waveform->phi->data, phi->data, count*(sizeof(REAL8)));
+  memcpy(waveform->f->data->data, ff->data, count*(sizeof(REAL4)));
+  memcpy(waveform->phi->data->data, phi->data, count*(sizeof(REAL8)));
 
   /* also set other parameters in the waveform structure */
   waveform->h->sampleUnits = waveform->a->sampleUnits = lalStrainUnit;
