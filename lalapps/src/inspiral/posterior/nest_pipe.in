@@ -366,7 +366,14 @@ if len(times)==0:
     sys.exit(1)
 
 inspnest_subfile=os.path.join(opts.run_path,'inspnest.sub')
-inspnest_job=OddsPipeline.InspNestJob(cp,inspnest_subfile,opts.jobs_log_path)
+if opts.program == 'inspnest':
+	inspnest_job=OddsPipeline.InspNestJob(cp,inspnest_subfile,opts.jobs_log_path)
+else:
+	if opts.program == 'lalinferencenest':
+		inspnest_job=OddsPipeline.LALInferenceJob(cp,inspnest_subfile,opts.jobs_log_path)
+	else:
+		raise Exception('Unknown program %s'%(opts.program))
+
 inspnest_job.add_opt('Nlive',cp.get('analysis','nlive'))
 inspnest_job.add_opt('Nmcmc',cp.get('analysis','nmcmc'))
 

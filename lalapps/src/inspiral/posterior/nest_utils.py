@@ -70,7 +70,7 @@ class LALInferenceNode(pipeline.CondorDAGNode):
             if data_tuples[ifo][1] is None:
                 cache=self.job().get_cp().get('data',ifo.lower()+'-channel')
             else:
-                cache=data_typles[ifo][1].get_df_node().get_output_files()([0])
+                cache=data_tuples[ifo][1].get_df_node().get_output_files()[0]
             ifostring=ifostring+ifo+','
             cachestring=cachestring+cache+','
             channelstring=channelstring+self.job().get_cp().get('data',ifo.lower()+'-channel')
@@ -86,7 +86,10 @@ class LALInferenceNode(pipeline.CondorDAGNode):
         # Otherwise the noise evidence will differ.
         starttime=max([int(data_tuples[ifo][0][0]) for ifo in allifos])
         endtime=min([int(data_tuples[ifo][0][1]) for ifo in allifos])
-
+        self.__GPSstart=starttime
+        self.__GPSend=endtime
+        length=endtime-starttime
+    
         # Now we need to adjust the start time and length to make sure the maximum data length
         # is not exceeded.
         trig_time=self.get_trig_time()
