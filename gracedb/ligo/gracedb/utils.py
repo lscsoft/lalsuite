@@ -3,11 +3,16 @@
 from math import log
 from time import gmtime, strftime
 
-from pylal import Fr
-from glue.lal import LIGOTimeGPS
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
+try:
+    from pylal import Fr
+    from glue.lal import LIGOTimeGPS
+    from glue.ligolw import ligolw
+    from glue.ligolw import table
+    from glue.ligolw import lsctables
+except ImportError:
+    import warnings
+    warnings.warn("pylal and/or glue not installed.  Most features of ligo.gracedb.utils will be unavailable.")
+
 
 ##############################################################################
 #
@@ -15,16 +20,19 @@ from glue.ligolw import lsctables
 #
 ##############################################################################
 
-#Need these for each search: inspiral, burst, etc.
-InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", \
-                                      search_coinc_type = 0, \
-                                      description = \
-                                      u"sngl_inspiral<-->sngl_inspiral coincidences")
-#these should work for both Omega and CWB
-BurstCoincDef = lsctables.CoincDef(search = u"burst", \
-                                      search_coinc_type = 0, \
-                                      description = \
-                                      u"coherent burst coincidences")
+try:
+  #Need these for each search: inspiral, burst, etc.
+  InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", \
+                                        search_coinc_type = 0, \
+                                        description = \
+                                        u"sngl_inspiral<-->sngl_inspiral coincidences")
+  #these should work for both Omega and CWB
+  BurstCoincDef = lsctables.CoincDef(search = u"burst", \
+                                        search_coinc_type = 0, \
+                                        description = \
+                                        u"coherent burst coincidences")
+except NameError:
+  pass
 
 #list of detectors participating in the coinc
 #MBTA only sends triples to gracedb at the time being so this list is
