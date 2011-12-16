@@ -1370,9 +1370,18 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
   REAL8 mu = -B / (2.0*C);
   REAL8 sigma2 = 1.0 / (2.0*C);
 
+  static INT8 weirdProposalCount = 0;
+  static INT8 thresholdProposalCount = 1;
+
   if (C<=0.0) {
     /* Flat or linear likelihood, or negative curvature in the
        gaussian---choose uniformly in prior range. */
+    weirdProposalCount++;
+    if (weirdProposalCount >= thresholdProposalCount) {
+      thresholdProposalCount *= 2;
+      XLAL_PRINT_WARNING("found infinite or negative sigma^2 (%g), using fallback proposal (for the %dth time overall)",
+                         sigma2, weirdProposalCount);
+    }
     if (distParam == USES_DISTANCE_VARIABLE) {
       REAL8 dMax, dMin;
       LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", &dMin, &dMax);
