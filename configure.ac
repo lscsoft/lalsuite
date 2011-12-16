@@ -9,7 +9,6 @@ AC_CONFIG_FILES([
   doxygen/src/Makefile
 ])
 AM_INIT_AUTOMAKE([foreign])
-AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
