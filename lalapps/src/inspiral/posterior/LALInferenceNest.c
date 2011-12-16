@@ -445,9 +445,9 @@ Parameter arguments:\n\
 		if(ppt){
 		  event = atoi(ppt->value);
 		  while(i<event) {i++; injTable = injTable->next;}
-		  endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
 		}
-
+		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
+        fprintf(stderr,"Read trig time %lf from injection XML file\n",endtime);
 		AmpOrder=injTable->amp_order;
 		LALGetOrderFromString(&status,injTable->waveform,&PhaseOrder);
 		LALGetApproximantFromString(&status,injTable->waveform,&approx);

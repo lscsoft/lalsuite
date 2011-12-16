@@ -1606,8 +1606,8 @@ void NestInitManual(LALMCMCParameter *parameter, void UNUSED *iT)
 	double mcmin,mcmax;
 	parameter->param=NULL;
 	parameter->dimension = 0;
-	mcmin=manual_mass_low;
-	mcmax=manual_mass_high;
+	mcmin=manual_mass_low*pow(etamin,-3./5.);
+	mcmax=manual_mass_high*pow(0.25,3./5.);
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 	double lDmin=log(manual_dist_min);
@@ -1751,9 +1751,9 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	etamin=0.01;
 	double etamax = 0.25;
 	mc=m2mc(injTable->mass1,injTable->mass2);
-	mcmin=manual_mass_low;
+	mcmin=manual_mass_low*pow(etamin,3./5.);
 	REAL8 m_comp_min=1., m_comp_max=15.;
-	mcmax=manual_mass_high;
+	mcmax=manual_mass_high*pow(etamax,3./5.);
 
 	lmmin=log(mcmin);
 	lmmax=log(mcmax);

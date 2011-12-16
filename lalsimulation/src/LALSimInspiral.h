@@ -866,7 +866,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8TimeSeries **E1x,    /**< orb. plane basis vector x[returned]*/
 	REAL8TimeSeries **E1y,    /**< "    "    "  y component [returned]*/
 	REAL8TimeSeries **E1z,    /**< "    "    "  z component [returned]*/
-	REAL8 phi0,               /**< orbital phase at initial time */
+	REAL8 phi_end,            /**< orbital phase at last sample */
 	REAL8 deltaT,          	  /**< sampling interval (s) */
 	REAL8 m1,              	  /**< mass of companion 1 (kg) */
 	REAL8 m2,              	  /**< mass of companion 2 (kg) */
@@ -899,8 +899,8 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 int XLALSimInspiralSpinTaylorT4(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 		REAL8TimeSeries **hcross, /**< x-polarization waveform */
-		REAL8 phi0,               /**< initial GW phase (rad) */
-		REAL8 v0,                 /**< tail gauge term (default = 0) */
+		REAL8 phi_end,            /**< GW phase of final sample (rad) */
+		REAL8 v0,                 /**< tail gauge term (default = 1) */
 		REAL8 deltaT,             /**< sampling interval (s) */
 		REAL8 m1,                 /**< mass of companion 1 (kg) */
 		REAL8 m2,                 /**< mass of companion 2 (kg) */
@@ -918,9 +918,9 @@ int XLALSimInspiralSpinTaylorT4(
 		REAL8 e1x,                /**< initial value of E1x */
 		REAL8 e1y,                /**< initial value of E1y */
 		REAL8 e1z,                /**< initial value of E1z */
-		REAL8 lambda1,                /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-		REAL8 lambda2,                /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-		LALSimInspiralInteraction interactionFlags,    /**< flag to control spin and tidal effects */
+		REAL8 lambda1,            /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+		REAL8 lambda2,            /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
 		int phaseO,               /**< twice PN phase order */
 		int amplitudeO            /**< twice PN amplitude order */
 		);
@@ -935,31 +935,31 @@ int XLALSimInspiralSpinTaylorT4(
  * but allows hte user to specify the phase PN order
  */
 int XLALSimInspiralRestrictedSpinTaylorT4(
-		REAL8TimeSeries **hplus,   /**< +-polarization waveform */
-		REAL8TimeSeries **hcross,  /**< x-polarization waveform */
-		REAL8 phi0,                /**< initial GW phase (rad) */
-		REAL8 v0,                  /**< tail gauge term (default = 0) */
-		REAL8 deltaT,              /**< sampling interval (s) */
-		REAL8 m1,                  /**< mass of companion 1 (kg) */
-		REAL8 m2,                  /**< mass of companion 2 (kg) */
-		REAL8 fStart,              /**< start GW frequency (Hz) */
-		REAL8 r,                   /**< distance of source (m) */
-		REAL8 s1x,                 /**< initial value of S1x */
-		REAL8 s1y,                 /**< initial value of S1y */
-		REAL8 s1z,                 /**< initial value of S1z */
-		REAL8 s2x,                 /**< initial value of S2x */
-		REAL8 s2y,                 /**< initial value of S2y */
-		REAL8 s2z,                 /**< initial value of S2z */
-		REAL8 lnhatx,              /**< initial value of LNhatx */
-		REAL8 lnhaty,              /**< initial value of LNhaty */
-		REAL8 lnhatz,              /**< initial value of LNhatz */
-		REAL8 e1x,                 /**< initial value of E1x */
-		REAL8 e1y,                 /**< initial value of E1y */
-		REAL8 e1z,                 /**< initial value of E1z */
-		REAL8 lambda1,                /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-		REAL8 lambda2,                /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-	    LALSimInspiralInteraction interactionFlags,    /**< flag to control spin and tidal effects */
-		int phaseO                 /**< twice PN phase order */
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+		REAL8TimeSeries **hcross, /**< x-polarization waveform */
+		REAL8 phi_end,            /**< GW phase of final sample (rad) */
+		REAL8 v0,                 /**< tail gauge term (default = 1) */
+		REAL8 deltaT,             /**< sampling interval (s) */
+		REAL8 m1,                 /**< mass of companion 1 (kg) */
+		REAL8 m2,                 /**< mass of companion 2 (kg) */
+		REAL8 fStart,             /**< start GW frequency (Hz) */
+		REAL8 r,                  /**< distance of source (m) */
+		REAL8 s1x,                /**< initial value of S1x */
+		REAL8 s1y,                /**< initial value of S1y */
+		REAL8 s1z,                /**< initial value of S1z */
+		REAL8 s2x,                /**< initial value of S2x */
+		REAL8 s2y,                /**< initial value of S2y */
+		REAL8 s2z,                /**< initial value of S2z */
+		REAL8 lnhatx,             /**< initial value of LNhatx */
+		REAL8 lnhaty,             /**< initial value of LNhaty */
+		REAL8 lnhatz,             /**< initial value of LNhatz */
+		REAL8 e1x,                /**< initial value of E1x */
+		REAL8 e1y,                /**< initial value of E1y */
+		REAL8 e1z,                /**< initial value of E1z */
+		REAL8 lambda1,            /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+		REAL8 lambda2,            /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	    LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+		int phaseO                /**< twice PN phase order */
 		);
 
 /**

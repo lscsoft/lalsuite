@@ -57,6 +57,7 @@ parser.add_option("--enable-pages-alltimes",action="store_true",default=False,he
 parser.add_option("--condor-submit",action="store_true",default=False,help="Automatically submit the condor dag")
 parser.add_option("--ignore-science-mode",action="store_true",default=False,help="Skip the segment database step and try and find data for all specified times.")
 parser.add_option("--notify",action="store",default=None,help="Optional e-mail address to notify upon completion",metavar="you@yourdomain.edu")
+parser.add_option("-X","--program",action="store",default="inspnest",help="Over-ride program to run, e.g. -X lalinferencenest",metavar="lalinferencenest")
 
 (opts,args)=parser.parse_args()
 
@@ -64,6 +65,11 @@ cp=ConfigParser.ConfigParser()
 cp.read(opts.ini_file)
 #Get ifos from string list
 ifos=eval(cp.get('analysis','ifos'))
+
+if opts.program == "inspnest":
+    nestclass=OddsPipeline.InspNestNode
+if opts.program == "lalinferencenest":
+    nestclass=OddsPipeline.LALInferenceNode
 
 ## This function is used to put the ifos.keys() in the same order than in the ifos section in the parser, whist passing them to the inspnest nodes
 def sort_ifo(a,b):
@@ -360,7 +366,14 @@ if len(times)==0:
     sys.exit(1)
 
 inspnest_subfile=os.path.join(opts.run_path,'inspnest.sub')
-inspnest_job=OddsPipeline.InspNestJob(cp,inspnest_subfile,opts.jobs_log_path)
+if opts.program == 'inspnest':
+	inspnest_job=OddsPipeline.InspNestJob(cp,inspnest_subfile,opts.jobs_log_path)
+else:
+	if opts.program == 'lalinferencenest':
+		inspnest_job=OddsPipeline.LALInferenceJob(cp,inspnest_subfile,opts.jobs_log_path)
+	else:
+		raise Exception('Unknown program %s'%(opts.program))
+
 inspnest_job.add_opt('Nlive',cp.get('analysis','nlive'))
 inspnest_job.add_opt('Nmcmc',cp.get('analysis','nmcmc'))
 
@@ -405,7 +418,7 @@ if nparallel==1:
                 thisevent=time_event[time]
         else:
                 thisevent=None
-        inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=sorted(segments_by_time[time].keys(),sort_ifo),event=thisevent)
+        inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=sorted(segments_by_time[time].keys(),sort_ifo),event=thisevent,nodeclass=nestclass)
         inspnest_nodes_by_time[time]=inspnest_node
         dag.add_node(inspnest_node)
         combine_each_time_nodes[time].add_parent(inspnest_node)
@@ -418,7 +431,7 @@ else:
                 thisevent=time_event[time]
         else:
                 thisevent=None
-        (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=sorted(segments_by_time[time].keys(),sort_ifo),event=thisevent)
+        (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=sorted(segments_by_time[time].keys(),sort_ifo),event=thisevent,nodeclass=nestclass)
         dag.add_node(merge_node)
         map(dag.add_node,inspnest_nodes)
         nest_files[time]=merge_node.get_output_files()[0]
@@ -471,14 +484,14 @@ if opts.coherence_test:
             else:
                 thisevent=None
             if nparallel>1:
-                (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=thisevent)
+                (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=thisevent,nodeclass=nestclass)
                 dag.add_node(merge_node)
                 coherence_test_files[time][ifo]=merge_node.get_output_files()[0]
                 combine_node.add_parent(merge_node)
                 coherence_test_node.add_parent(merge_node)
                 coherence_inspnest_nodes[time][ifo]=merge_node
             else:
-                inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=thisevent)
+                inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=thisevent,nodeclass=nestclass)
                 inspnest_nodes=[inspnest_node]
                 coherence_test_files[time][ifo]=inspnest_node.get_output_files()[0]
                 combine_node.add_parent(inspnest_node)

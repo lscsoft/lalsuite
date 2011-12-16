@@ -1,3 +1,24 @@
+lalframe (1.0.3-1) unstable; urgency=low
+
+  * LALFrame 1.0.3
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 12:42:43 -0600
+
+lalframe (1.0.3~rc2-1) unstable; urgency=low
+
+  * LALFrame 1.0.3 Release Candidate 2
+  * bug fixes to low latency data api
+  * added test codes for low latency data api
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 09 Dec 2011 14:44:24 -0600
+
+lalframe (1.0.3~rc1-1) unstable; urgency=low
+
+  * LALFrame 1.0.3 Release Candidate 1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 14:42:11 -0600
+
 lalframe (1.0.2-1lscsoft1) unstable; urgency=low
 
   * LALFrame 1.0.2

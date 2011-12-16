@@ -34,6 +34,16 @@
 
 #include<math.h>
 
+#include<stdlib.h>
+
+/* Comparison function for qsorting the arrays later */
+static int cmpREAL8p(const void *p1, const void *p2);
+REAL8 PriorCDF(const char *name, const REAL8 x, LALInferenceVariables *priorArgs);
+
+REAL8 rSquaredCDF(const REAL8 x, const REAL8 min, const REAL8 max);
+REAL8 FlatInSine(const REAL8 x,const REAL8 min,const REAL8 max);
+REAL8 FlatInCosine(const REAL8 x,const REAL8 min,const REAL8 max);
+REAL8 UniformMinMax(const REAL8 x,const REAL8 min,const REAL8 max);
 /** Efficient integer power computation. */
 REAL8 pow_int(const REAL8, const INT4);
 REAL8
@@ -477,17 +487,6 @@ void initVariables(LALInferenceRunState *state)
 	return;
 }
 
-static int cmpREAL8(const void *p1, const void *p2);
-static int cmpREAL8(const void *p1, const void *p2)
-{
-    REAL8 r1,r2;
-    r1=*(REAL8 *)p1;
-    r2=*(REAL8 *)p2;
-    if(r1<r2) return(-1);
-    if(r1==r2) return(0);
-    else return(1);
-}
-
 int main(int argc, char *argv[]) {
   
 	char help[]="\
@@ -503,7 +502,7 @@ int main(int argc, char *argv[]) {
 	ProcessParamsTable *ppt=NULL;
 	FILE *outfile=NULL;
 	char *filename=NULL;
-	LALInferenceParam *param=NULL;
+	LALInferenceVariableItem *param=NULL;
 	LALInferenceVariables *varArray=NULL;
 
 
@@ -584,17 +583,64 @@ int main(int argc, char *argv[]) {
     {
         if(param->type!=LALINFERENCE_REAL8_t) continue;
         /* Create sorted parameter vector */
-        REAL8 *sampvec=calloc(Nmcmc,sizeof(REAL8));
+        REAL8Vector *sampvec=XLALCreateREAL8Vector(Nmcmc);
         for(i=0;i<NvarArray;i++)
-            sampvec[i]=*(REAL8 *)LALInferenceGetVariable(varArray[i],param->name);
-
-        
+            sampvec->data[i]=*(REAL8 *)LALInferenceGetVariable(&(varArray[i]),param->name);
+        qsort((void *)(sampvec->data),NvarArray,sizeof(REAL8),cmpREAL8p);
 
         /* Create cumulative distribution */
+        REAL8Vector *cumvec=XLALCreateREAL8Vector(Nmcmc);
+        for(i=0;i<NvarArray;i++)
+            cumvec->data[i]=PriorCDF(param->name,sampvec->data[i],state->priorArgs);
 
-        free(sampvec);
+        /* Perform test*/
+        REAL8 Pval=KSPValue(sampvec,cumvec);
+        printf("%s: P-val = %lf\n",param->name,Pval);
+        XLALDestroyREAL8Vector(sampvec);
+        XLALDestroyREAL8Vector(cumvec);
     }
     
     return(0);
 }
 
+static int cmpREAL8p(const void *p1, const void *p2)
+{
+    REAL8 r1=*(const REAL8 *)p1;
+    REAL8 r2=*(const REAL8 *)p2;
+    if(r1<r2) return -1;
+    if(r1==r2) return 0;
+    else return 1;
+}
+
+/* Calculatethe CDF at point x for the variable given its name and the prior args */
+REAL8 PriorCDF(const char *name, const REAL8 x, LALInferenceVariables *priorArgs)
+{
+    REAL8 min=0,max=0;
+    LALInferenceGetMinMaxPrior(priorArgs,name,&min,&max);
+    if(!strcmp(name,"inclination")) return(FlatInCosine(x,min,max));
+    if(!strcmp(name,"declination")) return(FlatInSine(x,min,max));
+    if(!strcmp(name,"distance")) return(rSquaredCDF(x,min,max));
+    if(!strcmp(name,"logdistance")) return(rSquaredCDF(exp(x),exp(min),exp(max)));
+    else return(UniformMinMax(x,min,max));
+
+}
+
+REAL8 UniformMinMax(const REAL8 x,const REAL8 min,const REAL8 max)
+{
+    return ((x-min)/(max-min));
+}
+
+REAL8 FlatInCosine(const REAL8 x,const REAL8 min,const REAL8 max)
+{
+    return( (cos(min)-cos(x)) / (cos(min)-cos(max)) );
+}
+
+REAL8 FlatInSine(const REAL8 x, const REAL8 min, const REAL8 max)
+{
+    return( (sin(x)-sin(min)) / (sin(max)-sin(min)) );
+}
+
+REAL8 rSquaredCDF(const REAL8 x, const REAL8 min, const REAL8 max)
+{
+    return( (x*x*x - min*min*min)/(max*max*max - min*min*min));
+}

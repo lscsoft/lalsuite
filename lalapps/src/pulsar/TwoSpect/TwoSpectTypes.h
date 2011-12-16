@@ -47,9 +47,9 @@ typedef struct
    REAL8 dfmin;
    REAL8 dfmax;
    REAL4 dopplerMultiplier;
-   REAL4 ihsfar;
+   REAL8 ihsfar;
    REAL4 ihsfom;
-   REAL4 ihsfomfar;
+   REAL8 ihsfomfar;
    REAL8 templatefar;
    REAL8 log10templatefar;
    REAL8 ULfmin;

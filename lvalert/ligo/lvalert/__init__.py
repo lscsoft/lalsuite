@@ -1,4 +1,4 @@
-# Copyright (C) 2009  LIGO Scientific Collaboration
+# Copyright (C) 2011  LIGO Scientific Collaboration
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,18 +14,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#
-# =============================================================================
-#
-#                                   Preamble
-#
-# =============================================================================
-#
-
-"""
-FIXME:  ask somebody to document this.
-"""
-
 __author__ = "LIGO Scientific Collaboration"
 
 __all__ = ["pubsub", "lvstanzaprocessor", "utils"]
+
+GIT_TAG = 'lvalert-1.0-3'

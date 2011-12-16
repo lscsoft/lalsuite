@@ -210,7 +210,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	REAL8 SampleRate=4096.0,SegmentLength=0;
 	if(LALInferenceGetProcParamVal(commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(commandLine,"--srate")->value);
         const REAL8 defaultFLow = 40.0;
-        const REAL8 defaultFHigh = SampleRate/2.0;
 	int nSegs=0;
 	size_t seglen=0;
 	REAL8TimeSeries *PSDtimeSeries=NULL;
@@ -313,12 +312,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 			XLALPrintError("Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
 			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
-	}
-	if(LALInferenceGetProcParamVal(commandLine,"--injXML")){
-	  if(LALInferenceGetProcParamVal(commandLine,"--event")){
-		event=atoi(LALInferenceGetProcParamVal(commandLine,"--event")->value);
-		while(q<event) {q++; injTable = injTable->next;}
-	  }
+        procparam=LALInferenceGetProcParamVal(commandLine,"--event");
+        if(procparam) event=atoi(procparam->value);
+        while(q<event) {q++; injTable=injTable->next;}
 	}
 	
 	procparam=LALInferenceGetProcParamVal(commandLine,"--PSDstart");
@@ -330,7 +326,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 		LALStringToGPS(&status,&GPStrig,procparam->value,&chartmp);
 	}
 	else{
-		if(injTable) GPStrig = injTable->geocent_end_time;
+		if(injTable) memcpy(&GPStrig,&(injTable->geocent_end_time),sizeof(GPStrig));
 		else {
             XLALPrintError("Error: No trigger time specifed and no injection given \n");
             XLAL_ERROR_NULL(XLAL_EINVAL);
@@ -345,7 +341,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	
 	for(i=0;i<Nifo;i++) {
           IFOdata[i].fLow=fLows?atof(fLows[i]):defaultFLow; 
-          IFOdata[i].fHigh=fHighs?atof(fHighs[i]):defaultFHigh;
+          IFOdata[i].fHigh=fHighs?atof(fHighs[i]):(SampleRate/2.0-(1.0/SegmentLength));
           strncpy(IFOdata[i].name, IFOnames[i], DETNAMELEN);
           IFOdata[i].STDOF = 4.0 / M_PI * nSegs;
           fprintf(stderr, "Detector %s will run with %g DOF if Student's T likelihood used.\n",

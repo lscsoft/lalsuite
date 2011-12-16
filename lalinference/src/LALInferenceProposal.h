@@ -167,10 +167,18 @@ void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables
 /** Rotate each spin by random angles about L. */
 void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Sample from the analytic distance likelihood distribution with all
-    other variables fixed.  This is effectively a Gibbs sampler for
-    the distance variable. */
+/** Samples from the analytic likelihood distribution on u = 1/d with
+    all other variables fixed.  This behaves similarly to a Gibbs
+    sampler for distance (though a Gibbs sampler would sample from the
+    *posterior* in d, not the likelihood in u = 1/d). */
 void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+/** Samples from the analytic likelihood distribution in orbital phase
+    (log(L) ~ <d|d> + 2*Re(<d|h>)*cos(delta-phi) -
+    2*Im(<d|h>)*sin(delta-phi) + <h|h>, where delta-phi is the orbital
+    phase shift relative to the reference used for h.  This is
+    effectively a Gibbs sampler for the phase coordinate. */
+void LALInferenceOrbitalPhaseQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 #endif
 
