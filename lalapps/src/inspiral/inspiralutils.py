@@ -1537,3 +1537,87 @@ def omega_scan_setup(cp,ifos):
   print "Created omega scan frame files \n"
   
 
+###############################################################################
+# This function will...
+
+def create_frame_pfn_file(ifos, gpsstart, gpsend):
+	namer = "frame-cache_"+str(gpsstart)+"-"+ \
+		str(gpsend)
+	gwfname = namer+".pfn" # physical file location file
+	# print namer
+	# Deletes the gwfname file if it exists prior to the execution of this
+	# function.
+	try:
+		os.unlink(gwfname)
+	except:
+		pass
+	# Calls ligo_data_find and passes the output to a the file gwfname.
+	# The output from this will be returned and used to create the Pegasus
+	# cache file in the function create_pegasus_cache_file.
+	for v in ifos.values():
+		# Calls a system command to create the file.
+		try:
+			ldfcommand = "ligo_data_find --gps-start-time "+str(gpsstart)+ \
+			" --gps-end-time "+str(gpsend)+" --observatory "+v[0]+" --type "+ v+ \
+			" --url-type=file >> "+ gwfname
+			print ldfcommand
+			retcode = subprocess.call(ldfcommand, shell=True)
+			print retcode
+			if retcode < 0:
+				print >>sys.stderr, "ligo_data_find was terminated!", -retcode
+			else:
+				print >>sys.stderr, "ligo_data_find returned", retcode
+		except OSError, e:
+			print >>sys.stderr, "ligo_data_find failed:", e
+	return gwfname
+
+
+def create_pegasus_cache_file(framename):
+	rep = open(framename,"r") # Reads the file from gwfname to be formatted properly.
+	cachename = framename.split(".")[0]+".cache" # split gwfname
+	# Deletes the cachename file if it already exists so a fresh file is used
+	# each time.
+	try:
+		os.unlink(cachename)
+	except:
+		pass
+        cac = open(cachename,"a") # Opens cachename in append mode.
+	# Writes a new file from the original, unformatted create_frame_pfn_file function
+	# that provides the information about the frame files in a way that the workflow
+	# can read them.
+	for line in open(framename):
+		line = line.replace("localhost","") # remove localhost
+		line2 = line.replace("\n","") # remove new line characters
+		# removes the localhost/ from the beginning of the file name
+		kpline = line2 # creates a better variable name for line2
+		formline = kpline.split("/") # splits the line on slashes to pull out filename
+		cac.write(formline[8]+" "+kpline+ " "+ 'pool="local"' + "\n") # .cache formatter
+	rep.close()
+	cac.close()
+	return cachename
+
+
+def get_data_options(cp,ifo_name):
+  if ifo_name == 'G1':
+    data_opts = 'geo-data'
+    try: type = cp.get('input','geo-type')
+    except: type = None
+    channel = cp.get('input','geo-channel')
+  elif ifo_name == 'V1':
+    data_opts = 'virgo-data'
+    try:
+      type = cp.get('input','virgo-type')
+      if ('NINJA' in type):
+        type = ifo_name + '_' + type
+    except: type = None
+    channel = cp.get('input','virgo-channel')
+  else:
+    data_opts = 'ligo-data'
+    try:
+      type = cp.get('input','ligo-type')
+      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type):
+        type = ifo_name + '_' + type
+    except: type = None
+    channel = cp.get('input','ligo-channel')
+
+  return data_opts, type, channel
