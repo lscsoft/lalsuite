@@ -46,7 +46,8 @@ def get_timeslides_pipedown(database_connection):
 		from sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
 		== sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id == coinc_event_map.coinc_event_id) join time_slide on \
 		(time_slide.instrument == sngl_inspiral.ifo)"
-	
+	db_out = database_connection.cursor().execute(sql_query)
+	print 'Got timeslides from database:'+str(db_out)
 
 
 # Read command line options
@@ -265,15 +266,10 @@ if opts.coinc_triggers:
     starttime=min(times)
     endtime=max(times)
 
-<<<<<<< Updated upstream
 # Read pipedown database
     if opts.pipedown_db:
 	(db_connection,db_working_filename)=open_pipedown_database(opts.pipedown_db,None)
-=======
-if opts.pipedown_db is not None:
-	dbfile=opts.pipedown_db
->>>>>>> Stashed changes
-	
+	timeslides=get_timeslides_pipedown(db_connection)
 
 if opts.gps_start_time is not None:
     mystarttime=float(opts.gps_start_time)
