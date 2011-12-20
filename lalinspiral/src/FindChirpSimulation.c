@@ -456,46 +456,41 @@ LALFindChirpInjectSignals (
     }
     else
     {
-      INT4 i, dataLength, wfmLength; /*, sampleRate;*/
+      const INT4 wfmLength = waveform.h->data->length;
+      INT4 i = wfmLength;
+      REAL4 *dataPtr = waveform.h->data->data;
+      REAL4 *tmpdata;
+
       /* XXX This code will BREAK if the first element of the frequency XXX *
        * XXX series does not contain dynRange. This is the case for     XXX *
        * XXX calibrated strain data, but will not be the case when      XXX *
        * XXX filtering uncalibrated data.                               XXX */
-
       REAL8 dynRange;
-      float *x1;
-
       LALWarning (status, "Attempting to calculate dynRange: Will break if un-calibrated strain-data is used.");
       dynRange = 1.0/(resp->data->data[0].re);
 
       /* set the start times for injection */
       XLALINT8NSToGPS( &(waveform.h->epoch), waveformStartTime );
 
-      wfmLength = waveform.h->data->length;
-      dataLength = 2*wfmLength;
-      x1 = (float *) LALMalloc(sizeof(x1)*dataLength);
       /*
        * We are using functions from NRWaveInject which do not take a vector
        * with alternating h+ & hx but rather one that stores h+ in the first
-       * half and hx in the second half.
+       * half and hx in the second half. That is, we must transpose h.
        *
        * We also must multiply the strain by the distance to be compatible
        * with NRWaveInject.
-       *
        */
-      for( i = 0; i < dataLength; i++)
-      {
-        x1[i] = waveform.h->data->data[i]*thisEvent->distance;
+      if (waveform.h->data->vectorLength != 2)
+          LALAbort("expected alternating h+ and hx");
+      tmpdata = XLALCalloc(2 * wfmLength, sizeof(*tmpdata));
+      for (;i--;) {
+            tmpdata[i] = dataPtr[2*i] * thisEvent->distance;
+            tmpdata[wfmLength+i] = dataPtr[2*i+1] * thisEvent->distance;
       }
-      for( i = 0; i < wfmLength; i++)
-      {
-            waveform.h->data->data[i] = x1[2*i];
-            waveform.h->data->data[wfmLength+i] = x1[2*i+1];
-      }
-
-      LALFree(x1);
-
+      memcpy(dataPtr, tmpdata, 2 * wfmLength * sizeof(*tmpdata));
+      XLALFree(tmpdata);
       waveform.h->data->vectorLength = wfmLength;
+      waveform.h->data->length = 2;
 
       LALInjectStrainGW( status->statusPtr ,
                                       chan ,
