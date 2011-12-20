@@ -21,22 +21,22 @@ sys.path.append('@PYTHONLIBDIR@')
 ifos=['H1','L1','V1']
 fakeTypes=["LALVirgo","LALLIGO"]
 
-def open_pipedown_database(database_filename,tmp_space):                                                                                             
-    """                                                                                                                                              
-    Open the connection to the pipedown database                                                                                                     
-    """                                                                                                                                              
-    from glue.ligolw import dbtables                                                                                                                 
-    try:                                                                                                                                             
-        import sqlite3                                                                                                                               
-    except ImportError:                                                                                                                              
-        # Pre-2.5                                                                                                                                    
-        from pysqlite2 import dbapi2 as sqlite3                                                                                                      
-        working_filename=dbtables.get_connection_filename(database_filename,tmp_path=tmp_space)
-        connection = sqlite3.connect(working_filename)
-        if tmp_space:
-		dbtables.set_temp_store_directory(connection,tmp_space)
-	dbtables.DBTable_set_connection(connection)
-	return (connection,working_filename) 
+def open_pipedown_database(database_filename,tmp_space):
+    """
+    Open the connection to the pipedown database
+    """
+    from glue.ligolw import dbtables
+    try:
+        import sqlite3
+    except ImportError:
+        # Pre-2.5
+        from pysqlite2 import dbapi2 as sqlite3
+    working_filename=dbtables.get_connection_filename(database_filename,tmp_path=tmp_space)
+    connection = sqlite3.connect(working_filename)
+    if tmp_space:
+	dbtables.set_temp_store_directory(connection,tmp_space)
+    dbtables.DBTable_set_connection(connection)
+    return (connection,working_filename) 
 
 def get_timeslides_pipedown(database_connection):
 	"""
@@ -47,7 +47,10 @@ def get_timeslides_pipedown(database_connection):
 		== sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id == coinc_event_map.coinc_event_id) join time_slide on \
 		(time_slide.instrument == sngl_inspiral.ifo)"
 	db_out = database_connection.cursor().execute(sql_query)
-	print 'Got timeslides from database:'+str(db_out)
+	print 'Got timeslides from database:'
+	for x in db_out:
+		print x
+
 
 
 # Read command line options
@@ -267,7 +270,8 @@ if opts.coinc_triggers:
     endtime=max(times)
 
 # Read pipedown database
-    if opts.pipedown_db:
+if opts.pipedown_db:
+	print 'establishing connection to pipedown database'
 	(db_connection,db_working_filename)=open_pipedown_database(opts.pipedown_db,None)
 	timeslides=get_timeslides_pipedown(db_connection)
 
