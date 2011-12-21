@@ -278,14 +278,14 @@ int main(int argc,char *argv[])
       UINT4 numDetectors = multiAtoms->length;
       REAL4 rhomax = 4.0;
       LVcomponents   lvstats;      /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
-      if ( (lvstats.TwoFX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, numDetectors );
+      if ( (lvstats.TwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+        XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
       REAL4Vector *linepriorX;
       if ( (linepriorX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, numDetectors );
+        XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
@@ -354,7 +354,7 @@ int main(int argc,char *argv[])
       }
 
       /* ----- free Memory */
-      XLALDestroyREAL8Vector ( lvstats.TwoFX );
+      XLALDestroyREAL4Vector ( lvstats.TwoFX );
       XLALDestroyREAL4Vector ( linepriorX );
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
       XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
