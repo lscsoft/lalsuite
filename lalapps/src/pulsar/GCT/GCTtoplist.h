@@ -32,14 +32,6 @@ extern int global_argc;
 }
 #endif
 
-/** Type containing multi- and single-detector F statistics and Line Veto statistic */
-typedef struct tagLVcomponents {
-   REAL4 TwoF;                           /**< multi-detector F-statistic value */
-   REAL4 LV;                             /**< multi-detector Line Veto statistic value */
-   REAL4Vector *TwoFX;                   /**< vector of single-detector F-statistic values */
-} LVcomponents;
-
-
 #ifndef GCTTOP_MAX_IFOS
 #define GCTTOP_MAX_IFOS 10
 #endif
