@@ -267,8 +267,6 @@ void coh_PTF_statistic(
     REAL8                   *timeOffsets,
     REAL8                   *Fplus,
     REAL8                   *Fcross,
-    REAL8                   *Fplustrig,
-    REAL8                   *Fcrosstrig,
     INT4                    segmentNumber,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
