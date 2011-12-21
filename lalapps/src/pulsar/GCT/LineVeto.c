@@ -115,7 +115,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
   UINT4 numDetectors = detectorIDs->length;
 
   /* initialise LVcomponents structure and allocate memory */
-  LVcomponents   lineVeto;      /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
+  LVcomponents   lineVeto = empty_LVcomponents; /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
   if ( (lineVeto.TwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
     XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
     XLAL_ERROR ( XLAL_EFUNC );
@@ -147,21 +147,11 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         LALFree(singleSegStatsFileName);
       } /* if outputSingleSegStats */
 
-      REAL4Vector *sumTwoFX = NULL;
-      if ( (sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
-        XLAL_ERROR ( XLAL_EFUNC );
-      }
-
       void *elemV;
       if ( listEntryType == 1 ) {
         GCTtopOutputEntry *elem = toplist_elem ( list, j );
         elemV = elem;
 
-        if ( ( elem->LVstatsRecalc = (LVcomponents *)XLALCalloc(1, sizeof(*elem->LVstatsRecalc)) ) == NULL )
-          XLAL_ERROR ( XLAL_ENOMEM, "XLALCalloc(%d) failed.\n", sizeof(*elem->LVstatsRecalc) );
-
-        elem->LVstatsRecalc->TwoFX = sumTwoFX;
         /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
         candidateDopplerParams.Alpha = elem->Alpha;
         candidateDopplerParams.Delta = elem->Delta;
@@ -171,7 +161,11 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         HoughFStatOutputEntry *elem = toplist_elem ( list, j );
         elemV = elem;
 
-        elem->sumTwoFX = sumTwoFX;
+        if ( (elem->sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+          XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
+          XLAL_ERROR ( XLAL_EFUNC );
+        }
+
         /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
         candidateDopplerParams.Alpha = elem->AlphaBest;
         candidateDopplerParams.Delta = elem->DeltaBest;
@@ -195,10 +189,10 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
       if ( listEntryType == 1 )
         {
           GCTtopOutputEntry *elem = elemV;
-
-          elem->LVstatsRecalc->TwoF  = lineVeto.TwoF;
+          elem->numDetectors = numDetectors;
+          elem->sumTwoFrecalc  = lineVeto.TwoF;
           for ( X = 0; X < numDetectors; X ++ )
-            elem->LVstatsRecalc->TwoFX->data[X]  = lineVeto.TwoFX->data[X];
+            elem->sumTwoFXrecalc[X]  = lineVeto.TwoFX->data[X];
         }
       else if ( listEntryType == 2 )
         {
@@ -483,28 +477,74 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
 
 
 /** XLAL function to compute Line Veto statistics from multi- and single-detector Fstats:
+ *  this is now a wrapper for XLALComputeLineVetoSimple which just translates REAL4Vectors to fixed REAL4 arrays
+*/
+REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fstat */
+                            const REAL4Vector *TwoFXvec,  /**< vector of single-detector Fstats */
+                            const REAL4 rhomaxline,    /**< amplitude prior normalization for lines */
+                            const REAL4Vector *lXvec, /**< vector of single-detector prior line odds ratio, default to lX=1 for all X if NULL */
+                            const BOOLEAN useAllTerms  /**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
+                          )
+{
+  /* check input parameters and report errors */
+  if ( !TwoF || !TwoFXvec || !TwoFXvec->data )
+    XLAL_ERROR_REAL4 ( XLAL_EFAULT, "Empty TwoF or TwoFX pointer as input parameter!\n\n");
+
+  if ( TwoFXvec->length < 2 )
+    XLAL_ERROR_REAL4 ( XLAL_EBADLEN, "\nInput TwoFX vector needs at least 2 detectors (got %d)!\n\n", TwoFXvec->length );
+
+  if ( lXvec && ( lXvec->length != TwoFXvec->length ) )
+    XLAL_ERROR_REAL4 ( XLAL_EBADLEN, "Input lX and TwoFX vectors have different length!\n\n" );
+
+  if ( rhomaxline < 0 )
+    XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative prior range 'rhomaxline' = %g! Must be >= 0!\n", rhomaxline );
+
+  REAL4 LV;
+
+  /* translate REAL4Vectors to fixed REAL4 arrays */
+  UINT4 numDetectors = TwoFXvec->length; /* number of detectors */
+  REAL4 TwoFX[numDetectors];
+  for (UINT4 X = 0; X < numDetectors; X++)
+    TwoFX[X]=TwoFXvec->data[X];
+  if ( lXvec )
+   {
+      REAL4 lX[numDetectors];
+      for (UINT4 X = 0; X < numDetectors; X++)
+        lX[X]=lXvec->data[X];
+      LV = XLALComputeLineVetoSimple ( TwoF, numDetectors, TwoFX, rhomaxline, lX, useAllTerms );
+   }
+  else {
+    LV = XLALComputeLineVetoSimple ( TwoF, numDetectors, TwoFX, rhomaxline, NULL, useAllTerms );
+  }
+
+  return LV;
+
+} /* XLALComputeLineVeto() */
+
+
+
+
+/** XLAL function to compute Line Veto statistics from multi- and single-detector Fstats:
  *  LV = F - log ( rhomaxline^4/70 + sum(e^FX) )
  *  implemented by log sum exp formula:
  *  LV = F - max(denom_terms) - log( sum(e^(denom_term-max)) )
  *  from the analytical derivation, there should be a term LV += O_SN^0 + 4.0*log(rhomaxline/rhomaxsig)
  *  but this is irrelevant for toplist sorting, only a normalization which can be replaced arbitrarily
 */
-REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fstat */
-                            const REAL4Vector *TwoFX,  /**< vector of single-detector Fstats */
-                            const REAL4 rhomaxline,    /**< amplitude prior normalization for lines */
-                            const REAL4Vector *lX, /**< vector of single-detector prior line odds ratio, default to lX=1 for all X if NULL */
-                            const BOOLEAN useAllTerms  /**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
+REAL4 XLALComputeLineVetoSimple ( const REAL4 TwoF,   /**< multi-detector Fstat */
+                            const UINT4 numDetectors, /**< number of detectors */
+                            const REAL4 *TwoFX,       /**< array of single-detector Fstats */
+                            const REAL4 rhomaxline,   /**< amplitude prior normalization for lines */
+                            const REAL4 *lX,          /**< array of single-detector prior line odds ratio, default to lX=1 for all X if NULL */
+                            const BOOLEAN useAllTerms /**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
                           )
 {
   /* check input parameters and report errors */
-  if ( !TwoF || !TwoFX || !TwoFX->data )
+  if ( !TwoF || !TwoFX )
     XLAL_ERROR_REAL4 ( XLAL_EFAULT, "Empty TwoF or TwoFX pointer as input parameter!\n\n");
 
-  if ( TwoFX->length < 2 )
-    XLAL_ERROR_REAL4 ( XLAL_EBADLEN, "\nInput TwoFX vector needs at least 2 detectors (got %d)!\n\n", TwoFX->length );
-
-  if ( lX && ( lX->length != TwoFX->length ) )
-    XLAL_ERROR_REAL4 ( XLAL_EBADLEN, "Input lX and TwoFX vectors have different length!\n\n" );
+  if ( numDetectors < 2 )
+    XLAL_ERROR_REAL4 ( XLAL_EBADLEN, "\nNeed at least 2 detectors (got %d)!\n\n", numDetectors );
 
   if ( rhomaxline < 0 )
     XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative prior range 'rhomaxline' = %g! Must be >= 0!\n", rhomaxline );
@@ -512,21 +552,20 @@ REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fsta
   /* set up temporary variables and structs */
   REAL4 log0  = - LAL_REAL4_MAX;	/* approximates -inf */
 
-  UINT4 numDetectors = TwoFX->length; /* number of detectors */
-  REAL4 maxInSum = log0;             /* keep track of largest summand in denominator, for logsumexp formula below */
+  REAL4 maxInSum = log0;           /* keep track of largest summand in denominator, for logsumexp formula below */
   REAL4 FXprior[numDetectors];     /* FXprior equiv log(lX * e^(FX)) = FX + log(lX) */
 
   for (UINT4 X = 0; X < numDetectors; X++)
     {
-      FXprior[X] = 0.5 * TwoFX->data[X];
+      FXprior[X] = 0.5 * TwoFX[X];
       if (lX)
         {
-          if ( lX->data[X] > 0.0 )  /* if nonzero lX: add logarithm log(lX) to FX */
-            FXprior[X] += log ( lX->data[X] );
-          else if ( lX->data[X] == 0 ) /* if zero prior, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
+          if ( lX[X] > 0.0 )  /* if nonzero lX: add logarithm log(lX) to FX */
+            FXprior[X] += log ( lX[X] );
+          else if ( lX[X] == 0 ) /* if zero prior, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
             FXprior[X] = log0;
           else	/* negative prior is a mistake! */
-            XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative input prior-ratio for detector X=%d: l[X]=%g\n", X, lX->data[X] );
+            XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative input prior-ratio for detector X=%d: l[X]=%g\n", X, lX[X] );
         } /* if lX != NULL */
 
       /* if no priors given, just use lX=1 => log(lX)=0 for all X */
@@ -568,7 +607,7 @@ REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fsta
 
   return LV;
 
-} /* XLALComputeLineVeto() */
+} /* XLALComputeLineVetoSimple() */
 
 
 

@@ -2336,12 +2336,10 @@ void UpdateSemiCohToplist(LALStatus *status,
   }
 
    REAL4 rhomax = 5.0;
-   REAL4Vector *priorX = NULL;
+   REAL4 priorX[in->numDetectors];
    if ( in->numDetectors > 0 ) { /* numDetectors is only used (>0) if single-IFO Fstats in->sumTwoFX were computed */
-    priorX = XLALCreateREAL4Vector ( in->numDetectors ); /* vector of single-detector prior line odds ratio */
-    UINT4 X;
-    for (X = 0; X < in->numDetectors; X++)
-      priorX->data[X] = 0.5;
+    for (UINT4 X = 0; X < in->numDetectors; X++)
+      priorX[X] = 0.5;
    }
 
   /* ---------- Walk through fine-grid and insert candidates into toplist--------------- */
@@ -2367,54 +2365,32 @@ void UpdateSemiCohToplist(LALStatus *status,
     line.F2dot = f2dot_fg;
     line.nc = in->nc[ifreq_fg];
     line.sumTwoF = in->sumTwoF[ifreq_fg]; /* here it's already the average 2F value */
-    line.LVstats = NULL; /* for optional LV-stat and per-IFO F-stats */
-    line.LVstatsRecalc = NULL;  /* for optional LV postprocessing */
+    line.numDetectors = in->numDetectors;
+    for (UINT4 X = 0; X < GCTTOP_MAX_IFOS; X++) { /* initialise single-IFO F-stat arrays to zero */
+      line.sumTwoFX[X] = 0.0;
+      line.sumTwoFXrecalc[X] = 0.0;
+    }
+    line.sumTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFStatline_to_str if later overwritten in recalcToplistStats step */
 
-    if ( in->numDetectors > 0 ) { /* if we already have FX values from the main loop, use the same sumTwoFX field  */
-      line.LVstats = (LVcomponents *)LALCalloc(1, sizeof(*line.LVstats));
-      if ( line.LVstats == NULL) {
-        fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
-        ABORT ( status, HIERARCHICALSEARCH_EMEM, HIERARCHICALSEARCH_MSGEMEM );
-      }
-      line.LVstats->TwoF = line.sumTwoF;
-      line.LVstats->TwoFX = NULL;
-      if ( ( line.LVstats->TwoFX = XLALCreateREAL4Vector ( in->numDetectors ) ) == NULL ) {
-        XLALPrintError ("%s line %d : failed to XLALCreateREAL4Vector(%d).\n\n", __func__, __LINE__, in->numDetectors );
-        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
-      }
+    if ( in->numDetectors > 0 ) { /* if we already have FX values from the main loop, insert these, and calculate LV-stat here */
       for (UINT4 X = 0; X < in->numDetectors; X++)
-        line.LVstats->TwoFX->data[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
+        line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
       xlalErrno = 0;
       BOOLEAN useAllTerms = FALSE; /* use only the leading term of the LV denominator sum */
-      line.LVstats->LV = XLALComputeLineVeto ( line.LVstats->TwoF, line.LVstats->TwoFX, rhomax, priorX, useAllTerms );
+      line.LV = XLALComputeLineVetoSimple ( line.sumTwoF, line.numDetectors, line.sumTwoFX, rhomax, priorX, useAllTerms );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeLineVeto() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
       }
+      if ( line.LV < -LAL_REAL4_MAX*0.1 )
+        line.LV = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFStatline_to_str() */
     }
-
-    /* mark the currently lowest candidate in the toplist, needed for FX destruction when it gets dropped */
-    GCTtopOutputEntry *lowest_elem = NULL;
-    LVcomponents *lowest_elem_LVstats = NULL;
-    if ( list->elems == list->length ) { /* only have to do this if the list is already full */
-      lowest_elem = toplist_elem ( list, 0 );
-      lowest_elem_LVstats = lowest_elem->LVstats;
-    }
+    else
+      line.LV = -LAL_REAL4_MAX; /* in non-LV case, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
 
     debug = insert_into_gctFStat_toplist( list, line);
 
-    if ( ( debug == 1 ) && ( lowest_elem_LVstats ) ) { /* if the candidate was inserted, destroy the allocated structs of the dropped, lowest element */
-      XLALDestroyREAL4Vector ( lowest_elem_LVstats->TwoFX );
-      LALFree(lowest_elem_LVstats);
-    }
-    if ( ( debug == 0 ) && ( line.LVstats ) ) { /* if the candidate was not inserted, destroy its allocated structs right now */
-      XLALDestroyREAL4Vector ( line.LVstats->TwoFX );
-      LALFree(line.LVstats);
-    }
-
   }
-
-  XLALDestroyREAL4Vector(priorX);
 
   DETATCHSTATUSPTR (status);
   RETURN(status);

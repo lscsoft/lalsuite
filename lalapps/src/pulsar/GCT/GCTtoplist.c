@@ -172,11 +172,11 @@ static int gctLV_smaller(const void*a, const void*b) {
   if(debugfp)
     fprintf(debugfp,"%20lf  %20lf\n%20lf  %20lf\n\n",
 	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
-	    ((const GCTtopOutputEntry*)a)->LVstats->LV, ((const GCTtopOutputEntry*)b)->LVstats->LV);
+	    ((const GCTtopOutputEntry*)a)->LV, ((const GCTtopOutputEntry*)b)->LV);
 #endif
-  if      (((const GCTtopOutputEntry*)a)->LVstats->LV < ((const GCTtopOutputEntry*)b)->LVstats->LV)
+  if      (((const GCTtopOutputEntry*)a)->LV < ((const GCTtopOutputEntry*)b)->LV)
     return 1;
-  else if (((const GCTtopOutputEntry*)a)->LVstats->LV > ((const GCTtopOutputEntry*)b)->LVstats->LV)
+  else if (((const GCTtopOutputEntry*)a)->LV > ((const GCTtopOutputEntry*)b)->LV)
     return -1;
   else if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
     return 1;
@@ -227,29 +227,10 @@ int create_gctFStat_toplist(toplist_t**tl, UINT8 length, UINT4 whatToSortBy) {
 
 }
 
-/* frees the space occupied by the toplist */
+/* frees the space occupied by the toplist
+   NOTE: toplist must not contain any allocated structs */
 void free_gctFStat_toplist(toplist_t**l) {
-
-  /* special handling of sumTwoFX entries, which are REAL4Vectors
-   * and need to be free'ed first if they are non-NULL
-   */
-  UINT4 i;
-  for (i = 0; i < (*l)->elems; i++ )
-    {
-      GCTtopOutputEntry *elem = toplist_elem ( (*l), i );
-      if ( elem->LVstats) {
-        XLALDestroyREAL4Vector ( elem->LVstats->TwoFX );
-        LALFree( elem->LVstats );
-      }
-      if ( elem->LVstatsRecalc) {
-        XLALDestroyREAL4Vector ( elem->LVstatsRecalc->TwoFX );
-        LALFree( elem->LVstatsRecalc );
-      }
-    } /* for cand < numCands */
-
-  /* free the rest of the toplist and the 'container' */
   free_toplist(l);
-
 } /* free_gctFStat_toplist() */
 
 
@@ -283,14 +264,13 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 
   /* add extra output-field containing fields of LVstats struct, if non-NULL */
   char LVStr[256] = "";	/* defaults to empty */
-  if ( fline.LVstats )
+  if ( fline.LV > -LAL_REAL4_MAX*0.2 ) /* if --computeLV=FALSE, the LV field was initialised to -LAL_REAL4_MAX. if --computeLV=TRUE, it is at least -LAL_REAL4_MAX*0.1 */
     {
       char buf0[256];
-      UINT4 numDet = fline.LVstats->TwoFX->length;
-      snprintf ( LVStr, sizeof(LVStr), " %.6f", fline.LVstats->LV );
-      for ( UINT4 X = 0; X < numDet ; X ++ )
+      snprintf ( LVStr, sizeof(LVStr), " %.6f", fline.LV );
+      for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
         {
-          snprintf ( buf0, sizeof(buf0), " %.6f", fline.LVstats->TwoFX->data[X] );
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFX[X] );
           UINT4 len1 = strlen ( LVStr ) + strlen ( buf0 ) + 1;
           if ( len1 > sizeof ( LVStr ) ) {
             XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(LVStr ));
@@ -301,14 +281,13 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 
     } /* if fline.LVstats */
   char LVRecalcStr[256] = "";	/* defaults to empty */
-  if ( fline.LVstatsRecalc )
+  if ( fline.sumTwoFrecalc >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
     {
       char buf0[256];
-      UINT4 numDet = fline.LVstatsRecalc->TwoFX->length;
-      snprintf ( LVRecalcStr, sizeof(LVRecalcStr), " %.6f", fline.LVstatsRecalc->TwoF );
-      for ( UINT4 X = 0; X < numDet ; X ++ )
+      snprintf ( LVRecalcStr, sizeof(LVRecalcStr), " %.6f", fline.sumTwoFrecalc );
+      for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
         {
-          snprintf ( buf0, sizeof(buf0), " %.6f", fline.LVstatsRecalc->TwoFX->data[X] );
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFXrecalc[X] );
           UINT4 len1 = strlen ( LVRecalcStr ) + strlen ( buf0 ) + 1;
           if ( len1 > sizeof ( LVRecalcStr ) ) {
             XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(LVRecalcStr ));

@@ -39,6 +39,10 @@ typedef struct tagLVcomponents {
    REAL4Vector *TwoFX;                   /**< vector of single-detector F-statistic values */
 } LVcomponents;
 
+
+#ifndef GCTTOP_MAX_IFOS
+#define GCTTOP_MAX_IFOS 10
+#endif
 /** Type to hold the fields that will be kept in a "toplist"  */
 typedef struct {
   REAL8 Freq;  /**< frequency */
@@ -48,8 +52,11 @@ typedef struct {
   REAL8 Delta;/**< skyposition: latitude */
   REAL4 sumTwoF;  /**< sum of 2F-values */
   UINT4 nc;       /**< number count */
-  LVcomponents *LVstats;  /**< struct containing multi- and single-detector F statistics and Line Veto statistic */
-  LVcomponents *LVstatsRecalc;  /**< analoguous struct, but as recalculated in toplist postprocessing at finegrid */
+  REAL4 LV;       /**< Line Veto statistic */
+  UINT4 numDetectors; /**< number of detectors for optional sumTwoFX arrays */
+  REAL4 sumTwoFX[GCTTOP_MAX_IFOS]; /**< fixed-size array of single-detector 2F-values */
+  REAL4 sumTwoFrecalc;  /**< sum of 2F-values as recomputed by recalcToplistStats */
+  REAL4 sumTwoFXrecalc[GCTTOP_MAX_IFOS];  /**< fixed-size array of single-detector 2F-values as recomputed by recalcToplistStats */
 } GCTtopOutputEntry;
 
 /* This has by now been reduced to an interface to the HeapToplist functions */
