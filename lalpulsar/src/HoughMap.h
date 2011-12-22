@@ -58,13 +58,6 @@
 # include <lal/PHMD.h>
 
 /*
- *  #include "LALRCSID.h"
- *  not needed, it is included in "LALConstants.h"
- */
-
-
-
-/*
  *   Protection against C++ name mangling
  */
 

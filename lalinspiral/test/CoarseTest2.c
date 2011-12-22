@@ -57,8 +57,6 @@ LALInspiralCreateCoarseBank
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 
-#include <lal/LALRCSID.h>
-
 INT4 lalDebugLevel=34;
 int
 main(void)

@@ -44,7 +44,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -70,8 +69,6 @@
 #include <lal/LALInspiral.h>
 #include <lal/CoherentInspiral.h>
 #include <lal/LALStatusMacros.h>
-
-#include <lal/LALRCSID.h>
 
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);

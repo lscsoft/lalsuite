@@ -127,7 +127,6 @@ do nothing.
 #include <lal/LALMalloc.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
-#include <lal/LALRCSID.h>
 
 #include <lal/XLALGSL.h>
 

@@ -30,9 +30,6 @@
 extern "C" {
 #endif
 
-
-#include <lal/LALRCSID.h>
-
 REAL8 XLALChisqCdf(
 	REAL8 chi2,
 	REAL8 dof

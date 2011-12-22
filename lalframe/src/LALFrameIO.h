@@ -25,8 +25,6 @@
 #include <lal/FrameCache.h>
 #include <lal/LALFrameL.h>
 
-#include <lal/LALRCSID.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

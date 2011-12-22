@@ -37,9 +37,6 @@
 extern "C" {
 #endif
 
-
-#include <lal/LALRCSID.h>
-
 /*
  * An excess power filter bank
  */

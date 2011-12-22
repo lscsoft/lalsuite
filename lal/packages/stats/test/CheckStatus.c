@@ -21,8 +21,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <lal/LALRCSID.h>
-
 extern BOOLEAN optVerbose;
 
 INT4

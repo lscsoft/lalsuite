@@ -51,7 +51,6 @@
 #include <lal/Units.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>

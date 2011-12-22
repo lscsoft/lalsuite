@@ -32,9 +32,6 @@
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
 
-
-#include <lal/LALRCSID.h>
-
 static void print_usage( void );
 
 #define TEST_STATUS( ps ) \

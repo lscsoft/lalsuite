@@ -54,7 +54,6 @@
 #include <processtable.h>
 #include <lalappsfrutils.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>

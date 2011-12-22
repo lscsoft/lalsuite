@@ -131,8 +131,6 @@ LALCheckMemoryLeaks
 #include <lal/LALNoiseModels.h>
 #include <lal/AVFactories.h>
 
-#include <lal/LALRCSID.h>
-
 INT4 lalDebugLevel=0;
 
 /* Nlist = expected number of coarse grid templates; if not sufficient increase */

@@ -19,7 +19,6 @@
  */
 
 #include <math.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
 #include <lal/AVFactories.h>

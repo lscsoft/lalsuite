@@ -46,8 +46,6 @@
 extern "C" {
 #endif
 
-#include <lal/LALRCSID.h>
-
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALComputeAM.h>
 #include <lal/ComplexAM.h>

@@ -31,8 +31,6 @@
 #include <lal/Window.h>
 #include <lal/Date.h>
 
-#include <lal/LALRCSID.h>
-
 /** \ingroup TimeFreqFFT_h */
 /*@{*/
 

@@ -52,7 +52,6 @@ standard C routines.
 #define _LALMALLOC_H
 
 #include <stddef.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALConfig.h>
 
 #ifdef  __cplusplus

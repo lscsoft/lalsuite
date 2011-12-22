@@ -47,7 +47,6 @@ Provides LAL functions similar to the non-file functions in \verb+<stdio.h>+.
 #include <stdarg.h>
 #include <inttypes.h>
 #include <lal/LALConfig.h>
-#include <lal/LALRCSID.h>
 
 #ifdef __cplusplus
 extern "C" {

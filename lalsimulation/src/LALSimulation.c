@@ -42,9 +42,6 @@
 #include <lal/Window.h>
 #include "check_series_macros.h"
 
-
-#include <lal/LALRCSID.h>
-
 /*
  * ============================================================================
  *

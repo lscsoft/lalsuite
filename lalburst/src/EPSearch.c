@@ -37,9 +37,6 @@
 #include <lal/XLALError.h>
 #include <lal/Window.h>
 
-
-#include <lal/LALRCSID.h>
-
 /*
  * Generate a linked list of burst events from a time series.
  */

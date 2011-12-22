@@ -50,7 +50,6 @@
 #include <lal/MatrixUtils.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
-#include <lal/LALRCSID.h>
 #include <lal/ComputeFstat.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALNoiseModels.h>

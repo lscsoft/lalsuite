@@ -116,7 +116,6 @@
 %enddef
 
 // Include basic LAL headers in wrapping code.
-%include <lal/LALRCSID.h>
 %header %{
   #include <lal/XLALError.h>
   #include <lal/LALMalloc.h>

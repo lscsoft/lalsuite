@@ -34,7 +34,6 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Random.h>
 #include <lal/GSLSupport.h>

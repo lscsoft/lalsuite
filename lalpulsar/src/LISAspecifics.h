@@ -41,8 +41,6 @@
 extern "C" {
 #endif
 
-#include <lal/LALRCSID.h>
-
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALDetectors.h>
 #include <lal/LALDatatypes.h>

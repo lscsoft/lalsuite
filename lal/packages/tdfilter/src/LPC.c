@@ -18,7 +18,6 @@
 */
 
 #include <lal/LPC.h>
-#include "lal/LALRCSID.h"
 #include <lal/LALError.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/RealFFT.h>

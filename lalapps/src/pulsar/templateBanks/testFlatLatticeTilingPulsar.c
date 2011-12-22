@@ -31,7 +31,6 @@
 
 #include <gsl/gsl_math.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/UserInput.h>

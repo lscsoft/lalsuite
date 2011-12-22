@@ -44,7 +44,6 @@
 #include <lal/FrameStream.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>

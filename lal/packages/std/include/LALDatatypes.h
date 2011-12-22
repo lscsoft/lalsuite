@@ -238,9 +238,6 @@ typedef enum
 }
 LALTYPECODE;
 
-
-#include <lal/LALRCSID.h>
-
 #ifdef  __cplusplus
 extern "C" {
 #endif

@@ -31,7 +31,6 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Interpolate.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdlib.h>

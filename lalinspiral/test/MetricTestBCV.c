@@ -44,8 +44,6 @@ lalDebugLevel
 #include <lal/LALNoiseModels.h>
 #include <lal/AVFactories.h>
 
-#include <lal/LALRCSID.h>
-
 INT4 lalDebugLevel=0;
 
 int

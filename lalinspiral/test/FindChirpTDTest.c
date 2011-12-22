@@ -28,8 +28,6 @@
 #include <lal/FindChirpSP.h>
 #include "FindChirpTDTest.h"
 
-#include <lal/LALRCSID.h>
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else

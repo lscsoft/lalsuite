@@ -42,8 +42,6 @@
 extern "C" {
 #endif
 
-#include <lal/LALRCSID.h>
-
 /*---------- exported INCLUDES ----------*/
 #include <lal/PulsarDataTypes.h>
 #include <lal/SeqFactories.h>

@@ -45,8 +45,6 @@
 #include <lal/Units.h>
 #include <lal/FrameStream.h>
 
-#include <lal/LALRCSID.h>
-
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
 

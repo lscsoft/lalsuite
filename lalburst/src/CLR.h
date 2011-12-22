@@ -198,11 +198,6 @@ harmonics, which can be obtained applying a least square method.
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
 
-/*
- *  #include "LALRCSID.h"
- *	not needed, it is included in "LALConstants.h"
- */
-
 #ifdef  __cplusplus
 extern "C" {
 #endif

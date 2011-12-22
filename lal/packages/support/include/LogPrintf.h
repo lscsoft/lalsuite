@@ -39,7 +39,6 @@ extern "C" {
 #endif
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
 
 /*---------- INCLUDES ----------*/
 #include <stdarg.h>

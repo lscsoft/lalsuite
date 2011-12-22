@@ -53,7 +53,6 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStdio.h>
 
 /* maximum string size to print with LAL Printf routines */

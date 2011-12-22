@@ -768,7 +768,6 @@ package using the autodocumentation utilities, which the
 #include <lal/LALMalloc.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
-#include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus
 extern "C" {

@@ -29,8 +29,6 @@
 #include <lal/Window.h>
 #include <lal/FrequencySeries.h>
 
-#include <lal/LALRCSID.h>
-
 /**
  * \addtogroup Convolution
  * \brief Convolutions of time-series

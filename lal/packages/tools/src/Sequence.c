@@ -29,9 +29,6 @@
 #include <lal/Sequence.h>
 #include <lal/XLALError.h>
 
-
-#include <lal/LALRCSID.h>
-
 /*
  * Shift the bytes in the buffer buff, whose length is length, count bytes to
  * higher addresses.  If the magnitude of count is greater than or equal to

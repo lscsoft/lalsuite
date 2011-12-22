@@ -34,8 +34,6 @@
 #include <pthread.h>
 #include <bits/local_lim.h>
 
-#include <lal/LALRCSID.h>
-
 /* lal debug flag for verbosity level */
 extern int lalDebugLevel;
 

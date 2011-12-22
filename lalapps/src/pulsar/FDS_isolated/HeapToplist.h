@@ -27,7 +27,6 @@
 #define HEAPTOPLIST_H
 
 #include <stddef.h>
-#include <lal/LALRCSID.h>
 
 /* toplist structure */
 typedef struct {

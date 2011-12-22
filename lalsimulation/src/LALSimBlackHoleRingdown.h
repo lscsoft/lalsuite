@@ -34,8 +34,6 @@ typedef double complex dcomplex;
 
 #include <lal/LALDatatypes.h>
 
-#include <lal/LALRCSID.h>
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

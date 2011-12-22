@@ -21,7 +21,6 @@
 #define _LALSTRING_H
 
 #include <stddef.h>
-#include <lal/LALRCSID.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -43,8 +43,6 @@ LAL\f$\langle\mbox{DT}\rangle\f$PrintVector functions
 #ifndef _PRINTVECTOR_H
 #define _PRINTVECTOR_H
 
-#include <lal/LALRCSID.h>
-
 #ifndef _LALSTDLIB_H
 #include <lal/LALStdlib.h>
 #ifndef _LALSTDLIB_H

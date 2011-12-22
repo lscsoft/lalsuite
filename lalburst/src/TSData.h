@@ -41,7 +41,6 @@ and production use of the tracksearch libraries.
 #include <lal/FrequencySeries.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALMoment.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/Matrix.h>
 #include <lal/RealFFT.h>

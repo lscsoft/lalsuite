@@ -26,8 +26,6 @@ Revision: $Id$
 #ifndef _LALERRNO_H
 #define _LALERRNO_H
 
-#include <lal/LALRCSID.h>
-
 /*
  * Error codes and corresponding error messages.
  */

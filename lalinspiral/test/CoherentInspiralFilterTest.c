@@ -42,7 +42,6 @@
 #endif
 #include <getopt.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALConfig.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>

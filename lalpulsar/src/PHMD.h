@@ -82,13 +82,6 @@ their character and edge effects when clipping on a finite patch.
 #include <lal/LUT.h>
 
 /*
- *  #include "LALRCSID.h"
- *  not needed, it is included in "LALConstants.h"
- */
-
-
-
-/*
  *   Protection against C++ name mangling
  */
 

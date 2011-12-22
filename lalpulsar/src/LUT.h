@@ -146,13 +146,6 @@ on the celestial sphere to circles on the projected plane.
 #include <lal/SeqFactories.h>
 
 /*
- *  #include "LALRCSID.h"
- *  not needed, it is included in "LALConstants.h"
- */
-
-
-
-/*
  *   Protection against C++ name mangling
  */
 

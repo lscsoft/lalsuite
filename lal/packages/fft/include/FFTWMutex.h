@@ -21,7 +21,6 @@
 #define _FFTWMUTEX_H
 
 #include <lal/LALConfig.h>
-#include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus
 extern "C" {

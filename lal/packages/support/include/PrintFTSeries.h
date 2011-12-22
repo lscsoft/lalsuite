@@ -44,7 +44,6 @@ Provides prototype information for the routines in
 #ifndef _PRINTFTSERIES_H
 #define _PRINTFTSERIES_H
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus

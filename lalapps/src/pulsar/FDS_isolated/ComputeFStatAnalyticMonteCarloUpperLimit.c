@@ -38,7 +38,6 @@
 #include <gsl/gsl_vector_int.h>
 #include <gsl/gsl_matrix.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/GSLSupport.h>

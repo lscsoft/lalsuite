@@ -48,7 +48,6 @@ The coherent statistic will be defined here.
 #ifndef _COHERENTINSPIRALH_H
 #define _COHERENTINSPIRALH_H
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALConstants.h>

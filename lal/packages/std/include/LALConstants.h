@@ -67,8 +67,6 @@ constants.
 #ifndef _LALCONSTANTS_H
 #define _LALCONSTANTS_H
 
-#include <lal/LALRCSID.h>
-
 #ifdef  __cplusplus
 extern "C" {
 #endif

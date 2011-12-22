@@ -212,7 +212,6 @@ typedef unsigned char BOOLEAN;
 
 #include <stdint.h>
 #include <lal/LALConfig.h>
-#include <lal/LALRCSID.h>
 
 /* If INT8 etc. are already defined, undefine them */
 #undef CHAR

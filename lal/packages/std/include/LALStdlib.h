@@ -116,7 +116,6 @@ most LAL functions, by including the following header files in the
 #define _LALSTDLIB_H
 
 /* <lalVerbatim> */
-#include <lal/LALRCSID.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStatusMacros.h>
 /* </lalVerbatim>

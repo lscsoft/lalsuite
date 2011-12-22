@@ -60,8 +60,6 @@ LALInspiralCreateCoarseBank
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 
-#include <lal/LALRCSID.h>
-
 void LALInspiralCreateBoundarySpace(InspiralCoarseBankIn coarseIn);
 
 typedef struct {

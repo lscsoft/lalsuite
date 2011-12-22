@@ -32,9 +32,6 @@
 #include <lal/Thresholds.h>
 #include <lal/XLALError.h>
 
-
-#include <lal/LALRCSID.h>
-
 /**
  * Cumulative Probability Distribution for Chi Squared distribution.
  *

@@ -36,7 +36,6 @@
 #include <gsl/gsl_nan.h>
 #include <gsl/gsl_sf.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>

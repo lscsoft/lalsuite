@@ -49,7 +49,6 @@ The null statistic will be defined here.
 #ifndef _NULLSTATISTICH_H
 #define _NULLSTATISTICH_H
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALConstants.h>

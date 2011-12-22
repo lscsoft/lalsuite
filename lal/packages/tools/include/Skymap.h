@@ -31,7 +31,6 @@ extern "C" {
 #endif
 
 #include <lal/LALDetectors.h>
-#include <lal/LALRCSID.h>
 
 // Manipulate log-represented values without overflowing
 
