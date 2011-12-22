@@ -20,11 +20,14 @@ sys.path.append('@PYTHONLIBDIR@')
 #Presets
 ifos=['H1','L1','V1']
 fakeTypes=["LALVirgo","LALLIGO"]
+timeslides=None
 
 def open_pipedown_database(database_filename,tmp_space):
     """
     Open the connection to the pipedown database
     """
+    if not os.access(database_filename,os.R_OK):
+	raise Exception('Unable to open input file: %s'%(database_filename))
     from glue.ligolw import dbtables
     try:
         import sqlite3
@@ -40,18 +43,29 @@ def open_pipedown_database(database_filename,tmp_space):
 
 def get_timeslides_pipedown(database_connection):
 	"""
-	returns a list of slides in a dictionary with ifo name as the key
+	returns a dict of dicts { trigtime: {'H1':0,'L1':5,'V1':10}) , ... }
+	of times and timeslide offsets
 	"""
-	sql_query="SELECT coinc_event.coinc_event_id,sngl_inspiral.end_time + sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,time_slide.offset\
+	db_out_saved=[]
+	sql_query="SELECT time_slide.time_slide_id,sngl_inspiral.end_time + sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,time_slide.offset\
 		from sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
 		== sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id == coinc_event_map.coinc_event_id) join time_slide on \
-		(time_slide.instrument == sngl_inspiral.ifo)"
+		(time_slide.instrument == sngl_inspiral.ifo and time_slide.time_slide_id == coinc_event.time_slide_id)"
 	db_out = database_connection.cursor().execute(sql_query)
-	print 'Got timeslides from database:'
-	for x in db_out:
-		print x
-
-
+	for d in db_out:
+		db_out_saved.append(d)
+	output={}
+	ts_ids=set([tup[0] for tup in db_out_saved])
+	for ts in ts_ids:
+		print ts
+		events=[tup for tup in db_out_saved if tup[0]==ts]
+		d={}
+		for e in events:
+			d[e[2]]=e[3]
+		print events
+		t=events[0][1]+events[0][3]
+		output[t]=d
+	return output
 
 # Read command line options
 usage=""" %prog [options]
@@ -274,6 +288,9 @@ if opts.pipedown_db:
 	print 'establishing connection to pipedown database'
 	(db_connection,db_working_filename)=open_pipedown_database(opts.pipedown_db,None)
 	timeslides=get_timeslides_pipedown(db_connection)
+	times=timeslides.keys()
+	starttime=min(times)
+	endtime=max(times)
 
 if opts.gps_start_time is not None:
     mystarttime=float(opts.gps_start_time)
@@ -294,7 +311,7 @@ if opts.gps_end_time is not None:
         endtime=myendtime
     cp.set('analysis','gps-end-time',str(endtime))
 
-if not opts.inj and not opts.coinc_triggers and not opts.gps_time_file and not opts.single_triggers:
+if not opts.inj and not opts.coinc_triggers and not opts.gps_time_file and not opts.single_triggers and not opts.pipedown_db:
     if opts.gps_start_time is None and opts.gps_end_time is None:
 
         raise OptionValueError('Must specify both a start and end time if not using injection file or coinc file.\n')
@@ -458,7 +475,11 @@ if nparallel==1:
                 thisevent=time_event[time]
         else:
                 thisevent=None
-        inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=sorted(segments_by_time[time].keys(),sort_ifo),event=thisevent,nodeclass=nestclass)
+	if time in timeslides.keys():
+		ts=timeslides[time]
+	else:
+		ts=None
+        inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=sorted(segments_by_time[time].keys(),sort_ifo),event=thisevent,nodeclass=nestclass,timeslides=ts)
         inspnest_nodes_by_time[time]=inspnest_node
         dag.add_node(inspnest_node)
         combine_each_time_nodes[time].add_parent(inspnest_node)
@@ -471,7 +492,11 @@ else:
                 thisevent=time_event[time]
         else:
                 thisevent=None
-        (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=sorted(segments_by_time[time].keys(),sort_ifo),event=thisevent,nodeclass=nestclass)
+	if time in timeslides.keys():
+		ts=timeslides[time]
+	else:
+		ts=None
+        (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=sorted(segments_by_time[time].keys(),sort_ifo),event=thisevent,nodeclass=nestclass,timeslides=ts)
         dag.add_node(merge_node)
         map(dag.add_node,inspnest_nodes)
         nest_files[time]=merge_node.get_output_files()[0]
@@ -499,6 +524,10 @@ if opts.coherence_test:
     checkDir(coherence_test_dir)
     # Loop over all the times
     for time in times:
+	if time in timeslides.keys():
+		ts=timeslides[time]
+	else:
+		ts=None
         ifos=segments_by_time[time].keys()
         if len(ifos)<2:
             print 'Unable to setup coherence test for time %.3f, only %s data available.\n'%(time,ifos[0])
@@ -524,14 +553,14 @@ if opts.coherence_test:
             else:
                 thisevent=None
             if nparallel>1:
-                (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=thisevent,nodeclass=nestclass)
+                (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=thisevent,nodeclass=nestclass,timeslides=ts)
                 dag.add_node(merge_node)
                 coherence_test_files[time][ifo]=merge_node.get_output_files()[0]
                 combine_node.add_parent(merge_node)
                 coherence_test_node.add_parent(merge_node)
                 coherence_inspnest_nodes[time][ifo]=merge_node
             else:
-                inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=thisevent,nodeclass=nestclass)
+                inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=thisevent,nodeclass=nestclass,timeslides=ts)
                 inspnest_nodes=[inspnest_node]
                 coherence_test_files[time][ifo]=inspnest_node.get_output_files()[0]
                 combine_node.add_parent(inspnest_node)
