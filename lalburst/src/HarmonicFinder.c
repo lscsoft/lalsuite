@@ -137,10 +137,6 @@ LALSDestroyVector()
 #define UNUSED
 #endif
 
-NRCSID (HARMONICFINDERC, "$Id$");
-
-
-
 void LALHarmonicFinder (LALStatus  *status,
          INT4Vector         *out,   /* harmonic index and location, size 3*l */
          REAL4FVectorCLR    *in2,   /* |x(f)|^2, data + information */

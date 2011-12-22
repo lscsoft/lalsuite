@@ -58,8 +58,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID(BANDPASSTIMESERIESH,"$Id$");
-
 /********************************************************** <lalLaTeX>
 \subsection*{Error conditions}
 ****************************************** </lalLaTeX><lalErrTable> */

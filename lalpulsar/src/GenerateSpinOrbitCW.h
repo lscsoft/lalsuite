@@ -308,8 +308,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( GENERATESPINORBITCWH, "$Id$" );
-
 /**
  \name Error Codes */ /*@{*/
 #define GENERATESPINORBITCWH_ENUL 1

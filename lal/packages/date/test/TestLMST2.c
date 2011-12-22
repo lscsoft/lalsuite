@@ -25,8 +25,6 @@
 
 INT4 lalDebugLevel = 2;
 
-NRCSID (TESTLMSTC, "$Id$");
-
 /*int main(int argc, char *argv[])*/
 int main(void)
 {

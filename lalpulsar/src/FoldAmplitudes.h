@@ -86,8 +86,6 @@ typedef struct tagFoldAmplitudesParams
 extern "C" {
 #endif
 
-NRCSID (FOLDAMPLITUDESH, "$Id$");
-
 /**\name Error Codes */ /*@{*/
 
 #define FOLDAMPLITUDESH_ENULLP        	1

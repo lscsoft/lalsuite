@@ -179,8 +179,6 @@ LALNormalDeviates()
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/StreamInput.h>
 
-NRCSID( BASICINJECTTESTC, "$Id$" );
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define EPOCH (0)

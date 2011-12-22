@@ -25,8 +25,6 @@
 #include<lal/SeqFactories.h>
 #include<lal/StackMetric.h>
 
-NRCSID(COHERENTMETRICC,"$Id$");
-
 #define COHERENTMETRICC_NPTS 100000	/** Number of points to average per time interval. */
 
 

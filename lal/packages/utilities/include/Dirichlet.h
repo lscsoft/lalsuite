@@ -80,8 +80,6 @@ The fields are:
 extern "C" {
 #endif
 
-NRCSID (DIRICHLETH, "$Id$");
-
 /******************************** <lalErrTable file="DirichletHErrTable"> */
 
 #define DIRICHLETH_ENULLPIN    1

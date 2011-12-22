@@ -67,9 +67,6 @@ none.
 */
 #include <lal/LALNoiseModelsInspiral.h>
 
-NRCSID (LALINSPIRALWAVENORMALISEC, "$Id$");
-
-
 void
 LALInspiralWaveNormaliseLSO
    (

@@ -85,8 +85,6 @@ None
 
 #include <lal/LALStatusMacros.h>
 #include <lal/LALDemod.h>
-NRCSID( LALDEMODC, "$Id$" );
-
 
 void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 

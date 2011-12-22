@@ -23,9 +23,6 @@
 #include "TestRandomBank.h"
 
 /* --- version information --- */
-NRCSID( BANKEFFICIENCYC, "$Id$");
-RCSID(  "$Id$");
-
 #define CVS_ID_STRING_C      "$Id$"
 #define CVS_REVISION_C      "$Revision$"
 

@@ -36,8 +36,6 @@
 extern "C" {
 #endif
 
-  NRCSID(GSLSUPPORTH, "$Id$");
-
   /**
    * Functions
    */

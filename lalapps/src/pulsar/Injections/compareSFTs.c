@@ -29,8 +29,6 @@
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 
-RCSID ("$Id");
-
 /* Error codes and messages */
 /**\name Error Codes */ /*@{*/
 #define MAKEFAKEDATAC_ENORM 	0

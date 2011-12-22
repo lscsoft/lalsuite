@@ -59,12 +59,6 @@
 extern "C" {
 #endif
 
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID (MCINJECTHOUGHS2H, "$Id$");
-
 /* ************************************************************
  * Usage format string. 
  */

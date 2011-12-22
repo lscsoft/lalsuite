@@ -33,8 +33,6 @@
 #include <lal/SFTfileIO.h>
 #include "sft_extra.h"
 
-RCSID ("$Id$");
-
 /** \name Error codes */
 /*@{*/
 #define MAKEFAKEDATAC_ENORM 	0

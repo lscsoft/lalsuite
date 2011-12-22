@@ -31,8 +31,6 @@
 #include "CudaFunctions.h"
 #include "CudaFFT.h"
 
-NRCSID( COMPLEXFFTC, "$Id$" );
-
 /*
  *
  * XLAL COMPLEX8 functions

@@ -49,9 +49,6 @@
 
 #include <lal/TimeFreq.h>
 
-NRCSID (TFRPSWVTESTC,"$Id$");
-
-
 extern int lalDebugLevel;
 
 int main(void)

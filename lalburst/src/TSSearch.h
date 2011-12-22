@@ -53,8 +53,6 @@
 extern "C" {
 #endif
 
-  NRCSID (TSSEARCHH, "$Id$");
-
   /**\name Error Codes */ /*@{*/
 #define TSSEARCHH_ENULLP       1
 #define TSSEARCHH_EPOSARG      2

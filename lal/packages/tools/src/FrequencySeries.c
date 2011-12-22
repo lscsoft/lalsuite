@@ -30,7 +30,6 @@
 
 
 #include <lal/LALRCSID.h>
-NRCSID(FREQUENCYSERIESC, "$Id$");
 
 #define DATATYPE REAL4
 #define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;

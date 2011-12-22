@@ -126,9 +126,6 @@ LALInspiralSpinModulatedWave()
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/LALSQTPNWaveformInterface.h>
 
-NRCSID (LALINSPIRALWAVEC, "$Id$");
-
-
 void
 LALInspiralWave(
    LALStatus        *status,
@@ -253,10 +250,6 @@ LALInspiralWave(
    RETURN (status);
 }
 
-
-NRCSID (LALINSPIRALWAVETEMPLATESC, "$Id$");
-
-
 void
 LALInspiralWaveTemplates(
    LALStatus        *status,
@@ -356,11 +349,6 @@ LALInspiralWaveTemplates(
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }
-
-
-
-NRCSID (LALINSPIRALWAVEFORINJECTIONC, "$Id$");
-
 
 void
 LALInspiralWaveForInjection(

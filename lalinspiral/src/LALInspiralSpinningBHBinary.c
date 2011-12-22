@@ -85,9 +85,6 @@ void LALACSTDerivatives (REAL8Vector *values, REAL8Vector *dvalues, void *funcPa
 
 /* computes precession correction to phase dThi */
 
-
-NRCSID (LALINSPIRALSPINNINGBHBINARYC, "$Id$");
-
 /* Routine to generate inspiral waveforms from binaries consisting of spinning objects */
 
 void

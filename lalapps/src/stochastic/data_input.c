@@ -24,8 +24,6 @@
 
 #include "data_input.h"
 
-NRCSID(DATAINPUTC, "$Id$");
-RCSID("$Id$");
 
 /* externally declared variables */
 extern int high_pass_flag;

@@ -25,8 +25,6 @@
 
 #include "./PeakSelect.h"
 
-NRCSID (PEAKSELECTTESTC, "$Id$");
-
 /* Error codes and messages */
 
 /**\name Error Codes */ /*@{*/

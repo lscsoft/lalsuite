@@ -53,10 +53,6 @@
 extern "C" {
 #endif
 
-
-NRCSID (RANDOMH, "$Id$");
-
-
 /**** <lalLaTeX>
  *
  * \subsection*{Error conditions}

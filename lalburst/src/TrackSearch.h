@@ -60,8 +60,6 @@
 extern "C" {
 #endif
 
-NRCSID (TRACKSEARCHH, "$Id$");
-
 /* Mathematical constants */
 #ifndef SQRT_2_PI_INV
 #define SQRT_2_PI_INV 0.39894228040143272L  /* (1.0 / sqrt(2.0 * pi))  */

@@ -81,8 +81,6 @@ LALHO()
 
 #include <lal/RngMedBias.h>
 
-NRCSID (RNGMEDBIASC, "$Id$");
-
 /*
  * The functions that make up the guts of this module
  */

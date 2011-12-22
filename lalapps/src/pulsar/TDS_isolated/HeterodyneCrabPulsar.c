@@ -214,9 +214,6 @@
 #include <lal/BinaryPulsarTiming.h>
 #include "HeterodyneCrabPulsar.h"
 
-/* DEFINE RCS ID STRING */
-NRCSID( HETERODYNECRABPULSARC, "$Id$");
-
 void
 LALGetCrabEphemeris	( LALStatus			*status,
 			  CrabSpindownParamsInput	*output,

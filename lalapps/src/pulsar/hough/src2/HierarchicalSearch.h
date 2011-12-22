@@ -81,12 +81,6 @@ extern "C" {
 
 
 /******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID( HIERARCHICALSEARCHH, "$Id$" );
-
-/******************************************************
  *  Error codes and messages.
  */
  

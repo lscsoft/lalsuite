@@ -9,8 +9,6 @@
 #include <lal/LALSQTPNIntegrator.h>
 #include <lal/LALSQTPNWaveformInterface.h>
 
-NRCSID (LALSQTPNWAVEFORMC, "$Id LALSQTPN_Waveform.c$");
-
 /**		The macro function calculates the scalar product of two vectors.
  * @param[in]  a1	: the left vector
  * @param[in]  a2	: the right vector

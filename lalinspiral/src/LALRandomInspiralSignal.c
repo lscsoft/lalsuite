@@ -179,10 +179,6 @@ static void GenerateRandomSkyPositionAndPolarisation (
         RandomInspiralSignalIn *randIn
         );
 
-NRCSID (LALRANDOMINSPIRALSIGNALC, "$Id$");
-
-
-
 void LALRandomInspiralSignal
 (
  LALStatus              *status,

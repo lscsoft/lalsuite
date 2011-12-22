@@ -50,8 +50,6 @@
 #include <lal/FindChirp.h>
 #include <lal/TwoInterfFindChirp.h>
 
-NRCSID (MAIN, "$Id$");
-
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 

@@ -91,10 +91,6 @@ XLALInspiralWave1Engine(
    InspiralInit     *paramsInit
    );
 
-
-NRCSID (LALINSPIRALWAVE1C, "$Id$");
-
-
 void
 LALInspiralWave1(
    LALStatus        *status,
@@ -163,9 +159,6 @@ XLALInspiralWave1(
    Interface routine needed to generate time-domain T- or a P-approximant
    waveforms by solving the ODEs using a 4th order Runge-Kutta; April 5, 00.
 */
-
-NRCSID (LALINSPIRALWAVE1TEMPLATESC, "$Id$");
-
 
 void
 LALInspiralWave1Templates(
@@ -242,9 +235,6 @@ XLALInspiralWave1Templates(
    Interface routine needed to generate time-domain T- or a P-approximant
    waveforms for injection packages T.Cokelaer sept 2003
 */
-
-NRCSID (LALINSPIRALWAVE1FORINJECTIONC, "$Id$");
-
 
 void
 LALInspiralWave1ForInjection(
@@ -465,8 +455,6 @@ XLALInspiralWave1ForInjection(
  *  Engine function for use by other LALInspiralWave1* functions
  *  Craig Robinson April 2005
  */
-
-NRCSID (LALINSPIRALWAVE1ENGINEC, "$Id$");
 
 int
 XLALInspiralWave1Engine(

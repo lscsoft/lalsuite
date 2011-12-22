@@ -43,9 +43,6 @@ LALDRombergIntegrate()
 #include <lal/LALInspiral.h>
 #include <lal/Integrate.h>
 
-NRCSID (LALINSPIRALTOFVC, "$Id$");
-
-
 void
 LALInspiralTofV (
    LALStatus *status,

@@ -65,10 +65,6 @@ Accept the template if at least one of those points is within the search space.
 #include <lal/LALInspiralBank.h>
 #include <stdio.h>
 
-NRCSID (LALINSPIRALVALIDTEMPLATEC, "$Id$");
-
-
-
 void
 LALInspiralValidTemplate(
   LALStatus            *status,

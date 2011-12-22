@@ -21,10 +21,6 @@
 #include<lal/LALStdlib.h>
 #include<lal/PulsarTimes.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID(TSPINC,"$Id$");
-/** \endcond */
-
 /** \file
     \author Creighton, T. D.
     \ingroup PulsarTimes_h

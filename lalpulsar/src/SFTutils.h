@@ -52,7 +52,6 @@
 extern "C" {
 #endif
 
-NRCSID( SFTUTILSH, "$Id$" );
 /*---------- INCLUDES ----------*/
 #include <stdarg.h>
 

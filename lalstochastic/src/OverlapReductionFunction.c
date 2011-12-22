@@ -221,8 +221,6 @@ strncpy()
 #include <string.h>
 #include <lal/StochasticCrossCorrelation.h>
 
-NRCSID(OVERLAPREDUCTIONFUNCTIONC, "$Id$");
-
 static void evaluateBessels(REAL4 rho[3], REAL4 alpha);
 static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
 

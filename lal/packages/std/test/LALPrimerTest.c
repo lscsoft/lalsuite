@@ -22,8 +22,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALPrimer.h>
 
-NRCSID( LALPRIMERTESTC, "$Id$" );
-
 extern int lalDebugLevel;
 
 int

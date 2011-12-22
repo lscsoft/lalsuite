@@ -44,8 +44,6 @@
 #include <lal/LISAspecifics.h>
 #include <lal/ComputeFstat.h>
 
-NRCSID( COMPLEXAMC, "$Id$");
-
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
 #define FALSE (1==0)

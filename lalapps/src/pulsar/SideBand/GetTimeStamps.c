@@ -44,8 +44,6 @@
 #include <lalapps.h>
 #include <lal/SFTfileIO.h>
 
-RCSID( "$Id:$");
-
 /*---------- DEFINES ----------*/
 #define MAXUINT4 2147483647
 

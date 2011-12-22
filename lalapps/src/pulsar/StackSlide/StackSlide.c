@@ -75,8 +75,6 @@ Sum them.
 
 #include "StackSlide.h"/*This includes isolated/binary info*/
 
-NRCSID( STACKSLIDEC,  "$Id$");
-
 /*********************************************************************************/
 /*              START function: StackSlide                                       */
 /*********************************************************************************/

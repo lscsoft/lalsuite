@@ -105,12 +105,6 @@ void PrintLogFile2(LALStatus       *status,
 /******************************************/
 
 
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-RCSID ("$Id$");
-
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){
 

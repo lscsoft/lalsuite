@@ -49,8 +49,6 @@
 
 #include "inspiral.h"
 
-RCSID( "$Id$" );
-
 #define CVS_REVISION "$Revision$"
 #define CVS_ID_STRING "$Id$"
 #define CVS_SOURCE "$Source$"

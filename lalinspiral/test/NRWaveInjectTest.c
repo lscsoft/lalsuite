@@ -33,8 +33,6 @@
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
 
-NRCSID (NRWAVEIOTESTC, "$Id$");
-
 /*---------- DEFINES ----------*/
 
 /** \name Error codes */

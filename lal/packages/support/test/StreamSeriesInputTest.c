@@ -112,8 +112,6 @@ where \verb@<typecode>@ is any of \verb@I2@, \verb@I4@, \verb@I8@,
 #include <lal/StreamInput.h>
 #include <lal/StreamOutput.h>
 
-NRCSID( STREAMSERIESINPUTTESTC, "$Id$" );
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define INFILE "StreamSeriesInput.data"

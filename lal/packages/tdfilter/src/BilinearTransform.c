@@ -124,8 +124,6 @@ LALSHeapIndex()                 LALDHeapIndex()
 #include <math.h>
 #include <lal/ZPGFilter.h>
 
-NRCSID(BILINEARTRANSFORMC,"$Id$");
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else

@@ -121,9 +121,6 @@ extern "C" {
 
 #endif /* SWIG */
 
-NRCSID (LALRCSIDH, "$Id$");
-
-
 /* <lalLaTeX>
 \vfill{\footnotesize\input{LALRCSIDHV}}
 </lalLaTeX> */

@@ -111,9 +111,6 @@ XLALEtaTau04()
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>
 
-NRCSID (LALINSPIRALPARAMETERCALCC, "$Id$");
-
-
 void
 LALInspiralParameterCalc (
    LALStatus        *status,

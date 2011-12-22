@@ -53,9 +53,6 @@ and production use of the tracksearch libraries.
 extern "C" {
 #endif
 
-
-NRCSID (TSDATAH, "$Id$");
-
 /**\name Error Codes */ /*@{*/
 #define TSDATA_ENULL    1
 #define TSDATA_ENNUL    2

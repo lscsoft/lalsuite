@@ -80,8 +80,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( STRINGINPUTH, "$Id$");
-
 /********************************************************** <lalLaTeX>
 \subsection*{Error conditions}
 ****************************************** </lalLaTeX><lalErrTable> */

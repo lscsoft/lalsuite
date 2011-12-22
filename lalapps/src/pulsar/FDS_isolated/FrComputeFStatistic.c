@@ -43,8 +43,6 @@
 #include "clusters.h"
 #include "DopplerScan.h"
 
-RCSID( "$Id$");
-
 /*
 #define DEBG_FAFB                
 #define DEBG_ESTSIGPAR

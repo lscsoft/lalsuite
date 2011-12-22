@@ -60,9 +60,6 @@ None.
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID (LALINSPIRALUPDATEPARAMSC, "Id: $");
-
-
 void LALInspiralUpdateParams(LALStatus          *status,
                              InspiralBankParams *bankParams,
                              InspiralMetric     metric,

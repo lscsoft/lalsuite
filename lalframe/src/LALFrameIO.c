@@ -38,7 +38,6 @@ int gethostname(char *name, int len);
 #include <lal/LALCalibration.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (LALFRAMEIOC,"$Id$");
 
 /* FIXME: WARNING: this value might need to change in the future */
 #define FR_FILE_HEADER_SIZE 40 /* size of frame file header in bytes */

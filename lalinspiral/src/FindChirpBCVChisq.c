@@ -66,10 +66,6 @@ LALCOMPLEX8VectorFFT()
 #include <lal/FindChirpChisq.h>
 #include <lal/FindChirpBCV.h>
 
-NRCSID (FINDCHIRPBCVCHISQC, "$Id$");
-
-
-
 void
 LALFindChirpBCVChisqVeto (
     LALStatus                  *status,

@@ -73,8 +73,6 @@ constants.
 extern "C" {
 #endif
 
-NRCSID (LALCONSTANTSH, "$Id$");
-
 /* <lalLaTeX>
 
 \subsection*{Mathematical constants}

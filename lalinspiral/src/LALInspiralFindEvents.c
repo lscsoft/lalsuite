@@ -45,10 +45,6 @@ LALInspiralWaveCorrelate()
 */
 #include <lal/LALNoiseModelsInspiral.h>
 
-NRCSID (LALINSPIRALFINDEVENTSC, "$Id$");
-
-
-
 void
 LALInspiralFindEvents
    (

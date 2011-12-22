@@ -32,10 +32,6 @@
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
 
-NRCSID( NRWAVEIOC, "$Id$");
-
-
-
 /** Functionfor reading the numrel waveform -- just returns the numrel
     data as it is without any rescaling of time or amplitude */
 

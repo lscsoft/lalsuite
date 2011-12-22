@@ -76,12 +76,6 @@
 extern "C" {
 #endif
 
- /*
- * 6. Assignment of Id string using NRCSID()
- */
-
-NRCSID (NORMALIZESFTRNGMEDH, "$Id$");
-
 /*
  * 7. Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.

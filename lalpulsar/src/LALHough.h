@@ -236,7 +236,6 @@ typedef struct tagHOUGHResidualSpinPar{
 
 
 /** \cond DONT_DOXYGEN */
-NRCSID (LALHOUGHH, "$Id$");
 
 /*
  * 11. Extern Global variables. (discouraged)

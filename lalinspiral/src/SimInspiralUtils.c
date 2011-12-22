@@ -42,8 +42,6 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 
-NRCSID( SIMINSPIRALUTILSC, "$Id$" );
-
 /**
 \author Brown, D. A.
 \file

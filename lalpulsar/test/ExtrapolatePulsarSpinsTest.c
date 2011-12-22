@@ -30,8 +30,6 @@
 #include <lal/PulsarDataTypes.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
-NRCSID (PULSARSPINTESTC, "$Id$");
-
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 /** \name Error codes */

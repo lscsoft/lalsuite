@@ -56,8 +56,6 @@ is also provided if the verbose flag is set.
 #include <lal/LALVersion.h>
 #include <lal/LALVCSInfo.h>
 
-NRCSID( LALVERSIONC, "$Id$" );
-
 const char *const lalVersion       = LAL_VERSION;
 const int         lalVersionMajor  = LAL_VERSION_MAJOR;
 const int         lalVersionMinor  = LAL_VERSION_MINOR;

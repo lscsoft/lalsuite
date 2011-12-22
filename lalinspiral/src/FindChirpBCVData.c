@@ -70,9 +70,6 @@ LALFree()
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPBCVDATAC, "$Id$");
-
-
 void
 LALFindChirpBCVData (
     LALStatus                  *status,

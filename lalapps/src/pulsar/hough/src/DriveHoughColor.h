@@ -83,12 +83,6 @@ extern "C" {
 
 
 /******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID (DRIVEHOUGHCOLORH, "$Id$");
-
-/******************************************************
  *  Error codes and messages.
  */
  

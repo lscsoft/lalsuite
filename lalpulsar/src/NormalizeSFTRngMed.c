@@ -67,10 +67,6 @@ the Running median method.
 
 #include <lal/NormalizeSFTRngMed.h>
 
-
-NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
-
-
 /** Calculate the "periodogram" of an SFT, ie the modulus-squares of the SFT-data.
  */
 void

@@ -34,8 +34,6 @@
 
 
 #include <lal/LALRCSID.h>
-NRCSID (FINDCHIRPAMPCORTESTC,"$Id$");
-
 
 static void print_usage( void );
 

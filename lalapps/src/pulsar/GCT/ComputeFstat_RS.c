@@ -50,8 +50,6 @@
 #include <lal/ComplexAM.h>
 #include <lal/TimeSeries.h>
 
-NRCSID( COMPUTEFSTATRSC, "$Id$");
-
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
 #define FALSE (1==0)

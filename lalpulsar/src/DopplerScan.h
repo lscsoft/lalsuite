@@ -49,8 +49,6 @@ extern "C" {
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
 
-NRCSID( DOPPLERSCANH, "$Id$" );
-
 /*---------- DEFINES ----------*/
 
 #define DOPPLERSCANH_ENULL 		1

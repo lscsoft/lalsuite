@@ -180,9 +180,6 @@ LALDDestroyVector()           LALFree()
 #include <lal/SkyCoordinates.h>
 #include <lal/PulsarCat.h>
 
-NRCSID( PULSARCATC, "$Id$" );
-
-
 /* First, define a function to compute n!. */
 static UINT4
 fact( UINT2 n );

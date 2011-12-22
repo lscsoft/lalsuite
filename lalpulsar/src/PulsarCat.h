@@ -96,8 +96,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( PULSARCATH, "$Id$" );
-
 /** \name Error Codes */ /*@{*/
 #define PULSARCATH_ENUL   1
 #define PULSARCATH_EOUT   2

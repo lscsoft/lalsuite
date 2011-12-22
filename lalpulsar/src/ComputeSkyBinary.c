@@ -33,8 +33,6 @@ for the case of a continuous wave source in a binary system.
 #include <lal/FindRoot.h>
 #include <lal/LALBarycenter.h>
 
-NRCSID (COMPUTESKYBINARYC, "$Id$");
-
 static void Ft(LALStatus *status, REAL8 *tr, REAL8 t, void *tr0);
 
 static REAL8 a;      /* semi major axis */

@@ -84,8 +84,6 @@ LALSDestroyVectorSequence()   LALSDestroyVector()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
 
-NRCSID( GENERATEINSPIRALSMOOTHC, "$Id$" );
-
 #define BUFFSIZE 16384     /* Number of timesteps buffered */
 
 /*********************************************************************

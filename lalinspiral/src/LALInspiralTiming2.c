@@ -56,9 +56,6 @@ None
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
-NRCSID (LALINSPIRALTIMING2C, "$Id$");
-
-
 void
 LALInspiralTiming2_0PN (
    LALStatus *status,

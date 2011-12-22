@@ -60,12 +60,6 @@
 extern "C" {
 #endif
 
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID (MCINJECTCOMPUTEHOUGHH, "$Id$");
-
 /* ************************************************************
  * Usage format string. (Similar to DriveHoughColor_velo.c)
  */

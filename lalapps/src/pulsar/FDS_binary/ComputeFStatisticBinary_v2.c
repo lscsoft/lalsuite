@@ -53,9 +53,6 @@
 #include "ReadSourceFile_v1.h"
 #include "clusters.h"
 
-
-RCSID( "$Id$");
-
 /* BOINC should be set to 1 to be run under BOINC */
 #ifndef USE_BOINC
 #define USE_BOINC 0

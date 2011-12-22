@@ -85,10 +85,6 @@ This value should be in the interval  [1.0, 25.0].
 #include <lal/LUT.h>
 
 
-/** \cond DONT_DOXYGEN */
-NRCSID (PATCHGRIDC, "$Id$");
-/** \endcond */
-
 /*
  * The functions that make up the guts of this module
  */

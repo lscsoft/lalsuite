@@ -45,8 +45,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID(FLATLATTICETILINGH, "$Id$");
-
 /**
  * Flat lattice tiling bound
  */

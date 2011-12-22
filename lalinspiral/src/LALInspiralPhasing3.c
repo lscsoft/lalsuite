@@ -56,11 +56,6 @@ None.
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
-NRCSID (LALINSPIRALPHASING3C, "$Id$");
-
-
-
-
 void
 LALInspiralPhasing3_0PN (
    LALStatus  *status,

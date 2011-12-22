@@ -23,8 +23,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 
-NRCSID( UNITMULTIPLYC, "$Id$" );
-
 /**
 \author J. T. Whelan <john.whelan@ligo.org>
 \addtogroup UnitMultiply_c

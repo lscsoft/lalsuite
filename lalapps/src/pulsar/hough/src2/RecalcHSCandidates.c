@@ -115,9 +115,6 @@
 #include "HierarchicalSearch.h"
 #include "../../GCT/LineVeto.h"
 
-
-RCSID( "$Id$");
-
 #define TRUE (1==1)
 #define FALSE (1==0)
 

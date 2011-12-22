@@ -21,8 +21,6 @@
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
 
-NRCSID (CONFIGFILETESTC, "$Id$");
-
 /* Error codes and messages */
 
 #define CONFIGFILETESTC_ENORM 		0

@@ -152,9 +152,6 @@ LALRalloc()
 #define UNUSED
 #endif
 
-NRCSID(LALINSPIRALBCVBANKC, "$Id$");
-
-
 void
 LALInspiralCreateBCVBank (
     LALStatus            *status,

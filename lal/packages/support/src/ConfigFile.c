@@ -134,8 +134,6 @@ more convenient to use the UserInput.c infrastructure
 
 #include <lal/ConfigFile.h>
 
-NRCSID( CONFIGFILEC, "$Id$");
-
 extern INT4 lalDebugLevel;
 
 #define FMT_STRING "string"    /* reading in quoted strings needs some special treatment */

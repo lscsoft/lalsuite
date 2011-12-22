@@ -42,9 +42,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID(LALSIMBLACKHOLERINGDOWNH, "$Id$");
-
-
 /* LOW-LEVEL ROUTINES (USE LEAVER'S CONVENSIONS G = c = 2M = 1) */
 
 

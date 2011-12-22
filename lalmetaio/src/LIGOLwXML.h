@@ -48,8 +48,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 
-NRCSID( LIGOLWXMLH, "$Id$" );
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

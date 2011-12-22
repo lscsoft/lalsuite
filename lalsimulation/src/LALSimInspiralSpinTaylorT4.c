@@ -53,8 +53,6 @@
 #define LAL_ST4_ABSOLUTE_TOLERANCE 1.e-12
 #define LAL_ST4_RELATIVE_TOLERANCE 1.e-12
 
-NRCSID(LALSIMINSPIRALSPINTAYLORT4C, "$Id$");
-
 /**
  * Struct containing all of the non-dynamical coefficients needed
  * to evolve a spinning, precessing binary and produce a waveform.

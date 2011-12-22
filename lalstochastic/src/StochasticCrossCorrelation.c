@@ -280,9 +280,6 @@ LALUnitMultiply()
 #include <lal/AVFactories.h>
 #include <lal/VectorOps.h>
 
-NRCSID(STOCHASTICCROSSCORRELATIONC,
-"$Id$");
-
 void
 LALStochasticCrossCorrelationStatisticCal(
     LALStatus                                *status,

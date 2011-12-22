@@ -44,8 +44,6 @@
 
 #include <lalapps.h>
 
-RCSID( "$Id$");
-
 /* ---------- Error codes and messages ---------- */
 #define TEMPOCOMPARISONC_ENORM 0
 #define TEMPOCOMPARISONC_ESUB  1

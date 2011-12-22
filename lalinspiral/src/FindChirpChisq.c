@@ -69,8 +69,6 @@ LALCOMPLEX8VectorFFT()
 #include <lal/Chisq_CPU.h>
 #include <lal/LALInspiralConfig.h>
 
-NRCSID (FINDCHIRPCHISQC, "$Id$");
-
 
 void
 LALFindChirpComputeChisqBins(

@@ -26,8 +26,6 @@
 #define UNUSED
 #endif
 
-NRCSID( LALEVALUATEINSPIRALCHISQTESTC, "$Id$" );
-
 /* Local Functions used only in this file */
 static REAL4 **matrix(long nrl, long nrh, long ncl, long nch);
 static void  free_matrix(REAL4 **m, long nrl, long nrh, long ncl, long nch);

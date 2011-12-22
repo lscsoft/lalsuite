@@ -59,10 +59,6 @@ void LALParseUnitString ( LALStatus *status,
 static const LALUnit lalDimensionlessUnit 
 	= {  0, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 
-
-NRCSID( READTIMESERIESC, "$Id$" );
-
-
 /* Change the first instance of the target to '\0'; returns 0 on success,
    1 on failure */
 static INT2 changeCharToNull (CHAR *string, CHAR target, CHAR *offEndOfString)

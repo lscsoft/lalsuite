@@ -43,8 +43,6 @@
 #include <lal/PulsarTimes.h>
 #include <lal/FlatPulsarMetric.h>
 
-NRCSID( FLATPULSARMETRICC, "$Id$");
-
 /*---------- DEFINES ----------*/
 #define TRUE (1==1)
 #define FALSE (1==0)

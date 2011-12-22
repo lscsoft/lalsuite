@@ -59,8 +59,6 @@
 /*                                           */
 /*********************************************/
 
-NRCSID( STACKSLIDEBINARYC,  "$Id$");
-
 /* 04/12/05 gam; add StackSlideSearchParams *params */
 void StackSlideBinary(  LALStatus *status,
                         StackSlideParams *stksldParams,

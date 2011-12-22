@@ -121,8 +121,6 @@ typedef struct {
   REAL8 df;				/**< size of bin */
 }ExRegion;
 
-RCSID( "$Id$");
-
 /***********************************************************************************************/
 /* Global variables */
 extern int vrbflg;				/* defined in lalapps.c */

@@ -17,9 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-RCSID( "$Id$");
-
-
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 
 { 

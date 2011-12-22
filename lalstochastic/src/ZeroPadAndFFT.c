@@ -131,10 +131,6 @@ t\f$ times the discrete Fourier transform.</li>
 #include <lal/Units.h>
 #include <string.h>
 
-NRCSID(ZEROPADANDFFTC,
-       "$Id$");
-
-
 void
 LALSZeroPadAndFFT(
     LALStatus                *status,

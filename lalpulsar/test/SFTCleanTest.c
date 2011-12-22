@@ -31,9 +31,6 @@
 #include <lal/SFTClean.h>
 #include <glob.h>
 
-
-NRCSID (SFTCLEANTESTC, "$Id$");
-
 /**\name Error Codes */ /*@{*/
 #define SFTCLEANTESTC_ENORM     0
 #define SFTCLEANTESTC_ESUB      1

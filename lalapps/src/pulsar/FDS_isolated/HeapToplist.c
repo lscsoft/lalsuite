@@ -49,9 +49,6 @@
 #include <string.h>
 #include "HeapToplist.h"
 
-NRCSID(HEAPTOPLISTCID, "$Id$");
-
-
 /* this function gets a "partial heap", i.e. a heap where only the top
    element (potentially) violates the heap property. It "bubbles
    down" this element so that the heap property is restored */

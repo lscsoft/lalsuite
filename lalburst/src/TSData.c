@@ -38,8 +38,6 @@
 #define UNUSED
 #endif
 
-NRCSID (TSDATAC,"$Id$");
-
 /*
  * Local static functions
  */

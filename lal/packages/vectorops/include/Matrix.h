@@ -75,8 +75,6 @@ extern "C" {
 #define MATLABMATRIXH_MSGELNTH "Vector/Array of Improper Length"
 #define MATLABMATRIXH_MSGENNUL "Non-Null Pointer that should be NULL"
 
-NRCSID( MATLABMATRIXH, "$Id$");
-
 /* Multiply */
 /** \addtogroup MatrixMultiply_c
  * @{

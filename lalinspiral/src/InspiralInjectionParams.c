@@ -43,8 +43,6 @@
 #include <lal/InspiralInjectionParams.h>
 #include <lal/VectorOps.h>
 
-NRCSID (INSPIRALINJECTIONPARAMSC,"$Id$");
-
 /** Generates the geocent_end_time for an inspiral injection, based on the
  * given startTime and timeWindow */
 SimInspiralTable* XLALRandomInspiralTime(

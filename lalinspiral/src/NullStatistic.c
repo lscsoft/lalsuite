@@ -46,9 +46,6 @@
 #include <lal/CoherentInspiral.h>
 #include <lal/NullStatistic.h>
 
-NRCSID (NULLSTATISTICC, "$Id$");
-
-
 static REAL4 cartesianInnerProduct(REAL4 x[3], REAL4 y[3])
 {
   return x[0]*y[0] + x[1]*y[1] + x[2]*y[2];

@@ -147,7 +147,6 @@ points very close to the equator.
 
 
 /** \cond DONT_DOXYGEN */
-NRCSID( GENERALMESHTESTC, "$Id$" );
 
 #define MIN_DURATION (86400./LAL_TWOPI) /* one radian of rotation */
 #define MAX_DURATION (3.16e7)           /* one year; arbitrary */

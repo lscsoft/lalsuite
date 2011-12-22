@@ -41,8 +41,6 @@
 #include <lalapps.h>
 #include "SideBand.h"
 
-RCSID( "$Id:$");
-
 /*---------- DEFINES ----------*/
 #define ACC 40.0
 #define BIGNO 1.0e10

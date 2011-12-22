@@ -57,8 +57,6 @@
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-NRCSID( EXTRAPOLATEPULSARSPINSC, "$Id$");
-
 /*---------- main functions ---------- */
 
 /** General pulsar-spin extraploation function: given a "spin-range" (ie spins + spin-bands) at time

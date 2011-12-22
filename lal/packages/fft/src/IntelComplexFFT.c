@@ -34,8 +34,6 @@
 #include <lal/AVFactories.h>
 #include <lal/ComplexFFT.h>
 
-NRCSID( COMPLEXFFTC, "$Id$" );
-
 #ifdef LAL_QTHREAD
 extern int dummy_have_qthread;
 #endif

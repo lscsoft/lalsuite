@@ -58,8 +58,6 @@ double *zofA, *dzdA, *dRdz;
 double H0 = LAMBDA_H_0;
 int Namp;   /* size of amplitude/eff array */
 
-NRCSID( CSGAMMAC, "cs_gamma $Id$");
-RCSID( "cs_gamma $Id$");
 
 #define PROGRAM_NAME "cs_gamma"
 #define CVS_REVISION "$Revision$"

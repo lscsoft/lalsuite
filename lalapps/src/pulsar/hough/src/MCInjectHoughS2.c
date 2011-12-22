@@ -91,12 +91,6 @@ extern int lalDebugLevel;
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-RCSID ("$Id$");
-
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){
 

@@ -25,10 +25,6 @@
 #include <lal/Date.h>
 #include <lal/PulsarTimes.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID( GETEARTHTIMESC, "$Id$" );
-/** \endcond */
-
 #define NEQUINOXES 29
 /** Define a list of GPS times of autumnal equinoxes (1992 to 2020). */
 static const INT4 equinoxes[NEQUINOXES] = {

@@ -62,8 +62,6 @@ The quantities which are defined in this file are
 #ifndef _LIGOLWXMLINSPIRALHEADERS_H
 #define _LIGOLWXMLINSPIRALHEADERS_H
 
-NRCSID( LIFOLWXMLINSPIRALHEADERSH, "$Id$" );
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

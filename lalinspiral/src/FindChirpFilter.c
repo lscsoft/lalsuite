@@ -78,10 +78,6 @@ extern int vrbflg;                      /* verbocity of lal function    */
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPFILTERC, "$Id$");
-
-
-
 void
 LALFindChirpFilterSegment (
     LALStatus                  *status,

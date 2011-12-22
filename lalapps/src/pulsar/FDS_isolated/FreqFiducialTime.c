@@ -189,11 +189,6 @@ extern INT4 vrbflg;
 
 const REAL8 FIXED_FIDUCIAL_TIME = 793555944; /* here e.g. GPS startTime of first data stretch in S4 is chosen */
 
-
-RCSID ("$Id$");
-
-
-
 /* ------------------------------------------------------------------------------------------*/
 /* Code starts here.                                                                         */
 /* ------------------------------------------------------------------------------------------*/

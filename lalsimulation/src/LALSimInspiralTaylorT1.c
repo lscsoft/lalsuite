@@ -42,8 +42,6 @@
 #define UNUSED
 #endif
 
-NRCSID(LALSIMINSPIRALTAYLORT1C, "$Id$");
-
 /**
  * This structure contains the intrinsic parameters and post-newtonian 
  * co-efficients for the denergy/dv and flux expansions. 

@@ -55,9 +55,6 @@ mismatch from  1 - { (1/T) \int cos( phi1 - phi2 ) dt }^2. */
 " --sun               Sun ephemeris\n"\
 "\n"
 
-
-RCSID("$Id$");
-
 typedef struct tagInputParams{
   CHAR det[10];
   CHAR pulsar[15];

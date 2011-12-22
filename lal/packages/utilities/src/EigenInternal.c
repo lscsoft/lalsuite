@@ -114,8 +114,6 @@ left in indeterminate states.
 #define EIGENINTERNALC_MAXITER 30 /* max. number of iterations in
 				     diagonalizing */
 
-NRCSID( EIGENINTERNALC, "$Id$" );
-
 /* A quick macro to take the square root of the sum of squares,
    without overflowing or underflowing. */
 #define RSS( a, b ) ( fabs( a ) > fabs( b ) ?                        \

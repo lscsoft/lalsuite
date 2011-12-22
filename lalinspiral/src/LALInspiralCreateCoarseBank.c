@@ -259,12 +259,6 @@ LALRalloc()
 #include <lal/LALStdio.h>
 #include <lal/FindRoot.h>
 
-
-
-NRCSID(LALINSPIRALCREATECOARSEBANKC, "$Id$");
-
-
-
 void
 LALInspiralCreateCoarseBank(
     LALStatus            *status,

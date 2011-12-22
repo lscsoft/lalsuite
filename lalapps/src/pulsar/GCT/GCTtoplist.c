@@ -44,9 +44,6 @@
 
 #include <lal/LogPrintf.h>
 
-RCSID("$Id$");
-
-
 /* Windows specifics */
 #ifdef _WIN32
 

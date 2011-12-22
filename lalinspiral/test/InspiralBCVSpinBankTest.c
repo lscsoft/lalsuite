@@ -58,7 +58,6 @@ extern int lalDebugLevel;
 #include <gsl/gsl_matrix.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (INSPIRALBCVSPINBANKTESTC,"$Id$");
 
 void testfunction(LALStatus *status);
 

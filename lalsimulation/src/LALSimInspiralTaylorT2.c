@@ -37,8 +37,6 @@
 #define UNUSED
 #endif
 
-NRCSID(LALSIMINSPIRALTAYLORT3C, "$Id$");
-
 typedef struct
 tagexpnCoeffsTaylorT2 {
    /* Taylor expansion coefficents in t(v)*/

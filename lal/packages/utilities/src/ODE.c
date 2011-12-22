@@ -229,8 +229,6 @@
 #include <lal/AVFactories.h>
 #include <lal/ODE.h>
 
-NRCSID( ODEC, "$Id$" );
-
 #define NSTEP 4
 /* <lalVerbatim file="ODECP"> */
 void LALSRungeKutta4(

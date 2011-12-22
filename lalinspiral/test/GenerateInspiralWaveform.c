@@ -54,8 +54,6 @@ Basically, you can provide all the arguments from the InspiralTemplate structure
 #include <lal/Random.h>
 #include <lal/GenerateInspiral.h>
 
-NRCSID( LALGENERATEINSPIRALWAVEFORMC, "$Id$" );
-
 INT4 lalDebugLevel=1;
 #define ERROR( code, msg, statement )                                \
 do                                                                   \

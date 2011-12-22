@@ -111,7 +111,6 @@ LALXMGRPlotMesh()
 #include <lal/TwoDMesh.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID( PTOLEMESHTESTC, "$Id$" );
 
 /* BEN: These aren't used right now, but should be. */
 #define MIN_DURATION (86400./LAL_TWOPI) /* one radian of rotation */

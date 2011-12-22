@@ -29,8 +29,6 @@
 #include <stddef.h>
 #include <lal/LALRCSID.h>
 
-NRCSID( HEAPTOPLISTHID, "$Id$");
-
 /* toplist structure */
 typedef struct {
   size_t length;   /* the length (maximal number of entries) of the toplist */

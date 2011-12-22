@@ -28,9 +28,6 @@
 #include <lal/LALCorrelation.h>
 #include <math.h>
 
-/* ****** DEFINE RCS ID STRING ************/
-NRCSID( LALCORRELATIONC, "$Id$" );
-
 /* ****** DEFINE LOCAL CONSTANTS AND MACROS ************/
 
 /* ****** DECLARE LOCAL (static) FUNCTIONS ************/

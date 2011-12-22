@@ -63,9 +63,6 @@ LALDestroyVector()
 #include <lal/FindChirpPTF.h>
 #include <lal/MatrixUtils.h>
 
-NRCSID(FINDCHIRPPTFTEMPLATEC, "$Id$");
-
-
 void
 LALFindChirpPTFTemplate (
     LALStatus                  *status,

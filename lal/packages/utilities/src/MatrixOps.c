@@ -150,8 +150,6 @@ multiplication (negating the sign of the imaginary part) per element.
 #include <lal/LALStdlib.h>
 #include <lal/MatrixUtils.h>
 
-NRCSID( MATRIXOPSC, "$Id$" );
-
 #define TYPECODE I2
 #define TYPE INT2
 #define SIZE 2

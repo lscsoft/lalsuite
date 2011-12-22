@@ -56,8 +56,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( LIGOMETADATATABLESH, "$Id$" );
-
 /* Defines for lengths of database table char arrays       */
 /* one longer than as defined in the SQL tables to allow   */
 /* strage of the terminating null need for the C %s format */

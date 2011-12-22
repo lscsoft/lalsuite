@@ -23,8 +23,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 
-NRCSID( UNITRAISEC, "$Id$" );
-
 /**
 \author J. T. Whelan <john.whelan@ligo.org>
 \addtogroup UnitRaise_c

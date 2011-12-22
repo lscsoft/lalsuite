@@ -52,8 +52,6 @@
 #include <lal/SeqFactories.h>
 #include <lal/NRWaveInject.h>
 
-NRCSID(LALSpinInspiralRDTestC, "$Id: LALSpinInspiralRDTest.c,v 1.1 2009/07/14 09:47:23 ");
-
 int main() {
     static LALStatus    mystatus;
 

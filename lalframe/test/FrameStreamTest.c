@@ -49,7 +49,6 @@
 #include <lal/LALFrameL.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (FRAMESTREAMTESTC,"$Id$");
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { \

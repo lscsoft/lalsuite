@@ -68,9 +68,6 @@ returned through the function's return statement.
 #include <lal/LALStdlib.h>
 #include <lal/IIRFilter.h>
 
-NRCSID(IIRFILTERC,"$Id$");
-
-
 /*
  *
  * WARNING: THIS FUNCTION IS OBSOLETE

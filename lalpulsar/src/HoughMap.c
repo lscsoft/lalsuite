@@ -38,10 +38,6 @@
 
 #include <lal/HoughMap.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID (HOUGHMAPC, "$Id$");
-/** \endcond */
-
 /*
  * The functions that make up the guts of this module
  */

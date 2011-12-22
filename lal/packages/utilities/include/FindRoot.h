@@ -55,9 +55,6 @@ Root finding routines.
 extern "C" {
 #endif
 
-
-NRCSID (FINDROOTH, "$Id$");
-
 #if 0 /* autodoc block */
 
 <lalLaTeX>

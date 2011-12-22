@@ -42,8 +42,6 @@
 #include <lal/GSLSupport.h>
 #include <lal/FlatLatticeTilingPulsar.h>
 
-NRCSID(FLATLATTICETILINGPULSARC, "$Id$");
-
 #define TRUE  (1==1)
 #define FALSE (1==0)
 

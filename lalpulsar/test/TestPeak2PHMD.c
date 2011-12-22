@@ -103,7 +103,6 @@ LALCheckMemoryLeaks()
 
 
 /** \cond DONT_DOXYGEN */
-NRCSID (TESTPEAK2PHMDC, "$Id$");
 
 /* Default parameters. */
 

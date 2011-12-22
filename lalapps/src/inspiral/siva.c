@@ -35,8 +35,6 @@
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lalapps.h>
 
-RCSID("$Id$");
-
 #define USAGE \
   "Usage: lalapps_siva INPUTFILE VETOFILE OUTPUTFILE\n"\
 "\n"\

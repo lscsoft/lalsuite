@@ -28,8 +28,6 @@
 
 #include <lal/TrigScanEThincaCommon.h>
 
-NRCSID( TRIGSCANETHINCACOMMONC, "$Id$" );
-
 /**
 \author Robinson, C. A. K.
 \file

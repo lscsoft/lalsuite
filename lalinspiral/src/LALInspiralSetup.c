@@ -60,10 +60,6 @@ None.
 
 /* static void LALPadeCoeffs7(int n, double *padecoeffs, double *taylorcoeffs); */
 
-NRCSID (LALINSPIRALSETUPC, "$Id$");
-
-
-
 void
 LALInspiralSetup (
    LALStatus        *status,

@@ -172,8 +172,6 @@ LALUnitAsString()
 #include <lal/StreamOutput.h>
 #include <lal/Date.h>
 
-NRCSID( STREAMSERIESOUTPUTC, "$Id$" );
-
 /* Define a function for printing a string as a literal. */
 static int
 LALWriteLiteral( FILE *stream, const CHAR *string )

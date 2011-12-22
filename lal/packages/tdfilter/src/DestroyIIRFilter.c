@@ -60,8 +60,6 @@ void LALDDestroyVector()
 #include <lal/AVFactories.h>
 #include <lal/IIRFilter.h>
 
-NRCSID(DESTROYIIRFILTERC,"$Id$");
-
 void XLALDestroyREAL4IIRFilter( REAL4IIRFilter *filter )
 {
   if ( filter )

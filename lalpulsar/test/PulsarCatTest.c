@@ -164,8 +164,6 @@ this with the <tt>-i</tt> option.
 #include <lal/DetectorSite.h>
 #include <lal/PulsarCat.h>
 
-NRCSID( PULSARCATTESTC, "$Id$" );
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define J2000GPS 630763213 /* J2000.0 epoch in GPS seconds */

@@ -26,10 +26,6 @@
 /* Uncomment to remove orbital motion.
 #define LAL_AU_SI 0.0 */
 
-/** \cond DONT_DOXYGEN */
-NRCSID(TBARYPTOLEMAICC,"$Id$");
-/** \endcond */
-
 /** \file
     \author Creighton, T. D.
     \ingroup PulsarTimes_h

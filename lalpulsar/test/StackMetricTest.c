@@ -95,8 +95,6 @@ LALGetEarthTimes()
 #include <lal/StackMetric.h>
 #include <lal/PulsarTimes.h>
 
-NRCSID(STACKMETRICTESTC,"$Id$");
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define NSTACKS 1

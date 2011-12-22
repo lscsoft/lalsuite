@@ -35,8 +35,6 @@
 #include "getresp.h"
 #include "errutil.h"
 
-RCSID( "$Id$" );
-
 /* maximum length of filename */
 #define FILENAME_LENGTH 255
 

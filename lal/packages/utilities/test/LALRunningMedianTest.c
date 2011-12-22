@@ -82,8 +82,6 @@ LALCheckMemoryLeaks()
 #include <lal/PrintVector.h>
 #include <lal/LALRunningMedian.h>
 
-NRCSID( LALRUNNINGMEDIANTESTC, "$Id$" );
-
 /***************************** <lalErrTable file="LALRunningMedianTestCE"> */
 #define LALRUNNINGMEDIANTESTC_ENOM 0
 #define LALRUNNINGMEDIANTESTC_EARG 1

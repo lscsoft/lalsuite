@@ -43,9 +43,6 @@
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 
-NRCSID (FINDCHIRPCLUSTEREVENTSC, "$Id$");
-
-
 void
 LALFindChirpClusterEvents (
     LALStatus                  *status,

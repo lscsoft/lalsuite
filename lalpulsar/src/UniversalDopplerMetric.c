@@ -119,7 +119,6 @@ const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
 const MultiDetectorInfo empty_MultiDetectorInfo;
 
 /*---------- Global variables ----------*/
-NRCSID( UNIVERSALDOPPLERMETRICC, "$Id$");
 
 BOOLEAN outputIntegrand = 0;
 

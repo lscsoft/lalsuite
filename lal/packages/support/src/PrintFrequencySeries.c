@@ -102,10 +102,6 @@ enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
 				"K^-32768/32767 strain^-32768/32767 "
 				"count^-32768/32767") };
 
-
-NRCSID( PRINTFREQUENCYSERIESC, "$Id$" );
-
-
 #define TYPECODE Z
 #define TYPE COMPLEX16
 #define FMT "%e\t%le\t%le\n"

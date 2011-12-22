@@ -353,9 +353,6 @@ InspiralComputeMetricGetPsiCoefficients (
     InspiralMomentsEtc *moments
     );
 
-NRCSID(LALINSPIRALCOMPUTEMETRICC, "$Id$");
-
-
 void
 LALInspiralComputeMetric (
     LALStatus          *status,

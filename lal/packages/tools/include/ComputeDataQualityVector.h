@@ -23,8 +23,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/BandPassTimeSeries.h>
 
-NRCSID (COMPUTE_DATA_QUALITY_VECTORH,"$Id$");
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

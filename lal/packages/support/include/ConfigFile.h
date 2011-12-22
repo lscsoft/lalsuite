@@ -48,8 +48,6 @@
 extern "C" {
 #endif
 
-NRCSID( CONFIGFILEH, "$Id$");
-
 /** Levels of strictness for config-file parsing. */
 typedef enum {
   CONFIGFILE_IGNORE = 0,	/**< ignore missing config-variable or unparsed config-entries */

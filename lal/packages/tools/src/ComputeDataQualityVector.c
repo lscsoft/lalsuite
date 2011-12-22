@@ -21,8 +21,6 @@
 
 #include <math.h>  /* to use isnan() and isinf() */
 
-NRCSID( COMPUTEDATAQUALITYVECTORC, "$Id$" );
-RCSID("$Id$");
 
 /**
  * Compute the Data Quality Vector as defined in

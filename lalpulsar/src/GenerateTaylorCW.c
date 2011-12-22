@@ -106,9 +106,6 @@ snprintf()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
 
-NRCSID( GENERATETAYLORCWC, "$Id$" );
-
-
 void
 LALGenerateTaylorCW( LALStatus          *stat,
 		     CoherentGW         *output,

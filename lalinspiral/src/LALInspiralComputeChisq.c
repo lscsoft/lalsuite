@@ -41,9 +41,6 @@ LALREAL4VectorFFT
 #include <lal/AVFactories.h>
 #include <lal/LALNoiseModelsInspiral.h>
 
-NRCSID (LALINSPIRALCOMPUTECHISQ, "$Id$");
-
-
 void
 LALInspiralComputeChisq
    (

@@ -56,7 +56,6 @@
 #include <lal/ConfigFile.h>
 #include <lal/LogPrintf.h>
 
-NRCSID (SFTFILEIOC, "$Id$");
 /*---------- DEFINES ----------*/
 
 #define MIN_SFT_VERSION 1

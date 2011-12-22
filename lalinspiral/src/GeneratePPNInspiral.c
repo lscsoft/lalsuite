@@ -247,8 +247,6 @@ LALSBisectionFindRoot()       snprintf()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
 
-NRCSID( GENERATEPPNINSPIRALC, "$Id$" );
-
 /* Define some constants used in this module. */
 #define MAXORDER 6        /* Maximum number of N and PN terms */
 #define BUFFSIZE 1024     /* Number of timesteps buffered */

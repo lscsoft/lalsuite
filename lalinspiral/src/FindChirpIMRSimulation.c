@@ -70,10 +70,6 @@ LALFree()
 #include <lal/GenerateInspRing.h>
 #include <lal/TimeSeries.h>
 
-
-NRCSID( FINDCHIRPIMRSIMULATIONC, "$Id$" );
-
-
 void
 LALFindChirpInjectIMR (
     LALStatus                  *status,

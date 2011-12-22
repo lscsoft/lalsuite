@@ -23,11 +23,6 @@ binary inspiral chirps.
 /* debugging */
 extern int vrbflg;                      /* verbocity of lal function    */
 
-
-NRCSID (FINDCHIRPACTDFILTERC, "$Id$");
-
-
-
 void
 LALFindChirpACTDFilterSegment (
     LALStatus                  *status,

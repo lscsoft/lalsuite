@@ -83,9 +83,6 @@ by Donald B.\ Percival and Andrew T.\ Walden
 #include <math.h>
 #include <lal/Dirichlet.h>
 
-NRCSID(DIRICHLETC, "$Id$"
-);
-
 /* <lalVerbatim file="DirichletCP"> */
 void
 LALDirichlet(LALStatus*                 status,

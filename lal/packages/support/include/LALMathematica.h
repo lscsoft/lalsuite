@@ -196,8 +196,6 @@ extern "C" {
 #define END_TEXTCELL_		fprintf(nb, "\\>\", \"Text\"]\n")
 /* </lalVerbatim> */
 
-NRCSID (LALMATHEMATICAH, "$Id$");
-
 /* <lalVerbatim file="LALMathematicaHT"> */
 typedef struct tagMath3DPointList{
   SWIGLAL_STRUCT(Math3DPointList);

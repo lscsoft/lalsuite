@@ -45,9 +45,6 @@
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 
-NRCSID (FINDCHIRPSTOREEVENTC, "$Id$");
-
-
 void
 LALFindChirpStoreEvent (
     LALStatus                  *status,

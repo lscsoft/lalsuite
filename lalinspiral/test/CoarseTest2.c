@@ -58,7 +58,6 @@ LALInspiralCreateCoarseBank
 #include <lal/LALNoiseModels.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (COARSETEST2C,"$Id$");
 
 INT4 lalDebugLevel=34;
 int

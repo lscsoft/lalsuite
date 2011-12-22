@@ -135,8 +135,6 @@ LALFILE * lalstderr( void )
 	return &_lalstderr;
 }
 
-NRCSID (FILEIOC,"$Id$");
-
 #define STR( x ) #x
 #define XSTR( x ) STR( x )
 #define INFOMSG( msg, file ) ( ( lalDebugLevel & LALINFO ) ? \

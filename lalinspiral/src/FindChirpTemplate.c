@@ -72,10 +72,6 @@ LALDestroyVector()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpACTD.h>
 
-
-NRCSID (FINDCHIRPTEMPLATEC, "$Id$");
-
-
 void
 LALFindChirpTemplateInit (
     LALStatus                  *status,

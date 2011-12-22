@@ -43,8 +43,6 @@
 #include <lal/TimeDelay.h>
 #include <lal/XLALError.h>
 
-NRCSID( COINCRINGDOWNUTILSC, "$Id$" );
-
 /**
 \author Fairhurst, S.
 \file

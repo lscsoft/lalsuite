@@ -50,8 +50,6 @@
 
 #include <lal/TimeFreq.h>
 
-NRCSID (DESTROYTIMEFREQREPC, "$Id$");
-
 void LALDestroyTimeFreqRep (LALStatus *status, TimeFreqRep **tfr)
 {
   /*

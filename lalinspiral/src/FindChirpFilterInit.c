@@ -46,10 +46,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/FindChirpACTD.h>
 
-NRCSID (FINDCHIRPFILTERINITC, "$Id$");
-
-
-
 void
 LALCreateFindChirpInput (
     LALStatus                  *status,

@@ -37,7 +37,7 @@
 #include <LALAppsVCSInfo.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID LALAPPS_VCS_IDENT_ID LALAPPS_VCS_IDENT_STATUS
+#define VCSID LALAPPS_VCS_IDENT_ID LALAPPS_VCS_IDENT_STATUS
 
 int main(int argc, char** argv) {
   int i;
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
       
       /* SFT was invalid: say why */
       if (err) {
-	fprintf(stderr, "%s\n%s is not a valid SFT. %s\n", RCSID, argv[i], SFTErrorMessage(err));
+	fprintf(stderr, "%s\n%s is not a valid SFT. %s\n", VCSID, argv[i], SFTErrorMessage(err));
 	if (errno)
 	  perror(NULL);
 	return err;
@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
       /* check that various bits of header information are consistent */
       if (count && (err=CheckSFTHeaderConsistency(&lastinfo, &info)))
 	{
-	  fprintf(stderr, "%s\n%s is not a valid SFT. %s\n", RCSID, argv[i], SFTErrorMessage(err));
+	  fprintf(stderr, "%s\n%s is not a valid SFT. %s\n", VCSID, argv[i], SFTErrorMessage(err));
 	  if (errno)
 	    perror(NULL);
 	  return err;
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
       data=(float *)realloc((void *)data, info.nsamples*4*2);
       if (!data) {
 	errno=SFTENULLPOINTER;
-	fprintf(stderr, "%s\nran out of memory at %s. %s\n", RCSID, argv[i], SFTErrorMessage(err));
+	fprintf(stderr, "%s\nran out of memory at %s. %s\n", VCSID, argv[i], SFTErrorMessage(err));
 	if (errno)
 	  perror(NULL);
 	return err;
@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
 
       err=ReadSFTData(fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */ NULL);
       if (err) {
-	fprintf(stderr, "%s\n%s is not a valid SFT. %s\n", RCSID, argv[i], SFTErrorMessage(err));
+	fprintf(stderr, "%s\n%s is not a valid SFT. %s\n", VCSID, argv[i], SFTErrorMessage(err));
 	if (errno)
 	  perror(NULL);
 	return err;
@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
 
       for (j=0; j<info.nsamples; j++) {
 	if (!finite(data[2*j]) || !finite(data[2*j+1])) {
-	  fprintf(stderr, "%s\n%s is not a valid SFT (data infinite at freq bin %d)\n", RCSID, argv[i], j+info.firstfreqindex);
+	  fprintf(stderr, "%s\n%s is not a valid SFT (data infinite at freq bin %d)\n", VCSID, argv[i], j+info.firstfreqindex);
 	  return SFTNOTFINITE;
 	}
       }

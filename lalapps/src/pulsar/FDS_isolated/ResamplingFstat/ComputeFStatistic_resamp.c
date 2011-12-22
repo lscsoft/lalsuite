@@ -74,8 +74,6 @@ int finite(double);
 
 #include "../HeapToplist.h"
 
-RCSID("$Id: ComputeFStatistic_resamp.c,v 1.46 2009/03/10 08:40:27 ppatel Exp $");
-NRCSID(TEMPORARY,"$Blah$");
 
 /*---------- DEFINES ----------*/
 

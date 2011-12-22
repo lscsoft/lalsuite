@@ -49,8 +49,6 @@
 /* lisaXML stuff */
 #include "readxml.h"
 
-RCSID ("$Id$");
-
 /** \name Error codes */
 /*@{*/
 #define LISAMAKESFTS_ENORM 	0

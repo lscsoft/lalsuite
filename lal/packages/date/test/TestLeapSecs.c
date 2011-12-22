@@ -28,8 +28,6 @@
 
 INT4 lalDebugLevel = 0;
 
-NRCSID(LALTESTLEAPSECSC, "$Id$");
-
 static int do_test(int gpssec, int tai_utc_before, int tai_utc_after)
 {
 	int result = 0;

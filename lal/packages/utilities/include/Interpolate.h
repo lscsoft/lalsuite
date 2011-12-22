@@ -55,8 +55,6 @@ Generates random numbers.
 extern "C" {
 #endif
 
-NRCSID (INTERPOLATEH, "$Id: Interpolate.h");
-
 #if 0 /* autodoc block */
 
 <lalLaTeX>

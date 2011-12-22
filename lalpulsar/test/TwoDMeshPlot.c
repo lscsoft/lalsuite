@@ -23,8 +23,6 @@
 #include <lal/TwoDMesh.h>
 #include "TwoDMeshPlot.h"
 
-NRCSID( TWODEMESHPLOTC, "$Id$" );
-
 /* Local constants. */
 #define TWODMESHPLOTC_MAXOBJ 797 /* Maximum number of objects in a
                                     PostScript macro */

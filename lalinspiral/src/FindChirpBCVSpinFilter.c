@@ -127,9 +127,6 @@ LALDestroyVector()
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPBCVSPINFILTERC, "$Id$");
-
-
 void
 LALFindChirpBCVSpinFilterSegment (
     LALStatus                  *status,

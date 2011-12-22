@@ -97,8 +97,6 @@ LALWarning()
 #include <lal/StringInput.h>
 #include <lal/StreamInput.h>
 
-NRCSID( STREAMVECTORINPUTC, "$Id$" );
-
 /* Define linked-list of buffers for storing an arbitrary number of
    arbitrary datatypes. */
 #define BUFFSIZE 16

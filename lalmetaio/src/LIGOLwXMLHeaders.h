@@ -76,8 +76,6 @@ defined in this file are
 #ifndef _LIGOLWXMLHEADERS_H
 #define _LIGOLWXMLHEADERS_H
 
-NRCSID( LIFOLWXMLHEADERSH, "$Id$" );
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

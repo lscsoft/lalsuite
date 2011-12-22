@@ -22,7 +22,6 @@
 #include <string.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (CHECKSTATUSC,"$Id$");
 
 extern BOOLEAN optVerbose;
 

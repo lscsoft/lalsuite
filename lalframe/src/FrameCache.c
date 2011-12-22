@@ -109,8 +109,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/FrameCache.h>
 
-NRCSID( FRAMECACHEC, "$Id$" );
-
 #define TMPSTRLEN 15
 #define XSTR( x ) #x
 #define STR( x ) XSTR( x )

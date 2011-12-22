@@ -86,10 +86,6 @@
 #include <lal/SeqFactories.h>
 #include <lal/TemplateBankGeneration.h>
 
-
-NRCSID(INSPIRALSPINBANKWNDTEMPLATEBANKC, "$Id$");
-
-
 /* LALINSPIRALSPINBANKMETRIC() --------------------------------------------- */
 void
 LALInspiralSpinBankMetric(

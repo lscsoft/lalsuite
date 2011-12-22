@@ -179,9 +179,6 @@ LALGeneratePPNInspiral()      LALSSInjectTimeSeries()
    factor of SIMULATEINSPIRALC_CUTOFF: */
 #define SIMULATEINSPIRALC_CUTOFF (0.000001)
 
-NRCSID( SIMULATEINSPIRALC, "$Id$" );
-
-
 void
 LALSimulateInspiral( LALStatus                  *stat,
 		     REAL4TimeSeries            *output,

@@ -72,7 +72,6 @@
 #include <lal/LALStatusMacros.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (COHERENTINSPIRALINPUTTESTC,"$Id$");
 
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);

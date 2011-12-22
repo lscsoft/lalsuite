@@ -50,8 +50,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID (BBHPHENOMCOEFFSH, "$Id$");
-
 /* This header contains the coeffs from the matching with the LONG */
 /* Jena waveforms (those are not the ones published in the original paper */
 /* but in the Amaldi 07 proceedings: http://arxiv.org/abs/0712.0343) */

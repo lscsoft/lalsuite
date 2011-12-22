@@ -64,9 +64,6 @@ LALFree()
 
 #include <lal/FindChirp.h>
 
-NRCSID (FINDCHIRPLINKEDLISTC, "$Id$");
-
-
 void
 LALFindChirpCreateTmpltNode (
     LALStatus                  *status,

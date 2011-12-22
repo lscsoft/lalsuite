@@ -23,9 +23,6 @@
 #include <lal/AVFactories.h>
 #include <lal/Resample.h>
 
-NRCSID(APPLYRESAMPLERULESC,"$Id$");
-
-
 /**
     \author Creighton, T. D.
     \ingroup Resample_h

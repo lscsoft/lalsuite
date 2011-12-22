@@ -112,8 +112,6 @@ LALCHARDestroyVector()
 #endif
 #endif
 
-NRCSID( PRINTVECTORTESTC, "$Id$" );
-
 INT4 lalDebugLevel = 3;
 
 int main( void )

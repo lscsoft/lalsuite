@@ -40,8 +40,6 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 
-NRCSID( SNGLINSPIRALUTILSC, "$Id$" );
-
 /**
 \author Brown, D. A., Fairhurst, S. and Messaritaki, E.
 \file

@@ -122,10 +122,6 @@ that clearly stand over the noise level.
 
 #include <lal/CLR.h>
 
-
-NRCSID (REFINTERFERENCEC, "$Id$");
-
-
 void LALRefInterference (LALStatus    *status,
 		   COMPLEX8Vector     *out,   /*  M(t), size n */
 		   COMPLEX8Vector     *in1,   /*  x(f), size n/2+1 */

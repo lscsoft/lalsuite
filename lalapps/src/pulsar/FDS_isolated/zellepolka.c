@@ -385,12 +385,6 @@ extern INT4 lalDebugLevel;
 /*! @param vrbflg        INT4 Control debugging messages. Defined in lalapps.h */
 extern INT4 vrbflg;
 
-
-
-RCSID ("$Id$");
-
-
-
 /* ------------------------------------------------------------------------------------------*/
 /* Code starts here.                                                                         */
 /* ------------------------------------------------------------------------------------------*/

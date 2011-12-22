@@ -74,8 +74,6 @@ configuration information.
 extern "C" {
 #endif
 
-NRCSID( LALVERSIONH, "$Id$" );
-
 /* <lalErrTable file="LALVersionHErrTab"> */
 
 #define LALVERSIONH_ENULL 1

@@ -65,7 +65,6 @@
 /*@}*/
 
 /** \cond DONT_DOXYGEN */
-NRCSID(LALBARYCENTERTESTC,"$Id$");
 
 /* ----- internal prototype ---------- */
 int compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 );

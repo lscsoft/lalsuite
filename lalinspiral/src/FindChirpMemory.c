@@ -97,9 +97,6 @@ LALU4DestroyVector()
 #include <lal/Date.h>
 #include <lal/FindChirp.h>
 
-NRCSID (FINDCHIRPMEMORYC, "$Id$");
-
-
 void
 LALInitializeDataSegmentVector (
     LALStatus                  *status,

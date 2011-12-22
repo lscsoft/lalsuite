@@ -123,9 +123,6 @@ LALCheckMemoryLeaks()
 
 #include <lal/LALStdlib.h>
 
-NRCSID (MAKEFAKEDATAC, "$Id$");
-
-
 /* Error codes and messages */
 
 

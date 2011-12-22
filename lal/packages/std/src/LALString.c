@@ -30,8 +30,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
 
-NRCSID( LALSTRINGC, "$Id$" );
-
 /** Like strcat but dynamically reallocates string with LALRealloc. */
 char * XLALStringAppend( char *s, const char *append )
 {

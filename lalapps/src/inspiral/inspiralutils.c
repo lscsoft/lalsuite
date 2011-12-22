@@ -80,10 +80,6 @@
 
 #include "inspiral.h"
 
-
-RCSID( "$Id$" );
-
-
 REAL4 compute_candle_distance(REAL4 candleM1, REAL4 candleM2,
     REAL4 thissnr, REAL8 chanDeltaT, INT4 nPoints,
     REAL8FrequencySeries *spec, UINT4 cut)

@@ -53,10 +53,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-
-NRCSID (FINDCHIRPDATATYPESH, "$Id$");
-
-
 /*
  *
  * typedefs of structures used by the findchirp functions

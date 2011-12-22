@@ -37,8 +37,6 @@
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <gsl/gsl_permutation.h>
 
-RCSID( "$Id$");
-
 /* globals, constants and defaults */
 
 extern int lalDebugLevel;

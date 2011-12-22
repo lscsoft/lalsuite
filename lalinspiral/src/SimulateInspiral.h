@@ -260,8 +260,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( SIMULATEINSPIRALH, "$Id$" );
-
 /** \name Error Codes */ /*@{*/
 #define SIMULATEINSPIRALH_ENUL 1
 #define SIMULATEINSPIRALH_EMEM 2

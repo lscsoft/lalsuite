@@ -97,13 +97,6 @@ extern "C" {
 #endif
 
 /*
- * 6. Assignment of Id string using NRCSID()
- */
-/** \cond DONT_DOXYGEN */
-NRCSID (PHMDH, "$Id$");
-/** \endcond */
-
-/*
  * 7. Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.
  */

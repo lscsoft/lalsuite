@@ -66,9 +66,6 @@ LALDCreateVector()            LALDDestroyVector()
 #define UNUSED
 #endif
 
-NRCSID( GENERATERINGC, "$Id$" );
-
-
 void
 LALGenerateRing(
     LALStatus          *stat,

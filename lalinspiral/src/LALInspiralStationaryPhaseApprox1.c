@@ -95,9 +95,6 @@ XLALPsiOfT (
    void      *param
    );
 
-
-NRCSID (LALINSPIRALSTATIONARYPHASEAPPROX1C, "$Id$");
-
 /* This is the main function to compute the stationary phase approximation */
 
 

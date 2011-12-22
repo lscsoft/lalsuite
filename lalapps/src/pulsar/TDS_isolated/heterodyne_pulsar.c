@@ -43,8 +43,6 @@ and reheterodyne with this phase difference. */
 
 #include "heterodyne_pulsar.h"
 
-RCSID("$Id$");
-
 /* define a macro to round a number without having to use the C round function */
 #define ROUND(a) (floor(a+0.5))
 

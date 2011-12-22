@@ -59,8 +59,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/Thresholds.h>
 
-NRCSID(MAIN, "$Id$");
-
 extern char *optarg;
 extern int optind, opterr, optopt;
 

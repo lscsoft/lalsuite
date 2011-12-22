@@ -35,8 +35,6 @@
 
 #define LAL_SOUND_MAX 32760
 
-NRCSID( AUDIOC, "$Id$" );
-
 /* if file pointer is NULL then create a new file based on series name */
 static FILE * fopen_if_null( FILE *fp, const char *name, const char *extn )
 {

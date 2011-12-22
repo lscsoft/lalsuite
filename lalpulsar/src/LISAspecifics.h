@@ -42,7 +42,6 @@ extern "C" {
 #endif
 
 #include <lal/LALRCSID.h>
-NRCSID( LISASPECIFICSH, "$Id$" );
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALDetectors.h>

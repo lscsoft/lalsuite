@@ -63,10 +63,6 @@ None.
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID (LALINSPIRALNEXTTEMPLATEC, "Id: $");
-
-
-
 void LALInspiralNextTemplate(LALStatus          *status,
                              InspiralBankParams *bankPars,
                              InspiralMetric     metric)

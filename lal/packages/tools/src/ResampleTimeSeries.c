@@ -26,8 +26,6 @@
 #include <lal/BandPassTimeSeries.h>
 #include <lal/ResampleTimeSeries.h>
 
-NRCSID( RESAMPLETIMESERIESC, "$Id$" );
-
 /**
  * \author Brown, D. A., Brady, P. R., Charlton, P.
  *

@@ -61,8 +61,6 @@ LALInspiralCreateCoarseBank
 #include <lal/LALNoiseModels.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (SPACECOVERINGC,"$Id$");
-
 
 void LALInspiralCreateBoundarySpace(InspiralCoarseBankIn coarseIn);
 

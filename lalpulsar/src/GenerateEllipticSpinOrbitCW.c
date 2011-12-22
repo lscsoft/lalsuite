@@ -167,9 +167,6 @@ snprintf()                 LALWarning()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
-NRCSID( GENERATEELLIPTICSPINORBITCWC, "$Id$" );
-
-
 void
 LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
 				CoherentGW            *output,

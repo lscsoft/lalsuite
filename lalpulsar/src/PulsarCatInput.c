@@ -128,9 +128,6 @@ Pulsar catalogue entries with epochs earlier than this date will cause
 #include <lal/SkyCoordinates.h>
 #include <lal/PulsarCat.h>
 
-NRCSID( PULSARCATINPUTC, "$Id$" );
-
-
 /* Local routine to parse a token into a REAL8 number, with additional
    precision information stored in codes: codes[0] is -1 for no number
    parsed, 0 for a normal representable output, 1 for a subnormal

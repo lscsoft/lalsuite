@@ -20,7 +20,6 @@
 #include <lal/LALHough.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID (DRIVEHOUGHC, "$Id$");
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

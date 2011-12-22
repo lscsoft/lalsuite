@@ -30,8 +30,6 @@
 #define LAL_HSERIES (0.0001) /* value H below which we expand sqrt(1+H)-1 */
 #define LAL_BSERIES (0.001)  /* value B below which we expand v */
 
-NRCSID( TERRESTRIALCOORDINATESC, "$Id$" );
-
 /**
    \author Creighton, T. D.
    \addtogroup TerrestrialCoordinates_c

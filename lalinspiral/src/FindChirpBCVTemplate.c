@@ -66,11 +66,6 @@ LALDestroyVector()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCV.h>
 
-
-NRCSID (FINDCHIRPBCVTEMPLATEC, "$Id$");
-
-
-
 void
 LALFindChirpBCVTemplate (
     LALStatus                  *status,

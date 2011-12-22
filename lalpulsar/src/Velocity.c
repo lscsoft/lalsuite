@@ -19,10 +19,6 @@
 
 #include <lal/Velocity.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID (VELOCITYC, "$Id$");
-/** \endcond */
-
 /*
  * The functions that make up the guts of this module
  */

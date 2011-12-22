@@ -43,8 +43,6 @@ LALAstroOmega()
 #include <lal/Integrate.h>
 #include <lal/AstroOmega.h>
 
-NRCSID (ASTROOMEGATESTC, "$Id$");
-
 static void SDensity (REAL8 *dEgw, REAL8 nu)
  {
   *dEgw=9.27E35 * pow(nu,3.);

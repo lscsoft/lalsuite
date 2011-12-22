@@ -52,8 +52,6 @@
 
 #include <lalapps.h>
 
-RCSID( "$Id$");
-
 /* ---------- Error codes and messages ---------- */
 #define COMPUTEPSDC_ENORM 0
 #define COMPUTEPSDC_ESUB  1

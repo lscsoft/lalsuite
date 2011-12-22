@@ -114,7 +114,6 @@ LALCheckMemoryLeaks()
 */
 
 #include <lal/LALStdlib.h>
-NRCSID (MAKEFAKEDATABINARYC, "$Id$");
 
 /**\name Error Codes */ /*@{*/
 #define MAKEFAKEDATABINARYC_ENORM 0

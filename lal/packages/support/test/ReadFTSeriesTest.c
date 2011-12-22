@@ -118,9 +118,6 @@ LALUnitPair
 #define  READFTSERIESTEST_TOL 1e6
 #define  READFTSERIESTEST_LEN 20
 
-
-NRCSID( READFTSERIESTESTC, "$Id$" );
-
 extern int lalDebugLevel;
 
 

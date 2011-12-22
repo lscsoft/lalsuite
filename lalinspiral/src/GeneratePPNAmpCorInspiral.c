@@ -70,8 +70,6 @@ LALSBisectionFindRoot()       snprintf()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
 
-NRCSID( GENERATEPPNAMPCORINSPIRALC, "$Id$" );
-
 /* Define some constants used in this module. */
 #define MAXORDER 8               /* Maximum number of N and PN terms */
 #define AMPMAXORDER 6            /* Maximum PN order in amplitude (plus one) */

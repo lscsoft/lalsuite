@@ -34,8 +34,6 @@
 #include "DetectorStates.h"
 #include "LISAspecifics.h"
 
-NRCSID( DETECTORSTATESC, "$Id$");
-
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
 #define FALSE (1==0)

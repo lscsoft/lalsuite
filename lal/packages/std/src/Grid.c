@@ -69,8 +69,6 @@ LAL<typecode>CreateArray()      LAL<typecode>DestroyArray()
 #include <lal/AVFactories.h>
 #include <lal/Grid.h>
 
-NRCSID( GRIDC, "$Id$" );
-
 #define TYPECODE Z
 #define TYPE COMPLEX16
 #include "Grid_source.c"

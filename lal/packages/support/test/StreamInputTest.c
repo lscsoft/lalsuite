@@ -132,8 +132,6 @@ LALZReadSequence()              LALZDestroyVector()
 #include <lal/SeqFactories.h>
 #include <lal/StreamInput.h>
 
-NRCSID(STREAMINPUTTESTC,"$Id$");
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define INFILE "StreamInput.data"

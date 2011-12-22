@@ -24,8 +24,6 @@
 
 #include "data_output.h"
 
-NRCSID(DATAOUTPUTC, "$Id$");
-RCSID("$Id$");
 
 /* externally declared variables */
 extern int middle_segment_flag;

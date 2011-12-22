@@ -33,9 +33,6 @@
 extern "C" {
 #endif
 
-NRCSID (STOCHASTIC2H, "$Id$" );
-
-
 void parseOptions(INT4 argc, CHAR *argv[]);
 void displayUsage(INT4 exitcode);
 

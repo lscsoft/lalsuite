@@ -21,8 +21,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALPrimer.h>
 
-NRCSID( LALPRIMERC, "$Id$" );
-
 void
 REAL4Invert( LALStatus *stat, REAL4 *output, REAL4 input )
      /* Computes the inverse of a REAL4 number. */

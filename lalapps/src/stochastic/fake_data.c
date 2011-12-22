@@ -25,8 +25,6 @@
 #include "fake_data.h"
 #include "sgwb.h"
 
-NRCSID(DATAINPUTC, "$Id$");
-RCSID("$Id$");
 
 /* externally declared variables */
 extern int vrbflg;

@@ -35,8 +35,6 @@
 #include "GCTtoplist.h"
 #endif
 
-#define HSBOINCEXTRASHRCSID "$Id$"
-
 #ifndef EAH_LOGLEVEL
 #define EAH_LOGLEVEL 1        /* LOG_DEBUG */
 #endif

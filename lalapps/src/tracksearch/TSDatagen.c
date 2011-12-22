@@ -50,8 +50,6 @@ void Get_External_Data(LALStatus*,REAL4Vector*,REAL4Vector*,TSDataGenParams);
 void multipleInjection(LALStatus*,REAL4Vector*,INT4,INT4);
 
 /* Code identification Text */
-NRCSID( TRACKSEARCHC, "TSDatagen $Id$");
-RCSID( "datagen $Id$");
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"

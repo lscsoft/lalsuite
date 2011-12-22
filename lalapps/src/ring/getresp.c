@@ -35,8 +35,6 @@
 #include "errutil.h"
 #include "gpstime.h"
 
-RCSID( "$Id$" );
-
 /* a few useful constants */
 static LALUnit      strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 static FrCacheSieve blank_sieve;

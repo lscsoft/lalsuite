@@ -33,8 +33,6 @@
 #include <lal/FindRoot.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (LALINSPIRALBANKLISTC,"$Id$");
-
 
 /* for debugging only
 void

@@ -54,10 +54,6 @@ chirps for BCV templates.
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPBCVFILTERC, "$Id$");
-
-
-
 void
 LALFindChirpBCVFilterSegment (
     LALStatus                  *status,

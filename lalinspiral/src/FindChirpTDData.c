@@ -54,11 +54,6 @@
 #include <lal/FindChirpTD.h>
 #include <lal/FindChirpSP.h>
 
-
-NRCSID (FINDCHIRPTDDATAC, "$Id$");
-
-
-
 void
 LALFindChirpTDData (
     LALStatus                  *status,

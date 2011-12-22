@@ -66,7 +66,6 @@ The following program shows how to use the routines LALStochasticMCDso and LALSt
 #include <lal/SimulateSB.h>
 #include <lal/StochasticMC.h>
 
-NRCSID(STOCHASTICTESTMCC, "$Id$");
 int main( ){
 
   static LALStatus status;
@@ -318,9 +317,6 @@ LALResponseConvert()
 #include <lal/Random.h>
 #include <lal/SimulateSB.h>
 #include <lal/StochasticMC.h>
-
-
-NRCSID(STOCHASTICMCC, "$Id$");
 
 static int verbose = 0;
 

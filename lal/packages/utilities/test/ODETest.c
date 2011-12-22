@@ -47,8 +47,6 @@
 #include <lal/SeqFactories.h>
 #include <lal/ODE.h>
 
-NRCSID (ODETESTC,"$Id$");
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else

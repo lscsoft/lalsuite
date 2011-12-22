@@ -50,9 +50,6 @@
 /* LALApps-includes */
 #include <lalapps/lalapps.h>
 
-RCSID( "$Id$");
-
-
 /* Definitions */
 /*
 #define USE_S2ALLSKY

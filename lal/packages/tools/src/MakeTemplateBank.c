@@ -34,8 +34,6 @@
 #include<lal/InspiralBankGeneration.h>
 #include<lal/LIGOMetadataTables.h>
 
-NRCSID(MAKETEMPLATEBANKC, "$Id$");
-
 void
 LALMakeTemplateBank(
      LALStatus *status,

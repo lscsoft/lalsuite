@@ -132,7 +132,6 @@ LALCheckMemoryLeaks
 #include <lal/AVFactories.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (COARSETESTC,"$Id$");
 
 INT4 lalDebugLevel=0;
 

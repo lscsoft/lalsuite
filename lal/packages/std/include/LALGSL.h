@@ -137,8 +137,6 @@ do nothing.
 extern "C" {
 #endif
 
-NRCSID( LALGSLH, "$Id$" );
-
 #ifndef SWIG /* exclude from SWIG interface */
 extern LALStatus * lalGSLGlobalStatusPtr;
 #endif /* SWIG */

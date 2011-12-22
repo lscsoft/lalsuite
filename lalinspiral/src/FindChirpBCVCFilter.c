@@ -50,10 +50,6 @@
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPBCVCFILTERC, "$Id$");
-
-
-
 void
 LALFindChirpBCVCFilterSegment (
     LALStatus                  *status,

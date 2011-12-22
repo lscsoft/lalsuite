@@ -52,8 +52,6 @@
 #include <lal/ConfigFile.h>
 #include <lalapps.h>
 
-RCSID("$Id$");
-
 BOOLEAN calc_AM_coeffs(LALStatus*, gsl_rng*, REAL8, REAL8, REAL8, REAL8, MultiDetectorStateSeries*, MultiNoiseWeights*, REAL8*, REAL8*, REAL8*);
 REAL8 pdf_ncx2_4(REAL8, REAL8);
 REAL8 d_pdf_ncx2_4(REAL8, REAL8);

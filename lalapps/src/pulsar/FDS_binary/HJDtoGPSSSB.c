@@ -79,7 +79,6 @@ typedef struct {
 /***********************************************************************************************/
 /* global variables */
 extern int vrbflg;	 	/**< defined in lalapps.c */
-RCSID( "$Id$");		        /* FIXME: use git-ID instead to set 'rcsid' */
 
 /* gsl stuff needs to be seen globally for the root finding */
 gsl_interp_accel *acc_x = NULL;               /* gsl interpolation accelerator */

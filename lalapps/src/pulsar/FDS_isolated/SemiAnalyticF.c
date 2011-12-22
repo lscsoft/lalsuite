@@ -58,9 +58,6 @@
 
 #include <lalapps.h>
 
-
-RCSID("$Id$");
-
 /*---------- error-codes ---------- */
 #define SEMIANALYTIC_ENORM 		0
 #define SEMIANALYTIC_ESUB  		1

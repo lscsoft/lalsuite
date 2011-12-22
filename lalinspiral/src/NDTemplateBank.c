@@ -66,9 +66,6 @@
 #include <lal/MatrixUtils.h>
 #include <lal/TemplateBankGeneration.h>
 
-
-NRCSID(NDTEMPLATEBANKC, "$Id");
-
 static REAL4 DotProduct(REAL4 *EV, REAL4 *DX){
   INT2 loop = 0;
   REAL4 dot = 0.0;

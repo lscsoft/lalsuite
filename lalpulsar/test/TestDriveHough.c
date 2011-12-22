@@ -112,7 +112,6 @@ LALCheckMemoryLeaks()
 /*@}*/
 
 /** \cond DONT_DOXYGEN */
-NRCSID (TESTDRIVEHOUGHC, "$Id$");
 
 /* Default parameters. */
 

@@ -45,8 +45,6 @@
 #include <lal/BitField.h>
 #include <lal/FlatLatticeTiling.h>
 
-NRCSID(FLATLATTICETILINGC, "$Id$");
-
 #define TRUE  (1==1)
 #define FALSE (1==0)
 

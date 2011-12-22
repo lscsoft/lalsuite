@@ -32,9 +32,6 @@
 
 INT4 lalDebugLevel = 0;
 
-NRCSID (LALTESTINCREMENTGPSC, "$Id$");
-
-
 #define SUCCESS 0
 #define FAILURE 1
 

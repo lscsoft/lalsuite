@@ -74,8 +74,6 @@ LALFree()
 #include <lal/Interpolate.h>
 #include <lal/ReadNoiseSpectrum.h>
 
-NRCSID(LALREADNOISESPECTRUMC,"$Id$");
-
 /*********************************************************************
  * STATIC FUNCTION to locate the point nearest to the desired
  * frequency for the interpolation step below

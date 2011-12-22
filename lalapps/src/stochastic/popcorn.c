@@ -64,8 +64,6 @@
 #include <lal/FrameStream.h>
 #include <lal/ResampleTimeSeries.h>
 
-NRCSID (POPCORNC, "$Id$");
-RCSID ("$Id$");
 
 /* cvs info */
 #define CVS_ID "$Id$"

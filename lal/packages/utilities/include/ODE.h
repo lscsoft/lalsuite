@@ -57,8 +57,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( ODEH, "$Id$" );
-
 /**** <lalLaTeX>
  *
  * \subsection*{Error conditions}

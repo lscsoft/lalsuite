@@ -47,7 +47,6 @@ extern "C" {
 #endif
 
 #include <lal/LALRCSID.h>
-NRCSID( COMPUTEFSTATH, "$Id$" );
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALComputeAM.h>

@@ -81,8 +81,6 @@
 /*                                           */
 /*********************************************/
 
-NRCSID( COMPUTESTACKSLIDESUMSH, "$Id$");
-
 /*********************************************/
 /*                                           */
 /* START SECTION: define eternal global vars */

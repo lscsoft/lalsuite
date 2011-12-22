@@ -43,10 +43,6 @@ functions.
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 
-
-NRCSID (FINDCHIRPDATAC, "$Id$");
-
-
 void
 LALFindChirpDataInit (
     LALStatus                  *status,

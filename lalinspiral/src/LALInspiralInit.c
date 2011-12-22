@@ -60,9 +60,6 @@ function.
 #include <lal/LALInspiral.h>
 #define  LALINSPIRALINIT_LENGTHOVERESTIMATION  0.1       /* 10 % */
 
-NRCSID (LALINSPIRALAMPLITUDEC, "$Id$");
-
-
 void
 LALInspiralInit (LALStatus        *status,
 		 InspiralTemplate *params,

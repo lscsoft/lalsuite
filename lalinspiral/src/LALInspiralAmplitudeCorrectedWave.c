@@ -103,10 +103,6 @@ LALInspiralAmplitudeCorrectedWaveEngine(
    InspiralTemplate *params
    );
 
-
-NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVEC, "$Id$");
-
-
 void
 LALInspiralAmplitudeCorrectedWave(
    LALStatus        *status,
@@ -133,11 +129,6 @@ LALInspiralAmplitudeCorrectedWave(
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }
-
-
-
-NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVETEMPLATESC, "$Id$");
-
 
 void
 LALInspiralAmplitudeCorrectedWaveTemplates(
@@ -174,9 +165,6 @@ LALInspiralAmplitudeCorrectedWaveTemplates(
    Interface routine needed to generate time-domain T- or a P-approximant
    waveforms for injection packages T.Cokelaer sept 2003
 */
-
-NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVEFORINJECTIONC, "$Id$");
-
 
 void
 LALInspiralAmplitudeCorrectedWaveForInjection(
@@ -352,8 +340,6 @@ LALInspiralAmplitudeCorrectedWaveForInjection(
  *  Engine function for use by other LALInspiralAmplitudeCorrectedWave* functions
  *  Craig Robinson April 2005
  */
-
-NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVEENGINEC, "$Id$");
 
 void
 LALInspiralAmplitudeCorrectedWaveEngine(

@@ -137,8 +137,6 @@ LALUniformDeviate()
 #include <lal/Random.h>
 #include <lal/MatrixUtils.h>
 
-NRCSID( EIGENTESTC, "$Id$" );
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define SIZE 3

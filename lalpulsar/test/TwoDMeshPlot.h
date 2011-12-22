@@ -50,10 +50,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/** \cond DONT_DOXYGEN */
-NRCSID( TWODMESHPLOTH, "$Id$" );
-/** \endcond */
-
 /** \name Error Codes */ /*@{*/
 /** \ingroup TwoDMeshPlot_h */
 #define TWODMESHPLOTH_ENUL    1

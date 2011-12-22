@@ -61,10 +61,6 @@ LALFoldAmplitudes()
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 
-/******* DEFINE RCS ID STRING ************/
-
-NRCSID( FOLDAMPLITUDESTESTC, "$Id$" );
-
 /******* DEFINE LOCAL CONSTANTS AND MACROS ************/
 
 /**\name Error Codes */ /*@{*/

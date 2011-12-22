@@ -49,8 +49,6 @@
 extern "C" {
 #endif
 
-NRCSID( GENERATEINSPRING, "$Id$");
-
 CoherentGW *
 XLALGenerateInspRing(
     CoherentGW        *waveform,

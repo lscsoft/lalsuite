@@ -60,8 +60,6 @@
 #include <lal/CoherentInspiral.h>
 #include <lal/LALStatusMacros.h>
 
-NRCSID( COHERENTINSPIRALINPUTC, "$Id$");
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else

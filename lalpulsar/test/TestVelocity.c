@@ -89,7 +89,6 @@ LALCheckMemoryLeaks()
 /*@}*/
 
 /** \cond DONT_DOXYGEN */
-NRCSID (TESTVELOCITYC, "$Id$");
 
 /* Default parameters. */
 

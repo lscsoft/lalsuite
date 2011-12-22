@@ -34,10 +34,6 @@ Authors: Ian Harry, B.S. Sathyaprakash,  Chris Van Den Broeck
 #include <lal/LALInspiralRandomBank.h>
 #include <lal/LALSBBH-Metric.h>
 
-
-NRCSID(LALINSPIRALBCVSPINRANDOMBANKC, "$Id$");
-
-
 void
 LALInspiralBCVSpinRandomBank(
     LALStatus         	 *status,

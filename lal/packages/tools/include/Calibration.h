@@ -28,8 +28,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/BandPassTimeSeries.h>
 
-NRCSID (CALIBRATIONH,"$Id$");
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

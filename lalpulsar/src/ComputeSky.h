@@ -114,8 +114,6 @@ B_{s \alpha}=\mathcal{T}_{SFT}\dot{T}_{\alpha}\Delta T_{\alpha}^{s}
 extern "C" {
 #endif
 
-  NRCSID (COMPUTESKYH, "$Id: ComputeSky.h");
-
 /**\name Error Codes */ /*@{*/
 #define COMPUTESKYH_ENULL 1
 #define COMPUTESKYH_ENNUL 2

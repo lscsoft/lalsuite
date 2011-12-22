@@ -28,7 +28,6 @@
 #include <lal/ResampleTimeSeries.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (AVGSPECTESTC,"$Id$");
 
 #define TESTSTATUS( s ) \
   if ( (s)->statusCode ) { REPORTSTATUS( s ); exit( 1 ); } else ((void)0)

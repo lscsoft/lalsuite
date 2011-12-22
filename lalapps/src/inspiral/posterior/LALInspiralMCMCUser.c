@@ -58,8 +58,6 @@ REAL8Sequence **topdown_sum;
 REAL8 *normalisations;
 const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
-/*NRCSID (LALINSPIRALMCMCUSERC, "$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $"); */
-
 double mc2mass1(double mc, double eta)
 /* mass 1 (the smaller one) for given mass ratio & chirp mass */
 {

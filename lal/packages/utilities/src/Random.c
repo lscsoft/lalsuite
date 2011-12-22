@@ -97,8 +97,6 @@ This is an implementation of the random number generators \verb+ran1+ and
 #include <lal/Sequence.h>
 #include <lal/XLALError.h>
 
-NRCSID (RANDOMC, "$Id$");
-
 static const INT4 a = 16807;
 static const INT4 m = 2147483647;
 static const INT4 q = 127773;

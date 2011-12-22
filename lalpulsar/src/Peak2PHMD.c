@@ -28,10 +28,6 @@
 
 #include <lal/PHMD.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID (PEAK2PHMDC, "$Id$");
-/** \endcond */
-
 
 /**
 \author Sintes, A. M.

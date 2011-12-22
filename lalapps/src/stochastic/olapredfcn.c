@@ -31,8 +31,6 @@
 
 #include "olapredfcn.h"
 
-RCSID("$Id$");
-
 extern char *optarg;
 extern int   optind;
 

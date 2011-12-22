@@ -52,8 +52,6 @@ static void correct_phase (LALStatus *, SFTtype *sft, LIGOTimeGPS tHeterodyne);
 
 /*----------------------------------------------------------------------*/
 
-NRCSID( GENERATEPULSARSIGNALC, "$Id$");
-
 extern INT4 lalDebugLevel;
 
 static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining if some REAL8 frequency corresponds to an integer "bin-index" */

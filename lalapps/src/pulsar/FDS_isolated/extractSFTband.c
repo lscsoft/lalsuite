@@ -35,7 +35,6 @@
  */
 
 #include <lal/LALStdlib.h>
-NRCSID (MAKEFAKEDATAC, "$Id: extractSFTband.c,v 1.2 2004/06/22 21:03:56 siemens Exp $");
 
 /***************************************************/
 

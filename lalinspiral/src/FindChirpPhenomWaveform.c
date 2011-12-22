@@ -59,10 +59,6 @@ extern "C" {
 #pragma }
 #endif
 
-
-NRCSID (FINDCHIRPPHENOMWAVEFORMC, "$Id$");
-
-
 typedef struct tagPhenomCoeffs{
     REAL8 fMerg_a;
     REAL8 fMerg_b;

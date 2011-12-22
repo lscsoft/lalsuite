@@ -90,8 +90,6 @@ Numerical Recipes~\cite{ptvf:1992}.
 #include <lal/LALStdlib.h>
 #include <lal/Interpolate.h>
 
-NRCSID (INTERPOLATEC, "$Id$");
-
 /* <lalVerbatim file="InterpolateCP"> */
 void
 LALSPolynomialInterpolation (

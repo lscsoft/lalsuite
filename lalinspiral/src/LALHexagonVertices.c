@@ -68,10 +68,6 @@ None.
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID(LALHEXAGONVERTICESC, "$Id$");
-
-
-
 void
 LALHexagonVertices(
    LALStatus *status,

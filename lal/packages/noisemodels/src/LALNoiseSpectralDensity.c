@@ -19,8 +19,6 @@
 
 #include <lal/LALNoiseModels.h>
 
-NRCSID (LALNOISESPECTRALDENSITYC, "$Id$");
-
 /**
 \author Sathyaprakash, B. S.
 \ingroup LALNoiseModels_h

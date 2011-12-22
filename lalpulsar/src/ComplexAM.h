@@ -44,8 +44,6 @@
 extern "C" {
 #endif
 
-NRCSID (COMPLEXAMH, "$Id: ComplexAM.h");
-
 /* ---------- exported defines and macros -------------------- */
 
 /** \name Error codes */

@@ -221,8 +221,6 @@ LALIIRFilterREAL4VectorR()      LALIIRFilterREAL8VectorR()
 #include <lal/IIRFilter.h>
 #include <lal/BandPassTimeSeries.h>
 
-NRCSID(BUTTERWORTHTIMESERIESC,"$Id$");
-
 extern INT4 lalDebugLevel;
 
 static int

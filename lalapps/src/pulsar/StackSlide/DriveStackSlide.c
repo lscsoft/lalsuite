@@ -255,8 +255,6 @@
 /*                                            */
 /**********************************************/
 
-NRCSID( DRIVESTACKSLIDEC, "$Id$");
-
 #define PROGRAM_NAME "stackslide"
 #define CVS_ID_STRING "$Id$"
 #define CVS_SOURCE "$Source$"

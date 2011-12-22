@@ -32,8 +32,6 @@
 
 #include <lal/LALRunningMedian.h>
 
-NRCSID( CLUSTERSC, "$Id$");
-
 /* a few error codes */
 #define CLUSTERSC_ENULL 		1
 #define CLUSTERSC_ENONULL		2

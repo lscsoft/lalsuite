@@ -70,10 +70,6 @@
 #include <lalapps.h>
 #include "getopt.h"
 
-
-RCSID( "$Id$" );
-
-
 /*----------------------------------------------------------------------------------*/
 /*! Error code for Fstatistic shape test main part. */
 #define FSTATSHAPETESTC_ENULL 		1

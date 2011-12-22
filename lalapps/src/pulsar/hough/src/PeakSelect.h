@@ -79,12 +79,6 @@ From periodogram to peakgram
 extern "C" {
 #endif
 
- /*
- * 6. Assignment of Id string using NRCSID()
- */
-
-NRCSID (PEAKSELECTH, "$Id$");
-
 /*
  * 7. Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.

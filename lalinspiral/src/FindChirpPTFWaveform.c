@@ -55,8 +55,6 @@ LALDestroyVector()
 #define UNUSED
 #endif
 
-NRCSID(FINDCHIRPPTFWAVEFORMC, "$Id$");
-
 /* define a structure so that the ptf waveform parameters */
 /* can be used by the GSL ODE integrator                  */
 typedef struct

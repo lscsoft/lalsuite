@@ -34,8 +34,6 @@
 #include <lal/SFTfileIO.h>
 #include <lal/Units.h>
 
-NRCSID (SFTFILEIOTESTC, "$Id$");
-
 /*---------- DEFINES ----------*/
 
 /** \name Error codes */

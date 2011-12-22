@@ -157,9 +157,6 @@ LALNormalDeviates()
 #include <lal/SimulateSB.h>
 #include <lal/DetectorSite.h>
 
-NRCSID (SIMULATESBC, "$Id$");
-
-
 void
 LALSSSimStochBGTimeSeries( LALStatus                    *status,
 			   SSSimStochBGOutput           *output,

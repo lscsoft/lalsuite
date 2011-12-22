@@ -29,7 +29,6 @@
 #include "FindChirpTDTest.h"
 
 #include <lal/LALRCSID.h>
-NRCSID (FINDCHIRPTDTESTC,"$Id$");
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

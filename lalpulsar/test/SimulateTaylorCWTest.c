@@ -189,8 +189,6 @@ LALGenerateTaylorCW()           LALSDestroyVectorSequence()
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 
-NRCSID( SIMULATETAYLORCWTESTC, "$Id$" );
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define EPOCH  (0LL) /* about Jan. 1, 1990 */

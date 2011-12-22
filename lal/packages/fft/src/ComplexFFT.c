@@ -114,9 +114,6 @@
 #include <lal/ComplexFFT.h>
 #include <lal/FFTWMutex.h>
 
-NRCSID( COMPLEXFFTC, "$Id$" );
-
-
 /** Plan to perform an FFT of COMPLEX8 data
  * \ingroup ComplexFFT_h
  */

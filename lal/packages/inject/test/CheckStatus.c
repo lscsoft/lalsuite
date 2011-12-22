@@ -21,8 +21,6 @@
 #include <stdio.h>
 #include <string.h>
 
-NRCSID (CHECKSTATUSC,"$Id$");
-
 extern BOOLEAN optVerbose;
 
 INT4

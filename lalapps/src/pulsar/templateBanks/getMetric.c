@@ -41,8 +41,6 @@
 #include <lal/FlatPulsarMetric.h>
 #include <lal/DopplerScan.h>
 
-RCSID ("$Id$");
-
 /* Error codes and messages */
 #define GETMETRIC_ENORM 	0
 #define GETMETRIC_ESUB  	1

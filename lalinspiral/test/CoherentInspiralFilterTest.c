@@ -57,9 +57,6 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/CoherentInspiral.h>
 
-
-NRCSID(MAIN,"$Id$");
-
 static void
 ParseOptions (int argc, char *argv[]);
 

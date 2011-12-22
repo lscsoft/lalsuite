@@ -30,9 +30,6 @@
 #include <lal/ComputeSky.h>
 #include <gsl/gsl_cdf.h>
 
-RCSID( "$Id$");
-
-
 extern INT4 lalDebugLevel;
 
 /* defaults */
@@ -60,8 +57,6 @@ extern INT4 lalDebugLevel;
 #define FILEOUT "./ValidateAMOut"   
 #define TRUE (1==1)
 #define FALSE (1==0)
-
-NRCSID (HOUGHMISMATCHC, "$Id$");
 
 int main( int argc, char *argv[]){
 

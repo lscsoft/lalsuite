@@ -61,10 +61,6 @@ None
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 
-NRCSID (LALINSPIRALSETPARAMSC, "Id: $");
-
-
-
 void LALInspiralSetParams(LALStatus            *status,
                           InspiralTemplate     *tempPars,
                           InspiralCoarseBankIn coarseIn)

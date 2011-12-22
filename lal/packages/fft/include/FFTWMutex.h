@@ -27,8 +27,6 @@
 extern "C" {
 #endif
 
-NRCSID( FFTWMUTEXH, "$Id$" );
-
 #ifdef LAL_PTHREAD_LOCK
 # include <pthread.h>
   extern pthread_mutex_t lalFFTWMutex;

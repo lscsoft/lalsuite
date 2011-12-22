@@ -101,8 +101,6 @@
 #include <lal/FrameStream.h>
 #include <lal/FrameCalibration.h>
 
-NRCSID( FRAMECALIBRATIONC, "$Id$" );
-
 #define DURATION 256
 
 #define RESPONSE_CHAN "CAL-RESPONSE"

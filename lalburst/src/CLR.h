@@ -207,9 +207,6 @@ harmonics, which can be obtained applying a least square method.
 extern "C" {
 #endif
 
-
-NRCSID (CLRH, "$Id: CLR.h");
-
 /*
  * 5. Macros. But, note that macros are deprecated.
  */

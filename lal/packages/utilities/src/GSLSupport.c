@@ -38,8 +38,6 @@
 #include <lal/XLALError.h>
 #include <lal/GSLSupport.h>
 
-NRCSID(GSLSUPPORTC, "$Id$");
-
 /**
  * Convert variable argument list to a gsl_vector
  */

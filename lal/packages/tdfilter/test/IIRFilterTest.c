@@ -227,8 +227,6 @@ LALDIIRFilterREAL4Vector()      LALDIIRFilterREAL4VectorR()
 #include <lal/IIRFilter.h>
 #include <lal/ZPGFilter.h>
 
-NRCSID(IIRFILTERTESTC,"$Id$");
-
 /* Default parameters. */
 INT4 lalDebugLevel=0;
 #define NPTS   4096    /* Default length of time series */

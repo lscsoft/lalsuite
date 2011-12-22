@@ -108,9 +108,6 @@ For use in known pulsar search.
 #include <lal/LALStdlib.h>
 #include <lal/FoldAmplitudes.h>
 
-/******* DEFINE RCS ID STRING ************/
-NRCSID( FOLDAMPLITUDESC, "$Id$" );
-
 /******* DEFINE LOCAL CONSTANTS AND MACROS ************/
 
 /******* DECLARE LOCAL (static) FUNCTIONS ************/

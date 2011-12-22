@@ -118,8 +118,6 @@ LALCheckMemoryLeaks()
 /*@}*/
 
 /** \cond DONT_DOXYGEN */
-NRCSID (TESTNDHOUGHMAPC, "$Id$");
-
 
 /* Default parameters. */
 

@@ -53,8 +53,6 @@ Provides LAL functions similar to the non-file functions in \verb+<stdio.h>+.
 extern "C" {
 #endif
 
-NRCSID( LALSTDIOH, "$Id$" );
-
 #if LAL_BOINC_ENABLED
   extern FILE* boinc_fopen(const char* path, const char* mode);
 #define LALFopen boinc_fopen

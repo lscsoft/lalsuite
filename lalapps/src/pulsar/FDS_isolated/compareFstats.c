@@ -31,8 +31,6 @@
 #include <lal/UserInput.h>
 #include <lal/LALConstants.h>
 
-RCSID ("$Id$");
-
 /* Error codes and messages */
 /**\name Error Codes */ /*@{*/
 #define MAKEFAKEDATAC_ENORM 	0

@@ -72,10 +72,6 @@ static int derivativeGSLWrapper(
                                 REAL8 dydx[],
                                 void *params);
 
-
-
-NRCSID (LALRUNGEKUTTA4C, "$Id$");
-
 /* Function for allocating memory and setting up the GSL integrator */
 
 rk4GSLIntegrator * XLALRungeKutta4Init( INT4 n,

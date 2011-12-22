@@ -77,8 +77,6 @@
 
 #include <lal/LALInspiral.h>
 
-NRCSID (LALBCVWAVEFORMC, "$Id$");
-
 void
 LALBCVWaveform(
    LALStatus        *status,

@@ -39,9 +39,6 @@
 
 /* #include "LocalOptimizationFlags.h" */
 
-NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
-
-
 /*---------- local DEFINES ----------*/
 #define TRUE  (1==1)
 #define FALSE (1==0)

@@ -119,10 +119,6 @@ LALPopulateNarrowEdge(LALStatus       	*status,
 		      INT4 flag
 		      );
 
-
-NRCSID(LALINSPIRALHYBRIDHEXAGONALBANKC, "$Id$");
-
-
 void
 LALInspiralCreatePNCoarseBankHybridHexa(
     LALStatus            *status,

@@ -60,9 +60,6 @@ XLALDRombergIntegrate()
 #include <lal/LALInspiral.h>
 #include <lal/Integrate.h>
 
-NRCSID (LALINSPIRALPHASING1C, "$Id$");
-
-
 void
 LALInspiralPhasing1 (
    LALStatus *status,

@@ -93,8 +93,6 @@ LALFree()
 #define UNUSED
 #endif
 
-NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
-
 static int FindTimeSeriesStartAndEnd (
               REAL4Vector *signalvec,
               UINT4 *start,

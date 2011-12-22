@@ -157,9 +157,6 @@
 #include <lal/LALConstants.h>
 #include <lal/RngMedBias.h>
 
-NRCSID( TIMEFREQFFTC, "$Id$" );
-
-
 /*
  *
  * XLAL REAL4 Time->Freq and Freq->Time FFT routines

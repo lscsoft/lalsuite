@@ -23,8 +23,6 @@
 #include <string.h>
 #include <lal/DetectorSite.h>
 
-NRCSID( CREATEDETECTORC, "$Id$" );
-
 /**
 \author J. T. Whelan <john.whelan@ligo.org>
 \defgroup CreateDetector_c Module CreateDetector.c

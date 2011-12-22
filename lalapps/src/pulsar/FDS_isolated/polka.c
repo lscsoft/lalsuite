@@ -49,9 +49,6 @@
 
 #include "getopt.h"
 
-RCSID ("$Id$");
-
-
 /* some error codes and messages */
 #define POLKAC_ENULL  		1
 #define POLKAC_ENONULL 		2

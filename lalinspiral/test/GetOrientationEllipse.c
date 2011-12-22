@@ -59,9 +59,6 @@ or not in this code but one could have use a function such as
 #include <lal/LALNoiseModels.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (GETORIENTATIONELLIPSEC,"$Id$");
-
-
 
 INT4 lalDebugLevel=33;
 

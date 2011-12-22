@@ -64,9 +64,6 @@ LALZCreateVector()              LALZDestroyVector()
 #include <lal/AVFactories.h>
 #include <lal/ZPGFilter.h>
 
-NRCSID(CREATEZPGFILTERC,"$Id$");
-
-
 COMPLEX8ZPGFilter *XLALCreateCOMPLEX8ZPGFilter( INT4 numZeros, INT4 numPoles )
 {
   COMPLEX8ZPGFilter *output;

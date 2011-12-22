@@ -182,8 +182,6 @@ const char xtechannelname[16] = "X1";
 const char *PCUchannel[5] = {"XeCntPcu0","XeCntPcu1","XeCntPcu2","XeCntPcu3","XeCntPcu4"};
 
 
-RCSID( "$Id$");		/* FIXME: use git-ID instead to set 'rcsid' */
-
 /***********************************************************************************************/
 /* define functions */
 int main(int argc,char *argv[]);

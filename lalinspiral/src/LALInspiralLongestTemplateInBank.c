@@ -45,9 +45,6 @@ LALInspiralWaveLength
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID (INSPIRALSEARCHC, "$Id$");
-
-
 void
 LALInspiralLongestTemplateInBank
    (

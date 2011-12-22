@@ -122,8 +122,6 @@ orthogonal is equivalent to unitary.
 extern "C" {
 #endif
 
-NRCSID( MATRIXUTILSH, "$Id$" );
-
 /** \name Error Codes */ /*@{*/
 #define MATRIXUTILSH_ENUL  1
 #define MATRIXUTILSH_EDIM  2

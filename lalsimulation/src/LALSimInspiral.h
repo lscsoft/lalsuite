@@ -34,8 +34,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID(LALSIMINSPIRALH, "$Id$");
-
 #define LAL_PN_MODE_L_MAX 3
 
 /** Enum that specifies the PN approximant to be used in computing the waveform.

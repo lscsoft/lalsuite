@@ -29,8 +29,6 @@
 #include "data_output.h"
 #include "stochastic.h"
 
-NRCSID(STOCHASTICC, "$Id$");
-RCSID("$Id$");
 
 /* program info */
 const CHAR* prog_name="lalapps_stochastic_fake";

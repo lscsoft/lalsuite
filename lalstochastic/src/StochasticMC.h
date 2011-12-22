@@ -45,8 +45,6 @@
 extern "C" {
 #endif
 
-  NRCSID( STOCHASTICMCH, "$Id$" );
-
 /**\name Error Codes */ /*@{*/
 #define STOCHASTICMCH_ENULLP        1	/**< Null pointer */
 #define STOCHASTICMCH_ENULLLEN      2	/**< Negative or zero length for data member of time series */

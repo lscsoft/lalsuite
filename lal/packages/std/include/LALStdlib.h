@@ -142,8 +142,6 @@ for certain standard modules used by many LAL routines:
 extern "C" {
 #endif
 
-NRCSID (LALSTDLIBH, "$Id$");
-
 /* These are non-ANSI standard routines that will be allowed in LAL */
 #ifndef SWIG /* exclude from SWIG interface */
 int getopt( int, char * const *, const char * );

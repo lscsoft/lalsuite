@@ -25,8 +25,6 @@
 
 #include "./SFTbin.h"
 
-NRCSID (SFTBINTESTC, "$Id$");
-
 /* Error codes and messages */
 
 /**\name Error Codes */ /*@{*/

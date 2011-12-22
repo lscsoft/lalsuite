@@ -56,9 +56,6 @@ extern INT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
 #include "CFSLALDemod_Experimental.c"
 #else /* rather generic version */
 
-RCSID( "$Id$");
-
-
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 
 { 

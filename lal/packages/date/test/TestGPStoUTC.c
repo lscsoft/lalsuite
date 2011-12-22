@@ -28,8 +28,6 @@
 
 INT4 lalDebugLevel = 0;
 
-NRCSID (LALTESTGPSTOUTCC, "$Id$");
-
 int main(int argc, char *argv[])
 {
   LIGOTimeGPS         gpsTime = {0, 0};

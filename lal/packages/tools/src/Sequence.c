@@ -31,8 +31,6 @@
 
 
 #include <lal/LALRCSID.h>
-NRCSID(SEQUENCEC, "$Id$");
-
 
 /*
  * Shift the bytes in the buffer buff, whose length is length, count bytes to

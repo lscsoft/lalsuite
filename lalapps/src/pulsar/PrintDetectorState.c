@@ -96,8 +96,6 @@ int XLALDestroyConfig ( ConfigVariables *cfg );
  * FUNCTION definitions
  *============================================================*/
 
-RCSID("$Id");
-
 int
 main(int argc, char *argv[])
 {

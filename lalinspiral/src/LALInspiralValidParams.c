@@ -133,10 +133,6 @@ m_{2} \geq \mathtt{mMin}
 #include <lal/LALInspiralBank.h>
 #include <stdio.h>
 
-NRCSID (LALINSPIRALVALIDPARAMSC, "$Id$");
-
-
-
 void LALInspiralValidParams(
     LALStatus            *status,
     INT4                 *valid,

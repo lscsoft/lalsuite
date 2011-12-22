@@ -164,8 +164,6 @@ typedef struct {
 } integrationParams_t;
 
 
-RCSID( "$Id$");		/* FIXME: use git-ID instead to set 'rcsid' */
-
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 

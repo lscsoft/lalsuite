@@ -30,7 +30,6 @@
 #include <lal/FrequencySeries.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (CONVOLUTIONC,"$Id$");
 
 /**
  * \addtogroup Convolution

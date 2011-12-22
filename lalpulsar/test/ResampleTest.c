@@ -140,8 +140,6 @@ LALDestroyResampleRules()
 #define UNUSED
 #endif
 
-NRCSID( RESAMPLETESTC, "$Id$" );
-
 /* Default parameter settings. */
 INT4 lalDebugLevel = 0;
 #define NPTS 4096

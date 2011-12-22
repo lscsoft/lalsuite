@@ -120,8 +120,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID(IIRFILTERH,"$Id$");
-
 /********************************************************** <lalLaTeX>
 \subsection*{Error conditions}
 ****************************************** </lalLaTeX><lalErrTable> */

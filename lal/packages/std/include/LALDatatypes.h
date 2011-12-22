@@ -245,9 +245,6 @@ LALTYPECODE;
 extern "C" {
 #endif
 
-NRCSID (LALDATATYPESH, "$Id$");
-
-
 /* <lalLaTeX>
 \newpage
 \subsection{Aggregate datatypes}

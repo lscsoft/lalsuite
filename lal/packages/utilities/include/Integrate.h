@@ -56,8 +56,6 @@ Integrates a function.
 extern "C" {
 #endif
 
-NRCSID (INTEGRATEH, "$Id$");
-
 #if 0 /* autodoc block */
 
 <lalLaTeX>

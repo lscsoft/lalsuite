@@ -27,8 +27,6 @@
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 
-NRCSID( GEOCENTRICGEODETICTESTC, "$Id$" );
-
 /**
 \author Creighton, T. D.
 \file

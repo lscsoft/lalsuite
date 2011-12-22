@@ -63,10 +63,6 @@ It turns out that the evolution is monotonic at least up to lso.
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
-NRCSID (LALINSPIRALFREQUENCY3C, "$Id$");
-
-
-
 void
 LALInspiralFrequency3_0PN (
    LALStatus  *status,

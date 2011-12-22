@@ -108,8 +108,6 @@ and and LALBarycenter() to calculate \f$\tau(t)\f$.
 #include <lal/ComputeFstat.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
-NRCSID( SIMULATEPULSARSIGNALC, "$Id$");
-
 extern INT4 lalDebugLevel;
 
 

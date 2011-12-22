@@ -32,8 +32,6 @@ extern "C" {
 
 
 #include <lal/LALRCSID.h>
-NRCSID(THRESHOLDSH, "$Id:");
-
 
 REAL8 XLALChisqCdf(
 	REAL8 chi2,

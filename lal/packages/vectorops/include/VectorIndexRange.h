@@ -62,9 +62,6 @@ extern "C" {
 #define VECTORINDEXRANGEH_MSGELNTH "Vector/Array of Improper Length"
 #define VECTORINDEXRANGEH_MSGENNUL "Non-Null Pointer that should be NULL"
 
-
-NRCSID( VECTORINDEXRANGEH, "$Id$" );
-
 /* typedefs */
 
 /* CHAR */

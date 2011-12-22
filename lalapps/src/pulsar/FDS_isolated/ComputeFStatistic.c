@@ -74,8 +74,6 @@
    protect this with a HAVE_FINITE */
 int finite(double);
 
-RCSID( "$Id$");
-
 /*----------------------------------------------------------------------*/
 /* conditional compilation-switches */
 /*

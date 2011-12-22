@@ -39,8 +39,6 @@
 #include <lalapps.h>
 #include "SideBand.h"
 
-RCSID( "$Id:$");
-
 /*---------- DEFINES ----------*/
 #define TRUE (1==1)
 #define FALSE (1==0)

@@ -64,8 +64,6 @@ enum enumMaxLineLength {
 };
 #endif /* SWIG */
 
-NRCSID( READFTSERIESH, "$Id$" );
-
 void LALReadTimeSeries(LALStatus* status,  REAL4TimeSeries *series , const CHAR *filename );
 void LALSReadTimeSeries(LALStatus* status,  REAL4TimeSeries *series , const CHAR *filename );
 void LALDReadTimeSeries(LALStatus* status,  REAL8TimeSeries *series , const CHAR *filename );

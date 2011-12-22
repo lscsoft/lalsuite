@@ -74,8 +74,6 @@ int finite(double);
 
 #include "OptimizedCFS/ComputeFstatREAL4.h"
 
-RCSID( "$Id$");
-
 /*---------- DEFINES ----------*/
 
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */

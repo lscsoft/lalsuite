@@ -89,8 +89,6 @@
 extern "C" {
 #endif
 
-NRCSID( EXTRAPOLATEPULSARSPINSH, "$Id$");
-
 /*---------- exported INCLUDES ----------*/
 
 /*---------- exported DEFINES ----------*/

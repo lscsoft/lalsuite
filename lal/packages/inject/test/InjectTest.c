@@ -315,8 +315,6 @@ LALCheckMemoryLeaks()
 #include <lal/GenerateTaylorCW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
-NRCSID( INJECTTESTC, "$Id$" );
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 

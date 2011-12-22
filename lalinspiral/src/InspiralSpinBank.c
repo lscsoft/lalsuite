@@ -109,9 +109,6 @@
 #define INSPIRALSPINBANKC_ENOTILES 5
 #define INSPIRALSPINBANKC_MSGENOTILES "No templates were generated"
 
-
-NRCSID(INSPIRALSPINBANKC, "$Id$");
-
 /* Internal structures and functions --------------------------------------- */
 
 static void cleanup(LALStatus *,

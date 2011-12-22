@@ -56,9 +56,6 @@
 
 #define MIN(A, B)       ((A) < (B) ? (A) : (B))
 
-NRCSID (TFRSPC, "$Id$");
-
-
 void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *param)
 {
 

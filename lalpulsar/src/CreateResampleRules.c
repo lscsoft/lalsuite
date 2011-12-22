@@ -39,8 +39,6 @@ REAL8 globalNum;
 #define ROUND( num )                                                 \
   (INT4)( num + 1 ) */
 
-NRCSID(CREATERESAMPLERULESC,"$Id$");
-
 /* Prototypes for local functions. */
 static INT2
 ConstantRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,

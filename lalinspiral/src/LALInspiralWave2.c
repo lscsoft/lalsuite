@@ -81,11 +81,6 @@ XLALInspiralWave2Engine(
 		InspiralInit     *paramsInit
                 );
 
-
-NRCSID (LALINSPIRALWAVE2C, "$Id$");
-
-
-
 void
 LALInspiralWave2 (
    LALStatus        *status,
@@ -149,10 +144,6 @@ XLALInspiralWave2(
 
   return XLAL_SUCCESS;
 }
-
-NRCSID (LALINSPIRALWAVE2TEMPLATESC, "$Id$");
-
-
 
 void
 LALInspiralWave2Templates (
@@ -225,13 +216,6 @@ XLALInspiralWave2Templates(
 
   return XLAL_SUCCESS;
 }
-
-
-
-
-NRCSID (LALINSPIRALWAVE2FORINJECTIONC, "$Id$");
-
-
 
 void
 LALInspiralWave2ForInjection (
@@ -443,9 +427,6 @@ XLALInspiralWave2ForInjection(
 
   return XLAL_SUCCESS;
 }
-
-
-NRCSID (LALINSPIRALWAVE2ENGINEC, "$Id$");
 
 /* 'Engine' function upon which all the other functions invoke
     Craig Robinson 04/05 */

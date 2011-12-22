@@ -160,10 +160,6 @@ XLALEOBPPWaveformEngine (
                 InspiralInit     *paramsInit
                 );
 
-NRCSID (LALEOBPPWAVEFORMC,
-"$Id$");
-
-
 INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 				REAL8Vector           * restrict values,
                                 const REAL8           v,

@@ -42,7 +42,6 @@
 #include <lal/UniversalDopplerMetric.h>
 
 /*---------- DEFINES ----------*/
-NRCSID( DOPPLERLATTICECOVERING, "$Id$" );
 
 /* turn off  gsl range-checking in non-debug compilations */
 #ifdef LAL_NDEBUG

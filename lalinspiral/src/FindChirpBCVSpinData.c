@@ -71,9 +71,6 @@ LALDestroyVector()
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPBCVSPINDATAC, "$Id$");
-
-
 void
 LALFindChirpBCVSpinData (
     LALStatus                  *status,

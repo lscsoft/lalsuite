@@ -33,8 +33,6 @@
 
 #define SQUARE(x) (x*x)
 
-RCSID( "$Id$");
-
 /* this function is currently unused (20/07/09) */
 void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 					     INT4VectorSequence **out,

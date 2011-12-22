@@ -52,9 +52,6 @@ that allow functions to abort.
 extern "C" {
 #endif
 
-
-NRCSID( LALERRORH, "$Id$" );
-
 /* lalDebugLevel bit field values: */
 enum
 {

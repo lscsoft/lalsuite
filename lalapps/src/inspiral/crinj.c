@@ -53,8 +53,6 @@
 "  --logDIST-bin-size (0,3]    input log10(Distance) bin size from +0,3\n"\
 "\n"
 
-RCSID( "$Id$" );
-
 #define KPC ( 1e3 * LAL_PC_SI )
 #define MPC ( 1e6 * LAL_PC_SI )
 #define GPC ( 1e9 * LAL_PC_SI )

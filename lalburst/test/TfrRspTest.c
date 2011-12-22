@@ -48,8 +48,6 @@
 
 #include <lal/TimeFreq.h>
 
-NRCSID (TFRRSPTESTC,"$Id$");
-
 extern int lalDebugLevel;
 
 int main(void)

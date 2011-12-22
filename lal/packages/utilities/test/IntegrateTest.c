@@ -89,9 +89,6 @@ Options:
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
 
-NRCSID (MAIN, "$Id$");
-
-
 /*
  *
  * These functions are used as integrands for the test integrations.

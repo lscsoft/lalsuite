@@ -10,8 +10,6 @@
 #include <lal/LALSQTPNWaveformInterface.h>
 #include <lal/LALSQTPNWaveform.h>
 
-NRCSID (LALSQTPNWAVEFORMINTERFACEC, "$Id LALSQTPNWaveformInterface.c$");
-
 void LALSQTPNWaveformTemplates (LALStatus *status, REAL4Vector *signalvec1, 
 		REAL4Vector *signalvec2, InspiralTemplate *params) {
 

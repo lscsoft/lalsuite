@@ -104,8 +104,6 @@ REAL4 tmpx, tmpy;
 #define MAXFREQUENCIES 200       /* Maximum number of frequemcies for which to do the comparison */
 #define DECIMATE 4 /*Factor by which to decimate the data when the -D (decimate) flag is used */
 
-NRCSID( NOISECOMPARISONC, "NoiseComparison $Id$");
-RCSID( "NoiseComparison $Id$");
 
 #define PROGRAM_NAME "NoiseComparison"
 #define CVS_REVISION "$Revision$"

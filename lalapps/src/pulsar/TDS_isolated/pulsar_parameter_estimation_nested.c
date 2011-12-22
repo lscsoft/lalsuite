@@ -153,8 +153,6 @@ set, will be output.
 /** The maximum number of different detectors allowable. */
 #define MAXDETS 6
 
-RCSID("$Id$");
-
 /* global variables */
 /** An array to contain the log of factorials up to a certain number. */
 REAL8 *logfactorial = NULL;

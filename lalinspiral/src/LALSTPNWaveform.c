@@ -33,8 +33,6 @@
 #include <lal/SeqFactories.h>
 #include "LALSTPNWaveform2.h"
 
-NRCSID (LALSTPNWAVEFORMC, "$Id$");
-
 /* private structure with PN parameters*/
 
 void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams);
@@ -379,10 +377,6 @@ LALSTPNWaveformTemplates (
 
 
 int newswitch = 0;
-
-NRCSID (LALSTPNWAVEFORMFORINJECTIONC,
-"$Id$");
-
 
 void
 LALSTPNWaveformForInjection (

@@ -142,7 +142,6 @@ LALSCreateVector()              LALSDestroyVector()
 #include <lal/StreamInput.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID(FLATMESHTESTC,"$Id$");
 
 /* Default parameter settings. */
 extern int lalDebugLevel;

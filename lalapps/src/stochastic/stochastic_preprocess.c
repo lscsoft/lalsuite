@@ -69,8 +69,6 @@
 
 #include "stochastic_virgo.h"
 
-NRCSID (STOCHASTICPREPROCESSC, "$Id$");
-RCSID ("$Id$");
 
 /* cvs info */
 #define CVS_ID "$Id$"

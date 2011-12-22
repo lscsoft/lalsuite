@@ -32,8 +32,6 @@
 #include <config.h>
 #include <lal/NRWaveIO.h>
 
-NRCSID (NRWAVEIOTESTC, "$Id$");
-
 /*---------- DEFINES ----------*/
 
 /** \name Error codes */

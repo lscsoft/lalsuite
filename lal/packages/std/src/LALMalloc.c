@@ -399,8 +399,6 @@ static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 
 #include <lal/LALStdlib.h>
 
-NRCSID( LALMALLOCC, "$Id$" );
-
 /* global variables to assist in memory debugging */
 /* watch the value of these variables to find a particular alloc/free */
 char  *lalMemDbgArgPtr  = NULL; /* set to ptr arg in free or realloc */

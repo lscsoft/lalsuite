@@ -93,9 +93,6 @@ XLALTaylorNWaveformEngine (
   InspiralInit     *paramsInit
 );
 
-NRCSID (LALTAYLORNWAVEFORMC,
-"$Id$");
-
 static REAL8 XLALxiInit4PN(
    REAL8      xi,
    void      *params)

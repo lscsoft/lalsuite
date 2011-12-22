@@ -37,8 +37,6 @@
 
 #include <lal/LALDatatypes.h>
 
-NRCSID( AUDIOH, "$Id$" );
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

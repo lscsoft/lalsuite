@@ -167,8 +167,6 @@ and \verb@strtol()@ are not used as they are not guaranteed to have
 #include <lal/LALConstants.h>
 #include <lal/StringInput.h>
 
-NRCSID( STRINGCONVERTC, "$Id$" );
-
 /* Extremal integer values, all expressed as unsigned long long. */
 #define LAL_UINT8_MAX   LAL_UINT8_C(18446744073709551615)
 #define LAL_UINT4_MAX   LAL_UINT8_C(4294967295)

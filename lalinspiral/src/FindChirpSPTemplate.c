@@ -63,10 +63,6 @@ LALDestroyVector()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 
-
-NRCSID (FINDCHIRPSPTEMPLATEC, "$Id$");
-
-
 double
 XLALFindChirpChirpTime (double m1,
 			double m2,

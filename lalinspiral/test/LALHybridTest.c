@@ -58,8 +58,6 @@ e-Print: arXiv:0710.2335 [gr-qc]
 #include <lal/LALFrameIO.h>
 #include <lal/ComplexFFT.h>
 
-/** DEFINE RCS ID STRING **/
-NRCSID (XLALINSPIRALHYBRIDP1C, "$Id$");
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
 #define CVS_REVISION "$Revision$"

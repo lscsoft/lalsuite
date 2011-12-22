@@ -44,8 +44,6 @@
 
 #include <lal/DopplerScan.h>
 
-RCSID ("$Id$");
-
 /* Error codes and messages */
 #define GETMESH_ENORM 	0
 #define GETMESH_ESUB  	1

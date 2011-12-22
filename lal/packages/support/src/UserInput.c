@@ -33,8 +33,6 @@
 #include <lal/LogPrintf.h>
 #include <lal/StringVector.h>
 
-NRCSID( USERINPUTC, "$Id$");
-
 extern INT4 lalDebugLevel;
 
 #define TRUE  (1==1)

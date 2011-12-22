@@ -21,9 +21,6 @@
 #include <lal/AVFactories.h>
 #include <lal/Resample.h>
 
-NRCSID(DESTROYRESAMPLERULESC,"$Id$");
-
-
 /** \author Creighton, T. D.
  * \ingroup Resample_h
  * \brief Destroys an object of type ResampleRules, and sets <tt>*rules</tt> to \c NULL.

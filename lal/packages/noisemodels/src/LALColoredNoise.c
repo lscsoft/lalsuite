@@ -18,7 +18,6 @@
 */
 
 #include <lal/LALNoiseModels.h>
-NRCSID (LALCOLOREDNOISEC, "$Id$");
 
 /**
 \author Sathyaprakash, B. S.

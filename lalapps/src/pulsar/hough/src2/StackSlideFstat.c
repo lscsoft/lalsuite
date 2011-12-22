@@ -33,8 +33,6 @@
 /* include files: */
 #include "./StackSlideFstat.h"
 
-RCSID( "$Id$");
-
 #define TRUE (1==1)
 #define FALSE (1==0)
 

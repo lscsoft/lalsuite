@@ -56,8 +56,6 @@ INT4 lalDebugLevel;
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-NRCSID (HOUGHMISMATCHC, "$Id$");
-
 int main( int argc, char *argv[]){
 
   static LALStatus            status;  

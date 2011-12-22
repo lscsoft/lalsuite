@@ -135,8 +135,6 @@ LALI4DestroyVector()
 #include <lal/AVFactories.h>
 #include <lal/Sort.h>
 
-NRCSID(HEAPSORTC,"$Id$");
-
 /* helpful macros for generic routines */
 /* copy element j of array y to element i of array x; elements have size s */
 #define COPY(x,i,y,j,s) (memcpy((char*)(x)+(i)*(s),(char*)(y)+(j)*(s),(s)))

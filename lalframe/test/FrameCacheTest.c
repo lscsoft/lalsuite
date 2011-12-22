@@ -21,7 +21,6 @@
 #include <lal/FrameCache.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (FRAMECACHETESTC,"$Id$");
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)

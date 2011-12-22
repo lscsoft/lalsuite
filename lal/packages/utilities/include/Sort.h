@@ -57,9 +57,6 @@ elements.
 extern "C" {
 #endif
 
-
-NRCSID(SORTH,"$Id$");
-
 /* <lalLaTeX>
 
 \subsection*{Error conditions}

@@ -29,9 +29,6 @@
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
 
-NRCSID(DETRESPONSEC, "$Id$");
-
-
 /**
  *
  * An implementation of the detector response formulae in Anderson et al

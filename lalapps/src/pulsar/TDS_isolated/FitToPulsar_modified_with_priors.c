@@ -38,9 +38,6 @@ LALComputeDetAMResponse()
 #include <lal/LALStdlib.h>
 #include "FitToPulsar.h" /* use local version until up-to-date file commited to lal */
 
-/******* DEFINE RCS ID STRING ************/
-NRCSID( FITTOPULSARC, "$Id$" );
-
 #define INICHISQU 1.e100
 
 /* PSIMEAN is 125.155-90 = 35.155 degrees = 0.61357rads */

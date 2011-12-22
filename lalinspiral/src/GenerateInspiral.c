@@ -85,10 +85,6 @@ None.
 #include <lal/SeqFactories.h>
 #include <lal/Units.h>
 
-NRCSID( GENERATEINSPIRALC,
-"$Id$" );
-
-
 void
 LALGenerateInspiral(
     LALStatus		*status,

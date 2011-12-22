@@ -32,10 +32,6 @@
 static const MetricParamStruc empty_MetricParamStruc;
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 
-/** \cond DONT_DOXYGEN */
-NRCSID( PTOLEMETRICC, "$Id$" );
-/** \endcond */
-
 /* Bounds on acceptable parameters, may be somewhat arbitrary */
 #define MIN_DURATION (LAL_DAYSID_SI/LAL_TWOPI) /* Metric acts funny if duration too short */
 #define MIN_MAXFREQ  1.                        /* Arbitrary */

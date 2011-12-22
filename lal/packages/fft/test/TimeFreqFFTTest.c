@@ -65,7 +65,6 @@
 #include <lal/LALMoment.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (TIMEFREQFFTTESTC,"$Id$");
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)

@@ -229,9 +229,6 @@ LALUnitCompare()
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/Units.h>
 
-NRCSID (STOCHASTICOPTIMALFILTERC, "$Id$");
-
-
 void
 LALStochasticOptimalFilterNormalization(
     LALStatus                                            *status,

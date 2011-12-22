@@ -121,8 +121,6 @@ the following program shows how to use the function LALAstroOmega
 #include <lal/Integrate.h>
 #include <lal/AstroOmega.h>
 
-NRCSID (ASTROOMEGATESTC, "$Id$");
-
 //define here the spectral energy density of a single source
 
 static void SDensity (REAL8 *dEgw, REAL8 nu)
@@ -173,9 +171,6 @@ int main ()
 #include <lal/LALStdlib.h>
 #include <lal/Integrate.h>
 #include <lal/AstroOmega.h>
-
-NRCSID (ASTROOMEGAC, "$Id$");
-
 
 static void SFR (REAL8 *result, REAL8 z);
 static void dAstroOmega (LALStatus *s, REAL8 *domegaz, REAL8 z, void *p);

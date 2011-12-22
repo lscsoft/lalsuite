@@ -138,10 +138,6 @@
 #include <lal/RealFFT.h>
 #include <lal/FFTWMutex.h>
 
-
-NRCSID( REALFFTC, "$Id$" );
-
-
 /** \brief Plan to perform FFT of REAL4 data.
  * \ingroup RealFFT_h */
 struct

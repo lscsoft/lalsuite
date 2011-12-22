@@ -95,10 +95,6 @@ LALFree()
 #include <lal/LALConstants.h>
 #include <lal/TwoDMesh.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID( TWODMESHC, "$Id$" );
-/** \endcond */
-
 void
 LALCreateTwoDMesh( LALStatus          *stat,
 		   TwoDMeshNode       **mesh,

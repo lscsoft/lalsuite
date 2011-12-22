@@ -118,8 +118,6 @@ These routines use the functions \verb+LALSPolynomialInterpolation()+ and
 #define UNUSED
 #endif
 
-NRCSID (INTEGRATEC, "$Id$");
-
 typedef struct
 tagSIntegralState
 {

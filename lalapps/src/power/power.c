@@ -83,8 +83,6 @@
 
 #include <LALAppsVCSInfo.h>
 
-NRCSID(POWERC, "$Id$");
-RCSID("$Id$");
 
 
 #define PROGRAM_NAME "lalapps_power"

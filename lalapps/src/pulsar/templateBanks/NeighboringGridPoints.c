@@ -68,7 +68,6 @@
 #include <lal/StringInput.h>
 
 extern INT4 lalDebugLevel;
-NRCSID( NEIGHBORINGGRIDPOINTSC, "$Id$" );
 
 #define NEIGHBORINGGRIDPOINTSH_ENULL 	1
 #define NEIGHBORINGGRIDPOINTSH_ENONULL	2

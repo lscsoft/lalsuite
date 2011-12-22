@@ -34,7 +34,6 @@ void XLALDestroyEphemerisData ( EphemerisData *edat );
 
 
 /* ==================== deprecated LAL interface  ==================================================*/
-NRCSID (LALINITBARYCENTERH,"$Id$");
 
 #define LALINITBARYCENTERH_EOPEN    1
 #define LALINITBARYCENTERH_EMEM     2

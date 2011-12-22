@@ -38,7 +38,6 @@
 
 #include <lal/LALInferenceTemplate.h>
 
-RCSID("$Id$");
 #define PROGRAM_NAME "LALInferenceTemplate.c"
 #define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"

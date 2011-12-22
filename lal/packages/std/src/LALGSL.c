@@ -66,8 +66,6 @@ with the LAL GSL error handler in effect.
 #include <lal/LALGSL.h>
 #include <gsl/gsl_errno.h>
 
-NRCSID( LALGSLC, "$Id$" );
-
 LALStatus * lalGSLGlobalStatusPtr = NULL;
 #ifdef LAL_PTHREAD_LOCK
 #include <pthread.h>

@@ -41,8 +41,6 @@
 #include <lal/AVFactories.h>
 extern char *optarg;
 
-NRCSID (NEWGETAMCOEFFSTEST, "$Id$");
-
 /** \name Error codes */
 /*@{*/
 #define NEWGETAMCOEFFSTEST_ENORM 	0

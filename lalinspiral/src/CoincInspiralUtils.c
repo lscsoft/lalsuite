@@ -42,8 +42,6 @@
 #include <lal/XLALError.h>
 #include <lal/CoincInspiralEllipsoid.h>
 
-NRCSID( COINCINSPIRALUTILSC, "$Id$" );
-
 /**
 \author Fairhurst, S.
 \file

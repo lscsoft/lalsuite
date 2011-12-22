@@ -55,9 +55,6 @@ t(v) =  t_{0} - m \int_{v_{0}}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>
 
-NRCSID (LALINSPIRALVELOCITYC, "$Id$");
-
-
 void
 LALInspiralVelocity(
    LALStatus *status,

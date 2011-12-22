@@ -41,8 +41,6 @@
 #include <lal/PrintFTSeries.h>
 #include <lal/StreamOutput.h>
 
-NRCSID( LALTESTDETRESPONSE0C, "$Id$" );
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else

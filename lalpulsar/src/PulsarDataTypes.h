@@ -40,10 +40,6 @@
 extern "C" {
 #endif
 
-/** \cond DONT_DOXYGEN */
-NRCSID( PULSARDATATYPESH, "$Id$");
-/** \endcond */
-
 /**
  * \author Reinhard Prix
  * \date 2005

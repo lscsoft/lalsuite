@@ -36,10 +36,6 @@
 extern "C" {
 #endif
 
-/** \cond DONT_DOXYGEN */
-NRCSID( PTOLEMETRICH, "$Id$" );
-/** \endcond */
-
 /** @{ \name Error conditions */
 /** \ingroup PtoleMetric_h */
 #define PTOLEMETRICH_ENULL   1

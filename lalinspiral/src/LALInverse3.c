@@ -54,7 +54,6 @@ Do not generalise to more than 3 dimensions.
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID(LALINVERSE3C, "$Id$");
 #define Dim 3
 
 

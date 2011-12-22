@@ -67,10 +67,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/VectorOps.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID (VECTORMULTIPLYC, "$Id$");
-/** \endcond */
-
 COMPLEX8Vector * XLALCCVectorDivide(
     COMPLEX8Vector       *out,
     const COMPLEX8Vector *in1,

@@ -60,8 +60,6 @@ LALZDestroyVector()
 #include <lal/AVFactories.h>
 #include <lal/ZPGFilter.h>
 
-NRCSID(DESTROYZPGFILTERC,"$Id$");
-
 void XLALDestroyCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
 {
   if ( filter )

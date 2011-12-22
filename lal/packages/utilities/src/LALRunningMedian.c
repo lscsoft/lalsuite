@@ -75,11 +75,6 @@ LALFree()
 #include <lal/LALRunningMedian.h>
 /* #include "LALRunningMedian.h" */
 
-/* <lalVerbatim file="LALRunningMedianNRCSID"> */
-NRCSID( LALRUNNINGMEDIANC, "$Id$" );
-/* </lalVerbatim> */
-
-
 /*----------------------------------
   A structure to store values and indices
   of elements in an array

@@ -51,10 +51,6 @@ LALInspiralComputeMetric()
 
 /* Thomas:: definition for hexagonal grid. */
 
-
-NRCSID(LALINSPIRALHEXAGONALBANKC, "$Id$");
-
-
 void
 LALInspiralCreatePNCoarseBankHexa(
     LALStatus            *status,

@@ -129,8 +129,6 @@ couple of minutes.
 #define UNUSED
 #endif
 
-NRCSID (MAIN, "$Id$");
-
 INT4  lalDebugLevel = 2;
 
 int main ( void )

@@ -120,10 +120,6 @@ LALMersenneRandomVector()
 
 #include <lal/Random.h>
 
-
-NRCSID (MERSENNERANDOMTESTC, "$Id$");
-
-
 /* bogus type */
 struct
 tagMTRandomParams

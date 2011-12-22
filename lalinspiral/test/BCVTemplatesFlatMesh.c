@@ -74,8 +74,6 @@ LALSCreateVector()              LALSDestroyVector()
 #include <lal/FlatMesh.h>
 #include <lal/StreamInput.h>
 
-NRCSID(FLATMESHTESTC,"$Id$");
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else

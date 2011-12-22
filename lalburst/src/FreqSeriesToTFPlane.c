@@ -48,8 +48,6 @@
 
 
 #include <lal/LALRCSID.h>
-NRCSID(FREQSERIESTOTFPLANEC, "$Id:");
-
 
 /*
  * ============================================================================

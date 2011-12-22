@@ -84,8 +84,6 @@ int rename( const char *from, const char *to );
 #include <lal/LALDetectors.h>
 #include <lal/LALDatatypes.h>
 
-NRCSID( FRAMESERIESC, "$Id$" );
-
 /* Useful macros */
 #define SECNAN_TO_I8TIME( sec, nan ) \
   ((INT8)1000000000*(INT8)(sec)+(INT8)(nan))

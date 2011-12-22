@@ -37,9 +37,6 @@
 
 #include <LALAppsVCSInfo.h>
 
-RCSID( "$Id$" );
-
-
 /*
  *
  * Routines to output event triggers.

@@ -41,8 +41,6 @@ $Id$
 
 #include <lal/RngMedBias.h>
 
-NRCSID (RNGMEDBIASTESTC, "$Id$");
-
 /* Error codes and messages */
 
 /************** <lalErrTable file="RNGMEDBIASTESTCErrorTable"> */

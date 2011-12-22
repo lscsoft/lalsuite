@@ -104,7 +104,6 @@ typedef struct {
 /***********************************************************************************************/
 /* global variables */
 extern int vrbflg;	 	/**< defined in lalapps.c */
-RCSID( "$Id$");		/* FIXME: use git-ID instead to set 'rcsid' */
 
 const char NPCUS_STRING[6] = "NPCUS";
 

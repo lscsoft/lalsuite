@@ -35,9 +35,6 @@
 #include <lal/LALMoment.h>
 #include "CheckStatus.h"
 
-
-NRCSID (LALMOMENTTESTC, "$Id$");
-
 /**
 \author Tibbits, M. M.
 \file

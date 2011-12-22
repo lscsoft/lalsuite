@@ -67,10 +67,6 @@ LALRotatePolarU()
 
 #include <lal/LUT.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID (PARAMPLUTC, "$Id$");
-/** \endcond */
-
 void LALHOUGHParamPLUT (LALStatus    *status,
                    HOUGHParamPLUT    *out, /* parameters needed build LUT*/
                    HOUGHSizePar      *size,

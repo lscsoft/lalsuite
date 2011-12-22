@@ -44,9 +44,6 @@
 #include <gsl/gsl_rng.h>
 #include <time.h>
 
-
-NRCSID (FINDCHIRPBANKVETOC, "$Id$");
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else

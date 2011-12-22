@@ -29,8 +29,6 @@
 #include <lal/LALConstants.h>
 #include <lal/ComputeSky.h>
 
-NRCSID (COMPUTESKYC, "$Id ComputeSky.c $");
-
 static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
 

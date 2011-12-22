@@ -52,8 +52,6 @@ This is a short summary...
 extern "C" {
 #endif
 
-NRCSID (STACKSLIDEH, "$Id$");
-
 /* Author-defined error codes */
 
 /**\name Error Codes */ /*@{*/

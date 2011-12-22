@@ -89,10 +89,6 @@ stereographic  projection) of type \c REAL8UnitPolarCoor.
 
 #include <lal/LUT.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID (STEREOGRAPHICC, "$Id$");
-/** \endcond */
-
 /*
  * The functions that make up the guts of this module
  */

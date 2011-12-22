@@ -251,8 +251,6 @@ not in the <tt>2*Dterms</tt> band are initialized to zero.
 extern "C" {
 #endif
 
-NRCSID( GENERATEPULSARSIGNALH, "$Id$");
-
 /** \name Error codes */
 /*@{*/
 #define GENERATEPULSARSIGNALH_ENULL 		1

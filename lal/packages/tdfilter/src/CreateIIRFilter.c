@@ -120,8 +120,6 @@ LALDCreateVector()              LALDDestroyVector()
 #include <math.h>
 #include <lal/IIRFilter.h>
 
-NRCSID(CREATEIIRFILTERC,"$Id$");
-
 extern INT4 lalDebugLevel;
 
 

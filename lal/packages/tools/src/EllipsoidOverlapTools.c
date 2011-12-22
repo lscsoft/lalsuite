@@ -30,10 +30,6 @@
 
 #include <lal/EllipsoidOverlapTools.h>
 
-NRCSID( ELLIPSOIDOVERLAPTOOLSC,
-        "$Id$" );
-
-
 static REAL8 fContact (REAL8 x, void *params);
 
 /* ---------------------------------------------------------------------------

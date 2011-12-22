@@ -31,8 +31,6 @@
 #include <processtable.h>
 #include <LALAppsVCSInfo.h>
 
-RCSID("$Id$");
-
 #define PROGRAM_NAME "corse"
 #define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"

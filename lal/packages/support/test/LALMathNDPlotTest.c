@@ -105,8 +105,6 @@
 #define LALMATHNDPLOTTESTC_MSGESUB      "Subroutine error"
 /*</lalErrTable>*/
 
-NRCSID(LALMATHNDPLOTTESTC, "$Id:");
-
 int main(void){
   static LALStatus status;
   INT4 loopx = 0;                       /* loop counters */

@@ -56,8 +56,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/StringVector.h>
 
-NRCSID (BINARYPULSARTIMINGH,"$Id$");
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -32,8 +32,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/FindChirpEngine.h>
 
-NRCSID (MAIN, "$Id$");
-
 extern int lalDebugLevel;
 
 static

@@ -124,8 +124,6 @@
 extern "C" {
 #endif
 
-NRCSID(STACKMETRICH,"$Id$");
-
 /** \name Error conditions */
 /*@{*/
 /** \ingroup StackMetric_h */

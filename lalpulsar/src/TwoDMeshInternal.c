@@ -208,7 +208,6 @@ LALMalloc()                 LALDestroyTwoDMesh()
 #include <lal/TwoDMesh.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID( TWODMESHINTERNALC, "$Id$" );
 
 /* Whether or not to track progress internally. */
 static UINT4 columnNo;

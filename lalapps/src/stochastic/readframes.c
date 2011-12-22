@@ -58,8 +58,6 @@
 
 #include "stochastic_virgo.h"
 
-NRCSID (READFRAMESC, "$Id$");
-RCSID ("$Id$");
 
 /* cvs info */
 #define CVS_ID "$Id$"

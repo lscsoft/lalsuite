@@ -40,8 +40,6 @@
 #include <glob.h>
 #include <lal/GeneratePulsarSignal.h>
 
-NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
-
 /**\name Error Codes */ /*@{*/
 #define NORMALIZESFTRNGMEDC_ENORM 0
 #define NORMALIZESFTRNGMEDC_ESUB  1

@@ -35,7 +35,6 @@
 #include <bits/local_lim.h>
 
 #include <lal/LALRCSID.h>
-NRCSID (QTHREADC,"$Id$");
 
 /* lal debug flag for verbosity level */
 extern int lalDebugLevel;

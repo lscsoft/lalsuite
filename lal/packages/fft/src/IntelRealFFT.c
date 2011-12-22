@@ -34,8 +34,6 @@
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
 
-NRCSID( REALFFTC, "$Id$" );
-
 extern int dummy_have_qthread;
 
 struct

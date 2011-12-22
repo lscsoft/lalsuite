@@ -58,8 +58,6 @@ Author: Robinson, C. A. and Sengupta, A. S.
 extern "C" {
 #endif
 
-NRCSID( ELLIPSOIDOVERLAPTOOLSH, "$Id$" );
-
 typedef struct tagfContactWorkSpace
 {
     SWIGLAL_STRUCT(fContactWorkSpace);

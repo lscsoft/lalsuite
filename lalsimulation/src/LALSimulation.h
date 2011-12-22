@@ -32,9 +32,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID(LALSIMULATIONH, "$Id:");
-
-
 const LALDetector *XLALInstrumentNameToLALDetector(
 	const char *string
 );

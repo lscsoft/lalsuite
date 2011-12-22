@@ -18,7 +18,6 @@
 */
 
 #include <lal/LALNoiseModels.h>
-NRCSID (LALADDVECTORSC, "$Id$");
 
 /**
 \author Sathyaprakash, B. S.

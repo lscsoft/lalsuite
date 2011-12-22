@@ -75,8 +75,6 @@ void XLALCoherentCBCEstimateDistanceCase3a(INT4 caseID[6], double C_Real0, doubl
 void XLALCoherentCBCSigmasqFor3Sites(INT4 caseID[6], REAL8 sigmasq4DArray[4], REAL4 chisq4DArray[4], MultiInspiralTable *thisEvent, UINT4 case3b);
 double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double amplitudeConst, MultiInspiralTable *thisEvent, double chirpTime, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, double C_Real3, double C_Im3, REAL8 sigmasq[4], UINT4 case3b, INT4 caseID[6] );
 
-NRCSID (COHERENTINSPIRALFILTERC, "$Id$");
-
 static REAL4 cartesianInnerProduct(REAL4 x[3], REAL4 y[3])
 {
   return x[0]*y[0] + x[1]*y[1] + x[2]*y[2];

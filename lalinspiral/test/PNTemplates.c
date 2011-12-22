@@ -45,8 +45,6 @@ lalDebugLevel
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 
-NRCSID(PNTEMPLATESC,"$Id$");
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 

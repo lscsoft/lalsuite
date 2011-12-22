@@ -214,9 +214,6 @@ XLALEOBWaveformEngine (
                 InspiralInit     *paramsInit
                 );
 
-NRCSID (LALEOBWAVEFORMC,
-"$Id$");
-
 /*--------------------------------------------------------------------*/
 
 static REAL8
@@ -329,8 +326,7 @@ XLALrOfOmega (
 }
 
 /*--------------------------------------------------------------------*/
-NRCSID (LALLIGHTRINGRADIUSC,
-"$Id$");
+
 static REAL8
 XLALlightRingRadius(
    REAL8 r,
@@ -1054,12 +1050,6 @@ XLALEOBWaveform(
 
    return XLAL_SUCCESS;
 }
-
-
-NRCSID (LALEOBWAVEFORMTEMPLATESC,
-"$Id$");
-
-
 
 void
 LALEOBWaveformTemplates (

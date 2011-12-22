@@ -56,14 +56,6 @@
 extern "C" {
 #endif
 
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID (HOUGHVALIDATEAMH, "$Id$");
-
-
-
 /* ***************************************************************
  * Constant Declarations.  Default parameters.
  */

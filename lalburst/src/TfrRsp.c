@@ -61,9 +61,6 @@
 #define ROUND1(x)       (((((x)-(INT4)(x)) >= 0.0) && (((x)-(INT4)(x)) <= 0.50)) ? ((INT4)(x)) : ((INT4)(x+1)))
 #define ROUND(x)        ((INT4)(SGN((x))*ROUND1(ABS((x)))))
 
-NRCSID (TFRRSPC, "$Id$");
-
-
 void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *param)
 {
 

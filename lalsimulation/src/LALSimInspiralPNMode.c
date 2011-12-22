@@ -24,8 +24,6 @@
 #include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 
-NRCSID(LALSIMINSPIRALPNMODEC, "$Id$");
-
 /**
  * Computes h(2,2) mode of spherical harmonic decomposition of
  * the post-Newtonian inspiral waveform.

@@ -106,8 +106,6 @@ extern int lalDebugLevel;
 
 int check ( LALStatus*, INT4, const CHAR* );
 
-NRCSID(MAIN, "$Id$");
-
 int
 main( void )
 {

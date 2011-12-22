@@ -86,10 +86,6 @@
 #include "./timer/cycle_counter/Intel/GCC/cycle_counter.h"
 #endif
 
-RCSID( "$Id$");
-
-
-
 /* globals, constants and defaults */
 
 extern int lalDebugLevel;

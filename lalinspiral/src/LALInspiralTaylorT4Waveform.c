@@ -71,9 +71,6 @@ void LALTaylorT4WaveformEngine (
   InspiralInit     *paramsInit
 );
 
-NRCSID (LALTAYLORT4WAVEFORMC,
-"$Id$");
-
 void LALTaylorT4Derivatives4PN(
   REAL8Vector *values,
   REAL8Vector *dvalues,

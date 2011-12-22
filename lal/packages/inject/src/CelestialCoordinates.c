@@ -26,8 +26,6 @@
 #define LAL_DELTAGAL (0.473477302)
 #define LAL_LGAL     (0.576)
 
-NRCSID( CELESTIALCOORDINATESC, "$Id$" );
-
 /**
    \author T.D. Creighton
    \addtogroup CelestialCoordinates_c

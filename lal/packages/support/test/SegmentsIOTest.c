@@ -78,8 +78,6 @@ LALSegListWrite()
 #include <lal/LALStatusMacros.h>
 #include <lal/SegmentsIO.h>
 
-NRCSID( SEGMENTSIOTESTC, "$Id$" );
-
 /*-- Macros for this test program --*/
 
 #define RETPASS(testname,status) XLALPrintInfo( \

@@ -56,9 +56,6 @@ LAL\f$\langle\mbox{DT}\rangle\f$PrintVector functions
 extern "C" {
 #endif
 
-
-NRCSID( PRINTVECTORH, "$Id$" );
-
 void LALCHARPrintVector( CHARVector *vector );
 void LALI2PrintVector( INT2Vector *vector );
 void LALI4PrintVector( INT4Vector *vector );

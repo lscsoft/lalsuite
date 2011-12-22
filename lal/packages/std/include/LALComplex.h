@@ -26,8 +26,6 @@ extern "C" {
 
 #include <lal/LALAtomicDatatypes.h>
 
-NRCSID (LALCOMPLEXH,"$Id$");
-
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
 #if defined __COMPLEX__ || defined _COMPLEX_H
 #error "don't use both <complex.h> and LAL_USE_SHORT_MACROS"

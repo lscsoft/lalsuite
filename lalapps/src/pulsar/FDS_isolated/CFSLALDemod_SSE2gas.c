@@ -32,8 +32,6 @@
 
                                                          Bernd Machenschalk */
 
-RCSID( "$Id$");
-
 /* gcc version and Apples assembler specials aren't needed currently, but kept for reference */
 #ifdef __GNUC__
 #ifndef __GNUC_PATCHLEVEL__

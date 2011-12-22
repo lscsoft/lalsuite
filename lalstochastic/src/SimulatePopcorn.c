@@ -42,8 +42,6 @@
 #define ho SIMULATEPOPCORN_ho
 #define om SIMULATEPOPCORN_OMEGAMATTER
 #define ov SIMULATEPOPCORN_OMEGAVACUUM
-NRCSID (SIMULATEPOPCORNC, "$Id$");
-
 
 static void Rcfunc (REAL4 *Rc, REAL4 z);
 static void Ezfunc (REAL4 *result, REAL4 z);

@@ -31,11 +31,6 @@
 
 #include "./DriveHoughColor.h"
 
-
-RCSID( "$Id$");
-
-
-
 /* globals, constants and defaults */
 
 

@@ -54,8 +54,6 @@ running median of REAL4 and REAL8 sequences
 extern "C" {
 #endif
 
-NRCSID (LALRUNNINGMEDIANH, "$Id$");
-
 /* <lalLaTeX>
 
 \subsection*{Error conditions}

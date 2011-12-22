@@ -51,10 +51,6 @@ When appropriate this function calls:\\
 
 #include <lal/LALInspiral.h>
 
-
-NRCSID (LALINSPIRALAMPLITUDEC, "$Id$");
-
-
 void
 LALInspiralRestrictedAmplitude (LALStatus        *status,
 				InspiralTemplate *params )

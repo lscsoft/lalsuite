@@ -59,9 +59,6 @@ standard C routines.
 extern "C" {
 #endif
 
-
-NRCSID( LALMALLOCH, "$Id$" );
-
 void *XLALMalloc( size_t n );
 void *XLALMallocLong( size_t n, const char *file, int line );
 void *XLALCalloc( size_t m, size_t n );

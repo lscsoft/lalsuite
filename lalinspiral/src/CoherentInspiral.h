@@ -65,9 +65,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-
-NRCSID (COHERENTINSPIRALH, "$Id$");
-
 /**\name Error Codes */ /*@{*/
 #define COHERENTINSPIRALH_ENULL 1
 #define COHERENTINSPIRALH_ENNUL 2

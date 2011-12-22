@@ -96,9 +96,6 @@ static REAL8 XLALInspiralTaylorF2Phasing5PN (REAL8 v, expnCoeffs *ak);
 static REAL8 XLALInspiralTaylorF2Phasing6PN (REAL8 v, expnCoeffs *ak);
 static REAL8 XLALInspiralTaylorF2Phasing7PN (REAL8 v, expnCoeffs *ak);
 
-NRCSID (LALINSPIRALSTATIONARYPHASEAPPROX2C, "$Id$");
-
-
 void
 LALInspiralStationaryPhaseApprox2 (
    LALStatus        *status,

@@ -94,8 +94,6 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 /* 10/13/04 gam; allowed timing difference between LMST from LAL and independent code */
 #define LALIND_TIMETOLERANCE 32
 
-NRCSID( LALINDEPENDENTTESTDETRESPONSEC, "$Id$" );
-
 /* void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec, REAL8Vector *fPlus, REAL8Vector *fCross); */ /* 10/14/04 gam */
 void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, REAL8 inputXArmAzimuthRadians, REAL8 inputVertexLatitudeRadians, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec,  REAL8Vector *fPlus, REAL8Vector *fCross);
 

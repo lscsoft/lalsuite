@@ -49,8 +49,6 @@
 #define UNUSED
 #endif
 
-NRCSID( COINCINSPIRALELLIPSOIDC, "$Id$" );
-
 /**
 
 \author Craig Robinson

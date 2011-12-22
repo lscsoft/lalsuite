@@ -122,9 +122,6 @@ LALI2DestroyVector( &status, &dmro.data );
 #include <lal/FrameData.h>
 #include <lal/LALFrameL.h>
 
-NRCSID (FRAMEDATAC, "$Id$");
-
-
 void
 LALInitializeFrameData (
     LALStatus  *status,

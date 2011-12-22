@@ -210,8 +210,6 @@ LALDLUDecomp()                  LALDLUBackSub()
 #include <lal/AVFactories.h>
 #include <lal/MatrixUtils.h>
 
-NRCSID( DETINVERSEC, "$Id$" );
-
 /* <lalVerbatim file="DetInverseCP"> */
 void
 LALSMatrixDeterminant( LALStatus *stat, REAL4 *det, REAL4Array *matrix )

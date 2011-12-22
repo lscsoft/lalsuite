@@ -115,10 +115,6 @@ LALInspiralEccentricityEngine(
    InspiralTemplate *params
    );
 
-
-NRCSID (LALINSPIRALECCENTRICITYC, "$Id$");
-
-
 void
 LALInspiralEccentricity(
    LALStatus        *status,
@@ -154,9 +150,6 @@ LALInspiralEccentricity(
    Interface routine needed to generate time-domain T- or a P-approximant
    waveforms by solving the ODEs using a 4th order Runge-Kutta; April 5, 00.
 */
-
-NRCSID (LALINSPIRALECCENTRICITYTEMPLATESC, "$Id$");
-
 
 void
 LALInspiralEccentricityTemplates(
@@ -194,9 +187,6 @@ LALInspiralEccentricityTemplates(
    Interface routine needed to generate time-domain T- or a P-approximant
    waveforms for injection packages T.Cokelaer sept 2003
 */
-
-NRCSID (LALINSPIRALECCENTRICITYFORINJECTIONC, "$Id$");
-
 
 void
 LALInspiralEccentricityForInjection(
@@ -366,8 +356,6 @@ LALInspiralEccentricityForInjection(
  *  Engine function for use by other LALInspiralEccentricity* functions
  *  Craig Robinson April 2005
  */
-
-NRCSID (LALINSPIRALECCENTRICITYENGINEC, "$Id$");
 
 void
 LALInspiralEccentricityEngine(

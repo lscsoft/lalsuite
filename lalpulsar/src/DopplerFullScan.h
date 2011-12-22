@@ -51,9 +51,6 @@ extern "C" {
 
 #include "DopplerScan.h"
 
-
-NRCSID( DOPPLERFULLSCANH, "$Id$" );
-
 /*---------- DEFINES ----------*/
 
 /*---------- external types ----------*/

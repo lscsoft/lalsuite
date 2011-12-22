@@ -96,8 +96,6 @@ Character  & Effect \\ \hline
 #include <lal/SegmentsIO.h>
 #include <lal/StringInput.h>
 
-NRCSID( SEGMENTSIOC, "$Id$" );
-
 /* <lalVerbatim file="SegmentsIOCP"> */
 void
 LALSegListRead( LALStatus *status, LALSegList *seglist, const CHAR *fileName, const CHAR *options )

@@ -41,8 +41,6 @@
 #include <lal/TimeDelay.h>
 #include <lal/RingUtils.h>
 
-NRCSID( SNGLRINGDOWNUTILSC, "$Id$" );
-
 /**
 \author Brown, D. A., Fairhurst, S. and Messaritaki, E.
 \file

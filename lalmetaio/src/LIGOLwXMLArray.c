@@ -82,10 +82,6 @@
 #define FILE LALFILE
 #define fprintf XLALFilePrintf
 
-
-NRCSID(LIGOLWXMLARRAYC, "$Id$");
-
-
 /*
  * ============================================================================
  *

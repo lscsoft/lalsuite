@@ -23,8 +23,6 @@
 #include <lal/Random.h>
 #include <lal/Inject.h>
 
-NRCSID( INJECTVECTORC, "$Id$" );
-
 /**
 \author Creighton, T. D.
 \addtogroup InjectVector_c

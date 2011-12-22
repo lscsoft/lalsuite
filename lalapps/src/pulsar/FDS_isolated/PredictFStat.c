@@ -53,8 +53,6 @@
 
 /* local includes */
 
-RCSID( "$Id$");
-
 /*---------- DEFINES ----------*/
 
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */

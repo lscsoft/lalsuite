@@ -159,8 +159,6 @@ The code does not yet really work with more than one spindown parameter.
 /** \cond DONT_DOXYGEN */
 extern char *optarg;
 
-NRCSID( GENERALMETRICTESTC, "$Id" );
-
 #define DEFAULT_DURATION 39600 /* seconds */
 #define SPOKES 30
 #define MAGNIFY 1.0            /* Magnification factor of ellipses */

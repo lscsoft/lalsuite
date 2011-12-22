@@ -24,8 +24,6 @@
 #include <lal/RealFFT.h>
 #include <string.h>
 
-NRCSID (LPCC, "$Id$");
-
 static INT4 balanc(REAL4 **a, INT4 n);
 static INT4 toeplz(REAL4 r[], REAL4 x[], REAL4 y[], INT4 n);
 static INT4 zrhqr(REAL4 a[], INT4 m, REAL4 rtr[], REAL4 rti[]);

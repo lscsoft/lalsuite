@@ -49,8 +49,6 @@
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 
-NRCSID (MAIN, "$Id$");
-
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 

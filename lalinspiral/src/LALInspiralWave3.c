@@ -93,9 +93,6 @@ XLALInspiralWave3Engine(
                 InspiralInit     *paramsInit
                 );
 
-NRCSID (LALINSPIRALWAVE3C, "$Id$");
-
-
 void
 LALInspiralWave3 (
    LALStatus        *status,
@@ -178,10 +175,6 @@ static REAL8 XLALInspiralFrequency3Wrapper(REAL8 tC, void *pars)
   return f;
 }
 
-NRCSID (LALINSPIRALWAVE3TEMPLATESC, "$Id$");
-
-
-
 void
 LALInspiralWave3Templates (
    LALStatus        *status,
@@ -254,14 +247,6 @@ XLALInspiralWave3Templates (
 
   return XLAL_SUCCESS;
 }
-
-
-
-
-
-NRCSID (LALINSPIRALWAVE3FORINJECTIONC, "$Id$");
-
-
 
 void
 LALInspiralWave3ForInjection (

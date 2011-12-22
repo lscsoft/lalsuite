@@ -43,7 +43,6 @@ extern "C" {
 #endif
 
 #include <lal/LALRCSID.h>
-NRCSID( DETECTORSTATESH, "$Id$" );
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/PulsarDataTypes.h>

@@ -190,7 +190,6 @@ LALDSymmetricEigenVectors()     snprintf()
 #include <lal/FlatMesh.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID( DIRECTEDMESHTESTC, "$Id$" );
 
 /* Default parameter settings. */
 extern int lalDebugLevel;

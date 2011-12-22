@@ -108,8 +108,6 @@ LALGeneratePPNInspiral()        LALSDestroyVectorSequence()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
 
-NRCSID( GENERATEPPNINSPIRALTESTC, "$Id$" );
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define EPOCH (315187200000000000LL) /* about Jan. 1, 1990 */

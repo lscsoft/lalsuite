@@ -102,8 +102,6 @@ routines \verb+zbrac+ and \verb+rtbis+ in Numerical Recipes~\cite{ptvf:1992}.
 #include <lal/LALConstants.h>
 #include <lal/FindRoot.h>
 
-NRCSID (FINDROOTC, "$Id$");
-
 /* <lalVerbatim file="FindRootCP"> */
 void
 LALSBracketRoot (

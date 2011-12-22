@@ -99,12 +99,6 @@
 /* gsl includes */
 #include <gsl/gsl_permutation.h>
 
-
-
-RCSID( "$Id$");
-
-
-
 /* globals, constants and defaults */
 
 

@@ -98,8 +98,6 @@ LALPrintError()
 #include <lal/Random.h>
 #include <lal/Sort.h>
 
-NRCSID(SORTTESTC,"$Id$");
-
 #define NPTS 5
 
 #define SORTTEST_ESUB 1

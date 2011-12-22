@@ -46,9 +46,6 @@ Functions for linear predictor filters.
 extern "C" {
 #endif
 
-
-NRCSID (LPCH, "$Id$");
-
   /******************************** <lalErrTable file="LPCHErrTab"> */
 #define LPCH_EIN 1
 #define LPCH_EMEM 2

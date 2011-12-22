@@ -21,9 +21,6 @@
 #include <lal/LALNoiseModelsInspiral.h>
 #include <lal/LALConstants.h>
 
-
-NRCSID (LALESTIMATEEFFECTIVEDISTANCEC, "$Id$");
-
 void LALEstimateEffectiveDistance (
         LALStatus               *status,
         InspiralTemplate        param,

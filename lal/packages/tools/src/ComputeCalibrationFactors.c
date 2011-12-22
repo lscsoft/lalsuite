@@ -25,8 +25,6 @@
 
 /* Independently computes the calibration factors \alpha(t)*\beta(t) and \alpha (t) from */
 
-NRCSID( UPDATEFACTORSC, "$Id$" );
-RCSID("$Id$");
 
 static COMPLEX16 *cmul( COMPLEX16 *pc, COMPLEX16 *pa, COMPLEX16 *pb )
 {

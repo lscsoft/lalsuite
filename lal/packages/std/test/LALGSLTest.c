@@ -43,8 +43,6 @@ an error code is returned if the GSL function fails.
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_errno.h>
 
-NRCSID( LALGSLTESTC, "$Id$" );
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else

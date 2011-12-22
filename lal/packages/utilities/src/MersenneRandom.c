@@ -120,9 +120,6 @@ Seed value MAY NOT EQUAL ZERO.
 #define TEMPERING_SHIFT_T(y)  (y << 15)
 #define TEMPERING_SHIFT_L(y)  (y >> 18)
 
-
-NRCSID( MERSENNERANDOMC, "$Id$");
-
 typedef struct
 tagGenParams
 {

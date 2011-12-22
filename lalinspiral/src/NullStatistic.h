@@ -66,8 +66,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID (NULLSTATISTICH, "$Id$");
-
 /**\name Error Codes */ /*@{*/
 #define NULLSTATH_ENULL 1
 #define NULLSTATH_ENNUL 2

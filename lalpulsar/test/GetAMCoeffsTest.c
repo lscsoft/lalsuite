@@ -33,8 +33,6 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
 
-NRCSID (GETAMCOEFFSTEST, "$Id$");
-
 /** \name Error codes */
 /*@{*/
 #define GETAMCOEFFSTEST_ENORM 	0

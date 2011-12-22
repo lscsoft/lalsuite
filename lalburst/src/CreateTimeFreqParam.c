@@ -50,8 +50,6 @@
 
 #include <lal/TimeFreq.h>
 
-NRCSID (CREATETIMEFREQPARAMC, "$Id$");
-
 void LALCreateTimeFreqParam (LALStatus *status,
 			TimeFreqParam **param,
 			CreateTimeFreqIn *in)

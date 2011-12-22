@@ -98,7 +98,6 @@ void LALInitUserVars ( LALStatus *status, UserInput_t *uvar);
 void LoadInputSFTs ( LALStatus *status, InputSFTData *data, const UserInput_t *uvar );
 
 /*---------- empty initializers ---------- */
-RCSID( "$Id$");
 
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */

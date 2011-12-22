@@ -108,8 +108,6 @@
 
 #include <lal/LALDatatypes.h>
 
-NRCSID( RINGH, "$Id$" );
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

@@ -105,8 +105,6 @@ LALMalloc()                     LALFree()
 #include <lal/LALConstants.h>
 #include <lal/MatrixUtils.h>
 
-NRCSID( DETINVERSEINTERNALC, "$Id$" );
-
 /* <lalVerbatim file="DetInverseInternalCP"> */
 void
 LALSLUDecomp( LALStatus   *stat,

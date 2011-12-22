@@ -39,8 +39,6 @@
 extern "C" {
 #endif
 
-  NRCSID(VERYBASICXMLOUTPUTH, "$Id$");
-
   /**
    * Information for XML functions
    */

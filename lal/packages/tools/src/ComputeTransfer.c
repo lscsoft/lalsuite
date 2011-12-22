@@ -29,8 +29,6 @@
 #define CAL_S2START 729273613
 #define CAL_S2END 734367613
 
-NRCSID( COMPUTETRANSFERC, "$Id$" );
-
 /**
 \author Patrick Brady, Jolien Creighton
 \defgroup ComputeTransfer_c Module ComputeTransfer.c

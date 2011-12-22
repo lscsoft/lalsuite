@@ -27,10 +27,6 @@
 
 #include "PulsarTimes.h"
 
-/** \cond DONT_DOXYGEN */
-NRCSID(DTEPHEMERISC,"$Id$");
-/** \endcond */
-
 /** \file
     \author Jones, D. I.,   Owen, B. J.
     \ingroup PulsarTimes_h

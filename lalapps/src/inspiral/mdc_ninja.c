@@ -59,7 +59,6 @@
 #include "inspiral.h"
 
 /* cvs information */
-RCSID(LALAPPS_VCS_IDENT_ID);
 #define PROGRAM_NAME "lalapp_mdc_ninja"
 
 /* defines */

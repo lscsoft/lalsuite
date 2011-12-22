@@ -29,8 +29,6 @@
 #define Cosh(x) cosh(x)
 #define ACosh(x) acosh(x)
 
-NRCSID( COHERENTESTIMATIONC, "$Id$" );
-
 double cosh(double);
 double acosh(double);
 

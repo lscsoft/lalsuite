@@ -31,10 +31,6 @@
 #include "./DriveHoughColor.h"
 #include "./MCInjectHoughMulti.h"
 
-RCSID( "$Id$");
-
-
-
 /* globals, constants and defaults */
 
 

@@ -120,9 +120,6 @@ input to the function for future work.
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPFILTEROUTPUTVETOC, "$Id$");
-
-
 void
 LALFindChirpFilterOutputVeto(
     LALStatus                          *status,

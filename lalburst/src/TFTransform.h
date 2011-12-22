@@ -39,8 +39,6 @@ extern "C" {
 
 
 #include <lal/LALRCSID.h>
-NRCSID(TFTRANSFORMH, "$Id$");
-
 
 /*
  * An excess power filter bank

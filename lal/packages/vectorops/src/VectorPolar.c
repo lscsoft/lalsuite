@@ -91,7 +91,6 @@
 #include <lal/LALConstants.h>
 #include <lal/VectorOps.h>
 
-NRCSID (VECTORPOLARC, "$Id$");
 /** \endcond */
 
 /** computes the magnitudes of a vector of complex numbers */

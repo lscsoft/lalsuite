@@ -197,10 +197,6 @@ LALReverseRealFFT()
 #include <lal/FindChirpSP.h>
 #include <math.h>
 
-NRCSID (FINDCHIRPSPDATAC, "$Id$");
-
-
-
 void
 LALFindChirpSPData (
     LALStatus                  *status,

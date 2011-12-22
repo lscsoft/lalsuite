@@ -39,9 +39,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID(LALSIMBURSTH, "$Id:");
-
-
 /*
  * ============================================================================
  *

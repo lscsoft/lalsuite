@@ -57,9 +57,6 @@ which coarse-grain a frequency series.
 extern "C" {
 #endif
 
-NRCSID( COARSEGRAINFREQUENCYSERIESH,
-        "$Id$" );
-
 /****************** <lalErrTable file="CoarseGrainFrequencySeriesHE"> */
 
 #define COARSEGRAINFREQUENCYSERIESH_ENULLPTR        1

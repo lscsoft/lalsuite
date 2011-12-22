@@ -25,8 +25,6 @@
 #include <lal/Random.h>
 #include <lal/Inject.h>
 
-NRCSID( INJECTTIMESERIESC, "$Id$" );
-
 /**
 \author Creighton, T. D.
 \addtogroup InjectTimeSeries_c

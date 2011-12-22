@@ -82,8 +82,6 @@ extern "C" {
 #include <lal/FileIO.h>
 #include <lal/Segments.h>
 
-NRCSID( SEGMENTSIOH, "$Id$" );
-
 /* Function prototypes */
 
 void

@@ -82,9 +82,6 @@ be cast to a void before calling this function. For example,
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 
-NRCSID (LALINSPIRALDERIVATIVESC, "$Id$");
-
-
 void
 LALInspiralDerivatives (
    REAL8Vector *values,

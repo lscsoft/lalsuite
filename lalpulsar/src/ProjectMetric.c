@@ -21,9 +21,6 @@
 #include<lal/LALStdlib.h>
 #include<lal/StackMetric.h>
 
-NRCSID(PROJECTMETRICC,"$Id$");
-
-
 /**\brief Project out the zeroth dimension of a metric.
  * \author Creighton, T. D.
  * \date 2000

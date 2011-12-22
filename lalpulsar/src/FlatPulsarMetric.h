@@ -48,9 +48,6 @@ extern "C" {
 #include <lal/DetectorStates.h>
 #include <lal/PtoleMetric.h>
 
-NRCSID( FLATPULSARMETRICH, "$Id$" );
-
-
 /*---------- DEFINES ----------*/
 #define SIN_EPS		0.3977771557	/**< sin(LAL_IEARTH) */
 #define COS_EPS		0.9174820622	/**< cos(LAL_IEARTH) */

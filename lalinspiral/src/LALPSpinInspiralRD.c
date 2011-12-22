@@ -109,8 +109,6 @@
 #include <lal/NRWaveInject.h>
 #include <lal/RealFFT.h>
 
-NRCSID(LALPSPININSPIRALRDC, "$Id$");
-
 #define sqrtOnePointFive 1.22474
 #define sqrtPoint15      0.387298
 #define sqrtFiveOver2    1.1183
@@ -707,9 +705,6 @@ int XLALPSpinInspiralRD(REAL4Vector * signalvec, InspiralTemplate * params)
   return XLAL_SUCCESS;
 }
 
-
-NRCSID(LALPSPININSPIRALRDTEMPLATESC, "$Id$");
-
 /**
  * \ingroup psird
  * \brief Module to produce waveform templates
@@ -778,9 +773,6 @@ int XLALPSpinInspiralRDTemplates(
 
     return XLAL_SUCCESS;
 }
-
-
-NRCSID(LALPSPININSPIRALRDINJECTIONC, "$Id$");
 
 /**
  * \ingroup psird
@@ -1052,8 +1044,6 @@ int XLALPSpinInspiralRDFreqDom(
 
     return XLAL_SUCCESS;
 }
-
-NRCSID(LALPSPININSPIRALRDENGINEC, "$Id$");
 
 /**
  * \ingroup psird
@@ -1379,8 +1369,6 @@ static int XLALSpinInspiralFillH4Modes(
 
   return 0;
 }
-
-NRCSID(LALSPININSPIRALENGINEC,"$Id$");
 
 static int XLALSpinInspiralEngine(
 				UINT4 neqs, 

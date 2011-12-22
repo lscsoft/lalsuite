@@ -342,8 +342,6 @@ where <tt><typecode></tt> is any of \c I2, \c I4, \c I8,
 #include <lal/StringInput.h>
 #include <lal/StreamInput.h>
 
-NRCSID( STREAMSERIESINPUTC, "$Id$" );
-
 /* Define a message string for header parsing errors. */
 #define LALREADSERIESC_HEADER "Skipping badly-formatted line for metadata field "
 

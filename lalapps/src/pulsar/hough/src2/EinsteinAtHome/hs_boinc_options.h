@@ -22,8 +22,6 @@
 
 #include "boinc/boinc_api.h"
 
-#define HS_BOINC_OPTIONS_H_RCSID "$Id$"
-
 #define EAH_SHMEM_APP_NAME "EinsteinHS"
 #define EAH_SHMEM_SIZE 1024
 

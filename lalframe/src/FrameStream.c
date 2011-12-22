@@ -111,9 +111,6 @@ int gethostname(char *name, int len);
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
 
-NRCSID( FRAMESTREAMC, "$Id$" );
-
-
 /*
  *
  * These functions are for internal use.

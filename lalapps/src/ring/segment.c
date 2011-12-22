@@ -32,8 +32,6 @@
 #include "errutil.h"
 #include "gpstime.h"
 
-RCSID( "$Id$" );
-
 /* routine to compute a single overwhitened data segment */
 int compute_data_segment(
     COMPLEX8FrequencySeries  *segment,

@@ -92,9 +92,6 @@ static UNUSED REAL4Vector *XLALCutAtFreq(
     REAL8 cutFreq,
     REAL8 deltaT);
 
-NRCSID (LALPHENOMWAVEFORMC, "$Id$");
-
-
 /*
  *
  * Wrapper functions to be called from LALInspiralWave

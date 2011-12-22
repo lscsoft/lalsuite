@@ -50,8 +50,6 @@ Functions for creating XMGR graphs from LAL structures and functions.
 #include <lal/LALXMGRInterface.h>
 #include <lal/TwoDMesh.h>
 
-NRCSID (LALXMGRINTERFACEC, "$Id$");
-
 /* ---------------------------------------------------------------------- */
 void
 LALXMGROpenFile (

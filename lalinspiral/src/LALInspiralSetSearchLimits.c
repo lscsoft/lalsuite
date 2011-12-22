@@ -74,10 +74,6 @@ and
 #include <lal/LALInspiralBank.h>
 #include <lal/LALStdlib.h>
 
-
-NRCSID (LALINSPIRALSETSEARCHLIMITSC, "$Id$");
-
-
 void
 LALInspiralSetSearchLimits (
     LALStatus            *status,

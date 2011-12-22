@@ -53,8 +53,6 @@
 #include "ComputeFstat.h"
 #include "ComplexAM.h"
 
-NRCSID( COMPUTEFSTATC, "$Id$");
-
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
 #define FALSE (1==0)

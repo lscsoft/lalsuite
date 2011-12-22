@@ -150,8 +150,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( GENERATETAYLORCWH, "$Id$" );
-
 /**
  \name Error Codes */ /*@{*/
 #define GENERATETAYLORCWH_ENUL 1

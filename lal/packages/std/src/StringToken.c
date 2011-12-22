@@ -90,8 +90,6 @@ LALFree()                       LALCHARDestroyVector()
 #include <lal/AVFactories.h>
 #include <lal/StringInput.h>
 
-NRCSID( STRINGTOKENC, "$Id$" );
-
 /* <lalVerbatim file="StringTokenCP"> */
 void
 LALCreateTokenList( LALStatus  *stat,

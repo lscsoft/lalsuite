@@ -71,8 +71,6 @@
 extern "C" {
 #endif
 
-NRCSID (TIMEFREQH, "$Id$");
-
 /*
  * 5. Macros. But, note that macros are deprecated.
  */

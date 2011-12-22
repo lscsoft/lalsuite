@@ -185,8 +185,6 @@ i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
 extern "C" {
 #endif
 
-NRCSID (SFTFILEIOH, "$Id$");
-
 /** \name Error codes */
 /*@{*/
 #define SFTFILEIO_ENULL 	1

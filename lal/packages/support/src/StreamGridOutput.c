@@ -139,8 +139,6 @@ LALUnitAsString()
 #include <lal/StringInput.h>
 #include <lal/StreamOutput.h>
 
-NRCSID( STREAMGRIDOUTPUTC, "$Id$" );
-
 /* Define a function for printing a string as a literal. */
 static int
 LALWriteLiteral( FILE *stream, const CHAR *string )

@@ -40,7 +40,6 @@ extern "C" {
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALRCSID.h>
-NRCSID( LOGPRINTFH, "$Id$" );
 
 /*---------- INCLUDES ----------*/
 #include <stdarg.h>

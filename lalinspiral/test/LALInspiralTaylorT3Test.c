@@ -45,8 +45,6 @@ LALInspiralWave3Templates routine.
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 
-NRCSID(LALInspiralTaylorT3TestC, "$Id$");
-
 int main(void) {
 	static LALStatus    mystatus;
 

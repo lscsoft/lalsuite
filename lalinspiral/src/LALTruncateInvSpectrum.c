@@ -21,8 +21,6 @@
 #include <lal/RealFFT.h>
 #include <lal/LALNoiseModelsInspiral.h>
 
-NRCSID (LALTRUNCATEINVSPECTRUMC, "$Id$");
-
 void LALTruncateInvSpectrum(
         LALStatus                *status,
         REAL8Vector              *inputVec,

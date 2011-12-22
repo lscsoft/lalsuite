@@ -58,9 +58,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/Grid.h>
 #include <lal/TwoDMesh.h>
-/** \cond DONT_DOXYGEN */
-NRCSID( TWODMESHMETRICSC, "$Id$" );
-/** \endcond */
+
 void
 LALGetNearestMetric( LALStatus *stat, REAL4 metric[3], REAL4 position[2], void *params )
 {

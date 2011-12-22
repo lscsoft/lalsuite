@@ -61,11 +61,6 @@ extern "C" {
 /* we need these until we put them in some better LAL-place (FIXME) */
 #include <lal/PtoleMetric.h>
 
-
-
-NRCSID( LATTICECOVERINGH, "$Id$" );
-
-
 /*---------- DEFINES ----------*/
 
 /*----- Error-codes -----*/

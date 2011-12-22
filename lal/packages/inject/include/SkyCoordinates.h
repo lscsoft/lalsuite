@@ -31,8 +31,6 @@
 extern "C" {
 #endif
 
-NRCSID( SKYCOORDINATESH, "$Id$" );
-
 /** \addtogroup SkyCoordinates_h
  *
  * @{

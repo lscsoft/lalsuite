@@ -28,8 +28,6 @@
 
 #include <stdarg.h>
 
-NRCSID(VERYBASICXMLOUTPUTC, "$Id");
-
 const VeryBasicXMLOutput empty_VeryBasicXMLOutput = {NULL, 0, ' '};
 
 /**

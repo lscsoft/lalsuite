@@ -35,8 +35,6 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_linalg.h>
 
-NRCSID( ERRORMATRIXFROMSNGLINSPIRALC, "$Id$" );
-
 /**
 
 \author Craig Robinson

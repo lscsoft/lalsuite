@@ -68,10 +68,6 @@ None.
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID(LALRECTANGLEVERTICESC, "$Id$");
-
-
-
 void
 LALRectangleVertices(
    LALStatus *status,

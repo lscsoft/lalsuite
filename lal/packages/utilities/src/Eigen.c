@@ -164,8 +164,6 @@ LALDSymmetricToTriDiagonal2()   LALDTriDiagonalToDiagonal2()
 #include <lal/AVFactories.h>
 #include <lal/MatrixUtils.h>
 
-NRCSID( EIGENC, "$Id$" );
-
 /* <lalVerbatim file="EigenCP"> */
 void
 LALSSymmetricEigenVectors( LALStatus *stat, REAL4Vector *values, REAL4Array *matrix )

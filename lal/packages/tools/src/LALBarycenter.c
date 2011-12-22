@@ -718,10 +718,6 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
 
 /* ==================== deprecated LAL interface (only wrappers to XLAL-fcts now) ==================== */
 
-/** \cond DONT_DOXYGEN */
-NRCSID(LALBARYCENTERC, "$Id$");
-/** \endcond */
-
 /** Deprecated LAL wrapper to XLALBarycenterEarth()
  * \deprecated use XLALBarycenterEarth() instead.
  */

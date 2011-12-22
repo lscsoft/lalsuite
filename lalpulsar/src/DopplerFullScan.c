@@ -52,8 +52,6 @@
 
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
-NRCSID( DOPPLERFULLSCANC, "$Id$" );
-
 /*---------- internal types ----------*/
 typedef struct {
   PulsarDopplerParams thisPoint; /**< current doppler-position of the scan */

@@ -30,9 +30,6 @@
 #include "CudaFunctions.h"
 #include "CudaFFT.h"
 
-NRCSID( REALFFTC, "$Id$" );
-
-
 struct
 tagREAL4FFTPlan
 {

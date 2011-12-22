@@ -48,10 +48,6 @@
 #include <lal/FindChirpPTF.h>
 #include <lal/MatrixUtils.h>
 
-NRCSID (FINDCHIRPPTFFILTERC, "$Id$");
-
-
-
 void
 LALFindChirpPTFFilterSegment (
     LALStatus                  *status,

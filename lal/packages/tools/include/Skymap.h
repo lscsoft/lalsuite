@@ -32,7 +32,6 @@ extern "C" {
 
 #include <lal/LALDetectors.h>
 #include <lal/LALRCSID.h>
-NRCSID(EPSEARCHH, "$Id$");
 
 // Manipulate log-represented values without overflowing
 

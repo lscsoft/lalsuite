@@ -32,8 +32,6 @@
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCVSpin.h>
 
-NRCSID (FINDCHIRPSBCVTEMPLATEC, "$Id$");
-
 /**
 
 \author Brown, D. A., Spinning BCV-Modifications: Jones, G

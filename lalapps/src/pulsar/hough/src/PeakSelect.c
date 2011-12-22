@@ -43,8 +43,6 @@ LALHO()
 
 #include "./PeakSelect.h"
 
-NRCSID (PEAKSELECTC, "$Id$");
-
 /*
  * The functions that make up the guts of this module
  */

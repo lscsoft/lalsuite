@@ -38,8 +38,6 @@
 #include <lal/StreamInput.h>
 #include <lal/TimeFreqFFT.h>
 
-NRCSID( INSPAWGFILEC, "$Id$" );
-
 #define INSPAWGFILEC_ENORM  0
 #define INSPAWGFILEC_ESUB   1
 #define INSPAWGFILEC_EARG   2

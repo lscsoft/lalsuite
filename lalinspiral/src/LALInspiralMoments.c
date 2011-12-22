@@ -75,9 +75,6 @@ LALDRombergIntegrate
 #include <lal/LALInspiralBank.h>
 #include <lal/Integrate.h>
 
-NRCSID( LALINSPIRALMOMENTSC, "$Id$" );
-
-
 void
 LALGetInspiralMoments (
     LALStatus            *status,

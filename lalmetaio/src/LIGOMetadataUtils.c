@@ -97,9 +97,6 @@ LALCalloc, LALMalloc, LALFree.
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
 
-NRCSID( LIGOMETADATAUTILSC, "$Id$" );
-
-
 int XLALCountProcessTable(ProcessTable *head)
 
 {

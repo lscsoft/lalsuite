@@ -119,8 +119,6 @@ example uses of the functions tested by this code.
 /* void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv); */ /* 02/02/05 gam */
 void RunGeneratePulsarSignalTest(LALStatus *status);
 
-NRCSID( GENERATEPULSARSIGNALTESTC, "$Id$" );
-
 /*********************************************************/
 /*                                                       */
 /* START FUNCTION: main                                  */

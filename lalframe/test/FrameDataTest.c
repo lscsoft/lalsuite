@@ -71,8 +71,6 @@ Unless the <tt>-f</tt> option is used, the environment variable
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
 
-NRCSID (MAIN, "$Id$");
-
 extern char *optarg;
 extern int   optind;
 

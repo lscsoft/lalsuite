@@ -67,9 +67,6 @@
 #include <lal/Date.h>
 #include <lal/TSData.h>
 
-NRCSID (TRACKSEARCHC, "$Id$");
-
-
 /* Local Structure definitions */
 typedef struct tagLinePoints {
   INT4 pValue; /* value of the Line Point: 2 if a line Start Point else 1 if an ordinary line point

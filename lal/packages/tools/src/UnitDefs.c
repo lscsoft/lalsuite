@@ -124,8 +124,6 @@ And finally a couple of convenient scaled units:
 #include <ctype.h>
 #include <lal/Units.h>
 
-NRCSID( UNITDEFSC, "$Id$" );
-
 #define UNITDEFSC_TEMPSIZE 20
 
 /**\addtogroup UnitDefs_c

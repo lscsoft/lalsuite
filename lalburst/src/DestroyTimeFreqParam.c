@@ -50,8 +50,6 @@
 
 #include <lal/TimeFreq.h>
 
-NRCSID (DESTROYTIMEFREQPARAMC, "$Id$");
-
 void LALDestroyTimeFreqParam (LALStatus *status, TimeFreqParam **param)
 {
   /*  Initialize status */

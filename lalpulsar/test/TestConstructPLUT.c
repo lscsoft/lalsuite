@@ -100,7 +100,6 @@ LALCheckMemoryLeaks()
 
 
 /** \cond DONT_DOXYGEN */
-NRCSID (TESTCONSTRUCTPLUTC, "$Id$");
 
 /* Default parameters. */
 

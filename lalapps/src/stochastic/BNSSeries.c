@@ -41,8 +41,6 @@
 #define Msolar 1.989e33
 #define day 86164.1
 
-NRCSID (BNSSeriesC, "$Id: BNSSeries.c,v 1.1 2009/08/04 11:07:52 tania Exp $");
-RCSID ("$Id: BNSSeries.c,v 1.1 2009/08/04 11:07:52 tania Exp $");
 
 /* cvs info */
 #define CVS_ID "$Id: BNSSeries.c,v 1.1 2009/08/04 11:07:52 tania Exp $"

@@ -56,8 +56,6 @@
 #define UNUSED
 #endif
 
-NRCSID (NRWAVEINJECTC, "$Id$");
-
 int compare_abs_float(const void *a, const void *b);
 int compare_abs_double(const void *a, const void *b);
 

@@ -51,8 +51,6 @@ Provides prototype information for the routines in
 extern "C" {
 #endif
 
-NRCSID( PRINTFTSERIESH, "$Id$" );
-
 void LALI2PrintTimeSeries( INT2TimeSeries *series , const CHAR *filename );
 void LALI4PrintTimeSeries( INT4TimeSeries *series , const CHAR *filename );
 void LALI8PrintTimeSeries( INT8TimeSeries *series , const CHAR *filename );

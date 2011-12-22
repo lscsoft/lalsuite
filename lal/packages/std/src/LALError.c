@@ -205,8 +205,6 @@ lalDebugLevel
 #endif
 #endif
 
-NRCSID( LALERRORC, "$Id$" );
-
 extern int lalDebugLevel;
 
 /* <lalVerbatim file="LALErrorCP"> */

@@ -74,12 +74,6 @@ extern "C" {
 
 
 /******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID( STACKSLIDEFSTATH, "$Id$" );
-
-/******************************************************
  *  Error codes and messages.
  */
  

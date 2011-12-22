@@ -27,8 +27,6 @@ $Id$
 #include <lal/LALStdlib.h>
 #include <lal/StringInput.h>
 
-NRCSID( STRINGCONVERTTESTC, "$Id$" );
-
 #define LAL_INT4_MAX 2147483647
 #define LAL_INT4_ABSMIN LAL_UINT8_C(2147483648)
 

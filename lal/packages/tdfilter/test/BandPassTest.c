@@ -103,8 +103,6 @@ LALDButterworthREAL4TimeSeries()        LALCheckMemoryLeaks()
 #include <lal/StreamInput.h>
 #include <lal/StreamOutput.h>
 
-NRCSID(BANDPASSTESTC,"$Id$");
-
 /* Default parameters. */
 INT4 lalDebugLevel=0;
 #define NPTS 4096   /* Length of time series. */

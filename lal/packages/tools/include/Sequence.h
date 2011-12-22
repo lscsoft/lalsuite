@@ -32,8 +32,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID(SEQUENCEH, "$Id:");
-
 /* COMPLEX8 prototypes */
 
 void XLALDestroyCOMPLEX8Sequence (

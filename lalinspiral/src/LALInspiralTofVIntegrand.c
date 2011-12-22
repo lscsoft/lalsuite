@@ -57,9 +57,6 @@ of these functions is set by a call to the function \c LALInspiralChooseModel().
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
-NRCSID (LALINSPIRALTOFVINTEGRANDC, "$Id$");
-
-
 void
 LALInspiralTofVIntegrand (
    LALStatus *status,

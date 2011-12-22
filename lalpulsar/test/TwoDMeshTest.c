@@ -263,7 +263,6 @@ LALPlotTwoDMesh()
 #include "TwoDMeshPlot.h"
 
 /** \cond DONT_DOXYGEN */
-NRCSID( TWODMESHTESTC, "$Id$" );
 
 /* Default parameter settings. */
 extern int lalDebugLevel;

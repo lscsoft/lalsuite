@@ -85,8 +85,6 @@ LALCreateRandomParams()         LALDestroyRandomParams()
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/SkyCoordinates.h>
 
-NRCSID( GETINSPIRALPARAMSC, "$Id$" );
-
 #define LAL_DGALCORE_SI (2.62e20) /* Galactic core distance (metres) */
 
 

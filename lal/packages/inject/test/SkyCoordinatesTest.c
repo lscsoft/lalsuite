@@ -120,8 +120,6 @@ LALNormalizeSkyPosition()
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 
-NRCSID( SKYCOORDINATESTESTC, "$Id$" );
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 

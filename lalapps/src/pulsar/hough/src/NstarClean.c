@@ -26,9 +26,6 @@
 #include <lal/SFTClean.h>
 #include <glob.h> 
 
-
-NRCSID (SFTCLEANC, "$Id$");
-
 /* Error codes and messages */
 
 /**\name Error Codes */ /*@{*/

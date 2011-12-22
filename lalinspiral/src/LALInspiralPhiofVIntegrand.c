@@ -48,9 +48,6 @@ and pointed to the appropriate PN functions with a call to <tt>XLALInspiralChoos
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
-NRCSID (LALINSPIRALPHIOFVINTEGRANDC, "$Id$");
-
-
 void
 LALInspiralPhiofVIntegrand (
    LALStatus  *status,

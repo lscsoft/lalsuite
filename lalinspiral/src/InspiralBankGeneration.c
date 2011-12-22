@@ -25,9 +25,6 @@
 #include<lal/LALInspiralBank.h>
 #include<lal/LIGOMetadataTables.h>
 
-
-NRCSID(INSPIRALBANKGENERATIONC, "$Id$");
-
 void
 LALInspiralBankGeneration(
      LALStatus *status,

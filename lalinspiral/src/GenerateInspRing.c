@@ -49,8 +49,6 @@
 #include <lal/TimeSeries.h>
 #include <lal/GenerateInspRing.h>
 
-NRCSID (GENERATEINSPRINGC,"$Id$");
-
 static SimRingdownTable*
 XLALDeriveRingdownParameters(
     SimRingdownTable    *ringInj

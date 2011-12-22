@@ -40,7 +40,6 @@ extern "C" {
 #endif
 
 /*---------- INCLUDES ----------*/
-NRCSID( DOPPLERFLATTICECOVERINGH, "$Id$" );
 
 /*---------- DEFINES ----------*/
 

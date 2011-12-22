@@ -57,8 +57,6 @@ of type ::EtaTau02In :
 
 #include <lal/LALInspiral.h>
 
-NRCSID (LALETATAU02C, "$Id$");
-
 void
 LALEtaTau02(
    LALStatus *status,

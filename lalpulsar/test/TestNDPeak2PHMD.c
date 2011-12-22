@@ -104,7 +104,6 @@ LALCheckMemoryLeaks()
 
 /** \cond DONT_DOXYGEN */
 
-NRCSID (TESTNDPEAK2PHMDC, "$Id$");
 /* Default parameters. */
 
 INT4 lalDebugLevel=0;

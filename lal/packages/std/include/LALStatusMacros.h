@@ -262,22 +262,6 @@ which a function sould deliberately raise a signal.  In all other
 cases the error should be trapped, reported in the status structure,
 and control returned to the calling routine.
 
-\subsubsection{Assigning an RCS \texttt{\$Id\$} string}
-\idx{NRCSID()}
-
-Every source file should have a unique character string identifying
-that version of that file.  The standard convention, for a file
-\verb@MyFile.c@, is to declare a string \verb@MYFILEC@ at the top of
-the module using the macro \verb@NRCSID()@ (defined in the include
-file \verb@LALRCSID.h@):
-
-\vspace{2ex}
-\noindent\texttt{NRCSID( MYFILEC, \$Id\$ );}
-\vspace{2ex}
-
-\noindent where \texttt{\$Id\$} is expanded by RCS to give the full
-name and version number of the source file.
-
 \subsubsection{Initializing the status structure}
 \idx{INITSTATUS()}
 
@@ -789,9 +773,6 @@ package using the autodocumentation utilities, which the
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-
-NRCSID (LALSTATUSMACROSH, "$Id$");
 
 extern int lalDebugLevel;
 extern const int lalNoDebug;

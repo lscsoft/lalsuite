@@ -122,10 +122,6 @@ LALInspiralValidTemplate()
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 
-NRCSID (LALINSPIRALCREATEFINEBANKC, "$Id$");
-
-
-
 void LALInspiralCreateFineBank(LALStatus            *status,
                                InspiralTemplateList **outlist,
                                INT4                 *nlist,

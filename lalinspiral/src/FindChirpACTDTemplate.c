@@ -31,9 +31,6 @@ LALDestroyVector()
 #include <lal/FindChirpTD.h>
 #include <lal/FindChirpACTD.h>
 
-NRCSID (FINDCHIRPACTDTEMPLATEC, "$Id$");
-
-
 void
 LALFindChirpACTDTemplate(
     LALStatus                  *status,

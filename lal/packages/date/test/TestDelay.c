@@ -48,9 +48,6 @@ This program does zero-th order tests for XLALTimeDelayFromEarthCenter().
 #include <lal/SkyCoordinates.h>
 #include <lal/DetectorSite.h>
 
-
-NRCSID( LALTESTDELAYC, "$Id$" );
-
 /* This should already be defined as X_EPS in /usr/include/values.h ;
  * in Darwin, it's defined as DBL_EPSILON in /usr/include/float.h */
 #define DOUBLE_EPSILON 1.0536712127723507013e-08

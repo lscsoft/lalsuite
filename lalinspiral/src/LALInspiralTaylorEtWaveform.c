@@ -91,9 +91,6 @@ int XLALTaylorEtWaveformEngine (
   InspiralInit     *paramsInit
 );
 
-NRCSID (LALTAYLORETWAVEFORMC,
-"$Id$");
-
 static REAL8 XLALzetaInit4PN(
    REAL8      zeta,
    void      *params)

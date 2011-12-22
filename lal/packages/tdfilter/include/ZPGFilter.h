@@ -87,8 +87,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID(ZPGFILTERH,"$Id$");
-
 /********************************************************** <lalLaTeX>
 \subsection*{Error conditions}
 ****************************************** </lalLaTeX><lalErrTable> */

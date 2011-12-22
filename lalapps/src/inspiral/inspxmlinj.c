@@ -69,9 +69,6 @@
 "  --user-tag STRING       set the usertag to STRING\n"\
 "\n"
 
-
-RCSID( "$Id$" );
-
 #define MPC ( 1e6 * LAL_PC_SI )
 
 #define CVS_REVISION "$Revision$"

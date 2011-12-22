@@ -42,7 +42,6 @@
 #include <LALAppsVCSInfo.h>
 #include <lal/LALStdlib.h>
 
-RCSID("$Id$");
 #define PROGRAM_NAME "LALInferenceMCMCSampler.c"
 #define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"

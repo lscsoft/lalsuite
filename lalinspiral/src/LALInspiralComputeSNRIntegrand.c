@@ -35,9 +35,6 @@ LALREAL4VectorFFT
 
 #include <lal/LALNoiseModelsInspiral.h>
 
-NRCSID (LALINSPIRALWAVECORRELATEC, "$Id$");
-
-
 void
 LALInspiralComputeSNRIntegrand
    (

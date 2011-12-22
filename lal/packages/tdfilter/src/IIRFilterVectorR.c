@@ -72,9 +72,6 @@ switch to this implementation if there is any demand for it.)
 #include <lal/LALStdlib.h>
 #include <lal/IIRFilter.h>
 
-NRCSID(IIRFILTERVECTORRC,"$Id$");
-
-
 int XLALIIRFilterReverseREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter )
 {
   INT4 j;            /* Index for filter coeficients. */

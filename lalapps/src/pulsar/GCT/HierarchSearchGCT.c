@@ -46,8 +46,6 @@
 #define ALFree LALFree
 #endif
 
-RCSID( "$Id$");
-
 /* ---------- Defines -------------------- */
 /* #define OUTPUT_TIMING 1 */
 /* #define DIAGNOSISMODE 1 */

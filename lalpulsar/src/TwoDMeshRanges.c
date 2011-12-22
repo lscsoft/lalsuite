@@ -66,10 +66,6 @@ lalDebugLevel
 #include <lal/Grid.h>
 #include <lal/TwoDMesh.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID( TWODMESHRANGESC, "$Id$" );
-/** \endcond */
-
 void
 LALInterpolateRangePolygon( LALStatus *stat, REAL4 range[2], REAL4 x, void *params )
 {

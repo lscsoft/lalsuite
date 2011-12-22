@@ -36,8 +36,6 @@
 #include <lal/Units.h>
 #include <stdlib.h>
 
-NRCSID (SFTFILEIOTESTC, "$Id$");
-
 /*---------- DEFINES ----------*/
 
 /** \name Error codes */

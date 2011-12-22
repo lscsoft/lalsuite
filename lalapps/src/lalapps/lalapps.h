@@ -30,8 +30,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( LALAPPSH, "$Id$" );
-
 extern const LALStatus blank_status;
 
 typedef int ( *lal_errhandler_t )(

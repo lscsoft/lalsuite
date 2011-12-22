@@ -59,9 +59,6 @@
  + (1.0-indexFrac)*delayData[intIndex]                               \
 )
 
-
-NRCSID( SIMULATECOHERENTGWC, "$Id$" );
-
 /**
 \ingroup SimulateCoherentGW_h
 \author Creighton, T. D.

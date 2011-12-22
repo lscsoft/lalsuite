@@ -40,8 +40,6 @@
 
 #include <lalapps.h>
 
-RCSID ("$Id");
-
 /* Error codes and messages */
 #define MAKEFAKEDATAC_ENORM 	0
 #define MAKEFAKEDATAC_ESUB  	1

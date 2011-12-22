@@ -23,7 +23,6 @@
 #include <lal/LALInitBarycenter.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID(LALINITBARYCENTERC,"$Id$");
 
 /* ----- defines and macros ---------- */
 #define SQ(x) ((x) * (x))

@@ -181,8 +181,6 @@ of the individual "filters" \f$F_a\f$ and \f$F_b\f$, depending on the
 extern "C" {
 #endif
 
-NRCSID (LALDEMODH, "$Id$");
-
 /**
  \name Error Codes */ /*@{*/
 #define LALDEMODH_ENULL 		1

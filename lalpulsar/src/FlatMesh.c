@@ -24,7 +24,6 @@
 #include <lal/FlatMesh.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID(FLATMESHC,"$Id$");
 
 /* Local function prototypes. */
 static int

@@ -32,8 +32,6 @@ typedef struct
 }LALInitSearchParams;
 
 /* Code Identifying information */
-NRCSID( TRACKSEARCHC, "tracksearch $Id$");
-RCSID( "tracksearch $Id$");
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"

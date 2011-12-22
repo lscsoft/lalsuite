@@ -54,8 +54,6 @@
 
 #include <lal/TimeFreq.h>
 
-NRCSID (DWINDOWC, "$Id$");
-
 void LALDwindow (LALStatus *stat, REAL4Vector* window, REAL4Vector* dwindow)
 {
   INT4      column, hwl;

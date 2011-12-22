@@ -28,9 +28,6 @@
 #define UNUSED
 #endif
 
-NRCSID (LALLIGOIPSDC,"$Id$");
-
-
 /**
  * \ingroup LALNoiseModels_h
  * \brief Calculate the Initial LIGO SRD noise spectral density at given a

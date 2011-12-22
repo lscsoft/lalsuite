@@ -103,7 +103,6 @@ strncpy()
 #define wNoise input->unCalibratedNoisePSD
 #define wFilter input->responseFunction
 
-NRCSID(STOCHASTICINVERSENOISEC, "$Id$");
 /** \endcond */
 
 void

@@ -78,8 +78,6 @@ LALFree()
 #include <lal/LALStdlib.h>
 #include <lal/IIRFilter.h>
 
-NRCSID(IIRFILTERVECTORC,"$Id$");
-
 int XLALIIRFilterREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter )
 {
   INT4 j;            /* Index for filter coeficients. */

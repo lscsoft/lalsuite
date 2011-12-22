@@ -95,8 +95,6 @@ file.
 #include <lal/FindChirp.h>
 #include <lal/PrintFTSeries.h>
 
-NRCSID( INJECTIONINTERFACETESTC, "$Id$" );
-
 #define ERROR( code, msg, statement )                                \
 do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \

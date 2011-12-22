@@ -27,8 +27,6 @@
 #include <lal/FileIO.h>
 #include <lal/TrackSearch.h>
 
-NRCSID (TESTSTSC,"$Id$");
-
 INT4 lalDebugLevel=0;
 int main( void )
 {

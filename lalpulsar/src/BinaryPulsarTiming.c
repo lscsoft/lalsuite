@@ -93,9 +93,6 @@
 
 #define DAYSTOSECS 86400.0 /* number of seconds in a day */
 
-/******* DEFINE RCS ID STRING ************/
-NRCSID( BINARYPULSARTIMINGC, "$Id$" );
-
 /** Calculate the binary system time delay using the pulsar parameters in
  *  \c params
  */

@@ -87,8 +87,6 @@
  */
 #define EPS4	1e-6
 
-NRCSID( DOPPLERSCANC, "$Id$" );
-
 /*---------- internal types ----------*/
 /** TwoDMesh() can have either of two preferred directions of meshing: */
 enum {

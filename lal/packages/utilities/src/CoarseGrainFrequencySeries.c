@@ -211,9 +211,6 @@ strncpy()
 #include <lal/CoarseGrainFrequencySeries.h>
 #include <math.h>
 
-NRCSID(COARSEGRAINFREQUENCYSERIESC,
-       "$Id$");
-
 /* <lalVerbatim file="CoarseGrainFrequencySeriesCP"> */
 void
 LALSCoarseGrainFrequencySeries(LALStatus                      *status,

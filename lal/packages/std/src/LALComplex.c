@@ -41,9 +41,6 @@ double log1p(double x);
 double acosh(double x);
 double atanh(double x);
 
-NRCSID (LALCOMPLEXC,"$Id$");
-
-
 COMPLEX16
 XLALCOMPLEX16Rect (REAL8 x, REAL8 y)
 {

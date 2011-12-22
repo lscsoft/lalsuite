@@ -43,8 +43,6 @@
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/LALSQTPNWaveformInterface.h>
 
-NRCSID(LALSQTPNWAVEFORMTESTC, "$Id: LALSQTPNWaveformTest.c,v 0.1 2010/05/21");
-
 int lalDebugLevel = 0;	///< the debug level
 
 /** The main program.

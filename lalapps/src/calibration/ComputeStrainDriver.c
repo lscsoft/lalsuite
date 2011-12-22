@@ -87,8 +87,6 @@ extern int optind, opterr, optopt;
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
 
-RCSID("$Id$");
-NRCSID(COMPUTESTRAINDRIVERC, "$Id$");
 
 #define CVS_ID "$Id$"
 #define CVS_HEADER "$Header$"

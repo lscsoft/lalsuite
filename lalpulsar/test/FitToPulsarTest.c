@@ -72,9 +72,6 @@ LALComputeDetAMResponse()
 #include <lal/LALStdlib.h>
 #include <lal/FitToPulsar.h>
 
-/******* DEFINE RCS ID STRING ************/
-NRCSID( FITTOPULSARC, "$Id$" );
-
 /******* DEFINE LOCAL CONSTANTS AND MACROS ************/
 #define INICHISQU 1.e50
 #define INIMAXEH 0
@@ -327,10 +324,6 @@ LALFineFitToPulsar()
 /******* INCLUDE ANY LAL HEADERS ************/
 #include <lal/FitToPulsar.h>
 #include <lal/Random.h>
-
-/******* DEFINE RCS ID STRING ************/
-
-NRCSID( FitToPulsarTestC, "$Id$" );
 
 /******* DEFINE LOCAL CONSTANTS AND MACROS ************/
 

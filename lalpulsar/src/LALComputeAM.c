@@ -62,7 +62,6 @@
 #include <lal/ComputeFstat.h>
 
 /*---------- local DEFINES and macros ----------*/
-NRCSID (LALCOMPUTEAMC, "$Id LALComputeAM.c $");
 
 #define SQ(x) (x) * (x)
 

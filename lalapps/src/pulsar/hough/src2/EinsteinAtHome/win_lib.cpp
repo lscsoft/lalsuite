@@ -19,8 +19,6 @@
 
 /* MS-Windows specific functions */
 
-static volatile const char *rcsid_win_lib_cpp = "$Id$";
-
 #ifdef _WIN32
 
 /* This needs to be compiled in C++ mode ! */
@@ -84,10 +82,7 @@ int finite(double x) {
   for testing FPE
 */
 float get_float_snan(void) {
-  char*idummy;
   return (numeric_limits<float>::signaling_NaN());
-  idummy = (char*)rcsid_win_lib_cpp;
-  idummy = (char*)rcsid_win_lib_h;
 }
 
 

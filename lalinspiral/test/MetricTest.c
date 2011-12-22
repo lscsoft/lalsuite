@@ -46,8 +46,6 @@ lalDebugLevel
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 
-NRCSID(METRICTESTC,"$Id$");
-
 extern int lalDebugLevel;
 
 static void
