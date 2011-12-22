@@ -220,7 +220,7 @@ int usage( const char *program )
 	fprintf(stderr, "\t-o outfile     \t(default=stdout) output filename\n");
 	fprintf(stderr, "\t-s sampleRate  \t(default=16384) sample rate (Hz)\n");
 	fprintf(stderr, "\t-t GPSStartTime\t(default=0) start time relative to GPS epoch (s)\n");
-	fprintf(stderr, "\t-V TimeFreqVol \t(default=1) duration (s)\n");
+	fprintf(stderr, "\t-V TimeFreqVol \t(default=1) pixel time-frequency volume\n");
 	fprintf(stderr, "environment:\n" );
 	fprintf(stderr, "\tGSL_RNG_SEED   \trandom number generator seed\n");
 	fprintf(stderr, "\tGSL_RNG_TYPE   \trandom number generator type\n");
