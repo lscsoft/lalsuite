@@ -18,7 +18,7 @@
   *  MA  02111-1307  USA
 """
 __author__ = 'Cristina Torres <cristina@phys.utb.edu>'
-__date__ = '$Date: 2009/03/17 21:26:04 $'
+__date__ = '$Date$'
 __version__ = ''
 
 import getopt

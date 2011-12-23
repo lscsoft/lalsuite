@@ -10,7 +10,7 @@ This script generated the condor DAG necessary to run the post processing for th
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 # =============================================================================
 # import standard modules and append the lalapps prefix to the python path

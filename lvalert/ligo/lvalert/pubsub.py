@@ -21,7 +21,7 @@ Normative reference:
    ????
 """
 
-__revision__="$Id: message.py 651 2006-08-27 19:26:45Z jajcus $"
+__revision__="$Id$"
 __docformat__="restructuredtext en"
 
 import libxml2

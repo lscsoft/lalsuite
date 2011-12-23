@@ -24,7 +24,7 @@
  * \file Opt_Hough_amd64_linux.h
  * \brief Header file for CPU architecture specific optimization code
  * \author 
- * \date $Date: $
+ * \date $Date$
  * 
  ****/
 

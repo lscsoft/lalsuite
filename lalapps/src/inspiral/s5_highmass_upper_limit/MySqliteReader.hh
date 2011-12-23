@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------
 // File and Version Information:
-//      $Id: MySqliteReader.hh,v 1.4 2007-05-17 23:31:37 narsky Exp $
+//      $Id$
 //
 // Description:
 //      Class MySqliteReader :

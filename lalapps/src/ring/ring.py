@@ -4,7 +4,7 @@ Classes needed for the excess ring analysis pipeline.
 
 __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 import string
 import exceptions

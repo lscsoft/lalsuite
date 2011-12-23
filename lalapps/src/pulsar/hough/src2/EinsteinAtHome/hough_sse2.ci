@@ -24,7 +24,7 @@
  * \file Opt_Hough_i686_sse2.h
  * \brief Header file for CPU architecture specific optimization code
  * \author 
- * \date $Date: $
+ * \date $Date$
  * 
  ****/
 

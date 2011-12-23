@@ -5,13 +5,13 @@
 fscanDriver.py - Driver script for calling other code to generates SFTs and turns these into plots showing spectra.
 
 
-$Id: fscanDriver.py,v 1.25 2009/03/13 01:51:46 collingill Exp $
+$Id$
 
 """
 
 __author__ = 'Rejean Dupuis <rejean@caltech.edu> & Greg Mendell<gmendell@ligo-wa.caltech.edu> & Colin Gill <c.gill@astro.gla.ac.uk>'
-__date__ = '$Date: 2009/03/13 01:51:46 $'
-__version__ = '$Revision: 1.25 $'[11:-2]
+__date__ = '$Date$'
+__version__ = '$Revision$'
 
 # REVISIONS:
 # 03/02/2009 gam; implement -g --segment-file option; if not given run on Science,Injections times, if -g ALL given then use start and end times as segment.

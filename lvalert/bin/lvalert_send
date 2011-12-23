@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# $Id: xsend.py,v 1.8 2006/10/06 12:30:42 normanr Exp $
+# $Id$
 import sys
 import os
 import datetime
@@ -22,10 +22,10 @@ from pyxmpp.jabber.simple import send_message
 A tool to send an event to a pubsub node 
 """
 
-__version__ = "$Revision: 1.53 $"
-__date__ = "$Date: 2008/08/08 15:54:23 $"
+__version__ = "$Revision$"
+__date__ = "$Date$"
 __name__ = "lvalert_send"
-__Id__ = "$Id: plotinspiral,v 1.53 2008/08/08 15:54:23 nvf Exp $"
+__Id__ = "$Id$"
 __title__ = "LIGO-Virgo Alert Sender"
 
 
@@ -74,7 +74,7 @@ def parse_command_line():
   parser = OptionParser( usage=usage, \
       version= "%prog CVS\n" +
       "$Id$\n" +
-      "$Name:  $\n")
+      "$Name$\n")
 
   #username and password
   parser.add_option("-a","--username",action="store",type="string",\

@@ -52,7 +52,7 @@ double Ms,Mpc,G,c,Mpcs,pi,tpi,mtpi;
 int main(int argc, char* argv[])
 {
   printf("\n\n   Starting SPINspiral...\n");
-  printf("   Compiled from source code version $Id: SPINspiral_main.c 252 2010-10-22 12:18:27Z sluys $ \n");
+  printf("   Compiled from source code version $Id$ \n");
   
   clock_t time0 = clock();
   int ifonr=0,i=0,injectionWF=0,mcmcWF=0;

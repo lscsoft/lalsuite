@@ -42,9 +42,9 @@
 
 
 /* cvs info */
-#define CVS_ID "$Id: BNSSeries.c,v 1.1 2009/08/04 11:07:52 tania Exp $"
-#define CVS_REVISION "$Revision: 1.1 $"
-#define CVS_DATE "$Date: 2009/08/04 11:07:52 $"
+#define CVS_ID "$Id$"
+#define CVS_REVISION "$Revision$"
+#define CVS_DATE "$Date$"
 #define PROGRAM_NAME "BNSSeries"
 
 /* variables for getopt options parsing */
