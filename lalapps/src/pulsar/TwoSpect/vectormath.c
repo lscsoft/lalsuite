@@ -723,7 +723,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
 
 
 //Compute from a look up table, the sin and cos of a vector of x values using SSE
-//Can't use this for x values less than 0 or greater than 2.147483648e9
+//Can't use this for x values less than 0 or greater than 2.147483647e9
 INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *cos2pix_vector, REAL4Vector *x)
 {
    
@@ -732,14 +732,14 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
    INT4 ii;
    
    static BOOLEAN firstCall = TRUE;
-   static REAL8 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
+   static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
    
    /* the first time we get called, we set up the lookup-table */
    if ( firstCall ) {
       UINT4 k;
       for (k=0; k <= LUT_RES; k++) {
-         sinVal[k] = (REAL4)sin( LAL_TWOPI * k * OO_LUT_RES );
-         cosVal[k] = (REAL4)cos( LAL_TWOPI * k * OO_LUT_RES );
+         sinVal[k] = (REAL4)sinf( (REAL4)(LAL_TWOPI * k * OO_LUT_RES) );
+         cosVal[k] = (REAL4)cosf( (REAL4)(LAL_TWOPI * k * OO_LUT_RES) );
       }
       firstCall = FALSE;
    }
@@ -799,7 +799,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
    INT4 *I0 = (void*)(((UINT8)I+15) & ~15);
    
    __m128 lutresf = _mm_set1_ps((REAL4)LUT_RES_F);
-   __m128 onehalf = _mm_set1_ps(0.5);
+   __m128 onehalf = _mm_set1_ps(0.5f);
    __m128 oolutres = _mm_set1_ps((REAL4)OO_LUT_RES);
    __m128 twopi = _mm_set1_ps((REAL4)LAL_TWOPI);
    
