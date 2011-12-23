@@ -506,7 +506,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set defaults */
@@ -567,7 +567,7 @@ ConvertLISAtimeseries2LAL ( LALStatus *status, MultiREAL4TimeSeries **lalTs, con
   UINT4 nIFOs, i;
   MultiREAL4TimeSeries *ret = NULL;
 
-  INITSTATUS( status, "ConvertLISAtimeseries2LAL", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( lalTs, status, LISAMAKESFTS_ENULL, LISAMAKESFTS_MSGENULL );

@@ -128,7 +128,7 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
   REAL8 N=4.0/(D*M);
   REAL8 TwoC=2.0*C;
 
-  INITSTATUS( status, "LALDemodFAST", LALDEMODFASTC );
+  INITSTATUS(status);
 
   /* catch some obvious programming errors */
   ASSERT ( (Fstat != NULL)&&(Fstat->F != NULL), status, LALDEMODH_ENULL, LALDEMODH_MSGENULL );

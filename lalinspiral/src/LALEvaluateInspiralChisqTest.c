@@ -46,7 +46,7 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
     REAL4                     *pBandRho1=NULL, *pBandRho2=NULL;
     InspiralWaveCorrelateIn   corrin;
 
-    INITSTATUS (status, "LALEvaluateInspiralChisqTest", LALEVALUATEINSPIRALCHISQTESTC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     /* If fCutoff > flso, we need to modify imax

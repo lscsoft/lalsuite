@@ -162,7 +162,7 @@ void LALRefInterference (LALStatus    *status,
   ComplexFFTPlan  *pinv = NULL;
 /* --------------------------------------------- */
 
-  INITSTATUS (status, "LALRefInterference", REFINTERFERENCEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 

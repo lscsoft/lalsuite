@@ -55,7 +55,7 @@ LALFindChirpACTDTemplate(
   REAL4Vector  *tmpACTDVec = NULL; /* Used for band-passing */
 
 
-  INITSTATUS( status, "LALFindChirpACTDTemplate", FINDCHIRPACTDTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -423,7 +423,7 @@ LALFindChirpACTDNormalize(
 
   REAL4   norm;
 
-  INITSTATUS( status, "LALFindChirpACTDNormalize", FINDCHIRPACTDTEMPLATEC );
+  INITSTATUS(status);
 
   /* check the required input exists */
   ASSERT( fcTmplt, status,

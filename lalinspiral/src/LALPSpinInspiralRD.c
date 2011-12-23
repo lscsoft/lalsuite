@@ -659,7 +659,7 @@ static int XLALPSpinInspiralRDEngine(
 
 void LALPSpinInspiralRD(LALStatus * status, REAL4Vector * signalvec, InspiralTemplate * params)
 {
-  INITSTATUS(status, "LALPSpinInspiralRD", LALPSPININSPIRALRDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if (XLALPSpinInspiralRD(signalvec, params))
@@ -715,7 +715,7 @@ void LALPSpinInspiralRDTemplates(LALStatus * status,
          REAL4Vector * signalvec2,
          InspiralTemplate * params)
 {
-    INITSTATUS(status, "LALPSpinInspiralRDTemplates",LALPSPININSPIRALRDTEMPLATESC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     if (XLALPSpinInspiralRDTemplates(signalvec1, signalvec2, params))
@@ -784,7 +784,7 @@ void LALPSpinInspiralRDForInjection(LALStatus        * status,
             InspiralTemplate * params,
             PPNParamStruc    * ppnParams)
 {
-    INITSTATUS(status, "LALPSpinInspiralRDInjection", LALPSPININSPIRALRDINJECTIONC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     if (XLALPSpinInspiralRDForInjection(waveform, params, ppnParams))
@@ -922,7 +922,7 @@ void LALPSpinInspiralRDFreqDom(LALStatus * status,
 			       REAL4Vector * signalvec,
 			       InspiralTemplate * params)
 {
-    INITSTATUS(status, "LALPSpinInspiralRDFReqDom", LALPSPININSPIRALRDC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     if (XLALPSpinInspiralRDFreqDom(signalvec, params))

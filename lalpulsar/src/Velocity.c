@@ -46,7 +46,7 @@ void LALAvgDetectorVel( LALStatus *status,	/**< pointer to LALStatus structure *
 
   /*---------------------------------------------------------------*/
 
-  INITSTATUS (status, "LALAvgDetectorVel", VELOCITYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are not null */
@@ -109,7 +109,7 @@ void LALAvgDetectorPos( LALStatus *status,
 
   /*---------------------------------------------------------------*/
 
-  INITSTATUS (status, "LALAvgDetectorPos", VELOCITYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are not null */
@@ -206,7 +206,7 @@ void LALDetectorVel(LALStatus    *status,
 
   /*----------------------------------------------------------------*/
 
-  INITSTATUS ( status, "LALDetectorVel", VELOCITYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (time0, status, VELOCITYH_ENULL, VELOCITYH_MSGENULL);
@@ -262,7 +262,7 @@ void LALDetectorPos(LALStatus    *status,
 
   /*----------------------------------------------------------------*/
 
-  INITSTATUS ( status, "LALDetectorPos", VELOCITYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (time0, status, VELOCITYH_ENULL, VELOCITYH_MSGENULL);

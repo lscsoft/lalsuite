@@ -44,7 +44,7 @@ void RESIZEVECTOR ( LALStatus *status, VTYPE **vector, UINT4 length )
   /*
    * Initialize status structure
    */
-  INITSTATUS( status, STRING(RESIZEVECTOR), VECTORFACTORIESC );
+  INITSTATUS(status);
 
   ASSERT ( vector != NULL, status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR );
   ASSERT ( ! *vector || (*vector)->length, status, AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH );

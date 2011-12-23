@@ -69,7 +69,7 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
   REAL4Vector  *ptmp = NULL;
   RealFFTPlan  *plan = NULL;
 
-  INITSTATUS (stat, "LALTfrSp", TFRSPC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   /* Make sure the arguments are not NULL: */

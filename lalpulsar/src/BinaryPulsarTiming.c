@@ -101,7 +101,7 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
                        BinaryPulsarOutput   *output,
                        BinaryPulsarInput    *input,
                        BinaryPulsarParams   *params ){
-  INITSTATUS(status, "LALBinaryPulsarDeltaT", BINARYPULSARTIMINGC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* Check input arguments */
@@ -574,7 +574,7 @@ LALReadTEMPOParFile(  LALStatus *status,
                       BinaryPulsarParams *output,
                       CHAR      *pulsarAndPath )
 {
-  INITSTATUS(status, "LALReadTEMPOParFile", BINARYPULSARTIMINGC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(output != (BinaryPulsarParams *)NULL, status,

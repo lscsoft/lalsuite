@@ -248,7 +248,7 @@ XLALOverlapReductionFunction(
   RAT4 power;
 
   /* initialize status structure */
-  INITSTATUS(status, "XLALOverlapReductionFunction", XLALOVERLAPREDUCTIONFUNCTIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* check that pointer to parameters is not null */

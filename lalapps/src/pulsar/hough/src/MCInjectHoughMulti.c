@@ -1095,7 +1095,7 @@ void GenerateInjectParams(LALStatus   *status,
   UINT4    msp;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "GenerateInjectParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -1320,7 +1320,7 @@ void GenerateInjectParamsNoVeto(LALStatus   *status,
   UINT4    msp;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "GenerateInjectParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -1525,7 +1525,7 @@ void ComputeFoft_NM(LALStatus   *status,
   REAL8Cart3Coor  sourceLocation;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ComputeFoft", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -1591,7 +1591,7 @@ void PrintLogFile2 (LALStatus       *status,
   CHAR *logstr=NULL; 
   UINT4 k;
 
-  INITSTATUS (status, "PrintLogFile2", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* open log file for writing */

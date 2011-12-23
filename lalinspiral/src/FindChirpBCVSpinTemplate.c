@@ -173,7 +173,7 @@ LALFindChirpBCVSpinTemplate (
   REAL4                 deltaT;
   REAL4                 rLSOto3by2       = 0.0;
 
-  INITSTATUS( status, "LALFindChirpBCVSpinTemplate", FINDCHIRPSBCVTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that the output structures exist */

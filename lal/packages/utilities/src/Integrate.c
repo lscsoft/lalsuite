@@ -58,7 +58,7 @@ static void F( LALStatus *s, REAL4 *y, REAL4 x, void *p )
 {
   REAL4 x2 = x*x;
   REAL4 x4 = x2*x2;
-  INITSTATUS( s, "F", "Function F()" );
+  INITSTATUS(s);
   ASSERT( !p, s, 1, "Non-null pointer" );
   *y = x4 * log( x + sqrt( x2 + 1 ) );
   RETURN( s );
@@ -142,7 +142,7 @@ STrapezoid (
     void           *params
     )
 {
-  INITSTATUS (status, "STrapezoid", INTEGRATEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if (output->refinement)
@@ -187,7 +187,7 @@ DTrapezoid (
     void           *params
     )
 {
-  INITSTATUS (status, "DTrapezoid", INTEGRATEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if (output->refinement)
@@ -339,7 +339,7 @@ SMidpoint (
   REAL4 xmax;
   REAL4 xmin;
 
-  INITSTATUS (status, "SMidpoint", INTEGRATEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   switch (input->type)
@@ -474,7 +474,7 @@ DMidpoint (
   REAL8 xmax;
   REAL8 xmin;
 
-  INITSTATUS (status, "DMidpoint", INTEGRATEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   switch (input->type)
@@ -674,7 +674,7 @@ LALSRombergIntegrate (
   REAL4          stepSize[MaxSteps + 1];
   REAL4          refineFactor;
 
-  INITSTATUS (status, "LALSRombergIntegrate", INTEGRATEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (result, status, INTEGRATEH_ENULL, INTEGRATEH_MSGENULL);
@@ -760,7 +760,7 @@ LALDRombergIntegrate (
   REAL8          stepSize[MaxSteps + 1];
   REAL8          refineFactor;
 
-  INITSTATUS (status, "LALDRombergIntegrate", INTEGRATEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (result, status, INTEGRATEH_ENULL, INTEGRATEH_MSGENULL);

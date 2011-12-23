@@ -334,7 +334,7 @@ LALUnitAsString( LALStatus *status,
 		 const LALUnit *input )
 
 {
-  INITSTATUS( status, "LALUnitAsString", UNITDEFSC );
+  INITSTATUS(status);
   /* ATTATCHSTATUSPTR (status); */
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
@@ -562,7 +562,7 @@ LALParseUnitString ( LALStatus *status,
 {
   CHAR         *charPtr, *charStopPtr;
 
-  INITSTATUS( status, "LALParseUnitString", UNITDEFSC );
+  INITSTATUS(status);
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 

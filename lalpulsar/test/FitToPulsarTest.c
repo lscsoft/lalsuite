@@ -117,7 +117,7 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
         UINT4                   iH0, iCosIota, iPhase, iPsi, arg;
 
 
-  INITSTATUS(status, "LALCoarseFitToPulsar", FITTOPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /******* CHECK VALIDITY OF ARGUMENTS  ************/

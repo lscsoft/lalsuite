@@ -74,7 +74,7 @@ LALInspiralValidTemplate(
 {
 
 
-  INITSTATUS( status, "LALInspiralValidTemplate", LALINSPIRALVALIDTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn.fLower > 0, status,

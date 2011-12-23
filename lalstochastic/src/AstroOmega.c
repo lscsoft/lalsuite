@@ -182,7 +182,7 @@ void LALAstroOmega (LALStatus *s, REAL8 *omeganu, REAL8 nu, void *p)
    AstroOmegaSourceParams sourcep;
    AstroOmegaCosmoParams cosmop;
    REAL8 omegaz, zmax, numax, lambda;
-   INITSTATUS (s, "LALAstroOmega", ASTROOMEGAC);
+   INITSTATUS(s);
    ATTATCHSTATUSPTR (s);
 
    params = *((AstroOmegaParams *)p);
@@ -232,7 +232,7 @@ static void dAstroOmega (LALStatus *s, REAL8 *domegaz, REAL8 z, void *p)
   REAL8LALSDensity *SDensitySource;
   REAL8 Rc, dEgw, nu, nuz;
 
-  INITSTATUS (s, "dAstroOmega", ASTROOMEGAC);
+  INITSTATUS(s);
   ATTATCHSTATUSPTR (s);
   params = *((AstroOmegaParams *)p);
   sourcep = params.sourceparams;

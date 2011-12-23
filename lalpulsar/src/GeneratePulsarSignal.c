@@ -84,7 +84,7 @@ LALGeneratePulsarSignal (LALStatus *status,		/**< pointer to LALStatus structure
   REAL4TimeSeries *output;
   UINT4 i;
 
-  INITSTATUS( status, "LALGeneratePulsarSignal", GENERATEPULSARSIGNALC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (signalvec != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
@@ -279,7 +279,7 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
   UINT4 totalIndex;			/* timestep-index to start next FFT from */
   INT4 relIndexShift;			/* relative index-shift from previous SFT (number of timesteps) */
 
-  INITSTATUS( status, "LALSignalToSFTs", GENERATEPULSARSIGNALC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT (outputSFTs != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
@@ -534,7 +534,7 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,		/**< pointer to LALStatus
   REAL8 halfTsft;             /* half the time of one SFT */
   LIGOTimeGPS midTS;          /* midpoint time for an SFT */
 
-  INITSTATUS( status, "LALComputeSkyAndZeroPsiAMResponse", GENERATEPULSARSIGNALC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   numSFTs = params->pSFTParams->timestamps->length; /* number of SFTs */
@@ -671,7 +671,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
   REAL8 halfResTrig = ((REAL8)params->resTrig)/2.0; /* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
   REAL8 varTmp, dTmp, dTmp2, sinTmp, cosTmp;
 
-  INITSTATUS( status, "LALFastGeneratePulsarSFTs", GENERATEPULSARSIGNALC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* fprintf(stdout,"\n Hello from LALFastGeneratePulsarSFTs \n");
@@ -900,7 +900,7 @@ LALConvertGPS2SSB (LALStatus* status,		/**< pointer to LALStatus structure */
   BarycenterInput baryinput;
   SkyPosition tmp;
 
-  INITSTATUS( status, "ConvertGPS2SSB", GENERATEPULSARSIGNALC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (SSBout != NULL, status,  GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
@@ -955,7 +955,7 @@ LALConvertSSB2GPS (LALStatus *status,		/**< pointer to LALStatus structure */
   INT8 delta, guess;
   INT4 j = 0;
 
-  INITSTATUS( status, "ConvertSSB2GPS", GENERATEPULSARSIGNALC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*
@@ -1078,7 +1078,7 @@ void
 checkNoiseSFTs (LALStatus *status, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF)
 {
 
-  INITSTATUS( status, __func__, GENERATEPULSARSIGNALC);
+  INITSTATUS(status);
 
   for (UINT4 i=0; i < sfts->length; i++)
     {
@@ -1138,7 +1138,7 @@ correct_phase (LALStatus* status, SFTtype *sft, LIGOTimeGPS tHeterodyne)
   COMPLEX8 fvec1;
   REAL8 deltaT;
 
-  INITSTATUS( status, "correct_phase", GENERATEPULSARSIGNALC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   deltaT = XLALGPSDiff(&(sft->epoch), &tHeterodyne);

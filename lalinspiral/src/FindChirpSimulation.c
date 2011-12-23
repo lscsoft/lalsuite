@@ -121,7 +121,7 @@ LALFindChirpInjectSignals (
   CHAR                  ifo[LIGOMETA_IFO_MAX];
   REAL8                 timeDelay;
 
-  INITSTATUS( status, "LALFindChirpInjectSignals", FINDCHIRPSIMULATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( chan, status,
@@ -828,7 +828,7 @@ LALFindChirpSetAnalyseTemplate (
   CHAR                  myMsg[8192];
   UINT4                 approximant;
 
-  INITSTATUS( status, "LALFindChirpSetAnalyseTemplate", FINDCHIRPSIMULATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( analyseThisTmplt, status,

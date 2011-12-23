@@ -94,7 +94,7 @@ void LALFindNumberHarmonics (LALStatus    *status,	/**< pointer to LALStatus str
   REAL8 temp1, temp2, temp3, temp4;
 
 
-  INITSTATUS (status, "LALFindNumberHarmonics", SFTCLEANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
@@ -152,7 +152,7 @@ void  LALReadHarmonicsInfo (LALStatus          *status,		/**< pointer to LALStat
   REAL8   *rightWing=NULL;
   CHAR    dump[128];
 
-  INITSTATUS (status, "LALReadHarmonicsInfo", SFTCLEANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
@@ -212,7 +212,7 @@ void  LALHarmonics2Lines (LALStatus          *status,	/**< pointer to LALStatus 
   REAL8   f0, deltaf, leftDeltaf, rightDeltaf;
 
 
-  INITSTATUS (status, "LALHarmonics2Lines", SFTCLEANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
@@ -282,7 +282,7 @@ void LALFindNumberLines (LALStatus          *status,
   INT4  lineCount, r;
   CHAR  dump[128];
 
-  INITSTATUS (status, "LALFindNumberLines", SFTCLEANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
@@ -327,7 +327,7 @@ void  LALReadLineInfo (LALStatus     *status,
   REAL8   *rightWing=NULL;
   CHAR    dump[128];
 
-  INITSTATUS (status, "LALReadLineInfo", SFTCLEANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
@@ -380,7 +380,7 @@ void LALChooseLines (LALStatus        *status,	/**< pointer to LALStatus structu
   INT4 nLinesIn, nLinesOut, j;
   REAL8 lineFreq, leftWing, rightWing;
 
-  INITSTATUS (status, "LALChooseLines", SFTCLEANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* some sanity checks */
@@ -464,7 +464,7 @@ void LALCheckLines ( LALStatus           *status, /**< pointer to LALStatus stru
   INT4 nLines, j;
   REAL8 lineFreq, leftWing, rightWing, doppler;
 
-  INITSTATUS (status, "LALCheckLines", SFTCLEANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* sanity checks */
@@ -598,7 +598,7 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
   static REAL4Vector *ranVector=NULL;
   REAL4 *randVal;
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALCleanCOMPLEX8SFT", SFTCLEANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -764,7 +764,7 @@ void LALCleanSFTVector (LALStatus       *status,   /**< pointer to LALStatus str
 
   UINT4 k;
 
-  INITSTATUS (status, "LALCleanSFTVector", SFTCLEANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (sftVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
@@ -801,7 +801,7 @@ void LALCleanMultiSFTVect (LALStatus       *status,   /**< pointer to LALStatus 
 
   UINT4 k;
 
-  INITSTATUS (status, "LALCleanMultiSFTVector", SFTCLEANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (multVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
@@ -844,7 +844,7 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,   /**< pointer to LALSta
   REAL8 f_min, f_max, deltaF;
   UINT4 numBins;
 
-  INITSTATUS (status, "LALRemoveKnownLinesInSFTVector", SFTCLEANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -939,7 +939,7 @@ void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,        /**< 
   UINT4 k, j, numifos;
   CHAR *ifo;
 
-  INITSTATUS (status, "LALRemoveKnownLinesInMultiSFTVector", SFTCLEANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 

@@ -170,8 +170,7 @@ LALInspiralCreateBCVBank (
   static CreateVectorSequenceIn in;
   static REAL4VectorSequence 	*tempList = NULL;
 
-  INITSTATUS( status, "LALInspiralCreateBCVBank",
-      LALINSPIRALBCVBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn.psi0Min > 0., status,
@@ -332,8 +331,7 @@ LALInspiralCreateFlatBank (
   REAL8 x0, x1;
   UINT4 nlist = 0;
 
-  INITSTATUS( status, "LALInspiralCreateFlatBank",
-      LALINSPIRALBCVBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* From the knowledge of the metric and the minimal match find the */
@@ -387,7 +385,7 @@ LALInspiralBCVFcutBank (
   REAL4 LowGM;
   REAL4 HighGM;
 
-  INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALBCVBANKC );
+  INITSTATUS(status);
 
   nf 		= coarseIn.numFcutTemplates;
   ndx 		= nlist = *NList;
@@ -476,8 +474,7 @@ LALPSItoMasses (
     )
 {
 
-  INITSTATUS( status, "LALPSItoMasses",
-      LALINSPIRALBCVBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   if ( params->psi0 <= 0.L || params->psi3 >= 0.L )
@@ -546,7 +543,7 @@ LALInspiralBCVBankFcutS3S4 (
   REAL4 LowGM;
   REAL4 HighGM;
 
-  INITSTATUS( status, "LALInspiralBCVBankFcutS3S4", LALINSPIRALBCVBANKC );
+  INITSTATUS(status);
 
   nf    	= coarseIn.numFcutTemplates;
   ndx   	= nlist = *NList;
@@ -651,7 +648,7 @@ LALInspiralBCVRegularFcutBank (
   UINT4 i,nf, nlist, j, ndx;
   REAL8 fendBCV;
 
-  INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALBCVBANKC );
+  INITSTATUS(status);
 
   nf = coarseIn.numFcutTemplates;
   ndx = nlist = *NList;
@@ -709,8 +706,7 @@ LALEmpiricalPSItoMassesConversion (
     )
 {
 
-  INITSTATUS( status, "LALEmpiricalPSItoMassesConversion",
-      LALINSPIRALBCVBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   if ( params->psi0 <= 0.L || params->psi3 >= 0.L )
@@ -760,8 +756,7 @@ LALInspiralCreateFlatBankS3S4 (
   INT4 npol = 8;
 
 
-  INITSTATUS( status, "LALInspiralCreateFlatBankS3S4",
-      LALINSPIRALBCVBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -930,8 +925,7 @@ LALExcludeTemplate(
   REAL4 psi0Int = 2500000.;
   REAL4 psi3Int = -10000.;
 
-  INITSTATUS( status, "LALExcludeTemplate",
-      LALINSPIRALBCVBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   if (x > psi0Int && y < psi3Int )

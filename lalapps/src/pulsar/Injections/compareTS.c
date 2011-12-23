@@ -178,7 +178,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *status, UserVar *uvar)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set some defaults */

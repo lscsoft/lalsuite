@@ -77,7 +77,7 @@ LALCoherentEstimation ( LALStatus          *stat,
   /***********************************************************************/
   /* initialize status & validate input                                  */
   /***********************************************************************/
-  INITSTATUS( stat, "LALCoherentEstimation", COHERENTESTIMATIONC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
 
@@ -383,7 +383,7 @@ LALClearCoherentData (
 
   UINT4 i;
 
-  INITSTATUS( stat, "LALClearCoherentData", COHERENTESTIMATIONC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   if(!dat) {
@@ -413,7 +413,7 @@ LALClearCoherentInfo (
 
   UINT4 i;
 
-  INITSTATUS( stat, "LALClearCoherentInfo", COHERENTESTIMATIONC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   if(!dat) {

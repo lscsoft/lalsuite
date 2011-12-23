@@ -424,7 +424,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
                           Jan. 2 of given year */
     INT4 ret; /* return value for checking */
 
-    INITSTATUS(stat,"LALInitBarycenter",LALINITBARYCENTERC);
+    INITSTATUS(stat);
     ATTATCHSTATUSPTR(stat);
 
     /* open earth file */

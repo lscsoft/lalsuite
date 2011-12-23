@@ -726,7 +726,7 @@ ParseEpoch( LALStatus *stat, LIGOTimeGPS *epoch, const CHAR *string )
   INT8 gpsNan;  /* number of GPS nanoseconds */
   CHAR *endptr; /* pointer to end of parsed data */
 
-  INITSTATUS( stat, "ParseEpoch", PULSARCATTESTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Parse Julian days, or Julian epochs (converted to days). */

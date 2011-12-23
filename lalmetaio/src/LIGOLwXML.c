@@ -205,7 +205,7 @@ LALOpenLIGOLwXMLFile (
 {
   LIGOLwXMLStream *new;
   XLALPrintDeprecationWarning("LALOpenLIGOLwXMLFile", "XLALOpenLIGOLwXMLFile");
-  INITSTATUS( status, "LALOpenLIGOLwXMLFile", LIGOLWXMLC );
+  INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( ! xml->fp, status, LIGOLWXMLH_ENNUL, LIGOLWXMLH_MSGENNUL );
 
@@ -262,7 +262,7 @@ LALCloseLIGOLwXMLFile (
   LIGOLwXMLStream *copy;
   XLALPrintDeprecationWarning("LALCloseLIGOLwXMLFile", "XLALCloseLIGOLwXMLFile");
   /* print the xml footer and close the file handle */
-  INITSTATUS( status, "LALCloseLIGOLwXMLFile", LIGOLWXMLC );
+  INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   /* make an XLALFree()'able copy */
@@ -291,7 +291,7 @@ LALBeginLIGOLwXMLTable (
 
 {
   /* print the header for the xml table */
-  INITSTATUS( status, "LALBeginLIGOLwXMLTable", LIGOLWXMLC );
+  INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   if ( xml->table != no_table )
@@ -370,7 +370,7 @@ LALEndLIGOLwXMLTable (
 
 {
   /* print the header for the xml table */
-  INITSTATUS( status, "LALEndLIGOLwXMLTable", LIGOLWXMLC );
+  INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   if ( xml->table == no_table )
@@ -403,7 +403,7 @@ LALWriteLIGOLwXMLTable (
 
 {
   /* print contents of the database struct into the xml table */
-  INITSTATUS( status, "LALWriteLIGOLwXMLTable", LIGOLWXMLC );
+  INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   if ( xml->table == no_table )

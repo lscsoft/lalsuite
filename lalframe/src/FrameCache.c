@@ -567,7 +567,7 @@ void LALFrCacheImport(
     const CHAR  *fname
     )
 { 
-  INITSTATUS( status, "LALFrCacheImport", FRAMECACHEC );
+  INITSTATUS(status);
   ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );
   ASSERT( fname, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
@@ -601,7 +601,7 @@ void LALFrCacheExport(
     const CHAR *fname
     )
 { 
-  INITSTATUS( status, "LALFrCacheExport", FRAMECACHEC );
+  INITSTATUS(status);
   ASSERT( cache, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( fname, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
 
@@ -622,7 +622,7 @@ LALDestroyFrCache(
     FrCache   **cache
     )
 { 
-  INITSTATUS( status, "LALDestroyFrCache", FRAMECACHEC );
+  INITSTATUS(status);
   ASSERT( cache, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( *cache, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
 
@@ -642,7 +642,7 @@ LALFrCacheSieve(
     FrCacheSieve  *params
     )
 { 
-  INITSTATUS( status, "LALFrCacheSieve", FRAMECACHEC );
+  INITSTATUS(status);
   ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );
   ASSERT( input, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
@@ -668,7 +668,7 @@ LALFrCacheGenerate(
     const CHAR  *fnptrn
     )
 { 
-  INITSTATUS( status, "LALFrCacheGenerate", FRAMECACHEC );
+  INITSTATUS(status);
   ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );
 

@@ -133,7 +133,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
   COMPLEX8Vector *outa = NULL;  /* this will contain the FFT output of Fa for this detector */
   COMPLEX8Vector *outb = NULL;  /* this will contain the FFT output of Fb for this detector */
 
-  INITSTATUS( status, "ComputeFStatFreqBand_RS", COMPUTEFSTATRSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check that the input data and parameters structures don't point to NULL */

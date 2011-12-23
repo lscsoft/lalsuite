@@ -76,7 +76,7 @@ FSFUNC (
     )
 { 
   struct FrVect	*vect;
-  INITSTATUS( status, STRING(FSFUNC), FRAMESERIESC );
+  INITSTATUS(status);
 
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( ! series->data, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
@@ -385,7 +385,7 @@ FUNC (
   REAL8          rate;
   INT4           gap = 0;
 
-  INITSTATUS( status, STRING(FUNC), FRAMESERIESC );
+  INITSTATUS(status);
 
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -588,7 +588,7 @@ FUNCM (
 { 
   void *sequence;
 
-  INITSTATUS (status, STRING(FUNCM), FRAMESERIESC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);

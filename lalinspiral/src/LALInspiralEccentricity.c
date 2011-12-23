@@ -125,7 +125,7 @@ LALInspiralEccentricity(
 
    INT4 count;
 
-   INITSTATUS(status, "LALInspiralEccentricity", LALINSPIRALECCENTRICITYC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -162,7 +162,7 @@ LALInspiralEccentricityTemplates(
 
    INT4 count;
 
-   INITSTATUS(status, "LALInspiralEccentricityTemplates", LALINSPIRALECCENTRICITYTEMPLATESC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -210,7 +210,7 @@ LALInspiralEccentricityForInjection(
 
   InspiralInit paramsInit;
 
-  INITSTATUS(status, "LALInspiralEccentricityForInjection", LALINSPIRALECCENTRICITYTEMPLATESC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* Make sure parameter and waveform structures exist. */
@@ -403,7 +403,7 @@ LALInspiralEccentricityEngine(
    REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
 #endif
 
-   INITSTATUS(status, "LALInspiralEccentricityEngine", LALINSPIRALECCENTRICITYENGINEC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

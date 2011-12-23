@@ -171,7 +171,7 @@ LALSSymmetricEigenVectors( LALStatus *stat, REAL4Vector *values, REAL4Array *mat
   REAL4Vector *offDiag = NULL; /* off-diagonal line of
                                   tri-diagonalized matrix */
 
-  INITSTATUS( stat, "LALSSymmetricEigenVectors", EIGENC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check dimension length.  All other argument testing is done by
@@ -209,7 +209,7 @@ LALSSymmetricEigenValues( LALStatus *stat, REAL4Vector *values, REAL4Array *matr
   REAL4Vector *offDiag = NULL; /* off-diagonal line of
                                   tri-diagonalized matrix */
 
-  INITSTATUS( stat, "LALSSymmetricEigenValues", EIGENC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check dimension length.  All other argument testing is done by
@@ -247,7 +247,7 @@ LALDSymmetricEigenVectors( LALStatus *stat, REAL8Vector *values, REAL8Array *mat
   REAL8Vector *offDiag = NULL; /* off-diagonal line of
                                   tri-diagonalized matrix */
 
-  INITSTATUS( stat, "LALSSymmetricEigenVectors", EIGENC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check dimension length.  All other argument testing is done by
@@ -285,7 +285,7 @@ LALDSymmetricEigenValues( LALStatus *stat, REAL8Vector *values, REAL8Array *matr
   REAL8Vector *offDiag = NULL; /* off-diagonal line of
                                   tri-diagonalized matrix */
 
-  INITSTATUS( stat, "LALSSymmetricEigenValues", EIGENC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check dimension length.  All other argument testing is done by

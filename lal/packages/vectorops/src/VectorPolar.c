@@ -216,7 +216,7 @@ LALCVectorAbs(
     const COMPLEX8Vector *in
     )
 {
-  INITSTATUS (status, "LALCVectorAbs", VECTORPOLARC);
+  INITSTATUS(status);
 
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -247,7 +247,7 @@ LALZVectorAbs(
     const COMPLEX16Vector *in
     )
 {
-  INITSTATUS (status, "LALZVectorAbs", VECTORPOLARC);
+  INITSTATUS(status);
 
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -278,7 +278,7 @@ LALCVectorAngle (
     const COMPLEX8Vector *in
     )
 {
-  INITSTATUS (status, "LALCVectorAngle", VECTORPOLARC);
+  INITSTATUS(status);
 
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -309,7 +309,7 @@ LALZVectorAngle (
     const COMPLEX16Vector  *in
     )
 {
-  INITSTATUS (status, "LALZVectorAngle", VECTORPOLARC);
+  INITSTATUS(status);
 
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -339,7 +339,7 @@ LALUnwrapREAL4Angle (
     const REAL4Vector    *in
     )
 {
-  INITSTATUS (status, "LALUnwrapREAL4Angle", VECTORPOLARC );
+  INITSTATUS(status);
 
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -372,7 +372,7 @@ LALUnwrapREAL8Angle (
     const REAL8Vector    *in
     )
 {
-  INITSTATUS (status, "LALUnwrapREAL8Angle", VECTORPOLARC );
+  INITSTATUS(status);
 
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);

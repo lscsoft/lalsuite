@@ -607,7 +607,7 @@ void BankEfficiencyGetResult(
 {
   InspiralTemplate trigger;
 
-  INITSTATUS (status, "GetResult", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   trigger = *list;
@@ -913,7 +913,7 @@ void BankEfficiencyWaveOverlapBCV(
 
   REAL4 phi, phase, cphase, sphase, cphi, sphi;
 
-  INITSTATUS (status, "BankEfficiencyWaveOverlapBCV", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
 
@@ -1834,7 +1834,7 @@ void BankEfficiencyGetMaximumSize(
   InspiralTemplate params;
   UINT4 maxTmpltLength = 0;
 
-  INITSTATUS( status, "BankEfficiencyGetMaximumSize", BANKEFFICIENCYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   *length = 0;
@@ -1936,7 +1936,7 @@ void BankEfficiencyCreatePsd(
   REAL4 df;
   FILE  *Foutput;
 
-  INITSTATUS( status, "BankEfficiencyCreatePsd", BANKEFFICIENCYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   BankEfficiencyPrintMessage("Generating PSD ...");
@@ -2030,7 +2030,7 @@ void BankEfficiencyGenerateInputData(
   RandomInspiralSignalIn  *randIn,
   UserParametersIn         userParam)
 {
-  INITSTATUS( status, "BankEfficiencyGenerateInputData", BANKEFFICIENCYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   if(vrbflg) fprintf(stderr, "Signal mass1=%e mass2=%e\n", randIn->param.mass1, randIn->param.mass2);
@@ -2228,7 +2228,7 @@ void BankEfficiencyCreatePowerVector(
   RandomInspiralSignalIn     randIn,
   INT4                       length)
 {
-  INITSTATUS (status, "BankEfficiencyCreatePowerVector", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   powerVector->fm2_3.length = length / 2 ;
@@ -2275,7 +2275,7 @@ void BankEfficiencyInspiralOverlapBCV(
   REAL4 df;
   INT4 n, kMin, kMax;
 
-  INITSTATUS (status, "BankEfficiencyInspiralOverlapBCV", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   n       = bankefficiencyBCV->FilterBCV1.length;
@@ -2483,7 +2483,7 @@ void BankEfficiencyCreateListFromTmplt(
   Mybank             mybank,
   INT4               bank_index)
 {
-  INITSTATUS(status, "BankEfficiencyCreateListFromTmplt", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   /* Right now only t03 and psi0psi3 bank exists so we
      only need those information in principle and nothing else*/
@@ -3834,7 +3834,7 @@ void BankEfficiencyInspiralBankGeneration(
   INT4 cnt = 0, flist =0;
   InspiralMomentsEtc moments;
 
-  INITSTATUS(status, "BankEfficiencyInspiralBankGeneration", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT( input != NULL, status, LALINSPIRALBANKH_ENULL,
@@ -3958,7 +3958,7 @@ void BankEfficiencyInspiralCreateFineBank(
   InspiralTemplate   *tempPars=NULL;
   InspiralBankParams *bankPars=NULL;
 
-  INITSTATUS (status, "BankEfficiencyInspiralCreateFineBank", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   ASSERT ((INT4)fineIn.coarseIn.space>=0,  status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
@@ -4106,7 +4106,7 @@ void BankEfficiencyCreateTemplateBank(
   )
 {
 
-  INITSTATUS (status, "BankEfficiencyCreateTemplateBank", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
     /* --- make sure the pointer to the first template is null --- */
@@ -4207,7 +4207,7 @@ void BankEfficiencyWaveOverlap(
   InspiralWaveOverlapOut    overlapout2;
 #endif
 
-  INITSTATUS (status, "BankEfficiencyWaveOverlap", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* --- just to be sure a value has been computed --- */
@@ -4307,7 +4307,7 @@ void  BankEfficiencyFinalise(
   ResultIn           result;
   INT4 ntrials = simulation.ntrials;
   INT4 filter_processed = simulation.filter_processed;
-  INITSTATUS (status, "BankEfficiencyWaveOverlap", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   thisTemplateIndex = overlapOutputBestTemplate.templateNumber;
@@ -4685,7 +4685,7 @@ void BankEfficiencyReadBankFromFile (
   SnglInspiralTable *bank;
   InspiralMomentsEtc moments;
 
-  INITSTATUS (status, "ReadBankFromFile", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if ( (bankfile = fopen(userParam.BankFile, "r")) == NULL)

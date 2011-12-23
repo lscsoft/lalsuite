@@ -48,7 +48,7 @@ LALColoredNoise
    REAL8 x, length;
 
 
-   INITSTATUS (status, "LALColoredNoise", LALCOLOREDNOISEC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (noisy,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

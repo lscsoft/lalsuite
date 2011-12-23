@@ -277,7 +277,7 @@ void StackSlideInitSearch(
   INT4 i;
   INT4 k;  /* 05/11/04 gam */
   
- INITSTATUS( status, "StackSlideInitSearch", DRIVESTACKSLIDEC );
+ INITSTATUS(status);
  ATTATCHSTATUSPTR (status);
 
   #ifdef DEBUG_DRIVESTACKSLIDE
@@ -1441,7 +1441,7 @@ void StackSlideConditionData(
     )
 {
 
- INITSTATUS( status, "StackSlideConditionData", DRIVESTACKSLIDEC );
+ INITSTATUS(status);
  ATTATCHSTATUSPTR (status);
 
   #ifdef DEBUG_DRIVESTACKSLIDE
@@ -1870,7 +1870,7 @@ void StackSlideApplySearch(
   INT4 i = 0; /* all purpose index */
   INT4 k = 0; /* another all purpose index */
 
-  INITSTATUS( status, "StackSlideApplySearch", DRIVESTACKSLIDEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   #ifdef DEBUG_DRIVESTACKSLIDE
@@ -2720,7 +2720,7 @@ void StackSlideFinalizeSearch(
 {
   INT4          i = 0; /* 05/11/04 gam */
 
-  INITSTATUS( status, "StackSlideFinalizeSearch", DRIVESTACKSLIDEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   #ifdef DEBUG_DRIVESTACKSLIDE
@@ -3524,7 +3524,7 @@ void CountOrAssignSkyPosData(REAL8 **skyPosData, INT4 *numSkyPosTotal, BOOLEAN r
                           Jan. 2 of given year */
 
 /*  07/01/02 gam Comment out since LALINITBARYCENTERC not defined */
-    INITSTATUS(stat,"InternalLALInitBarycenter",DRIVESTACKSLIDEC);
+    INITSTATUS(stat);
     ATTATCHSTATUSPTR(stat);       
 
 /*  07/01/02 gam  Change for local stand-alone code */
@@ -3726,7 +3726,7 @@ void GetDetResponseTStampMidPts(LALStatus *stat, REAL4Vector *detResponseTStampM
     REAL8 halftSTK = 0.5*tSTK;  /* half the time of one STK */    
     LIGOTimeGPS midTS;          /* midpoint time for an STK */
     
-    INITSTATUS(stat,"GetDetResponseTStampMidPts",DRIVESTACKSLIDEC);
+    INITSTATUS(stat);
     ATTATCHSTATUSPTR(stat);       
     
     /* Set up das, the Detector and Source info */
@@ -3779,7 +3779,7 @@ void CheckDynamicRangeAndRescaleBLKData(LALStatus *status, REAL4 *blkRescaleFact
   INT4 i,j, nBinsPerBLK, count;
   REAL4 minFabsBLKData, maxFabsBLKData, sumFabsBLKData, meanFabsBLKData, temp;
 
-  INITSTATUS( status, "CheckAndRescaleBLKData", DRIVESTACKSLIDEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   nBinsPerBLK = BLKData[0]->fft->data->length;
@@ -3884,7 +3884,7 @@ void FindAveEarthAcc(LALStatus *status, REAL8 *aveEarthAccVec, REAL8 startTime, 
   INT4 i, iStart, iEnd;
   REAL8 count;
 
-  INITSTATUS( status, "FindAveEarthAcc", DRIVESTACKSLIDEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   iStart = floor( ( (startTime - edat->ephemE[0].gps)/edat->dtEtable ) + 0.5); /* finding starting Earth table entry */
@@ -3918,7 +3918,7 @@ void FindLongLatFromVec(LALStatus *status, REAL8 *longitude, REAL8 *latitude, co
 
   REAL8 vLength;
   
-  INITSTATUS( status, "FindAveEarthAcc", DRIVESTACKSLIDEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   vLength = sqrt( vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2] );
@@ -3956,7 +3956,7 @@ void RotateSkyCoordinates(LALStatus *status, REAL8 *longOut, REAL8 *latOut, REAL
 
   REAL8 longInFromAscendingNode, Xtmp, Ytmp, cosLatIn, sinLatIn, cosLatPole, sinLatPole, cosLatOut;
   
-  INITSTATUS( status, "RotateSkyCoordinates", DRIVESTACKSLIDEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   cosLatIn   = cos(latIn);
@@ -4001,7 +4001,7 @@ void RotateSkyPosData(LALStatus *status, REAL8 **skyPosData, INT4 numSkyPosTotal
      INT4 iSky;
      REAL8 tmpRA, tmpDEC;
      
-     INITSTATUS( status, "RotateSkyPosData", DRIVESTACKSLIDEC );
+     INITSTATUS(status);
      ATTATCHSTATUSPTR (status);
 
      for(iSky=0;iSky<numSkyPosTotal;iSky++) {
@@ -4022,7 +4022,7 @@ void StackSlideGetLinesAndHarmonics(LALStatus *status, LineHarmonicsInfo *infoHa
   LineNoiseInfo lines;
   INT4 nLines, count1, nHarmonicSets;  
 
-  INITSTATUS( status, "StackSlideGetLinesAndHarmonics", DRIVESTACKSLIDEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   lines.lineFreq  = NULL;
@@ -4088,7 +4088,7 @@ void StackSlideGetBinMask(LALStatus *status, INT4 *binMask, REAL8 *percentBinsEx
   INT4 j,k,f0Bin,spindownBins,spinupBins,minBin,maxBin,binCount;
   REAL8 tBaseOverOneMinusMaxDoppler, tBaseOverOnePlusMaxDoppler;
   
-  INITSTATUS( status, "StackSlideGetBinMask", DRIVESTACKSLIDEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   f0Bin = floor(f0*tBase + 0.5);
@@ -4129,7 +4129,7 @@ void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLi
   INT4 i,j, nBinsPerBLK;
   SFTtype *oneSFT;
 
-  INITSTATUS( status, "StackSlideCleanSFTs", DRIVESTACKSLIDEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   nBinsPerBLK = BLKData[0]->fft->data->length; /* 12/07/05 gam; moved here */

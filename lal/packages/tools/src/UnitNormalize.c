@@ -99,7 +99,7 @@ void
 LALUnitNormalize (LALStatus *status, LALUnit *output, const LALUnit *input)
 {
 
-  INITSTATUS( status, "LALUnitNormalize", UNITNORMALIZEC );
+  INITSTATUS(status);
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 

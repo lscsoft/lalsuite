@@ -85,7 +85,7 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
   REAL4         hatt, hatf;        /* reassignment operator */
   INT4          indext,indexf;     /* reassignment index */
 
-  INITSTATUS (stat, "LALTfrRsp", TFRRSPC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   /* Make sure the arguments are not NULL: */

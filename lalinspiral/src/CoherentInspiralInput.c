@@ -95,8 +95,7 @@ LALFindChirpCreateCoherentInput(
   INT4                     fullCohSegLength = 0;
   INT4                     eventTimePoint = 0;
 
-  INITSTATUS( status, "LALFindChirpCreateCoherentInput",
-	      COHERENTINSPIRALINPUTC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* Ensure that arguments are reasonable */

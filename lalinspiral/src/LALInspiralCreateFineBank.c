@@ -134,7 +134,7 @@ void LALInspiralCreateFineBank(LALStatus            *status,
   InspiralBankParams *bankPars=NULL;
 
 
-  INITSTATUS (status, "LALInspiralCreateFineBank", LALINSPIRALCREATEFINEBANKC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   ASSERT ((INT4)fineIn.coarseIn.space>=0,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
   ASSERT ((INT4)fineIn.coarseIn.space<=1,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);

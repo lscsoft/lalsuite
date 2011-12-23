@@ -721,7 +721,7 @@ int main(int argc,char *argv[])
 void
 initUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
@@ -891,7 +891,7 @@ InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
 
-  INITSTATUS( status, "InitEphemeris", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( edat, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL );
@@ -949,7 +949,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   UINT4 numSFTs;
   LIGOTimeGPS startTime, endTime;
 
-  INITSTATUS (status, "InitFStat", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set the current working directory */
@@ -1261,7 +1261,7 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   CHAR *codeID = NULL;
   CHAR *ret = NULL;
 
-  INITSTATUS( status, "getLogString", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if ( (codeID = XLALGetVersionString(0)) == NULL ) {
@@ -1341,7 +1341,7 @@ WriteFStatLog (LALStatus *status, char *argv[], const CHAR *log_fname )
   CHAR command[512] = "";
   FILE *fplog;
 
-  INITSTATUS (status, "WriteFStatLog", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if ( !log_fname )	/* no logfile given */
@@ -1383,7 +1383,7 @@ WriteFStatLog (LALStatus *status, char *argv[], const CHAR *log_fname )
 void
 Freemem(LALStatus *status,  ConfigVariables *cfg)
 {
-  INITSTATUS (status, "Freemem", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1430,7 +1430,7 @@ void
 checkUserInputConsistency (LALStatus *status)
 {
 
-  INITSTATUS (status, "checkUserInputConsistency", rcsid);
+  INITSTATUS(status);
 
   if (uvar_ephemYear == NULL)
     {

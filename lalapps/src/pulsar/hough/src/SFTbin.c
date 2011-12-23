@@ -72,7 +72,7 @@ void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
   INT4       length;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "COMPLEX8SFT2Periodogram1", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
@@ -136,7 +136,7 @@ void SFT2Periodogram (LALStatus  *status,
   INT4       length;
   REAL8      f0, deltaF;
   /* --------------------------------------------- */
-  INITSTATUS (status, "COMPLEX8SFT2Periodogram1", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 

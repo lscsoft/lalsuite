@@ -87,7 +87,7 @@ void
 LALDestroyCOMPLEX8ZPGFilter( LALStatus         *stat,
 			     COMPLEX8ZPGFilter **input )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALDestroyCOMPLEX8ZPGFilter",DESTROYZPGFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure handle is non-null, and points to a non-null
      pointer. */
@@ -107,7 +107,7 @@ void
 LALDestroyCOMPLEX16ZPGFilter( LALStatus          *stat,
 			      COMPLEX16ZPGFilter **input )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALDestroyCOMPLEX16ZPGFilter",DESTROYZPGFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure handle is non-null, and points to a non-null
      pointer. */

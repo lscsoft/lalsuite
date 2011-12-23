@@ -582,7 +582,7 @@ int main(int argc,char *argv[])
 void
 initUserVars (LALStatus *Stat)
 {
-  INITSTATUS( Stat, "initUserVars", rcsid );
+  INITSTATUS(Stat);
   ATTATCHSTATUSPTR (Stat);
 
   /* set a few defaults */
@@ -1053,7 +1053,7 @@ void CreateDemodParams (LALStatus *status)
   BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
   INT4 k;
 
-  INITSTATUS (status, "CreateDemodParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* Detector location: MAKE INTO INPUT!!!!! */
@@ -1157,7 +1157,7 @@ void CreateBinaryDemodParams (LALStatus *status)
   BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
   INT4 k;
 
-  INITSTATUS (status, "CreateBinaryDemodParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
  
@@ -1259,7 +1259,7 @@ void AllocateMem(LALStatus *status)
 {
   INT4 k;
 
-  INITSTATUS (status, "AllocateMem", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* Allocate space for AMCoeffs */
@@ -1529,7 +1529,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   glob_t globbuf;
 #endif
 
-  INITSTATUS (status, "SetGlobalVariables", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* do some sanity checks on the user-input before we proceed */
@@ -1924,7 +1924,7 @@ CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
   LALDetectorType bar;
   LALDetector Detector1;
 
-  INITSTATUS (status, "CreateNautilusDetector", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 /*   detector_params=(LALFrDetector )LALMalloc(sizeof(LALFrDetector)); */
@@ -1953,7 +1953,7 @@ void Freemem(LALStatus *status)
 
   INT4 k;
 
-  INITSTATUS (status, "Freemem", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* Free SFTData */

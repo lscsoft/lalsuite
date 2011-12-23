@@ -97,7 +97,7 @@ void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, c
 {
 	double fplus, fcross;
 
-	INITSTATUS(status, "LALComputeDetAMResponse", DETRESPONSEC);
+	INITSTATUS(status);
 	ATTATCHSTATUSPTR(status);
 
 	ASSERT(pResponse != (LALDetAMResponse *) NULL, status, DETRESPONSEH_ENULLOUTPUT, DETRESPONSEH_MSGENULLOUTPUT);
@@ -177,7 +177,7 @@ void LALComputeDetAMResponseSeries(LALStatus * status, LALDetAMResponseSeries * 
 	unsigned i;
 	char infostr[128];
 
-	INITSTATUS(status, "LALComputeDetAMResponseSeries", DETRESPONSEC);
+	INITSTATUS(status);
 	ATTATCHSTATUSPTR(status);
 
 	if(lalDebugLevel >= 8) {

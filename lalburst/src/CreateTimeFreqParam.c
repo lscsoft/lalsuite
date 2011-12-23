@@ -55,7 +55,7 @@ void LALCreateTimeFreqParam (LALStatus *status,
 			CreateTimeFreqIn *in)
 {
   /* Initialize status */
-  INITSTATUS (status, "LALCreateTimeFreqParam", CREATETIMEFREQPARAMC);
+  INITSTATUS(status);
 
   /* Check input structure: report if NULL */
   ASSERT (in != NULL, status, CREATETFP_ENULL, CREATETFP_MSGENULL);

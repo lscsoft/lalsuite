@@ -92,7 +92,7 @@ LALInspiralFindEvents
 
    InspiralWaveCorrelateIn corrin;
 
-   INITSTATUS (status, "LALInspiralFindEvents", LALINSPIRALFINDEVENTSC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (findeventsin->psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

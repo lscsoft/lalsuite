@@ -356,7 +356,7 @@ void LALTaylorEtWaveform (
    )
 {
    XLALPrintDeprecationWarning("LALTaylorEtWaveform","XLALTaylorEtWaveform");
-   INITSTATUS(status, "LALTaylorEtWaveform", LALTAYLORETWAVEFORMC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    if( XLALTaylorEtWaveform(signalvec, params) )
@@ -443,7 +443,7 @@ void LALTaylorEtWaveformEngine (
 {
    XLALPrintDeprecationWarning("LALTaylorEtWaveformEngine", 
          "XLALTaylorEtWaveformEngine");
-   INITSTATUS(status, "LALTaylorEtWaveform", LALTAYLORETWAVEFORMC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    if( XLALTaylorEtWaveformEngine(signalvec, NULL, params, paramsInit) )

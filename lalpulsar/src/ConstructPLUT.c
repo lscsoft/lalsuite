@@ -154,7 +154,7 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
   INT8    f0Bin;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, " LALHOUGHConstructPLUT", CONSTRUCTPLUTC);
+  INITSTATUS(status);
   /*  ATTATCHSTATUSPTR (status); */
 
   /*   Make sure the arguments are not NULL: */

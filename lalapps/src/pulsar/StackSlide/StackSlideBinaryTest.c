@@ -316,7 +316,7 @@ printf("iMinSTK is %d and iMAxSTK is %d\n",iMinSTK,iMaxSTK);
     
     
 	  	
-     INITSTATUS (status, "StackSlideBinary", STACKSLIDEBINARYTESTC); 
+     INITSTATUS(status); 
       ATTATCHSTATUSPTR(status);
 	
         	
@@ -522,7 +522,7 @@ printf("start function ComputeSkyBinary\n");
 	REAL8 acc;
 
 	
- INITSTATUS (status, "StackSlideComputeSkyBinary", STACKSLIDEBINARYTESTC);
+ INITSTATUS(status);
  ATTATCHSTATUSPTR(status);
  
 /*&&&*/
@@ -760,7 +760,7 @@ LALFree(edat);
 
 static void Ft(LALStatus *status, REAL8 *tr, REAL8 lE, void *tr0)
 {
-  INITSTATUS(status, "Ft", "Function Ft()");
+  INITSTATUS(status);
   ASSERT(tr0,status, 1, "Null pointer");
 
   /* this is the function relating the observed time since periapse in the SSB to the true eccentric anomoly E */

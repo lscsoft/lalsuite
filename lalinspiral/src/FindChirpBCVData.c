@@ -119,7 +119,7 @@ LALFindChirpBCVData (
   DataSegment          *dataSeg;
 
 
-  INITSTATUS( status, "LALFindChirpBCVData", FINDCHIRPBCVDATAC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

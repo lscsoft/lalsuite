@@ -69,7 +69,7 @@ void
 LALVersion( LALStatus *status, CHAR *message, UINT4 size, INT4 verbose )
 { /* </lalVerbatim> */
   INT4 nchar;
-  INITSTATUS( status, "LALVersion", LALVERSIONC );
+  INITSTATUS(status);
 
   ASSERT( message,  status, LALVERSIONH_ENULL, LALVERSIONH_MSGENULL );
   ASSERT( size > 0, status, LALVERSIONH_ESIZE, LALVERSIONH_MSGESIZE );

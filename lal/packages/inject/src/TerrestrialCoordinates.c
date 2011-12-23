@@ -347,7 +347,7 @@ LALEquatorialToGeographic( LALStatus   *stat,
 {
   REAL8 gmst;            /* siderial time (radians) */
 
-  INITSTATUS( stat, "LALEquatorialToGeographic", TERRESTRIALCOORDINATESC );
+  INITSTATUS(stat);
 
   /* Make sure parameter structures exist. */
   ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
@@ -381,7 +381,7 @@ LALGeographicToEquatorial( LALStatus   *stat,
 {
   REAL8 gmst;            /* siderial time (radians) */
 
-  INITSTATUS( stat, "LALEquatorialToGeographic", TERRESTRIALCOORDINATESC );
+  INITSTATUS(stat);
 
   /* Make sure parameter structures exist. */
   ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
@@ -418,7 +418,7 @@ LALSystemToHorizon( LALStatus   *stat,
   REAL8 sinD, cosD;    /* sin and cos of position latitude (declination) */
   REAL8 sina, sinA, cosA; /* sin and cos of altitude and -azimuth */
 
-  INITSTATUS( stat, "LALSystemToHorizon", TERRESTRIALCOORDINATESC );
+  INITSTATUS(stat);
 
   /* Make sure parameter structures exist. */
   ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
@@ -473,7 +473,7 @@ LALHorizonToSystem( LALStatus   *stat,
   REAL8 sinA, cosA;       /* sin and cos of -azimuth */
   REAL8 sinD, sinH, cosH; /* sin and cos of declination and hour angle */
 
-  INITSTATUS( stat, "LALHorizonToSystem", TERRESTRIALCOORDINATESC );
+  INITSTATUS(stat);
 
   /* Make sure parameter structures exist. */
   ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
@@ -525,7 +525,7 @@ LALGeodeticToGeocentric( LALStatus *stat, EarthPosition *location )
   REAL8 x, y;       /* Cartesian coordinates */
   REAL8 maxComp, r; /* max{x,y,z}, and sqrt(x^2+y^2+z^2) */
 
-  INITSTATUS( stat, "LALGeodeticToGeocentric", TERRESTRIALCOORDINATESC );
+  INITSTATUS(stat);
 
   /* Make sure parameter structure exists. */
   ASSERT( location, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
@@ -582,7 +582,7 @@ LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
   const REAL8 f1 = 1.0 - LAL_EARTHFLAT;
   const REAL8 f2 = LAL_EARTHFLAT*( 2.0 - LAL_EARTHFLAT );
 
-  INITSTATUS( stat, "LALGeocentricToGeodetic", TERRESTRIALCOORDINATESC );
+  INITSTATUS(stat);
 
   /* Make sure parameter structure exists. */
   ASSERT( location, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );

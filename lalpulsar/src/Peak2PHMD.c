@@ -73,7 +73,7 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   UINT8   firstBin,lastBin,pgI,pgF;
   /* --------------------------------------------- */
 
-  INITSTATUS (status, "LALHOUGHPeak2PHMD", PEAK2PHMDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /** lots of error checking of arguments -- asserts have been

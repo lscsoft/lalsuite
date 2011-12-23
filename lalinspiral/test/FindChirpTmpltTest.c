@@ -197,7 +197,7 @@ PrintInspiralBank (
 {
   InspiralTemplate    *current;
 
-  INITSTATUS( status, "PrintInspiralBank", MAIN );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( head, status, 1, "Null Pointer" );

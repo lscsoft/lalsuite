@@ -196,8 +196,7 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
   REAL4 *fData;                  /* pointer to frequency data */
   REAL8 *phiData;                /* pointer to phase data */
 
-  INITSTATUS( stat, "LALGenerateEllipticSpinOrbitCW",
-	      GENERATEELLIPTICSPINORBITCWC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter and output structures exist. */

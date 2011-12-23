@@ -102,7 +102,7 @@ LALFindChirpFilterSegment (
   COMPLEX8             *tmpltSignal   = NULL;
   /*SnglInspiralTable    *thisEvent     = NULL;*/
 
-  INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

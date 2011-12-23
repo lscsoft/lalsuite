@@ -312,7 +312,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *status, UserVariables_t *uvar)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
@@ -408,7 +408,7 @@ void
 initGeneral (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
 {
 
-  INITSTATUS( status, "initGeneral", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* ----- set up Tspan */
@@ -461,7 +461,7 @@ void
 checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
 {
 
-  INITSTATUS (status, "checkUserInputConsistency", rcsid);
+  INITSTATUS(status);
 
   if (uvar->ephemYear == NULL)
     {
@@ -597,7 +597,7 @@ getSearchRegion (LALStatus *status,		/**< pointer to LALStatus structure */
 
   DopplerRegion ret = empty_DopplerRegion;
 
-  INITSTATUS (status, "getSearchRegion", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( searchRegion, status, GETMESH_ENULL, GETMESH_MSGENULL);

@@ -81,8 +81,7 @@ LALRulesToTimingDifference( LALStatus       *stat,
   INT2 *shift;      /* Pointer to data in rules->shift */
   REAL4 *data;      /* Pointer to data in difference->data->data */
 
-  INITSTATUS( stat, "LALRulesToTimingDifference",
-	      RULESTOTIMINGDIFFERENCEC);
+  INITSTATUS(stat);
 
   /* Check that the input fields exist. */
   ASSERT( difference, stat, RESAMPLEH_ENUL, RESAMPLEH_MSGENUL );

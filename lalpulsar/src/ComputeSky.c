@@ -73,7 +73,7 @@ LALComputeSky (LALStatus *status,
   REAL8	dTbary;
   REAL8	tBary;
   REAL8	tB0;
-  INITSTATUS (status, "LALComputeSky", COMPUTESKYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* Check for non-negativity of sky positions in SkyCoh[] */

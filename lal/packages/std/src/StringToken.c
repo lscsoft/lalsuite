@@ -104,7 +104,7 @@ LALCreateTokenList( LALStatus  *stat,
   UINT4 tLength = 0;     /* length of token list */
   CHAR *copy;            /* working copy of token list */
 
-  INITSTATUS( stat, "LALCreateTokenList", STRINGTOKENC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -280,7 +280,7 @@ void
 LALDestroyTokenList( LALStatus *stat,
 		     TokenList **list )
 { /* </lalVerbatim> */
-  INITSTATUS( stat, "LALCreateTokenList", STRINGTOKENC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

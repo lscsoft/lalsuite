@@ -101,7 +101,7 @@ void LALRngMedBias (LALStatus   *status,
 
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALRngMedBias", RNGMEDBIASC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check arguments are not null and block size is positive*/

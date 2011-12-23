@@ -58,7 +58,7 @@ void LALComputeMeanPower (LALStatus  *status,
   REAL8      sum;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALComputeMeanPower", PEAKSELECTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -101,7 +101,7 @@ void LALSelectPeakWhiteNoise(LALStatus  *status,
   INT4  nPeaks;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALSelectPeakWhiteNoise", PEAKSELECTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -162,7 +162,7 @@ void LALUCHAR2HOUGHPeak(LALStatus  *status,
   UINT4  nPeaks;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALUCHAR2HOUGHPeak", PEAKSELECTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -223,7 +223,7 @@ void LALPeriodo2PSDrng (LALStatus  *status,
   
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALPeriodo2PSDrng", PEAKSELECTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -287,7 +287,7 @@ void LALSelectPeakColorNoise(LALStatus  *status,
   INT4  nPeaks;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALSelectPeakColorNoise", PEAKSELECTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -373,7 +373,7 @@ void SFTtoUCHARPeakGram(LALStatus        *status,
   REAL8FrequencySeries periodo;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "SFTtoUCHARPeakGram", PEAKSELECTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */

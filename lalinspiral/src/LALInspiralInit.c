@@ -67,7 +67,7 @@ LALInspiralInit (LALStatus        *status,
 {
   XLALPrintDeprecationWarning("LALInspiralInit", "XLALInspiralInit");
 
-  INITSTATUS (status, "LALInspiralInit", LALINSPIRALAMPLITUDEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if ( XLALInspiralInit(params, paramsInit) == XLAL_FAILURE )

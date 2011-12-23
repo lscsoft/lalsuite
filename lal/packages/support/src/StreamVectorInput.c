@@ -140,7 +140,7 @@ LALCHARReadVector( LALStatus *stat, CHARVector **vector, FILE *stream )
   BOOLEAN done = 0;     /* whether or not to read more buffers */
   size_t nTot;          /* total number of characters read */
 
-  INITSTATUS( stat, "LALCHARReadVector", STREAMVECTORINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

@@ -357,7 +357,7 @@ LALPlaygroundInSearchSummary (
 
 {
   INT4 playCheck = 0;
-  INITSTATUS( status, "LALPlaygroundInSearchSummary", LIGOMETADATAUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   playCheck = XLALPlaygroundInSearchSummary ( ssTable, inPlayTime,
@@ -578,7 +578,7 @@ LALTimeSortSearchSummary (
     )
 
 {
-  INITSTATUS( status, "LALTimeSortSearchSummary", LIGOMETADATAUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( summHead, status,
@@ -658,7 +658,7 @@ LALIfoScanSearchSummary(
     )
 
 {
-  INITSTATUS( status, "LALIfoScanSearchSummary", LIGOMETADATAUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   *output = XLALIfoScanSearchSummary( input, ifos );
@@ -682,7 +682,7 @@ LALDistanceScanSummValueTable (
   /*INT4 test=0;*/
   INT8 ta=0, tb=0, tc=0;
 
-  INITSTATUS( status, "LALDistanceScanSummValueTable", LIGOMETADATAUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* initialize diatnce to zero */
@@ -746,7 +746,7 @@ LALCheckOutTimeFromSearchSummary (
   INT8  outEndNS = 0;
 
 
-  INITSTATUS( status, "LALCheckOutTimeSearchSummary", LIGOMETADATAUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that the data has been searched once
@@ -840,7 +840,7 @@ LALIfoScanSummValue(
   SummValueTable    *thisSummValue = NULL;
   SummValueTable    *keptSumm = NULL;
 
-  INITSTATUS( status, "LALIfoScanSummValue", LIGOMETADATAUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that output is null and input non-null */
@@ -998,7 +998,7 @@ LALTimeSortSummValue (
     )
 
 {
-  INITSTATUS( status, "LALTimeSortSummValue", LIGOMETADATAUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( summHead, status,

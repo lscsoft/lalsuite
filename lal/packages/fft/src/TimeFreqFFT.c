@@ -624,7 +624,7 @@ LALTimeFreqRealFFT(
     RealFFTPlan             *plan
     )
 {
-  INITSTATUS( status, "LALTimeFreqRealFFT", TIMEFREQFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALTimeFreqRealFFT", "XLALREAL4TimeFreqFFT");
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -655,7 +655,7 @@ LALFreqTimeRealFFT(
     RealFFTPlan             *plan
     )
 {
-  INITSTATUS( status, "LALFreqTimeRealFFT", TIMEFREQFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALFreqTimeRealFFT", "XLALREAL4FreqTimeFFT");
   ATTATCHSTATUSPTR( status );
 
@@ -778,7 +778,7 @@ LALREAL4AverageSpectrum (
   LALUnitPair           pair;
   /* RAT4                  negRootTwo = { -1, 1 }; */
 
-  INITSTATUS (status, "LALREAL4AverageSpectrum", TIMEFREQFFTC);
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALREAL4AverageSpectrum", "XLALREAL4AverageSpectrumWelch");
   ATTATCHSTATUSPTR (status);
 
@@ -1003,7 +1003,7 @@ LALCOMPLEX8AverageSpectrum (
   LALUnitPair           pair;
   /* RAT4                  negRootTwo = { -1, 1 }; */
 
-  INITSTATUS (status, "LALCOMPLEX8AverageSpectrum", TIMEFREQFFTC);
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCOMPLEX8AverageSpectrum", "XLALREAL8AverageSpectrumWelch");
   ATTATCHSTATUSPTR (status);
 
@@ -1166,7 +1166,7 @@ LALTimeFreqComplexFFT(
     ComplexFFTPlan          *plan
     )
 {
-  INITSTATUS( status, "LALTimeFreqComplexFFT", TIMEFREQFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALTimeFreqComplexFFT", "XLALCOMPLEX8TimeFreqFFT");
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -1196,7 +1196,7 @@ LALFreqTimeComplexFFT(
     ComplexFFTPlan          *plan
     )
 {
-  INITSTATUS( status, "LALFreqTimeComplexFFT", TIMEFREQFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALFreqTimeComplexFFT", "XLALCOMPLEX8FreqTimeFFT");
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );

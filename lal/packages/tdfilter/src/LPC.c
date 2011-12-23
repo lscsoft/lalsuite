@@ -55,7 +55,7 @@ Train a FIR filter aout of order p on the data x.
   COMPLEX8Vector *Hvec = NULL;
   REAL4Vector rv;
 
-  INITSTATUS (status, "LALLPC", LPCC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(x->length>=p+1, status, LPCH_EIN, LPCH_MSGEIN);
@@ -185,7 +185,7 @@ Reflects poles and zeroes of a inside the complex unit circle.
 \end{verbatim}
 ********* </lalLaTeX> ********/
 
-  INITSTATUS (status, "LALPolystab", LPCC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if(a->length > 1) {

@@ -251,7 +251,7 @@ void LALSRungeKutta4(
   REAL4  dt;
   REAL4  t;
 
-  INITSTATUS( status, "LALSRungeKutta4", ODEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( input,  status, ODEH_ENULL, ODEH_MSGENULL );
@@ -369,7 +369,7 @@ void LALSRungeKutta5(
   REAL4  dt;
   REAL4  t;
 
-  INITSTATUS( status, "LALSRungeKutta5", ODEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( input,  status, ODEH_ENULL, ODEH_MSGENULL );
@@ -484,7 +484,7 @@ void LALSRungeKutta5Adapt(
   UINT4 n;
   UINT4 i;
 
-  INITSTATUS( status, "LALSRungeKutta5Adapt", ODEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( input,  status, ODEH_ENULL, ODEH_MSGENULL );

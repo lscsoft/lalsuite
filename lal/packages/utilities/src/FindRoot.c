@@ -54,7 +54,7 @@ Define the function:
 \begin{verbatim}
 static void F( LALStatus *status, REAL4 *y, REAL4 x, void *y0 )
 {
-  INITSTATUS( status, "F", "Function F()" );
+  INITSTATUS(status);
   ASSERT( y0, status, 1, "Null pointer" );
   *y = *(REAL4 *)y0 + x*x;
   RETURN( status );
@@ -116,7 +116,7 @@ LALSBracketRoot (
   REAL4 y_1;
   REAL4 y_2;
 
-  INITSTATUS (status, "LALSBracketRoot", FINDROOTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */
@@ -237,7 +237,7 @@ LALDBracketRoot (
   REAL8 y_1;
   REAL8 y_2;
 
-  INITSTATUS (status, "LALDBracketRoot", FINDROOTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */
@@ -309,7 +309,7 @@ LALSBisectionFindRoot (
   REAL4 x;
   REAL4 dx;
 
-  INITSTATUS (status, "LALSBisectionFindRoot", FINDROOTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */
@@ -478,7 +478,7 @@ LALDBisectionFindRoot (
   REAL8 x;
   REAL8 dx;
 
-  INITSTATUS (status, "LALDBisectionFindRoot", FINDROOTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */

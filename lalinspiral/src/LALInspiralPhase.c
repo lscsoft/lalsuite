@@ -67,7 +67,7 @@ LALInspiralPhase (
    REAL8 sign;
    REAL8 answer;
 
-   INITSTATUS (status, "LALInspiralPhase", LALINSPIRALPHASEC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR (status);
 
    ASSERT (phiofv, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

@@ -188,7 +188,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
 
   CHAR *channel;
 
-  INITSTATUS( status, "LALSimulatePulsarSignal", SIMULATEPULSARSIGNALC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT ( timeSeries, status, SIMULATEPULSARSIGNAL_ENULL, SIMULATEPULSARSIGNAL_MSGENULL);

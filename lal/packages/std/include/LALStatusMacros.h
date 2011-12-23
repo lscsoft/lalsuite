@@ -266,11 +266,10 @@ and control returned to the calling routine.
 \idx{INITSTATUS()}
 
 The first instruction in any function, after variable declarations,
-should be the macro \verb@INITSTATUS()@, which takes three arguments:
-the function's status pointer, the function name (a string literal)
-and the module's RCS \texttt{\$Id\$} string.
+should be the macro \verb@INITSTATUS()@, which takes one argument:
+the function's status pointer.
 \begin{verbatim}
-INITSTATUS( stat, "MyFunction", MYFILEC );
+INITSTATUS(stat);
 \end{verbatim}
 This macro checks that a valid status pointer has been passed to the
 function, and if so, initializes the other fields to indicate (by
@@ -782,15 +781,15 @@ extern const int lalNoDebug;
 
 #ifndef NOLALMACROS
 
-#define INITSTATUS( statusptr, funcname, id )                                 \
+#define INITSTATUS( statusptr )                                               \
   do { if ( (statusptr) )                                                     \
   {                                                                           \
     INT4 level_ = (statusptr)->level ;                                        \
     INT4 statp_ = (statusptr)->statusPtr ? 1 : 0 ;                            \
     memset( (statusptr), 0, sizeof( LALStatus ) ); /* possible memory leak */ \
     (statusptr)->level    = level_ > 0 ? level_ : 1 ;                         \
-    (statusptr)->Id       = (id);                                             \
-    (statusptr)->function = (funcname);                                       \
+    (statusptr)->Id       = "$Id$";                                           \
+    (statusptr)->function = __func__;                                         \
     SETSTATUSFILELINE( statusptr );                                           \
     (void) LALTrace( statusptr, 0 );                                          \
     if ( statp_ )                                                             \
@@ -801,7 +800,7 @@ extern const int lalNoDebug;
   else                                                                        \
     lalAbortHook( "Abort: function %s, file %s, line %d, %s\n"                \
                   "       Null status pointer passed to function\n",          \
-                  (funcname), __FILE__, __LINE__, (id) );                     \
+                  __func__, __FILE__, __LINE__, "$Id$" );                     \
   } while ( 0 )
 
 #define RETURN( statusptr )                                                   \
@@ -916,8 +915,8 @@ extern const int lalNoDebug;
 
 #else /* NOLALMACROS */
 
-#define INITSTATUS( statusptr, funcname, id ) \
-  do { if ( LALInitStatus( statusptr, funcname, id, __FILE__, __LINE__ ) ) return; } while ( 0 )
+#define INITSTATUS( statusptr ) \
+  do { if ( LALInitStatus( statusptr, __func__, "$Id$", __FILE__, __LINE__ ) ) return; } while ( 0 )
 
 #define RETURN( statusptr ) \
   do { if ( LALPrepareReturn( statusptr, __FILE__, __LINE__ ), 1 ) return; } while ( 0 )

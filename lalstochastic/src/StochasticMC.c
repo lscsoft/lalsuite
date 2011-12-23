@@ -370,7 +370,7 @@ void LALStochasticMCDso (LALStatus *status,
   const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
   /* initialize status pointer */
-   INITSTATUS(status, "LALStochasticMC", STOCHASTICMCC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
     /* ERROR CHECKING */
@@ -710,7 +710,7 @@ void LALStochasticMCDsoSplice (LALStatus *status,
   const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
   /* initialize status pointer */
-   INITSTATUS(status, "LALStochasticMC", STOCHASTICMCC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
     /* ERROR CHECKING */

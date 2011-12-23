@@ -99,7 +99,7 @@ LALDirichlet(LALStatus*                 status,
   REAL8 bot;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALDirichlet", DIRICHLETC );
+  INITSTATUS(status);
 
   /* check that pointer to input parameters is not null */
   ASSERT(parameters != NULL,status,

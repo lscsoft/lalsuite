@@ -209,7 +209,7 @@ LALSimulateInspiral( LALStatus                  *stat,
   */
   REAL8 dfInv, fOffset;
 
-  INITSTATUS( stat, "LALSimulateInspiral", SIMULATEINSPIRALC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure argument structures and their fields exist. */

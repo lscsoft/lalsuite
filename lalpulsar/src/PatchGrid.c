@@ -119,7 +119,7 @@ void LALHOUGHComputeSizePar (LALStatus  *status, /* demodulated case */
   REAL8   patchSkySizeY;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALHOUGHComputeSizePar", PATCHGRIDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -232,7 +232,7 @@ void LALHOUGHComputeNDSizePar (LALStatus  *status, /* non-demod. case */
   REAL8   patchSkySizeY;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALHOUGHComputeNDSizePar", PATCHGRIDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -348,7 +348,7 @@ void LALHOUGHFillPatchGrid (LALStatus      *status,
   REAL8   *yCoord;
   /* --------------------------------------------- */
 
-  INITSTATUS (status, "LALHOUGHFillPatchGrid", PATCHGRIDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */

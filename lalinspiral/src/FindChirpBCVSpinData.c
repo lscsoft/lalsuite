@@ -113,7 +113,7 @@ LALFindChirpBCVSpinData (
 
 
   /*declaration*/
-  INITSTATUS( status, "LALFindChirpBCVSpinData", FINDCHIRPBCVSPINDATAC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that the output exists */

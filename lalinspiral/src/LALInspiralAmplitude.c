@@ -57,7 +57,7 @@ LALInspiralRestrictedAmplitude (LALStatus        *status,
 {
   XLALPrintDeprecationWarning("LALInspiralRestrictedAmplitude", "XLALInspiralRestrictedAmplitude");
 
-  INITSTATUS (status, "LALInspiralAmplitude", LALINSPIRALAMPLITUDEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if ( XLALInspiralRestrictedAmplitude(params) == XLAL_FAILURE )

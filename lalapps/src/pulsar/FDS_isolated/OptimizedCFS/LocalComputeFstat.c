@@ -131,7 +131,7 @@ void LocalComputeFStatFreqBand ( LALStatus *status, 		/**< pointer to LALStatus 
   PulsarDopplerParams thisPoint;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
 
-  INITSTATUS( status, "LocalComputeFStatFreqBand", LOCALCOMPUTEFSTATC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( multiSFTs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
@@ -224,7 +224,7 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
   MultiAMCoeffs *multiAMcoef = NULL;
   REAL8 Ad, Bd, Cd, Dd_inv;
 
-  INITSTATUS( status, "LocalComputeFStat", LOCALCOMPUTEFSTATC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input */

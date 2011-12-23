@@ -278,7 +278,7 @@ LALSTPNWaveform (
 
    UINT4 count;
    InspiralInit paramsInit;
-   INITSTATUS(status, "LALSTPNWaveform", LALSTPNWAVEFORMC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec,  status,
@@ -328,7 +328,7 @@ LALSTPNWaveformTemplates (
 
    InspiralInit paramsInit;
 
-   INITSTATUS(status, "LALSTPNWaveform", LALSTPNWAVEFORMC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec1,  status,
@@ -399,7 +399,7 @@ LALSTPNWaveformForInjection (
 
   CreateVectorSequenceIn in;
 
-  INITSTATUS(status, "LALSRPNWaveformForInjection", LALSTPNWAVEFORMFORINJECTIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
 
@@ -670,7 +670,7 @@ LALSTPNWaveformEngine (
   REAL8 alpha, alpha0, omegadot;
   REAL8 f2a, apcommon;
 
-  INITSTATUS(status, "LALSTPNWaveform", LALSTPNWAVEFORMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* set parameters from InspiralTemplate structure*/

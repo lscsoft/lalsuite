@@ -144,7 +144,7 @@ void LALInspiralValidParams(
 
   InspiralTemplate *Pars=NULL;
 
-  INITSTATUS( status, "LALInspiralValidParams", LALINSPIRALVALIDPARAMSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn.fLower > 0.L, status,

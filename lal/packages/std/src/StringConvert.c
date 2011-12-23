@@ -258,7 +258,7 @@ LALStringToU2( LALStatus *stat, UINT2 *value, const CHAR *string, CHAR **endptr 
   INT2 sign;      /* sign of parsed number */
   CHAR *end;      /* substring following parsed number */
 
-  INITSTATUS( stat, "LALStringToU2", STRINGCONVERTC );
+  INITSTATUS(stat);
 
   /* Check for valid input arguments. */
   ASSERT( value, stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL );
@@ -291,7 +291,7 @@ LALStringToU4( LALStatus *stat, UINT4 *value, const CHAR *string, CHAR **endptr 
   INT2 sign;      /* sign of parsed number */
   CHAR *end;      /* substring following parsed number */
 
-  INITSTATUS( stat, "LALStringToU4", STRINGCONVERTC );
+  INITSTATUS(stat);
 
   /* Check for valid input arguments. */
   ASSERT( value, stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL );
@@ -324,7 +324,7 @@ LALStringToU8( LALStatus *stat, UINT8 *value, const CHAR *string, CHAR **endptr 
   INT2 sign;      /* sign of parsed number */
   CHAR *end;      /* substring following parsed number */
 
-  INITSTATUS( stat, "LALStringToU8", STRINGCONVERTC );
+  INITSTATUS(stat);
 
   /* Check for valid input arguments. */
   ASSERT( value, stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL );
@@ -354,7 +354,7 @@ LALStringToI2( LALStatus *stat, INT2 *value, const CHAR *string, CHAR **endptr )
   INT2 sign;      /* sign of parsed number */
   CHAR *end;      /* substring following parsed number */
 
-  INITSTATUS( stat, "LALStringToI2", STRINGCONVERTC );
+  INITSTATUS(stat);
 
   /* Check for valid input arguments. */
   ASSERT( value, stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL );
@@ -394,7 +394,7 @@ LALStringToI4( LALStatus *stat, INT4 *value, const CHAR *string, CHAR **endptr )
   INT2 sign;      /* sign of parsed number */
   CHAR *end;      /* substring following parsed number */
 
-  INITSTATUS( stat, "LALStringToI4", STRINGCONVERTC );
+  INITSTATUS(stat);
 
   /* Check for valid input arguments. */
   ASSERT( value, stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL );
@@ -434,7 +434,7 @@ LALStringToI8( LALStatus *stat, INT8 *value, const CHAR *string, CHAR **endptr )
   INT2 sign;      /* sign of parsed number */
   CHAR *end;      /* substring following parsed number */
 
-  INITSTATUS( stat, "LALStringToI8", STRINGCONVERTC );
+  INITSTATUS(stat);
 
   /* Check for valid input arguments. */
   ASSERT( value, stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL );
@@ -473,7 +473,7 @@ LALStringToS( LALStatus *stat, REAL4 *value, const CHAR *string, CHAR **endptr )
   REAL8 myValue; /* internal representation of value */
   CHAR *end;     /* substring following parsed number */
 
-  INITSTATUS( stat, "LALStringToS", STRINGCONVERTC );
+  INITSTATUS(stat);
 
   /* Check for valid input arguments. */
   ASSERT( value, stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL );
@@ -507,7 +507,7 @@ LALStringToD( LALStatus *stat, REAL8 *value, const CHAR *string, CHAR **endptr )
   REAL8 myValue; /* internal representation of value */
   CHAR *end;     /* substring following parsed number */
 
-  INITSTATUS( stat, "LALStringToD", STRINGCONVERTC );
+  INITSTATUS(stat);
 
   /* Check for valid input arguments. */
   ASSERT( value, stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL );
@@ -541,7 +541,7 @@ LALStringToC( LALStatus *stat, COMPLEX8 *value, const CHAR *string, CHAR **endpt
   REAL4 re, im; /* real and imaginary parts */
   CHAR *end;    /* substring following parsed numbers */
 
-  INITSTATUS( stat, "LALStringToC", STRINGCONVERTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -575,7 +575,7 @@ LALStringToZ( LALStatus *stat, COMPLEX16 *value, const CHAR *string, CHAR **endp
   REAL8 re, im; /* real and imaginary parts */
   CHAR *end;    /* substring following parsed numbers */
 
-  INITSTATUS( stat, "LALStringToZ", STRINGCONVERTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -625,7 +625,7 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
   INT4 nanosecSet;    /* flag to indicate if nanoseconds field has been set */
   INT4 idigit;        /* Digit value: 0 for 1s digit, 1 for 10s digit, etc. */
 
-  INITSTATUS( stat, "LALStringToGPS", STRINGCONVERTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

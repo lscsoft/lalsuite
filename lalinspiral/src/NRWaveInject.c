@@ -644,7 +644,7 @@ void LALInjectStrainGW( LALStatus                 *status,
   REAL8 offset;
   InspiralApplyTaper taper = INSPIRAL_TAPER_NONE;
 
-  INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* sampleRate = 1.0/strain->deltaT;   */
@@ -750,7 +750,7 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
   InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
   LALDetector det;
 
-  INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* get the detector information */

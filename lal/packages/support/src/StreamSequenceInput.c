@@ -142,7 +142,7 @@ LALCHARReadSequence( LALStatus *stat, CHARSequence **sequence, FILE *stream )
   CHAR *data;       /* pointer to vector data */
   size_t nTot = 0;  /* total number of characters read */
 
-  INITSTATUS( stat, "LALCHARReadSequence", STREAMSEQUENCEINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

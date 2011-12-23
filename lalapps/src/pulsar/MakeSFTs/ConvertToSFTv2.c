@@ -236,7 +236,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set defaults */
@@ -285,7 +285,7 @@ applyFactor2SFTs ( LALStatus *status, SFTVector *SFTs, REAL8 factor )
 {
   UINT4 i, numSFTs;
 
-  INITSTATUS( status, "applyFactor2SFTs", rcsid );
+  INITSTATUS(status);
 
   ASSERT ( SFTs, status, CONVERTSFT_EINPUT, CONVERTSFT_MSGEINPUT );
 

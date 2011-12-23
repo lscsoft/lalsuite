@@ -161,7 +161,7 @@ LALFindChirpSPTemplate (
   const REAL4 c4 =  0.03705;
 
 
-  INITSTATUS( status, "LALFindChirpSPTemplate", FINDCHIRPSPTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

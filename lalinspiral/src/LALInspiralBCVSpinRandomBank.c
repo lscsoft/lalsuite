@@ -52,7 +52,7 @@ LALInspiralBCVSpinRandomBank(
   SnglInspiralTable *bank=NULL;
   MetricFunc *thisMetric;
 
-  INITSTATUS(status, "LALInspiralBCVSpinRandomBank", LALINSPIRALBCVSPINRANDOMBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn != NULL, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );

@@ -84,7 +84,7 @@ static void ClearStatus( LALStatus *status )
 /* call the GSL log routine to test the GSL macros */
 static void Logarithm( LALStatus *status, REAL8 *output, REAL8 input )
 {
-  INITSTATUS( status, "Logarithm", LALGSLTESTC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   CALLGSL( *output = gsl_sf_log( input ), status );
@@ -136,7 +136,7 @@ static void Integral( LALStatus *status, REAL8 *y, REAL8 a, REAL8 b, REAL8 eps )
   gsl_integration_workspace *work = NULL;
   gsl_function F;
   REAL8  err;
-  INITSTATUS( status, "Integral", LALGSLTESTC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   F.function = &Heaviside;

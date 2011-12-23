@@ -66,7 +66,7 @@ LALInspiralTofVIntegrand (
    )
 {
 
-   INITSTATUS (status, "LALInspiralTofVIntegrand", LALINSPIRALTOFVINTEGRANDC);
+   INITSTATUS(status);
 
    *integrand = XLALInspiralTofVIntegrand( v, params );
 

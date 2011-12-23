@@ -163,7 +163,7 @@ LALTBaryPtolemaic( LALStatus             *stat,
   REAL8 cosi=cos(LAL_IEARTH);
   REAL8 sini=sin(LAL_IEARTH);
 
-  INITSTATUS(stat,"TBaryPtolemaic",TBARYPTOLEMAICC);
+  INITSTATUS(stat);
 
   /* This function may be called a lot.  Do error checking only in
      debug mode. */
@@ -240,7 +240,7 @@ LALDTBaryPtolemaic( LALStatus             *stat,
 
   UINT4 numDeriv; /* number of variables wrt which to compute derivatives */
 
-  INITSTATUS(stat,"DTBaryPtolemaic",TBARYPTOLEMAICC);
+  INITSTATUS(stat);
 
   numDeriv = dtBary->length - 1;
 

@@ -71,8 +71,7 @@ LALPolycoToTimingDifference( LALStatus       *stat,
   REAL4 *t0;        /* Pointer to polynomial fit times */
   REAL4 *poly;      /* Pointer to polynomial coefficients */
 
-  INITSTATUS(stat,"LALPolycoToTimingDifference",
-	     POLYCOTOTIMINGDIFFERENCEC);
+  INITSTATUS(stat);
 
   /* Check that the input fields exist. */
   ASSERT(difference,stat,RESAMPLEH_ENUL,RESAMPLEH_MSGENUL);

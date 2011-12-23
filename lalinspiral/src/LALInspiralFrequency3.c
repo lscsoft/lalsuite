@@ -73,7 +73,7 @@ LALInspiralFrequency3_0PN (
 {
   XLALPrintDeprecationWarning("LALInspiralFrequency3_0PN", "XLALInspiralFrequency3_0PN");
 
-  INITSTATUS (status, "LALInspiralFrequency3_0PN", LALINSPIRALFREQUENCY3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -120,7 +120,7 @@ LALInspiralFrequency3_2PN (
 {
   XLALPrintDeprecationWarning("LALInspiralFrequency3_2PN", "XLALInspiralFrequency3_2PN");
 
-  INITSTATUS (status, "LALInspiralFrequency3_2PN", LALINSPIRALFREQUENCY3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -169,7 +169,7 @@ LALInspiralFrequency3_3PN (
 {
   XLALPrintDeprecationWarning("LALInspiralFrequency3_3PN", "XLALInspiralFrequency3_3PN");
 
-  INITSTATUS (status, "LALInspiralFrequency3_3PN", LALINSPIRALFREQUENCY3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -219,7 +219,7 @@ LALInspiralFrequency3_4PN (
 {
   XLALPrintDeprecationWarning("LALInspiralFrequency3_4PN", "XLALInspiralFrequency3_4PN");
 
-  INITSTATUS (status, "LALInspiralFrequency3_4PN", LALINSPIRALFREQUENCY3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -271,7 +271,7 @@ LALInspiralFrequency3_5PN (
 {
   XLALPrintDeprecationWarning("LALInspiralFrequency3_5PN", "XLALInspiralFrequency3_5PN");
 
-  INITSTATUS (status, "LALInspiralFrequency3_5PN", LALINSPIRALFREQUENCY3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -325,7 +325,7 @@ LALInspiralFrequency3_6PN (
 {
   XLALPrintDeprecationWarning("LALInspiralFrequency3_6PN", "XLALInspiralFrequency3_6PN");
 
-  INITSTATUS (status, "LALInspiralFrequency3_6PN", LALINSPIRALFREQUENCY3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -381,7 +381,7 @@ LALInspiralFrequency3_7PN (
 {
   XLALPrintDeprecationWarning("LALInspiralFrequency3_7PN", "XLALInspiralFrequency3_7PN");
 
-  INITSTATUS (status, "LALInspiralFrequency3_7PN", LALINSPIRALFREQUENCY3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

@@ -1337,7 +1337,7 @@ void PrintLogFile (LALStatus       *status,
   CHAR *logstr=NULL; 
   UINT4 k;
 
-  INITSTATUS (status, "PrintLogFile", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* open log file for writing */
@@ -1437,7 +1437,7 @@ void ReadTimeStampsFile (LALStatus          *status,
   UINT4 j;
   REAL8 temp1, temp2;
 
-  INITSTATUS (status, "ReadTimeStampsFile", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(ts, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
@@ -1496,7 +1496,7 @@ void LALHoughHistogramSignificance(LALStatus      *status,
   INT4   i, j, binsHisto, xSide, ySide, binIndex;
   REAL8  temp;
 
-  INITSTATUS (status, "LALHoughHistogramSignificance", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
@@ -1557,7 +1557,7 @@ void GetSFTVelTime(LALStatus                *status,
 
   UINT4 numifo, numsft, iIFO, iSFT, j;  
   
-  INITSTATUS (status, "GetSFTVelTime", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (in, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
@@ -1612,7 +1612,7 @@ void GetSFTNoiseWeights(LALStatus          *status,
 
   UINT4 numifo, numsft, iIFO, iSFT, j;  
   
-  INITSTATUS (status, "GetSFTNoiseWeights", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (in, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
@@ -1661,7 +1661,7 @@ void GetPeakGramFromMultSFTVector(LALStatus           *status,		/**< pointer to 
   INT4   nPeaks;
   UINT4  iIFO, iSFT, numsft, numifo, j, binsSFT; 
   
-  INITSTATUS (status, "GetSFTNoiseWeights", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   numifo = in->length;
@@ -1723,7 +1723,7 @@ void SetUpSkyPatches(LALStatus           *status,		/**< pointer to LALStatus str
   UINT4 nSkyPatches, skyCounter;
   PulsarDopplerParams dopplerpos;	  
   
-  INITSTATUS (status, "SetUpSkyPatches", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (out, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
@@ -1849,7 +1849,7 @@ void GetAMWeights(LALStatus                *status,
   REAL8 a, b;
   SkyPosition skypos;
   
-  INITSTATUS (status, "GetAMWeights", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* get the amplitude modulation coefficients */
@@ -1899,7 +1899,7 @@ void SelectBestStuff(LALStatus      *status,
   size_t *ind=NULL;
   UINT4 k, mObsCoh;
 
-  INITSTATUS (status, "SelectBestStuff", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check consistency of input */
@@ -1988,7 +1988,7 @@ void DuplicateBestStuff(LALStatus      *status,
 
   UINT4 mObsCoh;
 
-  INITSTATUS (status, "SelectBestStuff", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check consistency of input */
@@ -2058,7 +2058,7 @@ void LALHOUGHCreateLUTVector(LALStatus           *status,
 			     UINT4               length)
 {
 
-  INITSTATUS (status, "LALHOUGHCreateLUTVector", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input pars are ok */
@@ -2095,7 +2095,7 @@ void LALHOUGHCreateLUTs(LALStatus           *status,
 
   UINT4 j,i;
 
-  INITSTATUS (status, "LALHOUGHCreateLUTs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input pars are ok */
@@ -2149,7 +2149,7 @@ void LALHOUGHDestroyLUTs(LALStatus           *status,
 
   UINT4 j,i;
 
-  INITSTATUS (status, "LALHOUGHDestroyLUTs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   for (j = 0; j < lutV->length ; ++j){
@@ -2183,7 +2183,7 @@ void LALHOUGHCreatePHMDVS(LALStatus           *status,
 			  UINT4               nfSize)
 {
 
-  INITSTATUS (status, "LALHOUGHCreatePHMDVS", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input pars are ok */
@@ -2227,7 +2227,7 @@ void LALHOUGHCreatePHMDs(LALStatus           *status,
 
   UINT4 j;
 
-  INITSTATUS (status, "LALHOUGHCreatePHMDs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input pars are ok */
@@ -2275,7 +2275,7 @@ void LALHOUGHDestroyPHMDs(LALStatus           *status,
 {
   UINT4 j;
 
-  INITSTATUS (status, "LALHOUGHDestroyPHMDs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   for(j = 0; j < phmdVS->length * phmdVS->nfSize; j++){
@@ -2302,7 +2302,7 @@ void LALHOUGHCreateHT(LALStatus             *status,
 		      UINT2                 ySide)
 {
 
-  INITSTATUS (status, "LALHOUGHCreateHT", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input pars are ok */
@@ -2343,7 +2343,7 @@ void LALHOUGHCreateFreqIndVector(LALStatus                 *status,
 				 REAL8                     deltaF)
 {
 
-  INITSTATUS (status, "LALHOUGHCreateFreqIndVector", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input pars are ok */
@@ -2388,7 +2388,7 @@ void GetToplistFromHoughmap(LALStatus *status,
   INT4 i,j, xSide, ySide;
   FstatOutputEntry candidate;
 
-  INITSTATUS( status, "GetToplistFromHoughMap", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   deltaF = ht->deltaF;
@@ -2512,7 +2512,7 @@ void ComputeFoft_NM(LALStatus   *status,
   REAL8Cart3Coor  sourceLocation;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "ComputeFoft", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -2578,7 +2578,7 @@ void SplitSFTs(LALStatus         *status,
   REAL8   partialsumWeightp, partialsumWeightSquarep;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "SplitSFTs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -2665,7 +2665,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
     REAL8Vector numberCountV;  /* Vector with the number count of each block inside */
 
     /* --------------------------------------------- */
-    INITSTATUS (status, "ComputeandPrintChi2", rcsid);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR (status);
   
     /*   Make sure the arguments are not NULL: */
@@ -2845,7 +2845,7 @@ void GetPeakGramFromMultSFTVector_NondestroyPg1(LALStatus                   *sta
   INT4   nPeaks;
   UINT4  iIFO, iSFT, numsft, numifo, j, binsSFT; 
   
-  INITSTATUS (status, "GetSFTNoiseWeights", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   numifo = in->length;

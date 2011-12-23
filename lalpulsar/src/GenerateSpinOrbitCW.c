@@ -132,7 +132,7 @@ LALGenerateSpinOrbitCW( LALStatus             *stat,
 			SpinOrbitCWParamStruc *params )
 {
 
-  INITSTATUS( stat, "LALGenerateSpinOrbitCW", GENERATESPINORBITCWC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structure exists (output structure will be

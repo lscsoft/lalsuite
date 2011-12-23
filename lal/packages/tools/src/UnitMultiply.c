@@ -124,7 +124,7 @@ void
 LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input)
 
 {
-  INITSTATUS( status, "LALUnitMultiply", UNITMULTIPLYC );
+  INITSTATUS(status);
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 

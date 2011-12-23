@@ -123,7 +123,7 @@ LALMathNDPlot( LALStatus *stat,
   INT4 z = 0;
 
 
-  INITSTATUS( stat, "LALMathNDPlot", LALMATHNDPLOTC );
+  INITSTATUS(stat);
 
   /* Check that the PointList isn't NULL */
   if (!first) {

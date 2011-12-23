@@ -920,7 +920,7 @@ computePhaseMetric ( gsl_matrix *g_ij, const PhaseDerivs *dPhi, const REAL8Vecto
 void
 initUserVars (LALStatus *status, UserVariables_t *uvar)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
@@ -993,7 +993,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
   REAL8Vector *detWeights;
   UINT4 X, numDet;
 
-  INITSTATUS (status, "InitCode", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* ----- determine start-time from user-input */
@@ -1248,7 +1248,7 @@ getMultiPhaseDerivs (LALStatus *status,
   PulsarTimesParamStruc times = empty_PulsarTimesParamStruc;
   MultiPhaseDerivs *mdPhi = NULL;
 
-  INITSTATUS (status, "getMultiPhaseDerivs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( dopplerPoint, status, FSTATMETRIC_ENULL, FSTATMETRIC_MSGENULL );
@@ -1388,7 +1388,7 @@ void
 FreeMem ( LALStatus *status, ConfigVariables *cfg )
 {
 
-  INITSTATUS (status, "FreeMem", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( cfg, status, FSTATMETRIC_ENULL, FSTATMETRIC_MSGENULL );
@@ -1607,7 +1607,7 @@ InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
 
-  INITSTATUS( status, "InitEphemeris", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( edat, status, FSTATMETRIC_ENULL, FSTATMETRIC_MSGENULL );

@@ -114,7 +114,7 @@ LALGenerateInspiralSmooth(  LALStatus     *stat,
   INT4 nSmooth,n;
   CoherentGW *waveform;
 
-  INITSTATUS( stat, "LALGenerateInspiralSmooth", GENERATEINSPIRALSMOOTHC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter, qfactor and output structures exist. */

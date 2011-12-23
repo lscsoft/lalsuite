@@ -119,7 +119,7 @@ LALInspiralParameterCalc (
 {
    XLALPrintDeprecationWarning("LALInspiralParameterCalc", "XLALInspiralParameterCalc");
 
-   INITSTATUS (status, "LALInspiralParameterCalc", LALINSPIRALPARAMETERCALCC );
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    XLALInspiralParameterCalc(params);

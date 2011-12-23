@@ -139,8 +139,7 @@ LALCHARReadVectorSequence( LALStatus          *stat,
   UINT4 nRows, nCols;        /* number and length of lines */
   CreateVectorSequenceIn in; /* parameters for creating sequence */
 
-  INITSTATUS( stat, "LALCHARReadVectorSequence",
-	      STREAMVECTORSEQUENCEINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Read the first line. */

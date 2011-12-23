@@ -101,7 +101,7 @@ LALGetInspiralParams( LALStatus                  *stat,
   SkyPosition direction; /* direction to the source */
   RandomParams *localParams = NULL; /* local random parameters pointer */
 
-  INITSTATUS( stat, "LALGetInspiralParams", GETINSPIRALPARAMSC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures exist. */

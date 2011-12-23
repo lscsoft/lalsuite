@@ -114,7 +114,7 @@ LALInitializeDataSegmentVector (
   REAL4 *dataPtr;
   DataSegmentVector *dataSegVec = NULL;
 
-  INITSTATUS( status, "LALPopulateDataSegmentVector", FINDCHIRPMEMORYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( dataSegVecPtr, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
@@ -231,7 +231,7 @@ LALFinalizeDataSegmentVector (
   DataSegmentVector *dataSegVec;
   UINT4 i;
 
-  INITSTATUS( status, "LALFinalizeDataSegmentVector", FINDCHIRPMEMORYC );
+  INITSTATUS(status);
 
   ASSERT( vector, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( *vector, status, FINDCHIRPH_ENNUL, FINDCHIRPH_MSGENNUL );
@@ -269,7 +269,7 @@ LALCreateDataSegmentVector (
   DataSegmentVector    *vectorPtr;
   DataSegment          *segPtr;
 
-  INITSTATUS( status, "LALCreateDataSegmentVector", FINDCHIRPMEMORYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -383,7 +383,7 @@ LALDestroyDataSegmentVector (
   UINT4                 i;
   DataSegment          *segPtr;
 
-  INITSTATUS( status, "LALDestroyDataSegmentVector", FINDCHIRPMEMORYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -458,7 +458,7 @@ LALCreateFindChirpSegmentVector (
   FindChirpSegmentVector       *vectorPtr;
   FindChirpSegment             *segPtr;
 
-  INITSTATUS( status, "LALCreateFindChirpSegmentVector", FINDCHIRPMEMORYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -663,7 +663,7 @@ LALDestroyFindChirpSegmentVector (
   UINT4                         i;
   FindChirpSegment             *segPtr;
 
-  INITSTATUS( status, "LALDestroyFindChirpSegmentVector", FINDCHIRPMEMORYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

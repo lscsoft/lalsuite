@@ -81,7 +81,7 @@ LALExtrapolatePulsarSpinRange(  LALStatus *status,
   PulsarSpinRange inRange;
   REAL8 dtau;
 
-  INITSTATUS( status, "LALExtrapolatePulsarSpinRange", EXTRAPOLATEPULSARSPINSC );
+  INITSTATUS(status);
 
   ASSERT ( range1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
   ASSERT ( range0, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
@@ -152,7 +152,7 @@ LALExtrapolatePulsarSpins (LALStatus   *status,		/**< pointer to LALStatus struc
 {
   REAL8 dtau;
 
-  INITSTATUS( status, "LALExtrapolatePulsarSpins", EXTRAPOLATEPULSARSPINSC );
+  INITSTATUS(status);
 
   ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
 
@@ -224,7 +224,7 @@ LALExtrapolatePulsarPhase (LALStatus *status,		/**< pointer to LALStatus structu
   REAL8 frac_cycles;
   REAL8 dummy, phi;
 
-  INITSTATUS( status, "LALExtrapolatePulsarPhase", EXTRAPOLATEPULSARSPINSC );
+  INITSTATUS(status);
 
   ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
   ASSERT ( phi1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);

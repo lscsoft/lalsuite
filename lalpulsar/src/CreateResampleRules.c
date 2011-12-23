@@ -246,7 +246,7 @@ LALCreateResampleRules( LALStatus          *stat,
   INT4 *interval;     /* Pointer to interval elements in rules */
   INT2 *shift;        /* Pointer to shift elements in rules */
 
-  INITSTATUS(stat,"LALCreateResampleRules",CREATERESAMPLERULESC);
+  INITSTATUS(stat);
 
   /* Check that the inputs all exist. */
   ASSERT(rules,stat,RESAMPLEH_ENUL,RESAMPLEH_MSGENUL);

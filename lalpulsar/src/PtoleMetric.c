@@ -148,7 +148,7 @@ void LALPtoleMetric( LALStatus *status,
   INT2 j_max;  /* Number of terms in series */
 
 
-  INITSTATUS( status, "LALPtoleMetric", PTOLEMETRICC );
+  INITSTATUS(status);
 
   /* Check for valid input structure. */
   ASSERT( input != NULL, status, PTOLEMETRICH_ENULL,
@@ -644,7 +644,7 @@ void LALPulsarMetric ( LALStatus *stat,
   REAL8Vector *lambda = NULL;
   UINT4 i, nSpin, dim;
 
-  INITSTATUS( stat, "LALPulsarMetric", PTOLEMETRICC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   ASSERT ( input, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL );

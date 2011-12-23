@@ -161,7 +161,7 @@ LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input )
 void
 LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RAT4 *power)
 {
-  INITSTATUS( status, "LALUnitRaise", UNITRAISEC );
+  INITSTATUS(status);
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 

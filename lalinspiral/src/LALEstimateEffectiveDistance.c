@@ -35,7 +35,7 @@ void LALEstimateEffectiveDistance (
     INT4    i;
     REAL8   dynRange = 1.0;
 
-    INITSTATUS (status, "LALEstimateEffectiveDistance", LALESTIMATEEFFECTIVEDISTANCEC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR (status);
 
     msevenby3 = -7.L/3.L;

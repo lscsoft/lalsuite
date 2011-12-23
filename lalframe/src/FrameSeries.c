@@ -517,7 +517,7 @@ LALFrGetTimeSeriesType(
     )
 { 
   int type;
-  INITSTATUS( status, "LALFrGetTimeSeriesType", FRAMESERIESC );
+  INITSTATUS(status);
 
   ASSERT( output, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );

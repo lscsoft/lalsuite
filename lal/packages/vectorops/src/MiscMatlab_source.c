@@ -24,7 +24,7 @@ void F1 (
 	INT4	myindex;
 	INT4	length;
 
-	INITSTATUS( status, STRING(F1) , MATLABMATRIXSUMC);
+	INITSTATUS(status);
         ATTATCHSTATUSPTR( status );
 
 	/*  Check input for existence.  */
@@ -70,7 +70,7 @@ void F2 (
         INT4    iterator;
         INT4    length;
 
-        INITSTATUS( status, STRING(F2) , MATLABMATRIXSUMC);
+        INITSTATUS(status);
 
         /*  Check input for existence.  */
         /*  data must be defined  */
@@ -102,7 +102,7 @@ void F3 (
         INT4    iterator;
         INT4    length;
 
-        INITSTATUS( status, STRING(F3) , MATLABMATRIXSUMC);
+        INITSTATUS(status);
 
         /*  Check input for existence.  */
         /*  data must be defined  */
@@ -138,7 +138,7 @@ void F4 (
         INT4    iterator;
         INT4    length;
 
-        INITSTATUS( status, STRING(F4) , MATLABMATRIXSUMC);
+        INITSTATUS(status);
 	ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */

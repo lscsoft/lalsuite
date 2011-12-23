@@ -92,7 +92,7 @@ void LALNDHOUGHParamPLUT (LALStatus  *status,
   INT4    offset;
   /* --------------------------------------------- */
 
-  INITSTATUS (status, "LALNDHOUGHParamPLUT", NDPARAMPLUTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */

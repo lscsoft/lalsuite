@@ -41,7 +41,7 @@ LALMakeTemplateBank(
      MakeTemplateBankInput *input,
      MetadataTable *table)
 {
-  INITSTATUS(status, "LALMakeTemplateBank", MAKETEMPLATEBANKC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   if(type == NULL){
     ABORT(status, TEMPLATEBANKGENERATIONH_ENULL, TEMPLATEBANKGENERATIONH_MSGENULL);

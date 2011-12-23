@@ -144,7 +144,7 @@ LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
 {
   int code;
 
-  INITSTATUS( status, "LALUnitCompare", UNITCOMPAREC );
+  INITSTATUS(status);
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 

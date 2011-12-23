@@ -290,7 +290,7 @@ void LALSHeapSort(LALStatus      *stat,
   REAL4 temp;
   REAL4 *data;
 
-  INITSTATUS(stat,"LALSHeapSort",HEAPSORTC);
+  INITSTATUS(stat);
 
   /* Make sure all pointers are valid. */
   ASSERT(vector,stat,SORTH_ENUL,SORTH_MSGENUL);
@@ -352,7 +352,7 @@ void LALSHeapIndex(LALStatus      *stat,
   REAL4 temp;
   REAL4 *data;
 
-  INITSTATUS(stat,"LALSHeapIndex",HEAPSORTC);
+  INITSTATUS(stat);
 
   /* Make sure all pointers are valid, and the idx vector is of the
      same length as the data vector. */
@@ -422,7 +422,7 @@ void LALSHeapRank(LALStatus      *stat,
   INT4       *rnk;
   INT4Vector *idx=NULL;
 
-  INITSTATUS(stat,"LALSHeapRank",HEAPSORTC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure all pointers are valid, and the rank vector is of the
@@ -463,7 +463,7 @@ void LALDHeapSort(LALStatus      *stat,
   REAL8 temp;
   REAL8 *data;
 
-  INITSTATUS(stat,"LALDHeapSort",HEAPSORTC);
+  INITSTATUS(stat);
 
   /* Make sure all pointers are valid. */
   ASSERT(vector,stat,SORTH_ENUL,SORTH_MSGENUL);
@@ -525,7 +525,7 @@ void LALDHeapIndex(LALStatus      *stat,
   REAL8 temp;
   REAL8 *data;
 
-  INITSTATUS(stat,"LALDHeapIndex",HEAPSORTC);
+  INITSTATUS(stat);
 
   /* Make sure all pointers are valid, and the idx vector is of the
      same length as the data vector. */
@@ -597,7 +597,7 @@ void LALDHeapRank(LALStatus      *stat,
   INT4       *rnk;
   INT4Vector *idx=NULL;
 
-  INITSTATUS(stat,"LALDHeapRank",HEAPSORTC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure all pointers are valid, and the rank vector is of the

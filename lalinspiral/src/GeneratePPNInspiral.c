@@ -305,7 +305,7 @@ FreqDiff( LALStatus *stat, REAL4 *y, REAL4 x, void *p )
   BOOLEAN b0, b1, b2, b3, b4, b5; /* whether each order is nonzero */
   REAL4 x2, x3, x4, x5;           /* x^2, x^3, x^4, and x^5 */
 
-  INITSTATUS( stat, "FreqDiff", GENERATEPPNINSPIRALC );
+  INITSTATUS(stat);
   ASSERT( p, stat, 1, "Null pointer" );
 
   /* Set constants used by FREQ() macro. */
@@ -392,7 +392,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   REAL8 *phi;   /* pointer to generated phase data */
   PPNInspiralBuffer *head, *here; /* pointers to buffered data */
 
-  INITSTATUS( stat, "LALGeneratePPNInspiral", GENERATEPPNINSPIRALC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /*******************************************************************

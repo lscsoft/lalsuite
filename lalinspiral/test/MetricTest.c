@@ -164,7 +164,7 @@ GetInspiralMoments (
    UINT4 k;
    InspiralMomentsIn in;
 
-   INITSTATUS (status, "GetInspiralMoments", METRICTESTC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);

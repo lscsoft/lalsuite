@@ -360,7 +360,7 @@ int main(int argc,char *argv[])
 void
 initUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
@@ -445,7 +445,7 @@ void
 checkUserInputConsistency (LALStatus *status)
 {
 
-  INITSTATUS (status, "checkUserInputConsistency", rcsid);  
+  INITSTATUS(status);  
 
   /* don't allow negative orbital sem-major axis */
   if (uvar_semimajoraxis < 0.0) {

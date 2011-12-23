@@ -958,7 +958,7 @@ LALParseDataFile (LALStatus *status,		/**< pointer to LALStatus structure */
 {
   const char *fn = __func__;
 
-  INITSTATUS( status, fn, CONFIGFILEC );
+  INITSTATUS(status);
 
   if ( XLALParseDataFile (cfgdata, fname) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: call to XLALParseDataFile() failed with code %d\n", fn, xlalErrno );
@@ -977,7 +977,7 @@ LALDestroyParsedDataFile (LALStatus *status,		/**< pointer to LALStatus structur
 			  LALParsedDataFile **cfgdata)	/**< [in/out] config-file data */
 {
   const char *fn = __func__;
-  INITSTATUS( status, fn, CONFIGFILEC );
+  INITSTATUS(status);
 
   if ( XLALDestroyParsedDataFile (cfgdata) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: call to XLALDestroyParsedDataFile() failed with code %d\n", fn, xlalErrno );
@@ -1002,7 +1002,7 @@ LALReadConfigVariable (LALStatus *status,		/**< pointer to LALStatus structure *
 {
   const char *fn = __func__;
 
-  INITSTATUS( status, fn, CONFIGFILEC );
+  INITSTATUS(status);
 
   if ( XLALReadConfigVariable ( varp,	cfgdata, param, wasRead ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: call to XLALReadConfigVariable() failed with code %d\n", fn, xlalErrno );
@@ -1024,7 +1024,7 @@ LALReadConfigBOOLVariable (LALStatus *status,		/**< pointer to LALStatus structu
 			   BOOLEAN *wasRead)		 /**< [out] did we succeed in reading? */
 {
   const char *fn = __func__;
-  INITSTATUS( status, fn, CONFIGFILEC );
+  INITSTATUS(status);
 
   if ( XLALReadConfigBOOLVariable(varp, cfgdata, NULL, varName, wasRead ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: call to XLALReadConfigBOOLVariable() failed with code %d\n", fn, xlalErrno );
@@ -1047,7 +1047,7 @@ LALReadConfigINT4Variable (LALStatus *status,
 {
   const char *fn = __func__;
 
-  INITSTATUS( status, fn, CONFIGFILEC );
+  INITSTATUS(status);
 
   if ( XLALReadConfigINT4Variable ( varp, cfgdata, NULL, varName, wasRead ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: call to XLALReadConfigINT4Variable() failed with code %d\n", fn, xlalErrno );
@@ -1069,7 +1069,7 @@ LALReadConfigREAL8Variable (LALStatus *status,
 {
   const char *fn = __func__;
 
-  INITSTATUS( status, fn, CONFIGFILEC );
+  INITSTATUS(status);
 
   if ( XLALReadConfigREAL8Variable ( varp, cfgdata, NULL, varName, wasRead ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: call to XLALReadConfigREAL8Variable() failed with code %d\n", fn, xlalErrno );
@@ -1091,7 +1091,7 @@ LALReadConfigSTRINGVariable (LALStatus *status,		/**< pointer to LALStatus struc
 {
   const char *fn = __func__;
 
-  INITSTATUS( status, fn, CONFIGFILEC );
+  INITSTATUS(status);
 
   if ( XLALReadConfigSTRINGVariable ( varp, cfgdata, NULL, varName, wasRead ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: call to XLALReadConfigSTRINGVariable() failed with code %d\n", fn, xlalErrno );
@@ -1114,7 +1114,7 @@ LALReadConfigSTRINGNVariable (LALStatus *status,	/**< pointer to LALStatus struc
 {
   const char *fn = __func__;
 
-  INITSTATUS( status, fn, CONFIGFILEC );
+  INITSTATUS(status);
 
   if ( XLALReadConfigSTRINGNVariable(varp, cfgdata, NULL, varName, wasRead ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: call to XLALReadConfigSTRINGNVariable() failed with code %d\n", fn, xlalErrno );
@@ -1134,7 +1134,7 @@ LALCheckConfigReadComplete (LALStatus *status,			/**< pointer to LALStatus struc
 {
   const char *fn = __func__;
 
-  INITSTATUS( status, fn, CONFIGFILEC );
+  INITSTATUS(status);
 
   if ( XLALCheckConfigReadComplete ( cfgdata, strict ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: call to XLALCheckConfigReadComplete() failed with code %d\n", fn, xlalErrno );

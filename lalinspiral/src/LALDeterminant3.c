@@ -69,7 +69,7 @@ void LALDeterminant3(LALStatus *status,
                               {-1, 0, 0},
                               { 0, 0, 0}}};
    INT4 Dim=3,i,j,k;
-   INITSTATUS(status, "LALDeterminant3", LALDETERMINANT3C);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (matrix,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);

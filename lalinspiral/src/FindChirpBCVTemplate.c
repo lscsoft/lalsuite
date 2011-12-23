@@ -97,7 +97,7 @@ LALFindChirpBCVTemplate (
   REAL4        distNorm;
   const REAL4  cannonDist = 1.0; /* Mpc */
 
-  INITSTATUS( status, "LALFindChirpBCVTemplate", FINDCHIRPBCVTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

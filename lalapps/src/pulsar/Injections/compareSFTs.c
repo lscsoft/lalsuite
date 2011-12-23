@@ -249,7 +249,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *stat)
 {
-  INITSTATUS( stat, "initUserVars", rcsid );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   /* set some defaults */
@@ -336,7 +336,7 @@ scalarProductSFT (LALStatus *stat, REAL4 *scalar, const SFTtype *sft1, const SFT
   UINT4 i;
   REAL8 prod;
 
-  INITSTATUS( stat, "scalarProductSFT", rcsid );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   ASSERT ( scalar, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
@@ -379,7 +379,7 @@ scalarProductSFTVector (LALStatus *stat, REAL4 *scalar, const SFTVector *sftvect
   UINT4 i;
   REAL8 prod;
 
-  INITSTATUS( stat, "scalarProductSFT", rcsid );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   ASSERT ( scalar, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
@@ -413,7 +413,7 @@ subtractSFTVectors (LALStatus *stat, SFTVector **ret, const SFTVector *sftvect1,
   UINT4 M, N;
   SFTVector *vect = NULL;
 
-  INITSTATUS( stat, "subtractSFTVector", rcsid );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   ASSERT ( ret, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);

@@ -236,7 +236,7 @@ LALInitUserVars ( LALStatus *status, UserInput_t *uvar )
 {
   static const CHAR *fn = "XLALInitUserVars()";
 
-  INITSTATUS( status, fn, rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   uvar->help = 0;
@@ -281,7 +281,7 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
   UINT4 numSFTs;
   REAL8 Tspan, Tdata;
 
-  INITSTATUS( status, fn, rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   minStartTimeGPS.gpsSeconds = uvar->minStartTime;

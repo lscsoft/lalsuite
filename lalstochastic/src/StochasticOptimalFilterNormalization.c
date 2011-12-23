@@ -271,8 +271,7 @@ LALStochasticOptimalFilterNormalization(
   REAL4WithUnits *lamPtr;
 
   /* initialize status pointer */
-  INITSTATUS(status, "LALStochasticOptimalFilterNormalization", \
-      STOCHASTICOPTIMALFILTERC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* ERROR CHECKING ----------------------------------------------------- */

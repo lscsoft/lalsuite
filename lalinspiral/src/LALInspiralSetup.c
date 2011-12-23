@@ -69,7 +69,7 @@ LALInspiralSetup (
 {
    XLALPrintDeprecationWarning("LALInspiralSetup", "XLALInspiralSetup");
 
-   INITSTATUS (status, "LALInspiralSetup", LALINSPIRALSETUPC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    if ( XLALInspiralSetup(ak, params) == XLAL_FAILURE )

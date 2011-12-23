@@ -107,7 +107,7 @@ LALSPolynomialInterpolation (
   UINT4  n;
   UINT4  i;
 
-  INITSTATUS (status, "LALSPolynomialInterpolation", INTERPOLATEC);
+  INITSTATUS(status);
 
   ASSERT (output, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
   ASSERT (params, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
@@ -185,7 +185,7 @@ LALDPolynomialInterpolation (
     DInterpolatePar *params
     )
 { /* </lalVerbatim> */
-  INITSTATUS (status, "LALDPolynomialInterpolation", INTERPOLATEC);
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning("LALDPolynomialInterpolation", "XLALDPolynomialInterpolation");
 

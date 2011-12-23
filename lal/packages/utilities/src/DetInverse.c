@@ -218,7 +218,7 @@ LALSMatrixDeterminant( LALStatus *stat, REAL4 *det, REAL4Array *matrix )
   UINT4 n, i;               /* array dimension and index */
   UINT4Vector *indx = NULL; /* permutation storage vector */
 
-  INITSTATUS( stat, "LALSMatrixDeterminant", DETINVERSEC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check dimension length.  All other argument testing is done by
@@ -262,7 +262,7 @@ LALSMatrixInverse( LALStatus *stat, REAL4 *det, REAL4Array *matrix, REAL4Array *
   UINT4Vector *indx = NULL; /* permutation storage vector */
   REAL4Vector *col = NULL;  /* columns of inverse matrix */
 
-  INITSTATUS( stat, "LALSMatrixInverse", DETINVERSEC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check dimension length.  Other argument testing is done by the
@@ -336,7 +336,7 @@ LALSMatrixDeterminantErr( LALStatus *stat, REAL4 det[2], REAL4Array *matrix, REA
   REAL4 var;               /* partial derivative of determinant */
   REAL4Array *temp = NULL; /* internal copy of *matrix */
 
-  INITSTATUS( stat, "LALSMatrixDeterminantErr", DETINVERSEC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check input arguments. */
@@ -412,7 +412,7 @@ LALDMatrixDeterminant( LALStatus *stat, REAL8 *det, REAL8Array *matrix )
   UINT4 n, i;               /* array dimension and index */
   UINT4Vector *indx = NULL; /* permutation storage vector */
 
-  INITSTATUS( stat, "LALDMatrixDeterminant", DETINVERSEC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check dimension length.  All other argument testing is done by
@@ -456,7 +456,7 @@ LALDMatrixInverse( LALStatus *stat, REAL8 *det, REAL8Array *matrix, REAL8Array *
   UINT4Vector *indx = NULL; /* permutation storage vector */
   REAL8Vector *col = NULL;  /* columns of inverse matrix */
 
-  INITSTATUS( stat, "LALDMatrixInverse", DETINVERSEC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check dimension length.  Other argument testing is done by the
@@ -530,7 +530,7 @@ LALDMatrixDeterminantErr( LALStatus *stat, REAL8 det[2], REAL8Array *matrix, REA
   REAL8 var;               /* partial derivative of determinant */
   REAL8Array *temp = NULL; /* internal copy of *matrix */
 
-  INITSTATUS( stat, "LALDMatrixDeterminantErr", DETINVERSEC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check input arguments. */

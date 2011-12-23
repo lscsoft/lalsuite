@@ -273,7 +273,7 @@ void LALTaylorT4Waveform (
 
    InspiralInit paramsInit;
    UINT4        count;
-   INITSTATUS(status, "LALTaylorT4Waveform", LALTAYLORT4WAVEFORMC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec,  status,
@@ -324,7 +324,7 @@ LALTaylorT4WaveformTemplates(
 
   InspiralInit paramsInit;
 
-  INITSTATUS (status, "LALTaylorT4WaveformTemplates", LALTAYLORT4WAVEFORMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(signalvec1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -372,7 +372,7 @@ LALTaylorT4WaveformForInjection(
   InspiralInit paramsInit;
 
 
-  INITSTATUS(status, "LALInspirallTaylorT4WaveformForInjection", LALTAYLORT4WAVEFORMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* Make sure parameter and waveform structures exist. */
@@ -559,7 +559,7 @@ LALTaylorT4WaveformEngine (
    REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
 
 
-   INITSTATUS(status, "LALTaylorT4WaveformEngine", LALTAYLORT4WAVEFORMC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT( signalvec1 || ( ff && a && phiVec ), status,

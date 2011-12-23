@@ -145,7 +145,7 @@ void LALCleanAll (LALStatus     *status,
 
 /* --------------------------------------------- */
 
-  INITSTATUS (status, "LALCleanAll", CLEANALLC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */

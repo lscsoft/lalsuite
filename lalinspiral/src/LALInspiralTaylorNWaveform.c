@@ -307,7 +307,7 @@ void LALTaylorNWaveform (
 {
    XLALPrintDeprecationWarning("LALTaylorNWaveform", 
          "XLALTaylorNWaveform");
-   INITSTATUS(status, "LALTaylorNWaveform", LALTAYLORNWAVEFORMC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    if (XLALTaylorNWaveform(signalvec, params))

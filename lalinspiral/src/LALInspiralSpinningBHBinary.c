@@ -111,7 +111,7 @@ LALInspiralSpinModulatedWave(
 	expnCoeffs ak;
 
 
-	INITSTATUS(status, "LALInspiralSpinngBHBinary", LALINSPIRALSPINNINGBHBINARYC);
+	INITSTATUS(status);
 	ATTATCHSTATUSPTR(status);
 	ASSERT(signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 	ASSERT(signalvec->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -531,7 +531,7 @@ LALInspiralSpinModulatedWaveForInjection(
     acFac *= 2.0*cosI;
 
 
-    INITSTATUS(status, "LALInspiralSpinngBHBinaryForInjection", LALINSPIRALSPINNINGBHBINARYC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
     ASSERT(params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
     /* Make sure waveform fields don't exist. */

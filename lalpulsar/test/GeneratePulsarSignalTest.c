@@ -252,7 +252,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
    FILE *fpRandom;
   #endif
 
-  INITSTATUS( status, "RunGeneratePulsarSignalTest", GENERATEPULSARSIGNALTESTC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* generate timeStamps */

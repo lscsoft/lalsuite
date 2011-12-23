@@ -152,7 +152,7 @@ InitDopplerLatticeScan ( LALStatus *status,		/**< pointer to LALStatus structure
   gsl_matrix *gij, *gijLattice;
   UINT4 i, j;
 
-  INITSTATUS( status, "InitDopplerLatticeScan", DOPPLERLATTICECOVERING );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR ( status );
 
   ASSERT ( scan, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
@@ -699,7 +699,7 @@ setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRe
   UINT4 i;
   vect3Dlist_t *points3D = NULL;
 
-  INITSTATUS( status, "InitDopplerLatticeScan", DOPPLERLATTICECOVERING );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR ( status );
 
   ASSERT ( scan, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
@@ -959,7 +959,7 @@ skyRegionString2vect3D ( LALStatus *status,		/**< pointer to LALStatus structure
   SkyRegion region = empty_SkyRegion;
   UINT4 i, j, refineby, N0, N1;
 
-  INITSTATUS( status, "skyRegionString2vect3D()", DOPPLERLATTICECOVERING );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR ( status );
 
   ASSERT ( skyRegion, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );

@@ -83,7 +83,7 @@ LALStackMetric( LALStatus        *stat,
   MetricParamStruc subParams;  /* Parameters passed to coherent metric
 				  computation. */
 
-  INITSTATUS(stat,"StackMetric",STACKMETRICC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure parameter structures and their fields exist. */

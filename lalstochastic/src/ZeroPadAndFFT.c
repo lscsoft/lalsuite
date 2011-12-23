@@ -144,7 +144,7 @@ LALSZeroPadAndFFT(
   REAL4 *sPtr, *sStopPtr, *hBarPtr, *windowPtr;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALSZeroPadAndFFT", ZEROPADANDFFTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* ERROR CHECKING --------------------------------------------------- */
@@ -327,7 +327,7 @@ LALCZeroPadAndFFT(
   REAL4 *windowPtr;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALCZeroPadAndFFT", ZEROPADANDFFTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* ERROR CHECKING --------------------------------------------------- */

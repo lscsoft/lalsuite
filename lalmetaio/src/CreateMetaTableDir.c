@@ -344,7 +344,7 @@ LALCreateMetaTableDir(
     )
 
 {
-  INITSTATUS( status, "LALCreateMetaTableDir", CREATEMETATABLEDIRC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check the inputs */

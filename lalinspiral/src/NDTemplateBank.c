@@ -108,7 +108,7 @@ LALNDTemplateBank( LALStatus *status,
   INT4 cnt = 0;
   /* INT4 bccFlag = 0; */
 
-  INITSTATUS( status, "LALNDTemplateBank", NDTEMPLATEBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

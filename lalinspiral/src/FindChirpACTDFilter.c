@@ -49,7 +49,7 @@ LALFindChirpACTDFilterSegment (
   COMPLEX8Vector        tmpltSignal[NACTDVECS];
   SnglInspiralTable    *thisEvent     = NULL;
 
-  INITSTATUS( status, "LALFindChirpACTDFilter", FINDCHIRPACTDFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

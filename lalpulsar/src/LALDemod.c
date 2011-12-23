@@ -118,7 +118,7 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
   REAL8 A=params->amcoe->A,B=params->amcoe->B,C=params->amcoe->C,D=params->amcoe->D;
   INT4 M=params->SFTno;
 
-  INITSTATUS( status, "LALDemod", LALDEMODC );
+  INITSTATUS(status);
 
   /* catch some obvious programming errors */
   ASSERT ( (Fstat != NULL)&&(Fstat->F != NULL), status, LALDEMODH_ENULL, LALDEMODH_MSGENULL );

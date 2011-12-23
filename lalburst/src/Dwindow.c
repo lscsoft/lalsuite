@@ -59,7 +59,7 @@ void LALDwindow (LALStatus *stat, REAL4Vector* window, REAL4Vector* dwindow)
   INT4      column, hwl;
   REAL4     step, ramp, dwin1, dwin2;
 
-  INITSTATUS (stat, "LALDwindow", DWINDOWC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   /* Make sure the arguments are not NULL: */

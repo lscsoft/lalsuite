@@ -1167,7 +1167,7 @@ static void add_colored_noise(LALStatus *status,
   REAL8             deltaF         = 1.0 / (deltaT * (REAL8) length);
   REAL8             tObs           = length * deltaT;
 
-  INITSTATUS( status, "add_colored_noise", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* Generate white Gaussian noise with unit variance */

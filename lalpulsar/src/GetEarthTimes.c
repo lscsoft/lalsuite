@@ -88,7 +88,7 @@ LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
   LIGOTimeGPS epoch;   /* local copy of times->epoch */
   REAL8 t;             /* time as a floating-point number (s) */
 
-  INITSTATUS( stat, "GetEarthTimes", GETEARTHTIMESC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure the parameters exist. */

@@ -65,7 +65,7 @@ LALFindChirpStoreEvent (
   INT4                       timeIndex;
   REAL4                      deltaT;
 
-  INITSTATUS( status, "LALFindChirpStoreEvent", FINDCHIRPSTOREEVENTC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

@@ -87,7 +87,7 @@ LALProjectMetric( LALStatus *stat, REAL8Vector *metric, BOOLEAN errors )
   UINT4 i, j;  /* Indecies. */
   REAL8 *data; /* The metric data array. */
 
-  INITSTATUS(stat,"ProjectMetric",PROJECTMETRICC);
+  INITSTATUS(stat);
 
   /* Check that data exist. */
   ASSERT(metric,stat,STACKMETRICH_ENUL,STACKMETRICH_MSGENUL);

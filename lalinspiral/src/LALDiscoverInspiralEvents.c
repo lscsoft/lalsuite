@@ -45,7 +45,7 @@ void  LALDiscoverInspiralEvents (
     InspiralWaveOverlapIn              overlapin;
     InspiralWaveOverlapOut             overlapout;
 
-    INITSTATUS (status, "LALDiscoverInspiralEvents", LALDISCOVERINSPIRALEVENTSC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     ASSERT (findeventsin->psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

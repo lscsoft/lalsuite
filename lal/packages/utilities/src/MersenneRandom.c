@@ -151,7 +151,7 @@ void LALCreateMTRandomParams
 )
 {	/* </lalVerbatim> */
 
-	INITSTATUS( status, "LALCreateMTRandomParams" , MERSENNERANDOMC );
+	INITSTATUS(status);
 
 	ASSERT ( seed != 0, status,  RANDOMH_ESEED, RANDOMH_MSGESEED);
 
@@ -190,7 +190,7 @@ void LALDestroyMTRandomParams
 )
 {	/* </lalVerbatim> */
 
-	INITSTATUS( status, "LALDestroyMTRandomParams" , MERSENNERANDOMC );
+	INITSTATUS(status);
 
 	/*  Check input for existence.  */
 	/*  params must come in allocated  */
@@ -217,7 +217,7 @@ void LALMersenneRandom
 )
 {	/* </lalVerbatim> */
 
-	INITSTATUS( status, "LALMersenneRandom" , MERSENNERANDOMC );
+	INITSTATUS(status);
 
 	/*  Check input for existence.  */
 	/*  Output should come in Allocated  */
@@ -250,7 +250,7 @@ void LALMersenneRandomVector
 	/*  Variable Declaration  */
 	UINT8	iterator;
 
-	INITSTATUS( status, "LALMersenneRandom" , MERSENNERANDOMC );
+	INITSTATUS(status);
 
 	/*  Variable Initialization  */
 	iterator = 0;

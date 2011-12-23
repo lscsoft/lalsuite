@@ -294,8 +294,7 @@ LALStochasticCrossCorrelationStatisticCal(
   COMPLEX8 *cStopPtr;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticCrossCorrelationStatisticCal", \
-    STOCHASTICCROSSCORRELATIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */
@@ -558,8 +557,7 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
   COMPLEX8 *cStopPtr;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticHeterodynedCrossCorrelationStatisticCal", \
-      STOCHASTICCROSSCORRELATIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */
@@ -816,8 +814,7 @@ LALStochasticCrossCorrelationSpectrumCal(
   INT4 i;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticCrossCorrelationSpectrumCal", \
-      STOCHASTICCROSSCORRELATIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */
@@ -1225,8 +1222,7 @@ LALStochasticCrossCorrelationStatistic(
   COMPLEX8 *cStopPtr;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticCrossCorrelationStatistic", \
-      STOCHASTICCROSSCORRELATIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */
@@ -1421,8 +1417,7 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
   COMPLEX8 *cStopPtr;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticHeterodynedCrossCorrelationStatistic", \
-      STOCHASTICCROSSCORRELATIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */
@@ -1609,8 +1604,7 @@ LALStochasticCrossCorrelationSpectrum(
   UINT4 streamLength;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticCrossCorrelationSpectrum", \
-      STOCHASTICCROSSCORRELATIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */
@@ -1893,8 +1887,7 @@ LALStochasticCrossCorrelationStatisticStrain(
   COMPLEX8 *cStopPtr;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticCrossCorrelationStatisticStrain", \
-      STOCHASTICCROSSCORRELATIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */
@@ -2089,8 +2082,7 @@ LALStochasticHeterodynedCrossCorrelationStatisticStrain(
   COMPLEX8 *cStopPtr;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticHeterodynedCrossCorrelationStatisticStrain", \
-      STOCHASTICCROSSCORRELATIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */
@@ -2277,8 +2269,7 @@ LALStochasticCrossCorrelationSpectrumStrain(
   UINT4 streamLength;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticCrossCorrelationSpectrumStrain", \
-      STOCHASTICCROSSCORRELATIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */

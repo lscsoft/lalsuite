@@ -34,7 +34,7 @@ void LALTruncateInvSpectrum(
     REAL4Vector       *hvec = NULL;
     REAL4             *w, norm;
 
-    INITSTATUS( status, "LALTruncateInvSpectrum", LALTRUNCATEINVSPECTRUMC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR( status );
 
     ASSERT (inputVec,         status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

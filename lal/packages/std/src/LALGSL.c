@@ -88,7 +88,7 @@ LALGSLErrorHandler(
                   __FILE__, __LINE__, LALGSLC );
   }
   lalGSLGlobalStatusPtr->statusPtr = NULL;
-  INITSTATUS( lalGSLGlobalStatusPtr, "LALGSLErrorHandler", LALGSLC );
+  INITSTATUS(lalGSLGlobalStatusPtr);
   lalGSLGlobalStatusPtr->statusDescription = gsl_strerror( my_gsl_error );
   lalGSLGlobalStatusPtr->statusCode        = my_gsl_error;
   lalGSLGlobalStatusPtr->file              = file;

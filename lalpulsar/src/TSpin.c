@@ -100,7 +100,7 @@ LALTSpin( LALStatus             *stat,
   REAL8 ts;    /* Another time variable storing ts(t). */
   REAL8 *data; /* Pointer to variables->data. */
 
-  INITSTATUS(stat,"TSpin",TSPINC);
+  INITSTATUS(stat);
 
   /* This function may be called a lot.  Do error checking only in
      debug mode. */
@@ -147,7 +147,7 @@ LALDTSpin( LALStatus             *stat,
   REAL8 *data1; /* Pointer to variables->data. */
   REAL8 *data2; /* Pointer to dtSpin->data. */
 
-  INITSTATUS(stat,"DTSpin",TSPINC);
+  INITSTATUS(stat);
 
   /* This function may be called a lot.  Do error checking only in
      debug mode. */

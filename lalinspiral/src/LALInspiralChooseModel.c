@@ -487,7 +487,7 @@ LALInspiralChooseModel(
 {
    XLALPrintDeprecationWarning("LALInspiralChooseModel", "XLALInspiralChooseModel");
 
-   INITSTATUS (status, "LALInspiralChooseModel", LALINSPIRALCHOOSEMODELC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    if (XLALInspiralChooseModel(f, ak, params))

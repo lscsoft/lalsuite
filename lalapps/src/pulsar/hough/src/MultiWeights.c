@@ -479,7 +479,7 @@ void PrintLogFile (LALStatus       *status,
   CHAR *logstr=NULL; 
   UINT4 k;
 
-  INITSTATUS (status, "PrintLogFile", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* open log file for writing */

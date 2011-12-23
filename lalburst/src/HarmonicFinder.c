@@ -166,7 +166,7 @@ void LALHarmonicFinder (LALStatus  *status,
 
 /* --------------------------------------------- */
 
-  INITSTATUS (status, "LALHarmonicFinder", HARMONICFINDERC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */

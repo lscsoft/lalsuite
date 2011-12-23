@@ -89,7 +89,7 @@ void
 LALDestroyREAL4IIRFilter( LALStatus      *stat,
 			  REAL4IIRFilter **input )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALDestroyREAL4IIRFilter",DESTROYIIRFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
      (The routine LALSDestroyVector will check that the data fields are
@@ -111,7 +111,7 @@ void
 LALDestroyREAL8IIRFilter( LALStatus      *stat,
 			  REAL8IIRFilter **input )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALDestroyREAL8IIRFilter",DESTROYIIRFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
      (The routine LALDDestroyVector will check that the data fields are

@@ -384,7 +384,7 @@ LALLiteralToString( LALStatus  *stat,
   CHAR c;       /* Current character being considered. */
   UINT4 n = 0;  /* Counter of number of characters written. */
 
-  INITSTATUS( stat, "LALLiteralToString", STREAMSERIESINPUTC );
+  INITSTATUS(stat);
 
   /* Find open quote. */
   while ( ( c = *literal ) != '"' && c != '\n' && c != '\0' )

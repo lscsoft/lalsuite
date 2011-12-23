@@ -80,7 +80,7 @@ void ReadTimeStamps(LALStatus *status,
   INT4 Ngap;
  
 
-  INITSTATUS( status, "ReadTimeStamps", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   ASSERT ( *TParams, status, SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -171,7 +171,7 @@ void ComputeSideBandWindow(LALStatus *status,
   COMPLEX16 ae,as,be,bs;
   REAL8 ddf = (*TParams)->dfwindow/1000;
   
-  INITSTATUS( status, "ComputeSideBandWindow", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   ASSERT (*TParams, status, SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -330,7 +330,7 @@ void ComputeSideBandLikelihood(LALStatus *status,
   BinarySourceParams BSParams;          /* structure for binary source parameters */
   INT4 i;
  
-  INITSTATUS( status, "ComputeSideBandLikelihood", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (lambda,status,SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -399,7 +399,7 @@ void InitEphemeris (LALStatus * status,   	/**< pointer to LALStatus structure *
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
 
-  INITSTATUS( status, "InitEphemeris", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( edat, status, SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -452,7 +452,7 @@ void ReadSideBandPriors(LALStatus *status,
   CHAR y[32];
   CHAR line[352];
 
-  INITSTATUS( status, "ReadSideBandPriors", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (ranges,status,SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -613,7 +613,7 @@ void SelectSideBandFrequencies (LALStatus * status,
   INT4 mmin,mmax;
   REAL8 f;
 
-  INITSTATUS( status, "SelectSideBandFrequencies", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   ASSERT ( fulldata, status, SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -727,7 +727,7 @@ void ReadSideBandData (LALStatus * status,
   REAL8 norm;
   REAL8 sum = 0.0;
 
-  INITSTATUS( status, "ReadSideBandData", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* open and read file */
@@ -837,7 +837,7 @@ void EstimateSideBandNoise (LALStatus * status,
   INT4 k = 0;
   BOOLEAN flag;
 
-  INITSTATUS( status, "EstimateSideBandNoise", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( *fulldata, status, SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -944,7 +944,7 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   REAL8 cosy,siny;
   REAL8 tdiff;
 
-  INITSTATUS( status, "SideBandTemplate", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input results vectors */ 
@@ -1258,7 +1258,7 @@ ComputeABCcoefficients (LALStatus *status,   			/**< pointer to LALStatus struct
   REAL8 alpha;
   REAL8 delta;
 
-  INITSTATUS( status, "ComputeABCcoefficients", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input results vectors */

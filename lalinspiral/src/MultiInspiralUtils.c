@@ -65,7 +65,7 @@ LALFreeMultiInspiral (
     )
 
 {
-  INITSTATUS( status, "LALFreeMultiInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   XLALFreeMultiInspiral( eventHead );
   RETURN( status );
 }

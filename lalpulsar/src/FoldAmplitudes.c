@@ -135,7 +135,7 @@ LALFoldAmplitudes( LALStatus                      *status,
    	INT4			i;               /* generic integer index */
 /*   	INT4			n;     */          /* generic integer */
 
-  INITSTATUS( status, "LALFoldAmplitudes", FOLDAMPLITUDESC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /******* CHECK VALIDITY OF ARGUMENTS; for example ************/

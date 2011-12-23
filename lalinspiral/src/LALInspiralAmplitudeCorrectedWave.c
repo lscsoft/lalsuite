@@ -113,7 +113,7 @@ LALInspiralAmplitudeCorrectedWave(
 
    INT4 count;
 
-   INITSTATUS(status, "LALInspiralAmplitudeCorrectedWave",LALINSPIRALAMPLITUDECORRECTEDWAVEC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -141,7 +141,7 @@ LALInspiralAmplitudeCorrectedWaveTemplates(
 
    INT4 count;
 
-   INITSTATUS(status, "LALInspiralAmplitudeCorrectedWaveTemplates",LALINSPIRALAMPLITUDECORRECTEDWAVETEMPLATESC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -188,8 +188,7 @@ LALInspiralAmplitudeCorrectedWaveForInjection(
 
   InspiralInit paramsInit;
 
-  INITSTATUS(status,"LALInspiralAmplitudeCorrectedWaveForInjection",
-  LALINSPIRALAMPLITUDECORRECTEDWAVETEMPLATESC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* Make sure parameter and waveform structures exist. */
@@ -372,7 +371,7 @@ LALInspiralAmplitudeCorrectedWaveEngine(
    InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
    REAL4 longitude,latitude,polarization,gmst;
 */
-   INITSTATUS(status, "LALInspiralAmplitudeCorrectedWaveEngine", LALINSPIRALAMPLITUDECORRECTEDWAVEENGINEC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

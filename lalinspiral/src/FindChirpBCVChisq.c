@@ -96,7 +96,7 @@ LALFindChirpBCVChisqVeto (
   COMPLEX8             *qtildeBin;
   COMPLEX8             *qtildeBinBCV;
 
-  INITSTATUS( status, "LALFindChirpBCVChisqVeto", FINDCHIRPBCVCHISQC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

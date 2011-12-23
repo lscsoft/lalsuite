@@ -57,7 +57,7 @@ void LALHOUGHInitializeHD (LALStatus      *status,
   HoughDT  *pointer;
 
    /* --------------------------------------------- */
-  INITSTATUS (status, "LALHOUGHInitializeHD", HOUGHMAPC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -100,7 +100,7 @@ void LALHOUGHInitializeHT (LALStatus      *status,
   HoughTT  *pointer;
 
    /* --------------------------------------------- */
-  INITSTATUS (status, "LALHOUGHInitializeHT", HOUGHMAPC);
+  INITSTATUS(status);
 
   /*   Make sure the arguments are not NULL: */
   ASSERT (ht, status, HOUGHMAPH_ENULL, HOUGHMAPH_MSGENULL);
@@ -151,7 +151,7 @@ void LALHOUGHAddPHMD2HD (LALStatus      *status, 	/**< the status pointer */
   HOUGHBorder  *borderP;
 
    /* --------------------------------------------- */
-  INITSTATUS (status, "LALHOUGHAddPHMD2HD", HOUGHMAPC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -259,7 +259,7 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, 	/**< the status pointer */
   INT4       sidx; /* pre-calcuted array index for sanity check */
 
    /* --------------------------------------------- */
-  INITSTATUS (status, "LALHOUGHAddPHMD2HD_W", HOUGHMAPC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -376,7 +376,7 @@ void LALHOUGHIntegrHD2HT (LALStatus       *status,
   HoughTT accumulator;
 
    /* --------------------------------------------- */
-  INITSTATUS (status, "LALHOUGHIntegrHD2HT", HOUGHMAPC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -430,7 +430,7 @@ void LALStereo2SkyLocation (LALStatus  *status,
   REAL8UnitPolarCoor    sourceRotated;
   REAL8UnitPolarCoor    skyPatchCenter;
   /* --------------------------------------------- */
-  INITSTATUS (status, "Stereo2SkyLocation", HOUGHMAPH);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (sourceLocation, status, HOUGHMAPH_ENULL,HOUGHMAPH_MSGENULL);

@@ -277,7 +277,7 @@ static void TimeOfEmission(LALStatus *status,
 			   void *tr0
 			   )
 {
-  INITSTATUS(status, "TimeOfEmission", "Function TimeOfEmission()");
+  INITSTATUS(status);
   ASSERT(tr0,status, 1, "Null pointer");
 
   /* interpolate to find the x,y,z coordinates of the heliocenter in the SSB frame (in seconds) */

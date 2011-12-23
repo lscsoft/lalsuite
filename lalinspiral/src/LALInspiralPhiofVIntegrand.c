@@ -58,7 +58,7 @@ LALInspiralPhiofVIntegrand (
 {
   XLALPrintDeprecationWarning("LALInspiralPhiofVIntegrand", "XLALInspiralPhiofVIntegrand");
 
-  INITSTATUS (status, "LALInspiralPhiofVIntegrand", LALINSPIRALPHIOFVINTEGRANDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (integrand, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

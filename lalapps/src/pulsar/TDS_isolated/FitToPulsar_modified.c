@@ -73,7 +73,7 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
   UINT4			iH0, iCosIota, iPhase, iPsi, arg;
   LALGPSandAcc		pGPSandAcc;
 	
-  INITSTATUS(status, "LALCoarseFitToPulsar", FITTOPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /******* CHECK VALIDITY OF ARGUMENTS  ************/	 
@@ -256,7 +256,7 @@ LALFitToPulsarStudentT	( 	LALStatus            *status,
 	UINT4 count=0;
 	REAL8 meanSegLength=0.0;
   
-  INITSTATUS(status, "LALFitToPulsarStudentT", FITTOPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /******* CHECK VALIDITY OF ARGUMENTS  ************/	 
@@ -459,7 +459,7 @@ LALPulsarMarginalize   ( 	LALStatus              *status,
    UINT4 iH0, iPsi, iPhase, iCosIota; 
    REAL8 area;
   
-  INITSTATUS(status, "LALPulsarMarginalize", FITTOPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* initialize outputs */

@@ -62,7 +62,7 @@ void LALInsidePolygon(  LALStatus          *status,
 {
 
 
-   INITSTATUS (status, "LALInsidePolygon", LALINSIDEPOLYGONC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
    ASSERT (n>=3,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
 

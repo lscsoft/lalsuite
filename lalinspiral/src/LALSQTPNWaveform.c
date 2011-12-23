@@ -317,7 +317,7 @@ int XLALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[],
 // LAL wrapper to XLAL Generator function
 void LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform, LALSQTPNWaveformParams *params) {
 	XLALPrintDeprecationWarning("LALSQTPNGenerator", "XLALSQTPNGenerator");
-	INITSTATUS(status, "LALSQTPNGenerator", LALSQTPNWAVEFORMC);
+	INITSTATUS(status);
 	ATTATCHSTATUSPTR(status);
 
 	if(XLALSQTPNGenerator(waveform, params))

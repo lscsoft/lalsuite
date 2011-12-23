@@ -64,7 +64,7 @@ LALInspiralPhasing2_0PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing2_0PN", "XLALInspiralPhasing2_0PN");
 
-  INITSTATUS (status, "LALInspiralPhasing2_0PN", LALINSPIRALPHASING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -111,7 +111,7 @@ LALInspiralPhasing2_2PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing2_2PN", "XLALInspiralPhasing2_2PN");
 
-  INITSTATUS (status, "LALInspiralPhasing2_2PN", LALINSPIRALPHASING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -160,7 +160,7 @@ LALInspiralPhasing2_3PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing2_3PN", "XLALInspiralPhasing2_3PN");
 
-  INITSTATUS (status, "LALInspiralPhasing2_3PN", LALINSPIRALPHASING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -211,7 +211,7 @@ LALInspiralPhasing2_4PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing2_4PN", "XLALInspiralPhasing2_4PN");
 
-  INITSTATUS (status, "LALInspiralPhasing2_4PN", LALINSPIRALPHASING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -263,7 +263,7 @@ LALInspiralPhasing2_5PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing2_5PN", "XLALInspiralPhasing2_5PN");
 
-  INITSTATUS (status, "LALInspiralPhasing2_5PN", LALINSPIRALPHASING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -316,7 +316,7 @@ LALInspiralPhasing2_6PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing2_6PN", "XLALInspiralPhasing2_6PN");
 
-  INITSTATUS (status, "LALInspiralPhasing2_6PN", LALINSPIRALPHASING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -371,7 +371,7 @@ LALInspiralPhasing2_7PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing2_7PN", "XLALInspiralPhasing2_7PN");
 
-  INITSTATUS (status, "LALInspiralPhasing2_7PN", LALINSPIRALPHASING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

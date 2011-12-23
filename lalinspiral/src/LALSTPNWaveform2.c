@@ -294,7 +294,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
   /* other computed values */
   REAL8 unitHz, dt, m, lengths, norm;
 
-  INITSTATUS(status, "LALSTPNWaveform", LALSTPNWAVEFORM2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
  	/* Make sure parameter and waveform structures exist. */

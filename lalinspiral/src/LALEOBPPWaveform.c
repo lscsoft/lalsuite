@@ -1122,7 +1122,7 @@ LALEOBPPWaveform (
    )
 {
 
-   INITSTATUS(status, "LALEOBPPWaveform", LALEOBPPWAVEFORMC);
+   INITSTATUS(status);
 
    XLALPrintDeprecationWarning( "LALEOBPPWaveform", "XLALEOBPPWaveform" );
 
@@ -1212,7 +1212,7 @@ LALEOBPPWaveformTemplates (
    )
 {
 
-   INITSTATUS(status, "LALEOBPPWaveform", LALEOBPPWAVEFORMC);
+   INITSTATUS(status);
 
    XLALPrintDeprecationWarning( "LALEOBPPWaveformTemplates", "XLALEOBPPWaveformTemplates" );
 
@@ -1316,7 +1316,7 @@ LALEOBPPWaveformForInjection (
 			    PPNParamStruc    *ppnParams
 			    )
 {
-  INITSTATUS(status, "LALEOBPPWaveformForInjection", LALEOBPPWAVEFORMC);
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning( "LALEOBPPWaveformForInjection", "XLALEOBPPWaveformForInjection" );
 

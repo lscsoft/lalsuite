@@ -87,7 +87,7 @@ LALFindChirpTDTemplate (
   REAL4Vector  *tmpxfac = NULL; /* Used for band-passing */
 
 
-  INITSTATUS( status, "LALFindChirpTDTemplate", FINDCHIRPTDTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -436,7 +436,7 @@ LALFindChirpTDNormalize(
   REAL4        *segNorm;
   REAL4         segNormSum;
 
-  INITSTATUS( status, "LALFindChirpTDNormalize", FINDCHIRPTDTEMPLATEC );
+  INITSTATUS(status);
 
   /* check the required input exists */
   ASSERT( fcTmplt, status,

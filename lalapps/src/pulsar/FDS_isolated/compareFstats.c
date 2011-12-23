@@ -150,7 +150,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   uvar_clusterFiles = TRUE;	/* default: compare output-files from "cluster" */
@@ -186,7 +186,7 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
   REAL8 eps8 = 100.0 * LAL_REAL8_EPS;	/* tolerances */
   REAL4 eps4 = 1000.0 * LAL_REAL4_EPS;
 
-  INITSTATUS (status, "compareClusterFiles", rcsid );
+  INITSTATUS(status);
 
   nlines1 = f1->lines->nTokens;
   nlines2 = f2->lines->nTokens;
@@ -277,7 +277,7 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
   REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
   FstatLine_t parsed1 = empty_FstatLine, parsed2 = empty_FstatLine;
 
-  INITSTATUS (status, "compareFstatFiles", rcsid );
+  INITSTATUS(status);
 
   nlines1 = f1->lines->nTokens;
   nlines2 = f2->lines->nTokens;

@@ -94,8 +94,7 @@ LALCoherentInspiralFilterInputInit (
   DetectorBeamArray               *detBeamArray = NULL;
   CoherentInspiralCVector         *cVecPtr = NULL;
 
-  INITSTATUS( status, "LALCoherentInspiralFilterInputInit",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*
@@ -253,8 +252,7 @@ LALCoherentInspiralFilterInputFinalize (
   CoherentInspiralFilterInput     *inputPtr;
   CoherentInspiralCVector         *cVecPtr;
 
-  INITSTATUS( status, "LALCoherentInspiralFilterInputFinalize",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -334,8 +332,7 @@ LALCoherentInspiralFilterParamsInit (
   CoherentInspiralFilterParams     *outputPtr;
   INT4                              networkLength = LAL_NUM_IFO;
 
-  INITSTATUS( status, "LALCoherentInspiralFilterParamsInit",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -890,8 +887,7 @@ LALCoherentInspiralFilterParamsFinalize (
 {
   CoherentInspiralFilterParams     *outputPtr;
 
-  INITSTATUS( status, "LALCoherentInspiralFilterParamsInit",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*
@@ -1059,8 +1055,7 @@ LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
   COMPLEX8               cMinus;
   COMPLEX8               cRatio;  /* cMinus/cPlus */
 
-  INITSTATUS( status, "LALCoherentInspiralEstimatePsiEpsilon",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* Must have 3 sites to estimate psi and epsilon */
@@ -1536,8 +1531,7 @@ LALCoherentInspiralEstimateDistance (
     REAL4                                 *distance
     )
 {
-  INITSTATUS( status, "LALCoherentInspiralEstimateDistance",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* This function computes the effective distance for the H1-H2 pair */
@@ -1672,8 +1666,7 @@ XLALCoherentInspiralFilterSegment (
   REAL4 eff_coh_snr = 0.0;
   REAL4 crossCorrCohSqEff = 0.0;
 
-  INITSTATUS( status, "LALCoherentInspiralFilterSegment",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*

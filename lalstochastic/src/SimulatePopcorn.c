@@ -67,7 +67,7 @@ static void Ezfunc (REAL4 *result, REAL4 z)
 static void drfunc (LALStatus *s, REAL4 *result, REAL4 z, void UNUSED *p)
 {
   REAL4 Ez;
-  INITSTATUS (s, "drfunc", SIMULATEPOPCORNC);
+  INITSTATUS(s);
   ATTATCHSTATUSPTR (s);
   Ezfunc(&Ez,z);
   *result=1./Ez;
@@ -80,7 +80,7 @@ static void rfunc (LALStatus *s, REAL4 *result, REAL4 z)
 {
   SIntegrateIn  zint;
   REAL4 r;
-  INITSTATUS (s, "rfunc", SIMULATEPOPCORNC);
+  INITSTATUS(s);
   ATTATCHSTATUSPTR (s);
 
   zint.function = drfunc;
@@ -98,7 +98,7 @@ static void rfunc (LALStatus *s, REAL4 *result, REAL4 z)
 static void dVfunc (LALStatus *s, REAL4 *result, REAL4 z)
 {
   REAL4 r,Ez;
-  INITSTATUS (s, "dVfunc", SIMULATEPOPCORNC);
+  INITSTATUS(s);
   ATTATCHSTATUSPTR (s);
   rfunc(s->statusPtr,&r,z);
   Ezfunc(&Ez,z);
@@ -124,7 +124,7 @@ static void Rcfunc (REAL4 *result, REAL4 z)
 static void  pzfunc (LALStatus *s, REAL4 *result, REAL4 z)
 {
   REAL4 dV=0, Rc;
-  INITSTATUS (s, "pzfunc", SIMULATEPOPCORNC);
+  INITSTATUS(s);
   ATTATCHSTATUSPTR (s);
   dVfunc(s->statusPtr,&dV,z);
   Rcfunc(&Rc,z);
@@ -138,7 +138,7 @@ static void  pzfunc (LALStatus *s, REAL4 *result, REAL4 z)
 static void  dLfunc (LALStatus *s, REAL4 *result, REAL4 z)
  {
   REAL4 r;
-  INITSTATUS (s, "dLfunc", SIMULATEPOPCORNC);
+  INITSTATUS(s);
   ATTATCHSTATUSPTR (s);
   rfunc(s->statusPtr,&r,z);
   *result=4285.*(0.7/ho)*(1.+z)*r;
@@ -273,7 +273,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   RealFFTPlan      *prev=NULL;
 
   /* initialize status pointer */
-  INITSTATUS (status, "LALSimPopcornTimeSeries",SIMULATEPOPCORNC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 

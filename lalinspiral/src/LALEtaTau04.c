@@ -68,7 +68,7 @@ LALEtaTau04(
 {
    XLALPrintDeprecationWarning("LALEtaTau04", "XLALEtaTau04");
 
-   INITSTATUS(status, "LALEtaTau04", LALETATAU04C);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
    ASSERT (x,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 

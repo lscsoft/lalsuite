@@ -64,7 +64,7 @@ LALInspiralWaveOverlap
    INT4 i, nBegin, nEnd;
    InspiralWaveNormaliseIn normin;
 
-   INITSTATUS (status, "LALInspiralWaveOverlap", LALINSPIRALWAVEOVERLAPC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (output->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

@@ -103,7 +103,7 @@ LALCreateTwoDMesh( LALStatus          *stat,
   TwoDMeshNode head;     /* dummy head node */
   TwoDMeshNode *headPtr; /* pointer to above */
 
-  INITSTATUS( stat, "LALCreateTwoDMesh", TWODMESHC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check that input parameters exist, but that the mesh handle
@@ -156,7 +156,7 @@ LALDestroyTwoDMesh( LALStatus    *stat,
 		    TwoDMeshNode **mesh,
 		    UINT4        *nFree )
 {
-  INITSTATUS( stat, "LALDestroyTwoDMesh", TWODMESHC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check that all parameters exist. */
@@ -194,7 +194,7 @@ LALRefineTwoDMesh( LALStatus    *stat,
   UINT4 lost = 0;     /* number of fine points not found */
   TwoDMeshNode *here; /* pointer to coarse mesh list */
 
-  INITSTATUS( stat, "LALDestroyTwoDMesh", TWODMESHC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   ASSERT( coarseMesh, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );

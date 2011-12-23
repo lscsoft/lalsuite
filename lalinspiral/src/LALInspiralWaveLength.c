@@ -79,7 +79,7 @@ LALInspiralWaveLength(
    expnCoeffs ak;
    expnFunc func;
 
-   INITSTATUS (status, "LALInspiralWaveLength", LALINSPIRALWAVELENGTHC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (params.nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);

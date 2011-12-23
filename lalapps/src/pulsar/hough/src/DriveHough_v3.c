@@ -1219,7 +1219,7 @@ void PrintHoughEvents (LALStatus       *status,
   REAL8    temp;
   REAL8    f0;
   /* --------------------------------------------- */
-  INITSTATUS (status, "PrintHoughEvents", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
  /* make sure arguments are not null */
@@ -1279,7 +1279,7 @@ void PrintLogFile (LALStatus       *status,
   FILE *fpLog=NULL;
   CHAR *logstr=NULL;
 
-  INITSTATUS (status, "PrintLogFile", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* open log file for writing */
@@ -1377,7 +1377,7 @@ void PrintnStarFile (LALStatus                   *status,
   HoughSignificantEvent *event;
   INT4 mkdir_result;
 
-  INITSTATUS (status, "PrintnStarFile", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(eventVec, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 

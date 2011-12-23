@@ -85,7 +85,7 @@ LALFindChirpTemplateInit (
   REAL4                        *xfac = NULL;
   const REAL4                   exponent = -1.0/3.0;
 
-  INITSTATUS( status, "LALFindChirpTemplateInit", FINDCHIRPTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -252,7 +252,7 @@ LALFindChirpTemplateFinalize (
 {
   FindChirpTmpltParams         *outputPtr;
 
-  INITSTATUS( status, "LALFindChirpTemplateFinalize", FINDCHIRPTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

@@ -81,8 +81,7 @@ LALInspiralMomentsIntegrand(
    REAL8                deltaF;
    UINT8                freqIndex;
 
-   INITSTATUS( status, "LALInspiralMomentsIntegrand",
-       LALINSPIRALMOMENTSINTEGRANDC );
+   INITSTATUS(status);
    ATTATCHSTATUSPTR( status );
 
    ASSERT( params, status,

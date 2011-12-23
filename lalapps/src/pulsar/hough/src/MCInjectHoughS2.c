@@ -930,7 +930,7 @@ void GenerateInjectParams(LALStatus   *status,
   UINT4    msp;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "GenerateInjectParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -1151,7 +1151,7 @@ void ComputeFoft(LALStatus   *status,
   REAL8Cart3Coor  sourceLocation;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ComputeFoft", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */

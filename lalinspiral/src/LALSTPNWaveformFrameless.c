@@ -308,7 +308,7 @@ void LALSTPNFramelessWaveform(LALStatus *status, REAL4Vector *signalvec,
 {
   XLALPrintDeprecationWarning("LALSTPNFramelessWaveform",
       "XLALSTPNFramelessWaveform");
-  INITSTATUS(status, "LALSTPNFramelessWaveform", LALSTPNWAVEFORMFRAMELESSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALSTPNFramelessWaveform(signalvec, params) )
@@ -351,8 +351,7 @@ void LALSTPNFramelessWaveformTemplates(LALStatus *status,
 {
   XLALPrintDeprecationWarning("LALSTPNFramelessWaveformTemplates",
       "XLALSTPNFramelessWaveformTemplates");
-  INITSTATUS(status, "LALSTPNFramelessWaveformTemplates", 
-      LALSTPNWAVEFORMFRAMELESSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALSTPNFramelessWaveformTemplates(signalvec1, signalvec2, params) )
@@ -399,8 +398,7 @@ void LALSTPNFramelessWaveformForInjection(LALStatus *status,
 {
   XLALPrintDeprecationWarning("LALSTPNFramelessWaveformForInjection",
       "XLALSTPNFramelessWaveformForInjection");
-  INITSTATUS(status, "LALSTPNFramelessWaveformForInjection", 
-      LALSTPNWAVEFORMFRAMELESSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALSTPNFramelessWaveformForInjection(waveform, params, ppnParams) )
@@ -530,8 +528,7 @@ void LALSTPNFramelessAdaptiveWaveformEngine( LALStatus *status,
   XLALPrintDeprecationWarning("LALSTPNFramelessAdaptiveWaveformEngine",
       "XLALSTPNFramelessAdaptiveWaveformEngine");
 
-  INITSTATUS(status, "LALSTPNFramelessWaveformForInjection", 
-      LALSTPNWAVEFORMFRAMELESSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALSTPNFramelessAdaptiveWaveformEngine(signalvec1, signalvec2, 

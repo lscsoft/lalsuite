@@ -593,7 +593,7 @@ void LALCreateREAL4IIRFilter( LALStatus         *stat,
 			      REAL4IIRFilter    **output,
 			      COMPLEX8ZPGFilter *input )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALCreateREAL4IIRFilter",CREATEIIRFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure all the input structures have been initialized. */
   ASSERT(input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
@@ -632,7 +632,7 @@ void LALCreateREAL8IIRFilter( LALStatus          *stat,
 			      REAL8IIRFilter     **output,
 			      COMPLEX16ZPGFilter *input )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALCreateREAL8IIRFilter",CREATEIIRFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure all the input structures have been initialized. */
   ASSERT(input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);

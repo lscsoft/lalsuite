@@ -248,7 +248,7 @@ LALOverlapReductionFunction(
   RAT4 power;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALOverlapReductionFunction", OVERLAPREDUCTIONFUNCTIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* check that pointer to parameters is not null */

@@ -113,7 +113,7 @@ void LALInspiralComputeParams(LALStatus            *status,
 {
 
 
-  INITSTATUS (status, "LALInspiralComputeParams", LALINSPIRALCOMPUTEPARAMSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   ASSERT (pars,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
 

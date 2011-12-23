@@ -337,7 +337,7 @@ void ReadTimeStampsFile (LALStatus          *status,
   UINT4 j;
   REAL8 temp1, temp2;
 
-  INITSTATUS (status, "ReadTimeStampsFile", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(ts, status, COMPUTEPSDC_ENULL,COMPUTEPSDC_MSGENULL); 

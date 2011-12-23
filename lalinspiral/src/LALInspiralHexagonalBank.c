@@ -71,8 +71,7 @@ LALInspiralCreatePNCoarseBankHexa(
   CellEvolution         cellEvolution;
   CellList 		*cellList = NULL;
 
-  INITSTATUS( status, "LALInspiralHexagonalBank",
-      LALINSPIRALHEXAGONALBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn.mMin > 0., status,
@@ -395,8 +394,7 @@ LALPopulateCell(
   INT4 it;
   INT4 add = 0;
 
-  INITSTATUS( status, "LALPopulateCell",
-	      LALINSPIRALHEXAGONALBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* aliases to get the characteristics of the parent template,
@@ -578,8 +576,7 @@ LALInitHexagonalBank(
   INT4          i;
   INT4 		valid;
 
-  INITSTATUS( status, "LALInitHexagonalBank",
-	      LALINSPIRALHEXAGONALBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* a new cell is created; by default it can create new children,
@@ -709,8 +706,7 @@ GetPositionRectangle(
   RectangleOut  RectOut;
   InspiralTemplate paramsIn;
 
-  INITSTATUS( status, "GetPosition",
-	      LALINSPIRALHEXAGONALBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* let us investigate this particular template : */
@@ -797,8 +793,7 @@ LALSPAValidPosition(LALStatus *status,
 {
   INT4 below = 0, in = 0, out = 0, above = 0;
 
-  INITSTATUS( status, "LALSPAFindPosition",
-	      LALINSPIRALHEXAGONALBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -946,8 +941,7 @@ LALFindPosition(LALStatus       *status,
   REAL4   	eta;
   REAL4 	totalMass, oneby4, tiny, piFl, A0, A3;
 
-  INITSTATUS( status, "LALFindPosition",
-	      LALINSPIRALHEXAGONALBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   oneby4 	= 1./4.;
@@ -1093,8 +1087,7 @@ void LALSPAF(
   REAL4 ct, b;
   PRIN *prin;
 
-  INITSTATUS( status, "LALSPAF",
-	      LALINSPIRALHEXAGONALBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   prin = (PRIN *)param;

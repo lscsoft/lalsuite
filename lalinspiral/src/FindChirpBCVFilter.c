@@ -107,7 +107,7 @@ LALFindChirpBCVFilterSegment (
   /* CHAR                  infomsg[256]; */
 
 
-  INITSTATUS( status, "LALFindChirpBCVFilter", FINDCHIRPBCVFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

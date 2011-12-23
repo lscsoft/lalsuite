@@ -82,7 +82,7 @@ LALFindChirpClusterEvents (
   REAL4			bvChisq = 0;
   UINT4                 ccDOF = 0;
   REAL4                 ccChisq = 0;
-  INITSTATUS( status, "LALFindChirpClusterEvents", FINDCHIRPCLUSTEREVENTSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

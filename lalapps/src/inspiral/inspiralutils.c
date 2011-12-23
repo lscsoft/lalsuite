@@ -228,7 +228,7 @@ void AddNumRelStrainModes(  LALStatus              *status,     /**< pointer to 
   REAL4TimeVectorSeries *tempStrain=NULL;
   /*   NRWaveMetaData thisMetaData; */
 
-  INITSTATUS (status, "LALAddStrainModes", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   modeLlo = thisinj->numrel_mode_min;
@@ -357,7 +357,7 @@ void AddNumRelStrainModesREAL8(LALStatus      *status,  /**< pointer to LALStatu
   REAL8TimeSeries  *modePlus=NULL;
   REAL8TimeSeries  *modeCross=NULL;
   REAL8 massMpc, timeStep;
-  INITSTATUS (status, "AddNumRelStrainModesREAL8", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   modeLlo = thisinj->numrel_mode_min;
@@ -474,7 +474,7 @@ void InjectNumRelWaveforms (LALStatus           *status,       /**< pointer to L
   SimInspiralTable *simTableOut=NULL;
   SimInspiralTable *thisInjOut=NULL;
 
-  INITSTATUS (status, "InjectNumRelWaveforms", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( chan, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
   ASSERT( ifo, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
@@ -578,7 +578,7 @@ void InjectNumRelWaveformsREAL8 (LALStatus      *status,       /**< pointer to L
   SimInspiralTable *simTableOut=NULL;
   SimInspiralTable *thisInjOut=NULL;
 
-  INITSTATUS (status, "InjectNumRelWaveformsREAL8", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( chan, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
   ASSERT( ifo, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );

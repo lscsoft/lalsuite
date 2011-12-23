@@ -20,7 +20,7 @@ void FUNC ( LALStatus *status, STYPE **aseq, CreateArraySequenceIn *in )
   /*
    * Initialize status
    */
-  INITSTATUS( status, STRING(FUNC), ARRAYSEQUENCEFACTORIESC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* Check input structure: report if NULL */

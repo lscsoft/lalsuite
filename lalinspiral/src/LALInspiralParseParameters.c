@@ -119,7 +119,7 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 {
   UINT4 i	= 1;
 
-  INITSTATUS( status, "LALInspiralParseParameters", LALINSPIRALPARSEPARAMETERSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   while(i <argc)

@@ -231,8 +231,7 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
   REAL4         value;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALSCoarseGrainFrequencySeries",
-              COARSEGRAINFREQUENCYSERIESC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */
@@ -470,8 +469,7 @@ LALDCoarseGrainFrequencySeries(LALStatus                      *status,
   REAL8         value;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALDCoarseGrainFrequencySeries",
-              COARSEGRAINFREQUENCYSERIESC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */
@@ -709,8 +707,7 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
   COMPLEX8      value;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALCCoarseGrainFrequencySeries",
-              COARSEGRAINFREQUENCYSERIESC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* printf("entering function\n"); */
@@ -971,8 +968,7 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
   COMPLEX16      value;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALZCoarseGrainFrequencySeries",
-              COARSEGRAINFREQUENCYSERIESC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* printf("entering function\n"); */

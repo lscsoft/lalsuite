@@ -35,7 +35,7 @@ void GetMaximumTemplateSize(LALStatus *status, RandomInspiralSignalIn  randIn,
 		      UINT4 *checkLength)
 {
 
-   INITSTATUS(status, "BEGetMaximumSize", BANKEFFICIENCYNEWC);
+   INITSTATUS(status);
    ATTACHSTATUSPTR(status);
 
    InspiralTemplate dummy;

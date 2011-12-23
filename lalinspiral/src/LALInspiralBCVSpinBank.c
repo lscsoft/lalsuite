@@ -78,7 +78,7 @@ LALInspiralBCVSpinBank(
   static REAL4VectorSequence *totList=NULL;
   SnglInspiralTable *bank=NULL, *tmpBank=NULL;
 
-  INITSTATUS(status, "LALInspiralBCVSpinBank", LALINSPIRALBCVSPINBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn != NULL, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );

@@ -122,7 +122,7 @@ LALReadNoiseSpectrum(LALStatus *stat, REAL4FrequencySeries *spectrum, CHAR *fnam
     DInterpolateOut  intOutput;
     DInterpolatePar  intParams;
 
-    INITSTATUS(stat,"LALReadNoiseSpectrum",LALREADNOISESPECTRUMC);
+    INITSTATUS(stat);
     ATTATCHSTATUSPTR(stat);
 
     /* this is the file containing the spectrum data */

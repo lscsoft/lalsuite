@@ -76,7 +76,7 @@ LALCreateForwardRealFFTPlan(
   dummy_have_qthread = 0;
 #endif
 
-  INITSTATUS( status, "LALCreateForwardRealFFTPlan", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCreateForwardRealFFTPlan", "XLALCreateForwardRealFFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -138,7 +138,7 @@ LALCreateReverseRealFFTPlan(
   dummy_have_qthread = 0;
 #endif
 
-  INITSTATUS( status, "LALCreateReverseRealFFTPlan", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCreateReverseRealFFTPlan", "XLALCreateReverseRealFFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -198,7 +198,7 @@ LALDestroyRealFFTPlan(
   dummy_have_qthread = 0;
 #endif
 
-  INITSTATUS( status, "LALDestroyRealFFTPlan", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALDestroyRealFFTPlan", "XLALDestroyRealFFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -233,7 +233,7 @@ LALForwardRealFFT(
   dummy_have_qthread = 0;
 #endif
 
-  INITSTATUS( status, "LALForwardRealFFT", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALForwardRealFFT", "XLALForwardRealFFT");
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -294,7 +294,7 @@ LALReverseRealFFT(
   dummy_have_qthread = 0;
 #endif
 
-  INITSTATUS( status, "LALReverseRealFFT", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALReverseRealFFT", "XLALReverseRealFFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -358,7 +358,7 @@ LALRealPowerSpectrum (
   dummy_have_qthread = 0;
 #endif
 
-  INITSTATUS( status, "LALRealPowerSpectrum", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALRealPowerSpectrum", "XLALREAL4PowerSpectrum");
 
   ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -414,7 +414,7 @@ LALREAL4VectorFFT(
   dummy_have_qthread = 0;
 #endif
 
-  INITSTATUS( status, "LALREAL4VectorFFT", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALREAL4VectorFFT", "XLALREAL4VectorFFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );

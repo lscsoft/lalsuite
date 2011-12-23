@@ -146,8 +146,7 @@ LALFindChirpFilterOutputVeto(
 
   event = *eventList;
 
-  INITSTATUS( status, "LALFindChirpFilterFilterOutputVeto",
-      FINDCHIRPFILTEROUTPUTVETOC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

@@ -88,7 +88,7 @@ LALFindChirpComputeChisqBins(
   REAL4         nextBin;
   REAL4         partSum;
 
-  INITSTATUS( status, "LALFindChirpComputeChisqBins", FINDCHIRPCHISQC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -188,7 +188,7 @@ LALFindChirpChisqVeto (
 
 {
 
-  INITSTATUS( status, "LALFindChirpChisqVeto", FINDCHIRPCHISQC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

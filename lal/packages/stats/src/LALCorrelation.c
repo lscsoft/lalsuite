@@ -83,7 +83,7 @@ LALCorrelation( LALStatus                      *status,
   REAL4 *data1, *data2;
   OutputCorrelation *output;
 
-  INITSTATUS( status, "LALCorrelation", LALCORRELATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* ****** CHECK VALIDITY OF ARGUMENTS; for example ************/

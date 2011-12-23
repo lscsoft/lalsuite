@@ -27,7 +27,7 @@ void F1 (
   UINT4 iter;
   UINT4 rslt_length;
 
-  INITSTATUS( status, STRING(F1) , VECTORINDEXRANGEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*
@@ -76,7 +76,7 @@ void F2 ( LALStatus  *status,
   UINT4Vector *head_index_range = NULL;
   UINT4Vector *tail_index_range = NULL;
 
-  INITSTATUS( status, STRING(F2) , VECTORINDEXRANGEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

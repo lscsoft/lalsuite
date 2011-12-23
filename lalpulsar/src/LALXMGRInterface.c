@@ -97,7 +97,7 @@ LALXMGROpenFile (
     "@    string just 0\n"
     "@    string char size 0.750000\n";
 
-  INITSTATUS( status, "LALXMGROpenFile", LALXMGRINTERFACEC );
+  INITSTATUS(status);
 
   ASSERT( fp, status,
       LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
@@ -130,7 +130,7 @@ LALXMGRCloseFile (
     FILE               *fp
     )
 {
-  INITSTATUS( status, "LALXMGRCloseFile", LALXMGRINTERFACEC );
+  INITSTATUS(status);
 
   ASSERT( fp, status, LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
 
@@ -152,7 +152,7 @@ LALXMGRCreateGraph (
   XMGRGraph            *graph;
   XMGRGraph            *newGraph;
 
-  INITSTATUS( status, "LALXMGRCreateGraph", LALXMGRINTERFACEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( graphVec, status,
@@ -292,7 +292,7 @@ LALXMGRGPSTimeToTitle(
   CHARVector           *stopString  = NULL;
   struct tm             thisDate;
 
-  INITSTATUS( status, "LALXMGRGPSTimeToTitle", LALXMGRINTERFACEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( title, status,
@@ -338,7 +338,7 @@ void LALXMGRPlotMesh( LALStatus          *status,
   TwoDMeshNode *node;
   REAL4 xlast = 0, ylast = 0;
 
-  INITSTATUS( status, "LALXMGRPlotMesh", LALXMGRINTERFACEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( fp, status, LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );

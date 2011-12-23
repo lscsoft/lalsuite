@@ -89,7 +89,7 @@ void LALHOUGHParamPLUT (LALStatus    *status,
   REAL8   timeDiffProd;
   /* --------------------------------------------- */
 
-  INITSTATUS (status, "LALHOUGHParamPLUT", PARAMPLUTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */

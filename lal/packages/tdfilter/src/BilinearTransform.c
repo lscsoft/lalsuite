@@ -653,7 +653,7 @@ void
 LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
 			  COMPLEX8ZPGFilter *filter )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALWToZCOMPLEX8ZPGFilter",BILINEARTRANSFORMC);
+  INITSTATUS(stat);
 
   if(XLALWToZCOMPLEX8ZPGFilter(filter)<0)
   {
@@ -678,7 +678,7 @@ void
 LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
 			   COMPLEX16ZPGFilter *filter )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALWToZCOMPLEX16ZPGFilter",BILINEARTRANSFORMC);
+  INITSTATUS(stat);
 
   if(XLALWToZCOMPLEX16ZPGFilter(filter)<0)
   {

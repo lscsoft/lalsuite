@@ -365,7 +365,7 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
   CHAR *version_string;
   INT4 i;
 
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* initialise user variables */

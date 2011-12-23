@@ -56,7 +56,7 @@ void LALDestroyTimeFreqRep (LALStatus *status, TimeFreqRep **tfr)
    * Initialize status
    */
 
-  INITSTATUS (status, "LALDestroyTimeFreqRep", DESTROYTIMEFREQREPC);
+  INITSTATUS(status);
 
   /* Check tfr: report if NULL */
   ASSERT (tfr != NULL, status, DESTROYTFR_ENULL, DESTROYTFR_MSGENULL);

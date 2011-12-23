@@ -520,7 +520,7 @@ int main(int argc,char *argv[])
 void
 initUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* set a few defaults */
@@ -581,7 +581,7 @@ void
 checkUserInputConsistency (LALStatus *status)
 {
 
-  INITSTATUS (status, "checkUserInputConsistency", rcsid);  
+  INITSTATUS(status);  
   /* don't allow unspecified output file */
   if (uvar_output == NULL) {
     XLALPrintError ("\nOutput file must be specified (option 'output')\n\n");
@@ -616,7 +616,7 @@ InitialiseLambda(LALStatus *status,SideBandMCMCVector *lambda,SideBandMCMCRanges
   REAL8 temp;                          /* temporary time used for setting tp */
   int compareGPS;
 
-  INITSTATUS( status, "InitialiseLambda", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (lambda,status,SIDEBANDMCMCC_ENULL,SIDEBANDMCMCC_MSGENULL );
@@ -676,7 +676,7 @@ MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlamb
   int compare1,compare2,compare3;
   double delta1;
 
-  INITSTATUS( status, "MakeJump", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* ASSERT (newlambda,status,SIDEBANDMCMCC_ENULL,SIDEBANDMCMCC_MSGENULL ); */
@@ -920,7 +920,7 @@ TestJump(LALStatus *status,SideBandMCMCVector *lambda,SideBandMCMCVector *newlam
   REAL8 T = 1e6;                       /* starting temperature */
   REAL8 logrand;
 
-  INITSTATUS( status, "TestJumpFourier", rcsid ); 
+  INITSTATUS(status); 
   ATTATCHSTATUSPTR (status); 
   
   ASSERT (lambda,status,SIDEBANDMCMCC_ENULL,SIDEBANDMCMCC_MSGENULL );
@@ -995,7 +995,7 @@ PriorRanges(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCRanges range
 
   int compare1, compare2;
 
-  INITSTATUS( status, "PriorRanges", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   compare1 = XLALGPSCmp(&(lambda.tp),&(ranges.tpmin));

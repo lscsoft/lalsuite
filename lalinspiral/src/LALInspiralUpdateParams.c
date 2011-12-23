@@ -67,7 +67,7 @@ void LALInspiralUpdateParams(LALStatus          *status,
 {
    REAL8 dx0, dx1, myphi, theta, fac;
 
-   INITSTATUS (status, "LALInspiralUpdateParams", LALINSPIRALUPDATEPARAMSC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
    ASSERT (bankParams,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (metric.g00 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);

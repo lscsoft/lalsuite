@@ -19,7 +19,7 @@ FUNC ( LALStatus *stat, VTYPE **sequence, FILE *stream )
   TYPE *data;         /* pointer to vector data */
   size_t nTot = 0;    /* total number of values read */
 
-  INITSTATUS( stat, STRING(FUNC), STREAMSEQUENCEINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

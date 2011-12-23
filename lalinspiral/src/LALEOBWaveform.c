@@ -972,7 +972,7 @@ LALEOBWaveform (
    )
 {
 
-   INITSTATUS(status, "LALEOBWaveform", LALEOBWAVEFORMC);
+   INITSTATUS(status);
 
    XLALPrintDeprecationWarning( "LALEOBWaveform", "XLALEOBWaveform" );
 
@@ -1060,7 +1060,7 @@ LALEOBWaveformTemplates (
    )
 {
 
-   INITSTATUS(status, "LALEOBWaveformTemplates", LALEOBWAVEFORMTEMPLATESC);
+   INITSTATUS(status);
 
    XLALPrintDeprecationWarning( "LALEOBWaveformTemplates", "XLALEOBWaveformTemplates" );
 
@@ -1164,7 +1164,7 @@ LALEOBWaveformForInjection (
 			    )
 {
 
-  INITSTATUS(status, "LALEOBWaveformForInjection", LALEOBWAVEFORMTEMPLATESC);
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning( "LALEOBWaveformForInjection", "XLALEOBWaveformForInjection" );
 

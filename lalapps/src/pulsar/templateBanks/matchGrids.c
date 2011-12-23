@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
 void
 initUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR ( status );
 
   uvar_tolerance = 1e-5;

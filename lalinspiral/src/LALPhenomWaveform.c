@@ -1181,7 +1181,7 @@ void LALBBHPhenWaveFreqDom(
     LALStatus        *status,
     REAL4Vector      *signalvec,
     InspiralTemplate *params) {
-  INITSTATUS (status, "LALBBHPhenWaveFreqDom", LALPHENOMWAVEFORMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   XLALPrintDeprecationWarning(__func__, "XLALBBHPhenWaveFreqDom");
   switch (params->approximant) {
@@ -1203,7 +1203,7 @@ void LALBBHPhenWaveFreqDomTemplates(
     REAL4Vector      *signalvec1,
     REAL4Vector      *signalvec2,
     InspiralTemplate *params) {
-  INITSTATUS (status, "LALBBHPhenWaveFreqDomTemplates", LALPHENOMWAVEFORMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   XLALPrintDeprecationWarning(__func__, "XLALBBHPhenWaveFreqDomTemplates");
   switch (params->approximant) {
@@ -1224,7 +1224,7 @@ void LALBBHPhenWaveTimeDom(
     LALStatus        *status,
     REAL4Vector      *signalvec1,
     InspiralTemplate *insp_template) {
-  INITSTATUS(status, "LALBBHPhenWaveTimeDom", LALPHENOMWAVEFORMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   XLALPrintDeprecationWarning(__func__, "XLALBBHPhenWaveTimeDom");
   if (XLALBBHPhenWaveTimeDom(signalvec1, insp_template)) ABORTXLAL(status);
@@ -1238,7 +1238,7 @@ void LALBBHPhenWaveTimeDomTemplates(
     REAL4Vector      *signalvec1,
     REAL4Vector      *signalvec2,
     InspiralTemplate *insp_template) {
-  INITSTATUS(status, "LALBBHPhenWaveTimeDomTemplates", LALPHENOMWAVEFORMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   XLALPrintDeprecationWarning(__func__, "XLALBBHPhenWaveTimeDomTemplates");
   if (XLALBBHPhenWaveTimeDomTemplates(signalvec1, signalvec2, insp_template))
@@ -1258,7 +1258,7 @@ void LALBBHPhenTimeDomEngine(
     REAL8Vector      *phiVec,
     UINT4            *countback,
     InspiralTemplate *params) {
-  INITSTATUS(status, "LALBBHPhenTimeDomEngine", LALPHENOMWAVEFORMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   XLALPrintDeprecationWarning(__func__, "XLALBBHPhenTimeDomEngine");
   if (XLALBBHPhenTimeDomEngine(signalvec1, signalvec2, h, aVec,
@@ -1272,7 +1272,7 @@ void LALBBHPhenWaveTimeDomForInjection(
     CoherentGW       *waveform,
     InspiralTemplate *params,
     PPNParamStruc    *ppnParams) {
-  INITSTATUS(status, "LALBBHPhenWaveTimeDomForInjection", LALPHENOMWAVEFORMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   XLALPrintDeprecationWarning(__func__, "XLALBBHPhenWaveTimeDomForInjection");
   if (XLALBBHPhenWaveTimeDomForInjection(waveform, params, ppnParams))

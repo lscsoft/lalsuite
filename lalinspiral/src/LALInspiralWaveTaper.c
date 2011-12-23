@@ -69,7 +69,7 @@ void LALInspiralWaveTaper(
 
   InspiralApplyTaper taperType;
 
-  INITSTATUS(status, "LALInspiralWaveTaper",LALINSPIRALWAVETAPERC);
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning( "LALInspiralWaveTaper", "XLALInspiralWaveTaper" );
 

@@ -83,7 +83,7 @@ void LALComputeCalibrationFactors(
   REAL8 s;
   UINT4 i;
 
-  INITSTATUS( status, "LALComputeCalibrationFactors", UPDATEFACTORSC );
+  INITSTATUS(status);
 
   ASSERT( output, status, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
   ASSERT( params, status, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );

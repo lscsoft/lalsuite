@@ -193,7 +193,7 @@ LALFindChirpBCVSpinFilterSegment (
 
 
 
-  INITSTATUS( status, "LALFindChirpBCVSpinFilter", FINDCHIRPBCVSPINFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

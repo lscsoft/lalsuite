@@ -64,7 +64,7 @@ LALInspiralVelocity(
 {
   XLALPrintDeprecationWarning("LALInspiralVelocity", "XLALInspiralVelocity");
 
-  INITSTATUS (status, "LALInspiralVelocity", LALINSPIRALVELOCITYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (v, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

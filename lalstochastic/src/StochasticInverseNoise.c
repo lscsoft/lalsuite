@@ -125,7 +125,7 @@ LALStochasticInverseNoiseCal(
   COMPLEX8FrequencySeries *hcInvNoise;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticInverseNoiseCal", STOCHASTICINVERSENOISEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /*****************************************************************
@@ -325,7 +325,7 @@ LALStochasticInverseNoise(
   LALUnit wInvNoiseUnits;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticInverseNoise", STOCHASTICINVERSENOISEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /*****************************************************************

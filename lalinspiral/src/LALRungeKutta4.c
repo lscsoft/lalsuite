@@ -128,7 +128,7 @@ LALRungeKutta4(
    )
 {
 
-   INITSTATUS(status, "LALRungeKutta4", LALRUNGEKUTTA4C);
+   INITSTATUS(status);
 
    // FIXME: uncomment when transitioned
    //XLALPrintDeprecationWarning( "LALRungeKutta4", "XLALRungeKutta4" );

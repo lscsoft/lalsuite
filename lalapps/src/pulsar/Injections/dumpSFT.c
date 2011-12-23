@@ -170,7 +170,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *stat)
 {
-  INITSTATUS( stat, "initUserVars", rcsid );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   /* now register all our user-variable */

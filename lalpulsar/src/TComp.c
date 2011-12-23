@@ -143,7 +143,7 @@ LALTComp( LALStatus             *stat,
   REAL8 t1;   /* Value of t_1(t). */
   REAL8Vector variablesIn; /* Variables to be sent to t1,2(). */
 
-  INITSTATUS(stat,"TComp",TCOMPC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR(stat);
 
   /* This function may be called a lot.  Do error checking only in
@@ -217,7 +217,7 @@ LALDTComp( LALStatus             *stat,
   REAL8Vector variablesIn; /* Variables to be sent to dt1,2(). */
   REAL8Vector dtOut;       /* Derivatives returned by dt1,2(). */
 
-  INITSTATUS(stat,"DTComp",TCOMPC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR(stat);
 
   /* This function may be called a lot.  Do error checking only in

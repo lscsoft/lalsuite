@@ -168,7 +168,7 @@ LALCoherentMetric( LALStatus        *stat,
   CreateVectorSequenceIn in; /* Input structure. */
   PulsarTimesParamStruc *constants; /* Timing constants. */
 
-  INITSTATUS(stat,"LALCoherentMetric",COHERENTMETRICC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure parameter structures and their fields exist. */

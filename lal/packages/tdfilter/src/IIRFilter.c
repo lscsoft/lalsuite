@@ -85,7 +85,7 @@ LALIIRFilterREAL4( LALStatus      *stat,
   REAL4 *coef; /* Values of filter coefficients. */
   REAL4 *hist; /* Values of filter history. */
 
-  INITSTATUS(stat,"LALIIRFilterREAL4",IIRFILTERC);
+  INITSTATUS(stat);
 
   /* Check all the passed parameters for null pointers. */
   ASSERT(output,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
@@ -134,7 +134,7 @@ LALIIRFilterREAL8( LALStatus      *stat,
 		   REAL8          input,
 		   REAL8IIRFilter *filter )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALIIRFilterREAL8",IIRFILTERC);
+  INITSTATUS(stat);
 
   /* Check all the passed parameters for null pointers. */
   ASSERT(output,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);

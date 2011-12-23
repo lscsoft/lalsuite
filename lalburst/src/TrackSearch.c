@@ -119,7 +119,7 @@ LALSignalTrackSearch(LALStatus *status,
   /*INT4 tempmaskcount; remove later on temp */
 
   /* Initialize status structure   */
-  INITSTATUS(status,"LALSignalTrackSearch",TRACKSEARCHC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* Check the the arguments are not null pointers */
@@ -204,7 +204,7 @@ InitializeStorage( LALStatus * status,
   INT4 maskSize; /* size of the mask arrays (gaussMask.k[i]) */
 
   /* Initialize status structure   */
-  INITSTATUS(status,"InitializeStorage",TRACKSEARCHC);
+  INITSTATUS(status);
 
   /* check for null pointers */
   ASSERT (store !=NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);
@@ -293,7 +293,7 @@ DestroyStorage (LALStatus *status,
 
 
   /* Initialize status structure   */
-  INITSTATUS(status,"DestroyStorage",TRACKSEARCHC);
+  INITSTATUS(status);
 
   /* check for null pointers */
   ASSERT (store !=NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);
@@ -341,7 +341,7 @@ ComputeConvolutions (LALStatus *status,
   INT4 heightTemp, widthTemp;/* variables used for reflecting images at its edges*/
 
   /* Initialize status structure   */
-  INITSTATUS(status,"ComputeConvolutions",TRACKSEARCHC);
+  INITSTATUS(status);
 
   /* check for null pointers */
   ASSERT(store->k[0],status,TS_NULL_POINTER, TS_MSG_NULL_POINTER);
@@ -482,7 +482,7 @@ ComputeLinePoints (LALStatus *status,
   /*FILE* fp;*/ /* temp added by cwt */
 
   /* Initialize status structure   */
-  INITSTATUS(status,"ComputeLinePoints",TRACKSEARCHC);
+  INITSTATUS(status);
   /* initialize the number of possible line start points and line points */
   store->numLStartPoints=0;
   store->numLPoints=0;
@@ -612,7 +612,7 @@ ConnectLinePoints(LALStatus *status,
   REAL4 mySNR=0; /*current estimate of SNR for particular curve*/
 
   /* Initialize status structure   */
-  INITSTATUS(status,"ConnectLinePoints",TRACKSEARCHC);
+  INITSTATUS(status);
   /* check if the caller has passed a non NULL pointer for Curves */
   ASSERT(out->curves==NULL,status,TS_NON_NULL_POINTER,TS_MSGNON_NULL_POINTER);
   /* a pointer to the storage structure */
@@ -1206,7 +1206,7 @@ void LALTrackSearchInsertMarkers(
   INT4 j;
 
   /* Initialize status structure   */
-  INITSTATUS(status,"LALTrackSearchInsertMarkers",TRACKSEARCHC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   /* Still need to include error checking code */
   i=0;

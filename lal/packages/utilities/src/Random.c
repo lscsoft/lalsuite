@@ -290,7 +290,7 @@ LALCreateRandomParams (
     INT4           seed
     )
 { /* </lalVerbatim> */
-  INITSTATUS (status, "LALCreateRandomParams", RANDOMC);
+  INITSTATUS(status);
 
   ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
   ASSERT (!*params, status, RANDOMH_ENNUL, RANDOMH_MSGENNUL);
@@ -313,7 +313,7 @@ LALDestroyRandomParams (
     RandomParams **params
     )
 { /* </lalVerbatim> */
-  INITSTATUS (status, "LALDestroyRandomParams", RANDOMC);
+  INITSTATUS(status);
 
   ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
   ASSERT (*params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
@@ -333,7 +333,7 @@ LALUniformDeviate (
     RandomParams *params
     )
 { /* </lalVerbatim> */
-  INITSTATUS (status, "LALUniformDeviate", RANDOMC);
+  INITSTATUS(status);
 
   ASSERT (deviate, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
   ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
@@ -357,7 +357,7 @@ LALNormalDeviates (
     RandomParams *params
     )
 { /* </lalVerbatim> */
-  INITSTATUS (status, "LALNormalDeviates", RANDOMC);
+  INITSTATUS(status);
 
   ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
   ASSERT (deviates, status, RANDOMH_ENULL, RANDOMH_MSGENULL);

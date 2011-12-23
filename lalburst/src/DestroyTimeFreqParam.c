@@ -53,7 +53,7 @@
 void LALDestroyTimeFreqParam (LALStatus *status, TimeFreqParam **param)
 {
   /*  Initialize status */
-  INITSTATUS (status, "LALDestroyTimeFreqParam", DESTROYTIMEFREQPARAMC);
+  INITSTATUS(status);
 
   /* Check param: report if NULL */
   ASSERT (param != NULL, status, DESTROYTFP_ENULL, DESTROYTFP_MSGENULL);

@@ -721,7 +721,7 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
 
   LALTimeIntervalAndNSample time_info;
 
-  INITSTATUS (status, "GenerateResponseFuncUsingLAL", LALINDEPENDENTTESTDETRESPONSEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if (lalDebugLevel > 1)  {

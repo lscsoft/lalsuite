@@ -119,7 +119,7 @@ LALStochasticOmegaGW(
 
   UINT4 length;
 
-  INITSTATUS(status, "LALStochasticOmegaGW", STOCHASTICOMEGAGWC);
+  INITSTATUS(status);
 
   /* ERROR CHECKING -------------------------------------------------- */
 

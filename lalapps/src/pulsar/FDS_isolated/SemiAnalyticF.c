@@ -172,7 +172,7 @@ ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
   REAL8 aPlus, aCross;
   REAL8 twopsi, twophi;
 
-  INITSTATUS (status, "ComputeF", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR ( status);
   
   A = amc.A;
@@ -215,7 +215,7 @@ void
 InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
 {
 
-  INITSTATUS( status, "InitUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* Initialize default values */
@@ -330,7 +330,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   LALDetector *Detector;              /* Our detector*/
   INT4 k;
 
-  INITSTATUS (status, "Initialize", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if ( LALUserVarWasSet ( &(CLA->nTsft) ) )
@@ -490,7 +490,7 @@ CheckUserInput (LALStatus *status,  struct CommandLineArgsTag *CLA )
   BOOLEAN have_duration  = LALUserVarWasSet (&(CLA->duration));
   BOOLEAN have_nTsft     = LALUserVarWasSet (&(CLA->nTsft));
   
-  INITSTATUS (status, "CheckUserInput", rcsid);
+  INITSTATUS(status);
   
   if( have_timestamps && (have_gpsStart||have_duration) )
     {

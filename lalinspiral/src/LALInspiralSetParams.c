@@ -66,7 +66,7 @@ void LALInspiralSetParams(LALStatus            *status,
                           InspiralCoarseBankIn coarseIn)
 {
 
-   INITSTATUS (status, "LALInspiralSetParams", LALINSPIRALSETPARAMSC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
    ASSERT (tempPars,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT ((INT4)coarseIn.space >= 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);

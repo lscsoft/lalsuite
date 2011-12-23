@@ -137,7 +137,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
 
   toplist_t *houghToplist;
 
-  INITSTATUS( status, "LocalComputeFstatHoughMap", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input is not null */
@@ -568,7 +568,7 @@ LocalHOUGHConstructHMT_W (LALStatus                  *status,
   HOUGHMapDeriv hd; /* the Hough map derivative */
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALHOUGHConstructHMT_W", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status); 
 
   /*   Make sure the arguments are not NULL: */ 
@@ -668,7 +668,7 @@ LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
   UINT2    xSide,ySide;
   HoughDT  weight;
 
-  INITSTATUS (status, "LALHOUGHAddPHMD2HD_W", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status); 
 
   /*   Make sure the arguments are not NULL: */ 

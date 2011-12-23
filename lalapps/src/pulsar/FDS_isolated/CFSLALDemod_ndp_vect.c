@@ -57,7 +57,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
   UINT4 M=params->SFTno;
 
-  INITSTATUS( status, "TestLALDemod", rcsid );
+  INITSTATUS(status);
 
   /* catch some obvious programming errors */
   ASSERT ( (Fs != NULL)&&(Fs->F != NULL), status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );

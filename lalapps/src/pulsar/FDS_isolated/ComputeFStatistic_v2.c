@@ -956,7 +956,7 @@ int main(int argc,char *argv[])
 void
 initUserVars (LALStatus *status, UserInput_t *uvar)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
@@ -1175,7 +1175,7 @@ InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
 
-  INITSTATUS( status, "InitEphemeris", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( edat, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL );
@@ -1233,7 +1233,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   LIGOTimeGPS startTime, endTime;
   size_t toplist_length = uvar->NumCandidatesToKeep;
 
-  INITSTATUS (status, __func__, rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set the current working directory */
@@ -1630,7 +1630,7 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   UINT4 i, numDet, numSpins = PULSAR_MAX_SPINS;
   CHAR *ret = NULL;
 
-  INITSTATUS( status, "getLogString", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* get full commandline describing search*/
@@ -1699,7 +1699,7 @@ WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *log_string
 {
   FILE *fplog;
 
-  INITSTATUS (status, "WriteFStatLog", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if ( !log_fname || !log_string ) {	/* no logfile given */
@@ -1727,7 +1727,7 @@ WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *log_string
 void
 Freemem(LALStatus *status,  ConfigVariables *cfg)
 {
-  INITSTATUS (status, "Freemem", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1775,7 +1775,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 void
 checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
 {
-  INITSTATUS (status, __func__, rcsid);
+  INITSTATUS(status);
 
   if (uvar->ephemYear == NULL)
     {

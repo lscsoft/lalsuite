@@ -36,7 +36,7 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
   STYPE sCopy; /* internal copy of series */
   int numRead = 0; /* number of values read by parsing subroutine */
 
-  INITSTATUS( stat, STRING(SFUNC), STREAMSERIESINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -432,7 +432,7 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
   CreateVectorSequenceIn in; /* structure to create sequence */
   int numRead = 0; /* number of values read per call of fscanf() */
 
-  INITSTATUS( stat, STRING(VFUNC), STREAMSERIESINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -911,7 +911,7 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
   CreateArraySequenceIn in; /* structure to create sequence */
   int numRead; /* number of values read per call of fscanf() */
 
-  INITSTATUS( stat, STRING(AFUNC), STREAMSERIESINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -1460,7 +1460,7 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
   FTYPE sCopy; /* internal copy of series */
   int numRead; /* number of values read per call of fscanf() */
 
-  INITSTATUS( stat, STRING(FFUNC), STREAMSERIESINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

@@ -111,7 +111,7 @@ LALSegListRead( LALStatus *status, LALSegList *seglist, const CHAR *fileName, co
   INT4 segid;
   INT4 xstatus;
 
-  INITSTATUS( status, "LALSegListRead", SEGMENTSIOC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*-- Check arguments for sanity.  Note that the options string pointer is
@@ -284,7 +284,7 @@ LALSegListWrite( LALStatus *status, LALSegList *seglist, const CHAR *fileName, c
   LALSeg *segp;
   REAL8 duration;
 
-  INITSTATUS( status, "LALSegListWrite", SEGMENTSIOC );
+  INITSTATUS(status);
 
   /*-- Check arguments for sanity --*/
   if ( seglist == NULL ) {

@@ -108,8 +108,7 @@ LALInspiralStationaryPhaseApprox2 (
 			      "XLALInspiralStationaryPhaseApprox2");
 
   /* Initialize the status pointer */
-  INITSTATUS (status, "LALInspiralStationaryPhaseApprox2", 
-	      LALINSPIRALSTATIONARYPHASEAPPROX2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* Call XLAL function and check for errors */

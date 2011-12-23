@@ -87,7 +87,7 @@ LALFindChirpChisqVetoInit (
 {
   UINT4                         l, m;
 
-  INITSTATUS( status, "FindChirpChisqVetoInit", FINDCHIRPCHISQINITC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( params, status,
@@ -293,7 +293,7 @@ LALFindChirpChisqVetoFinalize (
 {
   UINT4                         l;
 
-  INITSTATUS( status, "FindChirpChisqVetoInit", FINDCHIRPCHISQINITC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that we are using a known approximant */

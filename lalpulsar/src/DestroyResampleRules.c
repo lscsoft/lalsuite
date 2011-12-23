@@ -29,7 +29,7 @@ void
 LALDestroyResampleRules( LALStatus     *stat,
 			 ResampleRules **rules )
 {
-  INITSTATUS(stat,"LALDestroyResampleRules",DESTROYRESAMPLERULESC);
+  INITSTATUS(stat);
 
   /* Make sure that the handle is non-null, that it points to a
      non-null pointer, and that the interval and shift fields are

@@ -72,7 +72,7 @@ LALInspiralWaveCorrelate
   REAL4Vector buff;
 
 
-  INITSTATUS (status, "LALInspiralWaveCorrelate", LALINSPIRALWAVECORRELATEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (output,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

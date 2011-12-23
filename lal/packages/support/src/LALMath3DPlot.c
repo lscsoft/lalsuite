@@ -99,7 +99,7 @@ LALMath3DPlot( LALStatus *stat,
   REAL4 xmax, ymax, zmax; /* maximum values plotted */
   INT2 xlog, ylog, zlog;  /* log10 of axis scaling factors */
 
-  INITSTATUS( stat, "LALMath3DPlot", LALMATH3DPLOTC );
+  INITSTATUS(stat);
 
   if (!first) {
     ABORT(stat, LALMATHEMATICAH_ENULL, LALMATHEMATICAH_MSGENULL);

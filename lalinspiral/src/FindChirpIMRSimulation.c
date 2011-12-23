@@ -96,7 +96,7 @@ LALFindChirpInjectIMR (
   UINT4 i;
 #endif
 
-  INITSTATUS( status, "LALFindChirpInjectIMR", FINDCHIRPIMRSIMULATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( chan, status,

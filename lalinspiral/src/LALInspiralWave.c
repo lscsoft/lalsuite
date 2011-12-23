@@ -134,7 +134,7 @@ LALInspiralWave(
    )
 {
 
-   INITSTATUS(status, "LALInspiralWave", LALINSPIRALWAVEC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -259,7 +259,7 @@ LALInspiralWaveTemplates(
    )
 {
 
-   INITSTATUS(status, "LALInspiralWaveTemplates", LALINSPIRALWAVETEMPLATESC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (signalvec1,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -358,7 +358,7 @@ LALInspiralWaveForInjection(
    PPNParamStruc  *ppnParams)
 {
 
-   INITSTATUS(status, "LALInspiralWaveForInjection", LALINSPIRALWAVEFORINJECTIONC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (inspiralParams,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

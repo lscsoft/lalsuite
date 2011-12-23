@@ -809,7 +809,7 @@ void LALCreateDetector( LALStatus             *status,
                         const LALFrDetector   *input,
                         const LALDetectorType  type )
 {
-  INITSTATUS( status, "LALCreateDetector", CREATEDETECTORC );
+  INITSTATUS(status);
 
   ASSERT( input != NULL, status, LALDETECTORSH_ENULLP,
           LALDETECTORSH_MSGENULLP );

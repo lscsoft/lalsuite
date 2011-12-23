@@ -89,7 +89,7 @@ LALInspiralWave2 (
    )
 {
   XLALPrintDeprecationWarning("LALInspiralWave2", "XLALInspiralWave2");
-  INITSTATUS(status, "LALInspiralWave2", LALINSPIRALWAVE2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALInspiralWave2(output, params) )
@@ -154,7 +154,7 @@ LALInspiralWave2Templates (
   )
 {
   XLALPrintDeprecationWarning("LALInspiralWave2Templates", "XLALInspiralWave2Templates");
-  INITSTATUS(status, "LALInspiralWave2Templates", LALINSPIRALWAVE2TEMPLATESC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALInspiralWave2Templates(output1, output2, params) )
@@ -226,7 +226,7 @@ LALInspiralWave2ForInjection (
   )
 {
   XLALPrintDeprecationWarning("LALInspiralWave2ForInjection", "XLALInspiralWave2ForInjection");
-  INITSTATUS(status, "LALInspiralWave2ForInjection", LALINSPIRALWAVE2FORINJECTIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALInspiralWave2ForInjection(waveform, params, ppnParams) )

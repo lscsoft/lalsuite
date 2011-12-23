@@ -344,7 +344,7 @@ HandleComArg( LALStatus *status,
 {
   INT4 option;
   
-  INITSTATUS( status, "HandleComArg", rcsid );
+  INITSTATUS(status);
 
   /* First initialization of all the cla variables. */
   cla->computeProbFlag = 0;
@@ -402,7 +402,7 @@ static void
 showHelp( LALStatus *status, 
 	  FSTUserInput *cla /*!< input */) 
 {
-  INITSTATUS( status, "showHelp", rcsid );
+  INITSTATUS(status);
 
   fprintf(stderr,"Usage: lalapps_FstatShapeTestLAL [-hC] [-otls <>]\n");
   fprintf(stderr,
@@ -471,7 +471,7 @@ ReadClusterInfo( LALStatus *status,
   CHAR buff[1024];
   CHAR *ptr;
 
-  INITSTATUS( status, "ReadClusterInfo", rcsid );
+  INITSTATUS(status);
   ASSERT ( cla, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
   ASSERT ( clustInfoPair != NULL, status, FSTATSHAPETESTC_ENONULL , FSTATSHAPETESTC_MSGENONULL );  
 
@@ -640,7 +640,7 @@ ComputeVetoStatistic( LALStatus *status,
 
   FSTControlParameters CP; 
 
-  INITSTATUS( status, "ComputeVetoStatistic", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
   ASSERT ( clustInfoPair, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
   ASSERT ( FaFbPair, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
@@ -761,7 +761,7 @@ SummitFinder( LALStatus *status,
 {
   UINT4 ic,jc; /* counter */
 
-  INITSTATUS( status, "SummitFinder", rcsid );
+  INITSTATUS(status);
   ASSERT ( threshold, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
   ASSERT ( FaFbPair, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
 
@@ -803,7 +803,7 @@ ShiftData( LALStatus *status,
   REAL8 startFreqT;
   REAL8 fmaxT;
   REAL8 freqoffset = 0.0;
-  INITSTATUS( status, "ShiftData", rcsid );
+  INITSTATUS(status);
   ASSERT ( searchFreq, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
 
 
@@ -839,7 +839,7 @@ RearrangeData( LALStatus *status,
 
 
 
-  INITSTATUS( status, "RearrangeData", rcsid );
+  INITSTATUS(status);
   ASSERT ( clustInfoPair, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
 
 
@@ -967,7 +967,7 @@ ReadData( LALStatus *status,
 
   FILE *fpobsv,*fptest;
 
-  INITSTATUS( status, "ReadData", rcsid );
+  INITSTATUS(status);
   ASSERT ( cla, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
 
   if( ( fpobsv = fopen(cla->obsvdatafile,"r") ) == NULL ) {
@@ -1057,7 +1057,7 @@ ComputeVetoStatisticCore( LALStatus *status,
   REAL8 FaSq,FbSq,FaFb;
   REAL8 vetoStatBin; /* veto statistic at each frequency bin. */
 
-  INITSTATUS( status, "ComputeVetoStatisticCore", rcsid );
+  INITSTATUS(status);
   ASSERT ( CP, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
   ASSERT ( FaFbPair, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
   ASSERT ( vetoStatistic != NULL, status, FSTATSHAPETESTC_ENONULL , FSTATSHAPETESTC_MSGENONULL );  
@@ -1178,7 +1178,7 @@ LALChi2CDFP( LALStatus *status,
 {
   REAL8 x, a;
 
-  INITSTATUS( status, "LALChi2CDFP", rcsid );
+  INITSTATUS(status);
 
   /* This traps coding errors in the calling routine. */
   ASSERT ( data, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
@@ -1236,7 +1236,7 @@ LALGammaInc( LALStatus *status,
   REAL8 fac, n, g, gold, ana, anf;
 
 
-  INITSTATUS( status, "LALGammaInc", rcsid );
+  INITSTATUS(status);
 
   /* This traps coding errors in the calling routine. */
   ASSERT ( input, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
@@ -1395,7 +1395,7 @@ LALGammaLn( LALStatus *status,
 	       -2.777777777777681622553e-03, 8.333333333333333331554247e-02, 
 	       5.7083835261e-03};
 
-  INITSTATUS( status, "LALGammaLn", rcsid );
+  INITSTATUS(status);
 
 
   /* This traps coding errors in the calling routine. */
