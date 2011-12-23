@@ -219,7 +219,7 @@ int main( int argc, char *argv[] )
 	/*  Initialize Parameter structure  */
 	LALCreateMTRandomParams(&status, 4357, &params);
 
-	printf("\n\nMESG: %s \n",MERSENNERANDOMTESTC);
+	printf("\n\nMESG: %s \n","$Id$");
 
 #ifndef LAL_NDEBUG
 	INT4		code;

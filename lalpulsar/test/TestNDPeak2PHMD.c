@@ -128,7 +128,7 @@ do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
     XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
-              __LINE__, TESTNDPEAK2PHMDC, statement ? statement :  \
+              __LINE__, "$Id$", statement ? statement :  \
                    "", (msg) );                                      \
 } while (0)
 
@@ -137,7 +137,7 @@ do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
     XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
-              TESTNDPEAK2PHMDC, (statement) );                     \
+              "$Id$", (statement) );                     \
 } while (0)
 
 #define SUB( func, statusptr )                                       \

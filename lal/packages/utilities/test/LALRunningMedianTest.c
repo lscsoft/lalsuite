@@ -109,11 +109,11 @@ char*argv0;
     if (( lalDebugLevel & LALERROR ) && (code))                       \
       LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"\
                      "        %s\n", (code), (program), __FILE__,     \
-                     __LINE__, LALRUNNINGMEDIANTESTC, (message) );    \
+                     __LINE__, "$Id$", (message) );    \
     else if ( lalDebugLevel & LALINFO )                               \
       LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"    \
                      "        %s\n", (program), __FILE__, __LINE__,   \
-                     LALRUNNINGMEDIANTESTC, (message) );              \
+                     "$Id$", (message) );              \
     return (code);                                                    \
   } else (void)(0)
 

@@ -345,7 +345,7 @@ int main(int argc, char *argv[]) {
       fp = stdout;
     }
     LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
-    fprintf(fp, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
+    fprintf(fp, "%%%% %s\n%%%% %s\n", "$Id$", cmdline);
     LALFree(cmdline);
     cmdline = NULL;
     fprintf(fp, "alpha=%0.4f alpha_band=%0.4f\n", alpha, alpha_band);
@@ -582,7 +582,7 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
     LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
-    fprintf(fpH, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
+    fprintf(fpH, "%%%% %s\n%%%% %s\n", "$Id$", cmdline);
     LALFree(cmdline);
     cmdline = NULL;
     

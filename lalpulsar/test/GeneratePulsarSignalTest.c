@@ -150,7 +150,7 @@ int main(int UNUSED argc, char **argv)
   if ( lalDebugLevel & LALINFO ) {
     XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"
        "        %s\n", *argv, __FILE__, __LINE__,
-       GENERATEPULSARSIGNALTESTC, (GENERATEPULSARSIGNALTESTC_MSGENORM) );
+       "$Id$", (GENERATEPULSARSIGNALTESTC_MSGENORM) );
   }
 
   return GENERATEPULSARSIGNALTESTC_ENORM;

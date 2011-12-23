@@ -71,10 +71,10 @@ extern char *XLALGetVersionString( int level );
 extern int XLALOutputVersionString ( FILE *fp, int level );
 
 #define LAL_CALL( function, statusptr ) \
-  ((function),lal_errhandler(statusptr,#function,__FILE__,__LINE__,rcsid))
+  ((function),lal_errhandler(statusptr,#function,__FILE__,__LINE__,"$Id$"))
 
 #define PRINT_VERSION( program ) \
-  fprintf(stderr,PACKAGE " %s version " VERSION "\n%s\n",program,rcsid)
+  fprintf(stderr,PACKAGE " %s version " VERSION "\n%s\n",program,"$Id$")
 
 #if 0
 { /* so that editors will match succeeding brace */

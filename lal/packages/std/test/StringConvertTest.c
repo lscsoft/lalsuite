@@ -173,7 +173,7 @@ main( int argc, char **argv )
 	fprintf( stderr,
 		 "Error[0] 1: program %s, file %s, line %i, %s\n"
 		 "         Function LALStringToGPS() failed\n",
-		 argv[0], __FILE__, __LINE__, STRINGCONVERTTESTC );
+		 argv[0], __FILE__, __LINE__, "$Id$" );
 	REPORTSTATUS( &stat );
 	return stat.statusCode;
       }

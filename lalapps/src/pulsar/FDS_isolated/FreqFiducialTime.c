@@ -753,7 +753,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
 
 
   if (uvar_help) {	/* if help was requested, we're done here */
-    XLALPrintError("%s\n",rcsid);
+    XLALPrintError("%s\n","$Id$");
     fflush(stderr);
     LALDestroyUserVars(lalStatus->statusPtr);
     exit(FIDUCIAL_EXIT_OK);

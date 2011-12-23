@@ -134,7 +134,7 @@ if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
-		 __LINE__, SKYCOORDINATESTESTC, statement ?          \
+		 __LINE__, "$Id$", statement ?          \
                  statement : "", (msg) );                            \
 }                                                                    \
 while (0)
@@ -145,7 +145,7 @@ if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
   LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
-		 SKYCOORDINATESTESTC, (statement) );                 \
+		 "$Id$", (statement) );                 \
 }                                                                    \
 while (0)
 
@@ -155,7 +155,7 @@ if ( lalDebugLevel & LALWARNING )                                    \
 {                                                                    \
   LALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
-		 SKYCOORDINATESTESTC, (statement) );                 \
+		 "$Id$", (statement) );                 \
 }                                                                    \
 while (0)
 

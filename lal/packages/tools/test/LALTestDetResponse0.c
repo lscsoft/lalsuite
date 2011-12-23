@@ -1072,7 +1072,7 @@ int main(int argc, char *argv[])
     {
       fprintf(stderr,
               "LALTestDetResponse0: LALCreateDetector failed, line %i, %s\n",
-              __LINE__, LALTESTDETRESPONSE0C);
+              __LINE__, "$Id$");
       REPORTSTATUS(&status);
       return status.statusCode;
     }
@@ -1266,7 +1266,7 @@ int main(int argc, char *argv[])
     {
       fprintf(stderr,
               "LALTestDetResponse0: LALCreateDetector failed, line %i, %s\n",
-              __LINE__, LALTESTDETRESPONSE0C);
+              __LINE__, "$Id$");
       REPORTSTATUS(&status);
       return status.statusCode;
     }
@@ -1443,7 +1443,7 @@ int main(int argc, char *argv[])
     {
       fprintf(stderr,
               "LALTestDetResponse0: error in LALComputeDetAMResponseSeries, line %i, %s\n",
-              __LINE__, LALTESTDETRESPONSE0C);
+              __LINE__, "$Id$");
       return status.statusCode;
     }
 

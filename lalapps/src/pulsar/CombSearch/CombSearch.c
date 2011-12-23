@@ -700,7 +700,7 @@ int OutputCstats(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat
     fprintf(Cstat_out, "%%%% ***************   Fstat Header   ****************** \n %s", Fstat->comment);
     fprintf(Cstat_out, "%%%% *********************************************************************** \n");
     fprintf(Cstat_out, "%%%% ***************   Cstat Header   ****************** \n");
-    fprintf(Cstat_out, "%%%% %s\n%%%% cmdline: %s\n", rcsid, Cstat->comment);
+    fprintf(Cstat_out, "%%%% %s\n%%%% cmdline: %s\n", "$Id$", Cstat->comment);
     
     /* Cstat header - output user input to file */
     fprintf(Cstat_out,"%%%% input: f0 = %f,\t asini = %lf, Porb = %lf,\t user fmin = %f,\n",userParams->f0,userParams->orbitasini,userParams->orbitPeriod,userParams->freq);
