@@ -636,7 +636,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   section = 'inspmissed'
   sections.append(section)
   htmlAndPlot.append(section)
-  titles[section] = "Found and missed plots (second stage) & the 10 closest missed injections (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."
+  titles[section] = "Found and missed plots (second stage) and the 10 closest missed injections (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."
   tags[section] = '*ligolw_cbc_plotfm_fm_dist_v_param_ALLINJ*CAT_4*'
   htmltags[section] = '*'+injection.upper()+'_CAT_4_VETO_CLOSEST_MISSED_INJECTIONS_SUMMARY*'
   imagetags[section] = ['cbc_plotfm_fm_dist_v_param']
