@@ -488,6 +488,25 @@ class CohBankJob(InspiralAnalysisJob):
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
+class InspiralCoherentJob(InspiralAnalysisJob):
+  """
+  A lalapps_inspiral job used by the inspiral pipeline. The static options
+  are read from the sections [data] and [inspiral] in the ini file. The
+  stdout and stderr from the job are directed to the logs directory. The job
+  runs in the universe specfied in the ini file. The path to the executable
+  is determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'inspiral'
+    sections = ['data']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+
 class CohInspBankJob(InspiralAnalysisJob):
   """
   A lalapps_coherent_inspiral job used by the inspiral pipeline. The static
@@ -1739,6 +1758,13 @@ class CohBankNode(InspiralAnalysisNode):
   def get_ifos(self):
     return self.__ifos
 
+  def set_num_slides(self, num_slides):
+    """
+    Set number of time slides to undertake
+    """
+    self.add_var_opt('num-slides',num_slides)
+    self.__num_slides = num_slides
+
   def get_output(self):
     """
     Returns the file name of output from the coherent bank. 
@@ -1789,6 +1815,13 @@ class CohInspBankNode(InspiralAnalysisNode):
 
   def get_ifos(self):
     return self.__ifos
+
+  def set_num_slides(self, num_slides):
+    """
+    Set number of time slides to undertake
+    """
+    self.add_var_opt('num-slides',num_slides)
+    self.__num_slides = num_slides
 
   def get_output(self):
     """
