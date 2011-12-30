@@ -841,7 +841,8 @@ LALFindChirpClusterEvents (
     FindChirpFilterParams      *params,
     FindChirpBankVetoData      *bankVetoData,
     UINT4                       subBankIndex,
-    int                         writeCData
+    int                         writeCData,
+    InspiralTemplate           *bankCurrent
     );
 
 
