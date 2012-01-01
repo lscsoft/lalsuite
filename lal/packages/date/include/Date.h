@@ -198,16 +198,6 @@ LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(
 
 
 /** \ingroup Date_h
- * This structure is just the standard Unix \c tm structure, described
- * in the man page for <tt>ctime(3)</tt>.  We shall
- * {\em always} ignore the daylight savings time field, \c tm_isdst.
- */
-typedef struct
-tm
-LALUnixDate;
-
-
-/** \ingroup Date_h
  * This structure stores pointers to a ::LALDetector and a
  * ::LIGOTimeGPS. Its sole purpose is to aggregate these
  * structures for passing to functions.
