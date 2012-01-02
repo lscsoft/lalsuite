@@ -983,6 +983,9 @@ int XLALSimInspiralChooseWaveform(
     REAL8 f_min,                /**< start frequency */
     REAL8 r,                    /**< distance of source */
     REAL8 i,                    /**< inclination of source (rad) */
+    REAL8 lambda1,              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+    REAL8 lambda2,              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+    LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
     int amplitudeO,             /**< twice post-Newtonian amplitude order */
     int phaseO,                 /**< twice post-Newtonian phase order */
     Approximant approximant     /**< post-Newtonian approximant to use for waveform production */
@@ -1038,7 +1041,7 @@ int XLALSimInspiralChooseWaveform(
             E1z = - sin(i);
             /* Maximum PN amplitude order for precessing waveforms is MAX_PRECESSING_AMP_PN_ORDER */
             amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
-            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, phi0, 0., deltaT, m1, m2, f_min, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, 0.0, 0.0, LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN, phaseO, amplitudeO);
+            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, phi0, 0., deltaT, m1, m2, f_min, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2, interactionFlags, phaseO, amplitudeO);
             break;
 
         /* spinning inspiral-merger-ringdown models */
@@ -1084,6 +1087,9 @@ int XLALSimInspiralChooseRestrictedWaveform(
     REAL8 f_min,                /**< start frequency */
     REAL8 r,                    /**< distance of source */
     REAL8 i,                    /**< inclination of source (rad) */
+    REAL8 lambda1,              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+    REAL8 lambda2,              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+    LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
     int O,                      /**< twice post-Newtonian order */
     Approximant approximant     /**< post-Newtonian approximant to use for waveform production */
     )
@@ -1129,7 +1135,7 @@ int XLALSimInspiralChooseRestrictedWaveform(
             E1x = cos(i);
             E1y = 0.;
             E1z = - sin(i);
-            ret = XLALSimInspiralRestrictedSpinTaylorT4(hplus, hcross, phi0, 0., deltaT, m1, m2, f_min, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, 0.0, 0.0, LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN, O);
+            ret = XLALSimInspiralRestrictedSpinTaylorT4(hplus, hcross, phi0, 0., deltaT, m1, m2, f_min, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2, interactionFlags, O);
             break;
 
         default:

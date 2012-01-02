@@ -984,12 +984,47 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       LALGetOrderFromString(&status, injEvent->waveform, &order);
       amporder = injEvent->amp_order;
       //if(amporder<0) amporder=0;
-        
+      /* FIXME - tidal lambda's and interactionFlag are just set to command line values here.
+       * They should be added to injEvent and set to appropriate values 
+       */
+      REAL8 lambda1 = 0.;
+      if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")) {
+        lambda1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")->value);
+        fprintf(stdout,"Injection lambda1 set to %f\n",lambda1);
+      }
+      REAL8 lambda2 = 0.;
+      if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda2")) {
+        lambda2= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda2")->value);
+        fprintf(stdout,"Injection lambda2 set to %f\n",lambda2);
+      }      
+      LALSimInspiralInteraction interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_ALL;
+      ppt=LALInferenceGetProcParamVal(commandLine,"--inj-interactionFlags");
+      if(ppt){
+        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_NONE")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_NONE;
+        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN;
+        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN;
+        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN;
+        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN;
+        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN;
+        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN;
+        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN;
+        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN;
+        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_ALL")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_ALL;
+      }
+            
         XLALSimInspiralChooseWaveform(&hplus, &hcross, injEvent->coa_phase, thisData->timeData->deltaT,
                                                 injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI, injEvent->spin1x,
                                                 injEvent->spin1y, injEvent->spin1z, injEvent->spin2x, injEvent->spin2y,
                                                 injEvent->spin2z, injEvent->f_lower, injEvent->distance*LAL_PC_SI * 1.0e6,
-                                                injEvent->inclination, amporder, order, approximant);
+                                                injEvent->inclination, lambda1, lambda2, interactionFlags, 
+                                                amporder, order, approximant);
+      
+      if(!hplus || !hcross) {
+        fprintf(stderr,"Error: XLALSimInspiralChooseWaveform() failed to produce waveform.\n");
+        exit(-1);
+        //XLALPrintError("XLALSimInspiralChooseWaveform() failed to produce waveform.\n");
+        //XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
       
       XLALGPSAddGPS(&(hplus->epoch), &(injEvent->geocent_end_time));
       XLALGPSAddGPS(&(hcross->epoch), &(injEvent->geocent_end_time));

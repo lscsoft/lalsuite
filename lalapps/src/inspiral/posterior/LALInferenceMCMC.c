@@ -447,12 +447,16 @@ void initVariables(LALInferenceRunState *state)
   REAL8 qMin=mMin/mMax;
   REAL8 qMax=1.0;
   REAL8 dt=0.1;            /* Width of time prior */
+  REAL8 lambda1Min=0.0;
+  REAL8 lambda1Max=80.0;
+  REAL8 lambda2Min=0.0;
+  REAL8 lambda2Max=80.0;  
   REAL8 tmpMin,tmpMax;//,tmpVal;
   gsl_rng * GSLrandom=state->GSLrandom;
   REAL8 endtime=0.0, timeParam=0.0;
   REAL8 start_mc			=4.82+gsl_ran_gaussian(GSLrandom,0.025);
   REAL8 start_eta			=etaMin+gsl_rng_uniform(GSLrandom)*(etaMax-etaMin);
-  REAL8 start_q           =qMin+gsl_rng_uniform(GSLrandom)*(qMin-qMax);
+  REAL8 start_q           =qMin+gsl_rng_uniform(GSLrandom)*(qMax-qMin);
   REAL8 start_phase		=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
   REAL8 start_dist		=8.07955+gsl_ran_gaussian(GSLrandom,1.1);
   REAL8 start_ra			=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
@@ -465,7 +469,9 @@ void initVariables(LALInferenceRunState *state)
   REAL8 start_a_spin2		=0.0+gsl_rng_uniform(GSLrandom)*(1.0-0.0);
   REAL8 start_theta_spin2 =0.0+gsl_rng_uniform(GSLrandom)*(LAL_PI-0.0);
   REAL8 start_phi_spin2	=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
-
+  REAL8 start_lambda1 =lambda1Min+gsl_rng_uniform(GSLrandom)*(lambda1Max-lambda1Min);
+  REAL8 start_lambda2 =lambda2Min+gsl_rng_uniform(GSLrandom)*(lambda2Max-lambda2Min);
+  
   memset(currentParams,0,sizeof(LALInferenceVariables));
 
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
@@ -804,6 +810,16 @@ void initVariables(LALInferenceRunState *state)
     start_phi_spin2 = atof(ppt->value);
   }
 
+  ppt=LALInferenceGetProcParamVal(commandLine,"--lambda1");
+  if (ppt) {
+    start_lambda1 = atof(ppt->value);
+  }
+
+  ppt=LALInferenceGetProcParamVal(commandLine,"--lambda2");
+  if (ppt) {
+    start_lambda2 = atof(ppt->value);
+  }
+  
   /* Over-ride time prior if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
   if(ppt){
@@ -824,6 +840,31 @@ void initVariables(LALInferenceRunState *state)
     Dmax=atof(ppt->value);
   }
 
+  /* Over-ride lambda1 min if specified */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--lambda1-min");
+  if(ppt){
+    lambda1Min=atof(ppt->value);
+  }
+  
+  /* Over-ride lambda1 max if specified */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--lambda1-max");
+  if(ppt){
+    lambda1Max=atof(ppt->value);
+  }
+  
+  /* Over-ride lambda2 min if specified */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--lambda2-min");
+  if(ppt){
+    lambda2Min=atof(ppt->value);
+  }
+  
+  /* Over-ride lambda2 max if specified */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--lambda2-max");
+  if(ppt){
+    lambda2Max=atof(ppt->value);
+  }
+  
+  
   /* Over-ride Mass priors if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--mc-min");
   if(ppt)
@@ -1247,7 +1288,42 @@ void initVariables(LALInferenceRunState *state)
     LALInferenceAddMinMaxPrior(priorArgs, "ppelowerb",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 
   }
-
+  
+  ppt=LALInferenceGetProcParamVal(commandLine,"--fixLambda1");
+  if(ppt){
+    LALInferenceAddVariable(currentParams, "lambda1",           &start_lambda1,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    if(MPIrank==0) fprintf(stdout,"phase fixed and set to %f\n",start_lambda1);
+  }else{
+    LALInferenceAddVariable(currentParams, "lambda1",           &start_lambda1,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+  }
+  LALInferenceAddMinMaxPrior(priorArgs, "lambda1",     &lambda1Min, &lambda1Max,   LALINFERENCE_REAL8_t);
+  
+  ppt=LALInferenceGetProcParamVal(commandLine,"--fixLambda2");
+  if(ppt){
+    LALInferenceAddVariable(currentParams, "lambda2",           &start_lambda2,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    if(MPIrank==0) fprintf(stdout,"phase fixed and set to %f\n",start_lambda2);
+  }else{
+    LALInferenceAddVariable(currentParams, "lambda2",           &start_lambda2,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+  }
+  LALInferenceAddMinMaxPrior(priorArgs, "lambda2",     &lambda2Min, &lambda2Max,   LALINFERENCE_REAL8_t);
+  
+  LALSimInspiralInteraction interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_ALL;
+  ppt=LALInferenceGetProcParamVal(commandLine,"--interactionFlags");
+  if(ppt){
+    if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_NONE")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_NONE;
+    if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN;
+    if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN;
+    if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN;
+    if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN;
+    if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN;
+    if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN;
+    if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN;
+    if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN;
+    if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_ALL")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_ALL;
+    LALInferenceAddVariable(currentParams, "interactionFlags", &interactionFlags,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED); 
+ }
+ 
+  
   /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES.
      (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enought */
   while(state->prior(state, currentParams)<=-DBL_MAX){
