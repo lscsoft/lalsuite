@@ -1289,23 +1289,26 @@ void initVariables(LALInferenceRunState *state)
 
   }
   
-  ppt=LALInferenceGetProcParamVal(commandLine,"--fixLambda1");
+  ppt=LALInferenceGetProcParamVal(commandLine,"--tidal");
   if(ppt){
-    LALInferenceAddVariable(currentParams, "lambda1",           &start_lambda1,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    if(MPIrank==0) fprintf(stdout,"phase fixed and set to %f\n",start_lambda1);
-  }else{
-    LALInferenceAddVariable(currentParams, "lambda1",           &start_lambda1,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-  }
-  LALInferenceAddMinMaxPrior(priorArgs, "lambda1",     &lambda1Min, &lambda1Max,   LALINFERENCE_REAL8_t);
+    ppt=LALInferenceGetProcParamVal(commandLine,"--fixLambda1");
+    if(ppt){
+      LALInferenceAddVariable(currentParams, "lambda1",           &start_lambda1,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      if(MPIrank==0) fprintf(stdout,"phase fixed and set to %f\n",start_lambda1);
+    }else{
+      LALInferenceAddVariable(currentParams, "lambda1",           &start_lambda1,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    }
+    LALInferenceAddMinMaxPrior(priorArgs, "lambda1",     &lambda1Min, &lambda1Max,   LALINFERENCE_REAL8_t);
   
-  ppt=LALInferenceGetProcParamVal(commandLine,"--fixLambda2");
-  if(ppt){
+    ppt=LALInferenceGetProcParamVal(commandLine,"--fixLambda2");
+    if(ppt){
     LALInferenceAddVariable(currentParams, "lambda2",           &start_lambda2,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    if(MPIrank==0) fprintf(stdout,"phase fixed and set to %f\n",start_lambda2);
-  }else{
-    LALInferenceAddVariable(currentParams, "lambda2",           &start_lambda2,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+      if(MPIrank==0) fprintf(stdout,"phase fixed and set to %f\n",start_lambda2);
+    }else{
+      LALInferenceAddVariable(currentParams, "lambda2",           &start_lambda2,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    }
+    LALInferenceAddMinMaxPrior(priorArgs, "lambda2",     &lambda2Min, &lambda2Max,   LALINFERENCE_REAL8_t);
   }
-  LALInferenceAddMinMaxPrior(priorArgs, "lambda2",     &lambda2Min, &lambda2Max,   LALINFERENCE_REAL8_t);
   
   LALSimInspiralInteraction interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_ALL;
   ppt=LALInferenceGetProcParamVal(commandLine,"--interactionFlags");
