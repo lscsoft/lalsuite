@@ -1849,9 +1849,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	}
 	
 	INT4 errnum=0;
-  /* FIXME - tidal lambda's and interactionFlag are just set to default values here.
-   * They should be added to appropriate struct and set to appropriate values 
-   */
+
   REAL8 lambda1 = 0.;
   if(LALInferenceCheckVariable(IFOdata->modelParams, "lambda1")) lambda1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "lambda1");
   REAL8 lambda2 = 0.;
