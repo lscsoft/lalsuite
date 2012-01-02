@@ -401,8 +401,17 @@ void initVariables(LALInferenceRunState *state)
                (--MTotMax max)                 Maximum total mass (35.0)\n\
                (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n\
                (--noDifferentialEvolution)     Do not use differential evolution to propose jumps (it is used by default)\n\
-               (--appendOutput fname)          Basename of the file to append outputs to\n";
-
+               (--appendOutput fname)          Basename of the file to append outputs to\n\
+               (--tidal)                       Enables tidal corrections, only with LALSimulation\n\
+               (--lambda1)                     Trigger lambda1\n\
+               (--fixLambda1)                  Do not allow lambda1 to vary\n\
+               (--lambda1-min)                 Minimum lambda1 (0)\n\
+               (--lambda1-max)                 Maximum lambda1 (80)\n\
+               (--lambda2)                     Trigger lambda2\n\
+               (--fixLambda2)                  Do not allow lambda2 to vary\n\
+               (--lambda2-min)                 Minimum lambda2 (0)\n\
+               (--lambda2-max)                 Maximum lambda2 (80)\n\
+               (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL)\n";
 
   /* Print command line arguments if state was not allocated */
   if(state==NULL)

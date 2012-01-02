@@ -197,7 +197,12 @@ static REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS 
 (--fLow [freq1,freq2,...])      Specify lower frequency cutoff for overlap integral (40.0)\n\
 (--fHigh [freq1,freq2,...])     Specify higher frequency cutoff for overlap integral (2048.0)\n\
 (--channel [chan1,chan2,...])   Specify channel names when reading cache files\n\
-(--dataseed number)             Specify random seed to use when generating data\n"
+(--dataseed number)             Specify random seed to use when generating data\n\
+(--LALSimulationInjection)      Enables injections via the LALSimulation package\n\
+(--inj-lambda1)                 value of lambda1 to be injected, LALSimulation only (0)\n\
+(--inj-lambda2)                 value of lambda1 to be injected, LALSimulation only (0)\n\
+(--inj-interactionFlags)        value of the interaction flag to be injected, LALSimulation only (LAL_SIM_INSPIRAL_INTERACTION_ALL)\n"
+
 
 LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 /* Read in the data and store it in a LALInferenceIFOData structure */
