@@ -254,18 +254,13 @@ XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file 
 int
 XLALDestroyParsedDataFile (LALParsedDataFile **cfgdata)	/**< [in/out] config-file data */
 {
-  int err = 0;  /* error code */
 
   if ( ! cfgdata || ! *cfgdata || ! (*cfgdata)->lines ) {
     XLALPrintError( "%s:" CONFIGFILEH_MSGENULL, __func__ );
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
-  err = XLALDestroyTokenList ( &((*cfgdata)->lines) );
-  if (err) {
-    XLALPrintError("%s: XLALDestroyTokenList() failed.\n", __func__ );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
+  XLALDestroyTokenList ( (*cfgdata)->lines );
 
   if ( (*cfgdata)->wasRead )
     XLALFree ( (*cfgdata)->wasRead );
