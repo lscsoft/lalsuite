@@ -1039,7 +1039,7 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
     XLALPrintError ("%s: XLALLoadMultiSFTs( %f, %f ) failed with xlalErrno = %d\n", __func__, fMin, fMax, xlalErrno );
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
-  XLALDestroySFTCatalog ( &catalog );
+  XLALDestroySFTCatalog ( catalog );
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
   /* ---------- end loading SFTs ---------- */
 

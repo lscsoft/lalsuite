@@ -2501,44 +2501,39 @@ LALDestroySFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure 
 
 /** Free an 'SFT-catalogue' */
 void
-XLALDestroySFTCatalog ( SFTCatalog **catalog )	/**< the 'catalogue' to free */
+XLALDestroySFTCatalog ( SFTCatalog *catalog  /**< the 'catalogue' to free */ )
 {
   if ( catalog ) {
 
-    if ( *catalog ) {
+    if ( catalog -> data )
+      {
+        UINT4 i;
+        for ( i=0; i < catalog->length; i ++ )
+          {
+            SFTDescriptor *ptr = &( catalog->data[i] );
+            if ( ptr->locator )
+              {
+                if ( ptr->locator->fname )
+                  XLALFree ( ptr->locator->fname );
+                XLALFree ( ptr->locator );
+              }
+            if ( ptr->comment )
+              XLALFree ( ptr->comment );
 
-      if ( (*catalog) -> data )
-	{
-	  UINT4 i;
-	  for ( i=0; i < (*catalog)->length; i ++ )
-	    {
-	      SFTDescriptor *ptr = &( (*catalog)->data[i] );
-	      if ( ptr->locator )
-		{
-		  if ( ptr->locator->fname )
-		    XLALFree ( ptr->locator->fname );
-		  XLALFree ( ptr->locator );
-		}
-	      if ( ptr->comment )
-		XLALFree ( ptr->comment );
+            /* this should not happen, but just in case: free data-entry in SFT-header */
+            if ( ptr->header.data )
+              XLALDestroyCOMPLEX8Sequence (ptr->header.data);
+          } /* for i < length */
 
-	      /* this should not happen, but just in case: free data-entry in SFT-header */
-	      if ( ptr->header.data )
-		XLALDestroyCOMPLEX8Sequence (ptr->header.data);
-	    } /* for i < length */
+        catalog->length = 0;
 
-	  (*catalog)->length = 0;
+        XLALFree ( catalog->data );
 
-	  XLALFree ( (*catalog)->data );
+      } /* if catalog->data */
 
-	} /* if *catalog->data */
+    XLALFree ( catalog );
 
-      XLALFree ( *catalog );
-
-    } /* if *catalog */
-
-    (*catalog) = NULL;
-  }
+  } /* if catalog */
 
 } /* XLALDestroySFTCatalog() */
 
