@@ -170,7 +170,8 @@ extern "C" {
     UINT4 freqlength;       /**< number of fine-grid points in frequency */
     UINT4 numDetectors;     /**< number of detectors for sumTwoFX array */
     REAL4 * sumTwoF;        /**< sum of 2F-values, 1D array over fine-grid frequencies (of length 'length') */
-    REAL4 * sumTwoFX;       /**< sum of per-IFO 2F-values, 2D array over frequencies and detectors (of length 'length*numDetectors') */
+    UINT4 freqlengthAL;     /**< "aligned" number of fine-grid points in frequency: in blocks of 16 bytes, consistent with ALAlloc() [used only for sumTwoFX]*/
+    REAL4 * sumTwoFX;       /**< sum of per-IFO 2F-values, 2D array over frequencies and detectors (of length 'freqlengthAL*numDetectors') */
     FINEGRID_NC_T * nc;     /**< number count (1D array over frequencies, of length 'length') */
   } FineGrid;
 
@@ -182,9 +183,11 @@ extern "C" {
 
   /* macro to index FX array in the FineGrid structure
    * frequency/GCT U1 index MUST always be the innermost index
+   * NOTE!: this 2D array needs 16-byte aligned blocks of frequency-bins (one block per detector),
+   * therefore we need to use the special length field freqlengthAL (which is a multiple of 4xREAL4 bytes)
    */
 #define FG_FX_INDEX(fg, iDet, iFreq)       \
-  ( ( (iDet) * (fg).length ) + (iFreq) )
+  ( ( (iDet) * (fg).freqlengthAL ) + (iFreq) )
 
   /* ------------------------------------------------------------------------- */
 
@@ -192,7 +195,7 @@ extern "C" {
   typedef struct tagCoarseGrid {
     UINT4 length;        /**< length of multi-IFO array 'sumTwoF', 'Uindex' (currently 'length'= 'nStacks * freqlength') */
     UINT4 nStacks;       /**< number of stacks */
-    UINT4 freqlength;    /**< number of fine-grid points in frequency */
+    UINT4 freqlength;    /**< number of coarse-grid points in frequency */
     UINT4 * Uindex;      /**< U index, 2D array over stacks and frequencies (of length 'length') */
     REAL4 * TwoF;        /**< 2F-value, 2D array over stacks and frequencies (of length 'length') */
     UINT4 numDetectors;  /**< number of detectors */

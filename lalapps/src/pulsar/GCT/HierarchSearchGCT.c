@@ -250,7 +250,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* fine grid */
   FineGrid finegrid;
-  UINT4 nfreqs_fg, nf1dots_fg=1; /* number of frequency and spindown values */
+  UINT4 nf1dots_fg = 1; /* number of frequency and spindown values */
   REAL8 gammaRefine, sigmasq;  /* refinement factor and variance */
   UINT4 nf2dots_fg=1;          /* number of second spindown values */
   REAL8 gamma2Refine, sigma4;  /* 2nd spindown refinement factor and 4th moment */
@@ -1168,7 +1168,7 @@ int MAIN( int argc, char *argv[]) {
 
           /* fine-grid frequency resolution */
           dfreq_fg = dFreqStack;
-          nfreqs_fg = ceil(freqband_fg / dfreq_fg);  /* number of points in frequency */
+          UINT4 nfreqs_fg = ceil(freqband_fg / dfreq_fg);  /* number of points in frequency */
           if (nfreqs_fg == 0) {
             nfreqs_fg++;
           }
@@ -1177,6 +1177,9 @@ int MAIN( int argc, char *argv[]) {
           finegrid.freqmin_fg = freqmin_fg;
           finegrid.dfreq_fg = dfreq_fg;
           finegrid.freqlength = nfreqs_fg ;
+#define ALIGN_REAL4 4  /* 16 bytes / sizeof(REAL4) = 4 */
+          finegrid.freqlengthAL = ALIGN_REAL4 * ((UINT4)ceil ( 1.0 * finegrid.freqlength / ALIGN_REAL4 ));
+          LogPrintf (LOG_DEBUG, "finegrid.freqlength = %d, finegrid.freqlengthAL = %d\n", finegrid.freqlength, finegrid.freqlengthAL );
 
           /* fine-grid f1dot resolution */
           if (nf1dot == 1) {
@@ -1209,7 +1212,7 @@ int MAIN( int argc, char *argv[]) {
           f2dotmin_fg = (usefulParams.spinRange_midTime.fkdot[2] + if2dot * df2dot) - df2dot_fg * floor(nf2dots_fg / 2.0);
 
           /* total number of fine-grid points */
-          finegrid.length = nfreqs_fg;
+          finegrid.length = finegrid.freqlength;
 
           if(!oldcg) {
             oldcg = coarsegrid.length;
@@ -1233,7 +1236,7 @@ int MAIN( int argc, char *argv[]) {
           finegrid.numDetectors = coarsegrid.numDetectors;  /* non-zero only in computeLV case */
 
           /* allocate memory for finegrid points */
-          /* FIXME: The SSE2 optimized code relies on an identical alignment modulo 16 of the
+          /* FIXME: The SSE2 optimized code relies on an identical alignment modulo 16 bytes of the
              arrays finegrid.nc and finegrid.sumTwoF !!
              MacOS enforces 16 byte alignment of memory blocks with size >= 16 bytes allocated
              with malloc and realloc, but e.g. for 32 bit Linux this will NOT hold.
@@ -1243,7 +1246,7 @@ int MAIN( int argc, char *argv[]) {
 
           finegrid.nc = (FINEGRID_NC_T *)ALRealloc( finegrid.nc, finegrid.length * sizeof(FINEGRID_NC_T));
           finegrid.sumTwoF = (REAL4 *)ALRealloc( finegrid.sumTwoF, finegrid.length * sizeof(REAL4));
-          finegrid.sumTwoFX = (REAL4 *)ALRealloc( finegrid.sumTwoFX, finegrid.numDetectors * finegrid.length * sizeof(REAL4));
+          finegrid.sumTwoFX = (REAL4 *)ALRealloc( finegrid.sumTwoFX, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4));
 
           if ( finegrid.nc == NULL || finegrid.sumTwoF == NULL) {
             fprintf(stderr, "ERROR: Memory allocation [HierarchSearchGCT.c %d]\n" , __LINE__);
@@ -1274,7 +1277,7 @@ int MAIN( int argc, char *argv[]) {
               /* initialize the entire finegrid ( 2F-sum and number count set to 0 ) */
               memset( finegrid.nc, 0, finegrid.length * sizeof(FINEGRID_NC_T) );
               memset( finegrid.sumTwoF, 0, finegrid.length * sizeof(REAL4) );
-              memset( finegrid.sumTwoFX, 0, finegrid.numDetectors * finegrid.length * sizeof(REAL4) );
+              memset( finegrid.sumTwoFX, 0, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4) );
 
               /* compute F-statistic values for coarse grid the first time through fine grid fdots loop */
               const BOOLEAN doComputeFstats = ( (if1dot_fg == 0) && (if2dot_fg == 0) );
@@ -1582,15 +1585,17 @@ int MAIN( int argc, char *argv[]) {
 
               /* take F-stat averages over segments */
               REAL4 * fgrid2F = finegrid.sumTwoF + FG_INDEX(finegrid, 0);
+              REAL4 nStacksInv = 1.0 / nStacks;
               for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
-                fgrid2F[0] /= nStacks; /* average multi-2F by full number of segments */
+                fgrid2F[0] *= nStacksInv; /* average multi-2F by full number of segments */
                 fgrid2F++;
               }
               if ( uvar_computeLV ) {
                 for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
+                  REAL4 NsegmentsXInv = 1.0 / NsegmentsX[X];
                   REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
                   for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
-                    fgrid2FX[0] /= NsegmentsX[X]; /* average single-2F by per-IFO number of segments */
+                    fgrid2FX[0] *= NsegmentsXInv; /* average single-2F by per-IFO number of segments */
                     fgrid2FX++;
                   }
                 }
