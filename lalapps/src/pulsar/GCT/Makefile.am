@@ -10,8 +10,8 @@ INCLUDES = -I$(top_srcdir)/src/lalapps -I$(CFSsrc) -I$(EAHsrc)
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
-check_PROGRAMS =  testLineVeto
-EXTRA_PROGRAMS = eah_HierarchSearchGCT lalapps_HierarchSearchGCT_cuda lalapps_HierarchSearchGCT_VFStat
+check_PROGRAMS = testLineVeto
+EXTRA_PROGRAMS = eah_HierarchSearchGCT lalapps_HierarchSearchGCT_cuda lalapps_HierarchSearchGCT_VFStat lalapps_HierarchSearchGCT_SSE2
 
 EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc)/win_lib.cpp $(OPTsrc)/LocalComputeFstat.c
 HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
@@ -33,6 +33,10 @@ lalapps_HierarchSearchGCT_cuda_LDADD = $(LDADD) -lcudart
 
 lalapps_HierarchSearchGCT_VFStat_SOURCES = $(HSGCTSources) $(OPTsrc)/LocalComputeFstat.c
 lalapps_HierarchSearchGCT_VFStat_CPPFLAGS = $(AM_CPPFLAGS) -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT
+
+lalapps_HierarchSearchGCT_SSE2_SOURCES = $(HSGCTSources) $(OPTsrc)/LocalComputeFstat.c
+lalapps_HierarchSearchGCT_SSE2_CPPFLAGS = $(AM_CPPFLAGS) -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT -DGC_SSE2_OPT
+lalapps_HierarchSearchGCT_SSE2_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=sse
 
 eah_HierarchSearchGCT_SOURCES = $(HSGCTSources) $(EAHSources)
 eah_HierarchSearchGCT_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT
