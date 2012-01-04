@@ -49,7 +49,7 @@ void gc_hotloop(REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthr
 
 	    fgrid2F[0] += cgrid2F[0] ;
 
-#ifndef EXP_NO_NUM_COUNT	    
+#ifndef EXP_NO_NUM_COUNT
 	    fgridnc[0] += (TwoFthreshold < cgrid2F[0]);
 	    fgridnc++;
 #endif
@@ -66,21 +66,21 @@ for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
 #pragma ivdep
   for(int j=0 ; j < 16; j++ ) {
 	    fgrid2F[0] += cgrid2F[0] ;
-#ifndef EXP_NO_NUM_COUNT	    
+#ifndef EXP_NO_NUM_COUNT
 	    fgridnc[0] += (TwoFthreshold < cgrid2F[0]);
 	    fgridnc++;
 #endif
 	    fgrid2F++;
 	    cgrid2F++;
-  }	    
+  }
 
 #else
     __asm __volatile (
          "MOVUPS  (%[cg2F]),%%xmm2 \n\t"  /* load coarse grid values, possibly unaligned */
          "MOVAPS  (%[fg2F]),%%xmm3 \n\t"
-#ifndef EXP_NO_NUM_COUNT	             
+#ifndef EXP_NO_NUM_COUNT
          "MOVAPS %[Vthresh2F],%%xmm7 \n\t"
-#endif         
+#endif
          "MOVUPS  0x10(%[cg2F]),%%xmm4 \n\t"
          "MOVUPS  0x20(%[cg2F]),%%xmm5 \n\t"
          "MOVUPS  0x30(%[cg2F]),%%xmm6 \n\t"
@@ -88,12 +88,12 @@ for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
          /* Loop iterations 1...4 */
 
          "ADDPS   %%xmm2,%%xmm3 \n\t"     /* Add four coarse grid 2F values to fine grid sums */
-#ifndef EXP_NO_NUM_COUNT	             
+#ifndef EXP_NO_NUM_COUNT
          "MOVAPS  (%[fgnc]),%%xmm1 \n\t"  /* vector of 16 (!) number count values (unsigned bytes) */
-#endif         
+#endif
          "MOVAPS  %%xmm3,(%[fg2F]) \n\t"  /* store 4 values in fine grid 2F sum array */
 
-#ifndef EXP_NO_NUM_COUNT	             
+#ifndef EXP_NO_NUM_COUNT
          "MOVAPS %%xmm7,%%xmm3 \n\t"
          "CMPLEPS %%xmm2,%%xmm3   \n\t"   /* compare the four coarse grid 2F values to four */
                                           /* copies of threshold value in parallel          */
@@ -108,7 +108,7 @@ for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
          "MOVAPS  0x10(%[fg2F]),%%xmm2 \n\t"
          "ADDPS   %%xmm4,%%xmm2 \n\t"
          "MOVAPS  %%xmm2,0x10(%[fg2F]) \n\t"
-#ifndef EXP_NO_NUM_COUNT	                      
+#ifndef EXP_NO_NUM_COUNT
          "MOVAPS %%xmm7,%%xmm0 \n\t"
          "CMPLEPS %%xmm4,%%xmm0   \n\t"
 
@@ -121,7 +121,7 @@ for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
          "ADDPS   %%xmm5,%%xmm4 \n\t"
          "MOVAPS  %%xmm4,0x20(%[fg2F]) \n\t"
 
-#ifndef EXP_NO_NUM_COUNT	             
+#ifndef EXP_NO_NUM_COUNT
          "MOVAPS %%xmm7,%%xmm4 \n\t"
          "CMPLEPS %%xmm5,%%xmm4   \n\t"
 #endif
@@ -132,7 +132,7 @@ for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
          "ADDPS   %%xmm6,%%xmm2 \n\t"
          "MOVAPS  %%xmm2,0x30(%[fg2F]) \n\t"
 
-#ifndef EXP_NO_NUM_COUNT	             
+#ifndef EXP_NO_NUM_COUNT
          "MOVAPS %%xmm7,%%xmm0 \n\t"
          "CMPLEPS %%xmm6,%%xmm0   \n\t"
 
@@ -152,8 +152,8 @@ for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
       /* input */
       [cg2F]       "r"  (cgrid2F),
       [fg2F]       "r"  (fgrid2F)
-      
-#ifndef EXP_NO_NUM_COUNT	            
+
+#ifndef EXP_NO_NUM_COUNT
       ,
 
       [fgnc]       "r"  (fgridnc),
@@ -164,11 +164,11 @@ for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
       "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7","memory"
 
     ) ;
-    
-#endif // EXP_No_ASM    
+
+#endif // EXP_No_ASM
     fgrid2F+=16;
     cgrid2F+=16;
-#ifndef EXP_NO_NUM_COUNT	        
+#ifndef EXP_NO_NUM_COUNT
     fgridnc+=16;
 #endif
 
@@ -176,7 +176,7 @@ for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
   /* take care of remaining iterations, length  modulo 16 */
   for( ; ifreq_fg < length; ifreq_fg++ ) {
 	    fgrid2F[0] += cgrid2F[0] ;
-#ifndef EXP_NO_NUM_COUNT	    
+#ifndef EXP_NO_NUM_COUNT
 	    fgridnc[0] += (TwoFthreshold < cgrid2F[0]);
 	    fgridnc++;
 #endif
