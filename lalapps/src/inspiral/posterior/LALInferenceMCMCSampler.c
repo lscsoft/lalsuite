@@ -267,8 +267,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   FILE * chainoutput = NULL;
 
   FILE *stat = NULL;
+  FILE *propstatfile = NULL;
   FILE *tempfile = NULL;
   char statfilename[256];
+  char propstatfilename[256];
   char tempfilename[256];
   if(MPIrank == 0){
     if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose") || LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")) {
@@ -279,6 +281,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
       sprintf(tempfilename,"PTMCMC.tempswaps.%u",randomseed);
       tempfile = fopen(tempfilename, "a");
+    }
+
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose")) {
+      sprintf(propstatfilename,"PTMCMC.propstats.%u",randomseed);
+      propstatfile = fopen(propstatfilename, "a");
     }
   }
 
@@ -310,7 +317,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (ppt) {
       LALInferenceDataDump(runState);
     }
-
   }
 
   INT4 Tskip=100;
@@ -339,6 +345,24 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
     runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
     acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
+
+    if (i==1 && MPIrank == 0){
+      ppt = LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose");
+      if (ppt) {
+        // Make sure numbers are initialized (TODO:FIX)!!!
+        LALInferenceProposalStatistics *propStat;
+        LALInferenceVariableItem *this;
+        this = runState->proposalStats->head;
+        while(this){
+          propStat = (LALInferenceProposalStatistics *)this->value;
+          propStat->accepted=0;
+          propStat->proposed=0;
+          this = this->next;
+        }
+        LALInferencePrintProposalStatsHeader(propstatfile, runState->proposalStats);
+        fflush(propstatfile);
+      }
+    }
 
     if ((i % Nskip) == 0) {
       if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")) {
@@ -384,6 +408,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             fprintf(stat,"\n");
             fflush(stat);
           }
+        }
+      }
+
+      if (MPIrank == 0){
+        if (LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose")){
+          LALInferencePrintProposalStats(propstatfile,runState->proposalStats);
+          fflush(propstatfile);
         }
       }
     }
@@ -480,6 +511,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
       fclose(tempfile);
     }
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose")) {
+      fclose(propstatfile);
+    }
   }
 
   free(tempLadder);
@@ -504,6 +538,8 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   REAL8 temperature;
   INT4 acceptanceCount;
   INT4 accepted = 0;
+  const char *currentProposalName;
+  LALInferenceProposalStatistics *propStat;
   ProcessParamsTable *ppt, *commandLine = runState->commandLine;
 
   // current values:
@@ -562,6 +598,18 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
       if(accepted == 1){
         PacceptCount->data[i]+=1;
       }
+    }
+  }
+  if (runState->proposalStats){
+
+
+    currentProposalName = *((const char **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceCurrentProposalName));
+    propStat = ((LALInferenceProposalStatistics *)LALInferenceGetVariable(runState->proposalStats, currentProposalName));
+    fprintf(stdout,"%s(%u):\n",currentProposalName,propStat->weight);
+    fprintf(stdout,"accepted:%u\tproposed:%u\n",propStat->accepted,propStat->proposed);
+    propStat->proposed++;
+    if (accepted == 1){
+      propStat->accepted++;
     }
   }
 

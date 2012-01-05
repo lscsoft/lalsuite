@@ -545,6 +545,34 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 	return;
 }
 
+int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propStats) {
+  LALInferenceVariableItem *head = propStats->head;
+  while (head != NULL) {
+    fprintf(fp, "%s\t", head->name);
+    head = head->next;
+  }
+  fprintf(fp, "\n");
+  return 0;
+}
+
+void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats){
+  REAL4 accepted = 0;
+  REAL4 proposed = 0;
+  REAL4 acceptanceRate = 0;
+
+  if(propStats==NULL || fp==NULL) return;
+  LALInferenceVariableItem *ptr=propStats->head;
+  while(ptr!=NULL) {
+    accepted = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).accepted;
+    proposed = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).proposed;
+    acceptanceRate = accepted/proposed;
+    fprintf(fp, "%9.5f\t", accepted/proposed);
+    ptr=ptr->next;
+  }
+  fprintf(fp, "\n");
+  return;
+}
+
 const char *LALInferenceTranslateInternalToExternalParamName(const char *inName) {
   if (!strcmp(inName, "a_spin1")) {
     return "a1";

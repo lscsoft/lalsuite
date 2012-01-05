@@ -46,6 +46,26 @@ static const char *cycleArrayLengthName = "Proposal Cycle Length";
 static const char *cycleArrayCounterName = "Proposal Cycle Counter";
 
 const char *LALInferenceSigmaJumpName = "sigmaJump";
+const char *LALInferenceCurrentProposalName = "Current Proposal";
+
+/* Proposal Names */
+const char *singleAdaptProposalName = "SingleAdapt";
+const char *singleProposalName = "Single";
+const char *orbitalPhaseJumpName = "OrbitalPhase";
+const char *inclinationDistanceName = "InclinationDistance";
+const char *covarianceEigenvectorJumpName = "CovarianceEigenvector";
+const char *skyLocWanderJumpName = "SkyLocWander";
+const char *differentialEvolutionFullName = "DifferentialEvolutionFull";
+const char *differentialEvolutionMassesName = "DifferentialEvolutionMasses";
+const char *differentialEvolutionAmpName = "DifferentialEvolutionAmp";
+const char *differentialEvolutionSpinsName = "DifferentialEvolutionSpins";
+const char *differentialEvolutionSkyName = "DifferentialEvolutionSky";
+const char *drawApproxPriorName = "DrawApproxPrior";
+const char *skyReflectDetPlaneName = "SkyReflectDetPlane";
+const char *rotateSpinsName = "RotateSpins";
+const char *polarizationPhaseJumpName = "PolarizationPhase";
+const char *distanceQuasiGibbsProposalName = "DistanceQuasiGibbs";
+const char *orbitalPhaseQuasiGibbsProposalName = "OrbitalPhaseQuasiGibbs";
 
 /* Mode hopping fraction for the differential evoultion proposals. */
 static const REAL8 modeHoppingFrac = 0.1;
@@ -92,12 +112,13 @@ LALInferenceSetLogProposalRatio(LALInferenceRunState *runState, REAL8 logP) {
 }
 
 void
-LALInferenceAddProposalToCycle(LALInferenceRunState *runState, LALInferenceProposalFunction *prop, UINT4 weight) {
+LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction *prop, UINT4 weight) {
   const char *fname = "LALInferenceAddProposalToCycle";
 
   UINT4 length = 0;
   LALInferenceProposalFunction **cycle = NULL;
   LALInferenceVariables *propArgs = runState->proposalArgs;
+  LALInferenceVariables *propStats = runState->proposalStats;
 
   /* Quit without doing anything if weight = 0. */
   if (weight == 0) {
@@ -142,6 +163,17 @@ LALInferenceAddProposalToCycle(LALInferenceRunState *runState, LALInferencePropo
 
     LALInferenceAddVariable(propArgs, cycleArrayLengthName, &length, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(propArgs, cycleArrayName, (void *)&cycle, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
+  }
+
+  /* If propStats is not NULL, add counters for proposal function if they aren't already there */
+  if(propStats){
+    if(!LALInferenceCheckVariable(propStats, propName)){
+      LALInferenceProposalStatistics propStat = {
+        .weight = weight,
+        .proposed = 0,
+        .accepted = 0};
+      LALInferenceAddVariable(propStats, propName, (void *)&propStat, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
+    }
   }
 }
 
@@ -305,39 +337,42 @@ LALInferenceDeleteProposalCycle(LALInferenceRunState *runState) {
 static void
 SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const UINT4 BIGWEIGHT = 20;
-  const UINT4 SMALLWEIGHT = 5;
-  const UINT4 TINYWEIGHT = 1;
+  const UINT4 SMALLWEIGHT = 20;
+  const UINT4 TINYWEIGHT = 20;
+  //const UINT4 SMALLWEIGHT = 5;
+  //const UINT4 TINYWEIGHT = 1;
 
-  ProcessParamsTable *ppt;
+  //ProcessParamsTable *ppt;
         
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   /* The default, single-parameter updates. */
-  LALInferenceAddProposalToCycle(runState, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
+  LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
 
-  LALInferenceAddProposalToCycle(runState, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
 
-  LALInferenceAddProposalToCycle(runState, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
+  LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
+  LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
+  /*
 
   UINT4 nDet = numDetectorsUniquePositions(runState);
   if (nDet == 3) {
-    LALInferenceAddProposalToCycle(runState, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
+    LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
   }
 
-  LALInferenceAddProposalToCycle(runState, &LALInferenceDrawApproxPrior, TINYWEIGHT);
+  LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
 
-  /* Now add various special proposals that are conditional on
-     command-line arguments or variables in the params. */
+  *//* Now add various special proposals that are conditional on
+     command-line arguments or variables in the params. *//*
   if(LALInferenceCheckVariable(proposedParams,"inclination")) {
-    LALInferenceAddProposalToCycle(runState, &LALInferenceInclinationDistance, TINYWEIGHT);
+    LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
   }
 
   if(LALInferenceCheckVariable(proposedParams,"phase")) {
-    LALInferenceAddProposalToCycle(runState, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
+    LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
   }
 
   if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
-    LALInferenceAddProposalToCycle(runState, &LALInferenceRotateSpins, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, rotateSpinsName, &LALInferenceRotateSpins, SMALLWEIGHT);
   }
 
   ppt=LALInferenceGetProcParamVal(runState->commandLine, "--covariancematrix");
@@ -346,39 +381,50 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
  	if(ppt) XLALPrintWarning("WARNING: Deprecated --covarianceMatrix option will be removed, please change to --covariancematrix");
   }
   if (ppt) {
-    LALInferenceAddProposalToCycle(runState, &LALInferenceCovarianceEigenvectorJump, BIGWEIGHT);
+    LALInferenceAddProposalToCycle(runState, covarianceEigenvectorJumpName, &LALInferenceCovarianceEigenvectorJump, BIGWEIGHT);
   }
 
   if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")
       && !LALInferenceGetProcParamVal(runState->commandLine, "--nodifferentialevolution")) {
-    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionFull, BIGWEIGHT);
-    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionMasses, SMALLWEIGHT);
-    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionAmp, SMALLWEIGHT);
-    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionSpins, SMALLWEIGHT);
-    LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionSky, SMALLWEIGHT);
-  } 
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, BIGWEIGHT);
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionMassesName, &LALInferenceDifferentialEvolutionMasses, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionAmpName, &LALInferenceDifferentialEvolutionAmp, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionSkyName, &LALInferenceDifferentialEvolutionSky, SMALLWEIGHT);
+    if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
+      LALInferenceAddProposalToCycle(runState, differentialEvolutionSpinsName, &LALInferenceDifferentialEvolutionSpins, SMALLWEIGHT);
+    }
+  }
 
   if (LALInferenceGetProcParamVal(runState->commandLine, "--kDTree") || LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) {
     LALInferenceAddProposalToCycle(runState, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
   }
 
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--nogibbsproposal")){
-    LALInferenceAddProposalToCycle(runState, &LALInferenceDistanceQuasiGibbsProposal, SMALLWEIGHT);
-    LALInferenceAddProposalToCycle(runState, &LALInferenceOrbitalPhaseQuasiGibbsProposal, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, distanceQuasiGibbsProposalName, &LALInferenceDistanceQuasiGibbsProposal, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, orbitalPhaseQuasiGibbsProposalName, &LALInferenceOrbitalPhaseQuasiGibbsProposal, SMALLWEIGHT);
   }
+  */
   LALInferenceRandomizeProposalCycle(runState);
+
+  FILE *propstatfile = NULL;
+  char propstatfilename[256];
+  sprintf(propstatfilename,"PTMCMC.init.propstats");
+  propstatfile = fopen(propstatfilename, "a");
+  LALInferencePrintProposalStatsHeader(propstatfile, runState->proposalStats);
+  LALInferencePrintProposalStats(propstatfile,runState->proposalStats); 
+  fflush(propstatfile);
 }
 
 static void
 SetupRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
-  LALInferenceAddProposalToCycle(runState, &LALInferenceSingleProposal, 10);
-  LALInferenceAddProposalToCycle(runState, &LALInferenceSkyLocWanderJump, 0);
-  LALInferenceAddProposalToCycle(runState, &LALInferenceInclinationDistance, 0);
+  LALInferenceAddProposalToCycle(runState, singleProposalName, &LALInferenceSingleProposal, 10);
+  LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, 0);
+  LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, 0);
 
   UINT4 nDet = numDetectorsUniquePositions(runState);
   if (nDet == 3) {
-    LALInferenceAddProposalToCycle(runState, &LALInferenceSkyReflectDetPlane, 1);
+    LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, 1);
   }
 
   LALInferenceRandomizeProposalCycle(runState);
@@ -414,7 +460,9 @@ void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVar
 }
 
 void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = singleAdaptProposalName;
   LALInferenceVariables *args = runState->proposalArgs;
+  LALInferenceSetVariable(args, LALInferenceCurrentProposalName, &propName);
   ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine, "--adapt");
   
   if (!LALInferenceCheckVariable(args, LALInferenceSigmaJumpName) || !ppt) {
@@ -484,6 +532,8 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
 
 void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
 {
+  const char *propName = singleProposalName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   gsl_rng * GSLrandom=runState->GSLrandom;
   LALInferenceVariableItem *param=NULL, *dummyParam=NULL;
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
@@ -581,6 +631,8 @@ void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVari
 }
 
 void LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = orbitalPhaseJumpName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   REAL8 phi;
 
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
@@ -615,6 +667,8 @@ void LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVa
    amplitude, or ... because it makes for the simplest jump proposal.
    */
 void LALInferenceInclinationDistance(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = inclinationDistanceName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   UINT4 nIFO = 0;
@@ -671,6 +725,8 @@ void LALInferenceInclinationDistance(LALInferenceRunState *runState, LALInferenc
 }
 
 void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = covarianceEigenvectorJumpName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceVariables *proposalArgs = runState->proposalArgs;
   gsl_matrix *eigenvectors = *((gsl_matrix **)LALInferenceGetVariable(proposalArgs, "covarianceEigenvectors"));
   REAL8Vector *eigenvalues = *((REAL8Vector **)LALInferenceGetVariable(proposalArgs, "covarianceEigenvalues"));
@@ -708,6 +764,8 @@ void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALIn
 }
 
 void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = skyLocWanderJumpName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   gsl_rng *rng = runState->GSLrandom;
   LALInferenceVariables *proposalArgs = runState->proposalArgs;
   REAL8 temp = *((REAL8 *)LALInferenceGetVariable(proposalArgs, "temperature"));
@@ -735,6 +793,8 @@ void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVa
 }
 
 void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = differentialEvolutionFullName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceDifferentialEvolutionNames(runState, proposedParams, NULL);
 }
 
@@ -800,6 +860,8 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
 }
 
 void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *runState, LALInferenceVariables *pp) {
+  const char *propName = differentialEvolutionMassesName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   const char *names[] = {"chirpmass", "asym_massratio", NULL};
   if (LALInferenceCheckVariable(pp, "massratio")) {
     names[1] = "massratio";
@@ -808,16 +870,22 @@ void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *runState, LAL
 }
 
 void LALInferenceDifferentialEvolutionAmp(LALInferenceRunState *runState, LALInferenceVariables *pp) {
+  const char *propName = differentialEvolutionAmpName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   const char *names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "time", NULL};
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
 
 void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *runState, LALInferenceVariables *pp) {
+  const char *propName = differentialEvolutionSpinsName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   const char *names[] = {"a_spin1", "a_spin2", "phi_spin1", "phi_spin2", "theta_spin1", "theta_spin2", NULL};
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
 
 void LALInferenceDifferentialEvolutionSky(LALInferenceRunState *runState, LALInferenceVariables *pp) {
+  const char *propName = differentialEvolutionSkyName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   const char *names[] = {"rightascension", "declination", "time", NULL};
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
@@ -912,6 +980,8 @@ approxLogPrior(LALInferenceVariables *params) {
 
 void 
 LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = drawApproxPriorName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   REAL8 Mc = draw_chirp(runState);
@@ -1125,6 +1195,8 @@ reflected_position_and_time(LALInferenceRunState *runState, const REAL8 ra, cons
 }
 
 void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = skyReflectDetPlaneName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   /* Find the number of distinct-position detectors. */
@@ -1226,6 +1298,8 @@ vectorToColatLong(const REAL8 v[3],
 
 void 
 LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = rotateSpinsName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   REAL8 theta1 = 2.0*M_PI*gsl_rng_uniform(runState->GSLrandom);
@@ -1302,6 +1376,8 @@ LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *p
 
 void
 LALInferencePolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = polarizationPhaseJumpName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   REAL8 psi = *(REAL8 *)LALInferenceGetVariable(proposedParams, "polarisation");
@@ -1325,6 +1401,8 @@ typedef enum {
 } DistanceParam;
 
 void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = distanceQuasiGibbsProposalName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   DistanceParam distParam;
@@ -1451,6 +1529,8 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
    This proposal computes the coefficients of the likelihood and draws
    phase from the analytic distribution that results. */
 void LALInferenceOrbitalPhaseQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = orbitalPhaseQuasiGibbsProposalName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   REAL8 L0, L1, L2;
