@@ -387,7 +387,7 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALSIMULATION
       /* get lalsimulation info */
       tree_status = strdup(lalSimulationVCSInfo.vcsStatus);
-      snprintf(lalsimulation_info, sizeof(lalxml_info),
+      snprintf(lalsimulation_info, sizeof(lalsimulation_info),
           "%%%% LALSimulation: %s (%s %s)\n", lalSimulationVCSInfo.version, \
           strsep(&tree_status, delim), lalSimulationVCSInfo.vcsId);
 #endif
