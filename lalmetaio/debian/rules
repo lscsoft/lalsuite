@@ -60,9 +60,9 @@ install: build
 	dh_clean -k
 	dh_installdirs
 
-	$(MAKE) DESTDIR=$(CURDIR)/debian/lalmetaio install ;                     \
-	echo "tree after install:" ;                                                 \
-	ls -lR $(CURDIR)/debian ;                                                    \
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	echo "tree after install:"
+	ls -lR $(CURDIR)/debian
 	$(MAKE) clean
 # only if necessary overwrite user-env scripts
 #	cp -p debian/lalmetaio-user-env.* $(CURDIR)/debian/lalmetaio/$(PREFIX)/etc/
@@ -73,7 +73,7 @@ binary-common: build install
 	dh_installchangelogs
 	dh_installdocs
 	dh_installexamples
-#	dh_install
+	dh_install --sourcedir=debian/tmp
 #	dh_installmenu
 #	dh_installdebconf
 #	dh_installlogrotate
