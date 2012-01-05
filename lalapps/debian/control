@@ -3,7 +3,7 @@ Section: lscsoft
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Build-Depends: debhelper (>= 5), pkg-config, python-all-dev (>= 2.4),
-  python-support, libgsl0-dev (>= 1.9), fftw3-dev, zlib1g-dev,
+  python-support, libgsl0-dev (>= 1.9), libfftw3-dev, zlib1g-dev,
   libframe-dev (>= 8.0), libmetaio-dev (>= 8.2), lal-dev (>= 6.6.0),
   lalstochastic-dev (>= 1.1.2), lalframe-dev (>= 1.0.3),
   lalmetaio-dev (>= 1.0.2), lalburst-dev (>= 1.1.0),
