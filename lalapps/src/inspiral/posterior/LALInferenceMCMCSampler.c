@@ -359,6 +359,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           propStat->proposed=0;
           this = this->next;
         }
+        fprintf(propstatfile, "cycle\t");
         LALInferencePrintProposalStatsHeader(propstatfile, runState->proposalStats);
         fflush(propstatfile);
       }
@@ -413,13 +414,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
       if (MPIrank == 0){
         if (LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose")){
+          fprintf(propstatfile, "%d\t", i);
           LALInferencePrintProposalStats(propstatfile,runState->proposalStats);
           fflush(propstatfile);
         }
       }
     }
 
-    if ((i % Nskip) == 0) {
+    if ((i % Tskip) == 0) {
       ptr=runState->currentParams->head;
       p=0;
       while(ptr!=NULL) {
@@ -443,9 +445,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         }
         ptr=ptr->next;
       }
-    }
 
-    if ((i % Tskip) == 0) {
       if(temperature_test==1){
         for (p=0;p<nPar;++p){
           pdf_count=0;
@@ -605,8 +605,6 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 
     currentProposalName = *((const char **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceCurrentProposalName));
     propStat = ((LALInferenceProposalStatistics *)LALInferenceGetVariable(runState->proposalStats, currentProposalName));
-    fprintf(stdout,"%s(%u):\n",currentProposalName,propStat->weight);
-    fprintf(stdout,"accepted:%u\tproposed:%u\n",propStat->accepted,propStat->proposed);
     propStat->proposed++;
     if (accepted == 1){
       propStat->accepted++;

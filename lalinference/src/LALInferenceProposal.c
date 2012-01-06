@@ -337,12 +337,10 @@ LALInferenceDeleteProposalCycle(LALInferenceRunState *runState) {
 static void
 SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const UINT4 BIGWEIGHT = 20;
-  const UINT4 SMALLWEIGHT = 20;
-  const UINT4 TINYWEIGHT = 20;
-  //const UINT4 SMALLWEIGHT = 5;
-  //const UINT4 TINYWEIGHT = 1;
+  const UINT4 SMALLWEIGHT = 5;
+  const UINT4 TINYWEIGHT = 1;
 
-  //ProcessParamsTable *ppt;
+  ProcessParamsTable *ppt;
         
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
@@ -352,7 +350,6 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
   LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
-  /*
 
   UINT4 nDet = numDetectorsUniquePositions(runState);
   if (nDet == 3) {
@@ -361,8 +358,8 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
 
-  *//* Now add various special proposals that are conditional on
-     command-line arguments or variables in the params. *//*
+  /* Now add various special proposals that are conditional on
+     command-line arguments or variables in the params. */
   if(LALInferenceCheckVariable(proposedParams,"inclination")) {
     LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
   }
@@ -403,28 +400,33 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, distanceQuasiGibbsProposalName, &LALInferenceDistanceQuasiGibbsProposal, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, orbitalPhaseQuasiGibbsProposalName, &LALInferenceOrbitalPhaseQuasiGibbsProposal, SMALLWEIGHT);
   }
-  */
   LALInferenceRandomizeProposalCycle(runState);
-
-  FILE *propstatfile = NULL;
-  char propstatfilename[256];
-  sprintf(propstatfilename,"PTMCMC.init.propstats");
-  propstatfile = fopen(propstatfilename, "a");
-  LALInferencePrintProposalStatsHeader(propstatfile, runState->proposalStats);
-  LALInferencePrintProposalStats(propstatfile,runState->proposalStats); 
-  fflush(propstatfile);
 }
 
 static void
 SetupRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
-  LALInferenceAddProposalToCycle(runState, singleProposalName, &LALInferenceSingleProposal, 10);
-  LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, 0);
-  LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, 0);
+  LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, 100);
+  //LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, 1);
+  //LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, 1);
+  LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, 1);
 
+  /*
   UINT4 nDet = numDetectorsUniquePositions(runState);
   if (nDet == 3) {
     LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, 1);
+  }
+  */
+
+  if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")) {
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, 10);
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionAmpName, &LALInferenceDifferentialEvolutionAmp, 1);
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionSkyName, &LALInferenceDifferentialEvolutionSky, 5);
+  }
+
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--nogibbsproposal")){
+    LALInferenceAddProposalToCycle(runState, distanceQuasiGibbsProposalName, &LALInferenceDistanceQuasiGibbsProposal, 1);
+    LALInferenceAddProposalToCycle(runState, orbitalPhaseQuasiGibbsProposalName, &LALInferenceOrbitalPhaseQuasiGibbsProposal, 1);
   }
 
   LALInferenceRandomizeProposalCycle(runState);
