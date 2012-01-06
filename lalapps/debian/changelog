@@ -1,3 +1,11 @@
+lalapps (6.6.2-1) unstable; urgency=low
+
+  * LALApps 6.6.2
+  * report version of LALSimulation in version reporting
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 06 Jan 2012 10:10:30 -0600
+
 lalapps (6.6.1-1) unstable; urgency=low
 
   * updates to lalapps_binj for ER1 data generation
