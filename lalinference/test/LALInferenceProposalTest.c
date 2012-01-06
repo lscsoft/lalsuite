@@ -494,10 +494,11 @@ int main(int argc, char *argv[]) {
 	Test jump proposal distributions\n\
 	--Nprop N\t: Number of jumps to perform\n\
 	--outfile file.dat\t: Optional output file for samples\n\
+	--thin N\t:Thin MCMC chain by factor N (default 1)\
 	";
 	LALInferenceRunState *state=NULL;
 	ProcessParamsTable *procParams=NULL;
-	UINT4 Nmcmc=0,i=1,NvarArray=0;
+	UINT4 Nmcmc=0,i=1,NvarArray=0,thinfac=1;
 	REAL8 logLmin=-DBL_MAX;
 	ProcessParamsTable *ppt=NULL;
 	FILE *outfile=NULL;
@@ -521,7 +522,8 @@ int main(int argc, char *argv[]) {
 	  Nmcmc=atoi(ppt->value);
 	if((ppt=LALInferenceGetProcParamVal(procParams,"--outfile")))
 	  filename=ppt->value;
-	
+	if((ppt=LALInferenceGetProcParamVal(procParams,"--thin")))
+	  thinfac=atoi(ppt->value);
 	
 	state = initialize(procParams);
 	
@@ -536,13 +538,13 @@ int main(int argc, char *argv[]) {
 	state->algorithmParams=calloc(1,sizeof(LALInferenceVariables));
 	state->prior=LALInferenceInspiralPriorNormalised;
 	state->likelihood=&LALInferenceZeroLogLikelihood;
-	state->proposal=&LALInferenceDefaultProposal;
+	state->proposal=&NSWrapMCMCLALProposal;
 	
 	/* Set up a sample to evolve */
 	initVariables(state);
 	
 	/* Set up the proposal function requirements */
-	LALInferenceAddVariable(state->algorithmParams,"Nmcmc",&i,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+	LALInferenceAddVariable(state->algorithmParams,"Nmcmc",&thinfac,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 	LALInferenceAddVariable(state->algorithmParams,"logLmin",&logLmin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
 	/* Use the PTMCMC proposal to sample prior */
