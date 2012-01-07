@@ -442,5 +442,47 @@ void LALInferenceMcEta2Masses(double mc, double eta, double *m1, double *m2);
 /** Convert from Mc, q space to m1, m2 space (q = m2/m1, with m1 > m2). */
 void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2);
 
-#endif
+/** A kD-tree cell has a bounding box (lower left to upper right), and
+    two sub-cells. */
+typedef struct tagLALInferenceKDCell {
+  size_t npts; /** Stores the number of tree points that lie in the cell. */
+  REAL8 *lowerLeft; /** Lower left (i.e. coordinate minimum) bound;
+                         length is ndim from LALInferenceKDTree. */
+  REAL8 *upperRight; /** Upper right (i.e. coordinate maximum) bound. */
+  REAL8 *pointsLowerLeft; /** Lower left for the contained points. */
+  REAL8 *pointsUpperRight; /** Upper right for contained points. */
+  struct tagLALInferenceKDCell *left; /** Left (i.e. lower-coordinate)
+                                          sub-tree, may be NULL if
+                                          empty.*/
+  struct tagLALInferenceKDCell *right; /** Right
+                                           (i.e. upper-coordinate)
+                                           sub-tree, may be NULL if
+                                           empty. */
+} LALInferenceKDCell;
 
+/** A kD-tree stores the current points that have been used to
+    construct the tree, and the top-level cell in the tree. */
+typedef struct {
+  size_t npts; /** The number of points. */
+  size_t ndim; /** Each point is ndim long. */
+  REAL8 **pts; /** Array of points. */
+  LALInferenceKDCell *topCell; /** The top-level cell in the tree. */
+} LALInferenceKDTree;
+
+/** Delete a kD-tree.  Also deletes all contained cells, and points. */
+void LALInferenceKDTreeDelete(LALInferenceKDTree *tree);
+
+/** Constructs a fresh, empty kD tree, using the provided global
+    bounds. */
+LALInferenceKDTree *LALInferenceKDEmpty(REAL8 *lowerLeft, REAL8 *upperRight, size_t ndim);
+
+/** Adds a point to the kD-tree, returns 0 on successful exit. */
+int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt);
+
+/** Returns the first cell that contains the given point that also
+    contains fewer than Npts points.  Non-positive Npts will give the
+    fewest-point cell in the tree containing the given point.  Returns
+    NULL on error. */
+LALInferenceKDCell *LALInferenceKDFindCell(LALInferenceKDTree *tree, REAL8 *pt, size_t Npts);
+
+#endif
