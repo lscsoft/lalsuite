@@ -480,9 +480,11 @@ LALInferenceKDTree *LALInferenceKDEmpty(REAL8 *lowerLeft, REAL8 *upperRight, siz
 int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt);
 
 /** Returns the first cell that contains the given point that also
-    contains fewer than Npts points.  Non-positive Npts will give the
-    fewest-point cell in the tree containing the given point.  Returns
-    NULL on error. */
+    contains fewer than Npts points, if possible.  If no cell
+    containing the given point has fewer than Npts points, then
+    returns the cell containing the fewest number of points and the
+    given point.  Non-positive Npts will give the fewest-point cell in
+    the tree containing the given point.  Returns NULL on error. */
 LALInferenceKDCell *LALInferenceKDFindCell(LALInferenceKDTree *tree, REAL8 *pt, size_t Npts);
 
 #endif

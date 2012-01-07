@@ -24,4 +24,4 @@ CLEANFILES = \
 	*.dat \
     *.xml
 
-TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
+TESTS_ENVIRONMENT = # 1>/dev/null 2>/dev/null

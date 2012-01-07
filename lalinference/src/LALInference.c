@@ -1319,7 +1319,10 @@ int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt) {
 }
 
 static LALInferenceKDCell *doFindCell(LALInferenceKDCell *cell, REAL8 *pt, size_t dim, size_t Npts, size_t level) {
-  if (cell->npts == 0) {
+  if (cell == NULL) {
+    /* If we encounter a NULL cell, then pass it up the chain. */
+    return cell;
+  } else if (cell->npts == 0) {
     XLAL_ERROR_NULL(XLAL_FAILURE, "could not find cell containing point");
   } else if (cell->npts == 1 || cell->npts < Npts) {
     return cell;
@@ -1327,9 +1330,21 @@ static LALInferenceKDCell *doFindCell(LALInferenceKDCell *cell, REAL8 *pt, size_
     REAL8 mid = 0.5*(cell->lowerLeft[level] + cell->upperRight[level]);
 
     if (pt[level] <= mid) {
-      return doFindCell(cell->left, pt, dim, Npts, (level+1)%dim);
+      LALInferenceKDCell *maybeCell = doFindCell(cell->left, pt, dim, Npts, (level+1)%dim);
+      if (maybeCell == NULL) {
+        return cell; /* If a NULL comes up from below, then this cell
+                        is the one with the fewest points containing
+                        pt. */
+      } else {
+        return maybeCell;
+      }
     } else {
-      return doFindCell(cell->right, pt, dim, Npts, (level+1)%dim);
+      LALInferenceKDCell *maybeCell = doFindCell(cell->right, pt, dim, Npts, (level+1)%dim);
+      if (maybeCell == NULL) {
+        return cell;
+      } else {
+        return maybeCell;
+      }
     }
   }
 }
