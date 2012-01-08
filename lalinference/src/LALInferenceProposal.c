@@ -353,6 +353,10 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionSky, SMALLWEIGHT);
   } 
 
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--kDTree")) {
+    LALInferenceAddProposalToCycle(runState, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
+  }
+
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--nogibbsproposal")){
     LALInferenceAddProposalToCycle(runState, &LALInferenceDistanceQuasiGibbsProposal, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, &LALInferenceOrbitalPhaseQuasiGibbsProposal, SMALLWEIGHT);
@@ -1495,4 +1499,78 @@ void LALInferenceOrbitalPhaseQuasiGibbsProposal(LALInferenceRunState *runState, 
   REAL8 phiNew = fmod(phi0 + dPhi, 2.0*M_PI);
   LALInferenceSetVariable(proposedParams, "phase", &phiNew);
   LALInferenceSetLogProposalRatio(runState, L0 - LDPhi);
+}
+
+static int inBounds(REAL8 *pt, REAL8 *low, REAL8 *high, size_t N) {
+  size_t i;
+  for (i = 0; i < N; i++) {
+    if (pt[i] < low[i] || pt[i] > high[i]) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const size_t NCell = 64;
+  LALInferenceVariables *proposalArgs = runState->proposalArgs;
+
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+
+  if (!LALInferenceCheckVariable(proposalArgs, "kDTree") || !LALInferenceCheckVariable(proposalArgs, "kDTreeVariableTemplate")) {
+    /* For whatever reason, the appropriate data are not set up in the
+       proposalArgs, so just propose the current point again and
+       bail. */
+    LALInferenceSetLogProposalRatio(runState, 0.0);
+    return;
+  }
+  
+  LALInferenceKDTree *tree = *(LALInferenceKDTree **)LALInferenceGetVariable(proposalArgs, "kDTree");
+  LALInferenceVariables *template = *(LALInferenceVariables **)LALInferenceGetVariable(proposalArgs, "kDTreeVariableTemplate");
+  REAL8 *pt = XLALMalloc(tree->ndim*sizeof(REAL8));
+
+  /* If tree has zero points, bail. */
+  if (tree->npts == 0) {
+    LALInferenceSetLogProposalRatio(runState, 0.0);
+    return;
+  }
+
+  /* A randomly-chosen point from those in the tree. */
+  REAL8 *thePt = tree->pts[gsl_rng_uniform_int(runState->GSLrandom, tree->npts)];
+  LALInferenceKDCell *aCell = LALInferenceKDFindCell(tree, thePt, NCell);
+
+  /* Proposed params chosen randomly from within the box bounding
+     points in aCell. */
+  size_t i;
+  for (i = 0; i < tree->ndim; i++) {
+    REAL8 delta = aCell->pointsUpperRight[i] - aCell->pointsLowerLeft[i];
+    pt[i] = aCell->pointsLowerLeft[i] + delta*gsl_rng_uniform(runState->GSLrandom);
+  }
+  LALInferenceKDREAL8ToVariables(proposedParams, pt, template);
+
+  /* Forward probability is N_Cell / N / Cell_Volume. */
+  REAL8 logForwardProb = log(aCell->npts) - log(tree->npts) - LALInferenceKDLogPointsVolume(tree, aCell);
+
+  /* To compute the backward jump probability, we need to know which
+     box contains the current point. */
+  LALInferenceKDVariablesToREAL8(runState->currentParams, pt, template);
+  LALInferenceKDCell *currentCell = LALInferenceKDFindCell(tree, pt, NCell);
+
+  /* Backward jump probability, based on the number of points and
+     volume of the cell containing the current point. */
+  REAL8 logBackwardProb;
+
+  if (inBounds(pt, currentCell->pointsLowerLeft, currentCell->pointsUpperRight, tree->ndim)) {
+    /* If the current point is within its cell's point-bounding-box, then this is jump probability. */
+    logBackwardProb = log(currentCell->npts) - log(tree->npts) - LALInferenceKDLogPointsVolume(tree, currentCell);
+  } else {
+    /* If current point outside its cell's points-bounding-box, then there is no probability of backward jump. */
+    logBackwardProb = log(0.0);
+  }
+
+  LALInferenceSetLogProposalRatio(runState, logBackwardProb - logForwardProb);
+
+  /* Cleanup the allocated storage for currentPt. */
+  XLALFree(pt);
 }

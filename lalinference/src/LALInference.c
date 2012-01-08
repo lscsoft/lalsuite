@@ -1264,6 +1264,14 @@ static int doInsert(LALInferenceKDCell *cell, size_t ndim, REAL8 *pt, size_t lev
   }
 }
 
+static int equalPoints(REAL8 *a, REAL8 *b, size_t n) {
+  size_t i;
+  for (i = 0; i < n; i++) {
+    if (a[i] != b[i]) return 0;
+  }
+  return 1;
+}
+
 static int insertIntoCell(LALInferenceKDCell *cell, size_t ndim, REAL8 *pt, size_t level) {
   if (cell->npts == 0) {
     /* Reached the end of the line, insert into this cell. */
@@ -1272,25 +1280,33 @@ static int insertIntoCell(LALInferenceKDCell *cell, size_t ndim, REAL8 *pt, size
     memcpy(cell->pointsUpperRight, pt, ndim*sizeof(REAL8));
     return 0;
   } else if (cell->npts == 1) {
-    /* We need to push the pre-existing point in this cell down to a
-       lower level before we insert the current pt. */
-    REAL8 *cellPt = cell->pointsLowerLeft;
-    REAL8 mid = 0.5*(cell->lowerLeft[level] + cell->upperRight[level]);
-
-    if (cellPt[level] <= mid) {
-      doInsert(cell, ndim, cellPt, level, LEFT);
+    if (equalPoints(pt, cell->pointsLowerLeft, ndim)) {
+      /* If we're trying to insert a point into the cell that is the
+         same as the current point, we just bail, leaving one point in
+         the tree.  This makes the tree not interpolate quite
+         correctly, but hopefully doesn't happen too often. */
+      return 0;
     } else {
-      doInsert(cell, ndim, cellPt, level, RIGHT);
-    }
-
-    /* Now insert this point. */
-    cell->npts += 1;
-    expandCellBounds(cell, pt, ndim);
-
-    if (pt[level] <= mid) {
-      return doInsert(cell, ndim, pt, level, LEFT);
-    } else {
-      return doInsert(cell, ndim, pt, level, RIGHT);
+      /* We need to push the pre-existing point in this cell down to a
+         lower level before we insert the current pt. */
+      REAL8 *cellPt = cell->pointsLowerLeft;
+      REAL8 mid = 0.5*(cell->lowerLeft[level] + cell->upperRight[level]);
+      
+      if (cellPt[level] <= mid) {
+        doInsert(cell, ndim, cellPt, level, LEFT);
+      } else {
+        doInsert(cell, ndim, cellPt, level, RIGHT);
+      }
+      
+      /* Now insert this point. */
+      cell->npts += 1;
+      expandCellBounds(cell, pt, ndim);
+      
+      if (pt[level] <= mid) {
+        return doInsert(cell, ndim, pt, level, LEFT);
+      } else {
+        return doInsert(cell, ndim, pt, level, RIGHT);
+      }
     }
   } else {
     /* There are some points in cell already, so insert into
@@ -1396,5 +1412,51 @@ void LALInferencePrintKDTree(LALInferenceKDTree *tree, FILE *stream) {
     }
 
     LALInferencePrintCell(tree->topCell, tree->ndim, stream);
+  }
+}
+
+double LALInferenceKDLogCellVolume(LALInferenceKDTree *tree, LALInferenceKDCell *cell) {
+  double logVol = 0.0;
+  size_t ndim = tree->ndim;
+  size_t i;
+  for (i = 0; i < ndim; i++) {
+    logVol += log(cell->upperRight[i] - cell->lowerLeft[i]);
+  }
+
+  return logVol;
+}
+
+double LALInferenceKDLogPointsVolume(LALInferenceKDTree *tree, LALInferenceKDCell *cell) {
+  double logVol = 0.0;
+  size_t ndim = tree->ndim;
+  size_t i;
+  for (i = 0; i < ndim; i++) {
+    logVol += log(cell->pointsUpperRight[i] - cell->pointsLowerLeft[i]);
+  }
+
+  return logVol;
+}
+
+void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template) {
+  LALInferenceVariableItem *templateItem = template->head;
+  size_t i = 0;
+  while (templateItem != NULL) {
+    if (templateItem->vary != LALINFERENCE_PARAM_FIXED) {
+      pt[i] = *(REAL8 *)LALInferenceGetVariable(params, templateItem->name);
+      i++;
+    }
+    templateItem = templateItem->next;
+  }
+}
+
+void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template) {
+  LALInferenceVariableItem *templateItem = template->head;
+  size_t i = 0;
+  while (templateItem != NULL) {
+    if (templateItem->vary != LALINFERENCE_PARAM_FIXED) {
+      LALInferenceSetVariable(params, templateItem->name, &(pt[i]));
+      i++;
+    }
+    templateItem = templateItem->next;
   }
 }

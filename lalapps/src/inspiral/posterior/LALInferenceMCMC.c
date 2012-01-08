@@ -1420,6 +1420,36 @@ void initVariables(LALInferenceRunState *state)
     state->differentialPointsSize = 0;
   }
 
+  /* KD Tree propsal. */
+  ppt=LALInferenceGetProcParamVal(commandLine, "--kDTree");
+  if (ppt) {
+    LALInferenceKDTree *tree;
+    REAL8 *low, *high;
+    currentParams = state->currentParams;
+    LALInferenceVariables *template = XLALCalloc(1,sizeof(LALInferenceVariables));
+    size_t ndim = LALInferenceGetVariableDimensionNonFixed(currentParams);
+    LALInferenceVariableItem *currentItem;
+
+    low = XLALMalloc(ndim*sizeof(REAL8));
+    high = XLALMalloc(ndim*sizeof(REAL8));
+    
+    currentItem = currentParams->head;
+    i = 0;
+    while (currentItem != NULL) {
+      if (currentItem->vary != LALINFERENCE_PARAM_FIXED) {
+        LALInferenceGetMinMaxPrior(state->priorArgs, currentItem->name, &(low[i]), &(high[i]));
+        i++;
+      }
+      currentItem = currentItem->next;
+    }
+
+    tree = LALInferenceKDEmpty(low, high, ndim);
+    LALInferenceCopyVariables(currentParams, template);
+
+    LALInferenceAddVariable(state->proposalArgs, "kDTree", &tree, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(state->proposalArgs, "kDTreeVariableTemplate", &template, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
+  }
+
   UINT4 N = LALInferenceGetVariableDimensionNonFixed(currentParams);
 
   ppt=LALInferenceGetProcParamVal(commandLine, "--adapt");

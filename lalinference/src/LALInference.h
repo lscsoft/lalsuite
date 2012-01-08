@@ -487,4 +487,24 @@ int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt);
     the tree containing the given point.  Returns NULL on error. */
 LALInferenceKDCell *LALInferenceKDFindCell(LALInferenceKDTree *tree, REAL8 *pt, size_t Npts);
 
+/** Returns the volume of the given cell, which is part of the given
+    tree. */
+double LALInferenceKDLogCellVolume(LALInferenceKDTree *tree, LALInferenceKDCell *cell);
+
+/** Returns the volume of a box that tightly encloses the points in
+    the given cell, which is part of the given tree. */
+double LALInferenceKDLogPointsVolume(LALInferenceKDTree *tree, LALInferenceKDCell *cell);
+
+/** Fills in the given REAL8 array with the parameter values from
+    params; the ordering of the variables is taken from the order of
+    the non-fixed variables in template.  It is an error if pt does
+    not point to enough storage to store all the non-fixed parameters
+    from template and params. */
+void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template);
+
+/** Fills in the non-fixed variables in params from the given REAL8
+    array.  The ordering of variables is given by the order of the
+    non-fixed variables in template. */
+void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template);
+
 #endif
