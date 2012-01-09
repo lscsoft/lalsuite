@@ -265,13 +265,6 @@ void ComputeFStatFreqBand ( LALStatus *status,
 			    const MultiDetectorStateSeries *multiDetStates,
 			    const ComputeFParams *params);
 
-int XLALComputeFStatFreqBand (  MultiFstatFrequencySeries **fstatSeries,
-				const PulsarDopplerParams *doppler,
-				const MultiSFTVector *multiSFTs,
-				const MultiNoiseWeights *multiWeights,
-				const MultiDetectorStateSeries *multiDetStates,
-				const ComputeFParams *params);
-
 void
 LALEstimatePulsarAmplitudeParams (LALStatus * status,
 				  PulsarCandidate *pulsarParams,
