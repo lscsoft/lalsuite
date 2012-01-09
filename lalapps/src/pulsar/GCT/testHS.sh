@@ -51,7 +51,7 @@ else
     gct_code="$@"
 fi
 
-testDir="testHS_dir";
+testDir="./testHS_dir";
 if [ ! -d "$testDir" ]; then
     mkdir -p "$testDir"
 fi
