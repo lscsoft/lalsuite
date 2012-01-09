@@ -78,8 +78,19 @@ LocalComputeFStatFreqBand ( LALStatus *status,
                             const MultiDetectorStateSeries *multiDetStates,
                             const ComputeFParams *params);
 #define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
+extern void
+LocalComputeFStat ( LALStatus *status,
+		    Fcomponents *Fstat,
+		    const PulsarDopplerParams *doppler,
+		    const MultiSFTVector *multiSFTs,
+		    const MultiNoiseWeights *multiWeights,
+		    const MultiDetectorStateSeries *multiDetStates,
+		    const ComputeFParams *params,
+		    ComputeFBuffer *cfBuffer);
+#define COMPUTEFSTAT LocalComputeFStat
 #else
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
+#define COMPUTEFSTAT ComputeFStat
 #endif
 #define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 char**global_argv;
@@ -2887,7 +2898,7 @@ int XLALComputeFStatFreqBand ( MultiFstatFrequencySeries **fstatSeries,	/**< [ou
 
     thisPoint.fkdot[0] = fStart + k*dFreq;
 
-    ComputeFStat ( &fakeStatus, &Fstat, &thisPoint, multiSFTs, multiWeights, multiDetStates, params, &cfBuffer );
+    COMPUTEFSTAT ( &fakeStatus, &Fstat, &thisPoint, multiSFTs, multiWeights, multiDetStates, params, &cfBuffer );
     if ( fakeStatus.statusCode )
       XLAL_ERROR (XLAL_EFUNC, "\nFailure in LAL function ComputeFStat(). statusCode=%d\n\n", fakeStatus.statusCode);
 
