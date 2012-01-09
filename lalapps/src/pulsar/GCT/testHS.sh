@@ -373,7 +373,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM_LV="${testDir}/GCT_DM_LV.dat"
 timingsfile_DM_LV="${testDir}/timing_DM_LV.dat"
 
-cmdline="$gct_code $gct_CL_common --useResamp=false --computeLV --SortToplist=2 --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
+cmdline="$gct_code $gct_CL_common --useResamp=false --computeLV --SortToplist=2 --LVrho=5.0 --LVlX='0.5,0.5' --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline -d1"
 else

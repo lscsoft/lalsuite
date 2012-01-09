@@ -159,6 +159,8 @@ typedef struct {
   UINT4 nStacks;                   /**< number of stacks */
   LALSegList *segmentList;         /**< parsed segment list read from user-specified input file --segmentList */
   BOOLEAN LVuseAllTerms;           /**< which terms to use in LineVeto computation - FALSE: only leading term, TRUE: all terms */
+  REAL4 LVrho;                     /**< Prior parameter rho_max_line for LineVeto statistic */
+  REAL4 *LVlX;                     /**< Array of line prior ratios lX per detector for LineVeto statistic */
 } UsefulStageVariables;
 
 
@@ -339,6 +341,8 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_recalcToplistStats = FALSE; /* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
   BOOLEAN uvar_computeLV = FALSE;          /* In Fstat loop, get single-IFO F-stats [and, in future, compute Line Veto stat] */
   BOOLEAN uvar_LVuseAllTerms = TRUE;       /* Use only leading term or all terms in Line Veto computation */
+  REAL8 uvar_LVrho = 0.0;                  /* Prior parameter rho_max_line for LineVeto statistic */
+  LALStringVector *uvar_LVlX = NULL;       /* Line-to-gauss prior ratios lX for LineVeto statistic */
   CHAR *uvar_outputSingleSegStats = NULL; /* Additionally output single-segment Fstats for each final toplist candidate */
 
   REAL8 uvar_dAlpha = DALPHA;   /* resolution for flat or isotropic grids -- coarse grid*/
@@ -475,6 +479,10 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacksMax",   0,  UVAR_OPTIONAL, "Maximum No. of segments", &uvar_nStacksMax ),&status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "tStack",      'T', UVAR_OPTIONAL, "Duration of segments (sec)", &uvar_tStack ),&status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "segmentList",  0, UVAR_OPTIONAL, "ALTERNATIVE: file containing a segment list: lines of form <startGPS endGPS duration[h] NumSFTs>", &uvar_segmentList),  &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "recalcToplistStats", 0, UVAR_OPTIONAL, "Additional analysis for toplist candidates, recalculate 2F, 2FX at finegrid", &uvar_recalcToplistStats), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeLV",    0, UVAR_OPTIONAL,  "Compute LineVeto stat for all candidates from single- and multi-IFO F-stats, can be used as main toplist statistic", &uvar_computeLV), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "LVrho",        0, UVAR_OPTIONAL,  "Prior parameter rho_max_line for LineVeto statistic, must be >=0", &uvar_LVrho), &status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "LVlX",         0, UVAR_OPTIONAL,  "Line-to-gauss prior ratios lX for LineVeto statistic, length must be numDetectors and each value in [0,1]", &uvar_LVlX), &status);
 
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
@@ -484,8 +492,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 1=numbercount, 2=LV-stat",  &uvar_SortToplist), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "recalcToplistStats", 0, UVAR_OPTIONAL, "Additional analysis for toplist candidates, recalculate 2F, 2FX at finegrid", &uvar_recalcToplistStats), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeLV",    0, UVAR_OPTIONAL,  "Compute LineVeto stat for all candidates from single- and multi-IFO F-stats, can be used as main toplist statistic", &uvar_computeLV), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "LVuseAllTerms",0, UVAR_DEVELOPER, "Which terms to use in LineVeto computation - FALSE: only leading term, TRUE: all terms", &uvar_LVuseAllTerms), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_DEVELOPER, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
 
@@ -565,6 +571,12 @@ int MAIN( int argc, char *argv[]) {
 
   /* take LV user vars and save them in usefulParams */
   usefulParams.LVuseAllTerms = uvar_LVuseAllTerms;
+  if ( uvar_LVrho < 0.0 ) {
+    fprintf(stderr, "Invalid LV prior rho (given rho=%f, need rho>=0)!\n", uvar_LVrho);
+    return( HIERARCHICALSEARCH_EBAD );
+  }
+  else
+    usefulParams.LVrho = (REAL4)uvar_LVrho;
 
   /* create toplist -- semiCohToplist has the same structure
      as a fstat candidate, so treat it as a fstat candidate */
@@ -989,6 +1001,24 @@ int MAIN( int argc, char *argv[]) {
         }
       }
     }
+
+   if ( uvar_LVlX ) { /* if line prior ratio given as user variable, convert from string to REAL4 vector */
+     if (  uvar_LVlX->length != numDetectors ) {
+       fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar_LVlX->length, numDetectors);
+       return( HIERARCHICALSEARCH_EBAD );
+     }
+     REAL4 lX[numDetectors];
+     for (UINT4 X = 0; X < numDetectors; X++) {
+       lX[X] = atof(uvar_LVlX->data[X]);
+       if ( ( lX[X] < 0.0 ) || ( lX[X] > 1.0 ) ) {
+         fprintf(stderr, "Input prior-ratio for detector X=%d out of range [0,1]: l[X]=%g\n", X, lX[X] );
+         return( HIERARCHICALSEARCH_EBAD );
+       }
+     }
+     usefulParams.LVlX = lX;
+   }
+   else /* else, pass NULL to XLALComputeLineVetoSimple, will use lX=0.0 for all X */
+     usefulParams.LVlX = NULL;
 
   }
 
@@ -2365,13 +2395,6 @@ void UpdateSemiCohToplist(LALStatus *status,
     /*fprintf(stderr,"translateSpins = TRUE\n");*/
   }
 
-   REAL4 rhomax = 5.0;
-   REAL4 priorX[in->numDetectors];
-   if ( in->numDetectors > 0 ) { /* numDetectors is only used (>0) if single-IFO Fstats in->sumTwoFX were computed */
-    for (UINT4 X = 0; X < in->numDetectors; X++)
-      priorX[X] = 0.5;
-   }
-
   /* ---------- Walk through fine-grid and insert candidates into toplist--------------- */
   for( ifreq_fg = 0; ifreq_fg < in->freqlength; ifreq_fg++ ) {
 
@@ -2406,7 +2429,7 @@ void UpdateSemiCohToplist(LALStatus *status,
       for (UINT4 X = 0; X < in->numDetectors; X++)
         line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
       xlalErrno = 0;
-      line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, rhomax, priorX, usefulparams->LVuseAllTerms );
+      line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, usefulparams->LVrho, usefulparams->LVlX, usefulparams->LVuseAllTerms );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeLineVeto() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
