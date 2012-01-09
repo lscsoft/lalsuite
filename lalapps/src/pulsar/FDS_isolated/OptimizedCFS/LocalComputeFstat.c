@@ -87,7 +87,7 @@ static const LALStatus empty_status;
 
 
 /*---------- internal prototypes ----------*/
-static void
+void
 LocalComputeFStat ( LALStatus*, Fcomponents*, const PulsarDopplerParams*,
 		    const MultiSFTVector*, const MultiNoiseWeights*,
 		    const MultiDetectorStateSeries*, const ComputeFParams*,
@@ -209,7 +209,7 @@ void LocalComputeFStatFreqBand ( LALStatus *status, 		/**< pointer to LALStatus 
  * it not implemented yet.
  *
  */
-static void
+void
 LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
 		    Fcomponents *Fstat,                 /**< [out] Fstatistic + Fa, Fb */
 		    const PulsarDopplerParams *doppler, /**< parameter-space point to compute F for */
@@ -296,6 +296,32 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
   Cd = multiAMcoef->Mmunu.Cd;
   Dd_inv = 1.0 / (Ad * Bd - Cd * Cd );
 
+  /* if requested, prepare for returning single-IFO F-stat vector */
+  if ( params->returnSingleF )
+    {
+      retF.numDetectors = numDetectors;
+      if ( numDetectors > CFS_MAX_IFOS ) {
+        XLALPrintError ("%s: numDetectors = %d exceeds currently allowed upper limit of detectors (%d) for returnSingleF=TRUE\n", __func__, numDetectors, CFS_MAX_IFOS );
+        ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+      }
+    }
+
+#ifdef HS_OPTIMIZATION
+  {
+    static int firstcall = TRUE;
+    if (firstcall) {
+      /* init sin/cos lookup tables */
+      local_sin_cos_2PI_LUT_init();
+
+      /* make sure Dterms is what we expect */
+      if (DTERMS != params->Dterms)
+        XLAL_ERROR ( XLAL_EINVAL, "LocalComputeFstat has been compiled with fixed DTERMS (%d) != params->Dtems (%d)\n",DTERMS, params->Dterms);
+
+      firstcall = FALSE;
+    }
+  }
+#endif
+
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( X=0; X < numDetectors; X ++)
     {
@@ -325,7 +351,22 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
 	ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
       }
 #endif
- 		 
+
+      /* compute single-IFO F-stats, if requested */
+      if ( params->returnSingleF )
+        {
+         REAL8 AdX = multiAMcoef->data[X]->A;
+         REAL8 BdX = multiAMcoef->data[X]->B;
+         REAL8 CdX = multiAMcoef->data[X]->C;
+         REAL8 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
+
+         /* compute final single-IFO F-stat */
+	 retF.FX[X] = DdX_inv * (  BdX * (SQ(FcX.Fa.re) + SQ(FcX.Fa.im) )
+	                           + AdX * ( SQ(FcX.Fb.re) + SQ(FcX.Fb.im) )
+		                   - 2.0 * CdX *( FcX.Fa.re * FcX.Fb.re + FcX.Fa.im * FcX.Fb.im )
+		                   );
+        } /* if returnSingleF */
+
       /* Fa = sum_X Fa_X */
       retF.Fa.re += FcX.Fa.re;
       retF.Fa.im += FcX.Fa.im;
@@ -612,7 +653,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       SFT_al ++;
 
     } /* for alpha < numSFTs */
-  
+
   /* return result */
   FaFb->Fa.re = norm * Fa.re;
   FaFb->Fa.im = norm * Fa.im;
