@@ -187,50 +187,10 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 				}
 			}
 			if(!foundIFOwithSameSampleRate){
-				ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
-																														
-																														&(ifoPtr->timeData->epoch),
-																														
-																														0.0,
-																														
-																														ifoPtr->timeData->deltaT,
-																														
-																														&lalDimensionlessUnit,
-																														
-																														ifoPtr->timeData->data->length);
-				ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
-																														
-																														&(ifoPtr->timeData->epoch),
-																														
-																														0.0,
-																														
-																														ifoPtr->timeData->deltaT,
-																														
-																														&lalDimensionlessUnit,
-																														
-																														ifoPtr->timeData->data->length);
-				ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
-																																		
-																																		&(ifoPtr->freqData->epoch),
-																																		
-																																		0.0,
-																																		
-																																		ifoPtr->freqData->deltaF,
-																																		
-																																		&lalDimensionlessUnit,
-																																		
-																																		ifoPtr->freqData->data->length);
-				ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
-																																		 
-																																		 &(ifoPtr->freqData->epoch),
-																																		 
-																																		 0.0,
-																																		 
-																																		 ifoPtr->freqData->deltaF,
-																																		 
-																																		 &lalDimensionlessUnit,
-																																		 
-																																		 ifoPtr->freqData->data->length);
+				ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",&(ifoPtr->timeData->epoch),0.0,ifoPtr->timeData->deltaT,&lalDimensionlessUnit,ifoPtr->timeData->data->length);
+				ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",&(ifoPtr->timeData->epoch),0.0,ifoPtr->timeData->deltaT,&lalDimensionlessUnit,ifoPtr->timeData->data->length);
+				ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",&(ifoPtr->freqData->epoch),0.0,ifoPtr->freqData->deltaF,&lalDimensionlessUnit,ifoPtr->freqData->data->length);
+				ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",&(ifoPtr->freqData->epoch),0.0,ifoPtr->freqData->deltaF,lalDimensionlessUnit,ifoPtr->freqData->data->length);
 				ifoPtr->modelParams = calloc(1, sizeof(LALInferenceVariables));
 			}
 			ifoPtr = ifoPtr->next;
@@ -559,6 +519,10 @@ int main(int argc, char *argv[]) {
 	/* Open the output file */
 	if(filename) outfile=fopen(filename,"w");
 	if(!outfile) fprintf(stdout,"No output file specified, internal testing only\n");
+	
+	/* Burn in */
+	LALInferenceNestedSamplingOneStep(state);
+	
 	
 	/* Evolve with fixed likelihood */
 	for(i=0;i<Nmcmc;i++){
