@@ -477,7 +477,7 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
 
 
 /** XLAL function to compute Line Veto statistics from multi- and single-detector Fstats:
- *  this is now a wrapper for XLALComputeLineVetoSimple which just translates REAL4Vectors to fixed REAL4 arrays
+ *  this is now a wrapper for XLALComputeLineVetoArray which just translates REAL4Vectors to fixed REAL4 arrays
 */
 REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fstat */
                             const REAL4Vector *TwoFXvec,  /**< vector of single-detector Fstats */
@@ -499,23 +499,11 @@ REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fsta
   if ( rhomaxline < 0 )
     XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative prior range 'rhomaxline' = %g! Must be >= 0!\n", rhomaxline );
 
-  REAL4 LV;
-
-  /* translate REAL4Vectors to fixed REAL4 arrays */
-  UINT4 numDetectors = TwoFXvec->length; /* number of detectors */
-  REAL4 TwoFX[numDetectors];
-  for (UINT4 X = 0; X < numDetectors; X++)
-    TwoFX[X]=TwoFXvec->data[X];
+  REAL4 *lX = NULL;
   if ( lXvec )
-   {
-      REAL4 lX[numDetectors];
-      for (UINT4 X = 0; X < numDetectors; X++)
-        lX[X]=lXvec->data[X];
-      LV = XLALComputeLineVetoSimple ( TwoF, numDetectors, TwoFX, rhomaxline, lX, useAllTerms );
-   }
-  else {
-    LV = XLALComputeLineVetoSimple ( TwoF, numDetectors, TwoFX, rhomaxline, NULL, useAllTerms );
-  }
+    lX = lXvec->data;
+
+  REAL4 LV = XLALComputeLineVetoArray ( TwoF, TwoFXvec->length, TwoFXvec->data, rhomaxline, lX, useAllTerms );
 
   return LV;
 
@@ -531,13 +519,14 @@ REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fsta
  *  from the analytical derivation, there should be a term LV += O_SN^0 + 4.0*log(rhomaxline/rhomaxsig)
  *  but this is irrelevant for toplist sorting, only a normalization which can be replaced arbitrarily
 */
-REAL4 XLALComputeLineVetoSimple ( const REAL4 TwoF,   /**< multi-detector Fstat */
-                            const UINT4 numDetectors, /**< number of detectors */
-                            const REAL4 *TwoFX,       /**< array of single-detector Fstats */
-                            const REAL4 rhomaxline,   /**< amplitude prior normalization for lines */
-                            const REAL4 *lX,          /**< array of single-detector prior line odds ratio, default to lX=1 for all X if NULL */
-                            const BOOLEAN useAllTerms /**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
-                          )
+REAL4
+XLALComputeLineVetoArray ( const REAL4 TwoF,   /**< multi-detector Fstat */
+                           const UINT4 numDetectors, /**< number of detectors */
+                           const REAL4 *TwoFX,       /**< array of single-detector Fstats */
+                           const REAL4 rhomaxline,   /**< amplitude prior normalization for lines */
+                           const REAL4 *lX,          /**< array of single-detector prior line odds ratio, default to lX=1 for all X if NULL */
+                           const BOOLEAN useAllTerms /**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
+                           )
 {
   /* check input parameters and report errors */
   if ( !TwoF || !TwoFX )
@@ -607,9 +596,7 @@ REAL4 XLALComputeLineVetoSimple ( const REAL4 TwoF,   /**< multi-detector Fstat 
 
   return LV;
 
-} /* XLALComputeLineVetoSimple() */
-
-
+} /* XLALComputeLineVetoArray() */
 
 
 /** XLAL function to get a list of detector IDs from multi-segment multiSFT vectors

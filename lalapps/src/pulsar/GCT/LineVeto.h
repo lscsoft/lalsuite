@@ -104,12 +104,12 @@ XLALComputeLineVeto ( const REAL4 TwoF,
 		      const BOOLEAN useAllTerms );
 
 REAL4
-XLALComputeLineVetoSimple ( const REAL4 TwoF,
-			    const UINT4 numDetectors,
-			    const REAL4 *TwoFX,
-			    const REAL4 rhomaxline,
-			    const REAL4 *lX,
-			    const BOOLEAN useAllTerms );
+XLALComputeLineVetoArray ( const REAL4 TwoF,
+                           const UINT4 numDetectors,
+                           const REAL4 *TwoFX,
+                           const REAL4 rhomaxline,
+                           const REAL4 *lX,
+                           const BOOLEAN useAllTerms );
 
 LALStringVector *
 XLALGetDetectorIDs ( const MultiSFTVectorSequence *multiSFTsV );

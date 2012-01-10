@@ -2400,7 +2400,7 @@ void UpdateSemiCohToplist(LALStatus *status,
         line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
       xlalErrno = 0;
       BOOLEAN useAllTerms = FALSE; /* use only the leading term of the LV denominator sum */
-      line.LV = XLALComputeLineVetoSimple ( line.sumTwoF, line.numDetectors, line.sumTwoFX, rhomax, priorX, useAllTerms );
+      line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, rhomax, priorX, useAllTerms );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeLineVeto() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
