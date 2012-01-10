@@ -160,7 +160,7 @@ typedef struct {
   LALSegList *segmentList;         /**< parsed segment list read from user-specified input file --segmentList */
   BOOLEAN LVuseAllTerms;           /**< which terms to use in LineVeto computation - FALSE: only leading term, TRUE: all terms */
   REAL4 LVrho;                     /**< Prior parameter rho_max_line for LineVeto statistic */
-  REAL4 *LVlX;                     /**< Array of line prior ratios lX per detector for LineVeto statistic */
+  REAL4Vector *LVlX;               /**< Vector of line prior ratios lX per detector for LineVeto statistic */
 } UsefulStageVariables;
 
 
@@ -482,7 +482,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "recalcToplistStats", 0, UVAR_OPTIONAL, "Additional analysis for toplist candidates, recalculate 2F, 2FX at finegrid", &uvar_recalcToplistStats), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeLV",    0, UVAR_OPTIONAL,  "Compute LineVeto stat for all candidates from single- and multi-IFO F-stats, can be used as main toplist statistic", &uvar_computeLV), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "LVrho",        0, UVAR_OPTIONAL,  "Prior parameter rho_max_line for LineVeto statistic, must be >=0", &uvar_LVrho), &status);
-  LAL_CALL( LALRegisterLISTUserVar(   &status, "LVlX",         0, UVAR_OPTIONAL,  "Line-to-gauss prior ratios lX for LineVeto statistic, length must be numDetectors and each value in [0,1]", &uvar_LVlX), &status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "LVlX",         0, UVAR_OPTIONAL,  "Line-to-gauss prior ratios lX for LineVeto statistic, length must be numDetectors and each value >=0. Defaults to lX=1.0 for all X", &uvar_LVlX), &status);
 
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
@@ -571,6 +571,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* take LV user vars and save them in usefulParams */
   usefulParams.LVuseAllTerms = uvar_LVuseAllTerms;
+  usefulParams.LVlX = NULL;
   if ( uvar_LVrho < 0.0 ) {
     fprintf(stderr, "Invalid LV prior rho (given rho=%f, need rho>=0)!\n", uvar_LVrho);
     return( HIERARCHICALSEARCH_EBAD );
@@ -1000,27 +1001,31 @@ int MAIN( int argc, char *argv[]) {
             NsegmentsX[X] += 1;
         }
       }
-    }
+    } /* for X < numDetectors */
 
-   if ( uvar_LVlX ) { /* if line prior ratio given as user variable, convert from string to REAL4 vector */
-     if (  uvar_LVlX->length != numDetectors ) {
-       fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar_LVlX->length, numDetectors);
-       return( HIERARCHICALSEARCH_EBAD );
-     }
-     REAL4 lX[numDetectors];
-     for (UINT4 X = 0; X < numDetectors; X++) {
-       lX[X] = atof(uvar_LVlX->data[X]);
-       if ( ( lX[X] < 0.0 ) || ( lX[X] > 1.0 ) ) {
-         fprintf(stderr, "Input prior-ratio for detector X=%d out of range [0,1]: l[X]=%g\n", X, lX[X] );
-         return( HIERARCHICALSEARCH_EBAD );
-       }
-     }
-     usefulParams.LVlX = lX;
-   }
-   else /* else, pass NULL to XLALComputeLineVetoSimple, will use lX=0.0 for all X */
-     usefulParams.LVlX = NULL;
+    /* set up line prior ratios: either given by user, then convert from string to REAL4 vector; else, pass NULL, which is interpreted as lX=1.0 for all X */
+    if ( uvar_LVlX ) {
+      if (  uvar_LVlX->length != numDetectors ) {
+        fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar_LVlX->length, numDetectors);
+        return( HIERARCHICALSEARCH_EBAD );
+      }
+      if ( (usefulParams.LVlX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+       fprintf(stderr, "Failed call to XLALCreateREAL4Vector( %d )\n", numDetectors );
+       return( HIERARCHICALSEARCH_EXLAL );
+      }
+      for (UINT4 X = 0; X < numDetectors; X++) {
+        if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL4_FORMAT, (REAL4*)&usefulParams.LVlX->data[X] ) ) {
+          fprintf(stderr, "Illegal REAL4 commandline argument to --LVlX[%d]: '%s'\n", X, uvar_LVlX->data[X]);
+          return ( HIERARCHICALSEARCH_EBAD );
+        }
+        if ( usefulParams.LVlX->data[X] < 0.0 ) {
+          fprintf(stderr, "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, usefulParams.LVlX->data[X] );
+          return( HIERARCHICALSEARCH_EBAD );
+        }
+      } /* for X < numDetectors */
+    } /* if ( uvar_LVlX ) */
 
-  }
+  } /* if ( uvar_computeLV ) */
 
   /*-----------Create template grid for first stage ---------------*/
   /* prepare initialization of DopplerSkyScanner to step through paramter space */
@@ -1840,6 +1845,8 @@ int MAIN( int argc, char *argv[]) {
 
   free_gctFStat_toplist(&semiCohToplist);
 
+  XLALDestroyREAL4Vector ( usefulParams.LVlX );
+
   XLALDestroyExpLUT(); /* lookup table for fast exponential function, used in computeLV case */
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
@@ -2429,7 +2436,10 @@ void UpdateSemiCohToplist(LALStatus *status,
       for (UINT4 X = 0; X < in->numDetectors; X++)
         line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
       xlalErrno = 0;
-      line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, usefulparams->LVrho, usefulparams->LVlX, usefulparams->LVuseAllTerms );
+      if ( usefulparams->LVlX )
+        line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, usefulparams->LVrho, usefulparams->LVlX->data, usefulparams->LVuseAllTerms );
+      else
+        line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, usefulparams->LVrho, NULL, usefulparams->LVuseAllTerms );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeLineVeto() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
