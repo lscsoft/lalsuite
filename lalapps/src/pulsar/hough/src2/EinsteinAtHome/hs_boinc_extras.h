@@ -79,6 +79,16 @@ extern "C" {
 /* use platform-specific optimized ComputeFStatFreqBand and ComputeFstatHoughMap functions */
 #define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
 #define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
+#define COMPUTEFSTAT LocalComputeFStat
+
+LocalComputeFStat ( LALStatus *status,
+		    Fcomponents *Fstat,
+		    const PulsarDopplerParams *doppler,
+		    const MultiSFTVector *multiSFTs,
+		    const MultiNoiseWeights *multiWeights,
+		    const MultiDetectorStateSeries *multiDetStates,
+		    const ComputeFParams *params,
+		    ComputeFBuffer *cfBuffer);
 
 extern void
 LocalComputeFStatFreqBand ( LALStatus *status, 
