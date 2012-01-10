@@ -442,8 +442,13 @@ void LALInferenceMcEta2Masses(double mc, double eta, double *m1, double *m2);
 /** Convert from Mc, q space to m1, m2 space (q = m2/m1, with m1 > m2). */
 void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2);
 
-/** A kD-tree cell has a bounding box (lower left to upper right), and
-    two sub-cells. */
+/** A kD tree cell contains some points (npts), a bounding box
+    enclosing the cell (lowerLeft to upperRight), a bounding box
+    tightly enclosing all the points currently in the cell
+    (pointsLowerLeft to pointsUpperRight), and two sub-cells, left and
+    right, which split the bounding box in half along one coordinate
+    dimension (in N dimensions, the coordinate dimension that splits
+    is given by the level of the cell in the tree mod N). */
 typedef struct tagLALInferenceKDCell {
   size_t npts; /** Stores the number of tree points that lie in the cell. */
   REAL8 *lowerLeft; /** Lower left (i.e. coordinate minimum) bound;
@@ -460,8 +465,19 @@ typedef struct tagLALInferenceKDCell {
                                            empty. */
 } LALInferenceKDCell;
 
-/** A kD-tree stores the current points that have been used to
-    construct the tree, and the top-level cell in the tree. */
+/** The kD trees used in LALInference are not quite the standard kD
+    trees.  Our kD trees split the domain exactly in half along
+    successive dimensions (at level i, in N dimensions, the dimension
+    that is split is i%N), producing left- and right-sub-cells until
+    each cell contains either zero or one point.  The advantage of
+    this structure over the standard kD tree that splits the domain
+    along the median coordinate of the points at each level is that
+    this structure can be updated incrementally by the
+    LALInferenceKDAddPoint() function. 
+
+    To produce a kD tree from a set of points, add them one-at-a-time
+    using LALInferenceKDAddPoint() and starting with an empty tree
+    produced by LALInferenceKDEmpty().*/
 typedef struct {
   size_t npts; /** The number of points. */
   size_t ndim; /** Each point is ndim long. */
@@ -472,8 +488,9 @@ typedef struct {
 /** Delete a kD-tree.  Also deletes all contained cells, and points. */
 void LALInferenceKDTreeDelete(LALInferenceKDTree *tree);
 
-/** Constructs a fresh, empty kD tree, using the provided global
-    bounds. */
+/** Constructs a fresh, empty kD tree.  The top-level cell will get
+    the given bounds, which should enclose every point added by
+    LALInferenceKDAddPoint(). */
 LALInferenceKDTree *LALInferenceKDEmpty(REAL8 *lowerLeft, REAL8 *upperRight, size_t ndim);
 
 /** Adds a point to the kD-tree, returns 0 on successful exit. */

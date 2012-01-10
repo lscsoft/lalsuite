@@ -1323,7 +1323,22 @@ static int insertIntoCell(LALInferenceKDCell *cell, size_t ndim, REAL8 *pt, size
   }
 }
 
+static int inBounds(REAL8 *pt, REAL8 *low, REAL8 *high, size_t n) {
+  size_t i;
+
+  for (i = 0; i < n; i++) {
+    if (pt[i] < low[i] || pt[i] > high[i]) return 0;
+  }
+
+  return 1;
+}
+
 int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt) {
+  if (tree == NULL) XLAL_ERROR(XLAL_EINVAL, "given NULL tree");
+
+  if (!inBounds(pt, tree->topCell->lowerLeft, tree->topCell->upperRight, tree->ndim))
+    XLAL_ERROR(XLAL_EINVAL, "given point that is not in global tree bounds");
+
   tree->npts += 1;
   tree->pts = XLALRealloc(tree->pts, tree->npts*sizeof(REAL8 *));
   
