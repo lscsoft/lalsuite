@@ -1558,7 +1558,7 @@ int MAIN( int argc, char *argv[]) {
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
-                    gc_hotloop( fgrid2FX, cgrid2FX, fgridnc, TwoFthreshold, finegrid.freqlength );
+                    gc_hotloop_no_nc( fgrid2FX, cgrid2FX, fgridnc, TwoFthreshold, finegrid.freqlength );
                   }
                 }
 #else // GC_SSE2_OPT
