@@ -80,7 +80,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 /*---------- Global variables ----------*/
 static const REAL4 inv_fact[PULSAR_MAX_SPINS] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
-
+static int firstcall = TRUE; /* for sin/cos lookup table initialization */
 
 /* empty initializers  */
 static const LALStatus empty_status;
@@ -150,7 +150,6 @@ void LocalComputeFStatFreqBand ( LALStatus *status, 		/**< pointer to LALStatus 
   ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   ASSERT ( DTERMS == params->Dterms, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   {
-    static int firstcall = TRUE;
     if (firstcall) {
       /* init sin/cos lookup tables */
       local_sin_cos_2PI_LUT_init();
@@ -306,9 +305,7 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
       }
     }
 
-#ifdef HS_OPTIMIZATION
   {
-    static int firstcall = TRUE;
     if (firstcall) {
       /* init sin/cos lookup tables */
       local_sin_cos_2PI_LUT_init();
@@ -320,7 +317,6 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
       firstcall = FALSE;
     }
   }
-#endif
 
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( X=0; X < numDetectors; X ++)
