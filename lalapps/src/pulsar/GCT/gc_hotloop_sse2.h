@@ -1,5 +1,5 @@
 static inline void gc_hotloop (REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthreshold, UINT4 length  ) __attribute__ ((hot));
-static inline void gc_hotloop_no_nc (REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, UINT4 length  ) __attribute__ ((hot));
+static inline void gc_hotloop_no_nc (REAL4 * fgrid2F, REAL4 * cgrid2F, UINT4 length  ) __attribute__ ((hot));
 
 #ifdef __APPLE__
 
@@ -174,26 +174,10 @@ for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
 
 }
 
-void gc_hotloop_no_nc(REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, UINT4 length  )  {
+void gc_hotloop_no_nc(REAL4 * fgrid2F, REAL4 * cgrid2F, UINT4 length  )  {
   UINT4 ifreq_fg;
 
-  /* ensure alignment on fine grid. note fgridnc is UCHAR*
-     while fgrid2F is UINT4*  */
-
-  int offset = ((UINT4)fgridnc & 0xf) ;
-
-  if(offset != 0) offset = 16-offset;
-
-  for(ifreq_fg=0; offset > 0 && ifreq_fg < length; ifreq_fg++, offset-- ) {
-
-	    fgrid2F[0] += cgrid2F[0] ;
-	    fgrid2F++;
-	    cgrid2F++;
-
-  } /* for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) { */
-
-
-for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
+for( ifreq_fg=0 ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
     /* unrolled loop (16 iterations of original loop) */
 #ifdef EXP_NO_ASM
 

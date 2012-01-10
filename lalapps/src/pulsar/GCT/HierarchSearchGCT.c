@@ -1606,18 +1606,21 @@ int MAIN( int argc, char *argv[]) {
 
                 /* fine grid over frequency */
                 REAL4 * fgrid2F = finegrid.sumTwoF + FG_INDEX(finegrid, 0);
+#ifndef EXP_NO_NUM_COUNT
                 FINEGRID_NC_T * fgridnc = finegrid.nc + FG_INDEX(finegrid, 0);
+#endif
+
 #ifdef GC_SSE2_OPT
 #ifndef EXP_NO_NUM_COUNT
                 gc_hotloop( fgrid2F, cgrid2F, fgridnc, TwoFthreshold, finegrid.freqlength );
 #else
-                gc_hotloop_no_nc ( fgrid2F, cgrid2F, fgridnc, finegrid.freqlength );
+                gc_hotloop_no_nc ( fgrid2F, cgrid2F, finegrid.freqlength );
 #endif
                 if ( uvar_computeLV ) {
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
-                    gc_hotloop_no_nc( fgrid2FX, cgrid2FX, fgridnc, finegrid.freqlength );
+                    gc_hotloop_no_nc( fgrid2FX, cgrid2FX, finegrid.freqlength );
                   }
                 }
 #else // GC_SSE2_OPT
