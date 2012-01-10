@@ -51,12 +51,13 @@ else
     gct_code="$@"
 fi
 
-testDir="./testHS_dir";
+testDirBase="testHS_dir"
+testDir="./${testDirBase}";
 if [ ! -d "$testDir" ]; then
     mkdir -p "$testDir"
 fi
 
-SFTdir="$testDir"
+SFTdir="${testDirBase}"
 SFTfiles="$SFTdir${dirsep}*.sft"
 SFTfiles_H1="$SFTdir${dirsep}H1-*.sft"
 SFTfiles_L1="$SFTdir${dirsep}L1-*.sft"
