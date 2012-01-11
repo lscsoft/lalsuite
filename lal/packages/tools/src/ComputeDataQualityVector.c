@@ -79,7 +79,8 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
     int i, j;                    /* counters */
     float sum_x, sum_y;
     int light;                   /* is there light in the arms? */
-    int science, injection, up;  /* state vector info */
+    int sv_science, sv_injection, sv_up;  /* state vector info */
+    int science, injection, up;   /* DQ (not identical to the sv_*) */
     int calibrated;
     int badgamma;
     int dq_value;
@@ -98,17 +99,20 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
         /* "is the mean higher than 100 for both arms?" */
 
         /* science, injection, up (stuff coming from the state vector) */
-        science = 1;    /* in science mode */
-        injection = 0;  /* with no injection going on */
-        up = 1;         /* and IFO is up */
-        for (j = 0; j < r_sv; j++) {
+        sv_science = 1;    /* in science mode */
+        sv_injection = 0;  /* with no injection going on */
+        sv_up = 1;         /* and IFO is up */
+        for (j = 0; j < r_sv; j++) {  /* go over SV samples in a DQ sample */
             int s = (int) sv_data[i*r_sv + j];  /* convert from float to int */
-            if ((s & (1 << 0)) == 0)  science = 0;
-            if ((s & (1 << 3)) == 0)  injection = 1;
-            if ((s & (1 << 2)) == 0)  up = 0;
+            if ((s & (1 << 0)) == 0)  sv_science = 0;
+            if ((s & (1 << 3)) == 0)  sv_injection = 1;
+            if ((s & (1 << 2)) == 0)  sv_up = 0;
         }
 
-        up = up && light;  /* this is the "up" definition of the DQ vector */
+        science = sv_science && light;
+        injection = sv_injection;
+        up = sv_up && light;  /* these are the definitions for the DQ vector */
+
 
         /* calibrated */
         /* Because we will have to compute UP for the Data Quality
@@ -151,17 +155,19 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
         for (j = 0; j < wings; j++) {
             int pos = i - j;
             if (pos > 0) {
-                if ((dq_data[pos] & (1 << 2)) == 0)
+                if ((dq_data[pos] & (1 << 2)) == 0)  /* if not up */
                     calibrated = 0;
             }
             pos = i + j;  /* note that this includes dq_data[i] having UP=1 */
             if (pos < n_dq) {
-                if ((dq_data[pos] & (1 << 2)) == 0)
+                if ((dq_data[pos] & (1 << 2)) == 0)  /* if not up */
                     calibrated = 0;
             }
         }
 
         if (calibrated) dq_data[i] += (1 << 3);
+        /* we checked that we were DQ up all the time in +/- wings
+         * seconds, so that also includes sv_up && light */
     }
 
     return 0;
