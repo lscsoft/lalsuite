@@ -348,7 +348,7 @@ void initVariables(LALInferenceRunState *state)
 {
 
   char help[]="\
-               (--injXML injections.xml)       Injection XML file to use\n\
+               (--inj injections.xml)       Injection XML file to use\n\
                (--tempSkip )                   Number of iterations between proposed temperature swaps (100)\n\
                (--symMassRatio)                Run with symmetric mass ratio eta, instead of q=m2/m1\n\
                (--mc-min mchirp)               Minimum chirp mass\n\
@@ -495,7 +495,7 @@ void initVariables(LALInferenceRunState *state)
   }
 
   /* Read injection XML file for parameters if specified */
-  ppt=LALInferenceGetProcParamVal(commandLine,"--injXML");
+  ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
   if(ppt){
     SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
     if(!injTable){

@@ -310,7 +310,12 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	IFOdata=headIFO=calloc(sizeof(LALInferenceIFOData),Nifo);
 	if(!IFOdata) XLAL_ERROR_NULL(XLAL_ENOMEM);
 	
-	procparam=LALInferenceGetProcParamVal(commandLine,"--injXML");
+	if(LALInferenceGetProcParamVal(commandLine,"--injXML")
+	{
+		XLALPrintError("ERROR: --injXML option is deprecated. Use --inj and update your scripts\n");
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+	procparam=LALInferenceGetProcParamVal(commandLine,"--inj");
 	if(procparam){
 		SimInspiralTableFromLIGOLw(&injTable,procparam->value,0,0);
 		if(!injTable){
@@ -916,15 +921,15 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	//InjParams.deltaT = MindeltaT;
 	//InjParams.fStartIn=(REAL4)minFlow;
 	
-	if(!LALInferenceGetProcParamVal(commandLine,"--injXML")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
+	if(!LALInferenceGetProcParamVal(commandLine,"--inj")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
 	if(LALInferenceGetProcParamVal(commandLine,"--event")){
     event= atoi(LALInferenceGetProcParamVal(commandLine,"--event")->value);
     fprintf(stdout,"Injecting event %d\n",event);
 	}
-	Ninj=SimInspiralTableFromLIGOLw(&injTable,LALInferenceGetProcParamVal(commandLine,"--injXML")->value,0,0);
+	Ninj=SimInspiralTableFromLIGOLw(&injTable,LALInferenceGetProcParamVal(commandLine,"--inj")->value,0,0);
 	REPORTSTATUS(&status);
 	printf("Ninj %d\n", Ninj);
-	if(Ninj<event) fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--injXML")->value);
+	if(Ninj<event) fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--inj")->value);
 	while(i<event) {i++; injTable = injTable->next;} /* Select event */
 	injEvent = injTable;
 	injEvent->next = NULL;

@@ -206,7 +206,7 @@ void initVariables(LALInferenceRunState *state)
 	memset(currentParams,0,sizeof(LALInferenceVariables));
 	
 	char help[]="\
-	[--injXML injections.xml]\tInjection XML file to use\
+	[--inj injections.xml]\tInjection XML file to use\
 	[--Mmin mchirp]\tMinimum chirp mass\
 	[--Mmax mchirp]\tMaximum chirp mass\
 	[--dt time]\tWidth of time prior, centred around trigger (0.1s)\
@@ -244,7 +244,7 @@ void initVariables(LALInferenceRunState *state)
 	}
 	
 	/* Read injection XML file for parameters if specified */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--injXML");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
 	if(ppt){
 		SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
 		if(!injTable){
