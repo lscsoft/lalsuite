@@ -19,7 +19,7 @@
 
 #include <lal/ComputeDataQualityVector.h>
 
-/* #include <math.h>  to use isnan() and isinf(), but not in C89! */
+#include <math.h>  /* to use isnan() and isinf() */
 
 NRCSID( COMPUTEDATAQUALITYVECTORC, "$Id$" );
 RCSID("$Id$");
@@ -128,7 +128,7 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
 
         for (j = 0; j < r_gamma; j++) {
             REAL8 re = gamma_data[i*r_gamma + j].re;
-            if (re < 0.8 || re > 1.2)  /* || isnan(re) || isinf(re)  not C89 */
+            if (re < 0.8 || re > 1.2 || isnan(re) || isinf(re))
                 badgamma = 1;
         }
 
