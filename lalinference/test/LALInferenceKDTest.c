@@ -13,7 +13,10 @@ static void seedRng(gsl_rng *rng) {
   if (devRandom == NULL) {
     seed = 314159;
   } else {
-    fread(&seed, sizeof(unsigned long), 1, devRandom);
+    if(!fread(&seed, sizeof(unsigned long), 1, devRandom))
+    {
+        exit(1);
+    }
     fclose(devRandom);
   }
   
