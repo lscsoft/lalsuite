@@ -310,7 +310,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	IFOdata=headIFO=calloc(sizeof(LALInferenceIFOData),Nifo);
 	if(!IFOdata) XLAL_ERROR_NULL(XLAL_ENOMEM);
 	
-	if(LALInferenceGetProcParamVal(commandLine,"--injXML")
+	if(LALInferenceGetProcParamVal(commandLine,"--injXML"))
 	{
 		XLALPrintError("ERROR: --injXML option is deprecated. Use --inj and update your scripts\n");
 		XLAL_ERROR_NULL(XLAL_EINVAL);
