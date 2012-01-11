@@ -522,6 +522,7 @@ int MAIN( int argc, char *argv[]) {
     return( HIERARCHICALSEARCH_EBAD );
   }
 
+#ifndef EXP_NO_NUM_COUNT
   /* check that the numbercount can't exceed the data type */
   {
     UINT8 maxseg = 1;
@@ -535,6 +536,7 @@ int MAIN( int argc, char *argv[]) {
       return( HIERARCHICALSEARCH_EBAD );
     }
   }
+#endif
 
   if ( uvar_blocksRngMed < 1 ) {
     fprintf(stderr, "Invalid Running Median block size\n");
@@ -1551,7 +1553,6 @@ int MAIN( int argc, char *argv[]) {
                 /* fine grid over frequency */
                 REAL4 * fgrid2F = finegrid.sumTwoF + FG_INDEX(finegrid, 0);
                 FINEGRID_NC_T * fgridnc = finegrid.nc + FG_INDEX(finegrid, 0);
-
 #ifdef GC_SSE2_OPT
                 gc_hotloop( fgrid2F, cgrid2F, fgridnc, TwoFthreshold, finegrid.freqlength );
                 if ( uvar_computeLV ) {
