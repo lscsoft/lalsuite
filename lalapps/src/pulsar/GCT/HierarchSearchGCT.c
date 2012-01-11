@@ -981,51 +981,56 @@ int MAIN( int argc, char *argv[]) {
     }
   }
 
-  /* initialise detector name vector for later identification */
-  UINT4 numDetectors = 0; /* even though there always are >= detectors, this will be set as non-zero only in computeLV case */
+  /* get numer of detectors and, in line veto case, detector name vector */
+  UINT4 numDetectors = 0;
   LALStringVector *detectorIDs = NULL;
+
+  /* fill detector name vector with all detectors present in any data sements */
+  if ( ( detectorIDs = XLALGetDetectorIDs ( &stackMultiSFT )) == NULL )
+    XLAL_ERROR ( XLAL_EFUNC );
+  numDetectors = detectorIDs->length;
+
+  /* get effective number of segments per detector (needed for correct averaging in single-IFO F calculation) */
   UINT4 * NsegmentsX = NULL;
-  if ( uvar_computeLV ) { /* allocate detector matching info */
+  if ( uvar_computeLV )
+    {
+      NsegmentsX = ALRealloc( NsegmentsX, numDetectors * sizeof(*NsegmentsX));
+      for (UINT4 X = 0; X < numDetectors; X++)
+        {
+          NsegmentsX[X] = 0;
+          for (k = 0; k < nStacks; k++)
+            { /* for each detector, check if present in each segment, and save the number of segments where it is */
+              for (UINT4 Y = 0; Y < stackMultiSFT.data[k]->length; Y++)
+                {
+                  if ( strcmp( stackMultiSFT.data[k]->data[Y]->data[0].name, detectorIDs->data[X] ) == 0 )
+                    NsegmentsX[X] += 1;
+                } /* for Y < numDetectors */
+            } /* for k < nStacks */
+        } /* for X < numDetectors */
+    } /* if ( uvar_computeLV ) */
 
-    /* fill detector name vector with all detectors present in any data sements */
-    if ( ( detectorIDs = XLALGetDetectorIDs ( &stackMultiSFT )) == NULL )
-      XLAL_ERROR ( XLAL_EFUNC );
-    numDetectors = detectorIDs->length;
-    /* keep track of effective number of segments per detector (needed for correct averaging) */
-    NsegmentsX = (UINT4 *)ALRealloc( NsegmentsX, numDetectors * sizeof(UINT4));
+  /* set up line prior ratios: either given by user, then convert from string to REAL4 vector; else, pass NULL, which is interpreted as lX=1.0 for all X */
+  usefulParams.LVlX = NULL;
+  if ( uvar_computeLV && uvar_LVlX ) {
+    if (  uvar_LVlX->length != numDetectors ) {
+      fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar_LVlX->length, numDetectors);
+      return( HIERARCHICALSEARCH_EBAD );
+    }
+    if ( (usefulParams.LVlX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+      fprintf(stderr, "Failed call to XLALCreateREAL4Vector( %d )\n", numDetectors );
+      return( HIERARCHICALSEARCH_EXLAL );
+    }
     for (UINT4 X = 0; X < numDetectors; X++) {
-      NsegmentsX[X] = 0;
-      for (k = 0; k < nStacks; k++) { /* for each detector, check if present in each segment, and save the number of segments where it is */
-        for (UINT4 Y = 0; Y < stackMultiSFT.data[k]->length; Y++) {
-          if ( strcmp( stackMultiSFT.data[k]->data[Y]->data[0].name, detectorIDs->data[X] ) == 0 )
-            NsegmentsX[X] += 1;
-        }
+        if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL4_FORMAT, &usefulParams.LVlX->data[X] ) ) {
+        fprintf(stderr, "Illegal REAL4 commandline argument to --LVlX[%d]: '%s'\n", X, uvar_LVlX->data[X]);
+        return ( HIERARCHICALSEARCH_EBAD );
       }
-    } /* for X < numDetectors */
-
-    /* set up line prior ratios: either given by user, then convert from string to REAL4 vector; else, pass NULL, which is interpreted as lX=1.0 for all X */
-    if ( uvar_LVlX ) {
-      if (  uvar_LVlX->length != numDetectors ) {
-        fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar_LVlX->length, numDetectors);
+      if ( usefulParams.LVlX->data[X] < 0.0 ) {
+        fprintf(stderr, "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, usefulParams.LVlX->data[X] );
         return( HIERARCHICALSEARCH_EBAD );
       }
-      if ( (usefulParams.LVlX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-       fprintf(stderr, "Failed call to XLALCreateREAL4Vector( %d )\n", numDetectors );
-       return( HIERARCHICALSEARCH_EXLAL );
-      }
-      for (UINT4 X = 0; X < numDetectors; X++) {
-        if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL4_FORMAT, &usefulParams.LVlX->data[X] ) ) {
-          fprintf(stderr, "Illegal REAL4 commandline argument to --LVlX[%d]: '%s'\n", X, uvar_LVlX->data[X]);
-          return ( HIERARCHICALSEARCH_EBAD );
-        }
-        if ( usefulParams.LVlX->data[X] < 0.0 ) {
-          fprintf(stderr, "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, usefulParams.LVlX->data[X] );
-          return( HIERARCHICALSEARCH_EBAD );
-        }
-      } /* for X < numDetectors */
-    } /* if ( uvar_LVlX ) */
-
-  } /* if ( uvar_computeLV ) */
+    } /* for X < numDetectors */
+  } /* if ( computeLV && uvar_LVlX ) */
 
   /*-----------Create template grid for first stage ---------------*/
   /* prepare initialization of DopplerSkyScanner to step through paramter space */
@@ -1209,11 +1214,12 @@ int MAIN( int argc, char *argv[]) {
           coarsegrid.freqlength = (UINT4) (binsFstat1);
           coarsegrid.nStacks = nStacks;
           coarsegrid.length = coarsegrid.freqlength * coarsegrid.nStacks;
-          coarsegrid.numDetectors = numDetectors; /* non-zero only in computeLV case */
+          coarsegrid.numDetectors = numDetectors;
 
           /* allocate memory for coarsegrid */
           coarsegrid.TwoF = (REAL4 *)LALRealloc( coarsegrid.TwoF, coarsegrid.length * sizeof(REAL4));
-          coarsegrid.TwoFX = (REAL4 *)LALRealloc( coarsegrid.TwoFX, coarsegrid.numDetectors * coarsegrid.length * sizeof(REAL4));
+	  if ( uvar_computeLV )
+            coarsegrid.TwoFX = (REAL4 *)LALRealloc( coarsegrid.TwoFX, coarsegrid.numDetectors * coarsegrid.length * sizeof(REAL4));
           coarsegrid.Uindex = (UINT4 *)LALRealloc( coarsegrid.Uindex, coarsegrid.length * sizeof(UINT4));
 
           if ( coarsegrid.TwoF == NULL || coarsegrid.Uindex == NULL) {
@@ -1294,7 +1300,7 @@ int MAIN( int argc, char *argv[]) {
           finegrid.refTime = tMidGPS;
 
           /* number of detectors, needed for sumTwoFX array */
-          finegrid.numDetectors = coarsegrid.numDetectors;  /* non-zero only in computeLV case */
+          finegrid.numDetectors = coarsegrid.numDetectors;
 
           /* allocate memory for finegrid points */
           /* FIXME: The SSE2 optimized code relies on an identical alignment modulo 16 bytes of the
@@ -1307,7 +1313,8 @@ int MAIN( int argc, char *argv[]) {
 
           finegrid.nc = (FINEGRID_NC_T *)ALRealloc( finegrid.nc, finegrid.length * sizeof(FINEGRID_NC_T));
           finegrid.sumTwoF = (REAL4 *)ALRealloc( finegrid.sumTwoF, finegrid.length * sizeof(REAL4));
-          finegrid.sumTwoFX = (REAL4 *)ALRealloc( finegrid.sumTwoFX, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4));
+	  if ( uvar_computeLV )
+            finegrid.sumTwoFX = (REAL4 *)ALRealloc( finegrid.sumTwoFX, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4));
 
           if ( finegrid.nc == NULL || finegrid.sumTwoF == NULL) {
             fprintf(stderr, "ERROR: Memory allocation [HierarchSearchGCT.c %d]\n" , __LINE__);
@@ -1338,7 +1345,8 @@ int MAIN( int argc, char *argv[]) {
               /* initialize the entire finegrid ( 2F-sum and number count set to 0 ) */
               memset( finegrid.nc, 0, finegrid.length * sizeof(FINEGRID_NC_T) );
               memset( finegrid.sumTwoF, 0, finegrid.length * sizeof(REAL4) );
-              memset( finegrid.sumTwoFX, 0, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4) );
+	      if ( uvar_computeLV )
+                memset( finegrid.sumTwoFX, 0, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4) );
 
               /* compute F-statistic values for coarse grid the first time through fine grid fdots loop */
               const BOOLEAN doComputeFstats = ( (if1dot_fg == 0) && (if2dot_fg == 0) );
@@ -1526,17 +1534,19 @@ int MAIN( int argc, char *argv[]) {
 
                     /* ============ Copy the *2F* value ============ */
                     coarsegrid.TwoF[CG_INDEX(coarsegrid, k, ifreq)] = 2.0 * Fstat;
-                    for (UINT4 X = 0; X < coarsegrid.numDetectors; X++) { /* numDetectors was initialised to 0, so this will only evaluate for uvar_computeLV=TRUE */
-                      INT4 detid = -1;
-                      for (UINT4 Y = 0; Y < multiFstatVector->FX->length; Y++) { /* look for matching detector ID in this segment */
-                        if ( strcmp( stackMultiSFT.data[k]->data[Y]->data[0].name, detectorIDs->data[X] ) == 0 )
-                          detid = Y;
-                      }
-                      if ( detid == -1 ) /* if no match found, detector X was not present in this segment, so use 2FX=0.0 */
-                        coarsegrid.TwoFX[CG_FX_INDEX(coarsegrid, X, k, ifreq)] = 0.0;
-                      else /* if a match was found, get the corresponding F value and multiply by 2 */
-                        coarsegrid.TwoFX[CG_FX_INDEX(coarsegrid, X, k, ifreq)] = 2.0 * multiFstatVector->FX->data[FX_INDEX(multiFstatVector->FX, detid, ifreq)];
-                    }
+                    if ( uvar_computeLV ) {
+                      for (UINT4 X = 0; X < coarsegrid.numDetectors; X++) {
+                        INT4 detid = -1;
+                        for (UINT4 Y = 0; Y < multiFstatVector->FX->length; Y++) { /* look for matching detector ID in this segment */
+                          if ( strcmp( stackMultiSFT.data[k]->data[Y]->data[0].name, detectorIDs->data[X] ) == 0 )
+                            detid = Y;
+                        }
+                        if ( detid == -1 ) /* if no match found, detector X was not present in this segment, so use 2FX=0.0 */
+                          coarsegrid.TwoFX[CG_FX_INDEX(coarsegrid, X, k, ifreq)] = 0.0;
+                        else /* if a match was found, get the corresponding F value and multiply by 2 */
+                          coarsegrid.TwoFX[CG_FX_INDEX(coarsegrid, X, k, ifreq)] = 2.0 * multiFstatVector->FX->data[FX_INDEX(multiFstatVector->FX, detid, ifreq)];
+                      } /* for X < numDetectors */
+                    } /* if ( uvar_computeLV ) */
 
                   } /* END: Loop over coarse-grid frequency bins (ifreq) */
 
@@ -2432,7 +2442,7 @@ void UpdateSemiCohToplist(LALStatus *status,
     }
     line.sumTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFStatline_to_str if later overwritten in recalcToplistStats step */
 
-    if ( in->numDetectors > 0 ) { /* if we already have FX values from the main loop, insert these, and calculate LV-stat here */
+    if ( in->sumTwoFX ) { /* if we already have FX values from the main loop, insert these, and calculate LV-stat here */
       for (UINT4 X = 0; X < in->numDetectors; X++)
         line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
       xlalErrno = 0;
