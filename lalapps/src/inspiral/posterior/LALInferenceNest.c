@@ -82,7 +82,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
 	char help[]="\
 Initialisation arguments:\n\
-(--randomseed seed           Random seed for Nested Sampling)\n\n";
+(--seed seed           Random seed for Nested Sampling)\n\n";
 	LALInferenceRunState *irs=NULL;
 	LALInferenceIFOData *ifoPtr, *ifoListStart;
 	ProcessParamsTable *ppt=NULL;
@@ -171,7 +171,7 @@ Initialisation arguments:\n\
 	gsl_rng_env_setup();
 	irs->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
 	/* (try to) get random seed from command line: */
-	ppt = LALInferenceGetProcParamVal(commandLine, "--randomseed");
+	ppt = LALInferenceGetProcParamVal(commandLine, "--seed");
 	if (ppt != NULL)
 		randomseed = atoi(ppt->value);
 	else { /* otherwise generate "random" random seed: */
