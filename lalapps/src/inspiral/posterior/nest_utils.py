@@ -50,12 +50,14 @@ class LALInferenceNode(pipeline.CondorDAGNode):
     """
     def __init__(self,li_job):
         pipeline.CondorDAGNode.__init__(self,li_job)
-    def add_ifo_data(self,data_tuples,ifos=None):
+    def add_ifo_data(self,data_tuples,ifos=None,shift_time_dict=None):
         """
         Add list of IFOs and data to analyse.
         data_tuples is a dictionary of available (cache,channel) tuples
         ifos is an optional list of IFOs to include. If not specified analyse all available
         """
+        if shift_time_dict is not None:
+            raise Exception('ERROR: Time slides not supported by lalinference yet')
         cp = self.job().get_cp()
         allifos=data_tuples.keys()
         if ifos is None:
@@ -127,7 +129,7 @@ class LALInferenceNode(pipeline.CondorDAGNode):
         Set the end time of the signal for the centre of the prior in time
         """
         self.__trigtime=float(time)
-        self.add_var_opt('--trigtime',str(time))
+        self.add_var_opt('trigtime',str(time))
 
     def set_event_number(self,event):
 
